@@ -120,9 +120,9 @@ static void rtr_textlog_chat(RCore *core, TextLog T) {
 	char *ret, msg[1024] = {0};
 
 	R_LOG_INFO ("Type '/help' for commands and ^D to quit:");
-	char *oldprompt = strdup (r_line_singleton ()->prompt);
+	char *oldprompt = strdup (core->cons->line->prompt);
 	snprintf (prompt, sizeof (prompt) - 1, "[%s]> ", me);
-	r_line_set_prompt (prompt);
+	r_line_set_prompt (core->cons, prompt);
 	ret = rtrcmd (T, msg);
 	for (;;) {
 		if (lastmsg >= 0) {
@@ -154,7 +154,7 @@ static void rtr_textlog_chat(RCore *core, TextLog T) {
 			r_config_set (core->config, "cfg.user", buf+6);
 			me = r_config_get (core->config, "cfg.user");
 			snprintf (prompt, sizeof (prompt) - 1, "[%s]> ", me);
-			r_line_set_prompt (prompt);
+			r_line_set_prompt (core->cons, prompt);
 			free (m);
 		} else if (!strcmp (buf, "/log")) {
 			char *ret = rtrcmd (T, "T");
@@ -176,7 +176,7 @@ static void rtr_textlog_chat(RCore *core, TextLog T) {
 		}
 	}
 beach:
-	r_line_set_prompt (oldprompt);
+	r_line_set_prompt (core->cons, oldprompt);
 	free (oldprompt);
 }
 

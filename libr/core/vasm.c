@@ -28,14 +28,13 @@ static int readline_callback(RCons *cons, void *_a, const char *str) {
 		a->amode? "hexpairs": "assembly"
 		);
 	r_asm_set_pc (a->core->rasm, a->off);
+	RLine *line = cons->line;
 	if (*str == '!') {
 		a->amode = !a->amode;
-		RLine *line = r_line_singleton();
 		line->buffer.data[0] = 0;
 		line->buffer.length = 0;
 	} else if (r_str_endswith (str, "!")) {
 		a->amode = !a->amode;
-		RLine *line = r_line_singleton();
 		strcpy (line->buffer.data, a->otherstr);
 		line->buffer.length = strlen (a->otherstr);
 		line->buffer.index = line->buffer.length;

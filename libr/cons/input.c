@@ -758,17 +758,13 @@ R_API char *r_cons_input(RCons *cons, const char *msg) {
 	if (!oprompt) {
 		return NULL;
 	}
-	if (msg) {
-		r_line_set_prompt (msg);
-	} else {
-		r_line_set_prompt ("");
-	}
+	r_line_set_prompt (cons, msg? msg: "");
 	size_t buf_size = 1024;
 	char *buf = malloc (buf_size);
 	if (buf) {
 		*buf = 0;
 		r_cons_fgets (cons, buf, buf_size, 0, NULL);
-		r_line_set_prompt (oprompt);
+		r_line_set_prompt (cons, oprompt);
 	}
 	free (oprompt);
 	return buf;

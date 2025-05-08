@@ -31,7 +31,7 @@ static int cmd_macro(void *data, const char *_input) {
 			if (!strchr (_input, ';')) {
 				r_strbuf_append (sb, ";");
 			}
-			r_line_set_prompt ("> ");
+			r_line_set_prompt (core->cons, "> ");
 			bool closepar = true;
 			while (true) {
 				const char *ptr = r_line_readline (core->cons);

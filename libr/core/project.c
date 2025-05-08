@@ -333,7 +333,7 @@ static bool r_core_project_load(RCore *core, const char *prj_name, const char *r
 	}
 	if (r_config_get_b (core->config, "prj.history")) {
 		char *file = r_file_new (prj_path, "history", NULL);
-		r_line_hist_free (); // R2_600 - hist_reset ?
+		r_line_hist_free (core->cons->line); // R2_600 - hist_reset ?
 		r_line_hist_load (file);
 		free (file);
 	}

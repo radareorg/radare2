@@ -579,7 +579,7 @@ static void setup_hist_match(RLine *line) {
 
 R_API int r_line_hist_cmd_up(RLine *line) {
 	if (line->hist_up) {
-		return line->hist_up (line->user);
+		return line->hist_up (line->cons, line->user);
 	}
 	if (!inithist ()) {
 		return false;
@@ -609,7 +609,7 @@ R_API int r_line_hist_cmd_up(RLine *line) {
 
 R_API int r_line_hist_cmd_down(RLine *line) {
 	if (line->hist_down) {
-		return line->hist_down (line->user);
+		return line->hist_down (line->cons, line->user);
 	}
 	if (!line->history.data) {
 		inithist ();
@@ -721,16 +721,16 @@ R_API int r_line_hist_list(bool full) {
 	return i;
 }
 
-R_API void r_line_hist_free(void) {
-	int i;
-	if (I.history.data) {
-		for (i = 0; i < I.history.size; i++) {
-			R_FREE (I.history.data[i]);
+R_API void r_line_hist_free(RLine *line) {
+	if (line->history.data) {
+		size_t i;
+		for (i = 0; i < line->history.size; i++) {
+			R_FREE (line->history.data[i]);
 		}
 	}
-	R_FREE (I.history.data);
-	R_FREE (I.sdbshell_hist);
-	I.history.index = 0;
+	R_FREE (line->history.data);
+	R_FREE (line->sdbshell_hist);
+	line->history.index = 0;
 }
 
 /* load history from file. TODO: if file == NULL load from ~/.<prg>.history or so */
@@ -1795,8 +1795,8 @@ repeat:
 				I.buffer.length = I.buffer.index;
 				D.gcomp = 0;
 			} else if (prev == 24) {// ^X = 0x18
-				I.buffer.data[I.buffer.length] = 0;	// probably unnecessary
-				tmp_ed_cmd = I.cb_editor (I.user, I.buffer.data);
+				I.buffer.data[I.buffer.length] = 0; // probably unnecessary
+				tmp_ed_cmd = I.cb_editor (I.user, NULL, I.buffer.data);
 				if (tmp_ed_cmd) {
 					/* copied from yank (case 25) */
 					I.buffer.length = strlen (tmp_ed_cmd);

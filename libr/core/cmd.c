@@ -2546,7 +2546,7 @@ static int cmd_kuery(void *data, const char *input) {
 		const size_t buf_size = 1024;
 		char *buf = malloc (1024);
 		while (buf) {
-			r_line_set_prompt (p);
+			r_line_set_prompt (core->cons, p);
 			*buf = 0;
 			if (r_cons_fgets (core->cons, buf, buf_size, 0, NULL) < 1) {
 				break;
@@ -3467,13 +3467,11 @@ static int cmd_system(void *data, const char *input) {
 	int ret = 0;
 	switch (*input) {
 	case '-': //!-
+		r_line_hist_free (core->cons->line);
 		if (input[1]) {
-			r_line_hist_free ();
 			char *history_file = r_xdg_cachedir ("history");
 			r_line_hist_save (history_file);
 			free (history_file);
-		} else {
-			r_line_hist_free ();
 		}
 		break;
 	case '=': //!=
