@@ -1619,18 +1619,18 @@ static bool __vi_mode(void) {
 		default:					// escape key
 			ch = tolower (r_cons_arrow_to_hjkl (ch));
 			switch (ch) {
-			case 'k':			// up
+			case 'k': // up
 				I.history.do_setup_match = o_do_setup_match;
 				r_line_hist_up ();
 				break;
-			case 'j':			// down
+			case 'j': // down
 				I.history.do_setup_match = o_do_setup_match;
 				r_line_hist_down ();
 				break;
-			case 'l':			// right
+			case 'l': // right
 				__move_cursor_right ();
 				break;
-			case 'h':			// left
+			case 'h': // left
 				__move_cursor_left ();
 				break;
 			}
@@ -1968,40 +1968,14 @@ repeat:
 #if R2__WINDOWS__
 			// always skip escape
 			memmove (buf, buf + 1, strlen ((char *) buf));
-#if 0
-			if (I.vtmode != 2) {
-				if (buf[1] == '[') {
-					memmove (buf, buf + 2, strlen (buf));
-				} else {
-					memmove (buf, buf + 1, strlen (buf));
-				}
-				if (!buf[0]) {
-					buf[0] = -1;
-				}
-			} else {
-				buf[0] = r_cons_readchar_timeout (50);
-			}
-#endif
 #else
 			buf[0] = r_cons_readchar_timeout (50);
 #endif
 			switch (buf[0]) {
-			case 91: // CSI fixterms - https://www.leonerd.org.uk/hacks/fixterms/
-				while (true) {
-					ch = r_cons_readchar ();
-					// 'i' is the CSI fixterm for insert
-					if (ch == 126 || ch == 'i' || ch < 15) {
-						// consider shift+return is the same as the return key
-						*buf = '\n';
-						goto repeat;
-						break;
-					}
-				}
-				break;
-			case 127:	// alt+bkspace
+			case 127: // alt+bkspace
 				backward_kill_word (MINOR_BREAK);
 				break;
-			case -1:	// escape key, goto vi mode
+			case -1: // escape key, goto vi mode
 				if (I.enable_vi_mode) {
 					if (I.hud) {
 						I.hud->vi = true;
@@ -2052,11 +2026,12 @@ repeat:
 					I.buffer.index = I.buffer.length;
 				}
 				break;
-			default:
+			default:;
+				eprintf ("Default %d %c\n", buf[0], buf[0]);
 #if !R2__WINDOWS__
 				if (I.vtmode == 2) {
 					buf[1] = r_cons_readchar_timeout (50);
-					if (buf[1] == -1) {	// alt+e
+					if (buf[1] == -1) { // alt+e
 						r_cons_break_pop ();
 						__print_prompt ();
 						continue;
@@ -2068,9 +2043,20 @@ repeat:
 				if (buf[0] == 'O' && strchr("ABCDFH", buf[1]) != NULL) { // O
 					buf[0] = '[';
 				}
+				eprintf ("buf1 %d %c\n", buf[1], buf[1]);
 				if (buf[0] == '[') { // [
 					switch (buf[1]) {
-					case '3':	// supr or mouse click
+					case '2': // termfix
+						while (true) {
+							ch = r_cons_readchar ();
+							if (!isdigit (ch) && ch != ';') {
+								*buf = '\n';
+								goto repeat;
+								break;
+							}
+						}
+						break;
+					case '3': // supr or mouse click
 						__delete_current_char ();
 						if (I.vtmode == 2) {
 							buf[1] = r_cons_readchar ();
@@ -2096,7 +2082,7 @@ repeat:
 							}
 						}
 						break;
-					case '5':	// pag up
+					case '5': // pag up
 						if (I.vtmode == 2) {
 							buf[1] = r_cons_readchar ();
 						}
@@ -2111,7 +2097,7 @@ repeat:
 							selection_widget_draw ();
 						}
 						break;
-					case '6':	// pag down
+					case '6': // pag down
 						if (I.vtmode == 2) {
 							buf[1] = r_cons_readchar ();
 						}
@@ -2126,14 +2112,14 @@ repeat:
 							selection_widget_draw ();
 						}
 						break;
-					case '9':	// handle mouse wheel
+					case '9': // handle mouse wheel
 						key = r_cons_readchar ();
 						cons->mouse_event = 1;
-						if (key == '6') {	// up
+						if (key == '6') { // up
 							if (I.hud && I.hud->top_entry_n + 1 < I.hud->current_entry_n) {
 								I.hud->top_entry_n--;
 							}
-						} else if (key == '7') {	// down
+						} else if (key == '7') { // down
 							if (I.hud && I.hud->top_entry_n >= 0) {
 								I.hud->top_entry_n++;
 							}
@@ -2141,7 +2127,7 @@ repeat:
 						while (r_cons_readchar () != 'M') {}
 						break;
 					/* arrows */
-					case 'A':	// up arrow
+					case 'A': // up arrow
 						if (I.hud) {
 							if (I.hud->top_entry_n > 0) {
 								I.hud->top_entry_n--;
@@ -2159,7 +2145,7 @@ repeat:
 							}
 						}
 						break;
-					case 'B':	// down arrow
+					case 'B': // down arrow
 						if (I.hud) {
 							if (I.hud->top_entry_n + 1 < I.hud->current_entry_n) {
 								I.hud->top_entry_n++;
@@ -2179,10 +2165,10 @@ repeat:
 							}
 						}
 						break;
-					case 'C':	// right arrow
+					case 'C': // right arrow
 						__move_cursor_right ();
 						break;
-					case 'D':	// left arrow
+					case 'D': // left arrow
 						__move_cursor_left ();
 						break;
 					case 0x31:	// control + arrow
@@ -2241,10 +2227,10 @@ repeat:
 						}
 						r_cons_set_raw (true);
 						break;
-					case 0x37:	// HOME xrvt-unicode
+					case 0x37: // HOME xrvt-unicode
 						r_cons_readchar ();
 						break;
-					case 0x48:	// HOME
+					case 0x48: // HOME
 						if (I.sel_widget) {
 							selection_widget_up (I.sel_widget->options_len - 1);
 							selection_widget_draw ();
@@ -2252,10 +2238,10 @@ repeat:
 						}
 						I.buffer.index = 0;
 						break;
-					case 0x34:	// END
-					case 0x38:	// END xrvt-unicode
+					case 0x34: // END
+					case 0x38: // END xrvt-unicode
 						r_cons_readchar ();
-					case 0x46:	// END
+					case 0x46: // END
 						if (I.sel_widget) {
 							selection_widget_down (I.sel_widget->options_len - 1);
 							selection_widget_draw ();
