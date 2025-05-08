@@ -34,6 +34,7 @@ R_API RLine *r_line_new(RCons *cons) {
 }
 
 R_API void r_line_free(RLine *line) {
+#if R2_600
 	if (line) {
 		free ((void *)line->prompt);
 		line->prompt = NULL;
@@ -41,6 +42,7 @@ R_API void r_line_free(RLine *line) {
 		r_line_hist_free (line);
 		r_line_completion_fini (&line->completion);
 	}
+#endif
 }
 
 R_API void r_line_clipboard_push(const char *str) {
