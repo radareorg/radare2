@@ -2516,7 +2516,7 @@ static bool scr_vtmode(void *user, void *data) {
 		node->i_value = 1;
 	}
 	node->i_value = node->i_value > 2 ? 2 : node->i_value;
-	r_line_singleton ()->vtmode = core->cons->vtmode = node->i_value;
+	core->cons->line->vtmode = core->cons->vtmode = node->i_value;
 
 	DWORD mode;
 	HANDLE input = GetStdHandle (STD_INPUT_HANDLE);
