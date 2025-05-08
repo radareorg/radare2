@@ -2640,6 +2640,7 @@ R_API bool r_core_init(RCore *core) {
 
 	// We save the old num ad user, in order to restore it after free
 	core->lang = r_lang_new ();
+	core->lang->cons = core->cons;
 	core->lang->cmd_str = (char *(*)(void *, const char *))r_core_cmd_str;
 	core->lang->cmdf = (RCoreCmdF)r_core_cmdf;
 	core->lang->call_at = (RCoreCallAtCallback) r_core_cmd_call_str_at;

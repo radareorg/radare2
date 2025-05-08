@@ -333,7 +333,7 @@ R_API bool r_lang_prompt(RLang *lang) {
 		return true;
 	}
 	/* init line */
-	RLine *line = r_line_singleton ();
+	RLine *line = lang->cons->line;
 	RLineHistory hist = line->history;
 	RLineHistory histnull = {0};
 	RLineCompletion oc = line->completion;
@@ -344,9 +344,9 @@ R_API bool r_lang_prompt(RLang *lang) {
 
 	/* foo */
 	for (;;) {
-		r_cons_flush ();
-		snprintf (buf, sizeof (buf)-1, "%s> ", plugin->meta.name);
-		r_line_set_prompt (buf);
+		r_kons_flush (lang->cons);
+		snprintf (buf, sizeof (buf) - 1, "%s> ", plugin->meta.name);
+		r_line_set_prompt (lang->cons, buf);
 #if 0
 		printf ("%s> ", lang->cur->name);
 		fflush (stdout);
@@ -354,7 +354,7 @@ R_API bool r_lang_prompt(RLang *lang) {
 		if (feof (stdin)) break;
 		r_str_trim_tail (buf);
 #endif
-		p = r_line_readline ();
+		p = r_line_readline (lang->cons);
 		if (!p) {
 			break;
 		}
@@ -366,7 +366,7 @@ R_API bool r_lang_prompt(RLang *lang) {
 			} else {
 				char *foo, *code = NULL;
 				do {
-					foo = r_cons_editor (NULL, code);
+					foo = r_cons_editor (lang->cons, NULL, code);
 					r_lang_run (lang, foo, 0);
 					free (code);
 					code = foo;
@@ -410,7 +410,7 @@ R_API bool r_lang_prompt(RLang *lang) {
 		}
 	}
 	// XXX: leaking history
-	r_line_set_prompt (prompt);
+	r_line_set_prompt (line->cons, prompt);
 	line->completion = oc;
 	line->history = hist;
 	clearerr (stdin);
