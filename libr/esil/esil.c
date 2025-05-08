@@ -554,9 +554,13 @@ R_API char *r_esil_pop(REsil *esil) {
 }
 
 static int not_a_number(REsil *esil, const char *str) {
+#if USE_NEW_ESIL
+	if (esil->reg_if.is_reg (esil->reg_if.reg, str)) {
+#else
 	RRegItem *ri = r_reg_get (esil->anal->reg, str, -1);
 	if (ri) {
 		r_unref (ri);
+#endif
 		return R_ESIL_PARM_REG;
 	}
 	return R_ESIL_PARM_INVALID;
