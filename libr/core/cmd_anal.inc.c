@@ -2497,6 +2497,7 @@ static int esil_cost(RCore *core, ut64 addr, const char *expr) {
 	int ec = 0;
 #if USE_NEW_ESIL
 	REsil *e = r_esil_new_simple (0, core->anal->reg, &core->anal->iob);
+	e->anal = core->anal;	//XXX
 	//preserve regs? enforce ro mem access?
 	r_esil_add_voyeur (e, &ec, mr, R_ESIL_VOYEUR_MEM_READ);
 	r_esil_add_voyeur (e, &ec, mw, R_ESIL_VOYEUR_MEM_WRITE);
@@ -2597,6 +2598,7 @@ static void esilmemrefs(RCore *core, const char *expr) {
 	REsil *e = r_esil_new_simple (0, core->anal->reg, &core->anal->iob);
 	r_esil_add_voyeur (e, NULL, mw2, R_ESIL_VOYEUR_MEM_WRITE);
 	r_esil_add_voyeur (e, NULL, mr2, R_ESIL_VOYEUR_MEM_READ);
+	e->anal = core->anal;	//XXX
 #else
 	REsil *e = r_esil_new (256, 0, 0);
 	r_esil_setup (e, core->anal, false, false, false);
