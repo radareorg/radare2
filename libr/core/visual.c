@@ -4777,29 +4777,24 @@ R_API void r_core_visual_disasm_down(RCore *core, RAnalOp *op, int *cols) {
 	}
 }
 
+
+static bool is_mintty(RCons *cons) {
 #ifdef R2__WINDOWS__
-
-static bool is_mintty(RCons *cons) {
 	return cons->term_xterm;
-}
-
-static void flush_stdin(void) {
-	while (r_cons_readchar_timeout (1) != -1) ;
-}
-
 #else
-
-static bool is_mintty(RCons *cons) {
 	return false;
+#endif
 }
 
-static void flush_stdin(void) {
+static void flush_stdin(RCons *cons) {
+#if R2__WINDOWS__
+	while (r_cons_readchar_timeout (cons, 1) != -1) ;
+#else
 #ifndef __wasi__
 	tcflush (STDIN_FILENO, TCIFLUSH);
 #endif
-}
-
 #endif
+}
 
 R_API int r_core_visual(RCore *core, const char *input) {
 	RStrBuf *highlight_sb = NULL;
@@ -4994,7 +4989,7 @@ dodo:
 			if (I->vtmode == 2 && !is_mintty (core->cons)) {
 				// Prevent runaway scrolling
 				if (IS_PRINTABLE (ch) || ch == '\t' || ch == '\n') {
-					flush_stdin ();
+					flush_stdin (core->cons);
 				} else if (ch == 0x1b) {
 					char chrs[3];
 					int chrs_read = 1;
@@ -5006,13 +5001,13 @@ dodo:
 						if ((chrs[1] >= 'A' && chrs[1] <= 'D') || ch56) { // arrow keys
 							if (!ch56 || (chrs[2] = r_cons_readchar (core->cons)) == '~') {
 								chrs_read += ch56;
-								flush_stdin ();
+								flush_stdin (core->cons);
 #ifndef R2__WINDOWS__
 							// Following seems to fix an issue where scrolling slows
 							// down to a crawl for some terminals after some time
 							// mashing the up and down arrow keys
-							r_cons_set_raw (false);
-							r_cons_set_raw (true);
+							r_kons_set_raw (core->cons, false);
+							r_kons_set_raw (core->cons, true);
 #endif
 							}
 						}
