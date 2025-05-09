@@ -364,11 +364,6 @@ R_API int r_cons_fgets(RCons *cons, char *buf, int len, int argc, const char **a
 		r_cons_set_raw (false);
 		r_cons_show_cursor (true);
 	}
-#if 0
-	int mouse = r_cons_enable_mouse (false);
-	r_cons_enable_mouse (false);
-	r_cons_flush ();
-#endif
 	errno = 0;
 	if (cons->user_fgets) {
 		RETURN (cons->user_fgets (buf, len));
@@ -400,7 +395,6 @@ R_API int r_cons_fgets(RCons *cons, char *buf, int len, int argc, const char **a
 	}
 	ret = strlen (buf);
 beach:
-	//r_cons_enable_mouse (mouse);
 	return ret;
 }
 
@@ -415,9 +409,9 @@ R_API int r_cons_any_key(const char *msg) {
 	return r_cons_readchar (cons);
 }
 
-static inline void resizeWin(void) {
-	if (I->event_resize) {
-		I->event_resize (I->event_data);
+static inline void resizeWin(RCons *cons) {
+	if (cons->event_resize) {
+		cons->event_resize (cons->event_data);
 	}
 }
 
@@ -466,7 +460,7 @@ static int readchar_w32(RCons *cons, ut32 usec) {
 				continue;
 			}
 			if (mouse_enabled) {
-				r_cons_enable_mouse (true);
+				r_kons_enable_mouse (cons, true);
 			}
 			if (irInBuf.EventType == MOUSE_EVENT) {
 				if (irInBuf.Event.MouseEvent.dwEventFlags == MOUSE_MOVED) {
@@ -550,7 +544,7 @@ static int readchar_w32(RCons *cons, ut32 usec) {
 							ch = R_CONS_KEY_F12;
 						case VK_SHIFT:
 							if (mouse_enabled) {
-								r_cons_enable_mouse (false);
+								r_kons_enable_mouse (cons, false);
 							}
 							break;
 						default:
@@ -668,7 +662,7 @@ R_API int r_cons_readchar(RCons *cons) {
 		}
 		if (sigwinchFlag) {
 			sigwinchFlag = 0;
-			resizeWin ();
+			resizeWin (cons);
 		}
 	}
 
