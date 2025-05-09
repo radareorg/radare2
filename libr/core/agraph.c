@@ -251,15 +251,16 @@ static void rotateAsmemu(RCore *core) {
 }
 
 static void showcursor(RCore *core, int x) {
+	RCons *cons = core->cons;
 	if (!x) {
 		bool wheel = r_config_get_b (core->config, "scr.wheel");
 		if (wheel) {
-			r_cons_enable_mouse (true);
+			r_kons_enable_mouse (cons, true);
 		}
 	} else {
-		r_cons_enable_mouse (false);
+		r_kons_enable_mouse (cons, false);
 	}
-	r_cons_show_cursor (x);
+	r_kons_show_cursor (cons, x);
 }
 
 static char *get_title(ut64 addr) {
@@ -3408,13 +3409,13 @@ static void agraph_follow_innodes(RCore *core, RAGraph *g, bool in) {
 	} else if (r_list_length (list) < 10) {
 		// just 1 key
 		r_cons_set_raw (true);
-		char ch = r_cons_readchar ();
+		char ch = r_cons_readchar (core->cons);
 		if (ch >= '0' && ch <= '9') {
 			nth =  ch - '0';
 		}
 	} else {
-		r_cons_show_cursor (true);
-		r_cons_enable_mouse (false);
+		r_kons_show_cursor (core->cons, true);
+		r_kons_enable_mouse (core->cons, false);
 		char *nth_string = r_cons_input (core->cons, "index> ");
 		nth = atoi (nth_string);
 		if (nth == 0 && *nth_string != '0') {
@@ -4165,8 +4166,8 @@ find_next:
 			visual_refresh (core);
 		}
 
-		r_cons_clear_line (0);
-		r_cons_printf (Color_RESET);
+		r_kons_clear_line (core->cons, 0);
+		r_kons_printf (core->cons, Color_RESET);
 		if (addr > 0) {
 			r_cons_gotoxy (0, 0);
 			r_cons_printf ("[find]> match '%s'", line);
@@ -4174,11 +4175,11 @@ find_next:
 		} else {
 			R_LOG_ERROR ("Text '%s' not found. Press 'q' for quit, any other key to conitnue", buf);
 		}
-		r_cons_flush ();
+		r_kons_flush (core->cons);
 
 		free (line);
 
-		char c = r_cons_readchar ();
+		char c = r_cons_readchar (core->cons);
 		if (addr > 0) {
 			if (c == ';') {
 				char buf[256];
@@ -4241,7 +4242,7 @@ static void goto_asmqjmps(RAGraph *g, RCore *core) {
 
 	do {
 		r_cons_set_raw (true);
-		char ch = r_cons_readchar ();
+		char ch = r_cons_readchar (core->cons);
 		obuf[i++] = ch;
 		r_cons_write (&ch, 1);
 		cont = isalpha (ch & 0xff) && !islower (ch & 0xff);
@@ -4558,7 +4559,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 
 		// r_core_graph_inputhandle()
 		r_cons_set_raw (true);
-		okey = r_cons_readchar ();
+		okey = r_cons_readchar (core->cons);
 		key = r_cons_arrow_to_hjkl (okey);
 
 		if (core->cons->mouse_event) {
@@ -4935,7 +4936,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 				r_cons_gotoxy (0, 0);
 				r_cons_printf (R_CONS_CLEAR_LINE"Set shortcut key for 0x%"PFMT64x"\n", core->addr);
 				r_cons_flush ();
-				int ch = r_cons_readchar ();
+				int ch = r_cons_readchar (core->cons);
 				if (ch > 0) {
 					r_core_vmark_set (core, ch, core->addr, can->sx, can->sy);
 				}
@@ -4947,7 +4948,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 				r_cons_gotoxy (0, 2);
 				if (r_core_vmark_dump (core, 'v')) {
 					r_cons_flush ();
-					const int ch = r_cons_readchar ();
+					const int ch = r_cons_readchar (core->cons);
 					r_core_vmark_seek (core, ch, g);
 					core->visual.coming_from_vmark = true;
 				}
@@ -5275,8 +5276,8 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 			}
 			break;
 		case 27: // ESC
-			if (r_cons_readchar () == 91) {
-				if (r_cons_readchar () == 90) {
+			if (r_cons_readchar (core->cons) == 91) {
+				if (r_cons_readchar (core->cons) == 90) {
 					agraph_prev_node (g);
 				}
 			}

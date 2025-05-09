@@ -964,8 +964,8 @@ R_API void r_cons_log_stub(const char *output, const char *funcname, const char 
 
 /* input */
 
-R_API int r_cons_controlz(int ch);
-R_API int r_cons_readchar(void);
+R_API int r_cons_controlz(RCons *cons, int ch);
+R_API int r_cons_readchar(RCons *cons);
 R_API bool r_cons_readpush(const char *str, int len);
 R_API void r_cons_readflush(void);
 R_API void r_cons_switchbuf(bool active);
@@ -1037,7 +1037,7 @@ R_API void r_cons_column(int c);
 R_API int r_cons_get_column(void);
 R_API char *r_cons_message(const char *msg);
 R_API void r_cons_set_title(const char *str);
-R_API bool r_cons_enable_mouse(const bool enable);
+R_API bool r_kons_enable_mouse(RCons *cons, const bool enable);
 R_API void r_cons_enable_highlight(const bool enable);
 R_API const char* r_cons_get_rune(const ut8 ch);
 #endif

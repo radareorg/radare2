@@ -1,4 +1,4 @@
-/* radare - Copyright 2009-2021 - pancake */
+/* radare - Copyright 2009-2025 - pancake */
 
 static bool rtr_visual(RCore *core, TextLog T, const char *cmd) {
 	bool autorefresh = false;
@@ -38,14 +38,14 @@ static bool rtr_visual(RCore *core, TextLog T, const char *cmd) {
 				r_sys_sleep (1);
 				if (r_cons_is_breaked ())  {
 					autorefresh = false;
-					ch = r_cons_readchar ();
+					ch = r_cons_readchar (core->cons);
 				} else {
 					r_cons_break_pop ();
 					continue;
 				}
 				r_cons_break_pop ();
 			} else {
-				ch = r_cons_readchar ();
+				ch = r_cons_readchar (core->cons);
 			}
 #if 0
 TODO:

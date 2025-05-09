@@ -120,7 +120,7 @@ static void riu_render(RIU *riu) {
 }
 
 static bool riu_input(RIU *riu) {
-	int ch = r_cons_readchar ();
+	int ch = r_cons_readchar (riu->core->cons);
 	ch = r_cons_arrow_to_hjkl (ch);
 	switch (ch) {
 	case 'q':

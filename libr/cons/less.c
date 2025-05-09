@@ -69,7 +69,7 @@ R_API int r_cons_less_str(RCons *cons, const char *str, const char *exitkeys) {
 			from = 0;
 		}
 		pager_printpage (p, lines, mla, from, to, w);
-		ch = r_cons_readchar ();
+		ch = r_cons_readchar (cons);
 		if (exitkeys && strchr (exitkeys, ch)) {
 			for (i = 0; i < lines_count; i++) {
 				r_list_free (mla[i]);

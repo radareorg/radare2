@@ -38,12 +38,12 @@ static int copyuntilch(char *dst, char *src, int ch) {
 
 R_IPI void visual_add_comment(RCore *core, ut64 at) {
 	char buf[1024];
-	r_cons_enable_mouse (false);
-	r_cons_gotoxy (0, 0);
-	r_cons_printf ("Enter a comment: ('-' to remove, '!' to use cfg.editor)\n");
+	r_kons_enable_mouse (core->cons, false);
+	r_kons_gotoxy (core->cons, 0, 0);
+	r_kons_printf (core->cons, "Enter a comment: ('-' to remove, '!' to use cfg.editor)\n");
 	r_core_visual_showcursor (core, true);
-	r_cons_flush ();
-	r_cons_set_raw (false);
+	r_kons_flush (core->cons);
+	r_kons_set_raw (core->cons, false);
 	const ut64 orig = core->addr;
 	if (at == UT64_MAX) {
 		at = core->addr;
@@ -320,7 +320,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 		r_cons_newline ();
 		r_cons_visual_flush ();
 
-		int ch = r_cons_readchar ();
+		int ch = r_cons_readchar (core->cons);
 		if (ch == -1 || ch == 4) {
 			break;
 		}
@@ -679,7 +679,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 		//r_cons_visual_flush ();
 		r_cons_flush ();
 
-		int ch = r_cons_readchar ();
+		int ch = r_cons_readchar (core->cons);
 		if (ch == -1 || ch == 4) {
 			break;
 		}
@@ -1071,7 +1071,7 @@ R_API int r_core_visual_types(RCore *core) {
 		}
 
 		r_cons_visual_flush ();
-		ch = r_cons_readchar ();
+		ch = r_cons_readchar (core->cons);
 		if (ch == -1 || ch == 4) {
 			return false;
 		}
@@ -1571,7 +1571,7 @@ R_API int r_core_visual_classes(RCore *core) {
 		/* update terminal size */
 		(void) r_cons_get_size (&cols);
 		r_cons_visual_flush ();
-		ch = r_cons_readchar ();
+		ch = r_cons_readchar (core->cons);
 		if (ch == -1 || ch == 4) {
 			R_FREE (grep);
 			return false;
@@ -1844,7 +1844,7 @@ R_API int r_core_visual_anal_classes(RCore *core) {
 		/* update terminal size */
 		(void) r_cons_get_size (&cols);
 		r_cons_visual_flush ();
-		ch = r_cons_readchar ();
+		ch = r_cons_readchar (core->cons);
 		if (ch == -1 || ch == 4) {
 			goto cleanup;
 		}
@@ -2062,7 +2062,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 			count ++;
 		}
 		r_cons_flush ();
-		int ch = r_cons_readchar ();
+		int ch = r_cons_readchar (core->cons);
 		if (ch == -1 || ch == 4) {
 			free (curline);
 			free (cursearch);
@@ -2346,7 +2346,7 @@ R_API int r_core_visual_trackflags(RCore *core) { // "vbf"
 			}
 		}
 		r_cons_visual_flush ();
-		ch = r_cons_readchar ();
+		ch = r_cons_readchar (core->cons);
 		if (ch == -1 || ch == 4) {
 			return false;
 		}
@@ -2589,7 +2589,7 @@ R_API int r_core_visual_comments(RCore *core) {
 			r_core_cmd (core, cmd, 0);
 		}
 		r_cons_visual_flush ();
-		ch = r_cons_readchar ();
+		ch = r_cons_readchar (core->cons);
 		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case 'a':
@@ -2885,9 +2885,9 @@ R_API void r_core_visual_config(RCore *core) {
 			r_cons_gotoxy (21, y);
 			r_cons_printf ("...");
 			r_cons_gotoxy (0, 0);
-			r_cons_flush ();
+			r_kons_flush (core->cons);
 		}
-		ch = r_cons_readchar ();
+		ch = r_cons_readchar (core->cons);
 		if (ch == 4 || ch == -1) {
 			return;
 		}
@@ -3085,7 +3085,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 		r_cons_flush ();
 
 		/* Ask for option */
-		ch = r_cons_readchar ();
+		ch = r_cons_readchar (core->cons);
 		if (ch==-1||ch==4) {
 			free (root);
 			return;
@@ -3697,7 +3697,7 @@ R_API void r_core_visual_debugtraces(RCore *core, const char *input) {
 			ch = *input;
 			input++;
 		} else {
-			ch = r_cons_readchar ();
+			ch = r_cons_readchar (core->cons);
 		}
 		if (ch == 4 || (int)ch == -1) {
 			if (level == 0) {
@@ -3803,7 +3803,7 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			input++;
 		} else {
 			r_cons_set_raw (true);
-			ch = r_cons_readchar ();
+			ch = r_cons_readchar (core->cons);
 		}
 		if (ch == 4 || ch == -1) {
 			if (level == 0) {
@@ -3860,7 +3860,7 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			case 1:
 				{
 					eprintf ("Select variable source ('r'egister, 's'tackptr or 'b'aseptr): ");
-					int type = r_cons_readchar ();
+					int type = r_cons_readchar (core->cons);
 					switch (type) {
 					case 'r':
 						addVar (core, type, "Source Register Name: ");
@@ -4315,7 +4315,7 @@ repeat:
 		ch = *args;
 		args++;
 	} else {
-		ch = r_cons_arrow_to_hjkl (r_cons_readchar ());
+		ch = r_cons_arrow_to_hjkl (r_cons_readchar (core->cons));
 	}
 
 onemoretime:
@@ -4843,7 +4843,7 @@ R_API void r_core_visual_colors(RCore *core) {
 			r_cons_printf ("\n%s", res);
 		}
 		r_kons_flush (cons);
-		ch = r_cons_readchar ();
+		ch = r_cons_readchar (core->cons);
 		ch = r_cons_arrow_to_hjkl (ch);
 		switch (ch) {
 #define CASE_RGB(x,X,y) \

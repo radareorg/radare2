@@ -420,7 +420,7 @@ R_API bool r_line_dietline_init(void) {
 
 #if USE_UTF8
 /* read utf8 char into 's', return the length in bytes */
-static int r_line_readchar_utf8(ut8 *s, int slen) {
+static int readchar_utf8(RCons *cons, ut8 *s, int slen) {
 #if R2__WINDOWS__
 	return r_line_readchar_win (s, slen);
 #else
@@ -433,13 +433,13 @@ static int r_line_readchar_utf8(ut8 *s, int slen) {
 	if (I.demo) {
 		ch = r_cons_readchar_timeout (80);
 	} else {
-		ch = r_cons_readchar ();
+		ch = r_cons_readchar (cons);
 	}
 	if (ch == -1) {
 		return I.demo? 0: -1;
 	}
 	*s = ch;
-	*s = r_cons_controlz (*s);
+	*s = r_cons_controlz (cons, *s);
 	if (*s < 0x80) {
 		len = 1;
 	} else if ((s[0] & 0xe0) == 0xc0) {
@@ -455,7 +455,7 @@ static int r_line_readchar_utf8(ut8 *s, int slen) {
 		return -1;
 	}
 	for (i = 1; i < len; i++) {
-		ch = r_cons_readchar ();
+		ch = r_cons_readchar (cons);
 		if (ch != -1) {
 			s[i] = ch;
 		}
@@ -1221,14 +1221,14 @@ static void __print_prompt(void) {
 	fflush (stdout);
 }
 
-static inline void vi_delete_commands(int rep) {
+static inline void vi_delete_commands(RCons *cons, int rep) {
 	char c, t, e;
 	int i;
-	c = r_cons_readchar ();
+	c = r_cons_readchar (cons);
 	while (rep--) {
 		switch (c) {
 		case 'i':
-			t = r_cons_readchar ();
+			t = r_cons_readchar (cons);
 			switch (t) {
 			case 'w':
 				delete_in_word (MINOR_BREAK);
@@ -1292,14 +1292,14 @@ static inline void vi_delete_commands(int rep) {
 			}
 			break;
 		case 'f':
-			t = r_cons_readchar ();
+			t = r_cons_readchar (cons);
 			i = vi_motion_seek_to_char (t);
 			if (i != I.buffer.index) {
 				shift_buffer (I.buffer.index, i + 1);
 			}
 			break;
 		case 'F':
-			t = r_cons_readchar ();
+			t = r_cons_readchar (cons);
 			i = vi_motion_seek_to_char_backward (t);
 			if (i != I.buffer.index) {
 				shift_buffer (i, I.buffer.index);
@@ -1307,14 +1307,14 @@ static inline void vi_delete_commands(int rep) {
 			}
 			break;
 		case 't':
-			t = r_cons_readchar ();
+			t = r_cons_readchar (cons);
 			i = vi_motion_seek_to_char (t);
 			if (i != I.buffer.index) {
 				shift_buffer (I.buffer.index, i);
 			}
 			break;
 		case 'T':
-			t = r_cons_readchar ();
+			t = r_cons_readchar (cons);
 			i = vi_motion_seek_to_char_backward (t);
 			if (i != I.buffer.index) {
 				if (i < I.buffer.length) {
@@ -1403,7 +1403,7 @@ static void __update_prompt_color(void) {
 	I.prompt = r_str_newf ("%s%s%s", BEGIN, prompt, END);
 }
 
-static bool __vi_mode(void) {
+static bool __vi_mode(RCons *cons) {
 	char ch;
 	I.vi_mode = CONTROL_MODE;
 	__update_prompt_color ();
@@ -1421,14 +1421,14 @@ static bool __vi_mode(void) {
 		}
 		bool o_do_setup_match = I.history.do_setup_match;
 		I.history.do_setup_match = true;
-		ch = r_cons_readchar ();
+		ch = r_cons_readchar (cons);
 		while (isdigit (ch)) {			// handle commands like 3b
 			if (ch == '0' && rep == 0) {	// to handle the command 0
 				break;
 			}
 			int tmp = ch - '0';
 			rep = (rep * 10) + tmp;
-			ch = r_cons_readchar ();
+			ch = r_cons_readchar (cons);
 		}
 		rep = rep > 0? rep: 1;
 
@@ -1457,7 +1457,7 @@ static bool __vi_mode(void) {
 			delete_till_end ();
 			break;
 		case 'r':
-			ch = r_cons_readchar ();
+			ch = r_cons_readchar (cons);
 			I.buffer.data[I.buffer.index] = ch;
 			break;
 		case 'x':
@@ -1472,7 +1472,7 @@ static bool __vi_mode(void) {
 			I.vi_mode = INSERT_MODE;
 		/* fall through */
 		case 'd':
-			vi_delete_commands (rep);
+			vi_delete_commands (cons, rep);
 			break;
 		case 'I':
 			if (I.hud) {
@@ -1583,19 +1583,19 @@ static bool __vi_mode(void) {
 			}
 			break;
 		case 'f':
-			ch = r_cons_readchar ();
+			ch = r_cons_readchar (cons);
 			while (rep--) {
 				I.buffer.index = vi_motion_seek_to_char (ch);
 			}
 			break;
 		case 'F':
-			ch = r_cons_readchar ();
+			ch = r_cons_readchar (cons);
 			while (rep--) {
 				I.buffer.index = vi_motion_seek_to_char_backward (ch);
 			}
 			break;
 		case 't':
-			ch = r_cons_readchar ();
+			ch = r_cons_readchar (cons);
 			while (rep--) {
 				I.buffer.index = vi_motion_seek_to_char (ch);
 				if (I.buffer.index > 0) {
@@ -1604,7 +1604,7 @@ static bool __vi_mode(void) {
 			}
 			break;
 		case 'T':
-			ch = r_cons_readchar ();
+			ch = r_cons_readchar (cons);
 			while (rep--) {
 				I.buffer.index = vi_motion_seek_to_char_backward (ch);
 				if (I.buffer.index < I.buffer.length - 1) {
@@ -1688,7 +1688,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 	}
 	int mouse_status = cons->mouse;
 	if (I.hud && I.hud->vi) {
-		__vi_mode ();
+		__vi_mode (cons);
 		goto _end;
 	}
 	if (I.contents) {
@@ -1711,7 +1711,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 		__print_prompt ();
 	}
 	r_kons_break_push (cons, NULL, NULL);
-	r_cons_enable_mouse (I.hud);
+	r_kons_enable_mouse (cons, I.hud);
 	for (;;) {
 		D.yank_flag = false;
 		if (r_cons_is_breaked ()) {
@@ -1734,7 +1734,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 			}
 		}
 #if USE_UTF8
-		utflen = r_line_readchar_utf8 ((ut8 *) buf, sizeof (buf));
+		utflen = readchar_utf8 (cons, (ut8 *) buf, sizeof (buf));
 		if (utflen < (I.demo? 0: 1)) {
 			r_cons_break_pop ();
 			return NULL;
@@ -1757,7 +1757,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 			buf[len] = 0;
 		}
 #else
-		ch = r_cons_readchar ();
+		ch = r_cons_readchar (cons);
 		if (ch == -1) {
 			r_cons_break_pop ();
 			return NULL;
@@ -1980,7 +1980,7 @@ repeat:
 					if (I.hud) {
 						I.hud->vi = true;
 					}
-					if (__vi_mode ()) {
+					if (__vi_mode (cons)) {
 						goto _end;
 					}
 				}
@@ -2046,7 +2046,7 @@ repeat:
 					switch (buf[1]) {
 					case '2': // termfix
 						while (true) {
-							ch = r_cons_readchar ();
+							ch = r_cons_readchar (cons);
 							if (!isdigit (ch) && ch != ';') {
 								*buf = '\n';
 								goto repeat;
@@ -2057,7 +2057,7 @@ repeat:
 					case '3': // supr or mouse click
 						__delete_current_char ();
 						if (I.vtmode == 2) {
-							buf[1] = r_cons_readchar ();
+							buf[1] = r_cons_readchar (cons);
 							if (buf[1] == 126) {
 								// handle SUPR key
 								r_cons_break_pop ();
@@ -2070,7 +2070,7 @@ repeat:
 							}
 						}
 						for (;;) {
-							ch = r_cons_readchar ();
+							ch = r_cons_readchar (cons);
 							if (ch < 20) {
 								r_cons_break_pop ();
 								return NULL;
@@ -2082,7 +2082,7 @@ repeat:
 						break;
 					case '5': // pag up
 						if (I.vtmode == 2) {
-							buf[1] = r_cons_readchar ();
+							buf[1] = r_cons_readchar (cons);
 						}
 						if (I.hud) {
 							I.hud->top_entry_n -= (rows - 1);
@@ -2097,7 +2097,7 @@ repeat:
 						break;
 					case '6': // pag down
 						if (I.vtmode == 2) {
-							buf[1] = r_cons_readchar ();
+							buf[1] = r_cons_readchar (cons);
 						}
 						if (I.hud) {
 							I.hud->top_entry_n += (rows - 1);
@@ -2111,7 +2111,7 @@ repeat:
 						}
 						break;
 					case '9': // handle mouse wheel
-						key = r_cons_readchar ();
+						key = r_cons_readchar (cons);
 						cons->mouse_event = 1;
 						if (key == '6') { // up
 							if (I.hud && I.hud->top_entry_n + 1 < I.hud->current_entry_n) {
@@ -2122,7 +2122,7 @@ repeat:
 								I.hud->top_entry_n++;
 							}
 						}
-						while (r_cons_readchar () != 'M') {}
+						while (r_cons_readchar (cons) != 'M') {}
 						break;
 					/* arrows */
 					case 'A': // up arrow
@@ -2171,14 +2171,14 @@ repeat:
 						break;
 					case 0x31:	// control + arrow
 						if (I.vtmode == 2) {
-							ch = r_cons_readchar ();
+							ch = r_cons_readchar (cons);
 							if (ch == 0x7e) {	// HOME in screen/tmux
 								// corresponding END is 0x34 below (the 0x7e is ignored there)
 								I.buffer.index = 0;
 								break;
 							}
-							r_cons_readchar ();	// should be '5'
-							ch = r_cons_readchar ();
+							r_cons_readchar (cons);	// should be '5'
+							ch = r_cons_readchar (cons);
 						}
 #if R2__WINDOWS__
 						else {
@@ -2226,7 +2226,7 @@ repeat:
 						r_cons_set_raw (true);
 						break;
 					case 0x37: // HOME xrvt-unicode
-						r_cons_readchar ();
+						r_cons_readchar (cons);
 						break;
 					case 0x48: // HOME
 						if (I.sel_widget) {
@@ -2238,7 +2238,7 @@ repeat:
 						break;
 					case 0x34: // END
 					case 0x38: // END xrvt-unicode
-						r_cons_readchar ();
+						r_cons_readchar (cons);
 					case 0x46: // END
 						if (I.sel_widget) {
 							selection_widget_down (I.sel_widget->options_len - 1);
@@ -2393,7 +2393,7 @@ repeat:
 _end:
 	r_cons_break_pop ();
 	r_cons_set_raw (false);
-	r_cons_enable_mouse (mouse_status);
+	r_kons_enable_mouse (cons, mouse_status);
 #if 0
 	if (I.buffer.length > 1024) {	// R2_590 - use I.maxlength
 		I.buffer.data[0] = 0;

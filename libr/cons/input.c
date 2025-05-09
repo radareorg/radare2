@@ -4,11 +4,11 @@
 
 #define I r_cons_singleton ()
 
-R_API int r_cons_controlz(int ch) {
+R_API int r_cons_controlz(RCons *cons, int ch) {
 #if R2__UNIX__
 	if (ch == 0x1a) {
 		r_cons_show_cursor (true);
-		r_cons_enable_mouse (false);
+		r_kons_enable_mouse (cons, false);
 		r_sys_stop ();
 		return 0;
 	}
@@ -20,11 +20,11 @@ R_API int r_cons_controlz(int ch) {
 // 97 - wheel down
 // 95 - mouse up
 // 92 - mouse down
-static int __parseMouseEvent(void) {
+static int parseMouseEvent(RCons *cons) {
 	char xpos[32];
 	char ypos[32];
-	(void) r_cons_readchar (); // skip first char
-	int ch2 = r_cons_readchar ();
+	(void) r_cons_readchar (cons); // skip first char
+	int ch2 = r_cons_readchar (cons);
 
 	// [32M - mousedown
 	// [35M - mouseup
@@ -32,7 +32,7 @@ static int __parseMouseEvent(void) {
 		size_t i;
 		// read until next ;
 		for (i = 0; i < sizeof (xpos) - 1; i++) {
-			char ch = r_cons_readchar ();
+			char ch = r_cons_readchar (cons);
 			if (ch == ';' || ch == 'M') {
 				break;
 			}
@@ -40,7 +40,7 @@ static int __parseMouseEvent(void) {
 		}
 		xpos[i] = 0;
 		for (i = 0; i < sizeof (ypos) - 1; i++) {
-			char ch = r_cons_readchar ();
+			char ch = r_cons_readchar (cons);
 			if (ch == ';' || ch == 'M') {
 				break;
 			}
@@ -48,15 +48,15 @@ static int __parseMouseEvent(void) {
 		}
 		ypos[i] = 0;
 		r_cons_set_click (atoi (xpos), atoi (ypos));
-		(void) r_cons_readchar ();
+		(void) r_cons_readchar (cons);
 		// ignored
-		int ch = r_cons_readchar ();
+		int ch = r_cons_readchar (cons);
 		if (ch == 27) {
-			ch = r_cons_readchar (); // '['
+			ch = r_cons_readchar (cons); // '['
 		}
 		if (ch == '[') {
 			do {
-				ch = r_cons_readchar (); // '3'
+				ch = r_cons_readchar (cons); // '3'
 			} while (ch != 'M');
 		}
 	}
@@ -64,9 +64,9 @@ static int __parseMouseEvent(void) {
 }
 
 #if __APPLE__
-static void skipchars(char ech, int nch) {
+static void skipchars(RCons *cons, char ech, int nch) {
 	while (nch-- > 0) {
-		if (r_cons_readchar () == ech) {
+		if (r_cons_readchar (cons) == ech) {
 			break;
 		}
 	}
@@ -74,6 +74,7 @@ static void skipchars(char ech, int nch) {
 #endif
 
 R_API int r_cons_arrow_to_hjkl(int ch) {
+	RCons *cons = r_cons_singleton ();
 #if R2__WINDOWS__
 	if (I->vtmode != 2) {
 		if (I->is_arrow) {
@@ -104,7 +105,7 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 	I->mouse_event = 0;
 	/* emacs */
 	switch ((ut8)ch) {
-	case 0xc3: r_cons_readchar (); ch = 'K'; break; // emacs repag (alt + v)
+	case 0xc3: r_cons_readchar (cons); ch = 'K'; break; // emacs repag (alt + v)
 	case 0x16: ch = 'J'; break; // emacs avpag (ctrl + v)
 	case 0x10: ch = 'k'; break; // emacs up (ctrl + p)
 	case 0x0e: ch = 'j'; break; // emacs down (ctrl + n)
@@ -114,7 +115,7 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 	if (ch != 0x1b) {
 		return ch;
 	}
-	ch = r_cons_readchar ();
+	ch = r_cons_readchar (cons);
 	if (!ch) {
 		return 0;
 	}
@@ -123,7 +124,7 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 		ch = 'q'; // XXX: must be 0x1b (R_CONS_KEY_ESC)
 		break;
 	case 0x4f: // function keys from f1 to f4
-		ch = r_cons_readchar ();
+		ch = r_cons_readchar (cons);
 #if defined(__HAIKU__)
 		/* Haiku't don use the '[' char for function keys */
 		if (ch > 'O') {/* only in f1..f12 function keys */
@@ -133,7 +134,7 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 	case '[': // 0x5b function keys (2)
 		/* Haiku need ESC + [ for PageUp and PageDown  */
 		if (ch < 'A' || ch == '[') {
-			ch = r_cons_readchar ();
+			ch = r_cons_readchar (cons);
 		}
 #else
 		switch (ch) { // Arrow keys
@@ -145,7 +146,7 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 		}
 		break;
 	case '[': // function keys (2)
-		ch = r_cons_readchar ();
+		ch = r_cons_readchar (cons);
 #endif
 		switch (ch) {
 		case '<':
@@ -159,7 +160,7 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 				char vel[8] = {0};
 				int vn = 0;
 				do {
-					ch = r_cons_readchar ();
+					ch = r_cons_readchar (cons);
 					// just for debugging
 					if (sc > 0) {
 						if (ch >= '0' && ch <= '9') {
@@ -206,7 +207,7 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 			}
 			return 0;
 		case '[':
-			ch = r_cons_readchar ();
+			ch = r_cons_readchar (cons);
 			switch (ch) {
 			case '2': ch = R_CONS_KEY_F11; break;
 			case 'A': ch = R_CONS_KEY_F1; break;
@@ -218,7 +219,7 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 		case '9':
 			// handle mouse wheel
 	//		__parseWheelEvent();
-			ch = r_cons_readchar ();
+			ch = r_cons_readchar (cons);
 			// 6 is up
 			// 7 is down
 			I->mouse_event = 1;
@@ -232,21 +233,21 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 			}
 			int ch2;
 			do {
-				ch2 = r_cons_readchar ();
+				ch2 = r_cons_readchar (cons);
 			} while (ch2 != 'M');
 			break;
 		case '3':
 			// handle mouse down /up events (35 vs 32)
-			__parseMouseEvent ();
+			parseMouseEvent (cons);
 			return 0;
 		case '2':
-			ch = r_cons_readchar ();
+			ch = r_cons_readchar (cons);
 			switch (ch) {
 			case 0x7e:
 				ch = R_CONS_KEY_F12;
 				break;
 			default:
-				r_cons_readchar ();
+				r_cons_readchar (cons);
 				switch (ch) {
 				case '0': ch = R_CONS_KEY_F9; break;
 				case '1': ch = R_CONS_KEY_F10; break;
@@ -256,17 +257,17 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 			}
 			break;
 		case '1':
-			ch = r_cons_readchar ();
+			ch = r_cons_readchar (cons);
 #if __APPLE__
 			if (ch == '1') {
 				// horizontal scroll on macOS (works on Therm and Terminal apps)
-				ch = r_cons_readchar ();
+				ch = r_cons_readchar (cons);
 				if (ch == '2') {
-					skipchars ('M', 12);
+					skipchars (cons, 'M', 12);
 					return 'l';
 				}
 				if (ch == '3') {
-					skipchars ('M', 12);
+					skipchars (cons, 'M', 12);
 					return 'h';
 				}
 			}
@@ -283,33 +284,33 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 			case '9': ch = R_CONS_KEY_F8; break;
 #if 0
 			case '5':
-				r_cons_readchar ();
+				r_cons_readchar (cons);
 				ch = 0xf5;
 				break;
 			case '6':
-				r_cons_readchar ();
+				r_cons_readchar (cons);
 				ch = 0xf7;
 				break;
 			case '7':
-				r_cons_readchar ();
+				r_cons_readchar (cons);
 				ch = 0xf6;
 				break;
 			case '8':
-				r_cons_readchar ();
+				r_cons_readchar (cons);
 				ch = 0xf7;
 				break;
 			case '9':
-				r_cons_readchar ();
+				r_cons_readchar (cons);
 				ch = 0xf8;
 				break;
 #endif
 			// Support st/st-256color term and others
 			// for shift+arrows
 			case ';': // arrow+mod
-				ch = r_cons_readchar ();
+				ch = r_cons_readchar (cons);
 				switch (ch) {
 				case '2': // arrow+shift
-					ch = r_cons_readchar ();
+					ch = r_cons_readchar (cons);
 					switch (ch) {
 					case 'A': ch = 'K'; break;
 					case 'B': ch = 'J'; break;
@@ -321,8 +322,8 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 				}
 				break;
 			case ':': // arrow+shift
-				ch = r_cons_readchar ();
-				ch = r_cons_readchar ();
+				ch = r_cons_readchar (cons);
+				ch = r_cons_readchar (cons);
 				switch (ch) {
 				case 'A': ch = 'K'; break;
 				case 'B': ch = 'J'; break;
@@ -332,8 +333,8 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 				break;
 			} // F9-F12 not yet supported!!
 			break;
-		case '5': ch = 'K'; r_cons_readchar (); break; // repag
-		case '6': ch = 'J'; r_cons_readchar (); break; // avpag
+		case '5': ch = 'K'; r_cons_readchar (cons); break; // repag
+		case '6': ch = 'J'; r_cons_readchar (cons); break; // avpag
 		/* arrow keys */
 		case 'A': ch = 'k'; break; // up
 		case 'B': ch = 'j'; break; // down
@@ -344,8 +345,7 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 		case 'b': ch = 'J'; break; // shift+down
 		case 'c': ch = 'L'; break; // shift+right
 		case 'd': ch = 'H'; break; // shift+left
-		// case 'm': ch = __parseMouseEvent (); break; // mouse down
-		case 'M': ch = __parseMouseEvent (); break; // mouse up
+		case 'M': ch = parseMouseEvent (cons); break; // mouse up
 		}
 		break;
 	}
@@ -411,8 +411,9 @@ R_API int r_cons_any_key(const char *msg) {
 	} else {
 		r_cons_print ("\n--press any key--\n");
 	}
-	r_cons_flush ();
-	return r_cons_readchar ();
+	RCons *cons = r_cons_singleton ();
+	r_kons_flush (cons);
+	return r_cons_readchar (cons);
 }
 
 static inline void resizeWin(void) {
@@ -583,11 +584,12 @@ R_API int r_cons_readchar_timeout(ut32 msec) {
 	tv.tv_sec = secs;
 	ut32 usec = (msec - secs) * 1000;
 	tv.tv_usec = usec;
-	r_cons_set_raw (true);
+	RCons * cons = r_cons_singleton ();
+	r_kons_set_raw (cons, true);
 	if (select (1, &fdset, NULL, &errset, &tv) == 1) {
-		return r_cons_readchar ();
+		return r_cons_readchar (cons);
 	}
-	r_cons_set_raw (false);
+	r_kons_set_raw (cons, false);
 	// timeout
 	return -1;
 #else
@@ -624,7 +626,7 @@ R_API void r_cons_switchbuf(bool active) {
 extern volatile sig_atomic_t sigwinchFlag;
 #endif
 
-R_API int r_cons_readchar(void) {
+R_API int r_cons_readchar(RCons *cons) {
 	char buf[2];
 	buf[0] = -1;
 	InputState *input_state = r_cons_input_state ();
@@ -644,7 +646,7 @@ R_API int r_cons_readchar(void) {
 	if (ret < 1) {
 		return -1;
 	}
-	return r_cons_controlz (buf[0]);
+	return r_cons_controlz (cons, buf[0]);
 #else
 	void *bed = r_cons_sleep_begin ();
 
@@ -663,7 +665,7 @@ R_API int r_cons_readchar(void) {
 	sigdelset (&sigmask, SIGWINCH);
 	while (pselect (STDIN_FILENO + 1, &readfds, NULL, NULL, NULL, &sigmask) == -1) {
 		if (errno == EBADF) {
-			R_LOG_ERROR ("r_cons_readchar (): EBADF");
+			R_LOG_ERROR ("r_cons_readchar (cons): EBADF");
 			return -1;
 		}
 		if (sigwinchFlag) {
@@ -677,7 +679,7 @@ R_API int r_cons_readchar(void) {
 	if (ret != 1) {
 		return -1;
 	}
-	return r_cons_controlz (buf[0]);
+	return r_cons_controlz (cons, buf[0]);
 #endif
 }
 
@@ -716,13 +718,13 @@ R_API char *r_cons_password(const char *msg) {
 	printf ("\r%s", msg);
 	fflush (stdout);
 	r_cons_set_raw (true);
+	RCons *cons = r_cons_singleton ();
 #if R2__UNIX__ && !__wasi__
-	RCons *a = r_cons_singleton ();
-	a->term_raw.c_lflag &= ~(ECHO | ECHONL);
+	cons->term_raw.c_lflag &= ~(ECHO | ECHONL);
 	// //  required to make therm/iterm show the key
 	// // cannot read when enabled in this way
 	// a->term_raw.c_lflag |= ICANON;
-	tcsetattr (0, TCSADRAIN, &a->term_raw);
+	tcsetattr (0, TCSADRAIN, &cons->term_raw);
 	r_sys_signal (SIGTSTP, SIG_IGN);
 #endif
 	const size_t buf_size = 256;
@@ -731,7 +733,7 @@ R_API char *r_cons_password(const char *msg) {
 		return NULL;
 	}
 	while (i < buf_size - 1) {
-		int ch = r_cons_readchar ();
+		int ch = r_cons_readchar (cons);
 		if (ch == 127) { // backspace
 			if (i < 1) {
 				break;

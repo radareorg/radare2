@@ -169,9 +169,9 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 	int mode = 1;
 	int sx = 0;
 	int sy = 0;
-	r_cons_set_raw (1);
+	r_kons_set_raw (core->cons, 1);
 	r_cons_show_cursor (false);
-	r_cons_enable_mouse (false);
+	r_kons_enable_mouse (core->cons, false);
 	int total_pages = count_pages (list);
 	SlidesState state = {0};
 	while (having_fun) {
@@ -188,7 +188,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 		render_title (page, mode, total_pages);
 		r_cons_flush ();
 		r_cons_set_raw (true);
-		ch = r_cons_readchar ();
+		ch = r_cons_readchar (core->cons);
 		ch = r_cons_arrow_to_hjkl (ch);
 		switch (ch) {
 		case 'j':
