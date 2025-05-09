@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2016-2024 - n4x0r, soez, pancake */
+/* radare2 - LGPL - Copyright 2016-2025 - n4x0r, soez, pancake */
 
 #if R_INCLUDE_BEGIN
 // https://levelup.gitconnected.com/understand-heap-memory-allocation-a-hands-on-approach-775151caf2ea
@@ -1741,7 +1741,7 @@ void GH(print_malloc_states)( RCore *core, GHT m_arena, MallocState *main_arena)
 }
 
 void GH(print_inst_minfo)(GH(RHeapInfo) *heap_info, GHT hinfo) {
-	RConsPrintablePalette *pal = &core->cons->context->pal;
+	RConsPrintablePalette *pal = &r_cons_singleton()->context->pal;
 
 	PRINT_YA ("malloc_info @ ");
 	PRINTF_BA ("0x%"PFMT64x, (ut64)hinfo);
