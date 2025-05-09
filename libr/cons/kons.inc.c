@@ -828,7 +828,7 @@ R_API void r_kons_free(RCons * R_NULLABLE cons) {
 		return;
 	}
 #if R2__WINDOWS__
-	r_cons_enable_mouse (false);
+	r_cons_enable_mouse (cons, false);
 	if (cons->old_cp) {
 		(void)SetConsoleOutputCP (cons->old_cp);
 		// chcp doesn't pick up the code page switch for some reason
