@@ -277,12 +277,12 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	if (eos < 1) { eos = 0; }\
 	memset (indentstr, ' ', sizeof (indentstr)); indentstr [(eos * 2)] = 0;\
 	if (pj) {\
-		if (show_addr) r_strbuf_appendf (codestr, "\n0x%08"PFMT64x" | %s", a, indentstr);\
-		else r_strbuf_appendf (codestr, "\n%s", indentstr);\
+		if (show_addr) { r_strbuf_appendf (codestr, "\n0x%08"PFMT64x" | %s", a, indentstr); }\
+		else { r_strbuf_appendf (codestr, "\n%s", indentstr); }\
 	} else {\
 		r_strbuf_append (out, "\n");\
-		if (show_addr) r_strbuf_appendf (out, " 0x%08"PFMT64x" | %s", a, indentstr);\
-		else r_strbuf_append (out, indentstr); }\
+		if (show_addr) { r_strbuf_appendf (out, " 0x%08"PFMT64x" | %s", a, indentstr); }\
+		else { r_strbuf_append (out, indentstr); } }\
 	}
 #define PRINTGOTO(y, x) if (x != UT64_MAX && y != x) { NEWLINE (x, indent); PRINTF (" goto loc_0x%08"PFMT64x, x); }
 	const char *cmdPdc = r_config_get (core->config, "cmd.pdc");
@@ -412,11 +412,11 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	ut64 addr = fcn->addr;
 	while (bb) {
 		r_list_append (visited, bb);
-		r_cons_push ();
+		r_kons_push (core->cons);
 		bool html = r_config_get_b (core->config, "scr.html");
 		r_config_set_b (core->config, "scr.html", false);
 		char *code = r_core_cmd_str (core, r_strf ("pD %"PFMT64d" @ 0x%08"PFMT64x, bb->size, bb->addr));
-		r_cons_pop ();
+		r_kons_pop (core->cons);
 		r_config_set_b (core->config, "scr.html", html);
 		indent = 2;
 		if (!code) {

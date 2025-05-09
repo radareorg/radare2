@@ -487,7 +487,7 @@ static int cmd_seek(void *data, const char *input) {
 		const char *trimin = r_str_trim_head_ro (input);
 		ut64 addr = r_num_math (core->num, trimin);
 		if (core->num->nc.errors) { // TODO expose an api for this char *r_num_failed();
-			if (r_cons_singleton ()->context->is_interactive) {
+			if (core->cons->context->is_interactive) {
 				R_LOG_ERROR ("Cannot seek to unknown address '%s'", trimin);
 			}
 			break;

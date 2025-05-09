@@ -2446,18 +2446,17 @@ static bool cb_scrtheme(void* user, void* data) {
 }
 
 static bool cb_scrbreakword(void* user, void* data) {
+	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	if (*node->value) {
-		r_cons_breakword (node->value);
-	} else {
-		r_cons_breakword (NULL);
-	}
+	const char *arg = (*node->value)? node->value: NULL;
+	r_kons_breakword (core->cons, arg);
 	return true;
 }
 
 static bool cb_scrtimeout(void* user, void* data) {
+	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	r_cons_break_timeout (node->i_value);
+	r_kons_break_timeout (core->cons, node->i_value);
 	return true;
 }
 

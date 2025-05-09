@@ -63,7 +63,7 @@ static void r_core_debug_breakpoint_hit(RCore *core, RBreakpointItem *bpi) {
 	const bool bpcmd_exists = R_STR_ISNOTEMPTY (bpi->data);
 	const bool may_output = (cmdbp_exists || bpcmd_exists);
 	if (may_output) {
-		r_cons_push ();
+		r_kons_push (core->cons);
 	}
 	if (cmdbp_exists) {
 		r_core_cmd0 (core, cmdbp);
@@ -72,8 +72,8 @@ static void r_core_debug_breakpoint_hit(RCore *core, RBreakpointItem *bpi) {
 		r_core_cmd0 (core, bpi->data);
 	}
 	if (may_output) {
-		r_cons_flush ();
-		r_cons_pop ();
+		r_kons_flush (core->cons);
+		r_kons_pop (core->cons);
 	}
 }
 
@@ -81,7 +81,7 @@ static void r_core_debug_syscall_hit(RCore *core) {
 	const char *cmdhit = r_config_get (core->config, "cmd.onsyscall");
 	if (R_STR_ISNOTEMPTY (cmdhit)) {
 		r_core_cmd0 (core, cmdhit);
-		r_cons_flush ();
+		r_kons_flush (core->cons);
 	}
 }
 
@@ -307,25 +307,25 @@ static bool __syncDebugMaps(RCore *core) {
 
 R_API char *r_core_cmd_call_str_at(RCore *core, ut64 addr, const char *cmd) {
 	R_RETURN_VAL_IF_FAIL (core && core->cons, NULL);
-	r_cons_push ();
+	r_kons_push (core->cons);
 	core->cons->context->noflush = true;
 	core->cons->context->cmd_str_depth++;
 	if (cmd && r_core_cmd_call_at (core, addr, cmd) == -1) {
 		//eprintf ("Invalid command: %s\n", cmd);
 		if (--core->cons->context->cmd_str_depth == 0) {
 			core->cons->context->noflush = false;
-			r_cons_flush ();
+			r_kons_flush (core->cons);
 		}
-		r_cons_pop ();
+		r_kons_pop (core->cons);
 		return NULL;
 	}
 	if (--core->cons->context->cmd_str_depth == 0) {
 		core->cons->context->noflush = false;
 	}
-	r_cons_filter ();
+	r_kons_filter (core->cons);
 	const char *static_str = r_cons_get_buffer ();
 	char *retstr = strdup (r_str_get (static_str));
-	r_cons_pop ();
+	r_kons_pop (core->cons);
 	r_cons_echo (NULL);
 	return retstr;
 }
@@ -718,12 +718,13 @@ static void autocomplete_alias(RLineCompletion *completion, RCmd *cmd, const cha
 	const int match_count = c.num_completions;
 	if (match_count == 1) {
 		/* If only 1 possible completion, use it */
+		RCons *cons = r_cons_singleton ();
 		const char *k = c.valid_completions[0];
 		const RCmdAliasVal *val = c.valid_completion_vals[0];
 
 		char *v = r_cmd_alias_val_strdup ((RCmdAliasVal *)val);
-		r_cons_printf ("$%s=%s%s\n", k, val->is_data? "$": "", v);
-		r_cons_flush ();
+		r_kons_printf (cons, "$%s=%s%s\n", k, val->is_data? "$": "", v);
+		r_kons_flush (cons);
 
 		char *completed_alias = r_str_newf ("$%s", k);
 		r_line_completion_push (completion, completed_alias);
@@ -1358,7 +1359,7 @@ static bool find_autocomplete(RCore *core, RLineCompletion *completion, RLineBuf
 			}
 			if (desc && desc->help_msg) {
 				r_core_cmd_help (core, desc->help_msg);
-				r_cons_flush ();
+				r_kons_flush (core->cons);
 				return true;
 			}
 			// fallback to command listing
@@ -2481,7 +2482,7 @@ static void cmdusr1(int p) {
 	const char *cmd = r_config_get (Gcore->config, "cmd.usr1");
 	if (R_STR_ISNOTEMPTY (cmd)) {
 		r_core_cmd0 (Gcore, cmd);
-		r_cons_flush ();
+		r_kons_flush (r_cons_singleton ());
 	}
 }
 
@@ -2489,7 +2490,7 @@ static void cmdusr2(int p) {
 	const char *cmd = r_config_get (Gcore->config, "cmd.usr2");
 	if (R_STR_ISNOTEMPTY (cmd)) {
 		r_core_cmd0 (Gcore, cmd);
-		r_cons_flush ();
+		r_kons_flush (r_cons_singleton ());
 	}
 }
 #endif
@@ -2793,9 +2794,9 @@ R_API void __cons_cb_fkey(RCore *core, int fkey) {
 	snprintf (buf, sizeof (buf), "key.f%d", fkey);
 	const char *v = r_config_get (core->config, buf);
 	if (v && *v) {
-		r_cons_printf ("%s\n", v);
+		r_kons_println (core->cons, v);
 		r_core_cmd0 (core, v);
-		r_cons_flush ();
+		r_kons_flush (core->cons);
 	}
 }
 

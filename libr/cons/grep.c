@@ -720,10 +720,6 @@ static void colorcode(void) {
 	}
 }
 
-R_API void r_cons_grepbuf(void) {
-	r_kons_grepbuf (r_cons_singleton ());
-}
-
 R_API void r_kons_grepbuf(RCons *cons) {
 	const char *buf = cons->context->buffer;
 	size_t len = cons->context->buffer_len;
@@ -1257,13 +1253,10 @@ R_API int r_cons_grep_line(char *buf, int len) {
 	return len;
 }
 
-R_API void r_kons_grep(RCons *cons, const char *grep) {
+#if 0
+R_API void r_cons_grep(RCons * R_NONNULL cons, const char *grep) {
 	R_RETURN_IF_FAIL (grep);
 	r_cons_grep_expression (cons, grep);
 	r_kons_grepbuf (cons);
 }
-
-R_API void r_cons_grep(const char *grep) {
-	r_kons_grep (r_cons_singleton (), grep);
-}
-
+#endif

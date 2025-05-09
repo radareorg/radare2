@@ -848,9 +848,8 @@ R_API void r_cons_sleep_end(void *user);
 R_API void r_cons_break_push(RConsBreak cb, void *user);
 R_API void r_cons_break_pop(void);
 R_API void r_cons_break_clear(void);
-R_API void r_cons_breakword(const char *s);
 R_API void r_cons_break_end(void);
-R_API void r_cons_break_timeout(int timeout);
+R_API void r_kons_break_timeout(RCons *cons, int timeout);
 
 /* pipe */
 R_API int r_cons_pipe_open(RCons *cons, const char *file, int fdn, int append);
@@ -930,7 +929,6 @@ R_API void r_cons_set_raw(bool b);
 R_API void r_cons_set_interactive(bool b);
 R_API void r_cons_set_last_interactive(void);
 R_API void r_cons_set_utf8(bool b);
-R_API void r_cons_grep(const char *grep);
 
 /* output */
 
@@ -947,7 +945,7 @@ R_API void r_cons_filter(void);
 R_API void r_cons_flush(void);
 R_API char *r_cons_drain(void);
 R_API void r_cons_print_fps(int col);
-R_API int r_cons_less_str(RCons *cons, const char *str, const char *exitkeys);
+R_API int r_cons_less_str(RCons * R_NONNULL cons, const char * R_NONNULL str, const char * R_NULLABLE exitkeys);
 R_API void r_cons_less(RCons *cons);
 R_API void r_cons_2048(bool color);
 R_API void r_cons_memset(char ch, int len);
@@ -1282,8 +1280,8 @@ typedef struct r_cons_bind_t {
 	RConsGrepCallback cb_grep;
 	struct r_cons_t *cons;
 } RConsBind;
-R_API void r_cons_bind(RCons *cons, RConsBind *bind);
 
+R_API void r_cons_bind(RCons *cons, RConsBind *bind);
 
 typedef int (*RPanelsMenuCallback)(void *user);
 typedef struct r_panels_menu_item {

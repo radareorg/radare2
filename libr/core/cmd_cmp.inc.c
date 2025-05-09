@@ -101,9 +101,6 @@ R_API bool r_core_cmpwatch_add(RCore *core, ut64 addr, int size, const char *cmd
 	RCoreCmpWatcher *cmpw = r_core_cmpwatch_get (core, addr);
 	if (!cmpw) {
 		cmpw = R_NEW0 (RCoreCmpWatcher);
-		if (!cmpw) {
-			return false;
-		}
 		cmpw->addr = addr;
 	} else {
 		R_FREE (cmpw->odata);
@@ -343,7 +340,7 @@ static int radare_compare_words(RCore *core, ut64 of, ut64 od, int len, int ws) 
 	int i;
 	bool useColor = r_config_get_i (core->config, "scr.color") != 0;
 	utAny v0, v1;
-	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
+	RConsPrintablePalette *pal = &core->cons->context->pal;
 	for (i = 0; i < len; i+=ws) {
 		memset (&v0, 0, sizeof (v0));
 		memset (&v1, 0, sizeof (v1));
@@ -663,7 +660,7 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 	int cols = r_config_get_i (core->config, "hex.cols") * 2;
 	ut64 off = r_num_math (core->num, input);
 	ut8 *buf = calloc (core->blocksize + 32, 1);
-	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
+	RConsPrintablePalette *pal = &core->cons->context->pal;
 	if (!buf) {
 		return false;
 	}
@@ -834,7 +831,7 @@ static int cmd_cp(void *data, const char *input) {
  * colored graph_false.
  */
 static int cmp_bits(RCore *core, ut64 addr) {
-	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
+	RConsPrintablePalette *pal = &core->cons->context->pal;
 	const bool use_color = r_config_get_b (core->config, "scr.color");
 	const char *color_end = use_color? Color_RESET: "";
 	int i;

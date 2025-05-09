@@ -3559,7 +3559,7 @@ core->cons->context->noflush = false;
 				void *bed = r_cons_sleep_begin ();
 				ret = r_sys_cmd (cmd);
 				if (ret != 0) {
-					r_cons_singleton()->context->was_breaked = true;
+					core->cons->context->was_breaked = true;
 				}
 				r_cons_sleep_end (bed);
 				r_core_sysenv_end (core, input);
@@ -4083,7 +4083,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 			r_kons_flush (core->cons);
 		}
 		if (R_STR_ISNOTEMPTY (cr) && orep > 1) {
-			// XXX: do not flush here, we need r_cons_push () and r_cons_pop()
+			// XXX: do not flush here, we need r_kons_push () and r_kons_pop()
 			r_kons_flush (core->cons);
 			// XXX: we must import register flags in C
 			(void)r_core_cmd0 (core, ".dr*");
@@ -6054,7 +6054,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				r_list_foreach (core->anal->fcns, iter, fcn) {
 					r_core_seek (core, fcn->addr, true);
 #if 0
-					r_cons_push ();
+					r_kons_push ();
 					r_core_cmd (core, cmd, 0);
 					char *buf = (char *)r_cons_get_buffer ();
 					if (buf) {
@@ -6277,13 +6277,13 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					char *buf = NULL;
 					const char *tmp = NULL;
 					r_core_seek (core, flag->addr, true);
-					r_cons_push ();
+					r_kons_push (core->cons);
 					r_core_cmd (core, cmd, 0);
 					tmp = r_cons_get_buffer ();
 					buf = tmp? strdup (tmp): NULL;
-					r_cons_pop ();
+					r_kons_pop (core->cons);
 					if (buf) {
-						r_cons_print (buf);
+						r_kons_print (core->cons, buf);
 						free (buf);
 					}
 					if (!foreach_newline (core)) {
@@ -6307,7 +6307,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 	return true;
 out_finish:
 	free (ostr);
-	r_cons_break_pop ();
+	r_kons_break_pop (core->cons);
 	return false;
 }
 

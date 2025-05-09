@@ -3403,7 +3403,7 @@ static void agraph_follow_innodes(RCore *core, RAGraph *g, bool in) {
 			count++;
 		}
 	}
-	r_cons_flush ();
+	r_kons_flush (core->cons);
 	if (r_list_length (list) == 1) {
 		nth = 0;
 	} else if (r_list_length (list) < 10) {
@@ -3642,7 +3642,7 @@ static int agraph_print(RAGraph *g, bool is_interactive, RCore *core, RAnalFunct
 		}
 		if (r_config_get_b (core->config, "graph.mini")) { // minigraph
 			int h, w = r_cons_get_size (&h);
-			r_cons_push ();
+			r_kons_push (core->cons);
 			g->can->h *= 4;
 			RConsCanvas *_can = g->can;
 			g->can = r_cons_canvas_new (w * 2, h * 4);
@@ -3654,12 +3654,12 @@ static int agraph_print(RAGraph *g, bool is_interactive, RCore *core, RAnalFunct
 			agraph_print_nodes (g);
 			r_cons_canvas_print_region (g->can);
 			g->can = _can;
-			char *s = strdup (r_cons_singleton ()->context->buffer);
-			r_cons_pop ();
+			char *s = strdup (core->cons->context->buffer);
+			r_kons_pop (core->cons);
 			cmd_agfb3 (core, s, w - 40, 2);
 			free (s);
 			g->can->h /= 4;
-			r_cons_flush ();
+			r_kons_flush (core->cons);
 		}
 	}
 
@@ -3728,7 +3728,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 		} else {
 			// TODO: maybe go back to avoid seeking from graph view to an scary place?
 			r_cons_message ("This is not a valid offset\n");
-			r_cons_flush ();
+			r_kons_flush (core->cons);
 		}
 	}
 
@@ -4114,10 +4114,10 @@ R_API void r_core_visual_find(RCore *core, RAGraph *g) {
 
 	while (1) {
 		r_cons_get_size (&rows);
-		r_cons_gotoxy (0, rows - 1);
-		r_cons_flush ();
+		r_kons_gotoxy (core->cons, 0, rows - 1);
+		r_kons_flush (core->cons);
 		printf (Color_RESET);
-		r_cons_flush ();
+		r_kons_flush (core->cons);
 
 		r_cons_fgets (core->cons, buf, sizeof (buf), 0, NULL);
 
@@ -4161,7 +4161,7 @@ find_next:
 		r_config_set_b (core->config, "asm.addr", asm_addr);
 		r_config_set_b (core->config, "asm.lines", asm_lines);
 		if (g) {
-			agraph_refresh (r_cons_singleton ()->event_data);
+			agraph_refresh (core->cons->event_data);
 		} else {
 			visual_refresh (core);
 		}
@@ -4213,7 +4213,7 @@ find_next:
 			break;
 		}
 		if (g) {
-			agraph_refresh (r_cons_singleton ()->event_data);
+			agraph_refresh (core->cons->event_data);
 		} else {
 			visual_refresh (core);
 		}
@@ -4238,7 +4238,7 @@ static void goto_asmqjmps(RAGraph *g, RCore *core) {
 	r_cons_clear_line (0);
 	r_cons_print (Color_RESET);
 	r_cons_print (h);
-	r_cons_flush ();
+	r_kons_flush (core->cons);
 
 	do {
 		r_cons_set_raw (true);
@@ -4247,7 +4247,7 @@ static void goto_asmqjmps(RAGraph *g, RCore *core) {
 		r_cons_write (&ch, 1);
 		cont = isalpha (ch & 0xff) && !islower (ch & 0xff);
 	} while (i < R_CORE_ASMQJMPS_LEN_LETTERS && cont);
-	r_cons_flush ();
+	r_kons_flush (core->cons);
 
 	obuf[i] = '\0';
 	ut64 addr = r_core_get_asmqjmps (core, obuf);
@@ -4395,7 +4395,7 @@ static void nextword(RCore *core, RAGraph *g, const char *word) {
 	}
 	char *s = get_graph_string (core, g);
 	r_cons_clear00 ();
-	r_cons_flush ();
+	r_kons_flush (core->cons);
 	const size_t MAX_COUNT = 4096;
 	const char *a = NULL;
 	size_t count = 0;
@@ -4933,9 +4933,9 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 		case 'm':
 			// mark current x/y + offset
 			{
-				r_cons_gotoxy (0, 0);
-				r_cons_printf (R_CONS_CLEAR_LINE"Set shortcut key for 0x%"PFMT64x"\n", core->addr);
-				r_cons_flush ();
+				r_kons_gotoxy (core->cons, 0, 0);
+				r_kons_printf (core->cons, R_CONS_CLEAR_LINE"Set shortcut key for 0x%"PFMT64x"\n", core->addr);
+				r_kons_flush (core->cons);
 				int ch = r_cons_readchar (core->cons);
 				if (ch > 0) {
 					r_core_vmark_set (core, ch, core->addr, can->sx, can->sy);
@@ -4947,7 +4947,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 			{
 				r_cons_gotoxy (0, 2);
 				if (r_core_vmark_dump (core, 'v')) {
-					r_cons_flush ();
+					r_kons_flush (core->cons);
 					const int ch = r_cons_readchar (core->cons);
 					r_core_vmark_seek (core, ch, g);
 					core->visual.coming_from_vmark = true;

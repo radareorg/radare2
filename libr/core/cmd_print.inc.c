@@ -1092,7 +1092,7 @@ static void cmd_pCd(RCore *core, const char *input) {
 	if (user_rows > 0) {
 		rows = user_rows + 1;
 	}
-	r_cons_push ();
+	r_kons_push (core->cons);
 	RConsCanvas *c = r_cons_canvas_new (w, rows);
 	ut64 osek = core->addr;
 	c->color = r_config_get_i (core->config, "scr.color");
@@ -1108,7 +1108,7 @@ static void cmd_pCd(RCore *core, const char *input) {
 	r_core_block_size (core, obsz);
 	r_core_seek (core, osek, true);
 
-	r_cons_pop ();
+	r_kons_pop (core->cons);
 	r_cons_canvas_print (c);
 	r_cons_canvas_free (c);
 	r_config_set (core->config, "asm.bytes", o_ab);
@@ -1162,7 +1162,7 @@ static void cmd_pCD(RCore *core, const char *input) {
 	if (user_rows > 0) {
 		rows = user_rows + 1;
 	}
-	r_cons_push ();
+	r_kons_push (core->cons);
 	RConsCanvas *c = r_cons_canvas_new (w, rows);
 	ut64 osek = core->addr;
 	c->color = r_config_get_i (core->config, "scr.color");
@@ -1193,7 +1193,7 @@ static void cmd_pCD(RCore *core, const char *input) {
 	r_core_block_size (core, obsz);
 	r_core_seek (core, osek, true);
 
-	r_cons_pop ();
+	r_kons_pop (core->cons);
 	r_cons_canvas_print (c);
 	r_cons_canvas_free (c);
 	r_config_set (core->config, "asm.bytes", o_ab);
@@ -3636,7 +3636,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 		pdsfs = true;
 	}
 
-	r_cons_push ();
+	r_kons_push (core->cons);
 	line = NULL;
 	s = NULL;
 	if (r_str_startswith (input, "dsb")) {
@@ -3659,7 +3659,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	} else {
 		line = s = r_core_cmd_str (core, "pd");
 	}
-	r_cons_pop ();
+	r_kons_pop (core->cons);
 
 	r_config_set_b (core->config, "scr.html", scr_html);
 	r_config_set_i (core->config, "scr.color", use_color);
@@ -3946,15 +3946,15 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 								string2 = NULL;
 							}
 						}
-						r_cons_printf ("%s%s%s%s%s%s%s\n",
+						r_kons_printf (core->cons, "%s%s%s%s%s%s%s\n",
 							r_str_get (linecolor),
 							r_str_get (string2), string2? " ": "", string,
 							flag? " ": "", flag? flag->name: "", Color_RESET);
 					} else {
 						if (show_offset) {
-							r_cons_printf ("0x%08"PFMT64x" ", addr);
+							r_kons_printf (core->cons, "0x%08"PFMT64x" ", addr);
 						}
-						r_cons_printf ("%s%s%s%s%s\n",
+						r_kons_printf (core->cons, "%s%s%s%s%s\n",
 							r_str_get (string2), string2? " ": "", string,
 							flag? " ": "", flag? flag->name: "");
 					}
@@ -3980,7 +3980,7 @@ restore_conf:
 	if (pj) {
 		pj_end (pj);
 		char *s = pj_drain (pj);
-		r_cons_printf ("%s\n", s);
+		r_kons_println (core->cons, s);
 		free (s);
 	}
 }
@@ -4554,12 +4554,12 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 				if (use_color) {
 					if (s) {
 						if (s->perm & R_PERM_X) {
-							r_cons_print (r_cons_singleton ()->context->pal.graph_trufae);
+							r_cons_print (core->cons->context->pal.graph_trufae);
 						} else {
-							r_cons_print (r_cons_singleton ()->context->pal.graph_true);
+							r_cons_print (core->cons->context->pal.graph_true);
 						}
 					} else {
-						r_cons_print (r_cons_singleton ()->context->pal.graph_false);
+						r_cons_print (core->cons->context->pal.graph_false);
 					}
 				}
 				if (as->block[p].strings > 0) {
@@ -5463,7 +5463,7 @@ static void disasm_until_optype(RCore *core, ut64 addr, char type_print, int opt
 				r_cons_printf ("%s\n", m);
 			} else {
 				if (show_color) {
-					const char *offsetColor = r_cons_singleton ()->context->pal.addr; // TODO etooslow. must cache
+					const char *offsetColor = core->cons->context->pal.addr; // TODO etooslow. must cache
 					r_cons_printf ("%s0x%08"PFMT64x Color_RESET"  %10s %s\n",
 							offsetColor, addr + p, "", m);
 				} else {
@@ -9184,7 +9184,7 @@ R_API void r_print_offset(RPrint *p, ut64 off, int invert, int delta, const char
 	bool show_color = p->flags & R_PRINT_FLAGS_COLOR;
 	if (show_color) {
 		char rgbstr[32];
-		const char *k = r_cons_singleton ()->context->pal.addr; // TODO etooslow. must cache
+		const char *k = core->cons->context->pal.addr; // TODO etooslow. must cache
 		const char *inv = invert ? R_CONS_INVERT (true, true) : "";
 		if (p->flags & R_PRINT_FLAGS_RAINBOW) {
 			k = r_cons_rgb_str_off (rgbstr, sizeof (rgbstr), off);

@@ -9,7 +9,7 @@
 #include <windows.h>
 #define printf(...) r_cons_win_printf (r_cons_singleton (), false, __VA_ARGS__)
 #define USE_UTF8 1
-static int r_line_readchar_win(ut8 *s, int slen);
+static int r_line_readchar_win(RCons *cons, ut8 *s, int slen);
 #else
 #include <sys/ioctl.h>
 #ifndef HAVE_PTY
@@ -422,7 +422,7 @@ R_API bool r_line_dietline_init(void) {
 /* read utf8 char into 's', return the length in bytes */
 static int readchar_utf8(RCons *cons, ut8 *s, int slen) {
 #if R2__WINDOWS__
-	return r_line_readchar_win (s, slen);
+	return r_line_readchar_win (cons, s, slen);
 #else
 	// TODO: add support for w32
 	ssize_t len, i;
@@ -469,7 +469,7 @@ static int readchar_utf8(RCons *cons, ut8 *s, int slen) {
 #endif
 
 #if R2__WINDOWS__
-static int r_line_readchar_win(ut8 *s, int slen) {	// this function handle the input in console mode
+static int r_line_readchar_win(RCons *cons, ut8 *s, int slen) {
 	INPUT_RECORD irInBuf = { { 0 } };
 	BOOL ret;
 	DWORD mode, out;
@@ -479,14 +479,14 @@ static int r_line_readchar_win(ut8 *s, int slen) {	// this function handle the i
 	void *bed;
 
 	HANDLE h = GetStdHandle (STD_INPUT_HANDLE);
-	DWORD new_mode = I.vtmode == 2? ENABLE_VIRTUAL_TERMINAL_INPUT: 0;
+	DWORD new_mode = cons->vtmode == 2? ENABLE_VIRTUAL_TERMINAL_INPUT: 0;
 	GetConsoleMode (h, &mode);
 	SetConsoleMode (h, new_mode);
-	if (I.zerosep) {
-		bed = r_cons_sleep_begin ();
+	if (cons->line->zerosep) {
+		bed = r_kons_sleep_begin (cons);
 		DWORD rsz = 0;
 		BOOL ret = ReadFile (h, s, 1, &rsz, NULL);
-		r_cons_sleep_end (bed);
+		r_kons_sleep_end (cons, bed);
 		SetConsoleMode (h, mode);
 		if (!ret || rsz != 1) {
 			return 0;
@@ -494,13 +494,13 @@ static int r_line_readchar_win(ut8 *s, int slen) {	// this function handle the i
 		return 1;
 	}
 do_it_again:
-	bed = r_cons_sleep_begin ();
-	if (r_cons_singleton ()->term_xterm) {
+	bed = r_kons_sleep_begin (cons);
+	if (cons->term_xterm) {
 		ret = ReadFile (h, buf, 1, &out, NULL);
 	} else {
 		ret = ReadConsoleInput (h, &irInBuf, 1, &out);
 	}
-	r_cons_sleep_end (bed);
+	r_kons_sleep_end (cons, bed);
 	if (ret < 1) {
 		return 0;
 	}
@@ -1749,7 +1749,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 #else
 #if R2__WINDOWS__
 		{
-			int len = r_line_readchar_win ((ut8 *) buf, sizeof (buf));
+			int len = r_line_readchar_win (cons, (ut8 *) buf, sizeof (buf));
 			if (len < 1) {
 				r_cons_break_pop ();
 				return NULL;
