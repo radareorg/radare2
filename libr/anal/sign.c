@@ -3047,11 +3047,15 @@ static int signdb_type(const char *file) {
 			t = SIGNDB_TYPE_KV;
 		}
 	}
+#if defined(__GNUC__)
 	// XXX looks like a false positive bug in gcc 9.4 (debian CI)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfree-nonheap-object"
 	free (data);
 #pragma GCC diagnostic pop
+#else
+	free (data);
+#endif
 	return t;
 }
 
