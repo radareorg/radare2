@@ -266,9 +266,9 @@ R_API char *r_cons_hud(RCons *cons, RList *list, const char *prompt) {
 	user_input[HUD_BUF_SIZE] = 0;
 	hud->top_entry_n = 0;
 	r_cons_show_cursor (false);
-	r_cons_enable_mouse (false);
-	r_cons_set_raw (true);
-	r_cons_clear ();
+	r_kons_enable_mouse (cons, false);
+	r_kons_set_raw (cons, true);
+	r_kons_clear (cons);
 
 	// Repeat until the user exits the hud
 	for (;;) {
@@ -324,7 +324,7 @@ R_API char *r_cons_hud(RCons *cons, RList *list, const char *prompt) {
 				if (selected_entry) {
 					R_FREE (I(line)->hud);
 					I(line)->echo = true;
-					r_cons_enable_mouse (false);
+					r_kons_enable_mouse (cons, false);
 					r_cons_show_cursor (true);
 					r_cons_set_raw (false);
 					return strdup (selected_entry);
@@ -338,7 +338,7 @@ _beach:
 	R_FREE (I(line)->hud);
 	I(line)->echo = true;
 	r_cons_show_cursor (true);
-	r_cons_enable_mouse (false);
+	r_kons_enable_mouse (cons, false);
 	r_cons_set_raw (false);
 	ht_pp_free (ht);
 	return NULL;
@@ -359,7 +359,7 @@ static char *r_cons_hud_line(RCons *cons, RList *list, const char *prompt) {
 	user_input[HUD_BUF_SIZE] = 0;
 	hud->top_entry_n = 0;
 	r_cons_show_cursor (false);
-	r_cons_enable_mouse (false);
+	r_kons_enable_mouse (cons, false);
 	r_cons_set_raw (true);
 
 	r_kons_reset (cons);
@@ -410,9 +410,9 @@ static char *r_cons_hud_line(RCons *cons, RList *list, const char *prompt) {
 				if (selected_entry) {
 					R_FREE (I(line)->hud);
 					I(line)->echo = true;
-					r_cons_enable_mouse (false);
+					r_kons_enable_mouse (cons, false);
 					r_cons_show_cursor (true);
-					r_cons_set_raw (false);
+					r_kons_set_raw (cons, false);
 					return strdup (selected_entry);
 				}
 			} else {
@@ -424,8 +424,8 @@ _beach:
 	R_FREE (I(line)->hud);
 	I(line)->echo = true;
 	r_cons_show_cursor (true);
-	r_cons_enable_mouse (false);
-	r_cons_set_raw (false);
+	r_kons_enable_mouse (cons, false);
+	r_kons_set_raw (cons, false);
 	ht_pp_free (ht);
 	return NULL;
 }

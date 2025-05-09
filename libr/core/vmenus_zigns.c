@@ -68,11 +68,11 @@ R_API int r_core_visual_view_zigns(RCore *core) {
 
 	while (true) {
 		__core_visual_view_zigns_update (core, &status);
-		int ch = r_cons_readchar ();
+		int ch = r_cons_readchar (core->cons);
 		if (ch == -1 || ch == 4) {
 			return true;
 		}
-		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
+		ch = r_cons_arrow_to_hjkl (core->cons, ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case 'g':
 			r_core_cmd0 (core, "zg");

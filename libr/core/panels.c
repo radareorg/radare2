@@ -495,7 +495,7 @@ static int __show_status(RCore *core, const char *msg) {
 	r_cons_printf (R_CONS_CLEAR_LINE"%s[Status] %s"Color_RESET, PANEL_HL_COLOR, msg);
 	r_kons_flush (core->cons);
 	r_cons_set_raw (true);
-	return r_cons_readchar ();
+	return r_cons_readchar (core->cons);
 }
 
 static bool __show_status_yesno(RCore *core, int def, const char *msg) {
@@ -4214,8 +4214,8 @@ static void __create_modal(RCore *core, RPanel *panel, Sdb *menu_db) {
 	__update_modal (core, menu_db, modal, 1);
 	while (modal) {
 		r_cons_set_raw (true);
-		okey = r_cons_readchar ();
-		key = r_cons_arrow_to_hjkl (okey);
+		okey = r_cons_readchar (core->cons);
+		key = r_cons_arrow_to_hjkl (core->cons, okey);
 		word = NULL;
 		if (key == INT8_MAX - 1) {
 			if (r_cons_get_click (&cx, &cy)) {
@@ -4440,7 +4440,7 @@ static void __handle_vmark(RCore *core) {
 			r_cons_printf (R_CONS_CLEAR_LINE"Remove a shortcut key from the list\n");
 			r_kons_flush (core->cons);
 			r_cons_set_raw (true);
-			int ch = r_cons_readchar ();
+			int ch = r_cons_readchar (core->cons);
 			r_core_vmark_del (core, ch);
 		}
 		break;
@@ -4449,7 +4449,7 @@ static void __handle_vmark(RCore *core) {
 		if (r_core_vmark_dump (core, 0)) {
 			r_kons_flush (core->cons);
 			r_cons_set_raw (true);
-			int ch = r_cons_readchar ();
+			int ch = r_cons_readchar (core->cons);
 			r_core_vmark_seek (core, ch, NULL);
 			__set_panel_addr (core, cur, core->addr);
 		}
@@ -4539,7 +4539,7 @@ static void __move_panel_to_dir(RCore *core, RPanel *panel, int src) {
 	RPanels *panels = core->panels;
 	__dismantle_panel (panels, panel);
 	int key = __show_status (core, "Move the current panel to direction (h/j/k/l): ");
-	key = r_cons_arrow_to_hjkl (key);
+	key = r_cons_arrow_to_hjkl (core->cons, key);
 	__set_refresh_all (core, false, true);
 	switch (key) {
 	case 'h':
@@ -6739,7 +6739,7 @@ static void __handle_tab(RCore *core) {
 	}
 	r_kons_flush (core->cons);
 	r_cons_set_raw (true);
-	const int ch = r_cons_readchar ();
+	const int ch = r_cons_readchar (core->cons);
 
 	if (isdigit (ch)) {
 		__handle_tab_nth (core, ch);
@@ -6822,13 +6822,11 @@ static void __panels_process(RCore *core, RPanels *panels) {
 		}
 	}
 
-	bool o_interactive = r_cons_is_interactive ();
+	bool o_interactive = r_kons_is_interactive (core->cons);
 	r_cons_set_interactive (true);
 	r_core_visual_showcursor (core, false);
-
-	r_cons_enable_mouse (false);
 repeat:
-	r_cons_enable_mouse (r_config_get_i (core->config, "scr.wheel"));
+	r_kons_enable_mouse (core->cons, r_config_get_i (core->config, "scr.wheel"));
 	core->panels = panels;
 	core->cons->event_resize = NULL; // avoid running old event with new data
 	core->cons->event_data = core;
@@ -6842,16 +6840,16 @@ repeat:
 			__reset_snow (panels);
 			goto repeat;
 		}
-		okey = r_cons_readchar_timeout (300);
+		okey = r_cons_readchar_timeout (core->cons, 300);
 		if (okey == -1) {
 			cur->view->refresh = true;
 			goto repeat;
 		}
 	} else {
-		okey = r_cons_readchar ();
+		okey = r_cons_readchar (core->cons);
 	}
 
-	key = r_cons_arrow_to_hjkl (okey);
+	key = r_cons_arrow_to_hjkl (core->cons, okey);
 virtualmouse:
 	if (__handle_mouse (core, cur, &key)) {
 		if (panels_root->root_state != DEFAULT) {
@@ -7509,8 +7507,8 @@ virtualmouse:
 		goto exit;
 #if 0
 	case 27: // ESC
-		if (r_cons_readchar () == 91) {
-			if (r_cons_readchar () == 90) {}
+		if (r_cons_readchar (core->cons) == 91) {
+			if (r_cons_readchar (core->cons) == 90) {}
 		}
 		break;
 #endif
@@ -7607,7 +7605,7 @@ R_API bool r_core_panels_root(RCore *core, RPanelsRoot *panels_root) {
 	if (core->visual.fromVisual) {
 		r_core_visual (core, "");
 	} else {
-		r_cons_enable_mouse (false);
+		r_kons_enable_mouse (core->cons, false);
 	}
 	return true;
 }

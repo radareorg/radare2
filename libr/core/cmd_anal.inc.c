@@ -8580,7 +8580,7 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 			agraph->need_set_layout = true;
 			int update_seek = r_core_visual_graph (core, agraph, NULL, true);
 			r_cons_show_cursor (true);
-			r_cons_enable_mouse (false);
+			r_kons_enable_mouse (core->cons, false);
 			if (update_seek != -1) {
 				r_core_seek (core, oseek, false);
 			}
@@ -12325,7 +12325,7 @@ R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 			r_config_set_b (core->config, "scr.interactive", ov);
 			r_cons_show_cursor (true);
 			core->graph->is_handmade = false;
-			r_cons_enable_mouse (false);
+			r_kons_enable_mouse (core->cons, false);
 			if (update_seek != -1) {
 				r_core_seek (core, oseek, false);
 			}
@@ -12494,7 +12494,7 @@ static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, 
 				int update_seek = r_core_visual_graph (core, agraph, NULL, true);
 				r_config_set_b (core->config, "scr.interactive", ov);
 				r_cons_show_cursor (true);
-				r_cons_enable_mouse (false);
+				r_kons_enable_mouse (core->cons, false);
 				if (update_seek != -1) {
 					r_core_seek (core, oseek, false);
 				}
@@ -12799,7 +12799,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			} else {
 				R_LOG_ERROR ("No function to graph");
 			}
-			r_cons_enable_mouse (false);
+			r_kons_enable_mouse (core->cons, false);
 			r_cons_show_cursor (true);
 		}
 			break;

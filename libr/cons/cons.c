@@ -389,8 +389,8 @@ R_API void r_cons_enable_highlight(const bool enable) {
 	I->enable_highlight = enable;
 }
 
-R_API bool r_cons_enable_mouse(const bool enable) {
-	bool enabled = I->mouse;
+R_API bool r_kons_enable_mouse(RCons *cons, const bool enable) {
+	bool enabled = cons->mouse;
 #if R2__WINDOWS__
 	HANDLE h = GetStdHandle (STD_INPUT_HANDLE);
 	DWORD mode = 0;
@@ -400,10 +400,10 @@ R_API bool r_cons_enable_mouse(const bool enable) {
 		? (mode | ENABLE_MOUSE_INPUT) & ~ENABLE_QUICK_EDIT_MODE
 		: (mode & ~ENABLE_MOUSE_INPUT) | ENABLE_QUICK_EDIT_MODE;
 	if (SetConsoleMode (h, mode)) {
-		I->mouse = enable;
+		cons->mouse = enable;
 	}
 #else
-	if (I->vtmode == 2) {
+	if (cons->vtmode == 2) {
 		const char *click = enable
 			? "\x1b[?1000;1006;1015h"
 			: "\x1b[?1000;1006;1015l";
@@ -411,7 +411,7 @@ R_API bool r_cons_enable_mouse(const bool enable) {
 		if (write (2, click, click_len) != click_len) {
 			enabled = false;
 		} else {
-			I->mouse = enable;
+			cons->mouse = enable;
 		}
 	}
 #endif
