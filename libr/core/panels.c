@@ -4607,11 +4607,11 @@ static void __swap_panels(RPanels *panels, int p0, int p1) {
 static bool __check_func(RCore *core) {
 	RAnalFunction *fun = r_anal_get_fcn_in (core->anal, core->addr, R_ANAL_FCN_TYPE_NULL);
 	if (!fun) {
-		r_cons_message ("Not in a function. Type 'df' to define it here");
+		r_cons_message (core->cons, "Not in a function. Type 'df' to define it here");
 		return false;
 	}
 	if (r_list_empty (fun->bbs)) {
-		r_cons_message ("No basic blocks in this function. You may want to use 'afb+'.");
+		r_cons_message (core->cons, "No basic blocks in this function. You may want to use 'afb+'.");
 		return false;
 	}
 	return true;
@@ -5640,7 +5640,7 @@ static int __references_cb(void *user) {
 static int __fortune_cb(void *user) {
 	RCore *core = (RCore *)user;
 	char *s = r_core_cmd_str (core, "fo");
-	r_cons_message (s);
+	r_cons_message (core->cons, s);
 	free (s);
 	return 0;
 }
@@ -5658,7 +5658,8 @@ static int __help_cb(void *user) {
 }
 
 static int __license_cb(void *user) {
-	r_cons_message ("Copyright 2006-2024 - pancake - LGPL");
+	RCore *core = (RCore *)user;
+	r_cons_message (core->cons, "Copyright 2006-2024 - pancake - LGPL");
 	return 0;
 }
 
@@ -5676,7 +5677,7 @@ static int __version2_cb(void *user) {
 static int __version_cb(void *user) {
 	RCore *core = (RCore *)user;
 	char *s = r_core_cmd_str (core, "?V");
-	r_cons_message (s);
+	r_cons_message (core->cons, s);
 	free (s);
 	return 0;
 }

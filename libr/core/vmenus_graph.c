@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019 - pancake */
+/* radare - LGPL - Copyright 2019-2025 - pancake */
 
 #include <r_core.h>
 #include <r_vec.h>
@@ -384,8 +384,8 @@ R_API int r_core_visual_view_graph(RCore *core) {
 			__sync_status_with_cursor (&status);
 			break;
 		case '?':
-			r_cons_clear00 ();
-			r_cons_printf (
+			r_kons_clear00 (core->cons);
+			r_kons_printf (core->cons,
 			"vbg: Visual Browser (Code) Graph:\n\n"
 			" jkJK  - scroll up/down\n"
 			" hl    - move to the left/right panel\n"
@@ -393,8 +393,8 @@ R_API int r_core_visual_view_graph(RCore *core) {
 			" _     - enter the hud\n"
 			" .     - go back to the initial function list view\n"
 			" :     - enter command\n");
-			r_cons_flush ();
-			r_cons_any_key (NULL);
+			r_kons_flush (core->cons);
+			r_cons_any_key (core->cons, NULL);
 			break;
 		case '/':
 			{
@@ -430,7 +430,7 @@ R_API int r_core_visual_view_graph(RCore *core) {
 			r_kons_set_raw (core->cons, 1);
 			r_cons_show_cursor (false);
 			if (cmd[0]) {
-				r_cons_any_key (NULL);
+				r_cons_any_key (core->cons, NULL);
 			}
 			r_kons_clear (core->cons);
 			}

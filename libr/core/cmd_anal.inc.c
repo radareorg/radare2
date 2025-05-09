@@ -14166,8 +14166,8 @@ static void cmd_aaa(RCore *core, const char *input) {
 	if (r_str_startswith (input, "aaaaa")) {
 		R_LOG_INFO ("We fired the r2 developer that was heading to your location to help you analyze this binary");
 		R_LOG_INFO ("Contact support for premium service");
-		if (r_cons_is_interactive ()) {
-			r_cons_any_key (NULL);
+		if (r_kons_is_interactive (core->cons)) {
+			r_cons_any_key (core->cons, NULL);
 		}
 		goto jacuzzi;
 	}

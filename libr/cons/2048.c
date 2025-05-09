@@ -181,14 +181,14 @@ R_API void r_cons_2048(bool color) {
 			break;
 		}
 	}
-	r_cons_clear00 ();
-	r_cons_printf ("[r2048] score: %d\n", state.score);
-	r_cons_flush ();
+	r_kons_clear00 (cons);
+	r_kons_printf (cons, "[r2048] score: %d\n", state.score);
+	r_kons_flush (cons);
 	twok_print (&state, color);
 
-	r_cons_printf ("\n  [r2048.score] %d\n", state.score);
+	r_kons_printf (cons, "\n  [r2048.score] %d\n", state.score);
 	do {
-		ch = r_cons_any_key ("Press 'q' to quit.");
+		ch = r_cons_any_key (cons, "Press 'q' to quit.");
 	} while (ch != 'q' && ch >= 1);
-	r_cons_set_raw (0);
+	r_kons_set_raw (cons, 0);
 }
