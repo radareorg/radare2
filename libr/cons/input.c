@@ -554,7 +554,7 @@ static int readchar_w32(RCons *cons, ut32 usec) {
 				}
 			}
 			if (irInBuf.EventType == WINDOW_BUFFER_SIZE_EVENT) {
-				resizeWin ();
+				resizeWin (cons);
 			}
 		}
 		if (cons->vtmode != 2 && !cons->term_xterm) {
