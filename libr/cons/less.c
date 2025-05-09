@@ -16,11 +16,10 @@ static const char *r_cons_less_help = \
 	" ?        - show this help\n"
 	"\n";
 
-R_API int r_cons_less_str(RCons *cons, const char *str, const char *exitkeys) {
+R_API int r_cons_less_str(RCons * R_NONNULL cons, const char * R_NONNULL str, const char * R_NULLABLE exitkeys) {
 	R_RETURN_VAL_IF_FAIL (R_STR_ISNOTEMPTY (str), 0);
 	if (!r_kons_is_interactive (cons)) {
 		R_LOG_ERROR ("Internal less requires scr.interactive=true");
-		return 0;
 	}
 
 	int in_help = false;
@@ -55,12 +54,12 @@ R_API int r_cons_less_str(RCons *cons, const char *str, const char *exitkeys) {
 	for (i = 0; i < lines_count; i++) {
 		mla[i] = r_list_new ();
 	}
-	r_cons_set_raw (true);
-	r_cons_show_cursor (false);
+	r_kons_set_raw (cons, true);
+	r_kons_show_cursor (cons, false);
 	r_kons_reset (cons);
 	h = 0;
 	while (ui) {
-		w = r_cons_get_size (&h);
+		w = r_kons_get_size (cons, &h);
 		to = R_MIN (lines_count, from + h);
 		if (from + 3 > lines_count) {
 			from = lines_count - 3;
@@ -115,10 +114,10 @@ R_API int r_cons_less_str(RCons *cons, const char *str, const char *exitkeys) {
 				from--;
 			}
 			break;
-		case 'K': from = (from>=h)? from - h: 0;
+		case 'K': from = (from >= h)? from - h: 0;
 			break;
 		case '/': 	/* search */
-			r_cons_reset_colors ();
+			r_kons_reset_colors (cons);
 			r_line_set_prompt (cons, "/");
 			sreg = r_line_readline (cons);
 			from = R_MIN (lines_count - 1, from);
@@ -139,7 +138,7 @@ R_API int r_cons_less_str(RCons *cons, const char *str, const char *exitkeys) {
 			if (pager_all_matches (p, rx, mla, lines, lines_count)) {
 				from = pager_next_match (from, mla, lines_count);
 			}
-			r_cons_set_raw (true);
+			r_kons_set_raw (cons, true);
 			break;
 		case 'n': 	/* next match */
 			/* search already performed */
@@ -162,9 +161,9 @@ R_API int r_cons_less_str(RCons *cons, const char *str, const char *exitkeys) {
 	r_regex_free (rx);
 	free (lines);
 	free (p);
-	r_cons_reset_colors ();
-	r_cons_set_raw (false);
-	r_cons_show_cursor (true);
+	r_kons_reset_colors (cons);
+	r_kons_set_raw (cons, false);
+	r_kons_show_cursor (cons, true);
 	free (ostr);
 	return 0;
 }
@@ -172,11 +171,3 @@ R_API int r_cons_less_str(RCons *cons, const char *str, const char *exitkeys) {
 R_API void r_cons_less(RCons *cons) {
 	(void)r_cons_less_str (cons, cons->context->buffer, NULL);
 }
-
-#if 0
-main (int argc, char **argv) {
-	char *s = r_file_slurp (argv[1], NULL);
-	r_cons_new ();
-	r_cons_less (s);
-}
-#endif

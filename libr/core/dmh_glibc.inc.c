@@ -290,11 +290,8 @@ static bool GH(is_tcache)(RCore *core) {
 
 static GHT GH(tcache_chunk_size)(RCore *core, GHT brk_start) {
 	GH (RHeapChunk) *cnk = R_NEW0 (GH (RHeapChunk));
-	if (cnk) {
-		r_io_read_at (core->io, brk_start, (ut8 *)cnk, sizeof (GH (RHeapChunk)));
-		return (cnk->size >> 3) << 3; // clear chunk flag
-	}
-	return 0;
+	r_io_read_at (core->io, brk_start, (ut8 *)cnk, sizeof (GH (RHeapChunk)));
+	return (cnk->size >> 3) << 3; // clear chunk flag
 }
 
 static void GH(update_arena_with_tc)(GH(RHeap_MallocState_227) *cmain_arena, MallocState *main_arena) {
@@ -346,9 +343,6 @@ static bool GH(update_main_arena)(RCore *core, GHT m_arena, MallocState *main_ar
 	const bool tcache = r_config_get_b (core->config, "dbg.glibc.tcache");
 	if (tcache) {
 		GH(RHeap_MallocState_227) *cmain_arena = R_NEW0 (GH(RHeap_MallocState_227));
-		if (!cmain_arena) {
-			return false;
-		}
 		if (!r_io_read_at (core->io, m_arena, (ut8 *)cmain_arena, sizeof (GH(RHeap_MallocState_227)))) {
 			R_LOG_ERROR ("Cannot read");
 			return false;
@@ -356,9 +350,6 @@ static bool GH(update_main_arena)(RCore *core, GHT m_arena, MallocState *main_ar
 		GH(update_arena_with_tc)(cmain_arena, main_arena);
 	} else {
 		GH(RHeap_MallocState_223) *cmain_arena = R_NEW0 (GH(RHeap_MallocState_223));
-		if (!cmain_arena) {
-			return false;
-		}
 		if (!r_io_read_at (core->io, m_arena, (ut8 *)cmain_arena, sizeof (GH(RHeap_MallocState_223)))) {
 			R_LOG_ERROR ("Cannot read");
 			return false;
@@ -404,7 +395,7 @@ static void GH(print_arena_stats)(RCore *core, GHT m_arena, MallocState *main_ar
 	size_t i, j, k, start;
 	GHT align = 12 * SZ + sizeof (int) * 2;
 	const bool tcache = r_config_get_b (core->config, "dbg.glibc.tcache");
-	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
+	RConsPrintablePalette *pal = &core->cons->context->pal;
 
 	if (tcache) {
 		align = 16;
@@ -747,9 +738,6 @@ static bool GH(resolve_main_arena)(RCore *core, GHT *m_arena) {
 	GHT addr_srch = libc_addr_sta;
 	GHT heap_sz = brk_end - brk_start;
 	MallocState *ta = R_NEW0 (MallocState);
-	if (R_UNLIKELY (!ta)) {
-		return false;
-	}
 
 	if (main_arena_addr != GHT_MAX) {
 		if (!GH (update_main_arena) (core, main_arena_addr, ta)) {
@@ -785,11 +773,8 @@ static bool GH(resolve_main_arena)(RCore *core, GHT *m_arena) {
 
 void GH(print_heap_chunk)(RCore *core) {
 	GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk));
-	if (!cnk) {
-		return;
-	}
 	GHT chunk = core->addr;
-	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
+	RConsPrintablePalette *pal = &core->cons->context->pal;
 
 	(void) r_io_read_at (core->io, chunk, (ut8 *)cnk, sizeof (*cnk));
 
@@ -841,9 +826,6 @@ static bool GH(is_arena)(RCore *core, GHT m_arena, GHT m_state) {
 		return true;
 	}
 	MallocState *ta = R_NEW0 (MallocState);
-	if (!ta) {
-		return false;
-	}
 	if (!GH(update_main_arena) (core, m_arena, ta)) {
 		free (ta);
 		return false;
@@ -870,7 +852,7 @@ static int GH(print_double_linked_list_bin_simple)(RCore *core, GHT bin, MallocS
 	GHT next = GHT_MAX;
 	int ret = 1;
 	GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk));
-	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
+	RConsPrintablePalette *pal = &core->cons->context->pal;
 
 	if (!cnk) {
 		return -1;
@@ -925,7 +907,7 @@ static int GH(print_double_linked_list_bin_graph)(RCore *core, GHT bin, MallocSt
 	GHT next = GHT_MAX;
 	char title[256], chunk[256];
 	GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk));
-	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
+	RConsPrintablePalette *pal = &core->cons->context->pal;
 
 	if (!cnk || !g) {
 		free (cnk);
@@ -979,7 +961,7 @@ static int GH(print_double_linked_list_bin)(RCore *core, MallocState *main_arena
 	}
 	int ret = 0;
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX, initial_brk = GHT_MAX;
-	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
+	RConsPrintablePalette *pal = &core->cons->context->pal;
 
 	if (num_bin > 126) {
 		return -1;
@@ -1041,7 +1023,7 @@ static void GH(print_heap_bin)(RCore *core, GHT m_arena, MallocState *main_arena
 	int i, j = 2;
 	GHT num_bin = GHT_MAX;
 	GHT offset;
-	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
+	RConsPrintablePalette *pal = &core->cons->context->pal;
 
 	const bool tcache = r_config_get_b (core->config, "dbg.glibc.tcache");
 	if (tcache) {
@@ -1086,7 +1068,7 @@ static int GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena
 		return -1;
 	}
 	GHT next = GHT_MAX, brk_start = GHT_MAX, brk_end = GHT_MAX;
-	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
+	RConsPrintablePalette *pal = &core->cons->context->pal;
 
 	GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk));
 	if (!cnk) {
@@ -1170,7 +1152,7 @@ void GH(print_heap_fastbin)(RCore *core, GHT m_arena, MallocState *main_arena, G
 	int i;
 	GHT num_bin = GHT_MAX, offset = sizeof (int) * 2;
 	const bool tcache = r_config_get_b (core->config, "dbg.glibc.tcache");
-	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
+	RConsPrintablePalette *pal = &core->cons->context->pal;
 
 	if (tcache) {
 		offset = 16;
@@ -1269,7 +1251,7 @@ static void GH (tcache_print) (RCore *core, GH (RTcache)* tcache, bool demangle)
 	R_RETURN_IF_FAIL (core && tcache);
 	GHT tcache_fd = GHT_MAX;
 	GHT tcache_tmp = GHT_MAX;
-	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
+	RConsPrintablePalette *pal = &core->cons->context->pal;
 	size_t i;
 	for (i = 0; i < TCACHE_MAX_BINS; i++) {
 		int count = GH (tcache_get_count) (tcache, i);
@@ -1315,7 +1297,7 @@ static void GH (print_tcache_instance)(RCore *core, GHT m_arena, MallocState *ma
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX, initial_brk = GHT_MAX;
 	GH (get_brks) (core, &brk_start, &brk_end);
 	GHT tcache_start = GHT_MAX;
-	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
+	RConsPrintablePalette *pal = &core->cons->context->pal;
 
 	tcache_start = brk_start + 0x10;
 	GHT fc_offset = GH (tcache_chunk_size) (core, brk_start);
@@ -1386,7 +1368,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 
 	const bool tcache = r_config_get_b (core->config, "dbg.glibc.tcache");
 	const int offset = r_config_get_i (core->config, "dbg.glibc.fc_offset");
-	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
+	RConsPrintablePalette *pal = &core->cons->context->pal;
 	int glibc_version = core->dbg->glibc_version;
 
 	if (m_arena == m_state) {
@@ -1727,11 +1709,8 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 
 void GH(print_malloc_states)( RCore *core, GHT m_arena, MallocState *main_arena) {
 	MallocState *ta = R_NEW0 (MallocState);
-	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
+	RConsPrintablePalette *pal = &core->cons->context->pal;
 
-	if (!ta) {
-		return;
-	}
 	PRINT_YA ("main_arena @ ");
 	PRINTF_BA ("0x%"PFMT64x"\n", (ut64)m_arena);
 	if (main_arena->GH(next) != m_arena) {
@@ -1762,7 +1741,7 @@ void GH(print_malloc_states)( RCore *core, GHT m_arena, MallocState *main_arena)
 }
 
 void GH(print_inst_minfo)(GH(RHeapInfo) *heap_info, GHT hinfo) {
-	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
+	RConsPrintablePalette *pal = &core->cons->context->pal;
 
 	PRINT_YA ("malloc_info @ ");
 	PRINTF_BA ("0x%"PFMT64x, (ut64)hinfo);
@@ -1785,16 +1764,9 @@ void GH(print_malloc_info)(RCore *core, GHT m_state, GHT malloc_state) {
 	} else if (GH(is_arena) (core, malloc_state, m_state)) {
 		h_info = (malloc_state >> 16) << 16;
 		GH(RHeapInfo) *heap_info = R_NEW0 (GH(RHeapInfo));
-		if (!heap_info) {
-			return;
-		}
 		r_io_read_at (core->io, h_info, (ut8*)heap_info, sizeof (GH(RHeapInfo)));
 		GH(print_inst_minfo) (heap_info, h_info);
 		MallocState *ms = R_NEW0 (MallocState);
-		if (!ms) {
-			free (heap_info);
-			return;
-		}
 
 		while (heap_info->prev != 0x0 && heap_info->prev != GHT_MAX) {
 			if (!GH(update_main_arena) (core, malloc_state, ms)) {
@@ -1873,9 +1845,6 @@ static int GH(dmh_glibc)(RCore *core, const char *input) {
 	GHT global_max_fast = (64 * SZ / 4);
 
 	MallocState *main_arena = R_NEW0 (MallocState);
-	if (!main_arena) {
-		return false;
-	}
 
 	int format = 'c';
 	bool get_state = false;

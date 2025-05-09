@@ -15,7 +15,6 @@ r_cons_sources = [
   'less.c',
   'stiv.c',
   'line.c',
-  'more.c',
   'winutils.c',
   'pager.c',
   'pal.c',

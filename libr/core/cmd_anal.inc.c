@@ -5376,7 +5376,7 @@ static void cmd_afe(RCore *core, const char *input) {
 #endif
 
 static int cmd_af(RCore *core, const char *input) {
-	r_cons_break_timeout (r_config_get_i (core->config, "anal.timeout"));
+	r_kons_break_timeout (core->cons, r_config_get_i (core->config, "anal.timeout"));
 	switch (input[1]) {
 	case '-': // "af-"
 		if (!input[2]) { // "af-"
@@ -11970,11 +11970,11 @@ static void cmd_agraph_edge(RCore *core, const char *input) {
 R_API void cmd_agfb(RCore *core) {
 	const int c = r_config_get_b (core->config, "scr.color");
 	r_config_set_i (core->config, "scr.color", 0);
-	r_cons_push ();
+	r_kons_push (core->cons);
 	r_core_visual_graph (core, NULL, NULL, false);
 	r_config_set_i (core->config, "scr.color", c);
-	char *s = strdup (r_cons_singleton()->context->buffer);
-	r_cons_pop ();
+	char *s = strdup (core->cons->context->buffer);
+	r_kons_pop (core->cons);
 	cmd_agfb2 (core, s);
 	free (s);
 }
@@ -11982,13 +11982,13 @@ R_API void cmd_agfb(RCore *core) {
 R_API void cmd_aggb(RCore *core) {
 	const int c = r_config_get_b (core->config, "scr.color");
 	r_config_set_i (core->config, "scr.color", 0);
-	r_cons_push ();
+	r_kons_push (core->cons);
 	int ograph_zoom = r_config_get_i (core->config, "graph.zoom");
 	r_config_set_i (core->config, "graph.zoom", 1);
 	r_core_cmd_call (core, "agg");
 	r_config_set_i (core->config, "scr.color", c);
-	char *s = strdup (r_cons_singleton()->context->buffer);
-	r_cons_pop ();
+	char *s = strdup (core->cons->context->buffer);
+	r_kons_pop (core->cons);
 	cmd_agfb2 (core, s);
 	r_config_set_i (core->config, "graph.zoom", ograph_zoom);
 	free (s);
@@ -14174,7 +14174,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 	ut64 curseek = core->addr;
 	logline (core, 5, "Analyze all flags starting with sym. and entry0 (aa)");
 	r_cons_break_push (NULL, NULL);
-	r_cons_break_timeout (r_config_get_i (core->config, "anal.timeout"));
+	r_kons_break_timeout (core->cons, r_config_get_i (core->config, "anal.timeout"));
 	bool anal_imports = false;
 	if (r_config_get_b (core->config, "anal.imports")) {
 		logline (core, 10, "Analyze imports (af@@@i)");

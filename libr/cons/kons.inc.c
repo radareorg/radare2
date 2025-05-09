@@ -438,7 +438,7 @@ R_API bool r_kons_is_interactive(RCons *cons) {
 R_API void r_kons_break_push(RCons *cons, RConsBreak cb, void *user) {
 	RConsContext *ctx = cons->context;
 	if (ctx->break_stack && r_stack_size (ctx->break_stack) > 0) {
-		r_cons_break_timeout (cons->otimeout);
+		r_kons_break_timeout (cons, cons->otimeout);
 	}
 	r_cons_context_break_push (ctx, cb, user, true);
 }
@@ -1697,7 +1697,7 @@ R_API bool r_kons_is_breaked(RCons *cons) {
 			if (r_time_now_mono () > cons->timeout) {
 				C->breaked = true;
 				C->was_breaked = true;
-				r_cons_break_timeout (cons->otimeout);
+				r_kons_break_timeout (cons, cons->otimeout);
 			}
 		}
 	}

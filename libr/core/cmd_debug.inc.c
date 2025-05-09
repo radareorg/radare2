@@ -3389,13 +3389,13 @@ static void backtrace_vars(RCore *core, RList *frames) {
 //////////
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, f->addr, 0);
 		// char *str = r_str_newf ("[frame %d]", n);
-		r_cons_printf ("%d  0x%08"PFMT64x" sp: 0x%08"PFMT64x" %-5d"
+		r_kons_printf (core->cons, "%d  0x%08"PFMT64x" sp: 0x%08"PFMT64x" %-5d"
 				"[%s]  %s %s\n", n, f->addr, f->sp, (int)f->size,
 				fcn ? fcn->name : "??", flagdesc, flagdesc2);
 		eprintf ("afvd @ 0x%"PFMT64x"\n", f->addr);
-		r_cons_push();
+		r_kons_push (core->cons);
 		char *res = r_core_cmd_strf (core, "afvd@0x%"PFMT64x, f->addr);
-		r_cons_pop();
+		r_kons_pop (core->cons);
 		r_cons_printf ("%s", res);
 		free (res);
 		n++;
@@ -6252,12 +6252,11 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case 's': // "dxs"
 			if (input[2]) {
-				char *str;
-				r_cons_push ();
+				r_kons_push (core->cons);
 				char *cmd = r_str_newf ("gs %s", input + 2);
-				str = r_core_cmd_str (core, cmd);
+				char *str = r_core_cmd_str (core, cmd);
 				free (cmd);
-				r_cons_pop ();
+				r_kons_pop (core->cons);
 				r_core_cmdf (core, "dx %s", str); //`gs %s`", input + 2);
 				free (str);
 			} else {

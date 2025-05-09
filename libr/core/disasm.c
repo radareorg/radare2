@@ -5695,7 +5695,7 @@ static void print_fcn_arg(RCore *core, int nth, const char *type, const char *na
 			r_cons_printf ("-1");
 		}
 	}
-	r_cons_trim ();
+	r_kons_trim (core->cons);
 }
 
 static void delete_last_comment(RDisasmState *ds) {

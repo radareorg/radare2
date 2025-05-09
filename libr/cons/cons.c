@@ -340,13 +340,13 @@ R_API int r_cons_get_cur_line(void) {
 	return curline;
 }
 
-R_API void r_cons_break_timeout(int timeout) {
+R_API void r_kons_break_timeout(RCons *cons, int timeout) {
 	if (timeout > 0) {
-		I->timeout = r_time_now_mono () + (timeout * 1000);
-		I->otimeout = timeout;
+		cons->timeout = r_time_now_mono () + (timeout * 1000);
+		cons->otimeout = timeout;
 	} else {
-		I->otimeout = 0;
-		I->timeout = 0;
+		cons->otimeout = 0;
+		cons->timeout = 0;
 	}
 #if 0
 	I->timeout = (timeout && !I->timeout)
@@ -807,8 +807,9 @@ R_API bool r_cons_drop(int n) {
 	return r_kons_drop (I, n);
 }
 
-R_API void r_cons_trim(void) {
-	r_kons_trim (I);
+static void mygrep(RCons *cons, const char *grep) {
+	r_cons_grep_expression (cons, grep);
+	r_kons_grepbuf (cons);
 }
 
 R_API void r_cons_bind(RCons *cons, RConsBind *bind) {
@@ -818,7 +819,7 @@ R_API void r_cons_bind(RCons *cons, RConsBind *bind) {
 	bind->get_cursor = r_kons_get_cursor;
 	bind->cb_printf = r_kons_printf;
 	bind->cb_flush = r_kons_flush;
-	bind->cb_grep = r_kons_grep;
+	bind->cb_grep = mygrep;
 	bind->is_breaked = r_kons_is_breaked;
 }
 
@@ -837,14 +838,6 @@ R_API const char* r_cons_get_rune(const ut8 ch) {
 	case RUNECODE_CURVE_CORNER_BL:  return RUNE_CURVE_CORNER_BL;
 	}
 	return NULL;
-}
-
-R_API void r_cons_breakword(const char * R_NULLABLE s) {
-	r_kons_breakword (I, s);
-}
-
-R_API void r_cons_clear_buffer(void) {
-	r_kons_clear_buffer (I);
 }
 
 // conceptually wrong, needs redesign
