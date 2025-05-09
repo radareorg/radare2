@@ -83,6 +83,24 @@ static void kvc_error(KVCParser *kvc, const char *msg) {
 	kvc->s.a = kvc->s.b;
 }
 
+static void massage_type(char **s) {
+	char *star = strchr (*s, '*');
+	if (star) {
+		char *ostar = star;
+		while (star > *s) {
+			if (!isspace (*star)) {
+				break;
+			}
+			star--;
+		}
+		char *type = r_str_ndup (*s, star - *s);
+		char *res = r_str_newf ("%s %s", type, ostar);
+		free (*s);
+		free (type);
+		*s = res;
+	}
+}
+
 static const char *kvc_peekn(KVCParser *kvc, size_t amount) {
 	return (kvctoken_len (kvc->s) >= amount)? kvc->s.a: NULL;
 }
@@ -326,7 +344,7 @@ static void kvctoken_typename(KVCToken *fun_rtyp, KVCToken *fun_name) {
 	// eprintf ("i TYPENAME n (%s)\n", kvctoken_tostring (*fun_name));
 	const char *p = fun_rtyp->b - 1;
 	while (p > fun_rtyp->a) {
-		if (!isalnum (*p) || isspace (*p)) {
+		if ((!isalnum (*p) && *p != '_') || isspace (*p)) {
 			if (*p != '[' && *p != ']') {
 				p++;
 				break;
@@ -457,14 +475,13 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 			char *mt = kvctoken_tostring (member_type);
 			char *mn = kvctoken_tostring (member_name);
 			char *md = kvctoken_tostring (member_dimm);
-			char full_scope[512];
 			if (!*mn) {
 				free (mt);
 				free (mn);
 				free (md);
 				break;
 			}
-			snprintf (full_scope, sizeof (full_scope), "%s.%s", struct_tag, mn);
+			r_strf_var (full_scope, 512, "%s.%s", struct_tag, mn);
 			if (R_STR_ISNOTEMPTY (md)) {
 				r_strbuf_appendf (kvc->sb, "struct.%s.%s=%s,%d,%s\n",
 						struct_tag, mn, mt, off, md);
@@ -547,6 +564,7 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 		char *alias_str = kvctoken_tostring (alias);
 		char *type_str = kvctoken_tostring (orig_type);
 		r_strbuf_appendf (kvc->sb, "typedef.%s=%s\n", alias_str, type_str);
+		r_strbuf_appendf (kvc->sb, "%s=typedef\n", alias_str);
 		free (alias_str);
 		free (type_str);
 		kvc_skipn (kvc, semicolon - kvc->s.a);
@@ -633,7 +651,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 				member_name.b = member_dimm.a - 1;
 				member_dimm.b = kvctoken_find (member_dimm, "]");
 				if (member_dimm.b) {
-					kvc_skipn (kvc, kvctoken_len (member_dimm));
+					// Dimensions already consumed by kvc_find_semicolon; no need to skip
 				} else {
 					R_LOG_ERROR ("Missing ] in struct field dimension");
 				}
@@ -643,14 +661,14 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 		char *mt = kvctoken_tostring (member_type);
 		char *mn = kvctoken_tostring (member_name);
 		char *md = kvctoken_tostring (member_dimm);
-		char full_scope[512];
 		if (!*mn) {
 			free (mt);
 			free (mn);
 			free (md);
 			break;
 		}
-		snprintf (full_scope, sizeof (full_scope), "%s.%s", sn, mn);
+		massage_type (&mt);
+		r_strf_var (full_scope, 512, "%s.%s", sn, mn);
 		if (md) {
 			r_strbuf_appendf (kvc->sb, "%s.%s=%s,%d,%s\n", type, full_scope, mt, off, md);
 		} else {
@@ -738,17 +756,25 @@ static bool parse_enum(KVCParser *kvc, const char *name) {
 			return false;
 		}
 
-		char full_scope[512];
 		char *mn = kvctoken_tostring (member_name);
 		apply_attributes (kvc, "enum", en);
-		snprintf (full_scope, sizeof (full_scope), "%s.%s", en, mn);
+		r_strf_var (full_scope, 512, "%s.%s", en, mn);
 		if (member_value.a) {
 			st64 nv = r_num_get (NULL, member_value.a);
-			if (r_str_startswith (member_value.a, "0x")) {
-				r_strbuf_appendf (kvc->sb, "enum.%s=0x%"PFMT64x"\n", full_scope, nv);
-			} else {
+#if 0
+			// new style, stuff breaks, but full enum scope makes sense imho
+			r_strbuf_appendf (kvc->sb, "enum.%s=0x%"PFMT64x"\n", full_scope, nv);
+			r_strbuf_appendf (kvc->sb, "enum.0x%"PFMT64x"=%s\n", nv, full_scope);
+#else
+			// old style, backward compat, everything works.
+			if ((st64)nv < 0) {
 				r_strbuf_appendf (kvc->sb, "enum.%s=%"PFMT64d"\n", full_scope, nv);
+				r_strbuf_appendf (kvc->sb, "enum.%s.%"PFMT64d"=%s\n", en, nv, mn);
+			} else {
+				r_strbuf_appendf (kvc->sb, "enum.%s=0x%"PFMT64x"\n", full_scope, nv);
+				r_strbuf_appendf (kvc->sb, "enum.%s.0x%"PFMT64x"=%s\n", en, nv, mn);
 			}
+#endif
 			value = nv; // r_num_get (NULL, member_value.a);
 		} else {
 			r_strbuf_appendf (kvc->sb, "enum.%s=%d\n", full_scope, value);
@@ -756,7 +782,7 @@ static bool parse_enum(KVCParser *kvc, const char *name) {
 		if (enumstr) {
 			r_strbuf_appendf (enumstr, ",%s", mn);
 		} else {
-			enumstr = r_strbuf_new (en);
+			enumstr = r_strbuf_new (mn);
 		}
 		free (mn);
 		value++;
@@ -852,6 +878,7 @@ static bool parse_function(KVCParser *kvc) {
 #endif
 			char *an = kvctoken_tostring (arg_name);
 			char *at = kvctoken_tostring (arg_type);
+			massage_type (&at);
 			if (R_STR_ISEMPTY (at) && !strcmp (an, "void") && arg_idx == 0) {
 				// TODO: check if its the only arg
 				arg_idx--;

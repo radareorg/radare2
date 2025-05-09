@@ -19,9 +19,11 @@ struct.Bar.ptr=void *,8,0
 struct.Bar=name,ptr
 Enum=enum
 enum.Enum.@.type=ut64
-enum.Enum.FOO=1
+enum.Enum.FOO=0x1
+enum.Enum.0x1=FOO
 enum.Enum.BAR=2
 enum.Enum.COW=3
 enum.Enum.LOW=-1
-enum.Enum=Enum,BAR,COW,LOW
+enum.Enum.-1=LOW
+enum.Enum=FOO,BAR,COW,LOW
 
