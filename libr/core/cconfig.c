@@ -2131,12 +2131,18 @@ R_API bool r_core_esil_cmd(REsil *esil, const char *cmd, ut64 a1, ut64 a2) {
 }
 
 static bool cb_cmd_esil_ioer(void *user, void *data) {
-	RCore *core = (RCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RCore *core = user;
+	RConfigNode *node = data;
+#if USE_NEW_ESIL
+	if (core) {
+		free (core->esil.cmd_ioer);
+		core->esil.cmd_ioer = strdup (node->value);
+#else
 	if (core && core->anal && core->anal->esil) {
 		core->anal->esil->cmd = r_core_esil_cmd;
 		free (core->anal->esil->cmd_ioer);
 		core->anal->esil->cmd_ioer = strdup (node->value);
+#endif
 	}
 	return true;
 }
@@ -2164,12 +2170,18 @@ static bool cb_cmd_esil_intr(void *user, void *data) {
 }
 
 static bool cb_mdevrange(void *user, void *data) {
-	RCore *core = (RCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RCore *core = user;
+	RConfigNode *node = data;
+#if USE_NEW_ESIL
+	if (core) {
+		free (core->esil.mdev_range);
+		core->esil.mdev_range = strdup (node->value);
+#else
 	if (core && core->anal && core->anal->esil) {
 		core->anal->esil->cmd = r_core_esil_cmd;
 		free (core->anal->esil->mdev_range);
 		core->anal->esil->mdev_range = strdup (node->value);
+#endif
 	}
 	return true;
 }
@@ -2207,12 +2219,18 @@ static bool cb_cmd_esil_step_out(void *user, void *data) {
 }
 
 static bool cb_cmd_esil_mdev(void *user, void *data) {
-	RCore *core = (RCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RCore *core = user;
+	RConfigNode *node = data;
+#if USE_NEW_ESIL
+	if (core) {
+		free (core->esil.cmd_mdev);
+		core->esil.cmd_mdev = strdup (node->value);
+#else
 	if (core && core->anal && core->anal->esil) {
 		core->anal->esil->cmd = r_core_esil_cmd;
 		free (core->anal->esil->cmd_mdev);
 		core->anal->esil->cmd_mdev = strdup (node->value);
+#endif
 	}
 	return true;
 }
