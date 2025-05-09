@@ -487,51 +487,6 @@ static inline void *r_new_copy(int size, void *data) {
 #define eprintf(...) fprintf (stderr, __VA_ARGS__)
 #endif
 
-#ifndef R2_DEBUG_EPRINT
-#define R2_DEBUG_EPRINT 0
-#endif
-#if !R2_DEBUG_EPRINT
-#define EPRINT_STR
-#define EPRINT_CHAR
-#define EPRINT_INT
-#define EPRINT_BOOL
-#define EPRINT_PTR
-
-#define EPRINT_UT64
-#define EPRINT_ST64
-#define EPRINT_UT32
-#define EPRINT_ST32
-#define EPRINT_UT16
-#define EPRINT_ST16
-#define EPRINT_UT8
-#define EPRINT_ST8
-#else
-/* Pass R2_NO_EPRINT_MACROS=1 as an environment variable to disable these
- * macros at runtime. Used by r2r to prevent interference with tests. */
-#define EPRINT_VAR_WRAPPER(name, fmt, ...) {				\
-	char *eprint_env = r_sys_getenv ("R2_NO_EPRINT_MACROS");	\
-	if (!eprint_env || strcmp (eprint_env, "1")) {			\
-		eprintf (#name ": " fmt "\n", __VA_ARGS__);		\
-	}								\
-	free (eprint_env);						\
-}
-
-#define EPRINT_STR(x) EPRINT_VAR_WRAPPER (x, "\"%s\"", x)
-#define EPRINT_CHAR(x) EPRINT_VAR_WRAPPER (x, "'%c' (0x%x)", x, x)
-#define EPRINT_INT(x) EPRINT_VAR_WRAPPER (x, "%d (0x%x)", x, x)
-#define EPRINT_BOOL(x) EPRINT_VAR_WRAPPER (x, "%s", x? "true": "false")
-#define EPRINT_PTR(x) EPRINT_VAR_WRAPPER (x, "%p", x)
-
-#define EPRINT_UT64(x) EPRINT_VAR_WRAPPER (x, "%" PFMT64u " (0x%" PFMT64x ")", x, x)
-#define EPRINT_ST64(x) EPRINT_VAR_WRAPPER (x, "%" PFMT64d " (0x%" PFMT64x ")", x, x)
-#define EPRINT_UT32(x) EPRINT_VAR_WRAPPER (x, "%" PFMT32u " (0x%" PFMT32x ")", x, x)
-#define EPRINT_ST32(x) EPRINT_VAR_WRAPPER (x, "%" PFMT32d " (0x%" PFMT32x ")", x, x)
-#define EPRINT_UT16(x) EPRINT_VAR_WRAPPER (x, "%hu (0x%hx)", x, x)
-#define EPRINT_ST16(x) EPRINT_VAR_WRAPPER (x, "%hd (0x%hx)", x, x)
-#define EPRINT_UT8(x) EPRINT_VAR_WRAPPER (x, "%hhu (0x%hhx)", x, x)
-#define EPRINT_ST8(x) EPRINT_VAR_WRAPPER (x, "%hhd (0x%hhx)", x, x)
-#endif
-
 #if __APPLE__
 # if __i386__
 # define R_SYS_BASE ((ut64)0x1000)
