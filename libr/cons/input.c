@@ -47,7 +47,7 @@ static int parseMouseEvent(RCons *cons) {
 			ypos[i] = ch;
 		}
 		ypos[i] = 0;
-		r_cons_set_click (atoi (xpos), atoi (ypos));
+		r_kons_set_click (cons, atoi (xpos), atoi (ypos));
 		(void) r_cons_readchar (cons);
 		// ignored
 		int ch = r_cons_readchar (cons);
@@ -73,23 +73,22 @@ static void skipchars(RCons *cons, char ech, int nch) {
 }
 #endif
 
-R_API int r_cons_arrow_to_hjkl(int ch) {
-	RCons *cons = r_cons_singleton ();
+R_API int r_cons_arrow_to_hjkl(RCons *cons, int ch) {
 #if R2__WINDOWS__
-	if (I->vtmode != 2) {
-		if (I->is_arrow) {
+	if (cons->vtmode != 2) {
+		if (cons->is_arrow) {
 			switch (ch) {
 			case VK_DOWN: // key down
-				ch = I->bCtrl ? 'J' : 'j';
+				ch = cons->bCtrl ? 'J' : 'j';
 				break;
 			case VK_RIGHT: // key right
-				ch = I->bCtrl ? 'L' : 'l';
+				ch = cons->bCtrl ? 'L' : 'l';
 				break;
 			case VK_UP: // key up
-				ch = I->bCtrl ? 'K' : 'k';
+				ch = cons->bCtrl ? 'K' : 'k';
 				break;
 			case VK_LEFT: // key left
-				ch = I->bCtrl ? 'H' : 'h';
+				ch = cons->bCtrl ? 'H' : 'h';
 				break;
 			case VK_PRIOR: // key home
 				ch = 'K';
@@ -99,10 +98,10 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 				break;
 			}
 		}
-		return I->mouse_event && (ut8)ch == UT8_MAX ? 0 : ch;
+		return cons->mouse_event && (ut8)ch == UT8_MAX ? 0 : ch;
 	}
 #endif
-	I->mouse_event = 0;
+	cons->mouse_event = 0;
 	/* emacs */
 	switch ((ut8)ch) {
 	case 0xc3: r_cons_readchar (cons); ch = 'K'; break; // emacs repag (alt + v)
@@ -128,7 +127,7 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 #if defined(__HAIKU__)
 		/* Haiku't don use the '[' char for function keys */
 		if (ch > 'O') {/* only in f1..f12 function keys */
-			ch = 0xf1 + (ch&0xf);
+			ch = 0xf1 + (ch & 0xf);
 			break;
 		}
 	case '[': // 0x5b function keys (2)
@@ -202,7 +201,7 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 				pos[p++] = 0;
 				y = atoi (pos);
 				if (ch == 'm') { // mouse up only
-					r_cons_set_click (x, y);
+					r_kons_set_click (cons, x, y);
 				}
 			}
 			return 0;
@@ -423,11 +422,11 @@ static inline void resizeWin(void) {
 }
 
 #if R2__WINDOWS__
-static int __cons_readchar_w32(ut32 usec) {
+static int __cons_readchar_w32(RCons *cons, ut32 usec) {
 	int ch = 0;
 	BOOL ret;
-	I->bCtrl = false;
-	I->is_arrow = false;
+	cons->bCtrl = false;
+	cons->is_arrow = false;
 	DWORD mode, out;
 	HANDLE h;
 	INPUT_RECORD irInBuf = {0};
@@ -435,11 +434,11 @@ static int __cons_readchar_w32(ut32 usec) {
 	bool mouse_enabled = I->mouse;
 	bool click_n_drag = false;
 	void *bed;
-	I->mouse_event = 0;
+	cons->mouse_event = 0;
 	h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &mode);
 	DWORD newmode = ENABLE_WINDOW_INPUT;
-	if (I->vtmode == 2) {
+	if (cons->vtmode == 2) {
 		newmode |= ENABLE_VIRTUAL_TERMINAL_INPUT;
 	}
 	newmode |= mode;
@@ -488,14 +487,14 @@ static int __cons_readchar_w32(ut32 usec) {
 				case FROM_LEFT_1ST_BUTTON_PRESSED:
 					GetConsoleScreenBufferInfo (GetStdHandle (STD_OUTPUT_HANDLE), &info);
 					int rel_y = irInBuf.Event.MouseEvent.dwMousePosition.Y - info.srWindow.Top;
-					r_cons_set_click (irInBuf.Event.MouseEvent.dwMousePosition.X + 1, rel_y + 1);
+					r_kons_set_click (cons, irInBuf.Event.MouseEvent.dwMousePosition.X + 1, rel_y + 1);
 					ch = UT8_MAX;
 					break;
 				} // TODO: Handle more buttons?
 			}
 
 			if (click_n_drag) {
-				r_cons_set_click (irInBuf.Event.MouseEvent.dwMousePosition.X + 1, irInBuf.Event.MouseEvent.dwMousePosition.Y + 1);
+				r_kons_set_click (cons, irInBuf.Event.MouseEvent.dwMousePosition.X + 1, irInBuf.Event.MouseEvent.dwMousePosition.Y + 1);
 				ch = UT8_MAX;
 			}
 
@@ -564,7 +563,7 @@ static int __cons_readchar_w32(ut32 usec) {
 				resizeWin ();
 			}
 		}
-		if (I->vtmode != 2 && !I->term_xterm) {
+		if (cons->vtmode != 2 && !cons->term_xterm) {
 			FlushConsoleInputBuffer (h);
 		}
 	} while (ch == 0);
@@ -573,7 +572,7 @@ static int __cons_readchar_w32(ut32 usec) {
 }
 #endif
 
-R_API int r_cons_readchar_timeout(ut32 msec) {
+R_API int r_cons_readchar_timeout(RCons *cons, ut32 msec) {
 #if R2__UNIX__
 	struct timeval tv;
 	fd_set fdset, errset;
@@ -584,7 +583,6 @@ R_API int r_cons_readchar_timeout(ut32 msec) {
 	tv.tv_sec = secs;
 	ut32 usec = (msec - secs) * 1000;
 	tv.tv_usec = usec;
-	RCons * cons = r_cons_singleton ();
 	r_kons_set_raw (cons, true);
 	if (select (1, &fdset, NULL, &errset, &tv) == 1) {
 		return r_cons_readchar (cons);
@@ -636,9 +634,9 @@ R_API int r_cons_readchar(RCons *cons) {
 		memmove (input_state->readbuffer, input_state->readbuffer + 1, input_state->readbuffer_length);
 		return ch;
 	}
-	r_cons_set_raw (true);
+	r_kons_set_raw (cons, true);
 #if R2__WINDOWS__
-	return __cons_readchar_w32 (0);
+	return __cons_readchar_w32 (cons, 0);
 #elif __wasi__
 	void *bed = r_cons_sleep_begin ();
 	int ret = read (STDIN_FILENO, buf, 1);

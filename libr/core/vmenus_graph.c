@@ -285,7 +285,7 @@ R_API int r_core_visual_view_graph(RCore *core) {
 		if (ch == -1 || ch == 4) {
 			return true;
 		}
-		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
+		ch = r_cons_arrow_to_hjkl (core->cons, ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case 'h':
 			if (!r_list_empty (status.xrefsCol)) {

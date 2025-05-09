@@ -431,7 +431,7 @@ static int readchar_utf8(RCons *cons, ut8 *s, int slen) {
 	}
 	int ch = -1;
 	if (I.demo) {
-		ch = r_cons_readchar_timeout (80);
+		ch = r_cons_readchar_timeout (cons, 80);
 	} else {
 		ch = r_cons_readchar (cons);
 	}
@@ -1617,7 +1617,7 @@ static bool __vi_mode(RCons *cons) {
 		case '\n':
 			return true;
 		default:					// escape key
-			ch = tolower (r_cons_arrow_to_hjkl (ch));
+			ch = tolower (r_cons_arrow_to_hjkl (cons, ch));
 			switch (ch) {
 			case 'k': // up
 				I.history.do_setup_match = o_do_setup_match;
@@ -1969,7 +1969,7 @@ repeat:
 			// always skip escape
 			memmove (buf, buf + 1, strlen ((char *) buf));
 #else
-			buf[0] = r_cons_readchar_timeout (50);
+			buf[0] = r_cons_readchar_timeout (cons, 50);
 #endif
 			switch (buf[0]) {
 			case 127: // alt+bkspace
@@ -2029,14 +2029,14 @@ repeat:
 			default:;
 #if !R2__WINDOWS__
 				if (I.vtmode == 2) {
-					buf[1] = r_cons_readchar_timeout (50);
+					buf[1] = r_cons_readchar_timeout (cons, 50);
 					if (buf[1] == -1) { // alt+e
 						r_cons_break_pop ();
 						__print_prompt ();
 						continue;
 					}
 				} else {
-					buf[1] = r_cons_readchar_timeout (50);
+					buf[1] = r_cons_readchar_timeout (cons, 50);
 				}
 #endif
 				if (buf[0] == 'O' && strchr("ABCDFH", buf[1]) != NULL) { // O

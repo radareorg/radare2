@@ -80,7 +80,7 @@ R_API int r_cons_less_str(RCons *cons, const char *str, const char *exitkeys) {
 			free (lines);
 			return ch;
 		}
-		ch = r_cons_arrow_to_hjkl (ch);
+		ch = r_cons_arrow_to_hjkl (cons, ch);
 		switch (ch) {
 		case '_':
 			r_cons_hud_string (cons, ostr);

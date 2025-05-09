@@ -29,9 +29,9 @@ static int win_xterm_get_cur_pos(RCons *cons, int *xpos) {
 	bool is_reply;
 	do {
 		is_reply = true;
-		ch = r_cons_readchar ();
+		ch = r_cons_readchar (cons);
 		if (ch != 0x1b) {
-			while ((ch = r_cons_readchar_timeout (25))) {
+			while ((ch = r_cons_readchar_timeout (cons, 25))) {
 				if (ch < 1) {
 					return 0;
 				}
@@ -40,9 +40,9 @@ static int win_xterm_get_cur_pos(RCons *cons, int *xpos) {
 				}
 			}
 		}
-		(void)r_cons_readchar ();
+		(void)r_cons_readchar (cons);
 		for (i = 0; i < R_ARRAY_SIZE (pos) - 1; i++) {
-			ch = r_cons_readchar ();
+			ch = r_cons_readchar (cons);
 			if ((!i && !isdigit (ch)) || // dumps arrow keys etc.
 			    (i == 1 && ch == '~')) {  // dumps PgUp, PgDn etc.
 				is_reply = false;
@@ -58,7 +58,7 @@ static int win_xterm_get_cur_pos(RCons *cons, int *xpos) {
 	pos[R_ARRAY_SIZE (pos) - 1] = 0;
 	ypos = atoi (pos);
 	for (i = 0; i < R_ARRAY_SIZE (pos) - 1; i++) {
-		if ((ch = r_cons_readchar ()) == 'R') {
+		if ((ch = r_cons_readchar (cons)) == 'R') {
 			pos[i] = 0;
 			break;
 		}
@@ -1814,3 +1814,11 @@ R_API void r_kons_cmd_help(RCons *cons, RCoreHelpMessage help, bool use_color) {
 		}
 	}
 }
+
+R_API void r_kons_set_click(RCons *cons, int x, int y) {
+	cons->click_x = x;
+	cons->click_y = y;
+	cons->click_set = true;
+	cons->mouse_event = 1;
+}
+

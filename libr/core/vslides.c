@@ -189,7 +189,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 		r_cons_flush ();
 		r_cons_set_raw (true);
 		ch = r_cons_readchar (core->cons);
-		ch = r_cons_arrow_to_hjkl (ch);
+		ch = r_cons_arrow_to_hjkl (core->cons, ch);
 		switch (ch) {
 		case 'j':
 			sy++;

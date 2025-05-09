@@ -1642,7 +1642,7 @@ repeat:
 	r_kons_enable_mouse (core->cons, r_config_get_i (core->config, "scr.wheel"));
 	r_kons_set_raw (core->cons, true);
 	ch = r_cons_readchar (core->cons);
-	ch = r_cons_arrow_to_hjkl (ch);
+	ch = r_cons_arrow_to_hjkl (core->cons, ch);
 	switch (ch) {
 	case ':':
 		r_core_visual_prompt_input (core);
@@ -1866,7 +1866,7 @@ static void visual_textlogs(RCore *core) {
 		}
 		r_cons_visual_flush ();
 		char ch = (ut8)r_cons_readchar (core->cons);
-		ch = r_cons_arrow_to_hjkl (ch);
+		ch = r_cons_arrow_to_hjkl (core->cons, ch);
 		if (showhelp) {
 			showhelp = false;
 			continue;
@@ -2455,7 +2455,7 @@ static bool insert_mode_enabled(RCore *core) {
 		}
 		return true;
 	}
-	char arrows = r_cons_arrow_to_hjkl (ch);
+	char arrows = r_cons_arrow_to_hjkl (core->cons, ch);
 	switch (ch) {
 	case ':':
 		if (core->print->col != 2) {
@@ -2627,7 +2627,7 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 		} else {
 			ch = r_cons_readchar (core->cons);
 		}
-		ch = r_cons_arrow_to_hjkl (ch);
+		ch = r_cons_arrow_to_hjkl (core->cons, ch);
 		switch (ch) {
 		case '1':
 			r_core_visual_bit_editor (core);
@@ -2873,7 +2873,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		r_cons_readchar (core->cons);
 		ch = 'q';
 	}
-	ch = r_cons_arrow_to_hjkl (ch);
+	ch = r_cons_arrow_to_hjkl (core->cons, ch);
 	ch = visual_nkey (core, ch);
 	if (ch < 2) {
 		ch = process_get_click (core, ch);
@@ -4936,7 +4936,7 @@ dodo:
 		}
 		if (!skip) {
 			if (core->visual.snowMode) {
-				ch = r_cons_readchar_timeout (300);
+				ch = r_cons_readchar_timeout (core->cons, 300);
 				if (ch == -1) {
 					skip = 1;
 					continue;

@@ -324,7 +324,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 		if (ch == -1 || ch == 4) {
 			break;
 		}
-		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
+		ch = r_cons_arrow_to_hjkl (core->cons, ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case 'Q':
 		case 'q':
@@ -684,7 +684,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			break;
 		}
 		if (ch != 10) {
-			ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
+			ch = r_cons_arrow_to_hjkl (core->cons, ch); // get ESC+char, return 'hjkl' char
 		}
 		// input
 		r_cons_newline ();
@@ -1075,7 +1075,7 @@ R_API int r_core_visual_types(RCore *core) {
 		if (ch == -1 || ch == 4) {
 			return false;
 		}
-		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
+		ch = r_cons_arrow_to_hjkl (core->cons, ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case 'h':
 			h_opt--;
@@ -1604,7 +1604,7 @@ R_API int r_core_visual_classes(RCore *core) {
 			continue;
 		}
 
-		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
+		ch = r_cons_arrow_to_hjkl (core->cons, ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case 'C':
 			r_config_toggle (core->config, "scr.color");
@@ -1849,7 +1849,7 @@ R_API int r_core_visual_anal_classes(RCore *core) {
 			goto cleanup;
 		}
 
-		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
+		ch = r_cons_arrow_to_hjkl (core->cons, ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case 'C':
 			r_config_toggle (core->config, "scr.color");
@@ -2070,7 +2070,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 			return false;
 		}
 #define NEWTYPE(x,y) r_mem_dup (&(y), sizeof (x));
-		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
+		ch = r_cons_arrow_to_hjkl (core->cons, ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case 127:
 			free (r_list_pop (core->ropchain));
@@ -2350,7 +2350,7 @@ R_API int r_core_visual_trackflags(RCore *core) { // "vbf"
 		if (ch == -1 || ch == 4) {
 			return false;
 		}
-		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
+		ch = r_cons_arrow_to_hjkl (core->cons, ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case 'C':
 			r_config_toggle (core->config, "scr.color");
@@ -2590,7 +2590,7 @@ R_API int r_core_visual_comments(RCore *core) {
 		}
 		r_cons_visual_flush ();
 		ch = r_cons_readchar (core->cons);
-		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
+		ch = r_cons_arrow_to_hjkl (core->cons, ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case 'a':
 			// TODO
@@ -2891,7 +2891,7 @@ R_API void r_core_visual_config(RCore *core) {
 		if (ch == 4 || ch == -1) {
 			return;
 		}
-		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
+		ch = r_cons_arrow_to_hjkl (core->cons, ch); // get ESC+char, return 'hjkl' char
 
 		switch (ch) {
 		case 'd':
@@ -3082,15 +3082,15 @@ R_API void r_core_visual_mounts(RCore *core) {
 			list = NULL;
 			*str='\0';
 		}
-		r_cons_flush ();
+		r_kons_flush (core->cons);
 
 		/* Ask for option */
 		ch = r_cons_readchar (core->cons);
-		if (ch==-1||ch==4) {
+		if (ch == -1 || ch == 4) {
 			free (root);
 			return;
 		}
-		ch = r_cons_arrow_to_hjkl (ch);
+		ch = r_cons_arrow_to_hjkl (core->cons, ch);
 		switch (ch) {
 			case '/':
 				R_FREE (root);
@@ -3706,7 +3706,7 @@ R_API void r_core_visual_debugtraces(RCore *core, const char *input) {
 			level--;
 			continue;
 		}
-		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
+		ch = r_cons_arrow_to_hjkl (core->cons, ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case 'Q': // tab
 			{
@@ -3812,7 +3812,7 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			level--;
 			continue;
 		}
-		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
+		ch = r_cons_arrow_to_hjkl (core->cons, ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case '[':
 			coldelta--;
@@ -4315,7 +4315,7 @@ repeat:
 		ch = *args;
 		args++;
 	} else {
-		ch = r_cons_arrow_to_hjkl (r_cons_readchar (core->cons));
+		ch = r_cons_arrow_to_hjkl (core->cons, r_cons_readchar (core->cons));
 	}
 
 onemoretime:
@@ -4844,7 +4844,7 @@ R_API void r_core_visual_colors(RCore *core) {
 		}
 		r_kons_flush (cons);
 		ch = r_cons_readchar (core->cons);
-		ch = r_cons_arrow_to_hjkl (ch);
+		ch = r_cons_arrow_to_hjkl (core->cons, ch);
 		switch (ch) {
 #define CASE_RGB(x,X,y) \
 	case x:if ((y) > 0x00) { (y)--; } break;\

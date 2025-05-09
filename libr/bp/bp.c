@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2024 - pancake */
+/* radare2 - LGPL - Copyright 2009-2025 - pancake */
 
 #include <r_bp.h>
 #include <config.h>
@@ -24,9 +24,6 @@ R_API RBreakpoint *r_bp_new(void) {
 	int i;
 	RBreakpointPlugin *static_plugin;
 	RBreakpoint *bp = R_NEW0 (RBreakpoint);
-	if (!bp) {
-		return NULL;
-	}
 	bp->bps_idx_count = 16;
 	bp->bps_idx = R_NEWS0 (RBreakpointItem*, bp->bps_idx_count);
 	bp->stepcont = R_BP_CONT_NORMAL;

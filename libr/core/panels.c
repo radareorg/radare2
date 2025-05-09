@@ -4215,7 +4215,7 @@ static void __create_modal(RCore *core, RPanel *panel, Sdb *menu_db) {
 	while (modal) {
 		r_cons_set_raw (true);
 		okey = r_cons_readchar (core->cons);
-		key = r_cons_arrow_to_hjkl (okey);
+		key = r_cons_arrow_to_hjkl (core->cons, okey);
 		word = NULL;
 		if (key == INT8_MAX - 1) {
 			if (r_cons_get_click (&cx, &cy)) {
@@ -4539,7 +4539,7 @@ static void __move_panel_to_dir(RCore *core, RPanel *panel, int src) {
 	RPanels *panels = core->panels;
 	__dismantle_panel (panels, panel);
 	int key = __show_status (core, "Move the current panel to direction (h/j/k/l): ");
-	key = r_cons_arrow_to_hjkl (key);
+	key = r_cons_arrow_to_hjkl (core->cons, key);
 	__set_refresh_all (core, false, true);
 	switch (key) {
 	case 'h':
@@ -6840,7 +6840,7 @@ repeat:
 			__reset_snow (panels);
 			goto repeat;
 		}
-		okey = r_cons_readchar_timeout (300);
+		okey = r_cons_readchar_timeout (core->cons, 300);
 		if (okey == -1) {
 			cur->view->refresh = true;
 			goto repeat;
@@ -6849,7 +6849,7 @@ repeat:
 		okey = r_cons_readchar (core->cons);
 	}
 
-	key = r_cons_arrow_to_hjkl (okey);
+	key = r_cons_arrow_to_hjkl (core->cons, okey);
 virtualmouse:
 	if (__handle_mouse (core, cur, &key)) {
 		if (panels_root->root_state != DEFAULT) {

@@ -4560,7 +4560,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 		// r_core_graph_inputhandle()
 		r_cons_set_raw (true);
 		okey = r_cons_readchar (core->cons);
-		key = r_cons_arrow_to_hjkl (okey);
+		key = r_cons_arrow_to_hjkl (core->cons, okey);
 
 		if (core->cons->mouse_event) {
 			movspeed = r_config_get_i (core->config, "scr.wheel.speed");

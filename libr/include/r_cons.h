@@ -833,6 +833,7 @@ R_API char *r_cons_lastline(int *size);
 R_API char *r_cons_lastline_utf8_ansi_len(int *len);
 R_API void r_cons_set_click(int x, int y);
 R_API bool r_cons_get_click(int *x, int *y);
+R_API void r_kons_set_click(RCons *cons, int x, int y);
 
 typedef void (*RConsBreak)(void *);
 R_API bool r_cons_is_initialized(void);
@@ -969,7 +970,7 @@ R_API int r_cons_readchar(RCons *cons);
 R_API bool r_cons_readpush(const char *str, int len);
 R_API void r_cons_readflush(void);
 R_API void r_cons_switchbuf(bool active);
-R_API int r_cons_readchar_timeout(ut32 usec);
+R_API int r_cons_readchar_timeout(RCons *cons, ut32 usec);
 R_API int r_cons_any_key(const char *msg);
 R_API void r_cons_thready(void);
 
@@ -992,7 +993,7 @@ R_API void r_cons_pal_show(RCons *cons);
 R_API int r_cons_get_size(int *rows);
 R_API bool r_cons_is_tty(void);
 R_API int r_cons_get_cursor(int *rows);
-R_API int r_cons_arrow_to_hjkl(int ch);
+R_API int r_cons_arrow_to_hjkl(RCons *cons, int ch);
 R_API char *r_cons_html_filter(const char *ptr, int *newlen);
 R_API char *r_cons_rainbow_get(RCons *cons, int idx, int last, bool bg);
 R_API void r_cons_rainbow_free(RCons *ctx);
