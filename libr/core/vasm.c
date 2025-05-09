@@ -119,7 +119,7 @@ R_API void r_core_visual_asm(RCore *core, ut64 off) {
 		if (r_cons_yesno ('y', "Save changes? (Y/n)")) {
 			if (!r_io_write_at (core->io, off, cva.acode->bytes, cva.acode->len)) {
 				R_LOG_ERROR ("Cannot write in here, check map permissions or reopen the file with oo+");
-				r_cons_any_key (NULL);
+				r_cons_any_key (core->cons, NULL);
 			}
 		}
 	}

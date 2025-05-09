@@ -969,7 +969,7 @@ R_API bool r_cons_readpush(const char *str, int len);
 R_API void r_cons_readflush(void);
 R_API void r_cons_switchbuf(bool active);
 R_API int r_cons_readchar_timeout(RCons *cons, ut32 usec);
-R_API int r_cons_any_key(const char *msg);
+R_API int r_cons_any_key(RCons *cons, const char *msg);
 R_API void r_cons_thready(void);
 
 R_API int r_cons_palette_init(const unsigned char *pal);
@@ -1034,7 +1034,7 @@ R_API char *r_cons_password(const char *msg);
 R_API bool r_cons_set_cup(bool enable);
 R_API void r_cons_column(int c);
 R_API int r_cons_get_column(void);
-R_API char *r_cons_message(const char *msg);
+R_API char *r_cons_message(RCons *cons, const char *msg);
 R_API void r_cons_set_title(const char *str);
 R_API bool r_kons_enable_mouse(RCons *cons, const bool enable);
 R_API void r_cons_enable_highlight(const bool enable);

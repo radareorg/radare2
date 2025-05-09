@@ -398,13 +398,12 @@ beach:
 	return ret;
 }
 
-R_API int r_cons_any_key(const char *msg) {
+R_API int r_cons_any_key(RCons *cons, const char *msg) {
 	if (R_STR_ISNOTEMPTY (msg)) {
 		r_cons_printf ("\n-- %s --\n", msg);
 	} else {
 		r_cons_print ("\n--press any key--\n");
 	}
-	RCons *cons = r_cons_singleton ();
 	r_kons_flush (cons);
 	return r_cons_readchar (cons);
 }

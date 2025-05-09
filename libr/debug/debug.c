@@ -1595,8 +1595,9 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 	}
 	for (;;) {
 		RDebugReasonType reason;
+		RCore *core = (RCore *)dbg->coreb.core;
 
-		if (r_cons_singleton ()->context->breaked) {
+		if (core->cons->context->breaked) {
 			break;
 		}
 #if __linux__
