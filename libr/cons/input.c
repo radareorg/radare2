@@ -422,7 +422,7 @@ static inline void resizeWin(void) {
 }
 
 #if R2__WINDOWS__
-static int __cons_readchar_w32(RCons *cons, ut32 usec) {
+static int readchar_w32(RCons *cons, ut32 usec) {
 	int ch = 0;
 	BOOL ret;
 	cons->bCtrl = false;
@@ -591,7 +591,7 @@ R_API int r_cons_readchar_timeout(RCons *cons, ut32 msec) {
 	// timeout
 	return -1;
 #else
-	return  __cons_readchar_w32 (msec);
+	return  readchar_w32 (cons, msec);
 #endif
 }
 
@@ -636,7 +636,7 @@ R_API int r_cons_readchar(RCons *cons) {
 	}
 	r_kons_set_raw (cons, true);
 #if R2__WINDOWS__
-	return __cons_readchar_w32 (cons, 0);
+	return readchar_w32 (cons, 0);
 #elif __wasi__
 	void *bed = r_cons_sleep_begin ();
 	int ret = read (STDIN_FILENO, buf, 1);
