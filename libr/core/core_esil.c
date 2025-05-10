@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2024 - condret */
+/* radare - LGPL - Copyright 2024 - 2025 - condret */
 
 #define R_LOG_ORIGIN "core.esil"
 #include <r_core.h>
@@ -57,8 +57,9 @@ static ut32 core_esil_reg_size (void *core, const char *name) {
 	if (!ri) {
 		return 0;
 	}
+	const ut32 size = ri->size;
 	r_unref (ri);
-	return ri->size;
+	return size;
 }
 
 static REsilRegInterface core_esil_reg_if = {
@@ -84,6 +85,11 @@ static bool core_esil_mem_read (void *core, ut64 addr, ut8 *buf, int len) {
 	if (!addr && c->esil.cfg & R_CORE_ESIL_NONULL) {
 		return false;
 	}
+	
+	if (c->esil.cmd_mdev && c->esil.mdev_range && r_str_range_in (c->esil.mdev_range, addr)) {
+		r_core_cmdf (c, "%s %"PFMT64d" 0", c->esil.cmd_mdev, c->esil.old_pc);
+		return c->num->value;
+	}
 	return r_io_read_at (c->io, addr, buf, len);
 }
 
@@ -98,6 +104,10 @@ static bool core_esil_mem_write (void *core, ut64 addr, const ut8 *buf, int len)
 	RCore *c = core;
 	if (!addr && c->esil.cfg & R_CORE_ESIL_NONULL) {
 		return false;
+	}
+	if (c->esil.cmd_mdev && c->esil.mdev_range && r_str_range_in (c->esil.mdev_range, addr)) {
+		r_core_cmdf (c, "%s %"PFMT64d" 1", c->esil.cmd_mdev, c->esil.old_pc);
+		return c->num->value;
 	}
 	if (c->esil.cfg & R_CORE_ESIL_RO) {
 		RIORegion region;
@@ -223,6 +233,7 @@ R_API void r_core_esil_single_step(RCore *core) {
 		R_LOG_ERROR ("Couldn't read from PC register");
 		return;
 	}
+	ut32 trap_code = R_ANAL_TRAP_READ_ERR;
 	//check if pc is in mapped rx area,
 	//or in case io is pa
 	//check if pc is within desc and desc is at least readable
@@ -234,6 +245,7 @@ R_API void r_core_esil_single_step(RCore *core) {
 		(!core->io->va && !(region.perm & R_PERM_R))) {
 		goto trap;
 	}
+	trap_code = R_ANAL_TRAP_NONE;
 	int max_opsize = R_MIN (64,
 		r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE));
 	if (R_UNLIKELY (max_opsize < 1)) {
@@ -286,25 +298,36 @@ R_API void r_core_esil_single_step(RCore *core) {
 			"0x%"PFMT64x",%s,:=", pc, pc_name);
 	} else {
 		core->esil.cfg &= ~R_CORE_ESIL_TRAP_REVERT;
-		core->esil.old_pc = pc;
 	}
+	core->esil.old_pc = pc;
 	pc += op.size;
 	char *expr = r_strbuf_drain_nofree (&op.esil);
-	r_anal_op_fini (&op);
 	r_esil_reg_write_silent (&core->esil.esil, pc_name, pc);
+	r_anal_op_fini (&op);
+	if (core->esil.cmd_step) {
+		r_core_cmdf (core, "%s %"PFMT64d" 0", core->esil.cmd_step, core->esil.old_pc);
+		if (core->num->value) {
+			free (expr);
+			goto skip;
+		}
+	}
 	const bool suc = r_esil_parse (&core->esil.esil, expr);
 	free (expr);
 	if (suc) {
+skip:
 		if (core->esil.cfg & R_CORE_ESIL_TRAP_REVERT) {
 			r_strbuf_fini (&core->esil.trap_revert);
 		}
+		if (core->esil.cmd_step_out) {
+			r_core_cmdf (core, "%s %"PFMT64d" 0", core->esil.cmd_step_out, core->esil.old_pc);
+		}
 		return;
 	}
+	trap_code = core->esil.esil.trap_code;
 	if (core->esil.cfg & R_CORE_ESIL_TRAP_REVERT) {
 		//disable trap_revert voyeurs
 		core->esil.cfg &= ~R_CORE_ESIL_TRAP_REVERT;
 		char *expr = r_strbuf_drain_nofree (&core->esil.trap_revert);
-		//TODO: check trap codes here
 		//revert all changes
 		r_esil_parse (&core->esil.esil, expr);
 		free (expr);
@@ -312,13 +335,21 @@ R_API void r_core_esil_single_step(RCore *core) {
 	}
 	//restore pc
 	r_esil_reg_write_silent (&core->esil.esil, pc_name, core->esil.old_pc);
-	//TODO: check trap codes here
 	goto trap;
 op_trap:
 	r_anal_op_fini (&op);
 trap:
 	if (core->esil.cmd_trap) {
 		r_core_cmd0 (core, core->esil.cmd_trap);
+	}
+	switch (trap_code) {
+	case R_ANAL_TRAP_WRITE_ERR:
+	case R_ANAL_TRAP_READ_ERR:
+		if (core->esil.cmd_ioer) {
+			r_core_cmdf (core, "%s %"PFMT64d" 0", core->esil.cmd_ioer,
+				core->esil.old_pc);
+		}
+		break;
 	}
 	return;
 }

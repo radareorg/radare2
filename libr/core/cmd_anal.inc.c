@@ -2417,6 +2417,28 @@ R_API char *cmd_syscall_dostr(RCore *core, st64 n, ut64 addr) {
 	r_syscall_item_free (item);
 	return r_str_append (res, ")");
 }
+#if USE_NEW_ESIL
+static bool mw(int *ec, ut64 addr, const ut8 *old, const ut8 *buf, int len) {
+	*ec += (len * 2);
+	return true;
+}
+
+#if 0
+static bool rw(void *null, const char *regname, ut64 old, ut64 num) {
+	return true;
+}
+
+static bool rr(void *null, const char *regname, ut64 num) {
+	return true;
+}
+#endif
+
+static bool mr(int *ec, ut64 addr, const ut8 *buf, int len) {
+	*ec += len;
+	return true;
+}
+
+#else
 
 static bool mw(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	int *ec = (int*)esil->user;
@@ -2437,12 +2459,24 @@ static bool mr(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	*ec += len;
 	return true;
 }
+#endif
 
 static int esil_cost(RCore *core, ut64 addr, const char *expr) {
 	if (R_STR_ISEMPTY (expr)) {
 		return 0;
 	}
 	int ec = 0;
+#if USE_NEW_ESIL
+	REsil *e = r_esil_new_simple (0, core->anal->reg, &core->anal->iob);
+	e->anal = core->anal;	//XXX
+	//preserve regs? enforce ro mem access?
+	r_esil_add_voyeur (e, &ec, mr, R_ESIL_VOYEUR_MEM_READ);
+	r_esil_add_voyeur (e, &ec, mw, R_ESIL_VOYEUR_MEM_WRITE);
+#if 0
+	r_esil_add_voyeur (e, NULL, rr, R_ESIL_VOYEUR_REG_READ);
+	r_esil_add_voyeur (e, NULL, rw, R_ESIL_VOYEUR_REG_WRITE);
+#endif
+#else
 	REsil *e = r_esil_new (256, 0, 0);
 	r_esil_setup (e, core->anal, false, false, false);
 	e->user = &ec;
@@ -2450,6 +2484,7 @@ static int esil_cost(RCore *core, ut64 addr, const char *expr) {
 	e->cb.mem_write = mw;
 	e->cb.reg_write = rw;
 	e->cb.reg_read = rr;
+#endif
 	r_esil_parse (e, expr);
 	r_esil_free (e);
 	return ec;
@@ -2511,22 +2546,36 @@ static void val_tojson(PJ *pj, RAnalValue *val) {
 	pj_end (pj);
 }
 
-
+#if USE_NEW_ESIL
+static bool mw2(void *null, ut64 addr, const ut8 *old, const ut8 *buf, int len) {
+#else
 static bool mw2(REsil *esil, ut64 addr, const ut8 *buf, int len) {
+#endif
 	r_cons_printf ("WRITE 0x%08"PFMT64x" %d\n", addr, len);
 	return true;
 }
 
+#if USE_NEW_ESIL
+static bool mr2(void *null, ut64 addr, const ut8 *buf, int len) {
+#else
 static bool mr2(REsil *esil, ut64 addr, ut8 *buf, int len) {
+#endif
 	r_cons_printf ("READ 0x%08"PFMT64x" %d\n", addr, len);
 	return true;
 }
 
 static void esilmemrefs(RCore *core, const char *expr) {
+#if USE_NEW_ESIL
+	REsil *e = r_esil_new_simple (0, core->anal->reg, &core->anal->iob);
+	r_esil_add_voyeur (e, NULL, mw2, R_ESIL_VOYEUR_MEM_WRITE);
+	r_esil_add_voyeur (e, NULL, mr2, R_ESIL_VOYEUR_MEM_READ);
+	e->anal = core->anal;	//XXX
+#else
 	REsil *e = r_esil_new (256, 0, 0);
 	r_esil_setup (e, core->anal, false, false, false);
 	e->cb.mem_read = mr2;
 	e->cb.mem_write = mw2;
+#endif
 	r_esil_parse (e, expr);
 	r_esil_free (e);
 }
@@ -2544,20 +2593,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	ut64 addr;
 	PJ *pj = NULL;
 	int totalsize = 0;
-#if 1
-	REsil *esil = r_esil_new (256, 0, 0);
-	r_esil_setup (esil, core->anal, false, false, false);
-	esil->user = &core;
-	esil->cb.mem_read = mr;
-	esil->cb.mem_write = mw;
-#else
-	REsil *esil = core->anal->esil;
-	//esil->user = &ec;
-	esil->cb.mem_read = mr;
-	esil->cb.mem_write = mw;
-#endif
 
-	// Variables required for setting up ESIL to REIL conversion
 	if (use_color) {
 		color = core->cons->context->pal.label;
 	}
@@ -3032,7 +3068,6 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		r_cons_println (pj_string (pj));
 		pj_free (pj);
 	}
-	r_esil_free (esil);
 }
 
 static int bb_cmp(const void *a, const void *b) {
@@ -8320,6 +8355,7 @@ static void cmd_debug_stack_init(RCore *core, int argc, char **argv, char **envp
 }
 
 R_IPI void cmd_aei(RCore *core) {
+//TODO use core_esil here
 	REsil *esil = esil_new_setup (core);
 	if (esil) {
 		r_esil_free (core->anal->esil);
