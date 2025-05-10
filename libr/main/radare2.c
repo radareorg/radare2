@@ -1248,7 +1248,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 	char *history_file = r_xdg_cachedir ("history");
 	if (history_file) {
-		r_line_hist_load (history_file);
+		r_line_hist_load (r->cons->line, history_file);
 		free (history_file);
 	}
 
@@ -1958,7 +1958,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	if (mustSaveHistory (r->config)) {
 		char *history_file = r_xdg_cachedir ("history");
 		if (history_file) {
-			r_line_hist_save (history_file);
+			r_line_hist_save (r->cons->line, history_file);
 			free (history_file);
 		}
 	}

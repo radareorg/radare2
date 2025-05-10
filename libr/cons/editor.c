@@ -19,7 +19,7 @@ static void r_cons_editor_init(void) {
 
 static void setprompt(RCons *cons) {
 	snprintf (G.prompt, sizeof (G.prompt), "(%d/%d): ", G.n, r_list_length (G.lines));
-	r_line_set_prompt (cons, G.prompt);
+	r_line_set_prompt (cons->line, G.prompt);
 }
 
 static void setcurline(RCons *cons) {
@@ -84,8 +84,8 @@ static int down(RCons *cons, void *n) {
 
 R_API char *r_cons_editor(RCons *cons, const char *file, const char *str) {
 	// bool visual = false; // TODO: should be an argument
-	if (cons->line->cb_editor) {
-		return cons->line->cb_editor (cons->line->user, file, str);
+	if (cons->cb_editor) {
+		return cons->cb_editor (cons->line->user, file, str);
 	}
 	r_cons_editor_init ();
 	if (R_STR_ISNOTEMPTY (file)) {

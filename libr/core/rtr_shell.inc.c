@@ -78,9 +78,9 @@ TODO:
 #endif
 					char buf[1024];
 					if (COLORFLAGS) {
-						r_line_set_prompt (core->cons, Color_RESET":> ");
+						r_line_set_prompt (core->cons->line, Color_RESET":> ");
 					} else {
-						r_line_set_prompt (core->cons, ":> ");
+						r_line_set_prompt (core->cons->line, ":> ");
 					}
 					showcursor (core, true);
 					r_cons_fgets (core->cons, buf + 3, sizeof (buf) - 3, 0, NULL);
@@ -112,20 +112,20 @@ TODO:
 					do {
 						char buf[1024];
 #if R2__UNIX__
-						r_line_set_prompt (core->cons, Color_RESET":> ");
+						r_line_set_prompt (core->cons->line, Color_RESET":> ");
 #else
-						r_line_set_prompt (core->cons, ":> ");
+						r_line_set_prompt (core->cons->line, ":> ");
 #endif
 						showcursor (core, true);
 						r_cons_fgets (core->cons, buf, sizeof (buf), 0, NULL);
 						if (*buf) {
-							r_line_hist_add (buf);
+							r_line_hist_add (core->cons->line, buf);
 							char *res = rtrcmd (T, buf);
 							if (res) {
-								r_cons_println (res);
+								r_kons_println (core->cons, res);
 								free (res);
 							}
-							r_cons_flush ();
+							r_kons_flush (core->cons);
 							ret = true;
 						} else {
 							ret = false;
@@ -213,7 +213,7 @@ static void __rtr_shell(RCore *core, int nth) {
 	snprintf (prompt, sizeof (prompt), "[%s://%s:%s/%s]> ", proto, host, port, file);
 	snprintf (prompt2, sizeof (prompt2), "[%s:%s]$ ", host, port);
 	for (;;) {
-		r_line_set_prompt (core->cons, prompt);
+		r_line_set_prompt (core->cons->line, prompt);
 		res = r_line_readline (core->cons);
 		if (R_STR_ISEMPTY (res)) {
 			break;
@@ -223,7 +223,7 @@ static void __rtr_shell(RCore *core, int nth) {
 		}
 		if (!strcmp (res, "!sh")) {
 			for (;;) {
-				r_line_set_prompt (core->cons, prompt2);
+				r_line_set_prompt (core->cons->line, prompt2);
 				res = r_line_readline (core->cons);
 				if (!res || !*res || !strcmp (res, "exit")) {
 					break;
@@ -240,7 +240,7 @@ static void __rtr_shell(RCore *core, int nth) {
 					res = res? res + 2: str;
 					const char *tail = (res[strlen (res) - 1] == '\n')? "": "\n";
 					printf ("%s%s", res, tail);
-					r_line_hist_add (str);
+					r_line_hist_add (core->cons->line, str);
 					free (str);
 				}
 				free (ptr);
@@ -257,8 +257,8 @@ static void __rtr_shell(RCore *core, int nth) {
 		} else {
 			char *cmdline = r_str_newf ("%d %s", nth, res);
 			r_core_rtr_cmd (core, cmdline);
-			r_cons_flush ();
-			r_line_hist_add (res);
+			r_kons_flush (core->cons);
+			r_line_hist_add (core->cons->line, res);
 		}
 	}
 	r_socket_free (s);

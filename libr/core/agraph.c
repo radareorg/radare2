@@ -4088,7 +4088,7 @@ static void visual_offset(RCore *core, RAGraph *g) {
 	r_kons_flush (core->cons);
 	core->cons->line->prompt_type = R_LINE_PROMPT_OFFSET;
 	r_line_set_hist_callback (core->cons->line, &r_line_hist_offset_up, &r_line_hist_offset_down);
-	r_line_set_prompt (core->cons, "[offset]> ");
+	r_line_set_prompt (core->cons->line, "[offset]> ");
 	strcpy (buf, "s ");
 	if (r_cons_fgets (core->cons, buf + 2, sizeof (buf) - 2, 0, NULL) > 0) {
 		if (buf[2] == '.') {
@@ -4110,7 +4110,7 @@ R_API void r_core_visual_find(RCore *core, RAGraph *g) {
 	const bool asm_lines = r_config_get_b (core->config, "asm.lines");
 
 	core->cons->line->prompt_type = R_LINE_PROMPT_OFFSET;
-	r_line_set_prompt (core->cons, "[find]> ");
+	r_line_set_prompt (core->cons->line, "[find]> ");
 
 	while (1) {
 		r_cons_get_size (&rows);
@@ -4183,11 +4183,11 @@ find_next:
 		if (addr > 0) {
 			if (c == ';') {
 				char buf[256];
-				r_line_set_prompt (core->cons, "[comment]> ");
+				r_line_set_prompt (core->cons->line, "[comment]> ");
 				if (r_cons_fgets (core->cons, buf, sizeof (buf), 0, NULL) > 0) {
 					r_core_cmdf (core, "'CC %s", buf);
 				}
-				r_line_set_prompt (core->cons, "[find]> ");
+				r_line_set_prompt (core->cons->line, "[find]> ");
 				if (g) {
 					g->need_reload_nodes = true;
 				}
@@ -4606,7 +4606,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 		{         // TODO: edit
 			showcursor (core, true);
 			const char *cmd = r_config_get (core->config, "cmd.gprompt");
-			r_line_set_prompt (core->cons, "cmd.gprompt> ");
+			r_line_set_prompt (core->cons->line, "cmd.gprompt> ");
 			core->cons->line->contents = strdup (cmd);
 			const char *buf = r_line_readline (core->cons);
 			core->cons->line->contents = NULL;
@@ -4919,7 +4919,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 			if (fcn) {
 				showcursor (core, true);
 				char buf[256];
-				r_line_set_prompt (core->cons, "[comment]> ");
+				r_line_set_prompt (core->cons->line, "[comment]> ");
 				if (r_cons_fgets (core->cons, buf, sizeof (buf), 0, NULL) > 0) {
 					r_core_cmdf (core, "'CC %s", buf);
 				}

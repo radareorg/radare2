@@ -118,7 +118,7 @@ R_API int r_cons_less_str(RCons * R_NONNULL cons, const char * R_NONNULL str, co
 			break;
 		case '/': 	/* search */
 			r_kons_reset_colors (cons);
-			r_line_set_prompt (cons, "/");
+			r_line_set_prompt (cons->line, "/");
 			sreg = r_line_readline (cons);
 			from = R_MIN (lines_count - 1, from);
 			/* repeat last search if empty string is provided */

@@ -2546,7 +2546,7 @@ static int cmd_kuery(void *data, const char *input) {
 		const size_t buf_size = 1024;
 		char *buf = malloc (1024);
 		while (buf) {
-			r_line_set_prompt (core->cons, p);
+			r_line_set_prompt (core->cons->line, p);
 			*buf = 0;
 			if (r_cons_fgets (core->cons, buf, buf_size, 0, NULL) < 1) {
 				break;
@@ -3470,7 +3470,7 @@ static int cmd_system(void *data, const char *input) {
 		r_line_hist_free (core->cons->line);
 		if (input[1]) {
 			char *history_file = r_xdg_cachedir ("history");
-			r_line_hist_save (history_file);
+			r_line_hist_save (core->cons->line, history_file);
 			free (history_file);
 		}
 		break;
@@ -3488,7 +3488,7 @@ static int cmd_system(void *data, const char *input) {
 		{
 			char *history_file = r_xdg_cachedir ("history");
 			R_LOG_INFO ("History saved to %s", history_file);
-			r_line_hist_save (history_file);
+			r_line_hist_save (core->cons->line, history_file);
 			free (history_file);
 		}
 		break;
@@ -3525,12 +3525,12 @@ core->cons->context->noflush = false;
 					}
 					free (out);
 			} else {
-				r_line_hist_list (false);
+				r_line_hist_list (core->cons->line, false);
 			}
 		}
 		break;
 	case '\0':
-		r_line_hist_list (true);
+		r_line_hist_list (core->cons->line, true);
 		break;
 	case '?': // "!?"
 		cmd_help_exclamation (core);
@@ -3549,7 +3549,7 @@ core->cons->context->noflush = false;
 	default:
 		n = atoi (input);
 		if (*input == '0' || n > 0) {
-			const char *cmd = r_line_hist_get (n);
+			const char *cmd = r_line_hist_get (core->cons->line, n);
 			if (cmd) {
 				r_core_cmd0 (core, cmd);
 			}
@@ -6360,7 +6360,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, bool log) {
 	}
 	if (ret != -1) {
 		if (log) {
-			r_line_hist_add (cstr);
+			r_line_hist_add (core->cons->line, cstr);
 		}
 		return ret;
 	}
@@ -6399,7 +6399,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, bool log) {
 				}
 			}
 			if (log) {
-				r_line_hist_add (cstr);
+				r_line_hist_add (core->cons->line, cstr);
 			}
 			goto beach; // false
 		}
@@ -6428,7 +6428,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, bool log) {
 	}
 	r_str_cpy (cmd, cstr);
 	if (log) {
-		r_line_hist_add (cstr);
+		r_line_hist_add (core->cons->line, cstr);
 	}
 	ret = run_cmd_depth (core, cmd);
 	free (cmd);

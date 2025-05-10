@@ -4,33 +4,35 @@
 
 #include <r_cons.h>
 
+#if 0
+// XXX kill this global NOW
 static R_TH_LOCAL RLine r_line_instance = {0};
-#define I r_line_instance
 
 R_API RLine *r_line_singleton(void) {
 	return &r_line_instance;
 }
+#endif
 
 R_API RLine *r_line_new(RCons *cons) {
 	RLine *line = R_NEW0 (RLine);
 	line->cons = cons;
 
-	I.cons = cons;
-	I.hist_up = NULL;
-	I.hist_down = NULL;
-	I.prompt = strdup ("> ");
-	I.contents = NULL;
-	I.enable_vi_mode = false;
-	I.clipboard = NULL;
-	I.kill_ring = r_list_newf (free);
-	I.kill_ring_ptr = -1;
+	line->cons = cons;
+	line->hist_up = NULL;
+	line->hist_down = NULL;
+	line->prompt = strdup ("> ");
+	line->contents = NULL;
+	line->enable_vi_mode = false;
+	line->clipboard = NULL;
+	line->kill_ring = r_list_newf (free);
+	line->kill_ring_ptr = -1;
 #if R2__WINDOWS__
-	I.vtmode = win_is_vtcompat ();
+	line->vtmode = win_is_vtcompat ();
 #else
-	I.vtmode = 2;
+	line->vtmode = 2;
 #endif
-	r_line_completion_init (&I.completion, 4096);
-	return &I;
+	r_line_completion_init (&line->completion, 4096);
+	return line;
 }
 
 R_API void r_line_free(RLine *line) {
@@ -45,21 +47,21 @@ R_API void r_line_free(RLine *line) {
 #endif
 }
 
-R_API void r_line_clipboard_push(const char *str) {
-	I.kill_ring_ptr += 1;
-	r_list_insert (I.kill_ring, I.kill_ring_ptr, strdup (str));
+R_API void r_line_clipboard_push(RLine *line, const char *str) {
+	line->kill_ring_ptr += 1;
+	r_list_insert (line->kill_ring, line->kill_ring_ptr, strdup (str));
 }
 
 // handle const or dynamic prompts?
-R_API void r_line_set_prompt(RCons *cons, const char *prompt) {
-	free (I.prompt);
-	I.prompt = strdup (prompt);
-	I.cb_fkey = cons->cb_fkey;
+R_API void r_line_set_prompt(RLine *line, const char *prompt) {
+	free (line->prompt);
+	line->prompt = strdup (prompt);
+	line->cb_fkey = line->cons->cb_fkey;
 }
 
 // handle const or dynamic prompts?
-R_API char *r_line_get_prompt(void) {
-	return strdup (I.prompt);
+R_API char *r_line_get_prompt(RLine *line) {
+	return strdup (line->prompt);
 }
 
 R_API void r_line_completion_init(RLineCompletion *completion, size_t args_limit) {
