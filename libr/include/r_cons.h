@@ -1117,7 +1117,7 @@ struct r_line_comp_t {
 	bool quit;
 	RPVector args; /* <char *> */
 	RLineCompletionCb run;
-	void *run_user;
+	void *run_user; // RCore *
 };
 
 typedef char* (*RLineEditorCb)(void *core, const char *file, const char *str);

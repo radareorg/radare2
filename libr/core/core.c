@@ -1632,7 +1632,10 @@ R_API void r_core_autocomplete(RCore * R_NULLABLE core, RLineCompletion *complet
 }
 
 static int autocomplete(RLineCompletion *completion, RLineBuffer *buf, RLinePromptType prompt_type, void *user) {
-	RCore *core = user;
+	RCore *core = (RCore *)user;
+	if (core == NULL) {
+		R_LOG_WARN ("core->cons->line->user is nul, but should be equals to core");
+	}
 	r_core_autocomplete (core, completion, buf, prompt_type);
 	return true;
 }
@@ -2617,6 +2620,7 @@ R_API bool r_core_init(RCore *core) {
 	core->theme = strdup ("default");
 	/* initialize libraries */
 	core->cons = r_cons_new ();
+	core->cons->line->user = core;
 #if 0
 	if (true || core->cons->refcnt == 1) {
 		core->cons = r_cons_singleton ();
