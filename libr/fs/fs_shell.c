@@ -282,7 +282,7 @@ R_API bool r_fs_shell(RFSShell* shell, RFS* fs, const char* root) {
 		snprintf (prompt, sizeof (prompt), "[%.*s]> ", (int)sizeof (prompt) - 5, shell->cwd);
 		if (shell) {
 			if (shell->set_prompt) {
-				shell->set_prompt (shell->cons, prompt);
+				shell->set_prompt (shell->cons->line, prompt);
 			}
 			if (shell->readline) {
 				const char* ptr = shell->readline (shell->cons);
@@ -304,7 +304,7 @@ R_API bool r_fs_shell(RFSShell* shell, RFS* fs, const char* root) {
 		r_str_trim (buf);
 
 		if (shell && shell->hist_add) {
-			shell->hist_add (buf);
+			shell->hist_add (shell->cons->line, buf);
 		}
 
 		char *wave = strchr (buf, '~');
