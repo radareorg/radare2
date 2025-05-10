@@ -2197,23 +2197,35 @@ static bool cb_cmd_esil_pin(void *user, void *data) {
 }
 
 static bool cb_cmd_esil_step(void *user, void *data) {
-	RCore *core = (RCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RCore *core = user;
+	RConfigNode *node = data;
+#if USE_NEW_ESIL
+	if (core) {
+		free (core->esil.cmd_step);
+		core->esil.cmd_step = strdup (node->value);
+#else
 	if (core && core->anal && core->anal->esil) {
 		core->anal->esil->cmd = r_core_esil_cmd;
 		free (core->anal->esil->cmd_step);
 		core->anal->esil->cmd_step = strdup (node->value);
+#endif
 	}
 	return true;
 }
 
 static bool cb_cmd_esil_step_out(void *user, void *data) {
-	RCore *core = (RCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RCore *core = user;
+	RConfigNode *node = data;
+#if USE_NEW_ESIL
+	if (core) {
+		free (core->esil.cmd_step_out);
+		core->esil.cmd_step_out = strdup (node->value);
+#else
 	if (core && core->anal && core->anal->esil) {
 		core->anal->esil->cmd = r_core_esil_cmd;
 		free (core->anal->esil->cmd_step_out);
 		core->anal->esil->cmd_step_out = strdup (node->value);
+#endif
 	}
 	return true;
 }
