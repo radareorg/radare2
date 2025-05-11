@@ -3620,9 +3620,10 @@ static int agraph_print(RAGraph *g, bool is_interactive, RCore *core, RAnalFunct
 	}
 
 	r_cons_canvas_print_region (g->can);
+	g->can->flags = r_cons_canvas_flags (core->cons);
 
 	if (is_interactive) {
-		r_cons_newline ();
+		r_kons_newline (core->cons);
 		const char *cmdv = r_config_get (core->config, "cmd.gprompt");
 		bool mustFlush = false;
 		r_cons_visual_flush ();
@@ -3645,16 +3646,17 @@ static int agraph_print(RAGraph *g, bool is_interactive, RCore *core, RAnalFunct
 			int h, w = r_cons_get_size (&h);
 			r_kons_push (core->cons);
 			g->can->h *= 4;
-			RConsCanvas *_can = g->can;
-			g->can = r_cons_canvas_new (w * 2, h * 4);
-			g->can->sx = _can->sx;
-			g->can->sy = _can->sy;
+			RConsCanvas *ocan = g->can;
+			int flags = r_cons_canvas_flags (core->cons);
+			g->can = r_cons_canvas_new (w * 2, h * 4, flags);
+			g->can->sx = ocan->sx;
+			g->can->sy = ocan->sy;
 			g->can->color = 0;
-			g->can->linemode = _can->linemode;
+			g->can->linemode = ocan->linemode;
 			agraph_print_edges (g);
 			agraph_print_nodes (g);
 			r_cons_canvas_print_region (g->can);
-			g->can = _can;
+			g->can = ocan;
 			char *s = strdup (core->cons->context->buffer);
 			r_kons_pop (core->cons);
 			cmd_agfb3 (core, s, w - 40, 2);
@@ -3818,13 +3820,13 @@ static void sdb_set_enc(Sdb *db, const char *key, const char *v, ut32 cas) {
 }
 
 static void agraph_sdb_init(const RAGraph *g) {
+	RConsContext *ctx = r_cons_singleton ()->context;
 	sdb_bool_set (g->db, "agraph.is_callgraph", g->is_callgraph, 0);
-	RCons *cons = r_cons_singleton ();
-	sdb_set_enc (g->db, "agraph.color_box", cons->context->pal.graph_box, 0);
-	sdb_set_enc (g->db, "agraph.color_box2", cons->context->pal.graph_box2, 0);
-	sdb_set_enc (g->db, "agraph.color_box3", cons->context->pal.graph_box3, 0);
-	sdb_set_enc (g->db, "agraph.color_true", cons->context->pal.graph_true, 0);
-	sdb_set_enc (g->db, "agraph.color_false", cons->context->pal.graph_false, 0);
+	sdb_set_enc (g->db, "agraph.color_box", ctx->pal.graph_box, 0);
+	sdb_set_enc (g->db, "agraph.color_box2", ctx->pal.graph_box2, 0);
+	sdb_set_enc (g->db, "agraph.color_box3", ctx->pal.graph_box3, 0);
+	sdb_set_enc (g->db, "agraph.color_true", ctx->pal.graph_true, 0);
+	sdb_set_enc (g->db, "agraph.color_false", ctx->pal.graph_false, 0);
 }
 
 R_API Sdb *r_agraph_get_sdb(RAGraph *g) {
@@ -3834,20 +3836,20 @@ R_API Sdb *r_agraph_get_sdb(RAGraph *g) {
 	return g->db;
 }
 
-R_API void r_agraph_print(RAGraph *g) {
-	agraph_print (g, false, NULL, NULL);
+R_API void r_agraph_print(RAGraph *g, void *_core) {
+	RCore *core = (RCore *)_core;
+	g->can->flags = 0;
+	agraph_print (g, false, core, NULL);
 	if (g->graph->n_nodes > 0) {
-		r_cons_newline ();
+		r_kons_newline (core->cons);
 	}
 }
 
 R_API void r_agraph_print_json(RAGraph *g, PJ *pj) {
+	R_RETURN_IF_FAIL (g && pj);
 	RList *nodes = g->graph->nodes, *neighbours = NULL;
 	RListIter *it, *itt;
 	RGraphNode *node = NULL, *neighbour = NULL;
-	if (!pj) {
-		return;
-	}
 	r_list_foreach (nodes, it, node) {
 		RANode *anode = (RANode *) node->data;
 		char *label = strdup (anode->body);
@@ -3882,7 +3884,7 @@ R_API RANode *r_agraph_add_node(const RAGraph *g, const char *title, const char 
 
 	res->title = title? r_str_trunc_ellipsis (title, 255) : strdup ("");
 	res->body = (body && strlen (body))? r_str_endswith (body, "\n")?
-		strdup (body): r_str_newf ("%s\n", body): strdup ("");	//XXX
+		strdup (body): r_str_newf ("%s\n", body): strdup ("");	// XXX
 	res->layer = -1;
 	res->pos_in_layer = -1;
 	res->is_dummy = false;
@@ -4113,21 +4115,23 @@ R_API void r_core_visual_find(RCore *core, RAGraph *g) {
 	core->cons->line->prompt_type = R_LINE_PROMPT_OFFSET;
 	r_line_set_prompt (core->cons->line, "[find]> ");
 
+	RCons *cons = core->cons;
 	while (1) {
-		r_cons_get_size (&rows);
-		r_kons_gotoxy (core->cons, 0, rows - 1);
-		r_kons_flush (core->cons);
+		r_kons_get_size (cons, &rows);
+		r_kons_gotoxy (cons, 0, rows - 1);
+		r_kons_flush (cons);
 		printf (Color_RESET);
-		r_kons_flush (core->cons);
+		fflush (stdout);
+		r_kons_flush (cons);
 
-		r_cons_fgets (core->cons, buf, sizeof (buf), 0, NULL);
+		r_cons_fgets (cons, buf, sizeof (buf), 0, NULL);
 
 		if (buf[0] == '\0') {
 			break;
 		}
 
 find_next:
-		if (core->cons->line->contents != NULL && strcmp (buf, core->cons->line->contents) == 0) {
+		if (cons->line->contents != NULL && strcmp (buf, cons->line->contents) == 0) {
 			offset += 1;
 			if (offset >= offset_max) {
 				offset = 0;
@@ -4140,8 +4144,8 @@ find_next:
 		r_config_set_b (core->config, "asm.lines", 0);
 
 		if (offset == 0) {
-			free (core->cons->line->contents);
-			core->cons->line->contents = strdup (buf);
+			free (cons->line->contents);
+			cons->line->contents = strdup (buf);
 
 			char *lines_nbr = r_core_cmd_strf (core, "pdr~%s~^0x~?", buf);
 			offset_max = atoi (lines_nbr);
@@ -4162,42 +4166,43 @@ find_next:
 		r_config_set_b (core->config, "asm.addr", asm_addr);
 		r_config_set_b (core->config, "asm.lines", asm_lines);
 		if (g) {
-			agraph_refresh (core->cons->event_data);
+			agraph_refresh (cons->event_data);
 		} else {
 			visual_refresh (core);
 		}
 
-		r_kons_clear_line (core->cons, 0);
-		r_kons_printf (core->cons, Color_RESET);
+		r_kons_clear_line (cons, 0);
+		r_kons_printf (cons, Color_RESET);
 		if (addr > 0) {
-			r_cons_gotoxy (0, 0);
-			r_cons_printf ("[find]> match '%s'", line);
-			R_LOG_INFO ("Found (%d/%d). Press 'n' for next, 'N' for prev, 'q' for quit, any other key to continue", offset+1, offset_max);
+			r_kons_gotoxy (cons, 0, 0);
+			r_kons_printf (cons, "[find]> match '%s'", line);
+			R_LOG_INFO ("Found (%d/%d). Press 'n' for next, 'N' for prev, 'q' for quit, any other key to continue", offset + 1, offset_max);
 		} else {
 			R_LOG_ERROR ("Text '%s' not found. Press 'q' for quit, any other key to conitnue", buf);
 		}
-		r_kons_flush (core->cons);
+		r_kons_flush (cons);
 
 		free (line);
 
-		char c = r_cons_readchar (core->cons);
+		char c = r_cons_readchar (cons);
 		if (addr > 0) {
 			if (c == ';') {
 				char buf[256];
-				r_line_set_prompt (core->cons->line, "[comment]> ");
-				if (r_cons_fgets (core->cons, buf, sizeof (buf), 0, NULL) > 0) {
+				r_line_set_prompt (cons->line, "[comment]> ");
+				if (r_cons_fgets (cons, buf, sizeof (buf), 0, NULL) > 0) {
 					r_core_cmdf (core, "'CC %s", buf);
 				}
-				r_line_set_prompt (core->cons->line, "[find]> ");
+				r_line_set_prompt (cons->line, "[find]> ");
 				if (g) {
 					g->need_reload_nodes = true;
 				}
 			}
 			if (c == ':') {
-				core->cons->event_resize = (RConsEvent)agraph_set_need_reload_nodes;
+				cons->event_resize = (RConsEvent)agraph_set_need_reload_nodes;
 				r_core_visual_prompt_input (core);
-				r_cons_set_raw (true);
-				core->cons->event_resize = (RConsEvent)agraph_refresh_oneshot;
+				g->can->flags = r_cons_canvas_flags (cons);
+				r_kons_set_raw (cons, true);
+				cons->event_resize = (RConsEvent)agraph_refresh_oneshot;
 			}
 			if (c == 'n' || c == 'j') {
 				goto find_next;
@@ -4214,16 +4219,16 @@ find_next:
 			break;
 		}
 		if (g) {
-			agraph_refresh (core->cons->event_data);
+			agraph_refresh (cons->event_data);
 		} else {
 			visual_refresh (core);
 		}
 	}
 
-	free (core->cons->line->contents);
-	core->cons->line->contents = NULL;
+	free (cons->line->contents);
+	cons->line->contents = NULL;
 	r_config_set (core->config, "scr.highlight", "");
-	core->cons->line->prompt_type = R_LINE_PROMPT_DEFAULT;
+	cons->line->prompt_type = R_LINE_PROMPT_DEFAULT;
 	r_config_set_b (core->config, "asm.addr", asm_addr);
 	r_config_set_b (core->config, "asm.lines", asm_lines);
 }
@@ -4446,11 +4451,12 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 	r_config_hold (hc, "asm.pseudo", "asm.esil", "asm.cmt.right", NULL);
 
 	int h, w = r_cons_get_size (&h);
-	RConsCanvas *can = r_cons_canvas_new (w, h);
+	int flags = r_cons_canvas_flags (core->cons);
+	RConsCanvas *can = r_cons_canvas_new (w, h, flags);
 	if (!can) {
 		w = 80;
 		h = 25;
-		can = r_cons_canvas_new (w, h);
+		can = r_cons_canvas_new (w, h, flags);
 		if (!can) {
 			R_LOG_ERROR ("Cannot create RCons.canvas context. Invalid screen "
 					"size? See scr.cols + scr.rows");
@@ -5150,6 +5156,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 		case ':':
 			core->cons->event_resize = (RConsEvent)agraph_set_need_reload_nodes;
 			r_core_visual_prompt_input (core);
+			g->can->flags = r_cons_canvas_flags (core->cons);
 			r_cons_set_raw (true);
 			core->cons->event_resize = (RConsEvent)agraph_refresh_oneshot;
 			if (!g) {
@@ -5313,7 +5320,9 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 R_API RAGraph *r_agraph_new_from_graph(const RGraph *graph, RAGraphTransitionCBs *cbs, void *user) {
 	R_RETURN_VAL_IF_FAIL (graph && cbs && cbs->get_title && cbs->get_body, NULL);
 
-	RAGraph *result_agraph = r_agraph_new (r_cons_canvas_new (1, 1));
+	int flags = r_cons_canvas_flags (r_cons_singleton ());
+	RConsCanvas *canvas = r_cons_canvas_new (1, 1, flags);
+	RAGraph *result_agraph = r_agraph_new (canvas);
 	if (!result_agraph) {
 		return NULL;
 	}

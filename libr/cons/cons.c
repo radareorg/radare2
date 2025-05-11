@@ -889,10 +889,6 @@ R_API RConsMark *r_cons_mark_at(ut64 addr, const char *name) {
 	return r_kons_mark_at (I, addr, name);
 }
 
-R_API void r_cons_printf_list(const char *format, va_list ap) {
-	r_kons_printf_list (I, format, ap);
-}
-
 R_API int r_cons_printf(const char *format, ...) {
 	va_list ap;
 	if (R_STR_ISEMPTY (format)) {

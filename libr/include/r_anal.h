@@ -1475,7 +1475,7 @@ R_API ut64 r_anal_vtable_info_get_size(RVTableContext *context, RVTableInfo *vta
 R_API bool r_anal_vtable_begin(RAnal *anal, RVTableContext *context);
 R_API RVTableInfo *r_anal_vtable_parse_at(RVTableContext *context, ut64 addr);
 R_API RList *r_anal_vtable_search(RVTableContext *context);
-R_API void r_anal_vtables_list(RAnal *anal, int rad);
+R_API char *r_anal_vtables_list(RAnal *anal, int rad);
 
 /* rtti */
 R_API char *r_anal_rtti_msvc_demangle_class_name(RVTableContext *context, const char *name);

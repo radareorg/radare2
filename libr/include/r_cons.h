@@ -331,7 +331,14 @@ typedef struct r_cons_canvas_t {
 	int color;
 	int linemode; // 0 = diagonal , 1 = square
 	char *bgcolor;
+	int flags; // utf8
 } RConsCanvas;
+
+#define R_CONS_CANVAS_FLAG_DEFAULT -1
+#define R_CONS_CANVAS_FLAG_UTF8 1
+#define R_CONS_CANVAS_FLAG_CURVY 2
+// #define R_CONS_CANVAS_FLAG_LINEMODE_SQUARE
+// #define R_CONS_CANVAS_FLAG_LINEMODE_SQUARE
 
 #define RUNECODE_MIN 0xc8 // 200
 #define RUNECODE_LINE_VERT 0xc8
@@ -799,9 +806,10 @@ typedef struct r_cons_canvas_line_style_t {
 
 #ifdef R_API
 R_API void r_cons_image(const ut8 *buf, int bufsz, int width, int mode, int components);
-R_API RConsCanvas* r_cons_canvas_new(int w, int h);
+R_API RConsCanvas* r_cons_canvas_new(int w, int h, int flags);
+R_API int r_cons_canvas_flags(RCons * R_NONNULL cons);
 R_API void r_cons_canvas_free(RConsCanvas *c);
-R_API void r_cons_canvas_clear(RConsCanvas *c);
+R_API void r_cons_canvas_clear(RConsCanvas * R_NONNULL c, int flags);
 R_API void r_cons_canvas_print(RConsCanvas *c);
 R_API void r_cons_canvas_print_region(RConsCanvas *c);
 R_API char *r_cons_canvas_tostring(RConsCanvas *c);
@@ -822,7 +830,7 @@ R_API void r_cons_canvas_line_square_defined(RConsCanvas *c, int x, int y, int x
 R_API void r_cons_canvas_line_back_edge(RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style, int ybendpoint1, int xbendpoint, int ybendpoint2, int isvert);
 
 R_API RCons *r_cons_new(void);
-R_API RCons *r_cons_singleton(void);
+R_API RCons *r_cons_singleton(void); // DEPRECATE
 R_API RCons *r_cons_global(RCons *c);
 R_API const RConsTheme *r_cons_themes(void);
 R_API void r_cons_trim(void);
@@ -933,7 +941,6 @@ R_API void r_cons_set_utf8(bool b);
 /* output */
 
 R_API int r_cons_printf(const char *format, ...) R_PRINTF_CHECK(1, 2);
-R_API void r_cons_printf_list(const char *format, va_list ap);
 R_API void r_cons_print(const char *str);
 R_API void r_cons_print_at(const char *str, int x, char y, int w, int h);
 R_API void r_cons_println(const char* str);

@@ -286,7 +286,7 @@ R_API RList *r_anal_vtable_search(RVTableContext *context) {
 	return vtables;
 }
 
-R_API void r_anal_vtables_list(RAnal *anal, int rad) {
+R_API char *r_anal_vtables_list(RAnal *anal, int rad) {
 	RVTableContext context = {0};
 	r_anal_vtable_begin (anal, &context);
 
@@ -316,37 +316,39 @@ R_API void r_anal_vtables_list(RAnal *anal, int rad) {
 			pj_end (pj);
 		}
 		pj_end (pj);
-		r_cons_println (pj_string (pj));
-		pj_free (pj);
-	} else if (rad == '*') {
+		return pj_drain (pj);
+	}
+	RStrBuf *sb = r_strbuf_new ("");
+	if (rad == '*') {
 		r_list_foreach (vtables, vtableIter, table) {
 			r_cons_printf ("f vtable.0x%08"PFMT64x" %"PFMT64d" @ 0x%08"PFMT64x"\n",
 						   table->saddr,
 						   r_anal_vtable_info_get_size (&context, table),
 						   table->saddr);
 			r_vector_foreach (&table->methods, curMethod) {
-				r_cons_printf ("Cd %d @ 0x%08"PFMT64x"\n", context.word_size, table->saddr + curMethod->vtable_offset);
+				r_strbuf_appendf (sb, "Cd %d @ 0x%08"PFMT64x"\n", context.word_size, table->saddr + curMethod->vtable_offset);
 				RAnalFunction *fcn = r_anal_get_fcn_in (anal, curMethod->addr, 0);
 				const char *const name = fcn ? fcn->name : NULL;
 				if (name) {
-					r_cons_printf ("f %s=0x%08"PFMT64x"\n", name, curMethod->addr);
+					r_strbuf_appendf (sb, "f %s=0x%08"PFMT64x"\n", name, curMethod->addr);
 				} else {
-					r_cons_printf ("f method.virtual.0x%08"PFMT64x"=0x%08"PFMT64x"\n", curMethod->addr, curMethod->addr);
+					r_strbuf_appendf (sb, "f method.virtual.0x%08"PFMT64x"=0x%08"PFMT64x"\n", curMethod->addr, curMethod->addr);
 				}
 			}
 		}
 	} else {
 		r_list_foreach (vtables, vtableIter, table) {
 			ut64 vtableStartAddress = table->saddr;
-			r_cons_printf ("\nVtable Found at 0x%08"PFMT64x"\n", vtableStartAddress);
+			r_strbuf_appendf (sb, "\nVtable Found at 0x%08"PFMT64x"\n", vtableStartAddress);
 			r_vector_foreach (&table->methods, curMethod) {
 				RAnalFunction *fcn = r_anal_get_fcn_in (anal, curMethod->addr, 0);
 				const char *const name = fcn ? fcn->name : NULL;
-				r_cons_printf ("0x%08"PFMT64x" : %s\n", vtableStartAddress, r_str_get_fail (name, noMethodName));
+				r_strbuf_appendf (sb, "0x%08"PFMT64x" : %s\n", vtableStartAddress, r_str_get_fail (name, noMethodName));
 				vtableStartAddress += context.word_size;
 			}
-			r_cons_newline ();
+			r_strbuf_append (sb, "\n");
 		}
 	}
 	r_list_free (vtables);
+	return r_strbuf_drain (sb);
 }

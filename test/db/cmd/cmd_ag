@@ -16,29 +16,29 @@ aa 2> /dev/null
 agi*
 EOF
 EXPECT=<<EOF
-agn "sym.imp.free"
-agn "0x0000083f"
-agn "sym.imp.strcpy"
-agn "0x00000814"
-agn "sym.imp.puts"
-agn "0x00000833"
-agn "sym.imp.strlen"
-agn "0x000007cf"
-agn "0x000007de"
-agn "sym.imp.malloc"
-agn "0x000007f6"
-agn "sym.imp.strcat"
-agn "0x00000827"
-agn "section..plt.got"
-agn "0x0000077e"
-age "0x0000083f" "sym.imp.free"
-age "0x00000814" "sym.imp.strcpy"
-age "0x00000833" "sym.imp.puts"
-age "0x000007cf" "sym.imp.strlen"
-age "0x000007de" "sym.imp.strlen"
-age "0x000007f6" "sym.imp.malloc"
-age "0x00000827" "sym.imp.strcat"
-age "0x0000077e" "section..plt.got"
+'agn "sym.imp.free"
+'agn "0x0000083f"
+'agn "sym.imp.strcpy"
+'agn "0x00000814"
+'agn "sym.imp.puts"
+'agn "0x00000833"
+'agn "sym.imp.strlen"
+'agn "0x000007cf"
+'agn "0x000007de"
+'agn "sym.imp.malloc"
+'agn "0x000007f6"
+'agn "sym.imp.strcat"
+'agn "0x00000827"
+'agn "section..plt.got"
+'agn "0x0000077e"
+'age "0x0000083f" "sym.imp.free"
+'age "0x00000814" "sym.imp.strcpy"
+'age "0x00000833" "sym.imp.puts"
+'age "0x000007cf" "sym.imp.strlen"
+'age "0x000007de" "sym.imp.strlen"
+'age "0x000007f6" "sym.imp.malloc"
+'age "0x00000827" "sym.imp.strcat"
+'age "0x0000077e" "section..plt.got"
 EOF
 RUN
 
@@ -50,9 +50,9 @@ aa 2> /dev/null
 agx* @ main
 EOF
 EXPECT=<<EOF
-agn "main"
-agn "0x000006bd"
-age "0x000006bd" "main"
+'agn "main"
+'agn "0x000006bd"
+'age "0x000006bd" "main"
 EOF
 RUN
 

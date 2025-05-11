@@ -903,7 +903,8 @@ static int GH(print_double_linked_list_bin_simple)(RCore *core, GHT bin, MallocS
 }
 
 static int GH(print_double_linked_list_bin_graph)(RCore *core, GHT bin, MallocState *main_arena, GHT brk_start) {
-	RAGraph *g = r_agraph_new (r_cons_canvas_new (1, 1));
+	int flags = r_cons_canvas_flags (core->cons);
+	RAGraph *g = r_agraph_new (r_cons_canvas_new (1, 1, flags));
 	GHT next = GHT_MAX;
 	char title[256], chunk[256];
 	GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk));
@@ -947,7 +948,7 @@ static int GH(print_double_linked_list_bin_graph)(RCore *core, GHT bin, MallocSt
 	}
 	r_agraph_add_edge (g, prev_node, bin_node, false);
 	r_agraph_add_edge (g, bin_node, prev_node, false);
-	r_agraph_print (g);
+	r_agraph_print (g, core);
 
 	free (cnk);
 	r_agraph_free (g);
@@ -1419,7 +1420,8 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 	}
 
 	w = r_cons_get_size (&h);
-	RConsCanvas *can = r_cons_canvas_new (w, h);
+	int flags = r_cons_canvas_flags (core->cons);
+	RConsCanvas *can = r_cons_canvas_new (w, h, flags);
 	if (!can) {
 		free (cnk);
 		free (cnk_next);
@@ -1692,7 +1694,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 			free (node_data);
 			free (node_title);
 		}
-		r_agraph_print (g);
+		r_agraph_print (g, core);
 		r_cons_canvas_free (can);
 		r_config_hold_restore (hc);
 		r_config_hold_free (hc);
