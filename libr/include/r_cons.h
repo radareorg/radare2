@@ -1014,8 +1014,7 @@ R_API void r_cons_grep_help(RCons *cons);
 R_API void r_cons_grep_expression(RCons *cons, const char *str);
 R_API void r_cons_grep_parsecmd(RCons *cons, char *cmd, const char *quotestr);
 R_API char *r_cons_grep_strip(char *cmd, const char *quotestr);
-R_API int r_cons_grep_line(char *buf, int len); // must be static
-R_API void r_cons_grepbuf(void);
+R_API int r_cons_grep_line(RCons *cons, char *buf, int len); // must be static
 
 R_API void r_cons_rgb(ut8 r, ut8 g, ut8 b, ut8 a);
 R_API void r_cons_rgb_fgbg(ut8 r, ut8 g, ut8 b, ut8 R, ut8 G, ut8 B);

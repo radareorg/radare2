@@ -14,7 +14,6 @@ static char *strchr_ns(char *s, const char ch) {
 	if (!s) {
 		return NULL;
 	}
-
 	char *p;
 	while ((p = strchr (s, ch)) != NULL) {
 		if (p > s && *(p - 1) == '\\') {
@@ -595,9 +594,8 @@ static char *colorword(char *res, const char *k, const char *color) {
 	return res;
 }
 
-static void colorcode(void) {
+static void colorcode(RCons *cons) {
 	// TODO : dupped from libr/util/print_code.c r_print_code_tocolor
-	RCons *cons = r_cons_singleton ();
 	int i;
 	char *res = r_str_ndup (cons->context->buffer, cons->context->buffer_len);
 	if (res) {
@@ -733,7 +731,7 @@ R_API void r_kons_grepbuf(RCons *cons) {
 		return;
 	}
 	if (grep->colorcode) {
-		colorcode ();
+		colorcode (cons);
 		grep->sort = 0;
 		grep->code = false;
 		return;
@@ -837,7 +835,7 @@ R_API void r_kons_grepbuf(RCons *cons) {
 				cons->context->buffer_len = strlen (u);
 				cons->context->buffer_sz = cons->context->buffer_len + 1;
 				grep->json = false;
-				r_cons_newline ();
+				r_kons_newline (cons);
 			}
 			R_FREE (grep->json_path);
 		} else {
@@ -966,7 +964,7 @@ continuation:
 			if (tl < 0) {
 				ret = -1;
 			} else {
-				ret = r_cons_grep_line (tline, tl);
+				ret = r_cons_grep_line (cons, tline, tl);
 				if (!grep->range_line) {
 					if (grep->line == cons->lines) {
 						show = true;
@@ -1110,9 +1108,8 @@ continuation:
 	}
 }
 
-R_API int r_cons_grep_line(char *buf, int len) {
+R_API int r_cons_grep_line(RCons *cons, char *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (buf && len >= 0, 0);
-	RCons *cons = r_cons_singleton ();
 	RConsGrep *grep = &cons->context->grep;
 	const char *delims = " |,;=\t";
 	char *tok = NULL;
