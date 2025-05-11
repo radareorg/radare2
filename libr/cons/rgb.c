@@ -41,8 +41,8 @@ static void init_color_table(RCons *cons) {
 	}
 }
 
-static int rgb_lookup(int r, int g, int b) {
-	RConsContext *ctx = r_cons_singleton ()->context;
+static int rgb_lookup(RCons *cons, int r, int g, int b) {
+	RConsContext *ctx = cons->context;
 	int i, color = (r << 16) + (g << 8) + b;
 	// lookup extended colors only, coz non-extended can be changed by users.
 	for (i = 16; i < 232; i++) {
@@ -65,8 +65,8 @@ static ut32 rgb_aprox(int r, int g, int b) {
 	return 16 + (r * 36) + (g * 6) + b;
 }
 
-static int rgb(int r, int g, int b) {
-	const int c = rgb_lookup (r, g, b);
+static int rgb(RCons *cons, int r, int g, int b) {
+	const int c = rgb_lookup (cons, r, g, b);
 	return (c != -1) ? c: rgb_aprox (r, g, b);
 }
 
@@ -189,17 +189,17 @@ R_API bool r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a) {
 	return true;
 }
 
-R_API char *r_cons_rgb_str_off(char *outstr, size_t sz, ut64 off) {
+R_API char *r_cons_rgb_str_off(RCons *cons, char *outstr, size_t sz, ut64 off) {
 	RColor rc = RColor_BLACK;
 	rc.id16 = -1;
 	rc.r = (off >> 2) & 0xff;
 	rc.g = (off >> 6) & 0xff;
 	rc.b = (off >> 12) & 0xff;
-	return r_cons_rgb_str (outstr, sz, &rc);
+	return r_cons_rgb_str (cons, outstr, sz, &rc);
 }
 
 /* Compute color string depending on cons->color */
-static void r_cons_rgb_gen(RConsColorMode mode, char *outstr, size_t sz, ut8 attr, ut8 a, ut8 r, ut8 g, ut8 b, st8 id16) {
+static void rgb_gen(RCons *cons, RConsColorMode mode, char *outstr, size_t sz, ut8 attr, ut8 a, ut8 r, ut8 g, ut8 b, st8 id16) {
 	ut8 fgbg = (a == ALPHA_BG)? 48: 38; // ANSI codes for Background/Foreground
 
 	if (sz < 4) { // must have at least room for "<esc>[m\0"
@@ -231,7 +231,7 @@ static void r_cons_rgb_gen(RConsColorMode mode, char *outstr, size_t sz, ut8 att
 	int written = -1;
 	switch (mode) {
 	case COLOR_MODE_256: // 256 color palette
-		written = snprintf (outstr + i, sz - i, "%d;5;%dm", fgbg, rgb (r, g, b));
+		written = snprintf (outstr + i, sz - i, "%d;5;%dm", fgbg, rgb (cons, r, g, b));
 		break;
 	case COLOR_MODE_16M: // 16M (truecolor)
 		written = snprintf (outstr + i, sz - i, "%d;2;%d;%d;%dm", fgbg, r, g, b);
@@ -267,10 +267,11 @@ static void r_cons_rgb_gen(RConsColorMode mode, char *outstr, size_t sz, ut8 att
 }
 
 /* Return the computed color string for the specified color in the specified mode */
-R_API char *r_cons_rgb_str_mode(RConsColorMode mode, char *outstr, size_t sz, RColor *rcolor) {
+R_API char *r_cons_rgb_str_mode(RCons *cons, char *outstr, size_t sz, RColor *rcolor) {
 	if (!rcolor) {
 		return NULL;
 	}
+	RConsColorMode mode = cons->context->color_mode;
 	if (!outstr) {
 		sz = 64;
 		outstr = calloc (sz, 1);
@@ -282,19 +283,19 @@ R_API char *r_cons_rgb_str_mode(RConsColorMode mode, char *outstr, size_t sz, RC
 	}
 	// If the color handles both foreground and background, also add background
 	if (rcolor->a == ALPHA_FGBG) {
-		r_cons_rgb_gen (mode, outstr, sz, 0, ALPHA_BG, rcolor->r2, rcolor->g2, rcolor->b2, rcolor->id16);
+		rgb_gen (cons, mode, outstr, sz, 0, ALPHA_BG, rcolor->r2, rcolor->g2, rcolor->b2, rcolor->id16);
 	}
 	// APPEND
 	size_t len = strlen (outstr);
-	r_cons_rgb_gen (mode, outstr + len, sz - len, rcolor->attr, rcolor->a, rcolor->r, rcolor->g, rcolor->b,
-			rcolor->id16);
+	rgb_gen (cons, mode, outstr + len, sz - len,
+			rcolor->attr, rcolor->a, rcolor->r, rcolor->g, rcolor->b, rcolor->id16);
 
 	return outstr;
 }
 
 /* Return the computed color string for the specified color */
-R_API char *r_cons_rgb_str(char *outstr, size_t sz, RColor *rcolor) {
-	return r_cons_rgb_str_mode (r_cons_context ()->color_mode, outstr, sz, rcolor);
+R_API char *r_cons_rgb_str(RCons *cons, char *outstr, size_t sz, RColor *rcolor) {
+	return r_cons_rgb_str_mode (cons, outstr, sz, rcolor);
 }
 
 R_API char *r_cons_rgb_tostring(ut8 r, ut8 g, ut8 b) {

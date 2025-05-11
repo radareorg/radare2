@@ -4803,7 +4803,7 @@ R_API void r_core_visual_colors(RCore *core) {
 		} else {
 			rcolor.a = ALPHA_FG;
 		}
-		r_cons_rgb_str (cstr, sizeof (cstr), &rcolor);
+		r_cons_rgb_str (cons, cstr, sizeof (cstr), &rcolor);
 		char *esc = strchr (cstr + 1, '\x1b');
 		char *curtheme = r_core_get_theme (core);
 
