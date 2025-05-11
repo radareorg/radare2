@@ -398,22 +398,23 @@ beach:
 	return ret;
 }
 
-R_API int r_cons_any_key(const char *msg) {
+R_API int r_cons_any_key(RCons *cons, const char *msg) {
 	if (R_STR_ISNOTEMPTY (msg)) {
-		r_cons_printf ("\n-- %s --\n", msg);
+		r_kons_printf (cons, "\n-- %s --\n", msg);
 	} else {
-		r_cons_print ("\n--press any key--\n");
+		r_kons_print (cons, "\n--press any key--\n");
 	}
-	RCons *cons = r_cons_singleton ();
 	r_kons_flush (cons);
 	return r_cons_readchar (cons);
 }
 
+#if !__wasi__
 static inline void resizeWin(RCons *cons) {
 	if (cons->event_resize) {
 		cons->event_resize (cons->event_data);
 	}
 }
+#endif
 
 #if R2__WINDOWS__
 static int readchar_w32(RCons *cons, ut32 usec) {
@@ -632,13 +633,15 @@ R_API int r_cons_readchar(RCons *cons) {
 #if R2__WINDOWS__
 	return readchar_w32 (cons, 0);
 #elif __wasi__
-	void *bed = r_cons_sleep_begin ();
+	void *bed = r_kons_sleep_begin (cons);
 	int ret = read (STDIN_FILENO, buf, 1);
-	r_cons_sleep_end (bed);
+	r_kons_sleep_end (cons, bed);
 	if (ret < 1) {
+	///	eprintf ("read minus wan\n");
 		return -1;
 	}
-	return r_cons_controlz (cons, buf[0]);
+	// eprintf ("READ %d = %d\n", ret, buf[0]);
+	return buf[0];
 #else
 	void *bed = r_cons_sleep_begin ();
 

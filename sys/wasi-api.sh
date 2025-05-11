@@ -1,12 +1,10 @@
 #!/bin/sh
 
-WASI_ROOT=${HOME}/Downloads/wasi
-WASI_MAJOR=22
-WASI_VERSION=${WASI_MAJOR}.0
-TOOLS="radare2"
+. `dirname $0`/wasi-env.sh
 
-export WASI_SDK=${WASI_ROOT}/wasi-sdk-${WASI_VERSION}
-export WASI_SYSROOT=${WASI_ROOT}/wasi-sysroot-${WASI_VERSION}
+echo "WASI_SDK=$WASI_SDK"
+
+TOOLS="radare2"
 
 if [ ! -d "$WASI_SDK" ]; then
 	#OS=linux,macos,mingw
@@ -29,12 +27,7 @@ if [ ! -d "$WASI_SDK" ]; then
 	)
 fi
 
-export CFLAGS="-D_WASI_EMULATED_SIGNAL -Os -flto -D__wasi__=1"
-export CFLAGS="${CFLAGS} -D_WASI_EMULATED_PROCESS_CLOCKS=1"
-
 cp -f dist/plugins-cfg/plugins.wasi.cfg plugins.cfg
-
-echo "WASI_SDK=$WASI_SDK"
 
 ERR=0
 ./configure --with-static-themes --without-gperf --with-compiler=wasi --disable-debugger --without-fork --with-ostype=wasi-api --with-checks-level=0 --disable-threads --without-dylink --with-libr --without-gpl

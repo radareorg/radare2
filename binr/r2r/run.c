@@ -457,6 +457,7 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 			R2RSubprocess *proc = pid_to_proc (pid);
 			if (proc) {
 				r_th_lock_enter (proc->lock);
+#if !__wasi__
 				if (WIFSIGNALED (wstat)) {
 					const int signal_number = WTERMSIG (wstat);
 					R_LOG_ERROR ("Child signal %d", signal_number);
@@ -473,6 +474,9 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 				} else {
 					proc->ret = -1;
 				}
+#else
+				proc->ret = -1;
+#endif
 				int ret = write (proc->killpipe[1], "", 1);
 				r_th_lock_leave (proc->lock);
 				if (ret != 1) {
