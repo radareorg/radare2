@@ -1694,7 +1694,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 			free (node_data);
 			free (node_title);
 		}
-		r_agraph_print (g);
+		r_agraph_print (g, core);
 		r_cons_canvas_free (can);
 		r_config_hold_restore (hc);
 		r_config_hold_free (hc);
