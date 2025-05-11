@@ -1,7 +1,7 @@
 BIN=rafind2
 
-BINDEPS=r_search r_io r_asm r_anal r_reg r_cons r_lang r_crypto
-BINDEPS+=r_socket r_util r_syscall r_flag r_main
+BINDEPS=r_search r_io r_asm r_anal r_reg r_cons r_crypto
+BINDEPS+=r_socket r_util r_syscall r_flag r_main r_lang
 
 include ../rules.mk
 
