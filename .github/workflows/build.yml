@@ -58,6 +58,18 @@ jobs:
 
   # Linux
   linux-static:
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          - amd64
+          - arm64
+          - i386
+        include:
+          - arch: arm64
+            gcc: aarch64-linux-gnu
+          - arch: i386
+            gcc: multilib
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
@@ -66,22 +78,22 @@ jobs:
       shell: bash
       run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
       id: r2v
-    - name: Installing the musl runtime
+    - name: Installing the musl runtime and crosscompiler
       run: |
         sudo apt update --assume-yes
         sudo apt install --assume-yes musl-tools
+        if [ -n "${{ matrix.gcc }}" ]; then sudo apt install --assume-yes gcc-${{ matrix.gcc }}; fi
     - name: Building static r2 with acr
       run: |
         cp -f dist/plugins-cfg/plugins.static.nogpl.cfg plugins.cfg
         NOLTO=1 sys/static.sh
-        # NOLTO=1 sys/static.sh
         make -C binr/blob
-        tar cJvf radare2-${{ steps.r2v.outputs.branch }}-static.tar.xz r2-static
+        tar cJvf radare2-${{ steps.r2v.outputs.branch }}-static-${{ matrix.arch }}.tar.xz r2-static
     - name: Pub
       uses: actions/upload-artifact@v4
       with:
-        name: linux-static
-        path: radare2-*-static.tar.xz
+        name: linux-static-${{ matrix.arch }}
+        path: radare2-*-static-${{ matrix.arch }}.tar.xz
 
   linux-acr-rpm-64:
     # if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
