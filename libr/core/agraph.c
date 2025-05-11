@@ -3645,16 +3645,17 @@ static int agraph_print(RAGraph *g, bool is_interactive, RCore *core, RAnalFunct
 			int h, w = r_cons_get_size (&h);
 			r_kons_push (core->cons);
 			g->can->h *= 4;
-			RConsCanvas *_can = g->can;
-			g->can = r_cons_canvas_new (w * 2, h * 4);
-			g->can->sx = _can->sx;
-			g->can->sy = _can->sy;
+			RConsCanvas *ocan = g->can;
+			int flags = r_cons_canvas_flags (core->cons);
+			g->can = r_cons_canvas_new (w * 2, h * 4, flags);
+			g->can->sx = ocan->sx;
+			g->can->sy = ocan->sy;
 			g->can->color = 0;
-			g->can->linemode = _can->linemode;
+			g->can->linemode = ocan->linemode;
 			agraph_print_edges (g);
 			agraph_print_nodes (g);
 			r_cons_canvas_print_region (g->can);
-			g->can = _can;
+			g->can = ocan;
 			char *s = strdup (core->cons->context->buffer);
 			r_kons_pop (core->cons);
 			cmd_agfb3 (core, s, w - 40, 2);
@@ -4446,11 +4447,12 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 	r_config_hold (hc, "asm.pseudo", "asm.esil", "asm.cmt.right", NULL);
 
 	int h, w = r_cons_get_size (&h);
-	RConsCanvas *can = r_cons_canvas_new (w, h);
+	int flags = r_cons_canvas_flags (core->cons);
+	RConsCanvas *can = r_cons_canvas_new (w, h, flags);
 	if (!can) {
 		w = 80;
 		h = 25;
-		can = r_cons_canvas_new (w, h);
+		can = r_cons_canvas_new (w, h, flags);
 		if (!can) {
 			R_LOG_ERROR ("Cannot create RCons.canvas context. Invalid screen "
 					"size? See scr.cols + scr.rows");
@@ -5313,7 +5315,8 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 R_API RAGraph *r_agraph_new_from_graph(const RGraph *graph, RAGraphTransitionCBs *cbs, void *user) {
 	R_RETURN_VAL_IF_FAIL (graph && cbs && cbs->get_title && cbs->get_body, NULL);
 
-	RAGraph *result_agraph = r_agraph_new (r_cons_canvas_new (1, 1));
+	int flags = r_cons_canvas_flags (r_cons_singleton ());
+	RAGraph *result_agraph = r_agraph_new (r_cons_canvas_new (1, 1, flags));
 	if (!result_agraph) {
 		return NULL;
 	}

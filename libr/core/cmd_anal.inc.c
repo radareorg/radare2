@@ -12216,7 +12216,8 @@ R_API void r_core_agraph_treemap(RCore *core, int use_utf, const char *input) {
 	int h, w = r_cons_get_size (&h);
 	w--;
 	h--;
-	RConsCanvas *canvas = r_cons_canvas_new (w, h);
+	int flags = r_cons_canvas_flags (core->cons);
+	RConsCanvas *canvas = r_cons_canvas_new (w, h, flags);
 	r_cons_canvas_box (canvas, 1, 1, w - 1, h - 1, "");
 	RListIter *iter;
 	RAnalFunction *fcn = NULL;

@@ -1,10 +1,10 @@
-/* radare - LGPL - Copyright 2013-2024 - pancake */
+/* radare - LGPL - Copyright 2013-2025 - pancake */
 
 #include <r_cons.h>
 #include <r_util/r_assert.h>
+#include <math.h>
 
-#define useUtf8 (r_cons_singleton ()->use_utf8)
-#define useUtf8Curvy (r_cons_singleton ()->use_utf8_curvy)
+#define PI 3.14159265359
 
 #define W(y) r_cons_canvas_write (c, y)
 #define G(x, y) r_cons_canvas_gotoxy (c, x, y)
@@ -219,16 +219,14 @@ R_API bool r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y) {
 	return ret;
 }
 
-R_API RConsCanvas *r_cons_canvas_new(int w, int h) {
+R_API RConsCanvas *r_cons_canvas_new(int w, int h, int flags) {
 	if (w < 1 || h < 1) {
 		return NULL;
 	}
 	RConsCanvas *c = R_NEW0 (RConsCanvas);
-	if (!c) {
-		return NULL;
-	}
 	c->bgcolor = strdup (Color_RESET);
 	c->bsize = NULL;
+	c->flags = flags;
 	c->blen = NULL;
 	int i = 0;
 	c->color = 0;
@@ -496,8 +494,6 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 	return true;
 }
 
-#include <math.h>
-#define PI 3.1415
 R_API void r_cons_canvas_circle(RConsCanvas *c, int x, int y, int w, int h, const char *color) {
 	if (color) {
 		c->attr = color;
@@ -525,14 +521,19 @@ R_API void r_cons_canvas_circle(RConsCanvas *c, int x, int y, int w, int h, cons
 }
 
 R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const char *color) {
-	const char *hline = useUtf8? RUNECODESTR_LINE_HORIZ : "-";
-	const char *vtmp = useUtf8? RUNECODESTR_LINE_VERT : "|";
+	// NOTE: As long as utf and curvy flags are tied to the canvas, we need to
+	// regenerate the canvas to get such changes now. before the kons refactoring
+	// this changed when cconfig settings were modified. not sure if its worth.
+	const bool useutf = c->flags & R_CONS_CANVAS_FLAG_UTF8;
+	const bool usecrv = c->flags & R_CONS_CANVAS_FLAG_CURVY;
+	const char *hline = useutf? RUNECODESTR_LINE_HORIZ : "-";
+	const char *vtmp = useutf? RUNECODESTR_LINE_VERT : "|";
 	RStrBuf *vline = r_strbuf_new (NULL);
 	r_strbuf_appendf (vline, Color_RESET"%s%s", color, vtmp);
-	const char *tl_corner = useUtf8 ? (useUtf8Curvy ? RUNECODESTR_CURVE_CORNER_TL : RUNECODESTR_CORNER_TL) : ".";
-	const char *tr_corner = useUtf8 ? (useUtf8Curvy ? RUNECODESTR_CURVE_CORNER_TR : RUNECODESTR_CORNER_TR) : ".";
-	const char *bl_corner = useUtf8 ? (useUtf8Curvy ? RUNECODESTR_CURVE_CORNER_BL : RUNECODESTR_CORNER_BL) : "`";
-	const char *br_corner = useUtf8 ? (useUtf8Curvy ? RUNECODESTR_CURVE_CORNER_BR : RUNECODESTR_CORNER_BR) : "'";
+	const char *tl_corner = useutf ? (usecrv ? RUNECODESTR_CURVE_CORNER_TL : RUNECODESTR_CORNER_TL) : ".";
+	const char *tr_corner = useutf ? (usecrv ? RUNECODESTR_CURVE_CORNER_TR : RUNECODESTR_CORNER_TR) : ".";
+	const char *bl_corner = useutf ? (usecrv ? RUNECODESTR_CURVE_CORNER_BL : RUNECODESTR_CORNER_BL) : "`";
+	const char *br_corner = useutf ? (usecrv ? RUNECODESTR_CURVE_CORNER_BR : RUNECODESTR_CORNER_BR) : "'";
 	int i, x_mod;
 	int roundcorners = 0;
 	char *row = NULL, *row_ptr;
@@ -639,4 +640,15 @@ R_API void r_cons_canvas_line(RConsCanvas *c, int x, int y, int x2, int y2, RCan
 	} else {
 		r_cons_canvas_line_diagonal (c, x, y, x2, y2, style);
 	}
+}
+
+R_API int r_cons_canvas_flags(RCons * R_NONNULL cons) {
+	int flags = 0;
+	if (cons->use_utf8) {
+		flags |= R_CONS_CANVAS_FLAG_UTF8;
+	}
+	if (cons->use_utf8_curvy) {
+		flags |= R_CONS_CANVAS_FLAG_CURVY;
+	}
+	return flags;
 }
