@@ -884,7 +884,7 @@ static int cmd_seek(void *data, const char *input) {
 			} else {
 				if (r_config_get_b (core->config, "scr.interactive")) {
 					// open shell
-					r_line_set_prompt (core->cons, "sh> ");
+					r_line_set_prompt (core->cons->line, "sh> ");
 					for (;;) {
 						const char *line = r_line_readline (core->cons);
 						if (!line || !strcmp (line, "exit")) {

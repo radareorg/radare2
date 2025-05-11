@@ -1,4 +1,4 @@
-/* radare - Copyright 2009-2024 - pancake, nibble */
+/* radare - Copyright 2009-2025 - pancake, nibble */
 
 #include "r_core.h"
 #include "r_socket.h"
@@ -123,7 +123,7 @@ static void rtr_textlog_chat(RCore *core, TextLog T) {
 	R_LOG_INFO ("Type '/help' for commands and ^D to quit:");
 	char *oldprompt = strdup (core->cons->line->prompt);
 	snprintf (prompt, sizeof (prompt) - 1, "[%s]> ", me);
-	r_line_set_prompt (core->cons, prompt);
+	r_line_set_prompt (core->cons->line, prompt);
 	ret = rtrcmd (T, msg);
 	for (;;) {
 		if (lastmsg >= 0) {
@@ -155,7 +155,7 @@ static void rtr_textlog_chat(RCore *core, TextLog T) {
 			r_config_set (core->config, "cfg.user", buf+6);
 			me = r_config_get (core->config, "cfg.user");
 			snprintf (prompt, sizeof (prompt) - 1, "[%s]> ", me);
-			r_line_set_prompt (core->cons, prompt);
+			r_line_set_prompt (core->cons->line, prompt);
 			free (m);
 		} else if (!strcmp (buf, "/log")) {
 			char *ret = rtrcmd (T, "T");
@@ -177,7 +177,7 @@ static void rtr_textlog_chat(RCore *core, TextLog T) {
 		}
 	}
 beach:
-	r_line_set_prompt (core->cons, oldprompt);
+	r_line_set_prompt (core->cons->line, oldprompt);
 	free (oldprompt);
 }
 

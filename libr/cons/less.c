@@ -20,9 +20,10 @@ R_API int r_cons_less_str(RCons * R_NONNULL cons, const char * R_NONNULL str, co
 	R_RETURN_VAL_IF_FAIL (R_STR_ISNOTEMPTY (str), 0);
 	if (!r_kons_is_interactive (cons)) {
 		R_LOG_ERROR ("Internal less requires scr.interactive=true");
+		return 0;
 	}
 
-	int in_help = false;
+	bool in_help = false;
 	int lines_count = 0;
 	RRegex *rx = NULL;
 	int w, h, ch, to, ui = 1, from = 0, i;
@@ -118,7 +119,7 @@ R_API int r_cons_less_str(RCons * R_NONNULL cons, const char * R_NONNULL str, co
 			break;
 		case '/': 	/* search */
 			r_kons_reset_colors (cons);
-			r_line_set_prompt (cons, "/");
+			r_line_set_prompt (cons->line, "/");
 			sreg = r_line_readline (cons);
 			from = R_MIN (lines_count - 1, from);
 			/* repeat last search if empty string is provided */

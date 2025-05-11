@@ -117,7 +117,7 @@ static int textlog_chat(RCore *core) {
 
 	eprintf ("Type '/help' for commands:\n");
 	snprintf (prompt, sizeof (prompt) - 1, "[%s]> ", me);
-	r_line_set_prompt (core->cons, prompt);
+	r_line_set_prompt (core->cons->line, prompt);
 	for (;;) {
 		r_core_log_list (core, lastmsg, 0, 0);
 		lastmsg = core->log->last;
@@ -138,7 +138,7 @@ static int textlog_chat(RCore *core) {
 			r_config_set (core->config, "cfg.user", buf + 6);
 			me = r_config_get (core->config, "cfg.user");
 			snprintf (prompt, sizeof (prompt) - 1, "[%s]> ", me);
-			r_line_set_prompt (core->cons, prompt);
+			r_line_set_prompt (core->cons->line, prompt);
 			return 0;
 		} else if (!strcmp (buf, "/log")) {
 			r_core_log_list (core, 0, 0, 0);

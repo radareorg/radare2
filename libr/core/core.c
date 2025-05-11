@@ -1632,7 +1632,10 @@ R_API void r_core_autocomplete(RCore * R_NULLABLE core, RLineCompletion *complet
 }
 
 static int autocomplete(RLineCompletion *completion, RLineBuffer *buf, RLinePromptType prompt_type, void *user) {
-	RCore *core = user;
+	RCore *core = (RCore *)user;
+	if (core == NULL) {
+		R_LOG_WARN ("core->cons->line->user is nul, but should be equals to core");
+	}
 	r_core_autocomplete (core, completion, buf, prompt_type);
 	return true;
 }
@@ -2617,6 +2620,7 @@ R_API bool r_core_init(RCore *core) {
 	core->theme = strdup ("default");
 	/* initialize libraries */
 	core->cons = r_cons_new ();
+	core->cons->line->user = core;
 #if 0
 	if (true || core->cons->refcnt == 1) {
 		core->cons = r_cons_singleton ();
@@ -2979,7 +2983,7 @@ static void chop_prompt(RCore *core, const char *filename, char *tmp, size_t max
 
 static void set_prompt(RCore *core) {
 	if (core->incomment) {
-		r_line_set_prompt (core->cons, " * ");
+		r_line_set_prompt (core->cons->line, " * ");
 		return;
 	}
 	char tmp[128];
@@ -3053,7 +3057,7 @@ static void set_prompt(RCore *core) {
 	} else {
 		prompt = r_str_newf ("%s%s[%s%s]> %s", filename, BEGIN, remote, tmp, END);
 	}
-	r_line_set_prompt (core->cons, r_str_get (prompt));
+	r_line_set_prompt (core->cons->line, r_str_get (prompt));
 
 	R_FREE (filename);
 	R_FREE (prompt);
@@ -3535,7 +3539,7 @@ reaccept:
 		r_socket_free (c);
 	}
 out_of_function:
-	r_cons_break_pop ();
+	r_kons_break_pop (core->cons);
 	return false;
 }
 
@@ -3738,9 +3742,6 @@ R_API RCoreAutocomplete *r_core_autocomplete_add(RCoreAutocomplete *parent, cons
 		return NULL;
 	}
 	RCoreAutocomplete *autocmpl = R_NEW0 (RCoreAutocomplete);
-	if (!autocmpl) {
-		return NULL;
-	}
 	// TODO: use rlist or so
 	RCoreAutocomplete **updated = realloc (parent->subcmds, (parent->n_subcmds + 1) * sizeof (RCoreAutocomplete*));
 	if (!updated) {

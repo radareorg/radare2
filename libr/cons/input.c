@@ -7,7 +7,7 @@
 R_API int r_cons_controlz(RCons *cons, int ch) {
 #if R2__UNIX__
 	if (ch == 0x1a) {
-		r_cons_show_cursor (true);
+		r_kons_show_cursor (cons, true);
 		r_kons_enable_mouse (cons, false);
 		r_sys_stop ();
 		return 0;
@@ -748,17 +748,18 @@ R_API char *r_cons_password(const char *msg) {
 }
 
 R_API char *r_cons_input(RCons *cons, const char *msg) {
-	char *oprompt = r_line_get_prompt ();
+	RLine *line = cons->line;
+	char *oprompt = r_line_get_prompt (line);
 	if (!oprompt) {
 		return NULL;
 	}
-	r_line_set_prompt (cons, msg? msg: "");
+	r_line_set_prompt (cons->line, msg? msg: "");
 	size_t buf_size = 1024;
 	char *buf = malloc (buf_size);
 	if (buf) {
 		*buf = 0;
 		r_cons_fgets (cons, buf, buf_size, 0, NULL);
-		r_line_set_prompt (cons, oprompt);
+		r_line_set_prompt (cons->line, oprompt);
 	}
 	free (oprompt);
 	return buf;

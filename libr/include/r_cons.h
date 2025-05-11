@@ -1014,8 +1014,7 @@ R_API void r_cons_grep_help(RCons *cons);
 R_API void r_cons_grep_expression(RCons *cons, const char *str);
 R_API void r_cons_grep_parsecmd(RCons *cons, char *cmd, const char *quotestr);
 R_API char *r_cons_grep_strip(char *cmd, const char *quotestr);
-R_API int r_cons_grep_line(char *buf, int len); // must be static
-R_API void r_cons_grepbuf(void);
+R_API int r_cons_grep_line(RCons *cons, char *buf, int len); // must be static
 
 R_API void r_cons_rgb(ut8 r, ut8 g, ut8 b, ut8 a);
 R_API void r_cons_rgb_fgbg(ut8 r, ut8 g, ut8 b, ut8 R, ut8 G, ut8 B);
@@ -1117,7 +1116,7 @@ struct r_line_comp_t {
 	bool quit;
 	RPVector args; /* <char *> */
 	RLineCompletionCb run;
-	void *run_user;
+	void *run_user; // RCore *
 };
 
 typedef char* (*RLineEditorCb)(void *core, const char *file, const char *str);
@@ -1133,7 +1132,6 @@ struct r_line_t {
 	/* callbacks */
 	RLineHistoryUpCb cb_history_up;
 	RLineHistoryDownCb cb_history_down;
-	RLineEditorCb cb_editor;
 	// RLineFunctionKeyCb cb_fkey;
 	RConsFunctionKey cb_fkey;
 	bool echo;
@@ -1166,26 +1164,26 @@ struct r_line_t {
 #ifdef R_API
 
 R_API RLine *r_line_new(RCons *cons);
-R_API bool r_line_dietline_init(void); // XXX rename to r_line_init?
+R_API bool r_line_dietline_init(RLine *line); // XXX rename to r_line_init?
 R_API void r_line_free(RLine *line);
-R_API char *r_line_get_prompt(void);
-R_API void r_line_set_prompt(RCons *cons, const char *prompt);
-R_API void r_line_clipboard_push(const char *str);
+R_API char *r_line_get_prompt(RLine *line);
+R_API void r_line_set_prompt(RLine *line, const char *prompt);
+R_API void r_line_clipboard_push(RLine *line, const char *str);
 
 typedef int (RLineReadCallback)(RCons *cons, void *user, const char *line);
-R_API const char *r_line_readline(RCons *cons);
+R_API const char *r_line_readline(RCons *cons); // must use RLine instead?
 R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *user);
 
 R_API void r_line_hist_free(RLine *line);
-R_API bool r_line_hist_load(const char *file);
-R_API bool r_line_hist_add(const char *line);
-R_API bool r_line_hist_save(const char *file);
-R_API int r_line_hist_label(const char *label, void(*cb)(const char*));
-R_API void r_line_label_show(void);
-R_API int r_line_hist_list(bool full);
-R_API int r_line_hist_get_size(void);
-R_API void r_line_hist_set_size(int size);
-R_API const char *r_line_hist_get(int n);
+R_API bool r_line_hist_load(RLine *line, const char *file);
+R_API bool r_line_hist_add(RLine *line, const char *text);
+R_API bool r_line_hist_save(RLine *line, const char *file);
+R_API int r_line_hist_label(RLine *line, const char *label, void(*cb)(const char*));
+R_API void r_line_label_show(RLine *line);
+R_API int r_line_hist_list(RLine *line, bool full);
+R_API int r_line_hist_get_size(RLine *line);
+R_API void r_line_hist_set_size(RLine *line, int size);
+R_API const char *r_line_hist_get(RLine *line, int n);
 
 R_API int r_line_set_hist_callback(RLine *line, RLineHistoryUpCb cb_up, RLineHistoryDownCb cb_down);
 R_API int r_line_hist_cmd_up(RLine *line);

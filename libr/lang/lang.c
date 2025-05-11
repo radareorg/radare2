@@ -346,7 +346,7 @@ R_API bool r_lang_prompt(RLang *lang) {
 	for (;;) {
 		r_kons_flush (lang->cons);
 		snprintf (buf, sizeof (buf) - 1, "%s> ", plugin->meta.name);
-		r_line_set_prompt (lang->cons, buf);
+		r_line_set_prompt (lang->cons->line, buf);
 #if 0
 		printf ("%s> ", lang->cur->name);
 		fflush (stdout);
@@ -358,7 +358,7 @@ R_API bool r_lang_prompt(RLang *lang) {
 		if (!p) {
 			break;
 		}
-		r_line_hist_add (p);
+		r_line_hist_add (lang->cons->line, p);
 		strncpy (buf, p, sizeof (buf) - 1);
 		if (*buf == '!') {
 			if (buf[1]) {
@@ -410,7 +410,7 @@ R_API bool r_lang_prompt(RLang *lang) {
 		}
 	}
 	// XXX: leaking history
-	r_line_set_prompt (line->cons, prompt);
+	r_line_set_prompt (line->cons->line, prompt);
 	line->completion = oc;
 	line->history = hist;
 	clearerr (stdin);
