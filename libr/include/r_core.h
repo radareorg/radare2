@@ -307,18 +307,16 @@ typedef struct {
 	int y;
 } VisualMark;
 
+typedef struct r_core_esil_stepback_t {
+	char *expr;
+	ut64 addr;
+} RCoreEsilStepBack;
+
 typedef struct r_core_esil_t {
 	REsil esil;
-#if 0
-	union {
-		RStrBuf trap_revert;
-		ut64 old_pc;
-	};
-#else
-	//ideally this would be a union, but cmd_mdev need to know the old pc
+	RList stepback;
 	RStrBuf trap_revert;
 	ut64 old_pc;
-#endif
 	ut32 tr_reg;
 	ut32 tr_mem;
 	RReg *reg;
@@ -330,6 +328,7 @@ typedef struct r_core_esil_t {
 	char *cmd_todo;		// command to run when esil expr contains TODO
 	char *cmd_ioer;		// command to run when esil fails to IO
 	char *mdev_range;	// string containing the r_str_range to match for read/write accesses
+	ut32 max_stepback;
 	ut8 cfg;
 } RCoreEsil;
 
@@ -796,6 +795,8 @@ R_API void r_core_esil_fini(RCoreEsil *cesil);
 R_API void r_core_esil_load_arch(RCore *core);
 R_API void r_core_esil_unload_arch(RCore *core);
 R_API void r_core_esil_single_step(RCore *core);
+R_API void r_core_esil_stepback(RCore *core);	//replacement for r_core_esil_step_back; rename later
+R_API void r_core_esil_set_max_stepback(RCore *core, ut32 max_stepback);
 
 // both do the same, we should get rid of one of them
 R_API bool r_core_bin_raise(RCore *core, ut32 bfid);

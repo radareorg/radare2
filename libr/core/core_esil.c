@@ -148,6 +148,9 @@ static void core_esil_voyeur_trap_revert_mem_write (void *user, ut64 addr,
 	if (!(cesil->cfg & R_CORE_ESIL_TRAP_REVERT)) {
 		return;
 	}
+	if (cesil->cfg & R_CORE_ESIL_RO) {
+		return;
+	}
 	int i;
 	for (i = 0; i < len; i++) {
 		//TODO: optimize this after breaking
@@ -156,8 +159,17 @@ static void core_esil_voyeur_trap_revert_mem_write (void *user, ut64 addr,
 	}
 }
 
+static void core_esil_stepback_free (void *data) {
+	if (data) {
+		RCoreEsilStepBack *cesb = data;
+		free (cesb->expr);
+		free (data);
+	}
+}
+
 R_API bool r_core_esil_init(RCore *core) {
 	R_RETURN_VAL_IF_FAIL (core && core->io, false);
+	core->esil = (const RCoreEsil){0};
 	core->esil.reg = r_reg_new ();
 	if (!core->esil.reg) {
 		return false;
@@ -179,6 +191,7 @@ R_API bool r_core_esil_init(RCore *core) {
 		core_esil_voyeur_trap_revert_reg_write, R_ESIL_VOYEUR_REG_WRITE);
 	core->esil.tr_mem = r_esil_add_voyeur (&core->esil.esil, &core->esil,
 		core_esil_voyeur_trap_revert_mem_write, R_ESIL_VOYEUR_MEM_WRITE);
+	core->esil.stepback.free = core_esil_stepback_free;
 	return true;
 op_fail:
 	r_esil_fini (&core->esil.esil);
@@ -292,7 +305,7 @@ R_API void r_core_esil_single_step(RCore *core) {
 	if (!r_itv_contain (region.itv, pc + op.size)) {
 		goto op_trap;
 	}
-	if (core->esil.cfg & R_CORE_ESIL_TRAP_REVERT_CONFIG) {
+	if ((core->esil.cfg & R_CORE_ESIL_TRAP_REVERT_CONFIG) || core->esil.max_stepback) {
 		core->esil.cfg |= R_CORE_ESIL_TRAP_REVERT;
 		r_strbuf_initf (&core->esil.trap_revert,
 			"0x%"PFMT64x",%s,:=", pc, pc_name);
@@ -316,7 +329,38 @@ R_API void r_core_esil_single_step(RCore *core) {
 	if (suc) {
 skip:
 		if (core->esil.cfg & R_CORE_ESIL_TRAP_REVERT) {
-			r_strbuf_fini (&core->esil.trap_revert);
+			if (core->esil.max_stepback) {
+				if (core->esil.max_stepback > r_list_length (&core->esil.stepback)) {
+					RCoreEsilStepBack *cesb = R_NEW (RCoreEsilStepBack);
+					if (!cesb) {
+						R_LOG_WARN ("RCoreEsilStepBack allocation failed");
+						r_strbuf_fini (&core->esil.trap_revert);
+					} else {
+						if (!r_list_push (&core->esil.stepback, cesb)) {
+							R_LOG_WARN ("Pushing RCoreEsilStepBack failed");
+						} else {
+							cesb->expr = r_strbuf_drain_nofree (&core->esil.trap_revert);
+							cesb->addr = core->esil.old_pc;
+						}
+					}
+				} else {
+					//this is like r_list_pop_head + r_list_push,
+					//but without expensive calls to malloc and free
+					RListIter *iter = core->esil.stepback.head;
+					iter->p->n = NULL;
+					core->esil.stepback.head = iter->p;
+					iter->p = NULL;
+					iter->n = core->esil.stepback.tail;
+					core->esil.stepback.tail->p = iter;
+					core->esil.stepback.tail = iter;
+					RCoreEsilStepBack *cesb = iter->data;
+					free (cesb->expr);
+					cesb->expr = r_strbuf_drain_nofree (&core->esil.trap_revert);
+					cesb->addr = core->esil.old_pc;
+				}
+			} else {
+				r_strbuf_fini (&core->esil.trap_revert);
+			}
 		}
 		if (core->esil.cmd_step_out) {
 			r_core_cmdf (core, "%s %"PFMT64d" 0", core->esil.cmd_step_out, core->esil.old_pc);
@@ -354,6 +398,26 @@ trap:
 	return;
 }
 
+R_API void r_core_esil_stepback (RCore *core) {
+	R_RETURN_IF_FAIL (core && core->io && core->esil.reg);
+	if (!r_list_length (&core->esil.stepback)) {
+		//not an error
+		return;
+	}
+	RCoreEsilStepBack *cesb = r_list_pop (&core->esil.stepback);
+	core->esil.cfg &= ~R_CORE_ESIL_TRAP_REVERT;
+	r_esil_parse (&core->esil.esil, cesb->expr);
+	core_esil_stepback_free (cesb);
+}
+
+R_API void r_core_esil_set_max_stepback (RCore *core, ut32 max_stepback) {
+	R_RETURN_IF_FAIL (core && core->esil.stepback.free);
+	core->esil.max_stepback = max_stepback;
+	while (r_list_length (&core->esil.stepback) > max_stepback) {
+		core_esil_stepback_free (r_list_pop_head (&core->esil.stepback));
+	}
+}
+
 R_API void r_core_esil_fini(RCoreEsil *cesil) {
 	R_RETURN_IF_FAIL (cesil);
 	r_esil_del_voyeur (&cesil->esil, cesil->tr_reg);
@@ -372,5 +436,6 @@ R_API void r_core_esil_fini(RCoreEsil *cesil) {
 	R_FREE (cesil->cmd_todo);
 	R_FREE (cesil->cmd_ioer);
 	R_FREE (cesil->mdev_range);
+	r_list_purge (&cesil->stepback);
 	cesil->esil = (const REsil){0};
 }
