@@ -763,7 +763,7 @@ R_API RCons *r_kons_new(void) {
 	init_cons_input (&cons->input_state);
 	cons->lock = r_th_lock_new (false);
 	cons->use_utf8 = r_cons_is_utf8 ();
-	cons->rgbstr = r_cons_rgb_str_off;
+	cons->rgbstr = r_cons_rgb_str_off; // XXX maybe we can kill that
 	cons->enable_highlight = true;
 	cons->highlight = NULL;
 	cons->is_wine = -1;

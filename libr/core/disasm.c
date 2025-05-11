@@ -1150,7 +1150,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 				bg.g2 = bb->color.g;
 				bg.b2 = bb->color.b;
 				// RColor bg = { .r2 = bb->color.r, .g2 = bb->color.g, .b2 = bb->color.b, };
-				char *color = r_cons_rgb_str (NULL, -1, &bg); // &bb->color);
+				char *color = r_cons_rgb_str (core->cons, NULL, -1, &bg); // &bb->color);
 				r_kons_printf (core->cons, "%s_%s ", color, Color_RESET);
 				free (color);
 				extraspace = false;
@@ -2469,7 +2469,7 @@ static void ds_print_pre(RDisasmState *ds, bool fcnline) {
 	r_list_foreach (list, iter, bb) {
 		if (bb->color.r || bb->color.g || bb->color.b) {
 			free (kolor);
-			kolor = r_cons_rgb_str (NULL, -1, &bb->color);
+			kolor = r_cons_rgb_str (cons, NULL, -1, &bb->color);
 			break;
 		}
 	}
@@ -2633,7 +2633,7 @@ static void __preline_flag(RDisasmState *ds, RFlagItem *fi) {
 		bool hasColor = false;
 		RFlagItemMeta *fim = r_flag_get_meta (ds->core->flags, fi->id);
 		if (fim && fim->color) {
-			char *color = r_cons_pal_parse (fim->color, NULL);
+			char *color = r_cons_pal_parse (ds->core->cons, fim->color, NULL);
 			if (color) {
 				r_cons_print (color);
 				free (color);
@@ -2795,7 +2795,7 @@ static bool ds_show_flags(RDisasmState *ds, bool overlapped) {
 		if (ds->show_color) {
 			const char *fcolor = r_flag_item_set_color (core->flags, flag, NULL);
 			if (fcolor) {
-				color = r_cons_pal_parse (fcolor, NULL);
+				color = r_cons_pal_parse (core->cons, fcolor, NULL);
 				if (color) {
 					r_kons_print (cons, color);
 					ds->lastflag = flag;
@@ -3467,7 +3467,7 @@ static void ds_print_offset(RDisasmState *ds) {
 	}
 	if (ds->show_color && f && fcolor) {
 		if (ds->at >= f->addr && ds->at < f->addr + f->size) {
-			char *k = r_cons_pal_parse (fcolor, NULL);
+			char *k = r_cons_pal_parse (cons, fcolor, NULL);
 			if (R_STR_ISNOTEMPTY (k)) {
 				r_kons_printf (cons, "%s", k);
 				hasCustomColor = true;

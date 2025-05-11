@@ -4645,7 +4645,7 @@ static void cmd_afbc(RCore *core, const char *input) {
 	} else if (!*ptr) {
 		RAnalBlock *bb = r_anal_get_block_at (core->anal, core->addr);
 		if (bb && (bb->color.r || bb->color.g || bb->color.b)) {
-			char *s = r_cons_rgb_str (NULL, -1, &bb->color);
+			char *s = r_cons_rgb_str (core->cons, NULL, -1, &bb->color);
 			if (s) {
 				char *name = r_cons_rgb_tostring (bb->color.r, bb->color.g, bb->color.b);
 				r_cons_printf ("%s%s"Color_RESET"\n", s, name);
@@ -4670,7 +4670,7 @@ static void cmd_afbc(RCore *core, const char *input) {
 		if (del) {
 			ptr--;
 		} else {
-			char *ansi = r_cons_pal_parse (ptr, &color);
+			char *ansi = r_cons_pal_parse (core->cons, ptr, &color);
 			valid_color = ansi != NULL;
 			free (ansi);
 		}
@@ -11864,10 +11864,10 @@ static void cmd_agraph_node(RCore *core, const char *input) {
 			body = r_str_append (body, "\n");
 			if (n_args > 2) {
 				RColor kolor = {0};
-				char *akolor = r_cons_pal_parse (args[2], &kolor);
+				char *akolor = r_cons_pal_parse (core->cons, args[2], &kolor);
 				free (akolor);
 				if (akolor != NULL) {
-					color = r_cons_rgb_str (NULL, -1, &kolor);
+					color = r_cons_rgb_str (core->cons, NULL, -1, &kolor);
 				}
 			}
 		} else {
@@ -13519,7 +13519,7 @@ static void cmd_anal_abtn(RCore *core, const char *input) {
 			}
 			if (arg) {
 				RColor k = {0};
-				char *s = r_cons_pal_parse (arg + 1, &k);
+				char *s = r_cons_pal_parse (core->cons, arg + 1, &k);
 				if (s)  {
 					core->anal->tracetagcolors[tag] = k;
 					free (s);

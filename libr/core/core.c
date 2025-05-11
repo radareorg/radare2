@@ -2109,7 +2109,7 @@ R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr, ut8 ch, bo
 			const char *ficolor = r_flag_item_set_color (core->flags, fi, NULL);
 			if (ficolor) {
 				free (const_color);
-				const_color = r_cons_pal_parse (ficolor, NULL);
+				const_color = r_cons_pal_parse (core->cons, ficolor, NULL);
 				return const_color;
 			}
 		}

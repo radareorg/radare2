@@ -2865,7 +2865,7 @@ static void fcn_print(RCore *core, RAnalFunction *fcn, bool quiet) {
 		ut64 realsize = r_anal_function_realsize (fcn);
 		if (use_colors) {
 			RAnalBlock *firstBlock = r_list_first (fcn->bbs);
-			char *color = firstBlock? r_cons_rgb_str (NULL, 0, &firstBlock->color): strdup ("");
+			char *color = firstBlock? r_cons_rgb_str (core->cons, NULL, 0, &firstBlock->color): strdup ("");
 			r_kons_printf (core->cons, "%s0x%08"PFMT64x" %4d %6"PFMT64d" %s%s\n",
 					color, fcn->addr, r_list_length (fcn->bbs),
 					realsize, name, Color_RESET);

@@ -2357,7 +2357,7 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 			node->body = body;
 			R_FREE (node->color);
 			if (bb->color.r || bb->color.g || bb->color.b) {
-				node->color = r_cons_rgb_str (NULL, -1, &bb->color);
+				node->color = r_cons_rgb_str (core->cons, NULL, -1, &bb->color);
 			}
 		} else {
 			free (body);
@@ -2506,7 +2506,8 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		}
 		char *body = get_bb_body (core, bb, mode2opts (g), fcn, emu, saved_gp, saved_arena, saved_arena_size);
 		char *title = get_title (bb->addr);
-		char *color = (bb->color.r || bb->color.g || bb->color.b)? r_cons_rgb_str (NULL, -1, &bb->color): NULL;
+		char *color = (bb->color.r || bb->color.g || bb->color.b)
+			? r_cons_rgb_str (core->cons, NULL, -1, &bb->color): NULL;
 
 		RANode *node = r_agraph_add_node (g, title, body, color);
 		free (color);

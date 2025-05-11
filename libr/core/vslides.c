@@ -86,7 +86,7 @@ static void render(SlidesState *state, RCore *core, RList *list, int mode, int p
 			} else if (r_str_startswith (s, "--color=")) {
 				char *kv = strdup (s + strlen ("--color="));
 				if (*kv) {
-					char *k = r_cons_pal_parse (kv, NULL);
+					char *k = r_cons_pal_parse (core->cons, kv, NULL);
 					r_strbuf_append (sb, k);
 					free (k);
 				} else {

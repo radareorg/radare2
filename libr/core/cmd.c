@@ -3004,7 +3004,7 @@ static int cmd_panels(void *data, const char *input) {
 			RPanel *pan = getpanel (core->panels, core->panels->curnode);
 #undef getpanel
 			if (pan) {
-				char *r = r_cons_pal_parse (r_str_trim_head_ro (input + 2), NULL);
+				char *r = r_cons_pal_parse (core->cons, r_str_trim_head_ro (input + 2), NULL);
 				if (r) {
 					free (pan->model->bgcolor);
 					pan->model->bgcolor = r_str_newf (Color_RESET"%s", r);

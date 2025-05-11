@@ -465,7 +465,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 				// pre = r_cons_rgb_str_off (rgbstr, addr);
 				if (p->consb.cons && p->consb.cons->rgbstr) {
 					static R_TH_LOCAL char rgbstr[32];
-					pre = p->consb.cons->rgbstr (rgbstr, sizeof (rgbstr), addr);
+					pre = p->consb.cons->rgbstr (p->consb.cons, rgbstr, sizeof (rgbstr), addr);
 				}
 			}
 			if (dec) {

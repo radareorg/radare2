@@ -769,12 +769,12 @@ static void first_flag_chars(const char *name, char *ch, char *ch2) {
 }
 
 // nibble-level colordump
-static char *get_color(ut8 ch) {
+static char *get_color(RCons *cons, ut8 ch) {
 	ut32 c0 = colormap16[ch];
 	const int brightness = ((c0 & 0xff0000) >> 16) + 2 * ((c0 & 0xff00) >> 8) + (c0 & 0xff) / 2;
 	// char *str = r_str_newf ("rgb:%s rgb:%06x", brightness <= 0x7f * 3 ? "fff" : "000", c0);
 	char *str = r_str_newf ("rgb:%s rgb:%06x", brightness <= 0x40 * 3 ? "aaa" : "222", c0);
-	char *res = r_cons_pal_parse (str, NULL);
+	char *res = r_cons_pal_parse (cons, str, NULL);
 	free (str);
 	return res;
 }
@@ -793,6 +793,7 @@ static void cmd_prcn(RCore *core, const ut8* block, int len, bool bitsmode) {
 	if (cols < 1 || cols > 0xfffff) {
 		cols = 32;
 	}
+	RCons *cons = core->cons;
 	for (i = 0; i < len; i += cols) {
 		if (show_section) {
 			const char * name = r_core_get_section_name (core, core->addr + i);
@@ -812,8 +813,8 @@ static void cmd_prcn(RCore *core, const ut8* block, int len, bool bitsmode) {
 				ch1 = core->print->io_unalloc_ch;
 			}
 			if (show_color) {
-				color0 = get_color (ch0);
-				color1 = get_color (ch1);
+				color0 = get_color (cons, ch0);
+				color1 = get_color (cons, ch1);
 #if 0
 				if (show_cursor && core->print->cur == j) {
 					ch = '_';
@@ -895,7 +896,7 @@ static void cmd_prc(RCore *core, const ut8* block, int len) {
 					+ (color_val & 0xff) / 2;
 				char *str = r_str_newf ("rgb:%s rgb:%06x",
 					brightness <= 0x7f * 3 ? "fff" : "000", color_val);
-				color = r_cons_pal_parse (str, NULL);
+				color = r_cons_pal_parse (core->cons, str, NULL);
 				free (str);
 				if (show_cursor && core->print->cur == j) {
 					ch = '_';
@@ -1017,7 +1018,7 @@ static void cmd_prc_zoom(RCore *core, const char *input) {
 			}
 			if (show_color) {
 				char *str = r_str_newf ("rgb:fff rgb:%06x", colormap[block[j]]);
-				color = r_cons_pal_parse (str, NULL);
+				color = r_cons_pal_parse (core->cons, str, NULL);
 				free (str);
 				if (show_cursor && core->print->cur == j) {
 					ch = '_';
@@ -2727,7 +2728,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 						}
 					}
 					if (curcolor) {
-						char *ansicolor = r_cons_pal_parse (curcolor, NULL);
+						char *ansicolor = r_cons_pal_parse (core->cons, curcolor, NULL);
 						if (ansicolor) {
 							append (ebytes, ansicolor);
 							append (echars, ansicolor);
@@ -9187,7 +9188,7 @@ R_API void r_print_offset(RPrint *p, ut64 off, int invert, int delta, const char
 		const char *k = core->cons->context->pal.addr; // TODO etooslow. must cache
 		const char *inv = invert ? R_CONS_INVERT (true, true) : "";
 		if (p->flags & R_PRINT_FLAGS_RAINBOW) {
-			k = r_cons_rgb_str_off (rgbstr, sizeof (rgbstr), off);
+			k = r_cons_rgb_str_off (core->cons, rgbstr, sizeof (rgbstr), off);
 		}
 		if (!k) {
 			k = "";
