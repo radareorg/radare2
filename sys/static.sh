@@ -63,6 +63,8 @@ fi
 # CFGARGS=--disable-loadlibs
 # CFGARGS=--without-openssl
 DOCFG=1
+export CFLAGS="${CFLAGS} -O2"
+
 if [ 1 = "${DOCFG}" ]; then
 	# build
 	if [ -f config-user.mk ]; then
@@ -70,6 +72,7 @@ if [ 1 = "${DOCFG}" ]; then
 	fi
 	export CFLAGS="${CFLAGS} -fPIC"
 	export CFGARGS="$CFGARGS --with-static-themes"
+	strip -s binr/blob/r2blob
 	cp -f dist/plugins-cfg/plugins.static.nogpl.cfg plugins.cfg
 	./configure-plugins || exit 1
 	./configure --prefix="$PREFIX" --without-gpl --with-libr $CFGARGS || exit 1
@@ -93,6 +96,9 @@ for a in ${BINS} ; do
 	fi
 )
 done
+
+${MAKE} -C binr/blob/r2blob
+strip -s binr/blob/r2blob/*
 
 rm -rf r2-static
 mkdir r2-static || exit 1
