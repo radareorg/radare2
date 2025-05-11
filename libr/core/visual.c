@@ -512,7 +512,7 @@ R_API bool r_core_visual_hud(RCore *core) {
 		res = r_cons_hud_file (core->cons, f);
 	}
 	if (!res) {
-		r_cons_message ("Cannot find hud file");
+		r_cons_message (core->cons, "Cannot find hud file");
 	}
 	r_cons_clear ();
 	if (res) {
@@ -1124,10 +1124,10 @@ static void visual_search(RCore *core) {
 		}
 		r_core_visual_showcursor (core, true);
 		R_LOG_INFO ("Found in offset 0x%08"PFMT64x" + %d", core->addr, core->print->cur);
-		r_cons_any_key (NULL);
+		r_cons_any_key (core->cons, NULL);
 	} else {
 		R_LOG_ERROR ("Cannot find bytes");
-		r_cons_any_key (NULL);
+		r_cons_any_key (core->cons, NULL);
 		r_cons_clear00 ();
 	}
 }
@@ -2847,9 +2847,9 @@ static void handle_space_key(RCore *core, int force) {
 	if (force == 'V') {
 		RAnalFunction *fun = r_anal_get_fcn_in (core->anal, core->addr, R_ANAL_FCN_TYPE_NULL);
 		if (!fun) {
-			r_cons_message ("Not in a function. Type 'df' to define it here");
+			r_cons_message (core->cons, "Not in a function. Type 'df' to define it here");
 		} else if (r_list_empty (fun->bbs)) {
-			r_cons_message ("No basic blocks in this function. You may want to use 'afb+'.");
+			r_cons_message (core->cons, "No basic blocks in this function. You may want to use 'afb+'.");
 		} else {
 			const int ocolor = r_config_get_i (core->config, "scr.color");
 			reset_print_cur (core->print);
@@ -3044,7 +3044,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				}
 				if (!canWrite (core, addr)) {
 					r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag, oo+ or e io.cache=true\n");
-					r_cons_any_key (NULL);
+					r_cons_any_key (core->cons, NULL);
 					return true;
 				}
 			}
@@ -3301,7 +3301,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			*buf = 0;
 			if (!canWrite (core, addr)) {
 				R_LOG_ERROR ("File is read-only. Use `r2 -w` or run `oo+` or `e io.cache=true`");
-				r_cons_any_key (NULL);
+				r_cons_any_key (core->cons, NULL);
 				return true;
 			}
 			if (PIDX == 0) {
@@ -3809,7 +3809,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if (!core->yank_buf) {
 				r_cons_print ("Cannot paste, clipboard is empty.\n");
 				r_cons_flush ();
-				r_cons_any_key (NULL);
+				r_cons_any_key (core->cons, NULL);
 				r_cons_clear00 ();
 			} else {
 				r_core_yank_paste (core, core->addr + core->print->cur, 0);
@@ -3837,7 +3837,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				} else {
 					if (!canWrite (core, core->addr)) {
 						r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag, oo+ or e io.cache=true\n");
-						r_cons_any_key (NULL);
+						r_cons_any_key (core->cons, NULL);
 						return true;
 					}
 					if (core->print->ocur == -1) {
@@ -3871,7 +3871,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				} else {
 					if (!canWrite (core, core->addr)) {
 						r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag, oo+ or e io.cache=true\n");
-						r_cons_any_key (NULL);
+						r_cons_any_key (core->cons, NULL);
 						return true;
 					}
 					if (core->print->ocur == -1) {
@@ -3957,7 +3957,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if (core->print->cur_enabled) {
 				if (core->print->ocur == -1) {
 					R_LOG_ERROR ("No range selected. Use HJKL");
-					r_cons_any_key (NULL);
+					r_cons_any_key (core->cons, NULL);
 					break;
 				}
 				char buf[128];

@@ -465,7 +465,7 @@ R_API char *r_cons_hud_path(RCons *cons, const char *path, int dir) {
 	return tmp;
 }
 
-static char *r_cons_message_multiline(const char *msg) {
+static char *r_cons_message_multiline(RCons *cons, const char *msg) {
 	char *s = strdup (msg);
 	RList *lines = r_str_split_list (s, "\n", 0);
 	RListIter *iter;
@@ -480,29 +480,29 @@ static char *r_cons_message_multiline(const char *msg) {
 	int rows, cols = r_cons_get_size (&rows);
 	const char *pad = r_str_pad (' ', (cols-longest) / 2);
 	char *newmsg = r_str_prefix_all (msg, pad);
-	r_cons_clear ();
-	r_cons_gotoxy (0, (rows / 2) - (r_list_length (lines) / 2));
-	r_cons_println (newmsg);
-	r_cons_flush ();
-	r_cons_gotoxy (0, rows - 2);
-	r_cons_any_key (NULL);
+	r_kons_clear (cons);
+	r_kons_gotoxy (cons, 0, (rows / 2) - (r_list_length (lines) / 2));
+	r_kons_println (cons, newmsg);
+	r_kons_flush (cons);
+	r_kons_gotoxy (cons, 0, rows - 2);
+	r_cons_any_key (cons, NULL);
 	r_list_free (lines);
 	free (s);
 	free (newmsg);
 	return NULL;
 }
 
-R_API char *r_cons_message(const char *msg) {
+R_API char *r_cons_message(RCons *cons, const char *msg) {
 	if (strchr (msg, '\n')) {
-		return r_cons_message_multiline (msg);
+		return r_cons_message_multiline (cons, msg);
 	}
 	int len = strlen (msg);
 	int rows, cols = r_cons_get_size (&rows);
-	r_cons_clear ();
-	r_cons_gotoxy ((cols - len) / 2, rows / 2);
-	r_cons_println (msg);
-	r_cons_flush ();
-	r_cons_gotoxy (0, rows - 2);
-	r_cons_any_key (NULL);
+	r_kons_clear (cons);
+	r_kons_gotoxy (cons, (cols - len) / 2, rows / 2);
+	r_kons_println (cons, msg);
+	r_kons_flush (cons);
+	r_kons_gotoxy (cons, 0, rows - 2);
+	r_cons_any_key (cons, NULL);
 	return NULL;
 }

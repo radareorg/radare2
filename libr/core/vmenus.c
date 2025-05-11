@@ -438,7 +438,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 			" !     - toggle all bits\n"
 			" :     - enter command\n");
 			r_kons_flush (core->cons);
-			r_cons_any_key (NULL);
+			r_cons_any_key (core->cons, NULL);
 			break;
 		case ':': // TODO: move this into a separate helper function
 			r_kons_show_cursor (core->cons, true);
@@ -900,7 +900,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			" !     - toggle all the bits\n"
 			" :     - run r2 command\n");
 			r_cons_flush ();
-			r_cons_any_key (NULL);
+			r_cons_any_key (core->cons, NULL);
 			break;
 		case ':': // TODO: move this into a separate helper function
 			{
@@ -916,7 +916,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			r_cons_set_raw (1);
 			r_cons_show_cursor (false);
 			if (cmd[0]) {
-				r_cons_any_key (NULL);
+				r_cons_any_key (core->cons, NULL);
 			}
 			r_cons_clear ();
 			}
@@ -1207,7 +1207,7 @@ R_API int r_core_visual_types(RCore *core) {
 			" -	- Open cfg.editor to load types\n"
 			" :     - enter command\n");
 			r_cons_flush ();
-			r_cons_any_key (NULL);
+			r_cons_any_key (core->cons, NULL);
 			break;
 		case ':':
 			r_cons_show_cursor (true);
@@ -1221,7 +1221,7 @@ R_API int r_core_visual_types(RCore *core) {
 			r_cons_set_raw (1);
 			r_cons_show_cursor (false);
 			if (cmd[0]) {
-				r_cons_any_key (NULL);
+				r_cons_any_key (core->cons, NULL);
 			}
 			r_cons_clear ();
 			continue;
@@ -1546,7 +1546,7 @@ R_API int r_core_visual_classes(RCore *core) {
 	bool grepmode = false;
 	RList *list = r_bin_get_classes (core->bin);
 	if (r_list_empty (list)) {
-		r_cons_message ("No Classes");
+		r_cons_message (core->cons, "No Classes");
 		return false;
 	}
 	for (;;) {
@@ -1704,7 +1704,7 @@ R_API int r_core_visual_classes(RCore *core) {
 			" p     - preview method disasm with less\n"
 			" :     - enter command\n");
 			r_cons_flush ();
-			r_cons_any_key (NULL);
+			r_cons_any_key (core->cons, NULL);
 			break;
 		case ':':
 			r_cons_show_cursor (true);
@@ -1719,7 +1719,7 @@ R_API int r_core_visual_classes(RCore *core) {
 			r_cons_set_raw (1);
 			r_cons_show_cursor (false);
 			if (cmd[0]) {
-				r_cons_any_key (NULL);
+				r_cons_any_key (core->cons, NULL);
 			}
 			//cons_gotoxy(0,0);
 			r_cons_clear ();
@@ -1832,7 +1832,7 @@ R_API int r_core_visual_anal_classes(RCore *core) {
 	const char *class_name = "";
 
 	if (r_list_empty (list)) {
-		r_cons_message ("No Classes");
+		r_cons_message (core->cons, "No Classes");
 		goto cleanup;
 	}
 	for (;;) {
@@ -1913,7 +1913,7 @@ R_API int r_core_visual_anal_classes(RCore *core) {
 			" l/' ' - accept current selection\n"
 			" :     - enter command\n");
 			r_cons_flush ();
-			r_cons_any_key (NULL);
+			r_cons_any_key (core->cons, NULL);
 			break;
 		case ':':
 			r_cons_show_cursor (true);
@@ -1928,7 +1928,7 @@ R_API int r_core_visual_anal_classes(RCore *core) {
 			r_cons_set_raw (1);
 			r_cons_show_cursor (false);
 			if (command[0]) {
-				r_cons_any_key (NULL);
+				r_cons_any_key (core->cons, NULL);
 			}
 			//cons_gotoxy(0,0);
 			r_cons_clear ();
@@ -2094,7 +2094,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 					" q  - quit this view\n"
 				      );
 			r_cons_flush ();
-			r_cons_any_key (NULL);
+			r_cons_any_key (core->cons, NULL);
 			break;
 		case ':': // TODO: move this into a separate helper function
 			r_cons_show_cursor (true);
@@ -2514,7 +2514,7 @@ R_API int r_core_visual_trackflags(RCore *core) { // "vbf"
 			" _     - hud for flags and comments\n"
 			" :     - enter command\n");
 			r_cons_flush ();
-			r_cons_any_key (NULL);
+			r_cons_any_key (core->cons, NULL);
 			break;
 		case ':':
 			r_cons_show_cursor (true);
@@ -2529,7 +2529,7 @@ R_API int r_core_visual_trackflags(RCore *core) { // "vbf"
 			r_cons_set_raw (1);
 			r_cons_show_cursor (false);
 			if (*cmd) {
-				r_cons_any_key (NULL);
+				r_cons_any_key (core->cons, NULL);
 			}
 			//cons_gotoxy(0,0);
 			r_cons_clear ();
@@ -2572,7 +2572,7 @@ R_API int r_core_visual_comments(RCore *core) {
 		}
 		if (!i) {
 			if (--option < 0) {
-				r_cons_any_key ("No comments");
+				r_cons_any_key (core->cons, "No comments");
 				break;
 			}
 			continue;
@@ -2651,7 +2651,7 @@ R_API int r_core_visual_comments(RCore *core) {
 			" a/d/e - add/delete/edit comment/anal symbol\n"
 			" p/P   - rotate print format\n");
 			r_cons_flush ();
-			r_cons_any_key (NULL);
+			r_cons_any_key (core->cons, NULL);
 			break;
 		}
 		R_FREE (p);
@@ -2922,7 +2922,7 @@ R_API void r_core_visual_config(RCore *core) {
 			break;
 		case '$':
 			r_core_cmd0 (core, "?$");
-			r_cons_any_key (NULL);
+			r_cons_any_key (core->cons, NULL);
 			break;
 		case '*':
 		case '+':
@@ -2963,7 +2963,7 @@ R_API void r_core_visual_config(RCore *core) {
 			" +/-   - increase/decrease numeric value (* and /, too)\n"
 			" :     - enter command\n");
 			r_cons_flush ();
-			r_cons_any_key (NULL);
+			r_cons_any_key (core->cons, NULL);
 			break;
 		case ':':
 			r_cons_show_cursor (true);
@@ -2975,7 +2975,7 @@ R_API void r_core_visual_config(RCore *core) {
 			 }
 			r_cons_set_raw (1);
 			r_cons_show_cursor (false);
-			r_cons_any_key (NULL);
+			r_cons_any_key (core->cons, NULL);
 			r_cons_clear00 ();
 			continue;
 		}
@@ -3106,14 +3106,14 @@ R_API void r_core_visual_mounts(RCore *core) {
 					list = r_fs_partitions (core->fs, n, 0);
 					if (!list) {
 						r_cons_printf ("Unknown partition\n");
-						r_cons_any_key (NULL);
+						r_cons_any_key (core->cons, NULL);
 						r_cons_flush ();
 						break;
 					}
 					part = r_list_get_n (list, option);
 					if (!part) {
 						r_cons_printf ("Unknown partition\n");
-						r_cons_any_key (NULL);
+						r_cons_any_key (core->cons, NULL);
 						r_cons_flush ();
 						break;
 					}
@@ -3127,12 +3127,12 @@ R_API void r_core_visual_mounts(RCore *core) {
 						} else {
 							r_cons_printf ("Cannot mount partition\n");
 							r_cons_flush ();
-							r_cons_any_key (NULL);
+							r_cons_any_key (core->cons, NULL);
 						}
 					} else {
 						r_cons_printf ("Unknown partition type\n");
 						r_cons_flush ();
-						r_cons_any_key (NULL);
+						r_cons_any_key (core->cons, NULL);
 					}
 					r_list_free (list);
 					list = NULL;
@@ -3159,7 +3159,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 					} else {
 						r_cons_printf ("Unknown file\n");
 						r_cons_flush ();
-						r_cons_any_key (NULL);
+						r_cons_any_key (core->cons, NULL);
 					}
 
 				} else if (mode == 3) {
@@ -3276,7 +3276,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 						r_cons_printf ("Cannot dump file\n");
 					}
 					r_cons_flush ();
-					r_cons_any_key (NULL);
+					r_cons_any_key (core->cons, NULL);
 					*str='\0';
 				}
 				break;
@@ -3296,7 +3296,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 				r_cons_printf (" :     - enter command\n");
 				r_cons_printf (" ?     - show this help\n");
 				r_cons_flush ();
-				r_cons_any_key (NULL);
+				r_cons_any_key (core->cons, NULL);
 				break;
 			case ':':
 				r_cons_show_cursor (true);
@@ -3306,7 +3306,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 				r_cons_set_raw (1);
 				r_cons_show_cursor (false);
 				r_core_cmd (core, buf, 1);
-				r_cons_any_key (NULL);
+				r_cons_any_key (core->cons, NULL);
 				break;
 		}
 	}
@@ -3673,7 +3673,7 @@ static void r_core_visual_debugtraces_help(RCore *core) {
 			" j/k   - Select next/previous trace\n"
 			" :     - enter command\n");
 	r_cons_flush ();
-	r_cons_any_key (NULL);
+	r_cons_any_key (core->cons, NULL);
 }
 
 R_API void r_core_visual_debugtraces(RCore *core, const char *input) {
@@ -3744,7 +3744,7 @@ R_API void r_core_visual_debugtraces(RCore *core, const char *input) {
 			break;
 		case ':': // "vbd:"
 			r_core_visual_prompt (core);
-			r_cons_any_key (NULL);
+			r_cons_any_key (core->cons, NULL);
 			break;
 		case '?': // "vbd?"
 			r_core_visual_debugtraces_help (core);
@@ -3880,7 +3880,7 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			{
 				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->addr, 0);
 				if (!f) {
-					r_cons_any_key ("No function found in the current offset");
+					r_cons_any_key (core->cons, "No function found in the current offset");
 					break;
 				}
 				switch (level) {
@@ -3957,7 +3957,7 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 				if (f) {
 					r_core_cmdf (core, "afs!@0x%08"PFMT64x, addr);
 				} else {
-					r_cons_any_key ("No function found in the current offset");
+					r_cons_any_key (core->cons, "No function found in the current offset");
 				}
 			}
 			break;
@@ -4434,7 +4434,7 @@ onemoretime:
 				r_sys_cmdf ("man %s", man);
 				free (man);
 			}
-			r_cons_any_key (NULL);
+			r_cons_any_key (core->cons, NULL);
 		}
 		break;
 	case 'n':
@@ -4482,7 +4482,7 @@ onemoretime:
 			free (q);
 		} else {
 			R_LOG_INFO ("Sorry. No flags or variables referenced here");
-			r_cons_any_key (NULL);
+			r_cons_any_key (core->cons, NULL);
 		}
 		r_anal_op_fini (&op);
 		break;
@@ -4502,7 +4502,7 @@ onemoretime:
 				}
 			} else {
 				R_LOG_INFO ("Sorry. No flag here");
-				r_cons_any_key (NULL);
+				r_cons_any_key (core->cons, NULL);
 			}
 		}
 		break;
@@ -4522,7 +4522,7 @@ onemoretime:
 				}
 			} else {
 				R_LOG_INFO ("Sorry. No flag here");
-				r_cons_any_key (NULL);
+				r_cons_any_key (core->cons, NULL);
 			}
 		}
 		break;
@@ -4552,7 +4552,7 @@ onemoretime:
 		break;
 	case 'k':
 		R_LOG_TODO ("merge up");
-		r_cons_any_key (NULL);
+		r_cons_any_key (core->cons, NULL);
 		break;
 	// very weak and incomplete
 	case 'h': // "Vdh"
@@ -4565,7 +4565,7 @@ onemoretime:
 				r_core_cmdf (core, "cls;pd 10 @ 0x%08"PFMT64x, off);
 				r_core_cmdf (core, "?i new function name;afn `yp` @ 0x%08"PFMT64x, off);
 			} else {
-				r_cons_any_key ("No function found in the current offset");
+				r_cons_any_key (core->cons, "No function found in the current offset");
 			}
 		}
 		break;
@@ -4703,7 +4703,7 @@ onemoretime:
 		}
 		if (!end_off || end_off == endptr) {
 			R_LOG_ERROR ("Invalid numeric input");
-			r_cons_any_key (NULL);
+			r_cons_any_key (core->cons, NULL);
 			free (end_off);
 			break;
 		}
@@ -4750,7 +4750,7 @@ onemoretime:
 			}
 		} else {
 			R_LOG_ERROR ("Cannot find instruction with a variable");
-			r_cons_any_key (NULL);
+			r_cons_any_key (core->cons, NULL);
 		}
 
 		r_anal_op_free (op);
