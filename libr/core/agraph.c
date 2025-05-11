@@ -3727,7 +3727,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 			}
 		} else {
 			// TODO: maybe go back to avoid seeking from graph view to an scary place?
-			r_cons_message ("This is not a valid offset\n");
+			r_cons_message (core->cons, "This is not a valid offset\n");
 			r_kons_flush (core->cons);
 		}
 	}

@@ -1576,7 +1576,7 @@ static int cmd_help(void *data, const char *input) {
 				eprintf ("%s\n", r_str_bool (!core->num->value));
 				break;
 			case 'm': // "?im"
-				r_cons_message (input + 2);
+				r_cons_message (core->cons, input + 2);
 				break;
 			case 'p': // "?ip"
 				{
@@ -1603,7 +1603,7 @@ static int cmd_help(void *data, const char *input) {
 				}
 				break;
 			case 'k': // "?ik"
-				 r_cons_any_key (NULL);
+				 r_cons_any_key (core->cons, NULL);
 				 break;
 			case 'y': // "?iy"
 				 input = r_str_trim_head_ro (input + 2);

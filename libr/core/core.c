@@ -1640,9 +1640,8 @@ static int autocomplete(RLineCompletion *completion, RLineBuffer *buf, RLineProm
 	return true;
 }
 
-R_API int r_core_fgets(char *buf, int len) {
+R_API int r_core_fgets(RCons *cons, char *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (buf, -1);
-	RCons *cons = r_cons_singleton (); // XXX no globals pls
 	RLine *rli = cons->line;
 #if R2_590
 	cons->maxlength = len; /// R2_590
@@ -2882,7 +2881,6 @@ R_API void r_core_fini(RCore *c) {
 	should probably need to add a r_config_free_payload callback */
 	r_cons_free (c->cons);
 	c->cons = NULL;
-	//r_cons_singleton ()->teefile = NULL; // HACK
 	free (c->theme);
 	free (c->themepath);
 	r_search_free (c->search);
@@ -2913,7 +2911,7 @@ R_IPI int Gload_index = 0;
 
 R_API bool r_core_prompt_loop(RCore *r) {
 #if !R2_USE_NEW_ABI
-	Gload_index = r_cons_singleton()->line->history.index;
+	Gload_index = r->cons->line->history.index;
 #endif
 	int ret = 0;
 	do {
@@ -3619,7 +3617,7 @@ R_API char *r_core_editor(const RCore *core, const char *file, const char *str) 
 	close (fd);
 
 	if (name && (R_STR_ISEMPTY (editor) || !strcmp (editor, "-"))) {
-		RCons *cons = r_cons_singleton ();
+		RCons *cons = core->cons;
 		void *tmp = cons->cb_editor;
 		cons->cb_editor = NULL;
 		r_cons_editor (cons, name, NULL);

@@ -24,26 +24,26 @@ static bool rtr_visual(RCore *core, TextLog T, const char *cmd) {
 		free (rtrcmd (T, "e scr.color=true"));
 		free (rtrcmd (T, "e scr.html=false"));
 		for (;;) {
-			r_cons_clear00 ();
+			r_kons_clear00 (core->cons);
 			ret = rtrcmd (T, cmds[cmdidx]);
 			if (ret) {
-				r_cons_println (ret);
+				r_kons_println (core->cons, ret);
 				free (ret);
 			}
-			r_cons_flush ();
+			r_kons_flush (core->cons);
 			if (autorefresh) {
-				r_cons_printf ("(auto-refresh)\n");
-				r_cons_flush ();
+				r_kons_printf (core->cons, "(auto-refresh)\n");
+				r_kons_flush (core->cons);
 				r_cons_break_push (NULL, NULL);
 				r_sys_sleep (1);
 				if (r_cons_is_breaked ())  {
 					autorefresh = false;
 					ch = r_cons_readchar (core->cons);
 				} else {
-					r_cons_break_pop ();
+					r_kons_break_pop (core->cons);
 					continue;
 				}
-				r_cons_break_pop ();
+				r_kons_break_pop (core->cons);
 			} else {
 				ch = r_cons_readchar (core->cons);
 			}
@@ -54,8 +54,8 @@ TODO:
 #endif
 			switch (ch) {
 			case '?':
-				r_cons_clear00 ();
-				r_cons_printf ("Remote Visual keys:\n"
+				r_kons_clear00 (core->cons);
+				r_kons_printf (core->cons, "Remote Visual keys:\n"
 				" hjkl : move\n"
 				" HJKL : move faster\n"
 				" +-*/ : change block size\n"
@@ -66,8 +66,8 @@ TODO:
 				" q    : quit this mode and go back to the shell\n"
 				" sS   : step / step over\n"
 				" .    : seek entry or pc\n");
-				r_cons_flush ();
-				r_cons_any_key (NULL);
+				r_kons_flush (core->cons);
+				r_cons_any_key (core->cons, NULL);
 				break;
 			case 'i':
 				{

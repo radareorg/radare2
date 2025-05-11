@@ -62,10 +62,10 @@ R_API bool r_core_vmark_dump(RCore *core, int mode) {
 	if (mode == 'v') {
 		r_cons_printf ("  `----------------------------------------------------------------'\n");
 		if (count == 0) {
-			r_cons_clear00 ();
+			r_kons_clear00 (core->cons);
 			r_cons_printf ("\nNo visual marks have been set.\n");
 			r_cons_printf ("Use `m<KEY>` and then `'<KEY>` like in VIM\n");
-			r_cons_any_key (NULL);
+			r_cons_any_key (core->cons, NULL);
 		}
 	}
 	return res;

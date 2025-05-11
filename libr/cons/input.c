@@ -361,12 +361,12 @@ R_API int r_cons_fgets(RCons *cons, char *buf, int len, int argc, const char **a
 #define RETURN(x) { ret=x; goto beach; }
 	int ret = 0, color = cons->context->pal.input && *cons->context->pal.input;
 	if (cons->echo) {
-		r_cons_set_raw (false);
-		r_cons_show_cursor (true);
+		r_kons_set_raw (cons, false);
+		r_kons_show_cursor (cons, true);
 	}
 	errno = 0;
 	if (cons->user_fgets) {
-		RETURN (cons->user_fgets (buf, len));
+		RETURN (cons->user_fgets (cons, buf, len));
 	}
 	const char *prompt = cons->line->prompt;
 	P (prompt);

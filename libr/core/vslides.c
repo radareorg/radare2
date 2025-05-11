@@ -240,7 +240,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 			eprintf (" e    = open vim to edit the current slide\n");
 			eprintf (" 12   = show 1 or two pages\n");
 			eprintf (" :    = enter command\n");
-			r_cons_any_key (NULL);
+			r_cons_any_key (core->cons, NULL);
 			break;
 		case 'e':
 		case '!':
