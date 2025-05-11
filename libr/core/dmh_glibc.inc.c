@@ -948,7 +948,7 @@ static int GH(print_double_linked_list_bin_graph)(RCore *core, GHT bin, MallocSt
 	}
 	r_agraph_add_edge (g, prev_node, bin_node, false);
 	r_agraph_add_edge (g, bin_node, prev_node, false);
-	r_agraph_print (g);
+	r_agraph_print (g, core);
 
 	free (cnk);
 	r_agraph_free (g);
