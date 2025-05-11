@@ -170,14 +170,16 @@ static bool attribute_delete_cb(void *user, const ut64 key, const void *value) {
 	return true;
 }
 
-R_API void r_cons_canvas_clear(RConsCanvas *c) {
+R_API void r_cons_canvas_clear(RConsCanvas *c, int flags) {
 	R_RETURN_IF_FAIL (c && c->b);
 	int y;
 	for (y = 0; y < c->h; y++) {
 		memset (c->b[y], '\n', c->bsize[y]);
 	}
-
 	ht_up_foreach (c->attrs, attribute_delete_cb, c->attrs);
+	if (flags != R_CONS_CANVAS_FLAG_DEFAULT) {
+		c->flags = flags;
+	}
 }
 
 R_API bool r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y) {
@@ -226,7 +228,11 @@ R_API RConsCanvas *r_cons_canvas_new(int w, int h, int flags) {
 	RConsCanvas *c = R_NEW0 (RConsCanvas);
 	c->bgcolor = strdup (Color_RESET);
 	c->bsize = NULL;
-	c->flags = flags;
+	if (flags == R_CONS_CANVAS_FLAG_DEFAULT) {
+		c->flags = 0;
+	} else {
+		c->flags = flags;
+	}
 	c->blen = NULL;
 	int i = 0;
 	c->color = 0;
@@ -263,7 +269,7 @@ R_API RConsCanvas *r_cons_canvas_new(int w, int h, int flags) {
 		goto beach;
 	}
 	c->attr = Color_RESET;
-	r_cons_canvas_clear (c);
+	r_cons_canvas_clear (c, -1);
 	return c;
 beach:
 	r_str_constpool_fini (&c->constpool);
@@ -490,7 +496,7 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 	c->h = h;
 	c->x = 0;
 	c->y = 0;
-	r_cons_canvas_clear (c);
+	r_cons_canvas_clear (c, R_CONS_CANVAS_FLAG_DEFAULT);
 	return true;
 }
 
