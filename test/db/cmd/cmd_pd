@@ -242,8 +242,8 @@ e asm.cmt.right=false
 pd 1
 EOF
 EXPECT=<<EOF
-            [32m[7m0x00000000[0m      [33m48[36m89[36me5[0m         [36mrbp =[36m rsp[0m[0m[0m
-[0m            [32m[7m0x00000000[0m      [33m48[36m89[36me5[0m         [36mrbp =[36m rsp[0m[0m
+            [33m[7m0x00000000[0m      [33m48[36m89[36me5[0m         [36mrbp =[32m rsp[0m[0m[0m
+[0m            [33m[7m0x00000000[0m      [33m48[36m89[36me5[0m         [36mrbp =[32m rsp[0m[0m
 EOF
 RUN
 
@@ -257,7 +257,7 @@ e scr.color=1
 pd 1
 EOF
 EXPECT=<<EOF
-            [32m[7m0x00000000[0m      [36ma9[33m7e[32m00[0m         [35mlda[36m #[33m0x007e[0m[0m[0m
+            [33m[7m0x00000000[0m      [36ma9[33m7e[32m00[0m         [35mlda[36m #[33m0x007e[0m[0m[0m
 EOF
 RUN
 
@@ -811,8 +811,8 @@ e asm.sub.names=false
 pd 1 @ 0x0001145f
 EOF
 EXPECT=<<EOF
-            [32m0x0001145f[0m      [36mlea[36m rdi[0m,[36m[36m str.A_NULL_argv_0__was_passed_through_an_exec_system_call._n[0m[0m
-            [32m0x0001145f[0m      [36mlea[36m rdi[0m,[36m[36m [0m[[36m0x0001b5d8[0m][36m[0m[0m
+            [33m0x0001145f[0m      [36mlea[32m rdi[0m,[36m[36m str.A_NULL_argv_0__was_passed_through_an_exec_system_call._n[0m[0m
+            [33m0x0001145f[0m      [36mlea[32m rdi[0m,[36m[36m [0m[[36m0x0001b5d8[0m][32m[0m[0m
 EOF
 RUN
 
@@ -1184,10 +1184,10 @@ af
 pd 2 @ 0x004010e8
 EOF
 EXPECT=<<EOF
-[0m[36m|[0m           [32m0x004010e8[0m      [35mpush[36m esi[0m[0m
+[0m[36m|[0m           [33m0x004010e8[0m      [35mpush[32m esi[0m[0m
 [36m|[0m           [31m; 0x402004
 [0m[36m|[0m           [31m; DWORD GetCurrentProcessorNumber(void)
-[0m[36m|[0m           [32m0x004010e9[0m      [32mcall dword[36m [0m[[36msym.imp.KERNEL32.dll_GetCurrentProcessorNumber[0m][36m[0m[0m
+[0m[36m|[0m           [33m0x004010e9[0m      [32mcall dword[36m [0m[[36msym.imp.KERNEL32.dll_GetCurrentProcessorNumber[0m][32m[0m[0m
 EOF
 RUN
 
@@ -1388,8 +1388,8 @@ EOF
 EXPECT=<<EOF
             0x080484aa      b8e1850408     mov eax, 0x80485e1          ; "%ls" ; eax=0x80485e1 -> 0x736c25
 [{"offset":134513834,"esil":{"expr":"134514145,eax,=","eax":134514145},"text":"            0x080484aa      b8e1850408     mov eax, 0x80485e1          ; \"%ls\" ; eax=0x80485e1 -> 0x736c25"}]
-            [32m0x080484aa[0m      [36mb8[36me1[36m85[36m04[36m08[0m     [36mmov[36m eax[0m,[36m[36m [33m0x80485e1[0m[0m[31m          [31m; "%ls"[0m[31m ; eax=0x80485e1 -> 0x736c25[0m
-[{"offset":134513834,"esil":{"expr":"134514145,eax,=","eax":134514145},"text":"            \u001b[32m0x080484aa\u001b[0m      \u001b[36mb8\u001b[36me1\u001b[36m85\u001b[36m04\u001b[36m08\u001b[0m     \u001b[36mmov\u001b[36m eax\u001b[0m,\u001b[36m\u001b[36m \u001b[33m0x80485e1\u001b[0m\u001b[0m\u001b[31m          \u001b[31m; \"%ls\"\u001b[0m\u001b[31m ; eax=0x80485e1 -> 0x736c25\u001b[0m"}]
+            [33m0x080484aa[0m      [36mb8[36me1[36m85[36m04[36m08[0m     [36mmov[32m eax[0m,[36m[36m [33m0x80485e1[0m[0m[31m          [31m; "%ls"[0m[31m ; eax=0x80485e1 -> 0x736c25[0m
+[{"offset":134513834,"esil":{"expr":"134514145,eax,=","eax":134514145},"text":"            \u001b[33m0x080484aa\u001b[0m      \u001b[36mb8\u001b[36me1\u001b[36m85\u001b[36m04\u001b[36m08\u001b[0m     \u001b[36mmov\u001b[32m eax\u001b[0m,\u001b[36m\u001b[36m \u001b[33m0x80485e1\u001b[0m\u001b[0m\u001b[31m          \u001b[31m; \"%ls\"\u001b[0m\u001b[31m ; eax=0x80485e1 -> 0x736c25\u001b[0m"}]
 EOF
 RUN
 
@@ -1723,17 +1723,17 @@ e emu.str.inv=false
 pd 1 @ 0x161d
 EOF
 EXPECT=<<EOF
-            [32m0x0000161d[0m      [36mlea[36m eax[0m,[36m [0m[[36mesi [0m-[36m[36m abcdefghi[0m][36m[0m[0m[31m                 [31m; 0x21f7[31m [31m; "abcdefghi"[0m[31m ; [7m"\n  Blue Pill"[27m str._n__Blue_Pill[0m
-            [32m0x0000161d[0m      [36mlea[36m eax[0m,[36m [0m[[36mesi [0m-[36m[36m abcdefghi[0m][36m[0m[0m[31m                 [31m; 0x21f7[31m [31m; [7m"abcdefghi"[27m[0m[31m ; "\n  Blue Pill" str._n__Blue_Pill[0m
+            [33m0x0000161d[0m      [36mlea[32m eax[0m,[32m [0m[[32mesi [0m-[36m[36m abcdefghi[0m][32m[0m[0m[31m                 [31m; 0x21f7[31m [31m; "abcdefghi"[0m[31m ; [7m"\n  Blue Pill"[27m str._n__Blue_Pill[0m
+            [33m0x0000161d[0m      [36mlea[32m eax[0m,[32m [0m[[32mesi [0m-[36m[36m abcdefghi[0m][32m[0m[0m[31m                 [31m; 0x21f7[31m [31m; [7m"abcdefghi"[27m[0m[31m ; "\n  Blue Pill" str._n__Blue_Pill[0m
 
             [31m; 0x21f7
             [31m; "abcdefghi"
 [0m[31m[0m               [31m; [7m"\n  Blue Pill"[27m str._n__Blue_Pill
-[0m            [32m0x0000161d[0m      [36mlea[36m eax[0m,[36m [0m[[36mesi [0m-[36m[36m abcdefghi[0m][36m[0m[0m
+[0m            [33m0x0000161d[0m      [36mlea[32m eax[0m,[32m [0m[[32mesi [0m-[36m[36m abcdefghi[0m][32m[0m[0m
             [31m; 0x21f7
             [31m; [7m"abcdefghi"[27m
 [0m[31m[0m               [31m; "\n  Blue Pill" str._n__Blue_Pill
-[0m            [32m0x0000161d[0m      [36mlea[36m eax[0m,[36m [0m[[36mesi [0m-[36m[36m abcdefghi[0m][36m[0m[0m
+[0m            [33m0x0000161d[0m      [36mlea[32m eax[0m,[32m [0m[[32mesi [0m-[36m[36m abcdefghi[0m][32m[0m[0m
 EOF
 RUN
 

@@ -158,7 +158,7 @@ EXPECT=<<EOF
  [34m##[0m  flow2
  [33m##[0m  prompt
  [0m##[0m  bgprompt
- [32m##[0m  addr
+ [33m##[0m  addr
  [37m##[0m  input
  [1;31m##[0m  invalid
  [36m##[0m  other
@@ -181,7 +181,7 @@ EXPECT=<<EOF
  [32m##[0m  ujmp
  [35m##[0m  swi
  [33m##[0m  cmp
- [36m##[0m  reg
+ [32m##[0m  reg
  [36m##[0m  creg
  [33m##[0m  num
  [36m##[0m  mov
