@@ -1888,7 +1888,7 @@ static void ds_print_show_cursor(RDisasmState *ds) {
 		res[1] = '~';
 	}
 	if (q) {
-		r_cons_mark (UT64_MAX, "cursor");
+		r_cons_mark (ds->core->cons, UT64_MAX, "cursor");
 		if (cursor_addr == ds->at) {
 			res[2] = '*';
 		} else {
@@ -3601,7 +3601,7 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *obuf, int ib, int si
 				int diff = ds->cursor - ds->index;
 				r_kons_printf (cons, "%d  ", diff);
 			} else if (ds->cursor == ds->index) {
-				r_cons_mark (ds->at, "cursor");
+				r_cons_mark (cons, ds->at, "cursor");
 				r_kons_printf (cons, "*  ");
 			} else {
 				r_kons_printf (cons, "   ");

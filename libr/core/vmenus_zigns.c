@@ -42,8 +42,9 @@ static RList *__signs(RCoreVisualViewZigns *status, ut64 addr, bool update) {
 }
 
 R_API int __core_visual_view_zigns_update(RCore *core, RCoreVisualViewZigns *status) {
-	int h, w = r_cons_get_size (&h);
-	r_cons_clear00 ();
+	RCons *cons = core->cons;
+	int h, w = r_kons_get_size (cons, &h);
+	r_kons_clear00 (cons);
 	int colh = h -2;
 	int colw = w -1;
 	RList *col0 = __signs (status, status->addr, true);
@@ -51,10 +52,10 @@ R_API int __core_visual_view_zigns_update(RCore *core, RCoreVisualViewZigns *sta
 
 	char *title = r_str_newf ("[r2-visual-signatures] 0x%08"PFMT64x" 0x%08"PFMT64x, status->addr, status->faddr);
 	if (title) {
-		r_cons_print_at (title, 0, 0, w - 1, 2);
+		r_cons_print_at (cons, title, 0, 0, w - 1, 2);
 		free (title);
 	}
-	r_cons_print_at (col0str, 0, 2, colw, colh);
+	r_cons_print_at (cons, col0str, 0, 2, colw, colh);
 	r_list_free (col0);
 	r_cons_flush ();
 	return 0;

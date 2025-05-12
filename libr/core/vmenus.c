@@ -317,8 +317,8 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 		if (!input) {
 			r_anal_op_fini (&analop);
 		}
-		r_cons_newline ();
-		r_cons_visual_flush ();
+		r_kons_newline (core->cons);
+		r_cons_visual_flush (core->cons);
 
 		int ch = r_cons_readchar (core->cons);
 		if (ch == -1 || ch == 4) {
@@ -509,7 +509,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			core->block = o;
 			r_config_set_i (core->config, "hex.stride", stride);
 			core->blocksize = bs;
-			r_cons_print_at (s, 60, 1, 20, 12);
+			r_cons_print_at (core->cons, s, 60, 1, 20, 12);
 			free (s);
 		}
 		r_cons_printf ("[0x08%"PFMT64x"]> Vd1 # r2's sprite / bit editor\n\n", core->addr + cur);
@@ -676,7 +676,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			r_core_cmd0 (core, vi);
 		}
 		r_cons_newline ();
-		//r_cons_visual_flush ();
+		//r_cons_visual_flush (core->cons);
 		r_cons_flush ();
 
 		int ch = r_cons_readchar (core->cons);
@@ -1070,7 +1070,7 @@ R_API int r_core_visual_types(RCore *core) {
 			sdb_foreach (core->anal->sdb_types, sdbforcb, &vt);
 		}
 
-		r_cons_visual_flush ();
+		r_cons_visual_flush (core->cons);
 		ch = r_cons_readchar (core->cons);
 		if (ch == -1 || ch == 4) {
 			return false;
@@ -1570,7 +1570,7 @@ R_API int r_core_visual_classes(RCore *core) {
 
 		/* update terminal size */
 		(void) r_cons_get_size (&cols);
-		r_cons_visual_flush ();
+		r_cons_visual_flush (core->cons);
 		ch = r_cons_readchar (core->cons);
 		if (ch == -1 || ch == 4) {
 			R_FREE (grep);
@@ -1843,7 +1843,7 @@ R_API int r_core_visual_anal_classes(RCore *core) {
 
 		/* update terminal size */
 		(void) r_cons_get_size (&cols);
-		r_cons_visual_flush ();
+		r_cons_visual_flush (core->cons);
 		ch = r_cons_readchar (core->cons);
 		if (ch == -1 || ch == 4) {
 			goto cleanup;
@@ -1995,6 +1995,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 	}
 	// maybe store in RCore, so we can save it in project and use it outside visual
 
+	RCons *cons = core->cons;
 	R_LOG_INFO ("Searching ROP gadgets");
 	char *ropstr = r_core_cmd_strf (core, "\"/Rl %s\" @e:scr.color=0", line);
 	RList *rops = r_str_split_list (ropstr, "\n", 0);
@@ -2042,27 +2043,27 @@ R_API int r_core_visual_view_rop(RCore *core) {
 				// get comment
 				char *output = r_core_cmd_strf (core, "piu 10 @ 0x%08"PFMT64x, addr + delta);
 				if (output) {
-					r_cons_print_at (output, 0, 10, scr_w, 10);
+					r_cons_print_at (cons, output, 0, 10, scr_w, 10);
 					free (output);
 				}
 			}
 		}
 		int count = 0;
-		r_cons_flush ();
-		r_cons_gotoxy (0, 20);
-		r_cons_printf ("ROPChain:\n  %s\n", r_str_get (chainstr));
+		r_kons_flush (cons);
+		r_kons_gotoxy (cons, 0, 20);
+		r_kons_printf (cons, "ROPChain:\n  %s\n", r_str_get (chainstr));
 		r_list_foreach (core->ropchain, iter, msg) {
 			int extra = strlen (chainstr) / scr_w;
 			r_cons_gotoxy (0, extra + 22 + count);
 			r_cons_print (msg);
 			const char *cmt = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, r_num_get (NULL, msg));
 			if (cmt) {
-				r_cons_print (cmt);
+				r_kons_print (cons, cmt);
 			}
 			count ++;
 		}
-		r_cons_flush ();
-		int ch = r_cons_readchar (core->cons);
+		r_kons_flush (cons);
+		int ch = r_cons_readchar (cons);
 		if (ch == -1 || ch == 4) {
 			free (curline);
 			free (cursearch);
@@ -2345,7 +2346,7 @@ R_API int r_core_visual_trackflags(RCore *core) { // "vbf"
 				continue;
 			}
 		}
-		r_cons_visual_flush ();
+		r_cons_visual_flush (core->cons);
 		ch = r_cons_readchar (core->cons);
 		if (ch == -1 || ch == 4) {
 			return false;
@@ -2588,7 +2589,7 @@ R_API int r_core_visual_comments(RCore *core) {
 		if (*cmd) {
 			r_core_cmd (core, cmd, 0);
 		}
-		r_cons_visual_flush ();
+		r_cons_visual_flush (core->cons);
 		ch = r_cons_readchar (core->cons);
 		ch = r_cons_arrow_to_hjkl (core->cons, ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
@@ -2746,6 +2747,7 @@ R_API void r_core_visual_config(RCore *core) {
 	int option, _option = 0;
 	RListIter *iter;
 	RConfigNode *bt;
+	RCons *cons = core->cons;
 	char old[1024] = {0};
 	int delta = 9;
 	int menu = 0;
@@ -2854,20 +2856,20 @@ R_API void r_core_visual_config(RCore *core) {
 			}
 		}
 
-		r_cons_visual_flush ();
+		r_cons_visual_flush (cons);
 		if (menu == 1 && fs2) {
 			// TODO: Break long lines.
 			r_cons_gotoxy (0, 0);
 			r_cons_printf ("[hjkq] %s", desc);
 			r_cons_gotoxy (0, menuboxh + 4);
 			show_config_options (core, fs2, menuboxh);
-			r_cons_flush ();
+			r_kons_flush (cons);
 		}
 		if (menu != 0 && fs && r_str_startswith (fs, "asm.")) {
 			char *s = r_core_cmd_str (core, "pd $r");
-			r_cons_print_at (s, 38, 3, w - 40, h - 2);
+			r_cons_print_at (cons, s, 38, 3, w - 40, h - 2);
 			free (s);
-			r_cons_flush ();
+			r_kons_flush (cons);
 		}
 		if (menu == 0) {
 			int y = 4;
@@ -3691,7 +3693,7 @@ R_API void r_core_visual_debugtraces(RCore *core, const char *input) {
 		// limit by rows here
 		// int rows = r_cons_get_size (NULL);
 		r_core_cmdf (core, "dtd %d", delta);
-		r_cons_visual_flush ();
+		r_cons_visual_flush (core->cons);
 		signed char ch;
 		if (input && *input) {
 			ch = *input;

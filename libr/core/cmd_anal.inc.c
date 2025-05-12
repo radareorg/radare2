@@ -12758,7 +12758,7 @@ static bool cmd_graph_mermaid(RCore *core, bool add_asm) {
 
 static void cmd_anal_graph(RCore *core, const char *input) {
 	core->graph->show_node_titles = r_config_get_i (core->config, "graph.ntitles");
-	r_cons_enable_highlight (false);
+	r_cons_enable_highlight (core->cons, false);
 	if (*input == '?') {
 		r_core_cmd_help (core, help_msg_ag);
 		return;

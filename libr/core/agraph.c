@@ -3626,7 +3626,7 @@ static int agraph_print(RAGraph *g, bool is_interactive, RCore *core, RAnalFunct
 		r_kons_newline (core->cons);
 		const char *cmdv = r_config_get (core->config, "cmd.gprompt");
 		bool mustFlush = false;
-		r_cons_visual_flush ();
+		r_cons_visual_flush (core->cons);
 		if (!strcmp (cmdv, ".dr*")) {
 			cmdv = ".dr*;dr=@e:hex.cols=`?v $w*3`";
 		}
