@@ -114,7 +114,7 @@ R_API void r_cons_print_at(RCons *cons, const char *_str, int x, char y, int w, 
 			y += H;
 		}
 	}
-	// TODO: what happens if w==0 || h==0 ?
+	// TODO: what happens if w == 0 || h == 0 ?
 	char *str = r_str_ansi_crop (_str, 0, 0, w + 1, h);
 	r_kons_print (cons, R_CONS_CURSOR_SAVE);
 	for (o = i = len = 0; str[i]; i++, len++) {
