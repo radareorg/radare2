@@ -1372,17 +1372,6 @@ typedef struct r_panels_root_t {
 	RPanelsRootState root_state;
 } RPanelsRoot;
 
-
-#ifdef __sun
-static inline void cfmakeraw(struct termios *tm) {
-	tm->c_cflag &= ~(CSIZE | PARENB);
-	tm->c_cflag |= CS8;
-	tm->c_iflag &= ~(IMAXBEL | IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON);
-	tm->c_oflag &= ~OPOST;
-	tm->c_lflag &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
-}
-#endif
-
 #ifdef __cplusplus
 }
 #endif

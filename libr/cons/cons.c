@@ -296,6 +296,17 @@ R_API int r_cons_get_cur_line(void) {
 	}
 	curline = info.dwCursorPosition.Y - info.srWindow.Top;
 #endif
+
+#ifdef __sun
+static inline void cfmakeraw(struct termios *tm) {
+	tm->c_cflag &= ~(CSIZE | PARENB);
+	tm->c_cflag |= CS8;
+	tm->c_iflag &= ~(IMAXBEL | IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON);
+	tm->c_oflag &= ~OPOST;
+	tm->c_lflag &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
+}
+#endif
+
 #if R2__UNIX__ && !__wasi__
 	char buf[8];
 	struct termios save,raw;

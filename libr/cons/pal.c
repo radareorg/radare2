@@ -76,19 +76,18 @@ static struct {
 	COLOR_KEY ("graph.traced", graph_traced),
 
 	// rename to diff, no need for graph prefix here
-	{ "diff.unknown", r_offsetof (RConsPrintablePalette, diff_unknown), r_offsetof (RConsPalette, diff_unknown) },
-	{ "diff.new", r_offsetof (RConsPrintablePalette, diff_new), r_offsetof (RConsPalette, diff_new) },
-	{ "diff.match", r_offsetof (RConsPrintablePalette, diff_match), r_offsetof (RConsPalette, diff_match) },
-	{ "diff.unmatch", r_offsetof (RConsPrintablePalette, diff_unmatch), r_offsetof (RConsPalette, diff_unmatch) },
+	COLOR_KEY ("diff.unknown", diff_unknown),
+	COLOR_KEY ("diff.new", diff_new),
+	COLOR_KEY ("diff.match", diff_match),
+	COLOR_KEY ("diff.unmatch", diff_unmatch),
 
-	{ "gui.cflow", r_offsetof (RConsPrintablePalette, gui_cflow), r_offsetof (RConsPalette, gui_cflow) },
-	{ "gui.dataoffset", r_offsetof (RConsPrintablePalette, gui_dataoffset), r_offsetof (RConsPalette, gui_dataoffset) },
-	{ "gui.background", r_offsetof (RConsPrintablePalette, gui_background), r_offsetof (RConsPalette, gui_background) },
-	{ "gui.background2", r_offsetof (RConsPrintablePalette, gui_background2), r_offsetof (RConsPalette, gui_background2) },
-	{ "gui.border", r_offsetof (RConsPrintablePalette, gui_border), r_offsetof (RConsPalette, gui_border) },
-	{ "wordhl", r_offsetof (RConsPrintablePalette, wordhl), r_offsetof (RConsPalette, wordhl) },
-	{ "linehl", r_offsetof (RConsPrintablePalette, linehl), r_offsetof (RConsPalette, linehl) },
-
+	COLOR_KEY ("gui.cflow", gui_cflow),
+	COLOR_KEY ("gui.dataoffset", gui_dataoffset),
+	COLOR_KEY ("gui.background", gui_background),
+	COLOR_KEY ("gui.background2", gui_background2),
+	COLOR_KEY ("gui.border", gui_border),
+	COLOR_KEY ("wordhl", wordhl),
+	COLOR_KEY ("linehl", linehl),
 
 	{ NULL, 0, 0 }
 };
@@ -244,7 +243,7 @@ R_API void r_cons_pal_init(RCons *cons) {
 	ctx->cpal.mov           = (RColor) RColor_CYAN; // works on white and black terminals
 	ctx->cpal.nop           = (RColor) RColor_BLUE;
 	ctx->cpal.num           = (RColor) RColor_YELLOW;
-	ctx->cpal.addr          = (RColor) RColor_GREEN;
+	ctx->cpal.addr          = (RColor) RColor_YELLOW;
 	ctx->cpal.other         = (RColor) RColor_CYAN;
 	ctx->cpal.pop           = (RColor) RColor_MAGENTA;
 	// ctx->cpal.pop.attr      = R_CONS_ATTR_BOLD;
@@ -252,7 +251,7 @@ R_API void r_cons_pal_init(RCons *cons) {
 	ctx->cpal.bgprompt      = (RColor) RColor_NULL;
 	ctx->cpal.push          = (RColor) RColor_MAGENTA;
 	ctx->cpal.crypto        = (RColor) RColor_BGBLUE;
-	ctx->cpal.reg           = (RColor) RColor_CYAN;
+	ctx->cpal.reg           = (RColor) RColor_GREEN;
 	ctx->cpal.ret           = (RColor) RColor_RED;
 	ctx->cpal.swi           = (RColor) RColor_MAGENTA;
 	ctx->cpal.trap          = (RColor) RColor_RED;
