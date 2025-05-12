@@ -1111,7 +1111,6 @@ R_API char *r_kons_drain(RCons *cons) {
 	return s;
 }
 
-#if 0
 static void print_fps(RCons *cons, int col) {
 	int fps = 0, w = r_cons_get_size (NULL);
 	fps = 0;
@@ -1141,7 +1140,6 @@ static void print_fps(RCons *cons, int col) {
 	eprintf ("\x1b[0;%dH[%d FPS] \n", w - col, fps);
 #endif
 }
-#endif
 
 static int real_strlen(const char *ptr, int len) {
 	int utf8len = r_str_len_utf8 (ptr);
@@ -1240,11 +1238,9 @@ R_API void r_cons_visual_flush(RCons *cons) {
 #endif
 	}
 	r_kons_reset (cons);
-#if 0
 	if (cons->fps) {
-		r_cons_print_fps (cons, 0);
+		print_fps (cons, 0);
 	}
-#endif
 }
 
 R_API int r_kons_get_column(RCons *cons) {

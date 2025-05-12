@@ -117,7 +117,6 @@ R_API void r_cons_pipe_close(RCons *cons, int fd) {
 #if 0
 	if (fd != -1) {
 		close (fd);
-		RCons *ci = r_cons_singleton ();
 		if (cons->backup_fdn[fd] != -1) {
 			dup2 (cons->backup_fd, cons->backup_fdn[fd]);
 			close (cons->backup_fd);
