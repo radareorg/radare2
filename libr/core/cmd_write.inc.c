@@ -4,11 +4,11 @@
 
 static RCoreHelpMessage help_msg_w = {
 	"Usage:", "w[x] [str] [<file] [<<EOF] [@addr]", "",
-	"w", "[1248][+-][n]", "increment/decrement byte,word..",
 	"w ", "foobar", "write string 'foobar'",
 	"w+", "string", "write string and seek to its null terminator",
 	"w0", " [len]", "write 'len' bytes with value 0x00",
 	"w6", "[d|e|x] base64/string/hex", "write base64 [d]ecoded or [e]ncoded string",
+	"w8", " [hexpairs]", "alias for wx",
 	"wa", "[?] push ebp", "write opcode, separated by ';' (use '\"' around the command)",
 	"waf", " f.asm", "assemble file and write bytes",
 	"waF", " f.asm", "assemble file and write bytes and show 'wx' op with hexpair bytes of assembled code",
@@ -22,6 +22,7 @@ static RCoreHelpMessage help_msg_w = {
 	"wf", "[fs] -|file", "write contents of file at current offset",
 	"wg", "[et] [http://host/file]", "download file from http server and save it to disk (wget)",
 	"wh", " r2", "whereis/which shell command",
+	"wi", "[1248][+-][n]", "increment/decrement byte,word..",
 	"wm", " f0ff", "set binary mask hexpair to be used as cyclic write mask",
 	"wo", "[?] hex", "write in block with operation. 'wo?' fmi",
 	"wp", "[?] -|file", "apply radare patch file. See wp? fmi",
@@ -2516,11 +2517,24 @@ static int cmd_write(void *data, const char *input) {
 	case '0': // "w0"
 		cmd_w0 (data, input + 1);
 		break;
-	case '1': // "w1"
-	case '2': // "w2"
-	case '4': // "w4"
-	case '8': // "w8"
-		w_incdec_handler (data, input + 1, *input - '0');
+	case '8':
+		cmd_wx (core, input + 1);
+		break;
+	case 'i':
+		switch (input[1]) {
+		case '1': // "w1"
+		case '2': // "w2"
+		case '4': // "w4"
+		case '8': // "w8"
+			w_incdec_handler (data, input + 2, input[1] - '0');
+			break;
+		case '?':
+			r_core_cmd_help_contains (core, help_msg_w, "wi");
+			break;
+		default:
+			r_core_return_invalid_command (core, "wi", input[1]);
+			break;
+		}
 		break;
 	case '6': // "w6"
 		cmd_w6 (core, input + 1);
