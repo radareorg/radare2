@@ -622,10 +622,6 @@ R_API int r_cons_write(const char *str, int len) {
 	return r_kons_write (I, str, len);
 }
 
-R_API void r_cons_memset(char ch, int len) {
-	r_kons_memset (I, ch, len);
-}
-
 R_API void r_cons_print(const char *str) {
 	r_kons_print (I, str);
 }

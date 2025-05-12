@@ -4250,7 +4250,7 @@ static void goto_asmqjmps(RAGraph *g, RCore *core) {
 		r_cons_set_raw (true);
 		char ch = r_cons_readchar (core->cons);
 		obuf[i++] = ch;
-		r_cons_write (&ch, 1);
+		r_kons_write (core->cons, &ch, 1);
 		cont = isalpha (ch & 0xff) && !islower (ch & 0xff);
 	} while (i < R_CORE_ASMQJMPS_LEN_LETTERS && cont);
 	r_kons_flush (core->cons);

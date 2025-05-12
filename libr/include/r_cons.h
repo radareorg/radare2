@@ -953,7 +953,6 @@ R_API void r_cons_print_fps(RCons *cons, int col);
 R_API int r_cons_less_str(RCons * R_NONNULL cons, const char * R_NONNULL str, const char * R_NULLABLE exitkeys);
 R_API void r_cons_less(RCons *cons);
 R_API void r_cons_2048(bool color);
-R_API void r_cons_memset(char ch, int len);
 R_API void r_cons_visual_write(char *buffer);
 R_API bool r_cons_is_utf8(void);
 R_API bool r_cons_is_windows(void);

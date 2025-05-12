@@ -689,11 +689,11 @@ static void bottom_panel_line(RCore *core) {
 	const char *br_corner = useUtf8 ? (useUtf8Curvy ? RUNE_CURVE_CORNER_BR : RUNE_CORNER_BR) : "'";
 	int i, h, w = r_cons_get_size (&h);
 	r_cons_gotoxy (0, h - 1);
-	r_cons_write (bl_corner, strlen (bl_corner));
+	r_kons_write (core->cons, bl_corner, strlen (bl_corner));
 	for (i = 0; i < w - 2; i++) {
-		r_cons_printf ("%s", hline);
+		r_kons_printf (core->cons, "%s", hline);
 	}
-	r_cons_write (br_corner, strlen (br_corner));
+	r_kons_write (core->cons, br_corner, strlen (br_corner));
 }
 
 static void __handlePrompt(RCore *core, RPanels *panels) {

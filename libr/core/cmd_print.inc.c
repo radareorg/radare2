@@ -1522,7 +1522,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 				// char *res = r_asn1_object_tostring (asn1, 0, NULL, fmt);
 				r_asn1_free (a);
 				if (res) {
-					r_cons_printf ("%s\n", res);
+					r_kons_println (core->cons, res);
 					free (res);
 				}
 			} else {
@@ -1535,7 +1535,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 			size_t out_len = 0;
 			ut8 *out = r_sys_unxz (data, size, &out_len);
 			if (out) {
-				r_cons_write ((const char *)out, out_len);
+				r_kons_write (core->cons, (const char *)out, out_len);
 				free (out);
 			}
 		}
@@ -1555,7 +1555,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 					r_x509_certificate_json (pj, x509);
 					char *res = pj_drain (pj);
 					if (res) {
-						r_cons_printf ("%s\n", res);
+						r_kons_println (core->cons, res);
 						free (res);
 					}
 				} else {
@@ -1563,7 +1563,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 					r_x509_certificate_dump (x509, NULL, sb);
 					char *res = r_strbuf_drain (sb);
 					if (res) {
-						r_cons_printf ("%s\n", res);
+						r_kons_println (core->cons, res);
 						free (res);
 					}
 				}
@@ -1580,7 +1580,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 			if (a) {
 				char *oid = r_asn1_oid (a);
 				if (oid) {
-					r_cons_printf ("%s\n", oid);
+					r_kons_println (core->cons, oid);
 					free (oid);
 				}
 				r_asn1_free (a);
@@ -1595,13 +1595,13 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 					PJ *pj = r_pkcs7_cms_json (cms);
 					if (pj) {
 						char *res = pj_drain (pj);
-						r_cons_printf ("%s\n", res);
+						r_kons_println (core->cons, res);
 						free (res);
 					}
 				} else {
 					char *res = r_pkcs7_cms_tostring (cms);
 					if (res) {
-						r_cons_printf ("%s\n", res);
+						r_kons_println (core->cons, res);
 						free (res);
 					}
 				}
@@ -1617,7 +1617,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 		} else {
 			char *s = r_protobuf_decode (data, size, input[1]);
 			if (s) {
-				r_cons_printf ("%s", s);
+				r_kons_print (core->cons, s);
 				free (s);
 			}
 		}
@@ -1630,12 +1630,12 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 				free (s);
 			}
 			s = pj_drain (pj);
-			r_cons_printf ("%s\n", s);
+			r_kons_println (core->cons, s);
 			free (s);
 		} else {
 			char *s = r_axml_decode (data, size, NULL);
 			if (s) {
-				r_cons_printf ("%s", s);
+				r_kons_print (core->cons, s);
 				free (s);
 			} else {
 				R_LOG_ERROR ("Malformed object: did you supply enough data? try to change the block size (see b?)");
@@ -1657,18 +1657,20 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 			}
 			char *s = pj_drain (pj);
 			if (input[1] == 'j') {
-				r_cons_printf ("%s\n", s);
+				r_kons_println (core->cons, s);
 			} else {
 				char *r = r_print_json_human (s);
-				r_cons_printf ("%s\n", r);
+				r_kons_println (core->cons, r);
 				free (r);
 			}
 			free (s);
 		}
 		break;
-	default:
 	case '?': // "pF?"
 		r_core_cmd_help (core, help_msg_pF);
+		break;
+	default:
+		r_core_return_invalid_command (core, "pF", input[0]);
 		break;
 	}
 }
@@ -4553,35 +4555,36 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 			cmd_p_minus_e (core, at, ate);
 			break;
 		default:{ // p--
+			RCons *cons = core->cons;
 			if (off >= at && off < ate) {
-				r_cons_write ("^", 1);
+				r_kons_write (cons, "^", 1);
 			} else {
 				RIOMap *s = r_io_map_get_at (core->io, at);
 				if (use_color) {
 					if (s) {
 						if (s->perm & R_PERM_X) {
-							r_cons_print (core->cons->context->pal.graph_trufae);
+							r_kons_print (cons, cons->context->pal.graph_trufae);
 						} else {
-							r_cons_print (core->cons->context->pal.graph_true);
+							r_kons_print (cons, cons->context->pal.graph_true);
 						}
 					} else {
-						r_cons_print (core->cons->context->pal.graph_false);
+						r_kons_print (cons, cons->context->pal.graph_false);
 					}
 				}
 				if (as->block[p].strings > 0) {
-					r_cons_write ("z", 1);
+					r_kons_write (cons, "z", 1);
 				} else if (as->block[p].symbols > 0) {
-					r_cons_write ("s", 1);
+					r_kons_write (cons, "s", 1);
 				} else if (as->block[p].functions > 0) {
-					r_cons_write ("F", 1);
+					r_kons_write (cons, "F", 1);
 				} else if (as->block[p].comments > 0) {
-					r_cons_write ("c", 1);
+					r_kons_write (cons, "c", 1);
 				} else if (as->block[p].flags > 0) {
-					r_cons_write (".", 1);
+					r_kons_write (cons, ".", 1);
 				} else if (as->block[p].in_functions > 0) {
-					r_cons_write ("f", 1);
+					r_kons_write (cons, "f", 1);
 				} else {
-					r_cons_write ("_", 1);
+					r_kons_write (cons, "_", 1);
 				}
 			}
 		}
@@ -4592,23 +4595,23 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 	case 'j':
 		pj_end (pj);
 		pj_end (pj);
-		r_cons_println (pj_string (pj));
+		r_kons_println (core->cons, pj_string (pj));
 		break;
 	case 'h': {
 		char *table_string = r_table_tostring (t);
 		if (!table_string) {
 			goto cleanup;
 		}
-		r_cons_printf ("\n%s\n", table_string);
+		r_kons_printf (core->cons, "\n%s\n", table_string);
 		free (table_string);
 		break;
 	}
 	case 'e':
 	default:
 		if (use_color) {
-			r_cons_print (Color_RESET);
+			r_kons_print (core->cons, Color_RESET);
 		}
-		r_cons_printf ("] 0x%08"PFMT64x "\n", to);
+		r_kons_printf (core->cons, "] 0x%08"PFMT64x "\n", to);
 		break;
 	}
 	result = true;
@@ -7654,16 +7657,16 @@ static int cmd_print(void *data, const char *input) {
 					if (input[2] == 'l') { // "psnl"
 						r_cons_printf ("%d\n", (int)len);
 					} else {
-						r_cons_write ((const char *)buf, len);
-						r_cons_newline ();
+						r_kons_write (core->cons, (const char *)buf, len);
+						r_kons_newline (core->cons);
 					}
 				} else {
 					if (input[2] == 'l') { // "psnl"
 						r_cons_print ("0\n");
 					} else {
 						// cant find newline, print block
-						r_cons_write ((const char *)core->block, core->blocksize);
-						r_cons_newline ();
+						r_kons_write (core->cons, (const char *)core->block, core->blocksize);
+						r_kons_newline (core->cons);
 					}
 				}
 				free (buf);
@@ -7691,10 +7694,10 @@ static int cmd_print(void *data, const char *input) {
 						char ch = (char) block[i];
 						if (ch == 0xa) {
 							char *s = r_strbuf_drain (sb);
-							r_cons_print (s); // TODO: missing newline?
+							r_kons_print (core->cons, s); // TODO: missing newline?
 							free (s);
 							sb = r_strbuf_new ("");
-							r_cons_newline ();
+							r_kons_newline (core->cons);
 							if (!quiet) {
 								r_print_offset (core->print, core->addr + i, 0, 0, NULL);
 							}
@@ -7731,7 +7734,7 @@ static int cmd_print(void *data, const char *input) {
 						}
 					}
 					char *s = r_strbuf_drain (sb);
-					r_cons_print (s); // TODO: missing newline?
+					r_kons_print (core->cons, s); // TODO: missing newline?
 					free (s);
 				}
 			}
@@ -7745,7 +7748,7 @@ static int cmd_print(void *data, const char *input) {
 				} else if (input[2] == '*') {
 					char *a = r_str_ndup ((const char*)s, l);
 					char *b = (char *)r_base64_encode_dyn ((const ut8 *)a, -1);
-					r_cons_printf ("w6e %s\n", b);
+					r_kons_printf (core->cons, "w6e %s\n", b);
 					free (b);
 					free (a);
 				} else if (input[2] == '?') {
@@ -7815,7 +7818,7 @@ static int cmd_print(void *data, const char *input) {
 					print_json_string (core, (const char *) core->block, len, "utf16");
 				} else {
 					char *str = r_str_utf16_encode ((const char *) core->block, len);
-					r_cons_println (str);
+					r_kons_println (core->cons, str);
 					free (str);
 				}
 			}
@@ -8064,7 +8067,7 @@ static int cmd_print(void *data, const char *input) {
 				ut8 *out;
 				out = r_inflate (block, core->blocksize, NULL, &outlen);
 				if (out) {
-					r_cons_write ((const char *) out, outlen);
+					r_kons_write (core->cons, (const char *) out, outlen);
 				}
 				free (out);
 			}
@@ -8112,13 +8115,16 @@ static int cmd_print(void *data, const char *input) {
 				break;
 			}
 			char *res = r_print_stereogram (data, 78, 20);
-			r_print_stereogram_print (core->print, res);
-			// if (data) eprintf ("%s\n", data);
+			char *out = r_print_stereogram_render (core->print, res);
+			r_kons_println (core->cons, out);
+			free (out);
 			free (res);
 			free (data);
 		} else {
 			char *res = r_print_stereogram_bytes (block, core->blocksize);
-			r_print_stereogram_print (core->print, res);
+			char *out = r_print_stereogram_render (core->print, res);
+			r_kons_println (core->cons, out);
+			free (out);
 			free (res);
 		}
 		break;

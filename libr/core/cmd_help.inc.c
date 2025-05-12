@@ -1329,7 +1329,7 @@ static int cmd_help(void *data, const char *input) {
 				int res_len = 0;
 				ut8 *res = r_base64_decode_dyn (arg, -1, &res_len);
 				if (res && res_len > 0) {
-					r_cons_write ((const char *)res, res_len);
+					r_kons_write (core->cons, (const char *)res, res_len);
 				}
 				free (res);
 			}

@@ -9,6 +9,11 @@
 
 R_LIB_VERSION (r_core);
 R_VEC_TYPE (RVecAnalRef, RAnalRef);
+// R2_600
+#if !R2_USE_NEW_ABI
+R_IPI int Gload_index = 0;
+#endif
+
 
 static ut64 letter_divs[R_CORE_ASMQJMPS_LEN_LETTERS - 1] = {
 	R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS,
@@ -2092,6 +2097,7 @@ R_API const char *colorforop(RCore *core, ut64 addr) {
 }
 
 R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr, ut8 ch, bool verbose) {
+	R_RETURN_VAL_IF_FAIL (core, NULL);
 	if (!(core->print->flags & R_PRINT_FLAGS_COLOR)) {
 		return NULL;
 	}
@@ -2099,7 +2105,7 @@ R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr, ut8 ch, bo
 		// if function in place check optype for given offset
 		return colorforop (core, addr);
 	}
-	if (!r_config_get_i (core->config, "scr.color")) {
+	if (r_config_get_i (core->config, "scr.color") == 0) {
 		return NULL;
 	}
 	if (!verbose) {
@@ -2139,27 +2145,24 @@ static void r_core_setenv(RCore *core) {
 	char *h = r_xdg_datadir ("prefix/bin"); // support \\ on windows :?
 	char *n = r_str_newf ("%s%s%s", h, R_SYS_ENVSEP, e);
 	r_sys_setenv ("PATH", n);
-	{
-		char *cpstr = r_str_newf ("%p", core);
-		r_sys_setenv ("R2CORE", cpstr);
-		free (cpstr);
-	}
+	r_strf_var (coreptr, 64, "%p", core);
+	r_sys_setenv ("R2CORE", coreptr);
 	free (n);
 	free (h);
 	free (e);
 }
 
 static int mywrite(const ut8 *buf, int len) {
-	return r_cons_write ((const char *)buf, len);
+	return r_kons_write (r_cons_singleton (), (const char *)buf, len);
 }
 
 static bool exists_var(RPrint *print, ut64 func_addr, char *str) {
 	RAnal *anal = ((RCore*)(print->user))->anal;
 	RAnalFunction *fcn = r_anal_get_function_at (anal, func_addr);
-	if (!fcn) {
-		return false;
+	if (fcn) {
+		return !!r_anal_function_get_var_byname (fcn, str);
 	}
-	return !!r_anal_function_get_var_byname (fcn, str);
+	return false;
 }
 
 static bool r_core_anal_log(struct r_anal_t *anal, const char *msg) {
@@ -2402,17 +2405,6 @@ R_API RFlagItem *r_core_flag_get_by_spaces(RFlag *f, bool prionospace, ut64 off)
 		NULL);
 }
 
-#if R2__WINDOWS__
-// XXX move to rcons?
-static int win_eprintf(const char *format, ...) {
-	va_list ap;
-	va_start (ap, format);
-	r_cons_win_vhprintf (r_cons_singleton (), STD_ERROR_HANDLE, false, format, ap);
-	va_end (ap);
-	return 0;
-}
-#endif
-
 static void ev_iowrite_cb(REvent *ev, int type, void *user, void *data) {
 	RCore *core = user;
 	REventIOWrite *iow = data;
@@ -2574,10 +2566,6 @@ R_API bool r_core_init(RCore *core) {
 	core->print->offname = r_core_print_offname;
 	core->print->offsize = r_core_print_offsize;
 	core->print->cb_printf = r_cons_printf;
-#if R2__WINDOWS__
-	// XXX R2_590 deprecate this callback? we have the rlog apis
-	core->print->cb_eprintf = win_eprintf;
-#endif
 	// core->print->cb_color = r_cons_rainbow_get; // NEVER CALLED
 	core->print->write = mywrite;
 	core->print->exists_var = exists_var;
@@ -2805,6 +2793,7 @@ R_API void __cons_cb_fkey(RCore *core, int fkey) {
 }
 
 R_API void r_core_bind_cons(RCore *core) {
+	R_RETURN_IF_FAIL (core);
 	core->cons->num = core->num;
 	core->cons->cb_fkey = (RConsFunctionKey)__cons_cb_fkey;
 	core->cons->cb_editor = (RConsEditorCallback)r_core_editor;
@@ -2816,9 +2805,7 @@ R_API void r_core_bind_cons(RCore *core) {
 }
 
 R_API void r_core_fini(RCore *c) {
-	if (!c) {
-		return;
-	}
+	R_RETURN_IF_FAIL (c);
 	if (c->chan) {
 		r_th_channel_free (c->chan);
 	}
@@ -2898,17 +2885,12 @@ R_API void r_core_fini(RCore *c) {
 	free (c->times);
 }
 
-R_API void r_core_free(RCore *c) {
+R_API void r_core_free(RCore * R_NULLABLE c) {
 	if (c) {
 		r_core_fini (c);
 		free (c);
 	}
 }
-
-// R2_600
-#if !R2_USE_NEW_ABI
-R_IPI int Gload_index = 0;
-#endif
 
 R_API bool r_core_prompt_loop(RCore *r) {
 #if !R2_USE_NEW_ABI
