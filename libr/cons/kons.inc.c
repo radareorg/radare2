@@ -1653,7 +1653,6 @@ R_API void r_kons_clear_buffer(RCons *cons) {
 }
 
 R_API void r_cons_mark(RCons *cons, ut64 addr, const char *name) {
-	eprintf ("MARK\n");sleep (1);
 	RConsMark *mark = R_NEW0 (RConsMark);
 	RConsContext *ctx = cons->context;
 	mark->addr = addr;
