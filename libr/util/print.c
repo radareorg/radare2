@@ -2342,7 +2342,17 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 
 	memset (o, 0, COLORIZE_BUFSIZE);
 	for (i = j = 0; p[i]; i++, j++) {
-		if (i > 0 && p[i - 1] == ' ' && p[i] == '0' && p[i + 1] == 0) {
+		if (i > 0 && p[i - 1] == ' ' && (p[i] == '$')) {
+			if (p[i + 1] == '0') {
+				snprintf (o + j, COLORIZE_BUFSIZE - j, "%s$0", num);
+				j += strlen (num) + 2;
+				i += 2;
+			} else {
+				snprintf (o + j, COLORIZE_BUFSIZE - j, "%s$", num);
+				j += strlen (num) + 1;
+				i++;
+			}
+		} else if (i > 0 && p[i - 1] == ' ' && (p[i] == '0' && p[i + 1] == 0)) {
 			snprintf (o + j, COLORIZE_BUFSIZE - j, "%s0", num);
 			j += strlen (num) + 1;
 			i++;
@@ -2350,7 +2360,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 		}
 		/* colorize numbers */
 		if ((ishexprefix (p + i) && previous != ':') \
-		     || (isdigit (p[i] & 0xff) && issymbol (previous))) {
+		     || (p[i] == '$' || (isdigit (p[i] & 0xff) && issymbol (previous)))) {
 			const char *num2 = num;
 			ut64 n = r_num_get (NULL, p + i);
 			const char *name = print->offname (print->user, n)? color_flag: NULL;
@@ -2389,6 +2399,8 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 			}
 			o[j++] = p[i++];
 #endif
+		case '$':
+			break;
 		case '+':
 		case '-':
 		case '/':
@@ -2397,7 +2409,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 		case '(':
 		case ')':
 		case '*':
-		case '%':
+		// case '%': // fix at&t reg colors
 		case ']':
 		case '[':
 		case ',':
