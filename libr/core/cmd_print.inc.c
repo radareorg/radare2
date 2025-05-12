@@ -185,9 +185,9 @@ static RCoreHelpMessage help_msg_amper = {
 
 static RCoreHelpMessage help_msg_p = {
 	"Usage:", "p[=68abcdDfiImrstuxz] [arg|len] [@addr]", "",
-	"p", "[b|B|xb] [len] ([S])", "bindump N bits skipping S bytes",
-	"p", "[iI][df] [len]", "print N ops/bytes (f=func) (see pi? and pdi)",
-	"p", "[kK] [len]", "print key in randomart (K is for mosaic)",
+	// "p", "[b|B|xb] [len] ([S])", "bindump N bits skipping S bytes",
+	// "p", "[iI][df] [len]", "print N ops/bytes (f=func) (see pi? and pdi)",
+	//"p", "[kK] [len]", "print key in randomart (K is for mosaic)",
 	"p-", "[?][jh] [mode]", "bar|json|histogram blocks (mode: e?search.in)",
 	"p2", " [len]", "8x8 2bpp-tiles",
 	"p3", " [file]", "print 3D stereogram image of current block",
@@ -208,8 +208,8 @@ static RCoreHelpMessage help_msg_p = {
 	"pi", "[?][bdefrj] [num]", "print instructions",
 	"pI", "[?][iI][df] [len]", "print N instructions/bytes (f=func)",
 	"pj", "[?] [len]", "print as indented JSON",
-	"pk", " [len]", "print key in randomart mosaic",
-	"pK", " [len]", "print key in randomart mosaic",
+	"pk", " [len]", "print key in randomart",
+	"pK", " [len]", "print key in randomart whole-screen mosaic",
 	"pl", "[?][format] [arg]", "print list of data (pl Ffvc)",
 	"pm", "[?] [magic]", "print libmagic data (see pm? and /m?)",
 	"po", "[?] hex", "print operation applied to block (see po?)",
