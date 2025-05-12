@@ -230,7 +230,8 @@ static void __sync_status_with_cursor(RCoreVisualViewGraph *status) {
 }
 
 R_API int __core_visual_view_graph_update(RCore *core, RCoreVisualViewGraph *status) {
-	int h, w = r_cons_get_size (&h);
+	RCons *cons = core->cons;
+	int h, w = r_kons_get_size (cons, &h);
 	const int colw = w / 4;
 	const int colh = h / 2;
 	const int colx = w / 3;
@@ -248,19 +249,19 @@ R_API int __core_visual_view_graph_update(RCore *core, RCoreVisualViewGraph *sta
 
 	char *title = r_str_newf ("[r2-visual-browser] addr=0x%08"PFMT64x" faddr=0x%08"PFMT64x, status->addr, status->fcn ? status->fcn->addr : 0);
 	if (title) {
-		r_cons_print_at (title, 0, 0, w - 1, 2);
+		r_cons_print_at (cons, title, 0, 0, w - 1, 2);
 		free (title);
 	}
-	r_cons_print_at (xrefsColstr, 0, 2, colw, colh);
-	r_cons_print_at (mainColstr, colx, 2, colw*2, colh);
-	r_cons_print_at (refsColstr, colx * 2, 2, colw, colh);
+	r_cons_print_at (cons, xrefsColstr, 0, 2, colw, colh);
+	r_cons_print_at (cons, mainColstr, colx, 2, colw*2, colh);
+	r_cons_print_at (cons, refsColstr, colx * 2, 2, colw, colh);
 
 	char *output = r_core_cmd_strf (core, "pd %d @e:asm.flags=0@ 0x%08"PFMT64x"; pds 256 @ 0x%08"PFMT64x,
 		32, status->addr, status->addr);
 	int disy = colh + 2;
-	r_cons_print_at (output, 10, disy, w, h - disy);
+	r_cons_print_at (cons, output, 10, disy, w, h - disy);
 	free (output);
-	r_cons_flush ();
+	r_kons_flush (cons);
 
 	free (xrefsColstr);
 	free (mainColstr);

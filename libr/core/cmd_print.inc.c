@@ -1758,7 +1758,7 @@ static void cmd_print_gadget(RCore *core, const char *_input) {
 		r_list_foreach (core->gadgets, iter, g) {
 			char *res = r_core_cmd_str (core, g->cmd);
 			if (res) {
-				r_cons_print_at (res, g->x, g->y, g->w, g->h);
+				r_cons_print_at (core->cons, res, g->x, g->y, g->w, g->h);
 				free (res);
 			}
 		}
@@ -3130,6 +3130,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *input) {
 	} else {
 		cols *= 2;
 	}
+	RCons *cons = core->cons;
 	if (show_offset) {
 		char offstr[128];
 		snprintf (offstr, sizeof (offstr),
@@ -3316,7 +3317,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *input) {
 		int opsz = R_MAX (op.size, 1);
 		if (show_cursor) {
 			if (core->print->cur >= i && core->print->cur < i + opsz) {
-				r_cons_invert (1, 1);
+				r_cons_invert (cons, 1, 1);
 			}
 		}
 		if (onechar) {
@@ -3346,7 +3347,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *input) {
 		}
 		if (show_cursor) {
 			if (core->print->cur >= i && core->print->cur < i + opsz) {
-				r_cons_invert (0, 1);
+				r_cons_invert (cons, 0, 1);
 			}
 		}
 		i += opsz;

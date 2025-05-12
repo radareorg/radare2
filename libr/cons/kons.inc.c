@@ -458,10 +458,12 @@ R_API void r_kons_flush(RCons *cons) {
 		r_kons_reset (cons);
 		return;
 	}
+#if 0
 	if (!r_list_empty (ctx->marks)) {
 		r_list_free (ctx->marks);
 		ctx->marks = r_list_newf ((RListFree)r_cons_mark_free);
 	}
+#endif
 	if (lastMatters (ctx)) {
 		// snapshot of the output
 		if (ctx->buffer_len > ctx->lastLength) {
@@ -692,9 +694,14 @@ static void cons_context_deinit(RConsContext *ctx) {
 }
 #endif
 
+static void mark_free(RConsMark *m) {
+	free (m->name);
+	free (m);
+}
+
 static void init_cons_context(RCons *cons, RConsContext * R_NULLABLE parent) {
 	RConsContext *ctx = cons->context;
-	ctx->marks = r_list_newf ((RListFree)r_cons_mark_free);
+	ctx->marks = r_list_newf ((RListFree)mark_free);
 	ctx->breaked = false;
 	// ctx->cmd_depth = R_CONS_CMD_DEPTH + 1;
 	ctx->buffer_sz = 0;
@@ -998,7 +1005,7 @@ R_API RConsContext *r_cons_context_clone(RConsContext *ctx) {
 	if (ctx->unsorted_lines) {
 		c->unsorted_lines = r_list_clone (ctx->unsorted_lines, (RListClone)strdup);
 	}
-	c->marks = r_list_clone (ctx->marks, (RListClone)strdup);
+	// c->marks = r_list_clone (ctx->marks, (RListClone)strdup);
 	c->pal.rainbow = NULL;
 	r_kons_pal_clone (c);
 	// rainbow_clone (c);
@@ -1104,7 +1111,8 @@ R_API char *r_kons_drain(RCons *cons) {
 	return s;
 }
 
-R_API void r_kons_print_fps(RCons *cons, int col) {
+#if 0
+static void print_fps(RCons *cons, int col) {
 	int fps = 0, w = r_cons_get_size (NULL);
 	fps = 0;
 	if (cons->prev) {
@@ -1133,6 +1141,7 @@ R_API void r_kons_print_fps(RCons *cons, int col) {
 	eprintf ("\x1b[0;%dH[%d FPS] \n", w - col, fps);
 #endif
 }
+#endif
 
 static int real_strlen(const char *ptr, int len) {
 	int utf8len = r_str_len_utf8 (ptr);
@@ -1212,7 +1221,7 @@ R_API void r_kons_visual_write(RCons *cons, char *buffer) {
 	}
 }
 
-R_API void r_kons_visual_flush(RCons *cons) {
+R_API void r_cons_visual_flush(RCons *cons) {
 	RConsContext *ctx = cons->context;
 	if (ctx->noflush) {
 		return;
@@ -1231,9 +1240,11 @@ R_API void r_kons_visual_flush(RCons *cons) {
 #endif
 	}
 	r_kons_reset (cons);
+#if 0
 	if (cons->fps) {
-		r_kons_print_fps (cons, 0);
+		r_cons_print_fps (cons, 0);
 	}
+#endif
 }
 
 R_API int r_kons_get_column(RCons *cons) {
@@ -1446,10 +1457,6 @@ R_API void r_kons_set_utf8(RCons *cons, bool b) {
 #endif
 }
 
-R_API void r_kons_invert(RCons *cons, int set, int color) {
-	r_kons_print (cons, R_CONS_INVERT (set, color));
-}
-
 R_API void r_kons_column(RCons *cons, int c) {
 	RConsContext *ctx = cons->context;
 	char *b = malloc (ctx->buffer_len + 1);
@@ -1503,7 +1510,7 @@ R_API void r_kons_highlight(RCons *cons, const char *word) {
 	};
 
 	if (!cons->enable_highlight) {
-		r_cons_enable_highlight (true);
+		r_cons_enable_highlight (cons, true);
 		return;
 	}
 	RConsContext *C = cons->context;
@@ -1645,30 +1652,20 @@ R_API void r_kons_clear_buffer(RCons *cons) {
 	}
 }
 
-R_API void r_cons_mark_free(RConsMark *m) {
-	if (m) {
-		free (m->name);
-		free (m);
-	}
-}
-
-R_API void r_kons_mark(RCons *cons, ut64 addr, const char *name) {
+R_API void r_cons_mark(RCons *cons, ut64 addr, const char *name) {
+	eprintf ("MARK\n");sleep (1);
 	RConsMark *mark = R_NEW0 (RConsMark);
 	RConsContext *ctx = cons->context;
 	mark->addr = addr;
-	int row = 0, col = r_cons_get_cursor (&row);
-	mark->name = strdup (name); // TODO. use a const pool
+	int row = 0, col = r_kons_get_cursor (cons, &row);
+	mark->name = strdup (name); // TODO. use a const pool instead
 	mark->pos = ctx->buffer_len;
 	mark->col = col;
 	mark->row = row;
 	r_list_append (ctx->marks, mark);
 }
 
-R_API void r_kons_mark_flush(RCons *cons) {
-	r_list_free (cons->context->marks);
-}
-
-R_API RConsMark *r_kons_mark_at(RCons *cons, ut64 addr, const char *name) {
+R_API RConsMark *r_cons_mark_at(RCons *cons, ut64 addr, const char *name) {
 	RConsContext *C = cons->context;
 	RListIter *iter;
 	RConsMark *mark;

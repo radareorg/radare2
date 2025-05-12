@@ -3871,7 +3871,7 @@ static bool __drag_and_resize(RCore *core) {
 	RPanels *panels = core->panels;
 	if (panels->mouse_on_edge_x || panels->mouse_on_edge_y) {
 		int x, y;
-		if (r_cons_get_click (&x, &y)) {
+		if (r_cons_get_click (core->cons, &x, &y)) {
 			y -= r_config_get_i (core->config, "scr.notch");
 			if (panels->mouse_on_edge_x) {
 				__update_edge_x (core, x - panels->mouse_orig_x);
@@ -4218,7 +4218,7 @@ static void __create_modal(RCore *core, RPanel *panel, Sdb *menu_db) {
 		key = r_cons_arrow_to_hjkl (core->cons, okey);
 		word = NULL;
 		if (key == INT8_MAX - 1) {
-			if (r_cons_get_click (&cx, &cy)) {
+			if (r_cons_get_click (core->cons, &cx, &cy)) {
 				cy -= r_config_get_i (core->config, "scr.notch");
 				if ((cx < x || x + w < cx) || ((cy < y || y + h < cy))) {
 					key = 'q';
@@ -4374,7 +4374,7 @@ static bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
 	}
 	if (key && !*key) {
 		int x, y;
-		if (!r_cons_get_click (&x, &y)) {
+		if (!r_cons_get_click (core->cons, &x, &y)) {
 			return false;
 		}
 		y -= r_config_get_i (core->config, "scr.notch");
@@ -6327,9 +6327,11 @@ static void __panels_refresh(RCore *core) {
 	}
 	show_cursor (core);
 	r_kons_flush (core->cons);
-	if (r_cons_singleton ()->fps) {
+#if 0
+	if (core->cons->fps) {
 		r_cons_print_fps (40);
 	}
+#endif
 }
 
 static void __panel_breakpoint(RCore *core) {
@@ -7357,7 +7359,7 @@ virtualmouse:
 	case 0x0d: // "\\n"
 		if (r_config_get_b (core->config, "scr.cursor")) {
 			key = 0;
-			r_cons_set_click (core->cons->cpos.x, core->cons->cpos.y);
+			r_cons_set_click (core->cons, core->cons->cpos.x, core->cons->cpos.y);
 			goto virtualmouse;
 		} else {
 			__toggle_zoom_mode (core);

@@ -85,10 +85,6 @@ typedef struct r_cons_fd_pair {
 } RConsFdPair;
 
 R_VEC_TYPE (RVecFdPairs, RConsFdPair);
-R_API void r_cons_mark_flush(void);
-R_API void r_cons_mark(ut64 addr, const char *name);
-R_API void r_cons_mark_free(RConsMark *m);
-R_API RConsMark *r_cons_mark_at(ut64 addr, const char *name);
 
 typedef struct {
 	const char *name;
@@ -839,9 +835,12 @@ R_API InputState *r_cons_input_state(void);
 R_API void r_cons_free(RCons *cons);
 R_API char *r_cons_lastline(int *size);
 R_API char *r_cons_lastline_utf8_ansi_len(int *len);
-R_API void r_cons_set_click(int x, int y);
-R_API bool r_cons_get_click(int *x, int *y);
+R_API void r_cons_set_click(RCons *cons, int x, int y);
+R_API bool r_cons_get_click(RCons *cons, int *x, int *y);
 R_API void r_kons_set_click(RCons *cons, int x, int y);
+R_API void r_cons_mark(RCons *cons, ut64 addr, const char *name);
+R_API RConsMark *r_cons_mark_at(RCons *cons, ut64 addr, const char *name);
+
 
 typedef void (*RConsBreak)(void *);
 R_API bool r_cons_is_initialized(void);
@@ -942,21 +941,19 @@ R_API void r_cons_set_utf8(bool b);
 
 R_API int r_cons_printf(const char *format, ...) R_PRINTF_CHECK(1, 2);
 R_API void r_cons_print(const char *str);
-R_API void r_cons_print_at(const char *str, int x, char y, int w, int h);
+R_API void r_cons_print_at(RCons *cons, const char *str, int x, char y, int w, int h);
 R_API void r_cons_println(const char* str);
 R_API void r_cons_print_justify(RCons *cons, const char *str, int j, char c);
-R_API void r_cons_printat(const char *str, int x, char y);
 R_API int r_cons_write(const char *str, int len);
 R_API void r_cons_newline(void);
 R_API void r_cons_filter(void);
 R_API void r_cons_flush(void);
 R_API char *r_cons_drain(void);
-R_API void r_cons_print_fps(int col);
+R_API void r_cons_print_fps(RCons *cons, int col);
 R_API int r_cons_less_str(RCons * R_NONNULL cons, const char * R_NONNULL str, const char * R_NULLABLE exitkeys);
 R_API void r_cons_less(RCons *cons);
 R_API void r_cons_2048(bool color);
 R_API void r_cons_memset(char ch, int len);
-R_API void r_cons_visual_flush(void);
 R_API void r_cons_visual_write(char *buffer);
 R_API bool r_cons_is_utf8(void);
 R_API bool r_cons_is_windows(void);
@@ -1033,7 +1030,6 @@ R_API char *r_cons_rgb_str_off(RCons *cons, char *outstr, size_t sz, ut64 off);
 R_API void r_cons_color(int fg, int r, int g, int b);
 
 R_API RColor r_cons_color_random(ut8 alpha);
-R_API void r_cons_invert(int set, int color);
 R_API bool r_cons_yesno(int def, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
 R_API char *r_cons_input(RCons *cons, const char *msg);
 R_API char *r_cons_password(const char *msg);
@@ -1043,7 +1039,7 @@ R_API int r_cons_get_column(void);
 R_API char *r_cons_message(RCons *cons, const char *msg);
 R_API void r_cons_set_title(const char *str);
 R_API bool r_kons_enable_mouse(RCons *cons, const bool enable);
-R_API void r_cons_enable_highlight(const bool enable);
+R_API void r_cons_enable_highlight(RCons *cons, const bool enable);
 R_API const char* r_cons_get_rune(const ut8 ch);
 #endif
 
@@ -1239,15 +1235,14 @@ R_API bool r_kons_context_is_main(RCons *cons);
 R_API RConsContext *r_cons_context_clone(RConsContext *ctx);
 R_API void r_kons_echo(RCons *cons, const char *msg);
 R_API char *r_kons_drain(RCons *cons);
-R_API void r_kons_print_fps(RCons *cons, int col);
 R_API void r_kons_visual_write(RCons *cons, char *buffer);
-R_API void r_kons_visual_flush(RCons *cons);
+R_API void r_cons_visual_flush(RCons *cons);
 R_API int r_kons_get_column(RCons *cons);
 R_API int r_kons_get_cursor(RCons *cons, int *rows);
 R_API void r_kons_show_cursor(RCons *I, int cursor);
 R_API void r_kons_set_raw(RCons *I, bool is_raw);
 R_API void r_kons_set_utf8(RCons *cons, bool b);
-R_API void r_kons_invert(RCons *cons, int set, int color);
+R_API void r_cons_invert(RCons *cons, int set, int color);
 R_API void r_kons_column(RCons *cons, int c);
 R_API void r_kons_set_title(RCons *cons, const char *str);
 R_API void r_kons_zero(RCons *cons);

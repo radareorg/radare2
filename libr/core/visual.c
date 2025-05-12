@@ -1447,6 +1447,7 @@ static RCoreHelpMessage help_msg_visual_xref = {
 
 R_API int r_core_visual_refs(RCore *core, bool xref, bool fcnInsteadOfAddr) {
 	ut64 cur_ref_addr = UT64_MAX;
+	RCons *cons = core->cons;
 	int ret = 0;
 	char ch;
 	int count = 0;
@@ -1482,22 +1483,22 @@ repeat:
 			: r_anal_refs_get (core->anal, addr);
 	}
 
-	r_cons_clear00 ();
-	r_cons_gotoxy (1, 1);
+	r_kons_clear00 (cons);
+	r_kons_gotoxy (cons, 1, 1);
 	{
 		char *address = R_SYS_BITS_CHECK (core->dbg->bits, 64)
 			? r_str_newf ("0x%016"PFMT64x, addr)
 			: r_str_newf ("0x%08"PFMT64x, addr);
-		r_cons_printf ("[%s%srefs]> %s # (TAB/jk/q/?) ",
+		r_kons_printf (cons, "[%s%srefs]> %s # (TAB/jk/q/?) ",
 				xrefsMode? "fcn.": "addr.", xref ? "x": "", address);
 		free (address);
 	}
 	if (!xrefs || RVecAnalRef_empty (xrefs)) {
 		RVecAnalRef_free (xrefs);
 		xrefs = NULL;
-		r_cons_printf ("\n\n(no %srefs)\n", xref ? "x": "");
+		r_kons_printf (cons, "\n\n(no %srefs)\n", xref ? "x": "");
 	} else {
-		int h, w = r_cons_get_size (&h);
+		int h, w = r_kons_get_size (cons, &h);
 		bool asm_bytes = r_config_get_b (core->config, "asm.bytes");
 		r_config_set_i (core->config, "asm.bytes", false);
 		r_core_cmd_call (core, "fd");
@@ -1513,7 +1514,7 @@ repeat:
 		const ut64 num_xrefs = RVecAnalRef_length (xrefs);
 		R_VEC_FOREACH (xrefs, refi) {
 			if (idx - skip > maxcount) {
-				r_cons_printf ("...");
+				r_kons_printf (cons, "...");
 				break;
 			}
 
@@ -1551,7 +1552,7 @@ repeat:
 				}
 				char *cmt = r_core_cmd_strf (core, "CC.@0x%08"PFMT64x, refi->addr);
 				r_str_trim (cmt);
-				r_cons_printf (" %d [%s] 0x%08"PFMT64x" 0x%08"PFMT64x " %s %sref (%s) ; %s\n",
+				r_kons_printf (cons, " %d [%s] 0x%08"PFMT64x" 0x%08"PFMT64x " %s %sref (%s) ; %s\n",
 					idx, cstr, refi->at, refi->addr,
 					r_anal_ref_type_tostring (refi->type),
 					xref ? "x":"", name, cmt);
@@ -1565,7 +1566,7 @@ repeat:
 					if (secondColumn) {
 						res = r_core_cmd_strf (core, "pd 10 @ 0x%08"PFMT64x"@e:asm.flags.limit=1@e:asm.lines=0@e:asm.xrefs=0", refi->at);
 						int height = R_MAX (h / 3, h - 13);
-						res2 = r_str_ansi_crop (res, 0, 0, w- secondColumn-2, height);
+						res2 = r_str_ansi_crop (res, 0, 0, w - secondColumn - 2, height);
 						free (res);
 						res = res2;
 					} else {
@@ -1575,9 +1576,9 @@ repeat:
 						res = res2;
 					}
 					dis = NULL;
-					r_cons_print_at ("; ----------------------------", 0, 11, secondColumn? secondColumn: w - 1, 2);
+					r_cons_print_at (cons, "; ----------------------------", 0, 11, secondColumn? secondColumn: w - 1, 2);
 					if (secondColumn) {
-						r_cons_print_at (res, secondColumn, 2, w - secondColumn, 15);
+						r_cons_print_at (core->cons, res, secondColumn, 2, w - secondColumn, 15);
 						free (res);
 						res = strdup ("");
 					}
@@ -1602,7 +1603,7 @@ repeat:
  					dis = res;
 				}
 				if (++count >= rows) {
-					r_cons_printf ("...");
+					r_kons_printf (cons, "...");
 					break;
 				}
 			}
@@ -1610,11 +1611,11 @@ repeat:
 		}
 		if (dis) {
 			if (count < rows) {
-				r_cons_newline ();
+				r_kons_newline (cons);
 			}
 			int i = count;
 			for (; i < 9; i++)  {
-				r_cons_newline ();
+				r_kons_newline (cons);
 			}
 			/* prepare highlight */
 			char *cmd = strdup (r_config_get (core->config, "scr.highlight"));
@@ -1624,12 +1625,12 @@ repeat:
 			}
 			/* print disasm */
 			if (secondColumn) {
-				r_cons_print_at (dis, 0, 13, secondColumn, h - 13);
+				r_cons_print_at (cons, dis, 0, 13, secondColumn, h - 13);
 			} else {
-				r_cons_print_at (dis, 0, 12, w - 1, h - 13);
+				r_cons_print_at (cons, dis, 0, 12, w - 1, h - 13);
 			}
 			/* flush and restore highlight */
-			r_cons_flush ();
+			r_kons_flush (cons);
 			r_config_set (core->config, "scr.highlight", cmd);
 			free (ats);
 			free (cmd);
@@ -1638,11 +1639,11 @@ repeat:
 		}
 		r_config_set_i (core->config, "asm.bytes", asm_bytes);
 	}
-	r_kons_flush (core->cons);
-	r_kons_enable_mouse (core->cons, r_config_get_i (core->config, "scr.wheel"));
-	r_kons_set_raw (core->cons, true);
-	ch = r_cons_readchar (core->cons);
-	ch = r_cons_arrow_to_hjkl (core->cons, ch);
+	r_kons_flush (cons);
+	r_kons_enable_mouse (cons, r_config_get_i (core->config, "scr.wheel"));
+	r_kons_set_raw (cons, true);
+	ch = r_cons_readchar (cons);
+	ch = r_cons_arrow_to_hjkl (cons, ch);
 	switch (ch) {
 	case ':':
 		r_core_visual_prompt_input (core);
@@ -1679,7 +1680,7 @@ repeat:
 		add_ref (core);
 		goto repeat;
 	case '-':
-		r_cons_gotoxy (0, 0);
+		r_kons_gotoxy (cons, 0, 0);
 		if (r_cons_yesno ('y', "Do you want to delete this xref? (Y/n)")) {
 			delete_ref (core, xrefs, skip, xref);
 		}
@@ -1778,12 +1779,13 @@ static void visual_textlogs(RCore *core) {
 	int skiplines = 0;
 	bool showhelp = false;
 	bool inbody = false;
+	RCons *cons = core->cons;
 	while (true) {
 		int log_level = r_log_get_level ();
-		r_cons_clear00 ();
+		r_kons_clear00 (cons);
 		int notch = r_config_get_i (core->config, "scr.notch");
 		while (notch-- > 0) {
-			r_cons_newline ();
+			r_kons_newline (cons);
 		}
 		const char *vi = r_config_get (core->config, "cmd.vprompt");
 		if (R_STR_ISNOTEMPTY (vi)) {
@@ -1791,22 +1793,24 @@ static void visual_textlogs(RCore *core) {
 		}
 #define TEXTLOGS_TITLE "[visual-text-logs] Press '?' for help. idx %d log.level=%d"
 		if (r_config_get_i (core->config, "scr.color") > 0) {
-			r_cons_printf (Color_YELLOW "" TEXTLOGS_TITLE "\n"Color_RESET, index, log_level);
+			r_kons_printf (cons, Color_YELLOW "" TEXTLOGS_TITLE "\n"Color_RESET, index, log_level);
 		} else {
-			r_cons_printf (TEXTLOGS_TITLE "\n", index, log_level);
+			r_kons_printf (cons, TEXTLOGS_TITLE "\n", index, log_level);
 		}
 		if (showhelp) {
-			r_cons_printf (" <tab>   - toggle between list and log body\n");
-			r_cons_printf (" 0       - jump to index 0\n");
-			r_cons_printf (" =       - edit visual prompt\n");
-			r_cons_printf (" !       - edit current message with cfg.editor\n");
-			r_cons_printf (" :       - run a radare command\n");
-			r_cons_printf (" +-      - change log level\n");
-			r_cons_printf (" []      - adjust scroll of message in list\n");
-			r_cons_printf (" i       - insert a new message\n");
-			r_cons_printf (" q       - quit this viewer mode\n");
-			r_cons_printf (" jk      - scroll up and down\n");
-			r_cons_printf (" JK      - faster scroll up and down (10x)\n");
+			const char help[] = \
+			" <tab>   - toggle between list and log body\n"
+			" 0       - jump to index 0\n"
+			" =       - edit visual prompt\n"
+			" !       - edit current message with cfg.editor\n"
+			" :       - run a radare command\n"
+			" +-      - change log level\n"
+			" []      - adjust scroll of message in list\n"
+			" i       - insert a new message\n"
+			" q       - quit this viewer mode\n"
+			" jk      - scroll up and down\n"
+			" JK      - faster scroll up and down (10x)\n";
+			r_kons_print (cons, help);
 		} else {
 			r_core_cmdf (core, "Tv %d %d", index, shift);
 			if (inbody) {
@@ -1820,7 +1824,7 @@ static void visual_textlogs(RCore *core) {
 				free (s);
 				s = r_core_cmd_strf (core, "Tm %d", index);
 			}
-			int w = r_cons_get_size (NULL);
+			int w = r_kons_get_size (cons, NULL);
 			s = r_str_wrap (s, w);
 			if (shiftbody) {
 				char *r = s;
@@ -1835,7 +1839,7 @@ static void visual_textlogs(RCore *core) {
 			}
 			if (skiplines > 0) {
 				char *r = s;
-				int w = r_cons_get_size (NULL);
+				int w = r_kons_get_size (cons, NULL);
 				int line = skiplines;
 				int col = 0;
 				while (*r) {
@@ -1857,16 +1861,16 @@ static void visual_textlogs(RCore *core) {
 				free (s);
 				s = r;
 			}
-			r_cons_printf ("%s\n", s);
+			r_kons_printf (cons, "%s\n", s);
 			free (s);
 			const char *vi2 = r_config_get (core->config, "cmd.vprompt2");
 			if (R_STR_ISNOTEMPTY (vi2)) {
 				r_core_cmd0 (core, vi2);
 			}
 		}
-		r_cons_visual_flush ();
-		char ch = (ut8)r_cons_readchar (core->cons);
-		ch = r_cons_arrow_to_hjkl (core->cons, ch);
+		r_cons_visual_flush (cons);
+		char ch = (ut8)r_cons_readchar (cons);
+		ch = r_cons_arrow_to_hjkl (cons, ch);
 		if (showhelp) {
 			showhelp = false;
 			continue;
@@ -1919,7 +1923,7 @@ static void visual_textlogs(RCore *core) {
 				const char *buf = NULL;
 				#define I core->cons
 				const char *cmd = r_config_get (core->config, "cmd.vprompt");
-				r_line_set_prompt (core->cons->line, "cmd.vprompt> ");
+				r_line_set_prompt (cons->line, "cmd.vprompt> ");
 				I->line->contents = strdup (cmd);
 				buf = r_line_readline (core->cons);
 				I->line->contents = NULL;
@@ -2799,7 +2803,7 @@ static bool toggle_bb(RCore *core, ut64 addr) {
 
 static int process_get_click(RCore *core, int ch) {
 	int x, y;
-	if (r_cons_get_click (&x, &y)) {
+	if (r_cons_get_click (core->cons, &x, &y)) {
 		if (y == 1) {
 			if (x < 13) {
 				ch = '_';
@@ -2942,7 +2946,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 #endif
 		case 0x0d: // "enter" "\\n" "newline"
 			if (r_config_get_b (core->config, "scr.cursor")) {
-				r_cons_set_click (core->cons->cpos.x, core->cons->cpos.y);
+				RConsCursorPos cpos = core->cons->cpos;
+				r_cons_set_click (core->cons, cpos.x, cpos.y);
 				char buf[10];
 				int ch = process_get_click (core, 0);
 				buf[0] = ch;
@@ -4620,7 +4625,7 @@ R_IPI void visual_refresh(RCore *core) {
 	core->visual.blocksize = core->num->value? core->num->value: core->blocksize;
 	core->cons->context->noflush = false;
 
-	RConsMark *mark = r_cons_mark_at (0, "cursor");
+	RConsMark *mark = r_cons_mark_at (core->cons, 0, "cursor");
 	if (mark) {
 		int x = 60;
 		r_cons_gotoxy (x, mark->row - 2); r_cons_print ("   .-------------.");
@@ -4632,13 +4637,13 @@ R_IPI void visual_refresh(RCore *core) {
 
 	/* this is why there's flickering */
 	if (core->print->vflush) {
-		r_cons_visual_flush ();
+		r_cons_visual_flush (core->cons);
 	} else {
-		r_cons_reset ();
+		r_kons_reset (core->cons);
 	}
 	if (core->scr_gadgets) {
 		r_core_cmd_call (core, "pg");
-		r_cons_flush ();
+		r_kons_flush (core->cons);
 	}
 	core->cons->blankline = false;
 	core->cons->blankline = true;

@@ -312,7 +312,7 @@ R_API char *r_cons_hud(RCons *cons, RList *list, const char *prompt) {
 #if !HUD_CACHE
 		r_list_free (filtered_list);
 #endif
-		r_kons_visual_flush (cons);
+		r_cons_visual_flush (cons);
 		(void) r_line_readline (cons);
 		r_str_ncpy (user_input, cons->line->buffer.data, HUD_BUF_SIZE);
 
