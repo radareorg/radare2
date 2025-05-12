@@ -4,7 +4,6 @@ r_cons_sources = [
   'canvas_line.c',
   'cons.c',
   'help.c',
-  'thread.c',
   'html.c',
   'editor.c',
   'grep.c',
