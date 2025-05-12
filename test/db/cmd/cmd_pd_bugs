@@ -54,19 +54,19 @@ EXPECT=<<EOF
 |           entry0+0xf                     4c8b05e693..   mov r8, qword [reloc.fixup.UHH_] ; [0x1f220:8]=0x16ee0
 |           entry0+0x16                    488b0de793..   mov rcx, qword [reloc.fixup.UHAWAVAUATSH8] ; [0x1f228:8]=0x16e60 ; "`n\x01"
 |           entry0+0x1d                    488b3de893..   mov rdi, qword [reloc.fixup.UHAWAVAUATSHH] ; [0x1f230:8]=0x3bd0 main
-[36m/[0m 41: [31mentry0[0m (int64_t arg3, void *stack_end);
+[36m/[0m 41: [33mentry0[0m (int64_t arg3, void *stack_end);
 [36m|[0m           [37m; [37marg [36mint64_t [33marg3 [32m@ rdx[0m
 [36m|[0m           [37m; [37marg [36mvoid *[33mstack_end [32m@ xmm0[0m
-[36m|[0m           [33mentry0[0m                          [33m31[36med[0m           [33mxor[32m ebp[0m,[32m ebp[0m[0m[0m
-[36m|[0m           [33mentry0[0m+0x2                      [33m49[36m89[36md1[0m         [36mmov[32m r9[0m,[32m rdx[0m[0m[0m [37m; arg3[0m
-[36m|[0m           [33mentry0[0m+0x5                      [33m5e[0m             [35mpop[32m rsi[0m[0m[0m
-[36m|[0m           [33mentry0[0m+0x6                      [33m48[36m89[36me2[0m         [36mmov[32m rdx[0m,[32m rsp[0m[0m[0m
-[36m|[0m           [33mentry0[0m+0x9                      [33m48[36m83[36me4[36mf0[0m       [33mand[32m rsp[0m,[36m[36m [33m0xfffffffffffffff0[0m[0m[0m
-[36m|[0m           [33mentry0[0m+0xd                      [33m50[0m             [35mpush[32m rax[0m[0m[0m
-[36m|[0m           [33mentry0[0m+0xe                      [33m54[0m             [35mpush[32m rsp[0m[0m[0m
-[36m|[0m           [33mentry0[0m+0xf                      [33m4c[36m8b[36m05[36me6[36m93[36m..   [36mmov[32m r8[0m,[36m qword[36m [0m[[36mreloc.fixup.UHH_[0m][32m[0m[0m[31m [31m; [[31m0x1f220[31m:8]=0x16ee0[0m
-[36m|[0m           [33mentry0[0m+0x16                     [33m48[36m8b[36m0d[36me7[36m93[36m..   [36mmov[32m rcx[0m,[36m qword[36m [0m[[36mreloc.fixup.UHAWAVAUATSH8[0m][32m[0m[0m[31m [31m; [[31m0x1f228[31m:8]=0x16e60[31m [31m; "`n\x01"[0m
-[36m|[0m           [33mentry0[0m+0x1d                     [33m48[36m8b[33m3d[36me8[36m93[36m..   [36mmov[32m rdi[0m,[36m qword[36m [0m[[36mreloc.fixup.UHAWAVAUATSHH[0m][32m[0m[0m[31m [31m; [[31m0x1f230[31m:8]=0x3bd0 main[0m
+[36m|[0m           [32mentry0[0m                          [33m31[36med[0m           [33mxor[37m ebp[0m,[37m ebp[0m[0m[0m
+[36m|[0m           [32mentry0[0m+0x2                      [33m49[36m89[36md1[0m         [36mmov[37m r9[0m,[37m rdx[0m[0m[0m [37m; arg3[0m
+[36m|[0m           [32mentry0[0m+0x5                      [33m5e[0m             [35mpop[37m rsi[0m[0m[0m
+[36m|[0m           [32mentry0[0m+0x6                      [33m48[36m89[36me2[0m         [36mmov[37m rdx[0m,[37m rsp[0m[0m[0m
+[36m|[0m           [32mentry0[0m+0x9                      [33m48[36m83[36me4[36mf0[0m       [33mand[37m rsp[0m,[33m[33m [32m0xfffffffffffffff0[0m[0m[0m
+[36m|[0m           [32mentry0[0m+0xd                      [33m50[0m             [35mpush[37m rax[0m[0m[0m
+[36m|[0m           [32mentry0[0m+0xe                      [33m54[0m             [35mpush[37m rsp[0m[0m[0m
+[36m|[0m           [32mentry0[0m+0xf                      [33m4c[36m8b[36m05[36me6[36m93[36m..   [36mmov[37m r8[0m,[33m qword[33m [0m[[33mreloc.fixup.UHH_[0m][37m[0m[0m[31m [31m; [[31m0x1f220[31m:8]=0x16ee0[0m
+[36m|[0m           [32mentry0[0m+0x16                     [33m48[36m8b[36m0d[36me7[36m93[36m..   [36mmov[37m rcx[0m,[33m qword[33m [0m[[33mreloc.fixup.UHAWAVAUATSH8[0m][37m[0m[0m[31m [31m; [[31m0x1f228[31m:8]=0x16e60[31m [31m; "`n\x01"[0m
+[36m|[0m           [32mentry0[0m+0x1d                     [33m48[36m8b[33m3d[36me8[36m93[36m..   [36mmov[37m rdi[0m,[33m qword[33m [0m[[33mreloc.fixup.UHAWAVAUATSHH[0m][37m[0m[0m[31m [31m; [[31m0x1f230[31m:8]=0x3bd0 main[0m
 EOF
 RUN
 

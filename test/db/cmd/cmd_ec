@@ -148,17 +148,17 @@ EXPECT=<<EOF
  [31m##[0m  comment
  [37m##[0m  usrcmt
  [33m##[0m  args
- [31m##[0m  fname
+ [33m##[0m  fname
  [36m##[0m  floc
  [36m##[0m  fline
- [36m##[0m  flag
+ [33m##[0m  flag
  [36m##[0m  label
  [32m##[0m  help
  [36m##[0m  flow
  [34m##[0m  flow2
  [33m##[0m  prompt
  [0m##[0m  bgprompt
- [33m##[0m  addr
+ [32m##[0m  addr
  [37m##[0m  input
  [1;31m##[0m  invalid
  [36m##[0m  other
@@ -180,10 +180,10 @@ EXPECT=<<EOF
  [32m##[0m  ucall
  [32m##[0m  ujmp
  [35m##[0m  swi
- [33m##[0m  cmp
- [32m##[0m  reg
+ [36m##[0m  cmp
+ [37m##[0m  reg
  [36m##[0m  creg
- [33m##[0m  num
+ [32m##[0m  num
  [36m##[0m  mov
  [37m##[0m  var
  [33m##[0m  var.name
