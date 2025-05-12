@@ -2586,7 +2586,7 @@ static void ds_show_comments_right(RDisasmState *ds) {
 		}
 		R_FREE (ds->comment);
 		ds_newline (ds);
-		/* flag one */
+		/* flag comments */
 		if (item) {
 			const char *item_comment = r_flag_item_set_comment (core->flags, item, NULL);
 			if (item_comment && ds->ocomment != item_comment) {
@@ -6817,6 +6817,9 @@ toro:
 					size_t clen = strlen (c);
 					r_str_trim (c);
 					if (clen > 1) {
+						if (ds->show_color) {
+							r_kons_print (cons, ds->color_usrcmt);
+						}
 						r_cons_printf ("%s%s\n", off? "; ": "", c);
 						off += clen;
 					} else {
