@@ -6251,6 +6251,7 @@ static void cmd_print_pxb(RCore *core, int len, const char *input) {
 	int lastc = columns - 1;
 	int i, c;
 	char buf[32];
+	const bool be = r_config_get_b (core->config, "cfg.bigendian");
 	for (i = c = 0; i < len; i++, c++) {
 		if (c == 0) {
 			ut64 ea = core->addr + i;
@@ -6270,7 +6271,7 @@ static void cmd_print_pxb(RCore *core, int len, const char *input) {
 			r_str_replace_ch (buf, '0', '.', true);
 			r_str_replace_ch (buf + 5, '0', '.', true);
 		}
-		r_cons_printf ("%s_%s  ", buf, buf + 5);
+		r_kons_printf (core->cons, "%s_%s  ", buf, buf + 5);
 		r_print_cursor (core->print, i, 1, 0);
 		if (c == lastc) {
 			const ut8 *b = core->block + i - 3;
@@ -6287,12 +6288,18 @@ static void cmd_print_pxb(RCore *core, int len, const char *input) {
 				break;
 			case 4:
 				n = k (b, 0) | k (b, 1) | k (b, 2) | k (b, 3);
+				if (be) {
+					n = r_read_be32 (&n);
+				}
 				r_cons_printf ("0x%08x  %c%c%c%c\n",
 					n, p (b[0]), p (b[1]), p (b[2]), p (b[3]));
 				break;
 			case 8:
 				n64 = k (b, 0) | k (b, 1) | k (b, 2) | k (b, 3)
-				  | k (b, 4) | k (b, 5) | k (b, 6) | k (b, 7);
+					  | k (b, 4) | k (b, 5) | k (b, 6) | k (b, 7);
+				if (be) {
+					n64 = r_read_be64 (&n64);
+				}
 				r_cons_printf ("0x%016"PFMT64x"  %c%c%c%c%c%c%c%c\n", n64,
 					p (b[0]), p (b[1]), p (b[2]), p (b[3]),
 					p (b[4]), p (b[5]), p (b[6]), p (b[7]));
