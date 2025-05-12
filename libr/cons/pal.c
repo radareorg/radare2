@@ -3,7 +3,7 @@
 #include <r_cons.h>
 #include <r_th.h>
 
-// R2R db/cmd/cmd_ahi db/cmd/cmd_ec db/cmd/cmd_flags db/cmd/cmd_pd db/cmd/cmd_pd2 db/cmd/cmd_pd_bugs db/cmd/midbb
+// R2R db/cmd/cmd_ahi db/cmd/cmd_ec db/cmd/cmd_flags db/cmd/cmd_pd db/cmd/cmd_pd2 db/cmd/cmd_pd_bugs db/cmd/midbb db/cmd/cmd_px
 
 #define RCOLOR_AT(i) (RColor *) (((ut8 *) &(cons->context->cpal)) + keys[i].coff)
 #define COLOR_AT(i) (char **) (((ut8 *) &(cons->context->pal)) + keys[i].off)
