@@ -2345,18 +2345,21 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 		if (i > 0 && p[i - 1] == ' ' && (p[i] == '$')) {
 			if (p[i + 1] == '0') {
 				snprintf (o + j, COLORIZE_BUFSIZE - j, "%s$0", num);
-				j += strlen (num) + 2;
-				i += 2;
 			} else {
 				snprintf (o + j, COLORIZE_BUFSIZE - j, "%s$", num);
-				j += strlen (num) + 1;
-				i++;
 			}
+			i += strlen (o + j);
+			j += strlen (o + j);
 		} else if (i > 0 && p[i - 1] == ' ' && (p[i] == '0' && p[i + 1] == 0)) {
 			snprintf (o + j, COLORIZE_BUFSIZE - j, "%s0", num);
-			j += strlen (num) + 1;
+			j += strlen (o + j);
 			i++;
 			break;
+		}
+		if (p[i] == '-' && isdigit (p[i + 1])) {
+			snprintf (o + j, COLORIZE_BUFSIZE - j, "%s-", num);
+			j += strlen (o + j);
+			i++;
 		}
 		/* colorize numbers */
 		if ((ishexprefix (p + i) && previous != ':') \

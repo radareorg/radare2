@@ -2593,7 +2593,7 @@ aae
 pd 1 @ 0x08048432
 EOF
 EXPECT=<<EOF
-[36m|[0m           [32m0x08048432[0m      [36mlea[36m eax[0m,[36m[36m str.Hello_PIC_[0m[0m
+[36m|[0m           [32m0x08048432[0m      [36mlea[37m eax[0m,[33m[33m str.Hello_PIC_[0m[0m
 EOF
 RUN
 
