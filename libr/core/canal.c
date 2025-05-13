@@ -2718,29 +2718,36 @@ R_API ut64 r_core_anal_fcn_list_size(RCore *core) {
 	return total;
 }
 
+static int count_callrefs(RAnalFunction *fcn) {
+	// Count the number of references and number of calls
+	RAnalRef *ref;
+	// R2_590: wasteful, make count function that does not allocate
+	RVecAnalRef *refs = r_anal_function_get_refs (fcn);
+	int numcallrefs = 0;
+	if (refs) {
+		R_VEC_FOREACH (refs, ref) {
+			if (R_ANAL_REF_TYPE_MASK (ref->type) == R_ANAL_REF_TYPE_CALL) {
+				numcallrefs++;
+			}
+		}
+	}
+	RVecAnalRef_free (refs);
+	return numcallrefs;
+}
+
 /* Fill out metadata struct of functions */
 static int fcnlist_gather_metadata(RAnal *anal, RList *fcns) {
 	RListIter *iter;
 	RAnalFunction *fcn;
 	r_list_foreach (fcns, iter, fcn) {
-		// Count the number of references and number of calls
-		RAnalRef *ref;
-		// R2_590: wasteful, make count function that does not allocate
-		RVecAnalRef *refs = r_anal_function_get_refs (fcn);
-		int numcallrefs = 0;
-		if (refs) {
-			R_VEC_FOREACH (refs, ref) {
-				if (R_ANAL_REF_TYPE_MASK (ref->type) == R_ANAL_REF_TYPE_CALL) {
-					numcallrefs++;
-				}
-			}
-		}
-		RVecAnalRef_free (refs);
-		fcn->meta.numcallrefs = numcallrefs;
-
+		fcn->meta.numcallrefs = count_callrefs (fcn);
 		RVecAnalRef *xrefs = r_anal_xrefs_get (anal, fcn->addr);
-		fcn->meta.numrefs = xrefs? RVecAnalRef_length (xrefs): 0;
-		RVecAnalRef_free (xrefs);
+		if (xrefs) {
+			fcn->meta.numrefs = RVecAnalRef_length (xrefs);
+			RVecAnalRef_free (xrefs);
+		} else {
+			fcn->meta.numrefs = 0;
+		}
 	}
 	// TODO: Determine sgnc, sgec
 	return 0;
@@ -3266,7 +3273,8 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 		}
 		RVecAnalRef_free (xrefs);
 
-		xrefs = r_anal_function_get_all_xrefs (fcn);
+#if 0
+		xrefs = r_anal_function_get_xrefs (fcn);
 		if (xrefs && !RVecAnalRef_empty (xrefs)) {
 			pj_k (pj, "allxrefs");
 			pj_a (pj);
@@ -3286,6 +3294,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 			pj_end (pj);
 		}
 		RVecAnalRef_free (xrefs);
+#endif
 	} else {
 		RVecAnalRef *refs = r_anal_function_get_refs (fcn);
 		if (refs) {
@@ -3530,8 +3539,8 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn, bool dorefs) {
 			}
 		}
 		RVecAnalRef_free (xrefs);
-
-		xrefs = r_anal_function_get_all_xrefs (fcn);
+#if 0
+		xrefs = r_anal_function_get_xrefs (fcn);
 		r_cons_printf ("\nall-code-xrefs:");
 		if (xrefs && !RVecAnalRef_empty (xrefs)) {
 			R_VEC_FOREACH (xrefs, refi) {
@@ -3551,6 +3560,7 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn, bool dorefs) {
 			}
 		}
 		RVecAnalRef_free (xrefs);
+#endif
 	} else {
 		RVecAnalRef *xrefs = r_anal_function_get_xrefs (fcn);
 		if (xrefs) {
@@ -3677,9 +3687,11 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 		snprintf (xref, sizeof (xref), "%"PFMT64u, xrefs ? RVecAnalRef_length (xrefs) : 0);
 		RVecAnalRef_free (xrefs);
 
-		xrefs = r_anal_function_get_all_xrefs (fcn);
+#if 0
+		xrefs = r_anal_function_get_xrefs (fcn);
 		snprintf (axref, sizeof (axref), "%"PFMT64u, xrefs ? RVecAnalRef_length (xrefs) : 0);
 		RVecAnalRef_free (xrefs);
+#endif
 		RVecAnalRef *calls = r_core_anal_fcn_get_calls (core, fcn);
 		if (calls) {
 			RVecAnalRef_sort (calls, RAnalRef_compare_by_addr);

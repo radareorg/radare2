@@ -506,6 +506,7 @@ R_API ut64 r_anal_xrefs_count_at(RAnal *anal, ut64 to) {
 	return ref_manager_count_xrefs_at (anal->rm, to);
 }
 
+#if 0
 R_API RVecAnalRef *r_anal_function_get_xrefs(RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (fcn, NULL);
 
@@ -517,6 +518,7 @@ R_API RVecAnalRef *r_anal_function_get_xrefs(RAnalFunction *fcn) {
 	}
 	return anal_refs;
 }
+#endif
 
 typedef RVecAnalRef *(*CollectFn)(RefManager *rm, ut64 addr);
 
@@ -545,13 +547,12 @@ static RVecAnalRef *fcn_get_all_refs(RAnalFunction *fcn, RefManager *rm, Collect
 	return anal_refs;
 }
 
-// XXX rename to r_anal_function_get_all_refs?
 R_API RVecAnalRef *r_anal_function_get_refs(RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (fcn, NULL);
 	return fcn_get_all_refs (fcn, fcn->anal->rm, ref_manager_get_refs);
 }
 
-R_API RVecAnalRef *r_anal_function_get_all_xrefs(RAnalFunction *fcn) {
+R_API RVecAnalRef *r_anal_function_get_xrefs(RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (fcn, NULL);
 	return fcn_get_all_refs (fcn, fcn->anal->rm, ref_manager_get_xrefs);
 }
@@ -627,6 +628,7 @@ R_API const char *r_anal_ref_type_tostring(RAnalRefType type) {
 	}
 }
 
+#if 0
 // UNUSED
 R_API RAnalRefType r_anal_xrefs_type_from_string(const char *s) {
 	RAnalRefType rt = R_ANAL_REF_TYPE_NULL;
@@ -656,6 +658,7 @@ R_API RAnalRefType r_anal_xrefs_type_from_string(const char *s) {
 	}
 	return rt;
 }
+#endif
 
 R_API int r_anal_ref_typemask(int x) {
 	const int maskedType = x & 0xff;
@@ -675,19 +678,4 @@ R_API int r_anal_ref_typemask(int x) {
 	R_LOG_ERROR ("Invalid reftype mask '%c' (0x%02x)", x, x);
 	// SHOULD NEVER HAPPEN MAYBE WARN HERE
 	return 0;
-}
-
-// TODO: deprecate
-R_API RAnalRefType r_anal_xrefs_type(char ch) {
-	switch (ch) {
-	case R_ANAL_REF_TYPE_CODE:
-	case R_ANAL_REF_TYPE_CALL:
-	case R_ANAL_REF_TYPE_DATA:
-	case R_ANAL_REF_TYPE_STRN:
-	case R_ANAL_REF_TYPE_ICOD:
-	case R_ANAL_REF_TYPE_NULL:
-		return (RAnalRefType)ch;
-	default:
-		return R_ANAL_REF_TYPE_NULL;
-	}
 }

@@ -10701,6 +10701,20 @@ static void axfm(RCore *core) {
 	RVecAnalRef_free (refs);
 }
 
+static RAnalRefType r_anal_xrefs_type(char ch) {
+	switch (ch) {
+	case R_ANAL_REF_TYPE_CODE:
+	case R_ANAL_REF_TYPE_CALL:
+	case R_ANAL_REF_TYPE_DATA:
+	case R_ANAL_REF_TYPE_STRN:
+	case R_ANAL_REF_TYPE_ICOD:
+	case R_ANAL_REF_TYPE_NULL:
+		return (RAnalRefType)ch;
+	default:
+		return R_ANAL_REF_TYPE_NULL;
+	}
+}
+
 static bool cmd_anal_refs(RCore *core, const char *input) {
 	ut64 addr = core->addr;
 	switch (input[0]) {
