@@ -3745,7 +3745,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		str = r_core_cmd_str (core, radare_cmd);
 		r_sys_cmd_str_full (shell_cmd + 1, str, -1, &out, &olen, NULL);
 		free (str);
-		r_cons_write (out, olen);
+		r_kons_write (core->cons, out, olen);
 		free (out);
 		ret = 0;
 	}

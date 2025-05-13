@@ -9,7 +9,7 @@
 
 static const char hex[16] = "0123456789ABCDEF";
 
-// global mutable
+// XXX global mutable
 static R_TH_LOCAL RPrintIsInterruptedCallback is_interrupted_cb = NULL;
 
 static int nullprinter(const char *a, ...) {
@@ -24,6 +24,7 @@ static int libc_printf(const char *format, ...) {
 	return 0;
 }
 
+#if 0
 static int libc_eprintf(const char *format, ...) {
 	va_list ap;
 	va_start (ap, format);
@@ -31,6 +32,7 @@ static int libc_eprintf(const char *format, ...) {
 	va_end (ap);
 	return 0;
 }
+#endif
 
 R_API void r_print_portionbar(RPrint *p, const ut64 *portions, int n_portions) {
 	const int use_color = p->flags & R_PRINT_FLAGS_COLOR;
@@ -68,8 +70,9 @@ R_API void r_print_portionbar(RPrint *p, const ut64 *portions, int n_portions) {
 	p->cb_printf ("]\n");
 }
 
-R_API void r_print_columns(RPrint *p, const ut8 *buf, int len, int height) {
+R_API char *r_print_columns(RPrint *p, const ut8 *buf, int len, int height) {
 #define cb_print(x) p->cb_printf ("%s", x)
+	RStrBuf *sb = r_strbuf_new ("");
 	size_t i, j;
 	int cols = 78; // TODO: do not hardcode this value, columns should be defined by the user
 	int rows = height > 0 ? height : 10;
@@ -92,37 +95,37 @@ R_API void r_print_columns(RPrint *p, const ut8 *buf, int len, int height) {
 				int realJ = j * len / cols;
 	 			if (255 - buf[realJ] < threshold || (i + 1 == rows)) {
 					if (p->histblock) {
-						p->cb_printf ("%s%s%s", kol[koli], block, Color_RESET);
+						r_strbuf_appendf (sb, "%s%s%s", kol[koli], block, Color_RESET);
 					} else {
-						p->cb_printf ("%s%s%s", kol[koli], vline, Color_RESET);
+						r_strbuf_appendf (sb, "%s%s%s", kol[koli], vline, Color_RESET);
 					}
 				} else {
-					cb_print (" ");
+					r_strbuf_append (sb, " ");
 				}
 			}
-			cb_print ("\n");
+			r_strbuf_append (sb, "\n");
 		}
-		return;
-	}
-
-	for (i = 0; i < rows; i++) {
-		size_t threshold = i * (0xff / rows);
-		for (j = 0; j < cols; j++) {
-			size_t realJ = j * len / cols;
-			if (255 - buf[realJ] < threshold) {
-				if (p->histblock) {
-					p->cb_printf ("%s%s%s", Color_BGGRAY, block, Color_RESET);
+	} else {
+		for (i = 0; i < rows; i++) {
+			size_t threshold = i * (0xff / rows);
+			for (j = 0; j < cols; j++) {
+				size_t realJ = j * len / cols;
+				if (255 - buf[realJ] < threshold) {
+					if (p->histblock) {
+						r_strbuf_appendf (sb, "%s%s%s", Color_BGGRAY, block, Color_RESET);
+					} else {
+						r_strbuf_append (sb, vline);
+					}
+				} else if (i + 1 == rows) {
+					r_strbuf_append (sb, "_");
 				} else {
-					cb_print (vline);
+					r_strbuf_append (sb, " ");
 				}
-			} else if (i + 1 == rows) {
-				cb_print ("_");
-			} else {
-				cb_print (" ");
 			}
+			r_strbuf_append (sb, "\n");
 		}
-		cb_print ("\n");
 	}
+	return r_strbuf_drain (sb);
 }
 
 R_API int r_util_lines_getline(ut64 *lines_cache, int lines_cache_sz, ut64 off) {
@@ -155,7 +158,7 @@ R_API void r_print_set_is_interrupted_cb(RPrintIsInterruptedCallback cb) {
 	is_interrupted_cb = cb;
 }
 
-static int r_print_stereogram_private(const char *bump, int w, int h, char *out, int size) {
+static void r_print_stereogram_private(const char *bump, int w, int h, char *out, int size) {
 	static R_TH_LOCAL char data[32768]; // ???
 	const char *string = "Az+|.-=/^@_pT";
 	const int string_len = strlen (string);
@@ -164,7 +167,7 @@ static int r_print_stereogram_private(const char *bump, int w, int h, char *out,
 	int skip = 7;
 	int bumpi = 0, outi = 0;
 	if (!bump || !out) {
-		return 0;
+		return;
 	}
 	for (; bump[bumpi] && outi < size;) {
 		l = l2 = 0;
@@ -219,7 +222,6 @@ static int r_print_stereogram_private(const char *bump, int w, int h, char *out,
 		}
 	}
 	out[outi] = 0;
-	return 1;
 }
 
 R_API char* r_print_stereogram(const char *bump, int w, int h) {
@@ -231,11 +233,9 @@ R_API char* r_print_stereogram(const char *bump, int w, int h) {
 		return NULL;
 	}
 	char *out = calloc (1, size * 2);
-	if (!out) {
-		return NULL;
+	if (out != NULL) {
+		r_print_stereogram_private (bump, w, h, out, size);
 	}
-	//eprintf ("%s\n", bump);
-	(void) r_print_stereogram_private (bump, w, h, out, size);
 	return out;
 }
 
@@ -246,7 +246,6 @@ R_API char* r_print_stereogram_bytes(const ut8 *buf, int len) {
 	if (!buf || len < 1) {
 		return NULL;
 	}
-	//scr_width = r_cons_get_size (NULL) -10;
 	int cols = scr_width;
 	int rows = len / cols;
 
@@ -268,32 +267,27 @@ R_API char* r_print_stereogram_bytes(const ut8 *buf, int len) {
 	return ret;
 }
 
-R_API void r_print_stereogram_print(RPrint *p, const char *ret) {
+R_API char *r_print_stereogram_render(RPrint * R_NONNULL p, const char *ret) {
+	R_RETURN_VAL_IF_FAIL (p && ret, NULL);
+	RStrBuf *sb = r_strbuf_new ("");
 	int i;
 	const int use_color = p->flags & R_PRINT_FLAGS_COLOR;
-	if (!ret) {
-		return;
-	}
 	if (use_color) {
 		for (i = 0; ret[i]; i++) {
-			p->cb_printf ("\x1b[%dm%c", 30 + (ret[i] % 8), ret[i]);
+			r_strbuf_appendf (sb, "\x1b[%dm%c", 30 + (ret[i] % 8), ret[i]);
 		}
-		p->cb_printf ("\x1b[0m\n");
+		r_strbuf_append (sb, "\x1b[0m\n");
 	} else {
-		p->cb_printf ("%s\n", ret);
+		r_strbuf_appendf (sb, "%s\n", ret);
 	}
+	return r_strbuf_drain (sb);
 }
 
-R_API RPrint* r_print_new(void) {
-	RPrint *p = R_NEW0 (RPrint);
-	if (!p) {
-		return NULL;
-	}
+R_API void r_print_init(RPrint *p) {
 	r_str_ncpy (p->datefmt, "%Y-%m-%d %H:%M:%S %u", sizeof (p->datefmt));
 	p->pairs = true;
 	p->resetbg = true;
 	p->cb_printf = libc_printf;
-	p->cb_eprintf = libc_eprintf;
 	p->oprintf = nullprinter;
 	p->stride = 0;
 	p->bytespace = 0;
@@ -327,13 +321,16 @@ R_API RPrint* r_print_new(void) {
 	p->io_unalloc_ch = '.';
 	p->enable_progressbar = true;
 	p->charset = r_charset_new ();
+}
+
+R_API RPrint* r_print_new(void) {
+	RPrint *p = R_NEW0 (RPrint);
+	r_print_init (p);
 	return p;
 }
 
-R_API void r_print_free(RPrint *p) {
-	if (!p) {
-		return;
-	}
+R_API bool r_print_fini(RPrint * R_NONNULL p) {
+	R_RETURN_VAL_IF_FAIL (p, false);
 	sdb_free (p->formats);
 	p->formats = NULL;
 	free (p->codevarname);
@@ -348,6 +345,14 @@ R_API void r_print_free(RPrint *p) {
 	R_FREE (p->row_offsets);
 	r_charset_free (p->charset);
 	r_unref (p->config);
+	return true;
+}
+
+R_API void r_print_free(RPrint *p) {
+	if (!p) {
+		return;
+	}
+	r_print_fini (p);
 	free (p);
 }
 
@@ -430,9 +435,8 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 		p->iob.p2v (p->iob.io, addr, &addr);
 	}
 	if (use_segoff) {
-		ut32 s, a;
-		a = addr & 0xffff;
-		s = (addr - a) >> ((p && p->config)? p->config->seggrn: 4);
+		ut32 a = addr & 0xffff;
+		ut32 s = (addr - a) >> ((p && p->config)? p->config->seggrn: 4);
 		if (dec) {
 			snprintf (space, sizeof (space), "%d:%d", s & 0xffff, a & 0xffff);
 			white = r_str_pad (' ', 9 - strlen (space));
@@ -462,7 +466,6 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 			const char *pre = PREOFF (addr): Color_GREEN;
 			const char *fin = Color_RESET;
 			if (p && p->flags & R_PRINT_FLAGS_RAINBOW) {
-				// pre = r_cons_rgb_str_off (rgbstr, addr);
 				if (p->consb.cons && p->consb.cons->rgbstr) {
 					static R_TH_LOCAL char rgbstr[32];
 					pre = p->consb.cons->rgbstr (p->consb.cons, rgbstr, sizeof (rgbstr), addr);
@@ -697,13 +700,6 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 	}
 	p->cb_printf ("\n");
 	return i;
-}
-
-R_API void r_print_hexpairs(RPrint *p, ut64 addr, const ut8 *buf, int len) {
-	int i;
-	for (i = 0; i < len; i++) {
-		p->cb_printf ("%02x ", buf[i]);
-	}
 }
 
 static bool checkSparse(const ut8 *p, int len, int ch) {
@@ -1690,7 +1686,7 @@ R_API void r_print_raw(RPrint *p, ut64 addr, const ut8 *buf, int len, int offlin
 				// just loop
 			}
 			if ((i + 1) >= len || !*q) {
-				mustbreak = 1;
+				mustbreak = true;
 			}
 			if ((q - o) > 0) {
 				p->write (o, (int) (size_t) (q - o));
@@ -1906,7 +1902,7 @@ R_API void r_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 ma
 			r_strbuf_append (sb, block);
 		} else {
 			if (!isFirst) {
-				p->cb_printf (Color_RESET);
+				p->consb.cb_printf (p->consb.cons, Color_RESET);
 			}
 			r_strbuf_append (sb, h_line);
 		}
@@ -2655,6 +2651,7 @@ R_API void r_print_hex_from_bin(RPrint *p, char *bin_str) {
 	free (buf);
 }
 
+#if 0
 R_API void r_print_bin_from_str(RPrint *p, char *str) {
 	int i = 0;
 	int len = strlen (str);
@@ -2683,6 +2680,7 @@ R_API void r_print_bin_from_str(RPrint *p, char *str) {
 		}
 	}
 }
+#endif
 
 R_API RBraile r_print_braile(int u) {
 #define CH0(x) ((x) >> 8)

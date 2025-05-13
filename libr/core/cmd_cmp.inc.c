@@ -1141,9 +1141,9 @@ static void cmd_curl(RCore *core, const char *arg) {
 				? r_socket_http_post (arg, NULL, postdata, NULL, &len)
 				: r_socket_http_get (arg, NULL, NULL, &len);
 			if (s) {
-				r_cons_write (s, len);
+				r_kons_write (core->cons, s, len);
 				free (s);
-				r_cons_newline ();
+				r_kons_newline (core->cons);
 			}
 		} else {
 			r_core_cmd_help_match (core, help_msg_cu, "curl");
