@@ -276,7 +276,7 @@ R_API char *r_print_stereogram_render(RPrint * R_NONNULL p, const char *ret) {
 		for (i = 0; ret[i]; i++) {
 			r_strbuf_appendf (sb, "\x1b[%dm%c", 30 + (ret[i] % 8), ret[i]);
 		}
-		r_strbuf_appendf (sb, "\x1b[0m\n");
+		r_strbuf_append (sb, "\x1b[0m\n");
 	} else {
 		r_strbuf_appendf (sb, "%s\n", ret);
 	}
