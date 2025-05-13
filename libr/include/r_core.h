@@ -305,10 +305,16 @@ typedef struct {
 
 typedef struct r_core_esil_t {
 	REsil esil;
+#if 0
 	union {
 		RStrBuf trap_revert;
 		ut64 old_pc;
 	};
+#else
+	//ideally this would be a union, but cmd_mdev need to know the old pc
+	RStrBuf trap_revert;
+	ut64 old_pc;
+#endif
 	ut32 tr_reg;
 	ut32 tr_mem;
 	RReg *reg;
