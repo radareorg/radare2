@@ -488,14 +488,13 @@ R_API bool r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 		return false;
 	}
 
-	pbody = strchr (name, ';');
+	pbody = strchr (name, '(');
 	if (!pbody) {
 		R_LOG_ERROR ("Invalid macro body in '%s'", name);
 		free (name);
 		return false;
 	}
-	*pbody = '\0';
-	pbody++;
+	*pbody++ = '\0';
 
 	if (*name && name[1] && name[strlen (name) - 1] == ')') {
 		R_LOG_ERROR ("missing macro body?");
@@ -507,7 +506,7 @@ R_API bool r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 	ptr = strchr (name, ' ');
 	if (ptr) {
 		*ptr = '\0';
-		args = ptr +1;
+		args = ptr + 1;
 	}
 	macro_update = false;
 	r_list_foreach (mac->macros, iter, m) {
@@ -532,8 +531,12 @@ R_API bool r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 		macro->name = strdup (name);
 	}
 
-	macro->codelen = (pbody[0])? strlen (pbody)+2 : 4096;
+	macro->codelen = (pbody[0])? strlen (pbody) + 2 : 4096;
 	macro->code = (char *)malloc (macro->codelen);
+	if (!macro->code) {
+		free (macro->name);
+		return false;
+	}
 	*macro->code = '\0';
 	macro->nargs = 0;
 	if (!args) {
@@ -543,18 +546,38 @@ R_API bool r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 	ptr = strchr (macro->name, ' ');
 	if (ptr) {
 		*ptr = '\0';
-		macro->nargs = r_str_word_set0 (ptr+1);
+		macro->nargs = r_str_word_set0 (ptr + 1);
 	}
 
+	bool openMode = true;
 	for (lidx = 0; pbody[lidx]; lidx++) {
-		if (pbody[lidx] == ';') {
-			pbody[lidx] = '\n';
-		} else if (pbody[lidx] == ')' && pbody[lidx - 1] == '\n') {
-			pbody[lidx] = '\0';
+		switch (pbody[lidx]) {
+		case '(':
+			pbody[lidx] = ' ';
+			if (openMode) {
+				R_LOG_ERROR ("double (");
+			} else {
+				openMode = true;
+			}
+			break;
+		case ')':
+			if (openMode) {
+				openMode = false;
+				pbody[lidx] = '\n';
+			} else {
+				pbody[lidx] = ' ';
+				R_LOG_ERROR ("double )");
+			}
+			break;
+		default:
+			if (!openMode) {
+				R_LOG_WARN ("IGNORED %c\n", pbody[lidx]);
+			}
+			break;
 		}
 	}
 	strncpy (macro->code, pbody, macro->codelen);
-	macro->code[macro->codelen-1] = 0;
+	macro->code[macro->codelen - 1] = 0;
 	if (macro_update == false) {
 		r_list_append (mac->macros, macro);
 	}
@@ -592,15 +615,15 @@ static void macro_meta(RCmdMacro *mac) {
 	int j;
 	RListIter *iter;
 	r_list_foreach (mac->macros, iter, m) {
-		mac->cb_printf ("\"(%s %s; ", m->name, m->args);
+		mac->cb_printf ("'(%s %s (", m->name, m->args);
 		for (j = 0; m->code[j]; j++) {
 			if (m->code[j] == '\n') {
-				mac->cb_printf (";");
+				mac->cb_printf (")(");
 			} else {
 				mac->cb_printf ("%c", m->code[j]);
 			}
 		}
-		mac->cb_printf (")\"\n");
+		mac->cb_printf ("))\n");
 	}
 }
 // TODO: use mac->cb_printf which is r_cons_printf at the end
@@ -635,15 +658,15 @@ R_API void r_cmd_macro_list(RCmdMacro *mac, int mode) {
 		return;
 	}
 	r_list_foreach (mac->macros, iter, m) {
-		mac->cb_printf ("%d (%s %s; ", idx, m->name, m->args);
+		mac->cb_printf ("%d (%s %s (", idx, m->name, m->args);
 		for (j = 0; m->code[j]; j++) {
 			if (m->code[j] == '\n') {
-				mac->cb_printf ("; ");
+				mac->cb_printf (")(");
 			} else {
 				mac->cb_printf ("%c", m->code[j]);
 			}
 		}
-		mac->cb_printf (")\n");
+		mac->cb_printf ("))\n");
 		idx++;
 	}
 }
@@ -707,9 +730,9 @@ R_API int r_cmd_macro_cmd_args(RCmdMacro *mac, const char *ptr, const char *args
 	for (pcmd = cmd; *pcmd && (*pcmd == ' ' || *pcmd == '\t'); pcmd++) {
 		;
 	}
-	//eprintf ("-pre %d\n", (int)mac->num->value);
+	// eprintf ("-pre %d\n", (int)mac->num->value);
 	int xx = (*pcmd == ')')? 0: mac->cmd (mac->user, pcmd);
-	//eprintf ("-pos %p %d\n", mac->num, (int)mac->num->value);
+	// eprintf ("-pos %p %d\n", mac->num, (int)mac->num->value);
 	return xx;
 }
 
