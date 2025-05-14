@@ -4066,7 +4066,11 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	SETCB ("dir.home", r_str_get_fail (r_str_get (p), "/"), &cb_dirhome, "path for the home directory");
 	free (p);
-	p = r_sys_getenv (R_SYS_TMP);
+	p = r_file_tmpdir ();
+	if (R_STR_ISEMPTY (p)) {
+		free (p);
+		p = strdup ("/tmp");
+	}
 	SETCB ("dir.tmp", r_str_get (p), &cb_dirtmp, "path of the tmp directory");
 	free (p);
 	char *cd = r_xdg_cachedir (NULL);
