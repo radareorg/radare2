@@ -52,12 +52,10 @@ with features.
 
 ### Compilation options
 
-* `sys/sanitize.sh`: Compile with ASan, the address sanitizer. Provides
-  detailed backtraces for memory errors.
-* `R2_DEBUG_ASSERT=1`: Provides a backtrace when a debug assert (typically a
-  `R_RETURN_` macro) fails.
-* `R2_DEBUG=1`: Show error messages and crash signal. Used for debugging plugin
-  loading issues.
+* `sys/sanitize.sh`: Compile with address sanitizer support.
+* `R2_DEBUG=1`: Set `R2_DEBUG_ASSERT`, setup just-in-time debugger and max `R2_LOG_LEVEL`
+  * `R2_DEBUG_ASSERT=1`: Show backtrace and trap when assert checks fail.
+  * `R2_LOG_LEVEL=10`: Show debug log messages, Used for plugin loading issues.
 
 ### ABI stability and versioning
 
