@@ -30,8 +30,7 @@ static REggEnv env[] = {
 
 static void ragg_show_env(bool show_desc);
 
-/* egg callback */
-static int __lib_egg_cb(RLibPlugin *pl, void *user, void *data) {
+static bool __lib_egg_cb(RLibPlugin *pl, void *user, void *data) {
 	REggPlugin *hand = (REggPlugin *)data;
 	REggState *es = (REggState *)user;
 	r_egg_plugin_add (es->e, hand);

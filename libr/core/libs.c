@@ -1,10 +1,10 @@
-/* radare2 - LGPL - Copyright 2009-2024 - pancake */
+/* radare2 - LGPL - Copyright 2009-2025 - pancake */
 
-#include "r_core.h"
+#include <r_core.h>
 #include "config.h"
 
 #define CB(x, y) \
-	static int __lib_ ## x ## _cb (RLibPlugin *pl, void *user, void *data) { \
+	static bool __lib_ ## x ## _cb (RLibPlugin *pl, void *user, void *data) { \
 		struct r_ ## x ## _plugin_t *hand = (struct r_ ## x ## _plugin_t *)data; \
 		RCore *core = (RCore *)user; \
 		pl->free = NULL; \
@@ -12,7 +12,7 @@
 		r_ ## x ## _plugin_add (core->y, hand); \
 		return true; \
 	} \
-	static int __lib_ ## x ## _dt (RLibPlugin *pl, void *user, void *data) { \
+	static bool __lib_ ## x ## _dt (RLibPlugin *pl, void *user, void *data) { \
 		struct r_ ## x ## _plugin_t *hand = (struct r_ ## x ## _plugin_t *)data; \
 		RCore *core = (RCore *)user; \
 		free (pl->name); \
@@ -32,6 +32,7 @@ CB (egg, egg)
 CB (fs, fs)
 CB (arch, anal->arch);
 
+#if R2_LOADLIBS
 static void open_plugins_at(RCore *core, const char *arg, const char *user_path) {
 	if (R_STR_ISNOTEMPTY (arg)) {
 		if (user_path && r_str_endswith (user_path, arg)) {
@@ -46,7 +47,6 @@ static void open_plugins_at(RCore *core, const char *arg, const char *user_path)
 }
 
 static void load_plugins(RCore *core, int where, const char *path) {
-#if R2_LOADLIBS
 	if (!where) {
 		where = -1;
 	}
@@ -76,8 +76,13 @@ static void load_plugins(RCore *core, int where, const char *path) {
 		open_plugins_at (core, R2_EXTRAS, dir_plugins);
 		open_plugins_at (core, R2_BINDINGS, dir_plugins);
 	}
-#endif
 }
+#else
+static void load_plugins(RCore *core, int where, const char *path) {
+	(void)
+#warning built without the ability to load plugins dynamically
+}
+#endif
 
 R_API void r_core_loadlibs_init(RCore *core) {
 	ut64 prev = r_time_now_mono ();
