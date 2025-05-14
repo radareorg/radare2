@@ -33,12 +33,8 @@ typedef enum r_log_level {
 	R_LOG_LEVEL_WARN = 3,
 	R_LOG_LEVEL_TODO = 4,
 	R_LOG_LEVEL_DEBUG = 5,
-#if R2_600
 	R_LOG_LEVEL_TRACE = 6,
 	R_LOG_LEVEL_LAST = 7,
-#else
-	R_LOG_LEVEL_LAST = 6,
-#endif
 } RLogLevel;
 
 typedef bool (*RLogCallback)(void *user, int type, const char *origin, const char *msg);
