@@ -18,6 +18,7 @@ static const char *level_tags[] = { // Log level to tag string lookup array
 	[R_LOG_LEVEL_WARN]  = "WARN",
 	[R_LOG_LEVEL_TODO]  = "TODO",
 	[R_LOG_LEVEL_DEBUG] = "DEBUG",
+	[R_LOG_LEVEL_TRACE] = "TRACE",
 };
 
 R_API int r_log_level_fromstring(const char *ll) {
@@ -53,6 +54,10 @@ R_API const char *r_log_level_tocolor(int level) {
 		break;
 	case R_LOG_LEVEL_DEBUG:
 		k = Color_GREEN;
+		break;
+	case R_LOG_LEVEL_TODO:
+	case R_LOG_LEVEL_TRACE:
+		k = Color_CYAN;
 		break;
 	default:
 		break;
