@@ -481,7 +481,7 @@ error:
 	return false;
 }
 
-static int rabin_show_srcline(RBin *bin, ut64 at) {
+static bool rabin_show_srcline(RBin *bin, ut64 at) {
 	char *srcline;
 	if (at != UT64_MAX && (srcline = r_bin_addrline_tostring (bin, at, 1))) {
 		printf ("%s\n", srcline);
@@ -492,7 +492,7 @@ static int rabin_show_srcline(RBin *bin, ut64 at) {
 }
 
 /* bin callback */
-static int __lib_bin_cb(RLibPlugin *pl, void *user, void *data) {
+static bool __lib_bin_cb(RLibPlugin *pl, void *user, void *data) {
 	struct r_bin_plugin_t *hand = (struct r_bin_plugin_t *)data;
 	RBin *bin = user;
 	//printf(" * Added (dis)assembly plugin\n");
@@ -500,12 +500,12 @@ static int __lib_bin_cb(RLibPlugin *pl, void *user, void *data) {
 	return true;
 }
 
-static int __lib_bin_dt(RLibPlugin *pl, void *p, void *u) {
+static bool __lib_bin_dt(RLibPlugin *pl, void *p, void *u) {
 	return true;
 }
 
 /* binxtr callback */
-static int __lib_bin_xtr_cb(RLibPlugin *pl, void *user, void *data) {
+static bool __lib_bin_xtr_cb(RLibPlugin *pl, void *user, void *data) {
 	struct r_bin_xtr_plugin_t *hand = (struct r_bin_xtr_plugin_t *)data;
 	RBin *bin = user;
 	//printf(" * Added (dis)assembly plugin\n");
@@ -513,12 +513,12 @@ static int __lib_bin_xtr_cb(RLibPlugin *pl, void *user, void *data) {
 	return true;
 }
 
-static int __lib_bin_xtr_dt(RLibPlugin *pl, void *p, void *u) {
+static bool __lib_bin_xtr_dt(RLibPlugin *pl, void *p, void *u) {
 	return true;
 }
 
 /* binldr callback */
-static int __lib_bin_ldr_cb(RLibPlugin *pl, void *user, void *data) {
+static bool __lib_bin_ldr_cb(RLibPlugin *pl, void *user, void *data) {
 	struct r_bin_ldr_plugin_t *hand = (struct r_bin_ldr_plugin_t *)data;
 	RBin *bin = user;
 	//printf(" * Added (dis)assembly plugin\n");
@@ -526,7 +526,7 @@ static int __lib_bin_ldr_cb(RLibPlugin *pl, void *user, void *data) {
 	return true;
 }
 
-static int __lib_bin_ldr_dt(RLibPlugin *pl, void *p, void *u) {
+static bool __lib_bin_ldr_dt(RLibPlugin *pl, void *p, void *u) {
 	return true;
 }
 

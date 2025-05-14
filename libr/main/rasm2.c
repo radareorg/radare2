@@ -634,7 +634,7 @@ static bool rasm_asm(RAsmState *as, const char *buf, ut64 offset, ut64 len, int 
 }
 
 /* anal callback */
-static int __lib_anal_cb(RLibPlugin *pl, void *user, void *data) {
+static bool __lib_anal_cb(RLibPlugin *pl, void *user, void *data) {
 	RAnalPlugin *hand = (RAnalPlugin *)data;
 	RAsmState *as = (RAsmState *)user;
 	r_anal_plugin_add (as->anal, hand);
@@ -642,8 +642,7 @@ static int __lib_anal_cb(RLibPlugin *pl, void *user, void *data) {
 }
 
 /* arch callback */
-// TODO: this should be bool
-static int __lib_arch_cb(RLibPlugin *pl, void *user, void *data) {
+static bool __lib_arch_cb(RLibPlugin *pl, void *user, void *data) {
 	RArchPlugin *hand = (RArchPlugin *)data;
 	RAsmState *as = (RAsmState *)user;
 	r_arch_plugin_add (as->anal->arch, hand);
