@@ -32,7 +32,7 @@ static RCoreHelpMessage help_msg_w = {
 	"ww", " foobar", "write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'",
 	"wx", "[?][fs] 9090", "write two intel nops (from wxfile or wxseek)",
 	"wX", " 1b2c3d", "fill current block with cyclic hexpairs",
-	"wv", "[?] eip+34", "write 32-64 bit value honoring cfg.bigendian",
+	"wv", "[?] [expr]", "write [1,2,4,8]-byte size using cfg.bigendian",
 	"wu", " [unified-diff-patch]", "see 'cu'",
 	"wz", " string", "write zero terminated string (like w + \\x00)",
 	NULL
@@ -190,10 +190,10 @@ static RCoreHelpMessage help_msg_wv = {
 	"wv2", " 234", "write unsigned short (2 bytes) with this number",
 	"wv4", " 1 2 3", "write N space-separated dword (4 bytes)",
 	"wv8", " 234", "write qword (8 bytes) with this number",
-	"wvp", " 934", "write 4 or 8 byte pointer, depending on asm.bits",
-	"wvf", " 3.14", "write float value (4 bytes)",
 	"wvF", " 3.14", "write double value (8 bytes)",
+	"wvf", " 3.14", "write float value (4 bytes)",
 	"wvG", " 3.14", "write long double value (10/16 bytes)",
+	"wvp", " 934", "write 4 or 8 byte pointer, depending on asm.bits",
 	"Supported sizes are:", "1, 2, 4, 8", "",
 	NULL
 };
