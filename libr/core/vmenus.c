@@ -512,7 +512,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			r_cons_print_at (core->cons, s, 60, 1, 20, 12);
 			free (s);
 		}
-		r_cons_printf ("[0x08%"PFMT64x"]> Vd1 # r2's sprite / bit editor\n\n", core->addr + cur);
+		r_cons_printf ("[0x%08"PFMT64x"]> Vd1 # r2's sprite / bit editor\n\n", (ut64)(core->addr + cur));
 		if (analop.bytes) {
 			char *op_hex = r_hex_bin2strdup (analop.bytes, analop.size);
 			char *res = r_print_hexpair (core->print, op_hex, -1);
