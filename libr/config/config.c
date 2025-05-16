@@ -80,7 +80,7 @@ static void config_print_value_json(RConfig *cfg, PJ *pj, RConfigNode *node) {
 		} else if (r_str_isnumber (val) || (*val /* HACK */ && r_str_is_bool (val))) {
 			if (pj) {
 				if (r_str_is_bool (val)) {
-					pj_b (pj, val);
+					pj_b (pj, r_str_is_true (val));
 				} else if (r_str_isnumber (val)) {
 					ut64 n = r_num_get (NULL, val);
 					pj_n (pj, n);
