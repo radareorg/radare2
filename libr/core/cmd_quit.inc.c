@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -18,18 +18,22 @@ static RCoreHelpMessage help_msg_q = {
 static int cmd_Quit(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	const char *arg = strchr (input, ' ');
+	unsigned int exclamations = 0;
 	if (!arg) {
 		while (*input == '!') {
+			if (exclamations < 4) {
+				exclamations++;
+			}
 			input++;
 		}
 		arg = input;
 	}
 	const int rv = arg? r_num_math (core->num, arg): 0;
-	if (input[0] == '!') { // "q!"
+	if (exclamations > 0) { // "q!"
 		r_config_set_b (core->config, "scr.hist.save", false);
-		if (input[1] == '!' || !input[1]) { // "q!!"
+		if (exclamations > 1) {
 			if (!r_sandbox_enable (false)) {
-				r_cons_flush ();
+				r_kons_flush (core->cons);
 				exit (rv);
 			}
 			return R_CMD_RC_QUIT;
