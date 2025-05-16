@@ -1,7 +1,10 @@
 Foo=enum
-enum.Foo.FOO=1
-enum.Foo.BAR=2
+enum.Foo.FOO=0x1
+enum.Foo.0x1=FOO
+enum.Foo.BAR=0x2
+enum.Foo.0x2=BAR
 enum.Foo.LOW=3
 enum.Foo.COW=-1
-enum.Foo=Foo,BAR,LOW,COW
+enum.Foo.-1=COW
+enum.Foo=FOO,BAR,LOW,COW
 
