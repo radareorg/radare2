@@ -218,17 +218,11 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	if (plugin && plugin->load) {
 		if (!plugin->load (bf, bf->buf, loadaddr)) {
 			R_LOG_DEBUG ("load failed for %s plugin", plugin->meta.name);
-			sdb_free (bo->kv);
-			free (bo);
-			bf->bo = NULL;
-			return NULL;
+			goto fail;
 		}
 	} else {
 		R_LOG_WARN ("Plugin %s should implement load method", plugin->meta.name);
-		sdb_free (bo->kv);
-		free (bo);
-		bf->bo = NULL;
-		return NULL;
+		goto fail;
 	}
 
 	// XXX - object size can't be set here and needs to be set where where
@@ -263,6 +257,23 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 		bf->sdb->refs++;
 	}
 	return bo;
+
+fail:
+	r_strpool_free (bo->pool);
+	if (!RVecRBinSymbol_empty (&bo->symbols_vec)) {
+		RVecRBinSymbol_fini (&bo->symbols_vec);
+		if (bo->symbols) {
+			bo->symbols->free = NULL;
+		}
+	}
+	ht_pp_free (bo->methods_ht);
+	ht_pp_free (bo->classes_ht);
+	r_list_free (bo->classes);
+	sdb_free (bo->kv);
+	ht_up_free (bo->strings_db);
+	free (bo);
+	bf->bo = NULL;
+	return NULL;
 }
 
 static bool filter_classes(RBinFile *bf, RList *list) {
