@@ -165,7 +165,7 @@ fi
 umask 0002
 
 
-${SHELL} --help 2> /dev/null | grep -q fish
+${SHELL} --version 2> /dev/null | grep -q fish
 if [ $? = 0 ]; then
 	SHELL=/bin/sh
 else
