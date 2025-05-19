@@ -259,18 +259,18 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	return bo;
 
 fail:
-	r_strpool_free(bo->pool);
+	r_strpool_free (bo->pool);
 	if (!RVecRBinSymbol_empty (&bo->symbols_vec)) {
 		RVecRBinSymbol_fini (&bo->symbols_vec);
 		if (bo->symbols) {
 			bo->symbols->free = NULL;
 		}
 	}
-	ht_pp_free(bo->methods_ht);
-	ht_pp_free(bo->classes_ht);
-	r_list_free(bo->classes);
+	ht_pp_free (bo->methods_ht);
+	ht_pp_free (bo->classes_ht);
+	r_list_free (bo->classes);
 	sdb_free (bo->kv);
-	ht_up_free(bo->strings_db);
+	ht_up_free (bo->strings_db);
 	free (bo);
 	bf->bo = NULL;
 	return NULL;
