@@ -15,7 +15,6 @@ EOF
 RUN
 
 NAME=dmh allocated
-BROKEN=1
 FILE=bins/elf/simple_malloc_x86_64
 ARGS=-d
 CMDS=<<EOF
@@ -69,6 +68,24 @@ dmht~?items[5]
 EOF
 EXPECT=<<EOF
 0
+1
+EOF
+RUN
+
+NAME=dmh malloc three times
+FILE=bins/elf/malloc_and_free_x86_64
+ARGS=-Rstdout=/dev/null -d
+CMDS=<<EOF
+dcu $DA+0x12B0
+dmh~?allocated
+dmh~?size: 0x90
+dmh~?size: 0x110
+dmh~?size: 0x610
+EOF
+EXPECT=<<EOF
+3
+1
+1
 1
 EOF
 RUN

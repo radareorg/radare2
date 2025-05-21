@@ -34,7 +34,7 @@ R_LIB_VERSION_HEADER(r_heap_glibc);
 #define NSMALLBINS 64
 #define NFASTBINS 10
 #define BINMAPSHIFT 5
-#define SZ core->dbg->bits
+#define SZ (core->dbg->bits == 64 ? 8 : 4)
 #define FASTBIN_IDX_TO_SIZE(i) ((SZ * 4) + (SZ * 2) * (i - 1))
 #define BITSPERMAP (1U << BINMAPSHIFT)
 #define BINMAPSIZE (NBINS / BITSPERMAP)
