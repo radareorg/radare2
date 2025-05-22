@@ -35,40 +35,40 @@ bool test_get_main_arena_offset_with_relocs(void) {
 	arena_offset = 0;
 	core->dbg->glibc_version_d = 2.21;
 	arena_offset = GH (get_main_arena_offset_with_relocs) (core, "bins/elf/libc-2.21.so");
-	mu_assert_eq (arena_offset, 0xb80, "Incorrect main_arena_offset for 2.21");
+	mu_assert_eq (arena_offset, 0x3c4c00, "Incorrect main_arena_offset for 2.21");
 
 	// 2.23
 	arena_offset = 0;
 	core->dbg->glibc_version_d = 2.23;
 	arena_offset = GH (get_main_arena_offset_with_relocs) (core, "bins/elf/libc-2.23.so");
-	mu_assert_eq (arena_offset, 0xaa0, "Incorrect main_arena_offset for 2.23");
+	mu_assert_eq (arena_offset, 0x3c4b20, "Incorrect main_arena_offset for 2.23");
 
 	// 2.26
 	arena_offset = 0;
 	core->dbg->glibc_version_d = 2.26;
 	arena_offset = GH (get_main_arena_offset_with_relocs) (core, "bins/elf/libc-2.26.so");
-	mu_assert_eq (arena_offset, 0xaa0, "Incorrect main_arena_offset for 2.26");
+	mu_assert_eq (arena_offset, 0x3dac20, "Incorrect main_arena_offset for 2.26");
 
 	// 2.27
 	arena_offset = 0;
 	core->dbg->glibc_version_d = 2.27;
 	arena_offset = GH (get_main_arena_offset_with_relocs) (core, "bins/elf/libc-2.27.so");
-	mu_assert_eq (arena_offset, 0xaa0, "Incorrect main_arena_offset for 2.27");
+	mu_assert_eq (arena_offset, 0x3ebc40, "Incorrect main_arena_offset for 2.27");
 
 	// 2.28
 	arena_offset = 0;
 	arena_offset = GH (get_main_arena_offset_with_relocs) (core, "bins/elf/libc.so.6");
-	mu_assert_eq (arena_offset, 0xaa0, "Incorrect main_arena_offset for 2.28");
+	mu_assert_eq (arena_offset, 0x1beaa0, "Incorrect main_arena_offset for 2.28");
 
 	// 2.31
 	arena_offset = 0;
 	arena_offset = GH (get_main_arena_offset_with_relocs) (core, "bins/elf/libc-2.31.so");
-	mu_assert_eq (arena_offset, 0x9e0, "Incorrect main_arena_offset for 2.31");
+	mu_assert_eq (arena_offset, 0x1bf9e0, "Incorrect main_arena_offset for 2.31");
 
 	// 2.32
 	arena_offset = 0;
 	arena_offset = GH (get_main_arena_offset_with_relocs) (core, "bins/elf/libc-2.32.so");
-	mu_assert_eq (arena_offset, 0xa00, "Incorrect main_arena_offset for 2.32");
+	mu_assert_eq (arena_offset, 0x1c2a00, "Incorrect main_arena_offset for 2.32");
 
 	r_core_free (core);
 	mu_end;
