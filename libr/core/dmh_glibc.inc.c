@@ -211,7 +211,7 @@ static const char* GH(get_libc_filename_from_maps)(RCore *core) {
 		if (!map->name || r_str_startswith (core->bin->file, map->name)) {
 			continue;
 		}
-		if (r_regex_match (".*libc6?[-_\\.]", "e", map->name)) {
+		if (r_regex_match (".*libc6?[-_\\.]", "e", r_file_basename(map->name))) {
 			r_config_set (core->config, "dbg.glibc.path", map->file);
 			return map->file;
 		}
@@ -560,7 +560,7 @@ static GH(expected_arenas_s) GH (get_expected_main_arena_structures ) (RCore *co
 static GHT GH (get_main_arena_offset_with_relocs) (RCore *core, const char *libc_path) {
 	RBin *bin = core->bin;
 	RBinFile *bf = r_bin_cur (bin);
-	GHT main_arena = GHT_MAX;
+	GHT main_arena_offset = GHT_MAX;
 	RBinFileOptions opt;
 	r_bin_file_options_init (&opt, -1, 0, 0, false);
 	if (!r_bin_open (bin, libc_path, &opt)) {
@@ -635,8 +635,8 @@ static GHT GH (get_main_arena_offset_with_relocs) (RCore *core, const char *libc
 				expected_p = (void *)&expected_arenas.expected_212;
 			} // else checked above
 			if (!memcmp (libc_data.buf + search_start, expected_p, malloc_state_size)) {
-				R_LOG_WARN ("Found main_arena offset with relocations");
-				main_arena = reloc->addend - data_section->vaddr;
+				R_LOG_INFO ("Found main_arena offset with relocations");
+				main_arena_offset = reloc->addend;
 				break;
 			} else {
 				R_LOG_WARN ("get_main_arena_offset_with_relocs: main_arena candidate did not match");
@@ -647,8 +647,7 @@ static GHT GH (get_main_arena_offset_with_relocs) (RCore *core, const char *libc
 	RBinFile *libc_bf = r_bin_cur (bin);
 	r_bin_file_delete (bin, libc_bf->id);
 	r_bin_file_set_cur_binfile (bin, bf);
-
-	return main_arena;
+	return main_arena_offset;
 }
 
 static bool GH(resolve_main_arena)(RCore *core, GHT *m_arena) {
@@ -683,6 +682,7 @@ static bool GH(resolve_main_arena)(RCore *core, GHT *m_arena) {
 			return false;
 		}
 
+		// TODO: add test for main_arena resolution via symbol
 		main_arena_offset = GH (get_main_arena_offset_with_symbol) (core, libc_filename);
 		if (main_arena_offset == GHT_MAX) {
 			main_arena_offset = GH (get_main_arena_offset_with_relocs) (core, libc_filename);
@@ -696,12 +696,16 @@ static bool GH(resolve_main_arena)(RCore *core, GHT *m_arena) {
 		RDebugMap *map;
 		r_debug_map_sync (core->dbg);
 		r_list_foreach (core->dbg->maps, iter, map) {
-			if (map->perm == R_PERM_RW && strstr (map->name, libc_filename)) {
+			if (!strstr (map->name, libc_filename)) {
+				continue;
+			}
+			//  main_arena_offset should be relative to libc base address e.g. first occurrence in maps
+			if (main_arena_addr == GHT_MAX && main_arena_offset != GHT_MAX) {
+				main_arena_addr = map->addr + main_arena_offset;
+			}
+			if (map->perm == R_PERM_RW) {
 				libc_addr_sta = map->addr;
 				libc_addr_end = map->addr_end;
-				if (main_arena_offset != GHT_MAX) {
-					main_arena_addr = map->addr + main_arena_offset;
-				}
 				break;
 			}
 		}
