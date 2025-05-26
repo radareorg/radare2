@@ -24,32 +24,39 @@ static int pyversion_toi(const char *version) {
 	return 360; // default version
 }
 
-static bool disassemble(RArchSession *s, RAnalOp *op, RArchDecodeMask mask, int pyversion) {
-	RBin *bin = s->arch->binb.bin;
-	RBinPlugin *plugin = bin && bin->cur && bin->cur->bo? bin->cur->bo->plugin: NULL;
-	RList *shared = (plugin && !strcmp (plugin->meta.name, "pyc"))?
-		bin->cur->bo->bin_obj: NULL;
-	RList *cobjs = NULL;
-	RList *interned_table = NULL;
-	if (shared) {
-		cobjs = r_list_get_n (shared, 0);
-		interned_table = r_list_get_n (shared, 1);
-	}
+static pyc_opcodes *get_pyc_opcodes(RArchSession *s) {
 	pyc_opcodes *ops = s->data;
 	if (!ops || !pyc_opcodes_equal (ops, s->config->cpu)) {
 		ops = get_opcode_by_version (s->config->cpu);
-		if (!ops) {
-			ops = get_opcode_by_version ("v3.9.0");
-			if (!ops) {
-				return false;
+		ops = ops? ops: get_opcode_by_version ("v3.9.0");
+		if (ops) {
+			ops->bits = s->config->bits;
+		}
+		s->data = ops;
+	}
+	return ops;
+}
+
+static RList *get_pyc_code_obj(RArchSession *as) {
+	RBin *b = as->arch->binb.bin;
+	RBinPlugin *plugin = b->cur && b->cur->bo? b->cur->bo->plugin: NULL;
+	bool is_pyc = (plugin && strcmp (plugin->meta.name, "pyc") == 0);
+	return is_pyc? b->cur->bo->bin_obj: NULL;
+}
+
+static inline pyc_code_object *get_func(ut64 pc, RList *pyobj) {
+	// XXX use better data structures
+	RList *cobjs = pyobj? r_list_get_n (pyobj, 0): NULL;
+	if (cobjs) {
+		pyc_code_object *t;
+		RListIter *iter;
+		r_list_foreach (cobjs, iter, t) {
+			if (R_BETWEEN (t->start_offset, pc, t->end_offset - 1)) {
+				return t;
 			}
 		}
-		ops->bits = s->config->bits;
 	}
-	s->data = ops;
-	int r = r_pyc_disasm (op, op->bytes, cobjs, interned_table, op->addr, ops);
-	op->size = r;
-	return r > 0;
+	return NULL;
 }
 
 static int archinfo(RArchSession *as, ut32 query) {
@@ -94,38 +101,23 @@ static char *regs(RArchSession *as) {
 	);
 }
 
-static RList *get_pyc_code_obj(RArchSession *as) {
-	RBin *b = as->arch->binb.bin;
-	RBinPlugin *plugin = b->cur && b->cur->bo? b->cur->bo->plugin: NULL;
-	bool is_pyc = (plugin && strcmp (plugin->meta.name, "pyc") == 0);
-	return is_pyc? b->cur->bo->bin_obj: NULL;
-}
-
-static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
-	RList *pyobj = get_pyc_code_obj (as);
-	if (!pyobj) {
-		return false;
-	}
+static bool pyc_decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const ut64 addr = op->addr;
 	const ut8 *data = op->bytes;
 	const size_t data_len = op->size;
-	RList *cobjs = r_list_get_n (pyobj, 0);
-	RListIter *iter = NULL;
-	pyc_code_object *func = NULL, *t = NULL;
-	r_list_foreach (cobjs, iter, t) {
-		if (R_BETWEEN (t->start_offset, addr, t->end_offset - 1)) {
-			func = t;
-			break;
-		}
-	}
-	if (!func) {
+
+	RList *pyobj = get_pyc_code_obj (as);
+	pyc_code_object *func = get_func (addr, pyobj);
+	pyc_opcodes *ops = get_pyc_opcodes (as);
+	if (!func || !ops) {
 		return false;
 	}
 	const int pyversion = pyversion_toi (as->config->cpu);
 	bool is_python36 = pyversion == 370; // < 370; // XXX this looks wrong
 
 	if (mask & R_ARCH_OP_MASK_DISASM) {
-		disassemble (as, op, mask, pyversion);
+		RList *interned_table = r_list_get_n (pyobj, 1);
+		r_pyc_disasm (op, func, interned_table, ops);
 	}
 	ut64 func_base = func->start_offset;
 	ut32 extended_arg = 0, oparg = 0;
@@ -134,12 +126,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	op->type = R_ANAL_OP_TYPE_ILL;
 	op->id = op_code;
 
-	pyc_opcodes *ops = as->data;
-	if (!ops || !pyc_opcodes_equal (ops, as->config->cpu)) {
-		if (!(ops = get_opcode_by_version (as->config->cpu))) {
-			return false;
-		}
-	}
 	pyc_opcode_object *op_obj = &ops->opcodes[op_code];
 	if (!op_obj->op_name) {
 		op->type = R_ANAL_OP_TYPE_ILL;
@@ -149,6 +135,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 
 	op->size = is_python36? 2: ((op_code >= ops->have_argument)? 3: 1);
 	if (op_code >= ops->have_argument) {
+		// XXX oparg also computed, in contradictory way in
+		// r_pyc_disasm, extended_arg will always be 0
 		if (is_python36) {
 			if (data_len > 1) {
 				oparg = data[1] + extended_arg;
@@ -205,7 +193,7 @@ const RArchPlugin r_arch_plugin_pyc = {
 	.bits = R_SYS_BITS_PACK1 (32),
 	.info = archinfo,
 	.regs = regs,
-	.decode = &decode,
+	.decode = &pyc_decode,
 	.fini = &finish,
 };
 
