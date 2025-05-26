@@ -1877,6 +1877,15 @@ static bool cb_gotolimit(void *user, void *data) {
 	return true;
 }
 
+static bool cb_esilmaxbacksteps(void *user, void *data) {
+	RCore *core = user;
+	RConfigNode *node = data;
+	if (core->esil.reg) {	//hack
+		r_core_esil_set_max_stepback (core, node->i_value);
+	}
+	return true;
+}
+
 static bool cb_esilverbose(void *user, void *data) {
 	RCore *core = user;
 	RConfigNode *node = data;
@@ -3777,6 +3786,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("dbg.glibc.demangle", "false", "demangle linked-lists pointers introduced in glibc 2.32");
 	SETB ("esil.prestep", "true", "step before esil evaluation in `de` commands");
 	SETI ("esil.maxsteps", 0, "If !=0 defines the maximum amount of steps to perform on aesu/aec/..");
+	SETICB ("esil.maxbacksteps", 256, &cb_esilmaxbacksteps, "esil back step capacity");
 	SETS ("esil.fillstack", "", "initialize ESIL stack with (random, debruijn, sequence, zeros, ...)");
 	SETICB ("esil.verbose", 0, &cb_esilverbose, "show ESIL verbose level (0, 1, 2)");
 	SETICB ("esil.gotolimit", core->anal->esil_goto_limit, &cb_gotolimit, "maximum number of gotos per ESIL expression");
