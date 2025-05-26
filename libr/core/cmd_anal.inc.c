@@ -8659,7 +8659,9 @@ static void cmd_aep(RCore *core, const char *input) {
 	ut64 addr = core->addr;
 	switch (input[1]) {
 	case 'a': // "aepa"
-		if (input[2] == ' ') {
+		if (input[2] == '?') {
+			r_core_cmd_help_contains (core, help_msg_aep, "aepa");
+		} else if (input[2] == ' ') {
 			addr = r_num_math (core->num, input + 2);
 		}
 		// get flag in current offset
@@ -8766,10 +8768,14 @@ static void cmd_aes(RCore *core, const char *input) {
 		}
 		break;
 	case 'b': // "aesb"
-		if (!r_core_esil_step_back (core)) {
-			R_LOG_ERROR ("Cannot step back");
+		if (input[2] == '?') {
+			r_core_cmd_help_contains (core, help_msg_aes, "aesb");
+		} else {
+			if (!r_core_esil_step_back (core)) {
+				R_LOG_ERROR ("Cannot step back");
+			}
+			r_core_cmd0 (core, ".ar*");
 		}
-		r_core_cmd0 (core, ".ar*");
 		break;
 	case 'B': // "aesB"
 		n = strchr (input + 2, ' ');
@@ -9051,6 +9057,9 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 		}
 		r_esil_stack_free (esil);
 		break;
+	case 0:
+		R_LOG_ERROR ("Expected argument or subcommand. See 'ae?' for details");
+		break;
 	case 's': // "aes" "aeso" "aesu" "aesue"
 		cmd_aes (core, input);
 		break;
@@ -9195,7 +9204,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			cmd_aei (core);
 			break;
 		default:
-			cmd_esil_mem (core, "?");
+			r_core_cmd_help (core, help_msg_aei);
 			break;
 		}
 		break;
