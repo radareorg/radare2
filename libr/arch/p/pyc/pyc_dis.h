@@ -72,6 +72,6 @@ typedef struct {
 	st64 end_offset;
 } pyc_code_object;
 
-int r_pyc_disasm(RAnalOp *op, const ut8 *buf, RList *cobjs, RList *interned_table, ut64 pc, pyc_opcodes *opcodes);
+bool r_pyc_disasm(RAnalOp *opstruct, pyc_code_object *func, RList *interned_table, pyc_opcodes *ops);
 
 #endif

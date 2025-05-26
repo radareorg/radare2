@@ -173,6 +173,40 @@ WARN: Cannot find asm.parser for pyc
 EOF
 RUN
 
+NAME=pyc 37 jumps
+FILE=bins/pyc/py37.pyc
+CMDS=<<EOF
+pdj 1 @0x00000030~{}[0]
+EOF
+EXPECT=<<EOF
+[
+  {
+    "offset": 48,
+    "esil": "",
+    "refptr": 0,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "jump_if_false_or_pop 10",
+    "disasm": "jump_if_false_or_pop 10",
+    "bytes": "6f0a",
+    "family": "cpu",
+    "type": "cjmp",
+    "reloc": false,
+    "type_num": 2147483649,
+    "type2_num": 0,
+    "jump": 52,
+    "fail": 50
+  }
+]
+EOF
+EXPECT_ERR=<<EOF
+WARN: Cannot find asm.parser for pyc
+INFO: Fallback to null
+WARN: Cannot find asm.parser for pyc
+EOF
+RUN
+
 NAME=pyc symbols for pyc2.7
 FILE=bins/pyc/py27.pyc
 CMDS=<<EOF
