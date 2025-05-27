@@ -122,7 +122,7 @@ endif
 # default plugins if none is defined
 if get_option('plugins') == ''
   arch_plugins += [
-    # 'arc',
+    'arc',
     '6502',
     '6502_cs',
     '8051',

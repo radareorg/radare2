@@ -21,12 +21,12 @@
    MA 02110-1301, USA.  */
 
 
-#include "disas-asm.h"
+#include "../../../include/disas-asm.h"
 #include "arc.h"
 #include "arc-ext.h"
 #include "arc-dis.h"
 #include "arcompact-dis.h"
-#include "elf-bfd.h"
+#include "../../../include/elf-bfd.h"
 #include "r_types.h"
 #include "r_util.h"
 

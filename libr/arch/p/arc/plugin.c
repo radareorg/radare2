@@ -3,8 +3,8 @@
 #include <r_lib.h>
 #include <r_arch.h>
 
-#include "disas-asm.h"
-#include <mybfd.h>
+#include "../../include/disas-asm.h"
+#include "../../include/mybfd.h"
 
 /* extern */
 extern int decodeInstr(bfd_vma address, disassemble_info * info);

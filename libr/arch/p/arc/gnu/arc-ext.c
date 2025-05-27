@@ -33,8 +33,8 @@
 //  the const prefix is used bellow for api definitions.
 // If u define the new value of const this dont match with previus const int arc-ext.h api definition
 //  giving a compiler error under MSVC
-#include "libiberty.h"
-#include "sysdep.h"
+#include "../../../include/libiberty.h"
+#include "../../../include/sysdep.h"
 #endif
 
 /******************************************************************************/
