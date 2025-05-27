@@ -5,6 +5,7 @@
 
 // Display the content of a file in the hud
 R_API char *r_cons_hud_file(RCons *cons, const char *f) {
+	R_RETURN_VAL_IF_FAIL (cons && f, NULL);
 	char *s = r_file_slurp (f, NULL);
 	if (s) {
 		r_str_ansi_strip (s);
@@ -20,6 +21,7 @@ static char *r_cons_hud_line(RCons *cons, RList *list, const char *prompt);
 // Display a buffer in the hud (splitting it line-by-line and ignoring
 // the lines starting with # )
 R_API char *r_cons_hud_line_string(RCons *cons, const char *s) {
+	R_RETURN_VAL_IF_FAIL (cons && s, NULL);
 	if (!r_kons_is_interactive (cons)) {
 		R_LOG_ERROR ("Hud mode requires scr.interactive=true");
 		return NULL;
@@ -60,6 +62,7 @@ R_API char *r_cons_hud_line_string(RCons *cons, const char *s) {
 // Display a buffer in the hud (splitting it line-by-line and ignoring
 // the lines starting with # )
 R_API char *r_cons_hud_string(RCons *cons, const char *s) {
+	R_RETURN_VAL_IF_FAIL (cons && s, NULL);
 	if (!r_kons_is_interactive (cons)) {
 		R_LOG_ERROR ("Hud mode requires scr.interactive=true");
 		return NULL;
@@ -430,15 +433,15 @@ _beach:
 
 // Display the list of files in a directory
 R_API char *r_cons_hud_path(RCons *cons, const char *path, int dir) {
+	R_RETURN_VAL_IF_FAIL (cons && path, NULL);
 	char *tmp, *ret = NULL;
-	RList *files;
 	if (path) {
 		path = r_str_trim_head_ro (path);
 		tmp = strdup (*path ? path : "./");
 	} else {
 		tmp = strdup ("./");
 	}
-	files = r_sys_dir (tmp);
+	RList *files = r_sys_dir (tmp);
 	if (files) {
 		ret = r_cons_hud (cons, files, tmp);
 		if (ret) {
@@ -466,6 +469,7 @@ R_API char *r_cons_hud_path(RCons *cons, const char *path, int dir) {
 }
 
 static char *r_cons_message_multiline(RCons *cons, const char *msg) {
+	R_RETURN_VAL_IF_FAIL (cons && msg, NULL);
 	char *s = strdup (msg);
 	RList *lines = r_str_split_list (s, "\n", 0);
 	RListIter *iter;
@@ -493,6 +497,7 @@ static char *r_cons_message_multiline(RCons *cons, const char *msg) {
 }
 
 R_API char *r_cons_message(RCons *cons, const char *msg) {
+	R_RETURN_VAL_IF_FAIL (cons && msg, NULL);
 	if (strchr (msg, '\n')) {
 		return r_cons_message_multiline (cons, msg);
 	}

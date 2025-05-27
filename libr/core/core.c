@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2024 - pancake */
+/* radare2 - LGPL - Copyright 2009-2025 - pancake */
 
 #define R_LOG_ORIGIN "core"
 
