@@ -486,9 +486,15 @@ static bool cb_arch_platform(void *user, void *data) {
 
 static bool cb_archbits(void *user, void *data) {
 	R_RETURN_VAL_IF_FAIL (user && data, false);
-	RCore *core = (RCore *)user;
+	RCore *core = user;
+#if USE_NEW_ESIL
+	r_core_esil_unload_arch (core);
+#endif
 	RConfigNode *node = (RConfigNode *)data;
 	r_arch_set_bits (core->anal->arch, node->i_value);
+#if USE_NEW_ESIL
+	r_core_esil_load_arch (core);
+#endif
 	return true;
 }
 
@@ -501,10 +507,13 @@ static bool cb_archbits_getter(RCore *core, RConfigNode *node) {
 }
 
 static bool cb_archendian(void *user, void *data) {
-	RCore *core = (RCore *)user;
-	RConfigNode *node = (RConfigNode *)data;
+	RCore *core = user;
+	RConfigNode *node = data;
 	R_RETURN_VAL_IF_FAIL (node && core && core->anal && core->anal->arch, false);
 	if (!strcmp (node->value, "big") || !strcmp (node->value, "bigswap")) {
+#if USE_NEW_ESIL
+		r_core_esil_unload_arch (core);
+#endif
 		r_arch_set_endian (core->anal->arch, R_SYS_ENDIAN_BIG);
 		RConfigNode *be = r_config_node_get (core->config, "cfg.bigendian");
 		if (be) {
@@ -512,9 +521,15 @@ static bool cb_archendian(void *user, void *data) {
 			be->value = strdup ("true");
 			be->i_value = 1;
 		}
+#if USE_NEW_ESIL
+		r_core_esil_load_arch (core);
+#endif
 		return true;
 	}
 	if (!strcmp (node->value, "little") || !strcmp (node->value, "littleswap")) {
+#if USE_NEW_ESIL
+		r_core_esil_unload_arch (core);
+#endif
 		r_arch_set_endian (core->anal->arch, R_SYS_ENDIAN_LITTLE);
 		RConfigNode *be = r_config_node_get (core->config, "cfg.bigendian");
 		if (be) {
@@ -522,9 +537,15 @@ static bool cb_archendian(void *user, void *data) {
 			be->value = strdup ("false");
 			be->i_value = 0;
 		}
+#if USE_NEW_ESIL
+		r_core_esil_load_arch (core);
+#endif
 		return true;
 	}
 	if (!strcmp (node->value, "middle")) {
+#if USE_NEW_ESIL
+		r_core_esil_unload_arch (core);
+#endif
 		r_arch_set_endian (core->anal->arch, R_SYS_ENDIAN_MIDDLE);
 		RConfigNode *be = r_config_node_get (core->config, "cfg.bigendian");
 		if (be) {
@@ -532,6 +553,9 @@ static bool cb_archendian(void *user, void *data) {
 			be->value = strdup ("false");
 			be->i_value = 0;
 		}
+#if USE_NEW_ESIL
+		r_core_esil_load_arch (core);
+#endif
 		return true;
 	}
 	return false;
@@ -735,7 +759,13 @@ static bool cb_asmcpu(void *user, void *data) {
 #endif
 		return 0;
 	}
+#if USE_NEW_ESIL
+	r_core_esil_unload_arch (core);
+#endif
 	r_arch_config_set_cpu (core->rasm->config, node->value);
+#if USE_NEW_ESIL
+	r_core_esil_load_arch (core);
+#endif
 	const int v = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
 	if (v >= 0) {
 		core->anal->config->codealign = v;
@@ -1376,12 +1406,21 @@ static bool cb_bigendian(void *user, void *data) {
 		core->dbg->bp->endian = isbig;
 	}
 	core->rasm->config->endian = endianType;
+#if USE_NEW_ESIL
+	r_core_esil_unload_arch (core);
+#endif
 	r_arch_set_endian (core->anal->arch, endianType);
+<<<<<<< HEAD
 	RConfigNode *ae = r_config_node_get (core->config, "arch.endian");
 	if (ae) {
 		free (ae->value);
 		ae->value = strdup (node->i_value? "big": "little");
 	}
+=======
+#if USE_NEW_ESIL
+	r_core_esil_load_arch (core);
+#endif
+>>>>>>> 4f529a73c9 (Initialize core_esil on core init and autoupdate on arch config changes)
 	return true;
 }
 
