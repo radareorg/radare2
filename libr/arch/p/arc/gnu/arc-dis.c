@@ -22,14 +22,26 @@
    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
    MA 02110-1301, USA.  */
 
-#include "ansidecl.h"
-#include "libiberty.h"
-#include "disas-asm.h"
+#include "../../../include/ansidecl.h"
+// #include "libiberty.h"
+#include "../../../include/disas-asm.h"
+#include "../../../include/opintl.h"
+
+#ifndef _MSC_VER
+#include "../../../include/libiberty.h"
+#else
+#include <stdlib.h>
+#define XNEWVEC(T, N)		((T *) malloc (sizeof (T) * (N)))
+#define XCNEWVEC(T, N)		((T *) calloc ((N), sizeof (T)))
+#define XNEW(T)			((T *) malloc (sizeof (T)))
+#define ARRAY_SIZE _countof
+#endif
+
 //#include "opcode/arc.h"
-#include "elf-bfd.h"
+// #include ""
+#include "../../../include/elf-bfd.h"
 #include "arc.h"
 #include <string.h>
-#include "opintl.h"
 
 #include <stdarg.h>
 #include "arc-dis.h"
