@@ -1265,7 +1265,7 @@ R_API void r_file_mmap_free(RMmap *m) {
 	free (m);
 }
 
-R_API char *r_file_temp(const char *prefix) {
+R_API char *r_file_temp(const char * R_NULLABLE prefix) {
 	if (!prefix) {
 		prefix = "";
 	}
