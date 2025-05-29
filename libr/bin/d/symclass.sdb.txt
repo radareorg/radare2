@@ -264,6 +264,7 @@ StrCatW=string
 strcatW=string
 strchr=string
 StrCpy=string
+__strcpy_chk=string
 strcpy=string
 StrCpyA=string
 strcpyA=string
