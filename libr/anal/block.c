@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019-2024 - pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2019-2025 - pancake, thestr4ng3r */
 
 #include <r_anal.h>
 #include <r_hash.h>
@@ -566,6 +566,9 @@ R_API bool r_anal_block_recurse_depth_first(RAnalBlock *block, RAnalBlockCb cb, 
 		goto beach;
 	}
 	do {
+		if (path.len < 1) {
+			break;
+		}
 		RecurseDepthFirstCtx *cur_ctx = r_vector_index_ptr (&path, path.len - 1);
 		cur_bb = cur_ctx->bb;
 		if (cur_bb->jump != UT64_MAX && !ht_up_find_kv (visited, cur_bb->jump, NULL)) {
