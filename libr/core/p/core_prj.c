@@ -333,6 +333,7 @@ static RIOMap *coremod(Cursor *cur, R2ProjectMod *mod) {
 	ut32 mapid;
 	r_id_storage_get_lowest (maps, &mapid);
 	ut64 at = r_buf_at (b);
+	ut64 bsz = r_buf_size (b);
 	const char *mod_name = rprj_st_get (cur->st, mod->name);
 	do {
 		RIOMap *m = r_id_storage_get (maps, mapid);
@@ -350,6 +351,10 @@ static RIOMap *coremod(Cursor *cur, R2ProjectMod *mod) {
 		if (!strcmp (name, mod_name)) {
 			return m;
 		}
+		if (at + sizeof (R2ProjectMod) >= bsz) {
+			// should never happen
+			break;
+		}
 		at += sizeof (R2ProjectMod);
 		r_buf_seek (b, at, SEEK_SET);
 	} while (r_id_storage_get_next (maps, &mapid));
@@ -363,6 +368,7 @@ static void rprj_mods_write(Cursor *cur) {
 	ut32 mapid;
 	r_id_storage_get_lowest (maps, &mapid);
 	ut64 at = r_buf_at (b);
+	ut64 bsz = r_buf_size (b);
 	do {
 		RIOMap *m = r_id_storage_get (maps, mapid);
 		if (!m) {
@@ -386,6 +392,10 @@ static void rprj_mods_write(Cursor *cur) {
 		mod.csum = checksum (cur->core, va, 1024);
 		rprj_mods_write_one (b, &mod);
 		r_list_append (cur->mods, r_mem_dup (&mod, sizeof (mod)));
+		if (at + sizeof (R2ProjectMod) >= bsz) {
+			// should never happen
+			break;
+		}
 		at += sizeof (R2ProjectMod);
 		r_buf_seek (b, at, SEEK_SET);
 	} while (r_id_storage_get_next (maps, &mapid));
