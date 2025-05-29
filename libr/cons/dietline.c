@@ -1173,9 +1173,11 @@ static void __print_prompt(RCons *cons) {
 #if 1
 	if (line->buffer.length > 0) {
 		int maxlen = R_MIN (line->buffer.length, cols);
-		fwrite (line->buffer.data, maxlen, 1, stdout);
-		if (line->buffer.length > cols) {
-			fwrite (" >", 2, 1, stdout);
+		if (maxlen > 0) {
+			fwrite (line->buffer.data, maxlen, 1, stdout);
+			if (line->buffer.length > cols) {
+				fwrite (" >", 2, 1, stdout);
+			}
 		}
 	}
 #endif
