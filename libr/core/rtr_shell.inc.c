@@ -188,7 +188,7 @@ static void __rtr_shell(RCore *core, int nth) {
 	int len;
 	const char* res;
 	RSocket *s = NULL;
-	if (nth < 0 || nth > RTR_MAX_HOSTS) {
+	if (nth < 0 || nth >= RTR_MAX_HOSTS) {
 		R_LOG_ERROR ("Invalid fd");
 		return;
 	}
