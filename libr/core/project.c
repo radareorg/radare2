@@ -538,6 +538,7 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 	}
 	r_core_cmd (core, "o*", 0);
 	r_core_cmd (core, "om*", 0);
+	r_cons_printf ("o=%d\n", core->io->desc->fd);
 	r_core_cmd0 (core, "tcc*");
 	if (opts & R_CORE_PRJ_FCNS) {
 		r_cons_printf ("# functions\n");
