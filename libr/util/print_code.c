@@ -35,8 +35,8 @@ static void print_c_instructions(RPrint *p, ut64 addr, const ut8 *buf, int len) 
 	}
 
 	// p->consb.cb_printf (p->consb.cons,"#define %s %d\n", namesz, len);
-	p->cb_printf ("#define %s %d\n", namesz, len);
-	p->cb_printf ("const uint8_t %s[%s] = {\n", namenm, namesz);
+	r_print_printf (p, "#define %s %d\n", namesz, len);
+	r_print_printf (p, "const uint8_t %s[%s] = {\n", namenm, namesz);
 	free (namesz);
 
 	const int orig_align = p->coreb.cfgGetI (p->coreb.core, "asm.cmt.col") - 40;
@@ -51,33 +51,33 @@ static void print_c_instructions(RPrint *p, ut64 addr, const ut8 *buf, int len) 
 			// just skip the current instruction and go ahead
 			inst_size = 1;
 		}
-		p->cb_printf (" ");
+		r_print_printf (p, " ");
 		size_t limit = R_MIN (i + inst_size, len);
 		for (k = i; k < limit; k++) {
 			r_print_cursor (p, k, 1, true);
-			p->cb_printf (fmtstr, r_read_ble (buf++, be, 8));
+			r_print_printf (p, fmtstr, r_read_ble (buf++, be, 8));
 			r_print_cursor (p, k, 1, false);
-			p->cb_printf (", ");
+			r_print_printf (p, ", ");
 		}
 		size_t j = k - i;
 		int pad = orig_align - ((j - 1) * 6);
-		p->cb_printf ("%*s", R_MAX (pad, 0), "");
+		r_print_printf (p, "%*s", R_MAX (pad, 0), "");
 
 		if (j == inst_size) {
 			char *instr = p->coreb.cmdStrF (p->coreb.core, "pi 1 @ 0x%08" PFMT64x, at);
 			r_str_trim (instr);
-			p->cb_printf (" /* %s */\n", instr);
+			r_print_printf (p, " /* %s */\n", instr);
 			free (instr);
 		} else {
-			p->cb_printf (" /* invalid */\n");
+			r_print_printf (p, " /* invalid */\n");
 		}
 		i += j;
 	}
-	p->cb_printf ("};\n");
+	r_print_printf (p, "};\n");
 }
 
 static void print_c_code(RPrint *p, ut64 addr, const ut8 *buf, int len, int ws, int w, bool headers) {
-	R_RETURN_IF_FAIL (p && p->cb_printf);
+	R_RETURN_IF_FAIL (p);
 	size_t i;
 
 	ws = R_MAX (1, R_MIN (ws, 8));
@@ -96,37 +96,37 @@ static void print_c_code(RPrint *p, ut64 addr, const ut8 *buf, int len, int ws, 
 			namesz = r_str_newf ("_%s_SIZE", namenm);
 			r_str_case (namesz, true);
 		}
-		p->cb_printf ("#define %s %d\n", namesz, len);
-		p->cb_printf ("const uint%d_t %s[%s] = {", bits, namenm, namesz);
+		r_print_printf (p, "#define %s %d\n", namesz, len);
+		r_print_printf (p, "const uint%d_t %s[%s] = {", bits, namenm, namesz);
 		free (namesz);
 	}
 
 	for (i = 0; !r_print_is_interrupted () && i < len; i++) {
 		if (headers) {
 			if (!(i % w)) {
-				p->cb_printf ("\n  ");
+				r_print_printf (p, "\n  ");
 			}
 		} else {
 			if (i == 0) {
-				p->cb_printf ("  ");
+				r_print_printf (p, "  ");
 			} else if (!(i % w)) {
-				p->cb_printf ("\n  ");
+				r_print_printf (p, "\n  ");
 			}
 		}
 		r_print_cursor (p, i, 1, 1);
-		p->cb_printf (fmtstr, r_read_ble (buf, be, bits));
+		r_print_printf (p, fmtstr, r_read_ble (buf, be, bits));
 		if ((i + 1) < len) {
-			p->cb_printf (",");
+			r_print_printf (p, ",");
 
 			if ((i + 1) % w) {
-				p->cb_printf (" ");
+				r_print_printf (p, " ");
 			}
 		}
 		r_print_cursor (p, i, 1, 0);
 		buf += ws;
 	}
 	if (headers) {
-		p->cb_printf ("\n};\n");
+		r_print_printf (p, "\n};\n");
 	}
 }
 
@@ -141,14 +141,14 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		print_c_code (p, addr, buf, len, 1, (int)(p->cols / 1.5), false);
 		break;
 	case '*':
-		p->cb_printf ("wx+");
+		r_print_printf (p, "wx+");
 		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
 			if (i && !(i % 32)) {
-				p->cb_printf (";\nwx+");
+				r_print_printf (p, ";\nwx+");
 			}
-			p->cb_printf ("%02x", buf[i]);
+			r_print_printf (p, "%02x", buf[i]);
 		}
-		p->cb_printf (";\ns-%d\n", len);
+		r_print_printf (p, ";\ns-%d\n", len);
 		break;
 	case 'A': // "pcA"
 		/* implemented in core because of disasm :( */
@@ -158,201 +158,201 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 			int col = 0;
 			const int max_cols = 60;
 
-			p->cb_printf ("const unsigned char cstr[%d] = \"", len);
+			r_print_printf (p, "const unsigned char cstr[%d] = \"", len);
 			for (i = 0; !r_print_is_interrupted () && i < len; i++) {
 				if (col == 0 || col > max_cols) {
-					p->cb_printf ("\"\\\n  \"");
+					r_print_printf (p, "\"\\\n  \"");
 					col = 0;
 				}
 				ut8 ch = buf[i];
 				switch (ch) {
 				case '\\':
-					p->cb_printf ("\\\\");
+					r_print_printf (p, "\\\\");
 					break;
 				case '\t':
-					p->cb_printf ("\\t");
+					r_print_printf (p, "\\t");
 					break;
 				case '\r':
-					p->cb_printf ("\\r");
+					r_print_printf (p, "\\r");
 					break;
 				case '\n':
-					p->cb_printf ("\\n");
+					r_print_printf (p, "\\n");
 					break;
 				case '"':
-					p->cb_printf ("\\\"");
+					r_print_printf (p, "\\\"");
 					break;
 				default:
 					if (IS_PRINTABLE (ch)) {
-						p->cb_printf ("%c", buf[i]);
+						r_print_printf (p, "%c", buf[i]);
 					} else {
-						p->cb_printf ("\"\"\\x%02x\"\"", buf[i]);
+						r_print_printf (p, "\"\"\\x%02x\"\"", buf[i]);
 						col += 3;
 					}
 					break;
 				}
 				col += 1;
 			}
-			p->cb_printf ("\";\n");
+			r_print_printf (p, "\";\n");
 		}
 		break;
 	case 'a': // "pca"
-		p->cb_printf ("shellcode:");
+		r_print_printf (p, "shellcode:");
 		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
 			if (!(i % 8)) {
-				p->cb_printf ("\n.byte ");
+				r_print_printf (p, "\n.byte ");
 			} else {
-				p->cb_printf (", ");
+				r_print_printf (p, ", ");
 			}
-			p->cb_printf ("0x%02x", buf[i]);
+			r_print_printf (p, "0x%02x", buf[i]);
 		}
-		p->cb_printf ("\n.equ shellcode_len, %d\n", len);
+		r_print_printf (p, "\n.equ shellcode_len, %d\n", len);
 		break;
 	case 'g': // "pcg"
-		p->cb_printf ("var BUFF = [%d]byte{", len);
+		r_print_printf (p, "var BUFF = [%d]byte{", len);
 		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
 			r_print_cursor (p, i, 1, 1);
-			p->cb_printf ("0x%x%s", buf[i], (i + 1 < len)? ",": "");
+			r_print_printf (p, "0x%x%s", buf[i], (i + 1 < len)? ",": "");
 			r_print_cursor (p, i, 1, 0);
 		}
-		p->cb_printf ("}\n");
+		r_print_printf (p, "}\n");
 		break;
 	case 's': // "pcs"
-		p->cb_printf ("\"");
+		r_print_printf (p, "\"");
 		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
-			p->cb_printf ("\\x%02x", buf[i]);
+			r_print_printf (p, "\\x%02x", buf[i]);
 		}
-		p->cb_printf ("\"\n");
+		r_print_printf (p, "\"\n");
 		break;
 	case 'S': // "pcS"
 	{
 		const int trunksize = 16;
 		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
 			if (!(i % trunksize)) {
-				p->cb_printf ("printf \"");
+				r_print_printf (p, "printf \"");
 			}
-			p->cb_printf ("\\%03o", buf[i]);
+			r_print_printf (p, "\\%03o", buf[i]);
 			if ((i % trunksize) == (trunksize - 1)) {
-				p->cb_printf ("\" %s bin\n", (i <= trunksize)? ">": ">>");
+				r_print_printf (p, "\" %s bin\n", (i <= trunksize)? ">": ">>");
 			}
 		}
 		if ((i % trunksize)) {
-			p->cb_printf ("\" %s bin\n", (i <= trunksize)? ">": ">>");
+			r_print_printf (p, "\" %s bin\n", (i <= trunksize)? ">": ">>");
 		}
 	} break;
 	case 'J': { // "pcJ"
 		char *out = malloc (len * 3);
-		p->cb_printf ("var buffer = new Buffer(\"");
+		r_print_printf (p, "var buffer = new Buffer(\"");
 		out[0] = 0;
 		r_base64_encode (out, buf, len);
-		p->cb_printf ("%s", out);
-		p->cb_printf ("\", 'base64');\n");
+		r_print_printf (p, "%s", out);
+		r_print_printf (p, "\", 'base64');\n");
 		free (out);
 	} break;
 	case 'n': // "pcn"
 		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
 			r_print_cursor (p, i, 1, 1);
-			p->cb_printf ("%d%s", buf[i], (i + 1 < len)? " ": "");
+			r_print_printf (p, "%d%s", buf[i], (i + 1 < len)? " ": "");
 			r_print_cursor (p, i, 1, 0);
 		}
-		p->cb_printf ("\n");
+		r_print_printf (p, "\n");
 		break;
 	case 'k': // "pck" kotlin
-		p->cb_printf ("val arr = byteArrayOfInts(");
+		r_print_printf (p, "val arr = byteArrayOfInts(");
 		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
 			r_print_cursor (p, i, 1, 1);
-			p->cb_printf ("0x%x%s", buf[i], (i + 1 < len)? ",": "");
+			r_print_printf (p, "0x%x%s", buf[i], (i + 1 < len)? ",": "");
 			r_print_cursor (p, i, 1, 0);
 		}
-		p->cb_printf (")\n");
+		r_print_printf (p, ")\n");
 		break;
 	case 'z': // "pcz" // swift
-		p->cb_printf ("let byteArray : [UInt8] = [");
+		r_print_printf (p, "let byteArray : [UInt8] = [");
 
 		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
 			r_print_cursor (p, i, 1, 1);
-			p->cb_printf ("0x%x%s", buf[i], (i + 1 < len)? ", ": "");
+			r_print_printf (p, "0x%x%s", buf[i], (i + 1 < len)? ", ": "");
 			r_print_cursor (p, i, 1, 0);
 		}
-		p->cb_printf ("]\n");
+		r_print_printf (p, "]\n");
 		break;
 	case 'r': // "pcr" // Rust
-		p->cb_printf ("let _: [u8; %d] = [\n", len);
+		r_print_printf (p, "let _: [u8; %d] = [\n", len);
 		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
 			r_print_cursor (p, i, 1, 1);
-			p->cb_printf ("0x%x%s", buf[i], (i + 1 < len)? ",": "");
+			r_print_printf (p, "0x%x%s", buf[i], (i + 1 < len)? ",": "");
 			r_print_cursor (p, i, 1, 0);
 		}
-		p->cb_printf ("];\n");
+		r_print_printf (p, "];\n");
 		break;
 	case 'o': // "pco" // Objective-C
-		p->cb_printf ("NSData *endMarker = [[NSData alloc] initWithBytes:{\n");
+		r_print_printf (p, "NSData *endMarker = [[NSData alloc] initWithBytes:{\n");
 		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
 			r_print_cursor (p, i, 1, 1);
-			p->cb_printf ("0x%x%s", buf[i], (i + 1 < len)? ",": "");
+			r_print_printf (p, "0x%x%s", buf[i], (i + 1 < len)? ",": "");
 			r_print_cursor (p, i, 1, 0);
 		}
-		p->cb_printf ("}];\n");
+		r_print_printf (p, "}];\n");
 		break;
 	case 'v': // "pcv" // JaVa
-		p->cb_printf ("byte[] ba = {");
+		r_print_printf (p, "byte[] ba = {");
 		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
 			r_print_cursor (p, i, 1, 1);
-			p->cb_printf ("%d%s", buf[i], (i + 1 < len)? ",": "");
+			r_print_printf (p, "%d%s", buf[i], (i + 1 < len)? ",": "");
 			r_print_cursor (p, i, 1, 0);
 		}
-		p->cb_printf ("};\n");
+		r_print_printf (p, "};\n");
 		break;
 	case 'V': // "pcV" // vlang.io
-		p->cb_printf ("const data = [ byte(%d),\n  ", buf[0]);
+		r_print_printf (p, "const data = [ byte(%d),\n  ", buf[0]);
 		for (i = 1; !r_print_is_interrupted () && i < len; i++) {
 			r_print_cursor (p, i, 1, 1);
-			p->cb_printf ("%d%s", buf[i], (i + 1 < len)? ", ": "");
+			r_print_printf (p, "%d%s", buf[i], (i + 1 < len)? ", ": "");
 			r_print_cursor (p, i, 1, 0);
 			if ((i %10) == 0) {
-				p->cb_printf ("\n  ");
+				r_print_printf (p, "\n  ");
 			}
 		}
-		p->cb_printf ("\n]\n");
+		r_print_printf (p, "\n]\n");
 		break;
 	case 'y': // "pcy"
-		p->cb_printf ("{");
+		r_print_printf (p, "{");
 		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
 			r_print_cursor (p, i, 1, 1);
-			p->cb_printf (" %02x", buf[i] & 0xff);
+			r_print_printf (p, " %02x", buf[i] & 0xff);
 			r_print_cursor (p, i, 1, 0);
 		}
-		p->cb_printf (" }\n");
+		r_print_printf (p, " }\n");
 		break;
 	case 'Y': // "pcY"
-		p->cb_printf ("$hex_%"PFMT64x" = {", addr);
+		r_print_printf (p, "$hex_%"PFMT64x" = {", addr);
 		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
 			r_print_cursor (p, i, 1, 1);
-			p->cb_printf (" %02x", buf[i] & 0xff);
+			r_print_printf (p, " %02x", buf[i] & 0xff);
 			r_print_cursor (p, i, 1, 0);
 		}
-		p->cb_printf (" }\n");
+		r_print_printf (p, " }\n");
 		break;
 	case 'j': // "pcj"
-		p->cb_printf ("[");
+		r_print_printf (p, "[");
 		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
 			r_print_cursor (p, i, 1, 1);
-			p->cb_printf ("%d%s", buf[i], (i + 1 < len)? ",": "");
+			r_print_printf (p, "%d%s", buf[i], (i + 1 < len)? ",": "");
 			r_print_cursor (p, i, 1, 0);
 		}
-		p->cb_printf ("]\n");
+		r_print_printf (p, "]\n");
 		break;
 	case 'P':
 	case 'p': // "pcp" "pcP"
-		p->cb_printf ("import struct\nbuf = struct.pack (\"%dB\", *[", len);
+		r_print_printf (p, "import struct\nbuf = struct.pack (\"%dB\", *[", len);
 		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
 			if (!(i % w)) {
-				p->cb_printf ("\n");
+				r_print_printf (p, "\n");
 			}
 			r_print_cursor (p, i, 1, 1);
-			p->cb_printf ("0x%02x%s", buf[i], (i + 1 < len)? ",": "])");
+			r_print_printf (p, "0x%02x%s", buf[i], (i + 1 < len)? ",": "])");
 			r_print_cursor (p, i, 1, 0);
 		}
-		p->cb_printf ("\n");
+		r_print_printf (p, "\n");
 		break;
 	case 'h': // "pch"
 		print_c_code (p, addr, buf, len, 2, p->cols / 2, true); // 9

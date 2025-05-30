@@ -94,8 +94,8 @@ typedef struct r_print_t {
 	char datefmt[32];
 	int datezone;
 	int (*write)(const unsigned char *buf, int len);
-	PrintfCallback oprintf;
-	PrintfCallback cb_printf;
+	// PrintfCallback oprintf;
+	// PrintfCallback cb_printf;
 	// PrintfCallback cb_eprintf;
 	// char *(*cb_color)(int idx, int last, bool bg);
 	bool scr_prompt;
@@ -180,6 +180,7 @@ R_API void r_print_set_is_interrupted_cb(RPrintIsInterruptedCallback cb);
 
 /* ... */
 R_API char *r_print_hexpair(RPrint *p, const char *str, int idx);
+R_API void r_print_printf(const RPrint *p, const char *fmt, ...);
 R_API void r_print_hex_from_bin(RPrint *p, char *bin_str);
 R_API void r_print_bin_from_str(RPrint *p, char *str);
 R_API RPrint *r_print_new(void);
@@ -234,7 +235,6 @@ typedef struct r_print_format_t {
 	int oldslide;
 	int ident;
 	// RStrBuf *sb to hold a string for plaintext formats
-	// indentlevel (or nestlevel)
 } RPrintFormat;
 
 R_API int r_print_format_struct_size(RPrint *p, const char *format, int mode, int n);

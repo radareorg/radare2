@@ -8847,16 +8847,16 @@ static int cmd_print(void *data, const char *input) {
 				int i;
 				for (i = 0; i < len; i += cols) {
 					if (rad) {
-						r_cons_printf ("wx+ ");
+						r_kons_printf (core->cons, "wx+ ");
 					}
 					r_print_bytes (core->print, block + i, R_MIN (cols, len - cols), "%02x");
 				}
 			} else if (input[1] == 'd') { // "p8d"
 				int i;
 				for (i = 0; i < len; i ++) {
-					r_cons_printf ("%d ", block[i]);
+					r_kons_printf (core->cons, "%d ", block[i]);
 				}
-				r_cons_newline ();
+				r_kons_newline (core->cons);
 			} else if (input[1] == 'b') { // "p8b"
 				r_core_cmdf (core, "p8 $BS @ $BB");
 			} else if (input[1] == 'f') { // "p8f"
@@ -8884,7 +8884,7 @@ static int cmd_print(void *data, const char *input) {
 				r_core_block_read (core);
 				block = core->block;
 				if (rad) {
-					r_cons_printf ("wx+ ");
+					r_kons_printf (core->cons, "wx+ ");
 				}
 				r_print_bytes (core->print, block, len, "%02x");
 			}

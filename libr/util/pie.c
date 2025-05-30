@@ -117,26 +117,26 @@ R_API void r_print_pie(RPrint * R_NULLABLE p, int nvalues, int *values, const ch
 		}
 	}
 	int legend_idx = 0;
-	if (nv && out && p && p->cb_printf) {
+	if (nv && out && p) {
 		for (y = 0; y < size; y++) {
 			for (x = 0; x < size; x++) {
 				const char ch = out[x + (y * size)];
 				if (use_colors && isdigit (ch)) {
 					const int index = ch - '0';
-					// p->cb_printf ("%s··"Color_RESET, fg_colors[index]);
-					p->cb_printf ("%s##"Color_RESET, fg_colors[index]);
+					// r_print_printf (p, "%s··"Color_RESET, fg_colors[index]);
+					r_print_printf (p, "%s##"Color_RESET, fg_colors[index]);
 				} else {
-					p->cb_printf ("%c%c", ch, ch);
+					r_print_printf (p, "%c%c", ch, ch);
 				}
 			}
 			if (y > 0 && legend_idx < nvalues) {
 				if (y % 2) {
 					if (leg[legend_idx]) {
 						if (use_colors) {
-							p->cb_printf ("   %s  "Color_RESET" - %s",
+							r_print_printf (p, "   %s  "Color_RESET" - %s",
 									bg_colors[legend_idx], leg[legend_idx]);
 						} else {
-							p->cb_printf ("   %c%c - %s",
+							r_print_printf (p, "   %c%c - %s",
 									'0' + legend_idx,
 									'0' + legend_idx,
 									leg[legend_idx]);
@@ -145,9 +145,9 @@ R_API void r_print_pie(RPrint * R_NULLABLE p, int nvalues, int *values, const ch
 					legend_idx++;
 				}
 			}
-			p->cb_printf ("\n");
+			r_print_printf (p, "\n");
 		}
-		p->cb_printf ("\n");
+		r_print_printf (p, "\n");
 	}
 	free (out);
 	free (nv);
