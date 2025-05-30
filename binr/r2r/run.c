@@ -504,22 +504,22 @@ R_API bool r2r_subprocess_init(void) {
 	}
 	sigchld_thread = r_th_new (sigchld_th, NULL, 0);
 	if (!r_th_start (sigchld_thread)) {
-		if (sigchld_thread) {
-			r_th_free (sigchld_thread);
-			sigchld_thread = NULL;
-		}
-		close (sigchld_pipe [0]);
-		close (sigchld_pipe [1]);
-		r_th_lock_free (subprocs_mutex);
-		return false;
+		goto error;
 	}
 	if (r_sys_signal (SIGCHLD, handle_sigchld) < 0) {
-		close (sigchld_pipe [0]);
-		close (sigchld_pipe [1]);
-		r_th_lock_free (subprocs_mutex);
-		return false;
+		goto error;
 	}
 	return true;
+
+error:
+	if (sigchld_thread) {
+		r_th_free (sigchld_thread);
+		sigchld_thread = NULL;
+	}
+	close (sigchld_pipe [0]);
+	close (sigchld_pipe [1]);
+	r_th_lock_free (subprocs_mutex);
+	return false;
 }
 
 R_API void r2r_subprocess_fini(void) {
