@@ -801,14 +801,14 @@ R_API void r_print_printf(const RPrint *p, const char *fmt, ...) {
 
 		va_list ap_copy;
 		va_copy (ap_copy, ap);
-		int needed = vsnprintf (buf, sizeof(buf), fmt, ap_copy);
+		int needed = vsnprintf (buf, sizeof (buf), fmt, ap_copy);
 		va_end (ap_copy);
 
-		if (needed >= 0 && (size_t)needed < sizeof(buf)) {
+		if (needed >= 0 && (size_t)needed < sizeof (buf)) {
 			p->consb.cb_printf (cons, "%s", buf);
 		} else {
 			// Allocate enough memory (+1 for null terminator)
-			char *heapbuf = (char *)malloc(needed + 1);
+			char *heapbuf = (char *)malloc (needed + 1);
 			if (heapbuf) {
 				vsnprintf (heapbuf, needed + 1, fmt, ap);
 				p->consb.cb_printf (cons, "%s", heapbuf);
