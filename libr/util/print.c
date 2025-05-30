@@ -813,6 +813,23 @@ static bool invalidchar(char ch) {
 	return !ch || !IS_PRINTABLE (ch) || isspace (ch & 0xff);
 }
 
+R_API void r_print_printf(RPrint *p, const char *fmt, ...) {
+	va_list ap;
+	va_start (ap, fmt);
+
+	if (p && p->consb.cb_printf) {
+		RCons *cons = p->consb.cons;
+		// Call the bound printf callback with user context
+		p->consb.cb_printf (cons, fmt, ap);
+	} else if (p && p->cb_printf) {
+		p->cb_printf (NULL, fmt, ap);
+	} else {
+		vprintf (fmt, ap);
+	}
+
+	va_end(ap);
+}
+
 R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, size_t zoomsz) {
 	R_RETURN_IF_FAIL (buf && len > 0);
 	PrintfCallback printfmt = (PrintfCallback)printf;
@@ -1625,16 +1642,18 @@ R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8 *_a, ut64 ba, const ut8
 
 R_API void r_print_bytes(RPrint *p, const ut8 *buf, int len, const char *fmt) {
 	int i;
-	if (p) {
+	RCons *cons = p->consb.cons;
+	if (cons) {
 		for (i = 0; i < len; i++) {
-			p->cb_printf (fmt, buf[i]);
+			p->consb.cb_printf (cons, fmt, buf[i]);
 		}
-		p->cb_printf ("\n");
+		p->consb.cb_printf (cons, "\n");
 	} else {
+		PrintfCallback cb_printf = (PrintfCallback) (p? p->cb_printf: printf);
 		for (i = 0; i < len; i++) {
-			printf (fmt, buf[i]);
+			cb_printf (fmt, buf[i]);
 		}
-		printf ("\n");
+		cb_printf ("\n");
 	}
 }
 
