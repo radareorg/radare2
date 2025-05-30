@@ -336,7 +336,7 @@ jobs:
         make -C test fuzz-tests
 
   w64-make:
-    runs-on: windows-2019
+    runs-on: windows-2022
     steps:
     - name: Win configure Pagefile
       uses: al-cheb/configure-pagefile-action@v1.4
