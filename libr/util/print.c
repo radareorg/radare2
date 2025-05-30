@@ -821,8 +821,8 @@ R_API void r_print_printf(const RPrint *p, const char *fmt, ...) {
 #if 0
 	} else if (p && p->cb_printf) {
 		char buf[1024];
-		vsnprintf(buf, sizeof(buf), fmt, ap);
-		r_print_printf(p, "%s", buf);
+		vsnprintf (buf, sizeof (buf), fmt, ap);
+		r_print_printf (p, "%s", buf);
 #endif
 	} else {
 		vprintf (fmt, ap);
