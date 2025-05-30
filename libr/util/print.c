@@ -2624,7 +2624,6 @@ R_API int r_print_jsondump(RPrint *p, const ut8 *buf, int len, int wordsize) {
 }
 
 R_API void r_print_hex_from_bin(RPrint *p, char *bin_str) {
-	R_RETURN_IF_FAIL (p);
 	int i, j, index;
 	const int len = strlen (bin_str);
 	if (!len) {
