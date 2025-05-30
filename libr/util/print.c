@@ -786,20 +786,43 @@ static bool invalidchar(char ch) {
 	return !ch || !IS_PRINTABLE (ch) || isspace (ch & 0xff);
 }
 
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 R_API void r_print_printf(const RPrint *p, const char *fmt, ...) {
 	va_list ap;
-	va_start (ap, fmt);
+	va_start(ap, fmt);
 
 	if (p && p->consb.cb_printf) {
 		RCons *cons = p->consb.cons;
 		char buf[1024];
-		vsnprintf (buf, sizeof (buf), fmt, ap);
-		p->consb.cb_printf (cons, "%s", buf);
+
+		va_list ap_copy;
+		va_copy (ap_copy, ap);
+		int needed = vsnprintf (buf, sizeof(buf), fmt, ap_copy);
+		va_end (ap_copy);
+
+		if (needed >= 0 && (size_t)needed < sizeof(buf)) {
+			p->consb.cb_printf (cons, "%s", buf);
+		} else {
+			// Allocate enough memory (+1 for null terminator)
+			char *heapbuf = (char *)malloc(needed + 1);
+			if (heapbuf) {
+				vsnprintf (heapbuf, needed + 1, fmt, ap);
+				p->consb.cb_printf (cons, "%s", heapbuf);
+				free (heapbuf);
+			} else {
+				// Allocation failed; fallback to truncated version
+				p->consb.cb_printf (cons, "%s", buf);
+			}
+		}
 #if 0
 	} else if (p && p->cb_printf) {
 		char buf[1024];
-		vsnprintf(buf, sizeof (buf), fmt, ap);
-		r_print_printf (p, "%s", buf);
+		vsnprintf(buf, sizeof(buf), fmt, ap);
+		r_print_printf(p, "%s", buf);
 #endif
 	} else {
 		vprintf (fmt, ap);
