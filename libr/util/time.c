@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2024 - pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2007-2025 - pancake, thestr4ng3r */
 
 #include <r_util.h>
 #include <r_util/r_print.h>
@@ -122,7 +122,7 @@ R_API int r_print_date_dos(RPrint *p, const ut8 *buf, int len) {
 	if (!s) {
 		return 0;
 	}
-	p->cb_printf ("%s\n", s);
+	r_print_printf (p, "%s\n", s);
 	free (s);
 	return 4;
 }
@@ -146,7 +146,7 @@ R_API int r_print_date_hfs(RPrint *p, const ut8 *buf, int len) {
 		if (p->datefmt[0]) {
 			t += p->datezone * 60 * 60;
 			t += hfs_unix_delta;
-			p->cb_printf ("%s\n", r_time_secs_tostring (t));
+			r_print_printf (p, "%s\n", r_time_secs_tostring (t));
 			ret = sizeof (time_t);
 		}
 	}
@@ -176,7 +176,7 @@ R_API int r_print_date_unix(RPrint *p, const ut8 *buf, int len) {
 			t += p->datezone * 60 * 60;
 			char *datestr = r_time_secs_tostring (t);
 			if (datestr) {
-				p->cb_printf ("%s\n", datestr);
+				r_print_printf (p, "%s\n", datestr);
 				free (datestr);
 			}
 			ret = sizeof (time_t);
@@ -197,7 +197,7 @@ R_API int r_print_date_w32(RPrint *p, const ut8 *buf, int len) {
 		l = (l > L ? l-L : 0); // isValidUnixTime?
 		time_t t = (time_t) l; // TODO limit above!
 		if (p->datefmt[0]) {
-			p->cb_printf ("%s\n", r_time_secs_tostring (t));
+			r_print_printf (p, "%s\n", r_time_secs_tostring (t));
 			ret = sizeof (time_t);
 		}
 	}

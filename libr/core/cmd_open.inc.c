@@ -494,10 +494,10 @@ static void cmd_open_bin(RCore *core, const char *input) {
 }
 
 // TODO: discuss the output format
-static void map_list(RCore *core, int mode, RPrint *print, int fd) {
+static void map_list(RCore *core, int mode, RPrint *p, int fd) {
 	RIO *io = core->io;
 	ut64 off = core->addr;
-	R_RETURN_IF_FAIL (io && print && print->cb_printf);
+	R_RETURN_IF_FAIL (io && p);
 	PJ *pj = NULL;
 	if (mode == 'j') {
 		pj = r_core_pj_new (core);
@@ -524,9 +524,9 @@ static void map_list(RCore *core, int mode, RPrint *print, int fd) {
 		switch (mode) {
 		case 'q':
 			if (fd == -2) {
-				print->cb_printf ("0x%08"PFMT64x"\n", r_io_map_begin (map));
+				r_print_printf (p, "0x%08"PFMT64x"\n", r_io_map_begin (map));
 			} else {
-				print->cb_printf ("%d %d\n", map->fd, map->id);
+				r_print_printf (p, "%d %d\n", map->fd, map->id);
 			}
 			break;
 		case 'j':
@@ -546,7 +546,7 @@ static void map_list(RCore *core, int mode, RPrint *print, int fd) {
 		case 'r': {
 			if (fd == -3) {
 				char *name = map->name? strdup (map->name): r_str_newf ("fd%d", map->fd);
-				print->cb_printf ("f iomap.%s=0x%"PFMT64x"\n",
+				r_print_printf (p, "f iomap.%s=0x%"PFMT64x"\n",
 						name, r_io_map_begin (map));
 				free (name);
 				break;
@@ -563,7 +563,7 @@ static void map_list(RCore *core, int mode, RPrint *print, int fd) {
 			break;
 		}
 		default:
-			print->cb_printf ("%c%2d fd: %i +0x%08"PFMT64x" 0x%08"PFMT64x
+			r_print_printf (p, "%c%2d fd: %i +0x%08"PFMT64x" 0x%08"PFMT64x
 					" - 0x%08"PFMT64x" %s%s%s\n",
 					(check_for_current_map && r_io_map_contain (map, off)) ?
 					'*' : '-', map->id, map->fd, map->delta, r_io_map_begin (map),
@@ -574,12 +574,12 @@ static void map_list(RCore *core, int mode, RPrint *print, int fd) {
 		}
 	}
 	if (om_cmds) {
-		print->cb_printf ("%s", om_cmds);
+		r_print_printf (p, "%s", om_cmds);
 		free (om_cmds);
 	}
 	if (mode == 'j') {
 		pj_end (pj);
-		print->cb_printf ("%s\n", pj_string (pj));
+		r_print_printf (p, "%s\n", pj_string (pj));
 		pj_free (pj);
 	}
 }
@@ -1162,11 +1162,11 @@ static void cmd_open_map(RCore *core, const char *input) {
 				pj_ks (pj, "name", r_str_get (map->name));
 				pj_end (pj);
 
-				core->print->cb_printf ("%s\n", pj_string (pj));
+				r_kons_printf (core->cons, "%s\n", pj_string (pj));
 
 				pj_free (pj);
 			} else {
-				core->print->cb_printf ("%2d fd: %i +0x%08"PFMT64x" 0x%08"PFMT64x
+				r_kons_printf (core->cons, "%2d fd: %i +0x%08"PFMT64x" 0x%08"PFMT64x
 					" - 0x%08"PFMT64x" %s %s\n", map->id, map->fd,
 					map->delta, r_io_map_begin (map), r_io_map_to (map),
 					r_str_rwx_i (map->perm), r_str_get (map->name));
@@ -1503,7 +1503,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 		} else if (input[1] && input[2] == '.') {
 			map = r_io_map_get_at (core->io, core->addr);
 			if (map) {
-				core->print->cb_printf ("%i\n", map->id);
+				r_kons_printf (core->cons, "%i\n", map->id);
 			}
 		} else {
 			if (input[1] && input[2] == 'q') { // "omqq"
@@ -1861,7 +1861,7 @@ static bool desc_list_visual_cb(void *user, void *data, ut32 id) {
 	if (desc->io && desc->io->va && desc->io->maps) {
 		ls_foreach_prev (desc->io->maps, iter, map) {
 			if (map->fd == desc->fd) {
-				p->cb_printf ("  +0x%"PFMT64x" 0x%"PFMT64x
+				r_print_printf (p, "  +0x%"PFMT64x" 0x%"PFMT64x
 					" - 0x%"PFMT64x" : %s : %s : %s\n", map->delta,
 					map->from, map->to, r_str_rwx_i (map->flags), "",
 					r_str_get (map));
@@ -1875,14 +1875,14 @@ static bool desc_list_visual_cb(void *user, void *data, ut32 id) {
 static bool desc_list_quiet2_cb(void *user, void *data, ut32 id) {
 	RPrint *p = (RPrint *)user;
 	RIODesc *desc = (RIODesc *)data;
-	p->cb_printf ("%d\n", desc->fd);
+	r_print_printf (p, "%d\n", desc->fd);
 	return false;
 }
 
 static bool desc_list_quiet_cb(void *user, void *data, ut32 id) {
 	RPrint *p = (RPrint *)user;
 	RIODesc *desc = (RIODesc *)data;
-	p->cb_printf ("%d\n", desc->fd);
+	r_print_printf (p, "%d\n", desc->fd);
 	return true;
 }
 
@@ -1892,7 +1892,7 @@ static bool desc_list_cmds_cb2(void *user, void *data, ut32 id) {
 	RIODesc *desc = (RIODesc*)data;
 	char *name = strdup (desc->name);
 	r_name_filter (name, -1);
-	p->cb_printf ("f fd.%s=%d\n", name, desc->fd);
+	r_print_printf (p, "f fd.%s=%d\n", name, desc->fd);
 	free (name);
 	return true;
 }
@@ -1905,14 +1905,14 @@ static bool desc_list_cmds_cb(void *user, void *data, ut32 id) {
 	if (bf) {
 		if (r_config_get_b (core->config, "prj.files") && *r_config_get (core->config, "prj.name")) {
 			const char *buri = strstr (desc->uri, "://")? desc->uri: r_file_basename (desc->uri);
-			p->cb_printf ("pushd %s/%s\n", r_config_get (core->config, "dir.projects"), r_config_get (core->config, "prj.name"));
-			p->cb_printf ("o \"%s\" 0x%08"PFMT64x" %s\n", buri, bf->bo->baddr, r_str_rwx_i (desc->perm));
-			p->cb_printf ("popd\n");
+			r_print_printf (p, "pushd %s/%s\n", r_config_get (core->config, "dir.projects"), r_config_get (core->config, "prj.name"));
+			r_print_printf (p, "o \"%s\" 0x%08"PFMT64x" %s\n", buri, bf->bo->baddr, r_str_rwx_i (desc->perm));
+			r_print_printf (p, "popd\n");
 		} else {
-			p->cb_printf ("o \"%s\" 0x%08"PFMT64x" %s\n", desc->uri, bf->bo->baddr, r_str_rwx_i (desc->perm));
+			r_print_printf (p, "o \"%s\" 0x%08"PFMT64x" %s\n", desc->uri, bf->bo->baddr, r_str_rwx_i (desc->perm));
 		}
 	} else {
-		p->cb_printf ("onnu %s %s\n", desc->uri, r_str_rwx_i (desc->perm));
+		r_print_printf (p, "onnu %s %s\n", desc->uri, r_str_rwx_i (desc->perm));
 	}
 	if (strstr (desc->uri, "null://")) {
 		// null descs dont want to be mapped
@@ -1948,7 +1948,7 @@ static bool desc_list_cmds_cb(void *user, void *data, ut32 id) {
 			ut64 vaddr = map->itv.addr + map->delta;
 			ut64 vsize = map->itv.size;
 			if (vsize > 0) {
-				p->cb_printf ("om $d 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %s\n",
+				r_print_printf (p, "om $d 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %s\n",
 						vaddr, vsize, paddr, r_str_rwx_i (map->perm), r_str_get (map->name));
 			}
 		}
@@ -1958,7 +1958,7 @@ static bool desc_list_cmds_cb(void *user, void *data, ut32 id) {
 static bool desc_list_cb(void *user, void *data, ut32 id) {
 	RPrint *p = (RPrint *)user;
 	RIODesc *desc = (RIODesc *)data;
-	p->cb_printf ("%2d %c %s 0x%08"PFMT64x" %s\n", desc->fd,
+	r_print_printf (p, "%2d %c %s 0x%08"PFMT64x" %s\n", desc->fd,
 			(desc->io && (desc->io->desc == desc)) ? '*' : '-',
 			r_str_rwx_i (desc->perm), r_io_desc_size (desc), desc->uri);
 	return true;
@@ -2514,7 +2514,7 @@ static int cmd_open(void *data, const char *input) {
 		pj_a (pj);
 		r_id_storage_foreach (&core->io->files, desc_list_json_cb, pj);
 		pj_end (pj);
-		core->print->cb_printf ("%s\n", pj_string (pj));
+		r_kons_printf (core->cons, "%s\n", pj_string (pj));
 		pj_free (pj);
 		break;
 	case 'L': // "oL"

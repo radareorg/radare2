@@ -878,7 +878,7 @@ static void cmd_write_pcache(RCore *core, const char *input) {
 	RList *caches;
 	int fd;
 	bool rad = false;
-	if (core && core->io && core->io->p_cache && core->print && core->print->cb_printf) {
+	if (core && core->io && core->io->p_cache && core->print) {
 		switch (input[0]) {
 		case 'i' :
 			if (input[1]) {
@@ -891,7 +891,7 @@ static void cmd_write_pcache(RCore *core, const char *input) {
 			break;
 		case '*':
 			rad = true;
-		case ' ':	//fall-o-through
+		case ' ': // fall-o-through
 		case '\0':
 			if (input[0] && input[1]) {
 				fd = (int)r_num_math (core->num, input + 1);
