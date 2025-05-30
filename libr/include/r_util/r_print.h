@@ -180,6 +180,7 @@ R_API void r_print_set_is_interrupted_cb(RPrintIsInterruptedCallback cb);
 
 /* ... */
 R_API char *r_print_hexpair(RPrint *p, const char *str, int idx);
+R_API void r_print_printf(RPrint *p, const char *fmt, ...);
 R_API void r_print_hex_from_bin(RPrint *p, char *bin_str);
 R_API void r_print_bin_from_str(RPrint *p, char *str);
 R_API RPrint *r_print_new(void);
