@@ -330,7 +330,7 @@ jobs:
 
   # Windows
   w32-meson:
-    runs-on: windows-2019
+    runs-on: windows-2022
     steps:
     - name: Win configure Pagefile
       uses: al-cheb/configure-pagefile-action@v1.4
@@ -371,7 +371,7 @@ jobs:
         path: |
           radare2-${{ steps.r2v.outputs.branch }}-w32.zip
 #          radare2-win-installer\Output\radare2.exe
-  w64-static-2022:
+  w64-static:
     runs-on: windows-2022
     steps:
     - name: Win configure Pagefile
@@ -416,55 +416,6 @@ jobs:
       run: |
         cd prefix\bin
         dir
-        7z a r2blob-${{ steps.r2v.outputs.branch }}-w64-2022.zip r2blob.static.exe
-    - uses: actions/upload-artifact@v4
-      continue-on-error: true
-      with:
-        name: w64-static-2022
-        path: prefix\bin\r2blob-${{ steps.r2v.outputs.branch }}-w64-2022.zip
-
-  w64-static:
-    runs-on: windows-2019
-    steps:
-    - name: Win configure Pagefile
-      uses: al-cheb/configure-pagefile-action@v1.4
-      with:
-          minimum-size: 16GB
-          maximum-size: 16GB
-          disk-root: "C:"
-    - name: Checkout
-      uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
-    - name: Preparing nmake
-      uses: ilammy/msvc-dev-cmd@v1
-      with:
-        arch: x64
-    - name: Install dependencies
-      run: |
-        pip install meson ninja r2pipe wget r2env --break-system-packages
-    - name: Extract r2 version
-      shell: bash
-      run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
-      id: r2v
-    - name: Build with meson + ninja
-      shell: cmd
-      run: |
-        REM preconfigure
-        call configure static
-        call make
-    - name: Test executable
-      continue-on-error: true
-      shell: cmd
-      run: |
-        cd prefix\bin
-        r2blob -v
-    - name: Zipping Executable
-      shell: cmd
-      run: |
-        cd prefix\bin
-        dir
         7z a r2blob-${{ steps.r2v.outputs.branch }}-w64.zip r2blob.static.exe
     - uses: actions/upload-artifact@v4
       continue-on-error: true
@@ -473,7 +424,7 @@ jobs:
         path: prefix\bin\r2blob-${{ steps.r2v.outputs.branch }}-w64.zip
 
   w64-meson:
-    runs-on: windows-2019
+    runs-on: windows-2022
     steps:
     - name: Win configure Pagefile
       uses: al-cheb/configure-pagefile-action@v1.4
