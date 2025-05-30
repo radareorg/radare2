@@ -1425,6 +1425,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			// printf ("%s\n", opt.arg);
 			break;
 		case 'T': // imho `t <=> T`
+			R_LOG_WARN ("Threading support is experimental and known to be crashy");
 			ro.thready = true;
 			// printf ("%s\n", opt.arg);
 			break;
