@@ -1935,17 +1935,32 @@ static int cmd_afv(RCore *core, const char *str) {
 		case 'j':
 			r_cons_println ("{}");
 			break;
-		case 'b':
-			r_core_cmd_help (core, help_msg_afvb);
-			break;
-		case 's':
-			r_core_cmd_help (core, help_msg_afvs);
-			break;
-		case 'r':
-			r_core_cmd_help (core, help_msg_afvr);
+		case 0:
+			R_LOG_ERROR ("No function found in current offset");
 			break;
 		default:
-			R_LOG_ERROR ("No function found in current offset");
+			if (str[1] == '?') {
+				switch (str[0]) {
+				case 'b':
+					r_core_cmd_help (core, help_msg_afvb);
+					break;
+				case 's':
+					r_core_cmd_help (core, help_msg_afvs);
+					break;
+				case 'r':
+					r_core_cmd_help (core, help_msg_afvr);
+					break;
+				default:
+					{
+						char cmd[] = "afvr";
+						cmd[3] = str[0];
+						r_core_cmd_help_contains (core, help_msg_afv, cmd);
+					}
+					break;
+				}
+			} else {
+				R_LOG_ERROR ("No function found in current offset");
+			}
 			break;
 		}
 		return false;
