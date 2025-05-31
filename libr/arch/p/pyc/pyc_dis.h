@@ -8,6 +8,11 @@
 
 #include "opcode.h"
 
+typedef struct {
+	ut8 opcode, have_arg, argsize, extop;
+	ut32 arg;
+} py_simple_op;
+
 typedef enum {
 	TYPE_ASCII = 'a',
 	TYPE_ASCII_INTERNED = 'A',
@@ -72,6 +77,6 @@ typedef struct {
 	st64 end_offset;
 } pyc_code_object;
 
-bool r_pyc_disasm(RAnalOp *opstruct, pyc_code_object *func, RList *interned_table, pyc_opcodes *ops);
+bool r_pyc_disasm(RAnalOp *opstruct, pyc_code_object *func, RList *interned_table, pyc_opcodes *ops, py_simple_op *so);
 
 #endif

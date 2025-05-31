@@ -7,11 +7,10 @@ static const char *cmp_op[CMP_OP_SIZE] = { "<", "<=", "==", "!=", ">", ">=", "in
 
 static char *parse_arg(pyc_opcode_object *op, ut32 oparg, pyc_code_object *cobj, RList *interned_table, RList *opcode_arg_fmt);
 
-bool r_pyc_disasm(RAnalOp *opstruct, pyc_code_object *func, RList *interned_table, pyc_opcodes *ops) {
-	ut32 extended_arg = 0, i = 0, oparg;
+bool r_pyc_disasm(RAnalOp *opstruct, pyc_code_object *func, RList *interned_table, pyc_opcodes *ops, py_simple_op *so) {
 	const ut8 *code = opstruct->bytes;
-	ut8 op = code[i++];
-	char *name = strdup (ops->opcodes[op].op_name);
+	pyc_opcode_object *op_obj = &ops->opcodes[so->opcode];
+	char *name = strdup (op_obj->op_name);
 	if (!name) {
 		free (name);
 		return false;
@@ -20,34 +19,16 @@ bool r_pyc_disasm(RAnalOp *opstruct, pyc_code_object *func, RList *interned_tabl
 	opstruct->mnemonic = name;
 
 	/* TODO: adding line number and offset */
-	if (op >= ops->have_argument) {
-		if (ops->bits == 16) {
-			oparg = code[i] + code[i + 1] * 256 + extended_arg;
-			i += 2;
-		} else {
-			oparg = code[i] + extended_arg;
-			i += 1;
-		}
-		extended_arg = 0;
-		if (op == ops->extended_arg) {
-			if (ops->bits == 16) {
-				extended_arg = oparg * 65536;
-			} else {
-				extended_arg = oparg << 8;
-			}
-		}
-		char *arg = parse_arg (&ops->opcodes[op], oparg, func, interned_table, ops->opcode_arg_fmt);
+	if (so->opcode >= so->have_arg) {
+		char *arg = parse_arg (op_obj, so->arg, func, interned_table, ops->opcode_arg_fmt);
 		if (arg) {
 			char *nm = r_str_newf ("%s %s", opstruct->mnemonic, arg);
 			free (opstruct->mnemonic);
 			opstruct->mnemonic = nm;
 			free (arg);
 		}
-	} else if (ops->bits == 8) {
-		i += 1;
 	}
-	opstruct->size = i;
-	return i > 0;
+	return true;
 }
 
 static RList *list_from_pycobj(pyc_object *obj) {
