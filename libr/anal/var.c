@@ -137,6 +137,7 @@ static inline bool valid_var_kind(char kind) {
 
 R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind, const char * R_NULLABLE type, int size, bool isarg, const char * R_NONNULL name) {
 	R_RETURN_VAL_IF_FAIL (fcn && name, NULL);
+	R_LOG_DEBUG ("fcn.setvar 0x%llx delta=%d kind=%c type=%s size=%d isarg=%d name=%s", fcn->addr, delta, kind, type, size, isarg, name);
 	RAnalVar *existing = r_anal_function_get_var_byname (fcn, name);
 	if (existing && (existing->kind != kind || existing->delta != delta)) {
 		// var name already exists at a different kind+delta

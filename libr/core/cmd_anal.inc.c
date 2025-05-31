@@ -1496,7 +1496,7 @@ static bool cmd_anal_aaft(RCore *core) {
 	return true;
 }
 
-static void type_cmd(RCore *core, const char *input) {
+static void cmd_aft(RCore *core, const char *input) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, -1);
 	if (!fcn && *input != '?') {
 		R_LOG_WARN ("cant find function here");
@@ -1687,6 +1687,14 @@ static void list_vars(RCore *core, RAnalFunction *fcn, PJ *pj, int type, const c
 		return;
 	}
 	if (type == '*') {
+		r_list_foreach (list, iter, var) {
+			r_cons_printf ("afv%c %d %s %s\n", var->kind, var->delta,
+					var->name, var->type);
+		}
+		r_list_free (list);
+		return;
+	}
+	if (type == 'd') {
 		const char *bp = r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_BP);
 		r_cons_printf ("f-fcnvar*\n");
 		r_list_foreach (list, iter, var) {
@@ -1915,7 +1923,7 @@ static void __cmd_afvf(RCore *core, const char *input) {
 
 }
 
-static int var_cmd(RCore *core, const char *str) {
+static int cmd_afv(RCore *core, const char *str) {
 	int delta, type = *str, res = true;
 	RAnalVar *v1;
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, -1);
@@ -1927,11 +1935,29 @@ static int var_cmd(RCore *core, const char *str) {
 		case 'j':
 			r_cons_println ("{}");
 			break;
+		case 0:
+			R_LOG_ERROR ("No function found in current offset");
+			break;
 		default:
 			if (str[1] == '?') {
-				char cmd[5] = "afvb";
-				cmd[3] = str[0];
-				r_core_cmd_help_match (core, help_msg_afv, cmd);
+				switch (str[0]) {
+				case 'b':
+					r_core_cmd_help (core, help_msg_afvb);
+					break;
+				case 's':
+					r_core_cmd_help (core, help_msg_afvs);
+					break;
+				case 'r':
+					r_core_cmd_help (core, help_msg_afvr);
+					break;
+				default:
+					{
+						char cmd[] = "afvr";
+						cmd[3] = str[0];
+						r_core_cmd_help_contains (core, help_msg_afv, cmd);
+					}
+					break;
+				}
 			} else {
 				R_LOG_ERROR ("No function found in current offset");
 			}
@@ -2086,6 +2112,8 @@ static int var_cmd(RCore *core, const char *str) {
 	case 'd': // "afvd"
 		if (!fcn) {
 			R_LOG_ERROR ("Cannot find function");
+		} else if (str[1] == '*') {
+			list_vars (core, fcn, NULL, 'd', NULL);
 		} else if (str[1]) {
 			p = strchr (ostr, ' ');
 			if (!p) {
@@ -2261,7 +2289,7 @@ static int var_cmd(RCore *core, const char *str) {
 		*name++ = 0;
 		r_str_trim_head (name);
 
-		if (type == 'r') { //registers
+		if (type == 'r') { // registers
 			RRegItem *ri = r_reg_get (core->anal->reg, p, -1);
 			if (!ri) {
 				R_LOG_ERROR ("Register not found");
@@ -6007,10 +6035,10 @@ static int cmd_af(RCore *core, const char *input) {
 		r_core_anal_fmap (core, input + 1);
 		break;
 	case 'v': // "afv"
-		var_cmd (core, input + 2);
+		cmd_afv (core, input + 2);
 		break;
 	case 't': // "aft"
-		type_cmd (core, input + 2);
+		cmd_aft (core, input + 2);
 		break;
 	case 'C': // "afC"
 		if (input[2] == 'c') {
