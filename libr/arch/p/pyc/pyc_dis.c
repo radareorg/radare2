@@ -8,7 +8,6 @@ static const char *cmp_op[CMP_OP_SIZE] = { "<", "<=", "==", "!=", ">", ">=", "in
 static char *parse_arg(pyc_opcode_object *op, ut32 oparg, pyc_code_object *cobj, RList *interned_table, RList *opcode_arg_fmt);
 
 bool r_pyc_disasm(RAnalOp *opstruct, pyc_code_object *func, RList *interned_table, pyc_opcodes *ops, py_simple_op *so) {
-	const ut8 *code = opstruct->bytes;
 	pyc_opcode_object *op_obj = &ops->opcodes[so->opcode];
 	char *name = strdup (op_obj->op_name);
 	if (!name) {
