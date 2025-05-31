@@ -101,76 +101,121 @@ static char *regs(RArchSession *as) {
 	);
 }
 
-static bool pyc_decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
-	const ut64 addr = op->addr;
-	const ut8 *data = op->bytes;
-	const size_t data_len = op->size;
+static inline bool simple_parse_op(RAnalOp *op, size_t *oloc, py_simple_op *so) {
+	size_t loc = *oloc;
+	if (loc + 1 > op->size) {
+		return false;
+	}
 
+	so->opcode = op->bytes[loc++];
+	if (so->opcode >= so->have_arg) {
+		if (loc + so->argsize > op->size) {
+			return false;
+		}
+		so->arg = op->bytes[loc++];
+		if (so->argsize == 2) {
+			so->arg += op->bytes[loc++] << 8;
+		}
+	} else if (so->argsize == 1) {
+		// python > 3.6 opcodes have empty arguments of size 1
+		loc++;
+		if (loc > op->size) {
+			return false;
+		}
+	}
+
+	*oloc = loc;
+	return true;
+}
+
+// Parses instruction with ext if needed. If this returns 0, you should still run simple_parse_op.
+static inline size_t parse_op(RAnalOp *op, py_simple_op *so) {
+	size_t loc = 0;
+	ut32 ext = 0;
+
+	int i, loops = so->argsize == 2? 1: 3;
+	for (i = 0; i < loops; i++) {
+		if (!simple_parse_op (op, &loc, so)) {
+			return 0;
+		}
+
+		// extended op, so we add it's arg to the next arg
+		if (so->opcode == so->extop) {
+			ext += so->arg;
+			ext = ext << (8 * so->argsize);
+		} else {
+			break;
+		}
+	}
+
+	// no extention encoutered, just return op
+	if (i == 0) {
+		return loc;
+	}
+
+	// on the first non-extended opcode, it should have an argument
+	if (so->opcode >= so->have_arg) {
+		so->arg += ext;
+		return loc;
+	};
+
+	// just returned the extended instruction then...
+	loc = 0;
+	return simple_parse_op (op, &loc, so)? loc: 0;
+}
+
+static bool pyc_decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
+	const int pyversion = pyversion_toi (as->config->cpu);
 	RList *pyobj = get_pyc_code_obj (as);
-	pyc_code_object *func = get_func (addr, pyobj);
 	pyc_opcodes *ops = get_pyc_opcodes (as);
+	pyc_code_object *func = get_func (op->addr, pyobj);
 	if (!func || !ops) {
 		return false;
 	}
-	const int pyversion = pyversion_toi (as->config->cpu);
-	bool is_python36 = pyversion == 370; // < 370; // XXX this looks wrong
+
+	py_simple_op so = { 0 };
+	// python <= 3.6 has opcode len 1 or 3 see https://docs.python.org/3/library/dis.html#opcode-HAVE_ARGUMENT
+	so.argsize = pyversion <= 360? 2: 1;
+	so.have_arg = ops->have_argument;
+	so.extop = ops->extended_arg;
+	int size = parse_op (op, &so);
+	pyc_opcode_object *op_obj = &ops->opcodes[so.opcode];
+	if (!size || !op_obj) {
+		return false;
+	}
+	op->size = size;
 
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		RList *interned_table = r_list_get_n (pyobj, 1);
-		r_pyc_disasm (op, func, interned_table, ops);
+		r_pyc_disasm (op, func, interned_table, ops, &so);
 	}
 	ut64 func_base = func->start_offset;
-	ut32 extended_arg = 0, oparg = 0;
-	ut8 op_code = data[0];
 	op->sign = true;
 	op->type = R_ANAL_OP_TYPE_ILL;
-	op->id = op_code;
-
-	pyc_opcode_object *op_obj = &ops->opcodes[op_code];
-	if (!op_obj->op_name) {
-		op->type = R_ANAL_OP_TYPE_ILL;
-		op->size = 1;
-		goto beach;
-	}
-
-	op->size = is_python36? 2: ((op_code >= ops->have_argument)? 3: 1);
-	if (op_code >= ops->have_argument) {
-		// XXX oparg also computed, in contradictory way in
-		// r_pyc_disasm, extended_arg will always be 0
-		if (is_python36) {
-			if (data_len > 1) {
-				oparg = data[1] + extended_arg;
-			}
-		} else {
-			if (data_len > 2) {
-				oparg = data[1] + data[2] * 256 + extended_arg;
-			}
-		}
-	}
+	op->id = so.opcode;
 
 	if (op_obj->type & HASJABS) {
 		op->type = R_ANAL_OP_TYPE_JMP;
-		op->jump = func_base + oparg;
+		op->jump = func_base + so.arg;
 
 		if (op_obj->type & HASCONDITION) {
 			op->type = R_ANAL_OP_TYPE_CJMP;
-			op->fail = addr + ((is_python36)? 2: 3);
+			op->fail = op->addr + size;
 		}
 	} else if (op_obj->type & HASJREL) {
 		op->type = R_ANAL_OP_TYPE_JMP;
-		op->jump = addr + oparg + ((is_python36)? 2: 3);
-		op->fail = addr + ((is_python36)? 2: 3);
+		op->jump = op->addr + so.arg + size;
+		op->fail = op->addr + size;
 
 		if (op_obj->type & HASCONDITION) {
 			op->type = R_ANAL_OP_TYPE_CJMP;
-			// op->fail = addr + ((is_python36)? 2: 3);
+			// op->fail = addr + ((py36_lens)? 2: 3);
 		}
 	} else if (op_obj->type & HASCOMPARE) {
 		op->type = R_ANAL_OP_TYPE_CMP;
 	}
-	anal_pyc_op (op, op_obj, oparg);
-beach:
-	return op->size > 0;
+	anal_pyc_op (op, op_obj, so.arg);
+	return true;
 }
 
 static bool finish(RArchSession *s) {

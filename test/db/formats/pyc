@@ -173,32 +173,50 @@ WARN: Cannot find asm.parser for pyc
 EOF
 RUN
 
-NAME=pyc 37 jumps
+NAME=pyc 37 jumps, extended jumps and extend
 FILE=bins/pyc/py37.pyc
 CMDS=<<EOF
-pdj 1 @0x00000030~{}[0]
+e io.cache = true
+wx 9010 @0x0000002e # make 0x30 extened 0x10
+wx 9010 @0x0000002c
+pdj 1 @0x00000030~{[0].jump}
+pdj 1 @0x0000002e~{[0].jump}
+pdj 1 @0x0000002c~{[0].jump}
+wx 9010 @0x0000003a
+pd2 @0x3a
 EOF
 EXPECT=<<EOF
-[
-  {
-    "offset": 48,
-    "esil": "",
-    "refptr": 0,
-    "fcn_addr": 0,
-    "fcn_last": 0,
-    "size": 2,
-    "opcode": "jump_if_false_or_pop 10",
-    "disasm": "jump_if_false_or_pop 10",
-    "bytes": "6f0a",
-    "family": "cpu",
-    "type": "cjmp",
-    "reloc": false,
-    "type_num": 2147483649,
-    "type2_num": 0,
-    "jump": 52,
-    "fail": 50
-  }
-]
+52
+4148
+1052724
+            0x0000003a      9010           extended_arg 4096
+            0x0000003c      0100           pop_top
+EOF
+EXPECT_ERR=<<EOF
+WARN: Cannot find asm.parser for pyc
+INFO: Fallback to null
+WARN: Cannot find asm.parser for pyc
+EOF
+RUN
+
+NAME=pyc 38 jumps, extended jumps and extend
+FILE=bins/pyc/py38.pyc
+CMDS=<<EOF
+e io.cache = true
+wx 9010 @0x32 # make 0x32 extened 0x10
+wx 9010 @0x30
+pdj 1 @0x34~{[0].jump}
+pdj 1 @0x32~{[0].jump}
+pdj 1 @0x30~{[0].jump}
+wx 9010 @0x46
+pd2 @0x46
+EOF
+EXPECT=<<EOF
+56
+4152
+1052728
+            0x00000046      9010           extended_arg 4096
+            0x00000048      0100           pop_top
 EOF
 EXPECT_ERR=<<EOF
 WARN: Cannot find asm.parser for pyc
