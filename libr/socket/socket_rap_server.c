@@ -109,8 +109,14 @@ R_API bool r_socket_rap_server_continue(RSocketRapServer *s) {
 		}
 		break;
 	case RAP_PACKET_CMD:
+		/* Read and validate command request length */
 		r_socket_read_block (s->fd, &s->buf[1], 4);
 		i = r_read_be32 (&s->buf[1]);
+		if (i < 0 || i > RAP_PACKET_MAX) {
+			R_LOG_ERROR ("rap: invalid cmd request length %d", i);
+			r_socket_close (s->fd);
+			return false;
+		}
 		if (r_socket_read_block (s->fd, &s->buf[5], i) > 0) {
 			ptr = s->cmd (s->user, (const char *)s->buf + 5);
 			i = (ptr)? strlen (ptr) + 1: 0;
