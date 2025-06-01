@@ -3331,32 +3331,41 @@ reaccept:
 				r_socket_flush (c);
 				R_FREE (ptr);
 				break;
-			case RAP_PACKET_READ:
-				r_socket_read_block (c, (ut8*)&buf, 4);
+			case RAP_PACKET_READ: {
+				/* Read requested length and validate */
+				r_socket_read_block (c, (ut8 *)&buf, 4);
 				i = r_read_be32 (buf);
-				ptr = (ut8 *)malloc (i + core->blocksize + 5);
-				if (ptr) {
-					r_core_block_read (core);
-					ptr[0] = RAP_PACKET_READ | RAP_PACKET_REPLY;
-					if (i > RAP_PACKET_MAX) {
-						i = RAP_PACKET_MAX;
-					}
-					if (i > core->blocksize) {
-						r_core_block_size (core, i);
-					}
-					if (i + 128 < core->blocksize) {
-						r_core_block_size (core, i);
-					}
-					r_write_be32 (ptr + 1, i);
-					memcpy (ptr + 5, core->block, i); //core->blocksize);
-					r_socket_write (c, ptr, i + 5);
-					r_socket_flush (c);
-					R_FREE (ptr);
-				} else {
-					R_LOG_ERROR ("Cannot read %d byte(s)", i);
-					r_socket_free (c);
-					// TODO: reply error here
+				if (i < 0) {
+					R_LOG_ERROR ("rap: invalid read length %d", i);
+					r_socket_close (c);
 					goto out_of_function;
+				}
+				if (i > RAP_PACKET_MAX) {
+					i = RAP_PACKET_MAX;
+				}
+				/* Ensure core block buffer is large enough */
+				if (i > core->blocksize) {
+					r_core_block_size (core, i);
+				}
+				r_core_block_read (core);
+				/* Prevent size overflow on allocation */
+				if (SZT_ADD_OVFCHK ((size_t)i, 5)) {
+					R_LOG_ERROR ("rap: size overflow for read length %d", i);
+					r_socket_close (c);
+					goto out_of_function;
+				}
+				ptr = malloc ((size_t)i + 5);
+				if (!ptr) {
+					R_LOG_ERROR ("rap: cannot allocate %zu bytes for read", (size_t)i + 5);
+					r_socket_close (c);
+					goto out_of_function;
+				}
+				ptr[0] = RAP_PACKET_READ | RAP_PACKET_REPLY;
+				r_write_be32 (ptr + 1, i);
+				memcpy (ptr + 5, core->block, i);
+				r_socket_write (c, ptr, (size_t)i + 5);
+				r_socket_flush (c);
+				R_FREE (ptr);
 				}
 				break;
 			case RAP_PACKET_CMD:
@@ -3429,20 +3438,33 @@ reaccept:
 				r_socket_flush (c);
 				free (bufw);
 				free (cmd_output);
-				break;
 				}
-			case RAP_PACKET_WRITE:
+				break;
+			case RAP_PACKET_WRITE: {
+				/* Read write length and validate */
 				r_socket_read_block (c, buf, 4);
 				x = r_read_at_be32 (buf, 0);
-				ptr = malloc (x);
-				r_socket_read_block (c, ptr, x);
-				int ret = r_core_write_at (core, core->addr, ptr, x);
+				if ((int)x < 0 || x > RAP_PACKET_MAX) {
+					R_LOG_ERROR ("rap: invalid write length %llu", (unsigned long long)x);
+					r_socket_close (c);
+					goto out_of_function;
+				}
+				int wlen = (int)x;
+				ptr = malloc (wlen);
+				if (!ptr) {
+					R_LOG_ERROR ("rap: write malloc failed for %d bytes", wlen);
+					r_socket_close (c);
+					goto out_of_function;
+				}
+				r_socket_read_block (c, ptr, wlen);
+				int ret = r_core_write_at (core, core->addr, ptr, wlen);
 				buf[0] = RAP_PACKET_WRITE | RAP_PACKET_REPLY;
 				r_write_be32 (buf + 1, ret);
 				r_socket_write (c, buf, 5);
 				r_socket_flush (c);
 				R_FREE (ptr);
 				break;
+			}
 			case RAP_PACKET_SEEK:
 				r_socket_read_block (c, buf, 9);
 				x = r_read_at_be64 (buf, 1);
