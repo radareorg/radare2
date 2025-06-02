@@ -11904,6 +11904,7 @@ static void cmd_agraph_node(RCore *core, const char *input) {
 			}
 			body = r_str_append (body, "\n");
 			if (n_args > 2) {
+				eprintf ("(%s)(%s)(%s)\n", args[0], args[1], args[2]);
 				RColor kolor = {0};
 				char *akolor = r_cons_pal_parse (core->cons, args[2], &kolor);
 				free (akolor);

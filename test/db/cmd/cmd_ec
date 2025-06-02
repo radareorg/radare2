@@ -315,7 +315,7 @@ NAME=ecHi
 FILE=-
 CMDS=ecHi xxxx
 EXPECT_ERR=<<EOF
-ERROR: Invalid color code
+ERROR: Invalid color code (bgonly xxxx)
 ERROR: Unknown color xxxx
 EOF
 RUN

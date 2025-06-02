@@ -468,7 +468,7 @@ R_API char *r_cons_pal_parse(RCons *cons, const char *str, RColor * R_NULLABLE o
 	}
 	free (fgcolor);
 	if (!ok) {
-		R_LOG_ERROR ("Invalid color code");
+		R_LOG_ERROR ("Invalid color code (%s)", str);
 		return NULL;
 	}
 	return *out ? strdup (out) : strdup ("");

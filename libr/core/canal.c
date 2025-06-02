@@ -1881,10 +1881,10 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 			if (opts & R_CORE_ANAL_GRAPHDIFF) {
 				const char *difftype = bbi->diff? (\
 				bbi->diff->type==R_ANAL_DIFF_TYPE_MATCH? "lightgray":
-				bbi->diff->type==R_ANAL_DIFF_TYPE_UNMATCH? "yellow": "red"): "orange";
+				bbi->diff->type==R_ANAL_DIFF_TYPE_UNMATCH? "yellow": "red"): "";
 				const char *diffname = bbi->diff? (\
 				bbi->diff->type==R_ANAL_DIFF_TYPE_MATCH? "match":
-				bbi->diff->type==R_ANAL_DIFF_TYPE_UNMATCH? "unmatch": "new"): "unk";
+				bbi->diff->type==R_ANAL_DIFF_TYPE_UNMATCH? "unmatch": "new"): "unknown";
 				if (is_keva) {
 					sdb_set (DB, "diff", diffname, 0);
 					sdb_set (DB, "label", str, 0);
@@ -1938,7 +1938,7 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 								return false;
 							}
 							body_b64 = r_str_prepend (body_b64, "base64:");
-							r_kons_printf (core->cons, "agn %s %s %d\n", title, body_b64, bbi->diff->type);
+							r_kons_printf (core->cons, "agn %s %s %s\n", title, body_b64, difftype);
 							free (body_b64);
 							free (title);
 						} else {
@@ -1956,7 +1956,6 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 						if (is_star) {
 							char *title = get_title (bbi->addr);
 							char *body_b64 = r_base64_encode_dyn ((const ut8*)str, -1);
-							int color = (bbi && bbi->diff) ? bbi->diff->type : 0;
 							if (!title  || !body_b64) {
 								free (body_b64);
 								free (title);
@@ -1964,7 +1963,7 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 								return false;
 							}
 							body_b64 = r_str_prepend (body_b64, "base64:");
-							r_kons_printf (core->cons, "agn %s %s %d\n", title, body_b64, color);
+							r_kons_printf (core->cons, "agn %s %s %s\n", title, body_b64, difftype);
 							free (body_b64);
 							free (title);
 						} else {
@@ -2041,31 +2040,36 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 	return nodes;
 }
 
-static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *pj) {
-	const bool is_json = opts & R_CORE_ANAL_JSON;
-	const bool is_keva = opts & R_CORE_ANAL_KEYVALUE;
+typedef struct {
+	int opts;
+	bool is_json;
+	bool is_html;
+	bool is_star;
+	bool is_keva;
+	char *pal_jump;
+	char *pal_fail;
+	char *pal_trfa;
+	char *pal_curr;
+	char *pal_traced;
+	char *pal_box4;
+} GraphOptions;
+
+static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, GraphOptions *go, PJ *pj) {
 	int nodes = 0;
 	Sdb *DB = NULL;
-	RCons *cons = core->cons;
-	char *pal_jump = palColorFor (cons, "graph.true");
-	char *pal_fail = palColorFor (cons, "graph.false");
-	char *pal_trfa = palColorFor (cons, "graph.trufae");
-	char *pal_curr = palColorFor (cons, "graph.current");
-	char *pal_traced = palColorFor (cons, "graph.traced");
-	char *pal_box4 = palColorFor (cons, "graph.box4");
 	if (!fcn || !fcn->bbs) {
 		nodes = -1;
 		goto fin;
 	}
 
-	if (is_keva) {
+	if (go->is_keva) {
 		char ns[64];
 		DB = sdb_ns (core->anal->sdb, "graph", 1);
 		snprintf (ns, sizeof (ns), "fcn.0x%08"PFMT64x, fcn->addr);
 		DB = sdb_ns (DB, ns, 1);
 	}
 
-	if (is_keva) {
+	if (go->is_keva) {
 		char *ename = sdb_encode ((const ut8*)fcn->name, -1);
 		sdb_set (DB, "name", fcn->name, 0);
 		sdb_set (DB, "ename", ename, 0);
@@ -2076,7 +2080,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *
 		}
 		sdb_set (DB, "pos", "0,0", 0); // needs to run layout
 		sdb_set (DB, "type", r_anal_functiontype_tostring (fcn->type), 0);
-	} else if (is_json) {
+	} else if (go->is_json) {
 		// TODO: show vars, refs and xrefs
 		char *fcn_name_escaped = r_str_escape_utf8_for_json (fcn->name, -1);
 		pj_o (pj);
@@ -2092,19 +2096,13 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *
 		pj_k (pj, "blocks");
 		pj_a (pj);
 	}
-	nodes += core_anal_graph_construct_nodes (core, fcn, opts, pj, DB);
-	nodes += core_anal_graph_construct_edges (core, fcn, opts, pj, DB);
-	if (is_json) {
+	nodes += core_anal_graph_construct_nodes (core, fcn, go->opts, pj, DB);
+	nodes += core_anal_graph_construct_edges (core, fcn, go->opts, pj, DB);
+	if (go->is_json) {
 		pj_end (pj);
 		pj_end (pj);
 	}
 fin:
-	free (pal_jump);
-	free (pal_fail);
-	free (pal_trfa);
-	free (pal_curr);
-	free (pal_traced);
-	free (pal_box4);
 	return nodes;
 }
 
@@ -4196,11 +4194,22 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	ut64 from = r_config_get_i (core->config, "graph.from");
 	ut64 to = r_config_get_i (core->config, "graph.to");
 	const char *font = r_config_get (core->config, "graph.font");
-	bool is_html = core->cons->context->is_html;
-	int is_json = opts & R_CORE_ANAL_JSON;
 	int is_json_format_disasm = opts & R_CORE_ANAL_JSON_FORMAT_DISASM;
-	int is_keva = opts & R_CORE_ANAL_KEYVALUE;
-	int is_star = opts & R_CORE_ANAL_STAR;
+
+	GraphOptions go = {0};
+	go.opts = opts;
+	RCons *cons = core->cons;
+	go.is_json = opts & R_CORE_ANAL_JSON;
+	go.is_keva = opts & R_CORE_ANAL_KEYVALUE;
+	go.is_html = core->cons->context->is_html;
+	go.is_star = opts & R_CORE_ANAL_STAR;
+	go.pal_jump = palColorFor (cons, "graph.true");
+	go.pal_fail = palColorFor (cons, "graph.false");
+	go.pal_trfa = palColorFor (cons, "graph.trufae");
+	go.pal_curr = palColorFor (cons, "graph.current");
+	go.pal_traced = palColorFor (cons, "graph.traced");
+	go.pal_box4 = palColorFor (cons, "graph.box4");
+
 	RAnalFunction *fcni;
 	RListIter *iter;
 	int nodes = 0;
@@ -4225,7 +4234,7 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 		r_config_hold (hc, "asm.bytes", NULL);
 		r_config_set_i (core->config, "asm.bytes", 0);
 	}
-	if (!is_html && !is_json && !is_keva && !is_star) {
+	if (!go.is_html && !go.is_json && !go.is_keva && !go.is_star) {
 		const char *gv_edge = r_config_get (core->config, "graph.gv.edge");
 		const char *gv_node = r_config_get (core->config, "graph.gv.node");
 		const char *gv_spline = r_config_get (core->config, "graph.gv.spline");
@@ -4247,7 +4256,7 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 			"\tnode [%s];\n"
 			"\tedge [%s];\n", font, gv_grph, gv_spline, gv_node, gv_edge);
 	}
-	if (is_json) {
+	if (go.is_json) {
 		pj = r_core_pj_new (core);
 		if (!pj) {
 			r_config_hold_restore (hc);
@@ -4265,16 +4274,16 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 					continue;
 				}
 			}
-			nodes += core_anal_graph_nodes (core, fcni, opts, pj);
+			nodes += core_anal_graph_nodes (core, fcni, &go, pj);
 			if (addr != UT64_MAX) {
 				break;
 			}
 		}
 	}
 	if (!nodes) {
-		if (!is_html && !is_json && !is_keva) {
+		if (!go.is_html && !go.is_json && !go.is_keva) {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
-			if (is_star) {
+			if (go.is_star) {
 				char *name = get_title (fcn ? fcn->addr: addr);
 				r_kons_printf (core->cons, "agn %s;", name);
 			} else {
@@ -4282,16 +4291,23 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 			}
 		}
 	}
-	if (!is_keva && !is_html && !is_json && !is_star && !is_json_format_disasm) {
+	if (!go.is_keva && !go.is_html && !go.is_json && !go.is_star && !is_json_format_disasm) {
 		r_kons_printf (core->cons, "}\n");
 	}
-	if (is_json) {
+	if (go.is_json) {
 		pj_end (pj);
 		r_kons_printf (core->cons, "%s\n", pj_string (pj));
 		pj_free (pj);
 	}
 	r_config_hold_restore (hc);
 	r_config_hold_free (hc);
+	// free GraphOptions
+	free (go.pal_jump);
+	free (go.pal_fail);
+	free (go.pal_trfa);
+	free (go.pal_curr);
+	free (go.pal_traced);
+	free (go.pal_box4);
 	return true;
 }
 
