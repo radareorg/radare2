@@ -2493,18 +2493,22 @@ static int cmd_info(void *data, const char *input) {
 		}
 		break;
 	case 's': // "is"
-		if (input[1] == 'e') { // "ise"
+		switch (input[1]) {
+		case 'e': // "ise"
 			r_core_cmdf (core, "ies%s", input + 1);
-			break;
-		}
-		if (input[1] == 'j' && input[2] == '.') { // "isj" "is."
+			return 0;
+		case 'j':
 			mode = R_MODE_JSON;
 			INIT_PJ ();
-		} else if (input[1] == 'q') {
-			if (input[2] == 'q') { // "isq"
+			break;
+		case 'q':
+			if (input[2] == 'q') {
 				mode = R_MODE_SIMPLEST;
 			}
-		} else if (input[1]) {
+		// case ',':
+		case '.':
+			break;
+		default:
 			r_core_return_invalid_command (core, "is", input[1]);
 			break;
 		}
