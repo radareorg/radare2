@@ -10,6 +10,5 @@ ${CORE_TARGET_AGD}: ${CORE_OBJ_AGD}
 	${CC} $(call libname,core_anal) ${CFLAGS} \
 		-o core_agD.${EXT_SO} \
 		$(SHLR)/../subprojects/sdb/src/libsdb.a \
-		-L$(LIBR)/crypto -lr_crypto \
 		${CORE_OBJ_AGD}
 endif

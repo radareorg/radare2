@@ -79,7 +79,7 @@ r_main_static_deps = [
   r_socket_static_dep,
   r_fs_static_dep,
   r_magic_static_dep,
-  r_crypto_static_dep
+  r_muta_static_dep
 ]
   r_main_static = static_library('r_main_static', r_main_sources,
     include_directories: [platform_inc],

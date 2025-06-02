@@ -341,7 +341,7 @@ REPORT
 ;
 
 PKGCFG_DO pkgcfg/r_egg.pc r_egg r_asm r_syscall r_util r_reg r_flag r_cons ;
-PKGCFG_DO pkgcfg/r_io.pc r_io r_util r_socket r_cons r_crypto ;
+PKGCFG_DO pkgcfg/r_io.pc r_io r_util r_socket r_cons r_muta ;
 PKGCFG_DO pkgcfg/r_esil.pc r_esil r_util r_reg ;
 PKGCFG_DO pkgcfg/r_cons.pc r_cons r_util ;
 PKGCFG_DO pkgcfg/r_socket.pc r_socket r_util ;
@@ -357,9 +357,9 @@ PKGCFG_DO pkgcfg/r_util.pc r_util ;
 PKGCFG_DO pkgcfg/r_magic.pc r_magic r_util ;
 PKGCFG_DO pkgcfg/r_search.pc r_search r_util ;
 PKGCFG_DO pkgcfg/r_arch.pc r_arch r_util r_reg r_esil ;
-PKGCFG_DO pkgcfg/r_crypto.pc r_crypto r_util ;
-PKGCFG_DO pkgcfg/r_anal.pc r_anal r_util r_reg r_syscall r_search r_cons r_flag r_crypto r_arch r_esil ;
-PKGCFG_DO pkgcfg/r_asm.pc r_asm r_util r_reg r_syscall r_search r_cons r_flag r_crypto r_arch r_esil ;
+PKGCFG_DO pkgcfg/r_muta.pc r_muta r_util ;
+PKGCFG_DO pkgcfg/r_anal.pc r_anal r_util r_reg r_syscall r_search r_cons r_flag r_muta r_arch r_esil ;
+PKGCFG_DO pkgcfg/r_asm.pc r_asm r_util r_reg r_syscall r_search r_cons r_flag r_muta r_arch r_esil ;
 PKGCFG_DO pkgcfg/r_debug.pc r_debug r_util ;
 
 /* TODO: Add the rest of .pc files here.. add a rule for acr? */

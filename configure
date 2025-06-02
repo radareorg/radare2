@@ -44,8 +44,8 @@ USE_XXHASH=0
 WITH_GPL=1
 WANT_SSL=0
 WANT_SSL_CRYPTO=0
-WANT_V35=0
 WANT_LIBUV=0
+WANT_V35=0
 USE_NEW_ABI=0
 USE_RPATH=0
 [ -z "${USERCC}" ] && USERCC="gcc"
@@ -195,7 +195,8 @@ System types:
   --target=TARGET        configure for building compilers for TARGET [HOST]
 EOF2
 
-printf "\nOptional Features:
+printf "
+Optional Features:
   --disable-debugger     disable native debugger features
   --with-libatomic       force to use libatomic
   --with-sysmagic        force to use system's magic
@@ -222,8 +223,8 @@ printf "\nOptional Features:
   --without-gpl          do not build GPL code (grub, cxx, ... )
   --with-ssl             build with (Open|Boring|..)SSL if possible
   --with-ssl-crypto      build crypto code with libssl
-  --with-v35             build with vector35
   --with-libuv           use libuv if available
+  --with-v35             build with v35 plugin
   --with-new-abi         use the new ABI breaking changes scheduled for the next major release
   --with-rpath           use rpath to build
   --with-compiler        Define compiler to use (see mk/) (USERCC=gcc)
@@ -231,16 +232,20 @@ printf "\nOptional Features:
   --with-libversion      specify different libversion (LIBVERSION=xxx)
   --without-jemalloc     build without jemalloc
   --with-checks-level    value between 0 and 3 to enable different level of assert (see R_CHECKS_LEVEL) (R_CHECKS_LEVEL=2)
-  --disable-debug-stuff  disable the log messages and disable control-c\n"
-printf "\nSome influential environment variables:
+  --disable-debug-stuff  disable the log messages and disable control-c
+"
+printf "
+Some influential environment variables:
   CC          C compiler command
   CFLAGS      C compiler flags
   LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
               nonstandard directory <lib dir>
   CPPFLAGS    C/C++ preprocessor flags, e.g. -I<include dir> if you have
               headers in a nonstandard directory <include dir>
-  CPP         C preprocessor\n"
-printf "\nReport bugs to: pancake <pancake@nopcode.org>"
+  CPP         C preprocessor
+"
+printf "
+Report bugs to: pancake <pancake@nopcode.org>"
 echo ""
 exit 0
 }
@@ -304,7 +309,7 @@ echo "LANGS:       c"
 echo "REQUIRED:    libdl"
 echo "OPTIONAL:    libatomic libmagic libz libzip libxxhash libssl liblibuv>=1.0.0"
 echo "PKGCONFIG:   capstone libsqsh liblz4 openssl libuv"
-echo "FLAGS:       --disable-debugger --with-libatomic --with-sysmagic --disable-threads --disable-loadlibs --enable-threadsafety --without-qjs --without-dylink --without-fork --without-ptrace-wrap --without-gperf --without-capstone --with-libr --with-static-themes --with-capstone-next --with-capstone5 --with-capstone4 --with-syscapstone --without-syscapstone --without-sqsh --with-syslz4 --with-syszip --with-sysxxhash --without-gpl --with-ssl --with-ssl-crypto --with-v35 --with-libuv --with-new-abi --with-rpath --with-compiler=gcc --with-ostype=auto --with-libversion=xxx --without-jemalloc --with-checks-level=2 --disable-debug-stuff"
+echo "FLAGS:       --disable-debugger --with-libatomic --with-sysmagic --disable-threads --disable-loadlibs --enable-threadsafety --without-qjs --without-dylink --without-fork --without-ptrace-wrap --without-gperf --without-capstone --with-libr --with-static-themes --with-capstone-next --with-capstone5 --with-capstone4 --with-syscapstone --without-syscapstone --without-sqsh --with-syslz4 --with-syszip --with-sysxxhash --without-gpl --with-ssl --with-ssl-crypto --with-libuv --with-v35 --with-new-abi --with-rpath --with-compiler=gcc --with-ostype=auto --with-libversion=xxx --without-jemalloc --with-checks-level=2 --disable-debug-stuff"
 	exit 0
 	;;
 --cache-file)
@@ -382,8 +387,8 @@ echo "FLAGS:       --disable-debugger --with-libatomic --with-sysmagic --disable
 "--without-gpl") WITH_GPL="0"; ;;
 "--with-ssl") WANT_SSL="1"; ;;
 "--with-ssl-crypto") WANT_SSL_CRYPTO="1"; ;;
-"--with-v35") WANT_V35="1"; ;;
 "--with-libuv") WANT_LIBUV="1"; ;;
+"--with-v35") WANT_V35="1"; ;;
 "--with-new-abi") USE_NEW_ABI="1"; ;;
 "--with-rpath") USE_RPATH="1"; ;;
 --with-compiler) if [ -z "${value}" ]; then USERCC="gcc"; else USERCC="${value}" ; fi ;;
@@ -409,7 +414,7 @@ parse_options "$1"
 shift
 done
 
-ENVWORDS="MANDIR DESCRIPTION INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR ETCDIR SYSCONFDIR DATADIR DOCDIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_PROGRAM_STRIP INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU VERSION VERSION_MAJOR VERSION_MINOR VERSION_PATCH VERSION_NUMBER PKGCFG_LIBDIR PKGCFG_INCDIR PKGNAME VPATH CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS CPPFLAGS LDFLAGS HAVE_LANG_C DEBUGGER HAVE_LIB_DL DL_LIBS PKGCONFIG R2_BUILDSYSTEM HAVE_PATCH PATCH HAVE_AR AR HAVE_GIT GIT HAVE_GPERF GPERF HAVE_LIB_ATOMIC HAVE_LIB_MAGIC HAVE_LINUX_CAN_H USE_LIB_ATOMIC LIBATOMIC USE_MAGIC USE_LIB_MAGIC LIBMAGIC WANT_THREADS LOADLIBS R_CRITICAL_ENABLED WANT_QJS WANT_DYLINK HAVE_FORK WANT_PTRACE_WRAP WANT_GPERF WANT_CAPSTONE WITH_LIBR WITH_STATIC_THEMES USE_CSNEXT USE_CS5 USE_CS4 WITH_CAPSTONE WITHOUT_SYSCAPSTONE CAPSTONE_CFLAGS CAPSTONE_LDFLAGS HAVE_PKGCFG_CAPSTONE USE_CAPSTONE SQSH_CFLAGS SQSH_LDFLAGS HAVE_PKGCFG_LIBSQSH WITH_SQSH USE_SQSH LZ4_CFLAGS LZ4_LDFLAGS HAVE_PKGCFG_LIBLZ4 WITH_SYSLZ4 USE_SYSLZ4 HAVE_LIB_Z HAVE_LIB_ZIP USE_ZIP USE_LIB_ZIP LIBZIP HAVE_LIB_XXHASH USE_XXHASH USE_LIB_XXHASH LIBXXHASH WITH_GPL HAVE_DECL_ADDR_NO_RANDOMIZE HAVE_DECL___GLIBC__ HAVE_ARC4RANDOM_UNIFORM HAVE_EXPLICIT_BZERO HAVE_EXPLICIT_MEMSET HAVE_CLOCK_NANOSLEEP HAVE___ATOMIC_FETCH_ADD_8 HAVE_SIGACTION HAVE_CLOCK_GETTIME FORCE_LIB_ATOMIC CLOCK_LDFLAGS SUPPORT_GNU99 HAVE_LIB_GMP WANT_SSL WANT_SSL_CRYPTO WANT_V35 HAVE_OPENSSL SSL_CFLAGS SSL_LDFLAGS HAVE_LIB_SSL HAVE_PKGCFG_OPENSSL WANT_LIBUV HAVE_LIBUV_VERSION_1_0_0 LIBUV_CFLAGS LIBUV_LDFLAGS HAVE_PKGCFG_LIBUV HAVE_LIBUV USE_NEW_ABI USE_RPATH USERCC USEROSTYPE LIBVERSION HAVE_JEMALLOC HAVE_PTRACE USE_PTRACE_WRAP R_CHECKS_LEVEL WANT_DEBUGSTUFF"
+ENVWORDS="MANDIR DESCRIPTION INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR ETCDIR SYSCONFDIR DATADIR DOCDIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_PROGRAM_STRIP INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU VERSION VERSION_MAJOR VERSION_MINOR VERSION_PATCH VERSION_NUMBER PKGCFG_LIBDIR PKGCFG_INCDIR PKGNAME VPATH CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS CPPFLAGS LDFLAGS HAVE_LANG_C DEBUGGER HAVE_LIB_DL DL_LIBS PKGCONFIG R2_BUILDSYSTEM HAVE_PATCH PATCH HAVE_AR AR HAVE_GIT GIT HAVE_GPERF GPERF HAVE_LIB_ATOMIC HAVE_LIB_MAGIC HAVE_LINUX_CAN_H USE_LIB_ATOMIC LIBATOMIC USE_MAGIC USE_LIB_MAGIC LIBMAGIC WANT_THREADS LOADLIBS R_CRITICAL_ENABLED WANT_QJS WANT_DYLINK HAVE_FORK WANT_PTRACE_WRAP WANT_GPERF WANT_CAPSTONE WITH_LIBR WITH_STATIC_THEMES USE_CSNEXT USE_CS5 USE_CS4 WITH_CAPSTONE WITHOUT_SYSCAPSTONE CAPSTONE_CFLAGS CAPSTONE_LDFLAGS HAVE_PKGCFG_CAPSTONE USE_CAPSTONE SQSH_CFLAGS SQSH_LDFLAGS HAVE_PKGCFG_LIBSQSH WITH_SQSH USE_SQSH LZ4_CFLAGS LZ4_LDFLAGS HAVE_PKGCFG_LIBLZ4 WITH_SYSLZ4 USE_SYSLZ4 HAVE_LIB_Z HAVE_LIB_ZIP USE_ZIP USE_LIB_ZIP LIBZIP HAVE_LIB_XXHASH USE_XXHASH USE_LIB_XXHASH LIBXXHASH WITH_GPL HAVE_DECL_ADDR_NO_RANDOMIZE HAVE_DECL___GLIBC__ HAVE_ARC4RANDOM_UNIFORM HAVE_EXPLICIT_BZERO HAVE_EXPLICIT_MEMSET HAVE_CLOCK_NANOSLEEP HAVE___ATOMIC_FETCH_ADD_8 HAVE_SIGACTION HAVE_CLOCK_GETTIME FORCE_LIB_ATOMIC CLOCK_LDFLAGS SUPPORT_GNU99 HAVE_LIB_GMP WANT_SSL WANT_SSL_CRYPTO HAVE_OPENSSL SSL_CFLAGS SSL_LDFLAGS HAVE_LIB_SSL HAVE_PKGCFG_OPENSSL WANT_LIBUV HAVE_LIBUV_VERSION_1_0_0 LIBUV_CFLAGS LIBUV_LDFLAGS HAVE_PKGCFG_LIBUV HAVE_LIBUV WANT_V35 USE_NEW_ABI USE_RPATH USERCC USEROSTYPE LIBVERSION HAVE_JEMALLOC HAVE_PTRACE USE_PTRACE_WRAP R_CHECKS_LEVEL WANT_DEBUGSTUFF"
 
 create_environ
 
@@ -980,7 +985,7 @@ pcgen() {
 }
 
 pcgen pkgcfg/r_egg.pc r_egg r_asm r_syscall r_util r_reg r_flag r_cons
-pcgen pkgcfg/r_io.pc r_io r_util r_socket r_cons r_crypto
+pcgen pkgcfg/r_io.pc r_io r_util r_socket r_cons r_muta
 pcgen pkgcfg/r_esil.pc r_esil r_util r_reg
 pcgen pkgcfg/r_cons.pc r_cons r_util
 pcgen pkgcfg/r_socket.pc r_socket r_util
@@ -996,9 +1001,9 @@ pcgen pkgcfg/r_util.pc r_util
 pcgen pkgcfg/r_magic.pc r_magic r_util
 pcgen pkgcfg/r_search.pc r_search r_util
 pcgen pkgcfg/r_arch.pc r_arch r_util r_reg r_esil
-pcgen pkgcfg/r_crypto.pc r_crypto r_util
-pcgen pkgcfg/r_anal.pc r_anal r_util r_reg r_syscall r_search r_cons r_flag r_crypto r_arch r_esil
-pcgen pkgcfg/r_asm.pc r_asm r_util r_reg r_syscall r_search r_cons r_flag r_crypto r_arch r_esil
+pcgen pkgcfg/r_muta.pc r_muta r_util
+pcgen pkgcfg/r_anal.pc r_anal r_util r_reg r_syscall r_search r_cons r_flag r_muta r_arch r_esil
+pcgen pkgcfg/r_asm.pc r_asm r_util r_reg r_syscall r_search r_cons r_flag r_muta r_arch r_esil
 pcgen pkgcfg/r_debug.pc r_debug r_util
 SEDFLAGS=" -e '"
 COUNT=0

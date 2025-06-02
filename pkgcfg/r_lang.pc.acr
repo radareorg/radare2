@@ -1,11 +1,11 @@
 prefix=@PREFIX@
 exec_prefix=${prefix}
-libdir=@PKGCFG_LIBDIR@
-includedir=@PKGCFG_INCDIR@
+libdir=@LIBDIR@
+includedir=${prefix}/include
 
 Name: r_lang
 Description: radare foundation libraries
 Version: @VERSION@
-Requires: r_util r_cons
-Libs: -L${libdir} -lr_lang
-Cflags: -I${includedir}/libr
+Requires: r_util r_io r_socket r_cons r_reg r_asm r_muta r_arch r_esil r_search r_syscall r_flag
+Libs: -L${libdir} -lr_lang  
+Cflags: -I${includedir}/libr 

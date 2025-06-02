@@ -10,6 +10,6 @@ ${CORE_TARGET_A2F}: ${CORE_OBJ_A2F}
 	${CC} $(call libname,core_anal) ${CFLAGS} \
 		-o core_a2f.${EXT_SO} \
 		$(SHLR)/../subprojects/sdb/src/libsdb.a \
-		-L$(LIBR)/crypto -lr_crypto \
+		-L$(LIBR)/muta -lr_muta \
 		${CORE_OBJ_A2F}
 endif

@@ -259,7 +259,7 @@ pkgconfig_mod.generate(r_arch,
   requires: [
     'r_util',
     'r_esil',
-    'r_crypto',
+    'r_muta',
     'r_reg',
   ],
   description: 'radare foundation libraries'
