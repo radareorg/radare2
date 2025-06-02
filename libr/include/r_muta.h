@@ -149,6 +149,7 @@ R_API ut8 *r_muta_session_get_output(RMutaSession *cry, int *size);
 #endif
 
 /* plugin pointers */
+extern RMutaPlugin r_muta_plugin_null;
 extern RMutaPlugin r_muta_plugin_aes;
 extern RMutaPlugin r_muta_plugin_aes_cbc;
 extern RMutaPlugin r_muta_plugin_aes_wrap;
