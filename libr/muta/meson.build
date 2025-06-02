@@ -1,7 +1,7 @@
 r_muta_sources = files(
-  'crypto.c',
+  'muta.c',
   'p/muta_aes.c',
-  'p/muta_aes_algo.c',
+  'p/algo/crypto_aes.c',
   'p/muta_aes_cbc.c',
   'p/muta_aes_wrap.c',
   'p/muta_bech32.c',
@@ -20,8 +20,8 @@ r_muta_sources = files(
   'p/muta_rot.c',
   'p/muta_serpent.c',
   'p/muta_sm4.c',
-  'p/muta_sm4_algo.c',
-  'p/muta_serpent_algo.c',
+  'p/algo/sm4.c',
+  'p/algo/serpent.c',
   'p/muta_xor.c',
 )
 
