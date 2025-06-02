@@ -2506,6 +2506,7 @@ static int cmd_info(void *data, const char *input) {
 				mode = R_MODE_SIMPLEST;
 			}
 		// case ',':
+		case ' ':
 		case '.':
 			break;
 		default:
