@@ -2080,7 +2080,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, GraphOptions *
 		}
 		sdb_set (DB, "pos", "0,0", 0); // needs to run layout
 		sdb_set (DB, "type", r_anal_functiontype_tostring (fcn->type), 0);
-   } else if (go->is_json) {
+	} else if (go->is_json) {
 		// TODO: show vars, refs and xrefs
 		char *fcn_name_escaped = r_str_escape_utf8_for_json (fcn->name, -1);
 		pj_o (pj);
@@ -2096,9 +2096,9 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, GraphOptions *
 		pj_k (pj, "blocks");
 		pj_a (pj);
 	}
-   nodes += core_anal_graph_construct_nodes (core, fcn, go->opts, pj, DB);
-   nodes += core_anal_graph_construct_edges (core, fcn, go->opts, pj, DB);
-   if (go->is_json) {
+	nodes += core_anal_graph_construct_nodes (core, fcn, go->opts, pj, DB);
+	nodes += core_anal_graph_construct_edges (core, fcn, go->opts, pj, DB);
+	if (go->is_json) {
 		pj_end (pj);
 		pj_end (pj);
 	}
@@ -4280,10 +4280,10 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 			}
 		}
 	}
-       if (!nodes) {
-           if (!go.is_html && !go.is_json && !go.is_keva) {
+	if (!nodes) {
+		if (!go.is_html && !go.is_json && !go.is_keva) {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
-               if (go.is_star) {
+			if (go.is_star) {
 				char *name = get_title (fcn ? fcn->addr: addr);
 				r_kons_printf (core->cons, "agn %s;", name);
 			} else {
@@ -4291,10 +4291,10 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 			}
 		}
 	}
-       if (!go.is_keva && !go.is_html && !go.is_json && !go.is_star && !is_json_format_disasm) {
+	if (!go.is_keva && !go.is_html && !go.is_json && !go.is_star && !is_json_format_disasm) {
 		r_kons_printf (core->cons, "}\n");
 	}
-       if (go.is_json) {
+	if (go.is_json) {
 		pj_end (pj);
 		r_kons_printf (core->cons, "%s\n", pj_string (pj));
 		pj_free (pj);
