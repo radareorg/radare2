@@ -1,9 +1,0 @@
-OBJ_BLOWFISH=crypto_blowfish.o
-
-STATIC_OBJ+=${OBJ_BLOWFISH}
-TARGET_BLOWFISH=crypto_blowfish.${EXT_SO}
-
-ALL_TARGETS+=${TARGET_BLOWFISH}
-
-${TARGET_BLOWFISH}: ${OBJ_BLOWFISH}
-	${CC} ${call libname,crypto_blowfish} ${LDFLAGS} ${CFLAGS} -o ${TARGET_BLOWFISH} ${OBJ_BLOWFISH}

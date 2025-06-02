@@ -57,7 +57,7 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 		{ "r_cons", r_cons_version },
 		{ "r_flag", r_flag_version },
 		{ "r_core", r_core_version },
-		{ "r_crypto", r_crypto_version },
+		{ "r_muta", r_muta_version },
 		{ "r_bp", r_bp_version },
 		{ "r_debug", r_debug_version },
 		{ "r_main", r_main_version },

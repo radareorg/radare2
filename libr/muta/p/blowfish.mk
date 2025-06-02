@@ -1,0 +1,9 @@
+OBJ_BLOWFISH=muta_blowfish.o
+
+STATIC_OBJ+=${OBJ_BLOWFISH}
+TARGET_BLOWFISH=muta_blowfish.${EXT_SO}
+
+ALL_TARGETS+=${TARGET_BLOWFISH}
+
+${TARGET_BLOWFISH}: ${OBJ_BLOWFISH}
+	${CC} ${call libname,muta_blowfish} ${LDFLAGS} ${CFLAGS} -o ${TARGET_BLOWFISH} ${OBJ_BLOWFISH}

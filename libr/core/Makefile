@@ -4,7 +4,7 @@ NAME=r_core
 
 R2DEPS=r_config r_cons r_io r_util r_flag r_asm r_arch r_esil
 R2DEPS+=r_debug r_bin r_lang r_io r_anal r_bp r_egg
-R2DEPS+=r_reg r_search r_syscall r_socket r_fs r_magic r_crypto
+R2DEPS+=r_reg r_search r_syscall r_socket r_fs r_magic r_muta
 
 OBJS=core.o cmd.o cfile.o cconfig.o visual.o cio.o yank.o libs.o agraph.o xpatch.o
 OBJS+=fortune.o vasm.o patch.o cbin.o corelog.o rtr.o cmd_api.o cundo.o cproject.o

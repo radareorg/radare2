@@ -10,7 +10,7 @@ executable('rapatch2', 'rapatch2.c',
     r_bin_dep,
     r_anal_dep,
     r_asm_dep,
-    r_crypto_dep,
+    r_muta_dep,
     r_config_dep
   ],
   install: true,

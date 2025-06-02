@@ -2,7 +2,7 @@ include ../config.mk
 
 NAME=r_debug
 R2DEPS=r_reg r_anal r_bp r_io r_cons r_syscall r_arch
-R2DEPS+=r_socket r_flag r_util r_egg r_crypto r_esil r_bin
+R2DEPS+=r_socket r_flag r_util r_egg r_muta r_esil r_bin
 CFLAGS+=-DR2_PLUGIN_INCORE
 
 include ../util/deps.mk

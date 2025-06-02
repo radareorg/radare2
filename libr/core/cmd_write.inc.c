@@ -263,9 +263,9 @@ static void write_encrypted_block(RCore *core, const char *algo, const char *key
 		free (binkey);
 		return;
 	}
-	RCryptoJob *cj = r_crypto_use (core->crypto, algo);
+	RMutaJob *cj = r_muta_use (core->muta, algo);
 	if (cj && cj->h->type == R_CRYPTO_TYPE_ENCRYPT) {
-		if (r_crypto_job_set_key (cj, binkey, keylen, 0, direction)) {
+		if (r_muta_job_set_key (cj, binkey, keylen, 0, direction)) {
 			if (iv) {
 				ut8 *biniv = malloc (strlen (iv) + 1);
 				int ivlen = r_hex_str2bin (iv, biniv);
@@ -273,15 +273,15 @@ static void write_encrypted_block(RCore *core, const char *algo, const char *key
 					ivlen = strlen(iv);
 					strcpy ((char *)biniv, iv);
 				}
-				if (!r_crypto_job_set_iv (cj, biniv, ivlen)) {
+				if (!r_muta_job_set_iv (cj, biniv, ivlen)) {
 					R_LOG_ERROR ("Invalid IV");
 					return;
 				}
 			}
-			r_crypto_job_update (cj, (const ut8*)core->block, core->blocksize);
+			r_muta_job_update (cj, (const ut8*)core->block, core->blocksize);
 
 			int result_size = 0;
-			ut8 *result = r_crypto_job_get_output (cj, &result_size);
+			ut8 *result = r_muta_job_get_output (cj, &result_size);
 			if (result) {
 				if (!r_core_write_at (core, core->addr, result, result_size)) {
 					R_LOG_ERROR ("write failed at 0x%08"PFMT64x, core->addr);
@@ -316,12 +316,12 @@ static void write_block_signature(RCore *core, const char *algo, const char *key
 		free (binkey);
 		return;
 	}
-	RCryptoJob *cj = r_crypto_use (core->crypto, algo);
+	RMutaJob *cj = r_muta_use (core->muta, algo);
 	if (cj && cj->h->type == R_CRYPTO_TYPE_SIGNATURE) {
-		if (r_crypto_job_set_key (cj, binkey, keylen, 0, R_CRYPTO_DIR_ENCRYPT)) {
-			r_crypto_job_update (cj, (const ut8 *)core->block, core->blocksize);
+		if (r_muta_job_set_key (cj, binkey, keylen, 0, R_CRYPTO_DIR_ENCRYPT)) {
+			r_muta_job_update (cj, (const ut8 *)core->block, core->blocksize);
 			int result_size = 0;
-			ut8 *result = r_crypto_job_get_output (cj, &result_size);
+			ut8 *result = r_muta_job_get_output (cj, &result_size);
 			if (result) {
 				if (!r_core_write_at (core, core->addr, result, result_size)) {
 					R_LOG_ERROR ("write failed at 0x%08" PFMT64x, core->addr);
@@ -433,7 +433,7 @@ static int cmd_wo(void *data, const char *input) {
 			if (R_STR_ISNOTEMPTY (algo) && key) {
 				write_encrypted_block (core, algo, key, direction, iv);
 			} else {
-				r_crypto_list (core->crypto, r_cons_printf, 0, R_CRYPTO_TYPE_ENCRYPT);
+				r_muta_list (core->muta, r_cons_printf, 0, R_CRYPTO_TYPE_ENCRYPT);
 				r_core_cmd_help_match_spec (core, help_msg_wo, "wo", input[0]);
 			}
 			free (args);
@@ -454,7 +454,7 @@ static int cmd_wo(void *data, const char *input) {
 			if (R_STR_ISNOTEMPTY (algo) && key) {
 				write_block_signature (core, algo, key);
 			} else {
-				r_crypto_list (core->crypto, r_cons_printf, 0, R_CRYPTO_TYPE_SIGNATURE);
+				r_muta_list (core->muta, r_cons_printf, 0, R_CRYPTO_TYPE_SIGNATURE);
 				r_core_cmd_help_match_spec (core, help_msg_wo, "wo", input[0]);
 			}
 			free (args);

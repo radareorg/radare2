@@ -5,7 +5,8 @@
 #include "dex/dex.h"
 // XXX use rhash/crytpo/trans api instead
 #define r_hash_adler32 __adler32
-#include "../../crypto/hash/adler32.c"
+// TODO rename muta/hash to muta/p/algo
+#include "../../muta/hash/adler32.c"
 
 #define DBG_END_SEQUENCE          0x00
 #define DBG_ADVANCE_PC            0x01

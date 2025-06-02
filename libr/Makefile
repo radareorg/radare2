@@ -207,7 +207,7 @@ install-includes:
 	(cd ../subprojects/sdb/include/sdb && for FILE in *.h ; do \
 		${INSTALL_DATA} $$FILE "${DESTDIR}${INCLUDEDIR}/libr/sdb/$$FILE" ; \
 	done)
-	for a in r_util r_crypto r_anal ; do \
+	for a in r_util r_muta r_anal ; do \
 	${INSTALL_DIR} "${DESTDIR}${INCLUDEDIR}/libr/$$a" ; \
 	(cd include/$$a && for FILE in * ; do \
 		${INSTALL_DATA} $$FILE "${DESTDIR}${INCLUDEDIR}/libr/$$a/$$FILE" ; done) ; \

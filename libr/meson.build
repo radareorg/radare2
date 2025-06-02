@@ -11,7 +11,7 @@ bin_xtr_plugins = [ 'xtr_sep64' ]
 io_plugins = [ 'malloc', 'cyclic', 'xattr', 'fd', 'default', 'null', 'rbuf', 'r2pipe' ]
 fs_plugins = [ 'r2', 'posix', 'io', 'zip' ]
 bp_plugins = [ 'null' ]
-crypto_plugins = [ 'xor', 'punycode' ]
+muta_plugins = [ 'xor', 'punycode' ]
 core_plugins = [ 'a2f', 'agD' ]
 egg_plugins = [ 'xor' ]
 debug_plugins = [ 'null', 'io', 'esil', 'rap' ]
@@ -296,7 +296,7 @@ if get_option('plugins') == ''
     'java'
   ]
 
-  crypto_plugins += [
+  muta_plugins += [
     'aes',
     'aes_cbc',
     'aes_wrap',
@@ -442,7 +442,7 @@ include_files = [
   'include/r_config.h',
   'include/r_cons.h',
   'include/r_core.h',
-  'include/r_crypto.h',
+  'include/r_muta.h',
   'include/r_debug.h',
   'include/r_drx.h',
   'include/r_egg.h',
@@ -546,13 +546,13 @@ r_util_files = [
 ]
 install_headers(r_util_files, install_dir: join_paths(r2_incdir, 'r_util'))
 
-r_crypto_files = [
-  'include/r_crypto/r_aes.h',
-#'include/r_crypto/r_des.h',
-  'include/r_crypto/r_ed25519.h',
-  'include/r_crypto/r_sm4.h'
+r_muta_files = [
+  'include/r_muta/r_aes.h',
+#'include/r_muta/r_des.h',
+  'include/r_muta/r_ed25519.h',
+  'include/r_muta/r_sm4.h'
 ]
-install_headers(r_crypto_files, install_dir: join_paths(r2_incdir, 'r_crypto'))
+install_headers(r_muta_files, install_dir: join_paths(r2_incdir, 'r_muta'))
 
 r_anal_files = [
   'include/r_anal/op.h',

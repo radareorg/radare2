@@ -10,7 +10,7 @@ https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 
 #include "./disasm.h"
 #include "./assemble.h"
-#include "../crypto/p/des.inc.c"
+#include "../muta/p/des.inc.c"
 
 typedef struct _cpu_const_tag {
 	const char *const key;

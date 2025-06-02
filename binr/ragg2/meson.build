@@ -10,7 +10,7 @@ executable('ragg2', 'ragg2.c',
     r_fs_dep,
     r_config_dep,
     r_bp_dep,
-    r_crypto_dep
+    r_muta_dep
   ],
   install: true,
   install_rpath: rpath_exe,

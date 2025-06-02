@@ -61,7 +61,7 @@ LINK+=$(LIBR)/search/libr_search.a
 LINK+=$(LIBR)/cons/libr_cons.a
 LINK+=$(LIBR)/lang/libr_lang.a
 LINK+=$(LIBR)/config/libr_config.a
-LINK+=$(LIBR)/crypto/libr_crypto.a
+LINK+=$(LIBR)/muta/libr_muta.a
 LINK+=$(LIBR)/main/libr_main.a
 else ifeq (${COMPILER},wasm)
 LINK+=$(SHLR)/libr_shlr.a

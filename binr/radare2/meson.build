@@ -21,7 +21,7 @@ radare2_exe = executable('radare2', 'radare2.c',
     r_anal_dep,
     r_egg_dep,
     r_search_dep,
-    r_crypto_dep,
+    r_muta_dep,
     r_magic_dep
   ],
   install: true,
