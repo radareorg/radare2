@@ -76,7 +76,7 @@ static RCoreHelpMessage help_msg_iS = {
 	"iS,", "[table-query]", "list sections in table using given expression",
 	"iS=", "", "show ascii-art color bars with the section ranges",
 	"iSS", "[,tablequery]", "list memory segments (maps with om)",
-	"iSm", "", "list sections with the symbols contained (iSmc for count only)",
+	"iSm", "[cj]", "list sections with the symbols contained (iSmc for count only, iSmj for json)",
 	NULL
 };
 
@@ -1489,6 +1489,7 @@ static bool inrange(RBinSection *sec, RBinSymbol *sym) {
 }
 
 static void cmd_iSm(RCore *core, const char *input, PJ **_pj, int mode, const bool va, const bool is_array) {
+	// TODO: Add iSm= to show with progressbars
 	RListIter *iter, *iter2;
 	RBinSection *sec;
 	RBinSymbol *sym;
@@ -1503,25 +1504,50 @@ static void cmd_iSm(RCore *core, const char *input, PJ **_pj, int mode, const bo
 		return;
 	}
 
+	PJ *pj = *_pj;
 	RList *symbols = r_bin_file_get_symbols (bf);
 	r_list_foreach (bo->sections, iter, sec) {
-		char *hsz = r_num_units (NULL, 0, sec->vsize);
-		r_kons_printf (core->cons, "0x%08"PFMT64x"-0x%08"PFMT64x" %8s %s",
-				sec->vaddr, sec->vaddr + sec->vsize, hsz, sec->name);
-		free (hsz);
-		if (countmode) {
-			int count = 0;
+		int vsize = sec->vsize;
+		if (vsize < 1) {
+			continue;
+		}
+		if (pj) {
+			pj_o (pj);
+			pj_ks (pj, "section", sec->name);
+			pj_ka (pj, "symbols");
 			r_list_foreach (symbols, iter2, sym) {
 				if (inrange (sec, sym)) {
-					count++;
+					pj_o (pj);
+					pj_ks (pj, "name", r_bin_name_tostring (sym->name));
+					if (sym->size > 0) {
+						pj_ki (pj, "size", sym->size);
+						pj_kd (pj, "percent", (sym->size * 100 ) / vsize);
+					}
+					pj_end (pj);
 				}
 			}
-			r_kons_printf (core->cons, " = %d symbols\n", count);
+			pj_end (*_pj);
+			pj_end (*_pj);
 		} else {
-			r_kons_newline (core->cons);
-			r_list_foreach (symbols, iter2, sym) {
-				if (inrange (sec, sym)) {
-					r_kons_printf (core->cons, "    - %s\n", r_bin_name_tostring (sym->name));
+			char *hsz = r_num_units (NULL, 0, sec->vsize);
+			r_kons_printf (core->cons, "0x%08"PFMT64x"-0x%08"PFMT64x" %8s %s",
+					sec->vaddr, sec->vaddr + sec->vsize, hsz, sec->name);
+			free (hsz);
+			if (countmode) {
+				int count = 0;
+				r_list_foreach (symbols, iter2, sym) {
+					if (inrange (sec, sym)) {
+						count++;
+					}
+				}
+				r_kons_printf (core->cons, " = %d symbols\n", count);
+			} else {
+				r_kons_newline (core->cons);
+				r_list_foreach (symbols, iter2, sym) {
+					if (inrange (sec, sym)) {
+						r_kons_printf (core->cons, "    - %8d %s\n",
+								sym->size, r_bin_name_tostring (sym->name));
+					}
 				}
 			}
 		}
