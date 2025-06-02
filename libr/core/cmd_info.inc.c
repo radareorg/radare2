@@ -76,6 +76,7 @@ static RCoreHelpMessage help_msg_iS = {
 	"iS,", "[table-query]", "list sections in table using given expression",
 	"iS=", "", "show ascii-art color bars with the section ranges",
 	"iSS", "[,tablequery]", "list memory segments (maps with om)",
+	"iSm", "[cj]", "list sections with the symbols contained (iSmc for count only, iSmj for json)",
 	NULL
 };
 
@@ -1466,14 +1467,89 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 			RBinFile *cur = core->bin->cur;
 			r_list_foreach (bfiles, iter, bf) {
 				core->bin->cur = bf;
-				RBinObject *obj = r_bin_cur_object (core->bin);
+				RBinObject *bo = r_bin_cur_object (core->bin);
 				RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL,
-						(obj && obj->strings)? r_list_length (obj->strings): 0);
+						(bo && bo->strings)? r_list_length (bo->strings): 0);
 			}
 			core->bin->cur = cur;
 			r_list_free (bfiles);
 		} else {
 			//
+		}
+	}
+}
+
+static bool inrange(RBinSection *sec, RBinSymbol *sym) {
+	if (sym->vaddr >= sec->vaddr) {
+		if (sym->vaddr < sec->vaddr + sec->vsize) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static void cmd_iSm(RCore *core, const char *input, PJ **_pj, int mode, const bool va, const bool is_array) {
+	// TODO: Add iSm= to show with progressbars
+	RListIter *iter, *iter2;
+	RBinSection *sec;
+	RBinSymbol *sym;
+	bool countmode = (input[2] == 'c');
+
+	RBinFile *bf = core->bin->cur;
+	if (!bf) {
+		return;
+	}
+	RBinObject *bo = bf->bo;
+	if (!bo) {
+		return;
+	}
+
+	PJ *pj = *_pj;
+	RList *symbols = r_bin_file_get_symbols (bf);
+	r_list_foreach (bo->sections, iter, sec) {
+		int vsize = sec->vsize;
+		if (vsize < 1) {
+			continue;
+		}
+		if (pj) {
+			pj_o (pj);
+			pj_ks (pj, "section", sec->name);
+			pj_ka (pj, "symbols");
+			r_list_foreach (symbols, iter2, sym) {
+				if (inrange (sec, sym)) {
+					pj_o (pj);
+					pj_ks (pj, "name", r_bin_name_tostring (sym->name));
+					if (sym->size > 0) {
+						pj_ki (pj, "size", sym->size);
+						pj_kd (pj, "percent", (sym->size * 100 ) / vsize);
+					}
+					pj_end (pj);
+				}
+			}
+			pj_end (*_pj);
+			pj_end (*_pj);
+		} else {
+			char *hsz = r_num_units (NULL, 0, sec->vsize);
+			r_kons_printf (core->cons, "0x%08"PFMT64x"-0x%08"PFMT64x" %8s %s",
+					sec->vaddr, sec->vaddr + sec->vsize, hsz, sec->name);
+			free (hsz);
+			if (countmode) {
+				int count = 0;
+				r_list_foreach (symbols, iter2, sym) {
+					if (inrange (sec, sym)) {
+						count++;
+					}
+				}
+				r_kons_printf (core->cons, " = %d symbols\n", count);
+			} else {
+				r_kons_newline (core->cons);
+				r_list_foreach (symbols, iter2, sym) {
+					if (inrange (sec, sym)) {
+						r_kons_printf (core->cons, "    - %8d %s\n",
+								sym->size, r_bin_name_tostring (sym->name));
+					}
+				}
+			}
 		}
 	}
 }
@@ -1488,6 +1564,8 @@ static void cmd_iS(RCore *core, const char *input, PJ **_pj, int mode, const boo
 	}
 	if (!input[1]) {
 		RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, NULL, 0);
+	} else if (input[1] == 'm') {
+		cmd_iSm (core, input, &pj, mode, va, is_array);
 	} else if (input[1] == 'S' && !input[2]) { // "iSS"
 		RBININFO ("segments", R_CORE_BIN_ACC_SEGMENTS, NULL, 0);
 	} else { // iS/iSS entropy,sha1
@@ -1808,7 +1886,7 @@ static void cmd_is(RCore *core, const char *input, PJ *pj, bool is_array, int mo
 		}
 #endif
 	}
-	input = input + strlen (input) - 1;
+	input += strlen (input) - 1;
 	r_list_free (objs);
 }
 
@@ -2415,15 +2493,26 @@ static int cmd_info(void *data, const char *input) {
 		}
 		break;
 	case 's': // "is"
-		if (input[1] == 'e') { // "ise"
+		switch (input[1]) {
+		case 'e': // "ise"
 			r_core_cmdf (core, "ies%s", input + 1);
-			break;
-		}
-		if (input[1] == 'j' && input[2] == '.') { // "isj" "is."
+			return 0;
+		case 'j':
 			mode = R_MODE_JSON;
 			INIT_PJ ();
-		} else if (input[1] == 'q' && input[2] == 'q') { // "isq"
-			mode = R_MODE_SIMPLEST;
+			break;
+		case 'q':
+			if (input[2] == 'q') {
+				mode = R_MODE_SIMPLEST;
+			}
+		// case ',':
+		case ' ':
+		case 0:
+		case '.':
+			break;
+		default:
+			r_core_return_invalid_command (core, "is", input[1]);
+			break;
 		}
 		cmd_is (core, input, pj, is_array, mode, va);
 		break;
