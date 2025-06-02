@@ -1886,7 +1886,7 @@ static void cmd_is(RCore *core, const char *input, PJ *pj, bool is_array, int mo
 		}
 #endif
 	}
-	input = input + strlen (input) - 1;
+	input += strlen (input) - 1;
 	r_list_free (objs);
 }
 
@@ -2507,6 +2507,7 @@ static int cmd_info(void *data, const char *input) {
 			}
 		// case ',':
 		case ' ':
+		case 0:
 		case '.':
 			break;
 		default:
