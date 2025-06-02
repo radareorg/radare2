@@ -2500,8 +2500,10 @@ static int cmd_info(void *data, const char *input) {
 		if (input[1] == 'j' && input[2] == '.') { // "isj" "is."
 			mode = R_MODE_JSON;
 			INIT_PJ ();
-		} else if (input[1] == 'q' && input[2] == 'q') { // "isq"
-			mode = R_MODE_SIMPLEST;
+		} else if (input[1] == 'q') {
+			if (input[2] == 'q') { // "isq"
+				mode = R_MODE_SIMPLEST;
+			}
 		} else if (input[1]) {
 			r_core_return_invalid_command (core, "is", input[1]);
 			break;
