@@ -297,6 +297,7 @@ if get_option('plugins') == ''
   ]
 
   muta_plugins += [
+    'null',
     'aes',
     'aes_cbc',
     'aes_wrap',
