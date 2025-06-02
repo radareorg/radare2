@@ -14,35 +14,8 @@ extern "C" {
 
 R_LIB_VERSION_HEADER (r_hash);
 
-#if 0
-typedef struct r_hash_plugin_t {
-	RPluginMeta meta;
-	bool support_hmac;
-	void *(*context_new)();
-	void (*context_free)(void *context);
-	int (*digest_size)(void *context);
-	int (*block_size)(void *context);
-	bool (*init)(void *context);
-	bool (*update)(void *context, const ut8 *data, ut64 size);
-	bool (*final)(void *context, ut8 *digest);
-	bool (*small_block)(const ut8 *data, ut64 size, ut8 **digest, int *digest_size);
-} RHashPlugin;
-#endif
-
 // WANT_SSL_CRYPTO
-#if 0
-// XXX breaks the build because openssl code is not portable, just force those plugins to always be native
-#include <openssl/sha.h>
-#include <openssl/md5.h>
-typedef MD5_CTX RHashMD5Context;
-typedef SHA_CTX RHashShaContext;
-typedef SHA256_CTX RSha256Context;
-typedef SHA512_CTX RSha384Context;
-typedef SHA512_CTX RSha512Context;
-#define SHA256_BLOCK_LENGTH SHA256_CBLOCK
-#define SHA384_BLOCK_LENGTH SHA384_CBLOCK
-#define SHA512_BLOCK_LENGTH SHA512_CBLOCK
-#else
+#if 1
 // #define MD5_CTX RHashMD5Context
 
 /* hashing */

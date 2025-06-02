@@ -35,21 +35,21 @@ static void xor_crypt(struct xor_state *const state, const ut8 *inbuf, ut8 *outb
 		outbuf[i] = inbuf[i] ^ state->key[(i%state->key_size)];
 	}
 }
-static bool xor_set_key(RMutaJob *cj, const ut8 *key, int keylen, int mode, int direction) {
+static bool xor_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction) {
 	return xor_init (&st, key, keylen);
 }
 
-static int xor_get_key_size(RMutaJob *cj) {
+static int xor_get_key_size(RMutaSession *cj) {
 	return st.key_size;
 }
 
-static bool update(RMutaJob *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	ut8 *obuf = calloc (1, len);
 	if (!obuf) {
 		return false;
 	}
 	xor_crypt (&st, buf, obuf, len);
-	r_muta_job_append (cj, obuf, len);
+	r_muta_session_append (cj, obuf, len);
 	free (obuf);
 	return true;
 }

@@ -146,14 +146,14 @@ static bech32_encoding bech32_decode(char *hrp, uint8_t *data, int data_len, con
 	return BECH32_ENCODING_NONE;
 }
 
-static bool bech32_set_key(RMutaJob *cj, const ut8 *key, int keylen, int mode, int direction) {
+static bool bech32_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction) {
 	cj->key_len = keylen;
 	memcpy (cj->key, key, keylen);
 	cj->dir = direction;
 	return true;
 }
 
-static int bech32_get_key_size(RMutaJob *cj) {
+static int bech32_get_key_size(RMutaSession *cj) {
 	return cj->key_len;
 }
 
@@ -161,7 +161,7 @@ static bool bech32_check(const char *algo) {
 	return !strcmp (algo, "bech32");
 }
 
-static bool update(RMutaJob *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	const int enc = BECH32_ENCODING_BECH32;
 	char *hrp = malloc (cj->key_len + 1); // HRP need to be null-terminated
 	if (!hrp) {
@@ -188,7 +188,7 @@ static bool update(RMutaJob *cj, const ut8 *buf, int len) {
 	return true;
 }
 
-static bool end(RMutaJob *cj, const ut8 *buf, int len) {
+static bool end(RMutaSession *cj, const ut8 *buf, int len) {
 	return update (cj, buf, len);
 }
 

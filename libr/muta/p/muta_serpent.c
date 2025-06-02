@@ -3,7 +3,7 @@
 #include <r_muta.h>
 #include "algo/serpent.h"
 
-static bool serpent_set_key(RMutaJob *cj, const ut8 *key, int keylen, int mode, int direction) {
+static bool serpent_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction) {
 	free (cj->data);
 	cj->data = R_NEW0 (struct serpent_state);
 	struct serpent_state *st = cj->data;
@@ -21,7 +21,7 @@ static bool serpent_set_key(RMutaJob *cj, const ut8 *key, int keylen, int mode, 
 	return true;
 }
 
-static int serpent_get_key_size(RMutaJob *cj) {
+static int serpent_get_key_size(RMutaSession *cj) {
 	struct serpent_state *st = cj->data;
 	return st? st->key_size: 0;
 }
@@ -32,7 +32,7 @@ static bool serpent_check(const char *algo) {
 
 #define BLOCK_SIZE 16
 
-static bool update(RMutaJob *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	// Pad to the block size, do not append dummy block
 	const int diff = (BLOCK_SIZE - (len % BLOCK_SIZE)) % BLOCK_SIZE;
 	const int size = len + diff;
@@ -100,14 +100,14 @@ static bool update(RMutaJob *cj, const ut8 *buf, int len) {
 		obuf[k + 3] = (tmp[j] >> 24) & 0xff;
 	}
 
-	r_muta_job_append (cj, obuf, size);
+	r_muta_session_append (cj, obuf, size);
 	free (obuf);
 	free (ibuf);
 	free (tmp);
 	return true;
 }
 
-static bool end(RMutaJob *cj, const ut8 *buf, int len) {
+static bool end(RMutaSession *cj, const ut8 *buf, int len) {
 	return update (cj, buf, len);
 }
 

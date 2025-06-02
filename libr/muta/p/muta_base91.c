@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2024 - rakholiyajenish.07 */
+/* radare - LGPL - Copyright 2016-2025 - rakholiyajenish.07 */
 
 #include <r_lib.h>
 #include <r_muta.h>
@@ -6,12 +6,12 @@
 
 #define INSIZE 32768
 
-static bool base91_set_key(RMutaJob *cj, const ut8 *key, int keylen, int mode, int direction) {
+static bool base91_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction) {
 	cj->dir = direction;
 	return true;
 }
 
-static int base91_get_key_size(RMutaJob *cj) {
+static int base91_get_key_size(RMutaSession *cj) {
 	return 0;
 }
 
@@ -19,7 +19,7 @@ static bool base91_check(const char *algo) {
 	return algo && !strcmp (algo, "base91");
 }
 
-static bool update(RMutaJob *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (cj && buf && len > 0, false);
 
 	int olen = INSIZE;
@@ -35,7 +35,7 @@ static bool update(RMutaJob *cj, const ut8 *buf, int len) {
 		olen = r_base91_decode (obuf, (const char *)buf, len);
 		break;
 	}
-	r_muta_job_append (cj, obuf, olen);
+	r_muta_session_append (cj, obuf, olen);
 	free (obuf);
 	return true;
 }

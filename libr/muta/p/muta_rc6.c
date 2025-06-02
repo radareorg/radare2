@@ -148,24 +148,24 @@ static void rc6_decrypt(struct rc6_state *const state, const ut8 *inbuf, ut8 *ou
 	}
 }
 
-static struct rc6_state *getnewstate(RMutaJob *cj) {
+static struct rc6_state *getnewstate(RMutaSession *cj) {
 	free (cj->data);
 	cj->data = R_NEW0 (struct rc6_state);
 	return (struct rc6_state*)cj->data;
 }
 
-static bool rc6_set_key(RMutaJob *cj, const ut8 *key, int keylen, int mode, int direction) {
+static bool rc6_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction) {
 	struct rc6_state *st = getnewstate (cj);
 	cj->flag = (direction == R_CRYPTO_DIR_DECRYPT);
 	return rc6_init (st, key, keylen, direction);
 }
 
-static int rc6_get_key_size(RMutaJob *cj) {
+static int rc6_get_key_size(RMutaSession *cj) {
 	struct rc6_state *st = (struct rc6_state*)cj->data;
 	return st? st->key_size: 0;
 }
 
-static bool update(RMutaJob *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	if (len % BLOCK_SIZE != 0) { //let user handle with with pad.
 		R_LOG_ERROR ("Input should be multiple of 128bit");
 		return false;
@@ -194,7 +194,7 @@ static bool update(RMutaJob *cj, const ut8 *buf, int len) {
 		}
 	}
 
-	r_muta_job_append (cj, obuf, len);
+	r_muta_session_append (cj, obuf, len);
 	free (obuf);
 	return true;
 }

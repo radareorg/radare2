@@ -69,35 +69,35 @@ static void rc4_crypt(struct rc4_state *const state, const ut8 *inbuf, ut8 *outb
 
 ///////////////////////////////////////////////////////////
 
-static bool rc4_set_key(RMutaJob *cj, const ut8 *key, int keylen, int mode, int direction) {
+static bool rc4_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction) {
 	free (cj->data);
 	cj->data = R_NEW0 (struct rc4_state);
 	struct rc4_state *st = (struct rc4_state *)cj->data;
 	return rc4_init (st, key, keylen);
 }
 
-static int rc4_get_key_size(RMutaJob *cj) {
+static int rc4_get_key_size(RMutaSession *cj) {
 	struct rc4_state *st = (struct rc4_state *)cj->data;
 	return st? st->key_size: 0;
 }
 
-static bool update(RMutaJob *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	ut8 *obuf = calloc (1, len);
 	if (!obuf) {
 		return false;
 	}
 	struct rc4_state *st = (struct rc4_state *)cj->data;
 	rc4_crypt (st, buf, obuf, len);
-	r_muta_job_append (cj, obuf, len);
+	r_muta_session_append (cj, obuf, len);
 	free (obuf);
 	return false;
 }
 
-static bool end(RMutaJob *cj, const ut8 *buf, int len) {
+static bool end(RMutaSession *cj, const ut8 *buf, int len) {
 	return update (cj, buf, len);
 }
 
-static bool fini(RMutaJob *cj) {
+static bool fini(RMutaSession *cj) {
 	R_FREE (cj->data);
 	return true;
 }

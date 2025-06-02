@@ -2,7 +2,7 @@
 
 #include <r_muta.h>
 
-static bool update(RMutaJob *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	if (!buf || len < 1) {
 		return false;
 	}
@@ -28,7 +28,7 @@ static bool update(RMutaJob *cj, const ut8 *buf, int len) {
 	return true;
 }
 
-static bool end(RMutaJob *cj, const ut8 *buf, int len) {
+static bool end(RMutaSession *cj, const ut8 *buf, int len) {
 	if (buf) {
 		if (len > 0) {
 			double e = update (cj, buf, len) / log2 ((double) R_MIN (len, 256));

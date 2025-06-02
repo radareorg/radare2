@@ -6,7 +6,7 @@
 #include <r_util/r_log.h>
 #include "algo/crypto_aes.h"
 
-static bool aes_wrap_set_key(RMutaJob *cj, const ut8 *key, int keylen, int mode, int direction) {
+static bool aes_wrap_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction) {
 	if (!(keylen == 128 / 8 || keylen == 192 / 8 || keylen == 256 / 8)) {
 		return false;
 	}
@@ -16,11 +16,11 @@ static bool aes_wrap_set_key(RMutaJob *cj, const ut8 *key, int keylen, int mode,
 	return true;
 }
 
-static int aes_wrap_get_key_size(RMutaJob *cj) {
+static int aes_wrap_get_key_size(RMutaSession *cj) {
 	return cj->key_len;
 }
 
-static bool aes_wrap_set_iv(RMutaJob *cj, const ut8 *iv_src, int ivlen) {
+static bool aes_wrap_set_iv(RMutaSession *cj, const ut8 *iv_src, int ivlen) {
 	if (ivlen != AES_WRAP_BLOCK_SIZE) {
 		return false;
 	}
@@ -35,7 +35,7 @@ static bool aes_wrap_use(const char *algo) {
 	return algo && !strcmp (algo, "aes-wrap");
 }
 
-static bool update(RMutaJob *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	struct aes_state st;
 	const ut64 blocks = len / AES_WRAP_BLOCK_SIZE;
 
@@ -71,10 +71,10 @@ static bool update(RMutaJob *cj, const ut8 *buf, int len) {
 
 	bool ret = aes_wrap (&st, buf, obuf, cj->iv, cj->dir == R_CRYPTO_DIR_ENCRYPT, blocks);
 	if (cj->dir == R_CRYPTO_DIR_ENCRYPT) {
-		r_muta_job_append (cj, obuf, len + AES_WRAP_BLOCK_SIZE);
+		r_muta_session_append (cj, obuf, len + AES_WRAP_BLOCK_SIZE);
 	} else {
 		if (ret) {
-			r_muta_job_append (cj, obuf, len - AES_WRAP_BLOCK_SIZE);
+			r_muta_session_append (cj, obuf, len - AES_WRAP_BLOCK_SIZE);
 		}
 	}
 
@@ -82,7 +82,7 @@ static bool update(RMutaJob *cj, const ut8 *buf, int len) {
 	return true;
 }
 
-static bool end(RMutaJob *cj, const ut8 *buf, int len) {
+static bool end(RMutaSession *cj, const ut8 *buf, int len) {
 	return update (cj, buf, len);
 }
 

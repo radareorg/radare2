@@ -3,12 +3,12 @@
 #include <r_lib.h>
 #include <r_muta.h>
 
-static bool punycode_set_key(RMutaJob *ci, const ut8 *key, int keylen, int mode, int direction) {
+static bool punycode_set_key(RMutaSession *ci, const ut8 *key, int keylen, int mode, int direction) {
 	ci->flag = direction;
 	return true;
 }
 
-static int punycode_get_key_size(RMutaJob *cry) {
+static int punycode_get_key_size(RMutaSession *cry) {
 	return 0;
 }
 
@@ -16,7 +16,7 @@ static bool punycode_check(const char *algo) {
 	return !strcmp (algo, "punycode");
 }
 
-static bool update(RMutaJob *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	char *obuf = NULL;
 	int olen = 0;
 	switch (cj->flag) {
@@ -27,7 +27,7 @@ static bool update(RMutaJob *cj, const ut8 *buf, int len) {
 		obuf = r_punycode_encode (buf, len, &olen);
 		break;
 	}
-	r_muta_job_append (cj, (ut8*)obuf, olen);
+	r_muta_session_append (cj, (ut8*)obuf, olen);
 	free (obuf);
 	return true;
 }

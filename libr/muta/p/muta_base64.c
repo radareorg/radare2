@@ -1,15 +1,15 @@
-/* radare - LGPL - Copyright 2016-2024 - rakholiyajenish.07 */
+/* radare - LGPL - Copyright 2016-2025 - rakholiyajenish.07 */
 
 #include <r_lib.h>
 #include <r_muta.h>
 #include <r_util.h>
 
-static bool base64_set_key(RMutaJob *cj, const ut8 *key, int keylen, int mode, int direction) {
+static bool base64_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction) {
 	cj->dir = direction;
 	return true;
 }
 
-static int base64_get_key_size(RMutaJob *cj) {
+static int base64_get_key_size(RMutaSession *cj) {
 	return 0;
 }
 
@@ -17,7 +17,7 @@ static bool base64_check(const char *algo) {
 	return !strcmp (algo, "base64");
 }
 
-static bool update(RMutaJob *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	int olen = 0;
 	ut8 *obuf = NULL;
 	switch (cj->dir) {
@@ -42,13 +42,13 @@ static bool update(RMutaJob *cj, const ut8 *buf, int len) {
 		break;
 	}
 	if (olen > 0) {
-		r_muta_job_append (cj, obuf, olen);
+		r_muta_session_append (cj, obuf, olen);
 	}
 	free (obuf);
 	return true;
 }
 
-static bool end(RMutaJob *cj, const ut8 *buf, int len) {
+static bool end(RMutaSession *cj, const ut8 *buf, int len) {
 	return update (cj, buf, len);
 }
 

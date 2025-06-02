@@ -10,7 +10,7 @@ foo:
 include ${STATIC_MUTA_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst muta_,p/muta_,$(STATIC_OBJ)))
 
-OBJS=${STATIC_OBJS} muta.o
+OBJS=${STATIC_OBJS} muta.o muta_session.o
 include hash/deps.mk
 include signature/ed25519/deps.mk
 

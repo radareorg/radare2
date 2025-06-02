@@ -716,7 +716,7 @@ main(cps_state,cps2crypt) {
 }
 #endif
 
-static bool set_key(RMutaJob *cj, const ut8 *key, int keylen, int mode, int direction) {
+static bool set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction) {
 	cj->dir = direction;
 	if (keylen == 8) { // old hardcoded MAME keys
 		/* fix key endianness */
@@ -741,7 +741,7 @@ static bool set_key(RMutaJob *cj, const ut8 *key, int keylen, int mode, int dire
 	return false;
 }
 
-static int get_key_size(RMutaJob *cj) {
+static int get_key_size(RMutaSession *cj) {
 	/* 64bit key */
 	return 8;
 }
@@ -750,14 +750,14 @@ static bool cps2_check(const char *algo) {
 	return !strcmp (algo, "cps2");
 }
 
-static bool update(RMutaJob *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	ut8 *output = calloc (1, len);
 	if (!output) {
 		return false;
 	}
 	/* TODO : handle decryption errors */
 	cps2_crypt (cj->dir, (const ut16 *)buf, (ut16*)output, len, cj->cps2key, UPPER_LIMIT);
-	r_muta_job_append (cj, output, len);
+	r_muta_session_append (cj, output, len);
 	free (output);
 	return true;
 }

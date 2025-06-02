@@ -4,7 +4,7 @@
 #include <r_muta.h>
 #include "algo/crypto_aes.h"
 
-static bool aes_set_key(RMutaJob *cj, const ut8 *key, int keylen, int mode, int direction) {
+static bool aes_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction) {
 	if (!(keylen == 128 / 8 || keylen == 192 / 8 || keylen == 256 / 8)) {
 		return false;
 	}
@@ -14,7 +14,7 @@ static bool aes_set_key(RMutaJob *cj, const ut8 *key, int keylen, int mode, int 
 	return true;
 }
 
-static int aes_get_key_size(RMutaJob *cj) {
+static int aes_get_key_size(RMutaSession *cj) {
 	return cj->key_len;
 }
 
@@ -22,7 +22,7 @@ static bool aes_check(const char *algo) {
 	return !strcmp (algo, "aes-ecb");
 }
 
-static bool update(RMutaJob *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	struct aes_state st;
 
 	if (len % AES_BLOCK_SIZE != 0 && cj->dir == R_CRYPTO_DIR_DECRYPT) {
@@ -55,7 +55,7 @@ static bool update(RMutaJob *cj, const ut8 *buf, int len) {
 	memcpy (st.key, cj->key, st.key_size);
 
 	if (aes_ecb (&st, ibuf, obuf, cj->dir == R_CRYPTO_DIR_ENCRYPT, blocks)) {
-		r_muta_job_append (cj, obuf, size);
+		r_muta_session_append (cj, obuf, size);
 	}
 
 	free (obuf);
@@ -63,7 +63,7 @@ static bool update(RMutaJob *cj, const ut8 *buf, int len) {
 	return true;
 }
 
-static bool end(RMutaJob *cj, const ut8 *buf, int len) {
+static bool end(RMutaSession *cj, const ut8 *buf, int len) {
 	return update (cj, buf, len);
 }
 

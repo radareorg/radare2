@@ -1,5 +1,6 @@
 r_muta_sources = files(
   'muta.c',
+  'muta_session.c',
   'p/muta_aes.c',
   'p/algo/crypto_aes.c',
   'p/muta_aes_cbc.c',

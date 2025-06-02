@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2008-2025 - pancake */
 
-#ifndef R2_CRYPTO_H
-#define R2_CRYPTO_H
+#ifndef R2_MUTA_H
+#define R2_MUTA_H
 
 #include <r_types.h>
 #include <r_th.h>
@@ -14,6 +14,14 @@ extern "C" {
 #endif
 
 R_LIB_VERSION_HEADER(r_muta);
+
+enum {
+	R_MUTA_TYPE_HASH,
+	R_MUTA_TYPE_BASE,
+	R_MUTA_TYPE_CRYPTO,
+	R_MUTA_TYPE_SIGN,
+	R_MUTA_TYPE_CHARSET,
+};
 
 enum {
 	R_CRYPTO_MODE_ECB,
@@ -46,7 +54,7 @@ typedef struct r_muta_t {
 	RList *plugins;
 } RMuta;
 
-typedef struct r_muta_job_t {
+typedef struct r_muta_session_t {
 	struct r_muta_plugin_t* h;
 	struct r_muta_t* c;
 	int flag;
@@ -63,7 +71,7 @@ typedef struct r_muta_job_t {
 	ut32 cps2key[2];
 	ut8 rot_key;
 	double entropy;
-} RMutaJob; // rename to CryptoState
+} RMutaSession; // rename to CryptoState
 
 typedef enum {
 	R_CRYPTO_TYPE_ENCODER = 'e',
@@ -73,8 +81,8 @@ typedef enum {
 	R_CRYPTO_TYPE_ALL = 'a'
 } RMutaType;
 
-typedef bool (*RMutaJobSetIVCallback)(RMutaJob *ci, const ut8 *iv, int ivlen);
-typedef bool (*RMutaJobUpdateCallback)(RMutaJob *ci, const ut8 *buf, int len);
+typedef bool (*RMutaSessionSetIVCallback)(RMutaSession *ci, const ut8 *iv, int ivlen);
+typedef bool (*RMutaSessionUpdateCallback)(RMutaSession *ci, const ut8 *buf, int len);
 
 typedef struct r_muta_plugin_t {
 	RPluginMeta meta;
@@ -82,18 +90,26 @@ typedef struct r_muta_plugin_t {
 	RMutaType type;
 	bool (*check)(const char *algo); // must be deprecated
 
-	int (*get_key_size)(RMutaJob *cry);
-	RMutaJobSetIVCallback set_iv;
-	bool (*set_key)(RMutaJob *ci, const ut8 *key, int keylen, int mode, int direction);
+	int (*get_key_size)(RMutaSession *cry);
+	RMutaSessionSetIVCallback set_iv;
+	bool (*set_key)(RMutaSession *ci, const ut8 *key, int keylen, int mode, int direction);
 
-	RMutaJob* (*begin)(RMuta *cry);
-	RMutaJobUpdateCallback update;
-	bool (*end)(RMutaJob *ci, const ut8 *buf, int len);
+	RMutaSession* (*begin)(RMuta *cry);
+	RMutaSessionUpdateCallback update;
+	bool (*end)(RMutaSession *ci, const ut8 *buf, int len);
 #if 0
 	bool (*init)(RMuta *cry, struct r_muta_plugin_t *cp);
 #endif
-	bool (*fini)(RMutaJob *cj);
+	bool (*fini)(RMutaSession *cj);
 } RMutaPlugin;
+
+typedef struct {
+	ut8 *iv;
+	ut8 *key;
+	size_t key_len;
+	// iv
+	// ..
+} RMutaOptions;
 
 typedef ut64 RMutaSelector;
 
@@ -106,18 +122,25 @@ R_API void r_muta_list(RMuta *cry, PrintfCallback cb_printf, int mode, RMutaType
 
 // R_API RMutaHash *r_muta_hash(RMuta *cry, bool rst, const char *name);
 
-R_API RMutaJob *r_muta_use(RMuta *cry, const char *algo);
-R_API bool r_muta_job_set_key(RMutaJob *cry, const ut8* key, int keylen, int mode, int direction);
-R_API bool r_muta_job_set_iv(RMutaJob *cry, const ut8 *iv, int ivlen);
+#if 1
+// DEPRECATE
+R_API RMutaSession *r_muta_use(RMuta *cry, const char *algo);
+R_API bool r_muta_session_set_key(RMutaSession *cry, const ut8* key, int keylen, int mode, int direction);
+R_API bool r_muta_session_set_iv(RMutaSession *cry, const ut8 *iv, int ivlen);
+#endif
 
-R_API RMutaJob *r_muta_job_new(RMuta *cry, RMutaPlugin *cp);
-R_API void r_muta_job_free(RMutaJob *cj);
+R_API RMutaSession *r_muta_new_session(RMuta *mu, const char *algo, RMutaOptions *opt);
 
-R_API RMutaJob *r_muta_begin(RMuta *cry);
-R_API bool r_muta_job_update(RMutaJob *cry, const ut8 *buf, int len);
-R_API bool r_muta_job_end(RMutaJob *cry, const ut8 *buf, int len);
-R_API int r_muta_job_append(RMutaJob *cry, const ut8 *buf, int len);
-R_API ut8 *r_muta_job_get_output(RMutaJob *cry, int *size);
+
+R_API RMutaSession *r_muta_session_new(RMuta *cry, RMutaPlugin *cp);
+R_API void r_muta_session_free(RMutaSession *cj);
+
+R_API RMutaSession *r_muta_begin(RMuta *cry);
+R_API bool r_muta_session_update(RMutaSession *cry, const ut8 *buf, int len);
+R_API bool r_muta_session_end(RMutaSession *cry, const ut8 *buf, int len);
+R_API int r_muta_session_append(RMutaSession *cry, const ut8 *buf, int len);
+R_API ut8 *r_muta_session_get_output(RMutaSession *cry, int *size);
+
 #endif
 
 /* plugin pointers */

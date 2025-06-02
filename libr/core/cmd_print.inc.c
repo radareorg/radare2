@@ -3386,9 +3386,9 @@ static void print_encrypted_block(RCore *core, const char *algo, const char *key
 		free (binkey);
 		return;
 	}
-	RMutaJob *cj = r_muta_use (core->muta, algo);
+	RMutaSession *cj = r_muta_use (core->muta, algo);
 	if (cj && cj->h->type == R_CRYPTO_TYPE_ENCRYPT) {
-		if (r_muta_job_set_key (cj, binkey, keylen, 0, direction)) {
+		if (r_muta_session_set_key (cj, binkey, keylen, 0, direction)) {
 			if (iv) {
 				ut8 *biniv = malloc (strlen (iv) + 1);
 				int ivlen = r_hex_str2bin (iv, biniv);
@@ -3396,15 +3396,15 @@ static void print_encrypted_block(RCore *core, const char *algo, const char *key
 					ivlen = strlen (iv);
 					strcpy ((char *)biniv, iv);
 				}
-				if (!r_muta_job_set_iv (cj, biniv, ivlen)) {
+				if (!r_muta_session_set_iv (cj, biniv, ivlen)) {
 					R_LOG_ERROR ("Invalid IV");
 					return;
 				}
 			}
-			r_muta_job_update (cj, (const ut8 *)core->block, core->blocksize);
+			r_muta_session_update (cj, (const ut8 *)core->block, core->blocksize);
 
 			int result_size = 0;
-			ut8 *result = r_muta_job_get_output (cj, &result_size);
+			ut8 *result = r_muta_session_get_output (cj, &result_size);
 			if (result) {
 				r_print_bytes (core->print, result, result_size, "%02x");
 				free (result);
@@ -3463,7 +3463,7 @@ static void cmd_print_op(RCore *core, const char *input) {
 			r_core_cmd_help_match (core, help_msg_po, "poS");
 			break;
 		}
-		RMutaJob *cj = r_muta_use (core->muta, algo);
+		RMutaSession *cj = r_muta_use (core->muta, algo);
 		if (cj && cj->h->type == R_CRYPTO_TYPE_SIGNATURE) {
 			char *key = r_list_get_n (args, 2);
 			ut8 *binkey = (ut8 *)strdup (key);
@@ -3472,13 +3472,13 @@ static void cmd_print_op(RCore *core, const char *input) {
 				R_LOG_ERROR ("Invalid key");
 				break;
 			}
-			if (!r_muta_job_set_key (cj, binkey, keylen, 0, R_CRYPTO_DIR_ENCRYPT)) {
+			if (!r_muta_session_set_key (cj, binkey, keylen, 0, R_CRYPTO_DIR_ENCRYPT)) {
 				break;
 			}
-			r_muta_job_update (cj, (const ut8 *)core->block, core->blocksize);
+			r_muta_session_update (cj, (const ut8 *)core->block, core->blocksize);
 
 			int result_size = 0;
-			ut8 *result = r_muta_job_get_output (cj, &result_size);
+			ut8 *result = r_muta_session_get_output (cj, &result_size);
 			if (result) {
 				r_print_bytes (core->print, result, result_size, "%02x");
 				free (result);

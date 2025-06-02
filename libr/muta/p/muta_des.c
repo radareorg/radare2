@@ -72,7 +72,7 @@ static bool des_decrypt(struct des_state *st, const ut8 *input, ut8 *output) {
 	return true;
 }
 
-static bool des_set_key(RMutaJob *cj, const ut8 *key, int keylen, int mode, int direction) {
+static bool des_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction) {
 	ut32 keylo, keyhi, i;
 	if (keylen != DES_KEY_SIZE) {
 		return false;
@@ -98,7 +98,7 @@ static bool des_set_key(RMutaJob *cj, const ut8 *key, int keylen, int mode, int 
 	return true;
 }
 
-static int des_get_key_size(RMutaJob *cj) {
+static int des_get_key_size(RMutaSession *cj) {
 	struct des_state *st = cj->data;
 	return st? st->key_size: 0;
 }
@@ -107,7 +107,7 @@ static bool des_check(const char *algo) {
 	return algo && !strcmp (algo, "des-ecb");
 }
 
-static bool update(RMutaJob *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	if (len <= 0) {
 		return false;
 	}
@@ -157,13 +157,13 @@ static bool update(RMutaJob *cj, const ut8 *buf, int len) {
 		break;
 	}
 
-	r_muta_job_append (cj, obuf, size);
+	r_muta_session_append (cj, obuf, size);
 	free (obuf);
 	free (ibuf);
 	return 0;
 }
 
-static bool end(RMutaJob *cj, const ut8 *buf, int len) {
+static bool end(RMutaSession *cj, const ut8 *buf, int len) {
 	return update (cj, buf, len);
 }
 

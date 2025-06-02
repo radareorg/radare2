@@ -410,21 +410,21 @@ static int encrypt_or_decrypt(RahashOptions *ro, const char *hashstr, int hashst
 	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo) || !strcmp ("punycode", algo) || !strcmp ("bech32", algo);
 	if (no_key_mode || ro->s.len > 0) {
 		RMuta *cry = r_muta_new ();
-		RMutaJob *cj = r_muta_use (cry, algo);
+		RMutaSession *cj = r_muta_use (cry, algo);
 		if (cj) {
-			if (r_muta_job_set_key (cj, ro->s.buf, ro->s.len, 0, direction)) {
+			if (r_muta_session_set_key (cj, ro->s.buf, ro->s.len, 0, direction)) {
 				const char *buf = hashstr;
 				int buflen = hashstr_len;
 
-				if (iv && !r_muta_job_set_iv (cj, iv, ivlen)) {
+				if (iv && !r_muta_session_set_iv (cj, iv, ivlen)) {
 					R_LOG_ERROR ("Invalid IV");
 					return 0;
 				}
 
-				r_muta_job_update (cj, (const ut8 *) buf, buflen);
+				r_muta_session_update (cj, (const ut8 *) buf, buflen);
 
 				int result_size = 0;
-				ut8 *result = r_muta_job_get_output (cj, &result_size);
+				ut8 *result = r_muta_session_get_output (cj, &result_size);
 				if (result) {
 					print_result (ro, result, result_size);
 					free (result);
@@ -451,9 +451,9 @@ static int encrypt_or_decrypt_file(RahashOptions *ro, const char *filename, cons
 	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo) || !strcmp ("punycode", algo) || !strcmp ("bech32", algo);
 	if (no_key_mode || ro->s.len > 0) {
 		RMuta *cry = r_muta_new ();
-		RMutaJob *cj = r_muta_use (cry, algo);
+		RMutaSession *cj = r_muta_use (cry, algo);
 		if (cj) {
-			if (r_muta_job_set_key (cj, ro->s.buf, ro->s.len, 0, direction)) {
+			if (r_muta_session_set_key (cj, ro->s.buf, ro->s.len, 0, direction)) {
 				size_t file_size;
 				ut8 *buf;
 				if (!strcmp (filename, "-")) {
@@ -467,16 +467,16 @@ static int encrypt_or_decrypt_file(RahashOptions *ro, const char *filename, cons
 					R_LOG_ERROR ("Cannot open '%s'", filename);
 					return -1;
 				}
-				if (iv && !r_muta_job_set_iv (cj, iv, ivlen)) {
+				if (iv && !r_muta_session_set_iv (cj, iv, ivlen)) {
 					R_LOG_ERROR ("Invalid IV");
 					free (buf);
 					return 0;
 				}
 
-				r_muta_job_update (cj, buf, file_size);
+				r_muta_session_update (cj, buf, file_size);
 
 				int result_size = 0;
-				ut8 *result = r_muta_job_get_output (cj, &result_size);
+				ut8 *result = r_muta_session_get_output (cj, &result_size);
 				if (result) {
 					print_result (ro, result, result_size);
 					free (result);

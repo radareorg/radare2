@@ -6,7 +6,7 @@
 #include <r_muta.h>
 #include "algo/crypto_aes.h"
 
-static bool aes_cbc_set_key(RMutaJob *cj, const ut8 *key, int keylen, int mode, int direction) {
+static bool aes_cbc_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction) {
 	if (!(keylen == 128 / 8 || keylen == 192 / 8 || keylen == 256 / 8)) {
 		return false;
 	}
@@ -16,12 +16,12 @@ static bool aes_cbc_set_key(RMutaJob *cj, const ut8 *key, int keylen, int mode, 
 	return true;
 }
 
-static int aes_cbc_get_key_size(RMutaJob *cj) {
+static int aes_cbc_get_key_size(RMutaSession *cj) {
 	R_RETURN_VAL_IF_FAIL (cj, -1);
 	return cj->key_len;
 }
 
-static bool aes_cbc_set_iv(RMutaJob *cj, const ut8 *iv_src, int ivlen) {
+static bool aes_cbc_set_iv(RMutaSession *cj, const ut8 *iv_src, int ivlen) {
 	if (ivlen != AES_BLOCK_SIZE) {
 		return false;
 	}
@@ -37,7 +37,7 @@ static bool aes_cbc_check(const char *algo) {
 	return algo && !strcmp (algo, "aes-cbc");
 }
 
-static bool update(RMutaJob *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	if (!cj->iv) {
 		R_LOG_ERROR ("AES CBC IV is not defined");
 		return false;
@@ -73,7 +73,7 @@ static bool update(RMutaJob *cj, const ut8 *buf, int len) {
 	memcpy (st.key, cj->key, st.key_size);
 
 	if (aes_cbc (&st, ibuf, obuf, cj->iv, cj->dir == R_CRYPTO_DIR_ENCRYPT, blocks)) {
-		r_muta_job_append (cj, obuf, size);
+		r_muta_session_append (cj, obuf, size);
 	}
 
 	free (obuf);

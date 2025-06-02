@@ -31,7 +31,7 @@ static void rol_crypt(struct rol_state *const state, const ut8 *inbuf, ut8 *outb
 	}
 }
 
-static bool rol_set_key(RMutaJob *cj, const ut8 *key, int keylen, int mode, int direction) {
+static bool rol_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction) {
 	free (cj->data);
 	cj->data = R_NEW0 (struct rol_state);
 	cj->flag = direction;
@@ -39,17 +39,17 @@ static bool rol_set_key(RMutaJob *cj, const ut8 *key, int keylen, int mode, int 
 	return rol_init (st, key, keylen);
 }
 
-static int rol_get_key_size(RMutaJob *cj) {
+static int rol_get_key_size(RMutaSession *cj) {
 	struct rol_state *st = (struct rol_state*)cj->data;
 	return st->key_size;
 }
 
-static bool fini(RMutaJob *cj) {
+static bool fini(RMutaSession *cj) {
 	R_FREE (cj->data);
 	return true;
 }
 
-static bool update(RMutaJob *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	if (cj->flag == R_CRYPTO_DIR_DECRYPT) {
 		R_LOG_ERROR ("Use ROR instead of ROL");
 		return false;
@@ -60,7 +60,7 @@ static bool update(RMutaJob *cj, const ut8 *buf, int len) {
 		return false;
 	}
 	rol_crypt (st, buf, obuf, len);
-	r_muta_job_append (cj, obuf, len);
+	r_muta_session_append (cj, obuf, len);
 	free (obuf);
 	return true;
 }

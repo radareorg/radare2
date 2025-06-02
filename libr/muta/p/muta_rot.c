@@ -52,17 +52,17 @@ static void rot_decrypt(ut8 key, const ut8 *inbuf, ut8 *outbuf, int buflen) {
 	}
 }
 
-static bool rot_set_key(RMutaJob *cj, const ut8 *key, int keylen, int mode, int direction) {
+static bool rot_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction) {
 	cj->flag = direction == R_CRYPTO_DIR_ENCRYPT;
 	return rot_init (&cj->rot_key, key, keylen);
 }
 
-static int rot_get_key_size(RMutaJob *cj) {
+static int rot_get_key_size(RMutaSession *cj) {
 	// Returning number of bytes occupied by ut8
 	return 1;
 }
 
-static bool update(RMutaJob *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	ut8 *obuf = calloc (1, len);
 	if (!obuf) {
 		return false;
@@ -75,7 +75,7 @@ static bool update(RMutaJob *cj, const ut8 *buf, int len) {
 		rot_decrypt (cj->rot_key, buf, obuf, len);
 		break;
 	}
-	r_muta_job_append (cj, obuf, len);
+	r_muta_session_append (cj, obuf, len);
 	free (obuf);
 	return true;
 }

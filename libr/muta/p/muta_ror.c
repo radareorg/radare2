@@ -32,7 +32,7 @@ static void ror_crypt(struct ror_state *const state, const ut8 *inbuf, ut8 *outb
 	}
 }
 
-static bool ror_set_key(RMutaJob *cj, const ut8 *key, int keylen, int mode, int direction) {
+static bool ror_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction) {
 	cj->flag = direction;
 	free (cj->data);
 	cj->data = R_NEW0 (struct ror_state);
@@ -40,7 +40,7 @@ static bool ror_set_key(RMutaJob *cj, const ut8 *key, int keylen, int mode, int 
 	return ror_init (st, key, keylen);
 }
 
-static int ror_get_key_size(RMutaJob *cj) {
+static int ror_get_key_size(RMutaSession *cj) {
 	struct ror_state *st = (struct ror_state*)cj->data;
 	return st->key_size;
 }
@@ -49,7 +49,7 @@ static bool ror_check(const char *algo) {
 	return !strcmp (algo, NAME);
 }
 
-static bool update(RMutaJob *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	if (cj->flag != R_CRYPTO_DIR_ENCRYPT) {
 		return false;
 	}
@@ -59,12 +59,12 @@ static bool update(RMutaJob *cj, const ut8 *buf, int len) {
 	}
 	struct ror_state *st = (struct ror_state*)cj->data;
 	ror_crypt (st, buf, obuf, len);
-	r_muta_job_append (cj, obuf, len);
+	r_muta_session_append (cj, obuf, len);
 	free (obuf);
 	return true;
 }
 
-static bool fini(RMutaJob *cj) {
+static bool fini(RMutaSession *cj) {
 	R_FREE (cj->data);
 	return true;
 }

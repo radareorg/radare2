@@ -263,9 +263,9 @@ static void write_encrypted_block(RCore *core, const char *algo, const char *key
 		free (binkey);
 		return;
 	}
-	RMutaJob *cj = r_muta_use (core->muta, algo);
+	RMutaSession *cj = r_muta_use (core->muta, algo);
 	if (cj && cj->h->type == R_CRYPTO_TYPE_ENCRYPT) {
-		if (r_muta_job_set_key (cj, binkey, keylen, 0, direction)) {
+		if (r_muta_session_set_key (cj, binkey, keylen, 0, direction)) {
 			if (iv) {
 				ut8 *biniv = malloc (strlen (iv) + 1);
 				int ivlen = r_hex_str2bin (iv, biniv);
@@ -273,15 +273,15 @@ static void write_encrypted_block(RCore *core, const char *algo, const char *key
 					ivlen = strlen(iv);
 					strcpy ((char *)biniv, iv);
 				}
-				if (!r_muta_job_set_iv (cj, biniv, ivlen)) {
+				if (!r_muta_session_set_iv (cj, biniv, ivlen)) {
 					R_LOG_ERROR ("Invalid IV");
 					return;
 				}
 			}
-			r_muta_job_update (cj, (const ut8*)core->block, core->blocksize);
+			r_muta_session_update (cj, (const ut8*)core->block, core->blocksize);
 
 			int result_size = 0;
-			ut8 *result = r_muta_job_get_output (cj, &result_size);
+			ut8 *result = r_muta_session_get_output (cj, &result_size);
 			if (result) {
 				if (!r_core_write_at (core, core->addr, result, result_size)) {
 					R_LOG_ERROR ("write failed at 0x%08"PFMT64x, core->addr);
@@ -316,12 +316,12 @@ static void write_block_signature(RCore *core, const char *algo, const char *key
 		free (binkey);
 		return;
 	}
-	RMutaJob *cj = r_muta_use (core->muta, algo);
+	RMutaSession *cj = r_muta_use (core->muta, algo);
 	if (cj && cj->h->type == R_CRYPTO_TYPE_SIGNATURE) {
-		if (r_muta_job_set_key (cj, binkey, keylen, 0, R_CRYPTO_DIR_ENCRYPT)) {
-			r_muta_job_update (cj, (const ut8 *)core->block, core->blocksize);
+		if (r_muta_session_set_key (cj, binkey, keylen, 0, R_CRYPTO_DIR_ENCRYPT)) {
+			r_muta_session_update (cj, (const ut8 *)core->block, core->blocksize);
 			int result_size = 0;
-			ut8 *result = r_muta_job_get_output (cj, &result_size);
+			ut8 *result = r_muta_session_get_output (cj, &result_size);
 			if (result) {
 				if (!r_core_write_at (core, core->addr, result, result_size)) {
 					R_LOG_ERROR ("write failed at 0x%08" PFMT64x, core->addr);

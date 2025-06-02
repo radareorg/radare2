@@ -3,13 +3,13 @@
 #include <r_lib.h>
 #include <r_muta.h>
 
-static bool update(RMutaJob *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	char *s = r_str_ndup ((const char *)buf, len);
 	ut8 obuf[4];
 	int n = r_str_hash (s);
 	free (s);
 	r_write_ble32 (obuf, n, cj->c->bigendian);
-	r_muta_job_append (cj, obuf, 4);
+	r_muta_session_append (cj, obuf, 4);
 	return true;
 }
 

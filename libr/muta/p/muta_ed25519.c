@@ -22,7 +22,7 @@ R_API void ed25519_create_keypair(const ut8 *seed, ut8 *privkey, ut8 *pubkey) {
 	ge_p3_tobytes (pubkey, &A);
 }
 
-static bool ed25519_set_key(RMutaJob *cj, const ut8 *key, int keylen, int mode, int direction) {
+static bool ed25519_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction) {
 	if (keylen != 32 && keylen != 64) {
 		R_LOG_ERROR ("Invalid key length");
 		return false;
@@ -48,7 +48,7 @@ static bool ed25519_set_key(RMutaJob *cj, const ut8 *key, int keylen, int mode, 
 	return true;
 }
 
-static int ed25519_get_key_size(RMutaJob *cj) {
+static int ed25519_get_key_size(RMutaSession *cj) {
 	return cj->key_len;
 }
 
@@ -56,7 +56,7 @@ static bool ed25519_use(const char *algo) {
 	return algo && !strcmp (algo, "ed25519");
 }
 
-static bool update(RMutaJob *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	ut8 *public_key = (ut8 *)cj->data;
 	ut8 r[64];
 	ge_p3 R;
@@ -87,11 +87,11 @@ static bool update(RMutaJob *cj, const ut8 *buf, int len) {
 	} else {
 		return false;
 	}
-	r_muta_job_append (cj, signature, ED25519_SIG_LEN);
+	r_muta_session_append (cj, signature, ED25519_SIG_LEN);
 	return true;
 }
 
-static bool end(RMutaJob *cj, const ut8 *buf, int len) {
+static bool end(RMutaSession *cj, const ut8 *buf, int len) {
 	return update (cj, buf, len);
 }
 

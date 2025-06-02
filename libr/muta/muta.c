@@ -42,17 +42,6 @@ R_API RMuta *r_muta_new(void) {
 	return cry;
 }
 
-R_API void r_muta_job_free(RMutaJob * R_NULLABLE cj) {
-	if (cj) {
-		if (cj->h->fini) {
-			cj->h->fini (cj);
-		}
-		free (cj->output);
-		free (cj->key);
-		free (cj->iv);
-		free (cj);
-	}
-}
 
 R_API void r_muta_free(RMuta *cry) {
 	if (cry) {
@@ -71,7 +60,7 @@ R_API void r_muta_free(RMuta *cry) {
 	}
 }
 
-R_API RMutaJob *r_muta_use(RMuta *cry, const char *algo) {
+R_API RMutaSession *r_muta_use(RMuta *cry, const char *algo) {
 	R_RETURN_VAL_IF_FAIL (cry && algo, false);
 	RListIter *iter, *iter2;
 	RMutaPlugin *h;
@@ -84,7 +73,7 @@ R_API RMutaJob *r_muta_use(RMuta *cry, const char *algo) {
 				if (!strcmp (s, algo)) {
 					cry->h = h;
 					r_list_free (l);
-					return r_muta_job_new (cry, h);
+					return r_muta_session_new (cry, h);
 				}
 			}
 			r_list_free (l);
@@ -93,95 +82,12 @@ R_API RMutaJob *r_muta_use(RMuta *cry, const char *algo) {
 		// XXX deprecate
 		if (h && h->check && h->check (algo)) {
 			// R_DEPRECATE cry->h = h;
-			return r_muta_job_new (cry, h);
+			return r_muta_session_new (cry, h);
 		}
 	}
 	return NULL;
 }
 
-R_API bool r_muta_job_set_key(RMutaJob *cj, const ut8* key, int keylen, int mode, int direction) {
-	R_RETURN_VAL_IF_FAIL (cj, false);
-	if (keylen < 0) {
-		keylen = strlen ((const char *)key);
-	}
-	if (!cj->h || !cj->h->set_key) {
-		return true;
-	}
-	cj->key_len = keylen;
-	cj->key = calloc (1, cj->key_len);
-	return cj->h->set_key (cj, key, keylen, mode, direction);
-}
-
-R_API int r_muta_job_get_key_size(RMutaJob *cj) {
-	R_RETURN_VAL_IF_FAIL (cj, false);
-	return (cj->h && cj->h->get_key_size)?
-		cj->h->get_key_size (cj): 0;
-}
-
-R_API bool r_muta_job_set_iv(RMutaJob *cj, const ut8 *iv, int ivlen) {
-	R_RETURN_VAL_IF_FAIL (cj, false);
-	RMutaJobSetIVCallback set_iv = R_UNWRAP3 (cj, h, set_iv);
-	return set_iv? set_iv (cj, iv, ivlen): 0;
-}
-
-// return the number of bytes written in the output buffer
-R_API bool r_muta_job_update(RMutaJob *cj, const ut8 *buf, int len) {
-	R_RETURN_VAL_IF_FAIL (cj, 0);
-	RMutaJobUpdateCallback update = R_UNWRAP3 (cj, h, update);
-	return update? update (cj, buf, len): 0;
-}
-
-R_API RMutaJob *r_muta_job_new(RMuta *cry, RMutaPlugin *cp) {
-	R_RETURN_VAL_IF_FAIL (cry && cp, NULL);
-	RMutaJob *cj = R_NEW0 (RMutaJob);
-	cj->h = cp;
-	cj->c = cry;
-	return cj;
-}
-
-R_API bool r_muta_job_end(RMutaJob *cj, const ut8 *buf, int len) {
-	R_RETURN_VAL_IF_FAIL (cj && buf, false);
-	return (cj->h && cj->h->end)? cj->h->end (cj, buf, len): 0;
-}
-
-// TODO: internal api?? used from plugins? TODO: use r_buf here
-R_API int r_muta_job_append(RMutaJob *cj, const ut8 *buf, int len) {
-	R_RETURN_VAL_IF_FAIL (cj && buf, -1);
-	if (cj->output_len+len > cj->output_size) {
-		cj->output_size += 4096 + len;
-		cj->output = realloc (cj->output, cj->output_size);
-	}
-	memcpy (cj->output + cj->output_len, buf, len);
-	cj->output_len += len;
-	return cj->output_len;
-}
-
-R_API ut8 *r_muta_job_get_output(RMutaJob *cj, int *size) {
-	R_RETURN_VAL_IF_FAIL (cj, NULL);
-	if (cj->output_size < 1) {
-		return NULL;
-	}
-	ut8 *buf = calloc (1, cj->output_size);
-	if (!buf) {
-		return NULL;
-	}
-	if (size) {
-		*size = cj->output_len;
-		memcpy (buf, cj->output, *size);
-	} else {
-		size_t newlen = 4096;
-		ut8 *newbuf = realloc (buf, newlen);
-		if (newbuf) {
-			buf = newbuf;
-			cj->output = newbuf;
-			cj->output_len = 0;
-			cj->output_size = newlen;
-		} else {
-			R_FREE (buf);
-		}
-	}
-	return buf;
-}
 
 static inline void print_plugin_verbose(RMutaPlugin *cp, PrintfCallback cb_printf) {
 	const char type = cp->type? cp->type: 'c';

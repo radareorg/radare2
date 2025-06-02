@@ -290,7 +290,7 @@ static bool blowfish_init(struct blowfish_state *const state, const ut8 *key, in
 	return true;
 }
 
-static struct blowfish_state *get_st(RMutaJob *cj) {
+static struct blowfish_state *get_st(RMutaSession *cj) {
 	if (cj) {
 		struct blowfish_state *st = cj->data;
 		if (!cj->data) {
@@ -302,18 +302,18 @@ static struct blowfish_state *get_st(RMutaJob *cj) {
 	return NULL;
 }
 
-static bool blowfish_set_key(RMutaJob *cj, const ut8 *key, int keylen, int mode, int direction) {
+static bool blowfish_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction) {
 	struct blowfish_state *st = get_st (cj);
 	cj->dir = direction;
 	return blowfish_init (st, key, keylen);
 }
 
-static int blowfish_get_key_size(RMutaJob *cj) {
+static int blowfish_get_key_size(RMutaSession *cj) {
 	struct blowfish_state *st = get_st (cj);
 	return st? st->key_size: -1;
 }
 
-static bool update(RMutaJob *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (cj && cj->data && buf, false);
 	struct blowfish_state *st = get_st (cj);
 	ut8 *obuf = calloc (1, len);
@@ -325,12 +325,12 @@ static bool update(RMutaJob *cj, const ut8 *buf, int len) {
 	} else {
 		blowfish_decrypt (st, buf, obuf, len);
 	}
-	r_muta_job_append (cj, obuf, len);
+	r_muta_session_append (cj, obuf, len);
 	free (obuf);
 	return true;
 }
 
-static bool end(RMutaJob *cj, const ut8 *buf, int len) {
+static bool end(RMutaSession *cj, const ut8 *buf, int len) {
 	bool res = update (cj, buf, len);
 	R_FREE (cj->data);
 	return res;

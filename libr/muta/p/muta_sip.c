@@ -3,12 +3,12 @@
 #include <r_lib.h>
 #include <r_muta.h>
 
-static bool update(RMutaJob *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	ut8 obuf[R_HASH_SIZE_SIP];
 	uint64_t h = r_hash_sip (buf, len);
 	cj->output = malloc (cj->output_size);
 	r_write_ble64 (obuf, h, cj->c->bigendian);
-	r_muta_job_append (cj, obuf, R_HASH_SIZE_SIP);
+	r_muta_session_append (cj, obuf, R_HASH_SIZE_SIP);
 	return true;
 }
 
