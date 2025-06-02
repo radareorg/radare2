@@ -88,13 +88,6 @@ R_API RMutaSession *r_muta_use(RMuta *cry, const char *algo) {
 	return NULL;
 }
 
-
-static inline void print_plugin_verbose(RMutaPlugin *cp, PrintfCallback cb_printf) {
-	const char type = cp->type? cp->type: 'c';
-	const char *desc = r_str_get (cp->meta.desc);
-	cb_printf ("%c %12s  %s\n", type, cp->meta.name, desc);
-}
-
 static const char *mutatype_tostring(int type) {
 	switch (type) {
 	case R_MUTA_TYPE_HASH:
@@ -112,6 +105,14 @@ static const char *mutatype_tostring(int type) {
 	}
 }
 
+static inline void print_plugin_verbose(RMutaPlugin *cp, PrintfCallback cb_printf) {
+	const char *typestr = mutatype_tostring (cp->type);
+	const char *desc = r_str_get (cp->meta.desc);
+	char type4[5];
+	r_str_ncpy (type4, typestr, sizeof (type4));
+	cb_printf ("%s %12s  %s\n", type4, cp->meta.name, desc);
+}
+
 R_API void r_muta_list(RMuta *cry, PrintfCallback R_NULLABLE cb_printf, int mode, RMutaType type) {
 	R_RETURN_IF_FAIL (cry);
 	if (!cb_printf) {
@@ -119,10 +120,7 @@ R_API void r_muta_list(RMuta *cry, PrintfCallback R_NULLABLE cb_printf, int mode
 	}
 	PJ *pj = NULL;
 
-	if (mode == 'J') {
-		pj = pj_new ();
-		pj_a (pj);
-	} else if (mode == 'j') {
+	if (tolower (mode) == 'j') {
 		pj = pj_new ();
 		pj_a (pj);
 	}
@@ -175,7 +173,7 @@ R_API void r_muta_list(RMuta *cry, PrintfCallback R_NULLABLE cb_printf, int mode
 				cb_printf ("%s\n", name);
 				break;
 			default:
-				cb_printf ("h %12s\n", name);
+				cb_printf ("hash %12s\n", name);
 				break;
 			}
 		}
