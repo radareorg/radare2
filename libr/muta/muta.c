@@ -95,6 +95,23 @@ static inline void print_plugin_verbose(RMutaPlugin *cp, PrintfCallback cb_print
 	cb_printf ("%c %12s  %s\n", type, cp->meta.name, desc);
 }
 
+static const char *mutatype_tostring(int type) {
+	switch (type) {
+	case R_MUTA_TYPE_HASH:
+		return "hash";
+	case R_MUTA_TYPE_CRYPTO:
+		return "crypto";
+	case R_MUTA_TYPE_CHARSET:
+		return "charset";
+	case R_MUTA_TYPE_BASE:
+		return "base";
+	case R_MUTA_TYPE_SIGN:
+		return "sign";
+	default:
+		return "unknown";
+	}
+}
+
 R_API void r_muta_list(RMuta *cry, PrintfCallback R_NULLABLE cb_printf, int mode, RMutaType type) {
 	R_RETURN_IF_FAIL (cry);
 	if (!cb_printf) {
@@ -112,7 +129,7 @@ R_API void r_muta_list(RMuta *cry, PrintfCallback R_NULLABLE cb_printf, int mode
 	RListIter *iter;
 	RMutaPlugin *cp;
 	r_list_foreach (cry->plugins, iter, cp) {
-		if (cp->type != type && type != R_CRYPTO_TYPE_ALL) {
+		if (cp->type != type && type != R_MUTA_TYPE_ALL) {
 			continue;
 		}
 		switch (mode) {
@@ -125,24 +142,8 @@ R_API void r_muta_list(RMuta *cry, PrintfCallback R_NULLABLE cb_printf, int mode
 		case 'j':
 			pj_o (pj);
 			pj_ks (pj, "name", cp->meta.name);
-			switch (cp->type) {
-			case R_CRYPTO_TYPE_HASH:
-				pj_ks (pj, "type", "hash");
-				break;
-			case R_CRYPTO_TYPE_ENCRYPT:
-				pj_ks (pj, "type", "encryption");
-				break;
-			case R_CRYPTO_TYPE_ENCODER:
-				pj_ks (pj, "type", "encoder");
-				break;
-			case R_CRYPTO_TYPE_SIGNATURE:
-				pj_ks (pj, "type", "signature");
-				break;
-			default:
-				R_LOG_ERROR ("Unknown algorithm type for %s", cp->meta.name);
-				pj_free (pj);
-				return;
-			}
+			const char *ts = mutatype_tostring (cp->type);
+			pj_ks (pj, "type", ts);
 			r_lib_meta_pj (pj, &cp->meta);
 			pj_end (pj);
 			break;
@@ -152,7 +153,7 @@ R_API void r_muta_list(RMuta *cry, PrintfCallback R_NULLABLE cb_printf, int mode
 		}
 	}
 	// TODO: R2_600 move all those static hashes into muta plugins and remove the code below
-	if (type == R_CRYPTO_TYPE_HASH || type == R_CRYPTO_TYPE_ALL) {
+	if (type == R_MUTA_TYPE_HASH || type == R_MUTA_TYPE_ALL) {
 		int i;
 		for (i = 0; i < 64; i++) {
 			ut64 bits = ((ut64)1) << i;

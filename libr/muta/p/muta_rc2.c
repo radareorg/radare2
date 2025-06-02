@@ -242,7 +242,7 @@ static bool fini(RMutaSession *cj) {
 }
 
 RMutaPlugin r_muta_plugin_rc2 = {
-	.type = R_CRYPTO_TYPE_ENCRYPT,
+	.type = R_MUTA_TYPE_CRYPTO,
 	.meta = {
 		.name = "rc2",
 		.desc = "Ron Rivest's Code symmetric key encryption also known as ARC2",

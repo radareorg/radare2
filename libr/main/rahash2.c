@@ -352,7 +352,7 @@ static int do_help(int line) {
 
 static void algolist(int mode) {
 	RMuta *cry = r_muta_new ();
-	r_muta_list (cry, NULL, mode, (int)R_CRYPTO_TYPE_ALL);
+	r_muta_list (cry, NULL, mode, (int)R_MUTA_TYPE_ALL);
 	r_muta_free (cry);
 }
 

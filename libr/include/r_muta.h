@@ -16,14 +16,6 @@ extern "C" {
 R_LIB_VERSION_HEADER(r_muta);
 
 enum {
-	R_MUTA_TYPE_HASH,
-	R_MUTA_TYPE_BASE,
-	R_MUTA_TYPE_CRYPTO,
-	R_MUTA_TYPE_SIGN,
-	R_MUTA_TYPE_CHARSET,
-};
-
-enum {
 	R_CRYPTO_MODE_ECB,
 	R_CRYPTO_MODE_CBC,
 	R_CRYPTO_MODE_OFB,
@@ -73,13 +65,26 @@ typedef struct r_muta_session_t {
 	double entropy;
 } RMutaSession; // rename to CryptoState
 
+#if 0
 typedef enum {
 	R_CRYPTO_TYPE_ENCODER = 'e',
-	R_CRYPTO_TYPE_HASH = 'h',
-	R_CRYPTO_TYPE_ENCRYPT = 'c', // CIPHER
-	R_CRYPTO_TYPE_SIGNATURE = 's',
-	R_CRYPTO_TYPE_ALL = 'a'
+	R_MUTA_TYPE_HASH = 'h',
+	R_MUTA_TYPE_CRYPTO = 'c', // CIPHER
+	R_MUTA_TYPE_SIGN = 's',
+	R_MUTA_TYPE_ALL = 'a'
 } RMutaType;
+#else
+
+typedef enum {
+	R_MUTA_TYPE_HASH,
+	R_MUTA_TYPE_BASE,
+	R_MUTA_TYPE_CRYPTO,
+	R_MUTA_TYPE_SIGN,
+	R_MUTA_TYPE_CHARSET,
+	R_MUTA_TYPE_ALL = -1,
+} RMutaType;
+
+#endif
 
 typedef bool (*RMutaSessionSetIVCallback)(RMutaSession *ci, const ut8 *iv, int ivlen);
 typedef bool (*RMutaSessionUpdateCallback)(RMutaSession *ci, const ut8 *buf, int len);

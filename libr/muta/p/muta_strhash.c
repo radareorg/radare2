@@ -20,7 +20,7 @@ RMutaPlugin r_muta_plugin_strhash = {
 		.author = "pancake",
 		.license = "MIT",
 	},
-	.type = R_CRYPTO_TYPE_HASH,
+	.type = R_MUTA_TYPE_HASH,
 	.implements = "strhash",
 	.update = update,
 	.end = update

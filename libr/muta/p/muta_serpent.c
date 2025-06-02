@@ -112,7 +112,7 @@ static bool end(RMutaSession *cj, const ut8 *buf, int len) {
 }
 
 RMutaPlugin r_muta_plugin_serpent = {
-	.type = R_CRYPTO_TYPE_ENCRYPT,
+	.type = R_MUTA_TYPE_CRYPTO,
 	.meta = {
 		.name = "serpent-ecb",
 		.desc = "Serpent block cipher with Electronic Code Book mode",

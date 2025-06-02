@@ -59,7 +59,7 @@ RMutaPlugin r_muta_plugin_base64 = {
 		.author = "rakholiyajenish.07",
 		.license = "LGPL-3.0-only"
 	},
-	.type = R_CRYPTO_TYPE_ENCODER,
+	.type = R_MUTA_TYPE_CRYPTO,
 	.set_key = base64_set_key,
 	.get_key_size = base64_get_key_size,
 	.check = base64_check,

@@ -82,7 +82,7 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 }
 
 RMutaPlugin r_muta_plugin_aes_cbc = {
-	.type = R_CRYPTO_TYPE_ENCRYPT,
+	.type = R_MUTA_TYPE_CRYPTO,
 	.meta = {
 		.name = "aes-cbc",
 		.desc = "Rijndael block cipher with Cipher Block Chaining mode",

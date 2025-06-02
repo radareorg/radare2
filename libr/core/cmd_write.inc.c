@@ -264,7 +264,7 @@ static void write_encrypted_block(RCore *core, const char *algo, const char *key
 		return;
 	}
 	RMutaSession *cj = r_muta_use (core->muta, algo);
-	if (cj && cj->h->type == R_CRYPTO_TYPE_ENCRYPT) {
+	if (cj && cj->h->type == R_MUTA_TYPE_CRYPTO) {
 		if (r_muta_session_set_key (cj, binkey, keylen, 0, direction)) {
 			if (iv) {
 				ut8 *biniv = malloc (strlen (iv) + 1);
@@ -317,7 +317,7 @@ static void write_block_signature(RCore *core, const char *algo, const char *key
 		return;
 	}
 	RMutaSession *cj = r_muta_use (core->muta, algo);
-	if (cj && cj->h->type == R_CRYPTO_TYPE_SIGNATURE) {
+	if (cj && cj->h->type == R_MUTA_TYPE_SIGN) {
 		if (r_muta_session_set_key (cj, binkey, keylen, 0, R_CRYPTO_DIR_ENCRYPT)) {
 			r_muta_session_update (cj, (const ut8 *)core->block, core->blocksize);
 			int result_size = 0;
@@ -433,7 +433,7 @@ static int cmd_wo(void *data, const char *input) {
 			if (R_STR_ISNOTEMPTY (algo) && key) {
 				write_encrypted_block (core, algo, key, direction, iv);
 			} else {
-				r_muta_list (core->muta, r_cons_printf, 0, R_CRYPTO_TYPE_ENCRYPT);
+				r_muta_list (core->muta, r_cons_printf, 0, R_MUTA_TYPE_CRYPTO);
 				r_core_cmd_help_match_spec (core, help_msg_wo, "wo", input[0]);
 			}
 			free (args);
@@ -454,7 +454,7 @@ static int cmd_wo(void *data, const char *input) {
 			if (R_STR_ISNOTEMPTY (algo) && key) {
 				write_block_signature (core, algo, key);
 			} else {
-				r_muta_list (core->muta, r_cons_printf, 0, R_CRYPTO_TYPE_SIGNATURE);
+				r_muta_list (core->muta, r_cons_printf, 0, R_MUTA_TYPE_SIGN);
 				r_core_cmd_help_match_spec (core, help_msg_wo, "wo", input[0]);
 			}
 			free (args);

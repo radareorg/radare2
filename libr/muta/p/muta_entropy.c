@@ -52,7 +52,7 @@ RMutaPlugin r_muta_plugin_entropy = {
 		.author = "pancake",
 		.license = "MIT",
 	},
-	.type = R_CRYPTO_TYPE_HASH,
+	.type = R_MUTA_TYPE_HASH,
 	.update = update,
 	.end = end
 };

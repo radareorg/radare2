@@ -70,7 +70,7 @@ static bool fini(RMutaSession *cj) {
 }
 
 RMutaPlugin r_muta_plugin_ror = {
-	.type = R_CRYPTO_TYPE_ENCODER,
+	.type = R_MUTA_TYPE_CRYPTO,
 	.meta = {
 		.name = NAME,
 		.desc = "Rotate Right N bits",

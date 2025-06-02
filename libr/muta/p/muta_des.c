@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2017-2025 - deroad */
 
 #include <r_muta.h>
-#include "des.inc.c"
+#include "algo/des.inc.c"
 
 struct des_state {
 	ut32 keylo[16]; // round key low
@@ -168,7 +168,7 @@ static bool end(RMutaSession *cj, const ut8 *buf, int len) {
 }
 
 RMutaPlugin r_muta_plugin_des = {
-	.type = R_CRYPTO_TYPE_ENCRYPT,
+	.type = R_MUTA_TYPE_CRYPTO,
 	.meta = {
 		.name = "des-ecb",
 		.author = "deroad",

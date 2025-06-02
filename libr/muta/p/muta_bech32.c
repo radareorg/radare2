@@ -198,7 +198,7 @@ RMutaPlugin r_muta_plugin_bech32 = {
 		.author = "W0nda",
 		.license = "BSD-3-Clause",
 	},
-	.type = R_CRYPTO_TYPE_ENCODER,
+	.type = R_MUTA_TYPE_BASE,
 	.set_key = bech32_set_key,
 	.get_key_size = bech32_get_key_size,
 	.check = bech32_check,

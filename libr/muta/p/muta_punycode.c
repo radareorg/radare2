@@ -39,7 +39,7 @@ RMutaPlugin r_muta_plugin_punycode = {
 		.author = "pancake",
 		.license = "LGPL-3.0-only",
 	},
-	.type = R_CRYPTO_TYPE_ENCODER,
+	.type = R_MUTA_TYPE_CHARSET, // XXX this is an actual charset plugin!
 	.set_key = punycode_set_key,
 	.get_key_size = punycode_get_key_size,
 	.check = punycode_check,

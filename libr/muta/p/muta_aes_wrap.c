@@ -87,7 +87,7 @@ static bool end(RMutaSession *cj, const ut8 *buf, int len) {
 }
 
 RMutaPlugin r_muta_plugin_aes_wrap = {
-	.type = R_CRYPTO_TYPE_ENCRYPT,
+	.type = R_MUTA_TYPE_CRYPTO,
 	.meta = {
 		.name = "aes-wrap",
 		.desc = "Rijndael block cipher with Key Wrap Algorithm (RFC 3394)",

@@ -763,7 +763,7 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 }
 
 RMutaPlugin r_muta_plugin_cps2 = {
-	.type = R_CRYPTO_TYPE_ENCRYPT,
+	.type = R_MUTA_TYPE_CRYPTO,
 	.meta = {
 		.name = "cps2",
 		.desc = "Capcom Play System 2",

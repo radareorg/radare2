@@ -42,7 +42,7 @@ static bool end(RMutaSession *cj, const ut8 *buf, int len) {
 }
 
 RMutaPlugin r_muta_plugin_sm4 = {
-	.type = R_CRYPTO_TYPE_ENCRYPT,
+	.type = R_MUTA_TYPE_CRYPTO,
 	.meta = {
 		.name = "sm4-ecb",
 		.desc = "ShāngMì4 block cipher with Electronic Code Book mode",

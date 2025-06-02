@@ -373,7 +373,7 @@ R_API R_MUSTUSE char *r_hash_tostring(RHash * R_NULLABLE ctx, const char *name, 
 		ctx = r_hash_new (true, algo);
 	}
 
-	if (cj && cj->h->type == R_CRYPTO_TYPE_HASH) {
+	if (cj && cj->h->type == R_MUTA_TYPE_HASH) {
 		r_muta_session_update (cj, data, len);
 		ut8 *result = r_muta_session_get_output (cj, &digest_size);
 		memcpy (ctx->digest, result, digest_size);

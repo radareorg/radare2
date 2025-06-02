@@ -3387,7 +3387,7 @@ static void print_encrypted_block(RCore *core, const char *algo, const char *key
 		return;
 	}
 	RMutaSession *cj = r_muta_use (core->muta, algo);
-	if (cj && cj->h->type == R_CRYPTO_TYPE_ENCRYPT) {
+	if (cj && cj->h->type == R_MUTA_TYPE_CRYPTO) {
 		if (r_muta_session_set_key (cj, binkey, keylen, 0, direction)) {
 			if (iv) {
 				ut8 *biniv = malloc (strlen (iv) + 1);
@@ -3459,12 +3459,12 @@ static void cmd_print_op(RCore *core, const char *input) {
 			algo = r_list_get_n (args, 1);
 		}
 		if (!args || !algo) {
-			r_muta_list (core->muta, r_cons_printf, 0, R_CRYPTO_TYPE_SIGNATURE);
+			r_muta_list (core->muta, r_cons_printf, 0, R_MUTA_TYPE_SIGN);
 			r_core_cmd_help_match (core, help_msg_po, "poS");
 			break;
 		}
 		RMutaSession *cj = r_muta_use (core->muta, algo);
-		if (cj && cj->h->type == R_CRYPTO_TYPE_SIGNATURE) {
+		if (cj && cj->h->type == R_MUTA_TYPE_SIGN) {
 			char *key = r_list_get_n (args, 2);
 			ut8 *binkey = (ut8 *)strdup (key);
 			int keylen = r_hex_str2bin (key, binkey);
@@ -3498,7 +3498,7 @@ static void cmd_print_op(RCore *core, const char *input) {
 			algo = r_list_get_n (args, 1);
 		}
 		if (!args || !algo) {
-			r_muta_list (core->muta, r_cons_printf, 0, R_CRYPTO_TYPE_ENCRYPT);
+			r_muta_list (core->muta, r_cons_printf, 0, R_MUTA_TYPE_CRYPTO);
 			r_core_cmd_help_match_spec (core, help_msg_po, "po", input[1]);
 			break;
 		}
@@ -4005,19 +4005,19 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 	}
 	if (!i0 || i0 == 'l' || i0 == 'L') {
 		RMuta *cry = r_muta_new ();
-		r_muta_list (cry, NULL, 'q', R_CRYPTO_TYPE_HASH);
+		r_muta_list (cry, NULL, 'q', R_MUTA_TYPE_HASH);
 		r_muta_free (cry);
 		return true;
 	}
 	if (i0 == 'j') { // "phj"
 		RMuta *cry = r_muta_new ();
-		r_muta_list (cry, r_cons_printf, 'j', R_CRYPTO_TYPE_ALL);
+		r_muta_list (cry, r_cons_printf, 'j', R_MUTA_TYPE_ALL);
 		r_muta_free (cry);
 		return true;
 	}
 	if (i0 == 'J') { // "phJ"
 		RMuta *cry = r_muta_new ();
-		r_muta_list (cry, r_cons_printf, 'J', R_CRYPTO_TYPE_HASH);
+		r_muta_list (cry, r_cons_printf, 'J', R_MUTA_TYPE_HASH);
 		r_muta_free (cry);
 		return true;
 	}

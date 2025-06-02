@@ -19,7 +19,7 @@ RMutaPlugin r_muta_plugin_sip = {
 		.author = "pancake",
 		.license = "MIT",
 	},
-	.type = R_CRYPTO_TYPE_HASH,
+	.type = R_MUTA_TYPE_HASH,
 	.implements = "sip",
 	.update = update,
 	.end = update

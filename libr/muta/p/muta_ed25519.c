@@ -96,7 +96,7 @@ static bool end(RMutaSession *cj, const ut8 *buf, int len) {
 }
 
 RMutaPlugin r_muta_plugin_ed25519 = {
-	.type = R_CRYPTO_TYPE_SIGNATURE,
+	.type = R_MUTA_TYPE_SIGN,
 	.meta = {
 		.name = "ed25519",
 		.desc = "Elliptic curve pubkey cryptographic algorithm used for signing and verification",

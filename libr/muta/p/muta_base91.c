@@ -48,7 +48,7 @@ RMutaPlugin r_muta_plugin_base91 = {
 		.license = "MIT",
 	},
 	.implements = "base91",
-	.type = R_CRYPTO_TYPE_ENCODER,
+	.type = R_MUTA_TYPE_BASE, // _BASE ?
 	.set_key = base91_set_key,
 	.get_key_size = base91_get_key_size,
 	.check = base91_check,

@@ -103,7 +103,7 @@ static bool fini(RMutaSession *cj) {
 }
 
 RMutaPlugin r_muta_plugin_rc4 = {
-	.type = R_CRYPTO_TYPE_ENCRYPT,
+	.type = R_MUTA_TYPE_CRYPTO,
 	.meta = {
 		.name = "rc4",
 		.license = "LGPL-3.0-only",

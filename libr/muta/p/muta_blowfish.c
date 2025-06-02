@@ -337,7 +337,7 @@ static bool end(RMutaSession *cj, const ut8 *buf, int len) {
 }
 
 RMutaPlugin r_muta_plugin_blowfish = {
-	.type = R_CRYPTO_TYPE_ENCRYPT,
+	.type = R_MUTA_TYPE_CRYPTO,
 	.meta = {
 		.name = "blowfish",
 		.license = "LGPL-3.0-only",
@@ -357,21 +357,4 @@ R_API RLibStruct radare_plugin = {
 	.data = &r_muta_plugin_blowfish,
 	.version = R2_VERSION
 };
-#endif
-
-#if 0
-int main() {
-	ut8 out[16];
-	struct blowfish_state st;
-
-	/* encrypt */
-	blowfish_init (&st, (const ut8*)"key", 3);
-	blowfish_crypt (&st, (const ut8*)"helloworld123456", out, sizeof (out));
-
-	/* decrypt */
-	blowfish_init (&st, (const ut8*)"key", 3);
-	blowfish_decrypt (&st, out, out, sizeof (out));
-
-	eprintf ("%s\n", (const char *)out); // must print "helloworld123456"
-}
 #endif
