@@ -6,6 +6,6 @@ includedir=@PKGCFG_INCDIR@
 Name: r_debug
 Description: radare foundation libraries
 Version: @VERSION@
-Requires: r_reg r_anal r_bp r_io r_cons r_syscall r_crypto r_flag r_util r_egg r_socket
+Requires: r_reg r_anal r_bp r_io r_cons r_syscall r_muta r_flag r_util r_egg r_socket
 Libs: -L${libdir} -lr_debug
 Cflags: -I${includedir}/libr

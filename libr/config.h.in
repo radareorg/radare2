@@ -24,6 +24,6 @@
 #define R_ESIL_STATIC_PLUGINS @plugins_esil@
 #define R_CORE_STATIC_PLUGINS @plugins_core@
 #define R_LANG_STATIC_PLUGINS @plugins_lang@
-#define R_CRYPTO_STATIC_PLUGINS @plugins_crypto@
+#define R_MUTA_STATIC_PLUGINS @plugins_muta@
 
 #endif

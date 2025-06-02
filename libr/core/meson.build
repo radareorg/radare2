@@ -71,7 +71,7 @@ r_core_deps = [
   r_flag_dep,
   r_egg_dep,
   r_debug_dep,
-  r_crypto_dep,
+  r_muta_dep,
   r_config_dep,
   r_bin_dep,
   r_asm_dep,

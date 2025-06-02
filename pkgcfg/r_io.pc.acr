@@ -6,6 +6,6 @@ includedir=@PKGCFG_INCDIR@
 Name: r_io
 Description: radare foundation libraries
 Version: @VERSION@
-Requires: r_util r_socket r_cons r_crypto
+Requires: r_util r_socket r_cons r_muta
 Libs: -L${libdir} -lr_io
 Cflags: -I${includedir}/libr

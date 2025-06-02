@@ -39,7 +39,7 @@ r_main_deps = [
   r_socket_dep,
   r_fs_dep,
   r_magic_dep,
-  r_crypto_dep
+  r_muta_dep
 ]
 
 r_main = library('r_main', r_main_sources,

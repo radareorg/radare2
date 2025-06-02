@@ -203,7 +203,7 @@ deps =  [
     r_util_dep,
     r_esil_dep,
     r_reg_dep,
-    r_crypto_dep,
+    r_muta_dep,
     java_dep,
     capstone_dep,
   ]
