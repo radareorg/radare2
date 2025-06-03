@@ -232,7 +232,7 @@ R_API RConsCanvas *r_cons_canvas_new(RCons *cons, int w, int h, int flags) {
 	if (flags == R_CONS_CANVAS_FLAG_DEFAULT) {
 		c->flags = 0;
 	} else if (flags == R_CONS_CANVAS_FLAG_INHERIT) {
-		c->flags = r_cons_canvas_flags (cons);
+		c->flags = cons? r_cons_canvas_flags (cons): 0;
 	} else {
 		c->flags = flags;
 	}
@@ -652,6 +652,7 @@ R_API void r_cons_canvas_line(RConsCanvas *c, int x, int y, int x2, int y2, RCan
 }
 
 R_API int r_cons_canvas_flags(RCons * R_NONNULL cons) {
+	R_RETURN_VAL_IF_FAIL (cons, 0);
 	int flags = 0;
 	if (cons->use_utf8) {
 		flags |= R_CONS_CANVAS_FLAG_UTF8;
