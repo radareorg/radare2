@@ -5,13 +5,11 @@
 R_API RConfigNode* r_config_node_new(const char *name, const char *value) {
 	R_RETURN_VAL_IF_FAIL (name && *name && value, NULL);
 	RConfigNode *node = R_NEW0 (RConfigNode);
-	if (R_LIKELY (node)) {
-		node->name = strdup (name);
-		node->value = strdup (r_str_get (value));
-		node->flags = CN_RW | CN_STR;
-		node->i_value = r_num_get (NULL, value);
-		node->options = NULL;
-	}
+	node->name = strdup (name);
+	node->value = strdup (r_str_get (value));
+	node->flags = CN_RW | CN_STR;
+	node->i_value = r_num_get (NULL, value);
+	node->options = NULL;
 	return node;
 }
 
@@ -39,15 +37,13 @@ R_API void r_config_node_add_option(RConfigNode *node, const char *option) {
 R_API RConfigNode* r_config_node_clone(RConfigNode *n) {
 	R_RETURN_VAL_IF_FAIL (n, NULL);
 	RConfigNode *cn = R_NEW0 (RConfigNode);
-	if (R_LIKELY (cn)) {
-		cn->name = strdup (n->name);
-		cn->desc = n->desc ? strdup (n->desc) : NULL;
-		cn->value = strdup (r_str_get (n->value));
-		cn->i_value = n->i_value;
-		cn->flags = n->flags;
-		cn->setter = n->setter;
-		cn->options = n->options? r_list_clone (n->options, NULL): NULL;
-	}
+	cn->name = strdup (n->name);
+	cn->desc = n->desc ? strdup (n->desc) : NULL;
+	cn->value = strdup (r_str_get (n->value));
+	cn->i_value = n->i_value;
+	cn->flags = n->flags;
+	cn->setter = n->setter;
+	cn->options = n->options? r_list_clone (n->options, NULL): NULL;
 	return cn;
 }
 

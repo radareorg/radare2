@@ -436,7 +436,7 @@ static bool cmd_ec(RCore *core, const char *input) {
 			break;
 		case 'c':
 		case '.':
-			r_cons_printf ("%s\n", core->theme);
+			r_kons_printf (core->cons, "%s\n", core->theme);
 			break;
 		case '?':
 			r_core_cmd_help (core, help_msg_eco);
@@ -697,7 +697,7 @@ static void cmd_eplus(RCore *core, const char *input) {
 }
 
 static void core_config_list(RCore *core, const char *str, int rad) {
-	char *res = r_config_list (core->config, NULL, 0);
+	char *res = r_config_list (core->config, str, rad);
 	r_kons_print (core->cons, res);
 	free (res);
 }
