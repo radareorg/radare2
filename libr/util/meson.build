@@ -51,6 +51,7 @@ r_util_sources = [
   'format.c',
   'format2.c',
   'pie.c',
+  'treemap.c',
   'seven.c',
   'print.c',
   'prof.c',
