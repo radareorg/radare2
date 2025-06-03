@@ -255,7 +255,7 @@ conf_data.set('plugins_bp', '&r_bp_plugin_' + ', &r_bp_plugin_'.join(bp_plugins)
 conf_data.set('plugins_bin', '&r_bin_plugin_' + ', &r_bin_plugin_'.join(bin_plugins) + ', 0')
 conf_data.set('plugins_bin_ldr', '&r_bin_ldr_plugin_' + ', &r_bin_ldr_plugin_'.join(bin_ldr_plugins) + ', 0')
 conf_data.set('plugins_bin_xtr', '&r_bin_xtr_plugin_' + ', &r_bin_xtr_plugin_'.join(bin_xtr_plugins) + ', 0')
-conf_data.set('plugins_crypto', '&r_crypto_plugin_' + ', &r_crypto_plugin_'.join(crypto_plugins) + ', 0')
+conf_data.set('plugins_muta', '&r_muta_plugin_' + ', &r_muta_plugin_'.join(muta_plugins) + ', 0')
 conf_data.set('plugins_io', '&r_io_plugin_' + ', &r_io_plugin_'.join(io_plugins) + ', 0')
 conf_data.set('plugins_fs', '&r_fs_plugin_' + ', &r_fs_plugin_'.join(fs_plugins) + ', 0')
 conf_data.set('plugins_debug', '&r_debug_plugin_' + ', &r_debug_plugin_'.join(debug_plugins) + ', 0')
@@ -590,7 +590,7 @@ endif
 
 subdir('libr/util')
 subdir('libr/socket')
-subdir('libr/crypto')
+subdir('libr/muta')
 subdir('shlr')
 subdir('libr/cons')
 subdir('shlr/gdb')
@@ -628,7 +628,7 @@ if meson.is_subproject()
       r_cons_dep,
       r_core_dep,
       r_main_dep,
-      r_crypto_dep,
+      r_muta_dep,
       r_debug_dep,
       r_egg_dep,
       r_flag_dep,

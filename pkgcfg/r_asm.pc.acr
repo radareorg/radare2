@@ -1,11 +1,11 @@
 prefix=@PREFIX@
 exec_prefix=${prefix}
-libdir=@PKGCFG_LIBDIR@
-includedir=@PKGCFG_INCDIR@
+libdir=@LIBDIR@
+includedir=${prefix}/include
 
 Name: r_asm
 Description: radare foundation libraries
 Version: @VERSION@
-Requires: r_syscall r_lang r_util r_flag r_cons r_reg r_arch
-Libs: -L${libdir} -lr_asm
-Cflags: -I${includedir}/libr
+Requires: r_syscall r_util r_esil r_muta r_flag r_cons r_reg r_arch
+Libs: -L${libdir} -lr_asm  
+Cflags: -I${includedir}/libr 

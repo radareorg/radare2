@@ -27,7 +27,7 @@
 #include <r_util.h>
 #include <rvc.h>
 #include <r_util/r_print.h>
-#include <r_crypto.h>
+#include <r_muta.h>
 #include <r_bind.h>
 #include <r_codemeta.h>
 
@@ -345,7 +345,7 @@ struct r_core_t {
 	bool vmode; // is r2 in visual or panels mode?
 	/* files */
 	RCons *cons;
-	RCrypto *crypto;
+	RMuta *muta;
 	RIO *io;
 	RNum *num;
 	ut64 rc; // command's return code .. related to num->value;

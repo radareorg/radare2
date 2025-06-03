@@ -5,7 +5,7 @@
 #include <r_io.h>
 #include <r_main.h>
 #include <r_util/r_print.h>
-#include <r_crypto.h>
+#include <r_muta.h>
 
 
 typedef struct {
@@ -340,7 +340,7 @@ static int do_help(int line) {
 		"             (- will slurp the key from stdin, the @ prefix points to a file\n"
 		" -k          show hash using the openssh's randomkey algorithm\n"
 		" -q          run in quiet mode (-qq to show only the hash)\n"
-		" -L          list crypto plugins (combines with -q, used by -a, -E and -D)\n"
+		" -L          list muta plugins (combines with -q, used by -a, -E and -D)\n"
 		" -r          output radare commands\n"
 		" -s string   hash this string instead of files\n"
 		" -t to       stop hashing at given address\n"
@@ -351,9 +351,9 @@ static int do_help(int line) {
 }
 
 static void algolist(int mode) {
-	RCrypto *cry = r_crypto_new ();
-	r_crypto_list (cry, NULL, mode, (int)R_CRYPTO_TYPE_ALL);
-	r_crypto_free (cry);
+	RMuta *cry = r_muta_new ();
+	r_muta_list (cry, NULL, mode, (int)R_MUTA_TYPE_ALL);
+	r_muta_free (cry);
 }
 
 #define setHashString(x, y) {\
@@ -409,22 +409,22 @@ static int encrypt_or_decrypt(RahashOptions *ro, const char *hashstr, int hashst
 	// TODO: generalise this for all non key encoding/decoding.
 	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo) || !strcmp ("punycode", algo) || !strcmp ("bech32", algo);
 	if (no_key_mode || ro->s.len > 0) {
-		RCrypto *cry = r_crypto_new ();
-		RCryptoJob *cj = r_crypto_use (cry, algo);
+		RMuta *cry = r_muta_new ();
+		RMutaSession *cj = r_muta_use (cry, algo);
 		if (cj) {
-			if (r_crypto_job_set_key (cj, ro->s.buf, ro->s.len, 0, direction)) {
+			if (r_muta_session_set_key (cj, ro->s.buf, ro->s.len, 0, direction)) {
 				const char *buf = hashstr;
 				int buflen = hashstr_len;
 
-				if (iv && !r_crypto_job_set_iv (cj, iv, ivlen)) {
+				if (iv && !r_muta_session_set_iv (cj, iv, ivlen)) {
 					R_LOG_ERROR ("Invalid IV");
 					return 0;
 				}
 
-				r_crypto_job_update (cj, (const ut8 *) buf, buflen);
+				r_muta_session_update (cj, (const ut8 *) buf, buflen);
 
 				int result_size = 0;
-				ut8 *result = r_crypto_job_get_output (cj, &result_size);
+				ut8 *result = r_muta_session_get_output (cj, &result_size);
 				if (result) {
 					print_result (ro, result, result_size);
 					free (result);
@@ -432,12 +432,12 @@ static int encrypt_or_decrypt(RahashOptions *ro, const char *hashstr, int hashst
 			} else {
 				R_LOG_ERROR ("Invalid key");
 			}
-			r_crypto_free (cry);
+			r_muta_free (cry);
 			return 0;
 		} else {
 			R_LOG_ERROR ("Unknown %s algorithm '%s'", (direction? "encryption": "decryption"), algo);
 		}
-		r_crypto_free (cry);
+		r_muta_free (cry);
 	} else {
 		R_LOG_ERROR ("%s key not defined. Use -S [key]", (direction? "Encryption": "Decryption"));
 	}
@@ -447,13 +447,13 @@ static int encrypt_or_decrypt(RahashOptions *ro, const char *hashstr, int hashst
 static int encrypt_or_decrypt_file(RahashOptions *ro, const char *filename, const ut8 *iv, int ivlen, int mode) {
 	const int direction = ro->direction;
 	const char *algo = ro->algorithm;
-	// TODO: generalise this for all non key encoding/decoding. aka crypto vs encoder plugins after moving all those hash algos to crypto plugins
+	// TODO: generalise this for all non key encoding/decoding. aka muta vs encoder plugins after moving all those hash algos to muta plugins
 	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo) || !strcmp ("punycode", algo) || !strcmp ("bech32", algo);
 	if (no_key_mode || ro->s.len > 0) {
-		RCrypto *cry = r_crypto_new ();
-		RCryptoJob *cj = r_crypto_use (cry, algo);
+		RMuta *cry = r_muta_new ();
+		RMutaSession *cj = r_muta_use (cry, algo);
 		if (cj) {
-			if (r_crypto_job_set_key (cj, ro->s.buf, ro->s.len, 0, direction)) {
+			if (r_muta_session_set_key (cj, ro->s.buf, ro->s.len, 0, direction)) {
 				size_t file_size;
 				ut8 *buf;
 				if (!strcmp (filename, "-")) {
@@ -467,16 +467,16 @@ static int encrypt_or_decrypt_file(RahashOptions *ro, const char *filename, cons
 					R_LOG_ERROR ("Cannot open '%s'", filename);
 					return -1;
 				}
-				if (iv && !r_crypto_job_set_iv (cj, iv, ivlen)) {
+				if (iv && !r_muta_session_set_iv (cj, iv, ivlen)) {
 					R_LOG_ERROR ("Invalid IV");
 					free (buf);
 					return 0;
 				}
 
-				r_crypto_job_update (cj, buf, file_size);
+				r_muta_session_update (cj, buf, file_size);
 
 				int result_size = 0;
-				ut8 *result = r_crypto_job_get_output (cj, &result_size);
+				ut8 *result = r_muta_session_get_output (cj, &result_size);
 				if (result) {
 					print_result (ro, result, result_size);
 					free (result);
@@ -485,12 +485,12 @@ static int encrypt_or_decrypt_file(RahashOptions *ro, const char *filename, cons
 			} else {
 				R_LOG_ERROR ("Invalid key");
 			}
-			r_crypto_free (cry);
+			r_muta_free (cry);
 			return 0;
 		} else {
 			R_LOG_ERROR ("Unknown %s algorithm '%s'", direction? "encryption": "decryption", algo);
 		}
-		r_crypto_free (cry);
+		r_muta_free (cry);
 	} else {
 		R_LOG_ERROR ("%s key not defined. Use -S [key]", direction? "Encryption": "Decryption");
 	}

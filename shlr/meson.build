@@ -241,7 +241,7 @@ winkd_files = [
 winkd_inc = [platform_inc, include_directories('winkd')]
 
 libr2winkd = static_library('r2winkd', winkd_files,
-  dependencies: [r_crypto_dep, r_socket_dep, r_util_dep],
+  dependencies: [r_muta_dep, r_socket_dep, r_util_dep],
   include_directories: winkd_inc,
   implicit_include_directories: false
 )
@@ -253,7 +253,7 @@ winkd_dep = declare_dependency(
 
 if get_option('blob')
 libr2winkd_static = static_library('r2winkd_static', winkd_files,
-  dependencies: [r_crypto_static_dep, r_socket_static_dep, r_util_static_dep],
+  dependencies: [r_muta_static_dep, r_socket_static_dep, r_util_static_dep],
   include_directories: winkd_inc,
   implicit_include_directories: false
 )

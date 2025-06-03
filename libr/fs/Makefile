@@ -1,5 +1,5 @@
 NAME=r_fs
-R2DEPS=r_util r_io r_socket r_cons r_crypto
+R2DEPS=r_util r_io r_socket r_cons r_muta
 CFLAGS:=-DR2_PLUGIN_INCORE -Iarch/include -Iarch $(CFLAGS)
 
 SHLR=../../shlr/

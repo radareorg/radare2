@@ -1,0 +1,11 @@
+OBJ_ED25519=muta_ed25519.o
+
+STATIC_OBJ+=${OBJ_ED25519}
+TARGET_ED25519=muta_ed25519.${EXT_SO}
+
+ALL_TARGETS+=${TARGET_ED25519}
+# DEPFLAGS=-L.. -lr_muta -I../../../include
+
+${TARGET_ED25519}: ${OBJ_ED25519}
+	${CC} $(call libname,muta_ed25519) $(DEPFLAGS) \
+		${LDFLAGS} ${CFLAGS} -o ${TARGET_ED25519} ${OBJ_ED25519}

@@ -162,73 +162,74 @@ NAME=rahash2 -L
 FILE=-
 CMDS=!rahash2 -L
 EXPECT=<<EOF
-c      aes-ecb  Rijndael block cipher with Electronic Code Book mode
-c      aes-cbc  Rijndael block cipher with Cipher Block Chaining mode
-c     aes-wrap  Rijndael block cipher with Key Wrap Algorithm (RFC 3394)
-e       base64  Binary to text encoding scheme using 64 ascii characters
-e       base91  Binary to text encoding scheme using 91 ascii characters
-e       bech32  
-c     blowfish  Bruce Schneier's symetric-key block cipher
-c         cps2  Capcom Play System 2
-c      des-ecb  DES with with Electronic Code Book mode
-s      ed25519  Elliptic curve pubkey cryptographic algorithm used for signing and verification
-h      entropy  Shannon entropy
-e     punycode  Unicoded represented in plain ascii
-c          rc2  Ron Rivest's Code symmetric key encryption also known as ARC2
-c          rc4  Rivest Cipher 4
-c          rc6  Rivest's Cipher 6
-e          rol  Rotate Left N bits
-e          ror  Rotate Right N bits
-e          rot  Rotate Encryption
-c  serpent-ecb  Serpent block cipher with Electronic Code Book mode
-h          sip  SipHash-2-4
-c      sm4-ecb  ShāngMì4 block cipher with Electronic Code Book mode
-h      strhash  String hash using a modified DJB2 xor
-c          xor  Byte level Exclusive Or
-h          md5
-h         sha1
-h       sha256
-h       sha384
-h       sha512
-h          md4
-h          xor
-h      xorpair
-h       parity
-h      entropy
-h      hamdist
-h      pcprint
-h       mod255
-h       xxhash
-h      adler32
-h         luhn
-h       ssdeep
-h    crc8smbus
-h     crc15can
-h        crc16
-h    crc16hdlc
-h     crc16usb
-h    crc16citt
-h        crc24
-h        crc32
-h       crc32c
-h crc32ecma267
-h   crc32bzip2
-h       crc32d
-h   crc32mpeg2
-h   crc32posix
-h       crc32q
-h  crc32jamcrc
-h    crc32xfer
-h        crc64
-h    crc64ecma
-h      crc64we
-h      crc64xz
-h     crc64iso
-h    fletcher8
-h   fletcher16
-h   fletcher32
-h   fletcher64
-h          elf
+cryp      aes-ecb  Rijndael block cipher with Electronic Code Book mode
+cryp      aes-cbc  Rijndael block cipher with Cipher Block Chaining mode
+cryp     aes-wrap  Rijndael block cipher with Key Wrap Algorithm (RFC 3394)
+cryp       base64  Binary to text encoding scheme using 64 ascii characters
+base       base91  Binary to text encoding scheme using 91 ascii characters
+base       bech32  
+cryp     blowfish  Bruce Schneier's symetric-key block cipher
+cryp         cps2  Capcom Play System 2
+cryp      des-ecb  DES with with Electronic Code Book mode
+sign      ed25519  Elliptic curve pubkey cryptographic algorithm used for signing and verification
+hash      entropy  Shannon entropy
+hash         null  mutate nothing
+char     punycode  Unicoded represented in plain ascii
+cryp          rc2  Ron Rivest's Code symmetric key encryption also known as ARC2
+cryp          rc4  Rivest Cipher 4
+cryp          rc6  Rivest's Cipher 6
+cryp          rol  Rotate Left N bits
+cryp          ror  Rotate Right N bits
+cryp          rot  Rotate Encryption
+cryp  serpent-ecb  Serpent block cipher with Electronic Code Book mode
+hash          sip  SipHash-2-4
+cryp      sm4-ecb  ShāngMì4 block cipher with Electronic Code Book mode
+hash      strhash  String hash using a modified DJB2 xor
+cryp          xor  Byte level Exclusive Or
+hash          md5
+hash         sha1
+hash       sha256
+hash       sha384
+hash       sha512
+hash          md4
+hash          xor
+hash      xorpair
+hash       parity
+hash      entropy
+hash      hamdist
+hash      pcprint
+hash       mod255
+hash       xxhash
+hash      adler32
+hash         luhn
+hash       ssdeep
+hash    crc8smbus
+hash     crc15can
+hash        crc16
+hash    crc16hdlc
+hash     crc16usb
+hash    crc16citt
+hash        crc24
+hash        crc32
+hash       crc32c
+hash crc32ecma267
+hash   crc32bzip2
+hash       crc32d
+hash   crc32mpeg2
+hash   crc32posix
+hash       crc32q
+hash  crc32jamcrc
+hash    crc32xfer
+hash        crc64
+hash    crc64ecma
+hash      crc64we
+hash      crc64xz
+hash     crc64iso
+hash    fletcher8
+hash   fletcher16
+hash   fletcher32
+hash   fletcher64
+hash          elf
 EOF
 RUN
 

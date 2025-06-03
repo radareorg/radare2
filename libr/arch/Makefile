@@ -2,7 +2,7 @@ include ../config.mk
 include p/capstone.mk
 
 NAME=r_arch
-R2DEPS+=r_util r_reg r_esil r_crypto
+R2DEPS+=r_util r_reg r_esil r_muta
 
 CFLAGS+=-DR2_PLUGIN_INCORE
 CFLAGS:=-I.. -I$(LTOP)/arch/include -DR2_PLUGIN_INCORE -Iarch -I$(TOP)/shlr $(CFLAGS)

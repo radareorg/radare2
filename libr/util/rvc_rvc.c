@@ -4,7 +4,7 @@
 
 // XXX support git too!
 #define R_CRYPTO_INTERNAL 1
-#include "../crypto/hash/sha2.c"
+#include "../muta/hash/sha2.c"
 
 #include <rvc.h>
 

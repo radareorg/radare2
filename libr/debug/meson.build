@@ -36,7 +36,7 @@ r_debug_sources = [
 
 r_debug_deps = [
   r_util_dep,
-  r_crypto_dep,
+  r_muta_dep,
   r_reg_dep,
   r_esil_dep,
   r_arch_dep,
@@ -119,7 +119,7 @@ r_debug_dep = declare_dependency(link_with: r_debug,
 if get_option('blob')
 r_debug_static_deps = [
   r_util_static_dep,
-  r_crypto_static_dep,
+  r_muta_static_dep,
   r_reg_static_dep,
   r_syscall_static_dep,
   r_anal_static_dep,
@@ -159,7 +159,7 @@ pkgconfig_mod.generate(r_debug,
   libraries: pkgcfg_sanitize_libs,
   requires: [
     'r_util',
-    'r_crypto',
+    'r_muta',
     'r_reg',
     'r_bin',
     'r_syscall',

@@ -1,7 +1,7 @@
 include ../../global.mk
 
 NAME=r_asm
-R2DEPS=r_syscall r_util r_esil r_crypto
+R2DEPS=r_syscall r_util r_esil r_muta
 R2DEPS+=r_flag r_cons r_reg r_arch
 CFLAGS+=-DR2_PLUGIN_INCORE -Iarch/include -Iarch
 CFLAGS+=-I../../shlr # for spp only

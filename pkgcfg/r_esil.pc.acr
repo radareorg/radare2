@@ -1,11 +1,11 @@
 prefix=@PREFIX@
 exec_prefix=${prefix}
-libdir=@PKGCFG_LIBDIR@
-includedir=@PKGCFG_INCDIR@
+libdir=@LIBDIR@
+includedir=${prefix}/include
 
 Name: r_esil
 Description: radare foundation libraries
 Version: @VERSION@
 Requires: r_util r_reg
-Libs: -L${libdir} -lr_esil
-Cflags: -I${includedir}/libr
+Libs: -L${libdir} -lr_esil  
+Cflags: -I${includedir}/libr 

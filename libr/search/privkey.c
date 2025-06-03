@@ -5,7 +5,7 @@
 // Updated by Sylvain Pelissier 2024
 
 #include <r_search.h>
-#include <r_crypto/r_ed25519.h>
+#include <r_muta/r_ed25519.h>
 
 /* The minimal length to perform a search is the sizes of
 the sequence tag, the minimal length of the sequence,
@@ -28,14 +28,13 @@ static const ut8 *parse_next_field(const ut8 *start, ut32 *len) {
 	if (!(start[1] & 0x80)) {
 		*len = (ut32)start[1];
 		return start + 2;
-	} else {
-		int i;
-		const int lensize = start[1] & 0x7f;
-		for (i = 0; i < lensize; i++) {
-			*len = (*len << 8) | start[2 + i];
-		}
-		return start + 2 + lensize;
 	}
+	int i;
+	const int lensize = start[1] & 0x7f;
+	for (i = 0; i < lensize; i++) {
+		*len = (*len << 8) | start[2 + i];
+	}
+	return start + 2 + lensize;
 }
 
 /* Check if `start` points to an ensemble of BER fields
@@ -113,8 +112,7 @@ R_IPI int search_asn1_privkey_update(RSearch *s, ut64 from, const ut8 *buf, int 
 				parse_next_field(buf + index, &kw->keyword_length);
 				t = r_search_hit_new (s, kw, from + index);
 				if (t > 1) {
-						return s->nhits - old_nhits;
-
+					return s->nhits - old_nhits;
 				}
 			}
 		}
@@ -141,7 +139,7 @@ R_IPI int search_raw_privkey_update(RSearch *s, ut64 from, const ut8 *buf, int l
 
 	r_list_foreach (s->kws, iter, kw) {
 		for (i = 0; i < len - ED25519_SEARCH_MIN_LENGTH; i++) {
-			ed25519_create_keypair (buf + i, private_key, public_key);
+			r_muta_ed25519_keypair (buf + i, private_key, public_key);
 			if (!memcmp (public_key, public_key_target, ED25519_PUBKEY_LENGTH)) {
 				t = r_search_hit_new (s, kw, from + i);
 				if (t > 1) {

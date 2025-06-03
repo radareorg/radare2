@@ -1,0 +1,11 @@
+prefix=@PREFIX@
+exec_prefix=${prefix}
+libdir=@LIBDIR@
+includedir=${prefix}/include
+
+Name: r_muta
+Description: radare foundation libraries
+Version: @VERSION@
+Requires: r_util r_util r_util r_util
+Libs: -L${libdir} -lr_muta  
+Cflags: -I${includedir}/libr 

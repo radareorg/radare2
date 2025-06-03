@@ -3,7 +3,7 @@ BINS=$(patsubst %.c,$(UNITS_BINDIR)/%,$(wildcard *.c))
 # LDFLAGS+=$(shell pkg-config --libs r_core)
 -include ../../config-user.mk
 LDFLAGS+=-L$(LIBDIR)
-LDFLAGS+=-lr_core -lm -lr_config -lr_debug -lr_bin -lr_lang -lr_anal -lr_bp -lr_egg -lr_asm -lr_flag -lr_search -lr_syscall -lr_fs -lr_io -lr_socket -lr_cons -lr_magic -lr_crypto -lr_arch -lr_esil -lr_reg -lr_util -ldl
+LDFLAGS+=-lr_core -lm -lr_config -lr_debug -lr_bin -lr_lang -lr_anal -lr_bp -lr_egg -lr_asm -lr_flag -lr_search -lr_syscall -lr_fs -lr_io -lr_socket -lr_cons -lr_magic -lr_muta -lr_arch -lr_esil -lr_reg -lr_util -ldl
 CFLAGS+=-I$(INCLUDEDIR)
 CFLAGS+=-I../../libr/include
 CFLAGS+=-I../../subprojects/sdb/include

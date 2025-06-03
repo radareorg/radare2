@@ -1,6 +1,7 @@
-/* radare2 - LGPL - Copyright 2022 - Sylvain Pelissier */
-#include <r_crypto.h>
+/* radare2 - LGPL - Copyright 2022-2025 - Sylvain Pelissier */
+
 #include <r_search.h>
+#include <r_muta.h>
 #include <r_util.h>
 
 #define SM4_SEARCH_LENGTH 24

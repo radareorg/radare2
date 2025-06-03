@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2024 - pancake, Roc Valles, condret, killabyte */
+/* radare - LGPL - Copyright 2011-2025 - pancake, Roc Valles, condret, killabyte */
 
 #if 0
 http://www.atmel.com/images/atmel-0856-avr-instruction-set-manual.pdf
@@ -10,7 +10,7 @@ https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 
 #include "./disasm.h"
 #include "./assemble.h"
-#include "../crypto/p/des.inc.c"
+#include "../muta/p/algo/des.inc.c"
 
 typedef struct _cpu_const_tag {
 	const char *const key;

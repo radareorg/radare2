@@ -19,7 +19,7 @@ else
 R_IO_SHM_LINKFLAGS+=-L../../cons -lr_cons
 R_IO_SHM_LINKFLAGS+=-L../../util -lr_util
 R_IO_SHM_LINKFLAGS+=-L../../socket -lr_socket
-R_IO_SHM_LINKFLAGS+=-L../../crypto -lr_crypto
+R_IO_SHM_LINKFLAGS+=-L../../muta -lr_muta
 R_IO_SHM_LINKFLAGS+=-L.. -lr_io
 endif
 
