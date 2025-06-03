@@ -41,7 +41,7 @@ static int r_cmd_agD_call(void *user, const char *input) {
 	r_config_set_b (core->config, "asm.addr", false);
 	r_config_set_b (core->config, "asm.bytes", false);
 	RAGraphTransitionCBs agtcbs = {&_get_title, &_get_body};
-	RAGraph *dtagraph = r_agraph_new_from_graph (fcn_dtgraph, &agtcbs, core);
+	RAGraph *dtagraph = r_agraph_new_from_graph (core, fcn_dtgraph, &agtcbs, core);
 	r_config_set_b (core->config, "asm.lines", o_asm_lines);
 	r_config_set_b (core->config, "asm.addr", o_asm_address);
 	r_config_set_b (core->config, "asm.bytes", o_asm_bytes);

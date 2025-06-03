@@ -8530,7 +8530,7 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 					r_anal_op_free (aop);
 					return;
 				}
-				RAGraph *agraph = r_agraph_new_from_graph (dfg->flow, &cbs, NULL);
+				RAGraph *agraph = r_agraph_new_from_graph (core, dfg->flow, &cbs, NULL);
 				r_anal_esil_dfg_free (dfg);
 				agraph->can->linemode = r_config_get_i (core->config, "graph.linemode");
 				agraph->layout = r_config_get_i (core->config, "graph.layout");
@@ -8552,7 +8552,7 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 					r_config_get_b (core->config, "esil.dfg.mapinfo"),
 					r_config_get_b (core->config, "esil.dfg.maps"));
 			if (dfg) {
-				RAGraph *agraph = r_agraph_new_from_graph (dfg->flow, &cbs, NULL);
+				RAGraph *agraph = r_agraph_new_from_graph (core, dfg->flow, &cbs, NULL);
 				r_anal_esil_dfg_free (dfg);
 				agraph->can->linemode = r_config_get_i (core->config, "graph.linemode");
 				agraph->layout = r_config_get_i (core->config, "graph.layout");
@@ -8590,7 +8590,7 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 					r_anal_op_free (aop);
 					return;
 				}
-				agraph = r_agraph_new_from_graph (dfg->flow, &cbs, NULL);
+				agraph = r_agraph_new_from_graph (core, dfg->flow, &cbs, NULL);
 				r_anal_esil_dfg_free (dfg);
 			}
 			r_anal_op_free (aop);
@@ -8599,7 +8599,7 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 				r_config_get_b (core->config, "esil.dfg.mapinfo"),
 				r_config_get_b (core->config, "esil.dfg.maps"));
 			R_RETURN_IF_FAIL (dfg);
-			agraph = r_agraph_new_from_graph (dfg->flow, &cbs, NULL);
+			agraph = r_agraph_new_from_graph (core, dfg->flow, &cbs, NULL);
 			r_anal_esil_dfg_free (dfg);
 		}
 		const ut64 osc = r_config_get_i (core->config, "scr.color");
@@ -12258,8 +12258,7 @@ R_API void r_core_agraph_treemap(RCore *core, int use_utf, const char *input) {
 	int h, w = r_kons_get_size (core->cons, &h);
 	w--;
 	h--;
-	int flags = r_cons_canvas_flags (core->cons);
-	RConsCanvas *canvas = r_cons_canvas_new (w, h, flags);
+	RConsCanvas *canvas = r_cons_canvas_new (core->cons, w, h, R_CONS_CANVAS_FLAG_INHERIT);
 	r_cons_canvas_box (canvas, 1, 1, w - 1, h - 1, "");
 	RListIter *iter;
 	RAnalFunction *fcn = NULL;
@@ -12487,7 +12486,7 @@ static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, 
 			.get_title = _graph_node_info_get_title,
 			.get_body = _graph_node_info_get_body
 		};
-		agraph = r_agraph_new_from_graph (graph, &cbs, NULL);
+		agraph = r_agraph_new_from_graph (core, graph, &cbs, NULL);
 		switch (*input) {
 		case 0:
 			agraph->can->linemode = r_config_get_i (core->config, "graph.linemode");
@@ -12863,7 +12862,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			RConfigHold *hc = r_config_hold_new (core->config);
 			r_config_hold (hc, "asm.addr", NULL);
 			const bool o_graph_addr = r_config_get_b (core->config, "graph.addr");
-			r_config_set_i (core->config, "asm.addr", o_graph_addr);
+			r_config_set_b (core->config, "asm.addr", o_graph_addr);
 			r_core_anal_graph (core, r_num_math (core->num, input + 2),
 				R_CORE_ANAL_JSON | R_CORE_ANAL_JSON_FORMAT_DISASM);
 			r_config_hold_restore (hc);

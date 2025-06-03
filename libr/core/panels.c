@@ -2475,8 +2475,7 @@ static void __init_all_dbs(RCore *core) {
 }
 
 static RConsCanvas *__create_new_canvas(RCore *core, int w, int h) {
-	int flags = r_cons_canvas_flags (core->cons);
-	RConsCanvas *can = r_cons_canvas_new (w, h, flags);
+	RConsCanvas *can = r_cons_canvas_new (core->cons, w, h, -2);
 	if (!can) {
 		return false;
 	}
