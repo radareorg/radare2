@@ -809,7 +809,6 @@ R_API int r_cons_canvas_flags(RCons * R_NONNULL cons);
 R_API void r_cons_canvas_free(RConsCanvas *c);
 R_API void r_cons_canvas_clear(RConsCanvas * R_NONNULL c, int flags);
 R_API void r_cons_canvas_print(RConsCanvas *c);
-R_API void r_cons_treemap(RCons *cons, int n, int *values, const char **labels, int width, int height);
 R_API void r_cons_canvas_print_region(RConsCanvas *c);
 R_API char *r_cons_canvas_tostring(RConsCanvas *c);
 R_API void r_cons_canvas_attr(RConsCanvas *c,const char *attr);
