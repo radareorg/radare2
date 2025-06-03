@@ -1446,6 +1446,48 @@ static int cmd_help(void *data, const char *input) {
 				  free (d);
 			}
 			break;
+		case 'm': // "?em"
+			  {
+				  char *word, *str = strdup (r_str_trim_head_ro (input + 2));
+				  char *legend = strchr (str, ',');
+				  RList *llist = NULL;
+				  if (legend) {
+					  *legend = 0;
+					  r_str_trim (legend + 1);
+					  llist = r_str_split_list (strdup (legend + 1), " ", 0);
+				  }
+				  r_str_trim (str);
+				  RList *list = r_str_split_list (str, " ", 0);
+				  int *nums = calloc (sizeof (int), r_list_length (list));
+				  char **text = calloc (sizeof (char *), r_list_length (list));
+				  int i = 0;
+				  r_list_foreach (list, iter, word) {
+					st64 n = r_num_math (core->num, word);
+					if (n >= ST32_MAX || n < 0) {
+						R_LOG_WARN ("Number out of range");
+					}
+					nums[i] = n;
+					i++;
+				  }
+				  int j = 0;
+				  r_list_foreach (llist, iter, word) {
+					  if (j >= i) {
+						  break;
+					  }
+					  text[j] = word;
+					  j++;
+				  }
+				  // const int size = r_config_get_i (core->config, "hex.cols");
+				  int h, w = r_kons_get_size (core->cons, &h);
+				  h /= 2;
+				  char *res = r_print_treemap (r_list_length (list), nums, (const char**)text, w, h);
+				  r_cons_println (res);
+				  free (res);
+				  free (text);
+				  r_list_free (list);
+				  r_list_free (llist);
+			  }
+			break;
 		case 'p': // "?ep"
 			  {
 				  char *word, *str = strdup (r_str_trim_head_ro (input + 2));
