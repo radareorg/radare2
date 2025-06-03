@@ -722,7 +722,7 @@ R_API ut64 r_core_anal_fcn_list_size(RCore *core);
 R_API void r_core_anal_fcn_labels(RCore *core, RAnalFunction *fcn, int rad);
 R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr);
 R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn);
-R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts);
+R_API bool r_core_anal_graph(RCore *core, ut64 addr, int opts);
 R_API int r_core_anal_graph_fcn(RCore *core, char *input, int opts);
 R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n);
 R_API int r_core_anal_ref_list(RCore *core, int rad);

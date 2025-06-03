@@ -221,15 +221,18 @@ R_API bool r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y) {
 	return ret;
 }
 
-R_API RConsCanvas *r_cons_canvas_new(int w, int h, int flags) {
+R_API RConsCanvas *r_cons_canvas_new(RCons *cons, int w, int h, int flags) {
 	if (w < 1 || h < 1) {
 		return NULL;
 	}
 	RConsCanvas *c = R_NEW0 (RConsCanvas);
+	c->cons = cons;
 	c->bgcolor = strdup (Color_RESET);
 	c->bsize = NULL;
 	if (flags == R_CONS_CANVAS_FLAG_DEFAULT) {
 		c->flags = 0;
+	} else if (flags == R_CONS_CANVAS_FLAG_INHERTI) {
+		c->flags = r_cons_canvas_flags (core->cons);
 	} else {
 		c->flags = flags;
 	}

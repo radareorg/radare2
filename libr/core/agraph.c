@@ -1,4 +1,4 @@
-/* Copyright radare2 - 2014-2024 - pancake, ret2libc */
+/* Copyright radare2 - 2014-2025 - pancake, ret2libc */
 
 #include <r_core.h>
 
@@ -3381,8 +3381,9 @@ static void agraph_follow_innodes(RCore *core, RAGraph *g, bool in) {
 	if (r_list_length (list) == 0) {
 		return;
 	}
-	r_kons_gotoxy (core->cons, 0, 2);
-	r_kons_printf (core->cons, in? "Input nodes:\n": "Output nodes:\n");
+	RCons *cons = core->cons;
+	r_kons_gotoxy (cons, 0, 2);
+	r_kons_printf (cons, in? "Input nodes:\n": "Output nodes:\n");
 	RList *options = r_list_newf (NULL);
 	RList *gnodes = in? an->gnode->in_nodes: an->gnode->out_nodes;
 	RGraphNode *gn;
@@ -3399,7 +3400,7 @@ static void agraph_follow_innodes(RCore *core, RAGraph *g, bool in) {
 					continue;
 				}
 			}
-			r_cons_printf ("%d %s\n", count, nnn->title);
+			r_kons_printf (cons, "%d %s\n", count, nnn->title);
 			r_list_append (options, nnn);
 			count++;
 		}
@@ -3409,8 +3410,8 @@ static void agraph_follow_innodes(RCore *core, RAGraph *g, bool in) {
 		nth = 0;
 	} else if (r_list_length (list) < 10) {
 		// just 1 key
-		r_cons_set_raw (true);
-		char ch = r_cons_readchar (core->cons);
+		r_kons_set_raw (cons, true);
+		char ch = r_cons_readchar (cons);
 		if (ch >= '0' && ch <= '9') {
 			nth =  ch - '0';
 		}
@@ -3647,8 +3648,7 @@ static int agraph_print(RAGraph *g, bool is_interactive, RCore *core, RAnalFunct
 			r_kons_push (core->cons);
 			g->can->h *= 4;
 			RConsCanvas *ocan = g->can;
-			int flags = r_cons_canvas_flags (core->cons);
-			g->can = r_cons_canvas_new (w * 2, h * 4, flags);
+			g->can = r_cons_canvas_new (core->cons, w * 2, h * 4, -2);
 			g->can->sx = ocan->sx;
 			g->can->sy = ocan->sy;
 			g->can->color = 0;
@@ -4451,12 +4451,11 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 	r_config_hold (hc, "asm.pseudo", "asm.esil", "asm.cmt.right", NULL);
 
 	int h, w = r_cons_get_size (&h);
-	int flags = r_cons_canvas_flags (core->cons);
-	RConsCanvas *can = r_cons_canvas_new (w, h, flags);
+	RConsCanvas *can = r_cons_canvas_new (core->cons, w, h, -2);
 	if (!can) {
 		w = 80;
 		h = 25;
-		can = r_cons_canvas_new (w, h, flags);
+		can = r_cons_canvas_new (core->cons, w, h, -2);
 		if (!can) {
 			R_LOG_ERROR ("Cannot create RCons.canvas context. Invalid screen "
 					"size? See scr.cols + scr.rows");
@@ -5317,11 +5316,11 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 	return !is_error;
 }
 
-R_API RAGraph *r_agraph_new_from_graph(const RGraph *graph, RAGraphTransitionCBs *cbs, void *user) {
+R_API RAGraph *r_agraph_new_from_graph(void *_core, const RGraph *graph, RAGraphTransitionCBs *cbs, void *user) {
 	R_RETURN_VAL_IF_FAIL (graph && cbs && cbs->get_title && cbs->get_body, NULL);
 
-	int flags = r_cons_canvas_flags (r_cons_singleton ());
-	RConsCanvas *canvas = r_cons_canvas_new (1, 1, flags);
+	RCore *core = (RCore *)_core;
+	RConsCanvas *canvas = r_cons_canvas_new (core->cons, 1, 1, -2);
 	RAGraph *result_agraph = r_agraph_new (canvas);
 	if (!result_agraph) {
 		return NULL;

@@ -444,7 +444,9 @@ static char *autoname_basic(RCore *core, RAnalFunction *fcn, int mode) {
 						pj_ks (pj, "flag", f->name);
 						pj_end (pj);
 					} else {
-						r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n", ref->at, ref->addr, f->name);
+						r_kons_printf (core->cons,
+							"0x%08"PFMT64x" 0x%08"PFMT64x" %s\n",
+							ref->at, ref->addr, f->name);
 					}
 				}
 			}
@@ -471,7 +473,7 @@ static char *autoname_basic(RCore *core, RAnalFunction *fcn, int mode) {
 	r_list_uniq_inplace (names, cmpstrings);
 	if (mode == 'l') {
 		r_list_foreach (names, iter, n) {
-			r_cons_printf ("%s\n", n);
+			r_kons_printf (core->cons, "%s\n", n);
 		}
 	} else {
 		r_list_foreach (names, iter, n) {
@@ -483,7 +485,7 @@ static char *autoname_basic(RCore *core, RAnalFunction *fcn, int mode) {
 	r_list_free (names);
 	if (pj) {
 		pj_end (pj);
-		r_cons_printf ("%s\n", pj_string (pj));
+		r_kons_printf (core->cons, "%s\n", pj_string (pj));
 		pj_free (pj);
 	}
 	return final_name;
@@ -558,7 +560,7 @@ static char *autoname_slow(RCore *core, RAnalFunction *fcn, int mode) {
 	r_list_uniq_inplace (names, cmpstrings);
 	r_list_foreach (names, iter, name) {
 		if (mode == 'l') {
-			r_cons_printf ("%s\n", name);
+			r_kons_printf (core->cons, "%s\n", name);
 		}
 		if (strstr (name, "getopt") || strstr (name, "optind")) {
 			use_getopt = true;
@@ -575,7 +577,7 @@ static char *autoname_slow(RCore *core, RAnalFunction *fcn, int mode) {
 			bestname = strdup (name);
 		}
 		if (mode == 's') {
-			r_cons_printf ("%s\n", name);
+			r_kons_printf (core->cons, "%s\n", name);
 		} else if (pj) {
 			pj_s (pj, name);
 		}
@@ -586,7 +588,7 @@ static char *autoname_slow(RCore *core, RAnalFunction *fcn, int mode) {
 		pj_end (pj);
 	}
 	if (pj) {
-		r_cons_printf ("%s\n", pj_string (pj));
+		r_kons_printf (core->cons, "%s\n", pj_string (pj));
 		pj_free (pj);
 	}
 	// TODO: append counter if name already exists
@@ -677,7 +679,6 @@ R_API void r_core_anal_autoname_all_golang_fcns(RCore *core) {
 	}
 	ut32 size = r_read_le32 (temp_size);
 	int num_syms = 0;
-	//r_cons_print ("[x] Reading .gopclntab...\n");
 	r_flag_space_push (core->flags, R_FLAGS_FS_SYMBOLS);
 	while (offset < gopclntab + size) {
 		ut8 temp_delta[4] = {0};
@@ -700,7 +701,6 @@ R_API void r_core_anal_autoname_all_golang_fcns(RCore *core) {
 			break;
 		}
 		r_name_filter ((char *)func_name, 0);
-		//r_cons_printf ("[x] Found symbol %s at 0x%x\n", func_name, func_addr);
 		char *flagname = r_str_newf ("sym.go.%s", func_name);
 		if (flagname) {
 			r_flag_set (core->flags, flagname, func_addr, 1);
@@ -1165,10 +1165,9 @@ error:
 				next = next_append (next, &nexti, newaddr);
 				for (i = 0; i < nexti; i++) {
 					ut64 addr = next[i];
-					if (!addr) {
-						continue;
+					if (addr && addr != UT64_MAX) {
+						r_core_anal_fcn (core, addr, addr, 0, depth - 1);
 					}
-					r_core_anal_fcn (core, addr, addr, 0, depth - 1);
 				}
 				free (next);
 			}
@@ -1766,7 +1765,7 @@ static int core_anal_graph_construct_edges(RCore *core, RAnalFunction *fcn, int 
 					r_kons_printf (core->cons, "<div class=\"connector _0x%08" PFMT64x " _0x%08" PFMT64x "\">\n"
 							"  <img class=\"connector-end\" src=\"img/arrow.gif\"/></div>\n",
 							bbi->addr, caseop->addr);
-				} else if (!is_json && !is_keva) {
+				} else if (!is_json) {
 					if (is_star) {
 						char *from = get_title (bbi->addr);
 						char *to = get_title (caseop->addr);
@@ -1879,12 +1878,10 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 		}
 		if ((str = core_anal_graph_label (core, bbi, opts))) {
 			if (opts & R_CORE_ANAL_GRAPHDIFF) {
-				const char *difftype = bbi->diff? (\
-				bbi->diff->type==R_ANAL_DIFF_TYPE_MATCH? "lightgray":
-				bbi->diff->type==R_ANAL_DIFF_TYPE_UNMATCH? "yellow": "red"): "";
-				const char *diffname = bbi->diff? (\
-				bbi->diff->type==R_ANAL_DIFF_TYPE_MATCH? "match":
-				bbi->diff->type==R_ANAL_DIFF_TYPE_UNMATCH? "unmatch": "new"): "unknown";
+				const bool ismatch = (bbi->diff && bbi->diff->type == R_ANAL_DIFF_TYPE_MATCH);
+				const bool isunmatch = (bbi->diff && bbi->diff->type == R_ANAL_DIFF_TYPE_UNMATCH);
+				const char *difftype = bbi->diff? ismatch? "lightgray": isunmatch? "yellow": "red": "";
+				const char *diffname = bbi->diff? ismatch? "match": isunmatch? "unmatch": "new": "unknown";
 				if (is_keva) {
 					sdb_set (DB, "diff", diffname, 0);
 					sdb_set (DB, "label", str, 0);
@@ -4190,7 +4187,7 @@ R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n) {
 	return paths;
 }
 
-R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
+R_API bool r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	ut64 from = r_config_get_i (core->config, "graph.from");
 	ut64 to = r_config_get_i (core->config, "graph.to");
 	const char *font = r_config_get (core->config, "graph.font");
@@ -4613,14 +4610,14 @@ static bool found_xref(RCore *core, ut64 at, ut64 xref_to, RAnalRefType type, PJ
 		case R_ANAL_REF_TYPE_DATA: cmd = "axd"; break;
 		default: cmd = "ax"; break;
 		}
-		r_cons_printf ("%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n", cmd, xref_to, at);
+		r_kons_printf (core->cons, "%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n", cmd, xref_to, at);
 		if (cfg_anal_strings && R_ANAL_REF_TYPE_MASK (type) == R_ANAL_REF_TYPE_DATA) {
 			char *str_flagname = is_string_at (core, xref_to, &len);
 			if (str_flagname) {
 				ut64 str_addr = xref_to;
 				r_name_filter (str_flagname, -1);
-				r_cons_printf ("f str.%s=0x%"PFMT64x"\n", str_flagname, str_addr);
-				r_cons_printf ("Cs %d @ 0x%"PFMT64x"\n", len, str_addr);
+				r_kons_printf (core->cons, "'f str.%s=0x%"PFMT64x"\n", str_flagname, str_addr);
+				r_kons_printf (core->cons, "Cs %d @ 0x%"PFMT64x"\n", len, str_addr);
 				free (str_flagname);
 			}
 		}
@@ -4900,12 +4897,12 @@ R_API int r_core_anal_data(RCore *core, ut64 addr, int count, int depth, int wor
 		/* null terminating here */
 		d = r_anal_data (core->anal, addr + i, buf + i, len - i, wordsize);
 		str = r_anal_data_tostring (d, pal);
-		r_cons_println (str);
+		r_kons_println (core->cons, str);
 
 		if (d) {
 			switch (d->type) {
 			case R_ANAL_DATA_TYPE_POINTER:
-				r_cons_printf ("`- ");
+				r_kons_printf (core->cons, "`- ");
 				dstaddr = r_mem_get_num (buf + i, word);
 				if (depth > 0) {
 					r_core_anal_data (core, dstaddr, 1, depth - 1, wordsize);
@@ -6582,25 +6579,25 @@ typedef struct {
 } RCoreAnalPaths;
 
 static bool printAnalPaths(RCoreAnalPaths *p, PJ *pj) {
+	RCons *cons = p->core->cons;
 	RListIter *iter;
 	RAnalBlock *path;
 	if (pj) {
 		pj_a (pj);
 	} else {
-		r_cons_printf ("pdb @@=");
+		r_kons_printf (cons, "pdb @@=");
 	}
-
 	r_list_foreach (p->path, iter, path) {
 		if (pj) {
 			pj_n (pj, path->addr);
 		} else {
-			r_cons_printf (" 0x%08"PFMT64x, path->addr);
+			r_kons_printf (cons, " 0x%08"PFMT64x, path->addr);
 		}
 	}
 	if (pj) {
 		pj_end (pj);
 	} else {
-		r_cons_newline ();
+		r_kons_newline (cons);
 	}
 	return (p->count < 1 || --p->count > 0);
 }
@@ -6723,7 +6720,7 @@ R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls, 
 
 	if (is_json) {
 		pj_end (pj);
-		r_cons_printf ("%s", pj_string (pj));
+		r_kons_printf (core->cons, "%s", pj_string (pj));
 	}
 
 	if (pj) {

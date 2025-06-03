@@ -312,6 +312,7 @@ typedef void (*RConsEvent)(void *);
 #define CONS_MAX_ATTR_SZ 16
 
 typedef struct r_cons_canvas_t {
+	struct r_cons_t *cons;
 	int w;
 	int h;
 	int x;
@@ -330,6 +331,7 @@ typedef struct r_cons_canvas_t {
 	int flags; // utf8
 } RConsCanvas;
 
+#define R_CONS_CANVAS_FLAG_INHERIT -2
 #define R_CONS_CANVAS_FLAG_DEFAULT -1
 #define R_CONS_CANVAS_FLAG_UTF8 1
 #define R_CONS_CANVAS_FLAG_CURVY 2
@@ -802,7 +804,7 @@ typedef struct r_cons_canvas_line_style_t {
 
 #ifdef R_API
 R_API void r_cons_image(const ut8 *buf, int bufsz, int width, int mode, int components);
-R_API RConsCanvas* r_cons_canvas_new(int w, int h, int flags);
+R_API RConsCanvas* r_cons_canvas_new(RCons *cons, int w, int h, int flags);
 R_API int r_cons_canvas_flags(RCons * R_NONNULL cons);
 R_API void r_cons_canvas_free(RConsCanvas *c);
 R_API void r_cons_canvas_clear(RConsCanvas * R_NONNULL c, int flags);

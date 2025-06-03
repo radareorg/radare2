@@ -1095,7 +1095,7 @@ static void cmd_pCd(RCore *core, const char *input) {
 	}
 	r_kons_push (core->cons);
 	int flags = r_cons_canvas_flags (core->cons);
-	RConsCanvas *c = r_cons_canvas_new (w, rows, flags);
+	RConsCanvas *c = r_cons_canvas_new (core->cons, w, rows, flags);
 	ut64 osek = core->addr;
 	c->color = r_config_get_i (core->config, "scr.color");
 	r_core_block_size (core, rows * 32);
@@ -1166,7 +1166,7 @@ static void cmd_pCD(RCore *core, const char *input) {
 	}
 	r_kons_push (core->cons);
 	int flags = r_cons_canvas_flags (core->cons);
-	RConsCanvas *c = r_cons_canvas_new (w, rows, flags);
+	RConsCanvas *c = r_cons_canvas_new (core->cons, w, rows, flags);
 	ut64 osek = core->addr;
 	c->color = r_config_get_i (core->config, "scr.color");
 	r_core_block_size (core, rows * 32);
@@ -1216,7 +1216,7 @@ static void cmd_pCx(RCore *core, const char *input, const char *xcmd) {
 		rows = user_rows + 1;
 	}
 	int flags = r_cons_canvas_flags (core->cons);
-	RConsCanvas *c = r_cons_canvas_new (w, rows, flags);
+	RConsCanvas *c = r_cons_canvas_new (core->cons, w, rows, flags);
 	if (!c) {
 		R_LOG_ERROR ("Couldn't allocate a canvas with %d rows", rows);
 		goto err;
@@ -8944,7 +8944,7 @@ static int cmd_print(void *data, const char *input) {
 				rows = 1;
 			}
 			int flags = r_cons_canvas_flags (core->cons);
-			c = r_cons_canvas_new (w, rows * 11, flags);
+			c = r_cons_canvas_new (core->cons, w, rows * 11, flags);
 			for (i = 0; i < rows; i++) {
 				for (j = 0; j < cols; j++) {
 					r_cons_canvas_gotoxy (c, j * 20, i * 11);
