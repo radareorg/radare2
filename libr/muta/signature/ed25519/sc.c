@@ -12,7 +12,7 @@ Output:
   Overwrites s in place.
 */
 
-void sc_reduce(unsigned char *s) {
+void sc_reduce(ut8 *s) {
 	st64 s0 = 2097151 & r_read_le24 (s);
 	st64 s1 = 2097151 & (r_read_le32 (s + 2) >> 5);
 	st64 s2 = 2097151 & (r_read_le24 (s + 5) >> 2);
@@ -292,38 +292,38 @@ void sc_reduce(unsigned char *s) {
 	s11 += carry10;
 	s10 -= carry10 << 21;
 
-	s[0] = (unsigned char)(s0 >> 0);
-	s[1] = (unsigned char)(s0 >> 8);
-	s[2] = (unsigned char)((s0 >> 16) | (s1 << 5));
-	s[3] = (unsigned char)(s1 >> 3);
-	s[4] = (unsigned char)(s1 >> 11);
-	s[5] = (unsigned char)((s1 >> 19) | (s2 << 2));
-	s[6] = (unsigned char)(s2 >> 6);
-	s[7] = (unsigned char)((s2 >> 14) | (s3 << 7));
-	s[8] = (unsigned char)(s3 >> 1);
-	s[9] = (unsigned char)(s3 >> 9);
-	s[10] = (unsigned char)((s3 >> 17) | (s4 << 4));
-	s[11] = (unsigned char)(s4 >> 4);
-	s[12] = (unsigned char)(s4 >> 12);
-	s[13] = (unsigned char)((s4 >> 20) | (s5 << 1));
-	s[14] = (unsigned char)(s5 >> 7);
-	s[15] = (unsigned char)((s5 >> 15) | (s6 << 6));
-	s[16] = (unsigned char)(s6 >> 2);
-	s[17] = (unsigned char)(s6 >> 10);
-	s[18] = (unsigned char)((s6 >> 18) | (s7 << 3));
-	s[19] = (unsigned char)(s7 >> 5);
-	s[20] = (unsigned char)(s7 >> 13);
-	s[21] = (unsigned char)(s8 >> 0);
-	s[22] = (unsigned char)(s8 >> 8);
-	s[23] = (unsigned char)((s8 >> 16) | (s9 << 5));
-	s[24] = (unsigned char)(s9 >> 3);
-	s[25] = (unsigned char)(s9 >> 11);
-	s[26] = (unsigned char)((s9 >> 19) | (s10 << 2));
-	s[27] = (unsigned char)(s10 >> 6);
-	s[28] = (unsigned char)((s10 >> 14) | (s11 << 7));
-	s[29] = (unsigned char)(s11 >> 1);
-	s[30] = (unsigned char)(s11 >> 9);
-	s[31] = (unsigned char)(s11 >> 17);
+	s[0] = (ut8)(s0 >> 0);
+	s[1] = (ut8)(s0 >> 8);
+	s[2] = (ut8)((s0 >> 16) | (s1 << 5));
+	s[3] = (ut8)(s1 >> 3);
+	s[4] = (ut8)(s1 >> 11);
+	s[5] = (ut8)((s1 >> 19) | (s2 << 2));
+	s[6] = (ut8)(s2 >> 6);
+	s[7] = (ut8)((s2 >> 14) | (s3 << 7));
+	s[8] = (ut8)(s3 >> 1);
+	s[9] = (ut8)(s3 >> 9);
+	s[10] = (ut8)((s3 >> 17) | (s4 << 4));
+	s[11] = (ut8)(s4 >> 4);
+	s[12] = (ut8)(s4 >> 12);
+	s[13] = (ut8)((s4 >> 20) | (s5 << 1));
+	s[14] = (ut8)(s5 >> 7);
+	s[15] = (ut8)((s5 >> 15) | (s6 << 6));
+	s[16] = (ut8)(s6 >> 2);
+	s[17] = (ut8)(s6 >> 10);
+	s[18] = (ut8)((s6 >> 18) | (s7 << 3));
+	s[19] = (ut8)(s7 >> 5);
+	s[20] = (ut8)(s7 >> 13);
+	s[21] = (ut8)(s8 >> 0);
+	s[22] = (ut8)(s8 >> 8);
+	s[23] = (ut8)((s8 >> 16) | (s9 << 5));
+	s[24] = (ut8)(s9 >> 3);
+	s[25] = (ut8)(s9 >> 11);
+	s[26] = (ut8)((s9 >> 19) | (s10 << 2));
+	s[27] = (ut8)(s10 >> 6);
+	s[28] = (ut8)((s10 >> 14) | (s11 << 7));
+	s[29] = (ut8)(s11 >> 1);
+	s[30] = (ut8)(s11 >> 9);
+	s[31] = (ut8)(s11 >> 17);
 }
 
 /*
@@ -337,7 +337,7 @@ Output:
   where l = 2^252 + 27742317777372353535851937790883648493.
 */
 
-void sc_muladd(unsigned char *s, const unsigned char *a, const unsigned char *b, const unsigned char *c) {
+void sc_muladd(ut8 *s, const ut8 *a, const ut8 *b, const ut8 *c) {
 	st64 a0 = 2097151 & r_read_le24 (a);
 	st64 a1 = 2097151 & (r_read_le32 (a + 2) >> 5);
 	st64 a2 = 2097151 & (r_read_le24 (a + 5) >> 2);
@@ -752,36 +752,36 @@ void sc_muladd(unsigned char *s, const unsigned char *a, const unsigned char *b,
 	s11 += carry10;
 	s10 -= carry10 << 21;
 
-	s[0] = (unsigned char)(s0 >> 0);
-	s[1] = (unsigned char)(s0 >> 8);
-	s[2] = (unsigned char)((s0 >> 16) | (s1 << 5));
-	s[3] = (unsigned char)(s1 >> 3);
-	s[4] = (unsigned char)(s1 >> 11);
-	s[5] = (unsigned char)((s1 >> 19) | (s2 << 2));
-	s[6] = (unsigned char)(s2 >> 6);
-	s[7] = (unsigned char)((s2 >> 14) | (s3 << 7));
-	s[8] = (unsigned char)(s3 >> 1);
-	s[9] = (unsigned char)(s3 >> 9);
-	s[10] = (unsigned char)((s3 >> 17) | (s4 << 4));
-	s[11] = (unsigned char)(s4 >> 4);
-	s[12] = (unsigned char)(s4 >> 12);
-	s[13] = (unsigned char)((s4 >> 20) | (s5 << 1));
-	s[14] = (unsigned char)(s5 >> 7);
-	s[15] = (unsigned char)((s5 >> 15) | (s6 << 6));
-	s[16] = (unsigned char)(s6 >> 2);
-	s[17] = (unsigned char)(s6 >> 10);
-	s[18] = (unsigned char)((s6 >> 18) | (s7 << 3));
-	s[19] = (unsigned char)(s7 >> 5);
-	s[20] = (unsigned char)(s7 >> 13);
-	s[21] = (unsigned char)(s8 >> 0);
-	s[22] = (unsigned char)(s8 >> 8);
-	s[23] = (unsigned char)((s8 >> 16) | (s9 << 5));
-	s[24] = (unsigned char)(s9 >> 3);
-	s[25] = (unsigned char)(s9 >> 11);
-	s[26] = (unsigned char)((s9 >> 19) | (s10 << 2));
-	s[27] = (unsigned char)(s10 >> 6);
-	s[28] = (unsigned char)((s10 >> 14) | (s11 << 7));
-	s[29] = (unsigned char)(s11 >> 1);
-	s[30] = (unsigned char)(s11 >> 9);
-	s[31] = (unsigned char)(s11 >> 17);
+	s[0] = (ut8)(s0 >> 0);
+	s[1] = (ut8)(s0 >> 8);
+	s[2] = (ut8)((s0 >> 16) | (s1 << 5));
+	s[3] = (ut8)(s1 >> 3);
+	s[4] = (ut8)(s1 >> 11);
+	s[5] = (ut8)((s1 >> 19) | (s2 << 2));
+	s[6] = (ut8)(s2 >> 6);
+	s[7] = (ut8)((s2 >> 14) | (s3 << 7));
+	s[8] = (ut8)(s3 >> 1);
+	s[9] = (ut8)(s3 >> 9);
+	s[10] = (ut8)((s3 >> 17) | (s4 << 4));
+	s[11] = (ut8)(s4 >> 4);
+	s[12] = (ut8)(s4 >> 12);
+	s[13] = (ut8)((s4 >> 20) | (s5 << 1));
+	s[14] = (ut8)(s5 >> 7);
+	s[15] = (ut8)((s5 >> 15) | (s6 << 6));
+	s[16] = (ut8)(s6 >> 2);
+	s[17] = (ut8)(s6 >> 10);
+	s[18] = (ut8)((s6 >> 18) | (s7 << 3));
+	s[19] = (ut8)(s7 >> 5);
+	s[20] = (ut8)(s7 >> 13);
+	s[21] = (ut8)(s8 >> 0);
+	s[22] = (ut8)(s8 >> 8);
+	s[23] = (ut8)((s8 >> 16) | (s9 << 5));
+	s[24] = (ut8)(s9 >> 3);
+	s[25] = (ut8)(s9 >> 11);
+	s[26] = (ut8)((s9 >> 19) | (s10 << 2));
+	s[27] = (ut8)(s10 >> 6);
+	s[28] = (ut8)((s10 >> 14) | (s11 << 7));
+	s[29] = (ut8)(s11 >> 1);
+	s[30] = (ut8)(s11 >> 9);
+	s[31] = (ut8)(s11 >> 17);
 }

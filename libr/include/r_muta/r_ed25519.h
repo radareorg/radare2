@@ -10,7 +10,7 @@ extern "C" {
 #define ED25519_PUBKEY_LENGTH  32
 #define ED25519_PRIVKEY_LENGTH 64
 
-R_API void ed25519_create_keypair(const ut8 *seed, ut8 *privkey, ut8 *pubkey);
+R_API void r_muta_ed25519_keypair(const ut8 *seed, ut8 *privkey, ut8 *pubkey);
 
 #ifdef __cplusplus
 }

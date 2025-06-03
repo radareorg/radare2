@@ -112,8 +112,7 @@ R_IPI int search_asn1_privkey_update(RSearch *s, ut64 from, const ut8 *buf, int 
 				parse_next_field(buf + index, &kw->keyword_length);
 				t = r_search_hit_new (s, kw, from + index);
 				if (t > 1) {
-						return s->nhits - old_nhits;
-
+					return s->nhits - old_nhits;
 				}
 			}
 		}
@@ -140,7 +139,7 @@ R_IPI int search_raw_privkey_update(RSearch *s, ut64 from, const ut8 *buf, int l
 
 	r_list_foreach (s->kws, iter, kw) {
 		for (i = 0; i < len - ED25519_SEARCH_MIN_LENGTH; i++) {
-			ed25519_create_keypair (buf + i, private_key, public_key);
+			r_muta_ed25519_keypair (buf + i, private_key, public_key);
 			if (!memcmp (public_key, public_key_target, ED25519_PUBKEY_LENGTH)) {
 				t = r_search_hit_new (s, kw, from + i);
 				if (t > 1) {
