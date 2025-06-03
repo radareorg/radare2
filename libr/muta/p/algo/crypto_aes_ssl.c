@@ -1,5 +1,5 @@
 #include <openssl/evp.h>
-#include "crypto_aes_algo.h"
+#include "crypto_aes.h"
 
 // AES encryption or decryption with ECB mode of operation using OpenSSL.
 bool aes_ecb (RCryptoAESState *st, ut8 *const ibuf, ut8 *const obuf, bool encrypt, const int blocks) {
