@@ -88,7 +88,7 @@ static void config_print_value_json(RConfig *cfg, RStrBuf *sb, PJ *pj, RConfigNo
 					pj_s (pj, val);
 				}
 			} else {
-				r_strbuf_appendf (sb, "%s", val);  // TODO: always use true/false for bool json str
+				r_strbuf_append (sb, val);
 			}
 		} else {
 			if (pj) {
@@ -144,18 +144,18 @@ static void config_print_node(RConfig *cfg, RConfigNode *node, RStrBuf *sb, PJ *
 				node->desc);
 			if (node->options && !r_list_empty (node->options)) {
 				bool isFirst = true;
-				r_strbuf_appendf (sb, "[");
+				r_strbuf_append (sb, "[");
 				r_list_foreach (node->options, iter, option) {
 					if (isFirst) {
 						isFirst = false;
 					} else {
-						r_strbuf_appendf (sb, ", ");
+						r_strbuf_append (sb, ", ");
 					}
 					r_strbuf_appendf (sb, "%s", option);
 				}
-				r_strbuf_appendf (sb, "]");
+				r_strbuf_append (sb, "]");
 			}
-			r_strbuf_appendf (sb, "\n");
+			r_strbuf_append (sb, "\n");
 		} else {
 			r_strbuf_appendf (sb, "%s%s = %s%s\n", pfx,
 				node->name, node->value, sfx);
