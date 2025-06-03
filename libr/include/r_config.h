@@ -46,7 +46,6 @@ R_API const char *r_config_node_type(RConfigNode *node);
 typedef struct r_config_t {
 	void *user;
 	RNum *num;
-	PrintfCallback cb_printf;
 	RList *nodes;
 	HtPP *ht;
 	bool lock;
@@ -72,7 +71,7 @@ R_API RConfig *r_config_clone(RConfig *cfg);
 R_API void r_config_free(RConfig *cfg);
 
 R_API void r_config_lock(RConfig *cfg, bool lock);
-R_API bool r_config_eval(RConfig *cfg, const char *str, bool many);
+R_API char *r_config_eval(RConfig *cfg, const char *str, bool many, bool * R_NULLABLE error);
 R_API void r_config_bump(RConfig *cfg, const char *key);
 R_API bool r_config_get_b(RConfig *cfg, const char *name);
 R_API RConfigNode* r_config_set_b(RConfig *cfg, const char *name, bool b);

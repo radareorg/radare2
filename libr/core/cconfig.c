@@ -3551,7 +3551,6 @@ R_API int r_core_config_init(RCore *core) {
 	if (!cfg) {
 		return 0;
 	}
-	cfg->cb_printf = r_cons_printf;
 	cfg->num = core->num;
 	/* dir.prefix is used in other modules, set it first */
 	{

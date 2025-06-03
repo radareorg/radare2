@@ -639,7 +639,7 @@ beach:
 	return node;
 }
 
-static void eval_config_string(RConfig *cfg, char *name) {
+static void eval_config_string(RConfig *cfg, char *name, RStrBuf *sb) {
 	if (!*name) {
 		return;
 	}
@@ -654,12 +654,12 @@ static void eval_config_string(RConfig *cfg, char *name) {
 	} else {
 		if (r_str_endswith (name, ".") && !r_str_endswith (name, "..")) {
 			char *res = r_config_list (cfg, name, 0);
-			cfg->cb_printf ("%s\n", res);
+			r_strbuf_appendf (sb, "%s\n", res);
 			free (res);
 		} else {
 			const char *v = r_config_get (cfg, name);
 			if (v) {
-				cfg->cb_printf ("%s\n", v);
+				r_strbuf_appendf (sb, "%s\n", v);
 			} else {
 				R_LOG_ERROR ("Invalid config key %s", name);
 			}
@@ -667,37 +667,44 @@ static void eval_config_string(RConfig *cfg, char *name) {
 	}
 }
 
-R_API bool r_config_eval(RConfig *cfg, const char *str, bool many) {
+R_API char *r_config_eval(RConfig *cfg, const char *str, bool many, bool *error) {
 	R_RETURN_VAL_IF_FAIL (cfg && str, false);
+	RStrBuf *sb = r_strbuf_new ("");
 
 	char *s = r_str_trim_dup (str);
+		if (error) {
+			*error = false;
+		}
 
 	if (!*s || !strcmp (s, "help")) { // 580 wtf is help here
 		char *res = r_config_list (cfg, NULL, 0);
-		cfg->cb_printf ("%s\n", res);
+		r_strbuf_appendf (sb, "%s\n", res);
 		free (res);
 		free (s);
-		return false;
+		if (error) {
+			*error = true;
+		}
 	}
 
 	if (*s == '-') {
 		r_config_rm (cfg, s + 1);
 		free (s);
-		return false;
+		if (error) {
+			*error = true;
+		}
 	}
 	if (many) {
 		RList *list = r_str_split_list (s, ":", 0);
 		RListIter *iter;
 		char *name;
 		r_list_foreach (list, iter, name) {
-			eval_config_string (cfg, name);
+			eval_config_string (cfg, name, sb);
 		}
-		free (s);
-		return true;
+	} else {
+		eval_config_string (cfg, s, sb);
 	}
-	eval_config_string (cfg, s);
 	free (s);
-	return true;
+	return r_strbuf_drain (sb);
 }
 
 static int cmp(RConfigNode *a, RConfigNode *b) {
@@ -732,7 +739,6 @@ R_API RConfig* r_config_new(void *user) {
 	cfg->user = user;
 	cfg->num = NULL;
 	cfg->lock = false;
-	cfg->cb_printf = (void *) printf;
 	R_DIRTY_SET (cfg);
 	return cfg;
 }
@@ -750,7 +756,6 @@ R_API RConfig* r_config_clone(RConfig *cfg) {
 		r_list_append (c->nodes, nn);
 	}
 	c->lock = cfg->lock;
-	c->cb_printf = cfg->cb_printf;
 	R_DIRTY_SET (c);
 	return c;
 }

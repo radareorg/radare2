@@ -834,7 +834,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				if (!strcmp (opt.arg, "q")) {
 					r_core_cmd0 (r, "eq");
 				} else {
-					r_config_eval (r->config, opt.arg, false);
+					char *res = r_config_eval (r->config, opt.arg, false, NULL);
+					r_kons_print (r->cons, res);
+					free (res);
 					r_list_append (mr.evals, (void*)strdup (opt.arg));
 				}
 			}
@@ -1658,8 +1660,10 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		RListIter *iter;
 		char *cmdn;
 		r_list_foreach (mr.evals, iter, cmdn) {
-			r_config_eval (r->config, cmdn, false);
-			r_cons_flush ();
+			char *res = r_config_eval (r->config, cmdn, false, NULL);
+			r_kons_print (r->cons, res);
+			free (res);
+			r_kons_flush (r->cons);
 		}
 		if (mr.asmbits) {
 			r_config_set (r->config, "asm.bits", mr.asmbits);
@@ -1725,8 +1729,10 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		r_core_seek (r, r->addr, true); // read current block
 
 		r_list_foreach (mr.evals, iter, cmdn) {
-			r_config_eval (r->config, cmdn, false);
-			r_cons_flush ();
+			char *res = r_config_eval (r->config, cmdn, false, NULL);
+			r_kons_print (r->cons, res);
+			free (res);
+			r_kons_flush (r->cons);
 		}
 
 		// no flagspace selected by default the beginning

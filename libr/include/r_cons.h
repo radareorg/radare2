@@ -1275,7 +1275,6 @@ typedef void (*RConsGrepCallback)(RCons *cons, const char *grep);
 typedef struct r_cons_bind_t {
 	RConsGetSize get_size;
 	RConsGetCursor get_cursor;
-	RConsPrintfCallback cb_printf;
 	RConsIsBreaked is_breaked;
 	RConsFlush cb_flush;
 	RConsGrepCallback cb_grep;

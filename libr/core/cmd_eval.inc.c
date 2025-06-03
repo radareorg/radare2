@@ -702,6 +702,12 @@ static void core_config_list(RCore *core, const char *str, int rad) {
 	free (res);
 }
 
+static void core_config_eval(RCore *core, const char *input, bool uhm) {
+	char *res = r_config_eval (core->config, input, uhm, NULL);
+	r_kons_print (core->cons, res);
+	free (res);
+}
+
 static int cmd_eval(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
@@ -904,7 +910,7 @@ static int cmd_eval(void *data, const char *input) {
 		}
 		break;
 	case ':': // "e:"
-		r_config_eval (core->config, input + 1, true);
+		core_config_eval (core, input + 1, true);
 		break;
 	case ',': // "e,"
 		cmd_eval_table (core, input + 1);
@@ -912,7 +918,7 @@ static int cmd_eval(void *data, const char *input) {
 	case '.': // "e "
 	case ' ': // "e "
 		if (strchr (input, '=')) {
-			r_config_eval (core->config, r_str_trim_head_ro (input + 1), false);
+			core_config_eval (core, r_str_trim_head_ro (input + 1), false);
 		} else {
 			if (r_str_endswith (input, ".") && !r_str_endswith (input, "..")) {
 				core_config_list (core, input + 1, 0);
@@ -922,7 +928,7 @@ static int cmd_eval(void *data, const char *input) {
 				free (w);
 			} else {
 				// XXX we cant do "e cmd.gprompt=dr=", because the '=' is a token, and quotes dont affect him
-				r_config_eval (core->config, r_str_trim_head_ro (input + 1), false);
+				core_config_eval (core, r_str_trim_head_ro (input + 1), false);
 			}
 		}
 		break;
