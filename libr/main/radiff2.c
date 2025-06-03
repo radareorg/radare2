@@ -84,7 +84,9 @@ static RCore *opencore(RadiffOptions *ro, const char *f) {
 	r_config_set_b (c->config, "io.va", ro->useva);
 	r_config_set_b (c->config, "scr.interactive", false);
 	r_list_foreach (ro->evals, iter, e) {
-		r_config_eval (c->config, e, false);
+		char *res = r_config_eval (c->config, e, false, NULL);
+		r_kons_println (c->cons, res);
+		free (res);
 	}
 	if (f) {
 		RIODesc *rfile = NULL;

@@ -39,12 +39,13 @@ static bool isGdbPlugin(RCore *core) {
 	return plugin && plugin->meta.name && !strcmp (plugin->meta.name, "gdb");
 }
 
-static void print_node_options(RConfigNode *node) {
+static void print_node_options(void *user, RConfigNode *node) {
 	if (node->options) {
 		RListIter *iter;
 		char *option;
+		RCore *core = (RCore *)user;
 		r_list_foreach (node->options, iter, option) {
-			r_cons_printf ("%s\n", option);
+			r_kons_printf (core->cons, "%s\n", option);
 		}
 	}
 }
@@ -210,7 +211,7 @@ bool ranal2_list(RCore *core, const char *arch, int fmt) {
 				pj_ks (pj, "features", feat);
 				pj_end (pj);
 			} else {
-				r_cons_printf ("%s%s  %-11s  %-11s %-7s %s\n",
+				r_kons_printf (core->cons, "%s%s  %-11s  %-11s %-7s %s\n",
 						feat, feat2, bits, h->name,
 						r_str_get_fail (h->license, "unknown"), h->desc);
 			}
@@ -369,7 +370,7 @@ static bool cb_analarch(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
-		print_node_options (node);
+		print_node_options (user, node);
 		return false;
 	}
 	if (*node->value) {
@@ -415,7 +416,7 @@ static bool cb_archdecoder(void *user, void *data) {
 	R_RETURN_VAL_IF_FAIL (node && core && core->anal && core->anal->arch, false);
 	if (*node->value == '?') {
 		update_archdecoder_options (core, node);
-		print_node_options (node);
+		print_node_options (user, node);
 		return false;
 	}
 	if (*node->value) {
@@ -591,11 +592,14 @@ static bool cb_asmsubsec(void *user, void *data) {
 static bool cb_asm_var_summary(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (*node->value == '?') {
-		r_cons_printf ("0 # same as afv output\n");
-		r_cons_printf ("1 # simplified args+vars list\n");
-		r_cons_printf ("2 # short summary\n");
-		r_cons_printf ("3 # compact oneliner for args + vars\n");
-		r_cons_printf ("4 # compact oneliner with args+vars regs+mem range\n");
+		RCore *core = (RCore *)user;
+		const char help[] = \
+			"0 # same as afv output\n"
+			"1 # simplified args+vars list\n"
+			"2 # short summary\n"
+			"3 # compact oneliner for args + vars\n"
+			"4 # compact oneliner with args+vars regs+mem range\n";
+		r_kons_println (core->cons, help);
 		return false;
 	}
 	return true;
@@ -612,7 +616,7 @@ static bool cb_asmassembler(void *user, void *data) {
 		}
 		RConfigNode* asm_arch_node = r_config_node_get (core->config, "asm.arch");
 		if (asm_arch_node) {
-			print_node_options (asm_arch_node);
+			print_node_options (user, asm_arch_node);
 		}
 		return false;
 	}
@@ -737,7 +741,7 @@ static bool cb_asmarch(void *user, void *data) {
 			ranal2_list (core, NULL, node->value[1]);
 			return false;
 		} else {
-			print_node_options (node);
+			print_node_options (user, node);
 			return false;
 		}
 	}
@@ -835,7 +839,7 @@ static bool cb_asmbits(void *user, void *data) {
 
 	if (*node->value == '?') {
 		update_asmbits_options (core, node);
-		print_node_options (node);
+		print_node_options (user, node);
 		return false;
 	}
 
@@ -926,12 +930,14 @@ static bool cb_emuskip(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
-			r_cons_printf ("Concatenation of meta types encoded as characters:\n" \
+			RCore *core = (RCore *)user;
+			r_kons_printf (core->cons,
+				"Concatenation of meta types encoded as characters:\n" \
 				"'d': data\n'c': code\n's': string\n'f': format\n'm': magic\n" \
 				"'h': hide\n'C': comment\n'r': run\n" \
 				"(default is 'ds' to skip data and strings)\n");
 		} else {
-			print_node_options (node);
+			print_node_options (user, node);
 		}
 		return false;
 	}
@@ -941,7 +947,7 @@ static bool cb_emuskip(void *user, void *data) {
 static bool cb_tableformat(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
-		print_node_options (node);
+		print_node_options (user, node);
 		return false;
 	}
 	return true;
@@ -951,14 +957,16 @@ static bool cb_jsonencoding(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
 		if (node->value[1] && node->value[1] == '?') {
-			r_cons_printf ("choose either: \n"\
+			RCore *core = (RCore *)user;
+			r_kons_printf (core->cons, \
+			"choose either: \n"\
 			"none (default)\n" \
 			"base64 - encode the json string values as base64\n" \
 			"hex - convert the string to a string of hexpairs\n" \
 			"array - convert the string to an array of chars\n" \
 			"strip - strip non-printable characters\n");
 		} else {
-			print_node_options (node);
+			print_node_options (user, node);
 		}
 		return false;
 	}
@@ -969,12 +977,14 @@ static bool cb_jsonencoding_numbers(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
 		if (node->value[1] && node->value[1] == '?') {
-			r_cons_printf ("choose either: \n"\
+			RCore *core = (RCore *)user;
+			r_kons_printf (core->cons,
+			"choose either: \n"\
 			"none (default)\n" \
 			"string - encode the json number values as strings\n" \
 			"hex - encode the number values as hex, then as a string\n");
 		} else {
-			print_node_options (node);
+			print_node_options (user, node);
 		}
 		return false;
 	}
@@ -1006,7 +1016,7 @@ static bool cb_asmos(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 
 	if (*node->value == '?') {
-		print_node_options (node);
+		print_node_options (user, node);
 		return 0;
 	}
 	if (!node->value[0]) {
@@ -1054,7 +1064,7 @@ static bool cb_asmparser(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
 		update_asmparser_options (core, node);
-		print_node_options (node);
+		print_node_options (user, node);
 		return false;
 	}
 	return r_asm_use_parser (core->rasm, node->value);
@@ -1069,10 +1079,12 @@ static bool cb_binstrenc(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode *)data;
 	if (*node->value == '?') {
-		print_node_options (node);
-		r_cons_printf ("  -- if string's 2nd & 4th bytes are 0 then utf16le else "
-				"if 2nd - 4th & 6th bytes are 0 & no char > 0x10ffff then utf32le else "
-				"if utf8 char detected then utf8 else latin1\n");
+		RCore *core = (RCore *)user;
+		print_node_options (user, node);
+		r_kons_printf (core->cons,
+			"  -- if string's 2nd & 4th bytes are 0 then utf16le else "
+			"if 2nd - 4th & 6th bytes are 0 & no char > 0x10ffff then utf32le else "
+			"if utf8 char detected then utf8 else latin1\n");
 		return false;
 	}
 	const namealiases_pair names[] = {
@@ -1162,7 +1174,8 @@ static bool cb_strpurge(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
-		r_cons_printf (
+		RCore *core = (RCore *)user;
+		r_kons_printf (core->cons,
 		    "There can be multiple entries separated by commas. No whitespace before/after entries.\n"
 		    "Possible entries:\n"
 		    "  all          : purge all strings\n"
@@ -1198,7 +1211,7 @@ static bool cb_maxname(void *user, void *data) {
 static bool cb_midflags(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	if (*node->value == '?') {
-		print_node_options (node);
+		print_node_options (user, node);
 		return false;
 	}
 	return true;
@@ -1209,7 +1222,9 @@ static bool cb_strfilter(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
-			r_cons_printf ("Valid values for bin.str.filter:\n"
+			RCore *core = (RCore *)user;
+			r_kons_printf (core->cons,
+				"Valid values for bin.str.filter:\n"
 				"a  only alphanumeric printable\n"
 				"8  only strings with utf8 chars\n"
 				"p  file/directory paths\n"
@@ -1219,7 +1234,7 @@ static bool cb_strfilter(void *user, void *data) {
 				"U  only uppercase strings\n"
 				"f  format-strings\n");
 		} else {
-			print_node_options (node);
+			print_node_options (user, node);
 		}
 		return false;
 	} else {
@@ -1239,7 +1254,7 @@ static bool cb_asmsyntax(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
-		print_node_options (node);
+		print_node_options (user, node);
 		return false;
 	} else {
 		int syntax = r_asm_syntax_from_string (node->value);
@@ -1619,7 +1634,8 @@ static bool cb_reloff(void *user, void *data) {
 			return true;
 		}
 		if (strchr (node->value, '?')) {
-			r_cons_printf (options);
+			RCore *core = (RCore *)user;
+			r_kons_printf (core->cons, options);
 		} else {
 			R_LOG_ERROR ("Invalid value, try `-e asm.addr.relto=?`");
 		}
@@ -1643,7 +1659,7 @@ static bool cb_decoff(void *user, void *data) {
 static bool cb_dbgbep(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
-		print_node_options (node);
+		print_node_options (user, node);
 		return false;
 	}
 	return true;
@@ -1653,7 +1669,7 @@ static bool cb_dbg_btalgo(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
-		print_node_options (node);
+		print_node_options (user, node);
 		return false;
 	}
 	free (core->dbg->btalgo);
@@ -2216,7 +2232,7 @@ static bool cb_fsview(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (*node->value == '?') {
-		print_node_options (node);
+		print_node_options (user, node);
 		return false;
 	}
 	if (!strcmp (node->value, "all")) {
@@ -2586,14 +2602,16 @@ static bool cb_scrstrconv(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
-			r_cons_printf ("Valid values for scr.strconv:\n"
+			RCore *core = (RCore *)user;
+			r_kons_printf (core->cons,
+				"Valid values for scr.strconv:\n"
 				"  asciiesc  convert to ascii with non-ascii chars escaped (see str.escbslash)\n"
 				"  asciidot  non-printable chars are represented with a dot\n"
 				"  pascal    takes the first byte as the length for the string\n"
 				"  raw       perform no conversion from non-ascii chars\n"
 			);
 		} else {
-			print_node_options (node);
+			print_node_options (user, node);
 		}
 		return false;
 	} else {
@@ -2606,7 +2624,8 @@ static bool cb_scrstrconv(void *user, void *data) {
 static bool cb_graphformat(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (*node->value == '?') {
-		r_cons_printf ("png\njpg\npdf\nps\nsvg\njson\n");
+		RCore *core = (RCore *)user;
+		r_kons_printf (core->cons, "png\njpg\npdf\nps\nsvg\njson\n");
 		return false;
 	}
 	return true;
@@ -2677,7 +2696,7 @@ static bool cb_scrint(void *user, void *data) {
 static bool cb_scrnkey(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (!strcmp (node->value, "help") || *node->value == '?') {
-		print_node_options (node);
+		print_node_options (user, node);
 		return false;
 	}
 	return true;
@@ -3062,7 +3081,7 @@ static bool cb_searchin(void *user, void *data) {
 			"anal.fcn           search in the current function\n"
 			"anal.bb            search in the current basic-block\n");
 		} else {
-			print_node_options (node);
+			print_node_options (user, node);
 		}
 		return false;
 	}
@@ -3300,7 +3319,7 @@ static bool cb_anal_cxxabi(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 
 	if (*node->value == '?') {
-		print_node_options (node);
+		print_node_options (user, node);
 		return false;
 	}
 
@@ -3532,7 +3551,6 @@ R_API int r_core_config_init(RCore *core) {
 	if (!cfg) {
 		return 0;
 	}
-	cfg->cb_printf = r_cons_printf;
 	cfg->num = core->num;
 	/* dir.prefix is used in other modules, set it first */
 	{

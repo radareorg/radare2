@@ -436,7 +436,7 @@ static bool cmd_ec(RCore *core, const char *input) {
 			break;
 		case 'c':
 		case '.':
-			r_cons_printf ("%s\n", core->theme);
+			r_kons_printf (core->cons, "%s\n", core->theme);
 			break;
 		case '?':
 			r_core_cmd_help (core, help_msg_eco);
@@ -696,17 +696,29 @@ static void cmd_eplus(RCore *core, const char *input) {
 	free (s);
 }
 
+static void core_config_list(RCore *core, const char *str, int rad) {
+	char *res = r_config_list (core->config, str, rad);
+	r_kons_print (core->cons, res);
+	free (res);
+}
+
+static void core_config_eval(RCore *core, const char *input, bool uhm) {
+	char *res = r_config_eval (core->config, input, uhm, NULL);
+	r_kons_print (core->cons, res);
+	free (res);
+}
+
 static int cmd_eval(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
 	case '\0': // "e"
-		r_config_list (core->config, NULL, 0);
+		core_config_list (core, NULL, 0);
 		break;
 	case '?': // "e?"
 		switch (input[1]) {
 		case '\0': r_core_cmd_help (core, help_msg_e); break;
-		case '?': r_config_list (core->config, input + 2, 2); break;
-		default: r_config_list (core->config, input + 1, 3); break;
+		case '?': core_config_list (core, input + 2, 2); break;
+		default: core_config_list (core, input + 1, 3); break;
 		}
 		break;
 	case 't': // "et"
@@ -799,16 +811,16 @@ static int cmd_eval(void *data, const char *input) {
 		// XXX we need headers for the cmd_xxx files.
 		return cmd_quit (data, "");
 	case 'J': // "eJ"
-		r_config_list (core->config, NULL, 'J');
+		core_config_list (core, NULL, 'J');
 		break;
 	case 'j': // "ej"
-		r_config_list (core->config, NULL, 'j');
+		core_config_list (core, NULL, 'j');
 		break;
 	case 'v': // verbose
-		r_config_list (core->config, r_str_trim_head_ro (input + 1), 'v');
+		core_config_list (core, r_str_trim_head_ro (input + 1), 'v');
 		break;
 	case 'q': // quiet list of eval keys
-		r_config_list (core->config, NULL, 'q');
+		core_config_list (core, NULL, 'q');
 		break;
 	case 'c': // "ec"
 		return cmd_ec (core, input);
@@ -878,14 +890,14 @@ static int cmd_eval(void *data, const char *input) {
 		}
 		break;
 	case 's': // "es"
-		r_config_list (core->config, (input[1])? input + 1: NULL, 's');
+		core_config_list (core, (input[1])? input + 1: NULL, 's');
 		break;
 	case '-': // "e-"
 		r_core_config_init (core);
 		//eprintf ("BUG: 'e-' command locks the eval hashtable. patches are welcome :)\n");
 		break;
 	case '*': // "e*"
-		r_config_list (core->config, NULL, 1);
+		core_config_list (core, NULL, 1);
 		break;
 	case 'r': // "er"
 		if (input[1]) {
@@ -898,7 +910,7 @@ static int cmd_eval(void *data, const char *input) {
 		}
 		break;
 	case ':': // "e:"
-		r_config_eval (core->config, input + 1, true);
+		core_config_eval (core, input + 1, true);
 		break;
 	case ',': // "e,"
 		cmd_eval_table (core, input + 1);
@@ -906,17 +918,17 @@ static int cmd_eval(void *data, const char *input) {
 	case '.': // "e "
 	case ' ': // "e "
 		if (strchr (input, '=')) {
-			r_config_eval (core->config, r_str_trim_head_ro (input + 1), false);
+			core_config_eval (core, r_str_trim_head_ro (input + 1), false);
 		} else {
 			if (r_str_endswith (input, ".") && !r_str_endswith (input, "..")) {
-				r_config_list (core->config, input + 1, 0);
+				core_config_list (core, input + 1, 0);
 			} else if (r_str_endswith (input, ".?")) {
 				char *w = r_str_ndup (input, strlen (input) - 1);
-				r_config_list (core->config, w, 2);
+				core_config_list (core, w, 2);
 				free (w);
 			} else {
 				// XXX we cant do "e cmd.gprompt=dr=", because the '=' is a token, and quotes dont affect him
-				r_config_eval (core->config, r_str_trim_head_ro (input + 1), false);
+				core_config_eval (core, r_str_trim_head_ro (input + 1), false);
 			}
 		}
 		break;

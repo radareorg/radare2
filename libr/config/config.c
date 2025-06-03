@@ -1,17 +1,15 @@
-/* radare - LGPL - Copyright 2006-2022 - pancake */
+/* radare - LGPL - Copyright 2006-2025 - pancake */
 
 #include "r_config.h"
 
 R_API RConfigNode* r_config_node_new(const char *name, const char *value) {
 	R_RETURN_VAL_IF_FAIL (name && *name && value, NULL);
 	RConfigNode *node = R_NEW0 (RConfigNode);
-	if (R_LIKELY (node)) {
-		node->name = strdup (name);
-		node->value = strdup (r_str_get (value));
-		node->flags = CN_RW | CN_STR;
-		node->i_value = r_num_get (NULL, value);
-		node->options = NULL;
-	}
+	node->name = strdup (name);
+	node->value = strdup (r_str_get (value));
+	node->flags = CN_RW | CN_STR;
+	node->i_value = r_num_get (NULL, value);
+	node->options = NULL;
 	return node;
 }
 
@@ -39,15 +37,13 @@ R_API void r_config_node_add_option(RConfigNode *node, const char *option) {
 R_API RConfigNode* r_config_node_clone(RConfigNode *n) {
 	R_RETURN_VAL_IF_FAIL (n, NULL);
 	RConfigNode *cn = R_NEW0 (RConfigNode);
-	if (R_LIKELY (cn)) {
-		cn->name = strdup (n->name);
-		cn->desc = n->desc ? strdup (n->desc) : NULL;
-		cn->value = strdup (r_str_get (n->value));
-		cn->i_value = n->i_value;
-		cn->flags = n->flags;
-		cn->setter = n->setter;
-		cn->options = n->options? r_list_clone (n->options, NULL): NULL;
-	}
+	cn->name = strdup (n->name);
+	cn->desc = n->desc ? strdup (n->desc) : NULL;
+	cn->value = strdup (r_str_get (n->value));
+	cn->i_value = n->i_value;
+	cn->flags = n->flags;
+	cn->setter = n->setter;
+	cn->options = n->options? r_list_clone (n->options, NULL): NULL;
 	return cn;
 }
 
@@ -62,7 +58,7 @@ R_API void r_config_node_free(void *n) {
 	}
 }
 
-static void config_print_value_json(RConfig *cfg, PJ *pj, RConfigNode *node) {
+static void config_print_value_json(RConfig *cfg, RStrBuf *sb, PJ *pj, RConfigNode *node) {
 	R_RETURN_IF_FAIL (cfg && node);
 	const char *val = node->value;
 	if (!val) {
@@ -75,7 +71,7 @@ static void config_print_value_json(RConfig *cfg, PJ *pj, RConfigNode *node) {
 			if (pj) {
 				pj_n (pj, n);
 			} else {
-				cfg->cb_printf ("%"PFMT64d, n);
+				r_strbuf_appendf (sb, "%"PFMT64d, n);
 			}
 		} else if (r_str_isnumber (val) || (*val /* HACK */ && r_str_is_bool (val))) {
 			if (pj) {
@@ -88,26 +84,26 @@ static void config_print_value_json(RConfig *cfg, PJ *pj, RConfigNode *node) {
 					pj_s (pj, val);
 				}
 			} else {
-				cfg->cb_printf ("%s", val);  // TODO: always use true/false for bool json str
+				r_strbuf_append (sb, val);
 			}
 		} else {
 			if (pj) {
 				pj_s (pj, sval);
 			} else {
-				cfg->cb_printf ("\"%s\"", sval);
+				r_strbuf_appendf (sb, "\"%s\"", sval);
 			}
 		}
 	} else {
 		if (pj) {
 			pj_s (pj, sval);
 		} else {
-			cfg->cb_printf ("\"%s\"", sval);
+			r_strbuf_appendf (sb, "\"%s\"", sval);
 		}
 	}
 	free (sval);
 }
 
-static void config_print_node(RConfig *cfg, RConfigNode *node, PJ *pj, const char *pfx, const char *sfx, bool verbose) {
+static void config_print_node(RConfig *cfg, RConfigNode *node, RStrBuf *sb, PJ *pj, const char *pfx, const char *sfx, bool verbose) {
 	R_RETURN_IF_FAIL (cfg && node && pfx && sfx);
 	char *option;
 	RListIter *iter;
@@ -119,7 +115,7 @@ static void config_print_node(RConfig *cfg, RConfigNode *node, PJ *pj, const cha
 			pj_ks (pj, "value", node->name);
 			pj_ks (pj, "type", r_config_node_type (node));
 			pj_k (pj, "value");
-			config_print_value_json (cfg, pj, node);
+			config_print_value_json (cfg, sb, pj, node);
 			if (R_STR_ISNOTEMPTY (node->desc)) {
 				pj_ks (pj, "desc", node->desc);
 			}
@@ -134,37 +130,37 @@ static void config_print_node(RConfig *cfg, RConfigNode *node, PJ *pj, const cha
 			pj_end (pj);
 		} else {
 			pj_k (pj, node->name);
-			config_print_value_json (cfg, pj, node);
+			config_print_value_json (cfg, sb, pj, node);
 		}
 	} else {
 		if (verbose) {
-			cfg->cb_printf ("%s%s = %s%s %s; %s", pfx,
+			r_strbuf_appendf (sb, "%s%s = %s%s %s; %s", pfx,
 				node->name, node->value, sfx,
 				r_config_node_is_ro (node) ? "(ro)" : "",
 				node->desc);
 			if (node->options && !r_list_empty (node->options)) {
 				bool isFirst = true;
-				cfg->cb_printf ("[");
+				r_strbuf_append (sb, "[");
 				r_list_foreach (node->options, iter, option) {
 					if (isFirst) {
 						isFirst = false;
 					} else {
-						cfg->cb_printf (", ");
+						r_strbuf_append (sb, ", ");
 					}
-					cfg->cb_printf ("%s", option);
+					r_strbuf_appendf (sb, "%s", option);
 				}
-				cfg->cb_printf ("]");
+				r_strbuf_append (sb, "]");
 			}
-			cfg->cb_printf ("\n");
+			r_strbuf_append (sb, "\n");
 		} else {
-			cfg->cb_printf ("%s%s = %s%s\n", pfx,
+			r_strbuf_appendf (sb, "%s%s = %s%s\n", pfx,
 				node->name, node->value, sfx);
 		}
 	}
 }
 
-R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
-	R_RETURN_IF_FAIL (cfg);
+R_API char *r_config_list(RConfig *cfg, const char *str, int rad) {
+	R_RETURN_VAL_IF_FAIL (cfg, NULL);
 	RConfigNode *node;
 	RListIter *iter;
 	const char *sfx = "";
@@ -172,6 +168,7 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 	int len = 0;
 	bool found, verbose = false;
 	PJ *pj = NULL;
+	RStrBuf *sb = r_strbuf_new ("");
 
 	if (!IS_NULLSTR (str)) {
 		str = r_str_trim_head_ro (str);
@@ -202,7 +199,7 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 	case 0:
 		r_list_foreach (cfg->nodes, iter, node) {
 			if (!str || (str && (!strncmp (str, node->name, len)))) {
-				config_print_node (cfg, node, NULL, pfx, sfx, verbose);
+				config_print_node (cfg, node, sb, NULL, pfx, sfx, verbose);
 			}
 		}
 		break;
@@ -215,14 +212,14 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 				if (r_str_startswith (node->name, "dir.")) {
 					continue;
 				}
-				config_print_node (cfg, node, NULL, "'e ", "", verbose);
+				config_print_node (cfg, node, sb, NULL, "'e ", "", verbose);
 			}
 		}
 		break;
 	case 2:
 		r_list_foreach (cfg->nodes, iter, node) {
 			if (!str || (str && (!strncmp (str, node->name, len)))) {
-				cfg->cb_printf ("%20s: %s\n", node->name, r_str_get (node->desc));
+				r_strbuf_appendf (sb, "%20s: %s\n", node->name, r_str_get (node->desc));
 			}
 		}
 		break;
@@ -231,12 +228,12 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 		r_list_foreach (cfg->nodes, iter, node) {
 			if (!str || (str && (!strcmp (str, node->name)))) {
 				found = true;
-				cfg->cb_printf ("%s\n", r_str_get (node->desc));
+				r_strbuf_appendf (sb, "%s\n", r_str_get (node->desc));
 				break;
 			}
 		}
 		if (!found) {
-			cfg->cb_printf ("Key not found. Try e??%s\n", str);
+			r_strbuf_appendf (sb, "Key not found. Try e??%s\n", str);
 		}
 		break;
 	case 's':
@@ -248,7 +245,7 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 					*dot = 0;
 				}
 				if (!strcmp (str, space)) {
-					cfg->cb_printf ("%s\n", dot + 1);
+					r_strbuf_appendf (sb, "%s\n", dot + 1);
 				}
 				free (space);
 			}
@@ -270,7 +267,7 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 				} else {
 					oldSpace = space;
 				}
-				cfg->cb_printf ("%s\n", space);
+				r_strbuf_appendf (sb, "%s\n", space);
 			}
 			free (oldSpace);
 		}
@@ -279,14 +276,14 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 		verbose = true;
 		r_list_foreach (cfg->nodes, iter, node) {
 			if (!str || (str && (!strncmp (str, node->name, len)))) {
-				config_print_node (cfg, node, NULL, pfx, sfx, verbose);
+				config_print_node (cfg, node, sb, NULL, pfx, sfx, verbose);
 			}
 		}
 		break;
 	case 'q':
 		r_list_foreach (cfg->nodes, iter, node) {
 			if (!str || (str && (!strncmp (str, node->name, len)))) {
-				cfg->cb_printf ("%s\n", node->name);
+				r_strbuf_appendf (sb, "%s\n", node->name);
 			}
 		}
 		break;
@@ -302,7 +299,7 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 		r_list_foreach (cfg->nodes, iter, node) {
 			if (!str || (str && (!strncmp (str, node->name, len)))) {
 				if (!str || !strncmp (str, node->name, len)) {
-					config_print_node (cfg, node, pj, pfx, sfx, verbose);
+					config_print_node (cfg, node, sb, pj, pfx, sfx, verbose);
 				}
 			}
 		}
@@ -311,9 +308,10 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 	}
 	if (pj) {
 		char *s = pj_drain (pj);
-		cfg->cb_printf ("%s\n", s);
+		r_strbuf_appendf (sb, "%s\n", s);
 		free (s);
 	}
+	return r_strbuf_drain (sb);
 }
 
 R_API RConfigNode* r_config_node_get(RConfig *cfg, const char *name) {
@@ -637,7 +635,7 @@ beach:
 	return node;
 }
 
-static void eval_config_string(RConfig *cfg, char *name) {
+static void eval_config_string(RConfig *cfg, char *name, RStrBuf *sb) {
 	if (!*name) {
 		return;
 	}
@@ -651,11 +649,13 @@ static void eval_config_string(RConfig *cfg, char *name) {
 		}
 	} else {
 		if (r_str_endswith (name, ".") && !r_str_endswith (name, "..")) {
-			r_config_list (cfg, name, 0);
+			char *res = r_config_list (cfg, name, 0);
+			r_strbuf_appendf (sb, "%s\n", res);
+			free (res);
 		} else {
 			const char *v = r_config_get (cfg, name);
 			if (v) {
-				cfg->cb_printf ("%s\n", v);
+				r_strbuf_appendf (sb, "%s\n", v);
 			} else {
 				R_LOG_ERROR ("Invalid config key %s", name);
 			}
@@ -663,35 +663,44 @@ static void eval_config_string(RConfig *cfg, char *name) {
 	}
 }
 
-R_API bool r_config_eval(RConfig *cfg, const char *str, bool many) {
+R_API char *r_config_eval(RConfig *cfg, const char *str, bool many, bool *error) {
 	R_RETURN_VAL_IF_FAIL (cfg && str, false);
+	RStrBuf *sb = r_strbuf_new ("");
 
 	char *s = r_str_trim_dup (str);
+		if (error) {
+			*error = false;
+		}
 
 	if (!*s || !strcmp (s, "help")) { // 580 wtf is help here
-		r_config_list (cfg, NULL, 0);
+		char *res = r_config_list (cfg, NULL, 0);
+		r_strbuf_appendf (sb, "%s\n", res);
+		free (res);
 		free (s);
-		return false;
+		if (error) {
+			*error = true;
+		}
 	}
 
 	if (*s == '-') {
 		r_config_rm (cfg, s + 1);
 		free (s);
-		return false;
+		if (error) {
+			*error = true;
+		}
 	}
 	if (many) {
 		RList *list = r_str_split_list (s, ":", 0);
 		RListIter *iter;
 		char *name;
 		r_list_foreach (list, iter, name) {
-			eval_config_string (cfg, name);
+			eval_config_string (cfg, name, sb);
 		}
-		free (s);
-		return true;
+	} else {
+		eval_config_string (cfg, s, sb);
 	}
-	eval_config_string (cfg, s);
 	free (s);
-	return true;
+	return r_strbuf_drain (sb);
 }
 
 static int cmp(RConfigNode *a, RConfigNode *b) {
@@ -726,7 +735,6 @@ R_API RConfig* r_config_new(void *user) {
 	cfg->user = user;
 	cfg->num = NULL;
 	cfg->lock = false;
-	cfg->cb_printf = (void *) printf;
 	R_DIRTY_SET (cfg);
 	return cfg;
 }
@@ -744,7 +752,6 @@ R_API RConfig* r_config_clone(RConfig *cfg) {
 		r_list_append (c->nodes, nn);
 	}
 	c->lock = cfg->lock;
-	c->cb_printf = cfg->cb_printf;
 	R_DIRTY_SET (c);
 	return c;
 }
