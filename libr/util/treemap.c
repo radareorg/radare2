@@ -50,9 +50,9 @@ static void treemapRecurse(char **buffer, int width, int height, int x, int y, i
 	if (n == 1) {
 		char label[128];
 		if (labels && labels[start]) {
-			snprintf (label, sizeof(label), "%s (%d)", labels[start], values[start]);
+			snprintf (label, sizeof (label), "%s (%d)", labels[start], values[start]);
 		} else {
-			snprintf (label, sizeof(label), "%d", values[start]);
+			snprintf (label, sizeof (label), "%d", values[start]);
 		}
 		drawBox (buffer, width, height, x, y, w, h, label);
 		return;
@@ -89,9 +89,9 @@ static void treemapRecurse(char **buffer, int width, int height, int x, int y, i
 
 		char label[128];
 		if (labels && labels[start + i]) {
-			snprintf (label, sizeof(label), "%s (%d)", labels[start + i], val);
+			snprintf (label, sizeof (label), "%s (%d)", labels[start + i], val);
 		} else {
-			snprintf (label, sizeof(label), "%d", val);
+			snprintf (label, sizeof (label), "%d", val);
 		}
 		drawBox (buffer, width, height, x, y, boxw, boxh, label);
 
