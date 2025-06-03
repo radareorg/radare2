@@ -1,4 +1,4 @@
-/* radare - ZLib - Copyright 2024 - Sylvain Pelissier
+/* radare - ZLib - Copyright 2024-2025 - Sylvain Pelissier
  * Implementation of Ed25519 signature algorithm (RFC 8032)
  * Based on Orson Peters implementation: https://github.com/orlp/ed25519 */
 
@@ -8,7 +8,7 @@
 #include "../signature/ed25519/sc.h"
 #include "../hash/sha2.h"
 
-R_API void r_muta_ed25519_keypair(const ut8 *seed, ut8 *privkey, ut8 *pubkey) {
+static void ed25519_keypair(const ut8 *seed, ut8 *privkey, ut8 *pubkey) {
 	RHash *ctx = r_hash_new (true, R_HASH_SHA512);
 	ge_p3 A;
 
