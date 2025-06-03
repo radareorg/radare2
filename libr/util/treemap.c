@@ -13,8 +13,9 @@ static void drawBox(char **buffer, int width, int height, int x, int y, int w, i
 	if (x < 0 || y < 0 || x + w > width || y + h > height) {
 		return;
 	}
-	for (int i = 0; i < h; i++) {
-		for (int j = 0; j < w; j++) {
+	int i, j;
+	for (i = 0; i < h; i++) {
+		for (j = 0; j < w; j++) {
 			int gx = x + j;
 			int gy = y + i;
 			char ch = ' ';
@@ -58,12 +59,13 @@ static void treemapRecurse(char **buffer, int width, int height, int x, int y, i
 	}
 
 	int used = 0;
-	for (int i = 0; i < n; i++) {
+	int i, j;
+	for (i = 0; i < n; i++) {
 		int val = values[start + i];
 		// soften extremes by taking square root
 		float adjusted = sqrtf((float)val);
 		int sum_adjusted = 0;
-		for (int j = 0; j < n - i; j++) {
+		for (j = 0; j < n - i; j++) {
 			sum_adjusted += sqrtf((float)values[start + i + j]);
 		}
 		int boxw = w, boxh = h;
