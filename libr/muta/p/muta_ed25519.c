@@ -8,20 +8,6 @@
 #include "../signature/ed25519/sc.h"
 #include "../hash/sha2.h"
 
-static void ed25519_keypair(const ut8 *seed, ut8 *privkey, ut8 *pubkey) {
-	RHash *ctx = r_hash_new (true, R_HASH_SHA512);
-	ge_p3 A;
-
-	r_hash_do_sha512 (ctx, seed, ED25519_SEED_LENGTH);
-	memcpy (privkey, ctx->digest, ED25519_PRIVKEY_LENGTH);
-	r_hash_free (ctx);
-	privkey[0] &= 248;
-	privkey[31] &= 63;
-	privkey[31] |= 64;
-	ge_scalarmult_base (&A, privkey);
-	ge_p3_tobytes (pubkey, &A);
-}
-
 static bool ed25519_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction) {
 	if (keylen != 32 && keylen != 64) {
 		R_LOG_ERROR ("Invalid key length");
