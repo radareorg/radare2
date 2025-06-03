@@ -12862,8 +12862,8 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			// Honor asm.graph=false in json as well
 			RConfigHold *hc = r_config_hold_new (core->config);
 			r_config_hold (hc, "asm.addr", NULL);
-			const bool o_graph_offset = r_config_get_i (core->config, "graph.offset");
-			r_config_set_i (core->config, "asm.addr", o_graph_offset);
+			const bool o_graph_addr = r_config_get_b (core->config, "graph.addr");
+			r_config_set_i (core->config, "asm.addr", o_graph_addr);
 			r_core_anal_graph (core, r_num_math (core->num, input + 2),
 				R_CORE_ANAL_JSON | R_CORE_ANAL_JSON_FORMAT_DISASM);
 			r_config_hold_restore (hc);

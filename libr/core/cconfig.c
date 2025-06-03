@@ -4333,7 +4333,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("graph.layout", 0, "graph layout (0=vertical, 1=horizontal)");
 	SETI ("graph.linemode", 1, "graph edges (0=diagonal, 1=square)");
 	SETS ("graph.font", "Courier", "Font for dot graphs");
-	SETB ("graph.offset", "false", "show offsets in graphs");
+	SETB ("graph.addr", "false", "show addresses in graphs");
 	SETB ("graph.bytes", "false", "show opcode bytes in graphs");
 	SETI ("graph.bb.maxwidth", 0, "maximum width for the basic blocks in the graph");
 	SETI ("graph.from", UT64_MAX, "lower bound address when drawing global graphs");
