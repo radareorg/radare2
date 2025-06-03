@@ -2190,7 +2190,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	const bool o_cmtright = r_config_get_b (core->config, "graph.cmtright");
 	const bool o_bytes = r_config_get_b (core->config, "graph.bytes");
 	bool o_flags_in_bytes = r_config_get_b (core->config, "asm.flags.inbytes");
-	const bool o_graph_offset = r_config_get_b (core->config, "graph.offset");
+	const bool o_graph_addr = r_config_get_b (core->config, "graph.addr");
 	int o_cursor = core->print->cur_enabled;
 	r_config_set_b (core->config, "asm.dwarf.file", false);
 	int mw = r_config_get_i (core->config, "graph.bb.maxwidth");
@@ -2226,7 +2226,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	r_config_set_b (core->config, "asm.bbmiddle", false);
 	core->print->cur_enabled = false;
 
-	const bool asm_addr = (opts & BODY_OFFSETS || opts & BODY_SUMMARY || o_graph_offset);
+	const bool asm_addr = (opts & BODY_OFFSETS || opts & BODY_SUMMARY || o_graph_addr);
 	r_config_set_b (core->config, "asm.addr", asm_addr);
 
 	const bool html = r_config_get_b (core->config, "scr.html");
