@@ -158,11 +158,9 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
     - name: Installing with ssl crypto
-      run: |
-          sys/install.sh --with-ssl-crypto
+      run: sys/install.sh --with-ssl-crypto
     - name: Running rahash2 tests
-      run: |
-          r2r test/db/tools/rahash2
+      run: r2r test/db/tools/rahash2
   linux-static-meson:
 #    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     continue-on-error: true

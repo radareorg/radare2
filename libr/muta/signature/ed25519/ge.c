@@ -1,24 +1,24 @@
 #include "ge.h"
 #include "precomp_data.h"
 
-static void ge_add (ge_p1p1 *r, const ge_p3 *p, const ge_cached *q);
-static void ge_sub (ge_p1p1 *r, const ge_p3 *p, const ge_cached *q);
-static void ge_madd (ge_p1p1 *r, const ge_p3 *p, const ge_precomp *q);
-static void ge_msub (ge_p1p1 *r, const ge_p3 *p, const ge_precomp *q);
+static void ge_add(ge_p1p1 *r, const ge_p3 *p, const ge_cached *q);
+static void ge_sub(ge_p1p1 *r, const ge_p3 *p, const ge_cached *q);
+static void ge_madd(ge_p1p1 *r, const ge_p3 *p, const ge_precomp *q);
+static void ge_msub(ge_p1p1 *r, const ge_p3 *p, const ge_precomp *q);
 static void ge_p1p1_to_p2 (ge_p2 *r, const ge_p1p1 *p);
 static void ge_p1p1_to_p3 (ge_p3 *r, const ge_p1p1 *p);
-static void ge_p2_0 (ge_p2 *h);
-static void ge_p2_dbl (ge_p1p1 *r, const ge_p2 *p);
-static void ge_p3_0 (ge_p3 *h);
-static void ge_p3_dbl (ge_p1p1 *r, const ge_p3 *p);
-static void ge_p3_to_cached (ge_cached *r, const ge_p3 *p);
-static void ge_p3_to_p2 (ge_p2 *r, const ge_p3 *p);
+static void ge_p2_0(ge_p2 *h);
+static void ge_p2_dbl(ge_p1p1 *r, const ge_p2 *p);
+static void ge_p3_0(ge_p3 *h);
+static void ge_p3_dbl(ge_p1p1 *r, const ge_p3 *p);
+static void ge_p3_to_cached(ge_cached *r, const ge_p3 *p);
+static void ge_p3_to_p2(ge_p2 *r, const ge_p3 *p);
 
 /*
 r = p + q
 */
 
-static void ge_add (ge_p1p1 *r, const ge_p3 *p, const ge_cached *q) {
+static void ge_add(ge_p1p1 *r, const ge_p3 *p, const ge_cached *q) {
 	fe t0;
 	fe_add (r->X, p->Y, p->X);
 	fe_sub (r->Y, p->Y, p->X);

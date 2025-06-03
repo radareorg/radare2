@@ -4,7 +4,6 @@ ifeq ($(WANT_SSL_CRYPTO),1)
 OBJ_AES+=p/algo/crypto_aes_ssl.o
 CFLAGS+=${SSL_CFLAGS}
 LDFLAGS+=${SSL_LDFLAGS}
-LDFLAGS+=-lmuta
 else
 OBJ_AES+=p/algo/crypto_aes.o
 endif
