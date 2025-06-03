@@ -231,8 +231,8 @@ R_API RConsCanvas *r_cons_canvas_new(RCons *cons, int w, int h, int flags) {
 	c->bsize = NULL;
 	if (flags == R_CONS_CANVAS_FLAG_DEFAULT) {
 		c->flags = 0;
-	} else if (flags == R_CONS_CANVAS_FLAG_INHERTI) {
-		c->flags = r_cons_canvas_flags (core->cons);
+	} else if (flags == R_CONS_CANVAS_FLAG_INHERIT) {
+		c->flags = r_cons_canvas_flags (cons);
 	} else {
 		c->flags = flags;
 	}
