@@ -54,7 +54,7 @@ wx b8010000004839ca7f00
 pDj 5 @ 0
 EOF
 EXPECT=<<EOF
-[{"offset":0,"val":1,"esil":"1,rax,=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov eax, 1","disasm":"mov eax, 1","bytes":"b801000000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0}]
+[{"addr":0,"val":1,"esil":"1,rax,=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov eax, 1","disasm":"mov eax, 1","bytes":"b801000000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0}]
 EOF
 RUN
 
