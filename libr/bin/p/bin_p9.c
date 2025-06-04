@@ -55,6 +55,7 @@ static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 		break;
 	case MAGIC_ARM64:
 	case MAGIC_PPC64:
+	case MAGIC_RISCV64:
 	case MAGIC_SPARC:
 	case MAGIC_SPARC64:
 	case MAGIC_MIPS_3000BE:
@@ -94,6 +95,11 @@ static ut64 baddr(RBinFile *bf) {
 		// fallthrough
 	case MAGIC_PPC64:
 		return 0x200000ULL;
+	case MAGIC_RISCV64:
+		if (o->is_kernel) {
+			return 0xffffffffc0200000ULL;
+		}
+		return 0x10000ULL;
 	case MAGIC_68020:
 	case MAGIC_INTEL_386:
 	case MAGIC_SPARC:

@@ -53,6 +53,8 @@ typedef struct r_bin_plan9_obj_t {
 #define	MAGIC_PPC _MAGIC(0, 21)
 #define	MAGIC_PPC64 _MAGIC(HDR_MAGIC, 27)
 
+#define MAGIC_RISCV64 _MAGIC(HDR_MAGIC, 30)
+
 /* Retired, and subsequently unsupported, architectures. */
 #define	MAGIC_INTEL_960 _MAGIC(0, 12)
 #define	MAGIC_ATT_DSP_3210 _MAGIC(0, 17)

@@ -62,6 +62,11 @@ bool r_bin_p9_get_arch(RBuffer *b, const char **arch, int *bits, int *big_endian
 		*big_endian = 1;
 		*arch = "ppc";
 		return true;
+
+	case MAGIC_RISCV64:
+		*bits = 64;
+		*arch = "riscv";
+		return true;
 	}
 
 	return false;
