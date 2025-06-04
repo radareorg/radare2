@@ -9,7 +9,7 @@ EOF
 EXPECT=<<EOF
 [
   {
-    "offset": 0,
+    "addr": 0,
     "ptr": 104,
     "val": 104,
     "esil": "104,rdi,+=,63,$o,of,:=,63,$s,sf,:=,$z,zf,:=,63,$c,cf,:=,$p,pf,:=,3,$c,af,:=",
