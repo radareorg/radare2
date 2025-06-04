@@ -102,7 +102,6 @@ R_API RIODesc* r_io_open_at(RIO* io, const char* uri, int perm, int mode, ut64 a
 
 /* opens many files, without mapping them. This should be discussed */
 R_API RList* r_io_open_many(RIO* io, const char* uri, int perm, int mode) {
-	RList* desc_list;
 	RListIter* iter;
 	RIODesc* desc;
 	R_RETURN_VAL_IF_FAIL (io && io->files.pool && uri, NULL);
@@ -110,10 +109,11 @@ R_API RList* r_io_open_many(RIO* io, const char* uri, int perm, int mode) {
 	if (!plugin || !plugin->open_many || !plugin->close) {
 		return NULL;
 	}
-	if (!(desc_list = plugin->open_many (io, uri, perm, mode))) {
+	RList* descs = plugin->open_many (io, uri, perm, mode);
+	if (!descs) {
 		return NULL;
 	}
-	r_list_foreach (desc_list, iter, desc) {
+	r_list_foreach (descs, iter, desc) {
 		if (desc) {
 			if (!desc->plugin) {
 				desc->plugin = plugin;
@@ -129,8 +129,8 @@ R_API RList* r_io_open_many(RIO* io, const char* uri, int perm, int mode) {
 		}
 	}
 	// ensure no double free with r_list_close and r_io_free
-	desc_list->free = NULL;
-	return desc_list;
+	descs->free = NULL;
+	return descs;
 }
 
 #if R2__WINDOWS__
