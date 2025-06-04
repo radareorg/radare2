@@ -549,69 +549,69 @@ EXPECT=<<EOF
 
 [
   {
-    "offset": 16947,
+    "addr": 16947,
     "arrow": 16952,
     "text": "|       ,=< 0x00004233      jg 0x4238"
   },
   {
-    "offset": 16949,
+    "addr": 16949,
     "text": "|       |   |"
   },
   {
-    "offset": 16949,
+    "addr": 16949,
     "text": "|       |   0x00004235      test rax, rax"
   },
   {
-    "offset": 16952,
+    "addr": 16952,
     "arrow": 16963,
     "text": "|       |   |"
   },
   {
-    "offset": 16952,
+    "addr": 16952,
     "arrow": 16963,
     "text": "|      ,`-> 0x00004238      je 0x4243"
   },
   {
-    "offset": 16954,
+    "addr": 16954,
     "text": "|      |    |"
   },
   {
-    "offset": 16954,
+    "addr": 16954,
     "text": "|      |    0x0000423a      cmp byte [rax], 0"
   },
   {
-    "offset": 16957,
+    "addr": 16957,
     "arrow": 19228,
     "text": "|      |    |"
   },
   {
-    "offset": 16957,
+    "addr": 16957,
     "arrow": 19228,
     "text": "|     ,=.-> 0x0000423d      jne 0x4b1c"
   },
   {
-    "offset": 16963,
+    "addr": 16963,
     "text": "|     ||:   |"
   },
   {
-    "offset": 16963,
+    "addr": 16963,
     "text": "|     |`--> 0x00004243      lea r12, [var_58h]"
   },
   {
-    "offset": 16968,
+    "addr": 16968,
     "text": "|     | :   0x00004248      xor eax, eax"
   },
   {
-    "offset": 16970,
+    "addr": 16970,
     "arrow": 16957,
     "text": "|     | `=< 0x0000424a      jb 0x423d"
   },
   {
-    "offset": 16972,
+    "addr": 16972,
     "text": "|     |     |"
   },
   {
-    "offset": 16972,
+    "addr": 16972,
     "text": "|     |     0x0000424c      nop"
   }
 ]

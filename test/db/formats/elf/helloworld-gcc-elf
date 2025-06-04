@@ -614,7 +614,7 @@ EOF
 EXPECT=<<EOF
 [
   {
-    "offset": 134513408,
+    "addr": 134513408,
     "esil": "ebp,ebp,^=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=,0,cf,:=,0,of,:=",
     "refptr": 0,
     "fcn_addr": 0,
@@ -636,7 +636,7 @@ EXPECT=<<EOF
     "comment": "WzEzXSAtci14IHNlY3Rpb24gc2l6ZSA0MDQgbmFtZWQgLnRleHQ="
   },
   {
-    "offset": 134513410,
+    "addr": 134513410,
     "esil": "esp,[4],4,esp,+=,esi,=",
     "refptr": 0,
     "fcn_addr": 0,
@@ -652,7 +652,7 @@ EXPECT=<<EOF
     "type2_num": 0
   },
   {
-    "offset": 134513411,
+    "addr": 134513411,
     "esil": "esp,ecx,=",
     "refptr": 0,
     "fcn_addr": 0,
@@ -668,7 +668,7 @@ EXPECT=<<EOF
     "type2_num": 0
   },
   {
-    "offset": 134513413,
+    "addr": 134513413,
     "val": 4294967280,
     "esil": "4294967280,esp,&=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=,0,cf,:=,0,of,:=",
     "refptr": 0,

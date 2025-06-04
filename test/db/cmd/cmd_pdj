@@ -8,37 +8,37 @@ EOF
 EXPECT=<<EOF
 [
   {
-    "offset": 4294972376,
+    "addr": 4294972376,
     "text": "            ;-- main:"
   },
   {
-    "offset": 4294972376,
+    "addr": 4294972376,
     "text": "            ;-- entry0:"
   },
   {
-    "offset": 4294972376,
+    "addr": 4294972376,
     "text": "            ;-- func.1000013d8:"
   },
   {
-    "offset": 4294972376,
+    "addr": 4294972376,
     "text": "            0x1000013d8      55             push rbp"
   }
 ]
 [
   {
-    "offset": 4294972376,
+    "addr": 4294972376,
     "text": "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;--&nbsp;main:"
   },
   {
-    "offset": 4294972376,
+    "addr": 4294972376,
     "text": "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;--&nbsp;entry0:"
   },
   {
-    "offset": 4294972376,
+    "addr": 4294972376,
     "text": "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;--&nbsp;func.1000013d8:"
   },
   {
-    "offset": 4294972376,
+    "addr": 4294972376,
     "text": "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x1000013d8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;55&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;push&nbsp;rbp"
   }
 ]

@@ -1397,7 +1397,7 @@ static void ds_pre_line(RDisasmState *ds) {
 static void ds_begin_line(RDisasmState *ds) {
 	if (ds->pj) {
 		pj_o (ds->pj);
-		pj_kn (ds->pj, "offset", ds->vat);
+		pj_kn (ds->pj, "addr", ds->vat);
 		if (ds->core->anal->reflines) {
 			RAnalRefline *ref;
 			RListIter *iter;
@@ -7522,7 +7522,7 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 		int ret = r_asm_disassemble (core->rasm, &asmop, buf + i, nb_bytes - i);
 		if (ret < 1) {
 			pj_o (pj);
-			pj_kn (pj, "offset", at);
+			pj_kn (pj, "addr", at);
 			pj_ki (pj, "size", 1);
 			if (asmop.bytes) {
 				char *hex = r_asm_op_get_hex (&asmop);
@@ -7596,7 +7596,7 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 		}
 
 		pj_o (pj);
-		pj_kn (pj, "offset", at);
+		pj_kn (pj, "addr", at);
 		if (ds->analop.ptr != UT64_MAX) {
 			pj_kn (pj, "ptr", ds->analop.ptr);
 		}

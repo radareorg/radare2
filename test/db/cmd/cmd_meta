@@ -186,7 +186,7 @@ EOF
 EXPECT=<<EOF
 [
   {
-    "offset": 268436232,
+    "addr": 268436232,
     "esil": "r1,r9,=",
     "refptr": 0,
     "fcn_addr": 0,

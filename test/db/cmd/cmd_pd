@@ -435,7 +435,7 @@ pdj -1
 s
 EOF
 EXPECT=<<EOF
-[{"offset":1,"ptr":4248444,"val":4248444,"esil":"4248444,4,esp,-,=[4],4,esp,-=","refptr":0,"fcn_addr":0,"fcn_last":1020,"size":5,"opcode":"push 0x40d37c","disasm":"push 0x40d37c","bytes":"687cd34000","family":"cpu","type":"push","reloc":false,"type_num":13,"type2_num":0}]
+[{"addr":1,"ptr":4248444,"val":4248444,"esil":"4248444,4,esp,-,=[4],4,esp,-=","refptr":0,"fcn_addr":0,"fcn_last":1020,"size":5,"opcode":"push 0x40d37c","disasm":"push 0x40d37c","bytes":"687cd34000","family":"cpu","type":"push","reloc":false,"type_num":13,"type2_num":0}]
 0x6
 EOF
 RUN
@@ -448,7 +448,7 @@ e asm.bits=64
 pdj 3 @ main
 EOF
 EXPECT=<<EOF
-[{"offset":4195590,"esil":"rbp,8,rsp,-,=[8],8,rsp,-=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":1,"opcode":"push rbp","disasm":"push rbp","bytes":"55","family":"cpu","type":"rpush","reloc":false,"type_num":268435468,"type2_num":0,"flags":["main","sym.main"]},{"offset":4195591,"esil":"rsp,rbp,=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"mov rbp, rsp","disasm":"mov rbp, rsp","bytes":"4889e5","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":4195594,"ptr":4195780,"val":4195780,"esil":"4195780,rdi,=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov edi, 0x4005c4","disasm":"mov edi, str.Hello_World","bytes":"bfc4054000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0}]
+[{"addr":4195590,"esil":"rbp,8,rsp,-,=[8],8,rsp,-=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":1,"opcode":"push rbp","disasm":"push rbp","bytes":"55","family":"cpu","type":"rpush","reloc":false,"type_num":268435468,"type2_num":0,"flags":["main","sym.main"]},{"addr":4195591,"esil":"rsp,rbp,=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"mov rbp, rsp","disasm":"mov rbp, rsp","bytes":"4889e5","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"addr":4195594,"ptr":4195780,"val":4195780,"esil":"4195780,rdi,=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov edi, 0x4005c4","disasm":"mov edi, str.Hello_World","bytes":"bfc4054000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0}]
 EOF
 RUN
 
@@ -460,7 +460,7 @@ e asm.bits=64
 pdj -3 @ 0x0040050f
 EOF
 EXPECT=<<EOF
-[{"offset":4195590,"esil":"rbp,8,rsp,-,=[8],8,rsp,-=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":1,"opcode":"push rbp","disasm":"push rbp","bytes":"55","family":"cpu","type":"rpush","reloc":false,"type_num":268435468,"type2_num":0,"flags":["main","sym.main"]},{"offset":4195591,"esil":"rsp,rbp,=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"mov rbp, rsp","disasm":"mov rbp, rsp","bytes":"4889e5","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":4195594,"ptr":4195780,"val":4195780,"esil":"4195780,rdi,=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov edi, 0x4005c4","disasm":"mov edi, str.Hello_World","bytes":"bfc4054000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0}]
+[{"addr":4195590,"esil":"rbp,8,rsp,-,=[8],8,rsp,-=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":1,"opcode":"push rbp","disasm":"push rbp","bytes":"55","family":"cpu","type":"rpush","reloc":false,"type_num":268435468,"type2_num":0,"flags":["main","sym.main"]},{"addr":4195591,"esil":"rsp,rbp,=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"mov rbp, rsp","disasm":"mov rbp, rsp","bytes":"4889e5","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"addr":4195594,"ptr":4195780,"val":4195780,"esil":"4195780,rdi,=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov edi, 0x4005c4","disasm":"mov edi, str.Hello_World","bytes":"bfc4054000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0}]
 EOF
 RUN
 
@@ -468,7 +468,7 @@ NAME=pdj str in opcode
 FILE=bins/java/Hello.class
 CMDS=pdj 1 @ 0x000002ae
 EXPECT=<<EOF
-[{"offset":686,"esil":"","refptr":0,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"ldc \"World\"","disasm":"ldc \"World\"","bytes":"120b","family":"cpu","type":"push","reloc":false,"type_num":13,"type2_num":2138640}]
+[{"addr":686,"esil":"","refptr":0,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"ldc \"World\"","disasm":"ldc \"World\"","bytes":"120b","family":"cpu","type":"push","reloc":false,"type_num":13,"type2_num":2138640}]
 EOF
 RUN
 
@@ -1245,7 +1245,7 @@ e asm.lines.jmp=0
 pdJ 2
 EOF
 EXPECT=<<EOF
-[{"offset":0,"text":"  0x00000000      90             nop"},{"offset":1,"text":"  0x00000001      90             nop"}]
+[{"addr":0,"text":"  0x00000000      90             nop"},{"addr":1,"text":"  0x00000001      90             nop"}]
 EOF
 RUN
 
@@ -1264,9 +1264,9 @@ e asm.cmt.right=false
 pdJ 1
 EOF
 EXPECT=<<EOF
-[{"offset":0,"text":"  0x00000000      90             nop                                   ; test"}]
-[{"offset":0,"text":"  0x00000000      90             nop                                   ; test \"with quotes\""}]
-[{"offset":0,{"offset":0,"text":"  ; test \"with quotes\"\n  ; "},{"offset":0,"text":"  0x00000000      90             nop"}}
+[{"addr":0,"text":"  0x00000000      90             nop                                   ; test"}]
+[{"addr":0,"text":"  0x00000000      90             nop                                   ; test \"with quotes\""}]
+[{"addr":0,{"addr":0,"text":"  ; test \"with quotes\"\n  ; "},{"addr":0,"text":"  0x00000000      90             nop"}}
 EOF
 RUN
 
@@ -1277,7 +1277,7 @@ aa
 pdJ 1 @ 0x0040050a
 EOF
 EXPECT=<<EOF
-[{"offset":4195594,"text":"|           0x0040050a      bfc4054000     mov edi, str.Hello_World    ; 0x4005c4 ; \"Hello World\""}]
+[{"addr":4195594,"text":"|           0x0040050a      bfc4054000     mov edi, str.Hello_World    ; 0x4005c4 ; \"Hello World\""}]
 EOF
 RUN
 
@@ -1290,8 +1290,8 @@ aa
 pdJ 1 @ 0x00400506
 EOF
 EXPECT=<<EOF
-[{"offset":4195590,"text":"            ;-- main:"},{"offset":4195590,"text":"            0x00400506      55             push rbp"}]
-[{"offset":4195590,"text":"            ; DATA XREF from entry0 @ 0x40042d(r)"},{"offset":4195590,"text":"/ 16: int main (int argc, char **argv, char **envp);"},{"offset":4195590,"text":"|           0x00400506      55             push rbp"}]
+[{"addr":4195590,"text":"            ;-- main:"},{"addr":4195590,"text":"            0x00400506      55             push rbp"}]
+[{"addr":4195590,"text":"            ; DATA XREF from entry0 @ 0x40042d(r)"},{"addr":4195590,"text":"/ 16: int main (int argc, char **argv, char **envp);"},{"addr":4195590,"text":"|           0x00400506      55             push rbp"}]
 EOF
 RUN
 
@@ -1304,7 +1304,7 @@ f reloc.test @ 0x1
 pdJ 1 @ 0x0
 EOF
 EXPECT=<<EOF
-[{"offset":0,"text":"            0x00000000      0000           add byte [rax], al"}]
+[{"addr":0,"text":"            0x00000000      0000           add byte [rax], al"}]
 EOF
 RUN
 
@@ -1315,7 +1315,7 @@ Cs 30
 pdJ 1
 EOF
 EXPECT=<<EOF
-[{"offset":0,"text":"            0x00000000     .string \"Snoo\\\"ping as\\\" usual,\" ; len=30"}]
+[{"addr":0,"text":"            0x00000000     .string \"Snoo\\\"ping as\\\" usual,\" ; len=30"}]
 EOF
 RUN
 
@@ -1323,7 +1323,7 @@ NAME=pdJ str in opcode
 FILE=bins/java/Hello.class
 CMDS=pdJ 1 @ 0x000002ae
 EXPECT=<<EOF
-[{"offset":686,"text":"            0x000002ae      120b           ldc \"World\""}]
+[{"addr":686,"text":"            0x000002ae      120b           ldc \"World\""}]
 EOF
 RUN
 
@@ -1338,7 +1338,7 @@ e str.escbslash=1
 pdJ 1 @ 0x08048532
 EOF
 EXPECT=<<EOF
-[{"offset":134513970,"text":"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;&nbsp;[0x8048679:4]=0x73736150"},{"offset":134513970,"text":"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;&nbsp;\"Password&nbsp;Incorrect!\\n\""},{"offset":134513970,"text":"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x08048532&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;c704247986..&nbsp;&nbsp;&nbsp;mov&nbsp;dword&nbsp;[esp],&nbsp;str.Password_Incorrect__n"}]
+[{"addr":134513970,"text":"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;&nbsp;[0x8048679:4]=0x73736150"},{"addr":134513970,"text":"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;&nbsp;\"Password&nbsp;Incorrect!\\n\""},{"addr":134513970,"text":"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x08048532&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;c704247986..&nbsp;&nbsp;&nbsp;mov&nbsp;dword&nbsp;[esp],&nbsp;str.Password_Incorrect__n"}]
 EOF
 RUN
 
@@ -1356,9 +1356,9 @@ e asm.cmt.right=1
 pdJ 1 @ 0x080483ec
 EOF
 EXPECT=<<EOF
-[{"offset":134514169,"arrow":134514133,"text":"|       `=< 0x080485f9      72da           if (((unsigned) v) < 0) goto 0x80485d5"}]
-[{"offset":134513644,"text":"            ; sym.imp.__libc_start_main"},{"offset":134513644,"text":"            ; int __libc_start_main(func main, int argc, char **ubp_av, func init, func fini, func rtld_fini, void *stack_end)"},{"offset":134513644,"text":"            0x080483ec      e873ffffff     134513508,eip,4,esp,-=,esp,=[4],eip,="}]
-[{"offset":134513644,"text":"            0x080483ec      e873ffffff     134513508,eip,4,esp,-=,esp,=[4],eip,= ; sym.imp.__libc_start_main ; int __libc_start_main(func main, int argc, char **ubp_av, func init, func fini, func rtld_fini, void *stack_end)"}]
+[{"addr":134514169,"arrow":134514133,"text":"|       `=< 0x080485f9      72da           if (((unsigned) v) < 0) goto 0x80485d5"}]
+[{"addr":134513644,"text":"            ; sym.imp.__libc_start_main"},{"addr":134513644,"text":"            ; int __libc_start_main(func main, int argc, char **ubp_av, func init, func fini, func rtld_fini, void *stack_end)"},{"addr":134513644,"text":"            0x080483ec      e873ffffff     134513508,eip,4,esp,-=,esp,=[4],eip,="}]
+[{"addr":134513644,"text":"            0x080483ec      e873ffffff     134513508,eip,4,esp,-=,esp,=[4],eip,= ; sym.imp.__libc_start_main ; int __libc_start_main(func main, int argc, char **ubp_av, func init, func fini, func rtld_fini, void *stack_end)"}]
 EOF
 RUN
 
@@ -1369,7 +1369,7 @@ e asm.emu=1
 pdJ 1 @ 0x08048566
 EOF
 EXPECT=<<EOF
-[{"offset":134514022,"esil":{"expr":"134513556,eip,4,esp,-=,esp,=[4],eip,=","esp":18446744073709551612,"eip":134513556},"text":"            0x08048566      e829feffff     call sym.imp.printf         ; esp=0xfffffffffffffffc ; [0xfffffffc:4] = 0x804856b ; eip=0x8048394 -> 0xa00c25ff"},{"offset":134514022,"text":"                                                                       ; int printf(-1)"}]
+[{"addr":134514022,"esil":{"expr":"134513556,eip,4,esp,-=,esp,=[4],eip,=","esp":18446744073709551612,"eip":134513556},"text":"            0x08048566      e829feffff     call sym.imp.printf         ; esp=0xfffffffffffffffc ; [0xfffffffc:4] = 0x804856b ; eip=0x8048394 -> 0xa00c25ff"},{"addr":134514022,"text":"                                                                       ; int printf(-1)"}]
 EOF
 RUN
 
@@ -1387,9 +1387,9 @@ pdJ 1
 EOF
 EXPECT=<<EOF
             0x080484aa      b8e1850408     mov eax, 0x80485e1          ; "%ls" ; eax=0x80485e1 -> 0x736c25
-[{"offset":134513834,"esil":{"expr":"134514145,eax,=","eax":134514145},"text":"            0x080484aa      b8e1850408     mov eax, 0x80485e1          ; \"%ls\" ; eax=0x80485e1 -> 0x736c25"}]
+[{"addr":134513834,"esil":{"expr":"134514145,eax,=","eax":134514145},"text":"            0x080484aa      b8e1850408     mov eax, 0x80485e1          ; \"%ls\" ; eax=0x80485e1 -> 0x736c25"}]
             [32m0x080484aa[0m      [36mb8[36me1[36m85[36m04[36m08[0m     [36mmov[37m eax[0m,[33m[33m [32m0x80485e1[0m[0m[31m          [31m; "%ls"[0m[31m ; eax=0x80485e1 -> 0x736c25[0m
-[{"offset":134513834,"esil":{"expr":"134514145,eax,=","eax":134514145},"text":"            \u001b[32m0x080484aa\u001b[0m      \u001b[36mb8\u001b[36me1\u001b[36m85\u001b[36m04\u001b[36m08\u001b[0m     \u001b[36mmov\u001b[37m eax\u001b[0m,\u001b[33m\u001b[33m \u001b[32m0x80485e1\u001b[0m\u001b[0m\u001b[31m          \u001b[31m; \"%ls\"\u001b[0m\u001b[31m ; eax=0x80485e1 -> 0x736c25\u001b[0m"}]
+[{"addr":134513834,"esil":{"expr":"134514145,eax,=","eax":134514145},"text":"            \u001b[32m0x080484aa\u001b[0m      \u001b[36mb8\u001b[36me1\u001b[36m85\u001b[36m04\u001b[36m08\u001b[0m     \u001b[36mmov\u001b[37m eax\u001b[0m,\u001b[33m\u001b[33m \u001b[32m0x80485e1\u001b[0m\u001b[0m\u001b[31m          \u001b[31m; \"%ls\"\u001b[0m\u001b[31m ; eax=0x80485e1 -> 0x736c25\u001b[0m"}]
 EOF
 RUN
 
@@ -1408,8 +1408,8 @@ e asm.xrefs.max=0
 pdJ 1
 EOF
 EXPECT=<<EOF
-[{"offset":0,"text":"            ; XREFS: CODE 0x00000001  "},{"offset":0,"text":"            0x00000000      0000           add byte [rax], al"}]
-[{"offset":0,"text":"            ; XREFS(1)"},{"offset":0,"text":"            0x00000000      0000           add byte [rax], al"}]
+[{"addr":0,"text":"            ; XREFS: CODE 0x00000001  "},{"addr":0,"text":"            0x00000000      0000           add byte [rax], al"}]
+[{"addr":0,"text":"            ; XREFS(1)"},{"addr":0,"text":"            0x00000000      0000           add byte [rax], al"}]
 EOF
 RUN
 
@@ -1417,7 +1417,7 @@ NAME=pdJ escape flagname
 FILE=bins/elf/crackme
 CMDS=pdJ 1 @ 0x0040082f
 EXPECT=<<EOF
-[{"offset":4196399,"text":"            ;-- str.Password_Correct_:"},{"offset":4196399,"text":"            0x0040082f     .string \"Password Correct!\" ; len=18"}]
+[{"addr":4196399,"text":"            ;-- str.Password_Correct_:"},{"addr":4196399,"text":"            0x0040082f     .string \"Password Correct!\" ; len=18"}]
 EOF
 RUN
 
@@ -1896,17 +1896,17 @@ pdJ 1
 EOF
 EXPECT=<<EOF
             0x00002000      mov eax, ansi_str                          ; 0x1000 ; "path\"C:\\Program\n"
-[{"offset":8192,"text":"            0x00002000      mov eax, ansi_str                          ; 0x1000 ; \"path\\\"C:\\\\Program\\n\""}]
+[{"addr":8192,"text":"            0x00002000      mov eax, ansi_str                          ; 0x1000 ; \"path\\\"C:\\\\Program\\n\""}]
             0x00002000      mov eax, ansi_str                          ; 0x1000 ; "path\"C:\Program\n"
-[{"offset":8192,"text":"            0x00002000      mov eax, ansi_str                          ; 0x1000 ; \"path\\\"C:\\Program\\n\""}]
+[{"addr":8192,"text":"            0x00002000      mov eax, ansi_str                          ; 0x1000 ; \"path\\\"C:\\Program\\n\""}]
             0x00004000      mov ebx, wide_str                          ; 0x3000 ; u"path\"C:\Program\r"
-[{"offset":16384,"text":"            0x00004000      mov ebx, wide_str                          ; 0x3000 ; u\"path\\\"C:\\Program\\r\""}]
+[{"addr":16384,"text":"            0x00004000      mov ebx, wide_str                          ; 0x3000 ; u\"path\\\"C:\\Program\\r\""}]
             0x00004000      mov ebx, wide_str                          ; 0x3000 ; "p"
-[{"offset":16384,"text":"            0x00004000      mov ebx, wide_str                          ; 0x3000 ; \"p\""}]
+[{"addr":16384,"text":"            0x00004000      mov ebx, wide_str                          ; 0x3000 ; \"p\""}]
             0x00004000      mov ebx, wide_str                          ; 0x3000 ; u"path\"C:\\Program\r"
-[{"offset":16384,"text":"            0x00004000      mov ebx, wide_str                          ; 0x3000 ; u\"path\\\"C:\\\\Program\\r\""}]
+[{"addr":16384,"text":"            0x00004000      mov ebx, wide_str                          ; 0x3000 ; u\"path\\\"C:\\\\Program\\r\""}]
             0x00004000      mov ebx, wide_str                          ; 0x3000 ; u"path\"C:\Program\r"
-[{"offset":16384,"text":"            0x00004000      mov ebx, wide_str                          ; 0x3000 ; u\"path\\\"C:\\Program\\r\""}]
+[{"addr":16384,"text":"            0x00004000      mov ebx, wide_str                          ; 0x3000 ; u\"path\\\"C:\\Program\\r\""}]
 EOF
 RUN
 
@@ -2042,7 +2042,7 @@ EXPECT=<<EOF
             ; '>>>[<<+<'
             0x000009b3      48b83e3e3e..   movabs rax, 0x3c2b3c3c5b3e3e3e
 
-[{"offset":2483,"text":"            ; '>>>[<<+<'"},{"offset":2483,"text":"            0x000009b3      48b83e3e3e..   movabs rax, 0x3c2b3c3c5b3e3e3e"}]
+[{"addr":2483,"text":"            ; '>>>[<<+<'"},{"addr":2483,"text":"            0x000009b3      48b83e3e3e..   movabs rax, 0x3c2b3c3c5b3e3e3e"}]
 EOF
 RUN
 
@@ -2133,7 +2133,7 @@ EXPECT=<<EOF
             ; --------------------------------------
             0x08048415      90             nop
 
-[{"offset":134513684,"text":"            0x08048414      c3             ret"},{"offset":134513684,"text":"            ; --------------------------------------"},{"offset":134513685,"text":"            0x08048415      90             nop"}]
+[{"addr":134513684,"text":"            0x08048414      c3             ret"},{"addr":134513684,"text":"            ; --------------------------------------"},{"addr":134513685,"text":"            0x08048415      90             nop"}]
 EOF
 RUN
 

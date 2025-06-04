@@ -91,7 +91,7 @@ EXPECT=<<EOF
       "addr": 0,
       "ops": [
         {
-          "offset": 0,
+          "addr": 0,
           "esil": ",",
           "refptr": 0,
           "fcn_addr": 0,
@@ -115,7 +115,7 @@ EXPECT=<<EOF
       "addr": 3,
       "ops": [
         {
-          "offset": 3,
+          "addr": 3,
           "esil": "al,rax,+=[1],7,$o,of,:=,7,$s,sf,:=,$z,zf,:=,7,$c,cf,:=,$p,pf,:=,3,$c,af,:=",
           "refptr": 1,
           "fcn_addr": 0,
@@ -143,7 +143,7 @@ EXPECT=<<EOF
       "addr": 5,
       "ops": [
         {
-          "offset": 5,
+          "addr": 5,
           "ptr": 3238002721,
           "val": 3238002721,
           "esil": "3238002721,rax,=",
@@ -161,7 +161,7 @@ EXPECT=<<EOF
           "type2_num": 0
         },
         {
-          "offset": 10,
+          "addr": 10,
           "esil": "0x9,rip,=",
           "refptr": 0,
           "fcn_addr": 0,
@@ -190,7 +190,7 @@ EXPECT=<<EOF
       "addr": 9,
       "ops": [
         {
-          "offset": 9,
+          "addr": 9,
           "val": 253,
           "esil": "0,cf,:=,1,253,-,1,<<,ebx,&,?{,1,cf,:=,},253,ebx,>>,ebx,=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=",
           "refptr": 0,
@@ -214,7 +214,7 @@ EXPECT=<<EOF
           ]
         },
         {
-          "offset": 12,
+          "addr": 12,
           "ptr": 44,
           "val": 44,
           "esil": "44,rbx,=",
@@ -239,7 +239,7 @@ EXPECT=<<EOF
           ]
         },
         {
-          "offset": 17,
+          "addr": 17,
           "esil": "0x3,rip,=",
           "refptr": 0,
           "fcn_addr": 0,
@@ -282,7 +282,7 @@ jmp 3
       "addr": 0,
       "ops": [
         {
-          "offset": 0,
+          "addr": 0,
           "esil": ",",
           "refptr": 0,
           "fcn_addr": 0,
@@ -306,7 +306,7 @@ jmp 3
       "addr": 3,
       "ops": [
         {
-          "offset": 3,
+          "addr": 3,
           "esil": "al,rax,+=[1],7,$o,of,:=,7,$s,sf,:=,$z,zf,:=,7,$c,cf,:=,$p,pf,:=,3,$c,af,:=",
           "refptr": 1,
           "fcn_addr": 0,
@@ -334,7 +334,7 @@ jmp 3
       "addr": 5,
       "ops": [
         {
-          "offset": 5,
+          "addr": 5,
           "ptr": 3238002721,
           "val": 3238002721,
           "esil": "3238002721,rax,=",
@@ -352,7 +352,7 @@ jmp 3
           "type2_num": 0
         },
         {
-          "offset": 10,
+          "addr": 10,
           "esil": "0x9,rip,=",
           "refptr": 0,
           "fcn_addr": 0,
@@ -381,7 +381,7 @@ jmp 3
       "addr": 9,
       "ops": [
         {
-          "offset": 9,
+          "addr": 9,
           "val": 253,
           "esil": "0,cf,:=,1,253,-,1,<<,ebx,&,?{,1,cf,:=,},253,ebx,>>,ebx,=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=",
           "refptr": 0,
@@ -405,7 +405,7 @@ jmp 3
           ]
         },
         {
-          "offset": 12,
+          "addr": 12,
           "ptr": 44,
           "val": 44,
           "esil": "44,rbx,=",
@@ -430,7 +430,7 @@ jmp 3
           ]
         },
         {
-          "offset": 17,
+          "addr": 17,
           "esil": "0x3,rip,=",
           "refptr": 0,
           "fcn_addr": 0,

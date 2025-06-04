@@ -133,7 +133,7 @@ EOF
 EXPECT=<<EOF
 [
   {
-    "offset": 0,
+    "addr": 0,
     "esil": "rbp,8,rsp,-,=[8],8,rsp,-=",
     "refptr": 0,
     "fcn_addr": 0,
@@ -149,7 +149,7 @@ EXPECT=<<EOF
     "type2_num": 0
   },
   {
-    "offset": 1,
+    "addr": 1,
     "esil": "rsp,rbp,=",
     "refptr": 0,
     "fcn_addr": 0,
@@ -165,7 +165,7 @@ EXPECT=<<EOF
     "type2_num": 0
   },
   {
-    "offset": 4,
+    "addr": 4,
     "esil": "r15,8,rsp,-,=[8],8,rsp,-=",
     "refptr": 0,
     "fcn_addr": 0,
@@ -181,7 +181,7 @@ EXPECT=<<EOF
     "type2_num": 0
   },
   {
-    "offset": 6,
+    "addr": 6,
     "esil": "r14,8,rsp,-,=[8],8,rsp,-=",
     "refptr": 0,
     "fcn_addr": 0,
@@ -214,7 +214,7 @@ EOF
 EXPECT=<<EOF
 [
   {
-    "offset": 0,
+    "addr": 0,
     "esil": "rbp,8,rsp,-,=[8],8,rsp,-=",
     "refptr": 0,
     "fcn_addr": 0,
@@ -230,7 +230,7 @@ EXPECT=<<EOF
     "type2_num": 0
   },
   {
-    "offset": 1,
+    "addr": 1,
     "esil": "rsp,rbp,=",
     "refptr": 0,
     "fcn_addr": 0,
@@ -246,7 +246,7 @@ EXPECT=<<EOF
     "type2_num": 0
   },
   {
-    "offset": 2,
+    "addr": 2,
     "esil": "esp,rbp,=",
     "refptr": 0,
     "fcn_addr": 0,
@@ -265,7 +265,7 @@ EXPECT=<<EOF
     ]
   },
   {
-    "offset": 4,
+    "addr": 4,
     "esil": "r15,8,rsp,-,=[8],8,rsp,-=",
     "refptr": 0,
     "fcn_addr": 0,

@@ -440,7 +440,7 @@ wx b8010000004839ca7f
 pij 3
 EOF
 EXPECT=<<EOF
-[{"offset":0,"val":1,"esil":"1,rax,=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov eax, 1","disasm":"mov eax, 1","bytes":"b801000000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":5,"esil":"rcx,rdx,==,$z,zf,:=,64,$b,cf,:=,$p,pf,:=,63,$s,sf,:=,rcx,0x8000000000000000,-,!,63,$o,^,of,:=,3,$b,af,:=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"cmp rdx, rcx","disasm":"cmp rdx, rcx","bytes":"4839ca","family":"cpu","type":"cmp","reloc":false,"type_num":15,"type2_num":0},{"offset":8,"esil":"sf,of,!,^,zf,!,&,?{,10,rip,=,}","refptr":0,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"jg 0xa","disasm":"jg 0xa","bytes":"7f00","family":"cpu","type":"cjmp","reloc":false,"type_num":2147483649,"type2_num":0,"jump":10,"fail":10}]
+[{"addr":0,"val":1,"esil":"1,rax,=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov eax, 1","disasm":"mov eax, 1","bytes":"b801000000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"addr":5,"esil":"rcx,rdx,==,$z,zf,:=,64,$b,cf,:=,$p,pf,:=,63,$s,sf,:=,rcx,0x8000000000000000,-,!,63,$o,^,of,:=,3,$b,af,:=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"cmp rdx, rcx","disasm":"cmp rdx, rcx","bytes":"4839ca","family":"cpu","type":"cmp","reloc":false,"type_num":15,"type2_num":0},{"addr":8,"esil":"sf,of,!,^,zf,!,&,?{,10,rip,=,}","refptr":0,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"jg 0xa","disasm":"jg 0xa","bytes":"7f00","family":"cpu","type":"cjmp","reloc":false,"type_num":2147483649,"type2_num":0,"jump":10,"fail":10}]
 EOF
 RUN
 
@@ -503,7 +503,7 @@ e asm.bits=64
 pij -3 @ 0x0040050f
 EOF
 EXPECT=<<EOF
-[{"offset":4195590,"esil":"rbp,8,rsp,-,=[8],8,rsp,-=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":1,"opcode":"push rbp","disasm":"push rbp","bytes":"55","family":"cpu","type":"rpush","reloc":false,"type_num":268435468,"type2_num":0,"flags":["main","sym.main"]},{"offset":4195591,"esil":"rsp,rbp,=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"mov rbp, rsp","disasm":"mov rbp, rsp","bytes":"4889e5","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":4195594,"ptr":4195780,"val":4195780,"esil":"4195780,rdi,=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov edi, 0x4005c4","disasm":"mov edi, str.Hello_World","bytes":"bfc4054000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0}]
+[{"addr":4195590,"esil":"rbp,8,rsp,-,=[8],8,rsp,-=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":1,"opcode":"push rbp","disasm":"push rbp","bytes":"55","family":"cpu","type":"rpush","reloc":false,"type_num":268435468,"type2_num":0,"flags":["main","sym.main"]},{"addr":4195591,"esil":"rsp,rbp,=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"mov rbp, rsp","disasm":"mov rbp, rsp","bytes":"4889e5","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"addr":4195594,"ptr":4195780,"val":4195780,"esil":"4195780,rdi,=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov edi, 0x4005c4","disasm":"mov edi, str.Hello_World","bytes":"bfc4054000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0}]
 EOF
 RUN
 
@@ -611,7 +611,7 @@ wx b8010000004839ca7f
 pij 3
 EOF
 EXPECT=<<EOF
-[{"offset":0,"val":1,"esil":"1,rax,=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov eax, 1","disasm":"mov eax, 1","bytes":"b801000000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":5,"esil":"rcx,rdx,==,$z,zf,:=,64,$b,cf,:=,$p,pf,:=,63,$s,sf,:=,rcx,0x8000000000000000,-,!,63,$o,^,of,:=,3,$b,af,:=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"cmp rdx, rcx","disasm":"cmp rdx, rcx","bytes":"4839ca","family":"cpu","type":"cmp","reloc":false,"type_num":15,"type2_num":0},{"offset":8,"esil":"sf,of,!,^,zf,!,&,?{,10,rip,=,}","refptr":0,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"jg 0xa","disasm":"jg 0xa","bytes":"7f00","family":"cpu","type":"cjmp","reloc":false,"type_num":2147483649,"type2_num":0,"jump":10,"fail":10}]
+[{"addr":0,"val":1,"esil":"1,rax,=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov eax, 1","disasm":"mov eax, 1","bytes":"b801000000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"addr":5,"esil":"rcx,rdx,==,$z,zf,:=,64,$b,cf,:=,$p,pf,:=,63,$s,sf,:=,rcx,0x8000000000000000,-,!,63,$o,^,of,:=,3,$b,af,:=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"cmp rdx, rcx","disasm":"cmp rdx, rcx","bytes":"4839ca","family":"cpu","type":"cmp","reloc":false,"type_num":15,"type2_num":0},{"addr":8,"esil":"sf,of,!,^,zf,!,&,?{,10,rip,=,}","refptr":0,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"jg 0xa","disasm":"jg 0xa","bytes":"7f00","family":"cpu","type":"cjmp","reloc":false,"type_num":2147483649,"type2_num":0,"jump":10,"fail":10}]
 EOF
 RUN
 
@@ -659,7 +659,7 @@ EOF
 EXPECT=<<EOF
 [
   {
-    "offset": 3,
+    "addr": 3,
     "esil": "al,rax,+=[1],7,$o,of,:=,7,$s,sf,:=,$z,zf,:=,7,$c,cf,:=,$p,pf,:=,3,$c,af,:=",
     "refptr": 1,
     "fcn_addr": 0,
@@ -675,7 +675,7 @@ EXPECT=<<EOF
     "type2_num": 0
   },
   {
-    "offset": 5,
+    "addr": 5,
     "esil": "rcx,rdx,==,$z,zf,:=,64,$b,cf,:=,$p,pf,:=,63,$s,sf,:=,rcx,0x8000000000000000,-,!,63,$o,^,of,:=,3,$b,af,:=",
     "refptr": 0,
     "fcn_addr": 0,
@@ -691,7 +691,7 @@ EXPECT=<<EOF
     "type2_num": 0
   },
   {
-    "offset": 8,
+    "addr": 8,
     "esil": "sf,of,!,^,zf,!,&,?{,10,rip,=,}",
     "refptr": 0,
     "fcn_addr": 0,

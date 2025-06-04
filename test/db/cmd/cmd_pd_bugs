@@ -315,27 +315,27 @@ EXPECT=<<EOF
 0x1000013e0      push     r13
 [
   {
-    "offset": 4294972376,
+    "addr": 4294972376,
     "text": ";-- main:"
   },
   {
-    "offset": 4294972376,
+    "addr": 4294972376,
     "text": ";-- entry0:"
   },
   {
-    "offset": 4294972376,
+    "addr": 4294972376,
     "text": ";-- func.1000013d8:"
   },
   {
-    "offset": 4294972376,
+    "addr": 4294972376,
     "text": "0x1000013d8      push     rbp"
   },
   {
-    "offset": 4294972377,
+    "addr": 4294972377,
     "text": "0x1000013d9      mov      rbp, rsp"
   },
   {
-    "offset": 4294972380,
+    "addr": 4294972380,
     "text": "0x1000013dc      push     r15"
   }
 ]
