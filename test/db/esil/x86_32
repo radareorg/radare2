@@ -2301,7 +2301,7 @@ EOF
 EXPECT=<<EOF
 [
   {
-    "offset": 0,
+    "addr": 0,
     "esil": "0,cf,:=,32,eax,%,1,<<,32,eax,/,esp,+,[4],&,?{,1,cf,:=,},32,eax,%,1,<<,32,eax,/,esp,+,|=[4]",
     "refptr": 4,
     "fcn_addr": 0,
