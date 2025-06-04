@@ -15061,7 +15061,9 @@ static void cmd_acb(RCore *core, const char *input) {
 		}
 		if (R_STR_ISEMPTY (end)) {
 			if (c == ' ') {
-				r_anal_class_list_bases (core->anal, cstr);
+				char *res = r_anal_class_list_bases (core->anal, cstr);
+				r_kons_print (core->cons, res);
+				free (res);
 			} else /*if (c == '-')*/ {
 				R_LOG_ERROR ("No base id given");
 			}
@@ -15132,8 +15134,9 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 			end = (char *)r_str_trim_head_wp (class_arg); // in case of extra unwanted stuff at the cmd end
 			*end = '\0';
 		}
-		r_anal_class_list_vtable_offset_functions (core->anal, class_arg, offset_arg);
-
+		char *res = r_anal_class_list_vtable_offset_functions (core->anal, class_arg, offset_arg);
+		r_kons_print (core->cons, res);
+		free (res);
 		free (cstr);
 		break;
 	}
@@ -15156,7 +15159,9 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 
 		if (R_STR_ISEMPTY (end)) {
 			if (c == ' ') {
-				r_anal_class_list_vtables (core->anal, cstr);
+				char *res = r_anal_class_list_vtables (core->anal, cstr);
+				r_kons_print (core->cons, res);
+				free (res);
 			} else /*if (c == '-')*/ {
 				R_LOG_ERROR ("No vtable id given. See acv [class name]");
 			}
@@ -15233,7 +15238,9 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 				break;
 			}
 		}
-		r_anal_class_list (core->anal, input[1]);
+		char *res = r_anal_class_list (core->anal, input[1]);
+		r_kons_print (core->cons, res);
+		free (res);
 		break;
 	case ' ': // "ac"
 	case '-': // "ac-"

@@ -460,13 +460,13 @@ acm PorcupineTreeAlbum Listen 0xdeadbeef
 acl*
 EOF
 EXPECT=<<EOF
-ac Deadwing
-ac PorcupineTreeAlbum
-ac Album
-acb Deadwing PorcupineTreeAlbum 8
-acb PorcupineTreeAlbum Album 0
-acv PorcupineTreeAlbum 0x1337 66
-acm PorcupineTreeAlbum Listen 0xdeadbeef -1
+'ac Deadwing
+'ac PorcupineTreeAlbum
+'ac Album
+'acb Deadwing PorcupineTreeAlbum 8
+'acb PorcupineTreeAlbum Album 0
+'acv PorcupineTreeAlbum 0x1337 66
+'acm PorcupineTreeAlbum Listen 0xdeadbeef -1
 EOF
 RUN
 
@@ -480,9 +480,7 @@ acv PorcupineTreeAlbum 0x1337 0x42
 acm PorcupineTreeAlbum Listen 0xdeadbeef
 aclj
 EOF
-EXPECT=<<EOF
-[{"name":"PorcupineTreeAlbum","bases":[],"vtables":[{"id":"0","addr":4919,"offset":66}],"methods":[{"name":"Listen","addr":3735928559}]},{"name":"Deadwing","bases":[{"id":"0","name":"PorcupineTreeAlbum","offset":8}],"vtables":[],"methods":[]}]
-EOF
+EXPECT=[{"name":"PorcupineTreeAlbum","bases":[],"vtables":[{"id":"0","addr":4919,"offset":66}],"methods":[{"name":"Listen","addr":3735928559}]},{"name":"Deadwing","bases":[{"id":"0","name":"PorcupineTreeAlbum","offset":8}],"vtables":[],"methods":[]}]
 RUN
 
 NAME=acvf
