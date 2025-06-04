@@ -5891,7 +5891,7 @@ static int cmd_af(RCore *core, const char *input) {
 			r_core_anal_fcn_list (core, NULL, input + 2);
 			break;
 		case 'c': // "aflc"
-			r_cons_printf ("%d\n", r_list_length (core->anal->fcns));
+			r_kons_printf (core->cons, "%d\n", r_list_length (core->anal->fcns));
 			break;
 		case ' ': // "afl [addr]" argument ignored
 		case 0: // "afl"
