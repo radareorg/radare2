@@ -4209,6 +4209,8 @@ const char *MACH0_(get_cputype_from_hdr)(struct MACH0_(mach_header) *hdr) {
 	case CPU_TYPE_MC680x0:
 		archstr = "mc680x0";
 		break;
+	case CPU_TYPE_RISCV:
+		return "riscv";
 	case CPU_TYPE_I386:
 	case CPU_TYPE_X86_64:
 		archstr = "x86";
@@ -4277,6 +4279,8 @@ static const char *cpusubtype_tostring(ut32 cputype, ut32 cpusubtype) {
 		case CPU_SUBTYPE_MC68030_ONLY:	return "mc68030 only";
 		default:			return "Unknown mc680x0 subtype";
 		}
+	case CPU_TYPE_RISCV:
+		return "riscv";
 	case CPU_TYPE_I386:
 		switch (cpusubtype) {
 		case CPU_SUBTYPE_386: 			return "386";

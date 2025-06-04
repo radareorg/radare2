@@ -1099,7 +1099,8 @@ enum CPUType {
 	CPU_TYPE_SPARC     = 14,
 	CPU_TYPE_I860      = 15,
 	CPU_TYPE_POWERPC   = 18,
-	CPU_TYPE_POWERPC64 = CPU_TYPE_POWERPC | CPU_ARCH_ABI64
+	CPU_TYPE_POWERPC64 = CPU_TYPE_POWERPC | CPU_ARCH_ABI64,
+	CPU_TYPE_RISCV     = 24,
 };
 
 enum {
@@ -1138,17 +1139,22 @@ enum CPUSubTypeX86 {
 	CPU_SUBTYPE_X86_ALL     = 3,
 	CPU_SUBTYPE_X86_64_ALL  = 3,
 	CPU_SUBTYPE_X86_ARCH1   = 4,
-	CPU_SUBTYPE_X86_64_H    = 8
+	CPU_SUBTYPE_X86_64_H    = 8,
+	CPU_SUBTYPE_RISCV_ALL   = 0,
 };
+
 static inline int CPU_SUBTYPE_INTEL(int Family, int Model) {
 	return Family | (Model << 4);
 }
+
 static inline int CPU_SUBTYPE_INTEL_FAMILY(enum CPUSubTypeX86 ST) {
 	return ((int)ST) & 0x0f;
 }
+
 static inline int CPU_SUBTYPE_INTEL_MODEL(enum CPUSubTypeX86 ST) {
 	return ((int)ST) >> 4;
 }
+
 enum {
 	CPU_SUBTYPE_INTEL_FAMILY_MAX = 15,
 	CPU_SUBTYPE_INTEL_MODEL_ALL  = 0
