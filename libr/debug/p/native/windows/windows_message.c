@@ -1,4 +1,5 @@
-/* radare2 - LGPL - Copyright 2019 - GustavoLCR */
+/* radare2 - LGPL - Copyright 2019-2025 - GustavoLCR */
+
 #include <r_debug.h>
 #include "windows_message.h"
 
@@ -300,6 +301,7 @@ static void __add_window_to_table(RTable *tbl, window *win) {
 }
 
 R_API void r_w32_identify_window(void) {
+	RCons *cons = r_cons_singleton ();
 	while (!r_kons_yesno (cons, 'y', "Move cursor to the window to be identified. Ready?"));
 	POINT p;
 	GetCursorPos (&p);
