@@ -3672,7 +3672,7 @@ static int agraph_print(RAGraph *g, bool is_interactive, RCore *core, RAnalFunct
 static void check_function_modified(RCore *core, RAnalFunction *fcn) {
 	if (r_anal_function_was_modified (fcn)) {
 		if (r_config_get_b (core->config, "anal.onchange")
-			|| r_cons_yesno ('y', "Function was modified. Reanalyze? (Y/n)")) {
+			|| r_kons_yesno (core->cons, 'y', "Function was modified. Reanalyze? (Y/n)")) {
 			r_anal_function_update_analysis (fcn);
 		}
 	}
@@ -3682,8 +3682,9 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 	if (!grd) {
 		return 0;
 	}
-	r_cons_singleton ()->event_data = grd;
 	RCore *core = grd->core;
+	RCons *cons = core->cons;
+	cons->event_data = grd;
 	RAGraph *g = grd->g;
 	RAnalFunction *f = NULL;
 	RAnalFunction **fcn = grd->fcn;
@@ -3711,7 +3712,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 			f = r_anal_get_fcn_in (core->anal, core->addr, 0);
 			if (!f) {
 				if (!g->is_dis) {
-					if (!r_cons_yesno ('y', "\rNo function at 0x%08"PFMT64x". Define it here (Y/n)? ", core->addr)) {
+					if (!r_kons_yesno (cons, 'y', "\rNo function at 0x%08"PFMT64x". Define it here (Y/n)? ", core->addr)) {
 						return 0;
 					}
 					r_core_cmd_call (core, "af");
@@ -3802,6 +3803,9 @@ static void graphNodeMove(RAGraph *g, int dir, int speed) {
 }
 
 static void agraph_free_nodes(RAGraph *g) {
+	if (!g) {
+		return;
+	}
 	RListIter *it;
 	RGraphNode *n;
 	RANode *a;
@@ -3820,7 +3824,8 @@ static void sdb_set_enc(Sdb *db, const char *key, const char *v, ut32 cas) {
 }
 
 static void agraph_sdb_init(const RAGraph *g) {
-	RConsContext *ctx = r_cons_singleton ()->context;
+	RConsCanvas *canvas = g->can;
+	RConsContext *ctx = canvas->cons->context;
 	sdb_bool_set (g->db, "agraph.is_callgraph", g->is_callgraph, 0);
 	sdb_set_enc (g->db, "agraph.color_box", ctx->pal.graph_box, 0);
 	sdb_set_enc (g->db, "agraph.color_box2", ctx->pal.graph_box2, 0);
@@ -4677,7 +4682,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 			exit_graph = true;
 			break;
 		case '>':
-			if (fcn && r_cons_yesno ('y', "Compute function callgraph? (Y/n)")) {
+			if (fcn && r_kons_yesno (core->cons, 'y', "Compute function callgraph? (Y/n)")) {
 				r_core_cmd0 (core, "ag-;.agc* @$FB;.axfg @$FB;aggi");
 			}
 			break;

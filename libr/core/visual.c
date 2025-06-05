@@ -499,7 +499,7 @@ R_API bool r_core_visual_hud(RCore *core) {
 	char *homehud = r_xdg_datadir ("hud");
 	bool ready = false;
 	char *res = NULL;
-	r_cons_context ()->color_mode = use_color;
+	core->cons->context->color_mode = use_color;
 
 	r_core_visual_showcursor (core, true);
 	if (R_STR_ISNOTEMPTY (c) && r_file_exists (c)) {
@@ -1681,7 +1681,7 @@ repeat:
 		goto repeat;
 	case '-':
 		r_kons_gotoxy (cons, 0, 0);
-		if (r_cons_yesno ('y', "Do you want to delete this xref? (Y/n)")) {
+		if (r_kons_yesno (cons, 'y', "Do you want to delete this xref? (Y/n)")) {
 			delete_ref (core, xrefs, skip, xref);
 		}
 		goto repeat;

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #include <r_core.h>
 
@@ -116,7 +116,7 @@ R_API void r_core_visual_asm(RCore *core, ut64 off) {
 	r_line_readline_cb (core->cons, readline_callback, &cva);
 
 	if (cva.acode && cva.acode->len > 0) {
-		if (r_cons_yesno ('y', "Save changes? (Y/n)")) {
+		if (r_kons_yesno (core->cons, 'y', "Save changes? (Y/n)")) {
 			if (!r_io_write_at (core->io, off, cva.acode->bytes, cva.acode->len)) {
 				R_LOG_ERROR ("Cannot write in here, check map permissions or reopen the file with oo+");
 				r_cons_any_key (core->cons, NULL);

@@ -678,19 +678,19 @@ R_API int r_cons_readchar(RCons *cons) {
 #endif
 }
 
-R_API bool r_cons_yesno(int def, const char *fmt, ...) {
+R_API bool r_kons_yesno(RCons *cons, int def, const char *fmt, ...) {
 	va_list ap;
 	ut8 key = (ut8)def;
 	va_start (ap, fmt);
 
-	if (!r_cons_is_interactive ()) {
+	if (!r_kons_is_interactive (cons)) {
 		va_end (ap);
 		return def == 'y';
 	}
 	vfprintf (stderr, fmt, ap);
 	va_end (ap);
 	fflush (stderr);
-	r_cons_set_raw (true);
+	r_kons_set_raw (cons, true);
 	char buf[] = " ?\n";
 	if (read (0, buf + 1, 1) == 1) {
 		key = (ut8)buf[1];
@@ -698,7 +698,7 @@ R_API bool r_cons_yesno(int def, const char *fmt, ...) {
 			if (key == 'Y') {
 				key = 'y';
 			}
-			r_cons_set_raw (false);
+			r_kons_set_raw (cons, false);
 			if (key == '\n' || key == '\r') {
 				key = def;
 			}

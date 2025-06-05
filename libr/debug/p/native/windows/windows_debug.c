@@ -1,10 +1,10 @@
-/* radare - LGPL - Copyright 2019-2021 - MapleLeaf-X */
+/* radare - LGPL - Copyright 2019-2025 - MapleLeaf-X */
 
 #include <ntstatus.h>
 #include "windows_debug.h"
 
 // XXX remove globals
-const DWORD wait_time = 1000;
+static const DWORD wait_time = 1000;
 static RList *lib_list = NULL;
 static PLIB_ITEM last_lib = NULL;
 

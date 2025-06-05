@@ -567,7 +567,7 @@ R_IPI void r_io_desc_fini(RIO *io);
 /* io/cache.c */
 R_API void r_io_cache_init(RIO *io);
 R_API void r_io_cache_fini(RIO *io);
-R_API void r_io_cache_list(RIO *io, int rad, bool many);
+R_API char *r_io_cache_list(RIO *io, int rad, bool many);
 R_API bool r_io_cache_empty(RIO *io);
 R_API void r_io_cache_reset(RIO *io);
 R_API bool r_io_cache_at(RIO *io, ut64 addr);

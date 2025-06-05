@@ -497,7 +497,8 @@ static int cmp(const void *a, const void *b) {
 		}
 		return (int)diff;
 	}
-	RConsContext *ctx = r_cons_context ();
+	RCons *cons = r_cons_singleton ();
+	RConsContext *ctx = cons->context;
 	if (ctx->sorted_column > 0) {
 		da = strdup (ca);
 		db = strdup (cb);
@@ -1171,7 +1172,7 @@ R_API int r_cons_grep_line(RCons *cons, char *buf, int len) {
 		hit = true;
 	}
 
-	RConsContext *ctx = r_cons_context ();
+	RConsContext *ctx = cons->context;
 	if (hit) {
 		if (!grep->range_line) {
 			if (grep->line == cons->lines) {

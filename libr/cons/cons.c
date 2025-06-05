@@ -15,7 +15,6 @@ static R_TH_LOCAL RCons *I = NULL;
 #include "thread.inc.c"
 #include "kons.inc.c"
 
-#define C (getctx ())
 static void __break_signal(int sig) {
 	r_cons_context_break (I->context); // &r_cons_context_default);
 }
@@ -51,7 +50,8 @@ R_API bool r_cons_is_initialized(void) {
 
 R_API RColor r_cons_color_random(ut8 alpha) {
 	RColor rcolor = {0};
-	if (C->color_mode > COLOR_MODE_16) {
+	RConsContext *ctx = getctx ();
+	if (ctx->color_mode > COLOR_MODE_16) {
 		rcolor.r = r_num_rand (0xff);
 		rcolor.g = r_num_rand (0xff);
 		rcolor.b = r_num_rand (0xff);
@@ -142,9 +142,11 @@ R_API void r_cons_print_at(RCons *cons, const char *_str, int x, char y, int w, 
 	free (str);
 }
 
+#if 0
 R_API RConsContext *r_cons_context(void) {
 	return C;
 }
+#endif
 
 R_API RCons *r_cons_global(RCons *c) {
 	if (c) {
@@ -213,12 +215,12 @@ R_API void r_cons_context_break_pop(RConsContext *context, bool sig) {
 		//there is not more elements in the stack
 #if R2__UNIX__ && !__wasi__
 		if (sig && r_cons_context_is_main ()) {
-			if (!C->unbreakable) {
+			if (!context->unbreakable) {
 				r_sys_signal (SIGINT, SIG_IGN);
 			}
 		}
 #endif
-		C->was_breaked = C->breaked;
+		context->was_breaked = context->breaked;
 		context->breaked = false;
 	}
 #endif
@@ -241,11 +243,23 @@ R_API bool r_cons_default_context_is_interactive(void) {
 	return I->context->is_interactive;
 }
 
+R_API bool r_kons_was_breaked(RCons *cons) {
+#if WANT_DEBUGSTUFF
+	const bool res = r_kons_is_breaked (cons) || cons->context->was_breaked;
+	cons->context->breaked = false;
+	cons->context->was_breaked = false;
+	return res;
+#else
+	return false;
+#endif
+}
+
 R_API bool r_cons_was_breaked(void) {
 #if WANT_DEBUGSTUFF
-	const bool res = r_cons_is_breaked () || C->was_breaked;
-	C->breaked = false;
-	C->was_breaked = false;
+	RConsContext *ctx = r_cons_singleton ()->context;
+	const bool res = r_cons_is_breaked () || ctx->was_breaked;
+	ctx->breaked = false;
+	ctx->was_breaked = false;
 	return res;
 #else
 	return false;

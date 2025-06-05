@@ -141,6 +141,7 @@ R_API int r_core_project_list(RCore *core, int mode) {
 }
 
 R_API int r_core_project_delete(RCore *core, const char *prjfile) {
+	RCons *cons = core->cons;
 	if (r_sandbox_enable (0)) {
 		R_LOG_ERROR ("Cannot delete project in sandbox mode");
 		return 0;
@@ -160,7 +161,7 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 		bool must_rm = true;
 		if (r_config_get_b (core->config, "scr.interactive")) {
 			R_LOG_INFO ("Removing: %s", prj_dir);
-			must_rm = r_cons_yesno ('y', "Confirm project deletion? (Y/n)");
+			must_rm = r_kons_yesno (cons, 'y', "Confirm project deletion? (Y/n)");
 		}
 		if (must_rm) {
 			r_file_rm_rf (prj_dir);
@@ -372,6 +373,7 @@ R_API RThread *r_core_project_load_bg(RCore *core, const char *prj_name, const c
 }
 
 R_API bool r_core_project_open(RCore *core, const char *prj_path) {
+	RCons *cons = core->cons;
 	R_RETURN_VAL_IF_FAIL (core && !R_STR_ISEMPTY (prj_path), false);
 	bool interactive = r_config_get_b (core->config, "scr.interactive");
 	bool close_current_session = true;
@@ -379,7 +381,7 @@ R_API bool r_core_project_open(RCore *core, const char *prj_path) {
 	if (r_project_is_loaded (core->prj)) {
 		R_LOG_ERROR ("There's a project already opened");
 		ask_for_closing = false;
-		bool ccs = interactive? r_cons_yesno ('y', "Close current session? (Y/n)"): true;
+		bool ccs = interactive? r_kons_yesno (cons, 'y', "Close current session? (Y/n)"): true;
 		if (!ccs) {
 			R_LOG_ERROR ("Project not loaded");
 			return false;
@@ -396,7 +398,7 @@ R_API bool r_core_project_open(RCore *core, const char *prj_path) {
 	if (ask_for_closing && r_project_is_loaded (core->prj)) {
 		if (r_cons_is_interactive ()) {
 			close_current_session = interactive
-				? r_cons_yesno ('y', "Close current session? (Y/n)")
+				? r_kons_yesno (cons, 'y', "Close current session? (Y/n)")
 				: true;
 		}
 	}

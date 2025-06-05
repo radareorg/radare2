@@ -370,7 +370,7 @@ R_API bool r_lang_prompt(RLang *lang) {
 					r_lang_run (lang, foo, 0);
 					free (code);
 					code = foo;
-				} while (r_cons_yesno ('y', "Edit again? (Y/n)"));
+				} while (r_kons_yesno (lang->cons, 'y', "Edit again? (Y/n)"));
 				free (foo);
 			}
 			continue;

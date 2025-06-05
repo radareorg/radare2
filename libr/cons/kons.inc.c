@@ -503,14 +503,14 @@ R_API void r_kons_flush(RCons *cons) {
 					lines ++;
 				}
 			}
-			if (lines > 0 && !r_cons_yesno ('n',"Do you want to print %d lines? (y/N)", lines)) {
+			if (lines > 0 && !r_kons_yesno (cons, 'n',"Do you want to print %d lines? (y/N)", lines)) {
 				r_kons_reset (cons);
 				return;
 			}
 #else
 			char buf[8];
 			r_num_units (buf, sizeof (buf), ctx->buffer_len);
-			if (!r_cons_yesno ('n', "Do you want to print %s chars? (y/N)", buf)) {
+			if (!r_kons_yesno (cons, 'n', "Do you want to print %s chars? (y/N)", buf)) {
 				r_kons_reset (cons);
 				return;
 			}

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2024 - pancake */
+/* radare - LGPL - Copyright 2024-2025 - pancake */
 
 #include <r_core.h>
 
@@ -54,6 +54,7 @@ R_API void r_core_list_lang(RCore *core, int mode) {
 }
 
 R_API int r_core_list_io(RCore *core, const char *name, int mode) {
+	RCons *cons = core->cons;
 	RIOPlugin *plugin;
 	SdbListIter *iter;
 	char str[4];
@@ -93,30 +94,30 @@ R_API int r_core_list_io(RCore *core, const char *name, int mode) {
 			}
 			pj_end (pj);
 		} else if (name) {
-			r_cons_printf ("name: %s\n", plugin->meta.name);
-			r_cons_printf ("auth: %s\n", plugin->meta.author);
-			r_cons_printf ("lice: %s\n", plugin->meta.license);
-			r_cons_printf ("desc: %s\n", plugin->meta.desc);
-			r_cons_printf ("uris: %s\n", plugin->uris);
+			r_kons_printf (cons, "name: %s\n", plugin->meta.name);
+			r_kons_printf (cons, "auth: %s\n", plugin->meta.author);
+			r_kons_printf (cons, "lice: %s\n", plugin->meta.license);
+			r_kons_printf (cons, "desc: %s\n", plugin->meta.desc);
+			r_kons_printf (cons, "uris: %s\n", plugin->uris);
 			if (*str) {
-				r_cons_printf ("perm: %s\n", str);
+				r_kons_printf (cons, "perm: %s\n", str);
 			}
-			r_cons_printf ("sysc: %s\n", r_str_bool (plugin->system));
+			r_kons_printf (cons, "sysc: %s\n", r_str_bool (plugin->system));
 		} else {
-			r_cons_printf ("%s  %-8s %s.", str,
+			r_kons_printf (cons, "%s  %-8s %s.", str,
 				r_str_get (plugin->meta.name),
 				r_str_get (plugin->meta.desc));
 			if (plugin->uris) {
-				r_cons_printf (" %s", plugin->uris);
+				r_kons_printf (cons, " %s", plugin->uris);
 			}
-			r_cons_printf ("\n");
+			r_kons_printf (cons, "\n");
 		}
 		n++;
 	}
 	if (pj) {
 		pj_end (pj);
 		char *s = pj_drain (pj);
-		r_cons_printf ("%s\n", s);
+		r_kons_printf (cons, "%s\n", s);
 		free (s);
 	}
 	return n;

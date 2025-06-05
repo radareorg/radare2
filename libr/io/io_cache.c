@@ -406,9 +406,10 @@ R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to, bool many) {
 	}
 }
 
-static void list(RIO *io, RIOCacheLayer *layer, PJ *pj, int rad) {
+static char *list(RIO *io, RIOCacheLayer *layer, PJ *pj, int rad) {
 	void **iter;
 	size_t i, j = 0;
+	RStrBuf *sb = pj? NULL: r_strbuf_new ("");
 	r_pvector_foreach (layer->vec, iter) {
 		RIOCacheItem *ci = *iter;
 		const ut64 dataSize = r_itv_size (ci->itv);
@@ -426,42 +427,47 @@ static void list(RIO *io, RIOCacheLayer *layer, PJ *pj, int rad) {
 			pj_kb (pj, "written", ci->written);
 			pj_end (pj);
 		} else if (rad == 0) {
-			io->cb_printf ("idx=%"PFMTSZu" addr=0x%08"PFMT64x" size=%"PFMT64u" ", j,
+			r_strbuf_appendf (sb, "idx=%"PFMTSZu" addr=0x%08"PFMT64x" size=%"PFMT64u" ", j,
 					r_itv_begin (ci->itv), dataSize);
 			for (i = 0; i < dataSize; i++) {
-				io->cb_printf ("%02x", ci->odata[i]);
+				r_strbuf_appendf (sb, "%02x", ci->odata[i]);
 			}
-			io->cb_printf (" -> ");
+			r_strbuf_append (sb, " -> ");
 			for (i = 0; i < dataSize; i++) {
-				io->cb_printf ("%02x", ci->data[i]);
+				r_strbuf_appendf (sb, "%02x", ci->data[i]);
 			}
-			io->cb_printf (" %s\n", ci->written? "(written)": "(not written)");
+			r_strbuf_appendf (sb, " %s\n", ci->written? "(written)": "(not written)");
 		} else if (rad == 1) {
-			io->cb_printf ("wx ");
+			r_strbuf_append (sb, "wx ");
 			for (i = 0; i < dataSize; i++) {
-				io->cb_printf ("%02x", (ut8)(ci->data[i] & 0xff));
+				r_strbuf_appendf (sb, "%02x", (ut8)(ci->data[i] & 0xff));
 			}
-			io->cb_printf (" @ 0x%08"PFMT64x, r_itv_begin (ci->itv));
-			io->cb_printf (" # replaces: ");
+			r_strbuf_appendf (sb, " @ 0x%08"PFMT64x, r_itv_begin (ci->itv));
+			r_strbuf_append (sb, " # replaces: ");
 			for (i = 0; i < dataSize; i++) {
-				io->cb_printf ("%02x", (ut8)(ci->odata[i] & 0xff));
+				r_strbuf_appendf (sb, "%02x", (ut8)(ci->odata[i] & 0xff));
 			}
-			io->cb_printf ("\n");
+			r_strbuf_append (sb, "\n");
 		}
 		j++;
 	}
+	if (pj) {
+		return NULL;
+	}
+	return r_strbuf_drain (sb);
 }
 
-R_API void r_io_cache_list(RIO *io, int rad, bool many) {
-	R_RETURN_IF_FAIL (io);
+R_API char *r_io_cache_list(RIO *io, int rad, bool many) {
+	R_RETURN_VAL_IF_FAIL (io, NULL);
 	if (r_list_empty (io->cache.layers)) {
-		return;
+		return NULL;
 	}
+	char *res = NULL;
 	PJ *pj = NULL;
 	if (rad == 2 || rad == 'j') {
 		pj = pj_new ();
 		if (!pj) {
-			return;
+			return NULL;
 		}
 		pj_o (pj);
 		pj_ka (pj, many? "layers": "layer");
@@ -473,63 +479,26 @@ R_API void r_io_cache_list(RIO *io, int rad, bool many) {
 			if (pj) {
 				pj_a (pj);
 			}
-			list (io, layer, pj, rad);
 			if (pj) {
 				pj_end (pj);
 				pj_end (pj);
+			} else {
+				res = list (io, layer, pj, rad);
 			}
 		}
 	} else {
 		if (!r_list_empty (io->cache.layers)) {
 			layer = r_list_last (io->cache.layers);
-			list (io, layer, pj, rad);
+			res = list (io, layer, pj, rad);
 		}
 	}
 	if (pj) {
 		pj_end (pj);
 		pj_end (pj);
-		char *json = pj_drain (pj);
-		io->cb_printf ("%s\n", json);
-		free (json);
+		res = pj_drain (pj);
 	}
+	return res;
 }
-
-#if 0
-static RIOCacheItem *_clone_ci(RIOCacheItem *ci) {
-	RIOCacheItem *clone = R_NEWCOPY (RIOCacheItem, ci);
-	if (clone) {
-		clone->data = R_NEWS (ut8, r_itv_size (ci->itv));
-		clone->odata = R_NEWS (ut8, r_itv_size (ci->itv));
-		memcpy (clone->data, ci->data, (size_t)r_itv_size (ci->itv));
-		memcpy (clone->odata, ci->odata, (size_t)r_itv_size (ci->itv));
-		if (ci->tree_itv) {
-			clone->tree_itv = R_NEWCOPY (RInterval, ci->tree_itv);
-		}
-	}
-	return clone;
-}
-
-// why?
-R_API RIOCache *r_io_cache_clone(RIO *io) {
-	R_RETURN_VAL_IF_FAIL (io, NULL);
-	if (!io->cache) {
-		return NULL;
-	}
-	RIOCache *clone = R_NEW (RIOCache);
-	clone->tree = r_crbtree_new (NULL);
-	clone->vec = r_pvector_new ((RPVectorFree)_io_cache_item_free);
-	clone->ci_cmp_cb = _ci_start_cmp_cb;
-	void **iter;
-	r_pvector_foreach (io->cache->vec, iter) {
-		RIOCacheItem *ci = _clone_ci ((RIOCacheItem *)*iter);
-		r_pvector_push (clone->vec, ci);
-		if (ci->tree_itv) {
-			r_crbtree_insert (clone->tree, ci, _ci_start_cmp_cb, NULL);
-		}
-	}
-	return clone;
-}
-#endif
 
 static RIOCacheLayer *iocache_layer_new(void) {
 	RIOCacheLayer *cl = R_NEW (RIOCacheLayer);

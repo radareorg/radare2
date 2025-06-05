@@ -469,7 +469,7 @@ static void prj_save(RCore *core, const char *file) {
 	}
 	// -------------
 	if (r_file_exists (file)) {
-		if (!r_cons_yesno ('y', "Overwrite project file (Y/n)")) {
+		if (!r_kons_yesno (core->cons, 'y', "Overwrite project file (Y/n)")) {
 			R_LOG_ERROR ("File exists");
 			return;
 		}
