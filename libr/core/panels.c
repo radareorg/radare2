@@ -499,9 +499,10 @@ static int __show_status(RCore *core, const char *msg) {
 }
 
 static bool __show_status_yesno(RCore *core, int def, const char *msg) {
-	r_kons_gotoxy (core->cons, 0, 0);
-	r_kons_flush (core->cons);
-	return r_cons_yesno (def, R_CONS_CLEAR_LINE"%s[Status] %s"Color_RESET, PANEL_HL_COLOR, msg);
+	RCons *cons = core->cons;
+	r_kons_gotoxy (cons, 0, 0);
+	r_kons_flush (cons);
+	return r_kons_yesno (cons, def, R_CONS_CLEAR_LINE"%s[Status] %s"Color_RESET, PANEL_HL_COLOR, msg);
 }
 
 static char *__show_status_input(RCore *core, const char *msg) {

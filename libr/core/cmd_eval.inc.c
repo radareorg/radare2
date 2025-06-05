@@ -710,6 +710,7 @@ static void core_config_eval(RCore *core, const char *input, bool uhm) {
 
 static int cmd_eval(void *data, const char *input) {
 	RCore *core = (RCore *)data;
+	RCons *cons = core->cons;
 	switch (input[0]) {
 	case '\0': // "e"
 		core_config_list (core, NULL, 0);
@@ -723,13 +724,13 @@ static int cmd_eval(void *data, const char *input) {
 		break;
 	case 't': // "et"
 		if (input[1] == 'a') {
-			r_cons_printf ("%s\n", (r_num_rand (10) % 2)? "wen": "son");
+			r_kons_printf (cons, "%s\n", (r_num_rand (10) % 2)? "wen": "son");
 		} else if (input[1] == ' ' && input[2]) {
 			RConfigNode *node = r_config_node_get (core->config, input+2);
 			if (node) {
 				const char *type = r_config_node_type (node);
 				if (type && *type) {
-					r_cons_println (type);
+					r_kons_println (cons, type);
 				}
 			}
 		} else {
@@ -759,13 +760,13 @@ static int cmd_eval(void *data, const char *input) {
 			}
 			pj_end (pj);
 			char *s = pj_drain (pj);
-			r_cons_println (s);
+			r_kons_println (cons, s);
 			free (s);
 		} else if (!strcmp (input + 1, "v*")) {
 			char **e = r_sys_get_environ ();
 			if (e != NULL) {
 				while (*e) {
-					r_cons_printf ("%%%s\n", *e);
+					r_kons_printf (cons, "%%%s\n", *e);
 					e++;
 				}
 			}
@@ -776,13 +777,13 @@ static int cmd_eval(void *data, const char *input) {
 			}
 			char *p = r_sys_getenv (var);
 			if (p) {
-				r_cons_println (p);
+				r_kons_println (cons, p);
 				free (p);
 			} else if (!var || !*var) {
 				char **e = r_sys_get_environ ();
 				if (e != NULL) {
 					while (*e) {
-						r_cons_println (*e);
+						r_kons_println (cons, *e);
 						e++;
 					}
 				}
@@ -830,7 +831,7 @@ static int cmd_eval(void *data, const char *input) {
 		} else if (input[1] == '*') {
 			char *file = r_file_home (".radare2rc");
 			char *data = r_file_slurp (file, NULL);
-			r_cons_println (data);
+			r_kons_println (cons, data);
 			free (data);
 			free (file);
 		} else if (input[1] == '+') {
@@ -839,7 +840,7 @@ static int cmd_eval(void *data, const char *input) {
 			const bool prompt = (input[2] != '!');
 			char *file = r_file_home (".radare2rc");
 			if (file) {
-				const bool rmfile = !prompt || r_cons_yesno ('n', "Do you want to delete ~/.radare2? (Y/n)");
+				const bool rmfile = !prompt || r_kons_yesno (cons, 'n', "Do you want to delete ~/.radare2? (Y/n)");
 				if (rmfile) {
 					r_file_rm (file);
 				}
@@ -847,11 +848,11 @@ static int cmd_eval(void *data, const char *input) {
 			}
 		} else {
 			char *file = r_file_home (".radare2rc");
-			if (r_kons_is_interactive (core->cons)) {
+			if (r_kons_is_interactive (cons)) {
 				r_file_touch (file);
-				char *res = r_cons_editor (core->cons, file, NULL);
+				char *res = r_cons_editor (cons, file, NULL);
 				if (res) {
-					if (r_cons_yesno ('y', "Reload? (Y/n)")) {
+					if (r_kons_yesno (cons, 'y', "Reload? (Y/n)")) {
 						r_core_run_script (core, file);
 					}
 				}

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020-2024 pancake */
+/* radare - LGPL - Copyright 2020-2025 pancake */
 
 #include <r_lib.h>
 #include <r_core.h>
@@ -8,7 +8,6 @@
 
 #define countof(x) (sizeof (x) / sizeof ((x)[0]))
 
-//#include <qjs/quickjs.h>
 #include <quickjs.h>
 
 #include "../../../shlr/qjs/js_require.c"
@@ -317,9 +316,11 @@ static void js_std_dump_error(JSContext *ctx) {
 }
 
 static JSValue r2log(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+	JSRuntime *rt = JS_GetRuntime (ctx);
+	QjsPluginManager *pm = JS_GetRuntimeOpaque (rt);
 	size_t plen;
 	const char *n = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
-	r_cons_printf ("%s\n", n);
+	r_kons_printf (pm->core->cons, "%s\n", n);
 	return JS_NewBool (ctx, true);
 }
 

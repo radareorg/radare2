@@ -438,7 +438,7 @@ static char *list(RIO *io, RIOCacheLayer *layer, PJ *pj, int rad) {
 			}
 			r_strbuf_appendf (sb, " %s\n", ci->written? "(written)": "(not written)");
 		} else if (rad == 1) {
-			r_strbuf_append ("wx ");
+			r_strbuf_append (sb, "wx ");
 			for (i = 0; i < dataSize; i++) {
 				r_strbuf_appendf (sb, "%02x", (ut8)(ci->data[i] & 0xff));
 			}
@@ -458,16 +458,16 @@ static char *list(RIO *io, RIOCacheLayer *layer, PJ *pj, int rad) {
 }
 
 R_API char *r_io_cache_list(RIO *io, int rad, bool many) {
-	R_RETURN_IF_FAIL (io);
+	R_RETURN_VAL_IF_FAIL (io, NULL);
 	if (r_list_empty (io->cache.layers)) {
-		return;
+		return NULL;
 	}
 	char *res = NULL;
 	PJ *pj = NULL;
 	if (rad == 2 || rad == 'j') {
 		pj = pj_new ();
 		if (!pj) {
-			return;
+			return NULL;
 		}
 		pj_o (pj);
 		pj_ka (pj, many? "layers": "layer");

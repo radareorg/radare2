@@ -1595,7 +1595,7 @@ R_API void r_core_anal_hint_print(RAnal* a, ut64 addr, int mode) {
 }
 
 static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
-	const bool is_html = r_cons_context ()->is_html;
+	const bool is_html = core->cons->context->is_html;
 	const bool is_json = opts & R_CORE_ANAL_JSON;
 	char *cmdstr = NULL, *filestr = NULL, *str = NULL;
 	int oline = 0;
@@ -2460,7 +2460,7 @@ static int RAnalRef_cmp(const RAnalRef* ref1, const RAnalRef* ref2) {
 
 R_API void r_core_anal_callgraph(RCore *core, ut64 addr, int fmt) {
 	const char *font = r_config_get (core->config, "graph.font");
-	int is_html = r_cons_context ()->is_html;
+	int is_html = core->cons->context->is_html;
 	bool refgraph = r_config_get_i (core->config, "graph.refs");
 	RListIter *iter, *iter2;
 	int usenames = r_config_get_i (core->config, "graph.json.usenames");
@@ -4881,7 +4881,7 @@ R_API int r_core_anal_data(RCore *core, ut64 addr, int count, int depth, int wor
 	r_io_read_at (core->io, addr, buf, len);
 	buf[len - 1] = 0;
 
-	RConsPrintablePalette *pal = r_config_get_i (core->config, "scr.color")? &r_cons_context ()->pal: NULL;
+	RConsPrintablePalette *pal = r_config_get_i (core->config, "scr.color")? &core->cons->context->pal: NULL;
 	for (i = j = 0; j < count; j++) {
 		if (i >= len) {
 			r_io_read_at (core->io, addr + i, buf, len);

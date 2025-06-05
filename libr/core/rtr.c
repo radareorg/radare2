@@ -978,20 +978,20 @@ static bool r_core_rtr_rap_run(RCore *core, const char *input) {
 	char *file = r_str_newf ("rap://%s", input);
 	int flags = R_PERM_RW;
 	RIODesc *fd = r_io_open_nomap (core->io, file, flags, 0644);
+	RConsContext *c = core->cons->context;
 	if (fd) {
 		if (r_io_is_listener (core->io)) {
 			if (!r_core_serve (core, fd)) {
-				r_cons_context ()->breaked = true;
+				c->breaked = true;
 			}
 			r_io_desc_close (fd);
 			// avoid double free, we are not the owners of this fd so we can't destroy it
 			//r_io_desc_free (fd);
 		}
 	} else {
-		r_cons_context ()->breaked = true;
+		c->breaked = true;
 	}
-	return !r_cons_context ()->breaked;
-	// r_core_cmdf (core, "o rap://%s", input);
+	return !c->breaked;
 }
 
 static RThreadFunctionRet r_core_rtr_rap_thread(RThread *th) {

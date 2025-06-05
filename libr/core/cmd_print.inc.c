@@ -7467,9 +7467,10 @@ static int cmd_print(void *data, const char *input) {
 			return 0;
 		}
 		if (formatted_json) {
-			if (r_cons_context ()->is_html) {
-				r_cons_context ()->is_html = false;
-				r_cons_context ()->was_html = true;
+			RConsContext *c = core->cons->context;
+			if (c->is_html) {
+				c->is_html = false;
+				c->was_html = true;
 			}
 		}
 		if (!processed_cmd) {
