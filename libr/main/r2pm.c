@@ -728,6 +728,7 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 		free (needs);
 		if (error) {
 			if (r2pm_check ("apt") && r_file_is_directory ("/system/bin")) {
+				RCons *cons = r_cons_singleton ();
 				if (r_kons_yesno (cons, 'y', "Install system dependencies (Y/n)")) {
 					const char cmd[] = "apt install build-essential ninja git make patch python wget binutils";
 					R_LOG_INFO ("Running %s", cmd);
