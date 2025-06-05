@@ -1447,7 +1447,11 @@ static int cmd_wc(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
 	case '\0': // "wc"
-		r_io_cache_list (core->io, 0, false);
+		{
+			char *res = r_io_cache_list (core->io, 0, false);
+			r_kons_print (core->cons, res);
+			free (res);
+		}
 		break;
 	case 'd':
 		{
@@ -1483,10 +1487,15 @@ static int cmd_wc(void *data, const char *input) {
 		}
 		break;
 	case 'a':
-		if (input[1] == 'j') {
-			r_io_cache_list (core->io, 'j', true);
-		} else {
-			r_io_cache_list (core->io, 0, true);
+		{
+			char *res;
+			if (input[1] == 'j') {
+				res = r_io_cache_list (core->io, 'j', true);
+			} else {
+				res = r_io_cache_list (core->io, 0, true);
+			}
+			r_kons_print (core->cons, res);
+			free (res);
 		}
 		break;
 	case 'l': // "wcl"
@@ -1522,7 +1531,11 @@ static int cmd_wc(void *data, const char *input) {
 		}
 		break;
 	case '*': // "wc*"
-		r_io_cache_list (core->io, 1, input[1] == '*');
+		{
+			char *res = r_io_cache_list (core->io, 1, input[1] == '*');
+			r_kons_print (core->cons, res);
+			free (res);
+		}
 		break;
 	case '+': // "wc+"
 		if (input[1] == '+') { // "wc++"
@@ -1590,7 +1603,11 @@ static int cmd_wc(void *data, const char *input) {
 		r_core_block_read (core);
 		break;
 	case 'j': // "wcj"
-		r_io_cache_list (core->io, 2, false);
+		{
+			char *res = r_io_cache_list (core->io, 2, false);
+			r_kons_print (core->cons, res);
+			free (res);
+		}
 		break;
 	case 'p': // "wcp"
 		cmd_write_pcache (core, &input[1]);
