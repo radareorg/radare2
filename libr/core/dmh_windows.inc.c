@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019-2024 - GustavoLCR */
+/* radare - LGPL - Copyright 2019-2025 - GustavoLCR */
 
 #undef R_LOG_ORIGIN
 #define R_LOG_ORIGIN "windows.heap"
@@ -1265,7 +1265,7 @@ static void w32_list_heaps_blocks(RCore *core, const char format) {
 		switch (format) {
 		case 'f':
 			if (heapInfo->heaps[i].BlockCount > 50000) {
-				go = r_kons_yesno (cons, 'n', "Are you sure you want to add %lu flags? (y/N)", heapInfo->heaps[i].BlockCount);
+				go = r_kons_yesno (core->cons, 'n', "Are you sure you want to add %lu flags? (y/N)", heapInfo->heaps[i].BlockCount);
 			}
 			break;
 		case 'j':

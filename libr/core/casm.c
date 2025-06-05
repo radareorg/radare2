@@ -400,8 +400,7 @@ static int handle_forward_disassemble(RCore* core, RList *hits, ut8* buf, ut64 l
 	while (tmp_current_buf_pos < len && temp_instr_addr < end_addr) {
 		RAnalOp op;
 		temp_instr_len = len - tmp_current_buf_pos;
-		IFDBG eprintf("Current position: %"PFMT64d" instr_addr: 0x%"PFMT64x"\n", 
-				(st64)tmp_current_buf_pos, (st64)temp_instr_addr);
+		R_LOG_DEBUG ("Current position: %"PFMT64d" instr_addr: 0x%"PFMT64x, (st64)tmp_current_buf_pos, (st64)temp_instr_addr);
 		temp_instr_len = r_asm_disassemble (core->rasm, &op, buf+tmp_current_buf_pos, temp_instr_len);
 
 		if (temp_instr_len == 0) {
