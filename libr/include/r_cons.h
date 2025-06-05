@@ -1032,7 +1032,6 @@ R_API char *r_cons_rgb_str_off(RCons *cons, char *outstr, size_t sz, ut64 off);
 R_API void r_cons_color(int fg, int r, int g, int b);
 
 R_API RColor r_cons_color_random(ut8 alpha);
-R_API bool r_cons_yesno(int def, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
 R_API bool r_kons_yesno(RCons *cons, int def, const char *fmt, ...) R_PRINTF_CHECK(3, 4);
 R_API char *r_cons_input(RCons *cons, const char *msg);
 R_API char *r_cons_password(const char *msg);
