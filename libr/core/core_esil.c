@@ -234,17 +234,17 @@ R_API void r_core_esil_unload_arch(RCore *core) {
 	core->anal->arch->esil = arch_esil;
 }
 
-R_API void r_core_esil_single_step(RCore *core) {
+R_API bool r_core_esil_single_step(RCore *core) {
 	R_RETURN_IF_FAIL (core && core->anal && core->anal->arch && core->io && core->esil.reg);
 	const char *pc_name = r_reg_alias_getname (core->esil.reg, R_REG_ALIAS_PC);
 	if (!pc_name) {
 		R_LOG_ERROR ("CoreEsil reg profile has no pc register");
-		return;
+		return false;
 	}
 	ut64 pc;
 	if (!r_esil_reg_read_silent (&core->esil.esil, pc_name, &pc, NULL)) {
 		R_LOG_ERROR ("Couldn't read from PC register");
-		return;
+		return false;
 	}
 	ut32 trap_code = R_ANAL_TRAP_READ_ERR;
 	//check if pc is in mapped rx area,
@@ -268,7 +268,7 @@ R_API void r_core_esil_single_step(RCore *core) {
 	ut8 buf[64];
 	if (R_UNLIKELY (!r_io_read_at (core->io, pc, buf, max_opsize))) {
 		R_LOG_ERROR ("Couldn't read data to decode from 0x%"PFMT64x, pc);
-		return;
+		return false;
 	}
 	RAnalOp op;
 	r_anal_op_init (&op);
@@ -279,7 +279,7 @@ R_API void r_core_esil_single_step(RCore *core) {
 		R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL)) {
 		R_LOG_ERROR ("COuldn't decode instruction at 0x%"PFMT64x, pc);
 		r_anal_op_fini (&op);
-		return;
+		return false;
 	}
 	RAnalHint *hint = r_anal_hint_get (core->anal, pc);
 	if (hint) {
@@ -365,7 +365,7 @@ skip:
 		if (core->esil.cmd_step_out) {
 			r_core_cmdf (core, "%s %"PFMT64d" 0", core->esil.cmd_step_out, core->esil.old_pc);
 		}
-		return;
+		return true;
 	}
 	trap_code = core->esil.esil.trap_code;
 	if (core->esil.cfg & R_CORE_ESIL_TRAP_REVERT) {
@@ -395,7 +395,7 @@ trap:
 		}
 		break;
 	}
-	return;
+	return false;
 }
 
 R_API void r_core_esil_stepback (RCore *core) {
