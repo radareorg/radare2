@@ -1641,7 +1641,7 @@ R_API bool r_file_is_newer(const char *f1, const char *f2) {
 		return false;
 	}
 	if (stat (f2, &a2) == -1) {
-		return false;
+		return true;
 	}
 	long a = a1.st_mtime;
 	long b = a2.st_mtime;
