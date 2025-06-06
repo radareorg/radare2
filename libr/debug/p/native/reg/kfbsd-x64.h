@@ -76,7 +76,6 @@ return strdup (
 "flg	eflags	.32	152	0	c1p.a.zstido.n.rv\n"
 "gpr	rsp	.64	160	0\n"
 "seg	ss	.64	168	0\n"
-"flg	rflags	.64	144	0	c1p.a.zstido.n.rv\n"
 "flg	cf	.1	.1216	0	carry\n"
 "flg	pf	.1	.1218	0	parity\n"
 "flg	af	.1	.1220	0	adjust\n"
