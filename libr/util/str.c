@@ -3475,7 +3475,7 @@ R_API RList *r_str_split_list(char *str, const char *c, int n)  {
 		}
 #endif
 		if (n > 0) {
-			if (++i > n) {
+			if (++i >= n) {
 				r_list_append (lst, aux);
 				break;
 			}
