@@ -195,6 +195,13 @@ bool test_r_str_split_list(void) {
 		mu_assert_eq (r_list_length (r), 2, "split newline");
 		free (hi);
 	}
+	{
+		char* hi = strdup ("hello,world,comma,world");
+		RList *r = r_str_split_list (hi, ",", 3);
+		mu_assert_eq (r_list_length (r), 3, "split commas");
+		mu_assert_streq (r_list_get_n (r, 2), "comma,world", "split commas");
+		free (hi);
+	}
 	mu_end;
 }
 
