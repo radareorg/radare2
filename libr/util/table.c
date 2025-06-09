@@ -1241,7 +1241,7 @@ R_API bool r_table_query(RTable *t, const char *q) {
 	RList *queries = r_str_split_list (qq, ",",  0);
 	char *query;
 	r_list_foreach (queries, iter, query) {
-		RList *q = r_str_split_list (query, "/", 2);
+		RList *q = r_str_split_list (query, "/", 3);
 		const char *columnName = r_list_get_n (q, 0);
 		const char *operation = r_list_get_n (q, 1);
 		const char *operand = r_list_get_n (q, 2);
