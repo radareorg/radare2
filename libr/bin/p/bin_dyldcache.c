@@ -21,6 +21,7 @@ typedef struct _r_dyldcache {
 	ut64 *hdr_offset;
 	ut64 *hdr_overhead;
 	ut32 *maps_index;
+	ut64 *maps_flags;
 	ut32 n_hdr;
 	cache_map_t *maps;
 	ut32 n_maps;
@@ -33,6 +34,7 @@ typedef struct _r_dyldcache {
 	RDyldLocSym *locsym;
 	objc_cache_opt_info *oi;
 	bool objc_opt_info_loaded;
+	bool images_are_global;
 } RDyldCache;
 
 typedef struct _r_bin_image {
@@ -90,7 +92,7 @@ static cache_img_t *read_cache_images(RBuffer *cache_buf, cache_hdr_t *hdr, ut64
 		return NULL;
 	}
 
-	if (r_buf_fread_at (cache_buf, hdr->imagesOffset, (ut8*) images, "3l2i", hdr->imagesCount) != size) {
+	if (r_buf_fread_at (cache_buf, (ut64) hdr->imagesOffset + hdr_offset, (ut8*) images, "3l2i", hdr->imagesCount) != size) {
 		R_FREE (images);
 		return NULL;
 	}
@@ -281,6 +283,7 @@ static void r_dyldcache_free(RDyldCache *cache) {
 	R_FREE (cache->hdr);
 	R_FREE (cache->maps);
 	R_FREE (cache->maps_index);
+	R_FREE (cache->maps_flags);
 	R_FREE (cache->hdr_offset);
 	R_FREE (cache->hdr_overhead);
 	R_FREE (cache->accel);
@@ -587,15 +590,25 @@ static void create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 		eprintf ("bin.dyldcache: list of names to avoid loading all the files in memory.\n");
 	}
 
+	cache_img_t *img = NULL;
+	if (cache->images_are_global) {
+		img = read_cache_images (cache->buf, cache->hdr, 0);
+		if (!img) {
+			return;
+		}
+	}
+
 	ut32 i;
 	for (i = 0; i < cache->n_hdr; i++) {
 		cache_hdr_t *hdr = &cache->hdr[i];
 		ut64 hdr_offset = cache->hdr_offset[i];
 		ut64 hdr_overhead = cache->hdr_overhead[i];
 		ut32 maps_index = cache->maps_index[i];
-		cache_img_t *img = read_cache_images (cache->buf, hdr, hdr_offset);
 		if (!img) {
-			goto next;
+			img = read_cache_images (cache->buf, hdr, hdr_offset);
+			if (!img) {
+				goto next;
+			}
 		}
 
 		ut32 j;
@@ -732,8 +745,11 @@ static void create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 next:
 		R_FREE (depArray);
 		R_FREE (extras);
-		R_FREE (img);
+		if (!cache->images_are_global) {
+			R_FREE (img);
+		}
 	}
+	R_FREE (img);
 end:
 	if (r_list_empty (bins)) {
 		r_list_free (bins);
@@ -788,12 +804,17 @@ static void populate_cache_headers(RDyldCache *cache) {
 	ut64 overheads[MAX_N_HDR];
 	ut64 offset = 0, overhead = 0;
 	ut64 buf_size = r_buf_size (cache->buf);
+	ut32 n_zero_images = 0;
 	do {
 		offsets[cache->n_hdr] = offset;
 		overheads[cache->n_hdr] = overhead;
 		h = read_cache_header (cache->buf, offset);
 		if (!h) {
 			break;
+		}
+
+		if (!h->imagesCount && !h->imagesOffset) {
+			n_zero_images++;
 		}
 
 		ut64 size = h->codeSignatureOffset + h->codeSignatureSize;
@@ -808,12 +829,9 @@ static void populate_cache_headers(RDyldCache *cache) {
 		x += offset; \
 	}
 
-		SHIFT_MAYBE (h->mappingOffset);
-		SHIFT_MAYBE (h->imagesOffset);
 		SHIFT_MAYBE (h->codeSignatureOffset);
 		SHIFT_MAYBE (h->slideInfoOffset);
 		SHIFT_MAYBE (h->localSymbolsOffset);
-		SHIFT_MAYBE (h->branchPoolsOffset);
 		SHIFT_MAYBE (h->imagesTextOffset);
 
 		offset += size;
@@ -843,12 +861,22 @@ static void populate_cache_headers(RDyldCache *cache) {
 	memcpy (cache->hdr_offset, offsets, cache->n_hdr * sizeof (ut64));
 	memcpy (cache->hdr_overhead, overheads, cache->n_hdr * sizeof (ut64));
 
+	cache->images_are_global = n_zero_images == cache->n_hdr - 1;
+
 	ut32 i = 0;
 	RListIter *iter;
 	cache_hdr_t *item;
+	cache_hdr_t *prev_h = NULL;
 	r_list_foreach (hdrs, iter, item) {
 		if (i >= cache->n_hdr) {
 			break;
+		}
+		if (cache->images_are_global) {
+			if (!item->imagesCount && !item->imagesOffset && prev_h) {
+				item->imagesCount = prev_h->imagesCount;
+				item->imagesOffset = prev_h->imagesOffset;
+			}
+			prev_h = item;
 		}
 		memcpy (&cache->hdr[i++], item, sizeof (cache_hdr_t));
 	}
@@ -897,7 +925,10 @@ static void populate_cache_maps(RDyldCache *cache) {
 		cache->n_maps = 0;
 		return;
 	}
-
+	ut64 * maps_flags = NULL;
+	if (cache->hdr->mappingOffset >= 0x140) {
+		maps_flags = R_NEWS0 (ut64, n_maps);
+	}
 	ut32 next_map = 0;
 	for (i = 0; i < cache->n_hdr; i++) {
 		cache_hdr_t *hdr = &cache->hdr[i];
@@ -906,21 +937,34 @@ static void populate_cache_maps(RDyldCache *cache) {
 		if (!hdr->mappingCount || !hdr->mappingOffset) {
 			continue;
 		}
+		ut64 hdr_offset = cache->hdr_offset[i];
+		ut64 mapping_slide_offset = 0;
+		if (maps_flags && hdr->mappingOffset >= 0x140) {
+			ut32 mapping_slide_count = r_buf_read_le32_at (cache->buf, 0x13c + hdr_offset);
+			if (mapping_slide_count == hdr->mappingCount) {
+				mapping_slide_offset = r_buf_read_le32_at (cache->buf, 0x138 + hdr_offset);
+			}
+		}
+
 		ut64 size = sizeof (cache_map_t) * hdr->mappingCount;
-		if (r_buf_fread_at (cache->buf, hdr->mappingOffset, (ut8*) &maps[next_map], "3l2i", hdr->mappingCount) != size) {
+		if (r_buf_fread_at (cache->buf, (ut64) hdr->mappingOffset + hdr_offset, (ut8*) &maps[next_map], "3l2i", hdr->mappingCount) != size) {
 			continue;
 		}
 		ut32 j;
-		ut64 hdr_offset = cache->hdr_offset[i];
 		for (j = 0; j < hdr->mappingCount; j++) {
 			cache_map_t *map = &maps[next_map + j];
 			map->fileOffset += hdr_offset;
+			if (maps_flags && mapping_slide_offset) {
+				maps_flags[next_map + j] = r_buf_read_le64_at(cache->buf,
+						mapping_slide_offset + hdr_offset + (ut64)j * sizeof (cache_mapping_slide) + offsetof(cache_mapping_slide, flags));
+			}
 		}
 		next_map += hdr->mappingCount;
 	}
 
 	cache->maps = maps;
 	cache->n_maps = next_map;
+	cache->maps_flags = maps_flags;
 }
 
 static cache_accel_t *read_cache_accel(RBuffer *cache_buf, cache_hdr_t *hdr, cache_map_t *maps, int n_maps) {
@@ -1349,13 +1393,22 @@ static RList *sections(RBinFile *bf) {
 		ut32 maps_index = cache->maps_index[i];
 		cache_map_t * first_map = &cache->maps[maps_index];
 
-		bool is_stubs = hdr->imagesCount == 0 &&
-			hdr->mappingCount == 1 &&
-			first_map->size > 0x4000 &&
-			first_map->initProt == 5;
+		if (cache->maps_flags) {
+			if ((cache->maps_flags[maps_index] & DYLD_CACHE_MAPPING_TEXT_STUBS) == 0) {
+				continue;
+			}
+		} else {
+			bool is_stubs_fallback =
+				!cache->images_are_global && (
+					hdr->imagesCount == 0 &&
+					hdr->mappingCount == 1 &&
+					first_map->size > 0x4000 &&
+					first_map->initProt == 5
+				);
 
-		if (!is_stubs) {
-			continue;
+			if (!is_stubs_fallback) {
+				continue;
+			}
 		}
 
 		if (!(ptr = R_NEW0 (RBinSection))) {
