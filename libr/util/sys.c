@@ -470,7 +470,7 @@ R_API int r_sys_setenv2(const char *key, const ut8 *value, size_t len) {
 		unsetenv (key);
 		return 0;
 	}
-	ut8 *buf = malloc (len);
+	ut8 *buf = malloc (len + 1);
 	ut8 *zeroes = calloc (1, len);
 	memcpy (buf, value, len);
 	size_t i = 0;
@@ -480,6 +480,7 @@ R_API int r_sys_setenv2(const char *key, const ut8 *value, size_t len) {
 			zeroes[i] = 1;
 		}
 	}
+	buf[len] = 0;
 	if (setenv (key, (char *)buf, 1) != 0) {
 		free (zeroes);
 		free (buf);
