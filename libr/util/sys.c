@@ -458,6 +458,46 @@ R_API int r_sys_setenv(const char *key, const char *value) {
 #endif
 }
 
+R_API int r_sys_setenv2(const char *key, const ut8 *value, size_t len) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_ENVIRON)) {
+		return false;
+	}
+	if (!key) {
+		return 0;
+	}
+#if R2__UNIX__
+	if (!value) {
+		unsetenv (key);
+		return 0;
+	}
+	ut8 *buf = malloc (len);
+	ut8 *zeroes = calloc (1, len);
+	memcpy (buf, value, len);
+	size_t i = 0;
+	for (i = 0; i < len; i++) {
+		if (!buf[i]) {
+			buf[i] = 'X';
+			zeroes[i] = 1;
+		}
+	}
+	if (setenv (key, (char *)buf, 1) != 0) {
+		free (zeroes);
+		free (buf);
+		return -1;
+	}
+	char *p = getenv (key);
+	for (i = 0; i < len; i++) {
+		p[i] = 0;
+	}
+	free (zeroes);
+	free (buf);
+	return 0;
+#else
+#pragma message("r_sys_setenv : unimplemented for this platform")
+	return 0;
+#endif
+}
+
 R_API int r_sys_setenv_sep(const char *key, const char *value, bool prefix) {
 	if (!r_sandbox_check (R_SANDBOX_GRAIN_ENVIRON)) {
 		return false;

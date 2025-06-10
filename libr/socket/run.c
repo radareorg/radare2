@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2024 - pancake */
+/* radare - LGPL - Copyright 2014-2025 - pancake */
 
 /* this helper api is here because it depends on r_util and r_socket */
 /* we should find a better place for it. r_io? */
@@ -697,11 +697,17 @@ R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 	} else if (!strcmp (b, "unsetenv")) {
 		r_sys_setenv (e, NULL);
 	} else if (!strcmp (b, "setenv")) {
-		char *V, *v = strchr (e, '=');
+		char *v = strchr (e, '=');
 		if (v) {
 			*v++ = 0;
-			V = getstr (v, NULL);
+#if 0
+			char *V = getstr (v, NULL);
 			r_sys_setenv (e, V);
+#else
+			size_t len;
+			ut8 *V = (ut8*)getstr (v, &len);
+			r_sys_setenv2 (e, V, len);
+#endif
 			free (V);
 		}
 	} else if (!strcmp (b, "clearenv")) {
