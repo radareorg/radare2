@@ -337,13 +337,23 @@ typedef struct {
 	uint32_t nlistCount;
 } cache_locsym_entry_large_t;
 
+enum {
+	DYLD_CACHE_MAPPING_AUTH_DATA = 1 << 0U,
+	DYLD_CACHE_MAPPING_DIRTY_DATA = 1 << 1U,
+	DYLD_CACHE_MAPPING_CONST_DATA = 1 << 2U,
+	DYLD_CACHE_MAPPING_TEXT_STUBS = 1 << 3U,
+	DYLD_CACHE_DYNAMIC_CONFIG_DATA = 1 << 4U,
+	DYLD_CACHE_READ_ONLY_DATA = 1 << 5U,
+	DYLD_CACHE_MAPPING_CONST_TPRO_DATA = 1 << 6U
+};
+
 typedef struct {
 	uint64_t address;
 	uint64_t size;
 	uint64_t fileOffset;
 	uint64_t slideInfoOffset;
 	uint64_t slideInfoSize;
-	uint64_t unknown;
+	uint64_t flags;
 	uint32_t maxProt;
 	uint32_t initProt;
 } cache_mapping_slide;
