@@ -341,7 +341,7 @@ static bool analyzeFunction(RCore *core, ut64 addr) {
 		return false;
 	}
 
-	// r_cons_printf ("af+ 0x%08"PFMT64x" %s\n", loc_addr, function_label);
+	// eprintf ("af+ 0x%08"PFMT64x" %s\n", loc_addr, function_label);
 	r_core_cmdf (core, "af+ 0x%08"PFMT64x" %s", loc_addr, function_label);
 	{
 		char *c, *bbs = sdb_get (db, "bbs", NULL);
@@ -352,7 +352,7 @@ static bool analyzeFunction(RCore *core, ut64 addr) {
 			ut64 jump = sdb_array_get_num (db, FbbTo (addr), 0, NULL);
 			ut64 fail = sdb_array_get_num (db, FbbTo (addr), 1, NULL);
 
-			// r_cons_printf ("afb+ 0x%"PFMT64x" 0x%"PFMT64x" %d 0x%"PFMT64x" 0x%"PFMT64x"\n",
+			// eprintf ("afb+ 0x%"PFMT64x" 0x%"PFMT64x" %d 0x%"PFMT64x" 0x%"PFMT64x"\n",
 			// 	loc_addr, addr, (int)(addr_end - addr), jump, fail);
 			r_core_cmdf (core, "afb+ 0x%"PFMT64x" 0x%"PFMT64x" %d 0x%"PFMT64x" 0x%"PFMT64x,
 			  	loc_addr, addr, (int)(addr_end - addr), jump, fail);
@@ -381,7 +381,7 @@ static bool analyzeFunction(RCore *core, ut64 addr) {
 	//		char *c, *calls = sdb_get (db, "calls", NULL);
 	//		sdb_aforeach (c, calls) {
 	//			ut64 addr = sdb_atoi (c);
-	//			r_cons_printf ("a2f @ 0x%"PFMT64x"\n", addr);
+	//			eprintf ("a2f @ 0x%"PFMT64x"\n", addr);
 	//			sdb_aforeach_next (c);
 	//		}
 	//		free (calls);
