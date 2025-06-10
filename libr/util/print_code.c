@@ -377,151 +377,163 @@ R_API char *r_print_code_indent(const char *s) {
 	return NULL;
 }
 
-R_API char *r_print_code_tocolor(const char *o) {
-	char *s = strdup (o);
-	s = r_str_replace (s, "\r", "", 1);
-	s = r_str_replace (s, "goto ", Color_GREEN"goto "Color_RESET, 1);
-	s = r_str_replace (s, "(byte)", Color_RED"(byte)"Color_RESET, 1);
+static bool is_identifier_char(char c) {
+	return c == '_' || isalnum(c);
+}
 
-	RStrBuf *sb = r_strbuf_new ("");
-	const char *p = s;
+R_API char *r_print_code_tocolor(const char *o) {
+	if (!o) return NULL;
+
+	static const char *keywords[] = {
+		"if", "else", "while", "for", "switch", "case", "break",
+		"continue", "return", "goto", "do", "sizeof", "typedef",
+		"struct", "union", "enum", "const", "volatile", "static",
+		"inline", "extern", NULL
+	};
+
+	static const char *types[] = {
+		"int", "char", "short", "long", "void", "float", "double",
+		"bool", "signed", "unsigned", NULL
+	};
+
+	const char *p = o;
+	RStrBuf *out = r_strbuf_new ("");
+	bool in_string = false;
+	bool in_char = false;
+	bool in_comment = false;
+	bool in_line_comment = false;
+	bool in_preproc = false;
+
 	while (*p) {
-		if (r_str_startswith (p, "\n\n")) {
+		if (!in_string && !in_char && !in_comment && *p == '#' && (p == o || *(p - 1) == '\n')) {
+			// Preprocessor
+			in_preproc = true;
+			r_strbuf_append (out, Color_CYAN);
+			r_strbuf_append_n (out, p, 1);
 			p++;
 			continue;
 		}
-		const char *nl = strchr (p, '\n');
-		const char *cm = strstr (p, "//");
-		const char *ox = strstr (p, "0x");
-		const char *lb = strchr (p, ':');
-		const char *cl = strstr (p, " ()");
-		const char *st = strstr (p, " str.");
-		const char *w = r_str_trim_head_ro (p);
-		if (st > cm && st < nl) {
-			st = NULL;
-		}
-		if (w == nl) {
-			p = w;
+
+		if (in_preproc) {
+			if (*p == '\n') {
+				in_preproc = false;
+				r_strbuf_append (out, Color_RESET);
+			}
+			r_strbuf_append_n (out, p++, 1);
 			continue;
 		}
-		if (lb && lb > p) {
-			const char *prev = lb - 1;
-			if (*prev == ' ') {
-				lb = 0;
-			}
+
+		if (!in_string && !in_char && !in_line_comment && !in_comment && *p == '/' && *(p + 1) == '/') {
+			in_line_comment = true;
+			r_strbuf_append (out, Color_GREEN);
+			r_strbuf_append_n (out, p, 2);
+			p += 2;
+			continue;
 		}
-		if (r_str_startswith (w, "(byte)")) {
-			r_strbuf_append_n (sb, p, w - p);
-			const char *msg = Color_RED "(byte)"Color_RESET;
-			r_strbuf_append (sb, msg);
-			p = w + 6;
-		} else if (r_str_startswith (w, "if ")) {
-			r_strbuf_append_n (sb, p, w - p);
-			const char *msg = Color_YELLOW"if "Color_RESET;
-			r_strbuf_append (sb, msg);
-			p = w + 3;
-		} else if (r_str_startswith (w, "do {")) {
-			r_strbuf_append_n (sb, p, w - p);
-			const char *msg = Color_YELLOW"do {"Color_RESET;
-			r_strbuf_append (sb, msg);
-			p = w + 4;
-		} else if (r_str_startswith (w, "int ")) {
-			r_strbuf_append_n (sb, p, w - p);
-			const char *msg = Color_CYAN"int "Color_RESET;
-			r_strbuf_append (sb, msg);
-			p = w + 4;
-		} else if (r_str_startswith (w, "return;")) {
-			r_strbuf_append_n (sb, p, w - p);
-			r_strbuf_append (sb, Color_CYAN"return;"Color_RESET);
-			p = w + 7;
-		} else if (r_str_startswith (w, "return ")) {
-			r_strbuf_append_n (sb, p, w - p);
-			const char *msg = Color_CYAN"return "Color_RESET;
-			r_strbuf_append (sb, msg);
-			p = w + 7;
-		} else if (r_str_startswith (w, "break;")) {
-			r_strbuf_append_n (sb, p, w - p);
-			const char *msg = Color_GREEN "break;"Color_RESET;
-			r_strbuf_append (sb, msg);
-			p = w + 6;
-		} else if (r_str_startswith (w, "while ")) {
-			r_strbuf_append_n (sb, p, w - p);
-			const char *msg = Color_GREEN "while "Color_RESET;
-			r_strbuf_append (sb, msg);
-			p = w + 6;
-		} else if (r_str_startswith (w, "goto ")) {
-			r_strbuf_append_n (sb, p, w - p);
-			const char *msg = Color_GREEN "goto "Color_RESET;
-			r_strbuf_append (sb, msg);
-			p = w + 5;
-		} else if (ox > 0 && ox < nl) {
-			const char *eos = ox + 2;
-			while (eos && *eos) {
-				char ch = *eos;
-				if (IS_HEXCHAR (ch)) {
-					eos++;
-				} else {
+		if (in_line_comment) {
+			r_strbuf_append_n (out, p, 1);
+			if (*p == '\n') {
+				in_line_comment = false;
+				r_strbuf_append (out, Color_RESET);
+			}
+			p++;
+			continue;
+		}
+
+		if (!in_string && !in_char && !in_comment && *p == '/' && *(p + 1) == '*') {
+			in_comment = true;
+			r_strbuf_append (out, Color_GREEN);
+			r_strbuf_append_n (out, p, 2);
+			p += 2;
+			continue;
+		}
+		if (in_comment) {
+			r_strbuf_append_n (out, p, 1);
+			if (*p == '*' && *(p + 1) == '/') {
+				r_strbuf_append_n (out, p + 1, 1);
+				p += 2;
+				in_comment = false;
+				r_strbuf_append (out, Color_RESET);
+			} else {
+				p++;
+			}
+			continue;
+		}
+
+		if (!in_char && *p == '"') {
+			in_string = !in_string;
+			r_strbuf_append (out, Color_YELLOW);
+			r_strbuf_append_n (out, p++, 1);
+			if (!in_string) {
+			       r_strbuf_append (out, Color_RESET);
+			}
+			continue;
+		}
+		if (!in_string && *p == '\'') {
+			in_char = !in_char;
+			r_strbuf_append (out, Color_YELLOW);
+			r_strbuf_append_n (out, p++, 1);
+			if (!in_char) {
+				r_strbuf_append (out, Color_RESET);
+			}
+			continue;
+		}
+		if (in_string || in_char) {
+			r_strbuf_append_n (out, p++, 1);
+			continue;
+		}
+
+		// Highlight numbers
+		if (IS_DIGIT (*p)) {
+			r_strbuf_append (out, Color_BLUE);
+			while (IS_DIGIT (*p) || *p == 'x' || IS_HEXCHAR (*p)) {
+				r_strbuf_append_n (out, p++, 1);
+			}
+			r_strbuf_append (out, Color_RESET);
+			continue;
+		}
+
+		// Highlight keywords and types
+		if (is_identifier_char (*p)) {
+			const char *start = p;
+			while (is_identifier_char (*p)) {
+				p++;
+			}
+			int len = p - start;
+			char *word = r_str_ndup (start, len);
+			bool matched = false;
+
+			const char **kw;
+			for (kw = keywords; *kw; kw++) {
+				if (!strcmp (word, *kw)) {
+					r_strbuf_append (out, Color_MAGENTA);
+					r_strbuf_append_n (out, start, len);
+					r_strbuf_append (out, Color_RESET);
+					matched = true;
 					break;
 				}
 			}
-			r_strbuf_append_n (sb, p, ox - p); // pre
-			r_strbuf_append (sb, Color_YELLOW); // numbers in yellow
-			r_strbuf_append_n (sb, ox, eos - ox); // number
-			r_strbuf_append (sb, Color_RESET);
-			r_strbuf_append_n (sb, eos, 2); // number
-			p = eos + 2;
-		} else if (st > 0 && st < nl) {
-			const char *eos = R_MIN (nl, cm);
-			if (eos < st) {
-				eos = nl;
+			if (!matched) {
+				const char **tp;
+				for (tp = types; *tp; tp++) {
+					if (!strcmp (word, *tp)) {
+						r_strbuf_append (out, Color_RED);
+						r_strbuf_append_n (out, start, len);
+						r_strbuf_append (out, Color_RESET);
+						matched = true;
+						break;
+					}
+				}
 			}
-			st += 5;
-			r_strbuf_append_n (sb, p, st - p); // pre
-			r_strbuf_append (sb, Color_CYAN);
-			r_strbuf_append (sb, " \"");
-			char *trim = r_str_ndup (st, eos - st);
-			r_str_trim (trim);
-			r_strbuf_append (sb, trim);
-			free (trim);
-			r_strbuf_append (sb, "\"");
-			r_strbuf_append (sb, Color_RESET);
-			p = eos;
-		} else if (cl > 0 && cl < nl && cl < cm) {
-			// colorize calls
-			r_strbuf_append (sb, Color_GREEN);
-			if (cm > 0 && cm < nl) {
-				r_strbuf_append_n (sb, p, cm - p);
-				p = cm;
-			} else {
-				r_strbuf_append_n (sb, p, nl - p);
-				p = nl;
+			if (!matched) {
+				r_strbuf_append_n (out, start, len);
 			}
-			r_strbuf_append (sb, Color_RESET);
-		} else if (cm > 0 && cm < nl) {
-			// colorize comments
-			if (cm > p) {
-				r_strbuf_append_n (sb, p, cm - p);
-			} else {
-				r_strbuf_append_n (sb, " ", 1);
-			}
-			r_strbuf_append (sb, Color_MAGENTA);
-			r_strbuf_append_n (sb, cm, nl - cm);
-			r_strbuf_append (sb, Color_RESET);
-			p = nl;
-		} else if (lb > 0 && lb < nl && lb < cm && (lb[1] == ' ' || lb[1] == '\n')) {
-			// colorize labels
-			size_t len = lb - p + 1;
-			r_strbuf_append (sb, Color_YELLOW);
-			r_strbuf_append_n (sb, p, len);
-			r_strbuf_append (sb, Color_RESET);
-			p = lb + 1;
-		} else {
-			r_strbuf_append_n (sb, p, 1);
-			p++;
+			free (word);
+			continue;
 		}
+
+		r_strbuf_append_n (out, p++, 1);
 	}
-	free (s);
-	char *r = r_strbuf_drain (sb);
-	r_str_trim_emptylines (r);
-	return r;
+
+	return r_strbuf_drain (out);
 }

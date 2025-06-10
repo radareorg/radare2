@@ -62,12 +62,12 @@ typedef enum {
 	DOWN
 } Direction;
 
-static const char *panels_dynamic [] = {
+static const char *panels_dynamic[] = {
 	"Disassembly", "Stack", "Registers",
 	NULL
 };
 
-static const char *panels_static [] = {
+static const char *panels_static[] = {
 	"Disassembly", "Functions", "Symbols",
 	NULL
 };
