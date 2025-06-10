@@ -2,8 +2,6 @@
 
 #include <r_esil.h>
 
-static void esil_stats_old(REsil *esil, bool enable);
-
 #if USE_NEW_ESIL
 static void stats_voyeur_reg_read (void *user, const char *name, ut64 val) {
 	const char *key = (*name>='0' && *name<='9')? "num.load": "reg.read";
@@ -24,6 +22,29 @@ static void stats_voyeur_mem_write (void *user, ut64 addr, const ut8 *old, const
 
 static void stats_voyeur_op (void *user, const char *op) {
 	sdb_array_add ((Sdb *)user, "ops.list", op, 0);
+}
+#endif
+
+#if ESIL_UNUSED
+static void esil_stats_old(REsil *esil, bool enable) {
+	if (enable) {
+		if (esil->stats) {
+			sdb_reset (esil->stats);
+		} else {
+			esil->stats = sdb_new0 ();
+		}
+		// reset sdb->stats
+		esil->cb.hook_reg_read = hook_reg_read;
+		esil->cb.hook_mem_read = hook_mem_read;
+		esil->cb.hook_mem_write = hook_mem_write;
+		esil->cb.hook_reg_write = hook_reg_write;
+		esil->cb.hook_command = hook_command;
+	} else {
+		esil->cb.hook_mem_write = NULL;
+		esil->cb.hook_command = NULL;
+		sdb_free (esil->stats);
+		esil->stats = NULL;
+	}
 }
 #endif
 
@@ -65,6 +86,7 @@ R_API void r_esil_stats(REsil *esil, REsilStats *stats, bool enable) {
 #endif
 }
 
+#if 0
 static bool hook_command(REsil *esil, const char *op) {
 	sdb_array_add (esil->stats, "ops.list", op, 0);
 	return false;
@@ -90,6 +112,7 @@ static bool hook_reg_write(REsil *esil, const char *name, ut64 *val) {
 	sdb_array_add (esil->stats, "reg.write", name, 0);
 	return false;
 }
+#endif
 
 static bool hook_NOP_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	eprintf ("NOP WRITE AT 0x%08"PFMT64x"\n", addr);
@@ -104,23 +127,3 @@ R_API void r_esil_mem_ro(REsil *esil, bool mem_readonly) {
 	}
 }
 
-static void esil_stats_old(REsil *esil, bool enable) {
-	if (enable) {
-		if (esil->stats) {
-			sdb_reset (esil->stats);
-		} else {
-			esil->stats = sdb_new0 ();
-		}
-		// reset sdb->stats
-		esil->cb.hook_reg_read = hook_reg_read;
-		esil->cb.hook_mem_read = hook_mem_read;
-		esil->cb.hook_mem_write = hook_mem_write;
-		esil->cb.hook_reg_write = hook_reg_write;
-		esil->cb.hook_command = hook_command;
-	} else {
-		esil->cb.hook_mem_write = NULL;
-		esil->cb.hook_command = NULL;
-		sdb_free (esil->stats);
-		esil->stats = NULL;
-	}
-}

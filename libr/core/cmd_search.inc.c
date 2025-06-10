@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2024 - pancake */
+/* radare - LGPL - Copyright 2010-2025 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -1881,7 +1881,7 @@ static bool search_esil_reg_read (void *reg, const char *name, ut64 *val) {
 	return true;
 }
 
-static const ut32 search_esil_reg_size (void *reg, const char *name) {
+static ut32 search_esil_reg_size (void *reg, const char *name) {
 	RRegItem *ri = r_reg_get ((RReg *)reg, name, -1);
 	if (!ri) {
 		return 0;
