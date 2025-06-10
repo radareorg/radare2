@@ -794,6 +794,7 @@ R_API bool r_core_esil_init(RCore *core);
 R_API void r_core_esil_fini(RCoreEsil *cesil);
 R_API void r_core_esil_load_arch(RCore *core);
 R_API void r_core_esil_unload_arch(RCore *core);
+R_API bool r_core_esil_run_expr_at(RCore *core, const char *expr, ut64 addr);
 R_API bool r_core_esil_single_step(RCore *core);
 R_API void r_core_esil_stepback(RCore *core);	//replacement for r_core_esil_step_back; rename later
 R_API void r_core_esil_set_max_stepback(RCore *core, ut32 max_stepback);

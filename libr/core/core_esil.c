@@ -234,8 +234,91 @@ R_API void r_core_esil_unload_arch(RCore *core) {
 	core->anal->arch->esil = arch_esil;
 }
 
+R_API bool r_core_esil_run_expr_at(RCore *core, const char *expr, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (expr && core && core->anal && core->anal->arch && core->io && core->esil.reg, false);
+	const char *pc_name = r_reg_alias_getname (core->esil.reg, R_REG_ALIAS_PC);
+	if (!pc_name) {
+		R_LOG_ERROR ("CoreEsil reg profile has no pc register");
+		return false;
+	}
+	ut64 pc;
+	if (!r_esil_reg_read_silent (&core->esil.esil, pc_name, &pc, NULL)) {
+		R_LOG_ERROR ("Couldn't read from PC register");
+		return false;
+	}
+	if ((core->esil.cfg & R_CORE_ESIL_TRAP_REVERT_CONFIG) || core->esil.max_stepback) {
+		core->esil.cfg |= R_CORE_ESIL_TRAP_REVERT;
+		r_strbuf_initf (&core->esil.trap_revert,
+			"0x%"PFMT64x",%s,:=", pc, pc_name);
+	} else {
+		core->esil.cfg &= ~R_CORE_ESIL_TRAP_REVERT;
+	}
+	core->esil.old_pc = pc;
+	r_esil_reg_write_silent (&core->esil.esil, pc_name, addr);
+	if (r_esil_parse (&core->esil.esil, expr)) {
+		if (core->esil.cfg & R_CORE_ESIL_TRAP_REVERT) {
+			if (core->esil.max_stepback) {
+				if (core->esil.max_stepback > r_list_length (&core->esil.stepback)) {
+					RCoreEsilStepBack *cesb = R_NEW (RCoreEsilStepBack);
+					if (!cesb) {
+						R_LOG_WARN ("RCoreEsilStepBack allocation failed");
+						r_strbuf_fini (&core->esil.trap_revert);
+					} else {
+						if (!r_list_push (&core->esil.stepback, cesb)) {
+							R_LOG_WARN ("Pushing RCoreEsilStepBack failed");
+						} else {
+							cesb->expr = r_strbuf_drain_nofree (&core->esil.trap_revert);
+							cesb->addr = core->esil.old_pc;
+						}
+					}
+				} else {
+					//this is like r_list_pop_head + r_list_push,
+					//but without expensive calls to malloc and free
+					RListIter *iter = core->esil.stepback.head;
+					iter->p->n = NULL;
+					core->esil.stepback.head = iter->p;
+					iter->p = NULL;
+					iter->n = core->esil.stepback.tail;
+					core->esil.stepback.tail->p = iter;
+					core->esil.stepback.tail = iter;
+					RCoreEsilStepBack *cesb = iter->data;
+					free (cesb->expr);
+					cesb->expr = r_strbuf_drain_nofree (&core->esil.trap_revert);
+					cesb->addr = core->esil.old_pc;
+				}
+			} else {
+				r_strbuf_fini (&core->esil.trap_revert);
+			}
+		}
+		return true;
+	}
+	if (core->esil.cfg & R_CORE_ESIL_TRAP_REVERT) {
+		//disable trap_revert voyeurs
+		core->esil.cfg &= ~R_CORE_ESIL_TRAP_REVERT;
+		char *expr = r_strbuf_drain_nofree (&core->esil.trap_revert);
+		//revert all changes
+		r_esil_parse (&core->esil.esil, expr);
+		free (expr);
+	} else {
+		r_esil_reg_write_silent (&core->esil.esil, pc_name, core->esil.old_pc);
+	}
+	if (core->esil.cmd_trap) {
+		r_core_cmd0 (core, core->esil.cmd_trap);
+	}
+	switch (core->esil.esil.trap_code) {
+	case R_ANAL_TRAP_WRITE_ERR:
+	case R_ANAL_TRAP_READ_ERR:
+		if (core->esil.cmd_ioer) {
+			r_core_cmdf (core, "%s %"PFMT64d" 0", core->esil.cmd_ioer,
+				core->esil.old_pc);
+		}
+		break;
+	}
+	return false;
+}
+
 R_API bool r_core_esil_single_step(RCore *core) {
-	R_RETURN_IF_FAIL (core && core->anal && core->anal->arch && core->io && core->esil.reg);
+	R_RETURN_VAL_IF_FAIL (core && core->anal && core->anal->arch && core->io && core->esil.reg, false);
 	const char *pc_name = r_reg_alias_getname (core->esil.reg, R_REG_ALIAS_PC);
 	if (!pc_name) {
 		R_LOG_ERROR ("CoreEsil reg profile has no pc register");
