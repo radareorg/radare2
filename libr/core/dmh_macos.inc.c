@@ -18,11 +18,11 @@ static void macos_list_heaps(RCore *core, const char format) {
 	// -interleaved
 	if (format == '*') {
 		char *s = r_sys_cmd_strf ("for kv in `vmmap -interleaved -purge -w %d | grep 0x | grep -v MALLOC | grep -v Load | sed -e 's,_0x,=0x,g' -e 's,_, ,g' | awk '{print $1}'`; do echo \"f heap.$kv\"; done", pid);
-		r_cons_printf ("%s\n", s);
+		r_kons_printf (core->cons, "%s\n", s);
 		free (s);
 	} else {
 		char *s = r_sys_cmd_strf ("vmmap -interleaved -purge -w %d | grep -e 0x -e MALLOC | sed -e 's,_0x,=0x,g' -e 's,_, ,g'", pid);
-		r_cons_printf ("%s\n", s);
+		r_kons_printf (core->cons, "%s\n", s);
 		free (s);
 	}
 }

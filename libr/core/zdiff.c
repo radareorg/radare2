@@ -39,6 +39,8 @@ static bool is_import(const char *name) {
 
 R_API bool r_core_zdiff(RCore *c, RCore *c2) {
 	R_RETURN_VAL_IF_FAIL (c && c2, false);
+
+	RCons *cons = c->cons;
 	// TODO move this into anal/sign
 	SdbList *a = sdb_foreach_list (c->anal->sdb_zigns, false);
 	SdbList *b = sdb_foreach_list (c2->anal->sdb_zigns, false);
@@ -67,10 +69,8 @@ R_API bool r_core_zdiff(RCore *c, RCore *c2) {
 		}
 	}
 	// --------------8<----------------
-	RListIter *itr;
-	RListIter *itr2;
-	RSignItem *si;
-	RSignItem *si2;
+	RListIter *itr, *itr2;
+	RSignItem *si, *si2;
 
 	// do the sign diff here
 	r_list_foreach (la, itr, si) {
@@ -82,16 +82,18 @@ R_API bool r_core_zdiff(RCore *c, RCore *c2) {
 				continue;
 			}
 			if (matchBytes (si, si2)) {
-				r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" B %s\n", si->addr, si2->addr, si->name);
+				r_kons_printf (cons, "0x%08"PFMT64x" 0x%08"PFMT64x" B %s\n", si->addr, si2->addr, si->name);
 			}
 			if (matchGraph (si, si2)) {
-				r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" G %s\n", si->addr, si2->addr, si->name);
+				r_kons_printf (cons, "0x%08"PFMT64x" 0x%08"PFMT64x" G %s\n", si->addr, si2->addr, si->name);
 			}
 		}
 	}
 
 	/* Diff functions */
 	// r_anal_diff_fcn (cores[0]->anal, cores[0]->anal->fcns, cores[1]->anal->fcns);
+	r_list_free (la);
+	r_list_free (lb);
 
 	return true;
 }
