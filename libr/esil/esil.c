@@ -416,12 +416,15 @@ R_API bool r_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 		esil->trap = R_ANAL_TRAP_NONE;
 	}
 	if (R_UNLIKELY (!r_esil_mem_write_silent (esil, addr, buf, len))) {
+		free (o.ptr);
 		return false;
 	}
-	do {
-		REsilVoyeur *voy = r_id_storage_get (&esil->voyeur[R_ESIL_VOYEUR_MEM_WRITE], i);
-		voy->mem_write (voy->user, addr, o.ptr, buf, len);
-	} while (r_id_storage_get_next (&esil->voyeur[R_ESIL_VOYEUR_MEM_WRITE], &i));
+	if (!r_id_storage_get_lowest (&esil->voyeur[R_ESIL_VOYEUR_MEM_WRITE], &i)) {
+		do {
+			REsilVoyeur *voy = r_id_storage_get (&esil->voyeur[R_ESIL_VOYEUR_MEM_WRITE], i);
+			voy->mem_write (voy->user, addr, o.ptr, buf, len);
+		} while (r_id_storage_get_next (&esil->voyeur[R_ESIL_VOYEUR_MEM_WRITE], &i));
+	}
 	free (o.ptr);
 	return true;
 #else
