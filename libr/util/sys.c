@@ -477,10 +477,12 @@ R_API int r_sys_setenv2(const char *key, const ut8 *value, size_t len) {
 	ut8 *zeroes = calloc (1, len);
 	memcpy (buf, value, len);
 	size_t i = 0;
+	bool nullbytes = false;
 	for (i = 0; i < len; i++) {
 		if (!buf[i]) {
 			buf[i] = 'X';
 			zeroes[i] = 1;
+			nullbytes = true;
 		}
 	}
 	buf[len] = 0;
@@ -488,6 +490,9 @@ R_API int r_sys_setenv2(const char *key, const ut8 *value, size_t len) {
 		free (zeroes);
 		free (buf);
 		return -1;
+	}
+	if (nullbytes) {
+		R_LOG_WARN ("Environment corrupted after null bytes injected via r_sys_setenv2");
 	}
 	char *p = getenv (key);
 	for (i = 0; i < len; i++) {
