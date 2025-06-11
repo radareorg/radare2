@@ -458,7 +458,7 @@ const RArchPlugin r_arch_plugin_sparc_cs = {
 	.meta = {
 		.name = "sparc",
 		.author = "pancake",
-		.desc = "Capstone SPARC architecture",
+		.desc = "Scalable Processor Architecture (capstone)",
 		.license = "Apache-2.0",
 	},
 	.arch = "sparc",

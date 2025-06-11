@@ -220,7 +220,7 @@ static int info(RArchSession *s, ut32 q) {
 const RArchPlugin r_arch_plugin_nios2 = {
 	.meta = {
 		.name = "nios2",
-		.desc = "NIOS II code analysis plugin",
+		.desc = "Intel Altera NIOS II FPGA",
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "nios2",

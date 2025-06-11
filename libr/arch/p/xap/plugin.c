@@ -215,7 +215,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 const RArchPlugin r_arch_plugin_xap = {
 	.meta = {
 		.name = "xap",
-		.desc = "XAP 32-bit signal processing RISC processor architecture",
+		.desc = "Cambridge Consultants RISC XAP 32-bit Signal Processing",
 		.license = "LGPL-3.0-only",
 		.author = "pancake",
 	},

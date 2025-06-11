@@ -1409,7 +1409,7 @@ const RArchPlugin r_arch_plugin_loongarch_gnu = {
 	.meta = {
 		.name = "loongarch",
 		.author = "junchao82,zhaojunchao",
-		.desc = "Loongson / loongarch architecture",
+		.desc = "Loongson / loongarch / mips-like architecture",
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "loongarch",

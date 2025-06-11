@@ -745,7 +745,7 @@ const RArchPlugin r_arch_plugin_h8300 = {
 	.meta = {
 		.name = "h8300",
 		.author = "pancake,Fedor Sakharov,Bhootravi",
-		.desc = "H8300 High Speed 8-bit cpu with internal 16 bit architecture",
+		.desc = "H8300 High Speed 8/16-bit",
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "h8300",

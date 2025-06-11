@@ -21,7 +21,7 @@ const RArchPlugin r_arch_plugin_jdh8 = {
 	.meta = {
 		.name = "jdh8",
 		.author = "slowhand99,condret",
-		.desc = "JDK-8 toy architecture",
+		.desc = "JDK-8 toy",
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "jdh8",

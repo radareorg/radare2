@@ -62,7 +62,7 @@ const RArchPlugin r_arch_plugin_i8080 = {
 	.meta = {
 		.name = "i8080",
 		.author = "pancake",
-		.desc = "Intel 8080 CPU",
+		.desc = "Intel 8080",
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "i8080",

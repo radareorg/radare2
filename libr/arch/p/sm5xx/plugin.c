@@ -70,7 +70,7 @@ const RArchPlugin r_arch_plugin_sm5xx = {
 	.meta = {
 		.name = "sm5xx",
 		.author = "pancake",
-		.desc = "Sharp SM 5XX family MCUs",
+		.desc = "Sharp SM 5XX MCUs",
 		.license = "BSD-3-Clause",
 	},
 	.bits = R_SYS_BITS_PACK1 (4),

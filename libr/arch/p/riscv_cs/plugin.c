@@ -644,7 +644,7 @@ const RArchPlugin r_arch_plugin_riscv_cs = {
 	.meta = {
 		.name = "riscv.cs",
 		.author = "pancake",
-		.desc = "Capstone's RISC-V ISA architecture",
+		.desc = "RISC-V ISA (capstone)",
 		.license = "Apache-2.0",
 	},
 	.arch = "riscv",

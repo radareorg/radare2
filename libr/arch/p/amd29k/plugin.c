@@ -699,7 +699,7 @@ const RArchPlugin r_arch_plugin_amd29k = {
 	.meta = {
 		.name = "amd29k",
 		.author = "condret",
-		.desc = "AMD 29k decoder",
+		.desc = "AMD 290x0 (also known as AM29k) RISC processor",
 		.license = "BSD-3-Clause",
 	},
 	.arch = "amd29k",

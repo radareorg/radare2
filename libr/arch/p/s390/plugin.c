@@ -374,7 +374,7 @@ static RList *preludes(RArchSession *as) {
 const RArchPlugin r_arch_plugin_s390_cs = {
 	.meta = {
 		.name = "s390",
-		.desc = "Capstone SystemZ microanalysis",
+		.desc = "IBM s390 - SystemZ (capstone)",
 		.author = "pancake",
 		.license = "Apache-2.0",
 	},

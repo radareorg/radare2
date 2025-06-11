@@ -188,7 +188,7 @@ static char *regs(RArchSession *s) {
 const RArchPlugin r_arch_plugin_mcs96 = {
 	.meta = {
 		.name = "mcs96",
-		.desc = "Intel MCS96 microcontroller, also known as 8xC196 or 80196",
+		.desc = "Intel MCS96 microcontroller (aka 8xC196 / 80196)",
 		.license = "LGPL-3.0-only",
 		.author = "condret",
 	},
