@@ -5229,8 +5229,6 @@ static char *__panels_config_path(bool syspath) {
 			r2_prefix = strdup (R2_PREFIX);
 		}
 		char *res = r_file_new (r2_prefix, "share", R2_VERSION, "panels", NULL);
-		eprintf ("%s\n", res);
-		sleep(1);
 		free (r2_prefix);
 		return res;
 	}
