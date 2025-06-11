@@ -1852,7 +1852,8 @@ static bool desc_list_visual_cb(void *user, void *data, ut32 id) {
 			(desc->io && (desc->io->desc == desc)) ? '*' : '-', r_str_rwx_i (desc->perm), sz);
 	int flags = p->flags;
 	p->flags &= ~R_PRINT_FLAGS_HEADER;
-	r_print_progressbar (p, sz * 100 / fdsz, r_cons_get_size (NULL) - 40, NULL);
+	const int percent = (fdsz > 0) ? (sz * 100) / fdsz: 0;
+	r_print_progressbar (p, percent, r_cons_get_size (NULL) - 40, NULL);
 	p->flags = flags;
 	r_cons_printf (" %s\n", desc->uri);
 #if 0
