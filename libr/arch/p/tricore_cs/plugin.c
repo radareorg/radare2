@@ -472,7 +472,7 @@ static char *regs(RArchSession *as) {
 const RArchPlugin r_arch_plugin_tricore_cs = {
 	.meta = {
 		.name = "tricore.cs",
-		.desc = "Capstone Infineon TriCore microcontroller architecture",
+		.desc = "Infineon TriCore microcontroller (capstone)",
 		.license = "Apache-2.0",
 	},
 	.endian = R_SYS_ENDIAN_LITTLE,

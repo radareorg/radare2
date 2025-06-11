@@ -88,7 +88,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 const RArchPlugin r_arch_plugin_stm8 = {
 	.meta = {
 		.name = "stm8",
-		.desc = "STM8 MCU microcontroller",
+		.desc = "STMicroelectronics 8-bit microcontroller unit",
 		.author = "pancake",
 		.license = "GPL-3.0-only",
 	},

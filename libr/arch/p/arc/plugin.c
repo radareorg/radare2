@@ -1230,7 +1230,7 @@ const RArchPlugin r_arch_plugin_arc = {
 		.name = "arc",
 		.author = "pancake",
 		.license = "LGPL-3.0-only",
-		.desc = "ARC processor instruction decoder",
+		.desc = "Argonaut RISC Core",
 	},
 	.arch = "arc",
 	.bits = R_SYS_BITS_PACK2 (16, 32),

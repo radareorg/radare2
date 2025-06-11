@@ -134,7 +134,7 @@ const RArchPlugin r_arch_plugin_s390_gnu = {
 	.meta = {
 		.name = "s390.gnu",
 		.author = "pancake",
-		.desc = "SystemZ S390 from binutils",
+		.desc = "IBM SystemZ S390 (binutils)",
 		.license = "BSD-3-Clause",
 	},
 	.arch = "s390",

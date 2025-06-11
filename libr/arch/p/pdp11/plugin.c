@@ -120,7 +120,7 @@ const RArchPlugin r_arch_plugin_pdp11 = {
 		.name = "pdp11",
 		.author = "pancake",
 		.license = "GPL-3.0-only",
-		.desc = "PDP-11 16 bit micro-computer by DEC",
+		.desc = "DEC PDP-11 16 bit micro-computer",
 	},
 	.arch = "pdp11",
 	.bits = R_SYS_BITS_PACK1 (16),

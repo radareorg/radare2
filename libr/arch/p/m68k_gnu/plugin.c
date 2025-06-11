@@ -118,7 +118,7 @@ const RArchPlugin r_arch_plugin_m68k_gnu = {
 		.name = "m68k.gnu",
 		.author = "pancake",
 		.license = "GPL-3.0-only",
-		.desc = "Binutils 2.36 based m68k disassembler",
+		.desc = "Motorola 680x0 (binutils 2.36)",
 	},
 	.arch = "m68k",
 	.cpus = "m68000,m68010,m68020,m68030,m68040,m68060,m68881,m68851"

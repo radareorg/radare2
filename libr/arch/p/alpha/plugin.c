@@ -140,7 +140,7 @@ static int info(RArchSession *s, ut32 q) {
 const RArchPlugin r_arch_plugin_alpha = {
 	.meta = {
 		.name = "alpha",
-		.desc = "ALPHA architecture disassembler based on GNU binutils",
+		.desc = "64bit DEC ALPHA (Based on GNU binutils)",
 		.license = "GPL-3.0-only",
 	},
 	.arch = "alpha",

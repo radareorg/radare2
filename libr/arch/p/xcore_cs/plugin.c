@@ -166,7 +166,7 @@ static bool fini(RArchSession *as) {
 const RArchPlugin r_arch_plugin_xcore_cs = {
 	.meta = {
 		.name = "xcore",
-		.desc = "Capstone XCORE",
+		.desc = "XMOS multicore microcontroller xCORE (capstone)",
 		.license = "Apache-2.0",
 	},
 	.arch = "xcore",

@@ -337,7 +337,7 @@ static bool snes_anop(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 const RArchPlugin r_arch_plugin_snes = {
 	.meta = {
 		.name = "snes",
-		.desc = "SNES cpu (aka Ricoh 5A22) based on custom 65C816",
+		.desc = "SNES cpu (aka Ricoh 5A22) custom 65C816",
 		.license = "LGPL-3.0-only",
 		.author = "condret",
 	},

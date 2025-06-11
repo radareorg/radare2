@@ -101,7 +101,7 @@ const RArchPlugin r_arch_plugin_lanai = {
 		.name = "lanai",
 		.author = "pancake",
 		.license = "GPL-3.0-only",
-		.desc = "Myricom's LANAI based on GNU binutils",
+		.desc = "Myricom's LANAI (based on GNU binutils",
 	},
 	.arch = "lanai",
 	.bits = R_SYS_BITS_PACK1 (32),

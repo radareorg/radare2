@@ -926,7 +926,7 @@ static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 const RArchPlugin r_arch_plugin_m68k_cs = {
 	.meta = {
 		.name = "m68k",
-		.desc = "Capstone M68K architecture",
+		.desc = "Motorola 680x0 (capstone)",
 		.license = "BSD-3-Clause",
 	},
 	.cpus = "68000,68010,68020,68030,68040,68060",
@@ -944,7 +944,7 @@ const RArchPlugin r_arch_plugin_m68k_cs = {
 const RArchPlugin r_arch_plugin_m68k_cs = {
 	.meta = {
 		.name = "m68k (unsupported)",
-		.desc = "Capstone M68K architecture",
+		.desc = "Motorola 680x0 (capstone)",
 		.license = "BSD-3-Clause",
 	},
 };

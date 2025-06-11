@@ -19,7 +19,7 @@ static char* regs(RArchSession *as) {
 const RArchPlugin r_arch_plugin_null = {
 	.meta = {
 		.name = "null",
-		.desc = "Fallback/Null arch plugin",
+		.desc = "nothing",
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "none",

@@ -832,7 +832,7 @@ const RArchPlugin r_arch_plugin_pickle = {
 	.meta = {
 		.name = "pickle",
 		.author = "bemodtwz",
-		.desc = "Python Pickle Machine Disassembler",
+		.desc = "Python Pickle Machine",
 		.license = "BSD-3-Clause",
 	},
 	.arch = "pickle",

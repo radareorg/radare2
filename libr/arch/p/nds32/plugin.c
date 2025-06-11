@@ -332,7 +332,7 @@ const RArchPlugin r_arch_plugin_nds32 = {
 		.name = "nds32",
 		.author = "decaduto,pancake",
 		.license = "GPL-3.0-only",
-		.desc = "Binutils based nds32 disassembler",
+		.desc = "AndesTar v3 NDS32 (binutils)",
 	},
 	.arch = "nds32",
 	.bits = R_SYS_BITS_PACK1 (32),

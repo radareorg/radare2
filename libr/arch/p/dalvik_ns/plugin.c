@@ -623,7 +623,7 @@ const RArchPlugin r_arch_plugin_dalvik_ns = {
 	.meta = {
 		.name = "dalvik.ns",
 		.author = "NowSecure",
-		.desc = "Android Dalvik VM disassembler",
+		.desc = "Android Dalvik Virtual bytecode machine",
 		.license = "MIT",
 	},
 	.arch = "dalvik",

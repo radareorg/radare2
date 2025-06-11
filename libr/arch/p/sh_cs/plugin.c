@@ -416,7 +416,7 @@ static char *regs(RArchSession *s) {
 const RArchPlugin r_arch_plugin_sh_cs = {
 	.meta = {
 		.name = "sh.cs",
-		.desc = "Capstone Hitachi Super-H architecture",
+		.desc = "Hitachi Super-H (capstone)",
 		.license = "Apache-2.0",
 	},
 	.arch = "sh",

@@ -318,7 +318,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 const RArchPlugin r_arch_plugin_bf = {
 	.meta = {
 		.name = "bf",
-		.desc = "brainfuck architecture",
+		.desc = "brainfuck",
 		.license = "LGPL-3.0-only",
 		.author = "pancake"
 	},
