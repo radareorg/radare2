@@ -431,7 +431,7 @@ R_API bool r_sys_clearenv(void) {
 
 R_API int r_sys_setenv(const char *key, const char *value) {
 	if (!r_sandbox_check (R_SANDBOX_GRAIN_ENVIRON)) {
-		return false;
+		return -1;
 	}
 	if (!key) {
 		return 0;
@@ -443,6 +443,10 @@ R_API int r_sys_setenv(const char *key, const char *value) {
 	}
 	return setenv (key, value, 1);
 #elif R2__WINDOWS__
+	if (!value) {
+		SetEnvironmentVariableA(key, NULL);
+		return 0;
+	}
 	LPTSTR key_ = r_sys_conv_utf8_to_win (key);
 	LPTSTR value_ = r_sys_conv_utf8_to_win (value);
 	int ret = SetEnvironmentVariable (key_, value_);
@@ -456,6 +460,49 @@ R_API int r_sys_setenv(const char *key, const char *value) {
 #pragma message("r_sys_setenv : unimplemented for this platform")
 	return 0;
 #endif
+}
+
+R_API int r_sys_setenv2(const char *key, const ut8 *value, size_t len) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_ENVIRON)) {
+		return -1;
+	}
+	if (!key) {
+		return 0;
+	}
+	if (!value) {
+		r_sys_setenv (key, NULL);
+		return 0;
+	}
+	ut8 *buf = malloc (len + 1);
+	ut8 *zeroes = calloc (1, len);
+	memcpy (buf, value, len);
+	size_t i = 0;
+	bool nullbytes = false;
+	for (i = 0; i < len; i++) {
+		if (!buf[i]) {
+			buf[i] = 'X';
+			zeroes[i] = 1;
+			nullbytes = true;
+		}
+	}
+	buf[len] = 0;
+	if (r_sys_setenv (key, (char *)buf) != 0) {
+		free (zeroes);
+		free (buf);
+		return -1;
+	}
+	if (nullbytes) {
+		R_LOG_WARN ("Environment corrupted after null bytes injected via r_sys_setenv2");
+	}
+	char *p = getenv (key);
+	for (i = 0; i < len; i++) {
+		if (zeroes[i]) {
+			p[i] = 0;
+		}
+	}
+	free (zeroes);
+	free (buf);
+	return 0;
 }
 
 R_API int r_sys_setenv_sep(const char *key, const char *value, bool prefix) {

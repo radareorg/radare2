@@ -1,4 +1,4 @@
-/* radare2 - Copyleft 2011-2024 - pancake */
+/* radare2 - Copyleft 2011-2025 - pancake */
 
 #define R_LOG_ORIGIN "rarun2"
 
