@@ -574,13 +574,13 @@ R_API bool r_bin_list_plugin(RBin *bin, const char* name, PJ *pj, int json) {
 	R_RETURN_VAL_IF_FAIL (bin && name, false);
 
 	r_list_foreach (bin->plugins, it, bp) {
-		if (r_str_startswith (bp->meta.name, name)) {
+		if (!r_str_startswith (bp->meta.name, name)) {
 			continue;
 		}
 		return r_bin_print_plugin_details (bin, bp, pj, json);
 	}
 	r_list_foreach (bin->binxtrs, it, bx) {
-		if (r_str_startswith (bx->meta.name, name)) {
+		if (!r_str_startswith (bx->meta.name, name)) {
 			continue;
 		}
 		__printXtrPluginDetails (bin, bx, json);

@@ -547,10 +547,10 @@ static char *__demangleAs(RBin *bin, int type, const char *file) {
 	return res;
 }
 
-static void __listPlugins(RBin *bin, const char* plugin_name, PJ *pj, int rad) {
+static void list_plugins(RBin *bin, const char* plugin_name, PJ *pj, int rad) {
 	int format = (rad == R_MODE_JSON) ? 'j': rad? 'q': 0;
 	bin->cb_printf = (PrintfCallback)printf;
-	if (plugin_name) {
+	if (R_STR_ISNOTEMPTY (plugin_name)) {
 		r_bin_list_plugin (bin, plugin_name, pj, format);
 	} else {
 		r_bin_list (bin, pj, format);
@@ -927,7 +927,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		if (opt.ind < argc) {
 			plugin_name = argv[opt.ind];
 		}
-		__listPlugins (bin, plugin_name, pj, rad);
+		list_plugins (bin, plugin_name, pj, rad);
 		if (rad == R_MODE_JSON) {
 			r_cons_println (pj_string (pj));
 			r_cons_flush ();
