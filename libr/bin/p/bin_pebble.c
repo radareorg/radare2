@@ -171,20 +171,14 @@ static RList* relocs(RBinFile *bf) {
 #endif
 
 static RList* entries(RBinFile *bf) {
-	RBinAddr *ptr = NULL;
-	RList *ret;
 	PebbleAppInfo pai;
 	if (!r_buf_read_at (bf->buf, 0, (ut8*)&pai, sizeof (pai))) {
 		R_LOG_ERROR ("Truncated Header");
 		return NULL;
 	}
-	if (!(ret = r_list_new ())) {
-		return NULL;
-	}
+	RList *ret = r_list_new ();
 	ret->free = free;
-	if (!(ptr = R_NEW0 (RBinAddr))) {
-		return ret;
-	}
+	RBinAddr *ptr = R_NEW0 (RBinAddr);
 	ptr->paddr = pai.offset;
 	ptr->vaddr = pai.offset;
 	r_list_append (ret, ptr);

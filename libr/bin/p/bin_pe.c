@@ -436,7 +436,7 @@ static void header(RBinFile *bf) {
 RBinPlugin r_bin_plugin_pe = {
 	.meta = {
 		.name = "pe",
-		.desc = "PE bin plugin",
+		.desc = "Portable Executable for 32bit",
 		.author = "pancake",
 		.license = "LGPL-3.0-only",
 	},

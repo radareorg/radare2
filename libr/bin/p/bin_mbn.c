@@ -180,7 +180,7 @@ static ut64 size(RBinFile *bf) {
 RBinPlugin r_bin_plugin_mbn = {
 	.meta = {
 		.name = "mbn",
-		.desc = "MBN/SBL bootloader things",
+		.desc = "MBN/SBL Qualcomm modems baseband firmwares",
 		.author = "pancake",
 		.license = "LGPL-3.0-only",
 	},

@@ -127,7 +127,7 @@ RBinPlugin r_bin_plugin_elf = {
 	.meta = {
 		.name = "elf",
 		.author = "nibble",
-		.desc = "ELF format parser",
+		.desc = "Executable and Link Format (ELF) for 32 bit",
 		.license = "LGPL-3.0-only",
 	},
 	.get_sdb = &get_sdb,

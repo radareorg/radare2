@@ -81,20 +81,16 @@ static void destroy(RBinFile *bf) {
 
 static RList *entries(RBinFile *bf) {
 	RList *ret = r_list_newf (free);
-	if (ret) {
-		RBinAddr *ptr = R_NEW0 (RBinAddr);
-		if (ptr) {
-			ptr->paddr = ptr->vaddr = 0x1928;
-			r_list_append (ret, ptr);
-		}
-	}
+	RBinAddr *ptr = R_NEW0 (RBinAddr);
+	ptr->paddr = ptr->vaddr = 0x1928;
+	r_list_append (ret, ptr);
 	return ret;
 }
 
 RBinPlugin r_bin_plugin_off = {
 	.meta = {
 		.name = "off",
-		.desc = "OS/360 Object File Format",
+		.desc = "OS/360 Object Files",
 		.license = "MIT",
 		.author = "pancake",
 	},

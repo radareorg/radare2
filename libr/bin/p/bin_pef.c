@@ -906,7 +906,7 @@ RBinPlugin r_bin_plugin_pef = {
 	.meta = {
 		.name = "pef",
 		.author = "elliotnunn",
-		.desc = "Vintage-Apple Preferred Executable Format bin plugin",
+		.desc = "Vintage-Apple Preferred Executable",
 		.license = "LGPL-3.0-only",
 	},
 	.check = &check,

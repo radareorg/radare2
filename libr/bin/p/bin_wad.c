@@ -1,4 +1,4 @@
-/* radare - LGPL3 - 2023 - murphy */
+/* radare - LGPL3 - 2023-2025 - murphy */
 
 #include <r_bin.h>
 #include <r_lib.h>
@@ -84,9 +84,6 @@ static ut64 baddr(RBinFile *bf) {
 
 static void addsym(RList *ret, char *name, ut64 addr, ut32 size) {
 	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
-	if (!ptr) {
-		return;
-	}
 	ptr->name = r_bin_name_new_from (name);
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->size = size;
@@ -95,10 +92,7 @@ static void addsym(RList *ret, char *name, ut64 addr, ut32 size) {
 }
 
 static RList *symbols(RBinFile *bf) {
-	RList *ret = NULL;
-	if (!(ret = r_list_new ())) {
-		return NULL;
-	}
+	RList *ret = r_list_new ();
 	WAD_DIR_Entry dir;
 	size_t i = 0;
 	WadObj *wo = bf->bo->bin_obj;
@@ -147,7 +141,7 @@ static void destroy(RBinFile *bf) {
 RBinPlugin r_bin_plugin_wad = {
 	.meta = {
 		.name = "wad",
-		.desc = "DOOM WAD format r_bin plugin",
+		.desc = "DOOM WAD Maps",
 		.license = "LGPL-3.0-only",
 		.author = "murphy",
 	},

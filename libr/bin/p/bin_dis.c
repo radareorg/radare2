@@ -28,9 +28,6 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	}
 
 	RBinDisObj *o = R_NEW0 (RBinDisObj);
-	if (!o) {
-		return false;
-	}
 
 	o->pcs = ht_uu_new0 ();
 
@@ -170,8 +167,6 @@ static void destroy(RBinFile *bf) {
 
 static RList *entries(RBinFile *bf) {
 	bool found;
-	RList *ret;
-	RBinAddr *ptr = NULL;
 	RBinDisObj *o = (RBinDisObj *)bf->bo->bin_obj;
 
 	ut64 entry_address = ht_uu_find (o->pcs, o->header.entry_pc, &found);
@@ -179,40 +174,30 @@ static RList *entries(RBinFile *bf) {
 		return NULL;
 	}
 
-	if (!(ret = r_list_new ())) {
-		return NULL;
-	}
-
+	RList *ret = r_list_new ();
 	ret->free = free;
 
-	if ((ptr = R_NEW0 (RBinAddr))) {
-		ptr->paddr = entry_address;
-		ptr->vaddr = entry_address;
-		r_list_append (ret, ptr);
-	}
+	RBinAddr *ptr = R_NEW0 (RBinAddr);
+	ptr->paddr = entry_address;
+	ptr->vaddr = entry_address;
+	r_list_append (ret, ptr);
 
 	return ret;
 }
 
 static RList *sections(RBinFile *bf) {
-	RList *ret = NULL;
-	RBinSection *ptr = NULL;
 	RBinDisObj *o = (RBinDisObj *)bf->bo->bin_obj;
 
 	if (!bf->bo->info) {
 		return NULL;
 	}
 
-	if (!(ret = r_list_newf ((RListFree)free))) {
-		return NULL;
-	}
+	RList *ret = r_list_newf ((RListFree)free);
 
 	ut64 addr = o->header_size;
 
 	// add code section
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	RBinSection *ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("code");
 	ptr->size = ptr->vsize = o->code_size;
 	ptr->paddr = ptr->vaddr = addr;
@@ -234,9 +219,7 @@ static RList *sections(RBinFile *bf) {
 	addr += ptr->size;
 
 	// add data section
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("data");
 	ptr->size = ptr->vsize = o->header.data_size;
 	ptr->paddr = ptr->vaddr = addr;
@@ -249,9 +232,7 @@ static RList *sections(RBinFile *bf) {
 	addr += o->module_name_size;
 
 	// add link section
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("link");
 	ptr->size = ptr->vsize = o->link_size;
 	ptr->paddr = ptr->vaddr = addr;
@@ -265,9 +246,6 @@ static RList *sections(RBinFile *bf) {
 
 static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) {
-		return NULL;
-	}
 	ret->file = strdup (bf->file);
 	ret->bclass = strdup ("program");
 	ret->rclass = strdup ("dis");
@@ -286,7 +264,7 @@ RBinPlugin r_bin_plugin_dis = {
 	.meta = {
 		.name = "dis",
 		.author = "keegan",
-		.desc = "Inferno Dis VM bin plugin",
+		.desc = "Inferno Dis Virtual Machine",
 		.license = "MIT",
 	},
 	.load = &load,

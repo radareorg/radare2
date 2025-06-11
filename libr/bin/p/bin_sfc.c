@@ -266,7 +266,7 @@ static RList* entries(RBinFile *bf) { //Should be 3 offsets pointed by NMI, RESE
 RBinPlugin r_bin_plugin_sfc = {
 	.meta = {
 		.name = "sfc",
-		.desc = "Super NES / Super Famicom ROM file",
+		.desc = "Super NES / Super Famicom ROM",
 		.author = "usrshare",
 		.license = "LGPL-3.0-only",
 	},

@@ -286,7 +286,7 @@ static RBinAddr* binsym(RBinFile *bf, int sym) {
 RBinPlugin r_bin_plugin_mach064 = {
 	.meta = {
 		.name = "mach064",
-		.desc = "mach064 bin plugin",
+		.desc = "64bit Mach Objects",
 		.license = "LGPL-3.0-only",
 	},
 	.get_sdb = &get_sdb,

@@ -403,10 +403,6 @@ static void header(RBinFile *bf) {
 	RBin *bin = bf->rbin;
 	PrintfCallback p = bin->cb_printf;
 	PJ *pj = pj_new ();
-	if (!pj) {
-		return;
-	}
-
 	pj_o (pj);
 	pj_kn (pj, "cs_version", element->hdr->version);
 	pj_kn (pj, "size", element->hdr->size);
@@ -434,7 +430,7 @@ RBinPlugin r_bin_plugin_symbols = {
 	.meta = {
 		.name = "symbols",
 		.author = "pancake",
-		.desc = "Apple Symbols file",
+		.desc = "Modern Apple Symbols",
 		.license = "MIT",
 	},
 	.load = &load,

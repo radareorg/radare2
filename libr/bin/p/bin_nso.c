@@ -291,7 +291,7 @@ RBinPlugin r_bin_plugin_nso = {
 	.meta = {
 		.name = "nso",
 		.author = "rkx1209",
-		.desc = "Nintendo Switch NSO0 binaries",
+		.desc = "Nintendo Switch NSO0",
 		.license = "MIT",
 	},
 	.load = &load,

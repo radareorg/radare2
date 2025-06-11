@@ -1,4 +1,4 @@
-/* radare - LGPL - 2018-2023 - a0rtega */
+/* radare - LGPL - 2018-2025 - a0rtega */
 
 #include <r_bin.h>
 #include "nin/n3ds.h"
@@ -104,10 +104,6 @@ static RList *entries(RBinFile *bf) {
 
 static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) {
-		return NULL;
-	}
-
 	if (!bf || !bf->buf) {
 		free (ret);
 		return NULL;
@@ -127,7 +123,7 @@ RBinPlugin r_bin_plugin_nin3ds = {
 	.meta = {
 		.name = "nin3ds",
 		.author = "a0rtega",
-		.desc = "Nintendo 3DS FIRM format r_bin plugin",
+		.desc = "Nintendo 3DS Firmware",
 		.license = "LGPL-3.0-only",
 	},
 	.load = &load,

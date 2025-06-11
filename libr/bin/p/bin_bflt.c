@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2024 - Oscar Salvador */
+/* radare - LGPL - Copyright 2016-2025 - Oscar Salvador */
 
 #include <r_bin.h>
 #include <r_io.h>
@@ -39,13 +39,12 @@ static int search_old_relocation(struct reloc_struct_t *reloc_table, ut32 addr_t
 
 static RList *patch_relocs(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->rbin && bf->rbin->iob.io, NULL);
-	struct r_bin_bflt_obj *bin = NULL;
 	RBin *b = bf->rbin;
 	RBinObject *obj = r_bin_cur_object (b);
 	if (!obj) {
 		return NULL;
 	}
-	bin = obj->bin_obj;
+	struct r_bin_bflt_obj *bin = obj->bin_obj;
 	RList *list = r_list_newf ((RListFree) free);
 	if (!list) {
 		return NULL;
@@ -57,12 +56,10 @@ static RList *patch_relocs(RBinFile *bf) {
 			__patch_reloc (&b->iob, got_table[i].addr_to_patch,
 				got_table[i].data_offset);
 			RBinReloc *reloc = R_NEW0 (RBinReloc);
-			if (reloc) {
-				reloc->type = R_BIN_RELOC_32;
-				reloc->paddr = got_table[i].addr_to_patch;
-				reloc->vaddr = reloc->paddr;
-				r_list_append (list, reloc);
-			}
+			reloc->type = R_BIN_RELOC_32;
+			reloc->paddr = got_table[i].addr_to_patch;
+			reloc->vaddr = reloc->paddr;
+			r_list_append (list, reloc);
 		}
 		R_FREE (bin->got_table);
 	}
@@ -81,12 +78,10 @@ static RList *patch_relocs(RBinFile *bf) {
 					reloc_table[i].data_offset);
 			}
 			RBinReloc *reloc = R_NEW0 (RBinReloc);
-			if (reloc) {
-				reloc->type = R_BIN_RELOC_32;
-				reloc->paddr = reloc_table[i].addr_to_patch;
-				reloc->vaddr = reloc->paddr;
-				r_list_append (list, reloc);
-			}
+			reloc->type = R_BIN_RELOC_32;
+			reloc->paddr = reloc_table[i].addr_to_patch;
+			reloc->vaddr = reloc->paddr;
+			r_list_append (list, reloc);
 		}
 		R_FREE (bin->reloc_table);
 	}
@@ -235,27 +230,25 @@ out_error:
 
 static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *info = R_NEW0 (RBinInfo);
-	if (info) {
-		struct r_bin_bflt_obj *obj = R_UNWRAP3 (bf, bo, bin_obj);
-		info->file = bf->file? strdup (bf->file): NULL;
-		info->rclass = strdup ("bflt");
-		info->bclass = strdup ("bflt" );
-		info->type = strdup ("bFLT (Executable file)");
-		info->os = strdup ("Linux");
-		info->subsystem = strdup ("Linux");
-		info->arch = strdup ("arm");
-		info->big_endian = obj? obj->endian: R_SYS_ENDIAN_LITTLE;
-		info->bits = 32;
-		info->has_va = false;
-		info->dbg_info = 0;
-		info->machine = strdup ("unknown");
-	}
+	struct r_bin_bflt_obj *obj = R_UNWRAP3 (bf, bo, bin_obj);
+	info->file = bf->file? strdup (bf->file): NULL;
+	info->rclass = strdup ("bflt");
+	info->bclass = strdup ("bflt" );
+	info->type = strdup ("bFLT (Executable file)");
+	info->os = strdup ("Linux");
+	info->subsystem = strdup ("Linux");
+	info->arch = strdup ("arm");
+	info->big_endian = obj? obj->endian: R_SYS_ENDIAN_LITTLE;
+	info->bits = 32;
+	info->has_va = false;
+	info->dbg_info = 0;
+	info->machine = strdup ("unknown");
 	return info;
 }
 
 static bool check(RBinFile *bf, RBuffer *buf) {
 	ut8 tmp[4] = {0};
-	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
+	const int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
 	return r == sizeof (tmp) && !memcmp (tmp, "bFLT", 4);
 }
 
@@ -267,7 +260,7 @@ RBinPlugin r_bin_plugin_bflt = {
 	.meta = {
 		.name = "bflt",
 		.author = "Oscar Salvador",
-		.desc = "bFLT format r_bin plugin",
+		.desc = "Lightweight uC-Linux flat executables",
 		.license = "LGPL-3.0-only",
 	},
 	.load = &load,

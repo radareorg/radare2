@@ -17,7 +17,7 @@ RBinLdrPlugin r_bin_ldr_plugin_ldr_linux = {
 	.meta = {
 		.name = "ldr.linux",
 		.author = "pancake",
-		.desc = "Linux loader plugin for RBin",
+		.desc = "Linux Kernel loader",
 		.license = "MIT",
 	},
 	.load = &load,

@@ -103,7 +103,7 @@ RBinXtrPlugin r_bin_xtr_plugin_xtr_pemixed = {
 	.meta = {
 		.name = "xtr.pemixed",
 		.author = "JohnPeng47",
-		.desc = "Extract sub-binaries in PE files",
+		.desc = "Microsoft Portable Executable Extractor",
 		.license = "LGPL-3.0-only"
 	},
 	.destroy = &destroy,

@@ -490,7 +490,7 @@ RBinPlugin r_bin_plugin_wasm = {
 	.meta = {
 		.name = "wasm",
 		.author = "cgvwzq",
-		.desc = "WebAssembly bin plugin",
+		.desc = "WebAssembly",
 		.license = "MIT",
 	},
 	.load = &load,

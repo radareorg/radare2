@@ -53,9 +53,6 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 		return false;
 	}
 	DolHeader *dol = R_NEW0 (DolHeader);
-	if (!dol) {
-		return false;
-	}
 	char *lowername = strdup (bf->file);
 	if (!lowername) {
 		goto dol_err;
@@ -148,9 +145,6 @@ static RList *entries(RBinFile *bf) {
 static RBinInfo *info(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->buf, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) {
-		return NULL;
-	}
 	ret->file = strdup (bf->file);
 	ret->big_endian = true;
 	ret->type = strdup ("ROM");
@@ -172,7 +166,7 @@ RBinPlugin r_bin_plugin_dol = {
 	.meta = {
 		.name = "dol",
 		.author = "pancake",
-		.desc = "Nintendo Dolphin binary format",
+		.desc = "Nintendo Dolphin Wii executables",
 		.license = "BSD-3-Clause",
 	},
 	.weak_guess = true,

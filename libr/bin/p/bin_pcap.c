@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2017-2023 - srimantabarua, abcSup, pancake */
+/* radare - LGPL - Copyright 2017-2025 - srimantabarua, abcSup, pancake */
 
 #include <r_bin.h>
 #include <r_lib.h>
@@ -10,9 +10,6 @@
 static RBinInfo *info(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) {
-		return NULL;
-	}
 	pcap_obj_t *obj = bf->bo->bin_obj;
 	pcap_hdr_t *header = obj->header;
 	ret->file = strdup (bf->file);
@@ -61,10 +58,6 @@ static RList *symbols(RBinFile *bf) {
 
 	// File header
 	ptr = R_NEW0 (RBinSymbol);
-	if (!ptr) {
-		r_list_free (ret);
-		return NULL;
-	}
 	ptr->name = r_bin_name_new_from (
 		r_str_newf ("tcpdump capture file - version %d.%d (%s, capture length %"PFMT32u ")", obj->header->version_major,
 			obj->header->version_minor, pcap_network_string (obj->header->network),
@@ -95,19 +88,12 @@ static RList *strings(RBinFile *bf) {
 	RBinString *ptr;
 	pcap_obj_t *obj = bf->bo->bin_obj;
 	RList *ret = r_list_newf (free);
-	if (!ret) {
-		return NULL;
-	}
 
 	RListIter *iter;
 	pcaprec_t *rec;
 	r_list_foreach (obj->recs, iter, rec) {
 		if (rec->data && *rec->data != 0) {
 			ptr = R_NEW0 (RBinString);
-			if (!ptr) {
-				r_list_free (ret);
-				return NULL;
-			}
 			ptr->string = r_str_ndup ((const char *)rec->data, 32); // rec->datasz);
 			if (strlen (ptr->string) < 10) {
 				// eprintf ("(%s)\n", ptr->string);
@@ -129,12 +115,10 @@ static RList *strings(RBinFile *bf) {
 static RList* libs(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RList *ret = r_list_newf (free);
-	if (ret) {
-		r_list_append (ret, strdup ("ether"));
-		r_list_append (ret, strdup ("tcp"));
-		r_list_append (ret, strdup ("ipv4"));
-		r_list_append (ret, strdup ("ipv6"));
-	}
+	r_list_append (ret, strdup ("ether"));
+	r_list_append (ret, strdup ("tcp"));
+	r_list_append (ret, strdup ("ipv4"));
+	r_list_append (ret, strdup ("ipv6"));
 	return ret;
 }
 
@@ -145,7 +129,7 @@ static ut64 baddr(RBinFile *bf) {
 RBinPlugin r_bin_plugin_pcap = {
 	.meta = {
 		.name = "pcap",
-		.desc = "libpcap/.pcap format",
+		.desc = "Packet Capture Network Analysis container",
 		.license = "LGPL-3.0-only",
 		.author = "srimanta,pancake",
 	},

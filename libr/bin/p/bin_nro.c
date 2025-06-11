@@ -41,15 +41,13 @@ static bool check(RBinFile *bf, RBuffer *b) {
 static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 	// XX bf->buf vs b :D this load_b
 	RBinNXOObj *bin = R_NEW0 (RBinNXOObj);
-	if (bin) {
-		ut64 ba = baddr (bf);
-		bin->methods_list = r_list_newf ((RListFree)free);
-		bin->imports_list = r_list_newf ((RListFree)r_bin_import_free);
-		bin->classes_list = r_list_newf ((RListFree)free);
-		ut32 mod0 = r_buf_read_le32_at (b, NRO_OFFSET_MODMEMOFF);
-		parseMod (b, bin, mod0, ba);
-		bf->bo->bin_obj = bin;
-	}
+	ut64 ba = baddr (bf);
+	bin->methods_list = r_list_newf ((RListFree)free);
+	bin->imports_list = r_list_newf ((RListFree)r_bin_import_free);
+	bin->classes_list = r_list_newf ((RListFree)free);
+	ut32 mod0 = r_buf_read_le32_at (b, NRO_OFFSET_MODMEMOFF);
+	parseMod (b, bin, mod0, ba);
+	bf->bo->bin_obj = bin;
 	return true;
 }
 
@@ -58,17 +56,12 @@ static RBinAddr *binsym(RBinFile *bf, int type) {
 }
 
 static RList *entries(RBinFile *bf) {
-	RList *ret;
-	RBinAddr *ptr = NULL;
-	if (!(ret = r_list_new ())) {
-		return NULL;
-	}
+	RList *ret = r_list_new ();
 	ret->free = free;
-	if ((ptr = R_NEW0 (RBinAddr))) {
-		ptr->paddr = 0x80;
-		ptr->vaddr = ptr->paddr + baddr (bf);
-		r_list_append (ret, ptr);
-	}
+	RBinAddr *ptr = R_NEW0 (RBinAddr);
+	ptr->paddr = 0x80;
+	ptr->vaddr = ptr->paddr + baddr (bf);
+	r_list_append (ret, ptr);
 	return ret;
 }
 
@@ -86,7 +79,6 @@ static Sdb *get_sdb(RBinFile *bf) {
 
 static RList *sections(RBinFile *bf) {
 	RList *ret = NULL;
-	RBinSection *ptr = NULL;
 	RBuffer *b = bf->buf;
 	if (!bf->bo->info) {
 		return NULL;
@@ -98,9 +90,7 @@ static RList *sections(RBinFile *bf) {
 
 	ut64 ba = baddr (bf);
 
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	RBinSection *ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("header");
 	ptr->size = 0x80;
 	ptr->vsize = 0x80;
@@ -114,9 +104,7 @@ static RList *sections(RBinFile *bf) {
 
 	ut32 mod0 = r_buf_read_le32_at (bf->buf, NRO_OFFSET_MODMEMOFF);
 	if (mod0 && mod0 + 8 < bufsz) {
-		if (!(ptr = R_NEW0 (RBinSection))) {
-			return ret;
-		}
+		ptr = R_NEW0 (RBinSection);
 		ut32 mod0sz = r_buf_read_le32_at (bf->buf, mod0 + 4);
 		ptr->name = strdup ("mod0");
 		ptr->size = mod0sz;
@@ -132,9 +120,7 @@ static RList *sections(RBinFile *bf) {
 
 	ut32 sig0 = r_buf_read_le32_at (bf->buf, 0x18);
 	if (sig0 && sig0 + 8 < bufsz) {
-		if (!(ptr = R_NEW0 (RBinSection))) {
-			return ret;
-		}
+		ptr = R_NEW0 (RBinSection);
 		ut32 sig0sz = r_buf_read_le32_at (bf->buf, sig0 + 4);
 		ptr->name = strdup ("sig0");
 		ptr->size = sig0sz;
@@ -149,9 +135,7 @@ static RList *sections(RBinFile *bf) {
 	}
 
 	// add text segment
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("text");
 	ptr->vsize = r_buf_read_le32_at (b, NRO_OFF (text_size));
 	ptr->size = ptr->vsize;
@@ -162,9 +146,7 @@ static RList *sections(RBinFile *bf) {
 	r_list_append (ret, ptr);
 
 	// add ro segment
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("ro");
 	ptr->vsize = r_buf_read_le32_at (b, NRO_OFF (ro_size));
 	ptr->size = ptr->vsize;
@@ -175,9 +157,7 @@ static RList *sections(RBinFile *bf) {
 	r_list_append (ret, ptr);
 
 	// add data segment
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("data");
 	ptr->vsize = r_buf_read_le32_at (b, NRO_OFF (data_size));
 	ptr->size = ptr->vsize;
@@ -216,9 +196,6 @@ static RList *libs(RBinFile *bf) {
 
 static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) {
-		return NULL;
-	}
 	ut8 magic[4];
 	r_buf_read_at (bf->buf, NRO_OFF (magic), magic, sizeof (magic));
 	const char *ft = fileType (magic);
@@ -256,7 +233,7 @@ RBinPlugin r_bin_plugin_nro = {
 	.meta = {
 		.name = "nro",
 		.author = "pancake",
-		.desc = "Nintendo Switch NRO0 binaries",
+		.desc = "Nintendo Switch NRO0 ROMs",
 		.license = "MIT",
 	},
 	.load = &load,

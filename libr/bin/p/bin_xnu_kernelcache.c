@@ -2276,7 +2276,7 @@ static void rebase_buffer_fixup(RKernelCacheObj *kobj, ut64 off, RIODesc *fd, ut
 RBinPlugin r_bin_plugin_xnu_kernelcache = {
 	.meta = {
 		.name = "kernelcache",
-		.desc = "iOS/macOS kernelcache parser",
+		.desc = "iOS/macOS Kernel Cache",
 		.author = "mrmacete",
 		.license = "LGPL-3.0-only",
 	},

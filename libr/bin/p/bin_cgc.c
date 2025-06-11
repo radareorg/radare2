@@ -97,7 +97,7 @@ RBinPlugin r_bin_plugin_cgc = {
 	.meta = {
 		.name = "cgc",
 		.author = "pancake",
-		.desc = "CGC format r_bin plugin",
+		.desc = "DARPAs Cyber Grand Challenge (ELF like)",
 		.license = "LGPL-3.0-only",
 	},
 	.get_sdb = &get_sdb,

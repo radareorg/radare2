@@ -357,7 +357,7 @@ RBinPlugin r_bin_plugin_xbe = {
 	.meta = {
 		.name = "xbe",
 		.author = "TheLemonMan",
-		.desc = "Microsoft Xbox xbe format r_bin plugin",
+		.desc = "Microsoft XBOX Executables",
 		.license = "LGPL-3.0-only",
 	},
 	.load = &load,

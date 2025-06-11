@@ -150,7 +150,7 @@ RBinPlugin r_bin_plugin_te = {
 	.meta = {
 		.name = "te",
 		.author = "xvilka",
-		.desc = "Terse Executable format",
+		.desc = "Terse Executable (based on PE/COFF for PE32/+)",
 		.license = "LGPL-3.0-only",
 	},
 	.get_sdb = &get_sdb,

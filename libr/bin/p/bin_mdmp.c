@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2016-2024 - Davis, Alex Kornitzer */
+/* radare2 - LGPL - Copyright 2016-2025 - Davis, Alex Kornitzer */
 
 #include <r_util/r_print.h>
 #include <r_bin.h>
@@ -39,9 +39,6 @@ static RList* entries(RBinFile *bf) {
 
 static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) {
-		return NULL;
-	}
 	RBinMdmpObj *mdmp = bf->bo->bin_obj;
 	if (!mdmp) {
 		return NULL;
@@ -175,25 +172,20 @@ static RList *sections(RBinFile *bf) {
 	struct minidump_string *str;
 	struct Pe32_r_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_r_bin_mdmp_pe_bin *pe64_bin;
-	RList *ret, *pe_secs;
+	RList *pe_secs;
 	RListIter *it, *it0;
 	RBinSection *ptr;
 	ut64 index;
 
 	struct r_bin_mdmp_obj *obj = (struct r_bin_mdmp_obj *)bf->bo->bin_obj;
 
-	if (!(ret = r_list_newf (free))) {
-		return NULL;
-	}
+	RList *ret = r_list_newf (free);
 
 	/* TODO: Can't remove the memories from this section until get_vaddr is
 	** implemented correctly, currently it is never called!?!? Is it a
 	** relic? */
 	r_list_foreach (obj->streams.memories, it, memory) {
-		if (!(ptr = R_NEW0 (RBinSection))) {
-			return ret;
-		}
-
+		ptr = R_NEW0 (RBinSection);
 		ptr->name = strdup ("Memory_Section");
 		ptr->paddr = (memory->memory).rva;
 		ptr->size = (memory->memory).data_size;
@@ -209,10 +201,7 @@ static RList *sections(RBinFile *bf) {
 
 	index = obj->streams.memories64.base_rva;
 	r_list_foreach (obj->streams.memories64.memories, it, memory64) {
-		if (!(ptr = R_NEW0 (RBinSection))) {
-			return ret;
-		}
-
+		ptr = R_NEW0 (RBinSection);
 		ptr->name = strdup ("Memory_Section");
 		ptr->paddr = index;
 		ptr->size = memory64->data_size;
@@ -232,9 +221,7 @@ static RList *sections(RBinFile *bf) {
 	r_list_foreach (obj->streams.modules, it, module) {
 		ut8 b[512];
 
-		if (!(ptr = R_NEW0 (RBinSection))) {
-			return ret;
-		}
+		ptr = R_NEW0 (RBinSection);
 		if (module->module_name_rva + sizeof (struct minidump_string) >= r_buf_size (obj->b)) {
 			free (ptr);
 			continue;
@@ -314,9 +301,7 @@ static RList *mem(RBinFile *bf) {
 	/* [1] As there isnt a better place to put this info at the moment we will
 	** mash it into the name field, but without enumeration for now  */
 	r_list_foreach (obj->streams.memories, it, module) {
-		if (!(ptr = R_NEW0 (RBinMem))) {
-			return ret;
-		}
+		ptr = R_NEW0 (RBinMem);
 		ptr->addr = module->start_of_memory_range;
 		ptr->size = location? location->data_size: 0;
 		ptr->perms = r_bin_mdmp_get_perm (obj, ptr->addr);
@@ -338,9 +323,7 @@ static RList *mem(RBinFile *bf) {
 
 	index = obj->streams.memories64.base_rva;
 	r_list_foreach (obj->streams.memories64.memories, it, module64) {
-		if (!(ptr = R_NEW0 (RBinMem))) {
-			return ret;
-		}
+		ptr = R_NEW0 (RBinMem);
 		ptr->addr = module64->start_of_memory_range;
 		ptr->size = module64->data_size;
 		ptr->perms = r_bin_mdmp_get_perm (obj, ptr->addr);
@@ -450,7 +433,7 @@ RBinPlugin r_bin_plugin_mdmp = {
 	.meta = {
 		.name = "mdmp",
 		.author = "Davis,Alex Kornitzer",
-		.desc = "Minidump format r_bin plugin",
+		.desc = "Windows minidump crash snapshot",
 		.license = "LGPL-3.0-only",
 	},
 	.destroy = &destroy,

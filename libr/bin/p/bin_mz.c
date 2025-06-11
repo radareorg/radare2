@@ -253,7 +253,7 @@ RBinPlugin r_bin_plugin_mz = {
 	.meta = {
 		.name = "mz",
 		.author = "pancake",
-		.desc = "MZ bin plugin",
+		.desc = "Mark Zbikowski's Modern Executable from MS-DOS",
 		.license = "MIT",
 	},
 	.get_sdb = &get_sdb,

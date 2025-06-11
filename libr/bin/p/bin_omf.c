@@ -98,17 +98,13 @@ static RList *sections(RBinFile *bf) {
 }
 
 static RList *symbols(RBinFile *bf) {
-	RList *ret;
 	RBinSymbol *sym;
 	OMF_symbol *sym_omf;
 	int ct_sym = 0;
 	if (!bf || !bf->bo || !bf->bo->bin_obj) {
 		return NULL;
 	}
-	if (!(ret = r_list_new ())) {
-		return NULL;
-	}
-
+	RList *ret = r_list_new ();
 	ret->free = free;
 
 	while (ct_sym < ((r_bin_omf_obj *) bf->bo->bin_obj)->nb_symbol) {
@@ -128,11 +124,7 @@ static RList *symbols(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret;
-
-	if (!(ret = R_NEW0 (RBinInfo))) {
-		return NULL;
-	}
+	RBinInfo *ret = R_NEW0 (RBinInfo);
 	ret->file = strdup (bf->file);
 	ret->bclass = strdup ("OMF");
 	ret->rclass = strdup ("omf");
@@ -157,7 +149,7 @@ static ut64 get_vaddr(RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 RBinPlugin r_bin_plugin_omf = {
 	.meta = {
 		.name = "omf",
-		.desc = "omf bin plugin",
+		.desc = "Object Module Format for 80x86",
 		.author = "ampotos",
 		.license = "LGPL-3.0-only",
 	},

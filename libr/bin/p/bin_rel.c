@@ -333,13 +333,10 @@ static ut64 baddr(RBinFile *bf) {
 
 static RList *sections(RBinFile *bf) {
 	int i;
-	RList *ret;
 	const RelSection *rel_s;
 	RBinSection *s;
 	const LoadedRel *rel = bf->bo->bin_obj;
-	if (!(ret = r_list_new ())) {
-		return NULL;
-	}
+	RList *ret = r_list_new ();
 
 	bool has_bss = false;
 	for (i = 0; i < rel->hdr.num_sections; i++) {
@@ -391,22 +388,16 @@ static void register_header_symbol(RBinFile *bf, RList *syms, const char *name, 
 		return;
 	}
 	RBinSymbol *ret = R_NEW0 (RBinSymbol);
-	if (R_LIKELY (ret)) {
-		ret->type = R_BIN_TYPE_FUNC_STR;
-		ret->libname = strdup (rel->libname);
-		ret->name = r_bin_name_new (name);
-		ret->paddr = rel_section_paddr (&rel->sections[section]) + offset;
-		ret->vaddr = bf->bo->baddr + ret->paddr;
-		r_list_append (syms, ret);
-	}
+	ret->type = R_BIN_TYPE_FUNC_STR;
+	ret->libname = strdup (rel->libname);
+	ret->name = r_bin_name_new (name);
+	ret->paddr = rel_section_paddr (&rel->sections[section]) + offset;
+	ret->vaddr = bf->bo->baddr + ret->paddr;
+	r_list_append (syms, ret);
 }
 
 static RList *symbols(RBinFile *bf) {
 	RList *syms = r_list_new ();
-	if (!syms) {
-		return NULL;
-	}
-
 	const LoadedRel *rel = bf->bo->bin_obj;
 	register_header_symbol (bf, syms, "prolog", rel->hdr.prolog_section, rel->hdr.prolog_offset);
 	register_header_symbol (bf, syms, "epilog", rel->hdr.epilog_section, rel->hdr.epilog_offset);
@@ -522,9 +513,6 @@ static RBinReloc *patch_reloc(RBin *b, const LoadedRel *rel, const RelReloc *rel
 	}
 
 	RBinReloc *ret = R_NEW0 (RBinReloc);
-	if (!ret) {
-		return NULL;
-	}
 	switch (size) {
 	// UNREACHABLE case 1: ret->type = R_BIN_RELOC_8; break;
 	case 2: ret->type = R_BIN_RELOC_16; break;
@@ -591,9 +579,6 @@ static RList *relocs(RBinFile *bf) {
 static RBinInfo *info(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->buf, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) {
-		return NULL;
-	}
 	ret->big_endian = true;
 	ret->type = strdup ("Relocatable File");
 	ret->machine = strdup ("Nintendo Wii");
@@ -609,7 +594,7 @@ static RBinInfo *info(RBinFile *bf) {
 RBinPlugin r_bin_plugin_rel = {
 	.meta = {
 		.name = "rel",
-		.desc = "Nintendo Wii REL format",
+		.desc = "Nintendo Wii Relocatable",
 		.license = "LGPL-3.0-only",
 		.author = "terorie",
 	},

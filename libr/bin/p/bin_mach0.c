@@ -975,7 +975,7 @@ static ut64 size(RBinFile *bf) {
 RBinPlugin r_bin_plugin_mach0 = {
 	.meta = {
 		.name = "mach0",
-		.desc = "mach0 bin plugin",
+		.desc = "32bit Mach Objects",
 		.author = "pancake",
 		.license = "LGPL-3.0-only",
 	},

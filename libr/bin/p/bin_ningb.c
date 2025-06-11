@@ -283,7 +283,7 @@ RBinPlugin r_bin_plugin_ningb = {
 	.meta = {
 		.name = "ningb",
 		.author = "condret",
-		.desc = "Gameboy format r_bin plugin",
+		.desc = "Nintendo GameBoy ROM",
 		.license = "LGPL-3.0-only",
 	},
 	.load = &load,

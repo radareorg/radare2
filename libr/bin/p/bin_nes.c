@@ -196,11 +196,9 @@ static RList* entries(RBinFile *bf) { //Should be 3 offsets pointed by NMI, RESE
 	RList *ret = r_list_new ();
 	if (R_LIKELY (ret)) {
 		RBinAddr *ptr = R_NEW0 (RBinAddr);
-		if (R_LIKELY (ptr)) {
-			ptr->paddr = INES_HDR_SIZE;
-			ptr->vaddr = ROM_START_ADDRESS;
-			r_list_append (ret, ptr);
-		}
+		ptr->paddr = INES_HDR_SIZE;
+		ptr->vaddr = ROM_START_ADDRESS;
+		r_list_append (ret, ptr);
 	}
 	return ret;
 }
@@ -208,7 +206,7 @@ static RList* entries(RBinFile *bf) { //Should be 3 offsets pointed by NMI, RESE
 RBinPlugin r_bin_plugin_nes = {
 	.meta = {
 		.name = "nes",
-		.desc = "NES",
+		.desc = "Nintendo Entertainment System",
 		.license = "MIT",
 		.author = "pancake",
 	},
