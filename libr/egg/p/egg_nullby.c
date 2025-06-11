@@ -67,7 +67,7 @@ static RBuffer *build(REgg *egg) {
 			"\x75\x02" // jne .loop
 			"\x88\x1f" // mov byte [rdi], bl
 			"\xe2\xf7"; // loop 0x15 (cmp byte rdi..)
-		size_t scsz = r_buf_size (sc);	
+		size_t scsz = r_buf_size (sc);
 		if (scsz >= 0xff) {
 			R_LOG_ERROR ("This encoder doesnt work for shellcodes larger than 255 bytes");
 			return NULL;

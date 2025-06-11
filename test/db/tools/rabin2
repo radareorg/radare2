@@ -1001,7 +1001,7 @@ FILE=-
 CMDS=!rabin2 -L elf
 EXPECT=<<EOF
 Name: elf
-Description: ELF format parser
+Description: Executable and Link Format (ELF) for 32 bit
 License: LGPL-3.0-only
 Author: nibble
 EOF
