@@ -5222,7 +5222,16 @@ static void __update_menu(RCore *core, const char *parent, R_NULLABLE RPanelMenu
 	__update_menu_contents (core, menu, p_item);
 }
 
-static char *__get_panels_config_dir_path(void) {
+static char *__panels_config_path(bool syspath) {
+	if (syspath) {
+		char *r2_prefix = r_sys_getenv ("R2_PREFIX");
+		if (!r2_prefix) {
+			r2_prefix = strdup (R2_PREFIX);
+		}
+		char *res = r_file_new (r2_prefix, "share", R2_VERSION, "panels", NULL);
+		free (r2_prefix);
+		return res;
+	}
 	return r_xdg_datadir ("r2panels");
 }
 
@@ -5266,19 +5275,41 @@ static void __add_menu(RCore *core, const char *parent, const char *name, RPanel
 }
 
 static void __init_menu_saved_layout(void *_core, const char *parent) {
-	char *dir_path = __get_panels_config_dir_path ();
+	char *dir_path = __panels_config_path (false);
 	RList *dir = r_sys_dir (dir_path);
-	if (!dir) {
-		free (dir_path);
-		return;
-	}
 	RCore *core = (RCore *)_core;
 	RListIter *it;
-	char *entry;
-	r_list_foreach (dir, it, entry) {
-		if (strcmp (entry, ".") && strcmp (entry, "..")) {
-			__add_menu (core, parent, entry, __load_layout_saved_cb);
+	char *entry, *entry2;
+	if (dir) {
+		r_list_foreach (dir, it, entry) {
+			if (*entry != '.') {
+				__add_menu (core, parent, entry, __load_layout_saved_cb);
+			}
 		}
+	}
+	char *sysdir_path = __panels_config_path (true);
+	RList *sysdir = r_sys_dir (sysdir_path);
+	if (sysdir) {
+		// load entries from syspath
+		r_list_foreach (sysdir, it, entry) {
+			if (*entry != '.') {
+				bool found_in_home = false;
+				if (dir) {
+					RListIter *it2;
+					r_list_foreach (dir, it2, entry2) {
+						if (!strcmp (entry, entry2)) {
+							found_in_home = true;
+							break;
+						}
+					}
+				}
+				if (!found_in_home) {
+					__add_menu (core, parent, entry, __load_layout_saved_cb);
+				}
+			}
+		}
+		r_list_free (sysdir);
+		free (sysdir_path);
 	}
 	r_list_free (dir);
 	free (dir_path);
@@ -5286,10 +5317,10 @@ static void __init_menu_saved_layout(void *_core, const char *parent) {
 
 static int __clear_layout_cb(void *user) {
 	RCore *core = (RCore *)user;
-	if (!__show_status_yesno (core, 0, "Clear all the saved layouts?(y/n): ")) {
+	if (!__show_status_yesno (core, 0, "Clear all the saved layouts? (y/n): ")) {
 		return 0;
 	}
-	char *dir_path = __get_panels_config_dir_path ();
+	char *dir_path = __panels_config_path (false);
 	RList *dir = r_sys_dir ((const char *)dir_path);
 	if (!dir) {
 		free (dir_path);
@@ -6499,7 +6530,7 @@ static bool __handle_console(RCore *core, RPanel *panel, const int key) {
 }
 
 static char *__create_panels_config_path(const char *file) {
-	char *dir_path = __get_panels_config_dir_path ();
+	char *dir_path = __panels_config_path (false);
 	r_sys_mkdirp (dir_path);
 	char *file_path = r_str_newf (R_JOIN_2_PATHS ("%s", "%s"), dir_path, file);
 	R_FREE (dir_path);
@@ -6507,11 +6538,18 @@ static char *__create_panels_config_path(const char *file) {
 }
 
 static char *__get_panels_config_file_from_dir(const char *file) {
-	char *dir_path = __get_panels_config_dir_path ();
+	char *dir_path = __panels_config_path (false);
 	RList *dir = r_sys_dir (dir_path);
 	if (!dir_path || !dir) {
 		free (dir_path);
-		return NULL;
+		dir_path = __panels_config_path (true);
+		r_list_free (dir);
+		dir = r_sys_dir (dir_path);
+		if (!dir || !dir_path) {
+			free (dir_path);
+			r_list_free (dir);
+			return NULL;
+		}
 	}
 	char *tmp = NULL;
 	RListIter *it;
