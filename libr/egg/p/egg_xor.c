@@ -6,7 +6,6 @@
 
 /* based on @santitox patch */
 static RBuffer *build(REgg *egg) {
-	RBuffer *buf, *sc;
 	ut8 aux[32], nkey;
 	const char *default_key = DEFAULT_XOR_KEY;
 	char *key = r_egg_option_get (egg, "key");
@@ -32,7 +31,7 @@ static RBuffer *build(REgg *egg) {
 		free (key);
 		return NULL;
 	}
-	sc = egg->bin; // hack
+	RBuffer *sc = egg->bin; // hack
 	if (!r_buf_size (sc)) {
 		R_LOG_ERROR ("No shellcode found!");
 		free (key);
@@ -47,7 +46,7 @@ static RBuffer *build(REgg *egg) {
 			return NULL;
 		}
 	}
-	buf = r_buf_new ();
+	RBuffer *buf = r_buf_new ();
 	sc = r_buf_new ();
 
 	// TODO: alphanumeric? :D
