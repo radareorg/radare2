@@ -33,10 +33,7 @@ static inline bool has_backward_edge_addr(ut8 meta) {
 static RList *sections(RBinFile *bf) {
 	RBinXtacObj *bin = bf->bo->bin_obj;
 
-	RList *ret = NULL;
-	if (!(ret = r_list_newf ((RListFree)r_bin_section_free))) {
-		return NULL;
-	}
+	RList *ret = r_list_newf ((RListFree)r_bin_section_free);
 
 	RBinSection *ptr_sect_header = NULL, *ptr_sect_blck = NULL, *ptr_sect_trans_code = NULL;
 
@@ -572,10 +569,7 @@ static RList *symbols(RBinFile *bf) {
 
 	ut64 x86_baddr = baddr (bf), arm_baddr = 0x0;
 
-	RList *ret = NULL;
-	if (!(ret = r_list_newf (free))) {
-		return NULL;
-	}
+	RList *ret = r_list_newf (free);
 
 	RBinSymbol *ptr = NULL;
 	const ut32 num_pairs = bin->header->num_of_addr_pairs;
@@ -606,7 +600,7 @@ RBinPlugin r_bin_plugin_xtac = {
 	.meta = {
 		.name = "xtac",
 		.author = "FFRI Security",
-		.desc = "XTAC format r2 plugin",
+		.desc = "Compiled XTA Cache File from Windows/ARM JIT",
 		.license = "Apache-2.0",
 	},
 	.load = &load,

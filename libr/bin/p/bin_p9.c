@@ -701,7 +701,7 @@ static RBuffer *create(RBin *bin, const ut8 *code, int codelen, const ut8 *data,
 RBinPlugin r_bin_plugin_p9 = {
 	.meta = {
 		.name = "p9",
-		.desc = "Plan 9 bin plugin",
+		.desc = "Plan 9 Executables",
 		.author = "keegan",
 		.license = "MIT",
 	},

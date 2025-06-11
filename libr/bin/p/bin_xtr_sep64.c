@@ -478,7 +478,7 @@ RBinXtrPlugin r_bin_xtr_plugin_xtr_sep64 = {
 	.meta = {
 		.name = "xtr.sep64",
 		.author = "pancake",
-		.desc = "64-bit SEP bin extractor plugin",
+		.desc = "Secure Enclave 64-bit Executable",
 		.license = "LGPL-3.0-only",
 	},
 	.check = check,

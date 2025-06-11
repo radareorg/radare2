@@ -269,7 +269,7 @@ RBinPlugin r_bin_plugin_qnx = {
 	.meta = {
 		.name = "qnx",
 		.author = "deepakchethan",
-		.desc = "QNX executable file support",
+		.desc = "Quantum Software Systems (QNX) executable",
 		.license = "LGPL-3.0-only",
 	},
 	.weak_guess = true,

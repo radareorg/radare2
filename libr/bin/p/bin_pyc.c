@@ -127,7 +127,7 @@ RBinPlugin r_bin_plugin_pyc = {
 	.meta = {
 		.name = "pyc",
 		.author = "c0riolis,x0urc3",
-		.desc = "Python byte-compiled file plugin",
+		.desc = "Python byte-compiled",
 		.license = "LGPL-3.0-only",
 	},
 	.info = &info,

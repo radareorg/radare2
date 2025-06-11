@@ -74,7 +74,7 @@ RBinPlugin r_bin_plugin_prg = {
 	.meta = {
 		.name = "prg",
 		.author = "thestr4ng3r",
-		.desc = "C64 PRG",
+		.desc = "Commodore64 Programs",
 		.license = "LGPL-3.0-only",
 	},
 	.load = load,

@@ -1,4 +1,4 @@
-/* radare - MIT - 2024 - pancake */
+/* radare - MIT - 2024-2025 - pancake */
 
 // the info loaded here is never updated maybe we should have a way to refresh it
 #include <r_bin.h>
@@ -34,10 +34,7 @@ static char *iocmd(RBinFile *bf, const char *s) {
 
 static RBinInfo *info(RBinFile *bf) {
 	free (iocmd (bf, "i"));
-	RBinInfo *ret = NULL;
-	if (!(ret = R_NEW0 (RBinInfo))) {
-		return NULL;
-	}
+	RBinInfo *ret = R_NEW0 (RBinInfo);
 	ret->file = strdup (bf->file);
 	ret->type = strdup ("IO");
 	ret->machine = strdup ("IO");
@@ -135,7 +132,7 @@ RBinPlugin r_bin_plugin_io = {
 	.meta = {
 		.name = "io",
 		.author = "pancake",
-		.desc = "bin plugin using the io interface",
+		.desc = "Use IO plugins for RBin",
 		.license = "MIT",
 	},
 	.load = &load,

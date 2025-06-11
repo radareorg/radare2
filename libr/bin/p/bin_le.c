@@ -126,14 +126,11 @@ static RList *relocs(RBinFile *bf) {
 }
 
 static RList* patch_relocs(RBinFile * bf) {
-	RList * ret = NULL;
-	RBin * b = bf->rbin;
-	RBinLEObj * bin = bf->bo->bin_obj;
-	LE_image_header * h = bin->header;
+	RList *ret = r_list_newf ((RListFree)free);
+	RBin *b = bf->rbin;
+	RBinLEObj *bin = bf->bo->bin_obj;
+	LE_image_header *h = bin->header;
 
-	if (!(ret = r_list_newf ((RListFree)free))) {
-		return NULL;
-	}
 	RList * all_relocs = relocs (bf);
 	if (all_relocs == NULL) {
 		goto beach;
@@ -208,26 +205,24 @@ beach:
 
 static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *info = R_NEW0 (RBinInfo);
-	if (info) {
-		RBinLEObj *bin = bf->bo->bin_obj;
-		LE_image_header *h = bin->header;
-		info->bits = 32;
-		info->type = strdup (bin->type);
-		info->cpu = strdup (bin->cpu);
-		info->os = strdup (bin->os);
-		info->arch = strdup (bin->arch);
-		info->file = strdup (r_str_get (bin->filename));
-		info->big_endian = h->worder;
-		info->has_va = true;
-		info->baddr = 0;
-	}
+	RBinLEObj *bin = bf->bo->bin_obj;
+	LE_image_header *h = bin->header;
+	info->bits = 32;
+	info->type = strdup (bin->type);
+	info->cpu = strdup (bin->cpu);
+	info->os = strdup (bin->os);
+	info->arch = strdup (bin->arch);
+	info->file = strdup (r_str_get (bin->filename));
+	info->big_endian = h->worder;
+	info->has_va = true;
+	info->baddr = 0;
 	return info;
 }
 
 RBinPlugin r_bin_plugin_le = {
 	.meta = {
 		.name = "le",
-		.desc = "LE/LX format r2 plugin",
+		.desc = "Linear Executables from OS/2, Windows VxD and DOS extenders",
 		.author = "GustavoLCR",
 		.license = "LGPL-3.0-only",
 	},

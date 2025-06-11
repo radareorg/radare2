@@ -1724,7 +1724,7 @@ beach:
 RBinPlugin r_bin_plugin_dyldcache = {
 	.meta = {
 		.name = "dyldcache",
-		.desc = "dyldcache bin plugin",
+		.desc = "Apple dynamic system library shared cache",
 		.author = "mrmacete",
 		.license = "LGPL-3.0-only",
 	},

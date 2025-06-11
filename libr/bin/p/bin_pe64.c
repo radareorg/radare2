@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2025 - nibble, pancake */
 
 #define R_BIN_PE64 1
 #include "bin_pe.inc.c"
@@ -30,9 +30,6 @@ static bool check(RBinFile *bf, RBuffer *b) {
 
 static RList *fields(RBinFile *bf) {
 	RList *ret  = r_list_new ();
-	if (!ret) {
-		return NULL;
-	}
 
 	#define ROWL(nam,siz,val,fmt) \
 		r_list_append (ret, r_bin_field_new (addr, addr, val, siz, nam, NULL, fmt, false));
@@ -453,7 +450,7 @@ static RList *trycatch(RBinFile *bf) {
 RBinPlugin r_bin_plugin_pe64 = {
 	.meta = {
 		.name = "pe64",
-		.desc = "PE64 (PE32+) bin plugin",
+		.desc = "Portable Executable for 64 bit (PE32+)",
 		.author = "nibble,pancake",
 		.license = "LGPL-3.0-only",
 	},

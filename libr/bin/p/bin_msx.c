@@ -213,7 +213,7 @@ static RList *entries(RBinFile *bf) {
 RBinPlugin r_bin_plugin_msx = {
 	.meta = {
 		.name = "msx",
-		.desc = "MSX rom/bin parser",
+		.desc = "MSX ROM images",
 		.license = "LGPL-3.0-only",
 		.author = "Jose Antonio Romero",
 	},

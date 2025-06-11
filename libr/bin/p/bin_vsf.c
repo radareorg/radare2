@@ -559,7 +559,7 @@ RBinPlugin r_bin_plugin_vsf = {
 	.meta = {
 		.name = "vsf",
 		.author = "riq",
-		.desc = "VICE Snapshot File",
+		.desc = "VICE Snapshot",
 		.license = "LGPL-3.0-only",
 	},
 	.get_sdb = &get_sdb,

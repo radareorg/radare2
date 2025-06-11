@@ -109,7 +109,7 @@ static RList *relocs(RBinFile *bf) {
 RBinPlugin r_bin_plugin_ne = {
 	.meta = {
 		.name = "ne",
-		.desc = "NE format r2 plugin",
+		.desc = "New Executables for 16bit Windows",
 		.author = "GustavoLCR",
 		.license = "LGPL-3.0-only",
 	},

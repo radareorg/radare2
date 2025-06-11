@@ -126,7 +126,7 @@ RBinPlugin r_bin_plugin_dmp64 = {
 	.meta = {
 		.name = "dmp64",
 		.author = "abcSup",
-		.desc = "Windows Crash Dump x64 r_bin plugin",
+		.desc = "Windows Crash Dump for x86-64",
 		.license = "LGPL-3.0-only",
 	},
 	.destroy = &destroy,

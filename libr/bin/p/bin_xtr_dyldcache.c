@@ -166,7 +166,7 @@ RBinXtrPlugin r_bin_xtr_plugin_xtr_dyldcache = {
 	.meta = {
 		.name = "xtr.dyldcache",
 		.author = "pancake,nibble",
-		.desc = "dyld cache bin extractor plugin",
+		.desc = "Extract binaries from Apple Dynamic Library Shared Cache",
 		.license = "LGPL-3.0-only",
 	},
 	.load = &load,

@@ -62,7 +62,7 @@ RBinXtrPlugin r_bin_xtr_plugin_xtr_xalz = {
 	.meta = {
 		.name = "xtr.xalz",
 		.author = "pancake",
-		.desc = "XAmarin LZ4 assemblies",
+		.desc = "Dotnet Xamarin LZ4 assemblies",
 		.license = "MIT",
 	},
 	.extractall_from_buffer = &oneshotall_buffer,

@@ -33,21 +33,9 @@ static ut64 baddr(RBinFile *bf) {
 }
 
 static RList *sections(RBinFile *bf) {
-	RList *ret = NULL;
-	RBinSection *ptr9 = NULL, *ptr7 = NULL;
-
-	if (!(ret = r_list_new ())) {
-		return NULL;
-	}
-	if (!(ptr9 = R_NEW0 (RBinSection))) {
-		r_list_free (ret);
-		return NULL;
-	}
-	if (!(ptr7 = R_NEW0 (RBinSection))) {
-		r_list_free (ret);
-		free (ptr9);
-		return NULL;
-	}
+	RList *ret = r_list_new ();
+	RBinSection *ptr9 = R_NEW0 (RBinSection);
+	RBinSection *ptr7 = R_NEW0 (RBinSection);
 
 	ptr9->name = strdup ("arm9");
 	ptr9->size = loaded_header.arm9_size;
@@ -72,22 +60,10 @@ static RList *sections(RBinFile *bf) {
 
 static RList *entries(RBinFile *bf) {
 	RList *ret = r_list_new ();
-	RBinAddr *ptr9 = NULL, *ptr7 = NULL;
-
 	if (bf && bf->buf) {
-		if (!ret) {
-			return NULL;
-		}
 		ret->free = free;
-		if (!(ptr9 = R_NEW0 (RBinAddr))) {
-			r_list_free (ret);
-			return NULL;
-		}
-		if (!(ptr7 = R_NEW0 (RBinAddr))) {
-			r_list_free (ret);
-			free (ptr9);
-			return NULL;
-		}
+		RBinAddr *ptr9 = R_NEW0 (RBinAddr);
+		RBinAddr *ptr7 = R_NEW0 (RBinAddr);
 
 		/* ARM9 entry point */
 		ptr9->vaddr = loaded_header.arm9_entry_address;
@@ -105,17 +81,15 @@ static RList *entries(RBinFile *bf) {
 static RBinInfo *info(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->buf, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (ret) {
-		char *filepath = r_str_newf ("%.12s - %.4s",
-			loaded_header.title, loaded_header.gamecode);
-		ret->file = filepath;
-		ret->type = strdup ("ROM");
-		ret->machine = strdup ("Nintendo DS");
-		ret->os = strdup ("nds");
-		ret->arch = strdup ("arm");
-		ret->has_va = true;
-		ret->bits = 32;
-	}
+	char *filepath = r_str_newf ("%.12s - %.4s",
+		loaded_header.title, loaded_header.gamecode);
+	ret->file = filepath;
+	ret->type = strdup ("ROM");
+	ret->machine = strdup ("Nintendo DS");
+	ret->os = strdup ("nds");
+	ret->arch = strdup ("arm");
+	ret->has_va = true;
+	ret->bits = 32;
 	return ret;
 }
 
@@ -123,7 +97,7 @@ RBinPlugin r_bin_plugin_ninds = {
 	.meta = {
 		.name = "ninds",
 		.author = "pancake",
-		.desc = "Nintendo DS format r_bin plugin",
+		.desc = "Nintendo DS ROMs",
 		.license = "LGPL-3.0-only",
 	},
 	.load = &load,

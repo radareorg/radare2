@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2019 - ninjahacker */
+/* radare - LGPL - Copyright 2011-2025 - ninjahacker */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -57,7 +57,7 @@ RBinPlugin r_bin_plugin_zimg = {
 	.meta = {
 		.name = "zimg",
 		.author = "ninjahacker",
-		.desc = "zimg format bin plugin",
+		.desc = "Compressed Linux Kernel Image",
 		.license = "LGPL-3.0-only",
 	},
 	.get_sdb = &get_sdb,

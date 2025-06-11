@@ -232,7 +232,7 @@ RBinPlugin r_bin_plugin_xcoff64 = {
 	.meta = {
 		.name = "xcoff64",
 		.author = "terorie",
-		.desc = "xcoff64 r_bin plugin",
+		.desc = "AIX Common Object File Format",
 		.license = "LGPL-3.0-only",
 	},
 	.load = &load,

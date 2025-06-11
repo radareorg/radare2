@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2024 - pancake */
+/* radare - LGPL - Copyright 2013-2025 - pancake */
 
 #include <r_bin.h>
 #include "../i/private.h"
@@ -54,35 +54,30 @@ static RList *strings(RBinFile *bf) {
 static RBinInfo *info(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (ret) {
-		ret->file = bf->file? strdup (bf->file): NULL;
-		ret->type = strdup ("bios");
-		ret->bclass = strdup ("1.0");
-		ret->rclass = strdup ("bios");
-		ret->os = strdup ("any");
-		ret->subsystem = strdup ("unknown");
-		ret->machine = strdup ("pc");
-		ret->arch = strdup ("x86");
-		ret->has_va = 1;
-		ret->bits = 16;
-		ret->big_endian = 0;
-		ret->dbg_info = false;
-	}
+	ret->file = bf->file? strdup (bf->file): NULL;
+	ret->type = strdup ("bios");
+	ret->bclass = strdup ("1.0");
+	ret->rclass = strdup ("bios");
+	ret->os = strdup ("any");
+	ret->subsystem = strdup ("unknown");
+	ret->machine = strdup ("pc");
+	ret->arch = strdup ("x86");
+	ret->has_va = 1;
+	ret->bits = 16;
+	ret->big_endian = 0;
+	ret->dbg_info = false;
 	return ret;
 }
 
 static RList *sections(RBinFile *bf) {
 	RList *ret = NULL;
-	RBinSection *ptr = NULL;
 	RBuffer *obj = bf->bo->bin_obj;
 
 	if (!(ret = r_list_newf ((RListFree) r_bin_section_free))) {
 		return NULL;
 	}
 	// program headers is another section
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	RBinSection *ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("bootblk"); // Maps to 0xF000:0000 segment
 	ptr->vsize = ptr->size = 0x10000;
 	ptr->paddr = r_buf_size (bf->buf) - ptr->size;
@@ -92,9 +87,7 @@ static RList *sections(RBinFile *bf) {
 	r_list_append (ret, ptr);
 	// If image bigger than 128K - add one more section
 	if (bf->size >= 0x20000) {
-		if (!(ptr = R_NEW0 (RBinSection))) {
-			return ret;
-		}
+		ptr = R_NEW0 (RBinSection);
 		ptr->name = strdup ("_e000"); // Maps to 0xE000:0000 segment
 		ptr->vsize = ptr->size = 0x10000;
 		ptr->paddr = r_buf_size (obj) - 2 * ptr->size;
@@ -108,14 +101,11 @@ static RList *sections(RBinFile *bf) {
 
 static RList *entries(RBinFile *bf) {
 	RList *ret;
-	RBinAddr *ptr = NULL;
 	if (!(ret = r_list_new ())) {
 		return NULL;
 	}
 	ret->free = free;
-	if (!(ptr = R_NEW0 (RBinAddr))) {
-		return ret;
-	}
+	RBinAddr *ptr = R_NEW0 (RBinAddr);
 	ptr->paddr = 0; // 0x70000;
 	ptr->vaddr = 0xffff0;
 	r_list_append (ret, ptr);
@@ -126,7 +116,7 @@ RBinPlugin r_bin_plugin_bios = {
 	.meta = {
 		.name = "bios",
 		.author = "pancake",
-		.desc = "BIOS bin plugin",
+		.desc = "Real mode Intel BIOS",
 		.license = "LGPL-3.0-only",
 	},
 	.load = &load,

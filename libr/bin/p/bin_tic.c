@@ -291,7 +291,7 @@ RBinPlugin r_bin_plugin_tic = {
 	.meta = {
 		.name = "tic",
 		.author = "pancake",
-		.desc = "TIC-80 cartridge parser",
+		.desc = "TIC-80 Cartridge",
 		.license = "MIT",
 	},
 	.weak_guess = true,

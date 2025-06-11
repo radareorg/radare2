@@ -83,7 +83,7 @@ static RBinInfo* info(RBinFile *bf) {
 RBinPlugin r_bin_plugin_fs = {
 	.meta = {
 		.name = "fs",
-		.desc = "filesystem bin plugin",
+		.desc = "Autodetect and mount RFS supported filesystems",
 		.author = "pancake",
 		.version = "1.0",
 		.license = "LGPL-3.0-only",

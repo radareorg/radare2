@@ -148,7 +148,7 @@ RBinXtrPlugin r_bin_xtr_plugin_xtr_fatmach0 = {
 	.meta = {
 		.name = "xtr.fatmach0",
 		.author = "nibble,pancake",
-		.desc = "fat mach0 bin extractor plugin",
+		.desc = "Fat Mach Object Extract",
 		.license = "LGPL-3.0-only",
 	},
 	.load = &load,

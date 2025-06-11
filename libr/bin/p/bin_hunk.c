@@ -25,10 +25,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret = NULL;
-	if (!(ret = R_NEW0 (RBinInfo))) {
-		return NULL;
-	}
+	RBinInfo *ret = R_NEW0 (RBinInfo);
 	ret->file = strdup (bf->file);
 	ret->type = strdup ("Hunk (Executable file)");
 	ret->machine = strdup ("Amiga");
@@ -41,14 +38,8 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 static RList* sections(RBinFile *bf) {
-	RList *ret = NULL;
-	RBinSection *ptr = NULL;
-	if (!(ret = r_list_new ())) {
-		return NULL;
-	}
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	RList *ret = r_list_new ();
+	RBinSection *ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("HUNK_HEADER");
 	ptr->paddr = 0;
 	ptr->size = r_buf_size (bf->buf);
@@ -89,7 +80,7 @@ RBinPlugin r_bin_plugin_hunk = {
 		.name = "hunk",
 		.version = "1.0",
 		.author = "pancake",
-		.desc = "AmigaOS Hunk executable binary",
+		.desc = "AmigaOS Hunk Executable",
 		.license = "MIT",
 	},
 	.load = &load,

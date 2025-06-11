@@ -1,6 +1,5 @@
 /* radare - LGPL - 2014-2023 - condret@runas-racer.com */
 
-#include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
@@ -86,7 +85,7 @@ RBinPlugin r_bin_plugin_ningba = {
 	.meta = {
 		.name = "ningba",
 		.author = "condret",
-		.desc = "Game Boy Advance format r_bin plugin",
+		.desc = "Game Boy Advance ROM",
 		.license = "LGPL-3.0-only",
 	},
 	.load = &load,

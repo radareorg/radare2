@@ -94,11 +94,9 @@ static RList *entries(RBinFile *bf) {
 		return NULL;
 	}
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
-	if (ptr) {
-		ptr->paddr = N64_ROM_START;
-		ptr->vaddr = baddr (bf);
-		r_list_append (ret, ptr);
-	}
+	ptr->paddr = N64_ROM_START;
+	ptr->vaddr = baddr (bf);
+	r_list_append (ret, ptr);
 	return ret;
 }
 
@@ -126,9 +124,6 @@ static RList *sections(RBinFile *bf) {
 static RBinInfo *info(RBinFile *bf) {
 	char GameName[21] = {0};
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) {
-		return NULL;
-	}
 	memcpy (GameName, n64_header.Name, sizeof (n64_header.Name));
 	ret->file = r_str_newf ("%s (%c)", GameName, n64_header.CountryCode);
 	ret->os = strdup ("n64");
@@ -147,7 +142,7 @@ RBinPlugin r_bin_plugin_z64 = {
 	.meta = {
 		.name = "z64",
 		.author = "pancake",
-		.desc = "Nintendo 64 binaries big endian r_bin plugin",
+		.desc = "Nintendo N64 rom",
 		.license = "LGPL-3.0-only",
 	},
 	.load = &load,

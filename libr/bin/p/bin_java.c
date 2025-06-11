@@ -147,7 +147,7 @@ RBinPlugin r_bin_plugin_java = {
 	.meta = {
 		.name = "java",
 		.author = "pancake",
-		.desc = "java bin plugin",
+		.desc = "Java Cafebabe Class",
 		.license = "LGPL-3.0-only",
 	},
 	.get_sdb = &get_sdb, // XXX we should remove this imho

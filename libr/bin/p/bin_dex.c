@@ -739,9 +739,6 @@ static bool check(RBinFile *bf, RBuffer *buf) {
 static RBinInfo *info(RBinFile *bf) {
 	RBinHash *h;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) {
-		return NULL;
-	}
 	RBinDexObj *dex = bf->bo->bin_obj;
 	ret->file = bf->file? strdup (bf->file): NULL;
 	ret->type = strdup ("DEX CLASS");
@@ -810,9 +807,7 @@ static RList *strings(RBinFile *bf) {
 		return NULL;
 	}
 	for (i = 0; i < bin->header.strings_size; i++) {
-		if (!(ptr = R_NEW0 (RBinString))) {
-			break;
-		}
+		ptr = R_NEW0 (RBinString);
 		if (bin->strings[i] > bin->size || bin->strings[i] + 6 > bin->size) {
 			goto out_error;
 		}
@@ -1057,9 +1052,6 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		tid = dex->types[field.type_id].descriptor_id;
 		const char *type_str = getstr (dex, tid);
 		RBinSymbol *sym = R_NEW0 (RBinSymbol);
-		if (!sym) {
-			break;
-		}
 		const char *cls_name = r_bin_name_tostring (cls->name);
 		const char *ftype = is_sfield ? "sfield": "ifield";
 		char *s = r_str_newf ("%s.%s_%s:%s", cls_name, ftype, fieldName, type_str);
@@ -1090,12 +1082,10 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		r_list_append (dex->methods_list, sym);
 
 		RBinField *field = R_NEW0 (RBinField);
-		if (R_LIKELY (field)) {
-			field->vaddr = field->paddr = sym->paddr;
-			field->name = r_bin_name_clone (sym->name);
-			field->attr = get_method_attr (accessFlags);
-			r_list_append (cls->fields, field);
-		}
+		field->vaddr = field->paddr = sym->paddr;
+		field->name = r_bin_name_clone (sym->name);
+		field->attr = get_method_attr (accessFlags);
+		r_list_append (cls->fields, field);
 		lastIndex = fieldIndex;
 	}
 }
@@ -1336,10 +1326,6 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		}
 		if (*flag_name) {
 			RBinSymbol *sym = R_NEW0 (RBinSymbol);
-			if (!sym) {
-				R_FREE (flag_name);
-				break;
-			}
 			sym->name = r_bin_name_new (flag_name);
 			R_FREE (flag_name);
 			// is_direct is no longer used
@@ -2179,7 +2165,7 @@ static ut64 baddr(RBinFile *bf) {
 RBinPlugin r_bin_plugin_dex = {
 	.meta = {
 		.name = "dex",
-		.desc = "dex format bin plugin",
+		.desc = "Dalvik Executable format",
 		.license = "LGPL-3.0-only",
 	},
 	.destroy = &destroy,

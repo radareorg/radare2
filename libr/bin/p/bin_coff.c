@@ -964,7 +964,7 @@ RBinPlugin r_bin_plugin_coff = {
 	.meta = {
 		.name = "coff",
 		.author = "Fedor Sakharov",
-		.desc = "COFF format r_bin plugin",
+		.desc = "Common Object File Format",
 		.license = "LGPL-3.0-only",
 	},
 	.weak_guess = true,

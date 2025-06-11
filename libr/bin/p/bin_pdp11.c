@@ -199,20 +199,18 @@ static RList* sections(RBinFile *bf) {
 
 static RBinInfo* info(RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (ret) {
-		ret->file = strdup (bf->file);
-		ret->bclass = strdup ("executable");
-		ret->rclass = strdup ("pure");
-		ret->os = strdup ("demos");
-		ret->arch = strdup ("pdp11");
-		ret->machine = strdup ("dvk");
-		ret->subsystem = strdup ("DVK");
-		ret->type = strdup ("EXEC");
-		ret->bits = 16;
-		ret->has_va = true;
-		ret->big_endian = false;
-		ret->dbg_info = false;
-	}
+	ret->file = strdup (bf->file);
+	ret->bclass = strdup ("executable");
+	ret->rclass = strdup ("pure");
+	ret->os = strdup ("demos");
+	ret->arch = strdup ("pdp11");
+	ret->machine = strdup ("dvk");
+	ret->subsystem = strdup ("DVK");
+	ret->type = strdup ("EXEC");
+	ret->bits = 16;
+	ret->has_va = true;
+	ret->big_endian = false;
+	ret->dbg_info = false;
 	return ret;
 }
 
@@ -224,7 +222,7 @@ static ut64 size(RBinFile *bf) {
 RBinPlugin r_bin_plugin_pdp11 = {
 	.meta = {
 		.name = "pdp11",
-		.desc = "PDP11",
+		.desc = "DEC's executables for Programmed Data Processors",
 		.author = "pancake",
 		.license = "MIT",
 	},
