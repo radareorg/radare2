@@ -990,9 +990,20 @@ RUN
 
 NAME=rabin2 -Lj any
 FILE=-
-CMDS=!rabin2 -Lj Dummy | grep -c Dummy
+CMDS=!rabin2 -Lj any | grep -c Dummy
 EXPECT=<<EOF
 1
+EOF
+RUN
+
+NAME=rabin2 -L elf
+FILE=-
+CMDS=!rabin2 -L elf
+EXPECT=<<EOF
+Name: elf
+Description: ELF format parser
+License: LGPL-3.0-only
+Author: nibble
 EOF
 RUN
 
