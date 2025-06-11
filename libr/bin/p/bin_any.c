@@ -38,7 +38,8 @@ static void fini(RBinFile *bf) {
 RBinPlugin r_bin_plugin_any = {
 	.meta = {
 		.name = "any",
-		.desc = "RMagic based loader",
+		.desc = "Dummy loader based on RMagic",
+		.author = "pancake",
 		.license = "LGPL-3.0-only",
 	},
 	.load = load,
