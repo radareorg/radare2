@@ -73,7 +73,7 @@ R_IPI void r_bin_mdt_obj_free(RBinMdtObj *obj) {
 static inline bool is_elf32(RBuffer *b) {
 	ut8 magic[4];
 	r_buf_read_at (b, 0, magic, 4);
-	return magic[0] == ELFMAG0 && magic[1] == ELFMAG1 && 
+	return magic[0] == ELFMAG0 && magic[1] == ELFMAG1 &&
 	       magic[2] == ELFMAG2 && magic[3] == ELFMAG3;
 }
 
@@ -97,6 +97,6 @@ R_IPI bool r_bin_mdt_check_filename(const char *filename) {
 		return false;
 	}
 	size_t len = strlen (filename);
-	return filename[len - 4] == '.' && filename[len - 3] == 'm' && 
+	return filename[len - 4] == '.' && filename[len - 3] == 'm' &&
 	       filename[len - 2] == 'd' && filename[len - 1] == 't';
 }
