@@ -77,7 +77,7 @@ WIN_TYPES+= ws2spi
 include $(TOP)/config-user.mk
 HOST_CC?=gcc
 USE_SDBTOOL=1
-SDBTOOL=$(LTOP)/../shlr/sdbtool
+SDBTOOL=$(LTOP)/util/b/sdbtool
 
 F_SDB=$(addsuffix .sdb,$F)
 
