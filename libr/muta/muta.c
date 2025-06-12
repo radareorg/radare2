@@ -105,19 +105,17 @@ static const char *mutatype_tostring(int type) {
 	}
 }
 
-static inline void print_plugin_verbose(RMutaPlugin *cp, PrintfCallback cb_printf) {
+static inline void print_plugin_verbose(RStrBuf *sb, RMutaPlugin *cp) {
 	const char *typestr = mutatype_tostring (cp->type);
 	const char *desc = r_str_get (cp->meta.desc);
 	char type4[5];
 	r_str_ncpy (type4, typestr, sizeof (type4));
-	cb_printf ("%s %12s  %s\n", type4, cp->meta.name, desc);
+	r_strbuf_appendf (sb, "%s %12s  %s\n", type4, cp->meta.name, desc);
 }
 
-R_API void r_muta_list(RMuta *cry, PrintfCallback R_NULLABLE cb_printf, int mode, RMutaType type) {
-	R_RETURN_IF_FAIL (cry);
-	if (!cb_printf) {
-		cb_printf = (PrintfCallback)printf;
-	}
+R_API char *r_muta_list(RMuta *cry, RMutaType type, int mode) {
+	R_RETURN_VAL_IF_FAIL (cry, NULL);
+	RStrBuf *sb = r_strbuf_new ("");
 	PJ *pj = NULL;
 
 	if (tolower (mode) == 'j') {
@@ -132,7 +130,7 @@ R_API void r_muta_list(RMuta *cry, PrintfCallback R_NULLABLE cb_printf, int mode
 		}
 		switch (mode) {
 		case 'q':
-			cb_printf ("%s\n", cp->meta.name);
+			r_strbuf_appendf (sb, "%s\n", cp->meta.name);
 			break;
 		case 'J':
 			pj_s (pj, cp->meta.name);
@@ -146,7 +144,7 @@ R_API void r_muta_list(RMuta *cry, PrintfCallback R_NULLABLE cb_printf, int mode
 			pj_end (pj);
 			break;
 		default:
-			print_plugin_verbose (cp, cb_printf);
+			print_plugin_verbose (sb, cp);
 			break;
 		}
 	}
@@ -170,25 +168,21 @@ R_API void r_muta_list(RMuta *cry, PrintfCallback R_NULLABLE cb_printf, int mode
 				pj_end (pj);
 				break;
 			case 'q':
-				cb_printf ("%s\n", name);
+				r_strbuf_appendf (sb, "%s\n", name);
 				break;
 			default:
-				cb_printf ("hash %12s\n", name);
+				r_strbuf_appendf (sb, "hash %12s\n", name);
 				break;
 			}
 		}
 	}
-	if (mode == 'J') {
+	if (mode == 'j' || mode == 'J') {
 		pj_end (pj);
 		char *s = pj_drain (pj);
-		cb_printf ("%s\n", s);
-		free (s);
-	} else if (mode == 'j') {
-		pj_end (pj);
-		char *s = pj_drain (pj);
-		cb_printf ("%s\n", s);
+		r_strbuf_appendf (sb, "%s\n", s);
 		free (s);
 	}
+	return r_strbuf_drain (sb);
 }
 
 #include <r_muta/r_ed25519.h>

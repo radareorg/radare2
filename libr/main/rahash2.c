@@ -352,7 +352,9 @@ static int do_help(int line) {
 
 static void algolist(int mode) {
 	RMuta *cry = r_muta_new ();
-	r_muta_list (cry, NULL, mode, (int)R_MUTA_TYPE_ALL);
+	char *s = r_muta_list (cry, (int)R_MUTA_TYPE_ALL, mode);
+	printf ("%s", s);
+	free (s);
 	r_muta_free (cry);
 }
 

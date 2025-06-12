@@ -3459,7 +3459,9 @@ static void cmd_print_op(RCore *core, const char *input) {
 			algo = r_list_get_n (args, 1);
 		}
 		if (!args || !algo) {
-			r_muta_list (core->muta, r_cons_printf, 0, R_MUTA_TYPE_SIGN);
+			char *s = r_muta_list (core->muta, R_MUTA_TYPE_SIGN, 0);
+			r_kons_print (core->cons, s);
+			free (s);
 			r_core_cmd_help_match (core, help_msg_po, "poS");
 			break;
 		}
@@ -3498,7 +3500,9 @@ static void cmd_print_op(RCore *core, const char *input) {
 			algo = r_list_get_n (args, 1);
 		}
 		if (!args || !algo) {
-			r_muta_list (core->muta, r_cons_printf, 0, R_MUTA_TYPE_CRYPTO);
+			char *s = r_muta_list (core->muta, R_MUTA_TYPE_CRYPTO, 0);
+			r_kons_print (core->cons, s);
+			free (s);
 			r_core_cmd_help_match_spec (core, help_msg_po, "po", input[1]);
 			break;
 		}
@@ -4005,19 +4009,25 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 	}
 	if (!i0 || i0 == 'l' || i0 == 'L') {
 		RMuta *cry = r_muta_new ();
-		r_muta_list (cry, NULL, 'q', R_MUTA_TYPE_HASH);
+		char *s = r_muta_list (cry, R_MUTA_TYPE_HASH, 'q');
+		r_kons_print (core->cons, s);
+		free (s);
 		r_muta_free (cry);
 		return true;
 	}
 	if (i0 == 'j') { // "phj"
 		RMuta *cry = r_muta_new ();
-		r_muta_list (cry, r_cons_printf, 'j', R_MUTA_TYPE_ALL);
+		char *s = r_muta_list (cry, R_MUTA_TYPE_ALL, 'j');
+		r_kons_print (core->cons, s);
+		free (s);
 		r_muta_free (cry);
 		return true;
 	}
 	if (i0 == 'J') { // "phJ"
 		RMuta *cry = r_muta_new ();
-		r_muta_list (cry, r_cons_printf, 'J', R_MUTA_TYPE_HASH);
+		char *s = r_muta_list (cry, R_MUTA_TYPE_HASH, 'J');
+		r_kons_print (core->cons, s);
+		free (s);
 		r_muta_free (cry);
 		return true;
 	}
