@@ -68,8 +68,7 @@ static char *escape(const char *b, int ch) {
 	while (*b) {
 		if (*b == ch) {
 			*c = '_';
-		} else
-		switch (*b) {
+		} else switch (*b) {
 		case '"':
 			*c++ = '\\';
 			*c++ = '"';
