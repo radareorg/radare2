@@ -63,7 +63,7 @@ EXTRA_PRE+=charsets
 EXTRA_CLEAN=doclean
 
 myall: all
-	$(MAKE) sdbtool
+	$(MAKE) b/sdbtool
 
 include ../rules.mk
 include deps.mk
@@ -75,9 +75,8 @@ f fast:
 	$(CC_LIB) $(LIBNAME) $(CFLAGS) sasa.c $(SHARED_OBJ) $(LINK) $(LDFLAGS)
 	rm -f sasa.c
 
-sdbtool:
+b/sdbtool:
 	$(CC) -I../include -I../../subprojects/sdb/include -o b/sdbtool$(EXT_EXE) b/sdbtool.c $(OBJS) $(LDFLAGS) $(LINK)
-#	$(MAKE) -C b sdbtool
 
 charsets:
 	$(MAKE) -C d
