@@ -37,7 +37,7 @@ R_API void r_assert_log(RLogLevel level, const char *origin, const char *fmt, ..
 	} while (0)
 
 /*
- * R_CHECKS_LEVEL determines the behaviour of the r_return_* set of functions.
+ * R_CHECKS_LEVEL determines the behaviour of the R_RETURN_* set of functions.
  *
  * 0: completely disable every function and make them like no-operation
  * 1: silently enable checks. Check expressions and do return, but do not log anything
@@ -50,10 +50,10 @@ R_API void r_assert_log(RLogLevel level, const char *origin, const char *fmt, ..
 
 #if R_CHECKS_LEVEL == 0
 
-#define r_return_if_fail(expr) do { ; } while(0)
-#define r_return_val_if_fail(expr, val) do { ; } while(0)
-#define r_return_if_reached() do { ; } while(0)
-#define r_return_val_if_reached(val) do { ; } while(0)
+#define R_RETURN_IF_FAIL(expr) do { ; } while(0)
+#define R_RETURN_VAL_IF_FAIL(expr, val) do { ; } while(0)
+#define R_RETURN_IF_REACHED() do { ; } while(0)
+#define R_RETURN_VAL_IF_REACHED(val) do { ; } while(0)
 
 #elif R_CHECKS_LEVEL == 1 || R_CHECKS_LEVEL == 2 // R_CHECKS_LEVEL
 
@@ -64,12 +64,12 @@ R_API void r_assert_log(RLogLevel level, const char *origin, const char *fmt, ..
 #endif
 
 /**
- * r_return_if_fail:
+ * R_RETURN_IF_FAIL:
  * @expr: the expression to check
  *
  * Verifies that the expression @expr, usually representing a precondition,
  * evaluates to `true`. If the function returns a value, use
- * r_return_val_if_fail() instead.
+ * R_RETURN_VAL_IF_FAIL() instead.
  *
  * If @expr evaluates to %FALSE, the current function should be considered to
  * have undefined behaviour (a programmer error). The only correct solution
@@ -81,7 +81,7 @@ R_API void r_assert_log(RLogLevel level, const char *origin, const char *fmt, ..
  * function returns.
  *
  */
-#define r_return_if_fail(expr) \
+#define R_RETURN_IF_FAIL(expr) \
 	do { \
 		if (!(expr)) { \
 			H_LOG_ (R_LOG_LEVEL_WARN, "%s: assertion '%s' failed (line %d)", R_FUNCTION, #expr, __LINE__); \
@@ -89,7 +89,7 @@ R_API void r_assert_log(RLogLevel level, const char *origin, const char *fmt, ..
 		} \
 	} while (0)
 
-#define r_return_val_if_fail(expr, val) \
+#define R_RETURN_VAL_IF_FAIL(expr, val) \
 	do { \
 		if (!(expr)) { \
 			H_LOG_ (R_LOG_LEVEL_WARN, "%s: assertion '%s' failed (line %d)", R_FUNCTION, #expr, __LINE__); \
@@ -97,13 +97,13 @@ R_API void r_assert_log(RLogLevel level, const char *origin, const char *fmt, ..
 		} \
 	} while (0)
 
-#define r_return_if_reached() \
+#define R_RETURN_IF_REACHED() \
 	do { \
 		H_LOG_ (R_LOG_LEVEL_ERROR, "file %s: line %d (%s): should not be reached", __FILE__, __LINE__, R_FUNCTION); \
 		return; \
 	} while (0)
 
-#define r_return_val_if_reached(val) \
+#define R_RETURN_VAL_IF_REACHED(val) \
 	do { \
 		H_LOG_ (R_LOG_LEVEL_ERROR, "file %s: line %d (%s): should not be reached", __FILE__, __LINE__, R_FUNCTION); \
 		return (val); \
@@ -113,20 +113,15 @@ R_API void r_assert_log(RLogLevel level, const char *origin, const char *fmt, ..
 
 #include <assert.h>
 
-#define r_return_if_fail(expr) do { assert (expr); } while(0)
-#define r_return_val_if_fail(expr, val) do { assert (expr); } while(0)
-#define r_return_if_reached() do { assert (false); } while(0)
-#define r_return_val_if_reached(val) do { assert (false); } while(0)
+#define R_RETURN_IF_FAIL(expr) do { assert (expr); } while(0)
+#define R_RETURN_VAL_IF_FAIL(expr, val) do { assert (expr); } while(0)
+#define R_RETURN_IF_REACHED() do { assert (false); } while(0)
+#define R_RETURN_VAL_IF_REACHED(val) do { assert (false); } while(0)
 
 #endif // R_CHECKS_LEVEL
 
 #ifdef __cplusplus
 }
 #endif
-
-#define R_RETURN_IF_FAIL(x) r_return_if_fail (x)
-#define R_RETURN_VAL_IF_FAIL(x,y) r_return_val_if_fail (x,y)
-#define R_RETURN_IF_REACHED() r_return_if_reached ()
-#define R_RETURN_VAL_IF_REACHED(x) r_return_val_if_reached (x)
 
 #endif

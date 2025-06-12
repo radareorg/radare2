@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2018-2022 - ret2libc */
+/* radare2 - LGPL - Copyright 2018-2025 - ret2libc */
 
 #include <r_util.h>
 
@@ -19,8 +19,8 @@ static void print_message(RLogLevel level, const char *origin, const char *fmt, 
 }
 #endif
 /*
- * It prints a message to the log and it provides a single point of entrance in
- * case of debugging. All r_return_* functions call this.
+ * Prints a message to the log and it provides a single point in
+ * case of debugging. All R_RETURN_* macros call this function.
  */
 R_API void r_assert_log(RLogLevel level, const char *origin, const char *fmt, ...) {
 	va_list args;
