@@ -86,10 +86,6 @@ preall: libwinkd capstone-build bochs sdbs
 		$(MAKE) -C $$MOD HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
 	done
 
-.PHONY: sdbtool
-sdbtool:
-	$(CC) -I ../libr/include -I ../subprojects/sdb/include -L ../libr/util -lr_util -o sdbtool sdbtool.c
-
 ifeq ($(BUILD_OS),windows)
 BUILD_EXT_EXE=.exe
 else
