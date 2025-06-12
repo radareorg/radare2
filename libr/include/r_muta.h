@@ -123,7 +123,7 @@ R_API void r_muta_init(RMuta *cry);
 R_API bool r_muta_add(RMuta *cry, RMutaPlugin *h);
 R_API RMuta *r_muta_new(void);
 R_API void r_muta_free(RMuta *cry);
-R_API void r_muta_list(RMuta *cry, PrintfCallback cb_printf, int mode, RMutaType type);
+R_API char *r_muta_list(RMuta *cry, RMutaType type, int mode);
 
 // R_API RMutaHash *r_muta_hash(RMuta *cry, bool rst, const char *name);
 

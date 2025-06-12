@@ -433,7 +433,9 @@ static int cmd_wo(void *data, const char *input) {
 			if (R_STR_ISNOTEMPTY (algo) && key) {
 				write_encrypted_block (core, algo, key, direction, iv);
 			} else {
-				r_muta_list (core->muta, r_cons_printf, 0, R_MUTA_TYPE_CRYPTO);
+				char *s = r_muta_list (core->muta, R_MUTA_TYPE_CRYPTO, 0);
+				r_kons_print (core->cons, s);
+				free (s);
 				r_core_cmd_help_match_spec (core, help_msg_wo, "wo", input[0]);
 			}
 			free (args);
@@ -454,7 +456,9 @@ static int cmd_wo(void *data, const char *input) {
 			if (R_STR_ISNOTEMPTY (algo) && key) {
 				write_block_signature (core, algo, key);
 			} else {
-				r_muta_list (core->muta, r_cons_printf, 0, R_MUTA_TYPE_SIGN);
+				char *s = r_muta_list (core->muta, R_MUTA_TYPE_SIGN, 0);
+				r_kons_print (core->cons, s);
+				free (s);
 				r_core_cmd_help_match_spec (core, help_msg_wo, "wo", input[0]);
 			}
 			free (args);
