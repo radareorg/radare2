@@ -63,6 +63,7 @@ EXTRA_PRE+=charsets
 EXTRA_CLEAN=doclean
 
 myall: all
+	$(MAKE) -C ../../shlr/ sdbtool
 
 include ../rules.mk
 include deps.mk

@@ -80,7 +80,7 @@ all:
 	exit 1
 endif
 
-preall: libwinkd capstone-build bochs sdbs sdbtool
+preall: libwinkd capstone-build bochs sdbs
 	@for MOD in ${MODS} ; do \
 		echo $(MAKE) -C $$MOD ; \
 		$(MAKE) -C $$MOD HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
