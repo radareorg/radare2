@@ -1205,7 +1205,7 @@ static int disassemble(RArchSession *as, RAnalOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
-static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const ut64 addr = op->addr;
 	const ut8 *b = op->bytes;
 	const int len = op->size;

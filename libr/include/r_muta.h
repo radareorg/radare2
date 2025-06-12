@@ -15,14 +15,14 @@ extern "C" {
 
 R_LIB_VERSION_HEADER(r_muta);
 
-enum {
+enum { // this is aes-specific and should be part of options
 	R_CRYPTO_MODE_ECB,
 	R_CRYPTO_MODE_CBC,
 	R_CRYPTO_MODE_OFB,
 	R_CRYPTO_MODE_CFB,
 };
 
-// TODO: use encode/decode wordings?
+// TODO: use encode/decode wordings? or just a bool?
 enum {
 	R_CRYPTO_DIR_NONE = -1,
 	R_CRYPTO_DIR_HASH = 0,
@@ -32,15 +32,6 @@ enum {
 
 typedef struct r_muta_t {
 	struct r_muta_plugin_t* h;
-#if 0
-	ut8 *key;
-	ut8 *iv;
-	int key_len;
-	ut8 *output;
-	int output_len;
-	int output_size;
-	int dir;
-#endif
 	bool bigendian;
 	void *user;
 	RList *plugins;
@@ -65,16 +56,6 @@ typedef struct r_muta_session_t {
 	double entropy;
 } RMutaSession; // rename to CryptoState
 
-#if 0
-typedef enum {
-	R_CRYPTO_TYPE_ENCODER = 'e',
-	R_MUTA_TYPE_HASH = 'h',
-	R_MUTA_TYPE_CRYPTO = 'c', // CIPHER
-	R_MUTA_TYPE_SIGN = 's',
-	R_MUTA_TYPE_ALL = 'a'
-} RMutaType;
-#else
-
 typedef enum {
 	R_MUTA_TYPE_HASH,
 	R_MUTA_TYPE_BASE,
@@ -83,8 +64,6 @@ typedef enum {
 	R_MUTA_TYPE_CHARSET,
 	R_MUTA_TYPE_ALL = -1,
 } RMutaType;
-
-#endif
 
 typedef bool (*RMutaSessionSetIVCallback)(RMutaSession *ci, const ut8 *iv, int ivlen);
 typedef bool (*RMutaSessionUpdateCallback)(RMutaSession *ci, const ut8 *buf, int len);
@@ -112,6 +91,7 @@ typedef struct {
 	ut8 *iv;
 	ut8 *key;
 	size_t key_len;
+	int direction;
 	// iv
 	// ..
 } RMutaOptions;
@@ -148,6 +128,27 @@ R_API ut8 *r_muta_session_get_output(RMutaSession *cry, int *size);
 
 #endif
 
+// TODO: deprecate
+#define R_CRYPTO_NONE 0ULL
+#define R_CRYPTO_RC2 1ULL
+#define R_CRYPTO_RC4 1ULL<<1
+#define R_CRYPTO_RC6 1ULL<<2
+#define R_CRYPTO_AES_ECB 1ULL<<3
+#define R_CRYPTO_AES_CBC 1ULL<<4
+#define R_CRYPTO_AES_WRAP 1ULL<<5
+#define R_CRYPTO_ROR 1ULL<<6
+#define R_CRYPTO_ROL 1ULL<<7
+#define R_CRYPTO_ROT 1ULL<<8
+#define R_CRYPTO_BLOWFISH 1ULL<<9
+#define R_CRYPTO_CPS2 1ULL<<10
+#define R_CRYPTO_DES_ECB 1ULL<<11
+#define R_CRYPTO_XOR 1ULL<<12
+#define R_CRYPTO_SERPENT 1ULL<<13
+#define R_CRYPTO_SM4_ECB 1ULL << 14
+#define R_CRYPTO_BECH32 1ULL << 15
+#define R_CRYPTO_ALL 0xFFFF
+
+
 /* plugin pointers */
 extern RMutaPlugin r_muta_plugin_null;
 extern RMutaPlugin r_muta_plugin_aes;
@@ -173,32 +174,7 @@ extern RMutaPlugin r_muta_plugin_sip;
 extern RMutaPlugin r_muta_plugin_sm4;
 extern RMutaPlugin r_muta_plugin_strhash;
 extern RMutaPlugin r_muta_plugin_xor;
-
-#define R_CRYPTO_NONE 0ULL
-#define R_CRYPTO_RC2 1ULL
-#define R_CRYPTO_RC4 1ULL<<1
-#define R_CRYPTO_RC6 1ULL<<2
-#define R_CRYPTO_AES_ECB 1ULL<<3
-#define R_CRYPTO_AES_CBC 1ULL<<4
-#define R_CRYPTO_AES_WRAP 1ULL<<5
-#define R_CRYPTO_ROR 1ULL<<6
-#define R_CRYPTO_ROL 1ULL<<7
-#define R_CRYPTO_ROT 1ULL<<8
-#define R_CRYPTO_BLOWFISH 1ULL<<9
-#define R_CRYPTO_CPS2 1ULL<<10
-#define R_CRYPTO_DES_ECB 1ULL<<11
-#define R_CRYPTO_XOR 1ULL<<12
-#define R_CRYPTO_SERPENT 1ULL<<13
-#define R_CRYPTO_SM4_ECB  1ULL << 14
-#define R_CRYPTO_BECH32   1ULL << 15
-#define R_CRYPTO_ALL 0xFFFF
-
-// TODO: better name
-#define R_CODEC_NONE 0ULL
-#define R_CODEC_B64 1ULL
-#define R_CODEC_B91 1ULL<<1
-#define R_CODEC_PUNYCODE 1ULL<<2
-#define R_CODEC_ALL 0xFFFF
+extern RMutaPlugin r_muta_plugin_charset_pokemon;
 
 #ifdef __cplusplus
 }

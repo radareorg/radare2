@@ -1197,7 +1197,7 @@ static void insn_memory_error_func(int status, bfd_vma memaddr, struct disassemb
 	//TODO
 }
 
-static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const ut64 addr = op->addr;
 	const ut8 *b = op->bytes;
 	const int len = op->size;
