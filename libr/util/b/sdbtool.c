@@ -141,8 +141,9 @@ static bool dothec(const char *file_txt, const char *file_gperf, const char *fil
 		return false;
 	}
 
+	bool textmode = !compile_gperf;
 	// Generate header using the sdb API
-	sdb_cgen_header (cname, false);
+	sdb_cgen_header (cname, textmode);
 
 	// Read key-value pairs from the SDB file
 	Sdb *db = sdb_new (NULL, NULL, 0);
@@ -171,7 +172,7 @@ static bool dothec(const char *file_txt, const char *file_gperf, const char *fil
 	SdbList *l = sdb_foreach_list (db, true);
 	SdbKv *kv;
 	SdbListIter *it;
-	printf ("static const struct kv kvs[] = {\n");
+	// printf ("static const struct kv kvs[] = {\n");
 	ls_foreach_cast (l, it, SdbKv*, kv) {
 		const char *k = sdbkv_key (kv);
 		const char *v = sdbkv_value (kv);
@@ -186,11 +187,11 @@ static bool dothec(const char *file_txt, const char *file_gperf, const char *fil
 			free (ev);
 		}
 	}
-	printf ("\t{NULL, NULL}\n};\n");
+	// printf ("\t{NULL, NULL}\n};\n");
 	ls_free (l);
 
 	// Generate footer using the sdb API
-	sdb_cgen_footer (name, cname, false);
+	sdb_cgen_footer (name, cname, textmode);
 
 	// Restore stdout
 	fflush (stdout);
@@ -239,7 +240,7 @@ static bool dothething(const char *basedir, const char *file_txt) {
 	char *file_sdb = r_str_ndup (file_txt, strlen (file_txt) - 4);
 	char *file_c = strdup (file_sdb);
 	strcpy (file_c + strlen (file_c) - 3, "c");
-	char *file_gperf = r_str_newf ("%s.gperf", file_c);
+	char *file_gperf = strdup (file_c); // r_str_newf ("%s.gperf", file_c);
 
 	const char *file_ref = compile_gperf? file_c: file_gperf;
 	if (!r_file_exists (file_ref) || r_file_is_newer (file_txt, file_ref)) {
