@@ -169,6 +169,7 @@ cryp       base64  Binary to text encoding scheme using 64 ascii characters
 base       base91  Binary to text encoding scheme using 91 ascii characters
 base       bech32  
 cryp     blowfish  Bruce Schneier's symetric-key block cipher
+char      pokemon  Transcode from/to Pokémon charset used in Gen 1 games
 cryp         cps2  Capcom Play System 2
 cryp      des-ecb  DES with with Electronic Code Book mode
 sign      ed25519  Elliptic curve pubkey cryptographic algorithm used for signing and verification
