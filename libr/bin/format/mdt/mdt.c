@@ -11,9 +11,6 @@ static inline bool is_layout_bin(size_t p_flags) {
 
 R_IPI RBinMdtPart *r_bin_mdt_part_new(const char *name, size_t p_flags) {
 	RBinMdtPart *part = R_NEW0 (RBinMdtPart);
-	if (!part) {
-		return NULL;
-	}
 	part->name = strdup (name);
 	part->relocatable = p_flags & QCOM_MDT_RELOCATABLE;
 	part->is_layout = is_layout_bin (p_flags);
@@ -53,9 +50,6 @@ R_IPI void r_bin_mdt_part_free(RBinMdtPart *part) {
 
 R_IPI RBinMdtObj *r_bin_mdt_obj_new(void) {
 	RBinMdtObj *obj = R_NEW0 (RBinMdtObj);
-	if (!obj) {
-		return NULL;
-	}
 	obj->parts = r_list_newf ((RListFree)r_bin_mdt_part_free);
 	return obj;
 }
@@ -78,7 +72,7 @@ static inline bool is_elf32(RBuffer *b) {
 }
 
 R_IPI bool r_bin_mdt_check_buffer(RBuffer *b) {
-	r_return_val_if_fail (b, false);
+	R_RETURN_VAL_IF_FAIL (b, false);
 	if (!is_elf32 (b) || r_buf_size (b) <= 0x34) {
 		return false;
 	}
@@ -92,11 +86,6 @@ R_IPI bool r_bin_mdt_check_buffer(RBuffer *b) {
 }
 
 R_IPI bool r_bin_mdt_check_filename(const char *filename) {
-	r_return_val_if_fail (filename, false);
-	if (!filename || strlen (filename) < strlen (".mdt")) {
-		return false;
-	}
-	size_t len = strlen (filename);
-	return filename[len - 4] == '.' && filename[len - 3] == 'm' &&
-	       filename[len - 2] == 'd' && filename[len - 1] == 't';
+	R_RETURN_VAL_IF_FAIL (filename, false);
+	return r_str_endswith (filename, ".mdt");
 }
