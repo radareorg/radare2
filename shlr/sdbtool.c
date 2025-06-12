@@ -1,5 +1,12 @@
 #include <r_util.h>
 
+#if HAVE_GPERF
+// #define COMPILE_GPERF 1
+#define COMPILE_GPERF 0
+#else
+#define COMPILE_GPERF 0
+#endif
+
 static char *get_name(const char *name) {
 	if (!name || !*name) {
 		return NULL;
@@ -228,7 +235,7 @@ static bool dothesdb(const char *file_txt, const char *file_sdb) {
 }
 
 static bool dothething(const char *basedir, const char *file_txt) {
-	bool compile_gperf = false;
+	bool compile_gperf = COMPILE_GPERF;
 	char *file_sdb = r_str_ndup (file_txt, strlen (file_txt) - 4);
 	char *file_c = strdup (file_sdb);
 	strcpy (file_c + strlen (file_c) - 3, "c");
