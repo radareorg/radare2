@@ -22,7 +22,7 @@ FORMATS+=bios.mk mach064.mk dyldcache.mk xnu_kernelcache.mk java.mk
 FORMATS+=dex.mk fs.mk ningb.mk coff.mk xcoff64.mk ningba.mk xbe.mk zimg.mk
 FORMATS+=omf.mk cgc.mk dol.mk rel.mk nes.mk mbn.mk psxexe.mk
 FORMATS+=vsf.mk nin3ds.mk bflt.mk wasm.mk sfc.mk uf2.mk
-FORMATS+=mdmp.mk z64.mk qnx.mk prg.mk dmp64.mk xtac.mk pef.mk
+FORMATS+=mdmp.mk z64.mk qnx.mk prg.mk dmp64.mk xtac.mk pef.mk mdt.mk
 
 FORMATS+=xtr_dyldcache.mk
 FORMATS+=xtr_fatmach0.mk
