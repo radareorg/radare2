@@ -62,16 +62,16 @@ static ut8 *pokemon_decode(const ut8 *in, int in_len, int *out_len) {
 
 	while (ptr < end) {
 		ut8 b = *ptr++;
-		const char *decoded = decode_byte(b);
+		const char *decoded = decode_byte (b);
 		const char *text;
 		int len;
 
 		if (decoded) {
 			text = decoded;
-			len = strlen(decoded);
+			len = strlen (decoded);
 		} else {
 			static char tmp[6];
-			snprintf(tmp, sizeof(tmp), "\\x%02x", b);
+			snprintf (tmp, sizeof (tmp), "\\x%02x", b);
 			text = tmp;
 			len = strlen(tmp);
 		}
@@ -82,14 +82,14 @@ static ut8 *pokemon_decode(const ut8 *in, int in_len, int *out_len) {
 			}
 			ut8 *tmpbuf = realloc(out, outcap);
 			if (!tmpbuf) {
-				free(out);
+				free (out);
 				*out_len = 0;
 				return NULL;
 			}
 			out = tmpbuf;
 		}
 
-		memcpy(out + outpos, text, len);
+		memcpy (out + outpos, text, len);
 		outpos += len;
 	}
 
