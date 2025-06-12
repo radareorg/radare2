@@ -100,7 +100,7 @@ static ut8 *pokemon_decode(const ut8 *in, int in_len, int *out_len) {
 static ut8 *pokemon_encode(const ut8 *in, int in_len, int *out_len) {
 	const ut8 *end = in + in_len;
 	const char *str = (const char *)in;
-	ut8 *out = malloc(in_len); // pessimistic allocation
+	ut8 *out = malloc (in_len); // pessimistic allocation
 	if (!out) {
 		*out_len = 0;
 		return NULL;
@@ -113,13 +113,13 @@ static ut8 *pokemon_encode(const ut8 *in, int in_len, int *out_len) {
 
 		if (*str == '<') {
 			const char *tend = strchr(str, '>');
-			if (tend && (tend - str) < sizeof(tok)) {
+			if (tend && (tend - str) < sizeof (tok)) {
 				len = tend - str + 1;
-				memcpy(tok, str, len);
+				memcpy (tok, str, len);
 			}
 		} else if (str[1] && str[0] == '\'' && (str[1] == 'r' || str[1] == 'd' || str[1] == 'l' || str[1] == 's')) {
 			len = 2;
-			memcpy(tok, str, 2);
+			memcpy (tok, str, 2);
 		} else {
 			tok[0] = *str;
 		}
