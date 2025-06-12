@@ -88,7 +88,7 @@ preall: libwinkd capstone-build bochs sdbs
 
 .PHONY: sdbtool
 sdbtool:
-	$(CC) -I ../libr/include -L ../libr/util -lr_util -o sdbtool sdbtool.c
+	$(CC) -I ../libr/include -I ../subprojects/sdb/include -L ../libr/util -lr_util -o sdbtool sdbtool.c
 
 ifeq ($(BUILD_OS),windows)
 BUILD_EXT_EXE=.exe
