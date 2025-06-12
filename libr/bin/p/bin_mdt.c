@@ -373,24 +373,22 @@ static RList *symbols(RBinFile *bf) {
 	RListIter *iter;
 	RBinMdtPart *part;
 	r_list_foreach (mdt->parts, iter, part) {
-		if (part->symbols) {
-			RListIter *it;
-			RBinSymbol *sym;
-			r_list_foreach (part->symbols, it, sym) {
-				// Clone symbol
-				RBinSymbol *clone = R_NEW0 (RBinSymbol);
-				if (!clone) {
-					continue;
-				}
-				clone->name = r_bin_name_clone (sym->name);
-				clone->vaddr = sym->vaddr;
-				clone->paddr = sym->paddr;
-				clone->size = sym->size;
-				clone->ordinal = sym->ordinal;
-				clone->bind = sym->bind;
-				clone->type = sym->type;
-				r_list_append (symbols, clone);
-			}
+		if (!part->symbols) {
+			continue;
+		}
+		RListIter *it;
+		RBinSymbol *sym;
+		r_list_foreach (part->symbols, it, sym) {
+			// Clone symbol
+			RBinSymbol *clone = R_NEW0 (RBinSymbol);
+			clone->name = r_bin_name_clone (sym->name);
+			clone->vaddr = sym->vaddr;
+			clone->paddr = sym->paddr;
+			clone->size = sym->size;
+			clone->ordinal = sym->ordinal;
+			clone->bind = sym->bind;
+			clone->type = sym->type;
+			r_list_append (symbols, clone);
 		}
 	}
 
@@ -507,7 +505,7 @@ RBinPlugin r_bin_plugin_mdt = {
 	.meta = {
 		.name = "mdt",
 		.desc = "Qualcomm MDT firmware format",
-		.license = "LGPL3",
+		.license = "LGPL-3.-only",
 		.author = "Rot127",
 	},
 	.load = &load,
