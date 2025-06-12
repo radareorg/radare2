@@ -218,7 +218,7 @@ static bool cnt_str(RArchSession *s, RAnalOp *op, const char *name, int sz) {
 	return false;
 }
 
-static bool pickle_decode(RArchSession *s, RAnalOp *op, RAnalOpMask mask) {
+static bool pickle_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	R_RETURN_VAL_IF_FAIL (s && op, false);
 	if (op->size < 1 || !op->bytes) {
 		return false;

@@ -4,7 +4,7 @@
 #include "./lh5801.c"
 #include <r_arch.h>
 
-static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	struct lh5801_insn insn = {0};
 	const int len = op->size;
 	const ut8 *buf = op->bytes;
