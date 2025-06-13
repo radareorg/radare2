@@ -1,5 +1,5 @@
 [wrap-git]
 url = https://github.com/radareorg/sdb.git
-revision = 64b1c0ad025d91142ef46f343f886cc3f1616d36
+revision = 939d1d1de0c781d130f12418a563c256fffee8e6
 directory = sdb
 depth = 1
