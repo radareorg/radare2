@@ -1,0 +1,391 @@
+NAME=iH
+FILE=bins/mdt/bin-mdt/load-test.mdt
+BROKEN=1
+CMDS=<<EOF
+iH
+EOF
+EXPECT=<<EOF
+==== MDT Segment 0 ====
+     priv_p_flags: 0b00000111: layout | ELF
+ -- ELF HEADER BEGIN -- 
+0x00000000  MAGIC       7f 45 4c 46 01 01 01 00 00 00 00 00 00 00 00 00
+0x00000010  Type        0x0002
+0x00000012  Machine     0x00a4
+0x00000014  Version     0x00000001
+0x00000018  Entrypoint  0x87400000
+0x0000001c  PhOff       0x00000034
+0x00000020  ShOff       0x00000000
+0x00000024  Flags       0x0066
+0x00000028  EhSize      52
+0x0000002a  PhentSize   32
+0x0000002c  PhNum       5
+0x0000002e  ShentSize   40
+0x00000030  ShNum       0
+0x00000032  ShStrndx    0
+ --- ELF HEADER END --- 
+
+==== MDT Segment 1 ====
+     priv_p_flags: 0b00000010: | MBN signature segment
+ -- MBN AUTH HEADER BEGIN -- 
+0x00 image_id:   kMbnImageNone (0x0)
+0x04 version:    0x0
+0x08 paddr:      0x0
+0x0c vaddr:      0x0
+0x10 psize:      0x0
+0x14 code_pa:    0x0
+0x18 sign_va:    0x0
+0x1c sign_sz:    0x0
+0x20 cert_va:    0x0
+0x24 cert_sz:    0x0
+ --- MBN AUTH HEADER END --- 
+
+==== MDT Segment 2 ====
+     priv_p_flags: 0b00001000: reloc | Unidentified
+==== MDT Segment 3 ====
+     priv_p_flags: 0b00001000: reloc | ELF
+ -- ELF HEADER BEGIN -- 
+0x00000000  MAGIC       7f 45 4c 46 01 01 01 00 00 00 00 00 00 00 00 00
+0x00000010  Type        0x0002
+0x00000012  Machine     0x00a4
+0x00000014  Version     0x00000001
+0x00000018  Entrypoint  0x00000000
+0x0000001c  PhOff       0x00000034
+0x00000020  ShOff       0x00011ee0
+0x00000024  Flags       0x0060
+0x00000028  EhSize      52
+0x0000002a  PhentSize   32
+0x0000002c  PhNum       3
+0x0000002e  ShentSize   40
+0x00000030  ShNum       16
+0x00000032  ShStrndx    13
+ --- ELF HEADER END --- 
+
+==== MDT Segment 4 ====
+     priv_p_flags: 0b00001000: reloc | ELF
+ -- ELF HEADER BEGIN -- 
+0x00000000  MAGIC       7f 45 4c 46 01 01 01 00 00 00 00 00 00 00 00 00
+0x00000010  Type        0x0001
+0x00000012  Machine     0x00a4
+0x00000014  Version     0x00000001
+0x00000018  Entrypoint  0x00000000
+0x0000001c  PhOff       0x00000000
+0x00000020  ShOff       0x000004ec
+0x00000024  Flags       0x0060
+0x00000028  EhSize      52
+0x0000002a  PhentSize   0
+0x0000002c  PhNum       0
+0x0000002e  ShentSize   40
+0x00000030  ShNum       5
+0x00000032  ShStrndx    1
+ --- ELF HEADER END --- 
+
+EOF
+RUN
+
+NAME=oml
+FILE=bins/mdt/bin-mdt/load-test.mdt
+BROKEN=1
+CMDS=<<EOF
+oml
+EOF
+EXPECT=<<EOF
+ 1 fd: 4 +0x00000000 0x89201c18 - 0x89201fff --- mmap.load-test.b01
+ 2 fd: 5 +0x00000000 0x89200000 - 0x89201c17 --- vmap.load-test.b01
+ 3 fd: 6 +0x00000000 0xfe030000 - 0xfe0aefff r-x mmap.load-test.b02
+ 4 fd: 7 +0x00000000 0xfe000000 * 0xfe02ffff r-x vmap.load-test.b02
+ 5 fd: 8 +0x00001000 0x00550000 - 0x00553ebf r-x vmap.load-test.b03.LOAD0
+ 6 fd: 8 +0x00005000 0x00554000 - 0x0055b763 r-x vmap.load-test.b03.LOAD1
+ 7 fd: 9 +0x00000000 0x0055d0a8 - 0x0055df03 rw- mmap.load-test.b03.LOAD2
+ 8 fd: 8 +0x0000d000 0x0055c000 - 0x0055d0a7 r-- vmap.load-test.b03.LOAD2
+ 9 fd: 10 +0x00000000 0x000004f4 - 0x00000567 r-- vmap.load-test.b04.reloc-targets
+10 fd: 11 +0x00000388 0xc00c9388 - 0xc00c94e9 --- vmap.load-test.b04..strtab
+11 fd: 12 +0x00000034 0xc00c9034 - 0xc00c90bb r-x vmap.load-test.b04..text
+12 fd: 11 +0x0000022c 0xc00c922c - 0xc00c9387 --x vmap.load-test.b04..rela.text
+13 fd: 11 +0x000000bc 0xc00c90bc - 0xc00c922b --- vmap.load-test.b04..symtab
+14 fd: 11 +0x00000000 0xc00c9000 - 0xc00c9033 r-- vmap.load-test.b04.ehdr
+EOF
+RUN
+
+NAME=iSS - segments
+FILE=bins/mdt/bin-mdt/load-test.mdt
+BROKEN=1
+CMDS=<<EOF
+echo "======== Sections ========"
+iS
+echo "======== Segments ========"
+iSS
+EOF
+EXPECT=<<EOF
+======== Sections ========
+     paddr   size      vaddr  vsize align perm name                    type flags 
+----------------------------------------------------------------------------------
+0x00000000    0x0 ----------    0x0   0x0 ---- load-test.b03.0x0            
+0x00001000 0x3ec0 0x00550000 0x3ec0   0x0 -rwx load-test.b03.start          
+0x00005000   0x54 0x00554000   0x54   0x0 -r-x load-test.b03.init           
+0x00006000 0x6088 0x00555000 0x6088   0x0 -r-x load-test.b03.text           
+0x0000c0a0   0x30 0x0055b0a0   0x30   0x0 -r-x load-test.b03.fini           
+0x0000c0d0  0x688 0x0055b0d0  0x688   0x0 -r-- load-test.b03.rodata         
+0x0000c760    0x4 0x0055b760    0x4   0x0 -r-- load-test.b03.eh_frame       
+0x0000d000  0x708 0x0055c000  0x708   0x0 -rw- load-test.b03.data           
+0x0000d708   0x10 0x0055c708   0x10   0x0 -rw- load-test.b03.ctors          
+0x0000d718   0x14 0x0055c718   0x14   0x0 -rw- load-test.b03.dtors          
+0x0000e000   0xa8 0x0055d000   0xa8   0x0 -rw- load-test.b03.sdata          
+0x0000e0a8    0x0 0x0055d0a8  0xe5c   0x0 -rw- load-test.b03.bss            
+0x0000e0a8   0xb5 ----------   0xb5   0x0 ---- load-test.b03.comment        
+0x0000e15d   0x6f ----------   0x6f   0x0 ---- load-test.b03.shstrtab       
+0x0000e1cc 0x2310 ---------- 0x2310   0x0 ---- load-test.b03.symtab         
+0x000104dc 0x19f1 ---------- 0x19f1   0x0 ---- load-test.b03.strtab         
+0x00000000    0x0 0xc00c9000    0x0   0x0 ---- load-test.b04.0x0            
+0x00000388  0x162 0xc00c9388  0x162   0x0 ---- load-test.b04.strtab         
+0x00000034   0x88 0xc00c9034   0x88   0x0 -r-x load-test.b04.text           
+0x0000022c  0x15c 0xc00c922c  0x15c   0x0 ---- load-test.b04.rela.text      
+0x000000bc  0x170 0xc00c90bc  0x170   0x0 ---- load-test.b04.symtab         
+======== Segments ========
+     paddr    size      vaddr   vsize    align perm name                
+------------------------------------------------------------------------
+0x00000000   0x1d4 0x00000000     0x0      0x0 ---- load-test.b00
+0x89200000  0x1c18 0x89200000  0x2000   0x1000 ---- load-test.b01
+0x87400000 0x30000 0xfe000000 0xaf000 0x100000 -r-x load-test.b02
+0x00001000  0x3ec0 0x00550000  0x3ec0   0x1000 -rwx load-test.b03.LOAD0
+0x00005000  0x7764 0x00554000  0x7764   0x1000 -r-x load-test.b03.LOAD1
+0x0000d000  0x10a8 0x0055c000  0x1f04   0x1000 -rw- load-test.b03.LOAD2
+0x00000000    0x34 0x00550000    0x34      0x0 -rw- load-test.b03.ehdr
+0x874af000 0x12160 0x00550000 0x1a000   0x1000 -r-x load-test.b03
+0x00000000    0x34 0xc00c9000    0x34      0x0 -rw- load-test.b04.ehdr
+0x874c9000   0x5b4 0xc00c9000  0x1000   0x1000 -r-x load-test.b04
+EOF
+RUN
+
+NAME=ie - entries
+FILE=bins/mdt/bin-mdt/load-test.mdt
+BROKEN=1
+CMDS=<<EOF
+ie
+EOF
+EXPECT=<<EOF
+     vaddr      paddr     hvaddr      haddr type 
+-------------------------------------------------
+0xfe000000 0x00000000 ---------- ---------- init
+EOF
+RUN
+
+NAME=ir - relocs print
+FILE=bins/mdt/bin-mdt/load-test.mdt
+BROKEN=1
+CMDS=<<EOF
+
+# This should give the same (relative) result as the reloc tests in db/analysis/hexagon.
+# The load-bin.b04 is the same binary as used for the reloc tests there.
+
+echo "==== Print relocs ===="
+ir
+EOF
+EXPECT=<<EOF
+==== Print relocs ====
+     vaddr      paddr     target type                name                  
+---------------------------------------------------------------------------
+0xc00c9048 0x00000048 0xc00c9034 R_HEX_B15_PCREL     test_sym - 0xc00c9048
+0xc00c904c 0x0000004c 0xc00c9034 R_HEX_B7_PCREL      test_sym - 0xc00c904c
+0xc00c9050 0x00000050 0xc00c9034 R_HEX_LO16          test_sym
+0xc00c9054 0x00000054 0xc00c9034 R_HEX_HI16          test_sym
+0xc00c9058 0x00000058 0xc00c9034 R_HEX_B13_PCREL     test_sym - 0xc00c9058
+0xc00c905c 0x0000005c 0xc00c9034 R_HEX_B9_PCREL      test_sym - 0xc00c905c
+0xc00c9060 0x00000060 0xc00c9034 R_HEX_B32_PCREL_X   test_sym - 0xc00c9060
+0xc00c9064 0x00000064 0xc00c9034 R_HEX_B22_PCREL_X   test_sym - 0xc00c9060
+0xc00c9068 0x00000068 0xc00c9034 R_HEX_32_6_X        test_sym
+0xc00c906c 0x0000006c 0xc00c9034 R_HEX_16_X          test_sym
+0xc00c9070 0x00000070 0xc00c9034 R_HEX_B32_PCREL_X   test_sym - 0xc00c9070
+0xc00c9074 0x00000074 0xc00c9034 R_HEX_B22_PCREL_X   test_sym - 0xc00c9070
+0xc00c9078 0x00000078 0xc00c9034 R_HEX_B32_PCREL_X   test_sym - 0xc00c9078
+0xc00c907c 0x0000007c 0xc00c9034 R_HEX_B15_PCREL_X   test_sym - 0xc00c9078
+0xc00c9080 0x00000080 0xc00c9034 R_HEX_B32_PCREL_X   test_sym - 0xc00c9080
+0xc00c9084 0x00000084 0xc00c9034 R_HEX_B7_PCREL_X    test_sym - 0xc00c9080
+0xc00c9088 0x00000088 0xc00c9034 R_HEX_PLT_B22_PCREL test_sym
+0xc00c908c 0x0000008c 0xc00c9034 R_HEX_B32_PCREL_X   test_sym - 0xc00c908c
+0xc00c9090 0x00000090 0xc00c9034 R_HEX_6_PCREL_X     test_sym - 0xc00c908c
+0xc00c9094 0x00000094 0xc00c9034 R_HEX_DTPREL_32_6_X test_sym
+0xc00c9098 0x00000098 0xc00c9034 R_HEX_DTPREL_16_X   test_sym
+0xc00c909c 0x0000009c 0xc00c9034 R_HEX_DTPREL_32_6_X test_sym
+0xc00c90a0 0x000000a0 0xc00c9034 R_HEX_DTPREL_16_X   test_sym
+0xc00c90a4 0x000000a4 0xc00c9034 R_HEX_DTPREL_32_6_X test_sym
+0xc00c90a8 0x000000a8 0xc00c9034 R_HEX_DTPREL_11_X   test_sym
+0xc00c90ac 0x000000ac 0xc00c9034 R_HEX_32            test_sym
+0xc00c90b0 0x000000b0 0xc00c9034 R_HEX_16            test_sym
+0xc00c90b4 0x000000b4 0xc00c9034 R_HEX_8             test_sym
+0xc00c90b8 0x000000b8 0xc00c9034 R_HEX_32_PCREL      test_sym - 0xc00c90b8
+EOF
+RUN
+
+
+NAME=ir - relocs patching
+FILE=bins/mdt/bin-mdt/load-test.mdt
+BROKEN=1
+CMDS=<<EOF
+
+# This should give the same (relative) result as the reloc tests in db/analysis/hexagon.
+# The load-bin.b04 is the same binary as used for the reloc tests there.
+
+e plugins.hexagon.imm.sign=false
+echo "==== Print instructions ===="
+s section.load_test.b04.text
+pi 30
+echo "==== Print patched bytes ===="
+s loc.r_hex_32
+px 16~[1-8]
+EOF
+EXPECT=<<EOF
+==== Print instructions ====
+[   nop
+[   nop
+[   nop
+[   nop
+[   jump 0xc00c9038
+[   if (P0) jump:nt loc.test_sym
+[   loop1(loc.test_sym,#0x0)
+[   R0.l = #0x9034
+[   R0.h = #0xc00c
+[   if (R0!=#0) jump:nt loc.test_sym
+[   R0 = #0x0 ; jump loc.test_sym
+/   immext(##0xffffffc0)
+\   jump loc.test_sym
+/   immext(##segment.load_test.b04)
+\   R0 = ##loc.test_sym
+/   immext(##0xffffffc0)
+\   jump loc.test_sym
+/   immext(##0xffffff80)
+\   if (P0) jump:nt loc.test_sym
+/   immext(##0xffffff80)
+\   loop1(loc.test_sym,#0x0)
+[   jump loc.test_sym
+/   immext(##0xffffff80)
+\   R0 = ##0xffffffa8 ; R1 = R1
+/   immext(##segment.load_test.b04)
+\   R0 = ##loc.test_sym
+/   immext(##segment.load_test.b04)
+\   R0 = ##loc.test_sym
+/   immext(##segment.load_test.b04)
+\   R0 = memw(R0+##loc.test_sym)
+==== Print patched bytes ====
+offset - 0 1 2 3 4 5
+3490 0cc0 3490 0000 3400 0000 7cff ffff
+EOF
+RUN
+
+NAME=is - symbols count
+FILE=bins/mdt/bin-mdt/load-test.mdt
+BROKEN=1
+CMDS=<<EOF
+
+# The binaries in the image are test/bins/analysis/hexagon-hello-loop
+# and test/bins/elf/hexagon/relocs.
+
+# The numbers of symbols should always match the sum.
+# So it can be cross-checked.
+echo "==== symbols count hexagon-hello-loop + relocs. Expected 519 + 22 ===="
+isq~?
+EOF
+EXPECT=<<EOF
+==== symbols count hexagon-hello-loop + relocs. Expected 519 + 22 ====
+541
+EOF
+RUN
+
+NAME=is - symbols vaddr
+FILE=bins/mdt/bin-mdt/load-test.mdt
+BROKEN=1
+CMDS=<<EOF
+
+# The binaries in the image are test/bins/analysis/hexagon-hello-loop
+# and test/bins/elf/hexagon/relocs.
+
+e plugins.hexagon.imm.sign=false
+echo "==== symbols vaddr correct hexagon-hello-loop ===="
+is~fputs
+is~.CONST_4197D78400000000
+echo "==== symbols vaddr correct relocs ===="
+is~test_sym
+is~r_hex_b15_pcrel
+EOF
+EXPECT=<<EOF
+==== symbols vaddr correct hexagon-hello-loop ====
+425 0x0000a2d0 0x005592d0 GLOBAL FUNC    244     fputs
+ 61 0x00001000 0x00550000 LOCAL  FILE      0     fputs.c
+549 0x0000e080 0x0055d080 GLOBAL NOTYPE    0     .CONST_4197D78400000000
+==== symbols vaddr correct relocs ====
+ 22 0x00000034 0xc00c9034 GLOBAL NOTYPE    0     test_sym
+  9 0x00000078 0xc00c9078 LOCAL  NOTYPE    0     r_hex_b15_pcrel_x
+  8 0x00000048 0xc00c9048 LOCAL  NOTYPE    0     r_hex_b15_pcrel
+EOF
+RUN
+
+NAME=is - symbols assembly
+FILE=bins/mdt/bin-mdt/load-test.mdt
+BROKEN=1
+CMDS=<<EOF
+
+# The binaries in the image are test/bins/analysis/hexagon-hello-loop
+# and test/bins/elf/hexagon/relocs.
+# Note that hexagon-hello-loop doesn't have relocations.
+
+e plugins.hexagon.imm.sign=false
+echo "==== hexagon-hello-loop ===="
+# One for each executable section.
+echo "== .init"
+pi 10 @ sym..init
+echo "== .text"
+pi 10 @ sym._Putfld
+echo "== .fini"
+pi 10 @ sym._fini
+echo "==== relocs ===="
+echo "== loc.r_hex_b7_pcrel_x"
+pi 10 @ loc.r_hex_b7_pcrel_x
+EOF
+EXPECT=<<EOF
+==== hexagon-hello-loop ====
+== .init
+?   allocframe(SP,#0x8):raw
+[   memw(SP+##0x0) = R27
+[   R0.h = #0x0
+[   R0.l = #0xb760
+[   R1 = memw(R0+##0x0)
+[   P0 = cmp.eq(R1,#0x0); if (P0.new) jump:nt 0x55402c
+/   R2 = ##0x0
+\   R3 = ##0x0 ; R1 = ##0x0
+[   R28.h = #0x0
+[   R28.l = #0x5f80
+== .text
+/   R4 = add(R2,##0xffffffdb)
+|   R16 = R0
+\   memd(R29+#0xfffffff0) = R17:16 ; allocframe(#0x18)
+[   P0 = cmp.gtu(R4,##0x53)
+/   if (P0) jump:nt 0x556638
+\   memd(SP+##0x8) = R19:18
+/   immext(##0xb100)
+\   R4 = memw(R4<<#0x2+##0xb130)
+[   jumpr R4
+/   R4 = memw(R16+##0x2c)
+== .fini
+[   allocframe(SP,#0x8):raw
+[   memw(SP+##0x0) = R27
+[   R27.h = #0x0
+[   R27.l = #0xc718
+[   R27 = add(R27,##0x4)
+[   R0 = memw(R27+##0x0)
+[   P0 = cmp.eq(R0,#0x0); if (P0.new) jump:nt 0x55b0c4
+[   callr R0
+[   jump 0x55b0b0
+/   R27 = memw(SP+##0x0)
+==== relocs ====
+== loc.r_hex_b7_pcrel_x
+/   immext(##0xffffff80)
+\   loop1(loc.test_sym,#0x0)
+[   jump loc.test_sym
+/   immext(##0xffffff80)
+\   R0 = ##0xffffffa8 ; R1 = R1
+/   immext(##segment.load_test.b04)
+\   R0 = ##loc.test_sym
+/   immext(##segment.load_test.b04)
+\   R0 = ##loc.test_sym
+/   immext(##segment.load_test.b04)
+EOF
+RUN
