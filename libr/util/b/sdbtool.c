@@ -220,7 +220,7 @@ static bool dothec(const char *file_txt, const char *file_gperf, const char *fil
 				" -N sdb_get_c_%s -t %s > %s\n", cname, cname, file_gperf, file_c);
 		R_LOG_INFO ("Generating C file from gperf: %s", file_c);
 		eprintf ("system: %s\n", gperf_cmd);
-		int rc = system (gperf_cmd);
+		int rc = r_sys_cmd (gperf_cmd);
 		free (gperf_cmd);
 		if (rc == 0) {
 			R_LOG_INFO ("Done");
