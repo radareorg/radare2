@@ -101,78 +101,67 @@ static char *escape(const char *b, int ch) {
 }
 
 static bool dothec(const char *file_txt, const char *file_gperf, const char *file_c, bool compile_gperf) {
-	// Open output file
-	FILE *out = fopen (file_gperf, "wb");
-	if (!out) {
-		R_LOG_ERROR ("Cannot open %s for writing", file_gperf);
-		return false;
-	}
-
 	// Extract name and cname from file_txt
 	char *name = get_name (file_txt);
 	if (!name) {
-		fclose (out);
 		return false;
 	}
 
 	char *cname = get_cname (file_txt);
 	if (!cname) {
 		free (name);
-		fclose (out);
-		return false;
-	}
-
-	// Redirect stdout to file temporarily for code generation
-	int saved_stdout = dup (1);
-	if (saved_stdout == -1) {
-		R_LOG_ERROR ("Cannot duplicate stdout");
-		free (name);
-		free (cname);
-		fclose (out);
-		return false;
-	}
-
-	if (dup2 (fileno (out), 1) == -1) {
-		R_LOG_ERROR("Cannot redirect stdout");
-		free (name);
-		free (cname);
-		fclose (out);
-		close (saved_stdout);
 		return false;
 	}
 
 	bool textmode = !compile_gperf;
-	// Generate header using the sdb API
-	sdb_cgen_header (cname, textmode);
-
+	
+	// Generate header string using the sdb API
+	char *header = sdb_cgen_header (cname, textmode);
+	if (!header) {
+		R_LOG_ERROR ("Failed to generate header");
+		free (name);
+		free (cname);
+		return false;
+	}
+	
+	// Create a string buffer for the entire file content
+	RStrBuf *sb = r_strbuf_new ("");
+	if (!sb) {
+		R_LOG_ERROR ("Failed to create string buffer");
+		free (header);
+		free (name);
+		free (cname);
+		return false;
+	}
+	
+	// Add header to the buffer
+	r_strbuf_append (sb, header);
+	free (header);
+	
 	// Read key-value pairs from the SDB file
 	Sdb *db = sdb_new (NULL, NULL, 0);
 	if (!db) {
 		R_LOG_ERROR ("Failed to create SDB instance");
-		dup2 (saved_stdout, 1);
-		close (saved_stdout);
+		r_strbuf_free (sb);
 		free (name);
 		free (cname);
-		fclose (out);
 		return false;
 	}
 
 	if (!sdb_text_load (db, file_txt)) {
 		R_LOG_ERROR ("Failed to load SDB text file %s", file_txt);
 		sdb_free (db);
-		dup2 (saved_stdout, 1);
-		close (saved_stdout);
+		r_strbuf_free (sb);
 		free (name);
 		free (cname);
-		fclose (out);
 		return false;
 	}
 
-	// Iterate and write all key-value pairs
+	// Iterate and collect all key-value pairs in the string buffer
 	SdbList *l = sdb_foreach_list (db, true);
 	SdbKv *kv;
 	SdbListIter *it;
-	// printf ("static const struct kv kvs[] = {\n");
+	
 	ls_foreach_cast (l, it, SdbKv*, kv) {
 		const char *k = sdbkv_key (kv);
 		const char *v = sdbkv_value (kv);
@@ -182,24 +171,48 @@ static bool dothec(const char *file_txt, const char *file_gperf, const char *fil
 		char *ev = escape (v, 0);
 
 		if (ek && ev) {
-			printf ("\t{\"%s\", \"%s\"},\n", ek, ev);
+			r_strbuf_appendf (sb, 0, "\t{\"%s\", \"%s\"},\n", ek, ev);
 			free (ek);
 			free (ev);
 		}
 	}
-	// printf ("\t{NULL, NULL}\n};\n");
 	ls_free (l);
 
-	// Generate footer using the sdb API
-	sdb_cgen_footer (name, cname, textmode);
+	// Generate footer string using the sdb API
+	char *footer = sdb_cgen_footer (name, cname, textmode);
+	if (!footer) {
+		R_LOG_ERROR ("Failed to generate footer");
+		sdb_free (db);
+		r_strbuf_free (sb);
+		free (name);
+		free (cname);
+		return false;
+	}
+	
+	// Add footer to the buffer
+	r_strbuf_append (sb, footer);
+	free (footer);
 
-	// Restore stdout
-	fflush (stdout);
-	dup2 (saved_stdout, 1);
-	close (saved_stdout);
+	// Get the complete file content and write it to the file
+	char *content = r_strbuf_drain (sb);
+	if (!content) {
+		R_LOG_ERROR ("Failed to create file content");
+		sdb_free (db);
+		free (name);
+		free (cname);
+		return false;
+	}
 
-	// Cleanup
-	fclose (out);
+	// Write the complete content to file
+	if (!r_file_dump (file_gperf, (const ut8 *)content, strlen (content), false)) {
+		R_LOG_ERROR ("Failed to write to file %s", file_gperf);
+		free (content);
+		sdb_free (db);
+		free (name);
+		free (cname);
+		return false;
+	}
+	free (content);
 
 	R_LOG_INFO ("Generated GPERF file: %s", file_gperf);
 	if (compile_gperf) {
