@@ -10,7 +10,7 @@ sdb_all: sdb
 
 sdb:
 	git clone --no-checkout --depth=1 https://github.com/radareorg/sdb.git sdb
-	cd sdb && git fetch --depth=1 origin $(WRAP_wrap_git_revision)
+	cd sdb && git fetch --depth=1 origin 939d1d1de0c781d130f12418a563c256fffee8e6
 	cd sdb && git checkout FETCH_HEAD
 
 sdb_clean:
