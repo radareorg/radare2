@@ -27,14 +27,7 @@ HOST_CC?=gcc
 
 F_SDB=$(addsuffix .sdb,$F)
 
-SDBPATH=$(LTOP)/../subprojects/sdb/
-ifeq ($(BUILD_OS),windows)
-BUILD_EXT_EXE=.exe
-else
-BUILD_EXT_EXE=
-endif
-SDB=$(SDBPATH)/sdb${BUILD_EXT_EXE}
-
+ifeq ($(USE_SDBTOOL),1)
 all: ${SDB}
 	@$(MAKE) compile
 
@@ -53,12 +46,16 @@ endif
 	${SDB} -t -C $@
 	$(CC) $(CFLAGS) $(PIC_CFLAGS) -c `echo $@ | sed -e s,sdb,c,`
 
-clean:
-	rm -f *.sdb
-
 ${SDB}:
 	@echo "Cannot find ${SDB}"
 	@false
+else
+all:
+	$(SDBTOOL) $(shell pwd)
+endif
+
+clean:
+	rm -f *.sdb *.tmp *.d *.o *.c
 
 #	cp -rf "$(SDBPATH)/src" "$(SDBPATH)/src-native"
 #	cd "$(SDBPATH)/src-native" && CFLAGS="-w ${CPPFLAGS}" \
