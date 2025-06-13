@@ -1,7 +1,6 @@
 NAME=function bytes
 ARGS=-a arm
 FILE=bins/mach0/ls-m1
-ARGS=-a arm
 CMDS=<<EOF
 af
 p8f

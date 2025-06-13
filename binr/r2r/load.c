@@ -648,7 +648,7 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 			}
 			bool is_archos_folder = !strcmp (path, "archos") || r_str_endswith (path, R_SYS_DIR"archos");
 			if (is_archos_folder && (skip_archos || strcmp (subname, archos))) {
-				R_LOG_ERROR ("Skipping %s"R_SYS_DIR"%s because it does not match the current platform \"%s\"", path, subname, archos);
+				R_LOG_INFO ("Skipping %s"R_SYS_DIR"%s because it does not match the current platform \"%s\"", path, subname, archos);
 				continue;
 			}
 			r_strbuf_setf (&subpath, "%s%s%s", path, R_SYS_DIR, subname);
