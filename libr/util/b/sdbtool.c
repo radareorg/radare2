@@ -8,7 +8,7 @@
 #endif
 
 static char *get_name(const char *name) {
-	if (!name || !*name) {
+	if (R_STR_ISEMPTY (name)) {
 		return NULL;
 	}
 	const char *l = name + strlen(name) - 1;
@@ -32,7 +32,7 @@ static char *get_name(const char *name) {
 }
 
 static char *get_cname(const char *name) {
-	if (!name || !*name) {
+	if (R_STR_ISEMPTY (name)) {
 		return NULL;
 	}
 	const char *l = name + strlen(name) - 1;
