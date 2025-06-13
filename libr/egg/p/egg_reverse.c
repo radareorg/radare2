@@ -1,7 +1,6 @@
-/* radare - LGPL - Copyright 2013 - pancake */
+/* radare - LGPL - Copyright 2013-2025 - pancake */
 
 #include <r_egg.h>
-
 
 unsigned long armle_osx_reverse[] = {
 	0xe3a00002, 0xe3a01001, 0xe3a02006, 0xe3a0c061, 0xef000080,
@@ -29,6 +28,7 @@ unsigned char x86_freebsd_reverse[] =
 
 static RBuffer *build(REgg *egg) {
 	RBuffer *buf = r_buf_new ();
+	int scsz = 0;
 	const ut8 *sc = NULL;
 	int cd = 0;
 	char *port = r_egg_option_get (egg, "port");
@@ -38,7 +38,8 @@ static RBuffer *build(REgg *egg) {
 	case R_EGG_OS_DARWIN:
 		switch (egg->arch) {
 		case R_SYS_ARCH_ARM:
-			sc = armle_osx_reverse;
+			sc = (const ut8*)armle_osx_reverse;
+			scsz = sizeof (armle_osx_reverse);
 			cd = 7+36;
 			break;
 		}
@@ -58,25 +59,28 @@ static RBuffer *build(REgg *egg) {
 		break;
 	}
 	if (sc) {
-		r_buf_set_bytes (buf, sc, strlen ((const char *)sc));
-		if (shell && *shell) {
+		r_buf_set_bytes (buf, sc, scsz? scsz: strlen ((const char *)sc));
+		if (R_STR_ISNOTEMPTY (port)) {
 			if (cd) {
-				r_buf_write_at (buf, cd, (const ut8*)shell, strlen (shell)+1);
+				ut8 nport = atoi (port);
+				r_buf_write_at (buf, cd, (const ut8*)&nport, 1);
 			} else {
-				R_LOG_ERROR ("Cannot set shell");
+				R_LOG_ERROR ("Cannot set port");
 			}
 		}
 	}
-	free (suid);
-	free (shell);
+	free (port);
 	return buf;
 }
 
 //TODO: rename plugin to run
-REggPlugin r_egg_plugin_bind = {
-	.name = "bind",
+REggPlugin r_egg_plugin_reverse = {
+	.meta = {
+		.name = "reverse",
+		.desc = "listen port=4444",
+		.license = "MIT",
+	},
 	.type = R_EGG_PLUGIN_SHELLCODE,
-	.desc = "listen port=4444",
 	.build = (void *)build
 };
 
