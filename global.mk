@@ -56,7 +56,7 @@ endif
 
 ## global sdb stuff
 
-USE_SDBTOOL=1
+USE_SDBTOOL=0
 SDBPATH=$(LTOP)/../subprojects/sdb/
 ifeq ($(BUILD_OS),windows)
 BUILD_EXT_EXE=.exe
