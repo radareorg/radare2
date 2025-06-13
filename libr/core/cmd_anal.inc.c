@@ -8621,16 +8621,19 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 		r_config_set_i (core->config, "scr.color", osc);
 	}
 		break;
-	case 'f':	// "aegf"
-	{
-		RStrBuf *filtered = r_anal_esil_dfg_filter_expr (core->anal, argv[1], argv[2],
-			r_config_get_b (core->config, "esil.dfg.mapinfo"),
-			r_config_get_b (core->config, "esil.dfg.maps"));
-		if (filtered) {
-			r_cons_printf ("%s\n", r_strbuf_get (filtered));
-			r_strbuf_free (filtered);
+	case 'f': // "aegf"
+		if (argv[1] && argv[2]) {
+			RStrBuf *filtered = r_anal_esil_dfg_filter_expr (core->anal, argv[1], argv[2],
+				r_config_get_b (core->config, "esil.dfg.mapinfo"),
+				r_config_get_b (core->config, "esil.dfg.maps"));
+			if (filtered) {
+				char *res = r_strbuf_drain (filtered);
+				r_cons_printf ("%s\n", res);
+				free (res);
+			}
+		} else {
+			R_LOG_ERROR ("Usage: aegf [expr] [reg]");
 		}
-	}
 		break;
 #if 0
 	case 'c':	// "aegc"
