@@ -1,4 +1,5 @@
 #include <r_util.h>
+#include <sdb/sdb.h>
 
 #if HAVE_GPERF
 // #define COMPILE_GPERF 1
