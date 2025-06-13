@@ -14,6 +14,7 @@ SDB_OBJS+=cdb.o
 SDB_OBJS+=heap.o
 SDB_OBJS+=cgen.o
 SDB_OBJS+=strbuf.o
+SDB_OBJS+=tool.o
 SDB_OBJS+=set.o
 SDB_OBJS+=cdb_make.o
 SDB_OBJS+=ht_uu.o
