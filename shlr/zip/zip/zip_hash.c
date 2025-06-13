@@ -245,6 +245,7 @@ _zip_hash_add(zip_hash_t *hash, const zip_uint8_t *name, zip_uint64_t index, zip
         hash->nentries++;
         if (hash->nentries > hash->table_size * HASH_MAX_FILL && hash->table_size < HASH_MAX_SIZE) {
             if (!hash_resize(hash, hash->table_size * 2, error)) {
+                free(entry);
                 return false;
             }
         }
