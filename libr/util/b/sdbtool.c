@@ -171,7 +171,7 @@ static bool dothec(const char *file_txt, const char *file_gperf, const char *fil
 		char *ev = escape (v, 0);
 
 		if (ek && ev) {
-			r_strbuf_appendf (sb, 0, "\t{\"%s\", \"%s\"},\n", ek, ev);
+			r_strbuf_appendf (sb, "\t{\"%s\", \"%s\"},\n", ek, ev);
 			free (ek);
 			free (ev);
 		}
