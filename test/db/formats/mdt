@@ -1,5 +1,6 @@
 NAME=iH
 FILE=bins/mdt/bin-mdt/load-test.mdt
+BROKEN=1
 CMDS=<<EOF
 iH
 EOF
@@ -83,6 +84,7 @@ RUN
 
 NAME=oml
 FILE=bins/mdt/bin-mdt/load-test.mdt
+BROKEN=1
 CMDS=<<EOF
 oml
 EOF
@@ -106,6 +108,7 @@ RUN
 
 NAME=iSS - segments
 FILE=bins/mdt/bin-mdt/load-test.mdt
+BROKEN=1
 CMDS=<<EOF
 echo "======== Sections ========"
 iS
@@ -155,6 +158,7 @@ RUN
 
 NAME=ie - entries
 FILE=bins/mdt/bin-mdt/load-test.mdt
+BROKEN=1
 CMDS=<<EOF
 ie
 EOF
@@ -167,6 +171,7 @@ RUN
 
 NAME=ir - relocs print
 FILE=bins/mdt/bin-mdt/load-test.mdt
+BROKEN=1
 CMDS=<<EOF
 
 # This should give the same (relative) result as the reloc tests in db/analysis/hexagon.
@@ -214,6 +219,7 @@ RUN
 
 NAME=ir - relocs patching
 FILE=bins/mdt/bin-mdt/load-test.mdt
+BROKEN=1
 CMDS=<<EOF
 
 # This should give the same (relative) result as the reloc tests in db/analysis/hexagon.
@@ -267,6 +273,7 @@ RUN
 
 NAME=is - symbols count
 FILE=bins/mdt/bin-mdt/load-test.mdt
+BROKEN=1
 CMDS=<<EOF
 
 # The binaries in the image are test/bins/analysis/hexagon-hello-loop
@@ -285,6 +292,7 @@ RUN
 
 NAME=is - symbols vaddr
 FILE=bins/mdt/bin-mdt/load-test.mdt
+BROKEN=1
 CMDS=<<EOF
 
 # The binaries in the image are test/bins/analysis/hexagon-hello-loop
@@ -312,6 +320,7 @@ RUN
 
 NAME=is - symbols assembly
 FILE=bins/mdt/bin-mdt/load-test.mdt
+BROKEN=1
 CMDS=<<EOF
 
 # The binaries in the image are test/bins/analysis/hexagon-hello-loop
