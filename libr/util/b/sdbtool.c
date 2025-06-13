@@ -120,28 +120,23 @@ static bool dothec(const char *file_txt, const char *file_gperf, const char *fil
 		R_LOG_ERROR ("Failed to create string buffer");
 		goto fail;
 	}
-	
 	// Add header to the buffer
 	r_strbuf_append (sb, header);
 	free (header);
-	
 	// Read key-value pairs from the SDB file
 	db = sdb_new (NULL, NULL, 0);
 	if (!db) {
 		R_LOG_ERROR ("Failed to create SDB instance");
 		goto fail;
 	}
-
 	if (!sdb_text_load (db, file_txt)) {
 		R_LOG_ERROR ("Failed to load SDB text file %s", file_txt);
 		goto fail;
 	}
-
 	// Iterate and collect all key-value pairs in the string buffer
 	SdbList *l = sdb_foreach_list (db, true);
 	SdbKv *kv;
 	SdbListIter *it;
-	
 	ls_foreach_cast (l, it, SdbKv*, kv) {
 		const char *k = sdbkv_key (kv);
 		const char *v = sdbkv_value (kv);
@@ -164,7 +159,6 @@ static bool dothec(const char *file_txt, const char *file_gperf, const char *fil
 		R_LOG_ERROR ("Failed to generate footer");
 		goto fail;
 	}
-	
 	// Add footer to the buffer
 	r_strbuf_append (sb, footer);
 	free (footer);
