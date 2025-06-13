@@ -645,18 +645,13 @@ static int bsd_reg_read(RDebug *dbg, int type, ut8* buf, int size) {
 	}
 	switch (type) {
 	case R_REG_TYPE_DRX:
-#if __i386__ || __x86_64__
-#if __KFBSD__
-	{
-		// TODO
-		struct dbreg dbr;
-		ret = ptrace (PT_GETDBREGS, pid, (caddr_t)&dbr, sizeof (dbr));
-		if (ret != 0) {
-			return false;
+#if __KFBSD__ && (__i386__ || __x86_64__)
+		{
+			struct dbreg dbr;
+			if (ptrace (PT_GETDBREGS, pid, (caddr_t)&dbr, sizeof (dbr)) != 0) {
+				return false;
+			}
 		}
-		// XXX: maybe the register map is not correct, must review
-	}
-#endif
 #endif
 		return true;
 		break;
@@ -667,14 +662,12 @@ static int bsd_reg_read(RDebug *dbg, int type, ut8* buf, int size) {
 	case R_REG_TYPE_VEC128: // XMM
 	case R_REG_TYPE_VEC256: // YMM
 	case R_REG_TYPE_VEC512: // ZMM
-#if __i386__ || __x86_64__
-#if __KFBSD__
+#if __KFBSD__ && (__i386__ || __x86_64__)
 		struct ptrace_xstate_info info;
 		ret = ptrace (PT_GETXSTATE_INFO, pid, (caddr_t)&info, sizeof (info));
 		if (info.xsave_len != 0) {
-		ret = ptrace (PT_GETXSTATE, pid, (caddr_t)buf, info.xsave_len);
+			ret = ptrace (PT_GETXSTATE, pid, (caddr_t)buf, info.xsave_len);
 		}
-#endif
 #endif
 		break;
 	case R_REG_TYPE_SEG:

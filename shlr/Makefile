@@ -27,7 +27,6 @@ endif
 endif
 endif
 
-# CAPSTONE_CFLAGS?=-g
 CAPSTONE_CFLAGS=
 # CAPSTONE_MAKEFLAGS?=CAPSTONE_ARCHS="arm aarch64"
 
@@ -86,7 +85,6 @@ preall: libwinkd capstone-build bochs sdbs
 		echo $(MAKE) -C $$MOD ; \
 		$(MAKE) -C $$MOD HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
 	done
-
 
 ifeq ($(BUILD_OS),windows)
 BUILD_EXT_EXE=.exe

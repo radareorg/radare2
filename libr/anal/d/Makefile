@@ -1,4 +1,5 @@
 include ../../../global.mk
+
 F=
 F+= types
 F+= types-16
@@ -75,6 +76,8 @@ WIN_TYPES+= ws2spi
 
 include $(TOP)/config-user.mk
 HOST_CC?=gcc
+USE_SDBTOOL=0
+SDBTOOL=$(LTOP)/util/b/sdbtool
 
 F_SDB=$(addsuffix .sdb,$F)
 
@@ -89,7 +92,11 @@ SDB=$(SDBPATH)/sdb${BUILD_EXT_EXE}
 FCNSIGNPATH=$(DESTDIR)$(DATADIR)/radare2/$(VERSION)/fcnsign
 
 all: ${SDB}
+ifeq ($(USE_SDBTOOL),1)
+	$(SDBTOOL) $(shell pwd)
+else
 	@$(MAKE) compile
+endif
 
 compile: ${F_SDB}
 
