@@ -76,18 +76,9 @@ WIN_TYPES+= ws2spi
 
 include $(TOP)/config-user.mk
 HOST_CC?=gcc
-USE_SDBTOOL=0
 SDBTOOL=$(LTOP)/util/b/sdbtool
 
 F_SDB=$(addsuffix .sdb,$F)
-
-SDBPATH=$(LTOP)/../subprojects/sdb/
-ifeq ($(BUILD_OS),windows)
-BUILD_EXT_EXE=.exe
-else
-BUILD_EXT_EXE=
-endif
-SDB=$(SDBPATH)/sdb${BUILD_EXT_EXE}
 
 FCNSIGNPATH=$(DESTDIR)$(DATADIR)/radare2/$(VERSION)/fcnsign
 
