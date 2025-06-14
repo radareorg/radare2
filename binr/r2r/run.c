@@ -880,15 +880,34 @@ R_API void r2r_subprocess_stdin_write(R2RSubprocess *proc, const ut8 *buf, size_
 }
 
 R_API R2RProcessOutput *r2r_subprocess_drain(R2RSubprocess *proc) {
-	r_th_lock_enter (subprocs_mutex);
-	R2RProcessOutput *out = R_NEW (R2RProcessOutput);
-	if (out) {
-		out->out = r_strbuf_drain_nofree (&proc->out);
-		out->err = r_strbuf_drain_nofree (&proc->err);
+	if (!proc) {
+		return NULL;
+	}
+	
+	R2RProcessOutput *out = R_NEW0 (R2RProcessOutput);
+	if (!out) {
+		return NULL;
+	}
+	
+	// Use process-specific lock to ensure atomicity when draining buffers
+	if (proc->lock && r_th_lock_enter (proc->lock)) {
+		out->out = r_strbuf_drain (&proc->out);
+		out->err = r_strbuf_drain (&proc->err);
+		out->ret = proc->ret;
+		out->timeout = false;
+		r_th_lock_leave (proc->lock);
+	} else {
+		// If we can't acquire the lock, make safe copies
+		if (proc->out.ptr) {
+			out->out = strdup (r_strbuf_get (&proc->out));
+		}
+		if (proc->err.ptr) {
+			out->err = strdup (r_strbuf_get (&proc->err));
+		}
 		out->ret = proc->ret;
 		out->timeout = false;
 	}
-	r_th_lock_leave (subprocs_mutex);
+	
 	return out;
 }
 
@@ -914,16 +933,26 @@ cleanup_without_vector:
 	// writing to or reading from its buffers
 	if (proc->lock) {
 		r_th_lock_enter (proc->lock);
-	}
 	
-	// Free buffers
-	r_strbuf_fini (&proc->out);
-	r_strbuf_fini (&proc->err);
-	
-	// Release the process lock before freeing it
-	if (proc->lock) {
+		// Free buffers - only reinitialize them if they haven't been drained
+		// This prevents double frees when r2r_subprocess_drain has been called
+		if (proc->out.ptr) {
+			r_strbuf_fini (&proc->out);
+			r_strbuf_init (&proc->out); // Reinitialize to avoid issues with subsequent r_strbuf_fini
+		}
+		if (proc->err.ptr) {
+			r_strbuf_fini (&proc->err);
+			r_strbuf_init (&proc->err); // Reinitialize to avoid issues with subsequent r_strbuf_fini
+		}
+		
+		// Release the process lock before freeing it
 		r_th_lock_leave (proc->lock);
 		r_th_lock_free (proc->lock);
+	} else {
+		// Even if we can't get the lock, we need to safely clean up buffers
+		// If buffers have been drained, ptr would be NULL and this is safe
+		r_strbuf_fini (&proc->out);
+		r_strbuf_fini (&proc->err);
 	}
 	
 	// Close all open file descriptors
