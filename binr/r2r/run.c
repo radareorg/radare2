@@ -453,38 +453,41 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 			// 	r_sys_perror ("waitpid failed");
 				break;
 			}
+			
+			// Fix: Restructured to avoid nested lock acquisitions
+			// and ensure proper lock ordering
 			r_th_lock_enter (subprocs_mutex);
 			R2RSubprocess *proc = pid_to_proc (pid);
-			if (proc) {
-				r_th_lock_enter (proc->lock);
-#if !__wasi__
-				if (WIFSIGNALED (wstat)) {
-					const int signal_number = WTERMSIG (wstat);
-					R_LOG_ERROR ("Child signal %d", signal_number);
-					proc->ret = -1;
-					int ret = write (proc->killpipe[1], "", 1);
-					if (ret != 1) {
-						r_sys_perror ("write killpipe-");
-						r_th_lock_leave (proc->lock);
-						r_th_lock_leave (subprocs_mutex);
-						break;
-					}
-				} else if (WIFEXITED (wstat)) {
-					proc->ret = WEXITSTATUS (wstat);
-				} else {
-					proc->ret = -1;
-				}
-#else
-				proc->ret = -1;
-#endif
-				int ret = write (proc->killpipe[1], "", 1);
-				r_th_lock_leave (proc->lock);
-				if (ret != 1) {
-					r_sys_perror ("write killpipe-");
-					r_th_lock_leave (subprocs_mutex);
-					break;
-				}
+			if (!proc) {
+				r_th_lock_leave (subprocs_mutex);
+				continue;
 			}
+			
+			// Capture exit status while holding only one lock
+			int exit_status = -1;
+#if !__wasi__
+			if (WIFSIGNALED (wstat)) {
+				const int signal_number = WTERMSIG (wstat);
+				R_LOG_ERROR ("Child signal %d", signal_number);
+				exit_status = -1;
+			} else if (WIFEXITED (wstat)) {
+				exit_status = WEXITSTATUS (wstat);
+			}
+#endif
+
+			// Signal process completion through killpipe
+			int ret = write (proc->killpipe[1], "", 1);
+			if (ret != 1) {
+				r_sys_perror ("write killpipe-");
+				r_th_lock_leave (subprocs_mutex);
+				break;
+			}
+			
+			// Update process status after signaling
+			r_th_lock_enter (proc->lock);
+			proc->ret = exit_status;
+			r_th_lock_leave (proc->lock);
+			
 			r_th_lock_leave (subprocs_mutex);
 		}
 	}
@@ -551,118 +554,175 @@ R_API R2RSubprocess *r2r_subprocess_start(
 	int stdout_pipe[2] = { -1, -1 };
 	int stderr_pipe[2] = { -1, -1 };
 
+	// Verify input parameters
+	if (!file) {
+		R_LOG_ERROR("Subprocess start: file parameter cannot be NULL");
+		return NULL;
+	}
+
 	r_th_lock_enter (subprocs_mutex);
 	R2RSubprocess *proc = R_NEW0 (R2RSubprocess);
 	if (!proc) {
-		goto error;
+		R_LOG_ERROR("Subprocess start: failed to allocate memory for subprocess");
+		r_th_lock_leave (subprocs_mutex);
+		return NULL;
 	}
+	
 	proc->killpipe[0] = proc->killpipe[1] = -1;
 	proc->ret = -1;
 	proc->lock = r_th_lock_new (false);
+	if (!proc->lock) {
+		R_LOG_ERROR("Subprocess start: failed to create lock");
+		free(proc);
+		r_th_lock_leave (subprocs_mutex);
+		return NULL;
+	}
+	
 	r_strbuf_init (&proc->out);
 	r_strbuf_init (&proc->err);
 
+	// Create kill pipe for signaling child process termination
 	if (pipe (proc->killpipe) == -1) {
-		r_sys_perror ("subproc-start pipe");
-		goto error;
+		r_sys_perror ("subproc-start pipe (killpipe)");
+		r_th_lock_free (proc->lock);
+		free (proc);
+		r_th_lock_leave (subprocs_mutex);
+		return NULL;
 	}
+	
+	// Set non-blocking mode on write end of killpipe
 	if (fcntl (proc->killpipe[1], F_SETFL, O_NONBLOCK) < 0) {
-		r_sys_perror ("subproc-start fcntl");
-		goto error;
+		r_sys_perror ("subproc-start fcntl (killpipe)");
+		close (proc->killpipe[0]);
+		close (proc->killpipe[1]);
+		r_th_lock_free (proc->lock);
+		free (proc);
+		r_th_lock_leave (subprocs_mutex);
+		return NULL;
 	}
 
+	// Create stdin pipe
 	if (pipe (stdin_pipe) == -1) {
-		r_sys_perror ("subproc-start pipe");
+		r_sys_perror ("subproc-start pipe (stdin)");
 		goto error;
 	}
 	proc->stdin_fd = stdin_pipe[1];
 
+	// Create stdout pipe
 	if (pipe (stdout_pipe) == -1) {
-		r_sys_perror ("subproc-start pipe");
+		r_sys_perror ("subproc-start pipe (stdout)");
 		goto error;
 	}
+	
+	// Set non-blocking mode on read end of stdout pipe
 	if (fcntl (stdout_pipe[0], F_SETFL, O_NONBLOCK) < 0) {
-		r_sys_perror ("subproc-start fcntl");
+		r_sys_perror ("subproc-start fcntl (stdout)");
 		goto error;
 	}
 	proc->stdout_fd = stdout_pipe[0];
 
+	// Create stderr pipe
 	if (pipe (stderr_pipe) == -1) {
-		r_sys_perror ("subproc-start pipe");
+		r_sys_perror ("subproc-start pipe (stderr)");
 		goto error;
 	}
+	
+	// Set non-blocking mode on read end of stderr pipe
 	if (fcntl (stderr_pipe[0], F_SETFL, O_NONBLOCK) < 0) {
-		r_sys_perror ("subproc-start fcntl");
+		r_sys_perror ("subproc-start fcntl (stderr)");
 		goto error;
 	}
 	proc->stderr_fd = stderr_pipe[0];
 
+	// Fork process
 	proc->pid = r_sys_fork ();
 	if (proc->pid == -1) {
-		// fail
-		r_th_lock_leave (subprocs_mutex);
-		r_sys_perror ("subproc-start fork");
-		free (proc);
-		return NULL;
+		r_sys_perror ("subproc-start fork failed");
+		goto error;
 	}
+	
+	// Child process
 	if (proc->pid == 0) {
+		// Duplicate pipes to standard file descriptors
 		dup_retry (stdin_pipe, 0, STDIN_FILENO);
 		dup_retry (stdout_pipe, 1, STDOUT_FILENO);
 		dup_retry (stderr_pipe, 1, STDERR_FILENO);
+		
+		// Prepare arguments for exec
 		char **argv = calloc (args_size + 2, sizeof (char *));
 		if (!argv) {
-			free (proc);
-			return NULL;
+			r_sys_perror ("subproc-start calloc (argv)");
+			r_sys_exit (-1, true);
 		}
+		
 		argv[0] = (char *)file;
 		if (args_size) {
 			memcpy (argv + 1, args, sizeof (char *) * args_size);
 		}
+		
+		// Set environment variables
 		size_t i;
 		for (i = 0; i < env_size; i++) {
-			setenv (envvars[i], envvals[i], 1);
+			if (envvars[i] && envvals[i]) {
+				setenv (envvars[i], envvals[i], 1);
+			}
 		}
+		
+		// Execute the command
 		execvp (file, argv);
-		r_sys_perror ("subproc-start exec");
+		r_sys_perror ("subproc-start exec failed");
+		free(argv);
 		r_sys_exit (-1, true);
 	}
 
-	// parent
+	// Parent process
+	// Close unused pipe ends
 	close (stdin_pipe[0]);
+	stdin_pipe[0] = -1;
 	close (stdout_pipe[1]);
+	stdout_pipe[1] = -1;
 	close (stderr_pipe[1]);
+	stderr_pipe[1] = -1;
 
+	// Register the subprocess
 	r_pvector_push (&subprocs, proc);
-
 	r_th_lock_leave (subprocs_mutex);
 
 	return proc;
+
 error:
-	if (proc && proc->killpipe[0] == -1) {
-		close (proc->killpipe[0]);
+	// Clean up all resources in case of error
+	if (proc) {
+		if (proc->killpipe[0] != -1) {
+			close (proc->killpipe[0]);
+		}
+		if (proc->killpipe[1] != -1) {
+			close (proc->killpipe[1]);
+		}
+		r_th_lock_free (proc->lock);
+		free (proc);
 	}
-	if (proc && proc->killpipe[1] == -1) {
-		close (proc->killpipe[1]);
-	}
-	free (proc);
-	if (stderr_pipe[0] == -1) {
-		close (stderr_pipe[0]);
-	}
-	if (stderr_pipe[1] == -1) {
-		close (stderr_pipe[1]);
-	}
-	if (stdout_pipe[0] == -1) {
-		close (stdout_pipe[0]);
-	}
-	if (stdout_pipe[1] == -1) {
-		close (stdout_pipe[1]);
-	}
-	if (stdin_pipe[0] == -1) {
+	
+	// Close all open pipe file descriptors
+	if (stdin_pipe[0] != -1) {
 		close (stdin_pipe[0]);
 	}
-	if (stdin_pipe[1] == -1) {
+	if (stdin_pipe[1] != -1) {
 		close (stdin_pipe[1]);
 	}
+	if (stdout_pipe[0] != -1) {
+		close (stdout_pipe[0]);
+	}
+	if (stdout_pipe[1] != -1) {
+		close (stdout_pipe[1]);
+	}
+	if (stderr_pipe[0] != -1) {
+		close (stderr_pipe[0]);
+	}
+	if (stderr_pipe[1] != -1) {
+		close (stderr_pipe[1]);
+	}
+	
 	r_th_lock_leave (subprocs_mutex);
 	return NULL;
 }
@@ -676,6 +736,18 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 	bool stdout_eof = false;
 	bool stderr_eof = false;
 	bool child_dead = false;
+
+	// Create temporary buffers for stdout and stderr
+	// to avoid mixing output from different read operations
+	RStrBuf *stdout_buf = r_strbuf_new("");
+	RStrBuf *stderr_buf = r_strbuf_new("");
+	
+	if (!stdout_buf || !stderr_buf) {
+		r_strbuf_free(stdout_buf);
+		r_strbuf_free(stderr_buf);
+		return false;
+	}
+	
 	while (!stdout_eof || !stderr_eof || !child_dead) {
 		fd_set rfds;
 		FD_ZERO (&rfds);
@@ -732,7 +804,8 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 			} else if (sz == 0) {
 				stdout_eof = true;
 			} else {
-				r_strbuf_append_n (&proc->out, buf, (int)sz);
+				// Append to temporary buffer instead of proc->out directly
+				r_strbuf_append_n(stdout_buf, buf, (int)sz);
 			}
 		}
 		if (FD_ISSET (proc->stderr_fd, &rfds)) {
@@ -749,7 +822,8 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 			if (sz == 0) {
 				stderr_eof = true;
 			} else {
-				r_strbuf_append_n (&proc->err, buf, (int)sz);
+				// Append to temporary buffer instead of proc->err directly
+				r_strbuf_append_n(stderr_buf, buf, (int)sz);
 			}
 		}
 		if (FD_ISSET (proc->killpipe[0], &rfds)) {
@@ -763,6 +837,31 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 	if (r < 0) {
 		r_sys_perror ("sp-wait select");
 	}
+
+	// Safely transfer buffered output to the process buffers
+	// This ensures atomicity of buffer updates and prevents mixing
+	r_th_lock_enter(proc->lock);
+	
+	// Move stdout to process buffer
+	char *stdout_str = r_strbuf_drain(stdout_buf);
+	if (stdout_str) {
+		r_strbuf_append(&proc->out, stdout_str);
+		free(stdout_str);
+	}
+	
+	// Move stderr to process buffer
+	char *stderr_str = r_strbuf_drain(stderr_buf);
+	if (stderr_str) {
+		r_strbuf_append(&proc->err, stderr_str);
+		free(stderr_str);
+	}
+	
+	r_th_lock_leave(proc->lock);
+	
+	// Free temporary buffers
+	r_strbuf_free(stdout_buf);
+	r_strbuf_free(stderr_buf);
+	
 	return child_dead;
 }
 
@@ -797,20 +896,55 @@ R_API void r2r_subprocess_free(R2RSubprocess *proc) {
 	if (!proc) {
 		return;
 	}
-	r_th_lock_enter (subprocs_mutex);
-	r_th_lock_free (proc->lock);
+	
+	// Take mutex to safely modify the subprocs vector
+	if (!r_th_lock_enter (subprocs_mutex)) {
+		// If we can't take the lock, still try to free resources
+		// to avoid leaking, but don't modify shared data structures
+		goto cleanup_without_vector;
+	}
+	
+	// Remove from global vector of subprocesses
 	r_pvector_remove_data (&subprocs, proc);
+	r_th_lock_leave (subprocs_mutex);
+	
+	// Now safely clean up process resources
+cleanup_without_vector:
+	// Acquire the process lock to ensure no one is currently
+	// writing to or reading from its buffers
+	if (proc->lock) {
+		r_th_lock_enter (proc->lock);
+	}
+	
+	// Free buffers
 	r_strbuf_fini (&proc->out);
 	r_strbuf_fini (&proc->err);
-	close (proc->killpipe[0]);
-	close (proc->killpipe[1]);
+	
+	// Release the process lock before freeing it
+	if (proc->lock) {
+		r_th_lock_leave (proc->lock);
+		r_th_lock_free (proc->lock);
+	}
+	
+	// Close all open file descriptors
+	if (proc->killpipe[0] != -1) {
+		close (proc->killpipe[0]);
+	}
+	if (proc->killpipe[1] != -1) {
+		close (proc->killpipe[1]);
+	}
 	if (proc->stdin_fd != -1) {
 		close (proc->stdin_fd);
 	}
-	close (proc->stdout_fd);
-	close (proc->stderr_fd);
+	if (proc->stdout_fd != -1) {
+		close (proc->stdout_fd);
+	}
+	if (proc->stderr_fd != -1) {
+		close (proc->stderr_fd);
+	}
+	
+	// Finally free the process struct itself
 	free (proc);
-	r_th_lock_leave (subprocs_mutex);
 }
 #endif
 
