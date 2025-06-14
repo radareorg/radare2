@@ -29,6 +29,9 @@ F_SDB=$(addsuffix .sdb,$F)
 
 ifeq (0,1)
 #$(USE_SDBTOOL),1)
+all:
+	$(SDBTOOL) -r $(shell pwd)
+else
 all: ${SDB}
 	@$(MAKE) compile
 
@@ -50,19 +53,10 @@ endif
 ${SDB}:
 	@echo "Cannot find ${SDB}"
 	@false
-else
-all:
-	$(SDBTOOL) $(shell pwd)
 endif
 
 clean:
 	rm -f *.sdb *.tmp *.d *.o *.c
-
-#	cp -rf "$(SDBPATH)/src" "$(SDBPATH)/src-native"
-#	cd "$(SDBPATH)/src-native" && CFLAGS="-w ${CPPFLAGS}" \
-#		$(MAKE) -j 1 ARCH=xxx CC=${HOST_CC} clean sdb
-#	cp -f "$(SDBPATH)/src-native/sdb" "$(SDBPATH)/sdb"
-#	rm -rf "$(SDBPATH)/src-native"
 
 .PHONY: all clean install install-symlink symstall
 
