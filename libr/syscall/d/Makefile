@@ -27,14 +27,11 @@ HOST_CC?=gcc
 
 F_SDB=$(addsuffix .sdb,$F)
 
-SDBPATH=$(LTOP)/../subprojects/sdb/
-ifeq ($(BUILD_OS),windows)
-BUILD_EXT_EXE=.exe
+ifeq (0,1)
+#$(USE_SDBTOOL),1)
+all:
+	$(SDBTOOL) -r $(shell pwd)
 else
-BUILD_EXT_EXE=
-endif
-SDB=$(SDBPATH)/sdb${BUILD_EXT_EXE}
-
 all: ${SDB}
 	@$(MAKE) compile
 
@@ -53,18 +50,13 @@ endif
 	${SDB} -t -C $@
 	$(CC) $(CFLAGS) $(PIC_CFLAGS) -c `echo $@ | sed -e s,sdb,c,`
 
-clean:
-	rm -f *.sdb
-
 ${SDB}:
 	@echo "Cannot find ${SDB}"
 	@false
+endif
 
-#	cp -rf "$(SDBPATH)/src" "$(SDBPATH)/src-native"
-#	cd "$(SDBPATH)/src-native" && CFLAGS="-w ${CPPFLAGS}" \
-#		$(MAKE) -j 1 ARCH=xxx CC=${HOST_CC} clean sdb
-#	cp -f "$(SDBPATH)/src-native/sdb" "$(SDBPATH)/sdb"
-#	rm -rf "$(SDBPATH)/src-native"
+clean:
+	rm -f *.sdb *.tmp *.d *.o *.c
 
 .PHONY: all clean install install-symlink symstall
 

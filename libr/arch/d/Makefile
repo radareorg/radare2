@@ -13,7 +13,7 @@ install:
 	mkdir -p "${OPDIR}"
 	cp -f *.r2 "${OPDIR}"
 
-#that sed is a workaround for mingw's pwd
+# that sed is a workaround for mingw's pwd
 CWD=$(shell pwd)
 symstall install-symlink: ${F_SDB}
 	mkdir -p "${OPDIR}"
