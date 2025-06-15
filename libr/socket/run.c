@@ -1221,7 +1221,9 @@ R_API bool r_run_start(RRunProfile *p) {
 		if (p->_pid) {
 			R_LOG_INFO ("pid = %d", r_sys_getpid ());
 		}
-		pause ();
+		while (true) {
+			pause ();
+		}
 		return true;
 	}
 #if LIBC_HAVE_FORK
