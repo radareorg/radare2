@@ -52,6 +52,7 @@ endif
 -include $(TOP)/mk/${COMPILER}.mk
 
 WWWROOT=$(DATADIR)/radare2/${VERSION}/www
+PANELS=$(DATADIR)/radare2/${VERSION}/panels
 endif
 
 ## global sdb stuff

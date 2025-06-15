@@ -232,7 +232,7 @@ install-doc-symlink:
 	for FILE in $(shell cd doc ; ls) ; do \
 		ln -fs "$(PWD)/doc/$$FILE" "${DESTDIR}${DOCDIR}" ; done
 
-install: install-doc install-man install-www install-pkgconfig
+install: install-doc install-man install-panels install-www install-pkgconfig
 	$(MAKE) -C libr install
 	$(MAKE) -C binr install
 	$(MAKE) -C shlr install
@@ -250,6 +250,11 @@ install: install-doc install-man install-www install-pkgconfig
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/"
 	$(SHELL) ./configure-plugins --rm-static $(DESTDIR)$(LIBDIR)/radare2/last/
 	cp -f subprojects/sdb/sdb "${DESTDIR}${BINDIR}/r2sdb"
+
+install-panels:
+	rm -rf "${DESTDIR}${PANELS}"
+	mkdir -p "${DESTDIR}${PANELS}"
+	cp -rf shlr/panels/* "${DESTDIR}${PANELS}"
 
 install-www:
 	rm -rf "${DESTDIR}${WWWROOT}"
