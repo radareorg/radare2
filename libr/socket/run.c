@@ -1222,7 +1222,7 @@ R_API bool r_run_start(RRunProfile *p) {
 			R_LOG_INFO ("pid = %d", r_sys_getpid ());
 		}
 		while (true) {
-#if R2__UNIX__
+#if R2__UNIX__ && !__wasi__
 			pause ();
 #else
 			r_sys_sleep (1);
