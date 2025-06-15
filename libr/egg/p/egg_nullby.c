@@ -4,7 +4,6 @@
 
 #define DEFAULT_NULLBY_KEY "0x41"
 
-/* based on @santitox patch */
 static RBuffer *build(REgg *egg) {
 	ut8 nkey;
 	const char *default_key = DEFAULT_NULLBY_KEY;
@@ -18,13 +17,13 @@ static RBuffer *build(REgg *egg) {
 	}
 	nkey = r_num_math (NULL, key);
 	if (nkey == 0) {
-		R_LOG_ERROR ("Invalid key (%s)", key);
+		R_LOG_ERROR ("nullby cant take null byte as key");
 		free (key);
-		return false;
+		return NULL;
 	}
 	if (nkey != (nkey & 0xff)) {
 		nkey &= 0xff;
-		R_LOG_INFO ("xor key wrapped to (%d)", nkey);
+		R_LOG_INFO ("nullby key wrapped to (%d)", nkey);
 	}
 	if (r_buf_size (egg->bin) > 250) { // XXX
 		R_LOG_ERROR ("shellcode is too long :(");
@@ -38,15 +37,26 @@ static RBuffer *build(REgg *egg) {
 		return NULL;
 	}
 
-	bool hasnul = false;
+	bool used[256] = {0};
 	for (i = 0; i < r_buf_size (sc); i++) {
 		// eprintf ("%02x -> %02x\n", sc->buf[i], sc->buf[i] ^nkey);
-		if (r_buf_read8_at (sc, i) == 0) {
-			hasnul = true;
-		}
+		ut8 ch = r_buf_read8_at (sc, i);
+		used[ch] = true;
 	}
+	const bool hasnul = used[0];
 	if (!hasnul) {
 		R_LOG_WARN ("This shellcode contains no null bytes. the encoder is not needed");
+	}
+	if (used[nkey]) {
+		int nnkey = 0;
+		for (i = 1; i < sizeof (used); i++) {
+			if (!used[i]) {
+				nnkey = i;
+				break;
+			}
+		}
+		R_LOG_INFO ("Selected key is in use, fallback to a valid %d", nnkey);
+		nkey = nnkey;
 	}
 	RBuffer *buf = r_buf_new ();
 	sc = r_buf_new ();
@@ -54,7 +64,7 @@ static RBuffer *build(REgg *egg) {
 	// This is the x86-32/64 byte replacement encoder
 	r_buf_append_buf (sc, egg->bin);
 	if (egg->arch == R_SYS_ARCH_X86) {
-		#define STUBLEN 0x1e
+		#define STUBLEN 27
 		ut8 stub[STUBLEN] =
 			"\x30\xdb" // xor bl, bl
 			"\x48\x31\xc9" // xor rcx, rcx
