@@ -259,6 +259,7 @@ typedef struct r_run_profile_t {
 	int _timeout_sig;
 	int _nice;
 	bool _stderrout;
+	bool _noprogram;
 } RRunProfile;
 
 R_API RRunProfile *r_run_new(const char * R_NULLABLE str);
