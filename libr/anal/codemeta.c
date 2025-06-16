@@ -1,16 +1,11 @@
-/* radare2 - LGPL - Copyright 2020-2024 - nimmumanoj, pancake */
+/* radare2 - LGPL - Copyright 2020-2025 - nimmumanoj, pancake */
 
 #include <r_core.h>
 #include <r_codemeta.h>
 
-#define USE_TRI 1
-
 R_API RCodeMetaItem *r_codemeta_item_clone(RCodeMetaItem *code) {
 	R_RETURN_VAL_IF_FAIL (code, NULL);
 	RCodeMetaItem *mi = r_codemeta_item_new ();
-	if (!mi) {
-		return NULL;
-	}
 	memcpy (mi, code, sizeof (RCodeMetaItem));
 	switch (mi->type) {
 	case R_CODEMETA_TYPE_FUNCTION_NAME:
@@ -32,35 +27,29 @@ R_API RCodeMetaItem *r_codemeta_item_clone(RCodeMetaItem *code) {
 R_API RCodeMeta *r_codemeta_clone(RCodeMeta *code) {
 	R_RETURN_VAL_IF_FAIL (code, NULL);
 	RCodeMeta *r = r_codemeta_new (code->code);
-	if (r) {
-		RCodeMetaItem *mi;
-		r_vector_foreach (&code->annotations, mi) {
-			r_codemeta_add_item (r, r_codemeta_item_clone (mi));
-		}
+	RCodeMetaItem *mi;
+	r_vector_foreach (&code->annotations, mi) {
+		r_codemeta_add_item (r, r_codemeta_item_clone (mi));
 	}
 	return r;
 }
 
-R_API RCodeMeta *r_codemeta_new(const char *code) {
-#if R2_600
+R_API RCodeMeta * R_NONNULL r_codemeta_new(const char *code) {
 	R_RETURN_VAL_IF_FAIL (code, NULL);
-#endif
 	RCodeMeta *r = R_NEW0 (RCodeMeta);
-	if (r) {
-		r->tree = r_crbtree_new (NULL);
-		r->code = strdup (code);
-		r_vector_init (&r->annotations, sizeof (RCodeMetaItem),
-				(RVectorFree)r_codemeta_item_fini, NULL);
-	}
+	r->tree = r_crbtree_new (NULL);
+	r->code = strdup (code);
+	r_vector_init (&r->annotations, sizeof (RCodeMetaItem),
+			(RVectorFree)r_codemeta_item_fini, NULL);
 	return r;
 }
 
-R_API RCodeMetaItem *r_codemeta_item_new(void) {
+R_API RCodeMetaItem * R_NONNULL r_codemeta_item_new(void) {
 	return R_NEW0 (RCodeMetaItem);
 }
 
 R_API void r_codemeta_item_free(RCodeMetaItem *mi) {
-	if (mi) {
+	if (R_LIKELY (mi)) {
 		r_codemeta_item_fini (mi);
 		free (mi);
 	}
@@ -103,8 +92,6 @@ R_API void r_codemeta_free(RCodeMeta *code) {
 	r_free (code->code);
 	r_free (code);
 }
-
-#if USE_TRI
 
 static int cmp_ins(void *incoming, void *in, void *user) {
 	RCodeMetaItem *mi = in;
@@ -157,8 +144,6 @@ static int cmp_find_min_mid(void *incoming, void *in, void *user) {
 	return 1;
 }
 
-#endif
-
 R_API void r_codemeta_add_item(RCodeMeta *code, RCodeMetaItem *mi) {
 	R_RETURN_IF_FAIL (code && mi);
 	r_vector_push (&code->annotations, mi);
@@ -176,7 +161,6 @@ R_API RPVector *r_codemeta_in(RCodeMeta *code, size_t start, size_t end) {
 	if (!r) {
 		return NULL;
 	}
-#if USE_TRI
 	size_t search_start = start / 2;
 	RCodeMetaItem *min = NULL;
 	r_crbtree_find (code->tree, &search_start, cmp_find_min_mid, &min);
@@ -208,16 +192,6 @@ R_API RPVector *r_codemeta_in(RCodeMeta *code, size_t start, size_t end) {
 		}
 	}
 	return r;
-#else
-	RCodeMetaItem *mi;
-	r_vector_foreach (&code->annotations, mi) {
-		if (start >= mi->end || end < mi->start) {
-			continue;
-		}
-		r_pvector_push (r, mi);
-	}
-	return r;
-#endif
 }
 
 R_API RVector *r_codemeta_line_offsets(RCodeMeta *code) {
@@ -247,94 +221,6 @@ R_API RVector *r_codemeta_line_offsets(RCodeMeta *code) {
 		r_pvector_free (annotations);
 	} while (cur < len);
 	return r;
-}
-
-// print methods
-R_API void r_codemeta_print_json(RCodeMeta *code) {
-	PJ *pj = pj_new ();
-	if (!pj) {
-		return;
-	}
-
-	pj_o (pj);
-	pj_ks (pj, "code", code->code);
-
-	pj_k (pj, "annotations");
-	pj_a (pj);
-
-	char *type_str;
-	RCodeMetaItem *annotation;
-	r_vector_foreach (&code->annotations, annotation) {
-		pj_o (pj);
-		pj_kn (pj, "start", (ut64)annotation->start);
-		pj_kn (pj, "end", (ut64)annotation->end);
-		switch (annotation->type) {
-		case R_CODEMETA_TYPE_OFFSET:
-			pj_ks (pj, "type", "offset");
-			pj_kn (pj, "offset", annotation->offset.offset);
-			break;
-		case R_CODEMETA_TYPE_FUNCTION_NAME:
-			pj_ks (pj, "type", "function_name");
-			pj_ks (pj, "name", annotation->reference.name);
-			pj_kn (pj, "offset", annotation->reference.offset);
-			break;
-		case R_CODEMETA_TYPE_GLOBAL_VARIABLE:
-			pj_ks (pj, "type", "global_variable");
-			pj_kn (pj, "offset", annotation->reference.offset);
-			break;
-		case R_CODEMETA_TYPE_CONSTANT_VARIABLE:
-			pj_ks (pj, "type", "constant_variable");
-			pj_kn (pj, "offset", annotation->reference.offset);
-			break;
-		case R_CODEMETA_TYPE_LOCAL_VARIABLE:
-			pj_ks (pj, "type", "local_variable");
-			pj_ks (pj, "name", annotation->variable.name);
-			break;
-		case R_CODEMETA_TYPE_FUNCTION_PARAMETER:
-			pj_ks (pj, "type", "function_parameter");
-			pj_ks (pj, "name", annotation->variable.name);
-			break;
-		case R_CODEMETA_TYPE_SYNTAX_HIGHLIGHT:
-			pj_ks (pj, "type", "syntax_highlight");
-			type_str = NULL;
-			switch (annotation->syntax_highlight.type) {
-			case R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD:
-				type_str = "keyword";
-				break;
-			case R_SYNTAX_HIGHLIGHT_TYPE_COMMENT:
-				type_str = "comment";
-				break;
-			case R_SYNTAX_HIGHLIGHT_TYPE_DATATYPE:
-				type_str = "datatype";
-				break;
-			case R_SYNTAX_HIGHLIGHT_TYPE_FUNCTION_NAME:
-				type_str = "function_name";
-				break;
-			case R_SYNTAX_HIGHLIGHT_TYPE_FUNCTION_PARAMETER:
-				type_str = "function_parameter";
-				break;
-			case R_SYNTAX_HIGHLIGHT_TYPE_LOCAL_VARIABLE:
-				type_str = "local_variable";
-				break;
-			case R_SYNTAX_HIGHLIGHT_TYPE_CONSTANT_VARIABLE:
-				type_str = "constant_variable";
-				break;
-			case R_SYNTAX_HIGHLIGHT_TYPE_GLOBAL_VARIABLE:
-				type_str = "global_variable";
-				break;
-			}
-			if (type_str) {
-				pj_ks (pj, "syntax_highlight", type_str);
-			}
-			break;
-		}
-		pj_end (pj);
-	}
-	pj_end (pj);
-
-	pj_end (pj);
-	r_cons_printf ("%s\n", pj_string (pj));
-	pj_free (pj);
 }
 
 #define PALETTE(x) (cons && cons->context->pal.x) ? cons->context->pal.x
@@ -410,7 +296,7 @@ static void print_disasm_in_binary_line_bar(RCodeMeta *code, ut64 offset, size_t
 	r_cons_printf ("    |");
 }
 
-R_API void r_codemeta_print_internal(RCodeMeta *code, RVector *line_offsets, RAnal *anal) {
+static void r_codemeta_print_internal(RCodeMeta *code, RVector *line_offsets, RAnal *anal) {
 	if (code->annotations.len == 0) {
 		r_cons_printf ("%s\n", code->code);
 		return;
@@ -469,6 +355,7 @@ R_API void r_codemeta_print_internal(RCodeMeta *code, RVector *line_offsets, RAn
 		case R_SYNTAX_HIGHLIGHT_TYPE_CONSTANT_VARIABLE:
 			color = PALETTE (num)
 			    : Color_YELLOW;
+			break;
 		default:
 			break;
 		}
