@@ -670,7 +670,7 @@ jobs:
         run: sha256sum $ASSET_FILES | awk '{sub(".*/", "", $2); print $1"  "$2}' > checksums.txt
       - name: Create GitHub release
         id: create_release
-        uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631 # v2.2.2
+        uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 # v2.3.2
         with:
           name: ${{ steps.r2v.outputs.branch }}
           tag_name: ${{ needs.check_release.outputs.tag_name }}
