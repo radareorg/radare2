@@ -1639,12 +1639,15 @@ R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8 *_a, ut64 ba, const ut8
 	free (b);
 }
 
-R_API void r_print_bytes(RPrint *p, const ut8 *buf, int len, const char *fmt) {
+R_API void r_print_bytes(RPrint *p, const ut8 *buf, int len, const char *fmt, const char sep) {
 	int i;
 	RCons *cons = p->consb.cons;
 	if (cons) {
 		for (i = 0; i < len; i++) {
 			p->consb.cb_printf (cons, fmt, buf[i]);
+			if (sep && i + 1 < len) {
+				p->consb.cb_printf (cons, "%c", sep);
+			}
 		}
 		p->consb.cb_printf (cons, "\n");
 	} else {

@@ -2726,7 +2726,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			}
 			ut8 *buf = r_reg_get_bytes (core->dbg->reg, type, &len);
 			if (str[0] == '8') {
-				r_print_bytes (core->print, buf, len, "%02x");
+				r_print_bytes (core->print, buf, len, "%02x", 0);
 			} else {
 				switch (str[1]) {
 				case '1':
