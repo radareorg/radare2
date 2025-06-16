@@ -2295,11 +2295,19 @@ bool Elf_(get_stripped)(ELFOBJ *eo) {
 	if (!eo->shdr) {
 		return true;
 	}
-
 	if (get_section_by_name (eo, ".gnu_debugdata")) {
 		return false;
 	}
-
+	RBinElfSection *debuglink = get_section_by_name (eo, ".gnu_debuglink");
+	if (debuglink) {
+		char buf[128] = {0};
+		ut64 addr = debuglink->offset;
+		ut64 size = sizeof (buf) - 1; // section->offset;
+		if (r_buf_read_at (eo->b, addr, (ut8*)buf, size) == size) {
+			R_LOG_INFO ("SideloadDwarf with this command: obf %s", buf);
+		}
+		return false;
+	}
 	size_t i;
 	for (i = 0; i < eo->ehdr.e_shnum; i++) {
 		if (eo->shdr[i].sh_type == SHT_SYMTAB) {
