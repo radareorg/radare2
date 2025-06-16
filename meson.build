@@ -180,6 +180,7 @@ if host_machine.system() == 'windows'
   r2_zigns = join_paths(r2_datdir, 'zigns')
   r2_scripts = join_paths(r2_datdir, 'scripts')
   r2_themes = join_paths(r2_datdir, 'cons')
+  r2_panels = join_paths(r2_datdir, 'panels')
   r2_platform = join_paths(r2_datdir, 'platform')
   r2_fortunes = join_paths(r2_datdir, 'doc')
   r2_flags = join_paths(r2_datdir, 'flag')
@@ -191,6 +192,7 @@ if host_machine.system() == 'windows'
     'r2_platform',
     'r2_zigns',
     'r2_themes',
+    'r2_panels',
     'r2_fortunes',
     'r2_flags',
     'r2_hud'
@@ -228,6 +230,7 @@ else
   r2_zigns = join_paths(r2_datdir_r2, r2_version, 'zigns')
   r2_platform = join_paths(r2_datdir_r2, r2_version, 'platform')
   r2_themes = join_paths(r2_datdir_r2, r2_version, 'cons')
+  r2_panels = join_paths(r2_datdir_r2, r2_version, 'panels')
   r2_fortunes = join_paths(r2_datdir, 'doc', 'radare2')
   r2_flags = join_paths(r2_datdir_r2, r2_version, 'flag')
   r2_hud = join_paths(r2_datdir_r2, r2_version, 'hud')
@@ -398,6 +401,7 @@ userconf.set('SDB', r2_sdb)
 userconf.set('PLATFORM', r2_platform)
 userconf.set('ZIGNS', r2_zigns)
 userconf.set('THEMES', r2_themes)
+userconf.set('PANELS', r2_panels)
 userconf.set('FORTUNES', r2_fortunes)
 userconf.set('FLAGS', r2_flags)
 userconf.set('HUD', r2_hud)
@@ -616,6 +620,8 @@ subdir('libr/cons/d')
 subdir('libr/magic/d')
 subdir('libr/flag/d')
 subdir('libr/main')
+subdir('shlr/panels')
+
 
 subdir('binr')
 if meson.is_subproject()
