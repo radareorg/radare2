@@ -304,9 +304,7 @@ typedef struct r_anal_function_t {
 	RAnalFcnMeta meta;
 	RList *imports; // maybe bound to class?
 	struct r_anal_t *anal; // this function is associated with this instance
-#if R2_600
 	ut64 ts; // timestamp when the function was registered. useful to sort them by order or "incremental projects"). afla
-#endif
 } RAnalFunction;
 
 typedef struct r_anal_func_arg_t {
