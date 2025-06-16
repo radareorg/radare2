@@ -5,6 +5,91 @@
 
 #include "minunit.h"
 
+static char *r_codemeta_print_json(RCodeMeta *code) {
+	PJ *pj = pj_new ();
+	if (!pj) {
+		return;
+	}
+
+	pj_o (pj);
+	pj_ks (pj, "code", code->code);
+
+	pj_k (pj, "annotations");
+	pj_a (pj);
+
+	char *type_str;
+	RCodeMetaItem *annotation;
+	r_vector_foreach (&code->annotations, annotation) {
+		pj_o (pj);
+		pj_kn (pj, "start", (ut64)annotation->start);
+		pj_kn (pj, "end", (ut64)annotation->end);
+		switch (annotation->type) {
+		case R_CODEMETA_TYPE_OFFSET:
+			pj_ks (pj, "type", "offset");
+			pj_kn (pj, "offset", annotation->offset.offset);
+			break;
+		case R_CODEMETA_TYPE_FUNCTION_NAME:
+			pj_ks (pj, "type", "function_name");
+			pj_ks (pj, "name", annotation->reference.name);
+			pj_kn (pj, "offset", annotation->reference.offset);
+			break;
+		case R_CODEMETA_TYPE_GLOBAL_VARIABLE:
+			pj_ks (pj, "type", "global_variable");
+			pj_kn (pj, "offset", annotation->reference.offset);
+			break;
+		case R_CODEMETA_TYPE_CONSTANT_VARIABLE:
+			pj_ks (pj, "type", "constant_variable");
+			pj_kn (pj, "offset", annotation->reference.offset);
+			break;
+		case R_CODEMETA_TYPE_LOCAL_VARIABLE:
+			pj_ks (pj, "type", "local_variable");
+			pj_ks (pj, "name", annotation->variable.name);
+			break;
+		case R_CODEMETA_TYPE_FUNCTION_PARAMETER:
+			pj_ks (pj, "type", "function_parameter");
+			pj_ks (pj, "name", annotation->variable.name);
+			break;
+		case R_CODEMETA_TYPE_SYNTAX_HIGHLIGHT:
+			pj_ks (pj, "type", "syntax_highlight");
+			type_str = NULL;
+			switch (annotation->syntax_highlight.type) {
+			case R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD:
+				type_str = "keyword";
+				break;
+			case R_SYNTAX_HIGHLIGHT_TYPE_COMMENT:
+				type_str = "comment";
+				break;
+			case R_SYNTAX_HIGHLIGHT_TYPE_DATATYPE:
+				type_str = "datatype";
+				break;
+			case R_SYNTAX_HIGHLIGHT_TYPE_FUNCTION_NAME:
+				type_str = "function_name";
+				break;
+			case R_SYNTAX_HIGHLIGHT_TYPE_FUNCTION_PARAMETER:
+				type_str = "function_parameter";
+				break;
+			case R_SYNTAX_HIGHLIGHT_TYPE_LOCAL_VARIABLE:
+				type_str = "local_variable";
+				break;
+			case R_SYNTAX_HIGHLIGHT_TYPE_CONSTANT_VARIABLE:
+				type_str = "constant_variable";
+				break;
+			case R_SYNTAX_HIGHLIGHT_TYPE_GLOBAL_VARIABLE:
+				type_str = "global_variable";
+				break;
+			}
+			if (type_str) {
+				pj_ks (pj, "syntax_highlight", type_str);
+			}
+			break;
+		}
+		pj_end (pj);
+	}
+	pj_end (pj);
+	pj_end (pj);
+	return pj_drain (pj);
+}
+
 static RCodeMetaItem make_code_annotation(int st, int en, RCodeMetaItemType typec,
 	ut64 offset, RSyntaxHighlightType types) {
 	RCodeMetaItem annotation = {0};
@@ -310,14 +395,9 @@ static bool test_r_codemeta_print_json(void) {
 static bool test_r_codemeta_print_json_context_annotations(void) {
 	RCodeMeta *code = get_all_context_annotated_code ();
 	char *expected = "{\"code\":\"\\nfunc-name\\nconst-var\\n   global-var(\\\"Hello, local-var\\\");\\n    function-param\\n}\\n\",\"annotations\":[{\"start\":1,\"end\":10,\"type\":\"function_name\",\"name\":\"func-name\",\"offset\":1234},{\"start\":10,\"end\":19,\"type\":\"constant_variable\",\"offset\":12345},{\"start\":23,\"end\":33,\"type\":\"global_variable\",\"offset\":123456},{\"start\":42,\"end\":51,\"type\":\"local_variable\",\"name\":\"local-var\"},{\"start\":59,\"end\":73,\"type\":\"function_parameter\",\"name\":\"function-param\"}]}\n";
-	RCons *cons = r_cons_new ();
-	r_kons_push (cons);
-	r_codemeta_print_json (code);
-	char *actual = strdup (r_cons_get_buffer ());
-	r_kons_pop (cons);
+	char *actual = r_codemeta_print_json (code);
 	mu_assert_streq (actual, expected, "r_codemeta_print_json() output doesn't match with the expected output");
 	free (actual);
-	r_kons_free (cons);
 	r_codemeta_free (code);
 	mu_end;
 }

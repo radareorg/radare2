@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake, maijin, thestr4ng3r */
+/* radare - LGPL - Copyright 2009-2025 - pancake, maijin, thestr4ng3r */
 
 #include "r_anal.h"
 

@@ -675,7 +675,7 @@ static class_type_info *rtti_itanium_type_info_new(RVTableContext *context, ut64
 
 static void rtti_itanium_type_info_free(void *info) {
 	class_type_info *cti = info;
-	if (!cti) {
+	if (R_UNLIKELY (!cti)) {
 		return;
 	}
 
@@ -739,20 +739,15 @@ R_API bool r_anal_rtti_itanium_print_at_vtable(RVTableContext *context, ut64 add
 }
 
 R_API char *r_anal_rtti_itanium_demangle_class_name(RVTableContext *context, const char *name) {
-	if (!name || !*name) {
+	if (R_STR_ISEMPTY (name)) {
 		return NULL;
 	}
-
-	char *result = NULL;
-
-	if (name[0] != '_') {
-		char *to_demangle = r_str_newf ("_Z%s", name);
-		result = context->anal->binb.demangle (NULL, "cxx", to_demangle, 0, false);
-		free (to_demangle);
-	} else {
-		result = context->anal->binb.demangle (NULL, "cxx", name, 0, false);
+	if (name[0] == '_') {
+		return context->anal->binb.demangle (NULL, "cxx", name, 0, false);
 	}
-
+	char *to_demangle = r_str_newf ("_Z%s", name);
+	char *result = context->anal->binb.demangle (NULL, "cxx", to_demangle, 0, false);
+	free (to_demangle);
 	return result;
 }
 
