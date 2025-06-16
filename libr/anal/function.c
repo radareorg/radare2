@@ -93,6 +93,7 @@ R_API RAnalFunction *r_anal_function_new(RAnal *anal) {
 	fcn->inst_vars = ht_up_new (NULL, inst_vars_kv_free, NULL);
 	fcn->labels = ht_up_new (NULL, labels_kv_free, NULL);
 	fcn->label_addrs = ht_pp_new (NULL, label_addrs_kv_free, NULL);
+	fcn->ts = r_time_now ();
 	return fcn;
 }
 
