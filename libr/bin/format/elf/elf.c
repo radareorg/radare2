@@ -2306,7 +2306,7 @@ bool Elf_(get_stripped)(ELFOBJ *eo) {
 		if (r_buf_read_at (eo->b, addr, (ut8*)buf, size) == size) {
 			R_LOG_INFO ("SideloadDwarf with this command: obf %s", buf);
 		}
-		return false;
+		return true;
 	}
 	size_t i;
 	for (i = 0; i < eo->ehdr.e_shnum; i++) {
