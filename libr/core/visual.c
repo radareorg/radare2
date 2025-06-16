@@ -221,6 +221,11 @@ static const char *__core_visual_print_command(RCore *core) {
 		core->stkcmd = R_STR_DUP (stackPrintCommand (core));
 		return printfmtColumns[PIDX];
 	}
+	if (PIDX == 1) {
+		if (r_config_get_b (core->config, "asm.pseudo.linear")) {
+			return "afsQ;pdcl";
+		}
+	}
 	return printfmtSingle[PIDX];
 }
 
@@ -427,7 +432,11 @@ static const char *rotateAsmemu(RCore *core) {
 	} else {
 		r_config_set_b (core->config, "emu.str", true);
 	}
-	return "pd";
+	if (r_config_get_b (core->config, "asm.pseudo.linear")) {
+		return "afsQ;pdcl";
+	}
+	return "afsQ;pd $r";  // ASSEMBLY
+	// return "pd";
 }
 
 R_API void r_core_visual_showcursor(RCore *core, int x) {
@@ -4046,6 +4055,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 #endif
 		case ':':
 			r_core_visual_prompt_input (core);
+			rotateAsmemu (core);
 			break;
 		case '_':
 			r_core_visual_hudstuff (core);
