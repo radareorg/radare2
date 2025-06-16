@@ -3862,6 +3862,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("asm.section.col", 20, "columns width to show asm.section");
 	SETCB ("asm.sub.section", "false", &cb_asmsubsec, "show offsets in disasm prefixed with section/map name");
 	SETCB ("asm.pseudo", "false", &cb_asmpseudo, "enable pseudo syntax");
+	SETB ("asm.pseudo.linear", "false", "visual disassemble with pdcl instead of pd (EXPERIMENTAL)");
 	SETB ("asm.size", "false", "show size of opcodes in disassembly (pd)");
 	SETB ("asm.stackptr", "false", "show stack pointer at disassembly");
 	SETB ("asm.cyclespace", "false", "indent instructions depending on CPU-cycles");
