@@ -49,12 +49,14 @@ static RCoreHelpMessage help_msg_psp = {
 static RCoreHelpMessage help_msg_p8 = {
 	"Usage: p8[*fjx]", " [len]", "8bit hexpair list of bytes (see pcj)",
 	"p8", " ([len])", "print hexpairs string",
+	"p8,", "", "comma separated 0xhexadecimal bytes",
 	"p8*", "", "display r2 commands to write this block",
 	"p8b", "", "print hexpairs of basic block",
 	"p8d", "", "space separated list of byte values in decimal",
 	"p8f", "[j]", "print hexpairs of function (linear)",
 	"p8fm", "[j]", "print linear function byte:mask pattern (zero-filled bbgaps)",
 	"p8j", "", "print hexpairs in JSON array",
+	"p8s", "", "space separated hex bytes",
 	"p8x", "", "print hexpairs honoring hex.cols",
 	NULL
 };
@@ -192,7 +194,7 @@ static RCoreHelpMessage help_msg_p = {
 	"p2", " [len]", "8x8 2bpp-tiles",
 	"p3", " [file]", "print 3D stereogram image of current block",
 	"p6", "[de] [len]", "base64 decode/encode",
-	"p8", "[?][dfjx] [len]", "8bit hexpair list of bytes",
+	"p8", "[?][bdfsjx] [len]", "8bit hexpair list of bytes",
 	"p=", "[?][bep] [N] [L] [b]", "show entropy/printable chars/chars bars",
 	"pa", "[?][edD] [arg]", "pa:assemble  pa[dD]:disasm or pae: esil from hex",
 	"pA", "[n_ops]", "show n_ops address and type",
@@ -3406,7 +3408,7 @@ static void print_encrypted_block(RCore *core, const char *algo, const char *key
 			int result_size = 0;
 			ut8 *result = r_muta_session_get_output (cj, &result_size);
 			if (result) {
-				r_print_bytes (core->print, result, result_size, "%02x");
+				r_print_bytes (core->print, result, result_size, "%02x", 0);
 				free (result);
 			}
 		}
@@ -3482,7 +3484,7 @@ static void cmd_print_op(RCore *core, const char *input) {
 			int result_size = 0;
 			ut8 *result = r_muta_session_get_output (cj, &result_size);
 			if (result) {
-				r_print_bytes (core->print, result, result_size, "%02x");
+				r_print_bytes (core->print, result, result_size, "%02x", 0);
 				free (result);
 			}
 		} else {
@@ -8043,7 +8045,7 @@ static int cmd_print(void *data, const char *input) {
 							for (i = 0; i < olen; i += 32) {
 								int left = R_MIN (olen - i, 32);
 								r_cons_printf ("wx+");
-								r_print_bytes (core->print, obuf + i, left, "%02x");
+								r_print_bytes (core->print, obuf + i, left, "%02x", 0);
 							}
 						} else {
 							R_LOG_ERROR ("Invalid input size %d", olen);
@@ -8237,7 +8239,7 @@ static int cmd_print(void *data, const char *input) {
 		case '0': // "px0"
 			if (l) {
 				int len = r_str_nlen ((const char *)core->block, core->blocksize);
-				r_print_bytes (core->print, core->block, len, "%02x");
+				r_print_bytes (core->print, core->block, len, "%02x", 0);
 			}
 			break;
 		case 'a': // "pxa"
@@ -8848,6 +8850,14 @@ static int cmd_print(void *data, const char *input) {
 			}
 			if (input[1] == 'j') { // "p8j"
 				r_core_cmdf (core, "pcj %s", input + 2);
+			} else if (input[1] == 's') { // "p8s"
+				r_core_block_read (core);
+				block = core->block;
+				r_print_bytes (core->print, block, l, "%02x", ' ');
+			} else if (input[1] == ',') { // "p8,"
+				r_core_block_read (core);
+				block = core->block;
+				r_print_bytes (core->print, block, l, "%02x", ',');
 			} else if (input[1] == 'x') { // "p8x"
 				r_core_block_read (core);
 				block = core->block;
@@ -8860,7 +8870,7 @@ static int cmd_print(void *data, const char *input) {
 					if (rad) {
 						r_kons_printf (core->cons, "wx+ ");
 					}
-					r_print_bytes (core->print, block + i, R_MIN (cols, len - cols), "%02x");
+					r_print_bytes (core->print, block + i, R_MIN (cols, len - cols), "%02x", 0);
 				}
 			} else if (input[1] == 'd') { // "p8d"
 				int i;
@@ -8897,7 +8907,7 @@ static int cmd_print(void *data, const char *input) {
 				if (rad) {
 					r_kons_printf (core->cons, "wx+ ");
 				}
-				r_print_bytes (core->print, block, len, "%02x");
+				r_print_bytes (core->print, block, len, "%02x", 0);
 			}
 		}
 		break;
