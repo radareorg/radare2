@@ -620,11 +620,8 @@ subdir('libr/cons/d')
 subdir('libr/magic/d')
 subdir('libr/flag/d')
 subdir('libr/main')
+subdir('shlr/panels')
 
-install_subdir('.',
-  install_dir: join_paths(get_option('prefix'), r2_panels),
-  exclude_files: ['Makefile', 'meson.build']
-)
 
 subdir('binr')
 if meson.is_subproject()
