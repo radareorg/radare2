@@ -3176,13 +3176,10 @@ static bool section_is_valid(ELFOBJ *eo, RBinElfSection *sect) {
 
 static Elf_(Xword) get_section_mode(ELFOBJ *eo, size_t pos) {
 	RBinElfSection *section = r_vector_at (&eo->g_sections, pos);
-	// Recognize standard ELF relocation sections by type, not by name
-	//if (r_str_startswith (section->name, ".rela.")) {
-	if (section->type == SHT_RELA) {
+	if (r_str_startswith (section->name, ".rela.")) {
 		return DT_RELA;
 	}
-	//if (r_str_startswith (section->name, ".rel.")) {
-	if (section->type == SHT_REL) {
+	if (r_str_startswith (section->name, ".rel.")) {
 		return DT_REL;
 	}
 	return 0;
@@ -3698,7 +3695,7 @@ static bool parse_pt_dynamic(RBinFile *bf, RBinSection *ptr) {
 		}
 		switch (entry.d_tag) {
 		case DT_RELR:
-			R_LOG_INFO ("TODO: parse relr section");
+			R_LOG_TODO ("parse relr section");
 #if 0
 				{
 					ut64 offset = dyn->d_un.d_ptr;
