@@ -500,6 +500,7 @@ static void set_default_value_dynamic_info(ELFOBJ *eo) {
 	eo->dyn_info.dt_strtab = R_BIN_ELF_ADDR_MAX;
 	eo->dyn_info.dt_symtab = R_BIN_ELF_ADDR_MAX;
 	eo->dyn_info.dt_rela = R_BIN_ELF_ADDR_MAX;
+	eo->dyn_info.dt_relr = R_BIN_ELF_ADDR_MAX;
 	eo->dyn_info.dt_relasz = 0;
 	eo->dyn_info.dt_relaent = 0;
 	eo->dyn_info.dt_strsz = 0;
@@ -567,6 +568,9 @@ static void fill_dynamic_entries(ELFOBJ *eo, ut64 loaded_offset, ut64 dyn_size) 
 			break;
 		case DT_RELA:
 			eo->dyn_info.dt_rela = d.d_un.d_ptr;
+			break;
+		case DT_RELR:
+			eo->dyn_info.dt_relr = d.d_un.d_ptr;
 			break;
 		case DT_RELASZ:
 			eo->dyn_info.dt_relasz = d.d_un.d_val;
@@ -3328,6 +3332,34 @@ static bool read_reloc(ELFOBJ *eo, RBinElfReloc *r, Elf_(Xword) rel_mode, ut64 v
 	if (rel_mode == DT_RELA) {
 		reloc_info.r_addend = R_BIN_ELF_READWORD (buf, i);
 		r->addend = reloc_info.r_addend;
+	} else if (rel_mode == DT_RELR) {
+#if 0
+// TODO: IMPLEMENT PARSING RELR TYPES TAKE THIS IMPLEMENTATION AS REFERENCE
+		ut8 b = r_buf_read8_at (eo->b, cur++);
+		ut64 delta = 0;
+
+		if (b & 0x80) {
+			delta = r_read_uleb128 (&buf);
+		} else {
+			delta = ((ut64)(b >> 3)) << shift;
+		}
+
+		off += delta;
+		if (b & 0x1) {
+			sym += r_read_sleb128 (&buf);
+		}
+		if (b & 0x2) {
+			type += r_read_sleb128 (&buf);
+		}
+		if (b & 0x4) {
+			addend += r_read_sleb128 (&buf);
+		}
+
+		Elf_(Reloc) r = { .r_offset = off, .r_sym = sym, .r_type = type, .r_addend = addend };
+		r_list_append (eo->relocs, r_mem_dup (&r, sizeof (r)));
+		ut64 at = r_buf_get_at (eo->b, shdr->sh_offset, NULL);
+		cur = shdr->sh_offset + (buf - at);
+#endif
 	}
 	r->mode = rel_mode;
 	r->offset = reloc_info.r_offset;
@@ -3357,13 +3389,10 @@ static bool section_is_valid(ELFOBJ *eo, RBinElfSection *sect) {
 
 static Elf_(Xword) get_section_mode(ELFOBJ *eo, size_t pos) {
 	RBinElfSection *section = r_vector_at (&eo->g_sections, pos);
-	// Recognize standard ELF relocation sections by type, not by name
-	//if (r_str_startswith (section->name, ".rela.")) {
-	if (section->type == SHT_RELA) {
+	if (r_str_startswith (section->name, ".rela.")) {
 		return DT_RELA;
 	}
-	//if (r_str_startswith (section->name, ".rel.")) {
-	if (section->type == SHT_REL) {
+	if (r_str_startswith (section->name, ".rel.")) {
 		return DT_REL;
 	}
 	if ((section->type & 0xff) == SHT_CREL) {
@@ -3430,6 +3459,16 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 		}
 
 		// XXX reloc is a weak pointer we can't own it!
+		int index = r_vector_index (&eo->g_relocs);
+		ht_uu_insert (eo->rel_cache, reloc->sym + 1, index + 1);
+		fix_rva_and_offset_exec_file (eo, reloc);
+	}
+	// parse relr
+	for (offset = 0; offset < eo->dyn_info.dt_relrsz && pos < num_relocs; offset += eo->dyn_info.dt_relaent, pos++) {
+		RBinElfReloc *reloc = r_vector_end (&eo->g_relocs);
+		if (!read_reloc (eo, reloc, DT_RELR, eo->dyn_info.dt_rela + offset)) {
+			break;
+		}
 		int index = r_vector_index (&eo->g_relocs);
 		ht_uu_insert (eo->rel_cache, reloc->sym + 1, index + 1);
 		fix_rva_and_offset_exec_file (eo, reloc);
@@ -3507,7 +3546,26 @@ static ut64 get_next_not_analysed_offset(ELFOBJ *eo, size_t section_vaddr, size_
 	return offset;
 }
 
-static ut64 populate_relocs_record_from_section(ELFOBJ *eo, size_t pos, size_t num_relocs) {
+#if 0
+static bool populate_relocs_record_from_section(ELFOBJ *eo, Elf_(Shdr) *shdr) {
+	if (!eo || !shdr) {
+		return false;
+	}
+
+	switch (shdr->sh_type) {
+	case SHT_REL:
+	case SHT_RELA:
+		return read_reloc (eo, shdr);
+
+	case SHT_CREL: // New section type for compact reloc
+		return parse_crel_section (eo, shdr);
+	default:
+		return false;
+	}
+}
+#endif
+
+static size_t populate_relocs_record_from_section(ELFOBJ *eo, size_t pos, size_t num_relocs) {
 	if (!eo->sections_loaded) {
 		return pos;
 	}
@@ -3662,15 +3720,13 @@ const RVector* Elf_(load_libs)(ELFOBJ *eo) {
 
 static void create_section_from_phdr(ELFOBJ *eo, const char *name, ut64 addr, ut64 sz) {
 	R_RETURN_IF_FAIL (eo);
-	if (!addr || addr == UT64_MAX) {
-		return;
+	if (addr && addr != UT64_MAX) {
+		RBinElfSection *section = r_vector_end (&eo->g_sections);
+		section->offset = Elf_(v2p_new) (eo, addr);
+		section->rva = addr;
+		section->size = sz;
+		r_str_ncpy (section->name, name, R_ARRAY_SIZE (section->name) - 1);
 	}
-
-	RBinElfSection *section = r_vector_end (&eo->g_sections);
-	section->offset = Elf_(v2p_new) (eo, addr);
-	section->rva = addr;
-	section->size = sz;
-	r_str_ncpy (section->name, name, R_ARRAY_SIZE (section->name) - 1);
 }
 
 static const RVector *load_sections_from_phdr(ELFOBJ *eo) {
@@ -3683,6 +3739,7 @@ static const RVector *load_sections_from_phdr(ELFOBJ *eo) {
 	size_t num_sections = 0;
 	ut64 reldyn = 0, relava = 0, pltgotva = 0, relva = 0;
 	ut64 reldynsz = 0, relasz = 0, pltgotsz = 0;
+	ut64 relr = 0, relrsz = 0;
 
 	if (eo->dyn_info.dt_rel != R_BIN_ELF_ADDR_MAX) {
 		reldyn = eo->dyn_info.dt_rel;
@@ -3692,8 +3749,15 @@ static const RVector *load_sections_from_phdr(ELFOBJ *eo) {
 		relva = eo->dyn_info.dt_rela;
 		num_sections++;
 	}
+	if (eo->dyn_info.dt_relr != R_BIN_ELF_ADDR_MAX) {
+		relr = eo->dyn_info.dt_relr;
+		num_sections++;
+	}
 	if (eo->dyn_info.dt_relsz) {
 		reldynsz = eo->dyn_info.dt_relsz;
+	}
+	if (eo->dyn_info.dt_relrsz) {
+		relrsz = eo->dyn_info.dt_relrsz;
 	}
 	if (eo->dyn_info.dt_relasz) {
 		relasz = eo->dyn_info.dt_relasz;
@@ -3716,6 +3780,7 @@ static const RVector *load_sections_from_phdr(ELFOBJ *eo) {
 
 	create_section_from_phdr (eo, ".rel.dyn", reldyn, reldynsz);
 	create_section_from_phdr (eo, ".rela.plt", relava, pltgotsz);
+	create_section_from_phdr (eo, ".relr.dyn", relr, relrsz);
 	create_section_from_phdr (eo, ".rel.plt", relva, relasz);
 	create_section_from_phdr (eo, ".got.plt", pltgotva, pltgotsz);
 	return &eo->g_sections;
@@ -3916,6 +3981,35 @@ static bool parse_pt_dynamic(RBinFile *bf, RBinSection *ptr) {
 			break;
 		}
 		switch (entry.d_tag) {
+		case DT_RELR:
+			R_LOG_TODO ("parse relr section");
+#if 0
+				{
+					ut64 offset = dyn->d_un.d_ptr;
+					Elf_(Shdr) *shdr = NULL;
+					for (int j = 0; j < eo->num_sections; j++) {
+						if (eo->sections[j].sh_offset == offset && eo->sections[j].sh_type == SHT_RELR) {
+							shdr = &eo->sections[j];
+							break;
+						}
+					}
+					if (shdr) {
+						parse_crel_section(eo, shdr); // This function already exists in your file!
+					}
+					break;
+				}
+#endif
+#if 0
+			{
+				Elf_(Dyn) *d = &eo->dyn[j];
+				Elf_(Addr) offset = d->d_un.d_ptr;
+				Elf_(Shdr) *shdr = find_section_by_offset (eo, offset);
+				if (shdr && shdr->sh_type == SHT_RELR) {
+					parse_crel_section (eo, shdr);
+				}
+			}
+#endif
+			break;
 		case DT_INIT_ARRAY:
 			R_LOG_DEBUG ("init array");
 			init_addr = entry.d_un.d_val;
