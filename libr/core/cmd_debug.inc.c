@@ -592,13 +592,14 @@ static void cmd_drn(RCore *core, const char *str) {
 }
 
 static void setRarunProfileString(RCore *core, const char *str) {
-	char *s = strdup (str);
+	char *s = r_str_newf ("%s\n", str);
 	r_str_replace_char (s, ',', '\n');
 	char *v = r_base64_encode_dyn ((const ut8*)s, -1);
 	char *rs = r_str_newf ("base64:%s", v);
 	r_config_set (core->config, "dbg.profile", rs);
 	free (rs);
 	free (v);
+	free (s);
 }
 
 static void cmd_debug_cont_syscall(RCore *core, const char *_str) {

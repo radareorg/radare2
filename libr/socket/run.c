@@ -545,8 +545,10 @@ R_API bool r_run_parsefile(RRunProfile *p, const char *b) {
 		int len;
 		char *s = (char *)r_base64_decode_dyn (b + 7, -1, &len);
 		char *res = r_str_ndup (s, len);
+		bool ret = r_run_parse (p, res);
+		free (res);
 		free (s);
-		return res;
+		return ret;
 	}
 	char *s = r_file_slurp (b, NULL);
 	if (s) {
