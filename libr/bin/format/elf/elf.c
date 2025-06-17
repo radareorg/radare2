@@ -2168,7 +2168,7 @@ ut64 Elf_(get_main_offset)(ELFOBJ *eo) {
 		// non-thumb entry points
 		if (!memcmp (buf, "\x00\xb0\xa0\xe3\x00\xe0\xa0\xe3", 8)) {
 			if (buf[0x40 + 2] == 0xff && buf[0x40 + 3] == 0xeb) {
-				// nothing may happen
+				// nothing to do
 			} else if (!memcmp (buf + 0x28 + 2, "\xff\xeb", 2)) {
 				return Elf_(v2p) (eo, r_read_le32 (&buf[0x34]) & ~1);
 			}
@@ -4404,6 +4404,7 @@ RBinSymbol *Elf_(convert_symbol)(ELFOBJ *eo, RBinElfSymbol *symbol) {
 		ptr->bind = symbol->bind;
 		ptr->type = symbol->type;
 		ptr->is_imported = symbol->is_imported;
+		// ptr->is_internal = symbol->is_internal;
 		ptr->paddr = paddr;
 		ptr->vaddr = vaddr;
 		ptr->size = symbol->size;
