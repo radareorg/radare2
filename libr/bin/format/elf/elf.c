@@ -3144,10 +3144,13 @@ static bool section_is_valid(ELFOBJ *eo, RBinElfSection *sect) {
 
 static Elf_(Xword) get_section_mode(ELFOBJ *eo, size_t pos) {
 	RBinElfSection *section = r_vector_at (&eo->g_sections, pos);
-	if (r_str_startswith (section->name, ".rela.")) {
+	// Recognize standard ELF relocation sections by type, not by name
+	//if (r_str_startswith (section->name, ".rela.")) {
+	if (section->type == SHT_RELA) {
 		return DT_RELA;
 	}
-	if (r_str_startswith (section->name, ".rel.")) {
+	//if (r_str_startswith (section->name, ".rel.")) {
+	if (section->type == SHT_REL) {
 		return DT_REL;
 	}
 	return 0;
