@@ -250,7 +250,8 @@ static RRunProfile* _get_run_profile(RIO *io, int bits, char **argv) {
 	}
 	rp->_program = strdup (argv[0]);
 
-	if (io->runprofile && *io->runprofile) {
+	const char *runprofile = io->runprofile;
+	if (R_STR_ISNOTEMPTY (runprofile)) {
 		if (!r_run_parsefile (rp, io->runprofile)) {
 			R_LOG_ERROR ("Can't find profile '%s'", io->runprofile);
 			r_run_free (rp);

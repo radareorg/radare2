@@ -591,15 +591,14 @@ static void cmd_drn(RCore *core, const char *str) {
 	free (foo);
 }
 
-// XXX those tmp files are never removed and we shouldnt use files for this
 static void setRarunProfileString(RCore *core, const char *str) {
-	char *file = r_file_temp ("rarun2");
 	char *s = strdup (str);
-	r_config_set (core->config, "dbg.profile", file);
 	r_str_replace_char (s, ',', '\n');
-	r_file_dump (file, (const ut8*)s, strlen (s), 0);
-	r_file_dump (file, (const ut8*)"\n", 1, 1);
-	free (file);
+	char *v = r_base64_encode_dyn ((const ut8*)s, -1);
+	char *rs = r_str_newf ("base64:%s", v);
+	r_config_set (core->config, "dbg.profile", rs);
+	free (rs);
+	free (v);
 }
 
 static void cmd_debug_cont_syscall(RCore *core, const char *_str) {
