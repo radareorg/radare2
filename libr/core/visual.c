@@ -369,7 +369,7 @@ static void printSnow(RCore *core) {
 	if (!core->visual.snows) {
 		core->visual.snows = r_list_newf (free);
 	}
-	int i, h, w = r_cons_get_size (&h);
+	int i, h, w = r_kons_get_size (core->cons, &h);
 	int amount = r_num_rand (4);
 	if (amount > 0) {
 		for (i = 0; i < amount; i++) {
@@ -393,11 +393,11 @@ static void printSnow(RCore *core) {
 			r_list_delete (core->visual.snows, iter);
 			continue;
 		}
-		r_cons_gotoxy (snow->x, snow->y);
-		r_cons_printf ("*");
+		r_kons_gotoxy (core->cons, snow->x, snow->y);
+		r_kons_printf (core->cons, "*");
 	}
 	// r_cons_gotoxy (10 , 10);
-	r_cons_flush ();
+	r_kons_flush (core->cons);
 }
 #endif
 
@@ -523,12 +523,12 @@ R_API bool r_core_visual_hud(RCore *core) {
 	if (!res) {
 		r_cons_message (core->cons, "Cannot find hud file");
 	}
-	r_cons_clear ();
+	r_kons_clear (core->cons);
 	if (res) {
 		char *p = strchr (res, ';');
 		if (res) {
-			r_cons_println (res);
-			r_cons_flush ();
+			r_kons_println (core->cons, res);
+			r_kons_flush (core->cons);
 		}
 		if (R_STR_ISNOTEMPTY (p)) {
 			r_core_cmd0 (core, p + 1);
@@ -537,7 +537,7 @@ R_API bool r_core_visual_hud(RCore *core) {
 		ready = true;
 	}
 	r_core_visual_showcursor (core, false);
-	r_cons_flush ();
+	r_kons_flush (core->cons);
 	free (homehud);
 	free (f);
 	return ready;
@@ -604,10 +604,10 @@ repeat:
 	if (!p) {
 		return 0;
 	}
-	r_cons_clear00 ();
+	r_kons_clear00 (core->cons);
 	r_core_visual_append_help (q, "Visual Mode Help (short)", help_visual);
-	r_cons_printf ("%s", r_strbuf_get (q));
-	r_cons_flush ();
+	r_kons_printf (core->cons, "%s", r_strbuf_get (q));
+	r_kons_flush (core->cons);
 	const char *lesstr = NULL;
 	switch (r_cons_readchar (core->cons)) {
 	case 'q':
@@ -784,12 +784,12 @@ static void restore_current_addr(RCore *core, ut64 addr, ut64 bsze, ut64 newaddr
 R_API void r_core_visual_prompt_input(RCore *core) {
 	ut64 addr, bsze, newaddr = 0LL;
 	int ret, h;
-	(void) r_cons_get_size (&h);
+	(void) r_kons_get_size (core->cons, &h);
 	bool mouse_state = __holdMouseState(core);
-	r_cons_gotoxy (0, h);
-	r_cons_reset_colors ();
+	r_kons_gotoxy (core->cons, 0, h);
+	r_kons_reset_colors (core->cons);
 	//r_cons_printf ("\nPress <enter> to return to Visual mode.\n");
-	r_cons_show_cursor (true);
+	r_kons_show_cursor (core->cons, true);
 	core->vmode = false;
 	const int ovtmode = r_config_get_i (core->config, "scr.vtmode");
 	r_config_set_i (core->config, "scr.vtmode", 1);
@@ -808,10 +808,10 @@ R_API void r_core_visual_prompt_input(RCore *core) {
 		r_core_block_size (core, curbs);
 	}
 
-	r_cons_show_cursor (false);
+	r_kons_show_cursor (core->cons, false);
 	core->vmode = true;
 	r_kons_enable_mouse (core->cons, mouse_state && r_config_get_i (core->config, "scr.wheel"));
-	r_cons_show_cursor (true);
+	r_kons_show_cursor (core->cons, true);
 	r_config_set_i (core->config, "scr.vtmode", ovtmode);
 }
 
@@ -829,14 +829,14 @@ R_API int r_core_visual_prompt(RCore *core) {
 	if (*buf) {
 		r_line_hist_add (core->cons->line, buf);
 		r_core_cmd (core, buf, 0);
-		r_cons_echo (NULL);
-		r_cons_flush ();
+		r_kons_echo (core->cons, NULL);
+		r_kons_flush (core->cons);
 		if (r_config_get_b (core->config, "cfg.debug")) {
 			r_core_cmd (core, ".dr*", 0);
 		}
 		return 1;
 	}
-	r_cons_clear00 ();
+	r_kons_clear00 (core->cons);
 	r_core_visual_showcursor (core, false);
 	return 0;
 }
@@ -1137,7 +1137,7 @@ static void visual_search(RCore *core) {
 	} else {
 		R_LOG_ERROR ("Cannot find bytes");
 		r_cons_any_key (core->cons, NULL);
-		r_cons_clear00 ();
+		r_kons_clear00 (core->cons);
 	}
 }
 
@@ -1148,11 +1148,12 @@ R_API void r_core_visual_show_char(RCore *core, char ch) {
 	if (!IS_PRINTABLE (ch)) {
 		return;
 	}
-	r_cons_gotoxy (1, 2);
-	r_cons_printf (".---.\n");
-	r_cons_printf ("| %c |\n", ch);
-	r_cons_printf ("'---'\n");
-	r_cons_flush ();
+	RCons *cons = core->cons;
+	r_kons_gotoxy (cons, 1, 2);
+	r_kons_printf (cons, ".---.\n");
+	r_kons_printf (cons, "| %c |\n", ch);
+	r_kons_printf (cons, "'---'\n");
+	r_kons_flush (cons);
 	r_sys_sleep (1);
 }
 
@@ -1164,15 +1165,16 @@ R_API void r_core_visual_seek_animation(RCore *core, ut64 addr) {
 	if (core->addr == addr) {
 		return;
 	}
-	r_cons_gotoxy (1, 2);
-	r_cons_printf (".----.\n");
+	RCons *cons = core->cons;
+	r_kons_gotoxy (cons, 1, 2);
+	r_kons_printf (cons, ".----.\n");
 	if (addr > core->addr) {
-		r_cons_printf ("| \\/ |\n");
+		r_kons_printf (cons, "| \\/ |\n");
 	} else {
-		r_cons_printf ("| /\\ |\n");
+		r_kons_printf (cons, "| /\\ |\n");
 	}
-	r_cons_printf ("'----'\n");
-	r_cons_flush ();
+	r_kons_printf (cons, "'----'\n");
+	r_kons_flush (cons);
 	r_sys_usleep (90000);
 }
 
@@ -1609,7 +1611,7 @@ repeat:
 						res = r_str_append (res, dis);
 						free (dis);
 					}
- 					dis = res;
+					dis = res;
 				}
 				if (++count >= rows) {
 					r_kons_printf (cons, "...");
@@ -1658,7 +1660,7 @@ repeat:
 		r_core_visual_prompt_input (core);
 		goto repeat;
 	case '?':
-		r_cons_clear00 ();
+		r_kons_clear00 (core->cons);
 		RStrBuf *rsb = r_strbuf_new ("");
 		r_core_visual_append_help (rsb, "Xrefs Visual Analysis Mode (Vv + x) Help", help_msg_visual_xref);
 		ret = r_cons_less_str (core->cons, r_strbuf_get (rsb), "?");
@@ -2630,11 +2632,11 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 		" :  run command\n"
 	;
 	for (;;) {
-		r_cons_clear00 ();
-		r_cons_printf ("%s\n", browsemsg);
-		r_cons_flush ();
+		r_kons_clear00 (core->cons);
+		r_kons_printf (core->cons, "%s\n", browsemsg);
+		r_kons_flush (core->cons);
 		char ch = 0;
-		if (input && *input) {
+		if (R_STR_ISNOTEMPTY (input)) {
 			ch = *input;
 			input++;
 		} else {
@@ -2961,40 +2963,40 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				int ch = process_get_click (core, 0);
 				buf[0] = ch;
 				buf[1] = 0;
-				r_core_visual_cmd(core, buf);
+				r_core_visual_cmd (core, buf);
 			} else {
-			RAnalOp *op;
-			int wheel = r_config_get_i (core->config, "scr.wheel");
-			if (wheel) {
-				r_kons_enable_mouse (core->cons, true);
-			}
-			do {
-				op = r_core_anal_op (core, core->addr + core->print->cur, R_ARCH_OP_MASK_BASIC);
-				if (op) {
-					if (op->type == R_ANAL_OP_TYPE_JMP ||
-					op->type == R_ANAL_OP_TYPE_CJMP ||
-					op->type == R_ANAL_OP_TYPE_CALL ||
-					op->type == R_ANAL_OP_TYPE_CCALL) {
-						if (core->print->cur_enabled) {
-							int delta = R_ABS ((st64) op->jump - (st64) offset);
-							if (op->jump < core->addr || op->jump >= core->print->screen_bounds) {
-								r_io_sundo_push (core->io, offset, r_print_get_cursor (core->print));
-								r_core_visual_seek_animation (core, op->jump);
-								core->print->cur = 0;
+				RAnalOp *op;
+				int wheel = r_config_get_i (core->config, "scr.wheel");
+				if (wheel) {
+					r_kons_enable_mouse (core->cons, true);
+				}
+				do {
+					op = r_core_anal_op (core, core->addr + core->print->cur, R_ARCH_OP_MASK_BASIC);
+					if (op) {
+						if (op->type == R_ANAL_OP_TYPE_JMP ||
+								op->type == R_ANAL_OP_TYPE_CJMP ||
+								op->type == R_ANAL_OP_TYPE_CALL ||
+								op->type == R_ANAL_OP_TYPE_CCALL) {
+							if (core->print->cur_enabled) {
+								int delta = R_ABS ((st64) op->jump - (st64) offset);
+								if (op->jump < core->addr || op->jump >= core->print->screen_bounds) {
+									r_io_sundo_push (core->io, offset, r_print_get_cursor (core->print));
+									r_core_visual_seek_animation (core, op->jump);
+									core->print->cur = 0;
+								} else {
+									r_io_sundo_push (core->io, offset, r_print_get_cursor (core->print));
+									core->print->cur = delta;
+								}
 							} else {
-								r_io_sundo_push (core->io, offset, r_print_get_cursor (core->print));
-								core->print->cur = delta;
+								r_io_sundo_push (core->io, offset, 0);
+								r_core_visual_seek_animation (core, op->jump);
 							}
-						} else {
-							r_io_sundo_push (core->io, offset, 0);
-							r_core_visual_seek_animation (core, op->jump);
 						}
 					}
-				}
-				r_anal_op_free (op);
-			} while (--wheelspeed > 0);
-		}
-		break;
+					r_anal_op_free (op);
+				} while (--wheelspeed > 0);
+			}
+			break;
 		case 'o': // tab TAB
 			nextPrintFormat (core);
 			break;
@@ -3057,14 +3059,14 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					}
 				}
 				if (!canWrite (core, addr)) {
-					r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag, oo+ or e io.cache=true\n");
+					r_kons_printf (core->cons, "\nFile has been opened in read-only mode. Use -w flag, oo+ or e io.cache=true\n");
 					r_cons_any_key (core->cons, NULL);
 					return true;
 				}
 			}
-			r_cons_printf ("Enter assembler opcodes separated with ';':\n");
+			r_kons_printf (core->cons, "Enter assembler opcodes separated with ';':\n");
 			r_core_visual_showcursor (core, true);
-			r_cons_flush ();
+			r_kons_flush (core->cons);
 			r_cons_set_raw (false);
 			strcpy (buf, "\"wa ");
 			r_line_set_prompt (core->cons->line, "> ");
@@ -3255,7 +3257,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				} else {
 					r_cons_printf ("[t] ");
 				}
-				r_cons_flush ();
+				r_kons_flush (core->cons);
 				r_cons_set_raw (true);
 				int ch = r_cons_readchar (core->cons);
 				if (isdigit (ch)) {
@@ -3345,7 +3347,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				}
 			}
 			r_core_visual_showcursor (core, true);
-			r_cons_flush ();
+			r_kons_flush (core->cons);
 			r_cons_set_raw (0);
 			if (ch == 'I') {
 				strcpy (buf, "wow ");
@@ -3795,7 +3797,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				r_cons_gotoxy (0, 0);
 				if (r_core_vmark_dump (core, 'v')) {
 					r_cons_printf (R_CONS_CLEAR_LINE"Remove a shortcut key from the list\n");
-					r_cons_flush ();
+					r_kons_flush (core->cons);
 					const int ch = r_cons_readchar (core->cons);
 					r_core_vmark_del (core, ch);
 				}
@@ -3805,7 +3807,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			{
 				r_cons_gotoxy (0, 2);
 				if (r_core_vmark_dump (core, 'v')) {
-					r_cons_flush ();
+					r_kons_flush (core->cons);
 					const int ch = r_cons_readchar (core->cons);
 					r_core_vmark_seek (core, ch, NULL);
 				}
@@ -3821,10 +3823,10 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'Y':
 			if (!core->yank_buf) {
-				r_cons_print ("Cannot paste, clipboard is empty.\n");
-				r_cons_flush ();
+				r_kons_print (core->cons, "Cannot paste, clipboard is empty.\n");
+				r_kons_flush (core->cons);
 				r_cons_any_key (core->cons, NULL);
-				r_cons_clear00 ();
+				r_kons_clear00 (core->cons);
 			} else {
 				r_core_yank_paste (core, core->addr + core->print->cur, 0);
 			}
@@ -4447,7 +4449,7 @@ R_API void r_core_print_scrollbar(RCore *core) {
 		free (s);
 	}
 	r_list_free (words);
-	r_cons_flush ();
+	r_kons_flush (core->cons);
 }
 
 R_API void r_core_print_scrollbar_bottom(RCore *core) {
@@ -4514,7 +4516,7 @@ R_API void r_core_print_scrollbar_bottom(RCore *core) {
 		free (s);
 	}
 	r_list_free (words);
-	r_cons_flush ();
+	r_kons_flush (core->cons);
 }
 
 static void show_cursor(RCore *core) {
@@ -4524,7 +4526,7 @@ static void show_cursor(RCore *core) {
 		r_cons_show_cursor (1);
 		//r_cons_invert (1, 1);
 		//r_cons_print ("#");
-		r_cons_flush ();
+		r_kons_flush (core->cons);
 	}
 }
 
@@ -4540,7 +4542,7 @@ R_IPI void visual_refresh(RCore *core) {
 	} else {
 		r_cons_clear ();
 	}
-	r_cons_flush ();
+	r_kons_flush (core->cons);
 	r_cons_print_clear ();
 	r_cons_print (core->cons->context->pal.bgprompt);
 	core->cons->context->noflush = true;
@@ -4937,8 +4939,8 @@ dodo:
 		if (highlight_mode && highlight_sb) {
 			r_cons_gotoxy (0, 0);
 			char *s = r_strbuf_tostring (highlight_sb);
-			r_cons_printf ("%s[Highlight] %s|", R_CONS_CLEAR_LINE, s);
-			r_cons_flush ();
+			r_kons_printf (core->cons, "%s[Highlight] %s|", R_CONS_CLEAR_LINE, s);
+			r_kons_flush (core->cons);
 			free (s);
 		}
 		if (insert_mode_enabled (core)) {
@@ -5018,11 +5020,11 @@ dodo:
 								chrs_read += ch56;
 								flush_stdin (core->cons);
 #ifndef R2__WINDOWS__
-							// Following seems to fix an issue where scrolling slows
-							// down to a crawl for some terminals after some time
-							// mashing the up and down arrow keys
-							r_kons_set_raw (core->cons, false);
-							r_kons_set_raw (core->cons, true);
+								// Following seems to fix an issue where scrolling slows
+								// down to a crawl for some terminals after some time
+								// mashing the up and down arrow keys
+								r_kons_set_raw (core->cons, false);
+								r_kons_set_raw (core->cons, true);
 #endif
 							}
 						}
@@ -5053,7 +5055,7 @@ dodo:
 	}
 	core->cons->teefile = teefile;
 	r_cons_set_cup (false);
-	r_cons_clear00 ();
+	r_kons_clear00 (core->cons);
 	core->vmode = false;
 	core->cons->event_resize = NULL;
 	core->cons->event_data = NULL;
