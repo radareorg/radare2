@@ -541,6 +541,15 @@ static bool handle_redirection(const char *cmd, bool in, bool out, bool err) {
 
 R_API bool r_run_parsefile(RRunProfile *p, const char *b) {
 	R_RETURN_VAL_IF_FAIL (p && b, false);
+	if (r_str_startswith (b, "base64:")) {
+		int len;
+		char *s = (char *)r_base64_decode_dyn (b + 7, -1, &len);
+		char *res = r_str_ndup (s, len);
+		bool ret = r_run_parse (p, res);
+		free (res);
+		free (s);
+		return ret;
+	}
 	char *s = r_file_slurp (b, NULL);
 	if (s) {
 		bool ret = r_run_parse (p, s);

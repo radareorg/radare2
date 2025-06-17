@@ -237,7 +237,7 @@ static int main_help(int line) {
 		" -p [prj]     use project, list if no arg, load if no file\n"
 		" -P [file]    apply rapatch file and quit\n"
 		" -r [rarun2]  specify rarun2 profile to load (same as -e dbg.profile=X)\n"
-		" -R [rr2rule] specify custom rarun2 directive\n"
+		" -R [rr2rule] specify custom rarun2 directive (uses base64 dbg.profile)\n"
 		" -s [addr]    initial seek\n"
 		" -S           start r2 in sandbox mode\n"
 #if USE_THREADS && ALLOW_THREADED
@@ -674,6 +674,33 @@ static void mainr2_fini(RMainRadare2 *mr) {
 	r_core_free (mr->r);
 }
 
+static char *dp_read(RCore *core) {
+	const char *dbg_profile = r_config_get (core->config, "dbg.profile");
+	if (R_STR_ISNOTEMPTY (dbg_profile)) {
+		if (r_str_startswith (dbg_profile, "base64:")) {
+			int len;
+			char *s = (char *)r_base64_decode_dyn (dbg_profile + 7, -1, &len);
+			char *res = r_str_ndup (s, len);
+			free (s);
+			return res;
+		}
+		return r_file_slurp (dbg_profile, NULL);
+	}
+	return NULL;
+}
+
+static void dp_write(RCore *core, const char *s) {
+	if (R_STR_ISEMPTY (s)) {
+		r_config_set (core->config, "dbg.profile", "");
+	} else {
+		char *v = r_base64_encode_dyn ((const ut8*)s, -1);
+		char *rs = r_str_newf ("base64:%s", v);
+		r_config_set (core->config, "dbg.profile", rs);
+		free (rs);
+		free (v);
+	}
+}
+
 R_API int r_main_radare2(int argc, const char **argv) {
 	int c, ret;
 	RMainRadare2 mr;
@@ -1072,29 +1099,21 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		}
 	}
 	{
-		const char *dbg_profile = r_config_get (r->config, "dbg.profile");
-		if (R_STR_ISNOTEMPTY (dbg_profile)) {
-			char *msg = r_file_slurp (dbg_profile, NULL);
-			if (msg) {
-				char *program = strstr (msg, "program=");
-				if (program) {
-					program += 8;
-					char *p = 0;
-					p = strstr (program, "\r\n");
-					if (!p) {
-						p = strchr (program, '\n');
-					}
-					if (p) {
-						*p = 0;
-						mr.pfile = strdup (program);
-					}
+		char *msg = dp_read (r);
+		if (R_STR_ISNOTEMPTY (msg)) {
+			char *program = strstr (msg, "program=");
+			if (program) {
+				program += 8;
+				char *p = 0;
+				p = strstr (program, "\n");
+				if (p) {
+					*p = 0;
+					mr.pfile = r_str_trim_dup (program);
 				}
-				free (msg);
-			} else {
-				R_LOG_ERROR ("Cannot read dbg.profile '%s'", dbg_profile);
-				R_FREE (mr.pfile);
 			}
-		} else {
+		}
+		free (msg);
+		if (!mr.pfile) {
 			mr.pfile = argv[opt.ind] ? strdup (argv[opt.ind]) : NULL;
 		}
 	}
@@ -1155,14 +1174,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	}
 #endif // R2__WINDOWS__
 	if (mr.customRarunProfile) {
-		char *tfn = r_file_temp (".rarun2");
-		if (!r_file_dump (tfn, (const ut8*)mr.customRarunProfile, strlen (mr.customRarunProfile), 0)) {
-			R_LOG_ERROR ("Cannot create %s", tfn);
-		} else {
-			mr.haveRarunProfile = true;
-			r_config_set (r->config, "dbg.profile", tfn);
-		}
-		free (tfn);
+		dp_write (r, mr.customRarunProfile);
 		R_FREE (mr.customRarunProfile);
 	}
 	if (mr.debug == 1) {
@@ -1473,8 +1485,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			}
 		}
 		if (!mr.debug || mr.debug == 2) {
-			const char *dbg_profile = r_config_get (r->config, "dbg.profile");
-			if (opt.ind == argc && dbg_profile && *dbg_profile) {
+			if (opt.ind == argc && mr.pfile) {
 				if (R_STR_ISEMPTY (mr.pfile)) {
 					R_LOG_ERROR ("Missing file to open");
 					ret = 1;
