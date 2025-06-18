@@ -1019,45 +1019,19 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		mainr2_fini (&mr);
 		return rc;
 	}
+	if (mr.show_versions) {
+		return r_main_version_verify (r, 0, mr.json);
+	}
 	if (mr.show_version) {
-#if 0
+		int mode = 0;
 		if (mr.json) {
-			PJ *pj = pj_new ();
-			pj_o (pj);
-			pj_ks (pj, "name", "radare2");
-			pj_ks (pj, "version", R2_VERSION);
-			pj_ks (pj, "birth", R2_BIRTH);
-			pj_ks (pj, "commit", R2_GITTIP);
-			pj_ki (pj, "commits", R2_VERSION_COMMIT);
-			pj_ks (pj, "license", "LGPLv3");
-			pj_ks (pj, "tap", R2_GITTAP);
-			pj_ko (pj, "semver");
-			pj_ki (pj, "major", R2_VERSION_MAJOR);
-			pj_ki (pj, "minor", R2_VERSION_MINOR);
-			pj_ki (pj, "patch", R2_VERSION_MINOR);
-			pj_end (pj);
-			pj_end (pj);
-			char *s = pj_drain (pj);
-			printf ("%s\n", s);
-			free (s);
+			mode = 'j';
 		} else if (mr.quiet) {
-			printf ("%s\n", R2_VERSION);
-			mainr2_fini (&mr);
+			mode = 'q';
 		}
-#endif
-		{
-			r_main_version_verify (r, 0, mr.json);
-			int mode = 0;
-			if (mr.json) {
-				mode = 'j';
-			} else if (mr.quiet) {
-				mode = 'q';
-			}
-			int res = r_main_version_print ("radare2", mode);
-			mainr2_fini (&mr);
-			return res;
-		}
-		return 0;
+		int res = r_main_version_print ("radare2", mode);
+		mainr2_fini (&mr);
+		return res;
 	}
 	if (mr.stderrToStdout) {
 #if __wasi__

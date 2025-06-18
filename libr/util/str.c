@@ -4068,7 +4068,7 @@ R_API char *r_str_version(const char *program) {
 			R_SYS_OS"-"
 			R_SYS_ARCH"-%d\n",
 			program, R2_VERSION_COMMIT,
-			(R_SYS_BITS & 8)? 64: 32);
+			(R_SYS_BITS_CHECK (R_SYS_BITS, 64))? 64: 32);
 	int csv = R2_CSVERSION;
 	s = r_str_appendf (s, "birth: git.%s "R2_BIRTH"\n",
 			*R2_GITTAP ? R2_GITTAP: "");
