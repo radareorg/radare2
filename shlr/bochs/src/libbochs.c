@@ -245,6 +245,7 @@ bool bochs_open(libbochs_t* b, const char * pathBochs, const char * pathConfig) 
 		}
 		free (commandline_);
 	}
+	return result;
 #elif __wasi__
 	// nothing
 #else
@@ -256,13 +257,13 @@ bool bochs_open(libbochs_t* b, const char * pathBochs, const char * pathConfig) 
 
 	if (pipe (aStdinPipe) < 0) {
 		R_LOG_ERROR ("allocating pipe for child input redirect");
-		return false;
+		goto done;
 	}
 	if (pipe(aStdoutPipe) < 0) {
 		close (aStdinPipe[PIPE_READ]);
 		close (aStdinPipe[PIPE_WRITE]);
 		R_LOG_ERROR ("allocating pipe for child output redirect");
-		return false;
+		goto done;
 	}
 
 	nChild = fork ();
@@ -313,6 +314,7 @@ bool bochs_open(libbochs_t* b, const char * pathBochs, const char * pathConfig) 
 				bochs_close (b);
 			}
 		}
+		return result;
 	} else {
 		perror ("pipe");
 		// failed to create child
@@ -322,5 +324,8 @@ bool bochs_open(libbochs_t* b, const char * pathBochs, const char * pathConfig) 
 		close (aStdoutPipe[PIPE_WRITE]);
 	}
 #endif
+done:
+	R_FREE (b->data);
+	R_FREE (lpTmpBuffer);
 	return result;
 }
