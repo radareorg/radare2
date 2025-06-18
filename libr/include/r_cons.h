@@ -909,10 +909,10 @@ R_DEPRECATE R_API RConsContext *r_cons_context_new(RConsContext * R_NULLABLE par
 R_API void r_cons_context_free(RConsContext *context);
 R_API void r_cons_context_load(RConsContext *context);
 R_API void r_cons_context_reset(RConsContext *context);
-R_API bool r_cons_context_is_main(RConsContext *context);
+R_API bool r_cons_context_is_main(RCons *cons, RConsContext *context);
 R_API void r_cons_context_break(RConsContext *context);
-R_API void r_cons_context_break_push(RConsContext *context, RConsBreak cb, void *user, bool sig);
-R_API void r_cons_context_break_pop(RConsContext *context, bool sig);
+R_API void r_cons_context_break_push(RCons *cons, RConsContext *context, RConsBreak cb, void *user, bool sig);
+R_API void r_cons_context_break_pop(RCons *cons, RConsContext *context, bool sig);
 
 /* control */
 R_API char *r_cons_editor(RCons *cons, const char *file, const char *str);

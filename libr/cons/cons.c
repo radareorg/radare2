@@ -10,6 +10,7 @@ R_LIB_VERSION (r_cons);
 static RCons s_cons_global = {0};
 
 static void __break_signal(int sig);
+// XXX this is wrong
 static R_TH_LOCAL RCons *I = NULL;
 
 #include "thread.inc.c"
@@ -148,6 +149,7 @@ R_API RConsContext *r_cons_context(void) {
 }
 #endif
 
+// XXX must die
 R_API RCons *r_cons_global(RCons *c) {
 	if (c) {
 		I = c;
@@ -167,7 +169,7 @@ R_API void r_cons_break_clear(void) {
 	r_kons_break_clear (I);
 }
 
-R_API void r_cons_context_break_push(RConsContext *context, RConsBreak cb, void *user, bool sig) {
+R_API void r_cons_context_break_push(RCons* cons, RConsContext *context, RConsBreak cb, void *user, bool sig) {
 	// eprintf ("Brk.push\n");
 #if WANT_DEBUGSTUFF
 	if (!context || !context->break_stack) {
@@ -175,13 +177,10 @@ R_API void r_cons_context_break_push(RConsContext *context, RConsBreak cb, void 
 	}
 	// if we don't have any element in the stack start the signal
 	RConsBreakStack *b = R_NEW0 (RConsBreakStack);
-	if (!b) {
-		return;
-	}
 	if (r_stack_is_empty (context->break_stack)) {
 #if R2__UNIX__
 		if (!context->unbreakable) {
-			if (sig && r_cons_context_is_main ()) {
+			if (sig && r_cons_context_is_main (cons, context)) {
 				r_sys_signal (SIGINT, __break_signal);
 			}
 		}
@@ -198,7 +197,7 @@ R_API void r_cons_context_break_push(RConsContext *context, RConsBreak cb, void 
 #endif
 }
 
-R_API void r_cons_context_break_pop(RConsContext *context, bool sig) {
+R_API void r_cons_context_break_pop(RCons *cons, RConsContext *context, bool sig) {
 	// eprintf ("Brk.pop\n");
 #if WANT_DEBUGSTUFF
 	if (!context || !context->break_stack) {
@@ -214,7 +213,7 @@ R_API void r_cons_context_break_pop(RConsContext *context, bool sig) {
 	} else {
 		//there is not more elements in the stack
 #if R2__UNIX__ && !__wasi__
-		if (sig && r_cons_context_is_main ()) {
+		if (sig && r_kons_context_is_main (cons)) {
 			if (!context->unbreakable) {
 				r_sys_signal (SIGINT, SIG_IGN);
 			}
@@ -508,16 +507,13 @@ R_API void r_cons_context_load(RConsContext *context) {
 	I->context = context;
 }
 
-R_API void r_cons_context_reset(void) {
+R_API void r_cons_context_reset(RConsContext *context) {
+	// XXX does nothing
 #if 0
 	while (r_kons_pop (I)) {
 		// you cant stop
 	}
 #endif
-}
-
-R_API bool r_cons_context_is_main(void) {
-	return r_kons_context_is_main (I);
 }
 
 R_API void r_cons_context_break(RConsContext *context) {
