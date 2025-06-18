@@ -433,28 +433,14 @@ static RBinSection *getsection(RBin *bin, int sn) {
 		if (lastSection[sn]) {
 			RBinSection *ls = lastSection[sn];
 			const char *lsn = ls->name;
-			if (strstr (lsn , name_str)) {
-				if (r_str_startswith (lsn, ".debug_") && R_BIN_ELF_SCN_IS_COMPRESSED (ls->flags))  {
-					R_LOG_WARN ("Compressed dwarf sections not yet supported");
-					return NULL;
-				}
-				if (strstr (lsn, "zdebug")) {
-					R_LOG_WARN ("Compressed dwarf sections not yet supported");
-					return NULL;
-				}
+			if (strstr (lsn, name_str)) {
+				/* accept matching section, including compressed or zdebug variants */
 				return ls;
 			}
 		}
 		r_list_foreach (o->sections, iter, section) {
 			if (strstr (section->name, name_str)) {
-				if (r_str_startswith (section->name, ".debug_") && R_BIN_ELF_SCN_IS_COMPRESSED (section->flags))  {
-					R_LOG_WARN ("Compressed dwarf sections not yet supported");
-					return NULL;
-				}
-				if (strstr (section->name, "zdebug")) {
-					R_LOG_WARN ("Compressed dwarf sections not yet supported");
-					return NULL;
-				}
+				/* accept matching section, including compressed or zdebug variants */
 				lastSection[sn] = section;
 				return section;
 			}
@@ -474,6 +460,54 @@ static ut8 *get_section_bytes(RBin *bin, int sect_name, size_t *len) {
 	if (section->size > binfile->size) {
 		return NULL;
 	}
+	/* Handle compressed DWARF sections (.zdebug_* or SHF_COMPRESSED) */
+	if (R_BIN_ELF_SCN_IS_COMPRESSED (section->flags) || strstr (section->name, "zdebug")) {
+		ut64 raw_size = section->size;
+		ut8 *rawbuf = calloc (1, raw_size);
+		if (!rawbuf) {
+			return NULL;
+		}
+		if (!r_buf_read_at (binfile->buf, section->paddr, rawbuf, raw_size)) {
+			free (rawbuf);
+			return NULL;
+		}
+		/* Determine ELF class and endianness */
+		RBinObject *ro = R_UNWRAP3 (bin, cur, bo);
+		ELFOBJ *eo = (ELFOBJ *)ro->bin_obj;
+		bool is64 = eo && eo->ehdr.e_ident[EI_CLASS] == ELFCLASS64;
+		bool be = r_bin_is_big_endian (bin);
+		/* Parse compression header */
+		ut32 ch_type = r_read_ble32 (rawbuf, be);
+		ut64 ch_size = 0;
+		size_t header_size = 0;
+		if (is64) {
+			/* Elf64_Chdr: type(4), reserved(4), size(8), align(8) */
+			ch_size = r_read_ble64 (rawbuf + 8, be);
+			header_size = 24;
+		} else {
+			/* Elf32_Chdr: type(4), size(4), align(4) */
+			ch_size = r_read_ble32 (rawbuf + 4, be);
+			header_size = 12;
+		}
+		/* Only support zlib compression (type 1) */
+		if (ch_type != 1) {
+			free (rawbuf);
+			return NULL;
+		}
+		/* Decompress data after header */
+		int dst_len = 0;
+		ut8 *decomp = r_inflate (rawbuf + header_size, (int)(raw_size - header_size), NULL, &dst_len);
+		free (rawbuf);
+		if (!decomp) {
+			return NULL;
+		}
+		if ((ut64)dst_len != ch_size) {
+			R_LOG_WARN ("DWARF: decompressed %d bytes, expected %llu", dst_len, ch_size);
+		}
+		*len = dst_len;
+		return decomp;
+	}
+	/* Uncompressed section: read raw bytes */
 	*len = section->size;
 	ut8 *buf = calloc (1, *len);
 	if (R_LIKELY (buf)) {
@@ -520,14 +554,14 @@ static inline bool is_printable_unit_type(ut64 unit_type) {
 	return unit_type > 0 && unit_type <= DW_UT_split_type;
 }
 
-/**
- * @brief Reads 64/32 bit unsigned based on format
- *
- * @param is_64bit Format of the comp unit
- * @param buf Pointer to the buffer to read from, to update after read
- * @param buf_end To check the boundary /for READ macro/
- * @return ut64 Read value
- */
+#if 0
+* @brief Reads 64/32 bit unsigned based on format
+*
+* @param is_64bit Format of the comp unit
+* @param buf Pointer to the buffer to read from, to update after read
+* @param buf_end To check the boundary /for READ macro/
+* @return ut64 Read value
+#endif
 static inline ut64 dwarf_read_offset(bool is_64bit, const ut8 **buf, const ut8 *buf_end, bool be) {
 	ut64 result;
 	if (!buf || !*buf || !buf_end) {
@@ -728,6 +762,31 @@ static char *get_section_string(RBin *bin, RBinSection * section, size_t offset)
 	RBinFile *bf = bin ? bin->cur: NULL;
 	if (!section || (section->paddr + offset + 2) > bf->size) {
 		return NULL;
+	}
+	/* Handle compressed DWARF string sections (.zdebug_str or SHF_COMPRESSED) */
+	if (R_BIN_ELF_SCN_IS_COMPRESSED (section->flags) || strstr (section->name, "zdebug")) {
+		/* Determine section index for decompression */
+		int sn = -1;
+		if (strstr (section->name, "debug_str") && !strstr (section->name, "debug_line_str")) {
+			sn = DWARF_SN_STR;
+		} else if (strstr (section->name, "debug_line_str")) {
+			sn = DWARF_SN_LINE_STR;
+		}
+		if (sn >= 0) {
+			size_t decomp_len = 0;
+			ut8 *decomp = get_section_bytes (bin, sn, &decomp_len);
+			if (!decomp) {
+				return NULL;
+			}
+			if (offset >= decomp_len) {
+				free (decomp);
+				return NULL;
+			}
+			const char *s = (const char *)(decomp + offset);
+			char *res = strdup (s);
+			free (decomp);
+			return res;
+		}
 	}
 	size_t len = R_MIN (section->size - offset, sizeof (str) - 1);
 	str[len] = 0;
@@ -2085,21 +2144,21 @@ static const ut8 *fill_block_data(const ut8 *buf, const ut8 *buf_end, RBinDwarfB
 	return buf;
 }
 
-/**
- * This function is quite incomplete and requires lot of work
- * With parsing various new FORM values
- * @brief Parses attribute value based on its definition
- *        and stores it into `value`
- *
- * @param obuf
- * @param obuf_len Buffer max capacity
- * @param def Attribute definition
- * @param value Parsed value storage
- * @param hdr Current unit header
- * @param debug_str Ptr to string section start
- * @param debug_str_len Length of the string section
- * @return const ut8* Updated buffer
- */
+#if 0
+* This function is quite incomplete and requires lot of work
+* With parsing various new FORM values
+* @brief Parses attribute value based on its definition
+*        and stores it into `value`
+*
+* @param obuf
+* @param obuf_len Buffer max capacity
+* @param def Attribute definition
+* @param value Parsed value storage
+* @param hdr Current unit header
+* @param debug_str Ptr to string section start
+* @param debug_str_len Length of the string section
+* @return const ut8* Updated buffer
+#endif
 static const ut8 *parse_attr_value(RBin *bin, const ut8 *obuf, int obuf_len, RBinDwarfAttrDef *def, RBinDwarfAttrValue *value, const RBinDwarfCompUnitHdr *hdr, bool be) {
 	R_RETURN_VAL_IF_FAIL (def && value && hdr && obuf, NULL);
 
@@ -2376,19 +2435,19 @@ static const ut8 *parse_attr_value(RBin *bin, const ut8 *obuf, int obuf_len, RBi
 	return buf;
 }
 
-/**
- * @brief
- *
- * @param buf Start of the DIE data
- * @param buf_end
- * @param abbrev Abbreviation of the DIE
- * @param hdr Unit header
- * @param die DIE to store the parsed info into
- * @param debug_str Ptr to string section start
- * @param debug_str_len Length of the string section
- * @param sdb
- * @return const ut8* Updated buffer
- */
+#if 0
+* @brief
+*
+* @param buf Start of the DIE data
+* @param buf_end
+* @param abbrev Abbreviation of the DIE
+* @param hdr Unit header
+* @param die DIE to store the parsed info into
+* @param debug_str Ptr to string section start
+* @param debug_str_len Length of the string section
+* @param sdb
+* @return const ut8* Updated buffer
+#endif
 static const ut8 *parse_die(RBin *bin, const ut8 *buf, const ut8 *buf_end, RBinDwarfAbbrevDecl *abbrev, RBinDwarfCompUnitHdr *hdr, RBinDwarfDie *die, Sdb *sdb, bool be) {
 	size_t i;
 	int debug_line_offset = -1;
@@ -2438,19 +2497,19 @@ static const ut8 *parse_die(RBin *bin, const ut8 *buf, const ut8 *buf_end, RBinD
 	return buf;
 }
 
-/**
- * @brief Reads throught comp_unit buffer and parses all its DIEntries
- *
- * @param sdb
- * @param buf_start Start of the compilation unit data
- * @param unit Unit to store the newly parsed information
- * @param abbrevs Parsed abbrev section info of *all* abbreviations
- * @param first_abbr_idx index for first abbrev of the current comp unit in abbrev array
- * @param debug_str Ptr to string section start
- * @param debug_str_len Length of the string section
- *
- * @return const ut8* Update buffer
- */
+#if 0
+* @brief Reads throught comp_unit buffer and parses all its DIEntries
+*
+* @param sdb
+* @param buf_start Start of the compilation unit data
+* @param unit Unit to store the newly parsed information
+* @param abbrevs Parsed abbrev section info of *all* abbreviations
+* @param first_abbr_idx index for first abbrev of the current comp unit in abbrev array
+* @param debug_str Ptr to string section start
+* @param debug_str_len Length of the string section
+*
+* @return const ut8* Update buffer
+#endif
 static const ut8 *parse_comp_unit(RBin *bin, RBinDwarfDebugInfo *info, Sdb *sdb, const ut8 *buf_start, const ut8 *buf_end, RBinDwarfCompUnit *unit, const RBinDwarfDebugAbbrev *abbrevs, size_t first_abbr_idx, bool be) {
 	const ut8 *buf = buf_start;
 	const ut8 *theoric_buf_end = buf_start + unit->hdr.length - unit->hdr.header_size;
@@ -2507,14 +2566,14 @@ static const ut8 *parse_comp_unit(RBin *bin, RBinDwarfDebugInfo *info, Sdb *sdb,
 	return buf;
 }
 
-/**
- * @brief Reads all information about compilation unit header
- *
- * @param buf Start of the buffer
- * @param buf_end Upper bound of the buffer
- * @param unit Unit to read information into
- * @return ut8* Advanced position in a buffer
- */
+#if 0
+* @brief Reads all information about compilation unit header
+*
+* @param buf Start of the buffer
+* @param buf_end Upper bound of the buffer
+* @param unit Unit to read information into
+* @return ut8* Advanced position in a buffer
+#endif
 static const ut8 *info_comp_unit_read_hdr(const ut8 *buf, const ut8 *buf_end, RBinDwarfCompUnitHdr *hdr, bool be) {
 	// 32-bit vs 64-bit dwarf formats
 	// http://www.dwarfstd.org/doc/Dwarf3.pdf section 7.4
@@ -2558,18 +2617,18 @@ static bool expand_info(RBinDwarfDebugInfo *info) {
 	return true;
 }
 
-/**
- * @brief Parses whole .debug_info section
- *
- * @param sdb Sdb to store line related information into
- * @param da Parsed Abbreviations
- * @param obuf .debug_info section buffer start
- * @param len length of the section buffer
- * @param debug_str start of the .debug_str section
- * @param debug_str_len length of the debug_str section
- * @param mode
- * @return R_API* parse_info_raw Parsed information
- */
+#if 0
+* @brief Parses whole .debug_info section
+*
+* @param sdb Sdb to store line related information into
+* @param da Parsed Abbreviations
+* @param obuf .debug_info section buffer start
+* @param len length of the section buffer
+* @param debug_str start of the .debug_str section
+* @param debug_str_len length of the debug_str section
+* @param mode
+* @return R_API* parse_info_raw Parsed information
+#endif
 static RBinDwarfDebugInfo *parse_info_raw(RBin *bin, Sdb *sdb, RBinDwarfDebugAbbrev *da, const ut8 *obuf, size_t len, bool be) {
 	R_RETURN_VAL_IF_FAIL (da && sdb && obuf, false);
 
@@ -2732,14 +2791,16 @@ static ut64 getint(RBinDwarfAttrValue *val) {
 	}
 	return 0;
 }
-/**
- * @brief Parses .debug_info section
- *
- * @param da Parsed abbreviations
- * @param bin
- * @param mode R_MODE_PRINT to print
- * @return RBinDwarfDebugInfo* Parsed information, NULL if error
- */
+
+#if 0
+* @brief Parses .debug_info section
+*
+* @param da Parsed abbreviations
+* @param bin
+* @param mode R_MODE_PRINT to print
+* @return RBinDwarfDebugInfo* Parsed information, NULL if error
+#endif
+
 R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBin *bin, RBinDwarfDebugAbbrev *da, int mode) {
 	R_RETURN_VAL_IF_FAIL (da && bin, NULL);
 	RBinDwarfDebugInfo *info = NULL;
@@ -2751,34 +2812,30 @@ R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBin *bin, RBinDwarfDebugAbbrev
 
 	const bool be = r_bin_is_big_endian (bin);
 	if (bf && section) {
-		RBinSection *debug_str = getsection (bin, DWARF_SN_STR);
-		if (debug_str) {
-			debug_str_len = debug_str->size & 0xffff;
+		/* Read and possibly decompress the .debug_str section for string contents */
+		size_t tmp_len = 0;
+		ut8 *tmp_buf = get_section_bytes (bin, DWARF_SN_STR, &tmp_len);
+		if (tmp_buf) {
+			/* allocate string buffer with null terminator */
+			debug_str_len = tmp_len;
 			debug_str_buf = calloc (1, debug_str_len + 1);
 			if (!debug_str_buf) {
+				free (tmp_buf);
 				goto cleanup;
 			}
-			st64 ret = r_buf_read_at (bf->buf, debug_str->paddr, debug_str_buf, debug_str_len);
-			if (ret != debug_str_len) {
-				goto cleanup;
-			}
+			memcpy (debug_str_buf, tmp_buf, debug_str_len);
+			free (tmp_buf);
 		}
 
-		ut64 len = section->size;
-		// what is this checking for?
-		if (len > (UT32_MAX >> 1) || len < 1) {
-			goto cleanup;
-		}
-		ut8 *buf = calloc (1, len);
-		if (!buf) {
-			goto cleanup;
-		}
-		if (!r_buf_read_at (bf->buf, section->paddr, buf, len)) {
+		/* Read and possibly decompress the .debug_info section */
+		size_t len = 0;
+		ut8 *buf = get_section_bytes (bin, DWARF_SN_INFO, &len);
+		if (!buf || len < 1 || len > (UT32_MAX >> 1)) {
 			free (buf);
 			goto cleanup;
 		}
-		/* set the endianity global [HOTFIX] */
 		info = parse_info_raw (bin, bf->sdb_addrinfo, da, buf, len, be);
+		free (buf);
 		if (mode == R_MODE_PRINT && info) {
 			print_debug_info (info, bin->cb_printf);
 		} else if (info) {
@@ -2839,11 +2896,11 @@ R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBin *bin, RBinDwarfDebugAbbrev
 				for (j = 0; j < unit->count; j++) {
 					RBinDwarfDie *die = &unit->dies[j];
 					ht_up_insert (info->lookup_table, die->offset, die); // optimization for further processing}
-				}
 			}
 		}
+		}
 		free (debug_str_buf);
-		free (buf);
+		/* buf already freed after parsing */
 		return info;
 	}
 cleanup:
@@ -2885,22 +2942,15 @@ R_API RList *r_bin_dwarf_parse_line(RBin *bin, int mode) {
 	RBinSection *section = getsection (bin, DWARF_SN_LINE);
 	RBinFile *bf = bin->cur;
 	if (bf && section) {
-		int len = section->size;
-		if (len < 1) {
-			return NULL;
-		}
-		ut8 *buf = calloc (1, len + 1);
-		if (!buf) {
-			return NULL;
-		}
-		int ret = r_buf_read_at (bf->buf, section->paddr, buf, len);
-		if (ret != len) {
+		/* Read and possibly decompress the .debug_line section */
+		size_t len = 0;
+		ut8 *buf = get_section_bytes (bin, DWARF_SN_LINE, &len);
+		if (!buf || len < 1) {
 			free (buf);
 			return NULL;
 		}
 		list = r_list_newf (row_free);
-		/* set the endianity global [HOTFIX] */
-		// Actually parse the section
+		/* parse the line number program */
 		parse_line_raw (bin, buf, len, mode, be);
 		if (bin->cur && bin->cur->addrline.used) {
 			RBinAddrLineStore *als = &bin->cur->addrline;
@@ -2915,19 +2965,13 @@ R_API void r_bin_dwarf_parse_aranges(RBin *bin, int mode) {
 	RBinSection *section = getsection (bin, DWARF_SN_ARANGES);
 	RBinFile *bf = bin ? bin->cur: NULL;
 	if (bf && section) {
-		size_t len = section->size;
-		if (len < 1 || len > ST32_MAX) {
-			return;
-		}
-		ut8 *buf = calloc (1, len);
-		if (!buf) {
-			return;
-		}
-		if (!r_buf_read_at (bf ->buf, section->paddr, buf, len)) {
+		/* Read and possibly decompress the .debug_aranges section */
+		size_t len = 0;
+		ut8 *buf = get_section_bytes (bin, DWARF_SN_ARANGES, &len);
+		if (!buf || len < 1 || len > ST32_MAX) {
 			free (buf);
 			return;
 		}
-		/* set the endianity global [HOTFIX] */
 		parse_aranges_raw (bin, buf, len, mode);
 		free (buf);
 	}
@@ -3033,14 +3077,14 @@ static void parse_loc_raw(HtUP/*<offset, List *<LocListEntry>*/ *loc_table, cons
 	free_loc_table_list (loc_list);
 }
 
-/**
- * @brief Parses out the .debug_loc section into a table that maps each list as
- *        offset of a list -> LocationList
- *
- * @param bin
- * @param addr_size machine address size used in executable (necessary for parsing)
- * @return R_API*
- */
+#if 0
+* @brief Parses out the .debug_loc section into a table that maps each list as
+*        offset of a list -> LocationList
+*
+* @param bin
+* @param addr_size machine address size used in executable (necessary for parsing)
+* @return R_API*
+#endif
 R_API HtUP/*<offset, RBinDwarfLocList*/ *r_bin_dwarf_parse_loc(RBin *bin, int addr_size) {
 	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	/* The standarparse_loc_raw_frame, not sure why is that */
