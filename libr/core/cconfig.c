@@ -4132,6 +4132,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("cmd.log", "", &cb_cmdlog, "every time a new T log is added run this command");
 	SETS ("cmd.prompt", "", "prompt commands");
 	SETCB ("cmd.repeat", "false", &cb_cmdrepeat, "empty command an alias for '..' (repeat last command)");
+	SETS ("dbg.linkurl", "https://debuginfod.debian.net", "debuginfo daemon server URL (see idld command and DEBUGINFOD_URLS env)");
 	SETS ("cmd.fcn.new", "", "run when new function is analyzed");
 	SETS ("cmd.fcn.delete", "", "run when a function is deleted");
 	SETS ("cmd.fcn.rename", "", "run when a function is renamed");
