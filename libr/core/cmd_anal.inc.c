@@ -120,7 +120,7 @@ static RCoreHelpMessage help_msg_ano = {
 	"ano-", "*", "remove all annotations for current file",
 	"ano-", "$$", "remove annotations for current function",
 	"ano*", "", "dump all annotations in ano= commands",
-	"ano=", "[base64:]text", "set anotation text in base64 for current function",
+	"ano=", "[:cmd]|[base64:]|text", "set function anotation command, plain text or base64",
 	"anoe", "", "edit annotation using cfg.editor",
 	"anos", "", "show current function annotation",
 	"anol", "", "display first line of function annotation if any",
@@ -15807,17 +15807,27 @@ static void cmd_ano(RCore *core, const char *input) {
 			if (f) {
 				const char *arg = r_str_trim_head_ro (input + 3);
 				int len;
-				if (r_str_startswith (arg, "base64:")) {
+				if (*arg == ':') {
+					char *s = r_core_cmd_str (core, arg + 1);
+					if (!r_file_dump (f, s, strlen (s), false)) {
+						R_LOG_ERROR ("Cannot save anotation to %s", f);
+					}
+					free (s);
+				} else if (r_str_startswith (arg, "base64:")) {
 					arg += 7;
 					ut8 *data = sdb_decode (arg, &len);
 					if (data) {
-						r_file_dump (f, data, len, false);
+						if (!r_file_dump (f, data, len, false)) {
+							R_LOG_ERROR ("Cannot save anotation to %s", f);
+						}
 						free (data);
 					} else {
 						R_LOG_ERROR ("Invalid base64 as argument for 'ano=...'");
 					}
 				} else {
-					r_file_dump (f, (const ut8*)arg, strlen (arg), false);
+					if (!r_file_dump (f, (const ut8*)arg, strlen (arg), false)) {
+						R_LOG_ERROR ("Cannot save anotation to %s", f);
+					}
 				}
 				free (f);
 			}
