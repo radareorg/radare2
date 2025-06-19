@@ -1194,6 +1194,27 @@ bool linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 #endif // __i386__
 		}
 		return size;
+#elif (__arm64__ || __aarch64__) && defined(PTRACE_GETREGSET)
+		// ARM64 FPU register reading using ptrace GETREGSET
+		struct iovec iov;
+		ut8 fpu_regs[512]; // ARM64 FPU register space (32 * 16 bytes for v0-v31)
+		memset(fpu_regs, 0, sizeof(fpu_regs));
+		iov.iov_base = fpu_regs;
+		iov.iov_len = sizeof(fpu_regs);
+		
+		ret = r_debug_ptrace(dbg, PTRACE_GETREGSET, pid, (void*)(size_t)NT_ARM_VFP, &iov);
+		if (ret != 0) {
+			r_sys_perror("PTRACE_GETREGSET NT_ARM_VFP");
+			return false;
+		}
+		
+		if (showfpu) {
+			print_fpu((void *)fpu_regs);
+		}
+		
+		size = R_MIN(iov.iov_len, size);
+		memcpy(buf, fpu_regs, size);
+		return size;
 #else
 		if (showfpu) {
 			print_fpu (cons, NULL);
@@ -1336,10 +1357,22 @@ bool linux_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 		}
 		return true;
 	}
-	if (type == R_REG_TYPE_FPU) {
+	if (type == R_REG_TYPE_FPU || type == R_REG_TYPE_VEC64 || type == R_REG_TYPE_VEC128) {
 #if __i386__ || __x86_64__
 		int ret = r_debug_ptrace (dbg, PTRACE_SETFPREGS, pid, 0, (void*)buf);
 		return (ret != 0) ? false : true;
+#elif (__arm64__ || __aarch64__) && defined(PTRACE_SETREGSET)
+		// ARM64 FPU/VEC register writing using ptrace SETREGSET
+		struct iovec iov;
+		iov.iov_base = (void*)buf;
+		iov.iov_len = size;
+		
+		int ret = r_debug_ptrace(dbg, PTRACE_SETREGSET, pid, (void*)(size_t)NT_ARM_VFP, &iov);
+		if (ret != 0) {
+			r_sys_perror("PTRACE_SETREGSET NT_ARM_VFP");
+			return false;
+		}
+		return true;
 #endif
 	}
 	return false;
