@@ -254,7 +254,16 @@ install: install-doc install-man install-panels install-www install-pkgconfig
 install-panels:
 	rm -rf "${DESTDIR}${PANELS}"
 	mkdir -p "${DESTDIR}${PANELS}"
-	cp -rf shlr/panels/* "${DESTDIR}${PANELS}"
+	for FILE in $(shell cd shlr/panels ; ls | grep json) ; do \
+		FILE2=$$(echo $$FILE | cut -d . -f 1); \
+		cp -f "$(PWD)/shlr/panels/$$FILE" "$(DESTDIR)$(PANELS)/$$FILE2" ; done
+
+symstall-panels:
+	rm -rf "${DESTDIR}${PANELS}"
+	mkdir -p "${DESTDIR}${PANELS}"
+	for FILE in $(shell cd shlr/panels ; ls | grep json) ; do \
+		FILE2=$$(echo $$FILE | cut -d . -f 1); \
+		ln -fs "$(PWD)/shlr/panels/$$FILE" "$(DESTDIR)$(PANELS)/$$FILE2" ; done
 
 install-www:
 	rm -rf "${DESTDIR}${WWWROOT}"
@@ -287,7 +296,7 @@ symstall-sdb:
 		${MAKE} install-symlink ); \
 	done
 
-symstall install-symlink: install-man-symlink install-doc-symlink install-pkgconfig-symlink symstall-www symstall-sdb
+symstall install-symlink: install-man-symlink install-doc-symlink install-pkgconfig-symlink symstall-www symstall-panels symstall-sdb
 	cd libr && ${MAKE} install-symlink
 	cd binr && ${MAKE} install-symlink
 	cd shlr && ${MAKE} install-symlink

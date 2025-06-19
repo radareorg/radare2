@@ -94,7 +94,7 @@ static const char *menus_ReOpen[] = {
 };
 
 static const char *menus_loadLayout[] = {
-	"Saved", "Default",
+	"Saved..", "Default",
 	NULL
 };
 
@@ -1169,8 +1169,7 @@ static void __set_curnode(RCore *core, int idx) {
 static bool __check_panel_num(RCore *core) {
 	RPanels *panels = core->panels;
 	if (panels->n_panels + 1 > PANEL_NUM_LIMIT) {
-		const char *msg = "panel limit exceeded";
-		(void)__show_status (core, msg);
+		(void)__show_status (core, "panel limit exceeded");
 		return false;
 	}
 	return true;
@@ -4920,20 +4919,20 @@ static void __print_snow(RPanels *panels) {
 						fall = false;
 						if (is_down_right) {
 							if (!is_down_left) {
-								snow->x --;
-								snow->y --;
+								snow->x--;
+								snow->y--;
 								fall = true;
 							}
 						} else {
 							if (is_down_left) {
-								snow->x ++;
-								snow->y --;
+								snow->x++;
+								snow->y--;
 								fall = true;
 							}
 						}
 						if (!fall) {
 							snow->stuck = true;
-							snow->y --;
+							snow->y--;
 						}
 						goto print_this_snow;
 					}
@@ -5228,7 +5227,7 @@ static char *__panels_config_path(bool syspath) {
 		if (!r2_prefix) {
 			r2_prefix = strdup (R2_PREFIX);
 		}
-		char *res = r_file_new (r2_prefix, "share", R2_VERSION, "panels", NULL);
+		char *res = r_file_new (r2_prefix, "share", "radare2", R2_VERSION, "panels", NULL);
 		free (r2_prefix);
 		return res;
 	}
@@ -5290,10 +5289,11 @@ static void __init_menu_saved_layout(void *_core, const char *parent) {
 	char *sysdir_path = __panels_config_path (true);
 	RList *sysdir = r_sys_dir (sysdir_path);
 	if (sysdir) {
+		bool found_in_home;
 		// load entries from syspath
 		r_list_foreach (sysdir, it, entry) {
 			if (*entry != '.') {
-				bool found_in_home = false;
+				found_in_home = false;
 				if (dir) {
 					RListIter *it2;
 					r_list_foreach (dir, it2, entry2) {
@@ -5337,7 +5337,7 @@ static int __clear_layout_cb(void *user) {
 	r_list_free (dir);
 	free (dir_path);
 
-	__update_menu (core, "Settings.Load Layout.Saved", __init_menu_saved_layout);
+	__update_menu (core, "Settings.Load Layout.Saved..", __init_menu_saved_layout);
 	return 0;
 }
 
@@ -6090,14 +6090,14 @@ static bool __init_panels_menu(RCore *core) {
 	parent = "Settings.Load Layout";
 	for (i = 0; menus_loadLayout[i]; i++) {
 		const char *menu = menus_loadLayout[i];
-		if (!strcmp (menu, "Saved")) {
+		if (!strcmp (menu, "Saved..")) {
 			__add_menu (core, parent, menu, __open_menu_cb);
 		} else if (!strcmp (menu, "Default")) {
 			__add_menu (core, parent, menu, __load_layout_default_cb);
 		}
 	}
 
-	__init_menu_saved_layout (core, "Settings.Load Layout.Saved");
+	__init_menu_saved_layout (core, "Settings.Load Layout.Saved..");
 	__init_menu_color_settings_layout (core, "Settings.Color Themes...");
 	__init_menu_manpages (core, "Help.Manpages...");
 
@@ -6604,7 +6604,7 @@ R_API void r_core_panels_save(RCore *core, const char *oname) {
 		fprintf (fd, "%s\n", pjs);
 		free (pjs);
 		fclose (fd);
-		__update_menu (core, "Settings.Load Layout.Saved", __init_menu_saved_layout);
+		__update_menu (core, "Settings.Load Layout.Saved..", __init_menu_saved_layout);
 		(void)__show_status (core, "Panels layout saved!");
 	} else {
 		pj_free (pj);
