@@ -2,13 +2,19 @@
 
 #if R_INCLUDE_BEGIN
 
-bool ranal2_list(RCore *core, const char *arch, int fmt);
-
 static RCoreHelpMessage help_msg_La = {
 	"Usage:", "La[qj]", " # asm/anal plugin list",
-	"La",  "", "List asm/anal plugins (See rasm2 -L)",
+	"La",  "", "List arch plugins (See rasm2 -L)",
 	"Laq",  "", "Only list the plugin name",
 	"Laj",  "", "Full list, but in JSON format",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_LA = {
+	"Usage:", "LA[qj]", " # analysis plugin list",
+	"LA",  "", "List analysis plugins (See rasm2 -L)",
+	"LAq",  "", "Only list the plugin name",
+	"LAj",  "", "Full list, but in JSON format",
 	NULL
 };
 
@@ -453,16 +459,39 @@ static int cmd_plugins(void *data, const char *input) {
 		break;
 	case 'A': // "LA"
 		if (input[1] == '?') { // "La?"
-			r_core_cmd_help (core, help_msg_La);
+			r_core_cmd_help (core, help_msg_LA);
 		} else { // asm plugins
-			ranal2_list (core, NULL, input[1]);
-		}
-		break;
-	case 's': // "Ls"
-		if (input[1] == '?') { // "Ls?"
-			r_core_cmd_help_match (core, help_msg_L, "Ls");
-		} else { // asm plugins
-			ranal2_list (core, NULL, input[1]);
+			int mode = input[1];
+			PJ *pj = (mode == 'j')? r_core_pj_new (core): NULL;
+			RListIter *iter;
+			RAnalPlugin *item;
+			if (pj) {
+				pj_a (pj);
+			}
+			r_list_foreach (core->anal->plugins, iter, item) {
+				switch (mode) {
+				case 'j':
+					pj_o (pj);
+					r_lib_meta_pj (pj, &item->meta);
+					pj_end (pj);
+					break;
+				case 'q':
+					r_kons_printf (core->cons, "%s\n", item->meta.name);
+					break;
+				default:
+					r_kons_printf (core->cons, "%-12s %5s %s\n",
+						item->meta.name,
+						item->meta.license,
+						item->meta.desc);
+					break;
+				}
+			}
+			if (pj) {
+				pj_end (pj);
+				char *s = pj_drain (pj);
+				r_kons_printf (core->cons, "%s\n", s);
+				free (s);
+			}
 		}
 		break;
 	case 'a': // "La" // list arch plugins
