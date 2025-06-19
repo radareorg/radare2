@@ -2931,18 +2931,22 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			{
 				const int left = len - idx;
 				const int instlen = R_MIN (op.size, left);
-				if (smart_mask) {
-					char *maskstr = r_core_cmd_strf (core, "aobm@0x%08"PFMT64x, op.addr);
-					r_str_trim (maskstr);
-					printline ("mask", "%s\n", maskstr);
-					free (maskstr);
+				if (instlen > 0) {
+					if (smart_mask) {
+						char *maskstr = r_core_cmd_strf (core, "aobm@0x%08"PFMT64x, op.addr);
+						r_str_trim (maskstr);
+						printline ("mask", "%s\n", maskstr);
+						free (maskstr);
+					} else {
+						ut8 *mask = r_anal_mask (core->anal, instlen, buf + idx, core->addr + idx);
+						char *maskstr = r_hex_bin2strdup (mask, size);
+						printline ("mask", "%s\n", maskstr);
+						free (maskstr);
+						free (mask);
+					}
 				} else {
-					ut8 *mask = r_anal_mask (core->anal, instlen, buf + idx, core->addr + idx);
-					char *maskstr = r_hex_bin2strdup (mask, size);
-					printline ("mask", "%s\n", maskstr);
-					free (maskstr);
-					free (mask);
-				}
+					R_LOG_DEBUG ("invalid instlen for 0x%"PFMT64x, op.addr);
+}
 			}
 			if (hint) {
 				if (hint->opcode) {
