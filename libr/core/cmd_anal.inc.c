@@ -16032,7 +16032,7 @@ static int cmd_anal(void *data, const char *input) {
 		case 'j':
 		case 'q':
 		case 0:
-			ranal2_list (core, NULL, input[1]);
+			r_core_cmdf (core, "LA%c", input[1]);
 			break;
 		case '?':
 			// help

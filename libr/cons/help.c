@@ -55,8 +55,7 @@ R_API void r_cons_cmd_help_json(RCons *cons, RCoreHelpMessage help) {
 }
 
 /* Print a coloured help message */
-R_API void r_cons_cmd_help(RCoreHelpMessage help, bool use_color) {
-	RCons *cons = r_cons_singleton ();
+R_API void r_cons_cmd_help(RCons *cons, RCoreHelpMessage help, bool use_color) {
 	r_kons_cmd_help (cons, help, use_color);
 }
 
@@ -67,7 +66,7 @@ R_API void r_cons_cmd_help(RCoreHelpMessage help, bool use_color) {
  * If exact is false, will match any command that contains the search text.
  * For example, ("pd", 'r', false) matches both `pdr` and `pdr.`.
  */
-R_API void r_cons_cmd_help_match(RCoreHelpMessage help, bool use_color, R_BORROW char * R_NONNULL cmd, char spec, bool exact) {
+R_API void r_cons_cmd_help_match(RCons *cons, RCoreHelpMessage help, bool use_color, R_BORROW char * R_NONNULL cmd, char spec, bool exact) {
 	RVector/*<int>*/ *match_indices = r_vector_new (sizeof (int), NULL, NULL);
 	char **matches = NULL;
 	size_t num_matches;
@@ -103,7 +102,7 @@ R_API void r_cons_cmd_help_match(RCoreHelpMessage help, bool use_color, R_BORROW
 		}
 	}
 	matches[matches_copied] = NULL;
-	r_cons_cmd_help ((const char * const *)matches, use_color);
+	r_cons_cmd_help (cons, (const char * const *)matches, use_color);
 
 out:
 	free (matches);

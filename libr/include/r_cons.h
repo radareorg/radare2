@@ -959,10 +959,10 @@ R_API void r_cons_2048(bool color);
 R_API void r_cons_visual_write(char *buffer);
 R_API bool r_cons_is_utf8(void);
 R_API bool r_cons_is_windows(void);
-R_API void r_cons_cmd_help(RCoreHelpMessage help, bool use_color);
+R_API void r_cons_cmd_help(RCons *cons, RCoreHelpMessage help, bool use_color);
 R_API void r_kons_cmd_help(RCons *cons, RCoreHelpMessage help, bool use_color);
 R_API void r_cons_cmd_help_json(RCons *cons, const char * const help[]);
-R_API void r_cons_cmd_help_match(RCoreHelpMessage help, bool use_color, char * R_BORROW R_NONNULL cmd, char spec, bool exact);
+R_API void r_cons_cmd_help_match(RCons *cons, RCoreHelpMessage help, bool use_color, char * R_BORROW R_NONNULL cmd, char spec, bool exact);
 R_API void r_cons_log_stub(const char *output, const char *funcname, const char *filename,
  unsigned int lineno, unsigned int level, const char *tag, const char *fmtstr, ...) R_PRINTF_CHECK(7, 8);
 

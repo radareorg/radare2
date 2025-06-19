@@ -442,19 +442,19 @@ R_API void r_core_cmd_help_json(const RCore *core, RCoreHelpMessage help) {
 }
 
 R_API void r_core_cmd_help_match(const RCore *core, RCoreHelpMessage help, R_BORROW char * R_NONNULL cmd) {
-	r_cons_cmd_help_match (help, core->print->flags & R_PRINT_FLAGS_COLOR, cmd, 0, true);
+	r_cons_cmd_help_match (core->cons, help, core->print->flags & R_PRINT_FLAGS_COLOR, cmd, 0, true);
 }
 
 R_API void r_core_cmd_help_contains(const RCore *core, RCoreHelpMessage help, R_BORROW char * R_NONNULL cmd) {
-	r_cons_cmd_help_match (help, core->print->flags & R_PRINT_FLAGS_COLOR, cmd, 0, false);
+	r_cons_cmd_help_match (core->cons, help, core->print->flags & R_PRINT_FLAGS_COLOR, cmd, 0, false);
 }
 
 R_API void r_core_cmd_help_match_spec(const RCore *core, RCoreHelpMessage help, R_BORROW char * R_NONNULL cmd, char spec) {
-	r_cons_cmd_help_match (help, core->print->flags & R_PRINT_FLAGS_COLOR, cmd, spec, true);
+	r_cons_cmd_help_match (core->cons, help, core->print->flags & R_PRINT_FLAGS_COLOR, cmd, spec, true);
 }
 
 R_API void r_core_cmd_help_contains_spec(const RCore *core, RCoreHelpMessage help, R_BORROW char * R_NONNULL cmd, char spec) {
-	r_cons_cmd_help_match (help, core->print->flags & R_PRINT_FLAGS_COLOR, cmd, spec, false);
+	r_cons_cmd_help_match (core->cons, help, core->print->flags & R_PRINT_FLAGS_COLOR, cmd, spec, false);
 }
 
 struct duplicate_flag_t {
