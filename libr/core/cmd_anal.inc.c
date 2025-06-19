@@ -15809,7 +15809,7 @@ static void cmd_ano(RCore *core, const char *input) {
 				int len;
 				if (*arg == ':') {
 					char *s = r_core_cmd_str (core, arg + 1);
-					if (!r_file_dump (f, s, strlen (s), false)) {
+					if (!r_file_dump (f, (const ut8*)s, strlen (s), false)) {
 						R_LOG_ERROR ("Cannot save anotation to %s", f);
 					}
 					free (s);
