@@ -14,10 +14,13 @@ typedef struct {
 	char *file;
 	int line;
 } LineEntry;
+
 // Create a Mach-O 64-bit object with minimal DWARF v2 debug info
 RBuffer *create_macho_with_dwarf(RList *lines, RList *symbols) {
-	RBuffer *buf = r_buf_new();
-	if (!buf) return NULL;
+	RBuffer *buf = r_buf_new ();
+	if (!buf) {
+		return NULL;
+	}
 
 	// Macros for writing to RBuffer (little-endian)
 #define B(x,y)    r_buf_append_bytes(buf, (const ut8*)(x), (y))
@@ -41,7 +44,7 @@ RBuffer *create_macho_with_dwarf(RList *lines, RList *symbols) {
 	// Load Command 1: __TEXT segment (contains __text section)
 	U32(0x19);                     // LC_SEGMENT_64
 	U32(152);                      // cmdsize (72 bytes cmd + 80 bytes section)
-	B("__TEXT", 6); Z(10);           // segname[16] = "__TEXT"
+	B("__TEXT", 6); Z(10);         // segname[16] = "__TEXT"
 	U64(0x0);                      // vmaddr
 	U64(0x1);                      // vmsize (segment size in memory, 1 byte for code)
 	U64(0x210);                    // fileoff = 0x210 (528) where __text section starts in file
@@ -51,8 +54,8 @@ RBuffer *create_macho_with_dwarf(RList *lines, RList *symbols) {
 	U32(1);                        // nsects = 1
 	U32(0);                        // flags (none)
 				       // Section 1: __text
-	B("__text", 6); Z(10);           // sectname[16] = "__text"
-	B("__TEXT", 6); Z(10);           // segname[16]  = "__TEXT"
+	B("__text", 6); Z(10);         // sectname[16] = "__text"
+	B("__TEXT", 6); Z(10);         // segname[16]  = "__TEXT"
 	U64(0x0);                      // addr (0 since not linked)
 	U64(0x1);                      // size = 1 byte
 	U32(0x210);                    // offset = 528 (file offset of section)
@@ -67,22 +70,22 @@ RBuffer *create_macho_with_dwarf(RList *lines, RList *symbols) {
 	// Load Command 2: __DWARF segment (contains 3 debug sections)
 	U32(0x19);                     // LC_SEGMENT_64
 	U32(312);                      // cmdsize (72 + 3*80)
-	B("__DWARF", 7); Z(9);           // segname[16] = "__DWARF"
+	B("__DWARF", 7); Z(9);         // segname[16] = "__DWARF"
 	U64(0x0);                      // vmaddr
-	ut64 dwarf_vmsize_off = r_buf_size(buf);
+	ut64 dwarf_vmsize_off = r_buf_size (buf);
 	U64(0x0);                      // vmsize (placeholder, to patch later)
 	U64(0x211);                    // fileoff = 0x211 (529) where first debug section starts
-	ut64 dwarf_filesz_off = r_buf_size(buf);
+	ut64 dwarf_filesz_off = r_buf_size (buf);
 	U64(0x0);                      // filesize (placeholder, to patch later)
 	U32(0x0);                      // maxprot = VM_PROT_NONE (debug section not loaded into memory)
 	U32(0x0);                      // initprot = VM_PROT_NONE
 	U32(3);                        // nsects = 3
 	U32(0x0);                      // flags (none)
 				       // Section 2: __debug_info
-	B("__debug_info", 12); Z(4);     // sectname[16] = "__debug_info"
-	B("__DWARF", 7); Z(9);           // segname[16]  = "__DWARF"
+	B("__debug_info", 12); Z(4);   // sectname[16] = "__debug_info"
+	B("__DWARF", 7); Z(9);         // segname[16]  = "__DWARF"
 	U64(0x0);                      // addr (0 within __DWARF segment)
-	ut64 debug_info_size_off = r_buf_size(buf);
+	ut64 debug_info_size_off = r_buf_size (buf);
 	U64(0x0);                      // size (placeholder, to patch with .debug_info length)
 	U32(0x211);                    // offset = 529 (file offset of .debug_info)
 	U32(0);                        // align = 2^0 (1-byte alignment)
@@ -93,13 +96,13 @@ RBuffer *create_macho_with_dwarf(RList *lines, RList *symbols) {
 	U32(0x0);                      // reserved2
 	U32(0x0);                      // reserved3
 				       // Section 3: __debug_abbrev
-	B("__debug_abbrev", 14); Z(2);   // sectname[16] = "__debug_abbrev"
-	B("__DWARF", 7); Z(9);           // segname[16]  = "__DWARF"
-	ut64 abbrev_addr_off = r_buf_size(buf);
+	B("__debug_abbrev", 14); Z(2); // sectname[16] = "__debug_abbrev"
+	B("__DWARF", 7); Z(9);         // segname[16]  = "__DWARF"
+	ut64 abbrev_addr_off = r_buf_size (buf);
 	U64(0x0);                      // addr (placeholder, to patch: start address in segment)
-	ut64 debug_abbrev_size_off = r_buf_size(buf);
+	ut64 debug_abbrev_size_off = r_buf_size (buf);
 	U64(0x0);                      // size (placeholder, to patch with .debug_abbrev length)
-	ut64 debug_abbrev_offset_off = r_buf_size(buf);
+	ut64 debug_abbrev_offset_off = r_buf_size (buf);
 	U32(0x0);                      // offset (placeholder, to patch with file offset of .debug_abbrev)
 	U32(0);                        // align = 1
 	U32(0x0);                      // reloff
@@ -111,11 +114,11 @@ RBuffer *create_macho_with_dwarf(RList *lines, RList *symbols) {
 				       // Section 4: __debug_line
 	B("__debug_line", 12); Z(4);     // sectname[16] = "__debug_line"
 	B("__DWARF", 7); Z(9);           // segname[16]  = "__DWARF"
-	ut64 line_addr_off = r_buf_size(buf);
+	ut64 line_addr_off = r_buf_size (buf);
 	U64(0x0);                      // addr (placeholder, to patch: start address in segment)
-	ut64 debug_line_size_off = r_buf_size(buf);
+	ut64 debug_line_size_off = r_buf_size (buf);
 	U64(0x0);                      // size (placeholder, to patch with .debug_line length)
-	ut64 debug_line_offset_off = r_buf_size(buf);
+	ut64 debug_line_offset_off = r_buf_size (buf);
 	U32(0x0);                      // offset (placeholder, to patch with file offset of .debug_line)
 	U32(0);                        // align = 1
 	U32(0x0);                      // reloff
@@ -128,13 +131,13 @@ RBuffer *create_macho_with_dwarf(RList *lines, RList *symbols) {
 	// Load Command 3: Symtab (symbol table and string table)
 	U32(0x02);                     // LC_SYMTAB
 	U32(24);                       // cmdsize
-	ut64 symoff_field_off = r_buf_size(buf);
+	ut64 symoff_field_off = r_buf_size (buf);
 	U32(0x0);                      // symoff (placeholder)
-	ut64 nsyms_field_off = r_buf_size(buf);
+	ut64 nsyms_field_off = r_buf_size (buf);
 	U32(0x0);                      // nsyms (placeholder)
-	ut64 stroff_field_off = r_buf_size(buf);
+	ut64 stroff_field_off = r_buf_size (buf);
 	U32(0x0);                      // stroff (placeholder)
-	ut64 strsize_field_off = r_buf_size(buf);
+	ut64 strsize_field_off = r_buf_size (buf);
 	U32(0x0);                      // strsize (placeholder)
 
 	// Pad to align the first section’s file offset (528) as specified
@@ -144,9 +147,9 @@ RBuffer *create_macho_with_dwarf(RList *lines, RList *symbols) {
 	U8(0xC3);  // 0xC3 = RET instruction (our dummy function body)
 
 	// Section content: .debug_info
-	ut64 debug_info_start = r_buf_size(buf);
+	ut64 debug_info_start = r_buf_size (buf);
 	// Write compilation unit header
-	ut64 cu_length_off = r_buf_size(buf);
+	ut64 cu_length_off = r_buf_size (buf);
 	U32(0);                         // unit_length (placeholder)
 	U16(2);                         // DWARF version 2
 	U32(0);                         // debug_abbrev_offset (0 for first CU)
@@ -166,13 +169,15 @@ RBuffer *create_macho_with_dwarf(RList *lines, RList *symbols) {
 				       // DW_AT_stmt_list (DW_FORM_data4)
 	U32(0x0);                      // offset in .debug_line (0 for this CU)
 				       // Children DIEs: DW_TAG_subprogram entries for each symbol
-	{   RListIter *sym_it;
+	{
+		RListIter *sym_it;
 		SymEntry *sym;
-		r_list_foreach(symbols, sym_it, sym) {
+		r_list_foreach (symbols, sym_it, sym) {
 			// DW_TAG_subprogram (subprogram)
 			U8(0x02);
 			// DW_AT_name (DW_FORM_string)
-			B(sym->symbol, strlen(sym->symbol)); U8(0x00);
+			B(sym->symbol, strlen (sym->symbol));
+			U8(0x00);
 			// DW_AT_low_pc (DW_FORM_addr)
 			U64(sym->addr);
 			// DW_AT_high_pc (DW_FORM_addr)
@@ -183,7 +188,7 @@ RBuffer *create_macho_with_dwarf(RList *lines, RList *symbols) {
 	U8(0x00);
 
 	// Patch the compile unit length
-	ut64 cu_end = r_buf_size(buf);
+	ut64 cu_end = r_buf_size (buf);
 	ut32 cu_length_val = (ut32)(cu_end - (cu_length_off + 4));
 	W(cu_length_off, &cu_length_val, 4);  // write unit_length
 
@@ -232,44 +237,49 @@ RBuffer *create_macho_with_dwarf(RList *lines, RList *symbols) {
 		U8(standard_opcode_lengths[i]);
 	}
 	// Include directories table (empty, just terminator)
-	RList *dirs = r_list_newf(free);
+	RList *dirs = r_list_newf (free);
 	RListIter *dir_it;
 	char *dir;
-	r_list_foreach(dirs, dir_it, dir) {
-		B(dir, strlen(dir)); U8(0x00);
+	r_list_foreach (dirs, dir_it, dir) {
+		B(dir, strlen (dir)); U8(0x00);
 	}
 	U8(0x00);  // end of directories
 		   // File names table from unique files in lines list
-	RList *files = r_list_newf(free);
-	{   RListIter *lit;
+	RList *files = r_list_newf (free);
+	{
+		RListIter *lit;
 		LineEntry *le;
-		r_list_foreach(lines, lit, le) {
+		r_list_foreach (lines, lit, le) {
 			RListIter *fit;
 			char *fn;
 			int found = 0;
-			r_list_foreach(files, fit, fn) {
-				if (!strcmp(fn, le->file)) { found = 1; break; }
+			r_list_foreach (files, fit, fn) {
+				if (!strcmp (fn, le->file)) {
+					found = 1;
+					break;
+				}
 			}
 			if (!found) {
-				r_list_append(files, strdup(le->file));
+				r_list_append (files, strdup (le->file));
 			}
 		}
 	}
 	RListIter *file_it;
 	char *filename;
-	r_list_foreach(files, file_it, filename) {
-		B(filename, strlen(filename)); U8(0x00);  // file name + NULL
+	r_list_foreach (files, file_it, filename) {
+		B(filename, strlen (filename)); U8(0x00);  // file name + NULL
 		U8(0x00);  // directory index
 		U8(0x00);  // modification time
 		U8(0x00);  // file length
 	}
 	U8(0x00);  // end of file names table
 		   // Line number program instructions based on lines list
-	{   ut64 prev_line = 1;
+	{
+		ut64 prev_line = 1;
 		int prev_file_idx = 1;
 		RListIter *lit;
 		LineEntry *le;
-		r_list_foreach(lines, lit, le) {
+		r_list_foreach (lines, lit, le) {
 			// Extended DW_LNE_set_address
 			U8(0x00); U8(1 + sizeof(ut64)); U8(0x02);
 			U64(le->addr);
@@ -277,15 +287,20 @@ RBuffer *create_macho_with_dwarf(RList *lines, RList *symbols) {
 			int file_idx = 1;
 			RListIter *fit;
 			char *fname;
-			r_list_foreach(files, fit, fname) {
-				if (!strcmp(fname, le->file)) break;
+			r_list_foreach (files, fit, fname) {
+				if (!strcmp (fname, le->file)) {
+					break;
+				}
 				file_idx++;
 			}
 			if (file_idx != prev_file_idx) {
 				U8(0x04);
 				{ ut32 val = file_idx;
-					do { ut8 byte = val & 0x7f; val >>= 7;
-						if (val) byte |= 0x80;
+					do {
+						ut8 byte = val & 0x7f; val >>= 7;
+						if (val) {
+							byte |= 0x80;
+						}
 						U8(byte);
 					} while (val);
 				}
@@ -293,7 +308,8 @@ RBuffer *create_macho_with_dwarf(RList *lines, RList *symbols) {
 			}
 			// DW_LNS_advance_line (SLEB128)
 			U8(0x03);
-			{ int64_t delta = (int64_t)le->line - (int64_t)prev_line;
+			{
+				int64_t delta = (int64_t)le->line - (int64_t)prev_line;
 				ut64 val = (ut64)delta;
 				int more = 1;
 				while (more) {
@@ -321,13 +337,13 @@ RBuffer *create_macho_with_dwarf(RList *lines, RList *symbols) {
 	ut32 header_length_val = (ut32)(line_ops_start - (header_length_off + 4));
 	W(header_length_off, &header_length_val, 4);
 	// Patch unit_length in .debug_line header
-	ut64 line_end = r_buf_size(buf);
+	ut64 line_end = r_buf_size (buf);
 	ut32 line_length_val = (ut32)(line_end - (line_length_off + 4));
 	W(line_length_off, &line_length_val, 4);
 
 	// Free the RLists used for dirs and files
-	r_list_free(files);
-	r_list_free(dirs);
+	r_list_free (files);
+	r_list_free (dirs);
 
 	// Now that all sections are written, patch section header values and load command sizes
 	// Calculate section sizes
@@ -355,13 +371,13 @@ RBuffer *create_macho_with_dwarf(RList *lines, RList *symbols) {
 
 	// Now prepare and patch symbol table info
 	{   // Build offsets for each symbol string in the string table
-		size_t sym_count = r_list_length(symbols);
-		ut32 *str_offsets = malloc(sizeof(ut32) * sym_count);
+		size_t sym_count = r_list_length (symbols);
+		ut32 *str_offsets = malloc (sizeof (ut32) * sym_count);
 		ut32 cur_offset = 1;
 		RListIter *sit;
 		SymEntry *se;
 		int i = 0;
-		r_list_foreach(symbols, sit, se) {
+		r_list_foreach (symbols, sit, se) {
 			str_offsets[i++] = cur_offset;
 			cur_offset += (ut32)strlen(se->symbol) + 1;
 		}
@@ -372,7 +388,7 @@ RBuffer *create_macho_with_dwarf(RList *lines, RList *symbols) {
 		W(nsyms_field_off, &nsyms_val, 4);
 		// Emit nlist_64 entries
 		i = 0;
-		r_list_foreach(symbols, sit, se) {
+		r_list_foreach (symbols, sit, se) {
 			U32(str_offsets[i]);   // n_strx
 			U8(0x0f);              // n_type = N_SECT | N_EXT
 			U8(0x01);              // n_sect = __text (1)
@@ -380,16 +396,17 @@ RBuffer *create_macho_with_dwarf(RList *lines, RList *symbols) {
 			U64(se->addr);         // n_value = address
 			i++;
 		}
-		free(str_offsets);
+		free (str_offsets);
 	}
 	// Emit string table
-	{   ut32 stroff_val = (ut32)r_buf_size(buf);
+	{
+		ut32 stroff_val = (ut32)r_buf_size (buf);
 		W(stroff_field_off, &stroff_val, 4);
 		// empty string
 		U8(0x00);
 		RListIter *sit2;
 		SymEntry *se2;
-		r_list_foreach(symbols, sit2, se2) {
+		r_list_foreach (symbols, sit2, se2) {
 			B(se2->symbol, strlen(se2->symbol)); U8(0x00);
 		}
 		ut32 strsize_val = (ut32)(r_buf_size(buf) - stroff_val);
@@ -399,6 +416,7 @@ RBuffer *create_macho_with_dwarf(RList *lines, RList *symbols) {
 	// Final RBuffer contains the complete Mach-O file in memory
 	return buf;
 }
+
 // (create_macho_with_dwarf and main remain unchanged)
 #if 0
 int main() {
@@ -520,7 +538,6 @@ static int cmd_writedwarf(void *user, const char *input) {
 	return false;
 }
 
-// PLUGIN Definition Info
 RCorePlugin r_core_plugin_writedwarf = {
 	.meta = {
 		.name = "writedwarf",
