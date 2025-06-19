@@ -47,7 +47,7 @@ static int lang_rust_file(RLangSession *s, const char *file) {
 	free (cmd);
 
 	char *path = r_str_newf ("%s/lib%s."R_LIB_EXT, libpath, libname);
-	lib = r_lib_dl_open (path);
+	lib = r_lib_dl_open (path, false);
 	if (lib!= NULL) {
 		void (*fcn)(RCore *);
 		fcn = r_lib_dl_sym (lib, "entry");

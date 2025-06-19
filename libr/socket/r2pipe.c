@@ -237,7 +237,7 @@ R_API R2Pipe *r2pipe_open_corebind(RCoreBind *coreb) {
 
 R_API R2Pipe *r2pipe_open_dl(const char *libr_path) {
 #if HAVE_R2PIPE
-	void *libr = r_lib_dl_open (libr_path);
+	void *libr = r_lib_dl_open (libr_path, false);
 	void* (*rnew)() = r_lib_dl_sym (libr, "r_core_new");
 	char* (*rcmd)(void *c, const char *cmd) = r_lib_dl_sym (libr, "r_core_cmd_str");
 

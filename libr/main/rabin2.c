@@ -1088,7 +1088,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			return waitpid (child, NULL, 0);
 		}
 #endif
-		void *addr = r_lib_dl_open (file);
+		void *addr = r_lib_dl_open (file, false);
 		if (addr) {
 			R_LOG_INFO ("%s is loaded at 0x%"PFMT64x, file, (ut64)(size_t)(addr));
 			r_lib_dl_close (addr);

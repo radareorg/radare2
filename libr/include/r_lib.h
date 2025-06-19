@@ -21,6 +21,8 @@ R_LIB_VERSION_HEADER (r_lib);
 #define R_LIB_SYMNAME "radare_plugin"
 #define R_LIB_SYMFUNC "radare_plugin_function"
 
+#define R_LIB_CURRENT_ABI_VERSION 1
+
 #define R_LIB_ENV "R2_LIBR_PLUGINS"
 
 /* TODO: This must depend on HOST_OS, and maybe move into r_types */
@@ -64,6 +66,7 @@ typedef struct r_lib_plugin_t {
 	void *dl_handler; // DL HANDLER
 	void (*free)(void *data);
 	char *name; // From the RPluginMeta's name // type + name imho
+	bool loaded; // Whether the plugin has been fully loaded and initialized
 } RLibPlugin;
 
 typedef bool (*RLibCallback)(RLibPlugin *, void *user, void *data);
@@ -85,6 +88,7 @@ typedef struct r_lib_struct_t {
 	const char *version; /* r2 version */
 	void (*free)(void *data);
 	const char *pkgname; /* pkgname associated to this plugin */
+	ut32 abi_version; /* ABI version to prevent loading incompatible plugins */
 } RLibStruct;
 
 typedef RLibStruct* (*RLibStructFunc) (void);
@@ -120,14 +124,17 @@ typedef struct r_lib_t {
 	RList /*RLibHandler*/ *handlers;
 	RLibHandler *handlers_bytype[R_LIB_TYPE_LAST];
 	bool ignore_version;
+	bool ignore_abi_version;
+	bool safe_loading; /* true to enable 2-step loading process */
 	// hashtable plugname = &plugin
 	HtPP *plugins_ht;
+	ut32 abi_version; /* Current ABI version */
 } RLib;
 
 #ifdef R_API
 
 /* low level api */
-R_API void *r_lib_dl_open(const char *libname);
+R_API void *r_lib_dl_open(const char *libname, bool safe_mode);
 R_API void *r_lib_dl_sym(void *handler, const char *name);
 R_API bool r_lib_dl_close(void *handler);
 
@@ -139,6 +146,8 @@ R_API RLibHandler *r_lib_get_handler(RLib *lib, int type);
 R_API bool r_lib_open(RLib *lib, const char *file);
 R_API bool r_lib_opendir(RLib *lib, const char *path);
 R_API bool r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct *stru);
+R_API bool r_lib_validate_plugin(RLib *lib, const char *file, RLibStruct *stru);
+R_API RList *r_lib_get_loaded_plugins(RLib *lib);
 R_API char *r_lib_path(const char *libname);
 R_API void r_lib_list(RLib *lib);
 R_API bool r_lib_add_handler(RLib *lib, int type, const char *desc, RLibCallback ct, RLibCallback dt, void *user);

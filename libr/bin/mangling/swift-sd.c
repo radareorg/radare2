@@ -186,15 +186,15 @@ static char *swift_demangle_cmd(const char *s) {
 static char *swift_demangle_lib(const char *s) {
 #if R2__UNIX__
 	if (!haveSwiftCore) {
-		void *lib = r_lib_dl_open ("/usr/lib/swift/libswiftCore." R_LIB_EXT);
+		void *lib = r_lib_dl_open ("/usr/lib/swift/libswiftCore." R_LIB_EXT, false);
 		if (!lib) {
-			lib = r_lib_dl_open ("/usr/lib/libswiftCore." R_LIB_EXT);
+			lib = r_lib_dl_open ("/usr/lib/libswiftCore." R_LIB_EXT, false);
 			if (!lib) {
-				lib = r_lib_dl_open ("libswiftCore");
+				lib = r_lib_dl_open ("libswiftCore", false);
 				if (!lib) {
-					lib = r_lib_dl_open ("/usr/lib/swift/libswiftDemangle." R_LIB_EXT);
+					lib = r_lib_dl_open ("/usr/lib/swift/libswiftDemangle." R_LIB_EXT, false);
 					if (!lib) {
-						lib = r_lib_dl_open ("libswiftDemangle");
+						lib = r_lib_dl_open ("libswiftDemangle", false);
 					}
 				}
 			}
