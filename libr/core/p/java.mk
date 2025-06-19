@@ -15,7 +15,7 @@ LDFLAGS+=$(LINK)
 
 ifeq ($(WITHPIC),1)
 ALL_TARGETS+=${CORE_TARGET_JAVA}
-R2DEPS+=r_codec
+R2DEPS+=r_muta
 include $(STOP)/java/deps.mk
 
 ${CORE_TARGET_JAVA}: ${CORE_OBJ_JAVA}
@@ -24,6 +24,5 @@ ${CORE_TARGET_JAVA}: ${CORE_OBJ_JAVA}
 		-o core_java.${EXT_SO} \
 		${CORE_OBJ_JAVA} ${CORE_SHARED2_JAVA} \
 		$(SHLR)/java/libr_java.$(EXT_AR) \
-		$(SHLR)/../subprojects/sdb/src/libsdb.$(EXT_AR) \
-		-L$(LIBR)/codec -lr_codec
+		$(SHLR)/../subprojects/sdb/src/libsdb.$(EXT_AR)
 endif
