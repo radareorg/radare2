@@ -4076,6 +4076,7 @@ R_API int r_core_config_init(RCore *core) {
 	}
 	SETCB ("dir.source.base", "", &cb_dirsrc_base, "path to trim out from the one in dwarf");
 	SETCB ("dir.source", "", &cb_dirsrc, "path to find source files");
+	SETS ("dir.debuglink", "/usr/lib/debug/", "default path for debuglink files (idl* command)");
 	SETS ("dir.types", "/usr/include", "default colon-separated list of paths to find C headers to cparse types");
 	SETS ("dir.libs", "", "specify path to find libraries to load when bin.libs=true");
 #if __EMSCRIPTEN__ || __wasi__

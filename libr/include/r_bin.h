@@ -276,6 +276,7 @@ typedef struct r_bin_info_t {
 	char *intrp;
 	char *compiler;
 	char *charset;
+	char *dbglink;
 } RBinInfo;
 
 typedef struct r_bin_symbol_t {
