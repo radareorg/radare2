@@ -23,13 +23,13 @@ RBuffer *create_macho_with_dwarf(RList *lines, RList *symbols) {
 	}
 
 	// Macros for writing to RBuffer (little-endian)
-#define B(x,y)    r_buf_append_bytes(buf, (const ut8*)(x), (y))
-#define U8(x)     do { ut8 _v = (ut8)(x); r_buf_append_bytes(buf, &_v, 1); } while(0)
-#define U16(x)    r_buf_append_ut16(buf, (ut16)(x))
-#define U32(x)    r_buf_append_ut32(buf, (ut32)(x))
-#define U64(x)    do { ut64 _vv = (ut64)(x); r_buf_append_ut32(buf, (ut32)_vv); r_buf_append_ut32(buf, (ut32)(_vv >> 32)); } while(0)
-#define Z(n)      r_buf_append_nbytes(buf, (n))
-#define W(off, data, len)  r_buf_write_at(buf, (off), (const ut8*)(data), (len))
+#define B(x,y)    r_buf_append_bytes (buf, (const ut8*)(x), (y))
+#define U8(x)     do { ut8 _v = (ut8)(x); r_buf_append_bytes (buf, &_v, 1); } while (0)
+#define U16(x)    r_buf_append_ut16 (buf, (ut16)(x))
+#define U32(x)    r_buf_append_ut32 (buf, (ut32)(x))
+#define U64(x)    do { ut64 _vv = (ut64)(x); r_buf_append_ut32 (buf, (ut32)_vv); r_buf_append_ut32 (buf, (ut32)(_vv >> 32)); } while (0)
+#define Z(n)      r_buf_append_nbytes (buf, (n))
+#define W(off, data, len)  r_buf_write_at (buf, (off), (const ut8*)(data), (len))
 
 	// Mach-O 64-bit Header (mach_header_64)
 	U32(0xFEEDFACF);                // magic MH_MAGIC_64 [oai_citation:0‡mikeash.com](https://www.mikeash.com/pyblog/friday-qa-2012-11-30-lets-build-a-mach-o-executable.html#:~:text=%2F,NXSwapInt%28MH_MAGIC_64%29)
@@ -233,8 +233,11 @@ RBuffer *create_macho_with_dwarf(RList *lines, RList *symbols) {
 	U8(13);                         // opcode_base = 13
 					// Standard opcode lengths (for opcodes 1 through 12)
 	ut8 standard_opcode_lengths[12] = {0,1,1,1,1,0,0,0,1,0,0,1};
-	for (int i = 0; i < 12; i++) {
-		U8(standard_opcode_lengths[i]);
+	{
+		int i;
+		for (i = 0; i < 12; i++) {
+			U8(standard_opcode_lengths[i]);
+		}
 	}
 	// Include directories table (empty, just terminator)
 	RList *dirs = r_list_newf (free);
@@ -281,7 +284,7 @@ RBuffer *create_macho_with_dwarf(RList *lines, RList *symbols) {
 		LineEntry *le;
 		r_list_foreach (lines, lit, le) {
 			// Extended DW_LNE_set_address
-			U8(0x00); U8(1 + sizeof(ut64)); U8(0x02);
+			U8(0x00); U8(1 + sizeof (ut64)); U8(0x02);
 			U64(le->addr);
 			// DW_LNS_set_file if changed
 			int file_idx = 1;
@@ -420,46 +423,46 @@ RBuffer *create_macho_with_dwarf(RList *lines, RList *symbols) {
 // (create_macho_with_dwarf and main remain unchanged)
 #if 0
 int main() {
-	RList *lines = r_list_newf(free);
-	RList *symbols = r_list_newf(free);
+	RList *lines = r_list_newf (free);
+	RList *symbols = r_list_newf (free);
 
 	// Populate line entries
 	{
-		LineEntry *le1 = R_NEW0(LineEntry);
+		LineEntry *le1 = R_NEW0 (LineEntry);
 		le1->addr = 0x1000;
-		le1->file = strdup("main.c");
+		le1->file = strdup ("main.c");
 		le1->line = 42;
-		r_list_append(lines, le1);
-		LineEntry *le2 = R_NEW0(LineEntry);
+		r_list_append (lines, le1);
+		LineEntry *le2 = R_NEW0 (LineEntry);
 		le2->addr = 0x2000;
-		le2->file = strdup("main.c");
+		le2->file = strdup ("main.c");
 		le2->line = 53;
-		r_list_append(lines, le2);
-		LineEntry *le3 = R_NEW0(LineEntry);
+		r_list_append (lines, le2);
+		LineEntry *le3 = R_NEW0 (LineEntry);
 		le3->addr = 0x3000;
-		le3->file = strdup("foo.c");
+		le3->file = strdup ("foo.c");
 		le3->line = 63;
-		r_list_append(lines, le3);
+		r_list_append (lines, le3);
 	}
 
 	// Populate symbol entries
 	{
-		SymEntry *se1 = R_NEW0(SymEntry);
+		SymEntry *se1 = R_NEW0 (SymEntry);
 		se1->addr = 0x1000;
-		se1->symbol = strdup("main");
-		r_list_append(symbols, se1);
-		SymEntry *se2 = R_NEW0(SymEntry);
+		se1->symbol = strdup ("main");
+		r_list_append (symbols, se1);
+		SymEntry *se2 = R_NEW0 (SymEntry);
 		se2->addr = 0x2000;
-		se2->symbol = strdup("check");
-		r_list_append(symbols, se2);
+		se2->symbol = strdup ("check");
+		r_list_append (symbols, se2);
 	}
 
-	RBuffer *b = create_macho_with_dwarf(lines, symbols);
+	RBuffer *b = create_macho_with_dwarf (lines, symbols);
 	int sz;
-	ut8 *outbuf = r_buf_read_all(b, &sz);
-	r_file_dump("gen", outbuf, sz, false);
-	free(outbuf);
-	r_buf_free(b);
+	ut8 *outbuf = r_buf_read_all (b, &sz);
+	r_file_dump ("gen", outbuf, sz, false);
+	free (outbuf);
+	r_buf_free (b);
 	return 0;
 }
 #endif
@@ -479,12 +482,12 @@ static void writedwarf(RCore *core, const char *arg) {
 		le1->file = strdup("main.c");
 		le1->line = 42;
 		r_list_append(lines, le1);
-		LineEntry *le2 = R_NEW0(LineEntry);
+		LineEntry *le2 = R_NEW0 (LineEntry);
 		le2->addr = 0x2000;
 		le2->file = strdup("main.c");
 		le2->line = 53;
 		r_list_append(lines, le2);
-		LineEntry *le3 = R_NEW0(LineEntry);
+		LineEntry *le3 = R_NEW0 (LineEntry);
 		le3->addr = 0x3000;
 		le3->file = strdup("foo.c");
 		le3->line = 63;
@@ -495,7 +498,7 @@ static void writedwarf(RCore *core, const char *arg) {
 	RListIter *it;
 	RAnalFunction *fcn;
 	r_list_foreach (core->anal->fcns, it, fcn) {
-		SymEntry *se = R_NEW0(SymEntry);
+		SymEntry *se = R_NEW0 (SymEntry);
 		se->addr = fcn->addr;
 		se->symbol = strdup (fcn->name);
 		r_list_append (symbols, se);
@@ -503,11 +506,11 @@ static void writedwarf(RCore *core, const char *arg) {
 #if 0
 	// Populate symbol entries
 	{
-		SymEntry *se1 = R_NEW0(SymEntry);
+		SymEntry *se1 = R_NEW0 (SymEntry);
 		se1->addr = 0x1000;
 		se1->symbol = strdup("main");
 		r_list_append(symbols, se1);
-		SymEntry *se2 = R_NEW0(SymEntry);
+		SymEntry *se2 = R_NEW0 (SymEntry);
 		se2->addr = 0x2000;
 		se2->symbol = strdup("check");
 		r_list_append(symbols, se2);
