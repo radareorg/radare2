@@ -1871,7 +1871,7 @@ static void cmd_id(RCore *core, PJ *pj, const char *input, bool is_array, int mo
 							free (dir_debuglink);
 						}
 						free (url);
-					}	
+					}
 					break;
 				case '*':
 					{
