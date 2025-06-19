@@ -4,6 +4,7 @@
 
 #if DEBUGGER
 #include <r_debug.h>
+#include <r_core.h>
 #include <r_asm.h>
 #include <r_lib.h>
 #include <r_anal.h>
@@ -495,7 +496,9 @@ RDebugReasonType linux_dbg_wait(RDebug *dbg, int pid) {
 		// In the main context, SIGINT is propagated to the debuggee if it is
 		// in the same process group. Otherwise, the task is running in
 		// background and SIGINT will not be propagated to the debuggee.
-		if (r_cons_context_is_main ()) {
+		RCore *core = dbg->coreb.core;
+		const bool is_main = r_kons_context_is_main (core->cons);
+		if (is_main) {
 			r_cons_break_push ((RConsBreak)linux_dbg_wait_break_main, dbg);
 		} else {
 			r_cons_break_push ((RConsBreak)linux_dbg_wait_break, dbg);

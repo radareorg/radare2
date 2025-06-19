@@ -456,7 +456,7 @@ stillbirth:
 	}
 
 	if (task->cons_context && task->cons_context->break_stack) {
-		r_cons_context_break_pop (task->cons_context, false);
+		r_kons_context_break_pop (core->cons, task->cons_context, false);
 	}
 
 	int ret = R_TH_STOP;
@@ -497,7 +497,7 @@ R_API void r_core_task_enqueue(RCoreTaskScheduler *scheduler, RCoreTask *task) {
 		r_th_sem_wait (task->running_sem);
 	}
 	if (task->cons_context) {
-		r_cons_context_break_push (task->cons_context, NULL, NULL, false);
+		r_cons_context_break_push (task->core->cons, task->cons_context, NULL, NULL, false);
 	}
 	r_list_append (scheduler->tasks, task);
 	task->thread = r_th_new (task_run_thread, task, 0);
