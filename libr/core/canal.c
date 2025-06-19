@@ -2666,15 +2666,15 @@ repeat:
 	switch (fmt) {
 	case R_GRAPH_FORMAT_GML:
 	case R_GRAPH_FORMAT_GMLFCN:
-		r_cons_printf ("]\n");
+		r_kons_printf (core->cons, "]\n");
 		break;
 	case R_GRAPH_FORMAT_JSON:
 		pj_end (pj);
-		r_cons_println (pj_string (pj));
+		r_kons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 		break;
 	case R_GRAPH_FORMAT_DOT:
-		r_cons_printf ("}\n");
+		r_kons_printf (core->cons, "}\n");
 		break;
 	}
 }
@@ -3080,7 +3080,7 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode, bool unique,
 				}
 				r_list_sort (sortbycount, atoisort);
 				char *s = r_str_list_join (sortbycount, "\n");
-				r_cons_println (s);
+				r_kons_println (core->cons, s);
 				free (s);
 				r_list_free (sortbycount);
 			}
@@ -3363,6 +3363,7 @@ static int fcn_list_verbose_json(RCore *core, RList *fcns) {
 }
 
 static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
+	RCons *cons = core->cons;
 	const char *defaultCC = r_anal_cc_default (core->anal);
 	char *name = r_core_anal_fcn_name (core, fcn);
 	char *paren = strchr (name, '(');
@@ -3370,9 +3371,9 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 		*paren = '\0';
 	}
 	char *fname = r_name_filter_dup (name);
-	r_cons_printf ("'f %s %"PFMT64u" 0x%08"PFMT64x"\n", fname, r_anal_function_linear_size (fcn), fcn->addr);
+	r_kons_printf (cons, "'f %s %"PFMT64u" 0x%08"PFMT64x"\n", fname, r_anal_function_linear_size (fcn), fcn->addr);
 	free (fname);
-	r_cons_printf ("'af+ 0x%08"PFMT64x" %s %c %c\n",
+	r_kons_printf (cons, "'af+ 0x%08"PFMT64x" %s %c %c\n",
 			fcn->addr, name, //r_anal_function_size (fcn), name,
 			fcn->type == R_ANAL_FCN_TYPE_LOC?'l':
 			fcn->type == R_ANAL_FCN_TYPE_SYM?'s':
@@ -3382,16 +3383,16 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	// FIXME: this command prints something annoying. Does it have important side-effects?
 	fcn_list_bbs (fcn);
 	if (fcn->bits != 0) {
-		r_cons_printf ("'@0x%08"PFMT64x"'afB %d\n", fcn->addr, fcn->bits);
+		r_kons_printf (cons, "'@0x%08"PFMT64x"'afB %d\n", fcn->addr, fcn->bits);
 	}
 	// FIXME command injection vuln here
 	if (fcn->callconv || defaultCC) {
-		r_cons_printf ("s 0x%"PFMT64x"\n", fcn->addr);
-		r_cons_printf ("'afc %s\n", fcn->callconv? fcn->callconv: defaultCC);
-		r_cons_println ("s-");
+		r_kons_printf (cons, "s 0x%"PFMT64x"\n", fcn->addr);
+		r_kons_printf (cons, "'afc %s\n", fcn->callconv? fcn->callconv: defaultCC);
+		r_kons_println (cons, "s-");
 	}
 	if (fcn->folded) {
-		r_cons_printf ("afF @ 0x%08"PFMT64x"\n", fcn->addr);
+		r_kons_printf (cons, "afF @ 0x%08"PFMT64x"\n", fcn->addr);
 	}
 	if (fcn) {
 		/* show variables  and arguments */
@@ -3406,23 +3407,23 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 		R_VEC_FOREACH (refs, refi) {
 			const int t = R_ANAL_REF_TYPE_MASK (refi->type);
 			if (t == R_ANAL_REF_TYPE_CALL) {
-				r_cons_printf ("axC 0x%"PFMT64x" 0x%"PFMT64x"\n", refi->addr, refi->at);
+				r_kons_printf (cons, "'axC 0x%"PFMT64x" 0x%"PFMT64x"\n", refi->addr, refi->at);
 			} else if (t == R_ANAL_REF_TYPE_DATA) {
-				r_cons_printf ("axd 0x%"PFMT64x" 0x%"PFMT64x"\n", refi->addr, refi->at);
+				r_kons_printf (cons, "'axd 0x%"PFMT64x" 0x%"PFMT64x"\n", refi->addr, refi->at);
 			} else if (t == R_ANAL_REF_TYPE_ICOD) {
-				r_cons_printf ("axi 0x%"PFMT64x" 0x%"PFMT64x"\n", refi->addr, refi->at);
+				r_kons_printf (cons, "'axi 0x%"PFMT64x" 0x%"PFMT64x"\n", refi->addr, refi->at);
 			} else if (t == R_ANAL_REF_TYPE_CODE) {
-				r_cons_printf ("axc 0x%"PFMT64x" 0x%"PFMT64x"\n", refi->addr, refi->at);
+				r_kons_printf (cons, "'axc 0x%"PFMT64x" 0x%"PFMT64x"\n", refi->addr, refi->at);
 			} else if (t == R_ANAL_REF_TYPE_STRN) {
-				r_cons_printf ("axs 0x%"PFMT64x" 0x%"PFMT64x"\n", refi->addr, refi->at);
+				r_kons_printf (cons, "'axs 0x%"PFMT64x" 0x%"PFMT64x"\n", refi->addr, refi->at);
 			} else {
-				r_cons_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n", refi->addr, refi->at);
+				r_kons_printf (cons, "'ax 0x%"PFMT64x" 0x%"PFMT64x"\n", refi->addr, refi->at);
 			}
 		}
 	}
 	RVecAnalRef_free (refs);
-	/*Saving Function stack frame*/
-	r_cons_printf ("afS %d @ 0x%"PFMT64x"\n", fcn->maxstack, fcn->addr);
+	/* Saving Function stack frame */
+	r_kons_printf (cons, "'0x%"PFMT64x"'afS %d\n", fcn->addr, fcn->maxstack);
 	free (name);
 	return 0;
 }
@@ -3623,7 +3624,7 @@ static int fcn_list_detail(RCore *core, RList *fcns) {
 	r_list_foreach (fcns, iter, fcn) {
 		fcn_print_detail (core, fcn);
 	}
-	r_cons_newline ();
+	r_kons_newline (core->cons);
 	return 0;
 }
 
@@ -4002,7 +4003,7 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 		if (opaddr < bb->addr || opaddr >= bb->addr + bb->size) {
 			break;
 		}
-		if (r_cons_is_breaked ()) {
+		if (r_kons_is_breaked (core->cons)) {
 			break;
 		}
 		pos = (opaddr - bb->addr);
@@ -4399,7 +4400,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 	// ???
 	// XXX must read bytes correctly
 	do_bckwrd_srch = bckwrds = core->search->bckwrds;
-	r_cons_break_push (NULL, NULL);
+	r_kons_break_push (core->cons, NULL, NULL);
 	if (core->blocksize > OPSZ) {
 		if (bckwrds) {
 			if (from + core->blocksize > to) {
@@ -4413,7 +4414,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 		}
 		while ((!bckwrds && at < to) || bckwrds) {
 			R_LOG_DEBUG ("[0x%08"PFMT64x"-0x%08"PFMT64x"]", at, to);
-			if (r_cons_is_breaked ()) {
+			if (r_kons_is_breaked (core->cons)) {
 				break;
 			}
 			size_t left = R_MIN (to - at, core->blocksize);
@@ -4429,7 +4430,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 				 (!bckwrds && i < core->blocksize - OPSZ) ||
 				 (bckwrds && i > 0); bckwrds ? i-- : i++) {
 				// TODO: honor anal.align
-				if (r_cons_is_breaked ()) {
+				if (r_kons_is_breaked (core->cons)) {
 					break;
 				}
 				switch (mode) {
@@ -4527,7 +4528,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 	} else {
 		R_LOG_ERROR ("block size too small");
 	}
-	r_cons_break_pop ();
+	r_kons_break_pop (core->cons);
 	free (buf);
 	r_anal_op_fini (&op);
 	return count;
@@ -4665,7 +4666,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 		free (buf);
 		return -1;
 	}
-	r_cons_break_push (NULL, NULL);
+	r_kons_break_push (core->cons, NULL, NULL);
 	at = from;
 	st64 asm_sub_varmin = r_config_get_i (core->config, "asm.sub.varmin");
 	int maxopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
@@ -4689,7 +4690,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 		goto beach;
 	}
 	bool uninit = true;
-	while (at < to && !r_cons_is_breaked ()) {
+	while (at < to && !r_kons_is_breaked (core->cons)) {
 		int i = 0, ret = bsz;
 		if (!r_itv_contain (region.itv, at)) {
 			if (!r_io_get_region_at (core->io, &region, at) || !(region.perm & R_PERM_X)) {
@@ -4734,7 +4735,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 			uninit = false;
 		}
 		(void) r_anal_op (core->anal, &op, at, buf, bsz, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
-		while ((i + maxopsz) < bsz && !r_cons_is_breaked ()) {
+		while ((i + maxopsz) < bsz && !r_kons_is_breaked (core->cons)) {
 			r_anal_op_fini (&op);
 			// check if meta tells its code
 			{
@@ -4857,7 +4858,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 		at += i + 1; // XXX i think this causes code unalignment problems
 	}
 beach:
-	r_cons_break_pop ();
+	r_kons_break_pop (core->cons);
 	free (buf);
 	free (block);
 	return count;
@@ -5034,6 +5035,7 @@ R_API void r_core_anal_stats_free(RCoreAnalStats *s) {
 }
 
 R_API RList* r_core_anal_cycles(RCore *core, int ccl) {
+	RCons *cons = core->cons;
 	const bool verbose = r_config_get_b (core->config, "scr.interactive") && r_config_get_b (core->config, "scr.prompt");
 	ut64 addr = core->addr;
 	int depth = 0;
@@ -5045,11 +5047,11 @@ R_API RList* r_core_anal_cycles(RCore *core, int ccl) {
 		return NULL;
 	}
 	cf = r_anal_cycle_frame_new ();
-	r_cons_break_push (NULL, NULL);
-	while (cf && !r_cons_is_breaked ()) {
+	r_kons_break_push (core->cons, NULL, NULL);
+	while (cf && !r_kons_is_breaked (cons)) {
 		if ((op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_BASIC)) && (op->cycles) && (ccl > 0)) {
 			if (verbose) {
-				r_cons_clear_line (1);
+				r_kons_clear_line (cons, 1);
 			}
 			addr += op->size;
 			switch (op->type) {
@@ -5219,7 +5221,7 @@ R_API RList* r_core_anal_cycles(RCore *core, int ccl) {
 		}
 		r_anal_op_free (op);
 	}
-	if (r_cons_is_breaked ()) {
+	if (r_kons_is_breaked (cons)) {
 		while (cf) {
 			ch = r_list_pop (cf->hooks);
 			while (ch) {
@@ -5231,7 +5233,7 @@ R_API RList* r_core_anal_cycles(RCore *core, int ccl) {
 			cf = prev;
 		}
 	}
-	r_cons_break_pop ();
+	r_kons_break_pop (cons);
 	return hooks;
 }
 
@@ -5923,7 +5925,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	//eprintf ("Analyzing ESIL refs from 0x%"PFMT64x" - 0x%"PFMT64x"\n", addr, end);
 	// TODO: backup/restore register state before/after analysis
 	core->esil_anal_stop = false;
-	r_cons_break_push (cccb, core);
+	r_kons_break_push (core->cons, cccb, core);
 
 	int arch = -1;
 	if (!strcmp (core->anal->config->arch, "arm")) {
@@ -5979,7 +5981,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	opflags |= R_ARCH_OP_MASK_DISASM;
 
 	do {
-		if (core->esil_anal_stop || r_cons_is_breaked ()) {
+		if (core->esil_anal_stop || r_kons_is_breaked (core->cons)) {
 			break;
 		}
 		buf_i = pulldata (core,
@@ -6378,7 +6380,7 @@ repeat:
 	ESIL->cb.hook_reg_write = NULL;
 	ESIL->user = NULL;
 	r_anal_op_fini (&op);
-	r_cons_break_pop ();
+	r_kons_break_pop (core->cons);
 	// r_core_cmd0 (core, "wc--");
 	// restore register
 	r_reg_arena_pop (core->anal->reg);
@@ -6451,7 +6453,7 @@ R_IPI int r_core_search_value_in_range(RCore *core, bool relative, RInterval sea
 		R_LOG_ERROR ("Invalid destination boundary");
 		return -1;
 	}
-	r_cons_break_push (NULL, NULL);
+	r_kons_break_push (core->cons, NULL, NULL);
 
 	if (!r_io_is_valid_offset (core->io, from, 0)) {
 		return -1;
@@ -6459,7 +6461,7 @@ R_IPI int r_core_search_value_in_range(RCore *core, bool relative, RInterval sea
 	while (from < to) {
 		size = R_MIN (to - from, sizeof (buf));
 		memset (buf, 0xff, sizeof (buf)); // probably unnecessary
-		if (r_cons_is_breaked ()) {
+		if (r_kons_is_breaked (core->cons)) {
 			goto beach;
 		}
 		bool res = r_io_read_at (core->io, from, buf, size);
@@ -6484,7 +6486,7 @@ R_IPI int r_core_search_value_in_range(RCore *core, bool relative, RInterval sea
 		for (i = 0; i <= (size - vsize); i++) {
 			ut8 *v = (buf + i);
 			ut64 addr = from + i;
-			if (r_cons_is_breaked ()) {
+			if (r_kons_is_breaked (core->cons)) {
 				goto beach;
 			}
 			if (align && (addr) % align) {
@@ -6556,7 +6558,7 @@ R_IPI int r_core_search_value_in_range(RCore *core, bool relative, RInterval sea
 		}
 	}
 beach:
-	r_cons_break_pop ();
+	r_kons_break_pop (core->cons);
 	return hitctr;
 }
 
@@ -6636,7 +6638,7 @@ static void analPaths(RCoreAnalPaths *p, PJ *pj, int depth) {
 		return;
 	}
 	/* handle ^C */
-	if (r_cons_is_breaked ()) {
+	if (r_kons_is_breaked (p->core->cons)) {
 		return;
 	}
 	dict_set (&p->visited, cur->addr, 1, NULL);
@@ -6761,7 +6763,7 @@ R_API void r_core_anal_inflags(RCore *core, const char * R_NULLABLE glob) {
 	// should be sorted already
 	r_list_sort (addrs, (RListComparator)__addrs_cmp);
 	r_list_foreach (addrs, iter, addr) {
-		if (!iter->n || r_cons_is_breaked ()) {
+		if (!iter->n || r_kons_is_breaked (core->cons)) {
 			break;
 		}
 		char *addr2 = iter->n->data;
@@ -6878,7 +6880,7 @@ R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr) {
 		ut64 *paddr = (ut64*)r_list_pop (todo);
 		ut64 noret_addr = *paddr;
 		free (paddr);
-		if (r_cons_is_breaked ()) {
+		if (r_kons_is_breaked (core->cons)) {
 			break;
 		}
 		RVecAnalRef *xrefs = r_anal_xrefs_get (core->anal, noret_addr);
