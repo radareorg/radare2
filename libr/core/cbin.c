@@ -958,6 +958,9 @@ static bool bin_info(RCore *core, PJ *pj, int mode, ut64 laddr) {
 		if (info->has_nobtcfi) {
 			pair_bool (core, pj, "nobtcfi", info->has_nobtcfi);
 		}
+		if (info->dbglink) {
+			pair_str (core, pj, "dbglink", info->dbglink);
+		}
 		pair_bool (core, pj, "injprot", info->has_libinjprot);
 		if (info->has_retguard != -1) {
 			pair_bool (core, pj, "retguard", info->has_retguard);

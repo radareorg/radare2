@@ -140,19 +140,17 @@ static RBinAddr* newEntry(RBinFile *bf, ut64 hpaddr, ut64 hvaddr, ut64 vaddr, in
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
-	if (ptr) {
-		ELFOBJ *eo = bf->bo->bin_obj;
-		ptr->paddr = Elf_(v2p) (eo, vaddr);
-		ptr->vaddr = vaddr;
-		ptr->hpaddr = hpaddr;
-		ptr->hvaddr = hvaddr;
-		ptr->bits = bits;
-		ptr->type = type;
-		// realign due to thumb
-		if (bits == 16 && ptr->vaddr & 1) {
-			ptr->paddr--;
-			ptr->vaddr--;
-		}
+	ELFOBJ *eo = bf->bo->bin_obj;
+	ptr->paddr = Elf_(v2p) (eo, vaddr);
+	ptr->vaddr = vaddr;
+	ptr->hpaddr = hpaddr;
+	ptr->hvaddr = hvaddr;
+	ptr->bits = bits;
+	ptr->type = type;
+	// realign due to thumb
+	if (bits == 16 && ptr->vaddr & 1) {
+		ptr->paddr--;
+		ptr->vaddr--;
 	}
 	return ptr;
 }
@@ -1165,6 +1163,17 @@ static void lookup_sections(RBinFile *bf, RBinInfo *ret) {
 			ret->lang = "go";
 			is_go = true;
 		}
+		if (!strcmp (section->name, ".gnu_debuglink")) {
+			char buf[128] = {0};
+			ut64 addr = section->paddr;
+			ut64 size = sizeof (buf) - 1;
+			if (r_buf_read_at (bf->buf, addr, (ut8*)buf, size) == size) {
+				// R_LOG_INFO ("SideloadDwarf with this command: obf %s", buf);
+				if (IS_PRINTABLE (buf[0])) {
+					ret->dbglink = r_str_ndup (buf, sizeof (buf));
+				}
+			}
+		}
 		# define R_BIN_RANDOMDATA_RETGUARD_SZ 48
 		if (!strcmp (section->name, ".openbsd.randomdata")) {
 			// The retguard cookie adds 8 per return function inst.
@@ -1193,21 +1202,19 @@ static bool has_sanitizers(RBinFile *bf) {
 
 static RBinInfo* info(RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) {
-		return NULL;
-	}
 	ret->file = bf->file
 		? strdup (bf->file)
 		: NULL;
 	void *obj = bf->bo->bin_obj;
-	char *str;
-	if ((str = Elf_(get_rpath)(obj))) {
+	char *str = Elf_(get_rpath)(obj);
+	if (str) {
 		ret->rpath = strdup (str);
 		free (str);
 	} else {
 		ret->rpath = strdup ("NONE");
 	}
-	if (!(str = Elf_(get_file_type) (obj))) {
+	str = Elf_(get_file_type) (obj);
+	if (!str) {
 		free (ret->rpath);
 		free (ret);
 		return NULL;

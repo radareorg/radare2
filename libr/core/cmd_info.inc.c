@@ -142,10 +142,11 @@ static RCoreHelpMessage help_msg_id = {
 	"Usage: idp", "", "Debug information",
 	"id", "", "show DWARF source lines information",
 	"idj", "", "show addrline information in json format",
+	"idl", "[*]", "show debug link file name",
 	"idp", " [file.pdb]", "load pdb file information",
+	"idpd", "", "download pdb file on remote server",
 	"idpi", " [file.pdb]", "show pdb file information",
 	"idpi*", "", "show symbols from pdb as flags (prefix with dot to import)",
-	"idpd", "", "download pdb file on remote server",
 	"idx", "", "display source files used via dwarf (previously known as iX)",
 	NULL
 };
@@ -1711,7 +1712,7 @@ static void cmd_it(RCore *core, PJ *pj) {
 	r_list_free (old_hashes);
 }
 
-static void cmd_idp (RCore *core, PJ *pj, const char *input, bool is_array, int mode) {
+static void cmd_idp(RCore *core, PJ *pj, const char *input, bool is_array, int mode) {
 	SPDBOptions pdbopts;
 	RBinInfo *info;
 	bool file_found;
@@ -1831,18 +1832,39 @@ static void cmd_idp (RCore *core, PJ *pj, const char *input, bool is_array, int 
 
 static void cmd_id(RCore *core, PJ *pj, const char *input, bool is_array, int mode) {
 	const bool va = r_config_get_b (core->config, "io.va");
-	const char input1 = input[1];
-	if (input1 == 'x') { // "idx" "iX"
+	switch (input[1]) {
+	case 'l': // "idl"
+		{
+			RBinInfo *info = r_bin_get_info (core->bin);
+			if (info && info->dbglink) {
+				if (input[2] == '*') {
+					r_kons_printf (core->cons, "'obf %s/%s\n",
+							r_config_get (core->config, "dir.debuglink"),
+							info->dbglink);
+				} else {
+					r_kons_println (core->cons, info->dbglink);
+				}
+			}
+		}
+		break;
+	case 'x': // "idx"
 		RBININFO ("source", R_CORE_BIN_ACC_SOURCE, NULL, 0);
-	} else if (input1 == 'p') { // "idp"
+		break;
+	case 'p': // "idp"
 		cmd_idp (core, pj, input, is_array, mode);
-	} else if (input1 == '?') { // "id?"
+		break;
+	case '?':
 		r_core_cmd_help (core, help_msg_id);
-		input++;
-	} else if (input1 == 'q' || input1 == 'j' || !input1 || input1 == '*') { // "idj"
+		break;
+	case 0:
+	case '*':
+	case 'j':
+	case 'q':
 		RBININFO ("dwarf", R_CORE_BIN_ACC_ADDRLINE, NULL, -1);
-	} else {
+		break;
+	default:
 		r_core_return_invalid_command (core, "id", input[1]);
+		break;
 	}
 }
 
