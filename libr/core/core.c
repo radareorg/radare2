@@ -2919,7 +2919,7 @@ static int prompt_flag(RCore *core, char *s, size_t maxlen) {
 	if (!f) {
 		return false;
 	}
-	if (f->addr < core->addr) {
+	if (core->addr > f->addr) {
 		snprintf (s, maxlen, "0x%08" PFMT64x " | %s+0x%" PFMT64x,
 				core->addr, f->name, core->addr - f->addr);
 	} else {
