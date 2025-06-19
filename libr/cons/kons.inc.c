@@ -440,12 +440,12 @@ R_API void r_kons_break_push(RCons *cons, RConsBreak cb, void *user) {
 	if (ctx->break_stack && r_stack_size (ctx->break_stack) > 0) {
 		r_kons_break_timeout (cons, cons->otimeout);
 	}
-	r_cons_context_break_push (ctx, cb, user, true);
+	r_cons_context_break_push (cons, ctx, cb, user, true);
 }
 
 R_API void r_kons_break_pop(RCons *cons) {
 	cons->timeout = 0;
-	r_cons_context_break_pop (cons->context, true);
+	r_cons_context_break_pop (cons, cons->context, true);
 }
 
 R_API void r_kons_flush(RCons *cons) {
@@ -1077,12 +1077,17 @@ R_API bool r_kons_pop(RCons *cons) {
 }
 
 R_API bool r_kons_context_is_main(RCons *cons) {
+	return r_cons_context_is_main (cons, cons->context);
+}
+
+R_API bool r_cons_context_is_main(RCons *cons, RConsContext *ctx) {
 	if (r_list_length (cons->ctx_stack) == 0) {
 		return true;
 	}
 	RConsContext *first_context = r_list_get_n (cons->ctx_stack, 0);
-	return cons->context == first_context;
+	return ctx == first_context;
 }
+
 
 R_API void r_kons_echo(RCons *cons, const char *msg) {
 	if (msg) {

@@ -86,7 +86,7 @@ R_API void r_core_task_print(RCore *core, RCoreTask *task, PJ *pj, int mode) {
 		if (task == core->tasks.main_task) {
 			info = "-- MAIN TASK --";
 		}
-		r_cons_printf ("%3d %3s %12s  %s\n",
+		r_kons_printf (core->cons, "%3d %3s %12s  %s\n",
 					   task->id,
 					   task->transient ? "(t)" : "",
 					   r_core_task_status (task),
@@ -114,10 +114,10 @@ R_API void r_core_task_list(RCore *core, int mode) {
 	}
 	if (mode == 'j') {
 		pj_end (pj);
-		r_cons_println (pj_string (pj));
+		r_kons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 	} else {
-		r_cons_printf ("--\ntotal running: %d\n", core->tasks.tasks_running);
+		r_kons_printf (core->cons, "--\ntotal running: %d\n", core->tasks.tasks_running);
 	}
 	tasks_lock_leave (&core->tasks, &old_sigset);
 }
@@ -325,7 +325,7 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 	tasks_lock_leave (scheduler, &old_sigset);
 
 	if (next) {
-		r_cons_context_reset ();
+		r_cons_context_reset (current->cons_context);
 		r_th_lock_enter (next->dispatch_lock);
 		next->dispatched = true;
 		r_th_lock_leave (next->dispatch_lock);
@@ -344,7 +344,7 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 		if (current->cons_context) {
 			r_cons_context_load (current->cons_context);
 		} else {
-			r_cons_context_reset ();
+			r_cons_context_reset (current->cons_context);
 		}
 	}
 	R_CRITICAL_LEAVE (core);
@@ -352,6 +352,7 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 
 static void task_wakeup(RCoreTask *current) {
 	return;
+#if 0
 	if (!current) {
 		return;
 	}
@@ -389,14 +390,14 @@ static void task_wakeup(RCoreTask *current) {
 
 	scheduler->current_task = current;
 
-	eprintf ("JAPUTA\n");
 	if (current->cons_context) {
 		// core->cons->context = current->cons_context;
 		r_cons_context_load (current->cons_context);
 	} else {
-		r_cons_context_reset ();
+		r_cons_context_reset (core->cons);
 	}
 	R_CRITICAL_LEAVE (core);
+#endif
 }
 
 R_API void r_core_task_yield(RCoreTaskScheduler *scheduler) {
@@ -437,7 +438,7 @@ static RThreadFunctionRet task_run(RCoreTask *task) {
 	task->res = res_str;
 
 	if (task != scheduler->main_task && r_cons_default_context_is_interactive ()) {
-		eprintf ("\nTask %d finished\n", task->id);
+		R_LOG_INFO ("Task %d finished", task->id);
 	}
 
 	TASK_SIGSET_T old_sigset;
@@ -455,7 +456,7 @@ stillbirth:
 	}
 
 	if (task->cons_context && task->cons_context->break_stack) {
-		r_cons_context_break_pop (task->cons_context, false);
+		r_cons_context_break_pop (core->cons, task->cons_context, false);
 	}
 
 	int ret = R_TH_STOP;
@@ -496,7 +497,7 @@ R_API void r_core_task_enqueue(RCoreTaskScheduler *scheduler, RCoreTask *task) {
 		r_th_sem_wait (task->running_sem);
 	}
 	if (task->cons_context) {
-		r_cons_context_break_push (task->cons_context, NULL, NULL, false);
+		r_cons_context_break_push (task->core->cons, task->cons_context, NULL, NULL, false);
 	}
 	r_list_append (scheduler->tasks, task);
 	task->thread = r_th_new (task_run_thread, task, 0);
