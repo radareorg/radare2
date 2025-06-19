@@ -16,6 +16,6 @@ dbglink  b53985768bb99f138f48655f7b8bf7e420d13d.debug
 --
 b53985768bb99f138f48655f7b8bf7e420d13d.debug
 --
-'obf /usr/lib/debug//b53985768bb99f138f48655f7b8bf7e420d13d.debug
+'obf b53985768bb99f138f48655f7b8bf7e420d13d.debug
 EOF
 RUN
