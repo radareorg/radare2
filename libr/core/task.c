@@ -456,7 +456,7 @@ stillbirth:
 	}
 
 	if (task->cons_context && task->cons_context->break_stack) {
-		r_kons_context_break_pop (core->cons, task->cons_context, false);
+		r_cons_context_break_pop (core->cons, task->cons_context, false);
 	}
 
 	int ret = R_TH_STOP;
