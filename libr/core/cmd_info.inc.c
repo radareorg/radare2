@@ -137,12 +137,20 @@ static RCoreHelpMessage help_msg_i = {
 	NULL
 };
 
-// TODO: this command needs a refactoring
+static RCoreHelpMessage help_msg_idl = {
+	"Usage: idl", "", "Debug information",
+	"idl", "", "show debuglink file",
+	"idl*", "", "show command to load the debuglink file",
+	"idld", "", "download associated debuglink file",
+	"idld*", "", "show url to pull the debuglink file",
+	NULL
+};
+
 static RCoreHelpMessage help_msg_id = {
-	"Usage: idp", "", "Debug information",
+	"Usage: id", "", "Debug information",
 	"id", "", "show DWARF source lines information",
 	"idj", "", "show addrline information in json format",
-	"idl", "[*]", "show debug link file name",
+	"idl", "[?]", "show debug link file name",
 	"idp", " [file.pdb]", "load pdb file information",
 	"idpd", "", "download pdb file on remote server",
 	"idpi", " [file.pdb]", "show pdb file information",
@@ -1834,16 +1842,69 @@ static void cmd_id(RCore *core, PJ *pj, const char *input, bool is_array, int mo
 	const bool va = r_config_get_b (core->config, "io.va");
 	switch (input[1]) {
 	case 'l': // "idl"
-		{
+		if (input[2] == '?') {
+			r_core_cmd_help (core, help_msg_idl);
+		} else {
 			RBinInfo *info = r_bin_get_info (core->bin);
 			if (info && info->dbglink) {
-				if (input[2] == '*') {
-					r_kons_printf (core->cons, "'obf %s/%s\n",
-							r_config_get (core->config, "dir.debuglink"),
-							info->dbglink);
-				} else {
-					r_kons_println (core->cons, info->dbglink);
+				char *linkname = strdup (info->dbglink);
+				char *dot = (char *)r_str_lchr (linkname, '.');
+				if (dot) {
+					*dot = 0;
 				}
+				switch (input[2]) {
+				case 'd':
+					{
+						char *url = r_str_newf ("%s/%s/debuginfo", r_config_get (core->config, "dbg.linkurl"), linkname);
+						if (input[3] == '*') {
+							r_kons_printf (core->cons, "%s\n", url);
+						} else {
+							char *dir_debuglink = strdup (r_config_get (core->config, "dir.debuglink"));
+							char *colon = strchr (dir_debuglink, ':');
+							if (colon) {
+								*colon = 0;
+							}
+							// TODO: check if file exists before downloading
+							// TODO: use seprate path instead of the first one from the list?
+							R_LOG_WARN ("This curl oneliner is subject to command injection. Use it at your own risk");
+							r_sys_cmdf ("curl -o \"%s/%s\" \"%s\"", dir_debuglink, info->dbglink, url);
+							free (dir_debuglink);
+						}
+						free (url);
+					}	
+					break;
+				case '*':
+					{
+						char *dirlink = strdup (r_config_get (core->config, "dir.debuglink"));
+						RList *paths = r_str_split_list (dirlink, ":", 0);
+						RListIter *iter;
+						bool found = false;
+						char *path;
+						r_list_foreach (paths, iter, path) {
+							char *f = r_str_newf ("%s/%s", path, info->dbglink);
+							if (r_file_exists (f)) {
+								found = true;
+								r_kons_printf (core->cons, "'obf %s\n", f);
+								free (f);
+								break;
+							}
+							free (f);
+						}
+						r_list_free (paths);
+						free (dirlink);
+						if (!found) {
+							R_LOG_ERROR ("Cannot find %s in dir.debuglink. Use idld instead", info->dbglink);
+						}
+					}
+					break;
+				case 0:
+					r_kons_println (core->cons, info->dbglink);
+					break;
+				default:
+					r_core_return_invalid_command (core, "idl", input[2]);
+					break;
+				}
+				free (linkname);
 			}
 		}
 		break;
