@@ -615,6 +615,14 @@ static bool isFunctionFlag(const char *n) {
 	return false;
 }
 
+static bool isreg(RFlagItem *item) {
+	if (!strchr (item->name, '.')) {
+		if (item->space && r_str_startswith (item->name, "regis")) {
+			return true;
+		}
+	}
+	return false;
+}
 /* returns the last flag item defined before or at the given addr.
  * NULL is returned if such a item is not found. */
 R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 addr, bool closest) {
@@ -634,6 +642,9 @@ R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 addr, bool closest) {
 	if (flags_at->addr == addr) {
 		RFlagItem *item;
 		r_list_foreach (flags_at->flags, iter, item) {
+			if (isreg (item)) {
+				continue;
+			}
 			if (IS_FI_NOTIN_SPACE (f, item)) {
 				continue;
 			}
@@ -658,11 +669,14 @@ R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 addr, bool closest) {
 	while (!nice && flags_at) {
 		RFlagItem *item;
 		r_list_foreach (flags_at->flags, iter, item) {
+			if (isreg (item)) {
+				continue;
+			}
 			if (IS_FI_NOTIN_SPACE (f, item)) {
 				continue;
 			}
 			if (item->addr == addr) {
-				R_LOG_ERROR ("The impossible happened");
+				R_LOG_DEBUG ("The impossible happened");
 				return evalFlag (f, item);
 			}
 			nice = item;
