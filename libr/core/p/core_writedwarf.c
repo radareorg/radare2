@@ -15,14 +15,7 @@ typedef struct {
 	int line;
 } LineEntry;
 
-// Create a Mach-O 64-bit object with minimal DWARF v2 debug info
-RBuffer *create_macho_with_dwarf(RList *lines, RList *symbols) {
-	RBuffer *buf = r_buf_new ();
-	if (!buf) {
-		return NULL;
-	}
-
-	// Macros for writing to RBuffer (little-endian)
+// Macros for writing to RBuffer (little-endian)
 #define B(x,y)    r_buf_append_bytes (buf, (const ut8*)(x), (y))
 #define U8(x)     do { ut8 _v = (ut8)(x); r_buf_append_bytes (buf, &_v, 1); } while (0)
 #define U16(x)    r_buf_append_ut16 (buf, (ut16)(x))
@@ -30,6 +23,14 @@ RBuffer *create_macho_with_dwarf(RList *lines, RList *symbols) {
 #define U64(x)    do { ut64 _vv = (ut64)(x); r_buf_append_ut32 (buf, (ut32)_vv); r_buf_append_ut32 (buf, (ut32)(_vv >> 32)); } while (0)
 #define Z(n)      r_buf_append_nbytes (buf, (n))
 #define W(off, data, len)  r_buf_write_at (buf, (off), (const ut8*)(data), (len))
+
+
+// Create a Mach-O 64-bit object with minimal DWARF v2 debug info
+RBuffer *create_macho_with_dwarf(RList *lines, RList *symbols) {
+	RBuffer *buf = r_buf_new ();
+	if (!buf) {
+		return NULL;
+	}
 
 	// Mach-O 64-bit Header (mach_header_64)
 	U32(0xFEEDFACF);                // magic MH_MAGIC_64 [oai_citation:0‡mikeash.com](https://www.mikeash.com/pyblog/friday-qa-2012-11-30-lets-build-a-mach-o-executable.html#:~:text=%2F,NXSwapInt%28MH_MAGIC_64%29)
@@ -420,6 +421,217 @@ RBuffer *create_macho_with_dwarf(RList *lines, RList *symbols) {
 	return buf;
 }
 
+RBuffer *create_elf_with_dwarf(RList *lines, RList *symbols) {
+	RBuffer *buf = r_buf_new ();
+	if (!buf) {
+		return NULL;
+	}
+	// ELF header
+	B("\x7f""ELF", 4);
+	U8(2); U8(1); U8(1); U8(0); U8(0); Z(7);
+	U16(1); U16(0x3E); U32(1);
+	U64(0); U64(0);
+	ut64 shoff_off = r_buf_size(buf);
+	U64(0);
+	U32(0); U16(64); U16(0); U16(0); U16(64); U16(8); U16(7);
+	// .text
+	ut64 text_off = r_buf_size(buf); U8(0xC3);
+	ut64 text_sz = r_buf_size(buf) - text_off;
+	// .debug_info
+	ut64 debug_info_start = r_buf_size(buf);
+	ut64 cu_len_off = r_buf_size(buf);
+	U32(0); U16(2); U32(0); U8(8);
+	U8(0x01); U8(0x0c); B("main.c",6); U8(0); B(".",1); U8(0);
+	U64(0); U64(1); U32(0);
+	{
+		RListIter *sym_it; SymEntry *sym;
+		r_list_foreach (symbols, sym_it, sym) {
+			U8(0x02);
+			B(sym->symbol, strlen (sym->symbol));
+			U8(0);
+			U64(sym->addr);
+			U64(sym->addr + 1);
+		}
+	}
+	U8(0);
+	ut64 cu_end = r_buf_size (buf);
+	ut32 cu_len = (ut32)(cu_end - (cu_len_off + 4));
+	W(cu_len_off, &cu_len, 4);
+	// .debug_abbrev
+	ut64 debug_abbrev_start = r_buf_size (buf);
+	U8(0x01); U8(0x11); U8(0x01);
+	U8(0x13); U8(0x0b);
+	U8(0x03); U8(0x08);
+	U8(0x1b); U8(0x08);
+	U8(0x11); U8(0x01);
+	U8(0x12); U8(0x01);
+	U8(0x10); U8(0x06);
+	U8(0x00); U8(0x00);
+	U8(0x02); U8(0x2e); U8(0x00);
+	U8(0x03); U8(0x08);
+	U8(0x11); U8(0x01);
+	U8(0x12); U8(0x01);
+	U8(0x00); U8(0x00);
+	U8(0x00);
+	// .debug_line
+	ut64 debug_line_start = r_buf_size (buf);
+	ut64 line_len_off = r_buf_size(buf); U32(0); U16(2);
+	ut64 hdr_len_off = r_buf_size(buf); U32(0);
+	U8(1); U8(1); U8((ut8)0xFB); U8(14); U8(13);
+	ut8 std_op_len[12] = {0,1,1,1,1,0,0,0,1,0,0,1};
+	{
+		int i;
+		for (i = 0; i < 12; i++) {
+			U8(std_op_len[i]);
+		}
+	}
+	RList *dirs = r_list_newf (free);
+	RListIter *dir_it; char *dir;
+	r_list_foreach (dirs, dir_it, dir) {
+		B(dir, strlen(dir)); U8(0);
+	}
+	U8(0);
+	RList *files = r_list_newf(free);
+	{
+		RListIter *lit;
+		LineEntry *le;
+		r_list_foreach (lines, lit, le) {
+			RListIter *fit;
+			char *fn;
+			bool found = false;
+			r_list_foreach (files, fit, fn) {
+				if (!strcmp (fn, le->file)) {
+					found = true;
+					break;
+				}
+			}
+			if (!found) {
+				r_list_append (files, strdup (le->file));
+			}
+		}
+	}
+	RListIter *file_it;
+	char *filename;
+	r_list_foreach (files, file_it, filename) {
+		B(filename, strlen (filename));
+		U8(0); U8(0); U8(0); U8(0);
+	}
+	U8(0);
+	{
+		ut64 prev_line = 1; int prev_file_idx = 1;
+		RListIter *lit; LineEntry *le;
+		r_list_foreach (lines, lit, le) {
+			U8(0x00); U8(1 + sizeof (ut64)); U8(0x02); U64(le->addr);
+			int file_idx = 1; RListIter *fit; char *fname;
+			r_list_foreach (files, fit, fname) {
+				if (!strcmp (fname, le->file)) {
+					break;
+				}
+				file_idx++;
+			}
+			if (file_idx != prev_file_idx) {
+				U8(0x04);
+				ut32 v = file_idx;
+				do {
+					ut8 b = v & 0x7f;
+					v >>= 7;
+					if (v) {
+						b |= 0x80;
+					}
+					U8(b);
+				} while (v);
+				prev_file_idx = file_idx;
+			}
+			U8(0x03);
+			{
+				int64_t d = (int64_t)le->line - (int64_t)prev_line;
+				ut64 v = (ut64)d; int more = 1;
+				while (more) {
+					ut8 b = v & 0x7f; v >>= 7;
+					int32_t s = (d < 0);
+					if ((v == 0 && !s) || ((int64_t)v == -1 && s)) {
+						more = 0;
+					} else {
+						b |= 0x80;
+					}
+					U8(b);
+				}
+				prev_line = le->line;
+			}
+			U8(0x01);
+		}
+	}
+	U8(0); U8(1); U8(1);
+	ut64 line_ops_end = r_buf_size(buf);
+	ut32 hdr_len = (ut32)(line_ops_end - (hdr_len_off + 4)); W(hdr_len_off, &hdr_len, 4);
+	ut64 line_end = r_buf_size(buf);
+	ut32 line_len = (ut32)(line_end - (line_len_off + 4)); W(line_len_off, &line_len, 4);
+	r_list_free(files); r_list_free(dirs);
+	// Symbol table
+	size_t sym_count = r_list_length (symbols);
+	ut32 *str_offsets = calloc (sizeof (ut32), sym_count);
+	ut32 cur_off = 1;
+	RListIter *sit; SymEntry *se; int i;
+	i = 0;
+	r_list_foreach (symbols, sit, se) {
+		str_offsets[i++] = cur_off;
+		cur_off += strlen (se->symbol) + 1;
+	}
+	ut64 symtab_off = r_buf_size (buf);
+	// NULL symbol
+	U32(0); U8(0); U8(0); U16(0); U64(0); U64(0);
+	i = 0;
+	r_list_foreach (symbols, sit, se) {
+		U32(str_offsets[i]);
+		U8(0x12); U8(0); U16(1); U64(se->addr); U64(1);
+		i++;
+	}
+	ut64 symtab_end = r_buf_size (buf);
+	ut32 symtab_sz = (ut32)(symtab_end - symtab_off);
+	free (str_offsets);
+	// String table
+	ut64 strtab_off = r_buf_size (buf);
+	U8(0);
+	r_list_foreach (symbols, sit, se) {
+		B(se->symbol, strlen(se->symbol)); U8(0);
+	}
+	ut64 strtab_end = r_buf_size (buf);
+	ut32 strtab_sz = (ut32)(strtab_end - strtab_off);
+	// Section header string table
+	ut64 shstr_off = r_buf_size (buf);
+	ut32 sh_names[8];
+	U8(0);
+	sh_names[1] = (ut32)(r_buf_size(buf) - shstr_off); B(".text",5); U8(0);
+	sh_names[2] = (ut32)(r_buf_size(buf) - shstr_off); B(".debug_info",11); U8(0);
+	sh_names[3] = (ut32)(r_buf_size(buf) - shstr_off); B(".debug_abbrev",13); U8(0);
+	sh_names[4] = (ut32)(r_buf_size(buf) - shstr_off); B(".debug_line",11); U8(0);
+	sh_names[5] = (ut32)(r_buf_size(buf) - shstr_off); B(".symtab",7); U8(0);
+	sh_names[6] = (ut32)(r_buf_size(buf) - shstr_off); B(".strtab",7); U8(0);
+	sh_names[7] = (ut32)(r_buf_size(buf) - shstr_off); B(".shstrtab",9); U8(0);
+	ut64 shstr_end = r_buf_size (buf);
+	ut32 shstr_sz = (ut32)(shstr_end - shstr_off);
+	// Patch section header table offset
+	ut64 shdrs_off = r_buf_size (buf);
+	W(shoff_off, &shdrs_off, 8);
+	// Section headers
+	Z(64);
+	// .text
+	U32(sh_names[1]); U32(1); U64(6); U64(0); U64(text_off); U64(text_sz); U32(0); U32(0); U64(16); U64(0);
+	// .debug_info
+	U32(sh_names[2]); U32(1); U64(0); U64(0); U64(debug_info_start); U64((ut64)(debug_abbrev_start - debug_info_start)); U32(0); U32(0); U64(1); U64(0);
+	// .debug_abbrev
+	U32(sh_names[3]); U32(1); U64(0); U64(0); U64(debug_abbrev_start); U64((ut64)(debug_line_start - debug_abbrev_start)); U32(0); U32(0); U64(1); U64(0);
+	// .debug_line
+	U32(sh_names[4]); U32(1); U64(0); U64(0); U64(debug_line_start); U64((ut64)(symtab_off - debug_line_start)); U32(0); U32(0); U64(1); U64(0);
+	// .symtab
+	U32(sh_names[5]); U32(2); U64(0); U64(0); U64(symtab_off); U64(symtab_sz); U32(6); U32(1); U64(8); U64(24);
+	// .strtab
+	U32(sh_names[6]); U32(3); U64(0); U64(0); U64(strtab_off); U64(strtab_sz); U32(0); U32(0); U64(1); U64(0);
+	// .shstrtab
+	U32(sh_names[7]); U32(3); U64(0); U64(0); U64(shstr_off); U64(shstr_sz); U32(0); U32(0); U64(1); U64(0);
+	return buf;
+}
+
 // (create_macho_with_dwarf and main remain unchanged)
 #if 0
 int main() {
@@ -467,7 +679,7 @@ int main() {
 }
 #endif
 
-static void writedwarf(RCore *core, const char *arg) {
+static void writedwarf(RCore *core, const char *format, const char *arg) {
 	const char *filename = arg;
 	R_LOG_INFO ("Writing to %s", filename);
 
@@ -517,7 +729,14 @@ static void writedwarf(RCore *core, const char *arg) {
 	}
 #endif
 
-	RBuffer *b = create_macho_with_dwarf (lines, symbols);
+	RBuffer *b = NULL;
+	if (!strcmp (format, "elf")) {
+		b = create_elf_with_dwarf (lines, symbols);
+	} else if (!strcmp (format, "mac")) {
+		b = create_macho_with_dwarf (lines, symbols);
+	} else {
+		R_LOG_ERROR ("Only macho and elf formats are supported");
+	}
 	int sz;
 	ut8 *outbuf = r_buf_read_all (b, &sz);
 	if (!r_file_dump (filename, outbuf, sz, false)) {
@@ -531,8 +750,20 @@ static int cmd_writedwarf(void *user, const char *input) {
 	RCore *core = (RCore *) user;
 	if (r_str_startswith (input, "writedwarf")) {
 		char *arg = strchr (input, ' ');
+		const char *format = "macho";
+		if (*arg == '-') {
+			if (r_str_startswith (arg, "-elf")) {
+				format = "elf";
+			} else if (r_str_startswith (arg, "-mac")) {
+				format = "mac";
+			} else {
+				R_LOG_ERROR ("Invalid format: use -elf or -mac");
+				return true;
+			}
+			arg = strchr (arg, ' ');
+		}
 		if (arg && *arg != '?') {
-			writedwarf (core, r_str_trim_head_ro (arg + 1));
+			writedwarf (core, format, r_str_trim_head_ro (arg + 1));
 		} else {
 			R_LOG_INFO ("Usage: writedwarf [filename]");
 		}
