@@ -329,7 +329,12 @@ R_API bool r_core_esil_single_step(RCore *core) {
 		R_LOG_ERROR ("Couldn't read from PC register");
 		return false;
 	}
-	ut32 trap_code = R_ANAL_TRAP_READ_ERR;
+	ut32 trap_code = R_ANAL_TRAP_UNALIGNED;
+	const int align = R_MAX (1, r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN));
+	if (pc % align) {
+		goto trap;
+	}
+	trap_code = R_ANAL_TRAP_READ_ERR;
 	//check if pc is in mapped rx area,
 	//or in case io is pa
 	//check if pc is within desc and desc is at least readable
@@ -481,7 +486,7 @@ trap:
 	return false;
 }
 
-R_API void r_core_esil_stepback (RCore *core) {
+R_API void r_core_esil_stepback(RCore *core) {
 	R_RETURN_IF_FAIL (core && core->io && core->esil.reg);
 	if (!r_list_length (&core->esil.stepback)) {
 		//not an error
@@ -493,7 +498,7 @@ R_API void r_core_esil_stepback (RCore *core) {
 	core_esil_stepback_free (cesb);
 }
 
-R_API void r_core_esil_set_max_stepback (RCore *core, ut32 max_stepback) {
+R_API void r_core_esil_set_max_stepback(RCore *core, ut32 max_stepback) {
 	R_RETURN_IF_FAIL (core && core->esil.stepback.free);
 	core->esil.max_stepback = max_stepback;
 	while (r_list_length (&core->esil.stepback) > max_stepback) {
