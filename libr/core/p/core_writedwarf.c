@@ -720,14 +720,15 @@ static void writedwarf(RCore *core, const char *format, const char *arg) {
 		r_list_append(lines, le3);
 	}
 #endif
-
-	RListIter *it;
-	RAnalFunction *fcn;
-	r_list_foreach (core->anal->fcns, it, fcn) {
-		SymEntry *se = R_NEW0 (SymEntry);
-		se->addr = fcn->addr;
-		se->symbol = strdup (fcn->name);
-		r_list_append (symbols, se);
+	{
+		RListIter *it;
+		RAnalFunction *fcn;
+		r_list_foreach (core->anal->fcns, it, fcn) {
+			SymEntry *se = R_NEW0 (SymEntry);
+			se->addr = fcn->addr;
+			se->symbol = strdup (fcn->name);
+			r_list_append (symbols, se);
+		}
 	}
 #if 0
 	// Populate symbol entries
