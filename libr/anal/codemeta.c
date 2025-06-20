@@ -467,7 +467,6 @@ R_API char *r_codemeta_print_comment_cmds(RCodeMeta *code) {
 		}
 		ht_up_update (ht, annotation->offset.offset, annotation);
 	}
-	
 	struct { RCodeMeta *code; char *str; } data;
 	data.code = code;
 	data.str = r_str_new ("");
@@ -475,7 +474,6 @@ R_API char *r_codemeta_print_comment_cmds(RCodeMeta *code) {
 		ht_up_free (ht);
 		return NULL;
 	}
-	
 	ht_up_foreach (ht, foreach_offset_annotation, &data);
 	ht_up_free (ht);
 	return data.str;
