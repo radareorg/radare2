@@ -443,10 +443,10 @@ R_API char *r_codemeta_print(RCodeMeta *code, RVector *line_offsets) {
 }
 
 static bool foreach_offset_annotation(void *user, const ut64 offset, const void *val) {
-	struct { RCodeMeta *code; char *str; } *data = user;
+	struct { RCodeMeta *code; RStrBuf *sb; } *data = user;
 	const RCodeMetaItem *annotation = val;
 	char *b64statement = r_base64_encode_dyn ((const ut8*)data->code->code + annotation->start, annotation->end - annotation->start);
-	data->str = r_str_appendf (data->str, "CCu base64:%s @ 0x%" PFMT64x "\n", b64statement, annotation->offset.offset);
+	r_strbuf_appendf (data->sb, "CCu base64:%s @ 0x%" PFMT64x "\n", b64statement, annotation->offset.offset);
 	free (b64statement);
 	return true;
 }
@@ -467,16 +467,12 @@ R_API char *r_codemeta_print_comment_cmds(RCodeMeta *code) {
 		}
 		ht_up_update (ht, annotation->offset.offset, annotation);
 	}
-	struct { RCodeMeta *code; char *str; } data;
+	struct { RCodeMeta *code; RStrBuf *sb; } data;
 	data.code = code;
-	data.str = r_str_new ("");
-	if (!data.str) {
-		ht_up_free (ht);
-		return NULL;
-	}
+	data.sb = r_strbuf_new ("");
 	ht_up_foreach (ht, foreach_offset_annotation, &data);
 	ht_up_free (ht);
-	return data.str;
+	return r_strbuf_drain (data.sb);
 }
 
 R_API char *r_codemeta_print_json(RCodeMeta *code) {
