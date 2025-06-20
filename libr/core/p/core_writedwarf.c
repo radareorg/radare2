@@ -759,7 +759,6 @@ static void writedwarf(RCore *core, const char *format, const char *arg) {
 	}
 	free (outbuf);
 	r_buf_free (b);
-	
 	// Free the RLists
 	RListIter *it;
 	void *item;
@@ -768,7 +767,6 @@ static void writedwarf(RCore *core, const char *format, const char *arg) {
 		free (se->symbol);
 	}
 	r_list_free (symbols);
-	
 	r_list_foreach (lines, it, item) {
 		LineEntry *le = (LineEntry *)item;
 		free (le->file);

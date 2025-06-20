@@ -313,7 +313,7 @@ static int init_phdr(ELFOBJ *eo) {
 		return false;
 	}
 	ut64 phnum = Elf_(get_phnum) (eo);
-	if (phnum > SIZE_MAX / sizeof(Elf_(Phdr))) {
+	if (phnum > SIZE_MAX / sizeof (Elf_(Phdr))) {
 		return false;
 	}
 	if (!(eo->phdr = R_NEWS0 (Elf_(Phdr), phnum))) {

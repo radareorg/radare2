@@ -90,7 +90,6 @@ static bool ubp_parseBlock(char *line, UBP_Block *b) {
 		R_LOG_ERROR ("Invalid patch format, Cant find comma in add part of @@ line");
 		return false;
 	}
-	
 	// Extract the part after "-" which contains the sub address and size
 	char *minus = strchr (line, '-');
 	if (!minus) {
