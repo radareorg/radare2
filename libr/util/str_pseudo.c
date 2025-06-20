@@ -17,6 +17,31 @@
  */
 
 /**
+ * Count balanced parentheses in a string
+ *
+ * @param str The string to check
+ * @return 1 if balanced, 0 if not
+ */
+static int check_balanced_parentheses(const char *str) {
+	if (!str) {
+		return 1;
+	}
+	int count = 0;
+	while (*str) {
+		if (*str == '(') {
+			count++;
+		} else if (*str == ')') {
+			count--;
+		}
+		if (count < 0) {
+			return 0; // Too many closing parentheses
+		}
+		str++;
+	}
+	return (count == 0); // Perfectly balanced
+}
+
+/**
  * Transform assembly instruction to pseudo code using transformation rules
  *
  * @param rules Null-terminated array of transformation rule strings
@@ -126,7 +151,14 @@ R_API char *r_str_pseudo_transform(const char **rules, const char *asm_str) {
 			// Rule matches, apply transformation
 			RStrBuf *buf = r_strbuf_new ("");
 			char *template_ptr = rule_template;
+			int paren_count = 0; // Track open parentheses
 			while (*template_ptr) {
+				// Count parentheses
+				if (*template_ptr == '(') {
+					paren_count++;
+				} else if (*template_ptr == ')') {
+					paren_count--;
+				}
 				// Look for placeholder $N where N is 1-9 for operand substitution
 				if (*template_ptr == '$' && *(template_ptr + 1) >= '1' && *(template_ptr + 1) <= '9') {
 					int arg_idx = *(template_ptr + 1) - '1';
@@ -163,6 +195,34 @@ R_API char *r_str_pseudo_transform(const char **rules, const char *asm_str) {
 	}
 	// Post-processing: apply common simplifications
 	if (result) {
+		// Verify and fix unbalanced parentheses
+		if (!check_balanced_parentheses(result)) {
+			// Count opening vs closing parentheses to add missing ones
+			int open_count = 0;
+			int close_count = 0;
+			char *ptr = result;
+			while (*ptr) {
+				if (*ptr == '(') {
+					open_count++;
+				} else if (*ptr == ')') {
+					close_count++;
+				}
+				ptr++;
+			}
+			// Add missing closing parentheses if needed
+			if (open_count > close_count) {
+				char *new_result = malloc(strlen(result) + (open_count - close_count) + 1);
+				if (new_result) {
+					strcpy (new_result, result);
+					int i;
+					for (i = 0; i < (open_count - close_count); i++) {
+						strcat (new_result, ")");
+					}
+					free (result);
+					result = new_result;
+				}
+			}
+		}
 		// Replace "+ -" with "-"
 		char *plusminus = strstr (result, "+ -");
 		while (plusminus) {
@@ -194,14 +254,23 @@ R_API char *r_str_pseudo_transform(const char **rules, const char *asm_str) {
 					for (i = 0; i < 4; i++) {
 						char *op_pos = strstr (right + left_len, ops[i]);
 						if (op_pos) {
-							char *new_result = r_str_newf ("%s %s %s",
-									left, shortops[i], op_pos + strlen (ops[i]));
+							char *new_result = r_str_newf ("%s %s %s", left, shortops[i], op_pos + strlen (ops[i]));
 							free (result);
 							result = new_result;
 							break;
 						}
 					}
 				}
+			}
+		}
+		// Check for function calls with missing closing parenthesis and add them
+		char *funccall = strstr (result, "(");
+		if (funccall) {
+			char *closing = strchr (funccall, ')');
+			if (!closing) {
+				char *new_result = r_str_newf ("%s)", result);
+				free (result);
+				result = new_result;
 			}
 		}
 	}
