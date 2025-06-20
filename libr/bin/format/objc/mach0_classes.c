@@ -1673,6 +1673,7 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 			ut64 vaddr = r_bin_file_get_baddr (bf) + field_method_addr;
 			char *field_name = readstr (bf, field_name_addr, NULL, NULL);
 			if (R_STR_ISEMPTY (field_name)) {
+				free (field);
 				break;
 			}
 
