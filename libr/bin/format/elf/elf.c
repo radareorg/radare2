@@ -232,6 +232,9 @@ static bool read_phdr(ELFOBJ *eo) {
 		bool load_header_found = false;
 
 		int i;
+		if (phnum > UT16_MAX) {
+			return false;
+		}
 		for (i = 0; i < phnum; i++) {
 			ut8 phdr[sizeof (Elf_(Phdr))] = {0};
 			const size_t rsize = eo->ehdr.e_phoff + i * sizeof (phdr);
@@ -260,6 +263,9 @@ static bool read_phdr(ELFOBJ *eo) {
 	const bool is_elf64 = false;
 #endif
 	int i;
+	if (phnum > UT16_MAX) {
+		return false;
+	}
 	for (i = 0; i < phnum; i++) {
 		ut8 phdr[sizeof (Elf_(Phdr))] = {0};
 		const size_t rsize = eo->ehdr.e_phoff + i * sizeof (Elf_(Phdr));
@@ -307,6 +313,9 @@ static int init_phdr(ELFOBJ *eo) {
 		return false;
 	}
 	ut64 phnum = Elf_(get_phnum) (eo);
+	if (phnum > SIZE_MAX / sizeof(Elf_(Phdr))) {
+		return false;
+	}
 	if (!(eo->phdr = R_NEWS0 (Elf_(Phdr), phnum))) {
 		r_sys_perror ("malloc (phdr)");
 		return false;
@@ -3787,7 +3796,9 @@ static bool _add_sections_from_phdr(RBinFile *bf, ELFOBJ *eo, bool *found_load) 
 	ut16 mach = eo->ehdr.e_machine;
 
 	ut64 num = Elf_(get_phnum) (eo);
-	r_vector_reserve (&eo->cached_sections, r_vector_length (&eo->cached_sections) + num);
+	if (!r_vector_reserve (&eo->cached_sections, r_vector_length (&eo->cached_sections) + num)) {
+		return false;
+	}
 
 	const int limit = bf->rbin->options.limit;
 	if (limit > 0 && num > limit) {
