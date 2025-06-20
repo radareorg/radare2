@@ -66,7 +66,6 @@ typedef struct r_lib_plugin_t {
 	void *dl_handler; // DL HANDLER
 	void (*free)(void *data);
 	char *name; // From the RPluginMeta's name // type + name imho
-	bool loaded; // Whether the plugin has been fully loaded and initialized
 } RLibPlugin;
 
 typedef bool (*RLibCallback)(RLibPlugin *, void *user, void *data);
