@@ -6515,6 +6515,10 @@ static ut64 find_nextop(RCore *core, ut64 addr) {
 		return addr + op->size;
 	}
 	const int minopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
+	// Check for possible integer overflow
+	if (UT64_MAX - (ut64)minopsz < addr) {
+		return UT64_MAX;
+	}
 	return addr + minopsz;
 }
 
@@ -6583,11 +6587,10 @@ repeat_inside:;
 				free (off);
 				off = r_str_newf ("0x%08"PFMT64x, addr);
 				goto repeat_inside;
-			} else {
-				free (cur);
-				cur = NULL;
 			}
+			R_FREE (cur);
 		}
+		R_FREE (off);
 	}
 	if (offpos) {
 		while (offpos > cur) {

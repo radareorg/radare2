@@ -232,6 +232,11 @@ static bool read_phdr(ELFOBJ *eo) {
 		bool load_header_found = false;
 
 		int i;
+#if 0
+		if (phnum > UT16_MAX) {
+			return false;
+		}
+#endif
 		for (i = 0; i < phnum; i++) {
 			ut8 phdr[sizeof (Elf_(Phdr))] = {0};
 			const size_t rsize = eo->ehdr.e_phoff + i * sizeof (phdr);
@@ -260,6 +265,11 @@ static bool read_phdr(ELFOBJ *eo) {
 	const bool is_elf64 = false;
 #endif
 	int i;
+#if 0
+	if (phnum > UT16_MAX) {
+		return false;
+	}
+#endif
 	for (i = 0; i < phnum; i++) {
 		ut8 phdr[sizeof (Elf_(Phdr))] = {0};
 		const size_t rsize = eo->ehdr.e_phoff + i * sizeof (Elf_(Phdr));
@@ -307,6 +317,11 @@ static int init_phdr(ELFOBJ *eo) {
 		return false;
 	}
 	ut64 phnum = Elf_(get_phnum) (eo);
+#if 0
+	if (phnum > SIZE_MAX / sizeof (Elf_(Phdr))) {
+		return false;
+	}
+#endif
 	if (!(eo->phdr = R_NEWS0 (Elf_(Phdr), phnum))) {
 		r_sys_perror ("malloc (phdr)");
 		return false;
@@ -3573,15 +3588,13 @@ static void dtproceed(RBinFile *bf, ut64 preinit_addr, ut64 preinit_size, int sy
 			break;
 		}
 		ba = R_NEW0 (RBinAddr);
-		if (ba) {
-			ba->paddr = caddr;
-			ba->vaddr = addr;
-			ba->hpaddr = at;
-			ba->hvaddr = at + _baddr;
-			ba->bits = R_BIN_ELF_WORDSIZE * 8;
-			ba->type = symtype;
-			r_list_append (eo->inits, ba);
-		}
+		ba->paddr = caddr;
+		ba->vaddr = addr;
+		ba->hpaddr = at;
+		ba->hvaddr = at + _baddr;
+		ba->bits = R_BIN_ELF_WORDSIZE * 8;
+		ba->type = symtype;
+		r_list_append (eo->inits, ba);
 	}
 }
 
@@ -3787,7 +3800,9 @@ static bool _add_sections_from_phdr(RBinFile *bf, ELFOBJ *eo, bool *found_load) 
 	ut16 mach = eo->ehdr.e_machine;
 
 	ut64 num = Elf_(get_phnum) (eo);
-	r_vector_reserve (&eo->cached_sections, r_vector_length (&eo->cached_sections) + num);
+	if (!r_vector_reserve (&eo->cached_sections, r_vector_length (&eo->cached_sections) + num)) {
+		return false;
+	}
 
 	const int limit = bf->rbin->options.limit;
 	if (limit > 0 && num > limit) {
@@ -4391,20 +4406,18 @@ RBinSymbol *Elf_(convert_symbol)(ELFOBJ *eo, RBinElfSymbol *symbol) {
 	}
 
 	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
-	if (R_LIKELY (ptr)) {
-		ptr->name = r_bin_name_new (symbol->name);
-		ptr->forwarder = "NONE";
-		ptr->bind = symbol->bind;
-		ptr->type = symbol->type;
-		ptr->is_imported = symbol->is_imported;
-		ptr->paddr = paddr;
-		ptr->vaddr = vaddr;
-		ptr->size = symbol->size;
-		ptr->ordinal = symbol->ordinal;
-		// detect thumb
-		if (eo->ehdr.e_machine == EM_ARM) {
-			_set_arm_thumb_bits (eo, &ptr);
-		}
+	ptr->name = r_bin_name_new (symbol->name);
+	ptr->forwarder = "NONE";
+	ptr->bind = symbol->bind;
+	ptr->type = symbol->type;
+	ptr->is_imported = symbol->is_imported;
+	ptr->paddr = paddr;
+	ptr->vaddr = vaddr;
+	ptr->size = symbol->size;
+	ptr->ordinal = symbol->ordinal;
+	// detect thumb
+	if (eo->ehdr.e_machine == EM_ARM) {
+		_set_arm_thumb_bits (eo, &ptr);
 	}
 	return ptr;
 }
@@ -5011,16 +5024,14 @@ void Elf_(free)(ELFOBJ* eo) {
 
 ELFOBJ* Elf_(new_buf)(RBuffer *buf, ut64 baddr, bool verbose) {
 	ELFOBJ *eo = R_NEW0 (ELFOBJ);
-	if (eo) {
-		eo->kv = sdb_new0 ();
-		eo->size = r_buf_size (buf);
-		eo->verbose = verbose;
-		eo->b = r_buf_ref (buf);
-		eo->user_baddr = baddr;
-		if (!elf_init (eo)) {
-			Elf_(free) (eo);
-			return NULL;
-		}
+	eo->kv = sdb_new0 ();
+	eo->size = r_buf_size (buf);
+	eo->verbose = verbose;
+	eo->b = r_buf_ref (buf);
+	eo->user_baddr = baddr;
+	if (!elf_init (eo)) {
+		Elf_(free) (eo);
+		return NULL;
 	}
 	return eo;
 }
@@ -5214,14 +5225,12 @@ RList *Elf_(get_maps)(ELFOBJ *eo) {
 		}
 
 		RBinMap *map = R_NEW0 (RBinMap);
-		if (map) {
-			map->addr = p->p_vaddr;
-			map->size = p->p_memsz;
-			map->perms = p->p_flags;
-			map->offset = p->p_offset;
-			map->file = NULL;
-			r_list_append (maps, map);
-		}
+		map->addr = p->p_vaddr;
+		map->size = p->p_memsz;
+		map->perms = p->p_flags;
+		map->offset = p->p_offset;
+		map->file = NULL;
+		r_list_append (maps, map);
 	}
 
 	if (!r_list_empty (maps)) {

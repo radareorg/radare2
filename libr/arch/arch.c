@@ -104,6 +104,9 @@ R_API bool r_arch_use(RArch *arch, RArchConfig *config, const char *name) {
 	if (!config) {
 		config = arch->cfg;
 	}
+	if (!config) {
+		return false;
+	}
 #if 0
 	if (arch->session && !strcmp (name, arch->session->plugin->name)) {
 		R_LOG_WARN ("already set%c", 10);

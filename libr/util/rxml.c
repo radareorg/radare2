@@ -285,12 +285,8 @@ R_API RXmlRet r_xml_parse(RXml *x, int _ch) {
 		if (R_XML_IS_NAME (ch)) {
 			return r_xml_attrname (x, ch);
 		}
-		if (R_XML_IS_SP (ch)) {
-			x->state = R_XML_STATE_ATTR1;
-			return r_xml_attrnameend (x, ch);
-		}
-		if (ch == (ut8)'=') {
-			x->state = R_XML_STATE_ATTR2;
+		if (R_XML_IS_SP (ch) || ch == (ut8)'=') {
+			x->state = (R_XML_IS_SP (ch))? R_XML_STATE_ATTR1: R_XML_STATE_ATTR2;
 			return r_xml_attrnameend (x, ch);
 		}
 		break;
@@ -473,16 +469,14 @@ R_API RXmlRet r_xml_parse(RXml *x, int _ch) {
 		if (R_XML_IS_NAME (ch)) {
 			return xml_elemname (x, ch);
 		}
-		if (R_XML_IS_SP (ch)) {
-			x->state = R_XML_STATE_ELEM1;
-			return xml_elemnameend (x, ch);
-		}
-		if (ch == (ut8)'/') {
-			x->state = R_XML_STATE_ELEM3;
-			return xml_elemnameend (x, ch);
-		}
-		if (ch == (ut8)'>') {
-			x->state = R_XML_STATE_MISC2;
+		if (R_XML_IS_SP (ch) || ch == (ut8)'/' || ch == (ut8)'>') {
+			if (R_XML_IS_SP (ch)) {
+				x->state = R_XML_STATE_ELEM1;
+			} else if (ch == (ut8)'/') {
+				x->state = R_XML_STATE_ELEM3;
+			} else { /* ch == '>' */
+				x->state = R_XML_STATE_MISC2;
+			}
 			return xml_elemnameend (x, ch);
 		}
 		break;
@@ -567,12 +561,8 @@ R_API RXmlRet r_xml_parse(RXml *x, int _ch) {
 		if (R_XML_IS_NAME (ch)) {
 			return xml_elemclose(x, ch);
 		}
-		if (R_XML_IS_SP (ch)) {
-			x->state = R_XML_STATE_ETAG2;
-			return xml_elemcloseend (x, ch);
-		}
-		if (ch == (ut8)'>') {
-			x->state = R_XML_STATE_MISC2;
+		if (R_XML_IS_SP (ch) || ch == (ut8)'>') {
+			x->state = (R_XML_IS_SP (ch))? R_XML_STATE_ETAG2: R_XML_STATE_MISC2;
 			return xml_elemcloseend (x, ch);
 		}
 		break;
@@ -758,12 +748,8 @@ R_API RXmlRet r_xml_parse(RXml *x, int _ch) {
 		if (R_XML_IS_NAME (ch)) {
 			return r_xml_piname (x, ch);
 		}
-		if (ch == (ut8)'?') {
-			x->state = R_XML_STATE_PI4;
-			return r_xml_pinameend (x, ch);
-		}
-		if (R_XML_IS_SP (ch)) {
-			x->state = R_XML_STATE_PI2;
+		if (ch == (ut8)'?' || R_XML_IS_SP (ch)) {
+			x->state = (ch == (ut8)'?')? R_XML_STATE_PI4: R_XML_STATE_PI2;
 			return r_xml_pinameend (x, ch);
 		}
 		break;
@@ -876,12 +862,8 @@ R_API RXmlRet r_xml_parse(RXml *x, int _ch) {
 			x->state = R_XML_STATE_PI1;
 			return r_xml_piname (x, ch);
 		}
-		if (ch == (ut8)'?') {
-			x->state = R_XML_STATE_PI4;
-			return r_xml_pinameend (x, ch);
-		}
-		if (R_XML_IS_SP (ch)) {
-			x->state = R_XML_STATE_PI2;
+		if (ch == (ut8)'?' || R_XML_IS_SP (ch)) {
+			x->state = (ch == (ut8)'?')? R_XML_STATE_PI4: R_XML_STATE_PI2;
 			return r_xml_pinameend (x, ch);
 		}
 		break;
@@ -894,12 +876,8 @@ R_API RXmlRet r_xml_parse(RXml *x, int _ch) {
 			x->state = R_XML_STATE_PI1;
 			return r_xml_piname (x, ch);
 		}
-		if (ch == (ut8)'?') {
-			x->state = R_XML_STATE_PI4;
-			return r_xml_pinameend (x, ch);
-		}
-		if (R_XML_IS_SP (ch)) {
-			x->state = R_XML_STATE_PI2;
+		if (ch == (ut8)'?' || R_XML_IS_SP (ch)) {
+			x->state = (ch == (ut8)'?')? R_XML_STATE_PI4: R_XML_STATE_PI2;
 			return r_xml_pinameend (x, ch);
 		}
 		break;

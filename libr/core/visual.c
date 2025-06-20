@@ -1836,7 +1836,9 @@ static void visual_textlogs(RCore *core) {
 				s = r_core_cmd_strf (core, "Tm %d", index);
 			}
 			int w = r_kons_get_size (cons, NULL);
-			s = r_str_wrap (s, w);
+			char *wrapped = r_str_wrap (s, w);
+			free (s);
+			s = wrapped;
 			if (shiftbody) {
 				char *r = s;
 				int sh = shiftbody;

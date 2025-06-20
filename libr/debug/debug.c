@@ -1189,10 +1189,6 @@ R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 	int ret = 0;
 	RBreakpointItem *bp = NULL;
 
-	if (!dbg) {
-		return -1;
-	}
-
 	// If the debugger is not at the end of the changes
 	// Go to the end or the next breakpoint in the changes
 	if (dbg->session && dbg->session->cnum != dbg->session->maxcnum) {

@@ -647,6 +647,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	int retries = 2;
 repeat:
 	if (retries < 0) {
+		free (next_op);
 		tps_fini (tps);
 		return;
 	}

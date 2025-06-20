@@ -151,6 +151,9 @@ RBuffer *create_macho_with_dwarf(RList *lines, RList *symbols) {
 	ut64 debug_info_start = r_buf_size (buf);
 	// Write compilation unit header
 	ut64 cu_length_off = r_buf_size (buf);
+	if (cu_length_off == (ut64)-1) {
+		return NULL;
+	}
 	U32(0);                         // unit_length (placeholder)
 	U16(2);                         // DWARF version 2
 	U32(0);                         // debug_abbrev_offset (0 for first CU)
@@ -190,6 +193,10 @@ RBuffer *create_macho_with_dwarf(RList *lines, RList *symbols) {
 
 	// Patch the compile unit length
 	ut64 cu_end = r_buf_size (buf);
+	if (cu_end == (ut64)-1 || cu_length_off == (ut64)-1) {
+		r_buf_free (buf);
+		return NULL;
+	}
 	ut32 cu_length_val = (ut32)(cu_end - (cu_length_off + 4));
 	W(cu_length_off, &cu_length_val, 4);  // write unit_length
 
@@ -440,6 +447,9 @@ RBuffer *create_elf_with_dwarf(RList *lines, RList *symbols) {
 	// .debug_info
 	ut64 debug_info_start = r_buf_size(buf);
 	ut64 cu_len_off = r_buf_size(buf);
+	if (cu_len_off == (ut64)-1) {
+		return NULL;
+	}
 	U32(0); U16(2); U32(0); U8(8);
 	U8(0x01); U8(0x0c); B("main.c",6); U8(0); B(".",1); U8(0);
 	U64(0); U64(1); U32(0);
@@ -455,6 +465,10 @@ RBuffer *create_elf_with_dwarf(RList *lines, RList *symbols) {
 	}
 	U8(0);
 	ut64 cu_end = r_buf_size (buf);
+	if (cu_end == (ut64)-1 || cu_len_off == (ut64)-1) {
+		r_buf_free (buf);
+		return NULL;
+	}
 	ut32 cu_len = (ut32)(cu_end - (cu_len_off + 4));
 	W(cu_len_off, &cu_len, 4);
 	// .debug_abbrev
@@ -548,8 +562,8 @@ RBuffer *create_elf_with_dwarf(RList *lines, RList *symbols) {
 				ut64 v = (ut64)d; int more = 1;
 				while (more) {
 					ut8 b = v & 0x7f; v >>= 7;
-					int32_t s = (d < 0);
-					if ((v == 0 && !s) || ((int64_t)v == -1 && s)) {
+					int32_t s = (d < 0) ? 1 : 0;
+					if ((v == 0 && s == 0) || ((int64_t)v == -1 && s == 1)) {
 						more = 0;
 					} else {
 						b |= 0x80;
@@ -706,14 +720,15 @@ static void writedwarf(RCore *core, const char *format, const char *arg) {
 		r_list_append(lines, le3);
 	}
 #endif
-
-	RListIter *it;
-	RAnalFunction *fcn;
-	r_list_foreach (core->anal->fcns, it, fcn) {
-		SymEntry *se = R_NEW0 (SymEntry);
-		se->addr = fcn->addr;
-		se->symbol = strdup (fcn->name);
-		r_list_append (symbols, se);
+	{
+		RListIter *it;
+		RAnalFunction *fcn;
+		r_list_foreach (core->anal->fcns, it, fcn) {
+			SymEntry *se = R_NEW0 (SymEntry);
+			se->addr = fcn->addr;
+			se->symbol = strdup (fcn->name);
+			r_list_append (symbols, se);
+		}
 	}
 #if 0
 	// Populate symbol entries
@@ -744,6 +759,19 @@ static void writedwarf(RCore *core, const char *format, const char *arg) {
 	}
 	free (outbuf);
 	r_buf_free (b);
+	// Free the RLists
+	RListIter *it;
+	void *item;
+	r_list_foreach (symbols, it, item) {
+		SymEntry *se = (SymEntry *)item;
+		free (se->symbol);
+	}
+	r_list_free (symbols);
+	r_list_foreach (lines, it, item) {
+		LineEntry *le = (LineEntry *)item;
+		free (le->file);
+	}
+	r_list_free (lines);
 }
 
 static int cmd_writedwarf(void *user, const char *input) {
@@ -751,6 +779,10 @@ static int cmd_writedwarf(void *user, const char *input) {
 	if (r_str_startswith (input, "writedwarf")) {
 		char *arg = strchr (input, ' ');
 		const char *format = "macho";
+		if (!arg) {
+			R_LOG_INFO ("Usage: writedwarf [filename]");
+			return true;
+		}
 		if (*arg == '-') {
 			if (r_str_startswith (arg, "-elf")) {
 				format = "elf";
