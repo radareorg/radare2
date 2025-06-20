@@ -7128,10 +7128,9 @@ static bool is_steporeable(int type) {
 	return false;
 }
 
-#if 0
+#if USE_NEW_ESIL
 R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver) {
 	const bool is_x86 = r_str_startswith (r_config_get (core->config, "asm.arch"), "x86");
-	const bool r2wars = is_x86 && r_config_get_b (core->config, "cfg.r2wars");
 	const bool breakoninvalid = r_config_get_b (core->config, "esil.breakoninvalid");
 	const int esiltimeout = r_config_get_i (core->config, "esil.timeout");
 	int ret = true;
@@ -7173,19 +7172,17 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 		if (prev_addr) {
 			prev_addr[0] = addr;
 		}
-		if (stepOver) {
-			switch (op.type) {
-			case R_ANAL_OP_TYPE_SWI:
-			case R_ANAL_OP_TYPE_UCALL:
-			case R_ANAL_OP_TYPE_CALL:
-			case R_ANAL_OP_TYPE_JMP:
-			case R_ANAL_OP_TYPE_RCALL:
-			case R_ANAL_OP_TYPE_RJMP:
-			case R_ANAL_OP_TYPE_CJMP:
-			case R_ANAL_OP_TYPE_RET:
-			case R_ANAL_OP_TYPE_CRET:
-			case R_ANAL_OP_TYPE_UJMP:
-				r_reg_setv (core->esil.reg, "PC", op.addr + op.size);
+		if (stepOver && is_steporeable (op.type)) {
+			if (addr % R_MAX (r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN), 1)) {
+				if (core->esil.cmd_trap) {
+					r_core_cmd0 (core, core->esil.cmd_trap);
+				}
+				r_anal_op_fini (&op);
+				goto out;
+			}
+			r_reg_setv (core->esil.reg, "PC", op.addr + op.size);
+			r_anal_op_fini (&op);
+			continue;
 		}
 		if (until_expr || stepOver) {
 			r_anal_op_fini (&op);
@@ -7196,11 +7193,12 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 		}
 		addr = r_reg_getv (core->esil.reg, "PC");
 	}
+out:
 	r_cons_break_pop ();
 	return ret;
 }
 
-#endif
+#else
 
 R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver) {
 #define SET_PC_BOTH(core, val) do { \
@@ -7519,6 +7517,17 @@ tail_return:
 	r_cons_break_pop (core->cons);
 	return tail_return_value;
 }
+#endif
+
+#if USE_NEW_ESIL
+R_API bool r_core_esil_step_back(RCore *core) {
+	R_RETURN_VAL_IF_FAIL (core && core->io && core->esil.reg &&
+		r_list_length (&core->esil.stepback), false);
+	r_core_esil_stepback (core);
+	return true;
+}
+
+#else
 
 R_API bool r_core_esil_step_back(RCore *core) {
 	R_RETURN_VAL_IF_FAIL (core && core->anal, false);
@@ -7535,6 +7544,7 @@ R_API bool r_core_esil_step_back(RCore *core) {
 	}
 	return false;
 }
+#endif
 
 static void cmd_address_info(RCore *core, const char *addrstr, int fmt) {
 	ut64 addr = R_STR_ISEMPTY (addrstr)? core->addr: r_num_math (core->num, addrstr);
