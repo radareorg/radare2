@@ -893,6 +893,7 @@ static char *regs(RArchSession *as) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	sp\n"
+		"=BP	bp\n"
 		"=SN	r0\n"
 		"=R0	r0\n"
 		"=A0	r0\n"

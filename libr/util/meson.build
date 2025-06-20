@@ -5,6 +5,7 @@ r_util_sources = [
   'assert.c',
   'bloom.c',
   'w32.c',
+  'str_pseudo.c',
   'rlz4.c',
   'w32dw.c',
   'alloc.c',
