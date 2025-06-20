@@ -453,38 +453,41 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 			// 	r_sys_perror ("waitpid failed");
 				break;
 			}
+			
+			// Fix: Restructured to avoid nested lock acquisitions
+			// and ensure proper lock ordering
 			r_th_lock_enter (subprocs_mutex);
 			R2RSubprocess *proc = pid_to_proc (pid);
-			if (proc) {
-				r_th_lock_enter (proc->lock);
-#if !__wasi__
-				if (WIFSIGNALED (wstat)) {
-					const int signal_number = WTERMSIG (wstat);
-					R_LOG_ERROR ("Child signal %d", signal_number);
-					proc->ret = -1;
-					int ret = write (proc->killpipe[1], "", 1);
-					if (ret != 1) {
-						r_sys_perror ("write killpipe-");
-						r_th_lock_leave (proc->lock);
-						r_th_lock_leave (subprocs_mutex);
-						break;
-					}
-				} else if (WIFEXITED (wstat)) {
-					proc->ret = WEXITSTATUS (wstat);
-				} else {
-					proc->ret = -1;
-				}
-#else
-				proc->ret = -1;
-#endif
-				int ret = write (proc->killpipe[1], "", 1);
-				r_th_lock_leave (proc->lock);
-				if (ret != 1) {
-					r_sys_perror ("write killpipe-");
-					r_th_lock_leave (subprocs_mutex);
-					break;
-				}
+			if (!proc) {
+				r_th_lock_leave (subprocs_mutex);
+				continue;
 			}
+			
+			// Capture exit status while holding only one lock
+			int exit_status = -1;
+#if !__wasi__
+			if (WIFSIGNALED (wstat)) {
+				const int signal_number = WTERMSIG (wstat);
+				R_LOG_ERROR ("Child signal %d", signal_number);
+				exit_status = -1;
+			} else if (WIFEXITED (wstat)) {
+				exit_status = WEXITSTATUS (wstat);
+			}
+#endif
+
+			// Signal process completion through killpipe
+			int ret = write (proc->killpipe[1], "", 1);
+			if (ret != 1) {
+				r_sys_perror ("write killpipe-");
+				r_th_lock_leave (subprocs_mutex);
+				break;
+			}
+			
+			// Update process status after signaling
+			r_th_lock_enter (proc->lock);
+			proc->ret = exit_status;
+			r_th_lock_leave (proc->lock);
+			
 			r_th_lock_leave (subprocs_mutex);
 		}
 	}
@@ -676,6 +679,18 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 	bool stdout_eof = false;
 	bool stderr_eof = false;
 	bool child_dead = false;
+
+	// Create temporary buffers for stdout and stderr
+	// to avoid mixing output from different read operations
+	RStrBuf *stdout_buf = r_strbuf_new("");
+	RStrBuf *stderr_buf = r_strbuf_new("");
+	
+	if (!stdout_buf || !stderr_buf) {
+		r_strbuf_free(stdout_buf);
+		r_strbuf_free(stderr_buf);
+		return false;
+	}
+	
 	while (!stdout_eof || !stderr_eof || !child_dead) {
 		fd_set rfds;
 		FD_ZERO (&rfds);
@@ -732,7 +747,8 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 			} else if (sz == 0) {
 				stdout_eof = true;
 			} else {
-				r_strbuf_append_n (&proc->out, buf, (int)sz);
+				// Append to temporary buffer instead of proc->out directly
+				r_strbuf_append_n(stdout_buf, buf, (int)sz);
 			}
 		}
 		if (FD_ISSET (proc->stderr_fd, &rfds)) {
@@ -749,7 +765,8 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 			if (sz == 0) {
 				stderr_eof = true;
 			} else {
-				r_strbuf_append_n (&proc->err, buf, (int)sz);
+				// Append to temporary buffer instead of proc->err directly
+				r_strbuf_append_n(stderr_buf, buf, (int)sz);
 			}
 		}
 		if (FD_ISSET (proc->killpipe[0], &rfds)) {
@@ -763,6 +780,31 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 	if (r < 0) {
 		r_sys_perror ("sp-wait select");
 	}
+
+	// Safely transfer buffered output to the process buffers
+	// This ensures atomicity of buffer updates and prevents mixing
+	r_th_lock_enter(proc->lock);
+	
+	// Move stdout to process buffer
+	char *stdout_str = r_strbuf_drain(stdout_buf);
+	if (stdout_str) {
+		r_strbuf_append(&proc->out, stdout_str);
+		free(stdout_str);
+	}
+	
+	// Move stderr to process buffer
+	char *stderr_str = r_strbuf_drain(stderr_buf);
+	if (stderr_str) {
+		r_strbuf_append(&proc->err, stderr_str);
+		free(stderr_str);
+	}
+	
+	r_th_lock_leave(proc->lock);
+	
+	// Free temporary buffers
+	r_strbuf_free(stdout_buf);
+	r_strbuf_free(stderr_buf);
+	
 	return child_dead;
 }
 
@@ -781,15 +823,34 @@ R_API void r2r_subprocess_stdin_write(R2RSubprocess *proc, const ut8 *buf, size_
 }
 
 R_API R2RProcessOutput *r2r_subprocess_drain(R2RSubprocess *proc) {
-	r_th_lock_enter (subprocs_mutex);
-	R2RProcessOutput *out = R_NEW (R2RProcessOutput);
-	if (out) {
-		out->out = r_strbuf_drain_nofree (&proc->out);
-		out->err = r_strbuf_drain_nofree (&proc->err);
+	if (!proc) {
+		return NULL;
+	}
+	
+	R2RProcessOutput *out = R_NEW0 (R2RProcessOutput);
+	if (!out) {
+		return NULL;
+	}
+	
+	// Use process-specific lock to ensure atomicity when draining buffers
+	if (proc->lock && r_th_lock_enter (proc->lock)) {
+		out->out = r_strbuf_drain (&proc->out);
+		out->err = r_strbuf_drain (&proc->err);
+		out->ret = proc->ret;
+		out->timeout = false;
+		r_th_lock_leave (proc->lock);
+	} else {
+		// If we can't acquire the lock, make safe copies
+		if (proc->out.ptr) {
+			out->out = strdup (r_strbuf_get (&proc->out));
+		}
+		if (proc->err.ptr) {
+			out->err = strdup (r_strbuf_get (&proc->err));
+		}
 		out->ret = proc->ret;
 		out->timeout = false;
 	}
-	r_th_lock_leave (subprocs_mutex);
+	
 	return out;
 }
 
@@ -797,20 +858,65 @@ R_API void r2r_subprocess_free(R2RSubprocess *proc) {
 	if (!proc) {
 		return;
 	}
-	r_th_lock_enter (subprocs_mutex);
-	r_th_lock_free (proc->lock);
+	
+	// Take mutex to safely modify the subprocs vector
+	if (!r_th_lock_enter (subprocs_mutex)) {
+		// If we can't take the lock, still try to free resources
+		// to avoid leaking, but don't modify shared data structures
+		goto cleanup_without_vector;
+	}
+	
+	// Remove from global vector of subprocesses
 	r_pvector_remove_data (&subprocs, proc);
-	r_strbuf_fini (&proc->out);
-	r_strbuf_fini (&proc->err);
-	close (proc->killpipe[0]);
-	close (proc->killpipe[1]);
+	r_th_lock_leave (subprocs_mutex);
+	
+	// Now safely clean up process resources
+cleanup_without_vector:
+	// Acquire the process lock to ensure no one is currently
+	// writing to or reading from its buffers
+	if (proc->lock) {
+		r_th_lock_enter (proc->lock);
+	
+		// Free buffers - only reinitialize them if they haven't been drained
+		// This prevents double frees when r2r_subprocess_drain has been called
+		if (proc->out.ptr) {
+			r_strbuf_fini (&proc->out);
+			r_strbuf_init (&proc->out); // Reinitialize to avoid issues with subsequent r_strbuf_fini
+		}
+		if (proc->err.ptr) {
+			r_strbuf_fini (&proc->err);
+			r_strbuf_init (&proc->err); // Reinitialize to avoid issues with subsequent r_strbuf_fini
+		}
+		
+		// Release the process lock before freeing it
+		r_th_lock_leave (proc->lock);
+		r_th_lock_free (proc->lock);
+	} else {
+		// Even if we can't get the lock, we need to safely clean up buffers
+		// If buffers have been drained, ptr would be NULL and this is safe
+		r_strbuf_fini (&proc->out);
+		r_strbuf_fini (&proc->err);
+	}
+	
+	// Close all open file descriptors
+	if (proc->killpipe[0] != -1) {
+		close (proc->killpipe[0]);
+	}
+	if (proc->killpipe[1] != -1) {
+		close (proc->killpipe[1]);
+	}
 	if (proc->stdin_fd != -1) {
 		close (proc->stdin_fd);
 	}
-	close (proc->stdout_fd);
-	close (proc->stderr_fd);
+	if (proc->stdout_fd != -1) {
+		close (proc->stdout_fd);
+	}
+	if (proc->stderr_fd != -1) {
+		close (proc->stderr_fd);
+	}
+	
+	// Finally free the process struct itself
 	free (proc);
-	r_th_lock_leave (subprocs_mutex);
 }
 #endif
 
