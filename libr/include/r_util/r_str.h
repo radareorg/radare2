@@ -338,6 +338,10 @@ R_API R_WIP RString r_string_newf(const char *fmt, ...);
 R_API bool r_string_append(RString *a, const char * R_NONNULL s);
 R_API void r_string_appendf(RString *a, const char * R_NONNULL fmt, ...);
 
+R_API char *r_str_pseudo_transform(const char **rules, const char *asm_str);
+R_API char *r_str_pseudo_subvar(char *pseudo, void *varmap);
+
+
 #ifdef __cplusplus
 }
 #endif
