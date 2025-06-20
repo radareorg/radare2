@@ -76,9 +76,9 @@ R_API bool r_codemeta_item_is_variable(RCodeMetaItem *annotation);
 R_API void r_codemeta_add_item(RCodeMeta *code, RCodeMetaItem *annotation);
 
 /* DECOMPILER PRINTING FUNCTIONS */
-R_API void r_codemeta_print(RCodeMeta *code, RVector *line_offsets);
-R_API void r_codemeta_print_disasm(RCodeMeta *code, RVector *line_offsets, void *anal);
-R_API void r_codemeta_print_comment_cmds(RCodeMeta *code);
+R_API char *r_codemeta_print(RCodeMeta *code, RVector *line_offsets);
+R_API char *r_codemeta_print_disasm(RCodeMeta *code, RVector *line_offsets, void *anal);
+R_API char *r_codemeta_print_comment_cmds(RCodeMeta *code);
 R_API char *r_codemeta_print_json(RCodeMeta *code);
 
 // compatibility with 5.2.0
