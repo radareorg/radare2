@@ -21,7 +21,7 @@ static bool lang_lib_file_run(RLangSession *user, const char *file) {
 		return false;
 	}
 
-	lib = r_lib_dl_open (libpath);
+	lib = r_lib_dl_open (libpath, false);
 	if (lib) {
 		void (*fcn)(RCore *);
 		fcn = r_lib_dl_sym (lib, "entry");

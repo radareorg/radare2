@@ -77,7 +77,7 @@ static void dyn_init(void) {
 	// attempt to fall back on libutil if we failed to load anything
 	if (!(dyn_openpty && dyn_login_tty && dyn_forkpty)) {
 		void *libutil;
-		if (!(libutil = r_lib_dl_open ("libutil." R_LIB_EXT))) {
+		if (!(libutil = r_lib_dl_open ("libutil." R_LIB_EXT, false))) {
 			R_LOG_ERROR ("rarun2: Could not find PTY utils, failed to load libutil" R_LIB_EXT);
 			return;
 		}
@@ -1466,7 +1466,7 @@ R_API bool r_run_start(RRunProfile *p) {
 			R_LOG_ERROR ("No function specified. Please set runlib.fcn");
 			return false;
 		}
-		void *addr = r_lib_dl_open (p->_runlib);
+		void *addr = r_lib_dl_open (p->_runlib, false);
 		if (!addr) {
 			R_LOG_ERROR ("Could not load the library '%s'", p->_runlib);
 			return false;

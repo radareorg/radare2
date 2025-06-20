@@ -41,7 +41,7 @@ static bool lang_zig_file(RLangSession *s, const char *file) {
 	free (cmd);
 
 	char *path = r_str_newf ("%s/%s.%s", libpath, libname, R_LIB_EXT);
-	void *lib = r_lib_dl_open (path);
+	void *lib = r_lib_dl_open (path, false);
 	if (lib) {
 		void (*fcn)(RCore *);
 		fcn = r_lib_dl_sym (lib, "entry");

@@ -71,7 +71,7 @@ static int lang_c_file(RLangSession *s, const char *file) {
 	}
 	free (buf);
 	buf = r_str_newf ("%s/lib%s."R_LIB_EXT, libpath, libname);
-	lib = r_lib_dl_open (buf);
+	lib = r_lib_dl_open (buf, false);
 	if (lib) {
 		void (*fcn)(RCore *, int argc, const char **argv);
 		fcn = r_lib_dl_sym (lib, "entry");

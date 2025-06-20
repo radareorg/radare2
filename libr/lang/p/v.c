@@ -90,7 +90,7 @@ static VParse vcode_parse(const char *code) {
 }
 
 static void runlib(void *user, const char *lib) {
-	void *vl = r_lib_dl_open (lib);
+	void *vl = r_lib_dl_open (lib, false);
 	if (vl) {
 		void (*fcn)(RCore *, int argc, const char **argv);
 		fcn = r_lib_dl_sym (vl, R2V_SYM);

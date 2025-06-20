@@ -683,7 +683,7 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 	} else if (r_str_startswith (ptr, ".extern")) {
 		char *str = r_str_trim_dup (ptr + strlen (".extern"));
 		if (!r_asm_code_equ_get (acode, str)) {
-			void *p = r_lib_dl_open ("libr_core."R_LIB_EXT);
+			void *p = r_lib_dl_open ("libr_core."R_LIB_EXT, false);
 			void *a = r_lib_dl_sym (p, str);
 			if (a) {
 				char *val = r_str_newf ("%p", a);

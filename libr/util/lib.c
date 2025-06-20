@@ -11,27 +11,46 @@ static const char *const r_lib_types[] = {
 	"bp", "syscall", "fastcall", "crypto", "core", "egg", "fs", "arch", NULL
 };
 
-R_API void *r_lib_dl_open(const char *libname) {
+R_API void *r_lib_dl_open(const char *libname, bool safe_mode) {
 	void *ret = NULL;
 #if WANT_DYLINK
 #if R2__UNIX__
 	if (libname) {
-#if __linux__
-		ret = dlopen (libname, RTLD_LOCAL | RTLD_NOW);
-		if (ret) {
-		//	R_LOG_ERROR ("LOPEN");
+		if (safe_mode) {
+			// In safe loading mode, try to open with flags that don't run constructors
+#if defined(RTLD_NOLOAD)
+			// First try with NOLOAD flag to validate without executing constructors
+			// RTLD_NOLOAD will only succeed if the library is already loaded
+			ret = dlopen (libname, RTLD_LAZY | RTLD_NOLOAD);
+			if (!ret) {
+				// If library isn't already loaded, use RTLD_LAZY which is safer than RTLD_NOW
+				ret = dlopen (libname, RTLD_LAZY);
+			}
+#else
+			// If RTLD_NOLOAD is not available, use RTLD_LAZY which is safer than RTLD_NOW
+			ret = dlopen (libname, RTLD_LAZY);
+#endif
 		} else {
-			if (strstr (libname, "python")) {
-				ret = dlopen (libname, RTLD_GLOBAL | RTLD_NOW);
+			// Normal loading with full initialization
+#if __linux__
+			ret = dlopen (libname, RTLD_LOCAL | RTLD_NOW);
+			if (ret) {
+				// Success - use this handle
 			} else {
-				ret = dlopen (libname, RTLD_NOW);
+				// Try with different flags for specific libraries
+				if (strstr (libname, "python")) {
+					ret = dlopen (libname, RTLD_GLOBAL | RTLD_NOW);
+				} else {
+					ret = dlopen (libname, RTLD_NOW);
+				}
+			}
+#endif
+			if (!ret) {
+				ret = dlopen (libname, RTLD_GLOBAL | RTLD_LAZY);
 			}
 		}
-#endif
-		if (!ret) {
-			ret = dlopen (libname, RTLD_GLOBAL | RTLD_LAZY);
-		}
 	} else {
+		// Self-loading
 		ret = dlopen (NULL, RTLD_NOW);
 	}
 	if (!ret) {
@@ -50,7 +69,13 @@ R_API void *r_lib_dl_open(const char *libname) {
 			libname_[0] = '\0';
 		}
 	}
-	ret = LoadLibrary (libname_);
+	if (safe_mode) {
+		// Use DONT_RESOLVE_DLL_REFERENCES to load without executing constructors
+		ret = LoadLibraryEx (libname_, NULL, DONT_RESOLVE_DLL_REFERENCES);
+	} else {
+		// Normal loading with full initialization
+		ret = LoadLibrary (libname_);
+	}
 	free (libname_);
 	if (!ret) {
 		R_LOG_DEBUG ("r_lib_dl_open failed %s", libname);
@@ -152,6 +177,9 @@ R_API RLib *r_lib_new(const char *symname, const char *symnamefunc) {
 		r_log_set_level (R_LOG_LEVEL_DEBUG);
 	}
 	lib->ignore_version = r_sys_getenv_asbool ("R2_IGNVER");
+	lib->ignore_abi_version = r_sys_getenv_asbool ("R2_IGNABI");
+	lib->safe_loading = r_sys_getenv_asbool ("R2_SAFE_PLUGINS");
+	lib->abi_version = R_LIB_CURRENT_ABI_VERSION;
 	lib->handlers = r_list_newf (free);
 	int i;
 	for (i = 0; i < R_LIB_TYPE_LAST; i++) {
@@ -268,12 +296,23 @@ R_API bool r_lib_open(RLib *lib, const char *file) {
 		return false;
 	}
 
-	void *handle = r_lib_dl_open (file);
+	// Step 1: Open with safe mode if enabled
+	bool using_safe_mode = lib->safe_loading;
+	void *handle = r_lib_dl_open (file, using_safe_mode);
 	if (!handle) {
-		R_LOG_DEBUG ("Cannot open library: '%s'", file);
-		return false;
+		// If safe mode failed, try normal mode
+		if (using_safe_mode) {
+			R_LOG_DEBUG ("Safe loading failed for '%s', falling back to normal loading", file);
+			handle = r_lib_dl_open (file, false);
+			using_safe_mode = false;
+		}
+		if (!handle) {
+			R_LOG_DEBUG ("Cannot open library: '%s'", file);
+			return false;
+		}
 	}
 
+	// Step 2: Get plugin struct pointer
 	RLibStructFunc strf = (RLibStructFunc)r_lib_dl_sym (handle, lib->symnamefunc);
 	RLibStruct *stru = NULL;
 	if (strf) {
@@ -288,12 +327,54 @@ R_API bool r_lib_open(RLib *lib, const char *file) {
 		return false;
 	}
 
+	// Step 3: Check plugin metadata and ABI version
 	RPluginMeta *meta = (RPluginMeta *)(stru->data);
 	if (already_loaded (lib, meta->name)) {
 		r_lib_dl_close (handle);
 		return false;
 	}
 
+	if (!r_lib_validate_plugin (lib, file, stru)) {
+		R_LOG_DEBUG ("Plugin '%s' validation failed", file);
+		r_lib_dl_close (handle);
+		if (strf) {
+			free (stru);
+		}
+		return false;
+	}
+
+	// Step 4: If safe mode used, reload with full initialization
+	if (using_safe_mode) {
+		r_lib_dl_close (handle);
+		// Reopen with normal mode to allow constructors to run
+		handle = r_lib_dl_open (file, false);
+		if (!handle) {
+			R_LOG_DEBUG ("Cannot reopen library: '%s'", file);
+			if (strf) {
+				free (stru);
+			}
+			return false;
+		}
+
+		// Re-get the function pointer and structure
+		strf = (RLibStructFunc)r_lib_dl_sym (handle, lib->symnamefunc);
+		if (strf) {
+			if (stru) {
+				free (stru);
+			}
+			stru = strf ();
+		}
+		if (!stru) {
+			stru = (RLibStruct *)r_lib_dl_sym (handle, lib->symname);
+		}
+		if (!stru) {
+			R_LOG_DEBUG ("Cannot find symbol '%s' in library '%s'", lib->symname, file);
+			r_lib_dl_close (handle);
+			return false;
+		}
+	}
+
+	// Step 5: Register and initialize the plugin
 	int res = r_lib_open_ptr (lib, file, handle, stru);
 	if (strf) {
 		free (stru);
@@ -313,8 +394,16 @@ char *major_minor(const char *s) {
 	return a;
 }
 
-R_API bool r_lib_open_ptr(RLib *lib, const char *file, void *handle, RLibStruct *stru) {
-	R_RETURN_VAL_IF_FAIL (lib && file && stru, -1);
+R_API bool r_lib_validate_plugin(RLib *lib, const char *file, RLibStruct *stru) {
+	R_RETURN_VAL_IF_FAIL (lib && file && stru, false);
+
+	// Check for proper plugin type
+	if (stru->type < 0 || stru->type >= R_LIB_TYPE_LAST) {
+		R_LOG_WARN ("Invalid plugin type %d for '%s'", stru->type, file);
+		return false;
+	}
+
+	// Check version compatibility
 	if (stru->version && !lib->ignore_version) {
 		char *mm0 = major_minor (stru->version);
 		char *mm1 = major_minor (R2_VERSION);
@@ -335,6 +424,22 @@ R_API bool r_lib_open_ptr(RLib *lib, const char *file, void *handle, RLibStruct 
 			return false;
 		}
 	}
+
+	// Check ABI compatibility
+	if (stru->abi_version && !lib->ignore_abi_version) {
+		if (stru->abi_version != lib->abi_version) {
+			R_LOG_WARN ("ABI version mismatch: (ABI %d) vs radare2 (ABI %d) for '%s'", stru->abi_version, lib->abi_version, file);
+			return false;
+		}
+	}
+
+	return true;
+}
+
+
+R_API bool r_lib_open_ptr(RLib *lib, const char *file, void *handle, RLibStruct *stru) {
+	R_RETURN_VAL_IF_FAIL (lib && file && stru, false);
+
 	RLibPlugin *p = R_NEW0 (RLibPlugin);
 	p->type = stru->type;
 	p->data = stru->data;
@@ -343,7 +448,7 @@ R_API bool r_lib_open_ptr(RLib *lib, const char *file, void *handle, RLibStruct 
 	p->handler = r_lib_get_handler (lib, p->type);
 	p->free = stru->free;
 
-	// TODO: this should be bool
+	// Run plugin handler (constructor)
 	bool ret = r_lib_run_handler (lib, p, stru);
 	if (!ret) {
 		R_LOG_DEBUG ("Library handler has failed for '%s'", file);
@@ -352,7 +457,6 @@ R_API bool r_lib_open_ptr(RLib *lib, const char *file, void *handle, RLibStruct 
 			free (p->name);
 		}
 		free (p);
-		r_lib_dl_close (handle);
 	} else {
 		r_list_append (lib->plugins, p);
 		if (p->name) {
@@ -505,6 +609,11 @@ R_API void r_lib_list(RLib *lib) {
 }
 
 // TODO: pj_o should be inside rlibmetapj
+R_API RList *r_lib_get_loaded_plugins(RLib *lib) {
+	R_RETURN_VAL_IF_FAIL (lib, NULL);
+	return lib->plugins;
+}
+
 R_API void r_lib_meta_pj(PJ *pj, const RPluginMeta *meta) {
 	R_RETURN_IF_FAIL (pj && meta);
 	if (meta->name) {

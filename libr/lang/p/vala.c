@@ -77,7 +77,7 @@ static bool lang_vala_file(RLangSession *s, const char *file, bool silent) {
 	cmdbuf = r_str_newf ("./lib%s." R_LIB_EXT, libname);
 	free (libname);
 
-	void *lib = r_lib_dl_open (cmdbuf);
+	void *lib = r_lib_dl_open (cmdbuf, false);
 	if (lib) {
 		void (*fcn) (RCore *) = r_lib_dl_sym (lib, "entry");
 		if (fcn) {

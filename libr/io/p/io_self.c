@@ -474,7 +474,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		const char *sym = r_str_word_get0 (argv, 0);
 		if (sym) {
 			const char *symbol = cmd + 6;
-			void *lib = r_lib_dl_open (NULL);
+			void *lib = r_lib_dl_open (NULL, false);
 			void *ptr = r_lib_dl_sym (lib, symbol);
 			if (ptr) {
 				cbptr = (ut64)(size_t)ptr;
@@ -567,13 +567,13 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 #endif
 	} else if (r_str_startswith (cmd, "dlsym ")) {
 		const char *symbol = cmd + 6;
-		void *lib = r_lib_dl_open (NULL);
+		void *lib = r_lib_dl_open (NULL, false);
 		void *ptr = r_lib_dl_sym (lib, symbol);
 		char *s = r_str_newf ("(%s) 0x%08"PFMT64x"\n", symbol, (ut64)(size_t)ptr);
 		r_lib_dl_close (lib);
 		return s;
 	} else if (!strcmp (cmd, "mameio")) {
-		void *lib = r_lib_dl_open (NULL);
+		void *lib = r_lib_dl_open (NULL, false);
 		void *ptr = r_lib_dl_sym (lib, "_ZN12device_debug2goEj");
 	//	void *readmem = dlsym (lib, "_ZN23device_memory_interface11memory_readE16address_spacenumjiRy");
 		if (ptr) {
