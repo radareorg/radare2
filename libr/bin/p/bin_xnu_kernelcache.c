@@ -30,6 +30,7 @@ typedef struct _RKernelCacheObj {
 	bool kexts_initialized;
 	ut8 *internal_buffer;
 	int internal_buffer_size;
+	ut64 kernel_base;
 } RKernelCacheObj;
 
 typedef struct _RFileRange {
@@ -231,6 +232,23 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	bf->bo->bin_obj = obj;
 	r_list_push (pending_bin_files, bf);
 
+	if (rebase_info) {
+		obj->kernel_base = rebase_info->kernel_base;
+	} else {
+		struct MACH0_(segment_command) *seg;
+		int nsegs = R_MIN (main_mach0->nsegs, 128);
+		int i;
+		for (i = 0; i < nsegs; i++) {
+			char segname[17];
+			seg = &main_mach0->segs[i];
+			r_str_ncpy (segname, seg->segname, 17);
+			if (!strncmp (segname, "__TEXT", 6) && segname[6] == '\0') {
+				obj->kernel_base = seg->vmaddr;
+				break;
+			}
+		}
+	}
+
 	if (rebase_info || main_mach0->chained_starts) {
 		RIO *io = bf->rbin->iob.io;
 		swizzle_io_read (obj, io);
@@ -251,9 +269,9 @@ static void r_ptr_undecorate(RParsedPointer *ptr, ut64 decorated_addr, RKernelCa
 	 * https://github.com/Synacktiv/kernelcache-laundering/blob/master/ios12_kernel_cache_helper.py
 	 */
 
-	if ((decorated_addr & 0x4000000000000000LL) == 0 && obj->rebase_info) {
+	if ((decorated_addr & 0x4000000000000000LL) == 0) {
 		if (decorated_addr & 0x8000000000000000LL) {
-			ptr->address = obj->rebase_info->kernel_base + (decorated_addr & 0xFFFFFFFFLL);
+			ptr->address = obj->kernel_base + (decorated_addr & 0xFFFFFFFFLL);
 		} else {
 			ptr->address = ((decorated_addr << 13) & 0xFF00000000000000LL) | (decorated_addr & 0x7ffffffffffLL);
 			if (decorated_addr & 0x40000000000LL) {
@@ -1274,6 +1292,7 @@ static bool symbols_vec(RBinFile *bf) {
 		}
 	}
 
+	ensure_kexts_initialized (obj, bf);
 	RList *syscalls = resolve_syscalls (obj, enosys_addr);
 	if (syscalls) {
 		RListIter *iter;
@@ -1304,7 +1323,6 @@ static bool symbols_vec(RBinFile *bf) {
 	if (R_STR_ISEMPTY (filter)) {
 		R_FREE (filter);
 	}
-	ensure_kexts_initialized (obj, bf);
 
 	RKext *kext = NULL;
 	int kiter;
@@ -1391,7 +1409,27 @@ static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
 	}
 
 	if (!data_const_offset || !data_const_size || !data_const_vaddr) {
-		goto beach;
+		RKext *kext = NULL;
+		int kiter;
+		r_kext_index_foreach (obj->kexts, kiter, kext) {
+			if (strcmp (kext->name, "com.apple.kernel") == 0) {
+				const RVector *sections = MACH0_(load_sections) (kext->mach0);
+				if (sections) {
+					r_vector_foreach (sections, section) {
+						if (strstr (section->name, "__DATA_CONST.__const")) {
+							data_const_offset = section->paddr;
+							data_const_size = section->size;
+							data_const_vaddr = K_PPTR (section->vaddr);
+							break;
+						}
+					}
+				}
+				break;
+			}
+		}
+		if (!data_const_offset || !data_const_size || !data_const_vaddr) {
+			goto beach;
+		}
 	}
 
 	data_const = malloc (data_const_size);
@@ -1404,9 +1442,15 @@ static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
 
 	ut8 *cursor = data_const;
 	ut8 *end = data_const + data_const_size;
+	ut64 offset = 24;
+	ut64 pattern = enosys_addr;
+	if (enosys_addr == 0) {
+		pattern = 0x0004000100000000;
+		offset -= 40;
+	}
 	while (cursor < end) {
 		ut64 test = r_read_le64 (cursor);
-		if (test == enosys_addr) {
+		if (test == pattern) {
 			break;
 		}
 		cursor += 8;
@@ -1416,21 +1460,23 @@ static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
 		goto beach;
 	}
 
-	cursor -= 24;
-	while (cursor >= data_const) {
-		ut64 addr = r_read_le64 (cursor);
-		ut64 x = r_read_le64 (cursor + 8);
-		ut64 y = r_read_le64 (cursor + 16);
+	cursor -= offset;
+	if (enosys_addr) {
+		while (cursor >= data_const) {
+			ut64 addr = r_read_le64 (cursor);
+			ut64 x = r_read_le64 (cursor + 8);
+			ut64 y = r_read_le64 (cursor + 16);
 
-		if (IS_KERNEL_ADDR (addr) &&
-			(x == 0 || IS_KERNEL_ADDR (x)) &&
-			(y != 0 && !IS_KERNEL_ADDR (y))) {
-			cursor -= 24;
-			continue;
+			if (IS_KERNEL_ADDR (K_PPTR (addr)) &&
+				(x == 0 || IS_KERNEL_ADDR (K_PPTR (x))) &&
+				(y != 0 && !IS_KERNEL_ADDR (K_PPTR (y)))) {
+				cursor -= 24;
+				continue;
+			}
+
+			cursor += 24;
+			break;
 		}
-
-		cursor += 24;
-		break;
 	}
 
 	if (cursor < data_const) {
@@ -1471,7 +1517,7 @@ static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
 	cursor += 24;
 	int num_syscalls = sdb_count (syscall->db);
 	while (cursor < end && i < num_syscalls) {
-		ut64 addr = r_read_le64 (cursor);
+		ut64 addr = K_PPTR (r_read_le64 (cursor));
 		RSyscallItem *item = r_syscall_get (syscall, i, 0x80);
 		if (item && item->name) {
 			RBinSymbol *sym = R_NEW0 (RBinSymbol);
