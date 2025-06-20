@@ -1193,6 +1193,13 @@ static void sections_from_mach0(RList *ret, struct MACH0_(obj_t) *mach0, RBinFil
 	}
 
 	struct section_t *section;
+	bool is_paddr_global = true;
+	r_vector_foreach (sections, section) {
+		if (section->paddr != 0 && section->paddr + bf->bo->boffset < paddr) {
+			is_paddr_global = false;
+			break;
+		}
+	}
 	r_vector_foreach (sections, section) {
 		RBinSection *ptr;
 		if (!(ptr = R_NEW0 (RBinSection))) {
@@ -1210,7 +1217,10 @@ static void sections_from_mach0(RList *ret, struct MACH0_(obj_t) *mach0, RBinFil
 		handle_data_sections (ptr);
 		ptr->size = section->size;
 		ptr->vsize = section->vsize;
-		ptr->paddr = section->paddr + bf->bo->boffset + paddr;
+		ptr->paddr = section->paddr + bf->bo->boffset;
+		if (!is_paddr_global) {
+			ptr->paddr += paddr;
+		}
 		ptr->vaddr = K_PPTR (section->vaddr);
 		if (!ptr->vaddr) {
 			ptr->vaddr = ptr->paddr;
