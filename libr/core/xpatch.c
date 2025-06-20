@@ -75,17 +75,30 @@ static bool ubp_parseBlock(char *line, UBP_Block *b) {
 	// @@ -0x00189ca8,char[4] +0x00189ca8,char[4] @@
 	// @@ -0x00189ca8,uint32_t[3] +0x00189ca8,uint32_t[3] @@
 	// @@ -0x00189ca8,12 +0x00189ca8,12 @@
+	// Initialize members to ensure they're not left uninitialized
+	b->add_addr = 0;
+	b->add_size = 0;
+	b->sub_addr = 0;
+	b->sub_size = 0;
 	char *plus = strchr (line, '+');
 	if (!plus) {
 		R_LOG_ERROR ("Invalid patch format, Cant find +");
 		return false;
 	}
-	if (!getpair (plus + 1, &b->sub_addr, &b->sub_size)) {
-		R_LOG_ERROR ("Invalid patch format, Cant find comma in @@ line");
+	// Extract the part after "+" which contains the add address and size
+	if (!getpair (plus + 1, &b->add_addr, &b->add_size)) {
+		R_LOG_ERROR ("Invalid patch format, Cant find comma in add part of @@ line");
 		return false;
 	}
-	if (!getpair (line + 3, &b->add_addr, &b->add_size)) {
-		R_LOG_ERROR ("Invalid patch format, Cant find comma in @@ line");
+	
+	// Extract the part after "-" which contains the sub address and size
+	char *minus = strchr (line, '-');
+	if (!minus) {
+		R_LOG_ERROR ("Invalid patch format, Cant find - in @@ line");
+		return false;
+	}
+	if (!getpair (minus + 1, &b->sub_addr, &b->sub_size)) {
+		R_LOG_ERROR ("Invalid patch format, Cant find comma in sub part of @@ line");
 		return false;
 	}
 	if (b->add_size != b->sub_size) {
@@ -240,5 +253,9 @@ R_API bool r_core_patch_unified(RCore *core, const char *patch, int level, bool 
 		p = nl + 1;
 	}
 	free (line);
+	free (ubpFileDel.file);
+	free (ubpFileDel.tstamp);
+	free (ubpFileAdd.file);
+	free (ubpFileAdd.tstamp);
 	return true;
 }
