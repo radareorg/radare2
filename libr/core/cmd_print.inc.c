@@ -6587,12 +6587,10 @@ repeat_inside:;
 				free (off);
 				off = r_str_newf ("0x%08"PFMT64x, addr);
 				goto repeat_inside;
-			} else {
-				free (off);
-				free (cur);
-				cur = NULL;
 			}
+			R_FREE (cur);
 		}
+		R_FREE (off);
 	}
 	if (offpos) {
 		while (offpos > cur) {
@@ -6602,7 +6600,6 @@ repeat_inside:;
 			}
 			offpos--;
 		}
-		free (off); // Free off when offpos exists
 		r_strbuf_append (sb, offpos);
 		lines += r_str_char_count (offpos, '\n');
 #if 0
