@@ -53,7 +53,6 @@ R_API void *r_lib_dl_open(const char *libname, bool safe_mode) {
 		// Self-loading
 		ret = dlopen (NULL, RTLD_NOW);
 	}
-	
 	if (!ret) {
 		R_LOG_DEBUG ("r_lib_dl_open failed %s (%s)", libname, dlerror ());
 	}
@@ -70,7 +69,6 @@ R_API void *r_lib_dl_open(const char *libname, bool safe_mode) {
 			libname_[0] = '\0';
 		}
 	}
-	
 	if (safe_mode) {
 		// Use DONT_RESOLVE_DLL_REFERENCES to load without executing constructors
 		ret = LoadLibraryEx (libname_, NULL, DONT_RESOLVE_DLL_REFERENCES);
@@ -78,7 +76,6 @@ R_API void *r_lib_dl_open(const char *libname, bool safe_mode) {
 		// Normal loading with full initialization
 		ret = LoadLibrary (libname_);
 	}
-	
 	free (libname_);
 	if (!ret) {
 		R_LOG_DEBUG ("r_lib_dl_open failed %s", libname);
@@ -302,7 +299,6 @@ R_API bool r_lib_open(RLib *lib, const char *file) {
 	// Step 1: Open with safe mode if enabled
 	bool using_safe_mode = lib->safe_loading;
 	void *handle = r_lib_dl_open (file, using_safe_mode);
-	
 	if (!handle) {
 		// If safe mode failed, try normal mode
 		if (using_safe_mode) {
@@ -310,7 +306,6 @@ R_API bool r_lib_open(RLib *lib, const char *file) {
 			handle = r_lib_dl_open (file, false);
 			using_safe_mode = false;
 		}
-		
 		if (!handle) {
 			R_LOG_DEBUG ("Cannot open library: '%s'", file);
 			return false;
@@ -351,7 +346,6 @@ R_API bool r_lib_open(RLib *lib, const char *file) {
 	// Step 4: If safe mode used, reload with full initialization
 	if (using_safe_mode) {
 		r_lib_dl_close (handle);
-		
 		// Reopen with normal mode to allow constructors to run
 		handle = r_lib_dl_open (file, false);
 		if (!handle) {
