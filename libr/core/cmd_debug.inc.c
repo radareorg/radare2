@@ -366,7 +366,7 @@ static RCoreHelpMessage help_msg_dr = {
 	"drf", "", "show fpu registers (80 bit long double)",
 	"dri", "", "show inverse registers dump (sorted by value)",
 	"drl", "[j]", "list all register names",
-	"drv", "[?]", "show vector registers (also known as sve / packed / multimedia)",
+	"drv", "[?]", "show vector registers (also known as sve / packed / vector)",
 	"dro", "", "show previous (old) values of registers",
 	"drn", "", "list, show or change register alias name (PC,A0, defined by the register profile)",
 	"drp", "[?] ", "display current register profile",
@@ -429,7 +429,7 @@ static RCoreHelpMessage help_msg_drx = {
 };
 
 static RCoreHelpMessage help_msg_drv = {
-	"Usage: drv", " [reg] [idx] [wordsize] [= value]", "Show multimedia packed registers",
+	"Usage: drv", " [reg] [idx] [wordsize] [= value]", "Show vector packed registers",
 	"drv", "", "show XMM registers",
 	"drv", " xmm0", "show all packings of xmm0",
 	"drv", " xmm0 0 32 = 12", "set the first 32 bit word of the xmm0 reg to 12",
@@ -3021,7 +3021,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 						}
 					}
 				} else {
-					R_LOG_ERROR ("cannot find multimedia register '%s'", name);
+					R_LOG_ERROR ("Cannot find vector register '%s'", name);
 				}
 				free (name);
 			} else {
@@ -3088,7 +3088,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				}
 			} else {
 				/* note, that negative type forces sync to print the regs from the backend */
-				R_LOG_ERROR ("cannot find multimedia register '%s'", name);
+				R_LOG_ERROR ("cannot find vector register '%s'", name);
 			}
 			free (name);
 		} else if (!str[1]) {
