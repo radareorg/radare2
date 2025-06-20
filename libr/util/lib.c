@@ -428,8 +428,7 @@ R_API bool r_lib_validate_plugin(RLib *lib, const char *file, RLibStruct *stru) 
 	// Check ABI compatibility
 	if (stru->abi_version && !lib->ignore_abi_version) {
 		if (stru->abi_version != lib->abi_version) {
-			R_LOG_WARN ("ABI version mismatch: plugin '%s' (ABI %d) vs radare2 (ABI %d)", 
-				file, stru->abi_version, lib->abi_version);
+			R_LOG_WARN ("ABI version mismatch: (ABI %d) vs radare2 (ABI %d) for '%s'", stru->abi_version, lib->abi_version, file);
 			return false;
 		}
 	}
