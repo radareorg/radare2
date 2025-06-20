@@ -5,6 +5,7 @@ Lp~$
 EOF
 EXPECT=<<EOF
 6502
+8051
 arm
 att2intel
 avr
