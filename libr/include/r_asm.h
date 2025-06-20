@@ -167,6 +167,38 @@ R_API int r_asm_op_set_hex(RAnalOp *op, const char *str);
 R_API int r_asm_op_set_hexbuf(RAnalOp *op, const ut8 *buf, int len);
 R_API void r_asm_op_set_buf(RAnalOp *op, const ut8 *str, int len);
 
+/**
+ * Simple pattern-based assembly to pseudocode converter
+ *
+ * Rule syntax: "op/nargs/template"
+ * - op: The assembly operation (e.g., "mov", "add")
+ * - nargs: Number of arguments (1-9)
+ * - template: Transformation template using $1, $2, $3 for args
+ *
+ * Examples:
+ * - "mov/2/$1 = $2" -> transform "mov eax, ebx" to "eax = ebx"
+ * - "add/3/$1 = $2 + $3" -> transform "add eax, ebx, ecx" to "eax = ebx + ecx"
+ * - "add/2/$1 += $2" -> transform "add eax, ebx" to "eax += ebx"
+ */
+
+/**
+ * Transform assembly instruction to pseudo code using transformation rules
+ *
+ * @param rules Null-terminated array of transformation rule strings
+ * @param asm_str Assembly instruction to transform
+ * @return Transformed pseudo code (caller must free with free())
+ */
+R_API char *r_arch_pseudo_transform(const char **rules, const char *asm_str);
+
+/**
+ * Substitute variables in pseudo code with meaningful names
+ *
+ * @param pseudo Pseudo code string
+ * @param varmap Function mapping of offsets to variable names (can be NULL)
+ * @return Pseudo code with variables substituted (caller must free)
+ */
+R_API char *r_arch_pseudo_subvar(char *pseudo, void *varmap);
+
 /* plugins */
 R_API bool r_asm_plugin_add(RAsm *a, RAsmPlugin *plugin);
 R_API bool r_asm_plugin_remove(RAsm *a, RAsmPlugin *plugin);
