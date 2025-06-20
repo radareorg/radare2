@@ -244,11 +244,11 @@ static char *print_offset_in_binary_line_bar(RCodeMeta *code, ut64 offset, size_
 	width -= 8;
 
 	RCons *cons = r_cons_singleton ();
-	str = r_str_appendf (str, "    ");
+	str = r_str_append (str, "    ");
 	if (offset == UT64_MAX) {
-		str = r_str_appendf (str, "          ");
+		str = r_str_append (str, "          ");
 		while (width > 0) {
-			str = r_str_appendf (str, " ");
+			str = r_str_append (str, " ");
 			width--;
 		}
 	} else {
@@ -256,14 +256,14 @@ static char *print_offset_in_binary_line_bar(RCodeMeta *code, ut64 offset, size_
 		str = r_str_appendf (str, "0x%08" PFMT64x, offset);
 		PRINT_COLOR (Color_RESET, str);
 	}
-	str = r_str_appendf (str, "    |");
+	str = r_str_append (str, "    |");
 	return str;
 }
 
 static char *print_disasm_in_binary_line_bar(RCodeMeta *code, ut64 offset, size_t width, RAnal *anal, char *str) {
 	width = 40;
 	RCons *cons = r_cons_singleton ();
-	str = r_str_appendf (str, "    ");
+	str = r_str_append (str, "    ");
 	if (offset == UT64_MAX) {
 		const char *pad = r_str_pad (' ', width);
 		str = r_str_appendf (str, "%s", pad);
@@ -275,10 +275,10 @@ static char *print_disasm_in_binary_line_bar(RCodeMeta *code, ut64 offset, size_
 			free (c);
 			r_str_trim (res);
 			int w = r_str_ansi_len (res);
-			str = r_str_appendf (str, "%s", res);
+			str = r_str_append (str, res);
 			if (w < width) {
 				const char *pad = r_str_pad (' ', width - w);
-				str = r_str_appendf (str, "%s", pad);
+				str = r_str_append (str, pad);
 			} else {
 				char *p = (char *)r_str_ansi_chrn (res, width);
 				if (p) {
@@ -294,7 +294,7 @@ static char *print_disasm_in_binary_line_bar(RCodeMeta *code, ut64 offset, size_
 			str = r_str_appendf (str, "%s", pad);
 		}
 	}
-	str = r_str_appendf (str, "    |");
+	str = r_str_append (str, "    |");
 	return str;
 }
 
