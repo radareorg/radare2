@@ -2954,6 +2954,7 @@ static int cmd_resize(void *data, const char *input) {
 		ret = r_io_resize (core->io, newsize);
 		if (ret < 1) {
 			R_LOG_ERROR ("r_io_resize: cannot resize");
+			return false;
 		}
 	}
 	if (delta && core->addr < newsize) {
@@ -2963,6 +2964,7 @@ static int cmd_resize(void *data, const char *input) {
 		ret = r_io_resize (core->io, newsize);
 		if (ret < 1) {
 			R_LOG_ERROR ("cannot resize");
+			return false;
 		}
 	}
 	if (newsize < (core->addr + core->blocksize) || oldsize < (core->addr + core->blocksize)) {
