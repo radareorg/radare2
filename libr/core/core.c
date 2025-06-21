@@ -2746,6 +2746,9 @@ R_API bool r_core_init(RCore *core) {
 	core->dbg->cb_printf = r_cons_printf;
 	core->dbg->bp->cb_printf = r_cons_printf;
 	core->dbg->ev = core->ev;
+#if USE_NEW_ESIL
+	r_core_esil_init (core);
+#endif
 	r_core_config_init (core);
 	r_core_loadlibs_init (core);
 	//r_core_loadlibs (core);
@@ -2850,6 +2853,9 @@ R_API void r_core_fini(RCore *c) {
 	/*
 	r_unref (c->anal->config);
 	*/
+#if USE_NEW_ESIL
+	r_core_esil_fini (&c->esil);
+#endif
 	if (c->anal->esil) {
 		c->anal->esil->anal = NULL;
 	}
