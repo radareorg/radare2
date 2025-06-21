@@ -1386,7 +1386,7 @@ R_API void r_sys_set_environ(char **e) {
 	env = e;
 }
 
-R_API char *r_sys_whoami(void) {
+R_API char * R_NONNULL r_sys_whoami(void) {
 #if R2__WINDOWS__
 	char buf[256];
 	DWORD buf_sz = sizeof (buf);
@@ -1442,7 +1442,7 @@ R_API int r_sys_getpid(void) {
 #endif
 }
 
-R_API bool r_sys_tts(const char *txt, bool bg) {
+R_API bool r_sys_tts(const char * R_NONNULL txt, bool bg) {
 	int i;
 	R_RETURN_VAL_IF_FAIL (txt, false);
 	const char *says[] = {
@@ -1489,7 +1489,7 @@ R_API const char *r_sys_prefix(const char *pfx) {
 	return prefix;
 }
 
-R_API RSysInfo *r_sys_info(void) {
+R_API RSysInfo * R_NULLABLE r_sys_info(void) {
 #if R2__UNIX__
 	struct utsname un = {{0}};
 	if (uname (&un) != -1) {
@@ -1559,7 +1559,7 @@ beach:
 	return NULL;
 }
 
-R_API void r_sys_info_free(RSysInfo *si) {
+R_API void r_sys_info_free(RSysInfo * R_NULLABLE si) {
 	if (si) {
 		free (si->sysname);
 		free (si->nodename);
@@ -1572,35 +1572,23 @@ R_API void r_sys_info_free(RSysInfo *si) {
 
 // R2_590 r_sys_endian_tostring() // endian == R_SYS_ENDIAN_BIG "big" .. R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config)? "big": "little"
 
-R_API R_MUSTUSE char *r_file_home(const char *str) {
-	char *dst, *home = r_sys_getenv (R_SYS_HOME);
-	size_t length;
+R_API R_MUSTUSE char * R_NULLABLE r_file_home(const char * R_NULLABLE str) {
+	char *home = r_sys_getenv (R_SYS_HOME);
 	if (!home) {
 		home = r_file_tmpdir ();
 		if (!home) {
 			return NULL;
 		}
 	}
-	length = strlen (home) + 1;
-	if (R_STR_ISNOTEMPTY (str)) {
-		length += strlen (R_SYS_DIR) + strlen (str);
+	if (R_STR_ISEMPTY (str)) {
+		return home;
 	}
-	dst = (char *)calloc (1, length);
-	if (!dst) {
-		goto fail;
-	}
-	int home_len = strlen (home);
-	memcpy (dst, home, home_len + 1);
-	if (R_STR_ISNOTEMPTY (str)) {
-		dst[home_len] = R_SYS_DIR[0];
-		strcpy (dst + home_len + 1, str);
-	}
-fail:
+	char *homepath = r_str_newf ("%s%s%s", home, R_SYS_DIR, str);
 	free (home);
-	return dst;
+	return homepath;
 }
 
-R_API R_MUSTUSE char *r_file_homef(const char *fmt, ...) {
+R_API R_MUSTUSE char * R_NULLABLE r_file_homef(const char * R_NONNULL fmt, ...) {
 	va_list ap;
 	va_start (ap, fmt);
 	char *r = r_str_newvf (fmt, ap);

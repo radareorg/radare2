@@ -275,12 +275,15 @@ typedef struct r_anal_function_meta_t {
 } RAnalFcnMeta;
 
 typedef struct r_anal_function_t {
-	// TODO R2_600 Use RBinName here
+#if R2_600
+	RBinName name;
+#else
 	char *name;
-	char *realname; // R2_590: add realname for the mangled one
+	char *realname;
+#endif
+        const char *callconv; // calling convention, should come from RAnal.constpool
 	int bits; // ((> bits 0) (set-bits bits))
 	int type;
-	const char *callconv; // calling convention, should come from RAnal.constpool
 	ut64 addr;
 	HtUP/*<ut64, char *>*/ *labels;
 	HtPP/*<char *, ut64 *>*/ *label_addrs;

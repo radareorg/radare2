@@ -101,6 +101,9 @@ R_API void r_cons_grep_expression(RCons *cons, const char *str) {
 	}
 	RConsContext *ctx = cons->context;
 	RConsGrep *grep = &ctx->grep;
+	// reset dynamic tokens from previous grep expression
+	R_FREE (grep->tokens);
+	grep->tokens_count = 0;
 
 	size_t str_len = strlen (str);
 	size_t buf_len = str_len;
@@ -120,7 +123,14 @@ R_API void r_cons_grep_expression(RCons *cons, const char *str) {
 	memcpy (buf, str, buf_len);
 	buf[buf_len] = '\0';
 
-	char *ptrs[R_CONS_GREP_COUNT];
+	// split expression into sub-expressions separated by '~'
+	size_t ptrs_capacity = buf_len + 1;
+	char **ptrs = malloc (ptrs_capacity * sizeof (char *));
+	if (!ptrs) {
+		R_LOG_ERROR ("r_cons_grep: cannot allocate ptrs");
+		free (buf);
+		return;
+	}
 	size_t ptrs_length = 1;
 	ptrs[0] = buf;
 	char *ptr = buf;
@@ -130,10 +140,7 @@ R_API void r_cons_grep_expression(RCons *cons, const char *str) {
 		ptrs[ptrs_length]++;
 		ptr = ptrs[ptrs_length];
 		ptrs_length++;
-		if (ptrs_length >= R_CONS_GREP_COUNT) {
-			R_LOG_ERROR ("too many nested greps");
-			goto cleanup;
-		}
+		// no static limit: ptrs_capacity is sufficient for buf_len+1 splits
 	}
 
 	R_FREE (grep->str);
@@ -296,8 +303,9 @@ while_end:
 			ptr2++;
 			for (; ptr2 <= ptr3; ptr2++) {
 				if (fail) {
-					ZERO_FILL(grep->tokens);
-					grep->tokens_used = 0;
+					// reset dynamic tokens list on failure
+					R_FREE (grep->tokens);
+					grep->tokens_count = 0;
 					break;
 				}
 				switch (*ptr2) {
@@ -308,13 +316,16 @@ while_end:
 					break;
 				case ']': // fallthrough to handle ']' like ','
 				case ',':
+					// add range of token indices dynamically
 					for (; range_begin <= range_end; range_begin++) {
-						if (range_begin >= R_CONS_GREP_TOKENS) {
-							fail = true;
-							break;
+						int idx = (int)range_begin;
+						int *tmp = realloc (grep->tokens, (grep->tokens_count + 1) * sizeof (int));
+						if (!tmp) {
+							R_LOG_ERROR ("r_cons_grep: cannot allocate tokens");
+							goto cleanup;
 						}
-						grep->tokens[range_begin] = 1;
-						grep->tokens_used = 1;
+						grep->tokens = tmp;
+						grep->tokens[grep->tokens_count++] = idx;
 					}
 					if (*ptr2 == ']' && is_range && !num_is_parsed) {
 						num_is_parsed = true;
@@ -404,8 +415,9 @@ while_end:
 		r_list_append (grep->strings, gw);
 	}
 cleanup:
+	free (ptrs);
 	free (buf);
-}
+	}
 
 // Finds and returns next intgrep expression, unescapes escaped twiddles
 static char *find_next_intgrep(char *cmd, const char *quotes) {
@@ -988,11 +1000,9 @@ R_API int r_cons_grep_line(RCons *cons, char *buf, int len) {
 	RConsGrep *grep = &cons->context->grep;
 	const char *delims = " |,;=\t";
 	char *tok = NULL;
-	char *save_ptr = NULL;
 	bool hit = true;
 	int outlen = 0;
 	bool use_tok = false;
-	size_t i;
 
 	char *in = calloc (1, len + 1);
 	if (!in) {
@@ -1057,11 +1067,13 @@ R_API int r_cons_grep_line(RCons *cons, char *buf, int len) {
 		} else {
 			use_tok = true;
 		}
-		if (use_tok && grep->tokens_used) {
-			for (i = 0; i < R_CONS_GREP_TOKENS; i++) {
-				tok = r_str_tok_r (i? NULL: in, delims, &save_ptr);
-				if (tok) {
-					if (grep->tokens[i]) {
+		if (use_tok && grep->tokens_count > 0) {
+			// dynamic tokens selection: pick only specified columns
+			char *save_ptr2 = NULL;
+			size_t k, tok_idx = 0;
+			while ((tok = r_str_tok_r (tok_idx? NULL: in, delims, &save_ptr2))) {
+				for (k = 0; k < grep->tokens_count; k++) {
+					if ((size_t)grep->tokens[k] == tok_idx) {
 						const size_t toklen = strlen (tok);
 						memcpy (out + outlen, tok, toklen);
 						memcpy (out + outlen + toklen, " ", 2);
@@ -1071,19 +1083,13 @@ R_API int r_cons_grep_line(RCons *cons, char *buf, int len) {
 							free (out);
 							return -1;
 						}
-					}
-				} else {
-					if (*out) {
 						break;
 					}
-					free (in);
-					free (out);
-					return 0;
 				}
+				tok_idx++;
 			}
-			outlen = outlen > 0? outlen - 1: 0;
-			if (outlen > len) { // should never happen
-				R_LOG_ERROR ("r_cons_grep_line: wtf, how you reach this?");
+			outlen = outlen > 0 ? outlen - 1 : 0;
+			if (outlen > len) {
 				free (in);
 				free (out);
 				return -1;

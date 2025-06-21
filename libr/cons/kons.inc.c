@@ -427,7 +427,7 @@ static bool lastMatters(RConsContext *C) {
 	}
 	return (C->buffer_len > 0 &&
 		(C->lastEnabled && !C->filter && r_list_empty (C->grep.strings)) \
-		&& !C->grep.tokens_used && !C->grep.less \
+		&& (C->grep.tokens_count == 0) && !C->grep.less \
 		&& !C->grep.json && !C->is_html);
 }
 
@@ -947,7 +947,7 @@ R_API const char *r_kons_get_buffer(RCons *cons, size_t *buffer_len) {
 R_API void r_kons_filter(RCons *cons) {
 	RConsContext *ctx = cons->context;
 	/* grep */
-	if (ctx->filter || ctx->grep.tokens_used \
+	if (ctx->filter || (ctx->grep.tokens_count > 0) \
 			|| (ctx->grep.strings && r_list_length (ctx->grep.strings) > 0) \
 			|| ctx->grep.less || ctx->grep.json) {
 		(void)r_kons_grepbuf (cons);
