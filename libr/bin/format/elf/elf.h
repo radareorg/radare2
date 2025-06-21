@@ -87,7 +87,9 @@ typedef struct Elf_(dynamic_info) {
 	Elf_(Addr) dt_strtab;
 	Elf_(Addr) dt_symtab;
 	Elf_(Addr) dt_rela;
+	Elf_(Addr) dt_relr;
 	Elf_(Xword) dt_relasz;
+	Elf_(Xword) dt_relrsz;
 	Elf_(Xword) dt_relaent;
 	Elf_(Xword) dt_strsz;
 	Elf_(Xword) dt_syment;
