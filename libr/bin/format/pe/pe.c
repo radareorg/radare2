@@ -610,13 +610,16 @@ static int bin_pe_parse_imports(RBinPEObj* pe,
 					R_LOG_WARN ("Import name '%s' has been truncated", import_name);
 				}
 			}
-			struct r_bin_pe_import_t *new_importp = realloc (*importp, (*nimp + 1) * sizeof (struct r_bin_pe_import_t));
+					// Improved memory management: batch allocations to reduce realloc calls
+		if (*nimp % 16 == 0) { // Allocate in blocks of 16 to reduce realloc frequency
+			size_t new_size = (*nimp + 16) * sizeof (struct r_bin_pe_import_t);
+			struct r_bin_pe_import_t *new_importp = realloc (*importp, new_size);
 			if (!new_importp) {
 				r_sys_perror ("realloc (import)");
 				goto error;
 			}
-			// XXX too much indirections here
 			*importp = new_importp;
+		}
 			memcpy ((*importp)[*nimp].name, import_name, PE_NAME_LENGTH);
 			(*importp)[*nimp].name[PE_NAME_LENGTH] = '\0';
 			memcpy ((*importp)[*nimp].libname, dll_name, PE_NAME_LENGTH);
@@ -765,10 +768,30 @@ static int bin_pe_init_hdr(RBinPEObj* pe) {
 		" e_magic e_cblp e_cp e_crlc e_cparhdr e_minalloc e_maxalloc"
 		" e_ss e_sp e_csum e_ip e_cs e_lfarlc e_ovno e_res e_oemid"
 		" e_oeminfo e_res2 e_lfanew", 0);
+	
+	// Enhanced validation for e_lfanew
 	if (pe->dos_header->e_lfanew > (unsigned int) pe->size) {
-		pe_printf ("Invalid e_lfanew field\n");
+		pe_printf ("Invalid e_lfanew field: 0x%x exceeds file size 0x%x\n", 
+			pe->dos_header->e_lfanew, pe->size);
 		return false;
 	}
+	
+	// Additional validation: e_lfanew should be reasonable (typically > 0x40)
+	if (pe->dos_header->e_lfanew < 0x40) {
+		pe_printf ("Suspicious e_lfanew field: 0x%x (too small)\n", pe->dos_header->e_lfanew);
+	}
+	
+	// Check alignment - NT headers should be aligned
+	if (pe->dos_header->e_lfanew & 3) {
+		pe_printf ("Warning: e_lfanew not aligned: 0x%x\n", pe->dos_header->e_lfanew);
+	}
+	
+	// Ensure we have enough space for NT headers
+	if (pe->dos_header->e_lfanew + sizeof(PE_(image_nt_headers)) > pe->size) {
+		pe_printf ("Invalid e_lfanew: NT headers would exceed file size\n");
+		return false;
+	}
+	
 	if (!(pe->nt_headers = malloc (sizeof (PE_(image_nt_headers))))) {
 		r_sys_perror ("malloc (nt header)");
 		return false;
@@ -776,6 +799,39 @@ static int bin_pe_init_hdr(RBinPEObj* pe) {
 	pe->nt_header_offset = pe->dos_header->e_lfanew;
 	if (PE_(read_nt_headers) (pe->b, pe->dos_header->e_lfanew, pe->nt_headers) < 0) {
 		pe_printf ("Warning: read (nt header)\n");
+		return false;
+	}
+	
+	// Enhanced PE signature validation
+	if (pe->dos_header->e_magic != 0x5a4d) { // "MZ"
+		pe_printf ("Invalid DOS signature: 0x%04x (expected 0x5a4d)\n", pe->dos_header->e_magic);
+		return false;
+	}
+	
+	if (pe->nt_headers->Signature != 0x4550 && // "PE"
+		pe->nt_headers->Signature != 0x4c50) { // "PL" for Phar Lap TNT DOS extender
+		pe_printf ("Invalid PE signature: 0x%08x\n", pe->nt_headers->Signature);
+		return false;
+	}
+	
+	// Validate optional header size
+	ut16 expected_opt_hdr_size = 
+#ifdef R_BIN_PE64
+		sizeof(Pe64_image_optional_header);
+#else
+		sizeof(Pe32_image_optional_header);
+#endif
+	
+	if (pe->nt_headers->file_header.SizeOfOptionalHeader < expected_opt_hdr_size) {
+		pe_printf ("Invalid SizeOfOptionalHeader: %d (expected at least %d)\n",
+			pe->nt_headers->file_header.SizeOfOptionalHeader, expected_opt_hdr_size);
+		return false;
+	}
+	
+	// Validate number of sections is reasonable
+	if (pe->nt_headers->file_header.NumberOfSections > 0x1000) {
+		pe_printf ("Suspicious NumberOfSections: %d (too many)\n", 
+			pe->nt_headers->file_header.NumberOfSections);
 		return false;
 	}
 	sdb_set (pe->kv, "pe_magic.cparse",     "enum pe_magic { IMAGE_NT_OPTIONAL_HDR32_MAGIC=0x10b, IMAGE_NT_OPTIONAL_HDR64_MAGIC=0x20b, IMAGE_ROM_OPTIONAL_HDR_MAGIC=0x107 };", 0);
@@ -836,7 +892,7 @@ static int bin_pe_init_hdr(RBinPEObj* pe) {
 	if (pe->dos_header->e_magic != 0x5a4d || // "MZ"
 		(pe->nt_headers->Signature != 0x4550 && // "PE"
 		/* Check also for Phar Lap TNT DOS extender PL executable */
-		pe->nt_headers->Signature != 0x4c50)) { // "PL"
+		pe->nt_headers->Signature != 0x4c50)) {
 		return false;
 	}
 	return true;
@@ -957,15 +1013,45 @@ static struct r_bin_pe_export_t* parse_symbol_table(RBinPEObj* pe, struct r_bin_
 }
 
 int PE_(read_image_section_header)(RBuffer *b, ut64 addr, PE_(image_section_header) *section_header) {
+	if (!b || !section_header) {
+		return -1;
+	}
+	
 	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
 	if (r_buf_seek (b, addr, R_BUF_SET) == -1) {
 		section_header->Name[0] = 0;
 		return -1;
 	}
 
+	// Enhanced bounds checking
+	st64 buf_size = r_buf_size (b);
+	if (buf_size < 0 || addr >= (ut64)buf_size) {
+		section_header->Name[0] = 0;
+		r_buf_seek (b, o_addr, R_BUF_SET);
+		return -1;
+	}
+	
+	if (addr + sizeof(PE_(image_section_header)) > (ut64)buf_size) {
+		R_LOG_WARN ("Section header at 0x%"PFMT64x" extends beyond buffer", addr);
+		section_header->Name[0] = 0;
+		r_buf_seek (b, o_addr, R_BUF_SET);
+		return -1;
+	}
+
 	ut8 buf[sizeof (PE_(image_section_header))] = {0};
-	r_buf_read (b, buf, sizeof (buf));
+	int bytes_read = r_buf_read (b, buf, sizeof (buf));
+	if (bytes_read != sizeof(buf)) {
+		R_LOG_WARN ("Failed to read complete section header: got %d, expected %zu", 
+			bytes_read, sizeof(buf));
+		section_header->Name[0] = 0;
+		r_buf_seek (b, o_addr, R_BUF_SET);
+		return -1;
+	}
+	
+	// Safely copy section name and ensure null termination
 	memcpy (section_header->Name, buf, PE_IMAGE_SIZEOF_SHORT_NAME);
+	section_header->Name[PE_IMAGE_SIZEOF_SHORT_NAME - 1] = '\0';
+	
 	PE_READ_STRUCT_FIELD (section_header, PE_(image_section_header), Misc.PhysicalAddress, 32);
 	PE_READ_STRUCT_FIELD (section_header, PE_(image_section_header), VirtualAddress, 32);
 	PE_READ_STRUCT_FIELD (section_header, PE_(image_section_header), SizeOfRawData, 32);
@@ -975,6 +1061,7 @@ int PE_(read_image_section_header)(RBuffer *b, ut64 addr, PE_(image_section_head
 	PE_READ_STRUCT_FIELD (section_header, PE_(image_section_header), NumberOfRelocations, 16);
 	PE_READ_STRUCT_FIELD (section_header, PE_(image_section_header), NumberOfLinenumbers, 16);
 	PE_READ_STRUCT_FIELD (section_header, PE_(image_section_header), Characteristics, 32);
+	
 	r_buf_seek (b, o_addr, R_BUF_SET);
 	return sizeof (PE_(image_section_header));
 }
@@ -1000,8 +1087,22 @@ static int bin_pe_init_sections(RBinPEObj* pe) {
 	if (pe->num_sections < 1) {
 		return true;
 	}
+	
+	// Enhanced validation: check for reasonable upper limit
+	if (pe->num_sections > 0x1000) {
+		pe_printf ("Suspicious NumberOfSections: %d (too many)\n", pe->num_sections);
+		goto out_error;
+	}
+	
+	// Check for integer overflow in sections size calculation
+	if (pe->num_sections > pe->size / sizeof(PE_(image_section_header))) {
+		pe_printf ("NumberOfSections would cause integer overflow\n");
+		goto out_error;
+	}
+	
 	int sections_size = sizeof (PE_(image_section_header)) * pe->num_sections;
 	if (sections_size > pe->size) {
+		pe_printf ("Sections size %d exceeds file size %d\n", sections_size, pe->size);
 		sections_size = pe->size;
 		pe->num_sections = pe->size / sizeof (PE_(image_section_header));
 		// massage this to make corkami happy
@@ -1014,13 +1115,40 @@ static int bin_pe_init_sections(RBinPEObj* pe) {
 	}
 	pe->section_header_offset = pe->dos_header->e_lfanew + 4 + sizeof (PE_(image_file_header)) +
 		pe->nt_headers->file_header.SizeOfOptionalHeader;
+	
+	// Validate section header offset doesn't exceed file size
+	if (pe->section_header_offset >= pe->size) {
+		pe_printf ("Section header offset 0x%"PFMT64x" exceeds file size\n", pe->section_header_offset);
+		R_FREE (pe->section_header);
+		goto out_error;
+	}
+	
+	// Ensure all section headers fit within file
+	ut64 total_headers_size = pe->section_header_offset + sections_size;
+	if (total_headers_size > pe->size) {
+		pe_printf ("Section headers extend beyond file size\n");
+		R_FREE (pe->section_header);
+		goto out_error;
+	}
+	
 	int i;
 	for (i = 0; i < pe->num_sections; i++) {
-		if (PE_(read_image_section_header) (pe->b, pe->section_header_offset + i * sizeof (PE_(image_section_header)),
-			pe->section_header + i) < 0) {
+		ut64 section_header_addr = pe->section_header_offset + i * sizeof (PE_(image_section_header));
+		if (PE_(read_image_section_header) (pe->b, section_header_addr, pe->section_header + i) < 0) {
 			pe_printf ("Warning: read (sections)\n");
 			R_FREE (pe->section_header);
 			goto out_error;
+		}
+		
+		// Additional validation for each section
+		PE_(image_section_header) *sect = &pe->section_header[i];
+		if (sect->PointerToRawData > 0 && sect->SizeOfRawData > 0) {
+			// Check if section data is within file bounds
+			ut64 section_end = (ut64)sect->PointerToRawData + sect->SizeOfRawData;
+			if (section_end > pe->size) {
+				pe_printf ("Section %d ('%8.8s') extends beyond file size\n", i, sect->Name);
+				// Don't fail here, just warn - some PEs have this issue
+			}
 		}
 	}
 #if 0
