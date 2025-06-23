@@ -4059,7 +4059,6 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 #endif
 		case ':':
 			r_core_visual_prompt_input (core);
-			rotateAsmemu (core);
 			break;
 		case '_':
 			r_core_visual_hudstuff (core);
