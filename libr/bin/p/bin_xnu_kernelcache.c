@@ -1446,7 +1446,7 @@ static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
 	ut64 pattern = enosys_addr;
 	if (enosys_addr == 0) {
 		pattern = 0x0004000100000000;
-		offset -= 40;
+		offset += 40;
 	}
 	while (cursor < end) {
 		ut64 test = r_read_le64 (cursor);
