@@ -1443,10 +1443,12 @@ static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
 	ut8 *cursor = data_const;
 	ut8 *end = data_const + data_const_size;
 	ut64 offset = 24;
+	ut64 array_offset = 24;
 	ut64 pattern = enosys_addr;
 	if (enosys_addr == 0) {
 		pattern = 0x0004000100000000;
 		offset += 40;
+		array_offset += 24;
 	}
 	while (cursor < end) {
 		ut64 test = r_read_le64 (cursor);
@@ -1514,7 +1516,7 @@ static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
 	r_list_append (syscalls, sym);
 
 	int i = 1;
-	cursor += 24;
+	cursor += array_offset;
 	int num_syscalls = sdb_count (syscall->db);
 	while (cursor < end && i < num_syscalls) {
 		ut64 addr = K_PPTR (r_read_le64 (cursor));
