@@ -98,6 +98,7 @@ typedef struct Elf_(dynamic_info) {
 	Elf_(Xword) dt_pltrel;
 	Elf_(Addr) dt_jmprel;
 	Elf_(Addr) dt_mips_pltgot;
+	Elf_(Addr) dt_crel;    // Address of Crel relocs
 	bool dt_bind_now;
 	Elf_(Xword) dt_flags;
 	Elf_(Xword) dt_flags_1;

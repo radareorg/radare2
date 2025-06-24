@@ -447,6 +447,7 @@ typedef struct {
 #define SHT_GROUP	  17		/* Section group */
 #define SHT_SYMTAB_SHNDX  18		/* Extended section indeces */
 #define	SHT_NUM		  19		/* Number of defined types.  */
+#define SHT_CREL      0x20            /* Compact relocations with explicit addends */
 #define SHT_LOOS	  0x60000000	/* Start OS-specific.  */
 #define SHT_GNU_ATTRIBUTES 0x6ffffff5	/* Object attributes.  */
 #define SHT_GNU_HASH	  0x6ffffff6	/* GNU-style hash table.  */
@@ -847,6 +848,7 @@ typedef struct {
 #define DT_STRTAB	5		/* Address of string table */
 #define DT_SYMTAB	6		/* Address of symbol table */
 #define DT_RELA		7		/* Address of Rela relocs */
+#define DT_CREL		38		/* Address of Crel relocs */
 #define DT_RELASZ	8		/* Total size of Rela relocs */
 #define DT_RELAENT	9		/* Size of one Rela reloc */
 #define DT_STRSZ	10		/* Size of string table */
