@@ -161,7 +161,7 @@ static RCoreHelpMessage help_msg_aC = {
 };
 
 static RCoreHelpMessage help_msg_aaf = {
-	"Usage:", "aaf[efrt?]", " # analyse all functionsee also 'af' and 'afna'",
+	"Usage:", "aaf[efrt?]", " # analyse all function, see also 'af' and 'afna'",
 	"aaf", "", "same as afr@@c:isq",
 	"aafe", " ", "same as aef@@F",
 	"aaff", "", "set a flag for every function",
