@@ -50,3 +50,18 @@ EXPECT=<<EOF
 {"size":7656}
 EOF
 RUN
+
+NAME=r-infloop
+FILE=-
+CMDS=<<EOF
+r- 304 @@s:0x0800 0x022b97a0 2048
+?e ok
+EOF
+EXPECT=<<EOF
+ok
+EOF
+EXPECT_ERR=<<EOF
+WARN: Cannot resize below zero -304 208
+INFO: @@s: sequence interrupted
+EOF
+RUN

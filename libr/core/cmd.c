@@ -2907,8 +2907,8 @@ static int cmd_resize(void *data, const char *input) {
 	case '+': // "r+"
 	case '-': // "r-"
 		delta = (st64)r_num_math (core->num, input);
-		if (delta < 0 && oldsize > -(st64)delta) {
-			R_LOG_WARN ("Cannot resize below zero");
+		if (delta < 0 && -(st64)delta > oldsize) {
+			R_LOG_WARN ("Cannot resize below zero %lld %lld", delta, oldsize);
 			r_core_return_code (core, 1);
 			return true;
 		}
