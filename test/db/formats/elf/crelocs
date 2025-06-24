@@ -1,0 +1,31 @@
+NAME=compact relocs
+FILE=bins/elf/new/compact-relocs.o
+CMDS=<<EOF
+iS;ir;s0x08000040;af;pdf
+EOF
+EXPECT=<<EOF
+nth paddr       size vaddr       vsize perm flags type     name
+---------------------------------------------------------------
+0   0x00000000   0x0 0x08000000    0x0 ---- 0x0   NULL
+1   0x0000017a  0x5f 0x0800017a   0x5f ---- 0x0   STRTAB   .strtab
+2   0x00000040  0x14 0x08000040   0x14 -r-x 0x6   PROGBITS .text
+3   0x00000170   0x5 0x08000170    0x5 ---- 0x40  ----     .crel.text
+4   0x00000054  0x16 0x08000054   0x16 ---- 0x30  PROGBITS .comment
+5   0x0000006a   0x0 0x0800006a    0x0 ---- 0x0   PROGBITS .note.GNU-stack
+6   0x00000070  0x40 0x08000070   0x40 -r-- 0x2   PROGBITS .eh_frame
+7   0x00000175   0x5 0x08000175    0x5 ---- 0x40  ----     .crel.eh_frame
+8   0x000000b0  0xc0 0x080000b0   0xc0 ---- 0x0   SYMTAB   .symtab
+vaddr      paddr      type   ntype name
+---------------------------------------
+0x08000048 0x00000048 ADD_64 283   callee
+            ;-- section..text:
+/ 20: sym.caller ();
+|           0x08000040      fd7bbfa9       stp x29, x30, [sp, -0x10]!  ; [02] -r-x section size 20 named .text
+|           0x08000044      fd030091       mov x29, sp
+|           ;-- reloc.callee:
+|           0x08000048      00000094       bl reloc.callee             ; RELOC 64 callee
+|           0x0800004c      fd7bc1a8       ldp x29, x30, [sp], 0x10
+\           0x08000050      c0035fd6       ret
+EOF
+RUN
+
