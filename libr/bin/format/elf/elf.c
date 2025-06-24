@@ -3473,7 +3473,7 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 	return pos;
 }
 
-static size_t get_next_not_analysed_offset(ELFOBJ *eo, size_t section_vaddr, size_t offset) {
+static ut64 get_next_not_analysed_offset(ELFOBJ *eo, size_t section_vaddr, size_t offset) {
 	size_t gvaddr = section_vaddr + offset;
 
 	if (eo->dyn_info.dt_rela != R_BIN_ELF_ADDR_MAX \
@@ -3505,7 +3505,7 @@ static size_t get_next_not_analysed_offset(ELFOBJ *eo, size_t section_vaddr, siz
 	return offset;
 }
 
-static size_t populate_relocs_record_from_section(ELFOBJ *eo, size_t pos, size_t num_relocs) {
+static ut64 populate_relocs_record_from_section(ELFOBJ *eo, size_t pos, size_t num_relocs) {
 	if (!eo->sections_loaded) {
 		return pos;
 	}

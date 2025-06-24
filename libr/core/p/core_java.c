@@ -1,11 +1,6 @@
-/* radare2 - Apache - Copyright 2014-2024 - dso, pancake */
+/* radare2 - Apache - Copyright 2014-2025 - dso, pancake */
 
-#include <r_types.h>
-#include <r_lib.h>
-#include <r_cmd.h>
 #include <r_core.h>
-#include <r_cons.h>
-#include <r_anal.h>
 
 #include "../../../shlr/java/ops.h"
 #include "../../../shlr/java/class.h"
@@ -44,7 +39,7 @@ static int r_cmd_java_resolve_cp_summary(RBinJavaObj *obj, ut16 idx);
 static int r_cmd_java_print_class_access_flags_value( const char *flags );
 static int r_cmd_java_print_field_access_flags_value( const char *flags );
 static int r_cmd_java_print_method_access_flags_value( const char *flags );
-static int r_cmd_java_get_all_access_flags_value(const char *cmd);
+static int r_cmd_java_get_all_access_flags_value(RCore *core, const char *cmd);
 
 static int r_cmd_java_set_acc_flags(RCore *core, ut64 addr, ut16 num_acc_flag);
 
@@ -1213,12 +1208,12 @@ static int r_cmd_java_handle_resolve_cp(RCore *core, const char *cmd) {
 	return res;
 }
 
-static int r_cmd_java_get_all_access_flags_value(const char *cmd) {
+static int r_cmd_java_get_all_access_flags_value(RCore *core, const char *cmd) {
 	RList *the_list = NULL;
 	RListIter *iter = NULL;
 	char *str = NULL;
 
-	switch (*(cmd)) {
+	switch (*cmd) {
 	case 'f': the_list = retrieve_all_field_access_string_and_value (); break;
 	case 'm': the_list = retrieve_all_method_access_string_and_value (); break;
 	case 'c': the_list = retrieve_all_class_access_string_and_value (); break;
@@ -1233,12 +1228,11 @@ static int r_cmd_java_get_all_access_flags_value(const char *cmd) {
 	case 'm': r_cons_printf ("[=] Methods Access Flags List\n"); break;
 	case 'c':
 		r_cons_printf ("[=] Class Access Flags List\n");
-		;
 		break;
 	}
 
 	r_list_foreach (the_list, iter, str) {
-		r_cons_println (str);
+		r_kons_println (core->cons, str);
 	}
 	r_list_free (the_list);
 	return true;
@@ -1260,13 +1254,13 @@ static int r_cmd_java_handle_calc_flags(RCore *core, const char *cmd) {
 		switch (*(lcmd)) {
 		case 'f':
 		case 'm':
-		case 'c': res = r_cmd_java_get_all_access_flags_value (lcmd); break;
+		case 'c': res = r_cmd_java_get_all_access_flags_value (core, lcmd); break;
 		}
 		// Just print them all out
 		if (res == false) {
-			r_cmd_java_get_all_access_flags_value ("c");
-			r_cmd_java_get_all_access_flags_value ("m");
-			res = r_cmd_java_get_all_access_flags_value ("f");
+			r_cmd_java_get_all_access_flags_value (core, "c");
+			r_cmd_java_get_all_access_flags_value (core, "m");
+			res = r_cmd_java_get_all_access_flags_value (core, "f");
 		}
 	}
 	if (res == false) {

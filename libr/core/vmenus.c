@@ -2736,7 +2736,7 @@ static void show_config_options(RCore *core, const char *opt, int row) {
 #if 0
 			if (r_strbuf_length (sb) + 5 >= w) {
 				char *s = r_strbuf_drain (sb);
-				r_cons_println (s);
+				r_kons_println (core->cons, s);
 				free (s);
 				sb = r_strbuf_new ("");
 			}
