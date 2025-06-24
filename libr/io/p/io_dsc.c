@@ -1153,7 +1153,7 @@ static RList * dsc_slice_get_rebase_infos_by_range(RIODscSlice * slice, ut64 off
 }
 
 static void rebase_bytes_v1(RIODscSlice * slice, RDyldRebaseInfo1 *rebase_info, ut8 *buf, ut64 offset, int count, ut64 buf_off) {
-	int in_buf = buf_off;
+	ut64 in_buf = buf_off;
 	while (in_buf < count) {
 		ut64 offset_in_data = offset - rebase_info->start_of_data;
 		ut64 page_index = offset_in_data / rebase_info->page_size;
@@ -1176,9 +1176,11 @@ static void rebase_bytes_v1(RIODscSlice * slice, RDyldRebaseInfo1 *rebase_info, 
 		ut8 b = entry[entry_index];
 
 		if (b & (1 << offset_in_entry)) {
-			ut64 value = r_read_le64 (buf + in_buf);
-			value += rebase_info->slide;
-			r_write_le64 (buf + in_buf, value);
+			if (in_buf <= count - 8) {
+				ut64 value = r_read_le64 (buf + in_buf);
+				value += rebase_info->slide;
+				r_write_le64 (buf + in_buf, value);
+			}
 			in_buf += 8;
 			offset += 8;
 		} else {
@@ -1189,7 +1191,7 @@ static void rebase_bytes_v1(RIODscSlice * slice, RDyldRebaseInfo1 *rebase_info, 
 }
 
 static void rebase_bytes_v2(RIODscSlice * slice, RDyldRebaseInfo2 *rebase_info, ut8 *buf, ut64 offset, int count, ut64 buf_off) {
-	int in_buf = buf_off;
+	ut64 in_buf = buf_off;
 	while (in_buf < count + buf_off) {
 		ut64 offset_in_data = offset - rebase_info->start_of_data;
 		ut64 page_index = offset_in_data / rebase_info->page_size;
@@ -1211,19 +1213,24 @@ static void rebase_bytes_v2(RIODscSlice * slice, RDyldRebaseInfo2 *rebase_info, 
 				ut32 delta = 1;
 				if (first_rebase_off < page_offset) {
 					ut64 back_size = page_offset - first_rebase_off;
-					ut8 * back_bytes = malloc (back_size);
+					ut64 padding = 0;
+					ut64 remainder = back_size % 8;
+					if (remainder) {
+						padding = 8 - remainder;
+					}
+					ut8 * back_bytes = malloc (back_size + padding);
 					if (!back_bytes) {
 						return;
 					}
 					bool got_back_bytes = false;
-					RIO_FREAD_AT_INTO_DIRECT (slice->fd, offset - back_size, back_bytes, back_size, got_back_bytes);
+					RIO_FREAD_AT_INTO_DIRECT (slice->fd, offset - back_size, back_bytes, back_size + padding, got_back_bytes);
 					if (!got_back_bytes) {
 						free (back_bytes);
 						return;
 					}
 
 					int cursor = 0;
-					while (delta && cursor <= back_size - 8) {
+					while (delta && cursor <= back_size + padding - 8) {
 						ut64 raw_value = r_read_le64 (back_bytes + cursor);
 						delta = ((raw_value & rebase_info->delta_mask) >> rebase_info->delta_shift);
 						cursor += delta;
@@ -1261,7 +1268,7 @@ next_page:
 }
 
 static void rebase_bytes_v5(RIODscSlice * slice, RDyldRebaseInfo5 *rebase_info, ut8 *buf, ut64 offset, int count, ut64 buf_off) {
-	int in_buf = buf_off;
+	ut64 in_buf = buf_off;
 	while (in_buf < count + buf_off) {
 		ut64 offset_in_data = offset - rebase_info->start_of_data;
 		ut64 page_index = offset_in_data / rebase_info->page_size;
@@ -1281,19 +1288,24 @@ static void rebase_bytes_v5(RIODscSlice * slice, RDyldRebaseInfo5 *rebase_info, 
 		if (first_rebase_off < page_offset + count) {
 			if (first_rebase_off < page_offset) {
 				ut64 back_size = page_offset - first_rebase_off;
-				ut8 * back_bytes = malloc (back_size);
+				ut64 padding = 0;
+				ut64 remainder = back_size % 8;
+				if (remainder) {
+					padding = 8 - remainder;
+				}
+				ut8 * back_bytes = malloc (back_size + padding);
 				if (!back_bytes) {
 					return;
 				}
 				bool got_back_bytes = false;
-				RIO_FREAD_AT_INTO_DIRECT (slice->fd, offset - back_size, back_bytes, back_size, got_back_bytes);
+				RIO_FREAD_AT_INTO_DIRECT (slice->fd, offset - back_size, back_bytes, back_size + padding, got_back_bytes);
 				if (!got_back_bytes) {
 					free (back_bytes);
 					return;
 				}
 
 				int cursor = 0;
-				while (cursor <= back_size - 8) {
+				while (cursor <= back_size + padding - 8) {
 					ut64 raw_value = r_read_le64 (back_bytes + cursor);
 					delta = ((raw_value & rebase_info->delta_mask) >> rebase_info->delta_shift) * 8;
 					cursor += delta;
@@ -1334,7 +1346,7 @@ next_page:
 }
 
 static void rebase_bytes_v3(RIODscSlice * slice, RDyldRebaseInfo3 *rebase_info, ut8 *buf, ut64 offset, int count, ut64 buf_off) {
-	int in_buf = buf_off;
+	ut64 in_buf = buf_off;
 	while (in_buf < count + buf_off) {
 		ut64 offset_in_data = offset - rebase_info->start_of_data;
 		ut64 page_index = offset_in_data / rebase_info->page_size;
@@ -1354,19 +1366,24 @@ static void rebase_bytes_v3(RIODscSlice * slice, RDyldRebaseInfo3 *rebase_info, 
 		if (first_rebase_off < page_offset + count) {
 			if (first_rebase_off < page_offset) {
 				ut64 back_size = page_offset - first_rebase_off;
-				ut8 * back_bytes = malloc (back_size);
+				ut64 padding = 0;
+				ut64 remainder = back_size % 8;
+				if (remainder) {
+					padding = 8 - remainder;
+				}
+				ut8 * back_bytes = malloc (back_size + padding);
 				if (!back_bytes) {
 					return;
 				}
 				bool got_back_bytes = false;
-				RIO_FREAD_AT_INTO_DIRECT (slice->fd, offset - back_size, back_bytes, back_size, got_back_bytes);
+				RIO_FREAD_AT_INTO_DIRECT (slice->fd, offset - back_size, back_bytes, back_size + padding, got_back_bytes);
 				if (!got_back_bytes) {
 					free (back_bytes);
 					return;
 				}
 
 				int cursor = 0;
-				while (cursor <= back_size - 8) {
+				while (cursor <= back_size + padding - 8) {
 					ut64 raw_value = r_read_le64 (back_bytes + cursor);
 					delta = ((raw_value & rebase_info->delta_mask) >> rebase_info->delta_shift) * 8;
 					cursor += delta;
