@@ -3195,13 +3195,13 @@ static bool read_crel_header(ELFOBJ *eo, CrelInfo *info) {
 		return false;
 	}
 	ut8 header_buf[16] = {0}; // Max ULEB128 size for 64-bit
-	int res = r_buf_read_at(eo->b, info->current_pos, header_buf, sizeof(header_buf));
+	int res = r_buf_read_at (eo->b, info->current_pos, header_buf, sizeof (header_buf));
 	if (res <= 0) {
 		return false;
 	}
 	ut64 header_val = 0;
 	int bytes_read = 0;
-	read_uleb128(header_buf, sizeof(header_buf), &header_val, &bytes_read);
+	read_uleb128 (header_buf, sizeof (header_buf), &header_val, &bytes_read);
 	info->count = header_val >> 3;
 	info->addend_bit = (header_val >> 2) & 1;
 	info->shift = header_val & 3;
@@ -3235,7 +3235,7 @@ static bool read_crel_reloc(ELFOBJ *eo, RBinElfReloc *r, ut64 vaddr, ut64 *next_
 	}
 	// Read the next relocation entry
 	ut8 buf[64] = {0}; // Buffer for reading relocation data
-	int res = r_buf_read_at(eo->b, crel_info.current_pos, buf, sizeof(buf));
+	int res = r_buf_read_at (eo->b, crel_info.current_pos, buf, sizeof (buf));
 	if (res <= 0) {
 		return false;
 	}
@@ -3251,7 +3251,7 @@ static bool read_crel_reloc(ELFOBJ *eo, RBinElfReloc *r, ut64 vaddr, ut64 *next_
 		// Handle large delta_offset
 		int bytes_read = 0;
 		ut64 high_bits = 0;
-		read_uleb128(&buf[read_pos], sizeof(buf) - read_pos, &high_bits, &bytes_read);
+		read_uleb128 (&buf[read_pos], sizeof (buf) - read_pos, &high_bits, &bytes_read);
 		read_pos += bytes_read;
 		delta_offset = delta_offset | (high_bits << (7 - flag_bits));
 		delta_offset -= (0x80 >> flag_bits);
@@ -3262,7 +3262,7 @@ static bool read_crel_reloc(ELFOBJ *eo, RBinElfReloc *r, ut64 vaddr, ut64 *next_
 	if (flags & 1) {
 		st64 delta_symidx = 0;
 		int bytes_read = 0;
-		read_sleb128(&buf[read_pos], sizeof(buf) - read_pos, &delta_symidx, &bytes_read);
+		read_sleb128 (&buf[read_pos], sizeof (buf) - read_pos, &delta_symidx, &bytes_read);
 		read_pos += bytes_read;
 		crel_info.symidx += delta_symidx;
 	}
@@ -3270,7 +3270,7 @@ static bool read_crel_reloc(ELFOBJ *eo, RBinElfReloc *r, ut64 vaddr, ut64 *next_
 	if (flags & 2) {
 		st64 delta_type = 0;
 		int bytes_read = 0;
-		read_sleb128(&buf[read_pos], sizeof(buf) - read_pos, &delta_type, &bytes_read);
+		read_sleb128 (&buf[read_pos], sizeof (buf) - read_pos, &delta_type, &bytes_read);
 		read_pos += bytes_read;
 		crel_info.type += delta_type;
 	}
@@ -3278,7 +3278,7 @@ static bool read_crel_reloc(ELFOBJ *eo, RBinElfReloc *r, ut64 vaddr, ut64 *next_
 	if ((flags & 4) && crel_info.addend_bit) {
 		st64 delta_addend = 0;
 		int bytes_read = 0;
-		read_sleb128(&buf[read_pos], sizeof(buf) - read_pos, &delta_addend, &bytes_read);
+		read_sleb128 (&buf[read_pos], sizeof (buf) - read_pos, &delta_addend, &bytes_read);
 		read_pos += bytes_read;
 		crel_info.addend += delta_addend;
 	}
