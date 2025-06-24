@@ -1767,7 +1767,7 @@ static ut64 get_num_relocs_dynamic_plt(ELFOBJ *eo) {
 	if (eo->dyn_info.dt_pltrelsz) {
 		const ut64 size = eo->dyn_info.dt_pltrelsz;
 		const ut64 relsize = get_size_rel_mode (eo->dyn_info.dt_pltrel);
-		return size / relsize;
+		return relsize ? size / relsize : 0;
 	}
 	return 0;
 }
