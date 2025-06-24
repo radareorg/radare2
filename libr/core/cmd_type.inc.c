@@ -566,7 +566,7 @@ static void print_struct_union_in_c_format(RCore *core, Sdb *TDB, SdbForeachCall
 					int arrnum = arr? atoi (arr): 0;
 					free (arr);
 					if (multiline) {
-						r_cons_printf ("  %s", val);
+						r_strbuf_appendf (sb, "  %s", val);
 						if (p && p[0] != '\0') {
 							r_strbuf_appendf (sb, "%s%s", strstr (val, " *")? "": " ", p);
 							if (arrnum) {
@@ -579,7 +579,7 @@ static void print_struct_union_in_c_format(RCore *core, Sdb *TDB, SdbForeachCall
 						if (arrnum) {
 							r_strbuf_appendf (sb, "[%d]", arrnum);
 						}
-						r_strbuf_append (sb, ";\n");
+						r_strbuf_append (sb, ";");
 						space = " ";
 					}
 					free (val);
