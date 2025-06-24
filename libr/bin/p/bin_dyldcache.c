@@ -377,7 +377,8 @@ static bool check(RBinFile *bf, RBuffer *buf) {
 	return check_magic (hdr);
 }
 
-static cache_imgxtr_t *read_cache_imgextra(RBuffer *cache_buf, cache_hdr_t *hdr, cache_accel_t *accel) {
+static cache_imgxtr_t *read_cache_imgextra(RBuffer *cache_buf, cache_hdr_t *hdr, cache_accel_t *accel, ut64 * out_count) {
+	*out_count = 0;
 	if (!cache_buf || !hdr || !hdr->imagesCount || !accel || !accel->imageExtrasCount || !accel->imagesExtrasOffset) {
 		return NULL;
 	}
@@ -392,6 +393,8 @@ static cache_imgxtr_t *read_cache_imgextra(RBuffer *cache_buf, cache_hdr_t *hdr,
 		R_FREE (images);
 		return NULL;
 	}
+
+	*out_count = accel->imageExtrasCount;
 
 	return images;
 }
@@ -563,6 +566,7 @@ static void create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 	char *target_libs = NULL;
 	RList *target_lib_names = NULL;
 
+	ut64 extras_count = 0;
 	cache_imgxtr_t *extras = NULL;
 	if (!bins) {
 		return;
@@ -626,7 +630,7 @@ static void create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 					goto next;
 				}
 
-				extras = read_cache_imgextra (cache->buf, hdr, cache->accel);
+				extras = read_cache_imgextra (cache->buf, hdr, cache->accel, &extras_count);
 				if (!extras) {
 					goto next;
 				}
@@ -653,7 +657,7 @@ static void create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 				R_FREE (lib_name);
 				deps[j]++;
 
-				if (extras && depArray) {
+				if (extras && depArray && j < extras_count) {
 					ut32 k;
 					for (k = extras[j].dependentsStartArrayIndex; k < depListCount && depArray[k] != 0xffff; k++) {
 						ut16 dep_index = depArray[k] & 0x7fff;
