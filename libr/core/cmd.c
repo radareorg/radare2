@@ -2907,11 +2907,22 @@ static int cmd_resize(void *data, const char *input) {
 	case '+': // "r+"
 	case '-': // "r-"
 		delta = (st64)r_num_math (core->num, input);
+		if (delta < 0 && -(st64)delta > oldsize) {
+			R_LOG_WARN ("Cannot resize below zero %lld %lld", delta, oldsize);
+			r_core_return_code (core, 1);
+			return true;
+		}
+		r_core_return_code (core, 0);
 		newsize = oldsize + delta;
 		break;
 	case '0': // "r0"
 		if (input[1] == 'x') { // "r0x"
 			newsize = r_num_math (core->num, input);
+			if ((st64)newsize < 1) {
+				R_LOG_ERROR ("Invalid hex size");
+				r_core_return_code (core, 1);
+				return true;
+			}
 		} else {
 			r_core_cmd_help (core, help_msg_r);
 		}
@@ -2926,6 +2937,7 @@ static int cmd_resize(void *data, const char *input) {
 				newsize = r_num_math (core->num, arg);
 				if (newsize == 0) {
 					if (arg[1] == '0') {
+						r_core_return_code (core, 1);
 						R_LOG_ERROR ("Invalid size");
 					}
 					return false;
@@ -2954,15 +2966,19 @@ static int cmd_resize(void *data, const char *input) {
 		ret = r_io_resize (core->io, newsize);
 		if (ret < 1) {
 			R_LOG_ERROR ("r_io_resize: cannot resize");
+			r_core_return_code (core, 1);
+			return true;
 		}
 	}
 	if (delta && core->addr < newsize) {
-		r_io_shift (core->io, core->addr, grow?newsize:oldsize, delta);
+		r_io_shift (core->io, core->addr, grow? newsize: oldsize, delta);
 	}
 	if (!grow) {
 		ret = r_io_resize (core->io, newsize);
 		if (ret < 1) {
 			R_LOG_ERROR ("cannot resize");
+			r_core_return_code (core, 1);
+			return true;
 		}
 	}
 	if (newsize < (core->addr + core->blocksize) || oldsize < (core->addr + core->blocksize)) {
@@ -5995,7 +6011,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			goto out_finish;
 		}
 		break;
-	case 's': // "@@s" - sequence
+	case 's': // "@@s:" - sequence
 		{
 			char *str = each + 1;
 			if (*str == ':' || *str == ' ') {
@@ -6007,13 +6023,23 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				ut64 from = r_num_math (core->num, r_str_word_get0 (str, 0));
 				ut64 to = r_num_math (core->num, r_str_word_get0 (str, 1));
 				ut64 step = r_num_math (core->num, r_str_word_get0 (str, 2));
+				r_cons_break_push (NULL, NULL);
+				r_core_return_code (core, 0);
 				for (cur = from; cur <= to; cur += step) {
+					if (r_cons_is_breaked ()) {
+						break;
+					}
 					(void) r_core_seek (core, cur, true);
 					r_core_cmd (core, cmd, 0);
+					if (core->rc != 0) {
+						R_LOG_INFO ("@@s: sequence interrupted");
+						break;
+					}
 					if (!foreach_newline (core)) {
 						break;
 					}
 				}
+				r_cons_break_pop ();
 			} else {
 				R_LOG_ERROR ("Use the sequence iterator like this: 'cmd @@s:from to step'");
 			}
