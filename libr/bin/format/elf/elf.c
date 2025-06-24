@@ -3115,7 +3115,6 @@ static ut64 read_uleb128(const ut8 *data, int data_size, ut64 *val, int *read_by
 	ut64 result = 0;
 	int shift = 0;
 	int count = 0;
-	
 	while (count < data_size) {
 		ut8 b = data[count++];
 		result |= ((b & 0x7f) << shift);
@@ -3127,7 +3126,6 @@ static ut64 read_uleb128(const ut8 *data, int data_size, ut64 *val, int *read_by
 			break;
 		}
 	}
-	
 	if (val) {
 		*val = result;
 	}
@@ -3143,7 +3141,6 @@ static st64 read_sleb128(const ut8 *data, int data_size, st64 *val, int *read_by
 	int shift = 0;
 	int count = 0;
 	ut8 b = 0;
-	
 	while (count < data_size) {
 		b = data[count++];
 		result |= ((b & 0x7f) << shift);
@@ -3155,12 +3152,10 @@ static st64 read_sleb128(const ut8 *data, int data_size, st64 *val, int *read_by
 			break;
 		}
 	}
-	
 	// Sign extend if needed
 	if ((b & 0x40) && shift < 64) {
 		result |= ~0ULL << shift;
 	}
-	
 	if (val) {
 		*val = (st64)result;
 	}
@@ -3186,15 +3181,11 @@ typedef struct {
 
 // Helper function to initialize a CrelInfo structure
 static bool init_crel_info(ELFOBJ *eo, ut64 section_offset, CrelInfo *info) {
-	if (!info) {
-		return false;
-	}
-	
-	memset(info, 0, sizeof(CrelInfo));
+	R_RETURN_VAL_IF_FAIL (eo && info, false);
+	memset (info, 0, sizeof (CrelInfo));
 	info->section_offset = section_offset;
 	info->current_pos = section_offset;
 	info->header_read = false;
-	
 	return true;
 }
 
@@ -3203,23 +3194,19 @@ static bool read_crel_header(ELFOBJ *eo, CrelInfo *info) {
 	if (!info || info->header_read) {
 		return false;
 	}
-	
 	ut8 header_buf[16] = {0}; // Max ULEB128 size for 64-bit
 	int res = r_buf_read_at(eo->b, info->current_pos, header_buf, sizeof(header_buf));
 	if (res <= 0) {
 		return false;
 	}
-	
 	ut64 header_val = 0;
 	int bytes_read = 0;
 	read_uleb128(header_buf, sizeof(header_buf), &header_val, &bytes_read);
-	
 	info->count = header_val >> 3;
 	info->addend_bit = (header_val >> 2) & 1;
 	info->shift = header_val & 3;
 	info->current_pos += bytes_read;
 	info->header_read = true;
-	
 	return true;
 }
 
@@ -3227,45 +3214,37 @@ static bool read_crel_header(ELFOBJ *eo, CrelInfo *info) {
 static bool read_crel_reloc(ELFOBJ *eo, RBinElfReloc *r, ut64 vaddr, ut64 *next_offset) {
 	static CrelInfo crel_info = {0};
 	static ut64 last_section_offset = 0;
-	
 	ut64 offset = Elf_(v2p_new) (eo, vaddr);
 	if (offset == UT64_MAX) {
 		return false;
 	}
-	
 	// Check if we're processing a new section
 	if (offset != last_section_offset && offset != crel_info.current_pos) {
 		init_crel_info(eo, offset, &crel_info);
 		last_section_offset = offset;
 	}
-	
 	// Read the CREL header if we haven't already
 	if (!crel_info.header_read) {
 		if (!read_crel_header(eo, &crel_info)) {
 			return false;
 		}
 	}
-	
 	// Make sure we have relocations left to read
 	if (crel_info.count <= 0) {
 		return false;
 	}
-	
 	// Read the next relocation entry
 	ut8 buf[64] = {0}; // Buffer for reading relocation data
 	int res = r_buf_read_at(eo->b, crel_info.current_pos, buf, sizeof(buf));
 	if (res <= 0) {
 		return false;
 	}
-	
 	// Parse delta offset and flags
 	int read_pos = 0;
 	ut8 b = buf[read_pos++];
-	
 	// Extract flags
 	int flag_bits = crel_info.addend_bit ? 3 : 2;
 	ut8 flags = b & ((1 << flag_bits) - 1);
-	
 	// Extract delta offset
 	ut64 delta_offset = b >> flag_bits;
 	if (b & 0x80) {
@@ -3277,10 +3256,8 @@ static bool read_crel_reloc(ELFOBJ *eo, RBinElfReloc *r, ut64 vaddr, ut64 *next_
 		delta_offset = delta_offset | (high_bits << (7 - flag_bits));
 		delta_offset -= (0x80 >> flag_bits);
 	}
-	
 	// Apply shift to delta_offset
 	crel_info.offset += (delta_offset << crel_info.shift);
-	
 	// Handle delta symbol index if present
 	if (flags & 1) {
 		st64 delta_symidx = 0;
@@ -3289,7 +3266,6 @@ static bool read_crel_reloc(ELFOBJ *eo, RBinElfReloc *r, ut64 vaddr, ut64 *next_
 		read_pos += bytes_read;
 		crel_info.symidx += delta_symidx;
 	}
-	
 	// Handle delta type if present
 	if (flags & 2) {
 		st64 delta_type = 0;
@@ -3298,7 +3274,6 @@ static bool read_crel_reloc(ELFOBJ *eo, RBinElfReloc *r, ut64 vaddr, ut64 *next_
 		read_pos += bytes_read;
 		crel_info.type += delta_type;
 	}
-	
 	// Handle delta addend if present and addend_bit is set
 	if ((flags & 4) && crel_info.addend_bit) {
 		st64 delta_addend = 0;
@@ -3307,23 +3282,20 @@ static bool read_crel_reloc(ELFOBJ *eo, RBinElfReloc *r, ut64 vaddr, ut64 *next_
 		read_pos += bytes_read;
 		crel_info.addend += delta_addend;
 	}
-	
 	// Update position for next read
 	crel_info.current_pos += read_pos;
 	crel_info.count--;
-	
 	// Fill in the relocation structure
 	r->mode = DT_CREL;
-	r->offset = crel_info.offset;
+	r->offset = crel_info.offset;  // This is the file offset
+	r->rva = crel_info.offset;     // Also store as RVA for now, will be adjusted in fix_rva_and_offset
 	r->sym = crel_info.symidx;
 	r->type = crel_info.type;
 	r->addend = crel_info.addend_bit ? crel_info.addend : 0;
-	
 	// Return next offset if requested
 	if (next_offset) {
 		*next_offset = crel_info.current_pos - offset;
 	}
-	
 	return true;
 }
 
@@ -3331,9 +3303,8 @@ static bool read_reloc(ELFOBJ *eo, RBinElfReloc *r, Elf_(Xword) rel_mode, ut64 v
 	// Handle CREL entries differently
 	if (rel_mode == DT_CREL) {
 		ut64 next_offset = 0;
-		return read_crel_reloc(eo, r, vaddr, &next_offset);
+		return read_crel_reloc (eo, r, vaddr, &next_offset);
 	}
-	
 	// Regular REL/RELA processing
 	ut64 offset = Elf_(v2p_new) (eo, vaddr);
 	if (offset == UT64_MAX) {
@@ -3395,7 +3366,7 @@ static Elf_(Xword) get_section_mode(ELFOBJ *eo, size_t pos) {
 	if (section->type == SHT_REL) {
 		return DT_REL;
 	}
-	if (section->type == SHT_CREL) {
+	if ((section->type & 0xff) == SHT_CREL) {
 		// Check for .crel. prefix to ensure we're dealing with CREL sections
 		if (r_str_startswith (section->name, ".crel.")) {
 			return DT_CREL;
@@ -3492,6 +3463,9 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 			}
 			int index = r_vector_index (&eo->g_relocs);
 			ht_uu_insert (eo->rel_cache, reloc->sym + 1, index + 1);
+			// For CREL relocations from dynamic table, we need to convert offset to address
+			ut64 vaddr = Elf_(p2v) (eo, reloc->offset);
+			reloc->rva = vaddr;  // Ensure rva is properly set
 			fix_rva_and_offset_exec_file (eo, reloc);
 			pos++;
 		}
@@ -3523,7 +3497,7 @@ static size_t get_next_not_analysed_offset(ELFOBJ *eo, size_t section_vaddr, siz
 	// Add support for CREL sections
 	if (eo->dyn_info.dt_crel != R_BIN_ELF_ADDR_MAX \
 		&& gvaddr >= eo->dyn_info.dt_crel) {
-		// Since CREL sections use variable-length encoding, we can't easily 
+		// Since CREL sections use variable-length encoding, we can't easily
 		// determine the end offset. For now, we'll just skip the section entirely.
 		return UT64_MAX;
 	}
@@ -3549,23 +3523,62 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, size_t pos, size_t
 			continue;
 		}
 
-		size_t size = get_size_rel_mode (rel_mode);
-		ut64 dim_relocs = section->size / size;
-		dim_relocs = R_MIN (dim_relocs, num_relocs) + 2;
-		ut64 j;
-		for (j = get_next_not_analysed_offset (eo, section->rva, 0);
-			j < section->size && pos <= dim_relocs;
-			j = get_next_not_analysed_offset (eo, section->rva, j + size)) {
+		// Handle CREL sections differently since they use variable-length encoding
+		if (rel_mode == DT_CREL) {
+			ut64 next_offset = 0;
+			ut64 j = 0;
+			// Process all CREL relocations in the section
+			while (j < section->size && pos <= num_relocs) {
+				RBinElfReloc *reloc = r_vector_end (&eo->g_relocs);
+				if (!read_crel_reloc (eo, reloc, section->rva + j, &next_offset)) {
+					// If read_crel_reloc returns false, either we're done or encountered an error
+					// In either case, break the loop
+					break;
+				}
 
-			RBinElfReloc *reloc = r_vector_end (&eo->g_relocs);
-			if (!read_reloc (eo, reloc, rel_mode, section->rva + j)) {
-				break;
+				int index = r_vector_index (&eo->g_relocs);
+				ht_uu_insert (eo->rel_cache, reloc->sym, index);
+				// For CREL relocations from sections, make sure rva is properly set
+				if (is_bin_etrel (eo)) {
+					// For relocatable files, find target section
+					if (has_valid_section_header (eo, i)) {
+						RBinElfSection *target_section = r_vector_at (&eo->g_sections, i);
+						size_t idx = target_section->info;
+						if (idx < eo->ehdr.e_shnum) {
+							// Map file offset to virtual address in target section
+							reloc->rva = eo->shdr[idx].sh_addr + reloc->offset;
+						}
+					}
+				} else {
+					// For executables, offset is target address
+					reloc->rva = reloc->offset;
+				}
+				fix_rva_and_offset (eo, reloc, i);
+				pos++;
+
+				// Move to next relocation
+				j += next_offset;
 			}
+		} else {
+			// Standard REL/RELA handling
+			size_t size = get_size_rel_mode (rel_mode);
+			ut64 dim_relocs = section->size / size;
+			dim_relocs = R_MIN (dim_relocs, num_relocs) + 2;
+			ut64 j;
+			for (j = get_next_not_analysed_offset (eo, section->rva, 0);
+				j < section->size && pos <= dim_relocs;
+				j = get_next_not_analysed_offset (eo, section->rva, j + size)) {
 
-			int index = r_vector_index (&eo->g_relocs);
-			ht_uu_insert (eo->rel_cache, reloc->sym, index);
-			fix_rva_and_offset (eo, reloc, i);
-			pos++;
+				RBinElfReloc *reloc = r_vector_end (&eo->g_relocs);
+				if (!read_reloc (eo, reloc, rel_mode, section->rva + j)) {
+					break;
+				}
+
+				int index = r_vector_index (&eo->g_relocs);
+				ht_uu_insert (eo->rel_cache, reloc->sym, index);
+				fix_rva_and_offset (eo, reloc, i);
+				pos++;
+			}
 		}
 
 		i++;

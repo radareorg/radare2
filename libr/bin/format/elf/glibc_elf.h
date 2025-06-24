@@ -446,8 +446,8 @@ typedef struct {
 #define SHT_PREINIT_ARRAY 16		/* Array of pre-constructors */
 #define SHT_GROUP	  17		/* Section group */
 #define SHT_SYMTAB_SHNDX  18		/* Extended section indeces */
-#define	SHT_NUM		  19		/* Number of defined types.  */
-#define SHT_CREL      0x20            /* Compact relocations with explicit addends */
+#define SHT_CREL      20            /* Compact relocations with explicit addends */
+#define	SHT_NUM		  20		/* Number of defined types.  */
 #define SHT_LOOS	  0x60000000	/* Start OS-specific.  */
 #define SHT_GNU_ATTRIBUTES 0x6ffffff5	/* Object attributes.  */
 #define SHT_GNU_HASH	  0x6ffffff6	/* GNU-style hash table.  */
