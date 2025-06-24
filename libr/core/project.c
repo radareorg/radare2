@@ -93,7 +93,7 @@ R_API void r_core_project_cat(RCore *core, const char *name) {
 	if (path) {
 		char *data = r_file_slurp (path, NULL);
 		if (data) {
-			r_cons_println (data);
+			r_kons_println (core->cons, data);
 			free (data);
 			r_core_return_value (core, R_CMD_RC_SUCCESS);
 		}
@@ -130,7 +130,7 @@ R_API int r_core_project_list(RCore *core, int mode) {
 	default:
 		r_list_foreach (list, iter, foo) {
 			if (r_core_is_project (core, foo)) {
-				r_cons_println (foo);
+				r_kons_println (core->cons, foo);
 			}
 		}
 		break;

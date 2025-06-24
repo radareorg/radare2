@@ -202,21 +202,21 @@ static void cmd_afcl(RCore *core, const char *input) {
 			pj_end (pj);
 		} else if (mode == 'l') {
 			char *sig = r_anal_cc_get (core->anal, cc);
-			r_cons_println (sig);
+			r_kons_println (core->cons, sig);
 			free (sig);
 		} else if (mode == '*') {
 			char *ccexpr = r_anal_cc_get (core->anal, cc);
 			r_cons_printf ("tcc %s\n", ccexpr);
 			free (ccexpr);
 		} else {
-			r_cons_println (cc);
+			r_kons_println (core->cons, cc);
 		}
 	}
 	r_list_free (list);
 	if (pj) {
 		pj_end (pj);
 		char *j = pj_drain (pj);
-		r_cons_println (j);
+		r_kons_println (core->cons, j);
 		free (j);
 	}
 }
@@ -503,8 +503,8 @@ static bool stdifstruct(void *user, const char *k, const char *v) {
  * \param filter a callback function for the filtering
  * \return 1 if success, 0 if failure
  */
-static int print_struct_union_list_json(Sdb *TDB, SdbForeachCallback filter) {
-	PJ *pj = pj_new ();
+static int print_struct_union_list_json(RCore *core, Sdb *TDB, SdbForeachCallback filter) {
+	PJ *pj = r_core_pj_new (core);
 	if (!pj) {
 		return 0;
 	}
@@ -524,20 +524,22 @@ static int print_struct_union_list_json(Sdb *TDB, SdbForeachCallback filter) {
 	}
 	pj_end (pj); // ]
 
-	r_cons_println (pj_string (pj));
+	r_kons_println (core->cons, pj_string (pj));
 	pj_free (pj);
 	ls_free (l);
 	return 1;
 }
 
 // Rename to char *RAnal.type_to_c() {}
-static void print_struct_union_in_c_format(Sdb *TDB, SdbForeachCallback filter, const char *arg, bool multiline) {
+static void print_struct_union_in_c_format(RCore *core, Sdb *TDB, SdbForeachCallback filter, const char *arg, bool multiline) {
 	char *name = NULL;
 	SdbKv *kv;
 	SdbListIter *iter;
 	SdbList *l = sdb_foreach_list_filter (TDB, filter, true);
 	const char *space = "";
 	bool match = false;
+
+	RStrBuf *sb = r_strbuf_new ("");
 
 	ls_foreach (l, iter, kv) {
 		if (name && !strcmp (sdbkv_value (kv), name)) {
@@ -553,7 +555,7 @@ static void print_struct_union_in_c_format(Sdb *TDB, SdbForeachCallback filter, 
 				continue;
 			}
 		}
-		r_cons_printf ("%s %s {%s", sdbkv_value (kv), name, multiline? "\n": "");
+		r_strbuf_appendf (sb, "%s %s {%s", sdbkv_value (kv), name, multiline? "\n": "");
 		char *p, *var = r_str_newf ("%s.%s", sdbkv_value (kv), name);
 		for (n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
 			char *var2 = r_str_newf ("%s.%s", var, p);
@@ -566,18 +568,18 @@ static void print_struct_union_in_c_format(Sdb *TDB, SdbForeachCallback filter, 
 					if (multiline) {
 						r_cons_printf ("  %s", val);
 						if (p && p[0] != '\0') {
-							r_cons_printf ("%s%s", strstr (val, " *")? "": " ", p);
+							r_strbuf_appendf (sb, "%s%s", strstr (val, " *")? "": " ", p);
 							if (arrnum) {
-								r_cons_printf ("[%d]", arrnum);
+								r_strbuf_appendf (sb, "[%d]", arrnum);
 							}
 						}
-						r_cons_println (";");
+						r_strbuf_append (sb, ";\n");
 					} else {
-						r_cons_printf ("%s%s %s", space, val, p);
+						r_strbuf_appendf (sb, "%s%s %s", space, val, p);
 						if (arrnum) {
-							r_cons_printf ("[%d]", arrnum);
+							r_strbuf_appendf (sb, "[%d]", arrnum);
 						}
-						r_cons_print (";");
+						r_strbuf_append (sb, ";\n");
 						space = " ";
 					}
 					free (val);
@@ -587,12 +589,15 @@ static void print_struct_union_in_c_format(Sdb *TDB, SdbForeachCallback filter, 
 			free (p);
 		}
 		free (var);
-		r_cons_println ("};");
+		r_strbuf_append (sb, "};\n");
 		space = "";
 		if (match) {
 			break;
 		}
 	}
+	char *s = r_strbuf_drain (sb);
+	r_kons_print (core->cons, s);
+	free (s);
 	free (name);
 	ls_free (l);
 }
@@ -1172,14 +1177,14 @@ static int cmd_type(void *data, const char *input) {
 				showFormat (core, r_str_trim_head_ro (input + 2), 'j');
 				r_cons_newline ();
 			} else {
-				print_struct_union_list_json (TDB, stdifunion);
+				print_struct_union_list_json (core, TDB, stdifunion);
 			}
 			break;
 		case 'c':
-			print_struct_union_in_c_format (TDB, stdifunion, r_str_trim_head_ro (input + 2), true);
+			print_struct_union_in_c_format (core, TDB, stdifunion, r_str_trim_head_ro (input + 2), true);
 			break;
 		case 'd':
-			print_struct_union_in_c_format (TDB, stdifunion, r_str_trim_head_ro (input + 2), false);
+			print_struct_union_in_c_format (core, TDB, stdifunion, r_str_trim_head_ro (input + 2), false);
 			break;
 		case ' ':
 			showFormat (core, r_str_trim_head_ro (input + 1), 0);
@@ -1296,10 +1301,10 @@ static int cmd_type(void *data, const char *input) {
 			print_keys (TDB, core, stdifstruct, printkey_cb, false);
 			break;
 		case 'c': // "tsc"
-			print_struct_union_in_c_format (TDB, stdifstruct, r_str_trim_head_ro (input + 2), true);
+			print_struct_union_in_c_format (core, TDB, stdifstruct, r_str_trim_head_ro (input + 2), true);
 			break;
 		case 'd': // "tsd"
-			print_struct_union_in_c_format (TDB, stdifstruct, r_str_trim_head_ro (input + 2), false);
+			print_struct_union_in_c_format (core, TDB, stdifstruct, r_str_trim_head_ro (input + 2), false);
 			break;
 		case 'j': // "tsj"
 			// TODO: current output is a bit poor, will be good to improve
@@ -1307,7 +1312,7 @@ static int cmd_type(void *data, const char *input) {
 				showFormat (core, r_str_trim_head_ro (input + 2), 'j');
 				r_cons_newline ();
 			} else {
-				print_struct_union_list_json (TDB, stdifstruct);
+				print_struct_union_list_json (core, TDB, stdifstruct);
 			}
 			break;
 		} // end of switch (input[1])
