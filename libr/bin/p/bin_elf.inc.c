@@ -455,14 +455,31 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 	ut64 B = eo->baddr;
 	ut64 P = rel->rva; // rva has taken baddr into account
 	RBinReloc *r = R_NEW0 (RBinReloc);
-	if (!r) {
-		return NULL;
-	}
 	r->import = NULL;
 	r->ntype = rel->type;
 	r->symbol = NULL;
 	r->is_ifunc = false;
 	r->addend = rel->addend;
+	// Special handling for CREL relocations
+	if (rel->mode == DT_CREL) {
+		// No special handling needed for symbol lookup, it works the same way
+		// Set appropriate relocation type based on architecture
+		if (eo->ehdr.e_machine == EM_X86_64 || eo->ehdr.e_machine == EM_AARCH64) {
+			r->type = R_BIN_RELOC_64;
+		} else if (eo->ehdr.e_machine == EM_386 || eo->ehdr.e_machine == EM_ARM) {
+			r->type = R_BIN_RELOC_32;
+		} else {
+			r->type = R_BIN_RELOC_64; // Default to 64-bit relocation type
+		}
+		r->additive = true;       // CREL relocations are typically additive
+		// Ensure valid vaddr and paddr
+		if (!r->vaddr) {
+			r->vaddr = rel->rva;
+		}
+		if (!r->paddr) {
+			r->paddr = rel->offset;
+		}
+	}
 	if (rel->sym) {
 		if (rel->sym < eo->imports_by_ord_size && eo->imports_by_ord[rel->sym]) {
 			r->import = eo->imports_by_ord[rel->sym];
@@ -482,7 +499,41 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 	}
 
 	#define SET(T) r->type = R_BIN_RELOC_ ## T; r->additive = 0; return r
-	#define ADD(T, A) r->type = R_BIN_RELOC_ ## T; if (!ST32_ADD_OVFCHK (r->addend, A)) { r->addend += A; } r->additive = rel->mode == DT_RELA; return r
+	#define ADD(T, A) r->type = R_BIN_RELOC_ ## T; if (!ST32_ADD_OVFCHK (r->addend, A)) { r->addend += A; } r->additive = rel->mode == DT_RELA || rel->mode == DT_CREL; return r
+
+	// Early return if it's a CREL relocation - it was already set up in the initialization above
+	if (rel->mode == DT_CREL) {
+		// If there's a symbol, use it to determine appropriate type
+		if (r->symbol || r->import) {
+			// Make sure the relocation has a valid vaddr and paddr before returning
+			if (!r->vaddr) {
+				r->vaddr = rel->rva;
+			}
+			if (!r->paddr) {
+				r->paddr = rel->offset;
+			}
+			return r;
+		}
+		// Default CREL handling based on machine type
+		switch (eo->ehdr.e_machine) {
+		case EM_X86_64:
+			ADD(64, 0);
+			break;
+		case EM_386:
+			ADD(32, 0);
+			break;
+		case EM_AARCH64:
+			ADD(64, 0);
+			break;
+		case EM_ARM:
+			ADD(32, 0);
+			break;
+		default:
+			// Default to 64-bit for other architectures
+			ADD(64, 0);
+			break;
+		}
+	}
 
 	switch (eo->ehdr.e_machine) {
 	case EM_S390:
@@ -782,7 +833,11 @@ static RList* relocs(RBinFile *bf) {
 					R_LOG_DEBUG ("Suspicious reloc patching at 0x%"PFMT64x" for 0x%08"PFMT64x" via 0x%"PFMT64x,
 						got_addr, reloc->rva, reloc->offset);
 				} else {
-					R_LOG_ERROR ("reloc conversion failed for 0x%"PFMT64x, got_addr);
+					if (reloc->rva) {
+						R_LOG_WARN ("reloc conversion failed for 0x%"PFMT64x, got_addr);
+					} else {
+						R_LOG_DEBUG ("wrong reloc conversion failed for 0x%"PFMT64x, got_addr);
+					}
 				}
 			}
 		}
