@@ -988,15 +988,13 @@ R_API void r_cons_highlight(const char *word) {
 	r_kons_highlight (I, word);
 }
 
-R_API char *r_cons_lastline(int *len) {
-	return r_kons_lastline (I, len);
-}
-
+#if 0
 // same as r_cons_lastline(), but len will be the number of
 // utf-8 characters excluding ansi escape sequences as opposed to just bytes
 R_API char *r_cons_lastline_utf8_ansi_len(int *len) {
-	return r_kons_lastline_utf8_ansi_len (I, len);
+	return r_cons_lastline_utf8_ansi_len (I, len);
 }
+#endif
 
 /* swap color from foreground to background, returned value must be freed */
 R_API char *r_cons_swap_ground(const char *col) {

@@ -5236,7 +5236,7 @@ static void ds_print_relocs(RDisasmState *ds) {
 #endif
 	if (rel) {
 		int cstrlen = 0;
-		char *ll = r_cons_lastline (&cstrlen);
+		char *ll = r_cons_lastline (cons, &cstrlen);
 		if (!ll) {
 			return;
 		}

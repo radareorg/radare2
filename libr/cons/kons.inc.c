@@ -583,7 +583,7 @@ R_API void r_kons_highlight(RCons *cons, const char *word) {
 	}
 }
 
-R_API char *r_kons_lastline(RCons *cons, int *len) {
+R_API char *r_cons_lastline(RCons *cons, int *len) {
 	RConsContext *c = cons->context;
 	char *start = c->buffer;
 	char *b = start + c->buffer_len;
@@ -600,12 +600,13 @@ R_API char *r_kons_lastline(RCons *cons, int *len) {
 	}
 	return b;
 }
+#if 0
 // same as r_cons_lastline(), but len will be the number of
 // utf-8 characters excluding ansi escape sequences as opposed to just bytes
-R_API char *r_kons_lastline_utf8_ansi_len(RCons *cons, int *len) {
+R_API char *r_cons_lastline_utf8_ansi_len(RCons *cons, int *len) {
 	RConsContext *c = cons->context;
 	if (!len) {
-		return r_kons_lastline (cons, 0);
+		return r_cons_lastline (cons, 0);
 	}
 
 	char *start = c->buffer;
@@ -642,3 +643,4 @@ R_API char *r_kons_lastline_utf8_ansi_len(RCons *cons, int *len) {
 	*len = l;
 	return b;
 }
+#endif
