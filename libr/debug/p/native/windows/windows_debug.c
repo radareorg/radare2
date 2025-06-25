@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2019-2025 - MapleLeaf-X */
 
 #include <ntstatus.h>
+#include <r_core.h>
 #include "windows_debug.h"
 
 // XXX remove globals
