@@ -336,9 +336,9 @@ static int cmd_log(void *data, const char *input) {
 				r_cons_break_push (NULL, NULL);
 				while (!r_cons_is_breaked (core->cons)) {
 					r_core_cmd_call (core, "T=");
-					void *bed = r_cons_sleep_begin();
+					void *bed = r_cons_sleep_begin (core->cons);
 					r_sys_sleep (1);
-					r_cons_sleep_end (bed);
+					r_cons_sleep_end (core->cons, bed);
 				}
 				r_cons_break_pop ();
 			} else {

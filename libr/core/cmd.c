@@ -980,7 +980,7 @@ repeat:
 		if (!buf) {
 			return;
 		}
-		void *bed = r_cons_sleep_begin ();
+		void *bed = r_cons_sleep_begin (core->cons);
 		r_cons_break_push (NULL, NULL);
 		for (;;) {
 			if (r_cons_is_breaked (core->cons)) {
@@ -1004,8 +1004,8 @@ repeat:
 			r_socket_flush (s);
 			free (res);
 		}
-		r_cons_break_pop ();
-		r_cons_sleep_end (bed);
+		r_kons_break_pop (core->cons);
+		r_cons_sleep_end (core->cons, bed);
 		free (buf);
 	} else {
 		if (retry) {
@@ -3523,11 +3523,11 @@ static int cmd_system(void *data, const char *input) {
 				char *out = NULL;
 				char *cmd = r_core_sysenv_begin (core, input);
 				if (cmd) {
-				//	void *bed = r_kons_sleep_begin (core->cons);
+				//	void *bed = r_cons_sleep_begin (core->cons);
 					ret = r_sys_cmd_str_full (cmd + 1, NULL, 0, &out, &olen, NULL);
-				//	r_kons_sleep_end (core->cons, bed);
+				//	r_cons_sleep_end (core->cons, bed);
 					r_core_sysenv_end (core, input);
-core->cons->context->noflush = false;
+					core->cons->context->noflush = false;
 					free (cmd);
 				}
 				r_kons_pop (core->cons);
@@ -3567,12 +3567,12 @@ core->cons->context->noflush = false;
 		} else {
 			char *cmd = r_core_sysenv_begin (core, input);
 			if (cmd) {
-				void *bed = r_cons_sleep_begin ();
+				void *bed = r_cons_sleep_begin (core->cons);
 				ret = r_sys_cmd (cmd);
 				if (ret != 0) {
 					core->cons->context->was_breaked = true;
 				}
-				r_cons_sleep_end (bed);
+				r_cons_sleep_end (core->cons, bed);
 				r_core_sysenv_end (core, input);
 				free (cmd);
 			} else {

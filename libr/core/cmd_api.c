@@ -824,7 +824,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 	}
 
 	int Gvalue = 0;
-	r_cons_break_push (NULL, NULL);
+	r_kons_break_push (core->cons, NULL, NULL);
 	r_list_foreach (mac->macros, iter, m) {
 		if (!strcmp (str, m->name)) {
 			char *ptr = m->code;
@@ -900,7 +900,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 	mac->macro_level--;
 	free (str);
 out_clean:
-	r_cons_break_pop ();
+	r_kons_break_pop (core->cons);
 	return true;
 }
 

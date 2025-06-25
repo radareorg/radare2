@@ -909,7 +909,7 @@ static int cmd_seek(void *data, const char *input) {
 				const char *arg = strchr (input, ' ');
 				if (arg) {
 					arg++;
-					void *bed = r_cons_sleep_begin ();
+					void *bed = r_cons_sleep_begin (core->cons);
 					if (strchr (arg, '.')) {
 						double d = 0;
 						sscanf (arg, "%lf", &d);
@@ -917,7 +917,7 @@ static int cmd_seek(void *data, const char *input) {
 					} else {
 						r_sys_sleep (atoi (arg));
 					}
-					r_cons_sleep_end (bed);
+					r_cons_sleep_end (core->cons, bed);
 				} else {
 					r_core_cmd_help_match (core, help_msg_sl, "sleep");
 				}

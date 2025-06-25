@@ -189,7 +189,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 
 	core->block = newblk;
 // TODO: handle mutex lock/unlock here
-	r_cons_break_push ((RConsBreak)r_core_rtr_http_stop, core);
+	r_kons_break_push (core->cons, (RConsBreak)r_core_rtr_http_stop, core);
 	while (!r_cons_is_breaked (core->cons) && core->http_up) {
 		/* restore environment */
 		core->config = origcfg;
@@ -211,17 +211,17 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		/* this is blocking */
 		activateDieTime (core);
 
-		void *bed = r_cons_sleep_begin ();
+		void *bed = r_cons_sleep_begin (core->cons);
 		rs = r_socket_http_accept (s, &so);
 		if (!core->http_up) {
 			eprintf ("^C\n");
 			break;
 		}
-		r_cons_sleep_end (bed);
+		r_cons_sleep_end (core->cons, bed);
 		if (!rs) {
-			bed = r_cons_sleep_begin ();
+			bed = r_cons_sleep_begin (core->cons);
 			r_sys_usleep (100);
-			r_cons_sleep_end (bed);
+			r_cons_sleep_end (core->cons, bed);
 			continue;
 		}
 
@@ -383,9 +383,9 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 						if (httpcmd && *httpcmd) {
 							int len; // do remote http query and proxy response
 							char *res, *bar = r_str_newf ("%s/%s", httpcmd, cmd);
-							bed = r_cons_sleep_begin ();
+							bed = r_cons_sleep_begin (core->cons);
 							res = r_socket_http_get (bar, NULL, NULL, &len);
-							r_cons_sleep_end (bed);
+							r_cons_sleep_end (core->cons, bed);
 							if (res) {
 								res[len] = 0;
 								r_cons_println (core->cons, res);
@@ -558,7 +558,7 @@ the_end:
 		r_config_set (core->config, "http.allow", allow);
 		r_config_set (core->config, "http.ui", httpui);
 	}
-	r_cons_break_pop ();
+	r_kons_break_pop (core->cons);
 	core->http_up = false;
 	free (pfile);
 	r_socket_free (s);

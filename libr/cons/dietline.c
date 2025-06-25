@@ -476,10 +476,10 @@ static int r_line_readchar_win(RCons *cons, ut8 *s, int slen) {
 	GetConsoleMode (h, &mode);
 	SetConsoleMode (h, new_mode);
 	if (cons->line->zerosep) {
-		bed = r_kons_sleep_begin (cons);
+		bed = r_cons_sleep_begin (cons);
 		DWORD rsz = 0;
 		BOOL ret = ReadFile (h, s, 1, &rsz, NULL);
-		r_kons_sleep_end (cons, bed);
+		r_cons_sleep_end (cons, bed);
 		SetConsoleMode (h, mode);
 		if (!ret || rsz != 1) {
 			return 0;
@@ -487,13 +487,13 @@ static int r_line_readchar_win(RCons *cons, ut8 *s, int slen) {
 		return 1;
 	}
 do_it_again:
-	bed = r_kons_sleep_begin (cons);
+	bed = r_cons_sleep_begin (cons);
 	if (cons->term_xterm) {
 		ret = ReadFile (h, buf, 1, &out, NULL);
 	} else {
 		ret = ReadConsoleInput (h, &irInBuf, 1, &out);
 	}
-	r_kons_sleep_end (cons, bed);
+	r_cons_sleep_end (cons, bed);
 	if (ret < 1) {
 		return 0;
 	}

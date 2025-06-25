@@ -100,10 +100,7 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 		return NULL;
 	}
 	RList *sten = r_list_newf ((RListFree)free);
-	if (!sten) {
-		goto list_err;
-	}
-	r_cons_break_push (NULL, NULL);
+	r_kons_break_push (cons, NULL, NULL);
 	/* analyze code block */
 	while (ptr < end && !r_cons_is_breaked (cons)) {
 		if (nlines != -1) {
@@ -225,12 +222,9 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 		ptr += sz;
 	}
 	r_anal_op_fini (&op);
-	r_cons_break_pop ();
+	r_kons_break_pop (cons);
 
 	free_levels = R_NEWS0 (ut8, r_list_length (list) + 1);
-	if (!free_levels) {
-		goto sten_err;
-	}
 	int min = 0;
 
 	r_list_foreach (sten, iter, el) {

@@ -184,9 +184,9 @@ static bool lang_pipe_run(RLangSession *s, const char *code, int len) {
 				break;
 			}
 			memset (buf, 0, sizeof (buf));
-			void *bed = r_kons_sleep_begin (cons);
+			void *bed = r_cons_sleep_begin (cons);
 			ret = read (output[0], buf, sizeof (buf) - 1);
-			r_kons_sleep_end (cons, bed);
+			r_cons_sleep_end (cons, bed);
 			if (ret < 1) {
 				break;
 			}

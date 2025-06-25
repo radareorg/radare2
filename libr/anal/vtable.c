@@ -237,7 +237,7 @@ R_API RList *r_anal_vtable_search(RVTableContext *context) {
 		return NULL;
 	}
 
-	r_cons_break_push (NULL, NULL);
+	r_kons_break_push (cons, NULL, NULL);
 
 	RListIter *iter;
 	RBinSection *section;
@@ -279,7 +279,7 @@ R_API RList *r_anal_vtable_search(RVTableContext *context) {
 		}
 	}
 
-	r_cons_break_pop ();
+	r_kons_break_pop (cons);
 
 	if (r_list_empty (vtables)) {
 		// stripped binary?

@@ -88,7 +88,9 @@ R_API void r_anal_rtti_recover_all(RAnal *anal) {
 	RVTableContext context;
 	r_anal_vtable_begin (anal, &context);
 
-	r_cons_break_push (NULL, NULL);
+	RCore *core = anal->coreb.core;
+	RCons *cons = core->cons;
+	r_kons_break_push (cons, NULL, NULL);
 	RList *vtables = r_anal_vtable_search (&context);
 	if (vtables) {
 		if (context.abi == R_ANAL_CPP_ABI_MSVC) {
@@ -98,5 +100,5 @@ R_API void r_anal_rtti_recover_all(RAnal *anal) {
 		}
 	}
 	r_list_free (vtables);
-	r_cons_break_pop ();
+	r_kons_break_pop (cons);
 }

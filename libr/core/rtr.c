@@ -1018,9 +1018,9 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 	}
 	// "=:"
 	if (*input == ':' && !strchr (input + 1, ':')) {
-		void *bed = r_cons_sleep_begin ();
+		void *bed = r_cons_sleep_begin (core->cons);
 		r_core_rtr_rap_run (core, input);
-		r_cons_sleep_end (bed);
+		r_cons_sleep_end (core->cons, bed);
 		return;
 	}
 
@@ -1235,9 +1235,9 @@ static void rtr_cmds_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *bu
 	}
 	*end = '\0';
 
-	r_cons_sleep_end (context->bed);
+	r_cons_sleep_end (core->cons, context->bed);
 	client_context->res = r_core_cmd_str (client_context->core, (const char *)client_context->buf);
-	context->bed = r_cons_sleep_begin ();
+	context->bed = r_cons_sleep_begin (core->cons);
 
 	if (!client_context->res || !*client_context->res) {
 		free (client_context->res);
@@ -1321,9 +1321,6 @@ R_API int r_core_rtr_cmds(RCore *core, const char *port) {
 	}
 
 	uv_loop_t *loop = R_NEW (uv_loop_t);
-	if (!loop) {
-		return 0;
-	}
 	uv_loop_init (loop);
 
 	rtr_cmds_context context;
@@ -1348,11 +1345,11 @@ R_API int r_core_rtr_cmds(RCore *core, const char *port) {
 	uv_async_t stop_async;
 	uv_async_init (loop, &stop_async, rtr_cmds_stop);
 
-	r_cons_break_push ((RConsBreak) rtr_cmds_break, &stop_async);
-	context.bed = r_cons_sleep_begin ();
+	r_kons_break_push (core->cons, (RConsBreak) rtr_cmds_break, &stop_async);
+	context.bed = r_cons_sleep_begin (core->cons);
 	uv_run (loop, UV_RUN_DEFAULT);
-	r_cons_sleep_end (context.bed);
-	r_cons_break_pop ();
+	r_cons_sleep_end (core->cons, context.bed);
+	r_kons_break_pop (core->cons);
 
 beach:
 	uv_loop_close (loop);
@@ -1390,11 +1387,11 @@ R_API int r_core_rtr_cmds(RCore *core, const char *port) {
 		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
-		void *bed = r_cons_sleep_begin ();
+		void *bed = r_cons_sleep_begin (core->cons);
 		ch = r_socket_accept (s);
 		buf[0] = 0;
 		ret = r_socket_read (ch, buf, sizeof (buf) - 1);
-		r_cons_sleep_end (bed);
+		r_cons_sleep_end (core->cons, bed);
 		if (ret > 0) {
 			buf[ret] = 0;
 			for (i = 0; buf[i]; i++) {
@@ -1407,13 +1404,13 @@ R_API int r_core_rtr_cmds(RCore *core, const char *port) {
 				break;
 			}
 			str = r_core_cmd_str (core, (const char *)buf);
-			bed = r_cons_sleep_begin ();
+			bed = r_cons_sleep_begin (core->cons);
 			if (str && *str)  {
 				r_socket_write (ch, str, strlen (str));
 			} else {
 				r_socket_write (ch, "\n", 1);
 			}
-			r_cons_sleep_end (bed);
+			r_cons_sleep_end (core->cons, bed);
 			free (str);
 		}
 		r_socket_close (ch);

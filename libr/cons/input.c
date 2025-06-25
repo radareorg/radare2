@@ -439,23 +439,23 @@ static int readchar_w32(RCons *cons, ut32 usec) {
 	newmode |= mode;
 	SetConsoleMode (h, newmode);
 	do {
-		bed = r_cons_sleep_begin ();
+		bed = r_cons_sleep_begin (cons);
 		if (usec) {
 			if (WaitForSingleObject (h, usec) == WAIT_TIMEOUT) {
-				r_cons_sleep_end (bed);
+				r_cons_sleep_end (cons, bed);
 				return -1;
 			}
 		}
 		if (I->term_xterm) {
 			ret = ReadFile (h, &ch, 1, &out, NULL);
 			if (ret) {
-				r_cons_sleep_end (bed);
+				r_cons_sleep_end (cons, bed);
 				return ch;
 			}
 		} else {
 			ret = ReadConsoleInput (h, &irInBuf, 1, &out);
 		}
-		r_cons_sleep_end (bed);
+		r_cons_sleep_end (cons, bed);
 		if (ret) {
 			if (irInBuf.EventType == MENU_EVENT || irInBuf.EventType == FOCUS_EVENT) {
 				continue;
@@ -633,9 +633,9 @@ R_API int r_cons_readchar(RCons *cons) {
 #if R2__WINDOWS__
 	return readchar_w32 (cons, 0);
 #elif __wasi__
-	void *bed = r_kons_sleep_begin (cons);
+	void *bed = r_cons_sleep_begin (cons);
 	int ret = read (STDIN_FILENO, buf, 1);
-	r_kons_sleep_end (cons, bed);
+	r_cons_sleep_end (cons, bed);
 	if (ret < 1) {
 	///	eprintf ("read minus wan\n");
 		return -1;
@@ -643,7 +643,7 @@ R_API int r_cons_readchar(RCons *cons) {
 	// eprintf ("READ %d = %d\n", ret, buf[0]);
 	return buf[0];
 #else
-	void *bed = r_cons_sleep_begin ();
+	void *bed = r_cons_sleep_begin (cons);
 
 	// Blocks until either stdin has something to read or a signal happens.
 	// This serves to check if the terminal window was resized. It avoids the race
@@ -670,7 +670,7 @@ R_API int r_cons_readchar(RCons *cons) {
 	}
 
 	ssize_t ret = read (STDIN_FILENO, buf, 1);
-	r_cons_sleep_end (bed);
+	r_cons_sleep_end (cons, bed);
 	if (ret != 1) {
 		return -1;
 	}

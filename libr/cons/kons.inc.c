@@ -803,7 +803,7 @@ R_API void r_cons_trim(RCons *cons) {
 	}
 }
 
-R_API void *r_kons_sleep_begin(RCons *cons) {
+R_API void *r_cons_sleep_begin(RCons *cons) {
 	R_CRITICAL_ENTER (cons);
 	if (cons->cb_sleep_begin) {
 		return cons->cb_sleep_begin (cons->user);
@@ -811,7 +811,7 @@ R_API void *r_kons_sleep_begin(RCons *cons) {
 	return NULL;
 }
 
-R_API void r_kons_sleep_end(RCons *cons, void *user) {
+R_API void r_cons_sleep_end(RCons *cons, void *user) {
 	if (cons->cb_sleep_end) {
 		cons->cb_sleep_end (cons->user, user);
 	}

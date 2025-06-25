@@ -15,6 +15,7 @@
 
 #include <r_asm.h>
 #include <r_debug.h>
+#include <r_core.h>
 #include <winkd.h>
 #include <kd.h>
 
@@ -71,15 +72,16 @@ static RDebugReasonType r_debug_winkd_wait(RDebug *dbg, int pid) {
 	if (!pd) {
 		return 0;
 	}
+	RCore *core = dbg->coreb.core;
 
 	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
 	kd_packet_t *pkt = NULL;
 	kd_stc_64 *stc;
 	winkd_lock_enter (pd->wctx);
 	for (;;) {
-		void *bed = r_cons_sleep_begin ();
+		void *bed = r_cons_sleep_begin (core->cons);
 		int ret = winkd_wait_packet (pd->wctx, KD_PACKET_TYPE_STATE_CHANGE64, &pkt);
-		r_cons_sleep_end (bed);
+		r_cons_sleep_end (core->cons, bed);
 		if (ret != KD_E_OK || !pkt) {
 			reason = R_DEBUG_REASON_ERROR;
 			break;

@@ -262,14 +262,6 @@ R_API void r_cons_context_break_pop(RCons *cons, RConsContext *context, bool sig
 #endif
 }
 
-R_API void r_cons_break_push(RConsBreak cb, void *user) {
-	r_kons_break_push (I, cb, user);
-}
-
-R_API void r_cons_break_pop(void) {
-	r_kons_break_pop (I);
-}
-
 R_API bool r_cons_is_interactive(RCons *cons) {
 	return cons->context->is_interactive;
 }
@@ -414,14 +406,6 @@ R_API void r_kons_break_timeout(RCons *cons, int timeout) {
 	I->timeout = (timeout && !I->timeout)
 		? r_time_now_mono () + ((ut64) timeout << 20) : 0;
 #endif
-}
-
-R_API void *r_cons_sleep_begin(void) {
-	return r_kons_sleep_begin (I);
-}
-
-R_API void r_cons_sleep_end(void *user) {
-	r_kons_sleep_end (I, user);
 }
 
 R_API void r_cons_set_click(RCons * R_NONNULL cons, int x, int y) {
@@ -774,7 +758,7 @@ R_API void r_cons_flush(RCons *cons) {
 			char *nl = strchr (ptr, '\n');
 			int len = ctx->buffer_len;
 			ctx->buffer[ctx->buffer_len] = 0;
-			r_cons_break_push (NULL, NULL);
+			r_kons_break_push (cons, NULL, NULL);
 			while (nl && !r_cons_is_breaked (cons)) {
 				__cons_write (cons, ptr, nl - ptr + 1);
 				if (cons->linesleep && !(i % pagesize)) {
@@ -785,7 +769,7 @@ R_API void r_cons_flush(RCons *cons) {
 				i++;
 			}
 			__cons_write (cons, ptr, ctx->buffer + len - ptr);
-			r_cons_break_pop ();
+			r_kons_break_pop (cons);
 		} else {
 			__cons_write (cons, ctx->buffer, ctx->buffer_len);
 		}

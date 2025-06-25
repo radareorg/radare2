@@ -793,13 +793,14 @@ static void print_exception_event(DEBUG_EVENT *de) {
 
 RDebugReasonType w32_dbg_wait(RDebug *dbg, int pid) {
 	RW32Dw *wrap = dbg->user;
+	RCore *core = dbg->coreb.core;
 	DEBUG_EVENT de;
 	int tid, next_event = 0;
 	char *dllname = NULL;
 	RDebugReasonType ret = R_DEBUG_REASON_UNKNOWN;
 	static int exited_already = 0;
 
-	r_cons_break_push (w32_break_process, dbg);
+	r_kons_break_push (core->cons, w32_break_process, dbg);
 
 	/* handle debug events */
 	do {
@@ -812,9 +813,9 @@ RDebugReasonType w32_dbg_wait(RDebug *dbg, int pid) {
 			wrap->params.type = W32_WAIT;
 			wrap->params.wait.de = &de;
 			wrap->params.wait.wait_time = wait_time;
-			void *bed = r_cons_sleep_begin ();
+			void *bed = r_cons_sleep_begin (core->cons);
 			r_w32dw_waitret (wrap);
-			r_cons_sleep_end (bed);
+			r_cons_sleep_end (core->cons, bed);
 			if (!r_w32dw_ret (wrap)) {
 				if (r_w32dw_err (wrap) != ERROR_SEM_TIMEOUT) {
 					r_sys_perror ("w32_dbg_wait/WaitForDebugEvent");

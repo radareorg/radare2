@@ -90,7 +90,7 @@ R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int 
 		fclose (fd);
 		return false;
 	}
-	r_cons_break_push (NULL, NULL);
+	r_kons_break_push (core->cons, NULL, NULL);
 	for (i = 0; i < size; i += bs) {
 		if (r_cons_is_breaked (core->cons)) {
 			break;
@@ -104,7 +104,7 @@ R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int 
 			break;
 		}
 	}
-	r_cons_break_pop ();
+	r_kons_break_pop (core->cons);
 	fclose (fd);
 	free (buf);
 	return true;
