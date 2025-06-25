@@ -1248,27 +1248,6 @@ R_API void r_kons_trim(RCons *cons) {
 	}
 }
 
-R_API void r_kons_breakword(RCons *cons, const char * R_NULLABLE s) {
-	free (cons->break_word);
-	if (s) {
-		cons->break_word = strdup (s);
-		cons->break_word_len = strlen (s);
-	} else {
-		cons->break_word = NULL;
-		cons->break_word_len = 0;
-	}
-}
-
-#if 0
-R_API void r_cons_clear_buffer(RCons *cons) {
-	if (cons->vtmode) {
-		if (write (1, "\x1b" "c\x1b[3J", 6) != 6) {
-			cons->context->breaked = true;
-		}
-	}
-}
-#endif
-
 R_API bool r_kons_is_breaked(RCons *cons) {
 #if WANT_DEBUGSTUFF
 	RConsContext *C = cons->context;

@@ -2465,7 +2465,7 @@ static bool cb_scrbreakword(void* user, void* data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	const char *arg = (*node->value)? node->value: NULL;
-	r_kons_breakword (core->cons, arg);
+	r_cons_breakword (core->cons, arg);
 	return true;
 }
 

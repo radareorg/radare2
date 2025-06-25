@@ -1095,3 +1095,23 @@ R_API RConsMark *r_cons_mark_at(RCons *cons, ut64 addr, const char *name) {
 	return NULL;
 }
 
+R_API void r_cons_breakword(RCons *cons, const char * R_NULLABLE s) {
+	free (cons->break_word);
+	if (s) {
+		cons->break_word = strdup (s);
+		cons->break_word_len = strlen (s);
+	} else {
+		cons->break_word = NULL;
+		cons->break_word_len = 0;
+	}
+}
+
+R_API void r_cons_clear_buffer(RCons *cons) {
+	if (cons->vtmode) {
+		// not implemented or ignored by most terminals out there...
+		if (write (1, "\x1b" "c\x1b[3J", 6) != 6) {
+			cons->context->breaked = true;
+		}
+	}
+}
+

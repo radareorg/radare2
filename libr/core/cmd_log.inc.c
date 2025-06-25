@@ -80,7 +80,7 @@ static void screenlock(RCore *core) {
 		return;
 	}
 	bool running = true;
-	// r_cons_clear_buffer (core->cons);
+	r_cons_clear_buffer (core->cons); // clear terminal backlog
 	ut64 begin = r_time_now ();
 	ut64 last = UT64_MAX;
 	int tries = 0;
