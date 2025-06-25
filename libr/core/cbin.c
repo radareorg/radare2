@@ -1071,7 +1071,7 @@ static bool bin_info(RCore *core, PJ *pj, int mode, ut64 laddr) {
 				for (j = 0; j < h->len; j++) {
 					r_kons_printf (core->cons, "%02x", h->buf[j]);
 				}
-				r_kons_newline (core->cons);
+				r_cons_newline (core->cons);
 			}
 		}
 		if (IS_MODE_JSON (mode)) {
@@ -2295,7 +2295,7 @@ static bool bin_imports(RCore *core, PJ *pj, int mode, int va, const char *name)
 				r_kons_printf (core->cons, " descriptor=%s", import->descriptor);
 			}
 			if (!IS_MODE_NORMAL (mode)) {
-				r_kons_newline (core->cons);
+				r_cons_newline (core->cons);
 			}
 		}
 		R_FREE (symname);
@@ -3069,7 +3069,7 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 	}
 	char *hashtypes = filter_hash_string (chksum);
 	if (IS_MODE_EQUAL (mode)) {
-		int cols = r_kons_get_size (core->cons, NULL);
+		int cols = r_cons_get_size (core->cons, NULL);
 		RList *list = r_list_newf ((RListFree) r_listinfo_free);
 		if (!list) {
 			free (hashtypes);
@@ -3515,7 +3515,7 @@ static bool bin_fields(RCore *core, PJ *pj, int mode, int va) {
 				field->vaddr, field->paddr, v, r_bin_name_tostring2 (field->name, pref),
 				haveComment? "; ": "",
 				haveComment? cmt: "");
-			r_kons_newline (core->cons);
+			r_cons_newline (core->cons);
 		} else if (IS_MODE_SET (mode)) {
 			// nothing
 		} else {
@@ -4203,7 +4203,7 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 			r_kons_printf (core->cons, "0x%08"PFMT64x" [0x%08"PFMT64x" - 0x%08"PFMT64x"] %6"PFMT64d" %s class %d %s",
 				c->addr, at_min, at_max, (at_max - at_min), cl, c->index, cname);
 			if (r_list_empty (c->super)) {
-				r_kons_newline (core->cons);
+				r_cons_newline (core->cons);
 			} else {
 				char *csv = csv_supers (c->super);
 				if (r_str_startswith (csv, "_T")) {
@@ -4423,7 +4423,7 @@ static void bin_pe_versioninfo(RCore *core, PJ *pj, int mode) {
 			r_kons_printf (core->cons, "  FileOS: 0x%"PFMT64x"\n", sdb_num_get (sdb, "FileOS", 0));
 			r_kons_printf (core->cons, "  FileType: 0x%"PFMT64x"\n", sdb_num_get (sdb, "FileType", 0));
 			r_kons_printf (core->cons, "  FileSubType: 0x%"PFMT64x"\n", sdb_num_get (sdb, "FileSubType", 0));
-			r_kons_newline (core->cons);
+			r_cons_newline (core->cons);
 		}
 		free (file_version);
 		free (product_version);

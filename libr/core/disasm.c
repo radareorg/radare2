@@ -596,7 +596,7 @@ static void ds_comment_(RDisasmState *ds, bool align, bool donl, const char *for
 			break;
 		}
 		if (!ds->show_cmt_right) {
-			r_kons_newline (cons);
+			r_cons_newline (cons);
 		}
 		first = false;
 		p = nl + 1;
@@ -635,7 +635,7 @@ static void ds_comment_esil(RDisasmState *ds, bool up, bool end, const char *for
 	if (ds->show_comments && up) {
 		ds->show_cmt_right ? ds_align_comment (ds) : ds_comment_lineup (ds);
 	}
-	r_kons_printf_list (cons, format, ap);
+	r_cons_printf_list (cons, format, ap);
 	va_end (ap);
 
 	if (end && ds->show_comments && !ds->show_cmt_right) {
@@ -1434,7 +1434,7 @@ static void ds_newline(RDisasmState *ds) {
 		r_kons_reset (cons);
 		pj_end (ds->pj);
 	} else {
-		r_kons_newline (cons);
+		r_cons_newline (cons);
 	}
 }
 
@@ -1467,7 +1467,7 @@ static void ds_print_pins(RDisasmState *ds) {
 		if (r_str_startswith (lepin, "soft.")) {
 			const char *cmd = r_anal_pin_get (core->anal, lepin);
 			if (cmd) {
-				r_kons_newline (ds->core->cons);
+				r_cons_newline (ds->core->cons);
 				r_core_cmd0 (core, cmd);
 			}
 		}
@@ -1568,7 +1568,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 		return;
 	}
 	if (RVecAnalRef_length (xrefs) > ds->foldxrefs) {
-		int cols = r_kons_get_size (ds->core->cons, NULL);
+		int cols = r_cons_get_size (ds->core->cons, NULL);
 		cols -= 15;
 		cols /= 23;
 		cols = cols > 5 ? 5 : cols;
@@ -4651,7 +4651,7 @@ static void ds_align_comment(RDisasmState *ds) {
 	if (cells < cmtcol) {
 		int len = cmtcol - cells;
 		if (len < cols && len > 0) {
-			r_kons_memset (cons, ' ', len);
+			r_cons_memset (cons, ' ', len);
 		}
 	}
 	r_kons_print (cons, " ");
@@ -5244,7 +5244,7 @@ static void ds_print_relocs(RDisasmState *ds) {
 		int utf8len = r_utf8_strlen ((const ut8*)ll);
 		int cells = utf8len - (cstrlen - ansilen);
 		int len = ds->cmtcol - cells;
-		r_kons_memset (cons, ' ', len);
+		r_cons_memset (cons, ' ', len);
 		int pref = demangle? 'd': 0;
 		// if (demangle) { demname = r_bin_demangle (core->bin->cur, lang, rel->import->name, rel->vaddr, keep_lib); }
 		// demname = r_bin_demangle (core->bin->cur, lang, rel->symbol->name, rel->symbol->vaddr, keep_lib);
@@ -7996,7 +7996,7 @@ toro:
 							r_kons_printf (core->cons, "hex length=%d delta=%d\n", size, delta);
 							r_print_hexdump (core->print, at, buf + i, hexlen - delta, 16, 1, 1);
 						} else {
-							r_kons_newline (core->cons);
+							r_cons_newline (core->cons);
 						}
 						free (b);
 					}
@@ -8071,7 +8071,7 @@ toro:
 			asmop.size = ret;
 			ret = asmop.size;
 			if (!asm_instr) {
-				r_kons_newline (core->cons);
+				r_cons_newline (core->cons);
 			} else if (!asm_immtrim && (decode || esil)) {
 				RAnalOp analop = {
 					0

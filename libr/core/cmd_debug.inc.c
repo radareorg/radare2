@@ -2172,7 +2172,7 @@ R_API void r_core_debug_ri(RCore *core, RReg *reg, int mode) {
 			if (R_STR_ISNOTEMPTY (rrstr) && strchr (rrstr, 'R')) {
 				r_kons_printf (core->cons, "    ;%s"Color_RESET, rrstr);
 			}
-			r_kons_newline (core->cons);
+			r_cons_newline (core->cons);
 		}
 	}
 	r_list_free (sorted);
@@ -2299,7 +2299,7 @@ static void cmd_drpi(RCore *core) {
 			if ((ri->offset / 8) + (ri->size / 8) > rs->arena->size) {
 				r_kons_printf (core->cons, " *OVERFLOW*");
 			}
-			r_kons_newline (core->cons);
+			r_cons_newline (core->cons);
 		}
 	}
 }
@@ -2519,7 +2519,7 @@ static void cmd_debug_reg_print_packed_reg(RCore *core, RRegItem *item, char exp
 					pack_print (i, res, pi);
 				}
 			}
-			r_kons_newline (core->cons);
+			r_cons_newline (core->cons);
 		}
 	}
 }
@@ -2825,7 +2825,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 									r_reg_cond_tostring (i),
 									r_reg_cond_bits (core->dbg->reg, i, rf));
 						}
-						r_kons_newline (core->cons);
+						r_cons_newline (core->cons);
 					} else {
 						for (i = 0; i < R_REG_COND_LAST; i++) {
 							r_cons_printf ("%d %s\n",
@@ -3875,7 +3875,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				}
 				i++;
 			}
-			r_kons_newline (core->cons);
+			r_cons_newline (core->cons);
 			r_list_free (list);
 			break;
 		case '*': // dbt*

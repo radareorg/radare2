@@ -2153,7 +2153,7 @@ static void r_core_setenv(RCore *core) {
 }
 
 static int mywrite(const ut8 *buf, int len) {
-	return r_kons_write (r_cons_singleton (), (const char *)buf, len);
+	return r_cons_write (r_cons_singleton (), (const char *)buf, len);
 }
 
 static bool exists_var(RPrint *print, ut64 func_addr, char *str) {
@@ -2949,7 +2949,7 @@ static void chop_prompt(RCore *core, const char *filename, char *tmp, size_t max
 	unsigned int OTHRSCH = 3;
 	const char DOTS[] = "...";
 
-	int w = r_kons_get_size (core->cons, NULL);
+	int w = r_cons_get_size (core->cons, NULL);
 	size_t file_len = strlen (filename);
 	size_t tmp_len = strlen (tmp);
 	int p_len = R_MAX (0, w - 6);

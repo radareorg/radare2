@@ -2491,7 +2491,7 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	core->keep_asmqjmps = false;
 	const bool breakable = r_list_length (fcn->bbs) > 1024;
 	if (breakable) {
-		r_kons_set_raw (core->cons, false);
+		r_cons_set_raw (core->cons, false);
 		r_kons_break_push (core->cons, NULL, NULL);
 	}
 	r_list_foreach (fcn->bbs, iter, bb) {
@@ -2554,7 +2554,7 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 interrupted:
 	if (breakable) {
 		r_kons_break_end (core->cons);
-		r_kons_set_raw (core->cons, true);
+		r_cons_set_raw (core->cons, true);
 	}
 
 	delete_dup_edges (g);
@@ -3410,7 +3410,7 @@ static void agraph_follow_innodes(RCore *core, RAGraph *g, bool in) {
 		nth = 0;
 	} else if (r_list_length (list) < 10) {
 		// just 1 key
-		r_kons_set_raw (cons, true);
+		r_cons_set_raw (cons, true);
 		char ch = r_cons_readchar (cons);
 		if (ch >= '0' && ch <= '9') {
 			nth =  ch - '0';
@@ -3551,7 +3551,7 @@ static bool check_changes(RAGraph *g, bool is_interactive, RCore *core, RAnalFun
 }
 
 static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, RAnalFunction *fcn) {
-	int h, w = r_kons_get_size (core->cons, &h);
+	int h, w = r_cons_get_size (core->cons, &h);
 	bool ret = check_changes (g, is_interactive, core, fcn);
 	if (!ret) {
 		return false;
@@ -3625,7 +3625,7 @@ static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, RAnalFunct
 	g->can->flags = r_cons_canvas_flags (core->cons);
 
 	if (is_interactive) {
-		r_kons_newline (core->cons);
+		r_cons_newline (core->cons);
 		const char *cmdv = r_config_get (core->config, "cmd.gprompt");
 		bool mustFlush = false;
 		r_cons_visual_flush (core->cons);
@@ -3645,7 +3645,7 @@ static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, RAnalFunct
 			r_kons_flush (core->cons);
 		}
 		if (r_config_get_b (core->config, "graph.mini")) { // minigraph
-			int h, w = r_kons_get_size (core->cons, &h);
+			int h, w = r_cons_get_size (core->cons, &h);
 			r_kons_push (core->cons);
 			g->can->h *= 4;
 			RConsCanvas *ocan = g->can;
@@ -3847,7 +3847,7 @@ R_API void r_agraph_print(RAGraph *g, void *_core) {
 	g->can->flags = 0;
 	agraph_print (core, g, false, NULL);
 	if (g->graph->n_nodes > 0) {
-		r_kons_newline (core->cons);
+		r_cons_newline (core->cons);
 	}
 }
 
@@ -4092,7 +4092,7 @@ R_API RAGraph *r_agraph_new(RConsCanvas *can) {
 static void visual_offset(RCore *core, RAGraph *g) {
 	char buf[256];
 	int rows;
-	r_kons_get_size (core->cons, &rows);
+	r_cons_get_size (core->cons, &rows);
 	r_kons_gotoxy (core->cons, 0, rows);
 	r_kons_flush (core->cons);
 	core->cons->line->prompt_type = R_LINE_PROMPT_OFFSET;
@@ -4123,7 +4123,7 @@ R_API void r_core_visual_find(RCore *core, RAGraph *g) {
 
 	RCons *cons = core->cons;
 	while (1) {
-		r_kons_get_size (cons, &rows);
+		r_cons_get_size (cons, &rows);
 		r_kons_gotoxy (cons, 0, rows - 1);
 		r_kons_flush (cons);
 		printf (Color_RESET);
@@ -4207,7 +4207,7 @@ find_next:
 				cons->event_resize = (RConsEvent)agraph_set_need_reload_nodes;
 				r_core_visual_prompt_input (core);
 				g->can->flags = r_cons_canvas_flags (cons);
-				r_kons_set_raw (cons, true);
+				r_cons_set_raw (cons, true);
 				cons->event_resize = (RConsEvent)agraph_refresh_oneshot;
 			}
 			if (c == 'n' || c == 'j') {
@@ -4246,7 +4246,7 @@ static void goto_asmqjmps(RAGraph *g, RCore *core) {
 	bool cont;
 	RCons *cons = core->cons;
 
-	r_kons_get_size (cons, &rows);
+	r_cons_get_size (cons, &rows);
 	r_kons_gotoxy (cons, 0, rows);
 	r_kons_clear_line (cons, 0);
 	r_kons_print (cons, Color_RESET);
@@ -4254,10 +4254,10 @@ static void goto_asmqjmps(RAGraph *g, RCore *core) {
 	r_kons_flush (cons);
 
 	do {
-		r_kons_set_raw (cons, true);
+		r_cons_set_raw (cons, true);
 		char ch = r_cons_readchar (cons);
 		obuf[i++] = ch;
-		r_kons_write (cons, &ch, 1);
+		r_cons_write (cons, &ch, 1);
 		cont = isalpha (ch & 0xff) && !islower (ch & 0xff);
 	} while (i < R_CORE_ASMQJMPS_LEN_LETTERS && cont);
 	r_kons_flush (cons);
@@ -4438,7 +4438,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 		R_LOG_ERROR ("Interactive graph mode requires 'e scr.interactive=true'");
 		return false;
 	}
-	r_kons_set_raw (core->cons, true);
+	r_cons_set_raw (core->cons, true);
 	int o_asmqjmps_letter = core->is_asmqjmps_letter;
 	int o_vmode = core->vmode;
 	int exit_graph = false, is_error = false;
@@ -4457,7 +4457,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 	}
 	r_config_hold (hc, "asm.pseudo", "asm.esil", "asm.cmt.right", NULL);
 
-	int h, w = r_kons_get_size (core->cons, &h);
+	int h, w = r_cons_get_size (core->cons, &h);
 	RConsCanvas *can = r_cons_canvas_new (core->cons, w, h, -2);
 	if (!can) {
 		w = 80;
@@ -4528,7 +4528,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 	grd->fcn = fcn? &fcn: NULL;
 	ret = agraph_refresh (grd);
 	if (!ret || is_interactive != 1) {
-		r_kons_newline (core->cons);
+		r_cons_newline (core->cons);
 		exit_graph = true;
 		is_error = !ret;
 	}
@@ -4560,7 +4560,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 	}
 
 	while (!exit_graph && !is_error && !r_cons_is_breaked ()) {
-		w = r_kons_get_size (core->cons, &h);
+		w = r_cons_get_size (core->cons, &h);
 		invscroll = r_config_get_b (core->config, "graph.invscroll");
 		ret = agraph_refresh (grd);
 
@@ -4571,7 +4571,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 		showcursor (core, false);
 
 		// r_core_graph_inputhandle()
-		r_kons_set_raw (core->cons, true);
+		r_cons_set_raw (core->cons, true);
 		okey = r_cons_readchar (core->cons);
 		key = r_cons_arrow_to_hjkl (core->cons, okey);
 
@@ -5163,7 +5163,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 			core->cons->event_resize = (RConsEvent)agraph_set_need_reload_nodes;
 			r_core_visual_prompt_input (core);
 			g->can->flags = r_cons_canvas_flags (core->cons);
-			r_kons_set_raw (core->cons, true);
+			r_cons_set_raw (core->cons, true);
 			core->cons->event_resize = (RConsEvent)agraph_refresh_oneshot;
 			if (!g) {
 				g->need_reload_nodes = true; // maybe too slow and unnecessary sometimes? better be safe and reload

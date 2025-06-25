@@ -1653,7 +1653,7 @@ static void var_accesses_list(RCore *core, RAnalFunction *fcn, RAnalVar *var, PJ
 		pj_end (pj);
 		pj_end (pj);
 	} else {
-		r_kons_newline (core->cons);
+		r_cons_newline (core->cons);
 	}
 }
 
@@ -2973,7 +2973,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			for (j = 0; j < minsz; j++) {
 				r_kons_printf (core->cons, "%02x", buf[idx + j]);
 			}
-			r_kons_newline (core->cons);
+			r_cons_newline (core->cons);
 			if (op.val != UT64_MAX) {
 				printline ("val", "0x%08" PFMT64x "\n", op.val);
 			}
@@ -3540,7 +3540,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 			return false;
 		}
 		r_table_visual_list (table, flist, core->addr, core->blocksize,
-			r_kons_get_size (core->cons, NULL), r_config_get_i (core->config, "scr.color"));
+			r_cons_get_size (core->cons, NULL), r_config_get_i (core->config, "scr.color"));
 		char *s = r_table_tostring (table);
 		r_kons_printf (core->cons, "\n%s\n", s);
 		free (s);
@@ -3619,7 +3619,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 					r_kons_printf (core->cons, " s 0x%08" PFMT64x, cop->addr);
 				}
 			}
-			r_kons_newline (core->cons);
+			r_cons_newline (core->cons);
 			break;
 		}
 	}
@@ -4738,7 +4738,7 @@ static void xrefs_map(RCore *core, const char *input) {
 			count++;
 			r_kons_printf (cons, "%c", f->name[col]);
 		}
-		r_kons_newline (cons);
+		r_cons_newline (cons);
 		col++;
 	} while (count);
 
@@ -5788,7 +5788,7 @@ static int cmd_af(RCore *core, const char *input) {
 					if (fcn->is_noreturn) {
 						r_kons_print (cons, "noreturn");
 					}
-					r_kons_newline (cons);
+					r_cons_newline (cons);
 				}
 			}
 			break;
@@ -6956,7 +6956,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 								r_reg_cond_tostring (i),
 								r_reg_cond_bits (core->dbg->reg, i, rf));
 						}
-						r_kons_newline (core->cons);
+						r_cons_newline (core->cons);
 					} else {
 						for (i = 0; i < R_REG_COND_LAST; i++) {
 							r_kons_printf (core->cons, "%d %s\n",
@@ -7905,7 +7905,7 @@ static void showregs(RCore *core, RList *list) {
 			}
 		}
 	}
-	r_kons_newline (core->cons);
+	r_cons_newline (core->cons);
 }
 
 static void showmem(RCore *core, RList *list) {
@@ -7917,7 +7917,7 @@ static void showmem(RCore *core, RList *list) {
 
 		}
 	}
-	r_kons_newline (core->cons);
+	r_cons_newline (core->cons);
 }
 
 static void showregs_json(RList *list, PJ *pj) {
@@ -9634,7 +9634,7 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 			for (i = 0; i < 8 && i < last; i++) {
 				r_kons_printf (core->cons, "%02x", finalmask[i]);
 			}
-			r_kons_newline (core->cons);
+			r_cons_newline (core->cons);
 		} else if (mode == 'v') { // "aobv"
 			typedef struct {
 				const char *color;
@@ -11048,7 +11048,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				pj_end (pj);
 				r_kons_printf (core->cons, "%s", pj_string (pj));
 				pj_free (pj);
-				r_kons_newline (core->cons);
+				r_cons_newline (core->cons);
 			} else if (input[1] == 'g') { // axtg
 				RAnalRef *ref;
 				R_VEC_FOREACH (list, ref) {
@@ -11282,7 +11282,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 							}
 							r_anal_op_fini (&aop);
 						}
-						r_kons_newline (core->cons);
+						r_cons_newline (core->cons);
 						free (desc_to_free);
 					}
 				}
@@ -12267,7 +12267,7 @@ R_API void r_core_agraph_treemap(RCore *core, int use_utf, const char *input) {
 	int a = r_config_get_i (core->config, "scr.color");
 	r_config_set_i (core->config, "scr.color", 0);
 	// walk all the functions and create a treemap and render it
-	int h, w = r_kons_get_size (core->cons, &h);
+	int h, w = r_cons_get_size (core->cons, &h);
 	w--;
 	h--;
 	RConsCanvas *canvas = r_cons_canvas_new (core->cons, w, h, R_CONS_CANVAS_FLAG_INHERIT);

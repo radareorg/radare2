@@ -119,7 +119,7 @@ static void render(SlidesState *state, RCore *core, RList *list, int mode, int p
 	char *oo = r_str_newf ("%s%s", r_str_pad ('\n', notch), o);
 	free (o);
 	o = oo;
-	int h, w = r_kons_get_size (core->cons, &h);
+	int h, w = r_cons_get_size (core->cons, &h);
 	if (mode == 2) {
 		w /= 2;
 		char *o2 = r_str_ansi_crop (o, sx, sy, w, h);
@@ -168,7 +168,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 	int mode = 1;
 	int sx = 0;
 	int sy = 0;
-	r_kons_set_raw (core->cons, 1);
+	r_cons_set_raw (core->cons, 1);
 	r_kons_show_cursor (core->cons, false);
 	r_kons_enable_mouse (core->cons, false);
 	int total_pages = count_pages (list);
@@ -186,7 +186,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 		render (&state, core, list, 1, page, sx, sy);
 		render_title (core, page, mode, total_pages);
 		r_kons_flush (core->cons);
-		r_kons_set_raw (core->cons, true);
+		r_cons_set_raw (core->cons, true);
 		ch = r_cons_readchar (core->cons);
 		ch = r_cons_arrow_to_hjkl (core->cons, ch);
 		switch (ch) {
@@ -273,7 +273,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 			break;
 		case ':':
 			r_kons_show_cursor (core->cons, true);
-			r_kons_set_raw (core->cons, false);
+			r_cons_set_raw (core->cons, false);
 			r_kons_flush (core->cons);
 			while (1) {
 				char cmd[1024];
@@ -289,7 +289,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 				r_kons_flush (core->cons);
 			}
 			r_kons_show_cursor (core->cons, false);
-			r_kons_set_raw (core->cons, true);
+			r_cons_set_raw (core->cons, true);
 			r_kons_clear (core->cons);
 			break;
 		default:
@@ -297,7 +297,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 			break;
 		}
 	}
-	r_kons_set_raw (core->cons, 0);
+	r_cons_set_raw (core->cons, 0);
 	r_kons_show_cursor (core->cons, true);
 	r_list_free (list);
 	free (data);

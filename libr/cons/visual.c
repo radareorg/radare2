@@ -15,7 +15,7 @@ static int real_strlen(const char *ptr, int len) {
 }
 
 static void print_fps(RCons *cons, int col) {
-	int fps = 0, w = r_cons_get_size (NULL);
+	int fps = 0, w = r_cons_get_size (cons, NULL);
 	fps = 0;
 	if (cons->prev) {
 		ut64 now = r_time_now_mono ();

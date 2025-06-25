@@ -246,7 +246,7 @@ R_API bool r_core_cmpwatch_show(RCore *core, ut64 addr, int mode) {
 				r_kons_println (core->cons, cmd_output);
 				free (cmd_output);
 			} else {
-				r_kons_newline (core->cons);
+				r_cons_newline (core->cons);
 			}
 			break;
 		}
@@ -875,7 +875,7 @@ static int cmp_bits(RCore *core, ut64 addr) {
 	for (i = 7; i >= 0; i--) {
 		r_kons_printf (core->cons, "%s%d%s%s", b_colors[i], b_bits[i], color_end, i? " ": "");
 	}
-	r_kons_newline (core->cons);
+	r_cons_newline (core->cons);
 
 	// 0 if equal, 1 if not equal
 	// same return pattern as ?==
@@ -1142,9 +1142,9 @@ static void cmd_curl(RCore *core, const char *arg) {
 				? r_socket_http_post (arg, NULL, postdata, NULL, &len)
 				: r_socket_http_get (arg, NULL, NULL, &len);
 			if (s) {
-				r_kons_write (core->cons, s, len);
+				r_cons_write (core->cons, s, len);
 				free (s);
-				r_kons_newline (core->cons);
+				r_cons_newline (core->cons);
 			}
 		} else {
 			r_core_cmd_help_match (core, help_msg_cu, "curl");

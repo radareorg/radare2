@@ -497,7 +497,7 @@ static void cmd_fz(RCore *core, const char *input) {
 		{
 			const char *a, *b;
 			int a_len = 0;
-			int w = r_kons_get_size (core->cons, NULL);
+			int w = r_cons_get_size (core->cons, NULL);
 			r_flag_zone_around (core->flags, core->addr, &a, &b);
 			if (a) {
 				r_kons_printf (core->cons, "[<< %s]", a);
@@ -519,7 +519,7 @@ static void cmd_fz(RCore *core, const char *input) {
 				r_kons_printf (core->cons, "%s[%s >>]", halfpad, b);
 			}
 			if (a || b) {
-				r_kons_newline (core->cons);
+				r_cons_newline (core->cons);
 			}
 		}
 		break;
@@ -562,7 +562,7 @@ static bool flagbar_foreach(RFlagItem *fi, void *user) {
 }
 
 static void flagbars(RCore *core, const char *glob) {
-	int cols = r_kons_get_size (core->cons, NULL);
+	int cols = r_cons_get_size (core->cons, NULL);
 	cols -= 80;
 	if (cols < 0) {
 		cols += 80;

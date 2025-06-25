@@ -55,12 +55,12 @@ R_API int r_cons_less_str(RCons * R_NONNULL cons, const char * R_NONNULL str, co
 	for (i = 0; i < lines_count; i++) {
 		mla[i] = r_list_new ();
 	}
-	r_kons_set_raw (cons, true);
+	r_cons_set_raw (cons, true);
 	r_kons_show_cursor (cons, false);
 	r_kons_reset (cons);
 	h = 0;
 	while (ui) {
-		w = r_kons_get_size (cons, &h);
+		w = r_cons_get_size (cons, &h);
 		to = R_MIN (lines_count, from + h);
 		if (from + 3 > lines_count) {
 			from = lines_count - 3;
@@ -139,7 +139,7 @@ R_API int r_cons_less_str(RCons * R_NONNULL cons, const char * R_NONNULL str, co
 			if (pager_all_matches (p, rx, mla, lines, lines_count)) {
 				from = pager_next_match (from, mla, lines_count);
 			}
-			r_kons_set_raw (cons, true);
+			r_cons_set_raw (cons, true);
 			break;
 		case 'n': 	/* next match */
 			/* search already performed */
@@ -163,7 +163,7 @@ R_API int r_cons_less_str(RCons * R_NONNULL cons, const char * R_NONNULL str, co
 	free (lines);
 	free (p);
 	r_kons_reset_colors (cons);
-	r_kons_set_raw (cons, false);
+	r_cons_set_raw (cons, false);
 	r_kons_show_cursor (cons, true);
 	free (ostr);
 	return 0;

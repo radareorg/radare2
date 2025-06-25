@@ -369,7 +369,7 @@ static void printSnow(RCore *core) {
 	if (!core->visual.snows) {
 		core->visual.snows = r_list_newf (free);
 	}
-	int i, h, w = r_kons_get_size (core->cons, &h);
+	int i, h, w = r_cons_get_size (core->cons, &h);
 	int amount = r_num_rand (4);
 	if (amount > 0) {
 		for (i = 0; i < amount; i++) {
@@ -784,7 +784,7 @@ static void restore_current_addr(RCore *core, ut64 addr, ut64 bsze, ut64 newaddr
 R_API void r_core_visual_prompt_input(RCore *core) {
 	ut64 addr, bsze, newaddr = 0LL;
 	int ret, h;
-	(void) r_kons_get_size (core->cons, &h);
+	(void) r_cons_get_size (core->cons, &h);
 	bool mouse_state = __holdMouseState(core);
 	r_kons_gotoxy (core->cons, 0, h);
 	r_kons_reset_colors (core->cons);
@@ -1382,7 +1382,7 @@ static void addComment(RCore *core, ut64 addr) {
 	r_kons_printf (core->cons, "Enter comment for reference:\n");
 	r_core_visual_showcursor (core, true);
 	r_kons_flush (core->cons);
-	r_kons_set_raw (core->cons, false);
+	r_cons_set_raw (core->cons, false);
 	r_line_set_prompt (core->cons->line, "> ");
 	r_kons_enable_mouse (core->cons, false);
 	char buf[1024];
@@ -1390,7 +1390,7 @@ static void addComment(RCore *core, ut64 addr) {
 		buf[0] = '\0';
 	}
 	r_core_cmdf (core, "'@0x%08"PFMT64x"'CC %s", addr, buf);
-	r_kons_set_raw (core->cons, true);
+	r_cons_set_raw (core->cons, true);
 	r_kons_enable_mouse (core->cons, r_config_get_b (core->config, "scr.wheel"));
 	r_core_visual_showcursor (core, false);
 }
@@ -1508,7 +1508,7 @@ repeat:
 		xrefs = NULL;
 		r_kons_printf (cons, "\n\n(no %srefs)\n", xref ? "x": "");
 	} else {
-		int h, w = r_kons_get_size (cons, &h);
+		int h, w = r_cons_get_size (cons, &h);
 		bool asm_bytes = r_config_get_b (core->config, "asm.bytes");
 		r_config_set_i (core->config, "asm.bytes", false);
 		r_core_cmd_call (core, "fd");
@@ -1621,11 +1621,11 @@ repeat:
 		}
 		if (dis) {
 			if (count < rows) {
-				r_kons_newline (cons);
+				r_cons_newline (cons);
 			}
 			int i = count;
 			for (; i < 9; i++)  {
-				r_kons_newline (cons);
+				r_cons_newline (cons);
 			}
 			/* prepare highlight */
 			char *cmd = strdup (r_config_get (core->config, "scr.highlight"));
@@ -1651,7 +1651,7 @@ repeat:
 	}
 	r_kons_flush (cons);
 	r_kons_enable_mouse (cons, r_config_get_i (core->config, "scr.wheel"));
-	r_kons_set_raw (cons, true);
+	r_cons_set_raw (cons, true);
 	ch = r_cons_readchar (cons);
 	ch = r_cons_arrow_to_hjkl (cons, ch);
 	switch (ch) {
@@ -1795,7 +1795,7 @@ static void visual_textlogs(RCore *core) {
 		r_kons_clear00 (cons);
 		int notch = r_config_get_i (core->config, "scr.notch");
 		while (notch-- > 0) {
-			r_kons_newline (cons);
+			r_cons_newline (cons);
 		}
 		const char *vi = r_config_get (core->config, "cmd.vprompt");
 		if (R_STR_ISNOTEMPTY (vi)) {
@@ -1834,7 +1834,7 @@ static void visual_textlogs(RCore *core) {
 				free (s);
 				s = r_core_cmd_strf (core, "Tm %d", index);
 			}
-			int w = r_kons_get_size (cons, NULL);
+			int w = r_cons_get_size (cons, NULL);
 			char *wrapped = r_str_wrap (s, w);
 			free (s);
 			s = wrapped;
@@ -1851,7 +1851,7 @@ static void visual_textlogs(RCore *core) {
 			}
 			if (skiplines > 0) {
 				char *r = s;
-				int w = r_kons_get_size (cons, NULL);
+				int w = r_cons_get_size (cons, NULL);
 				int line = skiplines;
 				int col = 0;
 				while (*r) {
@@ -2884,7 +2884,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	int i, cols = core->print->cols;
 	int wheelspeed;
 	int ch = och;
-	r_kons_set_raw (core->cons, true);
+	r_cons_set_raw (core->cons, true);
 	if ((ut8)ch == KEY_ALTQ) {
 		r_cons_readchar (core->cons);
 		ch = 'q';
@@ -3068,7 +3068,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_kons_printf (core->cons, "Enter assembler opcodes separated with ';':\n");
 			r_core_visual_showcursor (core, true);
 			r_kons_flush (core->cons);
-			r_kons_set_raw (core->cons, false);
+			r_cons_set_raw (core->cons, false);
 			strcpy (buf, "\"wa ");
 			r_line_set_prompt (core->cons->line, "> ");
 			r_kons_enable_mouse (core->cons, false);
@@ -3092,7 +3092,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				}
 			}
 			r_core_visual_showcursor (core, false);
-			r_kons_set_raw (core->cons, true);
+			r_cons_set_raw (core->cons, true);
 		}
 		break;
 		case '=':
@@ -3259,7 +3259,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					r_cons_printf ("[t] ");
 				}
 				r_kons_flush (core->cons);
-				r_kons_set_raw (core->cons, true);
+				r_cons_set_raw (core->cons, true);
 				int ch = r_cons_readchar (core->cons);
 				if (isdigit (ch)) {
 					visual_nthtab (core, ch - '0' - 1);
@@ -3349,7 +3349,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			r_core_visual_showcursor (core, true);
 			r_kons_flush (core->cons);
-			r_kons_set_raw (core->cons, 0);
+			r_cons_set_raw (core->cons, 0);
 			if (ch == 'I') {
 				strcpy (buf, "wow ");
 				r_line_set_prompt (core->cons->line, "insert hexpair block: ");
@@ -3396,7 +3396,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if (core->print->cur_enabled) {
 				r_core_seek (core, addr, true);
 			}
-			r_kons_set_raw (core->cons, true);
+			r_cons_set_raw (core->cons, true);
 			r_core_visual_showcursor (core, false);
 			r_core_seek (core, oaddr, true);
 			}
@@ -3468,7 +3468,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				if (core->cons->cpos.x < 1) {
 					core->cons->cpos.x = 0;
 				}
-				int h, w = r_kons_get_size (core->cons, &h);
+				int h, w = r_cons_get_size (core->cons, &h);
 				if (core->cons->cpos.x >= w) {
 					core->cons->cpos.x = w;
 				}
@@ -3500,7 +3500,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				if (core->cons->cpos.x < 1) {
 					core->cons->cpos.x = 0;
 				}
-				int h, w = r_kons_get_size (core->cons, &h);
+				int h, w = r_cons_get_size (core->cons, &h);
 				if (core->cons->cpos.x >= w) {
 					core->cons->cpos.x = w;
 				}
@@ -3528,7 +3528,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if (r_config_get_b (core->config, "scr.cursor")) {
 				core->cons->cpos.y++;
 				int h;
-				(void)r_kons_get_size (core->cons, &h);
+				(void)r_cons_get_size (core->cons, &h);
 				if (core->cons->cpos.y >= h) {
 					core->cons->cpos.y = h;
 				}
@@ -3592,7 +3592,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				const int distance = 4; // numbuf_pull (core);
 				core->cons->cpos.y += distance;
 				int h;
-				(void)r_kons_get_size (core->cons, &h);
+				(void)r_cons_get_size (core->cons, &h);
 				if (core->cons->cpos.y >= h) {
 					core->cons->cpos.y = h;
 				}
@@ -3619,7 +3619,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						if (hexCols < 1) {
 							hexCols = 16;
 						}
-						(void)r_kons_get_size (core->cons, &h);
+						(void)r_cons_get_size (core->cons, &h);
 						int delta = hexCols * (h / 4);
 						addr = core->addr + delta;
 					}
@@ -4349,7 +4349,7 @@ static void visual_title(RCore *core, int color) {
 }
 
 static int visual_responsive(RCore *core) {
-	int h, w = r_kons_get_size (core->cons, &h);
+	int h, w = r_cons_get_size (core->cons, &h);
 	if (r_config_get_i (core->config, "scr.responsive")) {
 		if (w < 110) {
 			r_config_set_i (core->config, "asm.cmt.right", 0);
@@ -4386,7 +4386,7 @@ static int visual_responsive(RCore *core) {
 // TODO: use colors
 // TODO: find better name
 R_API void r_core_print_scrollbar(RCore *core) {
-	int i, h, w = r_kons_get_size (core->cons, &h);
+	int i, h, w = r_cons_get_size (core->cons, &h);
 
 	int scrollbar = r_config_get_i (core->config, "scr.scrollbar");
 	if (scrollbar == 2) {
@@ -4453,7 +4453,7 @@ R_API void r_core_print_scrollbar(RCore *core) {
 }
 
 R_API void r_core_print_scrollbar_bottom(RCore *core) {
-	int i, h, w = r_kons_get_size (core->cons, &h);
+	int i, h, w = r_cons_get_size (core->cons, &h);
 
 	if (w < 10 || h < 4) {
 		return;
@@ -4823,7 +4823,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 
 	core->visual.splitPtr = UT64_MAX;
 
-	if (r_kons_get_size (core->cons, &ch) < 1 || ch < 1) {
+	if (r_cons_get_size (core->cons, &ch) < 1 || ch < 1) {
 		R_LOG_ERROR ("Cannot create Visual context. Use scr.fix_{columns|rows}");
 		return 0;
 	}
@@ -4867,7 +4867,7 @@ dodo:
 		// update the cursor when it's not visible anymore
 		skip = fix_cursor (core);
 		r_kons_show_cursor (core->cons, false);
-		r_kons_set_raw (core->cons, true);
+		r_cons_set_raw (core->cons, true);
 		const int ref = r_config_get_i (core->config, "dbg.slow");
 #if 1
 		// This is why multiple debug views dont work
@@ -5022,8 +5022,8 @@ dodo:
 								// Following seems to fix an issue where scrolling slows
 								// down to a crawl for some terminals after some time
 								// mashing the up and down arrow keys
-								r_kons_set_raw (core->cons, false);
-								r_kons_set_raw (core->cons, true);
+								r_cons_set_raw (core->cons, false);
+								r_cons_set_raw (core->cons, true);
 #endif
 							}
 						}

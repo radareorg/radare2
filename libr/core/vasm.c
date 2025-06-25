@@ -90,7 +90,7 @@ static int readline_callback(RCons *cons, void *_a, const char *str) {
 	}
 	{
 		int rows = 0;
-		int cols = r_kons_get_size (core->cons, &rows);
+		int cols = r_cons_get_size (core->cons, &rows);
 		core->print->cur_enabled = true;
 		core->print->ocur = 0;
 		core->print->cur = (a->acode && a->acode->len) ? a->acode->len - 1: 0;

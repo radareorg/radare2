@@ -92,12 +92,12 @@ static void print_format_values(RCore *core, const char *fmt, bool onstack, ut64
 			}
 		}
 		r_kons_print (core->cons, "\"");
-		r_kons_newline (core->cons);
+		r_cons_newline (core->cons);
 		break;
 	case 'd' : // integer
 	case 'x' :
 		r_kons_printf (core->cons, "0x%08" PFMT64x, bval);
-		r_kons_newline (core->cons);
+		r_cons_newline (core->cons);
 		break;
 	case 'c' : // char
 		r_kons_print (core->cons, "\'");
@@ -108,13 +108,13 @@ static void print_format_values(RCore *core, const char *fmt, bool onstack, ut64
 			r_kons_printf (core->cons, "\\x%02x", ch);
 		}
 		r_kons_print (core->cons, "\'");
-		r_kons_newline (core->cons);
+		r_cons_newline (core->cons);
 		break;
 	case 'p' : // pointer
 		{
 		// Try to deref the pointer once again
 		r_kons_printf (core->cons, "0x%08"PFMT64x, get_buf_val (buf, endian, width));
-		r_kons_newline (core->cons);
+		r_cons_newline (core->cons);
 		break;
 		}
 	default:
@@ -175,7 +175,7 @@ R_API void r_core_print_func_args(RCore *core) {
 				ut64 v = r_debug_arg_get (core->dbg, cc, i);
 				print_arg_str (core, i, "", color);
 				r_kons_printf (core->cons, "0x%08" PFMT64x, v);
-				r_kons_newline (core->cons);
+				r_cons_newline (core->cons);
 			}
 		}
 	}

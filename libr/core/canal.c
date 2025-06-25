@@ -1527,7 +1527,7 @@ static bool print_bits_hint_cb(ut64 addr, int bits, void *user) {
 }
 
 static void print_hint_tree(RCore *core, RBTree tree, int mode) {
-#define END_ADDR if (mode == 'j') { pj_end (pj); } else if (mode != '*') { r_kons_newline (core->cons); }
+#define END_ADDR if (mode == 'j') { pj_end (pj); } else if (mode != '*') { r_cons_newline (core->cons); }
 	PJ *pj = NULL;
 	if (mode == 'j') {
 		pj = pj_new ();
@@ -3090,7 +3090,7 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode, bool unique,
 				pj_end (pj); // close list of calls
 				pj_end (pj); // close function item
 			} else {
-				r_kons_newline (core->cons);
+				r_cons_newline (core->cons);
 			}
 		}
 		RVecAnalRef_free (refs);
@@ -3615,7 +3615,7 @@ static int fcn_list_names(RCore *core, RList *fcns) {
 	r_list_foreach (fcns, iter, fcn) {
 		r_kons_printf (core->cons, "'@0x%08"PFMT64x"'afn %s\n", fcn->addr, fcn->name);
 	}
-	r_kons_newline (core->cons);
+	r_cons_newline (core->cons);
 	return 0;
 }
 
@@ -3625,7 +3625,7 @@ static int fcn_list_detail(RCore *core, RList *fcns) {
 	r_list_foreach (fcns, iter, fcn) {
 		fcn_print_detail (core, fcn);
 	}
-	r_kons_newline (core->cons);
+	r_cons_newline (core->cons);
 	return 0;
 }
 
@@ -3721,7 +3721,7 @@ static int fcn_list_legacy(RCore *core, RList *fcns, bool dorefs) {
 	r_list_foreach (fcns, iter, fcn) {
 		fcn_print_legacy (core, fcn, dorefs);
 	}
-	r_kons_newline (core->cons);
+	r_cons_newline (core->cons);
 	return 0;
 }
 
@@ -3819,7 +3819,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		}
 		RTable *table = r_core_table_new (core, "functions");
 		r_table_visual_list (table, flist, core->addr, core->blocksize,
-			r_kons_get_size (core->cons, NULL), r_config_get_i (core->config, "scr.color"));
+			r_cons_get_size (core->cons, NULL), r_config_get_i (core->config, "scr.color"));
 		char *s = r_table_tostring (table);
 		r_kons_printf (core->cons, "\n%s\n", s);
 		free (s);
@@ -6598,7 +6598,7 @@ static bool printAnalPaths(RCoreAnalPaths *p, PJ *pj) {
 	if (pj) {
 		pj_end (pj);
 	} else {
-		r_kons_newline (cons);
+		r_cons_newline (cons);
 	}
 	return (p->count < 1 || --p->count > 0);
 }

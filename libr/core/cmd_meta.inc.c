@@ -972,7 +972,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			RAnalMetaItem *mi = r_meta_get_at (core->anal, addr, type, &size);
 			if (mi) {
 				r_meta_print (core->anal, mi, addr, size, input[2], NULL, NULL, false);
-				r_kons_newline (core->cons);
+				r_cons_newline (core->cons);
 			}
 			break;
 		}

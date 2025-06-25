@@ -828,14 +828,14 @@ static void selection_widget_draw(RCons *cons) {
 		r_kons_printf (cons, "%s", sel_widget->selection == y + scroll? selected_color: background_color);
 		r_kons_printf (cons, "%-*.*s", sel_widget->w, sel_widget->w, option);
 		if (scrollbar && R_BETWEEN (scrollbar_y, y, scrollbar_y + scrollbar_l)) {
-			r_kons_write (cons, Color_INVERT " "Color_INVERT_RESET, 10);
+			r_cons_write (cons, Color_INVERT " "Color_INVERT_RESET, 10);
 		} else {
-			r_kons_write (cons, " ", 1);
+			r_cons_write (cons, " ", 1);
 		}
 	}
 
 	r_kons_gotoxy (cons, pos_x + line->buffer.length, pos_y);
-	r_kons_write (cons, Color_RESET_BG, 5);
+	r_cons_write (cons, Color_RESET_BG, 5);
 	r_kons_flush (cons);
 }
 
@@ -962,7 +962,7 @@ R_API void r_line_autocomplete(RCons *cons) {
 	const char **argv = NULL;
 	int argc = 0, i, j, plen, len = 0;
 	bool opt = false;
-	int cols = (int) (r_kons_get_size (cons, NULL) * 0.82);
+	int cols = (int) (r_cons_get_size (cons, NULL) * 0.82);
 
 	RLine *line = cons->line;
 	/* prepare argc and argv */
@@ -1157,7 +1157,7 @@ static void __print_prompt(RCons *cons) {
 		R_LOG_WARN ("printing prompt without cons is wrong");
 	}
 	RLine *line = cons->line;
-	int columns = r_cons_get_size (NULL) - 2;
+	int columns = r_cons_get_size (cons, NULL) - 2;
 	int len, i, cols = R_MAX (1, columns - r_str_ansi_len (line->prompt) - 2);
 	if (cons->line->prompt_type == R_LINE_PROMPT_OFFSET) {
 		r_kons_gotoxy (cons, 0, cons->rows);
@@ -1712,7 +1712,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 	}
 
 	memset (&buf, 0, sizeof buf);
-	r_kons_set_raw (cons, 1);
+	r_cons_set_raw (cons, 1);
 
 	if (cons->line->echo) {
 		__print_prompt (cons);
@@ -1778,7 +1778,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 			r_kons_clear_line (cons, 0);
 		}
 repeat:
-		(void) r_cons_get_size (&rows);
+		(void) r_cons_get_size (cons, &rows);
 		switch (*buf) {
 		case 0:	// control-space
 			/* ignore atm */
@@ -1837,7 +1837,7 @@ repeat:
 				if (line->echo) {
 					eprintf ("^D\n");
 				}
-				r_kons_set_raw (cons, false);
+				r_cons_set_raw (cons, false);
 				r_kons_break_pop (cons);
 				return NULL;
 			}
@@ -2230,7 +2230,7 @@ repeat:
 							}
 							break;
 						}
-						r_kons_set_raw (cons, true);
+						r_cons_set_raw (cons, true);
 						break;
 					case 0x37: // HOME xrvt-unicode
 						r_cons_readchar (cons);
@@ -2399,7 +2399,7 @@ repeat:
 	}
 _end:
 	r_kons_break_pop (cons);
-	r_kons_set_raw (cons, false);
+	r_cons_set_raw (cons, false);
 	r_kons_enable_mouse (cons, mouse_status);
 #if 0
 	if (line->buffer.length > 1024) {	// R2_590 - use line->maxlength

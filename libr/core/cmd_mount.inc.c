@@ -535,9 +535,9 @@ static int cmd_mount(void *data, const char *_input) {
 			file = r_fs_open (core->fs, input, false);
 			if (file) {
 				r_fs_read (core->fs, file, 0, file->size);
-				r_kons_write (core->cons, (const char *)file->data, file->size);
+				r_cons_write (core->cons, (const char *)file->data, file->size);
 				r_fs_close (core->fs, file);
-				r_kons_write (core->cons, "\n", 1);
+				r_cons_write (core->cons, "\n", 1);
 			} else if (!r_fs_dir_dump (core->fs, input, ptr)) {
 				R_LOG_ERROR ("Cannot open file");
 			}
@@ -671,7 +671,7 @@ static int cmd_mount(void *data, const char *_input) {
 			return false;
 		}
 		input = (char *)r_str_trim_head_ro (input + 1);
-		r_kons_set_raw (core->cons, false);
+		r_cons_set_raw (core->cons, false);
 		{
 			free (core->rfs->cwd);
 			core->rfs->cons = core->cons;

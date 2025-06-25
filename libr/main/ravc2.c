@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2022-2024 - pancake, rhl120 */
+/* radare - LGPL - Copyright 2022-2025 - pancake, rhl120 */
 
 #define R_LOG_ORIGIN "ravc"
 

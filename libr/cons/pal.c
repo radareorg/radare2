@@ -494,7 +494,7 @@ static void r_cons_pal_show_gs(RCons *cons) {
 			fg, bg, i, i, i);
 		if (n++ == 5) {
 			n = 0;
-			r_kons_newline (cons);
+			r_cons_newline (cons);
 		}
 	}
 }
@@ -526,7 +526,7 @@ static void r_cons_pal_show_256(RCons *cons) {
 				r_kons_printf (cons, "%s%s rgb:%02x%02x%02x "
 					Color_RESET, fg, bg, rc.r, rc.g, rc.b);
 			}
-			r_kons_newline (cons);
+			r_cons_newline (cons);
 		}
 	}
 }
@@ -550,7 +550,7 @@ static void r_cons_pal_show_rgb(RCons *cons) {
 					Color_RESET, fg, bg, rc.r, rc.g, rc.b);
 				if (n ++== 5) {
 					n = 0;
-					r_kons_newline (cons);
+					r_cons_newline (cons);
 				}
 			}
 		}
@@ -658,7 +658,7 @@ R_API void r_cons_pal_list(RCons *cons, int rad, const char *arg) {
 					}
 				}
 			}
-			r_kons_newline (cons);
+			r_cons_newline (cons);
 			break;
 		default:
 			r_kons_printf (cons, " %s##"Color_RESET"  %s\n", *color, keys[i].name);

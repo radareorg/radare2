@@ -1262,7 +1262,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		/* stdin/batch mode */
 		char *buf = r_stdin_slurp (&sz);
 		eprintf ("^D\n");
-		r_kons_set_raw (r->cons, false);
+		r_cons_set_raw (r->cons, false);
 #if R2__UNIX__
 		// TODO: keep flags :?
 		R_UNUSED_RESULT (freopen ("/dev/tty", "rb", stdin));

@@ -221,7 +221,7 @@ R_API bool r_core_yank_dump(RCore *core, ut64 pos, int format) {
 		for (i = pos; i < r_buf_size (core->yank_buf); i++) {
 			r_kons_printf (core->cons, "%02x", r_buf_read8_at (core->yank_buf, i));
 		}
-		r_kons_newline (core->cons);
+		r_cons_newline (core->cons);
 		break;
 	case 'j': {
 		PJ *pj = r_core_pj_new (core);
@@ -246,7 +246,7 @@ R_API bool r_core_yank_dump(RCore *core, ut64 pos, int format) {
 		for (i = pos; i < r_buf_size (core->yank_buf); i++) {
 			r_kons_printf (core->cons, "%02x", r_buf_read8_at (core->yank_buf, i));
 		}
-		r_kons_newline (core->cons);
+		r_cons_newline (core->cons);
 		break;
 	default:
 		r_kons_printf (core->cons, "0x%08" PFMT64x " %" PFMT64d " ",
@@ -255,7 +255,7 @@ R_API bool r_core_yank_dump(RCore *core, ut64 pos, int format) {
 		for (i = pos; i < r_buf_size (core->yank_buf); i++) {
 			r_kons_printf (core->cons, "%02x", r_buf_read8_at (core->yank_buf, i));
 		}
-		r_kons_newline (core->cons);
+		r_cons_newline (core->cons);
 	}
 	return true;
 }
@@ -290,15 +290,15 @@ R_API bool r_core_yank_cat(RCore *core, ut64 pos) {
 			char *buf = R_NEWS (char, sz);
 			if (buf) {
 				r_buf_read_at (core->yank_buf, pos, (ut8 *)buf, sz);
-				r_kons_write (core->cons, buf, sz);
-				r_kons_newline (core->cons);
+				r_cons_write (core->cons, buf, sz);
+				r_cons_newline (core->cons);
 				free (buf);
 				return true;
 			}
 		}
 		R_LOG_ERROR ("Position exceeds buffer length");
 	} else {
-		r_kons_newline (core->cons);
+		r_cons_newline (core->cons);
 	}
 	return false;
 }
@@ -315,14 +315,14 @@ R_API bool r_core_yank_cat_string(RCore *core, ut64 pos) {
 			}
 			r_buf_read_at (core->yank_buf, pos, (ut8 *)buf, sz);
 			int len = r_str_nlen (buf, sz);
-			r_kons_write (core->cons, buf, len);
-			r_kons_newline (core->cons);
+			r_cons_write (core->cons, buf, len);
+			r_cons_newline (core->cons);
 			free (buf);
 			return true;
 		}
 	//	R_LOG_ERROR ("Position exceeds buffer length");
 	} else {
-		r_kons_newline (core->cons);
+		r_cons_newline (core->cons);
 	}
 	return false;
 }

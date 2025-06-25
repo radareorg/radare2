@@ -92,7 +92,7 @@ static void grep_word_free(RConsGrepWord *gw) {
 }
 
 R_API void r_cons_grep_help(RCons *cons) {
-	r_kons_cmd_help (cons, help_detail_tilde, true);
+	r_cons_cmd_help (cons, help_detail_tilde, true);
 }
 
 R_API void r_cons_grep_expression(RCons *cons, const char *str) {
@@ -710,7 +710,7 @@ R_API void r_kons_grepbuf(RCons *cons) {
 				cons->context->buffer_len = strlen (u);
 				cons->context->buffer_sz = cons->context->buffer_len + 1;
 				grep->json = false;
-				r_kons_newline (cons);
+				r_cons_newline (cons);
 			}
 			R_FREE (grep->json_path);
 		} else {

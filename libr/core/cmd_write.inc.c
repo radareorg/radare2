@@ -482,7 +482,7 @@ static int cmd_wo(void *data, const char *input) {
 						for (i = 0; i < len; i++) {
 							r_kons_printf (core->cons, "%02x", buf[i]);
 						}
-						r_kons_newline (core->cons);
+						r_cons_newline (core->cons);
 					} else {
 						if (!r_core_write_at (core, addr, ptr, len)) {
 							cmd_write_fail (core);

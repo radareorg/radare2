@@ -147,7 +147,7 @@ static void twok_print(GameState *state, bool color) {
 R_API void r_cons_2048(RCons *cons, bool color) {
 	GameState state;
 	int ch;
-	r_kons_set_raw (cons, 1);
+	r_cons_set_raw (cons, 1);
 	twok_init (&state);
 	twok_add (&state);
 	twok_add (&state);
@@ -189,5 +189,5 @@ R_API void r_cons_2048(RCons *cons, bool color) {
 	do {
 		ch = r_cons_any_key (cons, "Press 'q' to quit.");
 	} while (ch != 'q' && ch >= 1);
-	r_kons_set_raw (cons, 0);
+	r_cons_set_raw (cons, 0);
 }
