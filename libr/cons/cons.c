@@ -1468,3 +1468,90 @@ R_API void r_cons_gotoxy(RCons *cons, int x, int y) {
 #endif
 }
 
+R_API void r_cons_reset(RCons *cons) {
+	RConsContext *c = cons->context;
+	if (c->buffer) {
+		c->buffer[0] = '\0';
+	}
+	c->buffer_len = 0;
+	cons->lines = 0;
+	cons->lastline = c->buffer;
+	cons_grep_reset (&c->grep);
+	c->pageable = true;
+}
+
+R_API void r_cons_reset_colors(RCons *cons) {
+	r_kons_print (cons, Color_RESET_BG Color_RESET);
+}
+
+R_API void r_cons_context_free(RConsContext * R_NULLABLE ctx) {
+	if (ctx) {
+		// TODO: free more stuff
+#if 0
+	// r_stack_free (ctx->cons_stack);
+	r_list_free (ctx->marks);
+	ctx->cons_stack = NULL;
+	r_stack_free (ctx->break_stack);
+	ctx->break_stack = NULL;
+	r_cons_pal_free (ctx);
+#endif
+		free (ctx);
+	}
+}
+
+R_API RConsContext *r_cons_context_clone(RConsContext *ctx) {
+	RConsContext *c = r_mem_dup (ctx, sizeof (RConsContext));
+	if (ctx->buffer) {
+		c->buffer = r_mem_dup (ctx->buffer, ctx->buffer_sz);
+	}
+	if (ctx->break_stack) {
+		c->break_stack = r_stack_newf (3, break_stack_free);
+	}
+	if (ctx->lastOutput) {
+		c->lastOutput = r_mem_dup (ctx->lastOutput, ctx->lastLength);
+	}
+	if (ctx->sorted_lines) {
+		c->sorted_lines = r_list_clone (ctx->sorted_lines, (RListClone)strdup);
+	}
+	if (ctx->unsorted_lines) {
+		c->unsorted_lines = r_list_clone (ctx->unsorted_lines, (RListClone)strdup);
+	}
+	// c->marks = r_list_clone (ctx->marks, (RListClone)strdup);
+	c->pal.rainbow = NULL;
+	r_kons_pal_clone (c);
+	// rainbow_clone (c);
+	memset (&c->grep, 0, sizeof (c->grep));
+	c->grep.strings = r_list_newf ((RListFree)grep_word_free);
+	c->grep.line = -1;
+	c->grep.sort = -1;
+	c->grep.sort_invert = false;
+	return c;
+}
+
+R_API bool r_cons_context_is_main(RCons *cons, RConsContext *ctx) {
+	if (r_list_length (cons->ctx_stack) == 0) {
+		return true;
+	}
+	RConsContext *first_context = r_list_get_n (cons->ctx_stack, 0);
+	return ctx == first_context;
+}
+
+R_API void r_cons_break_end(RCons *cons) {
+	RConsContext *C = cons->context;
+	C->breaked = false;
+	cons->timeout = 0;
+#if R2__UNIX__ && !__wasi__
+	if (!C->unbreakable) {
+		r_sys_signal (SIGINT, SIG_IGN);
+	}
+#endif
+	if (!r_stack_is_empty (C->break_stack)) {
+		// free all the stack
+		r_stack_free (C->break_stack);
+		// create another one
+		C->break_stack = r_stack_newf (6, break_stack_free);
+		C->event_interrupt_data = NULL;
+		C->event_interrupt = NULL;
+	}
+}
+

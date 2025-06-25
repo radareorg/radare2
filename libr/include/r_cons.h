@@ -832,8 +832,6 @@ R_API RCons *r_cons_singleton(void); // DEPRECATE
 R_API RCons *r_cons_global(RCons * R_NULLABLE c); // same as singleton? but taking nullable arg?
 R_API int r_cons_get_size(RCons *cons, int *rows);
 R_API const RConsTheme *r_cons_themes(void);
-R_API void r_cons_trim(void);
-// R_API RConsContext *r_cons_context(void);
 R_API InputState *r_cons_input_state(void);
 R_API void r_cons_free(RCons *cons);
 R_API char *r_cons_lastline(int *size);
