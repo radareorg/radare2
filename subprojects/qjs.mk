@@ -11,9 +11,9 @@ qjs_all: qjs
 
 qjs:
 	git clone --no-checkout --depth=1 https://github.com/quickjs-ng/quickjs qjs
-	cd qjs && git fetch --depth=1 origin a75498b9c74bc71b49ab4ca2d15c07282483b8cd
+	cd qjs && git fetch --depth=1 origin a75498b9c74bc71b49ab4ca2d15c07282483b8cd && git checkout a75498b9c74bc71b49ab4ca2d15c07282483b8cd
 	cd qjs && git checkout FETCH_HEAD
-	cp -f packagefiles/qjs/* qjs
+	cp -rf packagefiles/qjs/* qjs
 
 qjs_clean:
 	rm -rf qjs

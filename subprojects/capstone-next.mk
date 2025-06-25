@@ -4,6 +4,7 @@ WRAP_wrap_git_url:=https://github.com/capstone-engine/capstone.git
 WRAP_wrap_git_revision:=fe6bdc6ed82057a52754306961b23cf54f746fc6
 WRAP_wrap_git_patch_directory:=capstone-next
 WRAP_wrap_git_directory:=capstone-next
+WRAP_wrap_git_diff_files:=capstone-next/capstone-patches/fix-x86-16.patch
 WRAP_wrap_git_depth:=1
 
 capstone-next_all: capstone-next
@@ -11,9 +12,10 @@ capstone-next_all: capstone-next
 
 capstone-next:
 	git clone --no-checkout --depth=1 https://github.com/capstone-engine/capstone.git capstone-next
-	cd capstone-next && git fetch --depth=1 origin fe6bdc6ed82057a52754306961b23cf54f746fc6
+	cd capstone-next && git fetch --depth=1 origin fe6bdc6ed82057a52754306961b23cf54f746fc6 && git checkout fe6bdc6ed82057a52754306961b23cf54f746fc6
 	cd capstone-next && git checkout FETCH_HEAD
-	cp -f packagefiles/capstone-next/* capstone-next
+	cp -rf packagefiles/capstone-next/* capstone-next
+	for a in capstone-next/capstone-patches/fix-x86-16.patch ; do echo "patch -d capstone-next -p1 < $$a" ; patch -d capstone-next -p1 < $$a ; done
 
 capstone-next_clean:
 	rm -rf capstone-next

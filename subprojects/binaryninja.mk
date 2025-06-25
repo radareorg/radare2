@@ -11,9 +11,9 @@ binaryninja_all: binaryninja
 
 binaryninja:
 	git clone --no-checkout --depth=1 https://github.com/Vector35/binaryninja-api binaryninja
-	cd binaryninja && git fetch --depth=1 origin c40a5f04deec68d388b2072dc42b29141089f9ce
+	cd binaryninja && git fetch --depth=1 origin c40a5f04deec68d388b2072dc42b29141089f9ce && git checkout c40a5f04deec68d388b2072dc42b29141089f9ce
 	cd binaryninja && git checkout FETCH_HEAD
-	cp -f packagefiles/binaryninja/* binaryninja
+	cp -rf packagefiles/binaryninja/* binaryninja
 
 binaryninja_clean:
 	rm -rf binaryninja

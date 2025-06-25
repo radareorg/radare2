@@ -3,4 +3,5 @@ url = https://github.com/capstone-engine/capstone.git
 revision = accf4df62f1fba6f92cae692985d27063552601c
 patch_directory = capstone-v5
 directory = capstone-v5
+diff_files = capstone-v5/capstone-patches/fix-x86-16.patch
 depth = 1

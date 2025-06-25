@@ -3,4 +3,5 @@ url = https://github.com/capstone-engine/capstone.git
 revision = d7e459d026b19d6c3a7b743bfc475d919ff03f74
 patch_directory = capstone-v4
 directory = capstone-v4
+diff_files = capstone-v4/capstone-patches/v4/capstone-calloc.patch, capstone-v4/capstone-patches/v4/fix-x86-16.patch, capstone-v4/capstone-patches/v4/sparc-crash.patch, capstone-v4/capstone-patches/v4/sstream-null.patch
 depth = 1
