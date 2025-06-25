@@ -166,7 +166,7 @@ R_API bool r_file_is_c(const char *file) {
 
 R_API bool r_file_is_regular(const char *str) {
 	struct stat buf = {0};
-	if (!str || !*str || file_stat (str, &buf) == -1) {
+	if (R_STR_ISEMPTY (str) || file_stat (str, &buf) == -1) {
 		return false;
 	}
 	return ((S_IFREG & buf.st_mode) == S_IFREG);
@@ -186,6 +186,7 @@ R_API bool r_file_is_directory(const char *str) {
 	return S_IFDIR == (S_IFDIR & buf.st_mode);
 }
 
+// TODO: rename to existf .. or maybe not
 R_API bool r_file_fexists(const char *fmt, ...) {
 	R_RETURN_VAL_IF_FAIL (fmt, false);
 	int ret;
@@ -200,26 +201,7 @@ R_API bool r_file_fexists(const char *fmt, ...) {
 
 R_API bool r_file_exists(const char *str) {
 	R_RETURN_VAL_IF_FAIL (str, false);
-	struct stat buf = {0};
-#if 1
-#if 0
-	// maybe faster?
-	int res = access (str, R_OK);
-	return (res == 0);
-#endif
-	if (file_stat (str, &buf) != 0) {
-		return false;
-	}
-#else
-	char *absfile = r_file_abspath (str);
-	R_RETURN_VAL_IF_FAIL (!R_STR_ISEMPTY (str), false);
-	if (file_stat (absfile, &buf) == -1) {
-		free (absfile);
-		return false;
-	}
-	free (absfile);
-#endif
-	return S_IFREG == (S_IFREG & buf.st_mode);
+	return r_file_is_regular (str);
 }
 
 R_API ut64 r_file_size(const char *str) {

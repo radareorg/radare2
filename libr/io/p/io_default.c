@@ -33,6 +33,9 @@ static int open_file(const char *file, int perm, int mode) {
 		if (fd == -1 && (perm & R_PERM_CREAT)) {
 			r_sandbox_creat (file, 0644);
 			fd = r_sandbox_open (file, O_RDWR | O_CREAT, 0);
+			if (fd != -1) {
+				R_LOG_INFO ("New file created: %s", file);
+			}
 		}
 	} else {
 		fd = r_sandbox_open (file, O_RDONLY | O_BINARY, 0);
@@ -40,7 +43,11 @@ static int open_file(const char *file, int perm, int mode) {
 #else
 	const size_t posixFlags = (perm & R_PERM_W) ? (perm & R_PERM_CREAT)
 			? (O_RDWR | O_CREAT) : O_RDWR : O_RDONLY;
+	bool toctou = (posixFlags & O_CREAT) && r_file_exists (file);
 	fd = r_sandbox_open (file, posixFlags, mode);
+	if ((posixFlags & O_CREAT) && !toctou && fd != -1) {
+		R_LOG_INFO ("New file created: %s", file);
+	}
 #endif
 	return fd;
 }
@@ -129,6 +136,7 @@ static RIOMMapFileObj *mmap_create(RIO  *io, const char *filename, int perm, int
 					? (O_RDWR | O_CREAT)
 					: O_RDWR
 			): O_RDONLY;
+	bool toctou = (perm & R_PERM_CREAT) && r_file_exists (filename);
 	mmo->fd = r_sandbox_open (filename, posixFlags, mode);
 	if (mmo->fd == -1) {
 		mmap_free (mmo);
@@ -139,6 +147,9 @@ static RIOMMapFileObj *mmap_create(RIO  *io, const char *filename, int perm, int
 			mmap_free (mmo);
 			mmo = NULL;
 		}
+	}
+	if ((perm & R_PERM_CREAT) && !toctou && (!mmo || mmo->fd != -1)) {
+		R_LOG_INFO ("New file created: %s", filename);
 	}
 	return mmo;
 }
