@@ -66,7 +66,7 @@ R_API void r_core_undo_print(RCore *core, int mode, RCoreUndoCondition *cond) {
 	if (mode) {
 		r_list_foreach (core->undos, iter, cu) {
 			if (r_core_undo_condition (cu, cond)) {
-				r_cons_printf ("%s @ 0x%"PFMT64x"\n", cu->revert, cu->addr);
+				r_kons_printf (core->cons, "%s @ 0x%"PFMT64x"\n", cu->revert, cu->addr);
 			}
 		}
 	} else {
@@ -74,7 +74,7 @@ R_API void r_core_undo_print(RCore *core, int mode, RCoreUndoCondition *cond) {
 		int i = 0;
 		r_list_foreach (core->undos, iter, cu) {
 			const char * arrow = (i == core->undoindex - 1)? "*": "-";
-			r_cons_printf ("%s 0x%08"PFMT64x" old:% ds cmd: %s (revert: %s)\n",
+			r_kons_printf (core->cons, "%s 0x%08"PFMT64x" old:% ds cmd: %s (revert: %s)\n",
 				arrow, cu->addr, (int)((now - cu->tstamp) / 1000000), cu->action, cu->revert);
 			i++;
 		}
