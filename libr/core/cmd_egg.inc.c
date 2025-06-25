@@ -20,14 +20,14 @@ static RCoreHelpMessage help_msg_g = {
 	NULL
 };
 
-static void cmd_egg_option(REgg *egg, const char *key, const char *input) {
+static void cmd_egg_option(RCore *core, REgg *egg, const char *key, const char *input) {
 	if (!*input) {
 		return;
 	}
 	if (input[1] != ' ') {
 		char *a = r_egg_option_get (egg, key);
 		if (a) {
-			r_cons_println (a);
+			r_kons_println (core->cons, a);
 			free (a);
 		}
 	} else {
@@ -35,18 +35,18 @@ static void cmd_egg_option(REgg *egg, const char *key, const char *input) {
 	}
 }
 
-static void showBuffer(RBuffer *b) {
+static void showBuffer(RCore *core, RBuffer *b) {
 	int i;
 	if (b && r_buf_size (b) > 0) {
 		r_buf_seek (b, 0, R_BUF_SET);
 		for (i = 0; i < r_buf_size (b); i++) {
-			r_cons_printf ("%02x", r_buf_read8 (b));
+			r_kons_printf (core->cons, "%02x", r_buf_read8 (b));
 		}
-		r_cons_newline ();
+		r_kons_newline (core->cons);
 	}
 }
 
-static int cmd_egg_compile(REgg *egg) {
+static int cmd_egg_compile(RCore *core, REgg *egg) {
 	RBuffer *b;
 	int ret = false;
 	char *p = r_egg_option_get (egg, "egg.shellcode");
@@ -79,7 +79,7 @@ static int cmd_egg_compile(REgg *egg) {
 		free (p);
 	}
 	if ((b = r_egg_get_bin (egg))) {
-		showBuffer (b);
+		showBuffer (core, b);
 		ret = true;
 	}
 	// we do not own this buffer!!
@@ -118,7 +118,7 @@ static int cmd_egg(void *data, const char *input) {
 			}
 			free (oa);
 			if (buf) {
-				showBuffer (buf);
+				showBuffer (core, buf);
 			}
 			egg->lang.nsyscalls = 0;
 		} else {
@@ -128,7 +128,7 @@ static int cmd_egg(void *data, const char *input) {
 	case ' ': // "g "
 		if (input[1] && input[2]) {
 			r_egg_load (egg, input + 2, 0);
-			if (!cmd_egg_compile (egg)) {
+			if (!cmd_egg_compile (core, egg)) {
 				R_LOG_ERROR ("Cannot compile '%s'", input + 2);
 			}
 		} else {
@@ -136,7 +136,7 @@ static int cmd_egg(void *data, const char *input) {
 		}
 		break;
 	case '\0': // "g"
-		if (!cmd_egg_compile (egg)) {
+		if (!cmd_egg_compile (core, egg)) {
 			R_LOG_ERROR ("Cannot compile");
 		}
 		break;
@@ -229,28 +229,28 @@ static int cmd_egg(void *data, const char *input) {
 			"suid",
 			NULL
 		};
-		r_cons_printf ("# Configuration options\n");
+		r_kons_printf (core->cons, "# Configuration options\n");
 		int i;
 		for (i = 0; configList[i]; i++) {
 			const char *p = configList[i];
 			if (r_egg_option_get (egg, p)) {
-				r_cons_printf ("%s : %s\n", p, r_egg_option_get (egg, p));
+				r_kons_printf (core->cons, "%s : %s\n", p, r_egg_option_get (egg, p));
 			} else {
-				r_cons_printf ("%s : %s\n", p, "");
+				r_kons_printf (core->cons, "%s : %s\n", p, "");
 			}
 		}
-		r_cons_printf ("\n# Target options\n");
+		r_kons_printf (core->cons, "\n# Target options\n");
 		RArchConfig *ac = core->anal->config;
 		const char *os = ac->os? ac->os: R_SYS_OS;
-		r_cons_printf ("arch : %s\n", ac->cpu);
-		r_cons_printf ("os   : %s\n", os);
-		r_cons_printf ("bits : %d\n", ac->bits);
+		r_kons_printf (core->cons, "arch : %s\n", ac->cpu);
+		r_kons_printf (core->cons, "os   : %s\n", os);
+		r_kons_printf (core->cons, "bits : %d\n", ac->bits);
 	}
 	break;
 	case 'r': // "gr"
-		cmd_egg_option (egg, "egg.padding", "");
-		cmd_egg_option (egg, "egg.shellcode", "");
-		cmd_egg_option (egg, "egg.encoder", "");
+		cmd_egg_option (core, egg, "egg.padding", "");
+		cmd_egg_option (core, egg, "egg.shellcode", "");
+		cmd_egg_option (core, egg, "egg.encoder", "");
 		break;
 	case 'c': // "gc"
 		// list, get, set egg options
@@ -264,7 +264,7 @@ static int cmd_egg(void *data, const char *input) {
 			} else {
 				char *o = r_egg_option_get (egg, oa);
 				if (o) {
-					r_cons_print (o);
+					r_kons_print (core->cons, o);
 					free (o);
 				}
 			}

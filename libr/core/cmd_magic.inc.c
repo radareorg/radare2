@@ -1,15 +1,20 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #if R_INCLUDE_BEGIN
 
 #define NAH 32
 
-static R_TH_LOCAL RMagic *ck = NULL; // XXX: Use RCore->magic
-static R_TH_LOCAL char *ofile = NULL;
+typedef struct {
+	RCore *core;
+	char *ofile;
+	int hits;
+	// TODO: add PJ and other stuff
+} MagicContext;
 
 #define MAX_MAGIC_DEPTH 64
 
-static int r_core_magic_at(RCore *core, RSearchKeyword *kw, const char *file, ut64 addr, int depth, bool v, PJ *pj, int *hits) {
+static int magic_at(MagicContext *mc, RSearchKeyword *kw, const char *file, ut64 addr, int depth, bool v, PJ *pj) {
+	RCore *core = mc->core;
 	const char *fmt;
 	char *q, *p;
 	const char *str;
@@ -18,7 +23,7 @@ static int r_core_magic_at(RCore *core, RSearchKeyword *kw, const char *file, ut
 	int max_hits = r_config_get_i (core->config, "search.maxhits");
 	char *flag;
 
-	if (max_hits > 0 && *hits >= max_hits) {
+	if (max_hits > 0 && mc->hits >= max_hits) {
 		return 0;
 	}
 
@@ -50,7 +55,7 @@ static int r_core_magic_at(RCore *core, RSearchKeyword *kw, const char *file, ut
 	}
 	if (((addr & 7) == 0) && ((addr & (7 << 8)) == 0)) {
 		if (must_report_progress) {
-			eprintf ("0x%08" PFMT64x " [%d matches found]\r", addr, *hits);
+			eprintf ("0x%08" PFMT64x " [%d matches found]\r", addr, mc->hits);
 		}
 	}
 	if (file) {
@@ -59,31 +64,28 @@ static int r_core_magic_at(RCore *core, RSearchKeyword *kw, const char *file, ut
 			file = NULL;
 		}
 	}
-	if (file && ofile && file != ofile) {
-		if (strcmp (file, ofile)) {
-			r_magic_free (ck);
-			ck = NULL;
+	if (file && mc->ofile && file != mc->ofile) {
+		if (strcmp (file, mc->ofile)) {
+			r_magic_free (core->magic);
+			core->magic = NULL;
 		}
 	}
-	if (!ck) {
-		// TODO: Move RMagic into RCore
-		r_magic_free (ck);
-		// allocate once
-		ck = r_magic_new (0);
+	if (!core->magic) {
+		core->magic = r_magic_new (0);
 		if (file) {
-			free (ofile);
-			ofile = strdup (file);
-			if (!r_magic_load (ck, file)) {
-				R_LOG_ERROR ("failed r_magic_load (\"%s\") %s", file, r_magic_error (ck));
-				ck = NULL;
+			free (mc->ofile);
+			mc->ofile = strdup (file);
+			if (!r_magic_load (core->magic, file)) {
+				R_LOG_ERROR ("failed r_magic_load (\"%s\") %s", file, r_magic_error (core->magic));
+				core->magic = NULL;
 				ret = -1;
 				goto seek_exit;
 			}
 		} else {
 			const char *magicpath = r_config_get (core->config, "dir.magic");
-			if (!r_magic_load (ck, magicpath)) {
-				ck = NULL;
-				R_LOG_ERROR ("failed r_magic_load (dir.magic) %s", r_magic_error (ck));
+			if (!r_magic_load (core->magic, magicpath)) {
+				core->magic = NULL;
+				R_LOG_ERROR ("failed r_magic_load (dir.magic) %s", r_magic_error (core->magic));
 				ret = -1;
 				goto seek_exit;
 			}
@@ -95,7 +97,7 @@ static int r_core_magic_at(RCore *core, RSearchKeyword *kw, const char *file, ut
 		ret = -1;
 		goto seek_exit;
 	}
-	str = r_magic_buffer (ck, core->block + delta, core->blocksize - delta);
+	str = r_magic_buffer (core->magic, core->block + delta, core->blocksize - delta);
 	if (str) {
 		const char *cmdhit;
 #if USE_LIB_MAGIC
@@ -107,8 +109,6 @@ static int r_core_magic_at(RCore *core, RSearchKeyword *kw, const char *file, ut
 			if (mod < 1) {
 				mod = 1;
 			}
-			//r_magic_free (ck);
-			//ck = NULL;
 			//return -1;
 			ret = mod + 1;
 			goto seek_exit;
@@ -122,7 +122,7 @@ static int r_core_magic_at(RCore *core, RSearchKeyword *kw, const char *file, ut
 				strcpy (q + 1, q + ((q[2] == ' ')? 3: 2));
 			}
 		}
-		(*hits)++;
+		mc->hits++;
 		cmdhit = r_config_get (core->config, "cmd.hit");
 		if (cmdhit && *cmdhit) {
 			r_core_cmd0 (core, cmdhit);
@@ -139,10 +139,10 @@ static int r_core_magic_at(RCore *core, RSearchKeyword *kw, const char *file, ut
 		// TODO: This must be a callback .. move this into RSearch?
 		if (!pj) {
 			if (kw) {
-				r_cons_printf ("0x%08" PFMT64x " %d %s %s\n", addr + adelta, depth, flag, p);
+				r_kons_printf (core->cons, "0x%08" PFMT64x " %d %s %s\n", addr + adelta, depth, flag, p);
 				R_FREE (flag);
 			} else {
-				r_cons_printf ("0x%08" PFMT64x " %d %s\n", addr + adelta, depth, p);
+				r_kons_printf (core->cons, "0x%08" PFMT64x " %d %s\n", addr + adelta, depth, p);
 			}
 		} else {
 			pj_o (pj);
@@ -153,7 +153,7 @@ static int r_core_magic_at(RCore *core, RSearchKeyword *kw, const char *file, ut
 		}
 
 		if (must_report_progress) {
-			r_cons_clear_line (1);
+			r_kons_clear_line (core->cons, 1);
 		}
 		//eprintf ("0x%08"PFMT64x" 0x%08"PFMT64x" %d %s\n", addr+adelta, addr+adelta, depth, p);
 		// walking children
@@ -174,22 +174,18 @@ static int r_core_magic_at(RCore *core, RSearchKeyword *kw, const char *file, ut
 					if (R_STR_ISEMPTY (fmt)) {
 						fmt = file;
 					}
-					r_core_magic_at (core, kw, fmt, addr, depth + 1, true, pj, hits);
+					magic_at (mc, kw, fmt, addr, depth + 1, true, pj);
 					*q = '@';
 				}
 				break;
 			}
 		}
 		R_FREE (p);
-		r_magic_free (ck);
-		ck = NULL;
+		r_magic_free (core->magic);
+		core->magic = NULL;
 	}
 	adelta ++;
 	delta ++;
-#if 0
-	r_magic_free (ck);
-	ck = NULL;
-#endif
 	int mod = core->search->align;
 	if (mod) {
 		ret = mod; //adelta%addr + deR_ABS(mod-adelta)+1;
@@ -203,12 +199,17 @@ seek_exit:
 }
 
 static void r_core_magic(RCore *core, const char *file, int v, PJ *pj) {
-	ut64 addr = core->addr;
-	int hits = 0;
+	const ut64 addr = core->addr;
+	MagicContext mc = {
+		.core = core,
+		.ofile = NULL,
+		.hits = 0
+	};
 
-	r_core_magic_at (core, NULL, file, addr, 0, v, pj, &hits);
+	magic_at (&mc, NULL, file, addr, 0, v, pj);
+	free (mc.ofile);
 	if (pj) {
-		r_cons_newline ();
+		r_kons_newline (core->cons);
 	}
 	if (addr != core->addr) {
 		r_core_seek (core, addr, true);

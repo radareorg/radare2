@@ -875,7 +875,7 @@ static int cmp_bits(RCore *core, ut64 addr) {
 	for (i = 7; i >= 0; i--) {
 		r_kons_printf (core->cons, "%s%d%s%s", b_colors[i], b_bits[i], color_end, i? " ": "");
 	}
-	r_cons_newline ();
+	r_kons_newline (core->cons);
 
 	// 0 if equal, 1 if not equal
 	// same return pattern as ?==

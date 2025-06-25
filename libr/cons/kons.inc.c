@@ -1100,8 +1100,8 @@ R_API void r_kons_echo(RCons *cons, const char *msg) {
 	} else {
 		if (cons->echodata) {
 			char *data = r_strbuf_drain (cons->echodata);
-			r_cons_print (data);
-			r_cons_newline ();
+			r_kons_print (cons, data);
+			r_kons_newline (cons);
 			cons->echodata = NULL;
 			free (data);
 		}

@@ -948,7 +948,7 @@ R_API void r_cons_print_at(RCons *cons, const char *str, int x, char y, int w, i
 R_API void r_cons_println(const char* str);
 R_API void r_cons_print_justify(RCons *cons, const char *str, int j, char c);
 R_API int r_cons_write(const char *str, int len);
-R_API void r_cons_newline(void);
+R_DEPRECATE R_API void r_cons_newline(void);
 R_API void r_cons_filter(void);
 R_API void r_cons_flush(void);
 R_API char *r_cons_drain(void);

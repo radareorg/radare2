@@ -1527,8 +1527,8 @@ static bool print_bits_hint_cb(ut64 addr, int bits, void *user) {
 	return true;
 }
 
-static void print_hint_tree(RBTree tree, int mode) {
-#define END_ADDR if (mode == 'j') { pj_end (pj); } else if (mode != '*') { r_cons_newline (); }
+static void print_hint_tree(RCore *core, RBTree tree, int mode) {
+#define END_ADDR if (mode == 'j') { pj_end (pj); } else if (mode != '*') { r_kons_newline (core->cons); }
 	PJ *pj = NULL;
 	if (mode == 'j') {
 		pj = pj_new ();
@@ -1549,7 +1549,7 @@ static void print_hint_tree(RBTree tree, int mode) {
 				pj_o (pj);
 				pj_kn (pj, "addr", node->addr);
 			} else if (mode != '*') {
-				r_cons_printf (" 0x%08"PFMT64x" =>", node->addr);
+				r_kons_printf (core->cons, " 0x%08"PFMT64x" =>", node->addr);
 			}
 		}
 		hint_node_print (node, mode, pj);
@@ -1559,26 +1559,28 @@ static void print_hint_tree(RBTree tree, int mode) {
 	}
 	if (pj) {
 		pj_end (pj);
-		r_cons_println (pj_string (pj));
+		r_kons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 	}
 #undef END_ADDR
 }
 
-R_API void r_core_anal_hint_list(RAnal *a, int mode) {
+R_API void r_core_anal_hint_list(RCore *core, int mode) {
+	RAnal *a = core->anal;
 	RBTree tree = NULL;
 	// Collect all hints in the tree to sort them
 	r_anal_arch_hints_foreach (a, print_arch_hint_cb, &tree);
 	r_anal_bits_hints_foreach (a, print_bits_hint_cb, &tree);
 	r_anal_addr_hints_foreach (a, print_addr_hint_cb, &tree);
-	print_hint_tree (tree, mode);
+	print_hint_tree (core, tree, mode);
 	r_rbtree_free (tree, hint_node_free, NULL);
 }
 
-R_API void r_core_anal_hint_print(RAnal* a, ut64 addr, int mode) {
+R_API void r_core_anal_hint_print(RCore *core, ut64 addr, int mode) {
 	RBTree tree = NULL;
+	RAnal *a = core->anal;
 	ut64 hint_addr = UT64_MAX;
-	const char *arch = r_anal_hint_arch_at(a, addr, &hint_addr);
+	const char *arch = r_anal_hint_arch_at (a, addr, &hint_addr);
 	if (hint_addr != UT64_MAX) {
 		print_arch_hint_cb (hint_addr, arch, &tree);
 	}
@@ -1590,7 +1592,7 @@ R_API void r_core_anal_hint_print(RAnal* a, ut64 addr, int mode) {
 	if (addr_hints) {
 		print_addr_hint_cb (addr, addr_hints, &tree);
 	}
-	print_hint_tree (tree, mode);
+	print_hint_tree (core, tree, mode);
 	r_rbtree_free (tree, hint_node_free, NULL);
 }
 
@@ -3089,7 +3091,7 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode, bool unique,
 				pj_end (pj); // close list of calls
 				pj_end (pj); // close function item
 			} else {
-				r_cons_newline ();
+				r_kons_newline (core->cons);
 			}
 		}
 		RVecAnalRef_free (refs);
@@ -3097,7 +3099,7 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode, bool unique,
 
 	if (mode == 'j') {
 		pj_end (pj); // close json output
-		r_cons_printf ("%s\n", pj_string (pj));
+		r_kons_printf (core->cons, "%s\n", pj_string (pj));
 	}
 	if (pj) {
 		pj_free (pj);

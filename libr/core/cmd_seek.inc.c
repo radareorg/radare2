@@ -656,7 +656,7 @@ static int cmd_seek(void *data, const char *input) {
 				}
 				r_list_free (list);
 				if (!mode) {
-					r_cons_newline ();
+					r_kons_newline (core->cons);
 				}
 			}
 		}

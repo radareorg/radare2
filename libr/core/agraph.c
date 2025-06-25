@@ -4526,7 +4526,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 	grd->fcn = fcn? &fcn: NULL;
 	ret = agraph_refresh (grd);
 	if (!ret || is_interactive != 1) {
-		r_cons_newline ();
+		r_kons_newline (core->cons);
 		exit_graph = true;
 		is_error = !ret;
 	}

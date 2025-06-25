@@ -7,6 +7,7 @@
 char *getcommapath(RCore *core);
 
 typedef struct {
+	RCore *core;
 	ut64 filter_offset;
 	int filter_format;
 	size_t filter_count;
@@ -182,7 +183,7 @@ static bool print_meta_offset(RCore *core, ut64 addr, PJ *pj) {
 	}
 	int line = al->line;
 
-	r_cons_printf ("file: %s\nline: %d\ncolu: %d\naddr: 0x%08"PFMT64x"\n", al->file, line, al->column, addr);
+	r_kons_printf (core->cons, "file: %s\nline: %d\ncolu: %d\naddr: 0x%08"PFMT64x"\n", al->file, line, al->column, addr);
 	int line_old = line;
 	if (line >= 2) {
 		line -= 2;
@@ -192,7 +193,7 @@ static bool print_meta_offset(RCore *core, ut64 addr, PJ *pj) {
 		for (i = 0; i < 5; i++) {
 			char *row = r_file_slurp_line (al->file, line + i, 0);
 			if (row) {
-				r_cons_printf ("%c %.3x  %s\n", al->line + i == line_old ? '>' : ' ', line + i, row);
+				r_kons_printf (core->cons, "%c %.3x  %s\n", al->line + i == line_old ? '>' : ' ', line + i, row);
 				free (row);
 			}
 		}
@@ -214,12 +215,12 @@ static bool print_addrinfo_json(void *user, const char *k, const char *v) {
 		colonpos = strchr (subst, ':');
 	}
 	if (!colonpos) {
-		r_cons_printf ("%s\n", subst);
+		r_kons_printf (fs->core->cons, "%s\n", subst);
 	}
 	if (colonpos && (fs->filter_offset == UT64_MAX || fs->filter_offset == offset)) {
 		if (fs->filter_format) {
 			*colonpos = ':';
-	//		r_cons_printf ("CL %s %s\n", k, subst);
+	//		r_kons_printf (core->cons, "CL %s %s\n", k, subst);
 		} else {
 			*colonpos = 0;
 	//		r_cons_printf ("file: %s\nline: %s\naddr: 0x%08"PFMT64x"\n", subst, colonpos + 1, offset);
@@ -405,7 +406,7 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 	const char *p = input;
 	char *file_line = NULL;
 
-	FilterStruct fs = { UT64_MAX, 0, 0, NULL };
+	FilterStruct fs = { core, UT64_MAX, 0, 0, NULL };
 
 	if (*p == '?') {
 		r_core_cmd_help (core, help_msg_CL);
@@ -971,7 +972,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			RAnalMetaItem *mi = r_meta_get_at (core->anal, addr, type, &size);
 			if (mi) {
 				r_meta_print (core->anal, mi, addr, size, input[2], NULL, NULL, false);
-				r_cons_newline ();
+				r_kons_newline (core->cons);
 			}
 			break;
 		}

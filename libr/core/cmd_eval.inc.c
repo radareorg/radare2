@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2024 - pancake */
+/* radare2 - LGPL - Copyright 2009-2025 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -107,7 +107,7 @@ static void cmd_eval_table(RCore *core, const char *input) {
 		char *s = (fmt == 'j')
 			? r_table_tojson (t)
 			: r_table_tostring (t);
-		r_cons_printf ("%s\n", s);
+		r_kons_printf (core->cons, "%s\n", s);
 		free (s);
 	}
 	r_table_free (t);
@@ -123,7 +123,7 @@ static bool nextpal_item(RCore *core, PJ *pj, int mode, const char *file) {
 		pj_s (pj, fn);
 		break;
 	case 'l': // list
-		r_cons_println (fn);
+		r_kons_println (core->cons, fn);
 		break;
 	case 'p': // previous
 		// TODO: move logic here
@@ -256,7 +256,7 @@ R_API RList *r_core_list_themes(RCore *core) {
 }
 
 static void nextpal(RCore *core, int mode) {
-// TODO: use r_core_list_themes() here instead of rewalking all the time
+	// TODO: use r_core_list_themes() here instead of rewalking all the time
 	RList *files = NULL;
 	RListIter *iter;
 	const char *fn;
@@ -358,7 +358,7 @@ done:
 	files = NULL;
 	if (mode == 'j') {
 		pj_end (pj);
-		r_cons_println (pj_string (pj));
+		r_kons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 	}
 }
@@ -368,14 +368,14 @@ R_API void r_core_echo(RCore *core, const char *input) {
 		char *buf = strdup (input);
 		r_base64_decode ((ut8*)buf, input + 3, -1);
 		if (*buf) {
-			r_cons_echo (buf);
+			r_kons_echo (core->cons, buf);
 		}
 		free (buf);
 	} else {
 		char *p = strchr (input, ' ');
 		if (p) {
-			r_cons_print (p + 1);
-			r_cons_newline ();
+			r_kons_print (core->cons, p + 1);
+			r_kons_newline (core->cons);
 		}
 	}
 }
@@ -417,7 +417,7 @@ static bool cmd_ec(RCore *core, const char *input) {
 				}
 				char *theme_script = get_theme_script (core, theme_name);
 				if (R_STR_ISNOTEMPTY (theme_script)) {
-					r_cons_printf ("%s\n", theme_script);
+					r_kons_printf (core->cons, "%s\n", theme_script);
 				} else {
 					R_LOG_ERROR ("Cannot find theme '%s'", theme_name);
 				}
@@ -451,11 +451,11 @@ static bool cmd_ec(RCore *core, const char *input) {
 			while (theme && theme->name) {
 				const char *th = theme->name;
 				if (input[2] == 'q') {
-					r_cons_printf ("%s\n", th);
+					r_kons_printf (core->cons, "%s\n", th);
 				} else if (core->theme && !strcmp (core->theme, th)) {
-					r_cons_printf ("- %s\n", th);
+					r_kons_printf (core->cons, "- %s\n", th);
 				} else {
-					r_cons_printf ("  %s\n", th);
+					r_kons_printf (core->cons, "  %s\n", th);
 				}
 				theme++;
 			}
@@ -464,11 +464,11 @@ static bool cmd_ec(RCore *core, const char *input) {
 					continue;
 				}
 				if (input[2] == 'q') {
-					r_cons_printf ("%s\n", th);
+					r_kons_printf (core->cons, "%s\n", th);
 				} else if (core->theme && !strcmp (core->theme, th)) {
-					r_cons_printf ("- %s\n", th);
+					r_kons_printf (core->cons, "- %s\n", th);
 				} else {
-					r_cons_printf ("  %s\n", th);
+					r_kons_printf (core->cons, "  %s\n", th);
 				}
 			}
 			r_list_free (themes_list);
@@ -649,7 +649,7 @@ static void r2rc_set(RCore *core, const char * R_NULLABLE k, const char * R_NULL
 						r_strbuf_appendf (sb, "'e %s=%s\n", k, v);
 					}
 				} else {
-					r_cons_println (line);
+					r_kons_println (core->cons, line);
 				}
 				found = true;
 			} else {
@@ -670,7 +670,7 @@ static void r2rc_set(RCore *core, const char * R_NULLABLE k, const char * R_NULL
 			r_strbuf_free (sb);
 		}
 	} else {
-		r_cons_println (rcdata);
+		r_kons_println (core->cons, rcdata);
 	}
 	free (rcdata);
 	free (rcfile);
