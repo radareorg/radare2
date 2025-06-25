@@ -1256,56 +1256,56 @@ static void print_hint_h_format(RCore *core, HintNode *node) {
 		r_vector_foreach (node->addr_hints, record) {
 			switch (record->type) {
 			case R_ANAL_ADDR_HINT_TYPE_IMMBASE:
-				r_cons_printf (" immbase=%d", record->immbase);
+				r_kons_printf (core->cons, " immbase=%d", record->immbase);
 				break;
 			case R_ANAL_ADDR_HINT_TYPE_JUMP:
-				r_cons_printf (" jump=0x%08"PFMT64x, record->jump);
+				r_kons_printf (core->cons, " jump=0x%08"PFMT64x, record->jump);
 				break;
 			case R_ANAL_ADDR_HINT_TYPE_FAIL:
-				r_cons_printf (" fail=0x%08"PFMT64x, record->fail);
+				r_kons_printf (core->cons, " fail=0x%08"PFMT64x, record->fail);
 				break;
 			case R_ANAL_ADDR_HINT_TYPE_STACKFRAME:
-				r_cons_printf (" stackframe=0x%"PFMT64x, record->stackframe);
+				r_kons_printf (core->cons, " stackframe=0x%"PFMT64x, record->stackframe);
 				break;
 			case R_ANAL_ADDR_HINT_TYPE_PTR:
-				r_cons_printf (" ptr=0x%"PFMT64x, record->ptr);
+				r_kons_printf (core->cons, " ptr=0x%"PFMT64x, record->ptr);
 				break;
 			case R_ANAL_ADDR_HINT_TYPE_NWORD:
-				r_cons_printf (" nword=%d", record->nword);
+				r_kons_printf (core->cons, " nword=%d", record->nword);
 				break;
 			case R_ANAL_ADDR_HINT_TYPE_RET:
-				r_cons_printf (" ret=0x%08"PFMT64x, record->retval);
+				r_kons_printf (core->cons, " ret=0x%08"PFMT64x, record->retval);
 				break;
 			case R_ANAL_ADDR_HINT_TYPE_NEW_BITS:
-				r_cons_printf (" newbits=%d", record->newbits);
+				r_kons_printf (core->cons, " newbits=%d", record->newbits);
 				break;
 			case R_ANAL_ADDR_HINT_TYPE_SIZE:
-				r_cons_printf (" size=%"PFMT64u, record->size);
+				r_kons_printf (core->cons, " size=%"PFMT64u, record->size);
 				break;
 			case R_ANAL_ADDR_HINT_TYPE_SYNTAX:
-				r_cons_printf (" syntax='%s'", record->syntax);
+				r_kons_printf (core->cons, " syntax='%s'", record->syntax);
 				break;
 			case R_ANAL_ADDR_HINT_TYPE_OPTYPE: {
 				const char *type = r_anal_optype_tostring (record->optype);
 				if (type) {
-					r_cons_printf (" type='%s'", type);
+					r_kons_printf (core->cons, " type='%s'", type);
 				}
 				break;
 			}
 			case R_ANAL_ADDR_HINT_TYPE_OPCODE:
-				r_cons_printf (" opcode='%s'", record->opcode);
+				r_kons_printf (core->cons, " opcode='%s'", record->opcode);
 				break;
 			case R_ANAL_ADDR_HINT_TYPE_TYPE_OFFSET:
-				r_cons_printf (" offset='%s'", record->type_offset);
+				r_kons_printf (core->cons, " offset='%s'", record->type_offset);
 				break;
 			case R_ANAL_ADDR_HINT_TYPE_ESIL:
-				r_cons_printf (" esil='%s'", record->esil);
+				r_kons_printf (core->cons, " esil='%s'", record->esil);
 				break;
 			case R_ANAL_ADDR_HINT_TYPE_HIGH:
-				r_cons_printf (" high=true");
+				r_kons_printf (core->cons, " high=true");
 				break;
 			case R_ANAL_ADDR_HINT_TYPE_VAL:
-				r_cons_printf (" val=0x%08"PFMT64x, record->val);
+				r_kons_printf (core->cons, " val=0x%08"PFMT64x, record->val);
 				break;
 			}
 		}
@@ -1332,7 +1332,7 @@ static void print_hint_h_format(RCore *core, HintNode *node) {
 static void hint_node_print(RCore *core, HintNode *node, int mode, PJ *pj) {
 	switch (mode) {
 	case '*':
-#define HINTCMD_ADDR(hint,fmt,x) r_cons_printf (fmt" @ 0x%"PFMT64x"\n", x, (hint)->addr)
+#define HINTCMD_ADDR(hint,fmt,x) r_kons_printf (core->cons, fmt" @ 0x%"PFMT64x"\n", x, (hint)->addr)
 		switch (node->type) {
 		case HINT_NODE_ADDR: {
 			const RAnalAddrHintRecord *record;
@@ -2680,25 +2680,25 @@ repeat:
 	}
 }
 
-static void fcn_list_bbs(RAnalFunction *fcn) {
+static void fcn_list_bbs(RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bbi;
 	RListIter *iter;
 
 	r_list_foreach (fcn->bbs, iter, bbi) {
-		r_cons_printf ("afb+ 0x%08" PFMT64x " 0x%08" PFMT64x " %" PFMT64u " ",
+		r_kons_printf (core->cons, "afb+ 0x%08" PFMT64x " 0x%08" PFMT64x " %" PFMT64u " ",
 				   fcn->addr, bbi->addr, bbi->size);
-		r_cons_printf ("0x%08"PFMT64x" ", bbi->jump);
-		r_cons_printf ("0x%08"PFMT64x, bbi->fail);
+		r_kons_printf (core->cons, "0x%08"PFMT64x" ", bbi->jump);
+		r_kons_printf (core->cons, "0x%08"PFMT64x, bbi->fail);
 		if (bbi->diff) {
 			if (bbi->diff->type == R_ANAL_DIFF_TYPE_MATCH) {
-				r_cons_printf (" m");
+				r_kons_printf (core->cons, " m");
 			} else if (bbi->diff->type == R_ANAL_DIFF_TYPE_UNMATCH) {
-				r_cons_printf (" u");
+				r_kons_printf (core->cons, " u");
 			} else {
-				r_cons_printf (" n");
+				r_kons_printf (core->cons, " n");
 			}
 		}
-		r_cons_printf ("\n");
+		r_kons_printf (core->cons, "\n");
 	}
 }
 
@@ -2710,7 +2710,7 @@ R_API ut64 r_core_anal_fcn_list_size(RCore *core) {
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		total += r_anal_function_realsize (fcn);
 	}
-	r_cons_printf ("%"PFMT64u"\n", total);
+	r_kons_printf (core->cons, "%"PFMT64u"\n", total);
 	return total;
 }
 
@@ -2782,7 +2782,7 @@ static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 		addrwidth = 16;
 	}
 
-	r_cons_printf (FCN_LIST_VERBOSE_ENTRY, color,
+	r_kons_printf (core->cons, FCN_LIST_VERBOSE_ENTRY, color,
 			addrwidth, fcn->addr, fcn->is_noreturn,
 			r_anal_function_realsize (fcn),
 			r_list_length (fcn->bbs),
@@ -2837,11 +2837,11 @@ static int fcn_list_verbose(RCore *core, RList *fcns, const char *sortby) {
 	}
 
 	// TODO: add ninstr and islineal?
-	r_cons_printf ("%-*s %5s %4s %5s %5s %5s %4s %*s range %-*s %s %s %s %s %s %s\n",
+	r_kons_printf (core->cons, "%-*s %5s %4s %5s %5s %5s %4s %*s range %-*s %s %s %s %s %s %s\n",
 			headeraddr_width, "address", "noret", "size", "nbbs", "edges", "cc", "cost",
 			headeraddr_width, "min bound", headeraddr_width, "max bound", "calls",
 			"locals", "args", "xref", "frame", "name");
-	r_cons_printf ("%s ===== ===== ===== ===== ===== ==== %s ===== %s ===== ====== ==== ==== ===== ====\n",
+	r_kons_printf (core->cons, "%s ===== ===== ===== ===== ===== ==== %s ===== %s ===== ====== ==== ==== ===== ====\n",
 			headeraddr, headeraddr, headeraddr);
 	RListIter *iter;
 	RAnalFunction *fcn;
@@ -3018,9 +3018,9 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode, bool unique,
 				}
 				if (found) {
 					if (mode == 'q') {
-						r_cons_printf ("0x%08"PFMT64x"\n", at);
+						r_kons_printf (core->cons, "0x%08"PFMT64x"\n", at);
 					} else {
-						r_cons_printf ("%s\n", fcn->name);
+						r_kons_printf (core->cons, "%s\n", fcn->name);
 					}
 				}
 				continue;
@@ -3037,13 +3037,13 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode, bool unique,
 				pj_k (pj, "calls");
 				pj_a (pj);
 			} else if (!here) {
-				r_cons_printf ("%s", fcn->name);
+				r_kons_printf (core->cons, "%s", fcn->name);
 			}
 
 			if (!mode || !here) {
-				r_cons_printf (":\n");
+				r_kons_printf (core->cons, ":\n");
 			} else if (mode == 'q') {
-				r_cons_printf (" -> ");
+				r_kons_printf (core->cons, " -> ");
 			}
 			// Iterate over all refs from a function
 			Sdb *uniq = unique ? sdb_new0 (): NULL;
@@ -3063,9 +3063,9 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode, bool unique,
 				} else if (mode == 'c') {
 					// print later
 				} else if (mode == 'q') {
-					r_cons_printf ("%s ", dst);
+					r_kons_printf (core->cons, "%s ", dst);
 				} else {
-					r_cons_printf ("    %s\n", dst);
+					r_kons_printf (core->cons, "    %s\n", dst);
 				}
 				free (dst);
 			}
@@ -3382,7 +3382,7 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 			fcn->diff->type == R_ANAL_DIFF_TYPE_MATCH?'m':
 			fcn->diff->type == R_ANAL_DIFF_TYPE_UNMATCH?'u':'n');
 	// FIXME: this command prints something annoying. Does it have important side-effects?
-	fcn_list_bbs (fcn);
+	fcn_list_bbs (core, fcn);
 	if (fcn->bits != 0) {
 		r_kons_printf (cons, "'@0x%08"PFMT64x"'afB %d\n", fcn->addr, fcn->bits);
 	}
@@ -3431,13 +3431,13 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 
 R_VEC_TYPE(RVecDebugTracepoint, RDebugTracepointItem);
 
-static bool is_fcn_traced(RDebugTrace *traced, RAnalFunction *fcn) {
+static bool is_fcn_traced(RCore *core, RDebugTrace *traced, RAnalFunction *fcn) {
 	int tag = traced->tag;
 	RDebugTracepointItem *trace;
 	R_VEC_FOREACH (traced->traces, trace) {
 		if (!trace->tag || (tag & trace->tag)) {
 			if (r_anal_function_contains (fcn, trace->addr)) {
-				r_cons_printf ("\ntraced: %d\n", trace->times);
+				r_kons_printf (core->cons, "\ntraced: %d\n", trace->times);
 				return true;
 			}
 		}
@@ -3604,7 +3604,7 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn, bool dorefs) {
 
 	// traced
 	if (core->dbg->trace->enabled) {
-		is_fcn_traced (core->dbg->trace, fcn);
+		is_fcn_traced (core, core->dbg->trace, fcn);
 	}
 	return 0;
 }

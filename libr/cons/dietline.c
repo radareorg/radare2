@@ -708,7 +708,7 @@ R_API int r_line_hist_list(RLine *line, bool full) {
 		i = full? 0: line->history.load_index;
 		for (; i < line->history.size && line->history.data[i]; i++) {
 			const char *pad = r_str_pad (' ', 32 - strlen (line->history.data[i]));
-			r_cons_printf ("%s %s # !%d\n", line->history.data[i], pad, i);
+			r_kons_printf (line->cons, "%s %s # !%d\n", line->history.data[i], pad, i);
 		}
 	}
 	return i;

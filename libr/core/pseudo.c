@@ -568,7 +568,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 #endif
 			if (addr != bb->addr) {
 				queuegoto = addr;
-				// r_cons_printf ("\n%s  goto loc_0x%"PFMT64x, indentstr, addr);
+				// r_kons_printf ("\n%s  goto loc_0x%"PFMT64x, indentstr, addr);
 			}
 			bb = r_anal_bb_from_offset (core->anal, addr);
 			if (!bb) {
@@ -619,7 +619,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 							/* do nothing here */
 							R_LOG_DEBUG ("There's already a block at 0x%"PFMT64x, bb->addr);
 						} else {
-							// r_cons_printf (" { RADICAL %llx\n", bb->addr);
+							// r_kons_printf (" { RADICAL %llx\n", bb->addr);
 							sdb_array_push_num (db, "indent", fail, 0);
 							sdb_num_set (db, K_INDENT (fail), indent, 0);
 							sdb_num_set (db, K_ELSE (fail), 1, 0);
@@ -782,7 +782,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		pj_ks (pj, "code", kode);
 		pj_end (pj);
 		char *j = pj_drain (pj);
-		r_cons_printf ("%s\n", j);
+		r_kons_printf (core->cons, "%s\n", j);
 		free (kode);
 		free (j);
 		r_strbuf_free (out);
@@ -793,7 +793,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			free (s);
 			s = ss;
 		}
-		r_cons_printf ("%s\n", s);
+		r_kons_printf (core->cons, "%s\n", s);
 		free (s);
 		r_strbuf_free (codestr);
 	}

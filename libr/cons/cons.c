@@ -1062,6 +1062,7 @@ R_API const RConsTheme* r_cons_themes(void) {
 }
 #endif
 
+// TODO
 R_API int r_cons_printf(const char *format, ...) {
 	va_list ap;
 	if (R_STR_ISEMPTY (format)) {
