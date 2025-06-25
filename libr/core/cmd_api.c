@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #define R_LOG_ORIGIN "cmdapi"
 #include <r_core.h>
@@ -22,21 +22,16 @@ static void *alias_dupkey(const void *k) {
 
 static void *alias_dupvalue(const void *v_void) {
 	RCmdAliasVal *v = (RCmdAliasVal *)v_void;
-	RCmdAliasVal *vcopy = R_NEW (RCmdAliasVal);
-	if (!vcopy) {
-		return NULL;
-	}
 	ut8 *data = malloc (v->sz);
 	if (!data) {
-		free (vcopy);
 		return NULL;
 	}
+	RCmdAliasVal *vcopy = R_NEW (RCmdAliasVal);
 	vcopy->is_data = v->is_data;
 	vcopy->is_str = v->is_str;
 	vcopy->sz = v->sz;
 	vcopy->data = data;
 	memcpy (vcopy->data, v->data, v->sz);
-
 	return vcopy;
 }
 
@@ -642,7 +637,7 @@ R_API char *r_cmd_macro_list(RCmdMacro *mac, int mode) {
 				r_strbuf_appendf (sb, "%c", m->code[j]);
 			}
 		}
-		r_strbuf_appendf (sb, ")\n");
+		r_strbuf_append (sb, ")\n");
 		idx++;
 	}
 	return r_strbuf_drain (sb);
