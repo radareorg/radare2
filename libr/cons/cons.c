@@ -716,6 +716,59 @@ R_API void r_cons_invert(RCons *cons, int set, int color) {
 }
 
 #if R2__WINDOWS__
+static int win_xterm_get_cur_pos(RCons *cons, int *xpos) {
+	int ypos = 0;
+	const char *get_pos = R_CONS_GET_CURSOR_POSITION;
+	if (write (cons->fdout, get_pos, sizeof (get_pos)) < 1) {
+		return 0;
+	}
+	int ch;
+	char pos[16];
+	size_t i;
+	bool is_reply;
+	do {
+		is_reply = true;
+		ch = r_cons_readchar (cons);
+		if (ch != 0x1b) {
+			while ((ch = r_cons_readchar_timeout (cons, 25))) {
+				if (ch < 1) {
+					return 0;
+				}
+				if (ch == 0x1b) {
+					break;
+				}
+			}
+		}
+		(void)r_cons_readchar (cons);
+		for (i = 0; i < R_ARRAY_SIZE (pos) - 1; i++) {
+			ch = r_cons_readchar (cons);
+			if ((!i && !isdigit (ch)) || // dumps arrow keys etc.
+			    (i == 1 && ch == '~')) {  // dumps PgUp, PgDn etc.
+				is_reply = false;
+				break;
+			}
+			if (ch == ';') {
+				pos[i] = 0;
+				break;
+			}
+			pos[i] = ch;
+		}
+	} while (!is_reply);
+	pos[R_ARRAY_SIZE (pos) - 1] = 0;
+	ypos = atoi (pos);
+	for (i = 0; i < R_ARRAY_SIZE (pos) - 1; i++) {
+		if ((ch = r_cons_readchar (cons)) == 'R') {
+			pos[i] = 0;
+			break;
+		}
+		pos[i] = ch;
+	}
+	pos[R_ARRAY_SIZE (pos) - 1] = 0;
+	*xpos = atoi (pos);
+
+	return ypos;
+}
+
 static bool w32_xterm_get_size(RCons *cons) {
 	if (write (cons->fdout, R_CONS_CURSOR_SAVE, sizeof (R_CONS_CURSOR_SAVE)) < 1) {
 		return false;
