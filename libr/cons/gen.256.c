@@ -39,7 +39,7 @@ int main() {
 	}
 
 	printf ("static int colortable[] = {\n");
-	for (i = 0; i< 256; i++) {
+	for (i = 0; i < 256; i++) {
 		if (i && !(i%16)) {
 			printf ("\n");
 		}
