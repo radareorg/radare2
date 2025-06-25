@@ -400,70 +400,11 @@ R_API const char *r_kons_get_buffer(RCons *cons, size_t *buffer_len) {
 	return (ctx->buffer_len > 0)? ctx->buffer : NULL;
 }
 
-R_API void r_cons_push(RCons *cons) {
-	r_list_push (cons->ctx_stack, cons->context);
-	RConsContext *nc = r_cons_context_clone (cons->context);
-#if 1
-	// maybe this is done by kons_reset too
-	nc->buffer = NULL;
-	nc->buffer_sz = 0;
-	nc->buffer_len = 0;
-#endif
-	cons->context = nc;
-	// global hacks
-	RCons *Gcons = r_cons_singleton ();
-	if (cons == Gcons) {
-		Gcons->context = nc;
-	}
-	r_cons_reset (cons);
-	// r_cons_context_reset (cons->context);
-#if 0
-	// memcpy (&tc, cons->context, sizeof (tc));
-	if (!ctx->cons_stack) {
-		return;
-	}
-	RConsStack *data = cons_stack_dump (cons, true);
-	if (data) {
-		r_stack_push (ctx->cons_stack, data);
-		ctx->buffer_len = 0;
-		if (ctx->buffer) {
-			memset (ctx->buffer, 0, ctx->buffer_sz);
-		}
-	}
-#endif
-}
-
-R_API bool r_cons_pop(RCons *cons) {
-	if (r_list_empty (cons->ctx_stack)) {
-		R_LOG_INFO ("Nothing to pop");
-		return false;
-	}
-	RConsContext *ctx = r_list_pop (cons->ctx_stack);
-	r_cons_context_free (cons->context);
-	cons->context = ctx;
-	// global hacks
-	RCons *Gcons = r_cons_singleton ();
-	if (cons == Gcons) {
-		Gcons->context = ctx;
-	}
-	return true;
-#if 0
-	if (ctx->cons_stack) {
-		RConsStack *data = (RConsStack *)r_stack_pop (ctx->cons_stack);
-		if (data) {
-			cons_stack_load (ctx, data, true);
-			cons_stack_free ((void *)data);
-		}
-	}
-	memcpy (cons->context, &tc, sizeof (tc));
-#endif
-}
-
 R_API bool r_kons_context_is_main(RCons *cons) {
 	return r_cons_context_is_main (cons, cons->context);
 }
 
-R_API void r_kons_echo(RCons *cons, const char *msg) {
+R_API void r_cons_echo(RCons *cons, const char *msg) {
 	if (msg) {
 		if (cons->echodata) {
 			r_strbuf_append (cons->echodata, msg);

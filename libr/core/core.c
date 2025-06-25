@@ -331,7 +331,7 @@ R_API char *r_core_cmd_call_str_at(RCore *core, ut64 addr, const char *cmd) {
 	const char *static_str = r_cons_get_buffer ();
 	char *retstr = strdup (r_str_get (static_str));
 	r_cons_pop (core->cons);
-	r_cons_echo (NULL);
+	r_cons_echo (core->cons, NULL);
 	return retstr;
 }
 
@@ -3124,7 +3124,7 @@ R_API int r_core_prompt_exec(RCore *r) {
 			}
 			r->cons->context->use_tts = false;
 		}
-		r_kons_echo (r->cons, NULL);
+		r_cons_echo (r->cons, NULL);
 		r_cons_flush (r->cons); // double free
 		if (r->cons && r->cons->line && r->cons->line->zerosep) {
 			r_kons_zero (r->cons);

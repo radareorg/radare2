@@ -828,7 +828,7 @@ R_API int r_core_visual_prompt(RCore *core) {
 	if (*buf) {
 		r_line_hist_add (core->cons->line, buf);
 		r_core_cmd (core, buf, 0);
-		r_kons_echo (core->cons, NULL);
+		r_cons_echo (core->cons, NULL);
 		r_cons_flush (core->cons);
 		if (r_config_get_b (core->config, "cfg.debug")) {
 			r_core_cmd (core, ".dr*", 0);

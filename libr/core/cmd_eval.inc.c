@@ -368,7 +368,7 @@ R_API void r_core_echo(RCore *core, const char *input) {
 		char *buf = strdup (input);
 		r_base64_decode ((ut8*)buf, input + 3, -1);
 		if (*buf) {
-			r_kons_echo (core->cons, buf);
+			r_cons_echo (core->cons, buf);
 		}
 		free (buf);
 	} else {

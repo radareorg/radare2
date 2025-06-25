@@ -6769,7 +6769,7 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 	const char *static_str = r_kons_get_buffer (core->cons, NULL);
 	char *retstr = strdup (r_str_get (static_str));
 	r_cons_pop (core->cons);
-	r_kons_echo (core->cons, NULL);
+	r_cons_echo (core->cons, NULL);
 	return retstr;
 }
 
@@ -6798,7 +6798,7 @@ R_API RBuffer *r_core_cmd_tobuf(RCore *core, const char *cmd) {
 	const char *buf = r_kons_get_buffer (core->cons, &bsz);
 	RBuffer *out = r_buf_new_with_bytes ((const ut8*)buf, bsz);
 	r_cons_pop (core->cons);
-	r_kons_echo (core->cons, NULL);
+	r_cons_echo (core->cons, NULL);
 	free ((void *)buf);
 	return out;
 }

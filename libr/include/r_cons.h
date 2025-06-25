@@ -1210,7 +1210,7 @@ R_API const char *r_kons_get_buffer(RCons *cons, size_t *buffer_len);
 R_API void r_cons_push(RCons *cons);
 R_API bool r_kons_context_is_main(RCons *cons);
 R_API RConsContext *r_cons_context_clone(RConsContext *ctx);
-R_API void r_kons_echo(RCons *cons, const char *msg);
+R_API void r_cons_echo(RCons *cons, const char *msg);
 R_API char *r_kons_drain(RCons *cons);
 R_API void r_cons_visual_flush(RCons *cons);
 R_API void r_cons_visual_write(RCons *cons, char *buffer);

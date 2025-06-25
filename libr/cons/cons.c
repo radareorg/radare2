@@ -569,91 +569,6 @@ R_API void r_cons_context_break(RConsContext *context) {
 	}
 }
 
-R_API void r_cons_echo(const char *msg) {
-	r_kons_echo (I, msg);
-}
-
-#if 0
-static void optimize(RConsContext *ctx) {
-	char *buf = ctx->buffer;
-	int len = ctx->buffer_len;
-	if (len < 1) {
-		return;
-	}
-
-	int i = 0;
-	int j = 0;
-	const int buf_sz = ctx->buffer_sz;
-
-	while (i < len) {
-		if (buf[i] == 0x1b && i + 1 < len && buf[i+1] == '[') {
-			char escape_seq[32];
-			int k = 0;
-
-			// Copy ESC and [
-			if (j + 2 > buf_sz) {
-				goto overflow;
-			}
-			escape_seq[k++] = buf[i++]; // ESC
-			escape_seq[k++] = buf[i++]; // [
-
-			while (i < len && k < sizeof (escape_seq) - 1) {
-				char c = buf[i++];
-				if (j + k > buf_sz) {
-					goto overflow;
-				}
-				escape_seq[k++] = c;
-				if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
-					break;
-				}
-			}
-			escape_seq[k] = '\0';
-
-			// TODO: Implement logic here to determine if escape_seq should be kept,
-			// modified, or discarded based on context or previous sequences.
-			// For now, we assume it should always be kept.
-			bool keep_sequence = true;
-			if (keep_sequence) {
-				if (j + k <= buf_sz) {
-					memcpy (buf + j, escape_seq, k);
-					j += k;
-				} else {
-					goto overflow;
-				}
-			}
-		} else {
-			if (j < buf_sz) {
-				buf[j++] = buf[i++];
-			} else {
-				goto overflow;
-			}
-		}
-	}
-
-	if (j < ctx->buffer_len) {
-		ctx->buffer_len = j;
-		if (j < buf_sz) {
-			buf[j] = '\0';
-		}
-	}
-	return;
-
-overflow:
-	R_LOG_WARN ("Buffer overflow during ANSI optimization, output truncated");
-	if (j <= buf_sz) {
-		ctx->buffer_len = j;
-		if (j < buf_sz) {
-			buf[j] = '\0';
-		}
-	} else {
-		ctx->buffer_len = buf_sz > 0 ? buf_sz - 1 : 0;
-		if (buf_sz > 0) {
-			buf[ctx->buffer_len] = '\0';
-		}
-	}
-}
-#endif
-
 R_API char *r_cons_drain(void) {
 	return r_kons_drain (I);
 }
@@ -1575,3 +1490,63 @@ R_API bool r_cons_drop(RCons *cons, int n) {
 	c->buffer_len -= n;
 	return true;
 }
+
+R_API void r_cons_push(RCons *cons) {
+	r_list_push (cons->ctx_stack, cons->context);
+	RConsContext *nc = r_cons_context_clone (cons->context);
+#if 1
+	// maybe this is done by kons_reset too
+	nc->buffer = NULL;
+	nc->buffer_sz = 0;
+	nc->buffer_len = 0;
+#endif
+	cons->context = nc;
+	// global hacks
+	RCons *Gcons = r_cons_singleton ();
+	if (cons == Gcons) {
+		Gcons->context = nc;
+	}
+	r_cons_reset (cons);
+	// r_cons_context_reset (cons->context);
+#if 0
+	// memcpy (&tc, cons->context, sizeof (tc));
+	if (!ctx->cons_stack) {
+		return;
+	}
+	RConsStack *data = cons_stack_dump (cons, true);
+	if (data) {
+		r_stack_push (ctx->cons_stack, data);
+		ctx->buffer_len = 0;
+		if (ctx->buffer) {
+			memset (ctx->buffer, 0, ctx->buffer_sz);
+		}
+	}
+#endif
+}
+
+R_API bool r_cons_pop(RCons *cons) {
+	if (r_list_empty (cons->ctx_stack)) {
+		R_LOG_INFO ("Nothing to pop");
+		return false;
+	}
+	RConsContext *ctx = r_list_pop (cons->ctx_stack);
+	r_cons_context_free (cons->context);
+	cons->context = ctx;
+	// global hacks
+	RCons *Gcons = r_cons_singleton ();
+	if (cons == Gcons) {
+		Gcons->context = ctx;
+	}
+	return true;
+#if 0
+	if (ctx->cons_stack) {
+		RConsStack *data = (RConsStack *)r_stack_pop (ctx->cons_stack);
+		if (data) {
+			cons_stack_load (ctx, data, true);
+			cons_stack_free ((void *)data);
+		}
+	}
+	memcpy (cons->context, &tc, sizeof (tc));
+#endif
+}
+

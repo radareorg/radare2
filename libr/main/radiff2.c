@@ -970,7 +970,7 @@ static char *get_graph_commands(RCore *c, ut64 off) {
 	const char *static_str = r_kons_get_buffer (c->cons, NULL);
 	char *retstr = strdup (r_str_get (static_str));
 	r_cons_pop (c->cons);
-	r_kons_echo (c->cons, NULL);
+	r_cons_echo (c->cons, NULL);
 	ctx->is_html = tmp_html;
 	return retstr;
 }
