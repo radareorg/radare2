@@ -5,8 +5,6 @@ bool test_r_cons(void) {
 	// NOTE: not initializing a value here results in UB
 	ut8 r = 0, g = 0, b = 0, a = 0;
 
-	r_cons_rgb_init();
-
 	// all these strdup are for asan/valgrind to have some exact bounds to work with
 
 	char *foo = strdup ("___"); // should crash in asan mode
@@ -46,7 +44,7 @@ bool test_r_cons(void) {
 	mu_assert_eq (b, 0, "blue color");
 	mu_assert_eq (a, 0, "alpha color");
 
-#if 0
+#if 1
 	// TODO: bring back those tests after constifying the colortable
 	// 256
 	foo = strdup ("\x1b[38;5;213mhello\x1b[0m");

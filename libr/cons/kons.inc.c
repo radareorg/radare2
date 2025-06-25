@@ -788,7 +788,6 @@ R_API RCons *r_kons_new(void) {
 	cons->mouse = 0;
 	cons->show_vals = false;
 	r_kons_reset (cons);
-	r_kons_rgb_init (cons);
 	r_print_set_is_interrupted_cb (r_cons_is_breaked);
 	cons->line = r_line_new (cons);
 	return cons;
