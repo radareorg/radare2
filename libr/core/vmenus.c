@@ -2184,7 +2184,6 @@ R_API int r_core_visual_view_rop(RCore *core) {
 				r_str_replace_char (line, '\n', ';');
 				if (show_color) {
 					// XXX parsing fails to read this ansi-offset
-					// const char *offsetColor = r_cons_singleton ()->context->pal.addr; // TODO etooslow. must cache
 					// r_list_push (core->ropchain, r_str_newf ("%s0x%08"PFMT64x Color_RESET"  %s", offsetColor, addr + delta, line));
 					r_list_push (core->ropchain, r_str_newf ("0x%08"PFMT64x"  %s", addr + delta, line));
 				} else {
@@ -3409,7 +3408,7 @@ static ut64 var_functions_show(RCore *core, int idx, int show, int cols) {
 							fcn->addr, r_anal_function_realsize (fcn), fcn->name);
 				}
 				if (var_functions) {
-					if (!r_cons_singleton ()->show_vals) {
+					if (!core->cons->show_vals) {
 						int fun_len = r_str_ansi_len (var_functions);
 						int columns = fun_len > cols ? cols - 2 : cols;
 						tmp = r_str_ansi_crop (var_functions, 0, 0, columns, window);
@@ -3645,13 +3644,13 @@ static ut64 r_core_visual_anal_refresh(RCore *core) {
 		char *output = r_core_cmd_strf (core, "afi @ 0x%08"PFMT64x, addr);
 		if (output) {
 			// 'h - 2' because we have two new lines in r_cons_printf
-			if (!r_cons_singleton ()->show_vals) {
+			if (core->cons->show_vals) {
+				r_kons_printf (core->cons, "\n%s\n", output);
+				R_FREE (output);
+			} else {
 				char *out = r_str_ansi_crop (output, 0, 0, cols, h - 2);
 				r_kons_printf (core->cons, "\n%s\n", out);
 				free (out);
-				R_FREE (output);
-			} else {
-				r_kons_printf (core->cons, "\n%s\n", output);
 				R_FREE (output);
 			}
 		}
@@ -3820,11 +3819,11 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 		switch (ch) {
 		case '[':
 			coldelta--;
-			// r_cons_singleton ()->show_vals = true;
+			// core->cons->show_vals = true;
 			break;
 		case ']':
 			coldelta++;
-			r_cons_singleton ()->show_vals = false;
+			core->cons->show_vals = false;
 			break;
 		case ';':
 			visual_add_comment (core, addr);
@@ -3832,9 +3831,9 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 		case '?':
 			r_kons_clear00 (core->cons);
 			RStrBuf *rsb = r_strbuf_new ("");
-			r_core_visual_append_help (rsb, "Funcs/Vars Visual Analysis Mode (Vv) Help", (const char *[]){ NULL });
-			r_core_visual_append_help (rsb, "Actions Supported", help_visual_anal_actions);
-			r_core_visual_append_help (rsb, "Keys", help_visual_anal_keys);
+			r_core_visual_append_help (core, rsb, "Funcs/Vars Visual Analysis Mode (Vv) Help", (const char *[]){ NULL });
+			r_core_visual_append_help (core, rsb, "Actions Supported", help_visual_anal_actions);
+			r_core_visual_append_help (core, rsb, "Keys", help_visual_anal_keys);
 			r_cons_less_str (core->cons, r_strbuf_get (rsb), "?");
 			r_strbuf_free (rsb);
 			break;

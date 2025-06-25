@@ -562,8 +562,8 @@ R_API void r_core_visual_jump(RCore *core, ut8 ch) {
 }
 
 // TODO: merge with r_cons_cmd_help
-R_API void r_core_visual_append_help(RStrBuf *p, const char *title, const char * const * help) {
-	RCons *cons = r_cons_singleton ();
+R_API void r_core_visual_append_help(RCore *core, RStrBuf *p, const char *title, const char * const * help) {
+	RCons *cons = core->cons;
 	bool use_color = cons->context->color_mode;
 	const char
 		*pal_input_color = use_color ? cons->context->pal.input : "",
@@ -605,7 +605,7 @@ repeat:
 		return 0;
 	}
 	r_kons_clear00 (core->cons);
-	r_core_visual_append_help (q, "Visual Mode Help (short)", help_visual);
+	r_core_visual_append_help (core, q, "Visual Mode Help (short)", help_visual);
 	r_kons_printf (core->cons, "%s", r_strbuf_get (q));
 	r_cons_flush (core->cons);
 	const char *lesstr = NULL;
@@ -618,8 +618,8 @@ repeat:
 		r_core_panels_root (core, core->panels_root);
 		break;
 	case '?':
-		r_core_visual_append_help (p, "Visual Mode Help (full)", help_msg_visual);
-		r_core_visual_append_help (p, "Function Keys Defaults  # Use `e key.` to owerwrite", help_msg_visual_fn);
+		r_core_visual_append_help (core, p, "Visual Mode Help (full)", help_msg_visual);
+		r_core_visual_append_help (core, p, "Function Keys Defaults  # Use `e key.` to owerwrite", help_msg_visual_fn);
 		lesstr = r_strbuf_get (p);
 		break;
 	case 'v':
@@ -1661,7 +1661,7 @@ repeat:
 	case '?':
 		r_kons_clear00 (core->cons);
 		RStrBuf *rsb = r_strbuf_new ("");
-		r_core_visual_append_help (rsb, "Xrefs Visual Analysis Mode (Vv + x) Help", help_msg_visual_xref);
+		r_core_visual_append_help (core, rsb, "Xrefs Visual Analysis Mode (Vv + x) Help", help_msg_visual_xref);
 		ret = r_cons_less_str (core->cons, r_strbuf_get (rsb), "?");
 		r_strbuf_free (rsb);
 		goto repeat;

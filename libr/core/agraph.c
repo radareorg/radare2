@@ -4767,7 +4767,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 		case '?':
 			r_kons_clear00 (core->cons);
 			RStrBuf *rsb = r_strbuf_new ("");
-			r_core_visual_append_help (rsb, "Visual Graph Mode (VV) Help", help_msg_visual_graph);
+			r_core_visual_append_help (core, rsb, "Visual Graph Mode (VV) Help", help_msg_visual_graph);
 			ret = r_cons_less_str (core->cons, r_strbuf_get (rsb), "?");
 			r_strbuf_free (rsb);
 			break;

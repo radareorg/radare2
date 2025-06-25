@@ -1118,7 +1118,7 @@ static void __update_help(RCore *core, RPanels *ps) {
 			p->model->title = strdup (help);
 			free (p->model->cmd);
 			p->model->cmd = strdup (help);
-			r_core_visual_append_help (rsb, title, msg);
+			r_core_visual_append_help (core, rsb, title, msg);
 			if (!rsb) {
 				break;
 			}
@@ -6683,7 +6683,7 @@ R_API bool r_core_panels_load(RCore *core, const char *_name) {
 			p->model->title = strdup ("Help");
 			p->model->cmd = strdup ("Help");
 			RStrBuf *rsb = r_strbuf_new (NULL);
-			r_core_visual_append_help (rsb, "Panels Mode", help_msg_panels);
+			r_core_visual_append_help (core, rsb, "Panels Mode", help_msg_panels);
 			if (!rsb) {
 				return false;
 			}

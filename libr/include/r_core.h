@@ -565,7 +565,7 @@ R_API void r_core_visual_toggle_decompiler_disasm(RCore *core, bool for_graph, b
 R_API void r_core_visual_applyDisMode(RCore *core, int disMode);
 R_API void r_core_visual_applyHexMode(RCore *core, int hexMode);
 R_API int r_core_visual_refs(RCore *core, bool xref, bool fcnInsteadOfAddr);
-R_API void r_core_visual_append_help(RStrBuf *p, const char *title, const char * const *help);
+R_API void r_core_visual_append_help(RCore *core, RStrBuf *p, const char *title, const char * const *help);
 R_API bool r_core_prevop_addr(RCore* core, ut64 start_addr, int numinstrs, ut64* prev_addr);
 R_API ut64 r_core_prevop_addr_force(RCore *core, ut64 start_addr, int numinstrs);
 R_API bool r_core_visual_hudstuff(RCore *core);
