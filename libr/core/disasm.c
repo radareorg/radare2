@@ -1431,7 +1431,7 @@ static void ds_newline(RDisasmState *ds) {
 		} else {
 			pj_ks (ds->pj, "text", r_kons_get_buffer (cons, NULL));
 		}
-		r_kons_reset (cons);
+		r_cons_reset (cons);
 		pj_end (ds->pj);
 	} else {
 		r_cons_newline (cons);
@@ -7060,7 +7060,7 @@ toro:
 				}
 			} else {
 				// no more bytes - give up
-				r_kons_reset (cons);
+				r_cons_reset (cons);
 				r_kons_printf (cons, "Failed to find instruction meeting pdu condition.\n");
 				pdu_condition_met = true;
 			}
@@ -7110,7 +7110,7 @@ toro:
 	}
 #endif
 	if (ds->pj) {
-		r_cons_pop ();
+		r_kons_pop (ds->core->cons);
 		if (!pj) {
 			pj_end (ds->pj);
 			r_kons_printf (ds->core->cons, "%s", pj_string (ds->pj));

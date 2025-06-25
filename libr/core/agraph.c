@@ -4378,7 +4378,7 @@ static char *get_graph_string(RCore *core, RAGraph *g) {
 	r_config_set_b (core->config, "scr.utf8", false);
 	r_core_visual_graph (core, g, NULL, false);
 	char *s = strdup (r_cons_get_buffer ());
-	r_cons_reset ();
+	r_cons_reset (core->cons);
 	r_config_set_i (core->config, "scr.color", c);
 	r_config_set_b (core->config, "scr.utf8", u);
 	return s;

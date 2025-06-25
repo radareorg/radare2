@@ -25,14 +25,6 @@ R_API int r_kons_printf(RCons *cons, const char *format, ...) {
 	return 0;
 }
 
-R_API void r_cons_gotoxy(RCons *cons, int x, int y) {
-#if R2__WINDOWS__
-	r_cons_win_gotoxy (cons, 1, x, y);
-#else
-	r_kons_printf (cons, "\x1b[%d;%dH", y, x);
-#endif
-}
-
 R_API void r_kons_set_interactive(RCons *cons, bool x) {
 	RConsContext *ctx = cons->context;
 	cons->lasti = ctx->is_interactive;
@@ -318,7 +310,7 @@ R_API RCons *r_kons_new(void) {
 	cons->pager = NULL; /* no pager by default */
 	cons->mouse = 0;
 	cons->show_vals = false;
-	r_kons_reset (cons);
+	r_cons_reset (cons);
 	cons->line = r_line_new (cons);
 	return cons;
 }
@@ -398,7 +390,7 @@ R_API void r_kons_clear_line(RCons *cons, int std_err) {
 	fflush (std_err? stderr: stdout);
 }
 
-R_API void r_kons_reset_colors(RCons *cons) {
+R_API void r_cons_reset_colors(RCons *cons) {
 	r_kons_print (cons, Color_RESET_BG Color_RESET);
 }
 
@@ -416,7 +408,7 @@ R_API void r_kons_clear00(RCons *cons) {
 	r_cons_gotoxy (cons, 0, 0);
 }
 
-R_API void r_kons_reset(RCons *cons) {
+R_API void r_cons_reset(RCons *cons) {
 	RConsContext *c = cons->context;
 	if (c->buffer) {
 		c->buffer[0] = '\0';
@@ -496,7 +488,7 @@ R_API void r_kons_push(RCons *cons) {
 	if (cons == Gcons) {
 		Gcons->context = nc;
 	}
-	r_kons_reset (cons);
+	r_cons_reset (cons);
 	// r_cons_context_reset (cons->context);
 #if 0
 	// memcpy (&tc, cons->context, sizeof (tc));
@@ -576,7 +568,7 @@ R_API char *r_kons_drain(RCons *cons) {
 	size_t buf_size;
 	const char *buf = r_kons_get_buffer (cons, &buf_size);
 	char *s = r_str_ndup (buf, buf_size);
-	r_kons_reset (cons);
+	r_cons_reset (cons);
 	return s;
 }
 

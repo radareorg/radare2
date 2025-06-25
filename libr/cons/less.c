@@ -57,7 +57,7 @@ R_API int r_cons_less_str(RCons * R_NONNULL cons, const char * R_NONNULL str, co
 	}
 	r_cons_set_raw (cons, true);
 	r_kons_show_cursor (cons, false);
-	r_kons_reset (cons);
+	r_cons_reset (cons);
 	h = 0;
 	while (ui) {
 		w = r_cons_get_size (cons, &h);
@@ -118,7 +118,7 @@ R_API int r_cons_less_str(RCons * R_NONNULL cons, const char * R_NONNULL str, co
 		case 'K': from = (from >= h)? from - h: 0;
 			break;
 		case '/': 	/* search */
-			r_kons_reset_colors (cons);
+			r_cons_reset_colors (cons);
 			r_line_set_prompt (cons->line, "/");
 			sreg = r_line_readline (cons);
 			from = R_MIN (lines_count - 1, from);
@@ -162,7 +162,7 @@ R_API int r_cons_less_str(RCons * R_NONNULL cons, const char * R_NONNULL str, co
 	r_regex_free (rx);
 	free (lines);
 	free (p);
-	r_kons_reset_colors (cons);
+	r_cons_reset_colors (cons);
 	r_cons_set_raw (cons, false);
 	r_kons_show_cursor (cons, true);
 	free (ostr);

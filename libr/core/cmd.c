@@ -6086,7 +6086,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					if (buf) {
 						buf = strdup (buf);
 					}
-					r_cons_pop ();
+					r_kons_pop ();
 					// r_kons_print (core->cons, buf);
 					r_strbuf_append (sb, buf);
 					free (buf);
@@ -6644,7 +6644,7 @@ R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd) {
 	if (!p && *cmd != '!' && *cmd != '.') {
 		return r_core_cmd_str (core, cmd);
 	}
-	r_kons_reset (core->cons);
+	r_cons_reset (core->cons);
 	r_sandbox_disable (true);
 	if (r_file_mkstemp ("cmd", &tmp) != -1) {
 		int pipefd = r_cons_pipe_open (core->cons, tmp, 1, false);

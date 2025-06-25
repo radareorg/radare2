@@ -514,16 +514,8 @@ R_DEPRECATE R_API void r_cons_clear00(void) {
 	r_cons_gotoxy (cons, 0, 0);
 }
 
-R_API void r_cons_reset_colors(void) {
-	r_kons_reset_colors (I);
-}
-
 R_DEPRECATE R_API void r_cons_clear(void) {
 	r_kons_clear (I);
-}
-
-R_API void r_cons_reset(void) {
-	r_kons_reset (I);
 }
 
 // TODO. merge these two functions into one!! return len with parameter
@@ -697,7 +689,7 @@ R_API void r_cons_flush(RCons *cons) {
 		return;
 	}
 	if (cons->null) {
-		r_kons_reset (cons);
+		r_cons_reset (cons);
 		return;
 	}
 #if 0
@@ -719,7 +711,7 @@ R_API void r_cons_flush(RCons *cons) {
 	}
 	r_cons_filter (cons);
 	if (!ctx->buffer || ctx->buffer_len < 1) {
-		r_kons_reset (cons);
+		r_cons_reset (cons);
 		return;
 	}
 	if (r_cons_is_interactive (cons) && cons->fdout == 1) {
@@ -730,12 +722,12 @@ R_API void r_cons_flush(RCons *cons) {
 				char *str = r_str_ndup (ctx->buffer, ctx->buffer_len);
 				ctx->pageable = false;
 				r_cons_less_str (cons, str, NULL);
-				r_kons_reset (cons);
+				r_cons_reset (cons);
 				free (str);
 				return;
 			}
 			r_sys_cmd_str_full (cons->pager, ctx->buffer, -1, NULL, NULL, NULL);
-			r_kons_reset (cons);
+			r_cons_reset (cons);
 		} else if (cons->maxpage > 0 && ctx->buffer_len > cons->maxpage) {
 #if COUNT_LINES
 			char *buffer = ctx->buffer;
@@ -746,14 +738,14 @@ R_API void r_cons_flush(RCons *cons) {
 				}
 			}
 			if (lines > 0 && !r_kons_yesno (cons, 'n',"Do you want to print %d lines? (y/N)", lines)) {
-				r_kons_reset (cons);
+				r_cons_reset (cons);
 				return;
 			}
 #else
 			char buf[8];
 			r_num_units (buf, sizeof (buf), ctx->buffer_len);
 			if (!r_kons_yesno (cons, 'n', "Do you want to print %s chars? (y/N)", buf)) {
-				r_kons_reset (cons);
+				r_cons_reset (cons);
 				return;
 			}
 #endif
@@ -801,7 +793,7 @@ R_API void r_cons_flush(RCons *cons) {
 		__cons_write (cons, ctx->buffer, ctx->buffer_len);
 	}
 
-	r_kons_reset (cons);
+	r_cons_reset (cons);
 	if (cons->newline) {
 		eprintf ("\n");
 		cons->newline = false;
@@ -1461,10 +1453,18 @@ R_API void r_cons_column(RCons *cons, int c) {
 	}
 	memcpy (b, ctx->buffer, ctx->buffer_len);
 	b[ctx->buffer_len] = 0;
-	r_kons_reset (cons);
+	r_cons_reset (cons);
 	// align current buffer N chars right
 	r_cons_print_justify (cons, b, c, 0);
 	free (b);
 	r_cons_gotoxy (cons, 0, 0);
+}
+
+R_API void r_cons_gotoxy(RCons *cons, int x, int y) {
+#if R2__WINDOWS__
+	r_cons_win_gotoxy (cons, 1, x, y);
+#else
+	r_kons_printf (cons, "\x1b[%d;%dH", y, x);
+#endif
 }
 

@@ -787,7 +787,7 @@ R_API void r_core_visual_prompt_input(RCore *core) {
 	(void) r_cons_get_size (core->cons, &h);
 	bool mouse_state = __holdMouseState(core);
 	r_cons_gotoxy (core->cons, 0, h);
-	r_kons_reset_colors (core->cons);
+	r_cons_reset_colors (core->cons);
 	r_kons_show_cursor (core->cons, true);
 	core->vmode = false;
 	const int ovtmode = r_config_get_i (core->config, "scr.vtmode");
@@ -4650,7 +4650,7 @@ R_IPI void visual_refresh(RCore *core) {
 	if (core->print->vflush) {
 		r_cons_visual_flush (core->cons);
 	} else {
-		r_kons_reset (core->cons);
+		r_cons_reset (core->cons);
 	}
 	if (core->scr_gadgets) {
 		r_core_cmd_call (core, "pg");

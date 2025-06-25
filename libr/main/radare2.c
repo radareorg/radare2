@@ -1609,7 +1609,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				// Set Thumb Mode if necessary
 				r_core_cmd0 (r, "dr? thumb;?? e asm.bits=16");
 			}
-			r_cons_reset ();
+			r_cons_reset (r->cons);
 		}
 		if (!mr.pfile) {
 			mr.pfile = mr.file;

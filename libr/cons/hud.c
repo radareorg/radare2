@@ -363,7 +363,7 @@ static char *r_cons_hud_line(RCons *cons, RList *list, const char *prompt) {
 	r_kons_enable_mouse (cons, false);
 	r_cons_set_raw (cons, true);
 
-	r_kons_reset (cons);
+	r_cons_reset (cons);
 	// Repeat until the user exits the hud
 	for (;;) {
 		hud->current_entry_n = 0;

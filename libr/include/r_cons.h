@@ -915,8 +915,6 @@ R_API void r_cons_context_break_pop(RCons *cons, RConsContext *context, bool sig
 
 /* control */
 R_API char *r_cons_editor(RCons *cons, const char *file, const char *str);
-R_API void r_cons_reset(void);
-R_API void r_cons_reset_colors(void);
 R_API void r_cons_print_clear(void);
 R_API void r_cons_echo(const char *msg);
 R_API void r_cons_zero(void);
@@ -1214,10 +1212,10 @@ R_API void r_kons_free(RCons * R_NULLABLE cons);
 R_API void r_kons_print_clear(RCons *cons);
 R_API void r_kons_fill_line(RCons *cons);
 R_API void r_kons_clear_line(RCons *cons, int std_err);
-R_API void r_kons_reset_colors(RCons *cons);
+R_API void r_cons_reset_colors(RCons *cons);
 R_API void r_kons_clear(RCons *cons);
 R_API void r_kons_clear00(RCons *cons);
-R_API void r_kons_reset(RCons *cons);
+R_API void r_cons_reset(RCons *cons);
 R_API const char *r_kons_get_buffer(RCons *cons, size_t *buffer_len);
 R_API void r_kons_push(RCons *cons);
 R_API bool r_kons_context_is_main(RCons *cons);
