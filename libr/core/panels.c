@@ -1422,7 +1422,7 @@ static void show_cursor(RCore *core) {
 	const bool keyCursor = r_config_get_b (core->config, "scr.cursor");
 	if (keyCursor) {
 		r_kons_gotoxy (core->cons, core->cons->cpos.x, core->cons->cpos.y);
-		r_cons_show_cursor (1);
+		r_kons_show_cursor (core->cons, 1);
 		r_kons_flush (core->cons);
 	}
 }

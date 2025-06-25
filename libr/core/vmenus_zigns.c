@@ -158,7 +158,7 @@ R_API int r_core_visual_view_zigns(RCore *core) {
 		case ':': // TODO: move this into a separate helper function
 			{
 			char cmd[1024] = {0};
-			r_cons_show_cursor (true);
+			r_kons_show_cursor (core->cons, true);
 			r_kons_set_raw (core->cons, 0);
 			r_line_set_prompt (core->cons->line, ":> ");
 			if (r_cons_fgets (core->cons, cmd, sizeof (cmd), 0, NULL) < 0) {

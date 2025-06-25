@@ -400,7 +400,7 @@ R_API int r_core_visual_view_graph(RCore *core) {
 		case '/':
 			{
 				char cmd[1024];
-				r_cons_show_cursor (true);
+				r_kons_show_cursor (core->cons, true);
 				r_kons_set_raw (core->cons, 0);
 				cmd[0] = '\0';
 				r_line_set_prompt (core->cons->line, ":> ");

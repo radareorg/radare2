@@ -4907,7 +4907,7 @@ dodo:
 			printfmtSingle[2] = core->visual.debugstr;
 		}
 #endif
-		r_cons_show_cursor (false);
+		r_kons_show_cursor (core->cons, false);
 		r_kons_enable_mouse (core->cons, r_config_get_b (core->config, "scr.wheel"));
 		core->cons->event_resize = NULL; // avoid running old event with new data
 		core->cons->event_data = core;
@@ -5058,7 +5058,7 @@ dodo:
 	core->vmode = false;
 	core->cons->event_resize = NULL;
 	core->cons->event_data = NULL;
-	r_cons_show_cursor (true);
+	r_kons_show_cursor (core->cons, true);
 	r_config_set_i (core->config, "scr.vtmode", ovtmode);
 	return 0;
 }
