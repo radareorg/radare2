@@ -2,10 +2,6 @@
 
 #include <r_cons.h>
 #include "private.h"
-R_API void r_kons_println(RCons *cons, const char* str) {
-	r_kons_print (cons, str);
-	r_cons_newline (cons);
-}
 
 R_API void r_kons_print(RCons *cons, const char *str) {
 	R_RETURN_IF_FAIL (str);
@@ -18,67 +14,6 @@ R_API void r_kons_print(RCons *cons, const char *str) {
 	}
 }
 
-R_API void r_cons_newline(RCons *cons) {
-	if (!cons->null) {
-		r_kons_print (cons, "\n");
-	}
-#if 0
-This place is wrong to manage the color reset, can interfire with r2pipe output sending resetchars
-and break json output appending extra chars.
-this code now is managed into output.c:118 at function r_cons_win_print
-now the console color is reset with each \n (same stuff do it here but in correct place ... i think)
-
-#if R2__WINDOWS__
-	r_cons_reset_colors();
-#else
-	r_cons_print (Color_RESET_ALL"\n");
-#endif
-	if (cons->is_html) r_cons_print ("<br />\n");
-#endif
-}
-
-R_API void r_cons_printf_list(RCons *cons, const char *format, va_list ap) {
-	va_list ap2, ap3;
-
-	va_copy (ap2, ap);
-	va_copy (ap3, ap);
-	if (cons->null || !format) {
-		va_end (ap2);
-		va_end (ap3);
-		return;
-	}
-	if (strchr (format, '%')) {
-		if (cons_palloc (cons, MOAR + strlen (format) * 20)) {
-			bool need_retry = true;
-			while (need_retry) {
-				need_retry = false;
-				size_t left = cons->context->buffer_sz - cons->context->buffer_len;
-				size_t written = vsnprintf (cons->context->buffer + cons->context->buffer_len, left, format, ap3);
-				if (written >= left) {
-					if (cons_palloc (cons, written + 1)) {
-						va_end (ap3);
-						va_copy (ap3, ap2);
-						need_retry = true; // Retry with larger buffer
-					} else {
-						// Allocation failed, use available space
-						size_t added = (left > 0) ? left - 1 : 0;
-						cons->context->buffer_len += added;
-						cons->context->breaked = true; // Indicate truncation
-					}
-				} else {
-					cons->context->buffer_len += written;
-				}
-			}
-		} else {
-			cons->context->breaked = true; // Initial allocation failed
-		}
-	} else {
-		r_kons_print (cons, format);
-	}
-	va_end (ap2);
-	va_end (ap3);
-}
-
 R_API int r_kons_printf(RCons *cons, const char *format, ...) {
 	va_list ap;
 	if (R_STR_ISEMPTY (format)) {
@@ -88,14 +23,6 @@ R_API int r_kons_printf(RCons *cons, const char *format, ...) {
 	r_cons_printf_list (cons, format, ap);
 	va_end (ap);
 	return 0;
-}
-
-R_API void r_kons_gotoxy(RCons *cons, int x, int y) {
-#if R2__WINDOWS__
-	r_cons_win_gotoxy (cons, 1, x, y);
-#else
-	r_kons_printf (cons, "\x1b[%d;%dH", y, x);
-#endif
 }
 
 R_API void r_kons_set_interactive(RCons *cons, bool x) {
@@ -129,129 +56,6 @@ R_API void r_kons_break_push(RCons *cons, RConsBreak cb, void *user) {
 R_API void r_kons_break_pop(RCons *cons) {
 	cons->timeout = 0;
 	r_cons_context_break_pop (cons, cons->context, true);
-}
-
-R_API void r_kons_flush(RCons *cons) {
-	RConsContext *ctx = cons->context;
-	const char *tee = cons->teefile;
-	if (ctx->noflush) {
-		return;
-	}
-	if (cons->null) {
-		r_kons_reset (cons);
-		return;
-	}
-#if 0
-	if (!r_list_empty (ctx->marks)) {
-		r_list_free (ctx->marks);
-		ctx->marks = r_list_newf ((RListFree)r_cons_mark_free);
-	}
-#endif
-	if (lastMatters (ctx)) {
-		// snapshot of the output
-		if (ctx->buffer_len > ctx->lastLength) {
-			free (ctx->lastOutput);
-			ctx->lastOutput = malloc (ctx->buffer_len + 1);
-		}
-		ctx->lastLength = ctx->buffer_len;
-		memcpy (ctx->lastOutput, ctx->buffer, ctx->buffer_len);
-	} else {
-		ctx->lastMode = false;
-	}
-	r_cons_filter (cons);
-	if (!ctx->buffer || ctx->buffer_len < 1) {
-		r_kons_reset (cons);
-		return;
-	}
-	if (r_cons_is_interactive (cons) && cons->fdout == 1) {
-		/* Use a pager if the output doesn't fit on the terminal window. */
-		if (ctx->pageable && R_STR_ISNOTEMPTY (cons->pager) && ctx->buffer_len > 0 && r_str_char_count (ctx->buffer, '\n') >= cons->rows) {
-			ctx->buffer[ctx->buffer_len - 1] = 0;
-			if (!strcmp (cons->pager, "..")) {
-				char *str = r_str_ndup (ctx->buffer, ctx->buffer_len);
-				ctx->pageable = false;
-				r_cons_less_str (cons, str, NULL);
-				r_kons_reset (cons);
-				free (str);
-				return;
-			}
-			r_sys_cmd_str_full (cons->pager, ctx->buffer, -1, NULL, NULL, NULL);
-			r_kons_reset (cons);
-		} else if (cons->maxpage > 0 && ctx->buffer_len > cons->maxpage) {
-#if COUNT_LINES
-			char *buffer = ctx->buffer;
-			int i, lines = 0;
-			for (i = 0; buffer[i]; i++) {
-				if (buffer[i] == '\n') {
-					lines ++;
-				}
-			}
-			if (lines > 0 && !r_kons_yesno (cons, 'n',"Do you want to print %d lines? (y/N)", lines)) {
-				r_kons_reset (cons);
-				return;
-			}
-#else
-			char buf[8];
-			r_num_units (buf, sizeof (buf), ctx->buffer_len);
-			if (!r_kons_yesno (cons, 'n', "Do you want to print %s chars? (y/N)", buf)) {
-				r_kons_reset (cons);
-				return;
-			}
-#endif
-			// fix | more | less problem
-			r_cons_set_raw (cons, true);
-		}
-	}
-	if (R_STR_ISNOTEMPTY (tee)) {
-		FILE *d = r_sandbox_fopen (tee, "a+");
-		if (d) {
-			if (ctx->buffer_len != fwrite (ctx->buffer, 1, ctx->buffer_len, d)) {
-				R_LOG_ERROR ("r_kons_flush: fwrite: error (%s)", tee);
-			}
-			fclose (d);
-		} else {
-			R_LOG_ERROR ("Cannot write on '%s'", tee);
-		}
-	}
-	r_kons_highlight (cons, cons->highlight);
-
-	if (r_cons_is_interactive (cons) && !r_sandbox_enable (false)) {
-		if (cons->linesleep > 0 && cons->linesleep < 1000) {
-			int i = 0;
-			int pagesize = R_MAX (1, cons->pagesize);
-			char *ptr = ctx->buffer;
-			char *nl = strchr (ptr, '\n');
-			int len = ctx->buffer_len;
-			ctx->buffer[ctx->buffer_len] = 0;
-			r_cons_break_push (NULL, NULL);
-			while (nl && !r_kons_is_breaked (cons)) {
-				__cons_write (cons, ptr, nl - ptr + 1);
-				if (cons->linesleep && !(i % pagesize)) {
-					r_sys_usleep (cons->linesleep * 1000);
-				}
-				ptr = nl + 1;
-				nl = strchr (ptr, '\n');
-				i++;
-			}
-			__cons_write (cons, ptr, ctx->buffer + len - ptr);
-			r_cons_break_pop ();
-		} else {
-			__cons_write (cons, ctx->buffer, ctx->buffer_len);
-		}
-	} else {
-		__cons_write (cons, ctx->buffer, ctx->buffer_len);
-	}
-
-	r_kons_reset (cons);
-	if (cons->newline) {
-		eprintf ("\n");
-		cons->newline = false;
-	}
-	if (ctx->tmp_html) {
-		ctx->is_html = ctx->was_html;
-		ctx->tmp_html = false;
-		ctx->was_html = false;
-	}
 }
 
 R_API void r_kons_last(RCons *cons) {
@@ -506,8 +310,7 @@ R_API RCons *r_kons_new(void) {
 	cons->pager = NULL; /* no pager by default */
 	cons->mouse = 0;
 	cons->show_vals = false;
-	r_kons_reset (cons);
-	r_print_set_is_interrupted_cb (r_cons_is_breaked);
+	r_cons_reset (cons);
 	cons->line = r_line_new (cons);
 	return cons;
 }
@@ -587,10 +390,6 @@ R_API void r_kons_clear_line(RCons *cons, int std_err) {
 	fflush (std_err? stderr: stdout);
 }
 
-R_API void r_kons_reset_colors(RCons *cons) {
-	r_kons_print (cons, Color_RESET_BG Color_RESET);
-}
-
 R_API void r_kons_clear(RCons *cons) {
 	cons->lines = 0;
 #if R2__WINDOWS__
@@ -602,19 +401,7 @@ R_API void r_kons_clear(RCons *cons) {
 
 R_API void r_kons_clear00(RCons *cons) {
 	r_kons_clear (cons);
-	r_kons_gotoxy (cons, 0, 0);
-}
-
-R_API void r_kons_reset(RCons *cons) {
-	RConsContext *c = cons->context;
-	if (c->buffer) {
-		c->buffer[0] = '\0';
-	}
-	c->buffer_len = 0;
-	cons->lines = 0;
-	cons->lastline = c->buffer;
-	cons_grep_reset (&c->grep);
-	c->pageable = true;
+	r_cons_gotoxy (cons, 0, 0);
 }
 
 R_API const char *r_kons_get_buffer(RCons *cons, size_t *buffer_len) {
@@ -624,50 +411,6 @@ R_API const char *r_kons_get_buffer(RCons *cons, size_t *buffer_len) {
 	}
 	// check len otherwise it will return trash
 	return (ctx->buffer_len > 0)? ctx->buffer : NULL;
-}
-
-R_API void r_cons_context_free(RConsContext * R_NULLABLE ctx) {
-	if (ctx) {
-		// TODO: free more stuff
-#if 0
-	// r_stack_free (ctx->cons_stack);
-	r_list_free (ctx->marks);
-	ctx->cons_stack = NULL;
-	r_stack_free (ctx->break_stack);
-	ctx->break_stack = NULL;
-	r_cons_pal_free (ctx);
-#endif
-		free (ctx);
-	}
-}
-
-R_API RConsContext *r_cons_context_clone(RConsContext *ctx) {
-	RConsContext *c = r_mem_dup (ctx, sizeof (RConsContext));
-	if (ctx->buffer) {
-		c->buffer = r_mem_dup (ctx->buffer, ctx->buffer_sz);
-	}
-	if (ctx->break_stack) {
-		c->break_stack = r_stack_newf (3, break_stack_free);
-	}
-	if (ctx->lastOutput) {
-		c->lastOutput = r_mem_dup (ctx->lastOutput, ctx->lastLength);
-	}
-	if (ctx->sorted_lines) {
-		c->sorted_lines = r_list_clone (ctx->sorted_lines, (RListClone)strdup);
-	}
-	if (ctx->unsorted_lines) {
-		c->unsorted_lines = r_list_clone (ctx->unsorted_lines, (RListClone)strdup);
-	}
-	// c->marks = r_list_clone (ctx->marks, (RListClone)strdup);
-	c->pal.rainbow = NULL;
-	r_kons_pal_clone (c);
-	// rainbow_clone (c);
-	memset (&c->grep, 0, sizeof (c->grep));
-	c->grep.strings = r_list_newf ((RListFree)grep_word_free);
-	c->grep.line = -1;
-	c->grep.sort = -1;
-	c->grep.sort_invert = false;
-	return c;
 }
 
 R_API void r_kons_push(RCons *cons) {
@@ -685,7 +428,7 @@ R_API void r_kons_push(RCons *cons) {
 	if (cons == Gcons) {
 		Gcons->context = nc;
 	}
-	r_kons_reset (cons);
+	r_cons_reset (cons);
 	// r_cons_context_reset (cons->context);
 #if 0
 	// memcpy (&tc, cons->context, sizeof (tc));
@@ -733,15 +476,6 @@ R_API bool r_kons_context_is_main(RCons *cons) {
 	return r_cons_context_is_main (cons, cons->context);
 }
 
-R_API bool r_cons_context_is_main(RCons *cons, RConsContext *ctx) {
-	if (r_list_length (cons->ctx_stack) == 0) {
-		return true;
-	}
-	RConsContext *first_context = r_list_get_n (cons->ctx_stack, 0);
-	return ctx == first_context;
-}
-
-
 R_API void r_kons_echo(RCons *cons, const char *msg) {
 	if (msg) {
 		if (cons->echodata) {
@@ -765,7 +499,7 @@ R_API char *r_kons_drain(RCons *cons) {
 	size_t buf_size;
 	const char *buf = r_kons_get_buffer (cons, &buf_size);
 	char *s = r_str_ndup (buf, buf_size);
-	r_kons_reset (cons);
+	r_cons_reset (cons);
 	return s;
 }
 
@@ -906,21 +640,6 @@ R_API void r_kons_show_cursor(RCons *I, int cursor) {
 		SetConsoleCursorInfo (hStdout, &cursor_info);
 	}
 #endif
-}
-
-R_API void r_kons_column(RCons *cons, int c) {
-	RConsContext *ctx = cons->context;
-	char *b = malloc (ctx->buffer_len + 1);
-	if (!b) {
-		return;
-	}
-	memcpy (b, ctx->buffer, ctx->buffer_len);
-	b[ctx->buffer_len] = 0;
-	r_kons_reset (cons);
-	// align current buffer N chars right
-	r_cons_print_justify (cons, b, c, 0);
-	free (b);
-	r_kons_gotoxy (cons, 0, 0);
 }
 
 R_API void r_kons_set_title(RCons *cons, const char *str) {
@@ -1073,7 +792,7 @@ R_API bool r_kons_drop(RCons *cons, int n) {
 	return true;
 }
 
-R_API void r_kons_trim(RCons *cons) {
+R_API void r_cons_trim(RCons *cons) {
 	RConsContext *c = cons->context;
 	while (c->buffer_len > 0) {
 		char ch = c->buffer[c->buffer_len - 1];
@@ -1081,49 +800,6 @@ R_API void r_kons_trim(RCons *cons) {
 			break;
 		}
 		c->buffer_len--;
-	}
-}
-
-R_API bool r_kons_is_breaked(RCons *cons) {
-#if WANT_DEBUGSTUFF
-	RConsContext *C = cons->context;
-	if (R_UNLIKELY (cons->cb_break)) {
-		cons->cb_break (cons->user);
-	}
-	if (R_UNLIKELY (cons->timeout)) {
-		if (r_stack_size (C->break_stack) > 0) {
-			if (r_time_now_mono () > cons->timeout) {
-				C->breaked = true;
-				C->was_breaked = true;
-				r_kons_break_timeout (cons, cons->otimeout);
-			}
-		}
-	}
-	if (R_UNLIKELY (!C->was_breaked)) {
-		C->was_breaked = C->breaked;
-	}
-	return R_UNLIKELY (C && C->breaked);
-#else
-	return false;
-#endif
-}
-
-R_API void r_kons_break_end(RCons *cons) {
-	RConsContext *C = cons->context;
-	C->breaked = false;
-	cons->timeout = 0;
-#if R2__UNIX__ && !__wasi__
-	if (!C->unbreakable) {
-		r_sys_signal (SIGINT, SIG_IGN);
-	}
-#endif
-	if (!r_stack_is_empty (C->break_stack)) {
-		// free all the stack
-		r_stack_free (C->break_stack);
-		// create another one
-		C->break_stack = r_stack_newf (6, break_stack_free);
-		C->event_interrupt_data = NULL;
-		C->event_interrupt = NULL;
 	}
 }
 

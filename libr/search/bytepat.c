@@ -14,11 +14,7 @@ typedef struct _fnditem {
 } fnditem;
 
 static fnditem* init_fi(void) {
-	fnditem* n;
-	n = (fnditem*) malloc (sizeof (fnditem));
-	if (!n) {
-		return NULL;
-	}
+	fnditem* n = R_NEW0 (fnditem);
 	n->next = NULL;
 	return n;
 }
@@ -40,7 +36,7 @@ static void add_fi(fnditem* n, unsigned char* blk, int patlen) {
 	for (p = n; p->next; p = p->next) {
 		;
 	}
-	p->next = (fnditem*) malloc (sizeof (fnditem));
+	p->next = R_NEW0 (fnditem);
 	p = p->next;
 	memcpy (p->str, blk, patlen);
 	p->next = NULL;
@@ -79,10 +75,11 @@ R_IPI bool search_pattern(RSearch *s, ut64 from, ut64 to) {
 	// bproc = from2
 	while (bact < bytes) {
 		addr = bact;
+#if 0
 		if (r_print_is_interrupted ()) {
 			break;
 		}
-
+#endif
 		bproc = bact + patlen ;
 		nr = ((bytes - bproc) < BSIZE)?(bytes - bproc):BSIZE;
 		rb = s->iob.read_at (s->iob.io, addr, sblk, nr);

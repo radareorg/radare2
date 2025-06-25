@@ -344,7 +344,7 @@ R_API bool r_lang_prompt(RLang *lang) {
 
 	/* foo */
 	for (;;) {
-		r_kons_flush (lang->cons);
+		r_cons_flush (lang->cons);
 		snprintf (buf, sizeof (buf) - 1, "%s> ", plugin->meta.name);
 		r_line_set_prompt (lang->cons->line, buf);
 #if 0

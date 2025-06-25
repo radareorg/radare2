@@ -87,6 +87,8 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, const char *input) {
 	}
 	int fd = -1;
 	RIODesc *d = dbg->iob.io->desc;
+	RCore *core = dbg->coreb.core;
+	RCons *cons = core->cons;
 	if (d) {
 		fd = d->fd;
 	}
@@ -101,11 +103,11 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, const char *input) {
 		break;
 	case '*': // "dm*" don't print a header for r2 commands output
 		if (input[1] == '-') {
-			r_cons_println ("om-*");
-			r_cons_printf ("omu %d 0x00000000 0xffffffffffffffff 0x00000000 rwx\n", fd);
+			r_cons_println (cons, "om-*");
+			r_kons_printf (cons, "omu %d 0x00000000 0xffffffffffffffff 0x00000000 rwx\n", fd);
 			return;
 		} else if (input[1] == '*') {
-			r_cons_println ("om-*");
+			r_cons_println (cons, "om-*");
 		}
 		break;
 	default:

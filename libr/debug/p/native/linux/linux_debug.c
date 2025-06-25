@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #include <r_userconf.h>
 
@@ -88,6 +88,7 @@ static void linux_dbg_wait_break(RDebug *dbg);
 static RDebugReasonType linux_handle_new_task(RDebug *dbg, int tid);
 
 int linux_handle_signals(RDebug *dbg, int tid) {
+	RCore *core = dbg->coreb.core;
 	siginfo_t siginfo = {0};
 	int ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, tid, 0, (r_ptrace_data_t)&siginfo);
 	if (ret == -1) {
@@ -160,7 +161,7 @@ int linux_handle_signals(RDebug *dbg, int tid) {
 		default:
 			break;
 		}
-		if (dbg->reason.signum != SIGTRAP && (dbg->reason.signum != SIGINT || !r_cons_is_breaked ())) {
+		if (dbg->reason.signum != SIGTRAP && (dbg->reason.signum != SIGINT || !r_cons_is_breaked (core->cons))) {
 			const char *name = r_signal_tostring (dbg->reason.signum);
 			eprintf ("[+] SIGNAL %d (aka %s) errno=%d addr=0x%08"PFMT64x " code=%d si_pid=%d ret=%d\n",
 				siginfo.si_signo, name, siginfo.si_errno,

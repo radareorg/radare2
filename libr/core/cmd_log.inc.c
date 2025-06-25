@@ -96,7 +96,7 @@ static void screenlock(RCore *core) {
 			free (endstr);
 		}
 		r_cons_newline (core->cons);
-		r_kons_flush (core->cons);
+		r_cons_flush (core->cons);
 		char *msg = r_cons_password ("radare2 password: ");
 		if (msg && !strcmp (msg, pass)) {
 			running = false;
@@ -334,7 +334,7 @@ static int cmd_log(void *data, const char *input) {
 		if (input[1] == '&') { //  "T=&"
 			if (input[2] == '&') { // "T=&&"
 				r_cons_break_push (NULL, NULL);
-				while (!r_cons_is_breaked ()) {
+				while (!r_cons_is_breaked (core->cons)) {
 					r_core_cmd_call (core, "T=");
 					void *bed = r_cons_sleep_begin();
 					r_sys_sleep (1);
@@ -428,7 +428,7 @@ static int cmd_plugins(void *data, const char *input) {
 			PJ *pj = r_core_pj_new (core);
 			r_bin_list (core->bin, pj, 'j');
 			char *s = pj_drain (pj);
-			r_cons_println (s);
+			r_cons_println (core->cons, s);
 			free (s);
 		} else {
 			r_bin_list (core->bin, NULL, 0);
@@ -662,7 +662,7 @@ static int cmd_plugins(void *data, const char *input) {
 				pj_end (pj);
 			}
 			pj_end (pj);
-			r_cons_println (pj_string (pj));
+			r_cons_println (core->cons, pj_string (pj));
 			pj_free (pj);
 			break;
 			}

@@ -573,7 +573,7 @@ static void cmd_drn(RCore *core, const char *str) {
 		} else {
 			const char *name = r_reg_alias_getname (core->dbg->reg, r_reg_alias_fromstring (foo));
 			if (R_STR_ISNOTEMPTY (name)) {
-				r_cons_println (name);
+				r_cons_println (core->cons, name);
 			} else {
 				R_LOG_ERROR ("Invalid register alias name");
 			}
@@ -805,7 +805,7 @@ static int step_until(RCore *core, ut64 addr) {
 	bool honorbps = r_config_get_b (core->config, "dbg.bpforuntil");
 	r_cons_break_push (NULL, NULL);
 	do {
-		if (r_cons_is_breaked ()) {
+		if (r_cons_is_breaked (core->cons)) {
 			core->break_loop = true;
 			break;
 		}
@@ -836,7 +836,7 @@ static int step_until_esil(RCore *core, const char *esilstr) {
 	}
 	r_cons_break_push (NULL, NULL);
 	for (;;) {
-		if (r_cons_is_breaked ()) {
+		if (r_cons_is_breaked (core->cons)) {
 			core->break_loop = true;
 			break;
 		}
@@ -873,7 +873,7 @@ static bool step_until_inst(RCore *core, const char *instr, bool regex) {
 	r_cons_break_push (NULL, NULL);
 	for (;;) {
 		RAnalOp asmop;
-		if (r_cons_is_breaked ()) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		if (r_debug_is_dead (core->dbg)) {
@@ -947,7 +947,7 @@ static bool step_until_optype(RCore *core, const char *_optypes) {
 
 	r_cons_break_push (NULL, NULL);
 	for (; !maxsteps || countsteps < maxsteps; countsteps++) {
-		if (r_cons_is_breaked ()) {
+		if (r_cons_is_breaked (core->cons)) {
 			core->break_loop = true;
 			break;
 		}
@@ -1019,7 +1019,7 @@ static bool step_until_flag(RCore *core, const char *instr) {
 	instr = r_str_trim_head_ro (instr);
 	r_cons_break_push (NULL, NULL);
 	for (;;) {
-		if (r_cons_is_breaked () || r_debug_is_dead (core->dbg)) {
+		if (r_cons_is_breaked (core->cons) || r_debug_is_dead (core->dbg)) {
 			break;
 		}
 		r_debug_step (core->dbg, 1);
@@ -1245,7 +1245,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 			int pid = (input[2] == ' ')? atoi (input + 2): core->dbg->pid;
 			char *exe = r_sys_pid_to_path (pid);
 			if (exe) {
-				r_cons_println (exe);
+				r_cons_println (core->cons, exe);
 				free (exe);
 			} else {
 				r_core_cmd0 (core, "o.");
@@ -1446,7 +1446,7 @@ show_help:
 beach:
 	if (mode == 'j') {
 		pj_end (pj);
-		r_cons_println (pj_string (pj));
+		r_cons_println (core->cons, pj_string (pj));
 	}
 	pj_free (pj);
 	r_list_free (list);
@@ -1546,7 +1546,7 @@ static bool cmd_dmh(RCore *core, const char *input) {
 #endif
 	}
 	if (input[1] == 'j') {
-		r_cons_println ("{}");
+		r_cons_println (core->cons, "{}");
 	}
 	return true;
 }
@@ -1702,7 +1702,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 			if (list) {
 				r_list_foreach (list, iter, map) {
 					if (addr >= map->addr && addr < map->addr_end) {
-						r_cons_println (r_str_rwx_i (map->perm));
+						r_cons_println (core->cons, r_str_rwx_i (map->perm));
 						break;
 					}
 				}
@@ -1910,7 +1910,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 					}
 				}
 				if (mode == R_MODE_JSON) {
-					r_cons_println (pj_string (pj));
+					r_cons_println (core->cons, pj_string (pj));
 					pj_free (pj);
 				}
 				free (ptr);
@@ -2019,7 +2019,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 							PFMT64x" -S \"%s\"", name, mode, baddr, filesc);
 					}
 					free (filesc);
-					r_cons_println (res);
+					r_cons_println (core->cons, res);
 					free (name);
 					free (res);
 					if (libname || addr != UT64_MAX) { //only single match requested
@@ -2085,7 +2085,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		} else {
 			R_LOG_INFO ("dm requires the debugger or use `om` instead");
 			if (*input == 'j') {
-				r_cons_println ("{}");
+				r_cons_println (core->cons, "{}");
 			}
 		}
 		break;
@@ -2161,7 +2161,7 @@ R_API void r_core_debug_ri(RCore *core, RReg *reg, int mode) {
 		if (list) {
 			RListIter *iter;
 			const char *r;
-			r_cons_print (Color_YELLOW);
+			r_kons_print (core->cons, Color_YELLOW);
 			r_list_foreach (list, iter, r) {
 				r_kons_printf (core->cons, " %s", r);
 			}
@@ -2247,7 +2247,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 		if (delta && use_colors) {
 			namestr = r_str_newf ("%s%s%s", color, r->name, colorend);
 			valuestr = r_str_newf ("%s0x%"PFMT64x"%s", color, value, colorend);
-			r_cons_print (Color_RESET);
+			r_kons_print (core->cons, Color_RESET);
 		} else {
 			namestr = strdup (r->name);
 			valuestr = r_str_newf ("0x%"PFMT64x, value);
@@ -2266,7 +2266,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 	}
 
 	char *s = (mode == 'j')? r_table_tojson (t): r_table_tostring (t);
-	r_cons_print (s);
+	r_kons_print (core->cons, s);
 	free (s);
 	r_table_free (t);
 	if (scr_color) {
@@ -2324,14 +2324,14 @@ static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" 
 	switch (str[1]) {
 	case '\0': // "drp" "arp"
 		if (r->reg_profile_str) {
-			r_cons_println (r->reg_profile_str);
+			r_cons_println (core->cons, r->reg_profile_str);
 		} else {
 			R_LOG_ERROR ("No register profile defined. Try 'dr.'");
 		}
 		break;
 	case 'c': // "drpc" "arpc"
 		if (core->dbg->reg->reg_profile_cmt) {
-			r_cons_println (r->reg_profile_cmt);
+			r_cons_println (core->cons, r->reg_profile_cmt);
 		}
 		break;
 	case '*': // "drp*"
@@ -2352,7 +2352,7 @@ static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" 
 		if (!R_STR_ISEMPTY (ptr)) {
 			char *r2profile = r_reg_parse_gdb_profile (ptr);
 			if (r2profile) {
-				r_cons_println (r2profile);
+				r_cons_println (core->cons, r2profile);
 				r_core_return_value (core, R_CMD_RC_SUCCESS);
 				free (r2profile);
 			} else {
@@ -2616,7 +2616,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 						}
 						pj_end (pj);
 						const char *s = pj_string (pj);
-						r_cons_println (s);
+						r_cons_println (core->cons, s);
 						pj_free (pj);
 					} else {
 						if (r->comment) {
@@ -2697,13 +2697,13 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 						pj_s (pj, r->name);
 						i++;
 					} else {
-						r_cons_println (r->name);
+						r_cons_println (core->cons, r->name);
 					}
 				}
 				if (json_out) {
 					pj_end (pj);
 					const char *s = pj_string (pj);
-					r_cons_println (s);
+					r_cons_println (core->cons, s);
 					pj_free (pj);
 				}
 			}
@@ -2802,7 +2802,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			if (*name && name[1]) {
 				r = r_reg_cond_get (core->dbg->reg, name);
 				if (r) {
-					r_cons_println (r->name);
+					r_cons_println (core->cons, r->name);
 				} else {
 					int id = r_reg_cond_from_string (name);
 					RRegFlags* rf = r_reg_cond_retrieve (core->dbg->reg, NULL);
@@ -3109,7 +3109,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		switch (str[1]) {
 		case '\0': // "drt"
 			for (i = 0; (name = r_reg_type_tostring (i)); i++) {
-				r_cons_println (name);
+				r_cons_println (core->cons, name);
 			}
 			break;
 		case 'j': // "drtj"
@@ -3126,7 +3126,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					pj_s (pj, name);
 				}
 				pj_end (pj);
-				r_cons_println (pj_string (pj));
+				r_cons_println (core->cons, pj_string (pj));
 				pj_free (pj);
 				break;
 			}
@@ -3841,7 +3841,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				free (desc);
 			}
 			pj_end (pj);
-			r_cons_println (pj_string (pj));
+			r_cons_println (core->cons, pj_string (pj));
 			pj_free (pj);
 			r_list_free (list);
 			break;
@@ -4052,7 +4052,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			}
 		} else {
 			if (bpi && bpi->name) {
-				r_cons_println (bpi->name);
+				r_cons_println (core->cons, bpi->name);
 			}
 		}
 		break;
@@ -4215,7 +4215,7 @@ static void do_debug_trace_calls(RCore *core, ut64 from, ut64 to, ut64 final_add
 		RAnalOp aop;
 		int addr_in_range;
 
-		if (r_cons_is_breaked()) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		if (r_debug_is_dead (dbg)) {
@@ -4446,12 +4446,12 @@ static void r_core_debug_kill(RCore *core, const char *input) {
 			if (signum > 0) {
 				const char *signame = r_signal_tostring (signum);
 				if (signame) {
-					r_cons_println (signame);
+					r_cons_println (core->cons, signame);
 				}
 			} else {
 				signum = r_signal_from_string (arg);
 				if (signum > 0) {
-					r_cons_printf ("%d\n", signum);
+					r_kons_printf (core->cons, "%d\n", signum);
 				}
 			}
 		} else {
@@ -4499,7 +4499,7 @@ static void r_core_debug_kill(RCore *core, const char *input) {
 			{
 				r_core_cmd_help (core, help_msg_dko);
 				// TODO #7967 help refactor: move to detail
-				r_cons_println ("NOTE: [signal] can be a number or a string that resolves with dk?\n"
+				r_cons_println (core->cons, "NOTE: [signal] can be a number or a string that resolves with dk?\n"
 						"  skip means do not enter into the signal handler\n"
 						"  continue means enter into the signal handler");
 			}
@@ -4623,7 +4623,7 @@ static bool cmd_dcu(RCore *core, const char *input) {
 	if (dcu_range) {
 		r_cons_break_push (NULL, NULL);
 		do {
-			if (r_cons_is_breaked ()) {
+			if (r_cons_is_breaked (core->cons)) {
 				break;
 			}
 			r_debug_step (core->dbg, 1);
@@ -4697,7 +4697,7 @@ static bool cmd_dcu(RCore *core, const char *input) {
 				if (steps % 500 == 0 || pc == addr) {
 					R_LOG_INFO ("At 0x%08" PFMT64x " after %lu steps", pc, steps);
 				}
-				if (r_cons_is_breaked () || r_debug_is_dead (core->dbg) || pc == addr) {
+				if (r_cons_is_breaked (core->cons) || r_debug_is_dead (core->dbg) || pc == addr) {
 					break;
 				}
 				if (is_x86_call (core->dbg, pc)) {
@@ -4878,7 +4878,7 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 				pc = r_debug_reg_get (core->dbg, "PC");
 				eprintf (" %d %"PFMT64x"\r", n++, pc);
 				s = r_io_map_get_at (core->io, pc);
-				if (r_cons_is_breaked ()) {
+				if (r_cons_is_breaked (core->cons)) {
 					break;
 				}
 			} while (!s);
@@ -4970,7 +4970,7 @@ static int cmd_debug_step(RCore *core, const char *input) {
 			int n = 0;
 			r_cons_break_push (static_debug_stop, core->dbg);
 			do {
-				if (r_cons_is_breaked ()) {
+				if (r_cons_is_breaked (core->cons)) {
 					break;
 				}
 				r_debug_step (core->dbg, 1);
@@ -5518,7 +5518,7 @@ static int cmd_debug(void *data, const char *input) {
 			r_cons_printf ("@%03d.%d\n", beats, sub_beats);
 		} else {
 			char *nostr = r_time_secs_tostring (r_time_today ());
-			r_cons_println (nostr);
+			r_cons_println (core->cons, nostr);
 			free (nostr);
 		}
 		return 0;
@@ -5722,7 +5722,7 @@ static int cmd_debug(void *data, const char *input) {
 					char *s = sdb_querys (db, NULL, 0, "*");
 					if (s) {
 						r_str_trim (s);
-						r_cons_println (s);
+						r_cons_println (core->cons, s);
 						free (s);
 					}
 				} else if (input[3] == ' ') {
@@ -5731,7 +5731,7 @@ static int cmd_debug(void *data, const char *input) {
 						char *s = sdb_querys (db, NULL, 0, input + 4);
 						if (s) {
 							r_str_trim (s);
-							r_cons_println (s);
+							r_cons_println (core->cons, s);
 							free (s);
 						}
 					} else {
@@ -6074,7 +6074,7 @@ static int cmd_debug(void *data, const char *input) {
 			switch (input[2]) {
 			case '\0': // "doe"
 				if (core->io->envprofile) {
-					r_cons_println (core->io->envprofile);
+					r_cons_println (core->cons, core->io->envprofile);
 				}
 				break;
 			case '!': // "doe!"
@@ -6152,7 +6152,7 @@ static int cmd_debug(void *data, const char *input) {
 #endif
 	case 'w': // "dw"
 		r_cons_break_push (static_debug_stop, core->dbg);
-		for (;!r_cons_is_breaked ();) {
+		for (;!r_cons_is_breaked (core->cons);) {
 			int pid = atoi (input + 1);
 			//int opid = core->dbg->pid = pid;
 			int res = r_debug_kill (core->dbg, pid, 0, 0);

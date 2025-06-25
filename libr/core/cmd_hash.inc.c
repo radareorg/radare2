@@ -30,7 +30,7 @@ static int cmd_hash_bang(RCore *core, const char *input) {
 			RLangPlugin *lp = r_lang_get_by_name (core->lang, name);
 			if (lp) {
 				if (lp->example) {
-					r_cons_println (lp->example);
+					r_cons_println (core->cons, lp->example);
 				} else {
 					R_LOG_ERROR ("%s plugin does not provide an example", name);
 				}

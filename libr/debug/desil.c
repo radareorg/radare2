@@ -1,6 +1,7 @@
-/* radare - LGPL - Copyright 2015-2024 - pancake */
+/* radare - LGPL - Copyright 2015-2025 - pancake */
 
 #include <r_debug.h>
+#include <r_core.h>
 
 #if 0
 	/* debugesil performs step into + esil conditionals */
@@ -279,10 +280,12 @@ R_API bool r_debug_esil_stepi(RDebug *d) {
 R_API ut64 r_debug_esil_step(RDebug *dbg, ut32 count) {
 	R_RETURN_VAL_IF_FAIL (dbg, UT64_MAX);
 	count++;
+	RCore *core = dbg->coreb.core;
+	RCons *cons = core->cons;
 	has_match = false;
-	r_cons_break_push (NULL, NULL);
+	r_kons_break_push (cons, NULL, NULL);
 	do {
-		if (r_cons_is_breaked ()) {
+		if (r_cons_is_breaked (cons)) {
 			break;
 		}
 		if (has_match) {
@@ -297,7 +300,7 @@ R_API ut64 r_debug_esil_step(RDebug *dbg, ut32 count) {
 			}
 		}
 	} while (r_debug_esil_stepi (dbg));
-	r_cons_break_pop ();
+	r_kons_break_pop (cons);
 	return Gopc;
 }
 

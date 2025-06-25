@@ -243,7 +243,7 @@ R_API bool r_core_cmpwatch_show(RCore *core, ut64 addr, int mode) {
 			char *cmd_output = cwcmd (core, w);
 			if (cmd_output) {
 				r_kons_print (core->cons, "\n  cmd: ");
-				r_kons_println (core->cons, cmd_output);
+				r_cons_println (core->cons, cmd_output);
 				free (cmd_output);
 			} else {
 				r_cons_newline (core->cons);
@@ -257,7 +257,7 @@ R_API bool r_core_cmpwatch_show(RCore *core, ut64 addr, int mode) {
 		char *out;
 		pj_end (pj);
 		out = pj_drain (pj);
-		r_kons_println (core->cons, out);
+		r_cons_println (core->cons, out);
 		free (out);
 	}
 
@@ -477,7 +477,7 @@ static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len, int 
 		pj_ki (pj, "total_bytes", len);
 		pj_end (pj); // End array
 		pj_end (pj); // End object
-		r_kons_println (core->cons, pj_string (pj));
+		r_cons_println (core->cons, pj_string (pj));
 	}
 	return len - eq;
 }
@@ -1212,7 +1212,7 @@ static int cmd_cmp(void *data, const char *input) {
 			if (*path == '$') {
 				char *v_str = r_core_slurp (core, path, NULL);
 				if (v_str) {
-					r_kons_println (core->cons, v_str);
+					r_cons_println (core->cons, v_str);
 					free (v_str);
 				}
 			} else if (*path) {
@@ -1673,7 +1673,7 @@ r_cons_global (core->cons);
 		break;
 	case 'l': // "cl"
 		if (strchr (input, 'f')) {
-			r_kons_flush (core->cons);
+			r_cons_flush (core->cons);
 		} else if (input[1] == 0) {
 			r_kons_fill_line (core->cons);
 		} else if (!strchr (input, '0')) {

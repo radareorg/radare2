@@ -123,7 +123,7 @@ static bool nextpal_item(RCore *core, PJ *pj, int mode, const char *file) {
 		pj_s (pj, fn);
 		break;
 	case 'l': // list
-		r_kons_println (core->cons, fn);
+		r_cons_println (core->cons, fn);
 		break;
 	case 'p': // previous
 		// TODO: move logic here
@@ -358,7 +358,7 @@ done:
 	files = NULL;
 	if (mode == 'j') {
 		pj_end (pj);
-		r_kons_println (core->cons, pj_string (pj));
+		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 	}
 }
@@ -587,7 +587,7 @@ static bool cmd_ec(RCore *core, const char *input) {
 			  r_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->addr, "");
 			  const char *str = r_meta_get_string (core->anal, R_META_TYPE_HIGHLIGHT, core->addr);
 			  char *dup = r_str_newf ("%s \"%s%s\"", r_str_get (str), r_str_get (word),
-					  color_code ? color_code : r_cons_singleton ()->context->pal.wordhl);
+					  color_code ? color_code : core->cons->context->pal.wordhl);
 			  r_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->addr, dup);
 			  r_str_argv_free (argv);
 			  free (color_code);
@@ -649,7 +649,7 @@ static void r2rc_set(RCore *core, const char * R_NULLABLE k, const char * R_NULL
 						r_strbuf_appendf (sb, "'e %s=%s\n", k, v);
 					}
 				} else {
-					r_kons_println (core->cons, line);
+					r_cons_println (core->cons, line);
 				}
 				found = true;
 			} else {
@@ -670,7 +670,7 @@ static void r2rc_set(RCore *core, const char * R_NULLABLE k, const char * R_NULL
 			r_strbuf_free (sb);
 		}
 	} else {
-		r_kons_println (core->cons, rcdata);
+		r_cons_println (core->cons, rcdata);
 	}
 	free (rcdata);
 	free (rcfile);
@@ -730,7 +730,7 @@ static int cmd_eval(void *data, const char *input) {
 			if (node) {
 				const char *type = r_config_node_type (node);
 				if (type && *type) {
-					r_kons_println (cons, type);
+					r_cons_println (cons, type);
 				}
 			}
 		} else {
@@ -760,7 +760,7 @@ static int cmd_eval(void *data, const char *input) {
 			}
 			pj_end (pj);
 			char *s = pj_drain (pj);
-			r_kons_println (cons, s);
+			r_cons_println (cons, s);
 			free (s);
 		} else if (!strcmp (input + 1, "v*")) {
 			char **e = r_sys_get_environ ();
@@ -777,13 +777,13 @@ static int cmd_eval(void *data, const char *input) {
 			}
 			char *p = r_sys_getenv (var);
 			if (p) {
-				r_kons_println (cons, p);
+				r_cons_println (cons, p);
 				free (p);
 			} else if (!var || !*var) {
 				char **e = r_sys_get_environ ();
 				if (e != NULL) {
 					while (*e) {
-						r_kons_println (cons, *e);
+						r_cons_println (cons, *e);
 						e++;
 					}
 				}
@@ -831,7 +831,7 @@ static int cmd_eval(void *data, const char *input) {
 		} else if (input[1] == '*') {
 			char *file = r_file_home (".radare2rc");
 			char *data = r_file_slurp (file, NULL);
-			r_kons_println (cons, data);
+			r_cons_println (cons, data);
 			free (data);
 			free (file);
 		} else if (input[1] == '+') {

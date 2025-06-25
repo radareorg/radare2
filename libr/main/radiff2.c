@@ -85,7 +85,7 @@ static RCore *opencore(RadiffOptions *ro, const char *f) {
 	r_config_set_b (c->config, "scr.interactive", false);
 	r_list_foreach (ro->evals, iter, e) {
 		char *res = r_config_eval (c->config, e, false, NULL);
-		r_kons_println (c->cons, res);
+		r_cons_println (c->cons, res);
 		free (res);
 	}
 	if (f) {
@@ -130,7 +130,7 @@ static RCore *opencore(RadiffOptions *ro, const char *f) {
 		if (ro->zignatures) {
 			r_core_cmd0 (c, "zg");
 		}
-		r_kons_flush (c->cons);
+		r_cons_flush (c->cons);
 	}
 	// TODO: must enable io.va here if wanted .. r_config_set_i (c->config, "io.va", va);
 	return c;
@@ -526,7 +526,7 @@ static void dump_cols(RadiffOptions *ro, ut8 *a, int as, ut8 *b, int bs, int w) 
 	}
 	r_kons_break_push (ro->cons, NULL, NULL);
 	for (i = 0; i < sz; i += w) {
-		if (r_kons_is_breaked (ro->cons)) {
+		if (r_cons_is_breaked (ro->cons)) {
 			break;
 		}
 		if (i + w >= sz) {
@@ -603,11 +603,11 @@ static void dump_cols(RadiffOptions *ro, ut8 *a, int as, ut8 *b, int bs, int w) 
 			}
 		}
 		r_kons_printf (ro->cons, "\n");
-		r_kons_flush (ro->cons);
+		r_cons_flush (ro->cons);
 	}
-	r_kons_break_end (ro->cons);
+	r_cons_break_end (ro->cons);
 	r_kons_printf (ro->cons, "\n"Color_RESET);
-	r_kons_flush (ro->cons);
+	r_cons_flush (ro->cons);
 	if (as != bs) {
 		r_kons_printf (ro->cons, "...\n");
 	}
@@ -624,7 +624,7 @@ static void dump_cols_hexii(RadiffOptions *ro, ut8 *a, int as, ut8 *b, int bs, i
 	}
 	r_kons_break_push (ro->cons, NULL, NULL);
 	for (i = 0; i < sz; i += w) {
-		if (r_kons_is_breaked (ro->cons)) {
+		if (r_cons_is_breaked (ro->cons)) {
 			break;
 		}
 		if (i + w >= sz) {
@@ -703,11 +703,11 @@ static void dump_cols_hexii(RadiffOptions *ro, ut8 *a, int as, ut8 *b, int bs, i
 			r_kons_printf (ro->cons, "  ");
 		}
 		r_kons_printf (ro->cons, "\n");
-		r_kons_flush (ro->cons);
+		r_cons_flush (ro->cons);
 	}
-	r_kons_break_end (ro->cons);
+	r_cons_break_end (ro->cons);
 	r_kons_printf (ro->cons, "\n"Color_RESET);
-	r_kons_flush (ro->cons);
+	r_cons_flush (ro->cons);
 	if (as != bs) {
 		r_kons_printf (ro->cons, "...\n");
 	}
@@ -982,7 +982,7 @@ static void __generate_graph(RCore *c, ut64 off) {
 	r_kons_break_push (c->cons, NULL, NULL);
 	if (str) {
 		for (;;) {
-			if (r_kons_is_breaked (c->cons)) {
+			if (r_cons_is_breaked (c->cons)) {
 				break;
 			}
 			char *eol = strchr (ptr, '\n');
@@ -1029,7 +1029,7 @@ static void __print_diff_graph(RCore *c, ut64 off, int gmode) {
 	case GRAPH_INTERACTIVE_MODE:
 		__generate_graph (c, off);
 		r_core_agraph_print (c, use_utf8, "v");
-		r_kons_reset_colors (c->cons);
+		r_cons_reset_colors (c->cons);
 		break;
 	case GRAPH_SDB_MODE:
 		__generate_graph (c, off);
@@ -1049,7 +1049,7 @@ static void __print_diff_graph(RCore *c, ut64 off, int gmode) {
 	default:
 		__generate_graph (c, off);
 		r_core_agraph_print (c, use_utf8, "");
-		r_kons_reset_colors (c->cons);
+		r_cons_reset_colors (c->cons);
 		break;
 	}
 }
@@ -1640,9 +1640,9 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		}
 // r_kons_printf (c2->cons, "PENE\n");
 		if (ro.mode == MODE_CODE || ro.mode == MODE_GRAPH) {
-			r_kons_flush (c->cons);
-			r_kons_flush (c2->cons);
-			r_kons_flush (ro.cons);
+			r_cons_flush (c->cons);
+			r_cons_flush (c2->cons);
+			r_cons_flush (ro.cons);
 		}
 		r_core_free (c);
 		r_core_free (c2);
@@ -1680,7 +1680,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		r_kons_printf (ro.cons, "+++ %s\n", ro.file2);
 		r_diff_set_callback (d, &cb_xpatch, &ro);
 		r_diff_buffers (d, bufa, (ut32)sza, bufb, (ut32)szb);
-		r_kons_flush (ro.cons);
+		r_cons_flush (ro.cons);
 		break;
 	case MODE_COLSII:
 		if (!c && !r_list_empty (ro.evals)) {

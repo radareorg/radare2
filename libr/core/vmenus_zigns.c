@@ -57,7 +57,7 @@ R_API int __core_visual_view_zigns_update(RCore *core, RCoreVisualViewZigns *sta
 	}
 	r_cons_print_at (cons, col0str, 0, 2, colw, colh);
 	r_list_free (col0);
-	r_kons_flush (core->cons);
+	r_cons_flush (core->cons);
 	return 0;
 }
 
@@ -149,7 +149,7 @@ R_API int r_core_visual_view_zigns(RCore *core) {
 			" q     - quit this visual mode\n"
 			" _     - enter the hud\n"
 			" :     - enter command\n");
-			r_kons_flush (core->cons);
+			r_cons_flush (core->cons);
 			r_cons_any_key (core->cons, NULL);
 			break;
 		case 'q':

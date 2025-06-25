@@ -60,15 +60,15 @@ R_IPI void pager_printpage(RCons *cons, const char *line, int *index, RList **ml
 	for (i = from; i < to; i++) {
 		pager_color_line (cons, line + index[i], p, mla[i]);
 		r_strpool_ansi_trim (p, w);
-		r_kons_reset_colors (cons);
+		r_cons_reset_colors (cons);
 		if (i + 1 == to) {
 			r_kons_print (cons, p->str);
 		} else {
-			r_kons_println (cons, p->str);
+			r_cons_println (cons, p->str);
 		}
 	}
 	r_strpool_free (p);
-	r_kons_flush (cons);
+	r_cons_flush (cons);
 }
 
 R_IPI int pager_next_match(int from, RList **mla, int lcount) {

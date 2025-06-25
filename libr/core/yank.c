@@ -206,7 +206,7 @@ R_API bool r_core_yank_dump(RCore *core, ut64 pos, int format) {
 	int ybl = core->yank_buf ? r_buf_size (core->yank_buf): 0;
 	if (ybl < 1) {
 		if (format == 'j') {
-			r_kons_println (core->cons, "{}");
+			r_cons_println (core->cons, "{}");
 		} else {
 			R_LOG_ERROR ("No buffer yanked yet");
 		}
@@ -237,7 +237,7 @@ R_API bool r_core_yank_dump(RCore *core, ut64 pos, int format) {
 		pj_ks (pj, "bytes", r_strbuf_get (buf));
 		r_strbuf_free (buf);
 		pj_end (pj);
-		r_kons_println (core->cons, pj_string (pj));
+		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 		break;
 	}

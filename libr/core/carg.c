@@ -119,7 +119,7 @@ static void print_format_values(RCore *core, const char *fmt, bool onstack, ut64
 		}
 	default:
 		//TODO: support types like structs and unions
-		r_kons_println (core->cons, "unk_format");
+		r_cons_println (core->cons, "unk_format");
 	}
 	r_kons_print (core->cons, Color_RESET);
 	free (buf);

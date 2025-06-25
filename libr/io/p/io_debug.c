@@ -405,11 +405,11 @@ static int platform_fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		bed = r_kons_sleep_begin (cons);
 		usleep (100000);
 		r_kons_sleep_end (cons, bed);
-	} while (ret != child_pid && !r_kons_is_breaked (cons));
+	} while (ret != child_pid && !r_cons_is_breaked (cons));
 	if (!WIFSTOPPED (status)) {
 		return -1;
 	}
-	if (WEXITSTATUS (status) == MAGIC_EXIT || r_kons_is_breaked (cons)) {
+	if (WEXITSTATUS (status) == MAGIC_EXIT || r_cons_is_breaked (cons)) {
 		R_LOG_INFO ("Killing child process %d due to an error", (int)child_pid);
 		kill (child_pid, SIGSTOP);
 		return -1;

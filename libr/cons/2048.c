@@ -158,7 +158,7 @@ R_API void r_cons_2048(RCons *cons, bool color) {
 		} else {
 			r_kons_printf (cons, "[r2048] score: %d   moves: %d\n", state.score, state.moves);
 		}
-		r_kons_flush (cons);
+		r_cons_flush (cons);
 		twok_print (&state, color);
 		ch = r_cons_readchar (cons);
 		ch = r_cons_arrow_to_hjkl (cons, ch);
@@ -182,7 +182,7 @@ R_API void r_cons_2048(RCons *cons, bool color) {
 	}
 	r_kons_clear00 (cons);
 	r_kons_printf (cons, "[r2048] score: %d\n", state.score);
-	r_kons_flush (cons);
+	r_cons_flush (cons);
 	twok_print (&state, color);
 
 	r_kons_printf (cons, "\n  [r2048.score] %d\n", state.score);

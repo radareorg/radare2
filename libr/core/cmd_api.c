@@ -389,10 +389,11 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 		}
 	} else {
 		char *nstr = NULL;
+		RCons *cons = r_cons_singleton ();
 		RCmdAliasVal *v = r_cmd_alias_get (cmd, input);
 		if (v && v->is_data) {
 			char *v_str = r_cmd_alias_val_strdup (v);
-			r_cons_print (v_str);
+			r_kons_print (cons, v_str);
 			free (v_str);
 			return true;
 		}
@@ -840,7 +841,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 				if (end) {
 					*end = '\0';
 				}
-				if (r_kons_is_breaked (core->cons)) {
+				if (r_cons_is_breaked (core->cons)) {
 					R_LOG_INFO ("Interrupted at (%s)", ptr);
 					if (end) {
 						*end = '\n';
@@ -849,7 +850,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 					r_kons_break_pop (core->cons);
 					return false;
 				}
-				r_kons_flush (core->cons);
+				r_cons_flush (core->cons);
 				/* Label handling */
 				ptr2 = r_cmd_macro_label_process (mac, &(labels[0]), &labels_n, ptr);
 				if (!ptr2) {

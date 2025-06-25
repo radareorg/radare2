@@ -247,7 +247,7 @@ static void draw_horizontal_line(RConsCanvas *c, int x, int y, int width, int st
 	const char *hline = useUtf8 ? utf8_line_horiz (cons, dot_style) : "-";
 	r_kons_break_push (c->cons, NULL, NULL);
 	for (i = x + 1; i < x + width - 1; i++) {
-		if (r_kons_is_breaked (c->cons)) {
+		if (r_cons_is_breaked (c->cons)) {
 			break;
 		}
 		if (G (i, y)) {
@@ -274,7 +274,7 @@ static void draw_vertical_line(RConsCanvas *c, int x, int y, int height, int dot
 	const char *vline = useUtf8 ? utf8_line_vert (cons, dot_style) : "|";
 	r_kons_break_push (c->cons, NULL, NULL);
 	for (i = y; i < y + height; i++) {
-		if (r_kons_is_breaked (c->cons)) {
+		if (r_cons_is_breaked (c->cons)) {
 			break;
 		}
 		if (G (x, i)) {

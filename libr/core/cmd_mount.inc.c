@@ -449,7 +449,7 @@ static int cmd_mount(void *data, const char *_input) {
 			}
 			pj_end (pj);
 			char *s = pj_drain (pj);
-			r_kons_println (core->cons, s);
+			r_cons_println (core->cons, s);
 			free (s);
 		} else {
 			r_list_foreach (core->fs->plugins, iter, plug) {
@@ -648,7 +648,7 @@ static int cmd_mount(void *data, const char *_input) {
 				list = r_fs_find_off (core->fs, input, off);
 				r_list_foreach (list, iter, ptr) {
 					r_str_trim_path (ptr);
-					r_kons_println (core->cons, ptr);
+					r_cons_println (core->cons, ptr);
 				}
 				// XXX: r_list_purge (list);
 			} else {

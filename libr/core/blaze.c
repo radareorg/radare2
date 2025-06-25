@@ -259,7 +259,7 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 	R_LOG_DEBUG ("Creating basic blocks");
 	ut64 cur = 0, base = 0;
 	while (cur >= base && cur < size) {
-		if (r_cons_is_breaked ()) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		// magic number to fix huge section of invalid code fuzz files
@@ -372,7 +372,7 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 			R_LOG_ERROR ("Failed to get next block from list");
 			continue;
 		}
-		if (r_cons_is_breaked ()) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 
@@ -435,7 +435,7 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 	R_LOG_DEBUG ("Trying to create functions");
 
 	r_list_foreach (result, iter, block) {
-		if (r_cons_is_breaked ()) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		if (block && (block->reached == 0 || block->called >= 1)) {
@@ -568,7 +568,7 @@ R_API bool core_anal_bbs_range(RCore *core, const char* input) {
 			b_start = lista[x];
 			lista[x] = 0;
 			while (cur < size) {
-				if (r_cons_is_breaked ()) {
+				if (r_cons_is_breaked (core->cons)) {
 					break;
 				}
 				// magic number to fix huge section of invalid code fuzz files
@@ -678,7 +678,7 @@ R_API bool core_anal_bbs_range(RCore *core, const char* input) {
 			R_LOG_ERROR ("Failed to get next block from list");
 			continue;
 		}
-		if (r_cons_is_breaked ()) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 
@@ -742,7 +742,7 @@ R_API bool core_anal_bbs_range(RCore *core, const char* input) {
 	R_LOG_DEBUG ("Trying to create functions");
 
 	r_list_foreach (result, iter, block) {
-		if (r_cons_is_breaked ()) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		if (block && (block->reached == 0)) {

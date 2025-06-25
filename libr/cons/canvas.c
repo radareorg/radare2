@@ -291,6 +291,7 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 	if (!c || !_s || !*_s || !R_BETWEEN (0, c->y, c->h - 1) || !R_BETWEEN (0, c->x, c->w - 1)) {
 		return;
 	}
+	RCons *cons = c->cons;
 	char *oos = strdup (_s);
 	char *os = r_str_ansi_resetbg (oos, c->bgcolor);
 	const char *s = os;
@@ -302,7 +303,7 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 
 	/* split the string into pieces of non-ANSI chars and print them normally,
 	** using the ANSI chars to set the attr of the canvas */
-	r_cons_break_push (NULL, NULL);
+	r_kons_break_push (cons, NULL, NULL);
 	do {
 		const char *s_part = set_attr (c, s);
 		ch = 0;
@@ -351,8 +352,8 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 			attr_x += utf8_len;
 		}
 		s += piece_len;
-	} while (*s && !r_cons_is_breaked ());
-	r_cons_break_pop ();
+	} while (*s && !r_cons_is_breaked (cons));
+	r_kons_break_pop (cons);
 	c->x = orig_x;
 	free (oos);
 	free (os);
@@ -434,7 +435,7 @@ R_API void r_cons_canvas_print_region(RConsCanvas *c) {
 	if (o) {
 		r_str_trim_tail (o);
 		if (*o) {
-			r_cons_print (o);
+			r_kons_print (c->cons, o);
 		}
 		free (o);
 	}
@@ -443,7 +444,7 @@ R_API void r_cons_canvas_print_region(RConsCanvas *c) {
 R_API void r_cons_canvas_print(RConsCanvas *c) {
 	char *o = r_cons_canvas_tostring (c);
 	if (o) {
-		r_cons_print (o);
+		r_kons_print (c->cons, o);
 		free (o);
 	}
 }

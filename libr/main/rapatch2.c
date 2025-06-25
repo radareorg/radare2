@@ -72,7 +72,7 @@ static int rapatch_file(RapatchOptions *ro, const char *patch, const char *file)
 	}
 	r_core_cmd0 (ro->core, "o");
 	R_LOG_INFO ("File %s patched", file);
-	r_kons_flush (ro->core->cons);
+	r_cons_flush (ro->core->cons);
 	return 0;
 }
 

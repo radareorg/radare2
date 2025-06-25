@@ -535,7 +535,7 @@ static void r_cons_pal_show_rgb(RCons *cons) {
 	const int inc = 3;
 	int i, j, k, n = 0;
 	RColor rc = RColor_BLACK;
-	r_cons_print ("\n\nRGB:\n");
+	r_kons_print (cons, "\n\nRGB:\n");
 	for (i = n = 0; i <= 0xf; i += inc) {
 		for (k = 0; k <= 0xf; k += inc) {
 			for (j = 0; j <= 0xf; j += inc) {
@@ -546,7 +546,7 @@ static void r_cons_pal_show_rgb(RCons *cons) {
 				strcpy (fg, ((i < 6) && (j < 5))
 					? Color_WHITE: Color_BLACK);
 				r_cons_rgb_str (cons, bg, sizeof (bg), &rc);
-				r_cons_printf ("%s%s rgb:%02x%02x%02x "
+				r_kons_printf (cons, "%s%s rgb:%02x%02x%02x "
 					Color_RESET, fg, bg, rc.r, rc.g, rc.b);
 				if (n ++== 5) {
 					n = 0;
@@ -668,7 +668,7 @@ R_API void r_cons_pal_list(RCons *cons, int rad, const char *arg) {
 	if (rad == 'j' || pj) {
 		pj_end (pj);
 		char *s = pj_drain (pj);
-		r_kons_println (cons, s);
+		r_cons_println (cons, s);
 		free (s);
 	}
 }

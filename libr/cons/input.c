@@ -404,7 +404,7 @@ R_API int r_cons_any_key(RCons *cons, const char *msg) {
 	} else {
 		r_kons_print (cons, "\n--press any key--\n");
 	}
-	r_kons_flush (cons);
+	r_cons_flush (cons);
 	return r_cons_readchar (cons);
 }
 

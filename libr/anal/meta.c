@@ -505,6 +505,8 @@ R_API void r_meta_print_list_at(RAnal *a, ut64 addr, int rad, const char *tq, RT
 }
 
 static void print_meta_list(RAnal *a, int type, int rad, ut64 addr, const char *tq, RTable *t) {
+	RCore *core = a->coreb.core;
+	RCons *cons = core->cons;
 	PJ *pj = NULL;
 	if (rad == ',') {
 		if (!t) {
@@ -553,7 +555,6 @@ static void print_meta_list(RAnal *a, int type, int rad, ut64 addr, const char *
 			r_meta_print (a, item, node->start, r_meta_node_size (node), rad, pj, t, true);
 		}
 	}
-
 beach:
 	if (t && tq) {
 		if (!r_table_query (t, tq)) {
@@ -565,16 +566,17 @@ beach:
 	if (!tq || !strstr (tq, "?")) {
 		if (t) {
 			char *s = r_table_tostring (t);
-			r_cons_print (s);
+			r_kons_print (cons, s);
 			free (s);
 		} else if (pj) {
 			pj_end (pj);
-			r_cons_printf ("%s\n", pj_string (pj));
+			r_kons_printf (cons, "%s\n", pj_string (pj));
 		}
 	}
 	pj_free (pj);
 }
 
+// TODO: return char*
 R_API void r_meta_print_list_all(RAnal *a, int type, int rad, const char *tq, RTable *t) {
 	print_meta_list (a, type, rad, UT64_MAX, tq, t);
 }

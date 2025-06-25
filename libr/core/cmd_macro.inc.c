@@ -60,7 +60,7 @@ static int cmd_macro(void *data, const char *_input) {
 		const char ch = input[1];
 		if (!ch || ch == ')') {
 			char *s = r_cmd_macro_list (&core->rcmd->macro, *input);
-			r_kons_println (core->cons, s);
+			r_cons_println (core->cons, s);
 			free (s);
 			free (input);
 			return R_CMD_RC_SUCCESS;

@@ -33,7 +33,7 @@ static int cmd_Quit(void *data, const char *input) {
 		r_config_set_b (core->config, "scr.hist.save", false);
 		if (exclamations > 1) {
 			if (!r_sandbox_enable (false)) {
-				r_kons_flush (core->cons);
+				r_cons_flush (core->cons);
 				exit (rv);
 			}
 			return R_CMD_RC_QUIT;

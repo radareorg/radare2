@@ -139,7 +139,7 @@ static void render(SlidesState *state, RCore *core, RList *list, int mode, int p
 
 static void render_title(RCore *core, int page, int mode, int total) {
 	R_RETURN_IF_FAIL (page >= 0 && mode >= 0 && total >= 0);
-	r_kons_gotoxy (core->cons, 0, 0);
+	r_cons_gotoxy (core->cons, 0, 0);
 	r_kons_printf (core->cons, "%s%s%s\r [r2slides] [%s:%d/%d]",
 			Color_BLACK, Color_BGYELLOW, R_CONS_CLEAR_LINE,
 			(mode == 2)? "pages": "page", page, total);
@@ -182,10 +182,10 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 		if (mode == 2) {
 			render (&state, core, list, 2, page + 1, sx, sy);
 		}
-		r_kons_gotoxy (core->cons, 0, 0);
+		r_cons_gotoxy (core->cons, 0, 0);
 		render (&state, core, list, 1, page, sx, sy);
 		render_title (core, page, mode, total_pages);
-		r_kons_flush (core->cons);
+		r_cons_flush (core->cons);
 		r_cons_set_raw (core->cons, true);
 		ch = r_cons_readchar (core->cons);
 		ch = r_cons_arrow_to_hjkl (core->cons, ch);
@@ -274,7 +274,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 		case ':':
 			r_kons_show_cursor (core->cons, true);
 			r_cons_set_raw (core->cons, false);
-			r_kons_flush (core->cons);
+			r_cons_flush (core->cons);
 			while (1) {
 				char cmd[1024];
 				*cmd = 0;
@@ -286,7 +286,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 				if (!cmd[0]) {
 					break;
 				}
-				r_kons_flush (core->cons);
+				r_cons_flush (core->cons);
 			}
 			r_kons_show_cursor (core->cons, false);
 			r_cons_set_raw (core->cons, true);

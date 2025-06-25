@@ -450,7 +450,7 @@ retry:
 		}
 		if (s) {
 			r_str_after (s, ':');
-			r_cons_println (s);
+			r_cons_println (core->cons, s);
 			free (s);
 			r_core_return_code (core, 0);
 		} else {
@@ -628,7 +628,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 			ut64 at = input[2]? r_num_math (core->num, input + 2): addr;
 			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, at);
 			if (R_STR_ISNOTEMPTY (comment)) {
-				r_cons_println (comment);
+				r_cons_println (core->cons, comment);
 			}
 		}
 		break;
@@ -840,7 +840,7 @@ static int cmd_meta_vartype_comment(RCore *core, const char *input) {
 		ut64 at = input[2]? r_num_math (core->num, input + 2): addr;
 		const char *comment = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, at);
 		if (R_STR_ISNOTEMPTY (comment)) {
-			r_cons_println (comment);
+			r_cons_println (core->cons, comment);
 		}
 		}
 		break;
@@ -895,7 +895,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 		switch (input[0]) {
 		case 'f': // "Cf?"
 			r_core_cmd_help_match (core, help_msg_C, "Cf");
-			r_cons_println (
+			r_cons_println (core->cons,
 				"'sz' indicates the byte size taken up by struct.\n"
 				"'fmt' is a 'pf?' style format string. It controls only the display format.\n\n"
 				"You may wish to have 'sz' != sizeof (fmt) when you have a large struct\n"
@@ -907,7 +907,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			r_core_cmd_help (core, help_msg_Cs);
 			break;
 		default:
-			r_cons_println ("See C?");
+			r_cons_println (core->cons, "See C?");
 			break;
 		}
 		break;
@@ -999,12 +999,12 @@ static int cmd_meta_others(RCore *core, const char *input) {
 				r_cons_printf ("\"%s\"\n", esc_str);
 				free (esc_str);
 			} else {
-				r_cons_println ("<oom>");
+				r_cons_println (core->cons, "<oom>");
 			}
 		} else if (type == 'd') {
 			r_cons_printf ("%"PFMT64u"\n", size);
 		} else {
-			r_cons_println (mi->str);
+			r_cons_println (core->cons, mi->str);
 		}
 		break;
 	case 's': // "Css"
@@ -1383,7 +1383,7 @@ static void cmd_Cv(RCore *core, const char *input) {
 					free (var->comment);
 					var->comment = text;
 				} else {
-					r_cons_println (var->comment);
+					r_cons_println (core->cons, var->comment);
 				}
 			} else if (R_STR_ISNOTEMPTY (comment)) {
 				var->comment = strdup (comment);

@@ -92,7 +92,7 @@ R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int 
 	}
 	r_cons_break_push (NULL, NULL);
 	for (i = 0; i < size; i += bs) {
-		if (r_cons_is_breaked ()) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		if ((i + bs) > size) {

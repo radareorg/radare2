@@ -1431,7 +1431,7 @@ static void ds_newline(RDisasmState *ds) {
 		} else {
 			pj_ks (ds->pj, "text", r_kons_get_buffer (cons, NULL));
 		}
-		r_kons_reset (cons);
+		r_cons_reset (cons);
 		pj_end (ds->pj);
 	} else {
 		r_cons_newline (cons);
@@ -5700,7 +5700,7 @@ static void print_fcn_arg(RCore *core, int nth, const char *type, const char *na
 			r_kons_printf (core->cons, "-1");
 		}
 	}
-	r_kons_trim (core->cons);
+	r_cons_trim (core->cons);
 }
 
 static void delete_last_comment(RDisasmState *ds) {
@@ -6586,7 +6586,7 @@ toro:
 		ds->at = ds->addr + ds->index;
 		ds->vat = r_core_pava (core, ds->at);
 
-		if (r_kons_is_breaked (cons) || r_cons_was_breaked ()) {
+		if (r_cons_is_breaked (cons) || r_cons_was_breaked ()) {
 			R_FREE (nbuf);
 			if (ds->pj) {
 				r_kons_pop (cons);
@@ -7060,7 +7060,7 @@ toro:
 				}
 			} else {
 				// no more bytes - give up
-				r_kons_reset (cons);
+				r_cons_reset (cons);
 				r_kons_printf (cons, "Failed to find instruction meeting pdu condition.\n");
 				pdu_condition_met = true;
 			}
@@ -7110,7 +7110,7 @@ toro:
 	}
 #endif
 	if (ds->pj) {
-		r_cons_pop ();
+		r_kons_pop (ds->core->cons);
 		if (!pj) {
 			pj_end (ds->pj);
 			r_kons_printf (ds->core->cons, "%s", pj_string (ds->pj));
@@ -7187,7 +7187,7 @@ toro:
 		ds->at = address + i;
 		ds->vat = r_core_pava (core, ds->at);
 		r_core_seek_arch_bits (core, ds->at);
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		ds_hint_begin (ds, ds->at);
@@ -7311,7 +7311,7 @@ toro:
 				opcolor = r_print_color_op_type (core->print, ds->analop.type);
 				r_kons_printf (core->cons, "%s%s" Color_RESET "\n", opcolor, ds->opstr);
 			} else {
-				r_kons_println (core->cons, ds->opstr);
+				r_cons_println (core->cons, ds->opstr);
 			}
 			R_FREE (ds->opstr);
 		}
@@ -7492,7 +7492,7 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 
 	r_kons_break_push (core->cons, NULL, NULL);
 	for (;;) {
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		RAnalOp asmop;
@@ -7794,7 +7794,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 		}
 		ds->vat = r_core_pava (core, ds->at);
 		r_asm_set_pc (core->rasm, ds->vat);
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		ret = r_asm_disassemble (core->rasm, &asmop, buf + i, l - i);
@@ -7839,7 +7839,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 							free (buf_asm);
 						}
 					} else {
-						r_kons_println (core->cons, asmop.mnemonic);
+						r_cons_println (core->cons, asmop.mnemonic);
 					}
 					free (res);
 				}
@@ -7893,7 +7893,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 	}
 	if (mode == 'j') {
 		pj_end (pj);
-		r_kons_println (core->cons, pj_string (pj));
+		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 	}
 	ds_free (ds);
@@ -7952,7 +7952,7 @@ toro:
 		// fix infinite loop
 		j += opinc;
 	} else for (; check_end (nb_opcodes, nb_bytes, addrbytes * i, j); j++) {
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			err = 1;
 			break;
 		}
@@ -8059,7 +8059,7 @@ toro:
 			if (show_bytes) {
 				r_kons_printf (core->cons, "%18s%02x  ", "", buf[i]);
 			}
-			r_kons_println (core->cons, "invalid");
+			r_cons_println (core->cons, "invalid");
 		} else {
 			if (show_bytes && asmop.bytes) {
 				char *op_hex = r_asm_op_get_hex (&asmop);
@@ -8082,7 +8082,7 @@ toro:
 				char *tmpopstr = r_anal_op_tostring (core->anal, &analop);
 				if (fmt == 'e') { // pie
 					const char *esil = R_STRBUF_SAFEGET (&analop.esil);
-					r_kons_println (core->cons, esil);
+					r_cons_println (core->cons, esil);
 				} else {
 					if (decode) {
 						opstr = tmpopstr? tmpopstr: asmop.mnemonic;
@@ -8095,7 +8095,7 @@ toro:
 							opstr = res;
 						}
 					}
-					r_kons_println (core->cons, opstr);
+					r_cons_println (core->cons, opstr);
 				}
 				free (tmpopstr);
 			} else {
@@ -8132,7 +8132,7 @@ toro:
 					r_anal_op_fini (&aop);
 					free (asm_str);
 				} else {
-					r_kons_println (core->cons, asm_str);
+					r_cons_println (core->cons, asm_str);
 				}
 			}
 		}

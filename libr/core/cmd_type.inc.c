@@ -202,21 +202,21 @@ static void cmd_afcl(RCore *core, const char *input) {
 			pj_end (pj);
 		} else if (mode == 'l') {
 			char *sig = r_anal_cc_get (core->anal, cc);
-			r_kons_println (core->cons, sig);
+			r_cons_println (core->cons, sig);
 			free (sig);
 		} else if (mode == '*') {
 			char *ccexpr = r_anal_cc_get (core->anal, cc);
 			r_kons_printf (core->cons, "tcc %s\n", ccexpr);
 			free (ccexpr);
 		} else {
-			r_kons_println (core->cons, cc);
+			r_cons_println (core->cons, cc);
 		}
 	}
 	r_list_free (list);
 	if (pj) {
 		pj_end (pj);
 		char *j = pj_drain (pj);
-		r_kons_println (core->cons, j);
+		r_cons_println (core->cons, j);
 		free (j);
 	}
 }
@@ -524,7 +524,7 @@ static int print_struct_union_list_json(RCore *core, Sdb *TDB, SdbForeachCallbac
 	}
 	pj_end (pj); // ]
 
-	r_kons_println (core->cons, pj_string (pj));
+	r_cons_println (core->cons, pj_string (pj));
 	pj_free (pj);
 	ls_free (l);
 	return 1;
@@ -635,7 +635,7 @@ static void print_enum_in_c_format(RCore *core, Sdb *TDB, const char *arg, bool 
 					}
 					r_list_free (list);
 				}
-				r_kons_println (core->cons, multiline? "\n};": "};");
+				r_cons_println (core->cons, multiline? "\n};": "};");
 				if (match) {
 					break;
 				}
@@ -648,7 +648,7 @@ static void print_enum_in_c_format(RCore *core, Sdb *TDB, const char *arg, bool 
 
 static bool printkey_cb(void *user, const char *k, const char *v) {
 	RCore *core = (RCore *)user;
-	r_kons_println (core->cons, k);
+	r_cons_println (core->cons, k);
 	return true;
 }
 
@@ -858,7 +858,7 @@ static void print_keys(Sdb *TDB, RCore *core, SdbForeachCallback filter, SdbFore
 		}
 	}
 	if (json) {
-		r_kons_println (core->cons, "{}]}\n");
+		r_cons_println (core->cons, "{}]}\n");
 	}
 	ls_free (l);
 }
@@ -1006,7 +1006,7 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 		ut64 to = bb->addr + bb->size;
 		r_reg_set_value (esil->anal->reg, pc, at);
 		for (i = 0; at < to; i++) {
-			if (r_cons_is_breaked ()) {
+			if (r_cons_is_breaked (core->cons)) {
 				goto beach;
 			}
 			if (at < bb->addr) {
@@ -1104,7 +1104,7 @@ beach:
 static void test_flag(RCore *core, bool res, bool verbose) {
 	r_core_return_value (core, res? 0: 1);
 	if (verbose) {
-		r_kons_println (core->cons, res? "found": "not found");
+		r_cons_println (core->cons, res? "found": "not found");
 	}
 }
 
@@ -1450,7 +1450,7 @@ static int cmd_type(void *data, const char *input) {
 					if (!name || strcmp (sdbkv_value (kv), name)) {
 						free (name);
 						name = strdup (sdbkv_key (kv));
-						r_kons_println (core->cons, name);
+						r_cons_println (core->cons, name);
 					}
 				}
 			}
@@ -1465,7 +1465,7 @@ static int cmd_type(void *data, const char *input) {
 		} // end of switch (input[1])
 		free (name);
 		if (res) {
-			r_kons_println (core->cons, res);
+			r_cons_println (core->cons, res);
 		} else if (member_name) {
 			R_LOG_ERROR ("Invalid enum member");
 		}
@@ -1621,7 +1621,7 @@ static int cmd_type(void *data, const char *input) {
 			if (fcn) {
 				RList *uniq = r_anal_types_from_fcn (core->anal, fcn);
 				r_list_foreach (uniq , iter , type) {
-					r_kons_println (core->cons, type);
+					r_cons_println (core->cons, type);
 				}
 				r_list_free (uniq);
 			} else {
@@ -1943,7 +1943,7 @@ static int cmd_type(void *data, const char *input) {
 						free (name);
 						name = strdup (sdbkv_key (kv));
 						if (!input[1]) {
-							r_kons_println (core->cons, name);
+							r_cons_println (core->cons, name);
 						} else {
 							char *q = r_str_newf ("typedef.%s", name);
 							const char *res = sdb_const_get (TDB, q, 0);
@@ -2013,7 +2013,7 @@ static int cmd_type(void *data, const char *input) {
 			char *q = r_str_newf ("typedef.%s", s);
 			const char *res = sdb_const_get (TDB, q, 0);
 			if (res) {
-				r_kons_println (core->cons, res);
+				r_cons_println (core->cons, res);
 			}
 			free (q);
 		} else {

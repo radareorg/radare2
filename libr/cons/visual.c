@@ -130,7 +130,7 @@ R_API void r_cons_visual_flush(RCons *cons) {
 		r_cons_visual_write (cons, ctx->buffer);
 #endif
 	}
-	r_kons_reset (cons);
+	r_cons_reset (cons);
 	if (cons->fps) {
 		print_fps (cons, 0);
 	}

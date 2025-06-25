@@ -1368,7 +1368,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		if (s) {
 			r_kons_print (cons, s);
 			if (havetoflush) {
-				r_kons_flush (cons);
+				r_cons_flush (cons);
 			}
 			res = 0;
 			free (s);
@@ -1392,7 +1392,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		if (s) {
 			r_kons_print (cons, s);
 			if (havetoflush) {
-				r_kons_flush (cons);
+				r_cons_flush (cons);
 			}
 			res = 0;
 		} else {
@@ -1412,7 +1412,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 			}
 		}
 		if (havetoflush) {
-			r_kons_flush (cons);
+			r_cons_flush (cons);
 		}
 	}
 	r_list_free (targets);

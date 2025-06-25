@@ -681,7 +681,7 @@ repeat:
 		}
 		ut64 addr = bb_addr;
 		for (i = 0; i < bb_size;) {
-			if (r_cons_is_breaked ()) {
+			if (r_cons_is_breaked (core->cons)) {
 				goto out_function;
 			}
 			// XXX fail sometimes

@@ -1484,7 +1484,7 @@ static bool cmd_anal_aaft(RCore *core) {
 		r_reg_arena_poke (core->anal->reg, saved_arena, saved_arena_size);
 		r_esil_set_pc (core->anal->esil, fcn->addr);
 		r_core_anal_type_match (core, fcn);
-		if (r_cons_is_breaked ()) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		__add_vars_sdb (core, fcn);
@@ -1741,13 +1741,13 @@ static void cmd_afvx(RCore *core, RAnalFunction *fcn, bool json) {
 			pj_o (pj);
 			pj_k (pj, "reads");
 		} else {
-			r_kons_println (core->cons, "afvR");
+			r_cons_println (core->cons, "afvR");
 		}
 		list_vars (core, fcn, pj, 'R', NULL);
 		if (json) {
 			pj_k (pj, "writes");
 		} else {
-			r_kons_println (core->cons, "afvW");
+			r_cons_println (core->cons, "afvW");
 		}
 		list_vars (core, fcn, pj, 'W', NULL);
 		if (json) {
@@ -1787,7 +1787,7 @@ static int cmd_an2(RCore *core, const char *name, int mode) {
 			pj_kn (pj, "addr", tgt_addr);
 			pj_end (pj);
 		} else {
-			r_kons_println (core->cons, var->name);
+			r_cons_println (core->cons, var->name);
 		}
 	} else {
 		if (tgt_addr == UT64_MAX) {
@@ -1810,7 +1810,7 @@ static int cmd_an2(RCore *core, const char *name, int mode) {
 				pj_kn (pj, "addr", tgt_addr);
 				pj_end (pj);
 			} else {
-				r_kons_println (core->cons, fcn->name);
+				r_cons_println (core->cons, fcn->name);
 			}
 		} else if (f) {
 			if (name) {
@@ -1839,7 +1839,7 @@ static int cmd_an2(RCore *core, const char *name, int mode) {
 					pj_kn (pj, "addr", tgt_addr);
 					pj_end (pj);
 				} else {
-					r_kons_println (core->cons, f->name);
+					r_cons_println (core->cons, f->name);
 				}
 				free (hname);
 			}
@@ -1876,7 +1876,7 @@ static int cmd_an2(RCore *core, const char *name, int mode) {
 failure:
 	if (mode == 'j') {
 		pj_end (pj);
-		r_kons_println (core->cons, pj_string (pj));
+		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 	}
 
@@ -1934,7 +1934,7 @@ static int cmd_afv(RCore *core, const char *str) {
 			r_core_cmd_help (core, help_msg_afv);
 			break;
 		case 'j':
-			r_kons_println (core->cons, "{}");
+			r_cons_println (core->cons, "{}");
 			break;
 		case 0:
 			R_LOG_ERROR ("No function found in current offset");
@@ -1995,7 +1995,7 @@ static int cmd_afv(RCore *core, const char *str) {
 		pj_k (pj, "bp");
 		r_anal_var_list_show (core->anal, fcn, 'b', 'j', pj);
 		pj_end (pj);
-		r_kons_println (core->cons, pj_string (pj));
+		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 		return true;
 	}
@@ -2034,7 +2034,7 @@ static int cmd_afv(RCore *core, const char *str) {
 			list_vars (core, fcn, pj, str[0], name);
 			if (str[1] == 'j') {
 				pj_end (pj);
-				r_kons_println (core->cons, pj_string (pj));
+				r_cons_println (core->cons, pj_string (pj));
 				pj_free (pj);
 			}
 			free (ostr);
@@ -2203,7 +2203,7 @@ static int cmd_afv(RCore *core, const char *str) {
 		}
 		if (fcn) {
 			r_anal_var_list_show (core->anal, fcn, type, str[1], pj);
-			r_kons_println (core->cons, pj_string (pj));
+			r_cons_println (core->cons, pj_string (pj));
 		} else {
 			R_LOG_ERROR ("No function");
 		}
@@ -2487,7 +2487,7 @@ static int esil_cost(RCore *core, ut64 addr, const char *expr) {
 static void cmd_syscall_do(RCore *core, st64 n, ut64 addr) {
 	char *msg = cmd_syscall_dostr (core, n, addr);
 	if (msg) {
-		r_kons_println (core->cons, msg);
+		r_cons_println (core->cons, msg);
 		free (msg);
 	}
 }
@@ -3062,7 +3062,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		r_kons_printf (core->cons, "%d\n", totalsize);
 	} else if (fmt == 'j') {
 		pj_end (pj);
-		r_kons_println (core->cons, pj_string (pj));
+		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 	}
 	r_esil_free (esil);
@@ -3323,7 +3323,7 @@ static void anal_bb_list(RCore *core, const char *input) {
 		pj_end (pj);
 		pj_end (pj);
 		char *j = pj_drain (pj);
-		r_kons_println (core->cons, j);
+		r_cons_println (core->cons, j);
 		free (j);
 	} else if (mode == 't' || mode == ',') {
 		const char *q = strchr (input, ' ');
@@ -3336,7 +3336,7 @@ static void anal_bb_list(RCore *core, const char *input) {
 		}
 		if (show_query) {
 			char *s = r_table_tostring (table);
-			r_kons_println (core->cons, s);
+			r_cons_println (core->cons, s);
 			free (s);
 		}
 		r_table_free (table);
@@ -3498,7 +3498,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 	if (mode == 'j' || mode == 'J') {
 		pj = r_core_pj_new (core);
 		if (!pj) {
-			r_kons_println (core->cons, "[]");
+			r_cons_println (core->cons, "[]");
 			return false;
 		}
 		pj_a (pj);
@@ -3507,11 +3507,11 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 	if (!fcn) {
 		if (mode == 'j') {
 			pj_end (pj);
-			r_kons_println (core->cons, pj_string (pj));
+			r_cons_println (core->cons, pj_string (pj));
 			pj_free (pj);
 		}
 		if (mode == 'i' && input && *input == 'j') {
-			r_kons_println (core->cons, "{}");
+			r_cons_println (core->cons, "{}");
 		}
 		R_LOG_ERROR ("Cannot find function in 0x%08"PFMT64x, addr);
 		return false;
@@ -3633,7 +3633,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 		r_table_free (t);
 	} else if (pj) {
 		pj_end (pj);
-		r_kons_println (core->cons, pj_string (pj));
+		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 	}
 	return true;
@@ -4322,7 +4322,7 @@ static void abm(RCore *core, int mode) {
 			pj_ks (pj, "mask", s1);
 			pj_end (pj);
 			char *s = pj_drain (pj);
-			r_kons_println (core->cons, s);
+			r_cons_println (core->cons, s);
 			free (s);
 		} else {
 			r_kons_printf (core->cons, "%s:%s\n", s0, s1);
@@ -4533,7 +4533,7 @@ static void cmd_afsr(RCore *core, const char *input) {
 	if ((f = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL))) {
 		char *res = fcnshowr (f);
 		if (R_STR_ISNOTEMPTY (res)) {
-			r_kons_println (core->cons, res);
+			r_cons_println (core->cons, res);
 		}
 		free (res);
 	} else {
@@ -4547,7 +4547,7 @@ static void cmd_afsj(RCore *core, const char *arg) {
 	RAnalFunction *f = r_anal_get_fcn_in (core->anal, addr, -1);
 	if (f) {
 		char *s = r_anal_function_get_json (f);
-		r_kons_println (core->cons, s);
+		r_cons_println (core->cons, s);
 		free (s);
 	} else {
 		R_LOG_ERROR ("Cannot find function in 0x%08"PFMT64x, addr);
@@ -4876,7 +4876,7 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 		RListIter *iter;
 		RAnalFunction *fcni = NULL;
 		r_list_foreach (core->anal->fcns, iter, fcni) {
-			if (r_cons_is_breaked ()) {
+			if (r_cons_is_breaked (core->cons)) {
 				break;
 			}
 			r_core_recover_vars (core, fcni, true);
@@ -5390,7 +5390,7 @@ static void cmd_afla(RCore *core, const char *input) {
 	if (pj) {
 		pj_end (pj);
 		char *s = pj_drain (pj);
-		r_kons_println (core->cons, s);
+		r_cons_println (core->cons, s);
 		free (s);
 	}
 }
@@ -5489,7 +5489,7 @@ static int cmd_af(RCore *core, const char *input) {
 				pj_ki (pj, "addr", (int)(addr - fcn->addr));
 			}
 			pj_end (pj);
-			r_kons_println (core->cons, pj_string (pj));
+			r_cons_println (core->cons, pj_string (pj));
 			pj_free (pj);
 		} else {
 			if (fcn) {
@@ -5497,7 +5497,7 @@ static int cmd_af(RCore *core, const char *input) {
 					r_kons_printf (core->cons, "%s + %d\n", fcn->name,
 							(int)(addr - fcn->addr));
 				} else {
-					r_kons_println (core->cons, fcn->name);
+					r_cons_println (core->cons, fcn->name);
 				}
 			} else {
 				R_LOG_ERROR ("afd: Cannot find function");
@@ -5624,7 +5624,7 @@ static int cmd_af(RCore *core, const char *input) {
 					pj_ki (pj, "address", fcn->addr);
 				}
 				pj_end (pj);
-				r_kons_println (core->cons, pj_string (pj));
+				r_cons_println (core->cons, pj_string (pj));
 				pj_free (pj);
 			}
 			break;
@@ -6003,7 +6003,7 @@ static int cmd_af(RCore *core, const char *input) {
 			}
 			char *str = r_anal_function_get_signature (f);
 			if (str) {
-				r_kons_println (core->cons, str);
+				r_cons_println (core->cons, str);
 				free (str);
 			}
 			break;
@@ -6073,7 +6073,7 @@ static int cmd_af(RCore *core, const char *input) {
 			fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
 			if (!fcn) {
 				if (!input[2]) {
-					r_kons_println (core->cons, r_config_get (core->config, "anal.cc"));
+					r_cons_println (core->cons, r_config_get (core->config, "anal.cc"));
 					break;
 				}
 				if (input[2] == 'i') {
@@ -6087,7 +6087,7 @@ static int cmd_af(RCore *core, const char *input) {
 		}
 		switch (input[2]) {
 		case '\0': // "afc"
-			r_kons_println (core->cons, fcn->callconv);
+			r_cons_println (core->cons, fcn->callconv);
 			break;
 		case ' ': { // "afc "
 				  char *cc = r_str_trim_dup (input + 3);
@@ -6205,7 +6205,7 @@ static int cmd_af(RCore *core, const char *input) {
 			free (cmd);
 			if (json) {
 				pj_end (pj);
-				r_kons_println (core->cons, pj_string (pj));
+				r_cons_println (core->cons, pj_string (pj));
 				pj_free (pj);
 			}
 			break;
@@ -6517,7 +6517,7 @@ static int cmd_af(RCore *core, const char *input) {
 			}
 			if (input[2] == 'j') {
 				pj_end (pj);
-				r_kons_println (core->cons, pj_string (pj));
+				r_cons_println (core->cons, pj_string (pj));
 			}
 			pj_free (pj);
 			break;
@@ -6660,7 +6660,7 @@ static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
 		if (mode2 == 'J') {
 			pj_end (pj);
 		}
-		r_kons_println (core->cons, pj_string (pj));
+		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 	}
 
@@ -6721,13 +6721,13 @@ void cmd_anal_reg(RCore *core, const char *str) {
 				if (use_json) {
 					pj_s (pj, r->name);
 				} else {
-					r_kons_println (core->cons, r->name);
+					r_cons_println (core->cons, r->name);
 				}
 			}
 			if (use_json) {
 				pj_end (pj);
 				const char *s = pj_string (pj);
-				r_kons_println (core->cons, s);
+				r_cons_println (core->cons, s);
 			}
 			pj_free (pj);
 		}
@@ -6810,7 +6810,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		break;
 	case 'C': // "arC"
 		if (core->anal->reg->reg_profile_cmt) {
-			r_kons_println (core->cons, core->anal->reg->reg_profile_cmt);
+			r_cons_println (core->cons, core->anal->reg->reg_profile_cmt);
 		}
 		break;
 	case 'w': // "arw"
@@ -6931,7 +6931,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			if (*name && name[1]) {
 				r = r_reg_cond_get (core->dbg->reg, name);
 				if (r) {
-					r_kons_println (core->cons, r->name);
+					r_cons_println (core->cons, r->name);
 				} else {
 					int id = r_reg_cond_from_string (name);
 					RRegFlags *rf = r_reg_cond_retrieve (core->dbg->reg, NULL);
@@ -7007,7 +7007,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			r_core_cmd_help_contains (core, help_msg_dr, "drt");
 		} else {
 			for (i = 0; (name = r_reg_type_tostring (i)); i++) {
-				r_kons_println (core->cons, name);
+				r_cons_println (core->cons, name);
 			}
 		}
 		break;
@@ -7159,7 +7159,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			notfirst = true;
 		}
 		R_LOG_DEBUG ("esil step at 0x%08"PFMT64x, addr);
-		if (r_cons_is_breaked ()) {
+		if (r_cons_is_breaked (core->cons)) {
 			R_LOG_INFO ("[+] ESIL emulation interrupted at 0x%08" PFMT64x, addr);
 			return_tail (0);
 		}
@@ -7483,7 +7483,7 @@ static void cmd_address_info(RCore *core, const char *addrstr, int fmt) {
 			pj_ks (pj, "sequence", "true");
 		}
 		pj_end (pj);
-		r_kons_println (core->cons, pj_string (pj));
+		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 		}
 		break;
@@ -7899,7 +7899,7 @@ static void showregs(RCore *core, RList *list) {
 		char *reg;
 		RListIter *iter;
 		r_list_foreach (list, iter, reg) {
-			r_cons_print (reg);
+			r_kons_print (core->cons, reg);
 			if (iter->n) {
 				r_kons_printf (core->cons, " ");
 			}
@@ -8001,7 +8001,7 @@ static bool cmd_aea_stuff(RCore* core, int mode, ut64 addr, int length, const ch
 	esil->nowrite = true;
 	r_cons_break_push (NULL, NULL);
 	for (ops = ptr = 0; ptr < buf_sz && hasNext (); ops++, ptr += len) {
-		if (r_cons_is_breaked ()) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		if (esilexpr) {
@@ -8100,7 +8100,7 @@ static bool cmd_aea_stuff(RCore* core, int mode, ut64 addr, int length, const ch
 		}
 
 		pj_end (pj);
-		r_kons_println (core->cons, pj_string (pj));
+		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 		break;
 	case '*':
@@ -8183,7 +8183,7 @@ static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int ninstr) {
 	ut64 oldoff = core->addr;
 	const ut64 flags = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_DISASM;
 	for (i = 0, j = 0; j < ninstr; i++, j++) {
-		if (r_cons_is_breaked ()) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		if (i >= (bsize - 32)) {
@@ -9254,7 +9254,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			if (esil && esil->stats) {
 				char *out = sdb_querys (esil->stats, NULL, 0, input + 2);
 				if (out) {
-					r_kons_println (core->cons, out);
+					r_cons_println (core->cons, out);
 					free (out);
 				}
 			} else {
@@ -9381,7 +9381,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			if (input[2] == '?') {
 				// TODO: find better name for this command
 				char *s = r_esil_opstr (core->anal->esil, input[3]);
-				r_cons_print (s);
+				r_kons_print (core->cons, s);
 				free (s);
 				break;
 			}
@@ -9647,7 +9647,7 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 			if (showbits) {
 				for (i = 0; i < last; i++) {
 					ut8 *byte = buf + i;
-					r_cons_print (" ");
+					r_kons_print (core->cons, " ");
 					if (pj) {
 						pj_a (pj);
 					}
@@ -9659,7 +9659,7 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 						r_kons_printf (core->cons, "%d", bit?1:0);
 					}
 				}
-				r_cons_print ("\n");
+				r_kons_print (core->cons, "\n");
 			}
 			for (p = s; *p; p++) {
 				int idx = *p - '0' + 1;
@@ -9842,7 +9842,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 				char *ops = r_asm_mnemonics (core->rasm, id, input[1] == 'j');
 				if (ops) {
 					r_str_trim (ops);
-					r_kons_println (core->cons, ops);
+					r_cons_println (core->cons, ops);
 					free (ops);
 				}
 			}
@@ -9890,7 +9890,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		r_list_foreach (hooks, iter, hook) {
 			instr_tmp = r_core_disassemble_instr (core, hook->addr, 1);
 			r_kons_printf (core->cons, "After %4i cycles:\t%s", (ccl - hook->cycles), instr_tmp);
-			r_kons_flush (core->cons);
+			r_cons_flush (core->cons);
 			free (instr_tmp);
 		}
 		r_list_free (hooks);
@@ -9912,7 +9912,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		} else if (input[1] == ' ') {
 			char *d = r_asm_describe (core->rasm, input + 2);
 			if (d && *d) {
-				r_kons_println (core->cons, d);
+				r_cons_println (core->cons, d);
 				free (d);
 			} else {
 				R_LOG_ERROR ("Unknown mnemonic");
@@ -10031,7 +10031,7 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 	int nopcount = 0;
 	r_cons_break_push (NULL, NULL);
 	while (addr < addr_end) {
-		if (r_cons_is_breaked ()) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		// TODO: too many ioreads here
@@ -10086,7 +10086,7 @@ static void cmd_anal_blocks(RCore *core, const char *input) {
 		r_list_foreach (list, iter, map) {
 			from = r_io_map_begin (map);
 			to = r_io_map_end (map);
-			if (r_cons_is_breaked ()) {
+			if (r_cons_is_breaked (core->cons)) {
 				goto ctrl_c;
 			}
 			if (!from && !to) {
@@ -10145,7 +10145,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 	}
 	r_cons_break_push (NULL, NULL);
 	bool valid = true;
-	while (addr < addr_end && !r_cons_is_breaked ()) {
+	while (addr < addr_end && !r_cons_is_breaked (core->cons)) {
 		// TODO: too many ioreads here
 		if (bufi > bufi_max) {
 			bufi = 0;
@@ -10275,7 +10275,7 @@ static void cmd_anal_calls(RCore *core, const char *input, bool printCommands, b
 			r_list_foreach (ranges, iter, map) {
 				ut64 addr = r_io_map_begin (map);
 				_anal_calls (core, addr, r_io_map_end (map), printCommands, importsOnly);
-				if (r_cons_is_breaked ()) {
+				if (r_cons_is_breaked (core->cons)) {
 					break;
 				}
 			}
@@ -10287,7 +10287,7 @@ static void cmd_anal_calls(RCore *core, const char *input, bool printCommands, b
 				addr = r->itv.addr;
 				//this normally will happen on fuzzed binaries, dunno if with huge
 				//binaries as well
-				if (r_cons_is_breaked ()) {
+				if (r_cons_is_breaked (core->cons)) {
 					break;
 				}
 				_anal_calls (core, addr, r_itv_end (r->itv), printCommands, importsOnly);
@@ -10302,7 +10302,7 @@ static void cmd_sdbk(RCore *core, Sdb *db, const char *input) {
 	const char *arg = (input[0] == ' ')? input + 1: "*";
 	char *out = sdb_querys (db, NULL, 0, arg);
 	if (out) {
-		r_kons_println (core->cons, out);
+		r_cons_println (core->cons, out);
 		free (out);
 	} else {
 		R_LOG_ERROR ("Usage: ask [query]");
@@ -10388,7 +10388,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 					si = r_syscall_get (core->anal->syscall, -1, sc_number);
 				}
 				if (si) {
-					r_kons_println (core->cons, si->name);
+					r_cons_println (core->cons, si->name);
 					r_syscall_item_free (si);
 				} else {
 					R_LOG_ERROR ("Unknown syscall number");
@@ -10416,7 +10416,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		}
 		pj_end (pj);
 		if (pj) {
-			r_kons_println (core->cons, pj_string (pj));
+			r_cons_println (core->cons, pj_string (pj));
 			pj_free (pj);
 		}
 		r_list_free (list);
@@ -10975,7 +10975,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				if (true) {
 					char *s = r_table_tostring (table);
 					r_str_trim (s);
-					r_kons_println (core->cons, s);
+					r_cons_println (core->cons, s);
 					free (s);
 				}
 				r_table_free (table);
@@ -11106,7 +11106,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			}
 		} else {
 			if (input[1] == 'j') { // "axtj"
-				r_kons_println (core->cons, "[]");
+				r_cons_println (core->cons, "[]");
 			}
 		}
 		RVecAnalRef_free (list);
@@ -11165,7 +11165,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				RVecAnalRef_free (refs);
 				if (pj) {
 					pj_end (pj);
-					r_kons_println (core->cons, pj_string (pj));
+					r_cons_println (core->cons, pj_string (pj));
 				}
 			} else {
 				R_LOG_ERROR ("Cannot find any function");
@@ -11231,7 +11231,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 						pj_end (pj);
 					}
 					pj_end (pj);
-					r_kons_println (core->cons, pj_string (pj));
+					r_cons_println (core->cons, pj_string (pj));
 					pj_free (pj);
 				} else if (input[1] == '*') { // "axf*"
 					// TODO: implement multi-line comments
@@ -11400,7 +11400,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			r_core_cmd_help (core, help_msg_ahb);
 		} else if (input[1] == '*') { // "ahb*"
 			char *s = r_core_cmd_str (core, "ah*~ahb");
-			r_cons_print (s);
+			r_kons_print (core->cons, s);
 			free (s);
 		} else if (input[1] == ' ') {
 			char *ptr = r_str_trim_dup (input + 2);
@@ -11526,7 +11526,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			}
 		} else if (input[1] == 0) {
 			char *s = r_core_cmd_str (core, "ah~size=");
-			r_cons_print (s);
+			r_kons_print (core->cons, s);
 			free (s);
 		} else {
 			r_core_cmd_help (core, help_msg_ahs);
@@ -11770,6 +11770,7 @@ static void agraph_print_node_dot(RANode *n, void *user) {
 }
 
 static void agraph_print_node(RANode *n, void *user) {
+	RCore *core = (RCore *)user;
 	size_t len = strlen (n->body);
 
 	if (len > 0 && n->body[len - 1] == '\n') {
@@ -11777,7 +11778,7 @@ static void agraph_print_node(RANode *n, void *user) {
 	}
 	char *encbody = r_base64_encode_dyn ((const ut8*)n->body, len);
 	char *cmd = r_str_newf ("agn \"%s\" base64:%s\n", n->title, encbody);
-	r_cons_print (cmd);
+	r_kons_print (core->cons, cmd);
 	free (cmd);
 	free (encbody);
 }
@@ -11848,7 +11849,7 @@ end:
 static bool convert_dotcmd_to_image(RCore *core, char *r2_cmd, const char *save_path) {
 	if (save_path && *save_path) {
 		r_kons_printf (core->cons, "Saving to file '%s'...\n", save_path);
-		r_kons_flush (core->cons);
+		r_cons_flush (core->cons);
 	}
 	r_core_cmdf (core, "%s > a.dot", r2_cmd); // TODO: check error here
 	return convert_dot_to_image (core, "a.dot", save_path);
@@ -11857,7 +11858,7 @@ static bool convert_dotcmd_to_image(RCore *core, char *r2_cmd, const char *save_
 static bool convert_dot_str_to_image(RCore *core, char *str, const char *save_path) {
 	if (save_path && *save_path) {
 		r_kons_printf (core->cons, "Saving to file '%s'...\n", save_path);
-		r_kons_flush (core->cons);
+		r_cons_flush (core->cons);
 	}
 	if (!r_file_dump ("a.dot", (const unsigned char *)str, -1, false)) {
 		return false;
@@ -12112,7 +12113,7 @@ static char *mermaid_nodeinfo_body(RGraphNode *n) {
 }
 
 typedef char *(*node_content_cb) (RGraphNode *);
-static void mermaid_graph(RGraph *graph, node_content_cb get_body) {
+static void mermaid_graph(RCore *core, RGraph *graph, node_content_cb get_body) {
 	if (!graph) {
 		return;
 	}
@@ -12146,8 +12147,8 @@ static void mermaid_graph(RGraph *graph, node_content_cb get_body) {
 		char *n = r_strbuf_drain_nofree (nodes);
 		char *e = r_strbuf_drain_nofree (edges);
 		if (n && e) {
-			r_cons_print (n);
-			r_cons_print (e);
+			r_kons_print (core->cons, n);
+			r_kons_print (core->cons, e);
 		}
 		free (n);
 		free (e);
@@ -12302,7 +12303,7 @@ R_API void r_core_agraph_treemap(RCore *core, int use_utf, const char *input) {
 	}
 	char *s = r_cons_canvas_tostring (canvas);
 	if (s) {
-		r_kons_println (core->cons, s);
+		r_cons_println (core->cons, s);
 		free (s);
 	}
 	r_list_free (maps);
@@ -12335,7 +12336,7 @@ R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 		break;
 	case 'm': // "aggm"
 		if (core->graph) {
-			mermaid_graph (core->graph->graph, mermaid_anod_body);
+			mermaid_graph (core, core->graph->graph, mermaid_anod_body);
 		}
 		break;
 	case 'k': // "aggk"
@@ -12344,7 +12345,7 @@ R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 		if (db) {
 			char *o = sdb_querys (db, "null", 0, "*");
 			if (o) {
-				r_cons_print (o);
+				r_kons_print (core->cons, o);
 				free (o);
 			}
 		}
@@ -12403,7 +12404,7 @@ R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 				r_agraph_print_json (core->graph, pj);
 				pj_end (pj);
 				pj_end (pj);
-				r_kons_println (core->cons, pj_string (pj));
+				r_cons_println (core->cons, pj_string (pj));
 				pj_free (pj);
 			}
 		}
@@ -12520,7 +12521,7 @@ static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, 
 		{
 			Sdb *db = r_agraph_get_sdb (agraph);
 			char *o = sdb_querys (db, "null", 0, "*");
-			r_cons_print (o);
+			r_kons_print (core->cons, o);
 			free (o);
 			break;
 		}
@@ -12570,7 +12571,7 @@ static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, 
 			PJ *pj = r_core_pj_new (core);
 			if (pj) {
 				r_graph_drawable_to_json (graph, pj, use_offset);
-				r_kons_println (core->cons, pj_string (pj));
+				r_cons_println (core->cons, pj_string (pj));
 				pj_free (pj);
 			}
 		}
@@ -12610,7 +12611,7 @@ static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, 
 		break;
 		}
 	case 'm':
-		mermaid_graph (graph, mermaid_nodeinfo_body);
+		mermaid_graph (core, graph, mermaid_nodeinfo_body);
 		break;
 	default:
 		r_core_cmd_help (core, help_msg_ag);
@@ -12794,8 +12795,8 @@ static bool cmd_graph_mermaid(RCore *core, bool add_asm) {
 		char *n = r_strbuf_drain_nofree (nodes);
 		char *e = r_strbuf_drain_nofree (edges);
 		if (n && e) {
-			r_cons_print (n);
-			r_cons_print (e);
+			r_kons_print (core->cons, n);
+			r_kons_print (core->cons, e);
 		}
 		free (n);
 		free (e);
@@ -13213,7 +13214,7 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 			r_list_foreach (list, iter, map) {
 				from = r_io_map_begin (map);
 				to = r_io_map_end (map);
-				if (r_cons_is_breaked ()) {
+				if (r_cons_is_breaked (core->cons)) {
 					break;
 				}
 				if (!from && !to) {
@@ -13235,7 +13236,7 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 			}
 			if (rad == 'j') {
 				pj_end (pj);
-				r_kons_println (core->cons, pj_string (pj));
+				r_cons_println (core->cons, pj_string (pj));
 				pj_free (pj);
 			}
 			free (ptr);
@@ -13265,7 +13266,7 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 	bool res = r_core_anal_search_xrefs (core, from, to, pj, rad);
 	if (rad == 'j') {
 		pj_end (pj);
-		r_kons_println (core->cons, pj_string (pj));
+		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 	}
 	return res;
@@ -13350,7 +13351,7 @@ static void r_core_anal_info(RCore *core, const char *input) {
 			pj_ki (pj, "codesz", code);
 			pj_ki (pj, "percent", cvpc);
 			pj_end (pj);
-			r_kons_println (core->cons, pj_string (pj));
+			r_cons_println (core->cons, pj_string (pj));
 			pj_free (pj);
 		}
 	} else {
@@ -13486,7 +13487,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 			goto beach;
 		}
 		r_list_foreach (list, iter, map) {
-			if (r_cons_is_breaked ()) {
+			if (r_cons_is_breaked (core->cons)) {
 				break;
 			}
 			ut64 from = r_io_map_begin (map);
@@ -13509,7 +13510,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 		ut64 to = UT64_MAX;
 		// find values pointing to non-executable regions
 		r_list_foreach (list, iter2, map2) {
-			if (r_cons_is_breaked ()) {
+			if (r_cons_is_breaked (core->cons)) {
 				break;
 			}
 			// TODO: Reduce multiple hits for same addr
@@ -13522,7 +13523,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 			r_list_foreach (list, iter, map) {
 				ut64 begin = r_io_map_begin (map);
 				ut64 end = r_io_map_end (map);
-				if (r_cons_is_breaked ()) {
+				if (r_cons_is_breaked (core->cons)) {
 					break;
 				}
 				if (end - begin > UT32_MAX) {
@@ -13703,7 +13704,7 @@ static void cmd_anal_abp(RCore *core, const char *input) {
 				}
 			}
 			pj_end (pj);
-			r_kons_println (core->cons, pj_string (pj));
+			r_cons_println (core->cons, pj_string (pj));
 			pj_free (pj);
 		}
 		r_list_free (path);
@@ -14004,11 +14005,11 @@ static void logline(RCore *core, int pc, const char *title) {
 	if (r_config_get_b (core->config, "scr.analbar") || r_config_get_b (core->config, "scr.demo")) {
 		int w = 80;
 		r_kons_printf (core->cons, R_CONS_CLEAR_LINE);
-		r_kons_flush (core->cons);
+		r_cons_flush (core->cons);
 		// R_LOG_INFO ("%s", title);
 		r_print_progressbar (core->print, pc, w, NULL);
 		r_kons_printf (core->cons, "\r");
-		r_kons_flush (core->cons);
+		r_cons_flush (core->cons);
 	} else {
 		R_LOG_INFO ("%s", title);
 	}
@@ -14142,7 +14143,7 @@ static bool cmd_aa(RCore *core, bool aaa) {
 	r_core_task_yield (&core->tasks);
 	if ((list = r_bin_get_entries (core->bin))) {
 		r_list_foreach (list, iter, entry) {
-			if (r_cons_is_breaked ()) {
+			if (r_cons_is_breaked (core->cons)) {
 				break;
 			}
 			if (entry->paddr == UT64_MAX) {
@@ -14161,7 +14162,7 @@ static bool cmd_aa(RCore *core, bool aaa) {
 			logline (core, 22, "Recovering variables (afva@@@F)");
 			/* Set fcn type to R_ANAL_FCN_TYPE_SYM for symbols */
 			r_list_foreach_prev (core->anal->fcns, iter, fcni) {
-				if (r_cons_is_breaked ()) {
+				if (r_cons_is_breaked (core->cons)) {
 					break;
 				}
 				r_core_recover_vars (core, fcni, true);
@@ -14231,7 +14232,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 	cmd_aa (core, input[0] == 'a');
 	r_config_set_b (core->config, "anal.imports", anal_imports);
 	r_core_task_yield (&core->tasks);
-	if (r_cons_is_breaked ()) {
+	if (r_cons_is_breaked (core->cons)) {
 		goto jacuzzi;
 	}
 #if 1
@@ -14253,7 +14254,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 		//use dh_origin if we are debugging
 		R_FREE (dh_orig);
 	}
-	if (r_cons_is_breaked ()) {
+	if (r_cons_is_breaked (core->cons)) {
 		goto jacuzzi;
 	}
 	const bool cfg_debug = r_config_get_b (core->config, "cfg.debug");
@@ -14280,7 +14281,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 				R_LOG_WARN ("Cannot seek to 0x%08"PFMT64x, section_addr);
 			}
 		}
-		if (r_cons_is_breaked ()) {
+		if (r_cons_is_breaked (core->cons)) {
 			goto jacuzzi;
 		}
 
@@ -14290,7 +14291,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 		// R_LOG_INFO ("Analyze data refs as code (LEA)");
 		// (void) cmd_anal_aad (core, NULL); // "aad"
 		r_core_task_yield (&core->tasks);
-		if (r_cons_is_breaked ()) {
+		if (r_cons_is_breaked (core->cons)) {
 			goto jacuzzi;
 		}
 		if (is_unknown_file (core)) {
@@ -14298,7 +14299,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 			(void)r_core_search_preludes (core, false); // "aap"
 			didAap = true;
 			r_core_task_yield (&core->tasks);
-			if (r_cons_is_breaked ()) {
+			if (r_cons_is_breaked (core->cons)) {
 				goto jacuzzi;
 			}
 		}
@@ -14306,7 +14307,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 		logline (core, 40, "Analyze len bytes of instructions for references (aar)");
 		(void)r_core_anal_refs (core, ""); // "aar"
 		r_core_task_yield (&core->tasks);
-		if (r_cons_is_breaked ()) {
+		if (r_cons_is_breaked (core->cons)) {
 			goto jacuzzi;
 		}
 		if (is_apple_target (core)) {
@@ -14321,7 +14322,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 		r_core_task_yield (&core->tasks);
 		// r_config_set_b (core->config, "anal.calls", c);
 		r_core_task_yield (&core->tasks);
-		if (r_cons_is_breaked ()) {
+		if (r_cons_is_breaked (core->cons)) {
 			goto jacuzzi;
 		}
 		const bool isPreludableArch = core->rasm->config->bits == 64 && r_str_startswith (asm_arch, "arm");
@@ -14366,7 +14367,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 				}
 			}
 		}
-		if (r_cons_is_breaked ()) {
+		if (r_cons_is_breaked (core->cons)) {
 			goto jacuzzi;
 		}
 		if (r_config_get_b (core->config, "anal.autoname")) {
@@ -14379,7 +14380,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 			RAnalFunction *fcni;
 			RListIter *iter;
 			r_list_foreach (core->anal->fcns, iter, fcni) {
-				if (r_cons_is_breaked ()) {
+				if (r_cons_is_breaked (core->cons)) {
 					break;
 				}
 				RList *list = r_anal_var_list (core->anal, fcni, 'r');
@@ -14658,7 +14659,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					break;
 				}
 				r_list_foreach (core->anal->fcns, it, fcn) {
-					if (r_cons_is_breaked ()) {
+					if (r_cons_is_breaked (core->cons)) {
 						break;
 					}
 					r_core_link_stroff (core, fcn);
@@ -14881,7 +14882,7 @@ static void cmd_anal_rtti(RCore *core, const char *input) {
 			char *demangled = r_anal_rtti_demangle_class_name (core->anal, name);
 			free (name);
 			if (demangled) {
-				r_kons_println (core->cons, demangled);
+				r_cons_println (core->cons, demangled);
 				free (demangled);
 			}
 		}
@@ -14939,7 +14940,7 @@ static void cmd_anal_virtual_functions(RCore *core, const char* input) {
 		{
 			char *s = r_anal_vtables_list (core->anal, input[0]);
 			if (input[0] == 'j') {
-				r_kons_println (core->cons, s);
+				r_cons_println (core->cons, s);
 			} else {
 				r_kons_print (core->cons, s);
 			}
@@ -15481,7 +15482,7 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 			free (u);
 		}
 	} else {
-		r_kons_println (core->cons, s);
+		r_cons_println (core->cons, s);
 	}
 	free (s);
 }
@@ -15963,7 +15964,7 @@ static void cmd_an(RCore *core, const char *input) {
 				free (r_core_anal_fcn_autoname (core, fcn, 'l'));
 			} else {
 				char *n = r_core_anal_fcn_autoname (core, fcn, 0);
-				r_kons_println (core->cons, n? n: fcn->name);
+				r_cons_println (core->cons, n? n: fcn->name);
 				free (n);
 			}
 		} else {
@@ -16147,7 +16148,7 @@ static int cmd_anal(void *data, const char *input) {
 			break;
 		case 'k': // "adk"
 			r = r_anal_data_kind (core->anal, core->addr, core->block, core->blocksize);
-			r_kons_println (core->cons, r);
+			r_cons_println (core->cons, r);
 			break;
 		case '\0': // "ad"
 			r_core_anal_data (core, core->addr, 2 + (core->blocksize / 4), 1, 0);
@@ -16176,7 +16177,7 @@ static int cmd_anal(void *data, const char *input) {
 			RListIter *iter;
 			RAnalPlugin *ap;
 			r_list_foreach (core->anal->plugins, iter, ap) {
-				r_kons_println (core->cons, ap->meta.name);
+				r_cons_println (core->cons, ap->meta.name);
 			}
 		} else {
 			r_anal_cmd (core->anal, r_str_trim_head_ro (input + 1));
@@ -16199,7 +16200,7 @@ static int cmd_anal(void *data, const char *input) {
 	if (tbs != core->blocksize) {
 		r_core_block_size (core, tbs);
 	}
-	if (r_cons_is_breaked ()) {
+	if (r_cons_is_breaked (core->cons)) {
 		r_kons_clear_line (core->cons, 1);
 	}
 	return 0;
