@@ -18,7 +18,7 @@ typedef struct found_idx_t {
 
 typedef int (*RCMDJavaCmdHandler) (RCore *core, const char *cmd);
 
-static const char *r_cmd_java_strtok(const char *str1, const char b, size_t len);
+static const char *r_cmd_java_strtok(RCore *core, const char *str1, const char b, size_t len);
 static const char *r_cmd_java_consumetok(const char *str1, const char b, size_t len);
 static int r_cmd_java_reload_bin_from_buf(RCore *core, RBinJavaObj *obj, ut8* buffer, ut64 len);
 
@@ -45,7 +45,7 @@ static int r_cmd_java_set_acc_flags(RCore *core, ut64 addr, ut16 num_acc_flag);
 
 #define _(x) UNUSED_FUNCTION(x)
 static int r_cmd_java_print_field_summary(RBinJavaObj *obj, ut16 idx);
-static int _(r_cmd_java_print_field_count)(RBinJavaObj *obj);
+// static int _(r_cmd_java_print_field_count)(RBinJavaObj *obj);
 static int r_cmd_java_print_field_name(RBinJavaObj *obj, ut16 idx);
 static int r_cmd_java_print_field_num_name(RBinJavaObj *obj);
 static int r_cmd_java_print_method_summary(RBinJavaObj *obj, ut16 idx);
@@ -89,8 +89,6 @@ static int r_cmd_java_handle_replace_cp_value_str(RCore *core, RBinJavaObj *obj,
 static int r_cmd_java_handle_replace_cp_value(RCore *core, const char *cmd);
 
 static int r_cmd_java_handle_replace_classname_value(RCore *core, const char *cmd);
-static char *r_cmd_replace_name_def(const char *s_new, ut32 replace_len, const char *s_old, ut32 match_len, const char *buffer, ut32 buf_len, ut32 *res_len);
-static char *r_cmd_replace_name(const char *s_new, ut32 replace_len, const char *s_old, ut32 match_len, const char *buffer, ut32 buf_len, ut32 *res_len);
 static int r_cmd_is_object_descriptor(const char *name, ut32 name_len);
 static ut32 r_cmd_get_num_classname_str_occ(const char *str, const char *match_me);
 static const char *r_cmd_get_next_classname_str(const char *str, const char *match_me);
@@ -335,26 +333,27 @@ static const char *r_cmd_java_consumetok(const char *str1, const char b, size_t 
 	return p;
 }
 
-static const char *r_cmd_java_strtok(const char *str1, const char b, size_t len) {
+static const char *r_cmd_java_strtok(RCore *core, const char *str1, const char b, size_t len) {
 	const char *p = str1;
+	RCons *cons = core->cons;
 	size_t i = 0;
-	if (!p || !*p) {
+	if (R_STR_ISEMPTY (p)) {
 		return p;
 	}
 	if (len == (size_t)-1) {
 		len = strlen (str1);
 	}
-	IFDBG r_cons_printf ("Looking for char (%c) in (%s) up to %u\n", b, p, (unsigned int)len);
+	IFDBG r_kons_printf (cons, "Looking for char (%c) in (%s) up to %u\n", b, p, (unsigned int)len);
 	for (; i < len; i++, p++) {
 		if (*p == b) {
-			IFDBG r_cons_printf ("Found? for char (%c) @ %u: (%s)\n", b, (unsigned int)i, p);
+			IFDBG r_kons_printf (cons, "Found? for char (%c) @ %u: (%s)\n", b, (unsigned int)i, p);
 			break;
 		}
 	}
 	if (i == len) {
 		p = NULL;
 	}
-	IFDBG r_cons_printf ("Found? for char (%c) @ %u: (%s)\n", b, (unsigned int)len, p);
+	IFDBG r_kons_printf (cons, "Found? for char (%c) @ %u: (%s)\n", b, (unsigned int)len, p);
 	return p;
 }
 
@@ -639,7 +638,7 @@ static int r_cmd_java_handle_replace_cp_value(RCore *core, const char *cmd) {
 		p = r_cmd_java_consumetok (cmd, ' ', -1);
 		if (r_cmd_java_is_valid_input_num_value (core, p)) {
 			idx = r_cmd_java_get_input_num_value (core, p);
-			p = r_cmd_java_strtok (p, ' ', strlen (p));
+			p = r_cmd_java_strtok (core, p, ' ', strlen (p));
 		}
 	}
 	if (idx == (ut16)-1) {
@@ -673,7 +672,45 @@ static int r_cmd_java_handle_replace_cp_value(RCore *core, const char *cmd) {
 	return false;
 }
 
-static char *r_cmd_replace_name_def(const char *s_new, ut32 replace_len, const char *s_old, ut32 match_len, const char *buffer, ut32 buf_len, ut32 *res_len) {
+static char *r_cmd_replace_name(RCore *core, const char *s_new, ut32 replace_len, const char *s_old, ut32 match_len, const char *buffer, ut32 buf_len, ut32 *res_len) {
+	ut32 num_occurrences = 0, i = 0;
+	char *result = NULL, *p_result = NULL;
+
+	num_occurrences = r_cmd_get_num_classname_str_occ (buffer, s_old);
+	*res_len = 0;
+	if (num_occurrences > 0 && replace_len > 0 && s_old) {
+		ut32 consumed = 0;
+		const char *next = r_cmd_get_next_classname_str (buffer + consumed, s_old);
+		IFDBG r_cons_printf ("Replacing \"%s\" with \"%s\" in: %s\n", s_old, s_new, buffer);
+		result = malloc (num_occurrences * replace_len + buf_len);
+		memset (result, 0, num_occurrences * replace_len + buf_len);
+		p_result = result;
+		while (next && consumed < buf_len) {
+			// replace up to next
+			IFDBG r_cons_printf ("next: \"%s\", len to: %" PFMTDPTR "\n", next, (ptrdiff_t)(next - buffer));
+			for (; buffer + consumed < next && consumed < buf_len; consumed++, p_result++) {
+				*p_result = *(buffer + consumed);
+				(*res_len)++;
+			}
+
+			for (i = 0; i < replace_len; i++, p_result++) {
+				*p_result = *(s_new + i);
+				(*res_len)++;
+			}
+			consumed += match_len;
+			next = r_cmd_get_next_classname_str (buffer + consumed, s_old);
+		}
+		IFDBG r_kons_printf (core->cons, "Found last occurrence of: \"%s\", remaining: %s\n", s_old, buffer + consumed);
+		IFDBG r_kons_printf (core->cons, "result is: \"%s\"\n", result);
+		for (; consumed < buf_len; consumed++, p_result++, (*res_len)++) {
+			*p_result = *(buffer + consumed);
+		}
+		IFDBG r_kons_printf (core->cons, "Old: %s\nNew: %s\n", buffer, result);
+	}
+	return result;
+}
+
+static char *r_cmd_replace_name_def(RCore *core, const char *s_new, ut32 replace_len, const char *s_old, ut32 match_len, const char *buffer, ut32 buf_len, ut32 *res_len) {
 	const char *fmt = "L%s;";
 	char *s_new_ref = s_new && replace_len > 0? malloc (3 + replace_len): NULL;
 	char *s_old_ref = s_old && match_len > 0? malloc (3 + match_len): NULL;
@@ -682,7 +719,7 @@ static char *r_cmd_replace_name_def(const char *s_new, ut32 replace_len, const c
 	if (s_new_ref && s_old_ref) {
 		snprintf (s_new_ref, replace_len + 3, fmt, s_new);
 		snprintf (s_old_ref, match_len + 3, fmt, s_old);
-		result = r_cmd_replace_name (s_new_ref, replace_len + 2, s_old_ref, match_len + 2, buffer, buf_len, res_len);
+		result = r_cmd_replace_name (core, s_new_ref, replace_len + 2, s_old_ref, match_len + 2, buffer, buf_len, res_len);
 	}
 	free (s_new_ref);
 	free (s_old_ref);
@@ -713,45 +750,7 @@ static int r_cmd_is_object_descriptor(const char *name, ut32 name_len) {
 	return true? found_L == found_Semi && found_L == true && L_pos < Semi_pos: false;
 }
 
-static char *r_cmd_replace_name(const char *s_new, ut32 replace_len, const char *s_old, ut32 match_len, const char *buffer, ut32 buf_len, ut32 *res_len) {
-	ut32 num_occurrences = 0, i = 0;
-	char *result = NULL, *p_result = NULL;
-
-	num_occurrences = r_cmd_get_num_classname_str_occ (buffer, s_old);
-	*res_len = 0;
-	if (num_occurrences > 0 && replace_len > 0 && s_old) {
-		ut32 consumed = 0;
-		const char *next = r_cmd_get_next_classname_str (buffer + consumed, s_old);
-		IFDBG r_cons_printf ("Replacing \"%s\" with \"%s\" in: %s\n", s_old, s_new, buffer);
-		result = malloc (num_occurrences * replace_len + buf_len);
-		memset (result, 0, num_occurrences * replace_len + buf_len);
-		p_result = result;
-		while (next && consumed < buf_len) {
-			// replace up to next
-			IFDBG r_cons_printf ("next: \"%s\", len to: %" PFMTDPTR "\n", next, (ptrdiff_t)(next - buffer));
-			for (; buffer + consumed < next && consumed < buf_len; consumed++, p_result++) {
-				*p_result = *(buffer + consumed);
-				(*res_len)++;
-			}
-
-			for (i = 0; i < replace_len; i++, p_result++) {
-				*p_result = *(s_new + i);
-				(*res_len)++;
-			}
-			consumed += match_len;
-			next = r_cmd_get_next_classname_str (buffer + consumed, s_old);
-		}
-		IFDBG r_cons_printf ("Found last occurrence of: \"%s\", remaining: %s\n", s_old, buffer + consumed);
-		IFDBG r_cons_printf ("result is: \"%s\"\n", result);
-		for (; consumed < buf_len; consumed++, p_result++, (*res_len)++) {
-			*p_result = *(buffer + consumed);
-		}
-		IFDBG r_cons_printf ("Old: %s\nNew: %s\n", buffer, result);
-	}
-	return result;
-}
-
-static int r_cmd_java_get_class_names_from_input(const char *input, char **class_name, ut32 *class_name_len, char **new_class_name, ut32 *new_class_name_len) {
+static int r_cmd_java_get_class_names_from_input(RCore *core, const char *input, char **class_name, ut32 *class_name_len, char **new_class_name, ut32 *new_class_name_len) {
 	const char *p = input;
 
 	ut32 cmd_sz = input && *input? strlen (input): 0;
@@ -771,7 +770,7 @@ static int r_cmd_java_get_class_names_from_input(const char *input, char **class
 	if (p && *p && cmd_sz > 1) {
 		const char *end;
 		p = r_cmd_java_consumetok (p, ' ', cmd_sz);
-		end = p && *p? r_cmd_java_strtok (p, ' ', -1): NULL;
+		end = p && *p? r_cmd_java_strtok (core, p, ' ', -1): NULL;
 
 		if (p && end && p != end) {
 			*class_name_len = end - p + 1;
@@ -782,7 +781,7 @@ static int r_cmd_java_get_class_names_from_input(const char *input, char **class
 
 		if (*class_name && cmd_sz > 0) {
 			p = r_cmd_java_consumetok (end + 1, ' ', cmd_sz);
-			end = p && *p? r_cmd_java_strtok (p, ' ', -1): NULL;
+			end = p && *p? r_cmd_java_strtok (core, p, ' ', -1): NULL;
 
 			if (!end && p && *p) {
 				end = p + cmd_sz;
@@ -817,7 +816,7 @@ static int r_cmd_java_handle_replace_classname_value(RCore *core, const char *cm
 		eprintf ("The current binary is not a Java Bin Object.\n");
 		return true;
 	}
-	res = r_cmd_java_get_class_names_from_input (cmd, &class_name,
+	res = r_cmd_java_get_class_names_from_input (core, cmd, &class_name,
 		&class_name_len, &new_class_name, &new_class_name_len);
 
 	if (!res || !class_name || !new_class_name) {
@@ -854,11 +853,11 @@ static int r_cmd_java_handle_replace_classname_value(RCore *core, const char *cm
 				char *result = NULL;
 
 				if (r_cmd_is_object_descriptor (name, len) == true) {
-					result = r_cmd_replace_name_def (new_class_name,
+					result = r_cmd_replace_name_def (core, new_class_name,
 						new_class_name_len - 1, class_name,
 						class_name_len - 1, name, len, &res_len);
 				} else {
-					result = r_cmd_replace_name (new_class_name,
+					result = r_cmd_replace_name (core, new_class_name,
 						new_class_name_len - 1, class_name,
 						class_name_len - 1, name, len, &res_len);
 				}
@@ -909,8 +908,11 @@ static int r_cmd_java_handle_reload_bin(RCore *core, const char *cmd) {
 	if (buf_size == 0) {
 		res = true;
 		buf_size = r_io_size (core->io);
-		buf = malloc (buf_size);
-		memset (buf, 0, buf_size);
+		buf = calloc (1, buf_size);
+		if (!buf) {
+			R_LOG_ERROR ("Cannot allocate %d", buf_size);
+			return false;
+		}
 		r_io_read_at (core->io, addr, buf, buf_size);
 	}
 	if (buf && obj) {
@@ -1375,7 +1377,7 @@ static int r_cmd_java_handle_set_flags(RCore *core, const char *input) {
 	ut64 addr = p && r_cmd_java_is_valid_input_num_value (core, p)
 		? r_cmd_java_get_input_num_value (core, p)
 		: UT64_MAX;
-	p = r_cmd_java_strtok (p + 1, ' ', -1);
+	p = r_cmd_java_strtok (core, p + 1, ' ', -1);
 	if (R_STR_ISEMPTY (p)) {
 		r_cmd_java_print_cmd_help (JAVA_CMDS + SET_ACC_FLAGS_IDX);
 		return true;
@@ -1737,12 +1739,21 @@ static int r_cmd_java_print_field_summary(RBinJavaObj *obj, ut16 idx) {
 	return res;
 }
 
+#if 0
 static int UNUSED_FUNCTION(r_cmd_java_print_field_count)(RBinJavaObj *obj) {
 	ut32 res = r_bin_java_get_field_count (obj);
 	r_cons_printf ("%d\n", res);
 	r_cons_flush ();
 	return true;
 }
+
+static int _(r_cmd_java_print_method_count)(RBinJavaObj *obj) {
+	ut32 res = r_bin_java_get_method_count (obj);
+	r_cons_printf ("%d\n", res);
+	r_cons_flush ();
+	return true;
+}
+#endif
 
 static int r_cmd_java_print_field_name(RBinJavaObj *obj, ut16 idx) {
 	char *res = r_bin_java_get_field_name (obj, idx);
@@ -1762,13 +1773,6 @@ static int r_cmd_java_print_method_summary(RBinJavaObj *obj, ut16 idx) {
 		res = true;
 	}
 	return res;
-}
-
-static int _(r_cmd_java_print_method_count)(RBinJavaObj *obj) {
-	ut32 res = r_bin_java_get_method_count (obj);
-	r_cons_printf ("%d\n", res);
-	r_cons_flush ();
-	return true;
 }
 
 static int r_cmd_java_print_method_name(RBinJavaObj *obj, ut16 idx) {
@@ -1801,7 +1805,7 @@ static int r_cmd_java_handle_yara_code_extraction_refs(RCore *core, const char *
 		return res;
 	}
 
-	n = *p? r_cmd_java_strtok (p, ' ', -1): NULL;
+	n = *p? r_cmd_java_strtok (core, p, ' ', -1): NULL;
 	name = n && p && p != n? malloc (n - p + 2): NULL;
 
 	if (!name) {
@@ -1811,10 +1815,10 @@ static int r_cmd_java_handle_yara_code_extraction_refs(RCore *core, const char *
 	memset (name, 0, n - p);
 	memcpy (name, p, n - p);
 
-	p = r_cmd_java_strtok (p, ' ', -1);
+	p = r_cmd_java_strtok (core, p, ' ', -1);
 	addr = p && *p && r_cmd_java_is_valid_input_num_value (core, p)? r_cmd_java_get_input_num_value (core, p): UT64_MAX;
 
-	p = r_cmd_java_strtok (p, ' ', -1);
+	p = r_cmd_java_strtok (core, p, ' ', -1);
 	count = p && *p && r_cmd_java_is_valid_input_num_value (core, p)? r_cmd_java_get_input_num_value (core, p): UT64_MAX;
 
 	if (name && count != UT64_MAX && addr != UT64_MAX) {
@@ -1847,7 +1851,7 @@ static int r_cmd_java_handle_insert_method_ref(RCore *core, const char *input) {
 		return false;
 	}
 
-	n = p && *p? r_cmd_java_strtok (p, ' ', -1): NULL;
+	n = p && *p? r_cmd_java_strtok (core, p, ' ', -1): NULL;
 	classname = n && p && p != n? malloc (n - p + 1): NULL;
 	cn_sz = n && p? n - p + 1: 0;
 	if (!classname) {
@@ -1856,7 +1860,7 @@ static int r_cmd_java_handle_insert_method_ref(RCore *core, const char *input) {
 
 	snprintf (classname, cn_sz, "%s", p);
 	p = n + 1;
-	n = p && *p? r_cmd_java_strtok (p, ' ', -1): NULL;
+	n = p && *p? r_cmd_java_strtok (core, p, ' ', -1): NULL;
 	name = n && p && p != n? malloc (n - p + 1): NULL;
 	n_sz = n && p? n - p + 1: 0;
 	if (!name) {
@@ -1866,7 +1870,7 @@ static int r_cmd_java_handle_insert_method_ref(RCore *core, const char *input) {
 	snprintf (name, n_sz, "%s", p);
 
 	p = n + 1;
-	n = p && *p? r_cmd_java_strtok (p, ' ', -1): NULL;
+	n = p && *p? r_cmd_java_strtok (core, p, ' ', -1): NULL;
 	if (n) {
 		descriptor = n && p && p != n? malloc (n - p + 1): NULL;
 		d_sz = n - p + 1;

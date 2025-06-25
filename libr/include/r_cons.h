@@ -949,14 +949,13 @@ R_API void r_cons_println(const char* str);
 R_API void r_cons_print_justify(RCons *cons, const char *str, int j, char c);
 R_API int r_cons_write(const char *str, int len);
 R_DEPRECATE R_API void r_cons_newline(void);
-R_API void r_cons_filter(void);
-R_API void r_cons_flush(void);
+
+R_DEPRECATE R_API void r_cons_flush(void);
 R_API char *r_cons_drain(void);
 R_API void r_cons_print_fps(RCons *cons, int col);
 R_API int r_cons_less_str(RCons * R_NONNULL cons, const char * R_NONNULL str, const char * R_NULLABLE exitkeys);
 R_API void r_cons_less(RCons *cons);
-R_API void r_cons_2048(bool color);
-R_API void r_cons_visual_write(char *buffer);
+R_API void r_cons_2048(RCons *cons, bool color);
 R_API bool r_cons_is_utf8(void);
 R_API bool r_cons_is_windows(void);
 R_API void r_cons_cmd_help(RCons *cons, RCoreHelpMessage help, bool use_color);
@@ -966,6 +965,7 @@ R_API void r_cons_cmd_help_match(RCons *cons, RCoreHelpMessage help, bool use_co
 R_API void r_cons_log_stub(const char *output, const char *funcname, const char *filename,
  unsigned int lineno, unsigned int level, const char *tag, const char *fmtstr, ...) R_PRINTF_CHECK(7, 8);
 
+R_API void r_cons_filter(RCons *cons);
 
 /* input */
 
@@ -990,7 +990,6 @@ R_API RColor r_cons_pal_get(RCons *cons, const char *key);
 R_API RColor r_cons_pal_get_i(RCons *cons, int index);
 R_API const char *r_cons_pal_get_name(RCons *cons, int index);
 R_API int r_cons_pal_len(void);
-R_API bool r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a);
 R_API char *r_cons_rgb_tostring(ut8 r, ut8 g, ut8 b);
 R_API void r_cons_pal_list(RCons *cons, int rad, const char *arg);
 R_API void r_cons_pal_show(RCons *cons);
@@ -1231,14 +1230,13 @@ R_API void r_kons_clear(RCons *cons);
 R_API void r_kons_clear00(RCons *cons);
 R_API void r_kons_reset(RCons *cons);
 R_API const char *r_kons_get_buffer(RCons *cons, size_t *buffer_len);
-R_API void r_kons_filter(RCons *cons);
 R_API void r_kons_push(RCons *cons);
 R_API bool r_kons_context_is_main(RCons *cons);
 R_API RConsContext *r_cons_context_clone(RConsContext *ctx);
 R_API void r_kons_echo(RCons *cons, const char *msg);
 R_API char *r_kons_drain(RCons *cons);
-R_API void r_kons_visual_write(RCons *cons, char *buffer);
 R_API void r_cons_visual_flush(RCons *cons);
+R_API void r_cons_visual_write(RCons *cons, char *buffer);
 R_API int r_kons_get_column(RCons *cons);
 R_API int r_kons_get_cursor(RCons *cons, int *rows);
 R_API void r_kons_show_cursor(RCons *I, int cursor);

@@ -396,7 +396,7 @@ static void printSnow(RCore *core) {
 		r_kons_gotoxy (core->cons, snow->x, snow->y);
 		r_kons_printf (core->cons, "*");
 	}
-	// r_cons_gotoxy (10 , 10);
+	// r_kons_gotoxy (core->cons, 10 , 10);
 	r_kons_flush (core->cons);
 }
 #endif
@@ -788,7 +788,6 @@ R_API void r_core_visual_prompt_input(RCore *core) {
 	bool mouse_state = __holdMouseState(core);
 	r_kons_gotoxy (core->cons, 0, h);
 	r_kons_reset_colors (core->cons);
-	//r_cons_printf ("\nPress <enter> to return to Visual mode.\n");
 	r_kons_show_cursor (core->cons, true);
 	core->vmode = false;
 	const int ovtmode = r_config_get_i (core->config, "scr.vtmode");
@@ -3046,7 +3045,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				} else {
 					r_core_block_size (core, core->visual.obs);
 				}
-				r_cons_clear ();
+				r_kons_clear (core->cons);
 			} else {
 				rotate_asm_bits (core);
 			}
@@ -3253,7 +3252,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 't':
 			{
-				r_cons_gotoxy (0, 0);
+				r_kons_gotoxy (core->cons, 0, 0);
 				if (core->visual.tabs) {
 					r_cons_printf ("[tnp:=+-] ");
 				} else {
@@ -3787,7 +3786,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'm':
 			{
-				r_cons_gotoxy (0, 0);
+				r_kons_gotoxy (core->cons, 0, 0);
 				r_cons_printf (R_CONS_CLEAR_LINE"Set shortcut key for 0x%"PFMT64x"\n", core->addr);
 				r_kons_flush (core->cons);
 				const int ch = r_cons_readchar (core->cons);
@@ -3796,7 +3795,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'M':
 			{
-				r_cons_gotoxy (0, 0);
+				r_kons_gotoxy (core->cons, 0, 0);
 				if (r_core_vmark_dump (core, 'v')) {
 					r_cons_printf (R_CONS_CLEAR_LINE"Remove a shortcut key from the list\n");
 					r_kons_flush (core->cons);
@@ -3807,7 +3806,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case '\'':
 			{
-				r_cons_gotoxy (0, 2);
+				r_kons_gotoxy (core->cons, 0, 2);
 				if (r_core_vmark_dump (core, 'v')) {
 					r_kons_flush (core->cons);
 					const int ch = r_cons_readchar (core->cons);
@@ -4242,7 +4241,7 @@ static void visual_title(RCore *core, int color) {
 	}
 
 	if (color) {
-		r_cons_print (BEGIN);
+		r_kons_print (core->cons, BEGIN);
 	}
 	const char *cmd_visual = r_config_get (core->config, "cmd.visual");
 	if (R_STR_ISNOTEMPTY (cmd_visual)) {
@@ -4340,12 +4339,12 @@ static void visual_title(RCore *core, int color) {
 			r_cons_printf ("[tab:%d/%d]", core->visual.tab, tabsCount);
 #endif
 		}
-		r_cons_print (title);
+		r_kons_print (core->cons, title);
 		free (title);
 		free (address);
 	}
 	if (color) {
-		r_cons_print (Color_RESET);
+		r_kons_print (core->cons, Color_RESET);
 	}
 }
 
@@ -4414,8 +4413,8 @@ R_API void r_core_print_scrollbar(RCore *core) {
 		to = r_num_math (core->num, "$s");
 	}
 	char *s = r_str_newf ("[0x%08"PFMT64x"]", from);
-	r_cons_gotoxy (w - strlen (s) + 1, 2);
-	r_cons_print (s);
+	r_kons_gotoxy (core->cons, w - strlen (s) + 1, 2);
+	r_kons_print (core->cons, s);
 	free (s);
 
 	ut64 block = (to - from) / h;
@@ -4426,10 +4425,10 @@ R_API void r_core_print_scrollbar(RCore *core) {
 	for (i = 0; i < h ; i++) {
 		const char *word = r_list_pop_head (words);
 		if (word && *word) {
-			r_cons_gotoxy (w - strlen (word) - 1, i + 3);
+			r_kons_gotoxy (core->cons, w - strlen (word) - 1, i + 3);
 			r_cons_printf ("%s>", word);
 		}
-		r_cons_gotoxy (w, i + 3);
+		r_kons_gotoxy (core->cons, w, i + 3);
 		if (hadMatch) {
 			r_cons_printf ("|");
 		} else {
@@ -4445,8 +4444,8 @@ R_API void r_core_print_scrollbar(RCore *core) {
 	}
 	s = r_str_newf ("[0x%08"PFMT64x"]", to);
 	if (s) {
-		r_cons_gotoxy (w - strlen (s) + 1, h + 1);
-		r_cons_print (s);
+		r_kons_gotoxy (core->cons, w - strlen (s) + 1, h + 1);
+		r_kons_print (core->cons, s);
 		free (s);
 	}
 	r_list_free (words);
@@ -4472,8 +4471,8 @@ R_API void r_core_print_scrollbar_bottom(RCore *core) {
 	}
 	char *s = r_str_newf ("[0x%08"PFMT64x"]", from);
 	int slen = strlen (s) + 1;
-	r_cons_gotoxy (0, h + 1);
-	r_cons_print (s);
+	r_kons_gotoxy (core->cons, 0, h + 1);
+	r_kons_print (core->cons, s);
 	free (s);
 
 	int linew = (w - (slen * 2)) + 1;
@@ -4483,17 +4482,17 @@ R_API void r_core_print_scrollbar_bottom(RCore *core) {
 
 	bool hadMatch = false;
 	for (i = 0; i < linew + 1; i++) {
-		r_cons_gotoxy (i + slen, h + 1);
+		r_kons_gotoxy (core->cons, i + slen, h + 1);
 		if (hadMatch) {
-			r_cons_print ("-");
+			r_kons_print (core->cons, "-");
 		} else {
 			ut64 cur = from + (block * i);
 			ut64 nex = from + (block * (i + 2));
 			if (R_BETWEEN (cur, core->addr, nex)) {
-				r_cons_print (Color_INVERT"-"Color_RESET);
+				r_kons_print (core->cons, Color_INVERT"-"Color_RESET);
 				hadMatch = true;
 			} else {
-				r_cons_print ("-");
+				r_kons_print (core->cons, "-");
 			}
 		}
 	}
@@ -4502,7 +4501,7 @@ R_API void r_core_print_scrollbar_bottom(RCore *core) {
 		if (word && *word) {
 			ut64 cur = from + (block * i);
 			ut64 nex = from + (block * (i + strlen (word) + 1));
-			r_cons_gotoxy (i + slen - 1, h);
+			r_kons_gotoxy (core->cons, i + slen - 1, h);
 			if (R_BETWEEN (cur, core->addr, nex)) {
 				r_cons_printf (Color_INVERT"{%s}"Color_RESET, word);
 			} else {
@@ -4512,8 +4511,8 @@ R_API void r_core_print_scrollbar_bottom(RCore *core) {
 	}
 	s = r_str_newf ("[0x%08"PFMT64x"]", to);
 	if (s) {
-		r_cons_gotoxy (linew + slen + 1, h + 1);
-		r_cons_print (s);
+		r_kons_gotoxy (core->cons, linew + slen + 1, h + 1);
+		r_kons_print (core->cons, s);
 		free (s);
 	}
 	r_list_free (words);
@@ -4523,11 +4522,10 @@ R_API void r_core_print_scrollbar_bottom(RCore *core) {
 static void show_cursor(RCore *core) {
 	const bool keyCursor = r_config_get_b (core->config, "scr.cursor");
 	if (keyCursor) {
-		r_cons_gotoxy (core->cons->cpos.x, core->cons->cpos.y);
-		r_cons_show_cursor (1);
-		//r_cons_invert (1, 1);
-		//r_cons_print ("#");
-		r_kons_flush (core->cons);
+		RCons *cons = core->cons;
+		r_kons_gotoxy (cons, cons->cpos.x, cons->cpos.y);
+		r_kons_show_cursor (cons, 1);
+		r_kons_flush (cons);
 	}
 }
 
@@ -4539,13 +4537,13 @@ R_IPI void visual_refresh(RCore *core) {
 	int notch = r_config_get_i (core->config, "scr.notch");
 	int w = visual_responsive (core);
 	if (core->visual.autoblocksize) {
-		r_cons_gotoxy (0, 0);
+		r_kons_gotoxy (core->cons, 0, 0);
 	} else {
-		r_cons_clear ();
+		r_kons_clear (core->cons);
 	}
 	r_kons_flush (core->cons);
 	r_cons_print_clear ();
-	r_cons_print (core->cons->context->pal.bgprompt);
+	r_kons_print (core->cons, core->cons->context->pal.bgprompt);
 	core->cons->context->noflush = true;
 
 	int hex_cols = r_config_get_i (core->config, "hex.cols");
@@ -4579,7 +4577,7 @@ R_IPI void visual_refresh(RCore *core) {
 				}
 			}
 		}
-		r_cons_gotoxy (0, 0);
+		r_kons_gotoxy (core->cons, 0, 0);
 	}
 	int i;
 	for (i = 0; i < notch; i++) {
@@ -4630,7 +4628,7 @@ R_IPI void visual_refresh(RCore *core) {
 		if (vsplit) {
 			res = r_str_ansi_crop (res, 0, 0, split_w, -1);
 		}
-		r_cons_print (res);
+		r_kons_print (core->cons, res);
 		free (res);
 	}
 	free (cmd_str);
@@ -4641,11 +4639,11 @@ R_IPI void visual_refresh(RCore *core) {
 	RConsMark *mark = r_cons_mark_at (core->cons, 0, "cursor");
 	if (mark) {
 		int x = 60;
-		r_cons_gotoxy (x, mark->row - 2); r_cons_print ("   .-------------.");
-		r_cons_gotoxy (x, mark->row - 1); r_cons_print ("   |             |");
-		r_cons_gotoxy (x, mark->row);     r_cons_print ("--<  Hello world |");
-		r_cons_gotoxy (x, mark->row + 1); r_cons_print ("   |             |");
-		r_cons_gotoxy (x, mark->row + 2); r_cons_print ("   `-------------'");
+		r_kons_gotoxy (core->cons, x, mark->row - 2); r_kons_print (core->cons, "   .-------------.");
+		r_kons_gotoxy (core->cons, x, mark->row - 1); r_kons_print (core->cons, "   |             |");
+		r_kons_gotoxy (core->cons, x, mark->row);     r_kons_print (core->cons, "--<  Hello world |");
+		r_kons_gotoxy (core->cons, x, mark->row + 1); r_kons_print (core->cons, "   |             |");
+		r_kons_gotoxy (core->cons, x, mark->row + 2); r_kons_print (core->cons, "   `-------------'");
 	}
 
 	/* this is why there's flickering */
@@ -4938,7 +4936,7 @@ dodo:
 		core->print->vflush = !skip;
 		visual_refresh (core);
 		if (highlight_mode && highlight_sb) {
-			r_cons_gotoxy (0, 0);
+			r_kons_gotoxy (core->cons, 0, 0);
 			char *s = r_strbuf_tostring (highlight_sb);
 			r_kons_printf (core->cons, "%s[Highlight] %s|", R_CONS_CLEAR_LINE, s);
 			r_kons_flush (core->cons);
@@ -5047,7 +5045,7 @@ dodo:
 
 	r_kons_enable_mouse (core->cons, false);
 	if (core->visual.color) {
-		r_cons_print (Color_RESET);
+		r_kons_print (core->cons, Color_RESET);
 	}
 	r_config_set_i (core->config, "scr.color", core->visual.color);
 	core->print->cur_enabled = false;

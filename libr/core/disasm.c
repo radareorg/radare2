@@ -1425,7 +1425,7 @@ static void ds_newline(RDisasmState *ds) {
 	if (ds->pj) {
 		const bool is_html = r_config_get_b (ds->core->config, "scr.html");
 		if (is_html) {
-			char *s = r_cons_html_filter (r_kons_get_buffer (cons, NULL), NULL);
+			char *s = r_str_html_strip (r_kons_get_buffer (cons, NULL), NULL);
 			pj_ks (ds->pj, "text", s);
 			free (s);
 		} else {

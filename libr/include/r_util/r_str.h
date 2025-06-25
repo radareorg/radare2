@@ -163,6 +163,8 @@ R_API bool r_str_is_false(const char *s);
 R_API bool r_str_is_bool(const char *val);
 R_API const char *r_str_ansi_chrn(const char *str, size_t n);
 R_API size_t r_str_ansi_strip(char *str);
+R_API char *r_str_html_strip(const char *ptr, int *newlen);
+R_API bool r_str_html_rgbparse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a);
 R_API size_t r_str_ansi_len(const char *str);
 R_API size_t r_str_ansi_nlen(const char *str, size_t len);
 R_API int r_str_ansi_trim(char *str, int str_len, int n);

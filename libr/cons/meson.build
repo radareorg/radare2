@@ -1,24 +1,24 @@
 r_cons_sources = [
   '2048.c',
-  'canvas.c',
   'canvas_line.c',
+  'canvas.c',
   'cons.c',
-  'help.c',
-  'html.c',
+  'cpipe.c',
+  'cutf8.c'
   'editor.c',
   'grep.c',
+  'help.c',
   'hud.c',
   'input.c',
-  'pixel.c',
   'less.c',
-  'stiv.c',
   'line.c',
-  'winutils.c',
   'pager.c',
   'pal.c',
-  'cpipe.c',
+  'pixel.c',
   'rgb.c',
-  'cutf8.c'
+  'stiv.c',
+  'visual.c',
+  'winutils.c',
 ]
 
 r_cons = library('r_cons', r_cons_sources,

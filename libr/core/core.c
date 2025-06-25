@@ -327,7 +327,7 @@ R_API char *r_core_cmd_call_str_at(RCore *core, ut64 addr, const char *cmd) {
 	if (--core->cons->context->cmd_str_depth == 0) {
 		core->cons->context->noflush = false;
 	}
-	r_kons_filter (core->cons);
+	r_cons_filter (core->cons);
 	const char *static_str = r_cons_get_buffer ();
 	char *retstr = strdup (r_str_get (static_str));
 	r_kons_pop (core->cons);

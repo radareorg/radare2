@@ -53,7 +53,6 @@ typedef struct r_cmd_macro_t {
 	int brk;
 	int macro_level;
 	RCoreCmd cmd;
-	PrintfCallback cb_printf;
 	void *user;
 	RNum *num;
 	int labels_n;
@@ -112,7 +111,7 @@ R_API void r_cmd_macro_item_free(RCmdMacroItem *item);
 R_API void r_cmd_macro_init(RCmdMacro *mac);
 R_API bool r_cmd_macro_add(RCmdMacro *mac, const char *name);
 R_API bool r_cmd_macro_rm(RCmdMacro *mac, const char *_name);
-R_API void r_cmd_macro_list(RCmdMacro *mac, int mode);
+R_API char *r_cmd_macro_list(RCmdMacro *mac, int mode);
 R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name);
 R_API int r_cmd_macro_break(RCmdMacro *mac, const char *value);
 

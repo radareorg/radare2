@@ -383,7 +383,7 @@ static bool run_commands(RCore *r, RList *cmds, RList *files, bool quiet, int do
 			goto beach;
 		}
 		int ret = r_core_run_script (r, file);
-		r_cons_flush ();
+		r_kons_flush (r->cons);
 		if (ret == -2) {
 			R_LOG_ERROR ("Cannot open '%s'", file);
 		}
@@ -527,7 +527,7 @@ static void perform_analysis(RCore *r, int do_analysis) {
 	case 3: acmd = "aaaa"; break;
 	}
 	r_core_cmd_call (r, acmd);
-	r_cons_flush ();
+	r_kons_flush (r->cons);
 	r->times->file_anal_time = r_time_now_mono () - r->times->file_anal_time;
 }
 
@@ -540,6 +540,7 @@ static RThreadFunctionRet th_analysis(RThread *th) {
 		td->th_bin = NULL;
 	}
 	R_LOG_INFO ("Loading binary information in background");
+	// XXX R2_600 - cons
 	r_cons_thready ();
 	r_cons_new ();
 	perform_analysis (td->core, td->do_analysis);
@@ -758,7 +759,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	r_core_task_sync_begin (&mr.r->tasks);
 	if (argc == 2 && !strcmp (argv[1], "-p")) {
 		r_core_project_list (r, 0);
-		r_cons_flush ();
+		r_kons_flush (r->cons);
 		mainr2_fini (&mr);
 		return 0;
 	}
@@ -847,7 +848,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			mr.debugbackend = strdup (opt.arg);
 			if (!strcmp (opt.arg, "?")) {
 				r_debug_plugin_list (r->dbg, 'q');
-				r_cons_flush ();
+				r_kons_flush (r->cons);
 				mainr2_fini (&mr);
 				return 0;
 			}
@@ -940,7 +941,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		case 'p':
 			if (!strcmp (opt.arg, "?")) {
 				r_core_project_list (r, 0);
-				r_cons_flush ();
+				r_kons_flush (r->cons);
 				mainr2_fini (&mr);
 				return 0;
 			}
@@ -992,8 +993,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		case 't':
 #if ALLOW_THREADED
 			mr.threaded = true;
+			R_LOG_WARN ("-t is experimental and known to be buggy!");
 #else
-			R_LOG_WARN ("Warning: -t is temporarily disabled!");
+			R_LOG_WARN ("-t is temporarily disabled!");
 #endif
 			break;
 #endif
@@ -1100,7 +1102,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 	if (mr.do_list_core_plugins) { // "-LL"
 		r_core_cmd0 (r, mr.json? "Lcj": "Lc");
-		r_cons_flush ();
+		r_kons_flush (r->cons);
 		mainr2_fini (&mr);
 		return 0;
 	}
@@ -1119,7 +1121,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		} else {
 			r_core_list_io (r, arg, 0);
 		}
-		r_cons_flush ();
+		r_kons_flush (r->cons);
 		mainr2_fini (&mr);
 		return 0;
 	}
@@ -1276,7 +1278,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			char *path = r_str_newf ("malloc://%d", sz);
 			mr.fh = r_core_file_open (r, path, mr.perms, mr.mapaddr);
 			if (!mr.fh) {
-				r_cons_flush ();
+				r_kons_flush (r->cons);
 				free (buf);
 				R_LOG_ERROR ("Cannot open '%s'", path);
 				free (path);
@@ -1614,7 +1616,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		}
 		if (!mr.fh) {
 			if (R_STR_ISNOTEMPTY (mr.pfile)) {
-				r_cons_flush ();
+				r_kons_flush (r->cons);
 				if (mr.perms & R_PERM_W) {
 					R_LOG_ERROR ("Cannot open '%s' for writing", mr.pfile);
 				} else {
@@ -1829,7 +1831,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	if (r_config_get_b (r->config, "scr.prompt")) {
 		if (mr.run_rc && r_config_get_i (r->config, "cfg.fortunes")) {
 			r_core_fortune_print_random (r);
-			r_cons_flush ();
+			r_kons_flush (r->cons);
 		}
 	}
 	if (mr.sandbox) {

@@ -70,18 +70,6 @@ static int rgb(RCons *cons, int r, int g, int b) {
 	return (c != -1) ? c: rgb_aprox (r, g, b);
 }
 
-static void __unrgb(int color, int *r, int *g, int *b) {
-	RConsContext *ctx = r_cons_singleton ()->context;
-	if (color < 0 || color > 255) {
-		*r = *g = *b = 0;
-	} else {
-		int rgb = ctx->colors[color];
-		*r = (rgb >> 16) & 0xff;
-		*g = (rgb >> 8) & 0xff;
-		*b = rgb & 0xff;
-	}
-}
-
 R_API void r_cons_rgb_init(void) {
 	RCons *cons = r_cons_singleton ();
 	RConsContext *ctx = cons->context;
@@ -97,97 +85,6 @@ R_API void r_kons_rgb_init(RCons *cons) {
 	}
 }
 
-
-/* Parse an ANSI code string into RGB values -- Used by HTML filter only */
-R_API bool r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a) {
-	const char *q = 0;
-	ut8 isbg = 0, bold = 127;
-	if (!p) {
-		// XXX maybe assert?
-		return false;
-	}
-	if (*p == 0x1b) {
-		p++;
-		if (!*p) {
-			return false;
-		}
-	}
-	if (*p == '[') {
-		p++;
-		if (!*p) {
-			return false;
-		}
-	}
-	// here, p should be just after the '['
-	switch (*p) {
-	case '1':
-		bold = 255;
-		if (!p[1] || !p[2]) {
-			return false;
-		}
-		p += 2;
-		break;
-	case '3': isbg = 0; break;
-	case '4': isbg = 1; break;
-	}
-#define SETRGB(x,y,z) if (r) *r = (x); if (g) *g = (y); if (b) *b = (z)
-	if (bold != 255 && strchr (p, ';')) {
-		if (!p[0] || !p[1] || !p[2]) {
-			return 0;
-		}
-		if (p[3] == '5')  { // \x1b[%d;5;%dm is 256 colors
-			int x, y, z;
-			if (!p[3] || !p[4]) {
-				return 0;
-			}
-			int n = atoi (p + 5);
-			__unrgb (n, &x, &y, &z);
-			SETRGB (x, y, z);
-		} else { // 16M colors (truecolor)
-			/* complex rgb */
-			if (!p[3] || !p[4]) {
-				return 0;
-			}
-			p += 5;
-			if (r) {
-				*r = atoi (p);
-			}
-			q = strchr (p, ';');
-			if (!q) {
-				return 0;
-			}
-			if (g) {
-				*g = atoi (q + 1);
-			}
-			q = strchr (q + 1, ';');
-			if (!q) {
-				return false;
-			}
-			if (b) {
-				*b = atoi (q + 1);
-			}
-		}
-		return true;
-	}
-	/* plain ansi escape codes */
-	if (a) {
-		*a = isbg;
-	}
-	if (!*p) {
-		return false;
-	}
-	switch (p[1]) {
-	case '0': SETRGB (0, 0, 0); break;
-	case '1': SETRGB (bold, 0, 0); break;
-	case '2': SETRGB (0, bold, 0); break;
-	case '3': SETRGB (bold, bold, 0); break;
-	case '4': SETRGB (0, 0, bold); break;
-	case '5': SETRGB (bold, 0, bold); break;
-	case '6': SETRGB (0, bold, bold); break;
-	case '7': SETRGB (bold, bold, bold); break;
-	}
-	return true;
-}
 
 R_API char *r_cons_rgb_str_off(RCons *cons, char *outstr, size_t sz, ut64 off) {
 	RColor rc = RColor_BLACK;

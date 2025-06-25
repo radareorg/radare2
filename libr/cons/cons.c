@@ -454,11 +454,11 @@ R_API void r_cons_fill_line(void) {
 	r_kons_fill_line (I);
 }
 
-R_API void r_cons_clear_line(int std_err) {
+R_DEPRECATE R_API void r_cons_clear_line(int std_err) {
 	r_kons_clear_line (I, std_err);
 }
 
-R_API void r_cons_clear00(void) {
+R_DEPRECATE R_API void r_cons_clear00(void) {
 	RCons *cons = r_cons_singleton ();
 	r_kons_clear (cons);
 	r_kons_gotoxy (cons, 0, 0);
@@ -468,7 +468,7 @@ R_API void r_cons_reset_colors(void) {
 	r_kons_reset_colors (I);
 }
 
-R_API void r_cons_clear(void) {
+R_DEPRECATE R_API void r_cons_clear(void) {
 	r_kons_clear (I);
 }
 
@@ -488,8 +488,33 @@ R_API int r_cons_get_buffer_len(void) {
 	return (int)len;
 }
 
-R_API void r_cons_filter(void) {
-	r_kons_filter (r_cons_singleton ());
+R_API void r_cons_filter(RCons *cons) {
+	RConsContext *ctx = cons->context;
+	/* grep */
+	if (ctx->filter || ctx->grep.tokens_used \
+			|| (ctx->grep.strings && r_list_length (ctx->grep.strings) > 0) \
+			|| ctx->grep.less || ctx->grep.json) {
+		(void)r_kons_grepbuf (cons);
+		ctx->filter = false;
+	}
+	/* html */
+	if (ctx->is_html) {
+		int newlen = 0;
+		char *input = r_str_ndup (ctx->buffer, ctx->buffer_len);
+		char *res = r_str_html_strip (input, &newlen);
+		if (res) {
+			free (ctx->buffer);
+			ctx->buffer = res;
+			ctx->buffer_len = newlen;
+			ctx->buffer_sz = newlen;
+		}
+		free (input);
+	}
+	if (ctx->tmp_html) {
+		ctx->is_html = ctx->was_html;
+		ctx->tmp_html = false;
+		ctx->was_html = false;
+	}
 }
 
 R_API void r_cons_push(void) {
@@ -617,10 +642,6 @@ R_API char *r_cons_drain(void) {
 
 R_API void r_cons_flush(void) {
 	r_kons_flush (I);
-}
-
-R_API void r_cons_visual_write(char *buffer) {
-	r_kons_visual_write (I, buffer);
 }
 
 R_API int r_cons_get_column(void) {

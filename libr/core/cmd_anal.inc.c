@@ -9887,11 +9887,10 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		r_config_set_b (core->config, "asm.xrefs", false);
 
 		hooks = r_core_anal_cycles (core, ccl); // analyse
-		// r_cons_clear_line (1);
 		r_list_foreach (hooks, iter, hook) {
 			instr_tmp = r_core_disassemble_instr (core, hook->addr, 1);
 			r_kons_printf (core->cons, "After %4i cycles:\t%s", (ccl - hook->cycles), instr_tmp);
-			r_cons_flush ();
+			r_kons_flush (core->cons);
 			free (instr_tmp);
 		}
 		r_list_free (hooks);
@@ -11849,7 +11848,7 @@ end:
 static bool convert_dotcmd_to_image(RCore *core, char *r2_cmd, const char *save_path) {
 	if (save_path && *save_path) {
 		r_kons_printf (core->cons, "Saving to file '%s'...\n", save_path);
-		r_cons_flush ();
+		r_kons_flush (core->cons);
 	}
 	r_core_cmdf (core, "%s > a.dot", r2_cmd); // TODO: check error here
 	return convert_dot_to_image (core, "a.dot", save_path);
@@ -11858,7 +11857,7 @@ static bool convert_dotcmd_to_image(RCore *core, char *r2_cmd, const char *save_
 static bool convert_dot_str_to_image(RCore *core, char *str, const char *save_path) {
 	if (save_path && *save_path) {
 		r_kons_printf (core->cons, "Saving to file '%s'...\n", save_path);
-		r_cons_flush ();
+		r_kons_flush (core->cons);
 	}
 	if (!r_file_dump ("a.dot", (const unsigned char *)str, -1, false)) {
 		return false;
@@ -14005,11 +14004,11 @@ static void logline(RCore *core, int pc, const char *title) {
 	if (r_config_get_b (core->config, "scr.analbar") || r_config_get_b (core->config, "scr.demo")) {
 		int w = 80;
 		r_kons_printf (core->cons, R_CONS_CLEAR_LINE);
-		r_cons_flush ();
+		r_kons_flush (core->cons);
 		// R_LOG_INFO ("%s", title);
 		r_print_progressbar (core->print, pc, w, NULL);
 		r_kons_printf (core->cons, "\r");
-		r_cons_flush ();
+		r_kons_flush (core->cons);
 	} else {
 		R_LOG_INFO ("%s", title);
 	}
@@ -14257,7 +14256,6 @@ static void cmd_aaa(RCore *core, const char *input) {
 	if (r_cons_is_breaked ()) {
 		goto jacuzzi;
 	}
-//	r_cons_clear_line (1);
 	const bool cfg_debug = r_config_get_b (core->config, "cfg.debug");
 	if (*input == 'a') { // "aaa" .. which is checked just in the case above
 		if (r_str_startswith (r_config_get (core->config, "bin.lang"), "go")) {
@@ -16202,7 +16200,7 @@ static int cmd_anal(void *data, const char *input) {
 		r_core_block_size (core, tbs);
 	}
 	if (r_cons_is_breaked ()) {
-		r_cons_clear_line (1);
+		r_kons_clear_line (core->cons, 1);
 	}
 	return 0;
 }

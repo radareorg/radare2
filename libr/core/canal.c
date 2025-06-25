@@ -19,8 +19,7 @@ enum {
 };
 
 static void loganal(ut64 from, ut64 to, int depth) {
-	r_cons_clear_line (1);
-	eprintf ("0x%08"PFMT64x" > 0x%08"PFMT64x" %d\r", from, to, depth);
+	eprintf (R_CONS_CLEAR_LINE "0x%08"PFMT64x" > 0x%08"PFMT64x" %d\r", from, to, depth);
 }
 
 static int cmpsize(const void *a, const void *b) {
@@ -1103,7 +1102,7 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 						}
 						// TODO: ensure next address is function after padding (nop or trap or wat)
 						// XXX noisy for test cases because we want to clear the stderr
-						r_cons_clear_line (1);
+						r_kons_clear_line (core->cons, 1);
 						if (verbose) {
 							loganal (fcn->addr, at, 10000 - depth);
 						}

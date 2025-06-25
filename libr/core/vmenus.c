@@ -1047,7 +1047,7 @@ R_API int r_core_visual_types(RCore *core) {
 		menu = 1;
 	}
 	for (;;) {
-		r_cons_clear00 ();
+		r_kons_clear00 (core->cons);
 		for (i = 0; opts[i]; i++) {
 			if (use_color) {
 				if (h_opt == i) {
@@ -1417,7 +1417,6 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 			if (!found) {
 				return NULL;
 			}
-			//  r_cons_clear00 ();
 			return NULL; // show_class (core, mode, idx, _c, "", list);
 		}
 		return cur;
@@ -1473,7 +1472,6 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 			if (_c && r_list_empty (_c->fields)) {
 				return NULL;
 			}
-			// r_cons_clear00 ();
 			return NULL; // show_class (core, mode, idx, _c, grep, list);
 		}
 		return fur;
@@ -1532,7 +1530,6 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 			if (_c && r_list_empty (_c->methods)) {
 				return NULL;
 			}
-			// r_cons_clear00 ();
 			return NULL; // show_class (core, mode, idx, _c, grep, list);
 		}
 		return mur;
@@ -1558,7 +1555,7 @@ R_API int r_core_visual_classes(RCore *core) {
 	}
 	for (;;) {
 		int cols;
-		r_cons_clear00 ();
+		r_kons_clear00 (core->cons);
 		if (grepmode) {
 			r_kons_printf (core->cons, "Grep: %s\n", r_str_get (grep));
 		}
@@ -1695,7 +1692,7 @@ R_API int r_core_visual_classes(RCore *core) {
 			}
 			break;
 		case '?':
-			r_cons_clear00 ();
+			r_kons_clear00 (core->cons);
 			r_kons_printf (core->cons,
 			"\nVF: Visual Classes help:\n\n"
 			" q     - quit menu\n"
@@ -1728,7 +1725,6 @@ R_API int r_core_visual_classes(RCore *core) {
 			if (cmd[0]) {
 				r_cons_any_key (core->cons, NULL);
 			}
-			//cons_gotoxy(0,0);
 			r_kons_clear (core->cons);
 			break;
 		}
@@ -1845,7 +1841,7 @@ R_API int r_core_visual_anal_classes(RCore *core) {
 	}
 	for (;;) {
 		int cols;
-		r_cons_clear00 ();
+		r_kons_clear00 (core->cons);
 
 		class_name = show_anal_classes (core, mode, &index, list, class_name);
 
@@ -1911,7 +1907,7 @@ R_API int r_core_visual_anal_classes(RCore *core) {
 			mode = 'd';
 			break;
 		case '?':
-			r_cons_clear00 ();
+			r_kons_clear00 (core->cons);
 			r_kons_printf (core->cons,
 			"\nVF: Visual Classes help:\n\n"
 			" q     - quit menu\n"
@@ -1931,15 +1927,13 @@ R_API int r_core_visual_anal_classes(RCore *core) {
 			if (r_cons_fgets (core->cons, command, sizeof (command), 0, NULL) < 0) {
 				command[0] = '\0';
 			}
-			//line[strlen(line)-1]='\0';
 			r_core_cmd (core, command, 1);
 			r_cons_set_raw (1);
 			r_cons_show_cursor (false);
 			if (command[0]) {
 				r_cons_any_key (core->cons, NULL);
 			}
-			//cons_gotoxy(0,0);
-			r_cons_clear ();
+			r_kons_clear (core->cons);
 			break;
 		}
 	}
@@ -2013,7 +2007,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 	ut64 addr = UT64_MAX;
 	char *cursearch = strdup (line);
 	while (true) {
-		r_cons_clear00 ();
+		r_kons_clear00 (core->cons);
 		r_kons_printf (core->cons, "[0x%08"PFMT64x"]-[visual-r2rop] %s (see pdp command)\n",
 			(addr == UT64_MAX)? 0: addr + delta, cursearch);
 
@@ -2062,7 +2056,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 		r_kons_printf (cons, "ROPChain:\n  %s\n", r_str_get (chainstr));
 		r_list_foreach (core->ropchain, iter, msg) {
 			int extra = strlen (chainstr) / scr_w;
-			r_cons_gotoxy (0, extra + 22 + count);
+			r_kons_gotoxy (core->cons, 0, extra + 22 + count);
 			r_kons_print (core->cons, msg);
 			const char *cmt = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, r_num_get (NULL, msg));
 			if (cmt) {
@@ -2085,7 +2079,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 			free (r_list_pop (core->ropchain));
 			break;
 		case '?':
-			r_cons_clear00 ();
+			r_kons_clear00 (core->cons);
 			r_kons_printf (core->cons, "[r2rop-visual] Help\n"
 					" jk - select next/prev rop gadget\n"
 					" JK - scroll next/prev page from list\n"
@@ -2267,7 +2261,7 @@ R_API int r_core_visual_trackflags(RCore *core) { // "vbf"
 	}
 	for (;;) {
 		bool hasColor = r_config_get_i (core->config, "scr.color");
-		r_cons_clear00 ();
+		r_kons_clear00 (core->cons);
 
 		if (menu) {
 			r_kons_printf (core->cons, "Flags in flagspace '%s'. Press '?' for help.\n\n",
@@ -2505,7 +2499,7 @@ R_API int r_core_visual_trackflags(RCore *core) { // "vbf"
 			option = 0;
 			break;
 		case '?':
-			r_cons_clear00 ();
+			r_kons_clear00 (core->cons);
 			r_kons_printf (core->cons,
 			"\nVF: Visual Flags help:\n\n"
 			" q     - quit menu\n"
@@ -2540,8 +2534,7 @@ R_API int r_core_visual_trackflags(RCore *core) { // "vbf"
 			if (*cmd) {
 				r_cons_any_key (core->cons, NULL);
 			}
-			//cons_gotoxy(0,0);
-			r_cons_clear ();
+			r_kons_clear (core->cons);
 			continue;
 		}
 	}
@@ -2557,7 +2550,7 @@ R_API int r_core_visual_comments(RCore *core) {
 	ut64 addr, from = 0, size = 0;
 
 	for (;;) {
-		r_cons_clear00 ();
+		r_kons_clear00 (core->cons);
 		r_kons_print (core->cons, "Comments:\n");
 		RIntervalTreeIter it;
 		RAnalMetaItem *item;
@@ -2650,7 +2643,7 @@ R_API int r_core_visual_comments(RCore *core) {
 			return true;
 		case '?':
 		case 'h':
-			r_cons_clear00 ();
+			r_kons_clear00 (core->cons);
 			r_kons_printf (core->cons,
 			"\nVT: Visual Comments/Anal help:\n\n"
 			" q     - quit menu\n"
@@ -2763,7 +2756,7 @@ R_API void r_core_visual_config(RCore *core) {
 
 	option = 0;
 	for (;;) {
-		r_cons_clear00 ();
+		r_kons_clear00 (core->cons);
 		int h, w = r_cons_get_size (&h);
 		delta = h;
 		delta /= 4;
@@ -2867,9 +2860,9 @@ R_API void r_core_visual_config(RCore *core) {
 		r_cons_visual_flush (cons);
 		if (menu == 1 && fs2) {
 			// TODO: Break long lines.
-			r_cons_gotoxy (0, 0);
+			r_kons_gotoxy (core->cons, 0, 0);
 			r_kons_printf (core->cons, "[hjkq] %s", desc);
-			r_cons_gotoxy (0, menuboxh + 4);
+			r_kons_gotoxy (core->cons, 0, menuboxh + 4);
 			show_config_options (core, fs2, menuboxh);
 			r_kons_flush (cons);
 		}
@@ -2886,15 +2879,15 @@ R_API void r_core_visual_config(RCore *core) {
 					if (y > 20) {
 						break;
 					}
-					r_cons_gotoxy (21, y);
+					r_kons_gotoxy (core->cons, 21, y);
 					// TODO: Better align
 					r_kons_printf (core->cons, "%s = %s", bt->name, bt->value);
 					y++;
 				}
 			}
-			r_cons_gotoxy (21, y);
+			r_kons_gotoxy (core->cons, 21, y);
 			r_kons_printf (core->cons, "...");
-			r_cons_gotoxy (0, 0);
+			r_kons_gotoxy (core->cons, 0, 0);
 			r_kons_flush (core->cons);
 		}
 		ch = r_cons_readchar (core->cons);
@@ -2962,7 +2955,7 @@ R_API void r_core_visual_config(RCore *core) {
 			}
 			break;
 		case '?':
-			r_cons_clear00 ();
+			r_kons_clear00 (core->cons);
 			r_kons_printf (core->cons, "\nVe: Visual Eval help:\n\n"
 			" q     - quit menu\n"
 			" j/k   - down/up keys\n"
@@ -2983,10 +2976,10 @@ R_API void r_core_visual_config(RCore *core) {
 				r_core_cmd (core, cmd, 1);
 				free (cmd);
 			 }
-			r_cons_set_raw (1);
-			r_cons_show_cursor (false);
+			r_kons_set_raw (core->cons, 1);
+			r_kons_show_cursor (core->cons, false);
 			r_cons_any_key (core->cons, NULL);
-			r_cons_clear00 ();
+			r_kons_clear00 (core->cons);
 			continue;
 		}
 	}
@@ -3005,7 +2998,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 	dir = partition = option = mode = 0;
 	for (;;) {
 		/* Clear */
-		r_cons_clear00 ();
+		r_kons_clear00 (core->cons);
 
 		/* Show */
 		if (mode == 0) {
@@ -3295,7 +3288,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 				option = 0;
 				break;
 			case '?':
-				r_cons_clear00 ();
+				r_kons_clear00 (core->cons);
 				r_kons_printf (core->cons, "\nVM: Visual Mount points help:\n\n");
 				r_kons_printf (core->cons, " q     - go back or quit menu\n");
 				r_kons_printf (core->cons, " j/k   - down/up keys\n");
@@ -3575,10 +3568,11 @@ static RCoreHelpMessage help_visual_anal_keys = {
 static R_TH_LOCAL int coldelta = 0;
 static ut64 r_core_visual_anal_refresh(RCore *core) {
 	R_RETURN_VAL_IF_FAIL (core, UT64_MAX);
+	RCons *cons = core->cons;
 	ut64 addr;
 	RStrBuf *buf;
 	bool color = r_config_get_i (core->config, "scr.color");
-	int h, cols = r_cons_get_size (&h);
+	int h, cols = r_kons_get_size (cons, &h);
 	addr = core->addr;
 	cols -= 50;
 	int maxcols = 60 + coldelta;
@@ -3586,7 +3580,7 @@ static ut64 r_core_visual_anal_refresh(RCore *core) {
 		cols = maxcols;
 	}
 
-	r_cons_clear00 ();
+	r_kons_clear00 (core->cons);
 	r_core_visual_anal_refresh_column (core, cols);
 	if (cols > 30) {
 		r_cons_column (cols);
@@ -3598,35 +3592,35 @@ static ut64 r_core_visual_anal_refresh(RCore *core) {
 		if (color) {
 			r_kons_print (core->cons, core->cons->context->pal.prompt);
 		}
-		r_cons_gotoxy (0, 0);
-		r_kons_print (core->cons, ".-- functions -------------------------------.");
-		r_cons_gotoxy (20, 0);
+		r_kons_gotoxy (cons, 0, 0);
+		r_kons_print (cons, ".-- functions -------------------------------.");
+		r_kons_gotoxy (cons, 20, 0);
 		if (selectPanel) {
-			r_kons_printf (core->cons, "[%s]", printCmds[printMode]);
+			r_kons_printf (cons, "[%s]", printCmds[printMode]);
 		} else {
-			r_kons_printf (core->cons, " %s ", printCmds[printMode]);
+			r_kons_printf (cons, " %s ", printCmds[printMode]);
 		}
 		if (color) {
-			r_kons_print (core->cons, Color_RESET);
+			r_kons_print (cons, Color_RESET);
 		}
-		r_kons_newline (core->cons);
-		r_kons_print (core->cons, "| (a)nalyze   (-)delete (xX)refs (jk)scroll  |\n");
-		r_kons_print (core->cons, "| (r)ename    (c)alls   (d)efine (tab)disasm |\n");
-		r_kons_print (core->cons, "| (d)efine    (v)ars    (?)help  (:)shell    |\n");
-		r_kons_print (core->cons, "| (s)ignature (_)hud    (q)quit  (;)comment  |\n");
-		r_kons_printf (core->cons, "'-------------------------------------------'");
+		r_kons_newline (cons);
+		r_kons_print (cons, "| (a)nalyze   (-)delete (xX)refs (jk)scroll  |\n");
+		r_kons_print (cons, "| (r)ename    (c)alls   (d)efine (tab)disasm |\n");
+		r_kons_print (cons, "| (d)efine    (v)ars    (?)help  (:)shell    |\n");
+		r_kons_print (cons, "| (s)ignature (_)hud    (q)quit  (;)comment  |\n");
+		r_kons_printf (cons, "'-------------------------------------------'");
 		addr = var_functions_show (core, option, 1, cols);
 		break;
 	case 1:
 		buf = r_strbuf_new ("");
 		if (color) {
-			r_kons_print (core->cons, core->cons->context->pal.prompt);
+			r_kons_print (cons, core->cons->context->pal.prompt);
 		}
-		r_kons_print (core->cons, ".-[ variables ]---------------------------.");
+		r_kons_print (cons, ".-[ variables ]---------------------------.");
 		if (color) {
-			r_kons_print (core->cons, "\n" Color_RESET);
+			r_kons_print (cons, "\n" Color_RESET);
 		}
-		r_cons_gotoxy (22, 0);
+		r_kons_gotoxy (cons, 22, 0);
 		r_kons_printf (core->cons, " 0x%08"PFMT64x" \n", addr);
 		r_kons_print (core->cons, "| (a)dd     (x)refs       (r)rename       |\n");
 		r_kons_print (core->cons, "| (t)ype    (g)o          (-)delete       |\n");
@@ -3836,7 +3830,7 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			visual_add_comment (core, addr);
 			break;
 		case '?':
-			r_cons_clear00 ();
+			r_kons_clear00 (core->cons);
 			RStrBuf *rsb = r_strbuf_new ("");
 			r_core_visual_append_help (rsb, "Funcs/Vars Visual Analysis Mode (Vv) Help", (const char *[]){ NULL });
 			r_core_visual_append_help (rsb, "Actions Supported", help_visual_anal_actions);
@@ -4271,9 +4265,9 @@ R_API void r_core_visual_define(RCore *core, const char *args, int distance) {
 	h -= 19;
 	if (h < 0) {
 		h = 0;
-		r_cons_clear00 ();
+		r_kons_clear00 (core->cons);
 	} else {
-		r_cons_gotoxy (0, 3);
+		r_kons_gotoxy (core->cons, 0, 3);
 	}
 	const char *lines[] = { ""
 		,"[Vd]- Define current block as:"
@@ -4798,8 +4792,8 @@ R_API void r_core_visual_colors(RCore *core) {
 	RCons *cons = core->cons;
 	rcolor = r_cons_pal_get_i (cons, opt);
 	for (;;) {
-		r_cons_clear ();
-		r_cons_gotoxy (0, 0);
+		r_kons_clear (core->cons);
+		r_kons_gotoxy (core->cons, 0, 0);
 		k = r_cons_pal_get_name (cons, opt);
 		if (!k) {
 			opt = 0;

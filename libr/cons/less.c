@@ -3,7 +3,7 @@
 #include <r_cons.h>
 #include <r_regex.h>
 #include <r_util.h>
-#include "pager_private.h"
+#include "private.h"
 
 static const char *r_cons_less_help = \
 	" u/space  - page up/down (same as ^F / ^B)\n"
@@ -68,7 +68,7 @@ R_API int r_cons_less_str(RCons * R_NONNULL cons, const char * R_NONNULL str, co
 		if (from < 0) {
 			from = 0;
 		}
-		pager_printpage (p, lines, mla, from, to, w);
+		pager_printpage (cons, p, lines, mla, from, to, w);
 		ch = r_cons_readchar (cons);
 		if (exitkeys && strchr (exitkeys, ch)) {
 			for (i = 0; i < lines_count; i++) {

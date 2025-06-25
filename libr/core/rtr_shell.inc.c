@@ -6,12 +6,12 @@ static bool rtr_visual(RCore *core, TextLog T, const char *cmd) {
 		r_cons_break_push (NULL, NULL);
 		for (;;) {
 			char *ret;
-			r_cons_clear00 ();
+			r_kons_clear00 (core->cons);
 			ret = rtrcmd (T, cmd);
 			r_cons_println (ret);
 			free (ret);
-			r_cons_flush ();
-			if (r_cons_is_breaked ()) {
+			r_kons_flush (core->cons);
+			if (r_kons_is_breaked (core->cons)) {
 				break;
 			}
 			r_sys_sleep (1);
@@ -92,7 +92,7 @@ TODO:
 							r_cons_println (res);
 							free (res);
 						}
-						r_cons_flush ();
+						r_kons_flush (core->cons);
 					}
 				}
 				break;
@@ -129,8 +129,7 @@ TODO:
 							ret = true;
 						} else {
 							ret = false;
-							//r_cons_any_key ();
-							r_cons_clear00 ();
+							r_kons_clear00 (core->cons);
 							showcursor (core, false);
 						}
 					} while (ret);
