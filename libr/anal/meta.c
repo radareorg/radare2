@@ -505,7 +505,8 @@ R_API void r_meta_print_list_at(RAnal *a, ut64 addr, int rad, const char *tq, RT
 }
 
 static void print_meta_list(RAnal *a, int type, int rad, ut64 addr, const char *tq, RTable *t) {
-	RCons *cons = r_cons_singleton ();
+	RCore *core = a->coreb.core;
+	RCons *cons = core->cons;
 	PJ *pj = NULL;
 	if (rad == ',') {
 		if (!t) {
