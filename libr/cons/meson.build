@@ -4,7 +4,7 @@ r_cons_sources = [
   'canvas.c',
   'cons.c',
   'cpipe.c',
-  'cutf8.c'
+  'cutf8.c',
   'editor.c',
   'grep.c',
   'help.c',
@@ -18,7 +18,7 @@ r_cons_sources = [
   'rgb.c',
   'stiv.c',
   'visual.c',
-  'winutils.c',
+  'winutils.c'
 ]
 
 r_cons = library('r_cons', r_cons_sources,
