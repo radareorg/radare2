@@ -3019,7 +3019,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 			case R_META_TYPE_DATA:
 #if 0
 				if (!R_STR_ISEMPTY (meta->str)) {
-					r_cons_printf (".data: %s\n", meta->str);
+					r_kons_printf (".data: %s\n", meta->str);
 				}
 #endif
 				i += meta_size;

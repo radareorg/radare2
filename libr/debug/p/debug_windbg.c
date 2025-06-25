@@ -1,6 +1,7 @@
-/* radare - LGPL - Copyright 2020 - GustavoLCR */
+/* radare - LGPL - Copyright 2020-2025 - GustavoLCR */
 
 #include <r_debug.h>
+#include <r_core.h>
 #include <DbgEng.h>
 
 #ifndef CONTEXT_ARM
@@ -135,6 +136,7 @@ static void break_action(void *user) {
 
 static RDebugReasonType windbg_wait(RDebug *dbg, int pid) {
 	DbgEngContext *idbg = dbg->user;
+	RCore *core = dbg->coreb.core;
 	R_RETURN_VAL_IF_FAIL (idbg && idbg->initialized, 0);
 	ULONG Type, ProcessId, ThreadId;
 	r_cons_break_push (core->cons, break_action, dbg);

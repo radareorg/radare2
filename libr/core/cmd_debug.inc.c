@@ -5885,7 +5885,7 @@ static int cmd_debug(void *data, const char *input) {
 				if (!r_config_get_b (core->config, "cfg.debug")) {
 					R_LOG_WARN ("No debugee information available when not using the debugger");
 				} else {
-#define P r_cons_printf
+#define P(x,y) r_kons_printf (core->cons, x, y)
 					if (stop != -1) {
 						if (core->dbg->reason.type == R_DEBUG_REASON_SIGNAL) {
 							P ("signalstr=%s\n", r_signal_to_human (core->dbg->reason.signum));
