@@ -5264,14 +5264,14 @@ fin:
 }
 
 static bool afla_leafs(void *user, const ut64 addr, const void *data) {
-	RCore *core = (RCore *)user;
+	// RCore *core = (RCore *)user;
 	ReverseCallData *rcd = (ReverseCallData*)user;
 	RVecAddr *va = (RVecAddr *)data;
 	if (RVecAddr_empty (va)) {
 		if (rcd->pj) {
 			pj_n (rcd->pj, addr);
 		} else {
-			r_kons_printf (core->cons, "0x%08"PFMT64x"\n", addr);
+			r_kons_printf (rcd->core->cons, "0x%08"PFMT64x"\n", addr);
 		}
 		RVecAddr_push_back (rcd->list, &addr);
 		RVecAddr_push_back (rcd->togo, &addr);

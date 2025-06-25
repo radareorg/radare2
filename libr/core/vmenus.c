@@ -1696,7 +1696,7 @@ R_API int r_core_visual_classes(RCore *core) {
 			break;
 		case '?':
 			r_cons_clear00 ();
-			r_kons_printf (core->cons, 
+			r_kons_printf (core->cons,
 			"\nVF: Visual Classes help:\n\n"
 			" q     - quit menu\n"
 			" j/k   - down/up keys\n"
@@ -1710,7 +1710,7 @@ R_API int r_core_visual_classes(RCore *core) {
 			" l/' ' - accept current selection\n"
 			" p     - preview method disasm with less\n"
 			" :     - enter command\n");
-			r_cons_flush ();
+			r_kons_flush (core->cons);
 			r_cons_any_key (core->cons, NULL);
 			break;
 		case ':':
@@ -1912,7 +1912,7 @@ R_API int r_core_visual_anal_classes(RCore *core) {
 			break;
 		case '?':
 			r_cons_clear00 ();
-			r_kons_printf (core->cons, 
+			r_kons_printf (core->cons,
 			"\nVF: Visual Classes help:\n\n"
 			" q     - quit menu\n"
 			" j/k   - down/up keys\n"
@@ -1920,7 +1920,7 @@ R_API int r_core_visual_anal_classes(RCore *core) {
 			" g/G   - go first/last item\n"
 			" l/' ' - accept current selection\n"
 			" :     - enter command\n");
-			r_cons_flush ();
+			r_kons_flush (core->cons);
 			r_cons_any_key (core->cons, NULL);
 			break;
 		case ':':
@@ -2102,7 +2102,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 					" ?  - show this help message\n"
 					" q  - quit this view\n"
 				      );
-			r_cons_flush ();
+			r_kons_flush (core->cons);
 			r_cons_any_key (core->cons, NULL);
 			break;
 		case ':': // TODO: move this into a separate helper function
@@ -2122,7 +2122,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 				r_core_seek (core, addr + delta, false);
 				r_core_cmd (core, cmd, 1);
 				r_core_seek (core, oseek, false);
-				r_cons_flush ();
+				r_kons_flush (core->cons);
 			}
 			r_cons_set_raw (1);
 			r_cons_show_cursor (false);
@@ -2459,7 +2459,7 @@ R_API int r_core_visual_trackflags(RCore *core) { // "vbf"
 				r_cons_show_cursor (true);
 				r_cons_set_raw (0);
 				r_kons_printf (core->cons, "Rename flag '%s' as:\n", fs2);
-				r_cons_flush ();
+				r_kons_flush (core->cons);
 				r_line_set_prompt (core->cons->line, ":> ");
 				if (r_cons_fgets (core->cons, line, sizeof (line), 0, NULL) >= 0) {
 					// TODO: use the API
@@ -2472,10 +2472,10 @@ R_API int r_core_visual_trackflags(RCore *core) { // "vbf"
 		case 'R':
 			if (menu == 1) {
 				char line[1024];
-				r_cons_show_cursor (true);
-				r_cons_set_raw (0);
+				r_kons_show_cursor (core->cons, true);
+				r_kons_set_raw (core->cons, 0);
 				r_kons_printf (core->cons, "Rename function '%s' as:\n", fs2);
-				r_cons_flush ();
+				r_kons_flush (core->cons);
 				r_line_set_prompt (core->cons->line, ":> ");
 				if (r_cons_fgets (core->cons, line, sizeof (line), 0, NULL) >= 0) {
 					// TODO: use the API
@@ -2506,7 +2506,7 @@ R_API int r_core_visual_trackflags(RCore *core) { // "vbf"
 			break;
 		case '?':
 			r_cons_clear00 ();
-			r_kons_printf (core->cons, 
+			r_kons_printf (core->cons,
 			"\nVF: Visual Flags help:\n\n"
 			" q     - quit menu\n"
 			" j/k   - line down/up keys\n"
@@ -2522,7 +2522,7 @@ R_API int r_core_visual_trackflags(RCore *core) { // "vbf"
 			" p/P   - rotate print format\n"
 			" _     - hud for flags and comments\n"
 			" :     - enter command\n");
-			r_cons_flush ();
+			r_kons_flush (core->cons);
 			r_cons_any_key (core->cons, NULL);
 			break;
 		case ':':
@@ -2651,7 +2651,7 @@ R_API int r_core_visual_comments(RCore *core) {
 		case '?':
 		case 'h':
 			r_cons_clear00 ();
-			r_kons_printf (core->cons, 
+			r_kons_printf (core->cons,
 			"\nVT: Visual Comments/Anal help:\n\n"
 			" q     - quit menu\n"
 			" j/k   - down/up keys\n"
@@ -2659,7 +2659,7 @@ R_API int r_core_visual_comments(RCore *core) {
 			" l/' ' - accept current selection\n"
 			" a/d/e - add/delete/edit comment/anal symbol\n"
 			" p/P   - rotate print format\n");
-			r_cons_flush ();
+			r_kons_flush (core->cons);
 			r_cons_any_key (core->cons, NULL);
 			break;
 		}
@@ -2699,7 +2699,7 @@ static void config_visual_hit(RCore *core, const char *name, int editor) {
 			// FGETS AND SO
 			r_kons_printf (core->cons, "New value (old=%s): \n", node->value);
 			r_cons_show_cursor (true);
-			r_cons_flush ();
+			r_kons_flush (core->cons);
 			r_cons_set_raw (0);
 			r_line_set_prompt (core->cons->line, ":> ");
 			r_cons_fgets (core->cons, buf, sizeof (buf), 0, 0);
@@ -2972,7 +2972,7 @@ R_API void r_core_visual_config(RCore *core) {
 			" E     - edit variable with 'cfg.editor' (vi?)\n"
 			" +/-   - increase/decrease numeric value (* and /, too)\n"
 			" :     - enter command\n");
-			r_cons_flush ();
+			r_kons_flush (core->cons);
 			r_cons_any_key (core->cons, NULL);
 			break;
 		case ':':
@@ -3117,14 +3117,14 @@ R_API void r_core_visual_mounts(RCore *core) {
 					if (!list) {
 						r_kons_printf (core->cons, "Unknown partition\n");
 						r_cons_any_key (core->cons, NULL);
-						r_cons_flush ();
+						r_kons_flush (core->cons);
 						break;
 					}
 					part = r_list_get_n (list, option);
 					if (!part) {
 						r_kons_printf (core->cons, "Unknown partition\n");
 						r_cons_any_key (core->cons, NULL);
-						r_cons_flush ();
+						r_kons_flush (core->cons);
 						break;
 					}
 					p = r_fs_partition_type (n, part->type);
@@ -3136,12 +3136,12 @@ R_API void r_core_visual_mounts(RCore *core) {
 							mode = 2;
 						} else {
 							r_kons_printf (core->cons, "Cannot mount partition\n");
-							r_cons_flush ();
+							r_kons_flush (core->cons);
 							r_cons_any_key (core->cons, NULL);
 						}
 					} else {
 						r_kons_printf (core->cons, "Unknown partition type\n");
-						r_cons_flush ();
+						r_kons_flush (core->cons);
 						r_cons_any_key (core->cons, NULL);
 					}
 					r_list_free (list);
@@ -3168,7 +3168,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 						}
 					} else {
 						r_kons_printf (core->cons, "Unknown file\n");
-						r_cons_flush ();
+						r_kons_flush (core->cons);
 						r_cons_any_key (core->cons, NULL);
 					}
 
@@ -3285,7 +3285,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 					} else {
 						r_kons_printf (core->cons, "Cannot dump file\n");
 					}
-					r_cons_flush ();
+					r_kons_flush (core->cons);
 					r_cons_any_key (core->cons, NULL);
 					*str='\0';
 				}
@@ -3305,7 +3305,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 				r_kons_printf (core->cons, " m     - show mountpoints\n");
 				r_kons_printf (core->cons, " :     - enter command\n");
 				r_kons_printf (core->cons, " ?     - show this help\n");
-				r_cons_flush ();
+				r_kons_flush (core->cons);
 				r_cons_any_key (core->cons, NULL);
 				break;
 			case ':':
@@ -3666,7 +3666,7 @@ static ut64 r_core_visual_anal_refresh(RCore *core) {
 		// assert
 		break;
 	}
-	r_cons_flush ();
+	r_kons_flush (core->cons);
 	return addr;
 }
 
@@ -3675,14 +3675,14 @@ static void r_core_visual_anal_refresh_oneshot(RCore *core) {
 }
 
 static void r_core_visual_debugtraces_help(RCore *core) {
-	r_cons_clear00 ();
-	r_kons_printf (core->cons, 
+	r_kons_clear00 (core->cons);
+	r_kons_printf (core->cons,
 			"vbd: Visual Browse Debugtraces:\n\n"
 			" q     - quit the bit editor\n"
 			" Q     - Quit (jump into the disasm view)\n"
 			" j/k   - Select next/previous trace\n"
 			" :     - enter command\n");
-	r_cons_flush ();
+	r_kons_flush (core->cons);
 	r_cons_any_key (core->cons, NULL);
 }
 
@@ -4227,7 +4227,7 @@ static void handleHints(RCore *core) {
 		r_cons_fill_line ();
 		r_kons_printf (core->cons, "\r%s\n", lines[i]);
 	}
-	r_cons_flush ();
+	r_kons_flush (core->cons);
 	r_line_set_prompt (core->cons->line, "anal hint: ");
 	if (r_cons_fgets (core->cons, ch, sizeof (ch), 0, NULL) > 0) {
 		switch (ch[0]) {
@@ -4317,7 +4317,7 @@ R_API void r_core_visual_define(RCore *core, const char *args, int distance) {
 		r_cons_fill_line ();
 		r_kons_printf (core->cons, "\r%s\n", lines[i]);
 	}
-	r_cons_flush ();
+	r_kons_flush (core->cons);
 	int wordsize = 0;
 	// get ESC+char, return 'hjkl' char
 repeat:
@@ -4439,8 +4439,8 @@ onemoretime:
 				if (p) {
 					*p = 0;
 				}
-				r_cons_clear ();
-				r_cons_flush ();
+				r_kons_clear (core->cons);
+				r_kons_flush (core->cons);
 				r_sys_cmdf ("man %s", man);
 				free (man);
 			}

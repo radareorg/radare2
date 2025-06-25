@@ -175,6 +175,9 @@ R_API char *r_str_pseudo_transform(const char **rules, const char *asm_str) {
 					template_ptr++;
 				}
 			}
+			if (paren_count != 0) {
+				R_LOG_WARN ("Unbalanced parenthesis in strpseudo expression");
+			}
 			result = r_strbuf_drain (buf);
 			free (rule_copy);
 			break;
