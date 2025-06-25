@@ -18,7 +18,7 @@ static const char *r_cons_less_help = \
 
 R_API int r_cons_less_str(RCons * R_NONNULL cons, const char * R_NONNULL str, const char * R_NULLABLE exitkeys) {
 	R_RETURN_VAL_IF_FAIL (R_STR_ISNOTEMPTY (str), 0);
-	if (!r_kons_is_interactive (cons)) {
+	if (!r_cons_is_interactive (cons)) {
 		R_LOG_ERROR ("Internal less requires scr.interactive=true");
 		return 0;
 	}

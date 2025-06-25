@@ -945,7 +945,7 @@ static char *__handle_cmd_str_cache(RCore *core, RPanel *panel, bool force_cache
 		if (b) {
 			core->print->cur_enabled = false;
 		}
-		bool o_interactive = r_cons_is_interactive ();
+		bool o_interactive = r_cons_is_interactive (core->cons);
 		r_cons_set_interactive (false);
 		out = (*cmd == '.')
 			? r_core_cmd_str_pipe (core, cmd)
@@ -5701,11 +5701,11 @@ static int __license_cb(void *user) {
 
 static int __version2_cb(void *user) {
 	RCore *core = (RCore *)user;
-	r_cons_set_raw (false);
+	r_kons_set_raw (core->cons, false);
 	r_core_cmd0 (core, "!!r2 -Vj>$a");
 	r_core_cmd0 (core, "$a~{}~..");
 	r_core_cmd0 (core, "rm $a");
-	r_cons_set_raw (true);
+	r_kons_set_raw (core->cons, true);
 	r_kons_flush (core->cons);
 	return 0;
 }
@@ -5720,9 +5720,9 @@ static int __version_cb(void *user) {
 
 static int __r2rc_cb(void *user) {
 	RCore *core = (RCore *)user;
-	r_cons_set_raw (false);
+	r_kons_set_raw (core->cons, false);
 	r_core_cmd0 (core, "edit");
-	r_cons_set_raw (true);
+	r_kons_set_raw (core->cons, true);
 	r_kons_flush (core->cons);
 	return 0;
 }
@@ -6862,7 +6862,7 @@ static void __panels_process(RCore *core, RPanels *panels) {
 		}
 	}
 
-	bool o_interactive = r_kons_is_interactive (core->cons);
+	bool o_interactive = r_cons_is_interactive (core->cons);
 	r_cons_set_interactive (true);
 	r_core_visual_showcursor (core, false);
 repeat:

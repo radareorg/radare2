@@ -4615,7 +4615,7 @@ static bool cmd_dcu(RCore *core, const char *input) {
 		R_LOG_ERROR ("Invalid range to address");
 		return false;
 	}
-	if (core->num->nc.errors && r_cons_is_interactive ()) {
+	if (core->num->nc.errors && r_cons_is_interactive (core->cons)) {
 		R_LOG_ERROR ("Cannot continue until unknown address");
 		return false;
 	}

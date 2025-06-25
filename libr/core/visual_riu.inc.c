@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2024 - pancake */
+/* radare - LGPL - Copyright 2024-2025 - pancake */
 
 typedef struct {
 	char *name;
@@ -80,7 +80,7 @@ static RIU *riu_new(RCore *core, const char *input) {
 		p++;
 	}
 
-	r_cons_set_raw (true);
+	r_kons_set_raw (core->cons, true);
 	riu->items = list;
 	riu->core = core;
 	return riu;
@@ -157,13 +157,13 @@ static bool riu_input(RIU *riu) {
 				r_core_cmdf (riu->core, "'k riu=%s", w->name);
 				return false;
 			}
-			r_cons_set_raw (false);
+			r_kons_set_raw (riu->core->cons, false);
 			char *res = r_core_cmd_str (riu->core, w->cmnd);
 			r_str_trim (res);
 			free (w->data);
 			w->data = res;
 			r_core_cmdf (riu->core, "'k riu.%s=%s", w->name, w->data);
-			r_cons_set_raw (true);
+			r_kons_set_raw (riu->core->cons, true);
 		}
 		break;
 	}
@@ -171,7 +171,7 @@ static bool riu_input(RIU *riu) {
 }
 
 static void riu_free(RIU *riu) {
-	r_cons_set_raw (false);
+	r_kons_set_raw (riu->core->cons, false);
 	if (riu) {
 		r_list_free (riu->items);
 		free (riu);

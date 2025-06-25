@@ -85,7 +85,7 @@ R_IPI void visual_add_comment(RCore *core, ut64 at) {
 	if (core->print->cur_enabled) {
 		r_core_seek (core, orig, true);
 	}
-	r_cons_set_raw (true);
+	r_kons_set_raw (core->cons, true);
 	r_core_visual_showcursor (core, false);
 }
 
@@ -1340,8 +1340,8 @@ static bool r_core_visual_config_hud(RCore *core) {
 			*p = 0;
 		}
 		oldvalue = r_config_get (core->config, res);
-		r_cons_show_cursor (true);
-		r_cons_set_raw (false);
+		r_kons_show_cursor (core->cons, true);
+		r_kons_set_raw (core->cons, false);
 		cmd[0] = '\0';
 		eprintf ("Set new value for %s (old=%s)\n", res, oldvalue);
 		r_line_set_prompt (core->cons->line, ":> ");
@@ -1349,8 +1349,8 @@ static bool r_core_visual_config_hud(RCore *core) {
 			cmd[0] = '\0';
 		}
 		r_config_set (core->config, res, cmd);
-		r_cons_set_raw (true);
-		r_cons_show_cursor (false);
+		r_kons_set_raw (core->cons, true);
+		r_kons_show_cursor (core->cons, false);
 	}
 	r_list_free (list);
 	return true;
@@ -1711,8 +1711,8 @@ R_API int r_core_visual_classes(RCore *core) {
 			r_cons_any_key (core->cons, NULL);
 			break;
 		case ':':
-			r_cons_show_cursor (true);
-			r_cons_set_raw (0);
+			r_kons_show_cursor (core->cons, true);
+			r_kons_set_raw (core->cons, 0);
 			cmd[0] = '\0';
 			r_line_set_prompt (core->cons->line, ":> ");
 			if (r_cons_fgets (core->cons, cmd, sizeof (cmd), 0, NULL) < 0) {
@@ -1920,16 +1920,16 @@ R_API int r_core_visual_anal_classes(RCore *core) {
 			r_cons_any_key (core->cons, NULL);
 			break;
 		case ':':
-			r_cons_show_cursor (true);
-			r_cons_set_raw (0);
+			r_kons_show_cursor (core->cons, true);
+			r_kons_set_raw (core->cons, 0);
 			command[0] = '\0';
 			r_line_set_prompt (core->cons->line, ":> ");
 			if (r_cons_fgets (core->cons, command, sizeof (command), 0, NULL) < 0) {
 				command[0] = '\0';
 			}
 			r_core_cmd (core, command, 1);
-			r_cons_set_raw (1);
-			r_cons_show_cursor (false);
+			r_kons_set_raw (core->cons, 1);
+			r_kons_show_cursor (core->cons, false);
 			if (command[0]) {
 				r_cons_any_key (core->cons, NULL);
 			}
@@ -2100,8 +2100,8 @@ R_API int r_core_visual_view_rop(RCore *core) {
 			r_cons_any_key (core->cons, NULL);
 			break;
 		case ':': // TODO: move this into a separate helper function
-			r_cons_show_cursor (true);
-			r_cons_set_raw (0);
+			r_kons_show_cursor (core->cons, true);
+			r_kons_set_raw (core->cons, 0);
 			while (true) {
 				char cmd[1024];
 				cmd[0] = '\0';
@@ -2118,8 +2118,8 @@ R_API int r_core_visual_view_rop(RCore *core) {
 				r_core_seek (core, oseek, false);
 				r_kons_flush (core->cons);
 			}
-			r_cons_set_raw (1);
-			r_cons_show_cursor (false);
+			r_kons_set_raw (core->cons, 1);
+			r_kons_show_cursor (core->cons, false);
 			break;
 		case 'y':
 			r_core_cmdf (core, "yfx %s", chainstr);
@@ -2403,8 +2403,8 @@ R_API int r_core_visual_trackflags(RCore *core) { // "vbf"
 				strcpy (cmd, "fs ");
 				if (r_cons_fgets (core->cons, cmd + 3, sizeof (cmd) - 3, 0, NULL) > 0) {
 					r_core_cmd (core, cmd, 0);
-					r_cons_set_raw (1);
-					r_cons_show_cursor (false);
+					r_kons_set_raw (core->cons, 1);
+					r_kons_show_cursor (core->cons, false);
 				}
 				break;
 			case 1: // new flag
@@ -2413,8 +2413,8 @@ R_API int r_core_visual_trackflags(RCore *core) { // "vbf"
 				strcpy (cmd, "f ");
 				if (r_cons_fgets (core->cons, cmd + 2, sizeof (cmd) - 2, 0, NULL) > 0) {
 					r_core_cmd (core, cmd, 0);
-					r_cons_set_raw (1);
-					r_cons_show_cursor (false);
+					r_kons_set_raw (core->cons, 1);
+					r_kons_show_cursor (core->cons, false);
 				}
 				break;
 			}
@@ -2450,8 +2450,8 @@ R_API int r_core_visual_trackflags(RCore *core) { // "vbf"
 		case 'r': // "Vtr"
 			if (menu == 1) {
 				char line[1024];
-				r_cons_show_cursor (true);
-				r_cons_set_raw (0);
+				r_kons_show_cursor (core->cons, true);
+				r_kons_set_raw (core->cons, 0);
 				r_kons_printf (core->cons, "Rename flag '%s' as:\n", fs2);
 				r_kons_flush (core->cons);
 				r_line_set_prompt (core->cons->line, ":> ");
@@ -2459,7 +2459,7 @@ R_API int r_core_visual_trackflags(RCore *core) { // "vbf"
 					// TODO: use the API
 					r_core_cmdf (core, "fr %s %s", fs2, line);
 				}
-				r_cons_set_raw (1);
+				r_kons_set_raw (core->cons, 1);
 				r_cons_show_cursor (false);
 			}
 			break;
@@ -2475,7 +2475,7 @@ R_API int r_core_visual_trackflags(RCore *core) { // "vbf"
 					// TODO: use the API
 					r_core_cmdf (core, "afr %s %s", line, fs2);
 				}
-				r_cons_set_raw (1);
+				r_kons_set_raw (core->cons, 1);
 				r_cons_show_cursor (false);
 			}
 			break;
@@ -2520,8 +2520,8 @@ R_API int r_core_visual_trackflags(RCore *core) { // "vbf"
 			r_cons_any_key (core->cons, NULL);
 			break;
 		case ':':
-			r_cons_show_cursor (true);
-			r_cons_set_raw (0);
+			r_kons_show_cursor (core->cons, true);
+			r_kons_set_raw (core->cons, 0);
 			*cmd = 0;
 			r_line_set_prompt (core->cons->line, ":> ");
 			if (r_cons_fgets (core->cons, cmd, sizeof (cmd), 0, NULL) <0) {
@@ -2529,8 +2529,8 @@ R_API int r_core_visual_trackflags(RCore *core) { // "vbf"
 			}
 			cmd[sizeof (cmd) - 1] = 0;
 			r_core_cmd_task_sync (core, cmd, 1);
-			r_cons_set_raw (1);
-			r_cons_show_cursor (false);
+			r_kons_set_raw (core->cons, 1);
+			r_kons_show_cursor (core->cons, false);
 			if (*cmd) {
 				r_cons_any_key (core->cons, NULL);
 			}
@@ -2693,10 +2693,10 @@ static void config_visual_hit(RCore *core, const char *name, int editor) {
 			r_kons_printf (core->cons, "New value (old=%s): \n", node->value);
 			r_cons_show_cursor (true);
 			r_kons_flush (core->cons);
-			r_cons_set_raw (0);
+			r_kons_set_raw (core->cons, false);
 			r_line_set_prompt (core->cons->line, ":> ");
 			r_cons_fgets (core->cons, buf, sizeof (buf), 0, 0);
-			r_cons_set_raw (1);
+			r_kons_set_raw (core->cons, true);
 			r_cons_show_cursor (false);
 			r_config_set (core->config, name, buf);
 			//node->value = strdup (node->value, buf);
@@ -2970,13 +2970,13 @@ R_API void r_core_visual_config(RCore *core) {
 			break;
 		case ':':
 			r_cons_show_cursor (true);
-			r_cons_set_raw (0);
-			 {
+			r_kons_set_raw (core->cons, false);
+			{
 				char *cmd = prompt (core, ":> ", NULL);
 				r_core_cmd (core, cmd, 1);
 				free (cmd);
-			 }
-			r_kons_set_raw (core->cons, 1);
+			}
+			r_kons_set_raw (core->cons, true);
 			r_kons_show_cursor (core->cons, false);
 			r_cons_any_key (core->cons, NULL);
 			r_kons_clear00 (core->cons);
@@ -3263,12 +3263,12 @@ R_API void r_core_visual_mounts(RCore *core) {
 						file = r_fs_open (core->fs, path, false);
 						if (file) {
 							r_fs_read (core->fs, file, 0, file->size);
-							r_cons_show_cursor (true);
-							r_cons_set_raw (0);
+							r_kons_show_cursor (core->cons, true);
+							r_kons_set_raw (core->cons, false);
 							r_line_set_prompt (core->cons->line, "Dump path (ej: /tmp/file): ");
 							r_cons_fgets (core->cons, buf, sizeof (buf), 0, 0);
-							r_cons_set_raw (1);
-							r_cons_show_cursor (false);
+							r_kons_set_raw (core->cons, true);
+							r_kons_show_cursor (core->cons, false);
 							r_file_dump (buf, file->data, file->size, 0);
 							r_fs_close (core->fs, file);
 							r_kons_printf (core->cons, "Done\n");
@@ -3302,12 +3302,12 @@ R_API void r_core_visual_mounts(RCore *core) {
 				r_cons_any_key (core->cons, NULL);
 				break;
 			case ':':
-				r_cons_show_cursor (true);
-				r_cons_set_raw (0);
+				r_kons_show_cursor (core->cons, true);
+				r_kons_set_raw (core->cons, false);
 				r_line_set_prompt (core->cons->line, ":> ");
 				r_cons_fgets (core->cons, buf, sizeof (buf), 0, 0);
-				r_cons_set_raw (1);
-				r_cons_show_cursor (false);
+				r_kons_set_raw (core->cons, true);
+				r_kons_show_cursor (core->cons, false);
 				r_core_cmd (core, buf, 1);
 				r_cons_any_key (core->cons, NULL);
 				break;
@@ -3806,7 +3806,7 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			ch = *input;
 			input++;
 		} else {
-			r_cons_set_raw (true);
+			r_kons_set_raw (core->cons, true);
 			ch = r_cons_readchar (core->cons);
 		}
 		if (ch == 4 || ch == -1) {
@@ -3889,8 +3889,8 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 				}
 				switch (level) {
 				case 1:
-					r_cons_show_cursor (true);
-					r_cons_set_raw (false);
+					r_kons_show_cursor (core->cons, true);
+					r_kons_set_raw (core->cons, false);
 					r_line_set_prompt (core->cons->line, "New name: ");
 					if (r_cons_fgets (core->cons, old, sizeof (old), 0, NULL)) {
 						if (*old) {
@@ -3907,8 +3907,8 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 					}
 					break;
 				}
-				r_cons_set_raw (true);
-				r_cons_show_cursor (false);
+				r_kons_set_raw (core->cons, true);
+				r_kons_show_cursor (core->cons, false);
 			}
 			break;
 		case 'R': // "VvR"
@@ -3916,16 +3916,16 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			break;
 		case 't':
 			if (level == 1) {
-				r_cons_show_cursor (true);
-				r_cons_set_raw (false);
+				r_kons_show_cursor (core->cons, true);
+				r_kons_set_raw (core->cons, false);
 				r_line_set_prompt (core->cons->line, "New type: ");
 				if (r_cons_fgets (core->cons, old, sizeof (old), 0, NULL)) {
 					if (*old) {
 						variable_set_type (core, addr, variable_option, old);
 					}
 				}
-				r_cons_set_raw (true);
-				r_cons_show_cursor (false);
+				r_kons_set_raw (core->cons, true);
+				r_kons_show_cursor (core->cons, false);
 			}
 			break;
 		case '.':
@@ -4338,8 +4338,8 @@ onemoretime:
 			strcpy (cmd, "Cf 0 ");
 			if (r_cons_fgets (core->cons, cmd + 5, sizeof (cmd) - 5, 0, NULL) > 0) {
 				r_core_cmdf (core, "'@0x%08"PFMT64x"'%s", off, cmd);
-				r_cons_set_raw (1);
-				r_cons_show_cursor (false);
+				r_kons_set_raw (core->cons, true);
+				r_kons_show_cursor (core->cons, false);
 			}
 		}
 		break;
@@ -4501,8 +4501,8 @@ onemoretime:
 				r_line_set_prompt (core->cons->line, "color: ");
 				if (r_cons_fgets (core->cons, cmd, sizeof (cmd), 0, NULL) > 0) {
 					r_flag_item_set_color (core->flags, item, cmd);
-					r_cons_set_raw (1);
-					r_cons_show_cursor (false);
+					r_kons_set_raw (core->cons, true);
+					r_kons_show_cursor (core->cons, false);
 				}
 			} else {
 				R_LOG_INFO ("Sorry. No flag here");

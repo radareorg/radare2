@@ -307,7 +307,7 @@ static bool r_core_project_load(RCore *core, const char *prj_name, const char *r
 		return false;
 	}
 	const bool cfg_fortunes = r_config_get_b (core->config, "cfg.fortunes");
-	const bool scr_interactive = r_cons_is_interactive ();
+	const bool scr_interactive = r_cons_is_interactive (core->cons);
 	const bool scr_prompt = r_config_get_b (core->config, "scr.prompt");
 	(void) load_project_rop (core, prj_name);
 	const bool sandy = r_config_get_b (core->config, "prj.sandbox");
@@ -396,7 +396,7 @@ R_API bool r_core_project_open(RCore *core, const char *prj_path) {
 		return false;
 	}
 	if (ask_for_closing && r_project_is_loaded (core->prj)) {
-		if (r_cons_is_interactive ()) {
+		if (r_cons_is_interactive (core->cons)) {
 			close_current_session = interactive
 				? r_kons_yesno (cons, 'y', "Close current session? (Y/n)")
 				: true;

@@ -233,8 +233,8 @@ R_API void r_cons_break_pop(void) {
 	r_kons_break_pop (I);
 }
 
-R_API bool r_cons_is_interactive(void) {
-	return r_kons_is_interactive (I);
+R_API bool r_cons_is_interactive(RCons *cons) {
+	return cons->context->is_interactive;
 }
 
 R_API bool r_cons_default_context_is_interactive(void) {

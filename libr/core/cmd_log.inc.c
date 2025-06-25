@@ -324,7 +324,7 @@ static int cmd_log(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg_T);
 		break;
 	case 'T': // "TT" Ts ? as ms?
-		if (r_cons_is_interactive ()) {
+		if (r_cons_is_interactive (core->cons)) {
 			textlog_chat (core);
 		} else {
 			R_LOG_ERROR ("The TT command needs scr.interactive=true");

@@ -1,6 +1,7 @@
 #!/bin/sh
 # SANITIZE="address leak memory undefined"
 # SANITIZE="address signed-integer-overflow"  # Faster build
+# SANITIZE="-fsanitize-address-use-after-return=always"
 # default:
 if [ -n "$(echo $SANITIZE | grep memory)" ]; then
 	# This is linux (and CLANG) Specific

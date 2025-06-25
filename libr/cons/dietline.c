@@ -2230,7 +2230,7 @@ repeat:
 							}
 							break;
 						}
-						r_cons_set_raw (true);
+						r_kons_set_raw (cons, true);
 						break;
 					case 0x37: // HOME xrvt-unicode
 						r_cons_readchar (cons);
@@ -2399,7 +2399,7 @@ repeat:
 	}
 _end:
 	r_kons_break_pop (cons);
-	r_cons_set_raw (false);
+	r_kons_set_raw (cons, false);
 	r_kons_enable_mouse (cons, mouse_status);
 #if 0
 	if (line->buffer.length > 1024) {	// R2_590 - use line->maxlength

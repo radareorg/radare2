@@ -3579,7 +3579,7 @@ R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback 
 #endif
 
 R_API char *r_core_editor(const RCore *core, const char *file, const char *str) {
-	const bool interactive = r_cons_is_interactive ();
+	const bool interactive = r_cons_is_interactive (core->cons);
 	const char *editor = r_config_get (core->config, "cfg.editor");
 	char *name = NULL, *ret = NULL;
 	int fd;

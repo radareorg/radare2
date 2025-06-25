@@ -12361,7 +12361,7 @@ R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 			core->graph->need_set_layout = true;
 			core->graph->is_handmade = true;
 			core->graph->layout = r_config_get_i (core->config, "graph.layout");
-			bool ov = r_cons_is_interactive ();
+			bool ov = r_cons_is_interactive (core->cons);
 			core->graph->need_update_dim = true;
 			int update_seek = r_core_visual_graph (core, core->graph, NULL, true);
 			r_config_set_b (core->config, "scr.interactive", ov);
@@ -12535,7 +12535,7 @@ static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, 
 				agraph->force_update_seek = true;
 				agraph->need_set_layout = true;
 				agraph->layout = r_config_get_i (core->config, "graph.layout");
-				bool ov = r_kons_is_interactive (core->cons);
+				bool ov = r_cons_is_interactive (core->cons);
 				agraph->need_update_dim = true;
 				int update_seek = r_core_visual_graph (core, agraph, NULL, true);
 				r_config_set_b (core->config, "scr.interactive", ov);
@@ -14212,7 +14212,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 	if (r_str_startswith (input, "aaaaa")) {
 		R_LOG_INFO ("We fired the r2 developer that was heading to your location to help you analyze this binary");
 		R_LOG_INFO ("Contact support for premium service");
-		if (r_kons_is_interactive (core->cons)) {
+		if (r_cons_is_interactive (core->cons)) {
 			r_cons_any_key (core->cons, NULL);
 		}
 		goto jacuzzi;

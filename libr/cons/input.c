@@ -683,7 +683,7 @@ R_API bool r_kons_yesno(RCons *cons, int def, const char *fmt, ...) {
 	ut8 key = (ut8)def;
 	va_start (ap, fmt);
 
-	if (!r_kons_is_interactive (cons)) {
+	if (!r_cons_is_interactive (cons)) {
 		va_end (ap);
 		return def == 'y';
 	}

@@ -22,7 +22,7 @@ static char *r_cons_hud_line(RCons *cons, RList *list, const char *prompt);
 // the lines starting with # )
 R_API char *r_cons_hud_line_string(RCons *cons, const char *s) {
 	R_RETURN_VAL_IF_FAIL (cons && s, NULL);
-	if (!r_kons_is_interactive (cons)) {
+	if (!r_cons_is_interactive (cons)) {
 		R_LOG_ERROR ("Hud mode requires scr.interactive=true");
 		return NULL;
 	}
@@ -63,7 +63,7 @@ R_API char *r_cons_hud_line_string(RCons *cons, const char *s) {
 // the lines starting with # )
 R_API char *r_cons_hud_string(RCons *cons, const char *s) {
 	R_RETURN_VAL_IF_FAIL (cons && s, NULL);
-	if (!r_kons_is_interactive (cons)) {
+	if (!r_cons_is_interactive (cons)) {
 		R_LOG_ERROR ("Hud mode requires scr.interactive=true");
 		return NULL;
 	}

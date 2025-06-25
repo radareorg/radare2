@@ -740,7 +740,7 @@ static RDisasmState *ds_init(RCore *core) {
 		ds->atabs = 0;
 	}
 	ds->subnames = r_config_get_b (core->config, "asm.sub.names");
-	ds->interactive = r_kons_is_interactive (ds->core->cons);
+	ds->interactive = r_cons_is_interactive (ds->core->cons);
 	ds->subjmp = r_config_get_b (core->config, "asm.sub.jmp");
 	ds->subvar = r_config_get_b (core->config, "asm.sub.var");
 	core->rasm->parse->subrel = r_config_get_b (core->config, "asm.sub.rel");

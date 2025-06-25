@@ -2711,7 +2711,7 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 			if (r_sandbox_enable (0)) {
 				R_LOG_WARN ("sandbox not enabled");
 			} else {
-				if (r_cons_is_interactive ()) {
+				if (r_cons_is_interactive (core->cons)) {
 					r_core_cmd_call (core, "TT");
 				}
 			}
@@ -2884,7 +2884,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	int i, cols = core->print->cols;
 	int wheelspeed;
 	int ch = och;
-	r_cons_set_raw (true);
+	r_kons_set_raw (core->cons, true);
 	if ((ut8)ch == KEY_ALTQ) {
 		r_cons_readchar (core->cons);
 		ch = 'q';
@@ -3068,7 +3068,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_kons_printf (core->cons, "Enter assembler opcodes separated with ';':\n");
 			r_core_visual_showcursor (core, true);
 			r_kons_flush (core->cons);
-			r_cons_set_raw (false);
+			r_kons_set_raw (core->cons, false);
 			strcpy (buf, "\"wa ");
 			r_line_set_prompt (core->cons->line, "> ");
 			r_kons_enable_mouse (core->cons, false);
@@ -3092,7 +3092,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				}
 			}
 			r_core_visual_showcursor (core, false);
-			r_cons_set_raw (true);
+			r_kons_set_raw (core->cons, true);
 		}
 		break;
 		case '=':
@@ -3259,7 +3259,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					r_cons_printf ("[t] ");
 				}
 				r_kons_flush (core->cons);
-				r_cons_set_raw (true);
+				r_kons_set_raw (core->cons, true);
 				int ch = r_cons_readchar (core->cons);
 				if (isdigit (ch)) {
 					visual_nthtab (core, ch - '0' - 1);
@@ -3349,7 +3349,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			r_core_visual_showcursor (core, true);
 			r_kons_flush (core->cons);
-			r_cons_set_raw (0);
+			r_kons_set_raw (core->cons, 0);
 			if (ch == 'I') {
 				strcpy (buf, "wow ");
 				r_line_set_prompt (core->cons->line, "insert hexpair block: ");
@@ -3396,7 +3396,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if (core->print->cur_enabled) {
 				r_core_seek (core, addr, true);
 			}
-			r_cons_set_raw (true);
+			r_kons_set_raw (core->cons, true);
 			r_core_visual_showcursor (core, false);
 			r_core_seek (core, oaddr, true);
 			}
@@ -4866,8 +4866,8 @@ dodo:
 		r_core_visual_tab_update (core);
 		// update the cursor when it's not visible anymore
 		skip = fix_cursor (core);
-		r_cons_show_cursor (false);
-		r_cons_set_raw (true);
+		r_kons_show_cursor (core->cons, false);
+		r_kons_set_raw (core->cons, true);
 		const int ref = r_config_get_i (core->config, "dbg.slow");
 #if 1
 		// This is why multiple debug views dont work

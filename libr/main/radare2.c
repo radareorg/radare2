@@ -412,11 +412,11 @@ beach:
 	return has_failed;
 }
 
-static bool mustSaveHistory(RConfig *c) {
-	if (!r_config_get_b (c, "scr.hist.save")) {
+static bool mustSaveHistory(RCore *core) {
+	if (!r_config_get_b (core->config, "scr.hist.save")) {
 		return false;
 	}
-	if (!r_cons_is_interactive ()) {
+	if (!r_cons_is_interactive (core->cons)) {
 		return false;
 	}
 	return true;
@@ -1731,7 +1731,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			const char *path = uri_splitter? uri_splitter + 3: f;
 			if (r_file_exists (path)) {
 				// TODO: should 'q' unset the interactive bit?
-				const bool isint = r_cons_is_interactive ();
+				const bool isint = r_cons_is_interactive (r->cons);
 				if (isint && r_kons_yesno (r->cons, 'n', "Do you want to run the '%s' script? (y/N) ", path)) {
 					r_core_cmd_file (r, path);
 				}
@@ -1876,7 +1876,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			}
 			ret = r->num->value;
 			mr.debug = r_config_get_b (r->config, "cfg.debug");
-			if (ret != -1 && r_cons_is_interactive ()) {
+			if (ret != -1 && r_cons_is_interactive (r->cons)) {
 				char *question;
 				bool no_question_debug = ret & 1;
 				bool no_question_save = (ret & 2) >> 1;
@@ -1948,7 +1948,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		}
 	}
 
-	if (mustSaveHistory (r->config)) {
+	if (mustSaveHistory (r)) {
 		char *history_file = r_xdg_cachedir ("history");
 		if (history_file) {
 			r_line_hist_save (r->cons->line, history_file);

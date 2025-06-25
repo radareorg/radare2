@@ -2491,8 +2491,8 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	core->keep_asmqjmps = false;
 	const bool breakable = r_list_length (fcn->bbs) > 1024;
 	if (breakable) {
-		r_cons_set_raw (false);
-		r_cons_break_push (NULL, NULL);
+		r_kons_set_raw (core->cons, false);
+		r_kons_break_push (core->cons, NULL, NULL);
 	}
 	r_list_foreach (fcn->bbs, iter, bb) {
 		if (breakable && r_cons_is_breaked ()) {
@@ -2553,8 +2553,8 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	}
 interrupted:
 	if (breakable) {
-		r_cons_break_end ();
-		r_cons_set_raw (true);
+		r_kons_break_end (core->cons);
+		r_kons_set_raw (core->cons, true);
 	}
 
 	delete_dup_edges (g);
@@ -4434,11 +4434,11 @@ static void nextword(RCore *core, RAGraph *g, const char *word) {
 
 R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int mode) {
 	bool is_interactive = (mode != 0);
-	if (is_interactive && !r_cons_is_interactive ()) {
+	if (is_interactive && !r_cons_is_interactive (core->cons)) {
 		R_LOG_ERROR ("Interactive graph mode requires 'e scr.interactive=true'");
 		return false;
 	}
-	r_cons_set_raw (true);
+	r_kons_set_raw (core->cons, true);
 	int o_asmqjmps_letter = core->is_asmqjmps_letter;
 	int o_vmode = core->vmode;
 	int exit_graph = false, is_error = false;
@@ -4542,7 +4542,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 	core->cons->event_data = grd;
 	core->cons->event_resize = (RConsEvent) agraph_refresh_oneshot;
 
-	r_cons_break_push (NULL, NULL);
+	r_kons_break_push (core->cons, NULL, NULL);
 	if (mode == 3) { // XXX wrong usage or buggy RGraph.domTree()
 		// dominance tree here
 		const RList *l = r_graph_get_nodes (g->graph);
@@ -4571,7 +4571,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 		showcursor (core, false);
 
 		// r_core_graph_inputhandle()
-		r_cons_set_raw (true);
+		r_kons_set_raw (core->cons, true);
 		okey = r_cons_readchar (core->cons);
 		key = r_cons_arrow_to_hjkl (core->cons, okey);
 
@@ -5163,7 +5163,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 			core->cons->event_resize = (RConsEvent)agraph_set_need_reload_nodes;
 			r_core_visual_prompt_input (core);
 			g->can->flags = r_cons_canvas_flags (core->cons);
-			r_cons_set_raw (true);
+			r_kons_set_raw (core->cons, true);
 			core->cons->event_resize = (RConsEvent)agraph_refresh_oneshot;
 			if (!g) {
 				g->need_reload_nodes = true; // maybe too slow and unnecessary sometimes? better be safe and reload
@@ -5301,7 +5301,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 		}
 	}
 	r_vector_fini (&g->ghits.word_list);
-	r_cons_break_pop ();
+	r_kons_break_pop (core->cons);
 	r_config_set_b (core->config, "asm.comments", asm_comments);
 	core->cons->event_resize = NULL;
 	core->cons->event_data = NULL;

@@ -2520,7 +2520,7 @@ static int cmd_kuery(void *data, const char *input) {
 		if (core->http_up) {
 			return false;
 		}
-		if (!r_cons_is_interactive ()) {
+		if (!r_cons_is_interactive (core->cons)) {
 			return false;
 		}
 		if (input[1] == ' ') {
@@ -3004,7 +3004,7 @@ static int cmd_panels(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg_v);
 		return false;
 	}
-	if (!r_cons_is_interactive ()) {
+	if (!r_cons_is_interactive (core->cons)) {
 		R_LOG_ERROR ("Panel mode requires scr.interactive=true");
 		return false;
 	}
@@ -3077,7 +3077,7 @@ static int cmd_visual(void *data, const char *input) {
 		return false;
 	}
 #endif
-	if (!r_cons_is_interactive ()) {
+	if (!r_cons_is_interactive (core->cons)) {
 		R_LOG_ERROR ("Visual mode requires scr.interactive=true");
 		return false;
 	}
@@ -3754,7 +3754,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		R_LOG_ERROR ("Pipes are not allowed in sandbox mode");
 		return -1;
 	}
-	bool si = r_cons_is_interactive ();
+	bool si = r_cons_is_interactive (core->cons);
 	r_config_set_b (core->config, "scr.interactive", false);
 	if (!r_config_get_b (core->config, "scr.color.pipe")) {
 		pipecolor = r_config_get_i (core->config, "scr.color");
@@ -4049,7 +4049,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		goto beach;
 	}
 	if ((st64)rep > 1 && rep > INTERACTIVE_MAX_REP) {
-		if (r_kons_is_interactive (cons)) {
+		if (r_cons_is_interactive (cons)) {
 			if (!r_kons_yesno (cons, 'n', "Are you sure to repeat this %"PFMT64d" times? (y/N)", rep)) {
 				goto beach;
 			}

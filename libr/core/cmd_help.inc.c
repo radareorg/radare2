@@ -1608,8 +1608,8 @@ static int cmd_help(void *data, const char *input) {
 		r_core_yank_hud_file (core, input + 1);
 		break;
 	case 'i': // "?i" input num
-		r_cons_set_raw(0);
-		if (!r_cons_is_interactive ()) {
+		r_kons_set_raw (core->cons, 0);
+		if (!r_cons_is_interactive (core->cons)) {
 			R_LOG_ERROR ("Not running in interactive mode");
 		} else {
 			switch (input[1]) {
@@ -1676,7 +1676,7 @@ static int cmd_help(void *data, const char *input) {
 				break;
 			}
 		}
-		r_cons_set_raw (0);
+		r_kons_set_raw (core->cons, 0);
 		break;
 	case 'w': // "?w"
 		{

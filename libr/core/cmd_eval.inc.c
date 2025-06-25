@@ -848,7 +848,7 @@ static int cmd_eval(void *data, const char *input) {
 			}
 		} else {
 			char *file = r_file_home (".radare2rc");
-			if (r_kons_is_interactive (cons)) {
+			if (r_cons_is_interactive (cons)) {
 				r_file_touch (file);
 				char *res = r_cons_editor (cons, file, NULL);
 				if (res) {

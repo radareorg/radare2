@@ -399,10 +399,6 @@ static bool lastMatters(RConsContext *C) {
 		&& !C->grep.json && !C->is_html);
 }
 
-R_API bool r_kons_is_interactive(RCons *cons) {
-	return cons->context->is_interactive;
-}
-
 R_API void r_kons_break_push(RCons *cons, RConsBreak cb, void *user) {
 	RConsContext *ctx = cons->context;
 	if (ctx->break_stack && r_stack_size (ctx->break_stack) > 0) {
@@ -448,7 +444,7 @@ R_API void r_kons_flush(RCons *cons) {
 		r_kons_reset (cons);
 		return;
 	}
-	if (r_kons_is_interactive (cons) && cons->fdout == 1) {
+	if (r_cons_is_interactive (cons) && cons->fdout == 1) {
 		/* Use a pager if the output doesn't fit on the terminal window. */
 		if (ctx->pageable && R_STR_ISNOTEMPTY (cons->pager) && ctx->buffer_len > 0 && r_str_char_count (ctx->buffer, '\n') >= cons->rows) {
 			ctx->buffer[ctx->buffer_len - 1] = 0;
@@ -500,7 +496,7 @@ R_API void r_kons_flush(RCons *cons) {
 	}
 	r_kons_highlight (cons, cons->highlight);
 
-	if (r_kons_is_interactive (cons) && !r_sandbox_enable (false)) {
+	if (r_cons_is_interactive (cons) && !r_sandbox_enable (false)) {
 		if (cons->linesleep > 0 && cons->linesleep < 1000) {
 			int i = 0;
 			int pagesize = R_MAX (1, cons->pagesize);
