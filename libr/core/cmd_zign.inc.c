@@ -285,7 +285,7 @@ static int cmd_za(void *data, const char *input) {
 		if (input[1] == '?') {
 			r_core_cmd_help_contains (core, help_msg_za, "zac");
 		} else {
-			r_jons_break_push (core->cons, NULL, NULL);
+			r_cons_break_push (core->cons, NULL, NULL);
 			r_sign_resolve_collisions (core->anal);
 			r_cons_break_pop (core->cons);
 		}

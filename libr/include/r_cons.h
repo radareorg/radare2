@@ -488,7 +488,6 @@ typedef struct r_cons_t {
 	int fix_rows;
 	int fix_columns;
 	bool break_lines;
-	int optimize;
 	// move into Completion
 	bool show_autocomplete_widget;
 	FILE *fdin; // FILE? and then int ??
@@ -907,7 +906,6 @@ R_API void r_cons_context_break_pop(RCons *cons, RConsContext *context, bool sig
 /* control */
 R_API char *r_cons_editor(RCons *cons, const char *file, const char *str);
 R_API void r_cons_print_clear(void);
-R_API void r_cons_echo(const char *msg);
 R_API void r_cons_zero(void);
 R_API void r_cons_highlight(const char *word);
 R_API void r_cons_clear(void);
@@ -1016,7 +1014,6 @@ R_API char *r_cons_password(const char *msg);
 R_API bool r_cons_set_cup(bool enable);
 R_API int r_cons_get_column(void);
 R_API char *r_cons_message(RCons *cons, const char *msg);
-R_API void r_cons_set_title(const char *str);
 R_API bool r_cons_enable_mouse(RCons *cons, const bool enable);
 R_API void r_cons_enable_highlight(RCons *cons, const bool enable);
 R_API const char* r_cons_get_rune(const ut8 ch);
@@ -1219,7 +1216,7 @@ R_API int r_kons_get_cursor(RCons *cons, int *rows);
 R_API void r_cons_show_cursor(RCons *cons, int cursor);
 R_API void r_cons_set_utf8(RCons *cons, bool b);
 R_API void r_cons_column(RCons *cons, int c);
-R_API void r_kons_set_title(RCons *cons, const char *str);
+R_API void r_cons_set_title(RCons *cons, const char *str);
 R_API void r_kons_zero(RCons *cons);
 R_API void r_kons_highlight(RCons *cons, const char *word);
 R_API char *r_kons_lastline(RCons *cons, int *len);

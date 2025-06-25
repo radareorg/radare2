@@ -971,10 +971,6 @@ R_API void r_cons_set_last_interactive(void) {
 	r_kons_set_last_interactive (I);
 }
 
-R_API void r_cons_set_title(const char *str) {
-	r_kons_set_title (I, str);
-}
-
 R_API void r_cons_zero(void) {
 	r_kons_zero (I);
 }
@@ -1547,6 +1543,52 @@ R_API bool r_cons_pop(RCons *cons) {
 		}
 	}
 	memcpy (cons->context, &tc, sizeof (tc));
+#endif
+}
+
+R_API void r_cons_echo(RCons *cons, const char *msg) {
+	if (msg) {
+		if (cons->echodata) {
+			r_strbuf_append (cons->echodata, msg);
+			r_strbuf_append_n (cons->echodata, "\n", 1);
+		} else {
+			cons->echodata = r_strbuf_new (msg);
+		}
+	} else {
+		if (cons->echodata) {
+			char *data = r_strbuf_drain (cons->echodata);
+			r_kons_print (cons, data);
+			r_cons_newline (cons);
+			cons->echodata = NULL;
+			free (data);
+		}
+	}
+}
+
+R_API void r_cons_show_cursor(RCons *I, int cursor) {
+	RConsContext *C = I->context;
+#if R2__WINDOWS__
+	if (I->vtmode) {
+#endif
+		if (write (1, cursor ? "\x1b[?25h" : "\x1b[?25l", 6) != 6) {
+			C->breaked = true;
+		}
+#if R2__WINDOWS__
+	} else {
+		static R_TH_LOCAL HANDLE hStdout = NULL;
+		static R_TH_LOCAL DWORD size = -1;
+		CONSOLE_CURSOR_INFO cursor_info;
+		if (!hStdout) {
+			hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
+		}
+		if (size == -1) {
+			GetConsoleCursorInfo (hStdout, &cursor_info);
+			size = cursor_info.dwSize;
+		}
+		cursor_info.dwSize = size;
+		cursor_info.bVisible = cursor ? TRUE : FALSE;
+		SetConsoleCursorInfo (hStdout, &cursor_info);
+	}
 #endif
 }
 

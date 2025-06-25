@@ -1325,7 +1325,7 @@ static int cmd_help(void *data, const char *input) {
 			}
 			break;
 		case 't': // "?et" "?e=t newtitle"
-			r_cons_set_title (r_str_trim_head_ro (input + 2));
+			r_cons_set_title (core->cons, r_str_trim_head_ro (input + 2));
 			break;
 		case ':': { // "?e:"
 				const char *arg = r_str_trim_head_ro (input + 2);
