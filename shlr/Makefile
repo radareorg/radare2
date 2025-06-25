@@ -7,26 +7,6 @@ include ../mk/${COMPILER}.mk
 include ../mk/darwin.mk
 
 
-# TODO: Delete this checks:
-ifeq ($(shell test -f ../ChangeLog -a -d capstone -a ! -d capstone/.git && echo 1),1)
-WITHOUT_PULL=1
-CS_RELEASE=0
-else
-WITHOUT_PULL=0
-
-# Build against last capstone release or next
-# TODO: Delete this checks:
-ifeq ($(shell test -e ../.git && echo 1),1)
-CS_RELEASE=0
-else
-ifeq ($(shell test -d capstone/.git && echo 1),1)
-CS_RELEASE=0
-else
-CS_RELEASE=1
-endif
-endif
-endif
-
 CAPSTONE_CFLAGS=
 # CAPSTONE_MAKEFLAGS?=CAPSTONE_ARCHS="arm aarch64"
 
@@ -38,7 +18,6 @@ WGET?=curl -o
 endif
 
 ifeq ($(CS_RELEASE),1)
-CS_PATCHES=0
 else
 ifeq ($(USE_CSNEXT),1)
 CS_ROOT=../subprojects/capstone-next
@@ -49,8 +28,6 @@ else
 CS_ROOT=../subprojects/capstone-v5
 endif
 endif
-
-CS_PATCHES=1
 endif
 
 .PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwinkd bochs sdbs
@@ -188,7 +165,7 @@ install-symlink symstall:
 uninstall deinstall:
 	rm -f ${DESTDIR}${LIBDIR}/libr_shlr.${EXT_AR}
 
-.PHONY: capstone capstone-sync capstone-build capstone-patch
+.PHONY: capstone capstone-sync capstone-build
 
 
 ifeq ($(WANT_CAPSTONE),0)
@@ -210,24 +187,7 @@ else
 
 ifeq ($(CS_RELEASE),1)
 
-capstone:
-	$(MAKE) patch-capstone
 
-# already implemented in capstone.sh
-patch-capstone capstone-patch:
-ifeq ($(CS_PATCHES),1)
-	if [ -d $(CS_ROOT) -a -d $(CS_ROOT)/.git ]; then \
-ifeq ($(USE_CS4),1)
-		cd $(CS_ROOT) && for PATCH in ../capstone-patches/v4/* ; do patch -p1 < $$PATCH ; done ; \
-else
-		cd $(CS_ROOT) && for PATCH in ../capstone-patches/v5/* ; do patch -p1 < $$PATCH ; done ; \
-endif
-	fi
-endif
-	mkdir -p $(CS_ROOT)/include/capstone
-	cp -rf $(CS_ROOT)/include/*.h $(CS_ROOT)/include/capstone
-
-patch-capstone capstone-patch:
 
 .PHONY: capstone capstone-sync
 endif
@@ -252,9 +212,6 @@ endif
 
 endif
 endif
-
-headsup:
-	[ "`cd $(CS_ROOT) && git rev-parse HEAD`" = "$(CS_TIP)" ]
 
 ../../radare2-webui:
 	cd ../.. ; git clone --depth 1 https://github.com/radareorg/radare2-webui

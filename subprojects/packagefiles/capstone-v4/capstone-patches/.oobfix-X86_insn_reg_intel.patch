@@ -1,0 +1,17 @@
+diff --git a/arch/X86/X86Mapping.c b/arch/X86/X86Mapping.c
+index f7d35d2..06827c3 100644
+--- a/arch/X86/X86Mapping.c
++++ b/arch/X86/X86Mapping.c
+@@ -2767,9 +2767,9 @@ static bool intel_regs_sorted = false;
+ // this is to handle instructions embedding accumulate registers into AsmStrs[]
+ x86_reg X86_insn_reg_intel(unsigned int id, enum cs_ac_type *access)
+ {
+-	unsigned int first = 0;
+-	unsigned int last = ARR_SIZE(insn_regs_intel) - 1;
+-	unsigned int mid = ARR_SIZE(insn_regs_intel) / 2;
++	int first = 0;
++	int last = ARR_SIZE(insn_regs_intel) - 1;
++	int mid = ARR_SIZE(insn_regs_intel) / 2;
+
+ 	if (!intel_regs_sorted) {
+ 		memcpy (insn_regs_intel_sorted, insn_regs_intel,

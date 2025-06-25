@@ -106,7 +106,6 @@ while : ; do
 		;;
 	"--with-capstone4")
 		export USE_CS5=1
-		rm -rf shlr/capstone
 		;;
 	"--install")
 		export INSTALL_TARGET="install"
@@ -207,20 +206,6 @@ else
 	echo "Warning: Cannot find system wide capstone"
 fi
 
-if [ "$NEED_CAPSTONE" = 1 ]; then
-	if [ ! -d shlr/capstone/.git -a ! -d .git ]; then
-		NEED_CAPSTONE=0
-	fi
-fi
-
-if [ "$NEED_CAPSTONE" = 1 ]; then
-	if [ -d shlr/capstone ]; then
-		${MAKE} -C shlr headsup 2> /dev/null || rm -rf shlr/capstone
-	fi
-	if [ ! -d shlr/capstone ]; then
-		./preconfigure
-	fi
-fi
 echo "ARGS=$ARGS"
 
 if [ "${M32}" = 1 ]; then

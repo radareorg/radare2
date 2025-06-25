@@ -13,38 +13,12 @@ else
   capstone_version = get_option('use_capstone_version')
   message('Use bundled capstone: ' + capstone_version)
 
-  patches_files = []
-  if capstone_version == 'next'
-    cs = subproject('capstone-next')
-    patches_files = [
-      'fix-x86-16.patch',
-    ]
-  elif capstone_version == 'v5'
-    cs = subproject('capstone-v5')
-    patches_files = [
-      'fix-x86-16.patch'
-    ]
-  elif capstone_version == 'v4'
-    cs = subproject('capstone-v4')
-    patches_files = [
-      'capstone-calloc.patch',
-      'fix-x86-16.patch',
-      'sparc-crash.patch',
-      'sstream-null.patch'
-    ]
+  fs = import('fs')
+  if fs.is_file('../subprojects/capstone-' + capstone_version + '.wrap')
+    cs = subproject('capstone-' + capstone_version)
   else
     error('Wrong capstone version selected. Please use one of the supported versions.')
   endif
-
-  message('Patching capstone with radare\'s patches')
-  foreach file : patches_files
-    patch_path = join_paths(meson.current_source_dir(), 'capstone-patches', file)
-    patch_cmd_str = '-C @0@ apply -p1 @1@'.format(capstone_path, patch_path)
-    patch_cmd = run_command(git_exe, patch_cmd_str.split())
-    if patch_cmd.returncode() != 0
-      warning('Cannot apply patch ' + file)
-    endif
-  endforeach
 
   capstone_dep = cs.get_variable('capstone_dep')
 endif
