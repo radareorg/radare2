@@ -1169,18 +1169,6 @@ static int r_cmd_java_resolve_cp_idx(RCore *core, RBinJavaObj *obj, ut16 idx) {
 	return true;
 }
 
-static int r_cmd_java_resolve_cp_address(RCore *core, RBinJavaObj *obj, ut16 idx) {
-	if (obj && idx) {
-		ut64 addr = r_bin_java_resolve_cp_idx_address (obj, idx);
-		if (addr == UT64_MAX) {
-			R_LOG_ERROR ("Unable to resolve CP Object @ index: 0x%04x", idx);
-		} else {
-			r_kons_printf (core->cons, "0x%" PFMT64x "\n", addr);
-		}
-	}
-	return true;
-}
-
 static int r_cmd_java_handle_resolve_cp(RCore *core, const char *cmd) {
 	RAnal *anal = get_anal (core);
 	char c_type = cmd && *cmd? *cmd: 0;
@@ -1208,6 +1196,12 @@ static int r_cmd_java_handle_resolve_cp(RCore *core, const char *cmd) {
 			return true;
 		case 'a': // r_cmd_java_resolve_cp_address (core, obj, idx);
 			{
+				ut64 addr = r_bin_java_resolve_cp_idx_address (obj, idx);
+				if (addr == UT64_MAX) {
+					R_LOG_ERROR ("Unable to resolve CP Object @ index: 0x%04x", idx);
+				} else {
+					r_kons_printf (core->cons, "0x%" PFMT64x "\n", addr);
+				}
 			}
 			return true;
 		case 's': // r_cmd_java_resolve_cp_summary (obj, idx);

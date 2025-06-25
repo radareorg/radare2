@@ -895,7 +895,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 		switch (input[0]) {
 		case 'f': // "Cf?"
 			r_core_cmd_help_match (core, help_msg_C, "Cf");
-			r_cons_println (core->cons, 
+			r_cons_println (core->cons,
 				"'sz' indicates the byte size taken up by struct.\n"
 				"'fmt' is a 'pf?' style format string. It controls only the display format.\n\n"
 				"You may wish to have 'sz' != sizeof (fmt) when you have a large struct\n"
