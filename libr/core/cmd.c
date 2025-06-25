@@ -434,7 +434,7 @@ static const RCoreHelpMessage help_msg_v = {
 };
 
 R_API void r_core_cmd_help(const RCore *core, RCoreHelpMessage help) {
-	r_kons_cmd_help (core->cons, help, core->print->flags & R_PRINT_FLAGS_COLOR);
+	r_cons_cmd_help (core->cons, help, core->print->flags & R_PRINT_FLAGS_COLOR);
 }
 
 R_API void r_core_cmd_help_json(const RCore *core, RCoreHelpMessage help) {
@@ -3532,7 +3532,7 @@ core->cons->context->noflush = false;
 				}
 				r_kons_pop (core->cons);
 					if (out && olen > 0) {
-						r_kons_write (core->cons, out, olen);
+						r_cons_write (core->cons, out, olen);
 					}
 					free (out);
 			} else {
@@ -3762,7 +3762,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		str = r_core_cmd_str (core, radare_cmd);
 		r_sys_cmd_str_full (shell_cmd + 1, str, -1, &out, &olen, NULL);
 		free (str);
-		r_kons_write (core->cons, out, olen);
+		r_cons_write (core->cons, out, olen);
 		free (out);
 		ret = 0;
 	}
@@ -4055,7 +4055,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 
 	bool is_root_cmd = core->cur_cmd_depth + 1 == core->max_cmd_depth;
 	if (is_root_cmd) {
-		r_kons_break_clear (core->cons);
+		r_cons_break_clear (core->cons);
 	}
 	r_kons_break_push (core->cons, NULL, NULL);
 	R_CRITICAL_ENTER (core);
@@ -4111,7 +4111,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	}
 	r_kons_break_pop (core->cons);
 	if (is_root_cmd) {
-		r_kons_break_clear (core->cons);
+		r_cons_break_clear (core->cons);
 	}
 	if (tmpseek) {
 		r_core_seek (core, orig_offset, true);

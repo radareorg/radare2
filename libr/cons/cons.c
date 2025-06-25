@@ -84,12 +84,12 @@ R_API void r_cons_print_justify(RCons *cons, const char *str, int j, char c) {
 	int i, o, len;
 	for (o = i = len = 0; str[i]; i++, len++) {
 		if (str[i] == '\n') {
-			r_kons_memset (cons, ' ', j);
+			r_cons_memset (cons, ' ', j);
 			if (c) {
-				r_kons_memset (cons, c, 1);
-				r_kons_memset (cons, ' ', 1);
+				r_cons_memset (cons, c, 1);
+				r_cons_memset (cons, ' ', 1);
 			}
-			r_cons_write (str + o, len);
+			r_cons_write (cons, str + o, len);
 			if (str[o + len] == '\n') {
 				r_kons_newline (cons);
 			}
@@ -98,7 +98,7 @@ R_API void r_cons_print_justify(RCons *cons, const char *str, int j, char c) {
 		}
 	}
 	if (len > 1) {
-		r_kons_write (cons, str + o, len);
+		r_cons_write (cons, str + o, len);
 	}
 }
 
@@ -128,7 +128,7 @@ R_API void r_cons_print_at(RCons *cons, const char *_str, int x, char y, int w, 
 			cols = R_MIN (w, ansilen);
 			const char *end = r_str_ansi_chrn (str + o, cols);
 			cols = end - str + o;
-			r_kons_write (cons, str + o, R_MIN (len, cols));
+			r_cons_write (cons, str + o, R_MIN (len, cols));
 			o = i + 1;
 			len = 0;
 			rows++;
@@ -136,7 +136,7 @@ R_API void r_cons_print_at(RCons *cons, const char *_str, int x, char y, int w, 
 	}
 	if (len > 1) {
 		r_kons_gotoxy (cons, x, y + rows);
-		r_kons_write (cons, str + o, len);
+		r_cons_write (cons, str + o, len);
 	}
 	r_kons_print (cons, Color_RESET);
 	r_kons_print (cons, R_CONS_CURSOR_RESTORE);
@@ -165,8 +165,10 @@ R_API RCons *r_cons_singleton(void) {
 	return I;
 }
 
-R_API void r_cons_break_clear(void) {
-	r_kons_break_clear (I);
+R_API void r_cons_break_clear(RCons *cons) {
+	RConsContext *ctx = cons->context;
+	ctx->was_breaked = false;
+	ctx->breaked = false;
 }
 
 R_API void r_cons_context_break_push(RCons* cons, RConsContext *context, RConsBreak cb, void *user, bool sig) {
@@ -648,11 +650,6 @@ R_API int r_cons_get_column(void) {
 	return r_kons_get_column (I);
 }
 
-/* final entrypoint for adding stuff in the buffer screen */
-R_API int r_cons_write(const char *str, int len) {
-	return r_kons_write (I, str, len);
-}
-
 R_API void r_cons_print(const char *str) {
 	r_kons_print (I, str);
 }
@@ -996,3 +993,105 @@ R_API void r_cons_set_raw(bool is_raw) {
 R_API void r_cons_set_utf8(bool b) {
 	r_kons_set_utf8 (I, b);
 }
+
+static int kons_chop(RCons *cons, int len) {
+	RConsContext *ctx = cons->context;
+	if (ctx->buffer_limit > 0) {
+		if (ctx->buffer_len + len >= ctx->buffer_limit) {
+			if (ctx->buffer_len >= ctx->buffer_limit) {
+				ctx->breaked = true;
+				return 0;
+			}
+			return ctx->buffer_limit - ctx->buffer_len;
+		}
+	}
+	return len;
+}
+
+R_API void r_cons_memset(RCons *cons, char ch, int len) {
+	RConsContext *C = cons->context;
+	if (C->breaked) {
+		return;
+	}
+	if (!cons->null && len > 0) {
+		if ((len = kons_chop (cons, len)) < 1) {
+			return;
+		}
+		if (kons_palloc (cons, len + 1)) {
+			memset (C->buffer + C->buffer_len, ch, len);
+			C->buffer_len += len;
+			C->buffer[C->buffer_len] = 0;
+		}
+	}
+}
+
+R_API int r_cons_write(RCons *cons, const char *str, int len) {
+	R_RETURN_VAL_IF_FAIL (str && len >= 0, -1);
+	RConsContext *ctx = cons->context;
+	if (len < 1 || ctx->breaked) {
+		return 0;
+	}
+
+	if (cons->echo) {
+		// Here to silent pedantic meson flags ...
+		int rlen = write (2, str, len);
+		if (rlen != len) {
+			return rlen;
+		}
+	}
+	if (str && len > 0 && !cons->null) {
+		R_CRITICAL_ENTER (cons);
+		if (kons_palloc (cons, len + 1)) {
+			int choplen = kons_chop (cons, len);
+			if (choplen > len || choplen < 1) {
+				// R_LOG_ERROR ("CHOP ISSUE");
+				R_CRITICAL_LEAVE (cons);
+				return 0;
+			}
+			len = choplen;
+			memcpy (ctx->buffer + ctx->buffer_len, str, len);
+			ctx->buffer_len += len;
+			ctx->buffer[ctx->buffer_len] = 0;
+		}
+		R_CRITICAL_LEAVE (cons);
+	}
+	if (ctx->flush) {
+		r_kons_flush (cons);
+	}
+	if (cons->break_word && str && len > 0) {
+		if (r_mem_mem ((const ut8*)str, len, (const ut8*)cons->break_word, cons->break_word_len)) {
+			ctx->breaked = true;
+		}
+	}
+	return len;
+}
+
+R_API void r_cons_mark(RCons *cons, ut64 addr, const char *name) {
+	RConsMark *mark = R_NEW0 (RConsMark);
+	RConsContext *ctx = cons->context;
+	mark->addr = addr;
+	int row = 0, col = r_kons_get_cursor (cons, &row);
+	mark->name = strdup (name); // TODO. use a const pool instead
+	mark->pos = ctx->buffer_len;
+	mark->col = col;
+	mark->row = row;
+	r_list_append (ctx->marks, mark);
+}
+R_API RConsMark *r_cons_mark_at(RCons *cons, ut64 addr, const char *name) {
+	RConsContext *C = cons->context;
+	RListIter *iter;
+	RConsMark *mark;
+	r_list_foreach (C->marks, iter, mark) {
+		if (R_STR_ISNOTEMPTY (name)) {
+			if (strcmp (mark->name, name)) {
+				continue;
+			}
+			return mark;
+		}
+		if (addr != UT64_MAX && mark->addr == addr) {
+			return mark;
+		}
+	}
+	return NULL;
+}
+

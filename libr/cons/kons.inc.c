@@ -3,20 +3,6 @@
 #include <r_cons.h>
 #include "private.h"
 
-static int kons_chop(RCons *cons, int len) {
-	RConsContext *ctx = cons->context;
-	if (ctx->buffer_limit > 0) {
-		if (ctx->buffer_len + len >= ctx->buffer_limit) {
-			if (ctx->buffer_len >= ctx->buffer_limit) {
-				ctx->breaked = true;
-				return 0;
-			}
-			return ctx->buffer_limit - ctx->buffer_len;
-		}
-	}
-	return len;
-}
-
 #if R2__WINDOWS__
 static int win_xterm_get_cur_pos(RCons *cons, int *xpos) {
 	int ypos = 0;
@@ -121,7 +107,7 @@ R_API void r_kons_print(RCons *cons, const char *str) {
 	}
 	size_t len = strlen (str);
 	if (len > 0) {
-		r_kons_write (cons, str, len);
+		r_cons_write (cons, str, len);
 	}
 }
 
@@ -142,64 +128,6 @@ now the console color is reset with each \n (same stuff do it here but in correc
 #endif
 	if (cons->is_html) r_cons_print ("<br />\n");
 #endif
-}
-
-R_API int r_kons_write(RCons *cons, const char *str, int len) {
-	R_RETURN_VAL_IF_FAIL (str && len >= 0, -1);
-	RConsContext *ctx = cons->context;
-	if (len < 1 || ctx->breaked) {
-		return 0;
-	}
-
-	if (cons->echo) {
-		// Here to silent pedantic meson flags ...
-		int rlen = write (2, str, len);
-		if (rlen != len) {
-			return rlen;
-		}
-	}
-	if (str && len > 0 && !cons->null) {
-		R_CRITICAL_ENTER (cons);
-		if (kons_palloc (cons, len + 1)) {
-			int choplen = kons_chop (cons, len);
-			if (choplen > len || choplen < 1) {
-				// R_LOG_ERROR ("CHOP ISSUE");
-				R_CRITICAL_LEAVE (cons);
-				return 0;
-			}
-			len = choplen;
-			memcpy (ctx->buffer + ctx->buffer_len, str, len);
-			ctx->buffer_len += len;
-			ctx->buffer[ctx->buffer_len] = 0;
-		}
-		R_CRITICAL_LEAVE (cons);
-	}
-	if (ctx->flush) {
-		r_kons_flush (cons);
-	}
-	if (cons->break_word && str && len > 0) {
-		if (r_mem_mem ((const ut8*)str, len, (const ut8*)cons->break_word, cons->break_word_len)) {
-			ctx->breaked = true;
-		}
-	}
-	return len;
-}
-
-R_API void r_kons_memset(RCons *cons, char ch, int len) {
-	RConsContext *C = cons->context;
-	if (C->breaked) {
-		return;
-	}
-	if (!cons->null && len > 0) {
-		if ((len = kons_chop (cons, len)) < 1) {
-			return;
-		}
-		if (kons_palloc (cons, len + 1)) {
-			memset (C->buffer + C->buffer_len, ch, len);
-			C->buffer_len += len;
-			C->buffer[C->buffer_len] = 0;
-		}
-	}
 }
 
 R_API void r_kons_printf_list(RCons *cons, const char *format, va_list ap) {
@@ -426,7 +354,7 @@ R_API void r_kons_last(RCons *cons) {
 	}
 	ctx->lastMode = true;
 	if (ctx->lastLength > 0) {
-		r_cons_write (ctx->lastOutput, ctx->lastLength);
+		r_cons_write (cons, ctx->lastOutput, ctx->lastLength);
 	}
 }
 
@@ -1331,43 +1259,15 @@ R_API void r_kons_breakword(RCons *cons, const char * R_NULLABLE s) {
 	}
 }
 
-R_API void r_kons_clear_buffer(RCons *cons) {
+#if 0
+R_API void r_cons_clear_buffer(RCons *cons) {
 	if (cons->vtmode) {
 		if (write (1, "\x1b" "c\x1b[3J", 6) != 6) {
 			cons->context->breaked = true;
 		}
 	}
 }
-
-R_API void r_cons_mark(RCons *cons, ut64 addr, const char *name) {
-	RConsMark *mark = R_NEW0 (RConsMark);
-	RConsContext *ctx = cons->context;
-	mark->addr = addr;
-	int row = 0, col = r_kons_get_cursor (cons, &row);
-	mark->name = strdup (name); // TODO. use a const pool instead
-	mark->pos = ctx->buffer_len;
-	mark->col = col;
-	mark->row = row;
-	r_list_append (ctx->marks, mark);
-}
-
-R_API RConsMark *r_cons_mark_at(RCons *cons, ut64 addr, const char *name) {
-	RConsContext *C = cons->context;
-	RListIter *iter;
-	RConsMark *mark;
-	r_list_foreach (C->marks, iter, mark) {
-		if (R_STR_ISNOTEMPTY (name)) {
-			if (strcmp (mark->name, name)) {
-				continue;
-			}
-			return mark;
-		}
-		if (addr != UT64_MAX && mark->addr == addr) {
-			return mark;
-		}
-	}
-	return NULL;
-}
+#endif
 
 R_API bool r_kons_is_breaked(RCons *cons) {
 #if WANT_DEBUGSTUFF
@@ -1425,83 +1325,5 @@ R_API void r_kons_sleep_end(RCons *cons, void *user) {
 		cons->cb_sleep_end (cons->user, user);
 	}
 	R_CRITICAL_LEAVE (cons);
-}
-
-R_API void r_kons_break_clear(RCons *cons) {
-	RConsContext *ctx = cons->context;
-	ctx->was_breaked = false;
-	ctx->breaked = false;
-}
-
-R_API void r_kons_cmd_help(RCons *cons, RCoreHelpMessage help, bool use_color) {
-	const char *pal_input_color = use_color ? cons->context->pal.input : "";
-	const char *pal_args_color = use_color ? cons->context->pal.args : "";
-	const char *pal_help_color = use_color ? cons->context->pal.help : "";
-	const char *pal_reset = use_color ? cons->context->pal.reset : "";
-	int i, max_length = 0, padding = 0;
-	const char *usage_str = "Usage:";
-	const char *help_cmd = NULL, *help_args = NULL, *help_desc = NULL;
-	if (!pal_input_color) {
-		pal_input_color = "";
-	}
-	if (!pal_args_color) {
-		pal_args_color = "";
-	}
-	if (!pal_help_color) {
-		pal_help_color = "";
-	}
-	if (!pal_reset) {
-		pal_reset = Color_RESET;
-	}
-
-	// calculate padding for description text in advance
-	for (i = 0; help[i]; i += 3) {
-		help_cmd = help[i + 0];
-		help_args = help[i + 1];
-
-		int len_cmd = strlen (help_cmd);
-		int len_args = strlen (help_args);
-		if (i) {
-			max_length = R_MAX (max_length, len_cmd + len_args);
-		}
-	}
-
-	for (i = 0; help[i]; i += 3) {
-		help_cmd  = help[i + 0];
-		help_args = help[i + 1];
-		help_desc = help[i + 2];
-
-		if (r_str_startswith (help_cmd, usage_str)) {
-			/* Usage header */
-			const char *afterusage = help_cmd + strlen (usage_str);
-			r_cons_printf ("Usage:%s%s", pal_args_color, afterusage);
-			if (help_args[0]) {
-				r_cons_printf (" %s", help_args);
-			}
-			if (help_desc[0]) {
-				r_cons_printf ("  %s", help_desc);
-			}
-			r_cons_printf ("%s\n", pal_reset);
-		} else if (!help_args[0] && !help_desc[0]) {
-			/* Section header, no need to indent it */
-			r_cons_printf ("%s%s%s\n", pal_help_color, help_cmd, pal_reset);
-		} else {
-			/* Body of help text, indented */
-			int str_length = strlen (help_cmd) + strlen (help_args);
-			padding = R_MAX ((max_length - str_length), 0);
-			r_cons_printf ("| %s%s%s%s%*s  %s%s%s\n",
-				pal_input_color, help_cmd,
-				pal_args_color, help_args,
-				padding, "",
-				pal_help_color, help_desc, pal_reset);
-		}
-	}
-}
-
-R_API void r_kons_set_click(RCons *cons, int x, int y) {
-	cons->click_x = x;
-	cons->click_y = y;
-	cons->click_set = true;
-	cons->mouse_event = 1;
 }
 

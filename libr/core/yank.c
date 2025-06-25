@@ -290,7 +290,7 @@ R_API bool r_core_yank_cat(RCore *core, ut64 pos) {
 			char *buf = R_NEWS (char, sz);
 			if (buf) {
 				r_buf_read_at (core->yank_buf, pos, (ut8 *)buf, sz);
-				r_kons_write (core->cons, buf, sz);
+				r_cons_write (core->cons, buf, sz);
 				r_kons_newline (core->cons);
 				free (buf);
 				return true;
@@ -315,7 +315,7 @@ R_API bool r_core_yank_cat_string(RCore *core, ut64 pos) {
 			}
 			r_buf_read_at (core->yank_buf, pos, (ut8 *)buf, sz);
 			int len = r_str_nlen (buf, sz);
-			r_kons_write (core->cons, buf, len);
+			r_cons_write (core->cons, buf, len);
 			r_kons_newline (core->cons);
 			free (buf);
 			return true;

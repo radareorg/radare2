@@ -1537,7 +1537,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 			size_t out_len = 0;
 			ut8 *out = r_sys_unxz (data, size, &out_len);
 			if (out) {
-				r_kons_write (core->cons, (const char *)out, out_len);
+				r_cons_write (core->cons, (const char *)out, out_len);
 				free (out);
 			}
 		}
@@ -4569,7 +4569,7 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 		default:{ // p--
 			RCons *cons = core->cons;
 			if (off >= at && off < ate) {
-				r_kons_write (cons, "^", 1);
+				r_cons_write (cons, "^", 1);
 			} else {
 				RIOMap *s = r_io_map_get_at (core->io, at);
 				if (use_color) {
@@ -4584,19 +4584,19 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 					}
 				}
 				if (as->block[p].strings > 0) {
-					r_kons_write (cons, "z", 1);
+					r_cons_write (cons, "z", 1);
 				} else if (as->block[p].symbols > 0) {
-					r_kons_write (cons, "s", 1);
+					r_cons_write (cons, "s", 1);
 				} else if (as->block[p].functions > 0) {
-					r_kons_write (cons, "F", 1);
+					r_cons_write (cons, "F", 1);
 				} else if (as->block[p].comments > 0) {
-					r_kons_write (cons, "c", 1);
+					r_cons_write (cons, "c", 1);
 				} else if (as->block[p].flags > 0) {
-					r_kons_write (cons, ".", 1);
+					r_cons_write (cons, ".", 1);
 				} else if (as->block[p].in_functions > 0) {
-					r_kons_write (cons, "f", 1);
+					r_cons_write (cons, "f", 1);
 				} else {
-					r_kons_write (cons, "_", 1);
+					r_cons_write (cons, "_", 1);
 				}
 			}
 		}
@@ -7803,7 +7803,7 @@ static int cmd_print(void *data, const char *input) {
 					if (input[2] == 'l') { // "psnl"
 						r_cons_printf ("%d\n", (int)len);
 					} else {
-						r_kons_write (core->cons, (const char *)buf, len);
+						r_cons_write (core->cons, (const char *)buf, len);
 						r_kons_newline (core->cons);
 					}
 				} else {
@@ -7811,7 +7811,7 @@ static int cmd_print(void *data, const char *input) {
 						r_kons_print (core->cons, "0\n");
 					} else {
 						// cant find newline, print block
-						r_kons_write (core->cons, (const char *)core->block, core->blocksize);
+						r_cons_write (core->cons, (const char *)core->block, core->blocksize);
 						r_kons_newline (core->cons);
 					}
 				}
@@ -8213,7 +8213,7 @@ static int cmd_print(void *data, const char *input) {
 				ut8 *out;
 				out = r_inflate (block, core->blocksize, NULL, &outlen);
 				if (out) {
-					r_kons_write (core->cons, (const char *) out, outlen);
+					r_cons_write (core->cons, (const char *) out, outlen);
 				}
 				free (out);
 			}

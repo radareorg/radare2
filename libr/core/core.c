@@ -2153,7 +2153,7 @@ static void r_core_setenv(RCore *core) {
 }
 
 static int mywrite(const ut8 *buf, int len) {
-	return r_kons_write (r_cons_singleton (), (const char *)buf, len);
+	return r_cons_write (r_cons_singleton (), (const char *)buf, len);
 }
 
 static bool exists_var(RPrint *print, ut64 func_addr, char *str) {

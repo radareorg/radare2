@@ -56,7 +56,68 @@ R_API void r_cons_cmd_help_json(RCons *cons, RCoreHelpMessage help) {
 
 /* Print a coloured help message */
 R_API void r_cons_cmd_help(RCons *cons, RCoreHelpMessage help, bool use_color) {
-	r_kons_cmd_help (cons, help, use_color);
+	const char *pal_input_color = use_color ? cons->context->pal.input : "";
+	const char *pal_args_color = use_color ? cons->context->pal.args : "";
+	const char *pal_help_color = use_color ? cons->context->pal.help : "";
+	const char *pal_reset = use_color ? cons->context->pal.reset : "";
+	int i, max_length = 0, padding = 0;
+	const char *usage_str = "Usage:";
+	const char *help_cmd = NULL, *help_args = NULL, *help_desc = NULL;
+	if (!pal_input_color) {
+		pal_input_color = "";
+	}
+	if (!pal_args_color) {
+		pal_args_color = "";
+	}
+	if (!pal_help_color) {
+		pal_help_color = "";
+	}
+	if (!pal_reset) {
+		pal_reset = Color_RESET;
+	}
+
+	// calculate padding for description text in advance
+	for (i = 0; help[i]; i += 3) {
+		help_cmd = help[i + 0];
+		help_args = help[i + 1];
+
+		int len_cmd = strlen (help_cmd);
+		int len_args = strlen (help_args);
+		if (i) {
+			max_length = R_MAX (max_length, len_cmd + len_args);
+		}
+	}
+
+	for (i = 0; help[i]; i += 3) {
+		help_cmd  = help[i + 0];
+		help_args = help[i + 1];
+		help_desc = help[i + 2];
+
+		if (r_str_startswith (help_cmd, usage_str)) {
+			/* Usage header */
+			const char *afterusage = help_cmd + strlen (usage_str);
+			r_cons_printf ("Usage:%s%s", pal_args_color, afterusage);
+			if (help_args[0]) {
+				r_cons_printf (" %s", help_args);
+			}
+			if (help_desc[0]) {
+				r_cons_printf ("  %s", help_desc);
+			}
+			r_cons_printf ("%s\n", pal_reset);
+		} else if (!help_args[0] && !help_desc[0]) {
+			/* Section header, no need to indent it */
+			r_cons_printf ("%s%s%s\n", pal_help_color, help_cmd, pal_reset);
+		} else {
+			/* Body of help text, indented */
+			int str_length = strlen (help_cmd) + strlen (help_args);
+			padding = R_MAX ((max_length - str_length), 0);
+			r_cons_printf ("| %s%s%s%s%*s  %s%s%s\n",
+				pal_input_color, help_cmd,
+				pal_args_color, help_args,
+				padding, "",
+				pal_help_color, help_desc, pal_reset);
+		}
+	}
 }
 
 /* See r_cons_cmd_help().

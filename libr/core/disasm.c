@@ -4651,7 +4651,7 @@ static void ds_align_comment(RDisasmState *ds) {
 	if (cells < cmtcol) {
 		int len = cmtcol - cells;
 		if (len < cols && len > 0) {
-			r_kons_memset (cons, ' ', len);
+			r_cons_memset (cons, ' ', len);
 		}
 	}
 	r_kons_print (cons, " ");
@@ -5244,7 +5244,7 @@ static void ds_print_relocs(RDisasmState *ds) {
 		int utf8len = r_utf8_strlen ((const ut8*)ll);
 		int cells = utf8len - (cstrlen - ansilen);
 		int len = ds->cmtcol - cells;
-		r_kons_memset (cons, ' ', len);
+		r_cons_memset (cons, ' ', len);
 		int pref = demangle? 'd': 0;
 		// if (demangle) { demname = r_bin_demangle (core->bin->cur, lang, rel->import->name, rel->vaddr, keep_lib); }
 		// demname = r_bin_demangle (core->bin->cur, lang, rel->symbol->name, rel->symbol->vaddr, keep_lib);

@@ -1142,7 +1142,7 @@ static void cmd_curl(RCore *core, const char *arg) {
 				? r_socket_http_post (arg, NULL, postdata, NULL, &len)
 				: r_socket_http_get (arg, NULL, NULL, &len);
 			if (s) {
-				r_kons_write (core->cons, s, len);
+				r_cons_write (core->cons, s, len);
 				free (s);
 				r_kons_newline (core->cons);
 			}

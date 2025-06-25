@@ -47,7 +47,7 @@ static int parseMouseEvent(RCons *cons) {
 			ypos[i] = ch;
 		}
 		ypos[i] = 0;
-		r_kons_set_click (cons, atoi (xpos), atoi (ypos));
+		r_cons_set_click (cons, atoi (xpos), atoi (ypos));
 		(void) r_cons_readchar (cons);
 		// ignored
 		int ch = r_cons_readchar (cons);
@@ -201,7 +201,7 @@ R_API int r_cons_arrow_to_hjkl(RCons *cons, int ch) {
 				pos[p++] = 0;
 				y = atoi (pos);
 				if (ch == 'm') { // mouse up only
-					r_kons_set_click (cons, x, y);
+					r_cons_set_click (cons, x, y);
 				}
 			}
 			return 0;
@@ -482,14 +482,14 @@ static int readchar_w32(RCons *cons, ut32 usec) {
 				case FROM_LEFT_1ST_BUTTON_PRESSED:
 					GetConsoleScreenBufferInfo (GetStdHandle (STD_OUTPUT_HANDLE), &info);
 					int rel_y = irInBuf.Event.MouseEvent.dwMousePosition.Y - info.srWindow.Top;
-					r_kons_set_click (cons, irInBuf.Event.MouseEvent.dwMousePosition.X + 1, rel_y + 1);
+					r_cons_set_click (cons, irInBuf.Event.MouseEvent.dwMousePosition.X + 1, rel_y + 1);
 					ch = UT8_MAX;
 					break;
 				} // TODO: Handle more buttons?
 			}
 
 			if (click_n_drag) {
-				r_kons_set_click (cons, irInBuf.Event.MouseEvent.dwMousePosition.X + 1, irInBuf.Event.MouseEvent.dwMousePosition.Y + 1);
+				r_cons_set_click (cons, irInBuf.Event.MouseEvent.dwMousePosition.X + 1, irInBuf.Event.MouseEvent.dwMousePosition.Y + 1);
 				ch = UT8_MAX;
 			}
 

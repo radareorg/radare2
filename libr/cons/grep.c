@@ -92,7 +92,7 @@ static void grep_word_free(RConsGrepWord *gw) {
 }
 
 R_API void r_cons_grep_help(RCons *cons) {
-	r_kons_cmd_help (cons, help_detail_tilde, true);
+	r_cons_cmd_help (cons, help_detail_tilde, true);
 }
 
 R_API void r_cons_grep_expression(RCons *cons, const char *str) {

@@ -828,14 +828,14 @@ static void selection_widget_draw(RCons *cons) {
 		r_kons_printf (cons, "%s", sel_widget->selection == y + scroll? selected_color: background_color);
 		r_kons_printf (cons, "%-*.*s", sel_widget->w, sel_widget->w, option);
 		if (scrollbar && R_BETWEEN (scrollbar_y, y, scrollbar_y + scrollbar_l)) {
-			r_kons_write (cons, Color_INVERT " "Color_INVERT_RESET, 10);
+			r_cons_write (cons, Color_INVERT " "Color_INVERT_RESET, 10);
 		} else {
-			r_kons_write (cons, " ", 1);
+			r_cons_write (cons, " ", 1);
 		}
 	}
 
 	r_kons_gotoxy (cons, pos_x + line->buffer.length, pos_y);
-	r_kons_write (cons, Color_RESET_BG, 5);
+	r_cons_write (cons, Color_RESET_BG, 5);
 	r_kons_flush (cons);
 }
 
