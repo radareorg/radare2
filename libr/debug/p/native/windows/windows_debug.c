@@ -988,7 +988,7 @@ end:
 		r_list_purge (dbg->threads);
 		r_list_purge (lib_list);
 	}
-	r_cons_break_pop ();
+	r_kons_break_pop (core->cons);
 	return ret;
 }
 

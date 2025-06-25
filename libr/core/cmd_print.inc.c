@@ -7554,18 +7554,18 @@ static int cmd_print(void *data, const char *input) {
 				if (!l) {
 					l = len;
 				}
-				r_cons_break_push (NULL, NULL);
+				r_kons_break_push (core->cons, NULL, NULL);
 				for (i = j = 0; i < core->blocksize && j < l; i += ret, j++) {
 					ret = r_asm_disassemble (core->rasm, &asmop, block + i, len - i);
 					if (r_cons_is_breaked (core->cons)) {
 						break;
 					}
-					r_cons_printf ("%d\n", ret);
+					r_kons_printf (core->cons, "%d\n", ret);
 					if (ret < 1) {
 						ret = 1;
 					}
 				}
-				r_cons_break_pop ();
+				r_kons_break_pop (core->cons);
 				pd_result = false;
 			}
 			break;
@@ -8345,7 +8345,7 @@ static int cmd_print(void *data, const char *input) {
 			/* Don't show comments in default case */
 			core->print->use_comments = false;
 		}
-		r_cons_break_push (NULL, NULL);
+		r_kons_break_push (core->cons, NULL, NULL);
 		switch (input[1]) {
 		case 'j': // "pxj"
 			if (len < core->blocksize) {
@@ -8861,7 +8861,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		}
-		r_cons_break_pop ();
+		r_kons_break_pop (core->cons);
 		break;
 	case '2': // "p2"
 		if (l) {

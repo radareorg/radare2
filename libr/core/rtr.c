@@ -1382,7 +1382,7 @@ R_API int r_core_rtr_cmds(RCore *core, const char *port) {
 
 	R_LOG_INFO ("Listening for commands on port %s", port);
 	listenport = port;
-	r_cons_break_push ((RConsBreak)r_core_rtr_http_stop, core);
+	r_kons_break_push (core->cons, (RConsBreak)r_core_rtr_http_stop, core);
 	for (;;) {
 		if (r_cons_is_breaked (core->cons)) {
 			break;
@@ -1417,7 +1417,7 @@ R_API int r_core_rtr_cmds(RCore *core, const char *port) {
 		r_socket_free (ch);
 		ch = NULL;
 	}
-	r_cons_break_pop ();
+	r_kons_break_pop (core->cons);
 	r_socket_free (s);
 	r_socket_free (ch);
 	return 0;

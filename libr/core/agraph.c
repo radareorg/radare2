@@ -3284,7 +3284,7 @@ static void agraph_print_edges(RAGraph *g) {
 
 	r_list_free (lyr);
 	r_list_free (bckedges);
-	r_cons_break_pop ();
+	r_kons_break_pop (cons);
 }
 
 static void agraph_toggle_callgraph(RAGraph *g) {

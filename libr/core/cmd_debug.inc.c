@@ -803,7 +803,7 @@ static int step_until(RCore *core, ut64 addr) {
 		return false;
 	}
 	bool honorbps = r_config_get_b (core->config, "dbg.bpforuntil");
-	r_cons_break_push (NULL, NULL);
+	r_kons_break_push (core->cons, NULL, NULL);
 	do {
 		if (r_cons_is_breaked (core->cons)) {
 			core->break_loop = true;
@@ -824,7 +824,7 @@ static int step_until(RCore *core, ut64 addr) {
 		}
 		// check breakpoint here
 	} while (pc != addr);
-	r_cons_break_pop ();
+	r_kons_break_pop (core->cons);
 	return true;
 }
 
@@ -834,7 +834,7 @@ static int step_until_esil(RCore *core, const char *esilstr) {
 		R_LOG_INFO ("esil is not initialized. Run 'aei' first");
 		return false;
 	}
-	r_cons_break_push (NULL, NULL);
+	r_kons_break_push (core->cons, NULL, NULL);
 	for (;;) {
 		if (r_cons_is_breaked (core->cons)) {
 			core->break_loop = true;
@@ -851,7 +851,7 @@ static int step_until_esil(RCore *core, const char *esilstr) {
 			break;
 		}
 	}
-	r_cons_break_pop ();
+	r_kons_break_pop (core->cons);
 	return true;
 }
 
@@ -870,7 +870,7 @@ static bool step_until_inst(RCore *core, const char *instr, bool regex) {
 	bool honorbps = r_config_get_b (core->config, "dbg.bpforuntil");
 
 	instr = r_str_trim_head_ro (instr);
-	r_cons_break_push (NULL, NULL);
+	r_kons_break_push (core->cons, NULL, NULL);
 	for (;;) {
 		RAnalOp asmop;
 		if (r_cons_is_breaked (core->cons)) {
@@ -918,7 +918,7 @@ static bool step_until_inst(RCore *core, const char *instr, bool regex) {
 		}
 		r_anal_op_fini (&asmop);
 	}
-	r_cons_break_pop ();
+	r_kons_break_pop (core->cons);
 	return true;
 }
 
@@ -945,7 +945,7 @@ static bool step_until_optype(RCore *core, const char *_optypes) {
 	const bool debugMode = r_config_get_b (core->config, "cfg.debug");
 	optypes_list = r_str_split_list (optypes, " ", 0);
 
-	r_cons_break_push (NULL, NULL);
+	r_kons_break_push (core->cons, NULL, NULL);
 	for (; !maxsteps || countsteps < maxsteps; countsteps++) {
 		if (r_cons_is_breaked (core->cons)) {
 			core->break_loop = true;
@@ -1003,7 +1003,7 @@ static bool step_until_optype(RCore *core, const char *_optypes) {
 	}
 
 cleanup_after_push:
-	r_cons_break_pop ();
+	r_kons_break_pop (core->cons);
 end:
 	free (optypes);
 	r_list_free (optypes_list);
@@ -1017,7 +1017,7 @@ static bool step_until_flag(RCore *core, const char *instr) {
 
 	bool honorbps = r_config_get_b (core->config, "dbg.bpforuntil");
 	instr = r_str_trim_head_ro (instr);
-	r_cons_break_push (NULL, NULL);
+	r_kons_break_push (core->cons, NULL, NULL);
 	for (;;) {
 		if (r_cons_is_breaked (core->cons) || r_debug_is_dead (core->dbg)) {
 			break;
@@ -1035,13 +1035,13 @@ static bool step_until_flag(RCore *core, const char *instr) {
 		const RList *list = r_flag_get_list (core->flags, pc);
 		r_list_foreach (list, iter, f) {
 			if (R_STR_ISEMPTY (instr) || (f->realname && strstr (f->realname, instr))) {
-				r_cons_printf ("[ 0x%08"PFMT64x" ] %s\n", f->addr, f->realname);
-				r_cons_break_pop ();
+				r_kons_printf (core->cons, "[ 0x%08"PFMT64x" ] %s\n", f->addr, f->realname);
+				r_kons_break_pop (core->cons);
 				return true;
 			}
 		}
 	}
-	r_cons_break_pop ();
+	r_kons_break_pop (core->cons);
 	return false;
 }
 
@@ -1049,7 +1049,7 @@ static bool step_until_flag(RCore *core, const char *instr) {
 static int step_until_eof(RCore *core) {
 	int maxLoops = 200000;
 	ut64 off, now = r_debug_reg_get (core->dbg, "SP");
-	r_cons_break_push (NULL, NULL);
+	r_kons_break_push (core->cons, NULL, NULL);
 	do {
 		// XXX (HACK!)
 		r_debug_step_over (core->dbg, 1);
@@ -1060,7 +1060,7 @@ static int step_until_eof(RCore *core) {
 			break;
 		}
 	} while (off <= now);
-	r_cons_break_pop ();
+	r_kons_break_pop (core->cons);
 	return true;
 }
 
@@ -4332,7 +4332,7 @@ static void debug_trace_calls(RCore *core, const char *input) {
 		}
 	}
 	core->dbg->trace->enabled = 0;
-	r_cons_break_push (static_debug_stop, core->dbg);
+	r_kons_break_push (core->cons, static_debug_stop, core->dbg);
 	r_reg_arena_swap (core->dbg->reg, true);
 	if (final_addr != UT64_MAX) {
 		bool hwbp = r_config_get_b (core->config, "dbg.hwbp");
@@ -4348,7 +4348,7 @@ static void debug_trace_calls(RCore *core, const char *input) {
 	Gcore = core;
 	trace_traverse (core->dbg->tree);
 	core->dbg->trace->enabled = t;
-	r_cons_break_pop ();
+	r_kons_break_pop (core->cons);
 }
 
 static void r_core_debug_esil(RCore *core, const char *input) {
@@ -4621,7 +4621,7 @@ static bool cmd_dcu(RCore *core, const char *input) {
 	}
 	bool honorbps = r_config_get_b (core->config, "dbg.bpforuntil");
 	if (dcu_range) {
-		r_cons_break_push (NULL, NULL);
+		r_kons_break_push (core->cons, NULL, NULL);
 		do {
 			if (r_cons_is_breaked (core->cons)) {
 				break;
@@ -4638,7 +4638,7 @@ static bool cmd_dcu(RCore *core, const char *input) {
 			}
 			R_LOG_INFO ("Continue 0x%08"PFMT64x" > 0x%08"PFMT64x" < 0x%08"PFMT64x, from, pc, to);
 		} while (pc < from || pc > to);
-		r_cons_break_pop ();
+		r_kons_break_pop (core->cons);
 	} else {
 		bool honorbps = r_config_get_b (core->config, "dbg.bpforuntil");
 		ut64 addr = from;
@@ -4650,7 +4650,7 @@ static bool cmd_dcu(RCore *core, const char *input) {
 			bool prev_call = false;
 			bool prev_ret = false;
 			ut64 old_sp, cur_sp;
-			r_cons_break_push (NULL, NULL);
+			r_kons_break_push (core->cons, NULL, NULL);
 			r_list_free (core->dbg->call_frames);
 			core->dbg->call_frames = r_list_new ();
 			core->dbg->call_frames->free = free;
@@ -4710,7 +4710,7 @@ static bool cmd_dcu(RCore *core, const char *input) {
 				r_debug_step (core->dbg, 1);
 				steps++;
 			}
-			r_cons_break_pop ();
+			r_kons_break_pop (core->cons);
 			return true;
 		}
 		RBreakpointItem *bp = r_bp_get_at (core->dbg->bp, addr);
@@ -4871,7 +4871,7 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 			int n = 0;
 			bool t = core->dbg->trace->enabled;
 			core->dbg->trace->enabled = false;
-			r_cons_break_push (static_debug_stop, core->dbg);
+			r_kons_break_push (core->cons, static_debug_stop, core->dbg);
 			do {
 				r_debug_step (core->dbg, 1);
 				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
@@ -4884,7 +4884,7 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 			} while (!s);
 			eprintf ("\n");
 			core->dbg->trace->enabled = t;
-			r_cons_break_pop ();
+			r_kons_break_pop (core->cons);
 			return 1;
 		}
 		break;
@@ -4968,7 +4968,7 @@ static int cmd_debug_step(RCore *core, const char *input) {
 	case 'i': // "dsi"
 		if (input[2] == ' ') {
 			int n = 0;
-			r_cons_break_push (static_debug_stop, core->dbg);
+			r_kons_break_push (core->cons, static_debug_stop, core->dbg);
 			do {
 				if (r_cons_is_breaked (core->cons)) {
 					break;
@@ -4981,7 +4981,7 @@ static int cmd_debug_step(RCore *core, const char *input) {
 				r_core_cmd0 (core, ".dr*");
 				n++;
 			} while (!r_num_conditional (core->num, input + 3));
-			r_cons_break_pop ();
+			r_kons_break_pop (core->cons);
 			R_LOG_INFO ("Stopped after %d instructions", n);
 		} else {
 			R_LOG_ERROR ("Three missing argument");
@@ -5827,11 +5827,11 @@ static int cmd_debug(void *data, const char *input) {
 		R_LOG_TODO ("transplant process");
 		break;
 	case 'c': // "dc"
-		r_cons_break_push (static_debug_stop, core->dbg);
+		r_kons_break_push (core->cons, static_debug_stop, core->dbg);
 		if (cmd_debug_continue (core, input)) {
 			do_follow = true;
 		}
-		r_cons_break_pop ();
+		r_kons_break_pop (core->cons);
 		break;
 	case 'm': // "dm"
 		cmd_debug_map (core, input + 1);
@@ -6151,7 +6151,7 @@ static int cmd_debug(void *data, const char *input) {
 		break;
 #endif
 	case 'w': // "dw"
-		r_cons_break_push (static_debug_stop, core->dbg);
+		r_kons_break_push (core->cons, static_debug_stop, core->dbg);
 		for (;!r_cons_is_breaked (core->cons);) {
 			int pid = atoi (input + 1);
 			//int opid = core->dbg->pid = pid;
@@ -6161,7 +6161,7 @@ static int cmd_debug(void *data, const char *input) {
 			}
 			r_sys_usleep (200);
 		}
-		r_cons_break_pop ();
+		r_kons_break_pop (core->cons);
 		break;
 	case 'x': // "dx"
 		switch (input[1]) {

@@ -1743,7 +1743,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 #if USE_UTF8
 		utflen = readchar_utf8 (cons, (ut8 *) buf, sizeof (buf));
 		if (utflen < (line->demo? 0: 1)) {
-			r_cons_break_pop ();
+			r_kons_break_pop (cons);
 			return NULL;
 		}
 		buf[utflen] = 0;
@@ -1758,7 +1758,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 		{
 			int len = r_line_readchar_win (cons, (ut8 *) buf, sizeof (buf));
 			if (len < 1) {
-				r_cons_break_pop ();
+				r_kons_break_pop (cons);
 				return NULL;
 			}
 			buf[len] = 0;
@@ -1766,7 +1766,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 #else
 		ch = r_cons_readchar (cons);
 		if (ch == -1) {
-			r_cons_break_pop ();
+			r_kons_break_pop (cons);
 			return NULL;
 		}
 		buf[0] = ch;
@@ -2079,7 +2079,7 @@ repeat:
 						for (;;) {
 							ch = r_cons_readchar (cons);
 							if (ch < 20) {
-								r_cons_break_pop ();
+								r_kons_break_pop (cons);
 								return NULL;
 							}
 							if (isupper (ch)) {	// read until 'M'

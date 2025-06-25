@@ -7178,7 +7178,7 @@ R_API int r_core_print_disasm_instructions_with_buf(RCore *core, ut64 address, u
 
 	core->addr = address;
 
-	r_cons_break_push (NULL, NULL);
+	r_kons_break_push (core->cons, NULL, NULL);
 	//build ranges to map addr with bits
 	j = 0;
 	int opsize = 0;

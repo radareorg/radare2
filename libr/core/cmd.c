@@ -981,7 +981,7 @@ repeat:
 			return;
 		}
 		void *bed = r_cons_sleep_begin (core->cons);
-		r_cons_break_push (NULL, NULL);
+		r_kons_break_push (core->cons, NULL, NULL);
 		for (;;) {
 			if (r_cons_is_breaked (core->cons)) {
 				break;
@@ -2397,7 +2397,7 @@ bypass:
 				ptr = eol + 1;
 			}
 		}
-		r_cons_break_pop ();
+		r_kons_break_pop (core->cons);
 		free (str);
 		free (inp);
 		break;
@@ -5754,7 +5754,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 		{
 			ut64 offorig = core->addr;
 			ut64 bszorig = core->blocksize;
-			r_cons_break_push (NULL, NULL);
+			r_kons_break_push (core->cons, NULL, NULL);
 			r_list_foreach (list, iter, item) {
 				if (r_cons_is_breaked (core->cons)) {
 					break;
@@ -5776,7 +5776,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 			}
 			r_core_seek (core, offorig, true);
 			r_core_block_size (core, bszorig);
-			r_cons_break_pop ();
+			r_kons_break_pop (core->cons);
 		}
 		break;
 	case 't':
@@ -5970,7 +5970,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 
 	oseek = core->addr;
 	ostr = str = strdup (each);
-	r_cons_break_push (NULL, NULL); //pop on return
+	r_kons_break_push (core->cons, NULL, NULL); //pop on return
 	switch (each[0]) {
 	case '/': // "@@/"
 		{
@@ -6021,7 +6021,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				ut64 from = r_num_math (core->num, r_str_word_get0 (str, 0));
 				ut64 to = r_num_math (core->num, r_str_word_get0 (str, 1));
 				ut64 step = r_num_math (core->num, r_str_word_get0 (str, 2));
-				r_cons_break_push (NULL, NULL);
+				r_kons_break_push (core->cons, NULL, NULL);
 				r_core_return_code (core, 0);
 				for (cur = from; cur <= to; cur += step) {
 					if (r_cons_is_breaked (core->cons)) {
@@ -6037,7 +6037,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 						break;
 					}
 				}
-				r_cons_break_pop ();
+				r_kons_break_pop (core->cons);
 			} else {
 				R_LOG_ERROR ("Use the sequence iterator like this: 'cmd @@s:from to step'");
 			}
@@ -6324,7 +6324,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			}
 		}
 	}
-	r_cons_break_pop ();
+	r_kons_break_pop (core->cons);
 	// XXX: use r_core_seek here
 	core->addr = oseek;
 
@@ -6483,14 +6483,14 @@ R_API bool r_core_cmd_lines(RCore *core, const char *lines) {
 	size_t current_line = 0;
 	char *nl = strchr (odata, '\n');
 	if (nl) {
-		r_cons_break_push (NULL, NULL);
+		r_kons_break_push (core->cons, NULL, NULL);
 		do {
 			if (show_progress_bar) {
 				r_print_progressbar_with_count (core->print, current_line++, line_count, 80, true);
 			}
 			if (r_cons_is_breaked (core->cons)) {
 				free (odata);
-				r_cons_break_pop ();
+				r_kons_break_pop (core->cons);
 				return ret;
 			}
 			*nl = '\0';

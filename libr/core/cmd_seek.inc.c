@@ -172,9 +172,6 @@ R_API int r_core_lines_initcache(RCore *core, ut64 start_addr, ut64 end_addr) {
 	}
 
 	ut64 *lines_cache = R_NEWS0 (ut64, bsz);
-	if (!lines_cache) {
-		return -1;
-	}
 	free (core->print->lines_cache);
 	core->print->lines_cache = lines_cache;
 
@@ -186,7 +183,7 @@ R_API int r_core_lines_initcache(RCore *core, ut64 start_addr, ut64 end_addr) {
 	if (!buf) {
 		return -1;
 	}
-	r_cons_break_push (NULL, NULL);
+	r_kons_break_push (core->cons, NULL, NULL);
 	while (off < end_addr) {
 		if (r_cons_is_breaked (core->cons)) {
 			break;
@@ -216,7 +213,7 @@ R_API int r_core_lines_initcache(RCore *core, ut64 start_addr, ut64 end_addr) {
 		off += bsz;
 	}
 	free (buf);
-	r_cons_break_pop ();
+	r_kons_break_pop (core->cons);
 	return line_count;
 }
 

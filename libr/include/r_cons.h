@@ -850,8 +850,6 @@ R_API bool r_cons_is_interactive(RCons *cons);
 R_API bool r_cons_default_context_is_interactive(void);
 
 /* ^C */
-R_API void r_cons_break_push(RConsBreak cb, void *user);
-R_API void r_cons_break_pop(void);
 R_API void r_cons_break_clear(RCons *cons);
 R_API void r_kons_break_timeout(RCons *cons, int timeout);
 

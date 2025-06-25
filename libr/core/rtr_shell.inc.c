@@ -3,7 +3,7 @@
 static bool rtr_visual(RCore *core, TextLog T, const char *cmd) {
 	bool autorefresh = false;
 	if (cmd) {
-		r_cons_break_push (NULL, NULL);
+		r_kons_break_push (core->cons, NULL, NULL);
 		for (;;) {
 			char *ret;
 			r_kons_clear00 (core->cons);
@@ -16,7 +16,7 @@ static bool rtr_visual(RCore *core, TextLog T, const char *cmd) {
 			}
 			r_sys_sleep (1);
 		}
-		r_cons_break_pop ();
+		r_kons_break_pop (core->cons);
 	} else {
 		const char *cmds[] = { "px", "pd", "pxa", "dr", "sr SP;pxa", NULL };
 		int cmdidx = 0;

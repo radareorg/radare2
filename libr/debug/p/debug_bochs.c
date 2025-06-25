@@ -304,7 +304,7 @@ static RDebugReasonType r_debug_bochs_wait(RDebug *dbg, int pid) {
 	if (pd->bStep) {
 		pd->bStep = false;
 	} else {
-		r_cons_break_push (bochs_debug_break, dbg);
+		r_kons_break_push (core->cons, bochs_debug_break, dbg);
 		i = 500;
 		do {
 			bochs_wait (pd->desc);
@@ -325,7 +325,7 @@ static RDebugReasonType r_debug_bochs_wait(RDebug *dbg, int pid) {
 				break;
 			}
 		} while (1);
-		r_cons_break_pop ();
+		r_kons_break_pop (core->cons);
 	}
 	//eprintf ("bochs_wait: loop done\n");
 	// Next at t=394241428
