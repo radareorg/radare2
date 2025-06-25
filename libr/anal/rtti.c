@@ -74,7 +74,7 @@ R_API void r_anal_rtti_print_all(RAnal *anal, int mode) {
 		}
 		if (use_json && !success && comma) {
 			// drop last comma if necessary
-			r_kons_drop (cons, 1);
+			r_cons_drop (cons, 1);
 		}
 	}
 	r_list_free (vtables);

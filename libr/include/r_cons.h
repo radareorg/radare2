@@ -1228,7 +1228,7 @@ R_API void r_kons_zero(RCons *cons);
 R_API void r_kons_highlight(RCons *cons, const char *word);
 R_API char *r_kons_lastline(RCons *cons, int *len);
 R_API char *r_kons_lastline_utf8_ansi_len(RCons *cons, int *len);
-R_API bool r_kons_drop(RCons *cons, int n);
+R_API bool r_cons_drop(RCons *cons, int n);
 R_API void r_cons_trim(RCons *cons);
 R_API void r_cons_breakword(RCons *cons, const char * R_NULLABLE s);
 R_API void r_kons_mark(RCons *cons, ut64 addr, const char *name);

@@ -768,13 +768,3 @@ R_API char *r_kons_lastline_utf8_ansi_len(RCons *cons, int *len) {
 	*len = l;
 	return b;
 }
-
-R_API bool r_kons_drop(RCons *cons, int n) {
-	RConsContext *c = cons->context;
-	if (n > c->buffer_len) {
-		c->buffer_len = 0;
-		return false;
-	}
-	c->buffer_len -= n;
-	return true;
-}

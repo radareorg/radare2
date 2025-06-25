@@ -1167,10 +1167,6 @@ R_API int r_cons_printf(const char *format, ...) {
 	return 0;
 }
 
-R_API void r_cons_show_cursor(int cursor) {
-	r_kons_show_cursor (I, cursor);
-}
-
 R_API void r_cons_set_utf8(RCons *cons, bool b) {
 	cons->use_utf8 = b;
 #if R2__WINDOWS__
@@ -1576,4 +1572,14 @@ R_API void r_cons_trim(RCons *cons) {
 		}
 		c->buffer_len--;
 	}
+}
+
+R_API bool r_cons_drop(RCons *cons, int n) {
+	RConsContext *c = cons->context;
+	if (n > c->buffer_len) {
+		c->buffer_len = 0;
+		return false;
+	}
+	c->buffer_len -= n;
+	return true;
 }

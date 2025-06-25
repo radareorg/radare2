@@ -3872,7 +3872,7 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 						len - idx, mi->str, R_PRINT_MUSTSEE, NULL, NULL);
 				const char *cons_buf = r_kons_get_buffer (core->cons, &len_after);
 				if (len_after > len_before && buf && cons_buf[len_after - 1] == '\n') {
-					r_kons_drop (cons, 1);
+					r_cons_drop (cons, 1);
 				}
 				ds->oplen = ds->asmop.size = (int)mi_size;
 				R_FREE (ds->line);
