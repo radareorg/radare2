@@ -3468,7 +3468,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				if (core->cons->cpos.x < 1) {
 					core->cons->cpos.x = 0;
 				}
-				int h, w = r_cons_get_size (&h);
+				int h, w = r_kons_get_size (core->cons, &h);
 				if (core->cons->cpos.x >= w) {
 					core->cons->cpos.x = w;
 				}
@@ -3500,7 +3500,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				if (core->cons->cpos.x < 1) {
 					core->cons->cpos.x = 0;
 				}
-				int h, w = r_cons_get_size (&h);
+				int h, w = r_kons_get_size (core->cons, &h);
 				if (core->cons->cpos.x >= w) {
 					core->cons->cpos.x = w;
 				}
@@ -3528,7 +3528,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if (r_config_get_b (core->config, "scr.cursor")) {
 				core->cons->cpos.y++;
 				int h;
-				(void)r_cons_get_size (&h);
+				(void)r_kons_get_size (core->cons, &h);
 				if (core->cons->cpos.y >= h) {
 					core->cons->cpos.y = h;
 				}
@@ -3592,7 +3592,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				const int distance = 4; // numbuf_pull (core);
 				core->cons->cpos.y += distance;
 				int h;
-				(void)r_cons_get_size (&h);
+				(void)r_kons_get_size (core->cons, &h);
 				if (core->cons->cpos.y >= h) {
 					core->cons->cpos.y = h;
 				}
@@ -3619,7 +3619,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						if (hexCols < 1) {
 							hexCols = 16;
 						}
-						(void)r_cons_get_size (&h);
+						(void)r_kons_get_size (core->cons, &h);
 						int delta = hexCols * (h / 4);
 						addr = core->addr + delta;
 					}
@@ -4349,7 +4349,7 @@ static void visual_title(RCore *core, int color) {
 }
 
 static int visual_responsive(RCore *core) {
-	int h, w = r_cons_get_size (&h);
+	int h, w = r_kons_get_size (core->cons, &h);
 	if (r_config_get_i (core->config, "scr.responsive")) {
 		if (w < 110) {
 			r_config_set_i (core->config, "asm.cmt.right", 0);
@@ -4386,7 +4386,7 @@ static int visual_responsive(RCore *core) {
 // TODO: use colors
 // TODO: find better name
 R_API void r_core_print_scrollbar(RCore *core) {
-	int i, h, w = r_cons_get_size (&h);
+	int i, h, w = r_kons_get_size (core->cons, &h);
 
 	int scrollbar = r_config_get_i (core->config, "scr.scrollbar");
 	if (scrollbar == 2) {
@@ -4453,7 +4453,7 @@ R_API void r_core_print_scrollbar(RCore *core) {
 }
 
 R_API void r_core_print_scrollbar_bottom(RCore *core) {
-	int i, h, w = r_cons_get_size (&h);
+	int i, h, w = r_kons_get_size (core->cons, &h);
 
 	if (w < 10 || h < 4) {
 		return;
@@ -4823,7 +4823,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 
 	core->visual.splitPtr = UT64_MAX;
 
-	if (r_cons_get_size (&ch) < 1 || ch < 1) {
+	if (r_kons_get_size (core->cons, &ch) < 1 || ch < 1) {
 		R_LOG_ERROR ("Cannot create Visual context. Use scr.fix_{columns|rows}");
 		return 0;
 	}

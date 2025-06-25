@@ -3551,7 +3551,7 @@ static bool check_changes(RAGraph *g, bool is_interactive, RCore *core, RAnalFun
 }
 
 static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, RAnalFunction *fcn) {
-	int h, w = r_cons_get_size (&h);
+	int h, w = r_kons_get_size (core->cons, &h);
 	bool ret = check_changes (g, is_interactive, core, fcn);
 	if (!ret) {
 		return false;
@@ -3645,7 +3645,7 @@ static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, RAnalFunct
 			r_kons_flush (core->cons);
 		}
 		if (r_config_get_b (core->config, "graph.mini")) { // minigraph
-			int h, w = r_cons_get_size (&h);
+			int h, w = r_kons_get_size (core->cons, &h);
 			r_kons_push (core->cons);
 			g->can->h *= 4;
 			RConsCanvas *ocan = g->can;
@@ -4457,7 +4457,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 	}
 	r_config_hold (hc, "asm.pseudo", "asm.esil", "asm.cmt.right", NULL);
 
-	int h, w = r_cons_get_size (&h);
+	int h, w = r_kons_get_size (core->cons, &h);
 	RConsCanvas *can = r_cons_canvas_new (core->cons, w, h, -2);
 	if (!can) {
 		w = 80;
@@ -4560,7 +4560,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 	}
 
 	while (!exit_graph && !is_error && !r_cons_is_breaked ()) {
-		w = r_cons_get_size (&h);
+		w = r_kons_get_size (core->cons, &h);
 		invscroll = r_config_get_b (core->config, "graph.invscroll");
 		ret = agraph_refresh (grd);
 

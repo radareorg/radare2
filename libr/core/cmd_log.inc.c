@@ -231,7 +231,7 @@ R_API void r_core_log_view(RCore *core, int num, int shift) {
 		num = 1;
 	}
 	int i;
-	int cons_width = r_cons_get_size (NULL);
+	int cons_width = r_kons_get_size (core->cons, NULL);
 	if (cons_width < 1) {
 		cons_width = 60;
 	}

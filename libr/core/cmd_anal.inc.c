@@ -3540,7 +3540,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 			return false;
 		}
 		r_table_visual_list (table, flist, core->addr, core->blocksize,
-			r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
+			r_kons_get_size (core->cons, NULL), r_config_get_i (core->config, "scr.color"));
 		char *s = r_table_tostring (table);
 		r_kons_printf (core->cons, "\n%s\n", s);
 		free (s);
