@@ -44,8 +44,6 @@ bool test_r_cons(void) {
 	mu_assert_eq (b, 0, "blue color");
 	mu_assert_eq (a, 0, "alpha color");
 
-#if 1
-	// TODO: bring back those tests after constifying the colortable
 	// 256
 	foo = strdup ("\x1b[38;5;213mhello\x1b[0m");
 	r = g = b = a = 0;
@@ -73,7 +71,6 @@ bool test_r_cons(void) {
 	mu_assert_eq (g, 135, "green color");
 	mu_assert_eq (b, 255, "blue color");
 	mu_assert_eq (a, 0, "alpha color");
-#endif
 
 	// 24 bit
 	foo = strdup ("\x1b[38;2;42;13;37mhello\x1b[0m");

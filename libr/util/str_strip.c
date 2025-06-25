@@ -22,19 +22,13 @@ static int colortable[256] = {
 5789784, 6447714, 7105644, 7763574, 8421504, 9079434, 9737364, 10395294, 11053224, 11711154, 12369084, 13027014, 13684944, 14342874, 15000804, 15658734};
 
 static void __unrgb(int color, int *r, int *g, int *b) {
-	// TODO: remove rcons dependency
 	if (color < 0 || color > 255) {
 		*r = *g = *b = 0;
 	} else {
-#if 1
 		int rgb = colortable[color];
 		*r = (rgb >> 16) & 0xff;
 		*g = (rgb >> 8) & 0xff;
 		*b = rgb & 0xff;
-#else
-		R_LOG_WARN ("256 color palette not supported right now");
-		*r = *g = *b = 0;
-#endif
 	}
 }
 
