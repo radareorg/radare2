@@ -122,7 +122,7 @@ R_API void r_cons_visual_flush(RCons *cons) {
 /* TODO: this ifdef must go in the function body */
 #if R2__WINDOWS__
 		if (cons->vtmode) {
-			r_kons_visual_write (cons, ctx->buffer);
+			r_cons_visual_write (cons, ctx->buffer);
 		} else {
 			r_cons_win_print (cons, ctx->buffer, ctx->buffer_len, true);
 		}

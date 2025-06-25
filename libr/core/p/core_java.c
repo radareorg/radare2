@@ -49,7 +49,6 @@ static int r_cmd_java_print_field_summary(RBinJavaObj *obj, ut16 idx);
 static int r_cmd_java_print_field_name(RBinJavaObj *obj, ut16 idx);
 static int r_cmd_java_print_field_num_name(RBinJavaObj *obj);
 static int r_cmd_java_print_method_summary(RBinJavaObj *obj, ut16 idx);
-static int _(r_cmd_java_print_method_count)(RBinJavaObj *obj);
 static int r_cmd_java_print_method_name(RBinJavaObj *obj, ut16 idx);
 static int r_cmd_java_print_method_num_name(RBinJavaObj *obj);
 
