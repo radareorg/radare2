@@ -543,14 +543,6 @@ R_API void r_cons_filter(RCons *cons) {
 	}
 }
 
-R_API void r_cons_push(void) {
-	r_kons_push (I);
-}
-
-R_API void r_cons_pop(void) {
-	r_kons_pop (I);
-}
-
 R_API void r_cons_context_load(RConsContext *context) {
 	if (!I) {
 		I = &s_cons_global;
@@ -561,7 +553,7 @@ R_API void r_cons_context_load(RConsContext *context) {
 R_API void r_cons_context_reset(RConsContext *context) {
 	// XXX does nothing
 #if 0
-	while (r_kons_pop (I)) {
+	while (r_cons_pop (I)) {
 		// you cant stop
 	}
 #endif

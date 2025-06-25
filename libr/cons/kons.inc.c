@@ -319,7 +319,7 @@ R_API void r_kons_free(RCons * R_NULLABLE cons) {
 		cons->line = NULL;
 	}
 	while (!r_list_empty (cons->ctx_stack)) {
-		r_kons_pop (cons);
+		r_cons_pop (cons);
 	}
 	r_cons_context_free (cons->context);
 #if 0
@@ -400,7 +400,7 @@ R_API const char *r_kons_get_buffer(RCons *cons, size_t *buffer_len) {
 	return (ctx->buffer_len > 0)? ctx->buffer : NULL;
 }
 
-R_API void r_kons_push(RCons *cons) {
+R_API void r_cons_push(RCons *cons) {
 	r_list_push (cons->ctx_stack, cons->context);
 	RConsContext *nc = r_cons_context_clone (cons->context);
 #if 1
@@ -433,7 +433,7 @@ R_API void r_kons_push(RCons *cons) {
 #endif
 }
 
-R_API bool r_kons_pop(RCons *cons) {
+R_API bool r_cons_pop(RCons *cons) {
 	if (r_list_empty (cons->ctx_stack)) {
 		R_LOG_INFO ("Nothing to pop");
 		return false;

@@ -3646,7 +3646,7 @@ static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, RAnalFunct
 		}
 		if (r_config_get_b (core->config, "graph.mini")) { // minigraph
 			int h, w = r_cons_get_size (core->cons, &h);
-			r_kons_push (core->cons);
+			r_cons_push (core->cons);
 			g->can->h *= 4;
 			RConsCanvas *ocan = g->can;
 			g->can = r_cons_canvas_new (core->cons, w * 2, h * 4, -2);
@@ -3659,7 +3659,7 @@ static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, RAnalFunct
 			r_cons_canvas_print_region (g->can);
 			g->can = ocan;
 			char *s = strdup (core->cons->context->buffer);
-			r_kons_pop (core->cons);
+			r_cons_pop (core->cons);
 			cmd_agfb3 (core, s, w - 40, 2);
 			free (s);
 			g->can->h /= 4;

@@ -68,7 +68,7 @@ static void r_core_debug_breakpoint_hit(RCore *core, RBreakpointItem *bpi) {
 	const bool bpcmd_exists = R_STR_ISNOTEMPTY (bpi->data);
 	const bool may_output = (cmdbp_exists || bpcmd_exists);
 	if (may_output) {
-		r_kons_push (core->cons);
+		r_cons_push (core->cons);
 	}
 	if (cmdbp_exists) {
 		r_core_cmd0 (core, cmdbp);
@@ -78,7 +78,7 @@ static void r_core_debug_breakpoint_hit(RCore *core, RBreakpointItem *bpi) {
 	}
 	if (may_output) {
 		r_cons_flush (core->cons);
-		r_kons_pop (core->cons);
+		r_cons_pop (core->cons);
 	}
 }
 
@@ -312,7 +312,7 @@ static bool __syncDebugMaps(RCore *core) {
 
 R_API char *r_core_cmd_call_str_at(RCore *core, ut64 addr, const char *cmd) {
 	R_RETURN_VAL_IF_FAIL (core && core->cons, NULL);
-	r_kons_push (core->cons);
+	r_cons_push (core->cons);
 	core->cons->context->noflush = true;
 	core->cons->context->cmd_str_depth++;
 	if (cmd && r_core_cmd_call_at (core, addr, cmd) == -1) {
@@ -321,7 +321,7 @@ R_API char *r_core_cmd_call_str_at(RCore *core, ut64 addr, const char *cmd) {
 			core->cons->context->noflush = false;
 			r_cons_flush (core->cons);
 		}
-		r_kons_pop (core->cons);
+		r_cons_pop (core->cons);
 		return NULL;
 	}
 	if (--core->cons->context->cmd_str_depth == 0) {
@@ -330,7 +330,7 @@ R_API char *r_core_cmd_call_str_at(RCore *core, ut64 addr, const char *cmd) {
 	r_cons_filter (core->cons);
 	const char *static_str = r_cons_get_buffer ();
 	char *retstr = strdup (r_str_get (static_str));
-	r_kons_pop (core->cons);
+	r_cons_pop (core->cons);
 	r_cons_echo (NULL);
 	return retstr;
 }
@@ -3049,7 +3049,7 @@ R_API void r_core_cmd_queue_wait(RCore *core) {
 	if (!interactive) {
 		return;
 	}
-	r_kons_push (core->cons);
+	r_cons_push (core->cons);
 	r_cons_break_push (core->cons, NULL, NULL);
 	while (!r_cons_is_breaked (core->cons)) {
 		char *cmd = r_list_pop (core->cmdqueue);
@@ -3061,7 +3061,7 @@ R_API void r_core_cmd_queue_wait(RCore *core) {
 		r_sys_usleep (100);
 	}
 	r_cons_break_pop (core->cons);
-	r_kons_pop (core->cons);
+	r_cons_pop (core->cons);
 }
 
 R_API void r_core_cmd_queue(RCore *core, const char *line) {

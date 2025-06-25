@@ -895,9 +895,6 @@ enum {
 	R_CONS_ERRMODE_FLUSH,  // no buffer, print = like eprintf + log
 };
 
-R_API void r_cons_push(void);
-R_API void r_cons_pop(void);
-
 R_DEPRECATE R_API RConsContext *r_cons_context_new(RConsContext * R_NULLABLE parent);
 R_API void r_cons_context_free(RConsContext *context);
 R_API void r_cons_context_load(RConsContext *context);
@@ -1200,7 +1197,7 @@ R_API void r_kons_set_last_interactive(RCons *cons);
 R_API void r_cons_flush(RCons * R_NONNULL cons);
 R_API void r_kons_last(RCons *cons);
 R_API RCons * R_NONNULL r_kons_new(void);
-R_API bool r_kons_pop(RCons * R_NONNULL cons);
+R_API bool r_cons_pop(RCons * R_NONNULL cons);
 R_API void r_kons_free(RCons * R_NULLABLE cons);
 R_API void r_kons_print_clear(RCons *cons);
 R_API void r_kons_fill_line(RCons *cons);
@@ -1210,7 +1207,7 @@ R_API void r_kons_clear(RCons *cons);
 R_API void r_kons_clear00(RCons *cons);
 R_API void r_cons_reset(RCons *cons);
 R_API const char *r_kons_get_buffer(RCons *cons, size_t *buffer_len);
-R_API void r_kons_push(RCons *cons);
+R_API void r_cons_push(RCons *cons);
 R_API bool r_kons_context_is_main(RCons *cons);
 R_API RConsContext *r_cons_context_clone(RConsContext *ctx);
 R_API void r_kons_echo(RCons *cons, const char *msg);

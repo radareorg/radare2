@@ -3393,9 +3393,9 @@ static void backtrace_vars(RCore *core, RList *frames) {
 				"[%s]  %s %s\n", n, f->addr, f->sp, (int)f->size,
 				fcn ? fcn->name : "??", flagdesc, flagdesc2);
 		eprintf ("afvd @ 0x%"PFMT64x"\n", f->addr);
-		r_kons_push (core->cons);
+		r_cons_push (core->cons);
 		char *res = r_core_cmd_strf (core, "afvd@0x%"PFMT64x, f->addr);
-		r_kons_pop (core->cons);
+		r_cons_pop (core->cons);
 		r_cons_printf ("%s", res);
 		free (res);
 		n++;
@@ -6260,11 +6260,11 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case 's': // "dxs"
 			if (input[2]) {
-				r_kons_push (core->cons);
+				r_cons_push (core->cons);
 				char *cmd = r_str_newf ("gs %s", input + 2);
 				char *str = r_core_cmd_str (core, cmd);
 				free (cmd);
-				r_kons_pop (core->cons);
+				r_cons_pop (core->cons);
 				r_core_cmdf (core, "dx %s", str); //`gs %s`", input + 2);
 				free (str);
 			} else {

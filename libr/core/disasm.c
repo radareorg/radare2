@@ -6468,7 +6468,7 @@ R_API int r_core_print_disasm(RCore *core, ut64 addr, ut8 *buf, int len, int cou
 			ds_free (ds);
 			return 0;
 		}
-		r_kons_push (cons);
+		r_cons_push (cons);
 	} else {
 		ds->pj = NULL;
 	}
@@ -6589,7 +6589,7 @@ toro:
 		if (r_cons_is_breaked (cons) || r_cons_was_breaked ()) {
 			R_FREE (nbuf);
 			if (ds->pj) {
-				r_kons_pop (cons);
+				r_cons_pop (cons);
 			}
 			r_cons_break_pop (cons);
 			ds_free (ds);
@@ -7110,7 +7110,7 @@ toro:
 	}
 #endif
 	if (ds->pj) {
-		r_kons_pop (ds->core->cons);
+		r_cons_pop (ds->core->cons);
 		if (!pj) {
 			pj_end (ds->pj);
 			r_kons_printf (ds->core->cons, "%s", pj_string (ds->pj));

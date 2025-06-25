@@ -412,11 +412,11 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	ut64 addr = fcn->addr;
 	while (bb) {
 		r_list_append (visited, bb);
-		r_kons_push (core->cons);
+		r_cons_push (core->cons);
 		bool html = r_config_get_b (core->config, "scr.html");
 		r_config_set_b (core->config, "scr.html", false);
 		char *code = r_core_cmd_str (core, r_strf ("pD %"PFMT64d" @ 0x%08"PFMT64x, bb->size, bb->addr));
-		r_kons_pop (core->cons);
+		r_cons_pop (core->cons);
 		r_config_set_b (core->config, "scr.html", html);
 		indent = 2;
 		if (!code) {

@@ -1095,7 +1095,7 @@ static void cmd_pCd(RCore *core, const char *input) {
 	if (user_rows > 0) {
 		rows = user_rows + 1;
 	}
-	r_kons_push (core->cons);
+	r_cons_push (core->cons);
 	int flags = r_cons_canvas_flags (core->cons);
 	RConsCanvas *c = r_cons_canvas_new (core->cons, w, rows, flags);
 	ut64 osek = core->addr;
@@ -1112,7 +1112,7 @@ static void cmd_pCd(RCore *core, const char *input) {
 	r_core_block_size (core, obsz);
 	r_core_seek (core, osek, true);
 
-	r_kons_pop (core->cons);
+	r_cons_pop (core->cons);
 	r_cons_canvas_print (c);
 	r_cons_canvas_free (c);
 	r_config_set (core->config, "asm.bytes", o_ab);
@@ -1166,7 +1166,7 @@ static void cmd_pCD(RCore *core, const char *input) {
 	if (user_rows > 0) {
 		rows = user_rows + 1;
 	}
-	r_kons_push (core->cons);
+	r_cons_push (core->cons);
 	int flags = r_cons_canvas_flags (core->cons);
 	RConsCanvas *c = r_cons_canvas_new (core->cons, w, rows, flags);
 	ut64 osek = core->addr;
@@ -1198,7 +1198,7 @@ static void cmd_pCD(RCore *core, const char *input) {
 	r_core_block_size (core, obsz);
 	r_core_seek (core, osek, true);
 
-	r_kons_pop (core->cons);
+	r_cons_pop (core->cons);
 	r_cons_canvas_print (c);
 	r_cons_canvas_free (c);
 	r_config_set (core->config, "asm.bytes", o_ab);
@@ -3650,7 +3650,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 		pdsfs = true;
 	}
 
-	r_kons_push (core->cons);
+	r_cons_push (core->cons);
 	line = NULL;
 	s = NULL;
 	if (r_str_startswith (input, "dsb")) {
@@ -3673,7 +3673,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	} else {
 		line = s = r_core_cmd_str (core, "pd");
 	}
-	r_kons_pop (core->cons);
+	r_cons_pop (core->cons);
 
 	r_config_set_b (core->config, "scr.html", scr_html);
 	r_config_set_i (core->config, "scr.color", use_color);

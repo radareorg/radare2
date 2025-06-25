@@ -12025,11 +12025,11 @@ static void cmd_agraph_edge(RCore *core, const char *input) {
 R_API void cmd_agfb(RCore *core) {
 	const int c = r_config_get_b (core->config, "scr.color");
 	r_config_set_i (core->config, "scr.color", 0);
-	r_kons_push (core->cons);
+	r_cons_push (core->cons);
 	r_core_visual_graph (core, NULL, NULL, false);
 	r_config_set_i (core->config, "scr.color", c);
 	char *s = strdup (core->cons->context->buffer);
-	r_kons_pop (core->cons);
+	r_cons_pop (core->cons);
 	cmd_agfb2 (core, s);
 	free (s);
 }
@@ -12037,13 +12037,13 @@ R_API void cmd_agfb(RCore *core) {
 R_API void cmd_aggb(RCore *core) {
 	const int c = r_config_get_b (core->config, "scr.color");
 	r_config_set_i (core->config, "scr.color", 0);
-	r_kons_push (core->cons);
+	r_cons_push (core->cons);
 	int ograph_zoom = r_config_get_i (core->config, "graph.zoom");
 	r_config_set_i (core->config, "graph.zoom", 1);
 	r_core_cmd_call (core, "agg");
 	r_config_set_i (core->config, "scr.color", c);
 	char *s = strdup (core->cons->context->buffer);
-	r_kons_pop (core->cons);
+	r_cons_pop (core->cons);
 	cmd_agfb2 (core, s);
 	r_config_set_i (core->config, "graph.zoom", ograph_zoom);
 	free (s);
