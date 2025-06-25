@@ -529,7 +529,7 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 	hl = core->cons->highlight;
 	if (hl) {
 		ohl = strdup (hl);
-		r_cons_highlight (NULL);
+		r_cons_highlight (core->cons, NULL);
 	}
 	RStrBuf *sb = r_strbuf_new ("");
 	core->cons->context->is_interactive = false;
@@ -633,7 +633,7 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 	free (s);
 
 	if (ohl) {
-		r_cons_highlight (ohl);
+		r_cons_highlight (cons, ohl);
 		free (ohl);
 	}
 	free (filename);

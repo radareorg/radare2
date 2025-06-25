@@ -2518,8 +2518,9 @@ static bool cb_scrhtml(void *user, void *data) {
 }
 
 static bool cb_scrhighlight(void *user, void *data) {
+	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode *) data;
-	r_cons_highlight (node->value);
+	r_cons_highlight (core->cons, node->value);
 	return true;
 }
 

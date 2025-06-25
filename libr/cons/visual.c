@@ -117,7 +117,7 @@ R_API void r_cons_visual_flush(RCons *cons) {
 	if (ctx->noflush) {
 		return;
 	}
-	r_kons_highlight (cons, cons->highlight);
+	r_cons_highlight (cons, cons->highlight);
 	if (!cons->null) {
 /* TODO: this ifdef must go in the function body */
 #if R2__WINDOWS__

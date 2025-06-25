@@ -904,7 +904,6 @@ R_API void r_cons_context_break_pop(RCons *cons, RConsContext *context, bool sig
 /* control */
 R_API char *r_cons_editor(RCons *cons, const char *file, const char *str);
 R_API void r_cons_zero(void);
-R_API void r_cons_highlight(const char *word);
 R_API void r_cons_clear(void);
 R_API void r_cons_clear00(void);
 R_API void r_cons_clear_line(int err);
@@ -1214,7 +1213,7 @@ R_API void r_cons_set_utf8(RCons *cons, bool b);
 R_API void r_cons_column(RCons *cons, int c);
 R_API void r_cons_set_title(RCons *cons, const char *str);
 R_API void r_kons_zero(RCons *cons);
-R_API void r_kons_highlight(RCons *cons, const char *word);
+R_API void r_cons_highlight(RCons *cons, const char *word);
 R_API char *r_cons_lastline(RCons *cons, int *len);
 R_API char *r_cons_lastline_utf8_ansi_len(RCons *cons, int *len);
 R_API bool r_cons_drop(RCons *cons, int n);

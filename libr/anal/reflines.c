@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2025 - pancake, nibble */
 
 #include <r_core.h>
 
@@ -260,7 +260,6 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 	return list;
 
 sten_err:
-list_err:
 	r_anal_op_fini (&op);
 	r_list_free (sten);
 	r_list_free (list);

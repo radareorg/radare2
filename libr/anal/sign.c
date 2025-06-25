@@ -948,7 +948,6 @@ R_API int r_sign_all_functions(RAnal *a, bool merge) {
 	char *prev_name = NULL;
 	r_cons_break_push (cons, NULL, NULL);
 	RCoreBind cb = a->coreb;
-	RCore *core = cb.core;
 	bool do_mangled = cb.cfgGetI (core, "zign.mangled");
 	bool zign_dups = a->opt.zigndups;
 	r_list_foreach_prev (a->fcns, iter, fcn) {
