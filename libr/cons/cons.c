@@ -303,8 +303,28 @@ R_API bool r_cons_was_breaked(void) {
 #endif
 }
 
-R_API bool r_cons_is_breaked(void) {
-	return r_cons_is_breaked (r_cons_singleton ());
+R_API bool r_cons_is_breaked(RCons *cons) {
+#if WANT_DEBUGSTUFF
+	RConsContext *C = cons->context;
+	if (R_UNLIKELY (cons->cb_break)) {
+		cons->cb_break (cons->user);
+	}
+	if (R_UNLIKELY (cons->timeout)) {
+		if (r_stack_size (C->break_stack) > 0) {
+			if (r_time_now_mono () > cons->timeout) {
+				C->breaked = true;
+				C->was_breaked = true;
+				r_kons_break_timeout (cons, cons->otimeout);
+			}
+		}
+	}
+	if (R_UNLIKELY (!C->was_breaked)) {
+		C->was_breaked = C->breaked;
+	}
+	return R_UNLIKELY (C && C->breaked);
+#else
+	return false;
+#endif
 }
 
 #if 0
@@ -394,10 +414,6 @@ R_API void r_kons_break_timeout(RCons *cons, int timeout) {
 	I->timeout = (timeout && !I->timeout)
 		? r_time_now_mono () + ((ut64) timeout << 20) : 0;
 #endif
-}
-
-R_API void r_cons_break_end(void) {
-	r_kons_break_end (I);
 }
 
 R_API void *r_cons_sleep_begin(void) {

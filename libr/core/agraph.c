@@ -2042,7 +2042,7 @@ static void set_layout(RAGraph *g) {
 	minimize_crossings (g);
 
 	if (r_cons_is_breaked (cons)) {
-		r_kons_break_end (cons);
+		r_cons_break_end (cons);
 		return;
 	}
 	/* identify row height */
@@ -2551,7 +2551,7 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	}
 interrupted:
 	if (breakable) {
-		r_kons_break_end (core->cons);
+		r_cons_break_end (core->cons);
 		r_cons_set_raw (core->cons, true);
 	}
 

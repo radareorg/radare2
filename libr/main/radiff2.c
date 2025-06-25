@@ -605,7 +605,7 @@ static void dump_cols(RadiffOptions *ro, ut8 *a, int as, ut8 *b, int bs, int w) 
 		r_kons_printf (ro->cons, "\n");
 		r_cons_flush (ro->cons);
 	}
-	r_kons_break_end (ro->cons);
+	r_cons_break_end (ro->cons);
 	r_kons_printf (ro->cons, "\n"Color_RESET);
 	r_cons_flush (ro->cons);
 	if (as != bs) {
@@ -705,7 +705,7 @@ static void dump_cols_hexii(RadiffOptions *ro, ut8 *a, int as, ut8 *b, int bs, i
 		r_kons_printf (ro->cons, "\n");
 		r_cons_flush (ro->cons);
 	}
-	r_kons_break_end (ro->cons);
+	r_cons_break_end (ro->cons);
 	r_kons_printf (ro->cons, "\n"Color_RESET);
 	r_cons_flush (ro->cons);
 	if (as != bs) {

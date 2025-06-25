@@ -857,7 +857,6 @@ R_API void r_cons_sleep_end(void *user);
 R_API void r_cons_break_push(RConsBreak cb, void *user);
 R_API void r_cons_break_pop(void);
 R_API void r_cons_break_clear(RCons *cons);
-R_API void r_cons_break_end(void);
 R_API void r_kons_break_timeout(RCons *cons, int timeout);
 
 /* pipe */
@@ -867,7 +866,7 @@ R_API void r_cons_pipe_close_all(RCons *cons);
 R_API void r_kons_pal_clone(RConsContext *ctx);
 R_API void *r_kons_sleep_begin(RCons *cons);
 R_API void r_kons_sleep_end(RCons *cons, void *user);
-R_API void r_kons_break_end(RCons *cons);
+R_API void r_cons_break_end(RCons *cons);
 
 R_API void r_cons_clear_buffer(RCons *cons);
 #if R2__WINDOWS__

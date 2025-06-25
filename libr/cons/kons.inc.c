@@ -880,31 +880,7 @@ R_API void r_kons_trim(RCons *cons) {
 	}
 }
 
-R_API bool r_cons_is_breaked(RCons *cons) {
-#if WANT_DEBUGSTUFF
-	RConsContext *C = cons->context;
-	if (R_UNLIKELY (cons->cb_break)) {
-		cons->cb_break (cons->user);
-	}
-	if (R_UNLIKELY (cons->timeout)) {
-		if (r_stack_size (C->break_stack) > 0) {
-			if (r_time_now_mono () > cons->timeout) {
-				C->breaked = true;
-				C->was_breaked = true;
-				r_kons_break_timeout (cons, cons->otimeout);
-			}
-		}
-	}
-	if (R_UNLIKELY (!C->was_breaked)) {
-		C->was_breaked = C->breaked;
-	}
-	return R_UNLIKELY (C && C->breaked);
-#else
-	return false;
-#endif
-}
-
-R_API void r_kons_break_end(RCons *cons) {
+R_API void r_cons_break_end(RCons *cons) {
 	RConsContext *C = cons->context;
 	C->breaked = false;
 	cons->timeout = 0;
