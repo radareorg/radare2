@@ -54,7 +54,7 @@ r_util_sources = [
   'range.c',
   'rbtree.c',
   'regex/regcomp.c',
-  'regex/regerror.c'
+  'regex/regerror.c',
   'regex/regexec.c',
   'rlz4.c',
   'rprintf.c',

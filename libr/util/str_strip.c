@@ -4,17 +4,20 @@
 
 static void __unrgb(int color, int *r, int *g, int *b) {
 	// TODO: remove rcons dependency
-#if 0
-	RConsContext *ctx = r_cons_singleton ()->context;
 	if (color < 0 || color > 255) {
 		*r = *g = *b = 0;
 	} else {
+#if 0
+		RConsContext *ctx = r_cons_singleton ()->context;
 		int rgb = ctx->colors[color];
 		*r = (rgb >> 16) & 0xff;
 		*g = (rgb >> 8) & 0xff;
 		*b = rgb & 0xff;
-	}
+#else
+		R_LOG_WARN ("256 color palette not supported right now");
+		*r = *g = *b = 0;
 #endif
+	}
 }
 
 /* Parse an ANSI code string into RGB values -- Used by HTML filter only */
