@@ -3625,7 +3625,7 @@ static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, RAnalFunct
 	g->can->flags = r_cons_canvas_flags (core->cons);
 
 	if (is_interactive) {
-		r_kons_newline (core->cons);
+		r_cons_newline (core->cons);
 		const char *cmdv = r_config_get (core->config, "cmd.gprompt");
 		bool mustFlush = false;
 		r_cons_visual_flush (core->cons);
@@ -3847,7 +3847,7 @@ R_API void r_agraph_print(RAGraph *g, void *_core) {
 	g->can->flags = 0;
 	agraph_print (core, g, false, NULL);
 	if (g->graph->n_nodes > 0) {
-		r_kons_newline (core->cons);
+		r_cons_newline (core->cons);
 	}
 }
 
@@ -4528,7 +4528,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 	grd->fcn = fcn? &fcn: NULL;
 	ret = agraph_refresh (grd);
 	if (!ret || is_interactive != 1) {
-		r_kons_newline (core->cons);
+		r_cons_newline (core->cons);
 		exit_graph = true;
 		is_error = !ret;
 	}

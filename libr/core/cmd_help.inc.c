@@ -1300,13 +1300,13 @@ static int cmd_help(void *data, const char *input) {
 			for (i = 0; i < bits; i++) {
 				r_kons_printf (core->cons, "%02x", (ut8)((n >> (i * 8)) &0xff));
 			}
-			r_kons_newline (core->cons);
+			r_cons_newline (core->cons);
 		} else {
 			input = r_str_trim_head_ro (input);
 			for (i = 0; input[i]; i++) {
 				r_kons_printf (core->cons, "%02x", input[i]);
 			}
-			r_kons_newline (core->cons);
+			r_cons_newline (core->cons);
 		}
 		break;
 	case 'E': // "?E" clippy echo
@@ -1340,7 +1340,7 @@ static int cmd_help(void *data, const char *input) {
 		case '=': { // "?e="
 				ut64 pc = r_num_math (core->num, input + 2);
 				r_print_progressbar (core->print, pc, 80, NULL);
-				r_kons_newline (core->cons);
+				r_cons_newline (core->cons);
 			}
 			break;
 		case 'b': { // "?eb"
@@ -1432,7 +1432,7 @@ static int cmd_help(void *data, const char *input) {
 						  r_core_cmdf (core, "?e=%d", i);
 						  r_kons_print (core->cons, d);
 						  r_kons_clear_line (core->cons, 0);
-						  r_kons_newline (core->cons);
+						  r_cons_newline (core->cons);
 						  free (d);
 						  r_kons_flush (core->cons);
 						  r_sys_usleep (2000);
@@ -1445,7 +1445,7 @@ static int cmd_help(void *data, const char *input) {
 				  r_str_trim_tail (d);
 				  const char *color = (core->cons && core->cons->context->pal.flag)? core->cons->context->pal.flag: "";
 				  r_kons_printf (core->cons, "%s%s", color, d);
-				  r_kons_newline (core->cons);
+				  r_cons_newline (core->cons);
 				  free (d);
 			}
 			break;
@@ -1539,7 +1539,7 @@ static int cmd_help(void *data, const char *input) {
 			}
 			break;
 		case 0: // "?e"
-			r_kons_newline (core->cons);
+			r_cons_newline (core->cons);
 			break;
 		case '?': // "?e?"
 			r_core_cmd_help (core, help_msg_question_e);
@@ -1569,7 +1569,7 @@ static int cmd_help(void *data, const char *input) {
 				for (; from <= to; from += step) {
 					r_kons_printf (core->cons, "%"PFMT64d" ", from);
 				}
-				r_kons_newline (core->cons);
+				r_cons_newline (core->cons);
 			}
 		}
 		break;

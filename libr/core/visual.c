@@ -1621,11 +1621,11 @@ repeat:
 		}
 		if (dis) {
 			if (count < rows) {
-				r_kons_newline (cons);
+				r_cons_newline (cons);
 			}
 			int i = count;
 			for (; i < 9; i++)  {
-				r_kons_newline (cons);
+				r_cons_newline (cons);
 			}
 			/* prepare highlight */
 			char *cmd = strdup (r_config_get (core->config, "scr.highlight"));
@@ -1795,7 +1795,7 @@ static void visual_textlogs(RCore *core) {
 		r_kons_clear00 (cons);
 		int notch = r_config_get_i (core->config, "scr.notch");
 		while (notch-- > 0) {
-			r_kons_newline (cons);
+			r_cons_newline (cons);
 		}
 		const char *vi = r_config_get (core->config, "cmd.vprompt");
 		if (R_STR_ISNOTEMPTY (vi)) {

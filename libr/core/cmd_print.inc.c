@@ -859,7 +859,7 @@ static void cmd_prcn(RCore *core, const ut8* block, int len, bool bitsmode) {
 				r_kons_printf (cons, " ; %s", fi->name);
 			}
 		}
-		r_kons_newline (cons);
+		r_cons_newline (cons);
 	}
 }
 
@@ -947,13 +947,13 @@ static void cmd_prc(RCore *core, const ut8* block, int len) {
 		if (show_color) {
 			r_cons_printf (Color_RESET);
 		}
-		r_kons_newline (core->cons);
+		r_cons_newline (core->cons);
 	}
 }
 
 static void cmd_printmsg(RCore *core, const char *input) {
 	if (!strcmp (input, "ln")) {
-		r_kons_newline (core->cons);
+		r_cons_newline (core->cons);
 	} else if (r_str_startswith (input, "ln ")) {
 		r_kons_println (core->cons, input + 3);
 	} else if (r_str_startswith (input, " ")) {
@@ -1075,7 +1075,7 @@ static void cmd_prc_zoom(RCore *core, const char *input) {
 		if (show_color) {
 			r_cons_printf (Color_RESET);
 		}
-		r_kons_newline (core->cons);
+		r_cons_newline (core->cons);
 	}
 }
 
@@ -2007,7 +2007,7 @@ static void pfb(RCore *core, const char *arg, int mode) {
 	if (mode == PFB_COD) {
 		r_cons_printf ("}\n");
 	} else if (mode == PFB_QUI) {
-		r_kons_newline (core->cons);
+		r_cons_newline (core->cons);
 	} else if (mode == PFB_JSN) {
 		pj_end (pj);
 		char *s = pj_drain (pj);
@@ -2055,7 +2055,7 @@ static void pfb(RCore *core, const char *arg, int mode) {
 		}
 		firstline[padsz + 2] = 0;
 		int totalpad = padsz + 4;
-		r_kons_newline (core->cons);
+		r_cons_newline (core->cons);
 		r_list_reverse (lart);
 		r_list_foreach (lart, iter, la) {
 			int padsz = la->pos - 1 + (la->sz / 2);
@@ -2563,7 +2563,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	} else {
 		r_kons_print (core->cons, bytes);
 	}
-	r_kons_newline (core->cons);
+	r_cons_newline (core->cons);
 
 	// hexdump
 	for (i = 0; i < rows; i++) {
@@ -2853,7 +2853,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			if (hasline) {
 				r_kons_print (core->cons, addrpad);
 				r_kons_print (core->cons, out + 1);
-				r_kons_newline (core->cons);
+				r_cons_newline (core->cons);
 			}
 			marks = false;
 			free (out);
@@ -2871,7 +2871,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			}
 		}
 
-		r_kons_newline (core->cons);
+		r_cons_newline (core->cons);
 		addr += nb_cols;
 	}
 
@@ -4976,7 +4976,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 				r_print_progressbar (core->print, word64 * 100 / UT16_MAX, 60, NULL);
 				r_cons_printf (" %" PFMT64d, word64 - oldword);
 				oldword = word64;
-				r_kons_newline (core->cons);
+				r_cons_newline (core->cons);
 				i += step;
 			}
 		}
@@ -5272,7 +5272,7 @@ static void __printPattern(RCore *core, const char *_input) {
 			for (i = 0; i < len; i++) {
 				r_cons_printf ("%02x", buf[i]);
 			}
-			r_kons_newline (core->cons);
+			r_cons_newline (core->cons);
 			free (buf);
 		}
 		break;
@@ -5283,7 +5283,7 @@ static void __printPattern(RCore *core, const char *_input) {
 			for (i = 0; i < len; i++) {
 				r_cons_printf ("%02x", (int)(i + min));
 			}
-			r_kons_newline (core->cons);
+			r_cons_newline (core->cons);
 		}
 		break;
 	case '2': // "pp2"
@@ -5294,7 +5294,7 @@ static void __printPattern(RCore *core, const char *_input) {
 			for (i = 0; i < len; i++) {
 				r_cons_printf ("%04x", (int)(i + min));
 			}
-			r_kons_newline (core->cons);
+			r_cons_newline (core->cons);
 		}
 		break;
 	case '4': // "pp4"
@@ -5305,7 +5305,7 @@ static void __printPattern(RCore *core, const char *_input) {
 			for (i = 0; i < len; i++) {
 				r_cons_printf ("%08x", (int)(i + min));
 			}
-			r_kons_newline (core->cons);
+			r_cons_newline (core->cons);
 		}
 		break;
 	case '8': // "pp8"
@@ -5316,7 +5316,7 @@ static void __printPattern(RCore *core, const char *_input) {
 			for (i = 0; i < len; i++) {
 				r_cons_printf ("%016"PFMT64x, i + min);
 			}
-			r_kons_newline (core->cons);
+			r_cons_newline (core->cons);
 		}
 		break;
 	case 'f': // "ppf"
@@ -5326,7 +5326,7 @@ static void __printPattern(RCore *core, const char *_input) {
 			for (i = 0; i < len; i++) {
 				r_cons_printf ("%02x", 0xff);
 			}
-			r_kons_newline (core->cons);
+			r_cons_newline (core->cons);
 			free (buf);
 		}
 		break;
@@ -5337,7 +5337,7 @@ static void __printPattern(RCore *core, const char *_input) {
 			for (i = 0; i < len; i++) {
 				r_cons_printf ("%02x", 0);
 			}
-			r_kons_newline (core->cons);
+			r_cons_newline (core->cons);
 			free (buf);
 		}
 		break;
@@ -5355,7 +5355,7 @@ static void __printPattern(RCore *core, const char *_input) {
 				}
 				r_cons_printf (" ");
 			}
-			r_kons_newline (core->cons);
+			r_cons_newline (core->cons);
 			free (buf);
 		}
 		break;
@@ -5372,7 +5372,7 @@ static void __printPattern(RCore *core, const char *_input) {
 				}
 				r_cons_printf (" ");
 			}
-			r_kons_newline (core->cons);
+			r_cons_newline (core->cons);
 			free (buf);
 		}
 		break;
@@ -5466,7 +5466,7 @@ static void pr_bb(RCore *core, RAnalFunction *fcn, RAnalBlock *b, bool emu, ut64
 		}
 	}
 	if (p_type == 'D' && show_flags) {
-		r_kons_newline (core->cons);
+		r_cons_newline (core->cons);
 	}
 }
 
@@ -7033,7 +7033,7 @@ static int cmd_print(void *data, const char *input) {
 						ut8 b = acode->bytes[i];
 						r_cons_printf ("%02x", b);
 					}
-					r_kons_newline (core->cons);
+					r_cons_newline (core->cons);
 					r_asm_code_free (acode);
 				}
 			}
@@ -7707,7 +7707,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 			free (block1);
 			if (formatted_json) {
-				r_kons_newline (core->cons);
+				r_cons_newline (core->cons);
 			}
 		}
 		r_config_set_b (core->config, "asm.addr.segment", asm_addr_segment);
@@ -7804,7 +7804,7 @@ static int cmd_print(void *data, const char *input) {
 						r_cons_printf ("%d\n", (int)len);
 					} else {
 						r_cons_write (core->cons, (const char *)buf, len);
-						r_kons_newline (core->cons);
+						r_cons_newline (core->cons);
 					}
 				} else {
 					if (input[2] == 'l') { // "psnl"
@@ -7812,7 +7812,7 @@ static int cmd_print(void *data, const char *input) {
 					} else {
 						// cant find newline, print block
 						r_cons_write (core->cons, (const char *)core->block, core->blocksize);
-						r_kons_newline (core->cons);
+						r_cons_newline (core->cons);
 					}
 				}
 				free (buf);
@@ -7843,7 +7843,7 @@ static int cmd_print(void *data, const char *input) {
 							r_kons_print (core->cons, s); // TODO: missing newline?
 							free (s);
 							sb = r_strbuf_new ("");
-							r_kons_newline (core->cons);
+							r_cons_newline (core->cons);
 							if (!quiet) {
 								r_print_offset (core->print, core->addr + i, 0, 0, NULL);
 							}
@@ -8822,7 +8822,7 @@ static int cmd_print(void *data, const char *input) {
 						ut8 *p = (ut8 *) core->block + j;
 						r_print_byte (core->print, core->addr + j, "%c", j, *p);
 					}
-					r_kons_newline (core->cons);
+					r_cons_newline (core->cons);
 				}
 			}
 			break;
@@ -9010,7 +9010,7 @@ static int cmd_print(void *data, const char *input) {
 				for (i = 0; i < len; i ++) {
 					r_kons_printf (core->cons, "%d ", block[i]);
 				}
-				r_kons_newline (core->cons);
+				r_cons_newline (core->cons);
 			} else if (input[1] == 'b') { // "p8b"
 				r_core_cmdf (core, "p8 $BS @ $BB");
 			} else if (input[1] == 'f') { // "p8f"

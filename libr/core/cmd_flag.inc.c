@@ -519,7 +519,7 @@ static void cmd_fz(RCore *core, const char *input) {
 				r_kons_printf (core->cons, "%s[%s >>]", halfpad, b);
 			}
 			if (a || b) {
-				r_kons_newline (core->cons);
+				r_cons_newline (core->cons);
 			}
 		}
 		break;

@@ -1180,7 +1180,7 @@ static int cmd_type(void *data, const char *input) {
 		case 'j': // "tuj"
 			if (input[2]) {
 				showFormat (core, r_str_trim_head_ro (input + 2), 'j');
-				r_kons_newline (core->cons);
+				r_cons_newline (core->cons);
 			} else {
 				print_struct_union_list_json (core, TDB, stdifunion);
 			}
@@ -1315,7 +1315,7 @@ static int cmd_type(void *data, const char *input) {
 			// TODO: current output is a bit poor, will be good to improve
 			if (input[2]) {
 				showFormat (core, r_str_trim_head_ro (input + 2), 'j');
-				r_kons_newline (core->cons);
+				r_cons_newline (core->cons);
 			} else {
 				print_struct_union_list_json (core, TDB, stdifstruct);
 			}
@@ -1906,7 +1906,7 @@ static int cmd_type(void *data, const char *input) {
 		case 'j': // "tfj"
 			if (input[2] == ' ') {
 				printFunctionType (core, input + 2);
-				r_kons_newline (core->cons);
+				r_cons_newline (core->cons);
 			} else {
 				print_keys (TDB, core, stdiffunc, printfunc_json_cb, true);
 			}

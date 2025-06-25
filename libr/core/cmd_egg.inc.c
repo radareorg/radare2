@@ -42,7 +42,7 @@ static void showBuffer(RCore *core, RBuffer *b) {
 		for (i = 0; i < r_buf_size (b); i++) {
 			r_kons_printf (core->cons, "%02x", r_buf_read8 (b));
 		}
-		r_kons_newline (core->cons);
+		r_cons_newline (core->cons);
 	}
 }
 

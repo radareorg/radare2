@@ -1090,7 +1090,7 @@ static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_arra
 				const char *comma = iter2->p? " ": "";
 				r_kons_printf (core->cons, "%s0x%"PFMT64x, comma, iova? sym->vaddr: sym->paddr);
 			}
-			r_kons_newline (core->cons);
+			r_cons_newline (core->cons);
 			break;
 		case 'j':
 			{
@@ -1295,7 +1295,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 										iova? sym->vaddr: sym->paddr);
 							}
 							if (!r_list_empty (cls->methods)) {
-								r_kons_newline (core->cons);
+								r_cons_newline (core->cons);
 							}
 						}
 					}
@@ -1551,7 +1551,7 @@ static void cmd_iSm(RCore *core, const char *input, PJ **_pj, int mode, const bo
 				}
 				r_kons_printf (core->cons, " = %d symbols\n", count);
 			} else {
-				r_kons_newline (core->cons);
+				r_cons_newline (core->cons);
 				r_list_foreach (symbols, iter2, sym) {
 					if (inrange (sec, sym)) {
 						r_kons_printf (core->cons, "    - %8d %s\n",

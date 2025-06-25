@@ -162,7 +162,7 @@ static int cb_xpatch(RDiff *d, void *user, RDiffOp *op) {
 	for (i = 0; i < op->b_len; i++) {
 		r_kons_printf (ro->cons, "%02x", op->b_buf[i]);
 	}
-	r_kons_newline (ro->cons);
+	r_cons_newline (ro->cons);
 	return 0;
 }
 

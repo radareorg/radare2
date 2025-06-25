@@ -209,7 +209,7 @@ static void r_core_magic(RCore *core, const char *file, int v, PJ *pj) {
 	magic_at (&mc, NULL, file, addr, 0, v, pj);
 	free (mc.ofile);
 	if (pj) {
-		r_kons_newline (core->cons);
+		r_cons_newline (core->cons);
 	}
 	if (addr != core->addr) {
 		r_core_seek (core, addr, true);

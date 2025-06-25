@@ -227,7 +227,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 	case '*': // "ob*"
 		r_core_bin_list (core, input[1]);
 		if (input[1] == 'j') {
-			r_kons_newline (core->cons);
+			r_cons_newline (core->cons);
 		}
 		break;
 	case '.': // "ob."

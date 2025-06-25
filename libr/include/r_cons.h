@@ -947,7 +947,6 @@ R_API void r_cons_print(const char *str);
 R_API void r_cons_print_at(RCons *cons, const char *str, int x, char y, int w, int h);
 R_API void r_cons_println(const char* str);
 R_API void r_cons_print_justify(RCons *cons, const char *str, int j, char c);
-R_DEPRECATE R_API void r_cons_newline(void);
 
 R_DEPRECATE R_API void r_cons_flush(void);
 R_API char *r_cons_drain(void);
@@ -1206,7 +1205,7 @@ R_API void r_kons_set_interactive(RCons *cons, bool x);
 R_API void r_kons_grepbuf(RCons *cons);
 R_API void r_kons_println(RCons *cons, const char* str);
 R_API void r_kons_print(RCons *cons, const char *str);
-R_API void r_kons_newline(RCons *cons);
+R_API void r_cons_newline(RCons *cons);
 R_API int r_cons_write(RCons *cons, const char *str, int len);
 R_API void r_cons_memset(RCons *cons, char ch, int len);
 R_API void r_cons_printf_list(RCons *cons, const char *format, va_list ap);

@@ -4,7 +4,7 @@
 #include "private.h"
 R_API void r_kons_println(RCons *cons, const char* str) {
 	r_kons_print (cons, str);
-	r_kons_newline (cons);
+	r_cons_newline (cons);
 }
 
 R_API void r_kons_print(RCons *cons, const char *str) {
@@ -18,7 +18,7 @@ R_API void r_kons_print(RCons *cons, const char *str) {
 	}
 }
 
-R_API void r_kons_newline(RCons *cons) {
+R_API void r_cons_newline(RCons *cons) {
 	if (!cons->null) {
 		r_kons_print (cons, "\n");
 	}
@@ -754,7 +754,7 @@ R_API void r_kons_echo(RCons *cons, const char *msg) {
 		if (cons->echodata) {
 			char *data = r_strbuf_drain (cons->echodata);
 			r_kons_print (cons, data);
-			r_kons_newline (cons);
+			r_cons_newline (cons);
 			cons->echodata = NULL;
 			free (data);
 		}
@@ -904,34 +904,6 @@ R_API void r_kons_show_cursor(RCons *I, int cursor) {
 		cursor_info.dwSize = size;
 		cursor_info.bVisible = cursor ? TRUE : FALSE;
 		SetConsoleCursorInfo (hStdout, &cursor_info);
-	}
-#endif
-}
-
-R_API void r_kons_set_utf8(RCons *cons, bool b) {
-	cons->use_utf8 = b;
-#if R2__WINDOWS__
-	if (b) {
-		if (IsValidCodePage (CP_UTF8)) {
-			if (!SetConsoleOutputCP (CP_UTF8)) {
-				r_sys_perror ("r_cons_set_utf8");
-			}
-#if UNICODE
-			UINT inCP = CP_UTF8;
-#else
-			UINT inCP = GetACP ();
-#endif
-			if (!SetConsoleCP (inCP)) {
-				r_sys_perror ("r_cons_set_utf8");
-			}
-		} else {
-			R_LOG_WARN ("UTF-8 Codepage not installed");
-		}
-	} else {
-		UINT acp = GetACP ();
-		if (!SetConsoleCP (acp) || !SetConsoleOutputCP (acp)) {
-			r_sys_perror ("r_cons_set_utf8");
-		}
 	}
 #endif
 }

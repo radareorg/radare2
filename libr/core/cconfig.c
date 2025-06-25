@@ -2832,8 +2832,9 @@ static bool cb_tracetag(void *user, void *data) {
 }
 
 static bool cb_utf8(void *user, void *data) {
+	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	r_cons_set_utf8 ((bool)node->i_value);
+	r_cons_set_utf8 (core->cons, (bool)node->i_value);
 	return true;
 }
 

@@ -481,7 +481,7 @@ static bool duplicate_flag(RFlagItem *flag, void *u) {
 static bool foreach_newline(RCore *core) {
 	bool nl = r_config_get_b (core->config, "scr.loopnl");
 	if (nl) {
-		r_kons_newline (core->cons);
+		r_cons_newline (core->cons);
 	}
 	return !r_kons_is_breaked (core->cons);
 }
@@ -659,7 +659,7 @@ static int cmd_uname(void *data, const char *input) { // "uniq"
 				r_kons_printf (core->cons, " %s", si->release);
 			}
 		}
-		r_kons_newline (core->cons);
+		r_cons_newline (core->cons);
 		r_sys_info_free (si);
 	}
 	return 0;
@@ -930,7 +930,7 @@ static int cmd_alias(void *data, const char *input) {
 				char *v_str = r_cmd_alias_val_strdup (v);
 				if (v_str) {
 					r_kons_print (core->cons, v_str);
-					r_kons_newline (core->cons);
+					r_cons_newline (core->cons);
 					free (v_str);
 				}
 			} else if (q) {
@@ -6516,7 +6516,7 @@ R_API bool r_core_cmd_lines(RCore *core, const char *lines) {
 		r_kons_break_pop (core->cons);
 		if (show_progress_bar) {
 			r_print_progressbar_with_count (core->print, line_count, line_count, 80, true);
-			r_kons_newline (core->cons);
+			r_cons_newline (core->cons);
 		}
 	}
 	if (ret && R_STR_ISNOTEMPTY (data)) {

@@ -130,7 +130,7 @@ R_API void r_cons_print_justify(RCons *cons, const char *str, int j, char c) {
 			}
 			r_cons_write (cons, str + o, len);
 			if (str[o + len] == '\n') {
-				r_kons_newline (cons);
+				r_cons_newline (cons);
 			}
 			o = i + 1;
 			len = 0;
@@ -694,7 +694,7 @@ R_API void r_cons_print(const char *str) {
 }
 
 R_DEPRECATE R_API void r_cons_newline(void) {
-	r_kons_newline (I);
+	r_cons_newline (I);
 }
 
 R_API int r_cons_get_cursor(int *rows) {
@@ -1078,8 +1078,32 @@ R_API void r_cons_show_cursor(int cursor) {
 	r_kons_show_cursor (I, cursor);
 }
 
-R_API void r_cons_set_utf8(bool b) {
-	r_kons_set_utf8 (I, b);
+R_API void r_cons_set_utf8(RCons *cons, bool b) {
+	cons->use_utf8 = b;
+#if R2__WINDOWS__
+	if (b) {
+		if (IsValidCodePage (CP_UTF8)) {
+			if (!SetConsoleOutputCP (CP_UTF8)) {
+				r_sys_perror ("r_cons_set_utf8");
+			}
+#if UNICODE
+			UINT inCP = CP_UTF8;
+#else
+			UINT inCP = GetACP ();
+#endif
+			if (!SetConsoleCP (inCP)) {
+				r_sys_perror ("r_cons_set_utf8");
+			}
+		} else {
+			R_LOG_WARN ("UTF-8 Codepage not installed");
+		}
+	} else {
+		UINT acp = GetACP ();
+		if (!SetConsoleCP (acp) || !SetConsoleOutputCP (acp)) {
+			r_sys_perror ("r_cons_set_utf8");
+		}
+	}
+#endif
 }
 
 static int kons_chop(RCons *cons, int len) {

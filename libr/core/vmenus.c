@@ -297,7 +297,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 		}
 		r_kons_printf (cons, "esil stack: ");
 		if (!r_esil_dumpstack (esil)) {
-			r_kons_newline (cons);
+			r_cons_newline (cons);
 		}
 		r_kons_printf (cons, "esil regs:\n");
 		showreg (core, "$$", "address");
@@ -320,7 +320,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 		if (!input) {
 			r_anal_op_fini (&analop);
 		}
-		r_kons_newline (cons);
+		r_cons_newline (cons);
 		r_cons_visual_flush (cons);
 
 		int ch = r_cons_readchar (cons);
@@ -641,7 +641,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 				}
 			}
 		}
-		r_kons_newline (cons);
+		r_cons_newline (cons);
 		{
 			char str_pos[128];
 			memset (str_pos, '-', nbits + 9);
@@ -679,7 +679,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			memcpy (core->block, buf, 8);
 			r_core_cmd0 (core, vi);
 		}
-		r_kons_newline (cons);
+		r_cons_newline (cons);
 		//r_cons_visual_flush (core->cons);
 		r_kons_flush (cons);
 
@@ -691,7 +691,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			ch = r_cons_arrow_to_hjkl (cons, ch); // get ESC+char, return 'hjkl' char
 		}
 		// input
-		r_kons_newline (cons);
+		r_cons_newline (cons);
 		switch (ch) {
 		case 'w':
 			wordsize += 1;
@@ -1061,7 +1061,7 @@ R_API int r_core_visual_types(RCore *core) {
 				r_kons_printf (cons, h_opt == i ? "[%s] " : " %s  ", opts[i]);
 			}
 		}
-		r_kons_newline (core->cons);
+		r_cons_newline (core->cons);
 		if (optword) {
 			r_kons_printf (cons, ">> %s\n", optword);
 		}
@@ -2579,7 +2579,7 @@ R_API int r_core_visual_comments(RCore *core) {
 			}
 			continue;
 		}
-		r_kons_newline (core->cons);
+		r_cons_newline (core->cons);
 
 		switch (format) {
 		case 0: snprintf (cmd, sizeof (cmd), "px @ 0x%"PFMT64x":64", from); v->printidx = 0; break;
@@ -3383,7 +3383,7 @@ static ut64 var_functions_show(RCore *core, int idx, int show, int cols) {
 	bool color = r_config_get_i (core->config, "scr.color");
 	const char *color_addr = core->cons->context->pal.addr;
 	const char *color_fcn = core->cons->context->pal.fname;
-	r_kons_newline (core->cons);
+	r_cons_newline (core->cons);
 
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		print_full_func = true;
@@ -3448,7 +3448,7 @@ static ut64 var_variables_show(RCore* core, int idx, int *vindex, int show, int 
 	window -= 8;  // Size of printed things.
 
 	// A new line so this looks reasonable.
-	r_kons_newline (core->cons);
+	r_cons_newline (core->cons);
 
 	int llen = r_list_length (list);
 	if (*vindex >= llen) {
@@ -3603,7 +3603,7 @@ static ut64 r_core_visual_anal_refresh(RCore *core) {
 		if (color) {
 			r_kons_print (cons, Color_RESET);
 		}
-		r_kons_newline (cons);
+		r_cons_newline (cons);
 		r_kons_print (cons, "| (a)nalyze   (-)delete (xX)refs (jk)scroll  |\n");
 		r_kons_print (cons, "| (r)ename    (c)alls   (d)efine (tab)disasm |\n");
 		r_kons_print (cons, "| (d)efine    (v)ars    (?)help  (:)shell    |\n");

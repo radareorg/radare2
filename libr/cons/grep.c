@@ -710,7 +710,7 @@ R_API void r_kons_grepbuf(RCons *cons) {
 				cons->context->buffer_len = strlen (u);
 				cons->context->buffer_sz = cons->context->buffer_len + 1;
 				grep->json = false;
-				r_kons_newline (cons);
+				r_cons_newline (cons);
 			}
 			R_FREE (grep->json_path);
 		} else {

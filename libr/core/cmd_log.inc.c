@@ -95,7 +95,7 @@ static void screenlock(RCore *core) {
 			r_kons_printf (core->cons, "Last try: %s\n", endstr);
 			free (endstr);
 		}
-		r_kons_newline (core->cons);
+		r_cons_newline (core->cons);
 		r_kons_flush (core->cons);
 		char *msg = r_cons_password ("radare2 password: ");
 		if (msg && !strcmp (msg, pass)) {

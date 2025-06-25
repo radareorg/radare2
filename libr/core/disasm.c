@@ -596,7 +596,7 @@ static void ds_comment_(RDisasmState *ds, bool align, bool donl, const char *for
 			break;
 		}
 		if (!ds->show_cmt_right) {
-			r_kons_newline (cons);
+			r_cons_newline (cons);
 		}
 		first = false;
 		p = nl + 1;
@@ -1434,7 +1434,7 @@ static void ds_newline(RDisasmState *ds) {
 		r_kons_reset (cons);
 		pj_end (ds->pj);
 	} else {
-		r_kons_newline (cons);
+		r_cons_newline (cons);
 	}
 }
 
@@ -1467,7 +1467,7 @@ static void ds_print_pins(RDisasmState *ds) {
 		if (r_str_startswith (lepin, "soft.")) {
 			const char *cmd = r_anal_pin_get (core->anal, lepin);
 			if (cmd) {
-				r_kons_newline (ds->core->cons);
+				r_cons_newline (ds->core->cons);
 				r_core_cmd0 (core, cmd);
 			}
 		}
@@ -7996,7 +7996,7 @@ toro:
 							r_kons_printf (core->cons, "hex length=%d delta=%d\n", size, delta);
 							r_print_hexdump (core->print, at, buf + i, hexlen - delta, 16, 1, 1);
 						} else {
-							r_kons_newline (core->cons);
+							r_cons_newline (core->cons);
 						}
 						free (b);
 					}
@@ -8071,7 +8071,7 @@ toro:
 			asmop.size = ret;
 			ret = asmop.size;
 			if (!asm_instr) {
-				r_kons_newline (core->cons);
+				r_cons_newline (core->cons);
 			} else if (!asm_immtrim && (decode || esil)) {
 				RAnalOp analop = {
 					0

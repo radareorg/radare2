@@ -1543,7 +1543,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 		}
 	}
 	if (mode != 'j') {
-		r_kons_newline (core->cons);
+		r_cons_newline (core->cons);
 	}
 	r_list_free (ropList);
 }
