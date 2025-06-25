@@ -614,7 +614,7 @@ static bool searchRange(RCore *core, ut64 from, ut64 to, bool rad, struct ctxSea
 
 	r_cons_break_push (NULL, NULL);
 	for (at = from; at < to; at += core->blocksize) {
-		if (r_cons_is_breaked ()) {
+		if (r_kons_is_breaked (core->cons)) {
 			retval = false;
 			break;
 		}

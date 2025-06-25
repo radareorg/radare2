@@ -334,7 +334,7 @@ static int cmd_log(void *data, const char *input) {
 		if (input[1] == '&') { //  "T=&"
 			if (input[2] == '&') { // "T=&&"
 				r_cons_break_push (NULL, NULL);
-				while (!r_cons_is_breaked ()) {
+				while (!r_kons_is_breaked (core->cons)) {
 					r_core_cmd_call (core, "T=");
 					void *bed = r_cons_sleep_begin();
 					r_sys_sleep (1);

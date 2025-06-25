@@ -190,7 +190,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 	core->block = newblk;
 // TODO: handle mutex lock/unlock here
 	r_cons_break_push ((RConsBreak)r_core_rtr_http_stop, core);
-	while (!r_cons_is_breaked () && core->http_up) {
+	while (!r_kons_is_breaked (core->cons) && core->http_up) {
 		/* restore environment */
 		core->config = origcfg;
 #if WEBCONFIG

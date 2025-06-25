@@ -985,6 +985,7 @@ static int gprobe_flasherase(struct gport *port, ut16 sector) {
 		goto fail;
 	}
 
+	RCons *cons = r_cons_singleton ();
 	while (1) {
 		RBuffer *reply = NULL;
 		int res = get_reply (port, GPROBE_ACK, &reply);
@@ -992,7 +993,7 @@ static int gprobe_flasherase(struct gport *port, ut16 sector) {
 		if (!res) {
 			break;
 		}
-		if (r_cons_is_breaked ()) {
+		if (r_kons_is_breaked (cons)) {
 			break;
 		}
 	}
@@ -1309,16 +1310,17 @@ static int gprobe_listen(struct gport *port) {
 		return -1;
 	}
 
-	r_cons_break_push (NULL, NULL);
+	RCons *cons = r_cons_singleton ();
+	r_kons_break_push (cons, NULL, NULL);
 	while (true) {
 		RBuffer *reply = NULL;
 		get_reply (port, GPROBE_RESET, &reply);
 		r_buf_free (reply);
-		if (r_cons_is_breaked ()) {
+		if (r_kons_is_breaked (cons)) {
 			break;
 		}
 	}
-	r_cons_break_pop ();
+	r_kons_break_pop (cons);
 
 	return 0;
 }

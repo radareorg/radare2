@@ -292,8 +292,9 @@ R_API bool r_kons_was_breaked(RCons *cons) {
 
 R_API bool r_cons_was_breaked(void) {
 #if WANT_DEBUGSTUFF
-	RConsContext *ctx = r_cons_singleton ()->context;
-	const bool res = r_cons_is_breaked () || ctx->was_breaked;
+	RCons *cons = r_cons_singleton ();
+	RConsContext *ctx = cons->context;
+	const bool res = r_kons_is_breaked (cons) || ctx->was_breaked;
 	ctx->breaked = false;
 	ctx->was_breaked = false;
 	return res;

@@ -2,6 +2,7 @@
 
 #include <r_anal.h>
 #include <r_hash.h>
+#include <r_core.h>
 
 #define unwrap(rbnode) container_of (rbnode, RAnalBlock, _rb)
 
@@ -526,7 +527,9 @@ R_API bool r_anal_block_recurse_followthrough(RAnalBlock *block, RAnalBlockCb cb
 	ht_up_insert (ctx.visited, block->addr, NULL);
 	r_pvector_push (&ctx.to_visit, block);
 
-	while (!r_pvector_empty (&ctx.to_visit) && !r_cons_is_breaked ()) {
+	RCore *core = ctx.anal->coreb.core;
+	RCons *cons = core->cons;
+	while (!r_pvector_empty (&ctx.to_visit) && !r_kons_is_breaked (cons)) {
 		RAnalBlock *cur = r_pvector_pop (&ctx.to_visit);
 		if (cb (cur, user)) {
 			r_anal_block_successor_addrs_foreach (cur, block_recurse_successor_cb, &ctx);

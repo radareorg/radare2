@@ -7,9 +7,6 @@
 
 static const char hex[16] = "0123456789ABCDEF";
 
-// XXX global mutable
-static R_TH_LOCAL RPrintIsInterruptedCallback is_interrupted_cb = NULL;
-
 R_API void r_print_portionbar(RPrint *p, const ut64 *portions, int n_portions) {
 	const int use_color = p->flags & R_PRINT_FLAGS_COLOR;
 	int i, j;
@@ -121,17 +118,6 @@ R_API int r_util_lines_getline(ut64 *lines_cache, int lines_cache_sz, ut64 off) 
 		}
 	}
 	return imin;
-}
-
-R_API bool r_print_is_interrupted(void) {
-	if (is_interrupted_cb) {
-		return is_interrupted_cb ();
-	}
-	return false;
-}
-
-R_API void r_print_set_is_interrupted_cb(RPrintIsInterruptedCallback cb) {
-	is_interrupted_cb = cb;
 }
 
 static void r_print_stereogram_private(const char *bump, int w, int h, char *out, int size) {
@@ -613,6 +599,7 @@ R_API void r_print_byte(RPrint *p, ut64 addr, const char *fmt, int idx, ut8 ch) 
 }
 
 R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int options) {
+	RCons *cons = (p && p->consb.cons)? p->consb.cons: NULL;
 	int i;
 	bool wide = (options & R_PRINT_STRING_WIDE);
 	bool wide32 = (options & R_PRINT_STRING_WIDE32);
@@ -620,12 +607,17 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 	bool wrap = (options & R_PRINT_STRING_WRAP);
 	bool urlencode = (options & R_PRINT_STRING_URLENCODE);
 	bool only_printable = (options & R_PRINT_STRING_ONLY_PRINTABLE);
-	bool is_interactive = (p && p->consb.cons) ? p->consb.cons->context->is_interactive: false;
+	bool is_interactive = cons ? cons->context->is_interactive: false;
 	bool esc_nl = (options & R_PRINT_STRING_ESC_NL);
 	bool use_color = p && (p->flags & R_PRINT_FLAGS_COLOR);
+	RConsIsBreaked is_breaked = p->consb.is_breaked;
 	int col = 0;
+
 	i = 0;
-	for (; !r_print_is_interrupted () && i < len; i++) {
+	for (; i < len; i++) {
+		if (cons && is_breaked && is_breaked (cons)) {
+			break;
+		}
 		if (wide32) {
 			int j = i;
 			while (buf[j] == '\0' && j < (i + 3)) {

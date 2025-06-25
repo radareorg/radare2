@@ -81,6 +81,8 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 	ut8 *free_levels;
 	int sz = 0, count = 0;
 	ut64 opc = addr;
+	RCore *core = anal->coreb.core;
+	RCons *cons = core->cons;
 
 	/*
 	 * 1) find all reflines
@@ -103,7 +105,7 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 	}
 	r_cons_break_push (NULL, NULL);
 	/* analyze code block */
-	while (ptr < end && !r_cons_is_breaked ()) {
+	while (ptr < end && !r_kons_is_breaked (cons)) {
 		if (nlines != -1) {
 			if (!nlines) {
 				break;

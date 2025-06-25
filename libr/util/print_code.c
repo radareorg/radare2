@@ -43,7 +43,7 @@ static void print_c_instructions(RPrint *p, ut64 addr, const ut8 *buf, int len) 
 	size_t k, i = 0;
 	bool be = (p && p->config)? R_ARCH_CONFIG_IS_BIG_ENDIAN (p->config): R_SYS_ENDIAN;
 
-	while (!r_print_is_interrupted () && i < len) {
+	while (!r_print_is_interrupted (p) && i < len) {
 		ut64 at = addr + i;
 		int inst_size = get_instruction_size (p, at);
 		if (inst_size <= 0) {
@@ -101,7 +101,7 @@ static void print_c_code(RPrint *p, ut64 addr, const ut8 *buf, int len, int ws, 
 		free (namesz);
 	}
 
-	for (i = 0; !r_print_is_interrupted () && i < len; i++) {
+	for (i = 0; !r_print_is_interrupted (p) && i < len; i++) {
 		if (headers) {
 			if (!(i % w)) {
 				r_print_printf (p, "\n  ");
@@ -130,6 +130,16 @@ static void print_c_code(RPrint *p, ut64 addr, const ut8 *buf, int len, int ws, 
 	}
 }
 
+R_API bool r_print_is_interrupted(RPrint *p) {
+	RCons *cons = (p && p->consb.cons)? p->consb.cons: NULL;
+	RConsIsBreaked is_breaked = p->consb.is_breaked;
+	if (cons && is_breaked && is_breaked (cons)) {
+		return true;
+	}
+	return false;
+}
+
+
 R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang) {
 	R_RETURN_IF_FAIL (p && buf);
 	int i, w = (int)(p->cols * 0.7);
@@ -142,7 +152,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		break;
 	case '*':
 		r_print_printf (p, "wx+");
-		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
+		for (i = 0; !r_print_is_interrupted (p) && i < len; i++) {
 			if (i && !(i % 32)) {
 				r_print_printf (p, ";\nwx+");
 			}
@@ -159,7 +169,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 			const int max_cols = 60;
 
 			r_print_printf (p, "const unsigned char cstr[%d] = \"", len);
-			for (i = 0; !r_print_is_interrupted () && i < len; i++) {
+			for (i = 0; !r_print_is_interrupted (p) && i < len; i++) {
 				if (col == 0 || col > max_cols) {
 					r_print_printf (p, "\"\\\n  \"");
 					col = 0;
@@ -197,7 +207,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		break;
 	case 'a': // "pca"
 		r_print_printf (p, "shellcode:");
-		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
+		for (i = 0; !r_print_is_interrupted (p) && i < len; i++) {
 			if (!(i % 8)) {
 				r_print_printf (p, "\n.byte ");
 			} else {
@@ -209,7 +219,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		break;
 	case 'g': // "pcg"
 		r_print_printf (p, "var BUFF = [%d]byte{", len);
-		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
+		for (i = 0; !r_print_is_interrupted (p) && i < len; i++) {
 			r_print_cursor (p, i, 1, 1);
 			r_print_printf (p, "0x%x%s", buf[i], (i + 1 < len)? ",": "");
 			r_print_cursor (p, i, 1, 0);
@@ -218,7 +228,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		break;
 	case 's': // "pcs"
 		r_print_printf (p, "\"");
-		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
+		for (i = 0; !r_print_is_interrupted (p) && i < len; i++) {
 			r_print_printf (p, "\\x%02x", buf[i]);
 		}
 		r_print_printf (p, "\"\n");
@@ -226,7 +236,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 	case 'S': // "pcS"
 	{
 		const int trunksize = 16;
-		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
+		for (i = 0; !r_print_is_interrupted (p) && i < len; i++) {
 			if (!(i % trunksize)) {
 				r_print_printf (p, "printf \"");
 			}
@@ -249,7 +259,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		free (out);
 	} break;
 	case 'n': // "pcn"
-		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
+		for (i = 0; !r_print_is_interrupted (p) && i < len; i++) {
 			r_print_cursor (p, i, 1, 1);
 			r_print_printf (p, "%d%s", buf[i], (i + 1 < len)? " ": "");
 			r_print_cursor (p, i, 1, 0);
@@ -258,7 +268,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		break;
 	case 'k': // "pck" kotlin
 		r_print_printf (p, "val arr = byteArrayOfInts(");
-		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
+		for (i = 0; !r_print_is_interrupted (p) && i < len; i++) {
 			r_print_cursor (p, i, 1, 1);
 			r_print_printf (p, "0x%x%s", buf[i], (i + 1 < len)? ",": "");
 			r_print_cursor (p, i, 1, 0);
@@ -268,7 +278,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 	case 'z': // "pcz" // swift
 		r_print_printf (p, "let byteArray : [UInt8] = [");
 
-		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
+		for (i = 0; !r_print_is_interrupted (p) && i < len; i++) {
 			r_print_cursor (p, i, 1, 1);
 			r_print_printf (p, "0x%x%s", buf[i], (i + 1 < len)? ", ": "");
 			r_print_cursor (p, i, 1, 0);
@@ -277,7 +287,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		break;
 	case 'r': // "pcr" // Rust
 		r_print_printf (p, "let _: [u8; %d] = [\n", len);
-		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
+		for (i = 0; !r_print_is_interrupted (p) && i < len; i++) {
 			r_print_cursor (p, i, 1, 1);
 			r_print_printf (p, "0x%x%s", buf[i], (i + 1 < len)? ",": "");
 			r_print_cursor (p, i, 1, 0);
@@ -286,7 +296,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		break;
 	case 'o': // "pco" // Objective-C
 		r_print_printf (p, "NSData *endMarker = [[NSData alloc] initWithBytes:{\n");
-		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
+		for (i = 0; !r_print_is_interrupted (p) && i < len; i++) {
 			r_print_cursor (p, i, 1, 1);
 			r_print_printf (p, "0x%x%s", buf[i], (i + 1 < len)? ",": "");
 			r_print_cursor (p, i, 1, 0);
@@ -295,7 +305,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		break;
 	case 'v': // "pcv" // JaVa
 		r_print_printf (p, "byte[] ba = {");
-		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
+		for (i = 0; !r_print_is_interrupted (p) && i < len; i++) {
 			r_print_cursor (p, i, 1, 1);
 			r_print_printf (p, "%d%s", buf[i], (i + 1 < len)? ",": "");
 			r_print_cursor (p, i, 1, 0);
@@ -304,7 +314,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		break;
 	case 'V': // "pcV" // vlang.io
 		r_print_printf (p, "const data = [ byte(%d),\n  ", buf[0]);
-		for (i = 1; !r_print_is_interrupted () && i < len; i++) {
+		for (i = 1; !r_print_is_interrupted (p) && i < len; i++) {
 			r_print_cursor (p, i, 1, 1);
 			r_print_printf (p, "%d%s", buf[i], (i + 1 < len)? ", ": "");
 			r_print_cursor (p, i, 1, 0);
@@ -316,7 +326,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		break;
 	case 'y': // "pcy"
 		r_print_printf (p, "{");
-		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
+		for (i = 0; !r_print_is_interrupted (p) && i < len; i++) {
 			r_print_cursor (p, i, 1, 1);
 			r_print_printf (p, " %02x", buf[i] & 0xff);
 			r_print_cursor (p, i, 1, 0);
@@ -325,7 +335,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		break;
 	case 'Y': // "pcY"
 		r_print_printf (p, "$hex_%"PFMT64x" = {", addr);
-		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
+		for (i = 0; !r_print_is_interrupted (p) && i < len; i++) {
 			r_print_cursor (p, i, 1, 1);
 			r_print_printf (p, " %02x", buf[i] & 0xff);
 			r_print_cursor (p, i, 1, 0);
@@ -334,7 +344,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		break;
 	case 'j': // "pcj"
 		r_print_printf (p, "[");
-		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
+		for (i = 0; !r_print_is_interrupted (p) && i < len; i++) {
 			r_print_cursor (p, i, 1, 1);
 			r_print_printf (p, "%d%s", buf[i], (i + 1 < len)? ",": "");
 			r_print_cursor (p, i, 1, 0);
@@ -344,7 +354,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 	case 'P':
 	case 'p': // "pcp" "pcP"
 		r_print_printf (p, "import struct\nbuf = struct.pack (\"%dB\", *[", len);
-		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
+		for (i = 0; !r_print_is_interrupted (p) && i < len; i++) {
 			if (!(i % w)) {
 				r_print_printf (p, "\n");
 			}

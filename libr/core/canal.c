@@ -1002,7 +1002,7 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 		if (!core->anal->opt.noncode && (region.perm & R_PERM_RX) != R_PERM_RX) {
 			goto error;
 		}
-		if (r_cons_is_breaked ()) {
+		if (r_kons_is_breaked (core->cons)) {
 			break;
 		}
 		fcnlen = r_anal_function (core->anal, fcn, at + delta, reftype);
@@ -2189,7 +2189,7 @@ R_API bool r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 		R_LOG_DEBUG ("Unknown address from memref call 0x%08"PFMT64x, from);
 		return false;
 	}
-	if (r_cons_is_breaked ()) {
+	if (r_kons_is_breaked (core->cons)) {
 		return false;
 	}
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, at, 0);

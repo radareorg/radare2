@@ -23,9 +23,6 @@ static int rcoreasm_address_comparator(RCoreAsmHit *a, RCoreAsmHit *b) {
 
 R_API RCoreAsmHit *r_core_asm_hit_new(void) {
 	RCoreAsmHit *hit = R_NEW0 (RCoreAsmHit);
-	if (!hit) {
-		return NULL;
-	}
 	hit->addr = -1;
 	hit->valid = false;
 	return hit;
@@ -126,7 +123,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	r_cons_break_push (NULL, NULL);
 	char *opst = NULL;
 	for (at = from; at < to; at += bs) {
-		if (r_cons_is_breaked ()) {
+		if (r_kons_is_breaked (core->cons)) {
 			break;
 		}
 		if (!r_io_is_valid_offset (core->io, at, 0)) {
@@ -144,7 +141,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 			if (addr >= to) {
 				break;
 			}
-			if (r_cons_is_breaked ()) {
+			if (r_kons_is_breaked (core->cons)) {
 				break;
 			}
 			r_asm_set_pc (core->rasm, addr);
@@ -541,7 +538,7 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 	}
 
 	for (idx = addrbytes; idx < len; idx += addrbytes) {
-		if (r_cons_is_breaked ()) {
+		if (r_kons_is_breaked (core->cons)) {
 			break;
 		}
 		c = r_asm_mdisassemble (core->rasm, buf + len - idx, idx);
@@ -611,7 +608,7 @@ static RList *r_core_asm_back_disassemble_all(RCore *core, ut64 addr, ut64 len, 
 
 	do {
 		RAnalOp op;
-		if (r_cons_is_breaked ()) {
+		if (r_kons_is_breaked (core->cons)) {
 			break;
 		}
 		// reset assembler
@@ -692,7 +689,7 @@ static RList *r_core_asm_back_disassemble(RCore *core, ut64 addr, int len, ut64 
 	current_instr_addr = addr - 1;
 	do {
 		RAnalOp op;
-		if (r_cons_is_breaked ()) {
+		if (r_kons_is_breaked (core->cons)) {
 			break;
 		}
 		// reset assembler

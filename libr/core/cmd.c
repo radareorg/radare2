@@ -983,7 +983,7 @@ repeat:
 		void *bed = r_cons_sleep_begin ();
 		r_cons_break_push (NULL, NULL);
 		for (;;) {
-			if (r_cons_is_breaked ()) {
+			if (r_kons_is_breaked (core->cons)) {
 				break;
 			}
 			r_socket_printf (s, "[0x%08"PFMT64x"]> ", core->addr);
@@ -5756,7 +5756,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 			ut64 bszorig = core->blocksize;
 			r_cons_break_push (NULL, NULL);
 			r_list_foreach (list, iter, item) {
-				if (r_cons_is_breaked ()) {
+				if (r_kons_is_breaked (core->cons)) {
 					break;
 				}
 				if (item->addr == UT64_MAX) {
@@ -6024,7 +6024,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				r_cons_break_push (NULL, NULL);
 				r_core_return_code (core, 0);
 				for (cur = from; cur <= to; cur += step) {
-					if (r_cons_is_breaked ()) {
+					if (r_kons_is_breaked (core->cons)) {
 						break;
 					}
 					(void) r_core_seek (core, cur, true);
@@ -6218,7 +6218,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			// XXX what's this 999 ?
 			i = 0;
 			for (core->rcmd->macro.counter = 0; i < 999; core->rcmd->macro.counter++) {
-				if (r_cons_is_breaked ()) {
+				if (r_kons_is_breaked (core->cons)) {
 					break;
 				}
 				r_cmd_macro_call (&core->rcmd->macro, each + 2);
@@ -6297,7 +6297,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 
 				/* for all flags that match */
 				r_list_foreach (match_flag_items, iter, flag) {
-					if (r_cons_is_breaked ()) {
+					if (r_kons_is_breaked (core->cons)) {
 						break;
 					}
 					char *buf = NULL;
@@ -6488,7 +6488,7 @@ R_API bool r_core_cmd_lines(RCore *core, const char *lines) {
 			if (show_progress_bar) {
 				r_print_progressbar_with_count (core->print, current_line++, line_count, 80, true);
 			}
-			if (r_cons_is_breaked ()) {
+			if (r_kons_is_breaked (core->cons)) {
 				free (odata);
 				r_cons_break_pop ();
 				return ret;

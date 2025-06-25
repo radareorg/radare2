@@ -160,7 +160,7 @@ int linux_handle_signals(RDebug *dbg, int tid) {
 		default:
 			break;
 		}
-		if (dbg->reason.signum != SIGTRAP && (dbg->reason.signum != SIGINT || !r_cons_is_breaked ())) {
+		if (dbg->reason.signum != SIGTRAP && (dbg->reason.signum != SIGINT || !r_kons_is_breaked (core->cons))) {
 			const char *name = r_signal_tostring (dbg->reason.signum);
 			eprintf ("[+] SIGNAL %d (aka %s) errno=%d addr=0x%08"PFMT64x " code=%d si_pid=%d ret=%d\n",
 				siginfo.si_signo, name, siginfo.si_errno,

@@ -1387,7 +1387,7 @@ R_API int r_core_rtr_cmds(RCore *core, const char *port) {
 	listenport = port;
 	r_cons_break_push ((RConsBreak)r_core_rtr_http_stop, core);
 	for (;;) {
-		if (r_cons_is_breaked ()) {
+		if (r_kons_is_breaked (core->cons)) {
 			break;
 		}
 		void *bed = r_cons_sleep_begin ();

@@ -1,8 +1,9 @@
-/* radare - LGPL - Copyright 2010-2024 - nibble, alvaro, pancake */
+/* radare - LGPL - Copyright 2010-2025 - nibble, alvaro, pancake */
 
 #define R_LOG_ORIGIN "fcn"
 
 #include <r_anal.h>
+#include <r_core.h>
 #include <r_vec.h>
 
 #define READ_AHEAD 1
@@ -621,19 +622,21 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	} delay = {
 		0
 	};
+	RCore *core = anal->coreb.core;
+	RCons *cons = core->cons;
 	const char *arch = anal->config? anal->config->arch: R_SYS_ARCH;
 	bool arch_destroys_dst = does_arch_destroys_dst (arch);
 	const bool flagends = anal->opt.flagends;
 	const bool is_arm = r_str_startswith (arch, "arm");
 	const bool is_mips = !is_arm && r_str_startswith (arch, "mips");
-	const bool is_v850 = is_arm ? false: (arch && (!strncmp (arch, "v850", 4) || !strncmp (anal->coreb.cfgGet (anal->coreb.core, "asm.cpu"), "v850", 4)));
+	const bool is_v850 = is_arm ? false: (arch && (!strncmp (arch, "v850", 4) || !strncmp (anal->coreb.cfgGet (core, "asm.cpu"), "v850", 4)));
 	const bool is_x86 = is_arm ? false: arch && !strncmp (arch, "x86", 3);
 	const bool is_amd64 = is_x86 ? fcn->callconv && !strcmp (fcn->callconv, "amd64") : false;
 	const bool is_dalvik = is_x86 ? false : arch && !strncmp (arch, "dalvik", 6);
 	const bool propagate_noreturn = anal->opt.propagate_noreturn;
 	ut64 v1 = UT64_MAX;
 
-	if (r_cons_is_breaked ()) {
+	if (r_kons_is_breaked (cons)) {
 		return R_ANAL_RET_END;
 	}
 	if (anal->sleep) {
@@ -754,7 +757,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 			break;
 		}
 repeat:
-		if (r_cons_is_breaked ()) {
+		if (r_kons_is_breaked (cons)) {
 			break;
 		}
 		ut8 buf[32]; // 32 bytes is enough to hold any instruction.
@@ -1217,7 +1220,7 @@ noskip:
 					}
 				}
 			}
-			if (r_cons_is_breaked ()) {
+			if (r_kons_is_breaked (cons)) {
 				gotoBeach (R_ANAL_RET_END);
 			}
 			if (anal->opt.jmpref) {
@@ -2528,7 +2531,8 @@ static void update_var_analysis(RAnalFunction *fcn, int align, ut64 from, ut64 t
 	}
 	for (cur_addr = from; cur_addr < to; cur_addr += opsz, len -= opsz) {
 		RAnalOp op;
-		int ret = r_anal_op (anal->coreb.core, &op, cur_addr, buf, len, R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_VAL);
+		// int ret = r_anal_op (anal->coreb.core, &op, cur_addr, buf, len, R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_VAL);
+		int ret = r_anal_op (anal, &op, cur_addr, buf, len, R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_VAL);
 		if (ret < 1 || op.size < 1) {
 			r_anal_op_fini (&op);
 			break;

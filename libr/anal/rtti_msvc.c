@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2018 - pancake, maijin, thestr4ng3r */
 
 #include "r_anal.h"
+#include <r_core.h>
 
 #define NAME_BUF_SIZE    64
 #define BASE_CLASSES_MAX 32
@@ -190,9 +191,8 @@ static RList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num_
 	}
 
 	RList *ret = r_list_newf (free);
-	if (!ret) {
-		return NULL;
-	}
+	RCore *core = context->anal->coreb.core;
+	RCons *cons = core->cons;
 
 	ut64 addr = base + offset;
 	ut64 stride = R_MIN (context->word_size, 4);
@@ -204,9 +204,9 @@ static RList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num_
 		num_base_classes = BASE_CLASSES_MAX;
 	}
 
-	r_cons_break_push (NULL, NULL);
+	r_kons_break_push (cons, NULL, NULL);
 	while (num_base_classes > 0) {
-		if (r_cons_is_breaked ()) {
+		if (r_kons_is_breaked (cons)) {
 			break;
 		}
 
@@ -246,7 +246,7 @@ static RList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num_
 		addr += stride;
 		num_base_classes--;
 	}
-	r_cons_break_pop ();
+	r_kons_break_pop (cons);
 
 	if (num_base_classes > 0) {
 		// there was an error in the loop above

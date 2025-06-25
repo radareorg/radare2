@@ -250,7 +250,7 @@ static bool objc_find_refs(RCore *core) {
 	size_t total_xrefs = 0;
 	bool readSuccess = true;
 	for (off = 0; off < objc->_data->vsize && readSuccess; off += objc2ClassSize) {
-		if (!readSuccess || r_cons_is_breaked ()) {
+		if (!readSuccess || r_kons_is_breaked (core->cons)) {
 			break;
 		}
 
@@ -285,7 +285,7 @@ static bool objc_find_refs(RCore *core) {
 			break;
 		}
 		for (va = classMethodsVA; va < to; va += objc2ClassMethSize) {
-			if (r_cons_is_breaked ()) {
+			if (r_kons_is_breaked (core->cons)) {
 				break;
 			}
 			bool found = false;

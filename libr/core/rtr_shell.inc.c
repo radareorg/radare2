@@ -34,9 +34,9 @@ static bool rtr_visual(RCore *core, TextLog T, const char *cmd) {
 			if (autorefresh) {
 				r_kons_printf (core->cons, "(auto-refresh)\n");
 				r_cons_flush (core->cons);
-				r_cons_break_push (NULL, NULL);
+				r_kons_break_push (core->cons, NULL, NULL);
 				r_sys_sleep (1);
-				if (r_cons_is_breaked ())  {
+				if (r_kons_is_breaked (core->cons))  {
 					autorefresh = false;
 					ch = r_cons_readchar (core->cons);
 				} else {

@@ -3051,7 +3051,7 @@ R_API void r_core_cmd_queue_wait(RCore *core) {
 	}
 	r_kons_push (core->cons);
 	r_cons_break_push (NULL, NULL);
-	while (!r_cons_is_breaked ()) {
+	while (!r_kons_is_breaked (core->cons)) {
 		char *cmd = r_list_pop (core->cmdqueue);
 		if (cmd) {
 			r_core_cmd0 (core, cmd);
@@ -3259,12 +3259,12 @@ R_API bool r_core_serve(RCore *core, RIODesc *file) {
 	R_LOG_INFO ("RAP Server started (rap.loop=%s)", arg);
 	r_cons_break_push (rap_break, rior);
 reaccept:
-	while (!r_cons_is_breaked ()) {
+	while (!r_kons_is_breaked (core->cons)) {
 		RSocket *c = r_socket_accept (fd);
 		if (!c) {
 			break;
 		}
-		if (r_cons_is_breaked ()) {
+		if (r_kons_is_breaked (core->cons)) {
 			goto out_of_function;
 		}
 		if (!c) {
@@ -3273,7 +3273,7 @@ reaccept:
 			goto out_of_function;
 		}
 		R_LOG_INFO ("rap: client connected");
-		for (;!r_cons_is_breaked ();) {
+		for (;!r_kons_is_breaked (core->cons);) {
 			if (!r_socket_read_block (c, &cmd, 1)) {
 				R_LOG_INFO ("rap: connection closed");
 				if (r_config_get_i (core->config, "rap.loop")) {

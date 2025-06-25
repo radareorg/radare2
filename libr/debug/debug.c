@@ -739,6 +739,8 @@ R_API RDebugReasonType r_debug_stop_reason(RDebug *dbg) {
  */
 R_API RDebugReasonType r_debug_wait(RDebug * R_NONNULL dbg, RBreakpointItem ** R_NULLABLE bp) {
 	R_RETURN_VAL_IF_FAIL (dbg, R_DEBUG_REASON_ERROR);
+	RCore *core = dbg->coreb.core;
+	RCons *cons = core->cons;
 	RDebugReasonType reason = R_DEBUG_REASON_ERROR;
 	if (bp) {
 		*bp = NULL;
@@ -828,7 +830,7 @@ R_API RDebugReasonType r_debug_wait(RDebug * R_NONNULL dbg, RBreakpointItem ** R
 			const char *name = r_signal_tostring (dbg->reason.signum);
 			const char *humn = r_signal_to_human (dbg->reason.signum);
 			if (name && strcmp ("SIGTRAP", name)) {
-				r_cons_printf ("[+] signal %d aka %s received %d (%s)\n",
+				r_kons_printf (cons, "[+] signal %d aka %s received %d (%s)\n",
 						dbg->reason.signum, name, what, humn);
 			}
 		}
@@ -1217,8 +1219,10 @@ repeat:
 		return 0;
 	}
 	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
+	RCore *core = dbg->coreb.core;
+	RCons *cons = core->cons;
 	if (dbg->session && dbg->trace_continue) {
-		while (!r_cons_is_breaked ()) {
+		while (!r_kons_is_breaked (cons)) {
 			if (r_debug_step (dbg, 1) != 1) {
 				break;
 			}
@@ -1254,7 +1258,7 @@ repeat:
 		}
 	}
 	if (reason == R_DEBUG_REASON_BREAKPOINT &&
-	   ((bp && !bp->enabled) || (!bp && !r_cons_is_breaked () && dbg->coreb.core &&
+	   ((bp && !bp->enabled) || (!bp && !r_kons_is_breaked (cons) && dbg->coreb.core &&
 					dbg->coreb.cfgGetI (dbg->coreb.core, "dbg.bpsysign")))) {
 		goto repeat;
 	}
@@ -1355,7 +1359,7 @@ repeat:
 		}
 	}
 #if R2__WINDOWS__
-	r_cons_break_pop ();
+	r_kons_break_pop (cons);
 #endif
 
 	// Unset breakpoints before leaving

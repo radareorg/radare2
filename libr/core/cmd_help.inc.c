@@ -1420,7 +1420,7 @@ static int cmd_help(void *data, const char *input) {
 				  r_kons_show_cursor (core->cons, 0);
 				  r_kons_clear00 (core->cons);
 				  for (i = 1; i < 100; i++) {
-					  if (r_cons_is_breaked ()) {
+					  if (r_kons_is_breaked (core->cons)) {
 						  break;
 					  }
 					  for (j = 0; j < 20; j++) {

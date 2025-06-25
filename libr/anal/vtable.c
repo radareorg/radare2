@@ -1,7 +1,8 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake, maijin, thestr4ng3r */
+/* radare - LGPL - Copyright 2009-2025 - pancake, maijin, thestr4ng3r */
 
 #include "r_util.h"
 #include "r_anal.h"
+#include <r_core.h>
 #include <r_vec.h>
 
 #define VTABLE_BUFF_SIZE 10
@@ -219,6 +220,8 @@ R_API RVTableInfo *r_anal_vtable_parse_at(RVTableContext *context, ut64 addr) {
 
 R_API RList *r_anal_vtable_search(RVTableContext *context) {
 	RAnal *anal = context->anal;
+	RCore *core = anal->coreb.core;
+	RCons *cons = core->cons;
 	if (!anal) {
 		return NULL;
 	}
@@ -239,7 +242,7 @@ R_API RList *r_anal_vtable_search(RVTableContext *context) {
 	RListIter *iter;
 	RBinSection *section;
 	r_list_foreach (sections, iter, section) {
-		if (r_cons_is_breaked ()) {
+		if (r_kons_is_breaked (cons)) {
 			break;
 		}
 
@@ -254,7 +257,7 @@ R_API RList *r_anal_vtable_search(RVTableContext *context) {
 			break;
 		}
 		while (startAddress <= endAddress) {
-			if (r_cons_is_breaked ()) {
+			if (r_kons_is_breaked (cons)) {
 				break;
 			}
 			if (!anal->iob.is_valid_offset (anal->iob.io, startAddress, 0)) {
