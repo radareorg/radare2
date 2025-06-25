@@ -913,9 +913,9 @@ static void cmd_fd_dot(RCore *core, const char *input) {
 			} else {
 				// Print realname if exists and asm.flags.real is enabled
 				if (core->flags->realnames && flag->realname) {
-					r_kons_println (core->cons, flag->realname);
+					r_cons_println (core->cons, flag->realname);
 				} else {
-					r_kons_println (core->cons, flag->name);
+					r_cons_println (core->cons, flag->name);
 				}
 			}
 		}
@@ -923,7 +923,7 @@ static void cmd_fd_dot(RCore *core, const char *input) {
 
 	if (isJson) {
 		pj_end (pj);
-		r_kons_println (core->cons, pj_string (pj));
+		r_cons_println (core->cons, pj_string (pj));
 	}
 
 	if (pj) {
@@ -974,7 +974,7 @@ static void print_function_labels(RCore *core, RAnalFunction *fcn, int rad) {
 		}
 	}
 	if (json) {
-		r_kons_println (core->cons, pj_string (pj));
+		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 	}
 }
@@ -1033,7 +1033,7 @@ static void cmd_fd(RCore *core, const char *input) {
 			  char *match = (curseek - loff) < (uoff - curseek) ? lmatch : umatch ;
 			  if (match) {
 				  if (*match) {
-					  r_kons_println (core->cons, match);
+					  r_cons_println (core->cons, match);
 				  }
 			  }
 			  r_list_free (temp);
@@ -1061,7 +1061,7 @@ static void cmd_fd(RCore *core, const char *input) {
 					pj_ks (pj, "realname", f->realname);
 				}
 				pj_end (pj);
-				r_kons_println (core->cons, pj_string (pj));
+				r_cons_println (core->cons, pj_string (pj));
 				pj_free (pj);
 			} else {
 				// Print realname if exists and asm.flags.real is enabled
@@ -1079,19 +1079,19 @@ static void cmd_fd(RCore *core, const char *input) {
 					pj_ks (pj, "realname", f->realname);
 				}
 				pj_end (pj);
-				r_kons_println (core->cons, pj_string (pj));
+				r_cons_println (core->cons, pj_string (pj));
 				pj_free (pj);
 			} else {
 				// Print realname if exists and asm.flags.real is enabled
 				if (core->flags->realnames && f->realname) {
-					r_kons_println (core->cons, f->realname);
+					r_cons_println (core->cons, f->realname);
 				} else {
-					r_kons_println (core->cons, f->name);
+					r_cons_println (core->cons, f->name);
 				}
 			}
 		}
 	} else if (input[1] == 'j') {
-		r_kons_println (core->cons, "{}");
+		r_cons_println (core->cons, "{}");
 	}
 }
 
@@ -1302,7 +1302,7 @@ static int cmd_flag(void *data, const char *input) {
 				if (fi) {
 					const char *alias = r_flag_item_set_alias (core->flags, fi, NULL);
 					if (alias) {
-						r_kons_println (core->cons, alias);
+						r_cons_println (core->cons, alias);
 					} else {
 						R_LOG_ERROR ("No alias set for this flag");
 					}
@@ -1753,7 +1753,7 @@ static int cmd_flag(void *data, const char *input) {
 					if (*color) {
 						ret = r_flag_item_set_color (core->flags, fi, color);
 						if (ret) {
-							r_kons_println (core->cons, ret);
+							r_cons_println (core->cons, ret);
 						}
 					} else {
 						r_flag_item_set_color (core->flags, fi, NULL);
@@ -1804,7 +1804,7 @@ static int cmd_flag(void *data, const char *input) {
 				if (item) {
 					const char *cmt = r_flag_item_set_comment (core->flags, item, NULL);
 					if (cmt) {
-						r_kons_println (core->cons, cmt);
+						r_cons_println (core->cons, cmt);
 					}
 				} else {
 					R_LOG_ERROR ("Cannot find item");

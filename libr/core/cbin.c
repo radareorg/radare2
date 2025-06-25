@@ -364,7 +364,7 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va) {
 	if (IS_MODE_JSON (mode)) {
 		pj_a (pj);
 	} else if (IS_MODE_RAD (mode)) {
-		r_kons_println (core->cons, "fs strings");
+		r_cons_println (core->cons, "fs strings");
 	} else if (IS_MODE_SET (mode) && r_config_get_i (core->config, "bin.strings")) {
 		r_flag_space_set (core->flags, R_FLAGS_FS_STRINGS);
 		r_kons_break_push (core->cons, NULL, NULL);
@@ -436,7 +436,7 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va) {
 			r_kons_printf (core->cons, "0x%"PFMT64x" %d %d %s\n", vaddr,
 				string->size, string->length, string->string);
 		} else if (IS_MODE_SIMPLEST (mode)) {
-			r_kons_println (core->cons, string->string);
+			r_cons_println (core->cons, string->string);
 		} else if (IS_MODE_JSON (mode)) {
 			int *block_list;
 			pj_o (pj);
@@ -1371,7 +1371,7 @@ static bool bin_source(RCore *core, PJ *pj, int mode) {
 	RList *files = r_bin_addrline_files (core->bin);
 	if (files) {
 		char *s = r_str_list_join (files, "\n");
-		r_kons_println (core->cons, s);
+		r_cons_println (core->cons, s);
 		free (s);
 	}
 #else
@@ -1470,7 +1470,7 @@ static bool bin_entry(RCore *core, PJ *pj, int mode, ut64 laddr, int va, bool in
 		if (r_list_empty (entries)) {
 			return true;
 		}
-		r_kons_println (core->cons, "'fs+symbols");
+		r_cons_println (core->cons, "'fs+symbols");
 	} else if (IS_MODE_JSON (mode)) {
 		pj_a (pj);
 	}
@@ -1598,7 +1598,7 @@ static bool bin_entry(RCore *core, PJ *pj, int mode, ut64 laddr, int va, bool in
 			r_core_seek (core, at, false);
 		}
 	} else if (IS_MODE_RAD (mode)) {
-		r_kons_println (core->cons, "'fs-");
+		r_cons_println (core->cons, "'fs-");
 	} else if (IS_MODE_JSON (mode)) {
 		pj_end (pj);
 	}
@@ -1947,7 +1947,7 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 	}
 
 	if (IS_MODE_RAD (mode)) {
-		r_kons_println (core->cons, "fs relocs");
+		r_cons_println (core->cons, "fs relocs");
 	} else if (IS_MODE_NORMAL (mode)) {
 		r_table_set_columnsf (table, "XXsds", "vaddr", "paddr", "type", "ntype", "name");
 	} else if (IS_MODE_JSON (mode)) {
@@ -2221,7 +2221,7 @@ static bool bin_imports(RCore *core, PJ *pj, int mode, int va, const char *name)
 	if (IS_MODE_JSON (mode)) {
 		pj_a (pj);
 	} else if (IS_MODE_RAD (mode)) {
-		r_kons_println (core->cons, "fs imports");
+		r_cons_println (core->cons, "fs imports");
 	} else if (IS_MODE_NORMAL (mode)) {
 		r_table_set_columnsf (table, "nXssss", "nth", "vaddr", "bind", "type", "lib", "name");
 	}
@@ -2255,7 +2255,7 @@ static bool bin_imports(RCore *core, PJ *pj, int mode, int va, const char *name)
 		} else if (IS_MODE_SIMPLE (mode)) {
 			r_kons_printf (core->cons, "%s%s%s\n", r_str_get (libname), libname ? " " : "", symname);
 		} else if (IS_MODE_SIMPLEST (mode)) {
-			r_kons_println (core->cons, symname);
+			r_cons_println (core->cons, symname);
 		} else if (IS_MODE_JSON (mode)) {
 			pj_o (pj);
 			pj_ki (pj, "ordinal", import->ordinal);
@@ -3447,7 +3447,7 @@ static bool bin_fields(RCore *core, PJ *pj, int mode, int va) {
 		r_core_bin_export_info (core, R_MODE_SET);
 		pj_a (pj);
 	} else if (IS_MODE_RAD (mode)) {
-		r_kons_println (core->cons, "'fs+header");
+		r_cons_println (core->cons, "'fs+header");
 	}
 	r_list_foreach (fields, iter, field) {
 		const bool haveComment = R_STR_ISNOTEMPTY (field->comment);
@@ -3527,7 +3527,7 @@ static bool bin_fields(RCore *core, PJ *pj, int mode, int va) {
 	if (IS_MODE_JSON (mode)) {
 		pj_end (pj);
 	} else if (IS_MODE_RAD (mode)) {
-		r_kons_println (core->cons, "'fs-");
+		r_cons_println (core->cons, "'fs-");
 	}
 
 	return true;
@@ -3734,7 +3734,7 @@ static void classdump_cxx(RCore *core, RBinClass *c) {
 			free (n);
 		}
 	}
-	r_kons_println (core->cons, "};\n");
+	r_cons_println (core->cons, "};\n");
 }
 
 static void classdump_objc(RCore *core, RBinClass *c) {
@@ -3776,7 +3776,7 @@ static void classdump_objc(RCore *core, RBinClass *c) {
 			}
 		}
 	}
-	r_kons_println (core->cons, "}");
+	r_cons_println (core->cons, "}");
 	r_list_foreach (c->methods, iter3, sym) {
 		const char *sname = r_bin_name_tostring2 (sym->name, pref);
 		char *rp = NULL;
@@ -3923,7 +3923,7 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 	} else if (IS_MODE_SET (mode)) {
 		r_flag_space_set (core->flags, R_FLAGS_FS_CLASSES);
 	} else if (IS_MODE_RAD (mode) && !IS_MODE_CLASSDUMP (mode)) {
-		r_kons_println (core->cons, "fs classes");
+		r_cons_println (core->cons, "fs classes");
 	}
 	const bool bin_filter = r_config_get_b (core->config, "bin.filter");
 	r_list_foreach (cs, iter, c) {
@@ -4283,7 +4283,7 @@ static bool bin_libs(RCore *core, PJ *pj, int mode) {
 			pj_s (pj, lib);
 		} else {
 			// simple and normal print mode
-			r_kons_println (core->cons, lib);
+			r_cons_println (core->cons, lib);
 		}
 	}
 	if (IS_MODE_JSON (mode)) {
@@ -4722,7 +4722,7 @@ static void bin_pe_resources(RCore *core, PJ *pj, int mode) {
 	if (IS_MODE_JSON (mode)) {
 		pj_end (pj);
 	} else if (IS_MODE_RAD (mode)) {
-		r_kons_println (core->cons, "fs *");
+		r_cons_println (core->cons, "fs *");
 	}
 }
 
@@ -4795,7 +4795,7 @@ static bool bin_signature(RCore *core, PJ *pj, int mode) {
 				pj_k (pj, "signature");
 				pj_j (pj, signature);
 			} else {
-				r_kons_println (core->cons, signature);
+				r_cons_println (core->cons, signature);
 			}
 			free (signature);
 		}

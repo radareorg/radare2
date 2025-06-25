@@ -1558,7 +1558,7 @@ static void print_hint_tree(RCore *core, RBTree tree, int mode) {
 	}
 	if (pj) {
 		pj_end (pj);
-		r_kons_println (core->cons, pj_string (pj));
+		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 	}
 #undef END_ADDR
@@ -2671,7 +2671,7 @@ repeat:
 		break;
 	case R_GRAPH_FORMAT_JSON:
 		pj_end (pj);
-		r_kons_println (core->cons, pj_string (pj));
+		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 		break;
 	case R_GRAPH_FORMAT_DOT:
@@ -3081,7 +3081,7 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode, bool unique,
 				}
 				r_list_sort (sortbycount, atoisort);
 				char *s = r_str_list_join (sortbycount, "\n");
-				r_kons_println (core->cons, s);
+				r_cons_println (core->cons, s);
 				free (s);
 				r_list_free (sortbycount);
 			}
@@ -3342,7 +3342,7 @@ static int fcn_list_json(RCore *core, RList *fcns, bool quiet, bool dorefs) {
 	RAnalFunction *fcn;
 	PJ *pj = r_core_pj_new (core);
 	if (!pj) {
-		r_kons_println (core->cons, "[]");
+		r_cons_println (core->cons, "[]");
 		return -1;
 	}
 	pj_a (pj);
@@ -3354,7 +3354,7 @@ static int fcn_list_json(RCore *core, RList *fcns, bool quiet, bool dorefs) {
 		}
 	}
 	pj_end (pj);
-	r_kons_println (core->cons, pj_string (pj));
+	r_cons_println (core->cons, pj_string (pj));
 	pj_free (pj);
 	return 0;
 }
@@ -3390,7 +3390,7 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	if (fcn->callconv || defaultCC) {
 		r_kons_printf (cons, "s 0x%"PFMT64x"\n", fcn->addr);
 		r_kons_printf (cons, "'afc %s\n", fcn->callconv? fcn->callconv: defaultCC);
-		r_kons_println (cons, "s-");
+		r_cons_println (cons, "s-");
 	}
 	if (fcn->folded) {
 		r_kons_printf (cons, "afF @ 0x%08"PFMT64x"\n", fcn->addr);
@@ -3750,7 +3750,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 	R_RETURN_VAL_IF_FAIL (core && core->anal, 0);
 	if (r_list_empty (core->anal->fcns)) {
 		if (*rad == 'j') {
-			r_kons_println (core->cons, "[]");
+			r_cons_println (core->cons, "[]");
 		}
 		return 0;
 	}
@@ -4897,7 +4897,7 @@ R_API int r_core_anal_data(RCore *core, ut64 addr, int count, int depth, int wor
 		/* null terminating here */
 		d = r_anal_data (core->anal, addr + i, buf + i, len - i, wordsize);
 		str = r_anal_data_tostring (d, pal);
-		r_kons_println (core->cons, str);
+		r_cons_println (core->cons, str);
 
 		if (d) {
 			switch (d->type) {

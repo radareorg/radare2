@@ -1163,7 +1163,7 @@ static int r_cmd_java_handle_isvalid(RCore *core, const char *cmd) {
 static int r_cmd_java_resolve_cp_idx(RCore *core, RBinJavaObj *obj, ut16 idx) {
 	if (obj && idx) {
 		char *str = r_bin_java_resolve_without_space (obj, idx);
-		r_kons_println (core->cons, str);
+		r_cons_println (core->cons, str);
 		free (str);
 	}
 	return true;
@@ -1194,7 +1194,7 @@ static int r_cmd_java_handle_resolve_cp(RCore *core, const char *cmd) {
 		case 't': // r_cmd_java_resolve_cp_type (obj, idx);
 			{
 				char *str = r_bin_java_resolve_cp_idx_type (obj, idx);
-				r_kons_println (core->cons, str);
+				r_cons_println (core->cons, str);
 				free (str);
 			}
 			return true;
@@ -1202,7 +1202,7 @@ static int r_cmd_java_handle_resolve_cp(RCore *core, const char *cmd) {
 		case 'e': // r_cmd_java_resolve_cp_idx_b64 (obj, idx);
 			{
 				char *str = r_bin_java_resolve_b64_encode (obj, idx);
-				r_kons_println (core->cons, str);
+				r_cons_println (core->cons, str);
 				free (str);
 			}
 			return true;
@@ -1218,7 +1218,7 @@ static int r_cmd_java_handle_resolve_cp(RCore *core, const char *cmd) {
 		case 'k': // return r_cmd_java_resolve_cp_to_key (obj, idx);
 			{
 				char *str = r_bin_java_resolve_cp_idx_tostring (obj, idx);
-				r_kons_println (core->cons, str);
+				r_cons_println (core->cons, str);
 				free (str);
 			}
 			return true;
@@ -1273,7 +1273,7 @@ static int r_cmd_java_get_all_access_flags_value(RCore *core, const char *cmd) {
 	}
 
 	r_list_foreach (the_list, iter, str) {
-		r_kons_println (core->cons, str);
+		r_cons_println (core->cons, str);
 	}
 	r_list_free (the_list);
 	return true;
@@ -1340,7 +1340,7 @@ static int r_cmd_java_handle_flags_str(RCore *core, const char *cmd) {
 		case 'f': r_cons_printf ("Field Access Flags String: "); break;
 		case 'c': r_cons_printf ("Class Access Flags String: "); break;
 		}
-		r_kons_println (core->cons, flags_str);
+		r_cons_println (core->cons, flags_str);
 		free (flags_str);
 		res = true;
 	}
@@ -1388,7 +1388,7 @@ static int r_cmd_java_handle_flags_str_at(RCore *core, const char *cmd) {
 		case 'f': r_cons_printf ("Field Access Flags String: "); break;
 		case 'c': r_cons_printf ("Class Access Flags String: "); break;
 		}
-		r_kons_println (core->cons, flags_str);
+		r_cons_println (core->cons, flags_str);
 		free (flags_str);
 		res = true;
 	}
@@ -1572,7 +1572,7 @@ static int r_cmd_java_print_all_definitions(RAnal *anal) {
 
 static int r_cmd_java_print_json_definitions(RCore *core, RBinJavaObj *obj) {
 	char *s = r_bin_java_get_bin_obj_json (obj);
-	r_kons_println (core->cons, s);
+	r_cons_println (core->cons, s);
 	free (s);
 	return true;
 }
@@ -1698,7 +1698,7 @@ static int r_cmd_java_print_field_num_name(RCore *core, RBinJavaObj *obj) {
 	char *str;
 	RListIter *iter = NULL;
 	r_list_foreach (the_list, iter, str) {
-		r_kons_println (core->cons, str);
+		r_cons_println (core->cons, str);
 	}
 	r_list_free (the_list);
 	return true;
@@ -1709,7 +1709,7 @@ static int r_cmd_java_print_method_num_name(RCore *core, RBinJavaObj *obj) {
 	char *str;
 	RListIter *iter = NULL;
 	r_list_foreach (the_list, iter, str) {
-		r_kons_println (core->cons, str);
+		r_cons_println (core->cons, str);
 	}
 	r_list_free (the_list);
 	return true;
@@ -1743,7 +1743,7 @@ static int _(r_cmd_java_print_method_count)(RBinJavaObj *obj) {
 static int r_cmd_java_print_field_name(RCore *core, RBinJavaObj *obj, ut16 idx) {
 	char *res = r_bin_java_get_field_name (obj, idx);
 	if (res) {
-		r_kons_println (core->cons, res);
+		r_cons_println (core->cons, res);
 	} else {
 		R_LOG_ERROR ("Field or Method @ index (%d) not found in the RBinJavaObj", idx);
 	}
@@ -1763,7 +1763,7 @@ static int r_cmd_java_print_method_summary(RBinJavaObj *obj, ut16 idx) {
 static int r_cmd_java_print_method_name(RCore *core, RBinJavaObj *obj, ut16 idx) {
 	char *res = r_bin_java_get_method_name (obj, idx);
 	if (res) {
-		r_kons_println (core->cons, res);
+		r_cons_println (core->cons, res);
 	} else {
 		R_LOG_ERROR ("Field or Method @ index (%d) not found in the RBinJavaObj", idx);
 	}

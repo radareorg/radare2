@@ -1090,7 +1090,7 @@ static int cmd_wh(RCore *core, const char *input) {
 	if (arg) {
 		char *path = r_file_path (arg);
 		if (path) {
-			r_kons_println (core->cons, path);
+			r_cons_println (core->cons, path);
 			free (path);
 			return 0;
 		}
@@ -2102,7 +2102,7 @@ static bool asm_patch(RCore *core, const char *op, int mode) {
 		char *cmd = r_asm_parse_patch (core->rasm, &aop, op);
 		if (cmd) {
 			switch (mode) {
-			case '*': r_kons_println (core->cons, cmd); break;
+			case '*': r_cons_println (core->cons, cmd); break;
 			case 'l': r_kons_printf (core->cons, "%d\n", (int)(strlen (cmd) - 3)/2); break;
 			default: r_core_cmd0 (core, cmd); break;
 			}

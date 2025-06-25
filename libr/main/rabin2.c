@@ -442,7 +442,7 @@ static int rabin_do_operation(RCons *cons, RBin *bin, const char *op, int rad, c
 		if (plg && plg->signature) {
 			char *sign = plg->signature (cur, rad == R_MODE_JSON);
 			if (sign) {
-				r_kons_println (cons, sign);
+				r_cons_println (cons, sign);
 				r_cons_flush (cons);
 				free (sign);
 			}
@@ -930,7 +930,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		}
 		list_plugins (bin, plugin_name, pj, rad);
 		if (rad == R_MODE_JSON) {
-			r_kons_println (cons, pj_string (pj));
+			r_cons_println (cons, pj_string (pj));
 			r_cons_flush (cons);
 			pj_free (pj);
 		}
@@ -1292,7 +1292,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	}
 	if (pj) {
 		pj_end (pj);
-		r_kons_println (cons, pj_string (pj));
+		r_cons_println (cons, pj_string (pj));
 	}
 
 	pj_free (pj);

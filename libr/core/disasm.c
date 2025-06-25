@@ -7311,7 +7311,7 @@ toro:
 				opcolor = r_print_color_op_type (core->print, ds->analop.type);
 				r_kons_printf (core->cons, "%s%s" Color_RESET "\n", opcolor, ds->opstr);
 			} else {
-				r_kons_println (core->cons, ds->opstr);
+				r_cons_println (core->cons, ds->opstr);
 			}
 			R_FREE (ds->opstr);
 		}
@@ -7839,7 +7839,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 							free (buf_asm);
 						}
 					} else {
-						r_kons_println (core->cons, asmop.mnemonic);
+						r_cons_println (core->cons, asmop.mnemonic);
 					}
 					free (res);
 				}
@@ -7893,7 +7893,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 	}
 	if (mode == 'j') {
 		pj_end (pj);
-		r_kons_println (core->cons, pj_string (pj));
+		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 	}
 	ds_free (ds);
@@ -8059,7 +8059,7 @@ toro:
 			if (show_bytes) {
 				r_kons_printf (core->cons, "%18s%02x  ", "", buf[i]);
 			}
-			r_kons_println (core->cons, "invalid");
+			r_cons_println (core->cons, "invalid");
 		} else {
 			if (show_bytes && asmop.bytes) {
 				char *op_hex = r_asm_op_get_hex (&asmop);
@@ -8082,7 +8082,7 @@ toro:
 				char *tmpopstr = r_anal_op_tostring (core->anal, &analop);
 				if (fmt == 'e') { // pie
 					const char *esil = R_STRBUF_SAFEGET (&analop.esil);
-					r_kons_println (core->cons, esil);
+					r_cons_println (core->cons, esil);
 				} else {
 					if (decode) {
 						opstr = tmpopstr? tmpopstr: asmop.mnemonic;
@@ -8095,7 +8095,7 @@ toro:
 							opstr = res;
 						}
 					}
-					r_kons_println (core->cons, opstr);
+					r_cons_println (core->cons, opstr);
 				}
 				free (tmpopstr);
 			} else {
@@ -8132,7 +8132,7 @@ toro:
 					r_anal_op_fini (&aop);
 					free (asm_str);
 				} else {
-					r_kons_println (core->cons, asm_str);
+					r_cons_println (core->cons, asm_str);
 				}
 			}
 		}

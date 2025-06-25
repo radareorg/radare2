@@ -819,9 +819,9 @@ static void selection_widget_draw(RCons *cons) {
 
 	for (y = 0; y < sel_widget->h; y++) {
 		if (sel_widget->direction == R_SELWIDGET_DIR_UP) {
-			r_kons_gotoxy (cons, pos_x + 1, pos_y - y - 1);
+			r_cons_gotoxy (cons, pos_x + 1, pos_y - y - 1);
 		} else {
-			r_kons_gotoxy (cons, pos_x + 1, pos_y + y + 1);
+			r_cons_gotoxy (cons, pos_x + 1, pos_y + y + 1);
 		}
 		int scroll = R_MAX (0, sel_widget->selection - sel_widget->scroll);
 		const char *option = y < sel_widget->options_len? sel_widget->options[y + scroll]: "";
@@ -834,7 +834,7 @@ static void selection_widget_draw(RCons *cons) {
 		}
 	}
 
-	r_kons_gotoxy (cons, pos_x + line->buffer.length, pos_y);
+	r_cons_gotoxy (cons, pos_x + line->buffer.length, pos_y);
 	r_cons_write (cons, Color_RESET_BG, 5);
 	r_cons_flush (cons);
 }
@@ -1160,7 +1160,7 @@ static void __print_prompt(RCons *cons) {
 	int columns = r_cons_get_size (cons, NULL) - 2;
 	int len, i, cols = R_MAX (1, columns - r_str_ansi_len (line->prompt) - 2);
 	if (cons->line->prompt_type == R_LINE_PROMPT_OFFSET) {
-		r_kons_gotoxy (cons, 0, cons->rows);
+		r_cons_gotoxy (cons, 0, cons->rows);
 		r_cons_flush (cons);
 	}
 	// printf ("%s", promptcolor ());

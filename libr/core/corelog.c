@@ -35,7 +35,7 @@ R_API int r_core_log_list(RCore *core, int n, int nth, char fmt) {
 				pj_end (pj);
 				break;
 			case 't':
-				r_kons_println (core->cons, str);
+				r_cons_println (core->cons, str);
 				break;
 			case '*':
 				{

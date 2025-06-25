@@ -492,7 +492,7 @@ static char *__search_db(RCore *core, const char *title) {
 
 static int __show_status(RCore *core, const char *msg) {
 	RCons *cons = core->cons;
-	r_kons_gotoxy (cons, 0, 0);
+	r_cons_gotoxy (cons, 0, 0);
 	r_kons_printf (cons, R_CONS_CLEAR_LINE"%s[Status] %s"Color_RESET, PANEL_HL_COLOR, msg);
 	r_cons_flush (cons);
 	r_cons_set_raw (cons, true);
@@ -501,7 +501,7 @@ static int __show_status(RCore *core, const char *msg) {
 
 static bool __show_status_yesno(RCore *core, int def, const char *msg) {
 	RCons *cons = core->cons;
-	r_kons_gotoxy (cons, 0, 0);
+	r_cons_gotoxy (cons, 0, 0);
 	r_cons_flush (cons);
 	return r_kons_yesno (cons, def, R_CONS_CLEAR_LINE"%s[Status] %s"Color_RESET, PANEL_HL_COLOR, msg);
 }
@@ -509,7 +509,7 @@ static bool __show_status_yesno(RCore *core, int def, const char *msg) {
 static char *__show_status_input(RCore *core, const char *msg) {
 	char *n_msg = r_str_newf (R_CONS_CLEAR_LINE"%s[Status] %s"Color_RESET, PANEL_HL_COLOR, msg);
 	RCons *cons = core->cons;
-	r_kons_gotoxy (cons, 0, 0);
+	r_cons_gotoxy (cons, 0, 0);
 	r_cons_flush (cons);
 	char *out = r_cons_input (cons, n_msg);
 	r_cons_set_raw (cons, true);
@@ -692,7 +692,7 @@ static void bottom_panel_line(RCore *core) {
 	const char *bl_corner = useUtf8 ? (useUtf8Curvy ? RUNE_CURVE_CORNER_BL : RUNE_CORNER_BL) : "`";
 	const char *br_corner = useUtf8 ? (useUtf8Curvy ? RUNE_CURVE_CORNER_BR : RUNE_CORNER_BR) : "'";
 	int i, h, w = r_cons_get_size (cons, &h);
-	r_kons_gotoxy (cons, 0, h - 1);
+	r_cons_gotoxy (cons, 0, h - 1);
 	r_cons_write (cons, bl_corner, strlen (bl_corner));
 	for (i = 0; i < w - 2; i++) {
 		r_kons_printf (cons, "%s", hline);
@@ -1421,7 +1421,7 @@ static void __fix_layout(RCore *core) {
 static void show_cursor(RCore *core) {
 	const bool keyCursor = r_config_get_b (core->config, "scr.cursor");
 	if (keyCursor) {
-		r_kons_gotoxy (core->cons, core->cons->cpos.x, core->cons->cpos.y);
+		r_cons_gotoxy (core->cons, core->cons->cpos.x, core->cons->cpos.y);
 		r_kons_show_cursor (core->cons, 1);
 		r_cons_flush (core->cons);
 	}
@@ -4142,7 +4142,7 @@ static void __update_modal(RCore *core, Sdb *menu_db, RModal *modal, int delta) 
 			i++;
 		}
 	}
-	r_kons_gotoxy (core->cons, 0, 0);
+	r_cons_gotoxy (core->cons, 0, 0);
 	r_cons_canvas_fill (can, modal->pos.x, modal->pos.y, modal->pos.w + 2, modal->pos.h + 2, ' ');
 	(void)r_cons_canvas_gotoxy (can, modal->pos.x + 2, modal->pos.y + 1);
 	r_cons_canvas_write (can, r_strbuf_get (modal->data));
@@ -4439,7 +4439,7 @@ static void __handle_vmark(RCore *core) {
 		__add_vmark (core);
 		break;
 	case '-':
-		r_kons_gotoxy (core->cons, 0, 0);
+		r_cons_gotoxy (core->cons, 0, 0);
 		if (r_core_vmark_dump (core, 0)) {
 			r_kons_printf (cons, R_CONS_CLEAR_LINE"Remove a shortcut key from the list\n");
 			r_cons_flush (cons);
@@ -4449,7 +4449,7 @@ static void __handle_vmark(RCore *core) {
 		}
 		break;
 	case '\'':
-		r_kons_gotoxy (core->cons, 0, 0);
+		r_cons_gotoxy (core->cons, 0, 0);
 		if (r_core_vmark_dump (core, 0)) {
 			r_cons_flush (cons);
 			r_cons_set_raw (cons, true);
@@ -5626,7 +5626,7 @@ static int __program_cb(void *user) {
 	RCore *core = (RCore *)user;
 	__del_menu (core);
 	__panels_refresh (core);
-	r_kons_gotoxy (core->cons, 0, 3);
+	r_cons_gotoxy (core->cons, 0, 3);
 	r_cons_flush (core->cons);
 	r_core_cmdf (core, "aaa");
 	return 0;
@@ -6156,7 +6156,7 @@ static void demo_begin(RCore *core, RConsCanvas *can) {
 			int H = (int)(i * ((double)h / 40));
 			char *r = r_str_scale (s, w, H);
 			r_kons_clear00 (core->cons);
-			r_kons_gotoxy (core->cons, 0, (h / 2) - (H / 2));
+			r_cons_gotoxy (core->cons, 0, (h / 2) - (H / 2));
 			r_kons_print (core->cons, r);
 			r_cons_flush (core->cons);
 			free (r);
@@ -6185,7 +6185,7 @@ static void demo_end(RCore *core, RConsCanvas *can) {
 			int H = i;
 			char *r = r_str_scale (s, w, H);
 			r_kons_clear00 (core->cons);
-			r_kons_gotoxy (core->cons, 0, (h / 2) - (H / 2)); // center
+			r_cons_gotoxy (core->cons, 0, (h / 2) - (H / 2)); // center
 			r_kons_print (core->cons, r);
 			r_cons_flush (core->cons);
 			free (r);
@@ -6243,7 +6243,7 @@ static void __panels_refresh(RCore *core) {
 	if (!can) {
 		return;
 	}
-	r_kons_gotoxy (core->cons, 0, 0);
+	r_cons_gotoxy (core->cons, 0, 0);
 	int i, h, w = r_cons_get_size (core->cons, &h);
 	h -= r_config_get_i (core->config, "scr.notch");
 	if (!r_cons_canvas_resize (can, w, h)) {
@@ -6768,7 +6768,7 @@ static void __redo_seek(RCore *core) {
 }
 
 static void __handle_tab(RCore *core) {
-	r_kons_gotoxy (core->cons, 0, 0);
+	r_cons_gotoxy (core->cons, 0, 0);
 	if (core->panels_root->n_panels <= 1) {
 		r_kons_printf (core->cons, R_CONS_CLEAR_LINE"%stab: q:quit t:new T:newWithCurPanel -:del =:setName"Color_RESET, PANEL_HL_COLOR);
 	} else {

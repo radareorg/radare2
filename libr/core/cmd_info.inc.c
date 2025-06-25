@@ -399,7 +399,7 @@ static void cmd_iic2(RCore *core, int mode, const char *symname) {
 	if (symname && !mode) {
 		const char *un = r_bin_import_tags (core->bin, symname);
 		if (R_STR_ISNOTEMPTY (un)) {
-			r_kons_println (core->cons, un);
+			r_cons_println (core->cons, un);
 		}
 		return;
 	}
@@ -459,7 +459,7 @@ static void cmd_iic2(RCore *core, int mode, const char *symname) {
 			RList *nres = r_list_uniq (rrrr, valstr);
 			char *ref;
 			r_list_foreach (nres, iter, ref) {
-				r_kons_println (core->cons, ref);
+				r_cons_println (core->cons, ref);
 			}
 			free (s);
 			r_list_free (rrrr);
@@ -1904,7 +1904,7 @@ static void cmd_id(RCore *core, PJ *pj, const char *input, bool is_array, int mo
 				break;
 			case 0:
 				if (linkname) {
-					r_kons_println (core->cons, info->dbglink);
+					r_cons_println (core->cons, info->dbglink);
 				}
 				break;
 			default:
@@ -2717,7 +2717,7 @@ static int cmd_info(void *data, const char *input) {
 			pj_end (pj);
 		}
 #endif
-		r_kons_println (core->cons, pj_string (pj));
+		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 	}
 	return 0;

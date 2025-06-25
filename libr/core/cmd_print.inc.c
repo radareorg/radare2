@@ -955,7 +955,7 @@ static void cmd_printmsg(RCore *core, const char *input) {
 	if (!strcmp (input, "ln")) {
 		r_cons_newline (core->cons);
 	} else if (r_str_startswith (input, "ln ")) {
-		r_kons_println (core->cons, input + 3);
+		r_cons_println (core->cons, input + 3);
 	} else if (r_str_startswith (input, " ")) {
 		r_kons_print (core->cons, input + 1);
 	} else if (r_str_startswith (input, "f ")) {
@@ -1424,7 +1424,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 			pj_a (pj);
 			ret = r_core_print_disasm_json_ipi (core, addr, buf, len, 0, pj, arg);
 			pj_end (pj);
-			r_kons_println (core->cons, pj_string (pj));
+			r_cons_println (core->cons, pj_string (pj));
 			pj_free (pj);
 		}
 		break;
@@ -1465,7 +1465,7 @@ static void cmd_pDj(RCore *core, const char *arg) {
 		R_LOG_ERROR ("Cannot allocate %d byte(s)", bsize);
 	}
 	pj_end (pj);
-	r_kons_println (core->cons, pj_string (pj));
+	r_cons_println (core->cons, pj_string (pj));
 	pj_free (pj);
 }
 
@@ -1478,7 +1478,7 @@ static void cmd_pdj(RCore *core, const char *arg, ut8* block) {
 	pj_a (pj);
 	r_core_print_disasm_json_ipi (core, core->addr, block, core->blocksize, nblines, pj, NULL);
 	pj_end (pj);
-	r_kons_println (core->cons, pj_string (pj));
+	r_cons_println (core->cons, pj_string (pj));
 	pj_free (pj);
 }
 
@@ -1524,7 +1524,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 				// char *res = r_asn1_object_tostring (asn1, 0, NULL, fmt);
 				r_asn1_free (a);
 				if (res) {
-					r_kons_println (core->cons, res);
+					r_cons_println (core->cons, res);
 					free (res);
 				}
 			} else {
@@ -1557,7 +1557,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 					r_x509_certificate_json (pj, x509);
 					char *res = pj_drain (pj);
 					if (res) {
-						r_kons_println (core->cons, res);
+						r_cons_println (core->cons, res);
 						free (res);
 					}
 				} else {
@@ -1565,7 +1565,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 					r_x509_certificate_dump (x509, NULL, sb);
 					char *res = r_strbuf_drain (sb);
 					if (res) {
-						r_kons_println (core->cons, res);
+						r_cons_println (core->cons, res);
 						free (res);
 					}
 				}
@@ -1582,7 +1582,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 			if (a) {
 				char *oid = r_asn1_oid (a);
 				if (oid) {
-					r_kons_println (core->cons, oid);
+					r_cons_println (core->cons, oid);
 					free (oid);
 				}
 				r_asn1_free (a);
@@ -1597,13 +1597,13 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 					PJ *pj = r_pkcs7_cms_json (cms);
 					if (pj) {
 						char *res = pj_drain (pj);
-						r_kons_println (core->cons, res);
+						r_cons_println (core->cons, res);
 						free (res);
 					}
 				} else {
 					char *res = r_pkcs7_cms_tostring (cms);
 					if (res) {
-						r_kons_println (core->cons, res);
+						r_cons_println (core->cons, res);
 						free (res);
 					}
 				}
@@ -1632,7 +1632,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 				free (s);
 			}
 			s = pj_drain (pj);
-			r_kons_println (core->cons, s);
+			r_cons_println (core->cons, s);
 			free (s);
 		} else {
 			char *s = r_axml_decode (data, size, NULL);
@@ -1659,10 +1659,10 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 			}
 			char *s = pj_drain (pj);
 			if (input[1] == 'j') {
-				r_kons_println (core->cons, s);
+				r_cons_println (core->cons, s);
 			} else {
 				char *r = r_print_json_human (s);
-				r_kons_println (core->cons, r);
+				r_cons_println (core->cons, r);
 				free (r);
 			}
 			free (s);
@@ -2262,7 +2262,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 					r_list_sort (files, (RListComparator)strcmp);
 					r_list_foreach (files, iter, fn) {
 						if (is_pfo_file (fn)) {
-							r_kons_println (core->cons, fn);
+							r_cons_println (core->cons, fn);
 						}
 					}
 					r_list_free (files);
@@ -2276,7 +2276,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 					r_list_sort (files, (RListComparator)strcmp);
 					r_list_foreach (files, iter, fn) {
 						if (is_pfo_file (fn)) {
-							r_kons_println (core->cons, fn);
+							r_cons_println (core->cons, fn);
 						}
 					}
 					r_list_free (files);
@@ -3994,7 +3994,7 @@ restore_conf:
 	if (pj) {
 		pj_end (pj);
 		char *s = pj_drain (pj);
-		r_kons_println (core->cons, s);
+		r_cons_println (core->cons, s);
 		free (s);
 	}
 }
@@ -4300,7 +4300,7 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 			at += n;
 		}
 		pj_end (pj);
-		r_kons_println (core->cons, pj_string (pj));
+		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 		break;
 	}
@@ -4443,7 +4443,7 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 	if (!list) {
 		result = true;
 		if (mode == 'j') {
-			r_kons_println (core->cons, "{}");
+			r_cons_println (core->cons, "{}");
 		}
 		goto cleanup;
 	}
@@ -4465,7 +4465,7 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 	as = r_core_anal_get_stats (core, from, to, piece);
 	if (!as) {
 		if (mode == 'j') {
-			r_kons_println (core->cons, "{}");
+			r_cons_println (core->cons, "{}");
 		}
 		goto cleanup;
 	}
@@ -4607,7 +4607,7 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 	case 'j':
 		pj_end (pj);
 		pj_end (pj);
-		r_kons_println (core->cons, pj_string (pj));
+		r_cons_println (core->cons, pj_string (pj));
 		break;
 	case 'h': {
 		char *table_string = r_table_tostring (t);
@@ -5159,7 +5159,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 			}
 			pj_end (pj);
 			pj_end (pj);
-			r_kons_println (core->cons, pj_string (pj));
+			r_cons_println (core->cons, pj_string (pj));
 			pj_free (pj);
 		}	break;
 		case 'q':
@@ -5721,7 +5721,7 @@ static void print_json_string(RCore *core, const char* block, int len, const cha
 		pj_ki (pj, "length", slen);
 		pj_ks (pj, "type", type);
 		pj_end (pj);
-		r_kons_println (core->cons, pj_string (pj));
+		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 	}
 	if (tblock != block) {
@@ -5902,14 +5902,14 @@ static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *ar
 		if (t) {
 			if (r_table_query (t, arg? arg + 1: NULL)) {
 				char *s = r_table_tostring (t);
-				r_kons_println (cons, s);
+				r_cons_println (cons, s);
 				free (s);
 			}
 			r_table_free (t);
 		}
 		if (pj) {
 			pj_end (pj);
-			r_kons_println (cons, pj_string (pj));
+			r_cons_println (cons, pj_string (pj));
 			pj_free (pj);
 		}
 	} else {
@@ -6092,7 +6092,7 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 				// print empty json object
 				if (pj) {
 					pj_end (pj);
-					r_kons_println (core->cons, pj_string (pj));
+					r_cons_println (core->cons, pj_string (pj));
 					pj_free (pj);
 				}
 				break;
@@ -6156,7 +6156,7 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 			// print json object
 			if (pj) {
 				pj_end (pj);
-				r_kons_println (core->cons, pj_string (pj));
+				r_cons_println (core->cons, pj_string (pj));
 				pj_free (pj);
 			}
 		} else if (l != 0) {
@@ -6690,7 +6690,7 @@ static void p8fm(RCore *core, ut64 addr, int mode) {
 		pj_ks (pj, "mask", sm);
 		pj_end (pj);
 		char *s = pj_drain (pj);
-		r_kons_println (core->cons, s);
+		r_cons_println (core->cons, s);
 		free (s);
 	} else {
 		r_kons_printf (core->cons, "%s:%s\n", sb, sm);
@@ -6859,7 +6859,7 @@ static int cmd_print(void *data, const char *input) {
 			if (!r_sandbox_enable (0)) {
 				char *cwd = r_sys_getdir ();
 				if (cwd) {
-					r_kons_println (core->cons, cwd);
+					r_cons_println (core->cons, cwd);
 					free (cwd);
 				}
 			}
@@ -6878,7 +6878,7 @@ static int cmd_print(void *data, const char *input) {
 					(void)r_io_read_at (core->io, 0, data, core->addr);
 					char *res = r_print_json_path ((const char *)data, core->addr);
 					if (res) {
-						r_kons_println (core->cons, res);
+						r_cons_println (core->cons, res);
 					}
 				} else {
 					R_LOG_ERROR ("Cannot allocate %d", (int)(core->addr));
@@ -6952,7 +6952,7 @@ static int cmd_print(void *data, const char *input) {
 						if (r_anal_op (core->anal, &aop, core->addr,
 							    (const ut8 *)acode->bytes + printed, bufsz - printed, R_ARCH_OP_MASK_ESIL) > 0) {
 							const char *str = R_STRBUF_SAFEGET (&aop.esil);
-							r_kons_println (core->cons, str);
+							r_cons_println (core->cons, str);
 						} else {
 							R_LOG_ERROR ("Cannot decode instruction");
 							break;
@@ -6989,7 +6989,7 @@ static int cmd_print(void *data, const char *input) {
 							if (r_anal_op (core->anal, &aop, core->addr,
 								    (const ut8 *)hex_arg + printed, bufsz - printed, R_ARCH_OP_MASK_ESIL) > 0) {
 								const char *str = R_STRBUF_SAFEGET (&aop.esil);
-								r_kons_println (core->cons, str);
+								r_cons_println (core->cons, str);
 							} else {
 								R_LOG_ERROR ("Cannot decode instruction");
 								break;
@@ -7076,7 +7076,7 @@ static int cmd_print(void *data, const char *input) {
 						buf[to] = 0;
 						//buf[buf_len - 1] = 0;
 					}
-					r_kons_println (core->cons, buf + from);
+					r_cons_println (core->cons, buf + from);
 				}
 				free (buf);
 			} else {
@@ -7098,7 +7098,7 @@ static int cmd_print(void *data, const char *input) {
 			buf = malloc (size + 1);
 			if (buf) {
 				r_str_bits (buf, core->block, size, NULL);
-				r_kons_println (core->cons, buf);
+				r_cons_println (core->cons, buf);
 				free (buf);
 			} else {
 				R_LOG_ERROR ("Cannot allocate %d byte(s)", size);
@@ -7774,7 +7774,7 @@ static int cmd_print(void *data, const char *input) {
 						break;
 					}
 				}
-				r_kons_println (core->cons, (const char *) b);
+				r_cons_println (core->cons, (const char *) b);
 				// r_print_string (core->print, core->addr, b,
 				// (size_t)(e-b), 0);
 				free (buf);
@@ -7856,7 +7856,7 @@ static int cmd_print(void *data, const char *input) {
 							}
 							if (!hasnl) {
 								char *s = r_strbuf_drain (sb);
-								r_kons_println (core->cons, s); // TODO: missing newline?
+								r_cons_println (core->cons, s); // TODO: missing newline?
 								free (s);
 								sb = r_strbuf_new ("");
 								if (!quiet) {
@@ -7964,7 +7964,7 @@ static int cmd_print(void *data, const char *input) {
 					print_json_string (core, (const char *) core->block, len, "utf16");
 				} else {
 					char *str = r_str_utf16_encode ((const char *) core->block, len);
-					r_kons_println (core->cons, str);
+					r_cons_println (core->cons, str);
 					free (str);
 				}
 			}
@@ -8042,7 +8042,7 @@ static int cmd_print(void *data, const char *input) {
 			const char *filename = r_str_trim_head_ro (input + 2);
 			PJ *pj = r_core_pj_new (core);
 			r_core_magic (core, filename, true, pj);
-			r_kons_println (core->cons, pj_string (pj));
+			r_cons_println (core->cons, pj_string (pj));
 			pj_free (pj);
 		} else {
 			// XXX: need cmd_magic header for r_core_magic
@@ -8262,14 +8262,14 @@ static int cmd_print(void *data, const char *input) {
 			}
 			char *res = r_print_stereogram (data, 78, 20);
 			char *out = r_print_stereogram_render (core->print, res);
-			r_kons_println (core->cons, out);
+			r_cons_println (core->cons, out);
 			free (out);
 			free (res);
 			free (data);
 		} else {
 			char *res = r_print_stereogram_bytes (block, core->blocksize);
 			char *out = r_print_stereogram_render (core->print, res);
-			r_kons_println (core->cons, out);
+			r_cons_println (core->cons, out);
 			free (out);
 			free (res);
 		}
@@ -8901,7 +8901,7 @@ static int cmd_print(void *data, const char *input) {
 						char *a = r_str_trim_dup (input + 3);
 						char *out = malloc ((4 + strlen (a)) * 4);
 						if (r_base64_decode ((ut8 *)out,(const char *) a, strlen (a))) {
-							r_kons_println (core->cons, (const char *) out);
+							r_cons_println (core->cons, (const char *) out);
 						} else {
 							R_LOG_ERROR ("r_base64_decode: invalid stream");
 						}
@@ -8915,17 +8915,17 @@ static int cmd_print(void *data, const char *input) {
 					} else {
 						len = r_str_nlen ((const char *)block, len);
 						if (r_base64_decode (buf, (const char *) block, len)) {
-							r_kons_println (core->cons, (const char *) buf);
+							r_cons_println (core->cons, (const char *) buf);
 						} else {
 							R_LOG_ERROR ("r_base64_decode: invalid stream");
 						}
-						r_kons_println (core->cons, (const char *) buf);
+						r_cons_println (core->cons, (const char *) buf);
 					}
 					break;
 				default:
 					len = len > core->blocksize? core->blocksize: len;
 					if (r_base64_decode (buf, (const char *) block, len)) {
-						r_kons_println (core->cons, (const char *) buf);
+						r_cons_println (core->cons, (const char *) buf);
 					} else {
 						R_LOG_ERROR ("r_base64_decode: invalid stream");
 					}
@@ -8944,7 +8944,7 @@ static int cmd_print(void *data, const char *input) {
 						char *a = r_str_trim_dup (input + 3);
 						char *out = calloc ((4 + strlen (a)), 4);
 						r_base64_encode ((char *) out, (const ut8*)a, strlen (a));
-						r_kons_println (core->cons, (const char *) out);
+						r_cons_println (core->cons, (const char *) out);
 						free (a);
 						free (out);
 					}
@@ -8955,13 +8955,13 @@ static int cmd_print(void *data, const char *input) {
 					} else {
 						len = r_str_nlen ((const char *)block, len);
 						r_base64_encode ((char *) buf, block, len);
-						r_kons_println (core->cons, (const char *) buf);
+						r_cons_println (core->cons, (const char *) buf);
 					}
 					break;
 				default:
 					len = len > core->blocksize? core->blocksize: len;
 					r_base64_encode ((char *) buf, block, len);
-					r_kons_println (core->cons, (const char *) buf);
+					r_cons_println (core->cons, (const char *) buf);
 					break;
 				}
 				break;
@@ -9077,7 +9077,7 @@ static int cmd_print(void *data, const char *input) {
 		} else if (l > 0) {
 			len = len > core->blocksize? core->blocksize: len;
 			char *s = r_print_randomart (block, len, core->addr);
-			r_kons_println (core->cons, s);
+			r_cons_println (core->cons, s);
 			free (s);
 		}
 		break;
@@ -9127,7 +9127,7 @@ static int cmd_print(void *data, const char *input) {
 		case '.': // "pt." same as "date"
 			{
 				char *nostr = r_time_secs_tostring (r_time_today ());
-				r_kons_println (core->cons, nostr);
+				r_cons_println (core->cons, nostr);
 				free (nostr);
 			}
 			break;

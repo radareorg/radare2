@@ -3,11 +3,6 @@
 #include <r_cons.h>
 #include "private.h"
 
-R_API void r_kons_println(RCons *cons, const char* str) {
-	r_kons_print (cons, str);
-	r_cons_newline (cons);
-}
-
 R_API void r_kons_print(RCons *cons, const char *str) {
 	R_RETURN_IF_FAIL (str);
 	if (cons->null) {
@@ -30,7 +25,7 @@ R_API int r_kons_printf(RCons *cons, const char *format, ...) {
 	return 0;
 }
 
-R_API void r_kons_gotoxy(RCons *cons, int x, int y) {
+R_API void r_cons_gotoxy(RCons *cons, int x, int y) {
 #if R2__WINDOWS__
 	r_cons_win_gotoxy (cons, 1, x, y);
 #else
@@ -419,7 +414,7 @@ R_API void r_kons_clear(RCons *cons) {
 
 R_API void r_kons_clear00(RCons *cons) {
 	r_kons_clear (cons);
-	r_kons_gotoxy (cons, 0, 0);
+	r_cons_gotoxy (cons, 0, 0);
 }
 
 R_API void r_kons_reset(RCons *cons) {
@@ -737,7 +732,7 @@ R_API void r_kons_column(RCons *cons, int c) {
 	// align current buffer N chars right
 	r_cons_print_justify (cons, b, c, 0);
 	free (b);
-	r_kons_gotoxy (cons, 0, 0);
+	r_cons_gotoxy (cons, 0, 0);
 }
 
 R_API void r_kons_set_title(RCons *cons, const char *str) {

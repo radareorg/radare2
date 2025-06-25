@@ -159,7 +159,7 @@ static int cmd_project(void *data, const char *input) {
 			r_core_return_code (core, success? 0: 1);
 		} else {
 			if (R_STR_ISNOTEMPTY (str)) {
-				r_kons_println (core->cons, str);
+				r_cons_println (core->cons, str);
 			}
 		}
 		break;
@@ -352,7 +352,7 @@ static int cmd_project(void *data, const char *input) {
 						char *data = r_file_slurp (str, &len);
 						char *res = r_base64_encode_dyn ((const ut8*)data, (int)len);
 						if (res) {
-							r_kons_println (core->cons, res);
+							r_cons_println (core->cons, res);
 							free (res);
 						}
 						free (data);
@@ -381,7 +381,7 @@ static int cmd_project(void *data, const char *input) {
 				char *str = r_core_project_notes_file (core, fileproject);
 				char *data = r_file_slurp (str, NULL);
 				if (data) {
-					r_kons_println (core->cons, data);
+					r_cons_println (core->cons, data);
 					free (data);
 				}
 				free (str);
@@ -394,15 +394,15 @@ static int cmd_project(void *data, const char *input) {
 		if (R_STR_ISNOTEMPTY (file)) {
 			char *prj_name = r_core_project_name (core, file);
 			if (!R_STR_ISEMPTY (prj_name)) {
-				r_kons_println (core->cons, prj_name);
+				r_cons_println (core->cons, prj_name);
 				free (prj_name);
 			}
 		} else if (r_project_is_loaded (core->prj)) {
 			if (R_STR_ISNOTEMPTY (core->prj->name)) {
-				r_kons_println (core->cons, core->prj->name);
+				r_cons_println (core->cons, core->prj->name);
 			}
 			if (R_STR_ISNOTEMPTY (core->prj->path)) {
-				r_kons_println (core->cons, core->prj->path);
+				r_cons_println (core->cons, core->prj->path);
 			}
 		}
 		break;

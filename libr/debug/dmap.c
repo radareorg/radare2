@@ -103,11 +103,11 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, const char *input) {
 		break;
 	case '*': // "dm*" don't print a header for r2 commands output
 		if (input[1] == '-') {
-			r_kons_println (cons, "om-*");
+			r_cons_println (cons, "om-*");
 			r_kons_printf (cons, "omu %d 0x00000000 0xffffffffffffffff 0x00000000 rwx\n", fd);
 			return;
 		} else if (input[1] == '*') {
-			r_kons_println (cons, "om-*");
+			r_cons_println (cons, "om-*");
 		}
 		break;
 	default:

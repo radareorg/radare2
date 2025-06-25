@@ -158,7 +158,7 @@ R_API void r_cons_print_at(RCons *cons, const char *_str, int x, char y, int w, 
 			break;
 		}
 		if (str[i] == '\n') {
-			r_kons_gotoxy (cons, x, y + rows);
+			r_cons_gotoxy (cons, x, y + rows);
 			size_t ansilen = r_str_ansi_len (str + o);
 			cols = R_MIN (w, ansilen);
 			const char *end = r_str_ansi_chrn (str + o, cols);
@@ -170,7 +170,7 @@ R_API void r_cons_print_at(RCons *cons, const char *_str, int x, char y, int w, 
 		}
 	}
 	if (len > 1) {
-		r_kons_gotoxy (cons, x, y + rows);
+		r_cons_gotoxy (cons, x, y + rows);
 		r_cons_write (cons, str + o, len);
 	}
 	r_kons_print (cons, Color_RESET);
@@ -479,10 +479,6 @@ R_API void r_cons_free(RCons *cons) {
 	}
 }
 
-R_API void r_cons_gotoxy(int x, int y) {
-	r_kons_gotoxy (I, x, y);
-}
-
 R_API void r_cons_print_clear(void) {
 	r_kons_print_clear (I);
 }
@@ -498,7 +494,7 @@ R_DEPRECATE R_API void r_cons_clear_line(int std_err) {
 R_DEPRECATE R_API void r_cons_clear00(void) {
 	RCons *cons = r_cons_singleton ();
 	r_kons_clear (cons);
-	r_kons_gotoxy (cons, 0, 0);
+	r_cons_gotoxy (cons, 0, 0);
 }
 
 R_API void r_cons_reset_colors(void) {
@@ -1437,5 +1433,10 @@ R_API void r_cons_printf_list(RCons *cons, const char *format, va_list ap) {
 	}
 	va_end (ap2);
 	va_end (ap3);
+}
+
+R_API void r_cons_println(RCons *cons, const char* str) {
+	r_kons_print (cons, str);
+	r_cons_newline (cons);
 }
 

@@ -2786,7 +2786,7 @@ R_API void __cons_cb_fkey(RCore *core, int fkey) {
 	snprintf (buf, sizeof (buf), "key.f%d", fkey);
 	const char *v = r_config_get (core->config, buf);
 	if (v && *v) {
-		r_kons_println (core->cons, v);
+		r_cons_println (core->cons, v);
 		r_core_cmd0 (core, v);
 		r_cons_flush (core->cons);
 	}

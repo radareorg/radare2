@@ -64,7 +64,7 @@ R_IPI void pager_printpage(RCons *cons, const char *line, int *index, RList **ml
 		if (i + 1 == to) {
 			r_kons_print (cons, p->str);
 		} else {
-			r_kons_println (cons, p->str);
+			r_cons_println (cons, p->str);
 		}
 	}
 	r_strpool_free (p);

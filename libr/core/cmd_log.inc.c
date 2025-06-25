@@ -428,7 +428,7 @@ static int cmd_plugins(void *data, const char *input) {
 			PJ *pj = r_core_pj_new (core);
 			r_bin_list (core->bin, pj, 'j');
 			char *s = pj_drain (pj);
-			r_kons_println (core->cons, s);
+			r_cons_println (core->cons, s);
 			free (s);
 		} else {
 			r_bin_list (core->bin, NULL, 0);
@@ -662,7 +662,7 @@ static int cmd_plugins(void *data, const char *input) {
 				pj_end (pj);
 			}
 			pj_end (pj);
-			r_kons_println (core->cons, pj_string (pj));
+			r_cons_println (core->cons, pj_string (pj));
 			pj_free (pj);
 			break;
 			}

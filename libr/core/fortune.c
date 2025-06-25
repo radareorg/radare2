@@ -70,7 +70,7 @@ static void core_fortune_list_types(RCore *core) {
 	if (types) {
 		char *fts = r_str_list_join (types, "\n");
 		if (fts) {
-			r_kons_println (core->cons, fts);
+			r_cons_println (core->cons, fts);
 			free (fts);
 		}
 		r_list_free (types);
@@ -102,7 +102,7 @@ R_API void r_core_fortune_list(RCore *core, bool list_types_instead_of_fortunes)
 				free (file);
 				continue;
 			}
-			r_kons_println (core->cons, str);
+			r_cons_println (core->cons, str);
 			free (str);
 			free (file);
 		}

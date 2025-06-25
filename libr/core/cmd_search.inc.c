@@ -2841,7 +2841,7 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 #if 0
 		char *res = pj_drain (pj);
 		if (R_STR_ISNOTEMPTY (res)) {
-			r_kons_println (core->cons, res);
+			r_cons_println (core->cons, res);
 		}
 		free (res);
 #endif
@@ -2850,7 +2850,7 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 	} else {
 		char *res = r_strbuf_drain (rb);
 		if (R_STR_ISNOTEMPTY (res)) {
-			r_kons_println (core->cons, res);
+			r_cons_println (core->cons, res);
 		}
 		free (res);
 	}
@@ -2887,7 +2887,7 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 					if (!strcmp (str, "undefined")) {
 						continue;
 					}
-					r_kons_println (core->cons, str);
+					r_cons_println (core->cons, str);
 				}
 				break;
 			case 's': // "als"
@@ -3407,31 +3407,31 @@ static void rop_kuery(void *data, const char *input, PJ *pj) {
 		if (!strcmp (input + 1, "nop")) {
 			out = sdb_querys (core->sdb, NULL, 0, "rop/nop/*");
 			if (out) {
-				r_kons_println (core->cons, out);
+				r_cons_println (core->cons, out);
 				free (out);
 			}
 		} else if (!strcmp (input + 1, "mov")) {
 			out = sdb_querys (core->sdb, NULL, 0, "rop/mov/*");
 			if (out) {
-				r_kons_println (core->cons, out);
+				r_cons_println (core->cons, out);
 				free (out);
 			}
 		} else if (!strcmp (input + 1, "const")) {
 			out = sdb_querys (core->sdb, NULL, 0, "rop/const/*");
 			if (out) {
-				r_kons_println (core->cons, out);
+				r_cons_println (core->cons, out);
 				free (out);
 			}
 		} else if (!strcmp (input + 1, "arithm")) {
 			out = sdb_querys (core->sdb, NULL, 0, "rop/arithm/*");
 			if (out) {
-				r_kons_println (core->cons, out);
+				r_cons_println (core->cons, out);
 				free (out);
 			}
 		} else if (!strcmp (input + 1, "arithm_ct")) {
 			out = sdb_querys (core->sdb, NULL, 0, "rop/arithm_ct/*");
 			if (out) {
-				r_kons_println (core->cons, out);
+				r_cons_println (core->cons, out);
 				free (out);
 			}
 		} else {
@@ -3441,7 +3441,7 @@ static void rop_kuery(void *data, const char *input, PJ *pj) {
 	default:
 		out = sdb_querys (core->sdb, NULL, 0, "rop/***");
 		if (out) {
-			r_kons_println (core->cons, out);
+			r_cons_println (core->cons, out);
 			free (out);
 		}
 		break;
@@ -5572,7 +5572,7 @@ beach:
 	core->in_search = false;
 	r_flag_space_pop (core->flags);
 	if (param.outmode == R_MODE_JSON) {
-		r_kons_println (core->cons, pj_string (param.pj));
+		r_cons_println (core->cons, pj_string (param.pj));
 	}
 	pj_free (param.pj);
 	r_list_free (param.boundaries);

@@ -114,7 +114,7 @@ R_API void r_core_task_list(RCore *core, int mode) {
 	}
 	if (mode == 'j') {
 		pj_end (pj);
-		r_kons_println (core->cons, pj_string (pj));
+		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 	} else {
 		r_kons_printf (core->cons, "--\ntotal running: %d\n", core->tasks.tasks_running);

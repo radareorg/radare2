@@ -27,7 +27,7 @@ static void cmd_egg_option(RCore *core, REgg *egg, const char *key, const char *
 	if (input[1] != ' ') {
 		char *a = r_egg_option_get (egg, key);
 		if (a) {
-			r_kons_println (core->cons, a);
+			r_cons_println (core->cons, a);
 			free (a);
 		}
 	} else {

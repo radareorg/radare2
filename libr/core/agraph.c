@@ -3382,7 +3382,7 @@ static void agraph_follow_innodes(RCore *core, RAGraph *g, bool in) {
 		return;
 	}
 	RCons *cons = core->cons;
-	r_kons_gotoxy (cons, 0, 2);
+	r_cons_gotoxy (cons, 0, 2);
 	r_kons_printf (cons, in? "Input nodes:\n": "Output nodes:\n");
 	RList *options = r_list_newf (NULL);
 	RList *gnodes = in? an->gnode->in_nodes: an->gnode->out_nodes;
@@ -3606,7 +3606,7 @@ static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, RAnalFunct
 			int color = core? r_config_get_i (core->config, "scr.color"): 0;
 			if (color > 0) {
 				const char *kolor = cons->context->pal.prompt;
-				r_kons_gotoxy (cons, 0, 0);
+				r_cons_gotoxy (cons, 0, 0);
 				r_kons_print (cons, kolor? kolor: Color_WHITE);
 				r_kons_print (cons, g->title);
 				r_kons_print (cons, Color_RESET"\r");
@@ -3633,7 +3633,7 @@ static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, RAnalFunct
 			cmdv = ".dr*;dr=@e:hex.cols=`?v $w*3`";
 		}
 		if (R_STR_ISNOTEMPTY (cmdv)) {
-			r_kons_gotoxy (cons, 0, 2);
+			r_cons_gotoxy (cons, 0, 2);
 			r_kons_print (cons, Color_RESET);
 			r_core_cmd0 (core, cmdv);
 			mustFlush = true;
@@ -4093,7 +4093,7 @@ static void visual_offset(RCore *core, RAGraph *g) {
 	char buf[256];
 	int rows;
 	r_cons_get_size (core->cons, &rows);
-	r_kons_gotoxy (core->cons, 0, rows);
+	r_cons_gotoxy (core->cons, 0, rows);
 	r_cons_flush (core->cons);
 	core->cons->line->prompt_type = R_LINE_PROMPT_OFFSET;
 	r_line_set_hist_callback (core->cons->line, &r_line_hist_offset_up, &r_line_hist_offset_down);
@@ -4124,7 +4124,7 @@ R_API void r_core_visual_find(RCore *core, RAGraph *g) {
 	RCons *cons = core->cons;
 	while (1) {
 		r_cons_get_size (cons, &rows);
-		r_kons_gotoxy (cons, 0, rows - 1);
+		r_cons_gotoxy (cons, 0, rows - 1);
 		r_cons_flush (cons);
 		printf (Color_RESET);
 		fflush (stdout);
@@ -4180,7 +4180,7 @@ find_next:
 		r_kons_clear_line (cons, 0);
 		r_kons_printf (cons, Color_RESET);
 		if (addr > 0) {
-			r_kons_gotoxy (cons, 0, 0);
+			r_cons_gotoxy (cons, 0, 0);
 			r_kons_printf (cons, "[find]> match '%s'", line);
 			R_LOG_INFO ("Found (%d/%d). Press 'n' for next, 'N' for prev, 'q' for quit, any other key to continue", offset + 1, offset_max);
 		} else {
@@ -4247,7 +4247,7 @@ static void goto_asmqjmps(RAGraph *g, RCore *core) {
 	RCons *cons = core->cons;
 
 	r_cons_get_size (cons, &rows);
-	r_kons_gotoxy (cons, 0, rows);
+	r_cons_gotoxy (cons, 0, rows);
 	r_kons_clear_line (cons, 0);
 	r_kons_print (cons, Color_RESET);
 	r_kons_print (cons, h);
@@ -4946,7 +4946,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 		case 'm':
 			// mark current x/y + offset
 			{
-				r_kons_gotoxy (core->cons, 0, 0);
+				r_cons_gotoxy (core->cons, 0, 0);
 				r_kons_printf (core->cons, R_CONS_CLEAR_LINE"Set shortcut key for 0x%"PFMT64x"\n", core->addr);
 				r_cons_flush (core->cons);
 				int ch = r_cons_readchar (core->cons);
@@ -4958,7 +4958,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 		case '\'':
 			// go to given mark
 			{
-				r_kons_gotoxy (core->cons, 0, 2);
+				r_cons_gotoxy (core->cons, 0, 2);
 				if (r_core_vmark_dump (core, 'v')) {
 					r_cons_flush (core->cons);
 					const int ch = r_cons_readchar (core->cons);

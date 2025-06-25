@@ -132,7 +132,7 @@ static void rtr_textlog_chat(RCore *core, TextLog T) {
 			strcpy (msg, "T");
 		}
 		ret = rtrcmd (T, msg);
-		r_kons_println (core->cons, ret);
+		r_cons_println (core->cons, ret);
 		free (ret);
 		ret = rtrcmd (T, "Tl");
 		lastmsg = atoi (ret)-1;
@@ -150,7 +150,7 @@ static void rtr_textlog_chat(RCore *core, TextLog T) {
 			eprintf ("/clear          clear text log messages\n");
 		} else if (!strncmp (buf, "/nick ", 6)) {
 			char *m = r_str_newf ("* '%s' is now known as '%s'", me, buf+6);
-			r_kons_println (core->cons, m);
+			r_cons_println (core->cons, m);
 			r_core_log_add (core, m);
 			r_config_set (core->config, "cfg.user", buf+6);
 			me = r_config_get (core->config, "cfg.user");
@@ -160,7 +160,7 @@ static void rtr_textlog_chat(RCore *core, TextLog T) {
 		} else if (!strcmp (buf, "/log")) {
 			char *ret = rtrcmd (T, "T");
 			if (ret) {
-				r_kons_println (core->cons, ret);
+				r_cons_println (core->cons, ret);
 				free (ret);
 			}
 		} else if (!strcmp (buf, "/clear")) {
@@ -745,7 +745,7 @@ R_API void r_core_rtr_list(RCore *core, int mode) {
 	if (pj) {
 		pj_end (pj);
 		char *s = pj_drain (pj);
-		r_kons_println (core->cons, s);
+		r_cons_println (core->cons, s);
 		free (s);
 	}
 }
@@ -942,7 +942,7 @@ R_API void r_core_rtr_event(RCore *core, const char *input) {
 		// TODO: support udp, tcp, rap, ...
 #if R2__UNIX__ && !__wasi__
 		char *f = r_file_temp ("errmsg");
-		r_kons_println (core->cons, f);
+		r_cons_println (core->cons, f);
 		r_file_rm (f);
 		errmsg_tmpfile = strdup (f);
 		int e = mkfifo (f, 0644);
@@ -1090,7 +1090,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		//ensure the termination
 		r_socket_close (s);
 		cmd_output[maxlen] = 0;
-		r_kons_println (core->cons, cmd_output);
+		r_cons_println (core->cons, cmd_output);
 		free ((void *)cmd_output);
 		return;
 	}
@@ -1125,7 +1125,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 			return;
 		}
 		char *cmd_output = r_socket_rap_client_command (fh, cmd, &core->anal->coreb);
-		r_kons_println (core->cons, cmd_output);
+		r_cons_println (core->cons, cmd_output);
 		free (cmd_output);
 		return;
 	}

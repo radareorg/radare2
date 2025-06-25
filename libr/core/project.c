@@ -93,7 +93,7 @@ R_API void r_core_project_cat(RCore *core, const char *name) {
 	if (path) {
 		char *data = r_file_slurp (path, NULL);
 		if (data) {
-			r_kons_println (core->cons, data);
+			r_cons_println (core->cons, data);
 			free (data);
 			r_core_return_value (core, R_CMD_RC_SUCCESS);
 		}
@@ -124,13 +124,13 @@ R_API int r_core_project_list(RCore *core, int mode) {
 			}
 		}
 		pj_end (pj);
-		r_kons_println (core->cons, pj_string (pj));
+		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 		break;
 	default:
 		r_list_foreach (list, iter, foo) {
 			if (r_core_is_project (core, foo)) {
-				r_kons_println (core->cons, foo);
+				r_cons_println (core->cons, foo);
 			}
 		}
 		break;
@@ -539,7 +539,7 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 	if (opts & R_CORE_PRJ_EVAL) {
 		r_kons_printf (core->cons, "# eval\n");
 		char *res = r_config_list (core->config, NULL, 'r');
-		r_kons_println (core->cons, res);
+		r_cons_println (core->cons, res);
 		free (res);
 		flush (sb);
 	}
@@ -604,14 +604,14 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 		flush (sb);
 	}
 	if (opts & R_CORE_PRJ_ANAL_TYPES) {
-		r_kons_println (cons, "# types");
+		r_cons_println (cons, "# types");
 		r_core_cmd (core, "t*", 0);
 		flush (sb);
 	}
 	if (opts & R_CORE_PRJ_ANAL_MACROS) {
-		r_kons_println (cons, "# macros");
+		r_cons_println (cons, "# macros");
 		r_core_cmd (core, "(*", 0);
-		r_kons_println (cons, "# aliases");
+		r_cons_println (cons, "# aliases");
 		r_core_cmd (core, "$*", 0);
 		flush (sb);
 	}

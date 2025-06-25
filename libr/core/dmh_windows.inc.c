@@ -1229,11 +1229,11 @@ static void w32_list_heaps(RCore *core, const char format) {
 	if (format == 'j') {
 		pj_end (pj);
 		char *s = pj_string (pj);
-		r_kons_println (core->cons, s);
+		r_cons_println (core->cons, s);
 		free (s);
 	} else {
 		char *s = r_table_tostring (tbl);
-		r_kons_println (core->cons, s);
+		r_cons_println (core->cons, s);
 		free (s);
 	}
 	r_table_free (tbl);
@@ -1320,10 +1320,10 @@ static void w32_list_heaps_blocks(RCore *core, const char format) {
 	}
 	if (format == 'j') {
 		pj_end (pj);
-		r_kons_println (core->cons, pj_string (pj));
+		r_cons_println (core->cons, pj_string (pj));
 	} else if (format != 'f') {
 		char *s = r_table_tostring (tbl);
-		r_kons_println (core->cons, s);
+		r_cons_println (core->cons, s);
 		free (s);
 	}
 	r_table_free (tbl);
@@ -1365,7 +1365,7 @@ static void cmd_debug_map_heap_block_win(RCore *core, const char *input) {
 			case ' ':
 				r_table_add_rowf (tbl, "xxnnns", headerAddr, off, (ut64)hb->dwSize, granularity, (ut64)hb->extraInfo->unusedBytes, type);
 				char *s = r_table_tostring (tbl);
-				r_kons_println (core->cons, s);
+				r_cons_println (core->cons, s);
 				free (s);
 				break;
 			case 'j':
@@ -1378,7 +1378,7 @@ static void cmd_debug_map_heap_block_win(RCore *core, const char *input) {
 					pj_kN (pj, "unused", hb->extraInfo->unusedBytes);
 				}
 				pj_end (pj);
-				r_kons_println (core->cons, pj_string (pj));
+				r_cons_println (core->cons, pj_string (pj));
 			}
 			free (hb->extraInfo);
 			free (hb);

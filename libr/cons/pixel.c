@@ -150,7 +150,7 @@ static inline void cons_pixel_paint(RCons *cons, RConsPixel *p, int sx, int sy, 
 		int py = sy + (y / 4);
 		if (px >= 0 && px < cols) {
 			if (py >= 0 && py < rows) {
-				r_cons_gotoxy (sx + (x / 2), sy + (y / 4));
+				r_cons_gotoxy (cons, sx + (x / 2), sy + (y / 4));
 				// r_cons_print (Color_RESET);
 				r_cons_print (b.str);
 			}

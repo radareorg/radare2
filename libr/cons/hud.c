@@ -273,7 +273,7 @@ R_API char *r_cons_hud(RCons *cons, RList *list, const char *prompt) {
 
 	// Repeat until the user exits the hud
 	for (;;) {
-		r_cons_gotoxy (0, 0);
+		r_cons_gotoxy (cons, 0, 0);
 		hud->current_entry_n = 0;
 
 		if (hud->top_entry_n < 0) {
@@ -485,10 +485,10 @@ static char *r_cons_message_multiline(RCons *cons, const char *msg) {
 	const char *pad = r_str_pad (' ', (cols-longest) / 2);
 	char *newmsg = r_str_prefix_all (msg, pad);
 	r_kons_clear (cons);
-	r_kons_gotoxy (cons, 0, (rows / 2) - (r_list_length (lines) / 2));
-	r_kons_println (cons, newmsg);
+	r_cons_gotoxy (cons, 0, (rows / 2) - (r_list_length (lines) / 2));
+	r_cons_println (cons, newmsg);
 	r_cons_flush (cons);
-	r_kons_gotoxy (cons, 0, rows - 2);
+	r_cons_gotoxy (cons, 0, rows - 2);
 	r_cons_any_key (cons, NULL);
 	r_list_free (lines);
 	free (s);
@@ -504,10 +504,10 @@ R_API char *r_cons_message(RCons *cons, const char *msg) {
 	int len = strlen (msg);
 	int rows, cols = r_cons_get_size (cons, &rows);
 	r_kons_clear (cons);
-	r_kons_gotoxy (cons, (cols - len) / 2, rows / 2);
-	r_kons_println (cons, msg);
+	r_cons_gotoxy (cons, (cols - len) / 2, rows / 2);
+	r_cons_println (cons, msg);
 	r_cons_flush (cons);
-	r_kons_gotoxy (cons, 0, rows - 2);
+	r_cons_gotoxy (cons, 0, rows - 2);
 	r_cons_any_key (cons, NULL);
 	return NULL;
 }

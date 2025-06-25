@@ -433,7 +433,7 @@ static char* rop_classify_arithmetic(RCore *core, RList *ropList) {
 			cmd_anal_esil (core, esil_str, false);
 		}
 		out = sdb_querys (core->anal->esil->stats, NULL, 0, "*");
-		// r_kons_println (core->cons, out);
+		// r_cons_println (core->cons, out);
 		if (!out) {
 			goto continue_error;
 		}
@@ -490,7 +490,7 @@ static char* rop_classify_arithmetic(RCore *core, RList *ropList) {
 						simulate = simulate_op (op, value_src1, value_src2, diff_src1, diff_src2, op_result, item_dst->size);
 						simulate_r = simulate_op (op, value_src2, value_src1, diff_src2, diff_src1, op_result_r, item_dst->size);
 						if (/*value_src1 != 0 && value_src2 != 0 && */simulate && value_dst == *op_result) {
-							// r_kons_println (core->cons, "Debug: FOUND ONE !");
+							// r_cons_println (core->cons, "Debug: FOUND ONE !");
 							char *tmp = r_str_newf ("%s <-- %s %s %s;", item_dst->name, item_src1->name, op, item_src2->name);
 							if (arithmetic && !strstr (arithmetic, tmp)) {
 								arithmetic = r_str_append (arithmetic, tmp);
@@ -500,7 +500,7 @@ static char* rop_classify_arithmetic(RCore *core, RList *ropList) {
 							free (tmp);
 							redundant = true;
 						} else if (!redundant /*&& value_src1 != 0 && value_src2 != 0*/ && simulate_r && value_dst == *op_result_r) {
-							// r_kons_println (core->cons, "Debug: FOUND ONE reversed!");
+							// r_cons_println (core->cons, "Debug: FOUND ONE reversed!");
 							char *tmp = r_str_newf ("%s <-- %s %s %s;", item_dst->name, item_src2->name, op, item_src1->name);
 							if (arithmetic && !strstr (arithmetic, tmp)) {
 								arithmetic = r_str_append (arithmetic, tmp);
@@ -565,7 +565,7 @@ static char* rop_classify_arithmetic_const(RCore *core, RList *ropList) {
 			cmd_anal_esil (core, esil_str, false);
 		}
 		char *out = sdb_querys (core->anal->esil->stats, NULL, 0, "*");
-		// r_kons_println (core->cons, out);
+		// r_cons_println (core->cons, out);
 		if (out) {
 			ops_list  = parse_list (strstr (out, "ops.list"));
 			flg_read  = parse_list (strstr (out, "flg.read"));
@@ -665,7 +665,7 @@ static int rop_classify_nops(RCore *core, RList *ropList) {
 		// r_cons_printf ("Emulating nop:%s\n", esil_str);
 		cmd_anal_esil (core, esil_str, false);
 		char *out = sdb_querys (core->anal->esil->stats, NULL, 0, "*");
-		// r_kons_println (core->cons, out);
+		// r_cons_println (core->cons, out);
 		if (out) {
 			free (out);
 			return 0;

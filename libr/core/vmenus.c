@@ -39,7 +39,7 @@ static int copyuntilch(char *dst, char *src, int ch) {
 R_IPI void visual_add_comment(RCore *core, ut64 at) {
 	char buf[1024];
 	r_kons_enable_mouse (core->cons, false);
-	r_kons_gotoxy (core->cons, 0, 0);
+	r_cons_gotoxy (core->cons, 0, 0);
 	r_kons_printf (core->cons, "Enter a comment: ('-' to remove, '!' to use cfg.editor)\n");
 	r_core_visual_showcursor (core, true);
 	r_cons_flush (core->cons);
@@ -2052,11 +2052,11 @@ R_API int r_core_visual_view_rop(RCore *core) {
 		}
 		int count = 0;
 		r_cons_flush (cons);
-		r_kons_gotoxy (cons, 0, 20);
+		r_cons_gotoxy (cons, 0, 20);
 		r_kons_printf (cons, "ROPChain:\n  %s\n", r_str_get (chainstr));
 		r_list_foreach (core->ropchain, iter, msg) {
 			int extra = strlen (chainstr) / scr_w;
-			r_kons_gotoxy (core->cons, 0, extra + 22 + count);
+			r_cons_gotoxy (core->cons, 0, extra + 22 + count);
 			r_kons_print (core->cons, msg);
 			const char *cmt = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, r_num_get (NULL, msg));
 			if (cmt) {
@@ -2730,7 +2730,7 @@ static void show_config_options(RCore *core, const char *opt, int row) {
 #if 0
 			if (r_strbuf_length (sb) + 5 >= w) {
 				char *s = r_strbuf_drain (sb);
-				r_kons_println (core->cons, s);
+				r_cons_println (core->cons, s);
 				free (s);
 				sb = r_strbuf_new ("");
 			}
@@ -2860,9 +2860,9 @@ R_API void r_core_visual_config(RCore *core) {
 		r_cons_visual_flush (cons);
 		if (menu == 1 && fs2) {
 			// TODO: Break long lines.
-			r_kons_gotoxy (core->cons, 0, 0);
+			r_cons_gotoxy (core->cons, 0, 0);
 			r_kons_printf (core->cons, "[hjkq] %s", desc);
-			r_kons_gotoxy (core->cons, 0, menuboxh + 4);
+			r_cons_gotoxy (core->cons, 0, menuboxh + 4);
 			show_config_options (core, fs2, menuboxh);
 			r_cons_flush (cons);
 		}
@@ -2879,15 +2879,15 @@ R_API void r_core_visual_config(RCore *core) {
 					if (y > 20) {
 						break;
 					}
-					r_kons_gotoxy (core->cons, 21, y);
+					r_cons_gotoxy (core->cons, 21, y);
 					// TODO: Better align
 					r_kons_printf (core->cons, "%s = %s", bt->name, bt->value);
 					y++;
 				}
 			}
-			r_kons_gotoxy (core->cons, 21, y);
+			r_cons_gotoxy (core->cons, 21, y);
 			r_kons_printf (core->cons, "...");
-			r_kons_gotoxy (core->cons, 0, 0);
+			r_cons_gotoxy (core->cons, 0, 0);
 			r_cons_flush (core->cons);
 		}
 		ch = r_cons_readchar (core->cons);
@@ -3420,7 +3420,7 @@ static ut64 var_functions_show(RCore *core, int idx, int show, int cols) {
 						r_free (tmp);
 					}
 					if (print_full_func) {
-						r_kons_println (core->cons, var_functions);
+						r_cons_println (core->cons, var_functions);
 					}
 					r_free (var_functions);
 				}
@@ -3592,9 +3592,9 @@ static ut64 r_core_visual_anal_refresh(RCore *core) {
 		if (color) {
 			r_kons_print (core->cons, core->cons->context->pal.prompt);
 		}
-		r_kons_gotoxy (cons, 0, 0);
+		r_cons_gotoxy (cons, 0, 0);
 		r_kons_print (cons, ".-- functions -------------------------------.");
-		r_kons_gotoxy (cons, 20, 0);
+		r_cons_gotoxy (cons, 20, 0);
 		if (selectPanel) {
 			r_kons_printf (cons, "[%s]", printCmds[printMode]);
 		} else {
@@ -3620,7 +3620,7 @@ static ut64 r_core_visual_anal_refresh(RCore *core) {
 		if (color) {
 			r_kons_print (cons, "\n" Color_RESET);
 		}
-		r_kons_gotoxy (cons, 22, 0);
+		r_cons_gotoxy (cons, 22, 0);
 		r_kons_printf (core->cons, " 0x%08"PFMT64x" \n", addr);
 		r_kons_print (core->cons, "| (a)dd     (x)refs       (r)rename       |\n");
 		r_kons_print (core->cons, "| (t)ype    (g)o          (-)delete       |\n");
@@ -4267,7 +4267,7 @@ R_API void r_core_visual_define(RCore *core, const char *args, int distance) {
 		h = 0;
 		r_kons_clear00 (core->cons);
 	} else {
-		r_kons_gotoxy (core->cons, 0, 3);
+		r_cons_gotoxy (core->cons, 0, 3);
 	}
 	const char *lines[] = { ""
 		,"[Vd]- Define current block as:"
@@ -4793,7 +4793,7 @@ R_API void r_core_visual_colors(RCore *core) {
 	rcolor = r_cons_pal_get_i (cons, opt);
 	for (;;) {
 		r_kons_clear (core->cons);
-		r_kons_gotoxy (core->cons, 0, 0);
+		r_cons_gotoxy (core->cons, 0, 0);
 		k = r_cons_pal_get_name (cons, opt);
 		if (!k) {
 			opt = 0;

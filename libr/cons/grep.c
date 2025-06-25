@@ -770,13 +770,13 @@ R_API void r_kons_grepbuf(RCons *cons) {
 		if (less == 3) {
 			char *res = r_cons_hud_line_string (cons, buf);
 			if (res) {
-				r_kons_println (cons, res);
+				r_cons_println (cons, res);
 				free (res);
 			}
 		} else if (less == 2) {
 			char *res = r_cons_hud_string (cons, buf);
 			if (res) {
-				r_kons_println (cons, res);
+				r_cons_println (cons, res);
 				free (res);
 			}
 		} else {

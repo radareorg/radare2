@@ -8,7 +8,7 @@ static bool rtr_visual(RCore *core, TextLog T, const char *cmd) {
 			char *ret;
 			r_kons_clear00 (core->cons);
 			ret = rtrcmd (T, cmd);
-			r_kons_println (core->cons, ret);
+			r_cons_println (core->cons, ret);
 			free (ret);
 			r_cons_flush (core->cons);
 			if (r_kons_is_breaked (core->cons)) {
@@ -27,7 +27,7 @@ static bool rtr_visual(RCore *core, TextLog T, const char *cmd) {
 			r_kons_clear00 (core->cons);
 			ret = rtrcmd (T, cmds[cmdidx]);
 			if (ret) {
-				r_kons_println (core->cons, ret);
+				r_cons_println (core->cons, ret);
 				free (ret);
 			}
 			r_cons_flush (core->cons);
@@ -89,7 +89,7 @@ TODO:
 						buf[sizeof (buf) - 1] = 0;
 						char *res = rtrcmd (T, buf);
 						if (res) {
-							r_kons_println (core->cons, res);
+							r_cons_println (core->cons, res);
 							free (res);
 						}
 						r_cons_flush (core->cons);
@@ -122,7 +122,7 @@ TODO:
 							r_line_hist_add (core->cons->line, buf);
 							char *res = rtrcmd (T, buf);
 							if (res) {
-								r_kons_println (core->cons, res);
+								r_cons_println (core->cons, res);
 								free (res);
 							}
 							r_cons_flush (core->cons);

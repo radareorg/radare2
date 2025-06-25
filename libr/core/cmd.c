@@ -897,7 +897,7 @@ static int cmd_alias(void *data, const char *input) {
 		RCmdAliasVal *v = r_cmd_alias_get (core->rcmd, buf);
 		if (v && !v->is_data) {
 			/* Commands are always strings */
-			r_kons_println (core->cons, (char *)v->data);
+			r_cons_println (core->cons, (char *)v->data);
 			r_cons_flush (core->cons);
 			free (buf);
 			return 1;
@@ -1127,7 +1127,7 @@ static void session_list(RCore *core, int mode) {
 	if (pj) {
 		pj_end (pj);
 		char *s = pj_drain (pj);
-		r_kons_println (core->cons, s);
+		r_cons_println (core->cons, s);
 		free (s);
 	}
 	r_list_free (files);
@@ -1561,7 +1561,7 @@ static int cmd_lr(RCore *core, const char *input) { // "lr"
 	}
 	r_list_sort (files, (RListComparator)strcmp);
 	r_list_foreach (files, iter, path) {
-		r_kons_println (core->cons, path);
+		r_cons_println (core->cons, path);
 	}
 	r_list_free (files);
 	return 0;
@@ -1790,7 +1790,7 @@ static int cmd_j(void *data, const char *input) { // "j"
 		pj_end (pj);
 		free (s);
 		s = pj_drain (pj);
-		r_kons_println (core->cons, s);
+		r_cons_println (core->cons, s);
 		free (s);
 		return R_CMD_RC_SUCCESS;
 	}
@@ -2107,7 +2107,7 @@ static void load_table(RCore *core, RTable *t, char *data) {
 
 static void display_table(RCore *core, char *ts) {
 	if (ts) {
-		r_kons_println (core->cons, ts);
+		r_cons_println (core->cons, ts);
 		free (ts);
 	}
 }
@@ -2444,7 +2444,7 @@ static int cmd_kuery(void *data, const char *input) {
 	case 'j':
 		out = sdb_querys (s, NULL, 0, "anal/**");
 		if (!out) {
-			r_kons_println (core->cons, "No Output from sdb");
+			r_cons_println (core->cons, "No Output from sdb");
 			break;
 		}
 		PJ *pj = r_core_pj_new (core);
@@ -2489,7 +2489,7 @@ static int cmd_kuery(void *data, const char *input) {
 		pj_end (pj);
 		pj_end (pj);
 		pj_end (pj);
-		r_kons_println (core->cons, pj_string (pj));
+		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 		R_FREE (next_cmd);
 		free (next_cmd);
@@ -2557,7 +2557,7 @@ static int cmd_kuery(void *data, const char *input) {
 			}
 			out = sdb_querys (s, NULL, 0, buf);
 			if (out) {
-				r_kons_println (core->cons, out);
+				r_cons_println (core->cons, out);
 				r_cons_flush (core->cons);
 			}
 		}
@@ -2643,7 +2643,7 @@ static int cmd_kuery(void *data, const char *input) {
 		s = sdb_ns (core->sdb, inp + 1, 1);
 		out = sdb_querys (s, NULL, 0, sp + 1);
 		if (out) {
-			r_kons_println (core->cons, out);
+			r_cons_println (core->cons, out);
 			free (out);
 		}
 		free (inp);
@@ -2709,7 +2709,7 @@ static int cmd_bsize(void *data, const char *input) {
 		pj_ki (pj, "blocksize", core->blocksize);
 		pj_ki (pj, "blocksize_limit", core->blocksize_max);
 		pj_end (pj);
-		r_kons_println (core->cons, pj_string (pj));
+		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 		break;
 	}
@@ -2886,7 +2886,7 @@ static int cmd_resize(void *data, const char *input) {
 			}
 			pj_end (pj);
 			char *s = pj_drain (pj);
-			r_kons_println (core->cons, s);
+			r_cons_println (core->cons, s);
 			free (s);
 			return true;
 		}
@@ -3126,7 +3126,7 @@ static int cmd_tasks(void *data, const char *input) {
 			RCoreTask *task = r_core_task_get_incref (&core->tasks, tid);
 			if (task) {
 				if (task->res) {
-					r_kons_println (core->cons, task->res);
+					r_cons_println (core->cons, task->res);
 				}
 				r_core_task_decref (task);
 			} else {

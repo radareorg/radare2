@@ -140,7 +140,7 @@ bool ranal2_list(RCore *core, const char *arch, int fmt) {
 				char *c = strdup (h->cpus);
 				int n = r_str_split (c, ',');
 				for (i = 0; i < n; i++) {
-					r_kons_println (core->cons, r_str_word_get0 (c, i));
+					r_cons_println (core->cons, r_str_word_get0 (c, i));
 					any = true;
 				}
 				free (c);
@@ -155,7 +155,7 @@ bool ranal2_list(RCore *core, const char *arch, int fmt) {
 					char *c = strdup (arp->cpus);
 					int n = r_str_split (c, ',');
 					for (i = 0; i < n; i++) {
-						r_kons_println (core->cons, r_str_word_get0 (c, i));
+						r_cons_println (core->cons, r_str_word_get0 (c, i));
 						any = true;
 					}
 					free (c);
@@ -186,7 +186,7 @@ bool ranal2_list(RCore *core, const char *arch, int fmt) {
 			feat = "_d";
 			feat2 = "__";
 			if (fmt == 'q') {
-				r_kons_println (core->cons, h->name);
+				r_cons_println (core->cons, h->name);
 			} else if (fmt == 'j') {
 				const char *license = "GPL";
 				pj_k (pj, h->name);
@@ -221,7 +221,7 @@ bool ranal2_list(RCore *core, const char *arch, int fmt) {
 	}
 	if (fmt == 'j') {
 		pj_end (pj);
-		r_kons_println (core->cons, pj_string (pj));
+		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 	}
 	return any;
@@ -599,7 +599,7 @@ static bool cb_asm_var_summary(void *user, void *data) {
 			"2 # short summary\n"
 			"3 # compact oneliner for args + vars\n"
 			"4 # compact oneliner with args+vars regs+mem range\n";
-		r_kons_println (core->cons, help);
+		r_cons_println (core->cons, help);
 		return false;
 	}
 	return true;
@@ -668,7 +668,7 @@ static void list_cpus(RCore *core) {
 		char *c = strdup (ap->cpus);
 		int i, n = r_str_split (c, ',');
 		for (i = 0; i < n; i++) {
-			r_kons_println (core->cons, r_str_word_get0 (c, i));
+			r_cons_println (core->cons, r_str_word_get0 (c, i));
 		}
 		free (c);
 	}
@@ -1298,7 +1298,7 @@ static void list_available_plugins(RCore *core, const char *path) {
 		if (*fn && *fn != '.' && r_str_endswith (fn, ".sdb")) {
 			char *f = strdup (fn);
 			f[strlen (f) - 4] = 0;
-			r_kons_println (core->cons, f);
+			r_cons_println (core->cons, f);
 			free (f);
 		}
 	}
@@ -3526,9 +3526,9 @@ static bool cb_prjvctype(void *user, void *data) {
 	free (git);
 	if (*node->value == '?') {
 		if (have_git) {
-			r_kons_println (core->cons, "git");
+			r_cons_println (core->cons, "git");
 		}
-		r_kons_println (core->cons, "rvc");
+		r_cons_println (core->cons, "rvc");
 		return true;
 	}
 	if (!strcmp (node->value, "git")) {

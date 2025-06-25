@@ -668,7 +668,7 @@ R_API void r_cons_pal_list(RCons *cons, int rad, const char *arg) {
 	if (rad == 'j' || pj) {
 		pj_end (pj);
 		char *s = pj_drain (pj);
-		r_kons_println (cons, s);
+		r_cons_println (cons, s);
 		free (s);
 	}
 }

@@ -855,16 +855,16 @@ static void cmd_oma(RCore *core, const char *input) {
 	case '?':
 		r_core_cmd_help_match (core, help_msg_om, "oma");
 		r_kons_print (core->cons, "Type: ");
-		r_kons_println (core->cons, "heap, stack, mmap, mmio, dma, jit, bss, shared, kernel, guard, null, gpu, tls, buffer, cow, pagetables");
+		r_cons_println (core->cons, "heap, stack, mmap, mmio, dma, jit, bss, shared, kernel, guard, null, gpu, tls, buffer, cow, pagetables");
 		r_kons_print (core->cons, "Flags: ");
-		r_kons_println (core->cons, "paged, private, persistent, aslr, swap, dep, enclave, compressed, encrypted, large");
+		r_cons_println (core->cons, "paged, private, persistent, aslr, swap, dep, enclave, compressed, encrypted, large");
 		break;
 	case 0:
 		{
 			RIOMap *map = r_io_map_get_at (core->io, core->addr);
 			if (map) {
 				char *s = r_io_map_getattr (map);
-				r_kons_println (core->cons, s);
+				r_cons_println (core->cons, s);
 				free (s);
 			}
 		}
@@ -889,7 +889,7 @@ static void cmd_oma(RCore *core, const char *input) {
 				RIOMap *map = r_io_map_get_at (core->io, core->addr);
 				if (map) {
 					char *s = r_io_map_getattr (map);
-					r_kons_println (core->cons, s);
+					r_cons_println (core->cons, s);
 					free (s);
 				} else {
 					R_LOG_ERROR ("Cannot find map in the current offset");
@@ -912,7 +912,7 @@ static void cmd_oma(RCore *core, const char *input) {
 			RIOMap *map = r_io_map_get_at (core->io, core->addr);
 			if (map) {
 				char *s = r_io_map_getattr (map);
-				r_kons_println (core->cons, s);
+				r_cons_println (core->cons, s);
 				free (s);
 			} else {
 				R_LOG_ERROR ("Cannot find map in the current offset");
@@ -1058,7 +1058,7 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 			} while (r_id_storage_get_next (&core->io->banks, &bank_id));
 			pj_end (pj);
 			char *s = pj_drain (pj);
-			r_kons_println (core->cons, s);
+			r_cons_println (core->cons, s);
 			free (s);
 		} else {
 			R_LOG_ERROR ("ombj takes no arguments");
@@ -1172,7 +1172,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 					r_str_rwx_i (map->perm), r_str_get (map->name));
 			}
 		} else if (input[2] == 'j') {
-			r_kons_println (core->cons, "{}");
+			r_cons_println (core->cons, "{}");
 		}
 		break;
 	case 's': // "oms"
@@ -1247,7 +1247,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 			if (pj) {
 				pj_end (pj);
 				char *s = pj_drain (pj);
-				r_kons_println (core->cons, s);
+				r_cons_println (core->cons, s);
 				free (s);
 			}
 		} else {
@@ -1302,7 +1302,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 				RIOMap *map = r_io_map_get_at (core->io, core->addr);
 				if (map) {
 					const char *sperm = r_str_rwx_i (map->perm);
-					r_kons_println (core->cons, sperm);
+					r_cons_println (core->cons, sperm);
 				}
 			}
 			break;
@@ -1482,7 +1482,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 			{
 				RIOMap *map = r_io_map_get_at (core->io, core->addr);
 				if (map) {
-					r_kons_println (core->cons, r_str_rwx_i (map->perm));
+					r_cons_println (core->cons, r_str_rwx_i (map->perm));
 				}
 			}
 			break;
