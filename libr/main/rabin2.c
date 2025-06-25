@@ -340,7 +340,7 @@ static bool __dumpSections(RBin *bin, const char *scnname, const char *output, c
 	return true;
 }
 
-static int rabin_do_operation(RBin *bin, const char *op, int rad, const char *output, const char *file) {
+static int rabin_do_operation(RCons *cons, RBin *bin, const char *op, int rad, const char *output, const char *file) {
 	char *arg = NULL, *ptr = NULL, *ptr2 = NULL;
 	bool rc = true;
 
@@ -442,8 +442,8 @@ static int rabin_do_operation(RBin *bin, const char *op, int rad, const char *ou
 		if (plg && plg->signature) {
 			char *sign = plg->signature (cur, rad == R_MODE_JSON);
 			if (sign) {
-				r_cons_println (sign);
-				r_cons_flush ();
+				r_kons_println (cons, sign);
+				r_kons_flush (cons);
 				free (sign);
 			}
 		}
@@ -603,6 +603,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 
 	r_core_init (&core);
 	RBin *bin = core.bin;
+	RCons *cons = core.cons;
 
 	state.stdin_buf = malloc (STDIN_BUF_SIZE);
 	if (!state.stdin_buf) {
@@ -929,8 +930,8 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		}
 		list_plugins (bin, plugin_name, pj, rad);
 		if (rad == R_MODE_JSON) {
-			r_cons_println (pj_string (pj));
-			r_cons_flush ();
+			r_kons_println (cons, pj_string (pj));
+			r_kons_flush (cons);
 			pj_free (pj);
 		}
 		r_core_fini (&core);
@@ -1187,7 +1188,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	if (query) {
 		if (rad) {
 			r_core_bin_export_info (&core, R_MODE_RADARE);
-			r_cons_flush ();
+			r_kons_flush (cons);
 		} else {
 			if (!strcmp (query, "-")) {
 				__sdb_prompt (&state, bin->cur->sdb);
@@ -1208,7 +1209,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	}\
 }
 	core.bin = bin;
-	bin->cb_printf = r_cons_printf;
+	bin->cb_printf = r_cons_printf; // XXX deprecate
 	filter.addr = at;
 	filter.name = name;
 	core.cons->context->is_interactive = false;
@@ -1287,15 +1288,15 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		}
 	}
 	if (op && action & R_BIN_REQ_OPERATION) {
-		rabin_do_operation (bin, op, rad, output, file);
+		rabin_do_operation (cons, bin, op, rad, output, file);
 	}
 	if (pj) {
 		pj_end (pj);
-		r_cons_println (pj_string (pj));
+		r_kons_println (cons, pj_string (pj));
 	}
 
 	pj_free (pj);
-	r_cons_flush ();
+	r_kons_flush (cons);
 	r_core_fini (&core);
 	r_syscmd_popalld ();
 	free (state.stdin_buf);

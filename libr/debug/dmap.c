@@ -215,11 +215,13 @@ static int findMinMax(RList *maps, ut64 *min, ut64 *max, int skip, int width) {
 static void print_debug_maps_ascii_art(RDebug *dbg, RList *maps, ut64 addr, int colors) {
 	ut64 mul; // The amount of address space a single console column will represent in bar graph
 	ut64 min = -1, max = 0;
-	int width = r_cons_get_size (NULL) - 90;
 	RListIter *iter;
 	RDebugMap *map;
 	RCore *core = (RCore *)dbg->coreb.core;
-	RConsPrintablePalette *pal = &core->cons->context->pal;
+	RCons *cons = core->cons;
+	RConsPrintablePalette *pal = &cons->context->pal;
+
+	int width = r_kons_get_size (cons, NULL) - 90;
 	if (width < 1) {
 		width = 30;
 	}
