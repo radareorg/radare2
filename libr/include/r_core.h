@@ -372,6 +372,7 @@ struct r_core_t {
 	RPanelsRoot *panels_root;
 	RPanels* panels;
 	RList *cmdqueue;
+	RMagic *magic;
 	char *lastcmd;
 	char *cmdlog;
 	bool cfglog; // cfg.corelog
@@ -695,8 +696,8 @@ R_API void r_core_anal_fcn_merge(RCore *core, ut64 addr, ut64 addr2);
 R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr, ut8 ch, bool verbose);
 R_API ut64 r_core_anal_address(RCore *core, ut64 addr);
 R_API void r_core_anal_undefine(RCore *core, ut64 off);
-R_API void r_core_anal_hint_print(RAnal* a, ut64 addr, int mode);
-R_API void r_core_anal_hint_list(RAnal *a, int mode);
+R_API void r_core_anal_hint_print(RCore* core, ut64 addr, int mode);
+R_API void r_core_anal_hint_list(RCore *core, int mode);
 R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode);
 R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int rad);
 R_API int r_core_anal_data(RCore *core, ut64 addr, int count, int depth, int wordsize);

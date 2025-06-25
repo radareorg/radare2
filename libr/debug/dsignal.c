@@ -64,25 +64,31 @@ R_API void r_debug_signal_init(RDebug *dbg) {
 	}
 }
 
+typedef struct {
+	RStrBuf *sb;
+	RDebug *dbg;
+} SignalContext;
+
 static bool siglistcb(void *p, const char *k, const char *v) {
-	RDebug *dbg = (RDebug *)p;
+	SignalContext *ctx = (SignalContext *)p;
+	RDebug *dbg = ctx->dbg;
 	if (atoi (k) > 0) {
 		int mode = dbg->_mode;
 		char *key = r_str_newf ("cfg.%s", k);
 		int opt = sdb_num_get (DB, key, 0);
 		free (key);
 		if (opt) {
-			r_cons_printf ("%s %s", k, v);
+			r_strbuf_appendf (ctx->sb, "%s %s", k, v);
 			if (opt & R_DBG_SIGNAL_CONT) {
-				r_cons_print (" cont");
+				r_strbuf_append (ctx->sb, " cont");
 			}
 			if (opt & R_DBG_SIGNAL_SKIP) {
-				r_cons_print (" skip");
+				r_strbuf_append (ctx->sb, " skip");
 			}
-			r_cons_newline ();
+			r_strbuf_append (ctx->sb, "\n");
 		} else {
 			if (mode == 0) {
-				r_cons_printf ("%s %s\n", k, v);
+				r_strbuf_appendf (ctx->sb, "%s %s\n", k, v);
 			}
 		}
 	}
@@ -90,46 +96,49 @@ static bool siglistcb(void *p, const char *k, const char *v) {
 }
 
 static bool siglistjsoncb(void *p, const char *k, const char *v) {
+	SignalContext *ctx = (SignalContext *)p;
 	static char key[32] = "cfg.";
-	RDebug *dbg = (RDebug *)p;
+	PJ *pj = ctx->dbg->pj;
 	int opt;
 	if (atoi (k) > 0) {
 		strncpy (key + 4, k, 20);
-		opt = (int)sdb_num_get (DB, key, 0);
-		pj_o (dbg->pj);
-		pj_ks (dbg->pj, "signum", k);
-		pj_ks (dbg->pj, "name", v);
-		pj_k (dbg->pj, "option");
+		opt = (int)sdb_num_get (ctx->dbg->sgnls, key, 0);
+		pj_o (pj);
+		pj_ks (pj, "signum", k);
+		pj_ks (pj, "name", v);
+		pj_k (pj, "option");
 		if (opt & R_DBG_SIGNAL_CONT) {
-			pj_s (dbg->pj, "cont");
+			pj_s (pj, "cont");
 		} else if (opt & R_DBG_SIGNAL_SKIP) {
-			pj_s (dbg->pj, "skip");
+			pj_s (pj, "skip");
 		} else {
-			pj_null (dbg->pj);
+			pj_null (pj);
 		}
-		pj_end (dbg->pj);
+		pj_end (pj);
 	}
 	return true;
 }
 
-R_API void r_debug_signal_list(RDebug *dbg, int mode) {
+R_API char *r_debug_signal_list(RDebug *dbg, int mode) {
+	RStrBuf *sb = r_strbuf_new ("");
+	SignalContext ctx = { sb, dbg };
 	dbg->_mode = mode;
 	switch (mode) {
 	case 0:
 	case 1:
-		sdb_foreach (DB, siglistcb, dbg);
+		sdb_foreach (DB, siglistcb, &ctx);
 		break;
 	case 2:
-		if (!dbg->pj) {
-			return;
+		if (dbg->pj) {
+			pj_a (dbg->pj);
+			sdb_foreach (DB, siglistjsoncb, &ctx);
+			pj_end (dbg->pj);
+			r_strbuf_append (sb, pj_string (dbg->pj));
 		}
-		pj_a (dbg->pj);
-		sdb_foreach (DB, siglistjsoncb, dbg);
-		pj_end (dbg->pj);
-		r_cons_println (pj_string (dbg->pj));
 		break;
 	}
 	dbg->_mode = 0;
+	return r_strbuf_drain (sb);
 }
 
 R_API int r_debug_signal_send(RDebug *dbg, int num) {

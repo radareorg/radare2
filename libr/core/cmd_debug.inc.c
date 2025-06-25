@@ -2154,25 +2154,25 @@ R_API void r_core_debug_ri(RCore *core, RReg *reg, int mode) {
 		if (map) {
 			rwx = map->perm;
 		}
-		r_cons_printf (" %s  ", r_str_rwx_i (rwx));
+		r_kons_printf (core->cons, " %s  ", r_str_rwx_i (rwx));
 
-		r_cons_printf ("0x%08"PFMT64x" ", *addr);
+		r_kons_printf (core->cons, "0x%08"PFMT64x" ", *addr);
 		RList *list = ht_up_find (db, *addr, NULL);
 		if (list) {
 			RListIter *iter;
 			const char *r;
 			r_cons_print (Color_YELLOW);
 			r_list_foreach (list, iter, r) {
-				r_cons_printf (" %s", r);
+				r_kons_printf (core->cons, " %s", r);
 			}
-			r_cons_print (Color_RESET);
+			r_kons_print (core->cons, Color_RESET);
 			ut64 o_offset = core->addr;
 			char *rrstr = r_core_anal_hasrefs (core, *addr, true);
 			core->addr = o_offset;
 			if (R_STR_ISNOTEMPTY (rrstr) && strchr (rrstr, 'R')) {
-				r_cons_printf ("    ;%s"Color_RESET, rrstr);
+				r_kons_printf (core->cons, "    ;%s"Color_RESET, rrstr);
 			}
-			r_cons_newline ();
+			r_kons_newline (core->cons);
 		}
 	}
 	r_list_free (sorted);
@@ -2297,9 +2297,9 @@ static void cmd_drpi(RCore *core) {
 			const char *arn = r_reg_type_tostring (ri->arena);
 			r_cons_printf ("   %s %s @ %s (offset: %d  size: %d)", ri->name, tpe, arn, ri->offset / 8, ri->size / 8);
 			if ((ri->offset / 8) + (ri->size / 8) > rs->arena->size) {
-				r_cons_printf (" *OVERFLOW*");
+				r_kons_printf (core->cons, " *OVERFLOW*");
 			}
-			r_cons_newline ();
+			r_kons_newline (core->cons);
 		}
 	}
 }
@@ -2519,7 +2519,7 @@ static void cmd_debug_reg_print_packed_reg(RCore *core, RRegItem *item, char exp
 					pack_print (i, res, pi);
 				}
 			}
-			r_cons_newline ();
+			r_kons_newline (core->cons);
 		}
 	}
 }
@@ -2821,11 +2821,11 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				if (rf) {
 					if (*name == '=') {
 						for (i = 0; i < R_REG_COND_LAST; i++) {
-							r_cons_printf ("%s:%d ",
+							r_kons_printf (core->cons, "%s:%d ",
 									r_reg_cond_tostring (i),
 									r_reg_cond_bits (core->dbg->reg, i, rf));
 						}
-						r_cons_newline ();
+						r_kons_newline (core->cons);
 					} else {
 						for (i = 0; i < R_REG_COND_LAST; i++) {
 							r_cons_printf ("%d %s\n",
@@ -3857,15 +3857,15 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			r_list_foreach (list, iter, frame) {
 				switch (input[3]) {
 				case 0:
-					r_cons_printf ("%s0x%08"PFMT64x,
+					r_kons_printf (core->cons, "%s0x%08"PFMT64x,
 							(i ? " " : ""), frame->addr);
 					break;
 				case 's':
-					r_cons_printf ("%s0x%08"PFMT64x,
+					r_kons_printf (core->cons, "%s0x%08"PFMT64x,
 							(i ? " " : ""), frame->sp);
 					break;
 				case 'b':
-					r_cons_printf ("%s0x%08"PFMT64x,
+					r_kons_printf (core->cons, "%s0x%08"PFMT64x,
 							(i ? " " : ""), frame->bp);
 					break;
 				case '?':
@@ -3875,7 +3875,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				}
 				i++;
 			}
-			r_cons_newline ();
+			r_kons_newline (core->cons);
 			r_list_free (list);
 			break;
 		case '*': // dbt*
@@ -3886,10 +3886,10 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			i = 0;
 			list = r_debug_frames (core->dbg, addr);
 			r_list_reverse (list);
-			r_cons_printf ("f-bt.*\n");
+			r_kons_printf (core->cons, "f-bt.*\n");
 			r_list_foreach (list, iter, frame) {
-				r_cons_printf ("f bt.frame%d = 0x%08"PFMT64x"\n", i, frame->addr);
-				r_cons_printf ("f bt.frame%d.stack %d 0x%08"PFMT64x"\n", i, frame->size, frame->sp);
+				r_kons_printf (core->cons, "f bt.frame%d = 0x%08"PFMT64x"\n", i, frame->addr);
+				r_kons_printf (core->cons, "f bt.frame%d.stack %d 0x%08"PFMT64x"\n", i, frame->size, frame->sp);
 				i++;
 			}
 			r_list_free (list);
@@ -4460,7 +4460,11 @@ static void r_core_debug_kill(RCore *core, const char *input) {
 	} else if (*input == 'o') {
 		switch (input[1]) {
 		case 0: // "dko" - list signal skip/conts
-			r_debug_signal_list (core->dbg, 1);
+			{
+				char *s = r_debug_signal_list (core->dbg, 1);
+				r_kons_print (core->cons, s);
+				free (s);
+			}
 			break;
 		case ' ': // dko SIGNAL
 			if (input[2]) {
@@ -4502,12 +4506,16 @@ static void r_core_debug_kill(RCore *core, const char *input) {
 			break;
 		}
 	} else if (*input == 'j') {
-		core->dbg->pj = r_core_pj_new (core);
-		r_debug_signal_list (core->dbg, 2);
+		core->dbg->pj = r_core_pj_new (core); /// XXX dbg->pj is an antipattern R2_600
+		char *s = r_debug_signal_list (core->dbg, 2);
+		r_kons_print (core->cons, s);
+		free (s);
 		pj_free (core->dbg->pj);
 		core->dbg->pj = NULL;
 	} else if (!*input) {
-		r_debug_signal_list (core->dbg, 0);
+		char *s = r_debug_signal_list (core->dbg, 0);
+		r_kons_print (core->cons, s);
+		free (s);
 #if 0
 		RListIter *iter;
 		RDebugSignal *ds;

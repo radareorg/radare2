@@ -636,7 +636,7 @@ R_API void r_cons_print(const char *str) {
 	r_kons_print (I, str);
 }
 
-R_API void r_cons_newline(void) {
+R_DEPRECATE R_API void r_cons_newline(void) {
 	r_kons_newline (I);
 }
 

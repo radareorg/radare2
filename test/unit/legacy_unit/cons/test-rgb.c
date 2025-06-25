@@ -1,5 +1,7 @@
 #include <r_cons.h>
 
+#if 0
+// commented because we dont have global instances now
 int main() {
 	int i,j ,k;
 	//char *str = "\x1b[38;5;231mpop\x1b[0m";
@@ -29,3 +31,4 @@ int main() {
 
 	return 0;
 }
+#endif
