@@ -1233,7 +1233,7 @@ R_API int r_kons_get_column(RCons *cons);
 R_API int r_kons_get_cursor(RCons *cons, int *rows);
 R_API void r_kons_show_cursor(RCons *I, int cursor);
 R_API void r_cons_set_utf8(RCons *cons, bool b);
-R_API void r_kons_column(RCons *cons, int c);
+R_API void r_cons_column(RCons *cons, int c);
 R_API void r_kons_set_title(RCons *cons, const char *str);
 R_API void r_kons_zero(RCons *cons);
 R_API void r_kons_highlight(RCons *cons, const char *word);

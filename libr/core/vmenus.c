@@ -3583,7 +3583,7 @@ static ut64 r_core_visual_anal_refresh(RCore *core) {
 	r_kons_clear00 (core->cons);
 	r_core_visual_anal_refresh_column (core, cols);
 	if (cols > 30) {
-		r_cons_column (cols);
+		r_cons_column (core->cons, cols);
 	}
 	switch (level) {
 	// Show functions list help in visual mode

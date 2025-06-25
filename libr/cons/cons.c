@@ -1063,10 +1063,6 @@ R_API bool r_cons_set_cup(bool enable) {
 	return true;
 }
 
-R_API void r_cons_column(int c) {
-	r_kons_column (I, c);
-}
-
 R_API void r_cons_set_interactive(bool x) {
 	r_kons_set_interactive (I, x);
 }
@@ -1438,5 +1434,20 @@ R_API void r_cons_printf_list(RCons *cons, const char *format, va_list ap) {
 R_API void r_cons_println(RCons *cons, const char* str) {
 	r_kons_print (cons, str);
 	r_cons_newline (cons);
+}
+
+R_API void r_cons_column(RCons *cons, int c) {
+	RConsContext *ctx = cons->context;
+	char *b = malloc (ctx->buffer_len + 1);
+	if (!b) {
+		return;
+	}
+	memcpy (b, ctx->buffer, ctx->buffer_len);
+	b[ctx->buffer_len] = 0;
+	r_kons_reset (cons);
+	// align current buffer N chars right
+	r_cons_print_justify (cons, b, c, 0);
+	free (b);
+	r_cons_gotoxy (cons, 0, 0);
 }
 

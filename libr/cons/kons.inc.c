@@ -720,21 +720,6 @@ R_API void r_kons_show_cursor(RCons *I, int cursor) {
 #endif
 }
 
-R_API void r_kons_column(RCons *cons, int c) {
-	RConsContext *ctx = cons->context;
-	char *b = malloc (ctx->buffer_len + 1);
-	if (!b) {
-		return;
-	}
-	memcpy (b, ctx->buffer, ctx->buffer_len);
-	b[ctx->buffer_len] = 0;
-	r_kons_reset (cons);
-	// align current buffer N chars right
-	r_cons_print_justify (cons, b, c, 0);
-	free (b);
-	r_cons_gotoxy (cons, 0, 0);
-}
-
 R_API void r_kons_set_title(RCons *cons, const char *str) {
 #if R2__WINDOWS__
 #  if defined(_UNICODE)

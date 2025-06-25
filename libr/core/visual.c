@@ -4567,7 +4567,7 @@ R_IPI void visual_refresh(RCore *core) {
 					r_core_seek (core, core->visual.oseek, true);
 				}
 				r_core_cmd0 (core, vi);
-				r_cons_column (split_w);
+				r_cons_column (core->cons, split_w);
 				if (r_str_startswith (vi, "p=") && core->print->cur_enabled) {
 					core->visual.oseek = core->addr;
 					core->print->cur_enabled = false;

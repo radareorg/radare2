@@ -1368,7 +1368,7 @@ static int cmd_help(void *data, const char *input) {
 			  }
 			break;
 		case 'c': // "?ec" column
-			r_cons_column (r_num_math (core->num, input + 2));
+			r_cons_column (core->cons, r_num_math (core->num, input + 2));
 			break;
 		case 'v':
 			colormessage (core, input + 2);
