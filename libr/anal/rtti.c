@@ -14,8 +14,10 @@ R_API char *r_anal_rtti_demangle_class_name(RAnal *anal, const char *name) {
 
 R_API void r_anal_rtti_print_at_vtable(RAnal *anal, ut64 addr, int mode) {
 	bool use_json = mode == 'j';
+	RCore *core = anal->coreb.core;
+	RCons *cons = core->cons;
 	if (use_json) {
-		r_cons_print ("[");
+		r_kons_print (cons, "[");
 	}
 
 	RVTableContext context;
@@ -27,7 +29,7 @@ R_API void r_anal_rtti_print_at_vtable(RAnal *anal, ut64 addr, int mode) {
 	}
 
 	if (use_json) {
-		r_cons_print ("]\n");
+		r_kons_print (cons, "]\n");
 	}
 }
 
@@ -55,7 +57,7 @@ R_API void r_anal_rtti_print_all(RAnal *anal, int mode) {
 				break;
 			}
 			if (use_json && success) {
-				r_cons_print (",");
+				r_kons_print (cons, ",");
 				comma = true;
 			}
 			if (context.abi == R_ANAL_CPP_ABI_MSVC) {

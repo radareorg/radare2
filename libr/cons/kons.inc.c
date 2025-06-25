@@ -792,7 +792,7 @@ R_API bool r_kons_drop(RCons *cons, int n) {
 	return true;
 }
 
-R_API void r_kons_trim(RCons *cons) {
+R_API void r_cons_trim(RCons *cons) {
 	RConsContext *c = cons->context;
 	while (c->buffer_len > 0) {
 		char ch = c->buffer[c->buffer_len - 1];

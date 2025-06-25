@@ -7899,7 +7899,7 @@ static void showregs(RCore *core, RList *list) {
 		char *reg;
 		RListIter *iter;
 		r_list_foreach (list, iter, reg) {
-			r_cons_print (reg);
+			r_kons_print (core->cons, reg);
 			if (iter->n) {
 				r_kons_printf (core->cons, " ");
 			}
@@ -9381,7 +9381,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			if (input[2] == '?') {
 				// TODO: find better name for this command
 				char *s = r_esil_opstr (core->anal->esil, input[3]);
-				r_cons_print (s);
+				r_kons_print (core->cons, s);
 				free (s);
 				break;
 			}
@@ -9647,7 +9647,7 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 			if (showbits) {
 				for (i = 0; i < last; i++) {
 					ut8 *byte = buf + i;
-					r_cons_print (" ");
+					r_kons_print (core->cons, " ");
 					if (pj) {
 						pj_a (pj);
 					}
@@ -9659,7 +9659,7 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 						r_kons_printf (core->cons, "%d", bit?1:0);
 					}
 				}
-				r_cons_print ("\n");
+				r_kons_print (core->cons, "\n");
 			}
 			for (p = s; *p; p++) {
 				int idx = *p - '0' + 1;
@@ -11400,7 +11400,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			r_core_cmd_help (core, help_msg_ahb);
 		} else if (input[1] == '*') { // "ahb*"
 			char *s = r_core_cmd_str (core, "ah*~ahb");
-			r_cons_print (s);
+			r_kons_print (core->cons, s);
 			free (s);
 		} else if (input[1] == ' ') {
 			char *ptr = r_str_trim_dup (input + 2);
@@ -11526,7 +11526,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			}
 		} else if (input[1] == 0) {
 			char *s = r_core_cmd_str (core, "ah~size=");
-			r_cons_print (s);
+			r_kons_print (core->cons, s);
 			free (s);
 		} else {
 			r_core_cmd_help (core, help_msg_ahs);
@@ -11770,6 +11770,7 @@ static void agraph_print_node_dot(RANode *n, void *user) {
 }
 
 static void agraph_print_node(RANode *n, void *user) {
+	RCore *core = (RCore *)user;
 	size_t len = strlen (n->body);
 
 	if (len > 0 && n->body[len - 1] == '\n') {
@@ -11777,7 +11778,7 @@ static void agraph_print_node(RANode *n, void *user) {
 	}
 	char *encbody = r_base64_encode_dyn ((const ut8*)n->body, len);
 	char *cmd = r_str_newf ("agn \"%s\" base64:%s\n", n->title, encbody);
-	r_cons_print (cmd);
+	r_kons_print (core->cons, cmd);
 	free (cmd);
 	free (encbody);
 }
@@ -12112,7 +12113,7 @@ static char *mermaid_nodeinfo_body(RGraphNode *n) {
 }
 
 typedef char *(*node_content_cb) (RGraphNode *);
-static void mermaid_graph(RGraph *graph, node_content_cb get_body) {
+static void mermaid_graph(RCore *core, RGraph *graph, node_content_cb get_body) {
 	if (!graph) {
 		return;
 	}
@@ -12146,8 +12147,8 @@ static void mermaid_graph(RGraph *graph, node_content_cb get_body) {
 		char *n = r_strbuf_drain_nofree (nodes);
 		char *e = r_strbuf_drain_nofree (edges);
 		if (n && e) {
-			r_cons_print (n);
-			r_cons_print (e);
+			r_kons_print (core->cons, n);
+			r_kons_print (core->cons, e);
 		}
 		free (n);
 		free (e);
@@ -12335,7 +12336,7 @@ R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 		break;
 	case 'm': // "aggm"
 		if (core->graph) {
-			mermaid_graph (core->graph->graph, mermaid_anod_body);
+			mermaid_graph (core, core->graph->graph, mermaid_anod_body);
 		}
 		break;
 	case 'k': // "aggk"
@@ -12344,7 +12345,7 @@ R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 		if (db) {
 			char *o = sdb_querys (db, "null", 0, "*");
 			if (o) {
-				r_cons_print (o);
+				r_kons_print (core->cons, o);
 				free (o);
 			}
 		}
@@ -12520,7 +12521,7 @@ static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, 
 		{
 			Sdb *db = r_agraph_get_sdb (agraph);
 			char *o = sdb_querys (db, "null", 0, "*");
-			r_cons_print (o);
+			r_kons_print (core->cons, o);
 			free (o);
 			break;
 		}
@@ -12610,7 +12611,7 @@ static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, 
 		break;
 		}
 	case 'm':
-		mermaid_graph (graph, mermaid_nodeinfo_body);
+		mermaid_graph (core, graph, mermaid_nodeinfo_body);
 		break;
 	default:
 		r_core_cmd_help (core, help_msg_ag);
@@ -12794,8 +12795,8 @@ static bool cmd_graph_mermaid(RCore *core, bool add_asm) {
 		char *n = r_strbuf_drain_nofree (nodes);
 		char *e = r_strbuf_drain_nofree (edges);
 		if (n && e) {
-			r_cons_print (n);
-			r_cons_print (e);
+			r_kons_print (core->cons, n);
+			r_kons_print (core->cons, e);
 		}
 		free (n);
 		free (e);

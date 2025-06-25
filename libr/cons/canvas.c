@@ -435,7 +435,7 @@ R_API void r_cons_canvas_print_region(RConsCanvas *c) {
 	if (o) {
 		r_str_trim_tail (o);
 		if (*o) {
-			r_cons_print (o);
+			r_kons_print (c->cons, o);
 		}
 		free (o);
 	}
@@ -444,7 +444,7 @@ R_API void r_cons_canvas_print_region(RConsCanvas *c) {
 R_API void r_cons_canvas_print(RConsCanvas *c) {
 	char *o = r_cons_canvas_tostring (c);
 	if (o) {
-		r_cons_print (o);
+		r_kons_print (c->cons, o);
 		free (o);
 	}
 }

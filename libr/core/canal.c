@@ -1249,7 +1249,7 @@ typedef struct {
 	};
 } HintNode;
 
-static void print_hint_h_format(HintNode *node) {
+static void print_hint_h_format(RCore *core, HintNode *node) {
 	switch (node->type) {
 	case HINT_NODE_ADDR: {
 		const RAnalAddrHintRecord *record;
@@ -1313,23 +1313,23 @@ static void print_hint_h_format(HintNode *node) {
 	}
 	case HINT_NODE_ARCH:
 		if (node->arch) {
-			r_cons_printf (" arch='%s'", node->arch);
+			r_kons_printf (core->cons, " arch='%s'", node->arch);
 		} else {
-			r_cons_print (" arch=RESET");
+			r_kons_print (core->cons, " arch=RESET");
 		}
 		break;
 	case HINT_NODE_BITS:
 		if (node->bits) {
-			r_cons_printf (" bits=%d", node->bits);
+			r_kons_printf (core->cons, " bits=%d", node->bits);
 		} else {
-			r_cons_print (" bits=RESET");
+			r_kons_print (core->cons, " bits=RESET");
 		}
 		break;
 	}
 }
 
 // if mode == 'j', pj must be an existing PJ!
-static void hint_node_print(HintNode *node, int mode, PJ *pj) {
+static void hint_node_print(RCore *core, HintNode *node, int mode, PJ *pj) {
 	switch (mode) {
 	case '*':
 #define HINTCMD_ADDR(hint,fmt,x) r_cons_printf (fmt" @ 0x%"PFMT64x"\n", x, (hint)->addr)
@@ -1385,7 +1385,7 @@ static void hint_node_print(HintNode *node, int mode, PJ *pj) {
 					HINTCMD_ADDR (node, "ahe %s", record->esil); // TODO: escape for newcmd
 					break;
 				case R_ANAL_ADDR_HINT_TYPE_HIGH:
-					r_cons_printf ("'@0x0x%"PFMT64x"'ahh\n", node->addr);
+					r_kons_printf (core->cons, "'@0x0x%"PFMT64x"'ahh\n", node->addr);
 					break;
 				case R_ANAL_ADDR_HINT_TYPE_VAL:
 					// no command for this
@@ -1478,7 +1478,7 @@ static void hint_node_print(HintNode *node, int mode, PJ *pj) {
 		}
 		break;
 	default:
-		print_hint_h_format (node);
+		print_hint_h_format (core, node);
 		break;
 	}
 }
@@ -1551,7 +1551,7 @@ static void print_hint_tree(RCore *core, RBTree tree, int mode) {
 				r_kons_printf (core->cons, " 0x%08"PFMT64x" =>", node->addr);
 			}
 		}
-		hint_node_print (node, mode, pj);
+		hint_node_print (core, node, mode, pj);
 	}
 	if (in_addr) {
 		END_ADDR
@@ -1652,8 +1652,8 @@ static void core_anal_color_curr_node(RCore *core, RAnalBlock *bbi) {
 	bool current = r_anal_block_contains (bbi, core->addr);
 	if (current && color_current) {
 		char *pal_curr = palColorFor (core->cons, "graph.current");
-		r_cons_printf ("\t\"0x%08"PFMT64x"\" ", bbi->addr);
-		r_cons_printf ("\t[fillcolor=%s style=filled shape=box];\n", pal_curr);
+		r_kons_printf (core->cons, "\t\"0x%08"PFMT64x"\" ", bbi->addr);
+		r_kons_printf (core->cons, "\t[fillcolor=%s style=filled shape=box];\n", pal_curr);
 		free (pal_curr);
 	}
 }
@@ -1686,7 +1686,7 @@ static int core_anal_graph_construct_edges(RCore *core, RAnalFunction *fcn, int 
 				// bb.<addr>.to=<jump>,<fail>
 				sdb_set (DB, key, val, 0);
 			} else if (is_html) {
-				r_cons_printf ("<div class=\"connector _0x%08"PFMT64x" _0x%08"PFMT64x"\">\n"
+				r_kons_printf (core->cons, "<div class=\"connector _0x%08"PFMT64x" _0x%08"PFMT64x"\">\n"
 						"  <img class=\"connector-end\" src=\"img/arrow.gif\" /></div>\n",
 						bbi->addr, bbi->jump);
 			} else if (!is_json && !is_keva) {
@@ -2283,7 +2283,7 @@ R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
 			return false;
 		}
 		body_b64 = r_str_prepend (body_b64, "base64:");
-		r_cons_printf ("agn %s %s\n", title, body_b64);
+		r_kons_printf (core->cons, "agn %s %s\n", title, body_b64);
 		free (body);
 		free (body_b64);
 		free (title);
@@ -2299,12 +2299,12 @@ R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
 		char *u = get_title (bb->addr), *v = NULL;
 		if (bb->jump != UT64_MAX) {
 			v = get_title (bb->jump);
-			r_cons_printf ("age %s %s\n", u, v);
+			r_kons_printf (core->cons, "age %s %s\n", u, v);
 			free (v);
 		}
 		if (bb->fail != UT64_MAX) {
 			v = get_title (bb->fail);
-			r_cons_printf ("age %s %s\n", u, v);
+			r_kons_printf (core->cons, "age %s %s\n", u, v);
 			free (v);
 		}
 		if (bb->switch_op) {
@@ -2312,7 +2312,7 @@ R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
 			RAnalCaseOp *cop;
 			r_list_foreach (bb->switch_op->cases, it, cop) {
 				v = get_title (cop->addr);
-				r_cons_printf ("age %s %s\n", u, v);
+				r_kons_printf (core->cons, "age %s %s\n", u, v);
 				free (v);
 			}
 		}
@@ -2341,14 +2341,14 @@ R_API void r_core_anal_datarefs(RCore *core, ut64 addr) {
 			RBinSection *binsec = r_bin_get_section_at (obj, ref->addr, true);
 			if (binsec && binsec->is_data) {
 				if (!found) {
-					r_cons_printf ("agn %s\n", me);
+					r_kons_printf (core->cons, "agn %s\n", me);
 					found = true;
 				}
 				RFlagItem *item = r_flag_get_in (core->flags, ref->addr);
 				r_strf_buffer (32);
 				const char *dst = item? item->name: r_strf ("0x%08"PFMT64x, ref->addr);
-				r_cons_printf ("agn %s\n", dst);
-				r_cons_printf ("age %s %s\n", me, dst);
+				r_kons_printf (core->cons, "agn %s\n", dst);
+				r_kons_printf (core->cons, "age %s %s\n", me, dst);
 			}
 		}
 		RVecAnalRef_free (refs);
@@ -2361,7 +2361,7 @@ R_API void r_core_anal_coderefs(RCore *core, ut64 addr) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, -1);
 	if (fcn) {
 		const char *me = fcn->name;
-		r_cons_printf ("agn %s\n", me);
+		r_kons_printf (core->cons, "agn %s\n", me);
 		RVecAnalRef *refs = r_anal_function_get_refs (fcn);
 		if (!refs) {
 			return;
@@ -2375,8 +2375,8 @@ R_API void r_core_anal_coderefs(RCore *core, ut64 addr) {
 			r_strf_buffer (32);
 			RFlagItem *item = r_flag_get_in (core->flags, ref->addr);
 			const char *dst = item? item->name: r_strf ("0x%08"PFMT64x, ref->addr);
-			r_cons_printf ("agn %s\n", dst);
-			r_cons_printf ("age %s %s\n", me, dst);
+			r_kons_printf (core->cons, "agn %s\n", dst);
+			r_kons_printf (core->cons, "age %s %s\n", me, dst);
 		}
 		RVecAnalRef_free (refs);
 	} else {
@@ -2482,7 +2482,7 @@ R_API void r_core_anal_callgraph(RCore *core, ut64 addr, int fmt) {
 		break;
 	case R_GRAPH_FORMAT_GML:
 	case R_GRAPH_FORMAT_GMLFCN:
-		r_cons_printf ("graph\n[\n"
+		r_kons_printf (core->cons, "graph\n[\n"
 				"hierarchic  1\n"
 				"label  \"\"\n"
 				"directed  1\n");
@@ -2556,14 +2556,14 @@ repeat:
 		}
 		switch (fmt) {
 		case R_GRAPH_FORMAT_NO:
-			r_cons_printf ("0x%08"PFMT64x"\n", fcni->addr);
+			r_kons_printf (core->cons, "0x%08"PFMT64x"\n", fcni->addr);
 			break;
 		case R_GRAPH_FORMAT_GML:
 		case R_GRAPH_FORMAT_GMLFCN: {
 			RFlagItem *flag = r_flag_get_in (core->flags, fcni->addr);
 			if (iteration == 0) {
 				char *msg = flag? strdup (flag->name): r_str_newf ("0x%08"PFMT64x, fcni->addr);
-				r_cons_printf ("  node [\n"
+				r_kons_printf (core->cons, "  node [\n"
 						"  id  %"PFMT64d"\n"
 						"    label  \"%s\"\n"
 						"  ]\n", fcni->addr - base, msg);
@@ -2584,7 +2584,7 @@ repeat:
 			pj_ka (pj, "imports");
 			break;
 		case R_GRAPH_FORMAT_DOT:
-			r_cons_printf ("  \"0x%08"PFMT64x"\" "
+			r_kons_printf (core->cons, "  \"0x%08"PFMT64x"\" "
 					"[label=\"%s\""
 					" URL=\"%s/0x%08"PFMT64x"\"];\n",
 					fcni->addr, fcni->name,
@@ -2597,31 +2597,31 @@ repeat:
 			switch (fmt) {
 			case R_GRAPH_FORMAT_GMLFCN:
 				if (iteration == 0) {
-					r_cons_printf ("  node [\n"
+					r_kons_printf (core->cons, "  node [\n"
 							"    id  %"PFMT64d"\n"
 							"    label  \"%s\"\n"
 							"  ]\n", fcnr->addr - base, fcnr_name);
-					r_cons_printf ("  edge [\n"
+					r_kons_printf (core->cons, "  edge [\n"
 							"    source  %"PFMT64d"\n"
 							"    target  %"PFMT64d"\n"
 							"  ]\n", fcni->addr-base, fcnr->addr-base);
 				}
 			case R_GRAPH_FORMAT_GML:
 				if (iteration != 0) {
-					r_cons_printf ("  edge [\n"
+					r_kons_printf (core->cons, "  edge [\n"
 							"    source  %"PFMT64d"\n"
 							"    target  %"PFMT64d"\n"
 							"  ]\n", fcni->addr-base, fcnr->addr-base); //, "#000000"
 				}
 				break;
 			case R_GRAPH_FORMAT_DOT:
-				r_cons_printf ("  \"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
+				r_kons_printf (core->cons, "  \"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
 						"[color=\"%s\" URL=\"%s/0x%08"PFMT64x"\"];\n",
 						//"[label=\"%s\" color=\"%s\" URL=\"%s/0x%08"PFMT64x"\"];\n",
 						fcni->addr, fcnr->addr, //, fcnr_name,
 						"#61afef",
 						fcnr_name, fcnr->addr);
-				r_cons_printf ("  \"0x%08"PFMT64x"\" "
+				r_kons_printf (core->cons, "  \"0x%08"PFMT64x"\" "
 						"[label=\"%s\""
 						" URL=\"%s/0x%08"PFMT64x"\"];\n",
 						fcnr->addr, fcnr_name,
@@ -2639,11 +2639,11 @@ repeat:
 			default:
 				if (refgraph || R_ANAL_REF_TYPE_MASK (fcnr->type) == R_ANAL_REF_TYPE_CALL) {
 					// TODO: avoid recreating nodes unnecessarily
-					r_cons_printf ("agn %s\n", fcni->name);
-					r_cons_printf ("agn %s\n", fcnr_name);
-					r_cons_printf ("age %s %s\n", fcni->name, fcnr_name);
+					r_kons_printf (core->cons, "agn %s\n", fcni->name);
+					r_kons_printf (core->cons, "agn %s\n", fcnr_name);
+					r_kons_printf (core->cons, "age %s %s\n", fcni->name, fcnr_name);
 				} else {
-					r_cons_printf ("# - 0x%08"PFMT64x" (%c)\n", fcnr->addr, fcnr->type);
+					r_kons_printf (core->cons, "# - 0x%08"PFMT64x" (%c)\n", fcnr->addr, fcnr->type);
 				}
 			}
 			if (!(flag && flag->name)) {

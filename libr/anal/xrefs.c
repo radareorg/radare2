@@ -1,8 +1,9 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake, nibble, defragger, ret2libc */
+/* radare - LGPL - Copyright 2009-2025 - pancake, nibble, defragger, ret2libc */
 
 // R2R db/cmd/cmd_aflxj db/cmd/cmd_aflxv db/cmd/cmd_ax
 
 #include <r_anal.h>
+#include <r_core.h>
 #include <r_cons.h>
 #include <r_vec.h>
 #include <sdb/cwisstable.h>
@@ -48,10 +49,8 @@ static inline int compare_ref(const RAnalRef *a, const RAnalRef *b) {
 
 static RefManager *ref_manager_new(void) {
 	RefManager *rm = R_NEW0 (RefManager);
-	if (R_LIKELY (rm)) {
-		rm->refs = AdjacencyList_new (INITIAL_CAPACITY);
-		rm->xrefs = AdjacencyList_new (INITIAL_CAPACITY);
-	}
+	rm->refs = AdjacencyList_new (INITIAL_CAPACITY);
+	rm->xrefs = AdjacencyList_new (INITIAL_CAPACITY);
 	return rm;
 }
 
@@ -361,7 +360,9 @@ static void r_anal_xrefs_list_table(RAnal *anal, RVecAnalRef *anal_refs, const c
 	}
 	if (show_table) {
 		char *s = r_table_tostring (table);
-		r_cons_print (s);
+		RCore *core = anal->coreb.core;
+		RCons *cons = core->cons;
+		r_kons_print (cons, s);
 		free (s);
 	}
 	r_table_free (table);

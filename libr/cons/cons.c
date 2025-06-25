@@ -327,20 +327,20 @@ R_API bool r_cons_is_breaked(RCons *cons) {
 #endif
 }
 
-#if 0
 // UNUSED
-R_API void r_cons_line(int x, int y, int x2, int y2, int ch) {
+R_API void r_cons_line(RCons *cons, int x, int y, int x2, int y2, int ch) {
 	char chstr[2] = {ch, 0};
 	int X, Y;
 	for (X = x; X < x2; X++) {
 		for (Y = y; Y < y2; Y++) {
-			r_cons_gotoxy (X, Y);
-			r_cons_print (chstr);
+			r_cons_gotoxy (cons, X, Y);
+			r_kons_print (cons, chstr);
 		}
 	}
 }
 
-R_API void r_cons_color(int fg, int r, int g, int b) {
+#if 0
+R_API void r_cons_color(RCons *cons, int fg, int r, int g, int b) {
 	int k;
 	r = R_DIM (r, 0, 255);
 	g = R_DIM (g, 0, 255);
@@ -353,7 +353,7 @@ R_API void r_cons_color(int fg, int r, int g, int b) {
 		b = (int)(b / 42.6);
 		k = 16 + (r * 36) + (g * 6) + b;
 	}
-	r_cons_printf ("\x1b[%d;5;%dm", fg? 48: 38, k);
+	r_kons_printf (cons, "\x1b[%d;5;%dm", fg? 48: 38, k);
 }
 
 #endif
@@ -1392,9 +1392,9 @@ now the console color is reset with each \n (same stuff do it here but in correc
 #if R2__WINDOWS__
 	r_cons_reset_colors();
 #else
-	r_cons_print (Color_RESET_ALL"\n");
+	r_kons_print (cons, Color_RESET_ALL"\n");
 #endif
-	if (cons->is_html) r_cons_print ("<br />\n");
+	if (cons->is_html) r_kons_print (cons, "<br />\n");
 #endif
 }
 

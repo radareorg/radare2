@@ -196,7 +196,6 @@ static bool lang_pipe_run(RLangSession *s, const char *code, int len) {
 			buf[sizeof (buf) - 1] = 0;
 			res = s->lang->cmd_str (core, buf);
 			if (res) {
-				// r_cons_print (res);
 				size_t res_len = strlen (res) + 1;
 				if (write (input[1], res, res_len) != res_len) {
 					break;

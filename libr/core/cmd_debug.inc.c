@@ -2161,7 +2161,7 @@ R_API void r_core_debug_ri(RCore *core, RReg *reg, int mode) {
 		if (list) {
 			RListIter *iter;
 			const char *r;
-			r_cons_print (Color_YELLOW);
+			r_kons_print (core->cons, Color_YELLOW);
 			r_list_foreach (list, iter, r) {
 				r_kons_printf (core->cons, " %s", r);
 			}
@@ -2247,7 +2247,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 		if (delta && use_colors) {
 			namestr = r_str_newf ("%s%s%s", color, r->name, colorend);
 			valuestr = r_str_newf ("%s0x%"PFMT64x"%s", color, value, colorend);
-			r_cons_print (Color_RESET);
+			r_kons_print (core->cons, Color_RESET);
 		} else {
 			namestr = strdup (r->name);
 			valuestr = r_str_newf ("0x%"PFMT64x, value);
@@ -2266,7 +2266,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 	}
 
 	char *s = (mode == 'j')? r_table_tojson (t): r_table_tostring (t);
-	r_cons_print (s);
+	r_kons_print (core->cons, s);
 	free (s);
 	r_table_free (t);
 	if (scr_color) {
