@@ -499,7 +499,7 @@ RDebugReasonType linux_dbg_wait(RDebug *dbg, int pid) {
 		// in the same process group. Otherwise, the task is running in
 		// background and SIGINT will not be propagated to the debuggee.
 		RCore *core = dbg->coreb.core;
-		const bool is_main = r_cons_context_is_main (core->cons);
+		const bool is_main = r_cons_context_is_main (core->cons, core->cons->context);
 		if (is_main) {
 			r_cons_break_push (core->cons, (RConsBreak)linux_dbg_wait_break_main, dbg);
 		} else {
