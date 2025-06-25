@@ -880,7 +880,7 @@ R_API void r_kons_trim(RCons *cons) {
 	}
 }
 
-R_API bool r_kons_is_breaked(RCons *cons) {
+R_API bool r_cons_is_breaked(RCons *cons) {
 #if WANT_DEBUGSTUFF
 	RConsContext *C = cons->context;
 	if (R_UNLIKELY (cons->cb_break)) {

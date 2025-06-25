@@ -5031,7 +5031,7 @@ dodo:
 					(void)r_cons_readpush (chrs, chrs_read);
 				}
 			}
-			if (r_kons_is_breaked (core->cons)) {
+			if (r_cons_is_breaked (core->cons)) {
 				break;
 			}
 			r_core_visual_show_char (core, ch);

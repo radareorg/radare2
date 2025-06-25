@@ -471,7 +471,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 	do {
 		reason = xnu_wait (dbg, pid);
 		if (reason == R_DEBUG_REASON_MACH_RCV_INTERRUPTED) {
-			if (r_kons_is_breaked (core->cons)) {
+			if (r_cons_is_breaked (core->cons)) {
 				// Perhaps check the inferior is still alive,
 				// otherwise xnu_stop will fail.
 				reason = xnu_stop (dbg, pid)

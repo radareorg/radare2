@@ -51,7 +51,7 @@ R_API void r_anal_rtti_print_all(RAnal *anal, int mode) {
 		bool comma = false;
 		bool success = false;
 		r_list_foreach (vtables, vtableIter, table) {
-			if (r_kons_is_breaked (cons)) {
+			if (r_cons_is_breaked (cons)) {
 				break;
 			}
 			if (use_json && success) {

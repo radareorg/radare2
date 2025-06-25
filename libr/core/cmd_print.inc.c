@@ -4710,7 +4710,7 @@ static ut8 *analBars(RCore *core, size_t type, size_t nblocks, size_t blocksize,
 		return ptr;
 	}
 	for (i = 0; i < nblocks; i++) {
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		ut64 off = from + (i + skipblocks) * blocksize;
@@ -7557,7 +7557,7 @@ static int cmd_print(void *data, const char *input) {
 				r_cons_break_push (NULL, NULL);
 				for (i = j = 0; i < core->blocksize && j < l; i += ret, j++) {
 					ret = r_asm_disassemble (core->rasm, &asmop, block + i, len - i);
-					if (r_kons_is_breaked (core->cons)) {
+					if (r_cons_is_breaked (core->cons)) {
 						break;
 					}
 					r_cons_printf ("%d\n", ret);

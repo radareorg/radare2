@@ -1721,7 +1721,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 	r_kons_enable_mouse (cons, cons->line->hud);
 	for (;;) {
 		D.yank_flag = false;
-		if (r_kons_is_breaked (cons)) {
+		if (r_cons_is_breaked (cons)) {
 			break;
 		}
 #if 0

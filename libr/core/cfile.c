@@ -961,7 +961,7 @@ R_API RIODesc *r_core_file_open(RCore *r, const char *file, int flags, ut64 load
 	}
 	r->io->bits = r->rasm->config->bits; // TODO: we need an api for this
 	RIODesc *fd = r_io_open_nomap (r->io, file, flags, 0644);
-	if (r_kons_is_breaked (r->cons)) {
+	if (r_cons_is_breaked (r->cons)) {
 		goto beach;
 	}
 	if (!fd) {

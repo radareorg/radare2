@@ -242,7 +242,7 @@ R_API RList *r_anal_vtable_search(RVTableContext *context) {
 	RListIter *iter;
 	RBinSection *section;
 	r_list_foreach (sections, iter, section) {
-		if (r_kons_is_breaked (cons)) {
+		if (r_cons_is_breaked (cons)) {
 			break;
 		}
 
@@ -257,7 +257,7 @@ R_API RList *r_anal_vtable_search(RVTableContext *context) {
 			break;
 		}
 		while (startAddress <= endAddress) {
-			if (r_kons_is_breaked (cons)) {
+			if (r_cons_is_breaked (cons)) {
 				break;
 			}
 			if (!anal->iob.is_valid_offset (anal->iob.io, startAddress, 0)) {

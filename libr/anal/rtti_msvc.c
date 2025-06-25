@@ -206,7 +206,7 @@ static RList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num_
 
 	r_kons_break_push (cons, NULL, NULL);
 	while (num_base_classes > 0) {
-		if (r_kons_is_breaked (cons)) {
+		if (r_cons_is_breaked (cons)) {
 			break;
 		}
 

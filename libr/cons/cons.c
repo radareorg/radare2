@@ -281,7 +281,7 @@ R_API bool r_cons_default_context_is_interactive(void) {
 
 R_API bool r_kons_was_breaked(RCons *cons) {
 #if WANT_DEBUGSTUFF
-	const bool res = r_kons_is_breaked (cons) || cons->context->was_breaked;
+	const bool res = r_cons_is_breaked (cons) || cons->context->was_breaked;
 	cons->context->breaked = false;
 	cons->context->was_breaked = false;
 	return res;
@@ -294,7 +294,7 @@ R_API bool r_cons_was_breaked(void) {
 #if WANT_DEBUGSTUFF
 	RCons *cons = r_cons_singleton ();
 	RConsContext *ctx = cons->context;
-	const bool res = r_kons_is_breaked (cons) || ctx->was_breaked;
+	const bool res = r_cons_is_breaked (cons) || ctx->was_breaked;
 	ctx->breaked = false;
 	ctx->was_breaked = false;
 	return res;
@@ -304,7 +304,7 @@ R_API bool r_cons_was_breaked(void) {
 }
 
 R_API bool r_cons_is_breaked(void) {
-	return r_kons_is_breaked (r_cons_singleton ());
+	return r_cons_is_breaked (r_cons_singleton ());
 }
 
 #if 0
@@ -767,7 +767,7 @@ R_API void r_cons_flush(RCons *cons) {
 			int len = ctx->buffer_len;
 			ctx->buffer[ctx->buffer_len] = 0;
 			r_cons_break_push (NULL, NULL);
-			while (nl && !r_kons_is_breaked (cons)) {
+			while (nl && !r_cons_is_breaked (cons)) {
 				__cons_write (cons, ptr, nl - ptr + 1);
 				if (cons->linesleep && !(i % pagesize)) {
 					r_sys_usleep (cons->linesleep * 1000);
@@ -1131,7 +1131,7 @@ R_API void r_cons_bind(RCons *cons, RConsBind *bind) {
 	bind->cb_printf = r_kons_printf;
 	bind->cb_flush = r_cons_flush;
 	bind->cb_grep = mygrep;
-	bind->is_breaked = r_kons_is_breaked;
+	bind->is_breaked = r_cons_is_breaked;
 }
 
 R_API const char* r_cons_get_rune(const ut8 ch) {

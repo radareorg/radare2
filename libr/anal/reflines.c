@@ -105,7 +105,7 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 	}
 	r_cons_break_push (NULL, NULL);
 	/* analyze code block */
-	while (ptr < end && !r_kons_is_breaked (cons)) {
+	while (ptr < end && !r_cons_is_breaked (cons)) {
 		if (nlines != -1) {
 			if (!nlines) {
 				break;

@@ -526,7 +526,7 @@ static void dump_cols(RadiffOptions *ro, ut8 *a, int as, ut8 *b, int bs, int w) 
 	}
 	r_kons_break_push (ro->cons, NULL, NULL);
 	for (i = 0; i < sz; i += w) {
-		if (r_kons_is_breaked (ro->cons)) {
+		if (r_cons_is_breaked (ro->cons)) {
 			break;
 		}
 		if (i + w >= sz) {
@@ -624,7 +624,7 @@ static void dump_cols_hexii(RadiffOptions *ro, ut8 *a, int as, ut8 *b, int bs, i
 	}
 	r_kons_break_push (ro->cons, NULL, NULL);
 	for (i = 0; i < sz; i += w) {
-		if (r_kons_is_breaked (ro->cons)) {
+		if (r_cons_is_breaked (ro->cons)) {
 			break;
 		}
 		if (i + w >= sz) {
@@ -982,7 +982,7 @@ static void __generate_graph(RCore *c, ut64 off) {
 	r_kons_break_push (c->cons, NULL, NULL);
 	if (str) {
 		for (;;) {
-			if (r_kons_is_breaked (c->cons)) {
+			if (r_cons_is_breaked (c->cons)) {
 				break;
 			}
 			char *eol = strchr (ptr, '\n');

@@ -1006,7 +1006,7 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 		ut64 to = bb->addr + bb->size;
 		r_reg_set_value (esil->anal->reg, pc, at);
 		for (i = 0; at < to; i++) {
-			if (r_kons_is_breaked (core->cons)) {
+			if (r_cons_is_breaked (core->cons)) {
 				goto beach;
 			}
 			if (at < bb->addr) {

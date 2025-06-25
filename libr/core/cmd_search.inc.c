@@ -289,7 +289,7 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 		ut32 len = j;
 		R_LOG_INFO ("Searching %s for %d byte length", hashname, j);
 		r_list_foreach (param->boundaries, iter, map) {
-			if (r_kons_is_breaked (core->cons)) {
+			if (r_cons_is_breaked (core->cons)) {
 				break;
 			}
 			ut64 from = r_io_map_begin (map);
@@ -310,7 +310,7 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 			R_LOG_INFO ("Carving %d blocks", blocks);
 			(void) r_io_read_at (core->io, from, buf, bufsz);
 			for (i = 0; (from + i + len) < to; i++) {
-				if (r_kons_is_breaked (core->cons)) {
+				if (r_cons_is_breaked (core->cons)) {
 					break;
 				}
 				char *s = r_hash_tostring (NULL, hashname, buf + i, len);
@@ -359,7 +359,7 @@ static void cmd_search_bin(RCore *core, RInterval itv) {
 
 	r_cons_break_push (NULL, NULL);
 	while (from < to) {
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		RBuffer *ref = r_buf_new_slice (b, from, to);
@@ -456,7 +456,7 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 	UserPrelude up = {core, false, 0};
 	r_search_set_callback (core->search, &__prelude_cb_hit, &up);
 	for (at = from; at < to; at += core->blocksize) {
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		if (!r_io_is_valid_offset (core->io, at, 0)) {
@@ -1642,7 +1642,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 		}
 		RInterval itv = r_itv_intersect (search_itv, map->itv);
 		ut64 from = itv.addr, to = r_itv_end (itv);
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		delta = to - from;
@@ -1682,7 +1682,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 				r_list_append (end_list, (void *) (intptr_t) epair);
 			}
 			r_anal_op_fini (&end_gadget);
-			if (r_kons_is_breaked (core->cons)) {
+			if (r_cons_is_breaked (core->cons)) {
 				break;
 			}
 			// Right now we have a list of all of the end/stop gadgets.
@@ -1699,7 +1699,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 			ropdepth = (increment == 1)
 				? max_instr * max_inst_size_x86 /* wow, x86 is long */
 				: max_instr * increment;
-			if (r_kons_is_breaked (core->cons)) {
+			if (r_cons_is_breaked (core->cons)) {
 				break;
 			}
 			struct endlist_pair *end_gadget = (struct endlist_pair *) r_list_pop (end_list);
@@ -1721,7 +1721,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 				if (i < 0) {
 					i = 0;
 				}
-				if (r_kons_is_breaked (core->cons)) {
+				if (r_cons_is_breaked (core->cons)) {
 					break;
 				}
 				if (i >= next) {
@@ -1813,7 +1813,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 		free (buf);
 		ht_uu_free (badstart);
 	}
-	if (r_kons_is_breaked (core->cons)) {
+	if (r_cons_is_breaked (core->cons)) {
 		eprintf ("\n");
 	}
 	r_cons_break_pop ();
@@ -1917,7 +1917,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 			// inheap
 			r_esil_set_op (core->anal->esil, "AddressInfo", esil_search_address_info);
 #endif
-			if (r_kons_is_breaked (core->cons)) {
+			if (r_cons_is_breaked (core->cons)) {
 				R_LOG_INFO ("Breaked at 0x%08"PFMT64x, addr);
 				break;
 			}
@@ -2130,7 +2130,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 			goto beach;
 		}
 		for (i = 0, at = from; at < to; at++, i++) {
-			if (r_kons_is_breaked (core->cons)) {
+			if (r_cons_is_breaked (core->cons)) {
 				break;
 			}
 			if (i >= (bsize - 32)) {
@@ -2504,7 +2504,7 @@ static void do_unkjmp_search(RCore *core, struct search_parameters *param, bool 
 		}
 		r_cons_break_push (NULL, NULL);
 		for (i = 0, at = from; at < to; i++, at++) {
-			if (r_kons_is_breaked (core->cons)) {
+			if (r_cons_is_breaked (core->cons)) {
 				break;
 			}
 			ut64 at = from + i;
@@ -2578,7 +2578,7 @@ static char *print_analstr(RCore *core, ut64 addr, int maxlen) {
 		return NULL;
 	}
 	for (i = 0, at = from; at < to; i++, at++) {
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		at = from + i;
@@ -2716,7 +2716,7 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 		}
 		bool inmov = false;
 		for (i = 0, at = from; at < to; i++, at++) {
-			if (r_kons_is_breaked (core->cons)) {
+			if (r_cons_is_breaked (core->cons)) {
 				break;
 			}
 			at = from + i;
@@ -2978,7 +2978,7 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 		ut64 from = r_io_map_begin (map);
 		ut64 to = r_io_map_end (map);
 		for (i = 0, at = from; at < to; i++, at++) {
-			if (r_kons_is_breaked (core->cons)) {
+			if (r_cons_is_breaked (core->cons)) {
 				break;
 			}
 			at = from + i;
@@ -3119,7 +3119,7 @@ static void do_section_search(RCore *core, struct search_parameters *param, cons
 	r_list_foreach (param->boundaries, iter, map) {
 		ut64 from = r_io_map_begin (map);
 		ut64 to = r_io_map_end (map);
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		for (at = from; at < to; at += buf_size) {
@@ -3205,7 +3205,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 		}
 		ut64 from = r_io_map_begin (map);
 		ut64 to = r_io_map_end (map);
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		if (maxhits && count >= maxhits) {
@@ -3214,7 +3214,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 		RList *hits = r_core_asm_strsearch (core, end_cmd, from, to, maxhits, regexp, everyByte, mode);
 		if (hits) {
 			r_list_foreach (hits, iter, hit) {
-				if (r_kons_is_breaked (core->cons)) {
+				if (r_cons_is_breaked (core->cons)) {
 					break;
 				}
 				search_hit_at (core, param, hit, NULL);
@@ -3270,7 +3270,7 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 			}
 			const ut64 saved_nhits = search->nhits;
 			RInterval itv = r_itv_intersect (search_itv, map->itv);
-			if (r_kons_is_breaked (core->cons)) {
+			if (r_cons_is_breaked (core->cons)) {
 				break;
 			}
 			RSearchKeyword *kw = r_list_first (core->search->kws);
@@ -3300,7 +3300,7 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 			ut64 len;
 			for (at = from1; at != to1; at = search->bckwrds? at - len: at + len) {
 				print_search_progress (at, to1, search->nhits, param);
-				if (r_kons_is_breaked (core->cons)) {
+				if (r_cons_is_breaked (core->cons)) {
 					eprintf ("\n\n");
 					break;
 				}
@@ -3468,7 +3468,7 @@ static void search_similar_pattern_in(RCore *core, int count, ut64 from, ut64 to
 	}
 	while (addr < to) {
 		(void) r_io_read_at (core->io, addr, block, core->blocksize);
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		int diff = memcmpdiff (core->block, block, core->blocksize);
@@ -3704,7 +3704,7 @@ static void search_collisions(RCore *core, const char *hashName, const ut8 *hash
 	ut64 inc = 0;
 	int amount = 0;
 	int mount = 0;
-	while (!r_kons_is_breaked (core->cons)) {
+	while (!r_cons_is_breaked (core->cons)) {
 		ut64 now = r_time_now_mono ();
 		if (now < (prev + 1000000)) {
 			amount++;
@@ -3773,7 +3773,7 @@ static void __core_cmd_search_asm_infinite(RCore *core, const char *arg) {
 	ut64 at;
 	r_cons_break_push (NULL, NULL);
 	r_list_foreach (boundaries, iter, map) {
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		ut64 map_begin = r_io_map_begin (map);
@@ -3936,7 +3936,7 @@ static void __core_cmd_search_backward_prelude(RCore *core, bool doseek, bool fo
 		}
 		r_cons_break_push (NULL, NULL);
 		while (addr > bs) {
-			if (r_kons_is_breaked (core->cons)) {
+			if (r_cons_is_breaked (core->cons)) {
 				break;
 			}
 			if (forward) {
@@ -4012,7 +4012,7 @@ static void cmd_slash_ab(RCore *core, int delta, bool infunc) {
 		}
 		(void) r_io_read_at (core->io, map_begin, buf, map_size);
 		for (at = map_begin; at + maxopsz < map_end; at += 1) {
-			if (r_kons_is_breaked (core->cons)) {
+			if (r_cons_is_breaked (core->cons)) {
 				break;
 			}
 			int left = R_MIN ((map_end - at), maxopsz);
@@ -4561,7 +4561,7 @@ reread:
 						r_core_anal_search (core, from, to, core->addr, 0);
 						do_ref_search (core, core->addr, from, to, &param);
 					}
-					if (r_kons_is_breaked (core->cons)) {
+					if (r_cons_is_breaked (core->cons)) {
 						break;
 					}
 				}
@@ -4969,7 +4969,7 @@ reread:
 				// eprintf ("-- %llx %llx\n", r_io_map_begin (map), r_io_map_end (map));
 				r_kons_break_push (core->cons, NULL, NULL);
 				for (addr = r_io_map_begin (map); addr < r_io_map_end (map); addr++) {
-					if (r_kons_is_breaked (core->cons)) {
+					if (r_cons_is_breaked (core->cons)) {
 						break;
 					}
 					if (align && (0 != (addr % align))) {
@@ -5022,7 +5022,7 @@ reread:
 				}
 				r_kons_break_push (core->cons, NULL, NULL);
 				for (addr = r_io_map_begin (map); addr < r_io_map_end (map); addr++) {
-					if (r_kons_is_breaked (core->cons)) {
+					if (r_cons_is_breaked (core->cons)) {
 						break;
 					}
 					ret = magic_at (&mc, kw, file, addr, 0, false,

@@ -805,7 +805,7 @@ static int step_until(RCore *core, ut64 addr) {
 	bool honorbps = r_config_get_b (core->config, "dbg.bpforuntil");
 	r_cons_break_push (NULL, NULL);
 	do {
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			core->break_loop = true;
 			break;
 		}
@@ -836,7 +836,7 @@ static int step_until_esil(RCore *core, const char *esilstr) {
 	}
 	r_cons_break_push (NULL, NULL);
 	for (;;) {
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			core->break_loop = true;
 			break;
 		}
@@ -873,7 +873,7 @@ static bool step_until_inst(RCore *core, const char *instr, bool regex) {
 	r_cons_break_push (NULL, NULL);
 	for (;;) {
 		RAnalOp asmop;
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		if (r_debug_is_dead (core->dbg)) {
@@ -947,7 +947,7 @@ static bool step_until_optype(RCore *core, const char *_optypes) {
 
 	r_cons_break_push (NULL, NULL);
 	for (; !maxsteps || countsteps < maxsteps; countsteps++) {
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			core->break_loop = true;
 			break;
 		}
@@ -1019,7 +1019,7 @@ static bool step_until_flag(RCore *core, const char *instr) {
 	instr = r_str_trim_head_ro (instr);
 	r_cons_break_push (NULL, NULL);
 	for (;;) {
-		if (r_kons_is_breaked (core->cons) || r_debug_is_dead (core->dbg)) {
+		if (r_cons_is_breaked (core->cons) || r_debug_is_dead (core->dbg)) {
 			break;
 		}
 		r_debug_step (core->dbg, 1);
@@ -4215,7 +4215,7 @@ static void do_debug_trace_calls(RCore *core, ut64 from, ut64 to, ut64 final_add
 		RAnalOp aop;
 		int addr_in_range;
 
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		if (r_debug_is_dead (dbg)) {
@@ -4623,7 +4623,7 @@ static bool cmd_dcu(RCore *core, const char *input) {
 	if (dcu_range) {
 		r_cons_break_push (NULL, NULL);
 		do {
-			if (r_kons_is_breaked (core->cons)) {
+			if (r_cons_is_breaked (core->cons)) {
 				break;
 			}
 			r_debug_step (core->dbg, 1);
@@ -4697,7 +4697,7 @@ static bool cmd_dcu(RCore *core, const char *input) {
 				if (steps % 500 == 0 || pc == addr) {
 					R_LOG_INFO ("At 0x%08" PFMT64x " after %lu steps", pc, steps);
 				}
-				if (r_kons_is_breaked (core->cons) || r_debug_is_dead (core->dbg) || pc == addr) {
+				if (r_cons_is_breaked (core->cons) || r_debug_is_dead (core->dbg) || pc == addr) {
 					break;
 				}
 				if (is_x86_call (core->dbg, pc)) {
@@ -4878,7 +4878,7 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 				pc = r_debug_reg_get (core->dbg, "PC");
 				eprintf (" %d %"PFMT64x"\r", n++, pc);
 				s = r_io_map_get_at (core->io, pc);
-				if (r_kons_is_breaked (core->cons)) {
+				if (r_cons_is_breaked (core->cons)) {
 					break;
 				}
 			} while (!s);
@@ -4970,7 +4970,7 @@ static int cmd_debug_step(RCore *core, const char *input) {
 			int n = 0;
 			r_cons_break_push (static_debug_stop, core->dbg);
 			do {
-				if (r_kons_is_breaked (core->cons)) {
+				if (r_cons_is_breaked (core->cons)) {
 					break;
 				}
 				r_debug_step (core->dbg, 1);
@@ -6152,7 +6152,7 @@ static int cmd_debug(void *data, const char *input) {
 #endif
 	case 'w': // "dw"
 		r_cons_break_push (static_debug_stop, core->dbg);
-		for (;!r_kons_is_breaked (core->cons);) {
+		for (;!r_cons_is_breaked (core->cons);) {
 			int pid = atoi (input + 1);
 			//int opid = core->dbg->pid = pid;
 			int res = r_debug_kill (core->dbg, pid, 0, 0);

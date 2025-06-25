@@ -840,7 +840,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 				if (end) {
 					*end = '\0';
 				}
-				if (r_kons_is_breaked (core->cons)) {
+				if (r_cons_is_breaked (core->cons)) {
 					R_LOG_INFO ("Interrupted at (%s)", ptr);
 					if (end) {
 						*end = '\n';

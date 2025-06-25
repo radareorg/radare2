@@ -636,7 +636,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	const bool propagate_noreturn = anal->opt.propagate_noreturn;
 	ut64 v1 = UT64_MAX;
 
-	if (r_kons_is_breaked (cons)) {
+	if (r_cons_is_breaked (cons)) {
 		return R_ANAL_RET_END;
 	}
 	if (anal->sleep) {
@@ -757,7 +757,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 			break;
 		}
 repeat:
-		if (r_kons_is_breaked (cons)) {
+		if (r_cons_is_breaked (cons)) {
 			break;
 		}
 		ut8 buf[32]; // 32 bytes is enough to hold any instruction.
@@ -1220,7 +1220,7 @@ noskip:
 					}
 				}
 			}
-			if (r_kons_is_breaked (cons)) {
+			if (r_cons_is_breaked (cons)) {
 				gotoBeach (R_ANAL_RET_END);
 			}
 			if (anal->opt.jmpref) {

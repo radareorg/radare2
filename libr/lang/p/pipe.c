@@ -48,7 +48,7 @@ static void lang_pipe_run_win(RLangSession *s) {
 	RCons *cons = core->cons;
 	r_kons_break_push (cons, NULL, NULL);
 	do {
-		if (r_kons_is_breaked (cons)) {
+		if (r_cons_is_breaked (cons)) {
 			TerminateProcess (hproc, 0);
 			break;
 		}
@@ -180,7 +180,7 @@ static bool lang_pipe_run(RLangSession *s, const char *code, int len) {
 		RCons *cons = core->cons;
 		r_kons_break_push (cons, NULL, NULL);
 		for (;;) {
-			if (r_kons_is_breaked (cons)) {
+			if (r_cons_is_breaked (cons)) {
 				break;
 			}
 			memset (buf, 0, sizeof (buf));

@@ -1222,7 +1222,7 @@ repeat:
 	RCore *core = dbg->coreb.core;
 	RCons *cons = core->cons;
 	if (dbg->session && dbg->trace_continue) {
-		while (!r_kons_is_breaked (cons)) {
+		while (!r_cons_is_breaked (cons)) {
 			if (r_debug_step (dbg, 1) != 1) {
 				break;
 			}
@@ -1258,7 +1258,7 @@ repeat:
 		}
 	}
 	if (reason == R_DEBUG_REASON_BREAKPOINT &&
-	   ((bp && !bp->enabled) || (!bp && !r_kons_is_breaked (cons) && dbg->coreb.core &&
+	   ((bp && !bp->enabled) || (!bp && !r_cons_is_breaked (cons) && dbg->coreb.core &&
 					dbg->coreb.cfgGetI (dbg->coreb.core, "dbg.bpsysign")))) {
 		goto repeat;
 	}

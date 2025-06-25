@@ -11,7 +11,7 @@ static bool rtr_visual(RCore *core, TextLog T, const char *cmd) {
 			r_cons_println (core->cons, ret);
 			free (ret);
 			r_cons_flush (core->cons);
-			if (r_kons_is_breaked (core->cons)) {
+			if (r_cons_is_breaked (core->cons)) {
 				break;
 			}
 			r_sys_sleep (1);
@@ -36,7 +36,7 @@ static bool rtr_visual(RCore *core, TextLog T, const char *cmd) {
 				r_cons_flush (core->cons);
 				r_kons_break_push (core->cons, NULL, NULL);
 				r_sys_sleep (1);
-				if (r_kons_is_breaked (core->cons))  {
+				if (r_cons_is_breaked (core->cons))  {
 					autorefresh = false;
 					ch = r_cons_readchar (core->cons);
 				} else {

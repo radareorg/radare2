@@ -6586,7 +6586,7 @@ toro:
 		ds->at = ds->addr + ds->index;
 		ds->vat = r_core_pava (core, ds->at);
 
-		if (r_kons_is_breaked (cons) || r_cons_was_breaked ()) {
+		if (r_cons_is_breaked (cons) || r_cons_was_breaked ()) {
 			R_FREE (nbuf);
 			if (ds->pj) {
 				r_kons_pop (cons);
@@ -7187,7 +7187,7 @@ toro:
 		ds->at = address + i;
 		ds->vat = r_core_pava (core, ds->at);
 		r_core_seek_arch_bits (core, ds->at);
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		ds_hint_begin (ds, ds->at);
@@ -7492,7 +7492,7 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 
 	r_kons_break_push (core->cons, NULL, NULL);
 	for (;;) {
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		RAnalOp asmop;
@@ -7794,7 +7794,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 		}
 		ds->vat = r_core_pava (core, ds->at);
 		r_asm_set_pc (core->rasm, ds->vat);
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		ret = r_asm_disassemble (core->rasm, &asmop, buf + i, l - i);
@@ -7952,7 +7952,7 @@ toro:
 		// fix infinite loop
 		j += opinc;
 	} else for (; check_end (nb_opcodes, nb_bytes, addrbytes * i, j); j++) {
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			err = 1;
 			break;
 		}

@@ -188,7 +188,7 @@ R_API int r_core_lines_initcache(RCore *core, ut64 start_addr, ut64 end_addr) {
 	}
 	r_cons_break_push (NULL, NULL);
 	while (off < end_addr) {
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		r_io_read_at (core->io, off, (ut8 *) buf, bsz);

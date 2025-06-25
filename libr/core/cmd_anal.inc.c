@@ -1484,7 +1484,7 @@ static bool cmd_anal_aaft(RCore *core) {
 		r_reg_arena_poke (core->anal->reg, saved_arena, saved_arena_size);
 		r_esil_set_pc (core->anal->esil, fcn->addr);
 		r_core_anal_type_match (core, fcn);
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		__add_vars_sdb (core, fcn);
@@ -4876,7 +4876,7 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 		RListIter *iter;
 		RAnalFunction *fcni = NULL;
 		r_list_foreach (core->anal->fcns, iter, fcni) {
-			if (r_kons_is_breaked (core->cons)) {
+			if (r_cons_is_breaked (core->cons)) {
 				break;
 			}
 			r_core_recover_vars (core, fcni, true);
@@ -7159,7 +7159,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			notfirst = true;
 		}
 		R_LOG_DEBUG ("esil step at 0x%08"PFMT64x, addr);
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			R_LOG_INFO ("[+] ESIL emulation interrupted at 0x%08" PFMT64x, addr);
 			return_tail (0);
 		}
@@ -8001,7 +8001,7 @@ static bool cmd_aea_stuff(RCore* core, int mode, ut64 addr, int length, const ch
 	esil->nowrite = true;
 	r_cons_break_push (NULL, NULL);
 	for (ops = ptr = 0; ptr < buf_sz && hasNext (); ops++, ptr += len) {
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		if (esilexpr) {
@@ -8183,7 +8183,7 @@ static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int ninstr) {
 	ut64 oldoff = core->addr;
 	const ut64 flags = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_DISASM;
 	for (i = 0, j = 0; j < ninstr; i++, j++) {
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		if (i >= (bsize - 32)) {
@@ -10031,7 +10031,7 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 	int nopcount = 0;
 	r_cons_break_push (NULL, NULL);
 	while (addr < addr_end) {
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		// TODO: too many ioreads here
@@ -10086,7 +10086,7 @@ static void cmd_anal_blocks(RCore *core, const char *input) {
 		r_list_foreach (list, iter, map) {
 			from = r_io_map_begin (map);
 			to = r_io_map_end (map);
-			if (r_kons_is_breaked (core->cons)) {
+			if (r_cons_is_breaked (core->cons)) {
 				goto ctrl_c;
 			}
 			if (!from && !to) {
@@ -10145,7 +10145,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 	}
 	r_cons_break_push (NULL, NULL);
 	bool valid = true;
-	while (addr < addr_end && !r_kons_is_breaked (core->cons)) {
+	while (addr < addr_end && !r_cons_is_breaked (core->cons)) {
 		// TODO: too many ioreads here
 		if (bufi > bufi_max) {
 			bufi = 0;
@@ -10275,7 +10275,7 @@ static void cmd_anal_calls(RCore *core, const char *input, bool printCommands, b
 			r_list_foreach (ranges, iter, map) {
 				ut64 addr = r_io_map_begin (map);
 				_anal_calls (core, addr, r_io_map_end (map), printCommands, importsOnly);
-				if (r_kons_is_breaked (core->cons)) {
+				if (r_cons_is_breaked (core->cons)) {
 					break;
 				}
 			}
@@ -10287,7 +10287,7 @@ static void cmd_anal_calls(RCore *core, const char *input, bool printCommands, b
 				addr = r->itv.addr;
 				//this normally will happen on fuzzed binaries, dunno if with huge
 				//binaries as well
-				if (r_kons_is_breaked (core->cons)) {
+				if (r_cons_is_breaked (core->cons)) {
 					break;
 				}
 				_anal_calls (core, addr, r_itv_end (r->itv), printCommands, importsOnly);
@@ -13213,7 +13213,7 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 			r_list_foreach (list, iter, map) {
 				from = r_io_map_begin (map);
 				to = r_io_map_end (map);
-				if (r_kons_is_breaked (core->cons)) {
+				if (r_cons_is_breaked (core->cons)) {
 					break;
 				}
 				if (!from && !to) {
@@ -13486,7 +13486,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 			goto beach;
 		}
 		r_list_foreach (list, iter, map) {
-			if (r_kons_is_breaked (core->cons)) {
+			if (r_cons_is_breaked (core->cons)) {
 				break;
 			}
 			ut64 from = r_io_map_begin (map);
@@ -13509,7 +13509,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 		ut64 to = UT64_MAX;
 		// find values pointing to non-executable regions
 		r_list_foreach (list, iter2, map2) {
-			if (r_kons_is_breaked (core->cons)) {
+			if (r_cons_is_breaked (core->cons)) {
 				break;
 			}
 			// TODO: Reduce multiple hits for same addr
@@ -13522,7 +13522,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 			r_list_foreach (list, iter, map) {
 				ut64 begin = r_io_map_begin (map);
 				ut64 end = r_io_map_end (map);
-				if (r_kons_is_breaked (core->cons)) {
+				if (r_cons_is_breaked (core->cons)) {
 					break;
 				}
 				if (end - begin > UT32_MAX) {
@@ -14142,7 +14142,7 @@ static bool cmd_aa(RCore *core, bool aaa) {
 	r_core_task_yield (&core->tasks);
 	if ((list = r_bin_get_entries (core->bin))) {
 		r_list_foreach (list, iter, entry) {
-			if (r_kons_is_breaked (core->cons)) {
+			if (r_cons_is_breaked (core->cons)) {
 				break;
 			}
 			if (entry->paddr == UT64_MAX) {
@@ -14161,7 +14161,7 @@ static bool cmd_aa(RCore *core, bool aaa) {
 			logline (core, 22, "Recovering variables (afva@@@F)");
 			/* Set fcn type to R_ANAL_FCN_TYPE_SYM for symbols */
 			r_list_foreach_prev (core->anal->fcns, iter, fcni) {
-				if (r_kons_is_breaked (core->cons)) {
+				if (r_cons_is_breaked (core->cons)) {
 					break;
 				}
 				r_core_recover_vars (core, fcni, true);
@@ -14231,7 +14231,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 	cmd_aa (core, input[0] == 'a');
 	r_config_set_b (core->config, "anal.imports", anal_imports);
 	r_core_task_yield (&core->tasks);
-	if (r_kons_is_breaked (core->cons)) {
+	if (r_cons_is_breaked (core->cons)) {
 		goto jacuzzi;
 	}
 #if 1
@@ -14253,7 +14253,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 		//use dh_origin if we are debugging
 		R_FREE (dh_orig);
 	}
-	if (r_kons_is_breaked (core->cons)) {
+	if (r_cons_is_breaked (core->cons)) {
 		goto jacuzzi;
 	}
 	const bool cfg_debug = r_config_get_b (core->config, "cfg.debug");
@@ -14280,7 +14280,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 				R_LOG_WARN ("Cannot seek to 0x%08"PFMT64x, section_addr);
 			}
 		}
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			goto jacuzzi;
 		}
 
@@ -14290,7 +14290,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 		// R_LOG_INFO ("Analyze data refs as code (LEA)");
 		// (void) cmd_anal_aad (core, NULL); // "aad"
 		r_core_task_yield (&core->tasks);
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			goto jacuzzi;
 		}
 		if (is_unknown_file (core)) {
@@ -14298,7 +14298,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 			(void)r_core_search_preludes (core, false); // "aap"
 			didAap = true;
 			r_core_task_yield (&core->tasks);
-			if (r_kons_is_breaked (core->cons)) {
+			if (r_cons_is_breaked (core->cons)) {
 				goto jacuzzi;
 			}
 		}
@@ -14306,7 +14306,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 		logline (core, 40, "Analyze len bytes of instructions for references (aar)");
 		(void)r_core_anal_refs (core, ""); // "aar"
 		r_core_task_yield (&core->tasks);
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			goto jacuzzi;
 		}
 		if (is_apple_target (core)) {
@@ -14321,7 +14321,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 		r_core_task_yield (&core->tasks);
 		// r_config_set_b (core->config, "anal.calls", c);
 		r_core_task_yield (&core->tasks);
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			goto jacuzzi;
 		}
 		const bool isPreludableArch = core->rasm->config->bits == 64 && r_str_startswith (asm_arch, "arm");
@@ -14366,7 +14366,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 				}
 			}
 		}
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			goto jacuzzi;
 		}
 		if (r_config_get_b (core->config, "anal.autoname")) {
@@ -14379,7 +14379,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 			RAnalFunction *fcni;
 			RListIter *iter;
 			r_list_foreach (core->anal->fcns, iter, fcni) {
-				if (r_kons_is_breaked (core->cons)) {
+				if (r_cons_is_breaked (core->cons)) {
 					break;
 				}
 				RList *list = r_anal_var_list (core->anal, fcni, 'r');
@@ -14658,7 +14658,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					break;
 				}
 				r_list_foreach (core->anal->fcns, it, fcn) {
-					if (r_kons_is_breaked (core->cons)) {
+					if (r_cons_is_breaked (core->cons)) {
 						break;
 					}
 					r_core_link_stroff (core, fcn);
@@ -16199,7 +16199,7 @@ static int cmd_anal(void *data, const char *input) {
 	if (tbs != core->blocksize) {
 		r_core_block_size (core, tbs);
 	}
-	if (r_kons_is_breaked (core->cons)) {
+	if (r_cons_is_breaked (core->cons)) {
 		r_kons_clear_line (core->cons, 1);
 	}
 	return 0;

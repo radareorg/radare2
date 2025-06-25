@@ -352,7 +352,7 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 			attr_x += utf8_len;
 		}
 		s += piece_len;
-	} while (*s && !r_kons_is_breaked (cons));
+	} while (*s && !r_cons_is_breaked (cons));
 	r_kons_break_pop (cons);
 	c->x = orig_x;
 	free (oos);

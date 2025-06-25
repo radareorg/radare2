@@ -205,7 +205,7 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 	RListIter *it;
 	RFlagItem *f;
 	r_list_foreach (flags, it, f) {
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			free (flag_array);
 			return;
 		}
@@ -265,7 +265,7 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 		size_t parent_len = ctx->prefix_len;
 		bool resume = false;
 		/* Iterate over children in this context */
-		while (i < ctx->end && !r_kons_is_breaked (core->cons)) {
+		while (i < ctx->end && !r_cons_is_breaked (core->cons)) {
 			const char *name = flag_array[i]->name;
 			/* Skip printing if the child name equals the parent prefix */
 			if (!strcmp (name, parent_prefix)) {
@@ -384,7 +384,7 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 			} else {
 				/* No grouping: output each element in the cluster individually */
 				size_t k;
-				for (k = i; k < j && !r_kons_is_breaked (core->cons); k++) {
+				for (k = i; k < j && !r_cons_is_breaked (core->cons); k++) {
 					const char *fname = flag_array[k]->name;
 					if (!ht_pp_find (ctx->processed, fname, NULL) && strcmp (fname, parent_prefix) != 0) {
 						ht_pp_insert (ctx->processed, fname, (void *)1);
@@ -396,7 +396,7 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 						}
 					}
 				}
-				if (r_kons_is_breaked (core->cons)) {
+				if (r_cons_is_breaked (core->cons)) {
 					break;
 				}
 				/* Advance index past this cluster */
@@ -405,7 +405,7 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 			}
 		} /* end while over children */
 
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			aborted = true;
 		}
 		if (!resume) {

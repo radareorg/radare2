@@ -950,7 +950,7 @@ R_API int r_sign_all_functions(RAnal *a, bool merge) {
 	bool do_mangled = cb.cfgGetI (core, "zign.mangled");
 	bool zign_dups = a->opt.zigndups;
 	r_list_foreach_prev (a->fcns, iter, fcn) {
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		char *realname = do_mangled? strdup (fcn->name): real_function_name (a, fcn);
@@ -2849,7 +2849,7 @@ R_API int r_sign_metric_search(RAnal *a, RSignSearchMetrics *sm) {
 	r_kons_break_push (cons, NULL, NULL);
 	struct metric_ctx ctx = { 0, NULL, sm, NULL, NULL };
 	r_list_foreach (a->fcns, iter, ctx.fcn) {
-		if (r_kons_is_breaked (cons)) {
+		if (r_cons_is_breaked (cons)) {
 			break;
 		}
 		ctx.it = metric_build_item (sm, ctx.fcn);

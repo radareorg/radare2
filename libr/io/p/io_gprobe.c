@@ -993,7 +993,7 @@ static int gprobe_flasherase(struct gport *port, ut16 sector) {
 		if (!res) {
 			break;
 		}
-		if (r_kons_is_breaked (cons)) {
+		if (r_cons_is_breaked (cons)) {
 			break;
 		}
 	}
@@ -1316,7 +1316,7 @@ static int gprobe_listen(struct gport *port) {
 		RBuffer *reply = NULL;
 		get_reply (port, GPROBE_RESET, &reply);
 		r_buf_free (reply);
-		if (r_kons_is_breaked (cons)) {
+		if (r_cons_is_breaked (cons)) {
 			break;
 		}
 	}

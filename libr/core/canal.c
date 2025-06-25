@@ -1002,7 +1002,7 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 		if (!core->anal->opt.noncode && (region.perm & R_PERM_RX) != R_PERM_RX) {
 			goto error;
 		}
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		fcnlen = r_anal_function (core->anal, fcn, at + delta, reftype);
@@ -2189,7 +2189,7 @@ R_API bool r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 		R_LOG_DEBUG ("Unknown address from memref call 0x%08"PFMT64x, from);
 		return false;
 	}
-	if (r_kons_is_breaked (core->cons)) {
+	if (r_cons_is_breaked (core->cons)) {
 		return false;
 	}
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, at, 0);
@@ -3940,7 +3940,7 @@ static bool anal_block_on_exit(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 }
 
 static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
-	if (r_kons_is_breaked (ctx->core->cons)) {
+	if (r_cons_is_breaked (ctx->core->cons)) {
 		return false;
 	}
 	if (bb->size < 1) {
@@ -4004,7 +4004,7 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 		if (opaddr < bb->addr || opaddr >= bb->addr + bb->size) {
 			break;
 		}
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		pos = (opaddr - bb->addr);
@@ -4415,7 +4415,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 		}
 		while ((!bckwrds && at < to) || bckwrds) {
 			R_LOG_DEBUG ("[0x%08"PFMT64x"-0x%08"PFMT64x"]", at, to);
-			if (r_kons_is_breaked (core->cons)) {
+			if (r_cons_is_breaked (core->cons)) {
 				break;
 			}
 			size_t left = R_MIN (to - at, core->blocksize);
@@ -4431,7 +4431,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 				 (!bckwrds && i < core->blocksize - OPSZ) ||
 				 (bckwrds && i > 0); bckwrds ? i-- : i++) {
 				// TODO: honor anal.align
-				if (r_kons_is_breaked (core->cons)) {
+				if (r_cons_is_breaked (core->cons)) {
 					break;
 				}
 				switch (mode) {
@@ -4691,7 +4691,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 		goto beach;
 	}
 	bool uninit = true;
-	while (at < to && !r_kons_is_breaked (core->cons)) {
+	while (at < to && !r_cons_is_breaked (core->cons)) {
 		int i = 0, ret = bsz;
 		if (!r_itv_contain (region.itv, at)) {
 			if (!r_io_get_region_at (core->io, &region, at) || !(region.perm & R_PERM_X)) {
@@ -4736,7 +4736,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 			uninit = false;
 		}
 		(void) r_anal_op (core->anal, &op, at, buf, bsz, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
-		while ((i + maxopsz) < bsz && !r_kons_is_breaked (core->cons)) {
+		while ((i + maxopsz) < bsz && !r_cons_is_breaked (core->cons)) {
 			r_anal_op_fini (&op);
 			// check if meta tells its code
 			{
@@ -5049,7 +5049,7 @@ R_API RList* r_core_anal_cycles(RCore *core, int ccl) {
 	}
 	cf = r_anal_cycle_frame_new ();
 	r_kons_break_push (core->cons, NULL, NULL);
-	while (cf && !r_kons_is_breaked (cons)) {
+	while (cf && !r_cons_is_breaked (cons)) {
 		if ((op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_BASIC)) && (op->cycles) && (ccl > 0)) {
 			if (verbose) {
 				r_kons_clear_line (cons, 1);
@@ -5222,7 +5222,7 @@ R_API RList* r_core_anal_cycles(RCore *core, int ccl) {
 		}
 		r_anal_op_free (op);
 	}
-	if (r_kons_is_breaked (cons)) {
+	if (r_cons_is_breaked (cons)) {
 		while (cf) {
 			ch = r_list_pop (cf->hooks);
 			while (ch) {
@@ -5982,7 +5982,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	opflags |= R_ARCH_OP_MASK_DISASM;
 
 	do {
-		if (core->esil_anal_stop || r_kons_is_breaked (core->cons)) {
+		if (core->esil_anal_stop || r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		buf_i = pulldata (core,
@@ -6462,7 +6462,7 @@ R_IPI int r_core_search_value_in_range(RCore *core, bool relative, RInterval sea
 	while (from < to) {
 		size = R_MIN (to - from, sizeof (buf));
 		memset (buf, 0xff, sizeof (buf)); // probably unnecessary
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			goto beach;
 		}
 		bool res = r_io_read_at (core->io, from, buf, size);
@@ -6487,7 +6487,7 @@ R_IPI int r_core_search_value_in_range(RCore *core, bool relative, RInterval sea
 		for (i = 0; i <= (size - vsize); i++) {
 			ut8 *v = (buf + i);
 			ut64 addr = from + i;
-			if (r_kons_is_breaked (core->cons)) {
+			if (r_cons_is_breaked (core->cons)) {
 				goto beach;
 			}
 			if (align && (addr) % align) {
@@ -6639,7 +6639,7 @@ static void analPaths(RCoreAnalPaths *p, PJ *pj, int depth) {
 		return;
 	}
 	/* handle ^C */
-	if (r_kons_is_breaked (p->core->cons)) {
+	if (r_cons_is_breaked (p->core->cons)) {
 		return;
 	}
 	dict_set (&p->visited, cur->addr, 1, NULL);
@@ -6764,7 +6764,7 @@ R_API void r_core_anal_inflags(RCore *core, const char * R_NULLABLE glob) {
 	// should be sorted already
 	r_list_sort (addrs, (RListComparator)__addrs_cmp);
 	r_list_foreach (addrs, iter, addr) {
-		if (!iter->n || r_kons_is_breaked (core->cons)) {
+		if (!iter->n || r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		char *addr2 = iter->n->data;
@@ -6881,7 +6881,7 @@ R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr) {
 		ut64 *paddr = (ut64*)r_list_pop (todo);
 		ut64 noret_addr = *paddr;
 		free (paddr);
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		RVecAnalRef *xrefs = r_anal_xrefs_get (core->anal, noret_addr);

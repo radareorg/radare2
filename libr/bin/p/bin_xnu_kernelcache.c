@@ -1331,7 +1331,7 @@ static bool symbols_vec(RBinFile *bf) {
 	RCons *cons = r_cons_singleton ();
 	r_kons_break_push (cons, NULL, NULL);
 	r_kext_index_foreach (obj->kexts, kiter, kext) {
-		if (r_kons_is_breaked (cons)) {
+		if (r_cons_is_breaked (cons)) {
 			eprintf ("Interrupted\n");
 			break;
 		}

@@ -414,7 +414,7 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va) {
 			}
 		}
 		if (IS_MODE_SET (mode)) {
-			if (r_kons_is_breaked (core->cons)) {
+			if (r_cons_is_breaked (core->cons)) {
 				break;
 			}
 			r_meta_set (core->anal, R_META_TYPE_STRING, vaddr, string->size, string->string);
@@ -1190,7 +1190,7 @@ static bool bin_addrline(RCore *core, PJ *pj, int mode) {
 	SetP *set = set_p_new ();
 	// XXX this leaks like there's no stopper
 	r_list_foreach (list, iter, row) {
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		if (mode) {
@@ -2545,7 +2545,7 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 	RBinSymbol *symbol;
 	r_kons_break_push (core->cons, NULL, NULL);
 	R_VEC_FOREACH (symbols, symbol) {
-		if (r_kons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		const char *rawname = r_bin_name_tostring2 (symbol->name, 'o');

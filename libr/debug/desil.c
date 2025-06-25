@@ -285,7 +285,7 @@ R_API ut64 r_debug_esil_step(RDebug *dbg, ut32 count) {
 	has_match = false;
 	r_kons_break_push (cons, NULL, NULL);
 	do {
-		if (r_kons_is_breaked (cons)) {
+		if (r_cons_is_breaked (cons)) {
 			break;
 		}
 		if (has_match) {
