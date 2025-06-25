@@ -1028,7 +1028,6 @@ R_API bool r_kons_yesno(RCons *cons, int def, const char *fmt, ...) R_PRINTF_CHE
 R_API char *r_cons_input(RCons *cons, const char *msg);
 R_API char *r_cons_password(const char *msg);
 R_API bool r_cons_set_cup(bool enable);
-R_API void r_cons_column(int c);
 R_API int r_cons_get_column(void);
 R_API char *r_cons_message(RCons *cons, const char *msg);
 R_API void r_cons_set_title(const char *str);
