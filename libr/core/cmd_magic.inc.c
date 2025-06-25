@@ -153,7 +153,7 @@ static int magic_at(MagicContext *mc, RSearchKeyword *kw, const char *file, ut64
 		}
 
 		if (must_report_progress) {
-			r_kons_clear_line (core->cons, 1);
+			r_cons_clear_line (core->cons, 1);
 		}
 		//eprintf ("0x%08"PFMT64x" 0x%08"PFMT64x" %d %s\n", addr+adelta, addr+adelta, depth, p);
 		// walking children

@@ -887,7 +887,7 @@ static void print_rline_task(void *_core) {
 	RCore *core = (RCore *)_core;
 	RCons *cons = core->cons;
 	RLine *line = cons->line;
-	r_kons_clear_line (cons, 0);
+	r_cons_clear_line (cons, 0);
 	r_kons_printf (cons, "%s%s%s", Color_RESET, line->prompt, line->buffer.data);
 	r_cons_flush (cons);
 }
@@ -1164,7 +1164,7 @@ static void __print_prompt(RCons *cons) {
 		r_cons_flush (cons);
 	}
 	// printf ("%s", promptcolor ());
-	r_kons_clear_line (cons, 0);
+	r_cons_clear_line (cons, 0);
 	if (cons->context->color_mode > 0) {
 		printf ("\r%s%s%s", Color_RESET, promptcolor (cons), line->prompt);
 	} else {
@@ -1775,7 +1775,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 		bool o_do_setup_match = line->history.do_setup_match;
 		line->history.do_setup_match = true;
 		if (line->echo && cons->context->color_mode) {
-			r_kons_clear_line (cons, 0);
+			r_cons_clear_line (cons, 0);
 		}
 repeat:
 		(void) r_cons_get_size (cons, &rows);

@@ -6,7 +6,7 @@ static bool rtr_visual(RCore *core, TextLog T, const char *cmd) {
 		r_cons_break_push (core->cons, NULL, NULL);
 		for (;;) {
 			char *ret;
-			r_kons_clear00 (core->cons);
+			r_cons_clear00 (core->cons);
 			ret = rtrcmd (T, cmd);
 			r_cons_println (core->cons, ret);
 			free (ret);
@@ -24,7 +24,7 @@ static bool rtr_visual(RCore *core, TextLog T, const char *cmd) {
 		free (rtrcmd (T, "e scr.color=true"));
 		free (rtrcmd (T, "e scr.html=false"));
 		for (;;) {
-			r_kons_clear00 (core->cons);
+			r_cons_clear00 (core->cons);
 			ret = rtrcmd (T, cmds[cmdidx]);
 			if (ret) {
 				r_cons_println (core->cons, ret);
@@ -54,7 +54,7 @@ TODO:
 #endif
 			switch (ch) {
 			case '?':
-				r_kons_clear00 (core->cons);
+				r_cons_clear00 (core->cons);
 				r_kons_printf (core->cons, "Remote Visual keys:\n"
 				" hjkl : move\n"
 				" HJKL : move faster\n"
@@ -129,7 +129,7 @@ TODO:
 							ret = true;
 						} else {
 							ret = false;
-							r_kons_clear00 (core->cons);
+							r_cons_clear00 (core->cons);
 							showcursor (core, false);
 						}
 					} while (ret);

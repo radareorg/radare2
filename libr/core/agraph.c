@@ -3558,7 +3558,7 @@ static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, RAnalFunct
 	}
 
 	if (is_interactive) {
-		r_kons_clear00 (core->cons);
+		r_cons_clear00 (core->cons);
 	} else {
 		/* TODO: limit to screen size when the output is not redirected to file */
 		update_graph_sizes (g);
@@ -4177,7 +4177,7 @@ find_next:
 			visual_refresh (core);
 		}
 
-		r_kons_clear_line (cons, 0);
+		r_cons_clear_line (cons, 0);
 		r_kons_printf (cons, Color_RESET);
 		if (addr > 0) {
 			r_cons_gotoxy (cons, 0, 0);
@@ -4248,7 +4248,7 @@ static void goto_asmqjmps(RAGraph *g, RCore *core) {
 
 	r_cons_get_size (cons, &rows);
 	r_cons_gotoxy (cons, 0, rows);
-	r_kons_clear_line (cons, 0);
+	r_cons_clear_line (cons, 0);
 	r_kons_print (cons, Color_RESET);
 	r_kons_print (cons, h);
 	r_cons_flush (cons);
@@ -4377,7 +4377,7 @@ static char *get_graph_string(RCore *core, RAGraph *g) {
 	r_config_set_i (core->config, "scr.color", 0);
 	r_config_set_b (core->config, "scr.utf8", false);
 	r_core_visual_graph (core, g, NULL, false);
-	char *s = strdup (r_cons_get_buffer ());
+	char *s = strdup (r_cons_get_buffer (core->cons, NULL));
 	r_cons_reset (core->cons);
 	r_config_set_i (core->config, "scr.color", c);
 	r_config_set_b (core->config, "scr.utf8", u);
@@ -4407,7 +4407,7 @@ static void nextword(RCore *core, RAGraph *g, const char *word) {
 		r_vector_clear (&gh->word_list);
 	}
 	char *s = get_graph_string (core, g);
-	r_kons_clear00 (core->cons);
+	r_cons_clear00 (core->cons);
 	r_cons_flush (core->cons);
 	const size_t MAX_COUNT = 4096;
 	const char *a = NULL;
@@ -4765,7 +4765,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 			g->discroll = 0;
 			break;
 		case '?':
-			r_kons_clear00 (core->cons);
+			r_cons_clear00 (core->cons);
 			RStrBuf *rsb = r_strbuf_new ("");
 			r_core_visual_append_help (core, rsb, "Visual Graph Mode (VV) Help", help_msg_visual_graph);
 			ret = r_cons_less_str (core->cons, r_strbuf_get (rsb), "?");

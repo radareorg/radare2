@@ -152,7 +152,7 @@ R_API void r_cons_2048(RCons *cons, bool color) {
 	twok_add (&state);
 	twok_add (&state);
 	while (twok_fin (&state)) {
-		r_kons_clear00 (cons);
+		r_cons_clear00 (cons);
 		if (color) {
 			r_kons_printf (cons, Color_GREEN"[r2048]"Color_BYELLOW" score: %d   moves: %d\n"Color_RESET, state.score, state.moves);
 		} else {
@@ -180,7 +180,7 @@ R_API void r_cons_2048(RCons *cons, bool color) {
 			break;
 		}
 	}
-	r_kons_clear00 (cons);
+	r_cons_clear00 (cons);
 	r_kons_printf (cons, "[r2048] score: %d\n", state.score);
 	r_cons_flush (cons);
 	twok_print (&state, color);

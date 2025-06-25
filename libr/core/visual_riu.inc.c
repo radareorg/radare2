@@ -91,7 +91,7 @@ static void riu_render(RIU *riu) {
 	RCons *cons = core->cons;
 	RListIter *iter;
 	RIUWidget *w;
-	r_kons_clear00 (cons);
+	r_cons_clear00 (cons);
 	r_kons_printf (cons, "\n.---------------------------------------.\n");
 	r_kons_printf (cons, "| [q] %18s                |\n", r_str_get (riu->title));
 	r_kons_printf (cons, "|---------------------------------------'\n");

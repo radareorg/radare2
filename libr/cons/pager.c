@@ -48,7 +48,7 @@ R_IPI void pager_color_line(RCons *cons, const char *line, RStrpool *p, RList *m
 R_IPI void pager_printpage(RCons *cons, const char *line, int *index, RList **mla, int from, int to, int w) {
 	int i;
 
-	r_kons_clear00 (cons);
+	r_cons_clear00 (cons);
 	if (from < 0 || to < 0) {
 		return;
 	}

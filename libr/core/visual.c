@@ -523,7 +523,7 @@ R_API bool r_core_visual_hud(RCore *core) {
 	if (!res) {
 		r_cons_message (core->cons, "Cannot find hud file");
 	}
-	r_kons_clear (core->cons);
+	r_cons_clear (core->cons);
 	if (res) {
 		char *p = strchr (res, ';');
 		if (res) {
@@ -604,7 +604,7 @@ repeat:
 	if (!p) {
 		return 0;
 	}
-	r_kons_clear00 (core->cons);
+	r_cons_clear00 (core->cons);
 	r_core_visual_append_help (core, q, "Visual Mode Help (short)", help_visual);
 	r_kons_printf (core->cons, "%s", r_strbuf_get (q));
 	r_cons_flush (core->cons);
@@ -835,7 +835,7 @@ R_API int r_core_visual_prompt(RCore *core) {
 		}
 		return 1;
 	}
-	r_kons_clear00 (core->cons);
+	r_cons_clear00 (core->cons);
 	r_core_visual_showcursor (core, false);
 	return 0;
 }
@@ -1136,7 +1136,7 @@ static void visual_search(RCore *core) {
 	} else {
 		R_LOG_ERROR ("Cannot find bytes");
 		r_cons_any_key (core->cons, NULL);
-		r_kons_clear00 (core->cons);
+		r_cons_clear00 (core->cons);
 	}
 }
 
@@ -1493,7 +1493,7 @@ repeat:
 			: r_anal_refs_get (core->anal, addr);
 	}
 
-	r_kons_clear00 (cons);
+	r_cons_clear00 (cons);
 	r_cons_gotoxy (cons, 1, 1);
 	{
 		char *address = R_SYS_BITS_CHECK (core->dbg->bits, 64)
@@ -1659,7 +1659,7 @@ repeat:
 		r_core_visual_prompt_input (core);
 		goto repeat;
 	case '?':
-		r_kons_clear00 (core->cons);
+		r_cons_clear00 (core->cons);
 		RStrBuf *rsb = r_strbuf_new ("");
 		r_core_visual_append_help (core, rsb, "Xrefs Visual Analysis Mode (Vv + x) Help", help_msg_visual_xref);
 		ret = r_cons_less_str (core->cons, r_strbuf_get (rsb), "?");
@@ -1792,7 +1792,7 @@ static void visual_textlogs(RCore *core) {
 	RCons *cons = core->cons;
 	while (true) {
 		int log_level = r_log_get_level ();
-		r_kons_clear00 (cons);
+		r_cons_clear00 (cons);
 		int notch = r_config_get_i (core->config, "scr.notch");
 		while (notch-- > 0) {
 			r_cons_newline (cons);
@@ -2633,7 +2633,7 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 		" :  run command\n"
 	;
 	for (;;) {
-		r_kons_clear00 (core->cons);
+		r_cons_clear00 (core->cons);
 		r_kons_printf (core->cons, "%s\n", browsemsg);
 		r_cons_flush (core->cons);
 		char ch = 0;
@@ -3045,7 +3045,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				} else {
 					r_core_block_size (core, core->visual.obs);
 				}
-				r_kons_clear (core->cons);
+				r_cons_clear (core->cons);
 			} else {
 				rotate_asm_bits (core);
 			}
@@ -3827,7 +3827,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				r_kons_print (core->cons, "Cannot paste, clipboard is empty.\n");
 				r_cons_flush (core->cons);
 				r_cons_any_key (core->cons, NULL);
-				r_kons_clear00 (core->cons);
+				r_cons_clear00 (core->cons);
 			} else {
 				r_core_yank_paste (core, core->addr + core->print->cur, 0);
 			}
@@ -4542,7 +4542,7 @@ R_IPI void visual_refresh(RCore *core) {
 	if (core->visual.autoblocksize) {
 		r_cons_gotoxy (cons, 0, 0);
 	} else {
-		r_kons_clear (cons);
+		r_cons_clear (cons);
 	}
 	r_cons_flush (cons);
 	r_cons_print_clear (cons);
@@ -5058,7 +5058,7 @@ dodo:
 	}
 	core->cons->teefile = teefile;
 	r_cons_set_cup (false);
-	r_kons_clear00 (core->cons);
+	r_cons_clear00 (core->cons);
 	core->vmode = false;
 	core->cons->event_resize = NULL;
 	core->cons->event_data = NULL;

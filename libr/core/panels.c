@@ -946,11 +946,11 @@ static char *__handle_cmd_str_cache(RCore *core, RPanel *panel, bool force_cache
 			core->print->cur_enabled = false;
 		}
 		bool o_interactive = r_cons_is_interactive (core->cons);
-		r_cons_set_interactive (false);
+		r_cons_set_interactive (core->cons, false);
 		out = (*cmd == '.')
 			? r_core_cmd_str_pipe (core, cmd)
 			: r_core_cmd_str (core, cmd);
-		r_cons_set_interactive (o_interactive);
+		r_cons_set_interactive (core->cons, o_interactive);
 		if (force_cache) {
 			panel->model->cache = true;
 		}
@@ -5478,7 +5478,7 @@ static int __calculator_cb(void *user) {
 			free (s);
 			break;
 		}
-		r_kons_clear00 (core->cons);
+		r_cons_clear00 (core->cons);
 		r_kons_printf (core->cons, "\n> %s\n", s);
 		r_core_cmdf (core, "? %s", s);
 		r_cons_flush (core->cons);
@@ -6155,7 +6155,7 @@ static void demo_begin(RCore *core, RConsCanvas *can) {
 		for (i = 0; i < 40; i+= (1 + (i/30))) {
 			int H = (int)(i * ((double)h / 40));
 			char *r = r_str_scale (s, w, H);
-			r_kons_clear00 (core->cons);
+			r_cons_clear00 (core->cons);
 			r_cons_gotoxy (core->cons, 0, (h / 2) - (H / 2));
 			r_kons_print (core->cons, r);
 			r_cons_flush (core->cons);
@@ -6184,7 +6184,7 @@ static void demo_end(RCore *core, RConsCanvas *can) {
 		for (i = h; i > 0; i--) {
 			int H = i;
 			char *r = r_str_scale (s, w, H);
-			r_kons_clear00 (core->cons);
+			r_cons_clear00 (core->cons);
 			r_cons_gotoxy (core->cons, 0, (h / 2) - (H / 2)); // center
 			r_kons_print (core->cons, r);
 			r_cons_flush (core->cons);
@@ -6863,7 +6863,7 @@ static void __panels_process(RCore *core, RPanels *panels) {
 	}
 
 	bool o_interactive = r_cons_is_interactive (core->cons);
-	r_cons_set_interactive (true);
+	r_cons_set_interactive (core->cons, true);
 	r_core_visual_showcursor (core, false);
 repeat:
 	r_cons_enable_mouse (core->cons, r_config_get_i (core->config, "scr.wheel"));
@@ -7568,7 +7568,7 @@ exit:
 	core->print->col = 0;
 	core->vmode = originVmode;
 	core->panels = prev;
-	r_cons_set_interactive (o_interactive);
+	r_cons_set_interactive (core->cons, o_interactive);
 }
 
 static void __del_panels(RCore *core) {

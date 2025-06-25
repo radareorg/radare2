@@ -324,7 +324,7 @@ R_API char *r_anal_vtables_list(RAnal *anal, int rad) {
 	RStrBuf *sb = r_strbuf_new ("");
 	if (rad == '*') {
 		r_list_foreach (vtables, vtableIter, table) {
-			r_cons_printf ("f vtable.0x%08"PFMT64x" %"PFMT64d" @ 0x%08"PFMT64x"\n",
+			r_strbuf_appendf (sb, "f vtable.0x%08"PFMT64x" %"PFMT64d" @ 0x%08"PFMT64x"\n",
 						   table->saddr,
 						   r_anal_vtable_info_get_size (&context, table),
 						   table->saddr);

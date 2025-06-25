@@ -178,7 +178,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 			page = total_pages;
 		}
 		clearkeys (&state);
-		r_kons_clear00 (core->cons);
+		r_cons_clear00 (core->cons);
 		if (mode == 2) {
 			render (&state, core, list, 2, page + 1, sx, sy);
 		}
@@ -290,7 +290,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 			}
 			r_cons_show_cursor (core->cons, false);
 			r_cons_set_raw (core->cons, true);
-			r_kons_clear (core->cons);
+			r_cons_clear (core->cons);
 			break;
 		default:
 			page = gotokey (&state, list, ch, page);

@@ -1974,7 +1974,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 		r_config_set_i (core->config, "search.kwidx", search->n_kws); // TODO remove
 		r_cons_break_pop (core->cons);
 	}
-	r_kons_clear_line (core->cons, 1);
+	r_cons_clear_line (core->cons, 1);
 	if (param->outmode == R_MODE_JSON) {
 		pj_end (param->pj);
 	}
@@ -3331,7 +3331,7 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 			}
 			if (param->progressbar) {
 				print_search_progress (at, to1, search->nhits, param);
-				r_kons_clear_line (core->cons, 1);
+				r_cons_clear_line (core->cons, 1);
 			}
 			r_core_return_value (core, search->nhits);
 			if (search_verbose && param->outmode != R_MODE_JSON) {
@@ -4983,7 +4983,7 @@ reread:
 					}
 					free (mp);
 				}
-				r_kons_clear_line (core->cons, 1);
+				r_cons_clear_line (core->cons, 1);
 				r_cons_break_pop (core->cons);
 			}
 			eprintf ("\n");
@@ -5036,7 +5036,7 @@ reread:
 					}
 					addr += ret - 1;
 				}
-				r_kons_clear_line (core->cons, 1);
+				r_cons_clear_line (core->cons, 1);
 				r_cons_break_pop (core->cons);
 			}
 			free (mc.ofile);
@@ -5046,7 +5046,7 @@ reread:
 		} else {
 			r_core_cmd_help (core, help_msg_slash_magic);
 		}
-		r_kons_clear_line (core->cons, 1);
+		r_cons_clear_line (core->cons, 1);
 		break;
 	case 'p': // "/p"
 		if (input[1] == '?') { // "/p" -- find next pattern

@@ -967,7 +967,7 @@ static char *get_graph_commands(RCore *c, ut64 off) {
 	ctx->is_html = false;
 	r_cons_push (c->cons);
 	r_core_anal_graph (c, off, R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF |  R_CORE_ANAL_STAR);
-	const char *static_str = r_kons_get_buffer (c->cons, NULL);
+	const char *static_str = r_cons_get_buffer (c->cons, NULL);
 	char *retstr = strdup (r_str_get (static_str));
 	r_cons_pop (c->cons);
 	r_cons_echo (c->cons, NULL);

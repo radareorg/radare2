@@ -328,7 +328,7 @@ R_API char *r_core_cmd_call_str_at(RCore *core, ut64 addr, const char *cmd) {
 		core->cons->context->noflush = false;
 	}
 	r_cons_filter (core->cons);
-	const char *static_str = r_cons_get_buffer ();
+	const char *static_str = r_cons_get_buffer (core->cons, NULL);
 	char *retstr = strdup (r_str_get (static_str));
 	r_cons_pop (core->cons);
 	r_cons_echo (core->cons, NULL);
@@ -3112,13 +3112,13 @@ R_API int r_core_prompt_exec(RCore *r) {
 		free (cmd);
 		if (ret < 0) {
 			if (r->cons && r->cons->line && r->cons->line->zerosep) {
-				r_cons_zero ();
+				r_cons_zero (r->cons);
 			}
 			r_core_cmd_queue (r, NULL);
 			break;
 		}
 		if (r->cons && r->cons->context->use_tts) {
-			const char *buf = r_cons_get_buffer ();
+			const char *buf = r_cons_get_buffer (r->cons, NULL);
 			if (R_STR_ISNOTEMPTY (buf)) {
 				r_sys_tts (buf, true);
 			}
@@ -3127,7 +3127,7 @@ R_API int r_core_prompt_exec(RCore *r) {
 		r_cons_echo (r->cons, NULL);
 		r_cons_flush (r->cons); // double free
 		if (r->cons && r->cons->line && r->cons->line->zerosep) {
-			r_kons_zero (r->cons);
+			r_cons_zero (r->cons);
 		}
 	}
 	return ret;

@@ -1857,7 +1857,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	R_CRITICAL_LEAVE (r);
 	if ((mr.patchfile && !mr.quiet) || !mr.patchfile) {
 		if (mr.zerosep) {
-			r_cons_zero ();
+			r_cons_zero (r->cons);
 		}
 		if (mr.seek != UT64_MAX) {
 			r_core_seek (r, mr.seek, true);

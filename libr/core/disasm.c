@@ -1411,7 +1411,7 @@ static void ds_begin_line(RDisasmState *ds) {
 		}
 	}
 	size_t buflen;
-	r_kons_get_buffer (ds->core->cons, &buflen);
+	r_cons_get_buffer (ds->core->cons, &buflen);
 	ds->buf_line_begin = buflen;
 	if (!ds->pj && ds->asm_hint_pos == -1) {
 		if (!ds_print_core_vmode (ds, ds->asm_hint_pos)) {
@@ -1425,11 +1425,11 @@ static void ds_newline(RDisasmState *ds) {
 	if (ds->pj) {
 		const bool is_html = r_config_get_b (ds->core->config, "scr.html");
 		if (is_html) {
-			char *s = r_str_html_strip (r_kons_get_buffer (cons, NULL), NULL);
+			char *s = r_str_html_strip (r_cons_get_buffer (cons, NULL), NULL);
 			pj_ks (ds->pj, "text", s);
 			free (s);
 		} else {
-			pj_ks (ds->pj, "text", r_kons_get_buffer (cons, NULL));
+			pj_ks (ds->pj, "text", r_cons_get_buffer (cons, NULL));
 		}
 		r_cons_reset (cons);
 		pj_end (ds->pj);
@@ -3867,10 +3867,10 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 			{
 				r_kons_printf (cons, "pf %s # size=%" PFMT64d "\n", mi->str, mi_size);
 				size_t len_before, len_after;
-				r_kons_get_buffer (core->cons, &len_before);
+				r_cons_get_buffer (core->cons, &len_before);
 				r_print_format (core->print, ds->at, buf + idx,
 						len - idx, mi->str, R_PRINT_MUSTSEE, NULL, NULL);
-				const char *cons_buf = r_kons_get_buffer (core->cons, &len_after);
+				const char *cons_buf = r_cons_get_buffer (core->cons, &len_after);
 				if (len_after > len_before && buf && cons_buf[len_after - 1] == '\n') {
 					r_cons_drop (cons, 1);
 				}
@@ -4641,7 +4641,7 @@ static void ds_align_comment(RDisasmState *ds) {
 	}
 	RCons *cons = ds->core->cons;
 	const int cmtcol = ds->cmtcol - 1;
-	const char *ll = r_kons_get_buffer (cons, NULL);
+	const char *ll = r_cons_get_buffer (cons, NULL);
 	if (!ll) {
 		return;
 	}
@@ -5182,7 +5182,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	}
 	if (!ds->show_cmt_right && ds->cmtcount > 0) {
 		size_t len;
-		const char *p = r_kons_get_buffer (core->cons, &len);
+		const char *p = r_cons_get_buffer (core->cons, &len);
 		if (p && len > 0) {
 			if (p[len - 1] != '\n') {
 				ds_newline (ds);
@@ -5707,7 +5707,7 @@ static void delete_last_comment(RDisasmState *ds) {
 	if (!ds->show_cmt_right_default) {
 		return;
 	}
-	const char *ll = r_cons_get_buffer ();
+	const char *ll = r_cons_get_buffer (ds->core->cons, NULL);
 	if (ll) {
 		ll += ds->buf_line_begin;
 		const char *begin = ll;

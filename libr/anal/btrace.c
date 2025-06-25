@@ -1,6 +1,7 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2025 - pancake, nibble */
 
 #include <r_anal.h>
+#include <r_core.h>
 
 typedef struct {
 	HtUP *ht;
@@ -21,6 +22,7 @@ typedef struct {
 	RAnal *a;
 	ut64 arg;
 	int opt;
+	RCons *cons;
 } Args;
 
 static bool cblist(void *user, const ut64 offset, const void *val) {
@@ -29,20 +31,23 @@ static bool cblist(void *user, const ut64 offset, const void *val) {
 	ut64 *addr;
 	if (args->opt == 'x') {
 		R_VEC_FOREACH (bt, addr) {
-			r_cons_printf ("ax 0x%08"PFMT64x" 0x%08"PFMT64x"\n", offset, *addr);
+			r_kons_printf (args->cons, "ax 0x%08"PFMT64x" 0x%08"PFMT64x"\n", offset, *addr);
 		}
 	} else {
-		r_cons_printf ("-> 0x%08"PFMT64x"\n", offset);
+		r_kons_printf (args->cons, "-> 0x%08"PFMT64x"\n", offset);
 		R_VEC_FOREACH (bt, addr) {
-			r_cons_printf (" `-> 0x%08"PFMT64x"\n", *addr);
+			r_kons_printf (args->cons, " `-> 0x%08"PFMT64x"\n", *addr);
 		}
 	}
 	return true;
 }
 
+// TODO: return a string instead of depending on rcons
 R_API void r_anal_backtrace_list(RAnal *a, ut64 addr, int opt) {
 	RAnalBacktracesPrivate *b = a->btstore.priv;
-	Args args = { a, addr, opt };
+	RCore *core = a->coreb.core;
+	RCons *cons = core->cons;
+	Args args = { a, addr, opt, cons };
 	ht_up_foreach (b->ht, cblist, &args);
 }
 

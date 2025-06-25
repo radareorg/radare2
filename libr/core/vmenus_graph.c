@@ -235,7 +235,7 @@ R_API int __core_visual_view_graph_update(RCore *core, RCoreVisualViewGraph *sta
 	const int colw = w / 4;
 	const int colh = h / 2;
 	const int colx = w / 3;
-	r_kons_clear00 (core->cons);
+	r_cons_clear00 (core->cons);
 
 	char *xrefsColstr = r_str_widget_list (core, status->xrefsCol, colh, 0, print_item);
 	char *mainColstr = r_str_widget_list (core, status->mainCol, colh, status->cur, print_item);
@@ -385,7 +385,7 @@ R_API int r_core_visual_view_graph(RCore *core) {
 			__sync_status_with_cursor (&status);
 			break;
 		case '?':
-			r_kons_clear00 (core->cons);
+			r_cons_clear00 (core->cons);
 			r_kons_printf (core->cons,
 			"vbg: Visual Browser (Code) Graph:\n\n"
 			" jkJK  - scroll up/down\n"
@@ -411,7 +411,7 @@ R_API int r_core_visual_view_graph(RCore *core) {
 				// r_core_cmd_task_sync (core, cmd, 1);
 				r_cons_set_raw (core->cons, 1);
 				r_cons_show_cursor (core->cons, false);
-				r_kons_clear (core->cons);
+				r_cons_clear (core->cons);
 			}
 			break;
 		case 'q':
@@ -433,7 +433,7 @@ R_API int r_core_visual_view_graph(RCore *core) {
 			if (cmd[0]) {
 				r_cons_any_key (core->cons, NULL);
 			}
-			r_kons_clear (core->cons);
+			r_cons_clear (core->cons);
 			}
 			break;
 		case '!': {

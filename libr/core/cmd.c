@@ -3368,7 +3368,7 @@ static int cmd_last(void *user, const char *input) {
 	};
 	switch (*input) {
 	case 0:
-		r_kons_last (core->cons);
+		r_cons_last (core->cons);
 		break;
 	default:
 		r_core_cmd_help (core, help_msg_last);
@@ -4609,7 +4609,7 @@ escape_pipe:
 		bool use_editor = false;
 		int ocolor = r_config_get_i (core->config, "scr.color");
 		*ptr = '\0';
-		r_cons_set_interactive (false); // XXX
+		r_cons_set_interactive (core->cons, false);
 repeat:;
 		str = ptr + 1 + (ptr[1] == '>');
 		r_str_trim (str);
@@ -4729,7 +4729,7 @@ repeat:;
 		core->cons->context->use_tts = false;
 		r_list_free (tmpenvs);
 		r_cons_pipe_close_all (core->cons);
-		r_kons_set_last_interactive (core->cons);
+		r_cons_set_last_interactive (core->cons);
 		return ret;
 	}
 escape_redir:
@@ -6305,7 +6305,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					r_core_seek (core, flag->addr, true);
 					r_cons_push (core->cons);
 					r_core_cmd (core, cmd, 0);
-					tmp = r_cons_get_buffer ();
+					tmp = r_cons_get_buffer (core->cons, NULL);
 					buf = tmp? strdup (tmp): NULL;
 					r_cons_pop (core->cons);
 					if (buf) {
@@ -6766,7 +6766,7 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 		core->cons->context->noflush = false;
 	}
 	r_cons_filter (core->cons);
-	const char *static_str = r_kons_get_buffer (core->cons, NULL);
+	const char *static_str = r_cons_get_buffer (core->cons, NULL);
 	char *retstr = strdup (r_str_get (static_str));
 	r_cons_pop (core->cons);
 	r_cons_echo (core->cons, NULL);
@@ -6795,7 +6795,7 @@ R_API RBuffer *r_core_cmd_tobuf(RCore *core, const char *cmd) {
 
 	r_cons_filter (core->cons);
 	size_t bsz;
-	const char *buf = r_kons_get_buffer (core->cons, &bsz);
+	const char *buf = r_cons_get_buffer (core->cons, &bsz);
 	RBuffer *out = r_buf_new_with_bytes ((const ut8*)buf, bsz);
 	r_cons_pop (core->cons);
 	r_cons_echo (core->cons, NULL);

@@ -1418,7 +1418,7 @@ static int cmd_help(void *data, const char *input) {
 			  if (input[2] == 'd') {
 				  int i,j;
 				  r_cons_show_cursor (core->cons, 0);
-				  r_kons_clear00 (core->cons);
+				  r_cons_clear00 (core->cons);
 				  for (i = 1; i < 100; i++) {
 					  if (r_cons_is_breaked (core->cons)) {
 						  break;
@@ -1427,18 +1427,18 @@ static int cmd_help(void *data, const char *input) {
 						  char *d = r_str_donut (i);
 						  r_cons_gotoxy (core->cons, 0, 0);
 						  r_str_trim_tail (d);
-						  r_kons_clear_line (core->cons, 0);
+						  r_cons_clear_line (core->cons, 0);
 						  r_kons_printf (core->cons, "Downloading the Gibson...\n\n");
 						  r_core_cmdf (core, "?e=%d", i);
 						  r_kons_print (core->cons, d);
-						  r_kons_clear_line (core->cons, 0);
+						  r_cons_clear_line (core->cons, 0);
 						  r_cons_newline (core->cons);
 						  free (d);
 						  r_cons_flush (core->cons);
 						  r_sys_usleep (2000);
 					  }
 				  }
-				  r_kons_clear00 (core->cons);
+				  r_cons_clear00 (core->cons);
 				  r_kons_printf (core->cons, "\nPayload installed. Thanks for your patience.\n\n");
 			} else {
 				  char *d = r_str_donut (r_num_math (core->num, input + 2));

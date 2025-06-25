@@ -42,7 +42,7 @@ static bool __typeLoad(void *p, const char *k, const char *v) {
 	RAnal *anal = loader->anal;
 	TCCState *s1 = loader->s1;
 	// TCCState *s1 = NULL; // XXX THIS WILL MAKE IT CRASH
-	//r_cons_printf ("tk %s=%s\n", k, v);
+	//r_kons_printf (cons, "tk %s=%s\n", k, v);
 	// TODO: Add unions support
 	if (!strncmp (v, "struct", 6) && strncmp (k, "struct.", 7)) {
 		// structure

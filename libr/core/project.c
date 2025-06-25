@@ -509,8 +509,8 @@ static bool store_files_and_maps(RCore *core, RIODesc *desc, ut32 id) {
 }
 #endif
 
-static void flush(RStrBuf *sb) {
-	char * s = r_cons_drain ();
+static void flush(RCore *core, RStrBuf *sb) {
+	char * s = r_cons_drain (core->cons);
 	if (s) {
 		r_strbuf_append (sb, s);
 		free (s);
@@ -541,7 +541,7 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 		char *res = r_config_list (core->config, NULL, 'r');
 		r_cons_println (core->cons, res);
 		free (res);
-		flush (sb);
+		flush (core, sb);
 	}
 	r_core_cmd (core, "o*", 0);
 	r_core_cmd (core, "om*", 0);
@@ -551,77 +551,77 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 		r_kons_printf (cons, "# functions\n");
 		r_kons_printf (cons, "fs functions\n");
 		r_core_cmd (core, "afl*", 0);
-		flush (sb);
+		flush (core, sb);
 	}
 	{
 		r_kons_printf (cons, "# registers\n");
 		r_core_cmd (core, "ar*", 0);
-		flush (sb);
+		flush (core, sb);
 		r_core_cmd (core, "arR", 0);
-		flush (sb);
+		flush (core, sb);
 	}
 	if (opts & R_CORE_PRJ_FLAGS) {
 		r_kons_printf (cons, "# flags\n");
 		r_flag_space_push (core->flags, NULL);
 		r_flag_list (core->flags, true, NULL);
 		r_flag_space_pop (core->flags);
-		flush (sb);
+		flush (core, sb);
 	}
 #if PROJECT_EXPERIMENTAL
 	if (opts & R_CORE_PRJ_IO_MAPS && core->io) {
 		fdc = 3;
 		r_id_storage_foreach (&core->io->files, (RIDStorageForeachCb)store_files_and_maps, core);
-		flush (sb);
+		flush (core, sb);
 	}
 #endif
 	{
 		r_core_cmd (core, "fz*", 0);
-		flush (sb);
+		flush (core, sb);
 	}
 	if (opts & R_CORE_PRJ_META) {
 		r_kons_printf (cons, "# meta\n");
 		r_meta_print_list_all (core->anal, R_META_TYPE_ANY, 1, NULL, NULL);
-		flush (sb);
+		flush (core, sb);
 		r_core_cmd (core, "fV*", 0);
-		flush (sb);
+		flush (core, sb);
 		r_core_cmd (core, "ano*@@@F", 0);
-		flush (sb);
+		flush (core, sb);
 	}
 	if (opts & R_CORE_PRJ_XREFS) {
 		r_core_cmd (core, "ax*", 0);
-		flush (sb);
+		flush (core, sb);
 	}
 	if (opts & R_CORE_PRJ_FLAGS) {
 		r_core_cmd (core, "f.**", 0);
-		flush (sb);
+		flush (core, sb);
 	}
 	if (opts & R_CORE_PRJ_DBG_BREAK) {
 		r_core_cmd (core, "db*", 0);
-		flush (sb);
+		flush (core, sb);
 	}
 	if (opts & R_CORE_PRJ_ANAL_HINTS) {
 		r_core_cmd (core, "ah*", 0);
-		flush (sb);
+		flush (core, sb);
 	}
 	if (opts & R_CORE_PRJ_ANAL_TYPES) {
 		r_cons_println (cons, "# types");
 		r_core_cmd (core, "t*", 0);
-		flush (sb);
+		flush (core, sb);
 	}
 	if (opts & R_CORE_PRJ_ANAL_MACROS) {
 		r_cons_println (cons, "# macros");
 		r_core_cmd (core, "(*", 0);
 		r_cons_println (cons, "# aliases");
 		r_core_cmd (core, "$*", 0);
-		flush (sb);
+		flush (core, sb);
 	}
 	r_core_cmd (core, "wc*", 0);
 	if (opts & R_CORE_PRJ_ANAL_SEEK) {
 		r_kons_printf (cons, "# seek\n" "s 0x%08" PFMT64x "\n", core->addr);
-		flush (sb);
+		flush (core, sb);
 	}
 	core->cons->context->is_interactive = true;
-	flush (sb);
+	flush (core, sb);
 	char *s = r_strbuf_drain (sb);
 	if (!strcmp (filename, "/dev/stdout")) {
 		r_kons_printf (cons, "%s\n", s);

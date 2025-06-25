@@ -44,7 +44,7 @@ static RList *__signs(RCoreVisualViewZigns *status, ut64 addr, bool update) {
 R_API int __core_visual_view_zigns_update(RCore *core, RCoreVisualViewZigns *status) {
 	RCons *cons = core->cons;
 	int h, w = r_cons_get_size (cons, &h);
-	r_kons_clear00 (cons);
+	r_cons_clear00 (cons);
 	int colh = h -2;
 	int colw = w -1;
 	RList *col0 = __signs (status, status->addr, true);
@@ -140,7 +140,7 @@ R_API int r_core_visual_view_zigns(RCore *core) {
 			}
 			break;
 		case '?':
-			r_kons_clear00 (core->cons);
+			r_cons_clear00 (core->cons);
 			r_kons_printf (core->cons,
 			"vbz: Visual Zignatures:\n\n"
 			" jkJK  - scroll up/down\n"
@@ -171,7 +171,7 @@ R_API int r_core_visual_view_zigns(RCore *core) {
 			if (cmd[0]) {
 				r_cons_any_key (core->cons, NULL);
 			}
-			r_kons_clear (core->cons);
+			r_cons_clear (core->cons);
 			}
 			break;
 		}

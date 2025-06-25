@@ -269,7 +269,7 @@ R_API char *r_cons_hud(RCons *cons, RList *list, const char *prompt) {
 	r_cons_show_cursor (cons, false);
 	r_cons_enable_mouse (cons, false);
 	r_cons_set_raw (cons, true);
-	r_kons_clear (cons);
+	r_cons_clear (cons);
 
 	// Repeat until the user exits the hud
 	for (;;) {
@@ -484,7 +484,7 @@ static char *r_cons_message_multiline(RCons *cons, const char *msg) {
 	int rows, cols = r_cons_get_size (cons, &rows);
 	const char *pad = r_str_pad (' ', (cols-longest) / 2);
 	char *newmsg = r_str_prefix_all (msg, pad);
-	r_kons_clear (cons);
+	r_cons_clear (cons);
 	r_cons_gotoxy (cons, 0, (rows / 2) - (r_list_length (lines) / 2));
 	r_cons_println (cons, newmsg);
 	r_cons_flush (cons);
@@ -503,7 +503,7 @@ R_API char *r_cons_message(RCons *cons, const char *msg) {
 	}
 	int len = strlen (msg);
 	int rows, cols = r_cons_get_size (cons, &rows);
-	r_kons_clear (cons);
+	r_cons_clear (cons);
 	r_cons_gotoxy (cons, (cols - len) / 2, rows / 2);
 	r_cons_println (cons, msg);
 	r_cons_flush (cons);

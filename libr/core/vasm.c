@@ -20,7 +20,7 @@ typedef struct {
 static int readline_callback(RCons *cons, void *_a, const char *str) {
 	RCoreVisualAsm *a = _a;
 	RCore *core = a->core;
-	r_kons_clear00 (cons);
+	r_cons_clear00 (cons);
 	r_kons_printf (cons, "Write %s-%" PFMT64d " %s... (! for %s, ^C to quit)\n\n",
 		r_config_get (a->core->config, "asm.arch"),
 		r_config_get_i (a->core->config, "asm.bits"),

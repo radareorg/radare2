@@ -90,7 +90,7 @@ static char *__io_reg_profile(RDebug *dbg) {
 	if (drp) {
 		return drp;
 	}
-	const char *buf = r_kons_get_buffer (cons, NULL);
+	const char *buf = r_cons_get_buffer (cons, NULL);
 	if (R_STR_ISNOTEMPTY (buf)) {
 		char *ret = strdup (buf);
 		r_cons_pop (cons);
@@ -107,7 +107,7 @@ static bool __reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	r_cons_push (cons);
 	char *dr8 = dbg->iob.system (dbg->iob.io, "dr8");
 	if (!dr8) {
-		const char *fb = r_cons_get_buffer ();
+		const char *fb = r_cons_get_buffer (cons, NULL);
 		if (R_STR_ISEMPTY (fb)) {
 			R_LOG_ERROR ("Failed to get dr8 from io");
 			r_cons_pop (cons);

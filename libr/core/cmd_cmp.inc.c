@@ -1677,7 +1677,7 @@ r_cons_global (core->cons);
 		} else if (input[1] == 0) {
 			r_cons_fill_line (core->cons);
 		} else if (!strchr (input, '0')) {
-			r_kons_clear00 (core->cons);
+			r_cons_clear00 (core->cons);
 		}
 		break;
 	case 'm': // "cmp"

@@ -16201,7 +16201,7 @@ static int cmd_anal(void *data, const char *input) {
 		r_core_block_size (core, tbs);
 	}
 	if (r_cons_is_breaked (core->cons)) {
-		r_kons_clear_line (core->cons, 1);
+		r_cons_clear_line (core->cons, 1);
 	}
 	return 0;
 }
