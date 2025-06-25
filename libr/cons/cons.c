@@ -693,10 +693,6 @@ R_API void r_cons_print(const char *str) {
 	r_kons_print (I, str);
 }
 
-R_DEPRECATE R_API void r_cons_newline(void) {
-	r_cons_newline (I);
-}
-
 R_API int r_cons_get_cursor(int *rows) {
 	return r_kons_get_cursor (I, rows);
 }
