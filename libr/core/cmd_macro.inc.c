@@ -59,7 +59,9 @@ static int cmd_macro(void *data, const char *_input) {
 	if (input[0] == 'j' || input[0] == '*') {
 		const char ch = input[1];
 		if (!ch || ch == ')') {
-			r_cmd_macro_list (&core->rcmd->macro, *input);
+			char *s = r_cmd_macro_list (&core->rcmd->macro, *input);
+			r_kons_println (core->cons, s);
+			free (s);
 			free (input);
 			return R_CMD_RC_SUCCESS;
 		}
@@ -73,7 +75,11 @@ static int cmd_macro(void *data, const char *_input) {
 		r_cmd_macro_rm (&core->rcmd->macro, input + 1);
 		break;
 	case '\0':
-		r_cmd_macro_list (&core->rcmd->macro, *input);
+		{
+			char *s = r_cmd_macro_list (&core->rcmd->macro, *input);
+			r_kons_print (core->cons, s);
+			free (s);
+		}
 		break;
 	case '(':
 	case '?':
