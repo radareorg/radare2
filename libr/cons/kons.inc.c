@@ -307,7 +307,7 @@ R_API void r_kons_free(RCons * R_NULLABLE cons) {
 		return;
 	}
 #if R2__WINDOWS__
-	r_kons_enable_mouse (cons, false);
+	r_cons_enable_mouse (cons, false);
 	if (cons->old_cp) {
 		(void)SetConsoleOutputCP (cons->old_cp);
 		// chcp doesn't pick up the code page switch for some reason
@@ -602,7 +602,7 @@ R_IPI int r_kons_is_vtcompat(RCons *cons) {
 }
 #endif
 
-R_API void r_kons_show_cursor(RCons *I, int cursor) {
+R_API void r_cons_show_cursor(RCons *I, int cursor) {
 	RConsContext *C = I->context;
 #if R2__WINDOWS__
 	if (I->vtmode) {

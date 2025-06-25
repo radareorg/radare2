@@ -442,10 +442,10 @@ static const char *rotateAsmemu(RCore *core) {
 R_API void r_core_visual_showcursor(RCore *core, int x) {
 	RCons *cons = core->cons;
 	if (core->vmode) {
-		r_kons_show_cursor (cons, x);
-		r_kons_enable_mouse (cons, r_config_get_i (core->config, "scr.wheel"));
+		r_cons_show_cursor (cons, x);
+		r_cons_enable_mouse (cons, r_config_get_i (core->config, "scr.wheel"));
 	} else {
-		r_kons_enable_mouse (cons, false);
+		r_cons_enable_mouse (cons, false);
 	}
 	r_cons_flush (cons);
 }
@@ -737,7 +737,7 @@ static void reset_print_cur(RPrint *p) {
 
 static bool __holdMouseState(RCore *core) {
 	bool m = core->cons->mouse;
-	r_kons_enable_mouse (core->cons, false);
+	r_cons_enable_mouse (core->cons, false);
 	return m;
 }
 
@@ -788,7 +788,7 @@ R_API void r_core_visual_prompt_input(RCore *core) {
 	bool mouse_state = __holdMouseState(core);
 	r_cons_gotoxy (core->cons, 0, h);
 	r_cons_reset_colors (core->cons);
-	r_kons_show_cursor (core->cons, true);
+	r_cons_show_cursor (core->cons, true);
 	core->vmode = false;
 	const int ovtmode = r_config_get_i (core->config, "scr.vtmode");
 	r_config_set_i (core->config, "scr.vtmode", 1);
@@ -807,10 +807,10 @@ R_API void r_core_visual_prompt_input(RCore *core) {
 		r_core_block_size (core, curbs);
 	}
 
-	r_kons_show_cursor (core->cons, false);
+	r_cons_show_cursor (core->cons, false);
 	core->vmode = true;
-	r_kons_enable_mouse (core->cons, mouse_state && r_config_get_i (core->config, "scr.wheel"));
-	r_kons_show_cursor (core->cons, true);
+	r_cons_enable_mouse (core->cons, mouse_state && r_config_get_i (core->config, "scr.wheel"));
+	r_cons_show_cursor (core->cons, true);
 	r_config_set_i (core->config, "scr.vtmode", ovtmode);
 }
 
@@ -1384,14 +1384,14 @@ static void addComment(RCore *core, ut64 addr) {
 	r_cons_flush (core->cons);
 	r_cons_set_raw (core->cons, false);
 	r_line_set_prompt (core->cons->line, "> ");
-	r_kons_enable_mouse (core->cons, false);
+	r_cons_enable_mouse (core->cons, false);
 	char buf[1024];
 	if (r_cons_fgets (core->cons, buf, sizeof (buf), 0, NULL) < 0) {
 		buf[0] = '\0';
 	}
 	r_core_cmdf (core, "'@0x%08"PFMT64x"'CC %s", addr, buf);
 	r_cons_set_raw (core->cons, true);
-	r_kons_enable_mouse (core->cons, r_config_get_b (core->config, "scr.wheel"));
+	r_cons_enable_mouse (core->cons, r_config_get_b (core->config, "scr.wheel"));
 	r_core_visual_showcursor (core, false);
 }
 
@@ -1650,7 +1650,7 @@ repeat:
 		r_config_set_i (core->config, "asm.bytes", asm_bytes);
 	}
 	r_cons_flush (cons);
-	r_kons_enable_mouse (cons, r_config_get_i (core->config, "scr.wheel"));
+	r_cons_enable_mouse (cons, r_config_get_i (core->config, "scr.wheel"));
 	r_cons_set_raw (cons, true);
 	ch = r_cons_readchar (cons);
 	ch = r_cons_arrow_to_hjkl (cons, ch);
@@ -2040,7 +2040,7 @@ static void visual_comma(RCore *core) {
 	}
 beach:
 	free (comment);
-	r_kons_enable_mouse (core->cons, mouse_state && r_config_get_i (core->config, "scr.wheel"));
+	r_cons_enable_mouse (core->cons, mouse_state && r_config_get_i (core->config, "scr.wheel"));
 }
 
 static bool isDisasmPrint(int mode) {
@@ -2969,7 +2969,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				RAnalOp *op;
 				int wheel = r_config_get_i (core->config, "scr.wheel");
 				if (wheel) {
-					r_kons_enable_mouse (core->cons, true);
+					r_cons_enable_mouse (core->cons, true);
 				}
 				do {
 					op = r_core_anal_op (core, core->addr + core->print->cur, R_ARCH_OP_MASK_BASIC);
@@ -3071,14 +3071,14 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_cons_set_raw (core->cons, false);
 			strcpy (buf, "\"wa ");
 			r_line_set_prompt (core->cons->line, "> ");
-			r_kons_enable_mouse (core->cons, false);
+			r_cons_enable_mouse (core->cons, false);
 			if (r_cons_fgets (core->cons, buf + 4, sizeof (buf) - 4, 0, NULL) < 0) {
 				buf[0] = '\0';
 			}
 			strcat (buf, "\"");
 			int wheel = r_config_get_i (core->config, "scr.wheel");
 			if (wheel) {
-				r_kons_enable_mouse (core->cons, true);
+				r_cons_enable_mouse (core->cons, true);
 			}
 			if (*buf) {
 				ut64 off = core->addr;
@@ -3150,13 +3150,13 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				const int occ = core->print->cur;
 				ut64 off = oce? core->addr + core->print->cur: core->addr;
 				core->print->cur_enabled = 0;
-				r_kons_enable_mouse (core->cons, false);
+				r_cons_enable_mouse (core->cons, false);
 				r_core_visual_asm (core, off);
 				core->print->cur_enabled = oce;
 				core->print->cur = occ;
 				core->print->ocur = oco;
 				if (r_config_get_b (core->config, "scr.wheel")) {
-					r_kons_enable_mouse (core->cons, true);
+					r_cons_enable_mouse (core->cons, true);
 				}
 			}
 			break;
@@ -3197,7 +3197,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			int distance = numbuf_pull (core);
 			r_core_visual_define (core, arg + 1, distance - 1);
 			r_core_visual_showcursor (core, false);
-			r_kons_enable_mouse (core->cons, mouse_state && r_config_get_i (core->config, "scr.wheel"));
+			r_cons_enable_mouse (core->cons, mouse_state && r_config_get_i (core->config, "scr.wheel"));
 		}
 			break;
 		case 'D':
@@ -3243,7 +3243,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					}
 				}
 			}
-			r_kons_enable_mouse (core->cons, mouse_state && r_config_get_i (core->config, "scr.wheel"));
+			r_cons_enable_mouse (core->cons, mouse_state && r_config_get_i (core->config, "scr.wheel"));
 		}
 			r_core_visual_showcursor (core, false);
 			break;
@@ -3930,7 +3930,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					r_core_block_size (core, core->blocksize - cols);
 				}
 			}
-			r_kons_enable_mouse (core->cons, mouse_state && r_config_get_i (core->config, "scr.wheel"));
+			r_cons_enable_mouse (core->cons, mouse_state && r_config_get_i (core->config, "scr.wheel"));
 		}	break;
 		case '(':
 			core->visual.snowMode = !core->visual.snowMode;
@@ -4524,7 +4524,7 @@ static void show_cursor(RCore *core) {
 	if (keyCursor) {
 		RCons *cons = core->cons;
 		r_cons_gotoxy (cons, cons->cpos.x, cons->cpos.y);
-		r_kons_show_cursor (cons, 1);
+		r_cons_show_cursor (cons, 1);
 		r_cons_flush (cons);
 	}
 }
@@ -4866,7 +4866,7 @@ dodo:
 		r_core_visual_tab_update (core);
 		// update the cursor when it's not visible anymore
 		skip = fix_cursor (core);
-		r_kons_show_cursor (core->cons, false);
+		r_cons_show_cursor (core->cons, false);
 		r_cons_set_raw (core->cons, true);
 		const int ref = r_config_get_i (core->config, "dbg.slow");
 #if 1
@@ -4907,8 +4907,8 @@ dodo:
 			printfmtSingle[2] = core->visual.debugstr;
 		}
 #endif
-		r_kons_show_cursor (core->cons, false);
-		r_kons_enable_mouse (core->cons, r_config_get_b (core->config, "scr.wheel"));
+		r_cons_show_cursor (core->cons, false);
+		r_cons_enable_mouse (core->cons, r_config_get_b (core->config, "scr.wheel"));
 		core->cons->event_resize = NULL; // avoid running old event with new data
 		core->cons->event_data = core;
 		core->cons->event_resize = (RConsEvent) visual_refresh_oneshot;
@@ -5043,7 +5043,7 @@ dodo:
 		}
 	} while (skip || (*arg && r_core_visual_cmd (core, arg)));
 
-	r_kons_enable_mouse (core->cons, false);
+	r_cons_enable_mouse (core->cons, false);
 	if (core->visual.color) {
 		r_kons_print (core->cons, Color_RESET);
 	}
@@ -5058,7 +5058,7 @@ dodo:
 	core->vmode = false;
 	core->cons->event_resize = NULL;
 	core->cons->event_data = NULL;
-	r_kons_show_cursor (core->cons, true);
+	r_cons_show_cursor (core->cons, true);
 	r_config_set_i (core->config, "scr.vtmode", ovtmode);
 	return 0;
 }

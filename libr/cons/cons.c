@@ -433,7 +433,7 @@ R_API void r_cons_enable_highlight(RCons *cons, const bool enable) {
 	cons->enable_highlight = enable;
 }
 
-R_API bool r_kons_enable_mouse(RCons *cons, const bool enable) {
+R_API bool r_cons_enable_mouse(RCons *cons, const bool enable) {
 	bool enabled = cons->mouse;
 #if R2__WINDOWS__
 	HANDLE h = GetStdHandle (STD_INPUT_HANDLE);

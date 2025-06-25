@@ -1718,7 +1718,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 		__print_prompt (cons);
 	}
 	r_cons_break_push (cons, NULL, NULL);
-	r_kons_enable_mouse (cons, cons->line->hud);
+	r_cons_enable_mouse (cons, cons->line->hud);
 	for (;;) {
 		D.yank_flag = false;
 		if (r_cons_is_breaked (cons)) {
@@ -2400,7 +2400,7 @@ repeat:
 _end:
 	r_cons_break_pop (cons);
 	r_cons_set_raw (cons, false);
-	r_kons_enable_mouse (cons, mouse_status);
+	r_cons_enable_mouse (cons, mouse_status);
 #if 0
 	if (line->buffer.length > 1024) {	// R2_590 - use line->maxlength
 		line->buffer.data[0] = 0;

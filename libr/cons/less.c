@@ -56,7 +56,7 @@ R_API int r_cons_less_str(RCons * R_NONNULL cons, const char * R_NONNULL str, co
 		mla[i] = r_list_new ();
 	}
 	r_cons_set_raw (cons, true);
-	r_kons_show_cursor (cons, false);
+	r_cons_show_cursor (cons, false);
 	r_cons_reset (cons);
 	h = 0;
 	while (ui) {
@@ -164,7 +164,7 @@ R_API int r_cons_less_str(RCons * R_NONNULL cons, const char * R_NONNULL str, co
 	free (p);
 	r_cons_reset_colors (cons);
 	r_cons_set_raw (cons, false);
-	r_kons_show_cursor (cons, true);
+	r_cons_show_cursor (cons, true);
 	free (ostr);
 	return 0;
 }

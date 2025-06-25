@@ -255,12 +255,12 @@ static void showcursor(RCore *core, int x) {
 	if (!x) {
 		bool wheel = r_config_get_b (core->config, "scr.wheel");
 		if (wheel) {
-			r_kons_enable_mouse (cons, true);
+			r_cons_enable_mouse (cons, true);
 		}
 	} else {
-		r_kons_enable_mouse (cons, false);
+		r_cons_enable_mouse (cons, false);
 	}
-	r_kons_show_cursor (cons, x);
+	r_cons_show_cursor (cons, x);
 }
 
 static char *get_title(ut64 addr) {
@@ -3416,8 +3416,8 @@ static void agraph_follow_innodes(RCore *core, RAGraph *g, bool in) {
 			nth =  ch - '0';
 		}
 	} else {
-		r_kons_show_cursor (core->cons, true);
-		r_kons_enable_mouse (core->cons, false);
+		r_cons_show_cursor (core->cons, true);
+		r_cons_enable_mouse (core->cons, false);
 		char *nth_string = r_cons_input (core->cons, "index> ");
 		nth = atoi (nth_string);
 		if (nth == 0 && *nth_string != '0') {

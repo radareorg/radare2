@@ -8617,8 +8617,8 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 			agraph->layout = r_config_get_i (core->config, "graph.layout");
 			agraph->need_set_layout = true;
 			int update_seek = r_core_visual_graph (core, agraph, NULL, true);
-			r_kons_show_cursor (core->cons, true);
-			r_kons_enable_mouse (core->cons, false);
+			r_cons_show_cursor (core->cons, true);
+			r_cons_enable_mouse (core->cons, false);
 			if (update_seek != -1) {
 				r_core_seek (core, oseek, false);
 			}
@@ -12366,9 +12366,9 @@ R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 			core->graph->need_update_dim = true;
 			int update_seek = r_core_visual_graph (core, core->graph, NULL, true);
 			r_config_set_b (core->config, "scr.interactive", ov);
-			r_kons_show_cursor (core->cons, true);
+			r_cons_show_cursor (core->cons, true);
 			core->graph->is_handmade = false;
-			r_kons_enable_mouse (core->cons, false);
+			r_cons_enable_mouse (core->cons, false);
 			if (update_seek != -1) {
 				r_core_seek (core, oseek, false);
 			}
@@ -12540,8 +12540,8 @@ static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, 
 				agraph->need_update_dim = true;
 				int update_seek = r_core_visual_graph (core, agraph, NULL, true);
 				r_config_set_b (core->config, "scr.interactive", ov);
-				r_kons_show_cursor (core->cons, true);
-				r_kons_enable_mouse (core->cons, false);
+				r_cons_show_cursor (core->cons, true);
+				r_cons_enable_mouse (core->cons, false);
 				if (update_seek != -1) {
 					r_core_seek (core, oseek, false);
 				}
@@ -12846,8 +12846,8 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			} else {
 				R_LOG_ERROR ("No function to graph");
 			}
-			r_kons_enable_mouse (core->cons, false);
-			r_kons_show_cursor (core->cons, true);
+			r_cons_enable_mouse (core->cons, false);
+			r_cons_show_cursor (core->cons, true);
 		}
 			break;
 		case 't': { // "agft" - tiny graph

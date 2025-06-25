@@ -7,8 +7,8 @@
 R_API int r_cons_controlz(RCons *cons, int ch) {
 #if R2__UNIX__
 	if (ch == 0x1a) {
-		r_kons_show_cursor (cons, true);
-		r_kons_enable_mouse (cons, false);
+		r_cons_show_cursor (cons, true);
+		r_cons_enable_mouse (cons, false);
 		r_sys_stop ();
 		return 0;
 	}
@@ -362,7 +362,7 @@ R_API int r_cons_fgets(RCons *cons, char *buf, int len, int argc, const char **a
 	int ret = 0, color = cons->context->pal.input && *cons->context->pal.input;
 	if (cons->echo) {
 		r_cons_set_raw (cons, false);
-		r_kons_show_cursor (cons, true);
+		r_cons_show_cursor (cons, true);
 	}
 	errno = 0;
 	if (cons->user_fgets) {
@@ -461,7 +461,7 @@ static int readchar_w32(RCons *cons, ut32 usec) {
 				continue;
 			}
 			if (mouse_enabled) {
-				r_kons_enable_mouse (cons, true);
+				r_cons_enable_mouse (cons, true);
 			}
 			if (irInBuf.EventType == MOUSE_EVENT) {
 				if (irInBuf.Event.MouseEvent.dwEventFlags == MOUSE_MOVED) {
@@ -545,7 +545,7 @@ static int readchar_w32(RCons *cons, ut32 usec) {
 							ch = R_CONS_KEY_F12;
 						case VK_SHIFT:
 							if (mouse_enabled) {
-								r_kons_enable_mouse (cons, false);
+								r_cons_enable_mouse (cons, false);
 							}
 							break;
 						default:
