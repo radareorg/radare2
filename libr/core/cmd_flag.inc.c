@@ -439,9 +439,9 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 static void __flag_graph(RCore *core, const char *input, int mode) {
 	RList *flags = r_list_newf (NULL);
 	r_flag_foreach_space (core->flags, r_flag_space_cur (core->flags), listFlag, flags);
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	__printRecursive (core, flags, input, mode);
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	r_list_free (flags);
 }
 

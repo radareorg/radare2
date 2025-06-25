@@ -284,7 +284,7 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 		maxlen = minlen;
 	}
 
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	for (j = minlen; j <= maxlen; j++) {
 		ut32 len = j;
 		R_LOG_INFO ("Searching %s for %d byte length", hashname, j);
@@ -339,7 +339,7 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 			free (buf);
 		}
 	}
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	R_LOG_WARN ("No hashes found");
 	return 0;
 hell:
@@ -357,7 +357,7 @@ static void cmd_search_bin(RCore *core, RInterval itv) {
 	int fd = core->io->desc->fd;
 	RBuffer *b = r_buf_new_with_io (&core->anal->iob, fd);
 
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	while (from < to) {
 		if (r_cons_is_breaked (core->cons)) {
 			break;
@@ -392,7 +392,7 @@ next:;
 		from++;
 	}
 	r_buf_free (b);
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 }
 
 typedef struct {
@@ -1633,7 +1633,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 	if (param->outmode == R_MODE_JSON) {
 		pj_a (param->pj);
 	}
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 
 	r_list_foreach (param->boundaries, itermap, map) {
 		HtUU *badstart = ht_uu_new0 ();
@@ -1816,7 +1816,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 	if (r_cons_is_breaked (core->cons)) {
 		eprintf ("\n");
 	}
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 
 	if (param->outmode == R_MODE_JSON) {
 		pj_end (param->pj);
@@ -1899,7 +1899,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 		r_esil_stack_free (esil);
 		esil->verbose = 0;
 
-		r_kons_break_push (core->cons, NULL, NULL);
+		r_cons_break_push (core->cons, NULL, NULL);
 		for (addr = from; addr < to; addr++) {
 			if (core->search->align) {
 				if ((addr % core->search->align)) {
@@ -1972,7 +1972,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 			}
 		}
 		r_config_set_i (core->config, "search.kwidx", search->n_kws); // TODO remove
-		r_kons_break_pop (core->cons);
+		r_cons_break_pop (core->cons);
 	}
 	r_kons_clear_line (core->cons, 1);
 	if (param->outmode == R_MODE_JSON) {
@@ -2101,7 +2101,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 #if !USE_EMULATION
 	int syscallNumber = 0;
 #endif
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	// XXX: the syscall register depends on arcm
 	const char *screg = get_syscall_register (core);
 	char *esp = r_str_newf ("%s,=", screg);
@@ -2265,7 +2265,7 @@ beach:
 	}
 	r_core_seek (core, oldoff, true);
 	r_esil_free (esil);
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	free (buf);
 	free (esp32);
 	free (esp);
@@ -2502,7 +2502,7 @@ static void do_unkjmp_search(RCore *core, struct search_parameters *param, bool 
 		if (!(map->perm & R_PERM_X)) {
 			continue;
 		}
-		r_kons_break_push (core->cons, NULL, NULL);
+		r_cons_break_push (core->cons, NULL, NULL);
 		for (i = 0, at = from; at < to; i++, at++) {
 			if (r_cons_is_breaked (core->cons)) {
 				break;
@@ -2547,7 +2547,7 @@ static void do_unkjmp_search(RCore *core, struct search_parameters *param, bool 
 			}
 			r_anal_op_fini (&aop);
 		}
-		r_kons_break_pop (core->cons);
+		r_cons_break_pop (core->cons);
 	}
 }
 
@@ -2559,7 +2559,7 @@ static char *print_analstr(RCore *core, ut64 addr, int maxlen) {
 	RAnalOp aop;
 	int hasch = 0;
 	int i, ret;
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	RStrBuf *sb = r_strbuf_new ("");
 	ut64 lastch = UT64_MAX;
 	int minstr = r_config_get_i (core->config, "bin.str.min");
@@ -2687,7 +2687,7 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 	int hasch = 0;
 	int i, ret;
 	input = r_str_trim_head_ro (input);
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	RIOMap* map;
 	RListIter *iter;
 	char *word = strdup (input);
@@ -2834,7 +2834,7 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 	}
 	r_list_free (words);
 	free (word);
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	if (json) {
 		r_strbuf_free (rb);
 		pj_end (pj);
@@ -2935,7 +2935,7 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 		pj_ks (param->pj, "arg", input);
 		pj_ka (param->pj, "result");
 	}
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	RIOMap* map;
 	RListIter *iter;
 	char *word = strdup (input);
@@ -3087,7 +3087,7 @@ done:
 		pj_end (param->pj);
 		pj_end (param->pj);
 	}
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	return false;
 }
 
@@ -3115,7 +3115,7 @@ static void do_section_search(RCore *core, struct search_parameters *param, cons
 	ut64 at, end = 0;
 	int index = 0;
 	bool lastBlock = true;
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	r_list_foreach (param->boundaries, iter, map) {
 		ut64 from = r_io_map_begin (map);
 		ut64 to = r_io_map_end (map);
@@ -3155,7 +3155,7 @@ static void do_section_search(RCore *core, struct search_parameters *param, cons
 		}
 		index++;
 	}
-	r_kons_break_pop(core->cons);
+	r_cons_break_pop(core->cons);
 	free (buf);
 }
 
@@ -3195,7 +3195,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 	if (param->outmode == R_MODE_JSON) {
 		pj_a (param->pj);
 	}
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	if (everyByte) {
 		input ++;
 	}
@@ -3225,7 +3225,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 	if (param->outmode == R_MODE_JSON) {
 		pj_end (param->pj);
 	}
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	// increment search index
 	r_config_set_i (core->config, "search.kwidx", ++core->search->n_kws);
 }
@@ -3262,7 +3262,7 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 		if (search->bckwrds) {
 			r_search_string_prepare_backward (search);
 		}
-		r_kons_break_push (core->cons, NULL, NULL);
+		r_cons_break_push (core->cons, NULL, NULL);
 		// TODO search cross boundary
 		r_list_foreach (param->boundaries, iter, map) {
 			if (!r_itv_overlap (search_itv, map->itv)) {
@@ -3339,7 +3339,7 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 			}
 		}
 	done:
-		r_kons_break_pop (core->cons);
+		r_cons_break_pop (core->cons);
 		free (buf);
 	} else {
 		R_LOG_ERROR ("No keywords defined");
@@ -3490,11 +3490,11 @@ static void search_similar_pattern(RCore *core, int count, struct search_paramet
 	RIOMap *p;
 	RListIter *iter;
 
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	r_list_foreach (param->boundaries, iter, p) {
 		search_similar_pattern_in (core, count, p->itv.addr, r_itv_end (p->itv));
 	}
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 }
 
 static bool isArm(RCore *core) {
@@ -3699,7 +3699,7 @@ static void search_collisions(RCore *core, const char *hashName, const ut8 *hash
 		free (buf);
 		return;
 	}
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	ut64 prev = r_time_now_mono ();
 	ut64 inc = 0;
 	int amount = 0;
@@ -3759,7 +3759,7 @@ static void search_collisions(RCore *core, const char *hashName, const ut8 *hash
 		}
 		inc++;
 	}
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	free (buf);
 	r_hash_free (ctx);
 }
@@ -3771,7 +3771,7 @@ static void __core_cmd_search_asm_infinite(RCore *core, const char *arg) {
 	RIOMap *map;
 	RAnalOp analop;
 	ut64 at;
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	r_list_foreach (boundaries, iter, map) {
 		if (r_cons_is_breaked (core->cons)) {
 			break;
@@ -3794,7 +3794,7 @@ static void __core_cmd_search_asm_infinite(RCore *core, const char *arg) {
 		}
 		free (buf);
 	}
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 }
 
 static void cmd_search_xn(RCore *core, const char *input) {
@@ -3934,7 +3934,7 @@ static void __core_cmd_search_backward_prelude(RCore *core, bool doseek, bool fo
 			addr -= bs;
 			addr += 4;
 		}
-		r_kons_break_push (core->cons, NULL, NULL);
+		r_cons_break_push (core->cons, NULL, NULL);
 		while (addr > bs) {
 			if (r_cons_is_breaked (core->cons)) {
 				break;
@@ -3977,7 +3977,7 @@ static void __core_cmd_search_backward_prelude(RCore *core, bool doseek, bool fo
 				break;
 			}
 		}
-		r_kons_break_pop (core->cons);
+		r_cons_break_pop (core->cons);
 		r_search_kw_reset (core->search);
 		r_list_free (preds);
 	}
@@ -3994,7 +3994,7 @@ static void cmd_slash_ab(RCore *core, int delta, bool infunc) {
 	RIOMap *map;
 	RAnalOp analop;
 	ut64 at;
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	int minopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
 	int maxopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
 	if (minopsz < 1 || maxopsz < 1) {
@@ -4047,7 +4047,7 @@ static void cmd_slash_ab(RCore *core, int delta, bool infunc) {
 		}
 		free (buf);
 	}
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	r_list_free (boundaries);
 }
 
@@ -4967,7 +4967,7 @@ reread:
 			const int align = core->search->align;
 			r_list_foreach (param.boundaries, iter, map) {
 				// eprintf ("-- %llx %llx\n", r_io_map_begin (map), r_io_map_end (map));
-				r_kons_break_push (core->cons, NULL, NULL);
+				r_cons_break_push (core->cons, NULL, NULL);
 				for (addr = r_io_map_begin (map); addr < r_io_map_end (map); addr++) {
 					if (r_cons_is_breaked (core->cons)) {
 						break;
@@ -4984,7 +4984,7 @@ reread:
 					free (mp);
 				}
 				r_kons_clear_line (core->cons, 1);
-				r_kons_break_pop (core->cons);
+				r_cons_break_pop (core->cons);
 			}
 			eprintf ("\n");
 		} else if (input[1] == 'e') { // "/me"
@@ -5020,7 +5020,7 @@ reread:
 				if (param.outmode != R_MODE_JSON) {
 					eprintf ("-- %"PFMT64x" %"PFMT64x"\n", r_io_map_begin (map), r_io_map_end (map));
 				}
-				r_kons_break_push (core->cons, NULL, NULL);
+				r_cons_break_push (core->cons, NULL, NULL);
 				for (addr = r_io_map_begin (map); addr < r_io_map_end (map); addr++) {
 					if (r_cons_is_breaked (core->cons)) {
 						break;
@@ -5037,7 +5037,7 @@ reread:
 					addr += ret - 1;
 				}
 				r_kons_clear_line (core->cons, 1);
-				r_kons_break_pop (core->cons);
+				r_cons_break_pop (core->cons);
 			}
 			free (mc.ofile);
 			if (param.outmode == R_MODE_JSON) {

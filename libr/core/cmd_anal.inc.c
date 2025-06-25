@@ -1504,7 +1504,7 @@ static void cmd_aft(RCore *core, const char *input) {
 		return;
 	}
 	ut64 seek;
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	switch (*input) {
 	case '\0': // "aft"
 		seek = core->addr;
@@ -1516,7 +1516,7 @@ static void cmd_aft(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_aft);
 		break;
 	}
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 }
 
 static void find_refs(RCore *core, const char *glob) {
@@ -7135,7 +7135,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 	if (esiltimeout > 0) {
 		startTime = r_time_now_mono ();
 	}
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	ut64 addr = -1;
 	ut64 oaddr = -1;
 	int minopsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
@@ -7416,7 +7416,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 	}
 tail_return:
 	r_anal_op_fini (&op);
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	return tail_return_value;
 }
 
@@ -7999,7 +7999,7 @@ static bool cmd_aea_stuff(RCore* core, int mode, ut64 addr, int length, const ch
 	esil->cb.hook_mem_write = mymemwrite;
 	esil->cb.hook_mem_read = mymemread;
 	esil->nowrite = true;
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	for (ops = ptr = 0; ptr < buf_sz && hasNext (); ops++, ptr += len) {
 		if (r_cons_is_breaked (core->cons)) {
 			break;
@@ -8039,7 +8039,7 @@ static bool cmd_aea_stuff(RCore* core, int mode, ut64 addr, int length, const ch
 		}
 		r_anal_op_fini (&aop);
 	}
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	esil->nowrite = false;
 	esil->cb.hook_reg_write = NULL;
 	esil->cb.hook_reg_read = NULL;
@@ -10029,7 +10029,7 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 	bufi = 0;
 	int trapcount = 0;
 	int nopcount = 0;
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	while (addr < addr_end) {
 		if (r_cons_is_breaked (core->cons)) {
 			break;
@@ -10067,14 +10067,14 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 		bufi += (op.size > 0)? op.size : 1;
 		r_anal_op_fini (&op);
 	}
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	free (buf);
 }
 
 static void cmd_anal_blocks(RCore *core, const char *input) {
 	ut64 from , to;
 	char *arg = strchr (input, ' ');
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	if (!arg) {
 		r_core_cmd0 (core, "abb $SS @ $S");
 		RList *list = r_core_get_boundaries_prot (core, R_PERM_X, NULL, "anal");
@@ -10109,7 +10109,7 @@ static void cmd_anal_blocks(RCore *core, const char *input) {
 		r_core_cmdf (core, "abb 0x%08"PFMT64x" @ 0x%08"PFMT64x, sz, core->addr);
 	}
 ctrl_c:
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 }
 
 static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommands, bool importsOnly) {
@@ -10143,7 +10143,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 			armthumb_switches = true;
 		}
 	}
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	bool valid = true;
 	while (addr < addr_end && !r_cons_is_breaked (core->cons)) {
 		// TODO: too many ioreads here
@@ -10237,7 +10237,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 		bufi += addrbytes * op.size;
 		r_anal_op_fini (&op);
 	}
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	free (buf);
 	free (block0);
 	free (block1);
@@ -10265,7 +10265,7 @@ static void cmd_anal_calls(RCore *core, const char *input, bool printCommands, b
 			ranges = r_core_get_boundaries_prot (core, R_PERM_X, NULL, "anal");
 		}
 	}
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	if (!binfile || (ranges && !r_list_length (ranges))) {
 		RListIter *iter;
 		RIOMap *map;
@@ -10294,7 +10294,7 @@ static void cmd_anal_calls(RCore *core, const char *input, bool printCommands, b
 			}
 		}
 	}
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	r_list_free (ranges);
 }
 
@@ -13478,7 +13478,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 		vsize = 8;
 	}
 	// R_LOG_INFO ("Analyze value pointers (aav)");
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	if (is_debug) {
 		RList *list = r_core_get_boundaries_prot (core, 0, "dbg.map", "anal");
 		RListIter *iter;
@@ -13545,7 +13545,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 		r_list_free (list);
 	}
 beach:
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	r_config_set_i (core->config, "search.align", o_align);
 	r_config_set (core->config, "anal.in", tmp);
 	free (tmp);
@@ -14099,7 +14099,7 @@ static bool cmd_aa(RCore *core, bool aaa) {
 #endif
 	r_core_task_yield (&core->tasks);
 
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 
 	logline (core, 18, "Analyze symbols (af@@@s)");
 	RVecRBinSymbol *v = r_bin_get_symbols_vec (core->bin);
@@ -14177,7 +14177,7 @@ static bool cmd_aa(RCore *core, bool aaa) {
 			}
 		}
 	}
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	return true;
 }
 
@@ -14220,7 +14220,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 	}
 	ut64 curseek = core->addr;
 	logline (core, 5, "Analyze all flags starting with sym. and entry0 (aa)");
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	r_kons_break_timeout (core->cons, r_config_get_i (core->config, "anal.timeout"));
 	bool anal_imports = false;
 	if (r_config_get_b (core->config, "anal.imports")) {
@@ -14462,7 +14462,7 @@ jacuzzi:
 	// XXX this shouldnt be called. flags muts be created wheen the function is registered
 	flag_every_function (core);
 	r_core_anal_propagate_noreturn (core, UT64_MAX);
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	R_FREE (dh_orig);
 }
 

@@ -500,9 +500,9 @@ RDebugReasonType linux_dbg_wait(RDebug *dbg, int pid) {
 		RCore *core = dbg->coreb.core;
 		const bool is_main = r_kons_context_is_main (core->cons);
 		if (is_main) {
-			r_kons_break_push (core->cons, (RConsBreak)linux_dbg_wait_break_main, dbg);
+			r_cons_break_push (core->cons, (RConsBreak)linux_dbg_wait_break_main, dbg);
 		} else {
-			r_kons_break_push (core->cons, (RConsBreak)linux_dbg_wait_break, dbg);
+			r_cons_break_push (core->cons, (RConsBreak)linux_dbg_wait_break, dbg);
 		}
 		void *bed = r_cons_sleep_begin (core->cons);
 		if (dbg->continue_all_threads) {
@@ -511,7 +511,7 @@ RDebugReasonType linux_dbg_wait(RDebug *dbg, int pid) {
 			ret = waitpid (pid, &status, flags);
 		}
 		r_cons_sleep_end (core->cons, bed);
-		r_kons_break_pop (core->cons);
+		r_cons_break_pop (core->cons);
 
 		if (ret < 0) {
 			// Continue when interrupted by user;

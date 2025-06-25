@@ -333,14 +333,14 @@ static int cmd_log(void *data, const char *input) {
 	case '=': // "T="
 		if (input[1] == '&') { //  "T=&"
 			if (input[2] == '&') { // "T=&&"
-				r_kons_break_push (core->cons, NULL, NULL);
+				r_cons_break_push (core->cons, NULL, NULL);
 				while (!r_cons_is_breaked (core->cons)) {
 					r_core_cmd_call (core, "T=");
 					void *bed = r_cons_sleep_begin (core->cons);
 					r_sys_sleep (1);
 					r_cons_sleep_end (core->cons, bed);
 				}
-				r_kons_break_pop (core->cons);
+				r_cons_break_pop (core->cons);
 			} else {
 				// TODO: Sucks that we can't enqueue functions, only commands
 				R_LOG_INFO ("Background thread syncing with http.sync started");

@@ -3050,7 +3050,7 @@ R_API void r_core_cmd_queue_wait(RCore *core) {
 		return;
 	}
 	r_kons_push (core->cons);
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	while (!r_cons_is_breaked (core->cons)) {
 		char *cmd = r_list_pop (core->cmdqueue);
 		if (cmd) {
@@ -3060,7 +3060,7 @@ R_API void r_core_cmd_queue_wait(RCore *core) {
 		}
 		r_sys_usleep (100);
 	}
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	r_kons_pop (core->cons);
 }
 
@@ -3257,7 +3257,7 @@ R_API bool r_core_serve(RCore *core, RIODesc *file) {
 	RSocket *fd = rior->fd;
 	const char *arg = r_config_get (core->config, "rap.loop");
 	R_LOG_INFO ("RAP Server started (rap.loop=%s)", arg);
-	r_kons_break_push (core->cons, rap_break, rior);
+	r_cons_break_push (core->cons, rap_break, rior);
 reaccept:
 	while (!r_cons_is_breaked (core->cons)) {
 		RSocket *c = r_socket_accept (fd);
@@ -3542,7 +3542,7 @@ reaccept:
 		r_socket_free (c);
 	}
 out_of_function:
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	return false;
 }
 
@@ -3899,7 +3899,7 @@ R_API char *r_core_cmd_str_r(RCore *core, const char *cmd) {
 	}
 	RThreadChannelMessage *message = r_th_channel_message_new (core->chan, (const ut8*)cmd, strlen (cmd) + 1);
 	RThreadChannelPromise *promise = r_th_channel_query (core->chan, message);
-	r_kons_break_push (core->cons, channel_stop, promise);
+	r_cons_break_push (core->cons, channel_stop, promise);
 	RThreadChannelMessage *response = r_th_channel_promise_wait (promise);
 	char *res = NULL;
 	if (response) {
@@ -3911,6 +3911,6 @@ R_API char *r_core_cmd_str_r(RCore *core, const char *cmd) {
 	if (response && message != response) {
 		r_th_channel_message_free (response);
 	}
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	return res;
 }

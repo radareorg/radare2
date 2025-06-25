@@ -4691,9 +4691,9 @@ onemoretime:
 			if (fcn) {
 				r_anal_function_resize (fcn, core->addr - fcn->addr);
 			}
-			r_kons_break_push (core->cons, NULL, NULL);
+			r_cons_break_push (core->cons, NULL, NULL);
 			r_core_cmdf_at (core, off, "af");
-			r_kons_break_pop (core->cons);
+			r_cons_break_pop (core->cons);
 		}
 		break;
 	case 'v':

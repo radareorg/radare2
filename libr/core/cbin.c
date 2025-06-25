@@ -367,7 +367,7 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va) {
 		r_cons_println (core->cons, "fs strings");
 	} else if (IS_MODE_SET (mode) && r_config_get_i (core->config, "bin.strings")) {
 		r_flag_space_set (core->flags, R_FLAGS_FS_STRINGS);
-		r_kons_break_push (core->cons, NULL, NULL);
+		r_cons_break_push (core->cons, NULL, NULL);
 	} else if (IS_MODE_NORMAL (mode)) {
 		r_table_set_columnsf (table, "nXXnnsss", "nth", "paddr", "vaddr", "len", "size", "section", "type", "string");
 	}
@@ -553,7 +553,7 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va) {
 	if (IS_MODE_JSON (mode)) {
 		pj_end (pj);
 	} else if (IS_MODE_SET (mode)) {
-		r_kons_break_pop (core->cons);
+		r_cons_break_pop (core->cons);
 	} else if (IS_MODE_NORMAL (mode)) {
 		bool show_table = true;
 		if (core->table_query) {
@@ -1183,7 +1183,7 @@ static bool bin_addrline(RCore *core, PJ *pj, int mode) {
 		return false;
 	}
 
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	/* cache file:line contents */
 	HtPP* file_lines = ht_pp_new (NULL, file_lines_free_kv, NULL);
 
@@ -1276,7 +1276,7 @@ static bool bin_addrline(RCore *core, PJ *pj, int mode) {
 		pj_end (pj);
 	}
 	set_p_free (set);
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	ht_pp_free (file_lines);
 	r_list_free (ownlist);
 	return true;
@@ -2543,7 +2543,7 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 	}
 
 	RBinSymbol *symbol;
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	R_VEC_FOREACH (symbols, symbol) {
 		if (r_cons_is_breaked (core->cons)) {
 			break;
@@ -2767,7 +2767,7 @@ next:
 			break;
 		}
 	}
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	if (IS_MODE_NORMAL (mode)) {
 		if (core->table_query) {
 			if (!r_table_query (table, core->table_query)) {

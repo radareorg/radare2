@@ -758,7 +758,7 @@ R_API void r_cons_flush(RCons *cons) {
 			char *nl = strchr (ptr, '\n');
 			int len = ctx->buffer_len;
 			ctx->buffer[ctx->buffer_len] = 0;
-			r_kons_break_push (cons, NULL, NULL);
+			r_cons_break_push (cons, NULL, NULL);
 			while (nl && !r_cons_is_breaked (cons)) {
 				__cons_write (cons, ptr, nl - ptr + 1);
 				if (cons->linesleep && !(i % pagesize)) {
@@ -769,7 +769,7 @@ R_API void r_cons_flush(RCons *cons) {
 				i++;
 			}
 			__cons_write (cons, ptr, ctx->buffer + len - ptr);
-			r_kons_break_pop (cons);
+			r_cons_break_pop (cons);
 		} else {
 			__cons_write (cons, ctx->buffer, ctx->buffer_len);
 		}
@@ -1537,5 +1537,18 @@ R_API void r_cons_break_end(RCons *cons) {
 		C->event_interrupt_data = NULL;
 		C->event_interrupt = NULL;
 	}
+}
+
+R_API void r_cons_break_push(RCons *cons, RConsBreak cb, void *user) {
+	RConsContext *ctx = cons->context;
+	if (ctx->break_stack && r_stack_size (ctx->break_stack) > 0) {
+		r_kons_break_timeout (cons, cons->otimeout);
+	}
+	r_cons_context_break_push (cons, ctx, cb, user, true);
+}
+
+R_API void r_cons_break_pop(RCons *cons) {
+	cons->timeout = 0;
+	r_cons_context_break_pop (cons, cons->context, true);
 }
 

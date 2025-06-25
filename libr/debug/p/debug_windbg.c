@@ -137,18 +137,18 @@ static RDebugReasonType windbg_wait(RDebug *dbg, int pid) {
 	DbgEngContext *idbg = dbg->user;
 	R_RETURN_VAL_IF_FAIL (idbg && idbg->initialized, 0);
 	ULONG Type, ProcessId, ThreadId;
-	r_kons_break_push (core->cons, break_action, dbg);
+	r_cons_break_push (core->cons, break_action, dbg);
 	const ULONG timeout = __is_target_kernel (idbg) ? INFINITE : TIMEOUT;
 	HRESULT hr;
 	while ((hr = ITHISCALL (dbgCtrl, WaitForEvent, DEBUG_WAIT_DEFAULT, timeout)) == S_FALSE) {
 		if (do_break) {
 			ITHISCALL (dbgCtrl, SetExecutionStatus, DEBUG_STATUS_BREAK);
 			do_break = false;
-			r_kons_break_pop (core->cons);
+			r_cons_break_pop (core->cons);
 			return R_DEBUG_REASON_USERSUSP;
 		}
 	}
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	if (FAILED (hr)) {
 		return R_DEBUG_REASON_DEAD;
 	}

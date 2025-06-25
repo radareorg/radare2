@@ -287,7 +287,7 @@ static int cmd_za(void *data, const char *input) {
 		} else {
 			r_jons_break_push (core->cons, NULL, NULL);
 			r_sign_resolve_collisions (core->anal);
-			r_kons_break_pop (core->cons);
+			r_cons_break_pop (core->cons);
 		}
 		break;
 	case 'F': // "zaF"
@@ -612,7 +612,7 @@ static bool searchRange(RCore *core, ut64 from, ut64 to, bool rad, struct ctxSea
 	ss->search->align = r_config_get_i (core->config, "search.align");
 	r_sign_search_init (core->anal, ss, minsz, searchBytesHitCB, ctx);
 
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	for (at = from; at < to; at += core->blocksize) {
 		if (r_cons_is_breaked (core->cons)) {
 			retval = false;
@@ -630,7 +630,7 @@ static bool searchRange(RCore *core, ut64 from, ut64 to, bool rad, struct ctxSea
 			break;
 		}
 	}
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	free (buf);
 	r_sign_search_free (ss);
 
@@ -934,14 +934,14 @@ static bool bestmatch_sig(RCore *core, const char *input, bool json) {
 	double th = get_zb_threshold (core);
 	bool found = false;
 	if (item->graph || item->bytes) {
-		r_kons_break_push (core->cons, NULL, NULL);
+		r_cons_break_push (core->cons, NULL, NULL);
 		RList *list = r_sign_find_closest_sig (core->anal, item, count, th);
 		if (list) {
 			found = true;
 			print_possible_matches (list, json, core);
 			r_list_free (list);
 		}
-		r_kons_break_pop (core->cons);
+		r_cons_break_pop (core->cons);
 	} else {
 		R_LOG_WARN ("no signatures types available for testing");
 	}
@@ -1239,9 +1239,9 @@ static int cmd_zdot(void *data, const char *input) {
 	R_LOG_INFO ("searching function metrics");
 	RAnalFunction *fcn = r_anal_get_function_at (core->anal, core->addr);
 	if (fcn) {
-		r_kons_break_push (core->cons, NULL, NULL);
+		r_cons_break_push (core->cons, NULL, NULL);
 		r_sign_fcn_match_metrics (&sm, fcn);
-		r_kons_break_pop (core->cons);
+		r_cons_break_pop (core->cons);
 	} else {
 		R_LOG_ERROR ("No function at 0x%08" PFMT64x, core->addr);
 	}

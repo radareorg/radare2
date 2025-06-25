@@ -391,7 +391,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 	int i, j, pos = 0, size = 0, max = r_type_func_args_count (TDB, fcn_name);
 	int lastarg = ST32_MAX;
 	const char *place = r_anal_cc_arg (anal, cc, lastarg, -1);
-	r_kons_break_push (cons, NULL, NULL);
+	r_cons_break_push (cons, NULL, NULL);
 
 	if (place && !strcmp (place, "stack_rev")) {
 		stack_rev = true;
@@ -556,7 +556,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 		free (type);
 	}
 	RVecString_fini (&types);
-	r_kons_break_pop (cons);
+	r_cons_break_pop (cons);
 }
 
 static int bb_cmpaddr(const void *_a, const void *_b) {
@@ -638,7 +638,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	char prev_type[256] = {0};
 	const char *prev_dest = NULL;
 	char *ret_reg = NULL;
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	RVecBuf buf;
 	RVecBuf_init (&buf);
 	RVecUT64 bblist;
@@ -1001,7 +1001,7 @@ out_function:
 	R_FREE (ret_reg);
 	R_FREE (ret_type);
 	r_anal_op_fini (&aop);
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	RVecBuf_fini (&buf);
 	RVecUT64_fini (&bblist);
 	tps_fini (tps);

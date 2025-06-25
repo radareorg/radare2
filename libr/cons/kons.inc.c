@@ -45,19 +45,6 @@ static bool lastMatters(RConsContext *C) {
 		&& !C->grep.json && !C->is_html);
 }
 
-R_API void r_kons_break_push(RCons *cons, RConsBreak cb, void *user) {
-	RConsContext *ctx = cons->context;
-	if (ctx->break_stack && r_stack_size (ctx->break_stack) > 0) {
-		r_kons_break_timeout (cons, cons->otimeout);
-	}
-	r_cons_context_break_push (cons, ctx, cb, user, true);
-}
-
-R_API void r_kons_break_pop(RCons *cons) {
-	cons->timeout = 0;
-	r_cons_context_break_pop (cons, cons->context, true);
-}
-
 R_API void r_kons_last(RCons *cons) {
 	RConsContext *ctx = cons->context;
 	if (!ctx->lastEnabled) {

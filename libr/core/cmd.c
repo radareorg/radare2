@@ -981,7 +981,7 @@ repeat:
 			return;
 		}
 		void *bed = r_cons_sleep_begin (core->cons);
-		r_kons_break_push (core->cons, NULL, NULL);
+		r_cons_break_push (core->cons, NULL, NULL);
 		for (;;) {
 			if (r_cons_is_breaked (core->cons)) {
 				break;
@@ -1004,7 +1004,7 @@ repeat:
 			r_socket_flush (s);
 			free (res);
 		}
-		r_kons_break_pop (core->cons);
+		r_cons_break_pop (core->cons);
 		r_cons_sleep_end (core->cons, bed);
 		free (buf);
 	} else {
@@ -2376,7 +2376,7 @@ bypass:
 		if (filter) {
 			*filter = '~';
 		}
-		r_kons_break_push (core->cons, NULL, NULL);
+		r_cons_break_push (core->cons, NULL, NULL);
 		if (ptr) {
 			for (;;) {
 				if (r_cons_is_breaked (core->cons)) {
@@ -2397,7 +2397,7 @@ bypass:
 				ptr = eol + 1;
 			}
 		}
-		r_kons_break_pop (core->cons);
+		r_cons_break_pop (core->cons);
 		free (str);
 		free (inp);
 		break;
@@ -4057,7 +4057,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	if (is_root_cmd) {
 		r_cons_break_clear (core->cons);
 	}
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	R_CRITICAL_ENTER (core);
 	const bool ocur_enabled = core->print && core->print->cur_enabled;
 	R_CRITICAL_LEAVE (core);
@@ -4109,7 +4109,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		}
 		free (cr);
 	}
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	if (is_root_cmd) {
 		r_cons_break_clear (core->cons);
 	}
@@ -4564,10 +4564,10 @@ escape_pipe:
 					detail++;
 				}
 			}
-			//r_kons_break_push (core->cons, NULL, NULL);
+			//r_cons_break_push (core->cons, NULL, NULL);
 			recursive_help (core, detail, cmd);
 			core->cons->context->noflush = false; // PANCAKE for some reason wtf
-			//r_kons_break_pop (core->cons);
+			//r_cons_break_pop (core->cons);
 			r_cons_grep_parsecmd (core->cons, ptr + 2, "`");
 			if (scr_html != -1) {
 				r_config_set_b (core->config, "scr.html", scr_html);
@@ -5754,7 +5754,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 		{
 			ut64 offorig = core->addr;
 			ut64 bszorig = core->blocksize;
-			r_kons_break_push (core->cons, NULL, NULL);
+			r_cons_break_push (core->cons, NULL, NULL);
 			r_list_foreach (list, iter, item) {
 				if (r_cons_is_breaked (core->cons)) {
 					break;
@@ -5776,7 +5776,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 			}
 			r_core_seek (core, offorig, true);
 			r_core_block_size (core, bszorig);
-			r_kons_break_pop (core->cons);
+			r_cons_break_pop (core->cons);
 		}
 		break;
 	case 't':
@@ -5970,7 +5970,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 
 	oseek = core->addr;
 	ostr = str = strdup (each);
-	r_kons_break_push (core->cons, NULL, NULL); //pop on return
+	r_cons_break_push (core->cons, NULL, NULL); //pop on return
 	switch (each[0]) {
 	case '/': // "@@/"
 		{
@@ -6021,7 +6021,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				ut64 from = r_num_math (core->num, r_str_word_get0 (str, 0));
 				ut64 to = r_num_math (core->num, r_str_word_get0 (str, 1));
 				ut64 step = r_num_math (core->num, r_str_word_get0 (str, 2));
-				r_kons_break_push (core->cons, NULL, NULL);
+				r_cons_break_push (core->cons, NULL, NULL);
 				r_core_return_code (core, 0);
 				for (cur = from; cur <= to; cur += step) {
 					if (r_cons_is_breaked (core->cons)) {
@@ -6037,7 +6037,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 						break;
 					}
 				}
-				r_kons_break_pop (core->cons);
+				r_cons_break_pop (core->cons);
 			} else {
 				R_LOG_ERROR ("Use the sequence iterator like this: 'cmd @@s:from to step'");
 			}
@@ -6324,7 +6324,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			}
 		}
 	}
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	// XXX: use r_core_seek here
 	core->addr = oseek;
 
@@ -6333,7 +6333,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 	return true;
 out_finish:
 	free (ostr);
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	return false;
 }
 
@@ -6483,14 +6483,14 @@ R_API bool r_core_cmd_lines(RCore *core, const char *lines) {
 	size_t current_line = 0;
 	char *nl = strchr (odata, '\n');
 	if (nl) {
-		r_kons_break_push (core->cons, NULL, NULL);
+		r_cons_break_push (core->cons, NULL, NULL);
 		do {
 			if (show_progress_bar) {
 				r_print_progressbar_with_count (core->print, current_line++, line_count, 80, true);
 			}
 			if (r_cons_is_breaked (core->cons)) {
 				free (odata);
-				r_kons_break_pop (core->cons);
+				r_cons_break_pop (core->cons);
 				return ret;
 			}
 			*nl = '\0';
@@ -6513,7 +6513,7 @@ R_API bool r_core_cmd_lines(RCore *core, const char *lines) {
 			data = nl + 1;
 			r_core_task_yield (&core->tasks);
 		} while ((nl = strchr (data, '\n')));
-		r_kons_break_pop (core->cons);
+		r_cons_break_pop (core->cons);
 		if (show_progress_bar) {
 			r_print_progressbar_with_count (core->print, line_count, line_count, 80, true);
 			r_cons_newline (core->cons);

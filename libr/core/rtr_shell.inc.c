@@ -3,7 +3,7 @@
 static bool rtr_visual(RCore *core, TextLog T, const char *cmd) {
 	bool autorefresh = false;
 	if (cmd) {
-		r_kons_break_push (core->cons, NULL, NULL);
+		r_cons_break_push (core->cons, NULL, NULL);
 		for (;;) {
 			char *ret;
 			r_kons_clear00 (core->cons);
@@ -16,7 +16,7 @@ static bool rtr_visual(RCore *core, TextLog T, const char *cmd) {
 			}
 			r_sys_sleep (1);
 		}
-		r_kons_break_pop (core->cons);
+		r_cons_break_pop (core->cons);
 	} else {
 		const char *cmds[] = { "px", "pd", "pxa", "dr", "sr SP;pxa", NULL };
 		int cmdidx = 0;
@@ -34,16 +34,16 @@ static bool rtr_visual(RCore *core, TextLog T, const char *cmd) {
 			if (autorefresh) {
 				r_kons_printf (core->cons, "(auto-refresh)\n");
 				r_cons_flush (core->cons);
-				r_kons_break_push (core->cons, NULL, NULL);
+				r_cons_break_push (core->cons, NULL, NULL);
 				r_sys_sleep (1);
 				if (r_cons_is_breaked (core->cons))  {
 					autorefresh = false;
 					ch = r_cons_readchar (core->cons);
 				} else {
-					r_kons_break_pop (core->cons);
+					r_cons_break_pop (core->cons);
 					continue;
 				}
-				r_kons_break_pop (core->cons);
+				r_cons_break_pop (core->cons);
 			} else {
 				ch = r_cons_readchar (core->cons);
 			}

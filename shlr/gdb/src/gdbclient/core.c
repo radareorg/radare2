@@ -100,14 +100,14 @@ bool gdbr_lock_tryenter(libgdbr_t *g) {
 	}
 	RCons *cons = r_cons_singleton ();
 	g->gdbr_lock_depth++;
-	r_kons_break_push (cons, gdbr_break_process, g);
+	r_cons_break_push (cons, gdbr_break_process, g);
 	return true;
 }
 
 bool gdbr_lock_enter(libgdbr_t *g) {
 	R_RETURN_VAL_IF_FAIL (g, false);
 	RCons *cons = r_cons_singleton ();
-	r_kons_break_push (cons, gdbr_break_process, g);
+	r_cons_break_push (cons, gdbr_break_process, g);
 	void *bed = r_cons_sleep_begin (cons);
 	r_th_lock_enter (g->gdbr_lock);
 	g->gdbr_lock_depth++;
@@ -118,7 +118,7 @@ bool gdbr_lock_enter(libgdbr_t *g) {
 void gdbr_lock_leave(libgdbr_t *g) {
 	R_RETURN_IF_FAIL (g);
 	RCons *cons = r_cons_singleton ();
-	r_kons_break_pop (cons);
+	r_cons_break_pop (cons);
 	if (g->gdbr_lock_depth < 1) {
 		return;
 	}
@@ -180,7 +180,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	}
 	// Use the default break handler for r_socket_connect to send a signal
 	RCons *cons = r_cons_singleton ();
-	r_kons_break_pop (cons);
+	r_cons_break_pop (cons);
 	bed = r_cons_sleep_begin (cons);
 	if (*host == '/') {
 		ret = r_socket_connect_serial (g->sock, host, port, 1);
@@ -189,7 +189,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 		ret = r_socket_connect_tcp (g->sock, host, portstr, 1);
 	}
 	r_cons_sleep_end (cons, bed);
-	r_kons_break_push (cons, gdbr_break_process, g);
+	r_cons_break_push (cons, gdbr_break_process, g);
 	if (!ret) {
 		ret = -1;
 		goto end;

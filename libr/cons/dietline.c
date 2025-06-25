@@ -1717,7 +1717,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 	if (cons->line->echo) {
 		__print_prompt (cons);
 	}
-	r_kons_break_push (cons, NULL, NULL);
+	r_cons_break_push (cons, NULL, NULL);
 	r_kons_enable_mouse (cons, cons->line->hud);
 	for (;;) {
 		D.yank_flag = false;
@@ -1743,7 +1743,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 #if USE_UTF8
 		utflen = readchar_utf8 (cons, (ut8 *) buf, sizeof (buf));
 		if (utflen < (line->demo? 0: 1)) {
-			r_kons_break_pop (cons);
+			r_cons_break_pop (cons);
 			return NULL;
 		}
 		buf[utflen] = 0;
@@ -1758,7 +1758,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 		{
 			int len = r_line_readchar_win (cons, (ut8 *) buf, sizeof (buf));
 			if (len < 1) {
-				r_kons_break_pop (cons);
+				r_cons_break_pop (cons);
 				return NULL;
 			}
 			buf[len] = 0;
@@ -1766,7 +1766,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 #else
 		ch = r_cons_readchar (cons);
 		if (ch == -1) {
-			r_kons_break_pop (cons);
+			r_cons_break_pop (cons);
 			return NULL;
 		}
 		buf[0] = ch;
@@ -1838,7 +1838,7 @@ repeat:
 					eprintf ("^D\n");
 				}
 				r_cons_set_raw (cons, false);
-				r_kons_break_pop (cons);
+				r_cons_break_pop (cons);
 				return NULL;
 			}
 			if (line->buffer.index < line->buffer.length) {
@@ -2038,7 +2038,7 @@ repeat:
 				if (line->vtmode == 2) {
 					buf[1] = r_cons_readchar_timeout (cons, 50);
 					if (buf[1] == -1) { // alt+e
-						r_kons_break_pop (cons);
+						r_cons_break_pop (cons);
 						__print_prompt (cons);
 						continue;
 					}
@@ -2067,19 +2067,19 @@ repeat:
 							buf[1] = r_cons_readchar (cons);
 							if (buf[1] == 126) {
 								// handle SUPR key
-								r_kons_break_pop (cons);
+								r_cons_break_pop (cons);
 								__print_prompt (cons);
 								continue;
 							}
 							if (buf[1] == -1) {
-								r_kons_break_pop (cons);
+								r_cons_break_pop (cons);
 								return NULL;
 							}
 						}
 						for (;;) {
 							ch = r_cons_readchar (cons);
 							if (ch < 20) {
-								r_kons_break_pop (cons);
+								r_cons_break_pop (cons);
 								return NULL;
 							}
 							if (isupper (ch)) {	// read until 'M'
@@ -2145,7 +2145,7 @@ repeat:
 						} else {
 							line->history.do_setup_match = o_do_setup_match;
 							if (r_line_hist_up (line) == -1) {
-								r_kons_break_pop (line->cons);
+								r_cons_break_pop (line->cons);
 								return NULL;
 							}
 						}
@@ -2165,7 +2165,7 @@ repeat:
 						} else {
 							line->history.do_setup_match = o_do_setup_match;
 							if (r_line_hist_down (line) == -1) {
-								r_kons_break_pop (line->cons);
+								r_cons_break_pop (line->cons);
 								return NULL;
 							}
 						}
@@ -2398,7 +2398,7 @@ repeat:
 		}
 	}
 _end:
-	r_kons_break_pop (cons);
+	r_cons_break_pop (cons);
 	r_cons_set_raw (cons, false);
 	r_kons_enable_mouse (cons, mouse_status);
 #if 0

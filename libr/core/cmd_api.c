@@ -824,7 +824,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 	}
 
 	int Gvalue = 0;
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	r_list_foreach (mac->macros, iter, m) {
 		if (!strcmp (str, m->name)) {
 			char *ptr = m->code;
@@ -833,7 +833,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 				R_LOG_ERROR ("Macro '%s' expects %d args, not %d", m->name, m->nargs, nargs);
 				mac->macro_level--;
 				free (str);
-				r_kons_break_pop (core->cons);
+				r_cons_break_pop (core->cons);
 				return false;
 			}
 			mac->brk = 0;
@@ -847,7 +847,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 						*end = '\n';
 					}
 					free (str);
-					r_kons_break_pop (core->cons);
+					r_cons_break_pop (core->cons);
 					return false;
 				}
 				r_cons_flush (core->cons);
@@ -873,7 +873,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 					Gvalue = mac->num->value;
 					if (r < 0) {
 						free (str);
-						r_kons_break_pop (core->cons);
+						r_cons_break_pop (core->cons);
 						return r;
 					}
 				}
@@ -900,7 +900,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 	mac->macro_level--;
 	free (str);
 out_clean:
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	return true;
 }
 

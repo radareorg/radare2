@@ -4401,7 +4401,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 	// ???
 	// XXX must read bytes correctly
 	do_bckwrd_srch = bckwrds = core->search->bckwrds;
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	if (core->blocksize > OPSZ) {
 		if (bckwrds) {
 			if (from + core->blocksize > to) {
@@ -4529,7 +4529,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 	} else {
 		R_LOG_ERROR ("block size too small");
 	}
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	free (buf);
 	r_anal_op_fini (&op);
 	return count;
@@ -4667,7 +4667,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 		free (buf);
 		return -1;
 	}
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	at = from;
 	st64 asm_sub_varmin = r_config_get_i (core->config, "asm.sub.varmin");
 	int maxopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
@@ -4859,7 +4859,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 		at += i + 1; // XXX i think this causes code unalignment problems
 	}
 beach:
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	free (buf);
 	free (block);
 	return count;
@@ -5048,7 +5048,7 @@ R_API RList* r_core_anal_cycles(RCore *core, int ccl) {
 		return NULL;
 	}
 	cf = r_anal_cycle_frame_new ();
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	while (cf && !r_cons_is_breaked (cons)) {
 		if ((op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_BASIC)) && (op->cycles) && (ccl > 0)) {
 			if (verbose) {
@@ -5234,7 +5234,7 @@ R_API RList* r_core_anal_cycles(RCore *core, int ccl) {
 			cf = prev;
 		}
 	}
-	r_kons_break_pop (cons);
+	r_cons_break_pop (cons);
 	return hooks;
 }
 
@@ -5926,7 +5926,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	//eprintf ("Analyzing ESIL refs from 0x%"PFMT64x" - 0x%"PFMT64x"\n", addr, end);
 	// TODO: backup/restore register state before/after analysis
 	core->esil_anal_stop = false;
-	r_kons_break_push (core->cons, cccb, core);
+	r_cons_break_push (core->cons, cccb, core);
 
 	int arch = -1;
 	if (!strcmp (core->anal->config->arch, "arm")) {
@@ -6381,7 +6381,7 @@ repeat:
 	ESIL->cb.hook_reg_write = NULL;
 	ESIL->user = NULL;
 	r_anal_op_fini (&op);
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	// r_core_cmd0 (core, "wc--");
 	// restore register
 	r_reg_arena_pop (core->anal->reg);
@@ -6454,7 +6454,7 @@ R_IPI int r_core_search_value_in_range(RCore *core, bool relative, RInterval sea
 		R_LOG_ERROR ("Invalid destination boundary");
 		return -1;
 	}
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 
 	if (!r_io_is_valid_offset (core->io, from, 0)) {
 		return -1;
@@ -6559,7 +6559,7 @@ R_IPI int r_core_search_value_in_range(RCore *core, bool relative, RInterval sea
 		}
 	}
 beach:
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	return hitctr;
 }
 

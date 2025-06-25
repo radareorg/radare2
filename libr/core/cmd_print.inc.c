@@ -5921,11 +5921,11 @@ static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *ar
 		}
 		core->print->cols = 1;
 		core->print->flags |= R_PRINT_FLAGS_REFS;
-		r_kons_break_push (cons, NULL, NULL);
+		r_cons_break_push (cons, NULL, NULL);
 		r_print_hexdump (core->print, core->addr,
 				core->block, R_MIN (len, core->blocksize),
 				wordsize * 8, bitsize / 8, 1);
-		r_kons_break_pop (cons);
+		r_cons_break_pop (cons);
 		core->print->flags &= ~R_PRINT_FLAGS_REFS;
 		core->print->cols = ocols;
 	}
@@ -7554,7 +7554,7 @@ static int cmd_print(void *data, const char *input) {
 				if (!l) {
 					l = len;
 				}
-				r_kons_break_push (core->cons, NULL, NULL);
+				r_cons_break_push (core->cons, NULL, NULL);
 				for (i = j = 0; i < core->blocksize && j < l; i += ret, j++) {
 					ret = r_asm_disassemble (core->rasm, &asmop, block + i, len - i);
 					if (r_cons_is_breaked (core->cons)) {
@@ -7565,7 +7565,7 @@ static int cmd_print(void *data, const char *input) {
 						ret = 1;
 					}
 				}
-				r_kons_break_pop (core->cons);
+				r_cons_break_pop (core->cons);
 				pd_result = false;
 			}
 			break;
@@ -8345,7 +8345,7 @@ static int cmd_print(void *data, const char *input) {
 			/* Don't show comments in default case */
 			core->print->use_comments = false;
 		}
-		r_kons_break_push (core->cons, NULL, NULL);
+		r_cons_break_push (core->cons, NULL, NULL);
 		switch (input[1]) {
 		case 'j': // "pxj"
 			if (len < core->blocksize) {
@@ -8861,7 +8861,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		}
-		r_kons_break_pop (core->cons);
+		r_cons_break_pop (core->cons);
 		break;
 	case '2': // "p2"
 		if (l) {

@@ -2172,7 +2172,7 @@ static void set_layout(RAGraph *g) {
 	free (g->layers);
 	r_list_free (g->long_edges);
 	r_list_free (g->back_edges);
-	r_kons_break_pop (cons);
+	r_cons_break_pop (cons);
 }
 
 static char *get_body(RCore *core, ut64 addr, int size, int opts) {
@@ -2490,7 +2490,7 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	const bool breakable = r_list_length (fcn->bbs) > 1024;
 	if (breakable) {
 		r_cons_set_raw (core->cons, false);
-		r_kons_break_push (core->cons, NULL, NULL);
+		r_cons_break_push (core->cons, NULL, NULL);
 	}
 	r_list_foreach (fcn->bbs, iter, bb) {
 		if (breakable && r_cons_is_breaked (core->cons)) {
@@ -2781,7 +2781,7 @@ static void update_graph_sizes(RAGraph *g) {
 			}
 		}
 	}
-	r_kons_break_pop (cons);
+	r_cons_break_pop (cons);
 
 	if (min_gn) {
 		const RList *neigh = r_graph_innodes (g->graph, min_gn->gnode);
@@ -3284,7 +3284,7 @@ static void agraph_print_edges(RAGraph *g) {
 
 	r_list_free (lyr);
 	r_list_free (bckedges);
-	r_kons_break_pop (cons);
+	r_cons_break_pop (cons);
 }
 
 static void agraph_toggle_callgraph(RAGraph *g) {
@@ -4542,7 +4542,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 	core->cons->event_data = grd;
 	core->cons->event_resize = (RConsEvent) agraph_refresh_oneshot;
 
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	if (mode == 3) { // XXX wrong usage or buggy RGraph.domTree()
 		// dominance tree here
 		const RList *l = r_graph_get_nodes (g->graph);
@@ -5301,7 +5301,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 		}
 	}
 	r_vector_fini (&g->ghits.word_list);
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	r_config_set_b (core->config, "asm.comments", asm_comments);
 	core->cons->event_resize = NULL;
 	core->cons->event_data = NULL;

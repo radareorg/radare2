@@ -998,7 +998,7 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 	r_config_set_b (core->config, "io.cache", true);
 	r_config_set_i (core->config, "dbg.follow", 0);
 	ut64 oldoff = core->addr;
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	// TODO: The algorithm can be more accurate if blocks are followed by their jmp/fail, not just by address
 	r_list_sort (fcn->bbs, bb_cmpaddr);
 	r_list_foreach (fcn->bbs, it, bb) {
@@ -1097,7 +1097,7 @@ beach:
 	r_esil_free (esil);
 	r_reg_arena_pop (core->anal->reg);
 	r_core_cmd0 (core, ".ar*");
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	free (buf);
 }
 

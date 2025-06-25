@@ -189,7 +189,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 
 	core->block = newblk;
 // TODO: handle mutex lock/unlock here
-	r_kons_break_push (core->cons, (RConsBreak)r_core_rtr_http_stop, core);
+	r_cons_break_push (core->cons, (RConsBreak)r_core_rtr_http_stop, core);
 	while (!r_cons_is_breaked (core->cons) && core->http_up) {
 		/* restore environment */
 		core->config = origcfg;
@@ -558,7 +558,7 @@ the_end:
 		r_config_set (core->config, "http.allow", allow);
 		r_config_set (core->config, "http.ui", httpui);
 	}
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	core->http_up = false;
 	free (pfile);
 	r_socket_free (s);

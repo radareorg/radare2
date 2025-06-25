@@ -800,7 +800,7 @@ RDebugReasonType w32_dbg_wait(RDebug *dbg, int pid) {
 	RDebugReasonType ret = R_DEBUG_REASON_UNKNOWN;
 	static int exited_already = 0;
 
-	r_kons_break_push (core->cons, w32_break_process, dbg);
+	r_cons_break_push (core->cons, w32_break_process, dbg);
 
 	/* handle debug events */
 	do {
@@ -988,7 +988,7 @@ end:
 		r_list_purge (dbg->threads);
 		r_list_purge (lib_list);
 	}
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	return ret;
 }
 

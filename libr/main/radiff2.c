@@ -524,7 +524,7 @@ static void dump_cols(RadiffOptions *ro, ut8 *a, int as, ut8 *b, int bs, int w) 
 		R_LOG_ERROR ("Invalid column width");
 		return;
 	}
-	r_kons_break_push (ro->cons, NULL, NULL);
+	r_cons_break_push (ro->cons, NULL, NULL);
 	for (i = 0; i < sz; i += w) {
 		if (r_cons_is_breaked (ro->cons)) {
 			break;
@@ -622,7 +622,7 @@ static void dump_cols_hexii(RadiffOptions *ro, ut8 *a, int as, ut8 *b, int bs, i
 	if (!a || !b || as < 0 || bs < 0) {
 		return;
 	}
-	r_kons_break_push (ro->cons, NULL, NULL);
+	r_cons_break_push (ro->cons, NULL, NULL);
 	for (i = 0; i < sz; i += w) {
 		if (r_cons_is_breaked (ro->cons)) {
 			break;
@@ -979,7 +979,7 @@ static void __generate_graph(RCore *c, ut64 off) {
 	R_RETURN_IF_FAIL (c);
 	char *ptr = get_graph_commands (c, off);
 	char *str = ptr;
-	r_kons_break_push (c->cons, NULL, NULL);
+	r_cons_break_push (c->cons, NULL, NULL);
 	if (str) {
 		for (;;) {
 			if (r_cons_is_breaked (c->cons)) {
@@ -1005,7 +1005,7 @@ static void __generate_graph(RCore *c, ut64 off) {
 		}
 		free (str);
 	}
-	r_kons_break_pop (c->cons);
+	r_cons_break_pop (c->cons);
 }
 
 static void __print_diff_graph(RCore *c, ut64 off, int gmode) {

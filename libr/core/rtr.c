@@ -1345,11 +1345,11 @@ R_API int r_core_rtr_cmds(RCore *core, const char *port) {
 	uv_async_t stop_async;
 	uv_async_init (loop, &stop_async, rtr_cmds_stop);
 
-	r_kons_break_push (core->cons, (RConsBreak) rtr_cmds_break, &stop_async);
+	r_cons_break_push (core->cons, (RConsBreak) rtr_cmds_break, &stop_async);
 	context.bed = r_cons_sleep_begin (core->cons);
 	uv_run (loop, UV_RUN_DEFAULT);
 	r_cons_sleep_end (core->cons, context.bed);
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 
 beach:
 	uv_loop_close (loop);
@@ -1382,7 +1382,7 @@ R_API int r_core_rtr_cmds(RCore *core, const char *port) {
 
 	R_LOG_INFO ("Listening for commands on port %s", port);
 	listenport = port;
-	r_kons_break_push (core->cons, (RConsBreak)r_core_rtr_http_stop, core);
+	r_cons_break_push (core->cons, (RConsBreak)r_core_rtr_http_stop, core);
 	for (;;) {
 		if (r_cons_is_breaked (core->cons)) {
 			break;
@@ -1417,7 +1417,7 @@ R_API int r_core_rtr_cmds(RCore *core, const char *port) {
 		r_socket_free (ch);
 		ch = NULL;
 	}
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	r_socket_free (s);
 	r_socket_free (ch);
 	return 0;
