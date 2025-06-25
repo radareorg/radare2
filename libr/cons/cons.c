@@ -1552,3 +1552,28 @@ R_API void r_cons_break_pop(RCons *cons) {
 	r_cons_context_break_pop (cons, cons->context, true);
 }
 
+R_API void *r_cons_sleep_begin(RCons *cons) {
+	R_CRITICAL_ENTER (cons);
+	if (cons->cb_sleep_begin) {
+		return cons->cb_sleep_begin (cons->user);
+	}
+	return NULL;
+}
+
+R_API void r_cons_sleep_end(RCons *cons, void *user) {
+	if (cons->cb_sleep_end) {
+		cons->cb_sleep_end (cons->user, user);
+	}
+	R_CRITICAL_LEAVE (cons);
+}
+
+R_API void r_cons_trim(RCons *cons) {
+	RConsContext *c = cons->context;
+	while (c->buffer_len > 0) {
+		char ch = c->buffer[c->buffer_len - 1];
+		if (ch != '\n' && !IS_WHITESPACE (ch)) {
+			break;
+		}
+		c->buffer_len--;
+	}
+}
