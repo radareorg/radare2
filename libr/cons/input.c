@@ -361,7 +361,7 @@ R_API int r_cons_fgets(RCons *cons, char *buf, int len, int argc, const char **a
 #define RETURN(x) { ret=x; goto beach; }
 	int ret = 0, color = cons->context->pal.input && *cons->context->pal.input;
 	if (cons->echo) {
-		r_kons_set_raw (cons, false);
+		r_cons_set_raw (cons, false);
 		r_kons_show_cursor (cons, true);
 	}
 	errno = 0;
@@ -578,11 +578,11 @@ R_API int r_cons_readchar_timeout(RCons *cons, ut32 msec) {
 	tv.tv_sec = secs;
 	ut32 usec = (msec - secs) * 1000;
 	tv.tv_usec = usec;
-	r_kons_set_raw (cons, true);
+	r_cons_set_raw (cons, true);
 	if (select (1, &fdset, NULL, &errset, &tv) == 1) {
 		return r_cons_readchar (cons);
 	}
-	r_kons_set_raw (cons, false);
+	r_cons_set_raw (cons, false);
 	// timeout
 	return -1;
 #else
@@ -629,7 +629,7 @@ R_API int r_cons_readchar(RCons *cons) {
 		memmove (input_state->readbuffer, input_state->readbuffer + 1, input_state->readbuffer_length);
 		return ch;
 	}
-	r_kons_set_raw (cons, true);
+	r_cons_set_raw (cons, true);
 #if R2__WINDOWS__
 	return readchar_w32 (cons, 0);
 #elif __wasi__
@@ -690,7 +690,7 @@ R_API bool r_kons_yesno(RCons *cons, int def, const char *fmt, ...) {
 	vfprintf (stderr, fmt, ap);
 	va_end (ap);
 	fflush (stderr);
-	r_kons_set_raw (cons, true);
+	r_cons_set_raw (cons, true);
 	char buf[] = " ?\n";
 	if (read (0, buf + 1, 1) == 1) {
 		key = (ut8)buf[1];
@@ -698,7 +698,7 @@ R_API bool r_kons_yesno(RCons *cons, int def, const char *fmt, ...) {
 			if (key == 'Y') {
 				key = 'y';
 			}
-			r_kons_set_raw (cons, false);
+			r_cons_set_raw (cons, false);
 			if (key == '\n' || key == '\r') {
 				key = def;
 			}
@@ -712,8 +712,8 @@ R_API char *r_cons_password(const char *msg) {
 	int i = 0;
 	printf ("\r%s", msg);
 	fflush (stdout);
-	r_cons_set_raw (true);
 	RCons *cons = r_cons_singleton ();
+	r_cons_set_raw (cons, true);
 #if R2__UNIX__ && !__wasi__
 	cons->term_raw.c_lflag &= ~(ECHO | ECHONL);
 	// //  required to make therm/iterm show the key
@@ -742,7 +742,7 @@ R_API char *r_cons_password(const char *msg) {
 		buf[i++] = ch;
 	}
 	buf[i] = 0;
-	r_cons_set_raw (false);
+	r_cons_set_raw (cons, false);
 	printf ("\n");
 #if R2__UNIX__
 	r_sys_signal (SIGTSTP, SIG_DFL);

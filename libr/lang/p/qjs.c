@@ -84,7 +84,7 @@ typedef struct qjs_plugin_manager_t {
 	RVecAsmPlugin asm_plugins;
 } QjsPluginManager;
 
-static QjsPluginManager *Gpm = NULL;
+static QjsPluginManager *Gpm = NULL; // XXX globals
 static bool plugin_manager_init(QjsPluginManager *pm, RCore *core, JSRuntime *rt) {
 	pm->core = core;
 	pm->rt = rt;
@@ -537,7 +537,9 @@ static JSValue js_write(JSContext *ctx, JSValueConst this_val, int argc, JSValue
 }
 
 static JSValue js_flush(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
-	RCons *cons = r_cons_singleton ();
+	JSRuntime *rt = JS_GetRuntime (ctx);
+	QjsPluginManager *pm = JS_GetRuntimeOpaque (rt);
+	RCons *cons = pm->core->cons;
 	r_kons_flush (cons);
 	fflush (stdout);
 	return JS_UNDEFINED;
@@ -834,9 +836,13 @@ static bool eval(JSContext *ctx, const char *code) {
 	if (R_STR_ISEMPTY (code)) {
 		return false;
 	}
+	JSRuntime *rt = JS_GetRuntime (ctx);
+	QjsPluginManager *pm = JS_GetRuntimeOpaque (rt);
+	RCons *cons = pm->core->cons;
+
 	bool wantRaw = strstr (code, "termInit(");
 	if (wantRaw) {
-		r_cons_set_raw (true);
+		r_cons_set_raw (cons, true);
 	}
 	int flags = JS_EVAL_TYPE_GLOBAL; //  | JS_EVAL_TYPE_MODULE; //  | JS_EVAL_FLAG_STRICT;
 	if (*code == '-') {
@@ -851,7 +857,7 @@ static bool eval(JSContext *ctx, const char *code) {
 	}
 	eval_jobs (ctx);
 	if (wantRaw) {
-		r_cons_set_raw (false);
+		r_cons_set_raw (cons, false);
 	}
 	// restore raw console
 	JS_FreeValue (ctx, v);

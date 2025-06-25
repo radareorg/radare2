@@ -2,45 +2,6 @@
 
 #include <r_cons.h>
 #include "private.h"
-
-#define MOAR (4096 * 8)
-
-static bool kons_palloc(RCons *cons, size_t moar) {
-	RConsContext *C = cons->context;
-	if (moar == 0 || moar > ST32_MAX) {
-		return false;
-	}
-	if (!C->buffer) {
-		if (moar > SIZE_MAX - MOAR) {
-			return false;
-		}
-		size_t new_sz = moar + MOAR;
-		void *temp = calloc (1, new_sz);
-		if (temp) {
-			C->buffer_sz = new_sz; // Maintain int for C->buffer_sz
-			C->buffer = temp;
-			C->buffer[0] = '\0';
-		} else {
-			return false;
-		}
-	} else if (moar + C->buffer_len > C->buffer_sz) {
-		size_t new_sz = moar + (C->buffer_sz * 2); // Exponential growth
-		if (new_sz < C->buffer_sz || new_sz < moar + C->buffer_len) {
-			new_sz = moar + C->buffer_sz + MOAR; // Ensure enough space
-		}
-		if (new_sz < C->buffer_sz) { // Check for overflow
-			return false;
-		}
-		void *new_buffer = realloc (C->buffer, new_sz);
-		if (!new_buffer) {
-			return false;
-		}
-		C->buffer = new_buffer;
-		C->buffer_sz = new_sz;
-	}
-	return true;
-}
-
 R_API void r_kons_println(RCons *cons, const char* str) {
 	r_kons_print (cons, str);
 	r_kons_newline (cons);
@@ -76,7 +37,7 @@ now the console color is reset with each \n (same stuff do it here but in correc
 #endif
 }
 
-R_API void r_kons_printf_list(RCons *cons, const char *format, va_list ap) {
+R_API void r_cons_printf_list(RCons *cons, const char *format, va_list ap) {
 	va_list ap2, ap3;
 
 	va_copy (ap2, ap);
@@ -87,14 +48,14 @@ R_API void r_kons_printf_list(RCons *cons, const char *format, va_list ap) {
 		return;
 	}
 	if (strchr (format, '%')) {
-		if (kons_palloc (cons, MOAR + strlen (format) * 20)) {
+		if (cons_palloc (cons, MOAR + strlen (format) * 20)) {
 			bool need_retry = true;
 			while (need_retry) {
 				need_retry = false;
 				size_t left = cons->context->buffer_sz - cons->context->buffer_len;
 				size_t written = vsnprintf (cons->context->buffer + cons->context->buffer_len, left, format, ap3);
 				if (written >= left) {
-					if (kons_palloc (cons, written + 1)) {
+					if (cons_palloc (cons, written + 1)) {
 						va_end (ap3);
 						va_copy (ap3, ap2);
 						need_retry = true; // Retry with larger buffer
@@ -124,7 +85,7 @@ R_API int r_kons_printf(RCons *cons, const char *format, ...) {
 		return -1;
 	}
 	va_start (ap, format);
-	r_kons_printf_list (cons, format, ap);
+	r_cons_printf_list (cons, format, ap);
 	va_end (ap);
 	return 0;
 }
@@ -238,7 +199,7 @@ R_API void r_kons_flush(RCons *cons) {
 			}
 #endif
 			// fix | more | less problem
-			r_kons_set_raw (cons, true);
+			r_cons_set_raw (cons, true);
 		}
 	}
 	if (R_STR_ISNOTEMPTY (tee)) {
@@ -945,49 +906,6 @@ R_API void r_kons_show_cursor(RCons *I, int cursor) {
 		SetConsoleCursorInfo (hStdout, &cursor_info);
 	}
 #endif
-}
-
-R_API void r_kons_set_raw(RCons *I, bool is_raw) {
-	if (I->oldraw != 0) {
-		if (is_raw == I->oldraw - 1) {
-			return;
-		}
-	}
-#if EMSCRIPTEN || __wasi__
-	/* do nothing here */
-#elif R2__UNIX__
-	struct termios *term_mode;
-	if (is_raw) {
-		I->term_raw.c_lflag &= ~(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
-		term_mode = &I->term_raw;
-	} else {
-		term_mode = &I->term_buf;
-	}
-	if (tcsetattr (0, TCSANOW, term_mode) == -1) {
-		return;
-	}
-#elif R2__WINDOWS__
-	if (I->term_xterm) {
-		char *stty = r_file_path ("stty");
-		if (!stty || *stty == 's') {
-			I->term_xterm = false;
-		}
-		free (stty);
-	}
-	if (I->term_xterm) {
-		const char *cmd = is_raw
-			? "stty raw -echo"
-			: "stty raw echo";
-		r_sandbox_system (cmd, 1);
-	} else {
-		if (!SetConsoleMode (h, is_raw? I->term_raw: I->term_buf)) {
-			return;
-		}
-	}
-#else
-#warning No raw console supported for this platform
-#endif
-	I->oldraw = is_raw + 1;
 }
 
 R_API void r_kons_set_utf8(RCons *cons, bool b) {

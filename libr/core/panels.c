@@ -495,7 +495,7 @@ static int __show_status(RCore *core, const char *msg) {
 	r_kons_gotoxy (cons, 0, 0);
 	r_kons_printf (cons, R_CONS_CLEAR_LINE"%s[Status] %s"Color_RESET, PANEL_HL_COLOR, msg);
 	r_kons_flush (cons);
-	r_kons_set_raw (cons, true);
+	r_cons_set_raw (cons, true);
 	return r_cons_readchar (cons);
 }
 
@@ -512,7 +512,7 @@ static char *__show_status_input(RCore *core, const char *msg) {
 	r_kons_gotoxy (cons, 0, 0);
 	r_kons_flush (cons);
 	char *out = r_cons_input (cons, n_msg);
-	r_kons_set_raw (cons, true);
+	r_cons_set_raw (cons, true);
 	free (n_msg);
 	return out;
 }
@@ -4216,7 +4216,7 @@ static void __create_modal(RCore *core, RPanel *panel, Sdb *menu_db) {
 	RCons *cons = core->cons;
 	__update_modal (core, menu_db, modal, 1);
 	while (modal) {
-		r_kons_set_raw (cons, true);
+		r_cons_set_raw (cons, true);
 		okey = r_cons_readchar (cons);
 		key = r_cons_arrow_to_hjkl (cons, okey);
 		word = NULL;
@@ -4443,7 +4443,7 @@ static void __handle_vmark(RCore *core) {
 		if (r_core_vmark_dump (core, 0)) {
 			r_kons_printf (cons, R_CONS_CLEAR_LINE"Remove a shortcut key from the list\n");
 			r_kons_flush (cons);
-			r_kons_set_raw (cons, true);
+			r_cons_set_raw (cons, true);
 			int ch = r_cons_readchar (cons);
 			r_core_vmark_del (core, ch);
 		}
@@ -4452,7 +4452,7 @@ static void __handle_vmark(RCore *core) {
 		r_kons_gotoxy (core->cons, 0, 0);
 		if (r_core_vmark_dump (core, 0)) {
 			r_kons_flush (cons);
-			r_kons_set_raw (cons, true);
+			r_cons_set_raw (cons, true);
 			int ch = r_cons_readchar (core->cons);
 			r_core_vmark_seek (core, ch, NULL);
 			__set_panel_addr (core, cur, core->addr);
@@ -5506,7 +5506,7 @@ static int __r2_shell_cb(void *user) {
 
 static int __system_shell_cb(void *user) {
 	RCore *core = (RCore *)user;
-	r_kons_set_raw (core->cons, 0);
+	r_cons_set_raw (core->cons, 0);
 	r_kons_flush (core->cons);
 	r_sys_cmd ("$SHELL");
 	return 0;
@@ -5701,11 +5701,11 @@ static int __license_cb(void *user) {
 
 static int __version2_cb(void *user) {
 	RCore *core = (RCore *)user;
-	r_kons_set_raw (core->cons, false);
+	r_cons_set_raw (core->cons, false);
 	r_core_cmd0 (core, "!!r2 -Vj>$a");
 	r_core_cmd0 (core, "$a~{}~..");
 	r_core_cmd0 (core, "rm $a");
-	r_kons_set_raw (core->cons, true);
+	r_cons_set_raw (core->cons, true);
 	r_kons_flush (core->cons);
 	return 0;
 }
@@ -5720,9 +5720,9 @@ static int __version_cb(void *user) {
 
 static int __r2rc_cb(void *user) {
 	RCore *core = (RCore *)user;
-	r_kons_set_raw (core->cons, false);
+	r_cons_set_raw (core->cons, false);
 	r_core_cmd0 (core, "edit");
-	r_kons_set_raw (core->cons, true);
+	r_cons_set_raw (core->cons, true);
 	r_kons_flush (core->cons);
 	return 0;
 }
@@ -6778,7 +6778,7 @@ static void __handle_tab(RCore *core) {
 				PANEL_HL_COLOR, min, max);
 	}
 	r_kons_flush (core->cons);
-	r_kons_set_raw (core->cons, true);
+	r_cons_set_raw (core->cons, true);
 	const int ch = r_cons_readchar (core->cons);
 
 	if (isdigit (ch)) {
@@ -6873,7 +6873,7 @@ repeat:
 	core->cons->event_resize = (RConsEvent) __do_panels_refreshOneShot;
 	__panels_layout_refresh (core);
 	RPanel *cur = __get_cur_panel (panels);
-	r_kons_set_raw (core->cons, true);
+	r_cons_set_raw (core->cons, true);
 	if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
 		if (panels->mode == PANEL_MODE_MENU) {
 			panels->fun = PANEL_FUN_NOFUN;
@@ -7630,7 +7630,7 @@ R_API bool r_core_panels_root(RCore *core, RPanelsRoot *panels_root) {
 	}
 	int maxpage = r_config_get_i (core->config, "scr.maxpage");
 	r_config_set_i (core->config, "scr.maxpage", 0);
-	r_kons_set_raw (core->cons, true);
+	r_cons_set_raw (core->cons, true);
 	while (panels_root->n_panels) {
 		__set_root_state (core, DEFAULT);
 		__panels_process (core, panels_root->panels[panels_root->cur_panels]);

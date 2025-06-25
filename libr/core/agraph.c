@@ -2491,7 +2491,7 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	core->keep_asmqjmps = false;
 	const bool breakable = r_list_length (fcn->bbs) > 1024;
 	if (breakable) {
-		r_kons_set_raw (core->cons, false);
+		r_cons_set_raw (core->cons, false);
 		r_kons_break_push (core->cons, NULL, NULL);
 	}
 	r_list_foreach (fcn->bbs, iter, bb) {
@@ -2554,7 +2554,7 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 interrupted:
 	if (breakable) {
 		r_kons_break_end (core->cons);
-		r_kons_set_raw (core->cons, true);
+		r_cons_set_raw (core->cons, true);
 	}
 
 	delete_dup_edges (g);
@@ -3410,7 +3410,7 @@ static void agraph_follow_innodes(RCore *core, RAGraph *g, bool in) {
 		nth = 0;
 	} else if (r_list_length (list) < 10) {
 		// just 1 key
-		r_kons_set_raw (cons, true);
+		r_cons_set_raw (cons, true);
 		char ch = r_cons_readchar (cons);
 		if (ch >= '0' && ch <= '9') {
 			nth =  ch - '0';
@@ -4207,7 +4207,7 @@ find_next:
 				cons->event_resize = (RConsEvent)agraph_set_need_reload_nodes;
 				r_core_visual_prompt_input (core);
 				g->can->flags = r_cons_canvas_flags (cons);
-				r_kons_set_raw (cons, true);
+				r_cons_set_raw (cons, true);
 				cons->event_resize = (RConsEvent)agraph_refresh_oneshot;
 			}
 			if (c == 'n' || c == 'j') {
@@ -4254,7 +4254,7 @@ static void goto_asmqjmps(RAGraph *g, RCore *core) {
 	r_kons_flush (cons);
 
 	do {
-		r_kons_set_raw (cons, true);
+		r_cons_set_raw (cons, true);
 		char ch = r_cons_readchar (cons);
 		obuf[i++] = ch;
 		r_cons_write (cons, &ch, 1);
@@ -4438,7 +4438,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 		R_LOG_ERROR ("Interactive graph mode requires 'e scr.interactive=true'");
 		return false;
 	}
-	r_kons_set_raw (core->cons, true);
+	r_cons_set_raw (core->cons, true);
 	int o_asmqjmps_letter = core->is_asmqjmps_letter;
 	int o_vmode = core->vmode;
 	int exit_graph = false, is_error = false;
@@ -4571,7 +4571,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 		showcursor (core, false);
 
 		// r_core_graph_inputhandle()
-		r_kons_set_raw (core->cons, true);
+		r_cons_set_raw (core->cons, true);
 		okey = r_cons_readchar (core->cons);
 		key = r_cons_arrow_to_hjkl (core->cons, okey);
 
@@ -5163,7 +5163,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 			core->cons->event_resize = (RConsEvent)agraph_set_need_reload_nodes;
 			r_core_visual_prompt_input (core);
 			g->can->flags = r_cons_canvas_flags (core->cons);
-			r_kons_set_raw (core->cons, true);
+			r_cons_set_raw (core->cons, true);
 			core->cons->event_resize = (RConsEvent)agraph_refresh_oneshot;
 			if (!g) {
 				g->need_reload_nodes = true; // maybe too slow and unnecessary sometimes? better be safe and reload

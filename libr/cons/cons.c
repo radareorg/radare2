@@ -13,6 +13,45 @@ static void __break_signal(int sig);
 // XXX this is wrong
 static R_TH_LOCAL RCons *I = NULL;
 
+#define MOAR (4096 * 8)
+
+static bool cons_palloc(RCons *cons, size_t moar) {
+	RConsContext *C = cons->context;
+	if (moar == 0 || moar > ST32_MAX) {
+		return false;
+	}
+	if (!C->buffer) {
+		if (moar > SIZE_MAX - MOAR) {
+			return false;
+		}
+		size_t new_sz = moar + MOAR;
+		void *temp = calloc (1, new_sz);
+		if (temp) {
+			C->buffer_sz = new_sz; // Maintain int for C->buffer_sz
+			C->buffer = temp;
+			C->buffer[0] = '\0';
+		} else {
+			return false;
+		}
+	} else if (moar + C->buffer_len > C->buffer_sz) {
+		size_t new_sz = moar + (C->buffer_sz * 2); // Exponential growth
+		if (new_sz < C->buffer_sz || new_sz < moar + C->buffer_len) {
+			new_sz = moar + C->buffer_sz + MOAR; // Ensure enough space
+		}
+		if (new_sz < C->buffer_sz) { // Check for overflow
+			return false;
+		}
+		void *new_buffer = realloc (C->buffer, new_sz);
+		if (!new_buffer) {
+			return false;
+		}
+		C->buffer = new_buffer;
+		C->buffer_sz = new_sz;
+	}
+	return true;
+}
+
+
 #include "thread.inc.c"
 #include "kons.inc.c"
 
@@ -1030,17 +1069,13 @@ R_API int r_cons_printf(const char *format, ...) {
 		return -1;
 	}
 	va_start (ap, format);
-	r_kons_printf_list (I, format, ap);
+	r_cons_printf_list (I, format, ap);
 	va_end (ap);
 	return 0;
 }
 
 R_API void r_cons_show_cursor(int cursor) {
 	r_kons_show_cursor (I, cursor);
-}
-
-R_API void r_cons_set_raw(bool is_raw) {
-	r_kons_set_raw (I, is_raw);
 }
 
 R_API void r_cons_set_utf8(bool b) {
@@ -1070,7 +1105,7 @@ R_API void r_cons_memset(RCons *cons, char ch, int len) {
 		if ((len = kons_chop (cons, len)) < 1) {
 			return;
 		}
-		if (kons_palloc (cons, len + 1)) {
+		if (cons_palloc (cons, len + 1)) {
 			memset (C->buffer + C->buffer_len, ch, len);
 			C->buffer_len += len;
 			C->buffer[C->buffer_len] = 0;
@@ -1094,7 +1129,7 @@ R_API int r_cons_write(RCons *cons, const char *str, int len) {
 	}
 	if (str && len > 0 && !cons->null) {
 		R_CRITICAL_ENTER (cons);
-		if (kons_palloc (cons, len + 1)) {
+		if (cons_palloc (cons, len + 1)) {
 			int choplen = kons_chop (cons, len);
 			if (choplen > len || choplen < 1) {
 				// R_LOG_ERROR ("CHOP ISSUE");
@@ -1166,5 +1201,48 @@ R_API void r_cons_clear_buffer(RCons *cons) {
 			cons->context->breaked = true;
 		}
 	}
+}
+
+R_API void r_cons_set_raw(RCons *I, bool is_raw) {
+	if (I->oldraw != 0) {
+		if (is_raw == I->oldraw - 1) {
+			return;
+		}
+	}
+#if EMSCRIPTEN || __wasi__
+	/* do nothing here */
+#elif R2__UNIX__
+	struct termios *term_mode;
+	if (is_raw) {
+		I->term_raw.c_lflag &= ~(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
+		term_mode = &I->term_raw;
+	} else {
+		term_mode = &I->term_buf;
+	}
+	if (tcsetattr (0, TCSANOW, term_mode) == -1) {
+		return;
+	}
+#elif R2__WINDOWS__
+	if (I->term_xterm) {
+		char *stty = r_file_path ("stty");
+		if (!stty || *stty == 's') {
+			I->term_xterm = false;
+		}
+		free (stty);
+	}
+	if (I->term_xterm) {
+		const char *cmd = is_raw
+			? "stty raw -echo"
+			: "stty raw echo";
+		r_sandbox_system (cmd, 1);
+	} else {
+		if (!SetConsoleMode (h, is_raw? I->term_raw: I->term_buf)) {
+			return;
+		}
+	}
+#else
+#warning No raw console supported for this platform
+#endif
+	I->oldraw = is_raw + 1;
 }
 

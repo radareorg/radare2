@@ -1712,7 +1712,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 	}
 
 	memset (&buf, 0, sizeof buf);
-	r_kons_set_raw (cons, 1);
+	r_cons_set_raw (cons, 1);
 
 	if (cons->line->echo) {
 		__print_prompt (cons);
@@ -1837,7 +1837,7 @@ repeat:
 				if (line->echo) {
 					eprintf ("^D\n");
 				}
-				r_kons_set_raw (cons, false);
+				r_cons_set_raw (cons, false);
 				r_kons_break_pop (cons);
 				return NULL;
 			}
@@ -2230,7 +2230,7 @@ repeat:
 							}
 							break;
 						}
-						r_kons_set_raw (cons, true);
+						r_cons_set_raw (cons, true);
 						break;
 					case 0x37: // HOME xrvt-unicode
 						r_cons_readchar (cons);
@@ -2399,7 +2399,7 @@ repeat:
 	}
 _end:
 	r_kons_break_pop (cons);
-	r_kons_set_raw (cons, false);
+	r_cons_set_raw (cons, false);
 	r_kons_enable_mouse (cons, mouse_status);
 #if 0
 	if (line->buffer.length > 1024) {	// R2_590 - use line->maxlength

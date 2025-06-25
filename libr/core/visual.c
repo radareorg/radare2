@@ -1382,7 +1382,7 @@ static void addComment(RCore *core, ut64 addr) {
 	r_kons_printf (core->cons, "Enter comment for reference:\n");
 	r_core_visual_showcursor (core, true);
 	r_kons_flush (core->cons);
-	r_kons_set_raw (core->cons, false);
+	r_cons_set_raw (core->cons, false);
 	r_line_set_prompt (core->cons->line, "> ");
 	r_kons_enable_mouse (core->cons, false);
 	char buf[1024];
@@ -1390,7 +1390,7 @@ static void addComment(RCore *core, ut64 addr) {
 		buf[0] = '\0';
 	}
 	r_core_cmdf (core, "'@0x%08"PFMT64x"'CC %s", addr, buf);
-	r_kons_set_raw (core->cons, true);
+	r_cons_set_raw (core->cons, true);
 	r_kons_enable_mouse (core->cons, r_config_get_b (core->config, "scr.wheel"));
 	r_core_visual_showcursor (core, false);
 }
@@ -1651,7 +1651,7 @@ repeat:
 	}
 	r_kons_flush (cons);
 	r_kons_enable_mouse (cons, r_config_get_i (core->config, "scr.wheel"));
-	r_kons_set_raw (cons, true);
+	r_cons_set_raw (cons, true);
 	ch = r_cons_readchar (cons);
 	ch = r_cons_arrow_to_hjkl (cons, ch);
 	switch (ch) {
@@ -2884,7 +2884,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	int i, cols = core->print->cols;
 	int wheelspeed;
 	int ch = och;
-	r_kons_set_raw (core->cons, true);
+	r_cons_set_raw (core->cons, true);
 	if ((ut8)ch == KEY_ALTQ) {
 		r_cons_readchar (core->cons);
 		ch = 'q';
@@ -3068,7 +3068,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_kons_printf (core->cons, "Enter assembler opcodes separated with ';':\n");
 			r_core_visual_showcursor (core, true);
 			r_kons_flush (core->cons);
-			r_kons_set_raw (core->cons, false);
+			r_cons_set_raw (core->cons, false);
 			strcpy (buf, "\"wa ");
 			r_line_set_prompt (core->cons->line, "> ");
 			r_kons_enable_mouse (core->cons, false);
@@ -3092,7 +3092,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				}
 			}
 			r_core_visual_showcursor (core, false);
-			r_kons_set_raw (core->cons, true);
+			r_cons_set_raw (core->cons, true);
 		}
 		break;
 		case '=':
@@ -3259,7 +3259,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					r_cons_printf ("[t] ");
 				}
 				r_kons_flush (core->cons);
-				r_kons_set_raw (core->cons, true);
+				r_cons_set_raw (core->cons, true);
 				int ch = r_cons_readchar (core->cons);
 				if (isdigit (ch)) {
 					visual_nthtab (core, ch - '0' - 1);
@@ -3349,7 +3349,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			r_core_visual_showcursor (core, true);
 			r_kons_flush (core->cons);
-			r_kons_set_raw (core->cons, 0);
+			r_cons_set_raw (core->cons, 0);
 			if (ch == 'I') {
 				strcpy (buf, "wow ");
 				r_line_set_prompt (core->cons->line, "insert hexpair block: ");
@@ -3396,7 +3396,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if (core->print->cur_enabled) {
 				r_core_seek (core, addr, true);
 			}
-			r_kons_set_raw (core->cons, true);
+			r_cons_set_raw (core->cons, true);
 			r_core_visual_showcursor (core, false);
 			r_core_seek (core, oaddr, true);
 			}
@@ -4867,7 +4867,7 @@ dodo:
 		// update the cursor when it's not visible anymore
 		skip = fix_cursor (core);
 		r_kons_show_cursor (core->cons, false);
-		r_kons_set_raw (core->cons, true);
+		r_cons_set_raw (core->cons, true);
 		const int ref = r_config_get_i (core->config, "dbg.slow");
 #if 1
 		// This is why multiple debug views dont work
@@ -5022,8 +5022,8 @@ dodo:
 								// Following seems to fix an issue where scrolling slows
 								// down to a crawl for some terminals after some time
 								// mashing the up and down arrow keys
-								r_kons_set_raw (core->cons, false);
-								r_kons_set_raw (core->cons, true);
+								r_cons_set_raw (core->cons, false);
+								r_cons_set_raw (core->cons, true);
 #endif
 							}
 						}

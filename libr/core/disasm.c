@@ -635,7 +635,7 @@ static void ds_comment_esil(RDisasmState *ds, bool up, bool end, const char *for
 	if (ds->show_comments && up) {
 		ds->show_cmt_right ? ds_align_comment (ds) : ds_comment_lineup (ds);
 	}
-	r_kons_printf_list (cons, format, ap);
+	r_cons_printf_list (cons, format, ap);
 	va_end (ap);
 
 	if (end && ds->show_comments && !ds->show_cmt_right) {
