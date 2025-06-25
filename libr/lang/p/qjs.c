@@ -540,7 +540,7 @@ static JSValue js_flush(JSContext *ctx, JSValueConst this_val, int argc, JSValue
 	JSRuntime *rt = JS_GetRuntime (ctx);
 	QjsPluginManager *pm = JS_GetRuntimeOpaque (rt);
 	RCons *cons = pm->core->cons;
-	r_kons_flush (cons);
+	r_cons_flush (cons);
 	fflush (stdout);
 	return JS_UNDEFINED;
 }

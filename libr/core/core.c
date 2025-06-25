@@ -77,7 +77,7 @@ static void r_core_debug_breakpoint_hit(RCore *core, RBreakpointItem *bpi) {
 		r_core_cmd0 (core, bpi->data);
 	}
 	if (may_output) {
-		r_kons_flush (core->cons);
+		r_cons_flush (core->cons);
 		r_kons_pop (core->cons);
 	}
 }
@@ -86,7 +86,7 @@ static void r_core_debug_syscall_hit(RCore *core) {
 	const char *cmdhit = r_config_get (core->config, "cmd.onsyscall");
 	if (R_STR_ISNOTEMPTY (cmdhit)) {
 		r_core_cmd0 (core, cmdhit);
-		r_kons_flush (core->cons);
+		r_cons_flush (core->cons);
 	}
 }
 
@@ -319,7 +319,7 @@ R_API char *r_core_cmd_call_str_at(RCore *core, ut64 addr, const char *cmd) {
 		//eprintf ("Invalid command: %s\n", cmd);
 		if (--core->cons->context->cmd_str_depth == 0) {
 			core->cons->context->noflush = false;
-			r_kons_flush (core->cons);
+			r_cons_flush (core->cons);
 		}
 		r_kons_pop (core->cons);
 		return NULL;
@@ -729,7 +729,7 @@ static void autocomplete_alias(RLineCompletion *completion, RCmd *cmd, const cha
 
 		char *v = r_cmd_alias_val_strdup ((RCmdAliasVal *)val);
 		r_kons_printf (cons, "$%s=%s%s\n", k, val->is_data? "$": "", v);
-		r_kons_flush (cons);
+		r_cons_flush (cons);
 
 		char *completed_alias = r_str_newf ("$%s", k);
 		r_line_completion_push (completion, completed_alias);
@@ -1364,7 +1364,7 @@ static bool find_autocomplete(RCore *core, RLineCompletion *completion, RLineBuf
 			}
 			if (desc && desc->help_msg) {
 				r_core_cmd_help (core, desc->help_msg);
-				r_kons_flush (core->cons);
+				r_cons_flush (core->cons);
 				return true;
 			}
 			// fallback to command listing
@@ -2476,7 +2476,7 @@ static void cmdusr1(int p) {
 	const char *cmd = r_config_get (Gcore->config, "cmd.usr1");
 	if (R_STR_ISNOTEMPTY (cmd)) {
 		r_core_cmd0 (Gcore, cmd);
-		r_kons_flush (r_cons_singleton ());
+		r_cons_flush (r_cons_singleton ());
 	}
 }
 
@@ -2484,7 +2484,7 @@ static void cmdusr2(int p) {
 	const char *cmd = r_config_get (Gcore->config, "cmd.usr2");
 	if (R_STR_ISNOTEMPTY (cmd)) {
 		r_core_cmd0 (Gcore, cmd);
-		r_kons_flush (r_cons_singleton ());
+		r_cons_flush (r_cons_singleton ());
 	}
 }
 #endif
@@ -2788,7 +2788,7 @@ R_API void __cons_cb_fkey(RCore *core, int fkey) {
 	if (v && *v) {
 		r_kons_println (core->cons, v);
 		r_core_cmd0 (core, v);
-		r_kons_flush (core->cons);
+		r_cons_flush (core->cons);
 	}
 }
 
@@ -3055,7 +3055,7 @@ R_API void r_core_cmd_queue_wait(RCore *core) {
 		char *cmd = r_list_pop (core->cmdqueue);
 		if (cmd) {
 			r_core_cmd0 (core, cmd);
-			r_kons_flush (core->cons);
+			r_cons_flush (core->cons);
 			free (cmd);
 		}
 		r_sys_usleep (100);
@@ -3125,7 +3125,7 @@ R_API int r_core_prompt_exec(RCore *r) {
 			r->cons->context->use_tts = false;
 		}
 		r_kons_echo (r->cons, NULL);
-		r_kons_flush (r->cons); // double free
+		r_cons_flush (r->cons); // double free
 		if (r->cons && r->cons->line && r->cons->line->zerosep) {
 			r_kons_zero (r->cons);
 		}

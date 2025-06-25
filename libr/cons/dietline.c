@@ -836,7 +836,7 @@ static void selection_widget_draw(RCons *cons) {
 
 	r_kons_gotoxy (cons, pos_x + line->buffer.length, pos_y);
 	r_cons_write (cons, Color_RESET_BG, 5);
-	r_kons_flush (cons);
+	r_cons_flush (cons);
 }
 
 static void selection_widget_up(RLine *line, int steps) {
@@ -889,7 +889,7 @@ static void print_rline_task(void *_core) {
 	RLine *line = cons->line;
 	r_kons_clear_line (cons, 0);
 	r_kons_printf (cons, "%s%s%s", Color_RESET, line->prompt, line->buffer.data);
-	r_kons_flush (cons);
+	r_cons_flush (cons);
 }
 
 static void selection_widget_erase(RLine *line) {
@@ -953,7 +953,7 @@ static void selection_widget_update(RLine *line) {
 		line->sel_widget->direction = R_SELWIDGET_DIR_UP;
 	}
 	selection_widget_draw (line->cons);
-	r_kons_flush (line->cons);
+	r_cons_flush (line->cons);
 	return;
 }
 
@@ -1161,7 +1161,7 @@ static void __print_prompt(RCons *cons) {
 	int len, i, cols = R_MAX (1, columns - r_str_ansi_len (line->prompt) - 2);
 	if (cons->line->prompt_type == R_LINE_PROMPT_OFFSET) {
 		r_kons_gotoxy (cons, 0, cons->rows);
-		r_kons_flush (cons);
+		r_cons_flush (cons);
 	}
 	// printf ("%s", promptcolor ());
 	r_kons_clear_line (cons, 0);

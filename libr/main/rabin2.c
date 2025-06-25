@@ -443,7 +443,7 @@ static int rabin_do_operation(RCons *cons, RBin *bin, const char *op, int rad, c
 			char *sign = plg->signature (cur, rad == R_MODE_JSON);
 			if (sign) {
 				r_kons_println (cons, sign);
-				r_kons_flush (cons);
+				r_cons_flush (cons);
 				free (sign);
 			}
 		}
@@ -931,7 +931,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		list_plugins (bin, plugin_name, pj, rad);
 		if (rad == R_MODE_JSON) {
 			r_kons_println (cons, pj_string (pj));
-			r_kons_flush (cons);
+			r_cons_flush (cons);
 			pj_free (pj);
 		}
 		r_core_fini (&core);
@@ -1188,7 +1188,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	if (query) {
 		if (rad) {
 			r_core_bin_export_info (&core, R_MODE_RADARE);
-			r_kons_flush (cons);
+			r_cons_flush (cons);
 		} else {
 			if (!strcmp (query, "-")) {
 				__sdb_prompt (&state, bin->cur->sdb);
@@ -1296,7 +1296,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	}
 
 	pj_free (pj);
-	r_kons_flush (cons);
+	r_cons_flush (cons);
 	r_core_fini (&core);
 	r_syscmd_popalld ();
 	free (state.stdin_buf);

@@ -857,7 +857,7 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'F': // "?F"
-		r_kons_flush (core->cons);
+		r_cons_flush (core->cons);
 		break;
 	case 'f': // "?f"
 		if (input[1] == ' ') {
@@ -1434,7 +1434,7 @@ static int cmd_help(void *data, const char *input) {
 						  r_kons_clear_line (core->cons, 0);
 						  r_cons_newline (core->cons);
 						  free (d);
-						  r_kons_flush (core->cons);
+						  r_cons_flush (core->cons);
 						  r_sys_usleep (2000);
 					  }
 				  }
@@ -1636,7 +1636,7 @@ static int cmd_help(void *data, const char *input) {
 			case 'e': // "?ie"
 				{
 				char foo[1024];
-				r_kons_flush (core->cons);
+				r_cons_flush (core->cons);
 				input = r_str_trim_head_ro (input + 2);
 				// TODO: r_cons_input()
 				snprintf (foo, sizeof (foo) - 1, "%s: ", input);
@@ -1663,7 +1663,7 @@ static int cmd_help(void *data, const char *input) {
 				 break;
 			default: {
 				char foo[1024];
-				r_kons_flush (core->cons);
+				r_cons_flush (core->cons);
 				input = r_str_trim_head_ro (input + 1);
 				// TODO: use r_cons_input()
 				snprintf (foo, sizeof (foo) - 1, "%s: ", input);

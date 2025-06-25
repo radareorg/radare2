@@ -277,7 +277,7 @@ static bool tracelib(RDebug *dbg, const char *mode, PLIB_ITEM item) {
 	}
 	r_kons_printf (core->cons, "(%d) %sing library at 0x%p (%s) %s\n", item->pid, mode,
 		item->BaseOfDll, item->Path, item->Name);
-	r_kons_flush (core->cons);
+	r_cons_flush (core->cons);
 	if (needle && strlen (needle)) {
 		tmp = r_str_glob (item->Name, needle);
 	}
@@ -352,7 +352,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 			}
 			r_debug_info_free (r);
 		} else {
-			r_kons_flush (core->cons);
+			r_cons_flush (core->cons);
 			R_LOG_WARN ("Loading unknown library");
 		}
 		restore_thread = true;
@@ -365,7 +365,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 			r_debug_info_free (r);
 		} else {
 			r_kons_printf (core->cons, "Unloading unknown library.\n");
-			r_kons_flush (core->cons);
+			r_cons_flush (core->cons);
 		}
 		restore_thread = true;
 	} else if (reason == R_DEBUG_REASON_NEW_TID) {
@@ -373,7 +373,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 		if (r && r->thread) {
 			PTHREAD_ITEM item = r->thread;
 			r_kons_printf (cons, "(%d) Created thread %d (start @ %p) (teb @ %p)\n", item->pid, item->tid, item->lpStartAddress, item->lpThreadLocalBase);
-			r_kons_flush (cons);
+			r_cons_flush (cons);
 
 			r_debug_info_free (r);
 		}
@@ -383,7 +383,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 		if (r && r->thread) {
 			PTHREAD_ITEM item = r->thread;
 			r_kons_printf (cons, "(%d) Finished thread %d Exit code %lu\n", (ut32)item->pid, (ut32)item->tid, item->dwExitCode);
-			r_kons_flush (cons);
+			r_cons_flush (cons);
 
 			r_debug_info_free (r);
 		}
@@ -395,7 +395,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 		if (r && r->thread) {
 			PTHREAD_ITEM item = r->thread;
 			r_kons_printf (cons, "(%d) Finished process with exit code %lu\n", dbg->main_pid, item->dwExitCode);
-			r_kons_flush (cons);
+			r_cons_flush (cons);
 			r_debug_info_free (r);
 		}
 		dbg->pid = -1;
@@ -405,7 +405,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 		if (r && r->thread) {
 			PTHREAD_ITEM item = r->thread;
 			r_kons_printf (cons, "(%d) Created DebugBreak thread %d (start @ %p)\n", item->pid, item->tid, item->lpStartAddress);
-			r_kons_flush (cons);
+			r_cons_flush (cons);
 
 			r_debug_info_free (r);
 		}

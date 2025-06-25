@@ -108,7 +108,7 @@ static void showcursor(RCore *core, int x) {
 	} else {
 		r_kons_enable_mouse (cons, false);
 	}
-	r_kons_flush (cons);
+	r_cons_flush (cons);
 }
 
 // TODO: rename /name to /nick or /so?

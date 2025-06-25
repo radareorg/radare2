@@ -8,9 +8,9 @@ static bool rtr_visual(RCore *core, TextLog T, const char *cmd) {
 			char *ret;
 			r_kons_clear00 (core->cons);
 			ret = rtrcmd (T, cmd);
-			r_cons_println (ret);
+			r_kons_println (core->cons, ret);
 			free (ret);
-			r_kons_flush (core->cons);
+			r_cons_flush (core->cons);
 			if (r_kons_is_breaked (core->cons)) {
 				break;
 			}
@@ -30,10 +30,10 @@ static bool rtr_visual(RCore *core, TextLog T, const char *cmd) {
 				r_kons_println (core->cons, ret);
 				free (ret);
 			}
-			r_kons_flush (core->cons);
+			r_cons_flush (core->cons);
 			if (autorefresh) {
 				r_kons_printf (core->cons, "(auto-refresh)\n");
-				r_kons_flush (core->cons);
+				r_cons_flush (core->cons);
 				r_cons_break_push (NULL, NULL);
 				r_sys_sleep (1);
 				if (r_cons_is_breaked ())  {
@@ -66,7 +66,7 @@ TODO:
 				" q    : quit this mode and go back to the shell\n"
 				" sS   : step / step over\n"
 				" .    : seek entry or pc\n");
-				r_kons_flush (core->cons);
+				r_cons_flush (core->cons);
 				r_cons_any_key (core->cons, NULL);
 				break;
 			case 'i':
@@ -89,10 +89,10 @@ TODO:
 						buf[sizeof (buf) - 1] = 0;
 						char *res = rtrcmd (T, buf);
 						if (res) {
-							r_cons_println (res);
+							r_kons_println (core->cons, res);
 							free (res);
 						}
-						r_kons_flush (core->cons);
+						r_cons_flush (core->cons);
 					}
 				}
 				break;
@@ -125,7 +125,7 @@ TODO:
 								r_kons_println (core->cons, res);
 								free (res);
 							}
-							r_kons_flush (core->cons);
+							r_cons_flush (core->cons);
 							ret = true;
 						} else {
 							ret = false;
@@ -256,7 +256,7 @@ static void __rtr_shell(RCore *core, int nth) {
 		} else {
 			char *cmdline = r_str_newf ("%d %s", nth, res);
 			r_core_rtr_cmd (core, cmdline);
-			r_kons_flush (core->cons);
+			r_cons_flush (core->cons);
 			r_line_hist_add (core->cons->line, res);
 		}
 	}

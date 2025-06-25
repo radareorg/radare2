@@ -261,7 +261,7 @@ R_API int __core_visual_view_graph_update(RCore *core, RCoreVisualViewGraph *sta
 	int disy = colh + 2;
 	r_cons_print_at (cons, output, 10, disy, w, h - disy);
 	free (output);
-	r_kons_flush (cons);
+	r_cons_flush (cons);
 
 	free (xrefsColstr);
 	free (mainColstr);
@@ -394,7 +394,7 @@ R_API int r_core_visual_view_graph(RCore *core) {
 			" _     - enter the hud\n"
 			" .     - go back to the initial function list view\n"
 			" :     - enter command\n");
-			r_kons_flush (core->cons);
+			r_cons_flush (core->cons);
 			r_cons_any_key (core->cons, NULL);
 			break;
 		case '/':

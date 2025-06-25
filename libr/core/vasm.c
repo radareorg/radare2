@@ -100,7 +100,7 @@ static int readline_callback(RCons *cons, void *_a, const char *str) {
 		free (msg);
 		free (res);
 	}
-	r_kons_flush (core->cons);
+	r_cons_flush (core->cons);
 	return 1;
 }
 

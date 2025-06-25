@@ -849,7 +849,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 					r_kons_break_pop (core->cons);
 					return false;
 				}
-				r_kons_flush (core->cons);
+				r_cons_flush (core->cons);
 				/* Label handling */
 				ptr2 = r_cmd_macro_label_process (mac, &(labels[0]), &labels_n, ptr);
 				if (!ptr2) {

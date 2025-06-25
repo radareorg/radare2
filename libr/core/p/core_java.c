@@ -22,19 +22,12 @@ static const char *r_cmd_java_strtok(RCore *core, const char *str1, const char b
 static const char *r_cmd_java_consumetok(const char *str1, const char b, size_t len);
 static int r_cmd_java_reload_bin_from_buf(RCore *core, RBinJavaObj *obj, ut8* buffer, ut64 len);
 
-static int r_cmd_java_print_json_definitions(RBinJavaObj *obj);
+static int r_cmd_java_print_json_definitions(RCore *core, RBinJavaObj *obj);
 static int r_cmd_java_print_all_definitions(RAnal *anal);
 static int r_cmd_java_print_class_definitions(RBinJavaObj *obj);
 static int r_cmd_java_print_field_definitions(RBinJavaObj *obj);
 static int r_cmd_java_print_method_definitions(RBinJavaObj *obj);
 static int r_cmd_java_print_import_definitions(RBinJavaObj *obj);
-
-static int r_cmd_java_resolve_cp_idx(RBinJavaObj *obj, ut16 idx);
-static int r_cmd_java_resolve_cp_type(RBinJavaObj *obj, ut16 idx);
-static int r_cmd_java_resolve_cp_idx_b64(RBinJavaObj *obj, ut16 idx);
-static int r_cmd_java_resolve_cp_address(RBinJavaObj *obj, ut16 idx);
-static int r_cmd_java_resolve_cp_to_key(RBinJavaObj *obj, ut16 idx);
-static int r_cmd_java_resolve_cp_summary(RBinJavaObj *obj, ut16 idx);
 
 static int r_cmd_java_print_class_access_flags_value( const char *flags );
 static int r_cmd_java_print_field_access_flags_value( const char *flags );
@@ -46,11 +39,11 @@ static int r_cmd_java_set_acc_flags(RCore *core, ut64 addr, ut16 num_acc_flag);
 #define _(x) UNUSED_FUNCTION(x)
 static int r_cmd_java_print_field_summary(RBinJavaObj *obj, ut16 idx);
 // static int _(r_cmd_java_print_field_count)(RBinJavaObj *obj);
-static int r_cmd_java_print_field_name(RBinJavaObj *obj, ut16 idx);
-static int r_cmd_java_print_field_num_name(RBinJavaObj *obj);
+static int r_cmd_java_print_field_name(RCore *core, RBinJavaObj *obj, ut16 idx);
+static int r_cmd_java_print_field_num_name(RCore *core, RBinJavaObj *obj);
 static int r_cmd_java_print_method_summary(RBinJavaObj *obj, ut16 idx);
-static int r_cmd_java_print_method_name(RBinJavaObj *obj, ut16 idx);
-static int r_cmd_java_print_method_num_name(RBinJavaObj *obj);
+static int r_cmd_java_print_method_name(RCore *core, RBinJavaObj *obj, ut16 idx);
+static int r_cmd_java_print_method_num_name(RCore *core, RBinJavaObj *obj);
 
 static RBinJavaObj *r_cmd_java_get_bin_obj(RAnal *anal);
 static RList *r_cmd_java_get_bin_obj_list(RAnal *anal);
@@ -398,7 +391,7 @@ static int r_cmd_java_handle_prototypes(RCore *core, const char *cmd) {
 	case 'i': return r_cmd_java_print_import_definitions (obj);
 	case 'c': return r_cmd_java_print_class_definitions (obj);
 	case 'a': return r_cmd_java_print_all_definitions (anal);
-	case 'j': return r_cmd_java_print_json_definitions (obj);
+	case 'j': return r_cmd_java_print_json_definitions (core, obj);
 	}
 	return false;
 }
@@ -1016,9 +1009,9 @@ static int r_cmd_java_handle_field_info(RCore *core, const char *cmd) {
 	}
 
 	switch (*(cmd)) {
-	case 'c': return r_cmd_java_print_field_num_name (obj);
+	case 'c': return r_cmd_java_print_field_num_name (core, obj);
 	case 's': return r_cmd_java_print_field_summary (obj, idx);
-	case 'n': return r_cmd_java_print_field_name (obj, idx);
+	case 'n': return r_cmd_java_print_field_name (core, obj, idx);
 	}
 	IFDBG r_cons_printf ("Command is (%s)\n", cmd);
 	eprintf ("[-] r_cmd_java: invalid command syntax.\n");
@@ -1046,9 +1039,9 @@ static int r_cmd_java_handle_method_info(RCore *core, const char *cmd) {
 	}
 
 	switch (*(cmd)) {
-	case 'c': return r_cmd_java_print_method_num_name (obj);
+	case 'c': return r_cmd_java_print_method_num_name (core, obj);
 	case 's': return r_cmd_java_print_method_summary (obj, idx);
-	case 'n': return r_cmd_java_print_method_name (obj, idx);
+	case 'n': return r_cmd_java_print_method_name (core, obj, idx);
 	}
 
 	IFDBG r_cons_printf ("Command is (%s)\n", cmd);
@@ -1167,6 +1160,27 @@ static int r_cmd_java_handle_isvalid(RCore *core, const char *cmd) {
 	return true;
 }
 
+static int r_cmd_java_resolve_cp_idx(RCore *core, RBinJavaObj *obj, ut16 idx) {
+	if (obj && idx) {
+		char *str = r_bin_java_resolve_without_space (obj, idx);
+		r_kons_println (core->cons, str);
+		free (str);
+	}
+	return true;
+}
+
+static int r_cmd_java_resolve_cp_address(RCore *core, RBinJavaObj *obj, ut16 idx) {
+	if (obj && idx) {
+		ut64 addr = r_bin_java_resolve_cp_idx_address (obj, idx);
+		if (addr == UT64_MAX) {
+			R_LOG_ERROR ("Unable to resolve CP Object @ index: 0x%04x", idx);
+		} else {
+			r_kons_printf (core->cons, "0x%" PFMT64x "\n", addr);
+		}
+	}
+	return true;
+}
+
 static int r_cmd_java_handle_resolve_cp(RCore *core, const char *cmd) {
 	RAnal *anal = get_anal (core);
 	char c_type = cmd && *cmd? *cmd: 0;
@@ -1177,12 +1191,38 @@ static int r_cmd_java_handle_resolve_cp(RCore *core, const char *cmd) {
 	int res = false;
 	if (idx > 0 && obj) {
 		switch (c_type) {
-		case 't': return r_cmd_java_resolve_cp_type (obj, idx);
-		case 'c': return r_cmd_java_resolve_cp_idx (obj, idx);
-		case 'e': return r_cmd_java_resolve_cp_idx_b64 (obj, idx);
-		case 'a': return r_cmd_java_resolve_cp_address (obj, idx);
-		case 's': return r_cmd_java_resolve_cp_summary (obj, idx);
-		case 'k': return r_cmd_java_resolve_cp_to_key (obj, idx);
+		case 't': // r_cmd_java_resolve_cp_type (obj, idx);
+			{
+				char *str = r_bin_java_resolve_cp_idx_type (obj, idx);
+				r_kons_println (core->cons, str);
+				free (str);
+			}
+			return true;
+		case 'c': return r_cmd_java_resolve_cp_idx (core, obj, idx);
+		case 'e': // r_cmd_java_resolve_cp_idx_b64 (obj, idx);
+			{
+				char *str = r_bin_java_resolve_b64_encode (obj, idx);
+				r_kons_println (core->cons, str);
+				free (str);
+			}
+			return true;
+		case 'a': // r_cmd_java_resolve_cp_address (core, obj, idx);
+			{
+			}
+			return true;
+		case 's': // r_cmd_java_resolve_cp_summary (obj, idx);
+			{
+				r_bin_java_resolve_cp_idx_print_summary (obj, idx);
+			}
+			return true;
+		case 'k': // return r_cmd_java_resolve_cp_to_key (obj, idx);
+			{
+				char *str = r_bin_java_resolve_cp_idx_tostring (obj, idx);
+				r_kons_println (core->cons, str);
+				free (str);
+			}
+			return true;
+
 		}
 	} else if (obj && c_type == 'g') {
 		for (idx = 1; idx <= obj->cp_count; idx++) {
@@ -1194,7 +1234,7 @@ static int r_cmd_java_handle_resolve_cp(RCore *core, const char *cmd) {
 		res = true;
 	} else if (obj && c_type == 'd') {
 		for (idx = 1; idx <= obj->cp_count; idx++) {
-			r_cmd_java_resolve_cp_summary (obj, idx);
+			r_bin_java_resolve_cp_idx_print_summary (obj, idx);
 		}
 		res = true;
 	} else {
@@ -1300,7 +1340,7 @@ static int r_cmd_java_handle_flags_str(RCore *core, const char *cmd) {
 		case 'f': r_cons_printf ("Field Access Flags String: "); break;
 		case 'c': r_cons_printf ("Class Access Flags String: "); break;
 		}
-		r_cons_println (flags_str);
+		r_kons_println (core->cons, flags_str);
 		free (flags_str);
 		res = true;
 	}
@@ -1348,7 +1388,7 @@ static int r_cmd_java_handle_flags_str_at(RCore *core, const char *cmd) {
 		case 'f': r_cons_printf ("Field Access Flags String: "); break;
 		case 'c': r_cons_printf ("Class Access Flags String: "); break;
 		}
-		r_cons_println (flags_str);
+		r_kons_println (core->cons, flags_str);
 		free (flags_str);
 		res = true;
 	}
@@ -1530,9 +1570,9 @@ static int r_cmd_java_print_all_definitions(RAnal *anal) {
 	return true;
 }
 
-static int r_cmd_java_print_json_definitions(RBinJavaObj *obj) {
+static int r_cmd_java_print_json_definitions(RCore *core, RBinJavaObj *obj) {
 	char *s = r_bin_java_get_bin_obj_json (obj);
-	r_cons_println (s);
+	r_kons_println (core->cons, s);
 	free (s);
 	return true;
 }
@@ -1613,60 +1653,6 @@ static RBinJavaObj *r_cmd_java_get_bin_obj(RAnal *anal) {
 	return is_java? b->cur->bo->bin_obj: NULL;
 }
 
-static int r_cmd_java_resolve_cp_idx(RBinJavaObj *obj, ut16 idx) {
-	if (obj && idx) {
-		char *str = r_bin_java_resolve_without_space (obj, idx);
-		r_cons_println (str);
-		free (str);
-	}
-	return true;
-}
-
-static int r_cmd_java_resolve_cp_type(RBinJavaObj *obj, ut16 idx) {
-	if (obj && idx) {
-		char *str = r_bin_java_resolve_cp_idx_type (obj, idx);
-		r_cons_println (str);
-		free (str);
-	}
-	return true;
-}
-
-static int r_cmd_java_resolve_cp_idx_b64(RBinJavaObj *obj, ut16 idx) {
-	if (obj && idx) {
-		char *str = r_bin_java_resolve_b64_encode (obj, idx);
-		r_cons_println (str);
-		free (str);
-	}
-	return true;
-}
-
-static int r_cmd_java_resolve_cp_address(RBinJavaObj *obj, ut16 idx) {
-	if (obj && idx) {
-		ut64 addr = r_bin_java_resolve_cp_idx_address (obj, idx);
-		if (addr == UT64_MAX) {
-			r_cons_printf ("Unable to resolve CP Object @ index: 0x%04x\n", idx);
-		} else {
-			r_cons_printf ("0x%" PFMT64x "\n", addr);
-		}
-	}
-	return true;
-}
-
-static int r_cmd_java_resolve_cp_to_key(RBinJavaObj *obj, ut16 idx) {
-	if (obj && idx) {
-		char *str = r_bin_java_resolve_cp_idx_tostring (obj, idx);
-		r_cons_println (str);
-		free (str);
-	}
-	return true;
-}
-static int r_cmd_java_resolve_cp_summary(RBinJavaObj *obj, ut16 idx) {
-	if (obj && idx) {
-		r_bin_java_resolve_cp_idx_print_summary (obj, idx);
-	}
-	return true;
-}
-
 static int r_cmd_java_is_valid_input_num_value(RCore *core, const char *input_value) {
 	ut64 value = input_value? r_num_math (core->num, input_value): 0;
 	return !(value == 0 && input_value && *input_value == '0');
@@ -1707,23 +1693,23 @@ static int r_cmd_java_set_acc_flags(RCore *core, ut64 addr, ut16 num_acc_flag) {
 	IFDBG r_cons_printf ("Executed cmd: %s == %d\n", cmd_buf, res);
 	return res;
 }
-static int r_cmd_java_print_field_num_name(RBinJavaObj *obj) {
+static int r_cmd_java_print_field_num_name(RCore *core, RBinJavaObj *obj) {
 	RList *the_list = r_bin_java_get_field_num_name (obj);
 	char *str;
 	RListIter *iter = NULL;
 	r_list_foreach (the_list, iter, str) {
-		r_cons_println (str);
+		r_kons_println (core->cons, str);
 	}
 	r_list_free (the_list);
 	return true;
 }
 
-static int r_cmd_java_print_method_num_name(RBinJavaObj *obj) {
+static int r_cmd_java_print_method_num_name(RCore *core, RBinJavaObj *obj) {
 	RList *the_list = r_bin_java_get_method_num_name (obj);
 	char *str;
 	RListIter *iter = NULL;
 	r_list_foreach (the_list, iter, str) {
-		r_cons_println (str);
+		r_kons_println (core->cons, str);
 	}
 	r_list_free (the_list);
 	return true;
@@ -1741,23 +1727,23 @@ static int r_cmd_java_print_field_summary(RBinJavaObj *obj, ut16 idx) {
 #if 0
 static int UNUSED_FUNCTION(r_cmd_java_print_field_count)(RBinJavaObj *obj) {
 	ut32 res = r_bin_java_get_field_count (obj);
-	r_cons_printf ("%d\n", res);
+	r_kons_printf ("%d\n", res);
 	r_cons_flush ();
 	return true;
 }
 
 static int _(r_cmd_java_print_method_count)(RBinJavaObj *obj) {
 	ut32 res = r_bin_java_get_method_count (obj);
-	r_cons_printf ("%d\n", res);
+	r_kons_printf ("%d\n", res);
 	r_cons_flush ();
 	return true;
 }
 #endif
 
-static int r_cmd_java_print_field_name(RBinJavaObj *obj, ut16 idx) {
+static int r_cmd_java_print_field_name(RCore *core, RBinJavaObj *obj, ut16 idx) {
 	char *res = r_bin_java_get_field_name (obj, idx);
 	if (res) {
-		r_cons_println (res);
+		r_kons_println (core->cons, res);
 	} else {
 		R_LOG_ERROR ("Field or Method @ index (%d) not found in the RBinJavaObj", idx);
 	}
@@ -1774,10 +1760,10 @@ static int r_cmd_java_print_method_summary(RBinJavaObj *obj, ut16 idx) {
 	return res;
 }
 
-static int r_cmd_java_print_method_name(RBinJavaObj *obj, ut16 idx) {
+static int r_cmd_java_print_method_name(RCore *core, RBinJavaObj *obj, ut16 idx) {
 	char *res = r_bin_java_get_method_name (obj, idx);
 	if (res) {
-		r_cons_println (res);
+		r_kons_println (core->cons, res);
 	} else {
 		R_LOG_ERROR ("Field or Method @ index (%d) not found in the RBinJavaObj", idx);
 	}

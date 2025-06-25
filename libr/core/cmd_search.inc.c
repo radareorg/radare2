@@ -3755,7 +3755,7 @@ static void search_collisions(RCore *core, const char *hashName, const ut8 *hash
 		if (!memcmp (hashValue, ctx->digest, hashLength)) {
 			eprintf ("\nCOLLISION FOUND!\n");
 			r_print_hexdump (core->print, core->addr, buf, bufsz, 0, 16, 0);
-			r_kons_flush (core->cons);
+			r_cons_flush (core->cons);
 		}
 		inc++;
 	}

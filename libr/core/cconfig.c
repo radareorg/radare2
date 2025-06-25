@@ -140,7 +140,7 @@ bool ranal2_list(RCore *core, const char *arch, int fmt) {
 				char *c = strdup (h->cpus);
 				int n = r_str_split (c, ',');
 				for (i = 0; i < n; i++) {
-					r_cons_println (r_str_word_get0 (c, i));
+					r_kons_println (core->cons, r_str_word_get0 (c, i));
 					any = true;
 				}
 				free (c);
@@ -155,7 +155,7 @@ bool ranal2_list(RCore *core, const char *arch, int fmt) {
 					char *c = strdup (arp->cpus);
 					int n = r_str_split (c, ',');
 					for (i = 0; i < n; i++) {
-						r_cons_println (r_str_word_get0 (c, i));
+						r_kons_println (core->cons, r_str_word_get0 (c, i));
 						any = true;
 					}
 					free (c);
@@ -186,7 +186,7 @@ bool ranal2_list(RCore *core, const char *arch, int fmt) {
 			feat = "_d";
 			feat2 = "__";
 			if (fmt == 'q') {
-				r_cons_println (h->name);
+				r_kons_println (core->cons, h->name);
 			} else if (fmt == 'j') {
 				const char *license = "GPL";
 				pj_k (pj, h->name);
@@ -221,7 +221,7 @@ bool ranal2_list(RCore *core, const char *arch, int fmt) {
 	}
 	if (fmt == 'j') {
 		pj_end (pj);
-		r_cons_println (pj_string (pj));
+		r_kons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 	}
 	return any;
@@ -668,7 +668,7 @@ static void list_cpus(RCore *core) {
 		char *c = strdup (ap->cpus);
 		int i, n = r_str_split (c, ',');
 		for (i = 0; i < n; i++) {
-			r_cons_println (r_str_word_get0 (c, i));
+			r_kons_println (core->cons, r_str_word_get0 (c, i));
 		}
 		free (c);
 	}
@@ -1289,7 +1289,7 @@ static bool cb_bigendian(void *user, void *data) {
 	return true;
 }
 
-static void list_available_plugins(const char *path) {
+static void list_available_plugins(RCore *core, const char *path) {
 	RListIter *iter;
 	const char *fn;
 	RList *files = r_sys_dir (path);
@@ -1298,7 +1298,7 @@ static void list_available_plugins(const char *path) {
 		if (*fn && *fn != '.' && r_str_endswith (fn, ".sdb")) {
 			char *f = strdup (fn);
 			f[strlen (f) - 4] = 0;
-			r_cons_println (f);
+			r_kons_println (core->cons, f);
 			free (f);
 		}
 	}
@@ -1316,7 +1316,7 @@ static bool cb_cfgcharset(void *user, void *data) {
 	bool rc = false;
 	if (*cf == '?') {
 		const char *cs = R2_PREFIX R_SYS_DIR R2_SDB R_SYS_DIR "charsets" R_SYS_DIR;
-		list_available_plugins (cs);
+		list_available_plugins (core, cs);
 	} else {
 		rc = r_charset_use (core->print->charset, cf);
 		if (rc) {

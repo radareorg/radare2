@@ -52,7 +52,7 @@ static char *__rap_reg_profile(RDebug *dbg) {
 	char *out, *tf = r_file_temp ("rap.XXXXXX");
 	int fd = r_cons_pipe_open (cons, tf, 1, 0);
 	r_io_system (dbg->iob.io, "drp");
-	r_kons_flush (cons);
+	r_cons_flush (cons);
 	r_cons_pipe_close (cons, fd);
 	out = r_file_slurp (tf, NULL);
 	r_file_rm (tf);

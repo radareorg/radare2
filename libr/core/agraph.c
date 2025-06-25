@@ -3405,7 +3405,7 @@ static void agraph_follow_innodes(RCore *core, RAGraph *g, bool in) {
 			count++;
 		}
 	}
-	r_kons_flush (core->cons);
+	r_cons_flush (core->cons);
 	if (r_list_length (list) == 1) {
 		nth = 0;
 	} else if (r_list_length (list) < 10) {
@@ -3642,7 +3642,7 @@ static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, RAnalFunct
 			r_core_cmd_call (core, "pg");
 		}
 		if (mustFlush) {
-			r_kons_flush (core->cons);
+			r_cons_flush (core->cons);
 		}
 		if (r_config_get_b (core->config, "graph.mini")) { // minigraph
 			int h, w = r_cons_get_size (core->cons, &h);
@@ -3663,7 +3663,7 @@ static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, RAnalFunct
 			cmd_agfb3 (core, s, w - 40, 2);
 			free (s);
 			g->can->h /= 4;
-			r_kons_flush (core->cons);
+			r_cons_flush (core->cons);
 		}
 	}
 
@@ -3733,7 +3733,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 		} else {
 			// TODO: maybe go back to avoid seeking from graph view to an scary place?
 			r_cons_message (core->cons, "This is not a valid offset\n");
-			r_kons_flush (core->cons);
+			r_cons_flush (core->cons);
 		}
 	}
 
@@ -4094,7 +4094,7 @@ static void visual_offset(RCore *core, RAGraph *g) {
 	int rows;
 	r_cons_get_size (core->cons, &rows);
 	r_kons_gotoxy (core->cons, 0, rows);
-	r_kons_flush (core->cons);
+	r_cons_flush (core->cons);
 	core->cons->line->prompt_type = R_LINE_PROMPT_OFFSET;
 	r_line_set_hist_callback (core->cons->line, &r_line_hist_offset_up, &r_line_hist_offset_down);
 	r_line_set_prompt (core->cons->line, "[offset]> ");
@@ -4125,10 +4125,10 @@ R_API void r_core_visual_find(RCore *core, RAGraph *g) {
 	while (1) {
 		r_cons_get_size (cons, &rows);
 		r_kons_gotoxy (cons, 0, rows - 1);
-		r_kons_flush (cons);
+		r_cons_flush (cons);
 		printf (Color_RESET);
 		fflush (stdout);
-		r_kons_flush (cons);
+		r_cons_flush (cons);
 
 		r_cons_fgets (cons, buf, sizeof (buf), 0, NULL);
 
@@ -4186,7 +4186,7 @@ find_next:
 		} else {
 			R_LOG_ERROR ("Text '%s' not found. Press 'q' for quit, any other key to conitnue", buf);
 		}
-		r_kons_flush (cons);
+		r_cons_flush (cons);
 
 		free (line);
 
@@ -4251,7 +4251,7 @@ static void goto_asmqjmps(RAGraph *g, RCore *core) {
 	r_kons_clear_line (cons, 0);
 	r_kons_print (cons, Color_RESET);
 	r_kons_print (cons, h);
-	r_kons_flush (cons);
+	r_cons_flush (cons);
 
 	do {
 		r_cons_set_raw (cons, true);
@@ -4260,7 +4260,7 @@ static void goto_asmqjmps(RAGraph *g, RCore *core) {
 		r_cons_write (cons, &ch, 1);
 		cont = isalpha (ch & 0xff) && !islower (ch & 0xff);
 	} while (i < R_CORE_ASMQJMPS_LEN_LETTERS && cont);
-	r_kons_flush (cons);
+	r_cons_flush (cons);
 
 	obuf[i] = '\0';
 	ut64 addr = r_core_get_asmqjmps (core, obuf);
@@ -4408,7 +4408,7 @@ static void nextword(RCore *core, RAGraph *g, const char *word) {
 	}
 	char *s = get_graph_string (core, g);
 	r_kons_clear00 (core->cons);
-	r_kons_flush (core->cons);
+	r_cons_flush (core->cons);
 	const size_t MAX_COUNT = 4096;
 	const char *a = NULL;
 	size_t count = 0;
@@ -4948,7 +4948,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 			{
 				r_kons_gotoxy (core->cons, 0, 0);
 				r_kons_printf (core->cons, R_CONS_CLEAR_LINE"Set shortcut key for 0x%"PFMT64x"\n", core->addr);
-				r_kons_flush (core->cons);
+				r_cons_flush (core->cons);
 				int ch = r_cons_readchar (core->cons);
 				if (ch > 0) {
 					r_core_vmark_set (core, ch, core->addr, can->sx, can->sy);
@@ -4960,7 +4960,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 			{
 				r_kons_gotoxy (core->cons, 0, 2);
 				if (r_core_vmark_dump (core, 'v')) {
-					r_kons_flush (core->cons);
+					r_cons_flush (core->cons);
 					const int ch = r_cons_readchar (core->cons);
 					r_core_vmark_seek (core, ch, g);
 					core->visual.coming_from_vmark = true;

@@ -401,7 +401,7 @@ static char *r_cons_hud_line(RCons *cons, RList *list, const char *prompt) {
 		r_list_free (filtered_list);
 #endif
 		r_cons_printf ("]");
-		r_kons_flush (cons);
+		r_cons_flush (cons);
 		(void) r_line_readline (cons);
 		r_str_ncpy (user_input, cons->line->buffer.data, HUD_BUF_SIZE);
 
@@ -487,7 +487,7 @@ static char *r_cons_message_multiline(RCons *cons, const char *msg) {
 	r_kons_clear (cons);
 	r_kons_gotoxy (cons, 0, (rows / 2) - (r_list_length (lines) / 2));
 	r_kons_println (cons, newmsg);
-	r_kons_flush (cons);
+	r_cons_flush (cons);
 	r_kons_gotoxy (cons, 0, rows - 2);
 	r_cons_any_key (cons, NULL);
 	r_list_free (lines);
@@ -506,7 +506,7 @@ R_API char *r_cons_message(RCons *cons, const char *msg) {
 	r_kons_clear (cons);
 	r_kons_gotoxy (cons, (cols - len) / 2, rows / 2);
 	r_kons_println (cons, msg);
-	r_kons_flush (cons);
+	r_cons_flush (cons);
 	r_kons_gotoxy (cons, 0, rows - 2);
 	r_cons_any_key (cons, NULL);
 	return NULL;

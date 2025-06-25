@@ -383,7 +383,7 @@ static bool run_commands(RCore *r, RList *cmds, RList *files, bool quiet, int do
 			goto beach;
 		}
 		int ret = r_core_run_script (r, file);
-		r_kons_flush (r->cons);
+		r_cons_flush (r->cons);
 		if (ret == -2) {
 			R_LOG_ERROR ("Cannot open '%s'", file);
 		}
@@ -395,7 +395,7 @@ static bool run_commands(RCore *r, RList *cmds, RList *files, bool quiet, int do
 	/* -c */
 	r_list_foreach (cmds, iter, cmdn) {
 		r_core_cmd_lines (r, cmdn);
-		r_kons_flush (r->cons);
+		r_cons_flush (r->cons);
 	}
 beach:
 	if (quiet && !has_failed) {
@@ -527,7 +527,7 @@ static void perform_analysis(RCore *r, int do_analysis) {
 	case 3: acmd = "aaaa"; break;
 	}
 	r_core_cmd_call (r, acmd);
-	r_kons_flush (r->cons);
+	r_cons_flush (r->cons);
 	r->times->file_anal_time = r_time_now_mono () - r->times->file_anal_time;
 }
 
@@ -759,7 +759,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	r_core_task_sync_begin (&mr.r->tasks);
 	if (argc == 2 && !strcmp (argv[1], "-p")) {
 		r_core_project_list (r, 0);
-		r_kons_flush (r->cons);
+		r_cons_flush (r->cons);
 		mainr2_fini (&mr);
 		return 0;
 	}
@@ -848,7 +848,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			mr.debugbackend = strdup (opt.arg);
 			if (!strcmp (opt.arg, "?")) {
 				r_debug_plugin_list (r->dbg, 'q');
-				r_kons_flush (r->cons);
+				r_cons_flush (r->cons);
 				mainr2_fini (&mr);
 				return 0;
 			}
@@ -941,7 +941,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		case 'p':
 			if (!strcmp (opt.arg, "?")) {
 				r_core_project_list (r, 0);
-				r_kons_flush (r->cons);
+				r_cons_flush (r->cons);
 				mainr2_fini (&mr);
 				return 0;
 			}
@@ -1102,7 +1102,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 	if (mr.do_list_core_plugins) { // "-LL"
 		r_core_cmd0 (r, mr.json? "Lcj": "Lc");
-		r_kons_flush (r->cons);
+		r_cons_flush (r->cons);
 		mainr2_fini (&mr);
 		return 0;
 	}
@@ -1121,7 +1121,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		} else {
 			r_core_list_io (r, arg, 0);
 		}
-		r_kons_flush (r->cons);
+		r_cons_flush (r->cons);
 		mainr2_fini (&mr);
 		return 0;
 	}
@@ -1278,7 +1278,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			char *path = r_str_newf ("malloc://%d", sz);
 			mr.fh = r_core_file_open (r, path, mr.perms, mr.mapaddr);
 			if (!mr.fh) {
-				r_kons_flush (r->cons);
+				r_cons_flush (r->cons);
 				free (buf);
 				R_LOG_ERROR ("Cannot open '%s'", path);
 				free (path);
@@ -1616,7 +1616,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		}
 		if (!mr.fh) {
 			if (R_STR_ISNOTEMPTY (mr.pfile)) {
-				r_kons_flush (r->cons);
+				r_cons_flush (r->cons);
 				if (mr.perms & R_PERM_W) {
 					R_LOG_ERROR ("Cannot open '%s' for writing", mr.pfile);
 				} else {
@@ -1650,7 +1650,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			char *res = r_config_eval (r->config, cmdn, false, NULL);
 			r_kons_print (r->cons, res);
 			free (res);
-			r_kons_flush (r->cons);
+			r_cons_flush (r->cons);
 		}
 		if (mr.asmbits) {
 			r_config_set (r->config, "asm.bits", mr.asmbits);
@@ -1719,7 +1719,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			char *res = r_config_eval (r->config, cmdn, false, NULL);
 			r_kons_print (r->cons, res);
 			free (res);
-			r_kons_flush (r->cons);
+			r_cons_flush (r->cons);
 		}
 
 		// no flagspace selected by default the beginning
@@ -1831,7 +1831,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	if (r_config_get_b (r->config, "scr.prompt")) {
 		if (mr.run_rc && r_config_get_i (r->config, "cfg.fortunes")) {
 			r_core_fortune_print_random (r);
-			r_kons_flush (r->cons);
+			r_cons_flush (r->cons);
 		}
 	}
 	if (mr.sandbox) {

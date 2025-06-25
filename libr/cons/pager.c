@@ -68,7 +68,7 @@ R_IPI void pager_printpage(RCons *cons, const char *line, int *index, RList **ml
 		}
 	}
 	r_strpool_free (p);
-	r_kons_flush (cons);
+	r_cons_flush (cons);
 }
 
 R_IPI int pager_next_match(int from, RList **mla, int lcount) {

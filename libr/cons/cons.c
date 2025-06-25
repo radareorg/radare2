@@ -681,9 +681,129 @@ R_API char *r_cons_drain(void) {
 	return r_kons_drain (I);
 }
 
-R_API void r_cons_flush(void) {
-	r_kons_flush (I);
+R_API void r_cons_flush(RCons *cons) {
+	RConsContext *ctx = cons->context;
+	const char *tee = cons->teefile;
+	if (ctx->noflush) {
+		return;
+	}
+	if (cons->null) {
+		r_kons_reset (cons);
+		return;
+	}
+#if 0
+	if (!r_list_empty (ctx->marks)) {
+		r_list_free (ctx->marks);
+		ctx->marks = r_list_newf ((RListFree)r_cons_mark_free);
+	}
+#endif
+	if (lastMatters (ctx)) {
+		// snapshot of the output
+		if (ctx->buffer_len > ctx->lastLength) {
+			free (ctx->lastOutput);
+			ctx->lastOutput = malloc (ctx->buffer_len + 1);
+		}
+		ctx->lastLength = ctx->buffer_len;
+		memcpy (ctx->lastOutput, ctx->buffer, ctx->buffer_len);
+	} else {
+		ctx->lastMode = false;
+	}
+	r_cons_filter (cons);
+	if (!ctx->buffer || ctx->buffer_len < 1) {
+		r_kons_reset (cons);
+		return;
+	}
+	if (r_cons_is_interactive (cons) && cons->fdout == 1) {
+		/* Use a pager if the output doesn't fit on the terminal window. */
+		if (ctx->pageable && R_STR_ISNOTEMPTY (cons->pager) && ctx->buffer_len > 0 && r_str_char_count (ctx->buffer, '\n') >= cons->rows) {
+			ctx->buffer[ctx->buffer_len - 1] = 0;
+			if (!strcmp (cons->pager, "..")) {
+				char *str = r_str_ndup (ctx->buffer, ctx->buffer_len);
+				ctx->pageable = false;
+				r_cons_less_str (cons, str, NULL);
+				r_kons_reset (cons);
+				free (str);
+				return;
+			}
+			r_sys_cmd_str_full (cons->pager, ctx->buffer, -1, NULL, NULL, NULL);
+			r_kons_reset (cons);
+		} else if (cons->maxpage > 0 && ctx->buffer_len > cons->maxpage) {
+#if COUNT_LINES
+			char *buffer = ctx->buffer;
+			int i, lines = 0;
+			for (i = 0; buffer[i]; i++) {
+				if (buffer[i] == '\n') {
+					lines ++;
+				}
+			}
+			if (lines > 0 && !r_kons_yesno (cons, 'n',"Do you want to print %d lines? (y/N)", lines)) {
+				r_kons_reset (cons);
+				return;
+			}
+#else
+			char buf[8];
+			r_num_units (buf, sizeof (buf), ctx->buffer_len);
+			if (!r_kons_yesno (cons, 'n', "Do you want to print %s chars? (y/N)", buf)) {
+				r_kons_reset (cons);
+				return;
+			}
+#endif
+			// fix | more | less problem
+			r_cons_set_raw (cons, true);
+		}
+	}
+	if (R_STR_ISNOTEMPTY (tee)) {
+		FILE *d = r_sandbox_fopen (tee, "a+");
+		if (d) {
+			if (ctx->buffer_len != fwrite (ctx->buffer, 1, ctx->buffer_len, d)) {
+				R_LOG_ERROR ("r_cons_flush: fwrite: error (%s)", tee);
+			}
+			fclose (d);
+		} else {
+			R_LOG_ERROR ("Cannot write on '%s'", tee);
+		}
+	}
+	r_kons_highlight (cons, cons->highlight);
+
+	if (r_cons_is_interactive (cons) && !r_sandbox_enable (false)) {
+		if (cons->linesleep > 0 && cons->linesleep < 1000) {
+			int i = 0;
+			int pagesize = R_MAX (1, cons->pagesize);
+			char *ptr = ctx->buffer;
+			char *nl = strchr (ptr, '\n');
+			int len = ctx->buffer_len;
+			ctx->buffer[ctx->buffer_len] = 0;
+			r_cons_break_push (NULL, NULL);
+			while (nl && !r_kons_is_breaked (cons)) {
+				__cons_write (cons, ptr, nl - ptr + 1);
+				if (cons->linesleep && !(i % pagesize)) {
+					r_sys_usleep (cons->linesleep * 1000);
+				}
+				ptr = nl + 1;
+				nl = strchr (ptr, '\n');
+				i++;
+			}
+			__cons_write (cons, ptr, ctx->buffer + len - ptr);
+			r_cons_break_pop ();
+		} else {
+			__cons_write (cons, ctx->buffer, ctx->buffer_len);
+		}
+	} else {
+		__cons_write (cons, ctx->buffer, ctx->buffer_len);
+	}
+
+	r_kons_reset (cons);
+	if (cons->newline) {
+		eprintf ("\n");
+		cons->newline = false;
+	}
+	if (ctx->tmp_html) {
+		ctx->is_html = ctx->was_html;
+		ctx->tmp_html = false;
+		ctx->was_html = false;
+	}
 }
+
 
 R_API int r_cons_get_column(void) {
 	return r_kons_get_column (I);
@@ -1024,7 +1144,7 @@ R_API void r_cons_bind(RCons *cons, RConsBind *bind) {
 	bind->get_size = r_cons_get_size;
 	bind->get_cursor = r_kons_get_cursor;
 	bind->cb_printf = r_kons_printf;
-	bind->cb_flush = r_kons_flush;
+	bind->cb_flush = r_cons_flush;
 	bind->cb_grep = mygrep;
 	bind->is_breaked = r_kons_is_breaked;
 }
@@ -1164,7 +1284,7 @@ R_API int r_cons_write(RCons *cons, const char *str, int len) {
 		R_CRITICAL_LEAVE (cons);
 	}
 	if (ctx->flush) {
-		r_kons_flush (cons);
+		r_cons_flush (cons);
 	}
 	if (cons->break_word && str && len > 0) {
 		if (r_mem_mem ((const ut8*)str, len, (const ut8*)cons->break_word, cons->break_word_len)) {
@@ -1264,5 +1384,66 @@ R_API void r_cons_set_raw(RCons *I, bool is_raw) {
 #warning No raw console supported for this platform
 #endif
 	I->oldraw = is_raw + 1;
+}
+
+R_API void r_cons_newline(RCons *cons) {
+	if (!cons->null) {
+		r_kons_print (cons, "\n");
+	}
+#if 0
+This place is wrong to manage the color reset, can interfire with r2pipe output sending resetchars
+and break json output appending extra chars.
+this code now is managed into output.c:118 at function r_cons_win_print
+now the console color is reset with each \n (same stuff do it here but in correct place ... i think)
+
+#if R2__WINDOWS__
+	r_cons_reset_colors();
+#else
+	r_cons_print (Color_RESET_ALL"\n");
+#endif
+	if (cons->is_html) r_cons_print ("<br />\n");
+#endif
+}
+
+R_API void r_cons_printf_list(RCons *cons, const char *format, va_list ap) {
+	va_list ap2, ap3;
+
+	va_copy (ap2, ap);
+	va_copy (ap3, ap);
+	if (cons->null || !format) {
+		va_end (ap2);
+		va_end (ap3);
+		return;
+	}
+	if (strchr (format, '%')) {
+		if (cons_palloc (cons, MOAR + strlen (format) * 20)) {
+			bool need_retry = true;
+			while (need_retry) {
+				need_retry = false;
+				size_t left = cons->context->buffer_sz - cons->context->buffer_len;
+				size_t written = vsnprintf (cons->context->buffer + cons->context->buffer_len, left, format, ap3);
+				if (written >= left) {
+					if (cons_palloc (cons, written + 1)) {
+						va_end (ap3);
+						va_copy (ap3, ap2);
+						need_retry = true; // Retry with larger buffer
+					} else {
+						// Allocation failed, use available space
+						size_t added = (left > 0) ? left - 1 : 0;
+						cons->context->buffer_len += added;
+						cons->context->breaked = true; // Indicate truncation
+					}
+				} else {
+					cons->context->buffer_len += written;
+				}
+			}
+		} else {
+			cons->context->breaked = true; // Initial allocation failed
+		}
+	} else {
+		r_kons_print (cons, format);
+	}
+	va_end (ap2);
+	va_end (ap3);
 }
 

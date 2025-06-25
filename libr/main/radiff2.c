@@ -130,7 +130,7 @@ static RCore *opencore(RadiffOptions *ro, const char *f) {
 		if (ro->zignatures) {
 			r_core_cmd0 (c, "zg");
 		}
-		r_kons_flush (c->cons);
+		r_cons_flush (c->cons);
 	}
 	// TODO: must enable io.va here if wanted .. r_config_set_i (c->config, "io.va", va);
 	return c;
@@ -603,11 +603,11 @@ static void dump_cols(RadiffOptions *ro, ut8 *a, int as, ut8 *b, int bs, int w) 
 			}
 		}
 		r_kons_printf (ro->cons, "\n");
-		r_kons_flush (ro->cons);
+		r_cons_flush (ro->cons);
 	}
 	r_kons_break_end (ro->cons);
 	r_kons_printf (ro->cons, "\n"Color_RESET);
-	r_kons_flush (ro->cons);
+	r_cons_flush (ro->cons);
 	if (as != bs) {
 		r_kons_printf (ro->cons, "...\n");
 	}
@@ -703,11 +703,11 @@ static void dump_cols_hexii(RadiffOptions *ro, ut8 *a, int as, ut8 *b, int bs, i
 			r_kons_printf (ro->cons, "  ");
 		}
 		r_kons_printf (ro->cons, "\n");
-		r_kons_flush (ro->cons);
+		r_cons_flush (ro->cons);
 	}
 	r_kons_break_end (ro->cons);
 	r_kons_printf (ro->cons, "\n"Color_RESET);
-	r_kons_flush (ro->cons);
+	r_cons_flush (ro->cons);
 	if (as != bs) {
 		r_kons_printf (ro->cons, "...\n");
 	}
@@ -1640,9 +1640,9 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		}
 // r_kons_printf (c2->cons, "PENE\n");
 		if (ro.mode == MODE_CODE || ro.mode == MODE_GRAPH) {
-			r_kons_flush (c->cons);
-			r_kons_flush (c2->cons);
-			r_kons_flush (ro.cons);
+			r_cons_flush (c->cons);
+			r_cons_flush (c2->cons);
+			r_cons_flush (ro.cons);
 		}
 		r_core_free (c);
 		r_core_free (c2);
@@ -1680,7 +1680,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		r_kons_printf (ro.cons, "+++ %s\n", ro.file2);
 		r_diff_set_callback (d, &cb_xpatch, &ro);
 		r_diff_buffers (d, bufa, (ut32)sza, bufb, (ut32)szb);
-		r_kons_flush (ro.cons);
+		r_cons_flush (ro.cons);
 		break;
 	case MODE_COLSII:
 		if (!c && !r_list_empty (ro.evals)) {
