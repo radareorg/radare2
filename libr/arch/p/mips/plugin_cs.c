@@ -906,7 +906,7 @@ static bool plugin_changed(RArchSession *as) {
 	return false;
 }
 
-static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	PluginData *pd = as->data;
 	ut64 addr = op->addr;
 	const ut8 *buf = op->bytes;

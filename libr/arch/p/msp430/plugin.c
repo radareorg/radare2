@@ -1,12 +1,9 @@
-/* radare - LGPL - Copyright 2014-2022 - Fedor Sakharov, pancake */
+/* radare - LGPL - Copyright 2014-2025 - Fedor Sakharov, pancake */
 
-#include <string.h>
 #include <r_arch.h>
-#include <r_util.h>
-
 #include "./msp430_disas.h"
 
-static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const int addr = op->addr;
 	const ut8 *buf = op->bytes;
 	const int len = op->size;

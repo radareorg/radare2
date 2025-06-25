@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2015 pancake, Fedor Sakharov, Bhootravi */
+/* radare - LGPL - Copyright 2012-2025 pancake, Fedor Sakharov, Bhootravi */
 
 #include <string.h>
 #include <r_types.h>
@@ -532,7 +532,7 @@ static int analop_esil(RAnalOp *op, ut64 addr, const ut8 *buf) {
 	return ret;
 }
 
-static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const ut64 addr = op->addr;
 	const ut8 *buf = op->bytes;
 	const int len = op->size;
@@ -750,7 +750,7 @@ const RArchPlugin r_arch_plugin_h8300 = {
 	},
 	.arch = "h8300",
 	.bits = R_SYS_BITS_PACK2 (8, 16),
-	.decode = &decode,
+	.decode = decode,
 	.regs = regs,
 	.info = archinfo,
 };
