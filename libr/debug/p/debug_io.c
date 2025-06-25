@@ -127,7 +127,6 @@ static bool __reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 // "dc" continue execution
 static bool __io_continue(RDebug *dbg, int pid, int tid, int sig) {
 	dbg->iob.system (dbg->iob.io, "dc");
-	r_cons_flush ();
 	return true;
 }
 
@@ -135,7 +134,6 @@ static bool __io_continue(RDebug *dbg, int pid, int tid, int sig) {
 static bool __io_kill(RDebug *dbg, int pid, int tid, int sig) {
 	r_strf_var (cmd, 32, "dk %d", sig);
 	dbg->iob.system (dbg->iob.io, cmd);
-	r_cons_flush ();
 	return true;
 }
 

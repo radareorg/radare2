@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2024 - pancake */
+/* radare - LGPL - Copyright 2024-2025 - pancake */
 
 typedef struct {
 	char *name;
@@ -80,19 +80,21 @@ static RIU *riu_new(RCore *core, const char *input) {
 		p++;
 	}
 
-	r_cons_set_raw (true);
+	r_kons_set_raw (core->cons, true);
 	riu->items = list;
 	riu->core = core;
 	return riu;
 }
 
 static void riu_render(RIU *riu) {
+	RCore *core = riu->core;
+	RCons *cons = core->cons;
 	RListIter *iter;
 	RIUWidget *w;
-	r_cons_clear00 ();
-	r_cons_printf ("\n.---------------------------------------.\n");
-	r_cons_printf ("| [q] %18s                |\n", r_str_get (riu->title));
-	r_cons_printf ("|---------------------------------------'\n");
+	r_kons_clear00 (cons);
+	r_kons_printf (cons, "\n.---------------------------------------.\n");
+	r_kons_printf (cons, "| [q] %18s                |\n", r_str_get (riu->title));
+	r_kons_printf (cons, "|---------------------------------------'\n");
 	int n = 0;
 	bool havebuttons = false;
 	r_list_foreach (riu->items, iter, w) {
@@ -103,20 +105,20 @@ static void riu_render(RIU *riu) {
 				r_cons_printf ("|\n");
 				havebuttons = true;
 			}
-			r_cons_printf ("|  %c [ %s ]\n", ch, w->name);
+			r_kons_printf (cons, "|  %c [ %s ]\n", ch, w->name);
 			break;
 		case 'r': // run
-			r_cons_printf ("|  %c %s (%s)\n", ch, w->name, w->cmnd);
-			r_core_cmd0 (riu->core, w->cmnd);
+			r_kons_printf (cons, "|  %c %s (%s)\n", ch, w->name, w->cmnd);
+			r_core_cmd0 (core, w->cmnd);
 			break;
 		default:
-			r_cons_printf ("|  %c %10s : %s\n", ch, w->name, w->data);
+			r_kons_printf (cons, "|  %c %10s : %s\n", ch, w->name, w->data);
 			break;
 		}
 		n++;
 	}
-	r_cons_printf ("`---------------------------------------'\n");
-	r_cons_flush ();
+	r_kons_print (cons, "`---------------------------------------'\n");
+	r_kons_flush (cons);
 }
 
 static bool riu_input(RIU *riu) {
@@ -155,13 +157,13 @@ static bool riu_input(RIU *riu) {
 				r_core_cmdf (riu->core, "'k riu=%s", w->name);
 				return false;
 			}
-			r_cons_set_raw (false);
+			r_kons_set_raw (riu->core->cons, false);
 			char *res = r_core_cmd_str (riu->core, w->cmnd);
 			r_str_trim (res);
 			free (w->data);
 			w->data = res;
 			r_core_cmdf (riu->core, "'k riu.%s=%s", w->name, w->data);
-			r_cons_set_raw (true);
+			r_kons_set_raw (riu->core->cons, true);
 		}
 		break;
 	}
@@ -169,7 +171,7 @@ static bool riu_input(RIU *riu) {
 }
 
 static void riu_free(RIU *riu) {
-	r_cons_set_raw (false);
+	r_kons_set_raw (riu->core->cons, false);
 	if (riu) {
 		r_list_free (riu->items);
 		free (riu);

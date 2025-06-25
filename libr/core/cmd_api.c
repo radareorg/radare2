@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #define R_LOG_ORIGIN "cmdapi"
 #include <r_core.h>
@@ -22,21 +22,16 @@ static void *alias_dupkey(const void *k) {
 
 static void *alias_dupvalue(const void *v_void) {
 	RCmdAliasVal *v = (RCmdAliasVal *)v_void;
-	RCmdAliasVal *vcopy = R_NEW (RCmdAliasVal);
-	if (!vcopy) {
-		return NULL;
-	}
 	ut8 *data = malloc (v->sz);
 	if (!data) {
-		free (vcopy);
 		return NULL;
 	}
+	RCmdAliasVal *vcopy = R_NEW (RCmdAliasVal);
 	vcopy->is_data = v->is_data;
 	vcopy->is_str = v->is_str;
 	vcopy->sz = v->sz;
 	vcopy->data = data;
 	memcpy (vcopy->data, v->data, v->sz);
-
 	return vcopy;
 }
 
@@ -452,7 +447,6 @@ R_API void r_cmd_macro_init(RCmdMacro *mac) {
 	mac->counter = 0;
 	mac->_brk_value = 0;
 	mac->brk_value = &mac->_brk_value;
-	mac->cb_printf = (void *)printf;
 	mac->num = NULL;
 	mac->user = NULL;
 	mac->cmd = NULL;
@@ -479,7 +473,9 @@ R_API bool r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 	int lidx;
 
 	if (!*oname) {
-		r_cmd_macro_list (mac, 0);
+		char *list = r_cmd_macro_list (mac, 0);
+		eprintf ("%s\n", list); // TODO: return char *?
+		free (list);
 		return false;
 	}
 
@@ -587,30 +583,31 @@ R_API bool r_cmd_macro_rm(RCmdMacro *mac, const char *_name) {
 	return ret;
 }
 
-static void macro_meta(RCmdMacro *mac) {
+static char *macro_meta(RCmdMacro *mac) {
 	RCmdMacroItem *m;
 	int j;
 	RListIter *iter;
+	RStrBuf *sb = r_strbuf_new ("");
 	r_list_foreach (mac->macros, iter, m) {
-		mac->cb_printf ("\"(%s %s; ", m->name, m->args);
+		r_strbuf_appendf (sb, "\"(%s %s; ", m->name, m->args);
 		for (j = 0; m->code[j]; j++) {
 			if (m->code[j] == '\n') {
-				mac->cb_printf (";");
+				r_strbuf_append (sb, ";");
 			} else {
-				mac->cb_printf ("%c", m->code[j]);
+				r_strbuf_appendf (sb, "%c", m->code[j]);
 			}
 		}
-		mac->cb_printf (")\"\n");
+		r_strbuf_append (sb, ")\"\n");
 	}
+	return r_strbuf_drain (sb);
 }
-// TODO: use mac->cb_printf which is r_cons_printf at the end
-R_API void r_cmd_macro_list(RCmdMacro *mac, int mode) {
+
+R_API char *r_cmd_macro_list(RCmdMacro *mac, int mode) {
 	RCmdMacroItem *m;
 	int j, idx = 0;
 	RListIter *iter;
 	if (mode == '*') {
-		macro_meta (mac);
-		return;
+		return macro_meta (mac);
 	}
 	if (mode == 'j') {
 		PJ *pj = pj_new ();
@@ -625,27 +622,25 @@ R_API void r_cmd_macro_list(RCmdMacro *mac, int mode) {
 			pj_end (pj);
 			idx++;
 		}
-
 		pj_end (pj);
 		pj_end (pj);
-
-		char *s = pj_drain (pj);
-		mac->cb_printf ("%s\n", s);
-		free (s);
-		return;
+		return pj_drain (pj);
 	}
+
+	RStrBuf *sb = r_strbuf_new ("");
 	r_list_foreach (mac->macros, iter, m) {
-		mac->cb_printf ("%d (%s %s; ", idx, m->name, m->args);
+		r_strbuf_appendf (sb, "%d (%s %s; ", idx, m->name, m->args);
 		for (j = 0; m->code[j]; j++) {
 			if (m->code[j] == '\n') {
-				mac->cb_printf ("; ");
+				r_strbuf_append (sb, "; ");
 			} else {
-				mac->cb_printf ("%c", m->code[j]);
+				r_strbuf_appendf (sb, "%c", m->code[j]);
 			}
 		}
-		mac->cb_printf (")\n");
+		r_strbuf_append (sb, ")\n");
 		idx++;
 	}
+	return r_strbuf_drain (sb);
 }
 
 
@@ -784,6 +779,7 @@ R_API char *r_cmd_macro_label_process(RCmdMacro *mac, RCmdMacroLabel *labels, in
 }
 
 R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
+	RCore *core = (RCore *)mac->user;
 	char *ptr2;
 	RListIter *iter;
 	RCmdMacroItem *m;
@@ -836,7 +832,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 				R_LOG_ERROR ("Macro '%s' expects %d args, not %d", m->name, m->nargs, nargs);
 				mac->macro_level--;
 				free (str);
-				r_cons_break_pop ();
+				r_kons_break_pop (core->cons);
 				return false;
 			}
 			mac->brk = 0;
@@ -844,16 +840,16 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 				if (end) {
 					*end = '\0';
 				}
-				if (r_cons_is_breaked ()) {
+				if (r_kons_is_breaked (core->cons)) {
 					R_LOG_INFO ("Interrupted at (%s)", ptr);
 					if (end) {
 						*end = '\n';
 					}
 					free (str);
-					r_cons_break_pop ();
+					r_kons_break_pop (core->cons);
 					return false;
 				}
-				r_cons_flush ();
+				r_kons_flush (core->cons);
 				/* Label handling */
 				ptr2 = r_cmd_macro_label_process (mac, &(labels[0]), &labels_n, ptr);
 				if (!ptr2) {
@@ -876,7 +872,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 					Gvalue = mac->num->value;
 					if (r < 0) {
 						free (str);
-						r_cons_break_pop ();
+						r_kons_break_pop (core->cons);
 						return r;
 					}
 				}

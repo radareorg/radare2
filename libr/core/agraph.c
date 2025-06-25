@@ -2491,8 +2491,8 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	core->keep_asmqjmps = false;
 	const bool breakable = r_list_length (fcn->bbs) > 1024;
 	if (breakable) {
-		r_cons_set_raw (false);
-		r_cons_break_push (NULL, NULL);
+		r_kons_set_raw (core->cons, false);
+		r_kons_break_push (core->cons, NULL, NULL);
 	}
 	r_list_foreach (fcn->bbs, iter, bb) {
 		if (breakable && r_cons_is_breaked ()) {
@@ -2553,8 +2553,8 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	}
 interrupted:
 	if (breakable) {
-		r_cons_break_end ();
-		r_cons_set_raw (true);
+		r_kons_break_end (core->cons);
+		r_kons_set_raw (core->cons, true);
 	}
 
 	delete_dup_edges (g);
@@ -3550,15 +3550,15 @@ static bool check_changes(RAGraph *g, bool is_interactive, RCore *core, RAnalFun
 	return true;
 }
 
-static int agraph_print(RAGraph *g, bool is_interactive, RCore *core, RAnalFunction *fcn) {
-	int h, w = r_cons_get_size (&h);
+static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, RAnalFunction *fcn) {
+	int h, w = r_kons_get_size (core->cons, &h);
 	bool ret = check_changes (g, is_interactive, core, fcn);
 	if (!ret) {
 		return false;
 	}
 
 	if (is_interactive) {
-		r_cons_clear00 ();
+		r_kons_clear00 (core->cons);
 	} else {
 		/* TODO: limit to screen size when the output is not redirected to file */
 		update_graph_sizes (g);
@@ -3598,17 +3598,18 @@ static int agraph_print(RAGraph *g, bool is_interactive, RCore *core, RAnalFunct
 	if (R_STR_ISNOTEMPTY (g->title)) {
 		g->can->sy--;
 	}
+	RCons *cons = core->cons;
 	/* print the graph title */
 	(void) G (-g->can->sx, -g->can->sy);
 	if (g->title) {
 		if (!g->is_tiny) {
 			int color = core? r_config_get_i (core->config, "scr.color"): 0;
 			if (color > 0) {
-				const char *kolor = core->cons->context->pal.prompt;
-				r_cons_gotoxy (0, 0);
-				r_cons_print (kolor?kolor: Color_WHITE);
-				r_cons_print (g->title);
-				r_cons_print (Color_RESET"\r");
+				const char *kolor = cons->context->pal.prompt;
+				r_kons_gotoxy (cons, 0, 0);
+				r_kons_print (cons, kolor? kolor: Color_WHITE);
+				r_kons_print (cons, g->title);
+				r_kons_print (cons, Color_RESET"\r");
 			} else {
 				W (g->title); // canvas write is always black/white
 			}
@@ -3632,8 +3633,8 @@ static int agraph_print(RAGraph *g, bool is_interactive, RCore *core, RAnalFunct
 			cmdv = ".dr*;dr=@e:hex.cols=`?v $w*3`";
 		}
 		if (R_STR_ISNOTEMPTY (cmdv)) {
-			r_cons_gotoxy (0, 2);
-			r_cons_print (Color_RESET);
+			r_kons_gotoxy (cons, 0, 2);
+			r_kons_print (cons, Color_RESET);
 			r_core_cmd0 (core, cmdv);
 			mustFlush = true;
 		}
@@ -3644,7 +3645,7 @@ static int agraph_print(RAGraph *g, bool is_interactive, RCore *core, RAnalFunct
 			r_kons_flush (core->cons);
 		}
 		if (r_config_get_b (core->config, "graph.mini")) { // minigraph
-			int h, w = r_cons_get_size (&h);
+			int h, w = r_kons_get_size (core->cons, &h);
 			r_kons_push (core->cons);
 			g->can->h *= 4;
 			RConsCanvas *ocan = g->can;
@@ -3689,7 +3690,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 	RAnalFunction *f = NULL;
 	RAnalFunction **fcn = grd->fcn;
 	if (!fcn) {
-		return agraph_print (g, grd->fs, core, NULL);
+		return agraph_print (core, g, grd->fs, NULL);
 	}
 	// allow to change the current function during debugging
 	if (g->is_instep && r_config_get_b (core->config, "cfg.debug")) {
@@ -3736,7 +3737,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 		}
 	}
 
-	int res = agraph_print (g, grd->fs, core, *fcn);
+	int res = agraph_print (core, g, grd->fs, *fcn);
 
 	if (r_config_get_b (core->config, "scr.scrollbar")) {
 		r_core_print_scrollbar (core);
@@ -3844,7 +3845,7 @@ R_API Sdb *r_agraph_get_sdb(RAGraph *g) {
 R_API void r_agraph_print(RAGraph *g, void *_core) {
 	RCore *core = (RCore *)_core;
 	g->can->flags = 0;
-	agraph_print (g, false, core, NULL);
+	agraph_print (core, g, false, NULL);
 	if (g->graph->n_nodes > 0) {
 		r_kons_newline (core->cons);
 	}
@@ -4243,22 +4244,23 @@ static void goto_asmqjmps(RAGraph *g, RCore *core) {
 	char obuf[R_CORE_ASMQJMPS_LEN_LETTERS + 1];
 	int rows, i = 0;
 	bool cont;
+	RCons *cons = core->cons;
 
-	r_cons_get_size (&rows);
-	r_cons_gotoxy (0, rows);
-	r_cons_clear_line (0);
-	r_cons_print (Color_RESET);
-	r_cons_print (h);
-	r_kons_flush (core->cons);
+	r_kons_get_size (cons, &rows);
+	r_kons_gotoxy (cons, 0, rows);
+	r_kons_clear_line (cons, 0);
+	r_kons_print (cons, Color_RESET);
+	r_kons_print (cons, h);
+	r_kons_flush (cons);
 
 	do {
-		r_cons_set_raw (true);
-		char ch = r_cons_readchar (core->cons);
+		r_kons_set_raw (cons, true);
+		char ch = r_cons_readchar (cons);
 		obuf[i++] = ch;
-		r_kons_write (core->cons, &ch, 1);
+		r_kons_write (cons, &ch, 1);
 		cont = isalpha (ch & 0xff) && !islower (ch & 0xff);
 	} while (i < R_CORE_ASMQJMPS_LEN_LETTERS && cont);
-	r_kons_flush (core->cons);
+	r_kons_flush (cons);
 
 	obuf[i] = '\0';
 	ut64 addr = r_core_get_asmqjmps (core, obuf);
@@ -4405,7 +4407,7 @@ static void nextword(RCore *core, RAGraph *g, const char *word) {
 		r_vector_clear (&gh->word_list);
 	}
 	char *s = get_graph_string (core, g);
-	r_cons_clear00 ();
+	r_kons_clear00 (core->cons);
 	r_kons_flush (core->cons);
 	const size_t MAX_COUNT = 4096;
 	const char *a = NULL;
@@ -4432,11 +4434,11 @@ static void nextword(RCore *core, RAGraph *g, const char *word) {
 
 R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int mode) {
 	bool is_interactive = (mode != 0);
-	if (is_interactive && !r_cons_is_interactive ()) {
+	if (is_interactive && !r_cons_is_interactive (core->cons)) {
 		R_LOG_ERROR ("Interactive graph mode requires 'e scr.interactive=true'");
 		return false;
 	}
-	r_cons_set_raw (true);
+	r_kons_set_raw (core->cons, true);
 	int o_asmqjmps_letter = core->is_asmqjmps_letter;
 	int o_vmode = core->vmode;
 	int exit_graph = false, is_error = false;
@@ -4455,7 +4457,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 	}
 	r_config_hold (hc, "asm.pseudo", "asm.esil", "asm.cmt.right", NULL);
 
-	int h, w = r_cons_get_size (&h);
+	int h, w = r_kons_get_size (core->cons, &h);
 	RConsCanvas *can = r_cons_canvas_new (core->cons, w, h, -2);
 	if (!can) {
 		w = 80;
@@ -4540,7 +4542,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 	core->cons->event_data = grd;
 	core->cons->event_resize = (RConsEvent) agraph_refresh_oneshot;
 
-	r_cons_break_push (NULL, NULL);
+	r_kons_break_push (core->cons, NULL, NULL);
 	if (mode == 3) { // XXX wrong usage or buggy RGraph.domTree()
 		// dominance tree here
 		const RList *l = r_graph_get_nodes (g->graph);
@@ -4558,7 +4560,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 	}
 
 	while (!exit_graph && !is_error && !r_cons_is_breaked ()) {
-		w = r_cons_get_size (&h);
+		w = r_kons_get_size (core->cons, &h);
 		invscroll = r_config_get_b (core->config, "graph.invscroll");
 		ret = agraph_refresh (grd);
 
@@ -4569,7 +4571,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 		showcursor (core, false);
 
 		// r_core_graph_inputhandle()
-		r_cons_set_raw (true);
+		r_kons_set_raw (core->cons, true);
 		okey = r_cons_readchar (core->cons);
 		key = r_cons_arrow_to_hjkl (core->cons, okey);
 
@@ -4763,7 +4765,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 			g->discroll = 0;
 			break;
 		case '?':
-			r_cons_clear00 ();
+			r_kons_clear00 (core->cons);
 			RStrBuf *rsb = r_strbuf_new ("");
 			r_core_visual_append_help (rsb, "Visual Graph Mode (VV) Help", help_msg_visual_graph);
 			ret = r_cons_less_str (core->cons, r_strbuf_get (rsb), "?");
@@ -4956,7 +4958,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 		case '\'':
 			// go to given mark
 			{
-				r_cons_gotoxy (0, 2);
+				r_kons_gotoxy (core->cons, 0, 2);
 				if (r_core_vmark_dump (core, 'v')) {
 					r_kons_flush (core->cons);
 					const int ch = r_cons_readchar (core->cons);
@@ -5161,7 +5163,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 			core->cons->event_resize = (RConsEvent)agraph_set_need_reload_nodes;
 			r_core_visual_prompt_input (core);
 			g->can->flags = r_cons_canvas_flags (core->cons);
-			r_cons_set_raw (true);
+			r_kons_set_raw (core->cons, true);
 			core->cons->event_resize = (RConsEvent)agraph_refresh_oneshot;
 			if (!g) {
 				g->need_reload_nodes = true; // maybe too slow and unnecessary sometimes? better be safe and reload
@@ -5299,7 +5301,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 		}
 	}
 	r_vector_fini (&g->ghits.word_list);
-	r_cons_break_pop ();
+	r_kons_break_pop (core->cons);
 	r_config_set_b (core->config, "asm.comments", asm_comments);
 	core->cons->event_resize = NULL;
 	core->cons->event_data = NULL;

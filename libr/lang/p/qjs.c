@@ -537,7 +537,8 @@ static JSValue js_write(JSContext *ctx, JSValueConst this_val, int argc, JSValue
 }
 
 static JSValue js_flush(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
-	r_cons_flush ();
+	RCons *cons = r_cons_singleton ();
+	r_kons_flush (cons);
 	fflush (stdout);
 	return JS_UNDEFINED;
 }

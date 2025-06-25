@@ -85,7 +85,7 @@ static void screenlock(RCore *core) {
 	ut64 last = UT64_MAX;
 	int tries = 0;
 	do {
-		r_cons_clear00 ();
+		r_kons_clear00 (core->cons);
 		r_kons_printf (core->cons, "Retries: %d\n", tries);
 		char *begstr = r_time_usecs_tostring (begin);
 		r_kons_printf (core->cons, "Locked ts: %s\n", begstr);
@@ -231,7 +231,7 @@ R_API void r_core_log_view(RCore *core, int num, int shift) {
 		num = 1;
 	}
 	int i;
-	int cons_width = r_cons_get_size (NULL);
+	int cons_width = r_kons_get_size (core->cons, NULL);
 	if (cons_width < 1) {
 		cons_width = 60;
 	}
@@ -324,7 +324,7 @@ static int cmd_log(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg_T);
 		break;
 	case 'T': // "TT" Ts ? as ms?
-		if (r_cons_is_interactive ()) {
+		if (r_cons_is_interactive (core->cons)) {
 			textlog_chat (core);
 		} else {
 			R_LOG_ERROR ("The TT command needs scr.interactive=true");

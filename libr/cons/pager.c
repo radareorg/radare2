@@ -1,11 +1,11 @@
-/* radare2 - LGPL - Copyright 2019-2022 - pancake */
+/* radare2 - LGPL - Copyright 2019-2025 - pancake */
 
 #include <r_regex.h>
 #include <r_util.h>
 #include <r_cons.h>
-#include "pager_private.h"
+#include "private.h"
 
-R_IPI void pager_color_line(const char *line, RStrpool *p, RList *ml) {
+R_IPI void pager_color_line(RCons *cons, const char *line, RStrpool *p, RList *ml) {
 	int m_len, offset = 0;
 	char *m_addr;
 	RListIter *it;
@@ -45,10 +45,10 @@ R_IPI void pager_color_line(const char *line, RStrpool *p, RList *ml) {
 	r_strpool_append (p, line + offset);
 }
 
-R_IPI void pager_printpage(const char *line, int *index, RList **mla, int from, int to, int w) {
+R_IPI void pager_printpage(RCons *cons, const char *line, int *index, RList **mla, int from, int to, int w) {
 	int i;
 
-	r_cons_clear00 ();
+	r_kons_clear00 (cons);
 	if (from < 0 || to < 0) {
 		return;
 	}
@@ -58,17 +58,17 @@ R_IPI void pager_printpage(const char *line, int *index, RList **mla, int from, 
 		return;
 	}
 	for (i = from; i < to; i++) {
-		pager_color_line (line + index[i], p, mla[i]);
+		pager_color_line (cons, line + index[i], p, mla[i]);
 		r_strpool_ansi_trim (p, w);
-		r_cons_reset_colors ();
+		r_kons_reset_colors (cons);
 		if (i + 1 == to) {
-			r_cons_print (p->str);
+			r_kons_print (cons, p->str);
 		} else {
-			r_cons_println (p->str);
+			r_kons_println (cons, p->str);
 		}
 	}
 	r_strpool_free (p);
-	r_cons_flush ();
+	r_kons_flush (cons);
 }
 
 R_IPI int pager_next_match(int from, RList **mla, int lcount) {

@@ -197,8 +197,9 @@ static bool r_debug_native_continue_syscall(RDebug *dbg, int pid, int num) {
 #if !R2__WINDOWS__ && !__APPLE__ && !R2__BSD__
 /* Callback to trigger SIGINT signal */
 static void interrupt_process(RDebug *dbg) {
+	RCore *core = dbg->coreb.core;
 	r_debug_kill (dbg, dbg->pid, dbg->tid, SIGINT);
-	r_cons_break_pop ();
+	r_kons_break_pop (core->cons);
 }
 #endif
 
@@ -225,9 +226,10 @@ static bool r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	if (sig == -1) {
 		   sig = dbg->reason.signum;
 	}
+	RCore *core = dbg->coreb.core;
 	/* SIGINT handler for attached processes: dbg.consbreak (disabled by default) */
 	if (dbg->consbreak) {
-		r_cons_break_push ((RConsBreak)interrupt_process, dbg);
+		r_kons_break_push (core->cons, (RConsBreak)interrupt_process, dbg);
 	}
 	if (dbg->continue_all_threads && dbg->n_threads && dbg->threads) {
 		RDebugPid *th;
@@ -264,6 +266,7 @@ static RDebugInfo* r_debug_native_info(RDebug *dbg, const char *arg) {
 
 #if R2__WINDOWS__
 static bool tracelib(RDebug *dbg, const char *mode, PLIB_ITEM item) {
+	RCore *core = dbg->coreb.core;
 	const char *needle = NULL;
 	int tmp = 0;
 	if (mode) {
@@ -272,9 +275,9 @@ static bool tracelib(RDebug *dbg, const char *mode, PLIB_ITEM item) {
 		case 'u': needle = dbg->glob_unlibs; break;
 		}
 	}
-	r_cons_printf ("(%d) %sing library at 0x%p (%s) %s\n", item->pid, mode,
+	r_kons_printf (core->cons, "(%d) %sing library at 0x%p (%s) %s\n", item->pid, mode,
 		item->BaseOfDll, item->Path, item->Name);
-	r_cons_flush ();
+	r_kons_flush (core->cons);
 	if (needle && strlen (needle)) {
 		tmp = r_str_glob (item->Name, needle);
 	}
@@ -295,6 +298,8 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 	int orig_tid = dbg->tid;
 	bool restore_thread = false;
 	RW32Dw *wrap = dbg->user;
+	RCore *core = dbg->coreb.core;
+	RCons *cons = core->cons;
 
 	if (pid == -1) {
 		R_LOG_ERROR ("r_debug_native_wait called with pid -1");
@@ -347,7 +352,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 			}
 			r_debug_info_free (r);
 		} else {
-			r_cons_flush ();
+			r_kons_flush (core->cons);
 			R_LOG_WARN ("Loading unknown library");
 		}
 		restore_thread = true;
@@ -359,16 +364,16 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 			}
 			r_debug_info_free (r);
 		} else {
-			r_cons_printf ("Unloading unknown library.\n");
-			r_cons_flush ();
+			r_kons_printf (core->cons, "Unloading unknown library.\n");
+			r_kons_flush (core->cons);
 		}
 		restore_thread = true;
 	} else if (reason == R_DEBUG_REASON_NEW_TID) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
 		if (r && r->thread) {
 			PTHREAD_ITEM item = r->thread;
-			r_cons_printf ("(%d) Created thread %d (start @ %p) (teb @ %p)\n", item->pid, item->tid, item->lpStartAddress, item->lpThreadLocalBase);
-			r_cons_flush ();
+			r_kons_printf (cons, "(%d) Created thread %d (start @ %p) (teb @ %p)\n", item->pid, item->tid, item->lpStartAddress, item->lpThreadLocalBase);
+			r_kons_flush (cons);
 
 			r_debug_info_free (r);
 		}
@@ -377,8 +382,8 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
 		if (r && r->thread) {
 			PTHREAD_ITEM item = r->thread;
-			r_cons_printf ("(%d) Finished thread %d Exit code %lu\n", (ut32)item->pid, (ut32)item->tid, item->dwExitCode);
-			r_cons_flush ();
+			r_kons_printf (cons, "(%d) Finished thread %d Exit code %lu\n", (ut32)item->pid, (ut32)item->tid, item->dwExitCode);
+			r_kons_flush (cons);
 
 			r_debug_info_free (r);
 		}
@@ -389,8 +394,8 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
 		if (r && r->thread) {
 			PTHREAD_ITEM item = r->thread;
-			r_cons_printf ("(%d) Finished process with exit code %lu\n", dbg->main_pid, item->dwExitCode);
-			r_cons_flush ();
+			r_kons_printf (cons, "(%d) Finished process with exit code %lu\n", dbg->main_pid, item->dwExitCode);
+			r_kons_flush (cons);
 			r_debug_info_free (r);
 		}
 		dbg->pid = -1;
@@ -399,8 +404,8 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
 		if (r && r->thread) {
 			PTHREAD_ITEM item = r->thread;
-			r_cons_printf ("(%d) Created DebugBreak thread %d (start @ %p)\n", item->pid, item->tid, item->lpStartAddress);
-			r_cons_flush ();
+			r_kons_printf (cons, "(%d) Created DebugBreak thread %d (start @ %p)\n", item->pid, item->tid, item->lpStartAddress);
+			r_kons_flush (cons);
 
 			r_debug_info_free (r);
 		}
@@ -461,11 +466,12 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 	if (pid < 0) {
 		return R_DEBUG_REASON_ERROR;
 	}
-	r_cons_break_push (NULL, NULL);
+	RCore *core = dbg->coreb.core;
+	r_kons_break_push (core->cons, NULL, NULL);
 	do {
 		reason = xnu_wait (dbg, pid);
 		if (reason == R_DEBUG_REASON_MACH_RCV_INTERRUPTED) {
-			if (r_cons_is_breaked ()) {
+			if (r_kons_is_breaked (core->cons)) {
 				// Perhaps check the inferior is still alive,
 				// otherwise xnu_stop will fail.
 				reason = xnu_stop (dbg, pid)
@@ -478,7 +484,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 		}
 		break;
 	} while (true);
-	r_cons_break_pop ();
+	r_kons_break_pop (core->cons);
 #else
 	int status = -1;
 	// XXX: this is blocking, ^C will be ignored

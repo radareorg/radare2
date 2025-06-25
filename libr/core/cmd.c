@@ -1582,7 +1582,7 @@ static int cmd_l(void *data, const char *input) { // "l"
 		}
 		{
 			char *carg = r_str_newf ("-l %s", arg);
-			int w = r_cons_get_size (NULL) - 8;
+			int w = r_kons_get_size (core->cons, NULL) - 8;
 			char *res = r_syscmd_ls (carg, w);
 			if (res) {
 				r_kons_print (core->cons, res);
@@ -1633,14 +1633,8 @@ static int cmd_l(void *data, const char *input) { // "l"
 		if (r_fs_check (core->fs, arg)) {
 			r_core_cmdf (core, "md %s", arg);
 		} else {
-			int w = r_cons_get_size (NULL) - 8;
-			char *res;
-
-			if (*arg) {
-				//arg++;
-			}
-
-			res = r_syscmd_ls (arg, w);
+			int w = r_kons_get_size (core->cons, NULL) - 8;
+			char *res = r_syscmd_ls (arg, w);
 			if (res) {
 				r_kons_print (core->cons, res);
 				free (res);
@@ -2520,7 +2514,7 @@ static int cmd_kuery(void *data, const char *input) {
 		if (core->http_up) {
 			return false;
 		}
-		if (!r_cons_is_interactive ()) {
+		if (!r_cons_is_interactive (core->cons)) {
 			return false;
 		}
 		if (input[1] == ' ') {
@@ -2564,7 +2558,7 @@ static int cmd_kuery(void *data, const char *input) {
 			out = sdb_querys (s, NULL, 0, buf);
 			if (out) {
 				r_kons_println (core->cons, out);
-				r_cons_flush ();
+				r_kons_flush (core->cons);
 			}
 		}
 		free (buf);
@@ -3004,7 +2998,7 @@ static int cmd_panels(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg_v);
 		return false;
 	}
-	if (!r_cons_is_interactive ()) {
+	if (!r_cons_is_interactive (core->cons)) {
 		R_LOG_ERROR ("Panel mode requires scr.interactive=true");
 		return false;
 	}
@@ -3077,7 +3071,7 @@ static int cmd_visual(void *data, const char *input) {
 		return false;
 	}
 #endif
-	if (!r_cons_is_interactive ()) {
+	if (!r_cons_is_interactive (core->cons)) {
 		R_LOG_ERROR ("Visual mode requires scr.interactive=true");
 		return false;
 	}
@@ -3618,6 +3612,11 @@ static char *unescape_special_chars(const char *s, const char *special_chars) {
 		close (fd_out);        \
 		fd_out = -1;
 
+static DWORD WINAPI flush_thread(LPVOID param) {
+	RCore *core = (RCore*) param;
+	r_kons_flush (core->cons);
+}
+
 static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	STARTUPINFO si = {0};
 	PROCESS_INFORMATION pi = {0};
@@ -3685,7 +3684,8 @@ static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	// exec radare command
 	r_core_cmd (core, radare_cmd, 0);
 
-	HANDLE th = CreateThread (NULL, 0,(LPTHREAD_START_ROUTINE) r_cons_flush, NULL, 0, NULL);
+	HANDLE th = CreateThread (NULL, 0, (LPTHREAD_START_ROUTINE) flush_thread, core, 0, NULL);
+
 	if (!th) {
 		__CLOSE_DUPPED_PIPES ();
 		goto err_r_w32_cmd_pipe;
@@ -3748,7 +3748,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		R_LOG_ERROR ("Pipes are not allowed in sandbox mode");
 		return -1;
 	}
-	bool si = r_cons_is_interactive ();
+	bool si = r_cons_is_interactive (core->cons);
 	r_config_set_b (core->config, "scr.interactive", false);
 	if (!r_config_get_b (core->config, "scr.color.pipe")) {
 		pipecolor = r_config_get_i (core->config, "scr.color");
@@ -3784,7 +3784,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 				close (fds[1]);
 				close (fds[0]);
 				r_core_cmd (core, radare_cmd, 0);
-				r_cons_flush ();
+				r_kons_flush (core->cons);
 				close (1);
 				wait (&ret);
 				dup2 (stdout_fd, 1);
@@ -4043,7 +4043,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		goto beach;
 	}
 	if ((st64)rep > 1 && rep > INTERACTIVE_MAX_REP) {
-		if (r_kons_is_interactive (cons)) {
+		if (r_cons_is_interactive (cons)) {
 			if (!r_kons_yesno (cons, 'n', "Are you sure to repeat this %"PFMT64d" times? (y/N)", rep)) {
 				goto beach;
 			}
@@ -4341,7 +4341,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 						str++;
 					}
 					str = (char *)r_str_trim_head_ro (str);
-					r_cons_flush ();
+					r_kons_flush (core->cons);
 					const bool append = p[2] == '>';
 					pipefd = r_cons_pipe_open (core->cons, str, 1, append);
 				}
@@ -4618,9 +4618,6 @@ repeat:;
 			goto next2;
 		}
 		fdn = 1;
-		/* r_cons_flush() handles interactive output (to the terminal)
-		 * differently (e.g. asking about too long output). This conflicts
-		 * with piping to a file. Disable it while piping. */
 		// note that 'x>a' is not working .. but 'x > a' or 'x >a' is valid
 		bool redirect_check = (ptr > cmd && (!ptr[-1] || !ptr[-2] || IS_WHITECHAR (ptr[-2])));
 		if (redirect_check) { // R2R db/cmd/cmd_macros
@@ -5859,7 +5856,7 @@ static void cmd_foreach_word(RCore *core, const char *_cmd, const char *each) {
 			if (!foreach_newline (core)) {
 				break;
 			}
-			r_cons_flush ();
+			r_kons_flush (core->cons);
 		}
 		each = nextLine;
 	}
@@ -5920,10 +5917,10 @@ static void cmd_foreach_offset(RCore *core, const char *_cmd, const char *each) 
 			r_core_seek (core, addr, true);
 			r_core_cmd (core, cmd, 0);
 			if (!foreach_newline (core)) {
-				r_cons_flush ();
+				r_kons_flush (core->cons);
 				break;
 			}
-			r_cons_flush ();
+			r_kons_flush (core->cons);
 		}
 		each = nextLine;
 	}
@@ -6210,7 +6207,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				if (!foreach_newline (core)) {
 					break;
 				}
-				r_cons_flush ();
+				r_kons_flush (core->cons);
 			} while (str);
 			free (out);
 		}
@@ -6503,7 +6500,7 @@ R_API bool r_core_cmd_lines(RCore *core, const char *lines) {
 				ret = true; // -1;
 				break;
 			}
-			r_cons_flush ();
+			r_kons_flush (core->cons);
 			if (data[0] == 'q') {
 				if (data[1] == '!') {
 					ret = true; // -1;
@@ -6768,7 +6765,7 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 	if (--core->cons->context->cmd_str_depth == 0) {
 		core->cons->context->noflush = false;
 	}
-	r_kons_filter (core->cons);
+	r_cons_filter (core->cons);
 	const char *static_str = r_kons_get_buffer (core->cons, NULL);
 	char *retstr = strdup (r_str_get (static_str));
 	r_kons_pop (core->cons);
@@ -6796,7 +6793,7 @@ R_API RBuffer *r_core_cmd_tobuf(RCore *core, const char *cmd) {
 		core->cons->context->noflush = false;
 	}
 
-	r_kons_filter (core->cons);
+	r_cons_filter (core->cons);
 	size_t bsz;
 	const char *buf = r_kons_get_buffer (core->cons, &bsz);
 	RBuffer *out = r_buf_new_with_bytes ((const ut8*)buf, bsz);
@@ -6897,7 +6894,6 @@ R_API void r_core_cmd_init(RCore *core) {
 		core->rcmd->macro.num = core->num;
 		core->rcmd->macro.cmd = core_cmd0_wrapper;
 		core->rcmd->nullcallback = r_core_cmd_nullcallback;
-		core->rcmd->macro.cb_printf = (PrintfCallback)r_cons_printf;
 		r_cmd_set_data (core->rcmd, core);
 		core->cmd_descriptors = r_list_newf (free);
 		size_t i;

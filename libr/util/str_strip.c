@@ -1,10 +1,120 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #include <r_cons.h>
 
+static void __unrgb(int color, int *r, int *g, int *b) {
+	// TODO: remove rcons dependency
+	if (color < 0 || color > 255) {
+		*r = *g = *b = 0;
+	} else {
+#if 0
+		RConsContext *ctx = r_cons_singleton ()->context;
+		int rgb = ctx->colors[color];
+		*r = (rgb >> 16) & 0xff;
+		*g = (rgb >> 8) & 0xff;
+		*b = rgb & 0xff;
+#else
+		R_LOG_WARN ("256 color palette not supported right now");
+		*r = *g = *b = 0;
+#endif
+	}
+}
+
+/* Parse an ANSI code string into RGB values -- Used by HTML filter only */
+R_API bool r_str_html_rgbparse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a) {
+	const char *q = 0;
+	ut8 isbg = 0, bold = 127;
+	if (!p) {
+		// XXX maybe assert?
+		return false;
+	}
+	if (*p == 0x1b) {
+		p++;
+		if (!*p) {
+			return false;
+		}
+	}
+	if (*p == '[') {
+		p++;
+		if (!*p) {
+			return false;
+		}
+	}
+	// here, p should be just after the '['
+	switch (*p) {
+	case '1':
+		bold = 255;
+		if (!p[1] || !p[2]) {
+			return false;
+		}
+		p += 2;
+		break;
+	case '3': isbg = 0; break;
+	case '4': isbg = 1; break;
+	}
+#define SETRGB(x,y,z) if (r) *r = (x); if (g) *g = (y); if (b) *b = (z)
+	if (bold != 255 && strchr (p, ';')) {
+		if (!p[0] || !p[1] || !p[2]) {
+			return 0;
+		}
+		if (p[3] == '5')  { // \x1b[%d;5;%dm is 256 colors
+			int x, y, z;
+			if (!p[3] || !p[4]) {
+				return 0;
+			}
+			int n = atoi (p + 5);
+			__unrgb (n, &x, &y, &z);
+			SETRGB (x, y, z);
+		} else { // 16M colors (truecolor)
+			/* complex rgb */
+			if (!p[3] || !p[4]) {
+				return 0;
+			}
+			p += 5;
+			if (r) {
+				*r = atoi (p);
+			}
+			q = strchr (p, ';');
+			if (!q) {
+				return 0;
+			}
+			if (g) {
+				*g = atoi (q + 1);
+			}
+			q = strchr (q + 1, ';');
+			if (!q) {
+				return false;
+			}
+			if (b) {
+				*b = atoi (q + 1);
+			}
+		}
+		return true;
+	}
+	/* plain ansi escape codes */
+	if (a) {
+		*a = isbg;
+	}
+	if (!*p) {
+		return false;
+	}
+	switch (p[1]) {
+	case '0': SETRGB (0, 0, 0); break;
+	case '1': SETRGB (bold, 0, 0); break;
+	case '2': SETRGB (0, bold, 0); break;
+	case '3': SETRGB (bold, bold, 0); break;
+	case '4': SETRGB (0, 0, bold); break;
+	case '5': SETRGB (bold, 0, bold); break;
+	case '6': SETRGB (0, bold, bold); break;
+	case '7': SETRGB (bold, bold, bold); break;
+	}
+	return true;
+}
+
+// HTML
 static bool gethtmlrgb(const char *str, char *buf, size_t buf_size) {
 	ut8 r = 0, g = 0, b = 0;
-	if (r_cons_rgb_parse (str, &r, &g, &b, 0)) {
+	if (r_str_html_rgbparse (str, &r, &g, &b, 0)) {
 		snprintf (buf, buf_size, "#%02x%02x%02x", r, g, b);
 		return true;
 	}
@@ -28,8 +138,7 @@ static const char *gethtmlcolor(const char ptrch) {
 	return "";
 }
 
-// TODO: move into r_util/str
-R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
+R_API char *r_str_html_strip(const char *ptr, int *newlen) {
 	const char *str = ptr;
 	int esc = 0;
 	bool inv = false;
@@ -260,3 +369,5 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 	return r_strbuf_drain (res);
 }
 
+// ANSI
+// ...

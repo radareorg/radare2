@@ -740,7 +740,7 @@ static RDisasmState *ds_init(RCore *core) {
 		ds->atabs = 0;
 	}
 	ds->subnames = r_config_get_b (core->config, "asm.sub.names");
-	ds->interactive = r_kons_is_interactive (ds->core->cons);
+	ds->interactive = r_cons_is_interactive (ds->core->cons);
 	ds->subjmp = r_config_get_b (core->config, "asm.sub.jmp");
 	ds->subvar = r_config_get_b (core->config, "asm.sub.var");
 	core->rasm->parse->subrel = r_config_get_b (core->config, "asm.sub.rel");
@@ -1425,7 +1425,7 @@ static void ds_newline(RDisasmState *ds) {
 	if (ds->pj) {
 		const bool is_html = r_config_get_b (ds->core->config, "scr.html");
 		if (is_html) {
-			char *s = r_cons_html_filter (r_kons_get_buffer (cons, NULL), NULL);
+			char *s = r_str_html_strip (r_kons_get_buffer (cons, NULL), NULL);
 			pj_ks (ds->pj, "text", s);
 			free (s);
 		} else {

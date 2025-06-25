@@ -1673,12 +1673,11 @@ r_cons_global (core->cons);
 		break;
 	case 'l': // "cl"
 		if (strchr (input, 'f')) {
-			r_cons_flush ();
+			r_kons_flush (core->cons);
 		} else if (input[1] == 0) {
-			r_cons_fill_line ();
-			// r_cons_clear_line (0);
+			r_kons_fill_line (core->cons);
 		} else if (!strchr (input, '0')) {
-			r_cons_clear00 ();
+			r_kons_clear00 (core->cons);
 		}
 		break;
 	case 'm': // "cmp"

@@ -50,7 +50,7 @@ static int r_cmd_agD_call(void *user, const char *input) {
 	r_agraph_free (dtagraph);
 	r_graph_free (fcn_dtgraph);
 	r_graph_free (fcn_graph);
-	r_cons_flush ();
+	r_kons_flush (core->cons);
 	return true;
 }
 

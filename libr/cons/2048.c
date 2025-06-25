@@ -144,8 +144,7 @@ static void twok_print(GameState *state, bool color) {
 	}
 }
 
-R_API void r_cons_2048(bool color) {
-	RCons *cons = r_cons_singleton ();
+R_API void r_cons_2048(RCons *cons, bool color) {
 	GameState state;
 	int ch;
 	r_kons_set_raw (cons, 1);
@@ -153,13 +152,13 @@ R_API void r_cons_2048(bool color) {
 	twok_add (&state);
 	twok_add (&state);
 	while (twok_fin (&state)) {
-		r_cons_clear00 ();
+		r_kons_clear00 (cons);
 		if (color) {
-			r_cons_printf (Color_GREEN"[r2048]"Color_BYELLOW" score: %d   moves: %d\n"Color_RESET, state.score, state.moves);
+			r_kons_printf (cons, Color_GREEN"[r2048]"Color_BYELLOW" score: %d   moves: %d\n"Color_RESET, state.score, state.moves);
 		} else {
-			r_cons_printf ("[r2048] score: %d   moves: %d\n", state.score, state.moves);
+			r_kons_printf (cons, "[r2048] score: %d   moves: %d\n", state.score, state.moves);
 		}
-		r_cons_flush ();
+		r_kons_flush (cons);
 		twok_print (&state, color);
 		ch = r_cons_readchar (cons);
 		ch = r_cons_arrow_to_hjkl (cons, ch);

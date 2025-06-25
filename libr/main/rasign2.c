@@ -58,7 +58,7 @@ static RCore *opencore(const char *fname) {
 		}
 		(void)r_core_bin_load (c, NULL, UT64_MAX);
 		(void)r_core_bin_update_arch_bits (c);
-		r_cons_flush ();
+		r_kons_flush (c->cons);
 	}
 	return c;
 }
@@ -93,7 +93,7 @@ static int inline output(RCore *core, RasignOptions *conf) {
 		R_LOG_ERROR ("Failed to write file");
 		return -1;
 	}
-	r_cons_flush ();
+	r_kons_flush (core->cons);
 	return 0;
 }
 
@@ -195,7 +195,7 @@ static RList *get_ar_file_uris(const char *fname) {
 static int dump_flirt(const char *ifile) {
 	RCore *core = opencore (NULL);
 	r_sign_flirt_dump (core->anal, ifile);
-	r_cons_flush ();
+	r_kons_flush (core->cons);
 	r_core_free (core);
 	return 0;
 }

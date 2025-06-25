@@ -327,7 +327,7 @@ R_API char *r_core_cmd_call_str_at(RCore *core, ut64 addr, const char *cmd) {
 	if (--core->cons->context->cmd_str_depth == 0) {
 		core->cons->context->noflush = false;
 	}
-	r_kons_filter (core->cons);
+	r_cons_filter (core->cons);
 	const char *static_str = r_cons_get_buffer ();
 	char *retstr = strdup (r_str_get (static_str));
 	r_kons_pop (core->cons);
@@ -3579,7 +3579,7 @@ R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback 
 #endif
 
 R_API char *r_core_editor(const RCore *core, const char *file, const char *str) {
-	const bool interactive = r_cons_is_interactive ();
+	const bool interactive = r_cons_is_interactive (core->cons);
 	const char *editor = r_config_get (core->config, "cfg.editor");
 	char *name = NULL, *ret = NULL;
 	int fd;

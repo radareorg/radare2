@@ -353,7 +353,7 @@ static bool wasm_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 }
 
 // analyzes the wasm opcode.
-static bool wasm_decode(RArchSession *s, RAnalOp *op, RAnalOpMask mask) {
+static bool wasm_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	R_RETURN_VAL_IF_FAIL (s && op, false);
 	WasmOp wop = {{0}};
 	const bool txt = mask & R_ARCH_OP_MASK_DISASM;
@@ -651,8 +651,8 @@ const RArchPlugin r_arch_plugin_wasm = {
 	.arch = "wasm",
 	.bits = R_SYS_BITS_PACK2 (32,64),
 	.regs = wasm_regs,
-	.decode = &wasm_decode,
-	.encode = &wasm_encode,
+	.decode = wasm_decode,
+	.encode = wasm_encode,
 	.init = cache_new,
 	.fini = cache_clean,
 };

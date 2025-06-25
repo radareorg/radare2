@@ -478,7 +478,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			}
 			RTable *table = r_core_table_new (core, "bins");
 			r_table_visual_list (table, list, core->addr, core->blocksize,
-				r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
+				r_kons_get_size (core->cons, NULL), r_config_get_i (core->config, "scr.color"));
 			char *table_text = r_table_tostring (table);
 			if (table_text) {
 				r_kons_printf (core->cons, "\n%s\n", table_text);
@@ -1538,7 +1538,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 		}
 		RTable *table = r_core_table_new (core, "maps");
 		r_table_visual_list (table, list, core->addr, core->blocksize,
-			r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
+			r_kons_get_size (core->cons, NULL), r_config_get_i (core->config, "scr.color"));
 		char *tablestr = r_table_tostring (table);
 		if (tablestr) {
 			r_kons_printf (core->cons, "\n%s\n", tablestr);
@@ -1854,7 +1854,7 @@ static bool desc_list_visual_cb(void *user, void *data, ut32 id) {
 	int flags = p->flags;
 	p->flags &= ~R_PRINT_FLAGS_HEADER;
 	const int percent = (fdsz > 0) ? (sz * 100) / fdsz: 0;
-	r_print_progressbar (p, percent, r_cons_get_size (NULL) - 40, NULL);
+	r_print_progressbar (p, percent, r_kons_get_size (core->cons, NULL) - 40, NULL);
 	p->flags = flags;
 	r_kons_printf (core->cons, " %s\n", desc->uri);
 #if 0

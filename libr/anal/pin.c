@@ -118,10 +118,10 @@ R_API const char *r_anal_pin_call(RAnal *a, ut64 addr) {
 		const char *cmd = sdb_const_get (DB, ckey, NULL);
 		if (R_STR_ISNOTEMPTY (cmd)) {
 			a->coreb.cmdf (a->coreb.core, "%s", cmd);
-			r_cons_flush ();
+	//		r_kons_flush (cons);
 		} else { if (name && a->pincmd) {
 			a->coreb.cmdf (a->coreb.core, "%s %s", a->pincmd, name);
-			r_cons_flush ();
+	//		r_kons_flush (cons);
 		}
 		return name;
 	}

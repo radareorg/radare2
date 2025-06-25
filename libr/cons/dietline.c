@@ -1160,11 +1160,11 @@ static void __print_prompt(RCons *cons) {
 	int columns = r_cons_get_size (NULL) - 2;
 	int len, i, cols = R_MAX (1, columns - r_str_ansi_len (line->prompt) - 2);
 	if (cons->line->prompt_type == R_LINE_PROMPT_OFFSET) {
-		r_cons_gotoxy (0, cons->rows);
-		r_cons_flush ();
+		r_kons_gotoxy (cons, 0, cons->rows);
+		r_kons_flush (cons);
 	}
 	// printf ("%s", promptcolor ());
-	r_cons_clear_line (0);
+	r_kons_clear_line (cons, 0);
 	if (cons->context->color_mode > 0) {
 		printf ("\r%s%s%s", Color_RESET, promptcolor (cons), line->prompt);
 	} else {
@@ -1775,7 +1775,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 		bool o_do_setup_match = line->history.do_setup_match;
 		line->history.do_setup_match = true;
 		if (line->echo && cons->context->color_mode) {
-			r_cons_clear_line (0);
+			r_kons_clear_line (cons, 0);
 		}
 repeat:
 		(void) r_cons_get_size (&rows);
@@ -2230,7 +2230,7 @@ repeat:
 							}
 							break;
 						}
-						r_cons_set_raw (true);
+						r_kons_set_raw (cons, true);
 						break;
 					case 0x37: // HOME xrvt-unicode
 						r_cons_readchar (cons);
@@ -2399,7 +2399,7 @@ repeat:
 	}
 _end:
 	r_kons_break_pop (cons);
-	r_cons_set_raw (false);
+	r_kons_set_raw (cons, false);
 	r_kons_enable_mouse (cons, mouse_status);
 #if 0
 	if (line->buffer.length > 1024) {	// R2_590 - use line->maxlength

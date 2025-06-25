@@ -304,7 +304,7 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int r
 				ut8 r = 0, g = 0, b = 0, A = 0;
 				const char *esc = strchr (d->str, '\x1b');
 				if (esc) {
-					r_cons_rgb_parse (esc, &r, &g, &b, &A);
+					r_str_html_rgbparse (esc, &r, &g, &b, &A);
 					char *rgb_str = r_cons_rgb_tostring (r, g, b);
 					base64_str = r_base64_encode_dyn ((const ut8*)rgb_str, -1);
 					if (d->type == 's' && base64_str) {
@@ -463,7 +463,7 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int r
 				{
 					ut8 r = 0, g = 0, b = 0, A = 0;
 					const char *esc = strchr (d->str, '\x1b');
-					r_cons_rgb_parse (esc, &r, &g, &b, &A);
+					r_str_html_rgbparse (esc, &r, &g, &b, &A);
 					a->cb_printf ("%s rgb:%02x%02x%02x @ 0x%08" PFMT64x "\n",
 						r_meta_type_tostring (d->type), r, g, b, start);
 					// TODO: d->size
