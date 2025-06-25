@@ -870,11 +870,11 @@ R_API void *r_kons_sleep_begin(RCons *cons);
 R_API void r_kons_sleep_end(RCons *cons, void *user);
 R_API void r_kons_break_end(RCons *cons);
 
+R_API void r_cons_clear_buffer(RCons *cons);
 #if R2__WINDOWS__
 // TODO all the w32 apis must be ipi
 R_IPI int win_is_vtcompat(void);
 R_API void r_kons_clear(RCons *cons);
-R_API void r_cons_clear_buffer(RCons *cons);
 R_API void r_cons_win_gotoxy(RCons *cons, int fd, int x, int y);
 R_API int r_cons_win_print(RCons *cons, const char *ptr, int len, bool vmode);
 R_API int r_cons_win_printf(RCons *cons, bool vmode, const char *fmt, ...) R_PRINTF_CHECK(3, 4);
@@ -939,7 +939,6 @@ R_API void r_cons_set_interactive(bool b);
 R_API void r_cons_set_raw(RCons *cons, bool is_raw);
 R_API void r_cons_invert(RCons *cons, int set, int color);
 R_API void r_cons_set_last_interactive(void);
-R_API void r_cons_set_utf8(bool b);
 
 /* output */
 
@@ -1237,7 +1236,7 @@ R_API void r_cons_visual_write(RCons *cons, char *buffer);
 R_API int r_kons_get_column(RCons *cons);
 R_API int r_kons_get_cursor(RCons *cons, int *rows);
 R_API void r_kons_show_cursor(RCons *I, int cursor);
-R_API void r_kons_set_utf8(RCons *cons, bool b);
+R_API void r_cons_set_utf8(RCons *cons, bool b);
 R_API void r_kons_column(RCons *cons, int c);
 R_API void r_kons_set_title(RCons *cons, const char *str);
 R_API void r_kons_zero(RCons *cons);
