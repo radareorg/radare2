@@ -1311,7 +1311,7 @@ static int gprobe_listen(struct gport *port) {
 	}
 
 	RCons *cons = r_cons_singleton ();
-	r_kons_break_push (cons, NULL, NULL);
+	r_cons_break_push (cons, NULL, NULL);
 	while (true) {
 		RBuffer *reply = NULL;
 		get_reply (port, GPROBE_RESET, &reply);
@@ -1320,7 +1320,7 @@ static int gprobe_listen(struct gport *port) {
 			break;
 		}
 	}
-	r_kons_break_pop (cons);
+	r_cons_break_pop (cons);
 
 	return 0;
 }

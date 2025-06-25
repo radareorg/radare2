@@ -208,8 +208,8 @@ static inline bool za_add(RCore *core, const char *input) {
 	return ret;
 }
 
-static void cmd_za_detailed_help(void) {
-	r_cons_printf ("Adding Zignatures (examples and documentation)\n\n"
+static void cmd_za_detailed_help(RCore *core) {
+	r_kons_printf (core->cons, "Adding Zignatures (examples and documentation)\n\n"
 			"Zignature types:\n"
 			"  a: bytes pattern, r2 creates mask from analysis\n"
 			"  b: bytes pattern\n"
@@ -243,7 +243,7 @@ static void cmd_za_detailed_help(void) {
 static int cmd_za(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	if (r_str_endswith (input, "??")) {
-		cmd_za_detailed_help ();
+		cmd_za_detailed_help (core);
 		return 0;
 	}
 	if (*input && input[1] == '?') {
@@ -285,9 +285,9 @@ static int cmd_za(void *data, const char *input) {
 		if (input[1] == '?') {
 			r_core_cmd_help_contains (core, help_msg_za, "zac");
 		} else {
-			r_cons_break_push (NULL, NULL);
+			r_cons_break_push (core->cons, NULL, NULL);
 			r_sign_resolve_collisions (core->anal);
-			r_cons_break_pop ();
+			r_cons_break_pop (core->cons);
 		}
 		break;
 	case 'F': // "zaF"
@@ -466,7 +466,7 @@ static void apply_name(RCore *core, RAnalFunction *fcn, RSignItem *it, bool rad)
 	if (rad) {
 		char *tmp = r_name_filter_dup (name);
 		if (tmp) {
-			r_cons_printf ("'@0x%08"PFMT64x"'afn %s\n", fcn->addr, tmp);
+			r_kons_printf (core->cons, "'@0x%08"PFMT64x"'afn %s\n", fcn->addr, tmp);
 			free (tmp);
 		}
 		return;
@@ -488,7 +488,7 @@ static void apply_flag(RCore *core, RSignItem *it, ut64 addr, int size, int coun
 		if (rad) {
 			char *tmp = r_name_filter_dup (name);
 			if (tmp) {
-				r_cons_printf ("f %s %d @ 0x%08" PFMT64x "\n", tmp, size, addr);
+				r_kons_printf (core->cons, "f %s %d @ 0x%08" PFMT64x "\n", tmp, size, addr);
 				free (tmp);
 			}
 		} else {
@@ -612,7 +612,7 @@ static bool searchRange(RCore *core, ut64 from, ut64 to, bool rad, struct ctxSea
 	ss->search->align = r_config_get_i (core->config, "search.align");
 	r_sign_search_init (core->anal, ss, minsz, searchBytesHitCB, ctx);
 
-	r_cons_break_push (NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	for (at = from; at < to; at += core->blocksize) {
 		if (r_cons_is_breaked (core->cons)) {
 			retval = false;
@@ -630,7 +630,7 @@ static bool searchRange(RCore *core, ut64 from, ut64 to, bool rad, struct ctxSea
 			break;
 		}
 	}
-	r_cons_break_pop ();
+	r_cons_break_pop (core->cons);
 	free (buf);
 	r_sign_search_free (ss);
 
@@ -712,7 +712,7 @@ static void print_ctx_hits(struct ctxSearchCB *ctx) {
 static bool search(RCore *core, bool rad, bool only_func) {
 	const char *zign_prefix = r_config_get (core->config, "zign.prefix");
 	if (rad) {
-		r_cons_printf ("fs+%s\n", zign_prefix);
+		r_kons_printf (core->cons, "fs+%s\n", zign_prefix);
 	} else {
 		if (!r_flag_space_push (core->flags, zign_prefix)) {
 			R_LOG_ERROR ("cannot create flagspace");
@@ -758,7 +758,7 @@ static bool search(RCore *core, bool rad, bool only_func) {
 	}
 
 	if (rad) {
-		r_cons_printf ("fs-\n");
+		r_kons_printf (core->cons, "fs-\n");
 	} else {
 		if (!r_flag_space_pop (core->flags)) {
 			R_LOG_ERROR ("cannot restore flagspace");
@@ -784,21 +784,21 @@ static void print_possible_matches(RList *list, bool json, RCore *core) {
 			pj_end (pj);
 		}
 		pj_end (pj);
-		r_cons_printf ("%s\n", pj_string (pj));
+		r_kons_printf (core->cons, "%s\n", pj_string (pj));
 		pj_free (pj);
 	} else {
 		r_list_foreach (list, itr, row) {
 			// total score
 			if (row->bscore > 0.0 && row->gscore > 0.0) {
-				r_cons_printf ("%02.5lf  ", row->score);
+				r_kons_printf (core->cons, "%02.5lf  ", row->score);
 			}
 			if (row->bscore > 0.0) {
-				r_cons_printf ("%02.5lf B  ", row->bscore);
+				r_kons_printf (core->cons, "%02.5lf B  ", row->bscore);
 			}
 			if (row->gscore > 0.0) {
-				r_cons_printf ("%02.5lf G  ", row->gscore);
+				r_kons_printf (core->cons, "%02.5lf G  ", row->gscore);
 			}
-			r_cons_printf (" %s\n", row->item->name);
+			r_kons_printf (core->cons, " %s\n", row->item->name);
 		}
 	}
 }
@@ -934,14 +934,14 @@ static bool bestmatch_sig(RCore *core, const char *input, bool json) {
 	double th = get_zb_threshold (core);
 	bool found = false;
 	if (item->graph || item->bytes) {
-		r_cons_break_push (NULL, NULL);
+		r_cons_break_push (core->cons, NULL, NULL);
 		RList *list = r_sign_find_closest_sig (core->anal, item, count, th);
 		if (list) {
 			found = true;
 			print_possible_matches (list, json, core);
 			r_list_free (list);
 		}
-		r_cons_break_pop ();
+		r_cons_break_pop (core->cons);
 	} else {
 		R_LOG_WARN ("no signatures types available for testing");
 	}
@@ -1003,7 +1003,7 @@ static bool _sig_bytediff_cb(RLevBuf *va, RLevBuf *vb, ut32 ia, ut32 ib) {
 	free (x.land); \
 	memset (&x, 0, sizeof (x));
 
-static void print_zig_diff(RCore *c, RSignBytes *ab, RSignBytes *bb, RLevOp *ops) {
+static void print_zig_diff(RCore *core, RSignBytes *ab, RSignBytes *bb, RLevOp *ops) {
 	struct lines {
 		char *mask, *bytes, *land;
 	} al, bl;
@@ -1012,7 +1012,7 @@ static void print_zig_diff(RCore *c, RSignBytes *ab, RSignBytes *bb, RLevOp *ops
 
 	char *colsub, *coladd, *coldel;
 	colsub = coladd = coldel = NULL;
-	if (r_config_get_b (c->config, "scr.color")) {
+	if (r_config_get_b (core->config, "scr.color")) {
 		coldel = "\x1b[1;31m";
 		coladd = "\x1b[1;32m";
 		colsub = "\x1b[1;33m";
@@ -1061,21 +1061,21 @@ static void print_zig_diff(RCore *c, RSignBytes *ab, RSignBytes *bb, RLevOp *ops
 
 		if (i % 16 == 15 || ops[i + 1] == LEVEND) {
 			if (i > 16) {
-				r_cons_printf ("\n");
+				r_kons_printf (core->cons, "\n");
 			}
-			r_cons_printf ("Fnc cmp   0x%04x %s\n", iastart, al.land);
+			r_kons_printf (core->cons, "Fnc cmp   0x%04x %s\n", iastart, al.land);
 			if (printb) {
-				r_cons_printf ("Sig cmp   0x%04x %s\n", ibstart, bl.land);
+				r_kons_printf (core->cons, "Sig cmp   0x%04x %s\n", ibstart, bl.land);
 			}
-			r_cons_printf ("Fnc Mask  0x%04x %s\n", iastart, al.mask);
+			r_kons_printf (core->cons, "Fnc Mask  0x%04x %s\n", iastart, al.mask);
 			if (printb) {
-				r_cons_printf ("Sig Mask  0x%04x %s\n", ibstart, bl.mask);
+				r_kons_printf (core->cons, "Sig Mask  0x%04x %s\n", ibstart, bl.mask);
 			}
-			r_cons_printf ("Fnc Bytes 0x%04x %s\n", iastart, al.bytes);
+			r_kons_printf (core->cons, "Fnc Bytes 0x%04x %s\n", iastart, al.bytes);
 			if (printb) {
-				r_cons_printf ("Sig Bytes 0x%04x %s\n", ibstart, bl.bytes);
+				r_kons_printf (core->cons, "Sig Bytes 0x%04x %s\n", ibstart, bl.bytes);
 			} else {
-				r_cons_printf ("== Signature was same ==\n");
+				r_kons_printf (core->cons, "== Signature was same ==\n");
 			}
 			freelines (al);
 			freelines (bl);
@@ -1228,7 +1228,7 @@ static int cmd_zdot(void *data, const char *input) {
 
 	const char *zign_prefix = r_config_get (core->config, "zign.prefix");
 	if (ctx.rad) {
-		r_cons_printf ("fs+%s\n", zign_prefix);
+		r_kons_printf (core->cons, "fs+%s\n", zign_prefix);
 	} else {
 		if (!r_flag_space_push (core->flags, zign_prefix)) {
 			R_LOG_ERROR ("cannot create flagspace");
@@ -1239,15 +1239,15 @@ static int cmd_zdot(void *data, const char *input) {
 	R_LOG_INFO ("searching function metrics");
 	RAnalFunction *fcn = r_anal_get_function_at (core->anal, core->addr);
 	if (fcn) {
-		r_cons_break_push (NULL, NULL);
+		r_cons_break_push (core->cons, NULL, NULL);
 		r_sign_fcn_match_metrics (&sm, fcn);
-		r_cons_break_pop ();
+		r_cons_break_pop (core->cons);
 	} else {
 		R_LOG_ERROR ("No function at 0x%08" PFMT64x, core->addr);
 	}
 
 	if (ctx.rad) {
-		r_cons_printf ("fs-\n");
+		r_kons_printf (core->cons, "fs-\n");
 	} else {
 		if (!r_flag_space_pop (core->flags)) {
 			R_LOG_ERROR ("cannot restore flagspace");
@@ -1346,7 +1346,7 @@ static int csvZignatures(RCore *core, const char *arg) {
 	r_sign_foreach (core->anal, listCB, &ctx);
 	if (r_table_query (t, arg)) {
 		char *ts = r_table_tostring (t);
-		r_cons_printf ("%s", ts); // \n?
+		r_kons_printf (core->cons, "%s", ts); // \n?
 		free (ts);
 	}
 	r_table_free (t);

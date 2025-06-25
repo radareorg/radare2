@@ -46,7 +46,7 @@ static void lang_pipe_run_win(RLangSession *s) {
 	}
 	RCore *core = R_UNWRAP3 (s, lang, user);
 	RCons *cons = core->cons;
-	r_kons_break_push (cons, NULL, NULL);
+	r_cons_break_push (cons, NULL, NULL);
 	do {
 		if (r_cons_is_breaked (cons)) {
 			TerminateProcess (hproc, 0);
@@ -113,7 +113,7 @@ static void lang_pipe_run_win(RLangSession *s) {
 			}
 		}
 	} while (true);
-	r_kons_break_pop (cons);
+	r_cons_break_pop (cons);
 	CloseHandle (hWritten);
 	CloseHandle (hRead);
 }
@@ -178,15 +178,15 @@ static bool lang_pipe_run(RLangSession *s, const char *code, int len) {
 		close (output[1]);
 		close (input[0]);
 		RCons *cons = core->cons;
-		r_kons_break_push (cons, NULL, NULL);
+		r_cons_break_push (cons, NULL, NULL);
 		for (;;) {
 			if (r_cons_is_breaked (cons)) {
 				break;
 			}
 			memset (buf, 0, sizeof (buf));
-			void *bed = r_kons_sleep_begin (cons);
+			void *bed = r_cons_sleep_begin (cons);
 			ret = read (output[0], buf, sizeof (buf) - 1);
-			r_kons_sleep_end (cons, bed);
+			r_cons_sleep_end (cons, bed);
 			if (ret < 1) {
 				break;
 			}
@@ -208,7 +208,7 @@ static bool lang_pipe_run(RLangSession *s, const char *code, int len) {
 				}
 			}
 		}
-		r_kons_break_pop (cons);
+		r_cons_break_pop (cons);
 		/* workaround to avoid stdin closed */
 		if (safe_in != -1) {
 			close (safe_in);

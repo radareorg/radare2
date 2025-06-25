@@ -402,9 +402,9 @@ static int platform_fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 			r_sys_perror ("waitpid");
 			return -1;
 		}
-		bed = r_kons_sleep_begin (cons);
+		bed = r_cons_sleep_begin (cons);
 		usleep (100000);
-		r_kons_sleep_end (cons, bed);
+		r_cons_sleep_end (cons, bed);
 	} while (ret != child_pid && !r_cons_is_breaked (cons));
 	if (!WIFSTOPPED (status)) {
 		return -1;

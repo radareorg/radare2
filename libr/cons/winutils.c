@@ -52,7 +52,7 @@ R_IPI void r_cons_win_gotoxy(RCons *cons, int fd, int x, int y) {
 	HANDLE *hConsole = (fd == 1)? &cons->hStdout : &cons->hStderr;
 	COORD coord = { .X = x, .Y = y };
 	if (cons->vtmode) {
-		r_cons_printf ("\x1b[%d;%dH", y, x);
+		r_kons_printf (cons, "\x1b[%d;%dH", y, x);
 		return;
 	}
 	if (cons->is_wine == 1) {

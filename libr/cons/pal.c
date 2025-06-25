@@ -560,7 +560,7 @@ static void r_cons_pal_show_rgb(RCons *cons) {
 R_API void r_cons_pal_show(RCons *cons) {
 	size_t i;
 	for (i = 0; colors[i].name; i++) {
-		r_cons_printf ("%s%s__"Color_RESET" %s\n",
+		r_kons_printf (cons, "%s%s__"Color_RESET" %s\n",
 			colors[i].code,
 			colors[i].bgcode,
 			colors[i].name);

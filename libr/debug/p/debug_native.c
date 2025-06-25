@@ -199,7 +199,7 @@ static bool r_debug_native_continue_syscall(RDebug *dbg, int pid, int num) {
 static void interrupt_process(RDebug *dbg) {
 	RCore *core = dbg->coreb.core;
 	r_debug_kill (dbg, dbg->pid, dbg->tid, SIGINT);
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 }
 #endif
 
@@ -229,7 +229,7 @@ static bool r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	RCore *core = dbg->coreb.core;
 	/* SIGINT handler for attached processes: dbg.consbreak (disabled by default) */
 	if (dbg->consbreak) {
-		r_kons_break_push (core->cons, (RConsBreak)interrupt_process, dbg);
+		r_cons_break_push (core->cons, (RConsBreak)interrupt_process, dbg);
 	}
 	if (dbg->continue_all_threads && dbg->n_threads && dbg->threads) {
 		RDebugPid *th;
@@ -467,7 +467,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 		return R_DEBUG_REASON_ERROR;
 	}
 	RCore *core = dbg->coreb.core;
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	do {
 		reason = xnu_wait (dbg, pid);
 		if (reason == R_DEBUG_REASON_MACH_RCV_INTERRUPTED) {
@@ -484,7 +484,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 		}
 		break;
 	} while (true);
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 #else
 	int status = -1;
 	// XXX: this is blocking, ^C will be ignored

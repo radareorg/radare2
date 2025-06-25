@@ -1329,7 +1329,7 @@ static bool symbols_vec(RBinFile *bf) {
 	ut64 *inits = NULL;
 	ut64 *terms = NULL;
 	RCons *cons = r_cons_singleton ();
-	r_kons_break_push (cons, NULL, NULL);
+	r_cons_break_push (cons, NULL, NULL);
 	r_kext_index_foreach (obj->kexts, kiter, kext) {
 		if (r_cons_is_breaked (cons)) {
 			eprintf ("Interrupted\n");
@@ -1367,7 +1367,7 @@ static bool symbols_vec(RBinFile *bf) {
 			break;
 		}
 	}
-	r_kons_break_pop (cons);
+	r_cons_break_pop (cons);
 
 	R_FREE (inits);
 	R_FREE (terms);

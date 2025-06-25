@@ -3019,7 +3019,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 			case R_META_TYPE_DATA:
 #if 0
 				if (!R_STR_ISEMPTY (meta->str)) {
-					r_cons_printf (".data: %s\n", meta->str);
+					r_kons_printf (".data: %s\n", meta->str);
 				}
 #endif
 				i += meta_size;
@@ -3872,7 +3872,7 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 						len - idx, mi->str, R_PRINT_MUSTSEE, NULL, NULL);
 				const char *cons_buf = r_kons_get_buffer (core->cons, &len_after);
 				if (len_after > len_before && buf && cons_buf[len_after - 1] == '\n') {
-					r_kons_drop (cons, 1);
+					r_cons_drop (cons, 1);
 				}
 				ds->oplen = ds->asmop.size = (int)mi_size;
 				R_FREE (ds->line);
@@ -5236,7 +5236,7 @@ static void ds_print_relocs(RDisasmState *ds) {
 #endif
 	if (rel) {
 		int cstrlen = 0;
-		char *ll = r_cons_lastline (&cstrlen);
+		char *ll = r_cons_lastline (cons, &cstrlen);
 		if (!ll) {
 			return;
 		}
@@ -6468,7 +6468,7 @@ R_API int r_core_print_disasm(RCore *core, ut64 addr, ut8 *buf, int len, int cou
 			ds_free (ds);
 			return 0;
 		}
-		r_kons_push (cons);
+		r_cons_push (cons);
 	} else {
 		ds->pj = NULL;
 	}
@@ -6536,7 +6536,7 @@ toro:
 	}
 
 	ds_print_esil_anal_init (ds);
-	r_kons_break_push (cons, NULL, NULL);
+	r_cons_break_push (cons, NULL, NULL);
 
 	ds->fcn = fcnIn (ds, ds->at, R_ANAL_FCN_TYPE_NULL);
 
@@ -6589,9 +6589,9 @@ toro:
 		if (r_cons_is_breaked (cons) || r_cons_was_breaked ()) {
 			R_FREE (nbuf);
 			if (ds->pj) {
-				r_kons_pop (cons);
+				r_cons_pop (cons);
 			}
-			r_kons_break_pop (cons);
+			r_cons_break_pop (cons);
 			ds_free (ds);
 			return 0; //break;
 		}
@@ -7084,7 +7084,7 @@ toro:
 	}
 
 	R_FREE (nbuf);
-	r_kons_break_pop (cons);
+	r_cons_break_pop (cons);
 
 #if HASRETRY
 	// if we come here without goto, never retry with count_bytes
@@ -7110,7 +7110,7 @@ toro:
 	}
 #endif
 	if (ds->pj) {
-		r_kons_pop (ds->core->cons);
+		r_cons_pop (ds->core->cons);
 		if (!pj) {
 			pj_end (ds->pj);
 			r_kons_printf (ds->core->cons, "%s", pj_string (ds->pj));
@@ -7178,7 +7178,7 @@ R_API int r_core_print_disasm_instructions_with_buf(RCore *core, ut64 address, u
 
 	core->addr = address;
 
-	r_cons_break_push (NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	//build ranges to map addr with bits
 	j = 0;
 	int opsize = 0;
@@ -7325,7 +7325,7 @@ toro:
 		i = 0;
 		goto toro;
 	}
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	ds_free (ds);
 	core->addr = old_offset;
 	r_reg_arena_pop (core->anal->reg);
@@ -7490,7 +7490,7 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 	bool result = false;
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	for (;;) {
 		if (r_cons_is_breaked (core->cons)) {
 			break;
@@ -7742,7 +7742,7 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 		}
 		free (opstr);
 	}
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	r_anal_op_fini (&ds->analop);
 	core->addr = old_offset;
 	ds_free (ds);
@@ -7781,7 +7781,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 	}
 	int minopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
 	int opalign = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	for (i = 0; i < l; i += minopsz) {
 		RAnalOp asmop;
 		ds->at = addr + i;
@@ -7887,7 +7887,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 		}
 		r_anal_op_fini (&asmop);
 	}
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	if (buf != core->block) {
 		free (buf);
 	}
@@ -7935,7 +7935,7 @@ R_API int r_core_disasm_pdi_with_buf(RCore *core, ut64 address, ut8 *buf, ut32 n
 	addr = address;
 	ut64 addr_end = address + nb_bytes;
 
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	int midflags = r_config_get_i (core->config, "asm.flags.middle");
 	int midbb = r_config_get_i (core->config, "asm.bbmiddle");
 	int minopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
@@ -8149,7 +8149,7 @@ toro:
 		free (buf);
 	}
 	r_config_set_b (core->config, "asm.marks", asmmarks);
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	return err;
 }
 

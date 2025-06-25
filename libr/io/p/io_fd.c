@@ -33,10 +33,7 @@ static bool __resize(RIO *io, RIODesc *desc, ut64 count) {
 static int __read(RIO *io, RIODesc *desc, ut8 *buf, int count) {
 	RIOFdata *fdd = (RIOFdata*)desc->data;
 	if (fdd) {
-		r_cons_break_push (NULL, NULL);
-		int res = read (fdd->fd, buf, count);
-		r_cons_break_pop ();
-		return res;
+		return read (fdd->fd, buf, count);
 	}
 	return -1;
 }

@@ -400,7 +400,7 @@ R_API int r_core_visual_view_graph(RCore *core) {
 		case '/':
 			{
 				char cmd[1024];
-				r_kons_show_cursor (core->cons, true);
+				r_cons_show_cursor (core->cons, true);
 				r_cons_set_raw (core->cons, 0);
 				cmd[0] = '\0';
 				r_line_set_prompt (core->cons->line, ":> ");
@@ -410,7 +410,7 @@ R_API int r_core_visual_view_graph(RCore *core) {
 				r_config_set (core->config, "scr.highlight", cmd);
 				// r_core_cmd_task_sync (core, cmd, 1);
 				r_cons_set_raw (core->cons, 1);
-				r_kons_show_cursor (core->cons, false);
+				r_cons_show_cursor (core->cons, false);
 				r_kons_clear (core->cons);
 			}
 			break;
@@ -419,7 +419,7 @@ R_API int r_core_visual_view_graph(RCore *core) {
 		case ':': // TODO: move this into a separate helper function
 			{
 			char cmd[1024];
-			r_kons_show_cursor (core->cons, true);
+			r_cons_show_cursor (core->cons, true);
 			r_cons_set_raw (core->cons, 0);
 			cmd[0]='\0';
 			r_line_set_prompt (core->cons->line, ":> ");
@@ -429,7 +429,7 @@ R_API int r_core_visual_view_graph(RCore *core) {
 			r_core_cmd0 (core, cmd);
 			//r_core_cmd_task_sync (core, cmd, 1);
 			r_cons_set_raw (core->cons, 1);
-			r_kons_show_cursor (core->cons, false);
+			r_cons_show_cursor (core->cons, false);
 			if (cmd[0]) {
 				r_cons_any_key (core->cons, NULL);
 			}

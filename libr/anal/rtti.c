@@ -44,7 +44,7 @@ R_API void r_anal_rtti_print_all(RAnal *anal, int mode) {
 		r_kons_print (cons, "[");
 	}
 
-	r_kons_break_push (cons, NULL, NULL);
+	r_cons_break_push (cons, NULL, NULL);
 	RList *vtables = r_anal_vtable_search (&context);
 	RListIter *vtableIter;
 	RVTableInfo *table;
@@ -74,21 +74,23 @@ R_API void r_anal_rtti_print_all(RAnal *anal, int mode) {
 		}
 		if (use_json && !success && comma) {
 			// drop last comma if necessary
-			r_kons_drop (cons, 1);
+			r_cons_drop (cons, 1);
 		}
 	}
 	r_list_free (vtables);
 	if (use_json) {
 		r_kons_print (cons, "]\n");
 	}
-	r_kons_break_pop (cons);
+	r_cons_break_pop (cons);
 }
 
 R_API void r_anal_rtti_recover_all(RAnal *anal) {
 	RVTableContext context;
 	r_anal_vtable_begin (anal, &context);
 
-	r_cons_break_push (NULL, NULL);
+	RCore *core = anal->coreb.core;
+	RCons *cons = core->cons;
+	r_cons_break_push (cons, NULL, NULL);
 	RList *vtables = r_anal_vtable_search (&context);
 	if (vtables) {
 		if (context.abi == R_ANAL_CPP_ABI_MSVC) {
@@ -98,5 +100,5 @@ R_API void r_anal_rtti_recover_all(RAnal *anal) {
 		}
 	}
 	r_list_free (vtables);
-	r_cons_break_pop ();
+	r_cons_break_pop (cons);
 }

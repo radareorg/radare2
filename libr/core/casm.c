@@ -120,7 +120,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 		tokens[tokcount] = tok;
 	}
 	tokens[tokcount] = NULL;
-	r_cons_break_push (NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	char *opst = NULL;
 	for (at = from; at < to; at += bs) {
 		if (r_cons_is_breaked (core->cons)) {
@@ -304,7 +304,7 @@ beach:
 	free (code);
 	free (inp);
 	R_FREE (opst);
-	r_cons_break_pop ();
+	r_cons_break_pop (core->cons);
 	return hits;
 }
 

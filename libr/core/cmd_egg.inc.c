@@ -206,13 +206,13 @@ static int cmd_egg(void *data, const char *input) {
 			}
 			pj_end (pj);
 			char *s = pj_drain (pj);
-			r_cons_printf ("%s\n", s);
+			r_kons_printf (core->cons, "%s\n", s);
 			free (s);
 		} else {
 			RListIter *iter;
 			REggPlugin *p;
 			r_list_foreach (egg->plugins, iter, p) {
-				r_cons_printf ("%s  %6s : %s\n",
+				r_kons_printf (core->cons, "%s  %6s : %s\n",
 					(p->type == R_EGG_PLUGIN_SHELLCODE)?
 					"shc": "enc", p->meta.name, p->meta.desc);
 			}

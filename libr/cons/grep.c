@@ -684,7 +684,7 @@ R_API void r_kons_grepbuf(RCons *cons) {
 		R_FREE (cons->context->buffer);
 		cons->context->buffer_len = 0;
 		cons->context->buffer_sz = 0;
-		r_cons_print (s);
+		r_cons_print (cons, s);
 		in = buf = cons->context->buffer;
 		len = cons->context->buffer_len;
 		r_json_free (node);

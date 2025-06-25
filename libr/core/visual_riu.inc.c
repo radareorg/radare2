@@ -102,7 +102,7 @@ static void riu_render(RIU *riu) {
 		switch (*w->type) {
 		case 'b': // button
 			if (!havebuttons) {
-				r_cons_printf ("|\n");
+				r_kons_printf (cons, "|\n");
 				havebuttons = true;
 			}
 			r_kons_printf (cons, "|  %c [ %s ]\n", ch, w->name);

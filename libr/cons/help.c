@@ -35,7 +35,7 @@ R_API void r_cons_cmd_help_json(RCons *cons, RCoreHelpMessage help) {
 			pj_ka (pj, "commands");
 		} else if (!help_args[0] && !help_desc[0]) {
 			/* Section header, no need to indent it */
-		//	r_cons_printf ("%s%s%s\n", pal_help_color, help_cmd, pal_reset);
+		//	r_kons_printf (cons, "%s%s%s\n", pal_help_color, help_cmd, pal_reset);
 		} else {
 			/* Body of help text, indented */
 			pj_o (pj);
@@ -49,7 +49,7 @@ R_API void r_cons_cmd_help_json(RCons *cons, RCoreHelpMessage help) {
 	pj_end (pj);
 	char *s = pj_drain (pj);
 	if (s) {
-		r_cons_printf ("%s\n", s);
+		r_kons_printf (cons, "%s\n", s);
 		free (s);
 	}
 }
@@ -96,22 +96,22 @@ R_API void r_cons_cmd_help(RCons *cons, RCoreHelpMessage help, bool use_color) {
 		if (r_str_startswith (help_cmd, usage_str)) {
 			/* Usage header */
 			const char *afterusage = help_cmd + strlen (usage_str);
-			r_cons_printf ("Usage:%s%s", pal_args_color, afterusage);
+			r_kons_printf (cons, "Usage:%s%s", pal_args_color, afterusage);
 			if (help_args[0]) {
-				r_cons_printf (" %s", help_args);
+				r_kons_printf (cons, " %s", help_args);
 			}
 			if (help_desc[0]) {
-				r_cons_printf ("  %s", help_desc);
+				r_kons_printf (cons, "  %s", help_desc);
 			}
-			r_cons_printf ("%s\n", pal_reset);
+			r_kons_printf (cons, "%s\n", pal_reset);
 		} else if (!help_args[0] && !help_desc[0]) {
 			/* Section header, no need to indent it */
-			r_cons_printf ("%s%s%s\n", pal_help_color, help_cmd, pal_reset);
+			r_kons_printf (cons, "%s%s%s\n", pal_help_color, help_cmd, pal_reset);
 		} else {
 			/* Body of help text, indented */
 			int str_length = strlen (help_cmd) + strlen (help_args);
 			padding = R_MAX ((max_length - str_length), 0);
-			r_cons_printf ("| %s%s%s%s%*s  %s%s%s\n",
+			r_kons_printf (cons, "| %s%s%s%s%*s  %s%s%s\n",
 				pal_input_color, help_cmd,
 				pal_args_color, help_args,
 				padding, "",

@@ -1,6 +1,7 @@
-/* debugbochs  - LGPL - Copyright 2016-2024 - SkUaTeR */
+/* debugbochs  - LGPL - Copyright 2016-2025 - SkUaTeR */
 
 #include <r_debug.h>
+#include <r_core.h>
 #include <libbochs.h>
 
 typedef struct {
@@ -295,6 +296,7 @@ static RDebugReasonType r_debug_bochs_wait(RDebug *dbg, int pid) {
 	if (!is_bochs (dbg) || !pd) {
 		return false;
 	}
+	RCore *core = dbg->coreb.core;
 
 	char strIP[19];
 	int i = 0;
@@ -304,7 +306,7 @@ static RDebugReasonType r_debug_bochs_wait(RDebug *dbg, int pid) {
 	if (pd->bStep) {
 		pd->bStep = false;
 	} else {
-		r_cons_break_push (bochs_debug_break, dbg);
+		r_cons_break_push (core->cons, bochs_debug_break, dbg);
 		i = 500;
 		do {
 			bochs_wait (pd->desc);
@@ -325,7 +327,7 @@ static RDebugReasonType r_debug_bochs_wait(RDebug *dbg, int pid) {
 				break;
 			}
 		} while (1);
-		r_cons_break_pop ();
+		r_cons_break_pop (core->cons);
 	}
 	//eprintf ("bochs_wait: loop done\n");
 	// Next at t=394241428

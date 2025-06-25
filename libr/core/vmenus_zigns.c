@@ -158,7 +158,7 @@ R_API int r_core_visual_view_zigns(RCore *core) {
 		case ':': // TODO: move this into a separate helper function
 			{
 			char cmd[1024] = {0};
-			r_kons_show_cursor (core->cons, true);
+			r_cons_show_cursor (core->cons, true);
 			r_cons_set_raw (core->cons, 0);
 			r_line_set_prompt (core->cons->line, ":> ");
 			if (r_cons_fgets (core->cons, cmd, sizeof (cmd), 0, NULL) < 0) {
@@ -167,7 +167,7 @@ R_API int r_core_visual_view_zigns(RCore *core) {
 			cmd[sizeof (cmd) - 1] = 0;
 			r_core_cmd_task_sync (core, cmd, 1);
 			r_cons_set_raw (core->cons, 1);
-			r_kons_show_cursor (core->cons, false);
+			r_cons_show_cursor (core->cons, false);
 			if (cmd[0]) {
 				r_cons_any_key (core->cons, NULL);
 			}

@@ -476,10 +476,10 @@ static int r_line_readchar_win(RCons *cons, ut8 *s, int slen) {
 	GetConsoleMode (h, &mode);
 	SetConsoleMode (h, new_mode);
 	if (cons->line->zerosep) {
-		bed = r_kons_sleep_begin (cons);
+		bed = r_cons_sleep_begin (cons);
 		DWORD rsz = 0;
 		BOOL ret = ReadFile (h, s, 1, &rsz, NULL);
-		r_kons_sleep_end (cons, bed);
+		r_cons_sleep_end (cons, bed);
 		SetConsoleMode (h, mode);
 		if (!ret || rsz != 1) {
 			return 0;
@@ -487,13 +487,13 @@ static int r_line_readchar_win(RCons *cons, ut8 *s, int slen) {
 		return 1;
 	}
 do_it_again:
-	bed = r_kons_sleep_begin (cons);
+	bed = r_cons_sleep_begin (cons);
 	if (cons->term_xterm) {
 		ret = ReadFile (h, buf, 1, &out, NULL);
 	} else {
 		ret = ReadConsoleInput (h, &irInBuf, 1, &out);
 	}
-	r_kons_sleep_end (cons, bed);
+	r_cons_sleep_end (cons, bed);
 	if (ret < 1) {
 		return 0;
 	}
@@ -708,7 +708,7 @@ R_API int r_line_hist_list(RLine *line, bool full) {
 		i = full? 0: line->history.load_index;
 		for (; i < line->history.size && line->history.data[i]; i++) {
 			const char *pad = r_str_pad (' ', 32 - strlen (line->history.data[i]));
-			r_cons_printf ("%s %s # !%d\n", line->history.data[i], pad, i);
+			r_kons_printf (line->cons, "%s %s # !%d\n", line->history.data[i], pad, i);
 		}
 	}
 	return i;
@@ -1717,8 +1717,8 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 	if (cons->line->echo) {
 		__print_prompt (cons);
 	}
-	r_kons_break_push (cons, NULL, NULL);
-	r_kons_enable_mouse (cons, cons->line->hud);
+	r_cons_break_push (cons, NULL, NULL);
+	r_cons_enable_mouse (cons, cons->line->hud);
 	for (;;) {
 		D.yank_flag = false;
 		if (r_cons_is_breaked (cons)) {
@@ -1743,7 +1743,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 #if USE_UTF8
 		utflen = readchar_utf8 (cons, (ut8 *) buf, sizeof (buf));
 		if (utflen < (line->demo? 0: 1)) {
-			r_cons_break_pop ();
+			r_cons_break_pop (cons);
 			return NULL;
 		}
 		buf[utflen] = 0;
@@ -1758,7 +1758,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 		{
 			int len = r_line_readchar_win (cons, (ut8 *) buf, sizeof (buf));
 			if (len < 1) {
-				r_cons_break_pop ();
+				r_cons_break_pop (cons);
 				return NULL;
 			}
 			buf[len] = 0;
@@ -1766,7 +1766,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 #else
 		ch = r_cons_readchar (cons);
 		if (ch == -1) {
-			r_cons_break_pop ();
+			r_cons_break_pop (cons);
 			return NULL;
 		}
 		buf[0] = ch;
@@ -1838,7 +1838,7 @@ repeat:
 					eprintf ("^D\n");
 				}
 				r_cons_set_raw (cons, false);
-				r_kons_break_pop (cons);
+				r_cons_break_pop (cons);
 				return NULL;
 			}
 			if (line->buffer.index < line->buffer.length) {
@@ -2038,7 +2038,7 @@ repeat:
 				if (line->vtmode == 2) {
 					buf[1] = r_cons_readchar_timeout (cons, 50);
 					if (buf[1] == -1) { // alt+e
-						r_kons_break_pop (cons);
+						r_cons_break_pop (cons);
 						__print_prompt (cons);
 						continue;
 					}
@@ -2067,19 +2067,19 @@ repeat:
 							buf[1] = r_cons_readchar (cons);
 							if (buf[1] == 126) {
 								// handle SUPR key
-								r_kons_break_pop (cons);
+								r_cons_break_pop (cons);
 								__print_prompt (cons);
 								continue;
 							}
 							if (buf[1] == -1) {
-								r_kons_break_pop (cons);
+								r_cons_break_pop (cons);
 								return NULL;
 							}
 						}
 						for (;;) {
 							ch = r_cons_readchar (cons);
 							if (ch < 20) {
-								r_cons_break_pop ();
+								r_cons_break_pop (cons);
 								return NULL;
 							}
 							if (isupper (ch)) {	// read until 'M'
@@ -2145,7 +2145,7 @@ repeat:
 						} else {
 							line->history.do_setup_match = o_do_setup_match;
 							if (r_line_hist_up (line) == -1) {
-								r_kons_break_pop (line->cons);
+								r_cons_break_pop (line->cons);
 								return NULL;
 							}
 						}
@@ -2165,7 +2165,7 @@ repeat:
 						} else {
 							line->history.do_setup_match = o_do_setup_match;
 							if (r_line_hist_down (line) == -1) {
-								r_kons_break_pop (line->cons);
+								r_cons_break_pop (line->cons);
 								return NULL;
 							}
 						}
@@ -2398,9 +2398,9 @@ repeat:
 		}
 	}
 _end:
-	r_kons_break_pop (cons);
+	r_cons_break_pop (cons);
 	r_cons_set_raw (cons, false);
-	r_kons_enable_mouse (cons, mouse_status);
+	r_cons_enable_mouse (cons, mouse_status);
 #if 0
 	if (line->buffer.length > 1024) {	// R2_590 - use line->maxlength
 		line->buffer.data[0] = 0;

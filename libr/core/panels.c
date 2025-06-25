@@ -1422,7 +1422,7 @@ static void show_cursor(RCore *core) {
 	const bool keyCursor = r_config_get_b (core->config, "scr.cursor");
 	if (keyCursor) {
 		r_cons_gotoxy (core->cons, core->cons->cpos.x, core->cons->cpos.y);
-		r_kons_show_cursor (core->cons, 1);
+		r_cons_show_cursor (core->cons, 1);
 		r_cons_flush (core->cons);
 	}
 }
@@ -6866,7 +6866,7 @@ static void __panels_process(RCore *core, RPanels *panels) {
 	r_cons_set_interactive (true);
 	r_core_visual_showcursor (core, false);
 repeat:
-	r_kons_enable_mouse (core->cons, r_config_get_i (core->config, "scr.wheel"));
+	r_cons_enable_mouse (core->cons, r_config_get_i (core->config, "scr.wheel"));
 	core->panels = panels;
 	core->cons->event_resize = NULL; // avoid running old event with new data
 	core->cons->event_data = core;
@@ -7645,7 +7645,7 @@ R_API bool r_core_panels_root(RCore *core, RPanelsRoot *panels_root) {
 	if (core->visual.fromVisual) {
 		r_core_visual (core, "");
 	} else {
-		r_kons_enable_mouse (core->cons, false);
+		r_cons_enable_mouse (core->cons, false);
 	}
 	return true;
 }

@@ -169,8 +169,8 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 	int sx = 0;
 	int sy = 0;
 	r_cons_set_raw (core->cons, 1);
-	r_kons_show_cursor (core->cons, false);
-	r_kons_enable_mouse (core->cons, false);
+	r_cons_show_cursor (core->cons, false);
+	r_cons_enable_mouse (core->cons, false);
 	int total_pages = count_pages (list);
 	SlidesState state = {0};
 	while (having_fun) {
@@ -272,7 +272,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 			}
 			break;
 		case ':':
-			r_kons_show_cursor (core->cons, true);
+			r_cons_show_cursor (core->cons, true);
 			r_cons_set_raw (core->cons, false);
 			r_cons_flush (core->cons);
 			while (1) {
@@ -288,7 +288,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 				}
 				r_cons_flush (core->cons);
 			}
-			r_kons_show_cursor (core->cons, false);
+			r_cons_show_cursor (core->cons, false);
 			r_cons_set_raw (core->cons, true);
 			r_kons_clear (core->cons);
 			break;
@@ -298,7 +298,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 		}
 	}
 	r_cons_set_raw (core->cons, 0);
-	r_kons_show_cursor (core->cons, true);
+	r_cons_show_cursor (core->cons, true);
 	r_list_free (list);
 	free (data);
 	r_config_set_b (core->config, "scr.interactive", true);

@@ -85,7 +85,7 @@ static bool __io_attach(RDebug *dbg, int pid) {
 static char *__io_reg_profile(RDebug *dbg) {
 	RCore *core = dbg->coreb.core;
 	RCons *cons = core->cons;
-	r_kons_push (cons);
+	r_cons_push (cons);
 	char *drp = dbg->iob.system (dbg->iob.io, "drp");
 	if (drp) {
 		return drp;
@@ -93,10 +93,10 @@ static char *__io_reg_profile(RDebug *dbg) {
 	const char *buf = r_kons_get_buffer (cons, NULL);
 	if (R_STR_ISNOTEMPTY (buf)) {
 		char *ret = strdup (buf);
-		r_kons_pop (cons);
+		r_cons_pop (cons);
 		return ret;
 	}
-	// r_kons_pop (cons);
+	// r_cons_pop (cons);
 	return r_anal_get_reg_profile (dbg->anal);
 }
 
@@ -104,19 +104,19 @@ static char *__io_reg_profile(RDebug *dbg) {
 static bool __reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	RCore *core = dbg->coreb.core;
 	RCons *cons = core->cons;
-	r_kons_push (cons);
+	r_cons_push (cons);
 	char *dr8 = dbg->iob.system (dbg->iob.io, "dr8");
 	if (!dr8) {
 		const char *fb = r_cons_get_buffer ();
 		if (R_STR_ISEMPTY (fb)) {
 			R_LOG_ERROR ("Failed to get dr8 from io");
-			r_kons_pop (cons);
+			r_cons_pop (cons);
 			return false;
 		}
 		dr8 = strdup (fb);
 		r_cons_reset (cons);
 	}
-	r_kons_pop (cons);
+	r_cons_pop (cons);
 	ut8 *bregs = calloc (1, strlen (dr8));
 	if (!bregs) {
 		free (dr8);

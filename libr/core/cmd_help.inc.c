@@ -1325,7 +1325,7 @@ static int cmd_help(void *data, const char *input) {
 			}
 			break;
 		case 't': // "?et" "?e=t newtitle"
-			r_cons_set_title (r_str_trim_head_ro (input + 2));
+			r_cons_set_title (core->cons, r_str_trim_head_ro (input + 2));
 			break;
 		case ':': { // "?e:"
 				const char *arg = r_str_trim_head_ro (input + 2);
@@ -1417,7 +1417,7 @@ static int cmd_help(void *data, const char *input) {
 		case 'd': // "?ed"
 			  if (input[2] == 'd') {
 				  int i,j;
-				  r_kons_show_cursor (core->cons, 0);
+				  r_cons_show_cursor (core->cons, 0);
 				  r_kons_clear00 (core->cons);
 				  for (i = 1; i < 100; i++) {
 					  if (r_cons_is_breaked (core->cons)) {

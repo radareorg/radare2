@@ -45,7 +45,6 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int count) {
 	RIOMalloc *mal = (RIOMalloc*)desc->data;
 	if (mal) {
 		ut64 addr = mal->offset;
-		r_cons_break_push (NULL, NULL);
 		RIOSocketData *sdat = mal->data;
 		RSocket *s = sdat->sc;
 		ut8 *mem = malloc (4096);
@@ -67,7 +66,6 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int count) {
 			}
 			free (mem);
 		}
-		r_cons_break_pop ();
 		mal->offset = addr;
 		return io_memory_read (io, desc, buf, count);
 	}

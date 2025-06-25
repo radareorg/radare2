@@ -45,19 +45,6 @@ static bool lastMatters(RConsContext *C) {
 		&& !C->grep.json && !C->is_html);
 }
 
-R_API void r_kons_break_push(RCons *cons, RConsBreak cb, void *user) {
-	RConsContext *ctx = cons->context;
-	if (ctx->break_stack && r_stack_size (ctx->break_stack) > 0) {
-		r_kons_break_timeout (cons, cons->otimeout);
-	}
-	r_cons_context_break_push (cons, ctx, cb, user, true);
-}
-
-R_API void r_kons_break_pop(RCons *cons) {
-	cons->timeout = 0;
-	r_cons_context_break_pop (cons, cons->context, true);
-}
-
 R_API void r_kons_last(RCons *cons) {
 	RConsContext *ctx = cons->context;
 	if (!ctx->lastEnabled) {
@@ -320,7 +307,7 @@ R_API void r_kons_free(RCons * R_NULLABLE cons) {
 		return;
 	}
 #if R2__WINDOWS__
-	r_kons_enable_mouse (cons, false);
+	r_cons_enable_mouse (cons, false);
 	if (cons->old_cp) {
 		(void)SetConsoleOutputCP (cons->old_cp);
 		// chcp doesn't pick up the code page switch for some reason
@@ -332,7 +319,7 @@ R_API void r_kons_free(RCons * R_NULLABLE cons) {
 		cons->line = NULL;
 	}
 	while (!r_list_empty (cons->ctx_stack)) {
-		r_kons_pop (cons);
+		r_cons_pop (cons);
 	}
 	r_cons_context_free (cons->context);
 #if 0
@@ -345,27 +332,6 @@ R_API void r_kons_free(RCons * R_NULLABLE cons) {
 #endif
 	R_FREE (cons->pager);
 	RVecFdPairs_fini (&cons->fds);
-}
-
-R_API void r_kons_print_clear(RCons *cons) {
-	r_kons_print (cons, "\x1b[0;0H\x1b[0m");
-}
-
-R_API void r_kons_fill_line(RCons *cons) {
-	char white[1024];
-	int cols = cons->columns - 1;
-	if (cols < 1) {
-		return;
-	}
-	char *p = (cols >= sizeof (white))? malloc (cols + 1): white;
-	if (p) {
-		memset (p, ' ', cols);
-		p[cols] = 0;
-		r_kons_print (cons, p);
-		if (white != p) {
-			free (p);
-		}
-	}
 }
 
 R_API void r_kons_clear_line(RCons *cons, int std_err) {
@@ -413,86 +379,8 @@ R_API const char *r_kons_get_buffer(RCons *cons, size_t *buffer_len) {
 	return (ctx->buffer_len > 0)? ctx->buffer : NULL;
 }
 
-R_API void r_kons_push(RCons *cons) {
-	r_list_push (cons->ctx_stack, cons->context);
-	RConsContext *nc = r_cons_context_clone (cons->context);
-#if 1
-	// maybe this is done by kons_reset too
-	nc->buffer = NULL;
-	nc->buffer_sz = 0;
-	nc->buffer_len = 0;
-#endif
-	cons->context = nc;
-	// global hacks
-	RCons *Gcons = r_cons_singleton ();
-	if (cons == Gcons) {
-		Gcons->context = nc;
-	}
-	r_cons_reset (cons);
-	// r_cons_context_reset (cons->context);
-#if 0
-	// memcpy (&tc, cons->context, sizeof (tc));
-	if (!ctx->cons_stack) {
-		return;
-	}
-	RConsStack *data = cons_stack_dump (cons, true);
-	if (data) {
-		r_stack_push (ctx->cons_stack, data);
-		ctx->buffer_len = 0;
-		if (ctx->buffer) {
-			memset (ctx->buffer, 0, ctx->buffer_sz);
-		}
-	}
-#endif
-}
-
-R_API bool r_kons_pop(RCons *cons) {
-	if (r_list_empty (cons->ctx_stack)) {
-		R_LOG_INFO ("Nothing to pop");
-		return false;
-	}
-	RConsContext *ctx = r_list_pop (cons->ctx_stack);
-	r_cons_context_free (cons->context);
-	cons->context = ctx;
-	// global hacks
-	RCons *Gcons = r_cons_singleton ();
-	if (cons == Gcons) {
-		Gcons->context = ctx;
-	}
-	return true;
-#if 0
-	if (ctx->cons_stack) {
-		RConsStack *data = (RConsStack *)r_stack_pop (ctx->cons_stack);
-		if (data) {
-			cons_stack_load (ctx, data, true);
-			cons_stack_free ((void *)data);
-		}
-	}
-	memcpy (cons->context, &tc, sizeof (tc));
-#endif
-}
-
 R_API bool r_kons_context_is_main(RCons *cons) {
 	return r_cons_context_is_main (cons, cons->context);
-}
-
-R_API void r_kons_echo(RCons *cons, const char *msg) {
-	if (msg) {
-		if (cons->echodata) {
-			r_strbuf_append (cons->echodata, msg);
-			r_strbuf_append_n (cons->echodata, "\n", 1);
-		} else {
-			cons->echodata = r_strbuf_new (msg);
-		}
-	} else {
-		if (cons->echodata) {
-			char *data = r_strbuf_drain (cons->echodata);
-			r_kons_print (cons, data);
-			r_cons_newline (cons);
-			cons->echodata = NULL;
-			free (data);
-		}
-	}
 }
 
 R_API char *r_kons_drain(RCons *cons) {
@@ -615,34 +503,7 @@ R_IPI int r_kons_is_vtcompat(RCons *cons) {
 }
 #endif
 
-R_API void r_kons_show_cursor(RCons *I, int cursor) {
-	RConsContext *C = I->context;
-#if R2__WINDOWS__
-	if (I->vtmode) {
-#endif
-		if (write (1, cursor ? "\x1b[?25h" : "\x1b[?25l", 6) != 6) {
-			C->breaked = true;
-		}
-#if R2__WINDOWS__
-	} else {
-		static R_TH_LOCAL HANDLE hStdout = NULL;
-		static R_TH_LOCAL DWORD size = -1;
-		CONSOLE_CURSOR_INFO cursor_info;
-		if (!hStdout) {
-			hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
-		}
-		if (size == -1) {
-			GetConsoleCursorInfo (hStdout, &cursor_info);
-			size = cursor_info.dwSize;
-		}
-		cursor_info.dwSize = size;
-		cursor_info.bVisible = cursor ? TRUE : FALSE;
-		SetConsoleCursorInfo (hStdout, &cursor_info);
-	}
-#endif
-}
-
-R_API void r_kons_set_title(RCons *cons, const char *str) {
+R_API void r_cons_set_title(RCons *cons, const char *str) {
 #if R2__WINDOWS__
 #  if defined(_UNICODE)
 	wchar_t* wstr = r_utf8_to_utf16_l (str, strlen (str));
@@ -665,156 +526,5 @@ R_API void r_kons_zero(RCons *cons) {
 	if (write (1, "", 1) != 1) {
 		cons->context->breaked = true;
 	}
-}
-
-R_API void r_kons_highlight(RCons *cons, const char *word) {
-	int l, *cpos = NULL;
-	char *rword = NULL, *res, *clean = NULL;
-	char *inv[2] = {
-		R_CONS_INVERT (true, true),
-		R_CONS_INVERT (false, true)
-	};
-	const int linv[2] = {
-		strlen (inv[0]),
-		strlen (inv[1])
-	};
-
-	if (!cons->enable_highlight) {
-		r_cons_enable_highlight (cons, true);
-		return;
-	}
-	RConsContext *C = cons->context;
-	if (R_STR_ISNOTEMPTY (word) && C->buffer) {
-		int word_len = strlen (word);
-		char *orig;
-		clean = r_str_ndup (C->buffer, C->buffer_len);
-		l = r_str_ansi_filter (clean, &orig, &cpos, -1);
-		free (C->buffer);
-		C->buffer = orig;
-		if (cons->highlight) {
-			if (strcmp (word, cons->highlight)) {
-				free (cons->highlight);
-				cons->highlight = strdup (word);
-			}
-		} else {
-			cons->highlight = strdup (word);
-		}
-		rword = malloc (word_len + linv[0] + linv[1] + 1);
-		if (!rword) {
-			free (cpos);
-			free (clean);
-			return;
-		}
-		strcpy (rword, inv[0]);
-		strcpy (rword + linv[0], word);
-		strcpy (rword + linv[0] + word_len, inv[1]);
-		res = r_str_replace_thunked (C->buffer, clean, cpos,
-					l, word, rword, 1);
-		if (res) {
-			C->buffer = res;
-			C->buffer_len = C->buffer_sz = strlen (res);
-		}
-		free (rword);
-		free (clean);
-		free (cpos);
-	} else {
-		R_FREE (cons->highlight);
-	}
-}
-
-R_API char *r_kons_lastline(RCons *cons, int *len) {
-	RConsContext *c = cons->context;
-	char *start = c->buffer;
-	char *b = start + c->buffer_len;
-	while (b > start) {
-		b--;
-		if (*b == '\n') {
-			b++;
-			break;
-		}
-	}
-	if (len) {
-		int delta = b - start;
-		*len = c->buffer_len - delta;
-	}
-	return b;
-}
-// same as r_cons_lastline(), but len will be the number of
-// utf-8 characters excluding ansi escape sequences as opposed to just bytes
-R_API char *r_kons_lastline_utf8_ansi_len(RCons *cons, int *len) {
-	RConsContext *c = cons->context;
-	if (!len) {
-		return r_kons_lastline (cons, 0);
-	}
-
-	char *start = c->buffer;
-	char *b = start + c->buffer_len;
-	int l = 0;
-	int last_possible_ansi_end = 0;
-	char ch = '\0';
-	char ch2;
-	while (b > start) {
-		ch2 = ch;
-		ch = *b;
-
-		if (ch == '\n') {
-			b++;
-			l--;
-			break;
-		}
-
-		// utf-8
-		if ((ch & 0xc0) != 0x80) {
-			l++;
-		}
-
-		// ansi
-		if (ch == 'J' || ch == 'm' || ch == 'H') {
-			last_possible_ansi_end = l - 1;
-		} else if (ch == '\x1b' && ch2 == '[') {
-			l = last_possible_ansi_end;
-		}
-
-		b--;
-	}
-
-	*len = l;
-	return b;
-}
-
-R_API bool r_kons_drop(RCons *cons, int n) {
-	RConsContext *c = cons->context;
-	if (n > c->buffer_len) {
-		c->buffer_len = 0;
-		return false;
-	}
-	c->buffer_len -= n;
-	return true;
-}
-
-R_API void r_cons_trim(RCons *cons) {
-	RConsContext *c = cons->context;
-	while (c->buffer_len > 0) {
-		char ch = c->buffer[c->buffer_len - 1];
-		if (ch != '\n' && !IS_WHITESPACE (ch)) {
-			break;
-		}
-		c->buffer_len--;
-	}
-}
-
-R_API void *r_kons_sleep_begin(RCons *cons) {
-	R_CRITICAL_ENTER (cons);
-	if (cons->cb_sleep_begin) {
-		return cons->cb_sleep_begin (cons->user);
-	}
-	return NULL;
-}
-
-R_API void r_kons_sleep_end(RCons *cons, void *user) {
-	if (cons->cb_sleep_end) {
-		cons->cb_sleep_end (cons->user, user);
-	}
-	R_CRITICAL_LEAVE (cons);
 }
 

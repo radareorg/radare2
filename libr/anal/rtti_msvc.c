@@ -204,7 +204,7 @@ static RList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num_
 		num_base_classes = BASE_CLASSES_MAX;
 	}
 
-	r_kons_break_push (cons, NULL, NULL);
+	r_cons_break_push (cons, NULL, NULL);
 	while (num_base_classes > 0) {
 		if (r_cons_is_breaked (cons)) {
 			break;
@@ -246,7 +246,7 @@ static RList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num_
 		addr += stride;
 		num_base_classes--;
 	}
-	r_kons_break_pop (cons);
+	r_cons_break_pop (cons);
 
 	if (num_base_classes > 0) {
 		// there was an error in the loop above

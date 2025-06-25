@@ -1359,7 +1359,7 @@ repeat:
 		}
 	}
 #if R2__WINDOWS__
-	r_kons_break_pop (cons);
+	r_cons_break_pop (cons);
 #endif
 
 	// Unset breakpoints before leaving

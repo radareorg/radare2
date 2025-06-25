@@ -980,8 +980,8 @@ repeat:
 		if (!buf) {
 			return;
 		}
-		void *bed = r_cons_sleep_begin ();
-		r_cons_break_push (NULL, NULL);
+		void *bed = r_cons_sleep_begin (core->cons);
+		r_cons_break_push (core->cons, NULL, NULL);
 		for (;;) {
 			if (r_cons_is_breaked (core->cons)) {
 				break;
@@ -1004,8 +1004,8 @@ repeat:
 			r_socket_flush (s);
 			free (res);
 		}
-		r_cons_break_pop ();
-		r_cons_sleep_end (bed);
+		r_cons_break_pop (core->cons);
+		r_cons_sleep_end (core->cons, bed);
 		free (buf);
 	} else {
 		if (retry) {
@@ -2376,7 +2376,7 @@ bypass:
 		if (filter) {
 			*filter = '~';
 		}
-		r_kons_break_push (core->cons, NULL, NULL);
+		r_cons_break_push (core->cons, NULL, NULL);
 		if (ptr) {
 			for (;;) {
 				if (r_cons_is_breaked (core->cons)) {
@@ -2397,7 +2397,7 @@ bypass:
 				ptr = eol + 1;
 			}
 		}
-		r_cons_break_pop ();
+		r_cons_break_pop (core->cons);
 		free (str);
 		free (inp);
 		break;
@@ -3518,19 +3518,19 @@ static int cmd_system(void *data, const char *input) {
 					R_LOG_ERROR ("The !! command is disabled in sandbox mode");
 					return 0;
 				}
-				r_kons_push (core->cons);
+				r_cons_push (core->cons);
 				int olen = 0;
 				char *out = NULL;
 				char *cmd = r_core_sysenv_begin (core, input);
 				if (cmd) {
-				//	void *bed = r_kons_sleep_begin (core->cons);
+				//	void *bed = r_cons_sleep_begin (core->cons);
 					ret = r_sys_cmd_str_full (cmd + 1, NULL, 0, &out, &olen, NULL);
-				//	r_kons_sleep_end (core->cons, bed);
+				//	r_cons_sleep_end (core->cons, bed);
 					r_core_sysenv_end (core, input);
-core->cons->context->noflush = false;
+					core->cons->context->noflush = false;
 					free (cmd);
 				}
-				r_kons_pop (core->cons);
+				r_cons_pop (core->cons);
 					if (out && olen > 0) {
 						r_cons_write (core->cons, out, olen);
 					}
@@ -3567,12 +3567,12 @@ core->cons->context->noflush = false;
 		} else {
 			char *cmd = r_core_sysenv_begin (core, input);
 			if (cmd) {
-				void *bed = r_cons_sleep_begin ();
+				void *bed = r_cons_sleep_begin (core->cons);
 				ret = r_sys_cmd (cmd);
 				if (ret != 0) {
 					core->cons->context->was_breaked = true;
 				}
-				r_cons_sleep_end (bed);
+				r_cons_sleep_end (core->cons, bed);
 				r_core_sysenv_end (core, input);
 				free (cmd);
 			} else {
@@ -4057,7 +4057,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	if (is_root_cmd) {
 		r_cons_break_clear (core->cons);
 	}
-	r_kons_break_push (core->cons, NULL, NULL);
+	r_cons_break_push (core->cons, NULL, NULL);
 	R_CRITICAL_ENTER (core);
 	const bool ocur_enabled = core->print && core->print->cur_enabled;
 	R_CRITICAL_LEAVE (core);
@@ -4101,7 +4101,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 			r_cons_flush (core->cons);
 		}
 		if (R_STR_ISNOTEMPTY (cr) && orep > 1) {
-			// XXX: do not flush here, we need r_kons_push () and r_kons_pop()
+			// XXX: do not flush here, we need r_cons_push () and r_cons_pop()
 			r_cons_flush (core->cons);
 			// XXX: we must import register flags in C
 			(void)r_core_cmd0 (core, ".dr*");
@@ -4109,7 +4109,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		}
 		free (cr);
 	}
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	if (is_root_cmd) {
 		r_cons_break_clear (core->cons);
 	}
@@ -4564,10 +4564,10 @@ escape_pipe:
 					detail++;
 				}
 			}
-			//r_kons_break_push (core->cons, NULL, NULL);
+			//r_cons_break_push (core->cons, NULL, NULL);
 			recursive_help (core, detail, cmd);
 			core->cons->context->noflush = false; // PANCAKE for some reason wtf
-			//r_kons_break_pop (core->cons);
+			//r_cons_break_pop (core->cons);
 			r_cons_grep_parsecmd (core->cons, ptr + 2, "`");
 			if (scr_html != -1) {
 				r_config_set_b (core->config, "scr.html", scr_html);
@@ -5754,7 +5754,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 		{
 			ut64 offorig = core->addr;
 			ut64 bszorig = core->blocksize;
-			r_cons_break_push (NULL, NULL);
+			r_cons_break_push (core->cons, NULL, NULL);
 			r_list_foreach (list, iter, item) {
 				if (r_cons_is_breaked (core->cons)) {
 					break;
@@ -5776,7 +5776,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 			}
 			r_core_seek (core, offorig, true);
 			r_core_block_size (core, bszorig);
-			r_cons_break_pop ();
+			r_cons_break_pop (core->cons);
 		}
 		break;
 	case 't':
@@ -5970,7 +5970,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 
 	oseek = core->addr;
 	ostr = str = strdup (each);
-	r_cons_break_push (NULL, NULL); //pop on return
+	r_cons_break_push (core->cons, NULL, NULL); //pop on return
 	switch (each[0]) {
 	case '/': // "@@/"
 		{
@@ -6021,7 +6021,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				ut64 from = r_num_math (core->num, r_str_word_get0 (str, 0));
 				ut64 to = r_num_math (core->num, r_str_word_get0 (str, 1));
 				ut64 step = r_num_math (core->num, r_str_word_get0 (str, 2));
-				r_cons_break_push (NULL, NULL);
+				r_cons_break_push (core->cons, NULL, NULL);
 				r_core_return_code (core, 0);
 				for (cur = from; cur <= to; cur += step) {
 					if (r_cons_is_breaked (core->cons)) {
@@ -6037,7 +6037,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 						break;
 					}
 				}
-				r_cons_break_pop ();
+				r_cons_break_pop (core->cons);
 			} else {
 				R_LOG_ERROR ("Use the sequence iterator like this: 'cmd @@s:from to step'");
 			}
@@ -6080,13 +6080,13 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				r_list_foreach (core->anal->fcns, iter, fcn) {
 					r_core_seek (core, fcn->addr, true);
 #if 0
-					r_kons_push ();
+					r_cons_push ();
 					r_core_cmd (core, cmd, 0);
 					char *buf = (char *)r_cons_get_buffer ();
 					if (buf) {
 						buf = strdup (buf);
 					}
-					r_kons_pop ();
+					r_cons_pop ();
 					// r_kons_print (core->cons, buf);
 					r_strbuf_append (sb, buf);
 					free (buf);
@@ -6303,11 +6303,11 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					char *buf = NULL;
 					const char *tmp = NULL;
 					r_core_seek (core, flag->addr, true);
-					r_kons_push (core->cons);
+					r_cons_push (core->cons);
 					r_core_cmd (core, cmd, 0);
 					tmp = r_cons_get_buffer ();
 					buf = tmp? strdup (tmp): NULL;
-					r_kons_pop (core->cons);
+					r_cons_pop (core->cons);
 					if (buf) {
 						r_kons_print (core->cons, buf);
 						free (buf);
@@ -6324,7 +6324,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			}
 		}
 	}
-	r_cons_break_pop ();
+	r_cons_break_pop (core->cons);
 	// XXX: use r_core_seek here
 	core->addr = oseek;
 
@@ -6333,7 +6333,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 	return true;
 out_finish:
 	free (ostr);
-	r_kons_break_pop (core->cons);
+	r_cons_break_pop (core->cons);
 	return false;
 }
 
@@ -6483,14 +6483,14 @@ R_API bool r_core_cmd_lines(RCore *core, const char *lines) {
 	size_t current_line = 0;
 	char *nl = strchr (odata, '\n');
 	if (nl) {
-		r_cons_break_push (NULL, NULL);
+		r_cons_break_push (core->cons, NULL, NULL);
 		do {
 			if (show_progress_bar) {
 				r_print_progressbar_with_count (core->print, current_line++, line_count, 80, true);
 			}
 			if (r_cons_is_breaked (core->cons)) {
 				free (odata);
-				r_cons_break_pop ();
+				r_cons_break_pop (core->cons);
 				return ret;
 			}
 			*nl = '\0';
@@ -6513,7 +6513,7 @@ R_API bool r_core_cmd_lines(RCore *core, const char *lines) {
 			data = nl + 1;
 			r_core_task_yield (&core->tasks);
 		} while ((nl = strchr (data, '\n')));
-		r_kons_break_pop (core->cons);
+		r_cons_break_pop (core->cons);
 		if (show_progress_bar) {
 			r_print_progressbar_with_count (core->print, line_count, line_count, 80, true);
 			r_cons_newline (core->cons);
@@ -6750,7 +6750,7 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 		r_core_cmd0 (core, cmd); // CMD HERE
 		return strdup ("");
 	}
-	r_kons_push (core->cons);
+	r_cons_push (core->cons);
 	core->cons->context->noflush = true; // why
 	core->cons->context->cmd_str_depth++; // wat
 	if (cmd && r_core_cmd (core, cmd, 0) == -1) { // dbl Free
@@ -6759,7 +6759,7 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 			core->cons->context->noflush = false;
 			r_cons_flush (core->cons);
 		}
-		r_kons_pop (core->cons);
+		r_cons_pop (core->cons);
 		return NULL;
 	}
 	if (--core->cons->context->cmd_str_depth == 0) {
@@ -6768,14 +6768,14 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 	r_cons_filter (core->cons);
 	const char *static_str = r_kons_get_buffer (core->cons, NULL);
 	char *retstr = strdup (r_str_get (static_str));
-	r_kons_pop (core->cons);
-	r_kons_echo (core->cons, NULL);
+	r_cons_pop (core->cons);
+	r_cons_echo (core->cons, NULL);
 	return retstr;
 }
 
 /* get command output in raw bytes */
 R_API RBuffer *r_core_cmd_tobuf(RCore *core, const char *cmd) {
-	r_kons_push (core->cons);
+	r_cons_push (core->cons);
 	core->cons->context->noflush = true;
 
 	core->cons->context->cmd_str_depth++;
@@ -6785,7 +6785,7 @@ R_API RBuffer *r_core_cmd_tobuf(RCore *core, const char *cmd) {
 			core->cons->context->noflush = false;
 			r_cons_flush (core->cons);
 		}
-		r_kons_pop (core->cons);
+		r_cons_pop (core->cons);
 		return NULL;
 	}
 
@@ -6797,8 +6797,8 @@ R_API RBuffer *r_core_cmd_tobuf(RCore *core, const char *cmd) {
 	size_t bsz;
 	const char *buf = r_kons_get_buffer (core->cons, &bsz);
 	RBuffer *out = r_buf_new_with_bytes ((const ut8*)buf, bsz);
-	r_kons_pop (core->cons);
-	r_kons_echo (core->cons, NULL);
+	r_cons_pop (core->cons);
+	r_cons_echo (core->cons, NULL);
 	free ((void *)buf);
 	return out;
 }
