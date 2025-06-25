@@ -91,7 +91,7 @@ static int magic_at(MagicContext *mc, RSearchKeyword *kw, const char *file, ut64
 			}
 		}
 	}
-	//if (v) r_cons_printf ("  %d # pm %s @ 0x%"PFMT64x"\n", depth, r_str_get (file), addr);
+	//if (v) r_kons_printf (cons, "  %d # pm %s @ 0x%"PFMT64x"\n", depth, r_str_get (file), addr);
 	if (delta + 2 > core->blocksize) {
 		R_LOG_WARN ("magic result happens between block reads");
 		ret = -1;

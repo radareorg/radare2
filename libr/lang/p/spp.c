@@ -20,8 +20,9 @@ static bool lang_spp_run(RLangSession *s, const char *code, int len) {
 	char *c = strdup (code);
 	spp_eval (c, &out);
 	free (c);
+	RCons *cons = s->lang->cons;
 	char *data = r_strbuf_drain (out.cout);
-	r_cons_printf ("%s\n", data);
+	r_kons_printf (cons, "%s\n", data);
 	free (data);
 	return true;
 }

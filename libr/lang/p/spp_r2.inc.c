@@ -137,7 +137,8 @@ static TAG_CALLBACK(spp_r2_warning) {
 static TAG_CALLBACK(spp_r2_r2) {
 	char *str = Glang->cmd_str (Glang->user, buf);
 	if (str) {
-		r_cons_printf ("%s", str);
+		RCons *cons = r_cons_singleton ();
+		r_kons_printf (cons, "%s", str);
 		free (str);
 	}
 	return 0;
@@ -149,7 +150,8 @@ static TAG_CALLBACK(spp_r2_system) {
 	}
 	char *msg = r_sys_cmd_str (buf, NULL, NULL);
 	if (msg) {
-		r_cons_printf ("%s", msg);
+		RCons *cons = r_cons_singleton ();
+		r_kons_printf (cons, "%s", msg);
 		free (msg);
 	}
 	return 0;
@@ -218,7 +220,8 @@ static TAG_CALLBACK(spp_r2_hex) {
 			int ch, b = buf[i + 2];
 			buf[i + 2] = '\0';
 			sscanf (buf + i, "%02x", &ch);
-			r_cons_printf ("%c", ch & 0xff);
+			RCons *cons = r_cons_singleton ();
+			r_kons_printf (cons, "%c", ch & 0xff);
 			buf[i + 2] = b;
 			buf = buf + 2;
 		}
@@ -246,7 +249,8 @@ static TAG_CALLBACK(spp_r2_grepline) {
 				}
 			}
 			fclose (fd);
-			r_cons_printf ("%s", b);
+			RCons *cons = r_cons_singleton ();
+			r_kons_printf (cons, "%s", b);
 		} else {
 			eprintf ("Unable to open '%s'\n", buf);
 		}
@@ -355,7 +359,8 @@ static TAG_CALLBACK(spp_r2_endpipe) {
 		}
 	} while (ret > 0);
 	str[len] = '\0';
-	r_cons_printf ("%s", str);
+	RCons *cons = r_cons_singleton ();
+	r_kons_printf (cons, "%s", str);
 	if (spp_r2_pipe_fd) {
 		pclose (spp_r2_pipe_fd);
 	}
@@ -366,14 +371,15 @@ static TAG_CALLBACK(spp_r2_endpipe) {
 }
 
 static PUT_CALLBACK(spp_r2_fputs) {
+	RCons *cons = r_cons_singleton ();
 #if HAVE_SYSTEM
 	if (spp_r2_pipe_fd) {
 		fprintf (spp_r2_pipe_fd, "%s", buf);
 	} else {
-		r_cons_printf ("%s", buf);
+		r_kons_printf (cons, "%s", buf);
 	}
 #else
-	r_cons_printf ("%s", buf);
+	r_kons_printf ("%s", buf);
 #endif
 	return 0;
 }
