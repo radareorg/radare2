@@ -1,6 +1,7 @@
-/* debugbochs  - LGPL - Copyright 2016-2024 - SkUaTeR */
+/* debugbochs  - LGPL - Copyright 2016-2025 - SkUaTeR */
 
 #include <r_debug.h>
+#include <r_core.h>
 #include <libbochs.h>
 
 typedef struct {
@@ -295,6 +296,7 @@ static RDebugReasonType r_debug_bochs_wait(RDebug *dbg, int pid) {
 	if (!is_bochs (dbg) || !pd) {
 		return false;
 	}
+	RCore *core = dbg->coreb.core;
 
 	char strIP[19];
 	int i = 0;
