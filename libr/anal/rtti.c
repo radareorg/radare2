@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2025 - pancake, maijin, thestr4ng3r */
 
-#include "r_anal.h"
+#include <r_anal.h>
+#include <r_core.h>
 
 R_API char *r_anal_rtti_demangle_class_name(RAnal *anal, const char *name) {
 	RVTableContext context;
@@ -33,13 +34,15 @@ R_API void r_anal_rtti_print_at_vtable(RAnal *anal, ut64 addr, int mode) {
 R_API void r_anal_rtti_print_all(RAnal *anal, int mode) {
 	RVTableContext context;
 	r_anal_vtable_begin (anal, &context);
+	RCore *core = anal->coreb.core;
+	RCons *cons = core->cons;
 
 	bool use_json = mode == 'j';
 	if (use_json) {
-		r_cons_print ("[");
+		r_kons_print (cons, "[");
 	}
 
-	r_cons_break_push (NULL, NULL);
+	r_kons_break_push (cons, NULL, NULL);
 	RList *vtables = r_anal_vtable_search (&context);
 	RListIter *vtableIter;
 	RVTableInfo *table;
@@ -48,7 +51,7 @@ R_API void r_anal_rtti_print_all(RAnal *anal, int mode) {
 		bool comma = false;
 		bool success = false;
 		r_list_foreach (vtables, vtableIter, table) {
-			if (r_cons_is_breaked ()) {
+			if (r_kons_is_breaked (cons)) {
 				break;
 			}
 			if (use_json && success) {
@@ -63,22 +66,20 @@ R_API void r_anal_rtti_print_all(RAnal *anal, int mode) {
 			if (success) {
 				comma = false;
 				if (!use_json) {
-					r_cons_print ("\n");
+					r_kons_print (cons, "\n");
 				}
 			}
 		}
 		if (use_json && !success && comma) {
 			// drop last comma if necessary
-			r_cons_drop (1);
+			r_kons_drop (cons, 1);
 		}
 	}
 	r_list_free (vtables);
-
 	if (use_json) {
-		r_cons_print ("]\n");
+		r_kons_print (cons, "]\n");
 	}
-
-	r_cons_break_pop ();
+	r_kons_break_pop (cons);
 }
 
 R_API void r_anal_rtti_recover_all(RAnal *anal) {

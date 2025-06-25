@@ -4,7 +4,7 @@
 
 static bool nullcmd(RAnal *anal, const char *cmd) {
 	if (r_str_startswith (cmd, "null")) {
-		r_cons_println ("nothing to see");
+		R_LOG_INFO ("nothing to see");
 		return true;
 	}
 	return false;

@@ -934,7 +934,6 @@ R_API int r_cons_get_cur_line(void);
 R_API void r_cons_line(int x, int y, int x2, int y2, int ch);
 R_API void r_cons_show_cursor(int cursor);
 R_API char *r_cons_swap_ground(const char *col);
-R_API bool r_cons_drop(int n);
 R_API void r_cons_set_interactive(bool b);
 R_API void r_cons_set_raw(RCons *cons, bool is_raw);
 R_API void r_cons_invert(RCons *cons, int set, int color);
@@ -945,7 +944,6 @@ R_API void r_cons_set_last_interactive(void);
 R_API int r_cons_printf(const char *format, ...) R_PRINTF_CHECK(1, 2);
 R_API void r_cons_print(const char *str);
 R_API void r_cons_print_at(RCons *cons, const char *str, int x, char y, int w, int h);
-R_API void r_cons_println(const char* str);
 R_API void r_cons_print_justify(RCons *cons, const char *str, int j, char c);
 
 R_API char *r_cons_drain(void);

@@ -115,10 +115,6 @@ R_API RColor r_cons_color_random(ut8 alpha) {
 	return rcolor;
 }
 
-R_API void r_cons_println(const char* str) {
-	r_kons_println (I, str);
-}
-
 R_API void r_cons_print_justify(RCons *cons, const char *str, int j, char c) {
 	int i, o, len;
 	for (o = i = len = 0; str[i]; i++, len++) {
@@ -1127,10 +1123,6 @@ R_API char *r_cons_swap_ground(const char *col) {
 		return r_str_newf ("\x1b[4%s", col + 3);
 	}
 	return strdup (col);
-}
-
-R_API bool r_cons_drop(int n) {
-	return r_kons_drop (I, n);
 }
 
 static void mygrep(RCons *cons, const char *grep) {
