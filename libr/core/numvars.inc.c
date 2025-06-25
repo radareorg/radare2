@@ -897,7 +897,7 @@ static ut64 num_callback(RNum *userptr, const char *str, bool *ok) {
 			}
 			break;
 		case 'c': // $c console width
-			return r_kons_get_size (core->cons, NULL);
+			return r_cons_get_size (core->cons, NULL);
 		case 'd': // $d - same as 'op'
 			if (core->io && core->io->desc) {
 				return core->io->desc->fd;
@@ -933,7 +933,7 @@ static ut64 num_callback(RNum *userptr, const char *str, bool *ok) {
 				return 0; // UT64_MAX;
 			}
 			int rows;
-			(void)r_kons_get_size (core->cons, &rows);
+			(void)r_cons_get_size (core->cons, &rows);
 			return rows;
 		case 'p': // $p
 			return r_sys_getpid ();

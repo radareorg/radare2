@@ -1573,7 +1573,7 @@ R_API int r_core_visual_classes(RCore *core) {
 		}
 
 		/* update terminal size */
-		(void) r_kons_get_size (core->cons, &cols);
+		(void) r_cons_get_size (core->cons, &cols);
 		r_cons_visual_flush (core->cons);
 		ch = r_cons_readchar (core->cons);
 		if (ch == -1 || ch == 4) {
@@ -1846,7 +1846,7 @@ R_API int r_core_visual_anal_classes(RCore *core) {
 		class_name = show_anal_classes (core, mode, &index, list, class_name);
 
 		/* update terminal size */
-		(void) r_kons_get_size (core->cons, &cols);
+		(void) r_cons_get_size (core->cons, &cols);
 		r_cons_visual_flush (core->cons);
 		ch = r_cons_readchar (core->cons);
 		if (ch == -1 || ch == 4) {
@@ -1990,7 +1990,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 	r_line_set_prompt (core->cons->line, "rop regexp: ");
 	const char *line = r_line_readline (core->cons);
 
-	int scr_h, scr_w = r_kons_get_size (core->cons, &scr_h);
+	int scr_h, scr_w = r_cons_get_size (core->cons, &scr_h);
 
 	if (R_STR_ISEMPTY (line)) {
 		return false;
@@ -2298,7 +2298,7 @@ R_API int r_core_visual_trackflags(RCore *core) { // "vbf"
 				continue;
 			}
 			if (fs2) {
-				int cols, rows = r_kons_get_size (core->cons, &cols);
+				int cols, rows = r_cons_get_size (core->cons, &cols);
 				//int rows = 20;
 				rows -= 12;
 				r_kons_printf (core->cons, "\n Selected: %s\n\n", fs2);
@@ -2708,7 +2708,7 @@ static void show_config_options(RCore *core, const char *opt, int row) {
 	RConfigNode *node = r_config_node_get (core->config, opt);
 	if (node && !r_list_empty (node->options)) {
 		int h, w = 25;
-		r_kons_get_size (core->cons, &h);
+		r_cons_get_size (core->cons, &h);
 		const char *item;
 		RListIter *iter;
 		RStrBuf *sb = r_strbuf_new ("|\n|\n`--[ Options ]\n");
@@ -2757,7 +2757,7 @@ R_API void r_core_visual_config(RCore *core) {
 	option = 0;
 	for (;;) {
 		r_kons_clear00 (core->cons);
-		int h, w = r_kons_get_size (core->cons, &h);
+		int h, w = r_cons_get_size (core->cons, &h);
 		delta = h;
 		delta /= 4;
 
@@ -3378,7 +3378,7 @@ static ut64 var_functions_show(RCore *core, int idx, int show, int cols) {
 	RListIter *iter;
 
 	// Adjust the windows size automaticaly
-	(void)r_kons_get_size (core->cons, &window);
+	(void)r_cons_get_size (core->cons, &window);
 	window -= 8; // Size of printed things
 	bool color = r_config_get_i (core->config, "scr.color");
 	const char *color_addr = core->cons->context->pal.addr;
@@ -3444,7 +3444,7 @@ static ut64 var_variables_show(RCore* core, int idx, int *vindex, int show, int 
 	RList *list = r_anal_var_all_list (core->anal, fcn);
 	RAnalVar* var;
 	// Adjust the window size automatically.
-	(void)r_kons_get_size (core->cons, &window);
+	(void)r_cons_get_size (core->cons, &window);
 	window -= 8;  // Size of printed things.
 
 	// A new line so this looks reasonable.
@@ -3517,7 +3517,7 @@ static void r_core_visual_anal_refresh_column(RCore *core, int colpos) {
 		? core->addr
 		: var_functions_show (core, option, 0, colpos);
 	// RAnalFunction* fcn = r_anal_get_fcn_in(core->anal, addr, R_ANAL_FCN_TYPE_NULL);
-	int h, w = r_kons_get_size (core->cons, &h);
+	int h, w = r_cons_get_size (core->cons, &h);
 	// int sz = (fcn)? R_MIN (r_anal_function_size (fcn), h * 15) : 16; // max instr is 15 bytes.
 
 	const char *cmd;
@@ -3572,7 +3572,7 @@ static ut64 r_core_visual_anal_refresh(RCore *core) {
 	ut64 addr;
 	RStrBuf *buf;
 	bool color = r_config_get_i (core->config, "scr.color");
-	int h, cols = r_kons_get_size (cons, &h);
+	int h, cols = r_cons_get_size (cons, &h);
 	addr = core->addr;
 	cols -= 50;
 	int maxcols = 60 + coldelta;
@@ -3693,7 +3693,7 @@ R_API void r_core_visual_debugtraces(RCore *core, const char *input) {
 		r_core_cmd0 (core, "x 64@r:SP");
 		r_core_cmd0 (core, "dri");
 		// limit by rows here
-		// int rows = r_kons_get_size (core->cons, NULL);
+		// int rows = r_cons_get_size (core->cons, NULL);
 		r_core_cmdf (core, "dtd %d", delta);
 		r_cons_visual_flush (core->cons);
 		signed char ch;
@@ -4035,7 +4035,7 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 				delta += 40;
 			} else {
 				int rows = 0;
-				r_kons_get_size (core->cons, &rows);
+				r_cons_get_size (core->cons, &rows);
 				option += (rows - 5);
 				if (option >= nfcns) {
 					option = nfcns - 1;
@@ -4048,7 +4048,7 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 				delta -= 40;
 			} else {
 				int rows = 0;
-				r_kons_get_size (core->cons, &rows);
+				r_cons_get_size (core->cons, &rows);
 				option -= (rows - 5);
 				if (option < 0) {
 					option = 0;
@@ -4261,7 +4261,7 @@ R_API void r_core_visual_define(RCore *core, const char *args, int distance) {
 		off += cur;
 		p += cur;
 	}
-	(void) r_kons_get_size (core->cons, &h);
+	(void) r_cons_get_size (core->cons, &h);
 	h -= 19;
 	if (h < 0) {
 		h = 0;
@@ -4836,7 +4836,7 @@ R_API void r_core_visual_colors(RCore *core) {
 			r_core_cmdf (core, "ec %s %s", k, color);
 		}
 		char * res = r_core_cmd_str (core, preview_cmd);
-		int h, w = r_kons_get_size (core->cons, &h);
+		int h, w = r_cons_get_size (core->cons, &h);
 		if (w > 80) {
 			char *body = r_str_ansi_crop (res, 0, 0, w - 10, h - 12);
 			if (body) {

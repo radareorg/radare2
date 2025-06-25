@@ -1080,7 +1080,7 @@ static void cmd_prc_zoom(RCore *core, const char *input) {
 }
 
 static void cmd_pCd(RCore *core, const char *input) {
-	int h, w = r_kons_get_size (core->cons, &h);
+	int h, w = r_cons_get_size (core->cons, &h);
 	int colwidth = (int)((double)r_config_get_i (core->config, "hex.cols") * 2.5);
 	if (colwidth < 1) {
 		colwidth = 16;
@@ -1156,7 +1156,7 @@ static ut64 findClassBounds(RCore *core, const char *input, int *len) {
 }
 
 static void cmd_pCD(RCore *core, const char *input) {
-	int i, h, w = r_kons_get_size (core->cons, &h);
+	int i, h, w = r_cons_get_size (core->cons, &h);
 	int rows = h - 2;
 	int obsz = core->blocksize;
 	int user_rows = r_num_math (core->num, input);
@@ -1207,7 +1207,7 @@ static void cmd_pCD(RCore *core, const char *input) {
 }
 
 static void cmd_pCx(RCore *core, const char *input, const char *xcmd) {
-	int h, w = r_kons_get_size (core->cons, &h);
+	int h, w = r_cons_get_size (core->cons, &h);
 	int hex_cols = r_config_get_i (core->config, "hex.cols");
 	int colwidth = hex_cols * 5;
 	int i, columns = (int)((double)w / (colwidth * 0.9));
@@ -4434,7 +4434,7 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 		return false;
 	}
 	int cols = r_config_get_i (core->config, "hex.cols");
-	//int cols = r_kons_get_size (core->cons, NULL) - 30;
+	//int cols = r_cons_get_size (core->cons, NULL) - 30;
 	ut64 off = core->addr;
 	ut64 from = UT64_MAX;
 	ut64 to = 0;
@@ -6560,7 +6560,7 @@ static ut64 find_nextfunc(RCore *core, ut64 addr, int range) {
 static void linear_pseudo(RCore *core, const char *arg) {
 	int rows = (int)r_num_math (core->num, arg);
 	int h;
-	r_kons_get_size (core->cons, &h);
+	r_cons_get_size (core->cons, &h);
 	if (rows < 1) {
 		rows = h;
 	}
@@ -7974,7 +7974,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 's': // "pss"
 			if (l > 0) {
-				int h, w = r_kons_get_size (core->cons, &h);
+				int h, w = r_cons_get_size (core->cons, &h);
 				int colwidth = r_config_get_i (core->config, "hex.cols") * 2;
 				core->print->width = (colwidth == 32)?w: colwidth; // w;
 				int bs = core->blocksize;
@@ -9088,7 +9088,7 @@ static int cmd_print(void *data, const char *input) {
 			len = len > core->blocksize? core->blocksize: len;
 			int w, h;
 			RConsCanvas *c;
-			w = r_kons_get_size (core->cons, &h);
+			w = r_cons_get_size (core->cons, &h);
 			ut64 offset0 = core->addr;
 			int cols = (w / 20);
 			int rows = (h / 12);

@@ -1686,13 +1686,13 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		if (!c && !r_list_empty (ro.evals)) {
 			c = opencore (&ro, NULL);
 		}
-		dump_cols_hexii (&ro, bufa, (int)sza, bufb, (int)szb, (r_kons_get_size (ro.cons, NULL) > 112)? 16: 8);
+		dump_cols_hexii (&ro, bufa, (int)sza, bufb, (int)szb, (r_cons_get_size (ro.cons, NULL) > 112)? 16: 8);
 		break;
 	case MODE_COLS:
 		if (!c && !r_list_empty (ro.evals)) {
 			c = opencore (&ro, NULL);
 		}
-		dump_cols (&ro, bufa, (int)sza, bufb, (int)szb, (r_kons_get_size (ro.cons, NULL) > 112)? 16: 8);
+		dump_cols (&ro, bufa, (int)sza, bufb, (int)szb, (r_cons_get_size (ro.cons, NULL) > 112)? 16: 8);
 		break;
 	case MODE_DIFF:
 	case MODE_DIFF_STRS:

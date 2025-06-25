@@ -962,7 +962,7 @@ R_API void r_line_autocomplete(RCons *cons) {
 	const char **argv = NULL;
 	int argc = 0, i, j, plen, len = 0;
 	bool opt = false;
-	int cols = (int) (r_kons_get_size (cons, NULL) * 0.82);
+	int cols = (int) (r_cons_get_size (cons, NULL) * 0.82);
 
 	RLine *line = cons->line;
 	/* prepare argc and argv */
@@ -1157,7 +1157,7 @@ static void __print_prompt(RCons *cons) {
 		R_LOG_WARN ("printing prompt without cons is wrong");
 	}
 	RLine *line = cons->line;
-	int columns = r_cons_get_size (NULL) - 2;
+	int columns = r_cons_get_size (cons, NULL) - 2;
 	int len, i, cols = R_MAX (1, columns - r_str_ansi_len (line->prompt) - 2);
 	if (cons->line->prompt_type == R_LINE_PROMPT_OFFSET) {
 		r_kons_gotoxy (cons, 0, cons->rows);
@@ -1778,7 +1778,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 			r_kons_clear_line (cons, 0);
 		}
 repeat:
-		(void) r_cons_get_size (&rows);
+		(void) r_cons_get_size (cons, &rows);
 		switch (*buf) {
 		case 0:	// control-space
 			/* ignore atm */

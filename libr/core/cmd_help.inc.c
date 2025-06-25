@@ -1481,7 +1481,7 @@ static int cmd_help(void *data, const char *input) {
 					  j++;
 				  }
 				  // const int size = r_config_get_i (core->config, "hex.cols");
-				  int h, w = r_kons_get_size (core->cons, &h);
+				  int h, w = r_cons_get_size (core->cons, &h);
 				  h /= 2;
 				  char *res = r_print_treemap (r_list_length (list), nums, (const char**)text, w, h);
 				  r_kons_println (core->cons, res);

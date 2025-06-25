@@ -829,7 +829,8 @@ R_API void r_cons_canvas_line_back_edge(RConsCanvas *c, int x, int y, int x2, in
 
 R_API RCons *r_cons_new(void);
 R_API RCons *r_cons_singleton(void); // DEPRECATE
-R_API RCons *r_cons_global(RCons *c);
+R_API RCons *r_cons_global(RCons * R_NULLABLE c); // same as singleton? but taking nullable arg?
+R_API int r_cons_get_size(RCons *cons, int *rows);
 R_API const RConsTheme *r_cons_themes(void);
 R_API void r_cons_trim(void);
 // R_API RConsContext *r_cons_context(void);
@@ -993,7 +994,6 @@ R_API int r_cons_pal_len(void);
 R_API char *r_cons_rgb_tostring(ut8 r, ut8 g, ut8 b);
 R_API void r_cons_pal_list(RCons *cons, int rad, const char *arg);
 R_API void r_cons_pal_show(RCons *cons);
-R_API int r_cons_get_size(int *rows);
 R_API bool r_cons_is_tty(void);
 R_API int r_cons_get_cursor(int *rows);
 R_API int r_cons_arrow_to_hjkl(RCons *cons, int ch);
@@ -1211,7 +1211,6 @@ R_API void r_kons_print(RCons *cons, const char *str);
 R_API void r_kons_newline(RCons *cons);
 R_API int r_kons_write(RCons *cons, const char *str, int len);
 R_API void r_kons_memset(RCons *cons, char ch, int len);
-R_API int r_kons_get_size(RCons *cons, int *rows);
 R_API void r_kons_printf_list(RCons *cons, const char *format, va_list ap);
 R_API int r_kons_printf(RCons *cons, const char *format, ...);
 R_API void r_kons_gotoxy(RCons * R_NONNULL cons, int x, int y);

@@ -1568,7 +1568,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 		return;
 	}
 	if (RVecAnalRef_length (xrefs) > ds->foldxrefs) {
-		int cols = r_kons_get_size (ds->core->cons, NULL);
+		int cols = r_cons_get_size (ds->core->cons, NULL);
 		cols -= 15;
 		cols /= 23;
 		cols = cols > 5 ? 5 : cols;

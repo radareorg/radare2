@@ -297,7 +297,7 @@ static void r_debug_trace_list_table(RDebug *dbg, ut64 offset, RTable *t) {
 		RCore *core = (RCore *)dbg->coreb.core;
 		table->cons = core->cons;
 		RIO *io = dbg->iob.io;
-		r_table_visual_vec (table, &info_vec, offset, 1, r_kons_get_size (core->cons, NULL), io->va);
+		r_table_visual_vec (table, &info_vec, offset, 1, r_cons_get_size (core->cons, NULL), io->va);
 		char *s = r_table_tostring (table);
 		io->cb_printf ("%s", s);
 		free (s);

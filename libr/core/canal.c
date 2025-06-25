@@ -3819,7 +3819,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		}
 		RTable *table = r_core_table_new (core, "functions");
 		r_table_visual_list (table, flist, core->addr, core->blocksize,
-			r_kons_get_size (core->cons, NULL), r_config_get_i (core->config, "scr.color"));
+			r_cons_get_size (core->cons, NULL), r_config_get_i (core->config, "scr.color"));
 		char *s = r_table_tostring (table);
 		r_kons_printf (core->cons, "\n%s\n", s);
 		free (s);

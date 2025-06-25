@@ -43,7 +43,7 @@ static RList *__signs(RCoreVisualViewZigns *status, ut64 addr, bool update) {
 
 R_API int __core_visual_view_zigns_update(RCore *core, RCoreVisualViewZigns *status) {
 	RCons *cons = core->cons;
-	int h, w = r_kons_get_size (cons, &h);
+	int h, w = r_cons_get_size (cons, &h);
 	r_kons_clear00 (cons);
 	int colh = h -2;
 	int colw = w -1;

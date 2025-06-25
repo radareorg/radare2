@@ -3069,7 +3069,7 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 	}
 	char *hashtypes = filter_hash_string (chksum);
 	if (IS_MODE_EQUAL (mode)) {
-		int cols = r_kons_get_size (core->cons, NULL);
+		int cols = r_cons_get_size (core->cons, NULL);
 		RList *list = r_list_newf ((RListFree) r_listinfo_free);
 		if (!list) {
 			free (hashtypes);

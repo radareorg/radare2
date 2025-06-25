@@ -119,7 +119,7 @@ static void render(SlidesState *state, RCore *core, RList *list, int mode, int p
 	char *oo = r_str_newf ("%s%s", r_str_pad ('\n', notch), o);
 	free (o);
 	o = oo;
-	int h, w = r_kons_get_size (core->cons, &h);
+	int h, w = r_cons_get_size (core->cons, &h);
 	if (mode == 2) {
 		w /= 2;
 		char *o2 = r_str_ansi_crop (o, sx, sy, w, h);

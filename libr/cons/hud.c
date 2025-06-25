@@ -159,7 +159,7 @@ static RList *hud_filter(RCons *cons, RList *list, char *user_input, int top_ent
 	char mask[HUD_BUF_SIZE];
 	char *p, *x;
 	int j, rows;
-	(void) r_cons_get_size (&rows);
+	(void) r_cons_get_size (cons, &rows);
 	int counter = 0;
 	bool first_line = true;
 	RList *res = r_list_newf (free);
@@ -389,7 +389,7 @@ static char *r_cons_hud_line(RCons *cons, RList *list, const char *prompt) {
 		}
 		r_cons_printf ("(%d)> %s [", r_list_length (filtered_list), user_input);
 		int slen = 0;
-		int w = r_cons_get_size (NULL);
+		int w = r_cons_get_size (cons, NULL);
 		r_list_foreach (filtered_list, iter, row) {
 			slen += strlen (row);
 			if (slen >= w) {
@@ -481,7 +481,7 @@ static char *r_cons_message_multiline(RCons *cons, const char *msg) {
 			longest = linelen;
 		}
 	}
-	int rows, cols = r_cons_get_size (&rows);
+	int rows, cols = r_cons_get_size (cons, &rows);
 	const char *pad = r_str_pad (' ', (cols-longest) / 2);
 	char *newmsg = r_str_prefix_all (msg, pad);
 	r_kons_clear (cons);
@@ -502,7 +502,7 @@ R_API char *r_cons_message(RCons *cons, const char *msg) {
 		return r_cons_message_multiline (cons, msg);
 	}
 	int len = strlen (msg);
-	int rows, cols = r_cons_get_size (&rows);
+	int rows, cols = r_cons_get_size (cons, &rows);
 	r_kons_clear (cons);
 	r_kons_gotoxy (cons, (cols - len) / 2, rows / 2);
 	r_kons_println (cons, msg);

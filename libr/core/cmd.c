@@ -1582,7 +1582,7 @@ static int cmd_l(void *data, const char *input) { // "l"
 		}
 		{
 			char *carg = r_str_newf ("-l %s", arg);
-			int w = r_kons_get_size (core->cons, NULL) - 8;
+			int w = r_cons_get_size (core->cons, NULL) - 8;
 			char *res = r_syscmd_ls (carg, w);
 			if (res) {
 				r_kons_print (core->cons, res);
@@ -1633,7 +1633,7 @@ static int cmd_l(void *data, const char *input) { // "l"
 		if (r_fs_check (core->fs, arg)) {
 			r_core_cmdf (core, "md %s", arg);
 		} else {
-			int w = r_kons_get_size (core->cons, NULL) - 8;
+			int w = r_cons_get_size (core->cons, NULL) - 8;
 			char *res = r_syscmd_ls (arg, w);
 			if (res) {
 				r_kons_print (core->cons, res);

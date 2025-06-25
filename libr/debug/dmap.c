@@ -221,7 +221,7 @@ static void print_debug_maps_ascii_art(RDebug *dbg, RList *maps, ut64 addr, int 
 	RCons *cons = core->cons;
 	RConsPrintablePalette *pal = &cons->context->pal;
 
-	int width = r_kons_get_size (cons, NULL) - 90;
+	int width = r_cons_get_size (cons, NULL) - 90;
 	if (width < 1) {
 		width = 30;
 	}

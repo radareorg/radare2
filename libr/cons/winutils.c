@@ -116,7 +116,7 @@ static int win_hprint(RCons *cons, DWORD hdl, const char *ptr, int len, bool vmo
 	int linelen = 0;
 	int ll = 0;
 	int raw_ll = 0;
-	int lines, cols = r_cons_get_size (&lines);
+	int lines, cols = r_cons_get_size (cons, &lines);
 	if (I->is_wine == -1) {
 		I->is_wine = r_file_is_directory ("/proc")? 1: 0;
 	}

@@ -202,122 +202,6 @@ R_API void r_kons_memset(RCons *cons, char ch, int len) {
 	}
 }
 
-#if R2__WINDOWS__
-static bool w32_xterm_get_size(RCons *cons) {
-	if (write (cons->fdout, R_CONS_CURSOR_SAVE, sizeof (R_CONS_CURSOR_SAVE)) < 1) {
-		return false;
-	}
-	int rows, columns;
-	const char nainnain[] = "\x1b[999;999H";
-	if (write (cons->fdout, nainnain, sizeof (nainnain)) != sizeof (nainnain)) {
-		return false;
-	}
-	rows = win_xterm_get_cur_pos (cons, &columns);
-	if (rows) {
-		cons->rows = rows;
-		cons->columns = columns;
-	} // otherwise reuse previous values
-	if (write (cons->fdout, R_CONS_CURSOR_RESTORE, sizeof (R_CONS_CURSOR_RESTORE) != sizeof (R_CONS_CURSOR_RESTORE))) {
-		return false;
-	}
-	return true;
-}
-#endif
-
-// XXX: if this function returns <0 in rows or cols expect MAYHEM
-R_API int r_kons_get_size(RCons *cons, int * R_NULLABLE rows) {
-	R_RETURN_VAL_IF_FAIL (cons, 0);
-#if R2__WINDOWS__
-	CONSOLE_SCREEN_BUFFER_INFO csbi;
-	bool ret = GetConsoleScreenBufferInfo (GetStdHandle (STD_OUTPUT_HANDLE), &csbi);
-	if (ret) {
-		cons->columns = csbi.srWindow.Right - csbi.srWindow.Left + 1;
-		cons->rows = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
-	} else {
-		if (cons->term_xterm) {
-			ret = w32_xterm_get_size (cons);
-		}
-		if (!ret || (cons->columns == -1 && cons->rows == 0)) {
-			// Stdout is probably redirected so we set default values
-			cons->columns = 80;
-			cons->rows = 23;
-		}
-	}
-#elif EMSCRIPTEN || __wasi__
-	cons->columns = 80;
-	cons->rows = 23;
-#elif R2__UNIX__
-	struct winsize win = {0};
-	if (isatty (0) && !ioctl (0, TIOCGWINSZ, &win)) {
-		if ((!win.ws_col) || (!win.ws_row)) {
-			char ttybuf[64];
-			const char *tty = NULL;
-			if (isatty (1)) {
-				if (!ttyname_r (1, ttybuf, sizeof (ttybuf))) {
-					tty = ttybuf;
-				}
-			}
-			int fd = open (r_str_get_fail (tty, "/dev/tty"), O_RDONLY);
-			if (fd != -1) {
-				int ret = ioctl (fd, TIOCGWINSZ, &win);
-				if (ret || !win.ws_col || !win.ws_row) {
-					win.ws_col = 80;
-					win.ws_row = 23;
-				}
-				close (fd);
-			}
-		}
-		cons->columns = win.ws_col;
-		cons->rows = win.ws_row;
-	} else {
-		cons->columns = 80;
-		cons->rows = 23;
-	}
-#else
-	char *str = r_sys_getenv ("COLUMNS");
-	if (str) {
-		cons->columns = atoi (str);
-		cons->rows = 23; // XXX. windows must get console size
-		free (str);
-	} else {
-		cons->columns = 80;
-		cons->rows = 23;
-	}
-#endif
-#if SIMULATE_ADB_SHELL
-	cons->rows = 0;
-	cons->columns = 0;
-#endif
-#if SIMULATE_MAYHEM
-	// expect tons of crashes
-	cons->rows = -1;
-	cons->columns = -1;
-#endif
-	if (cons->rows < 0) {
-		cons->rows = 0;
-	}
-	if (cons->columns < 0) {
-		cons->columns = 0;
-	}
-	if (cons->force_columns) {
-		cons->columns = cons->force_columns;
-	}
-	if (cons->force_rows) {
-		cons->rows = cons->force_rows;
-	}
-	if (cons->fix_columns) {
-		cons->columns += cons->fix_columns;
-	}
-	if (cons->fix_rows) {
-		cons->rows += cons->fix_rows;
-	}
-	if (rows) {
-		*rows = cons->rows;
-	}
-	cons->rows = R_MAX (0, cons->rows);
-	return R_MAX (0, cons->columns);
-}
-
 R_API void r_kons_printf_list(RCons *cons, const char *format, va_list ap) {
 	va_list ap2, ap3;
 
@@ -756,7 +640,7 @@ R_API RCons *r_kons_new(void) {
 	cons->lines = 0;
 	cons->maxpage = 102400;
 
-	r_kons_get_size (cons, &cons->pagesize);
+	r_cons_get_size (cons, &cons->pagesize);
 	cons->num = NULL;
 	cons->null = 0;
 #if R2__WINDOWS__

@@ -3540,7 +3540,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 			return false;
 		}
 		r_table_visual_list (table, flist, core->addr, core->blocksize,
-			r_kons_get_size (core->cons, NULL), r_config_get_i (core->config, "scr.color"));
+			r_cons_get_size (core->cons, NULL), r_config_get_i (core->config, "scr.color"));
 		char *s = r_table_tostring (table);
 		r_kons_printf (core->cons, "\n%s\n", s);
 		free (s);
@@ -12267,7 +12267,7 @@ R_API void r_core_agraph_treemap(RCore *core, int use_utf, const char *input) {
 	int a = r_config_get_i (core->config, "scr.color");
 	r_config_set_i (core->config, "scr.color", 0);
 	// walk all the functions and create a treemap and render it
-	int h, w = r_kons_get_size (core->cons, &h);
+	int h, w = r_cons_get_size (core->cons, &h);
 	w--;
 	h--;
 	RConsCanvas *canvas = r_cons_canvas_new (core->cons, w, h, R_CONS_CANVAS_FLAG_INHERIT);

@@ -1423,7 +1423,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 		return;
 	}
 
-	w = r_kons_get_size (core->cons, &h);
+	w = r_cons_get_size (core->cons, &h);
 	int flags = r_cons_canvas_flags (core->cons);
 	RConsCanvas *can = r_cons_canvas_new (core->cons, w, h, flags);
 	if (!can) {

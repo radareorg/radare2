@@ -231,7 +231,7 @@ static void __sync_status_with_cursor(RCoreVisualViewGraph *status) {
 
 R_API int __core_visual_view_graph_update(RCore *core, RCoreVisualViewGraph *status) {
 	RCons *cons = core->cons;
-	int h, w = r_kons_get_size (cons, &h);
+	int h, w = r_cons_get_size (cons, &h);
 	const int colw = w / 4;
 	const int colh = h / 2;
 	const int colx = w / 3;

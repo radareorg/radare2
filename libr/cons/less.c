@@ -60,7 +60,7 @@ R_API int r_cons_less_str(RCons * R_NONNULL cons, const char * R_NONNULL str, co
 	r_kons_reset (cons);
 	h = 0;
 	while (ui) {
-		w = r_kons_get_size (cons, &h);
+		w = r_cons_get_size (cons, &h);
 		to = R_MIN (lines_count, from + h);
 		if (from + 3 > lines_count) {
 			from = lines_count - 3;

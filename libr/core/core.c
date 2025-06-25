@@ -2949,7 +2949,7 @@ static void chop_prompt(RCore *core, const char *filename, char *tmp, size_t max
 	unsigned int OTHRSCH = 3;
 	const char DOTS[] = "...";
 
-	int w = r_kons_get_size (core->cons, NULL);
+	int w = r_cons_get_size (core->cons, NULL);
 	size_t file_len = strlen (filename);
 	size_t tmp_len = strlen (tmp);
 	int p_len = R_MAX (0, w - 6);

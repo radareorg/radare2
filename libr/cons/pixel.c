@@ -160,7 +160,7 @@ static inline void cons_pixel_paint(RCons *cons, RConsPixel *p, int sx, int sy, 
 
 R_API void r_cons_pixel_flush(RCons *cons, RConsPixel *p, int sx, int sy) {
 	R_RETURN_IF_FAIL (p);
-	int rows, cols = r_kons_get_size (cons, &rows);
+	int rows, cols = r_cons_get_size (cons, &rows);
 	size_t x, y;
 	for (y = 0; y + 4 < p->h; y += 4) {
 		for (x = 0; x + 2 < p->w; x += 2) {
