@@ -480,12 +480,21 @@ R_API void r_cons_free(RCons *cons) {
 	}
 }
 
-R_API void r_cons_print_clear(void) {
-	r_kons_print_clear (I);
-}
-
-R_API void r_cons_fill_line(void) {
-	r_kons_fill_line (I);
+R_API void r_cons_fill_line(RCons *cons) {
+	char white[1024];
+	int cols = cons->columns - 1;
+	if (cols < 1) {
+		return;
+	}
+	char *p = (cols >= sizeof (white))? malloc (cols + 1): white;
+	if (p) {
+		memset (p, ' ', cols);
+		p[cols] = 0;
+		r_kons_print (cons, p);
+		if (white != p) {
+			free (p);
+		}
+	}
 }
 
 R_DEPRECATE R_API void r_cons_clear_line(int std_err) {
@@ -701,8 +710,8 @@ R_API int r_cons_get_column(void) {
 	return r_kons_get_column (I);
 }
 
-R_API void r_cons_print(const char *str) {
-	r_kons_print (I, str);
+R_API void r_cons_print(RCons *cons, const char *str) {
+	r_kons_print (cons, str);
 }
 
 R_API int r_cons_get_cursor(int *rows) {
@@ -1590,5 +1599,9 @@ R_API void r_cons_show_cursor(RCons *I, int cursor) {
 		SetConsoleCursorInfo (hStdout, &cursor_info);
 	}
 #endif
+}
+
+R_API void r_cons_print_clear(RCons *cons) {
+	r_kons_print (cons, "\x1b[0;0H\x1b[0m");
 }
 

@@ -4217,7 +4217,7 @@ static void handleHints(RCore *core) {
 		," b [16,32,64]     set bits hint"
 		, NULL};
 	for (i = 0; lines[i]; i++) {
-		r_cons_fill_line ();
+		r_cons_fill_line (core->cons);
 		r_kons_printf (core->cons, "\r%s\n", lines[i]);
 	}
 	r_cons_flush (core->cons);
@@ -4307,7 +4307,7 @@ R_API void r_core_visual_define(RCore *core, const char *args, int distance) {
 		," z    zone flag"
 		, NULL};
 	for (i = 0; lines[i]; i++) {
-		r_cons_fill_line ();
+		r_cons_fill_line (core->cons);
 		r_kons_printf (core->cons, "\r%s\n", lines[i]);
 	}
 	r_cons_flush (core->cons);

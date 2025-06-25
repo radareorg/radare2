@@ -4542,7 +4542,7 @@ R_IPI void visual_refresh(RCore *core) {
 		r_kons_clear (core->cons);
 	}
 	r_cons_flush (core->cons);
-	r_cons_print_clear ();
+	r_cons_print_clear (core->cons);
 	r_kons_print (core->cons, core->cons->context->pal.bgprompt);
 	core->cons->context->noflush = true;
 

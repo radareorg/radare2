@@ -334,27 +334,6 @@ R_API void r_kons_free(RCons * R_NULLABLE cons) {
 	RVecFdPairs_fini (&cons->fds);
 }
 
-R_API void r_kons_print_clear(RCons *cons) {
-	r_kons_print (cons, "\x1b[0;0H\x1b[0m");
-}
-
-R_API void r_kons_fill_line(RCons *cons) {
-	char white[1024];
-	int cols = cons->columns - 1;
-	if (cols < 1) {
-		return;
-	}
-	char *p = (cols >= sizeof (white))? malloc (cols + 1): white;
-	if (p) {
-		memset (p, ' ', cols);
-		p[cols] = 0;
-		r_kons_print (cons, p);
-		if (white != p) {
-			free (p);
-		}
-	}
-}
-
 R_API void r_kons_clear_line(RCons *cons, int std_err) {
 #if R2__WINDOWS__
 	if (cons->vtmode) {

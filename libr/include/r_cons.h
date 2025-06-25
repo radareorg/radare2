@@ -905,13 +905,11 @@ R_API void r_cons_context_break_pop(RCons *cons, RConsContext *context, bool sig
 
 /* control */
 R_API char *r_cons_editor(RCons *cons, const char *file, const char *str);
-R_API void r_cons_print_clear(void);
 R_API void r_cons_zero(void);
 R_API void r_cons_highlight(const char *word);
 R_API void r_cons_clear(void);
 R_API void r_cons_clear00(void);
 R_API void r_cons_clear_line(int err);
-R_API void r_cons_fill_line(void);
 R_API void r_cons_stdout_open(const char *file, int append);
 R_API int  r_cons_stdout_set_fd(int fd);
 R_API int r_cons_get_cur_line(void);
@@ -925,7 +923,7 @@ R_API void r_cons_set_last_interactive(void);
 /* output */
 
 R_API int r_cons_printf(const char *format, ...) R_PRINTF_CHECK(1, 2);
-R_API void r_cons_print(const char *str);
+R_API void r_cons_print(RCons *cons, const char *str);
 R_API void r_cons_print_at(RCons *cons, const char *str, int x, char y, int w, int h);
 R_API void r_cons_print_justify(RCons *cons, const char *str, int j, char c);
 
@@ -1196,8 +1194,8 @@ R_API void r_kons_last(RCons *cons);
 R_API RCons * R_NONNULL r_kons_new(void);
 R_API bool r_cons_pop(RCons * R_NONNULL cons);
 R_API void r_kons_free(RCons * R_NULLABLE cons);
-R_API void r_kons_print_clear(RCons *cons);
-R_API void r_kons_fill_line(RCons *cons);
+R_API void r_cons_print_clear(RCons *cons);
+R_API void r_cons_fill_line(RCons *cons);
 R_API void r_kons_clear_line(RCons *cons, int std_err);
 R_API void r_cons_reset_colors(RCons *cons);
 R_API void r_kons_clear(RCons *cons);
