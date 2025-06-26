@@ -5032,7 +5032,7 @@ dodo:
 							}
 						}
 					}
-					(void)r_cons_readpush (chrs, chrs_read);
+					(void)r_cons_readpush (core->cons, chrs, chrs_read);
 				}
 			}
 			if (r_cons_is_breaked (core->cons)) {

@@ -2615,7 +2615,7 @@ static void __handle_tab_key(RCore *core, bool shift) {
 	__set_cursor (core, false);
 	RPanels *panels = core->panels;
 	RPanel *cur = __get_cur_panel (panels);
-	r_cons_switchbuf (false);
+	r_cons_switchbuf (core->cons, false);
 	cur->view->refresh = true;
 	if (!shift) {
 		if (panels->mode == PANEL_MODE_MENU) {
@@ -2645,7 +2645,7 @@ static void __handle_tab_key(RCore *core, bool shift) {
 
 static bool __handle_zoom_mode(RCore *core, const int key) {
 	RPanels *panels = core->panels;
-	r_cons_switchbuf (false);
+	r_cons_switchbuf (core->cons, false);
 	switch (key) {
 	case 'Q':
 	case 'q':
@@ -3530,7 +3530,7 @@ beach:
 static bool __handle_window_mode(RCore *core, const int key) {
 	RPanels *panels = core->panels;
 	RPanel *cur = __get_cur_panel (panels);
-	r_cons_switchbuf (false);
+	r_cons_switchbuf (core->cons, false);
 	switch (key) {
 	case 'Q':
 	case 'q':
@@ -3602,7 +3602,7 @@ static bool __handle_window_mode(RCore *core, const int key) {
 		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.x += 5;
 		} else {
-			r_cons_switchbuf (false);
+			r_cons_switchbuf (core->cons, false);
 			__resize_panel_left (panels);
 		}
 		break;
@@ -3610,7 +3610,7 @@ static bool __handle_window_mode(RCore *core, const int key) {
 		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.x += 5;
 		} else {
-			r_cons_switchbuf (false);
+			r_cons_switchbuf (core->cons, false);
 			__resize_panel_right (panels);
 		}
 		break;
@@ -3618,7 +3618,7 @@ static bool __handle_window_mode(RCore *core, const int key) {
 		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.y += 5;
 		} else {
-			r_cons_switchbuf (false);
+			r_cons_switchbuf (core->cons, false);
 			__resize_panel_down (panels);
 		}
 		break;
@@ -3626,7 +3626,7 @@ static bool __handle_window_mode(RCore *core, const int key) {
 		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.y -= 5;
 		} else {
-			r_cons_switchbuf (false);
+			r_cons_switchbuf (core->cons, false);
 			__resize_panel_up (panels);
 		}
 		break;
@@ -6392,7 +6392,7 @@ static void __handle_menu(RCore *core, const int key) {
 		return;
 	}
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
-	r_cons_switchbuf (false);
+	r_cons_switchbuf (core->cons, false);
 	switch (key) {
 	case 'h':
 		if (menu->depth <= 2) {
@@ -6498,7 +6498,7 @@ static bool __handle_console(RCore *core, RPanel *panel, const int key) {
 	if (!__check_panel_type (panel, PANEL_CMD_CONSOLE)) {
 		return false;
 	}
-	r_cons_switchbuf (false);
+	r_cons_switchbuf (core->cons, false);
 	switch (key) {
 	case 'i':
 		{
@@ -6846,7 +6846,7 @@ static void __panels_process(RCore *core, RPanels *panels) {
 	panels->can = __create_new_canvas (core, w, h);
 	__set_refresh_all (core, false, true);
 
-	r_cons_switchbuf (false);
+	r_cons_switchbuf (core->cons, false);
 
 	int originCursor = core->print->cur;
 	core->print->cur = 0;
@@ -6898,7 +6898,7 @@ virtualmouse:
 		goto repeat;
 	}
 
-	r_cons_switchbuf (true);
+	r_cons_switchbuf (core->cons, true);
 
 	if (panels->mode == PANEL_MODE_MENU) {
 		__handle_menu (core, key);
@@ -7075,7 +7075,7 @@ virtualmouse:
 			nextOpcode (core);
 		} else {
 			if (cur->model->directionCb) {
-				r_cons_switchbuf (false);
+				r_cons_switchbuf (core->cons, false);
 				cur->model->directionCb (core, (int)DOWN);
 			}
 		}
@@ -7103,7 +7103,7 @@ virtualmouse:
 			}
 		} else if (cur->model->directionCb) {
 			prevOpcode (core);
-			r_cons_switchbuf (false);
+			r_cons_switchbuf (core->cons, false);
 			cur->model->directionCb (core, (int)UP);
 		}
 		break;
@@ -7111,7 +7111,7 @@ virtualmouse:
 		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.y -= 5;
 		} else {
-			r_cons_switchbuf (false);
+			r_cons_switchbuf (core->cons, false);
 			if (cur->model->directionCb) {
 				for (i = 0; i < __get_cur_panel (panels)->view->pos.h / 2 - 6; i++) {
 					cur->model->directionCb (core, (int)UP);
@@ -7130,7 +7130,7 @@ virtualmouse:
 		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.y += 5;
 		} else {
-			r_cons_switchbuf (false);
+			r_cons_switchbuf (core->cons, false);
 			if (cur->model->directionCb) {
 				for (i = 0; i < __get_cur_panel (panels)->view->pos.h / 2 - 6; i++) {
 					cur->model->directionCb (core, (int)DOWN);
@@ -7149,7 +7149,7 @@ virtualmouse:
 		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.x -= 5;
 		} else {
-			r_cons_switchbuf (false);
+			r_cons_switchbuf (core->cons, false);
 			if (cur->model->directionCb) {
 				for (i = 0; i < __get_cur_panel (panels)->view->pos.w / 3; i++) {
 					cur->model->directionCb (core, (int)LEFT);
@@ -7161,7 +7161,7 @@ virtualmouse:
 		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.x += 5;
 		} else {
-			r_cons_switchbuf (false);
+			r_cons_switchbuf (core->cons, false);
 			if (cur->model->directionCb) {
 				for (i = 0; i < __get_cur_panel (panels)->view->pos.w / 3; i++) {
 					cur->model->directionCb (core, (int)RIGHT);
@@ -7182,7 +7182,7 @@ virtualmouse:
 		r_core_visual_hud (core);
 		break;
 	case '"':
-		r_cons_switchbuf (false);
+		r_cons_switchbuf (core->cons, false);
 		__create_modal (core, cur, panels->modal_db);
 		if (__check_root_state (core, ROTATE)) {
 			goto exit;
@@ -7277,7 +7277,7 @@ virtualmouse:
 				cp->view->curpos--;
 			}
 		} else if (cur->model->directionCb) {
-			r_cons_switchbuf (false);
+			r_cons_switchbuf (core->cons, false);
 			cur->model->directionCb (core, (int)LEFT);
 		}
 		break;
@@ -7286,7 +7286,7 @@ virtualmouse:
 			core->cons->cpos.x++;
 		} else if (cur->model->directionCb) {
 			cur->model->directionCb (core, (int)RIGHT);
-			r_cons_switchbuf (false);
+			r_cons_switchbuf (core->cons, false);
 		} else if (core->print->cur_enabled) {
 			core->print->cur++;
 		}

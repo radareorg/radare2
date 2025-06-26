@@ -937,9 +937,9 @@ R_API void r_cons_filter(RCons *cons);
 
 R_API int r_cons_controlz(RCons *cons, int ch);
 R_API int r_cons_readchar(RCons *cons);
-R_API bool r_cons_readpush(const char *str, int len);
-R_API void r_cons_readflush(void);
-R_API void r_cons_switchbuf(bool active);
+R_API bool r_cons_readpush(RCons *cons, const char *str, int len);
+R_API void r_cons_readflush(RCons *cons);
+R_API void r_cons_switchbuf(RCons *cons, bool active);
 R_API int r_cons_readchar_timeout(RCons *cons, ut32 usec);
 R_API int r_cons_any_key(RCons *cons, const char *msg);
 R_API void r_cons_thready(void);
