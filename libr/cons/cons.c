@@ -456,7 +456,6 @@ R_API RConsContext *r_cons_context(void) {
 }
 #endif
 
-// XXX must die
 R_API RCons *r_cons_global(RCons *c) {
 	if (c) {
 		I = c;
