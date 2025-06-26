@@ -117,7 +117,7 @@ static void riu_render(RIU *riu) {
 		}
 		n++;
 	}
-	r_kons_print (cons, "`---------------------------------------'\n");
+	r_cons_print (cons, "`---------------------------------------'\n");
 	r_cons_flush (cons);
 }
 

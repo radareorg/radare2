@@ -374,7 +374,7 @@ R_API void r_core_echo(RCore *core, const char *input) {
 	} else {
 		char *p = strchr (input, ' ');
 		if (p) {
-			r_kons_print (core->cons, p + 1);
+			r_cons_print (core->cons, p + 1);
 			r_cons_newline (core->cons);
 		}
 	}
@@ -698,13 +698,13 @@ static void cmd_eplus(RCore *core, const char *input) {
 
 static void core_config_list(RCore *core, const char *str, int rad) {
 	char *res = r_config_list (core->config, str, rad);
-	r_kons_print (core->cons, res);
+	r_cons_print (core->cons, res);
 	free (res);
 }
 
 static void core_config_eval(RCore *core, const char *input, bool uhm) {
 	char *res = r_config_eval (core->config, input, uhm, NULL);
-	r_kons_print (core->cons, res);
+	r_cons_print (core->cons, res);
 	free (res);
 }
 

@@ -6157,7 +6157,7 @@ static void demo_begin(RCore *core, RConsCanvas *can) {
 			char *r = r_str_scale (s, w, H);
 			r_cons_clear00 (core->cons);
 			r_cons_gotoxy (core->cons, 0, (h / 2) - (H / 2));
-			r_kons_print (core->cons, r);
+			r_cons_print (core->cons, r);
 			r_cons_flush (core->cons);
 			free (r);
 			r_sys_usleep (5000);
@@ -6186,7 +6186,7 @@ static void demo_end(RCore *core, RConsCanvas *can) {
 			char *r = r_str_scale (s, w, H);
 			r_cons_clear00 (core->cons);
 			r_cons_gotoxy (core->cons, 0, (h / 2) - (H / 2)); // center
-			r_kons_print (core->cons, r);
+			r_cons_print (core->cons, r);
 			r_cons_flush (core->cons);
 			free (r);
 			r_sys_usleep (3000);

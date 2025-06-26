@@ -230,7 +230,7 @@ static void cmd_info_demangle(RCore *core, const char *input, PJ *pj, int mode) 
 		if (!pj) {
 			r_core_cmd_help_match (core, help_msg_i, "iD");
 		} else {
-			r_kons_print (core->cons, "{}");
+			r_cons_print (core->cons, "{}");
 		}
 		return;
 	}
@@ -430,7 +430,7 @@ static void cmd_iic2(RCore *core, int mode, const char *symname) {
 		char *s = sdb_querys (db, NULL, 0, symname);
 		if (s) {
 			r_str_replace_ch (s, ',', '\n', -1);
-			r_kons_print (core->cons, s);
+			r_cons_print (core->cons, s);
 			free (s);
 		}
 	} else if (mode == 'x') {
@@ -486,7 +486,7 @@ static void cmd_iic2(RCore *core, int mode, const char *symname) {
 	} else if (mode == 'k') {
 		char *s = sdb_querys (db, NULL, 0, "*");
 		if (s) {
-			r_kons_print (core->cons, s);
+			r_cons_print (core->cons, s);
 			free (s);
 		}
 	} else if (mode == 'j') {
@@ -523,7 +523,7 @@ static void cmd_iic2(RCore *core, int mode, const char *symname) {
 		}
 		pj_end (pj);
 		char *s = pj_drain (pj);
-		r_kons_print (core->cons, s);
+		r_cons_print (core->cons, s);
 		free (s);
 	} else {
 		SdbKv *kv;
@@ -748,7 +748,7 @@ static void cmd_info_bin(RCore *core, int va, PJ *pj, int mode) {
 		}
 	} else {
 		if (mode & R_MODE_JSON) {
-			r_kons_print (core->cons, "{}");
+			r_cons_print (core->cons, "{}");
 		}
 		R_LOG_ERROR ("No file selected");
 	}
@@ -1233,7 +1233,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 			}
 			bool first = true;
 			if (r_list_empty (objs) && mode == 'j') {
-				r_kons_print (core->cons, "[]");
+				r_cons_print (core->cons, "[]");
 				return;
 			}
 			r_list_foreach (objs, objs_iter, bf) {
@@ -1567,7 +1567,7 @@ static void cmd_iS(RCore *core, const char *input, PJ **_pj, int mode, const boo
 	PJ *pj = *_pj;
 	RBinInfo *info = r_bin_get_info (core->bin);
 	if (!info && pj) {
-		r_kons_print (core->cons, "[]");
+		r_cons_print (core->cons, "[]");
 		r_core_return_value (core, 1);
 		return;
 	}
@@ -1656,7 +1656,7 @@ static void cmd_it(RCore *core, PJ *pj) {
 	RBinInfo *info = r_bin_get_info (core->bin);
 	if (!info) {
 		if (is_json) {
-			r_kons_print (core->cons, "{}");
+			r_cons_print (core->cons, "{}");
 		} else {
 			R_LOG_ERROR ("Cannot get bin info");
 		}
@@ -1987,7 +1987,7 @@ static void cmd_ik(RCore *core, const char *input) {
 		if (db) {
 			char *o = sdb_querys (db, NULL, 0, input + 3);
 			if (R_STR_ISNOTEMPTY (o)) {
-				r_kons_print (core->cons, o);
+				r_cons_print (core->cons, o);
 			}
 			free (o);
 		}
@@ -2000,7 +2000,7 @@ static void cmd_ik(RCore *core, const char *input) {
 		if (db) {
 			char *o = sdb_querys (db, NULL, 0, input + 2);
 			if (R_STR_ISNOTEMPTY (o)) {
-				r_kons_print (core->cons, o);
+				r_cons_print (core->cons, o);
 			}
 			free (o);
 		}
@@ -2009,7 +2009,7 @@ static void cmd_ik(RCore *core, const char *input) {
 		if (db) {
 			char *o = sdb_querys (db, NULL, 0, "*");
 			if (R_STR_ISNOTEMPTY (o)) {
-				r_kons_print (core->cons, o);
+				r_cons_print (core->cons, o);
 			}
 			free (o);
 		}
@@ -2352,7 +2352,7 @@ static int cmd_info(void *data, const char *input) {
 					RBININFO ("imports", R_CORE_BIN_ACC_IMPORTS, NULL, amount);
 				}
 			} else if (mode & R_MODE_JSON) {
-				r_kons_print (core->cons, "[]");
+				r_cons_print (core->cons, "[]");
 			}
 			core->bin->cur = cur;
 			r_list_free (objs);
@@ -2365,7 +2365,7 @@ static int cmd_info(void *data, const char *input) {
 			RBinFile *bf;
 			RBinFile *cur = core->bin->cur;
 			if (!cur && pj) {
-				r_kons_print (core->cons, "{}");
+				r_cons_print (core->cons, "{}");
 			}
 			r_list_foreach (objs, iter, bf) {
 				core->bin->cur = bf;
@@ -2382,7 +2382,7 @@ static int cmd_info(void *data, const char *input) {
 			RBinFile *bf;
 			RBinFile *cur = core->bin->cur;
 			if (!cur && pj) {
-				r_kons_print (core->cons, "{}");
+				r_cons_print (core->cons, "{}");
 			}
 			r_list_foreach (objs, iter, bf) {
 				core->bin->cur = bf;
@@ -2399,7 +2399,7 @@ static int cmd_info(void *data, const char *input) {
 			RBinFile *bf;
 			RBinFile *cur = core->bin->cur;
 			if (!cur && pj) {
-				r_kons_print (core->cons, "[]");
+				r_cons_print (core->cons, "[]");
 			}
 			r_list_foreach (objs, iter, bf) {
 				core->bin->cur = bf;
@@ -2431,7 +2431,7 @@ static int cmd_info(void *data, const char *input) {
 			RBinFile *bf;
 			RBinFile *cur = core->bin->cur;
 			if (!cur && pj) {
-				r_kons_print (core->cons, "[]");
+				r_cons_print (core->cons, "[]");
 			}
 			r_list_foreach (bfiles, iter, bf) {
 				core->bin->cur = bf;
@@ -2612,7 +2612,7 @@ static int cmd_info(void *data, const char *input) {
 			RBinFile *bf;
 			RBinFile *cur = core->bin->cur;
 			if (!cur && pj) {
-				r_kons_print (core->cons, "{}");
+				r_cons_print (core->cons, "{}");
 				break;
 			}
 			RList *bfiles = r_core_bin_files (core);
@@ -2635,7 +2635,7 @@ static int cmd_info(void *data, const char *input) {
 		switch (r_list_length (objs)) {
 		case 0:
 			if (!cur && pj) {
-				r_kons_print (core->cons, "[]");
+				r_cons_print (core->cons, "[]");
 			}
 			break;
 		case 1:
@@ -2681,7 +2681,7 @@ static int cmd_info(void *data, const char *input) {
 			RBinFile *bf;
 			RBinFile *cur = core->bin->cur;
 			if (!cur && pj) {
-				r_kons_print (core->cons, "[]");
+				r_cons_print (core->cons, "[]");
 			}
 			r_list_foreach (objs, iter, bf) {
 				core->bin->cur = bf;

@@ -546,15 +546,15 @@ static void ds_comment_align(RDisasmState *ds) {
 	RCons *cons = ds->core->cons;
 	if (ds->show_cmt_right) {
 		if (ds->show_color) {
-			r_kons_print (cons, ds->pal_comment);
+			r_cons_print (cons, ds->pal_comment);
 		}
 	} else {
 		const char *ss =get_section_name (ds);
 		const char *sn = (ds->show_section && ss)? ss: "";
 		ds_align_comment (ds);
-		r_kons_print (cons, COLOR_RESET (ds));
+		r_cons_print (cons, COLOR_RESET (ds));
 		ds_print_pre (ds, true);
-		r_kons_print (cons, sn);
+		r_cons_print (cons, sn);
 		ds_print_ref_lines (ds, ds->refline, ds->line_col, false);
 		r_cons_printf (cons, "   %s", COLOR (ds, color_comment));
 	}
@@ -591,7 +591,7 @@ static void ds_comment_(RDisasmState *ds, bool align, bool donl, const char *for
 				r_cons_printf (cons, "%s ", ds->cmtoken);
 			}
 		}
-		r_kons_print (cons, p);
+		r_cons_print (cons, p);
 		if (!nl) {
 			break;
 		}
@@ -1056,7 +1056,7 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds, bool print_color
 	}
 
 	if (print_color) {
-		r_kons_print (core->cons, r_print_color_op_type (core->print, ds->analop.type));
+		r_cons_print (core->cons, r_print_color_op_type (core->print, ds->analop.type));
 	}
 	// workaround dummy colorizer in case of paired commands (tms320 & friends)
 	char *spacer = strstr (source, "||");
@@ -1497,7 +1497,7 @@ static void ds_show_refs(RDisasmState *ds) {
 
 		// ds_align_comment (ds);
 		if (ds->show_color) {
-			r_kons_print (ds->core->cons, ds->color_comment);
+			r_cons_print (ds->core->cons, ds->color_comment);
 		}
 		if (cmt) {
 			ds_begin_comment (ds);
@@ -1899,7 +1899,7 @@ static void ds_print_show_cursor(RDisasmState *ds) {
 			res[i] = '0' + (diff % 10);
 		}
 	}
-	r_kons_print (ds->core->cons, res);
+	r_cons_print (ds->core->cons, res);
 }
 
 static void ds_pre_xrefs(RDisasmState *ds, bool no_fcnlines) {
@@ -2185,7 +2185,7 @@ static void ds_show_functions(RDisasmState *ds) {
 		char *r = r_str_ss (fcn_name, nl, 0);
 		char *s_in = r_str_newf ("%s%s%s", COLOR (ds, color_fname), r, COLOR_RESET (ds));
 		free (r);
-		r_kons_print (core->cons, s_in);
+		r_cons_print (core->cons, s_in);
 		free (s_in);
 	}
 #endif
@@ -2263,7 +2263,7 @@ static void ds_show_functions(RDisasmState *ds) {
 	if (call) {
 		if (!showSig) {
 			ds_begin_line (ds);
-			r_kons_print (cons, COLOR (ds, color_fline));
+			r_cons_print (cons, COLOR (ds, color_fline));
 			ds_print_pre (ds, true);
 			r_cons_printf (cons, "%s  ", COLOR_RESET (ds));
 		}
@@ -2279,7 +2279,7 @@ static void ds_show_functions(RDisasmState *ds) {
 
 		char *sig = r_anal_function_format_sig (core->anal, f, fcn_name, &vars_cache, COLOR (ds, color_fname), COLOR_RESET (ds));
 		if (sig) {
-			r_kons_print (cons, sig);
+			r_cons_print (cons, sig);
 			if (f->is_noreturn) {
 				r_cons_printf (cons, " // noreturn");
 			}
@@ -2371,7 +2371,7 @@ static void ds_show_functions(RDisasmState *ds) {
 				if (var->comment) {
 					r_cons_printf (cons, "    %s%s %s", COLOR (ds, color_comment), ds->cmtoken, var->comment);
 				}
-				r_kons_print (cons, COLOR_RESET (ds));
+				r_cons_print (cons, COLOR_RESET (ds));
 				ds_newline (ds);
 			}
 		}
@@ -2456,7 +2456,7 @@ static void ds_print_pre(RDisasmState *ds, bool fcnline) {
 		c = cons->vline[CORNER_BL];
 		break;
 	case DS_PRE_EMPTY:
-		r_kons_print (cons, "  ");
+		r_cons_print (cons, "  ");
 		return;
 	case DS_PRE_NONE:
 	default:
@@ -2498,7 +2498,7 @@ static void ds_show_comments_describe(RDisasmState *ds) {
 		ds_begin_comment (ds);
 		ds_align_comment (ds);
 		if (ds->show_color) {
-			r_kons_print (ds->core->cons, ds->color_comment);
+			r_cons_print (ds->core->cons, ds->color_comment);
 		}
 		r_cons_printf (ds->core->cons, "%s %s", ds->cmtoken, desc);
 		ds_print_color_reset (ds);
@@ -2563,7 +2563,7 @@ static void ds_show_comments_right(RDisasmState *ds) {
 		}
 		mycols /= 2;
 		if (ds->show_color) {
-			r_kons_print (cons, ds->pal_comment);
+			r_cons_print (cons, ds->pal_comment);
 		}
 		/* print multiline comment */
 		if (ds->cmtfold) {
@@ -2577,7 +2577,7 @@ static void ds_show_comments_right(RDisasmState *ds) {
 		} else {
 			ds_pre_xrefs (ds, false);
 			if (ds->show_color) {
-				r_kons_print (cons, ds->color_usrcmt);
+				r_cons_print (cons, ds->color_usrcmt);
 			}
 			ds_comment (ds, false, "%s", ds->comment);
 		}
@@ -2594,9 +2594,9 @@ static void ds_show_comments_right(RDisasmState *ds) {
 				ds_newline (ds);
 				ds_begin_line (ds);
 				if (ds->show_color) {
-					r_kons_print (cons, ds->pal_comment);
+					r_cons_print (cons, ds->pal_comment);
 				}
-				r_kons_print (cons, "  ;  ");
+				r_cons_print (cons, "  ;  ");
 				r_cons_print_justify (cons, item_comment, mycols, ';');
 				ds_newline (ds);
 				if (ds->show_color) {
@@ -2636,14 +2636,14 @@ static void __preline_flag(RDisasmState *ds, RFlagItem *fi) {
 		if (fim && fim->color) {
 			char *color = r_cons_pal_parse (cons, fim->color, NULL);
 			if (color) {
-				r_kons_print (cons, color);
+				r_cons_print (cons, color);
 				free (color);
 				ds->lastflag = fi;
 				hasColor = true;
 			}
 		}
 		if (!hasColor) {
-			r_kons_print (cons, ds->color_flag);
+			r_cons_print (cons, ds->color_flag);
 		}
 	}
 	if (!ds->show_offset) {
@@ -2739,7 +2739,7 @@ static bool ds_show_flags(RDisasmState *ds, bool overlapped) {
 			if (printPre) {
 				ds_pre_xrefs (ds, no_fcn_lines);
 			}
-			r_kons_print (cons, "...");
+			r_cons_print (cons, "...");
 			break;
 		}
 		count++;
@@ -2798,13 +2798,13 @@ static bool ds_show_flags(RDisasmState *ds, bool overlapped) {
 			if (fcolor) {
 				color = r_cons_pal_parse (core->cons, fcolor, NULL);
 				if (color) {
-					r_kons_print (cons, color);
+					r_cons_print (cons, color);
 					ds->lastflag = flag;
 					hasColor = true;
 				}
 			}
 			if (!hasColor) {
-				r_kons_print (cons, ds->color_flag);
+				r_cons_print (cons, ds->color_flag);
 			}
 		}
 			any = true;
@@ -2878,7 +2878,7 @@ static bool ds_show_flags(RDisasmState *ds, bool overlapped) {
 			}
 		}
 		if (ds->show_color) {
-			r_kons_print (cons, Color_RESET);
+			r_cons_print (cons, Color_RESET);
 		}
 		if (outline) {
 			ds_newline (ds);
@@ -3187,7 +3187,7 @@ static void ds_control_flow_comments(RDisasmState *ds) {
 				if (cmt) {
 					RCons *cons = ds->core->cons;
 					if (ds->show_color) {
-						r_kons_print (cons, ds->pal_comment);
+						r_cons_print (cons, ds->pal_comment);
 					}
 					ds_align_comment (ds);
 					const char *cmt = r_flag_item_set_comment (ds->core->flags, item, NULL);
@@ -3245,7 +3245,7 @@ static void printCol(RDisasmState *ds, char *sect, int cols, const char *color) 
 		r_str_ncpy (out + 1, sect, outsz - 2);
 	}
 	strcat (out, " ");
-	r_kons_print (ds->core->cons, out);
+	r_cons_print (ds->core->cons, out);
 	free (out);
 }
 
@@ -3320,7 +3320,7 @@ static void ds_print_cycles(RDisasmState *ds) {
 		int times = R_MIN (ds->analop.cycles/4, 30); // limit to 30
 		memset (spaces, ' ', sizeof (spaces));
 		spaces[times] = 0;
-		r_kons_print (cons, spaces);
+		r_cons_print (cons, spaces);
 	}
 }
 
@@ -3499,7 +3499,7 @@ static void ds_print_offset(RDisasmState *ds) {
 			core->print->flags = 0;
 			r_print_offset (core->print, at, (at == ds->dest) || show_trace, delta, label);
 			core->print->flags = of;
-			r_kons_print (core->cons, Color_RESET);
+			r_cons_print (core->cons, Color_RESET);
 		} else {
 			if (ds->show_offset_focus) {
 				ut64 bb = r_anal_get_bbaddr (core->anal, at);
@@ -3510,7 +3510,7 @@ static void ds_print_offset(RDisasmState *ds) {
 					char atstr[64];
 					snprintf (atstr, sizeof (atstr), " 0x%08"PFMT64x, at);
 					memset (atstr, ' ', strlen (atstr));
-					r_kons_print (core->cons, atstr);
+					r_cons_print (core->cons, atstr);
 				}
 			} else {
 				r_print_offset (core->print, at, (at == ds->dest) || show_trace, delta, label);
@@ -3530,7 +3530,7 @@ static void ds_print_offset(RDisasmState *ds) {
 				ds->_tabsoff = ds->atabsoff;
 			}
 		}
-		r_kons_print (ds->core->cons, ds->_tabsbuf);
+		r_cons_print (ds->core->cons, ds->_tabsbuf);
 	}
 }
 
@@ -3557,7 +3557,7 @@ static void ds_print_trace(RDisasmState *ds) {
 			int times = R_MIN (tp->times, 30); // limit to 30
 			memset (spaces, ' ', sizeof (spaces));
 			spaces[times] = 0;
-			r_kons_print (cons, spaces);
+			r_cons_print (cons, spaces);
 		}
 	}
 }
@@ -3613,7 +3613,7 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *obuf, int ib, int si
 		}
 	}
 	if (R_STR_ISNOTEMPTY (ds->color_mov)) {
-		r_kons_print (cons, ds->color_mov);
+		r_cons_print (cons, ds->color_mov);
 	}
 	switch (ib) {
 	case 1:
@@ -3705,7 +3705,7 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 					if (ds->asm_hint_lea) {
 						ds_print_shortcut (ds, node->start, 0);
 					} else {
-						r_kons_print (cons, "   ");
+						r_cons_print (cons, "   ");
 					}
 				}
 				once = false;
@@ -4223,7 +4223,7 @@ static void ds_print_indent(RDisasmState *ds) {
 		}
 		memset (indent, ' ', num);
 		indent[num] = 0;
-		r_kons_print (ds->core->cons, indent);
+		r_cons_print (ds->core->cons, indent);
 	}
 }
 
@@ -4257,14 +4257,14 @@ static void ds_print_optype(RDisasmState *ds) {
 static void ds_print_opstr(RDisasmState *ds) {
 	ds_print_indent (ds);
 	if (ds->asm_instr) {
-		r_kons_print (ds->core->cons, ds->opstr);
+		r_cons_print (ds->core->cons, ds->opstr);
 		ds_print_color_reset (ds);
 	}
 }
 
 static void ds_print_color_reset(RDisasmState *ds) {
 	if (ds->show_color) {
-		r_kons_print (ds->core->cons, Color_RESET);
+		r_cons_print (ds->core->cons, Color_RESET);
 	}
 }
 
@@ -4274,11 +4274,11 @@ static int ds_print_middle(RDisasmState *ds, int ret) {
 		ds_align_comment (ds);
 		RCons *cons = ds->core->cons;
 		if (ds->show_color) {
-			r_kons_print (cons, ds->pal_comment);
+			r_cons_print (cons, ds->pal_comment);
 		}
 		r_cons_printf (cons, " ; *middle* %d", ret);
 		if (ds->show_color) {
-			r_kons_print (cons, Color_RESET);
+			r_cons_print (cons, Color_RESET);
 		}
 	}
 	return ret;
@@ -4300,7 +4300,7 @@ static bool ds_print_labels(RDisasmState *ds, RAnalFunction *f) {
 	ds_pre_line (ds);
 	RCons *cons = ds->core->cons;
 	if (ds->show_color) {
-		r_kons_print (cons, ds->color_label);
+		r_cons_print (cons, ds->color_label);
 		r_cons_printf (cons, " .%s:\n", label);
 		ds_print_color_reset (ds);
 	} else {
@@ -4431,7 +4431,7 @@ static int ds_print_shortcut(RDisasmState *ds, ut64 addr, int pos) {
 		ch = " ";
 	}
 	if (ds->show_color) {
-		r_kons_print (cons, ds->pal_hint);
+		r_cons_print (cons, ds->pal_hint);
 	}
 	if (*ch) {
 		slen++;
@@ -4449,9 +4449,9 @@ static int ds_print_shortcut(RDisasmState *ds, ut64 addr, int pos) {
 	}
 	if (ds->show_color) {
 		if (ds->core->print->resetbg) {
-			r_kons_print (cons, Color_RESET);
+			r_cons_print (cons, Color_RESET);
 		} else {
-			r_kons_print (cons, Color_RESET_NOBG);
+			r_cons_print (cons, Color_RESET_NOBG);
 		}
 	}
 	slen++;
@@ -4612,10 +4612,10 @@ beach:
 	if (ds->asm_hint_pos > 0) {
 		const int begin = gotShortcut ? 2: 3;
 		for (i = begin - slen; i > 0; i--) {
-			r_kons_print (cons, " ");
+			r_cons_print (cons, " ");
 		}
 	} else if (ds->asm_hint_pos == 0 && !gotShortcut) {
-		r_kons_print (cons, "   ");
+		r_cons_print (cons, "   ");
 	}
 	ds->hinted_line = gotShortcut;
 	return gotShortcut;
@@ -4630,7 +4630,7 @@ static void ds_begin_nl_comment(RDisasmState *ds) {
 		ds_pre_xrefs (ds, false);
 	}
 	if (ds->show_color && (ds->cmtcount > 0 || ds->show_cmt_right)) {
-		r_kons_print (ds->core->cons, ds->pal_comment);
+		r_cons_print (ds->core->cons, ds->pal_comment);
 	}
 }
 
@@ -4654,7 +4654,7 @@ static void ds_align_comment(RDisasmState *ds) {
 			r_cons_memset (cons, ' ', len);
 		}
 	}
-	r_kons_print (cons, " ");
+	r_cons_print (cons, " ");
 }
 
 static void ds_print_dwarf(RDisasmState *ds) {
@@ -5191,7 +5191,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	}
 #if DEADCODE
 	if (aligned && ds->show_color) {
-		r_kons_print (ds->core->cons, Color_RESET);
+		r_cons_print (ds->core->cons, Color_RESET);
 	}
 #endif
 }
@@ -5914,7 +5914,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 		goto beach;
 	}
 	if (ds->show_color && ds->show_comments) {
-		r_kons_print (core->cons, ds->pal_comment);
+		r_cons_print (core->cons, ds->pal_comment);
 	}
 	esil = core->anal->esil;
 	r_reg_setv (core->anal->reg, "PC", at + ds->analop.size);
@@ -6079,9 +6079,9 @@ static void ds_print_comments_right(RDisasmState *ds) {
 		if (!r_list_empty (flaglist)) {
 			ds_align_comment (ds);
 			if (ds->show_color) {
-				r_kons_print (core->cons, ds->color_comment);
+				r_cons_print (core->cons, ds->color_comment);
 			}
-			r_kons_print (core->cons, ";-- ");
+			r_cons_print (core->cons, ";-- ");
 			r_list_foreach (flaglist, iter, fi) {
 				r_cons_printf (core->cons, "%s%s", fi->name, iter->n? ", ": " ");
 			}
@@ -6102,7 +6102,7 @@ static void ds_print_comments_right(RDisasmState *ds) {
 		if (R_STR_ISNOTEMPTY (desc)) {
 			ds_align_comment (ds);
 			if (ds->show_color) {
-				r_kons_print (core->cons, ds->color_comment);
+				r_cons_print (core->cons, ds->color_comment);
 			}
 			r_cons_printf (core->cons, "%s %s", ds->cmtoken, desc);
 			ds_print_color_reset (ds);
@@ -6128,10 +6128,10 @@ static void ds_print_comments_right(RDisasmState *ds) {
 								ds_print_pre (ds, true);
 								ds_align_comment (ds);
 								if (ds->show_color) {
-									r_kons_print (core->cons, ds->color_usrcmt);
+									r_cons_print (core->cons, ds->color_usrcmt);
 								}
 								if (i == 0) {
-									r_kons_print (core->cons, c);
+									r_cons_print (core->cons, c);
 								} else {
 									r_cons_printf (core->cons, "%s %s", ds->cmtoken, c);
 								}
@@ -6146,11 +6146,11 @@ static void ds_print_comments_right(RDisasmState *ds) {
 					free (comment);
 				} else {
 					if (comment) {
-						r_kons_print (core->cons, comment);
+						r_cons_print (core->cons, comment);
 					}
 				}
 			}
-			// r_kons_print_justify (core->cons, comment, strlen (ds->refline) + 5, ';');
+			// r_cons_print_justify (core->cons, comment, strlen (ds->refline) + 5, ';');
 			ds_print_color_reset (ds);
 			R_FREE (ds->comment);
 		}
@@ -6407,13 +6407,13 @@ static bool line_highlighted(RDisasmState *ds) {
 
 static void ds_start_line_highlight(RDisasmState *ds) {
 	if (ds->show_color && line_highlighted (ds)) {
-		r_kons_print (ds->core->cons, ds->color_linehl);
+		r_cons_print (ds->core->cons, ds->color_linehl);
 	}
 }
 
 static void ds_end_line_highlight(RDisasmState *ds) {
 	if (ds->show_color && line_highlighted (ds)) {
-		r_kons_print (ds->core->cons, Color_RESET);
+		r_cons_print (ds->core->cons, Color_RESET);
 	}
 }
 
@@ -6653,7 +6653,7 @@ toro:
 				const char *esil = R_STRBUF_SAFEGET (&ds->analop.esil);
 				ds_pre_line (ds);
 				ds_setup_print_pre (ds, false, false);
-				r_kons_print (ds->core->cons, "      ");
+				r_cons_print (ds->core->cons, "      ");
 				ds_print_lines_left (ds);
 				ds_begin_comment (ds);
 				if (ds->show_color) {
@@ -6822,7 +6822,7 @@ toro:
 					r_str_trim (c);
 					if (clen > 1) {
 						if (ds->show_color) {
-							r_kons_print (cons, ds->color_usrcmt);
+							r_cons_print (cons, ds->color_usrcmt);
 						}
 						r_cons_printf (cons, "%s%s\n", off? "; ": "", c);
 						off += clen;
@@ -6943,12 +6943,12 @@ toro:
 					if (ds->show_color) {
 						r_cons_printf (ds->core->cons, "%s;;", COLOR (ds, color_comment));
 					} else {
-						r_kons_print (ds->core->cons, ";;");
+						r_cons_print (ds->core->cons, ";;");
 					}
 				}
 				ds_print_bytes (ds);
 				if (ds->show_bytes_ascmt && ds->show_color) {
-					r_kons_print (ds->core->cons, Color_RESET);
+					r_cons_print (ds->core->cons, Color_RESET);
 				}
 			}
 			ds_print_lines_right (ds);
@@ -7862,7 +7862,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 						}
 						free (src);
 					}
-					r_kons_print (core->cons, str);
+					r_cons_print (core->cons, str);
 					free (str);
 				}
 				break;
@@ -8300,7 +8300,7 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 	}
 	if (mode == R_MODE_JSON) {
 		pj_end (pj);
-		r_kons_print (core->cons, pj_string (pj));
+		r_cons_print (core->cons, pj_string (pj));
 		pj_free (pj);
 	}
 leave:

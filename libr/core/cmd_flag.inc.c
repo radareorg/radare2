@@ -537,7 +537,7 @@ static void cmd_fz(RCore *core, const char *input) {
 	case 0:
 		{
 			char *s = r_flag_zone_list (core->flags, *input);
-			r_kons_print (core->cons, s);
+			r_cons_print (core->cons, s);
 			free (s);
 		}
 		break;
@@ -1937,7 +1937,7 @@ static int cmd_flag(void *data, const char *input) {
 			}
 		} else {
 			char *s = r_flag_list (core->flags, *input, input[0]? input + 1: "");
-			r_kons_print (core->cons, s);
+			r_cons_print (core->cons, s);
 			free (s);
 		}
 		break;
@@ -1962,7 +1962,7 @@ static int cmd_flag(void *data, const char *input) {
 					core->addr, core->addr + core->blocksize);
 			}
 			char *s = r_flag_list (core->flags, 'i', arg);
-			r_kons_print (core->cons, s);
+			r_cons_print (core->cons, s);
 			free (s);
 			free (arg);
 		} else {
@@ -1970,7 +1970,7 @@ static int cmd_flag(void *data, const char *input) {
 			char *arg = r_str_newf (" 0x%"PFMT64x" 0x%"PFMT64x,
 				core->addr, core->addr + core->blocksize);
 			char *s = r_flag_list (core->flags, 'i', arg);
-			r_kons_print (core->cons, s);
+			r_cons_print (core->cons, s);
 			free (s);
 			free (arg);
 		}

@@ -264,7 +264,7 @@ static int cmd_egg(void *data, const char *input) {
 			} else {
 				char *o = r_egg_option_get (egg, oa);
 				if (o) {
-					r_kons_print (core->cons, o);
+					r_cons_print (core->cons, o);
 					free (o);
 				}
 			}

@@ -863,7 +863,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 					r_core_cmd0 (r, "eq");
 				} else {
 					char *res = r_config_eval (r->config, opt.arg, false, NULL);
-					r_kons_print (r->cons, res);
+					r_cons_print (r->cons, res);
 					free (res);
 					r_list_append (mr.evals, (void*)strdup (opt.arg));
 				}
@@ -1648,7 +1648,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		char *cmdn;
 		r_list_foreach (mr.evals, iter, cmdn) {
 			char *res = r_config_eval (r->config, cmdn, false, NULL);
-			r_kons_print (r->cons, res);
+			r_cons_print (r->cons, res);
 			free (res);
 			r_cons_flush (r->cons);
 		}
@@ -1717,7 +1717,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 		r_list_foreach (mr.evals, iter, cmdn) {
 			char *res = r_config_eval (r->config, cmdn, false, NULL);
-			r_kons_print (r->cons, res);
+			r_cons_print (r->cons, res);
 			free (res);
 			r_cons_flush (r->cons);
 		}

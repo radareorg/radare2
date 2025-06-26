@@ -4727,7 +4727,7 @@ static void xrefs_map(RCore *core, const char *input) {
 	RCons *cons = core->cons;
 	RList *fcns = core->anal->fcns;
 	do {
-		r_kons_print (cons, "             ");
+		r_cons_print (cons, "             ");
 		count = 0;
 		r_list_foreach (fcns, iter, f) {
 			int nlen = strlen (f->name);
@@ -5783,10 +5783,10 @@ static int cmd_af(RCore *core, const char *input) {
 						r_anal_function_cost (fcn), r_anal_function_complexity (fcn));
 					r_cons_printf (cons, "  attr:  ");
 					if (r_anal_function_islineal (fcn)) {
-						r_kons_print (cons, "lineal");
+						r_cons_print (cons, "lineal");
 					}
 					if (fcn->is_noreturn) {
-						r_kons_print (cons, "noreturn");
+						r_cons_print (cons, "noreturn");
 					}
 					r_cons_newline (cons);
 				}
@@ -7899,7 +7899,7 @@ static void showregs(RCore *core, RList *list) {
 		char *reg;
 		RListIter *iter;
 		r_list_foreach (list, iter, reg) {
-			r_kons_print (core->cons, reg);
+			r_cons_print (core->cons, reg);
 			if (iter->n) {
 				r_cons_printf (core->cons, " ");
 			}
@@ -9381,7 +9381,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			if (input[2] == '?') {
 				// TODO: find better name for this command
 				char *s = r_esil_opstr (core->anal->esil, input[3]);
-				r_kons_print (core->cons, s);
+				r_cons_print (core->cons, s);
 				free (s);
 				break;
 			}
@@ -9647,7 +9647,7 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 			if (showbits) {
 				for (i = 0; i < last; i++) {
 					ut8 *byte = buf + i;
-					r_kons_print (core->cons, " ");
+					r_cons_print (core->cons, " ");
 					if (pj) {
 						pj_a (pj);
 					}
@@ -9659,7 +9659,7 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 						r_cons_printf (core->cons, "%d", bit?1:0);
 					}
 				}
-				r_kons_print (core->cons, "\n");
+				r_cons_print (core->cons, "\n");
 			}
 			for (p = s; *p; p++) {
 				int idx = *p - '0' + 1;
@@ -11288,7 +11288,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				}
 			} else {
 				if (input[1] == 'j') { // "axfj"
-					r_kons_print (core->cons, "[]\n");
+					r_cons_print (core->cons, "[]\n");
 				}
 			}
 			RVecAnalRef_free (list);
@@ -11400,7 +11400,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			r_core_cmd_help (core, help_msg_ahb);
 		} else if (input[1] == '*') { // "ahb*"
 			char *s = r_core_cmd_str (core, "ah*~ahb");
-			r_kons_print (core->cons, s);
+			r_cons_print (core->cons, s);
 			free (s);
 		} else if (input[1] == ' ') {
 			char *ptr = r_str_trim_dup (input + 2);
@@ -11526,7 +11526,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			}
 		} else if (input[1] == 0) {
 			char *s = r_core_cmd_str (core, "ah~size=");
-			r_kons_print (core->cons, s);
+			r_cons_print (core->cons, s);
 			free (s);
 		} else {
 			r_core_cmd_help (core, help_msg_ahs);
@@ -11778,7 +11778,7 @@ static void agraph_print_node(RANode *n, void *user) {
 	}
 	char *encbody = r_base64_encode_dyn ((const ut8*)n->body, len);
 	char *cmd = r_str_newf ("agn \"%s\" base64:%s\n", n->title, encbody);
-	r_kons_print (core->cons, cmd);
+	r_cons_print (core->cons, cmd);
 	free (cmd);
 	free (encbody);
 }
@@ -12147,8 +12147,8 @@ static void mermaid_graph(RCore *core, RGraph *graph, node_content_cb get_body) 
 		char *n = r_strbuf_drain_nofree (nodes);
 		char *e = r_strbuf_drain_nofree (edges);
 		if (n && e) {
-			r_kons_print (core->cons, n);
-			r_kons_print (core->cons, e);
+			r_cons_print (core->cons, n);
+			r_cons_print (core->cons, e);
 		}
 		free (n);
 		free (e);
@@ -12345,7 +12345,7 @@ R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 		if (db) {
 			char *o = sdb_querys (db, "null", 0, "*");
 			if (o) {
-				r_kons_print (core->cons, o);
+				r_cons_print (core->cons, o);
 				free (o);
 			}
 		}
@@ -12416,7 +12416,7 @@ R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 			       "directed 1\n");
 		r_agraph_foreach (core->graph, agraph_print_node_gml, NULL);
 		r_agraph_foreach_edge (core->graph, agraph_print_edge_gml, NULL);
-		r_kons_print (core->cons, "]\n");
+		r_cons_print (core->cons, "]\n");
 		break;
 	case 'w': // "aggw"
 		{
@@ -12521,7 +12521,7 @@ static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, 
 		{
 			Sdb *db = r_agraph_get_sdb (agraph);
 			char *o = sdb_querys (db, "null", 0, "*");
-			r_kons_print (core->cons, o);
+			r_cons_print (core->cons, o);
 			free (o);
 			break;
 		}
@@ -12557,7 +12557,7 @@ static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, 
 		{
 			char *dot_text = print_graph_dot (core, graph);
 			if (dot_text) {
-				r_kons_print (core->cons, dot_text);
+				r_cons_print (core->cons, dot_text);
 				free (dot_text);
 			}
 		}
@@ -12599,7 +12599,7 @@ static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, 
 					graphNode->idx, target->idx);
 			}
 		}
-		r_kons_print (core->cons, "]\n");
+		r_cons_print (core->cons, "]\n");
 		break;
 	case 'w': { // "ag_w"
 		const char *filename = r_str_trim_head_ro (input + 1);
@@ -12795,8 +12795,8 @@ static bool cmd_graph_mermaid(RCore *core, bool add_asm) {
 		char *n = r_strbuf_drain_nofree (nodes);
 		char *e = r_strbuf_drain_nofree (edges);
 		if (n && e) {
-			r_kons_print (core->cons, n);
-			r_kons_print (core->cons, e);
+			r_cons_print (core->cons, n);
+			r_cons_print (core->cons, e);
 		}
 		free (n);
 		free (e);
@@ -14942,7 +14942,7 @@ static void cmd_anal_virtual_functions(RCore *core, const char* input) {
 			if (input[0] == 'j') {
 				r_cons_println (core->cons, s);
 			} else {
-				r_kons_print (core->cons, s);
+				r_cons_print (core->cons, s);
 			}
 			free (s);
 		}
@@ -15074,7 +15074,7 @@ static void cmd_acb(RCore *core, const char *input) {
 		if (R_STR_ISEMPTY (end)) {
 			if (c == ' ') {
 				char *res = r_anal_class_list_bases (core->anal, cstr);
-				r_kons_print (core->cons, res);
+				r_cons_print (core->cons, res);
 				free (res);
 			} else /*if (c == '-')*/ {
 				R_LOG_ERROR ("No base id given");
@@ -15147,7 +15147,7 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 			*end = '\0';
 		}
 		char *res = r_anal_class_list_vtable_offset_functions (core->anal, class_arg, offset_arg);
-		r_kons_print (core->cons, res);
+		r_cons_print (core->cons, res);
 		free (res);
 		free (cstr);
 		break;
@@ -15172,7 +15172,7 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 		if (R_STR_ISEMPTY (end)) {
 			if (c == ' ') {
 				char *res = r_anal_class_list_vtables (core->anal, cstr);
-				r_kons_print (core->cons, res);
+				r_cons_print (core->cons, res);
 				free (res);
 			} else /*if (c == '-')*/ {
 				R_LOG_ERROR ("No vtable id given. See acv [class name]");
@@ -15251,7 +15251,7 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 			}
 		}
 		char *res = r_anal_class_list (core->anal, input[1]);
-		r_kons_print (core->cons, res);
+		r_cons_print (core->cons, res);
 		free (res);
 		break;
 	case ' ': // "ac"

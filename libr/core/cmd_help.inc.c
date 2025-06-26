@@ -675,7 +675,7 @@ const char iuhelp[] =
 
 static int cmd_qiu(RCore *core, const char *input) {
 	if (!*input || *input == '?') {
-		r_kons_print (core->cons, iuhelp);
+		r_cons_print (core->cons, iuhelp);
 		return 0;
 	}
 	RIU *riu = riu_new (core, input);
@@ -1385,7 +1385,7 @@ static int cmd_help(void *data, const char *input) {
 			// TODO: replace all ${flagname} by its value in hexa
 			char *newmsg = filterFlags (core, msg);
 			r_str_unescape (newmsg);
-			r_kons_print (core->cons, newmsg);
+			r_cons_print (core->cons, newmsg);
 			free (newmsg);
 			break;
 		}
@@ -1404,7 +1404,7 @@ static int cmd_help(void *data, const char *input) {
 				r_strbuf_append (b, r_str_pad('-', len));
 				r_strbuf_append (b, "'\n");
 				char * s = r_strbuf_drain (b);
-				r_kons_print (core->cons, s);
+				r_cons_print (core->cons, s);
 				free (s);
 			}
 			break;
@@ -1430,7 +1430,7 @@ static int cmd_help(void *data, const char *input) {
 						  r_cons_clear_line (core->cons, 0);
 						  r_cons_printf (core->cons, "Downloading the Gibson...\n\n");
 						  r_core_cmdf (core, "?e=%d", i);
-						  r_kons_print (core->cons, d);
+						  r_cons_print (core->cons, d);
 						  r_cons_clear_line (core->cons, 0);
 						  r_cons_newline (core->cons);
 						  free (d);
@@ -1762,7 +1762,7 @@ static void cmd_head(void *data, const char *_input) { // "head"
 		} else {
 			char *res = r_syscmd_head (arg, lines);
 			if (res) {
-				r_kons_print (core->cons, res);
+				r_cons_print (core->cons, res);
 				free (res);
 			}
 		}

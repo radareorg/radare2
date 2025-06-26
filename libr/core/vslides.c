@@ -128,10 +128,10 @@ static void render(SlidesState *state, RCore *core, RList *list, int mode, int p
 		free (o);
 		free (o2);
 		o = no;
-		r_kons_print (cons, o);
+		r_cons_print (cons, o);
 	} else {
 		char *no = r_str_ansi_crop (o, sx, sy, w, h);
-		r_kons_print (cons, no);
+		r_cons_print (cons, no);
 		free (no);
 	}
 	free (o);

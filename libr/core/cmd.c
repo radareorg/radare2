@@ -514,7 +514,7 @@ static void recursive_help(RCore *core, int detail, const char *cmd_prefix) {
 		return;
 	}
 	RList *pending = r_list_newf (free);
-	r_kons_print (core->cons, s);
+	r_cons_print (core->cons, s);
 	RList *rows = r_str_split_list (s, "\n", 0);
 
 	RListIter *iter;
@@ -685,7 +685,7 @@ static int cmd_uniq(void *data, const char *input) { // "uniq"
 		} else {
 			char *res = r_syscmd_uniq (arg);
 			if (res) {
-				r_kons_print (core->cons, res);
+				r_cons_print (core->cons, res);
 				free (res);
 			}
 		}
@@ -930,7 +930,7 @@ static int cmd_alias(void *data, const char *input) {
 			if (v->is_data) {
 				char *v_str = r_cmd_alias_val_strdup (v);
 				if (v_str) {
-					r_kons_print (core->cons, v_str);
+					r_cons_print (core->cons, v_str);
 					r_cons_newline (core->cons);
 					free (v_str);
 				}
@@ -1041,7 +1041,7 @@ static void cmd_tcp_server(RCore *core, const char *input) {
 	}
 	char *rbuf = r_core_rtr_cmds_query (core, host, port, cmd);
 	if (rbuf) {
-		r_kons_print (core->cons, rbuf);
+		r_cons_print (core->cons, rbuf);
 		free (rbuf);
 	}
 }
@@ -1347,7 +1347,7 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 		char *out = r_anal_cparse_file (core->anal, file, dir, NULL);
 		if (out) {
 			ret = true;
-			r_kons_print (core->cons, out);
+			r_cons_print (core->cons, out);
 			sdb_query_lines (core->anal->sdb_types, out);
 			free (out);
 		}
@@ -1586,7 +1586,7 @@ static int cmd_l(void *data, const char *input) { // "l"
 			int w = r_cons_get_size (core->cons, NULL) - 8;
 			char *res = r_syscmd_ls (carg, w);
 			if (res) {
-				r_kons_print (core->cons, res);
+				r_cons_print (core->cons, res);
 				free (res);
 			}
 			free (carg);
@@ -1637,7 +1637,7 @@ static int cmd_l(void *data, const char *input) { // "l"
 			int w = r_cons_get_size (core->cons, NULL) - 8;
 			char *res = r_syscmd_ls (arg, w);
 			if (res) {
-				r_kons_print (core->cons, res);
+				r_cons_print (core->cons, res);
 				free (res);
 			}
 		}
@@ -1686,7 +1686,7 @@ static int cmd_join(void *data, const char *input) { // "join"
 		if (!r_fs_check (core->fs, arg1) && !r_fs_check (core->fs, arg2)) {
 			char *res = r_syscmd_join (arg1, arg2);
 			if (res) {
-				r_kons_print (core->cons, res);
+				r_cons_print (core->cons, res);
 				free (res);
 			}
 		}
@@ -2280,7 +2280,7 @@ static int cmd_interpret(void *data, const char *input) {
 			}
 			rbuf = r_core_rtr_cmds_query (core, host, port, cmd);
 			if (rbuf) {
-				r_kons_print (core->cons, rbuf);
+				r_cons_print (core->cons, rbuf);
 				free (rbuf);
 			}
 		} else {
@@ -2500,7 +2500,7 @@ static int cmd_kuery(void *data, const char *input) {
 		if (s) {
 			out = sdb_querys (s, NULL, 0, input + 1);
 			if (out) {
-				r_kons_print (core->cons, out);
+				r_cons_print (core->cons, out);
 			}
 			R_FREE (out);
 		}
@@ -6088,7 +6088,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 						buf = strdup (buf);
 					}
 					r_cons_pop ();
-					// r_kons_print (core->cons, buf);
+					// r_cons_print (core->cons, buf);
 					r_strbuf_append (sb, buf);
 					free (buf);
 #else
@@ -6102,7 +6102,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				}
 				char *s = r_strbuf_drain (sb);
 				if (s) {
-					r_kons_print (core->cons, s);
+					r_cons_print (core->cons, s);
 					free (s);
 				}
 				core->cons->context->grep = grep;
@@ -6310,7 +6310,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					buf = tmp? strdup (tmp): NULL;
 					r_cons_pop (core->cons);
 					if (buf) {
-						r_kons_print (core->cons, buf);
+						r_cons_print (core->cons, buf);
 						free (buf);
 					}
 					if (!foreach_newline (core)) {

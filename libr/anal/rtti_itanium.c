@@ -339,7 +339,7 @@ static void rtti_itanium_print_class_type_info_json(class_type_info *cti) {
 	pj_end (pj);
 
 	RCons *cons = r_cons_singleton ();
-	r_kons_print (cons, pj_string (pj));
+	r_cons_print (cons, pj_string (pj));
 	pj_free (pj);
 }
 
@@ -403,7 +403,7 @@ static void rtti_itanium_print_vmi_class_type_info_json(vmi_class_type_info *vmi
 	pj_end (pj);
 
 	RCons *cons = r_cons_singleton ();
-	r_kons_print (cons, pj_string (pj));
+	r_cons_print (cons, pj_string (pj));
 	pj_free (pj);
 }
 
@@ -445,7 +445,7 @@ static void rtti_itanium_print_si_class_type_info_json(si_class_type_info *si_ct
 	pj_end (pj);
 
 	RCons *cons = r_cons_singleton ();
-	r_kons_print (cons, pj_string (pj));
+	r_cons_print (cons, pj_string (pj));
 	pj_free (pj);
 }
 

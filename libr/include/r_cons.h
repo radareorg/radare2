@@ -1158,10 +1158,10 @@ R_API void r_line_completion_clear(RLineCompletion *completion);
 
 #define R_CONS_INVERT(x,y) (y? (x?Color_INVERT: Color_INVERT_RESET): (x?"[":"]"))
 
-R_API void r_kons_grep(RCons *cons, const char *grep);
-R_API void r_kons_grepbuf(RCons *cons);
+R_API void r_cons_grep(RCons *cons, const char *grep);
+R_API void r_cons_grepbuf(RCons *cons);
 R_API void r_cons_println(RCons *cons, const char* str);
-R_API void r_kons_print(RCons *cons, const char *str);
+R_API void r_cons_print(RCons *cons, const char *str);
 R_API void r_cons_newline(RCons *cons);
 R_API int r_cons_write(RCons *cons, const char *str, int len);
 R_API void r_cons_memset(RCons *cons, char ch, int len);

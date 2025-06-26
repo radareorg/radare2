@@ -476,7 +476,7 @@ R_API char *r_cons_pal_parse(RCons *cons, const char *str, RColor * R_NULLABLE o
 
 static void r_cons_pal_show_gs(RCons *cons) {
 	int i, n;
-	r_kons_print (cons, "\nGreyscale:\n");
+	r_cons_print (cons, "\nGreyscale:\n");
 	RColor rcolor = RColor_BLACK;
 	for (i = 0x08, n = 0;  i <= 0xee; i += 0xa) {
 		char fg[32], bg[32];
@@ -501,7 +501,7 @@ static void r_cons_pal_show_gs(RCons *cons) {
 
 static void r_cons_pal_show_256(RCons *cons) {
 	RColor rc = RColor_BLACK;
-	r_kons_print (cons, "\n\nXTerm colors:\n");
+	r_cons_print (cons, "\n\nXTerm colors:\n");
 	int r = 0;
 	int g = 0;
 	int b = 0;
@@ -535,7 +535,7 @@ static void r_cons_pal_show_rgb(RCons *cons) {
 	const int inc = 3;
 	int i, j, k, n = 0;
 	RColor rc = RColor_BLACK;
-	r_kons_print (cons, "\n\nRGB:\n");
+	r_cons_print (cons, "\n\nRGB:\n");
 	for (i = n = 0; i <= 0xf; i += inc) {
 		for (k = 0; k <= 0xf; k += inc) {
 			for (j = 0; j <= 0xf; j += inc) {
@@ -650,7 +650,7 @@ R_API void r_cons_pal_list(RCons *cons, int rad, const char *arg) {
 				};
 				int j;
 				if (rcolor->a != ALPHA_FGBG) {
-					r_kons_print (cons, " .");
+					r_cons_print (cons, " .");
 				}
 				for (j = 0; j < R_ARRAY_SIZE (attrs); j++) {
 					if (rcolor->attr & attrs[j].val) {

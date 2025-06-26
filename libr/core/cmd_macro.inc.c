@@ -77,7 +77,7 @@ static int cmd_macro(void *data, const char *_input) {
 	case '\0':
 		{
 			char *s = r_cmd_macro_list (&core->rcmd->macro, *input);
-			r_kons_print (core->cons, s);
+			r_cons_print (core->cons, s);
 			free (s);
 		}
 		break;

@@ -242,7 +242,7 @@ R_API bool r_core_yank_dump(RCore *core, ut64 pos, int format) {
 		break;
 	}
 	case '*':
-		r_kons_print (core->cons, "'wx ");
+		r_cons_print (core->cons, "'wx ");
 		for (i = pos; i < r_buf_size (core->yank_buf); i++) {
 			r_cons_printf (core->cons, "%02x", r_buf_read8_at (core->yank_buf, i));
 		}

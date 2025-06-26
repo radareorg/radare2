@@ -225,7 +225,7 @@ static void cmd_afck(RCore *core, const char *c) {
 	const char *s = "anal/cc/*";
 	char *out = sdb_querys (core->sdb, NULL, 0, s);
 	if (out) {
-		r_kons_print (core->cons, out);
+		r_cons_print (core->cons, out);
 	}
 	free (out);
 }
@@ -408,7 +408,7 @@ static int cmd_tail(void *data, const char *_input) { // "tail"
 		} else {
 			char *res = r_syscmd_tail (arg, lines);
 			if (res) {
-				r_kons_print (core->cons, res);
+				r_cons_print (core->cons, res);
 				free (res);
 			}
 		}
@@ -596,7 +596,7 @@ static void print_struct_union_in_c_format(RCore *core, Sdb *TDB, SdbForeachCall
 		}
 	}
 	char *s = r_strbuf_drain (sb);
-	r_kons_print (core->cons, s);
+	r_cons_print (core->cons, s);
 	free (s);
 	free (name);
 	ls_free (l);
@@ -845,7 +845,7 @@ static void print_keys(Sdb *TDB, RCore *core, SdbForeachCallback filter, SdbFore
 	SdbKv *kv;
 
 	if (json) {
-		r_kons_print (core->cons, "{\"types\":[");
+		r_cons_print (core->cons, "{\"types\":[");
 	}
 	ls_foreach (l, it, kv) {
 		const char *k = sdbkv_key (kv);
@@ -1219,7 +1219,7 @@ static int cmd_type(void *data, const char *input) {
 				? sdb_querys (TDB, NULL, -1, input + 2)
 				: sdb_querys (TDB, NULL, -1, "*");
 			if (res) {
-				r_kons_print (core->cons, res);
+				r_cons_print (core->cons, res);
 				free (res);
 			}
 		}
@@ -1516,7 +1516,7 @@ static int cmd_type(void *data, const char *input) {
 						char *errmsg = NULL;
 						char *out = r_anal_cparse (core->anal, tmp, &errmsg);
 						if (out) {
-							// r_kons_print (core->cons, out);
+							// r_cons_print (core->cons, out);
 							r_anal_save_parsed_type (core->anal, out);
 							free (out);
 						}
@@ -1530,7 +1530,7 @@ static int cmd_type(void *data, const char *input) {
 					char *errmsg = NULL;
 					char *out = r_anal_cparse_file (core->anal, filename, dir, &errmsg);
 					if (out) {
-						// r_kons_print (core->cons, out);
+						// r_cons_print (core->cons, out);
 						r_anal_save_parsed_type (core->anal, out);
 						free (out);
 					}

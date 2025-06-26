@@ -1315,14 +1315,14 @@ static void print_hint_h_format(RCore *core, HintNode *node) {
 		if (node->arch) {
 			r_cons_printf (core->cons, " arch='%s'", node->arch);
 		} else {
-			r_kons_print (core->cons, " arch=RESET");
+			r_cons_print (core->cons, " arch=RESET");
 		}
 		break;
 	case HINT_NODE_BITS:
 		if (node->bits) {
 			r_cons_printf (core->cons, " bits=%d", node->bits);
 		} else {
-			r_kons_print (core->cons, " bits=RESET");
+			r_cons_print (core->cons, " bits=RESET");
 		}
 		break;
 	}

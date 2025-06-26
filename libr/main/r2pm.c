@@ -1366,7 +1366,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 	if (r2pm.search) {
 		char *s = r2pm_search (argv[opt.ind], r2pm.json? 'j': 0);
 		if (s) {
-			r_kons_print (cons, s);
+			r_cons_print (cons, s);
 			if (havetoflush) {
 				r_cons_flush (cons);
 			}
@@ -1390,7 +1390,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 	} else if (r2pm.list) {
 		char *s = r2pm_list (r2pm.json? 'j': 0);
 		if (s) {
-			r_kons_print (cons, s);
+			r_cons_print (cons, s);
 			if (havetoflush) {
 				r_cons_flush (cons);
 			}
@@ -1406,7 +1406,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 			char *s = r2pm_get (pkg, "\nR2PM_RELOAD() {", TT_CODEBLOCK);
 			if (s) {
 				char *t = r_str_trim_lines (s);
-				r_kons_print (cons, t);
+				r_cons_print (cons, t);
 				free (t);
 				free (s);
 			}

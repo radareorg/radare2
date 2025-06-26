@@ -1300,7 +1300,7 @@ static int cmd_zi(void *data, const char *input) {
 		r_flag_space_push (core->flags, R_FLAGS_FS_SIGNS);
 		{
 			char *s = r_flag_list (core->flags, *input, input[0] ? input + 1: "");
-			r_kons_print (core->cons, s);
+			r_cons_print (core->cons, s);
 			free (s);
 		}
 		r_flag_space_pop (core->flags);

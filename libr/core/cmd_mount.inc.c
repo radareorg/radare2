@@ -59,7 +59,7 @@ static char *readman(RCore *core, const char *page) {
 		}
 		r_list_free (files);
 		char *s = r_strbuf_drain (sb);
-		r_kons_print (core->cons, s);
+		r_cons_print (core->cons, s);
 		return NULL;
 	}
 	int cat = 1;
@@ -189,7 +189,7 @@ static int cmd_mktemp(RCore *core, const char *input) {
 	char *res = r_syscmd_mktemp (input);
 	if (res) {
 		r_core_return_value (core, 1);
-		r_kons_print (core->cons, res);
+		r_cons_print (core->cons, res);
 		free (res);
 	} else {
 		r_core_return_value (core, 0);

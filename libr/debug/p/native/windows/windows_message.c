@@ -327,7 +327,7 @@ R_API void r_w32_identify_window(void) {
 	}
 	__add_window_to_table (tbl, win);
 	char *tbl_str = r_table_tofancystring (tbl);
-	r_kons_print (cons, tbl_str);
+	r_cons_print (cons, tbl_str);
 	free (tbl_str);
 	r_table_free (tbl);
 }

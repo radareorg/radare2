@@ -27,7 +27,7 @@ R_IPI void r_cons_win_clear(RCons *cons) {
 	COORD startCoords;
 	DWORD dummy;
 	if (cons->vtmode) {
-		r_kons_print (cons, Color_RESET R_CONS_CLEAR_SCREEN);
+		r_cons_print (cons, Color_RESET R_CONS_CLEAR_SCREEN);
 		return;
 	}
 	if (cons->is_wine == 1) {

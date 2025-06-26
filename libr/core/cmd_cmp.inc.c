@@ -229,20 +229,20 @@ R_API bool r_core_cmpwatch_show(RCore *core, ut64 addr, int mode) {
 			break;
 		default:
 			r_cons_printf (core->cons, "0x%08" PFMT64x "%s\n", w->addr, changed? " modified": "");
-			r_kons_print (core->cons, "  old: ");
+			r_cons_print (core->cons, "  old: ");
 			int i;
 			if (w->odata) {
 				for (i = 0; i < w->size; i++) {
 					r_cons_printf (core->cons, "%02x", w->odata[i]);
 				}
-				r_kons_print (core->cons, " => new: ");
+				r_cons_print (core->cons, " => new: ");
 			}
 			for (i = 0; i < w->size; i++) {
 				r_cons_printf (core->cons, "%02x", w->ndata[i]);
 			}
 			char *cmd_output = cwcmd (core, w);
 			if (cmd_output) {
-				r_kons_print (core->cons, "\n  cmd: ");
+				r_cons_print (core->cons, "\n  cmd: ");
 				r_cons_println (core->cons, cmd_output);
 				free (cmd_output);
 			} else {
@@ -700,12 +700,12 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 				colpad[pos] = 0;
 			}
 			if (hascolor) {
-				r_kons_print (core->cons, iseq? pal->graph_true: pal->graph_false);
+				r_cons_print (core->cons, iseq? pal->graph_true: pal->graph_false);
 			}
 			r_cons_printf (core->cons, " 0x%08"PFMT64x "  %s %s", core->addr + i, opa, colpad);
 			r_cons_printf (core->cons, "%c 0x%08"PFMT64x "  %s\n", iseq? '=': '!', off + j, opb);
 			if (hascolor) {
-				r_kons_print (core->cons, Color_RESET);
+				r_cons_print (core->cons, Color_RESET);
 			}
 			if (op.size < 1) {
 				op.size = 1;
@@ -738,15 +738,15 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 					core->addr + i, op.mnemonic);
 			} else {
 				if (hascolor) {
-					r_kons_print (core->cons, pal->graph_false);
+					r_cons_print (core->cons, pal->graph_false);
 				}
 				r_cons_printf (core->cons, "-0x%08"PFMT64x "  %s\n", core->addr + i, op.mnemonic);
 				if (hascolor) {
-					r_kons_print (core->cons, pal->graph_true);
+					r_cons_print (core->cons, pal->graph_true);
 				}
 				r_cons_printf (core->cons, "+0x%08"PFMT64x "  %s\n", off + j, op2.mnemonic);
 				if (hascolor) {
-					r_kons_print (core->cons, Color_RESET);
+					r_cons_print (core->cons, Color_RESET);
 				}
 			}
 			if (op.size < 1) {
@@ -1221,7 +1221,7 @@ static int cmd_cmp(void *data, const char *input) {
 				} else {
 					char *res = r_syscmd_cat (path);
 					if (res) {
-						r_kons_print (core->cons, res);
+						r_cons_print (core->cons, res);
 						free (res);
 					}
 				}

@@ -3,28 +3,6 @@
 #include <r_cons.h>
 #include "private.h"
 
-R_API void r_kons_print(RCons *cons, const char *str) {
-	R_RETURN_IF_FAIL (str);
-	if (cons->null) {
-		return;
-	}
-	size_t len = strlen (str);
-	if (len > 0) {
-		r_cons_write (cons, str, len);
-	}
-}
-
-R_API int r_cons_printf(RCons *cons, const char *format, ...) {
-	va_list ap;
-	if (R_STR_ISEMPTY (format)) {
-		return -1;
-	}
-	va_start (ap, format);
-	r_cons_printf_list (cons, format, ap);
-	va_end (ap);
-	return 0;
-}
-
 typedef struct {
 	bool breaked;
 	RConsEvent event_interrupt;

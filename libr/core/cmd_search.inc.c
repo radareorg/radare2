@@ -549,7 +549,7 @@ R_API int r_core_search_uds(RCore *core, int mode) {
 	if (mode == 'j') {
 		pj_end (pj);
 		char *s = pj_drain (pj);
-		r_kons_print (core->cons, s);
+		r_cons_print (core->cons, s);
 		free (s);
 	}
 	return ret;

@@ -1682,7 +1682,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 		pj_kn (pj, "brk", brk_start);
 		pj_kn (pj, "end", brk_end);
 		pj_end (pj);
-		r_kons_print (core->cons, pj_string (pj));
+		r_cons_print (core->cons, pj_string (pj));
 		pj_free (pj);
 		break;
 	case '*':

@@ -562,7 +562,7 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va) {
 		if (show_table) {
 			char *s = r_table_tostring (table);
 			if (s) {
-				r_kons_print (core->cons, s);
+				r_cons_print (core->cons, s);
 				free (s);
 			}
 		}
@@ -1168,7 +1168,7 @@ static bool bin_addrline(RCore *core, PJ *pj, int mode) {
 		if (loc_table) {
 			if (mode == R_MODE_PRINT) {
 				char *s = r_bin_dwarf_print_loc (loc_table, core->anal->config->bits / 8);
-				r_kons_print (core->cons, s);
+				r_cons_print (core->cons, s);
 				free (s);
 			}
 			r_bin_dwarf_free_loc (loc_table);
@@ -1591,7 +1591,7 @@ static bool bin_entry(RCore *core, PJ *pj, int mode, ut64 laddr, int va, bool in
 			r_table_query (table, core->table_query);
 		}
 		char *s = r_table_tostring (table);
-		r_kons_print (core->cons, s);
+		r_cons_print (core->cons, s);
 		free (s);
 		r_table_free (table);
 	} else if (IS_MODE_SET (mode)) {
@@ -2107,7 +2107,7 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 		if (show_table) {
 			char *s = r_table_tostring (table);
 			if (s) {
-				r_kons_print (core->cons, s);
+				r_cons_print (core->cons, s);
 				free (s);
 			}
 		}
@@ -2313,7 +2313,7 @@ static bool bin_imports(RCore *core, PJ *pj, int mode, int va, const char *name)
 		}
 		if (show_table) {
 			char *s = r_table_tostring (table);
-			r_kons_print (core->cons, s);
+			r_cons_print (core->cons, s);
 			free (s);
 		}
 	}
@@ -2778,7 +2778,7 @@ next:
 			}
 		}
 		char *s = r_table_tostring (table);
-		r_kons_print (core->cons, s);
+		r_cons_print (core->cons, s);
 		free (s);
 	}
 
@@ -3019,7 +3019,7 @@ static bool bin_map_sections_to_segments(RCore *core, PJ *pj, int mode) {
 	if (IS_MODE_NORMAL (mode)) {
 		r_cons_printf (core->cons, "Section to Segment mapping:\n");
 		char *s = r_table_tostring (table);
-		r_kons_print (core->cons, s);
+		r_cons_print (core->cons, s);
 		free (s);
 	}
 	r_list_free (segments);
@@ -3099,7 +3099,7 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 		}
 		if (show_table) {
 			char *s = r_table_tostring (table);
-			r_kons_print (core->cons, s);
+			r_cons_print (core->cons, s);
 			free (s);
 		}
 		r_table_free (table);
@@ -3412,7 +3412,7 @@ out:
 		}
 		if (show_table) {
 			char *s = r_table_tostring (table);
-			r_kons_print (core->cons, s);
+			r_cons_print (core->cons, s);
 			free (s);
 		}
 	}
@@ -5097,7 +5097,7 @@ R_API bool r_core_bin_list(RCore *core, int mode) {
 	}
 	if (mode == 'j') {
 		pj_end (pj);
-		r_kons_print (core->cons, pj_string (pj));
+		r_cons_print (core->cons, pj_string (pj));
 		pj_free (pj);
 	}
 	return true;

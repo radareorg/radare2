@@ -655,12 +655,12 @@ static void dump_cols_hexii(RadiffOptions *ro, ut8 *a, int as, ut8 *b, int bs, i
 			}
 			ut8 ch = a[i + j];
 			if (spacy) {
-				r_kons_print (ro->cons, " ");
+				r_cons_print (ro->cons, " ");
 			}
 			if (ch == 0x00) {
-				r_kons_print (ro->cons, "  ");
+				r_cons_print (ro->cons, "  ");
 			} else if (ch == 0xff) {
-				r_kons_print (ro->cons, "##");
+				r_cons_print (ro->cons, "##");
 			} else if (IS_PRINTABLE (ch)) {
 				r_cons_printf (ro->cons, ".%c", ch);
 			} else {
@@ -684,12 +684,12 @@ static void dump_cols_hexii(RadiffOptions *ro, ut8 *a, int as, ut8 *b, int bs, i
 			}
 			ut8 ch = b[i + j];
 			if (spacy) {
-				r_kons_print (ro->cons, " ");
+				r_cons_print (ro->cons, " ");
 			}
 			if (ch == 0x00) {
-				r_kons_print (ro->cons, "  ");
+				r_cons_print (ro->cons, "  ");
 			} else if (ch == 0xff) {
-				r_kons_print (ro->cons, "##");
+				r_cons_print (ro->cons, "##");
 			} else if (IS_PRINTABLE (ch)) {
 				r_cons_printf (ro->cons, ".%c", ch);
 			} else {

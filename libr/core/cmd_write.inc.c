@@ -434,7 +434,7 @@ static int cmd_wo(void *data, const char *input) {
 				write_encrypted_block (core, algo, key, direction, iv);
 			} else {
 				char *s = r_muta_list (core->muta, R_MUTA_TYPE_CRYPTO, 0);
-				r_kons_print (core->cons, s);
+				r_cons_print (core->cons, s);
 				free (s);
 				r_core_cmd_help_match_spec (core, help_msg_wo, "wo", input[0]);
 			}
@@ -457,7 +457,7 @@ static int cmd_wo(void *data, const char *input) {
 				write_block_signature (core, algo, key);
 			} else {
 				char *s = r_muta_list (core->muta, R_MUTA_TYPE_SIGN, 0);
-				r_kons_print (core->cons, s);
+				r_cons_print (core->cons, s);
 				free (s);
 				r_core_cmd_help_match_spec (core, help_msg_wo, "wo", input[0]);
 			}
@@ -1453,7 +1453,7 @@ static int cmd_wc(void *data, const char *input) {
 	case '\0': // "wc"
 		{
 			char *res = r_io_cache_list (core->io, 0, false);
-			r_kons_print (core->cons, res);
+			r_cons_print (core->cons, res);
 			free (res);
 		}
 		break;
@@ -1498,7 +1498,7 @@ static int cmd_wc(void *data, const char *input) {
 			} else {
 				res = r_io_cache_list (core->io, 0, true);
 			}
-			r_kons_print (core->cons, res);
+			r_cons_print (core->cons, res);
 			free (res);
 		}
 		break;
@@ -1537,7 +1537,7 @@ static int cmd_wc(void *data, const char *input) {
 	case '*': // "wc*"
 		{
 			char *res = r_io_cache_list (core->io, 1, input[1] == '*');
-			r_kons_print (core->cons, res);
+			r_cons_print (core->cons, res);
 			free (res);
 		}
 		break;
@@ -1609,7 +1609,7 @@ static int cmd_wc(void *data, const char *input) {
 	case 'j': // "wcj"
 		{
 			char *res = r_io_cache_list (core->io, 2, false);
-			r_kons_print (core->cons, res);
+			r_cons_print (core->cons, res);
 			free (res);
 		}
 		break;

@@ -62,7 +62,7 @@ R_IPI void pager_printpage(RCons *cons, const char *line, int *index, RList **ml
 		r_strpool_ansi_trim (p, w);
 		r_cons_reset_colors (cons);
 		if (i + 1 == to) {
-			r_kons_print (cons, p->str);
+			r_cons_print (cons, p->str);
 		} else {
 			r_cons_println (cons, p->str);
 		}

@@ -255,7 +255,7 @@ static int cmd_sort(void *data, const char *input) { // "sort"
 		} else {
 			char *res = r_syscmd_sort (arg);
 			if (res) {
-				r_kons_print (core->cons, res);
+				r_cons_print (core->cons, res);
 				free (res);
 			}
 		}

@@ -3607,9 +3607,9 @@ static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, RAnalFunct
 			if (color > 0) {
 				const char *kolor = cons->context->pal.prompt;
 				r_cons_gotoxy (cons, 0, 0);
-				r_kons_print (cons, kolor? kolor: Color_WHITE);
-				r_kons_print (cons, g->title);
-				r_kons_print (cons, Color_RESET"\r");
+				r_cons_print (cons, kolor? kolor: Color_WHITE);
+				r_cons_print (cons, g->title);
+				r_cons_print (cons, Color_RESET"\r");
 			} else {
 				W (g->title); // canvas write is always black/white
 			}
@@ -3634,7 +3634,7 @@ static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, RAnalFunct
 		}
 		if (R_STR_ISNOTEMPTY (cmdv)) {
 			r_cons_gotoxy (cons, 0, 2);
-			r_kons_print (cons, Color_RESET);
+			r_cons_print (cons, Color_RESET);
 			r_core_cmd0 (core, cmdv);
 			mustFlush = true;
 		}
@@ -4249,8 +4249,8 @@ static void goto_asmqjmps(RAGraph *g, RCore *core) {
 	r_cons_get_size (cons, &rows);
 	r_cons_gotoxy (cons, 0, rows);
 	r_cons_clear_line (cons, 0);
-	r_kons_print (cons, Color_RESET);
-	r_kons_print (cons, h);
+	r_cons_print (cons, Color_RESET);
+	r_cons_print (cons, h);
 	r_cons_flush (cons);
 
 	do {

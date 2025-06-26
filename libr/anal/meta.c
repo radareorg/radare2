@@ -566,7 +566,7 @@ beach:
 	if (!tq || !strstr (tq, "?")) {
 		if (t) {
 			char *s = r_table_tostring (t);
-			r_kons_print (cons, s);
+			r_cons_print (cons, s);
 			free (s);
 		} else if (pj) {
 			pj_end (pj);

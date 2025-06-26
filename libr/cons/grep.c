@@ -593,7 +593,7 @@ static void colorcode(RCons *cons) {
 	cons->context->buffer = cres;
 }
 
-R_API void r_kons_grepbuf(RCons *cons) {
+R_API void r_cons_grepbuf(RCons *cons) {
 	const char *buf = cons->context->buffer;
 	size_t len = cons->context->buffer_len;
 	RConsGrep *grep = &cons->context->grep;
@@ -1129,6 +1129,6 @@ R_API int r_cons_grep_line(RCons *cons, char *buf, int len) {
 R_API void r_cons_grep(RCons * R_NONNULL cons, const char *grep) {
 	R_RETURN_IF_FAIL (grep);
 	r_cons_grep_expression (cons, grep);
-	r_kons_grepbuf (cons);
+	r_cons_grepbuf (cons);
 }
 #endif

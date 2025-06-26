@@ -2161,11 +2161,11 @@ R_API void r_core_debug_ri(RCore *core, RReg *reg, int mode) {
 		if (list) {
 			RListIter *iter;
 			const char *r;
-			r_kons_print (core->cons, Color_YELLOW);
+			r_cons_print (core->cons, Color_YELLOW);
 			r_list_foreach (list, iter, r) {
 				r_cons_printf (core->cons, " %s", r);
 			}
-			r_kons_print (core->cons, Color_RESET);
+			r_cons_print (core->cons, Color_RESET);
 			ut64 o_offset = core->addr;
 			char *rrstr = r_core_anal_hasrefs (core, *addr, true);
 			core->addr = o_offset;
@@ -2247,7 +2247,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 		if (delta && use_colors) {
 			namestr = r_str_newf ("%s%s%s", color, r->name, colorend);
 			valuestr = r_str_newf ("%s0x%"PFMT64x"%s", color, value, colorend);
-			r_kons_print (core->cons, Color_RESET);
+			r_cons_print (core->cons, Color_RESET);
 		} else {
 			namestr = strdup (r->name);
 			valuestr = r_str_newf ("0x%"PFMT64x, value);
@@ -2266,7 +2266,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 	}
 
 	char *s = (mode == 'j')? r_table_tojson (t): r_table_tostring (t);
-	r_kons_print (core->cons, s);
+	r_cons_print (core->cons, s);
 	free (s);
 	r_table_free (t);
 	if (scr_color) {
@@ -3960,21 +3960,21 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	case '*':
 		{
 			char *s = r_bp_list (core->dbg->bp, 1);
-			r_kons_print (core->cons, s);
+			r_cons_print (core->cons, s);
 			free (s);
 		}
 		break;
 	case 0:
 		{
 			char *s = r_bp_list (core->dbg->bp, 0);
-			r_kons_print (core->cons, s);
+			r_cons_print (core->cons, s);
 			free (s);
 		}
 		break;
 	case 'j':
 		{
 			char *s = r_bp_list (core->dbg->bp, 'j');
-			r_kons_print (core->cons, s);
+			r_cons_print (core->cons, s);
 			free (s);
 		}
 		break;
@@ -4097,7 +4097,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		case 0:
 			{
 				char *s = r_bp_plugin_list (core->dbg->bp);
-				r_kons_print (core->cons, s);
+				r_cons_print (core->cons, s);
 				free (s);
 			}
 			break;
@@ -4485,7 +4485,7 @@ static void r_core_debug_kill(RCore *core, const char *input) {
 		case 0: // "dko" - list signal skip/conts
 			{
 				char *s = r_debug_signal_list (core->dbg, 1);
-				r_kons_print (core->cons, s);
+				r_cons_print (core->cons, s);
 				free (s);
 			}
 			break;
@@ -4531,13 +4531,13 @@ static void r_core_debug_kill(RCore *core, const char *input) {
 	} else if (*input == 'j') {
 		core->dbg->pj = r_core_pj_new (core); /// XXX dbg->pj is an antipattern R2_600
 		char *s = r_debug_signal_list (core->dbg, 2);
-		r_kons_print (core->cons, s);
+		r_cons_print (core->cons, s);
 		free (s);
 		pj_free (core->dbg->pj);
 		core->dbg->pj = NULL;
 	} else if (!*input) {
 		char *s = r_debug_signal_list (core->dbg, 0);
-		r_kons_print (core->cons, s);
+		r_cons_print (core->cons, s);
 		free (s);
 #if 0
 		RListIter *iter;

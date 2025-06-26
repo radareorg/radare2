@@ -152,7 +152,7 @@ R_API void r_cons_print_at(RCons *cons, const char *_str, int x, char y, int w, 
 	}
 	// TODO: what happens if w == 0 || h == 0 ?
 	char *str = r_str_ansi_crop (_str, 0, 0, w + 1, h);
-	r_kons_print (cons, R_CONS_CURSOR_SAVE);
+	r_cons_print (cons, R_CONS_CURSOR_SAVE);
 	for (o = i = len = 0; str[i]; i++, len++) {
 		if (w < 0 || rows > w) {
 			break;
@@ -173,8 +173,8 @@ R_API void r_cons_print_at(RCons *cons, const char *_str, int x, char y, int w, 
 		r_cons_gotoxy (cons, x, y + rows);
 		r_cons_write (cons, str + o, len);
 	}
-	r_kons_print (cons, Color_RESET);
-	r_kons_print (cons, R_CONS_CURSOR_RESTORE);
+	r_cons_print (cons, Color_RESET);
+	r_cons_print (cons, R_CONS_CURSOR_RESTORE);
 	free (str);
 }
 
@@ -326,7 +326,7 @@ R_API void r_cons_line(RCons *cons, int x, int y, int x2, int y2, int ch) {
 	for (X = x; X < x2; X++) {
 		for (Y = y; Y < y2; Y++) {
 			r_cons_gotoxy (cons, X, Y);
-			r_kons_print (cons, chstr);
+			r_cons_print (cons, chstr);
 		}
 	}
 }
@@ -490,7 +490,7 @@ R_API void r_cons_fill_line(RCons *cons) {
 	if (p) {
 		memset (p, ' ', cols);
 		p[cols] = 0;
-		r_kons_print (cons, p);
+		r_cons_print (cons, p);
 		if (white != p) {
 			free (p);
 		}
@@ -503,7 +503,7 @@ R_API void r_cons_filter(RCons *cons) {
 	if (ctx->filter || ctx->grep.tokens_used \
 			|| (ctx->grep.strings && r_list_length (ctx->grep.strings) > 0) \
 			|| ctx->grep.less || ctx->grep.json) {
-		(void)r_kons_grepbuf (cons);
+		(void)r_cons_grepbuf (cons);
 		ctx->filter = false;
 	}
 	/* html */
@@ -699,10 +699,6 @@ R_API int r_cons_get_column(RCons *cons) {
 }
 #endif
 
-R_API void r_cons_print(RCons *cons, const char *str) {
-	r_kons_print (cons, str);
-}
-
 R_API bool r_cons_is_windows(void) {
 #if R2__WINDOWS__
 	return true;
@@ -753,7 +749,7 @@ R_API bool r_cons_is_tty(void) {
 }
 
 R_API void r_cons_invert(RCons *cons, int set, int color) {
-	r_kons_print (cons, R_CONS_INVERT (set, color));
+	r_cons_print (cons, R_CONS_INVERT (set, color));
 }
 
 #if R2__WINDOWS__
@@ -991,7 +987,7 @@ R_API char *r_cons_swap_ground(const char *col) {
 
 static void mygrep(RCons *cons, const char *grep) {
 	r_cons_grep_expression (cons, grep);
-	r_kons_grepbuf (cons);
+	r_cons_grepbuf (cons);
 }
 
 R_API void r_cons_bind(RCons *cons, RConsBind *bind) {
@@ -1241,7 +1237,7 @@ R_API void r_cons_set_raw(RCons *I, bool is_raw) {
 
 R_API void r_cons_newline(RCons *cons) {
 	if (!cons->null) {
-		r_kons_print (cons, "\n");
+		r_cons_print (cons, "\n");
 	}
 #if 0
 This place is wrong to manage the color reset, can interfire with r2pipe output sending resetchars
@@ -1252,9 +1248,9 @@ now the console color is reset with each \n (same stuff do it here but in correc
 #if R2__WINDOWS__
 	r_cons_reset_colors();
 #else
-	r_kons_print (cons, Color_RESET_ALL"\n");
+	r_cons_print (cons, Color_RESET_ALL"\n");
 #endif
-	if (cons->is_html) r_kons_print (cons, "<br />\n");
+	if (cons->is_html) r_cons_print (cons, "<br />\n");
 #endif
 }
 
@@ -1294,14 +1290,14 @@ R_API void r_cons_printf_list(RCons *cons, const char *format, va_list ap) {
 			cons->context->breaked = true; // Initial allocation failed
 		}
 	} else {
-		r_kons_print (cons, format);
+		r_cons_print (cons, format);
 	}
 	va_end (ap2);
 	va_end (ap3);
 }
 
 R_API void r_cons_println(RCons *cons, const char* str) {
-	r_kons_print (cons, str);
+	r_cons_print (cons, str);
 	r_cons_newline (cons);
 }
 
@@ -1341,7 +1337,7 @@ R_API void r_cons_reset(RCons *cons) {
 }
 
 R_API void r_cons_reset_colors(RCons *cons) {
-	r_kons_print (cons, Color_RESET_BG Color_RESET);
+	r_cons_print (cons, Color_RESET_BG Color_RESET);
 }
 
 R_API void r_cons_context_free(RConsContext * R_NULLABLE ctx) {
@@ -1534,7 +1530,7 @@ R_API void r_cons_echo(RCons *cons, const char *msg) {
 	} else {
 		if (cons->echodata) {
 			char *data = r_strbuf_drain (cons->echodata);
-			r_kons_print (cons, data);
+			r_cons_print (cons, data);
 			r_cons_newline (cons);
 			cons->echodata = NULL;
 			free (data);
@@ -1570,7 +1566,7 @@ R_API void r_cons_show_cursor(RCons *I, int cursor) {
 }
 
 R_API void r_cons_print_clear(RCons *cons) {
-	r_kons_print (cons, "\x1b[0;0H\x1b[0m");
+	r_cons_print (cons, "\x1b[0;0H\x1b[0m");
 }
 
 R_API char *r_cons_lastline(RCons *cons, int *len) {
@@ -1738,7 +1734,7 @@ R_API void r_cons_clear(RCons *cons) {
 #if R2__WINDOWS__
 	r_cons_win_clear (cons);
 #else
-	r_kons_print (cons, Color_RESET R_CONS_CLEAR_SCREEN);
+	r_cons_print (cons, Color_RESET R_CONS_CLEAR_SCREEN);
 #endif
 }
 
@@ -1890,5 +1886,27 @@ R_API void r_cons_zero(RCons *cons) {
 	if (write (1, "", 1) != 1) {
 		cons->context->breaked = true;
 	}
+}
+
+R_API void r_cons_print(RCons *cons, const char *str) {
+	R_RETURN_IF_FAIL (str);
+	if (cons->null) {
+		return;
+	}
+	size_t len = strlen (str);
+	if (len > 0) {
+		r_cons_write (cons, str, len);
+	}
+}
+
+R_API int r_cons_printf(RCons *cons, const char *format, ...) {
+	va_list ap;
+	if (R_STR_ISEMPTY (format)) {
+		return -1;
+	}
+	va_start (ap, format);
+	r_cons_printf_list (cons, format, ap);
+	va_end (ap);
+	return 0;
 }
 

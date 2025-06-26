@@ -756,7 +756,7 @@ static void __cmd_pad(RCore *core, const char *arg) {
 	bool is_pseudo = r_config_get_b (core->config, "asm.pseudo");
 	RAsmCode *acode = r_asm_mdisassemble_hexstr (core->rasm, is_pseudo ? core->rasm->parse : NULL, arg);
 	if (acode) {
-		r_kons_print (core->cons, acode->assembly);
+		r_cons_print (core->cons, acode->assembly);
 		r_asm_code_free (acode);
 	} else {
 		R_LOG_ERROR ("Invalid hexstr");
@@ -957,7 +957,7 @@ static void cmd_printmsg(RCore *core, const char *input) {
 	} else if (r_str_startswith (input, "ln ")) {
 		r_cons_println (core->cons, input + 3);
 	} else if (r_str_startswith (input, " ")) {
-		r_kons_print (core->cons, input + 1);
+		r_cons_print (core->cons, input + 1);
 	} else if (r_str_startswith (input, "f ")) {
 		R_LOG_TODO ("printf not implemented. use ?e, echo or print");
 	} else if (r_str_startswith (input, "fln ")) {
@@ -1619,7 +1619,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 		} else {
 			char *s = r_protobuf_decode (data, size, input[1]);
 			if (s) {
-				r_kons_print (core->cons, s);
+				r_cons_print (core->cons, s);
 				free (s);
 			}
 		}
@@ -1637,7 +1637,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 		} else {
 			char *s = r_axml_decode (data, size, NULL);
 			if (s) {
-				r_kons_print (core->cons, s);
+				r_cons_print (core->cons, s);
 				free (s);
 			} else {
 				R_LOG_ERROR ("Malformed object: did you supply enough data? try to change the block size (see b?)");
@@ -2557,11 +2557,11 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		snprintf (bytes + j + i, bytes_size - j - i, "%0X", i % 17);
 	}
 	if (usecolor) {
-		r_kons_print (core->cons, Color_GREEN);
-		r_kons_print (core->cons, bytes);
-		r_kons_print (core->cons, Color_RESET);
+		r_cons_print (core->cons, Color_GREEN);
+		r_cons_print (core->cons, bytes);
+		r_cons_print (core->cons, Color_RESET);
 	} else {
-		r_kons_print (core->cons, bytes);
+		r_cons_print (core->cons, bytes);
 	}
 	r_cons_newline (core->cons);
 
@@ -2851,15 +2851,15 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			}
 			out[out_sz - 1] = 0;
 			if (hasline) {
-				r_kons_print (core->cons, addrpad);
-				r_kons_print (core->cons, out + 1);
+				r_cons_print (core->cons, addrpad);
+				r_cons_print (core->cons, out + 1);
 				r_cons_newline (core->cons);
 			}
 			marks = false;
 			free (out);
 		}
-		r_kons_print (core->cons, bytes);
-		r_kons_print (core->cons, chars);
+		r_cons_print (core->cons, bytes);
+		r_cons_print (core->cons, chars);
 
 		if (core->print->use_comments) {
 			for (j = 0; j < nb_cols; j++) {
@@ -3345,9 +3345,9 @@ static int cmd_print_pxA(RCore *core, int len, const char *input) {
 			r_cons_printf (core->cons, "%s%s%s\x1b[0m", bgcolor, fgcolor, text);
 		} else {
 			if (text) {
-				r_kons_print (core->cons, text);
+				r_cons_print (core->cons, text);
 			} else {
-				r_kons_print (core->cons, "  ");
+				r_cons_print (core->cons, "  ");
 			}
 		}
 		if (show_cursor) {
@@ -3462,7 +3462,7 @@ static void cmd_print_op(RCore *core, const char *input) {
 		}
 		if (!args || !algo) {
 			char *s = r_muta_list (core->muta, R_MUTA_TYPE_SIGN, 0);
-			r_kons_print (core->cons, s);
+			r_cons_print (core->cons, s);
 			free (s);
 			r_core_cmd_help_match (core, help_msg_po, "poS");
 			break;
@@ -3503,7 +3503,7 @@ static void cmd_print_op(RCore *core, const char *input) {
 		}
 		if (!args || !algo) {
 			char *s = r_muta_list (core->muta, R_MUTA_TYPE_CRYPTO, 0);
-			r_kons_print (core->cons, s);
+			r_cons_print (core->cons, s);
 			free (s);
 			r_core_cmd_help_match_spec (core, help_msg_po, "po", input[1]);
 			break;
@@ -4012,7 +4012,7 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 	if (!i0 || i0 == 'l' || i0 == 'L') {
 		RMuta *cry = r_muta_new ();
 		char *s = r_muta_list (cry, R_MUTA_TYPE_HASH, 'q');
-		r_kons_print (core->cons, s);
+		r_cons_print (core->cons, s);
 		free (s);
 		r_muta_free (cry);
 		return true;
@@ -4020,7 +4020,7 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 	if (i0 == 'j') { // "phj"
 		RMuta *cry = r_muta_new ();
 		char *s = r_muta_list (cry, R_MUTA_TYPE_ALL, 'j');
-		r_kons_print (core->cons, s);
+		r_cons_print (core->cons, s);
 		free (s);
 		r_muta_free (cry);
 		return true;
@@ -4028,7 +4028,7 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 	if (i0 == 'J') { // "phJ"
 		RMuta *cry = r_muta_new ();
 		char *s = r_muta_list (cry, R_MUTA_TYPE_HASH, 'J');
-		r_kons_print (core->cons, s);
+		r_cons_print (core->cons, s);
 		free (s);
 		r_muta_free (cry);
 		return true;
@@ -4575,12 +4575,12 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 				if (use_color) {
 					if (s) {
 						if (s->perm & R_PERM_X) {
-							r_kons_print (cons, cons->context->pal.graph_trufae);
+							r_cons_print (cons, cons->context->pal.graph_trufae);
 						} else {
-							r_kons_print (cons, cons->context->pal.graph_true);
+							r_cons_print (cons, cons->context->pal.graph_true);
 						}
 					} else {
-						r_kons_print (cons, cons->context->pal.graph_false);
+						r_cons_print (cons, cons->context->pal.graph_false);
 					}
 				}
 				if (as->block[p].strings > 0) {
@@ -4621,7 +4621,7 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 	case 'e':
 	default:
 		if (use_color) {
-			r_kons_print (core->cons, Color_RESET);
+			r_cons_print (core->cons, Color_RESET);
 		}
 		r_cons_printf (core->cons, "] 0x%08"PFMT64x "\n", to);
 		break;
@@ -6633,7 +6633,7 @@ repeat_inside:;
 		}
 	}
 	char *s = r_strbuf_drain (sb);
-	r_kons_print (core->cons, s);
+	r_cons_print (core->cons, s);
 	free (s);
 	r_core_seek (core, initial_addr, true);
 }
@@ -7808,7 +7808,7 @@ static int cmd_print(void *data, const char *input) {
 					}
 				} else {
 					if (input[2] == 'l') { // "psnl"
-						r_kons_print (core->cons, "0\n");
+						r_cons_print (core->cons, "0\n");
 					} else {
 						// cant find newline, print block
 						r_cons_write (core->cons, (const char *)core->block, core->blocksize);
@@ -7840,7 +7840,7 @@ static int cmd_print(void *data, const char *input) {
 						char ch = (char) block[i];
 						if (ch == 0xa) {
 							char *s = r_strbuf_drain (sb);
-							r_kons_print (core->cons, s); // TODO: missing newline?
+							r_cons_print (core->cons, s); // TODO: missing newline?
 							free (s);
 							sb = r_strbuf_new ("");
 							r_cons_newline (core->cons);
@@ -7880,7 +7880,7 @@ static int cmd_print(void *data, const char *input) {
 						}
 					}
 					char *s = r_strbuf_drain (sb);
-					r_kons_print (core->cons, s); // TODO: missing newline?
+					r_cons_print (core->cons, s); // TODO: missing newline?
 					free (s);
 				}
 			}
@@ -8814,10 +8814,10 @@ static int cmd_print(void *data, const char *input) {
 						if (j < len) {
 							r_cons_printf (core->cons, "\xf0\x9f%c%c ", emoji[*p * 2], emoji[*p * 2 + 1]);
 						} else {
-							r_kons_print (core->cons, "  ");
+							r_cons_print (core->cons, "  ");
 						}
 					}
-					r_kons_print (core->cons, " ");
+					r_cons_print (core->cons, " ");
 					for (j = i; j < len && j < i + cols; j += 1) {
 						ut8 *p = (ut8 *) core->block + j;
 						r_print_byte (core->print, core->addr + j, "%c", j, *p);
@@ -9419,7 +9419,7 @@ R_API void r_print_offset(RPrint *p, ut64 off, int invert, int delta, const char
 				}
 			}
 		}
-		r_kons_print (core->cons, " ");
+		r_cons_print (core->cons, " ");
 	} else {
 		if (offseg) {
 			ut32 s, a;

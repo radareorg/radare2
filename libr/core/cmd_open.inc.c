@@ -854,9 +854,9 @@ static void cmd_oma(RCore *core, const char *input) {
 	switch (input[2]) {
 	case '?':
 		r_core_cmd_help_match (core, help_msg_om, "oma");
-		r_kons_print (core->cons, "Type: ");
+		r_cons_print (core->cons, "Type: ");
 		r_cons_println (core->cons, "heap, stack, mmap, mmio, dma, jit, bss, shared, kernel, guard, null, gpu, tls, buffer, cow, pagetables");
-		r_kons_print (core->cons, "Flags: ");
+		r_cons_print (core->cons, "Flags: ");
 		r_cons_println (core->cons, "paged, private, persistent, aslr, swap, dep, enclave, compressed, encrypted, large");
 		break;
 	case 0:

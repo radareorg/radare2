@@ -1109,7 +1109,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		}
 		r_core_return_value (core, R_CMD_RC_SUCCESS);
 		str[len] = 0;
-		r_kons_print (core->cons, str);
+		r_cons_print (core->cons, str);
 		free ((void *)str);
 		free ((void *)uri);
 		return;

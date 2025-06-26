@@ -1820,7 +1820,7 @@ static void visual_textlogs(RCore *core) {
 			" q       - quit this viewer mode\n"
 			" jk      - scroll up and down\n"
 			" JK      - faster scroll up and down (10x)\n";
-			r_kons_print (cons, help);
+			r_cons_print (cons, help);
 		} else {
 			r_core_cmdf (core, "Tv %d %d", index, shift);
 			if (inbody) {
@@ -3824,7 +3824,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'Y':
 			if (!core->yank_buf) {
-				r_kons_print (core->cons, "Cannot paste, clipboard is empty.\n");
+				r_cons_print (core->cons, "Cannot paste, clipboard is empty.\n");
 				r_cons_flush (core->cons);
 				r_cons_any_key (core->cons, NULL);
 				r_cons_clear00 (core->cons);
@@ -4241,7 +4241,7 @@ static void visual_title(RCore *core, int color) {
 	}
 
 	if (color) {
-		r_kons_print (core->cons, BEGIN);
+		r_cons_print (core->cons, BEGIN);
 	}
 	const char *cmd_visual = r_config_get (core->config, "cmd.visual");
 	if (R_STR_ISNOTEMPTY (cmd_visual)) {
@@ -4339,12 +4339,12 @@ static void visual_title(RCore *core, int color) {
 			r_cons_printf ("[tab:%d/%d]", core->visual.tab, tabsCount);
 #endif
 		}
-		r_kons_print (core->cons, title);
+		r_cons_print (core->cons, title);
 		free (title);
 		free (address);
 	}
 	if (color) {
-		r_kons_print (core->cons, Color_RESET);
+		r_cons_print (core->cons, Color_RESET);
 	}
 }
 
@@ -4414,7 +4414,7 @@ R_API void r_core_print_scrollbar(RCore *core) {
 	}
 	char *s = r_str_newf ("[0x%08"PFMT64x"]", from);
 	r_cons_gotoxy (core->cons, w - strlen (s) + 1, 2);
-	r_kons_print (core->cons, s);
+	r_cons_print (core->cons, s);
 	free (s);
 
 	ut64 block = (to - from) / h;
@@ -4446,7 +4446,7 @@ R_API void r_core_print_scrollbar(RCore *core) {
 	s = r_str_newf ("[0x%08"PFMT64x"]", to);
 	if (s) {
 		r_cons_gotoxy (core->cons, w - strlen (s) + 1, h + 1);
-		r_kons_print (core->cons, s);
+		r_cons_print (core->cons, s);
 		free (s);
 	}
 	r_list_free (words);
@@ -4474,7 +4474,7 @@ R_API void r_core_print_scrollbar_bottom(RCore *core) {
 	char *s = r_str_newf ("[0x%08"PFMT64x"]", from);
 	int slen = strlen (s) + 1;
 	r_cons_gotoxy (cons, 0, h + 1);
-	r_kons_print (cons, s);
+	r_cons_print (cons, s);
 	free (s);
 
 	int linew = (w - (slen * 2)) + 1;
@@ -4486,15 +4486,15 @@ R_API void r_core_print_scrollbar_bottom(RCore *core) {
 	for (i = 0; i < linew + 1; i++) {
 		r_cons_gotoxy (cons, i + slen, h + 1);
 		if (hadMatch) {
-			r_kons_print (cons, "-");
+			r_cons_print (cons, "-");
 		} else {
 			ut64 cur = from + (block * i);
 			ut64 nex = from + (block * (i + 2));
 			if (R_BETWEEN (cur, core->addr, nex)) {
-				r_kons_print (cons, Color_INVERT"-"Color_RESET);
+				r_cons_print (cons, Color_INVERT"-"Color_RESET);
 				hadMatch = true;
 			} else {
-				r_kons_print (cons, "-");
+				r_cons_print (cons, "-");
 			}
 		}
 	}
@@ -4514,7 +4514,7 @@ R_API void r_core_print_scrollbar_bottom(RCore *core) {
 	s = r_str_newf ("[0x%08"PFMT64x"]", to);
 	if (s) {
 		r_cons_gotoxy (cons, linew + slen + 1, h + 1);
-		r_kons_print (cons, s);
+		r_cons_print (cons, s);
 		free (s);
 	}
 	r_list_free (words);
@@ -4546,7 +4546,7 @@ R_IPI void visual_refresh(RCore *core) {
 	}
 	r_cons_flush (cons);
 	r_cons_print_clear (cons);
-	r_kons_print (cons, cons->context->pal.bgprompt);
+	r_cons_print (cons, cons->context->pal.bgprompt);
 	cons->context->noflush = true;
 
 	int hex_cols = r_config_get_i (core->config, "hex.cols");
@@ -4631,7 +4631,7 @@ R_IPI void visual_refresh(RCore *core) {
 		if (vsplit) {
 			res = r_str_ansi_crop (res, 0, 0, split_w, -1);
 		}
-		r_kons_print (cons, res);
+		r_cons_print (cons, res);
 		free (res);
 	}
 	free (cmd_str);
@@ -4642,11 +4642,11 @@ R_IPI void visual_refresh(RCore *core) {
 	RConsMark *mark = r_cons_mark_at (cons, 0, "cursor");
 	if (mark) {
 		int x = 60;
-		r_cons_gotoxy (cons, x, mark->row - 2); r_kons_print (cons, "   .-------------.");
-		r_cons_gotoxy (cons, x, mark->row - 1); r_kons_print (cons, "   |             |");
-		r_cons_gotoxy (cons, x, mark->row);     r_kons_print (cons, "--<  Hello world |");
-		r_cons_gotoxy (cons, x, mark->row + 1); r_kons_print (cons, "   |             |");
-		r_cons_gotoxy (cons, x, mark->row + 2); r_kons_print (cons, "   `-------------'");
+		r_cons_gotoxy (cons, x, mark->row - 2); r_cons_print (cons, "   .-------------.");
+		r_cons_gotoxy (cons, x, mark->row - 1); r_cons_print (cons, "   |             |");
+		r_cons_gotoxy (cons, x, mark->row);     r_cons_print (cons, "--<  Hello world |");
+		r_cons_gotoxy (cons, x, mark->row + 1); r_cons_print (cons, "   |             |");
+		r_cons_gotoxy (cons, x, mark->row + 2); r_cons_print (cons, "   `-------------'");
 	}
 
 	/* this is why there's flickering */
@@ -5049,7 +5049,7 @@ dodo:
 
 	r_cons_enable_mouse (core->cons, false);
 	if (core->visual.color) {
-		r_kons_print (core->cons, Color_RESET);
+		r_cons_print (core->cons, Color_RESET);
 	}
 	r_config_set_i (core->config, "scr.color", core->visual.color);
 	core->print->cur_enabled = false;
