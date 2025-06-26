@@ -1067,7 +1067,7 @@ static void print_fpu(RCons *cons, void *f) {
 #else
 	struct user_fpregs_struct fpregs = *(struct user_fpregs_struct *)f;
 	r_kons_printf (cons, "---- x86-32-noxmm ----\n");
-	PRINT_FPU_NOXMM (fpregs);
+	PRINT_FPU_NOXMM (cons, fpregs);
 	for (i = 0; i < 8; i++) {
 		ut64 *b = (ut64 *)(&fpregs.st_space[i*4]);
 		double *d = (double*)b;
