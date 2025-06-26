@@ -982,8 +982,6 @@ R_API int r_cons_grep_line(RCons *cons, char *buf, int len); // must be static
 
 R_API void r_cons_rgb(ut8 r, ut8 g, ut8 b, ut8 a);
 R_API void r_cons_rgb_fgbg(ut8 r, ut8 g, ut8 b, ut8 R, ut8 G, ut8 B);
-R_API void r_cons_rgb_init(void);
-R_API void r_kons_rgb_init(RCons *cons);
 R_API char *r_cons_rgb_str_mode(RCons *cons, char *outstr, size_t sz, RColor *rcolor);
 R_API char *r_cons_rgb_str(RCons *cons, char *outstr, size_t sz, RColor *rcolor);
 R_API char *r_cons_rgb_str_off(RCons *cons, char *outstr, size_t sz, ut64 off);
