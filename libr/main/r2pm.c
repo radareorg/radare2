@@ -1154,7 +1154,7 @@ static void r2pm_varprint(const char *name) {
 
 R_API int r_main_r2pm(int argc, const char **argv) {
 	bool havetoflush = false;
-	RCons *cons = r_cons_singleton ();
+	RCons *cons = r_cons_global (NULL);
 	if (!cons) {
 		havetoflush = true;
 		cons = r_cons_new2 ();
