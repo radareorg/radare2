@@ -15,7 +15,7 @@
 
 // copy from cbin.c modified to get pdb back
 int pdb_info(const char *file, RPdb *pdb) {
-	pdb->cb_printf = r_cons_printf;
+	pdb->cb_printf = r_cons_gprintf;
 	if (!init_pdb_parser (pdb, file)) {
 		return false;
 	}
@@ -28,7 +28,7 @@ int pdb_info(const char *file, RPdb *pdb) {
 }
 
 int pdb_info_save_types(RAnal *anal, const char *file, RPdb *pdb) {
-	pdb->cb_printf = r_cons_printf;
+	pdb->cb_printf = r_cons_gprintf;
 	if (!init_pdb_parser (pdb, file)) {
 		return false;
 	}
