@@ -3974,7 +3974,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	case 'j':
 		{
 			char *s = r_bp_list (core->dbg->bp, 'j');
-			r_cons_print (core->cons, s);
+			r_cons_println (core->cons, s);
 			free (s);
 		}
 		break;
