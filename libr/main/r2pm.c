@@ -1157,7 +1157,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 	RCons *cons = r_cons_singleton ();
 	if (!cons) {
 		havetoflush = true;
-		cons = r_kons_new ();
+		cons = r_cons_new2 ();
 	}
 #if R2__UNIX__
 	char *wd = getcwd (NULL, 0);

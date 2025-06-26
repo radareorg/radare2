@@ -164,7 +164,7 @@ static inline void init_cons_input(InputState *state) {
 	state->bufactive = true;
 }
 
-R_API RCons *r_kons_new(void) {
+R_API RCons *r_cons_new2(void) {
 	RCons *cons = R_NEW0 (RCons);
 #if 0
 	if (cons->refcnt != 1) {
@@ -243,7 +243,7 @@ R_API RCons *r_kons_new(void) {
 	return cons;
 }
 
-R_API void r_kons_free(RCons * R_NULLABLE cons) {
+R_API void r_cons_free2(RCons * R_NULLABLE cons) {
 	if (!cons) {
 		return;
 	}

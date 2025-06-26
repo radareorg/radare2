@@ -43,7 +43,7 @@ static void rafind_options_fini(RafindOptions *ro) {
 		ro->cur = 0;
 		r_list_free (ro->keywords);
 		ro->keywords = NULL;
-		r_kons_free (ro->cons);
+		r_cons_free2 (ro->cons);
 	}
 }
 
@@ -329,7 +329,7 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 		}
 	}
 done:
-//	r_kons_free (ro);
+//	r_cons_free2 (ro);
 err:
 	free (efile);
 	r_io_free (io);

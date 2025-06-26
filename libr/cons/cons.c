@@ -450,7 +450,7 @@ R_API bool r_cons_enable_mouse(RCons *cons, const bool enable) {
 }
 
 R_API RCons *r_cons_new(void) {
-	RCons *cons = r_kons_new ();
+	RCons *cons = r_cons_new2 ();
 	if (I) {
 		R_LOG_INFO ("Second cons!");
 		I = cons;
@@ -461,7 +461,7 @@ R_API RCons *r_cons_new(void) {
 }
 
 R_API void r_cons_free(RCons *cons) {
-	r_kons_free (cons);
+	r_cons_free2 (cons);
 	if (cons == I) {
 		I = NULL; // hack for globals
 	}
@@ -1793,7 +1793,7 @@ R_API const char *r_cons_get_buffer(RCons *cons, size_t *buffer_len) {
 
 #if 0
 #if R2__WINDOWS__
-R_IPI int r_kons_is_vtcompat(RCons *cons) {
+R_IPI int r_cons_is_vtcompat(RCons *cons) {
 	DWORD major;
 	DWORD minor;
 	DWORD release = 0;
