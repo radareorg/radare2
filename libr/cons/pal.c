@@ -130,7 +130,7 @@ static inline ut8 rgbnum(const char ch1, const char ch2) {
 	return r << 4 | r2;
 }
 
-R_IPI void r_cons_pal_clone(RConsContext *ctx) {
+R_IPI void pal_clone(RConsContext *ctx) {
 	int i;
 	/* Compute cons->pal values */
 	for (i = 0; keys[i].name; i++) {
@@ -148,7 +148,6 @@ R_IPI void r_cons_pal_clone(RConsContext *ctx) {
 		}
 	}
 }
-
 static bool is_valid_color(RColor c) {
 	if (c.r == 0 && c.g == 0 && c.b == 0) {
 		// no black
