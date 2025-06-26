@@ -534,10 +534,12 @@ static void cmd_fz(RCore *core, const char *input) {
 		}
 		break;
 	case '*':
-		r_flag_zone_list (core->flags, '*');
-		break;
 	case 0:
-		r_flag_zone_list (core->flags, 0);
+		{
+			char *s = r_flag_zone_list (core->flags, *input);
+			r_kons_print (core->cons, s);
+			free (s);
+		}
 		break;
 	}
 }
@@ -1934,7 +1936,9 @@ static int cmd_flag(void *data, const char *input) {
 				free (s);
 			}
 		} else {
-			r_flag_list (core->flags, *input, input[0]? input + 1: "");
+			char *s = r_flag_list (core->flags, *input, input[0]? input + 1: "");
+			r_kons_print (core->cons, s);
+			free (s);
 		}
 		break;
 	case 'i': // "fi"
@@ -1957,13 +1961,17 @@ static int cmd_flag(void *data, const char *input) {
 				arg = r_str_newf (" 0x%"PFMT64x" 0x%"PFMT64x,
 					core->addr, core->addr + core->blocksize);
 			}
-			r_flag_list (core->flags, 'i', arg);
+			char *s = r_flag_list (core->flags, 'i', arg);
+			r_kons_print (core->cons, s);
+			free (s);
 			free (arg);
 		} else {
 			// XXX dupe for prev case
 			char *arg = r_str_newf (" 0x%"PFMT64x" 0x%"PFMT64x,
 				core->addr, core->addr + core->blocksize);
-			r_flag_list (core->flags, 'i', arg);
+			char *s = r_flag_list (core->flags, 'i', arg);
+			r_kons_print (core->cons, s);
+			free (s);
 			free (arg);
 		}
 		break;

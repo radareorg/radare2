@@ -238,7 +238,6 @@ R_API RFlag *r_flag_new(void) {
 	}
 	f->lock = r_th_lock_new (true);
 	f->base = 0;
-	f->cb_printf = (PrintfCallback)printf;
 	f->zones = r_list_newf (r_flag_zone_item_free);
 	f->tags = sdb_new0 ();
 	f->ht_name = ht_pp_new (NULL, ht_free_flag, NULL);
@@ -286,8 +285,8 @@ R_API void r_flag_free(RFlag *f) {
 }
 
 static bool print_flag_name(RFlagItem *fi, void *user) {
-	RFlag *flag = (RFlag *)user;
-	flag->cb_printf ("%s\n", fi->name);
+	RStrBuf *sb = (RStrBuf *)user;
+	r_strbuf_appendf (sb, "%s\n", fi->name);
 	return true;
 }
 
@@ -300,6 +299,7 @@ struct print_flag_t {
 	RSpace *fs;
 	bool real;
 	const char *pfx;
+	RStrBuf *sb;
 };
 
 static bool print_flag_json(RFlagItem *fi, void *user) {
@@ -340,7 +340,7 @@ static bool print_flag_rad(RFlagItem *flag, void *user) {
 	}
 	if (!u->fs || flag->space != u->fs) {
 		u->fs = flag->space;
-		u->f->cb_printf ("fs %s\n", u->fs? u->fs->name: "*");
+		r_strbuf_appendf (u->sb, "fs %s\n", u->fs? u->fs->name: "*");
 	}
 	const char *cmt = r_flag_item_set_comment (u->f, flag, NULL);
 	const char *alias = r_flag_item_set_alias (u->f, flag, NULL);
@@ -354,13 +354,13 @@ static bool print_flag_rad(RFlagItem *flag, void *user) {
 		}
 	}
 	if (alias) {
-		u->f->cb_printf ("'fa %s %s\n", flag->name, alias);
+		r_strbuf_appendf (u->sb, "'fa %s %s\n", flag->name, alias);
 		if (comment_b64) {
-			u->f->cb_printf ("'fC %s %s\n",
+			r_strbuf_appendf (u->sb, "'fC %s %s\n",
 				flag->name, r_str_get (comment_b64));
 		}
 	} else {
-		u->f->cb_printf ("'f %s %" PFMT64d " 0x%08" PFMT64x "%s%s %s\n",
+		r_strbuf_appendf (u->sb, "'f %s %" PFMT64d " 0x%08" PFMT64x "%s%s %s\n",
 			flag->name, flag->size, flag->addr,
 			u->pfx? "+": "", r_str_get (u->pfx),
 			r_str_get (comment_b64));
@@ -378,16 +378,16 @@ static bool print_flag_orig_name(RFlagItem *fi, void *user) {
 	const char *alias = r_flag_item_set_alias (u->f, fi, NULL);
 	const char *name = u->real? fi->realname: (u->f->realnames? fi->realname: fi->name);
 	if (alias) {
-		u->f->cb_printf ("%s %"PFMT64d" %s\n", alias, fi->size, name);
+		r_strbuf_appendf (u->sb, "%s %"PFMT64d" %s\n", alias, fi->size, name);
 	} else {
-		u->f->cb_printf ("0x%08" PFMT64x " %" PFMT64d " %s\n", fi->addr, fi->size, name);
+		r_strbuf_appendf (u->sb, "0x%08" PFMT64x " %" PFMT64d " %s\n", fi->addr, fi->size, name);
 	}
 	return true;
 }
 
 /* print with r_cons the flag items in the flag f, given as a parameter */
-R_API void r_flag_list(RFlag *f, int rad, const char * R_NULLABLE pfx) {
-	R_RETURN_IF_FAIL (f);
+R_API char *r_flag_list(RFlag *f, int rad, const char * R_NULLABLE pfx) {
+	R_RETURN_VAL_IF_FAIL (f, NULL);
 	bool in_range = false;
 	ut64 range_from = UT64_MAX;
 	ut64 range_to = UT64_MAX;
@@ -411,9 +411,14 @@ R_API void r_flag_list(RFlag *f, int rad, const char * R_NULLABLE pfx) {
 	if (pfx && !*pfx) {
 		pfx = NULL;
 	}
+	char *res = NULL;
 	switch (rad) {
 	case 'q':
-		r_flag_foreach_space (f, r_flag_space_cur (f), print_flag_name, f);
+		{
+			RStrBuf *sb = r_strbuf_new ("");
+			r_flag_foreach_space (f, r_flag_space_cur (f), print_flag_name, sb);
+			res = r_strbuf_drain (sb);
+		}
 		break;
 	case 'j': {
 		PJ *pj = pj_new ();
@@ -428,8 +433,7 @@ R_API void r_flag_list(RFlag *f, int rad, const char * R_NULLABLE pfx) {
 		pj_a (pj);
 		r_flag_foreach_space (f, r_flag_space_cur (f), print_flag_json, &u);
 		pj_end (pj);
-		f->cb_printf ("%s\n", pj_string (pj));
-		pj_free (pj);
+		res = pj_drain (pj);
 		break;
 	}
 	case 1:
@@ -440,7 +444,8 @@ R_API void r_flag_list(RFlag *f, int rad, const char * R_NULLABLE pfx) {
 			.range_from = range_from,
 			.range_to = range_to,
 			.fs = NULL,
-			.pfx = pfx
+			.pfx = pfx,
+			.sb = r_strbuf_new ("")
 		};
 		r_flag_foreach_space (f, r_flag_space_cur (f), print_flag_rad, &u);
 		break;
@@ -453,7 +458,8 @@ R_API void r_flag_list(RFlag *f, int rad, const char * R_NULLABLE pfx) {
 				.in_range = in_range,
 				.range_from = range_from,
 				.range_to = range_to,
-				.real = (rad == 'n')
+				.real = (rad == 'n'),
+				.sb = r_strbuf_new ("")
 			};
 			r_flag_foreach_space (f, r_flag_space_cur (f), print_flag_orig_name, &u);
 		} else {
@@ -469,11 +475,11 @@ R_API void r_flag_list(RFlag *f, int rad, const char * R_NULLABLE pfx) {
 			pj_a (pj);
 			r_flag_foreach_space (f, r_flag_space_cur (f), print_flag_json, &u);
 			pj_end (pj);
-			f->cb_printf ("%s\n", pj_string (pj));
-			pj_free (pj);
+			res = pj_drain (pj);
 		}
 		break;
 	}
+	return res;
 }
 
 static RFlagItem *evalFlag(RFlag *f, RFlagItem *fi) {

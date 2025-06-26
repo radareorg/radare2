@@ -1167,7 +1167,9 @@ static bool bin_addrline(RCore *core, PJ *pj, int mode) {
 		}
 		if (loc_table) {
 			if (mode == R_MODE_PRINT) {
-				r_bin_dwarf_print_loc (loc_table, core->anal->config->bits / 8, r_cons_printf);
+				char *s = r_bin_dwarf_print_loc (loc_table, core->anal->config->bits / 8);
+				r_kons_print (core->cons, s);
+				free (s);
 			}
 			r_bin_dwarf_free_loc (loc_table);
 		}

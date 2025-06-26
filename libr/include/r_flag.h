@@ -60,7 +60,6 @@ typedef struct r_flag_t {
 	RSkipList *by_addr; /* flags sorted by addr, value=RFlagsAtOffset */
 	HtPP *ht_name; /* hashmap key=item name, value=RFlagItem */
 	HtUP *ht_meta; // hashtable for the flags metadata
-	PrintfCallback cb_printf;
 	RList *zones;
 	ut64 mask;
 	RThreadLock *lock;
@@ -113,7 +112,7 @@ R_API void r_flag_del_meta(RFlag *f, ut32 id);
 R_API void r_flag_bind(RFlag *io, RFlagBind *bnd);
 R_API RFlag *r_flag_new(void);
 R_API void r_flag_free(RFlag *f);
-R_API void r_flag_list(RFlag *f, int rad, const char *pfx);
+R_API char *r_flag_list(RFlag *f, int rad, const char *pfx);
 R_API bool r_flag_exist_at(RFlag *f, const char *flag_prefix, ut16 fp_size, ut64 addr);
 R_API RFlagItem *r_flag_get(RFlag *f, const char *name);
 R_API RFlagItem *r_flag_get_in(RFlag *f, ut64 addr);
@@ -228,7 +227,7 @@ R_API void r_flag_zone_item_free(void *a);
 R_API bool r_flag_zone_add(RFlag *fz, const char *name, ut64 addr);
 R_API bool r_flag_zone_del(RFlag *fz, const char *name);
 R_API bool r_flag_zone_around(RFlag *fz, ut64 addr, const char **prev, const char **next);
-R_API bool r_flag_zone_list(RFlag *fz, int mode);
+R_API char *r_flag_zone_list(RFlag *fz, int mode);
 R_API bool r_flag_zone_reset(RFlag *f);
 R_API RList *r_flag_zone_barlist(RFlag *f, ut64 from, ut64 bsize, int rows);
 

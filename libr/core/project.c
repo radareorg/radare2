@@ -563,7 +563,9 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 	if (opts & R_CORE_PRJ_FLAGS) {
 		r_kons_printf (cons, "# flags\n");
 		r_flag_space_push (core->flags, NULL);
-		r_flag_list (core->flags, true, NULL);
+		char *s = r_flag_list (core->flags, true, NULL);
+		r_kons_printf (cons, "%s", s);
+		free (s);
 		r_flag_space_pop (core->flags);
 		flush (core, sb);
 	}

@@ -56,13 +56,14 @@ R_API int r_bp_use(RBreakpoint *bp, const char *name, int bits) {
 	return false;
 }
 
-// TODO: deprecate
-R_API void r_bp_plugin_list(RBreakpoint *bp) {
+R_API char *r_bp_plugin_list(RBreakpoint *bp) {
 	RListIter *iter;
 	RBreakpointPlugin *b;
+	RStrBuf *sb = r_strbuf_new ("");
 	r_list_foreach (bp->plugins, iter, b) {
-		bp->cb_printf ("bp %c %s\n",
+		r_strbuf_appendf (sb, "bp %c %s\n",
 			(bp->cur && !strcmp (bp->cur->meta.name, b->meta.name))? '*': '-',
 			b->meta.name);
 	}
+	return r_strbuf_drain (sb);
 }

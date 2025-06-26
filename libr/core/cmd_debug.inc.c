@@ -3957,9 +3957,27 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			R_LOG_INFO ("Missing argument for dbm");
 		}
 		break;
-	case 'j': r_bp_list (core->dbg->bp, 'j'); break;
-	case '*': r_bp_list (core->dbg->bp, 1); break;
-	case '\0': r_bp_list (core->dbg->bp, 0); break;
+	case '*':
+		{
+			char *s = r_bp_list (core->dbg->bp, 1);
+			r_kons_print (core->cons, s);
+			free (s);
+		}
+		break;
+	case 0:
+		{
+			char *s = r_bp_list (core->dbg->bp, 0);
+			r_kons_print (core->cons, s);
+			free (s);
+		}
+		break;
+	case 'j':
+		{
+			char *s = r_bp_list (core->dbg->bp, 'j');
+			r_kons_print (core->cons, s);
+			free (s);
+		}
+		break;
 	case '-': // "db-"
 		if (input[2] == '*') {
 			r_bp_del_all (core->dbg->bp);
@@ -4077,7 +4095,11 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	case 'h': // "dbh"
 		switch (input[2]) {
 		case 0:
-			r_bp_plugin_list (core->dbg->bp);
+			{
+				char *s = r_bp_plugin_list (core->dbg->bp);
+				r_kons_print (core->cons, s);
+				free (s);
+			}
 			break;
 		case ' ':
 			if (input[3]) {

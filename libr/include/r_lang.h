@@ -20,7 +20,6 @@ typedef struct r_lang_t {
 	RCons *cons;
 	RList *defs;
 	RList *langs;
-	PrintfCallback cb_printf;
 	RCoreCmdStrCallback cmd_str;
 	RCoreCmdfCallback cmdf;
 	RCoreCallAtCallback call_at;

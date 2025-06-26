@@ -14,7 +14,6 @@ R_VEC_TYPE (RVecAnalRef, RAnalRef);
 R_IPI int Gload_index = 0;
 #endif
 
-
 static ut64 letter_divs[R_CORE_ASMQJMPS_LEN_LETTERS - 1] = {
 	R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS,
 	R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS,
@@ -2638,7 +2637,6 @@ R_API bool r_core_init(RCore *core) {
 	core->lang->call_at = (RCoreCallAtCallback) r_core_cmd_call_str_at;
 	r_core_bind_cons (core);
 	core->table = NULL;
-	core->lang->cb_printf = r_cons_printf;
 	r_lang_define (core->lang, "RCore", "core", core);
 	r_lang_set_user_ptr (core->lang, core);
 	core->rasm = core->egg->rasm;
@@ -2693,7 +2691,6 @@ R_API bool r_core_init(RCore *core) {
 	r_io_undo_enable (core->io, 1, 0); // TODO: configurable via eval
 	core->fs = r_fs_new ();
 	core->flags = r_flag_new ();
-	core->flags->cb_printf = r_cons_printf;
 	int flags = r_cons_canvas_flags (core->cons);
 	core->graph = r_agraph_new (r_cons_canvas_new (core->cons, 1, 1, flags));
 	core->graph->need_reload_nodes = false;
@@ -2744,7 +2741,6 @@ R_API bool r_core_init(RCore *core) {
 //	core->dbg->anal->reg = core->anal->reg; // XXX: dupped instance.. can cause lost pointerz
 	core->io->cb_printf = r_cons_printf;
 	core->dbg->cb_printf = r_cons_printf;
-	core->dbg->bp->cb_printf = r_cons_printf;
 	core->dbg->ev = core->ev;
 	r_core_config_init (core);
 	r_core_loadlibs_init (core);
@@ -3730,9 +3726,9 @@ R_API RBuffer *r_core_syscall(RCore *core, const char *name, const char *args) {
 #if 0
 		if (b->length > 0) {
 			for (i = 0; i < b->length; i++) {
-				r_cons_printf ("%02x", b->buf[i]);
+				r_kons_printf ("%02x", b->buf[i]);
 			}
-			r_cons_printf ("\n");
+			r_kons_printf ("\n");
 		}
 #endif
 	}
@@ -3905,7 +3901,7 @@ R_API char *r_core_cmd_str_r(RCore *core, const char *cmd) {
 	if (response) {
 		res = response->msg? strdup ((const char *)response->msg): NULL;
 	}
-	// r_cons_printf ("%s", response->msg);
+	// r_kons_printf ("%s", response->msg);
 	r_th_channel_message_free (message);
 	r_th_channel_promise_free (promise);
 	if (response && message != response) {

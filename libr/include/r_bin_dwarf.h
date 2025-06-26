@@ -901,7 +901,7 @@ R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode);
 R_API RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev(RBin *a, int mode);
 R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBin *a, RBinDwarfDebugAbbrev *da, int mode);
 R_API HtUP/*<offset, RBinDwarfLocList*>*/  *r_bin_dwarf_parse_loc(RBin *bin, int addr_size);
-R_API void r_bin_dwarf_print_loc(HtUP /*<offset, RBinDwarfLocList*>*/  *loc_table, int addr_size, PrintfCallback print);
+R_API char *r_bin_dwarf_print_loc(HtUP /*<offset, RBinDwarfLocList*>*/  *loc_table, int addr_size);
 R_API void r_bin_dwarf_free_loc(HtUP /*<offset, RBinDwarfLocList*>*/  *loc_table);
 R_API void r_bin_dwarf_free_debug_info(RBinDwarfDebugInfo *inf);
 R_API void r_bin_dwarf_free_debug_abbrev(RBinDwarfDebugAbbrev *da);

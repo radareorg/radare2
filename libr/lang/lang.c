@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2024 - pancake */
+/* radare2 - LGPL - Copyright 2009-2025 - pancake */
 
 #include <r_lang.h>
 #include <r_util.h>
@@ -53,7 +53,6 @@ R_API RLang *r_lang_new(void) {
 	}
 	lang->sessions = r_list_newf (r_lang_session_free);
 	lang->defs->free = (RListFree)r_lang_def_free;
-	lang->cb_printf = (PrintfCallback)printf;
 #if HAVE_SYSTEM
 #if R2__UNIX__
 	r_lang_plugin_add (lang, &r_lang_plugin_s);

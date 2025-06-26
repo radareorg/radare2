@@ -204,7 +204,7 @@ int r_bin_pdb_download(RCore *core, PJ *pj, SPDBOptions *options) {
 		pj_kb (pj, "download", (bool) ret);
 		pj_end (pj);
 	} else {
-		r_cons_printf ("PDB \"%s\" download %s\n",
+		r_kons_printf (core->cons, "PDB \"%s\" download %s\n",
 				opt.dbg_file, ret? "success": "failed");
 	}
 	deinit_pdb_downloader (&pdb_downloader);

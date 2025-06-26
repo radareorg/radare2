@@ -3126,9 +3126,10 @@ static bool sort_loclists(void *user, const ut64 key, const void *value) {
 	return true;
 }
 
-R_API void r_bin_dwarf_print_loc(HtUP /*<offset, RBinDwarfLocList*/ *loc_table, int addr_size, PrintfCallback print) {
-	R_RETURN_IF_FAIL (loc_table && print);
-	print ("\nContents of the .debug_loc section:\n");
+R_API char *r_bin_dwarf_print_loc(HtUP /*<offset, RBinDwarfLocList*/ *loc_table, int addr_size) {
+	R_RETURN_VAL_IF_FAIL (loc_table, NULL);
+	RStrBuf *sb = r_strbuf_new ("");
+	r_strbuf_append (sb, "\nContents of the .debug_loc section:\n");
 	RList /*<RBinDwarfLocList *>*/ *sort_list = r_list_new ();
 	/* sort the table contents by offset and print sorted
 	   a bit ugly, but I wanted to decouple the parsing and printing */
@@ -3140,16 +3141,17 @@ R_API void r_bin_dwarf_print_loc(HtUP /*<offset, RBinDwarfLocList*/ *loc_table, 
 		RBinDwarfLocRange *range;
 		ut64 base_offset = loc_list->offset;
 		r_list_foreach (loc_list->list, j, range) {
-			print ("0x%" PFMT64x " 0x%" PFMT64x " 0x%" PFMT64x "\n", base_offset, range->start, range->end);
+			r_strbuf_appendf (sb, "0x%" PFMT64x " 0x%" PFMT64x " 0x%" PFMT64x "\n", base_offset, range->start, range->end);
 			base_offset += addr_size * 2;
 			if (range->expression) {
 				base_offset += 2 + range->expression->length; /* 2 bytes for expr length */
 			}
 		}
-		print ("0x%" PFMT64x " <End of list>\n", base_offset);
+		r_strbuf_appendf (sb, "0x%" PFMT64x " <End of list>\n", base_offset);
 	}
-	print ("\n");
+	r_strbuf_append (sb, "\n");
 	r_list_free (sort_list);
+	return r_strbuf_drain (sb);
 }
 
 static void free_loc_table_entry(HtUPKv *kv) {

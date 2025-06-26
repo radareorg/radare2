@@ -28,7 +28,6 @@ R_API RBreakpoint *r_bp_new(void) {
 	bp->bps_idx = R_NEWS0 (RBreakpointItem*, bp->bps_idx_count);
 	bp->stepcont = R_BP_CONT_NORMAL;
 	bp->traces = r_bp_traptrace_new ();
-	bp->cb_printf = (PrintfCallback)printf;
 	bp->bps = r_list_newf ((RListFree)r_bp_item_free);
 	bp->plugins = r_list_newf ((RListFree)free);
 	bp->nhwbps = 0;
@@ -276,17 +275,16 @@ R_API void r_bp_set_trace_all(RBreakpoint *bp, int set) {
 	}
 }
 
-// TODO: deprecate or move into RCoreDebug ?
-R_API void r_bp_list(RBreakpoint *bp, int rad) {
+R_API char *r_bp_list(RBreakpoint *bp, int rad) {
 	RBreakpointItem *b;
 	RListIter *iter;
 	PJ *pj = NULL;
+	RStrBuf *sb = NULL;
 	if (rad == 'j') {
 		pj = pj_new ();
-		if (!pj) {
-			return;
-		}
 		pj_a (pj);
+	} else {
+		sb = r_strbuf_new ("");
 	}
 	r_list_foreach (bp->bps, iter, b) {
 		if (pj) {
@@ -303,12 +301,12 @@ R_API void r_bp_list(RBreakpoint *bp, int rad) {
 			pj_end (pj);
 		} else if (rad) {
 			if (b->module_name) {
-				bp->cb_printf ("dbm %s %"PFMT64d"\n", b->module_name, b->module_delta);
+				r_strbuf_appendf (sb, "dbm %s %"PFMT64d"\n", b->module_name, b->module_delta);
 			} else {
-				bp->cb_printf ("db 0x%08"PFMT64x"\n", b->addr);
+				r_strbuf_appendf (sb, "db 0x%08"PFMT64x"\n", b->addr);
 			}
 		} else {
-			bp->cb_printf ("0x%08"PFMT64x" - 0x%08"PFMT64x \
+			r_strbuf_appendf (sb, "0x%08"PFMT64x" - 0x%08"PFMT64x \
 				" %d %c%c%c %s %s %s %s cmd=\"%s\" cond=\"%s\" " \
 				"name=\"%s\" module=\"%s\"\n",
 				b->addr, b->addr + b->size, b->size,
@@ -327,9 +325,9 @@ R_API void r_bp_list(RBreakpoint *bp, int rad) {
 	}
 	if (pj) {
 		pj_end (pj);
-		bp->cb_printf ("%s\n", pj_string (pj));
-		pj_free (pj);
+		return pj_drain (pj);
 	}
+	return r_strbuf_drain (sb);
 }
 
 R_API RBreakpointItem *r_bp_item_new(RBreakpoint *bp) {
