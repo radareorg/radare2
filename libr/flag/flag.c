@@ -448,6 +448,7 @@ R_API char *r_flag_list(RFlag *f, int rad, const char * R_NULLABLE pfx) {
 			.sb = r_strbuf_new ("")
 		};
 		r_flag_foreach_space (f, r_flag_space_cur (f), print_flag_rad, &u);
+		res = r_strbuf_drain (u.sb);
 		break;
 	}
 	default:
@@ -462,6 +463,7 @@ R_API char *r_flag_list(RFlag *f, int rad, const char * R_NULLABLE pfx) {
 				.sb = r_strbuf_new ("")
 			};
 			r_flag_foreach_space (f, r_flag_space_cur (f), print_flag_orig_name, &u);
+			res = r_strbuf_drain (u.sb);
 		} else {
 			PJ *pj = pj_new ();
 			struct print_flag_t u = {
@@ -479,7 +481,7 @@ R_API char *r_flag_list(RFlag *f, int rad, const char * R_NULLABLE pfx) {
 		}
 		break;
 	}
-	return res;
+	return res? res: strdup ("");
 }
 
 static RFlagItem *evalFlag(RFlag *f, RFlagItem *fi) {

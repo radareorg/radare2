@@ -1937,7 +1937,11 @@ static int cmd_flag(void *data, const char *input) {
 			}
 		} else {
 			char *s = r_flag_list (core->flags, *input, input[0]? input + 1: "");
-			r_cons_print (core->cons, s);
+			if (*input == 'j') {
+				r_cons_println (core->cons, s);
+			} else {
+				r_cons_print (core->cons, s);
+			}
 			free (s);
 		}
 		break;
