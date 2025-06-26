@@ -7201,8 +7201,10 @@ toro:
 		ds->oplen = ds->analop.size;
 		if (ret > 0) {
 			ret = ds->oplen;
-			free (ds->opstr);
-			ds->opstr = strdup (ds->analop.mnemonic);
+			if (ds->analop.mnemonic) {
+				free (ds->opstr);
+				ds->opstr = strdup (ds->analop.mnemonic);
+			}
 		} else {
 			if (!ds->opstr) {
 				ds->opstr = strdup ("invalid");

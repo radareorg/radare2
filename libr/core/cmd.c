@@ -3080,9 +3080,10 @@ static int cmd_visual(void *data, const char *input) {
 }
 
 static int cmd_pipein(void *user, const char *input) {
+	RCore *core = (RCore *)user;
 	char *buf = strdup (input);
 	int len = r_str_unescape (buf);
-	r_cons_readpush (buf, len);
+	r_cons_readpush (core->cons, buf, len);
 	free (buf);
 	return 0;
 }

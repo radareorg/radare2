@@ -65,7 +65,7 @@ R_API char *r_asm_parse_immtrim(RAsm *a, const char *_opstr) {
 R_API char *r_asm_parse_subvar(RAsm *a, RAnalFunction * R_NULLABLE f, ut64 addr, int oplen, const char *data) {
 	R_RETURN_VAL_IF_FAIL (a, false);
 	RAsmPlugin *pcur = R_UNWRAP3 (a, cur, plugin);
-	if (pcur && pcur->subvar) {
+	if (pcur && pcur->subvar && data) {
 		return pcur->subvar (a->cur, f, addr, oplen, data);
 	}
 	return NULL;

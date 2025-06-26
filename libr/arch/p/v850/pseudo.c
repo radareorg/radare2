@@ -200,6 +200,9 @@ static char *parse(RAsmPluginSession *p, const char *data) {
 }
 
 static char *subvar(RAsmPluginSession *aps, RAnalFunction *f, ut64 addr, int oplen, const char *data) {
+	if (!data) {
+		return NULL;
+	}
 	char *r0 = strstr (data, "[r0]");
 	if (r0) {
 		char *neg = strstr (data, " -");
