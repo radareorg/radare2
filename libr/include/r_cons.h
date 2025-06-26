@@ -855,7 +855,6 @@ R_API void r_cons_break_timeout(RCons *cons, int timeout);
 R_API int r_cons_pipe_open(RCons *cons, const char *file, int fdn, int append);
 R_API void r_cons_pipe_close(RCons *cons, int fd);
 R_API void r_cons_pipe_close_all(RCons *cons);
-R_IPI void r_cons_pal_clone(RConsContext *ctx);
 R_API void *r_cons_sleep_begin(RCons *cons);
 R_API void r_cons_sleep_end(RCons *cons, void *user);
 R_API void r_cons_break_end(RCons *cons);
