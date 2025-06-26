@@ -1691,7 +1691,7 @@ repeat:
 		goto repeat;
 	case '-':
 		r_cons_gotoxy (cons, 0, 0);
-		if (r_kons_yesno (cons, 'y', "Do you want to delete this xref? (Y/n)")) {
+		if (r_cons_yesno (cons, 'y', "Do you want to delete this xref? (Y/n)")) {
 			delete_ref (core, xrefs, skip, xref);
 		}
 		goto repeat;

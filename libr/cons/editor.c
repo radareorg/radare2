@@ -144,7 +144,7 @@ R_API char *r_cons_editor(RCons *cons, const char *file, const char *str) {
 			}
 		}
 	}
-	if (!r_kons_yesno (cons, 'y', "Save? (Y/n)")) {
+	if (!r_cons_yesno (cons, 'y', "Save? (Y/n)")) {
 		r_list_free (G.lines);
 		return NULL;
 	}

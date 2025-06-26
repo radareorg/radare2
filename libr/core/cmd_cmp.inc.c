@@ -556,7 +556,7 @@ static int cmd_cmp_watcher(RCore *core, const char *input) {
 		if (input[1]) {
 			addr = r_num_math (core->num, input + 2);
 		}
-		if (addr == UT64_MAX && !r_kons_yesno (cons, 'n', "Delete all watchers? (y/N)")) {
+		if (addr == UT64_MAX && !r_cons_yesno (cons, 'n', "Delete all watchers? (y/N)")) {
 			return 1;
 		}
 		if (!r_core_cmpwatch_del (core, addr) && addr) {
@@ -572,7 +572,7 @@ static int cmd_cmp_watcher(RCore *core, const char *input) {
 		if (input[1]) {
 			addr = r_num_math (core->num, input + 2);
 		}
-		if (addr == UT64_MAX && !r_kons_yesno (cons, 'n', "Revert all watchers? (y/N)")) {
+		if (addr == UT64_MAX && !r_cons_yesno (cons, 'n', "Revert all watchers? (y/N)")) {
 			return 1;
 		}
 

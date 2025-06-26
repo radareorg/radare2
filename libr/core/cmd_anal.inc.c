@@ -5413,7 +5413,7 @@ static void cmd_afe(RCore *core, const char *input) {
 #endif
 
 static int cmd_af(RCore *core, const char *input) {
-	r_kons_break_timeout (core->cons, r_config_get_i (core->config, "anal.timeout"));
+	r_cons_break_timeout (core->cons, r_config_get_i (core->config, "anal.timeout"));
 	switch (input[1]) {
 	case '-': // "af-"
 		if (!input[2]) { // "af-"
@@ -14221,7 +14221,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 	ut64 curseek = core->addr;
 	logline (core, 5, "Analyze all flags starting with sym. and entry0 (aa)");
 	r_cons_break_push (core->cons, NULL, NULL);
-	r_kons_break_timeout (core->cons, r_config_get_i (core->config, "anal.timeout"));
+	r_cons_break_timeout (core->cons, r_config_get_i (core->config, "anal.timeout"));
 	bool anal_imports = false;
 	if (r_config_get_b (core->config, "anal.imports")) {
 		logline (core, 10, "Analyze imports (af@@@i)");

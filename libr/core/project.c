@@ -161,7 +161,7 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 		bool must_rm = true;
 		if (r_config_get_b (core->config, "scr.interactive")) {
 			R_LOG_INFO ("Removing: %s", prj_dir);
-			must_rm = r_kons_yesno (cons, 'y', "Confirm project deletion? (Y/n)");
+			must_rm = r_cons_yesno (cons, 'y', "Confirm project deletion? (Y/n)");
 		}
 		if (must_rm) {
 			r_file_rm_rf (prj_dir);
@@ -381,7 +381,7 @@ R_API bool r_core_project_open(RCore *core, const char *prj_path) {
 	if (r_project_is_loaded (core->prj)) {
 		R_LOG_ERROR ("There's a project already opened");
 		ask_for_closing = false;
-		bool ccs = interactive? r_kons_yesno (cons, 'y', "Close current session? (Y/n)"): true;
+		bool ccs = interactive? r_cons_yesno (cons, 'y', "Close current session? (Y/n)"): true;
 		if (!ccs) {
 			R_LOG_ERROR ("Project not loaded");
 			return false;
@@ -398,7 +398,7 @@ R_API bool r_core_project_open(RCore *core, const char *prj_path) {
 	if (ask_for_closing && r_project_is_loaded (core->prj)) {
 		if (r_cons_is_interactive (core->cons)) {
 			close_current_session = interactive
-				? r_kons_yesno (cons, 'y', "Close current session? (Y/n)")
+				? r_cons_yesno (cons, 'y', "Close current session? (Y/n)")
 				: true;
 		}
 	}

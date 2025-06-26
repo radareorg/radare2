@@ -4045,7 +4045,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	}
 	if ((st64)rep > 1 && rep > INTERACTIVE_MAX_REP) {
 		if (r_cons_is_interactive (cons)) {
-			if (!r_kons_yesno (cons, 'n', "Are you sure to repeat this %"PFMT64d" times? (y/N)", rep)) {
+			if (!r_cons_yesno (cons, 'n', "Are you sure to repeat this %"PFMT64d" times? (y/N)", rep)) {
 				goto beach;
 			}
 		}
@@ -4063,7 +4063,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	const bool ocur_enabled = core->print && core->print->cur_enabled;
 	R_CRITICAL_LEAVE (core);
 	while (rep-- > 0 && *cmd) {
-		if (r_kons_was_breaked (cons)) {
+		if (r_cons_was_breaked (cons)) {
 			break;
 		}
 		if (core->print) {

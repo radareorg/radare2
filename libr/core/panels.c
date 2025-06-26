@@ -503,7 +503,7 @@ static bool __show_status_yesno(RCore *core, int def, const char *msg) {
 	RCons *cons = core->cons;
 	r_cons_gotoxy (cons, 0, 0);
 	r_cons_flush (cons);
-	return r_kons_yesno (cons, def, R_CONS_CLEAR_LINE"%s[Status] %s"Color_RESET, PANEL_HL_COLOR, msg);
+	return r_cons_yesno (cons, def, R_CONS_CLEAR_LINE"%s[Status] %s"Color_RESET, PANEL_HL_COLOR, msg);
 }
 
 static char *__show_status_input(RCore *core, const char *msg) {

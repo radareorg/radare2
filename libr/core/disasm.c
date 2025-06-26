@@ -6586,7 +6586,7 @@ toro:
 		ds->at = ds->addr + ds->index;
 		ds->vat = r_core_pava (core, ds->at);
 
-		if (r_cons_is_breaked (cons) || r_cons_was_breaked ()) {
+		if (r_cons_is_breaked (cons) || r_cons_was_breaked (cons)) {
 			R_FREE (nbuf);
 			if (ds->pj) {
 				r_cons_pop (cons);

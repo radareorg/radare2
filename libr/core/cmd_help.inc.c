@@ -1652,14 +1652,14 @@ static int cmd_help(void *data, const char *input) {
 				 break;
 			case 'y': // "?iy"
 				 input = r_str_trim_head_ro (input + 2);
-				 r_core_return_value (core, r_kons_yesno (cons, 1, "%s? (Y/n)", input));
+				 r_core_return_value (core, r_cons_yesno (cons, 1, "%s? (Y/n)", input));
 				 break;
 			case 'u':
 				 r_core_return_value (core, cmd_qiu (core, r_str_trim_head_ro (input + 2)));
 				 break;
 			case 'n': // "?in"
 				input = r_str_trim_head_ro (input + 2);
-				 r_core_return_value (core, r_kons_yesno (cons, 0, "%s? (y/N)", input));
+				 r_core_return_value (core, r_cons_yesno (cons, 0, "%s? (y/N)", input));
 				 break;
 			default: {
 				char foo[1024];

@@ -2472,7 +2472,7 @@ static bool cb_scrbreakword(void* user, void* data) {
 static bool cb_scrtimeout(void* user, void* data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	r_kons_break_timeout (core->cons, node->i_value);
+	r_cons_break_timeout (core->cons, node->i_value);
 	return true;
 }
 

@@ -678,7 +678,7 @@ R_API int r_cons_readchar(RCons *cons) {
 #endif
 }
 
-R_API bool r_kons_yesno(RCons *cons, int def, const char *fmt, ...) {
+R_API bool r_cons_yesno(RCons *cons, int def, const char *fmt, ...) {
 	va_list ap;
 	ut8 key = (ut8)def;
 	va_start (ap, fmt);

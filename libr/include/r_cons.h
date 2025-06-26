@@ -837,24 +837,25 @@ R_API void r_cons_set_click(RCons *cons, int x, int y);
 R_API bool r_cons_get_click(RCons *cons, int *x, int *y);
 R_API void r_cons_mark(RCons *cons, ut64 addr, const char *name);
 R_API RConsMark *r_cons_mark_at(RCons *cons, ut64 addr, const char *name);
-
+R_API void r_cons_mark(RCons *cons, ut64 addr, const char *name);
+R_API void r_cons_mark_flush(RCons *cons);
+R_API RConsMark *r_cons_mark_at(RCons *cons, ut64 addr, const char *name);
 
 typedef void (*RConsBreak)(void *);
 R_API bool r_cons_is_initialized(void);
-R_API bool r_cons_was_breaked(void);
-R_API bool r_kons_was_breaked(RCons *cons);
+R_API bool r_cons_was_breaked(RCons *cons);
 R_API bool r_cons_is_interactive(RCons *cons);
 R_API bool r_cons_default_context_is_interactive(void);
 
 /* ^C */
 R_API void r_cons_break_clear(RCons *cons);
-R_API void r_kons_break_timeout(RCons *cons, int timeout);
+R_API void r_cons_break_timeout(RCons *cons, int timeout);
 
 /* pipe */
 R_API int r_cons_pipe_open(RCons *cons, const char *file, int fdn, int append);
 R_API void r_cons_pipe_close(RCons *cons, int fd);
 R_API void r_cons_pipe_close_all(RCons *cons);
-R_API void r_kons_pal_clone(RConsContext *ctx);
+R_IPI void r_cons_pal_clone(RConsContext *ctx);
 R_API void *r_cons_sleep_begin(RCons *cons);
 R_API void r_cons_sleep_end(RCons *cons, void *user);
 R_API void r_cons_break_end(RCons *cons);
@@ -989,7 +990,7 @@ R_API char *r_cons_rgb_str_off(RCons *cons, char *outstr, size_t sz, ut64 off);
 R_API void r_cons_color(int fg, int r, int g, int b);
 
 R_API RColor r_cons_color_random(ut8 alpha);
-R_API bool r_kons_yesno(RCons *cons, int def, const char *fmt, ...) R_PRINTF_CHECK(3, 4);
+R_API bool r_cons_yesno(RCons *cons, int def, const char *fmt, ...) R_PRINTF_CHECK(3, 4);
 R_API char *r_cons_input(RCons *cons, const char *msg);
 R_API char *r_cons_password(const char *msg);
 R_API bool r_cons_set_cup(bool enable);
@@ -1202,9 +1203,6 @@ R_API char *r_cons_lastline_utf8_ansi_len(RCons *cons, int *len);
 R_API bool r_cons_drop(RCons *cons, int n);
 R_API void r_cons_trim(RCons *cons);
 R_API void r_cons_breakword(RCons *cons, const char * R_NULLABLE s);
-R_API void r_kons_mark(RCons *cons, ut64 addr, const char *name);
-R_API void r_kons_mark_flush(RCons *cons);
-R_API RConsMark *r_kons_mark_at(RCons *cons, ut64 addr, const char *name);
 R_API bool r_cons_is_breaked(RCons *cons);
 R_API void r_cons_break_push(RCons *cons, RConsBreak cb, void *user);
 R_API void r_cons_break_pop(RCons *cons);

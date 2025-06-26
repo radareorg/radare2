@@ -3673,7 +3673,7 @@ static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, RAnalFunct
 static void check_function_modified(RCore *core, RAnalFunction *fcn) {
 	if (r_anal_function_was_modified (fcn)) {
 		if (r_config_get_b (core->config, "anal.onchange")
-			|| r_kons_yesno (core->cons, 'y', "Function was modified. Reanalyze? (Y/n)")) {
+			|| r_cons_yesno (core->cons, 'y', "Function was modified. Reanalyze? (Y/n)")) {
 			r_anal_function_update_analysis (fcn);
 		}
 	}
@@ -3713,7 +3713,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 			f = r_anal_get_fcn_in (core->anal, core->addr, 0);
 			if (!f) {
 				if (!g->is_dis) {
-					if (!r_kons_yesno (cons, 'y', "\rNo function at 0x%08"PFMT64x". Define it here (Y/n)? ", core->addr)) {
+					if (!r_cons_yesno (cons, 'y', "\rNo function at 0x%08"PFMT64x". Define it here (Y/n)? ", core->addr)) {
 						return 0;
 					}
 					r_core_cmd_call (core, "af");
@@ -4684,7 +4684,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 			exit_graph = true;
 			break;
 		case '>':
-			if (fcn && r_kons_yesno (core->cons, 'y', "Compute function callgraph? (Y/n)")) {
+			if (fcn && r_cons_yesno (core->cons, 'y', "Compute function callgraph? (Y/n)")) {
 				r_core_cmd0 (core, "ag-;.agc* @$FB;.axfg @$FB;aggi");
 			}
 			break;

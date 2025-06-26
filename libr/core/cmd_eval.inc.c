@@ -840,7 +840,7 @@ static int cmd_eval(void *data, const char *input) {
 			const bool prompt = (input[2] != '!');
 			char *file = r_file_home (".radare2rc");
 			if (file) {
-				const bool rmfile = !prompt || r_kons_yesno (cons, 'n', "Do you want to delete ~/.radare2? (Y/n)");
+				const bool rmfile = !prompt || r_cons_yesno (cons, 'n', "Do you want to delete ~/.radare2? (Y/n)");
 				if (rmfile) {
 					r_file_rm (file);
 				}
@@ -852,7 +852,7 @@ static int cmd_eval(void *data, const char *input) {
 				r_file_touch (file);
 				char *res = r_cons_editor (cons, file, NULL);
 				if (res) {
-					if (r_kons_yesno (cons, 'y', "Reload? (Y/n)")) {
+					if (r_cons_yesno (cons, 'y', "Reload? (Y/n)")) {
 						r_core_run_script (core, file);
 					}
 				}

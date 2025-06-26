@@ -302,13 +302,13 @@ static void __add_window_to_table(RTable *tbl, window *win) {
 
 R_API void r_w32_identify_window(void) {
 	RCons *cons = r_cons_singleton ();
-	while (!r_kons_yesno (cons, 'y', "Move cursor to the window to be identified. Ready?"));
+	while (!r_cons_yesno (cons, 'y', "Move cursor to the window to be identified. Ready?"));
 	POINT p;
 	GetCursorPos (&p);
 	HANDLE hwnd = WindowFromPoint (p);
 	window *win = NULL;
 	if (hwnd) {
-		if (r_kons_yesno (cons, 'y', "Try to get the child?")) {
+		if (r_cons_yesno (cons, 'y', "Try to get the child?")) {
 			HANDLE child = ChildWindowFromPoint (hwnd, p);
 			hwnd = child ? child : hwnd;
 		}

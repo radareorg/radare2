@@ -271,24 +271,11 @@ R_API bool r_cons_default_context_is_interactive(void) {
 	return I->context->is_interactive;
 }
 
-R_API bool r_kons_was_breaked(RCons *cons) {
+R_API bool r_cons_was_breaked(RCons *cons) {
 #if WANT_DEBUGSTUFF
 	const bool res = r_cons_is_breaked (cons) || cons->context->was_breaked;
 	cons->context->breaked = false;
 	cons->context->was_breaked = false;
-	return res;
-#else
-	return false;
-#endif
-}
-
-R_API bool r_cons_was_breaked(void) {
-#if WANT_DEBUGSTUFF
-	RCons *cons = r_cons_singleton ();
-	RConsContext *ctx = cons->context;
-	const bool res = r_cons_is_breaked (cons) || ctx->was_breaked;
-	ctx->breaked = false;
-	ctx->was_breaked = false;
 	return res;
 #else
 	return false;
@@ -306,7 +293,7 @@ R_API bool r_cons_is_breaked(RCons *cons) {
 			if (r_time_now_mono () > cons->timeout) {
 				C->breaked = true;
 				C->was_breaked = true;
-				r_kons_break_timeout (cons, cons->otimeout);
+				r_cons_break_timeout (cons, cons->otimeout);
 			}
 		}
 	}
@@ -394,7 +381,7 @@ static inline void cfmakeraw(struct termios *tm) {
 	return curline;
 }
 
-R_API void r_kons_break_timeout(RCons *cons, int timeout) {
+R_API void r_cons_break_timeout(RCons *cons, int timeout) {
 	if (timeout > 0) {
 		cons->timeout = r_time_now_mono () + (timeout * 1000);
 		cons->otimeout = timeout;
@@ -617,14 +604,14 @@ R_API void r_cons_flush(RCons *cons) {
 					lines ++;
 				}
 			}
-			if (lines > 0 && !r_kons_yesno (cons, 'n',"Do you want to print %d lines? (y/N)", lines)) {
+			if (lines > 0 && !r_cons_yesno (cons, 'n',"Do you want to print %d lines? (y/N)", lines)) {
 				r_cons_reset (cons);
 				return;
 			}
 #else
 			char buf[8];
 			r_num_units (buf, sizeof (buf), ctx->buffer_len);
-			if (!r_kons_yesno (cons, 'n', "Do you want to print %s chars? (y/N)", buf)) {
+			if (!r_cons_yesno (cons, 'n', "Do you want to print %s chars? (y/N)", buf)) {
 				r_cons_reset (cons);
 				return;
 			}
@@ -1154,6 +1141,7 @@ R_API void r_cons_mark(RCons *cons, ut64 addr, const char *name) {
 	mark->row = row;
 	r_list_append (ctx->marks, mark);
 }
+
 R_API RConsMark *r_cons_mark_at(RCons *cons, ut64 addr, const char *name) {
 	RConsContext *C = cons->context;
 	RListIter *iter;
@@ -1374,7 +1362,7 @@ R_API RConsContext *r_cons_context_clone(RConsContext *ctx) {
 	}
 	// c->marks = r_list_clone (ctx->marks, (RListClone)strdup);
 	c->pal.rainbow = NULL;
-	r_kons_pal_clone (c);
+	r_cons_pal_clone (c);
 	// rainbow_clone (c);
 	memset (&c->grep, 0, sizeof (c->grep));
 	c->grep.strings = r_list_newf ((RListFree)grep_word_free);
@@ -1414,7 +1402,7 @@ R_API void r_cons_break_end(RCons *cons) {
 R_API void r_cons_break_push(RCons *cons, RConsBreak cb, void *user) {
 	RConsContext *ctx = cons->context;
 	if (ctx->break_stack && r_stack_size (ctx->break_stack) > 0) {
-		r_kons_break_timeout (cons, cons->otimeout);
+		r_cons_break_timeout (cons, cons->otimeout);
 	}
 	r_cons_context_break_push (cons, ctx, cb, user, true);
 }
