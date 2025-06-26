@@ -40,7 +40,7 @@ static void showBuffer(RCore *core, RBuffer *b) {
 	if (b && r_buf_size (b) > 0) {
 		r_buf_seek (b, 0, R_BUF_SET);
 		for (i = 0; i < r_buf_size (b); i++) {
-			r_kons_printf (core->cons, "%02x", r_buf_read8 (b));
+			r_cons_printf (core->cons, "%02x", r_buf_read8 (b));
 		}
 		r_cons_newline (core->cons);
 	}
@@ -206,13 +206,13 @@ static int cmd_egg(void *data, const char *input) {
 			}
 			pj_end (pj);
 			char *s = pj_drain (pj);
-			r_kons_printf (core->cons, "%s\n", s);
+			r_cons_printf (core->cons, "%s\n", s);
 			free (s);
 		} else {
 			RListIter *iter;
 			REggPlugin *p;
 			r_list_foreach (egg->plugins, iter, p) {
-				r_kons_printf (core->cons, "%s  %6s : %s\n",
+				r_cons_printf (core->cons, "%s  %6s : %s\n",
 					(p->type == R_EGG_PLUGIN_SHELLCODE)?
 					"shc": "enc", p->meta.name, p->meta.desc);
 			}
@@ -229,22 +229,22 @@ static int cmd_egg(void *data, const char *input) {
 			"suid",
 			NULL
 		};
-		r_kons_printf (core->cons, "# Configuration options\n");
+		r_cons_printf (core->cons, "# Configuration options\n");
 		int i;
 		for (i = 0; configList[i]; i++) {
 			const char *p = configList[i];
 			if (r_egg_option_get (egg, p)) {
-				r_kons_printf (core->cons, "%s : %s\n", p, r_egg_option_get (egg, p));
+				r_cons_printf (core->cons, "%s : %s\n", p, r_egg_option_get (egg, p));
 			} else {
-				r_kons_printf (core->cons, "%s : %s\n", p, "");
+				r_cons_printf (core->cons, "%s : %s\n", p, "");
 			}
 		}
-		r_kons_printf (core->cons, "\n# Target options\n");
+		r_cons_printf (core->cons, "\n# Target options\n");
 		RArchConfig *ac = core->anal->config;
 		const char *os = ac->os? ac->os: R_SYS_OS;
-		r_kons_printf (core->cons, "arch : %s\n", ac->cpu);
-		r_kons_printf (core->cons, "os   : %s\n", os);
-		r_kons_printf (core->cons, "bits : %d\n", ac->bits);
+		r_cons_printf (core->cons, "arch : %s\n", ac->cpu);
+		r_cons_printf (core->cons, "os   : %s\n", os);
+		r_cons_printf (core->cons, "bits : %d\n", ac->bits);
 	}
 	break;
 	case 'r': // "gr"
@@ -264,7 +264,7 @@ static int cmd_egg(void *data, const char *input) {
 			} else {
 				char *o = r_egg_option_get (egg, oa);
 				if (o) {
-					r_kons_print (core->cons, o);
+					r_cons_print (core->cons, o);
 					free (o);
 				}
 			}

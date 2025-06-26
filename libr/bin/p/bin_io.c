@@ -2,6 +2,7 @@
 
 // the info loaded here is never updated maybe we should have a way to refresh it
 #include <r_bin.h>
+#include <r_core.h>
 #include <r_io.h>
 
 static ut64 baddr(RBinFile *bf) {
@@ -24,7 +25,9 @@ static char *iocmd(RBinFile *bf, const char *s) {
 	}
 	char *res = r_io_system (io, s);
 	if (!res) {
-		const char *buffer = r_cons_get_buffer ();
+		RCore *core = io->coreb.core;
+		RCons *cons = core->cons;
+		const char *buffer = r_cons_get_buffer (cons, NULL);
 		if (buffer != NULL) {
 			res = strdup (buffer);
 		}

@@ -728,7 +728,7 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 		if (error) {
 			if (r2pm_check ("apt") && r_file_is_directory ("/system/bin")) {
 				RCons *cons = r_cons_singleton ();
-				if (r_kons_yesno (cons, 'y', "Install system dependencies (Y/n)")) {
+				if (r_cons_yesno (cons, 'y', "Install system dependencies (Y/n)")) {
 					const char cmd[] = "apt install build-essential ninja git make patch python wget binutils";
 					R_LOG_INFO ("Running %s", cmd);
 					if (r_sys_cmd (cmd) == 0) {
@@ -1157,7 +1157,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 	RCons *cons = r_cons_singleton ();
 	if (!cons) {
 		havetoflush = true;
-		cons = r_kons_new ();
+		cons = r_cons_new2 ();
 	}
 #if R2__UNIX__
 	char *wd = getcwd (NULL, 0);
@@ -1366,7 +1366,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 	if (r2pm.search) {
 		char *s = r2pm_search (argv[opt.ind], r2pm.json? 'j': 0);
 		if (s) {
-			r_kons_print (cons, s);
+			r_cons_print (cons, s);
 			if (havetoflush) {
 				r_cons_flush (cons);
 			}
@@ -1390,7 +1390,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 	} else if (r2pm.list) {
 		char *s = r2pm_list (r2pm.json? 'j': 0);
 		if (s) {
-			r_kons_print (cons, s);
+			r_cons_print (cons, s);
 			if (havetoflush) {
 				r_cons_flush (cons);
 			}
@@ -1406,7 +1406,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 			char *s = r2pm_get (pkg, "\nR2PM_RELOAD() {", TT_CODEBLOCK);
 			if (s) {
 				char *t = r_str_trim_lines (s);
-				r_kons_print (cons, t);
+				r_cons_print (cons, t);
 				free (t);
 				free (s);
 			}

@@ -320,7 +320,7 @@ static JSValue r2log(JSContext *ctx, JSValueConst this_val, int argc, JSValueCon
 	QjsPluginManager *pm = JS_GetRuntimeOpaque (rt);
 	size_t plen;
 	const char *n = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
-	r_kons_printf (pm->core->cons, "%s\n", n);
+	r_cons_printf (pm->core->cons, "%s\n", n);
 	return JS_NewBool (ctx, true);
 }
 

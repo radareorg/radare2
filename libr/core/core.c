@@ -14,7 +14,6 @@ R_VEC_TYPE (RVecAnalRef, RAnalRef);
 R_IPI int Gload_index = 0;
 #endif
 
-
 static ut64 letter_divs[R_CORE_ASMQJMPS_LEN_LETTERS - 1] = {
 	R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS,
 	R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS,
@@ -328,7 +327,7 @@ R_API char *r_core_cmd_call_str_at(RCore *core, ut64 addr, const char *cmd) {
 		core->cons->context->noflush = false;
 	}
 	r_cons_filter (core->cons);
-	const char *static_str = r_cons_get_buffer ();
+	const char *static_str = r_cons_get_buffer (core->cons, NULL);
 	char *retstr = strdup (r_str_get (static_str));
 	r_cons_pop (core->cons);
 	r_cons_echo (core->cons, NULL);
@@ -728,7 +727,7 @@ static void autocomplete_alias(RLineCompletion *completion, RCmd *cmd, const cha
 		const RCmdAliasVal *val = c.valid_completion_vals[0];
 
 		char *v = r_cmd_alias_val_strdup ((RCmdAliasVal *)val);
-		r_kons_printf (cons, "$%s=%s%s\n", k, val->is_data? "$": "", v);
+		r_cons_printf (cons, "$%s=%s%s\n", k, val->is_data? "$": "", v);
 		r_cons_flush (cons);
 
 		char *completed_alias = r_str_newf ("$%s", k);
@@ -2565,7 +2564,7 @@ R_API bool r_core_init(RCore *core) {
 	core->print->num = core->num;
 	core->print->offname = r_core_print_offname;
 	core->print->offsize = r_core_print_offsize;
-	// core->print->cb_printf = r_cons_printf;
+	// core->print->cb_printf = r_cons_gprintf;
 	// core->print->cb_color = r_cons_rainbow_get; // NEVER CALLED
 	core->print->write = mywrite;
 	core->print->exists_var = exists_var;
@@ -2638,7 +2637,6 @@ R_API bool r_core_init(RCore *core) {
 	core->lang->call_at = (RCoreCallAtCallback) r_core_cmd_call_str_at;
 	r_core_bind_cons (core);
 	core->table = NULL;
-	core->lang->cb_printf = r_cons_printf;
 	r_lang_define (core->lang, "RCore", "core", core);
 	r_lang_set_user_ptr (core->lang, core);
 	core->rasm = core->egg->rasm;
@@ -2679,12 +2677,12 @@ R_API bool r_core_init(RCore *core) {
 	core->print->sdb_types = core->anal->sdb_types;
 	core->rasm->syscall = r_syscall_ref (core->anal->syscall); // BIND syscall anal/asm
 	r_anal_set_user_ptr (core->anal, core);
-	core->anal->cb_printf = (void *) r_cons_printf;
+	core->anal->cb_printf = (void *) r_cons_gprintf;
 	core->rasm->parse->varlist = r_anal_function_get_var_fields;
 	core->bin = r_bin_new ();
 	r_cons_bind (core->cons, &core->bin->consb);
 	// XXX we should use RConsBind instead of this hardcoded pointer
-	core->bin->cb_printf = (PrintfCallback) r_cons_printf;
+	core->bin->cb_printf = (PrintfCallback) r_cons_gprintf;
 	r_bin_set_user_ptr (core->bin, core);
 	core->io = r_io_new ();
 	r_event_hook (core->io->event, R_EVENT_IO_WRITE, ev_iowrite_cb, core);
@@ -2693,7 +2691,6 @@ R_API bool r_core_init(RCore *core) {
 	r_io_undo_enable (core->io, 1, 0); // TODO: configurable via eval
 	core->fs = r_fs_new ();
 	core->flags = r_flag_new ();
-	core->flags->cb_printf = r_cons_printf;
 	int flags = r_cons_canvas_flags (core->cons);
 	core->graph = r_agraph_new (r_cons_canvas_new (core->cons, 1, 1, flags));
 	core->graph->need_reload_nodes = false;
@@ -2742,9 +2739,8 @@ R_API bool r_core_init(RCore *core) {
 // XXX pushing uninitialized regstate results in trashed reg values
 //	r_reg_arena_push (core->dbg->reg); // create a 2 level register state stack
 //	core->dbg->anal->reg = core->anal->reg; // XXX: dupped instance.. can cause lost pointerz
-	core->io->cb_printf = r_cons_printf;
-	core->dbg->cb_printf = r_cons_printf;
-	core->dbg->bp->cb_printf = r_cons_printf;
+	core->io->cb_printf = r_cons_gprintf;
+	core->dbg->cb_printf = r_cons_gprintf;
 	core->dbg->ev = core->ev;
 	r_core_config_init (core);
 	r_core_loadlibs_init (core);
@@ -3112,13 +3108,13 @@ R_API int r_core_prompt_exec(RCore *r) {
 		free (cmd);
 		if (ret < 0) {
 			if (r->cons && r->cons->line && r->cons->line->zerosep) {
-				r_cons_zero ();
+				r_cons_zero (r->cons);
 			}
 			r_core_cmd_queue (r, NULL);
 			break;
 		}
 		if (r->cons && r->cons->context->use_tts) {
-			const char *buf = r_cons_get_buffer ();
+			const char *buf = r_cons_get_buffer (r->cons, NULL);
 			if (R_STR_ISNOTEMPTY (buf)) {
 				r_sys_tts (buf, true);
 			}
@@ -3127,7 +3123,7 @@ R_API int r_core_prompt_exec(RCore *r) {
 		r_cons_echo (r->cons, NULL);
 		r_cons_flush (r->cons); // double free
 		if (r->cons && r->cons->line && r->cons->line->zerosep) {
-			r_kons_zero (r->cons);
+			r_cons_zero (r->cons);
 		}
 	}
 	return ret;

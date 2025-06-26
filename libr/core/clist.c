@@ -12,7 +12,7 @@ R_API void r_core_list_lang(RCore *core, int mode) {
 	PJ *pj = NULL;
 	RTable *table = NULL;
 	if (mode == 'j') {
-		pj = pj_new ();
+		pj = r_core_pj_new (core);
 		pj_a (pj);
 	} else if (mode == ',') {
 		table = r_core_table_new (core, "langs");
@@ -29,25 +29,25 @@ R_API void r_core_list_lang(RCore *core, int mode) {
 			r_lib_meta_pj (pj, &h->meta);
 			pj_end (pj);
 		} else if (mode == 'q') {
-			lang->cb_printf ("%s\n", h->meta.name);
+			r_cons_printf (core->cons, "%s\n", h->meta.name);
 		} else if (mode == ',') {
 			r_table_add_row (table,
 				r_str_get (h->meta.name),
 				r_str_get (h->meta.license),
 				r_str_get (h->meta.desc), 0);
 		} else {
-			lang->cb_printf ("%-8s %6s  %s\n",
+			r_cons_printf (core->cons, "%-8s %6s  %s\n",
 				h->meta.name, license, h->meta.desc);
 		}
 	}
 	if (pj) {
 		pj_end (pj);
 		char *s = pj_drain (pj);
-		lang->cb_printf ("%s\n", s);
+		r_cons_printf (core->cons, "%s\n", s);
 		free (s);
 	} else if (table) {
 		char *s = r_table_tostring (table);
-		lang->cb_printf ("%s", s);
+		r_cons_printf (core->cons, "%s", s);
 		free (s);
 		r_table_free (table);
 	}
@@ -94,30 +94,30 @@ R_API int r_core_list_io(RCore *core, const char *name, int mode) {
 			}
 			pj_end (pj);
 		} else if (name) {
-			r_kons_printf (cons, "name: %s\n", plugin->meta.name);
-			r_kons_printf (cons, "auth: %s\n", plugin->meta.author);
-			r_kons_printf (cons, "lice: %s\n", plugin->meta.license);
-			r_kons_printf (cons, "desc: %s\n", plugin->meta.desc);
-			r_kons_printf (cons, "uris: %s\n", plugin->uris);
+			r_cons_printf (cons, "name: %s\n", plugin->meta.name);
+			r_cons_printf (cons, "auth: %s\n", plugin->meta.author);
+			r_cons_printf (cons, "lice: %s\n", plugin->meta.license);
+			r_cons_printf (cons, "desc: %s\n", plugin->meta.desc);
+			r_cons_printf (cons, "uris: %s\n", plugin->uris);
 			if (*str) {
-				r_kons_printf (cons, "perm: %s\n", str);
+				r_cons_printf (cons, "perm: %s\n", str);
 			}
-			r_kons_printf (cons, "sysc: %s\n", r_str_bool (plugin->system));
+			r_cons_printf (cons, "sysc: %s\n", r_str_bool (plugin->system));
 		} else {
-			r_kons_printf (cons, "%s  %-8s %s.", str,
+			r_cons_printf (cons, "%s  %-8s %s.", str,
 				r_str_get (plugin->meta.name),
 				r_str_get (plugin->meta.desc));
 			if (plugin->uris) {
-				r_kons_printf (cons, " %s", plugin->uris);
+				r_cons_printf (cons, " %s", plugin->uris);
 			}
-			r_kons_printf (cons, "\n");
+			r_cons_printf (cons, "\n");
 		}
 		n++;
 	}
 	if (pj) {
 		pj_end (pj);
 		char *s = pj_drain (pj);
-		r_kons_printf (cons, "%s\n", s);
+		r_cons_printf (cons, "%s\n", s);
 		free (s);
 	}
 	return n;

@@ -40,13 +40,13 @@ R_API int r_core_log_list(RCore *core, int n, int nth, char fmt) {
 			case '*':
 				{
 					char *b = r_base64_encode_dyn ((const ut8*)str, -1);
-					r_kons_printf (core->cons, "T base64:%s\n", b);
+					r_cons_printf (core->cons, "T base64:%s\n", b);
 					free (b);
 				}
-				// r_kons_printf (core->cons, "\"T %s\"\n", str);
+				// r_cons_printf (core->cons, "\"T %s\"\n", str);
 				break;
 			default:
-				r_kons_printf (core->cons, "%d %s\n", id, str);
+				r_cons_printf (core->cons, "%d %s\n", id, str);
 				break;
 			}
 			printed++;
@@ -64,7 +64,7 @@ R_API int r_core_log_list(RCore *core, int n, int nth, char fmt) {
 	if (fmt == 'j') {
 		pj_end (pj);
 		char *s = pj_drain (pj);
-		r_kons_printf (core->cons, "%s\n", s);
+		r_cons_printf (core->cons, "%s\n", s);
 		free (s);
 	}
 	return count;

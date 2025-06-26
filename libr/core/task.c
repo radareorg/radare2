@@ -86,7 +86,7 @@ R_API void r_core_task_print(RCore *core, RCoreTask *task, PJ *pj, int mode) {
 		if (task == core->tasks.main_task) {
 			info = "-- MAIN TASK --";
 		}
-		r_kons_printf (core->cons, "%3d %3s %12s  %s\n",
+		r_cons_printf (core->cons, "%3d %3s %12s  %s\n",
 					   task->id,
 					   task->transient ? "(t)" : "",
 					   r_core_task_status (task),
@@ -117,7 +117,7 @@ R_API void r_core_task_list(RCore *core, int mode) {
 		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 	} else {
-		r_kons_printf (core->cons, "--\ntotal running: %d\n", core->tasks.tasks_running);
+		r_cons_printf (core->cons, "--\ntotal running: %d\n", core->tasks.tasks_running);
 	}
 	tasks_lock_leave (&core->tasks, &old_sigset);
 }

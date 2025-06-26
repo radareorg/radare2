@@ -584,7 +584,7 @@ static void cmd_drn(RCore *core, const char *str) {
 			const char *r = r_reg_alias_getname (reg, i);
 			const char *a = r_reg_alias_tostring (i);
 			if (r && a) {
-				r_kons_printf (core->cons, "%s %s\n", a, r);
+				r_cons_printf (core->cons, "%s %s\n", a, r);
 			}
 		}
 	}
@@ -662,16 +662,16 @@ static int showreg(RCore *core, const char *str) {
 			off = r_reg_get_value_big (core->dbg->reg, r, &value);
 			switch (r->size) {
 			case 80:
-				r_kons_printf (core->cons, "0x%04x%016"PFMT64x"\n", value.v80.High, value.v80.Low);
+				r_cons_printf (core->cons, "0x%04x%016"PFMT64x"\n", value.v80.High, value.v80.Low);
 				break;
 			case 96:
-				r_kons_printf (core->cons, "0x%08x%016"PFMT64x"\n", value.v96.High, value.v96.Low);
+				r_cons_printf (core->cons, "0x%08x%016"PFMT64x"\n", value.v96.High, value.v96.Low);
 				break;
 			case 128:
-				r_kons_printf (core->cons, "0x%016"PFMT64x"%016"PFMT64x"\n", value.v128.High, value.v128.Low);
+				r_cons_printf (core->cons, "0x%016"PFMT64x"%016"PFMT64x"\n", value.v128.High, value.v128.Low);
 				break;
 			case 256:
-				r_kons_printf (core->cons, "0x%016"PFMT64x"%016"PFMT64x"%016"PFMT64x"%016"PFMT64x"\n",
+				r_cons_printf (core->cons, "0x%016"PFMT64x"%016"PFMT64x"%016"PFMT64x"%016"PFMT64x"\n",
 					   value.v256.High.High, value.v256.High.Low, value.v256.Low.High, value.v256.Low.Low);
 				break;
 			default:
@@ -679,7 +679,7 @@ static int showreg(RCore *core, const char *str) {
 			}
 		} else {
 			off = r_reg_get_value (core->dbg->reg, r);
-			r_kons_printf (core->cons, "0x%08"PFMT64x "\n", off);
+			r_cons_printf (core->cons, "0x%08"PFMT64x "\n", off);
 		}
 		return r->size;
 	}
@@ -748,7 +748,7 @@ static void dot_trace_traverse(RCore *core, RTree *t, int fmt) {
 	/* traverse the callgraph to print the dot file */
 	nodes = r_graph_get_nodes (aux_data.graph);
 	if (fmt == 0) {
-		r_kons_printf (core->cons, "digraph code {\n"
+		r_cons_printf (core->cons, "digraph code {\n"
 				"graph [bgcolor=white];\n"
 				"    node [color=lightgray, style=filled"
 				" shape=box fontname=\"%s\" fontsize=\"8\"];\n", gfont);
@@ -760,7 +760,7 @@ static void dot_trace_traverse(RCore *core, RTree *t, int fmt) {
 		RGraphNode *w;
 
 		if (!fmt && tn) {
-			r_kons_printf (core->cons, "\"0x%08"PFMT64x"\" [URL=\"0x%08"PFMT64x
+			r_cons_printf (core->cons, "\"0x%08"PFMT64x"\" [URL=\"0x%08"PFMT64x
 					"\" color=\"lightgray\" label=\"0x%08"PFMT64x
 					" (%d)\"]\n", tn->addr, tn->addr, tn->addr, tn->refs);
 		}
@@ -769,19 +769,19 @@ static void dot_trace_traverse(RCore *core, RTree *t, int fmt) {
 
 			if (tv && tn) {
 				if (fmt) {
-					r_kons_printf (core->cons, "agn 0x%08"PFMT64x"\n", tn->addr);
-					r_kons_printf (core->cons, "agn 0x%08"PFMT64x"\n", tv->addr);
-					r_kons_printf (core->cons, "age 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
+					r_cons_printf (core->cons, "agn 0x%08"PFMT64x"\n", tn->addr);
+					r_cons_printf (core->cons, "agn 0x%08"PFMT64x"\n", tv->addr);
+					r_cons_printf (core->cons, "age 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
 							tn->addr, tv->addr);
 				} else {
-					r_kons_printf (core->cons, "\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x
+					r_cons_printf (core->cons, "\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x
 							"\" [color=\"red\"];\n", tn->addr, tv->addr);
 				}
 			}
 		}
 	}
 	if (!fmt) {
-		r_kons_printf (core->cons, "}\n");
+		r_cons_printf (core->cons, "}\n");
 	}
 
 	r_graph_free (aux_data.graph);
@@ -1035,7 +1035,7 @@ static bool step_until_flag(RCore *core, const char *instr) {
 		const RList *list = r_flag_get_list (core->flags, pc);
 		r_list_foreach (list, iter, f) {
 			if (R_STR_ISEMPTY (instr) || (f->realname && strstr (f->realname, instr))) {
-				r_kons_printf (core->cons, "[ 0x%08"PFMT64x" ] %s\n", f->addr, f->realname);
+				r_cons_printf (core->cons, "[ 0x%08"PFMT64x" ] %s\n", f->addr, f->realname);
 				r_cons_break_pop (core->cons);
 				return true;
 			}
@@ -1161,7 +1161,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 			r_debug_thread_list (core->dbg, core->dbg->pid, 0);
 			break;
 		case '.':
-			r_kons_printf (core->cons, "%d\n", core->dbg->tid);
+			r_cons_printf (core->cons, "%d\n", core->dbg->tid);
 			break;
 		case 'j': // "dptj"
 			if (input[3] != ' ') { // "dptj"
@@ -1227,7 +1227,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		break;
 	case '.':
 	case 'q':
-		r_kons_printf (core->cons, "%d\n", core->dbg->pid);
+		r_cons_printf (core->cons, "%d\n", core->dbg->pid);
 		break;
 	case 'j': // "dpj"
 		switch (input[2]) {
@@ -1402,11 +1402,11 @@ show_help:
 	r_list_foreach (list, iter, map) {
 		switch (mode) {
 		case 0:
-			r_kons_printf (core->cons, "0x%08"PFMT64x" 0x%08"PFMT64x"  %s\n", map->addr, map->addr_end, map->file);
+			r_cons_printf (core->cons, "0x%08"PFMT64x" 0x%08"PFMT64x"  %s\n", map->addr, map->addr_end, map->file);
 			break;
 		case '.':
 			if (addr >= map->addr && addr < map->addr_end) {
-				r_kons_printf (core->cons, "0x%08"PFMT64x" 0x%08"PFMT64x"  %s\n", map->addr, map->addr_end, map->file);
+				r_cons_printf (core->cons, "0x%08"PFMT64x" 0x%08"PFMT64x"  %s\n", map->addr, map->addr_end, map->file);
 				goto beach;
 			}
 			break;
@@ -1428,10 +1428,10 @@ show_help:
 				char *escaped_path = r_str_escape (map->file);
 				char *filtered_name = strdup (map->name);
 				r_name_filter (filtered_name, 0);
-				r_kons_printf (core->cons, "f mod.%s = 0x%08"PFMT64x"\n",
+				r_cons_printf (core->cons, "f mod.%s = 0x%08"PFMT64x"\n",
 					filtered_name, map->addr);
-				r_kons_printf (core->cons, "oba 0x%08"PFMT64x" %s\n", map->addr, escaped_path);
-				// r_kons_printf (core->cons, ".!rabin2 -rsB 0x%08"PFMT64x" \"%s\"\n", map->addr, escaped_path);
+				r_cons_printf (core->cons, "oba 0x%08"PFMT64x" %s\n", map->addr, escaped_path);
+				// r_cons_printf (core->cons, ".!rabin2 -rsB 0x%08"PFMT64x" \"%s\"\n", map->addr, escaped_path);
 				free (escaped_path);
 				free (filtered_name);
 			}
@@ -1924,7 +1924,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 						continue;
 					}
 					if (addr >= map->addr && addr < map->addr_end) {
-						r_kons_printf (core->cons, "%s\n", map->name);
+						r_cons_printf (core->cons, "%s\n", map->name);
 				//		break;
 					}
 				}
@@ -2154,23 +2154,23 @@ R_API void r_core_debug_ri(RCore *core, RReg *reg, int mode) {
 		if (map) {
 			rwx = map->perm;
 		}
-		r_kons_printf (core->cons, " %s  ", r_str_rwx_i (rwx));
+		r_cons_printf (core->cons, " %s  ", r_str_rwx_i (rwx));
 
-		r_kons_printf (core->cons, "0x%08"PFMT64x" ", *addr);
+		r_cons_printf (core->cons, "0x%08"PFMT64x" ", *addr);
 		RList *list = ht_up_find (db, *addr, NULL);
 		if (list) {
 			RListIter *iter;
 			const char *r;
-			r_kons_print (core->cons, Color_YELLOW);
+			r_cons_print (core->cons, Color_YELLOW);
 			r_list_foreach (list, iter, r) {
-				r_kons_printf (core->cons, " %s", r);
+				r_cons_printf (core->cons, " %s", r);
 			}
-			r_kons_print (core->cons, Color_RESET);
+			r_cons_print (core->cons, Color_RESET);
 			ut64 o_offset = core->addr;
 			char *rrstr = r_core_anal_hasrefs (core, *addr, true);
 			core->addr = o_offset;
 			if (R_STR_ISNOTEMPTY (rrstr) && strchr (rrstr, 'R')) {
-				r_kons_printf (core->cons, "    ;%s"Color_RESET, rrstr);
+				r_cons_printf (core->cons, "    ;%s"Color_RESET, rrstr);
 			}
 			r_cons_newline (core->cons);
 		}
@@ -2247,7 +2247,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 		if (delta && use_colors) {
 			namestr = r_str_newf ("%s%s%s", color, r->name, colorend);
 			valuestr = r_str_newf ("%s0x%"PFMT64x"%s", color, value, colorend);
-			r_kons_print (core->cons, Color_RESET);
+			r_cons_print (core->cons, Color_RESET);
 		} else {
 			namestr = strdup (r->name);
 			valuestr = r_str_newf ("0x%"PFMT64x, value);
@@ -2266,7 +2266,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 	}
 
 	char *s = (mode == 'j')? r_table_tojson (t): r_table_tostring (t);
-	r_kons_print (core->cons, s);
+	r_cons_print (core->cons, s);
 	free (s);
 	r_table_free (t);
 	if (scr_color) {
@@ -2278,26 +2278,26 @@ static void cmd_drpi(RCore *core) {
 	int i;
 	RListIter *iter;
 	RRegItem *ri;
-	r_kons_printf (core->cons, "Aliases (Reg->name)\n");
+	r_cons_printf (core->cons, "Aliases (Reg->name)\n");
 	for (i = 0; i < R_REG_ALIAS_LAST; i++) {
 		const char *v = r_str_get_fail (r_reg_alias_getname (core->anal->reg, i), "?");
-		r_kons_printf (core->cons, "%d %s %s\n", i, r_reg_alias_tostring (i), v);
+		r_cons_printf (core->cons, "%d %s %s\n", i, r_reg_alias_tostring (i), v);
 	}
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		const char *nmi = r_reg_type_tostring (i);
-		r_kons_printf (core->cons, "regset %d (%s)\n", i, nmi);
+		r_cons_printf (core->cons, "regset %d (%s)\n", i, nmi);
 		RRegSet *rs = &core->anal->reg->regset[i];
 		if (!rs || !rs->arena) {
-			r_kons_printf (core->cons, "* arena %s no\n", r_reg_type_tostring (i));
+			r_cons_printf (core->cons, "* arena %s no\n", r_reg_type_tostring (i));
 			continue;
 		}
-		r_kons_printf (core->cons, "* arena %s size %d\n", r_reg_type_tostring (i), rs->arena->size);
+		r_cons_printf (core->cons, "* arena %s size %d\n", r_reg_type_tostring (i), rs->arena->size);
 		r_list_foreach (rs->regs, iter, ri) {
 			const char *tpe = r_reg_type_tostring (ri->type);
 			const char *arn = r_reg_type_tostring (ri->arena);
-			r_kons_printf (core->cons, "   %s %s @ %s (offset: %d  size: %d)", ri->name, tpe, arn, ri->offset / 8, ri->size / 8);
+			r_cons_printf (core->cons, "   %s %s @ %s (offset: %d  size: %d)", ri->name, tpe, arn, ri->offset / 8, ri->size / 8);
 			if ((ri->offset / 8) + (ri->size / 8) > rs->arena->size) {
-				r_kons_printf (core->cons, " *OVERFLOW*");
+				r_cons_printf (core->cons, " *OVERFLOW*");
 			}
 			r_cons_newline (core->cons);
 		}
@@ -2343,7 +2343,7 @@ static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" 
 				if (ri->type != R_REG_TYPE_GPR) {
 					continue;
 				}
-				r_kons_printf (core->cons, "f %s.%s=%d\n", "gpr", ri->name, ri->offset / 8);
+				r_cons_printf (core->cons, "f %s.%s=%d\n", "gpr", ri->name, ri->offset / 8);
 			}
 		}
 		break;
@@ -2402,7 +2402,7 @@ static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" 
 		} else {
 			RRegSet *rs = r_reg_regset_get (core->dbg->reg, R_REG_TYPE_GPR);
 			if (rs) {
-				r_kons_printf (core->cons, "%d\n", rs->arena->size);
+				r_cons_printf (core->cons, "%d\n", rs->arena->size);
 			} else {
 				R_LOG_ERROR ("Cannot find GPR register arena");
 			}
@@ -2446,7 +2446,7 @@ static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" 
 			}
 			pj_end (pj); // "]"
 			pj_end (pj); // "}"
-			r_kons_printf (core->cons, "%s", pj_string (pj));
+			r_cons_printf (core->cons, "%s", pj_string (pj));
 			pj_free (pj);
 		}
 		break;
@@ -2497,7 +2497,7 @@ static const char *pack_format[NUM_PACK_TYPES] = {
 	"%s0x%016" PFMT64x, "%s%lf" , "%s%lf"
 };
 
-#define pack_print(i, reg, pack_type_index) r_kons_printf (core->cons, pack_format[pack_type_index], i != 0 ? " " : "", reg);
+#define pack_print(i, reg, pack_type_index) r_cons_printf (core->cons, pack_format[pack_type_index], i != 0 ? " " : "", reg);
 
 static void cmd_debug_reg_print_packed_reg(RCore *core, RRegItem *item, char explicit_size, char* pack_show)	{
 	int pi, i;
@@ -2571,7 +2571,7 @@ static void __tableRegList(RCore *core, RReg *reg, const char *str) {
 	const char *q = str;
 	if (r_table_query (t, q)) {
 		char *s = __table_format_string (t, fmt);
-		r_kons_printf (core->cons, "%s\n", s);
+		r_cons_printf (core->cons, "%s\n", s);
 		free (s);
 	}
 	r_table_free (t);
@@ -2620,7 +2620,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 						pj_free (pj);
 					} else {
 						if (r->comment) {
-							r_kons_printf (core->cons, "%s\n", r->comment);
+							r_cons_printf (core->cons, "%s\n", r->comment);
 						} else {
 							R_LOG_ERROR ("Register %s doesn't have any comments", name);
 						}
@@ -2659,14 +2659,14 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				}
 				ut64 off = r_debug_reg_get (core->dbg, arg);
 				if (count == 1) {
-					r_kons_printf (core->cons, "0x%08"PFMT64x"\n", off);
+					r_cons_printf (core->cons, "0x%08"PFMT64x"\n", off);
 				} else {
 					int type = r_reg_alias_fromstring (arg);
 					const char *r = arg;
 					if (type != -1) {
 						r = r_reg_alias_getname (core->dbg->reg, type);
 					}
-					r_kons_printf (core->cons, "%3s %3s 0x%08"PFMT64x"\n", arg, r, off);
+					r_cons_printf (core->cons, "%3s %3s 0x%08"PFMT64x"\n", arg, r, off);
 				}
 				core->num->value = off;
 			}
@@ -2761,7 +2761,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		if (str[1] == 'q') { // "drcq"
 			RRegFlags *rf = r_reg_cond_retrieve (core->dbg->reg, NULL);
 			if (rf) {
-				r_kons_printf (core->cons, "s:%d z:%d c:%d o:%d p:%d\n",
+				r_cons_printf (core->cons, "s:%d z:%d c:%d o:%d p:%d\n",
 						rf->s, rf->z, rf->c, rf->o, rf->p);
 				free (rf);
 			}
@@ -2770,7 +2770,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		if (str[1] == '=') { // "drc="
 			RRegFlags *rf = r_reg_cond_retrieve (core->dbg->reg, NULL);
 			if (rf) {
-				r_kons_printf (core->cons, "s:%d z:%d c:%d o:%d p:%d\n",
+				r_cons_printf (core->cons, "s:%d z:%d c:%d o:%d p:%d\n",
 						rf->s, rf->z, rf->c, rf->o, rf->p);
 				free (rf);
 			}
@@ -2810,7 +2810,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 						int o = r_reg_cond_bits (core->dbg->reg, id, rf);
 						r_core_return_value (core, o);
 						// orly?
-						r_kons_printf (core->cons, "%d\n", o);
+						r_cons_printf (core->cons, "%d\n", o);
 						free (rf);
 					} else {
 						R_LOG_ERROR ("unknown conditional or flag register");
@@ -2821,14 +2821,14 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				if (rf) {
 					if (*name == '=') {
 						for (i = 0; i < R_REG_COND_LAST; i++) {
-							r_kons_printf (core->cons, "%s:%d ",
+							r_cons_printf (core->cons, "%s:%d ",
 									r_reg_cond_tostring (i),
 									r_reg_cond_bits (core->dbg->reg, i, rf));
 						}
 						r_cons_newline (core->cons);
 					} else {
 						for (i = 0; i < R_REG_COND_LAST; i++) {
-							r_kons_printf (core->cons, "%d %s\n",
+							r_cons_printf (core->cons, "%d %s\n",
 									r_reg_cond_bits (core->dbg->reg, i, rf),
 									r_reg_cond_tostring (i));
 						}
@@ -2892,7 +2892,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	case 's': // "drs"
 		switch (str[1]) {
 		case '\0': // "drs"
-			r_kons_printf (core->cons, "%d\n", r_list_length (core->dbg->reg->regset[0].pool));
+			r_cons_printf (core->cons, "%d\n", r_list_length (core->dbg->reg->regset[0].pool));
 			break;
 		case '-': // "drs-"
 			r_reg_arena_pop (core->dbg->reg);
@@ -3017,7 +3017,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 						} else {
 							ut64 res = r_reg_get_pack (core->dbg->reg, item, index, size);
 							// print selected index / wordsize
-							r_kons_printf (core->cons, "0x%08" PFMT64x "\n", res);
+							r_cons_printf (core->cons, "0x%08" PFMT64x "\n", res);
 						}
 					}
 				} else {
@@ -3036,7 +3036,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 						if (item->type != reg_type) {
 							continue;
 						}
-						r_kons_printf (core->cons, "%-5s = ", item->name);
+						r_cons_printf (core->cons, "%-5s = ", item->name);
 						cmd_debug_reg_print_packed_reg (core, item, explicit_size, pack_show);
 					}
 				}
@@ -3084,7 +3084,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_FPU, false);
 					long double res = r_reg_get_longdouble (core->dbg->reg, item);
-					r_kons_printf (core->cons, "%Lf\n", res);
+					r_cons_printf (core->cons, "%Lf\n", res);
 				}
 			} else {
 				/* note, that negative type forces sync to print the regs from the backend */
@@ -3152,7 +3152,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				r_debug_reg_list (core->dbg, type, size, pj, rad, use_color);
 				if (pj) {
 					char *s = pj_drain (pj);
-					r_kons_printf (core->cons, "%s\n", s);
+					r_cons_printf (core->cons, "%s\n", s);
 					free (s);
 				}
 			} else {
@@ -3279,7 +3279,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, pj, 'j', use_color);
 				char *s = pj_drain (pj);
 				if (s) {
-					r_kons_printf (core->cons, "%s\n", s);
+					r_cons_printf (core->cons, "%s\n", s);
 					free (s);
 				}
 			} else {
@@ -3297,11 +3297,11 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			r = r_reg_get (core->dbg->reg, string, -1);
 			if (r) {
 				if (r->flags) {
-					r_kons_printf (core->cons, "0x%08"PFMT64x" ->",
+					r_cons_printf (core->cons, "0x%08"PFMT64x" ->",
 							r_reg_get_value (core->dbg->reg, r));
 					r_reg_set_bvalue (core->dbg->reg, r, arg+1);
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
-					r_kons_printf (core->cons, "0x%08"PFMT64x"\n",
+					r_cons_printf (core->cons, "0x%08"PFMT64x"\n",
 							r_reg_get_value (core->dbg->reg, r));
 				} else {
 					ut64 oval = r_reg_get_value (core->dbg->reg, r);
@@ -3315,9 +3315,9 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					}
 					ut64 nval = r_reg_get_value (core->dbg->reg, r);
 					if (nval == wval) {
-						r_kons_printf (core->cons, "0x%08"PFMT64x" -> 0x%08"PFMT64x"\n", oval, nval);
+						r_cons_printf (core->cons, "0x%08"PFMT64x" -> 0x%08"PFMT64x"\n", oval, nval);
 					} else {
-						r_kons_printf (core->cons, "0x%08"PFMT64x" -> 0x%08"PFMT64x" -> 0x%08"PFMT64x"\n", oval, wval, nval);
+						r_cons_printf (core->cons, "0x%08"PFMT64x" -> 0x%08"PFMT64x" -> 0x%08"PFMT64x"\n", oval, wval, nval);
 					}
 				}
 			} else {
@@ -3389,14 +3389,14 @@ static void backtrace_vars(RCore *core, RList *frames) {
 //////////
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, f->addr, 0);
 		// char *str = r_str_newf ("[frame %d]", n);
-		r_kons_printf (core->cons, "%d  0x%08"PFMT64x" sp: 0x%08"PFMT64x" %-5d"
+		r_cons_printf (core->cons, "%d  0x%08"PFMT64x" sp: 0x%08"PFMT64x" %-5d"
 				"[%s]  %s %s\n", n, f->addr, f->sp, (int)f->size,
 				fcn ? fcn->name : "??", flagdesc, flagdesc2);
 		eprintf ("afvd @ 0x%"PFMT64x"\n", f->addr);
 		r_cons_push (core->cons);
 		char *res = r_core_cmd_strf (core, "afvd@0x%"PFMT64x, f->addr);
 		r_cons_pop (core->cons);
-		r_kons_printf (core->cons, "%s", res);
+		r_cons_printf (core->cons, "%s", res);
 		free (res);
 		n++;
 	}
@@ -3423,25 +3423,25 @@ static void asciiart_backtrace(RCore *core, RList *frames) {
 		map->addr_end = UT64_MAX;
 	}
 
-	r_kons_printf (core->cons, "0x%016"PFMT64x"  STACK END  ^^^\n", map->addr);
-	r_kons_printf (core->cons, "0x%016"PFMT64x"  STACK POINTER: %s\n", dsp, spreg);
-	r_kons_printf (core->cons, "                    .------------------------.\n");
+	r_cons_printf (core->cons, "0x%016"PFMT64x"  STACK END  ^^^\n", map->addr);
+	r_cons_printf (core->cons, "0x%016"PFMT64x"  STACK POINTER: %s\n", dsp, spreg);
+	r_cons_printf (core->cons, "                    .------------------------.\n");
 	int n = 0;
 	r_list_foreach (frames, iter, f) {
 		ut64 s = f->sp ? f->sp : dsp;
 		ut64 b = f->bp ? f->bp : dbp;
 		char *str = r_str_newf ("[frame %d]", n);
-		r_kons_printf (core->cons, "0x%016"PFMT64x"  |%4s    %10s      | ; size %" PFMTDPTR "\n", s, "SP", str, (ptrdiff_t)(s - b));
+		r_cons_printf (core->cons, "0x%016"PFMT64x"  |%4s    %10s      | ; size %" PFMTDPTR "\n", s, "SP", str, (ptrdiff_t)(s - b));
 		free (str);
-		r_kons_printf (core->cons, "                    |            ...         |\n");
-		r_kons_printf (core->cons, "0x%016"PFMT64x"  |%4s 0x%016"PFMT64x" | %s\n", b, "BP", f->addr, "; return address");
-		r_kons_printf (core->cons, "                    )------------------------(\n");
+		r_cons_printf (core->cons, "                    |            ...         |\n");
+		r_cons_printf (core->cons, "0x%016"PFMT64x"  |%4s 0x%016"PFMT64x" | %s\n", b, "BP", f->addr, "; return address");
+		r_cons_printf (core->cons, "                    )------------------------(\n");
 		// eprintf ("0x%08llx 0x%08llx 0x%08llx\n", f->addr, s, b);
 		n++;
 	}
-	r_kons_printf (core->cons, "                    |           ...          |\n");
-	r_kons_printf (core->cons, "                    `------------------------'\n");
-	r_kons_printf (core->cons, "0x%016"PFMT64x"  STACK BOTTOM\n", map->addr_end);
+	r_cons_printf (core->cons, "                    |           ...          |\n");
+	r_cons_printf (core->cons, "                    `------------------------'\n");
+	r_cons_printf (core->cons, "0x%016"PFMT64x"  STACK BOTTOM\n", map->addr_end);
 	if (mymap) {
 		r_debug_map_free (map);
 	}
@@ -3517,7 +3517,7 @@ static void core_cmd_dbi(RCore *core, const char *input, const ut64 idx) {
 		{
 			const int index = r_bp_get_index_at (core->dbg->bp, idx);
 			if (index != -1) {
-				r_kons_printf (core->cons, "%d\n", index);
+				r_cons_printf (core->cons, "%d\n", index);
 			}
 		}
 		break;
@@ -3532,14 +3532,14 @@ static void core_cmd_dbi(RCore *core, const char *input, const ut64 idx) {
 		{
 			const int index = r_bp_get_index_at (core->dbg->bp, core->addr);
 			if (index != -1) {
-				r_kons_printf (core->cons, "%d\n", index);
+				r_cons_printf (core->cons, "%d\n", index);
 			}
 		}
 		break;
 	case 0: // "dbi"
 		for (i = 0; i < core->dbg->bp->bps_idx_count; i++) {
 			if ((bpi = core->dbg->bp->bps_idx[i])) {
-				r_kons_printf (core->cons, "%d 0x%08"PFMT64x" E:%d T:%d\n",
+				r_cons_printf (core->cons, "%d 0x%08"PFMT64x" E:%d T:%d\n",
 						i, bpi->addr, bpi->enabled, bpi->trace);
 			}
 		}
@@ -3553,12 +3553,12 @@ static void core_cmd_dbi(RCore *core, const char *input, const ut64 idx) {
 					bpi->expr = strdup (expr);
 				}
 			}
-			r_kons_printf (core->cons, "%d\n", (int)idx);
+			r_cons_printf (core->cons, "%d\n", (int)idx);
 		} else {
 			for (i = 0; i < core->dbg->bp->bps_idx_count; i++) {
 				RBreakpointItem *bp = core->dbg->bp->bps_idx[i];
 				if (bp) {
-					r_kons_printf (core->cons, "%d 0x%08"PFMT64x" %s\n", i, bp->addr, bp->expr);
+					r_cons_printf (core->cons, "%d 0x%08"PFMT64x" %s\n", i, bp->addr, bp->expr);
 				}
 			}
 		}
@@ -3723,7 +3723,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		} else {
 			bpi = r_bp_get_at (core->dbg->bp, core->addr);
 			if (bpi) {
-				r_kons_printf (core->cons, "breakpoint %s %s %s\n",
+				r_cons_printf (core->cons, "breakpoint %s %s %s\n",
 						r_str_rwx_i (bpi->perm),
 						bpi->enabled ?  "enabled" : "disabled",
 						r_str_get (bpi->name));
@@ -3764,7 +3764,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		} else if (!input[2]) {
 			RBreakpointItem *bp;
 			r_list_foreach (core->dbg->bp->bps, iter, bp) {
-				r_kons_printf (core->cons, "0x%08"PFMT64x" %s\n", bp->addr, r_str_get (bp->expr));
+				r_cons_printf (core->cons, "0x%08"PFMT64x" %s\n", bp->addr, r_str_get (bp->expr));
 			}
 		} else {
 			r_core_return_invalid_command (core, "dbx", input[2]);
@@ -3857,15 +3857,15 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			r_list_foreach (list, iter, frame) {
 				switch (input[3]) {
 				case 0:
-					r_kons_printf (core->cons, "%s0x%08"PFMT64x,
+					r_cons_printf (core->cons, "%s0x%08"PFMT64x,
 							(i ? " " : ""), frame->addr);
 					break;
 				case 's':
-					r_kons_printf (core->cons, "%s0x%08"PFMT64x,
+					r_cons_printf (core->cons, "%s0x%08"PFMT64x,
 							(i ? " " : ""), frame->sp);
 					break;
 				case 'b':
-					r_kons_printf (core->cons, "%s0x%08"PFMT64x,
+					r_cons_printf (core->cons, "%s0x%08"PFMT64x,
 							(i ? " " : ""), frame->bp);
 					break;
 				case '?':
@@ -3886,10 +3886,10 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			i = 0;
 			list = r_debug_frames (core->dbg, addr);
 			r_list_reverse (list);
-			r_kons_printf (core->cons, "f-bt.*\n");
+			r_cons_printf (core->cons, "f-bt.*\n");
 			r_list_foreach (list, iter, frame) {
-				r_kons_printf (core->cons, "f bt.frame%d = 0x%08"PFMT64x"\n", i, frame->addr);
-				r_kons_printf (core->cons, "f bt.frame%d.stack %d 0x%08"PFMT64x"\n", i, frame->size, frame->sp);
+				r_cons_printf (core->cons, "f bt.frame%d = 0x%08"PFMT64x"\n", i, frame->addr);
+				r_cons_printf (core->cons, "f bt.frame%d.stack %d 0x%08"PFMT64x"\n", i, frame->size, frame->sp);
 				i++;
 			}
 			r_list_free (list);
@@ -3905,7 +3905,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				char *flagdesc, *flagdesc2, *pcstr, *spstr;
 				get_backtrace_info (core, frame, addr, &flagdesc, &flagdesc2, &pcstr, &spstr);
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, frame->addr, 0);
-				r_kons_printf (core->cons, "%d  %s sp: %s  %-5d"
+				r_cons_printf (core->cons, "%d  %s sp: %s  %-5d"
 						"[%s]  %s %s\n", i++,
 						pcstr, spstr,
 						(int)frame->size,
@@ -3931,7 +3931,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		if (input[2]) {
 			core->dbg->bp->delta = (st64)r_num_math (core->num, input + 2);
 		} else {
-			r_kons_printf (core->cons, "%"PFMT64d"\n", core->dbg->bp->delta);
+			r_cons_printf (core->cons, "%"PFMT64d"\n", core->dbg->bp->delta);
 		}
 		break;
 	case 'm': // "dbm"
@@ -3957,9 +3957,27 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			R_LOG_INFO ("Missing argument for dbm");
 		}
 		break;
-	case 'j': r_bp_list (core->dbg->bp, 'j'); break;
-	case '*': r_bp_list (core->dbg->bp, 1); break;
-	case '\0': r_bp_list (core->dbg->bp, 0); break;
+	case '*':
+		{
+			char *s = r_bp_list (core->dbg->bp, 1);
+			r_cons_print (core->cons, s);
+			free (s);
+		}
+		break;
+	case 0:
+		{
+			char *s = r_bp_list (core->dbg->bp, 0);
+			r_cons_print (core->cons, s);
+			free (s);
+		}
+		break;
+	case 'j':
+		{
+			char *s = r_bp_list (core->dbg->bp, 'j');
+			r_cons_println (core->cons, s);
+			free (s);
+		}
+		break;
 	case '-': // "db-"
 		if (input[2] == '*') {
 			r_bp_del_all (core->dbg->bp);
@@ -4077,7 +4095,11 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	case 'h': // "dbh"
 		switch (input[2]) {
 		case 0:
-			r_bp_plugin_list (core->dbg->bp);
+			{
+				char *s = r_bp_plugin_list (core->dbg->bp);
+				r_cons_print (core->cons, s);
+				free (s);
+			}
 			break;
 		case ' ':
 			if (input[3]) {
@@ -4168,7 +4190,7 @@ static void trace_traverse_pre(RTreeNode *n, RTreeVisitor *vis) {
 	}
 	RCons *cons = r_cons_singleton ();
 	for (i = 0; i < n->depth - 1; i++) {
-		r_kons_printf (cons, "  ");
+		r_cons_printf (cons, "  ");
 	}
 	if (Gcore) {
 		RFlagItem *f = r_flag_get_at (Gcore->flags, tn->addr, true);
@@ -4176,7 +4198,7 @@ static void trace_traverse_pre(RTreeNode *n, RTreeVisitor *vis) {
 			name = f->name;
 		}
 	}
-	r_kons_printf (cons, " 0x%08"PFMT64x" refs %d %s\n", tn->addr, tn->refs, name);
+	r_cons_printf (cons, " 0x%08"PFMT64x" refs %d %s\n", tn->addr, tn->refs, name);
 }
 
 static void trace_traverse(RTree *t) {
@@ -4429,7 +4451,7 @@ static void r_core_debug_esil(RCore *core, const char *input) {
 		{
 			r_core_cmd_help (core, help_msg_de);
 			// TODO #7967 help refactor: move to detail
-			r_kons_printf (core->cons, "Examples:\n"
+			r_cons_printf (core->cons, "Examples:\n"
 					" de r r rip       # stop when reads rip\n"
 					" de rw m ADDR     # stop when read or write in ADDR\n"
 					" de w r rdx       # stop when rdx register is modified\n"
@@ -4452,7 +4474,7 @@ static void r_core_debug_kill(RCore *core, const char *input) {
 			} else {
 				signum = r_signal_from_string (arg);
 				if (signum > 0) {
-					r_kons_printf (core->cons, "%d\n", signum);
+					r_cons_printf (core->cons, "%d\n", signum);
 				}
 			}
 		} else {
@@ -4463,7 +4485,7 @@ static void r_core_debug_kill(RCore *core, const char *input) {
 		case 0: // "dko" - list signal skip/conts
 			{
 				char *s = r_debug_signal_list (core->dbg, 1);
-				r_kons_print (core->cons, s);
+				r_cons_print (core->cons, s);
 				free (s);
 			}
 			break;
@@ -4509,13 +4531,13 @@ static void r_core_debug_kill(RCore *core, const char *input) {
 	} else if (*input == 'j') {
 		core->dbg->pj = r_core_pj_new (core); /// XXX dbg->pj is an antipattern R2_600
 		char *s = r_debug_signal_list (core->dbg, 2);
-		r_kons_print (core->cons, s);
+		r_cons_print (core->cons, s);
 		free (s);
 		pj_free (core->dbg->pj);
 		core->dbg->pj = NULL;
 	} else if (!*input) {
 		char *s = r_debug_signal_list (core->dbg, 0);
-		r_kons_print (core->cons, s);
+		r_cons_print (core->cons, s);
 		free (s);
 #if 0
 		RListIter *iter;
@@ -5142,7 +5164,7 @@ static int run_buffer_dxr(RCore *core, RBuffer *buf, bool print, bool ignore_sta
 	}
 	r_hex_bin2str (raw, raw_len, hexpairs);
 	if (print) {
-		r_kons_printf (core->cons, "%s %s\n", cmd, hexpairs);
+		r_cons_printf (core->cons, "%s %s\n", cmd, hexpairs);
 	} else {
 		ret = r_core_cmdf (core, "%s %s", cmd, hexpairs);
 	}
@@ -5516,7 +5538,7 @@ static int cmd_debug(void *data, const char *input) {
 		if (use_beat) {
 			int sub_beats = 0;
 			int beats = r_time_beats (r_time_now (), &sub_beats);
-			r_kons_printf (core->cons, "@%03d.%d\n", beats, sub_beats);
+			r_cons_printf (core->cons, "@%03d.%d\n", beats, sub_beats);
 		} else {
 			char *nostr = r_time_secs_tostring (r_time_today ());
 			r_cons_println (core->cons, nostr);
@@ -5547,10 +5569,10 @@ static int cmd_debug(void *data, const char *input) {
 		case ' ': // "dt [addr]"
 			if ((t = r_debug_trace_get (core->dbg,
 					r_num_math (core->num, input + 3)))) {
-				r_kons_printf (core->cons, "offset = 0x%" PFMT64x "\n", t->addr);
-				r_kons_printf (core->cons, "opsize = %d\n", t->size);
-				r_kons_printf (core->cons, "times = %d\n", t->times);
-				r_kons_printf (core->cons, "count = %d\n", t->count);
+				r_cons_printf (core->cons, "offset = 0x%" PFMT64x "\n", t->addr);
+				r_cons_printf (core->cons, "opsize = %d\n", t->size);
+				r_cons_printf (core->cons, "times = %d\n", t->times);
+				r_cons_printf (core->cons, "count = %d\n", t->count);
 				//TODO cons_printf("time = %d\n", t->tm);
 			}
 			break;
@@ -5563,7 +5585,7 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case 't': // "dtt"
 			if (input[2] == '.') {
-				r_kons_printf (core->cons, "%d\n", core->dbg->trace->tag);
+				r_cons_printf (core->cons, "%d\n", core->dbg->trace->tag);
 			} else if (input[2]) {
 				r_debug_trace_tag (core->dbg, atoi (input + 3));
 			} else {
@@ -5583,8 +5605,8 @@ static int cmd_debug(void *data, const char *input) {
 				int n = 0;
 				R_VEC_FOREACH (core->dbg->trace->traces, trace) {
 					if (n >= min) {
-						r_kons_printf (core->cons, "%d  ", trace->count);
-						r_kons_printf (core->cons, "0x%08"PFMT64x"\n", trace->addr);
+						r_cons_printf (core->cons, "%d  ", trace->count);
+						r_cons_printf (core->cons, "0x%08"PFMT64x"\n", trace->addr);
 						break;
 					}
 					n++;
@@ -5594,7 +5616,7 @@ static int cmd_debug(void *data, const char *input) {
 				R_VEC_FOREACH (core->dbg->trace->traces, trace) {
 					op = r_core_anal_op (core, trace->addr, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
 					if (n >= min) {
-						r_kons_printf (core->cons, "%d %s\n", trace->count, op->mnemonic);
+						r_cons_printf (core->cons, "%d %s\n", trace->count, op->mnemonic);
 					}
 					n++;
 					r_anal_op_free (op);
@@ -5605,7 +5627,7 @@ static int cmd_debug(void *data, const char *input) {
 					op = r_core_anal_op (core, trace->addr, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
 					if (n >= min) {
 						const char *opstr = op? op->mnemonic: "?";
-						r_kons_printf (core->cons, "0x%08"PFMT64x" %s\n", trace->addr, opstr);
+						r_cons_printf (core->cons, "0x%08"PFMT64x" %s\n", trace->addr, opstr);
 					}
 					n++;
 					r_anal_op_free (op);
@@ -5616,7 +5638,7 @@ static int cmd_debug(void *data, const char *input) {
 				R_VEC_FOREACH (core->dbg->trace->traces, trace) {
 					op = r_core_anal_op (core, trace->addr, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
 					const char *opstr = op? op->mnemonic: "?";
-					r_kons_printf (core->cons, "0x%08"PFMT64x" %s\n", trace->addr, opstr);
+					r_cons_printf (core->cons, "0x%08"PFMT64x" %s\n", trace->addr, opstr);
 					r_anal_op_free (op);
 				}
 			}
@@ -5885,7 +5907,7 @@ static int cmd_debug(void *data, const char *input) {
 				if (!r_config_get_b (core->config, "cfg.debug")) {
 					R_LOG_WARN ("No debugee information available when not using the debugger");
 				} else {
-#define P(x,y) r_kons_printf (core->cons, x, y)
+#define P(x,y) r_cons_printf (core->cons, x, y)
 					if (stop != -1) {
 						if (core->dbg->reason.type == R_DEBUG_REASON_SIGNAL) {
 							P ("signalstr=%s\n", r_signal_to_human (core->dbg->reason.signum));
@@ -5947,7 +5969,7 @@ static int cmd_debug(void *data, const char *input) {
 							if (a && b) {
 								RDiff *d = r_diff_new ();
 								char *uni = r_diff_buffers_tostring (d, a, al, b, bl);
-								r_kons_printf (core->cons, "%s\n", uni);
+								r_cons_printf (core->cons, "%s\n", uni);
 								r_diff_free (d);
 								free (uni);
 							} else {
@@ -5964,15 +5986,15 @@ static int cmd_debug(void *data, const char *input) {
 				break;
 			case '*': // "di*"
 				if (rdi) {
-					r_kons_printf (core->cons, "f dbg.signal = %d\n", core->dbg->reason.signum);
-					r_kons_printf (core->cons, "f dbg.sigpid = %d\n", core->dbg->reason.tid);
-					r_kons_printf (core->cons, "f dbg.inbp = %d\n", core->dbg->reason.bp_addr? 1: 0);
-					r_kons_printf (core->cons, "f dbg.sigaddr = 0x%"PFMT64x"\n", core->dbg->reason.addr);
-					r_kons_printf (core->cons, "f dbg.baddr = 0x%"PFMT64x"\n", r_debug_get_baddr (core->dbg, NULL));
-					r_kons_printf (core->cons, "f dbg.pid = %d\n", rdi->pid);
-					r_kons_printf (core->cons, "f dbg.tid = %d\n", rdi->tid);
-					r_kons_printf (core->cons, "f dbg.uid = %d\n", rdi->uid);
-					r_kons_printf (core->cons, "f dbg.gid = %d\n", rdi->gid);
+					r_cons_printf (core->cons, "f dbg.signal = %d\n", core->dbg->reason.signum);
+					r_cons_printf (core->cons, "f dbg.sigpid = %d\n", core->dbg->reason.tid);
+					r_cons_printf (core->cons, "f dbg.inbp = %d\n", core->dbg->reason.bp_addr? 1: 0);
+					r_cons_printf (core->cons, "f dbg.sigaddr = 0x%"PFMT64x"\n", core->dbg->reason.addr);
+					r_cons_printf (core->cons, "f dbg.baddr = 0x%"PFMT64x"\n", r_debug_get_baddr (core->dbg, NULL));
+					r_cons_printf (core->cons, "f dbg.pid = %d\n", rdi->pid);
+					r_cons_printf (core->cons, "f dbg.tid = %d\n", rdi->tid);
+					r_cons_printf (core->cons, "f dbg.uid = %d\n", rdi->uid);
+					r_cons_printf (core->cons, "f dbg.gid = %d\n", rdi->gid);
 				}
 				break;
 			case 'j': // "dij"
@@ -6022,7 +6044,7 @@ static int cmd_debug(void *data, const char *input) {
 					if (!r) {
 						r = "none";
 					}
-					r_kons_printf (core->cons, "%s at 0x%08"PFMT64x"\n", r, core->dbg->stopaddr);
+					r_cons_printf (core->cons, "%s at 0x%08"PFMT64x"\n", r, core->dbg->stopaddr);
 				}
 				break;
 			case '?': // "di?"

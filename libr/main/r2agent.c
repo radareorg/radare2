@@ -173,7 +173,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 		r_socket_http_close (rs);
 		R_FREE (res);
 	}
-	r_kons_free (cons);
+	r_cons_free2 (cons);
 	free (pfile);
 	r_list_free (so.authtokens);
 	r_socket_free (s);

@@ -3383,7 +3383,7 @@ static void agraph_follow_innodes(RCore *core, RAGraph *g, bool in) {
 	}
 	RCons *cons = core->cons;
 	r_cons_gotoxy (cons, 0, 2);
-	r_kons_printf (cons, in? "Input nodes:\n": "Output nodes:\n");
+	r_cons_printf (cons, in? "Input nodes:\n": "Output nodes:\n");
 	RList *options = r_list_newf (NULL);
 	RList *gnodes = in? an->gnode->in_nodes: an->gnode->out_nodes;
 	RGraphNode *gn;
@@ -3400,7 +3400,7 @@ static void agraph_follow_innodes(RCore *core, RAGraph *g, bool in) {
 					continue;
 				}
 			}
-			r_kons_printf (cons, "%d %s\n", count, nnn->title);
+			r_cons_printf (cons, "%d %s\n", count, nnn->title);
 			r_list_append (options, nnn);
 			count++;
 		}
@@ -3558,7 +3558,7 @@ static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, RAnalFunct
 	}
 
 	if (is_interactive) {
-		r_kons_clear00 (core->cons);
+		r_cons_clear00 (core->cons);
 	} else {
 		/* TODO: limit to screen size when the output is not redirected to file */
 		update_graph_sizes (g);
@@ -3607,9 +3607,9 @@ static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, RAnalFunct
 			if (color > 0) {
 				const char *kolor = cons->context->pal.prompt;
 				r_cons_gotoxy (cons, 0, 0);
-				r_kons_print (cons, kolor? kolor: Color_WHITE);
-				r_kons_print (cons, g->title);
-				r_kons_print (cons, Color_RESET"\r");
+				r_cons_print (cons, kolor? kolor: Color_WHITE);
+				r_cons_print (cons, g->title);
+				r_cons_print (cons, Color_RESET"\r");
 			} else {
 				W (g->title); // canvas write is always black/white
 			}
@@ -3634,7 +3634,7 @@ static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, RAnalFunct
 		}
 		if (R_STR_ISNOTEMPTY (cmdv)) {
 			r_cons_gotoxy (cons, 0, 2);
-			r_kons_print (cons, Color_RESET);
+			r_cons_print (cons, Color_RESET);
 			r_core_cmd0 (core, cmdv);
 			mustFlush = true;
 		}
@@ -3673,7 +3673,7 @@ static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, RAnalFunct
 static void check_function_modified(RCore *core, RAnalFunction *fcn) {
 	if (r_anal_function_was_modified (fcn)) {
 		if (r_config_get_b (core->config, "anal.onchange")
-			|| r_kons_yesno (core->cons, 'y', "Function was modified. Reanalyze? (Y/n)")) {
+			|| r_cons_yesno (core->cons, 'y', "Function was modified. Reanalyze? (Y/n)")) {
 			r_anal_function_update_analysis (fcn);
 		}
 	}
@@ -3713,7 +3713,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 			f = r_anal_get_fcn_in (core->anal, core->addr, 0);
 			if (!f) {
 				if (!g->is_dis) {
-					if (!r_kons_yesno (cons, 'y', "\rNo function at 0x%08"PFMT64x". Define it here (Y/n)? ", core->addr)) {
+					if (!r_cons_yesno (cons, 'y', "\rNo function at 0x%08"PFMT64x". Define it here (Y/n)? ", core->addr)) {
 						return 0;
 					}
 					r_core_cmd_call (core, "af");
@@ -4177,11 +4177,11 @@ find_next:
 			visual_refresh (core);
 		}
 
-		r_kons_clear_line (cons, 0);
-		r_kons_printf (cons, Color_RESET);
+		r_cons_clear_line (cons, 0);
+		r_cons_printf (cons, Color_RESET);
 		if (addr > 0) {
 			r_cons_gotoxy (cons, 0, 0);
-			r_kons_printf (cons, "[find]> match '%s'", line);
+			r_cons_printf (cons, "[find]> match '%s'", line);
 			R_LOG_INFO ("Found (%d/%d). Press 'n' for next, 'N' for prev, 'q' for quit, any other key to continue", offset + 1, offset_max);
 		} else {
 			R_LOG_ERROR ("Text '%s' not found. Press 'q' for quit, any other key to conitnue", buf);
@@ -4248,9 +4248,9 @@ static void goto_asmqjmps(RAGraph *g, RCore *core) {
 
 	r_cons_get_size (cons, &rows);
 	r_cons_gotoxy (cons, 0, rows);
-	r_kons_clear_line (cons, 0);
-	r_kons_print (cons, Color_RESET);
-	r_kons_print (cons, h);
+	r_cons_clear_line (cons, 0);
+	r_cons_print (cons, Color_RESET);
+	r_cons_print (cons, h);
 	r_cons_flush (cons);
 
 	do {
@@ -4377,7 +4377,7 @@ static char *get_graph_string(RCore *core, RAGraph *g) {
 	r_config_set_i (core->config, "scr.color", 0);
 	r_config_set_b (core->config, "scr.utf8", false);
 	r_core_visual_graph (core, g, NULL, false);
-	char *s = strdup (r_cons_get_buffer ());
+	char *s = strdup (r_cons_get_buffer (core->cons, NULL));
 	r_cons_reset (core->cons);
 	r_config_set_i (core->config, "scr.color", c);
 	r_config_set_b (core->config, "scr.utf8", u);
@@ -4407,7 +4407,7 @@ static void nextword(RCore *core, RAGraph *g, const char *word) {
 		r_vector_clear (&gh->word_list);
 	}
 	char *s = get_graph_string (core, g);
-	r_kons_clear00 (core->cons);
+	r_cons_clear00 (core->cons);
 	r_cons_flush (core->cons);
 	const size_t MAX_COUNT = 4096;
 	const char *a = NULL;
@@ -4684,7 +4684,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 			exit_graph = true;
 			break;
 		case '>':
-			if (fcn && r_kons_yesno (core->cons, 'y', "Compute function callgraph? (Y/n)")) {
+			if (fcn && r_cons_yesno (core->cons, 'y', "Compute function callgraph? (Y/n)")) {
 				r_core_cmd0 (core, "ag-;.agc* @$FB;.axfg @$FB;aggi");
 			}
 			break;
@@ -4765,7 +4765,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 			g->discroll = 0;
 			break;
 		case '?':
-			r_kons_clear00 (core->cons);
+			r_cons_clear00 (core->cons);
 			RStrBuf *rsb = r_strbuf_new ("");
 			r_core_visual_append_help (core, rsb, "Visual Graph Mode (VV) Help", help_msg_visual_graph);
 			ret = r_cons_less_str (core->cons, r_strbuf_get (rsb), "?");
@@ -4947,7 +4947,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 			// mark current x/y + offset
 			{
 				r_cons_gotoxy (core->cons, 0, 0);
-				r_kons_printf (core->cons, R_CONS_CLEAR_LINE"Set shortcut key for 0x%"PFMT64x"\n", core->addr);
+				r_cons_printf (core->cons, R_CONS_CLEAR_LINE"Set shortcut key for 0x%"PFMT64x"\n", core->addr);
 				r_cons_flush (core->cons);
 				int ch = r_cons_readchar (core->cons);
 				if (ch > 0) {

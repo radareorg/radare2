@@ -240,7 +240,7 @@ static const char *coff_section_type_tostring(int i) {
 	}
 	return "MAP";
 #if 0
-	r_cons_printf ("---> %x\n", i);
+	eprintf ("---> %x\n", i);
 	if (i & COFF_FLAGS_TI_F_EXEC) {
 		return "EXEC";
 	}

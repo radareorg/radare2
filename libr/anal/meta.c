@@ -566,11 +566,11 @@ beach:
 	if (!tq || !strstr (tq, "?")) {
 		if (t) {
 			char *s = r_table_tostring (t);
-			r_kons_print (cons, s);
+			r_cons_print (cons, s);
 			free (s);
 		} else if (pj) {
 			pj_end (pj);
-			r_kons_printf (cons, "%s\n", pj_string (pj));
+			r_cons_printf (cons, "%s\n", pj_string (pj));
 		}
 	}
 	pj_free (pj);

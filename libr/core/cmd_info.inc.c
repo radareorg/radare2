@@ -173,7 +173,7 @@ static void pair(RCore *core, const char *a, const char *b) {
 		al = 0;
 	}
 	ws[al] = 0;
-	r_kons_printf (core->cons, "%s%s%s\n", a, ws, b);
+	r_cons_printf (core->cons, "%s%s%s\n", a, ws, b);
 }
 
 static void classdump_keys(RCore *core, RBinObject *bo) {
@@ -187,14 +187,14 @@ static void classdump_keys(RCore *core, RBinObject *bo) {
 		const char *kname = r_bin_name_tostring2 (k->name, pref);
 		r_list_foreach (k->fields, iter2, f) {
 			const char *kind = r_bin_field_kindstr (f);
-			r_kons_printf (core->cons, "klass.%s.field.%s.%s=0x%"PFMT64x"\n",
+			r_cons_printf (core->cons, "klass.%s.field.%s.%s=0x%"PFMT64x"\n",
 					kname, kind, r_bin_name_tostring2 (f->name, 'f'),
 					iova? f->vaddr: f->paddr);
 		}
 		r_list_foreach (k->methods, iter2, m) {
 			char *attr = r_bin_attr_tostring (m->attr, true);
 			const char *mname = r_bin_name_tostring2 (m->name, 'f');
-			r_kons_printf (core->cons, "klass.%s.method.%s.%s=0x%"PFMT64x"\n",
+			r_cons_printf (core->cons, "klass.%s.method.%s.%s=0x%"PFMT64x"\n",
 					kname, r_str_get (attr), mname,
 					iova? m->vaddr: m->paddr);
 			free (attr);
@@ -230,7 +230,7 @@ static void cmd_info_demangle(RCore *core, const char *input, PJ *pj, int mode) 
 		if (!pj) {
 			r_core_cmd_help_match (core, help_msg_i, "iD");
 		} else {
-			r_kons_print (core->cons, "{}");
+			r_cons_print (core->cons, "{}");
 		}
 		return;
 	}
@@ -268,7 +268,7 @@ static void cmd_info_demangle(RCore *core, const char *input, PJ *pj, int mode) 
 		pj_end (pj);
 	} else {
 		if (res) {
-			r_kons_printf (core->cons, "%s\n", res);
+			r_cons_printf (core->cons, "%s\n", res);
 		} else {
 			R_LOG_ERROR (err);
 		}
@@ -341,10 +341,10 @@ static void cmd_info_here(RCore *core, PJ *pj, int mode) {
 	} else {
 		// TODO show more info
 		// type cant be code if perms are ---
-		r_kons_printf (core->cons, "type = %s\n", item->type);
-		r_kons_printf (core->cons, "perm = %s\n", r_str_rwx_i (item->perm));
-		r_kons_printf (core->cons, "size = %d\n", item->size);
-		r_kons_printf (core->cons, "addr = 0x%"PFMT64x"\n", item->addr);
+		r_cons_printf (core->cons, "type = %s\n", item->type);
+		r_cons_printf (core->cons, "perm = %s\n", r_str_rwx_i (item->perm));
+		r_cons_printf (core->cons, "size = %d\n", item->size);
+		r_cons_printf (core->cons, "addr = 0x%"PFMT64x"\n", item->addr);
 		// pj_kn (pj, "next", item->next);
 		// pj_kn (pj, "prev", item->prev);
 	}
@@ -430,7 +430,7 @@ static void cmd_iic2(RCore *core, int mode, const char *symname) {
 		char *s = sdb_querys (db, NULL, 0, symname);
 		if (s) {
 			r_str_replace_ch (s, ',', '\n', -1);
-			r_kons_print (core->cons, s);
+			r_cons_print (core->cons, s);
 			free (s);
 		}
 	} else if (mode == 'x') {
@@ -477,7 +477,7 @@ static void cmd_iic2(RCore *core, int mode, const char *symname) {
 				RFlagItem *fi = get_flag_for_import (core, value);
 				if (fi) {
 					const ut64 at = fi->addr;
-					r_kons_printf (core->cons, "'@0x%08"PFMT64x"'CC kind(%s)\n", at, k);
+					r_cons_printf (core->cons, "'@0x%08"PFMT64x"'CC kind(%s)\n", at, k);
 				}
 			}
 			free (v);
@@ -486,7 +486,7 @@ static void cmd_iic2(RCore *core, int mode, const char *symname) {
 	} else if (mode == 'k') {
 		char *s = sdb_querys (db, NULL, 0, "*");
 		if (s) {
-			r_kons_print (core->cons, s);
+			r_cons_print (core->cons, s);
 			free (s);
 		}
 	} else if (mode == 'j') {
@@ -523,7 +523,7 @@ static void cmd_iic2(RCore *core, int mode, const char *symname) {
 		}
 		pj_end (pj);
 		char *s = pj_drain (pj);
-		r_kons_print (core->cons, s);
+		r_cons_print (core->cons, s);
 		free (s);
 	} else {
 		SdbKv *kv;
@@ -532,18 +532,18 @@ static void cmd_iic2(RCore *core, int mode, const char *symname) {
 		ls_foreach (keys, it, kv) {
 			const char *k = sdbkv_key (kv);
 			char *v = strdup (sdbkv_value (kv));
-			r_kons_printf (core->cons, "|- %s:\n", k);
+			r_cons_printf (core->cons, "|- %s:\n", k);
 			const char *value;
 			RList *values = r_str_split_list (v, ",", 0);
 			r_list_foreach (values, iter2, value) {
-				r_kons_printf (core->cons, "|  |- %s\n", value);
+				r_cons_printf (core->cons, "|  |- %s\n", value);
 				RFlagItem *fi = get_flag_for_import (core, value);
 				if (fi) {
 					RList *refs = uniqrefs_for (core, fi->addr);
 					RListIter *iter;
 					char *ref;
 					r_list_foreach (refs, iter, ref) {
-						r_kons_printf (core->cons, "|  |  |- %s\n", ref);
+						r_cons_printf (core->cons, "|  |  |- %s\n", ref);
 					}
 					r_list_free (refs);
 				} else {
@@ -748,7 +748,7 @@ static void cmd_info_bin(RCore *core, int va, PJ *pj, int mode) {
 		}
 	} else {
 		if (mode & R_MODE_JSON) {
-			r_kons_print (core->cons, "{}");
+			r_cons_print (core->cons, "{}");
 		}
 		R_LOG_ERROR ("No file selected");
 	}
@@ -872,7 +872,7 @@ static void cmd_ic_comma(RCore *core, const char *input) {
 	r_list_free (bfiles);
 	if (r_table_query (t, q)) {
 		char *s = r_table_tostring (t);
-		r_kons_printf (core->cons, "%s\n", s);
+		r_cons_printf (core->cons, "%s\n", s);
 		free (s);
 	}
 	r_table_free (t);
@@ -987,14 +987,14 @@ static void cmd_icg(RCore *core, RBinObject *obj, const char *arg) { // "icg"
 			if (!match || !strstr (kname, match)) {
 				continue;
 			}
-			r_kons_printf (core->cons, "'agn %s\n", kname);
+			r_cons_printf (core->cons, "'agn %s\n", kname);
 			if (cls->super) {
 				RBinName *bn;
 				r_list_foreach (cls->super, iter2, bn) {
 					const char *sk = r_bin_name_tostring2 (bn, pref);
 					if (match && strstr (sk, match)) {
-						r_kons_printf (core->cons, "'agn %s\n", sk);
-						r_kons_printf (core->cons, "'age %s %s\n", sk, kname);
+						r_cons_printf (core->cons, "'agn %s\n", sk);
+						r_cons_printf (core->cons, "'age %s %s\n", sk, kname);
 					}
 				}
 			}
@@ -1003,11 +1003,11 @@ static void cmd_icg(RCore *core, RBinObject *obj, const char *arg) { // "icg"
 		r_list_foreach (obj->classes, iter, cls) {
 			const char *kname = r_bin_name_tostring2 (cls->name, pref);
 			RBinName *bn;
-			r_kons_printf (core->cons, "'agn %s\n", kname);
+			r_cons_printf (core->cons, "'agn %s\n", kname);
 			r_list_foreach (cls->super, iter2, bn) {
 				const char *sk = r_bin_name_tostring2 (bn, pref);
-				r_kons_printf (core->cons, "'agn %s\n", sk);
-				r_kons_printf (core->cons, "'age %s %s\n", sk, kname);
+				r_cons_printf (core->cons, "'agn %s\n", sk);
+				r_cons_printf (core->cons, "'age %s %s\n", sk, kname);
 			}
 		}
 	} else {
@@ -1019,9 +1019,9 @@ static void cmd_icg(RCore *core, RBinObject *obj, const char *arg) { // "icg"
 				if (strstr (sk, "NSObject")) {
 					continue;
 				}
-				r_kons_printf (core->cons, "'agn %s\n", sk);
-				r_kons_printf (core->cons, "'agn %s\n", kname);
-				r_kons_printf (core->cons, "'age %s %s\n", sk, kname);
+				r_cons_printf (core->cons, "'agn %s\n", sk);
+				r_cons_printf (core->cons, "'agn %s\n", kname);
+				r_cons_printf (core->cons, "'age %s %s\n", sk, kname);
 			}
 		}
 	}
@@ -1052,7 +1052,7 @@ static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_arra
 	RBinSymbol *sym;
 	RBinClass *cls;
 	if (mode == 'c') {
-		r_kons_printf (core->cons, "%d\n", r_list_length (obj->classes));
+		r_cons_printf (core->cons, "%d\n", r_list_length (obj->classes));
 		return;
 	}
 	r_list_foreach (obj->classes, iter, cls) {
@@ -1061,10 +1061,10 @@ static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_arra
 			continue;
 		}
 		if (is_doublerad) {
-			r_kons_printf (core->cons, "'ac %s\n", kname);
+			r_cons_printf (core->cons, "'ac %s\n", kname);
 			r_list_foreach (cls->methods, iter2, sym) {
 				const char *name = r_bin_name_tostring2 (sym->name, pref);
-				r_kons_printf (core->cons, "'ac %s %s 0x%08"PFMT64x"\n", kname,
+				r_cons_printf (core->cons, "'ac %s %s 0x%08"PFMT64x"\n", kname,
 						name, iova? sym->vaddr: sym->paddr);
 			}
 			continue;
@@ -1080,7 +1080,7 @@ static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_arra
 			}
 #if 0
 			r_list_foreach (cls->methods, iter2, sym) {
-				r_kons_printf (core->cons, "f sym.%s @ 0x%"PFMT64x "\n",
+				r_cons_printf (core->cons, "f sym.%s @ 0x%"PFMT64x "\n",
 						sym->name, iova? sym->vaddr: sym->paddr);
 			}
 #endif
@@ -1088,7 +1088,7 @@ static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_arra
 		case 'l': // "icl"
 			r_list_foreach (cls->methods, iter2, sym) {
 				const char *comma = iter2->p? " ": "";
-				r_kons_printf (core->cons, "%s0x%"PFMT64x, comma, iova? sym->vaddr: sym->paddr);
+				r_cons_printf (core->cons, "%s0x%"PFMT64x, comma, iova? sym->vaddr: sym->paddr);
 			}
 			r_cons_newline (core->cons);
 			break;
@@ -1107,11 +1107,11 @@ static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_arra
 				RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, len);
 				listed_classes = true;
 			} else {
-				r_kons_printf (core->cons, "class %s\n", kname);
+				r_cons_printf (core->cons, "class %s\n", kname);
 				r_list_foreach (cls->methods, iter2, sym) {
 					char *flags = r_core_bin_attr_tostring (core, sym->attr, true);
 					const char *name = r_bin_name_tostring (sym->name);
-					r_kons_printf (core->cons, "0x%08"PFMT64x " method %s %-4s %s\n",
+					r_cons_printf (core->cons, "0x%08"PFMT64x " method %s %-4s %s\n",
 							iova? sym->vaddr: sym->paddr,
 							kname, flags, name);
 					free (flags);
@@ -1127,11 +1127,11 @@ static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_arra
 			}
 			break;
 		default:
-			r_kons_printf (core->cons, "class %s\n", kname);
+			r_cons_printf (core->cons, "class %s\n", kname);
 			r_list_foreach (cls->methods, iter2, sym) {
 				char *flags = r_core_bin_attr_tostring (core, sym->attr, true);
 				const char *name = r_bin_name_tostring (sym->name);
-				r_kons_printf (core->cons, "0x%08"PFMT64x " method %s %-4s %s\n",
+				r_cons_printf (core->cons, "0x%08"PFMT64x " method %s %-4s %s\n",
 						iova? sym->vaddr: sym->paddr,
 						kname, flags, name);
 				free (flags);
@@ -1233,17 +1233,17 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 			}
 			bool first = true;
 			if (r_list_empty (objs) && mode == 'j') {
-				r_kons_print (core->cons, "[]");
+				r_cons_print (core->cons, "[]");
 				return;
 			}
 			r_list_foreach (objs, objs_iter, bf) {
 				RBinObject *bo = bf->bo;
 				if (!bo || !bo->classes || r_list_empty (bo->classes)) {
 					if (r_str_startswith (input, "lc")) { // "iclc"
-						r_kons_printf (core->cons, "0\n");
+						r_cons_printf (core->cons, "0\n");
 					}
 					if (mode == 'j') {
-						r_kons_printf (core->cons, "%s[]", first? "": ",");
+						r_cons_printf (core->cons, "%s[]", first? "": ",");
 					}
 					first = false;
 					continue;
@@ -1258,7 +1258,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 					r_list_foreach (bo->classes, iter, cls) {
 						const char *kname = r_bin_name_tostring (cls->name);
 						if (!isKnownAndroidPackage (kname)) {
-							r_kons_printf (core->cons, "%s\n", kname);
+							r_cons_printf (core->cons, "%s\n", kname);
 						}
 					}
 					break;
@@ -1277,7 +1277,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 								continue;
 							}
 							const char *sname = r_bin_name_tostring2 (sym->name, pref);
-							r_kons_printf (core->cons, "0x%"PFMT64x" [%s] %s\n", addr, kname, sname);
+							r_cons_printf (core->cons, "0x%"PFMT64x" [%s] %s\n", addr, kname, sname);
 						}
 					}
 					break;
@@ -1291,7 +1291,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 						r_list_foreach (bo->classes, iter, cls) {
 							r_list_foreach (cls->methods, iter2, sym) {
 								const char *comma = iter2->p? " ": "";
-								r_kons_printf (core->cons, "%s0x%"PFMT64x, comma,
+								r_cons_printf (core->cons, "%s0x%"PFMT64x, comma,
 										iova? sym->vaddr: sym->paddr);
 							}
 							if (!r_list_empty (cls->methods)) {
@@ -1323,9 +1323,9 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 						if (addr >= min && addr < max) {
 							const char *kname = r_bin_name_tostring (cls->name);
 							if (method) {
-								r_kons_printf (core->cons, "%s::%s\n", kname, method);
+								r_cons_printf (core->cons, "%s::%s\n", kname, method);
 							} else {
-								r_kons_printf (core->cons, "%s\n", kname);
+								r_cons_printf (core->cons, "%s\n", kname);
 							}
 						}
 						min = UT64_MAX;
@@ -1539,7 +1539,7 @@ static void cmd_iSm(RCore *core, const char *input, PJ **_pj, int mode, const bo
 			pj_end (*_pj);
 		} else {
 			char *hsz = r_num_units (NULL, 0, sec->vsize);
-			r_kons_printf (core->cons, "0x%08"PFMT64x"-0x%08"PFMT64x" %8s %s",
+			r_cons_printf (core->cons, "0x%08"PFMT64x"-0x%08"PFMT64x" %8s %s",
 					sec->vaddr, sec->vaddr + sec->vsize, hsz, sec->name);
 			free (hsz);
 			if (countmode) {
@@ -1549,12 +1549,12 @@ static void cmd_iSm(RCore *core, const char *input, PJ **_pj, int mode, const bo
 						count++;
 					}
 				}
-				r_kons_printf (core->cons, " = %d symbols\n", count);
+				r_cons_printf (core->cons, " = %d symbols\n", count);
 			} else {
 				r_cons_newline (core->cons);
 				r_list_foreach (symbols, iter2, sym) {
 					if (inrange (sec, sym)) {
-						r_kons_printf (core->cons, "    - %8d %s\n",
+						r_cons_printf (core->cons, "    - %8d %s\n",
 								sym->size, r_bin_name_tostring (sym->name));
 					}
 				}
@@ -1567,7 +1567,7 @@ static void cmd_iS(RCore *core, const char *input, PJ **_pj, int mode, const boo
 	PJ *pj = *_pj;
 	RBinInfo *info = r_bin_get_info (core->bin);
 	if (!info && pj) {
-		r_kons_print (core->cons, "[]");
+		r_cons_print (core->cons, "[]");
 		r_core_return_value (core, 1);
 		return;
 	}
@@ -1656,7 +1656,7 @@ static void cmd_it(RCore *core, PJ *pj) {
 	RBinInfo *info = r_bin_get_info (core->bin);
 	if (!info) {
 		if (is_json) {
-			r_kons_print (core->cons, "{}");
+			r_cons_print (core->cons, "{}");
 		} else {
 			R_LOG_ERROR ("Cannot get bin info");
 		}
@@ -1703,17 +1703,17 @@ static void cmd_it(RCore *core, PJ *pj) {
 					R_LOG_WARN ("Wrong file hashes structure");
 				}
 				if (!strcmp (fh_new->hex, fh_old->hex)) {
-					r_kons_printf (core->cons, "= %s %s\n", fh_new->type, fh_new->hex); // output one line because hash remains same `= hashtype hashval`
+					r_cons_printf (core->cons, "= %s %s\n", fh_new->type, fh_new->hex); // output one line because hash remains same `= hashtype hashval`
 				} else {
 					// output diff-like two lines, one with old hash val `- hashtype hashval` and one with new `+ hashtype hashval`
-					r_kons_printf (core->cons, "- %s %s\n+ %s %s\n",
+					r_cons_printf (core->cons, "- %s %s\n+ %s %s\n",
 							fh_old->type, fh_old->hex,
 							fh_new->type, fh_new->hex);
 				}
 			}
 		} else { // hashes are equal
 			r_list_foreach (new_hashes, hiter_new, fh_new) {
-				r_kons_printf (core->cons, "%s %s\n", fh_new->type, fh_new->hex);
+				r_cons_printf (core->cons, "%s %s\n", fh_new->type, fh_new->hex);
 			}
 		}
 	}
@@ -1859,7 +1859,7 @@ static void cmd_id(RCore *core, PJ *pj, const char *input, bool is_array, int mo
 				if (linkname) {
 					char *url = r_str_newf ("%s/%s/debuginfo", r_config_get (core->config, "dbg.linkurl"), linkname);
 					if (input[3] == '*') {
-						r_kons_printf (core->cons, "%s\n", url);
+						r_cons_printf (core->cons, "%s\n", url);
 					} else {
 						char *dir_debuglink = strdup (r_config_get (core->config, "dir.debuglink"));
 						char *colon = strchr (dir_debuglink, ':');
@@ -1888,7 +1888,7 @@ static void cmd_id(RCore *core, PJ *pj, const char *input, bool is_array, int mo
 						char *f = r_str_newf ("%s/%s", path, info->dbglink);
 						if (r_file_exists (f)) {
 							found = true;
-							r_kons_printf (core->cons, "'obf %s\n", f);
+							r_cons_printf (core->cons, "'obf %s\n", f);
 							free (f);
 							break;
 						}
@@ -1898,7 +1898,7 @@ static void cmd_id(RCore *core, PJ *pj, const char *input, bool is_array, int mo
 					free (dirlink);
 					if (!found) {
 						R_LOG_ERROR ("Cannot find %s in dir.debuglink. Use idld instead", info->dbglink);
-						r_kons_printf (core->cons, "'obf %s\n", info->dbglink);
+						r_cons_printf (core->cons, "'obf %s\n", info->dbglink);
 					}
 				}
 				break;
@@ -1987,7 +1987,7 @@ static void cmd_ik(RCore *core, const char *input) {
 		if (db) {
 			char *o = sdb_querys (db, NULL, 0, input + 3);
 			if (R_STR_ISNOTEMPTY (o)) {
-				r_kons_print (core->cons, o);
+				r_cons_print (core->cons, o);
 			}
 			free (o);
 		}
@@ -2000,7 +2000,7 @@ static void cmd_ik(RCore *core, const char *input) {
 		if (db) {
 			char *o = sdb_querys (db, NULL, 0, input + 2);
 			if (R_STR_ISNOTEMPTY (o)) {
-				r_kons_print (core->cons, o);
+				r_cons_print (core->cons, o);
 			}
 			free (o);
 		}
@@ -2009,7 +2009,7 @@ static void cmd_ik(RCore *core, const char *input) {
 		if (db) {
 			char *o = sdb_querys (db, NULL, 0, "*");
 			if (R_STR_ISNOTEMPTY (o)) {
-				r_kons_print (core->cons, o);
+				r_cons_print (core->cons, o);
 			}
 			free (o);
 		}
@@ -2103,7 +2103,7 @@ static void cmd_ies(RCore *core, const char *input, PJ *pj, int mode, int va) {
 					pj_ks (pj, "name", name);
 					pj_end (pj);
 				} else {
-					r_kons_printf (core->cons, "0x%08"PFMT64x"  %s\n", sym->vaddr, name);
+					r_cons_printf (core->cons, "0x%08"PFMT64x"  %s\n", sym->vaddr, name);
 				}
 			}
 		}
@@ -2133,7 +2133,7 @@ static void cmd_ies(RCore *core, const char *input, PJ *pj, int mode, int va) {
 						free (fname);
 						pj_end (pj);
 					} else {
-						r_kons_printf (core->cons, "0x%08"PFMT64x"  %s.%s\n",
+						r_cons_printf (core->cons, "0x%08"PFMT64x"  %s.%s\n",
 								method->vaddr, kname, name);
 					}
 				}
@@ -2148,7 +2148,7 @@ static void cmd_ies(RCore *core, const char *input, PJ *pj, int mode, int va) {
 			pj_ks (pj, "name", "main");
 			pj_end (pj);
 		} else {
-			r_kons_printf (core->cons, "0x%08"PFMT64x"  main\n", fi->addr);
+			r_cons_printf (core->cons, "0x%08"PFMT64x"  main\n", fi->addr);
 		}
 	}
 	fi = r_flag_get (core->flags, "entry0");
@@ -2159,7 +2159,7 @@ static void cmd_ies(RCore *core, const char *input, PJ *pj, int mode, int va) {
 			pj_ks (pj, "name", "entry0");
 			pj_end (pj);
 		} else {
-			r_kons_printf (core->cons, "0x%08"PFMT64x"  entry0\n", fi->addr);
+			r_cons_printf (core->cons, "0x%08"PFMT64x"  entry0\n", fi->addr);
 		}
 	}
 }
@@ -2239,7 +2239,7 @@ static int cmd_info(void *data, const char *input) {
 	PJ *pj = NULL;
 
 	if (r_str_startswith (input, "ddqd")) {
-		r_kons_printf (core->cons, "GOD MODE ON\n");
+		r_cons_printf (core->cons, "GOD MODE ON\n");
 		return 0;
 	}
 	int mode = 0;
@@ -2352,7 +2352,7 @@ static int cmd_info(void *data, const char *input) {
 					RBININFO ("imports", R_CORE_BIN_ACC_IMPORTS, NULL, amount);
 				}
 			} else if (mode & R_MODE_JSON) {
-				r_kons_print (core->cons, "[]");
+				r_cons_print (core->cons, "[]");
 			}
 			core->bin->cur = cur;
 			r_list_free (objs);
@@ -2365,7 +2365,7 @@ static int cmd_info(void *data, const char *input) {
 			RBinFile *bf;
 			RBinFile *cur = core->bin->cur;
 			if (!cur && pj) {
-				r_kons_print (core->cons, "{}");
+				r_cons_print (core->cons, "{}");
 			}
 			r_list_foreach (objs, iter, bf) {
 				core->bin->cur = bf;
@@ -2382,7 +2382,7 @@ static int cmd_info(void *data, const char *input) {
 			RBinFile *bf;
 			RBinFile *cur = core->bin->cur;
 			if (!cur && pj) {
-				r_kons_print (core->cons, "{}");
+				r_cons_print (core->cons, "{}");
 			}
 			r_list_foreach (objs, iter, bf) {
 				core->bin->cur = bf;
@@ -2399,7 +2399,7 @@ static int cmd_info(void *data, const char *input) {
 			RBinFile *bf;
 			RBinFile *cur = core->bin->cur;
 			if (!cur && pj) {
-				r_kons_print (core->cons, "[]");
+				r_cons_print (core->cons, "[]");
 			}
 			r_list_foreach (objs, iter, bf) {
 				core->bin->cur = bf;
@@ -2431,7 +2431,7 @@ static int cmd_info(void *data, const char *input) {
 			RBinFile *bf;
 			RBinFile *cur = core->bin->cur;
 			if (!cur && pj) {
-				r_kons_print (core->cons, "[]");
+				r_cons_print (core->cons, "[]");
 			}
 			r_list_foreach (bfiles, iter, bf) {
 				core->bin->cur = bf;
@@ -2563,11 +2563,11 @@ static int cmd_info(void *data, const char *input) {
 			char ss[64];
 			ut64 bs = r_bin_get_size (core->bin);
 			if (r_num_units (ss, sizeof (ss), bs)) {
-				r_kons_printf (core->cons, "%s\n", ss);
+				r_cons_printf (core->cons, "%s\n", ss);
 			}
 		} else {
 			ut64 bs = r_bin_get_size (core->bin);
-			r_kons_printf (core->cons, "0x%08"PFMT64x"\n", bs);
+			r_cons_printf (core->cons, "0x%08"PFMT64x"\n", bs);
 		}
 		break;
 	case 'c': // "ic"
@@ -2612,7 +2612,7 @@ static int cmd_info(void *data, const char *input) {
 			RBinFile *bf;
 			RBinFile *cur = core->bin->cur;
 			if (!cur && pj) {
-				r_kons_print (core->cons, "{}");
+				r_cons_print (core->cons, "{}");
 				break;
 			}
 			RList *bfiles = r_core_bin_files (core);
@@ -2635,7 +2635,7 @@ static int cmd_info(void *data, const char *input) {
 		switch (r_list_length (objs)) {
 		case 0:
 			if (!cur && pj) {
-				r_kons_print (core->cons, "[]");
+				r_cons_print (core->cons, "[]");
 			}
 			break;
 		case 1:
@@ -2681,7 +2681,7 @@ static int cmd_info(void *data, const char *input) {
 			RBinFile *bf;
 			RBinFile *cur = core->bin->cur;
 			if (!cur && pj) {
-				r_kons_print (core->cons, "[]");
+				r_cons_print (core->cons, "[]");
 			}
 			r_list_foreach (objs, iter, bf) {
 				core->bin->cur = bf;

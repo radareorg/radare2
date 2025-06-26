@@ -1,3 +1,4 @@
+#if 0
 #include <stdio.h>
 
 int pids_cmdline(int pid, char *cmdline) {
@@ -51,7 +52,7 @@ int pids_sons_of_r(int pid, int recursive, int limit) {
 			if (mola == pid) {
 				pids_cmdline (p, tmp2);
 				const char *state = process_state (tmp3[0]);
-				cons_printf (" `- %d : %s (%s)\n", p, tmp2, state);
+				eprintf (" `- %d : %s (%s)\n", p, tmp2, state);
 				n++;
 				if (recursive < limit) {
 					n += pids_sons_of_r (p, recursive + 1, limit);
@@ -63,3 +64,4 @@ int pids_sons_of_r(int pid, int recursive, int limit) {
 	closedir (dh);
 	return n;
 }
+#endif

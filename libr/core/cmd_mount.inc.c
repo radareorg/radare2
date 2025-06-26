@@ -59,7 +59,7 @@ static char *readman(RCore *core, const char *page) {
 		}
 		r_list_free (files);
 		char *s = r_strbuf_drain (sb);
-		r_kons_print (core->cons, s);
+		r_cons_print (core->cons, s);
 		return NULL;
 	}
 	int cat = 1;
@@ -189,7 +189,7 @@ static int cmd_mktemp(RCore *core, const char *input) {
 	char *res = r_syscmd_mktemp (input);
 	if (res) {
 		r_core_return_value (core, 1);
-		r_kons_print (core->cons, res);
+		r_cons_print (core->cons, res);
 		free (res);
 	} else {
 		r_core_return_value (core, 0);
@@ -256,14 +256,14 @@ static void cmd_mount_ls(RCore *core, const char *input) {
 			} else {
 				if (minus_quiet) {
 					if (file->type == 'd') {
-						r_kons_printf (core->cons, "%s/\n", file->name);
+						r_cons_printf (core->cons, "%s/\n", file->name);
 					} else {
-						r_kons_printf (core->cons, "%s\n", file->name);
+						r_cons_printf (core->cons, "%s\n", file->name);
 					}
 				} else if (minus_ele) {
-					r_kons_printf (core->cons, "%c %10d %s\n", file->type, file->size, file->name);
+					r_cons_printf (core->cons, "%c %10d %s\n", file->type, file->size, file->name);
 				} else {
-					r_kons_printf (core->cons, "%c %s\n", file->type, file->name);
+					r_cons_printf (core->cons, "%c %s\n", file->type, file->name);
 				}
 			}
 		}
@@ -292,7 +292,7 @@ static void cmd_mount_ls(RCore *core, const char *input) {
 					pj_ks (pj, "type", root->p->meta.name);
 					pj_end (pj);
 				} else {
-					r_kons_printf (core->cons, "m %s\n", root->path); //  (root->path && root->path[0]) ? root->path + 1: "");
+					r_cons_printf (core->cons, "m %s\n", root->path); //  (root->path && root->path[0]) ? root->path + 1: "");
 				}
 			}
 			free (base);
@@ -300,7 +300,7 @@ static void cmd_mount_ls(RCore *core, const char *input) {
 	}
 	if (isJSON) {
 		pj_end (pj);
-		r_kons_printf (core->cons, "%s\n", pj_string (pj));
+		r_cons_printf (core->cons, "%s\n", pj_string (pj));
 		pj_free (pj);
 	}
 }
@@ -416,19 +416,19 @@ static int cmd_mount(void *data, const char *_input) {
 
 			pj_end (pj);
 			pj_end (pj);
-			r_kons_printf (core->cons, "%s\n", pj_string (pj));
+			r_cons_printf (core->cons, "%s\n", pj_string (pj));
 			pj_free (pj);
 		}
 		break;
 	case '*': // "m*"
 		r_list_foreach (core->fs->roots, iter, root) {
-			r_kons_printf (core->cons, "m %s %s 0x%"PFMT64x"\n",
+			r_cons_printf (core->cons, "m %s %s 0x%"PFMT64x"\n",
 				root->path, root->p->meta.name, root->delta);
 		}
 		break;
 	case '\0': // "m"
 		r_list_foreach (core->fs->roots, iter, root) {
-			r_kons_printf (core->cons, "%s\t0x%"PFMT64x"\t%s\n",
+			r_cons_printf (core->cons, "%s\t0x%"PFMT64x"\t%s\n",
 				root->p->meta.name, root->delta, root->path);
 		}
 		break;
@@ -437,7 +437,7 @@ static int cmd_mount(void *data, const char *_input) {
 			r_core_cmd_help_match (core, help_msg_m, "mL");
 		} else if (input[1] == 'L') {
 			r_list_foreach (core->fs->plugins, iter, plug) {
-				r_kons_printf (core->cons, "%s\n", plug->meta.name);
+				r_cons_printf (core->cons, "%s\n", plug->meta.name);
 			}
 		} else if (input[1] == 'j') { // "mLj"
 			PJ *pj = r_core_pj_new (core);
@@ -453,7 +453,7 @@ static int cmd_mount(void *data, const char *_input) {
 			free (s);
 		} else {
 			r_list_foreach (core->fs->plugins, iter, plug) {
-				r_kons_printf (core->cons, "%10s  %s\n", plug->meta.name, plug->meta.desc);
+				r_cons_printf (core->cons, "%10s  %s\n", plug->meta.name, plug->meta.desc);
 			}
 		}
 		break;
@@ -478,7 +478,7 @@ static int cmd_mount(void *data, const char *_input) {
 		list = r_fs_partitions (core->fs, input, off);
 		if (list) {
 			r_list_foreach (list, iter, part) {
-				r_kons_printf (core->cons, "%d %02x 0x%010"PFMT64x" 0x%010"PFMT64x"\n",
+				r_cons_printf (core->cons, "%d %02x 0x%010"PFMT64x" 0x%010"PFMT64x"\n",
 					part->number, part->type,
 					part->start, part->start+part->length);
 			}
@@ -514,7 +514,7 @@ static int cmd_mount(void *data, const char *_input) {
 			if (file) {
 				// XXX: dump to file or just pipe?
 				r_fs_read (core->fs, file, 0, file->size);
-				r_kons_printf (core->cons, "'f file %d 0x%08"PFMT64x"\n", file->size, file->off);
+				r_cons_printf (core->cons, "'f file %d 0x%08"PFMT64x"\n", file->size, file->off);
 				r_fs_close (core->fs, file);
 			} else {
 				R_LOG_ERROR ("Cannot open file");

@@ -830,7 +830,7 @@ R_API RDebugReasonType r_debug_wait(RDebug * R_NONNULL dbg, RBreakpointItem ** R
 			const char *name = r_signal_tostring (dbg->reason.signum);
 			const char *humn = r_signal_to_human (dbg->reason.signum);
 			if (name && strcmp ("SIGTRAP", name)) {
-				r_kons_printf (cons, "[+] signal %d aka %s received %d (%s)\n",
+				r_cons_printf (cons, "[+] signal %d aka %s received %d (%s)\n",
 						dbg->reason.signum, name, what, humn);
 			}
 		}

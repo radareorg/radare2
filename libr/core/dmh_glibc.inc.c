@@ -406,27 +406,27 @@ static void GH(print_arena_stats)(RCore *core, GHT m_arena, MallocState *main_ar
 		for (i = 0; i < NBINS * 2 - 2; i += 2) {
 			GHT addr = m_arena + align + SZ * i - SZ * 2;
 			GHT bina = main_arena->GH(bins)[i];
-			r_kons_printf (core->cons, "f chunk.%zu.bin=0x%"PFMT64x"\n", i, (ut64)addr);
-			r_kons_printf (core->cons, "f chunk.%zu.fd=0x%"PFMT64x"\n", i, (ut64)bina);
+			r_cons_printf (core->cons, "f chunk.%zu.bin=0x%"PFMT64x"\n", i, (ut64)addr);
+			r_cons_printf (core->cons, "f chunk.%zu.fd=0x%"PFMT64x"\n", i, (ut64)bina);
 			bina = main_arena->GH(bins)[i + 1];
-			r_kons_printf (core->cons, "f chunk.%zu.bk=0x%"PFMT64x"\n", i, (ut64)bina);
+			r_cons_printf (core->cons, "f chunk.%zu.bk=0x%"PFMT64x"\n", i, (ut64)bina);
 		}
 		for (i = 0; i < BINMAPSIZE; i++) {
-			r_kons_printf (core->cons, "f binmap.%zu=0x%"PFMT64x, i, (ut64)main_arena->binmap[i]);
+			r_cons_printf (core->cons, "f binmap.%zu=0x%"PFMT64x, i, (ut64)main_arena->binmap[i]);
 		}
 		{	/* maybe use SDB instead of flags for this? */
 			char units[8];
 			r_num_units (units, sizeof (units), main_arena->GH(max_system_mem));
-			r_kons_printf (core->cons, "f heap.maxmem=%s\n", units);
+			r_cons_printf (core->cons, "f heap.maxmem=%s\n", units);
 
 			r_num_units (units, sizeof (units), main_arena->GH(system_mem));
-			r_kons_printf (core->cons, "f heap.sysmem=%s\n", units);
+			r_cons_printf (core->cons, "f heap.sysmem=%s\n", units);
 
 			r_num_units (units, sizeof (units), main_arena->GH(next_free));
-			r_kons_printf (core->cons, "f heap.nextfree=%s\n", units);
+			r_cons_printf (core->cons, "f heap.nextfree=%s\n", units);
 
 			r_num_units (units, sizeof (units), main_arena->GH(next));
-			r_kons_printf (core->cons, "f heap.next=%s\n", units);
+			r_cons_printf (core->cons, "f heap.next=%s\n", units);
 		}
 		return;
 	}
@@ -1474,7 +1474,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 		pj_ka (pj, "chunks");
 		break;
 	case '*':
-		r_kons_printf (core->cons, "fs+heap.allocated\n");
+		r_cons_printf (core->cons, "fs+heap.allocated\n");
 		break;
 	case 'g':
 		can->linemode = r_config_get_i (core->config, "graph.linemode");
@@ -1506,9 +1506,9 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 				pj_end (pj);
 				break;
 			case '*':
-				r_kons_printf (core->cons, "fs heap.corrupted\n");
+				r_cons_printf (core->cons, "fs heap.corrupted\n");
 				ut64 chunkflag = (ut64)((prev_chunk >> 4) & 0xffffULL);
-				r_kons_printf (core->cons, "f chunk.corrupted.%06"PFMT64x" %d 0x%"PFMT64x"\n",
+				r_cons_printf (core->cons, "f chunk.corrupted.%06"PFMT64x" %d 0x%"PFMT64x"\n",
 					chunkflag, (int)cnk->size, (ut64)prev_chunk);
 				break;
 			case 'g':
@@ -1648,9 +1648,9 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 			pj_end (pj);
 			break;
 		case '*':
-			r_kons_printf (core->cons, "fs heap.%s\n", status);
+			r_cons_printf (core->cons, "fs heap.%s\n", status);
 			ut64 chunkat = (prev_chunk_addr>>4) & 0xffff;
-			r_kons_printf (core->cons, "f chunk.%06"PFMT64x" %d 0x%"PFMT64x"\n", chunkat, (int)prev_chunk_size, (ut64)prev_chunk_addr);
+			r_cons_printf (core->cons, "f chunk.%06"PFMT64x" %d 0x%"PFMT64x"\n", chunkat, (int)prev_chunk_size, (ut64)prev_chunk_addr);
 			break;
 		case 'g':
 			node_title = r_str_newf ("  Malloc chunk @ 0x%"PFMT64x" ", (ut64)prev_chunk_addr);
@@ -1682,14 +1682,14 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 		pj_kn (pj, "brk", brk_start);
 		pj_kn (pj, "end", brk_end);
 		pj_end (pj);
-		r_kons_print (core->cons, pj_string (pj));
+		r_cons_print (core->cons, pj_string (pj));
 		pj_free (pj);
 		break;
 	case '*':
-		r_kons_printf (core->cons, "fs-\n");
-		r_kons_printf (core->cons, "f heap.top = 0x%08"PFMT64x"\n", (ut64)main_arena->GH (top));
-		r_kons_printf (core->cons, "f heap.brk = 0x%08"PFMT64x"\n", (ut64)brk_start);
-		r_kons_printf (core->cons, "f heap.end = 0x%08"PFMT64x"\n", (ut64)brk_end);
+		r_cons_printf (core->cons, "fs-\n");
+		r_cons_printf (core->cons, "f heap.top = 0x%08"PFMT64x"\n", (ut64)main_arena->GH (top));
+		r_cons_printf (core->cons, "f heap.brk = 0x%08"PFMT64x"\n", (ut64)brk_start);
+		r_cons_printf (core->cons, "f heap.end = 0x%08"PFMT64x"\n", (ut64)brk_end);
 		break;
 	case 'g':
 		top = r_agraph_add_node (g, top_title, top_data, NULL);

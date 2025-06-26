@@ -9,6 +9,7 @@ R_IPI int pager_next_match(int from, RList **mla, int lcount);
 R_IPI int pager_prev_match(int from, RList **mla);
 R_IPI bool pager_all_matches(const char *s, RRegex *rx, RList **mla, int *lines, int lcount);
 R_IPI int *pager_splitlines(char *s, int *lines_count);
+R_IPI void pal_clone(RConsContext *ctx);
 
 static inline void __cons_write_ll(RCons *cons, const char *buf, int len) {
 #if R2__WINDOWS__

@@ -85,14 +85,14 @@ static void screenlock(RCore *core) {
 	ut64 last = UT64_MAX;
 	int tries = 0;
 	do {
-		r_kons_clear00 (core->cons);
-		r_kons_printf (core->cons, "Retries: %d\n", tries);
+		r_cons_clear00 (core->cons);
+		r_cons_printf (core->cons, "Retries: %d\n", tries);
 		char *begstr = r_time_usecs_tostring (begin);
-		r_kons_printf (core->cons, "Locked ts: %s\n", begstr);
+		r_cons_printf (core->cons, "Locked ts: %s\n", begstr);
 		free (begstr);
 		if (last != UT64_MAX) {
 			char *endstr = r_time_usecs_tostring (last);
-			r_kons_printf (core->cons, "Last try: %s\n", endstr);
+			r_cons_printf (core->cons, "Last try: %s\n", endstr);
 			free (endstr);
 		}
 		r_cons_newline (core->cons);
@@ -213,7 +213,7 @@ static int log_callback_r2(RCore *core, int count, const char *line) {
 	if (*line == ':') {
 		char *cmd = expr2cmd (core->log, line);
 		if (cmd) {
-			r_kons_printf (core->cons, "%s\n", cmd);
+			r_cons_printf (core->cons, "%s\n", cmd);
 			r_core_cmd (core, cmd, 0);
 			free (cmd);
 		}
@@ -222,7 +222,7 @@ static int log_callback_r2(RCore *core, int count, const char *line) {
 }
 
 static int log_callback_all(RCore *core, int count, const char *line) {
-	r_kons_printf (core->cons, "%.2d %s\n", count, line);
+	r_cons_printf (core->cons, "%.2d %s\n", count, line);
 	return 0;
 }
 
@@ -236,17 +236,17 @@ R_API void r_core_log_view(RCore *core, int num, int shift) {
 		cons_width = 60;
 	}
 	for (i = num - 3; i < num + 3; i++) {
-		r_kons_printf (core->cons, "%s", (num == i)? "* ": "  ");
+		r_cons_printf (core->cons, "%s", (num == i)? "* ": "  ");
 		if (i < 1) {
-			r_kons_printf (core->cons, "   ^\n");
+			r_cons_printf (core->cons, "   ^\n");
 			continue;
 		}
 		if (i >= core->log->last) {
-			r_kons_printf (core->cons, "   $\n");
+			r_cons_printf (core->cons, "   $\n");
 			continue;
 		}
 		if (i < core->log->first) {
-			r_kons_printf (core->cons, "   ^\n");
+			r_cons_printf (core->cons, "   ^\n");
 			continue;
 		}
 		const char *msg = r_strpool_get_i (core->log->sp, i);
@@ -260,10 +260,10 @@ R_API void r_core_log_view(RCore *core, int num, int shift) {
 			if (nl) {
 				*nl = 0;
 			}
-			r_kons_printf (core->cons, "%.2d %s\n", i, m);
+			r_cons_printf (core->cons, "%.2d %s\n", i, m);
 			free (m);
 		} else {
-			r_kons_printf (core->cons, "%.2d ..\n", i);
+			r_cons_printf (core->cons, "%.2d ..\n", i);
 		}
 	}
 }
@@ -315,7 +315,7 @@ static int cmd_log(void *data, const char *input) {
 		}
 		break;
 	case 'l': // "Tl"
-		r_kons_printf (core->cons, "%.2d\n", core->log->last - 1);
+		r_cons_printf (core->cons, "%.2d\n", core->log->last - 1);
 		break;
 	case '-': //  "T-"
 		r_core_log_del (core, n);
@@ -362,7 +362,7 @@ static int cmd_log(void *data, const char *input) {
 					r_core_log_run (core, res, log_callback);
 					free (res);
 				} else {
-					r_kons_printf (core->cons, "Please check e http.sync\n");
+					r_cons_printf (core->cons, "Please check e http.sync\n");
 				}
 			}
 		}
@@ -474,10 +474,10 @@ static int cmd_plugins(void *data, const char *input) {
 					pj_end (pj);
 					break;
 				case 'q':
-					r_kons_printf (core->cons, "%s\n", item->meta.name);
+					r_cons_printf (core->cons, "%s\n", item->meta.name);
 					break;
 				default:
-					r_kons_printf (core->cons, "%-12s %5s %s\n",
+					r_cons_printf (core->cons, "%-12s %5s %s\n",
 						item->meta.name,
 						item->meta.license,
 						item->meta.desc);
@@ -487,7 +487,7 @@ static int cmd_plugins(void *data, const char *input) {
 			if (pj) {
 				pj_end (pj);
 				char *s = pj_drain (pj);
-				r_kons_printf (core->cons, "%s\n", s);
+				r_cons_printf (core->cons, "%s\n", s);
 				free (s);
 			}
 		}
@@ -536,10 +536,10 @@ static int cmd_plugins(void *data, const char *input) {
 					pj_end (pj);
 					break;
 				case 'q':
-					r_kons_printf (core->cons, "%s\n", item->meta.name);
+					r_cons_printf (core->cons, "%s\n", item->meta.name);
 					break;
 				default:
-					r_kons_printf (core->cons, "%-12s %5s %s (%s)\n",
+					r_cons_printf (core->cons, "%-12s %5s %s (%s)\n",
 						item->meta.name,
 						item->meta.license,
 						item->meta.desc,
@@ -550,7 +550,7 @@ static int cmd_plugins(void *data, const char *input) {
 			if (pj) {
 				pj_end (pj);
 				char *s = pj_drain (pj);
-				r_kons_printf (core->cons, "%s\n", s);
+				r_cons_printf (core->cons, "%s\n", s);
 				free (s);
 			}
 		}
@@ -572,7 +572,7 @@ static int cmd_plugins(void *data, const char *input) {
 				}
 				pj_end (pj);
 				char *s = pj_drain (pj);
-				r_kons_printf (core->cons, "%s\n", s);
+				r_cons_printf (core->cons, "%s\n", s);
 				free (s);
 			}
 		} else {
@@ -598,7 +598,7 @@ static int cmd_plugins(void *data, const char *input) {
 			pj_end (pj);
 			pj_end (pj);
 			char *s = pj_drain (pj);
-			r_kons_printf (core->cons, "%s\n", s);
+			r_cons_printf (core->cons, "%s\n", s);
 			free (s);
 			r_list_free (list);
 			free (decos);
@@ -614,7 +614,7 @@ static int cmd_plugins(void *data, const char *input) {
 		} else if (input[1] == ',') { // "Ll,"
 			r_core_list_lang (core, ',');
 		} else if (input[1] == '?') { // "Ll?"
-			r_kons_printf (core->cons, "Usage: Ll[,jq] - list r_lang plugins\n");
+			r_cons_printf (core->cons, "Usage: Ll[,jq] - list r_lang plugins\n");
 		} else {
 			r_core_list_lang (core, 0);
 		}
@@ -692,12 +692,12 @@ static int cmd_plugins(void *data, const char *input) {
 			break;
 		case 'q':
 			r_list_foreach (core->rcmd->plist, iter, cp) {
-				r_kons_printf (core->cons, "%s\n", cp->meta.name);
+				r_cons_printf (core->cons, "%s\n", cp->meta.name);
 			}
 			break;
 		case 0:
 			r_list_foreach (core->rcmd->plist, iter, cp) {
-				r_kons_printf (core->cons, "%-10s %s\n", cp->meta.name, cp->meta.desc);
+				r_cons_printf (core->cons, "%-10s %s\n", cp->meta.name, cp->meta.desc);
 			}
 			break;
 		case '?':

@@ -118,7 +118,7 @@ static void ds_print_stackptr(RDisasmState *ds) {
 	int ostackptr = 0;
 	int stackptr = ds_ostackptr_at (ds, &ostackptr);
 	if (ds->show_stackptr) {
-		r_kons_printf (ds->core->cons, "%5d%s", stackptr,
+		r_cons_printf (ds->core->cons, "%5d%s", stackptr,
 			ds->analop.type == R_ANAL_OP_TYPE_CALL?">":
 			ds->analop.stackop == R_ANAL_STACK_ALIGN? "=":
 			stackptr > ostackptr? "+":

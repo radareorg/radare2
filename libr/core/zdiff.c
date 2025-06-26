@@ -82,10 +82,10 @@ R_API bool r_core_zdiff(RCore *c, RCore *c2) {
 				continue;
 			}
 			if (matchBytes (si, si2)) {
-				r_kons_printf (cons, "0x%08"PFMT64x" 0x%08"PFMT64x" B %s\n", si->addr, si2->addr, si->name);
+				r_cons_printf (cons, "0x%08"PFMT64x" 0x%08"PFMT64x" B %s\n", si->addr, si2->addr, si->name);
 			}
 			if (matchGraph (si, si2)) {
-				r_kons_printf (cons, "0x%08"PFMT64x" 0x%08"PFMT64x" G %s\n", si->addr, si2->addr, si->name);
+				r_cons_printf (cons, "0x%08"PFMT64x" 0x%08"PFMT64x" G %s\n", si->addr, si2->addr, si->name);
 			}
 		}
 	}

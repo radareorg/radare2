@@ -148,22 +148,23 @@ R_API RList *r_flag_zone_barlist(RFlag *f, ut64 from, ut64 bsize, int rows) {
 	return list;
 }
 
-R_API bool r_flag_zone_list(RFlag *f, int mode) {
-	R_RETURN_VAL_IF_FAIL (f, false);
+R_API char *r_flag_zone_list(RFlag *f, int mode) {
+	R_RETURN_VAL_IF_FAIL (f, NULL);
 	RListIter *iter;
 	RFlagZoneItem *zi;
 	RList *db = f->zones;
+	RStrBuf *sb = r_strbuf_new ("");
 	r_list_foreach (db, iter, zi) {
 		if (mode == '*') {
-			f->cb_printf ("'@0x%08"PFMT64x"'fz %s\n", zi->from, zi->name);
-			f->cb_printf ("'f %s %"PFMT64d" 0x08%"PFMT64x"\n", zi->name,
+			r_strbuf_appendf (sb, "'@0x%08"PFMT64x"'fz %s\n", zi->from, zi->name);
+			r_strbuf_appendf (sb, "'f %s %"PFMT64d" 0x08%"PFMT64x"\n", zi->name,
 				zi->to - zi->from, zi->from);
 		} else if (mode == 'q') {
-			f->cb_printf ("%s\n", zi->name);
+			r_strbuf_appendf (sb, "%s\n", zi->name);
 		} else {
-			f->cb_printf ("0x08%"PFMT64x"  0x%08"PFMT64x"  %s\n",
+			r_strbuf_appendf (sb, "0x08%"PFMT64x"  0x%08"PFMT64x"  %s\n",
 					zi->from, zi->to, zi->name);
 		}
 	}
-	return true;
+	return r_strbuf_drain (sb);
 }

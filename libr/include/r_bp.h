@@ -75,7 +75,6 @@ typedef struct r_bp_t {
 	RBreakpointPlugin *cur;
 	RList *traces; // XXX
 	RList *plugins;
-	PrintfCallback cb_printf;
 	RBreakpointCallback breakpoint;
 	/* storage of breakpoints */
 	int nbps;
@@ -116,11 +115,10 @@ R_API int r_bp_plugin_add(RBreakpoint *bp, RBreakpointPlugin *plugin);
 R_API int r_bp_plugin_remove(RBreakpoint *bp, RBreakpointPlugin *plugin);
 R_API int r_bp_use(RBreakpoint *bp, const char *name, int bits);
 R_API int r_bp_plugin_del(RBreakpoint *bp, const char *name);
-R_API void r_bp_plugin_list(RBreakpoint *bp);
+R_API char *r_bp_plugin_list(RBreakpoint *bp);
 
 R_API int r_bp_in(RBreakpoint *bp, ut64 addr, int perm);
-// deprecate?
-R_API void r_bp_list(RBreakpoint *bp, int rad);
+R_API char *r_bp_list(RBreakpoint *bp, int rad);
 R_API int r_bp_size(RBreakpoint *bp);
 
 /* bp item attribs setters */

@@ -33,9 +33,9 @@ static ut64 get_buf_val(ut8 *buf, int endian, int width) {
 
 static void print_arg_str(RCore *core, int argcnt, const char *name, bool color) {
 	if (color) {
-		r_kons_printf (core->cons, Color_BYELLOW" arg [%d]"Color_RESET" -"Color_BCYAN" %s"Color_RESET" : ", argcnt, name);
+		r_cons_printf (core->cons, Color_BYELLOW" arg [%d]"Color_RESET" -"Color_BCYAN" %s"Color_RESET" : ", argcnt, name);
 	} else {
-		r_kons_printf (core->cons, " arg [%d] -  %s : ", argcnt, name);
+		r_cons_printf (core->cons, " arg [%d] -  %s : ", argcnt, name);
 	}
 }
 
@@ -60,9 +60,9 @@ static void print_format_values(RCore *core, const char *fmt, bool onstack, ut64
 	}
 	if (onstack || ((opt != 'd' && opt != 'x') && !onstack)) {
 		if (color) {
-			r_kons_printf (core->cons, Color_BGREEN"0x%08"PFMT64x Color_RESET" --> ", bval);
+			r_cons_printf (core->cons, Color_BGREEN"0x%08"PFMT64x Color_RESET" --> ", bval);
 		} else {
-			r_kons_printf (core->cons, "0x%08"PFMT64x" --> ", bval);
+			r_cons_printf (core->cons, "0x%08"PFMT64x" --> ", bval);
 		}
 		r_io_read_at (core->io, bval, buf, bsize);
 	}
@@ -72,48 +72,48 @@ static void print_format_values(RCore *core, const char *fmt, bool onstack, ut64
 			r_io_read_at (core->io, bval, buf, bsize); // update buf with val from stack
 		}
 	}
-	r_kons_print (core->cons, color? Color_BGREEN: "");
+	r_cons_print (core->cons, color? Color_BGREEN: "");
 	switch (opt) {
 	case 'z' : // Null terminated string
-		r_kons_print (core->cons, color ?Color_RESET Color_BWHITE:"");
-		r_kons_print (core->cons, "\"");
+		r_cons_print (core->cons, color ?Color_RESET Color_BWHITE:"");
+		r_cons_print (core->cons, "\"");
 		for (i = 0; i < MAXSTRLEN; i++) {
 			if (buf[i] == '\0') {
 				break;
 			}
 			ut8 b = buf[i];
 			if (IS_PRINTABLE (b)) {
-				r_kons_printf (core->cons, "%c", b);
+				r_cons_printf (core->cons, "%c", b);
 			} else {
-				r_kons_printf (core->cons, "\\x%02x", b);
+				r_cons_printf (core->cons, "\\x%02x", b);
 			}
 			if (i == MAXSTRLEN - 1) {
-				 r_kons_print (core->cons, "..."); // To show string is truncated
+				 r_cons_print (core->cons, "..."); // To show string is truncated
 			}
 		}
-		r_kons_print (core->cons, "\"");
+		r_cons_print (core->cons, "\"");
 		r_cons_newline (core->cons);
 		break;
 	case 'd' : // integer
 	case 'x' :
-		r_kons_printf (core->cons, "0x%08" PFMT64x, bval);
+		r_cons_printf (core->cons, "0x%08" PFMT64x, bval);
 		r_cons_newline (core->cons);
 		break;
 	case 'c' : // char
-		r_kons_print (core->cons, "\'");
+		r_cons_print (core->cons, "\'");
 		ut8 ch = buf[0];
 		if (IS_PRINTABLE (ch)) {
-			r_kons_printf (core->cons, "%c", ch);
+			r_cons_printf (core->cons, "%c", ch);
 		} else {
-			r_kons_printf (core->cons, "\\x%02x", ch);
+			r_cons_printf (core->cons, "\\x%02x", ch);
 		}
-		r_kons_print (core->cons, "\'");
+		r_cons_print (core->cons, "\'");
 		r_cons_newline (core->cons);
 		break;
 	case 'p' : // pointer
 		{
 		// Try to deref the pointer once again
-		r_kons_printf (core->cons, "0x%08"PFMT64x, get_buf_val (buf, endian, width));
+		r_cons_printf (core->cons, "0x%08"PFMT64x, get_buf_val (buf, endian, width));
 		r_cons_newline (core->cons);
 		break;
 		}
@@ -121,7 +121,7 @@ static void print_format_values(RCore *core, const char *fmt, bool onstack, ut64
 		//TODO: support types like structs and unions
 		r_cons_println (core->cons, "unk_format");
 	}
-	r_kons_print (core->cons, Color_RESET);
+	r_cons_print (core->cons, Color_RESET);
 	free (buf);
 }
 
@@ -174,7 +174,7 @@ R_API void r_core_print_func_args(RCore *core) {
 			for (i = 0; i < nargs; i++) {
 				ut64 v = r_debug_arg_get (core->dbg, cc, i);
 				print_arg_str (core, i, "", color);
-				r_kons_printf (core->cons, "0x%08" PFMT64x, v);
+				r_cons_printf (core->cons, "0x%08" PFMT64x, v);
 				r_cons_newline (core->cons);
 			}
 		}

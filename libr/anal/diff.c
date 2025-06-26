@@ -1,8 +1,9 @@
-/* radare - LGPL - Copyright 2010-2024 - nibble, pancake */
+/* radare - LGPL - Copyright 2010-2025 - nibble, pancake */
 
 #define R_LOG_ORIGIN "anal.diff"
 
 #include <r_anal.h>
+#include <r_core.h>
 
 R_API RAnalDiff *r_anal_diff_new(void) {
 	RAnalDiff *diff = R_NEW0 (RAnalDiff);
@@ -191,6 +192,8 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 		return anal->cur->diff_fcn (anal, fcns, fcns2);
 	}
 	if (fcns == fcns2 || (r_list_length (fcns) == 1 && 1 == r_list_length (fcns2))) {
+		RCore *core = anal->coreb.core;
+		RCons *cons = core->cons;
 		double threshold = 0.8; // XXX make this configurable by the user
 		// inplace diffing
 		r_list_foreach (fcns, iter, fcn) {
@@ -218,7 +221,7 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 					fcn->diff->dist = fcn2->diff->dist = t;
 					if (fcn->diff->type == R_ANAL_DIFF_TYPE_MATCH) {
 						// R_LOG_INFO ("match %lf %s", t, fcn2->name);
-						r_cons_printf ("match %lf %s\n", t, fcn2->name);
+						r_cons_printf (cons, "match %lf %s\n", t, fcn2->name);
 					}
 					R_FREE (fcn->fingerprint);
 					R_FREE (fcn2->fingerprint);

@@ -362,7 +362,7 @@ static void r_anal_xrefs_list_table(RAnal *anal, RVecAnalRef *anal_refs, const c
 		char *s = r_table_tostring (table);
 		RCore *core = anal->coreb.core;
 		RCons *cons = core->cons;
-		r_kons_print (cons, s);
+		r_cons_print (cons, s);
 		free (s);
 	}
 	r_table_free (table);

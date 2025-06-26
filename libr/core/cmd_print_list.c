@@ -71,12 +71,12 @@ static void tree_files(struct treestate *ts, int indent) {
 	r_list_uniq_inplace (files, (RListComparatorItem)itemcmp);
 	r_list_foreach (files, iter, file) {
 		const char *pad = r_str_pad (' ', indent);
-		r_cons_printf ("%s%c %s\n", pad, '+', file);
+		r_cons_printf (ts->core->cons, "%s%c %s\n", pad, '+', file);
 		RList *children = functions_for_file (ts, file);
 		char *fcnstr;
 		r_list_foreach (children, iter2, fcnstr) {
 			const char *pad = r_str_pad (' ', indent + 2);
-			r_cons_printf ("%s%c %s\n", pad, '-', fcnstr);
+			r_cons_printf (ts->core->cons, "%s%c %s\n", pad, '-', fcnstr);
 		}
 		r_list_free (children);
 	}
@@ -88,7 +88,7 @@ static void tree_functions(struct treestate *ts, int indent) {
 	RAnalFunction *fcn;
 	r_list_foreach (ts->core->anal->fcns, iter, fcn) {
 		const char *pad = r_str_pad (' ', indent);
-		r_cons_printf ("%s%c 0x%08"PFMT64x" %s\n", pad, '-', fcn->addr, fcn->name);
+		r_cons_printf (ts->core->cons, "%s%c 0x%08"PFMT64x" %s\n", pad, '-', fcn->addr, fcn->name);
 	}
 }
 

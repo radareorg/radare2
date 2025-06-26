@@ -163,7 +163,7 @@ R_API void r_core_fortune_print_random(RCore *core) {
 		if (r_config_get_b (core->config, "cfg.fortunes.clippy")) {
 			r_core_clippy (core, line);
 		} else {
-			r_kons_printf (core->cons, " -- %s\n", line);
+			r_cons_printf (core->cons, " -- %s\n", line);
 		}
 		if (r_config_get_b (core->config, "cfg.fortunes.tts")) {
 			r_sys_tts (line, true);

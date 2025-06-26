@@ -110,7 +110,7 @@ static void printPadded(RCore *core, int pad) {
 	}
 	char *fmt = r_str_newf ("0x%%0%d" PFMT64x, pad);
 	char *off = r_str_newf (fmt, core->addr);
-	r_kons_printf (core->cons, "%s\n", off);
+	r_cons_printf (core->cons, "%s\n", off);
 	free (off);
 	free (fmt);
 }
@@ -118,7 +118,7 @@ static void printPadded(RCore *core, int pad) {
 static void __get_current_line(RCore *core) {
 	if (core->print->lines_cache_sz > 0) {
 		int curr = r_util_lines_getline (core->print->lines_cache, core->print->lines_cache_sz, core->addr);
-		r_kons_printf (core->cons, "%d\n", curr);
+		r_cons_printf (core->cons, "%d\n", curr);
 	}
 }
 
@@ -255,7 +255,7 @@ static int cmd_sort(void *data, const char *input) { // "sort"
 		} else {
 			char *res = r_syscmd_sort (arg);
 			if (res) {
-				r_kons_print (core->cons, res);
+				r_cons_print (core->cons, res);
 				free (res);
 			}
 		}
@@ -340,7 +340,7 @@ static int cmd_seek(void *data, const char *input) {
 	ut64 off = core->addr;
 
 	if (!*input) {
-		r_kons_printf (core->cons, "0x%"PFMT64x "\n", core->addr);
+		r_cons_printf (core->cons, "0x%"PFMT64x "\n", core->addr);
 		return 0;
 	}
 	char *ptr;
@@ -399,47 +399,47 @@ static int cmd_seek(void *data, const char *input) {
 			ut64 at = core->addr;
 			char *ro = r_core_get_reloff (core, RELOFF_TO_FLAG, at, &delta);
 			if (ro) {
-				r_kons_printf (core->cons, "flag %s+0x%"PFMT64x"\n", ro, delta);
+				r_cons_printf (core->cons, "flag %s+0x%"PFMT64x"\n", ro, delta);
 				free (ro);
 			}
 			ro = r_core_get_reloff (core, RELOFF_TO_FUNC, at, &delta);
 			if (ro) {
-				r_kons_printf (core->cons, "func %s+0x%"PFMT64x"\n", ro, delta);
+				r_cons_printf (core->cons, "func %s+0x%"PFMT64x"\n", ro, delta);
 				free (ro);
 			}
 			ro = r_core_get_reloff (core, RELOFF_TO_MAPS, at, &delta);
 			if (ro) {
-				r_kons_printf (core->cons, "maps %s+0x%"PFMT64x"\n", ro, delta);
+				r_cons_printf (core->cons, "maps %s+0x%"PFMT64x"\n", ro, delta);
 				free (ro);
 			}
 			ro = r_core_get_reloff (core, RELOFF_TO_FILE, at, &delta);
 			if (ro) {
-				r_kons_printf (core->cons, "file %s+0x%"PFMT64x"\n", ro, delta);
+				r_cons_printf (core->cons, "file %s+0x%"PFMT64x"\n", ro, delta);
 				free (ro);
 			}
 			ro = r_core_get_reloff (core, RELOFF_TO_FMAP, at, &delta);
 			if (ro) {
-				r_kons_printf (core->cons, "fmap %s+0x%"PFMT64x"\n", ro, delta);
+				r_cons_printf (core->cons, "fmap %s+0x%"PFMT64x"\n", ro, delta);
 				free (ro);
 			}
 			ro = r_core_get_reloff (core, RELOFF_TO_LIBS, at, &delta);
 			if (ro) {
-				r_kons_printf (core->cons, "libs %s+0x%"PFMT64x"\n", ro, delta);
+				r_cons_printf (core->cons, "libs %s+0x%"PFMT64x"\n", ro, delta);
 				free (ro);
 			}
 			ro = r_core_get_reloff (core, RELOFF_TO_SYMB, at, &delta);
 			if (ro) {
-				r_kons_printf (core->cons, "symb %s+0x%"PFMT64x"\n", ro, delta);
+				r_cons_printf (core->cons, "symb %s+0x%"PFMT64x"\n", ro, delta);
 				free (ro);
 			}
 			ro = r_core_get_reloff (core, RELOFF_TO_SECT, at, &delta);
 			if (ro) {
-				r_kons_printf (core->cons, "sect %s+0x%"PFMT64x"\n", ro, delta);
+				r_cons_printf (core->cons, "sect %s+0x%"PFMT64x"\n", ro, delta);
 				free (ro);
 			}
 			ro = r_core_get_reloff (core, RELOFF_TO_DMAP, at, &delta);
 			if (ro) {
-				r_kons_printf (core->cons, "dmap %s+0x%"PFMT64x"\n", ro, delta);
+				r_cons_printf (core->cons, "dmap %s+0x%"PFMT64x"\n", ro, delta);
 				free (ro);
 			}
 		}
@@ -609,7 +609,7 @@ static int cmd_seek(void *data, const char *input) {
 			}
 			pj_end (pj);
 			char *s = pj_drain (pj);
-			r_kons_printf (core->cons, "%s\n", s);
+			r_cons_printf (core->cons, "%s\n", s);
 			free (s);
 			r_list_free (addrs);
 			r_list_free (names);
@@ -642,12 +642,12 @@ static int cmd_seek(void *data, const char *input) {
 						}
 					}
 					if (mode) {
-						r_kons_printf (core->cons, "0x%"PFMT64x" %s\n", undo->off, r_str_get (name));
+						r_cons_printf (core->cons, "0x%"PFMT64x" %s\n", undo->off, r_str_get (name));
 					} else {
 						if (!name) {
 							name = r_str_newf ("0x%"PFMT64x, undo->off);
 						}
-						r_kons_printf (core->cons, "%s%s", name, iter->n? " > ":"");
+						r_cons_printf (core->cons, "%s%s", name, iter->n? " > ":"");
 					}
 					free (name);
 				}
@@ -946,7 +946,7 @@ static int cmd_seek(void *data, const char *input) {
 			if (!core->print->lines_cache) {
 				__init_seek_line (core);
 			}
-			r_kons_printf (core->cons, "%d\n", core->print->lines_cache_sz - 1);
+			r_cons_printf (core->cons, "%d\n", core->print->lines_cache_sz - 1);
 			break;
 		case '?': // "sl?"
 			r_core_cmd_help (core, help_msg_sl);

@@ -863,7 +863,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 					r_core_cmd0 (r, "eq");
 				} else {
 					char *res = r_config_eval (r->config, opt.arg, false, NULL);
-					r_kons_print (r->cons, res);
+					r_cons_print (r->cons, res);
 					free (res);
 					r_list_append (mr.evals, (void*)strdup (opt.arg));
 				}
@@ -1648,7 +1648,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		char *cmdn;
 		r_list_foreach (mr.evals, iter, cmdn) {
 			char *res = r_config_eval (r->config, cmdn, false, NULL);
-			r_kons_print (r->cons, res);
+			r_cons_print (r->cons, res);
 			free (res);
 			r_cons_flush (r->cons);
 		}
@@ -1717,7 +1717,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 		r_list_foreach (mr.evals, iter, cmdn) {
 			char *res = r_config_eval (r->config, cmdn, false, NULL);
-			r_kons_print (r->cons, res);
+			r_cons_print (r->cons, res);
 			free (res);
 			r_cons_flush (r->cons);
 		}
@@ -1732,7 +1732,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			if (r_file_exists (path)) {
 				// TODO: should 'q' unset the interactive bit?
 				const bool isint = r_cons_is_interactive (r->cons);
-				if (isint && r_kons_yesno (r->cons, 'n', "Do you want to run the '%s' script? (y/N) ", path)) {
+				if (isint && r_cons_yesno (r->cons, 'n', "Do you want to run the '%s' script? (y/N) ", path)) {
 					r_core_cmd_file (r, path);
 				}
 			}
@@ -1857,7 +1857,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	R_CRITICAL_LEAVE (r);
 	if ((mr.patchfile && !mr.quiet) || !mr.patchfile) {
 		if (mr.zerosep) {
-			r_cons_zero ();
+			r_cons_zero (r->cons);
 		}
 		if (mr.seek != UT64_MAX) {
 			r_core_seek (r, mr.seek, true);
@@ -1884,7 +1884,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				bool y_save_project = (ret & 8) >> 3;
 
 				if (r_core_task_running_tasks_count (&r->tasks) > 0) {
-					if (r_kons_yesno (r->cons, 'y', "There are running background tasks. Do you want to kill them? (Y/n)")) {
+					if (r_cons_yesno (r->cons, 'y', "There are running background tasks. Do you want to kill them? (Y/n)")) {
 						r_core_task_break_all (&r->tasks);
 						r_core_task_join (&r->tasks, r->tasks.main_task, -1);
 					} else {
@@ -1898,9 +1898,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 							r_debug_kill (r->dbg, r->dbg->pid, r->dbg->tid, 9); // KILL
 						}
 					} else {
-						if (r_kons_yesno (r->cons, 'y', "Do you want to quit? (Y/n)")) {
+						if (r_cons_yesno (r->cons, 'y', "Do you want to quit? (Y/n)")) {
 							if (r_config_get_b (r->config, "dbg.exitkills") &&
-									r_kons_yesno (r->cons, 'y', "Do you want to kill the process? (Y/n)")) {
+									r_cons_yesno (r->cons, 'y', "Do you want to kill the process? (Y/n)")) {
 								r_debug_kill (r->dbg, r->dbg->pid, r->dbg->tid, 9); // KILL
 							} else {
 								r_debug_detach (r->dbg, r->dbg->pid);
@@ -1926,14 +1926,14 @@ R_API int r_main_radare2(int argc, const char **argv) {
 						}
 					} else {
 						question = r_str_newf ("Do you want to save the '%s' project? (Y/n)", prj);
-						if (r_kons_yesno (r->cons, 'y', "%s", question)) {
+						if (r_cons_yesno (r->cons, 'y', "%s", question)) {
 							r_core_project_save (r, prj);
 						}
 						free (question);
 					}
 				}
 				if (r_config_get_b (r->config, "scr.confirmquit")) {
-					if (!r_kons_yesno (r->cons, 'n', "Do you want to quit? (Y/n)")) {
+					if (!r_cons_yesno (r->cons, 'n', "Do you want to quit? (Y/n)")) {
 						continue;
 					}
 				}

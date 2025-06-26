@@ -22,18 +22,6 @@ static uint16_t i2u16(struct instruction *in) {
 	return *((uint16_t*)in);
 }
 
-#if 0
-static void output(struct state *s, char *fmt, ...)
-{
-	va_list ap;
-
-	va_start(ap, fmt);
-	cons_printf(fmt, ap);
-	//vfprintf(s->s_out, fmt, ap);
-	va_end(ap);
-}
-#endif
-
 static void decode_unknown(struct state *s, struct directive *d) {
 #if 0
 	printf("Opcode 0x%x reg %d mode %d operand 0x%x",

@@ -324,10 +324,10 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 						char hash_short[9];
 						r_str_ncpy (hash_short, hashstr, sizeof (hash_short));
 						r_strf_var (flag, 256, "%s.%s", hashname, hash_short);
-						r_kons_printf (core->cons, "0x%" PFMT64x ": %s : %s\n", from + i, flag, hashstr);
+						r_cons_printf (core->cons, "0x%" PFMT64x ": %s : %s\n", from + i, flag, hashstr);
 						r_flag_set (core->flags, flag, from + i, len);
 					} else {
-						r_kons_printf (core->cons, "f hash.%s.%s = 0x%" PFMT64x "\n", hashname, hashstr, from + i);
+						r_cons_printf (core->cons, "f hash.%s.%s = 0x%" PFMT64x "\n", hashname, hashstr, from + i);
 					}
 
 					free (s);
@@ -369,7 +369,7 @@ static void cmd_search_bin(RCore *core, RInterval itv) {
 			if (plug->weak_guess) {
 				goto next;
 			}
-			r_kons_printf (core->cons, "0x%08" PFMT64x "  %s\n", from, plug->meta.name);
+			r_cons_printf (core->cons, "0x%08" PFMT64x "  %s\n", from, plug->meta.name);
 			if (plug->size) {
 				RBinFileOptions opt = {
 					.pluginname = plug->meta.name,
@@ -383,7 +383,7 @@ static void cmd_search_bin(RCore *core, RInterval itv) {
 				r_bin_open_io (core->bin, &opt);
 				size = plug->size (core->bin->cur);
 				if (size > 0) {
-					r_kons_printf (core->cons, "size %d\n", size);
+					r_cons_printf (core->cons, "size %d\n", size);
 				}
 			}
 		}
@@ -533,7 +533,7 @@ R_API int r_core_search_uds(RCore *core, int mode) {
 				pj_end (pj);
 			} else {
 				if (mode == '*') {
-					r_kons_printf (core->cons, "f uds.%"PFMT64x".%d=0x%08" PFMT64x "\n", uds->addr, uds->stride, uds->addr);
+					r_cons_printf (core->cons, "f uds.%"PFMT64x".%d=0x%08" PFMT64x "\n", uds->addr, uds->stride, uds->addr);
 				}
 				if (mode != 'q') {
 					// use table instead?
@@ -549,7 +549,7 @@ R_API int r_core_search_uds(RCore *core, int mode) {
 	if (mode == 'j') {
 		pj_end (pj);
 		char *s = pj_drain (pj);
-		r_kons_print (core->cons, s);
+		r_cons_print (core->cons, s);
 		free (s);
 	}
 	return ret;
@@ -733,7 +733,7 @@ static int _cb_hit_sz(RSearchKeyword *kw, int klen, void *user, ut64 addr) {
 			pj_ks (param->pj, "data", s);
 			pj_end (param->pj);
 		} else {
-			r_kons_printf (core->cons, "0x%08"PFMT64x " %s%d_%d %s\n",
+			r_cons_printf (core->cons, "0x%08"PFMT64x " %s%d_%d %s\n",
 				base_addr + addr, param->searchprefix, kw->kwidx, kw->count, s);
 		}
 		free (s);
@@ -747,9 +747,9 @@ static int _cb_hit_sz(RSearchKeyword *kw, int klen, void *user, ut64 addr) {
 			pj_end (param->pj);
 		} else {
 			if (param->searchflags) {
-				r_kons_printf (core->cons, "%s%d_%d\n", param->searchprefix, kw->kwidx, kw->count);
+				r_cons_printf (core->cons, "%s%d_%d\n", param->searchprefix, kw->kwidx, kw->count);
 			} else {
-				r_kons_printf (core->cons, "f %s%d_%d %d 0x%08"PFMT64x "\n", param->searchprefix,
+				r_cons_printf (core->cons, "f %s%d_%d %d 0x%08"PFMT64x "\n", param->searchprefix,
 					kw->kwidx, kw->count, klen, base_addr + addr);
 			}
 		}
@@ -1437,7 +1437,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 		pj_end (pj);
 		if (db && hit) {
 			const ut64 addr = ((RCoreAsmHit *) hitlist->head->data)->addr;
-			// r_kons_printf (core->cons, "Gadget size: %d\n", (int)size);
+			// r_cons_printf (core->cons, "Gadget size: %d\n", (int)size);
 			r_strf_var (key, 32, "0x%08"PFMT64x, addr);
 			rop_classify (core, db, ropList, key, size);
 		}
@@ -1450,7 +1450,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 	case 'q':
 		// Print gadgets in a 'linear manner', each sequence
 		// on one line.
-		r_kons_printf (core->cons, "0x%08"PFMT64x ":",
+		r_cons_printf (core->cons, "0x%08"PFMT64x ":",
 			((RCoreAsmHit *) hitlist->head->data)->addr);
 		r_list_foreach (hitlist, iter, hit) {
 			RAnalOp asmop;
@@ -1465,14 +1465,14 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 				r_list_append (ropList, r_str_newf (" %s", opstr));
 			}
 			if (esil) {
-				r_kons_printf (core->cons, "%s\n", opstr);
+				r_cons_printf (core->cons, "%s\n", opstr);
 			} else if (colorize) {
 				buf_asm = r_print_colorize_opcode (core->print, asmop.mnemonic,
 					core->cons->context->pal.reg, core->cons->context->pal.num, false, 0);
-				r_kons_printf (core->cons, " %s%s;", buf_asm, Color_RESET);
+				r_cons_printf (core->cons, " %s%s;", buf_asm, Color_RESET);
 				free (buf_asm);
 			} else {
-				r_kons_printf (core->cons, " %s;", asmop.mnemonic);
+				r_cons_printf (core->cons, " %s;", asmop.mnemonic);
 			}
 			free (buf);
 			r_anal_op_fini (&asmop);
@@ -1480,7 +1480,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 		}
 		if (db && hit) {
 			const ut64 addr = ((RCoreAsmHit *) hitlist->head->data)->addr;
-			// r_kons_printf (core->cons, "Gadget size: %d\n", (int)size);
+			// r_cons_printf (core->cons, "Gadget size: %d\n", (int)size);
 			r_strf_var (key, 32, "0x%08"PFMT64x, addr);
 			rop_classify (core, db, ropList, key, size);
 		}
@@ -1514,19 +1514,19 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 					core->cons->context->pal.reg, core->cons->context->pal.num, false, 0);
 				otype = r_print_color_op_type (core->print, analop.type);
 				if (comment) {
-					r_kons_printf (core->cons, "  0x%08" PFMT64x " %18s%s  %s%s ; %s\n",
+					r_cons_printf (core->cons, "  0x%08" PFMT64x " %18s%s  %s%s ; %s\n",
 						hit->addr, asm_op_hex, otype, buf_asm, Color_RESET, comment);
 				} else {
-					r_kons_printf (core->cons, "  0x%08" PFMT64x " %18s%s  %s%s\n",
+					r_cons_printf (core->cons, "  0x%08" PFMT64x " %18s%s  %s%s\n",
 						hit->addr, asm_op_hex, otype, buf_asm, Color_RESET);
 				}
 				free (buf_asm);
 			} else {
 				if (comment) {
-					r_kons_printf (core->cons, "  0x%08" PFMT64x " %18s  %s ; %s\n",
+					r_cons_printf (core->cons, "  0x%08" PFMT64x " %18s  %s ; %s\n",
 						hit->addr, asm_op_hex, asmop.mnemonic, comment);
 				} else {
-					r_kons_printf (core->cons, "  0x%08" PFMT64x " %18s  %s\n",
+					r_cons_printf (core->cons, "  0x%08" PFMT64x " %18s  %s\n",
 						hit->addr, asm_op_hex, asmop.mnemonic);
 				}
 			}
@@ -1537,7 +1537,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 		}
 		if (db && hit) {
 			const ut64 addr = ((RCoreAsmHit *) hitlist->head->data)->addr;
-			// r_kons_printf (core->cons, "Gadget size: %d\n", (int)size);
+			// r_cons_printf (core->cons, "Gadget size: %d\n", (int)size);
 			r_strf_var (key, 32, "0x%08"PFMT64x, addr);
 			rop_classify (core, db, ropList, key, size);
 		}
@@ -1974,7 +1974,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 		r_config_set_i (core->config, "search.kwidx", search->n_kws); // TODO remove
 		r_cons_break_pop (core->cons);
 	}
-	r_kons_clear_line (core->cons, 1);
+	r_cons_clear_line (core->cons, 1);
 	if (param->outmode == R_MODE_JSON) {
 		pj_end (param->pj);
 	}
@@ -2206,7 +2206,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 						}
 						pj_end (param->pj);
 					} else {
-						r_kons_printf (core->cons, "0x%08"PFMT64x" %s\n", at, item->name);
+						r_cons_printf (core->cons, "0x%08"PFMT64x" %s\n", at, item->name);
 					}
 #if 0
 				} else {
@@ -2217,7 +2217,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 						pj_kn (param->pj, "num", scVector);
 						pj_end (param->pj);
 					} else {
-						r_kons_printf (core->cons, "0x%08"PFMT64x" %d\n", at, scNumber);
+						r_cons_printf (core->cons, "0x%08"PFMT64x" %d\n", at, scNumber);
 					}
 #endif
 				} else {
@@ -2302,7 +2302,7 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 			: r_str_newf ("%s", fcn ? fcn->name : "(nofunc)");
 		free (print_comment);
 		if (from <= ref->addr && to >= ref->addr) {
-			r_kons_printf (core->cons, "%s 0x%" PFMT64x " [%s] %s\n",
+			r_cons_printf (core->cons, "%s 0x%" PFMT64x " [%s] %s\n",
 					buf_fcn, ref->addr, r_anal_ref_type_tostring (ref->type),
 					disasm? disasm: asmop.mnemonic);
 			if (*param->cmd_hit) {
@@ -2360,7 +2360,7 @@ static void cmd_search_aF(RCore *core, const char *input) {
 				}
 				r_str_trim (s);
 				if (strstr (s, input)) {
-					r_kons_printf (core->cons, "0x%08"PFMT64x" %s: %s\n", addr, fcn->name, s);
+					r_cons_printf (core->cons, "0x%08"PFMT64x" %s: %s\n", addr, fcn->name, s);
 				}
 				free (s);
 				r_anal_op_fini (&asmop);
@@ -2416,7 +2416,7 @@ static void search_hit_at(RCore *core, struct search_parameters *param, RCoreAsm
 			pj_end (param->pj);
 			break;
 		case R_MODE_RADARE:
-			r_kons_printf (core->cons, "f %s%d_%i = 0x%08"PFMT64x "\n",
+			r_cons_printf (core->cons, "f %s%d_%i = 0x%08"PFMT64x "\n",
 					param->searchprefix, kwidx, param->count, hit->addr);
 			break;
 		default:
@@ -2426,19 +2426,19 @@ static void search_hit_at(RCore *core, struct search_parameters *param, RCoreAsm
 				if (tmp) {
 					r_anal_hint_free (hint);
 					if (param->outmode == R_MODE_SIMPLE) {
-						r_kons_printf (core->cons, "0x%08"PFMT64x "   # %i: %s\n", hit->addr, hit->len, tmp);
+						r_cons_printf (core->cons, "0x%08"PFMT64x "   # %i: %s\n", hit->addr, hit->len, tmp);
 					} else {
 						char *s = (hit->len > 0)
 							? r_core_cmd_strf (core, "pDi %d @e:asm.flags=0@0x%08"PFMT64x, (int)hit->len, hit->addr)
 							: r_core_cmd_strf (core, "pdi 1 @e:asm.flags=0@0x%08"PFMT64x, hit->addr);
 						if (s) {
-							r_kons_printf (core->cons, "%s", s);
+							r_cons_printf (core->cons, "%s", s);
 						}
 						free (s);
 					}
 				}
 			} else {
-				r_kons_printf (core->cons, "0x%08"PFMT64x "   # %i: %s\n", hit->addr, hit->len, r_str_get (hit->code));
+				r_cons_printf (core->cons, "0x%08"PFMT64x "   # %i: %s\n", hit->addr, hit->len, r_str_get (hit->code));
 			}
 			break;
 		}
@@ -2531,11 +2531,11 @@ static void do_unkjmp_search(RCore *core, struct search_parameters *param, bool 
 						switch (aop.type) {
 						case R_ANAL_OP_TYPE_UCALL:
 						case R_ANAL_OP_TYPE_RCALL:
-							r_kons_printf (core->cons, "CC RCALL 0x%08"PFMT64x" // %s @ 0x%08"PFMT64x"\n", d, aop.mnemonic, at);
+							r_cons_printf (core->cons, "CC RCALL 0x%08"PFMT64x" // %s @ 0x%08"PFMT64x"\n", d, aop.mnemonic, at);
 							break;
 						case R_ANAL_OP_TYPE_UJMP:
 						case R_ANAL_OP_TYPE_RJMP:
-							r_kons_printf (core->cons, "CC RJMP 0x%08"PFMT64x" // %s @ 0x%08"PFMT64x"\n", d, aop.mnemonic, at);
+							r_cons_printf (core->cons, "CC RJMP 0x%08"PFMT64x" // %s @ 0x%08"PFMT64x"\n", d, aop.mnemonic, at);
 							break;
 						default:
 							// eprintf ("--> 0x%08"PFMT64x" %s\n", aop.addr, aop.mnemonic);
@@ -3042,14 +3042,14 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 						pj_end (param->pj);
 						break;
 					case 'q':
-						r_kons_printf (core->cons, "0x%08"PFMT64x "\n", at);
+						r_cons_printf (core->cons, "0x%08"PFMT64x "\n", at);
 						break;
 					default:
 						if (type == 'f') {
 							const char *fam = r_anal_op_family_tostring (aop.family);
-							r_kons_printf (core->cons, "0x%08"PFMT64x " %s %s %d %s\n", at, fam, optype, ret, opstr);
+							r_cons_printf (core->cons, "0x%08"PFMT64x " %s %s %d %s\n", at, fam, optype, ret, opstr);
 						} else {
-							r_kons_printf (core->cons, "0x%08"PFMT64x " %s %d %s\n", at, optype, ret, opstr);
+							r_cons_printf (core->cons, "0x%08"PFMT64x " %s %d %s\n", at, optype, ret, opstr);
 						}
 						break;
 					}
@@ -3133,9 +3133,9 @@ static void do_section_search(RCore *core, struct search_parameters *param, cons
 			end = at + buf_size;
 			if (diff > threshold) {
 				if (r2mode) {
-					r_kons_printf (core->cons, "f entropy_section_%d 0x%08"PFMT64x" 0x%08"PFMT64x"\n", index, end - begin, begin);
+					r_cons_printf (core->cons, "f entropy_section_%d 0x%08"PFMT64x" 0x%08"PFMT64x"\n", index, end - begin, begin);
 				} else {
-					r_kons_printf (core->cons, "0x%08"PFMT64x" - 0x%08"PFMT64x" ~ %lf\n", begin, end, e);
+					r_cons_printf (core->cons, "0x%08"PFMT64x" - 0x%08"PFMT64x" ~ %lf\n", begin, end, e);
 				}
 				begin = UT64_MAX;
 				index++;
@@ -3149,9 +3149,9 @@ static void do_section_search(RCore *core, struct search_parameters *param, cons
 	}
 	if (begin != UT64_MAX && lastBlock) {
 		if (r2mode) {
-			r_kons_printf (core->cons, "f entropy_section_%d 0x%08"PFMT64x" 0x%08"PFMT64x"\n", index, end - begin, begin);
+			r_cons_printf (core->cons, "f entropy_section_%d 0x%08"PFMT64x" 0x%08"PFMT64x"\n", index, end - begin, begin);
 		} else {
-			r_kons_printf (core->cons, "0x%08"PFMT64x" - 0x%08"PFMT64x" ~ %d .. last\n", begin, end, 0);
+			r_cons_printf (core->cons, "0x%08"PFMT64x" - 0x%08"PFMT64x" ~ %d .. last\n", begin, end, 0);
 		}
 		index++;
 	}
@@ -3241,7 +3241,7 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 	RListIter *iter;
 	RIOMap *map;
 	if (!param->searchflags && param->outmode != R_MODE_JSON) {
-		r_kons_printf (core->cons, "fs hits\n");
+		r_cons_printf (core->cons, "fs hits\n");
 	}
 	core->search->inverse = param->inverse;
 	// TODO Bad but is to be compatible with the legacy behavior
@@ -3331,7 +3331,7 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 			}
 			if (param->progressbar) {
 				print_search_progress (at, to1, search->nhits, param);
-				r_kons_clear_line (core->cons, 1);
+				r_cons_clear_line (core->cons, 1);
 			}
 			r_core_return_value (core, search->nhits);
 			if (search_verbose && param->outmode != R_MODE_JSON) {
@@ -3369,7 +3369,7 @@ static void rop_kuery(void *data, const char *input, PJ *pj) {
 		ls_foreach (db_rop->ns, it, ns) {
 			sdb_list = sdb_foreach_list (ns->sdb, false);
 			ls_foreach (sdb_list, sdb_iter, kv) {
-				r_kons_printf (core->cons, "%s ", sdbkv_key (kv));
+				r_cons_printf (core->cons, "%s ", sdbkv_key (kv));
 			}
 		}
 		break;
@@ -3475,7 +3475,7 @@ static void search_similar_pattern_in(RCore *core, int count, ut64 from, ut64 to
 		int equal = core->blocksize - diff;
 		if (equal >= count) {
 			int pc = (equal * 100) / core->blocksize;
-			r_kons_printf (core->cons, "0x%08"PFMT64x " %4d/%d %3d%%  ", addr, equal, core->blocksize, pc);
+			r_cons_printf (core->cons, "0x%08"PFMT64x " %4d/%d %3d%%  ", addr, equal, core->blocksize, pc);
 			ut8 ptr[2] = {
 				(ut8)(pc * 2.5), 0
 			};
@@ -3521,7 +3521,7 @@ void _CbInRangeSearchV(RCore *core, ut64 from, ut64 to, int vsize, void *user) {
 		}
 	}
 	if (param->outmode != R_MODE_JSON) {
-		r_kons_printf (core->cons, "0x%"PFMT64x ": 0x%"PFMT64x"\n", from, to);
+		r_cons_printf (core->cons, "0x%"PFMT64x ": 0x%"PFMT64x"\n", from, to);
 	} else {
 		pj_o (param->pj);
 		pj_kn (param->pj, "addr", from);
@@ -3787,7 +3787,7 @@ static void __core_cmd_search_asm_infinite(RCore *core, const char *arg) {
 		for (at = map_begin; at + 24 < map_end; at += 1) {
 			r_anal_op (core->anal, &analop, at, buf + (at - map_begin), 24, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
 			if (at == analop.jump) {
-				r_kons_printf (core->cons, "0x%08"PFMT64x"\n", at);
+				r_cons_printf (core->cons, "0x%08"PFMT64x"\n", at);
 			}
 			at += analop.size;
 			r_anal_op_fini (&analop);
@@ -4040,7 +4040,7 @@ static void cmd_slash_ab(RCore *core, int delta, bool infunc) {
 				break;
 			}
 			if (found) {
-				r_kons_printf (core->cons, "0x%08"PFMT64x"\n", at);
+				r_cons_printf (core->cons, "0x%08"PFMT64x"\n", at);
 			}
 			at += analop.size - 1;
 			r_anal_op_fini (&analop);
@@ -4065,7 +4065,7 @@ static void __core_cmd_search_asm_byteswap(RCore *core, int nth) {
 		if (r_asm_disassemble (core->rasm, &asmop, buf, sizeof (buf)) > 0) {
 			const char *asmstr = asmop.mnemonic;
 			if (!strstr (asmstr, "invalid") && !strstr (asmstr, "unaligned")) {
-				r_kons_printf (core->cons, "%02x  %s\n", i, asmstr);
+				r_cons_printf (core->cons, "%02x  %s\n", i, asmstr);
 			}
 		}
 		r_anal_op_fini (&asmop);
@@ -4237,7 +4237,7 @@ static void cmd_search_baddr(RCore *core, const char *input) {
 		r_list_uniq_inplace (res, ut64item);
 		r_list_sort (res, ut64cmp);
 		r_list_foreach (res, iter, n) {
-			r_kons_printf (core->cons, "0x%08"PFMT64x"%c", *n, 10);
+			r_cons_printf (core->cons, "0x%08"PFMT64x"%c", *n, 10);
 		}
 		r_list_free (res);
 	}
@@ -4395,9 +4395,9 @@ reread:
 				  (void)r_core_asm_bwdis_len (core, NULL, &addr, n);
 			  }
 			  if (param.outmode == R_MODE_JSON) {
-				  r_kons_printf (core->cons, "[%"PFMT64u "]", addr);
+				  r_cons_printf (core->cons, "[%"PFMT64u "]", addr);
 			  } else {
-				  r_kons_printf (core->cons, "0x%08"PFMT64x "\n", addr);
+				  r_cons_printf (core->cons, "0x%08"PFMT64x "\n", addr);
 			  }
 		}
 		break;
@@ -4412,9 +4412,9 @@ reread:
 		}
 		addr = r_core_prevop_addr_force (core, core->addr, n);
 		if (param.outmode == R_MODE_JSON) {
-			r_kons_printf (core->cons, "[%"PFMT64u "]", addr);
+			r_cons_printf (core->cons, "[%"PFMT64u "]", addr);
 		} else {
-			r_kons_printf (core->cons, "0x%08"PFMT64x "\n", addr);
+			r_cons_printf (core->cons, "0x%08"PFMT64x "\n", addr);
 		}
 		break;
 	}
@@ -4983,7 +4983,7 @@ reread:
 					}
 					free (mp);
 				}
-				r_kons_clear_line (core->cons, 1);
+				r_cons_clear_line (core->cons, 1);
 				r_cons_break_pop (core->cons);
 			}
 			eprintf ("\n");
@@ -4992,7 +4992,7 @@ reread:
 				r_core_cmd_help_match (core, help_msg_slash_magic, "/me");
 				break;
 			}
-			r_kons_printf (core->cons, "* r2 thinks%s\n", input + 2);
+			r_cons_printf (core->cons, "* r2 thinks%s\n", input + 2);
 		} else if (input[1] == ' ' || input[1] == '\0' || param.outmode == R_MODE_JSON) {
 			int ret;
 			const char *file = input[param_offset - 1]? input + param_offset: NULL;
@@ -5036,7 +5036,7 @@ reread:
 					}
 					addr += ret - 1;
 				}
-				r_kons_clear_line (core->cons, 1);
+				r_cons_clear_line (core->cons, 1);
 				r_cons_break_pop (core->cons);
 			}
 			free (mc.ofile);
@@ -5046,7 +5046,7 @@ reread:
 		} else {
 			r_core_cmd_help (core, help_msg_slash_magic);
 		}
-		r_kons_clear_line (core->cons, 1);
+		r_cons_clear_line (core->cons, 1);
 		break;
 	case 'p': // "/p"
 		if (input[1] == '?') { // "/p" -- find next pattern

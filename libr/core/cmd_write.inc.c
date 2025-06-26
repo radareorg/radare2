@@ -434,7 +434,7 @@ static int cmd_wo(void *data, const char *input) {
 				write_encrypted_block (core, algo, key, direction, iv);
 			} else {
 				char *s = r_muta_list (core->muta, R_MUTA_TYPE_CRYPTO, 0);
-				r_kons_print (core->cons, s);
+				r_cons_print (core->cons, s);
 				free (s);
 				r_core_cmd_help_match_spec (core, help_msg_wo, "wo", input[0]);
 			}
@@ -457,7 +457,7 @@ static int cmd_wo(void *data, const char *input) {
 				write_block_signature (core, algo, key);
 			} else {
 				char *s = r_muta_list (core->muta, R_MUTA_TYPE_SIGN, 0);
-				r_kons_print (core->cons, s);
+				r_cons_print (core->cons, s);
 				free (s);
 				r_core_cmd_help_match_spec (core, help_msg_wo, "wo", input[0]);
 			}
@@ -478,9 +478,9 @@ static int cmd_wo(void *data, const char *input) {
 					ut64 addr = core->addr;
 					if (input[2] == '*') {
 						int i;
-						r_kons_printf (core->cons, "wx ");
+						r_cons_printf (core->cons, "wx ");
 						for (i = 0; i < len; i++) {
-							r_kons_printf (core->cons, "%02x", buf[i]);
+							r_cons_printf (core->cons, "%02x", buf[i]);
 						}
 						r_cons_newline (core->cons);
 					} else {
@@ -501,7 +501,7 @@ static int cmd_wo(void *data, const char *input) {
 				value = r_num_get (core->num, input + 3);
 				int offset = r_debruijn_offset (value, r_config_get_i (core->config, "cfg.bigendian"));
 				r_core_return_value (core, offset);
-				r_kons_printf (core->cons, "%"PFMT64d"\n", core->num->value);
+				r_cons_printf (core->cons, "%"PFMT64d"\n", core->num->value);
 			}
 			break;
 		case '\0':
@@ -1303,7 +1303,7 @@ static int cmd_wu(RCore *core, const char *input) {
 						hexa = 0;
 					} else if (sign) {
 						if (offs && hexa) {
-							r_kons_printf (core->cons, "wx %s @ %s\n", data+hexa, data+offs);
+							r_cons_printf (core->cons, "wx %s @ %s\n", data+hexa, data+offs);
 						} else {
 							R_LOG_ERROR ("Oops");
 						}
@@ -1453,7 +1453,7 @@ static int cmd_wc(void *data, const char *input) {
 	case '\0': // "wc"
 		{
 			char *res = r_io_cache_list (core->io, 0, false);
-			r_kons_print (core->cons, res);
+			r_cons_print (core->cons, res);
 			free (res);
 		}
 		break;
@@ -1466,7 +1466,7 @@ static int cmd_wc(void *data, const char *input) {
 				// list (io, layer, pj, rad);
 				r_pvector_foreach (layer->vec, iter) {
 					RIOCacheItem *ci = *iter;
-					r_kons_printf (core->cons, "0x%08"PFMT64x":\n", ci->itv.addr);
+					r_cons_printf (core->cons, "0x%08"PFMT64x":\n", ci->itv.addr);
 					char *a = r_hex_bin2strdup (ci->data, ci->itv.size);
 					char *b = r_hex_bin2strdup (ci->odata, ci->itv.size);
 					char *a0 = r_core_cmd_strf (core, "pad %s", b);
@@ -1476,9 +1476,9 @@ static int cmd_wc(void *data, const char *input) {
 					r_str_trim (a1);
 					r_str_trim (b1);
 					if (r_config_get_i (core->config, "scr.color") > 0) {
-						r_kons_printf (core->cons, Color_RED"%s\n"Color_GREEN"%s\n"Color_RESET, a1, b1);
+						r_cons_printf (core->cons, Color_RED"%s\n"Color_GREEN"%s\n"Color_RESET, a1, b1);
 					} else {
-						r_kons_printf (core->cons, "%s\n%s\n", a1, b1);
+						r_cons_printf (core->cons, "%s\n%s\n", a1, b1);
 					}
 					free (a);
 					free (b);
@@ -1498,7 +1498,7 @@ static int cmd_wc(void *data, const char *input) {
 			} else {
 				res = r_io_cache_list (core->io, 0, true);
 			}
-			r_kons_print (core->cons, res);
+			r_cons_print (core->cons, res);
 			free (res);
 		}
 		break;
@@ -1513,7 +1513,7 @@ static int cmd_wc(void *data, const char *input) {
 			r_list_foreach (core->io->cache.layers, iter, layer) {
 				int count = r_pvector_length (layer->vec);
 				const char ch = (i == last)? '*': '-';
-				r_kons_printf (core->cons, "%c %d cache layer with %d patches\n", ch, i, count);
+				r_cons_printf (core->cons, "%c %d cache layer with %d patches\n", ch, i, count);
 				i++;
 			}
 		}
@@ -1537,7 +1537,7 @@ static int cmd_wc(void *data, const char *input) {
 	case '*': // "wc*"
 		{
 			char *res = r_io_cache_list (core->io, 1, input[1] == '*');
-			r_kons_print (core->cons, res);
+			r_cons_print (core->cons, res);
 			free (res);
 		}
 		break;
@@ -1609,7 +1609,7 @@ static int cmd_wc(void *data, const char *input) {
 	case 'j': // "wcj"
 		{
 			char *res = r_io_cache_list (core->io, 2, false);
-			r_kons_print (core->cons, res);
+			r_cons_print (core->cons, res);
 			free (res);
 		}
 		break;
@@ -2103,7 +2103,7 @@ static bool asm_patch(RCore *core, const char *op, int mode) {
 		if (cmd) {
 			switch (mode) {
 			case '*': r_cons_println (core->cons, cmd); break;
-			case 'l': r_kons_printf (core->cons, "%d\n", (int)(strlen (cmd) - 3)/2); break;
+			case 'l': r_cons_printf (core->cons, "%d\n", (int)(strlen (cmd) - 3)/2); break;
 			default: r_core_cmd0 (core, cmd); break;
 			}
 			free (cmd);
@@ -2185,7 +2185,7 @@ repeat:
 			if (acode->len > 0) {
 				char* hex = r_asm_code_get_hex (acode);
 				if (input[0] == '*') {
-					r_kons_printf (core->cons, "wx %s\n", hex);
+					r_cons_printf (core->cons, "wx %s\n", hex);
 				} else {
 					if (!r_core_write_at (core, core->addr, acode->bytes, acode->len)) {
 						cmd_write_fail (core);
@@ -2260,7 +2260,7 @@ repeat:
 				if (acode) {
 					char* hex = r_asm_code_get_hex (acode);
 					if (input[1] == '*') {
-						r_kons_printf (core->cons, "wx %s\n", hex);
+						r_cons_printf (core->cons, "wx %s\n", hex);
 					} else {
 						if (r_config_get_b (core->config, "scr.prompt")) {
 							R_LOG_INFO ("Written %d byte(s) (%s)=wx %s", acode->len, input, hex);
@@ -2578,7 +2578,7 @@ static int cmd_write(void *data, const char *input) {
 	case 'h': // "wh"
 		if (!strcmp (input, "hoami")) {
 			char *ui = r_sys_whoami ();
-			r_kons_printf (core->cons, "%s\n", ui);
+			r_cons_printf (core->cons, "%s\n", ui);
 			free (ui);
 		} else {
 			cmd_wh (core, input + 1);
