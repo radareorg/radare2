@@ -490,7 +490,7 @@ static void r_cons_pal_show_gs(RCons *cons) {
 			strcpy (fg, Color_BLACK);
 		}
 		r_cons_rgb_str (cons, bg, sizeof (bg), &rcolor);
-		r_kons_printf (cons, "%s%s rgb:%02x%02x%02x "Color_RESET,
+		r_cons_printf (cons, "%s%s rgb:%02x%02x%02x "Color_RESET,
 			fg, bg, i, i, i);
 		if (n++ == 5) {
 			n = 0;
@@ -523,7 +523,7 @@ static void r_cons_pal_show_256(RCons *cons) {
 				}
 				const char *fg = ((rc.r <= 0x5f) && (rc.g <= 0x5f)) ? Color_WHITE: Color_BLACK;
 				r_cons_rgb_str (cons, bg, sizeof (bg), &rc);
-				r_kons_printf (cons, "%s%s rgb:%02x%02x%02x "
+				r_cons_printf (cons, "%s%s rgb:%02x%02x%02x "
 					Color_RESET, fg, bg, rc.r, rc.g, rc.b);
 			}
 			r_cons_newline (cons);
@@ -546,7 +546,7 @@ static void r_cons_pal_show_rgb(RCons *cons) {
 				strcpy (fg, ((i < 6) && (j < 5))
 					? Color_WHITE: Color_BLACK);
 				r_cons_rgb_str (cons, bg, sizeof (bg), &rc);
-				r_kons_printf (cons, "%s%s rgb:%02x%02x%02x "
+				r_cons_printf (cons, "%s%s rgb:%02x%02x%02x "
 					Color_RESET, fg, bg, rc.r, rc.g, rc.b);
 				if (n ++== 5) {
 					n = 0;
@@ -560,7 +560,7 @@ static void r_cons_pal_show_rgb(RCons *cons) {
 R_API void r_cons_pal_show(RCons *cons) {
 	size_t i;
 	for (i = 0; colors[i].name; i++) {
-		r_kons_printf (cons, "%s%s__"Color_RESET" %s\n",
+		r_cons_printf (cons, "%s%s__"Color_RESET" %s\n",
 			colors[i].code,
 			colors[i].bgcode,
 			colors[i].name);
@@ -619,7 +619,7 @@ R_API void r_cons_pal_list(RCons *cons, int rad, const char *arg) {
 					sname[j] = '_';
 				}
 			}
-			r_kons_printf (cons, ".%s%s { color: rgb(%d, %d, %d); }%s",
+			r_cons_printf (cons, ".%s%s { color: rgb(%d, %d, %d); }%s",
 				prefix, sname, rcolor->r, rcolor->g, rcolor->b, hasnext);
 			free (sname);
 			}
@@ -627,17 +627,17 @@ R_API void r_cons_pal_list(RCons *cons, int rad, const char *arg) {
 		case 'h':
 			name = strdup (keys[i].name);
 			r_str_replace_char (name, '.', '_');
-			r_kons_printf (cons, ".%s { color:#%02x%02x%02x }\n",
+			r_cons_printf (cons, ".%s { color:#%02x%02x%02x }\n",
 				name, rcolor->r, rcolor->g, rcolor->b);
 			free (name);
 			break;
 		case '*':
 		case 'r':
 		case 1:
-			r_kons_printf (cons, "ec %s rgb:%02x%02x%02x",
+			r_cons_printf (cons, "ec %s rgb:%02x%02x%02x",
 				keys[i].name, rcolor->r, rcolor->g, rcolor->b);
 			if (rcolor->a == ALPHA_FGBG) {
-				r_kons_printf (cons, " rgb:%02x%02x%02x",
+				r_cons_printf (cons, " rgb:%02x%02x%02x",
 					rcolor->r2, rcolor->g2, rcolor->b2);
 			}
 			if (rcolor->attr) {
@@ -654,14 +654,14 @@ R_API void r_cons_pal_list(RCons *cons, int rad, const char *arg) {
 				}
 				for (j = 0; j < R_ARRAY_SIZE (attrs); j++) {
 					if (rcolor->attr & attrs[j].val) {
-						r_kons_printf (cons, " %s", attrs[j].str);
+						r_cons_printf (cons, " %s", attrs[j].str);
 					}
 				}
 			}
 			r_cons_newline (cons);
 			break;
 		default:
-			r_kons_printf (cons, " %s##"Color_RESET"  %s\n", *color, keys[i].name);
+			r_cons_printf (cons, " %s##"Color_RESET"  %s\n", *color, keys[i].name);
 			break;
 		}
 	}

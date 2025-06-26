@@ -316,7 +316,7 @@ static bool rtti_msvc_read_type_descriptor(RVTableContext *context, ut64 addr, r
 
 static void rtti_msvc_print_complete_object_locator(rtti_complete_object_locator *col, ut64 addr, const char *prefix) {
 	RCons *cons = r_cons_singleton ();
-	r_kons_printf (cons, "%sComplete Object Locator at 0x%08"PFMT64x":\n"
+	r_cons_printf (cons, "%sComplete Object Locator at 0x%08"PFMT64x":\n"
 				   "%s\tsignature: %#x\n"
 				   "%s\tvftableOffset: %#x\n"
 				   "%s\tcdOffset: %#x\n"
@@ -328,7 +328,7 @@ static void rtti_msvc_print_complete_object_locator(rtti_complete_object_locator
 				   prefix, col->cd_offset,
 				   prefix, col->type_descriptor_addr,
 				   prefix, col->class_descriptor_addr);
-	r_kons_printf (cons, "%s\tobjectBase: 0x%08"PFMT32x"\n\n",
+	r_cons_printf (cons, "%s\tobjectBase: 0x%08"PFMT32x"\n\n",
 				   prefix, col->object_base);
 }
 
@@ -345,7 +345,7 @@ static void rtti_msvc_print_complete_object_locator_json(PJ *pj, rtti_complete_o
 
 static void rtti_msvc_print_type_descriptor(rtti_type_descriptor *td, ut64 addr, const char *prefix) {
 	RCons *cons = r_cons_singleton ();
-	r_kons_printf (cons, "%sType Descriptor at 0x%08"PFMT64x":\n"
+	r_cons_printf (cons, "%sType Descriptor at 0x%08"PFMT64x":\n"
 				   "%s\tvtableAddr: 0x%08"PFMT64x"\n"
 				   "%s\tspare: 0x%08"PFMT64x"\n"
 				   "%s\tname: %s\n\n",
@@ -365,7 +365,7 @@ static void rtti_msvc_print_type_descriptor_json(PJ *pj, rtti_type_descriptor *t
 
 static void rtti_msvc_print_class_hierarchy_descriptor(rtti_class_hierarchy_descriptor *chd, ut64 addr, const char *prefix) {
 	RCons *cons = r_cons_singleton ();
-	r_kons_printf (cons, "%sClass Hierarchy Descriptor at 0x%08"PFMT64x":\n"
+	r_cons_printf (cons, "%sClass Hierarchy Descriptor at 0x%08"PFMT64x":\n"
 				   "%s\tsignature: %#x\n"
 				   "%s\tattributes: %#x\n"
 				   "%s\tnumBaseClasses: %#x\n"
@@ -388,7 +388,7 @@ static void rtti_msvc_print_class_hierarchy_descriptor_json(PJ *pj, rtti_class_h
 
 static void rtti_msvc_print_base_class_descriptor(rtti_base_class_descriptor *bcd, const char *prefix) {
 	RCons *cons = r_cons_singleton ();
-	r_kons_printf (cons, "%sBase Class Descriptor:\n"
+	r_cons_printf (cons, "%sBase Class Descriptor:\n"
 				   "%s\ttypeDescriptorAddr: 0x%08"PFMT32x"\n"
 				   "%s\tnumContainedBases: %#x\n"
 				   "%s\twhere:\n"

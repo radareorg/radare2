@@ -31,12 +31,12 @@ static bool cblist(void *user, const ut64 offset, const void *val) {
 	ut64 *addr;
 	if (args->opt == 'x') {
 		R_VEC_FOREACH (bt, addr) {
-			r_kons_printf (args->cons, "ax 0x%08"PFMT64x" 0x%08"PFMT64x"\n", offset, *addr);
+			r_cons_printf (args->cons, "ax 0x%08"PFMT64x" 0x%08"PFMT64x"\n", offset, *addr);
 		}
 	} else {
-		r_kons_printf (args->cons, "-> 0x%08"PFMT64x"\n", offset);
+		r_cons_printf (args->cons, "-> 0x%08"PFMT64x"\n", offset);
 		R_VEC_FOREACH (bt, addr) {
-			r_kons_printf (args->cons, " `-> 0x%08"PFMT64x"\n", *addr);
+			r_cons_printf (args->cons, " `-> 0x%08"PFMT64x"\n", *addr);
 		}
 	}
 	return true;

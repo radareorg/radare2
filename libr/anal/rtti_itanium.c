@@ -306,7 +306,7 @@ static const char *type_tostring(RTypeInfoType type) {
 }
 static void rtti_itanium_print_class_type_info(class_type_info *cti, const char *prefix) {
 	RCons *cons = r_cons_singleton ();
-	r_kons_printf (cons, "%sType Info at 0x%08" PFMT64x ":\n"
+	r_cons_printf (cons, "%sType Info at 0x%08" PFMT64x ":\n"
 			"%s  Type Info type: %s\n"
 			"%s  Belongs to class vtable: 0x%08" PFMT64x "\n"
 			"%s  Reference to RTTI's type class: 0x%08" PFMT64x "\n"
@@ -345,7 +345,7 @@ static void rtti_itanium_print_class_type_info_json(class_type_info *cti) {
 
 static void rtti_itanium_print_vmi_class_type_info(vmi_class_type_info *vmi_cti, const char *prefix) {
 	RCons *cons = r_cons_singleton ();
-	r_kons_printf (cons, "%sType Info at 0x%08" PFMT64x ":\n"
+	r_cons_printf (cons, "%sType Info at 0x%08" PFMT64x ":\n"
 			"%s  Type Info type: %s\n"
 			"%s  Belongs to class vtable: 0x%08" PFMT64x "\n"
 			"%s  Reference to RTTI's type class: 0x%08" PFMT64x "\n"
@@ -367,7 +367,7 @@ static void rtti_itanium_print_vmi_class_type_info(vmi_class_type_info *vmi_cti,
 
 	int i;
 	for (i = 0; i < vmi_cti->vmi_base_count; i++) {
-		r_kons_printf (cons, "%s    Base class type descriptor address: 0x%08" PFMT64x "\n"
+		r_cons_printf (cons, "%s    Base class type descriptor address: 0x%08" PFMT64x "\n"
 			       "%s    Base class flags: 0x%" PFMT64x
 			       "\n",
 			prefix, vmi_cti->vmi_bases[i].base_class_addr,
@@ -409,7 +409,7 @@ static void rtti_itanium_print_vmi_class_type_info_json(vmi_class_type_info *vmi
 
 static void rtti_itanium_print_si_class_type_info(si_class_type_info *si_cti, const char *prefix) {
 	RCons *cons = r_cons_singleton ();
-	r_kons_printf (cons, "%sType Info at 0x%08" PFMT64x ":\n"
+	r_cons_printf (cons, "%sType Info at 0x%08" PFMT64x ":\n"
 			"%s  Type Info type: %s\n"
 			"%s  Belongs to class vtable: 0x%08" PFMT64x "\n"
 			"%s  Reference to RTTI's type class: 0x%08" PFMT64x "\n"

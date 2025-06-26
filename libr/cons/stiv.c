@@ -175,7 +175,7 @@ static Renderer select_renderer(int mode) {
 R_API void r_cons_image(const ut8 *buf, int bufsz, int width, int mode, int components) {
 	const int height = (bufsz / width) / components;
 	Renderer renderer = select_renderer (mode);
-	do_render (renderer, r_cons_printf, buf, bufsz, width, height, components);
+	do_render (renderer, r_cons_gprintf, buf, bufsz, width, height, components);
 }
 
 #if 0

@@ -708,7 +708,7 @@ R_API int r_line_hist_list(RLine *line, bool full) {
 		i = full? 0: line->history.load_index;
 		for (; i < line->history.size && line->history.data[i]; i++) {
 			const char *pad = r_str_pad (' ', 32 - strlen (line->history.data[i]));
-			r_kons_printf (line->cons, "%s %s # !%d\n", line->history.data[i], pad, i);
+			r_cons_printf (line->cons, "%s %s # !%d\n", line->history.data[i], pad, i);
 		}
 	}
 	return i;
@@ -825,8 +825,8 @@ static void selection_widget_draw(RCons *cons) {
 		}
 		int scroll = R_MAX (0, sel_widget->selection - sel_widget->scroll);
 		const char *option = y < sel_widget->options_len? sel_widget->options[y + scroll]: "";
-		r_kons_printf (cons, "%s", sel_widget->selection == y + scroll? selected_color: background_color);
-		r_kons_printf (cons, "%-*.*s", sel_widget->w, sel_widget->w, option);
+		r_cons_printf (cons, "%s", sel_widget->selection == y + scroll? selected_color: background_color);
+		r_cons_printf (cons, "%-*.*s", sel_widget->w, sel_widget->w, option);
 		if (scrollbar && R_BETWEEN (scrollbar_y, y, scrollbar_y + scrollbar_l)) {
 			r_cons_write (cons, Color_INVERT " "Color_INVERT_RESET, 10);
 		} else {
@@ -888,7 +888,7 @@ static void print_rline_task(void *_core) {
 	RCons *cons = core->cons;
 	RLine *line = cons->line;
 	r_cons_clear_line (cons, 0);
-	r_kons_printf (cons, "%s%s%s", Color_RESET, line->prompt, line->buffer.data);
+	r_cons_printf (cons, "%s%s%s", Color_RESET, line->prompt, line->buffer.data);
 	r_cons_flush (cons);
 }
 

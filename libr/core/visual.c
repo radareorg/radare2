@@ -394,7 +394,7 @@ static void printSnow(RCore *core) {
 			continue;
 		}
 		r_cons_gotoxy (core->cons, snow->x, snow->y);
-		r_kons_printf (core->cons, "*");
+		r_cons_printf (core->cons, "*");
 	}
 	// r_cons_gotoxy (core->cons, 10 , 10);
 	r_cons_flush (core->cons);
@@ -606,7 +606,7 @@ repeat:
 	}
 	r_cons_clear00 (core->cons);
 	r_core_visual_append_help (core, q, "Visual Mode Help (short)", help_visual);
-	r_kons_printf (core->cons, "%s", r_strbuf_get (q));
+	r_cons_printf (core->cons, "%s", r_strbuf_get (q));
 	r_cons_flush (core->cons);
 	const char *lesstr = NULL;
 	switch (r_cons_readchar (core->cons)) {
@@ -1149,9 +1149,9 @@ R_API void r_core_visual_show_char(RCore *core, char ch) {
 	}
 	RCons *cons = core->cons;
 	r_cons_gotoxy (cons, 1, 2);
-	r_kons_printf (cons, ".---.\n");
-	r_kons_printf (cons, "| %c |\n", ch);
-	r_kons_printf (cons, "'---'\n");
+	r_cons_printf (cons, ".---.\n");
+	r_cons_printf (cons, "| %c |\n", ch);
+	r_cons_printf (cons, "'---'\n");
 	r_cons_flush (cons);
 	r_sys_sleep (1);
 }
@@ -1166,13 +1166,13 @@ R_API void r_core_visual_seek_animation(RCore *core, ut64 addr) {
 	}
 	RCons *cons = core->cons;
 	r_cons_gotoxy (cons, 1, 2);
-	r_kons_printf (cons, ".----.\n");
+	r_cons_printf (cons, ".----.\n");
 	if (addr > core->addr) {
-		r_kons_printf (cons, "| \\/ |\n");
+		r_cons_printf (cons, "| \\/ |\n");
 	} else {
-		r_kons_printf (cons, "| /\\ |\n");
+		r_cons_printf (cons, "| /\\ |\n");
 	}
-	r_kons_printf (cons, "'----'\n");
+	r_cons_printf (cons, "'----'\n");
 	r_cons_flush (cons);
 	r_sys_usleep (90000);
 }
@@ -1379,7 +1379,7 @@ R_API int r_core_visual_prevopsz(RCore *core, ut64 addr) {
 }
 
 static void addComment(RCore *core, ut64 addr) {
-	r_kons_printf (core->cons, "Enter comment for reference:\n");
+	r_cons_printf (core->cons, "Enter comment for reference:\n");
 	r_core_visual_showcursor (core, true);
 	r_cons_flush (core->cons);
 	r_cons_set_raw (core->cons, false);
@@ -1499,14 +1499,14 @@ repeat:
 		char *address = R_SYS_BITS_CHECK (core->dbg->bits, 64)
 			? r_str_newf ("0x%016"PFMT64x, addr)
 			: r_str_newf ("0x%08"PFMT64x, addr);
-		r_kons_printf (cons, "[%s%srefs]> %s # (TAB/jk/q/?) ",
+		r_cons_printf (cons, "[%s%srefs]> %s # (TAB/jk/q/?) ",
 				xrefsMode? "fcn.": "addr.", xref ? "x": "", address);
 		free (address);
 	}
 	if (!xrefs || RVecAnalRef_empty (xrefs)) {
 		RVecAnalRef_free (xrefs);
 		xrefs = NULL;
-		r_kons_printf (cons, "\n\n(no %srefs)\n", xref ? "x": "");
+		r_cons_printf (cons, "\n\n(no %srefs)\n", xref ? "x": "");
 	} else {
 		int h, w = r_cons_get_size (cons, &h);
 		bool asm_bytes = r_config_get_b (core->config, "asm.bytes");
@@ -1524,7 +1524,7 @@ repeat:
 		const ut64 num_xrefs = RVecAnalRef_length (xrefs);
 		R_VEC_FOREACH (xrefs, refi) {
 			if (idx - skip > maxcount) {
-				r_kons_printf (cons, "...");
+				r_cons_printf (cons, "...");
 				break;
 			}
 
@@ -1562,7 +1562,7 @@ repeat:
 				}
 				char *cmt = r_core_cmd_strf (core, "CC.@0x%08"PFMT64x, refi->addr);
 				r_str_trim (cmt);
-				r_kons_printf (cons, " %d [%s] 0x%08"PFMT64x" 0x%08"PFMT64x " %s %sref (%s) ; %s\n",
+				r_cons_printf (cons, " %d [%s] 0x%08"PFMT64x" 0x%08"PFMT64x " %s %sref (%s) ; %s\n",
 					idx, cstr, refi->at, refi->addr,
 					r_anal_ref_type_tostring (refi->type),
 					xref ? "x":"", name, cmt);
@@ -1613,7 +1613,7 @@ repeat:
 					dis = res;
 				}
 				if (++count >= rows) {
-					r_kons_printf (cons, "...");
+					r_cons_printf (cons, "...");
 					break;
 				}
 			}
@@ -1803,9 +1803,9 @@ static void visual_textlogs(RCore *core) {
 		}
 #define TEXTLOGS_TITLE "[visual-text-logs] Press '?' for help. idx %d log.level=%d"
 		if (r_config_get_i (core->config, "scr.color") > 0) {
-			r_kons_printf (cons, Color_YELLOW "" TEXTLOGS_TITLE "\n"Color_RESET, index, log_level);
+			r_cons_printf (cons, Color_YELLOW "" TEXTLOGS_TITLE "\n"Color_RESET, index, log_level);
 		} else {
-			r_kons_printf (cons, TEXTLOGS_TITLE "\n", index, log_level);
+			r_cons_printf (cons, TEXTLOGS_TITLE "\n", index, log_level);
 		}
 		if (showhelp) {
 			const char help[] = \
@@ -1824,9 +1824,9 @@ static void visual_textlogs(RCore *core) {
 		} else {
 			r_core_cmdf (core, "Tv %d %d", index, shift);
 			if (inbody) {
-				r_kons_printf (cons, "--v--\n");
+				r_cons_printf (cons, "--v--\n");
 			} else {
-				r_kons_printf (cons, "--^--\n");
+				r_cons_printf (cons, "--^--\n");
 			}
 			char *s = r_core_cmd_strf (core, "Tm %d~{}", index);
 			r_str_trim (s);
@@ -1873,7 +1873,7 @@ static void visual_textlogs(RCore *core) {
 				free (s);
 				s = r;
 			}
-			r_kons_printf (cons, "%s\n", s);
+			r_cons_printf (cons, "%s\n", s);
 			free (s);
 			const char *vi2 = r_config_get (core->config, "cmd.vprompt2");
 			if (R_STR_ISNOTEMPTY (vi2)) {
@@ -2634,7 +2634,7 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 	;
 	for (;;) {
 		r_cons_clear00 (core->cons);
-		r_kons_printf (core->cons, "%s\n", browsemsg);
+		r_cons_printf (core->cons, "%s\n", browsemsg);
 		r_cons_flush (core->cons);
 		char ch = 0;
 		if (R_STR_ISNOTEMPTY (input)) {
@@ -3060,12 +3060,12 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					}
 				}
 				if (!canWrite (core, addr)) {
-					r_kons_printf (core->cons, "\nFile has been opened in read-only mode. Use -w flag, oo+ or e io.cache=true\n");
+					r_cons_printf (core->cons, "\nFile has been opened in read-only mode. Use -w flag, oo+ or e io.cache=true\n");
 					r_cons_any_key (core->cons, NULL);
 					return true;
 				}
 			}
-			r_kons_printf (core->cons, "Enter assembler opcodes separated with ';':\n");
+			r_cons_printf (core->cons, "Enter assembler opcodes separated with ';':\n");
 			r_core_visual_showcursor (core, true);
 			r_cons_flush (core->cons);
 			r_cons_set_raw (core->cons, false);
@@ -3254,9 +3254,9 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			{
 				r_cons_gotoxy (core->cons, 0, 0);
 				if (core->visual.tabs) {
-					r_kons_printf (core->cons, "[tnp:=+-] ");
+					r_cons_printf (core->cons, "[tnp:=+-] ");
 				} else {
-					r_kons_printf (core->cons, "[t] ");
+					r_cons_printf (core->cons, "[t] ");
 				}
 				r_cons_flush (core->cons);
 				r_cons_set_raw (core->cons, true);
@@ -3787,7 +3787,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		case 'm':
 			{
 				r_cons_gotoxy (core->cons, 0, 0);
-				r_kons_printf (core->cons, R_CONS_CLEAR_LINE"Set shortcut key for 0x%"PFMT64x"\n", core->addr);
+				r_cons_printf (core->cons, R_CONS_CLEAR_LINE"Set shortcut key for 0x%"PFMT64x"\n", core->addr);
 				r_cons_flush (core->cons);
 				const int ch = r_cons_readchar (core->cons);
 				r_core_vmark (core, ch);
@@ -3797,7 +3797,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			{
 				r_cons_gotoxy (core->cons, 0, 0);
 				if (r_core_vmark_dump (core, 'v')) {
-					r_kons_printf (core->cons, R_CONS_CLEAR_LINE"Remove a shortcut key from the list\n");
+					r_cons_printf (core->cons, R_CONS_CLEAR_LINE"Remove a shortcut key from the list\n");
 					r_cons_flush (core->cons);
 					const int ch = r_cons_readchar (core->cons);
 					r_core_vmark_del (core, ch);
@@ -3853,7 +3853,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					}
 				} else {
 					if (!canWrite (core, core->addr)) {
-						r_kons_printf (core->cons, "\nFile has been opened in read-only mode. Use -w flag, oo+ or e io.cache=true\n");
+						r_cons_printf (core->cons, "\nFile has been opened in read-only mode. Use -w flag, oo+ or e io.cache=true\n");
 						r_cons_any_key (core->cons, NULL);
 						return true;
 					}
@@ -3887,7 +3887,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					}
 				} else {
 					if (!canWrite (core, core->addr)) {
-						r_kons_printf (core->cons, "\nFile has been opened in read-only mode. Use -w flag, oo+ or e io.cache=true\n");
+						r_cons_printf (core->cons, "\nFile has been opened in read-only mode. Use -w flag, oo+ or e io.cache=true\n");
 						r_cons_any_key (core->cons, NULL);
 						return true;
 					}
@@ -4326,17 +4326,17 @@ static void visual_title(RCore *core, int color) {
 #if 0
 			// TODO: add an option to show this tab mode instead?
 			const int curTab = core->visual.tab;
-			r_kons_printf ("[");
+			r_cons_printf ("[");
 			int i;
 			for (i = 0; i < tabsCount; i++) {
 				if (i == curTab) {
-					r_kons_printf ("%d", curTab + 1);
+					r_cons_printf ("%d", curTab + 1);
 				} else {
-					r_kons_printf (".");
+					r_cons_printf (".");
 				}
 			}
-			r_kons_printf ("]");
-			r_kons_printf ("[tab:%d/%d]", core->visual.tab, tabsCount);
+			r_cons_printf ("]");
+			r_cons_printf ("[tab:%d/%d]", core->visual.tab, tabsCount);
 #endif
 		}
 		r_kons_print (core->cons, title);
@@ -4427,19 +4427,19 @@ R_API void r_core_print_scrollbar(RCore *core) {
 		const char *word = r_list_pop_head (words);
 		if (word && *word) {
 			r_cons_gotoxy (cons, w - strlen (word) - 1, i + 3);
-			r_kons_printf (cons, "%s>", word);
+			r_cons_printf (cons, "%s>", word);
 		}
 		r_cons_gotoxy (core->cons, w, i + 3);
 		if (hadMatch) {
-			r_kons_printf (cons, "|");
+			r_cons_printf (cons, "|");
 		} else {
 			ut64 cur = from + (block * i);
 			ut64 nex = from + (block * (i + 1));
 			if (R_BETWEEN (cur, core->addr, nex)) {
-				r_kons_printf (cons, Color_INVERT"|"Color_RESET);
+				r_cons_printf (cons, Color_INVERT"|"Color_RESET);
 				hadMatch = true;
 			} else {
-				r_kons_printf (cons, "|");
+				r_cons_printf (cons, "|");
 			}
 		}
 	}
@@ -4505,9 +4505,9 @@ R_API void r_core_print_scrollbar_bottom(RCore *core) {
 			ut64 nex = from + (block * (i + strlen (word) + 1));
 			r_cons_gotoxy (cons, i + slen - 1, h);
 			if (R_BETWEEN (cur, core->addr, nex)) {
-				r_kons_printf (cons, Color_INVERT"{%s}"Color_RESET, word);
+				r_cons_printf (cons, Color_INVERT"{%s}"Color_RESET, word);
 			} else {
-				r_kons_printf (cons, "{%s}", word);
+				r_cons_printf (cons, "{%s}", word);
 			}
 		}
 	}
@@ -4565,7 +4565,7 @@ R_IPI void visual_refresh(RCore *core) {
 			if (split_w > w) {
 				// do not show column contents
 			} else {
-				r_kons_printf (cons, "[cmd.cprompt=%s]\n", vi);
+				r_cons_printf (cons, "[cmd.cprompt=%s]\n", vi);
 				if (core->visual.oseek != UT64_MAX) {
 					r_core_seek (core, core->visual.oseek, true);
 				}
@@ -4584,7 +4584,7 @@ R_IPI void visual_refresh(RCore *core) {
 	}
 	int i;
 	for (i = 0; i < notch; i++) {
-		r_kons_printf (cons, R_CONS_CLEAR_LINE"\n");
+		r_cons_printf (cons, R_CONS_CLEAR_LINE"\n");
 	}
 	vi = r_config_get (core->config, "cmd.vprompt");
 	if (R_STR_ISNOTEMPTY (vi)) {
@@ -4942,7 +4942,7 @@ dodo:
 		if (highlight_mode && highlight_sb) {
 			r_cons_gotoxy (core->cons, 0, 0);
 			char *s = r_strbuf_tostring (highlight_sb);
-			r_kons_printf (core->cons, "%s[Highlight] %s|", R_CONS_CLEAR_LINE, s);
+			r_cons_printf (core->cons, "%s[Highlight] %s|", R_CONS_CLEAR_LINE, s);
 			r_cons_flush (core->cons);
 			free (s);
 		}

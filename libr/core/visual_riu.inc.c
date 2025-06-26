@@ -92,9 +92,9 @@ static void riu_render(RIU *riu) {
 	RListIter *iter;
 	RIUWidget *w;
 	r_cons_clear00 (cons);
-	r_kons_printf (cons, "\n.---------------------------------------.\n");
-	r_kons_printf (cons, "| [q] %18s                |\n", r_str_get (riu->title));
-	r_kons_printf (cons, "|---------------------------------------'\n");
+	r_cons_printf (cons, "\n.---------------------------------------.\n");
+	r_cons_printf (cons, "| [q] %18s                |\n", r_str_get (riu->title));
+	r_cons_printf (cons, "|---------------------------------------'\n");
 	int n = 0;
 	bool havebuttons = false;
 	r_list_foreach (riu->items, iter, w) {
@@ -102,17 +102,17 @@ static void riu_render(RIU *riu) {
 		switch (*w->type) {
 		case 'b': // button
 			if (!havebuttons) {
-				r_kons_printf (cons, "|\n");
+				r_cons_printf (cons, "|\n");
 				havebuttons = true;
 			}
-			r_kons_printf (cons, "|  %c [ %s ]\n", ch, w->name);
+			r_cons_printf (cons, "|  %c [ %s ]\n", ch, w->name);
 			break;
 		case 'r': // run
-			r_kons_printf (cons, "|  %c %s (%s)\n", ch, w->name, w->cmnd);
+			r_cons_printf (cons, "|  %c %s (%s)\n", ch, w->name, w->cmnd);
 			r_core_cmd0 (core, w->cmnd);
 			break;
 		default:
-			r_kons_printf (cons, "|  %c %10s : %s\n", ch, w->name, w->data);
+			r_cons_printf (cons, "|  %c %10s : %s\n", ch, w->name, w->data);
 			break;
 		}
 		n++;

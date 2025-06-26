@@ -466,12 +466,12 @@ static void colormessage(RCore *core, const char *msg) {
 	size_t msglen = strlen (msg);
 	RCons *cons = core->cons;
 	const char *pad = r_str_pad (' ', msglen + 5);
-	r_cons_gotoxy (cons, 10, 10); r_kons_printf (cons, Color_BGBLUE"%s", pad);
-	r_cons_gotoxy (cons, 10, 11); r_kons_printf (cons, Color_BGBLUE"%s", pad);
-	r_cons_gotoxy (cons, 10, 12); r_kons_printf (cons, Color_BGBLUE"%s", pad);
-	r_cons_gotoxy (cons, 12, 11); r_kons_printf (cons, Color_BGBLUE""Color_WHITE"%s", msg);
+	r_cons_gotoxy (cons, 10, 10); r_cons_printf (cons, Color_BGBLUE"%s", pad);
+	r_cons_gotoxy (cons, 10, 11); r_cons_printf (cons, Color_BGBLUE"%s", pad);
+	r_cons_gotoxy (cons, 10, 12); r_cons_printf (cons, Color_BGBLUE"%s", pad);
+	r_cons_gotoxy (cons, 12, 11); r_cons_printf (cons, Color_BGBLUE""Color_WHITE"%s", msg);
 	r_cons_gotoxy (cons, 0, 0);
-	r_kons_printf (cons, Color_RESET);
+	r_cons_printf (cons, Color_RESET);
 }
 
 static char *filterFlags(RCore *core, const char *msg) {
@@ -658,7 +658,7 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 		break;
 	}
 
-	r_kons_printf (core->cons, f, l, s, msg, s, l);
+	r_cons_printf (core->cons, f, l, s, msg, s, l);
 	free (l);
 	free (s);
 }
@@ -746,7 +746,7 @@ static int cmd_help(void *data, const char *input) {
 				r_core_cmd (core, input + 1, 0);
 				r_prof_end (&prof);
 				r_core_return_value (core, (ut64)(int)prof.result);
-				r_kons_printf (cons, "%lf\n", prof.result);
+				r_cons_printf (cons, "%lf\n", prof.result);
 				break;
 			}
 		default:
@@ -777,7 +777,7 @@ static int cmd_help(void *data, const char *input) {
 		}
 		ut64 n = (ut64)b + r_num_rand (r);
 		r_core_return_value (core, n);
-		r_kons_printf (cons, "0x%"PFMT64x"\n", n);
+		r_cons_printf (cons, "0x%"PFMT64x"\n", n);
 		}
 		break;
 	case '\'': // "?'"
@@ -785,9 +785,9 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case 'a': // "?a"
 		if (input[1] == 'e') {
-			r_kons_printf (cons, "%s", r_str_chartable ('e'));
+			r_cons_printf (cons, "%s", r_str_chartable ('e'));
 		} else {
-			r_kons_printf (cons, "%s", r_str_chartable (0));
+			r_cons_printf (cons, "%s", r_str_chartable (0));
 		}
 		break;
 	case 'd':
@@ -798,17 +798,17 @@ static int cmd_help(void *data, const char *input) {
 			r_write_le32 (data, n);
 			int res = r_anal_op (core->anal, &aop, core->addr, data, sizeof (data), R_ARCH_OP_MASK_DISASM);
 			if (res > 0) {
-				r_kons_printf (cons, "bedec   %s\n", aop.mnemonic);
+				r_cons_printf (cons, "bedec   %s\n", aop.mnemonic);
 			} else {
-				r_kons_printf (cons, "bedec   invalid\n");
+				r_cons_printf (cons, "bedec   invalid\n");
 			}
 			r_anal_op_fini (&aop);
 			r_write_be32 (data, n);
 			res = r_anal_op (core->anal, &aop, core->addr, data, sizeof (data), R_ARCH_OP_MASK_DISASM);
 			if (res > 0) {
-				r_kons_printf (cons, "ledec   %s\n", aop.mnemonic);
+				r_cons_printf (cons, "ledec   %s\n", aop.mnemonic);
 			} else {
-				r_kons_printf (cons, "ledec   invalid\n");
+				r_cons_printf (cons, "ledec   invalid\n");
 			}
 			r_anal_op_fini (&aop);
 		}
@@ -835,7 +835,7 @@ static int cmd_help(void *data, const char *input) {
 		} else {
 			n = r_num_math (core->num, input + 1);
 			r_num_to_bits (out, n);
-			r_kons_printf (cons, "%sb\n", out);
+			r_cons_printf (cons, "%sb\n", out);
 		}
 		break;
 	case 'B': // "?B"
@@ -845,13 +845,13 @@ static int cmd_help(void *data, const char *input) {
 			return false;
 		}
 		r_list_foreach (tmp, iter, map) {
-			r_kons_printf (cons, "0x%"PFMT64x" 0x%"PFMT64x"\n", r_io_map_begin (map), r_io_map_end (map));
+			r_cons_printf (cons, "0x%"PFMT64x" 0x%"PFMT64x"\n", r_io_map_begin (map), r_io_map_end (map));
 		}
 		r_list_free (tmp);
 		break;
 	case 'h': // "?h"
 		if (input[1] == ' ') {
-			r_kons_printf (cons, "0x%08x\n", (ut32)r_str_hash (input + 2));
+			r_cons_printf (cons, "0x%08x\n", (ut32)r_str_hash (input + 2));
 		} else {
 			r_core_cmd_help_contains (core, help_msg_question, "?h");
 		}
@@ -882,7 +882,7 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case 'o': // "?o"
 		n = r_num_math (core->num, input + 1);
-		r_kons_printf (cons, "0%"PFMT64o"\n", n);
+		r_cons_printf (cons, "0%"PFMT64o"\n", n);
 		break;
 	case 'T': // "?T"
 		if (input[1] == 'j') {
@@ -894,10 +894,10 @@ static int cmd_help(void *data, const char *input) {
 			pj_kn (pj, "file.anal", core->times->file_anal_time);
 			pj_end (pj);
 			char *s = pj_drain (pj);
-			r_kons_printf (cons, "%s\n", s);
+			r_cons_printf (cons, "%s\n", s);
 			free (s);
 		} else {
-			r_kons_printf (cons, "plug.init = %"PFMT64d"\n"
+			r_cons_printf (cons, "plug.init = %"PFMT64d"\n"
 				"plug.load = %"PFMT64d"\n"
 				"file.load = %"PFMT64d"\n"
 				"file.anal = %"PFMT64d"\n",
@@ -961,19 +961,19 @@ static int cmd_help(void *data, const char *input) {
 					pj_ks (pj, "segment", r_strf ("%04x:%04x", s, a));
 				} else {
 					if (n >> 32) {
-						r_kons_printf (cons, "int64   %"PFMT64d"\n", (st64)n);
-						r_kons_printf (cons, "uint64  %"PFMT64u"\n", (ut64)n);
+						r_cons_printf (cons, "int64   %"PFMT64d"\n", (st64)n);
+						r_cons_printf (cons, "uint64  %"PFMT64u"\n", (ut64)n);
 					} else {
-						r_kons_printf (cons, "int32   %d\n", (st32)n);
-						r_kons_printf (cons, "uint32  %u\n", (ut32)n);
+						r_cons_printf (cons, "int32   %d\n", (st32)n);
+						r_cons_printf (cons, "uint32  %u\n", (ut32)n);
 					}
-					r_kons_printf (cons, "hex     0x%"PFMT64x"\n", n);
-					r_kons_printf (cons, "octal   0%"PFMT64o"\n", n);
-					r_kons_printf (cons, "unit    %s\n", unit);
-					r_kons_printf (cons, "segment %04x:%04x\n", s, a);
+					r_cons_printf (cons, "hex     0x%"PFMT64x"\n", n);
+					r_cons_printf (cons, "octal   0%"PFMT64o"\n", n);
+					r_cons_printf (cons, "unit    %s\n", unit);
+					r_cons_printf (cons, "segment %04x:%04x\n", s, a);
 
 					if (asnum) {
-						r_kons_printf (cons, "string  \"%s\"\n", asnum);
+						r_cons_printf (cons, "string  \"%s\"\n", asnum);
 						free (asnum);
 					}
 				}
@@ -1000,15 +1000,15 @@ static int cmd_help(void *data, const char *input) {
 					r_num_to_ternary (out, n);
 					pj_ks (pj, "ternary", r_strf ("0t%s", out));
 				} else {
-					r_kons_printf (cons, "fvalue  %.1lf\n", core->num->fvalue);
-					r_kons_printf (cons, "float   %.15ff\n", f);
-					r_kons_printf (cons, "double  %.15lf\n", d);
-					r_kons_printf (cons, "binary  0b%s\n", out);
+					r_cons_printf (cons, "fvalue  %.1lf\n", core->num->fvalue);
+					r_cons_printf (cons, "float   %.15ff\n", f);
+					r_cons_printf (cons, "double  %.15lf\n", d);
+					r_cons_printf (cons, "binary  0b%s\n", out);
 					char b36str[16];
 					b36_fromnum (b36str, n);
-					r_kons_printf (cons, "base36  %s\n", b36str);
+					r_cons_printf (cons, "base36  %s\n", b36str);
 					r_num_to_ternary (out, n);
-					r_kons_printf (cons, "ternary 0t%s\n", out);
+					r_cons_printf (cons, "ternary 0t%s\n", out);
 				}
 			}
 			if (*input ==  'j') {
@@ -1017,7 +1017,7 @@ static int cmd_help(void *data, const char *input) {
 			free (inputs);
 			r_list_free (list);
 			if (pj) {
-				r_kons_printf (cons, "%s\n", pj_string (pj));
+				r_cons_printf (cons, "%s\n", pj_string (pj));
 				pj_free (pj);
 			}
 		}
@@ -1066,35 +1066,35 @@ static int cmd_help(void *data, const char *input) {
 			r_core_cmd_help_contains (core, help_msg_question, "?v");
 			break;
 		case '\0':
-			r_kons_printf (core->cons, "%d\n", (st32)n);
+			r_cons_printf (core->cons, "%d\n", (st32)n);
 			break;
 		case 'x': // "?vx"
-			r_kons_printf (core->cons, "0x%08"PFMT64x"\n", n);
+			r_cons_printf (core->cons, "0x%08"PFMT64x"\n", n);
 			break;
 		case 'i': // "?vi"
 			switch (input[2]) {
 			case '1': // byte
-				r_kons_printf (core->cons, "%d\n", (st8)(n & UT8_MAX));
+				r_cons_printf (core->cons, "%d\n", (st8)(n & UT8_MAX));
 				break;
 			case '2': // word
-				r_kons_printf (core->cons, "%d\n", (st16)(n & UT16_MAX));
+				r_cons_printf (core->cons, "%d\n", (st16)(n & UT16_MAX));
 				break;
 			case '4': // dword
-				r_kons_printf (core->cons, "%d\n", (st32)(n & UT32_MAX));
+				r_cons_printf (core->cons, "%d\n", (st32)(n & UT32_MAX));
 				break;
 			case '8': // qword
-				r_kons_printf (core->cons, "%"PFMT64d"\n", (st64)(n & UT64_MAX));
+				r_cons_printf (core->cons, "%"PFMT64d"\n", (st64)(n & UT64_MAX));
 				break;
 			default:
-				r_kons_printf (core->cons, "%"PFMT64d"\n", n);
+				r_cons_printf (core->cons, "%"PFMT64d"\n", n);
 				break;
 			}
 			break;
 		case 'd':
-			r_kons_printf (core->cons, "%"PFMT64d"\n", n);
+			r_cons_printf (core->cons, "%"PFMT64d"\n", n);
 			break;
 		default:
-			r_kons_printf (core->cons, "0x%"PFMT64x"\n", n);
+			r_cons_printf (core->cons, "0x%"PFMT64x"\n", n);
 			break;
 		}
 		r_core_return_value (core, n); // redundant
@@ -1121,7 +1121,7 @@ static int cmd_help(void *data, const char *input) {
 			if (input[1]) { // ?=
 				r_num_math (core->num, input + 1);
 			} else {
-				r_kons_printf (core->cons, "0x%"PFMT64x"\n", core->num->value);
+				r_cons_printf (core->cons, "0x%"PFMT64x"\n", core->num->value);
 			}
 		}
 		break;
@@ -1132,7 +1132,7 @@ static int cmd_help(void *data, const char *input) {
 				r_core_cmd (core, input + 1, 0);
 			}
 		} else {
-			r_kons_printf (core->cons, "0x%"PFMT64x"\n", core->num->value);
+			r_cons_printf (core->cons, "0x%"PFMT64x"\n", core->num->value);
 		}
 		break;
 	case '-': // "?-"
@@ -1142,7 +1142,7 @@ static int cmd_help(void *data, const char *input) {
 				r_core_cmd (core, input + 1, 0);
 			}
 		} else {
-			r_kons_printf (core->cons, "0x%"PFMT64x"\n", core->num->value);
+			r_cons_printf (core->cons, "0x%"PFMT64x"\n", core->num->value);
 		}
 		break;
 	case '!': // "?!"
@@ -1157,7 +1157,7 @@ static int cmd_help(void *data, const char *input) {
 				return cmdres;
 			}
 		} else {
-			r_kons_printf (core->cons, "0x%"PFMT64x"\n", core->num->value);
+			r_cons_printf (core->cons, "0x%"PFMT64x"\n", core->num->value);
 		}
 		break;
 	case '@': // "?@"
@@ -1217,13 +1217,13 @@ static int cmd_help(void *data, const char *input) {
 			{
 				char *v = r_str_version ("radare2");
 				if (v) {
-					r_kons_printf (core->cons, "%s\n", v);
+					r_cons_printf (core->cons, "%s\n", v);
 				}
 				free (v);
 			}
 			break;
 		case 'c': // "?Vc"
-			r_kons_printf (core->cons, "%d\n", vernum (R2_VERSION));
+			r_cons_printf (core->cons, "%d\n", vernum (R2_VERSION));
 			break;
 		case 'j': // "?Vj"
 			{
@@ -1241,24 +1241,24 @@ static int cmd_help(void *data, const char *input) {
 				pj_ki (pj, "nversion", vernum (R2_VERSION));
 				pj_ks (pj, "version", R2_VERSION);
 				pj_end (pj);
-				r_kons_printf (core->cons, "%s\n", pj_string (pj));
+				r_cons_printf (core->cons, "%s\n", pj_string (pj));
 				pj_free (pj);
 			}
 			break;
 		case 'n': // "?Vn"
-			r_kons_printf (core->cons, "%d\n", R2_VERSION_NUMBER);
+			r_cons_printf (core->cons, "%d\n", R2_VERSION_NUMBER);
 			break;
 		case 'q': // "?Vq"
 			r_cons_println (core->cons, R2_VERSION);
 			break;
 		case '0':
-			r_kons_printf (core->cons, "%d\n", R2_VERSION_MAJOR);
+			r_cons_printf (core->cons, "%d\n", R2_VERSION_MAJOR);
 			break;
 		case '1':
-			r_kons_printf (core->cons, "%d\n", R2_VERSION_MINOR);
+			r_cons_printf (core->cons, "%d\n", R2_VERSION_MINOR);
 			break;
 		case '2':
-			r_kons_printf (core->cons, "%d\n", R2_VERSION_PATCH);
+			r_cons_printf (core->cons, "%d\n", R2_VERSION_PATCH);
 			break;
 		default:
 			r_core_return_invalid_command (core, "?V", input[1]);
@@ -1272,13 +1272,13 @@ static int cmd_help(void *data, const char *input) {
 		} else {
 			input = r_str_trim_head_ro (input + 1);
 			r_core_return_value (core, strlen (input));
-			r_kons_printf (core->cons, "%" PFMT64d "\n", core->num->value);
+			r_cons_printf (core->cons, "%" PFMT64d "\n", core->num->value);
 		}
 		break;
 	case 'X': // "?X"
 		input = r_str_trim_head_ro (input + 1);
 		n = r_num_math (core->num, input);
-		r_kons_printf (core->cons, "%"PFMT64x"\n", n);
+		r_cons_printf (core->cons, "%"PFMT64x"\n", n);
 		break;
 	case 'x': // "?x"
 		input = r_str_trim_head_ro (input + 1);
@@ -1298,13 +1298,13 @@ static int cmd_help(void *data, const char *input) {
 			ut64 n = r_num_math (core->num, input);
 			int bits = r_num_to_bits (NULL, n) / 8;
 			for (i = 0; i < bits; i++) {
-				r_kons_printf (core->cons, "%02x", (ut8)((n >> (i * 8)) &0xff));
+				r_cons_printf (core->cons, "%02x", (ut8)((n >> (i * 8)) &0xff));
 			}
 			r_cons_newline (core->cons);
 		} else {
 			input = r_str_trim_head_ro (input);
 			for (i = 0; input[i]; i++) {
-				r_kons_printf (core->cons, "%02x", input[i]);
+				r_cons_printf (core->cons, "%02x", input[i]);
 			}
 			r_cons_newline (core->cons);
 		}
@@ -1428,7 +1428,7 @@ static int cmd_help(void *data, const char *input) {
 						  r_cons_gotoxy (core->cons, 0, 0);
 						  r_str_trim_tail (d);
 						  r_cons_clear_line (core->cons, 0);
-						  r_kons_printf (core->cons, "Downloading the Gibson...\n\n");
+						  r_cons_printf (core->cons, "Downloading the Gibson...\n\n");
 						  r_core_cmdf (core, "?e=%d", i);
 						  r_kons_print (core->cons, d);
 						  r_cons_clear_line (core->cons, 0);
@@ -1439,12 +1439,12 @@ static int cmd_help(void *data, const char *input) {
 					  }
 				  }
 				  r_cons_clear00 (core->cons);
-				  r_kons_printf (core->cons, "\nPayload installed. Thanks for your patience.\n\n");
+				  r_cons_printf (core->cons, "\nPayload installed. Thanks for your patience.\n\n");
 			} else {
 				  char *d = r_str_donut (r_num_math (core->num, input + 2));
 				  r_str_trim_tail (d);
 				  const char *color = (core->cons && core->cons->context->pal.flag)? core->cons->context->pal.flag: "";
-				  r_kons_printf (core->cons, "%s%s", color, d);
+				  r_cons_printf (core->cons, "%s%s", color, d);
 				  r_cons_newline (core->cons);
 				  free (d);
 			}
@@ -1567,7 +1567,7 @@ static int cmd_help(void *data, const char *input) {
 				}
 				ut64 to = r_num_math (core->num, p + 1);
 				for (; from <= to; from += step) {
-					r_kons_printf (core->cons, "%"PFMT64d" ", from);
+					r_cons_printf (core->cons, "%"PFMT64d" ", from);
 				}
 				r_cons_newline (core->cons);
 			}
@@ -1580,12 +1580,12 @@ static int cmd_help(void *data, const char *input) {
 			RIOMap *map = r_io_map_get_paddr (core->io, n);
 			if (map) {
 				o = n + r_io_map_begin (map) - map->delta;
-				r_kons_printf (core->cons, "0x%08"PFMT64x"\n", o);
+				r_cons_printf (core->cons, "0x%08"PFMT64x"\n", o);
 			} else {
-				r_kons_printf (core->cons, "no map at 0x%08"PFMT64x"\n", n);
+				r_cons_printf (core->cons, "no map at 0x%08"PFMT64x"\n", n);
 			}
 		} else {
-			r_kons_printf (core->cons, "0x%08"PFMT64x"\n", core->addr);
+			r_cons_printf (core->cons, "0x%08"PFMT64x"\n", core->addr);
 		}
 		break;
 	case 'p': // "?p"
@@ -1596,12 +1596,12 @@ static int cmd_help(void *data, const char *input) {
 			RIOMap *map = r_io_map_get_at (core->io, n);
 			if (map) {
 				o = n - r_io_map_begin (map) + map->delta;
-				r_kons_printf (core->cons, "0x%08"PFMT64x"\n", o);
+				r_cons_printf (core->cons, "0x%08"PFMT64x"\n", o);
 			} else {
-				r_kons_printf (core->cons, "no map at 0x%08"PFMT64x"\n", n);
+				r_cons_printf (core->cons, "no map at 0x%08"PFMT64x"\n", n);
 			}
 		} else {
-			r_kons_printf (core->cons, "0x%08"PFMT64x"\n", core->addr);
+			r_cons_printf (core->cons, "0x%08"PFMT64x"\n", core->addr);
 		}
 		break;
 	case '_': // "?_" hud input
@@ -1643,7 +1643,7 @@ static int cmd_help(void *data, const char *input) {
 				r_line_set_prompt (core->cons->line, foo);
 				r_cons_fgets (core->cons, foo, sizeof (foo), 0, NULL);
 				foo[sizeof (foo) - 1] = 0;
-				r_kons_printf (core->cons, "%s\n", foo);
+				r_cons_printf (core->cons, "%s\n", foo);
 				r_core_return_value (core, 0);
 				}
 				break;
@@ -1712,7 +1712,7 @@ static int cmd_help(void *data, const char *input) {
 			if (core->num->dbz) {
 				R_LOG_ERROR ("Division by Zero");
 			}
-			r_kons_printf (core->cons, "%"PFMT64d"\n", core->num->value);
+			r_cons_printf (core->cons, "%"PFMT64d"\n", core->num->value);
 		}
 		break;
 	case '\0': // "?"
@@ -1778,7 +1778,7 @@ static int cmd_h(void *data, const char *_input) { // "head"
 		return 0;
 	}
 	if (r_str_startswith (_input, "elp")) {
-		r_kons_printf (core->cons, "%s\n", help_message);
+		r_cons_printf (core->cons, "%s\n", help_message);
 		return 0;
 	}
 	r_core_cmd_help ((RCore*)data, help_msg_h);

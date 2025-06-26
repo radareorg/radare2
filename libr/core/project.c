@@ -492,11 +492,11 @@ static bool store_files_and_maps(RCore *core, RIODesc *desc, ut32 id) {
 	if (desc) {
 		// reload bin info
 		RCons *cons = core->cons;
-		r_kons_printf (cons, "'obf %s\n", desc->uri);
-		r_kons_printf (cons, "'of \\\"%s\\\" %s\n", desc->uri, r_str_rwx_i (desc->perm));
+		r_cons_printf (cons, "'obf %s\n", desc->uri);
+		r_cons_printf (cons, "'of \\\"%s\\\" %s\n", desc->uri, r_str_rwx_i (desc->perm));
 		if ((maps = r_io_map_get_by_fd (core->io, id))) { //wtf
 			r_list_foreach (maps, iter, map) {
-				r_kons_printf (cons,
+				r_cons_printf (cons,
 					"om %d 0x%" PFMT64x " 0x%" PFMT64x " 0x%" PFMT64x " %s%s%s\n", fdc,
 					r_io_map_begin (map), r_io_map_size (map), map->delta, r_str_rwx_i (map->perm),
 					map->name? " " : "", r_str_get (map->name));
@@ -534,10 +534,10 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 	RStrBuf *sb = r_strbuf_new ("");
 	core->cons->context->is_interactive = false;
 	RCons *cons = core->cons;
-	r_kons_printf (cons, "# r2 rdb project file\n");
+	r_cons_printf (cons, "# r2 rdb project file\n");
 	// new behaviour to project load routine (see io maps below).
 	if (opts & R_CORE_PRJ_EVAL) {
-		r_kons_printf (core->cons, "# eval\n");
+		r_cons_printf (core->cons, "# eval\n");
 		char *res = r_config_list (core->config, NULL, 'r');
 		r_cons_println (core->cons, res);
 		free (res);
@@ -545,26 +545,26 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 	}
 	r_core_cmd (core, "o*", 0);
 	r_core_cmd (core, "om*", 0);
-	r_kons_printf (cons, "o=%d\n", core->io->desc->fd);
+	r_cons_printf (cons, "o=%d\n", core->io->desc->fd);
 	r_core_cmd0 (core, "tcc*");
 	if (opts & R_CORE_PRJ_FCNS) {
-		r_kons_printf (cons, "# functions\n");
-		r_kons_printf (cons, "fs functions\n");
+		r_cons_printf (cons, "# functions\n");
+		r_cons_printf (cons, "fs functions\n");
 		r_core_cmd (core, "afl*", 0);
 		flush (core, sb);
 	}
 	{
-		r_kons_printf (cons, "# registers\n");
+		r_cons_printf (cons, "# registers\n");
 		r_core_cmd (core, "ar*", 0);
 		flush (core, sb);
 		r_core_cmd (core, "arR", 0);
 		flush (core, sb);
 	}
 	if (opts & R_CORE_PRJ_FLAGS) {
-		r_kons_printf (cons, "# flags\n");
+		r_cons_printf (cons, "# flags\n");
 		r_flag_space_push (core->flags, NULL);
 		char *s = r_flag_list (core->flags, true, NULL);
-		r_kons_printf (cons, "%s", s);
+		r_cons_printf (cons, "%s", s);
 		free (s);
 		r_flag_space_pop (core->flags);
 		flush (core, sb);
@@ -581,7 +581,7 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 		flush (core, sb);
 	}
 	if (opts & R_CORE_PRJ_META) {
-		r_kons_printf (cons, "# meta\n");
+		r_cons_printf (cons, "# meta\n");
 		r_meta_print_list_all (core->anal, R_META_TYPE_ANY, 1, NULL, NULL);
 		flush (core, sb);
 		r_core_cmd (core, "fV*", 0);
@@ -619,14 +619,14 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 	}
 	r_core_cmd (core, "wc*", 0);
 	if (opts & R_CORE_PRJ_ANAL_SEEK) {
-		r_kons_printf (cons, "# seek\n" "s 0x%08" PFMT64x "\n", core->addr);
+		r_cons_printf (cons, "# seek\n" "s 0x%08" PFMT64x "\n", core->addr);
 		flush (core, sb);
 	}
 	core->cons->context->is_interactive = true;
 	flush (core, sb);
 	char *s = r_strbuf_drain (sb);
 	if (!strcmp (filename, "/dev/stdout")) {
-		r_kons_printf (cons, "%s\n", s);
+		r_cons_printf (cons, "%s\n", s);
 	} else {
 		if (!r_file_dump (filename, (const ut8*)s, strlen (s), 0)) {
 			R_LOG_ERROR ("Cannot save file");

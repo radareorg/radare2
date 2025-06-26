@@ -22,7 +22,7 @@ static bool lang_spp_run(RLangSession *s, const char *code, int len) {
 	free (c);
 	RCons *cons = s->lang->cons;
 	char *data = r_strbuf_drain (out.cout);
-	r_kons_printf (cons, "%s\n", data);
+	r_cons_printf (cons, "%s\n", data);
 	free (data);
 	return true;
 }

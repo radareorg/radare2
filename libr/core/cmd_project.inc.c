@@ -407,7 +407,7 @@ static int cmd_project(void *data, const char *input) {
 		}
 		break;
 	case '.': // "P."
-		r_kons_printf (core->cons, "%s\n", fileproject);
+		r_cons_printf (core->cons, "%s\n", fileproject);
 		break;
 	case 'l':
 		r_core_project_list (core, input[1]);

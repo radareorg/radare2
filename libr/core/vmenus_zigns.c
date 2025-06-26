@@ -141,7 +141,7 @@ R_API int r_core_visual_view_zigns(RCore *core) {
 			break;
 		case '?':
 			r_cons_clear00 (core->cons);
-			r_kons_printf (core->cons,
+			r_cons_printf (core->cons,
 			"vbz: Visual Zignatures:\n\n"
 			" jkJK  - scroll up/down\n"
 			" d     - delete current signature\n"

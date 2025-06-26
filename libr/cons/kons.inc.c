@@ -14,7 +14,7 @@ R_API void r_kons_print(RCons *cons, const char *str) {
 	}
 }
 
-R_API int r_kons_printf(RCons *cons, const char *format, ...) {
+R_API int r_cons_printf(RCons *cons, const char *format, ...) {
 	va_list ap;
 	if (R_STR_ISEMPTY (format)) {
 		return -1;

@@ -140,7 +140,7 @@ static void render(SlidesState *state, RCore *core, RList *list, int mode, int p
 static void render_title(RCore *core, int page, int mode, int total) {
 	R_RETURN_IF_FAIL (page >= 0 && mode >= 0 && total >= 0);
 	r_cons_gotoxy (core->cons, 0, 0);
-	r_kons_printf (core->cons, "%s%s%s\r [r2slides] [%s:%d/%d]",
+	r_cons_printf (core->cons, "%s%s%s\r [r2slides] [%s:%d/%d]",
 			Color_BLACK, Color_BGYELLOW, R_CONS_CLEAR_LINE,
 			(mode == 2)? "pages": "page", page, total);
 }

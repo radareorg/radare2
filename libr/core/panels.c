@@ -301,7 +301,7 @@ static void print_notch(RCore *core) {
 	int notch = r_config_get_i (core->config, "scr.notch");
 	int i;
 	for (i = 0; i < notch; i++) {
-		r_kons_printf (core->cons, R_CONS_CLEAR_LINE"\n");
+		r_cons_printf (core->cons, R_CONS_CLEAR_LINE"\n");
 	}
 }
 
@@ -493,7 +493,7 @@ static char *__search_db(RCore *core, const char *title) {
 static int __show_status(RCore *core, const char *msg) {
 	RCons *cons = core->cons;
 	r_cons_gotoxy (cons, 0, 0);
-	r_kons_printf (cons, R_CONS_CLEAR_LINE"%s[Status] %s"Color_RESET, PANEL_HL_COLOR, msg);
+	r_cons_printf (cons, R_CONS_CLEAR_LINE"%s[Status] %s"Color_RESET, PANEL_HL_COLOR, msg);
 	r_cons_flush (cons);
 	r_cons_set_raw (cons, true);
 	return r_cons_readchar (cons);
@@ -695,7 +695,7 @@ static void bottom_panel_line(RCore *core) {
 	r_cons_gotoxy (cons, 0, h - 1);
 	r_cons_write (cons, bl_corner, strlen (bl_corner));
 	for (i = 0; i < w - 2; i++) {
-		r_kons_printf (cons, "%s", hline);
+		r_cons_printf (cons, "%s", hline);
 	}
 	r_cons_write (cons, br_corner, strlen (br_corner));
 }
@@ -4441,7 +4441,7 @@ static void __handle_vmark(RCore *core) {
 	case '-':
 		r_cons_gotoxy (core->cons, 0, 0);
 		if (r_core_vmark_dump (core, 0)) {
-			r_kons_printf (cons, R_CONS_CLEAR_LINE"Remove a shortcut key from the list\n");
+			r_cons_printf (cons, R_CONS_CLEAR_LINE"Remove a shortcut key from the list\n");
 			r_cons_flush (cons);
 			r_cons_set_raw (cons, true);
 			int ch = r_cons_readchar (cons);
@@ -5479,7 +5479,7 @@ static int __calculator_cb(void *user) {
 			break;
 		}
 		r_cons_clear00 (core->cons);
-		r_kons_printf (core->cons, "\n> %s\n", s);
+		r_cons_printf (core->cons, "\n> %s\n", s);
 		r_core_cmdf (core, "? %s", s);
 		r_cons_flush (core->cons);
 		free (s);
@@ -6770,11 +6770,11 @@ static void __redo_seek(RCore *core) {
 static void __handle_tab(RCore *core) {
 	r_cons_gotoxy (core->cons, 0, 0);
 	if (core->panels_root->n_panels <= 1) {
-		r_kons_printf (core->cons, R_CONS_CLEAR_LINE"%stab: q:quit t:new T:newWithCurPanel -:del =:setName"Color_RESET, PANEL_HL_COLOR);
+		r_cons_printf (core->cons, R_CONS_CLEAR_LINE"%stab: q:quit t:new T:newWithCurPanel -:del =:setName"Color_RESET, PANEL_HL_COLOR);
 	} else {
 		const int min = 1;
 		const int max = core->panels_root->n_panels;
-		r_kons_printf (core->cons, R_CONS_CLEAR_LINE"%stab: q:quit [%d..%d]:select; p:prev; n:next; t:new T:newWithCurPanel -:del =:setName"Color_RESET,
+		r_cons_printf (core->cons, R_CONS_CLEAR_LINE"%stab: q:quit [%d..%d]:select; p:prev; n:next; t:new T:newWithCurPanel -:del =:setName"Color_RESET,
 				PANEL_HL_COLOR, min, max);
 	}
 	r_cons_flush (core->cons);

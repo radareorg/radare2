@@ -209,7 +209,7 @@ static inline bool za_add(RCore *core, const char *input) {
 }
 
 static void cmd_za_detailed_help(RCore *core) {
-	r_kons_printf (core->cons, "Adding Zignatures (examples and documentation)\n\n"
+	r_cons_printf (core->cons, "Adding Zignatures (examples and documentation)\n\n"
 			"Zignature types:\n"
 			"  a: bytes pattern, r2 creates mask from analysis\n"
 			"  b: bytes pattern\n"
@@ -466,7 +466,7 @@ static void apply_name(RCore *core, RAnalFunction *fcn, RSignItem *it, bool rad)
 	if (rad) {
 		char *tmp = r_name_filter_dup (name);
 		if (tmp) {
-			r_kons_printf (core->cons, "'@0x%08"PFMT64x"'afn %s\n", fcn->addr, tmp);
+			r_cons_printf (core->cons, "'@0x%08"PFMT64x"'afn %s\n", fcn->addr, tmp);
 			free (tmp);
 		}
 		return;
@@ -488,7 +488,7 @@ static void apply_flag(RCore *core, RSignItem *it, ut64 addr, int size, int coun
 		if (rad) {
 			char *tmp = r_name_filter_dup (name);
 			if (tmp) {
-				r_kons_printf (core->cons, "f %s %d @ 0x%08" PFMT64x "\n", tmp, size, addr);
+				r_cons_printf (core->cons, "f %s %d @ 0x%08" PFMT64x "\n", tmp, size, addr);
 				free (tmp);
 			}
 		} else {
@@ -712,7 +712,7 @@ static void print_ctx_hits(struct ctxSearchCB *ctx) {
 static bool search(RCore *core, bool rad, bool only_func) {
 	const char *zign_prefix = r_config_get (core->config, "zign.prefix");
 	if (rad) {
-		r_kons_printf (core->cons, "fs+%s\n", zign_prefix);
+		r_cons_printf (core->cons, "fs+%s\n", zign_prefix);
 	} else {
 		if (!r_flag_space_push (core->flags, zign_prefix)) {
 			R_LOG_ERROR ("cannot create flagspace");
@@ -758,7 +758,7 @@ static bool search(RCore *core, bool rad, bool only_func) {
 	}
 
 	if (rad) {
-		r_kons_printf (core->cons, "fs-\n");
+		r_cons_printf (core->cons, "fs-\n");
 	} else {
 		if (!r_flag_space_pop (core->flags)) {
 			R_LOG_ERROR ("cannot restore flagspace");
@@ -784,21 +784,21 @@ static void print_possible_matches(RList *list, bool json, RCore *core) {
 			pj_end (pj);
 		}
 		pj_end (pj);
-		r_kons_printf (core->cons, "%s\n", pj_string (pj));
+		r_cons_printf (core->cons, "%s\n", pj_string (pj));
 		pj_free (pj);
 	} else {
 		r_list_foreach (list, itr, row) {
 			// total score
 			if (row->bscore > 0.0 && row->gscore > 0.0) {
-				r_kons_printf (core->cons, "%02.5lf  ", row->score);
+				r_cons_printf (core->cons, "%02.5lf  ", row->score);
 			}
 			if (row->bscore > 0.0) {
-				r_kons_printf (core->cons, "%02.5lf B  ", row->bscore);
+				r_cons_printf (core->cons, "%02.5lf B  ", row->bscore);
 			}
 			if (row->gscore > 0.0) {
-				r_kons_printf (core->cons, "%02.5lf G  ", row->gscore);
+				r_cons_printf (core->cons, "%02.5lf G  ", row->gscore);
 			}
-			r_kons_printf (core->cons, " %s\n", row->item->name);
+			r_cons_printf (core->cons, " %s\n", row->item->name);
 		}
 	}
 }
@@ -1061,21 +1061,21 @@ static void print_zig_diff(RCore *core, RSignBytes *ab, RSignBytes *bb, RLevOp *
 
 		if (i % 16 == 15 || ops[i + 1] == LEVEND) {
 			if (i > 16) {
-				r_kons_printf (core->cons, "\n");
+				r_cons_printf (core->cons, "\n");
 			}
-			r_kons_printf (core->cons, "Fnc cmp   0x%04x %s\n", iastart, al.land);
+			r_cons_printf (core->cons, "Fnc cmp   0x%04x %s\n", iastart, al.land);
 			if (printb) {
-				r_kons_printf (core->cons, "Sig cmp   0x%04x %s\n", ibstart, bl.land);
+				r_cons_printf (core->cons, "Sig cmp   0x%04x %s\n", ibstart, bl.land);
 			}
-			r_kons_printf (core->cons, "Fnc Mask  0x%04x %s\n", iastart, al.mask);
+			r_cons_printf (core->cons, "Fnc Mask  0x%04x %s\n", iastart, al.mask);
 			if (printb) {
-				r_kons_printf (core->cons, "Sig Mask  0x%04x %s\n", ibstart, bl.mask);
+				r_cons_printf (core->cons, "Sig Mask  0x%04x %s\n", ibstart, bl.mask);
 			}
-			r_kons_printf (core->cons, "Fnc Bytes 0x%04x %s\n", iastart, al.bytes);
+			r_cons_printf (core->cons, "Fnc Bytes 0x%04x %s\n", iastart, al.bytes);
 			if (printb) {
-				r_kons_printf (core->cons, "Sig Bytes 0x%04x %s\n", ibstart, bl.bytes);
+				r_cons_printf (core->cons, "Sig Bytes 0x%04x %s\n", ibstart, bl.bytes);
 			} else {
-				r_kons_printf (core->cons, "== Signature was same ==\n");
+				r_cons_printf (core->cons, "== Signature was same ==\n");
 			}
 			freelines (al);
 			freelines (bl);
@@ -1228,7 +1228,7 @@ static int cmd_zdot(void *data, const char *input) {
 
 	const char *zign_prefix = r_config_get (core->config, "zign.prefix");
 	if (ctx.rad) {
-		r_kons_printf (core->cons, "fs+%s\n", zign_prefix);
+		r_cons_printf (core->cons, "fs+%s\n", zign_prefix);
 	} else {
 		if (!r_flag_space_push (core->flags, zign_prefix)) {
 			R_LOG_ERROR ("cannot create flagspace");
@@ -1247,7 +1247,7 @@ static int cmd_zdot(void *data, const char *input) {
 	}
 
 	if (ctx.rad) {
-		r_kons_printf (core->cons, "fs-\n");
+		r_cons_printf (core->cons, "fs-\n");
 	} else {
 		if (!r_flag_space_pop (core->flags)) {
 			R_LOG_ERROR ("cannot restore flagspace");
@@ -1350,7 +1350,7 @@ static int csvZignatures(RCore *core, const char *arg) {
 	r_sign_foreach (core->anal, listCB, &ctx);
 	if (r_table_query (t, arg)) {
 		char *ts = r_table_tostring (t);
-		r_kons_printf (core->cons, "%s", ts); // \n?
+		r_cons_printf (core->cons, "%s", ts); // \n?
 		free (ts);
 	}
 	r_table_free (t);

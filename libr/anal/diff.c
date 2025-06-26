@@ -221,7 +221,7 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 					fcn->diff->dist = fcn2->diff->dist = t;
 					if (fcn->diff->type == R_ANAL_DIFF_TYPE_MATCH) {
 						// R_LOG_INFO ("match %lf %s", t, fcn2->name);
-						r_kons_printf (cons, "match %lf %s\n", t, fcn2->name);
+						r_cons_printf (cons, "match %lf %s\n", t, fcn2->name);
 					}
 					R_FREE (fcn->fingerprint);
 					R_FREE (fcn2->fingerprint);

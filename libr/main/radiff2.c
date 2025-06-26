@@ -151,16 +151,16 @@ static void readstr(char *s, int sz, const ut8 *buf, int len) {
 static int cb_xpatch(RDiff *d, void *user, RDiffOp *op) {
 	int i;
 	RadiffOptions *ro = (RadiffOptions*)user;
-	r_kons_printf (ro->cons, "@@ u8,u8,%%2x -0x%08"PFMT64x",%d, +0x%08"PFMT64x",%d @@\n",
+	r_cons_printf (ro->cons, "@@ u8,u8,%%2x -0x%08"PFMT64x",%d, +0x%08"PFMT64x",%d @@\n",
 			op->a_off + ro->baddr, op->a_len,
 			op->b_off + ro->baddr, op->b_len);
-	r_kons_printf (ro->cons, "- ");
+	r_cons_printf (ro->cons, "- ");
 	for (i = 0; i < op->a_len; i++) {
-		r_kons_printf (ro->cons, "%02x", op->a_buf[i]);
+		r_cons_printf (ro->cons, "%02x", op->a_buf[i]);
 	}
-	r_kons_printf (ro->cons, "\n+ ");
+	r_cons_printf (ro->cons, "\n+ ");
 	for (i = 0; i < op->b_len; i++) {
-		r_kons_printf (ro->cons, "%02x", op->b_buf[i]);
+		r_cons_printf (ro->cons, "%02x", op->b_buf[i]);
 	}
 	r_cons_newline (ro->cons);
 	return 0;
@@ -513,10 +513,10 @@ static void dump_cols(RadiffOptions *ro, ut8 *a, int as, ut8 *b, int bs, int w) 
 	}
 	switch (w) {
 	case 8:
-		r_kons_printf (ro->cons, "  offset     0 1 2 3 4 5 6 7 01234567    0 1 2 3 4 5 6 7 01234567\n");
+		r_cons_printf (ro->cons, "  offset     0 1 2 3 4 5 6 7 01234567    0 1 2 3 4 5 6 7 01234567\n");
 		break;
 	case 16:
-		r_kons_printf (ro->cons, "  offset     "
+		r_cons_printf (ro->cons, "  offset     "
 			"0 1 2 3 4 5 6 7 8 9 A B C D E F 0123456789ABCDEF    "
 			"0 1 2 3 4 5 6 7 8 9 A B C D E F 0123456789ABCDEF\n");
 		break;
@@ -537,7 +537,7 @@ static void dump_cols(RadiffOptions *ro, ut8 *a, int as, ut8 *b, int bs, int w) 
 		if (eq) {
 			ctx--;
 			if (ctx == -1) {
-				r_kons_printf (ro->cons, "...\n");
+				r_cons_printf (ro->cons, "...\n");
 				continue;
 			}
 			if (ctx < 0) {
@@ -547,69 +547,69 @@ static void dump_cols(RadiffOptions *ro, ut8 *a, int as, ut8 *b, int bs, int w) 
 		} else {
 			ctx = DUMP_CONTEXT;
 		}
-		r_kons_printf (ro->cons, eq? Color_GREEN: Color_RED);
-		r_kons_printf (ro->cons, "0x%08x%c ", i, eq? ' ': '!');
-		r_kons_printf (ro->cons, Color_RESET);
+		r_cons_printf (ro->cons, eq? Color_GREEN: Color_RED);
+		r_cons_printf (ro->cons, "0x%08x%c ", i, eq? ' ': '!');
+		r_cons_printf (ro->cons, Color_RESET);
 		for (j = 0; j < w; j++) {
 			bool eq2 = a[i + j] == b[i + j];
 			if (!eq) {
-				r_kons_printf (ro->cons, eq2? Color_GREEN: Color_RED);
+				r_cons_printf (ro->cons, eq2? Color_GREEN: Color_RED);
 			}
-			r_kons_printf (ro->cons, "%02x", a[i + j]);
+			r_cons_printf (ro->cons, "%02x", a[i + j]);
 			if (!eq) {
-				r_kons_printf (ro->cons, Color_RESET);
+				r_cons_printf (ro->cons, Color_RESET);
 			}
 		}
 		for (j = 0; j < pad; j++) {
-			r_kons_printf (ro->cons, "  ");
+			r_cons_printf (ro->cons, "  ");
 		}
-		r_kons_printf (ro->cons, " ");
+		r_cons_printf (ro->cons, " ");
 		for (j = 0; j < w; j++) {
 			bool eq2 = a[i + j] == b[i + j];
 			if (!eq) {
-				r_kons_printf (ro->cons, eq2? Color_GREEN: Color_RED);
+				r_cons_printf (ro->cons, eq2? Color_GREEN: Color_RED);
 			}
-			r_kons_printf (ro->cons, "%c", IS_PRINTABLE (a[i + j])? a[i + j]: '.');
+			r_cons_printf (ro->cons, "%c", IS_PRINTABLE (a[i + j])? a[i + j]: '.');
 			if (!eq) {
-				r_kons_printf (ro->cons, Color_RESET);
+				r_cons_printf (ro->cons, Color_RESET);
 			}
 		}
 		for (j = 0; j < pad; j++) {
-			r_kons_printf (ro->cons, " ");
+			r_cons_printf (ro->cons, " ");
 		}
-		r_kons_printf (ro->cons, "   ");
+		r_cons_printf (ro->cons, "   ");
 		for (j = 0; j < w; j++) {
 			bool eq2 = a[i + j] == b[i + j];
 			if (!eq) {
-				r_kons_printf (ro->cons, eq2? Color_GREEN: Color_RED);
+				r_cons_printf (ro->cons, eq2? Color_GREEN: Color_RED);
 			}
-			r_kons_printf (ro->cons, "%02x", b[i + j]);
+			r_cons_printf (ro->cons, "%02x", b[i + j]);
 			if (!eq) {
-				r_kons_printf (ro->cons, Color_RESET);
+				r_cons_printf (ro->cons, Color_RESET);
 			}
 		}
 		for (j = 0; j < pad; j++) {
-			r_kons_printf (ro->cons, "  ");
+			r_cons_printf (ro->cons, "  ");
 		}
-		r_kons_printf (ro->cons, " ");
+		r_cons_printf (ro->cons, " ");
 		for (j = 0; j < w; j++) {
 			bool eq2 = a[i + j] == b[i + j];
 			if (!eq) {
-				r_kons_printf (ro->cons, eq2? Color_GREEN: Color_RED);
+				r_cons_printf (ro->cons, eq2? Color_GREEN: Color_RED);
 			}
-			r_kons_printf (ro->cons, "%c", IS_PRINTABLE (b[i + j])? b[i + j]: '.');
+			r_cons_printf (ro->cons, "%c", IS_PRINTABLE (b[i + j])? b[i + j]: '.');
 			if (!eq) {
-				r_kons_printf (ro->cons, Color_RESET);
+				r_cons_printf (ro->cons, Color_RESET);
 			}
 		}
-		r_kons_printf (ro->cons, "\n");
+		r_cons_printf (ro->cons, "\n");
 		r_cons_flush (ro->cons);
 	}
 	r_cons_break_end (ro->cons);
-	r_kons_printf (ro->cons, "\n"Color_RESET);
+	r_cons_printf (ro->cons, "\n"Color_RESET);
 	r_cons_flush (ro->cons);
 	if (as != bs) {
-		r_kons_printf (ro->cons, "...\n");
+		r_cons_printf (ro->cons, "...\n");
 	}
 }
 
@@ -635,7 +635,7 @@ static void dump_cols_hexii(RadiffOptions *ro, ut8 *a, int as, ut8 *b, int bs, i
 		if (eq) {
 			ctx--;
 			if (ctx == -1) {
-				r_kons_printf (ro->cons, "...\n");
+				r_cons_printf (ro->cons, "...\n");
 				continue;
 			}
 			if (ctx < 0) {
@@ -645,13 +645,13 @@ static void dump_cols_hexii(RadiffOptions *ro, ut8 *a, int as, ut8 *b, int bs, i
 		} else {
 			ctx = DUMP_CONTEXT;
 		}
-		r_kons_printf (ro->cons, eq? Color_GREEN: Color_RED);
-		r_kons_printf (ro->cons, "0x%08x%c ", i, eq? ' ': '!');
-		r_kons_printf (ro->cons, Color_RESET);
+		r_cons_printf (ro->cons, eq? Color_GREEN: Color_RED);
+		r_cons_printf (ro->cons, "0x%08x%c ", i, eq? ' ': '!');
+		r_cons_printf (ro->cons, Color_RESET);
 		for (j = 0; j < w; j++) {
 			bool eq2 = a[i + j] == b[i + j];
 			if (!eq) {
-				r_kons_printf (ro->cons, eq2? Color_GREEN: Color_RED);
+				r_cons_printf (ro->cons, eq2? Color_GREEN: Color_RED);
 			}
 			ut8 ch = a[i + j];
 			if (spacy) {
@@ -662,25 +662,25 @@ static void dump_cols_hexii(RadiffOptions *ro, ut8 *a, int as, ut8 *b, int bs, i
 			} else if (ch == 0xff) {
 				r_kons_print (ro->cons, "##");
 			} else if (IS_PRINTABLE (ch)) {
-				r_kons_printf (ro->cons, ".%c", ch);
+				r_cons_printf (ro->cons, ".%c", ch);
 			} else {
-				r_kons_printf (ro->cons, "%02x", ch);
+				r_cons_printf (ro->cons, "%02x", ch);
 			}
 			if (!eq) {
-				r_kons_printf (ro->cons, Color_RESET);
+				r_cons_printf (ro->cons, Color_RESET);
 			}
 		}
 		for (j = 0; j < pad; j++) {
-			r_kons_printf (ro->cons, "  ");
+			r_cons_printf (ro->cons, "  ");
 		}
 		for (j = 0; j < pad; j++) {
-			r_kons_printf (ro->cons, " ");
+			r_cons_printf (ro->cons, " ");
 		}
-		r_kons_printf (ro->cons, "   ");
+		r_cons_printf (ro->cons, "   ");
 		for (j = 0; j < w; j++) {
 			bool eq2 = a[i + j] == b[i + j];
 			if (!eq) {
-				r_kons_printf (ro->cons, eq2? Color_GREEN: Color_RED);
+				r_cons_printf (ro->cons, eq2? Color_GREEN: Color_RED);
 			}
 			ut8 ch = b[i + j];
 			if (spacy) {
@@ -691,25 +691,25 @@ static void dump_cols_hexii(RadiffOptions *ro, ut8 *a, int as, ut8 *b, int bs, i
 			} else if (ch == 0xff) {
 				r_kons_print (ro->cons, "##");
 			} else if (IS_PRINTABLE (ch)) {
-				r_kons_printf (ro->cons, ".%c", ch);
+				r_cons_printf (ro->cons, ".%c", ch);
 			} else {
-				r_kons_printf (ro->cons, "%02x", ch);
+				r_cons_printf (ro->cons, "%02x", ch);
 			}
 			if (!eq) {
-				r_kons_printf (ro->cons, Color_RESET);
+				r_cons_printf (ro->cons, Color_RESET);
 			}
 		}
 		for (j = 0; j < pad; j++) {
-			r_kons_printf (ro->cons, "  ");
+			r_cons_printf (ro->cons, "  ");
 		}
-		r_kons_printf (ro->cons, "\n");
+		r_cons_printf (ro->cons, "\n");
 		r_cons_flush (ro->cons);
 	}
 	r_cons_break_end (ro->cons);
-	r_kons_printf (ro->cons, "\n"Color_RESET);
+	r_cons_printf (ro->cons, "\n"Color_RESET);
 	r_cons_flush (ro->cons);
 	if (as != bs) {
-		r_kons_printf (ro->cons, "...\n");
+		r_cons_printf (ro->cons, "...\n");
 	}
 }
 
@@ -1638,7 +1638,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			bufb = get_strings (c2, &sz);
 			szb = sz;
 		}
-// r_kons_printf (c2->cons, "PENE\n");
+// r_cons_printf (c2->cons, "PENE\n");
 		if (ro.mode == MODE_CODE || ro.mode == MODE_GRAPH) {
 			r_cons_flush (c->cons);
 			r_cons_flush (c2->cons);
@@ -1676,8 +1676,8 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 	case MODE_XPATCH:
 		d = r_diff_new ();
 		r_diff_set_delta (d, delta);
-		r_kons_printf (ro.cons, "--- %s\n", ro.file);
-		r_kons_printf (ro.cons, "+++ %s\n", ro.file2);
+		r_cons_printf (ro.cons, "--- %s\n", ro.file);
+		r_cons_printf (ro.cons, "+++ %s\n", ro.file2);
 		r_diff_set_callback (d, &cb_xpatch, &ro);
 		r_diff_buffers (d, bufa, (ut32)sza, bufb, (ut32)szb);
 		r_cons_flush (ro.cons);
@@ -1729,7 +1729,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			// r_diff_buffers (d, bufa, (ut32)sza, bufb, (ut32)szb);
 			if (ro.pdc) {
 				char *res = r_diff_buffers_unified (d, bufa, (ut32)sza, bufb, (ut32)szb);
-				r_kons_printf (ro.cons, "%s\n", res);
+				r_cons_printf (ro.cons, "%s\n", res);
 				free (res);
 			} else {
 				r_diff_buffers (d, bufa, (ut32)sza, bufb, (ut32)szb);

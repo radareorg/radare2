@@ -45,7 +45,7 @@ static void print_node_options(void *user, RConfigNode *node) {
 		char *option;
 		RCore *core = (RCore *)user;
 		r_list_foreach (node->options, iter, option) {
-			r_kons_printf (core->cons, "%s\n", option);
+			r_cons_printf (core->cons, "%s\n", option);
 		}
 	}
 }
@@ -211,7 +211,7 @@ bool ranal2_list(RCore *core, const char *arch, int fmt) {
 				pj_ks (pj, "features", feat);
 				pj_end (pj);
 			} else {
-				r_kons_printf (core->cons, "%s%s  %-11s  %-11s %-7s %s\n",
+				r_cons_printf (core->cons, "%s%s  %-11s  %-11s %-7s %s\n",
 						feat, feat2, bits, h->name,
 						r_str_get_fail (h->license, "unknown"), h->desc);
 			}
@@ -931,7 +931,7 @@ static bool cb_emuskip(void *user, void *data) {
 	if (*node->value == '?') {
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
 			RCore *core = (RCore *)user;
-			r_kons_printf (core->cons,
+			r_cons_printf (core->cons,
 				"Concatenation of meta types encoded as characters:\n" \
 				"'d': data\n'c': code\n's': string\n'f': format\n'm': magic\n" \
 				"'h': hide\n'C': comment\n'r': run\n" \
@@ -958,7 +958,7 @@ static bool cb_jsonencoding(void *user, void *data) {
 	if (*node->value == '?') {
 		if (node->value[1] && node->value[1] == '?') {
 			RCore *core = (RCore *)user;
-			r_kons_printf (core->cons, \
+			r_cons_printf (core->cons, \
 			"choose either: \n"\
 			"none (default)\n" \
 			"base64 - encode the json string values as base64\n" \
@@ -978,7 +978,7 @@ static bool cb_jsonencoding_numbers(void *user, void *data) {
 	if (*node->value == '?') {
 		if (node->value[1] && node->value[1] == '?') {
 			RCore *core = (RCore *)user;
-			r_kons_printf (core->cons,
+			r_cons_printf (core->cons,
 			"choose either: \n"\
 			"none (default)\n" \
 			"string - encode the json number values as strings\n" \
@@ -1081,7 +1081,7 @@ static bool cb_binstrenc(void *user, void *data) {
 	if (*node->value == '?') {
 		RCore *core = (RCore *)user;
 		print_node_options (user, node);
-		r_kons_printf (core->cons,
+		r_cons_printf (core->cons,
 			"  -- if string's 2nd & 4th bytes are 0 then utf16le else "
 			"if 2nd - 4th & 6th bytes are 0 & no char > 0x10ffff then utf32le else "
 			"if utf8 char detected then utf8 else latin1\n");
@@ -1175,7 +1175,7 @@ static bool cb_strpurge(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
 		RCore *core = (RCore *)user;
-		r_kons_printf (core->cons,
+		r_cons_printf (core->cons,
 		    "There can be multiple entries separated by commas. No whitespace before/after entries.\n"
 		    "Possible entries:\n"
 		    "  all          : purge all strings\n"
@@ -1223,7 +1223,7 @@ static bool cb_strfilter(void *user, void *data) {
 	if (*node->value == '?') {
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
 			RCore *core = (RCore *)user;
-			r_kons_printf (core->cons,
+			r_cons_printf (core->cons,
 				"Valid values for bin.str.filter:\n"
 				"a  only alphanumeric printable\n"
 				"8  only strings with utf8 chars\n"
@@ -1528,23 +1528,23 @@ static bool cb_cmdpdc(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *)data;
 	if (*node->value == '?') {
-		r_kons_printf (core->cons, "pdc\n");
+		r_cons_printf (core->cons, "pdc\n");
 		RListIter *iter;
 		RCorePlugin *cp;
 		r_list_foreach (core->rcmd->plist, iter, cp) {
 			if (!strcmp (cp->meta.name, "r2retdec")) {
-				r_kons_printf (core->cons, "pdz\n");
+				r_cons_printf (core->cons, "pdz\n");
 			} else if (!strcmp (cp->meta.name, "decai")) {
-				r_kons_printf (core->cons, "decai\n");
+				r_cons_printf (core->cons, "decai\n");
 			} else if (!strcmp (cp->meta.name, "r2jadx")) {
-				r_kons_printf (core->cons, "r2jadx\n");
+				r_cons_printf (core->cons, "r2jadx\n");
 			} else if (!strcmp (cp->meta.name, "r2ghidra")) {
-				r_kons_printf (core->cons, "pdg\n");
+				r_cons_printf (core->cons, "pdg\n");
 			}
 		}
 		RConfigNode *r2dec = r_config_node_get (core->config, "r2dec.asm");
 		if (r2dec) {
-			r_kons_printf (core->cons, "pdd\n");
+			r_cons_printf (core->cons, "pdd\n");
 		}
 		return false;
 	}
@@ -1635,7 +1635,7 @@ static bool cb_reloff(void *user, void *data) {
 		}
 		if (strchr (node->value, '?')) {
 			RCore *core = (RCore *)user;
-			r_kons_printf (core->cons, options);
+			r_cons_printf (core->cons, options);
 		} else {
 			R_LOG_ERROR ("Invalid value, try `-e asm.addr.relto=?`");
 		}
@@ -2604,7 +2604,7 @@ static bool cb_scrstrconv(void *user, void *data) {
 	if (*node->value == '?') {
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
 			RCore *core = (RCore *)user;
-			r_kons_printf (core->cons,
+			r_cons_printf (core->cons,
 				"Valid values for scr.strconv:\n"
 				"  asciiesc  convert to ascii with non-ascii chars escaped (see str.escbslash)\n"
 				"  asciidot  non-printable chars are represented with a dot\n"
@@ -2626,7 +2626,7 @@ static bool cb_graphformat(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (*node->value == '?') {
 		RCore *core = (RCore *)user;
-		r_kons_printf (core->cons, "png\njpg\npdf\nps\nsvg\njson\n");
+		r_cons_printf (core->cons, "png\njpg\npdf\nps\nsvg\njson\n");
 		return false;
 	}
 	return true;
@@ -2863,7 +2863,7 @@ static bool cb_zoombyte(void *user, void *data) {
 		break;
 	default:
 		R_LOG_ERROR ("Invalid zoom.byte value. See pz? for help");
-		r_kons_printf (core->cons, "pzp\npzf\npzs\npz0\npzF\npze\npzh\n");
+		r_cons_printf (core->cons, "pzp\npzf\npzs\npz0\npzF\npze\npzh\n");
 		return false;
 	}
 	return true;
@@ -3061,7 +3061,7 @@ static bool cb_searchin(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
-			r_kons_printf (core->cons, "Valid values for search.in (depends on .from/.to and io.va):\n"
+			r_cons_printf (core->cons, "Valid values for search.in (depends on .from/.to and io.va):\n"
 			"range              search between .from/.to boundaries\n"
 			"flag               find boundaries in ranges defined by flags larger than 1 byte\n"
 			"flag:[glob]        find boundaries in flags matching given glob and larger than 1 byte\n"
@@ -3414,7 +3414,7 @@ static bool cb_config_log_level(void *user, void *nodeptr) {
 			}
 			char *llm = strdup (lm);
 			r_str_case (llm, false);
-			r_kons_printf (core->cons, "%d  %s\n", i, llm);
+			r_cons_printf (core->cons, "%d  %s\n", i, llm);
 			free (llm);
 		}
 		return false;
@@ -3480,7 +3480,7 @@ static bool cb_log_cons(void *user, int level, const char *origin, const char *m
 	RCore *core = (RCore *)user;
 	const char *levelstr = r_log_level_tostring (level);
 	const char *originstr = origin? origin: "";
-	r_kons_printf (core->cons, "%s: [%s] %s\n", levelstr, originstr, msg);
+	r_cons_printf (core->cons, "%s: [%s] %s\n", levelstr, originstr, msg);
 	return true;
 }
 

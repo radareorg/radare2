@@ -323,7 +323,7 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 		case EXIT_PROCESS_DEBUG_EVENT:
 			//eprintf ("(%d) Process %d exited with exit code %d\n", (int)de.dwProcessId, (int)de.dwProcessId,
 			//	(int)de.u.ExitProcess.dwExitCode);
-			r_kons_printf (cons, "(%d) Process %d exited with exit code %d\n", (int)de.dwProcessId, (int)de.dwProcessId,
+			r_cons_printf (cons, "(%d) Process %d exited with exit code %d\n", (int)de.dwProcessId, (int)de.dwProcessId,
 				(int)de.u.ExitProcess.dwExitCode);
 			r_cons_flush (cons);
 			//debug_load();
@@ -376,7 +376,7 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 			break;
 		case OUTPUT_DEBUG_STRING_EVENT:
 			//eprintf ("(%d) Debug string\n", pid);
-			r_kons_printf (cons, "(%d) Debug string\n", pid);
+			r_cons_printf (cons, "(%d) Debug string\n", pid);
 			r_cons_flush (cons);
 
 			r_debug_native_continue (dbg, pid, tid, -1);
@@ -384,7 +384,7 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 			break;
 		case RIP_EVENT:
 			//eprintf ("(%d) RIP event\n", pid);
-			r_kons_printf (cons, "(%d) RIP event\n", pid);
+			r_cons_printf (cons, "(%d) RIP event\n", pid);
 			r_cons_flush (cons);
 			r_debug_native_continue (dbg, pid, tid, -1);
 			next_event = true;

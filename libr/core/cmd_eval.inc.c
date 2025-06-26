@@ -107,7 +107,7 @@ static void cmd_eval_table(RCore *core, const char *input) {
 		char *s = (fmt == 'j')
 			? r_table_tojson (t)
 			: r_table_tostring (t);
-		r_kons_printf (core->cons, "%s\n", s);
+		r_cons_printf (core->cons, "%s\n", s);
 		free (s);
 	}
 	r_table_free (t);
@@ -417,7 +417,7 @@ static bool cmd_ec(RCore *core, const char *input) {
 				}
 				char *theme_script = get_theme_script (core, theme_name);
 				if (R_STR_ISNOTEMPTY (theme_script)) {
-					r_kons_printf (core->cons, "%s\n", theme_script);
+					r_cons_printf (core->cons, "%s\n", theme_script);
 				} else {
 					R_LOG_ERROR ("Cannot find theme '%s'", theme_name);
 				}
@@ -436,7 +436,7 @@ static bool cmd_ec(RCore *core, const char *input) {
 			break;
 		case 'c':
 		case '.':
-			r_kons_printf (core->cons, "%s\n", core->theme);
+			r_cons_printf (core->cons, "%s\n", core->theme);
 			break;
 		case '?':
 			r_core_cmd_help (core, help_msg_eco);
@@ -451,11 +451,11 @@ static bool cmd_ec(RCore *core, const char *input) {
 			while (theme && theme->name) {
 				const char *th = theme->name;
 				if (input[2] == 'q') {
-					r_kons_printf (core->cons, "%s\n", th);
+					r_cons_printf (core->cons, "%s\n", th);
 				} else if (core->theme && !strcmp (core->theme, th)) {
-					r_kons_printf (core->cons, "- %s\n", th);
+					r_cons_printf (core->cons, "- %s\n", th);
 				} else {
-					r_kons_printf (core->cons, "  %s\n", th);
+					r_cons_printf (core->cons, "  %s\n", th);
 				}
 				theme++;
 			}
@@ -464,11 +464,11 @@ static bool cmd_ec(RCore *core, const char *input) {
 					continue;
 				}
 				if (input[2] == 'q') {
-					r_kons_printf (core->cons, "%s\n", th);
+					r_cons_printf (core->cons, "%s\n", th);
 				} else if (core->theme && !strcmp (core->theme, th)) {
-					r_kons_printf (core->cons, "- %s\n", th);
+					r_cons_printf (core->cons, "- %s\n", th);
 				} else {
-					r_kons_printf (core->cons, "  %s\n", th);
+					r_cons_printf (core->cons, "  %s\n", th);
 				}
 			}
 			r_list_free (themes_list);
@@ -724,7 +724,7 @@ static int cmd_eval(void *data, const char *input) {
 		break;
 	case 't': // "et"
 		if (input[1] == 'a') {
-			r_kons_printf (cons, "%s\n", (r_num_rand (10) % 2)? "wen": "son");
+			r_cons_printf (cons, "%s\n", (r_num_rand (10) % 2)? "wen": "son");
 		} else if (input[1] == ' ' && input[2]) {
 			RConfigNode *node = r_config_node_get (core->config, input+2);
 			if (node) {
@@ -766,7 +766,7 @@ static int cmd_eval(void *data, const char *input) {
 			char **e = r_sys_get_environ ();
 			if (e != NULL) {
 				while (*e) {
-					r_kons_printf (cons, "%%%s\n", *e);
+					r_cons_printf (cons, "%%%s\n", *e);
 					e++;
 				}
 			}

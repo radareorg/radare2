@@ -40,7 +40,7 @@ static TAG_CALLBACK(spp_r2_get) {
 	}
 	char *var = spp_r2_var_get (buf);
 	if (var) {
-		r_cons_printf ("%s", var);
+		r_cons_gprintf ("%s", var);
 		free (var);
 	}
 	return 0;
@@ -56,7 +56,7 @@ static TAG_CALLBACK(spp_r2_getrandom) {
 	if (max > 0) {
 		max = (int)(rand () % max);
 	}
-	r_cons_printf ("%d", max);
+	r_cons_gprintf ("%d", max);
 	return 0;
 }
 
@@ -112,7 +112,7 @@ static TAG_CALLBACK(spp_r2_trace) {
 /* TODO: deprecate */
 static TAG_CALLBACK(spp_r2_echo) {
 	if (state->echo[state->ifl]) {
-		r_cons_printf ("%s", buf);
+		r_cons_gprintf ("%s", buf);
 	}
 	// TODO: add variable replacement here?? not necessary, done by {{get}}
 	return 0;
@@ -138,7 +138,7 @@ static TAG_CALLBACK(spp_r2_r2) {
 	char *str = Glang->cmd_str (Glang->user, buf);
 	if (str) {
 		RCons *cons = r_cons_singleton ();
-		r_kons_printf (cons, "%s", str);
+		r_cons_printf (cons, "%s", str);
 		free (str);
 	}
 	return 0;
@@ -151,7 +151,7 @@ static TAG_CALLBACK(spp_r2_system) {
 	char *msg = r_sys_cmd_str (buf, NULL, NULL);
 	if (msg) {
 		RCons *cons = r_cons_singleton ();
-		r_kons_printf (cons, "%s", msg);
+		r_cons_printf (cons, "%s", msg);
 		free (msg);
 	}
 	return 0;
@@ -221,7 +221,7 @@ static TAG_CALLBACK(spp_r2_hex) {
 			buf[i + 2] = '\0';
 			sscanf (buf + i, "%02x", &ch);
 			RCons *cons = r_cons_singleton ();
-			r_kons_printf (cons, "%c", ch & 0xff);
+			r_cons_printf (cons, "%c", ch & 0xff);
 			buf[i + 2] = b;
 			buf = buf + 2;
 		}
@@ -250,7 +250,7 @@ static TAG_CALLBACK(spp_r2_grepline) {
 			}
 			fclose (fd);
 			RCons *cons = r_cons_singleton ();
-			r_kons_printf (cons, "%s", b);
+			r_cons_printf (cons, "%s", b);
 		} else {
 			eprintf ("Unable to open '%s'\n", buf);
 		}
@@ -360,7 +360,7 @@ static TAG_CALLBACK(spp_r2_endpipe) {
 	} while (ret > 0);
 	str[len] = '\0';
 	RCons *cons = r_cons_singleton ();
-	r_kons_printf (cons, "%s", str);
+	r_cons_printf (cons, "%s", str);
 	if (spp_r2_pipe_fd) {
 		pclose (spp_r2_pipe_fd);
 	}
@@ -376,10 +376,10 @@ static PUT_CALLBACK(spp_r2_fputs) {
 	if (spp_r2_pipe_fd) {
 		fprintf (spp_r2_pipe_fd, "%s", buf);
 	} else {
-		r_kons_printf (cons, "%s", buf);
+		r_cons_printf (cons, "%s", buf);
 	}
 #else
-	r_kons_printf ("%s", buf);
+	r_cons_printf ("%s", buf);
 #endif
 	return 0;
 }

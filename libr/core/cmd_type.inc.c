@@ -206,7 +206,7 @@ static void cmd_afcl(RCore *core, const char *input) {
 			free (sig);
 		} else if (mode == '*') {
 			char *ccexpr = r_anal_cc_get (core->anal, cc);
-			r_kons_printf (core->cons, "tcc %s\n", ccexpr);
+			r_cons_printf (core->cons, "tcc %s\n", ccexpr);
 			free (ccexpr);
 		} else {
 			r_cons_println (core->cons, cc);
@@ -274,7 +274,7 @@ static void cmd_tcc(RCore *core, const char *input) {
 			const char *ccname = r_str_trim_head_ro (input + 1);
 			char *cc = r_anal_cc_get (core->anal, ccname);
 			if (cc) {
-				r_kons_printf (core->cons, "%s\n", cc);
+				r_cons_printf (core->cons, "%s\n", cc);
 				free (cc);
 			}
 		}
@@ -299,14 +299,14 @@ static void showFormat(RCore *core, const char *name, int mode) {
 				pj_ks (pj, "name", name);
 				pj_ks (pj, "format", fmt);
 				pj_end (pj);
-				r_kons_printf (core->cons, "%s", pj_string (pj));
+				r_cons_printf (core->cons, "%s", pj_string (pj));
 				pj_free (pj);
 			} else {
 				if (R_STR_ISNOTEMPTY (fmt)) {
 					if (mode) {
-						r_kons_printf (core->cons, "pf.%s %s\n", name, fmt);
+						r_cons_printf (core->cons, "pf.%s %s\n", name, fmt);
 					} else {
-						r_kons_printf (core->cons, "pf %s\n", fmt);
+						r_cons_printf (core->cons, "pf %s\n", fmt);
 					}
 				} else {
 					// This happens when the type hasnt been fully removed
@@ -359,7 +359,7 @@ static int cmd_tac(void *data, const char *_input) { // "tac"
 				RListIter *iter;
 				char *line;
 				r_list_foreach_prev (lines, iter, line) {
-					r_kons_printf (core->cons, "%s\n", line);
+					r_cons_printf (core->cons, "%s\n", line);
 				}
 				r_list_free (lines);
 				free (filedata);
@@ -621,7 +621,7 @@ static void print_enum_in_c_format(RCore *core, Sdb *TDB, const char *arg, bool 
 						continue;
 					}
 				}
-				r_kons_printf (core->cons, "%s %s {%s", sdbkv_value (kv), name, multiline? "\n": "");
+				r_cons_printf (core->cons, "%s %s {%s", sdbkv_value (kv), name, multiline? "\n": "");
 				{
 					RList *list = r_type_get_enum (TDB, name);
 					if (list && !r_list_empty (list)) {
@@ -629,7 +629,7 @@ static void print_enum_in_c_format(RCore *core, Sdb *TDB, const char *arg, bool 
 						RTypeEnum *member;
 						separator = multiline? "\t": "";
 						r_list_foreach (list, iter, member) {
-							r_kons_printf (core->cons, "%s%s = %" PFMT64u, separator, member->name, r_num_math (NULL, member->val));
+							r_cons_printf (core->cons, "%s%s = %" PFMT64u, separator, member->name, r_num_math (NULL, member->val));
 							separator = multiline? ",\n\t": ", ";
 						}
 					}
@@ -668,16 +668,16 @@ static void printFunctionTypeC(RCore *core, const char *input) {
 		return;
 	}
 
-	r_kons_printf (core->cons, "%s %s (", ret, name);
+	r_cons_printf (core->cons, "%s %s (", ret, name);
 	for (i = 0; i < args; i++) {
 		char *type = sdb_get (TDB, r_strf ("func.%s.arg.%d", name, i), 0);
 		char *name = strchr (type, ',');
 		if (name) {
 			*name++ = 0;
 		}
-		r_kons_printf (core->cons, "%s%s %s", (i == 0)? "": ", ", type, name);
+		r_cons_printf (core->cons, "%s%s %s", (i == 0)? "": ", ", type, name);
 	}
-	r_kons_printf (core->cons, ");\n");
+	r_cons_printf (core->cons, ");\n");
 	free (res);
 }
 
@@ -720,9 +720,9 @@ static void printFunctionType(RCore *core, const char *input) {
 	pj_end (pj);
 	char *s = pj_drain (pj);
 	if (R_STR_ISEMPTY (s)) {
-		r_kons_printf (core->cons, "{}");
+		r_cons_printf (core->cons, "{}");
 	} else {
-		r_kons_printf (core->cons, "%s,", s);
+		r_cons_printf (core->cons, "%s,", s);
 	}
 	free (s);
 	free (res);
@@ -755,20 +755,20 @@ static bool stdiflink(void *p, const char *k, const char *v) {
 
 static bool print_link_cb(void *p, const char *k, const char *v) {
 	RCore *core = (RCore *)p;
-	r_kons_printf (core->cons, "0x%s = %s\n", k + strlen ("link."), v);
+	r_cons_printf (core->cons, "0x%s = %s\n", k + strlen ("link."), v);
 	return true;
 }
 
 //TODO PJ
 static bool print_link_json_cb(void *p, const char *k, const char *v) {
 	RCore *core = (RCore *)p;
-	r_kons_printf (core->cons, "{\"0x%s\":\"%s\"}", k + strlen ("link."), v);
+	r_cons_printf (core->cons, "{\"0x%s\":\"%s\"}", k + strlen ("link."), v);
 	return true;
 }
 
 static bool print_link_r_cb(void *p, const char *k, const char *v) {
 	RCore *core = (RCore *)p;
-	r_kons_printf (core->cons, "tl %s = 0x%s\n", v, k + strlen ("link."));
+	r_cons_printf (core->cons, "tl %s = 0x%s\n", v, k + strlen ("link."));
 	return true;
 }
 
@@ -779,7 +779,7 @@ static bool print_link_readable_cb(void *p, const char *k, const char *v) {
 		R_LOG_ERROR ("Can't find type %s", v);
 		return 1;
 	}
-	r_kons_printf (core->cons, "(%s)\n", v);
+	r_cons_printf (core->cons, "(%s)\n", v);
 	r_core_cmdf (core, "pf %s @ 0x%s", fmt, k + strlen ("link."));
 	return true;
 }
@@ -792,9 +792,9 @@ static bool print_link_readable_json_cb(void *p, const char *k, const char *v) {
 		R_LOG_ERROR ("Can't find type %s", v);
 		return true;
 	}
-	r_kons_printf (core->cons, "{\"%s\":", v);
+	r_cons_printf (core->cons, "{\"%s\":", v);
 	r_core_cmdf (core, "pfj %s @ 0x%s", fmt, k + strlen ("link."));
-	r_kons_printf (core->cons, "}");
+	r_cons_printf (core->cons, "}");
 	return true;
 }
 
@@ -804,7 +804,7 @@ static bool stdiftype(void *p, const char *k, const char *v) {
 
 static bool print_typelist_r_cb(void *p, const char *k, const char *v) {
 	RCore *core = (RCore *)p;
-	r_kons_printf (core->cons, "'tk %s=%s\n", k, v);
+	r_cons_printf (core->cons, "'tk %s=%s\n", k, v);
 	return true;
 }
 
@@ -827,7 +827,7 @@ static bool print_typelist_json_cb(void *p, const char *k, const char *v) {
 		pj_ki (pj, "size", size_s ? atoi (size_s) : -1);
 		pj_ks (pj, "format", format_s);
 		pj_end (pj);
-		r_kons_printf (core->cons, "%s,", pj_string (pj));
+		r_cons_printf (core->cons, "%s,", pj_string (pj));
 	} else {
 		R_LOG_DEBUG ("Internal sdb inconsistency for %s", sizecmd);
 	}
@@ -1297,7 +1297,7 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		case 's': // "tss"
 			if (input[2] == ' ') {
-				r_kons_printf (core->cons, "%" PFMT64u "\n", (r_type_get_bitsize (TDB, input + 3) / 8));
+				r_cons_printf (core->cons, "%" PFMT64u "\n", (r_type_get_bitsize (TDB, input + 3) / 8));
 			} else {
 				r_core_cmd_help (core, help_msg_ts);
 			}
@@ -1374,7 +1374,7 @@ static int cmd_type(void *data, const char *input) {
 					}
 				}
 				pj_end (pj);
-				r_kons_printf (core->cons, "%s\n", pj_string (pj));
+				r_cons_printf (core->cons, "%s\n", pj_string (pj));
 				pj_free (pj);
 				free (name);
 				ls_free (l);
@@ -1400,7 +1400,7 @@ static int cmd_type(void *data, const char *input) {
 						pj_end (pj);
 						pj_end (pj);
 					}
-					r_kons_printf (core->cons, "%s\n", pj_string (pj));
+					r_cons_printf (core->cons, "%s\n", pj_string (pj));
 					pj_free (pj);
 					r_list_free (list);
 				}
@@ -1435,7 +1435,7 @@ static int cmd_type(void *data, const char *input) {
 				RListIter *iter;
 				RTypeEnum *member;
 				r_list_foreach (list, iter, member) {
-					r_kons_printf (core->cons, "%s = %s\n", member->name, member->val);
+					r_cons_printf (core->cons, "%s = %s\n", member->name, member->val);
 				}
 				r_list_free (list);
 			}
@@ -1633,10 +1633,10 @@ static int cmd_type(void *data, const char *input) {
 			r_list_foreach (core->anal->fcns, iter, fcn) {
 				RList *uniq = r_anal_types_from_fcn (core->anal, fcn);
 				if (r_list_length (uniq)) {
-					r_kons_printf (core->cons, "%s: ", fcn->name);
+					r_cons_printf (core->cons, "%s: ", fcn->name);
 				}
 				r_list_foreach (uniq , iter2, type) {
-					r_kons_printf (core->cons, "%s%s", type, iter2->n ? ",":"\n");
+					r_cons_printf (core->cons, "%s%s", type, iter2->n ? ",":"\n");
 				}
 			}
 			break;
@@ -1645,13 +1645,13 @@ static int cmd_type(void *data, const char *input) {
 				r_list_foreach (core->anal->fcns, iter, fcn) {
 					RList *uniq = r_anal_types_from_fcn (core->anal, fcn);
 					if (r_list_length (uniq)) {
-						r_kons_printf (core->cons, "agn %s\n", fcn->name);
+						r_cons_printf (core->cons, "agn %s\n", fcn->name);
 					}
 					r_list_foreach (uniq , iter2, type) {
 						char *myType = strdup (type);
 						r_str_replace_ch (myType, ' ', '_', true);
-						r_kons_printf (core->cons, "agn %s\n", myType);
-						r_kons_printf (core->cons, "age %s %s\n", myType, fcn->name);
+						r_cons_printf (core->cons, "agn %s\n", myType);
+						r_cons_printf (core->cons, "age %s %s\n", myType, fcn->name);
 						free (myType);
 					}
 				}
@@ -1670,7 +1670,7 @@ static int cmd_type(void *data, const char *input) {
 				}
 				r_list_sort (uniqList, (RListComparator)strcmp);
 				r_list_foreach (uniqList, iter, type) {
-					r_kons_printf (core->cons, "%s\n", type);
+					r_cons_printf (core->cons, "%s\n", type);
 				}
 				r_list_free (uniqList);
 			}
@@ -1682,7 +1682,7 @@ static int cmd_type(void *data, const char *input) {
 				RList *uniq = r_anal_types_from_fcn (core->anal, fcn);
 				r_list_foreach (uniq , iter2, type2) {
 					if (!strcmp (type2, type)) {
-						r_kons_printf (core->cons, "%s\n", fcn->name);
+						r_cons_printf (core->cons, "%s\n", fcn->name);
 						break;
 					}
 				}
@@ -1916,7 +1916,7 @@ static int cmd_type(void *data, const char *input) {
 			char *res = sdb_querys (TDB, NULL, -1, k);
 			free (k);
 			if (res) {
-				r_kons_printf (core->cons, "%s", res);
+				r_cons_printf (core->cons, "%s", res);
 				free (res);
 			}
 			break;
@@ -1960,7 +1960,7 @@ static int cmd_type(void *data, const char *input) {
 				pj_end (pj);
 			}
 			if (pj) {
-				r_kons_printf (core->cons, "%s\n", pj_string (pj));
+				r_cons_printf (core->cons, "%s\n", pj_string (pj));
 				pj_free (pj);
 			}
 			free (name);
@@ -1990,7 +1990,7 @@ static int cmd_type(void *data, const char *input) {
 						const char *res = sdb_const_get (TDB, q, 0);
 						free (q);
 						if (res) {
-							r_kons_printf (core->cons, "%s %s %s;\n", sdbkv_value (kv), res, name);
+							r_cons_printf (core->cons, "%s %s %s;\n", sdbkv_value (kv), res, name);
 						}
 						if (match) {
 							break;

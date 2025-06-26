@@ -291,7 +291,7 @@ R_API char *r_cons_hud(RCons *cons, RList *list, const char *prompt) {
 				free (p);
 				p = q;
 			}
-			r_kons_printf (cons, "%s", p);
+			r_cons_printf (cons, "%s", p);
 			free (p);
 		}
 		char *row;
@@ -307,7 +307,7 @@ R_API char *r_cons_hud(RCons *cons, RList *list, const char *prompt) {
 #endif
 		}
 		r_list_foreach (filtered_list, iter, row) {
-			r_kons_printf (cons, "%s\n", row);
+			r_cons_printf (cons, "%s\n", row);
 		}
 		if (!filtered_list->length) {				// hack to remove garbage value when list is empty
 			printf ("%s", R_CONS_CLEAR_LINE);
@@ -372,9 +372,9 @@ static char *r_cons_hud_line(RCons *cons, RList *list, const char *prompt) {
 			hud->top_entry_n = 0;
 		}
 		selected_entry = NULL;
-		r_kons_printf (cons, "\r%s", R_CONS_CLEAR_LINE);
+		r_cons_printf (cons, "\r%s", R_CONS_CLEAR_LINE);
 		if (R_STR_ISNOTEMPTY (prompt)) {
-			r_kons_printf (cons, ">> %s [ ", prompt);
+			r_cons_printf (cons, ">> %s [ ", prompt);
 		}
 		char *row;
 
@@ -387,7 +387,7 @@ static char *r_cons_hud_line(RCons *cons, RList *list, const char *prompt) {
 			ht_pp_insert (ht, user_input, filtered_list);
 #endif
 		}
-		r_kons_printf (cons, "(%d)> %s [", r_list_length (filtered_list), user_input);
+		r_cons_printf (cons, "(%d)> %s [", r_list_length (filtered_list), user_input);
 		int slen = 0;
 		int w = r_cons_get_size (cons, NULL);
 		r_list_foreach (filtered_list, iter, row) {
@@ -395,12 +395,12 @@ static char *r_cons_hud_line(RCons *cons, RList *list, const char *prompt) {
 			if (slen >= w) {
 				break;
 			}
-			r_kons_printf (cons, " %s,", row);
+			r_cons_printf (cons, " %s,", row);
 		}
 #if !HUD_CACHE
 		r_list_free (filtered_list);
 #endif
-		r_kons_printf (cons, "]");
+		r_cons_printf (cons, "]");
 		r_cons_flush (cons);
 		(void) r_line_readline (cons);
 		r_str_ncpy (user_input, cons->line->buffer.data, HUD_BUF_SIZE);

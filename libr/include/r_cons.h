@@ -913,7 +913,7 @@ R_API void r_cons_invert(RCons *cons, int set, int color);
 
 /* output */
 
-R_API int r_cons_printf(const char *format, ...) R_PRINTF_CHECK(1, 2);
+R_API int r_cons_gprintf(const char *format, ...) R_PRINTF_CHECK(1, 2);
 R_API void r_cons_print(RCons *cons, const char *str);
 R_API void r_cons_print_at(RCons *cons, const char *str, int x, char y, int w, int h);
 R_API void r_cons_print_justify(RCons *cons, const char *str, int j, char c);
@@ -1166,7 +1166,7 @@ R_API void r_cons_newline(RCons *cons);
 R_API int r_cons_write(RCons *cons, const char *str, int len);
 R_API void r_cons_memset(RCons *cons, char ch, int len);
 R_API void r_cons_printf_list(RCons *cons, const char *format, va_list ap);
-R_API int r_kons_printf(RCons *cons, const char *format, ...);
+R_API int r_cons_printf(RCons *cons, const char *format, ...);
 R_API void r_cons_gotoxy(RCons * R_NONNULL cons, int x, int y);
 R_API void r_cons_set_interactive(RCons *cons, bool x);
 R_API void r_cons_set_last_interactive(RCons *cons);

@@ -400,7 +400,7 @@ beach:
 
 R_API int r_cons_any_key(RCons *cons, const char *msg) {
 	if (R_STR_ISNOTEMPTY (msg)) {
-		r_kons_printf (cons, "\n-- %s --\n", msg);
+		r_cons_printf (cons, "\n-- %s --\n", msg);
 	} else {
 		r_kons_print (cons, "\n--press any key--\n");
 	}

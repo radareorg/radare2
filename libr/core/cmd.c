@@ -617,12 +617,12 @@ static bool print_aliases(void *use_b64, const void *key, const void *val) {
 	RCmdAliasVal *v = (RCmdAliasVal *) val;
 	bool base64 = *(bool *)use_b64;
 	if (v->is_str) {
-		r_kons_printf (cons, "$%s=%s\n", k, (char *)v->data);
+		r_cons_printf (cons, "$%s=%s\n", k, (char *)v->data);
 	} else {
 		char *val_str = base64
 			? r_cmd_alias_val_strdup_b64 (v)
 			: r_cmd_alias_val_strdup (v);
-		r_kons_printf (cons, "$%s=%s%s\n", k, base64? "base64:": "", val_str);
+		r_cons_printf (cons, "$%s=%s%s\n", k, base64? "base64:": "", val_str);
 		free (val_str);
 	}
 	return true;
@@ -638,7 +638,7 @@ static int cmd_uname(void *data, const char *input) { // "uniq"
 	if (si) {
 		const int sysbits = R_SYS_BITS_CHECK (R_SYS_BITS, 64)? 64: 32;
 		if (strstr (input, "-a")) {
-			r_kons_printf (core->cons, "%s %s %s-%d", si->sysname, si->release,
+			r_cons_printf (core->cons, "%s %s %s-%d", si->sysname, si->release,
 				R_SYS_ARCH, sysbits);
 		} else if (strstr (input, "-j")) {
 			PJ *pj = r_core_pj_new (core);
@@ -648,16 +648,16 @@ static int cmd_uname(void *data, const char *input) { // "uniq"
 			pj_kn (pj, "bits", sysbits);
 			pj_end (pj);
 			char *s = pj_drain (pj);
-			r_kons_printf (core->cons, "%s", s);
+			r_cons_printf (core->cons, "%s", s);
 			free (s);
 		} else if (strstr (input, "-m")) {
-			r_kons_printf (core->cons, "%s", R_SYS_ARCH);
+			r_cons_printf (core->cons, "%s", R_SYS_ARCH);
 		} else if (strstr (input, "-b")) {
-			r_kons_printf (core->cons, "%d", sysbits);
+			r_cons_printf (core->cons, "%d", sysbits);
 		} else {
-			r_kons_printf (core->cons, "%s", si->sysname);
+			r_cons_printf (core->cons, "%s", si->sysname);
 			if (strstr (input, "-r")) {
-				r_kons_printf (core->cons, " %s", si->release);
+				r_cons_printf (core->cons, " %s", si->release);
 			}
 		}
 		r_cons_newline (core->cons);
@@ -744,7 +744,7 @@ static int cmd_undo(void *data, const char *input) {
 		}
 		return 1;
 	case 'i': // "ui"
-		r_kons_printf (core->cons, "%d\n", r_sys_uid ());
+		r_cons_printf (core->cons, "%d\n", r_sys_uid ());
 		return 1;
 	case 's': // "us"
 		r_core_cmdf (data, "s-%s", input + 1);
@@ -916,7 +916,7 @@ static int cmd_alias(void *data, const char *input) {
 			int i;
 			const int count = core->rcmd->aliases->count;
 			for (i = 0; i < count; i++) {
-				r_kons_printf (core->cons, "$%s\n", keys[i]);
+				r_cons_printf (core->cons, "$%s\n", keys[i]);
 			}
 			free (keys);
 		}
@@ -1118,7 +1118,7 @@ static void session_list(RCore *core, int mode) {
 						pj_kn (pj, "pid", fpid);
 						pj_end (pj);
 					} else {
-						r_kons_printf (core->cons, "r2 %s # pid %d\n", data, fpid);
+						r_cons_printf (core->cons, "r2 %s # pid %d\n", data, fpid);
 					}
 				}
 			}
@@ -1187,7 +1187,7 @@ static int cmd_rap(void *data, const char *input) {
 		} else {
 			char *res = r_io_system (core->io, input + 1);
 			if (res) {
-				r_kons_printf (core->cons, "%s\n", res);
+				r_cons_printf (core->cons, "%s\n", res);
 				free (res);
 			}
 		}
@@ -1253,7 +1253,7 @@ static int cmd_iosys(void *data, const char *input) {
 		char *s = r_core_cmd_str_r (core, r_str_trim_head_ro (input + 1));
 		if (s) {
 			r_str_trim_tail (s);
-			r_kons_printf (core->cons, "%s\n", s);
+			r_cons_printf (core->cons, "%s\n", s);
 			free (s);
 		}
 		return 0;
@@ -1264,7 +1264,7 @@ static int cmd_iosys(void *data, const char *input) {
 		int ret = 0;
 		if (*res) {
 			ret = atoi (res);
-			r_kons_printf (core->cons, "%s\n", res);
+			r_cons_printf (core->cons, "%s\n", res);
 		}
 		free (res);
 		r_core_return_value (core, ret);
@@ -1708,7 +1708,7 @@ static int cmd_j(void *data, const char *input) { // "j"
 	if (r_str_startswith (input, "i:")) {
 		char *res = r_core_cmd_str (core, input + 2);
 		char *indented = r_print_json_indent (res, true, "  ", NULL);
-		r_kons_printf (core->cons, "%s\n", indented);
+		r_cons_printf (core->cons, "%s\n", indented);
 		free (indented);
 		free (res);
 		return R_CMD_RC_SUCCESS;
@@ -1863,7 +1863,7 @@ static int cmd_stdin(void *data, const char *input) {
 		case 'a': // "-a"
 			if (R_STR_ISEMPTY (arg)) {
 				const char *arch = r_config_get (core->config, "asm.arch");
-				r_kons_printf (core->cons, "%s\n", arch);
+				r_cons_printf (core->cons, "%s\n", arch);
 			} else {
 				if (r_config_set (core->config, "asm.arch", arg)) {
 					r_config_set (core->config, "anal.arch", arg);
@@ -1882,7 +1882,7 @@ static int cmd_stdin(void *data, const char *input) {
 		case 'b': // "-b"
 			if (R_STR_ISEMPTY (arg)) {
 				const int bits = r_config_get_i (core->config, "asm.bits");
-				r_kons_printf (core->cons, "%d\n", bits);
+				r_cons_printf (core->cons, "%d\n", bits);
 			} else {
 				r_config_set_i (core->config, "asm.bits", r_num_math (core->num, arg));
 			}
@@ -1896,7 +1896,7 @@ static int cmd_stdin(void *data, const char *input) {
 		case 'k': // "-k"
 			if (R_STR_ISEMPTY (arg)) {
 				const char *os = r_config_get (core->config, "asm.os");
-				r_kons_printf (core->cons, "%s\n", os);
+				r_cons_printf (core->cons, "%s\n", os);
 			} else {
 				r_config_set (core->config, "asm.os", arg);
 			}
@@ -2241,7 +2241,7 @@ static int cmd_table(void *data, const char *input) {
 		break;
 	case '?':
 		r_core_cmd_help (core, help_msg_comma);
-		r_kons_printf (core->cons, "%s\n", r_table_help ());
+		r_cons_printf (core->cons, "%s\n", r_table_help ());
 		break;
 	default:
 		r_core_cmd_help (core, help_msg_comma);
@@ -2408,7 +2408,7 @@ bypass:
 
 static bool callback_foreach_kv(void *user, const char *k, const char *v) {
 	RCore *core = (RCore *)user;
-	r_kons_printf (core->cons, "%s=%s\n", k, v);
+	r_cons_printf (core->cons, "%s=%s\n", k, v);
 	return true;
 }
 
@@ -2678,7 +2678,7 @@ static int cmd_bsize(void *data, const char *input) {
 		if (n > 1) {
 			core->blocksize_max = n;
 		} else {
-			r_kons_printf (core->cons, "0x%x\n", (ut32)core->blocksize_max);
+			r_cons_printf (core->cons, "0x%x\n", (ut32)core->blocksize_max);
 		}
 		break;
 	case '+': // "b+"
@@ -2715,10 +2715,10 @@ static int cmd_bsize(void *data, const char *input) {
 		break;
 	}
 	case '*': // "b*"
-		r_kons_printf (core->cons, "b 0x%x\n", core->blocksize);
+		r_cons_printf (core->cons, "b 0x%x\n", core->blocksize);
 		break;
 	case '\0': // "b"
-		r_kons_printf (core->cons, "0x%x\n", core->blocksize);
+		r_cons_printf (core->cons, "0x%x\n", core->blocksize);
 		break;
 	case '=':
 	case ' ':
@@ -2868,14 +2868,14 @@ static int cmd_resize(void *data, const char *input) {
 	case 'x':
 		if (core->io->desc) {
 			if (oldsize != -1) {
-				r_kons_printf (core->cons, "0x%"PFMT64x"\n", oldsize);
+				r_cons_printf (core->cons, "0x%"PFMT64x"\n", oldsize);
 			}
 		}
 		return true;
 	case '\0':
 		if (core->io->desc) {
 			if (oldsize != -1) {
-				r_kons_printf (core->cons, "%"PFMT64d"\n", oldsize);
+				r_cons_printf (core->cons, "%"PFMT64d"\n", oldsize);
 			}
 		}
 		return true;
@@ -2896,7 +2896,7 @@ static int cmd_resize(void *data, const char *input) {
 			if (oldsize != -1) {
 				char humansz[8];
 				r_num_units (humansz, sizeof (humansz), oldsize);
-				r_kons_printf (core->cons, "%s\n", humansz);
+				r_cons_printf (core->cons, "%s\n", humansz);
 			}
 		}
 		return true;
@@ -3399,7 +3399,7 @@ static bool stderr_cb(void *user, int type, const char *origin, const char *msg)
 static int cmd_json(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	if (*input == '?') {
-		r_kons_printf (core->cons, "Usage: {\"cmd\":\"...\",\"json\":false,\"trim\":true} # `cmd` is required\n");
+		r_cons_printf (core->cons, "Usage: {\"cmd\":\"...\",\"json\":false,\"trim\":true} # `cmd` is required\n");
 		return 0;
 	}
 	char *s_input = strdup (input - 1);
@@ -3466,7 +3466,7 @@ static int cmd_json(void *data, const char *input) {
 	}
 	pj_end (pj);
 	char *j_res = pj_drain (pj);
-	r_kons_printf (core->cons, "%s\n", j_res);
+	r_cons_printf (core->cons, "%s\n", j_res);
 	free (j_res);
 	r_json_free (j);
 	free (s_input);
@@ -3974,7 +3974,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 				*http = 0;
 			}
 		}
-		r_kons_printf (cons, "HTTP/1.0 %d %s\r\n%s"
+		r_cons_printf (cons, "HTTP/1.0 %d %s\r\n%s"
 				"Connection: close\r\nContent-Length: %d\r\n\r\n",
 				200, "OK", "", -1);
 		return r_core_cmd0 (core, cmd);
@@ -4448,14 +4448,14 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 					char *s = r_core_cmd_str (core, cmd);
 					int len;
 					char *e = (char *)sdb_decode (s, &len);
-					r_kons_printf (core->cons, "%s\n", e);
+					r_cons_printf (core->cons, "%s\n", e);
 					free (e);
 					free (s);
 					return 0;
 				} else if (ptr[1] == 'E') { // "|E"
 					char *s = r_core_cmd_str (core, cmd);
 					char *e = sdb_encode ((const ut8*)s, strlen (s));
-					r_kons_printf (core->cons, "%s\n", e);
+					r_cons_printf (core->cons, "%s\n", e);
 					free (e);
 					free (s);
 					return 0;
@@ -4489,7 +4489,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 					} else {
 						char *res = r_io_system (core->io, ptr + 1);
 						if (res) {
-							r_kons_printf (core->cons, "%s\n", res);
+							r_cons_printf (core->cons, "%s\n", res);
 							free (res);
 						}
 					}
@@ -5764,7 +5764,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 					continue;
 				}
 				if (item->name) {
-					r_kons_printf (core->cons, "%s: ", item->name);
+					r_cons_printf (core->cons, "%s: ", item->name);
 				}
 				r_core_seek (core, item->addr, true);
 				if (item->size) {
@@ -5787,7 +5787,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 			r_list_foreach (list, iter, item) {
 				int curpid = (int) item->addr;
 				r_core_cmdf (core, "dp %d", curpid);
-				r_kons_printf (core->cons, "# PID %d\n", curpid);
+				r_cons_printf (core->cons, "# PID %d\n", curpid);
 				r_core_cmd0 (core, cmd);
 				if (!foreach_newline (core)) {
 					break;
@@ -6118,7 +6118,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			if (plugin && plugin->pids) {
 				RList *list = plugin->pids (core->dbg, R_MAX (0, pid));
 				r_list_foreach (list, iter, p) {
-					r_kons_printf (core->cons, "# PID %d\n", p->pid);
+					r_cons_printf (core->cons, "# PID %d\n", p->pid);
 					r_debug_select (core->dbg, p->pid, p->pid);
 					r_core_cmd (core, cmd, 0);
 					if (!foreach_newline (core)) {
@@ -6421,7 +6421,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, bool log) {
 			} else {
 				char *res = r_io_system (core->io, cstr);
 				if (res) {
-					r_kons_printf (core->cons, "%s\n", res);
+					r_cons_printf (core->cons, "%s\n", res);
 					free (res);
 				}
 			}

@@ -733,11 +733,11 @@ R_API void r_core_rtr_list(RCore *core, int mode) {
 			pj_ks (pj, "file", rtr_host[i].file);
 			pj_end (pj);
 		} else if (mode == '*') {
-			r_kons_printf (core->cons, "# %d fd:%i %s://%s:%i/%s\n",
+			r_cons_printf (core->cons, "# %d fd:%i %s://%s:%i/%s\n",
 				i, rtr_host[i].fd->fd, proto, rtr_host[i].host,
 				rtr_host[i].port, rtr_host[i].file);
 		} else {
-			r_kons_printf (core->cons, "%d fd:%i %s://%s:%i/%s\n",
+			r_cons_printf (core->cons, "%d fd:%i %s://%s:%i/%s\n",
 				i, rtr_host[i].fd->fd, proto, rtr_host[i].host,
 				rtr_host[i].port, rtr_host[i].file);
 		}
@@ -1316,7 +1316,7 @@ static void rtr_cmds_break(uv_async_t *async) {
 
 R_API int r_core_rtr_cmds(RCore *core, const char *port) {
 	if (!port || port[0] == '?') {
-		r_kons_printf (core->cons, "Usage: .:[tcp-port]    run r2 commands for clients\n");
+		r_cons_printf (core->cons, "Usage: .:[tcp-port]    run r2 commands for clients\n");
 		return 0;
 	}
 
@@ -1367,7 +1367,7 @@ R_API int r_core_rtr_cmds(RCore *core, const char *port) {
 	char *str;
 
 	if (!port || port[0] == '?') {
-		r_kons_printf (core->cons, "Usage: .:[tcp-port]    run r2 commands for clients\n");
+		r_cons_printf (core->cons, "Usage: .:[tcp-port]    run r2 commands for clients\n");
 		return false;
 	}
 

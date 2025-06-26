@@ -3383,7 +3383,7 @@ static void agraph_follow_innodes(RCore *core, RAGraph *g, bool in) {
 	}
 	RCons *cons = core->cons;
 	r_cons_gotoxy (cons, 0, 2);
-	r_kons_printf (cons, in? "Input nodes:\n": "Output nodes:\n");
+	r_cons_printf (cons, in? "Input nodes:\n": "Output nodes:\n");
 	RList *options = r_list_newf (NULL);
 	RList *gnodes = in? an->gnode->in_nodes: an->gnode->out_nodes;
 	RGraphNode *gn;
@@ -3400,7 +3400,7 @@ static void agraph_follow_innodes(RCore *core, RAGraph *g, bool in) {
 					continue;
 				}
 			}
-			r_kons_printf (cons, "%d %s\n", count, nnn->title);
+			r_cons_printf (cons, "%d %s\n", count, nnn->title);
 			r_list_append (options, nnn);
 			count++;
 		}
@@ -4178,10 +4178,10 @@ find_next:
 		}
 
 		r_cons_clear_line (cons, 0);
-		r_kons_printf (cons, Color_RESET);
+		r_cons_printf (cons, Color_RESET);
 		if (addr > 0) {
 			r_cons_gotoxy (cons, 0, 0);
-			r_kons_printf (cons, "[find]> match '%s'", line);
+			r_cons_printf (cons, "[find]> match '%s'", line);
 			R_LOG_INFO ("Found (%d/%d). Press 'n' for next, 'N' for prev, 'q' for quit, any other key to continue", offset + 1, offset_max);
 		} else {
 			R_LOG_ERROR ("Text '%s' not found. Press 'q' for quit, any other key to conitnue", buf);
@@ -4947,7 +4947,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 			// mark current x/y + offset
 			{
 				r_cons_gotoxy (core->cons, 0, 0);
-				r_kons_printf (core->cons, R_CONS_CLEAR_LINE"Set shortcut key for 0x%"PFMT64x"\n", core->addr);
+				r_cons_printf (core->cons, R_CONS_CLEAR_LINE"Set shortcut key for 0x%"PFMT64x"\n", core->addr);
 				r_cons_flush (core->cons);
 				int ch = r_cons_readchar (core->cons);
 				if (ch > 0) {

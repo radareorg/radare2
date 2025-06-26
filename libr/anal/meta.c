@@ -570,7 +570,7 @@ beach:
 			free (s);
 		} else if (pj) {
 			pj_end (pj);
-			r_kons_printf (cons, "%s\n", pj_string (pj));
+			r_cons_printf (cons, "%s\n", pj_string (pj));
 		}
 	}
 	pj_free (pj);

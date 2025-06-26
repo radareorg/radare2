@@ -1522,7 +1522,7 @@ ut32 fields_offset;
 	eprintf ("  fieldsat:0x%08"PFMT64x"\n", NCD (NCD_OFIELDS));
 
 	char * tn = r_name_filter_dup (typename);
-	r_kons_printf ("f sym.swift.%s.init = 0x%08"PFMT64x"\n",
+	r_cons_printf ("f sym.swift.%s.init = 0x%08"PFMT64x"\n",
 		tn, bf->bo->baddr + NCD (NCD_ACCESSFCNPTR));
 	free (tn);
 	free (typename);
@@ -1640,7 +1640,7 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 			r_list_append (klass->methods, sym);
 #if 0
 			// TODO. try to resolve the method name by symbol table or debug info
-			r_kons_printf ("f sym.swift.%s.method.%s = 0x%" PFMT64x"\n", typename, method_name, method_addr);
+			r_cons_printf ("f sym.swift.%s.method.%s = 0x%" PFMT64x"\n", typename, method_name, method_addr);
 #endif
 			free (method_name);
 		}
@@ -1703,7 +1703,7 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 			field->paddr = field_method_addr;
 			field->vaddr = vaddr;
 #if 0
-			r_kons_printf ("f sym.swift.%s.field.%s = 0x%08"PFMT64x"\n",
+			r_cons_printf ("f sym.swift.%s.field.%s = 0x%08"PFMT64x"\n",
 				typename, field->name, bf->bo->baddr + field_method_addr);
 #endif
 			free (field_name);

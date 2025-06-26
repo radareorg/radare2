@@ -345,7 +345,7 @@ R_API void r_cons_color(RCons *cons, int fg, int r, int g, int b) {
 		b = (int)(b / 42.6);
 		k = 16 + (r * 36) + (g * 6) + b;
 	}
-	r_kons_printf (cons, "\x1b[%d;5;%dm", fg? 48: 38, k);
+	r_cons_printf (cons, "\x1b[%d;5;%dm", fg? 48: 38, k);
 }
 
 #endif
@@ -999,7 +999,7 @@ R_API void r_cons_bind(RCons *cons, RConsBind *bind) {
 	bind->cons = cons;
 	bind->get_size = r_cons_get_size;
 	bind->get_cursor = r_cons_get_cursor;
-	bind->cb_printf = r_kons_printf;
+	bind->cb_printf = r_cons_printf;
 	bind->cb_flush = r_cons_flush;
 	bind->cb_grep = mygrep;
 	bind->is_breaked = r_cons_is_breaked;
@@ -1035,8 +1035,8 @@ R_API const RConsTheme* r_cons_themes(void) {
 }
 #endif
 
-// TODO
-R_API int r_cons_printf(const char *format, ...) {
+// TODO: deprecate
+R_API int r_cons_gprintf(const char *format, ...) {
 	va_list ap;
 	if (R_STR_ISEMPTY (format)) {
 		return -1;
@@ -1324,7 +1324,7 @@ R_API void r_cons_gotoxy(RCons *cons, int x, int y) {
 #if R2__WINDOWS__
 	r_cons_win_gotoxy (cons, 1, x, y);
 #else
-	r_kons_printf (cons, "\x1b[%d;%dH", y, x);
+	r_cons_printf (cons, "\x1b[%d;%dH", y, x);
 #endif
 }
 
@@ -1879,7 +1879,7 @@ R_API void r_cons_set_title(RCons *cons, const char *str) {
 	SetConsoleTitle (str);
 #  endif // defined(_UNICODE)
 #else
-	r_kons_printf (cons, "\x1b]0;%s\007", str);
+	r_cons_printf (cons, "\x1b]0;%s\007", str);
 #endif
 }
 

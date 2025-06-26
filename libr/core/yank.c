@@ -219,7 +219,7 @@ R_API bool r_core_yank_dump(RCore *core, ut64 pos, int format) {
 	switch (format) {
 	case '8':
 		for (i = pos; i < r_buf_size (core->yank_buf); i++) {
-			r_kons_printf (core->cons, "%02x", r_buf_read8_at (core->yank_buf, i));
+			r_cons_printf (core->cons, "%02x", r_buf_read8_at (core->yank_buf, i));
 		}
 		r_cons_newline (core->cons);
 		break;
@@ -244,16 +244,16 @@ R_API bool r_core_yank_dump(RCore *core, ut64 pos, int format) {
 	case '*':
 		r_kons_print (core->cons, "'wx ");
 		for (i = pos; i < r_buf_size (core->yank_buf); i++) {
-			r_kons_printf (core->cons, "%02x", r_buf_read8_at (core->yank_buf, i));
+			r_cons_printf (core->cons, "%02x", r_buf_read8_at (core->yank_buf, i));
 		}
 		r_cons_newline (core->cons);
 		break;
 	default:
-		r_kons_printf (core->cons, "0x%08" PFMT64x " %" PFMT64d " ",
+		r_cons_printf (core->cons, "0x%08" PFMT64x " %" PFMT64d " ",
 				core->yank_addr + pos,
 				r_buf_size (core->yank_buf) - pos);
 		for (i = pos; i < r_buf_size (core->yank_buf); i++) {
-			r_kons_printf (core->cons, "%02x", r_buf_read8_at (core->yank_buf, i));
+			r_cons_printf (core->cons, "%02x", r_buf_read8_at (core->yank_buf, i));
 		}
 		r_cons_newline (core->cons);
 	}
