@@ -21,7 +21,7 @@ R_LIB_VERSION_HEADER (r_lib);
 #define R_LIB_SYMNAME "radare_plugin"
 #define R_LIB_SYMFUNC "radare_plugin_function"
 
-#define R_LIB_CURRENT_ABI_VERSION 7
+#define R2_ABIVERSION 7
 
 #define R_LIB_ENV "R2_LIBR_PLUGINS"
 
@@ -87,7 +87,7 @@ typedef struct r_lib_struct_t {
 	const char *version; /* r2 version */
 	void (*free)(void *data);
 	const char *pkgname; /* pkgname associated to this plugin */
-	ut32 abi_version; /* ABI version to prevent loading incompatible plugins */
+	ut32 abiversion; /* ABI version to prevent loading incompatible plugins */
 } RLibStruct;
 
 typedef RLibStruct* (*RLibStructFunc) (void);
@@ -123,11 +123,11 @@ typedef struct r_lib_t {
 	RList /*RLibHandler*/ *handlers;
 	RLibHandler *handlers_bytype[R_LIB_TYPE_LAST];
 	bool ignore_version;
-	bool ignore_abi_version;
+	bool ignore_abiversion;
 	bool safe_loading; /* true to enable 2-step loading process */
 	// hashtable plugname = &plugin
 	HtPP *plugins_ht;
-	ut32 abi_version; /* Current ABI version */
+	ut32 abiversion; /* Current ABI version */
 } RLib;
 
 #ifdef R_API

@@ -177,9 +177,9 @@ R_API RLib *r_lib_new(const char *symname, const char *symnamefunc) {
 		r_log_set_level (R_LOG_LEVEL_DEBUG);
 	}
 	lib->ignore_version = r_sys_getenv_asbool ("R2_IGNVER");
-	lib->ignore_abi_version = r_sys_getenv_asbool ("R2_IGNABI");
+	lib->ignore_abiversion = r_sys_getenv_asbool ("R2_IGNABI");
 	lib->safe_loading = r_sys_getenv_asbool ("R2_SAFE_PLUGINS");
-	lib->abi_version = R_LIB_CURRENT_ABI_VERSION;
+	lib->abiversion = R2_ABIVERSION;
 	lib->handlers = r_list_newf (free);
 	int i;
 	for (i = 0; i < R_LIB_TYPE_LAST; i++) {
@@ -426,9 +426,9 @@ R_API bool r_lib_validate_plugin(RLib *lib, const char *file, RLibStruct *stru) 
 	}
 
 	// Check ABI compatibility
-	if (stru->abi_version && !lib->ignore_abi_version) {
-		if (stru->abi_version != lib->abi_version) {
-			R_LOG_WARN ("ABI version mismatch: (ABI %d) vs radare2 (ABI %d) for '%s'", stru->abi_version, lib->abi_version, file);
+	if (stru->abiversion && !lib->ignore_abiversion) {
+		if (stru->abiversion != lib->abiversion) {
+			R_LOG_WARN ("ABI version mismatch: (ABI %d) vs radare2 (ABI %d) for '%s'", stru->abiversion, lib->abiversion, file);
 			return false;
 		}
 	}
