@@ -693,12 +693,40 @@ int main() {
 }
 #endif
 
+static bool addrline_cb(void *user, RBinAddrline *al) {
+	RList *lines = (RList *)user;
+	if (!al || !al->file) {
+		return true;
+	}
+	LineEntry *le = R_NEW0 (LineEntry);
+	le->addr = al->addr;
+	le->file = strdup (al->file);
+	le->line = al->line;
+	r_list_append (lines, le);
+	return true;
+}
+
+static void populate_lines_from_addrline(RBin *bin, RList *lines) {
+	if (bin && bin->cur && bin->cur->addrline.used) {
+		r_bin_addrline_foreach (bin, addrline_cb, lines);
+	} else {
+		if (bin && bin->cur && bin->cur->sdb_addrinfo) {
+			R_LOG_INFO ("Falling back to legacy sdb_addrinfo");
+			// Legacy method - to be removed
+			sdb_foreach (bin->cur->sdb_addrinfo, NULL, NULL);
+		}
+	}
+}
+
 static void writedwarf(RCore *core, const char *format, const char *arg) {
 	const char *filename = arg;
 	R_LOG_INFO ("Writing to %s", filename);
 
 	RList *lines = r_list_newf (free);
 	RList *symbols = r_list_newf (free);
+
+	// Populate line entries from debug info
+	populate_lines_from_addrline (core->bin, lines);
 
 #if 0
 	// Populate line entries
