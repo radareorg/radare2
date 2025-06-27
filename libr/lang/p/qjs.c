@@ -492,8 +492,9 @@ static JSValue r2cmd(JSContext *ctx, JSValueConst this_val, int argc, JSValueCon
 	if (R_STR_ISNOTEMPTY (n)) {
 		ret = pm->core->lang->cmd_str (pm->core, n);
 	}
-	// JS_FreeValue (ctx, argv[0]);
-	return JS_NewString (ctx, r_str_get (ret));
+	JSValue res = JS_NewString (ctx, r_str_get (ret));
+	free (ret);
+	return res;
 }
 
 static JSValue r2callAt(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
