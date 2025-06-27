@@ -1370,7 +1370,6 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 	RBinField *f, *fur = NULL;
 	int i = 0;
 	int skip = *idx - 10;
-	bool found = false;
 	RCons *cons = core->cons;
 
 	const char *_cname = _c? r_bin_name_tostring (_c->name): "";
@@ -1410,7 +1409,6 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 			if (i++ == *idx) {
 				cur = c;
 			}
-			found = true;
 		}
 		if (!cur) {
 			*idx = i - 1;
