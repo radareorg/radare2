@@ -2525,7 +2525,8 @@ static void do_unkjmp_search(RCore *core, struct search_parameters *param, bool 
 				bool res = r_esil_parse (core->anal->esil, esil);
 				if (res) {
 					ut64 d = r_reg_getv (core->anal->reg, "PC");
-					if (!d || !r_io_is_valid_offset (core->io, d, 0) || d == at + aop.size) {
+					// Validate the register value before using it
+					if (!d || d == UT64_MAX || !r_io_is_valid_offset (core->io, d, 0) || d == at + aop.size) {
 						R_LOG_DEBUG ("Invalid destination offset");
 					} else {
 						switch (aop.type) {

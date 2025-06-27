@@ -1370,7 +1370,6 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 	RBinField *f, *fur = NULL;
 	int i = 0;
 	int skip = *idx - 10;
-	bool found = false;
 	RCons *cons = core->cons;
 
 	const char *_cname = _c? r_bin_name_tostring (_c->name): "";
@@ -1410,14 +1409,9 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 			if (i++ == *idx) {
 				cur = c;
 			}
-			found = true;
 		}
 		if (!cur) {
 			*idx = i - 1;
-			if (!found) {
-				return NULL;
-			}
-			return NULL; // show_class (core, mode, idx, _c, "", list);
 		}
 		return cur;
 	case 'f':
@@ -1469,10 +1463,6 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 		}
 		if (!fur) {
 			*idx = i - 1;
-			if (_c && r_list_empty (_c->fields)) {
-				return NULL;
-			}
-			return NULL; // show_class (core, mode, idx, _c, grep, list);
 		}
 		return fur;
 		break;
@@ -1527,10 +1517,6 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 		}
 		if (!mur) {
 			*idx = i - 1;
-			if (_c && r_list_empty (_c->methods)) {
-				return NULL;
-			}
-			return NULL; // show_class (core, mode, idx, _c, grep, list);
 		}
 		return mur;
 	}

@@ -3117,7 +3117,7 @@ static ut64 read_uleb128(const ut8 *data, int data_size, ut64 *val, int *read_by
 	int count = 0;
 	while (count < data_size) {
 		ut8 b = data[count++];
-		result |= ((b & 0x7f) << shift);
+		result |= ((ut64)(b & 0x7f)) << shift;
 		if (!(b & 0x80)) {
 			break;
 		}
@@ -3143,7 +3143,7 @@ static st64 read_sleb128(const ut8 *data, int data_size, st64 *val, int *read_by
 	ut8 b = 0;
 	while (count < data_size) {
 		b = data[count++];
-		result |= ((b & 0x7f) << shift);
+		result |= (ut64)((b & 0x7f)) << shift;
 		shift += 7;
 		if (!(b & 0x80)) {
 			break;
@@ -3153,7 +3153,7 @@ static st64 read_sleb128(const ut8 *data, int data_size, st64 *val, int *read_by
 		}
 	}
 	// Sign extend if needed
-	if ((b & 0x40) && shift < 64) {
+	if ((b & 0x40) && shift > 0 && shift < 64) {
 		result |= ~0ULL << shift;
 	}
 	if (val) {
@@ -3400,7 +3400,9 @@ static size_t get_num_relocs_sections(ELFOBJ *eo) {
 		}
 
 		size_t size = get_size_rel_mode (rel_mode);
-		ret += NUMENTRIES_ROUNDUP (section->size, size);
+		if (size > 0) {
+			ret += NUMENTRIES_ROUNDUP (section->size, size);
+		}
 		i++;
 	}
 
@@ -3562,6 +3564,9 @@ static ut64 populate_relocs_record_from_section(ELFOBJ *eo, size_t pos, size_t n
 		} else {
 			// Standard REL/RELA handling
 			size_t size = get_size_rel_mode (rel_mode);
+			if (!size) {
+				continue;
+			}
 			ut64 dim_relocs = section->size / size;
 			dim_relocs = R_MIN (dim_relocs, num_relocs) + 2;
 			ut64 j;

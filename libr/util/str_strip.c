@@ -179,8 +179,7 @@ R_API char *r_str_html_strip(const char *ptr, int *newlen) {
 				first_style = true;
 				r_strbuf_append (res, "<span");
 				if (text_color[0]) {
-					r_strbuf_append (res, first_style? " style='": ";");
-					r_strbuf_appendf (res, "color:%s", text_color);
+					r_strbuf_appendf (res, "%scolor:%s", first_style? " style='": ";", text_color);
 					first_style = false;
 				}
 				if (background_color[0]) {

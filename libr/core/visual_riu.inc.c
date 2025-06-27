@@ -171,9 +171,11 @@ static bool riu_input(RIU *riu) {
 }
 
 static void riu_free(RIU *riu) {
-	r_cons_set_raw (riu->core->cons, false);
-	if (riu) {
-		r_list_free (riu->items);
-		free (riu);
+	if (!riu) {
+		return;
 	}
+	r_cons_set_raw (riu->core->cons, false);
+	r_list_free (riu->items);
+	free (riu->title);
+	free (riu);
 }
