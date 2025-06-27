@@ -1414,7 +1414,6 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 		}
 		if (!cur) {
 			*idx = i - 1;
-			return NULL;
 		}
 		return cur;
 	case 'f':
@@ -1466,7 +1465,6 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 		}
 		if (!fur) {
 			*idx = i - 1;
-			return NULL;
 		}
 		return fur;
 		break;
@@ -1521,7 +1519,6 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 		}
 		if (!mur) {
 			*idx = i - 1;
-			return NULL;
 		}
 		return mur;
 	}
