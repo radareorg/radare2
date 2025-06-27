@@ -1603,13 +1603,14 @@ R_API void r_cons_context_free(RConsContext * R_NULLABLE ctx) {
 	if (ctx) {
 		// TODO: free more stuff
 #if 0
-	// r_stack_free (ctx->cons_stack);
-	r_list_free (ctx->marks);
-	ctx->cons_stack = NULL;
-	r_stack_free (ctx->break_stack);
-	ctx->break_stack = NULL;
-	r_cons_pal_free (ctx);
+		// r_stack_free (ctx->cons_stack);
+		r_list_free (ctx->marks);
+		ctx->cons_stack = NULL;
+		r_stack_free (ctx->break_stack);
+		ctx->break_stack = NULL;
+		r_cons_pal_free (ctx);
 #endif
+		free (ctx->lastOutput);
 		free (ctx);
 	}
 }
