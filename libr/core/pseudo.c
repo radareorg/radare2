@@ -569,10 +569,12 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 					} else {
 						PRINTF ("return;");
 					}
-					NEWLINE (bb->addr, indent);
+#if 0
 					if (show_asm) {
+						NEWLINE (bb->addr, indent);
 						PRINTF (" 0x%08"PFMT64x" | %s | ", bb->addr, r_str_pad (' ', 30));
 					}
+#endif
 				} else if (bb->fail != UT64_MAX) {
 					NEWLINE (bb->addr, indent);
 					if (show_asm) {
