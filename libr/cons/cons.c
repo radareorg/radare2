@@ -307,10 +307,7 @@ R_API void r_cons_free2(RCons * R_NULLABLE cons) {
 		(void)r_sys_cmdf ("chcp %u > NUL", cons->old_cp);
 	}
 #endif
-	if (cons->line) {
-		r_line_free (cons->line);
-		cons->line = NULL;
-	}
+	r_line_free (cons->line);
 	while (!r_list_empty (cons->ctx_stack)) {
 		r_cons_pop (cons);
 	}

@@ -16,8 +16,6 @@ R_API RLine *r_line_singleton(void) {
 R_API RLine *r_line_new(RCons *cons) {
 	RLine *line = R_NEW0 (RLine);
 	line->cons = cons;
-
-	line->cons = cons;
 	line->hist_up = NULL;
 	line->hist_down = NULL;
 	line->prompt = strdup ("> ");

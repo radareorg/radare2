@@ -5,7 +5,9 @@
 #include <r_cons.h>
 #include "private.h"
 
-R_IPI void pager_color_line(RCons *cons, const char *line, RStrpool *p, RList *ml) {
+// No longer needed
+
+R_IPI void pager_color_line(RCons *cons, const char *line, RStrBuf *sb, RList *ml) {
 	int m_len, offset = 0;
 	char *m_addr;
 	RListIter *it;
@@ -18,31 +20,31 @@ R_IPI void pager_color_line(RCons *cons, const char *line, RStrpool *p, RList *m
 		strlen (inv[0]),
 		strlen (inv[1])
 	};
-	r_strpool_empty (p);
+	r_strbuf_init (sb);
 	r_list_foreach (ml, it, m) {
 		/* highlight a match */
-		r_strpool_memcat (p, line + offset, m->rm_so - offset);
-		r_strpool_memcat (p, inv[0], linv[0]);
+		r_strbuf_append_n (sb, line + offset, m->rm_so - offset);
+		r_strbuf_append_n (sb, inv[0], linv[0]);
 		m_len = m->rm_eo - m->rm_so;
 		if (m_len < 0) {
 			m_len = 0;
 		}
 		m_addr = r_str_ndup (line + m->rm_so, m_len);
 		if (m_addr) {
-			/* in case there's a CSI in the middle of this match*/
+			/* in case there's a CSI in the middle of this match */
 			m_len = r_str_ansi_filter (m_addr, NULL, NULL, m_len);
 			if (m_len < 0) {
 				m_len = 0;
 			}
-			r_strpool_memcat (p, m_addr, m_len);
-			r_strpool_memcat (p, inv[1], linv[1]);
+			r_strbuf_append_n (sb, m_addr, m_len);
+			r_strbuf_append_n (sb, inv[1], linv[1]);
 			offset = m->rm_eo;
 			free (m_addr);
 		}
 
 	}
 	/* append final part of string w/o matches */
-	r_strpool_append (p, line + offset);
+	r_strbuf_append (sb, line + offset);
 }
 
 R_IPI void pager_printpage(RCons *cons, const char *line, int *index, RList **mla, int from, int to, int w) {
@@ -53,21 +55,24 @@ R_IPI void pager_printpage(RCons *cons, const char *line, int *index, RList **ml
 		return;
 	}
 
-	RStrpool *p = r_strpool_new ();
-	if (!p) {
+	RStrBuf *sb = r_strbuf_new (NULL);
+	if (!sb) {
 		return;
 	}
 	for (i = from; i < to; i++) {
-		pager_color_line (cons, line + index[i], p, mla[i]);
-		r_strpool_ansi_trim (p, w);
+		pager_color_line (cons, line + index[i], sb, mla[i]);
+		char *s = r_strbuf_drain (sb);
+		// Don't strip ANSI codes to preserve colors
+		sb = r_strbuf_new (NULL);
 		r_cons_reset_colors (cons);
 		if (i + 1 == to) {
-			r_cons_print (cons, p->str);
+			r_cons_print (cons, s);
 		} else {
-			r_cons_println (cons, p->str);
+			r_cons_println (cons, s);
 		}
+		free (s);
 	}
-	r_strpool_free (p);
+	r_strbuf_free (sb);
 	r_cons_flush (cons);
 }
 

@@ -3,7 +3,7 @@
 
 #include <r_util.h>
 
-R_IPI void pager_color_line(RCons *cons, const char *line, RStrpool *p, RList *ml);
+R_IPI void pager_color_line(RCons *cons, const char *line, RStrBuf *p, RList *ml);
 R_IPI void pager_printpage(RCons *cons, const char *line, int *index, RList **mla, int from, int to, int w);
 R_IPI int pager_next_match(int from, RList **mla, int lcount);
 R_IPI int pager_prev_match(int from, RList **mla);
