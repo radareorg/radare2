@@ -313,7 +313,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_config_hold (hc, "asm.addr", "asm.flags", "asm.lines.fcn", "asm.comments", NULL);
 	r_config_hold (hc, "asm.functions", "asm.section", "asm.cmt.col", "asm.sub.names", NULL);
 	r_config_hold (hc, "scr.color", "emu.str", "asm.emu", "emu.write", NULL);
-	r_config_hold (hc, "io.cache", NULL);
+	r_config_hold (hc, "io.cache", "asm.syntax", NULL);
 	if (!fcn) {
 		R_LOG_ERROR ("Cannot find function in 0x%08"PFMT64x, core->addr);
 		r_config_hold_free (hc);
@@ -338,6 +338,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_config_set_b (core->config, "asm.section", false);
 	r_config_set_i (core->config, "asm.cmt.col", 30);
 	r_config_set_b (core->config, "io.cache", true);
+	r_config_set (core->config, "asm.syntax", "intel");
 	r_core_cmd0 (core, "aeim");
 
 	r_strf_buffer (64);
