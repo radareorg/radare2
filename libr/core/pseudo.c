@@ -133,13 +133,11 @@ static void find_and_change(char* in, int len) {
 				// right now 'in' points at '(', but the function name is before, so i'll go back
 				// till a space is found
 				// 'int print(const char*, ...)'
-				//           ^
 				ctx.right = in - 1;
 				while (IS_ALPHA (*ctx.right) || *ctx.right == '_' || *ctx.right == '*') {
 					ctx.right--;
 				}
 				// 'int print(const char*, ...)'
-				//     ^
 				// right now 'in' points at ' ' before 'p' , but there can be a return value
 				// like 'int' in 'int print(const char*, ...)'.
 				// so to find for example 'int' we have to go back till a space is found.
@@ -175,6 +173,7 @@ static int cmpnbbs(const void *_a, const void *_b) {
 static RCoreHelpMessage help_msg_pdc = {
 	"Usage: pdc[oj]", "", "experimental, unreliable and hacky pseudo-decompiler",
 	"pdc", "", "pseudo decompile function in current offset",
+	"pdca", "", "side by side comparing assembly and pseudo",
 	"pdcc", "", "pseudo-decompile with C helpers around",
 	"pdco", "", "show associated offset next to pseudecompiled output",
 	"pdcj", "", "in json format for codemeta annotations (used by frontends like iaito)",
@@ -254,6 +253,13 @@ static char *cleancomments(char *s) {
 	return s;
 }
 
+static char *disat(RCore *core, ut64 addr, int *pad) {
+	char *s = r_core_cmd_strf (core, "pi 1 @e:scr.color=0@e:asm.pseudo=0@e:asm.addr=1@ 0x%08"PFMT64x, addr);
+	r_str_trim (s);
+	*pad = 30 - r_str_ansi_len (s);
+	return s;
+}
+
 #define I_TAB 2
 #define K_MARK(x) r_strf ("mark.%"PFMT64x,x)
 #define K_ELSE(x) r_strf ("else.%"PFMT64x,x)
@@ -277,14 +283,22 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	if (eos < 1) { eos = 0; }\
 	memset (indentstr, ' ', sizeof (indentstr)); indentstr [(eos * 2)] = 0;\
 	if (pj) {\
-		if (show_addr) { r_strbuf_appendf (codestr, "\n0x%08"PFMT64x" | %s", a, indentstr); }\
+		if (show_asm) { int asm_pad; char *asm_str = disat (core, a, &asm_pad); \
+			r_strbuf_appendf (codestr, "\n0x%08"PFMT64x" | %s%s%s", a, asm_str, r_str_pad (' ', asm_pad), indentstr); \
+			free (asm_str); }\
+		else if (show_addr) { r_strbuf_appendf (codestr, "\n0x%08"PFMT64x" | %s", a, indentstr); }\
 		else { r_strbuf_appendf (codestr, "\n%s", indentstr); }\
 	} else {\
 		r_strbuf_append (out, "\n");\
-		if (show_addr) { r_strbuf_appendf (out, " 0x%08"PFMT64x" | %s", a, indentstr); }\
+		if (show_asm) { int asm_pad; char *asm_str = disat (core, a, &asm_pad); \
+			r_strbuf_appendf (codestr, "XX 0x%08"PFMT64x" | %s%s%s", a, asm_str, r_str_pad (' ', asm_pad), indentstr); \
+			free (asm_str); }\
+		else if (show_addr) { r_strbuf_appendf (out, " 0x%08"PFMT64x" | %s", a, indentstr); }\
 		else { r_strbuf_append (out, indentstr); } }\
 	}
-#define PRINTGOTO(y, x) if (x != UT64_MAX && y != x) { NEWLINE (x, indent); PRINTF (" goto loc_0x%08"PFMT64x, x); }
+#define PRINTGOTO(y, x) if (x != UT64_MAX && y != x) { NEWLINE (x, indent); \
+		if (show_asm) { PRINTF (" 0x%08"PFMT64x" | %s | ", bb->addr, r_str_pad (' ', 30)); }\
+	PRINTF (" goto loc_0x%08"PFMT64x, x); }
 	const char *cmdPdc = r_config_get (core->config, "cmd.pdc");
 	if (R_STR_ISNOTEMPTY (cmdPdc) && !strstr (cmdPdc, "pdc")) {
 		if (strstr (cmdPdc, "!*") || strstr (cmdPdc, "#!")) {
@@ -299,7 +313,8 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		return r_core_cmdf (core, "%s%s", cmdPdc, input);
 	}
 	const bool show_json = (*input == 'j');
-	const bool show_addr = (*input == 'o');
+	const bool show_asm = (*input == 'a');
+	const bool show_addr = show_asm || (*input == 'o');
 
 	Sdb *db;
 	ut64 queuegoto = 0LL;
@@ -391,10 +406,16 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	{
 		char *cc = r_core_cmd_strf (core, "afci@0x%08"PFMT64x, fcn->addr);
 		r_str_trim (cc);
+		if (show_addr || show_asm) {
+			PRINTF (" 0x%08"PFMT64x " | %s | ", fcn->addr, r_str_pad (' ', 30));
+		}
 		if (R_STR_ISNOTEMPTY (cc)) {
 			PRINTF ("// callconv: %s\n", cc);
 		}
 		free (cc);
+	}
+	if (show_addr || show_asm) {
+		PRINTF (" 0x%08"PFMT64x " | %s | ", fcn->addr, r_str_pad (' ', 30));
 	}
 	if (R_STR_ISEMPTY (fs) || (r_str_startswith (fs, "void") && strstr (fs, "()"))) {
 		if (!strcmp (a0, a1)) {
@@ -420,11 +441,8 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		r_cons_pop (core->cons);
 		r_config_set_b (core->config, "scr.html", html);
 		indent = 2;
-		if (!code) {
-			R_LOG_ERROR ("No code here");
-			break;
-		}
-		if (!*code) {
+
+		if (R_STR_ISEMPTY (code)) {
 			free (code);
 			R_LOG_ERROR ("Empty code here");
 			break;
@@ -451,6 +469,9 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 					queuegoto = 0LL;
 				}
 				NEWLINE (bb->addr, indent - 1);
+				if (show_asm) {
+					PRINTF (" 0x%08"PFMT64x" | %s | ", bb->addr, r_str_pad (' ', 30));
+				}
 				PRINTF ("loc_0x%08"PFMT64x":", bb->addr);
 				// foreach lines
 				RList *lines = r_str_split_list (code, "\n", 0);
@@ -480,7 +501,17 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 					}
 					if (R_STR_ISNOTEMPTY (line)) {
 						NEWLINE (addr, indent);
-						PRINTF ("%s", line);
+						if (show_asm) {
+							// OK
+							ut64 at = addr;
+							int asm_pad; char *asm_str = disat (core, at, &asm_pad);
+							char *newline = r_str_newf (" 0x%08"PFMT64x" | %s%s | %s",
+									at, asm_str, r_str_pad (' ', asm_pad), line);
+							PRINTF ("%s", newline);
+							free (newline);
+						} else {
+							PRINTF ("%s", line);
+						}
 					}
 				}
 				r_list_free (lines);
@@ -505,6 +536,9 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			}
 		} else {
 			NEWLINE (bb->addr, indent);
+			if (show_asm) {
+				PRINTF (" 0x%08"PFMT64x" | %s | ", bb->addr, r_str_pad (' ', 30));
+			}
 			PRINTF ("goto loc_0x%08"PFMT64x";", bb->fail);
 		}
 		if (sdb_const_get (db, K_INDENT (bb->addr), 0)) {
@@ -527,13 +561,25 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 #endif
 				if (closed) {
 					NEWLINE (bb->addr, indent);
+					if (show_asm) {
+						PRINTF (" 0x%08"PFMT64x" | %s | ", bb->addr, r_str_pad (' ', 30));
+					}
 					if (r0) {
 						PRINTF ("return %s;", r0);
 					} else {
 						PRINTF ("return;");
 					}
+#if 0
+					if (show_asm) {
+						NEWLINE (bb->addr, indent);
+						PRINTF (" 0x%08"PFMT64x" | %s | ", bb->addr, r_str_pad (' ', 30));
+					}
+#endif
 				} else if (bb->fail != UT64_MAX) {
 					NEWLINE (bb->addr, indent);
+					if (show_asm) {
+						PRINTF (" 0x%08"PFMT64x" | %s | ", bb->addr, r_str_pad (' ', 30));
+					}
 					PRINTF ("goto loc_0x%08"PFMT64x";", bb->fail);
 				}
 				RAnalBlock *nbb = r_anal_bb_from_offset (core->anal, bb->fail);
@@ -703,7 +749,34 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 #endif
 		s = r_str_replace (s, "goto ", "// goto loc_", true);
 		s = cleancomments (s);
-		if (show_addr) {
+		if (show_asm) {
+			RList *rows = r_str_split_list (s, "\n", 0);
+			char *row;
+			RStrBuf *sb = r_strbuf_new ("");
+			RListIter *iter;
+			ut64 oldat = 0;
+			r_list_foreach (rows, iter, row) {
+				if (R_STR_ISEMPTY (row)) {
+					continue;
+				}
+				ut64 at = r_num_math (NULL, row);
+				if (!at) {
+					at = oldat;
+				}
+				oldat = at;
+				char *space = strchr (row, ' ');
+				if (space) {
+					row = (char *)r_str_trim_head_ro (space + 1);
+				}
+				int asm_pad; char *asm_str = disat (core, at, &asm_pad);
+				r_strbuf_appendf (sb, " 0x%08"PFMT64x" | %s%s | %s\n",
+					at, asm_str, r_str_pad (' ', asm_pad), row);
+				free (asm_str);
+			}
+			free (s);
+			r_list_free (rows);
+			s = r_strbuf_drain (sb);
+		} else if (show_addr) {
 			// indent with | or stgh
 			char *os = r_str_prefix_all (s, " ");
 			free (s);
@@ -729,12 +802,20 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			// PRINTF ("goto loc_0x%"PFMT64x";", bb->fail);
 		}
 		if (codelen > 0) {
-			if (show_addr) {
+			if (show_asm) {
+				ut64 a = bb->addr;
+				int asm_pad; char *asm_str = disat (core, a, &asm_pad);
+				r_strbuf_appendf (codestr, "\n 0x%08"PFMT64x" | %s%s%s", a, asm_str, r_str_pad (' ', asm_pad), indentstr);
+				free (asm_str);
+			} else if (show_addr) {
 				r_strbuf_appendf (out, "\n 0x%08"PFMT64x" | ", bb->addr);
 			} else {
 				NEWLINE (bb->addr, 1);
 			}
 			RFlagItem *fi = r_flag_get_in (core->flags, bb->addr);
+			if (show_asm) {
+				r_strbuf_appendf (codestr, "\n0x%08"PFMT64x" | %s | ", bb->addr, r_str_pad (' ', 30));
+			}
 			if (fi && r_str_startswith (fi->name, "case.")) {
 				const char *val = r_str_lchr (fi->name, '.') + 1;
 				char *hex = r_str_newf ("0x%s", val);
@@ -760,10 +841,16 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 #endif
 			if (bb->jump == UT64_MAX) {
 				NEWLINE (bb->addr, indent);
+				if (show_asm) {
+					PRINTF (" 0x%08"PFMT64x" | ret%s | ", bb->addr, r_str_pad (' ', 30 -3));
+				}
 				if (r0) {
 					PRINTF ("return %s;", r0);
 				} else {
 					PRINTF ("return;");
+				}
+				if (show_asm) {
+					PRINTF ("\n 0x%08"PFMT64x" | %s | ", bb->addr, r_str_pad (' ', 30));
 				}
 			} else {
 				PRINTGOTO (nbbaddr, bb->jump);
@@ -774,6 +861,9 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_list_free (visited);
 	indent = 0;
 	NEWLINE (addr, indent);
+	if (show_asm) {
+		PRINTF ("\n 0x%08"PFMT64x" | %s | ", bb->addr, r_str_pad (' ', 30));
+	}
 	PRINTF ("}\n");
 	r_config_hold_restore (hc);
 	r_config_hold_free (hc);
