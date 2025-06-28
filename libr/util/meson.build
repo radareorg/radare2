@@ -97,7 +97,6 @@ r_util_sources = [
   'udiff.c',
   'uleb128.c',
   'unum.c',
-  'ustrpool.c',
   'utf16.c',
   'utf32.c',
   'utf8.c',

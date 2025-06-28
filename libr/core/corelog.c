@@ -54,11 +54,11 @@ R_API int r_core_log_list(RCore *core, int n, int nth, char fmt) {
 				break;
 			}
 		}
-		str = r_strpool_next (sp, idx);
+		str = r_strpool_get_nth (sp, idx + 1);
 		if (!str) {
 			break;
 		}
-		idx = r_strpool_get_index (sp, str);
+		idx++;
 		count++;
 	}
 	if (fmt == 'j') {
@@ -161,7 +161,7 @@ R_API void r_core_log_del(RCore *core, int n) {
 			return;
 		}
 		core->log->first += idx + 1;
-		char *msg = r_strpool_get_i (core->log->sp, idx);
+		char *msg = r_strpool_get_nth (core->log->sp, idx);
 		if (R_STR_ISEMPTY (msg)) {
 			core->log->first = core->log->last;
 			r_strpool_empty (core->log->sp);
