@@ -27,6 +27,7 @@ static bool cons_palloc(RCons *cons, size_t moar) {
 		size_t new_sz = moar + MOAR;
 		void *temp = calloc (1, new_sz);
 		if (temp) {
+			free (C->buffer);
 			C->buffer_sz = new_sz; // Maintain int for C->buffer_sz
 			C->buffer = temp;
 			C->buffer[0] = '\0';
@@ -1598,15 +1599,18 @@ R_API void r_cons_reset_colors(RCons *cons) {
 
 R_API void r_cons_context_free(RConsContext * R_NULLABLE ctx) {
 	if (ctx) {
-		// TODO: free more stuff
-#if 0
-		// r_stack_free (ctx->cons_stack);
-		r_list_free (ctx->marks);
-		ctx->cons_stack = NULL;
+		r_cons_context_pal_free (ctx);
 		r_stack_free (ctx->break_stack);
-		ctx->break_stack = NULL;
-		r_cons_pal_free (ctx);
-#endif
+
+		// Free the grep strings list
+		r_list_free (ctx->grep.strings);
+
+		// Free sorted and unsorted lines
+		r_list_free (ctx->sorted_lines);
+		r_list_free (ctx->unsorted_lines);
+
+		// Free the buffer and lastOutput
+		free (ctx->buffer);
 		free (ctx->lastOutput);
 		free (ctx);
 	}
@@ -1630,7 +1634,8 @@ R_API RConsContext *r_cons_context_clone(RConsContext *ctx) {
 	if (ctx->unsorted_lines) {
 		c->unsorted_lines = r_list_clone (ctx->unsorted_lines, (RListClone)strdup);
 	}
-	// c->marks = r_list_clone (ctx->marks, (RListClone)strdup);
+	// Don't clone marks - avoid double free issues
+	c->marks = NULL;
 	c->pal.rainbow = NULL;
 	pal_clone (c);
 	// rainbow_clone (c);
@@ -1721,12 +1726,11 @@ R_API bool r_cons_drop(RCons *cons, int n) {
 R_API void r_cons_push(RCons *cons) {
 	r_list_push (cons->ctx_stack, cons->context);
 	RConsContext *nc = r_cons_context_clone (cons->context);
-#if 1
-	// maybe this is done by kons_reset too
+	// Free the buffer in the cloned context since we're going to reset it anyway
+	free (nc->buffer);
 	nc->buffer = NULL;
 	nc->buffer_sz = 0;
 	nc->buffer_len = 0;
-#endif
 	cons->context = nc;
 	// global hacks
 	RCons *Gcons = r_cons_singleton ();

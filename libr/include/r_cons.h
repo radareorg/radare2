@@ -892,6 +892,7 @@ enum {
 	R_CONS_ERRMODE_FLUSH,  // no buffer, print = like eprintf + log
 };
 
+R_API void r_cons_context_pal_free(RConsContext *ctx);
 R_DEPRECATE R_API RConsContext *r_cons_context_new(RConsContext * R_NULLABLE parent);
 R_API void r_cons_context_free(RConsContext *context);
 R_API void r_cons_context_load(RConsContext *context);
@@ -947,7 +948,6 @@ R_API void r_cons_thready(void);
 R_API int r_cons_palette_init(const unsigned char *pal);
 R_API bool r_cons_pal_set(RCons *cons, const char *key, const char *val);
 R_API void r_cons_pal_reload(RCons *cons);
-R_API void r_cons_pal_free(RCons *ctx);
 R_API void r_cons_pal_init(RCons *cons);
 R_API void r_cons_pal_copy(RCons *cons, RConsContext *src);
 R_API R_MUSTUSE char *r_cons_pal_parse(RCons *cons, const char *str, RColor *outcol);
@@ -964,6 +964,7 @@ R_API int r_cons_arrow_to_hjkl(RCons *cons, int ch);
 R_API char *r_cons_html_filter(const char *ptr, int *newlen);
 R_API char *r_cons_rainbow_get(RCons *cons, int idx, int last, bool bg);
 R_API void r_cons_rainbow_free(RCons *ctx);
+R_API void r_cons_context_rainbow_free(RConsContext *ctx);
 R_API void r_cons_rainbow_new(RCons *ctx, size_t sz);
 
 R_API int r_cons_fgets(RCons *cons, char *buf, int len, int argc, const char **argv);
