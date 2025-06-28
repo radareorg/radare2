@@ -59,18 +59,28 @@ R_IPI void pager_printpage(RCons *cons, const char *line, int *index, RList **ml
 	if (!sb) {
 		return;
 	}
+	int h, terminal_width;
+	terminal_width = r_cons_get_size (cons, &h);
+	int actual_lines = 0;
 	for (i = from; i < to; i++) {
 		pager_color_line (cons, line + index[i], sb, mla[i]);
 		char *s = r_strbuf_drain (sb);
 		// Don't strip ANSI codes to preserve colors
 		sb = r_strbuf_new (NULL);
 		r_cons_reset_colors (cons);
+		// Calculate how many terminal lines this will take
+		int len = r_str_ansi_len (s);
+		actual_lines += (len / terminal_width) + 1;
 		if (i + 1 == to) {
 			r_cons_print (cons, s);
 		} else {
 			r_cons_println (cons, s);
 		}
 		free (s);
+		// Check if we've exceeded the terminal height
+		if (actual_lines >= h) {
+			break;
+		}
 	}
 	r_strbuf_free (sb);
 	r_cons_flush (cons);
