@@ -182,7 +182,7 @@ static void pal_refresh(RCons *cons, bool rain) {
 		SdbList *list = sdb_foreach_list (db, true);
 		SdbListIter *iter;
 		SdbKv *kv;
-		r_cons_rainbow_free (cons);
+		r_cons_context_rainbow_free (cons->context);
 		cons->context->pal.rainbow = calloc (sizeof (char *), list->length);
 		r_cons_rainbow_new (cons, list->length); // alocated here
 		int n = 0;
@@ -303,15 +303,19 @@ R_API void r_cons_pal_init(RCons *cons) {
 	r_th_lock_leave (lock);
 }
 
-R_API void r_cons_pal_free(RCons *cons) {
+R_API void r_cons_context_pal_free(RConsContext *ctx) {
 	size_t i;
 	for (i = 0; keys[i].name; i++) {
-		char **color = (char **) (((ut8 *) &(cons->context->pal)) + keys[i].off);
+		char **color = (char **) (((ut8 *) &(ctx->pal)) + keys[i].off);
 		if (R_STR_ISNOTEMPTY (color)) {
 			R_FREE (*color);
 		}
 	}
-	r_cons_rainbow_free (cons);
+	r_cons_context_rainbow_free (ctx);
+}
+
+R_API void r_cons_pal_free(RCons *cons) {
+	r_cons_context_pal_free (cons->context);
 }
 
 // rename to copy_from for clarity?
@@ -744,14 +748,18 @@ R_API void r_cons_rainbow_new(RCons *cons, size_t sz) {
 }
 
 R_API void r_cons_rainbow_free(RCons *cons) {
-	int i, sz = cons->context->pal.rainbow_sz;
-	if (sz > 0 && cons->context->pal.rainbow) {
+	r_cons_context_rainbow_free (cons->context);
+}
+
+R_API void r_cons_context_rainbow_free(RConsContext *ctx) {
+	int i, sz = ctx->pal.rainbow_sz;
+	if (sz > 0 && ctx->pal.rainbow) {
 		for (i = 0; i < sz; i++) {
-			R_FREE (cons->context->pal.rainbow[i]);
+			R_FREE (ctx->pal.rainbow[i]);
 		}
-		R_FREE (cons->context->pal.rainbow);
+		R_FREE (ctx->pal.rainbow);
 	}
-	cons->context->pal.rainbow_sz = 0;
+	ctx->pal.rainbow_sz = 0;
 }
 
 R_API char *r_cons_rainbow_get(RCons *cons, int idx, int last, bool bg) {
