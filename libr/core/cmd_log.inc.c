@@ -249,7 +249,7 @@ R_API void r_core_log_view(RCore *core, int num, int shift) {
 			r_cons_printf (core->cons, "   ^\n");
 			continue;
 		}
-		const char *msg = r_strpool_get_i (core->log->sp, i);
+		const char *msg = r_strpool_get_nth (core->log->sp, i);
 		if (msg) {
 			size_t msglen = strlen (msg);
 			if (shift < msglen) {

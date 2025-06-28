@@ -531,7 +531,7 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, bool 
 
 typedef struct {
 	RList *list;
-	RUStrpool *pool;
+	RStrpool *pool;
 #if 0
 	RBloom *bloomSet;
 	RBloom *bloomGet;
@@ -570,8 +570,8 @@ static bool al_add(RBinAddrLineStore *als, RBinAddrline item) {
 	di->addr = item.addr;
 	di->line = item.line;
 	di->colu = item.column;
-	di->file = item.file ? r_ustrpool_add (store->pool, item.file) : UT32_MAX;
-	di->path = item.path ? r_ustrpool_add (store->pool, item.path) : UT32_MAX;
+	di->file = item.file ? r_strpool_add (store->pool, item.file) : UT32_MAX;
+	di->path = item.path ? r_strpool_add (store->pool, item.path) : UT32_MAX;
 #if 0
 	r_bloom_add (store->bloomSet, &item, sizeof (item));
 	r_bloom_add (store->bloomGet, &item.addr, sizeof (item.addr));
@@ -587,7 +587,7 @@ static bool al_add_cu(RBinAddrLineStore *als, RBinAddrline item) {
 	// we are just storing the filename in the stringpool for `idx` purposes
 	if (item.file) {
 		als->used = true;
-		r_ustrpool_add (store->pool, item.file);
+		r_strpool_add (store->pool, item.file);
 	}
 	return true;
 }
@@ -596,8 +596,8 @@ static void al_reset(RBinAddrLineStore *als) {
 	AddrLineStore *store = als->storage;
 	r_list_free (store->list);
 	store->list = r_list_newf (free);
-	r_ustrpool_free (store->pool);
-	store->pool = r_ustrpool_new ();
+	r_strpool_free (store->pool);
+	store->pool = r_strpool_new ();
 	ht_up_free (store->ht);
 	store->ht = ht_up_new0 ();
 #if 0
@@ -612,11 +612,11 @@ static RBinAddrline* dbgitem_from_internal(RBinAddrLineStore *als, RBinAddrlineI
 	di->addr = item->addr;
 	di->line = item->line;
 	di->column = item->colu;
-	di->file = r_ustrpool_get_nth (store->pool, item->file);
+	di->file = r_strpool_get_nth (store->pool, item->file);
 	if (!di->file) {
 		di->file = "?";
 	}
-	di->path = r_ustrpool_get_nth (store->pool, item->path);
+	di->path = r_strpool_get_nth (store->pool, item->path);
 	if (!di->path) {
 		di->path = "?";
 	}
@@ -628,7 +628,7 @@ static RList *al_files(RBinAddrLineStore *als) {
 	RList *files = r_list_newf (free);
 	int i = 0;
 	for (i = 0; true; i++) {
-		char *n = r_ustrpool_get_nth (store->pool, i);
+		char *n = r_strpool_get_nth (store->pool, i);
 		if (!n) {
 			break;
 		}
@@ -694,7 +694,7 @@ static void addrline_store_init(RBinAddrLineStore *b) {
 	AddrLineStore *als = R_NEW0 (AddrLineStore);
 	als->ht = ht_up_new0 ();
 	als->list = r_list_newf (free);
-	als->pool = r_ustrpool_new ();
+	als->pool = r_strpool_new ();
 #if 0
 	als->bloomGet = r_bloom_new (9586, 7, NULL);
 	als->bloomSet = r_bloom_new (9586, 7, NULL);
