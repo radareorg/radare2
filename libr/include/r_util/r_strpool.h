@@ -29,6 +29,7 @@ R_API int r_strpool_get(RStrpool *p, const char *s);
 R_API char *r_strpool_get_at(RStrpool *p, int index);
 R_API char *r_strpool_get_nth(RStrpool *p, int index);
 R_API void r_strpool_slice(RStrpool *p, int index);
+R_API void r_strpool_slice_range(RStrpool *p, int idx_from, int idx_to);
 #ifdef __cplusplus
 }
 #endif
