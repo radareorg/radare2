@@ -5,12 +5,14 @@ WRAP_wrap_git_revision:=bd7b9d817d48ffe581f80d0393e1be6faafabde3
 WRAP_wrap_git_directory:=sdb
 WRAP_wrap_git_depth:=1
 
-sdb_all: sdb
-	@echo "Nothing to do"
+.PHONY: sdb
 
 sdb:
-	git clone --no-checkout --depth=1 https://github.com/radareorg/sdb.git sdb
-	cd sdb && git fetch --depth=1 origin bd7b9d817d48ffe581f80d0393e1be6faafabde3 && git checkout bd7b9d817d48ffe581f80d0393e1be6faafabde3
+	if [ ! -d "sdb" -o "bd7b9d817d48ffe581f80d0393e1be6faafabde3" != "$(shell cd sdb && git rev-parse HEAD)" ]; then rm -rf "sdb"; ${MAKE} sdb_all; fi
+
+sdb_all:
+	git clone --no-checkout  https://github.com/radareorg/sdb.git sdb
+	cd sdb && git fetch  origin bd7b9d817d48ffe581f80d0393e1be6faafabde3
 	cd sdb && git checkout FETCH_HEAD
 
 sdb_clean:
