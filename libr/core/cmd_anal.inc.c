@@ -7213,6 +7213,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 				r_reg_setv (core->esil.reg, "PC", op.addr + op.size);
 				r_anal_op_fini (&op);
 				continue;
+			}
 		}
 		if (until_expr || stepOver) {
 			r_anal_op_fini (&op);
