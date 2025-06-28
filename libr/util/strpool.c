@@ -87,11 +87,33 @@ R_API void r_strpool_empty(RStrpool *p) {
 }
 
 R_API void r_strpool_slice(RStrpool *p, int index) {
+	R_RETURN_IF_FAIL (p);
 	char *pos = r_strpool_get_nth (p, index);
 	if (pos) {
 		p->count = index; // or index -1 ?
 		// TODO: shrink string allocation too?
 	}
+}
+
+R_API void r_strpool_slice_range(RStrpool *p, int idx_from, int idx_to) {
+	R_RETURN_IF_FAIL (p);
+	if (idx_from >= p->count || idx_from < 0) {
+		return;
+	}
+	if (idx_to > p->count || idx_to < idx_from) {
+		idx_to = p->count;
+	}
+	if (idx_from == 0) {
+		// Just truncate from idx_to onwards
+		p->count = idx_to;
+		return;
+	}
+	int i, j;
+	// Shift remaining items to the beginning
+	for (i = idx_from, j = 0; i < idx_to; i++, j++) {
+		p->idxs[j] = p->idxs[i];
+	}
+	p->count = j;
 }
 
 R_API int r_strpool_add(RStrpool *p, const char *s) {

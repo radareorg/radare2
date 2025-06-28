@@ -5,16 +5,16 @@
 R_API int r_core_log_list(RCore *core, int n, int nth, char fmt) {
 	R_RETURN_VAL_IF_FAIL (core && core->log, 0);
 	int printed = 0;
-	int count = 0, idx, id = core->log->first;
+	int count = 0, idx = 0, id = core->log->first;
 	RStrpool *sp = core->log->sp;
-	char *str = sp->str;
+	char *str = r_strpool_get_nth (sp, idx);
 	PJ *pj = NULL;
 
 	if (fmt == 'j') {
 		pj = r_core_pj_new (core);
 		pj_a (pj);
 	}
-	for (idx = 0; str && *str; id++) {
+	for (; str && *str; id++) {
 		if ((n && n <= id) || !n) {
 			switch (fmt) {
 			case 'j':
@@ -54,11 +54,11 @@ R_API int r_core_log_list(RCore *core, int n, int nth, char fmt) {
 				break;
 			}
 		}
-		str = r_strpool_get_nth (sp, idx + 1);
+		idx++;
+		str = r_strpool_get_nth (sp, idx);
 		if (!str) {
 			break;
 		}
-		idx++;
 		count++;
 	}
 	if (fmt == 'j') {
@@ -166,7 +166,8 @@ R_API void r_core_log_del(RCore *core, int n) {
 			core->log->first = core->log->last;
 			r_strpool_empty (core->log->sp);
 		} else {
-			r_strpool_slice (core->log->sp, idx);
+			// Slice from index+1 to end, removing the first idx+1 entries
+			r_strpool_slice_range (core->log->sp, idx + 1, core->log->sp->count);
 		}
 	} else {
 		core->log->first = core->log->last;
