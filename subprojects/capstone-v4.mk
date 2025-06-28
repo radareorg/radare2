@@ -7,12 +7,14 @@ WRAP_wrap_git_directory:=capstone-v4
 WRAP_wrap_git_diff_files:=capstone-v4/capstone-patches/v4/capstone-calloc.patch,capstone-v4/capstone-patches/v4/fix-x86-16.patch,capstone-v4/capstone-patches/v4/sparc-crash.patch,capstone-v4/capstone-patches/v4/sstream-null.patch
 WRAP_wrap_git_depth:=1
 
-capstone-v4_all: capstone-v4
-	@echo "Nothing to do"
+.PHONY: capstone-v4
 
 capstone-v4:
-	git clone --no-checkout --depth=1 https://github.com/capstone-engine/capstone.git capstone-v4
-	cd capstone-v4 && git fetch --depth=1 origin d7e459d026b19d6c3a7b743bfc475d919ff03f74 && git checkout d7e459d026b19d6c3a7b743bfc475d919ff03f74
+	if [ ! -d "capstone-v4" -o "d7e459d026b19d6c3a7b743bfc475d919ff03f74" != "$(shell cd capstone-v4 && git rev-parse HEAD)" ]; then rm -rf "capstone-v4"; ${MAKE} capstone-v4_all; fi
+
+capstone-v4_all:
+	git clone --no-checkout  https://github.com/capstone-engine/capstone.git capstone-v4
+	cd capstone-v4 && git fetch  origin d7e459d026b19d6c3a7b743bfc475d919ff03f74
 	cd capstone-v4 && git checkout FETCH_HEAD
 	cp -rf packagefiles/capstone-v4/* capstone-v4
 	for a in capstone-v4/capstone-patches/v4/capstone-calloc.patch capstone-v4/capstone-patches/v4/fix-x86-16.patch capstone-v4/capstone-patches/v4/sparc-crash.patch capstone-v4/capstone-patches/v4/sstream-null.patch ; do echo "patch -d capstone-v4 -p1 < $$a" ; patch -d capstone-v4 -p1 < $$a ; done

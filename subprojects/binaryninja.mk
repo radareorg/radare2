@@ -6,12 +6,14 @@ WRAP_wrap_git_directory:=binaryninja
 WRAP_wrap_git_patch_directory:=binaryninja
 WRAP_wrap_git_depth:=1
 
-binaryninja_all: binaryninja
-	@echo "Nothing to do"
+.PHONY: binaryninja
 
 binaryninja:
-	git clone --no-checkout --depth=1 https://github.com/Vector35/binaryninja-api binaryninja
-	cd binaryninja && git fetch --depth=1 origin c40a5f04deec68d388b2072dc42b29141089f9ce && git checkout c40a5f04deec68d388b2072dc42b29141089f9ce
+	if [ ! -d "binaryninja" -o "c40a5f04deec68d388b2072dc42b29141089f9ce" != "$(shell cd binaryninja && git rev-parse HEAD)" ]; then rm -rf "binaryninja"; ${MAKE} binaryninja_all; fi
+
+binaryninja_all:
+	git clone --no-checkout  https://github.com/Vector35/binaryninja-api binaryninja
+	cd binaryninja && git fetch  origin c40a5f04deec68d388b2072dc42b29141089f9ce
 	cd binaryninja && git checkout FETCH_HEAD
 	cp -rf packagefiles/binaryninja/* binaryninja
 

@@ -6,12 +6,14 @@ WRAP_wrap_git_directory:=qjs
 WRAP_wrap_git_patch_directory:=qjs
 WRAP_wrap_git_depth:=1
 
-qjs_all: qjs
-	@echo "Nothing to do"
+.PHONY: qjs
 
 qjs:
-	git clone --no-checkout --depth=1 https://github.com/quickjs-ng/quickjs qjs
-	cd qjs && git fetch --depth=1 origin a75498b9c74bc71b49ab4ca2d15c07282483b8cd && git checkout a75498b9c74bc71b49ab4ca2d15c07282483b8cd
+	if [ ! -d "qjs" -o "a75498b9c74bc71b49ab4ca2d15c07282483b8cd" != "$(shell cd qjs && git rev-parse HEAD)" ]; then rm -rf "qjs"; ${MAKE} qjs_all; fi
+
+qjs_all:
+	git clone --no-checkout  https://github.com/quickjs-ng/quickjs qjs
+	cd qjs && git fetch  origin a75498b9c74bc71b49ab4ca2d15c07282483b8cd
 	cd qjs && git checkout FETCH_HEAD
 	cp -rf packagefiles/qjs/* qjs
 
