@@ -1559,50 +1559,7 @@ R_API char *r_str_escape_utf32be(const char *buf, int buf_size, bool show_asciid
 	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF32BE, show_asciidot, esc_bslash, false);
 }
 
-R_API char *r_str_encoded_json(const char *buf, int buf_size, int encoding) {
-	R_RETURN_VAL_IF_FAIL (buf, NULL);
-	size_t buf_sz = buf_size < 0 ? strlen (buf) : buf_size;
-	char *encoded_str;
-
-	if (encoding == PJ_ENCODING_STR_BASE64) {
-		encoded_str = r_base64_encode_dyn ((const ut8*)buf, buf_sz);
-	} else if (encoding == PJ_ENCODING_STR_HEX || encoding == PJ_ENCODING_STR_ARRAY) {
-		size_t loop = 0;
-		size_t i = 0;
-		size_t increment = encoding == PJ_ENCODING_STR_ARRAY ? 4 : 2;
-
-		if (!SZT_MUL_OVFCHK (((buf_sz * increment) + 1), SZT_MAX)) {
-			return NULL;
-		}
-		size_t new_sz = (buf_sz * increment) + 1;
-
-		encoded_str = malloc (new_sz);
-		if (!encoded_str) {
-			return NULL;
-		}
-
-		const char *format = encoding == PJ_ENCODING_STR_ARRAY ? "%03u," : "%02X";
-		while (buf[loop] != '\0' && i < (new_sz - 1)) {
-			snprintf (encoded_str + i, new_sz - i, format, (ut8) buf[loop]);
-			loop++;
-			i += increment;
-		}
-		if (encoding == PJ_ENCODING_STR_ARRAY && i) {
-			// get rid of the trailing comma
-			encoded_str[i - 1] = '\0';
-		} else {
-			encoded_str[i] = '\0';
-		}
-	} else if (encoding == PJ_ENCODING_STR_STRIP) {
-		encoded_str = r_str_escape_utf8_for_json_strip (buf, buf_sz);
-	} else {
-		encoded_str = r_str_escape_utf8_for_json (buf, buf_sz);
-	}
-	return encoded_str;
-}
-
-// XXX R2_600 - very bad and long name
-R_API char *r_str_escape_utf8_for_json_strip(const char *buf, int buf_size) {
+static char *escape_and_strip(const char *buf, int buf_size) {
 	char *new_buf, *q;
 	const char *p, *end;
 	RRune ch;
@@ -1704,7 +1661,50 @@ R_API char *r_str_escape_utf8_for_json_strip(const char *buf, int buf_size) {
 	return new_buf;
 }
 
+R_API char *r_str_encoded_json(const char *buf, int buf_size, int encoding) {
+	R_RETURN_VAL_IF_FAIL (buf, NULL);
+	size_t buf_sz = buf_size < 0 ? strlen (buf) : buf_size;
+	char *encoded_str;
 
+	if (encoding == PJ_ENCODING_STR_BASE64) {
+		encoded_str = r_base64_encode_dyn ((const ut8*)buf, buf_sz);
+	} else if (encoding == PJ_ENCODING_STR_HEX || encoding == PJ_ENCODING_STR_ARRAY) {
+		size_t loop = 0;
+		size_t i = 0;
+		size_t increment = encoding == PJ_ENCODING_STR_ARRAY ? 4 : 2;
+
+		if (!SZT_MUL_OVFCHK (((buf_sz * increment) + 1), SZT_MAX)) {
+			return NULL;
+		}
+		size_t new_sz = (buf_sz * increment) + 1;
+
+		encoded_str = malloc (new_sz);
+		if (!encoded_str) {
+			return NULL;
+		}
+
+		const char *format = encoding == PJ_ENCODING_STR_ARRAY ? "%03u," : "%02X";
+		while (buf[loop] != '\0' && i < (new_sz - 1)) {
+			snprintf (encoded_str + i, new_sz - i, format, (ut8) buf[loop]);
+			loop++;
+			i += increment;
+		}
+		if (encoding == PJ_ENCODING_STR_ARRAY && i) {
+			// get rid of the trailing comma
+			encoded_str[i - 1] = '\0';
+		} else {
+			encoded_str[i] = '\0';
+		}
+	} else if (encoding == PJ_ENCODING_STR_STRIP) {
+		encoded_str = escape_and_strip (buf, buf_sz);
+	} else {
+		encoded_str = r_str_escape_utf8_for_json (buf, buf_sz);
+	}
+	return encoded_str;
+}
+
+
+// TODO: very long and bad name here
 R_API char *r_str_escape_utf8_for_json(const char *buf, int buf_size) {
 	char *new_buf, *q;
 	const char *p, *end;
@@ -3457,9 +3457,42 @@ R_API RVecStringSlice *r_str_split_vec(const char *str, const char *c, int n) {
 	return vs;
 }
 
+R_API RList *r_str_split_list_dup(char *str, const char *c, int n) {
+	R_RETURN_VAL_IF_FAIL (str && c, NULL);
+	RList *lst = r_list_newf (NULL);
+	char *aux = str; // R2_600 - XXX should be an strdup
+	int i = 0;
+	char *e = aux;
+	const size_t clen = strlen (c);
+	for (;e;) {
+		e = strstr (aux, c);
+#if 0
+		if (e == aux) {
+			aux++;
+			continue;
+		}
+#endif
+		if (n > 0) {
+			if (++i >= n) {
+				r_list_append (lst, aux);
+				break;
+			}
+		}
+		if (e) {
+			*e = 0;
+			e += clen;
+		}
+		// TODO: make string trim optional
+		r_str_trim (aux);
+		r_list_append (lst, aux);
+		aux = e;
+	}
+	return lst;
+}
+
 // Splits the string <str> by string <c> and returns the result in a list.
 // R2_600 - char *arg must be const!!
-R_API RList *r_str_split_list(char *str, const char *c, int n)  {
+R_API RList *r_str_split_list(char *str, const char *c, int n) {
 	R_RETURN_VAL_IF_FAIL (str && c, NULL);
 	RList *lst = r_list_newf (NULL);
 	char *aux = str; // R2_600 - XXX should be an strdup

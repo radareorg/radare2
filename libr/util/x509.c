@@ -92,7 +92,7 @@ static bool r_x509_subjectpublickeyinfo_parse(RX509SubjectPublicKeyInfo *spki, R
 	return true;
 }
 
-R_IPI void r_x509_subjectpublickeyinfo_fini(RX509SubjectPublicKeyInfo *spki) {
+static void r_x509_subjectpublickeyinfo_fini(RX509SubjectPublicKeyInfo *spki) {
 	R_RETURN_IF_FAIL (spki);
 	r_x509_algorithmidentifier_fini (&spki->algorithm);
 	r_asn1_binary_free (spki->subjectPublicKey);
@@ -527,7 +527,7 @@ R_API void r_x509_certificate_dump(RX509Certificate *cert, const char *pad, RStr
 	// r_asn1_string_free (signature);
 }
 
-R_IPI void r_x509_crlentry_dump(RX509CRLEntry *crle, const char *pad, RStrBuf *sb) {
+static void r_x509_crlentry_dump(RX509CRLEntry *crle, const char *pad, RStrBuf *sb) {
 	R_RETURN_IF_FAIL (crle && sb);
 	if (!pad) {
 		pad = "";
@@ -597,8 +597,7 @@ R_IPI void r_x509_name_json(PJ *pj, RX509Name *name) {
 	}
 }
 
-// R2_600 not used elsewhere. Make static?
-R_API void r_x509_subjectpublickeyinfo_json(PJ *pj, RX509SubjectPublicKeyInfo *spki) {
+static void r_x509_subjectpublickeyinfo_json(PJ *pj, RX509SubjectPublicKeyInfo *spki) {
 	R_RETURN_IF_FAIL (pj && spki);
 	if (spki) {
 		if (spki->algorithm.algorithm) {
@@ -615,8 +614,7 @@ R_API void r_x509_subjectpublickeyinfo_json(PJ *pj, RX509SubjectPublicKeyInfo *s
 	}
 }
 
-// R2_600 not used elsewhere. Make static?
-R_API void r_x509_extensions_json(PJ *pj, RX509Extensions *exts) {
+static void r_x509_extensions_json(PJ *pj, RX509Extensions *exts) {
 	R_RETURN_IF_FAIL (pj && exts);
 	pj_a (pj);
 	ut32 i;
@@ -645,8 +643,7 @@ R_API void r_x509_extensions_json(PJ *pj, RX509Extensions *exts) {
 	pj_end (pj);
 }
 
-// R2_600 not used elsewhere. Make static?
-R_API void r_x509_crlentry_json(PJ *pj, RX509CRLEntry *crle) {
+static void r_x509_crlentry_json(PJ *pj, RX509CRLEntry *crle) {
 	R_RETURN_IF_FAIL (pj && crle);
 	if (crle) {
 		if (crle->userCertificate) {
@@ -663,7 +660,6 @@ R_API void r_x509_crlentry_json(PJ *pj, RX509CRLEntry *crle) {
 	}
 }
 
-// R2_600 defined at r_util/r_x509.h
 R_API void r_x509_crl_json(PJ *pj, RX509CertificateRevocationList *crl) {
 	R_RETURN_IF_FAIL (pj && crl);
 	if (crl) {

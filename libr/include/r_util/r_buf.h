@@ -165,6 +165,7 @@ R_API st64 r_buf_seek(RBuffer *b, st64 addr, int whence);
 R_API st64 r_buf_fread_at(RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n);
 R_API st64 r_buf_write(RBuffer *b, const ut8 *buf, ut64 len);
 R_API st64 r_buf_fwrite(RBuffer *b, const ut8 *buf, const char *fmt, int n);
+R_API ut64 r_buf_at(RBuffer *b);
 R_API st64 r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, ut64 len);
 R_API st64 r_buf_fwrite_at(RBuffer *b, ut64 addr, const ut8 *buf, const char *fmt, int n);
 // WARNING: this function should be used with care because it may allocate the
