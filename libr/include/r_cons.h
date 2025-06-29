@@ -527,7 +527,6 @@ typedef struct r_cons_t {
 	int is_wine; // -1, 0, 1
 	struct r_line_t *line;
 	const char **vline;
-	R_DEPRECATE bool newline; // R2_600
 	int vtmode;
 	bool use_utf8; // use utf8 features
 	bool use_utf8_curvy; // use utf8 curved corners
