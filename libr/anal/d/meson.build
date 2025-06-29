@@ -35,6 +35,7 @@ sdb_files = [
 ]
 
 win_types_extra = [
+  'base',
   'bcrypt',
   'cfgmgr32',
   'combaseapi',
@@ -83,7 +84,7 @@ foreach file : sdb_files
   infiles = ['@0@.sdb.txt'.format(file)]
   if file == 'types-windows'
     foreach f : win_types_extra
-      infiles += 'types-windows_@0@.sdb.txt'.format(f)
+      infiles += 'windows/types-windows_@0@.sdb.txt'.format(f)
     endforeach
   endif
   ct = custom_target(outfile,
