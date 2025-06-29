@@ -27,10 +27,10 @@ DLLS+=win87em winaspi winnet16 winoldap winsock winspl16 wpsapd wpsuni
 DLLS+=wpsunire wsasrv
 DLL_SDB=$(addsuffix .sdb,$(addprefix dll/,$(DLLS)))
 
-ifeq ($(USE_SDBTOOL),1)
+ifeq (1,1)
 all:
-	$(SDBTOOL) $(shell pwd)
-	$(SDBTOOL) $(shell pwd)/dll
+	$(SDB) -r $(shell pwd)
+	$(SDB) -r $(shell pwd)/dll
 else
 all: $(DLL_SDB) symclass.sdb
 endif
