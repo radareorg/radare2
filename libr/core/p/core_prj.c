@@ -1,11 +1,8 @@
-/* radare - MIT - Copyright 2024 - pancake */
+/* radare - MIT - Copyright 2024-2025 - pancake */
 
 #define R_LOG_ORIGIN "prj"
 
 #include <r_core.h>
-static inline ut64 r_buf_at(RBuffer *b) {
-	return r_buf_seek (b, 0, R_BUF_CUR);
-}
 
 enum {
 	RPRJ_MAPS,
