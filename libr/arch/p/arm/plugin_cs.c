@@ -4769,7 +4769,7 @@ static bool plugin_changed(RArchSession *as) {
 static bool init(RArchSession *as);
 static bool fini(RArchSession *as);
 
-static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	if (plugin_changed (as)) {
 		fini (as);
 		init (as);

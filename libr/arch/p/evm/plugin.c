@@ -74,7 +74,7 @@ static ut64 evm_get_jmp_addr(RArchSession *s, ut64 addr) {
 	return sdb_num_nget (epd->pushs_db, addr, 0);
 }
 
-static bool encode(RArchSession *s, RAnalOp *op, RAnalOpMask mask) {
+static bool encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 	ut8 buf[64];
 	int asmlen = evm_asm (op->mnemonic, buf, sizeof (buf));
 	if (asmlen > 0) {
@@ -85,7 +85,7 @@ static bool encode(RArchSession *s, RAnalOp *op, RAnalOpMask mask) {
 	return false;
 }
 
-static bool decode(RArchSession *s, RAnalOp *op, RAnalOpMask mask) {
+static bool decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	R_RETURN_VAL_IF_FAIL (s && op && s->data, false);
 	const ut64 addr = op->addr;
 	const ut8 *buf = op->bytes;
