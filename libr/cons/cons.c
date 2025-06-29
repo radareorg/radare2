@@ -930,10 +930,6 @@ R_API void r_cons_flush(RCons *cons) {
 	}
 
 	r_cons_reset (cons);
-	if (cons->newline) {
-		eprintf ("\n");
-		cons->newline = false;
-	}
 	if (ctx->tmp_html) {
 		ctx->is_html = ctx->was_html;
 		ctx->tmp_html = false;
