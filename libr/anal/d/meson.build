@@ -98,11 +98,10 @@ foreach file : sdb_files
     outfile = '@0@.sdb'.format(file)
     gen_cmd = sdb_gen_cmd
   endif
-  infiles = ['@0@.sdb.txt'.format(file)]
   if file == 'types-windows'
-    foreach f : win_types_extra
-      infiles += 'windows/types-windows_@0@.sdb.txt'.format(f)
-    endforeach
+    infiles = [types_windows_sdbtxt]
+  else
+    infiles = ['@0@.sdb.txt'.format(file)]
   endif
   ct = custom_target(outfile,
     input: infiles,
