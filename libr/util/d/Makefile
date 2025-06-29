@@ -17,7 +17,10 @@ include ../../../global.mk
 R2_CHARSETS_PATH=$(DESTDIR)$(DATADIR)/radare2/$(VERSION)/charsets
 CWD=$(shell pwd)
 
-alle: $(F_SDB)
+alle:
+	$(SDB) -r $(shell pwd)
+
+compile: $(F_SDB)
 
 %.sdb: %.sdb.txt
 	$(SDB) $@ = < $<
