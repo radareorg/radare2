@@ -14,7 +14,10 @@ all:
 else
 all: ${F_SDB}
 
-%.sdb:%.sdb.txt
+%.sdb: %.sdb.txt
+	$(SDB) -r .
+
+old_%.sdb:%.sdb.txt
 	${SDB} $@ = < $<
 	test -f $@
 	${SDB} -t -C $@
