@@ -85,9 +85,7 @@ typedef struct r_asn1_object_t {
 	ut32 bitlength; /* Sector length in bits */
 	ut64 offset; /* Object offset */
 	RASN1List list; /* List of objects contained in the sector */
-#if R2_600
 	ut8 headerlength; /*Header length*/
-#endif
 } RASN1Object;
 
 typedef struct r_asn1_t {
