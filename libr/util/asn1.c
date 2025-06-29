@@ -4,6 +4,8 @@
 
 #include <r_util.h>
 
+#define FASTERASN 1
+
 static ut32 asn1_ber_indefinite(const ut8 *buffer, ut32 length) {
 	if (!buffer || length < 3) {
 		return 0;
@@ -35,15 +37,14 @@ static RASN1Object *asn1_parse_header(const ut8 *buffer_base, const ut8 *buffer,
 		return NULL;
 	}
 	RASN1Object *obj = R_NEW0 (RASN1Object);
-	if (!obj) {
-		return NULL;
-	}
 	ut8 head = buffer[0];
 	obj->offset = buffer_base? (buffer - buffer_base): 0;
 	obj->klass = head & ASN1_CLASS;
 	obj->form = head & ASN1_FORM;
 	obj->tag = head & ASN1_TAG;
 	length8 = buffer[1];
+	// Save initial position for header length calculation
+	const ut8 *initial_pos = buffer;
 	if (length8 & ASN1_LENLONG) {
 		length64 = 0;
 		length8 &= ASN1_LENSHORT;
@@ -78,6 +79,10 @@ static RASN1Object *asn1_parse_header(const ut8 *buffer_base, const ut8 *buffer,
 		obj->sector = buffer + 2;
 	}
 	obj->bitlength = 8 * obj->length;
+#if FASTERASN
+	// Calculate headerlength before BITSTRING adjustment
+	obj->headerlength = obj->sector - initial_pos;
+#endif
 	if (obj->tag == TAG_BITSTRING) {
 		if (obj->length > 0) {
 			obj->length--;
@@ -94,9 +99,6 @@ static RASN1Object *asn1_parse_header(const ut8 *buffer_base, const ut8 *buffer,
 		R_LOG_DEBUG ("Truncated object");
 		goto out_error;
 	}
-#if R2_600
-	obj->headerlength = obj->sector - buffer;
-#endif
 	return obj;
 out_error:
 	free (obj);
@@ -231,10 +233,6 @@ R_API RASN1Binary *r_asn1_binary_new(const ut8 *buffer, ut32 length) {
 		return NULL;
 	}
 	RASN1Binary* bin = R_NEW0 (RASN1Binary);
-	if (!bin) {
-		free (buf);
-		return NULL;
-	}
 	memcpy (buf, buffer, length);
 	bin->binary = buf;
 	bin->length = length;
@@ -336,8 +334,9 @@ static RASN1String* asn1_hexdump(RASN1Object *obj, ut32 depth, int fmtmode) {
 	}
 	return as;
 }
-#if R2_600
-/* Remove if adding header_len to RASN1Object and adapting asn1_parse_header() */
+
+#if FASTERASN
+/* This function is no longer needed when R2_600 is enabled, as headerlength is stored in the object */
 #else
 ut8 asn1_compute_header_length (ut8 klass, ut8 form, ut8 tag, ut32 content_length) {
 	ut8 identifier_length;
@@ -381,8 +380,9 @@ R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ
 	}
 	char temp_name[4096] = {0};
 	ut32 i;
-#if R2_600
-	// hlen can be replaced by obj->headerlength
+#if FASTERASN
+	// Use the pre-calculated headerlength from the object
+	ut8 hlen = obj->headerlength;
 #else
 	ut8 hlen = 0;
 #endif
@@ -539,8 +539,8 @@ R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ
 		string = asn1str->string;
 	}
 
-#if R2_600
-	// hlen can be replaced by obj->headerlength
+#if FASTERASN
+	// We already have the header length stored in the object
 #else
 	// Compute header length
 	hlen = asn1_compute_header_length (obj->klass, obj->form, obj->tag, obj->length);
@@ -603,8 +603,8 @@ R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ
 				r_strbuf_append (sb, "└── ");
 			}
 		}
-#if R2_600
-		r_strbuf_appendf (sb, " [@ 0x%" PFMT64x "](0x%x + 0x%x)", obj->offset, obj->headerlength, obj->length);
+#if FASTERASN
+		r_strbuf_appendf (sb, " [@ 0x%" PFMT64x "](0x%x + 0x%x)", obj->offset, hlen, obj->length);
 #else
 		r_strbuf_appendf (sb, " [@ 0x%" PFMT64x "](0x%x + 0x%x)", obj->offset, hlen, obj->length);
 #endif
@@ -642,8 +642,8 @@ R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ
 			r_strbuf_appendf (sb, "%8s %4s %s %6s %5s %4s %-20s: %s", "OFFSET", "HDR", "+", "OBJ", "DEPTH", "FORM", "NAME", "VALUE\n");
 		}
 		r_strbuf_appendf (sb, "%#8" PFMT64x, obj->offset);
-#if R2_600
-		r_strbuf_appendf (sb, " %#4x + %#6x %5d %4s %-20s: ", obj->headerlength, obj->length, depth, obj->form? "cons": "prim", name);
+#if FASTERASN
+		r_strbuf_appendf (sb, " %#4x + %#6x %5d %4s %-20s: ", hlen, obj->length, depth, obj->form? "cons": "prim", name);
 #else
 		r_strbuf_appendf (sb, " %#4x + %#6x %5d %4s %-20s: ", hlen, obj->length, depth, obj->form? "cons": "prim", name);
 #endif
