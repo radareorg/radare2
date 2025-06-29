@@ -82,11 +82,8 @@ F_SDB=$(addsuffix .sdb,$F)
 FCNSIGNPATH=$(DESTDIR)$(DATADIR)/radare2/$(VERSION)/fcnsign
 
 all: ${SDB}
-ifeq ($(USE_SDBTOOL),1)
-	$(SDBTOOL) $(shell pwd)
-else
+	cat windows/*.txt > types-windows.sdb.txt
 	@$(MAKE) compile
-endif
 
 compile: ${F_SDB}
 
