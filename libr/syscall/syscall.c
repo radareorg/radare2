@@ -1,4 +1,4 @@
-/* radare - Copyright 2008-2024 - LGPL -- pancake */
+/* radare - Copyright 2008-2025 - LGPL -- pancake */
 
 #include <r_syscall.h>
 
@@ -156,25 +156,23 @@ R_API bool r_syscall_setup(RSyscall *s, const char *arch, int bits, const char *
 }
 
 R_API RSyscallItem *r_syscall_item_new_from_string(const char *name, const char *s) {
-	if (!name || !s) {
-		return NULL;
-	}
+	R_RETURN_VAL_IF_FAIL (name && s, NULL);
 	char *o = strdup (s);
 	int cols = r_str_split (o, ',');
-	if (cols < 3) {
+	if (cols < 2) {
 		free (o);
 		return NULL;
 	}
 
 	RSyscallItem *si = R_NEW0 (RSyscallItem);
-	if (!si) {
-		free (o);
-		return NULL;
-	}
 	si->name = strdup (name);
 	si->swi = (int)r_num_get (NULL, r_str_word_get0 (o, 0));
 	si->num = (int)r_num_get (NULL, r_str_word_get0 (o, 1));
-	si->args = (int)r_num_get (NULL, r_str_word_get0 (o, 2));
+	if (cols > 2) {
+		si->args = (int)r_num_get (NULL, r_str_word_get0 (o, 2));
+	} else {
+		si->args = 0;
+	}
 	si->sargs = calloc (si->args + 1, sizeof (char));
 	if (!si->sargs) {
 		free (si);
@@ -189,12 +187,11 @@ R_API RSyscallItem *r_syscall_item_new_from_string(const char *name, const char 
 }
 
 R_API void r_syscall_item_free(RSyscallItem *si) {
-	if (!si) {
-		return;
+	if (si) {
+		free (si->name);
+		free (si->sargs);
+		free (si);
 	}
-	free (si->name);
-	free (si->sargs);
-	free (si);
 }
 
 static int getswi(RSyscall *s, int swi) {
@@ -205,6 +202,7 @@ static int getswi(RSyscall *s, int swi) {
 }
 
 R_API int r_syscall_get_swi(RSyscall *s) {
+	R_RETURN_VAL_IF_FAIL (s, -1);
 	return (int)sdb_num_get (s->db, "_", NULL);
 }
 
