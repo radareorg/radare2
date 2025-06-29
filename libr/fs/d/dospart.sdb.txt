@@ -1,4 +1,3 @@
-# http://www.win.tue.nl/~aeb/partitions/partition_types-1.html
 0=empty
 1.fs=fat
 1=DOS 12-bit FAT
@@ -16,11 +15,9 @@
 11=WIN95 OSR2 FAT32
 12.fs=fat
 12=WIN95 OSR2 FAT32, LBA
-...
 130=Linux swap
 131.fs=ext2
 131=Linux native partition
-...
 166=OpenBSD
 167=NeXTStep
 168=Mac OS-X

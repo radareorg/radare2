@@ -3918,6 +3918,7 @@ static int handle_command_call(RCore *core, const char *cmd) {
 		return r_core_cmd_call (core, cmd);
 	}
 	if (R_UNLIKELY (r_str_startswith (cmd, "\"\""))) {
+		R_LOG_DEBUG ("The double quote syntax is now deprecated, use the single quote instead");
 		// R2_600 - deprecate "" -> use ' <---------- discuss!
 		if (cmd[2] == '@') {
 			int res = 1;

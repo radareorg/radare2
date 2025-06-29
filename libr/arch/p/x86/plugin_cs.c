@@ -3882,7 +3882,7 @@ static bool plugin_changed(RArchSession *as) {
 	return false;
 }
 
-static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	csh handle = cs_handle_for_session (as);
 	if (handle == 0) {
 		return false;
