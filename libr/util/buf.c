@@ -607,11 +607,9 @@ R_API st64 r_buf_fwrite_at(RBuffer *b, ut64 addr, const ut8 *buf, const char *fm
 	return r;
 }
 
-#if R2_600
 R_API ut64 r_buf_at(RBuffer *b) {
 	return r_buf_seek (b, 0, R_BUF_CUR);
 }
-#endif
 
 R_API st64 r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, ut64 len) {
 	R_RETURN_VAL_IF_FAIL (b && buf, -1);
