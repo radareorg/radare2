@@ -361,6 +361,24 @@ static int r2pm_update(bool force) {
 	return rc;
 }
 
+// set python virtual environment when available
+static void r2pm_set_pyvenv(R2Pm *r2pm) {
+	char *r2_prefix = r_xdg_datadir ("prefix");
+	if (!r2_prefix) {
+		R_LOG_ERROR ("Cannot resolve xdg.datadir('prefix')");
+		return;
+	}
+	// set PYTHOMHOME, VIRTUAL_ENV and PATH
+	char *venv = r_file_new (r2_prefix, "venv", NULL);
+	if (r_file_is_directory (venv)) {
+		r_sys_setenv ("VIRTUAL_ENV", venv);
+		char *venv_bin = r_file_new (venv, "bin", NULL);
+		r_sys_setenv_sep ("PATH", venv_bin, false);
+		free (venv_bin);
+	}
+	free (venv);
+}
+
 static void r2pm_setenv(R2Pm *r2pm) {
 	char *gmake = r_file_path ("gmake");
 	if (gmake) {
@@ -369,6 +387,7 @@ static void r2pm_setenv(R2Pm *r2pm) {
 		r_sys_setenv ("MAKE", "make");
 	}
 	free (gmake);
+	r2pm_set_pyvenv (r2pm);
 
 	if (r2pm->global) {
 		// the r2pm_plugdir changes when using -g
