@@ -27,7 +27,7 @@ r_syscall_d_sources = []
 foreach file : sdb_files
   infile = '@0@.sdb.txt'.format(file)
   if host_machine.system() == 'windows'
-    infile = run_command(sdb_readlink_cmd + [join_paths(meson.current_source_dir(), infile)]).stdout().strip()
+    infile = run_command(sdb_readlink_cmd + [join_paths(meson.current_source_dir(), infile)], check: false).stdout().strip()
   endif
   tmp_outfile = '@0@.sdb.txt.tmp'.format(file)
   if get_option('sdb_cgen')
