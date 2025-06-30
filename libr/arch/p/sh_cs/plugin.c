@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2023 - pancake */
+/* radare2 - LGPL - Copyright 2023-2025 - pancake */
 
 #include <r_arch.h>
 #include <r_lib.h>
@@ -98,7 +98,7 @@ static csh cs_handle_for_session(RArchSession *as) {
 	return pd->cs_handle;
 }
 
-static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const ut64 addr = op->addr;
 	const ut8 *buf = op->bytes;
 	const int len = op->size;

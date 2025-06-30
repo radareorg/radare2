@@ -1730,7 +1730,7 @@ static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 }
 
 // TODO: remove register analysis comment when each avr cpu will be implemented in asm plugin
-static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const ut64 addr = op->addr;
 	const ut8 *buf = op->bytes;
 	const int len = op->size;

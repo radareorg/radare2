@@ -43,6 +43,15 @@ static void drawBox(char **buffer, int width, int height, int x, int y, int w, i
 	}
 }
 
+static inline int dodiv(float adjusted, float sum_adjusted, int d) {
+	if (sum_adjusted < 1) {
+		return 0;
+	}
+	float base = sum_adjusted * d;
+	int boxw = (int)(adjusted / base);
+	return R_MAX (boxw, 1);
+}
+
 static void treemapRecurse(char **buffer, int width, int height, int x, int y, int w, int h, int *values, const char **labels, int start, int n, int total, bool horizontal) {
 	if (n <= 0 || w <= 0 || h <= 0 || total <= 0) {
 		return;
@@ -63,25 +72,19 @@ static void treemapRecurse(char **buffer, int width, int height, int x, int y, i
 	for (i = 0; i < n; i++) {
 		int val = values[start + i];
 		// soften extremes by taking square root
-		float adjusted = sqrtf((float)val);
-		int sum_adjusted = 0;
+		float adjusted = sqrtf ((float)val);
+		float sum_adjusted = 0;
 		for (j = 0; j < n - i; j++) {
-			sum_adjusted += sqrtf((float)values[start + i + j]);
+			sum_adjusted += sqrtf ((float)values[start + i + j]);
 		}
 		int boxw = w, boxh = h;
 		if (horizontal) {
-			boxw = (int)(adjusted / sum_adjusted * w);
-			if (boxw < 1) {
-				boxw = 1;
-			}
+			boxw = dodiv (adjusted, sum_adjusted, w);
 			if (i == n - 1) {
 				boxw = w - used;
 			}
 		} else {
-			boxh = (int)(adjusted / sum_adjusted * h);
-			if (boxh < 1) {
-				boxh = 1;
-			}
+			boxh = dodiv (adjusted, sum_adjusted, h);
 			if (i == n - 1) {
 				boxh = h - used;
 			}

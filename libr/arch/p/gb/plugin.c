@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2024 - pancake, condret */
+/* radare - LGPL - Copyright 2012-2025 - pancake, condret */
 
 #include <r_arch.h>
 #include "./gbdis.c"
@@ -722,7 +722,7 @@ static bool gb_custom_daa(REsil *esil) {
 	return r_esil_pushnum (esil, val);
 }
 
-static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const ut64 addr = op->addr;
 	const ut8 *data = op->bytes;
 	const int len = op->size;
