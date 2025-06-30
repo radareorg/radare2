@@ -9,6 +9,7 @@
 #include "r_userconf.h"
 #include <r_list.h>
 #include <r_util/r_w32.h>
+#include <r_util/r_sys.h>
 
 #include <stdio.h>
 #include <stdlib.h>
