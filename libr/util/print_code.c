@@ -131,7 +131,10 @@ static void print_c_code(RPrint *p, ut64 addr, const ut8 *buf, int len, int ws, 
 }
 
 R_API bool r_print_is_interrupted(RPrint *p) {
-	RCons *cons = (p && p->consb.cons)? p->consb.cons: NULL;
+	if (!p) {
+		return false;
+	}
+	RCons *cons = p->consb.cons;
 	RConsIsBreaked is_breaked = p->consb.is_breaked;
 	if (cons && is_breaked && is_breaked (cons)) {
 		return true;

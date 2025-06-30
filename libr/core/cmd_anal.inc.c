@@ -11241,7 +11241,6 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 								ref->at, ref->type);
 					}
 				} else { // "axf"
-					char *str = asmop.mnemonic;
 					int has_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 					RAnalRef *ref;
 					R_VEC_FOREACH (list, ref) {
@@ -11255,6 +11254,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 							r_io_read_at (core->io, ref->addr, buf, sizeof (buf));
 							r_asm_set_pc (core->rasm, ref->addr);
 							r_asm_disassemble (core->rasm, &asmop, buf, sizeof (buf));
+							char *str = asmop.mnemonic;
 							desc_to_free = str = strdup (asmop.mnemonic);
 							RAnalHint *hint = r_anal_hint_get (core->anal, ref->addr);
 							char *res = r_asm_parse_filter (core->rasm, ref->addr, core->flags,
@@ -12203,7 +12203,7 @@ static void treemap_layout(RConsCanvas *canvas, RList *maps) {
 	int ny = 0;
 	int nw = canvas->w;
 	int nh = canvas->h;
-	float mfact = 0.33;
+	float mfact = 0.33f;
 	bool s = true; // layout
 
 	r_list_sort (maps, bysize);

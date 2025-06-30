@@ -219,12 +219,12 @@ R_API RVTableInfo *r_anal_vtable_parse_at(RVTableContext *context, ut64 addr) {
 }
 
 R_API RList *r_anal_vtable_search(RVTableContext *context) {
+	if (!context || !context->anal) {
+		return NULL;
+	}
 	RAnal *anal = context->anal;
 	RCore *core = anal->coreb.core;
 	RCons *cons = core->cons;
-	if (!anal) {
-		return NULL;
-	}
 
 	RList *vtables = r_list_newf ((RListFree)r_anal_vtable_info_free);
 	if (!vtables) {

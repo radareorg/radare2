@@ -303,12 +303,12 @@ static bool test_vec_append(void) {
 	RVecS_init (&v4);
 
 	S s = { .x = 0, .y = malloc (sizeof (float)) };
-	*s.y = 1.23;
+	*s.y = 1.23f;
 	RVecS_push_back (&v3, &s);
 
 	for (x = 0; x < 10; x++) {
 		S s = { .x = 0, .y = malloc (sizeof (float)) };
-		*s.y = 4.56;
+		*s.y = 4.56f;
 		RVecS_push_back (&v4, &s);
 	}
 
@@ -1067,19 +1067,19 @@ static bool test_vec_sort(void) {
 	float *y;
 
 	y = malloc (sizeof (float));
-	*y = 3.14;
+	*y = 3.14f;
 	s.y = y;
 	RVecS_push_back (&vS, &s);
 	y = malloc (sizeof (float));
-	*y = 1.42;
+	*y = 1.42f;
 	s.y = y;
 	RVecS_push_back (&vS, &s);
 	y = malloc (sizeof (float));
-	*y = 9000.1;
+	*y = 9000.1f;
 	s.y = y;
 	RVecS_push_back (&vS, &s);
 	y = malloc (sizeof (float));
-	*y = 13.37;
+	*y = 13.37f;
 	s.y = y;
 	RVecS_push_back (&vS, &s);
 
@@ -1131,7 +1131,7 @@ static bool test_vec_uniq(void) {
 	RVecS vS;
 	RVecS_init (&vS);
 
-	float data[] = { 3.14, 1.42, 9000.1, 9000.1, 3.14, 13.37, 13.37, 13.37 };
+	float data[] = { 3.14f, 1.42f, 9000.1f, 9000.1f, 3.14f, 13.37f, 13.37f, 13.37f };
 	for (x = 0; x < 8; x++) {
 		S s = { .x = 0, .y = malloc (sizeof (float)) };
 		*s.y = data[x];

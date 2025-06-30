@@ -3617,6 +3617,7 @@ static char *unescape_special_chars(const char *s, const char *special_chars) {
 static DWORD WINAPI flush_thread(LPVOID param) {
 	RCore *core = (RCore*) param;
 	r_cons_flush (core->cons);
+	return 0;
 }
 
 static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
