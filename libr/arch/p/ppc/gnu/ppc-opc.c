@@ -1138,7 +1138,7 @@ extract_nsi (unsigned long insn,
 	     int *invalid)
 {
   *invalid = 1;
-  return -(((insn & 0xffff) ^ 0x8000) - 0x8000);
+  return -((long)(((insn & 0xffff) ^ 0x8000) - 0x8000));
 }
 
 /* The RA field in a D or X form instruction which is an updating

@@ -87,7 +87,7 @@ R_VEC_TYPE(RVecAnalRef, RAnalRef);
 
 #undef R_INCLUDE_BEGIN
 
-static const RCoreHelpMessage help_msg_equal_l = {
+static RCoreHelpMessage help_msg_equal_l = {
 	"Usage:", "=l", " [..] list, create and destroy r2 sessions",
 	"=l", "", "list all available sessions",
 	"=l", " [name]", "give a name to the current session",
@@ -95,7 +95,7 @@ static const RCoreHelpMessage help_msg_equal_l = {
 	"=l", "l", "start a new session: listening for commands in background",
 	NULL
 };
-static const RCoreHelpMessage help_msg_dollar = {
+static RCoreHelpMessage help_msg_dollar = {
 	"Usage:", "$alias[=cmd] [args...]", "Alias commands and data (See ?$? for help on $variables)",
 	"$", "", "list all defined aliases",
 	"$*", "", "list all defined aliases and their values, with unprintable characters escaped",
@@ -117,7 +117,7 @@ static const RCoreHelpMessage help_msg_dollar = {
 	NULL
 };
 
-static const RCoreHelpMessage help_msg_l = {
+static RCoreHelpMessage help_msg_l = {
 	"Usage:", "l[erls] [arg]", "Internal less (~..) and file listing (!ls)",
 	"lu", " [path]", "same as #!lua",
 	"ll", " [path]", "same as ls -l",
@@ -132,7 +132,7 @@ static const RCoreHelpMessage help_msg_l = {
 	NULL
 };
 
-static const RCoreHelpMessage help_msg_quote = {
+static RCoreHelpMessage help_msg_quote = {
 	"Usage:", "\"[\"..|..\"]", "quote the command to avoid evaluating special characters",
 	"\"?", "", "show this help, NOTE that a single quote is simpler and works the same",
 	"\"", "?e hello \\\"world\\\"\"", "print (hello \"world\")",
@@ -143,14 +143,14 @@ static const RCoreHelpMessage help_msg_quote = {
 	NULL
 };
 
-static const RCoreHelpMessage help_msg_plus = {
+static RCoreHelpMessage help_msg_plus = {
 	"Usage:", "+", "seek forward, same as s+X (see s? and -? for more help)",
 	"+", "8", "seek 8 bytes forward, same as s+8",
 	"++", "", "seek one block forward. Same as s++ (see `b` command)",
 	NULL
 };
 
-static const RCoreHelpMessage help_msg_j = {
+static RCoreHelpMessage help_msg_j = {
 	"Usage:", "j[:o]in", "run command with json facilities or join two files",
 	"j:", "?e", "run '?e' command and show the result stats in json",
 	"ji:", "[cmd]", "run command and indent it as json like (cmd~{})",
@@ -164,7 +164,7 @@ static const RCoreHelpMessage help_msg_j = {
 	NULL
 };
 
-static const RCoreHelpMessage help_msg_dash = {
+static RCoreHelpMessage help_msg_dash = {
 	"Usage:", "-", "open editor and run the r2 commands in the saved document",
 	"", "'-' '.-' '. -'", " those three commands do the same",
 	"-", "8", "same as s-8, but shorter to type (see +? command)",
@@ -189,7 +189,7 @@ static const RCoreHelpMessage help_msg_dash = {
 	NULL
 };
 
-static const RCoreHelpMessage help_msg_star = {
+static RCoreHelpMessage help_msg_star = {
 	"Usage:", "*<addr>[=[0x]value]", "Pointer read/write data/values",
 	"*", "entry0=cc", "write trap in entrypoint",
 	"*", "entry0+10=0x804800", "write value in delta address",
@@ -198,7 +198,7 @@ static const RCoreHelpMessage help_msg_star = {
 	NULL
 };
 
-static const RCoreHelpMessage help_msg_comma = {
+static RCoreHelpMessage help_msg_comma = {
 	"Usage:", ",[,.-/*jhr] [file]", "# load table data",
 	",", "", "display table",
 	", ", "[table-query]", "filter and print table. See ,? for more details",
@@ -213,7 +213,7 @@ static const RCoreHelpMessage help_msg_comma = {
 	NULL
 };
 
-static const RCoreHelpMessage help_msg_dot = {
+static RCoreHelpMessage help_msg_dot = {
 	"Usage:", ".[r2cmd] | [file] | [!command] | [(macro)]", "# define macro or interpret r2, r_lang,\n"
 	"    cparse, d, es6, exe, go, js, lsp, pl, py, rb, sh, vala or zig file",
 	".", "", "repeat last command backward",
@@ -233,7 +233,7 @@ static const RCoreHelpMessage help_msg_dot = {
 	NULL
 };
 
-static const RCoreHelpMessage help_msg_equal = {
+static RCoreHelpMessage help_msg_equal = {
 	"Usage:", " =[:!+-=ghH] [...]", " # connect with other instances of r2",
 	"\nremote commands:", "", "",
 	"=", "[*j]", "list all open connections",
@@ -265,7 +265,7 @@ static const RCoreHelpMessage help_msg_equal = {
 	NULL
 };
 
-static const RCoreHelpMessage help_msg_equalh = {
+static RCoreHelpMessage help_msg_equalh = {
 	"Usage:", " =[hH] [...]", " # http server",
 	"http server:", "", "",
 	"=h", " port", "listen for http connections (r2 -qc=H /bin/ls)",
@@ -278,14 +278,14 @@ static const RCoreHelpMessage help_msg_equalh = {
 	NULL
 };
 
-static const RCoreHelpMessage help_msg_equal_equal = {
+static RCoreHelpMessage help_msg_equal_equal = {
 	"Usage:", " ==[=] ", "# add connection to remote r2",
 	"==", "[fd]", "shell to send to the nth remote (see '=1 x' / '==1'",
 	"===", "event", "returns socket file or udp port to read events from",
 	NULL
 };
 
-static const RCoreHelpMessage help_msg_equal_more = {
+static RCoreHelpMessage help_msg_equal_more = {
 	"Usage:", " =+ [proto://][host]:[port](/[path])", " # add connection to remote r2",
 	"=+", "tcp://localhost:9090", "communicates with another instance running '& .:9090'",
 	"=+", "http://localhost:9090/cmd", "talks to remote r2 webserver '& =h'",
@@ -293,14 +293,14 @@ static const RCoreHelpMessage help_msg_equal_more = {
 	NULL
 };
 
-static const RCoreHelpMessage help_msg_equalg = {
+static RCoreHelpMessage help_msg_equalg = {
 	"Usage:", " =[g] [...]", " # gdb server",
 	"gdbserver:", "", "",
 	"=g", " port file [args]", "listen on 'port' debugging 'file' using gdbserver",
 	NULL
 };
 
-static const RCoreHelpMessage help_msg_b = {
+static RCoreHelpMessage help_msg_b = {
 	"Usage:",  "b[f] [arg]", "change working block size",
 	"b", " 32", "set block size to 33",
 	"b", "=32", "same as 'b 32'",
@@ -316,7 +316,7 @@ static const RCoreHelpMessage help_msg_b = {
 	NULL
 };
 
-static const RCoreHelpMessage help_msg_k = {
+static RCoreHelpMessage help_msg_k = {
 	"Usage:", "k[s] [key[=value]]", "Sdb Query",
 	"k", " anal/**", "list namespaces under anal",
 	"k", " anal/meta/*", "list kv from anal > meta namespaces",
@@ -333,7 +333,7 @@ static const RCoreHelpMessage help_msg_k = {
 	NULL,
 };
 
-static const RCoreHelpMessage help_msg_r = {
+static RCoreHelpMessage help_msg_r = {
 	"Usage:", "r[+-][ size]", "Resize file",
 	"r", "", "display file size in decimal",
 	"r-", "num", "remove num bytes, move following data down",
@@ -360,7 +360,7 @@ static const RCoreHelpMessage help_msg_r = {
 	NULL
 };
 
-static const RCoreHelpMessage help_msg_u = {
+static RCoreHelpMessage help_msg_u = {
 	"Usage:", "u", "uname or undo write/seek",
 	"u", "", "show system uname (alias for uname)",
 	"uw", "", "alias for wc (requires: e io.cache=true)",
@@ -372,7 +372,7 @@ static const RCoreHelpMessage help_msg_u = {
 	NULL
 };
 
-static const RCoreHelpMessage help_msg_uname = {
+static RCoreHelpMessage help_msg_uname = {
 	"Usage:", "uname", "show information about the current system",
 	"uname", "", "show host operating system",
 	"uname", " -a", "show more system details",
@@ -383,7 +383,7 @@ static const RCoreHelpMessage help_msg_uname = {
 	NULL
 };
 
-static const RCoreHelpMessage help_msg_uc = {
+static RCoreHelpMessage help_msg_uc = {
 	"Usage:", "uc [cmd],[revert-cmd]", "undo core commands (see `e cmd.undo`)",
 	"uc", " w hello,w world", "add a new undo command manually",
 	"uc", "", "list all core undos commands",
@@ -395,7 +395,7 @@ static const RCoreHelpMessage help_msg_uc = {
 	NULL
 };
 
-static const RCoreHelpMessage help_msg_triple_exclamation = {
+static RCoreHelpMessage help_msg_triple_exclamation = {
 	"Usage:", "!!![-*][cmd] [arg|$type...]", " # user-defined autocompletion for commands",
 	"!!!", "", "list all autocompletions",
 	"!!!?", "", "show this help",
@@ -408,7 +408,7 @@ static const RCoreHelpMessage help_msg_triple_exclamation = {
 	NULL
 };
 
-static const RCoreHelpMessage help_msg_vertical_bar = {
+static RCoreHelpMessage help_msg_vertical_bar = {
 	"Usage:", "[cmd] | [program|H|T|.|]", "",
 	"|", " [program]", "pipe output of command to program",
 	"|", "", "disable scr.html and scr.color",
@@ -422,7 +422,7 @@ static const RCoreHelpMessage help_msg_vertical_bar = {
 	NULL
 };
 
-static const RCoreHelpMessage help_msg_v = {
+static RCoreHelpMessage help_msg_v = {
 	"Usage:", "v[*i]", "",
 	"v", "", "open visual panels",
 	"v", " test", "load saved layout with name test",

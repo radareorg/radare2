@@ -1,11 +1,11 @@
-/* radare - LGPL - Copyright 2024 - pancake */
+/* radare - LGPL - Copyright 2024-2025 - pancake */
 
 #define R_LOG_ORIGIN "arch.stm8"
 
 #include <r_arch.h>
 #include "gmtdisas/asm.c"
 
-static bool stm8_op(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+static bool stm8_op(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	int len = 0;
 	ut64 jump = UT64_MAX;
 	op->type = R_ANAL_OP_TYPE_ILL;

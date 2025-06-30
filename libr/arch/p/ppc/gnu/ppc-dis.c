@@ -192,7 +192,7 @@ operand_value_powerpc (const struct powerpc_operand *operand,
 		  /* BITM is always some number of zeros followed by some
 	     number of ones, followed by some numer of zeros.  */
 		  unsigned long top = operand->bitm;
-		  unsigned long ntop = (unsigned long)(-top & 0xFFFFFFFF);
+		  unsigned long ntop = (unsigned long)(-(long long)top & 0xFFFFFFFF);
 
 		  /* top & -top gives the rightmost 1 bit, so this fills in any trailing zeros.  */
 		  top |= (top & ntop) - 1;

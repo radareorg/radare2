@@ -1813,8 +1813,8 @@ aarch64_ext_sve_scale (const aarch64_operand *self,
 static uint64_t
 get_top_bit (uint64_t value)
 {
-  while ((value & -value) != value)
-    value -= value & -value;
+  while ((value & -(int64_t)value) != value)
+    value -= value & -(int64_t)value;
   return value;
 }
 
@@ -2072,7 +2072,7 @@ do_misc_decoding (aarch64_inst *inst)
     case OP_MOV_Z_V:
       /* Index must be zero.  */
       value = extract_fields (inst->value, 0, 2, FLD_SVE_tszh, FLD_imm5);
-      return value > 0 && value <= 16 && value == (value & -value);
+      return value > 0 && value <= 16 && value == (value & -(int64_t)value);
 
     case OP_MOV_Z_Z:
       return (extract_field (FLD_SVE_Zn, inst->value, 0)
@@ -2081,7 +2081,7 @@ do_misc_decoding (aarch64_inst *inst)
     case OP_MOV_Z_Zi:
       /* Index must be nonzero.  */
       value = extract_fields (inst->value, 0, 2, FLD_SVE_tszh, FLD_imm5);
-      return value > 0 && value != (value & -value);
+      return value > 0 && value != (value & -(int64_t)value);
 
     case OP_MOVM_P_P_P:
       return (extract_field (FLD_SVE_Pd, inst->value, 0)
