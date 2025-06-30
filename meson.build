@@ -52,7 +52,7 @@ if meson.is_subproject()
   repo = meson.current_source_dir()
   if host_machine.system() == 'windows'
     py_cmd = 'print(__import__("os").readlink(r"@0@"))'.format(repo)
-    py_cmd = run_command(py3_exe, '-c', py_cmd)
+    py_cmd = run_command(py3_exe, '-c', py_cmd, check: false)
     if py_cmd.returncode() == 0
       repo = py_cmd.stdout().strip()
       message('r2 real path: ' + repo)
@@ -68,7 +68,7 @@ gittip = 'unknown'
 
 if git_exe.found()
   # Get version_commit
-  git_rev_list = run_command(git_exe, '-C', repo, 'rev-list', '--all', '--count')
+  git_rev_list = run_command(git_exe, '-C', repo, 'rev-list', '--all', '--count', check: false)
   if git_rev_list.returncode() == 0
     version_commit = git_rev_list.stdout().strip()
   endif
@@ -77,13 +77,13 @@ if git_exe.found()
   endif
 
   # Get gittap
-  git_describe = run_command(git_exe, '-C', repo, 'describe', '--tags', '--match', '[0-9]*')
+  git_describe = run_command(git_exe, '-C', repo, 'describe', '--tags', '--match', '[0-9]*', check: false)
   if git_describe.returncode() == 0
     gittap = git_describe.stdout().strip()
   endif
 
   # Get gittip
-  git_rev_parse = run_command(git_exe, '-C', repo, 'rev-parse', 'HEAD')
+  git_rev_parse = run_command(git_exe, '-C', repo, 'rev-parse', 'HEAD', check: false)
   if git_rev_parse.returncode() == 0
     gittip = git_rev_parse.stdout().strip()
   endif
@@ -112,14 +112,14 @@ endif
 
 # Get current date
 if host_machine.system() == 'windows'
-  r2birth = run_command('cmd', '/c', 'echo %date%__%time%')
+  r2birth = run_command('cmd', '/c', 'echo %date%__%time%', check: false)
 else
   r2birth = run_command('sh', '-c', '''
       SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-`date +%s`}";
       FORMAT="+%Y-%m-%d__%H:%M:%S";
       date -u -d @"$SOURCE_DATE_EPOCH" "$FORMAT" 2>/dev/null ||
       date -u -r  "$SOURCE_DATE_EPOCH" "$FORMAT" 2>/dev/null ||
-      date -u "$FORMAT"''')
+      date -u "$FORMAT"''', check: false)
 endif
 if r2birth.returncode() != 0
   r2birth = ''
@@ -476,7 +476,7 @@ r_version_h = configure_file(
 )
 
 # Copy missing header
-run_command(py3_exe, '-c', '__import__("shutil").copyfile("shlr/spp/config.def.h", "shlr/spp/config.h")')
+run_command(py3_exe, '-c', '__import__("shutil").copyfile("shlr/spp/config.def.h", "shlr/spp/config.h")', check: false)
 
 pcconf = configuration_data()
 pcconf.set('PREFIX', get_option('prefix'))
