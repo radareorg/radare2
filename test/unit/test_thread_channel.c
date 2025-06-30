@@ -17,7 +17,7 @@ static RThreadFunctionRet consumer_function(RThread *th) {
 		// Increment counter based on received message
 		consumer_count += *(int *)msg->msg;
 		
-		// Send response back
+		// Send response back (this is crucial for promise-based synchronization)
 		r_th_channel_post(tc, msg);
 	}
 	return R_TH_STOP;
@@ -71,21 +71,25 @@ bool test_thread_channel_multiple_messages(void) {
 	// Start the consumer thread
 	r_th_start(tc->consumer);
 	
-	// Send multiple messages
+	// Send multiple messages and collect promises
+	RThreadChannelPromise *promises[5];
 	for (int i = 1; i <= 5; i++) {
-		// Create and send message with value i
+		// Create message with value i
 		RThreadChannelMessage *msg = r_th_channel_message_new(tc, (const ut8*)&i, sizeof(int));
 		mu_assert_notnull(msg, "Failed to create channel message");
 		
-		// Write message to channel
-		r_th_channel_write(tc, msg);
-		
-		// Short sleep to ensure processing order
-		r_sys_usleep(10000);  // 10ms
+		// Use query to get a promise for the response
+		promises[i-1] = r_th_channel_query(tc, msg);
+		mu_assert_notnull(promises[i-1], "Failed to create channel promise");
 	}
 	
-	// Give some time for all messages to be processed
-	r_sys_usleep(200000);  // 200ms
+	// Wait for all promises to be fulfilled (ensures all messages are processed)
+	for (int i = 0; i < 5; i++) {
+		RThreadChannelMessage *response = r_th_channel_promise_wait(promises[i]);
+		mu_assert_notnull(response, "Failed to get response from promise");
+		r_th_channel_message_free(response);
+		r_th_channel_promise_free(promises[i]);
+	}
 	
 	// Clean up
 	r_th_channel_free(tc);
