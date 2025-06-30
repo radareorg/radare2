@@ -62,6 +62,7 @@ R_API void r_th_channel_free(RThreadChannel *tc) {
 		r_th_free (tc->consumer);
 		//
 		r_list_free (tc->stack);
+		r_list_free (tc->responses);
 		r_th_sem_free (tc->sem);
 		r_th_lock_free (tc->lock);
 		free (tc);
@@ -91,7 +92,7 @@ R_API RThreadChannelMessage *r_th_channel_message_read(RThreadChannel *tc, RThre
 		eprintf ("waited\n");
 	} else {
 		eprintf ("not waited\n");
-		// r_ref (cm);
+		// Don't create a dangling reference
 	}
 	return cm;
 }
@@ -100,15 +101,21 @@ R_API RThreadChannelMessage *r_th_channel_promise_wait(RThreadChannelPromise *pr
 	// wait for a message to be delivered, find one with the same promise id
 	// RThreadChannelMessage *message = r_th_channel_message_new (promise->tc, "x", 0);
 	// append message into the queue
+	if (!promise || !promise->tc) {
+		R_LOG_ERROR ("Invalid promise or thread channel in r_th_channel_promise_wait");
+		return NULL;
+	}
+
 	while (true) {
 		RListIter *iter;
 		RThreadChannelMessage *res;
 		if (!r_th_lock_enter (promise->tc->lock)) {
+			R_LOG_ERROR ("Failed to acquire lock in r_th_channel_promise_wait");
 			break;
 		}
 		if (promise->tc->responses) {
 			r_list_foreach (promise->tc->responses, iter, res) {
-				if (res->id == promise->id) {
+				if (res && res->id == promise->id) {
 					r_list_split_iter (promise->tc->responses, iter);
 					r_th_lock_leave (promise->tc->lock);
 					return res;
@@ -116,6 +123,9 @@ R_API RThreadChannelMessage *r_th_channel_promise_wait(RThreadChannelPromise *pr
 			}
 		}
 		r_th_lock_leave (promise->tc->lock);
+		
+		// Sleep briefly to avoid CPU spinning
+		r_sys_usleep (1000);  // 1ms sleep between checks
 	}
 	return NULL;
 }
@@ -123,8 +133,12 @@ R_API RThreadChannelMessage *r_th_channel_promise_wait(RThreadChannelPromise *pr
 R_API RThreadChannelPromise *r_th_channel_promise_new(RThreadChannel *tc) {
 	r_th_lock_enter (tc->lock);
 	RThreadChannelPromise *promise = R_NEW0 (RThreadChannelPromise);
+	if (!promise) {
+		r_th_lock_leave (tc->lock);
+		return NULL;
+	}
 	promise->tc = tc;
-	promise->id = tc->nextid;
+	promise->id = tc->nextid++;
 	r_th_lock_leave (tc->lock);
 	return promise;
 }
@@ -140,6 +154,9 @@ R_API void r_th_channel_post(RThreadChannel *tc, RThreadChannelMessage *cm) {
 
 R_API RThreadChannelPromise *r_th_channel_query(RThreadChannel *tc, RThreadChannelMessage *cm) {
 	RThreadChannelPromise *promise = r_th_channel_promise_new (tc);
+	if (!promise) {
+		return NULL;
+	}
 	promise->id = cm->id;
 	r_th_channel_write (tc, cm);
 	return promise;
@@ -180,7 +197,6 @@ R_API void r_th_channel_message_free(RThreadChannelMessage *cm) {
 		r_th_sem_post (cm->sem);
 		r_th_sem_free (cm->sem);
 		free (cm->msg);
-		//r_th_lock_leave (cm->lock);
 		r_th_lock_free (cm->lock);
 		free (cm);
 	}
