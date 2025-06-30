@@ -12,15 +12,15 @@ extern "C" {
 // if ((x > 0) && (a > INT_MAX - x)) /* `a + x` would overflow */;
 // if ((x < 0) && (a < INT_MIN - x)) /* `a + x` would underflow */;
 #define SZT_ADD_OVFCHK(x,y) ((SIZE_MAX - (x)) < (y))
-#define SSZT_ADD_OVFCHK(a,x) ((((x) > 0) && ((a) > SSIZE_MAX - (x))) || (((x) < 0) && (a) < SSIZE_MIN - (x)))
+#define SSZT_ADD_OVFCHK(a,x) ((((x) > 0) && ((a) > SSIZE_MAX - (x))) || (((x) < 0) && ((a) < SSIZE_MIN - (x))))
 #define UT64_ADD_OVFCHK(x,y) ((UT64_MAX - (x)) < (y))
-#define ST64_ADD_OVFCHK(a,x) ((((x) > 0) && ((a) > ST64_MAX - (x))) || (((x) < 0) && (a) < ST64_MIN - (x)))
+#define ST64_ADD_OVFCHK(a,x) ((((x) > 0) && ((a) > ST64_MAX - (x))) || (((x) < 0) && ((a) < ST64_MIN - (x))))
 #define UT32_ADD_OVFCHK(x,y) ((UT32_MAX - (x)) < (y))
-#define ST32_ADD_OVFCHK(a,x) ((((x) > 0) && ((a) > ST32_MAX - (x))) || (((x) < 0) && (a) < ST32_MIN - (x)))
-#define UT16_ADD_OVFCHK(x,y) ((UT16_MAX - (x)) < (y))
+#define ST32_ADD_OVFCHK(a,x) ((((x) > 0) && ((a) > ST32_MAX - (x))) || (((x) < 0) && ((a) < ST32_MIN - (x))))
+#define UT16_ADD_OVFCHK(x,y) (((y) > 0x8000) || ((UT16_MAX - (x)) < (y)))
 #define ST16_ADD_OVFCHK(a,b) ((((b) > 0) && ((a) > ST16_MAX - (b))) || (((b) < 0) && ((a) < ST16_MIN - (b))))
 #define UT8_ADD_OVFCHK(x,y) ((UT8_MAX - (x)) < (y))
-#define ST8_ADD_OVFCHK(a,x) ((((x) > 0) && ((a) > ST8_MAX - (x))) || ((x) < 0 && (a) < ST8_MIN - (x)))
+#define ST8_ADD_OVFCHK(a,x) ((((x) > 0) && ((a) > ST8_MAX - (x))) || (((x) < 0) && ((a) < ST8_MIN - (x))))
 
 // SUB
 // if ((x < 0) && (a > INT_MAX + x)) /* `a - x` would overflow */;
@@ -31,7 +31,7 @@ extern "C" {
 #define ST64_SUB_OVFCHK(a,b) ST64_ADD_OVFCHK(a,-(b))
 #define UT32_SUB_OVFCHK(a,b) UT32_ADD_OVFCHK(a,-(b))
 #define ST32_SUB_OVFCHK(a,b) ST32_ADD_OVFCHK(a,-(b))
-#define UT16_SUB_OVFCHK(a,b) UT16_ADD_OVFCHK(a,-(b))
+#define UT16_SUB_OVFCHK(a,b) ((a) < (b))
 #define ST16_SUB_OVFCHK(a,b) ST16_ADD_OVFCHK(a,-(b))
 #define UT8_SUB_OVFCHK(a,b) UT8_ADD_OVFCHK(a,-(b))
 #define ST8_SUB_OVFCHK(a,b) ST8_ADD_OVFCHK(a,-(b))
