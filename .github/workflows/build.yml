@@ -535,6 +535,45 @@ jobs:
         name: msys2-w64-arm-meson
         path: radare2-${{ steps.r2v.outputs.branch }}-w64-arm64.zip
 
+  w64-arm-meson:
+    runs-on: windows-latest
+    steps:
+    - name: Win configure Pagefile
+      uses: al-cheb/configure-pagefile-action@v1.4
+      with:
+          minimum-size: 16GB
+          maximum-size: 16GB
+          disk-root: "C:"
+    - name: Checkout
+      uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+    - name: Preparing MSVC for ARM64
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: arm64
+    - name: Install dependencies
+      run: |
+        pip install meson ninja r2pipe wget --break-system-packages
+    - name: Extract r2 version
+      shell: bash
+      run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
+      id: r2v
+    - name: Build with meson + ninja
+      shell: pwsh
+      run: |
+        bash sys/source_bat.bash 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat' "arm64"
+        meson --buildtype=release --prefix=$PWD\radare2-${{ steps.r2v.outputs.branch }}-w64-arm64 -Dc_std=c11 build
+        ninja -C build -j 1
+        ninja -C build install
+    - name: Create zip artifact
+      run: 7z a radare2-${{ steps.r2v.outputs.branch }}-w64-arm64.zip $PWD\radare2-${{ steps.r2v.outputs.branch }}-w64-arm64
+    - uses: actions/upload-artifact@v4
+      with:
+        name: w64-arm-meson
+        path: radare2-${{ steps.r2v.outputs.branch }}-w64-arm64.zip
+
   # FreeBSD
 #  freebsd:
 #    runs-on: ubuntu-latest
@@ -645,6 +684,7 @@ jobs:
       - w32-meson
       - w64-meson
       - w64-static
+      - w64-arm-meson
       - msys2-w64-arm-meson
 #      - freebsd
     runs-on: ubuntu-24.04
