@@ -37,21 +37,22 @@ sdb_files = [
 ]
 
 r_asm_d_sources = []
+
+# Build all sdb files at once using 'sdb -r .'
+opcodes_sdb_files = []
 foreach file : sdb_files
-  if get_option('sdb_cgen')
-    outfile = '@0@.c'.format(file)
-    gen_cmd = sdb_gen_cmd_cgen
-  else
-    outfile = '@0@.sdb'.format(file)
-    gen_cmd = sdb_gen_cmd
-  endif
-  r_asm_d_sources += custom_target(outfile,
-    input: '@0@.sdb.txt'.format(file),
-    output: outfile,
-    command: gen_cmd,
-    depends: sdb_exe,
-    build_by_default: true,
-    install: true,
-    install_dir: join_paths(r2_sdb, 'opcodes')
-  )
+  opcodes_sdb_files += '@0@.sdb'.format(file)
+if get_option('sdb_cgen')
+  opcodes_sdb_files += '@0@.c'.format(file)
+endif
 endforeach
+  
+r_asm_d_sources += custom_target('opcodes-sdb',
+  input: [],
+  output: opcodes_sdb_files,
+  command: [sdb_exe, '-r', meson.current_source_dir()],
+  depends: sdb_exe,
+  build_by_default: true,
+  install: true,
+  install_dir: join_paths(r2_sdb, 'opcodes')
+)
