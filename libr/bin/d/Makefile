@@ -27,13 +27,9 @@ DLLS+=win87em winaspi winnet16 winoldap winsock winspl16 wpsapd wpsuni
 DLLS+=wpsunire wsasrv
 DLL_SDB=$(addsuffix .sdb,$(addprefix dll/,$(DLLS)))
 
-ifeq (1,1)
 all:
 	$(SDB) -r $(shell pwd)
 	$(SDB) -r $(shell pwd)/dll
-else
-all: $(DLL_SDB) symclass.sdb
-endif
 
 clean:
 	rm -f dll/*.sdb
@@ -49,17 +45,8 @@ install: $(F_SDB)
 	mkdir -p "$P/dll"
 	cp -f dll/*.sdb "$P/dll"
 
-ifeq ($(USE_SDBTOOL),1)
-$(DLL_SDB):
-else
-$(DLL_SDB):
-	-$(SDB) $@ = < $@.txt
-symclass.sdb:
-	-$(SDB) $@ = < $@.txt
-endif
-
 CWD=$(shell pwd)
-symstall install-symlink: symclass.sdb
+symstall install-symlink:
 	mkdir -p "$P"
 	rm -rf "$P/dll"
 	for FILE in *.r2 *.h dll symclass.sdb ; do \
