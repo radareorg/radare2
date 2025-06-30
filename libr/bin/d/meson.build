@@ -151,54 +151,65 @@ sdb_dll_files = [
   'wsasrv'
 ]
 
-r_bin_d_sources = []
-
+# Build all DLL SDB files at once using 'sdb -r .'
+dll_sdb_files = []
 foreach file : sdb_dll_files
+  dll_sdb_files += '@0@.sdb'.format(file)
   if get_option('sdb_cgen')
-    outfile = '@0@.c'.format(file)
-    gen_cmd = sdb_gen_cmd_cgen
-  else
-    outfile = '@0@.sdb'.format(file)
-    gen_cmd = sdb_gen_cmd
-  endif
-  target = custom_target(outfile,
-    input: join_paths(meson.current_source_dir(), 'dll', '@0@.sdb.txt'.format(file)),
-    output: outfile,
-    command: gen_cmd,
-    depends: sdb_exe,
-    build_by_default: true,
-    install: true,
-    install_dir: join_paths(r2_sdb, join_paths('format', 'dll'))
-  )
-  if get_option('sdb_cgen')
-    r_bin_d_sources += target
+    dll_sdb_files += '@0@.c'.format(file)
   endif
 endforeach
 
-# TODO: simplify this logic
+# Create environment with output directory set
+sdb_env = environment()
+sdb_env.set('SDB_OUTPUT_DIR', join_paths(meson.current_build_dir(), 'dll'))
+
+r_bin_d_dll_sources = custom_target('dll-sdb',
+  input: [],
+  output: dll_sdb_files,
+  command: [sdb_exe, '-r', join_paths(meson.current_source_dir(), 'dll')],
+  env: sdb_env,
+  depends: sdb_exe,
+  build_by_default: true,
+  install: true,
+  install_dir: join_paths(r2_sdb, join_paths('format', 'dll'))
+)
+
+r_bin_d_sources = []
+if get_option('sdb_cgen')
+  r_bin_d_sources += r_bin_d_dll_sources
+endif
+
+# Build format SDB files
 sdb_files = [ 'symclass' ]
 
+# Build all format SDB files at once using 'sdb -r .'
+format_sdb_files = []
 foreach file : sdb_files
+  format_sdb_files += '@0@.sdb'.format(file)
   if get_option('sdb_cgen')
-    outfile = '@0@.c'.format(file)
-    gen_cmd = sdb_gen_cmd_cgen
-  else
-    outfile = '@0@.sdb'.format(file)
-    gen_cmd = sdb_gen_cmd
-  endif
-  target = custom_target(outfile,
-    input: join_paths(meson.current_source_dir(), '@0@.sdb.txt'.format(file)),
-    output: outfile,
-    command: gen_cmd,
-    depends: sdb_exe,
-    build_by_default: true,
-    install: true,
-    install_dir: join_paths(r2_sdb, join_paths('format'))
-  )
-  if get_option('sdb_cgen')
-    r_bin_d_sources += target
+    format_sdb_files += '@0@.c'.format(file)
   endif
 endforeach
+
+# Create environment with output directory set
+format_sdb_env = environment()
+format_sdb_env.set('SDB_OUTPUT_DIR', meson.current_build_dir())
+
+r_bin_d_format_sources = custom_target('format-sdb',
+  input: [],
+  output: format_sdb_files,
+  command: [sdb_exe, '-r', meson.current_source_dir()],
+  env: format_sdb_env,
+  depends: sdb_exe,
+  build_by_default: true,
+  install: true,
+  install_dir: join_paths(r2_sdb, join_paths('format'))
+)
+
+if get_option('sdb_cgen')
+  r_bin_d_sources += r_bin_d_format_sources
+endif
 
 format_files = [
   'cdex.h',
