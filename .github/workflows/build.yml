@@ -726,6 +726,7 @@ jobs:
         dist/artifacts/linux-wasi-api/*.zip
         dist/artifacts/w64-static/*.zip
         dist/artifacts/msys2-w64-arm-meson/*.zip
+        dist/artifacts/w64-arm-meson/*.zip
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
