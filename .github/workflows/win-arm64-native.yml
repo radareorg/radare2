@@ -10,7 +10,7 @@ jobs:
   w64-arm-native:
     # Using GitHub-hosted Windows ARM64 runner
     # Available for public repos as per: https://blogs.windows.com/windowsdeveloper/2025/04/14/github-actions-now-supports-windows-on-arm-runners-for-all-public-repos/
-    runs-on: windows-arm64
+    runs-on: windows-11-arm64
     steps:
     - name: Checkout
       uses: actions/checkout@v4
