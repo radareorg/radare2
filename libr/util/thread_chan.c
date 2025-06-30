@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2022 - pancake */
+/* radare - LGPL - Copyright 2022-2025 - pancake */
 
 #define R_LOG_DISABLE 1
 #include <r_util.h>
@@ -10,7 +10,6 @@ R_API RThreadChannel *r_th_channel_new(RThreadFunction consumer, void *user) {
 	if (!tc) {
 		return NULL;
 	}
-	
 	// Initialize semaphore with 0 permits - consumers will initially block
 	// until a message is pushed to the queue
 	tc->sem = r_th_sem_new (0);
@@ -18,7 +17,6 @@ R_API RThreadChannel *r_th_channel_new(RThreadFunction consumer, void *user) {
 		free (tc);
 		return NULL;
 	}
-	
 	// Create recursive lock for thread safety
 	tc->lock = r_th_lock_new (true);
 	if (!tc->lock) {
@@ -26,7 +24,6 @@ R_API RThreadChannel *r_th_channel_new(RThreadFunction consumer, void *user) {
 		free (tc);
 		return NULL;
 	}
-	
 	// Initialize message queues
 	tc->stack = r_list_newf ((RListFree)r_th_channel_message_free);
 	tc->responses = r_list_newf ((RListFree)r_th_channel_message_free);
@@ -38,7 +35,6 @@ R_API RThreadChannel *r_th_channel_new(RThreadFunction consumer, void *user) {
 		free (tc);
 		return NULL;
 	}
-	
 	// Create consumer thread
 	tc->consumer = r_th_new (consumer, user, 0);
 	if (!tc->consumer) {
@@ -49,7 +45,6 @@ R_API RThreadChannel *r_th_channel_new(RThreadFunction consumer, void *user) {
 		free (tc);
 		return NULL;
 	}
-	
 	return tc;
 }
 
@@ -123,7 +118,6 @@ R_API RThreadChannelMessage *r_th_channel_promise_wait(RThreadChannelPromise *pr
 			}
 		}
 		r_th_lock_leave (promise->tc->lock);
-		
 		// Sleep briefly to avoid CPU spinning
 		r_sys_usleep (1000);  // 1ms sleep between checks
 	}
@@ -168,21 +162,16 @@ R_API RThreadChannelMessage *r_th_channel_write(RThreadChannel *tc, RThreadChann
 	if (!tc || !cm) {
 		return NULL;
 	}
-	
 	// Use consistent lock ordering to prevent deadlocks:
 	// Always acquire tc->lock first, then cm->lock if needed
 	r_th_lock_enter (tc->lock);
-	
 	// Add message to the stack while holding the channel lock
 	r_list_push (tc->stack, cm);
-	
 	// Release channel lock
 	r_th_lock_leave (tc->lock);
-	
 	// Signal that a message is available
 	// This unblocks any consumer thread waiting on r_th_sem_wait
 	r_th_sem_post (tc->sem);
-	
 	return cm;
 }
 
@@ -208,26 +197,20 @@ R_API RThreadChannelMessage *r_th_channel_read(RThreadChannel *tc) {
 	if (!tc) {
 		return NULL;
 	}
-	
 	// Wait for a message to be available
 	// This blocks until r_th_channel_write posts to the semaphore
 	r_th_sem_wait (tc->sem);
-	
 	// Now that a message should be available, acquire the lock
 	// to safely access the message queue
 	r_th_lock_enter (tc->lock);
-	
 	// Pop the message from the head of the queue
 	RThreadChannelMessage *msg = r_list_pop_head (tc->stack);
-	
 	// Release the lock
 	r_th_lock_leave (tc->lock);
-	
 	if (!msg) {
 		// This should not happen - if we got past the semaphore wait,
 		// there should be a message. If there isn't, it's a logic error.
 		R_LOG_ERROR ("Thread channel read: semaphore signaled but no message found");
 	}
-	
 	return msg;
 }

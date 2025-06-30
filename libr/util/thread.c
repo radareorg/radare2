@@ -36,7 +36,6 @@ static void *_r_th_launcher(void *_th) {
 		r_th_lock_enter (th->lock);
 		bool is_ready = th->ready;
 		r_th_lock_leave (th->lock);
-		
 		while (!is_ready) {
 			// spinlock
 #ifdef	__GNUC__
@@ -82,7 +81,6 @@ static void *_r_th_launcher(void *_th) {
 			return 0;
 		}
 	} while (repeat && !th->breaked);
-	
 	r_th_lock_enter (th->lock);
 	th->running = false;
 	r_th_lock_leave (th->lock);
@@ -289,7 +287,6 @@ R_API bool r_th_kill(RThread *th, bool force) {
 	}
 	// First set breaked flag to signal thread to stop
 	th->breaked = true;
-	
 	// If force is true, kill the thread immediately
 	if (force) {
 #if HAVE_PTHREAD
@@ -302,7 +299,6 @@ R_API bool r_th_kill(RThread *th, bool force) {
 		TerminateThread (th->tid, -1);
 #endif
 	}
-	
 	// Wait for thread to finish
 	r_th_wait (th);
 	return false;
