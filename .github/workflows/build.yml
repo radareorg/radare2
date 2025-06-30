@@ -503,7 +503,7 @@ jobs:
       run: meson compile -C build
 
   msys2-w64-arm-meson:
-    runs-on: windows-latest
+    runs-on: windows-11-arm
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -536,7 +536,7 @@ jobs:
         path: radare2-${{ steps.r2v.outputs.branch }}-w64-arm64.zip
 
   w64-arm-meson:
-    runs-on: windows-latest
+    runs-on: windows-11-arm
     steps:
     - name: Win configure Pagefile
       uses: al-cheb/configure-pagefile-action@v1.4
