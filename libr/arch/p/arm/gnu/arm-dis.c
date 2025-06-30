@@ -4062,7 +4062,7 @@ print_arm_address (bfd_vma pc, struct disassemble_info *info, long given)
 	  }
 
 	  if (NEGATIVE_BIT_SET) {
-		  offset = -offset;
+		  offset = -(int)offset;
 	  }
 
 	  offset += pc + 8;
@@ -4126,7 +4126,7 @@ print_arm_address (bfd_vma pc, struct disassemble_info *info, long given)
 	    }
 	}
 	if (NEGATIVE_BIT_SET) {
-		offset = -offset;
+		offset = -(int)offset;
 	}
     }
 
@@ -4779,7 +4779,7 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 								  func (stream, "[pc] ; ");
 							  }
 							  if (NEGATIVE_BIT_SET) {
-								  offset = -offset;
+								  offset = -(int)offset;
 							  }
 							  info->print_address_func (offset + pc + 8, info);
 						  } else {
@@ -4806,7 +4806,7 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 								  }
 
 								  if (NEGATIVE_BIT_SET) {
-									  offset = -offset;
+									  offset = -(int)offset;
 								  }
 
 								  value_in_comment = offset;
@@ -4832,7 +4832,7 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 								  func (stream, "], %s%d",
 									  NEGATIVE_BIT_SET ? "-" : "", offset);
 								  if (NEGATIVE_BIT_SET) {
-									  offset = -offset;
+									  offset = -(int)offset;
 								  }
 								  value_in_comment = offset;
 							  } else {
@@ -6062,7 +6062,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 					  bfd_vma offset = (given & 0xff) * 4;
 
 					  if ((given & (1 << 23)) == 0) {
-						  offset = -offset;
+						  offset = -(int)offset;
 					  }
 					  func (stream, " ; ");
 					  info->print_address_func ((pc & ~3) + 4 + offset, info);
