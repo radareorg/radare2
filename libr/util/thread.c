@@ -287,19 +287,25 @@ R_API bool r_th_kill(RThread *th, bool force) {
 	if (!th || !th->tid) {
 		return false;
 	}
+	// First set breaked flag to signal thread to stop
 	th->breaked = true;
-	r_th_break (th);
-	r_th_wait (th);
+	
+	// If force is true, kill the thread immediately
+	if (force) {
 #if HAVE_PTHREAD
 #ifdef __ANDROID__
-	pthread_kill (th->tid, 9);
+		pthread_kill (th->tid, 9);
 #else
-	pthread_cancel (th->tid);
+		pthread_cancel (th->tid);
 #endif
 #elif R2__WINDOWS__
-	TerminateThread (th->tid, -1);
+		TerminateThread (th->tid, -1);
 #endif
-	return 0;
+	}
+	
+	// Wait for thread to finish
+	r_th_wait (th);
+	return false;
 }
 
 // enable should be bool and th->ready must be protected with locks

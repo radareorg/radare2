@@ -131,8 +131,8 @@ bool test_thread_delay(void) {
 	// Reset test data
 	test_data = 0;
 	
-	// Create thread with 500ms delay
-	RThread *th = r_th_new(test_thread_delay_function, NULL, 500);
+	// Create thread with shorter delay (100ms instead of 500ms) to make test faster
+	RThread *th = r_th_new(test_thread_delay_function, NULL, 100);
 	mu_assert_notnull(th, "Thread creation failed");
 	
 	// Start the thread
@@ -142,11 +142,16 @@ bool test_thread_delay(void) {
 	// Verify data hasn't changed yet
 	mu_assert_eq(test_data, 0, "Thread executed before delay");
 	
-	// Wait for thread to finish
-	r_th_wait(th);
+	// Instead of waiting indefinitely, use a timeout approach
+	// Sleep for a bit longer than the delay to ensure the thread has time to complete
+	r_sys_usleep(150000);  // 150ms (50ms longer than the delay)
 	
 	// Verify thread executed after delay
 	mu_assert_eq(test_data, 1, "Thread didn't execute after delay");
+	
+	// Use kill with force=false to just break and wait for the thread
+	r_th_break(th);
+	r_th_wait(th);
 	
 	// Free thread
 	r_th_free(th);
@@ -158,23 +163,27 @@ bool test_thread_kill(void) {
 	// Reset test data
 	test_data = 0;
 	
-	// Create thread with long delay to ensure it's still running when we kill it
-	RThread *th = r_th_new(test_thread_delay_function, NULL, 2000);
+	// Create thread with delay to ensure it's still running when we kill it
+	// Keep delay short for faster test execution
+	RThread *th = r_th_new(test_thread_delay_function, NULL, 100);
 	mu_assert_notnull(th, "Thread creation failed");
 	
 	// Start the thread
 	bool res = r_th_start(th);
 	mu_assert_eq(res, true, "Thread start failed");
 	
-	// Kill the thread
+	// First verify the thread hasn't executed yet (due to delay)
+	mu_assert_eq(test_data, 0, "Thread executed before delay");
+	
+	// Force kill the thread
 	bool killed = r_th_kill(th, true);
 	mu_assert_eq(killed, false, "Thread kill should return false");
 	
-	// Free thread
-	r_th_free(th);
-	
-	// Verify thread didn't execute
+	// Verify thread didn't execute after being killed
 	mu_assert_eq(test_data, 0, "Thread executed after being killed");
+	
+	// Free thread after it's been fully killed
+	r_th_free(th);
 	
 	mu_end;
 }
