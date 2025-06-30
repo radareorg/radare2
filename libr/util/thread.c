@@ -33,17 +33,24 @@ static void *_r_th_launcher(void *_th) {
 	bool repeat = true;
 	RThread *th = _th;
 	do {
-		while (!th->ready) {
+		r_th_lock_enter (th->lock);
+		bool is_ready = th->ready;
+		r_th_lock_leave (th->lock);
+		while (!is_ready) {
 			// spinlock
 #ifdef	__GNUC__
 			__asm__ volatile ("nop");
 #else
 	//		r_sys_usleep (1);
 #endif
+			r_th_lock_enter (th->lock);
 			if (th->breaked) {
 				th->running = false;
+				r_th_lock_leave (th->lock);
 				return 0;
 			}
+			is_ready = th->ready;
+			r_th_lock_leave (th->lock);
 		}
 		r_th_lock_enter (th->lock);
 		if (th->delay) {
@@ -55,22 +62,28 @@ static void *_r_th_launcher(void *_th) {
 		case R_TH_STOP:
 			repeat = false;
 		case R_TH_PAUSE:
+			r_th_lock_enter (th->lock);
 			th->ready = false;
+			r_th_lock_leave (th->lock);
 		case R_TH_REPEAT:
 			r_th_lock_leave (th->lock);
 			break;
 		case R_TH_FREED:
 		default:
+			r_th_lock_enter (th->lock);
 			th->ready = false;
 			th->running = false;
 			r_th_lock_leave (th->lock);
 #if HAVE_PTHREAD
 			pthread_exit (&ret);
 #endif
+			r_th_lock_leave (th->lock);
 			return 0;
 		}
 	} while (repeat && !th->breaked);
+	r_th_lock_enter (th->lock);
 	th->running = false;
+	r_th_lock_leave (th->lock);
 #if HAVE_PTHREAD
 	pthread_exit (&ret);
 #endif
@@ -272,33 +285,39 @@ R_API bool r_th_kill(RThread *th, bool force) {
 	if (!th || !th->tid) {
 		return false;
 	}
+	// First set breaked flag to signal thread to stop
 	th->breaked = true;
-	r_th_break (th);
-	r_th_wait (th);
+	// If force is true, kill the thread immediately
+	if (force) {
 #if HAVE_PTHREAD
 #ifdef __ANDROID__
-	pthread_kill (th->tid, 9);
+		pthread_kill (th->tid, 9);
 #else
-	pthread_cancel (th->tid);
+		pthread_cancel (th->tid);
 #endif
 #elif R2__WINDOWS__
-	TerminateThread (th->tid, -1);
+		TerminateThread (th->tid, -1);
 #endif
-	return 0;
+	}
+	// Wait for thread to finish
+	r_th_wait (th);
+	return false;
 }
 
 // enable should be bool and th->ready must be protected with locks
 R_API bool r_th_start(RThread *th) {
 	R_RETURN_VAL_IF_FAIL (th, false);
+	r_th_lock_enter (th->lock);
 	if (!th->running) {
 		// thread already exited, cannot launch
+		r_th_lock_leave (th->lock);
 		return false;
 	}
 	if (th->ready) {
 		//thread is currently running and has launched user function
+		r_th_lock_leave (th->lock);
 		return true;
 	}
-	r_th_lock_enter (th->lock);
 	th->ready = true;
 	r_th_lock_leave (th->lock);
 	return true;
@@ -354,4 +373,3 @@ typedef struct r_th_pipe_t {
 r_th_pipe_new();
 
 #endif
-

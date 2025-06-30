@@ -51,7 +51,8 @@ R_API void r_th_cond_free(RThreadCond *cond) {
 #if HAVE_PTHREAD
 	pthread_cond_destroy (&cond->cond);
 #elif R2__WINDOWS__
-	// TODO destroy the condition variable here
+	// Windows condition variables don't require explicit destruction
+	// They are automatically cleaned up when no longer in use
 #endif
 	free (cond);
 }

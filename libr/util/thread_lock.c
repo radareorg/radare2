@@ -39,12 +39,15 @@ R_API bool r_atomic_exchange(volatile R_ATOMIC_BOOL *data, bool v) {
 #elif __GNUC__ && !__TINYC__ && !(__APPLE__ && __ppc__)
 	int orig = 0;
 	int conv = (int)v;
+	// Use __atomic_exchange for gcc for consistency across platforms
 	__atomic_exchange (data, &conv, &orig, __ATOMIC_ACQUIRE);
-	return orig;
+	return (bool)orig;
 #elif _MSC_VER
 	int conv = (int)v;
-	return InterlockedExchange (data, conv);
+	return (bool)InterlockedExchange (data, conv);
 #else
+	// Fallback with basic non-atomic implementation
+	// Note this is NOT thread-safe
 	bool orig = *data;
 	*data = v;
 	return orig;
@@ -56,12 +59,16 @@ R_API void r_atomic_store(volatile R_ATOMIC_BOOL *data, bool v) {
 	atomic_store_explicit (data, v, memory_order_release);
 #elif __GNUC__ && !__TINYC__ && !(__APPLE__ && __ppc__)
 	int conv = (int)v;
+	// Use __atomic_store for gcc for consistency across platforms
 	__atomic_store (data, &conv, __ATOMIC_RELEASE);
 #elif _MSC_VER
 	int conv = (int)v;
+	// This is a busy-wait loop which isn't ideal but ensures store happens
 	while (InterlockedExchange (data, conv) != conv)
 		;
 #else
+	// Fallback with basic non-atomic implementation
+	// Note this is NOT thread-safe
 	*data = v;
 #endif
 }
