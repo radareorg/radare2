@@ -45,10 +45,16 @@ foreach file : sdb_files
   endif
 endforeach
 
+# Create opcodes directory in build dir
+opcodes_build_dir = join_paths(meson.current_build_dir())
+
 r_asm_d_sources = custom_target('opcodes-sdb',
   input: [],
   output: opcodes_sdb_files,
-  command: [sdb_exe, '-r', meson.current_source_dir()],
+  command: [
+    'env', 'SDB_OUTPUT_DIR=' + opcodes_build_dir,
+    sdb_exe, '-r', meson.current_source_dir()
+  ],
   depends: sdb_exe,
   build_by_default: true,
   install: true,
