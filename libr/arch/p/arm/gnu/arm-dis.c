@@ -3500,7 +3500,7 @@ print_insn_coprocessor (bfd_vma pc,
 			}
 
 			if (NEGATIVE_BIT_SET) {
-				offset = -offset;
+				offset = -(int)offset;
 			}
 			//	if (rn != 15)
 			// value_in_comment = offset;
