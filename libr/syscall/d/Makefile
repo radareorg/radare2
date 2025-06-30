@@ -27,10 +27,9 @@ HOST_CC?=gcc
 
 F_SDB=$(addsuffix .sdb,$F)
 
-ifeq (0,1)
-#$(USE_SDBTOOL),1)
+ifeq (1,1)
 all:
-	$(SDBTOOL) -r $(shell pwd)
+	$(SDB) -r -r $(shell pwd)
 else
 all: ${SDB}
 	@$(MAKE) compile
