@@ -170,7 +170,6 @@ bool test_condition_individual_signal(void) {
 	r_th_lock_leave(test_lock);
 
 	// Wait for all threads to complete
-	int i;
 	for (i = 0; i < 2; i++) {
 		r_th_wait(signal_threads[i]);
 		r_th_free(signal_threads[i]);
