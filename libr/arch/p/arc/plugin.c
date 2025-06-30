@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2024 - pancake */
+/* radare - LGPL - Copyright 2012-2025 - pancake */
 
 #include <r_lib.h>
 #include <r_arch.h>
@@ -1086,7 +1086,7 @@ static int arcompact_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *dat
 	return op->size;
 }
 
-static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const int len = op->size;
 	const ut8 *data = op->bytes;
 	const ut64 addr = op->addr;
