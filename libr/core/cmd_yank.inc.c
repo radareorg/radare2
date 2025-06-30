@@ -1,4 +1,4 @@
-static const RCoreHelpMessage help_msg_y = {
+static RCoreHelpMessage help_msg_y = {
 	"Usage:", "y[fptxy] [len] [[@]addr]", " # See wd? for memcpy, same as 'yf'.",
 	"y!", "", "open cfg.editor to edit the clipboard",
 	"y", " 16 0x200", "copy 16 bytes into clipboard from 0x200",

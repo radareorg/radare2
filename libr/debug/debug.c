@@ -631,7 +631,7 @@ R_API bool r_debug_detach(RDebug *dbg, int pid) {
 	bool ret = false;
 	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
 	if (plugin && plugin->detach) {
-		ret = -plugin->detach (dbg, pid);
+		ret = plugin->detach (dbg, pid);
 		if (dbg->pid == pid) {
 			dbg->pid = -1;
 			dbg->tid = -1;

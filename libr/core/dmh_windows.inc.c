@@ -1228,9 +1228,8 @@ static void w32_list_heaps(RCore *core, const char format) {
 	}
 	if (format == 'j') {
 		pj_end (pj);
-		char *s = pj_string (pj);
+		const char *s = pj_string (pj);
 		r_cons_println (core->cons, s);
-		free (s);
 	} else {
 		char *s = r_table_tostring (tbl);
 		r_cons_println (core->cons, s);
