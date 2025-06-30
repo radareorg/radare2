@@ -68,8 +68,10 @@ bool test_thread_is_running(void) {
 	running = r_th_is_running(th);
 	mu_assert_eq(running, true, "Thread should be running after setting to true");
 	
-	// Free thread without starting
-	r_th_free(th);
+	// Kill and free thread properly
+	r_th_break(th);    // Signal thread to break
+	r_th_wait(th);     // Wait for thread to finish
+	r_th_free(th);     // Now free the thread
 	
 	mu_end;
 }
