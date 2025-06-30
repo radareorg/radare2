@@ -36,22 +36,29 @@ sdb_files = [
   'z80',
 ]
 
-r_asm_d_sources = []
+# Build all sdb files at once using 'sdb -r .'
+opcodes_sdb_files = []
 foreach file : sdb_files
+  opcodes_sdb_files += '@0@.sdb'.format(file)
   if get_option('sdb_cgen')
-    outfile = '@0@.c'.format(file)
-    gen_cmd = sdb_gen_cmd_cgen
-  else
-    outfile = '@0@.sdb'.format(file)
-    gen_cmd = sdb_gen_cmd
+    opcodes_sdb_files += '@0@.c'.format(file)
   endif
-  r_asm_d_sources += custom_target(outfile,
-    input: '@0@.sdb.txt'.format(file),
-    output: outfile,
-    command: gen_cmd,
-    depends: sdb_exe,
-    build_by_default: true,
-    install: true,
-    install_dir: join_paths(r2_sdb, 'opcodes')
-  )
 endforeach
+
+# Create opcodes directory in build dir
+opcodes_build_dir = join_paths(meson.current_build_dir())
+
+# Create environment with output directory set
+sdb_env = environment()
+sdb_env.set('SDB_OUTPUT_DIR', opcodes_build_dir)
+
+r_asm_d_sources = custom_target('opcodes-sdb',
+  input: [],
+  output: opcodes_sdb_files,
+  command: [sdb_exe, '-r', meson.current_source_dir()],
+  env: sdb_env,
+  depends: sdb_exe,
+  build_by_default: true,
+  install: true,
+  install_dir: join_paths(r2_sdb, 'opcodes')
+)

@@ -24,7 +24,7 @@ old_%.sdb:%.sdb.txt
 endif
 
 clean:
-	rm -f *.sdb *.c *.h *.gperf a.out
+	rm -f *.sdb *.c *.h *.gperf a.out *.o *.d
 
 .PHONY: all clean install install-symlink symstall uninstall
 
