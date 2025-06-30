@@ -6,7 +6,7 @@ else
   if get_option('capstone_in_builddir')
     capstone_path = join_paths(meson.current_build_dir(), 'capstone')
   else
-    capstone_path = join_paths(meson.source_root(), 'subprojects/capstone-' + capstone_version)
+    capstone_path = join_paths(meson.project_source_root(), 'subprojects/capstone-' + capstone_version)
   endif
 
   message('capstone path:' + capstone_path)
