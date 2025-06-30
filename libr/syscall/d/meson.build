@@ -22,30 +22,27 @@ sdb_files = [
   'windows-x86-64',
 ]
 
-r_syscall_d_sources = []
-
+# Build all SDB files at once using 'sdb -r -r .'
+syscall_sdb_files = []
 foreach file : sdb_files
-  infile = '@0@.sdb.txt'.format(file)
-  if host_machine.system() == 'windows'
-    infile = run_command(sdb_readlink_cmd + [join_paths(meson.current_source_dir(), infile)], check: false).stdout().strip()
-  endif
-  tmp_outfile = '@0@.sdb.txt.tmp'.format(file)
+  syscall_sdb_files += '@0@.sdb'.format(file)
   if get_option('sdb_cgen')
-    outfile = '@0@.c'.format(file)
-    gen_cmd = sdb_gen_cmd_cgen
-  else
-    outfile = '@0@.sdb'.format(file)
-    gen_cmd = syscall_sdb_gen_cmd
+    syscall_sdb_files += '@0@.c'.format(file)
   endif
-
-  r_syscall_d_sources += custom_target(outfile,
-    input: infile,
-    output: outfile,
-    command: gen_cmd,
-    depends: sdb_exe,
-    build_by_default: true,
-    install: true,
-    install_dir: join_paths(r2_sdb, 'syscall')
-  )
 endforeach
+
+# Create environment with output directory set
+sdb_env = environment()
+sdb_env.set('SDB_OUTPUT_DIR', meson.current_build_dir())
+
+r_syscall_d_sources = custom_target('syscall-sdb',
+  input: [],
+  output: syscall_sdb_files,
+  command: [sdb_exe, '-r', '-r', meson.current_source_dir()],
+  env: sdb_env,
+  depends: sdb_exe,
+  build_by_default: true,
+  install: true,
+  install_dir: join_paths(r2_sdb, 'syscall')
+)
 
