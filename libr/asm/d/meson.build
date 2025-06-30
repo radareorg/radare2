@@ -48,13 +48,15 @@ endforeach
 # Create opcodes directory in build dir
 opcodes_build_dir = join_paths(meson.current_build_dir())
 
+# Create environment with output directory set
+sdb_env = environment()
+sdb_env.set('SDB_OUTPUT_DIR', opcodes_build_dir)
+
 r_asm_d_sources = custom_target('opcodes-sdb',
   input: [],
   output: opcodes_sdb_files,
-  command: [
-    'env', 'SDB_OUTPUT_DIR=' + opcodes_build_dir,
-    sdb_exe, '-r', meson.current_source_dir()
-  ],
+  command: [sdb_exe, '-r', meson.current_source_dir()],
+  env: sdb_env,
   depends: sdb_exe,
   build_by_default: true,
   install: true,
