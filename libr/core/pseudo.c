@@ -1,14 +1,22 @@
 /* radare - LGPL - Copyright 2015-2025 - pancake */
 
 #include <r_core.h>
-#define TYPE_NONE 0
-#define TYPE_STR 1
-#define TYPE_SYM 2
-#define IS_ALPHA(x) (isupper(x) || islower(x))
-#define IS_STRING(x,y) ((x)+3<end && *(x) == 's' && *((x)+1) == 't' && *((x)+2) == 'r' && *((x)+3) == '.')
-#define IS_SYMBOL(x,y) ((x)+3<end && *(x) == 's' && *((x)+1) == 'y' && *((x)+2) == 'm' && *((x)+3) == '.')
 
 // R2R db/cmd/cmd_pdc
+
+typedef enum {
+	TYPE_NONE = 0,
+	TYPE_STR = 1,
+	TYPE_SYM = 2
+} RFindType;
+
+static inline bool is_string(const char *x, const char *end) {
+	return ((x) + 3 < end && r_str_startswith (x, "str."));
+}
+
+static inline bool is_symbol(const char *x, const char *end) {
+	return ((x) + 3 < end && r_str_startswith (x, "sym."));
+}
 
 typedef struct _find_ctx {
 	char *comment;
@@ -24,6 +32,58 @@ typedef struct _find_ctx {
 	int linecount;
 	int type;
 } RFindCTX;
+
+static void swap_strings(RFindCTX *ctx) {
+	char* copy = NULL;
+	size_t len;
+	if (!ctx->right || !ctx->left || ctx->rightlen <= 0 || ctx->leftlen <= 0) {
+		return;
+	}
+	if (ctx->leftlen > ctx->rightlen) {
+		// Left string is longer than right string
+		len = ctx->leftlen;
+		copy = R_NEWS (char, len);
+		if (!copy) {
+			return;
+		}
+		memmove (copy, ctx->left, len);
+		memmove (ctx->left, ctx->right, ctx->rightlen);
+		memset (ctx->left + ctx->rightlen, ' ', ctx->leftlen - ctx->rightlen);
+		memmove (ctx->comment - ctx->leftlen + ctx->rightlen, ctx->comment, ctx->right - ctx->comment);
+		memmove (ctx->right - ctx->leftlen + ctx->rightlen, copy, ctx->leftlen);
+	} else if (ctx->leftlen < ctx->rightlen) {
+		if (ctx->linecount < 1) {
+			// Right string is longer than left string
+			len = ctx->rightlen;
+			copy = R_NEWS (char, len);
+			if (!copy) {
+				return;
+			}
+			memcpy (copy, ctx->right, len);
+			memcpy (ctx->right + ctx->rightlen - ctx->leftlen, ctx->left, ctx->leftlen);
+			memmove (ctx->comment + ctx->rightlen - ctx->leftlen, ctx->comment, ctx->right - ctx->comment);
+			memmove (ctx->left + ctx->rightlen - ctx->leftlen, copy, ctx->rightlen);
+		} else {
+			// Special case handling
+			memset (ctx->right - ctx->leftpos, ' ', ctx->leftpos);
+			*(ctx->right - ctx->leftpos - 1) = '\n';
+			memset (ctx->left, ' ', ctx->leftlen);
+			memset (ctx->linebegin - ctx->leftlen, ' ', ctx->leftlen);
+		}
+	} else {
+		// Equal length strings - simple swap
+		len = ctx->leftlen;
+		copy = R_NEWS (char, len);
+		if (!copy) {
+			return;
+		}
+		memcpy (copy, ctx->right, len);
+		memcpy (ctx->right, ctx->left, len);
+		memcpy (ctx->left, copy, len);
+	}
+
+	free (copy);
+}
 
 static void find_and_change(char* in, int len) {
 	// just to avoid underflows.. len can't be < then len(padding).
@@ -41,49 +101,7 @@ static void find_and_change(char* in, int len) {
 				continue;
 			}
 			if (ctx.type != TYPE_NONE && ctx.right && ctx.left && ctx.rightlen > 0 && ctx.leftlen > 0) {
-				char* copy = NULL;
-				if (ctx.leftlen > ctx.rightlen) {
-					// if new string is o
-					copy = (char*) malloc (ctx.leftlen);
-					if (copy) {
-						memmove (copy, ctx.left, ctx.leftlen);
-						memmove (ctx.left, ctx.right, ctx.rightlen);
-						memset (ctx.left + ctx.rightlen, ' ', ctx.leftlen - ctx.rightlen);
-						memmove (ctx.comment - ctx.leftlen + ctx.rightlen, ctx.comment, ctx.right - ctx.comment);
-						memmove (ctx.right - ctx.leftlen + ctx.rightlen, copy, ctx.leftlen);
-					}
-				} else if (ctx.leftlen < ctx.rightlen) {
-					if (ctx.linecount < 1) {
-						copy = (char*) malloc (ctx.rightlen);
-						if (copy) {
-							// ###LEFTLEN### ### RIGHT
-							// backup ctx.right+len into copy
-							memcpy (copy, ctx.right, ctx.rightlen);
-							// move string into
-							memcpy (ctx.right + ctx.rightlen - ctx.leftlen, ctx.left, ctx.leftlen);
-							memmove (ctx.comment + ctx.rightlen - ctx.leftlen, ctx.comment, ctx.right - ctx.comment);
-							memmove (ctx.left + ctx.rightlen - ctx.leftlen, copy, ctx.rightlen);
-						}
-					} else {
-//						copy = (char*) malloc (ctx.linebegin - ctx.left);
-//						if (copy) {
-//							memcpy (copy, ctx.left, ctx.linebegin - ctx.left);
-						memset (ctx.right - ctx.leftpos, ' ', ctx.leftpos);
-						*(ctx.right - ctx.leftpos - 1) = '\n';
-//							memcpy (ctx.comment + 3, copy, ctx.linebegin - ctx.left);
-						memset (ctx.left, ' ', ctx.leftlen);
-						memset (ctx.linebegin - ctx.leftlen, ' ', ctx.leftlen);
-//						}
-					}
-				} else if (ctx.leftlen == ctx.rightlen) {
-					copy = (char*) malloc (ctx.leftlen);
-					if (copy) {
-						memcpy (copy, ctx.right, ctx.leftlen);
-						memcpy (ctx.right, ctx.left, ctx.leftlen);
-						memcpy (ctx.left, copy, ctx.leftlen);
-					}
-				}
-				free (copy);
+				swap_strings(&ctx);
 			}
 			memset (&ctx, 0, sizeof (ctx));
 			ctx.linebegin = in + 1;
@@ -92,30 +110,30 @@ static void find_and_change(char* in, int len) {
 			ctx.comment[1] = '/';
 			ctx.comment[2] = '/';
 		} else if (!ctx.comment && ctx.type == TYPE_NONE) {
-			if (IS_STRING (in, ctx)) {
+			if (is_string(in, end)) {
 				ctx.type = TYPE_STR;
 				ctx.left = in;
-				while (!IS_WHITESPACE (*(ctx.left - ctx.leftcolor))) {
+				while (!isspace (*(ctx.left - ctx.leftcolor))) {
 					ctx.leftcolor++;
 				}
 				ctx.leftcolor--;
 				ctx.leftpos = ctx.left - ctx.linebegin;
-			} else if (IS_SYMBOL (in, ctx)) {
+			} else if (is_symbol(in, end)) {
 				ctx.type = TYPE_SYM;
 				ctx.left = in;
-				while (!IS_WHITESPACE (*(ctx.left - ctx.leftcolor))) {
+				while (!isspace (*(ctx.left - ctx.leftcolor))) {
 					ctx.leftcolor++;
 				}
 				ctx.leftcolor--;
 				ctx.leftpos = ctx.left - ctx.linebegin;
 			}
 		} else if (ctx.type == TYPE_STR) {
-			if (!ctx.leftlen && ctx.left && IS_WHITESPACE (*in)) {
+			if (!ctx.leftlen && ctx.left && isspace (*in)) {
 				ctx.leftlen = in - ctx.left;
 			} else if (ctx.comment && *in == '"' && in[-1] != '\\') {
 				if (!ctx.right) {
 					ctx.right = in;
-					while (!IS_WHITESPACE (*(ctx.right - ctx.rightcolor))) {
+					while (!isspace (*(ctx.right - ctx.rightcolor))) {
 						ctx.rightcolor++;
 					}
 					ctx.rightcolor--;
@@ -124,9 +142,9 @@ static void find_and_change(char* in, int len) {
 				}
 			}
 		} else if (ctx.type == TYPE_SYM) {
-			if (!ctx.leftlen && ctx.left && IS_WHITESPACE (*in)) {
+			if (!ctx.leftlen && ctx.left && isspace (*in)) {
 				ctx.leftlen = in - ctx.left + 3;
-			} else if (ctx.comment && *in == '(' && IS_ALPHA (in[-1]) && !ctx.right) {
+			} else if (ctx.comment && *in == '(' && isalpha (in[-1]) && !ctx.right) {
 				// ok so i've found a function written in this way:
 				// type = [const|void|int|float|double|short|long]
 				// type fcn_name (type arg1, type arg2, ...)
@@ -134,7 +152,7 @@ static void find_and_change(char* in, int len) {
 				// till a space is found
 				// 'int print(const char*, ...)'
 				ctx.right = in - 1;
-				while (IS_ALPHA (*ctx.right) || *ctx.right == '_' || *ctx.right == '*') {
+				while (isalpha (*ctx.right) || *ctx.right == '_' || *ctx.right == '*') {
 					ctx.right--;
 				}
 				// 'int print(const char*, ...)'
@@ -144,13 +162,13 @@ static void find_and_change(char* in, int len) {
 				// if a non alpha is found, then we can cut from the function name
 				if (*ctx.right == ' ') {
 					ctx.right--;
-					while (IS_ALPHA (*ctx.right) || *ctx.right == '_' || *ctx.right == '*') {
+					while (isalpha (*ctx.right) || *ctx.right == '_' || *ctx.right == '*') {
 						ctx.right--;
 					}
 					// moving forward since it points now to non alpha.
 					ctx.right++;
 				}
-				while (!IS_WHITESPACE (*(ctx.right - ctx.rightcolor))) {
+				while (!isspace (*(ctx.right - ctx.rightcolor))) {
 					ctx.rightcolor++;
 				}
 				ctx.rightcolor--;

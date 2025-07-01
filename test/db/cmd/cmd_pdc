@@ -198,3 +198,40 @@ EXPECT=<<EOF
             0x00000004      0101a872       w1 = 0x4008 << 16
 EOF
 RUN
+
+NAME=pdco @ main ls-m1
+FILE=bins/mach0/ls-m1
+ARGS=-a arm -b64
+CMDS=<<EOF
+s 0x100003a54
+af
+pdco
+EOF
+EXPECT=<<EOF
+ 0x100003a54 |                                | // callconv: x0 arm64 (x0, x1, x2, x3, x4, x5, x6, x7, stack);
+ 0x100003a54 |                                | void sym.func.100003a54 (int64_t arg1, int64_t arg2) {
+ 0x100003a54 |     loc_0x100003a54:
+ 0x100003a54 |         x8 = [x0 + 0x60] // arg1
+ 0x100003a58 |         x8 = [x8 + 0x60]
+ 0x100003a5c |         x9 = [x1 + 0x60] // arg2
+ 0x100003a60 |         x9 = [x9 + 0x60]
+ 0x100003a64 |         (a, b) = compare (x8, x9)
+ 0x100003a68 |         if (a <= b) goto 0x100003a74 // likely
+ 0x100003a54 |         goto loc_0x100003a6c;
+ 0x100003a74 |     loc_0x100003a74:
+ 0x100003a74 |         if (a >= b) goto 0x100003a80 // likely
+ 0x100003a74 |         goto loc_0x100003a78;
+ 0x100003a80 |     loc_0x100003a80:
+ 0x100003a80 |         x8 = x1 + 0x68 // arg2
+ 0x100003a84 |         x1 = x0 + 0x68 // arg1
+ 0x100003a88 |         x0 = x8
+ 0x100003a8c |         goto sym.imp.strcoll // int strcoll("", "")
+ 0x100003a6c |         return x0;
+ 0x100003a6c | loc_0x100003a6c: // orphan
+ 0x100003a6c      w0 = 1
+
+ 0x100003a6c |         return x0;
+ 0x100003a8c | }
+
+EOF
+RUN
