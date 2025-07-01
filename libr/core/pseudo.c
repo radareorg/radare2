@@ -1,12 +1,25 @@
 /* radare - LGPL - Copyright 2015-2025 - pancake */
 
 #include <r_core.h>
-#define TYPE_NONE 0
-#define TYPE_STR 1
-#define TYPE_SYM 2
-#define IS_ALPHA(x) (isupper(x) || islower(x))
-#define IS_STRING(x,y) ((x)+3<end && *(x) == 's' && *((x)+1) == 't' && *((x)+2) == 'r' && *((x)+3) == '.')
-#define IS_SYMBOL(x,y) ((x)+3<end && *(x) == 's' && *((x)+1) == 'y' && *((x)+2) == 'm' && *((x)+3) == '.')
+typedef enum {
+	TYPE_NONE = 0,
+	TYPE_STR = 1,
+	TYPE_SYM = 2
+} RFindType;
+
+static inline bool is_alpha(char x) {
+	return (isupper(x) || islower(x));
+}
+
+static inline bool is_string(const char *x, const char *end) {
+	return ((x) + 3 < end && r_str_startswith (x, "str."));
+}
+
+static inline bool is_symbol(const char *x, const char *end) {
+	return ((x) + 3 < end && r_str_startswith (x, "sym."));
+}
+
+// Using standard isspace() function from ctype.h
 
 // R2R db/cmd/cmd_pdc
 
@@ -92,30 +105,30 @@ static void find_and_change(char* in, int len) {
 			ctx.comment[1] = '/';
 			ctx.comment[2] = '/';
 		} else if (!ctx.comment && ctx.type == TYPE_NONE) {
-			if (IS_STRING (in, ctx)) {
+			if (is_string(in, end)) {
 				ctx.type = TYPE_STR;
 				ctx.left = in;
-				while (!IS_WHITESPACE (*(ctx.left - ctx.leftcolor))) {
+				while (!isspace(*(ctx.left - ctx.leftcolor))) {
 					ctx.leftcolor++;
 				}
 				ctx.leftcolor--;
 				ctx.leftpos = ctx.left - ctx.linebegin;
-			} else if (IS_SYMBOL (in, ctx)) {
+			} else if (is_symbol(in, end)) {
 				ctx.type = TYPE_SYM;
 				ctx.left = in;
-				while (!IS_WHITESPACE (*(ctx.left - ctx.leftcolor))) {
+				while (!isspace(*(ctx.left - ctx.leftcolor))) {
 					ctx.leftcolor++;
 				}
 				ctx.leftcolor--;
 				ctx.leftpos = ctx.left - ctx.linebegin;
 			}
 		} else if (ctx.type == TYPE_STR) {
-			if (!ctx.leftlen && ctx.left && IS_WHITESPACE (*in)) {
+			if (!ctx.leftlen && ctx.left && is_whitespace(*in)) {
 				ctx.leftlen = in - ctx.left;
 			} else if (ctx.comment && *in == '"' && in[-1] != '\\') {
 				if (!ctx.right) {
 					ctx.right = in;
-					while (!IS_WHITESPACE (*(ctx.right - ctx.rightcolor))) {
+					while (!is_whitespace(*(ctx.right - ctx.rightcolor))) {
 						ctx.rightcolor++;
 					}
 					ctx.rightcolor--;
@@ -124,9 +137,9 @@ static void find_and_change(char* in, int len) {
 				}
 			}
 		} else if (ctx.type == TYPE_SYM) {
-			if (!ctx.leftlen && ctx.left && IS_WHITESPACE (*in)) {
+			if (!ctx.leftlen && ctx.left && is_whitespace(*in)) {
 				ctx.leftlen = in - ctx.left + 3;
-			} else if (ctx.comment && *in == '(' && IS_ALPHA (in[-1]) && !ctx.right) {
+			} else if (ctx.comment && *in == '(' && is_alpha(in[-1]) && !ctx.right) {
 				// ok so i've found a function written in this way:
 				// type = [const|void|int|float|double|short|long]
 				// type fcn_name (type arg1, type arg2, ...)
@@ -134,7 +147,7 @@ static void find_and_change(char* in, int len) {
 				// till a space is found
 				// 'int print(const char*, ...)'
 				ctx.right = in - 1;
-				while (IS_ALPHA (*ctx.right) || *ctx.right == '_' || *ctx.right == '*') {
+				while (is_alpha(*ctx.right) || *ctx.right == '_' || *ctx.right == '*') {
 					ctx.right--;
 				}
 				// 'int print(const char*, ...)'
@@ -144,13 +157,13 @@ static void find_and_change(char* in, int len) {
 				// if a non alpha is found, then we can cut from the function name
 				if (*ctx.right == ' ') {
 					ctx.right--;
-					while (IS_ALPHA (*ctx.right) || *ctx.right == '_' || *ctx.right == '*') {
+					while (is_alpha(*ctx.right) || *ctx.right == '_' || *ctx.right == '*') {
 						ctx.right--;
 					}
 					// moving forward since it points now to non alpha.
 					ctx.right++;
 				}
-				while (!IS_WHITESPACE (*(ctx.right - ctx.rightcolor))) {
+				while (!is_whitespace(*(ctx.right - ctx.rightcolor))) {
 					ctx.rightcolor++;
 				}
 				ctx.rightcolor--;
