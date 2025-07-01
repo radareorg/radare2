@@ -1,15 +1,14 @@
 /* radare - LGPL - Copyright 2015-2025 - pancake */
 
 #include <r_core.h>
+
+// R2R db/cmd/cmd_pdc
+
 typedef enum {
 	TYPE_NONE = 0,
 	TYPE_STR = 1,
 	TYPE_SYM = 2
 } RFindType;
-
-static inline bool is_alpha(char x) {
-	return (isupper(x) || islower(x));
-}
 
 static inline bool is_string(const char *x, const char *end) {
 	return ((x) + 3 < end && r_str_startswith (x, "str."));
@@ -18,12 +17,6 @@ static inline bool is_string(const char *x, const char *end) {
 static inline bool is_symbol(const char *x, const char *end) {
 	return ((x) + 3 < end && r_str_startswith (x, "sym."));
 }
-
-static inline bool is_whitespace(char x) {
-	return isspace((unsigned char)x);
-}
-
-// R2R db/cmd/cmd_pdc
 
 typedef struct _find_ctx {
 	char *comment;
@@ -43,11 +36,9 @@ typedef struct _find_ctx {
 static void swap_strings(RFindCTX *ctx) {
 	char* copy = NULL;
 	size_t len;
-	
 	if (!ctx->right || !ctx->left || ctx->rightlen <= 0 || ctx->leftlen <= 0) {
 		return;
 	}
-	
 	if (ctx->leftlen > ctx->rightlen) {
 		// Left string is longer than right string
 		len = ctx->leftlen;
@@ -122,7 +113,7 @@ static void find_and_change(char* in, int len) {
 			if (is_string(in, end)) {
 				ctx.type = TYPE_STR;
 				ctx.left = in;
-				while (!isspace(*(ctx.left - ctx.leftcolor))) {
+				while (!isspace (*(ctx.left - ctx.leftcolor))) {
 					ctx.leftcolor++;
 				}
 				ctx.leftcolor--;
@@ -130,19 +121,19 @@ static void find_and_change(char* in, int len) {
 			} else if (is_symbol(in, end)) {
 				ctx.type = TYPE_SYM;
 				ctx.left = in;
-				while (!isspace(*(ctx.left - ctx.leftcolor))) {
+				while (!isspace (*(ctx.left - ctx.leftcolor))) {
 					ctx.leftcolor++;
 				}
 				ctx.leftcolor--;
 				ctx.leftpos = ctx.left - ctx.linebegin;
 			}
 		} else if (ctx.type == TYPE_STR) {
-			if (!ctx.leftlen && ctx.left && is_whitespace(*in)) {
+			if (!ctx.leftlen && ctx.left && isspace (*in)) {
 				ctx.leftlen = in - ctx.left;
 			} else if (ctx.comment && *in == '"' && in[-1] != '\\') {
 				if (!ctx.right) {
 					ctx.right = in;
-					while (!is_whitespace(*(ctx.right - ctx.rightcolor))) {
+					while (!isspace (*(ctx.right - ctx.rightcolor))) {
 						ctx.rightcolor++;
 					}
 					ctx.rightcolor--;
@@ -151,9 +142,9 @@ static void find_and_change(char* in, int len) {
 				}
 			}
 		} else if (ctx.type == TYPE_SYM) {
-			if (!ctx.leftlen && ctx.left && is_whitespace(*in)) {
+			if (!ctx.leftlen && ctx.left && isspace (*in)) {
 				ctx.leftlen = in - ctx.left + 3;
-			} else if (ctx.comment && *in == '(' && is_alpha(in[-1]) && !ctx.right) {
+			} else if (ctx.comment && *in == '(' && isalpha (in[-1]) && !ctx.right) {
 				// ok so i've found a function written in this way:
 				// type = [const|void|int|float|double|short|long]
 				// type fcn_name (type arg1, type arg2, ...)
@@ -161,7 +152,7 @@ static void find_and_change(char* in, int len) {
 				// till a space is found
 				// 'int print(const char*, ...)'
 				ctx.right = in - 1;
-				while (is_alpha(*ctx.right) || *ctx.right == '_' || *ctx.right == '*') {
+				while (isalpha (*ctx.right) || *ctx.right == '_' || *ctx.right == '*') {
 					ctx.right--;
 				}
 				// 'int print(const char*, ...)'
@@ -171,13 +162,13 @@ static void find_and_change(char* in, int len) {
 				// if a non alpha is found, then we can cut from the function name
 				if (*ctx.right == ' ') {
 					ctx.right--;
-					while (is_alpha(*ctx.right) || *ctx.right == '_' || *ctx.right == '*') {
+					while (isalpha (*ctx.right) || *ctx.right == '_' || *ctx.right == '*') {
 						ctx.right--;
 					}
 					// moving forward since it points now to non alpha.
 					ctx.right++;
 				}
-				while (!is_whitespace(*(ctx.right - ctx.rightcolor))) {
+				while (!isspace (*(ctx.right - ctx.rightcolor))) {
 					ctx.rightcolor++;
 				}
 				ctx.rightcolor--;
