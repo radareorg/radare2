@@ -325,6 +325,7 @@ static char *disat(RCore *core, ut64 addr, int *pad) {
 static void print_str(PDCState *state, const char *fmt, ...);
 static void print_newline(PDCState *state, ut64 addr, int indent);
 static void print_goto(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut64 curr_addr, int indent);
+static void print_goto_direct(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut64 curr_addr, int indent);
 
 // Function implementations
 static void print_str(PDCState *state, const char *fmt, ...) {
@@ -382,25 +383,35 @@ static void print_goto(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut64 curr
 		return;
 	}
 
-	// Create a unique key for this destination address from this source
+	// Create keys for tracking different patterns of duplication
+	// Track source address -> destination address (prevents same goto from same bb)
 	char *src_dst_key = r_str_newf("%"PFMT64x".to.%"PFMT64x, bb->addr, dst_addr);
+	// Track curr_addr -> destination (prevents multiple gotos at same address)
+	char *addr_dst_key = r_str_newf("%"PFMT64x".to.%"PFMT64x, curr_addr, dst_addr);
 	// Create a unique key for just this destination 
 	char *dst_key = r_str_newf("%"PFMT64x, dst_addr);
 	// Create a mark key for checking if this destination is already marked
 	char *mark_key = r_str_newf("mark.%"PFMT64x, dst_addr);
+	// Check if we've already printed a goto from this source address
+	char *src_key = r_str_newf("%"PFMT64x".src", curr_addr);
 	// Check if we've already printed a return statement for this block
 	char *return_key = r_str_newf("return.%"PFMT64x, bb->addr);
 	
 	// Don't print goto if:
 	// 1. We've already printed a goto from this exact source to this exact destination, OR
-	// 2. The destination already has a label (marked as a location we've seen), OR
-	// 3. We've already printed a return statement for this block
+	// 2. We've already printed a goto from the current address, OR 
+	// 3. We've already printed a goto with this current address to this destination, OR
+	// 4. The destination already has a label (marked as a location we've seen), OR
+	// 5. We've already printed a return statement for this block
 	if (!sdb_exists(state->goto_cache, src_dst_key) && 
+	    !sdb_exists(state->goto_cache, addr_dst_key) &&
+	    !sdb_exists(state->goto_cache, src_key) && 
 	    !sdb_const_get(state->db, mark_key, 0) && 
 	    !sdb_exists(state->goto_cache, return_key)) {
-		// Mark this source-to-destination pair as seen in our goto cache
+		// Mark all our tracking keys to prevent duplicates
 		sdb_set(state->goto_cache, src_dst_key, "1", 0);
-		// Also mark just the destination for broader duplicate prevention
+		sdb_set(state->goto_cache, addr_dst_key, "1", 0); 
+		sdb_set(state->goto_cache, src_key, "1", 0);
 		sdb_set(state->goto_cache, dst_key, "1", 0);
 		
 		// Only print if this isn't a self-referential goto (which would be useless)
@@ -413,16 +424,46 @@ static void print_goto(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut64 curr
 		}
 	}
 
+	// Free all allocated keys
 	free(src_dst_key);
-	free(dst_key);
+	free(addr_dst_key);
+	free(dst_key); 
 	free(mark_key);
+	free(src_key);
 	free(return_key);
+}
+
+// Helper function for direct goto prints with semicolon
+static void print_goto_direct(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut64 curr_addr, int indent) {
+	// Skip invalid addresses
+	if (dst_addr == UT64_MAX) {
+		return;
+	}
+
+	// Create a key to track this specific goto
+	char *src_addr_key = r_str_newf("%"PFMT64x".addr", curr_addr);
+
+	// Only print if we haven't already printed a goto at this address
+	if (!sdb_exists(state->goto_cache, src_addr_key)) {
+		// Mark this source address as having a goto
+		sdb_set(state->goto_cache, src_addr_key, "1", 0);
+
+		// Print the goto statement
+		print_newline(state, curr_addr, indent);
+		if (state->show_asm) {
+			print_str(state, " 0x%08"PFMT64x" | %s | ", bb->addr, r_str_pad(' ', 30));
+		}
+		print_str(state, "goto loc_0x%08"PFMT64x";", dst_addr);
+	}
+
+	free(src_addr_key);
 }
 
 // Define macros that call these functions
 #define PRINTF(...) print_str(&state, __VA_ARGS__)
 #define NEWLINE(addr, indent) print_newline(&state, addr, indent)
 #define PRINTGOTO(dst_addr, curr_addr) print_goto(&state, bb, dst_addr, curr_addr, indent)
+#define PRINTGOTO_DIRECT(dst_addr, curr_addr) print_goto_direct(&state, bb, dst_addr, curr_addr, indent)
 
 R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	bool show_c_headers = *input == 'c';
@@ -678,11 +719,8 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 #endif
 			}
 		} else {
-			NEWLINE (bb->addr, indent);
-			if (state.show_asm) {
-				PRINTF (" 0x%08"PFMT64x" | %s | ", bb->addr, r_str_pad (' ', 30));
-			}
-			PRINTF ("goto loc_0x%08"PFMT64x";", bb->fail);
+			// Use our goto helper to avoid duplicates
+			PRINTGOTO_DIRECT(bb->fail, bb->addr);
 		}
 		if (sdb_const_get (state.db, K_INDENT (bb->addr), 0)) {
 			// already analyzed, go pop and continue

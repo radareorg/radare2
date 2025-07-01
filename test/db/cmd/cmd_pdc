@@ -120,7 +120,6 @@ int entry0 (int stack) {
         v = si - 0
         if (v > 0) goto loc_0x402018 // unlikely
         goto loc_0x00402042;
-        goto loc_0x00402042;
         return eax;
     loc_0x00402042:
         eax = dword [puts] // [0x4030dc:4]=0x30e8 reloc.crtdll.dll_puts // reloc.crtdll.dll_puts
@@ -158,7 +157,6 @@ int entry0 (int stack) {
  0x0040203a |         si--
  0x0040203c |         v = si - 0
  0x00402040 |         if (v > 0) goto loc_0x402018 // unlikely
- 0x00402018 |         goto loc_0x00402042;
  0x00402018 |         goto loc_0x00402042;
  0x00402018 |         return eax;
  0x00402042 |     loc_0x00402042:
