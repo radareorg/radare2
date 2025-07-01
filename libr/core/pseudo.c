@@ -375,25 +375,33 @@ static void print_newline(PDCState *state, ut64 addr, int indent) {
 }
 
 static void print_goto(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut64 curr_addr, int indent) {
-	// Early exit for invalid addresses
+	// Early exit checks:
+	// 1. Invalid destination address (UT64_MAX)
+	// 2. Self-referential goto (destination equals current address)
 	if (dst_addr == UT64_MAX || curr_addr == dst_addr) {
 		return;
 	}
 
-	// Create a unique key for this destination address
-	char *key = r_str_newf("%"PFMT64x, dst_addr);
+	// Create a unique key for this destination address from this source
+	char *src_dst_key = r_str_newf("%"PFMT64x".to.%"PFMT64x, bb->addr, dst_addr);
+	// Create a unique key for just this destination 
+	char *dst_key = r_str_newf("%"PFMT64x, dst_addr);
 	// Create a mark key for checking if this destination is already marked
 	char *mark_key = r_str_newf("mark.%"PFMT64x, dst_addr);
+	// Check if we've already printed a return statement for this block
+	char *return_key = r_str_newf("return.%"PFMT64x, bb->addr);
 	
 	// Don't print goto if:
-	// 1. It's already in the goto cache, OR 
-	// 2. The destination already has a label (marked as a location we've seen)
-	// 3. The destination equals the current address (which would be a pointless goto)
-	if (!sdb_exists(state->goto_cache, key) && 
+	// 1. We've already printed a goto from this exact source to this exact destination, OR
+	// 2. The destination already has a label (marked as a location we've seen), OR
+	// 3. We've already printed a return statement for this block
+	if (!sdb_exists(state->goto_cache, src_dst_key) && 
 	    !sdb_const_get(state->db, mark_key, 0) && 
-	    dst_addr != curr_addr) {
-		// Mark this destination as seen in our goto cache
-		sdb_set(state->goto_cache, key, "1", 0);
+	    !sdb_exists(state->goto_cache, return_key)) {
+		// Mark this source-to-destination pair as seen in our goto cache
+		sdb_set(state->goto_cache, src_dst_key, "1", 0);
+		// Also mark just the destination for broader duplicate prevention
+		sdb_set(state->goto_cache, dst_key, "1", 0);
 		
 		// Only print if this isn't a self-referential goto (which would be useless)
 		if (dst_addr != bb->addr) {
@@ -405,8 +413,10 @@ static void print_goto(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut64 curr
 		}
 	}
 
-	free(key);
+	free(src_dst_key);
+	free(dst_key);
 	free(mark_key);
+	free(return_key);
 }
 
 // Define macros that call these functions
@@ -702,6 +712,10 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 					} else {
 						PRINTF ("return;");
 					}
+					// Mark that we've printed a return for this block to avoid following gotos
+					char *return_key = r_str_newf("return.%"PFMT64x, bb->addr);
+					sdb_set(state.goto_cache, return_key, "1", 0);
+					free(return_key);
 #if 0
 					if (state.show_asm) {
 						NEWLINE (bb->addr, indent);
@@ -982,6 +996,10 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				} else {
 					PRINTF ("return;");
 				}
+				// Mark that we've printed a return for this block to avoid following gotos
+				char *return_key = r_str_newf("return.%"PFMT64x, bb->addr);
+				sdb_set(state.goto_cache, return_key, "1", 0);
+				free(return_key);
 				if (state.show_asm) {
 					PRINTF ("\n 0x%08"PFMT64x" | %s | ", bb->addr, r_str_pad (' ', 30));
 				}
