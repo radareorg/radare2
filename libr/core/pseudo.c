@@ -257,7 +257,7 @@ static void handle_indented_comments(char **p, char *nl, int spaces) {
 static void remove_double_spaces(char *s) {
 	char *p = s;
 	while (*p) {
-		char *nlnl = strstr(p, "  \n");
+		char *nlnl = strstr (p, "  \n");
 		if (!nlnl) {
 			break;
 		}
@@ -332,43 +332,43 @@ static void print_str(PDCState *state, const char *fmt, ...) {
 	va_list ap;
 	va_start(ap, fmt);
 	if (state->pj) {
-		r_strbuf_vappendf(state->codestr, fmt, ap);
+		r_strbuf_vappendf (state->codestr, fmt, ap);
 	} else {
-		r_strbuf_vappendf(state->out, fmt, ap);
+		r_strbuf_vappendf (state->out, fmt, ap);
 	}
 	va_end(ap);
 }
 
 static void print_newline(PDCState *state, ut64 addr, int indent) {
-	size_t indentstr_size = sizeof(state->indentstr);
+	size_t indentstr_size = sizeof (state->indentstr);
 	size_t eos = R_MIN (indent * 2, indentstr_size - 2);
-	if (eos < 1) { 
-		eos = 0; 
+	if (eos < 1) {
+		eos = 0;
 	}
 
-	memset(state->indentstr, ' ', indentstr_size);
+	memset (state->indentstr, ' ', indentstr_size);
 	state->indentstr[eos * 2] = 0;
 
 	if (state->pj) {
-		if (state->show_asm) { 
-			int asm_pad; 
+		if (state->show_asm) {
+			int asm_pad;
 			char *asm_str = disat(state->core, addr, &asm_pad);
-			r_strbuf_appendf(state->codestr, "\n0x%08"PFMT64x" | %s%s%s", addr, asm_str, r_str_pad(' ', asm_pad), state->indentstr);
+			r_strbuf_appendf (state->codestr, "\n0x%08"PFMT64x" | %s%s%s", addr, asm_str, r_str_pad(' ', asm_pad), state->indentstr);
 			free (asm_str);
 		} else if (state->show_addr) {
-			r_strbuf_appendf(state->codestr, "\n0x%08"PFMT64x" | %s", addr, state->indentstr);
-		} else { 
-			r_strbuf_appendf(state->codestr, "\n%s", state->indentstr);
+			r_strbuf_appendf (state->codestr, "\n0x%08"PFMT64x" | %s", addr, state->indentstr);
+		} else {
+			r_strbuf_appendf (state->codestr, "\n%s", state->indentstr);
 		}
 	} else {
 		r_strbuf_append(state->out, "\n");
 		if (state->show_asm) {
 			int asm_pad;
 			char *asm_str = disat(state->core, addr, &asm_pad);
-			r_strbuf_appendf(state->out, "0x%08"PFMT64x" | %s%s%s", addr, asm_str, r_str_pad(' ', asm_pad), state->indentstr);
+			r_strbuf_appendf (state->out, "0x%08"PFMT64x" | %s%s%s", addr, asm_str, r_str_pad(' ', asm_pad), state->indentstr);
 			free (asm_str);
 		} else if (state->show_addr) {
-			r_strbuf_appendf(state->out, " 0x%08"PFMT64x" | %s", addr, state->indentstr);
+			r_strbuf_appendf (state->out, " 0x%08"PFMT64x" | %s", addr, state->indentstr);
 		} else {
 			r_strbuf_append(state->out, state->indentstr);
 		}
@@ -385,49 +385,49 @@ static void print_goto(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut64 curr
 
 	// Create keys for tracking different patterns of duplication
 	// Track source address -> destination address (prevents same goto from same bb)
-	char *src_dst_key = r_str_newf("%"PFMT64x".to.%"PFMT64x, bb->addr, dst_addr);
+	char *src_dst_key = r_str_newf ("%"PFMT64x".to.%"PFMT64x, bb->addr, dst_addr);
 	// Track curr_addr -> destination (prevents multiple gotos at same address)
-	char *addr_dst_key = r_str_newf("%"PFMT64x".to.%"PFMT64x, curr_addr, dst_addr);
-	// Create a unique key for just this destination 
-	char *dst_key = r_str_newf("%"PFMT64x, dst_addr);
+	char *addr_dst_key = r_str_newf ("%"PFMT64x".to.%"PFMT64x, curr_addr, dst_addr);
+	// Create a unique key for just this destination
+	char *dst_key = r_str_newf ("%"PFMT64x, dst_addr);
 	// Create a mark key for checking if this destination is already marked
-	char *mark_key = r_str_newf("mark.%"PFMT64x, dst_addr);
+	char *mark_key = r_str_newf ("mark.%"PFMT64x, dst_addr);
 	// Check if we've already printed a goto from this source address
-	char *src_key = r_str_newf("%"PFMT64x".src", curr_addr);
+	char *src_key = r_str_newf ("%"PFMT64x".src", curr_addr);
 	// Check if we've already printed a return statement for this block
-	char *return_key = r_str_newf("return.%"PFMT64x, bb->addr);
+	char *return_key = r_str_newf ("return.%"PFMT64x, bb->addr);
 
 	// Don't print goto if:
 	// 1. We've already printed a goto from this exact source to this exact destination, OR
-	// 2. We've already printed a goto from the current address, OR 
+	// 2. We've already printed a goto from the current address, OR
 	// 3. We've already printed a goto with this current address to this destination, OR
 	// 4. The destination already has a label (marked as a location we've seen), OR
 	// 5. We've already printed a return statement for this block
-	if (!sdb_exists(state->goto_cache, src_dst_key) && 
-	    !sdb_exists(state->goto_cache, addr_dst_key) &&
-	    !sdb_exists(state->goto_cache, src_key) && 
-	    !sdb_const_get(state->db, mark_key, 0) && 
-	    !sdb_exists(state->goto_cache, return_key)) {
+	if (!sdb_exists (state->goto_cache, src_dst_key) &&
+	    !sdb_exists (state->goto_cache, addr_dst_key) &&
+	    !sdb_exists (state->goto_cache, src_key) &&
+	    !sdb_const_get(state->db, mark_key, 0) &&
+	    !sdb_exists (state->goto_cache, return_key)) {
 		// Mark all our tracking keys to prevent duplicates
-		sdb_set(state->goto_cache, src_dst_key, "1", 0);
-		sdb_set(state->goto_cache, addr_dst_key, "1", 0); 
-		sdb_set(state->goto_cache, src_key, "1", 0);
-		sdb_set(state->goto_cache, dst_key, "1", 0);
+		sdb_set (state->goto_cache, src_dst_key, "1", 0);
+		sdb_set (state->goto_cache, addr_dst_key, "1", 0);
+		sdb_set (state->goto_cache, src_key, "1", 0);
+		sdb_set (state->goto_cache, dst_key, "1", 0);
 
 		// Only print if this isn't a self-referential goto (which would be useless)
 		if (dst_addr != bb->addr) {
-			print_newline(state, curr_addr, indent);
+			print_newline (state, curr_addr, indent);
 			if (state->show_asm) {
-				print_str(state, " 0x%08"PFMT64x" | %s | ", bb->addr, r_str_pad(' ', 30));
+				print_str (state, " 0x%08"PFMT64x" | %s | ", bb->addr, r_str_pad(' ', 30));
 			}
-			print_str(state, " goto loc_0x%08"PFMT64x, dst_addr);
+			print_str (state, " goto loc_0x%08"PFMT64x, dst_addr);
 		}
 	}
 
 	// Free all allocated keys
 	free (src_dst_key);
 	free (addr_dst_key);
-	free (dst_key); 
+	free (dst_key);
 	free (mark_key);
 	free (src_key);
 	free (return_key);
@@ -441,26 +441,26 @@ static void print_goto_direct(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut
 	}
 
 	// Create a key to track this specific goto
-	char *src_addr_key = r_str_newf("%"PFMT64x".addr", curr_addr);
+	char *src_addr_key = r_str_newf ("%"PFMT64x".addr", curr_addr);
 
 	// Only print if we haven't already printed a goto at this address
-	if (!sdb_exists(state->goto_cache, src_addr_key)) {
+	if (!sdb_exists (state->goto_cache, src_addr_key)) {
 		// Mark this source address as having a goto
-		sdb_set(state->goto_cache, src_addr_key, "1", 0);
+		sdb_set (state->goto_cache, src_addr_key, "1", 0);
 
 		// Print the goto statement
 		print_newline(state, curr_addr, indent);
 		if (state->show_asm) {
-			print_str(state, " 0x%08"PFMT64x" | %s | ", bb->addr, r_str_pad(' ', 30));
+			print_str (state, " 0x%08"PFMT64x" | %s | ", bb->addr, r_str_pad(' ', 30));
 		}
-		print_str(state, "goto loc_0x%08"PFMT64x";", dst_addr);
+		print_str (state, "goto loc_0x%08"PFMT64x";", dst_addr);
 	}
 
 	free (src_addr_key);
 }
 
 // Define macros that call these functions
-#define PRINTF(...) print_str(&state, __VA_ARGS__)
+#define PRINTF(...) print_str (&state, __VA_ARGS__)
 #define NEWLINE(addr, indent) print_newline(&state, addr, indent)
 #define PRINTGOTO(dst_addr, curr_addr) print_goto(&state, bb, dst_addr, curr_addr, indent)
 #define PRINTGOTO_DIRECT(dst_addr, curr_addr) print_goto_direct(&state, bb, dst_addr, curr_addr, indent)
@@ -751,8 +751,8 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 						PRINTF ("return;");
 					}
 					// Mark that we've printed a return for this block to avoid following gotos
-					char *return_key = r_str_newf("return.%"PFMT64x, bb->addr);
-					sdb_set(state.goto_cache, return_key, "1", 0);
+					char *return_key = r_str_newf ("return.%"PFMT64x, bb->addr);
+					sdb_set (state.goto_cache, return_key, "1", 0);
 					free (return_key);
 #if 0
 					if (state.show_asm) {
@@ -968,7 +968,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			s = os;
 		} else {
 			int eos = indent;
-			memset (state.indentstr, ' ', sizeof(state.indentstr)); state.indentstr [(eos * 2)] = 0;
+			memset (state.indentstr, ' ', sizeof (state.indentstr)); state.indentstr [(eos * 2)] = 0;
 			char *os = r_str_prefix_all (s, state.indentstr);
 			free (s);
 			s = os;
@@ -1035,8 +1035,8 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 					PRINTF ("return;");
 				}
 				// Mark that we've printed a return for this block to avoid following gotos
-				char *return_key = r_str_newf("return.%"PFMT64x, bb->addr);
-				sdb_set(state.goto_cache, return_key, "1", 0);
+				char *return_key = r_str_newf ("return.%"PFMT64x, bb->addr);
+				sdb_set (state.goto_cache, return_key, "1", 0);
 				free (return_key);
 				if (state.show_asm) {
 					PRINTF ("\n 0x%08"PFMT64x" | %s | ", bb->addr, r_str_pad (' ', 30));
