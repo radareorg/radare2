@@ -80,13 +80,13 @@ static void find_function_name(RFindCTX *ctx, const char *in) {
 	if (!ctx->comment || *in != '(' || !isalpha(in[-1]) || ctx->right) {
 		return;
 	}
-	
+
 	// Navigate back to find function name
 	ctx->right = (char *)(in - 1);
 	while (isalpha(*ctx->right) || *ctx->right == '_' || *ctx->right == '*') {
 		ctx->right--;
 	}
-	
+
 	// Handle return type if present
 	if (*ctx->right == ' ') {
 		ctx->right--;
@@ -96,7 +96,7 @@ static void find_function_name(RFindCTX *ctx, const char *in) {
 		// Move back to start of function name
 		ctx->right++;
 	}
-	
+
 	// Set color offset for the right token
 	set_right_token(ctx, ctx->right);
 }
@@ -341,7 +341,7 @@ static void print_str(PDCState *state, const char *fmt, ...) {
 
 static void print_newline(PDCState *state, ut64 addr, int indent) {
 	size_t indentstr_size = sizeof(state->indentstr);
-	size_t eos = R_MIN(indent * 2, indentstr_size - 2);
+	size_t eos = R_MIN (indent * 2, indentstr_size - 2);
 	if (eos < 1) { 
 		eos = 0; 
 	}
@@ -354,7 +354,7 @@ static void print_newline(PDCState *state, ut64 addr, int indent) {
 			int asm_pad; 
 			char *asm_str = disat(state->core, addr, &asm_pad);
 			r_strbuf_appendf(state->codestr, "\n0x%08"PFMT64x" | %s%s%s", addr, asm_str, r_str_pad(' ', asm_pad), state->indentstr);
-			free(asm_str);
+			free (asm_str);
 		} else if (state->show_addr) {
 			r_strbuf_appendf(state->codestr, "\n0x%08"PFMT64x" | %s", addr, state->indentstr);
 		} else { 
@@ -366,7 +366,7 @@ static void print_newline(PDCState *state, ut64 addr, int indent) {
 			int asm_pad;
 			char *asm_str = disat(state->core, addr, &asm_pad);
 			r_strbuf_appendf(state->out, "0x%08"PFMT64x" | %s%s%s", addr, asm_str, r_str_pad(' ', asm_pad), state->indentstr);
-			free(asm_str);
+			free (asm_str);
 		} else if (state->show_addr) {
 			r_strbuf_appendf(state->out, " 0x%08"PFMT64x" | %s", addr, state->indentstr);
 		} else {
@@ -396,7 +396,7 @@ static void print_goto(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut64 curr
 	char *src_key = r_str_newf("%"PFMT64x".src", curr_addr);
 	// Check if we've already printed a return statement for this block
 	char *return_key = r_str_newf("return.%"PFMT64x, bb->addr);
-	
+
 	// Don't print goto if:
 	// 1. We've already printed a goto from this exact source to this exact destination, OR
 	// 2. We've already printed a goto from the current address, OR 
@@ -413,7 +413,7 @@ static void print_goto(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut64 curr
 		sdb_set(state->goto_cache, addr_dst_key, "1", 0); 
 		sdb_set(state->goto_cache, src_key, "1", 0);
 		sdb_set(state->goto_cache, dst_key, "1", 0);
-		
+
 		// Only print if this isn't a self-referential goto (which would be useless)
 		if (dst_addr != bb->addr) {
 			print_newline(state, curr_addr, indent);
@@ -425,12 +425,12 @@ static void print_goto(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut64 curr
 	}
 
 	// Free all allocated keys
-	free(src_dst_key);
-	free(addr_dst_key);
-	free(dst_key); 
-	free(mark_key);
-	free(src_key);
-	free(return_key);
+	free (src_dst_key);
+	free (addr_dst_key);
+	free (dst_key); 
+	free (mark_key);
+	free (src_key);
+	free (return_key);
 }
 
 // Helper function for direct goto prints with semicolon
@@ -456,7 +456,7 @@ static void print_goto_direct(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut
 		print_str(state, "goto loc_0x%08"PFMT64x";", dst_addr);
 	}
 
-	free(src_addr_key);
+	free (src_addr_key);
 }
 
 // Define macros that call these functions
@@ -471,14 +471,14 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_pdc);
 		return false;
 	}
-	
+
 	// Initialize state structure
 	PDCState state = {0};
 	state.core = core;
 	state.out = r_strbuf_new("");
 	state.codestr = r_strbuf_new("");
 	state.goto_cache = sdb_new0(); // Cache for avoiding duplicate goto statements
-	
+
 		const char *cmdPdc = r_config_get (core->config, "cmd.pdc");
 	if (R_STR_ISNOTEMPTY (cmdPdc) && !strstr (cmdPdc, "pdc")) {
 		if (strstr (cmdPdc, "!*") || strstr (cmdPdc, "#!")) {
@@ -556,7 +556,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	// XXX sorting basic blocks is nice for the reader, but introduces conceptual problems
 	// when the entrypoint is not starting at the lowest address. // r_list_sort (fcn->bbs, cmpnbbs);
 	int n_bb = r_list_length (state.fcn->bbs);
-	
+
 	if (state.pj) {
 		pj_o (state.pj);
 		pj_ka (state.pj, "annotations");
@@ -753,7 +753,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 					// Mark that we've printed a return for this block to avoid following gotos
 					char *return_key = r_str_newf("return.%"PFMT64x, bb->addr);
 					sdb_set(state.goto_cache, return_key, "1", 0);
-					free(return_key);
+					free (return_key);
 #if 0
 					if (state.show_asm) {
 						NEWLINE (bb->addr, indent);
@@ -1037,7 +1037,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				// Mark that we've printed a return for this block to avoid following gotos
 				char *return_key = r_str_newf("return.%"PFMT64x, bb->addr);
 				sdb_set(state.goto_cache, return_key, "1", 0);
-				free(return_key);
+				free (return_key);
 				if (state.show_asm) {
 					PRINTF ("\n 0x%08"PFMT64x" | %s | ", bb->addr, r_str_pad (' ', 30));
 				}
