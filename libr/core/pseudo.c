@@ -19,7 +19,9 @@ static inline bool is_symbol(const char *x, const char *end) {
 	return ((x) + 3 < end && r_str_startswith (x, "sym."));
 }
 
-// Using standard isspace() function from ctype.h
+static inline bool is_whitespace(char x) {
+	return isspace((unsigned char)x);
+}
 
 // R2R db/cmd/cmd_pdc
 
@@ -38,6 +40,60 @@ typedef struct _find_ctx {
 	int type;
 } RFindCTX;
 
+static void swap_strings(RFindCTX *ctx) {
+	char* copy = NULL;
+	size_t len;
+	
+	if (!ctx->right || !ctx->left || ctx->rightlen <= 0 || ctx->leftlen <= 0) {
+		return;
+	}
+	
+	if (ctx->leftlen > ctx->rightlen) {
+		// Left string is longer than right string
+		len = ctx->leftlen;
+		copy = R_NEWS (char, len);
+		if (!copy) {
+			return;
+		}
+		memmove (copy, ctx->left, len);
+		memmove (ctx->left, ctx->right, ctx->rightlen);
+		memset (ctx->left + ctx->rightlen, ' ', ctx->leftlen - ctx->rightlen);
+		memmove (ctx->comment - ctx->leftlen + ctx->rightlen, ctx->comment, ctx->right - ctx->comment);
+		memmove (ctx->right - ctx->leftlen + ctx->rightlen, copy, ctx->leftlen);
+	} else if (ctx->leftlen < ctx->rightlen) {
+		if (ctx->linecount < 1) {
+			// Right string is longer than left string
+			len = ctx->rightlen;
+			copy = R_NEWS (char, len);
+			if (!copy) {
+				return;
+			}
+			memcpy (copy, ctx->right, len);
+			memcpy (ctx->right + ctx->rightlen - ctx->leftlen, ctx->left, ctx->leftlen);
+			memmove (ctx->comment + ctx->rightlen - ctx->leftlen, ctx->comment, ctx->right - ctx->comment);
+			memmove (ctx->left + ctx->rightlen - ctx->leftlen, copy, ctx->rightlen);
+		} else {
+			// Special case handling
+			memset (ctx->right - ctx->leftpos, ' ', ctx->leftpos);
+			*(ctx->right - ctx->leftpos - 1) = '\n';
+			memset (ctx->left, ' ', ctx->leftlen);
+			memset (ctx->linebegin - ctx->leftlen, ' ', ctx->leftlen);
+		}
+	} else {
+		// Equal length strings - simple swap
+		len = ctx->leftlen;
+		copy = R_NEWS (char, len);
+		if (!copy) {
+			return;
+		}
+		memcpy (copy, ctx->right, len);
+		memcpy (ctx->right, ctx->left, len);
+		memcpy (ctx->left, copy, len);
+	}
+
+	free (copy);
+}
+
 static void find_and_change(char* in, int len) {
 	// just to avoid underflows.. len can't be < then len(padding).
 	if (!in || len < 1) {
@@ -54,49 +110,7 @@ static void find_and_change(char* in, int len) {
 				continue;
 			}
 			if (ctx.type != TYPE_NONE && ctx.right && ctx.left && ctx.rightlen > 0 && ctx.leftlen > 0) {
-				char* copy = NULL;
-				if (ctx.leftlen > ctx.rightlen) {
-					// if new string is o
-					copy = (char*) malloc (ctx.leftlen);
-					if (copy) {
-						memmove (copy, ctx.left, ctx.leftlen);
-						memmove (ctx.left, ctx.right, ctx.rightlen);
-						memset (ctx.left + ctx.rightlen, ' ', ctx.leftlen - ctx.rightlen);
-						memmove (ctx.comment - ctx.leftlen + ctx.rightlen, ctx.comment, ctx.right - ctx.comment);
-						memmove (ctx.right - ctx.leftlen + ctx.rightlen, copy, ctx.leftlen);
-					}
-				} else if (ctx.leftlen < ctx.rightlen) {
-					if (ctx.linecount < 1) {
-						copy = (char*) malloc (ctx.rightlen);
-						if (copy) {
-							// ###LEFTLEN### ### RIGHT
-							// backup ctx.right+len into copy
-							memcpy (copy, ctx.right, ctx.rightlen);
-							// move string into
-							memcpy (ctx.right + ctx.rightlen - ctx.leftlen, ctx.left, ctx.leftlen);
-							memmove (ctx.comment + ctx.rightlen - ctx.leftlen, ctx.comment, ctx.right - ctx.comment);
-							memmove (ctx.left + ctx.rightlen - ctx.leftlen, copy, ctx.rightlen);
-						}
-					} else {
-//						copy = (char*) malloc (ctx.linebegin - ctx.left);
-//						if (copy) {
-//							memcpy (copy, ctx.left, ctx.linebegin - ctx.left);
-						memset (ctx.right - ctx.leftpos, ' ', ctx.leftpos);
-						*(ctx.right - ctx.leftpos - 1) = '\n';
-//							memcpy (ctx.comment + 3, copy, ctx.linebegin - ctx.left);
-						memset (ctx.left, ' ', ctx.leftlen);
-						memset (ctx.linebegin - ctx.leftlen, ' ', ctx.leftlen);
-//						}
-					}
-				} else if (ctx.leftlen == ctx.rightlen) {
-					copy = (char*) malloc (ctx.leftlen);
-					if (copy) {
-						memcpy (copy, ctx.right, ctx.leftlen);
-						memcpy (ctx.right, ctx.left, ctx.leftlen);
-						memcpy (ctx.left, copy, ctx.leftlen);
-					}
-				}
-				free (copy);
+				swap_strings(&ctx);
 			}
 			memset (&ctx, 0, sizeof (ctx));
 			ctx.linebegin = in + 1;
