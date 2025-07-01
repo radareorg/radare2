@@ -623,7 +623,7 @@ static ut32 rbit(ArmOp *op) {
 	return data;
 }
 
-static ut32 mvn(ArmOp *op) {
+static ut32 op_mvn(ArmOp *op) {
 	ut32 data = UT32_MAX;
 
 	check_cond (op->operands[0].type == ARM_GPR);
@@ -2125,7 +2125,7 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 	} else if (!strncmp (str, "rev", 3)) {
 		*op = rev (&ops);
 	} else if (!strncmp (str, "mvn", 3)) {
-		*op = mvn (&ops);
+		*op = op_mvn (&ops);
 	} else if (!strncmp (str, "rbit", 4)) {
 		*op = rbit (&ops);
 	} else if (!strncmp (str, "tst", 3)) {
