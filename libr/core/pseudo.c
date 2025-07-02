@@ -347,7 +347,7 @@ static void print_newline(PDCState *state, ut64 addr, int indent) {
 	}
 
 	memset (state->indentstr, ' ', indentstr_size);
-	state->indentstr[eos * 2] = 0;
+	state->indentstr[eos] = '\0';
 
 	if (state->pj) {
 		if (state->show_asm) {
