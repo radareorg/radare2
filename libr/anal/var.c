@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2024 - pancake, oddcoder */
+/* radare - LGPL - Copyright 2010-2025 - pancake, oddcoder */
 
 #define R_LOG_ORIGIN "anal.var"
 
@@ -486,7 +486,8 @@ R_API ut64 r_anal_var_addr(RAnalVar *var) {
 	if (var->kind == R_ANAL_VAR_KIND_BPV) {
 		regname = r_reg_alias_getname (anal->reg, R_REG_ALIAS_BP);
 		return r_reg_getv (anal->reg, regname) + var->delta + var->fcn->bp_off;
-	} else if (var->kind == R_ANAL_VAR_KIND_SPV) {
+	}
+	if (var->kind == R_ANAL_VAR_KIND_SPV) {
 		regname = r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP);
 		return r_reg_getv (anal->reg, regname) + var->delta;
 	}

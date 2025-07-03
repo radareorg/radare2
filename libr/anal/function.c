@@ -203,7 +203,7 @@ R_API bool r_anal_function_delete(RAnal *anal, RAnalFunction *fcn) {
 	bool found = r_list_delete_data (fcn->anal->fcns, fcn);
 	{
 		REventFunction event = { .addr = fcn->addr };
-		r_event_send (anal->ev, R_EVENT_FUNCTION_REMOVED, &event);
+		r_event_send (anal->ev, R_EVENT_FUNCTION_DELETED, &event);
 	}
 	return found;
 }
