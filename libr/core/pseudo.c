@@ -214,6 +214,51 @@ static void swap_strings(RFindCTX *ctx) {
 }
 
 /**
+ * Process a token type when found in the input string
+ * @param ctx Context structure to update
+ * @param type Type of token found (STR or SYM)
+ * @param token Pointer to the token in the string
+ */
+static void process_token_found(RFindCTX *ctx, RFindType type, char *token) {
+	ctx->type = type;
+	set_left_token(ctx, token);
+}
+
+/**
+ * Process string token when found in the input
+ * @param ctx Context structure
+ * @param in Current character position
+ */
+static void process_string_token(RFindCTX *ctx, char *in) {
+	set_left_length(ctx, in, 0);
+	// Handle string literals (quoted text)
+	if (ctx->comment && *in == '"' && in[-1] != '\\') {
+		if (!ctx->right) {
+			set_right_token(ctx, in);
+		} else {
+			set_right_length(ctx, in, 1);
+		}
+	}
+}
+
+/**
+ * Process symbol token when found in the input
+ * @param ctx Context structure
+ * @param in Current character position
+ */
+static void process_symbol_token(RFindCTX *ctx, char *in) {
+	set_left_length(ctx, in, 3);
+	// Process function definition format: "type fcn_name(args)"
+	if (ctx->comment && *in == '(' && isalpha (in[-1]) && !ctx->right) {
+		find_function_name(ctx, in);
+	} 
+	// Handle closing parenthesis
+	else if (ctx->comment && *in == ')' && in[1] != '\'') {
+		set_right_length(ctx, in, 1);
+	}
+}
+
+/**
  * Main string processing function that identifies and manipulates tokens in the code
  * @param in Pointer to the input string to process
  * @param len Length of the input string
@@ -256,36 +301,18 @@ static void find_and_change(char* in, int len) {
 		// Identify string or symbol tokens if no comment yet and no token type set
 		else if (!ctx.comment && ctx.type == TYPE_NONE) {
 			if (is_string(in, end)) {
-				ctx.type = TYPE_STR;
-				set_left_token(&ctx, in);
+				process_token_found(&ctx, TYPE_STR, in);
 			} else if (is_symbol(in, end)) {
-				ctx.type = TYPE_SYM;
-				set_left_token(&ctx, in);
+				process_token_found(&ctx, TYPE_SYM, in);
 			}
 		} 
 		// Handle string token processing
 		else if (ctx.type == TYPE_STR) {
-			set_left_length(&ctx, in, 0);
-			// Handle string literals (quoted text)
-			if (ctx.comment && *in == '"' && in[-1] != '\\') {
-				if (!ctx.right) {
-					set_right_token(&ctx, in);
-				} else {
-					set_right_length(&ctx, in, 1);
-				}
-			}
+			process_string_token(&ctx, in);
 		} 
 		// Handle symbol token processing
 		else if (ctx.type == TYPE_SYM) {
-			set_left_length(&ctx, in, 3);
-			// Process function definition format: "type fcn_name(args)"
-			if (ctx.comment && *in == '(' && isalpha (in[-1]) && !ctx.right) {
-				find_function_name(&ctx, in);
-			} 
-			// Handle closing parenthesis
-			else if (ctx.comment && *in == ')' && in[1] != '\'') {
-				set_right_length(&ctx, in, 1);
-			}
+			process_symbol_token(&ctx, in);
 		}
 	}
 }
@@ -565,6 +592,70 @@ static void print_newline(PDCState *state, ut64 addr, int indent) {
 }
 
 /**
+ * Checks if a goto for the given destination should be printed
+ * Centralizes deduplication logic for goto statements
+ * @param state PDCState containing cache information
+ * @param bb Current basic block
+ * @param dst_addr Destination address
+ * @param curr_addr Current address
+ * @return true if goto should be printed, false otherwise
+ */
+static bool should_print_goto(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut64 curr_addr) {
+	// Early exit checks
+	if (dst_addr == UT64_MAX || curr_addr == dst_addr || dst_addr == bb->addr) {
+		return false;
+	}
+
+	// Create cache keys
+	char *src_dst_key = r_str_newf ("%"PFMT64x".to.%"PFMT64x, bb->addr, dst_addr);
+	char *addr_dst_key = r_str_newf ("%"PFMT64x".to.%"PFMT64x, curr_addr, dst_addr);
+	char *src_key = r_str_newf ("%"PFMT64x".src", curr_addr);
+	char *mark_key = r_str_newf ("mark.%"PFMT64x, dst_addr);
+	char *return_key = r_str_newf ("return.%"PFMT64x, bb->addr);
+	
+	// Check if we should print the goto
+	bool should_print = !sdb_exists (state->goto_cache, src_dst_key) &&
+	                   !sdb_exists (state->goto_cache, addr_dst_key) &&
+	                   !sdb_exists (state->goto_cache, src_key) &&
+	                   !sdb_const_get(state->db, mark_key, 0) &&
+	                   !sdb_exists (state->goto_cache, return_key);
+	
+	// Free the keys
+	free (src_dst_key);
+	free (addr_dst_key);
+	free (src_key);
+	free (mark_key);
+	free (return_key);
+	
+	return should_print;
+}
+
+/**
+ * Marks a goto statement as printed in the cache
+ * @param state PDCState containing cache information
+ * @param bb Current basic block
+ * @param dst_addr Destination address
+ * @param curr_addr Current address
+ */
+static void mark_goto_printed(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut64 curr_addr) {
+	char *src_dst_key = r_str_newf ("%"PFMT64x".to.%"PFMT64x, bb->addr, dst_addr);
+	char *addr_dst_key = r_str_newf ("%"PFMT64x".to.%"PFMT64x, curr_addr, dst_addr);
+	char *src_key = r_str_newf ("%"PFMT64x".src", curr_addr);
+	char *dst_key = r_str_newf ("%"PFMT64x, dst_addr);
+	
+	// Mark all tracking keys to prevent duplicates
+	sdb_set (state->goto_cache, src_dst_key, "1", 0);
+	sdb_set (state->goto_cache, addr_dst_key, "1", 0);
+	sdb_set (state->goto_cache, src_key, "1", 0);
+	sdb_set (state->goto_cache, dst_key, "1", 0);
+	
+	free (src_dst_key);
+	free (addr_dst_key);
+	free (src_key);
+	free (dst_key);
+}
+
+/**
  * Prints a goto statement with comprehensive deduplication logic
  * Ensures that goto statements are only printed once and when needed
  * @param state PDCState containing output configuration and goto cache
@@ -574,61 +665,17 @@ static void print_newline(PDCState *state, ut64 addr, int indent) {
  * @param indent Current indentation level
  */
 static void print_goto(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut64 curr_addr, int indent) {
-	// Early exit checks:
-	// 1. Invalid destination address (UT64_MAX)
-	// 2. Self-referential goto (destination equals current address)
-	if (dst_addr == UT64_MAX || curr_addr == dst_addr) {
-		return;
-	}
-
-	// Create keys for tracking different patterns of duplication
-	// Track source address -> destination address (prevents same goto from same bb)
-	char *src_dst_key = r_str_newf ("%"PFMT64x".to.%"PFMT64x, bb->addr, dst_addr);
-	// Track curr_addr -> destination (prevents multiple gotos at same address)
-	char *addr_dst_key = r_str_newf ("%"PFMT64x".to.%"PFMT64x, curr_addr, dst_addr);
-	// Create a unique key for just this destination
-	char *dst_key = r_str_newf ("%"PFMT64x, dst_addr);
-	// Create a mark key for checking if this destination is already marked
-	char *mark_key = r_str_newf ("mark.%"PFMT64x, dst_addr);
-	// Check if we've already printed a goto from this source address
-	char *src_key = r_str_newf ("%"PFMT64x".src", curr_addr);
-	// Check if we've already printed a return statement for this block
-	char *return_key = r_str_newf ("return.%"PFMT64x, bb->addr);
-
-	// Don't print goto if:
-	// 1. We've already printed a goto from this exact source to this exact destination, OR
-	// 2. We've already printed a goto from the current address, OR
-	// 3. We've already printed a goto with this current address to this destination, OR
-	// 4. The destination already has a label (marked as a location we've seen), OR
-	// 5. We've already printed a return statement for this block
-	if (!sdb_exists (state->goto_cache, src_dst_key) &&
-	    !sdb_exists (state->goto_cache, addr_dst_key) &&
-	    !sdb_exists (state->goto_cache, src_key) &&
-	    !sdb_const_get(state->db, mark_key, 0) &&
-	    !sdb_exists (state->goto_cache, return_key)) {
-		// Mark all our tracking keys to prevent duplicates
-		sdb_set (state->goto_cache, src_dst_key, "1", 0);
-		sdb_set (state->goto_cache, addr_dst_key, "1", 0);
-		sdb_set (state->goto_cache, src_key, "1", 0);
-		sdb_set (state->goto_cache, dst_key, "1", 0);
-
-		// Only print if this isn't a self-referential goto (which would be useless)
-		if (dst_addr != bb->addr) {
-			print_newline (state, curr_addr, indent);
-			if (state->show_asm) {
-				print_str (state, " 0x%08"PFMT64x" | %s | ", bb->addr, r_str_pad(' ', 30));
-			}
-			print_str (state, " goto loc_0x%08"PFMT64x, dst_addr);
+	if (should_print_goto(state, bb, dst_addr, curr_addr)) {
+		// Mark this goto as printed
+		mark_goto_printed(state, bb, dst_addr, curr_addr);
+		
+		// Print the goto statement
+		print_newline (state, curr_addr, indent);
+		if (state->show_asm) {
+			print_str (state, " 0x%08"PFMT64x" | %s | ", bb->addr, r_str_pad(' ', 30));
 		}
+		print_str (state, " goto loc_0x%08"PFMT64x, dst_addr);
 	}
-
-	// Free all allocated keys
-	free (src_dst_key);
-	free (addr_dst_key);
-	free (dst_key);
-	free (mark_key);
-	free (src_key);
-	free (return_key);
 }
 
 /**
