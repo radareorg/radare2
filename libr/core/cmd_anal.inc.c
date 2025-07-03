@@ -1777,7 +1777,7 @@ static int cmd_an2(RCore *core, const char *name, int mode) {
 	ut64 tgt_addr = op.jump != UT64_MAX? op.jump: op.ptr;
 	if (var) {
 		if (name) {
-			ret = r_anal_var_rename (var, name, true) ? 0 : -1;
+			ret = r_anal_var_rename (core->anal, var, name) ? 0 : -1;
 		} else if (mode == '*') {
 			r_cons_printf (core->cons, "f %s=0x%" PFMT64x "\n", var->name, tgt_addr);
 		} else if (mode == 'j') {
@@ -2088,7 +2088,7 @@ static int cmd_afv(RCore *core, const char *str) {
 			if (fcn) {
 				v1 = r_anal_function_get_var_byname (fcn, old_name);
 				if (v1) {
-					r_anal_var_rename (v1, new_name, true);
+					r_anal_var_rename (core->anal, v1, new_name);
 				} else {
 					R_LOG_ERROR ("Cant find var by name");
 				}
@@ -2167,7 +2167,7 @@ static int cmd_afv(RCore *core, const char *str) {
 				return false;
 			}
 			if (type) {
-				r_anal_var_set_type (v1, type);
+				r_anal_var_set_type (core->anal, v1, type);
 			} else {
 				r_cons_printf (core->cons, "%s\n", v1->type);
 			}
@@ -2233,7 +2233,7 @@ static int cmd_afv(RCore *core, const char *str) {
 				}
 			}
 			if (var) {
-				r_anal_var_delete (var);
+				r_anal_var_delete (core->anal, var);
 			}
 		}
 		break;
@@ -2262,7 +2262,7 @@ static int cmd_afv(RCore *core, const char *str) {
 			int ptr = *var->type == 's' ? idx - fcn->maxstack : idx;
 			RAnalOp *op = r_core_anal_op (core, addr, 0);
 			const char *ireg = op ? op->ireg : NULL;
-			r_anal_var_set_access (var, ireg, addr, rw, ptr);
+			r_anal_var_set_access (core->anal, var, ireg, addr, rw, ptr);
 			r_anal_op_free (op);
 		} else {
 			R_LOG_ERROR ("Missing argument");

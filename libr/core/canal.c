@@ -5435,7 +5435,7 @@ static void handle_var_stack_access(REsil *esil, ut64 addr, RPerm type, int len)
 				free (varname);
 			}
 			if (var) {
-				r_anal_var_set_access (var, regname, ctx->op->addr, type, delta_for_access (ctx->op, type));
+				r_anal_var_set_access (ctx->fcn->anal, var, regname, ctx->op->addr, type, delta_for_access (ctx->op, type));
 			}
 		}
 	}

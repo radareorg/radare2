@@ -97,7 +97,7 @@ R_API bool r_anal_function_rebase_vars(RAnal *a, RAnalFunction *fcn) {
 
 // If the type of var is a struct,
 // remove all other vars that are overlapped by var and are at the offset of one of its struct members
-static void shadow_var_struct_members(RAnalVar *var) {
+static void shadow_var_struct_members(RAnal *anal, RAnalVar *var) {
 	Sdb *TDB = var->fcn->anal->sdb_types;
 	const char *type_kind = sdb_const_get (TDB, var->type, 0);
 	if (type_kind && r_str_startswith (type_kind, "struct")) {
@@ -114,7 +114,7 @@ static void shadow_var_struct_members(RAnalVar *var) {
 			if (field_offset != 0) { // delete variables which are overlaid by structure
 				RAnalVar *other = r_anal_function_get_var (var->fcn, var->kind, var->delta + field_offset);
 				if (other && other != var) {
-					r_anal_var_delete (other);
+					r_anal_var_delete (anal, other);
 				}
 			}
 			free (field_type);
@@ -186,7 +186,7 @@ R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind
 	var->kind = kind;
 	var->isarg = isarg;
 	var->delta = delta;
-	shadow_var_struct_members (var);
+	shadow_var_struct_members (fcn->anal, var);
 	return var;
 }
 
@@ -203,19 +203,22 @@ R_API bool r_anal_function_set_var_prot(RAnalFunction *fcn, RList *l) {
 	return true;
 }
 
-// TODO: add an owned variant for this because we already own the type name before calling this
-R_API void r_anal_var_set_type(RAnalVar *var, const char * const type) {
+R_API void r_anal_var_set_type(RAnal *anal, RAnalVar *var, const char * const type) {
 	char *nt = strdup (type);
 	if (nt) {
 		free (var->type);
 		var->type = nt;
 		R_LOG_DEBUG ("set type %s for %s", type, var->name);
-		shadow_var_struct_members (var);
+		shadow_var_struct_members (anal, var);
+		{
+			REventVariable event = { .fcn = var->fcn, .var = var, .type = type };
+			r_event_send (anal->ev, R_EVENT_VARIABLE_TYPE_CHANGED, &event);
+		}
 	}
 }
 
 static void var_free(RAnalVar *var) {
-	if (var) {
+	if (R_LIKELY (var)) {
 		r_anal_var_clear_accesses (var);
 		r_vector_fini (&var->constraints);
 		free (var->name);
@@ -234,8 +237,8 @@ static void r_anal_var_proto_free(RAnalVarProt *vp) {
 	}
 }
 
-R_API void r_anal_var_delete(RAnalVar *var) {
-	R_RETURN_IF_FAIL (var);
+R_API bool r_anal_var_delete(RAnal *anal, RAnalVar *var) {
+	R_RETURN_VAL_IF_FAIL (var, false);
 	RAnalFunction *fcn = var->fcn;
 	size_t i;
 	for (i = 0; i < r_pvector_length (&fcn->vars); i++) {
@@ -243,9 +246,14 @@ R_API void r_anal_var_delete(RAnalVar *var) {
 		if (v == var) {
 			r_pvector_remove_at (&fcn->vars, i);
 			var_free (v);
-			return;
+			{
+				REventVariable event = { .fcn = fcn, .var = var };
+				r_event_send (anal->ev, R_EVENT_VARIABLE_DELETED, &event);
+			}
+			return true;
 		}
 	}
+	return false;
 }
 
 R_API void r_anal_function_delete_vars_by_kind(RAnalFunction *fcn, RAnalVarKind kind) {
@@ -554,16 +562,14 @@ R_API bool r_anal_var_check_name(const char *name) {
 	return !isdigit ((unsigned char)*name) && strcspn (name, "., =/");
 }
 
-R_API bool r_anal_var_rename(RAnalVar *var, const char *new_name, bool verbose) {
-	R_RETURN_VAL_IF_FAIL (var, false);
+R_API bool r_anal_var_rename(RAnal *anal, RAnalVar *var, const char *new_name) {
+	R_RETURN_VAL_IF_FAIL (anal && var, false);
 	if (!r_anal_var_check_name (new_name)) {
 		return false;
 	}
 	RAnalVar *v1 = r_anal_function_get_var_byname (var->fcn, new_name);
 	if (v1) {
-		if (verbose) {
-			R_LOG_ERROR ("variable or arg with name `%s` already exist", new_name);
-		}
+		R_LOG_DEBUG ("variable or arg with name `%s` already exist", new_name);
 		return false;
 	}
 	char *nn = strdup (new_name);
@@ -572,6 +578,10 @@ R_API bool r_anal_var_rename(RAnalVar *var, const char *new_name, bool verbose) 
 	}
 	free (var->name);
 	var->name = nn;
+	{
+		REventVariable event = { .fcn = var->fcn, .var = var, .name = nn };
+		r_event_send (anal->ev, R_EVENT_VARIABLE_NAME_CHANGED, &event);
+	}
 	return true;
 }
 
@@ -658,8 +668,8 @@ R_API RAnalVar *r_anal_var_get_dst_var(RAnalVar *var) {
 	return NULL;
 }
 
-R_API void r_anal_var_set_access(RAnalVar *var, const char *reg, ut64 access_addr, int access_type, st64 stackptr) {
-	R_RETURN_IF_FAIL (var);
+R_API bool r_anal_var_set_access(RAnal *anal, RAnalVar *var, const char *reg, ut64 access_addr, int access_type, st64 stackptr) {
+	R_RETURN_VAL_IF_FAIL (var, false);
 	st64 offset = access_addr - var->fcn->addr;
 
 	// accesses are stored ordered by offset, use binary search to get the matching existing or the index to insert a new one
@@ -684,13 +694,14 @@ R_API void r_anal_var_set_access(RAnalVar *var, const char *reg, ut64 access_add
 	if (!inst_accesses) {
 		inst_accesses = r_pvector_new (NULL);
 		if (!inst_accesses) {
-			return;
+			return false;
 		}
 		ht_up_insert (var->fcn->inst_vars, (ut64)offset, inst_accesses);
 	}
 	if (!r_pvector_contains (inst_accesses, var)) {
 		r_pvector_push (inst_accesses, var);
 	}
+	return true;
 }
 
 R_API void r_anal_var_remove_access_at(RAnalVar *var, ut64 address) {
@@ -1024,7 +1035,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		}
 		RAnalVar *var = get_stack_var (fcn, frame_off);
 		if (var) {
-			r_anal_var_set_access (var, reg, op->addr, rw, ptr);
+			r_anal_var_set_access (anal, var, reg, op->addr, rw, ptr);
 			goto beach;
 		}
 		char *varname = NULL, *vartype = NULL;
@@ -1072,7 +1083,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		if (varname) {
 			RAnalVar *var = r_anal_function_set_var (fcn, frame_off, type, vartype, anal->config->bits / 8, isarg, varname);
 			if (var) {
-				r_anal_var_set_access (var, reg, op->addr, rw, ptr);
+				r_anal_var_set_access (anal, var, reg, op->addr, rw, ptr);
 			}
 			free (varname);
 		}
@@ -1084,7 +1095,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		}
 		RAnalVar *var = get_stack_var (fcn, frame_off);
 		if (var) {
-			r_anal_var_set_access (var, reg, op->addr, rw, -ptr);
+			r_anal_var_set_access (anal, var, reg, op->addr, rw, -ptr);
 			goto beach;
 		}
 		char *varname = anal->opt.varname_stack
@@ -1093,7 +1104,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		if (varname) {
 			RAnalVar *var = r_anal_function_set_var (fcn, frame_off, type, NULL, anal->config->bits / 8, false, varname);
 			if (var) {
-				r_anal_var_set_access (var, reg, op->addr, rw, -ptr);
+				r_anal_var_set_access (anal, var, reg, op->addr, rw, -ptr);
 			}
 			free (varname);
 		}
@@ -1354,7 +1365,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 				reg_set[i] = 1;
 			}
 			if (var) {
-				r_anal_var_set_access (var, var->regname, op->addr, R_PERM_R, 0);
+				r_anal_var_set_access (anal, var, var->regname, op->addr, R_PERM_R, 0);
 				r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, var->name);
 			}
 		}
@@ -1373,7 +1384,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			}
 			RAnalVar *newvar = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, 0, size, true, vname);
 			if (newvar) {
-				r_anal_var_set_access (newvar, newvar->regname, op->addr, R_PERM_R, 0);
+				r_anal_var_set_access (anal, newvar, newvar->regname, op->addr, R_PERM_R, 0);
 			}
 			r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, vname);
 			free (vname);
@@ -1398,7 +1409,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			}
 			RAnalVar *newvar = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, 0, size, true, vname);
 			if (newvar) {
-				r_anal_var_set_access (newvar, newvar->regname, op->addr, R_PERM_R, 0);
+				r_anal_var_set_access (anal, newvar, newvar->regname, op->addr, R_PERM_R, 0);
 			}
 			r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, vname);
 			free (vname);

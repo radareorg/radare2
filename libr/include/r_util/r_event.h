@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2018-2024 - pancake */
+/* radare - LGPL - Copyright 2018-2025 - pancake */
 
 #ifndef R_EVENT_H
 #define R_EVENT_H
@@ -35,6 +35,11 @@ typedef enum {
 	R_EVENT_FUNCTION_CALLED,
 	R_EVENT_FUNCTION_RETURNED,
 
+	R_EVENT_VARIABLE_ADDED,
+	R_EVENT_VARIABLE_NAME_CHANGED,
+	R_EVENT_VARIABLE_TYPE_CHANGED,
+	R_EVENT_VARIABLE_DELETED,
+
 	R_EVENT_DEBUG_START,
 	R_EVENT_DEBUG_STOP,
 	R_EVENT_DEBUG_STEP,
@@ -69,10 +74,6 @@ typedef enum {
 
 	R_EVENT_FLAGS_ADDED,
 	R_EVENT_FLAGS_REMOVED,
-
-	R_EVENT_ANALYSIS_VARIABLE_ADD,
-	R_EVENT_ANALYSIS_VARIABLE_CHANGE,
-	R_EVENT_ANALYSIS_VARIABLE_DELETE,
 
 	R_EVENT_TRACE_START,
 	R_EVENT_TRACE_END,
@@ -194,6 +195,13 @@ typedef struct r_event_function_t {
 	ut64 addr;
 	void *fcn;
 } REventFunction;
+
+typedef struct r_event_variable_t {
+	const char *name;
+	const char *type;
+	void *fcn;
+	void *var;
+} REventVariable;
 
 typedef struct r_event_meta_t {
 	int type;
