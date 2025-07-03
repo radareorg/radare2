@@ -54,9 +54,9 @@ static RVecREventHook *get_cbs(REvent *ev, int type) {
 	return cbs;
 }
 
-R_API void r_event_hook(REvent * R_NULLABLE ev, ut32 type, REventCallback cb, void *user) {
+R_API bool r_event_hook(REvent * R_NULLABLE ev, ut32 type, REventCallback cb, void *user) {
 	if (!ev) {
-		return;
+		return false;
 	}
 	r_th_lock_enter (ev->lock);
 	REventHook hook = { type, cb, user };
@@ -74,6 +74,7 @@ R_API void r_event_hook(REvent * R_NULLABLE ev, ut32 type, REventCallback cb, vo
 		}
 	}
 	r_th_lock_leave (ev->lock);
+	return true;
 }
 
 static inline bool del_hook(RVecREventHook *hooks, const ut64 k, REventCallback cb) {

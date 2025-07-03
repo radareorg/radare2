@@ -1066,8 +1066,8 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 				// var int local_e0h --> var struct foo
 				if (strcmp (var->name , vlink) && !resolved) {
 					resolved = true;
-					r_anal_var_set_type (var, varpfx);
-					r_anal_var_rename (var, vlink, false);
+					r_anal_var_set_type (core->anal, var, varpfx);
+					r_anal_var_rename (core->anal, var, vlink);
 				}
 			} else if (slink) {
 				set_offset_hint (core, &aop, slink, src_addr, at - ret, src_imm);

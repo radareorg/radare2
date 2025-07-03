@@ -26,7 +26,7 @@ extern int ptrace(int _request, pid_t _pid, caddr_t _addr, int _data);
 #include <windows.h>
 int gettimeofday (struct timeval* p, void* tz);
 #endif
-#include "r_util/r_event.h"
+#include "r_event.h"
 #include "r_util/r_assert.h"
 #include "r_util/r_itv.h"
 #include "r_util/r_signal.h"

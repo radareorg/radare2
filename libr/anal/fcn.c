@@ -459,6 +459,7 @@ typedef struct {
 static bool fcn_takeover_block_recursive_followthrough_cb(RAnalBlock *block, void *user) {
 	BlockTakeoverCtx *ctx = user;
 	RAnalFunction *our_fcn = ctx->fcn;
+	RAnal *anal = our_fcn->anal;
 	r_anal_block_ref (block);
 	while (!r_list_empty (block->fcns)) {
 		RAnalFunction *other_fcn = r_list_first (block->fcns);
@@ -488,7 +489,7 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RAnalBlock *block, voi
 				}
 				if (our_var) {
 					RAnalVarAccess *acc = r_anal_var_get_access_at (other_var, addr);
-					r_anal_var_set_access (our_var, acc->reg, addr, acc->type, acc->stackptr);
+					r_anal_var_set_access (anal, our_var, acc->reg, addr, acc->type, acc->stackptr);
 				}
 				r_anal_var_remove_access_at (other_var, addr);
 				if (r_vector_empty (&other_var->accesses)) {
@@ -1880,7 +1881,7 @@ R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, int reftyp
 R_API int r_anal_function_del(RAnal *a, ut64 addr) {
 	RAnalFunction *fcn = r_anal_get_function_at (a, addr);
 	if (fcn) {
-		r_anal_function_delete (fcn);
+		r_anal_function_delete (a, fcn);
 		// r_anal_function_free (fcn);
 		return true;
 	}

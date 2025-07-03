@@ -376,6 +376,7 @@ static void r2pm_set_pyvenv(R2Pm *r2pm) {
 		r_sys_setenv_sep ("PATH", venv_bin, false);
 		free (venv_bin);
 	}
+	free (r2_prefix);
 	free (venv);
 }
 

@@ -2240,7 +2240,7 @@ R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr) {
 	} else {
 		r_list_foreach_safe (core->anal->fcns, iter, iter_tmp, fcni) {
 			if (r_anal_function_contains (fcni, addr)) {
-				r_anal_function_delete (fcni);
+				r_anal_function_delete (core->anal, fcni);
 			}
 		}
 	}
@@ -5435,7 +5435,7 @@ static void handle_var_stack_access(REsil *esil, ut64 addr, RPerm type, int len)
 				free (varname);
 			}
 			if (var) {
-				r_anal_var_set_access (var, regname, ctx->op->addr, type, delta_for_access (ctx->op, type));
+				r_anal_var_set_access (ctx->fcn->anal, var, regname, ctx->op->addr, type, delta_for_access (ctx->op, type));
 			}
 		}
 	}

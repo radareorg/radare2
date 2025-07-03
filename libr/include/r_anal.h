@@ -3,10 +3,6 @@
 #ifndef R2_ANAL_H
 #define R2_ANAL_H
 
-/* use old refs and function storage */
-// still required by core in lot of places
-#define USE_VARSUBS 0
-
 #include <r_cons.h>
 #include <r_io.h>
 #include <r_esil.h>
@@ -969,7 +965,7 @@ R_API RList *r_anal_get_functions_in(RAnal *anal, ut64 addr);
 // returns the function that has its entrypoint at addr or NULL
 R_API RAnalFunction *r_anal_get_function_at(RAnal *anal, ut64 addr);
 
-R_API bool r_anal_function_delete(RAnalFunction *fcn);
+R_API bool r_anal_function_delete(RAnal *anal, RAnalFunction *fcn);
 
 // rhange the entrypoint of fcn
 // This can fail (and return false) if there is already another function at the new address
@@ -1168,11 +1164,11 @@ R_API st64 r_anal_function_get_var_stackptr_at(RAnalFunction *fcn, st64 delta, u
 R_API const char *r_anal_function_get_var_reg_at(RAnalFunction *fcn, st64 delta, ut64 addr);
 R_API R_BORROW RPVector *r_anal_function_get_vars_used_at(RAnalFunction *fcn, ut64 op_addr);
 
-R_API bool r_anal_var_rename(RAnalVar *var, const char *new_name, bool verbose);
-R_API void r_anal_var_set_type(RAnalVar *var, const char *type);
-R_API void r_anal_var_delete(RAnalVar *var);
+R_API bool r_anal_var_rename(RAnal *anal, RAnalVar *var, const char *new_name);
+R_API void r_anal_var_set_type(RAnal *anal, RAnalVar *var, const char *type);
+R_API bool r_anal_var_delete(RAnal *anal, RAnalVar *var);
 R_API ut64 r_anal_var_addr(RAnalVar *var);
-R_API void r_anal_var_set_access(RAnalVar *var, const char *reg, ut64 access_addr, int access_type, st64 stackptr);
+R_API bool r_anal_var_set_access(RAnal *anal, RAnalVar *var, const char *reg, ut64 access_addr, int access_type, st64 stackptr);
 R_API void r_anal_var_remove_access_at(RAnalVar *var, ut64 address);
 R_API void r_anal_var_clear_accesses(RAnalVar *var);
 R_API void r_anal_var_add_constraint(RAnalVar *var, R_BORROW RAnalVarConstraint *constraint);

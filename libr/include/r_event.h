@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2018-2024 - pancake */
+/* radare - LGPL - Copyright 2018-2025 - pancake */
 
 #ifndef R_EVENT_H
 #define R_EVENT_H
@@ -25,9 +25,20 @@ typedef enum {
 
 	R_EVENT_ANALYSIS_START,
 	R_EVENT_ANALYSIS_END,
-	R_EVENT_ANALYSIS_FUNCTION_ADDED,
 	R_EVENT_ANALYSIS_BLOCK_ADDED,
-	R_EVENT_ANALYSIS_BLOCK_REMOVED,
+	R_EVENT_ANALYSIS_BLOCK_DELETED,
+
+	R_EVENT_FUNCTION_ADDED,
+	R_EVENT_FUNCTION_RENAMED,
+	R_EVENT_FUNCTION_MODIFIED,
+	R_EVENT_FUNCTION_DELETED,
+	R_EVENT_FUNCTION_CALLED,
+	R_EVENT_FUNCTION_RETURNED,
+
+	R_EVENT_VARIABLE_ADDED,
+	R_EVENT_VARIABLE_NAME_CHANGED,
+	R_EVENT_VARIABLE_TYPE_CHANGED,
+	R_EVENT_VARIABLE_DELETED,
 
 	R_EVENT_DEBUG_START,
 	R_EVENT_DEBUG_STOP,
@@ -63,9 +74,6 @@ typedef enum {
 
 	R_EVENT_FLAGS_ADDED,
 	R_EVENT_FLAGS_REMOVED,
-
-	R_EVENT_ANALYSIS_VARIABLE_ADD,
-	R_EVENT_ANALYSIS_VARIABLE_DELETE,
 
 	R_EVENT_TRACE_START,
 	R_EVENT_TRACE_END,
@@ -180,10 +188,20 @@ typedef enum {
 	R_EVENT_FILE_RELOCATED,
 	R_EVENT_BINARY_CHECKSUM_VERIFIED,
 
-	R_EVENT_FUNCTION_CALLED,
-	R_EVENT_FUNCTION_RETURNED,
 	R_EVENT_LAST,
 } REventType;
+
+typedef struct r_event_function_t {
+	ut64 addr;
+	void *fcn;
+} REventFunction;
+
+typedef struct r_event_variable_t {
+	const char *name;
+	const char *type;
+	void *fcn;
+	void *var;
+} REventVariable;
 
 typedef struct r_event_meta_t {
 	int type;
@@ -258,7 +276,7 @@ typedef struct r_event_callback_handle_t {
 
 R_API REvent *r_event_new(void *user);
 R_API void r_event_free(REvent *ev);
-R_API void r_event_hook(REvent *ev, ut32 type, REventCallback cb, void *data);
+R_API bool r_event_hook(REvent *ev, ut32 type, REventCallback cb, void *data);
 R_API bool r_event_unhook(REvent * R_NULLABLE ev, ut32 event_hook, REventCallback cb);
 R_API void r_event_send(REvent *ev, ut32 type, void *data);
 
