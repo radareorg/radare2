@@ -31,9 +31,6 @@
 #include <r_bind.h>
 #include <r_codemeta.h>
 
-// TODO: this var should be 1 at some point :D
-#define SHELLFILTER 0
-
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -13,9 +13,8 @@ static char *_get_body(void *data, void *user) {
 	return r_core_cmd_strf (core, "pD 0x%"PFMT64x" @ 0x%"PFMT64x, bb->size, bb->addr);
 }
 
-// int vs bool
-static int r_cmd_agD_call(void *user, const char *input) {
-	RCore *core = (RCore *)user;
+static bool r_cmd_agD_call(RCorePluginSession *cps, const char *input) {
+	RCore *core = cps->core;
 	if (!core) {
 		return false;
 	}

@@ -20,6 +20,7 @@ typedef struct {
 } QjsContext;
 #define QJS_CORE_MAGIC 0x07534617
 
+// TODO: deprecate
 typedef struct qjs_core_plugin {
 	char *name;
 	QjsContext qctx;
@@ -84,7 +85,7 @@ typedef struct qjs_plugin_manager_t {
 	RVecAsmPlugin asm_plugins;
 } QjsPluginManager;
 
-static QjsPluginManager *Gpm = NULL; // XXX globals
+// static QjsPluginManager *Gpm = NULL; // XXX globals
 static bool plugin_manager_init(QjsPluginManager *pm, RCore *core, JSRuntime *rt) {
 	pm->core = core;
 	pm->rt = rt;
@@ -921,12 +922,7 @@ static bool init(RLangSession *ls) {
 		return false;
 	}
 	QjsPluginManager *pm = R_NEW0 (QjsPluginManager);
-	if (!pm) {
-		JS_FreeContext (ctx);
-		JS_FreeRuntime (rt);
-		return false;
-	}
-	Gpm = pm;
+	// Gpm = pm;
 	pm->magic = QJS_CORE_MAGIC;
 	RCore *core = ls->lang->user;
 	plugin_manager_init (pm, core, rt);

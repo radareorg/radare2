@@ -802,8 +802,8 @@ static void writedwarf(RCore *core, const char *format, const char *arg) {
 	r_list_free (lines);
 }
 
-static int cmd_writedwarf(void *user, const char *input) {
-	RCore *core = (RCore *) user;
+static bool cmd_writedwarf(RCorePluginSession *cps, const char *input) {
+	RCore *core = cps->core;
 	if (r_str_startswith (input, "writedwarf")) {
 		char *arg = strchr (input, ' ');
 		const char *format = "macho";
