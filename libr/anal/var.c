@@ -170,9 +170,6 @@ R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind
 	RAnalVar *var = r_anal_function_get_var (fcn, kind, delta);
 	if (!var) {
 		var = R_NEW0 (RAnalVar);
-		if (!var) {
-			return NULL;
-		}
 		r_pvector_push (&fcn->vars, var);
 		var->fcn = fcn;
 		r_vector_init (&var->accesses, sizeof (RAnalVarAccess), NULL, NULL);
@@ -442,14 +439,12 @@ R_API RList *r_anal_var_get_prots(RAnalFunction *fcn) {
 		r_pvector_foreach (&fcn->vars, p) {
 			RAnalVar *var = *p;
 			RAnalVarProt *vp = R_NEW0 (RAnalVarProt);
-			if (vp) {
-				vp->isarg = var->isarg;
-				vp->name = strdup (var->name);
-				vp->type = strdup (var->type);
-				vp->kind = var->kind;
-				vp->delta = var->delta;
-				r_list_append (ret, vp);
-			}
+			vp->isarg = var->isarg;
+			vp->name = strdup (var->name);
+			vp->type = strdup (var->type);
+			vp->kind = var->kind;
+			vp->delta = var->delta;
+			r_list_append (ret, vp);
 		}
 	}
 	return ret;
@@ -967,7 +962,9 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		while ((addr[0] != '0' || addr[1] != 'x') && addr >= esil_buf + 1 && *addr != ',') {
 			addr--;
 		}
-		if (strncmp (addr, "0x", 2)) {
+		if (r_str_startswith (addr, "0x")) {
+			ptr = (st64)r_num_get (NULL, addr);
+		} else {
 			//XXX: This is a workaround for inconsistent esil
 			val = r_vector_at (&op->dsts, 0);
 			if (!op->stackop && val) {
@@ -1003,8 +1000,6 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 				free (esil_buf);
 				goto beach;
 			}
-		} else {
-			ptr = (st64)r_num_get (NULL, addr);
 		}
 		free (esil_buf);
 	}
@@ -1497,9 +1492,6 @@ R_API RList *r_anal_function_get_var_fields(RAnalFunction *fcn, int kind) {
 			continue;
 		}
 		RAnalVarField *field = R_NEW0 (RAnalVarField);
-		if (!field) {
-			break;
-		}
 		field->name = strdup (var->name);
 		if (!field->name) {
 			var_field_free (field);
@@ -1828,10 +1820,6 @@ R_API char *r_anal_function_format_sig(RAnal * R_NONNULL anal, RAnalFunction * R
 	cache = reuse_cache;
 	if (!cache) {
 		cache = R_NEW0 (RAnalFcnVarsCache);
-		if (!cache) {
-			type_fcn_name = NULL;
-			goto beach;
-		}
 		r_anal_function_vars_cache_init (anal, cache, fcn);
 	}
 
