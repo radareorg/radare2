@@ -378,10 +378,11 @@ static char *r_cmd_filter_special(const char *input) {
 #endif
 
 R_API int r_cmd_call(RCmd *cmd, const char *input) {
+	RCore *core = cmd->data;
 	struct r_cmd_item_t *c;
 	int ret = -1;
 	RListIter *iter;
-	RCorePlugin *cp;
+	//RCorePlugin *cp;
 	R_RETURN_VAL_IF_FAIL (cmd && input, -1);
 	if (!*input) {
 		if (cmd->nullcallback) {
@@ -389,7 +390,7 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 		}
 	} else {
 		char *nstr = NULL;
-		RCons *cons = r_cons_singleton ();
+		RCons *cons = core->cons;
 		RCmdAliasVal *v = r_cmd_alias_get (cmd, input);
 		if (v && v->is_data) {
 			char *v_str = r_cmd_alias_val_strdup (v);
@@ -397,6 +398,15 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 			free (v_str);
 			return true;
 		}
+		RCorePluginSession *cps;
+		r_list_foreach (cmd->lcmds, iter, cps) {
+			RCorePlugin *plugin = cps->plugin;
+			if (plugin->call && plugin->call (cps, input)) {
+				free (nstr);
+				return true;
+			}
+		}
+#if 0
 		r_list_foreach (cmd->plist, iter, cp) {
 			/// XXX the plugin call have no plugin context!! we cant have multiple plugins here
 			if (cp->call && cp->call (cmd->data, input)) {
@@ -404,6 +414,7 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 				return true;
 			}
 		}
+#endif
 		if (!*input) {
 			free (nstr);
 			return -1;
@@ -445,6 +456,7 @@ R_API void r_cmd_macro_item_free(RCmdMacroItem *item) {
 }
 
 R_API void r_cmd_macro_init(RCmdMacro *mac) {
+	R_RETURN_IF_FAIL (mac);
 	mac->counter = 0;
 	mac->_brk_value = 0;
 	mac->brk_value = &mac->_brk_value;
@@ -504,7 +516,7 @@ R_API bool r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 	ptr = strchr (name, ' ');
 	if (ptr) {
 		*ptr = '\0';
-		args = ptr +1;
+		args = ptr + 1;
 	}
 	macro_update = false;
 	r_list_foreach (mac->macros, iter, m) {
@@ -529,7 +541,7 @@ R_API bool r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 		macro->name = strdup (name);
 	}
 
-	macro->codelen = (pbody[0])? strlen (pbody)+2 : 4096;
+	macro->codelen = (pbody[0])? strlen (pbody) + 2 : 4096;
 	macro->code = (char *)malloc (macro->codelen);
 	*macro->code = '\0';
 	macro->nargs = 0;
@@ -540,7 +552,7 @@ R_API bool r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 	ptr = strchr (macro->name, ' ');
 	if (ptr) {
 		*ptr = '\0';
-		macro->nargs = r_str_word_set0 (ptr+1);
+		macro->nargs = r_str_word_set0 (ptr + 1);
 	}
 
 	for (lidx = 0; pbody[lidx]; lidx++) {
@@ -551,7 +563,7 @@ R_API bool r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 		}
 	}
 	strncpy (macro->code, pbody, macro->codelen);
-	macro->code[macro->codelen-1] = 0;
+	macro->code[macro->codelen - 1] = 0;
 	if (macro_update == false) {
 		r_list_append (mac->macros, macro);
 	}

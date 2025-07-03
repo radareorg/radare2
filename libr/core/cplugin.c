@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2022 - pancake */
+/* radare - LGPL - Copyright 2010-2025 - pancake */
 
 #include <config.h>
 #include <r_core.h>
@@ -9,6 +9,7 @@ static RCorePlugin *cmd_static_plugins[] = {
 
 R_API void r_core_plugin_fini(RCmd *cmd) {
 	R_RETURN_IF_FAIL (cmd);
+#if 0
 	if (cmd->plist) {
 		RListIter *iter;
 		RCorePlugin *plugin;
@@ -20,13 +21,29 @@ R_API void r_core_plugin_fini(RCmd *cmd) {
 		r_list_free (cmd->plist);
 		cmd->plist = NULL;
 	}
+#endif
+	RListIter *iter;
+	RCorePluginSession *cps;
+	r_list_foreach (cmd->lcmds, iter, cps) {
+		RCorePlugin *plugin = cps->plugin;
+		if (plugin->fini && plugin->fini (cps)) {
+			break;
+		}
+	}
 }
 
 R_API bool r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin) {
 	R_RETURN_VAL_IF_FAIL (cmd && plugin, false);
-	if (plugin->init && !plugin->init (cmd, NULL)) {
-		return false;
+	RCorePluginSession *ctx = R_NEW0 (RCorePluginSession);
+	ctx->core = cmd->data;
+	ctx->plugin = plugin;
+	if (plugin->init) {
+		if (!plugin->init (ctx)) {
+			free (ctx);
+			return false;
+		}
 	}
+	r_list_append (cmd->lcmds, ctx);
 	r_list_append (cmd->plist, plugin);
 	return true;
 }

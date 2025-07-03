@@ -58,9 +58,11 @@
 #endif
 
 #define QJS_CORE_MAGIC 0x07534617
+
 // TODO maybe add a function to call by plugin name? (is 1 extra arg)
-static int r_cmd_qjs_call(void *c, const char *input) {
-	RCore *core = c;
+static bool r_cmd_qjs_call(RCorePluginSession *cps, const char *input) {
+	RCore *core = cps->core;
+#if 0
 	QjsPluginManager *pm = R_UNWRAP4 (core, lang, session, plugin_data);
 	if (pm == NULL) {
 		return false;
@@ -84,6 +86,7 @@ static int r_cmd_qjs_call(void *c, const char *input) {
 			return true;
 		}
 	}
+#endif
 
 	return false;
 }
