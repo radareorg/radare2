@@ -200,9 +200,10 @@ R_API RAnalFunction *r_anal_create_function(RAnal *anal, const char *name, ut64 
 
 R_API bool r_anal_function_delete(RAnal *anal, RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (fcn, false);
+	ut64 fcn_addr = fcn->addr;
 	bool found = r_list_delete_data (fcn->anal->fcns, fcn);
-	{
-		REventFunction event = { .addr = fcn->addr };
+	if (found) {
+		REventFunction event = { .addr = fcn_addr };
 		r_event_send (anal->ev, R_EVENT_FUNCTION_DELETED, &event);
 	}
 	return found;
