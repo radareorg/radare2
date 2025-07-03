@@ -481,6 +481,7 @@ include_files = [
 install_headers(include_files, install_dir: r2_incdir)
 
 r_util_files = [
+  'include/r_event.h',
   'include/r_util/bplist.h',
   'include/r_util/pj.h',
   'include/r_util/r_alloc.h',
@@ -498,7 +499,6 @@ r_util_files = [
   'include/r_util/r_debruijn.h',
   'include/r_util/r_diff.h',
   'include/r_util/r_bloom.h',
-  'include/r_util/r_event.h',
   'include/r_util/r_file.h',
   'include/r_util/r_graph.h',
   'include/r_util/r_graph_drawable.h',
