@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019-2024 - pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2019-2025 - pancake, thestr4ng3r */
 
 #include <r_anal.h>
 
@@ -76,9 +76,6 @@ R_API RAnalFunction *r_anal_function_new(RAnal *anal) {
 	// XXX fcn->name is null because its r_anal_create_function the one that must be called
 	R_RETURN_VAL_IF_FAIL (anal, NULL);
 	RAnalFunction *fcn = R_NEW0 (RAnalFunction);
-	if (!fcn) {
-		return NULL;
-	}
 	fcn->anal = anal;
 	fcn->addr = UT64_MAX;
 	fcn->callconv = r_str_constpool_get (&anal->constpool, r_anal_cc_default (anal));
@@ -161,15 +158,16 @@ R_API bool r_anal_add_function(RAnal *anal, RAnalFunction *fcn) {
 	r_list_append (anal->fcns, fcn);
 	ht_pp_insert (anal->ht_name_fun, fcn->name, fcn);
 	ht_up_insert (anal->ht_addr_fun, fcn->addr, fcn);
+	{
+		REventFunction event = { .addr = fcn->addr, .fcn = fcn };
+		r_event_send (anal->ev, R_EVENT_FUNCTION_ADDED, &event);
+	}
 	return true;
 }
 
 R_API RAnalFunction *r_anal_create_function(RAnal *anal, const char *name, ut64 addr, int type, RAnalDiff *diff) {
 	R_RETURN_VAL_IF_FAIL (anal && addr != UT64_MAX, NULL);
 	RAnalFunction *fcn = r_anal_function_new (anal);
-	if (!fcn) {
-		return NULL;
-	}
 	fcn->addr = addr;
 	fcn->type = type;
 	fcn->callconv = r_str_constpool_get (&anal->constpool, r_anal_cc_default (anal));
@@ -200,9 +198,14 @@ R_API RAnalFunction *r_anal_create_function(RAnal *anal, const char *name, ut64 
 	return fcn;
 }
 
-R_API bool r_anal_function_delete(RAnalFunction *fcn) {
+R_API bool r_anal_function_delete(RAnal *anal, RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (fcn, false);
-	return r_list_delete_data (fcn->anal->fcns, fcn);
+	bool found = r_list_delete_data (fcn->anal->fcns, fcn);
+	{
+		REventFunction event = { .addr = fcn->addr };
+		r_event_send (anal->ev, R_EVENT_FUNCTION_REMOVED, &event);
+	}
+	return found;
 }
 
 R_API RAnalFunction *r_anal_get_function_at(RAnal *anal, ut64 addr) {
@@ -248,6 +251,11 @@ R_API bool r_anal_function_rename(RAnalFunction *fcn, const char *name) {
 		if (in_tree) {
 			// only re-insert if it really was in the tree before
 			ht_pp_insert (anal->ht_name_fun, fcn->name, fcn);
+		}
+		{
+			// TODO: maybe we want to know which was the old name?
+			REventFunction event = { .addr = fcn->addr, .fcn = fcn };
+			r_event_send (anal->ev, R_EVENT_FUNCTION_RENAMED, &event);
 		}
 		return true;
 	}

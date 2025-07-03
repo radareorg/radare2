@@ -76,7 +76,7 @@ typedef struct r_cmd_alias_val_t {
 
 
 typedef struct r_cmd_t {
-	void *data;
+	void *data; // maybe its user?
 	RCmdNullCb nullcallback;
 	RCmdItem *cmds[UT8_MAX];
 	RCmdMacro macro;

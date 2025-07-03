@@ -969,7 +969,7 @@ R_API RList *r_anal_get_functions_in(RAnal *anal, ut64 addr);
 // returns the function that has its entrypoint at addr or NULL
 R_API RAnalFunction *r_anal_get_function_at(RAnal *anal, ut64 addr);
 
-R_API bool r_anal_function_delete(RAnalFunction *fcn);
+R_API bool r_anal_function_delete(RAnal *anal, RAnalFunction *fcn);
 
 // rhange the entrypoint of fcn
 // This can fail (and return false) if there is already another function at the new address

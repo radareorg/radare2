@@ -1880,7 +1880,7 @@ R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, int reftyp
 R_API int r_anal_function_del(RAnal *a, ut64 addr) {
 	RAnalFunction *fcn = r_anal_get_function_at (a, addr);
 	if (fcn) {
-		r_anal_function_delete (fcn);
+		r_anal_function_delete (a, fcn);
 		// r_anal_function_free (fcn);
 		return true;
 	}

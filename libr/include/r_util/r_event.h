@@ -28,10 +28,12 @@ typedef enum {
 	R_EVENT_ANALYSIS_BLOCK_ADDED,
 	R_EVENT_ANALYSIS_BLOCK_REMOVED,
 
-	R_EVENT_ANALYSIS_FUNCTION_ADDED,
-	R_EVENT_ANALYSIS_FUNCTION_RENAMED,
-	R_EVENT_ANALYSIS_FUNCTION_MODIFIED,
-	R_EVENT_ANALYSIS_FUNCTION_REMOVED,
+	R_EVENT_FUNCTION_ADDED,
+	R_EVENT_FUNCTION_RENAMED,
+	R_EVENT_FUNCTION_MODIFIED,
+	R_EVENT_FUNCTION_REMOVED,
+	R_EVENT_FUNCTION_CALLED,
+	R_EVENT_FUNCTION_RETURNED,
 
 	R_EVENT_DEBUG_START,
 	R_EVENT_DEBUG_STOP,
@@ -185,10 +187,13 @@ typedef enum {
 	R_EVENT_FILE_RELOCATED,
 	R_EVENT_BINARY_CHECKSUM_VERIFIED,
 
-	R_EVENT_FUNCTION_CALLED,
-	R_EVENT_FUNCTION_RETURNED,
 	R_EVENT_LAST,
 } REventType;
+
+typedef struct r_event_function_t {
+	ut64 addr;
+	void *fcn;
+} REventFunction;
 
 typedef struct r_event_meta_t {
 	int type;
@@ -263,7 +268,7 @@ typedef struct r_event_callback_handle_t {
 
 R_API REvent *r_event_new(void *user);
 R_API void r_event_free(REvent *ev);
-R_API void r_event_hook(REvent *ev, ut32 type, REventCallback cb, void *data);
+R_API bool r_event_hook(REvent *ev, ut32 type, REventCallback cb, void *data);
 R_API bool r_event_unhook(REvent * R_NULLABLE ev, ut32 event_hook, REventCallback cb);
 R_API void r_event_send(REvent *ev, ut32 type, void *data);
 

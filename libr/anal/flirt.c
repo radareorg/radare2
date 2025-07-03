@@ -582,7 +582,7 @@ static bool module_match_buffer(RAnal *anal, const RFlirtModule *module, ut8 *b,
 							r_anal_function_add_block (next_module_function, block);
 						}
 						next_module_function->ninstr += fcn->ninstr;
-						r_anal_function_delete (fcn);
+						r_anal_function_delete (anal, fcn);
 					}
 				}
 				r_anal_function_resize (next_module_function, flirt_fcn_size);
