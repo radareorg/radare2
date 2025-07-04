@@ -74,14 +74,15 @@ R_API void r_cmd_alias_init(RCmd *cmd) {
 	cmd->aliases = ht_pp_new_opt (&opt);
 }
 
-R_API RCmd *r_cmd_new(void) {
+R_API RCmd *r_cmd_new(void *data) {
 	int i;
 	RCmd *cmd = R_NEW0 (RCmd);
-	cmd->lcmds = r_list_new ();
+	cmd->data = data;
+	cmd->lcmds = r_list_newf (free);
 	for (i = 0; i < NCMDS; i++) {
 		cmd->cmds[i] = NULL;
 	}
-	cmd->nullcallback = cmd->data = NULL;
+	cmd->nullcallback = NULL;
 	cmd->ht_cmds = ht_pp_new0 ();
 	// cmd->root_cmd_desc = create_cmd_desc (cmd, NULL, R_CMD_DESC_TYPE_ARGV, "", &root_help, true);
 	r_core_plugin_init (cmd);

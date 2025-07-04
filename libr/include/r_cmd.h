@@ -91,7 +91,7 @@ typedef struct r_cmd_descriptor_t {
 } RCmdDescriptor;
 
 #ifdef R_API
-R_API RCmd *r_cmd_new(void);
+R_API RCmd *r_cmd_new(void *data);
 R_API RCmd *r_cmd_free(RCmd *cmd);
 R_API int r_cmd_call(RCmd *cmd, const char *command);
 R_API void r_cmd_set_data(RCmd *cmd, void *data);

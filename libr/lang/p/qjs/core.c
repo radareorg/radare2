@@ -89,32 +89,6 @@ static bool r_cmd_qjs_call(RCorePluginSession *cps, const char *input) {
 	if (JS_ToBool (ctx, res)) {
 		return true;
 	}
-#if 0
-	QjsPluginManager *pm = R_UNWRAP4 (core, lang, session, plugin_data);
-	if (pm == NULL) {
-		return false;
-	}
-	if (pm->magic != QJS_CORE_MAGIC) {
-		pm = Gpm;
-		R_LOG_DEBUG ("NOT the right lang session");
-	}
-
-	// Iterate over plugins until one returns "true" (meaning the plugin handled the input)
-	QjsCorePlugin *plugin;
-	R_VEC_FOREACH (&pm->core_plugins, plugin) {
-		if (plugin == NULL) {
-			continue;
-		}
-		// check if core plugin is a qjs one
-		QjsContext *qc = &plugin->qctx;
-		JSValueConst args[1] = { JS_NewString (qc->ctx, input) };
-		JSValue res = JS_Call (qc->ctx, qc->call_func, JS_UNDEFINED, countof (args), args);
-		if (JS_ToBool (qc->ctx, res)) {
-			return true;
-		}
-	}
-#endif
-
 	return false;
 }
 

@@ -245,11 +245,11 @@ R_API bool r_anal_var_delete(RAnal *anal, RAnalVar *var) {
 		RAnalVar *v = r_pvector_at (&fcn->vars, i);
 		if (v == var) {
 			r_pvector_remove_at (&fcn->vars, i);
-			var_free (v);
 			{
 				REventVariable event = { .fcn = fcn, .var = var };
 				r_event_send (anal->ev, R_EVENT_VARIABLE_DELETED, &event);
 			}
+			var_free (var);
 			return true;
 		}
 	}

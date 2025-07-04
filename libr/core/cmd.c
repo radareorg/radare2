@@ -6892,13 +6892,13 @@ R_API void r_core_cmd_init(RCore *core) {
 		{ "z", "zignatures", cmd_zign },
 	};
 
-	core->rcmd = r_cmd_new ();
+	core->rcmd = r_cmd_new (core);
 	if (core->rcmd) {
+		r_cmd_set_data (core->rcmd, core);
 		core->rcmd->macro.user = core;
 		core->rcmd->macro.num = core->num;
 		core->rcmd->macro.cmd = core_cmd0_wrapper;
 		core->rcmd->nullcallback = r_core_cmd_nullcallback;
-		r_cmd_set_data (core->rcmd, core);
 		core->cmd_descriptors = r_list_newf (free);
 		size_t i;
 		for (i = 0; i < R_ARRAY_SIZE (cmds); i++) {
