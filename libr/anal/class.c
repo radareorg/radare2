@@ -59,7 +59,7 @@ R_API void r_anal_class_create(RAnal *anal, const char *name) {
 	}
 
 	REventClass event = { .name = name_sanitized };
-	r_event_send (anal->ev, R_EVENT_CLASS_NEW, &event);
+	r_event_send (anal->ev, R_EVENT_CLASS_ADDED, &event);
 
 	free (name_sanitized);
 }
@@ -106,7 +106,7 @@ R_API void r_anal_class_delete(RAnal *anal, const char *name) {
 	sdb_remove (anal->sdb_classes_attrs, key_attr_types (class_name_sanitized), 0);
 
 	REventClass event = { .name = class_name_sanitized };
-	r_event_send (anal->ev, R_EVENT_CLASS_DEL, &event);
+	r_event_send (anal->ev, R_EVENT_CLASS_DELETED, &event);
 
 	free (class_name_sanitized);
 }
