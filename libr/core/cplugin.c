@@ -45,6 +45,13 @@ R_API bool r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin) {
 	}
 	r_list_append (cmd->lcmds, ctx);
 	r_list_append (cmd->plist, plugin);
+	{
+		REventPlugin ep = {
+			.name = plugin->meta.name,
+			.type = R_LIB_TYPE_CORE,
+		};
+		r_event_send (ctx->core->ev, R_EVENT_PLUGIN_LOAD, &ep);
+	}
 	return true;
 }
 
@@ -72,6 +79,14 @@ R_API bool r_core_plugin_remove(RCmd *cmd, RCorePlugin *plugin) {
 		}
 	}
 
+	if (res) {
+		RCore *core = cmd->data;
+		REventPlugin ep = {
+			.name = plugin->meta.name,
+			.type = R_LIB_TYPE_CORE,
+		};
+		r_event_send (core->ev, R_EVENT_PLUGIN_UNLOAD, &ep);
+	}
 	return res;
 }
 
