@@ -152,9 +152,12 @@ static void cons_stack_load(RConsContext *C, RConsStack *data, bool free_current
 }
 
 static void cons_context_deinit(RConsContext *ctx) {
-	return;
+	if (!ctx) {
+		return;
+	}
 	// r_stack_free (ctx->cons_stack);
 	r_list_free (ctx->marks);
+	ctx->marks = NULL;
 	ctx->cons_stack = NULL;
 	r_stack_free (ctx->break_stack);
 	ctx->break_stack = NULL;
