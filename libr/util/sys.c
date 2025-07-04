@@ -1474,7 +1474,7 @@ R_API const char *r_sys_prefix(const char *pfx) {
 #if R2__WINDOWS__
 		Gprefix = r_sys_get_src_dir_w32 ();
 		if (!Gprefix) {
-			Gprefix = strdup (r2_prefix);
+			Gprefix = strdup (Gr2prefix);
 		}
 #else
 		Gprefix = strdup (Gr2prefix);
