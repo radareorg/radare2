@@ -313,6 +313,7 @@ R_API void r_cons_free2(RCons * R_NULLABLE cons) {
 		r_cons_pop (cons);
 	}
 	r_cons_context_free (cons->context);
+	r_list_free (cons->ctx_stack);
 #if 0
 	RConsContext *ctx = cons->context;
 	R_FREE (ctx->buffer);
@@ -734,6 +735,7 @@ R_API void r_cons_free(RCons *cons) {
 	if (cons == I) {
 		I = NULL; // hack for globals
 	}
+	free (cons);
 }
 
 R_API void r_cons_fill_line(RCons *cons) {

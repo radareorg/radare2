@@ -40,6 +40,7 @@ R_API void r_line_free(RLine *line) {
 		r_list_free (line->kill_ring);
 		r_line_hist_free (line);
 		r_line_completion_fini (&line->completion);
+		free (line);
 	}
 }
 
