@@ -5,13 +5,13 @@
 
 #define COUNT_LINES 1
 
+static R_TH_LOCAL RCons *I = NULL;
+
 R_LIB_VERSION (r_cons);
 
 static RCons s_cons_global = {0};
 
 static void __break_signal(int sig);
-// XXX this is wrong
-static R_TH_LOCAL RCons *I = NULL;
 
 #define MOAR (4096 * 8)
 
@@ -76,12 +76,9 @@ static void grep_word_free(RConsGrepWord *gw) {
 
 static void cons_grep_reset(RConsGrep *grep) {
 	if (grep) {
-		free (grep->str);
-		grep->str = NULL;
-		if (grep->strings) {
-			r_list_free (grep->strings);
-			grep->strings = r_list_newf ((RListFree)grep_word_free);
-		}
+		R_FREE (grep->str);
+		r_list_free (grep->strings);
+		grep->strings = r_list_newf ((RListFree)grep_word_free);
 		ZERO_FILL (*grep);
 		grep->line = -1;
 		grep->sort = -1;
@@ -348,23 +345,13 @@ static inline void init_cons_instance(void) {
 #endif
 }
 
-static RConsContext *getctx(void) {
-	init_cons_instance ();
-	return I->context;
-}
-
-R_API InputState *r_cons_input_state(void) {
-	init_cons_instance ();
-	return &I->input_state;
-}
-
 R_API bool r_cons_is_initialized(void) {
 	return I != NULL;
 }
 
-R_API RColor r_cons_color_random(ut8 alpha) {
+R_API RColor r_cons_color_random(RCons *cons, ut8 alpha) {
 	RColor rcolor = {0};
-	RConsContext *ctx = getctx ();
+	RConsContext *ctx = cons->context;
 	if (ctx->color_mode > COLOR_MODE_16) {
 		rcolor.r = r_num_rand (0xff);
 		rcolor.g = r_num_rand (0xff);
@@ -539,10 +526,12 @@ R_API bool r_cons_is_interactive(RCons *cons) {
 	return cons->context->is_interactive;
 }
 
+#if 0
 R_API bool r_cons_default_context_is_interactive(void) {
 	// XXX this is pure evil
 	return I->context->is_interactive;
 }
+#endif
 
 R_API bool r_cons_was_breaked(RCons *cons) {
 #if WANT_DEBUGSTUFF
@@ -1452,9 +1441,9 @@ R_API void r_cons_clear_buffer(RCons *cons) {
 	}
 }
 
-R_API void r_cons_set_raw(RCons *I, bool is_raw) {
-	if (I->oldraw != 0) {
-		if (is_raw == I->oldraw - 1) {
+R_API void r_cons_set_raw(RCons *cons, bool is_raw) {
+	if (cons->oldraw != 0) {
+		if (is_raw == cons->oldraw - 1) {
 			return;
 		}
 	}
@@ -1463,36 +1452,36 @@ R_API void r_cons_set_raw(RCons *I, bool is_raw) {
 #elif R2__UNIX__
 	struct termios *term_mode;
 	if (is_raw) {
-		I->term_raw.c_lflag &= ~(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
-		term_mode = &I->term_raw;
+		cons->term_raw.c_lflag &= ~(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
+		term_mode = &cons->term_raw;
 	} else {
-		term_mode = &I->term_buf;
+		term_mode = &cons->term_buf;
 	}
 	if (tcsetattr (0, TCSANOW, term_mode) == -1) {
 		return;
 	}
 #elif R2__WINDOWS__
-	if (I->term_xterm) {
+	if (cons->term_xterm) {
 		char *stty = r_file_path ("stty");
 		if (!stty || *stty == 's') {
-			I->term_xterm = false;
+			cons->term_xterm = false;
 		}
 		free (stty);
 	}
-	if (I->term_xterm) {
+	if (cons->term_xterm) {
 		const char *cmd = is_raw
 			? "stty raw -echo"
 			: "stty raw echo";
 		r_sandbox_system (cmd, 1);
 	} else {
-		if (!SetConsoleMode (h, is_raw? I->term_raw: I->term_buf)) {
+		if (!SetConsoleMode (h, is_raw? cons->term_raw: cons->term_buf)) {
 			return;
 		}
 	}
 #else
 #warning No raw console supported for this platform
 #endif
-	I->oldraw = is_raw + 1;
+	cons->oldraw = is_raw + 1;
 }
 
 R_API void r_cons_newline(RCons *cons) {
@@ -1806,10 +1795,10 @@ R_API void r_cons_echo(RCons *cons, const char *msg) {
 	}
 }
 
-R_API void r_cons_show_cursor(RCons *I, int cursor) {
-	RConsContext *C = I->context;
+R_API void r_cons_show_cursor(RCons *cons, int cursor) {
+	RConsContext *C = cons->context;
 #if R2__WINDOWS__
-	if (I->vtmode) {
+	if (cons->vtmode) {
 #endif
 		if (write (1, cursor ? "\x1b[?25h" : "\x1b[?25l", 6) != 6) {
 			C->breaked = true;

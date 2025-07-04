@@ -276,6 +276,7 @@ R_API void r_flag_free(RFlag *f) {
 		f->lock = NULL;
 		r_skiplist_free (f->by_addr);
 		ht_pp_free (f->ht_name);
+		ht_up_free (f->ht_meta);
 		sdb_free (f->tags);
 		r_spaces_fini (&f->spaces);
 		r_num_free (f->num);

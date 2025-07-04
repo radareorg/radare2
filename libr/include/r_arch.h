@@ -71,7 +71,7 @@ enum {
 
 typedef struct r_arch_config_t {
 	char *decoder;
-	char *arch;
+	char arch[16];
 	char *cpu;
 	char *os;
 	int bits;

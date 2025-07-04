@@ -337,7 +337,7 @@ R_API void r_cons_pal_random(RCons *cons) {
 	int i;
 	for (i = 0; keys[i].name; i++) {
 		RColor *rcolor = RCOLOR_AT (i);
-		*rcolor = r_cons_color_random (ALPHA_FG);
+		*rcolor = r_cons_color_random (cons, ALPHA_FG);
 	}
 	r_cons_pal_reload (cons);
 }
@@ -364,7 +364,7 @@ R_API char *r_cons_pal_parse(RCons *cons, const char *str, RColor * R_NULLABLE o
 	}
 	// Handle first color (fgcolor)
 	if (!strcmp (fgcolor, "random")) {
-		rcolor = r_cons_color_random (ALPHA_FG);
+		rcolor = r_cons_color_random (cons, ALPHA_FG);
 		r_cons_rgb_str (cons, out, sizeof (out), &rcolor);
 		ok = true;
 	} else if (fgcolor[0] == '#') { // "#00ff00" HTML format

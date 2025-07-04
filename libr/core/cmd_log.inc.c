@@ -64,11 +64,11 @@ static RCoreHelpMessage help_msg_T = {
 
 static void screenlock(RCore *core) {
 	//  char *pass = r_cons_input ("Enter new password: ");
-	char *pass = r_cons_password (Color_INVERT "Enter new password:"Color_INVERT_RESET);
-	if (!pass || !*pass) {
+	char *pass = r_cons_password (core->cons, Color_INVERT "Enter new password:"Color_INVERT_RESET);
+	if (R_STR_ISEMPTY (pass)) {
 		return;
 	}
-	char *again = r_cons_password (Color_INVERT "Type it again:"Color_INVERT_RESET);
+	char *again = r_cons_password (core->cons, Color_INVERT "Type it again:"Color_INVERT_RESET);
 	if (!again || !*again) {
 		free (pass);
 		return;
@@ -97,7 +97,7 @@ static void screenlock(RCore *core) {
 		}
 		r_cons_newline (core->cons);
 		r_cons_flush (core->cons);
-		char *msg = r_cons_password ("radare2 password: ");
+		char *msg = r_cons_password (core->cons, "radare2 password: ");
 		if (msg && !strcmp (msg, pass)) {
 			running = false;
 		} else {

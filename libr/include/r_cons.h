@@ -830,7 +830,6 @@ R_API RCons *r_cons_singleton(void); // DEPRECATE
 R_API RCons *r_cons_global(RCons * R_NULLABLE c); // same as singleton? but taking nullable arg?
 R_API int r_cons_get_size(RCons *cons, int *rows);
 R_API const RConsTheme *r_cons_themes(void);
-R_API InputState *r_cons_input_state(void);
 R_API void r_cons_free(RCons *cons);
 R_API void r_cons_set_click(RCons *cons, int x, int y);
 R_API bool r_cons_get_click(RCons *cons, int *x, int *y);
@@ -986,10 +985,10 @@ R_API char *r_cons_rgb_str(RCons *cons, char *outstr, size_t sz, RColor *rcolor)
 R_API char *r_cons_rgb_str_off(RCons *cons, char *outstr, size_t sz, ut64 off);
 R_API void r_cons_color(int fg, int r, int g, int b);
 
-R_API RColor r_cons_color_random(ut8 alpha);
+R_API RColor r_cons_color_random(RCons *cons, ut8 alpha);
 R_API bool r_cons_yesno(RCons *cons, int def, const char *fmt, ...) R_PRINTF_CHECK(3, 4);
 R_API char *r_cons_input(RCons *cons, const char *msg);
-R_API char *r_cons_password(const char *msg);
+R_API char *r_cons_password(RCons *cons, const char *msg);
 R_API bool r_cons_set_cup(bool enable);
 R_API char *r_cons_message(RCons *cons, const char *msg);
 R_API bool r_cons_enable_mouse(RCons *cons, const bool enable);
