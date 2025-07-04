@@ -130,8 +130,9 @@ R_API bool r_arch_use(RArch *arch, RArchConfig *config, const char *name) {
 		if (encode) {
 			arch->session->encoder = arch->session;
 		} else {
-			free (config->arch);
+			char *old_arch = config->arch;
 			config->arch = strdup (arch->session->plugin->arch);
+			R_FREE (old_arch);
 			RArchPlugin *ap = find_bestmatch (arch, config, name, true);
 			if (ap) {
 				RArchSession *es = r_arch_session (arch, config, ap);

@@ -171,6 +171,8 @@ static JSValue r2plugin_core_load(JSContext *ctx, JSValueConst this_val, int arg
 	if (ret != 1) {
 		free (hack);
 		free (lib);
+	} else {
+		// JS_DupValue(ctx, func);
 	}
 	return JS_NewBool (ctx, ret == 1);
 }

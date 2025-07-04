@@ -187,6 +187,7 @@ static bool plugin_manager_remove_core_plugin(QjsPluginManager *pm, const char *
 	ut64 index = RVecCorePlugin_find_index (&pm->core_plugins, (void*) name, compare_core_plugin_name);
 	if (index != UT64_MAX) {
 		pm->core->lang->cmdf (pm->core, "L-%s", name);
+		//JS_FreeValue(pm->default_ctx.ctx, pm->default_ctx.call_func);
 		RVecCorePlugin_remove (&pm->core_plugins, index);
 		return true;
 	}
@@ -253,7 +254,7 @@ static bool plugin_manager_remove_plugin(QjsPluginManager *pm, const char *type,
 	return false;
 }
 
-static void plugin_manager_fini (QjsPluginManager *pm) {
+static void plugin_manager_fini(QjsPluginManager *pm) {
 	RVecCorePlugin_fini (&pm->core_plugins);
 	RVecArchPlugin_fini (&pm->arch_plugins);
 	RVecIoPlugin_fini (&pm->io_plugins);

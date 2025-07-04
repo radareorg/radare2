@@ -2,8 +2,6 @@
 
 #include <r_cons.h>
 
-#define I r_cons_singleton ()
-
 R_API int r_cons_controlz(RCons *cons, int ch) {
 #if R2__UNIX__
 	if (ch == 0x1a) {
@@ -221,7 +219,7 @@ R_API int r_cons_arrow_to_hjkl(RCons *cons, int ch) {
 			ch = r_cons_readchar (cons);
 			// 6 is up
 			// 7 is down
-			I->mouse_event = 1;
+			cons->mouse_event = 1;
 			if (ch == '6') {
 				ch = 'k';
 			} else if (ch == '7') {
@@ -426,7 +424,7 @@ static int readchar_w32(RCons *cons, ut32 usec) {
 	HANDLE h;
 	INPUT_RECORD irInBuf = {0};
 	CONSOLE_SCREEN_BUFFER_INFO info = {0};
-	bool mouse_enabled = I->mouse;
+	bool mouse_enabled = cons->mouse;
 	bool click_n_drag = false;
 	void *bed;
 	cons->mouse_event = 0;
@@ -446,7 +444,7 @@ static int readchar_w32(RCons *cons, ut32 usec) {
 				return -1;
 			}
 		}
-		if (I->term_xterm) {
+		if (cons->term_xterm) {
 			ret = ReadFile (h, &ch, 1, &out, NULL);
 			if (ret) {
 				r_cons_sleep_end (cons, bed);
@@ -472,11 +470,11 @@ static int readchar_w32(RCons *cons, ut32 usec) {
 				}
 				if (irInBuf.Event.MouseEvent.dwEventFlags == MOUSE_WHEELED) {
 					if (irInBuf.Event.MouseEvent.dwButtonState & 0xFF000000) {
-						ch = I->bCtrl ? 'J' : 'j';
+						ch = cons->bCtrl ? 'J' : 'j';
 					} else {
-						ch = I->bCtrl ? 'K' : 'k';
+						ch = cons->bCtrl ? 'K' : 'k';
 					}
-					I->mouse_event = 1;
+					cons->mouse_event = 1;
 				}
 				switch (irInBuf.Event.MouseEvent.dwButtonState) {
 				case FROM_LEFT_1ST_BUTTON_PRESSED:
@@ -496,7 +494,7 @@ static int readchar_w32(RCons *cons, ut32 usec) {
 			if (irInBuf.EventType == KEY_EVENT) {
 				if (irInBuf.Event.KeyEvent.bKeyDown) {
 					ch = irInBuf.Event.KeyEvent.uChar.AsciiChar;
-					I->bCtrl = irInBuf.Event.KeyEvent.dwControlKeyState & 8;
+					cons->bCtrl = irInBuf.Event.KeyEvent.dwControlKeyState & 8;
 					if (irInBuf.Event.KeyEvent.uChar.AsciiChar == 0) {
 						switch (irInBuf.Event.KeyEvent.wVirtualKeyCode) {
 						case VK_DOWN: // key down
@@ -506,7 +504,7 @@ static int readchar_w32(RCons *cons, ut32 usec) {
 						case VK_PRIOR: // key home
 						case VK_NEXT: // key end
 							ch = irInBuf.Event.KeyEvent.wVirtualKeyCode;
-							I->is_arrow = true;
+							cons->is_arrow = true;
 							break;
 						case VK_F1:
 							ch = R_CONS_KEY_F1;
@@ -521,7 +519,7 @@ static int readchar_w32(RCons *cons, ut32 usec) {
 							ch = R_CONS_KEY_F4;
 							break;
 						case VK_F5:
-							ch = I->bCtrl ? 0xcf5 : R_CONS_KEY_F5;
+							ch = cons->bCtrl ? 0xcf5 : R_CONS_KEY_F5;
 							break;
 						case VK_F6:
 							ch = R_CONS_KEY_F6;
@@ -622,7 +620,7 @@ extern volatile sig_atomic_t sigwinchFlag;
 R_API int r_cons_readchar(RCons *cons) {
 	char buf[2];
 	buf[0] = -1;
-	InputState *input_state = r_cons_input_state ();
+	InputState *input_state = &cons->input_state;
 	if (input_state->readbuffer_length > 0) {
 		int ch = *input_state->readbuffer;
 		input_state->readbuffer_length--;
@@ -708,11 +706,10 @@ R_API bool r_cons_yesno(RCons *cons, int def, const char *fmt, ...) {
 	return false;
 }
 
-R_API char *r_cons_password(const char *msg) {
+R_API char *r_cons_password(RCons *cons, const char *msg) {
 	int i = 0;
 	printf ("\r%s", msg);
 	fflush (stdout);
-	RCons *cons = r_cons_singleton ();
 	r_cons_set_raw (cons, true);
 #if R2__UNIX__ && !__wasi__
 	cons->term_raw.c_lflag &= ~(ECHO | ECHONL);
