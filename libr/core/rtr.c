@@ -1331,8 +1331,9 @@ R_API int r_core_rtr_cmds(RCore *core, const char *port) {
 	uv_tcp_init (loop, &context.server);
 
 	struct sockaddr_in addr;
-	bool local = (bool) r_config_get_i(core->config, "tcp.islocal");
 	int porti = r_socket_port_by_name (port);
+	const char *http_bind = r_config_get (core->config, "http.bind");
+	const bool local = R_STR_ISEMPTY (http_bind) || r_str_startswith (http_bind, "local");
 	uv_ip4_addr (local ? "127.0.0.1" : "0.0.0.0", porti, &addr);
 
 	uv_tcp_bind (&context.server, (const struct sockaddr *) &addr, 0);
@@ -1372,7 +1373,9 @@ R_API int r_core_rtr_cmds(RCore *core, const char *port) {
 	}
 
 	RSocket *s = r_socket_new (0);
-	s->local = r_config_get_i (core->config, "tcp.islocal");
+	const char *http_bind = r_config_get (core->config, "http.bind");
+	const bool local = R_STR_ISEMPTY (http_bind) || r_str_startswith (http_bind, "local");
+	s->local = local;
 
 	if (!r_socket_listen (s, port, NULL)) {
 		R_LOG_ERROR ("listening on port %s", port);

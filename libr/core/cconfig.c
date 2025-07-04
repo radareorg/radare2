@@ -4337,9 +4337,6 @@ R_API int r_core_config_init(RCore *core) {
 	free (tmpdir);
 	r_config_desc (cfg, "http.uproot", "path where files are uploaded");
 
-	/* tcp */
-	SETB ("tcp.islocal", "false", "bind a loopback for tcp command server");
-
 	/* graph */
 	SETB ("graph.aeab", "false", "show aeab info on each basic block instead of disasm");
 	SETI ("graph.zoom", 0, "default zoom value when rendering the graph");
