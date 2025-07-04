@@ -22,7 +22,7 @@ static bool test_parse_dwarf_types(void) {
 	RBinFileOptions opt = {0};
 	bool res = r_bin_open (bin, "bins/pe/vista-glass.exe", &opt);
 	// TODO fix, how to correctly promote binary info to the RAnal in unit tests?
-	anal->config->arch = strdup ("x86");
+	r_str_ncpy (anal->config->arch, "x86", sizeof (anal->config->arch));
 	anal->config->bits = 32;
 	mu_assert ("pe/vista-glass.exe binary could not be opened", res);
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RAnal.sdb_types");
@@ -83,7 +83,7 @@ static bool test_dwarf_function_parsing_cpp(void) {
 	RIO *io = r_io_new ();
 	mu_assert_notnull (io, "Couldn't create new RIO");
 	RAnal *anal = r_anal_new ();
-	anal->config->arch = strdup ("x86");
+	r_str_ncpy (anal->config->arch, "x86", sizeof (anal->config->arch));
 	anal->config->bits = 64;
 	mu_assert_notnull (anal, "Couldn't create new RAnal");
 	r_io_bind (io, &bin->iob);
@@ -139,7 +139,7 @@ static bool test_dwarf_function_parsing_go(void) {
 	mu_assert_notnull (io, "Couldn't create new RIO");
 	RAnal *anal = r_anal_new ();
 	// TODO fix, how to correctly promote binary info to the RAnal in unit tests?
-	anal->config->arch = strdup ("x86");
+	r_str_ncpy (anal->config->arch, "x86", sizeof (anal->config->arch));
 	anal->config->bits = 64;
 	mu_assert_notnull (anal, "Couldn't create new RAnal");
 	r_io_bind (io, &bin->iob);
@@ -192,7 +192,7 @@ static bool test_dwarf_function_parsing_rust(void) {
 	RIO *io = r_io_new ();
 	mu_assert_notnull (io, "Couldn't create new RIO");
 	RAnal *anal = r_anal_new ();
-	anal->config->arch = strdup ("x86");
+	r_str_ncpy (anal->config->arch, "x86", sizeof (anal->config->arch));
 	anal->config->bits = 64;
 	mu_assert_notnull (anal, "Couldn't create new RAnal");
 	r_io_bind (io, &bin->iob);

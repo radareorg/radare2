@@ -79,7 +79,7 @@ static bool qjs_core_init(RCorePluginSession *cps) {
 static bool qjs_core_fini(RCorePluginSession *cps) {
 	if (cps && cps->data) {
 		Hack *hack = (Hack *)cps->data;
-		free(hack);
+		free (hack);
 		cps->data = NULL;
 	}
 	return true;

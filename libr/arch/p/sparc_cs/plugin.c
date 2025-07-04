@@ -121,7 +121,7 @@ static csh cs_handle_for_session(RArchSession *as) {
 	return pd->cs_handle;
 }
 
-static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const ut64 addr = op->addr;
 	csh handle = cs_handle_for_session (as);
 	if (handle == 0) {
