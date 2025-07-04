@@ -69,7 +69,7 @@ R_API void r_num_irand(void) {
 }
 
 R_API int r_num_rand(int max) {
-	static R_TH_LOCAL bool rand_initialized = false;
+	static R_TH_LOCAL bool rand_initialized = false; // OK
 	if (!rand_initialized) {
 		r_num_irand ();
 		rand_initialized = true;
