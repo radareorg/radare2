@@ -114,7 +114,7 @@ static bool GH(r_resolve_jemalloc)(RCore *core, char *symname, ut64 *symbol) {
 
 static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
 	ut64 cnksz;
-	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
+	RConsPrintablePalette *pal = &core->cons->context->pal;
 
 	if (!GH(r_resolve_jemalloc)(core, "je_chunksize", &cnksz)) {
 		R_LOG_ERROR ("Cannot find 'je_chunksize' symbol");
@@ -170,13 +170,6 @@ static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
 			extent_node_t *node = R_NEW0 (extent_node_t);
 			extent_node_t *head = R_NEW0 (extent_node_t);
 
-			if (!node || !head) {
-				free (ar);
-				free (node);
-				free (head);
-				return;
-			}
-
 			if (GH(r_resolve_jemalloc) (core, "je_arenas", &sym)) {
 				r_io_read_at (core->io, sym, (ut8 *)&arenas, sizeof (GHT));
 				for (;;) {
@@ -222,17 +215,10 @@ static void GH(jemalloc_print_narenas)(RCore *core, const char *input) {
 	ut64 arenas;
 	GHT arena = GHT_MAX;
 	arena_t *ar = R_NEW0 (arena_t);
-	if (!ar) {
-		return;
-	}
 	arena_stats_t *stats = R_NEW0 (arena_stats_t);
-	if (!stats) {
-		free (ar);
-		return;
-	}
 	int i = 0;
 	GHT narenas = 0;
-	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
+	RConsPrintablePalette *pal = &core->cons->context->pal;
 
 	switch (input[0]) {
 	case '\0':
@@ -322,18 +308,12 @@ static void GH(jemalloc_get_bins)(RCore *core, const char *input) {
 	GHT arena = GHT_MAX; //, bin = GHT_MAX;
 	arena_t *ar = NULL;
 	arena_bin_info_t *b = NULL;
-	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
+	RConsPrintablePalette *pal = &core->cons->context->pal;
 
 	switch (input[0]) {
 	case ' ':
 		ar = R_NEW0 (arena_t);
-		if (!ar) {
-			break;
-		}
 		b = R_NEW0 (arena_bin_info_t);
-		if (!b) {
-			break;
-		}
 		if (!GH(r_resolve_jemalloc)(core, "je_arena_bin_info", &bin_info)) {
 			R_LOG_ERROR ("resolving je_arena_bin_info");
 			R_FREE (b);

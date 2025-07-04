@@ -1713,7 +1713,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 	free (cnk_next);
 }
 
-void GH(print_malloc_states)( RCore *core, GHT m_arena, MallocState *main_arena) {
+static void GH(print_malloc_states)( RCore *core, GHT m_arena, MallocState *main_arena) {
 	MallocState *ta = R_NEW0 (MallocState);
 	RConsPrintablePalette *pal = &core->cons->context->pal;
 
@@ -1746,8 +1746,8 @@ void GH(print_malloc_states)( RCore *core, GHT m_arena, MallocState *main_arena)
 	free (ta);
 }
 
-void GH(print_inst_minfo)(GH(RHeapInfo) *heap_info, GHT hinfo) {
-	RConsPrintablePalette *pal = &r_cons_singleton()->context->pal;
+static void GH(print_inst_minfo)(RCore *core, GH(RHeapInfo) *heap_info, GHT hinfo) {
+	RConsPrintablePalette *pal = &core->cons->context->pal;
 
 	PRINT_YA ("malloc_info @ ");
 	PRINTF_BA ("0x%"PFMT64x, (ut64)hinfo);
@@ -1762,7 +1762,7 @@ void GH(print_inst_minfo)(GH(RHeapInfo) *heap_info, GHT hinfo) {
 	PRINT_YA ("}\n\n");
 }
 
-void GH(print_malloc_info)(RCore *core, GHT m_state, GHT malloc_state) {
+static void GH(print_malloc_info)(RCore *core, GHT m_state, GHT malloc_state) {
 	GHT h_info;
 
 	if (malloc_state == m_state) {
@@ -1771,7 +1771,7 @@ void GH(print_malloc_info)(RCore *core, GHT m_state, GHT malloc_state) {
 		h_info = (malloc_state >> 16) << 16;
 		GH(RHeapInfo) *heap_info = R_NEW0 (GH(RHeapInfo));
 		r_io_read_at (core->io, h_info, (ut8*)heap_info, sizeof (GH(RHeapInfo)));
-		GH(print_inst_minfo) (heap_info, h_info);
+		GH(print_inst_minfo) (core, heap_info, h_info);
 		MallocState *ms = R_NEW0 (MallocState);
 
 		while (heap_info->prev != 0x0 && heap_info->prev != GHT_MAX) {
@@ -1783,7 +1783,7 @@ void GH(print_malloc_info)(RCore *core, GHT m_state, GHT malloc_state) {
 			if ((ms->GH(top) >> 16) << 16 != h_info) {
 				h_info = (ms->GH(top) >> 16) << 16;
 				r_io_read_at (core->io, h_info, (ut8*)heap_info, sizeof (GH(RHeapInfo)));
-				GH(print_inst_minfo) (heap_info, h_info);
+				GH(print_inst_minfo) (core, heap_info, h_info);
 			}
 		}
 		free (heap_info);

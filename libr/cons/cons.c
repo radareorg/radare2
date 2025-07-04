@@ -1248,6 +1248,7 @@ R_API void r_cons_bind(RCons *cons, RConsBind *bind) {
 	bind->get_size = r_cons_get_size;
 	bind->get_cursor = r_cons_get_cursor;
 	bind->cb_printf = r_cons_printf;
+	bind->cb_write = r_cons_write;
 	bind->cb_flush = r_cons_flush;
 	bind->cb_grep = mygrep;
 	bind->is_breaked = r_cons_is_breaked;
@@ -1354,8 +1355,9 @@ R_API void r_cons_memset(RCons *cons, char ch, int len) {
 	}
 }
 
-R_API int r_cons_write(RCons *cons, const char *str, int len) {
-	R_RETURN_VAL_IF_FAIL (str && len >= 0, -1);
+R_API int r_cons_write(RCons *cons, const void *data, int len) {
+	R_RETURN_VAL_IF_FAIL (data && len >= 0, -1);
+	const char *str = data;
 	RConsContext *ctx = cons->context;
 	if (len < 1 || ctx->breaked) {
 		return 0;

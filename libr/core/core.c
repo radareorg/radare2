@@ -718,11 +718,12 @@ static void autocomplete_alias(RLineCompletion *completion, RCmd *cmd, const cha
 	c.num_completions = 0;
 
 	ht_pp_foreach (cmd->aliases, check_alias_completion, &c);
+	RCore *core = cmd->data;
+	RCons *cons = core->cons;
 
 	const int match_count = c.num_completions;
 	if (match_count == 1) {
 		/* If only 1 possible completion, use it */
-		RCons *cons = r_cons_singleton ();
 		const char *k = c.valid_completions[0];
 		const RCmdAliasVal *val = c.valid_completion_vals[0];
 
@@ -2151,10 +2152,6 @@ static void r_core_setenv(RCore *core) {
 	free (e);
 }
 
-static int mywrite(const ut8 *buf, int len) {
-	return r_cons_write (r_cons_singleton (), (const char *)buf, len);
-}
-
 static bool exists_var(RPrint *print, ut64 func_addr, char *str) {
 	RAnal *anal = ((RCore*)(print->user))->anal;
 	RAnalFunction *fcn = r_anal_get_function_at (anal, func_addr);
@@ -2475,7 +2472,7 @@ static void cmdusr1(int p) {
 	const char *cmd = r_config_get (Gcore->config, "cmd.usr1");
 	if (R_STR_ISNOTEMPTY (cmd)) {
 		r_core_cmd0 (Gcore, cmd);
-		r_cons_flush (r_cons_singleton ());
+		r_cons_flush (Gcore->cons);
 	}
 }
 
@@ -2483,7 +2480,7 @@ static void cmdusr2(int p) {
 	const char *cmd = r_config_get (Gcore->config, "cmd.usr2");
 	if (R_STR_ISNOTEMPTY (cmd)) {
 		r_core_cmd0 (Gcore, cmd);
-		r_cons_flush (r_cons_singleton ());
+		r_cons_flush (Gcore->cons);
 	}
 }
 #endif
@@ -2564,9 +2561,7 @@ R_API bool r_core_init(RCore *core) {
 	core->print->num = core->num;
 	core->print->offname = r_core_print_offname;
 	core->print->offsize = r_core_print_offsize;
-	// core->print->cb_printf = r_cons_gprintf;
 	// core->print->cb_color = r_cons_rainbow_get; // NEVER CALLED
-	core->print->write = mywrite;
 	core->print->exists_var = exists_var;
 	core->print->disasm = __disasm;
 	core->print->colorfor = colorfor_cb;
@@ -2607,23 +2602,6 @@ R_API bool r_core_init(RCore *core) {
 	/* initialize libraries */
 	core->cons = r_cons_new ();
 	core->cons->line->user = core;
-#if 0
-	if (true || core->cons->refcnt == 1) {
-		core->cons = r_cons_singleton ();
-		if (core->cons->line) {
-			core->cons->line->user = core;
-			core->cons->line->cb_editor = \
-				(RLineEditorCb)&r_core_editor;
-			core->cons->line->cb_fkey = core->cons->cb_fkey;
-		}
-#if __EMSCRIPTEN__
-		core->cons->user_fgets = NULL;
-#else
-		core->cons->user_fgets = (void *)r_core_fgets;
-#endif
-		// r_line_singleton ()->user = (void *)core;
-	}
-#endif
 	r_cons_bind (core->cons, &core->print->consb);
 	core->cmdlog = NULL;
 	// XXX causes uaf

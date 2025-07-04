@@ -410,8 +410,7 @@ static char *get_node_bgcolor(RCons *cons, int color, int cur) {
 		: cons->context->pal.diff_unknown;
 }
 
-static char *get_node_color(int color, int cur) {
-	RCons *cons = r_cons_singleton ();
+static char *get_node_color(RCons *cons, int color, int cur) {
 	if (color == -1) {
 		return cur ? cons->context->pal.graph_box2 : cons->context->pal.graph_box;
 	}
@@ -532,7 +531,7 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 #if 1
 	// TODO: check if node is traced or not and show proper color
 	// This info must be stored inside RANode* from RCore*
-	const char *nc = get_node_color (color, cur);
+	const char *nc = get_node_color (cons, color, cur);
 	if (g->show_node_bubble) {
 		r_cons_canvas_bgfill (g->can, n->x, n->y, n->w, n->h, get_node_bgcolor (cons, color, cur));
 	// r_cons_canvas_circle (g->can, n->x, n->y, n->w, n->h, get_node_color (color, cur));
@@ -552,9 +551,8 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 #endif
 }
 
-static int **get_crossing_matrix(const RGraph *g, const struct layer_t layers[], int maxlayer, int i, int from_up, int *n_rows) {
+static int **get_crossing_matrix(RCons *cons, const RGraph *g, const struct layer_t layers[], int maxlayer, int i, int from_up, int *n_rows) {
 	int j, len = layers[i].n_nodes;
-	RCons *cons = r_cons_singleton ();
 	int **m = R_NEWS0 (int *, len);
 	if (!m) {
 		return NULL;
@@ -665,13 +663,13 @@ err_row:
 	return NULL;
 }
 
-static int layer_sweep(const RGraph *g, const struct layer_t layers[], int maxlayer, int i, int from_up) {
+static int layer_sweep(RCons *cons, const RGraph *g, const struct layer_t layers[], int maxlayer, int i, int from_up) {
 	RGraphNode *u, *v;
 	const RANode *au, *av;
 	int n_rows, j, changed = false;
 	int len = layers[i].n_nodes;
 
-	int **cross_matrix = get_crossing_matrix (g, layers, maxlayer, i, from_up, &n_rows);
+	int **cross_matrix = get_crossing_matrix (cons, g, layers, maxlayer, i, from_up, &n_rows);
 	if (!cross_matrix) {
 		return -1; // ERROR HAPPENS
 	}
@@ -898,12 +896,13 @@ static void create_layers(RAGraph *g) {
 static void minimize_crossings(const RAGraph *g) {
 	int i, cross_changed, max_changes = 4096;
 
+	RCons *cons = g->can->cons;
 	do {
 		cross_changed = false;
 		max_changes--;
 
 		for (i = 0; i < g->n_layers; i++) {
-			int rc = layer_sweep (g->graph, g->layers, g->n_layers, i, true);
+			int rc = layer_sweep (cons, g->graph, g->layers, g->n_layers, i, true);
 			if (rc == -1) {
 				return;
 			}
@@ -918,7 +917,7 @@ static void minimize_crossings(const RAGraph *g) {
 		max_changes--;
 
 		for (i = g->n_layers - 1; i >= 0; i--) {
-			int rc = layer_sweep (g->graph, g->layers, g->n_layers, i, false);
+			int rc = layer_sweep (cons, g->graph, g->layers, g->n_layers, i, false);
 			if (rc == -1) {
 				return;
 			}
@@ -2988,7 +2987,7 @@ static void agraph_print_edges(RAGraph *g) {
 		agraph_print_edges_simple (g);
 		return;
 	}
-	RCons *cons = r_cons_singleton ();
+	RCons *cons = g->can->cons;
 	int out_nth, in_nth, bendpoint;
 	RListIter *itn, *itm, *ito;
 	RCanvasLineStyle style = {0};
@@ -3355,7 +3354,8 @@ static void move_current_node(RAGraph *g, int xdiff, int ydiff) {
 static void agraph_toggle_tiny(RAGraph *g) {
 	g->is_tiny = !g->is_tiny;
 	g->need_update_dim = 1;
-	agraph_refresh (r_cons_singleton ()->event_data);
+	RCons *cons = g->can->cons;
+	agraph_refresh (cons->event_data);
 	agraph_set_layout ((RAGraph *) g);
 }
 
@@ -3365,7 +3365,8 @@ static void agraph_toggle_mini(RAGraph *g) {
 		n->is_mini = !n->is_mini;
 	}
 	g->need_update_dim = 1;
-	agraph_refresh (r_cons_singleton ()->event_data);
+	RCons *cons = g->can->cons;
+	agraph_refresh (cons->event_data);
 	agraph_set_layout ((RAGraph *) g);
 }
 

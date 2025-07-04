@@ -704,7 +704,9 @@ static RGraphNode *get_graphtrace_node(RGraph *g, Sdb *nodes, struct trace_node 
 static void dot_trace_create_node(RTreeNode *n, RTreeVisitor *vis) {
 	struct dot_trace_ght *data = (struct dot_trace_ght *)vis->data;
 	struct trace_node *tn = n->data;
-	if (tn) get_graphtrace_node (data->graph, data->graphnodes, tn);
+	if (tn) {
+		get_graphtrace_node (data->graph, data->graphnodes, tn);
+	}
 }
 
 static void dot_trace_discover_child(RTreeNode *n, RTreeVisitor *vis) {
@@ -741,6 +743,7 @@ static void dot_trace_traverse(RCore *core, RTree *t, int fmt) {
 
 	/* build a callgraph from the execution trace */
 	vis.data = &aux_data;
+	vis.user = core;
 	vis.pre_visit = (RTreeNodeVisitCb)dot_trace_create_node;
 	vis.discover_child = (RTreeNodeVisitCb)dot_trace_discover_child;
 	r_tree_bfs (t, &vis);
@@ -4181,6 +4184,7 @@ static RTreeNode *add_trace_tree_child(Sdb *db, RTree *t, RTreeNode *cur, ut64 a
 	return r_tree_add_node (t, cur, t_node);
 }
 
+// swap args for consistency
 static void trace_traverse_pre(RTreeNode *n, RTreeVisitor *vis) {
 	const char *name = "";
 	struct trace_node *tn = n->data;
@@ -4188,25 +4192,25 @@ static void trace_traverse_pre(RTreeNode *n, RTreeVisitor *vis) {
 	if (!tn) {
 		return;
 	}
-	RCons *cons = r_cons_singleton ();
+	RCore *core = (RCore *)vis->user;
+	RCons *cons = core->cons;
 	for (i = 0; i < n->depth - 1; i++) {
 		r_cons_printf (cons, "  ");
 	}
-	if (Gcore) {
-		RFlagItem *f = r_flag_get_at (Gcore->flags, tn->addr, true);
-		if (f) {
-			name = f->name;
-		}
+	RFlagItem *f = r_flag_get_at (core->flags, tn->addr, true);
+	if (f) {
+		name = f->name;
 	}
 	r_cons_printf (cons, " 0x%08"PFMT64x" refs %d %s\n", tn->addr, tn->refs, name);
 }
 
-static void trace_traverse(RTree *t) {
+static void trace_traverse(RCore *core, RTree *t) {
 	RTreeVisitor vis = {0};
 
 	/* clear the line on stderr, because somebody has written there */
 	eprintf (R_CONS_CLEAR_LINE"\r");
 	fflush (stderr);
+	vis.user = core;
 	vis.pre_visit = (RTreeNodeVisitCb)trace_traverse_pre;
 	r_tree_dfs (t, &vis);
 }
@@ -4368,8 +4372,7 @@ static void debug_trace_calls(RCore *core, const char *input) {
 	if (bp_final) {
 		r_bp_del (core->dbg->bp, final_addr);
 	}
-	Gcore = core;
-	trace_traverse (core->dbg->tree);
+	trace_traverse (core, core->dbg->tree);
 	core->dbg->trace->enabled = t;
 	r_cons_break_pop (core->cons);
 }
