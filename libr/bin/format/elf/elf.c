@@ -5579,6 +5579,7 @@ typedef struct {
 
 static bool is_important(RBinElfReloc *reloc) {
 	switch (reloc->type) {
+	case 7:
 	case 21:
 	case 22:
 	case 28: // R_ARM_CALL
