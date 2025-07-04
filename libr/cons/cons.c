@@ -1605,6 +1605,9 @@ R_API void r_cons_context_free(RConsContext * R_NULLABLE ctx) {
 		r_cons_context_pal_free (ctx);
 		r_stack_free (ctx->break_stack);
 
+		// Free the marks list
+		r_list_free (ctx->marks);
+
 		// Free the grep strings list
 		r_list_free (ctx->grep.strings);
 
@@ -1631,14 +1634,14 @@ R_API RConsContext *r_cons_context_clone(RConsContext *ctx) {
 	if (ctx->lastOutput) {
 		c->lastOutput = r_mem_dup (ctx->lastOutput, ctx->lastLength);
 	}
+	// Don't clone marks to avoid double free issues
+	c->marks = r_list_newf ((RListFree)mark_free);
 	if (ctx->sorted_lines) {
 		c->sorted_lines = r_list_clone (ctx->sorted_lines, (RListClone)strdup);
 	}
 	if (ctx->unsorted_lines) {
 		c->unsorted_lines = r_list_clone (ctx->unsorted_lines, (RListClone)strdup);
 	}
-	// Don't clone marks - avoid double free issues
-	c->marks = NULL;
 	c->pal.rainbow = NULL;
 	pal_clone (c);
 	// rainbow_clone (c);
