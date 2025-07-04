@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2022-2024 - pancake, condret */
+/* radare - LGPL - Copyright 2022-2025 - pancake, condret */
 
 #include <r_arch.h>
 #include <config.h>
@@ -34,7 +34,7 @@ static ut32 _rate_compat(RArchPlugin *p, RArchConfig *cfg, const char *name) {
 	if (cfg) {
 		bits = cfg->bits;
 		//eprintf ("compare %s %s\n", p->arch, cfg->arch);
-		if (cfg->arch && !strcmp (p->arch, cfg->arch)) {
+		if (!strcmp (p->arch, cfg->arch)) {
 			score += 50;
 		}
 		if (p->endian & cfg->endian) {
@@ -130,9 +130,7 @@ R_API bool r_arch_use(RArch *arch, RArchConfig *config, const char *name) {
 		if (encode) {
 			arch->session->encoder = arch->session;
 		} else {
-			char *old_arch = config->arch;
-			config->arch = strdup (arch->session->plugin->arch);
-			R_FREE (old_arch);
+			r_str_ncpy (config->arch, arch->session->plugin->arch, sizeof (config->arch));
 			RArchPlugin *ap = find_bestmatch (arch, config, name, true);
 			if (ap) {
 				RArchSession *es = r_arch_session (arch, config, ap);
@@ -214,26 +212,18 @@ R_API bool r_arch_set_endian(RArch *arch, ut32 endian) {
 R_API bool r_arch_set_arch(RArch *arch, char *archname) {
 	// Rename to _use_arch instead ?
 	R_RETURN_VAL_IF_FAIL (arch && archname, false);
-	char *_arch = strdup (archname);
-	if (!_arch) {
-		return false;
-	}
-	if (!arch->cfg) {
-		RArchConfig *cfg = r_arch_config_new ();
+	RArchConfig *cfg = arch->cfg;
+	if (!cfg) {
+		cfg = r_arch_config_new ();
 		if (!cfg) {
-			free (_arch);
 			return false;
 		}
-		free (cfg->arch);
-		cfg->arch =_arch;
 		if (!r_arch_use (arch, cfg, archname)) {
 			r_unref (cfg);
 			return false;
 		}
-		return true;
 	}
-	free (arch->cfg->arch);
-	arch->cfg->arch = _arch;
+	r_str_ncpy (cfg->arch, archname, sizeof (cfg->arch));
 	return true;
 }
 

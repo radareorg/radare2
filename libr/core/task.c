@@ -437,9 +437,11 @@ static RThreadFunctionRet task_run(RCoreTask *task) {
 	free (task->res);
 	task->res = res_str;
 
+#if 0
 	if (task != scheduler->main_task && r_cons_default_context_is_interactive ()) {
 		R_LOG_INFO ("Task %d finished", task->id);
 	}
+#endif
 
 	TASK_SIGSET_T old_sigset;
 stillbirth:

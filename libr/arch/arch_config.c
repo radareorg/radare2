@@ -5,7 +5,7 @@
 static void _ac_free(RArchConfig *cfg) {
 	if (cfg) {
 		free (cfg->decoder);
-		free (cfg->arch);
+//		free (cfg->arch);
 		free (cfg->abi);
 		free (cfg->cpu);
 		free (cfg->os);
@@ -24,8 +24,7 @@ R_API void r_arch_config_use(RArchConfig *config, const char * R_NULLABLE arch) 
 	if (arch && !strcmp (arch, "null")) {
 		return;
 	}
-	// free (config->arch)
-	config->arch = R_STR_ISNOTEMPTY (arch) ? strdup (arch) : NULL;
+	r_str_ncpy (config->arch, arch, sizeof (config->arch));
 }
 
 R_API bool r_arch_config_iseq(RArchConfig *a, RArchConfig *b) {
@@ -74,7 +73,8 @@ R_API RArchConfig *r_arch_config_clone(RArchConfig *c) {
 	R_RETURN_VAL_IF_FAIL (c, NULL);
 	RArchConfig *ac = R_NEW0 (RArchConfig);
 	if (R_LIKELY (ac)) {
-		ac->arch = R_STR_DUP (c->arch);
+		// ac->arch = R_STR_DUP (c->arch);
+		r_str_ncpy (ac->arch, c->arch, sizeof (c->arch));
 		ac->abi = R_STR_DUP (c->abi);
 		ac->cpu = R_STR_DUP (c->cpu);
 		ac->os = R_STR_DUP (c->os);
@@ -87,7 +87,7 @@ R_API RArchConfig *r_arch_config_new(void) {
 	if (!ac) {
 		return NULL;
 	}
-	ac->arch = strdup (R_SYS_ARCH);
+	r_str_ncpy (ac->arch, R_SYS_ARCH, sizeof (ac->arch));
 	ac->bits = R_SYS_BITS_CHECK (R_SYS_BITS, 64)? 64: 32;
 	ac->bitshift = 0;
 	ac->syntax = R_ARCH_SYNTAX_INTEL;
