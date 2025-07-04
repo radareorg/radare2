@@ -18,9 +18,6 @@
 #include "dmh_jemalloc.inc.c"
 #endif
 
-
-static R_TH_LOCAL RCore *Gcore = NULL;
-
 void cmd_anal_reg (RCore *core, const char *str);
 
 static RCoreHelpMessage help_msg_d = {
