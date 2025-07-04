@@ -152,9 +152,12 @@ static void cons_stack_load(RConsContext *C, RConsStack *data, bool free_current
 }
 
 static void cons_context_deinit(RConsContext *ctx) {
-	return;
+	if (!ctx) {
+		return;
+	}
 	// r_stack_free (ctx->cons_stack);
 	r_list_free (ctx->marks);
+	ctx->marks = NULL;
 	ctx->cons_stack = NULL;
 	r_stack_free (ctx->break_stack);
 	ctx->break_stack = NULL;
@@ -313,6 +316,7 @@ R_API void r_cons_free2(RCons * R_NULLABLE cons) {
 		r_cons_pop (cons);
 	}
 	r_cons_context_free (cons->context);
+	r_list_free (cons->ctx_stack);
 #if 0
 	RConsContext *ctx = cons->context;
 	R_FREE (ctx->buffer);
@@ -734,6 +738,7 @@ R_API void r_cons_free(RCons *cons) {
 	if (cons == I) {
 		I = NULL; // hack for globals
 	}
+	free (cons);
 }
 
 R_API void r_cons_fill_line(RCons *cons) {
@@ -1600,6 +1605,9 @@ R_API void r_cons_context_free(RConsContext * R_NULLABLE ctx) {
 		r_cons_context_pal_free (ctx);
 		r_stack_free (ctx->break_stack);
 
+		// Free the marks list
+		r_list_free (ctx->marks);
+
 		// Free the grep strings list
 		r_list_free (ctx->grep.strings);
 
@@ -1626,14 +1634,14 @@ R_API RConsContext *r_cons_context_clone(RConsContext *ctx) {
 	if (ctx->lastOutput) {
 		c->lastOutput = r_mem_dup (ctx->lastOutput, ctx->lastLength);
 	}
+	// Don't clone marks to avoid double free issues
+	c->marks = r_list_newf ((RListFree)mark_free);
 	if (ctx->sorted_lines) {
 		c->sorted_lines = r_list_clone (ctx->sorted_lines, (RListClone)strdup);
 	}
 	if (ctx->unsorted_lines) {
 		c->unsorted_lines = r_list_clone (ctx->unsorted_lines, (RListClone)strdup);
 	}
-	// Don't clone marks - avoid double free issues
-	c->marks = NULL;
 	c->pal.rainbow = NULL;
 	pal_clone (c);
 	// rainbow_clone (c);

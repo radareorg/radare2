@@ -5579,12 +5579,16 @@ typedef struct {
 
 static bool is_important(RBinElfReloc *reloc) {
 	switch (reloc->type) {
-	case 7:
 	case 21:
 	case 22:
 	case 28: // R_ARM_CALL
 	case 1026:
 		return true;
+	}
+	// ignored
+	switch (reloc->type) {
+	case 7:
+		return false;
 	}
 
 	R_LOG_DEBUG ("Reloc type %d not used for imports", reloc->type);

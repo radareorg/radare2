@@ -76,6 +76,15 @@ static bool qjs_core_init(RCorePluginSession *cps) {
 	return true;
 }
 
+static bool qjs_core_fini(RCorePluginSession *cps) {
+	if (cps && cps->data) {
+		Hack *hack = (Hack *)cps->data;
+		free(hack);
+		cps->data = NULL;
+	}
+	return true;
+}
+
 // TODO maybe add a function to call by plugin name? (is 1 extra arg)
 static bool r_cmd_qjs_call(RCorePluginSession *cps, const char *input) {
 	Hack *hack = cps->data;
@@ -145,7 +154,7 @@ static JSValue r2plugin_core_load(JSContext *ctx, JSValueConst this_val, int arg
 	}
 	ap->init = qjs_core_init;
 	ap->call = r_cmd_qjs_call;
-	/// ap->fini
+	ap->fini = qjs_core_fini;
 
 	plugin_manager_add_core_plugin (pm, nameptr, ctx, func);
 
@@ -161,6 +170,7 @@ static JSValue r2plugin_core_load(JSContext *ctx, JSValueConst this_val, int arg
 	int ret = r_lib_open_ptr (pm->core->lib, ap->meta.name, NULL, lib);
 	if (ret != 1) {
 		free (hack);
+		free (lib);
 	}
 	return JS_NewBool (ctx, ret == 1);
 }

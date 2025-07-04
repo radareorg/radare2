@@ -35,6 +35,9 @@ R_API void r_core_plugin_fini(RCmd *cmd) {
 R_API bool r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin) {
 	R_RETURN_VAL_IF_FAIL (cmd && plugin, false);
 	RCorePluginSession *ctx = R_NEW0 (RCorePluginSession);
+	if (!ctx) {
+		return false;
+	}
 	ctx->core = cmd->data;
 	ctx->plugin = plugin;
 	if (plugin->init) {
