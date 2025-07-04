@@ -2818,9 +2818,10 @@ R_API void r_core_fini(RCore *c) {
 	r_list_free (c->watchers);
 	r_list_free (c->scriptstack);
 	r_core_task_scheduler_fini (&c->tasks);
-	r_lib_free (c->lib);
+	// Free cmd and its plugins before freeing event system
 	c->rcmd = r_cmd_free (c->rcmd);
 	r_list_free (c->cmd_descriptors);
+	r_lib_free (c->lib);
 	/*
 	r_unref (c->anal->config);
 	*/
