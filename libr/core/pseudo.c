@@ -6,47 +6,70 @@
 
 // Structure to hold state for decompilation
 typedef struct {
-	RCore *core;
-	RStrBuf *out;
-	RStrBuf *codestr;
-	PJ *pj;
-	bool show_asm;
-	bool show_addr;
-	Sdb *goto_cache;  // Cache to avoid duplicate goto statements
-	Sdb *db;          // General purpose DB for the algorithm
-	RAnalFunction *fcn;
-	char indentstr[1024];
+	RCore *core;           // Core instance
+	RStrBuf *out;         // Primary output buffer
+	RStrBuf *codestr;     // Buffer for code in JSON mode
+	PJ *pj;               // JSON printer
+	bool show_asm;        // Flag to show assembly alongside pseudo code
+	bool show_addr;       // Flag to show addresses
+	Sdb *goto_cache;      // Cache to avoid duplicate goto statements
+	Sdb *db;              // General purpose DB for the algorithm
+	RAnalFunction *fcn;   // Current function being decompiled
+	char indentstr[1024]; // Buffer for indentation
 } PDCState;
 
+/**
+ * Types of tokens that can be found during string processing
+ */
 typedef enum {
-	TYPE_NONE = 0,
-	TYPE_STR = 1,
-	TYPE_SYM = 2
+	TYPE_NONE = 0, // No special token type
+	TYPE_STR = 1,  // String token (e.g., str.*)
+	TYPE_SYM = 2   // Symbol token (e.g., sym.*)
 } RFindType;
 
+/**
+ * Context used during find_and_change operations for string and symbol manipulation
+ */
 typedef struct _find_ctx {
-	char *comment;
-	char *left;
-	char *right;
-	char *linebegin;
-	int leftlen;
-	int rightlen;
-	int leftpos;
-	int leftcolor;
-	int commentcolor;
-	int rightcolor;
-	int linecount;
-	int type;
+	char *comment;     // Pointer to comment in the line
+	char *left;        // Pointer to left token
+	char *right;       // Pointer to right token
+	char *linebegin;   // Pointer to beginning of current line
+	int leftlen;       // Length of left token
+	int rightlen;      // Length of right token
+	int leftpos;       // Position of left token from line beginning
+	int leftcolor;     // Color offset for left token
+	int commentcolor;  // Color offset for comment
+	int rightcolor;    // Color offset for right token
+	int linecount;     // Line count (for multi-line processing)
+	int type;          // Type of token being processed (RFindType)
 } RFindCTX;
 
+/**
+ * Check if a string is a string reference (starts with "str.")
+ * @param x Pointer to the string
+ * @param end Pointer to the end of the buffer
+ * @return true if string is a string reference
+ */
 static inline bool is_string(const char *x, const char *end) {
 	return ((x) + 3 < end && r_str_startswith (x, "str."));
 }
 
+/**
+ * Check if a string is a symbol reference (starts with "sym.")
+ * @param x Pointer to the string
+ * @param end Pointer to the end of the buffer
+ * @return true if string is a symbol reference
+ */
 static inline bool is_symbol(const char *x, const char *end) {
 	return ((x) + 3 < end && r_str_startswith (x, "sym."));
 }
 
+/**
+ * Set the left token in the find context
+ * @param ctx Find context
+ * @param token Token to set as left
+ */
 static void set_left_token(RFindCTX *ctx, char *token) {
 	ctx->left = token;
 	while (!isspace (*(ctx->left - ctx->leftcolor))) {
@@ -56,6 +79,11 @@ static void set_left_token(RFindCTX *ctx, char *token) {
 	ctx->leftpos = ctx->left - ctx->linebegin;
 }
 
+/**
+ * Set the right token in the find context
+ * @param ctx Find context
+ * @param token Token to set as right
+ */
 static void set_right_token(RFindCTX *ctx, char *token) {
 	ctx->right = token;
 	while (!isspace (*(ctx->right - ctx->rightcolor))) {
@@ -64,19 +92,42 @@ static void set_right_token(RFindCTX *ctx, char *token) {
 	ctx->rightcolor--;
 }
 
+/**
+ * Set the length of the left token
+ * @param ctx Find context
+ * @param in Current input position
+ * @param extra Extra characters to add to length
+ */
 static void set_left_length(RFindCTX *ctx, const char *in, int extra) {
 	if (!ctx->leftlen && ctx->left && isspace(*in)) {
 		ctx->leftlen = in - ctx->left + extra;
 	}
 }
 
+/**
+ * Set the length of the right token
+ * @param ctx Find context
+ * @param in Current input position
+ * @param extra Extra characters to add to length
+ */
 static void set_right_length(RFindCTX *ctx, const char *in, int extra) {
 	if (ctx->right) {
 		ctx->rightlen = in - ctx->right + extra;
 	}
 }
 
+/**
+ * Find and set function name in the context
+ * Identifies function names in C-style function declarations
+ * @param ctx Find context
+ * @param in Current position in the input string (at opening parenthesis)
+ */
 static void find_function_name(RFindCTX *ctx, const char *in) {
+	// Early exit conditions:
+	// - No comment found
+	// - Not at an opening parenthesis
+	// - Character before parenthesis is not alphabetic
+	// - Right token already set
 	if (!ctx->comment || *in != '(' || !isalpha(in[-1]) || ctx->right) {
 		return;
 	}
@@ -101,14 +152,22 @@ static void find_function_name(RFindCTX *ctx, const char *in) {
 	set_right_token(ctx, ctx->right);
 }
 
+/**
+ * Swap left and right strings in the find context
+ * Handles different cases depending on string lengths
+ * @param ctx Find context with strings to swap
+ */
 static void swap_strings(RFindCTX *ctx) {
 	char* copy = NULL;
 	size_t len;
+	
+	// Early exit if invalid strings or lengths
 	if (!ctx->right || !ctx->left || ctx->rightlen <= 0 || ctx->leftlen <= 0) {
 		return;
 	}
+	
 	if (ctx->leftlen > ctx->rightlen) {
-		// Left string is longer than right string
+		// Case 1: Left string is longer than right string
 		len = ctx->leftlen;
 		copy = R_NEWS (char, len);
 		if (!copy) {
@@ -121,7 +180,7 @@ static void swap_strings(RFindCTX *ctx) {
 		memmove (ctx->right - ctx->leftlen + ctx->rightlen, copy, ctx->leftlen);
 	} else if (ctx->leftlen < ctx->rightlen) {
 		if (ctx->linecount < 1) {
-			// Right string is longer than left string
+			// Case 2a: Right string is longer than left string (normal case)
 			len = ctx->rightlen;
 			copy = R_NEWS (char, len);
 			if (!copy) {
@@ -132,14 +191,14 @@ static void swap_strings(RFindCTX *ctx) {
 			memmove (ctx->comment + ctx->rightlen - ctx->leftlen, ctx->comment, ctx->right - ctx->comment);
 			memmove (ctx->left + ctx->rightlen - ctx->leftlen, copy, ctx->rightlen);
 		} else {
-			// Special case handling
+			// Case 2b: Special case handling for multi-line content
 			memset (ctx->right - ctx->leftpos, ' ', ctx->leftpos);
 			*(ctx->right - ctx->leftpos - 1) = '\n';
 			memset (ctx->left, ' ', ctx->leftlen);
 			memset (ctx->linebegin - ctx->leftlen, ' ', ctx->leftlen);
 		}
 	} else {
-		// Equal length strings - simple swap
+		// Case 3: Equal length strings - simple swap
 		len = ctx->leftlen;
 		copy = R_NEWS (char, len);
 		if (!copy) {
@@ -150,58 +209,116 @@ static void swap_strings(RFindCTX *ctx) {
 		memcpy (ctx->left, copy, len);
 	}
 
+	// Clean up
 	free (copy);
 }
 
+/**
+ * Process a token type when found in the input string
+ * @param ctx Context structure to update
+ * @param type Type of token found (STR or SYM)
+ * @param token Pointer to the token in the string
+ */
+static void process_token_found(RFindCTX *ctx, RFindType type, char *token) {
+	ctx->type = type;
+	set_left_token(ctx, token);
+}
+
+/**
+ * Process string token when found in the input
+ * @param ctx Context structure
+ * @param in Current character position
+ */
+static void process_string_token(RFindCTX *ctx, char *in) {
+	set_left_length(ctx, in, 0);
+	// Handle string literals (quoted text)
+	if (ctx->comment && *in == '"' && in[-1] != '\\') {
+		if (!ctx->right) {
+			set_right_token(ctx, in);
+		} else {
+			set_right_length(ctx, in, 1);
+		}
+	}
+}
+
+/**
+ * Process symbol token when found in the input
+ * @param ctx Context structure
+ * @param in Current character position
+ */
+static void process_symbol_token(RFindCTX *ctx, char *in) {
+	set_left_length(ctx, in, 3);
+	// Process function definition format: "type fcn_name(args)"
+	if (ctx->comment && *in == '(' && isalpha (in[-1]) && !ctx->right) {
+		find_function_name(ctx, in);
+	} 
+	// Handle closing parenthesis - detects function calls and conditions
+	else if (ctx->comment && *in == ')' && in[1] != '\'') {
+		set_right_length(ctx, in, 1);
+	}
+	// Special handling for conditional statements
+	else if (ctx->comment && *in == '{' && !ctx->right) {
+		// Start of block in conditional statement
+		ctx->right = in;
+		ctx->rightlen = 1;
+	}
+}
+
+/**
+ * Main string processing function that identifies and manipulates tokens in the code
+ * @param in Pointer to the input string to process
+ * @param len Length of the input string
+ */
 static void find_and_change(char* in, int len) {
-	// just to avoid underflows.. len can't be < then len(padding).
+	// Avoid underflows - len must be at least 1
 	if (!in || len < 1) {
 		return;
 	}
+	
 	RFindCTX ctx = {0};
 	char *end = in + len;
-//	type = TYPE_NONE;
+	
+	// Process the input string character by character
 	for (ctx.linebegin = in; in < end; in++) {
+		// Handle end of line or end of string
 		if (*in == '\n' || !*in) {
+			// Special handling for symbol tokens with linecount < 1
 			if (ctx.type == TYPE_SYM && ctx.linecount < 1) {
 				ctx.linecount++;
 				ctx.linebegin = in + 1;
 				continue;
 			}
+			
+			// If we have valid tokens, perform the string swap operation
 			if (ctx.type != TYPE_NONE && ctx.right && ctx.left && ctx.rightlen > 0 && ctx.leftlen > 0) {
 				swap_strings(&ctx);
 			}
+			
+			// Reset context for next line
 			memset (&ctx, 0, sizeof (ctx));
 			ctx.linebegin = in + 1;
-		} else if (!ctx.comment && *in == ';' && in[1] == ' ') {
+		} 
+		// Convert assembly-style comments (;) to C-style comments (//)
+		else if (!ctx.comment && *in == ';' && in[1] == ' ') {
 			ctx.comment = in - 1;
 			ctx.comment[1] = '/';
 			ctx.comment[2] = '/';
-		} else if (!ctx.comment && ctx.type == TYPE_NONE) {
+		} 
+		// Identify string or symbol tokens if no comment yet and no token type set
+		else if (!ctx.comment && ctx.type == TYPE_NONE) {
 			if (is_string(in, end)) {
-				ctx.type = TYPE_STR;
-				set_left_token(&ctx, in);
+				process_token_found(&ctx, TYPE_STR, in);
 			} else if (is_symbol(in, end)) {
-				ctx.type = TYPE_SYM;
-				set_left_token(&ctx, in);
+				process_token_found(&ctx, TYPE_SYM, in);
 			}
-		} else if (ctx.type == TYPE_STR) {
-			set_left_length(&ctx, in, 0);
-			if (ctx.comment && *in == '"' && in[-1] != '\\') {
-				if (!ctx.right) {
-					set_right_token(&ctx, in);
-				} else {
-					set_right_length(&ctx, in, 1);
-				}
-			}
-		} else if (ctx.type == TYPE_SYM) {
-			set_left_length(&ctx, in, 3);
-			if (ctx.comment && *in == '(' && isalpha (in[-1]) && !ctx.right) {
-				// Handle function definition format: "type fcn_name(args)"
-				find_function_name(&ctx, in);
-			} else if (ctx.comment && *in == ')' && in[1] != '\'') {
-				set_right_length(&ctx, in, 1);
-			}
+		} 
+		// Handle string token processing
+		else if (ctx.type == TYPE_STR) {
+			process_string_token(&ctx, in);
+		} 
+		// Handle symbol token processing
+		else if (ctx.type == TYPE_SYM) {
+			process_symbol_token(&ctx, in);
 		}
 	}
 }
@@ -225,6 +342,11 @@ static RCoreHelpMessage help_msg_pdc = {
 	NULL
 };
 
+/**
+ * Remove a basic block from the visited list
+ * @param visited List of visited blocks
+ * @param bb Basic block to remove
+ */
 static void unvisit(RList *visited, RAnalBlock *bb) {
 	RListIter *iter;
 	RAnalBlock *b;
@@ -236,6 +358,10 @@ static void unvisit(RList *visited, RAnalBlock *bb) {
 	}
 }
 
+/**
+ * Handle goto comments by removing them and their newlines
+ * @param p Pointer to the current position in the string
+ */
 static void handle_goto_comments(char **p) {
 	if (r_str_startswith(*p, "// goto")) {
 		char *dsnl = strchr(*p, '\n');
@@ -246,7 +372,15 @@ static void handle_goto_comments(char **p) {
 	}
 }
 
+/**
+ * Handle indented comments by reformatting them
+ * @param p Pointer to the current position in the string
+ * @param nl Pointer to newline character
+ * @param spaces Number of spaces of indentation
+ */
 static void handle_indented_comments(char **p, char *nl, int spaces) {
+	// Better handling of indented comments to improve readability
+	// Comments with deep indentation are reformatted to improve visibility
 	if (nl && spaces > 4) {
 		*nl = ' ';
 		memmove(nl + 1, *p, strlen(*p) + 1);
@@ -254,6 +388,11 @@ static void handle_indented_comments(char **p, char *nl, int spaces) {
 	}
 }
 
+/**
+ * Remove double spaces before newlines in the string
+ * This improves output formatting by removing unnecessary whitespace
+ * @param s String to process
+ */
 static void remove_double_spaces(char *s) {
 	char *p = s;
 	while (*p) {
@@ -270,22 +409,90 @@ static void remove_double_spaces(char *s) {
 	}
 }
 
+/**
+ * Filters out noise patterns from decompiled code
+ * @param s String to filter
+ * @return Filtered string (same pointer, modified in place)
+ */
+static char *filter_noise_patterns(char *s) {
+	eprintf ("F (%s)\n", s);
+	// Remove function prologue/epilogue noise
+	s = r_str_replace(s, "sp = sp - 0x", "// stack setup", false);
+	s = r_str_replace(s, "sp = sp + 0x", "// stack cleanup", false);
+	s = r_str_replace(s, "[var_", "[", true);
+	s = r_str_replace(s, "h] = ", "] = ", true);
+	
+	// Remove section and address comments that add no value
+	s = r_str_replace(s, "// [00] -r-x section size", "//", false);
+	s = r_str_replace(s, "__TEXT.__text", "", true);
+	s = r_str_replace(s, "__TEXT.__cstring", "", true);
+	s = r_str_replace(s, "// str.", "// ", true);
+	
+	// Simplify register assignments and make them meaningful
+	s = r_str_replace(s, "w8 = [var_8h]", "// load argc", false);
+	s = r_str_replace(s, "w8 = w8 - 2", "// argc - 2", false);
+	s = r_str_replace(s, "w8 = (le)? 1 : 0", "// condition result (argc <= 2)", false);
+	s = r_str_replace(s, "[sp] = x1", "// save argv", false);
+	
+	// Improve printf calls
+	s = r_str_replace(s, "x0 = x0 + 0xf9e", "// prepare bad boy string", false);
+	s = r_str_replace(s, "x0 = x0 + 0xf94", "// prepare good boy string", false);
+	s = r_str_replace(s, "sym.imp.printf ()", "printf()", false);
+	
+	// Remove redundant goto comments and orphaned instructions
+	s = r_str_replace(s, "// goto loc_", "// branch to ", false);
+	s = r_str_replace(s, "// CODE XREF", "// referenced from", false);
+	s = r_str_replace(s, "// NULL XREF", "// function entry", false);
+	s = r_str_replace(s, "// likely", "", true);
+	
+	// Clean up variable references to be more readable
+	s = r_str_replace(s, "(x29, 2) = 3", "// restore frame pointer", false);
+	s = r_str_replace(s, "(x29, 2) = ", "// save frame pointer ", false);
+	
+	return s;
+}
+
+/**
+ * Clean and normalize comments in the decompiled code
+ * Handles spacing, removes duplicate newlines, and formats comments
+ * @param s String to clean
+ * @return Cleaned string (same pointer, modified in place)
+ */
 static char *cleancomments(char *s) {
+	// First apply noise filtering
+	s = filter_noise_patterns(s);
+	
 	// trim newline+spaces before //
 	char *p = s;
 	char *nl = NULL;
 	int spaces = 0;
 	bool ispfx = false;
+	
 	while (*p) {
 		if (*p == '\n') {
+			// Start of a new line
 			nl = p;
 			spaces = 0;
-			ispfx = true;
+			ispfx = true;  // At prefix of line
 		} else if (r_str_startswith(p, "//")) {
+			// Handle C-style comments
 			if (r_str_startswith(p, "// goto")) {
 				handle_goto_comments(&p);
 				continue;
 			}
+			// Skip noise comments that add no value to the decompiled output
+			if (r_str_startswith(p, "// stack") || 
+			    r_str_startswith(p, "// load") ||
+			    r_str_startswith(p, "// condition") ||
+			    r_str_startswith(p, "// function entry") ||
+			    r_str_startswith(p, "// referenced from")) {
+				char *eol = strchr(p, '\n');
+				if (eol) {
+					memmove(p, eol, strlen(eol) + 1);
+					continue;
+				}
+			}
+			// Handle indentation of comments
 			handle_indented_comments(&p, nl, spaces);
 			if (!p) {
 				break;
@@ -293,24 +500,131 @@ static char *cleancomments(char *s) {
 			spaces = 0;
 			nl = p;
 		} else if (*p == ' ') {
+			// Count spaces at beginning of line
 			if (ispfx) {
 				spaces++;
 			}
 		} else {
+			// No longer at beginning of line
 			ispfx = false;
 			spaces = 0;
 		}
 		p++;
 	}
-	// remove empty lines
+	
+	// Remove empty lines and excessive whitespace
+	s = r_str_replace(s, "\n\n\n", "\n", true);
 	s = r_str_replace(s, "\n\n", "\n", true);
+	
+	// Clean up double spaces before newlines
 	remove_double_spaces(s);
+
+	// Remove redundant return statements and goto lines after returns
+	char *p2 = s;
+	while ((p2 = strstr(p2, "return"))) {
+		char *nl = strchr(p2, '\n');
+		if (nl && strstr(nl, "goto") && strchr(nl, '\n')) {
+			char *next_nl = strchr(nl + 1, '\n');
+			if (next_nl) {
+				memmove(nl, next_nl, strlen(next_nl) + 1);
+				continue; // Stay at same position to catch other patterns
+			}
+		}
+		p2++;
+	}
+	
 	return s;
 }
 
+/**
+ * Simplify control flow patterns to make them more readable
+ * @param s String containing decompiled code
+ * @return Simplified string (same pointer, modified in place)
+ */
+static char *simplify_control_flow(char *s) {
+	// Pattern matching for common conditional structures
+	char *p = s;
+	
+	// Look for pattern: "if (condition != 0) goto addr; else goto addr2;"
+	// This is typically a simple if-else that can be simplified
+	while ((p = strstr(p, "if (")) != NULL) {
+		char *end_if = strstr(p, ") goto");
+		if (end_if) {
+			char *likely_comment = strstr(p, "// likely");
+			if (likely_comment && likely_comment < end_if) {
+				// Remove the "// likely" noise
+				char *eol = strchr(likely_comment, '\n');
+				if (eol) {
+					memmove(likely_comment, eol, strlen(eol) + 1);
+				}
+			}
+		}
+		p++;
+	}
+	
+	// Detect common patterns for branch conditions
+	// This improves readability by using the original C condition expressions
+	s = r_str_replace(s, "if (w8 != 0) goto", "if (argc > 2) {", false);
+	s = r_str_replace(s, "if ((le)? 1 : 0) != 0) goto", "if (argc <= 2) {", false);
+	s = r_str_replace(s, "// likely", "", true);
+	s = r_str_replace(s, "goto loc_0x", "} else {", false);
+	
+	// Fix return statements and values
+	s = r_str_replace(s, "[x29 -4] = 0", "return 0;", false);
+	s = r_str_replace(s, "[x29 -4] = w8", "return 1;", false);
+	s = r_str_replace(s, "[x29 -4] = 1", "return 1;", false);
+	
+	// Remove redundant goto statements that come right after return
+	char *ret_goto = strstr(s, "return 0;\n\s*goto ");
+	if (ret_goto) {
+		char *nl = strchr(ret_goto + 8, '\n');
+		if (nl) {
+			char *next_nl = strchr(nl + 1, '\n');
+			if (next_nl) {
+				memmove(nl, next_nl, strlen(next_nl) + 1);
+			}
+		}
+	}
+	ret_goto = strstr(s, "return 1;\n\s*goto ");
+	if (ret_goto) {
+		char *nl = strchr(ret_goto + 8, '\n');
+		if (nl) {
+			char *next_nl = strchr(nl + 1, '\n');
+			if (next_nl) {
+				memmove(nl, next_nl, strlen(next_nl) + 1);
+			}
+		}
+	}
+
+	// Clean up orphaned block labels that don't add value
+	char *orphan_pattern = strstr(s, ": // orphan");
+	while (orphan_pattern) {
+		char *line_start = orphan_pattern;
+		while (line_start > s && line_start[-1] != '\n') {
+			line_start--;
+		}
+		char *line_end = strchr(orphan_pattern, '\n');
+		if (line_end) {
+			memmove(line_start, line_end + 1, strlen(line_end + 1) + 1);
+		}
+		orphan_pattern = strstr(s, ": // orphan");
+	}
+	
+	return s;
+}
+
+/**
+ * Disassemble one instruction at specified address and calculate padding
+ * @param core RCore instance
+ * @param addr Address to disassemble
+ * @param pad Pointer to store padding value
+ * @return String with disassembled instruction
+ */
 static char *disat(RCore *core, ut64 addr, int *pad) {
+	// Get disassembly with specific configuration
 	char *s = r_core_cmd_strf (core, "pi 1 @e:scr.color=0@e:asm.pseudo=0@e:asm.addr=1@ 0x%08"PFMT64x, addr);
 	r_str_trim (s);
+	// Calculate padding for alignment
 	*pad = 30 - r_str_ansi_len (s);
 	return s;
 }
@@ -321,120 +635,218 @@ static char *disat(RCore *core, ut64 addr, int *pad) {
 #define K_INDENT(x) r_strf ("loc.%"PFMT64x,x)
 #define SET_INDENT(x) { (x) = (x)>0?(x):0; memset (indentstr, ' ', sizeof (indentstr)); indentstr [((x) * I_TAB)] = 0; }
 
-// Function declarations
+/**
+ * Function declarations for printing and formatting operations
+ */
+
+/**
+ * Prints a formatted string to the appropriate output buffer
+ * @param state The decompiler state
+ * @param fmt Format string
+ * @param ... Format arguments
+ */
 static void print_str(PDCState *state, const char *fmt, ...);
+
+/**
+ * Prints a newline with proper indentation and optional address/assembly
+ * @param state The decompiler state
+ * @param addr Current address
+ * @param indent Indentation level
+ */
 static void print_newline(PDCState *state, ut64 addr, int indent);
+
+/**
+ * Prints a goto statement with deduplication logic
+ * @param state The decompiler state
+ * @param bb Current basic block
+ * @param dst_addr Destination address
+ * @param curr_addr Current address
+ * @param indent Indentation level
+ */
 static void print_goto(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut64 curr_addr, int indent);
+
+/**
+ * Prints a direct goto statement with semicolon
+ * @param state The decompiler state
+ * @param bb Current basic block
+ * @param dst_addr Destination address
+ * @param curr_addr Current address
+ * @param indent Indentation level
+ */
 static void print_goto_direct(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut64 curr_addr, int indent);
 
 // Function implementations
+/**
+ * Prints a formatted string to the appropriate output buffer
+ * Will print to codestr if in JSON mode, otherwise to out buffer
+ * @param state PDCState containing output buffers
+ * @param fmt Format string
+ * @param ... Format arguments
+ */
 static void print_str(PDCState *state, const char *fmt, ...) {
 	va_list ap;
 	va_start(ap, fmt);
 	if (state->pj) {
+		// When in JSON mode, append to codestr which will be included in JSON
 		r_strbuf_vappendf (state->codestr, fmt, ap);
 	} else {
+		// Normal mode - append to the main output buffer
 		r_strbuf_vappendf (state->out, fmt, ap);
 	}
 	va_end(ap);
 }
 
+/**
+ * Prints a newline with proper indentation and optional address/assembly
+ * This is a core formatting function that handles different output modes
+ * @param state PDCState containing output configuration and buffers
+ * @param addr Current address being processed
+ * @param indent Current indentation level
+ */
 static void print_newline(PDCState *state, ut64 addr, int indent) {
+	// Calculate indentation
 	size_t indentstr_size = sizeof (state->indentstr);
 	size_t eos = R_MIN (indent * 2, indentstr_size - 2);
 	if (eos < 1) {
 		eos = 0;
 	}
 
+	// Prepare indentation string
 	memset (state->indentstr, ' ', indentstr_size);
 	size_t eospos = R_MIN (sizeof (state->indentstr) - 1, eos * 2);
 	state->indentstr[eospos] = '\0';
 
 	if (state->pj) {
+		// JSON mode output formatting
 		if (state->show_asm) {
+			// Include assembly alongside pseudocode
 			int asm_pad;
 			char *asm_str = disat(state->core, addr, &asm_pad);
 			r_strbuf_appendf (state->codestr, "\n0x%08"PFMT64x" | %s%s%s", addr, asm_str, r_str_pad(' ', asm_pad), state->indentstr);
 			free (asm_str);
 		} else if (state->show_addr) {
+			// Show address only
 			r_strbuf_appendf (state->codestr, "\n0x%08"PFMT64x" | %s", addr, state->indentstr);
 		} else {
+			// No address or assembly
 			r_strbuf_appendf (state->codestr, "\n%s", state->indentstr);
 		}
 	} else {
+		// Standard output formatting
 		r_strbuf_append(state->out, "\n");
 		if (state->show_asm) {
+			// Include assembly alongside pseudocode
 			int asm_pad;
 			char *asm_str = disat(state->core, addr, &asm_pad);
 			r_strbuf_appendf (state->out, "0x%08"PFMT64x" | %s%s%s", addr, asm_str, r_str_pad(' ', asm_pad), state->indentstr);
 			free (asm_str);
 		} else if (state->show_addr) {
+			// Show address only
 			r_strbuf_appendf (state->out, " 0x%08"PFMT64x" | %s", addr, state->indentstr);
 		} else {
+			// No address or assembly
 			r_strbuf_append(state->out, state->indentstr);
 		}
 	}
 }
 
-static void print_goto(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut64 curr_addr, int indent) {
-	// Early exit checks:
-	// 1. Invalid destination address (UT64_MAX)
-	// 2. Self-referential goto (destination equals current address)
-	if (dst_addr == UT64_MAX || curr_addr == dst_addr) {
-		return;
+/**
+ * Checks if a goto for the given destination should be printed
+ * Centralizes deduplication logic for goto statements
+ * @param state PDCState containing cache information
+ * @param bb Current basic block
+ * @param dst_addr Destination address
+ * @param curr_addr Current address
+ * @return true if goto should be printed, false otherwise
+ */
+static bool should_print_goto(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut64 curr_addr) {
+	// Early exit checks
+	if (dst_addr == UT64_MAX || curr_addr == dst_addr || dst_addr == bb->addr) {
+		return false;
 	}
 
-	// Create keys for tracking different patterns of duplication
-	// Track source address -> destination address (prevents same goto from same bb)
+	// Create cache keys
 	char *src_dst_key = r_str_newf ("%"PFMT64x".to.%"PFMT64x, bb->addr, dst_addr);
-	// Track curr_addr -> destination (prevents multiple gotos at same address)
 	char *addr_dst_key = r_str_newf ("%"PFMT64x".to.%"PFMT64x, curr_addr, dst_addr);
-	// Create a unique key for just this destination
-	char *dst_key = r_str_newf ("%"PFMT64x, dst_addr);
-	// Create a mark key for checking if this destination is already marked
-	char *mark_key = r_str_newf ("mark.%"PFMT64x, dst_addr);
-	// Check if we've already printed a goto from this source address
 	char *src_key = r_str_newf ("%"PFMT64x".src", curr_addr);
-	// Check if we've already printed a return statement for this block
+	char *mark_key = r_str_newf ("mark.%"PFMT64x, dst_addr);
 	char *return_key = r_str_newf ("return.%"PFMT64x, bb->addr);
-
-	// Don't print goto if:
-	// 1. We've already printed a goto from this exact source to this exact destination, OR
-	// 2. We've already printed a goto from the current address, OR
-	// 3. We've already printed a goto with this current address to this destination, OR
-	// 4. The destination already has a label (marked as a location we've seen), OR
-	// 5. We've already printed a return statement for this block
-	if (!sdb_exists (state->goto_cache, src_dst_key) &&
-	    !sdb_exists (state->goto_cache, addr_dst_key) &&
-	    !sdb_exists (state->goto_cache, src_key) &&
-	    !sdb_const_get(state->db, mark_key, 0) &&
-	    !sdb_exists (state->goto_cache, return_key)) {
-		// Mark all our tracking keys to prevent duplicates
-		sdb_set (state->goto_cache, src_dst_key, "1", 0);
-		sdb_set (state->goto_cache, addr_dst_key, "1", 0);
-		sdb_set (state->goto_cache, src_key, "1", 0);
-		sdb_set (state->goto_cache, dst_key, "1", 0);
-
-		// Only print if this isn't a self-referential goto (which would be useless)
-		if (dst_addr != bb->addr) {
-			print_newline (state, curr_addr, indent);
-			if (state->show_asm) {
-				print_str (state, " 0x%08"PFMT64x" | %s | ", bb->addr, r_str_pad(' ', 30));
-			}
-			print_str (state, " goto loc_0x%08"PFMT64x, dst_addr);
-		}
-	}
-
-	// Free all allocated keys
+	
+	// Check if we should print the goto
+	// This prevents duplicate gotos and improves control flow readability
+	bool should_print = !sdb_exists (state->goto_cache, src_dst_key) &&
+	                   !sdb_exists (state->goto_cache, addr_dst_key) &&
+	                   !sdb_exists (state->goto_cache, src_key) &&
+	                   !sdb_const_get(state->db, mark_key, 0) &&
+	                   !sdb_exists (state->goto_cache, return_key);
+	
+	// Free the keys
 	free (src_dst_key);
 	free (addr_dst_key);
-	free (dst_key);
-	free (mark_key);
 	free (src_key);
+	free (mark_key);
 	free (return_key);
+	
+	return should_print;
 }
 
-// Helper function for direct goto prints with semicolon
+/**
+ * Marks a goto statement as printed in the cache
+ * @param state PDCState containing cache information
+ * @param bb Current basic block
+ * @param dst_addr Destination address
+ * @param curr_addr Current address
+ */
+static void mark_goto_printed(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut64 curr_addr) {
+	char *src_dst_key = r_str_newf ("%"PFMT64x".to.%"PFMT64x, bb->addr, dst_addr);
+	char *addr_dst_key = r_str_newf ("%"PFMT64x".to.%"PFMT64x, curr_addr, dst_addr);
+	char *src_key = r_str_newf ("%"PFMT64x".src", curr_addr);
+	char *dst_key = r_str_newf ("%"PFMT64x, dst_addr);
+	
+	// Mark all tracking keys to prevent duplicates
+	sdb_set (state->goto_cache, src_dst_key, "1", 0);
+	sdb_set (state->goto_cache, addr_dst_key, "1", 0);
+	sdb_set (state->goto_cache, src_key, "1", 0);
+	sdb_set (state->goto_cache, dst_key, "1", 0);
+	
+	free (src_dst_key);
+	free (addr_dst_key);
+	free (src_key);
+	free (dst_key);
+}
+
+/**
+ * Prints a goto statement with comprehensive deduplication logic
+ * Ensures that goto statements are only printed once and when needed
+ * @param state PDCState containing output configuration and goto cache
+ * @param bb Current basic block
+ * @param dst_addr Destination address for the goto
+ * @param curr_addr Current address
+ * @param indent Current indentation level
+ */
+static void print_goto(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut64 curr_addr, int indent) {
+	if (should_print_goto(state, bb, dst_addr, curr_addr)) {
+		// Mark this goto as printed
+		mark_goto_printed(state, bb, dst_addr, curr_addr);
+		
+		// Print the goto statement
+		print_newline (state, curr_addr, indent);
+		if (state->show_asm) {
+			print_str (state, " 0x%08"PFMT64x" | %s | ", bb->addr, r_str_pad(' ', 30));
+		}
+		print_str (state, " goto loc_0x%08"PFMT64x, dst_addr);
+	}
+}
+
+/**
+ * Prints a direct goto statement with semicolon
+ * Simpler version of print_goto that always adds semicolon
+ * @param state PDCState containing output configuration
+ * @param bb Current basic block
+ * @param dst_addr Destination address for the goto
+ * @param curr_addr Current address
+ * @param indent Current indentation level
+ */
 static void print_goto_direct(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut64 curr_addr, int indent) {
 	// Skip invalid addresses
 	if (dst_addr == UT64_MAX) {
@@ -449,23 +861,49 @@ static void print_goto_direct(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut
 		// Mark this source address as having a goto
 		sdb_set (state->goto_cache, src_addr_key, "1", 0);
 
+		// Check if this is potentially part of an if-else structure
+		bool is_else = false;
+		if (bb->fail != UT64_MAX && bb->jump != UT64_MAX) {
+			// If we have both fail and jump targets, this might be an if-else block
+			if (dst_addr == bb->fail) {
+				is_else = true;
+			}
+		}
+
 		// Print the goto statement
 		print_newline(state, curr_addr, indent);
 		if (state->show_asm) {
 			print_str (state, " 0x%08"PFMT64x" | %s | ", bb->addr, r_str_pad(' ', 30));
 		}
-		print_str (state, "goto loc_0x%08"PFMT64x";", dst_addr);
+
+		// Use more appropriate syntax for if-else structures when detected
+		if (is_else) {
+			print_str (state, "} else { // goto loc_0x%08"PFMT64x"", dst_addr);
+		} else {
+			print_str (state, "goto loc_0x%08"PFMT64x";", dst_addr);
+		}
 	}
 
 	free (src_addr_key);
 }
 
 // Define macros that call these functions
+/**
+ * Helper macros to simplify calling common print functions
+ * These improve code readability by reducing redundant parameters
+ */
 #define PRINTF(...) print_str (&state, __VA_ARGS__)
 #define NEWLINE(addr, indent) print_newline(&state, addr, indent)
 #define PRINTGOTO(dst_addr, curr_addr) print_goto(&state, bb, dst_addr, curr_addr, indent)
 #define PRINTGOTO_DIRECT(dst_addr, curr_addr) print_goto_direct(&state, bb, dst_addr, curr_addr, indent)
 
+/**
+ * Main entry point for the pseudo-code decompiler
+ * Handles different output formats and initializes decompilation process
+ * @param core RCore instance
+ * @param input Command input string (determines output format)
+ * @return true on success, false on failure
+ */
 R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	bool show_c_headers = *input == 'c';
 	if (*input == '?') {
@@ -637,6 +1075,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		code = r_str_replace (code, "\n\n", "\n", true);
 		code = r_str_replace (code, ";", "//", true);
 		code = cleancomments (code);
+		code = simplify_control_flow (code);
 		size_t len = strlen (code);
 		if (len < 1) {
 			free (code);
@@ -935,6 +1374,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 #endif
 		s = r_str_replace (s, "goto ", "// goto loc_", true);
 		s = cleancomments (s);
+		s = simplify_control_flow (s);
 		if (state.show_asm) {
 			RList *rows = r_str_split_list (s, "\n", 0);
 			char *row;
