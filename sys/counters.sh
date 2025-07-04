@@ -6,7 +6,10 @@ git grep XXX libr | wc -l
 printf -- "TODO\t"
 git grep TODO libr | wc -l
 printf -- "GLOBALS\t"
-git grep R_TH_LOCAL libr | grep -v include | wc -l
+git grep R_TH_LOCAL libr | grep -v include | grep -v OK | wc -l
+printf -- "BROKEN\t"
+git grep BROKEN=1 test/db |wc -l
+
 
 printf -- "strcpy\t"
 git grep 'strcpy (' libr | wc -l
@@ -24,12 +27,6 @@ git grep 'isdigit' libr | wc -l
 
 printf -- "f(void)\t"
 git grep 'free ((void' libr | wc -l
-
-printf -- "aPlugs\t"
-ls libr/anal/p/*.c |wc -l
-
-printf -- "BROKEN\t"
-git grep BROKEN=1 test/db |wc -l
 
 printf -- "Cannot\t"
 git grep eprintf libr/| grep -i cannot |wc -l

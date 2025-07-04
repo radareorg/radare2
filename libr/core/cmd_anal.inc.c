@@ -6508,7 +6508,9 @@ static int cmd_af(RCore *core, const char *input) {
 					// TODO: check if destination is outside the function boundaries
 				}
 			}
-		} else eprintf ("Cannot find function at 0x%08" PFMT64x "\n", core->addr);
+		} else {
+			R_LOG_ERROR ("Cannot find function at 0x%08" PFMT64x, core->addr);
+		}
 		free (name);
 		}
 		break;

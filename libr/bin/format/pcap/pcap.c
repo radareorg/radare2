@@ -13,9 +13,6 @@ void pcap_obj_free(pcap_obj_t *obj) {
 
 static bool pcap_obj_init_hdr(pcap_obj_t *obj) {
 	pcap_hdr_t *hdr = R_NEW0 (pcap_hdr_t);
-	if (!hdr) {
-		return false;
-	}
 	hdr->magic = r_buf_read_ble32_at (obj->b, 0, obj->bigendian);
 	hdr->version_major = r_buf_read_ble16_at (obj->b, 4, obj->bigendian);
 	hdr->version_minor = r_buf_read_ble16_at (obj->b, 6, obj->bigendian);
@@ -40,9 +37,6 @@ void pcaprec_free(pcaprec_t *rec) {
 
 static bool parse_tcp(RBuffer *b, ut64 off, pcaprec_t *rec, ut32 size) {
 	pcaprec_tcp_t *tcp = R_NEW0 (pcaprec_tcp_t);
-	if (!tcp) {
-		return false;
-	}
 	ut8 buf[sizeof (pcaprec_tcp_t)] = {0};
 	r_buf_read_at (b, off, buf, sizeof (buf));
 	tcp->src_port = r_read_at_be16 (buf, 0);
@@ -100,9 +94,6 @@ static bool parse_tcp(RBuffer *b, ut64 off, pcaprec_t *rec, ut32 size) {
 static bool parse_ipv4(RBuffer *b, ut64 off, pcaprec_t *rec) {
 	ut8 buf[sizeof (pcaprec_ipv4_t)] = {0};
 	pcaprec_ipv4_t *ipv4 = R_NEW0 (pcaprec_ipv4_t);
-	if (!ipv4) {
-		return false;
-	}
 	r_buf_read_at (b, off, buf, sizeof (buf));
 	ipv4->ver_len = r_read_at_be8 (buf, 0);
 	ipv4->diff_serv = r_read_at_be8 (buf, 1);
@@ -135,9 +126,6 @@ static bool parse_ipv4(RBuffer *b, ut64 off, pcaprec_t *rec) {
 
 static bool parse_ipv6(RBuffer *b, ut64 off, pcaprec_t *rec) {
 	pcaprec_ipv6_t *ipv6 = R_NEW0 (pcaprec_ipv6_t);
-	if (!ipv6) {
-		return false;
-	}
 	ut8 buf[sizeof (pcaprec_ipv6_t)] = { 0 };
 	r_buf_read_at (b, off, (ut8*)buf, sizeof (pcaprec_ipv6_t));
 	ipv6->vc_flow = r_read_at_be32 (buf, 0);
@@ -158,9 +146,6 @@ static bool parse_ipv6(RBuffer *b, ut64 off, pcaprec_t *rec) {
 
 static bool parse_ether(RBuffer *b, ut64 off, pcaprec_t *rec) {
 	pcaprec_ether_t *ether = R_NEW0 (pcaprec_ether_t);
-	if (!ether) {
-		return false;
-	}
 	// dst 6 bytes
 	// src 6 bytes
 	r_buf_read_at (b, off, (ut8*)ether, sizeof (pcaprec_ether_t));
@@ -198,9 +183,6 @@ static bool pcap_obj_init_recs(pcap_obj_t *obj) {
 
 	while (off < size) {
 		pcaprec_hdr_t *rec_hdr = R_NEW0 (pcaprec_hdr_t);
-		if (!rec_hdr) {
-			goto error;
-		}
 		rec_hdr->ts_sec = r_buf_read_ble32_at (obj->b, off, obj->bigendian);
 		rec_hdr->ts_usec = r_buf_read_ble32_at (obj->b, off + 4, obj->bigendian);
 		rec_hdr->incl_len = r_buf_read_ble32_at (obj->b, off + 8, obj->bigendian);
@@ -212,10 +194,6 @@ static bool pcap_obj_init_recs(pcap_obj_t *obj) {
 		off += 16;
 
 		pcaprec_t *rec = R_NEW0 (pcaprec_t);
-		if (!rec) {
-			free (rec_hdr);
-			goto error;
-		}
 		rec->paddr = off;
 		rec->hdr = rec_hdr;
 		ut8 *pktbuf = malloc (rec_hdr->incl_len);
@@ -285,9 +263,6 @@ pcap_obj_t *pcap_obj_new_buf(RBuffer *buf) {
 	R_RETURN_VAL_IF_FAIL (buf, NULL);
 
 	pcap_obj_t *obj = R_NEW0 (pcap_obj_t);
-	if (!obj) {
-		return NULL;
-	}
 	obj->b = r_buf_ref (buf);
 	if (!pcap_obj_init (obj)) {
 		pcap_obj_free (obj);
@@ -298,9 +273,6 @@ pcap_obj_t *pcap_obj_new_buf(RBuffer *buf) {
 
 static void pcaprec_tcp_sym_add(RList *list, pcaprec_t* rec, ut64 paddr, int size) {
 	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
-	if (!ptr) {
-		return;
-	}
 	pcaprec_tcp_t *tcp = rec->transport.tcp_hdr;
 	if (!tcp) {
 		free (ptr);
@@ -315,9 +287,6 @@ static void pcaprec_tcp_sym_add(RList *list, pcaprec_t* rec, ut64 paddr, int siz
 
 static void pcaprec_ipv4_sym_add(RList *list, pcaprec_t* rec, ut64 paddr) {
 	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
-	if (!ptr) {
-		return;
-	}
 	pcaprec_ipv4_t *ipv4 = rec->net.ipv4_hdr;
 	ptr->name = r_bin_name_new_from (r_str_newf ("0x%"PFMT64x": IPV%d, Src: %d.%d.%d.%d, Dst: %d.%d.%d.%d",
 		paddr, (ipv4->ver_len >> 4) & 0x0F,
@@ -345,19 +314,63 @@ static void pcaprec_ipv4_sym_add(RList *list, pcaprec_t* rec, ut64 paddr) {
 	}
 }
 
+static char *ipv6_addr_string(ut8 *addr) {
+	size_t i;
+	size_t start = -1;
+	size_t tmp = -1;
+	size_t len = 0, maxlen = 0;
+
+	ut16 words[8] = { 0 };
+	for (i = 0; i < 8; i++) {
+		words[i] = r_read_at_be16 (addr, i * 2);
+	}
+
+	// find the longest sequence of zero field
+	for (i = 0; i < 8; i++) {
+		if (words[i] == 0) {
+			if (tmp == -1) {
+				tmp = i;
+				len = 1;
+			} else {
+				len++;
+			}
+			continue;
+		}
+
+		if (len > maxlen) {
+			maxlen = len;
+			start = tmp;
+		}
+		tmp = -1;
+	}
+
+	if (maxlen > 1) {
+		RStrBuf *addr = r_strbuf_new (NULL);
+		for (i = 0; i < 8; i++) {
+			if (i == start) {
+				r_strbuf_append (addr, "::");
+				i += maxlen - 1;
+			} else {
+				r_strbuf_appendf (addr, "%02x", words[i]);
+			}
+		}
+		return r_strbuf_drain (addr);
+	}
+	return r_str_newf ("%x:%x:%x:%x:%x:%x:%x:%x",
+		words[0], words[1], words[2], words[3],
+		words[4], words[5], words[6], words[7]);
+}
+
 static void pcaprec_ipv6_sym_add(RList *list, pcaprec_t* rec, ut64 paddr) {
 	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
-	if (!ptr) {
-		return;
-	}
 	pcaprec_ipv6_t *ipv6 = rec->net.ipv6_hdr;
-	const char *src = ipv6_addr_string (ipv6->src);
-	const char *dst = ipv6_addr_string (ipv6->dst);
+	char *src = ipv6_addr_string (ipv6->src);
+	char *dst = ipv6_addr_string (ipv6->dst);
 	ptr->name = r_bin_name_new_from (r_str_newf ("0x%"PFMT64x": IPV6, Src: %s, Dst: %s", paddr, src, dst));
 	ptr->paddr = ptr->vaddr = paddr;
 	r_list_append (list, ptr);
-	free ((char *)src);
-	free ((char *)dst);
+	free (src);
+	free (dst);
 
 	switch (ipv6->nxt) {
 	case TRANSPORT_TCP:
@@ -375,9 +388,6 @@ static void pcaprec_ipv6_sym_add(RList *list, pcaprec_t* rec, ut64 paddr) {
 
 void pcaprec_ether_sym_add(RList *list, pcaprec_t *rec, ut64 paddr) {
 	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
-	if (!ptr) {
-		return;
-	}
 	pcaprec_ether_t *ether = rec->link.ether_hdr;
 	if (!ether) {
 		free (ptr);
@@ -492,51 +502,4 @@ const char* pcap_network_string(ut32 network) {
 	default:
 		return "Unknown";
 	}
-}
-
-const char *ipv6_addr_string(ut8 *addr) {
-	size_t i;
-	size_t start = -1;
-	size_t tmp = -1;
-	size_t len = 0, maxlen = 0;
-
-	ut16 words[8] = { 0 };
-	for (i = 0; i < 8; i++) {
-		words[i] = r_read_at_be16 (addr, i * 2);
-	}
-
-	// find the longest sequence of zero field
-	for (i = 0; i < 8; i++) {
-		if (words[i] == 0) {
-			if (tmp == -1) {
-				tmp = i;
-				len = 1;
-			} else {
-				len++;
-			}
-			continue;
-		}
-
-		if (len > maxlen) {
-			maxlen = len;
-			start = tmp;
-		}
-		tmp = -1;
-	}
-
-	if (maxlen > 1) {
-		RStrBuf *addr = r_strbuf_new (NULL);
-		for (i = 0; i < 8; i++) {
-			if (i == start) {
-				r_strbuf_append (addr, "::");
-				i += maxlen - 1;
-			} else {
-				r_strbuf_appendf (addr, "%02x", words[i]);
-			}
-		}
-		return r_strbuf_drain (addr);
-	}
-	return r_str_newf ("%x:%x:%x:%x:%x:%x:%x:%x",
-		words[0], words[1], words[2], words[3],
-		words[4], words[5], words[6], words[7]);
 }
