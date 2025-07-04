@@ -56,20 +56,23 @@ R_API bool r_core_plugin_remove(RCmd *cmd, RCorePlugin *plugin) {
 	RListIter *iter, *iter2;
 	RCorePluginSession *cps;
 	RCorePlugin *p;
+	bool res = false;
 	r_list_foreach_safe (cmd->lcmds, iter, iter2, cps) {
 		if (cps && !strcmp (name, cps->plugin->meta.name)) {
 			r_list_delete (cmd->plist, iter);
-			return true;
+			res = true;
+			break;
 		}
 	}
 	r_list_foreach_safe (cmd->plist, iter, iter2, p) {
 		if (p && !strcmp (name, p->meta.name)) {
 			r_list_delete (cmd->plist, iter);
-			return true;
+			res = true;
+			break;
 		}
 	}
 
-	return false;
+	return res;
 }
 
 R_API bool r_core_plugin_init(RCmd *cmd) {

@@ -408,7 +408,9 @@ static int cmd_plugins(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg_L);
 		break;
 	case '-':
-		r_lib_close (core->lib, r_str_trim_head_ro (input + 1));
+		if (!r_lib_close (core->lib, r_str_trim_head_ro (input + 1))) {
+			R_LOG_WARN ("Cannot find plugin");
+		}
 		break;
 	case ' ':
 		r_lib_open (core->lib, r_str_trim_head_ro (input + 1));
@@ -667,7 +669,10 @@ static int cmd_plugins(void *data, const char *input) {
 			break;
 			}
 		case '-':
-			r_core_cmd_callf (core, "L-%s", r_str_trim_head_ro (input + 2));
+			if (!r_lib_close (core->lib, r_str_trim_head_ro (input + 2))) {
+				R_LOG_WARN ("Cannot find plugin");
+			}
+			// r_core_cmd_callf (core, "L-%s", r_str_trim_head_ro (input + 2));
 			break;
 		case ' ':
 			{

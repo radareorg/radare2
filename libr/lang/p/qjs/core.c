@@ -72,7 +72,7 @@ static bool qjs_core_init(RCorePluginSession *cps) {
 		return false;
 	}
 	// QjsContext *qc = &plugin->ctx;
-	cps->data = hack; 
+	cps->data = hack;
 	return true;
 }
 
