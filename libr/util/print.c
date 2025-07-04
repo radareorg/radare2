@@ -1653,7 +1653,7 @@ R_API void r_print_bytes(RPrint *p, const ut8 *buf, int len, const char *fmt, co
 R_API void r_print_raw(RPrint *p, ut64 addr, const ut8 *buf, int len, int offlines) {
 	switch (offlines) {
 	case 0:
-		p->write (buf, len);
+		p->consb.cb_write (p->consb.cons, buf, len);
 		break;
 	case 2:
 	{
@@ -1701,7 +1701,7 @@ R_API void r_print_raw(RPrint *p, ut64 addr, const ut8 *buf, int len, int offlin
 				mustbreak = true;
 			}
 			if ((q - o) > 0) {
-				p->write (o, (int) (size_t) (q - o));
+				p->consb.cb_write (p->consb.cons, o, (int) (size_t) (q - o));
 			}
 			r_print_printf (p, "\n");
 			linenum++;

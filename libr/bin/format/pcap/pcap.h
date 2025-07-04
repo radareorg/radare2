@@ -156,6 +156,5 @@ void pcap_obj_free (pcap_obj_t *obj);
 void pcaprec_free(pcaprec_t *rec);
 void pcaprec_ether_sym_add(RList *list, pcaprec_t *rec, ut64 paddr);
 const char* pcap_network_string(ut32 network);
-const char *ipv6_addr_string (ut8 *addr);
 
 #endif  // _PCAP_H_

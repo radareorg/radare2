@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019-2024 - pancake */
+/* radare - LGPL - Copyright 2019-2025 - pancake */
 
 #include <r_util/r_table.h>
 #include <r_core.h>
@@ -899,7 +899,7 @@ R_API void r_table_sort(RTable *t, int nth, bool dec) {
 		Gnth = nth;
 		if (col->type && col->type->cmp) {
 			Gcmp = col->type->cmp;
-			t->rows->sorted = false; //force sorting
+			t->rows->sorted = false; // force sorting
 			r_list_sort (t->rows, cmp);
 			if (dec) {
 				r_list_reverse (t->rows);

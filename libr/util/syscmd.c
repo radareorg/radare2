@@ -9,7 +9,7 @@
 #define FMT_QUIET 'q'
 #define FMT_EMOJI 'e'
 
-R_TH_LOCAL RList *dirstack = NULL;
+static R_TH_LOCAL RList *dirstack = NULL;
 
 static char *showfile(char *res, const int nth, const char *fpath, const char *name, int printfmt, bool needs_newline) {
 #if R2__UNIX__

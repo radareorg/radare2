@@ -29,6 +29,7 @@ typedef struct r_tree_visitor_t {
 	void (*post_visit)(RTreeNode *, struct r_tree_visitor_t *);
 	void (*discover_child)(RTreeNode *, struct r_tree_visitor_t *);
 	void *data;
+	void *user;
 } RTreeVisitor;
 typedef void (*RTreeNodeVisitCb)(RTreeNode *n, RTreeVisitor *vis);
 

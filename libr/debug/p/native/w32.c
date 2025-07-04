@@ -219,7 +219,7 @@ static void r_debug_lstLibAdd(DWORD pid,LPVOID lpBaseOfDll, HANDLE hFile,char *d
 		}
 		lstLibPtr++;
 	}
-	eprintf ("r_debug_lstLibAdd: Cannot find slot\n");
+	R_LOG_ERROR ("Cannot find slot to add a library");
 }
 
 static void * r_debug_findlib(void *BaseOfDll) {
@@ -266,7 +266,7 @@ static void r_debug_lstThreadAdd(DWORD pid, DWORD tid, HANDLE hThread, LPVOID  l
 		}
 		lstThreadPtr++;
 	}
-	eprintf ("r_debug_lstThreadAdd: Cannot find slot\n");
+	R_LOG_ERROR ("Cannot find slot to add a thread");
 }
 
 static void *r_debug_findthread(int pid, int tid) {

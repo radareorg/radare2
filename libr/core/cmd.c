@@ -610,12 +610,19 @@ static int r_core_cmd_nullcallback(void *data) {
 	return 1;
 }
 
+typedef struct {
+	RCore *core;
+	bool use_b64;
+} PrintAliases;
+
 /* Escape raw bytes if not using b64 */
-static bool print_aliases(void *use_b64, const void *key, const void *val) {
-	RCons *cons = r_cons_singleton ();
+static bool print_aliases(void *user, const void *key, const void *val) {
+	PrintAliases *pa = user;
+	RCore *core = (RCore *)pa->core;
+	RCons *cons = core->cons;
 	const char *k = (char *) key;
 	RCmdAliasVal *v = (RCmdAliasVal *) val;
-	bool base64 = *(bool *)use_b64;
+	bool base64 = pa->use_b64;
 	if (v->is_str) {
 		r_cons_printf (cons, "$%s=%s\n", k, (char *)v->data);
 	} else {
@@ -908,8 +915,11 @@ static int cmd_alias(void *data, const char *input) {
 			R_LOG_ERROR ("No such alias \"$%s\"", buf);
 		}
 	} else if (*buf == '*') {
-		bool use_b64 = (buf[1] == '*');
-		ht_pp_foreach (core->rcmd->aliases, print_aliases, &use_b64);
+		PrintAliases pa = {
+			.core = core,
+			.use_b64 = (buf[1] == '*')
+		};
+		ht_pp_foreach (core->rcmd->aliases, print_aliases, &pa);
 	} else if (!*buf) {
 		char **keys = (char **)r_cmd_alias_keys (core->rcmd);
 		if (keys) {

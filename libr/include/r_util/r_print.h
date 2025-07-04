@@ -93,11 +93,6 @@ typedef struct r_print_t {
 	const char *cfmt;
 	char datefmt[32];
 	int datezone;
-	int (*write)(const unsigned char *buf, int len);
-	// PrintfCallback oprintf;
-	// PrintfCallback cb_printf;
-	// PrintfCallback cb_eprintf;
-	// char *(*cb_color)(int idx, int last, bool bg);
 	bool scr_prompt;
 	int (*disasm)(void *p, ut64 addr);
 	RArchConfig *config;

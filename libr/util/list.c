@@ -604,7 +604,7 @@ R_API void r_list_insertion_sort(RList *list, RListComparator cmp) {
 	}
 }
 
-// chose wisely based on length
+// choose wisely based on length
 R_API void r_list_sort(RList *list, RListComparator cmp) {
 	R_RETURN_IF_FAIL (list);
 	if (list->length > MERGE_LIMIT) {

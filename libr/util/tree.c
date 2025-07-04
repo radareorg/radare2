@@ -1,13 +1,12 @@
-/* radare - LGPL - Copyright 2007-2015 - ret2libc */
+/* radare - LGPL - Copyright 2007-2025 - pancake, ret2libc */
 
 #include <r_util.h>
 
 static void tree_dfs_node(RTreeNode *r, RTreeVisitor *vis) {
-	RStack *s;
 	RListIter *it;
 	RTreeNode *n;
 
-	s = r_stack_new (16);
+	RStack *s = r_stack_new (16);
 	if (!s) {
 		return;
 	}
