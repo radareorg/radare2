@@ -31,9 +31,6 @@
 #include <r_bind.h>
 #include <r_codemeta.h>
 
-// TODO: this var should be 1 at some point :D
-#define SHELLFILTER 0
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -97,13 +94,20 @@ typedef enum {
 	R_CORE_VISUAL_MODE_CD = 4
 } RCoreVisualMode;
 
-// R2_600 - coresession
+typedef struct r_core_plugin_session_t {
+	RCore *core;
+	struct r_core_plugin_t *plugin;
+	void *data; // plugin instance data
+} RCorePluginSession;
+
+typedef bool (*RCorePluginLife) (RCorePluginSession *ctx);
+typedef bool (*RCorePluginCall) (RCorePluginSession *ctx, const char *input);
+
 typedef struct r_core_plugin_t {
 	RPluginMeta meta;
-	RCmdCb call; // returns true if command was handled, false otherwise.
-	RCmdCb init; // XXX needs a context to store user data and return bool instead of int! RCmdCb is wrong
-	RCmdCb fini;
-	void *data; // required for rlang-python
+	RCorePluginLife init;
+	RCorePluginLife fini;
+	RCorePluginCall call;
 } RCorePlugin;
 
 typedef struct r_core_rtr_host_t {

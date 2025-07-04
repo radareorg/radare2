@@ -288,7 +288,7 @@ static void siguza_xrefs(RCore *core, ut64 search, ut64 start, int lenbytes) {
 	} while (lenbytes_rem > core->blocksize_max);
 }
 
-static int r_cmdsixref_call(void *user, const char *input) {
+static bool r_cmdsixref_call(RCorePluginSession *cps, const char *input) {
 	static RCoreHelpMessage help_msg_sixref = {
 		"Usage:", "sixref", "Fast xref discovery in arm64 executable sections",
 		"sixref", " [addr] [len]", "find xrefs in arm64 executable sections",
@@ -300,7 +300,7 @@ static int r_cmdsixref_call(void *user, const char *input) {
 	}
 	input = r_str_trim_head_ro (input + strlen ("sixref"));
 
-	RCore *core = (RCore *)user;
+	RCore *core = cps->core;
 	const ut64 oaddr = core->addr;
 	const char *arch = r_config_get (core->config, "asm.arch");
 	const int bits = r_config_get_i (core->config, "asm.bits");

@@ -734,8 +734,8 @@ static void prjcmd(RCore *core, const char *mod, const char *arg) {
 	}
 }
 
-static int callback(void *user, const char *input) {
-	RCore *core = (RCore *) user;
+static bool callback(RCorePluginSession *cps, const char *input) {
+	RCore *core = cps->core;
 	if (r_str_startswith (input, "prj")) {
 		const char *mod = input + 3;
 		const char *arg = strchr (mod, ' ');

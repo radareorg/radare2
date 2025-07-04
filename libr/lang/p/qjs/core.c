@@ -58,33 +58,37 @@
 #endif
 
 #define QJS_CORE_MAGIC 0x07534617
-// TODO maybe add a function to call by plugin name? (is 1 extra arg)
-static int r_cmd_qjs_call(void *c, const char *input) {
-	RCore *core = c;
+
+typedef struct {
+	JSContext *ctx;
+	JSValue func;
+} Hack;
+Hack *hack = NULL;
+
+static bool qjs_core_init(RCorePluginSession *cps) {
+	RCore *core = cps->core;
 	QjsPluginManager *pm = R_UNWRAP4 (core, lang, session, plugin_data);
 	if (pm == NULL) {
 		return false;
 	}
-	if (pm->magic != QJS_CORE_MAGIC) {
-		pm = Gpm;
-		R_LOG_DEBUG ("NOT the right lang session");
-	}
+	// QjsContext *qc = &plugin->ctx;
+	cps->data = hack;
+	return true;
+}
 
-	// Iterate over plugins until one returns "true" (meaning the plugin handled the input)
-	QjsCorePlugin *plugin;
-	R_VEC_FOREACH (&pm->core_plugins, plugin) {
-		if (plugin == NULL) {
-			continue;
-		}
-		// check if core plugin is a qjs one
-		QjsContext *qc = &plugin->qctx;
-		JSValueConst args[1] = { JS_NewString (qc->ctx, input) };
-		JSValue res = JS_Call (qc->ctx, qc->call_func, JS_UNDEFINED, countof (args), args);
-		if (JS_ToBool (qc->ctx, res)) {
-			return true;
-		}
+// TODO maybe add a function to call by plugin name? (is 1 extra arg)
+static bool r_cmd_qjs_call(RCorePluginSession *cps, const char *input) {
+	Hack *hack = cps->data;
+	JSContext *ctx = hack->ctx;
+	JSValue func = hack->func;
+	// RCore *core = cps->core;
+	// QjsCorePlugin *plugin;
+	// QjsContext *qc = cps->data;
+	JSValueConst args[1] = { JS_NewString (ctx, input) };
+	JSValue res = JS_Call (ctx, func, JS_UNDEFINED, countof (args), args);
+	if (JS_ToBool (ctx, res)) {
+		return true;
 	}
-
 	return false;
 }
 
@@ -127,10 +131,6 @@ static JSValue r2plugin_core_load(JSContext *ctx, JSValueConst this_val, int arg
 	}
 
 	RCorePlugin *ap = R_NEW0 (RCorePlugin);
-	if (!ap) {
-		return JS_ThrowRangeError (ctx, "could not allocate qjs core plugin");
-	}
-
 	JSValue desc = JS_GetPropertyStr (ctx, res, "desc");
 	JSValue license = JS_GetPropertyStr (ctx, res, "license");
 	const char *descptr = JS_ToCStringLen2 (ctx, &namelen, desc, false);
@@ -143,20 +143,24 @@ static JSValue r2plugin_core_load(JSContext *ctx, JSValueConst this_val, int arg
 	if (licenseptr) {
 		ap->meta.license = strdup (licenseptr);
 	}
-
-	ap->call = r_cmd_qjs_call;  // Technically this could all be handled by a single generic plugin
+	ap->init = qjs_core_init;
+	ap->call = r_cmd_qjs_call;
+	/// ap->fini
 
 	plugin_manager_add_core_plugin (pm, nameptr, ctx, func);
 
 	RLibStruct *lib = R_NEW0 (RLibStruct);
-	if (!lib) {
-		free (ap);
-		return JS_NewBool (ctx, false);
-	}
-
 	lib->type = R_LIB_TYPE_CORE;
 	lib->data = ap;
 	lib->version = R2_VERSION;
+	// void *ptr = pm->core->lib;
+	hack = R_NEW0 (Hack);
+	// hack->pm = pm;
+	hack->ctx = ctx;
+	hack->func = func;
 	int ret = r_lib_open_ptr (pm->core->lib, ap->meta.name, NULL, lib);
+	if (ret != 1) {
+		free (hack);
+	}
 	return JS_NewBool (ctx, ret == 1);
 }

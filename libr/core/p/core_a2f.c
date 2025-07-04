@@ -397,8 +397,8 @@ static RCoreHelpMessage help_msg_a2f = {
 	NULL
 };
 
-static int r_cmd_anal_call(void *user, const char *input) {
-	RCore *core = (RCore *) user;
+static bool r_cmd_anal_call(RCorePluginSession *cps, const char *input) {
+	RCore *core = cps->core;
 	if (r_str_startswith (input, "a2")) {
 		switch (input[2]) {
 		case 'f':

@@ -15,16 +15,8 @@ typedef struct r_core_t RCore;
 #define MACRO_LABELS 20
 #define R_CMD_MAXLEN 4096
 
-typedef enum r_cmd_status_t {
-	R_CMD_STATUS_OK = 0, // command handler exited in the right way
-	R_CMD_STATUS_WRONG_ARGS, // command handler could not handle the arguments passed to it
-	R_CMD_STATUS_ERROR, // command handler had issues while running (e.g. allocation error, etc.)
-	R_CMD_STATUS_INVALID, // command could not be executed (e.g. shell level error, not existing command, bad expression, etc.)
-	R_CMD_STATUS_EXIT, // command handler asks to exit the prompt loop
-} RCmdStatus;
-
 typedef int (*RCmdCb) (void *user, const char *input);
-typedef RCmdStatus (*RCmdArgvCb) (RCore *core, int argc, const char **argv);
+// typedef RCmdStatus (*RCmdArgvCb) (RCore *core, int argc, const char **argv);
 typedef int (*RCmdNullCb) (void *user);
 
 typedef struct r_cmd_parsed_args_t {
@@ -80,8 +72,8 @@ typedef struct r_cmd_t {
 	RCmdNullCb nullcallback;
 	RCmdItem *cmds[UT8_MAX];
 	RCmdMacro macro;
-	RList *lcmds;
-	RList *plist;
+	RList *lcmds; // list of loaded pluginstates
+	RList *plist; // list of plugins
 	RCmdAlias aliases;
 	void *language; // used to store TSLanguage *
 	HtUP *ts_symbols_ht;
@@ -99,7 +91,7 @@ typedef struct r_cmd_descriptor_t {
 } RCmdDescriptor;
 
 #ifdef R_API
-R_API RCmd *r_cmd_new(void);
+R_API RCmd *r_cmd_new(void *data);
 R_API RCmd *r_cmd_free(RCmd *cmd);
 R_API int r_cmd_call(RCmd *cmd, const char *command);
 R_API void r_cmd_set_data(RCmd *cmd, void *data);
