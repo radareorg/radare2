@@ -43,7 +43,7 @@ R_API bool r_anal_vtable_begin(RAnal *anal, RVTableContext *context) {
 	context->anal = anal;
 	context->abi = anal->cxxabi;
 	context->word_size = (ut8) (anal->config->bits / 8);
-	const bool is_arm = anal->config->arch && r_str_startswith (anal->config->arch, "arm");
+	const bool is_arm = r_str_startswith (anal->config->arch, "arm");
 	if (is_arm && context->word_size < 4) {
 		context->word_size = 4;
 	}

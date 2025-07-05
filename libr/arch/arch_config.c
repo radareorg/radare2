@@ -24,7 +24,9 @@ R_API void r_arch_config_use(RArchConfig *config, const char * R_NULLABLE arch) 
 	if (arch && !strcmp (arch, "null")) {
 		return;
 	}
-	r_str_ncpy (config->arch, arch, sizeof (config->arch));
+	if (arch) {
+		r_str_ncpy (config->arch, arch, sizeof (config->arch));
+	}
 }
 
 R_API bool r_arch_config_iseq(RArchConfig *a, RArchConfig *b) {

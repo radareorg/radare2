@@ -95,7 +95,9 @@ static void emit_set_string(REgg *egg, const char *dstvar, const char *str, int 
 	// use r_str_escape to handle \n
 	// do not forget mem leak
 	char *s = strdup (str);
-	r_str_escape (s);
+	char *escaped = r_str_escape (s);
+	free (s);
+	s = escaped;
 	r_egg_printf (egg, ".string \"%s\"\n", s);
 	free (s);
 	if (rest) {

@@ -394,7 +394,7 @@ R_API void r_core_seek_arch_bits(RCore *core, ut64 addr) {
 		}
 	}
 	if (arch) {
-		if (core->anal->config->arch && strcmp (arch, core->anal->config->arch)) {
+		if (strcmp (arch, core->anal->config->arch)) {
 			r_config_set (core->config, "asm.arch", arch);
 		}
 	}

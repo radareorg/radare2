@@ -29,7 +29,7 @@ R_API bool r_core_file_close_all_but(RCore *core) {
 
 static bool its_a_mips(RCore *core) {
 	RArchConfig *cfg = core->rasm->config;
-	return cfg && cfg->arch && r_str_startswith (cfg->arch, "mips");
+	return cfg && r_str_startswith (cfg->arch, "mips");
 }
 
 static void load_gp(RCore *core) {
