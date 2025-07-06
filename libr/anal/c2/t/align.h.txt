@@ -1,0 +1,6 @@
+foo=struct
+struct.foo=gap,bar
+struct.foo.bar=int32_t,4,0
+struct.foo.bar.meta=0
+struct.foo.gap=char,0,0
+struct.foo.gap.meta=2

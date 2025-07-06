@@ -1,4 +1,4 @@
-TESTS=lowerdash test test-enum a c b invalid j macho union crash vararg typedef
+TESTS=lowerdash test test-enum a c b invalid j macho union crash vararg typedef align
 
 all:
 	rm -f a.out
