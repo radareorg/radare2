@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2024 - nibble, pancake, xvilka */
+/* radare2 - LGPL - Copyright 2009-2025 - nibble, pancake, xvilka */
 
 #ifndef R2_ANAL_H
 #define R2_ANAL_H
@@ -798,6 +798,8 @@ typedef int (*REsilCB)(REsil *esil);
 typedef int (*REsilLoopCB)(REsil *esil, RAnalOp *op);
 typedef int (*REsilTrapCB)(REsil *esil, int trap_type, int trap_code);
 
+typedef bool (*RAnalTypesParser)(RAnal *a, const char *s);
+
 typedef struct r_anal_plugin_t {
 	RPluginMeta meta;
 
@@ -809,6 +811,10 @@ typedef struct r_anal_plugin_t {
 	// legacy r_anal_functions
 	RAnalOpCallback op;
 	RAnalCmdCallback cmd;
+
+	// implement custom types parser and dumper
+	RAnalTypesParser tparse;
+	RAnalTypesParser tdump;
 #if 1
 	/// XXX unused but referenced, maybe worth checking in case we want them for anal
 	RAnalFPBBCallback fingerprint_bb;
