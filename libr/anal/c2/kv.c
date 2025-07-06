@@ -94,6 +94,7 @@ static void massage_type(char **s) {
 			star--;
 		}
 		char *type = r_str_ndup (*s, star - *s);
+		r_str_trim (type);
 		char *res = r_str_newf ("%s %s", type, ostar);
 		free (*s);
 		free (type);

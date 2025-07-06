@@ -7,7 +7,7 @@ all:
 		echo "Testing $$a " \
 		&& ./a.out t/$${a}.h 2> t/$${a}.h.tmperr > t/$${a}.h.tmp \
 		&& if [ -f t/$${a}.h.err ]; then diff -u t/$${a}.h.err t/$${a}.h.tmperr; fi \
-		&& diff -u t/$${a}.h.txt t/$${a}.h.tmp ; \
+		&& diff -u t/$${a}.h.txt t/$${a}.h.tmp || cat t/$${a}.h ; \
 	done
 	rm -f t/*.tmp*
 
