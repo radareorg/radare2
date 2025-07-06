@@ -9,7 +9,7 @@ all:
 		&& if [ -f t/$${a}.h.err ]; then diff -u t/$${a}.h.err t/$${a}.h.tmperr; fi \
 		&& diff -u t/$${a}.h.txt t/$${a}.h.tmp || \
 			(echo '# ------------' ; echo '$$ cat t/$${a}.h' ; cat t/$${a}.h ; echo '# -------' ); \
-		cat t/$${a}.h.tmperr ; \
+		[ -z "`echo $${a}| grep invalid`" ] && cat t/$${a}.h.tmperr ; \
 	done
 	rm -f t/*.tmp*
 

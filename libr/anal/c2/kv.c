@@ -292,7 +292,7 @@ static bool parse_attributes(KVCParser *kvc) {
 			attr_value.b = kvc->s.a;
 			kvc_getch (kvc);
 		} else {
-			eprintf ("JKLFD PARM\n");
+			// eprintf ("JKLFD PARM\n");
 			attr_value.a = "true";
 			attr_value.b = attr_value.a + 4;
 		}
@@ -816,6 +816,14 @@ static bool parse_function(KVCParser *kvc) {
 	}
 	fun_rtyp.b = kvc->s.a;
 	fun_name.a = fun_rtyp.a;
+#if 0
+	const char *open_paren = kvc_find (kvc, "(");
+	if (!open_paren) {
+		// R_LOG_ERROR ("Parsing problem at line 2: Cannot find ( in function definition")
+		// If we can't find an opening parenthesis, this is not a function definition
+		return false;
+	}
+#endif
 	if (!skip_until (kvc, '(', 0)) {
 		kvc_error (kvc, "Cannot find ( in function definition");
 		// r_sys_breakpoint();
@@ -955,7 +963,9 @@ R_IPI char* kvc_parse(const char* header_content, char **errmsg) {
 		skip_spaces (kvc);
 		if (!hasparse) {
 			skip_semicolons (kvc); // hack
-			parse_function (kvc);
+			if (!parse_function (kvc)) {
+				kvc_getch (kvc);
+			}
 			skip_spaces (kvc);
 		}
 	}
