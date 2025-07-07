@@ -2112,12 +2112,17 @@ R_API char *r_anal_function_get_signature(RAnalFunction *function) {
 		// parse commas
 		int arg_i_len = strlen (arg_i);
 		for (j = 0; j < arg_i_len; j++) {
-			if (j > 0 && arg_i[j] == ',') {
-				if (arg_i[j - 1] == '*') {
-					// remove whitespace
-					memmove (arg_i + j, arg_i + j + 1, strlen (arg_i) - j);
+			if (arg_i[j] == ',') {
+				if (j> 0) {
+					if (arg_i[j - 1] == '*') {
+						// remove whitespace
+						memmove (arg_i + j, arg_i + j + 1, strlen (arg_i) - j);
+					} else {
+						arg_i[j] = ' ';
+					}
 				} else {
-					arg_i[j] = ' ';
+					// untyped arg. fex: `printf(...)`
+					memmove (arg_i, arg_i + 1, strlen (arg_i));
 				}
 			}
 		}

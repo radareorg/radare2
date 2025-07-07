@@ -1559,9 +1559,9 @@ FILE=bins/elf/hello_world
 CMDS=<<EOF
 af
 afs
-"afs foo.bar();"
+'afs foo.bar();
 afs
-"afs char foo.bar(int a, ...);"
+'afs char foo.bar(int a, ...);
 afs
 EOF
 EXPECT=<<EOF
