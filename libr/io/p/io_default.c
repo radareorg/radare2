@@ -185,8 +185,9 @@ static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		}
 		return read (mmo->fd, buf, count);
 	}
-	if (r_buf_size (mmo->buf) < mmo->addr) {
-		mmo->addr = r_buf_size (mmo->buf);
+	size_t bs = r_buf_size (mmo->buf);
+	if (bs < mmo->addr) {
+		mmo->addr = bs;
 	}
 	int r = r_buf_read_at (mmo->buf, mmo->addr, buf, count);
 	if (r < 0) {
