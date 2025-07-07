@@ -1,0 +1,6 @@
+Books=struct
+struct.Books.title=char,0,50
+struct.Books.author=char,50,50
+struct.Books.subject=char,100,100
+struct.Books=title,author,subject
+

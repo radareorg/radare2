@@ -30,6 +30,7 @@ EOF
 EXPECT=<<EOF
 --
 Foo
+anon_struct_1
 --
 EOF
 RUN
@@ -240,12 +241,9 @@ t-xoo
 EOF
 EXPECT=<<EOF
 union.xoo=x,y,z
-union.xoo.x=int32_t,0,0
-union.xoo.x.meta=0
-union.xoo.y=int32_t,0,0
-union.xoo.y.meta=0
-union.xoo.z=int32_t,0,0
-union.xoo.z.meta=0
+union.xoo.x=int,0,0
+union.xoo.y=int,0,0
+union.xoo.z=int,0,0
 xoo=union
 EOF
 RUN
@@ -510,14 +508,14 @@ CMDS=<<EOF
 "td int foo(int bar);"
 tk~foo
 EOF
-EXPECT_ERR=<<EOF
-EOF
+EXPECT_ERR=
 EXPECT=<<EOF
 foo=func
-func.foo.arg.0=int32_t,bar
+func.foo=bar
+func.foo.arg.0=int,bar
 func.foo.args=1
 func.foo.cc=cdecl
-func.foo.ret=int32_t
+func.foo.ret=int
 EOF
 RUN
 
@@ -572,8 +570,8 @@ te Foo
 EOF
 EXPECT=<<EOF
 Foo
-COW = 0x1
-BAR = 0x2
+COW = 1
+BAR = 2
 EOF
 RUN
 
@@ -595,7 +593,7 @@ CMDS=<<EOF
 teb Foo COW
 EOF
 EXPECT=<<EOF
-0x1
+1
 EOF
 RUN
 
@@ -925,7 +923,7 @@ tsc three_elements
 EOF
 EXPECT=<<EOF
 struct three_elements {
-  int32_t x;
+  int x;
   char y;
   float z;
 };
@@ -940,7 +938,7 @@ tsc with_array
 EOF
 EXPECT=<<EOF
 struct with_array {
-  int32_t x;
+  int x;
   char y[50];
   float z;
 };
@@ -969,9 +967,9 @@ tuc x
 EOF
 EXPECT=<<EOF
 union x {
-  int32_t x;
-  int32_t y;
-  int32_t z;
+  int x;
+  int y;
+  int z;
 };
 EOF
 RUN
@@ -998,8 +996,8 @@ t-*
 tcd
 EOF
 EXPECT=<<EOF
-union x {int32_t x; int32_t y; int32_t z;};
-struct three_elements {int32_t x; char y; float z;};
+union x {int x; int y; int z;};
+struct three_elements {int x; char y; float z;};
 typedef char FILE_NAME;
 enum Foo {COW = 1, BAR = 2};
 EOF
@@ -1498,12 +1496,9 @@ tk~struct.s1
 EOF
 EXPECT=<<EOF
 struct.s1=a,size,b
-struct.s1.a=int32_t,0,0
-struct.s1.a.meta=0
-struct.s1.b=int32_t,8,0
-struct.s1.b.meta=0
-struct.s1.size=int32_t,4,0
-struct.s1.size.meta=0
+struct.s1.a=int,0,0
+struct.s1.b=int,8,0
+struct.s1.size=int,4,0
 EOF
 RUN
 
@@ -1532,10 +1527,11 @@ af
 tk~func.main
 EOF
 EXPECT=<<EOF
-func.main.arg.0=int32_t,argc
+func.main=argc
+func.main.arg.0=int,argc
 func.main.args=1
 func.main.cc=cdecl
-func.main.ret=int32_t
+func.main.ret=int
 EOF
 RUN
 
@@ -1553,8 +1549,8 @@ afs
 EOF
 EXPECT=<<EOF
 void fcn.004e2420 (int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg6, int64_t arg_8h);
-int32_t no_type (int32_t a, char **b);
-char type (int32_t a, char **b);
+void no_type (int a, char **b);
+char type (int a, char **b);
 EOF
 RUN
 
@@ -1647,10 +1643,8 @@ EXPECT=<<EOF
 pf.foo dc a b
 'tk foo=union
 'tk union.foo=a,b
-'tk union.foo.a=int32_t,0,0
-'tk union.foo.a.meta=0
+'tk union.foo.a=int,0,0
 'tk union.foo.b=char,0,0
-'tk union.foo.b.meta=2
 pf dc a b
 pf.foo dc a b
 EOF
@@ -1849,9 +1843,9 @@ t Number
 EOF
 EXPECT=<<EOF
 Number
-int32_t
+int
 Number=typedef
-typedef.Number=int32_t
+typedef.Number=int
 pf d
 EOF
 RUN

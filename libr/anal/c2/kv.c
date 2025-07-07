@@ -379,7 +379,7 @@ static void kvctoken_typename(KVCToken *fun_rtyp, KVCToken *fun_name) {
 	// eprintf ("o TYPENAME n (%s)\n", kvctoken_tostring (*fun_name));
 }
 
-static int kvc_typesize(KVCParser *kvc, const char *name) {
+static int kvc_typesize(KVCParser *kvc, const char *name, int dimension) {
 	if (r_str_endswith (name, "8")) {
 		return 1;
 	}
@@ -388,6 +388,10 @@ static int kvc_typesize(KVCParser *kvc, const char *name) {
 	}
 	if (r_str_endswith (name, "64")) {
 		return 8;
+	}
+	if (dimension > 1) {
+		// TODO: honor type size
+		return dimension;
 	}
 	// TODO: honor alignment, packing, access types
 	return 4;
@@ -507,9 +511,9 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 		int member_idx = 0;
 		int off = 0;
 		while (true) {
-			skip_spaces(kvc);
-			if (kvc_peek(kvc, 0) == '}') {
-				kvc_getch(kvc); // Consume '}'
+			skip_spaces (kvc);
+			if (kvc_peek (kvc, 0) == '}') {
+				kvc_getch (kvc); // Consume '}'
 				break;
 			}
 			parse_attributes(kvc);
@@ -520,7 +524,7 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 			member_type.a = kvc->s.a;
 			member_type.b = kvc_find_semicolon (kvc);
 			if (!member_type.b) {
-				kvc_error(kvc, "Missing semicolon in struct member");
+				kvc_error (kvc, "Missing semicolon in struct member");
 				r_strbuf_free (args_sb);
 				free (struct_tag);
 				return false;
@@ -531,7 +535,8 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 			}
 			memcpy (&member_name, &member_type, sizeof (member_name));
 			kvctoken_typename (&member_type, &member_name);
-#if 0
+#if 1
+			// PANCAKE
 			kvc_getch (kvc); // Skip the semicolon
 #else
 			// Handle trailing C-style __attribute__ before semicolon
@@ -570,6 +575,7 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 				free (mt);
 				free (mn);
 				free (md);
+				R_LOG_ERROR ("struct field parse failed");
 				break;
 			}
 			r_strf_var (full_scope, 512, "%s.%s", struct_tag, mn);
@@ -582,7 +588,7 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 			}
 			// TODO: this is for backward compat, but imho it should be removed
 			r_strbuf_appendf (kvc->sb, "struct.%s.%s.meta=0\n", struct_tag, mn);
-			off += kvc_typesize (kvc, mt);
+			off += kvc_typesize (kvc, mt, 1);
 			apply_attributes (kvc, "struct", full_scope);
 			r_strbuf_appendf (args_sb, "%s%s", member_idx ? "," : "", mn);
 			member_idx++;
@@ -707,6 +713,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 				break;
 			}
 			bool fail = true;
+#if 1
 			if (ch0 == '(') {
 				member_type.b = kvc_find_semicolon2 (kvc);
 				if (member_type.b) {
@@ -721,6 +728,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 					}
 				}
 			}
+#endif
 			if (fail) {
 				if (ch0) {
 					R_LOG_ERROR ("Cant find semicolon in struct field chr(%d)='%c'", ch0, ch0);
@@ -770,6 +778,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 		char *mn = kvctoken_tostring (member_name);
 		char *md = kvctoken_tostring (member_dimm);
 		if (!*mn) {
+			R_LOG_ERROR ("FJF");
 			free (mt);
 			free (mn);
 			free (md);
@@ -777,16 +786,19 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 		}
 		massage_type (&mt);
 		r_strf_var (full_scope, 512, "%s.%s", sn, mn);
+		int dimension = 1;
 		if (md) {
+			dimension = atoi (md);
 			r_strbuf_appendf (kvc->sb, "%s.%s=%s,%d,%s\n", type, full_scope, mt, off, md);
 		} else {
 			r_strbuf_appendf (kvc->sb, "%s.%s=%s,%d,0\n", type, full_scope, mt, off);
 		}
 		if (!strcmp (type, "struct")) {
-			off += kvc_typesize (kvc, mt);
+			off += kvc_typesize (kvc, mt, dimension);
 		}
+		// r_strbuf_appendf (kvc->sb, "%s.%s.meta=0\n", type, mn);
 		apply_attributes (kvc, type, full_scope);
-		r_strbuf_appendf (args_sb, "%s%s", member_idx?",":"", mn);
+		r_strbuf_appendf (args_sb, "%s%s", member_idx? ",": "", mn);
 		member_idx++;
 		free (mt);
 		free (mn);
@@ -875,7 +887,7 @@ static bool parse_enum(KVCParser *kvc, const char *name) {
 			r_strbuf_appendf (kvc->sb, "enum.0x%"PFMT64x"=%s\n", nv, full_scope);
 #else
 			// old style, backward compat, everything works.
-			if ((st64)nv < 0) {
+			if ((ut64)nv < 256) {
 				r_strbuf_appendf (kvc->sb, "enum.%s=%"PFMT64d"\n", full_scope, nv);
 				r_strbuf_appendf (kvc->sb, "enum.%s.%"PFMT64d"=%s\n", en, nv, mn);
 			} else {
@@ -1009,6 +1021,7 @@ static bool parse_function(KVCParser *kvc) {
 		} while (comma);
 	}
 	char *func_args = r_strbuf_drain (func_args_sb);
+	r_strbuf_appendf (kvc->sb, "func.%s.cc=%s\n", fn, "cdecl");
 	r_strbuf_appendf (kvc->sb, "func.%s=%s\n", fn, func_args);
 	r_strbuf_appendf (kvc->sb, "func.%s.ret=%s\n", fn, fr);
 	r_strbuf_appendf (kvc->sb, "func.%s.args=%d\n", fn, arg_idx);
