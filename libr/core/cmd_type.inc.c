@@ -1967,7 +1967,7 @@ static int cmd_type(void *data, const char *input) {
 			ls_free (l);
 			break;
 		}
-		if (input[1] == 'c') {
+		if (input[1] == 'c') { // "ttc"
 			char *name = NULL;
 			SdbKv *kv;
 			SdbListIter *iter;
