@@ -1,3 +1,11 @@
+Bar=enum
+enum.Bar.COW=123
+enum.Bar.123=COW
+enum.Bar=COW
+Cow=enum
+enum.Cow.LOW=123
+enum.Cow.123=LOW
+enum.Cow=LOW
 foo=struct
 struct.foo.gap=char,0,0
 struct.foo.bar=int,4,0

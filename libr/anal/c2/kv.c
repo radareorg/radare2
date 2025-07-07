@@ -249,6 +249,18 @@ static const char *consume_word(KVCParser *kvc) {
 	return word;
 }
 
+static const char *kvc_attr(KVCParser *kvc, const char *k) {
+	KVCToken s = { .a = k, .b = k + strlen (k) };
+	int i;
+	for (i = 0; i < kvc->attrs.count; i++) {
+		if (kvctoken_equals (kvc->attrs.keys[i], s)) {
+			return kvctoken_tostring (kvc->attrs.values[i]);
+		}
+
+	}
+	return NULL;
+}
+
 static bool parse_attributes(KVCParser *kvc) {
 	const char *begin = kvc_peekn (kvc, 3);
 	if (!begin) {
@@ -451,10 +463,21 @@ static bool parse_c_attributes(KVCParser *kvc) {
 		kvc_error (kvc, "Expected ')' after __attribute__");
 		return false;
 	}
+	skip_spaces (kvc);
+	// PANCAKE eprintf ("AFTER ATT (%s)\n", kvc->s.a);
 	// Store attribute
 	int idx = kvc->attrs.count++;
 	kvc->attrs.keys[idx] = attr_name;
 	kvc->attrs.values[idx] = attr_value;
+#if 0
+	if (kvc_getch (kvc) != ')') {
+		kvc_error (kvc, "Expected ')' after attribute ))");
+	}
+	kvc_getch (kvc); // slurp ';'
+
+#endif
+	kvc_getch (kvc); // slurp ';'
+	// PANCAKE eprintf ("AFTER ATTR (%s)\n", kvc->s.a);
 	return true;
 }
 
@@ -679,6 +702,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 		R_LOG_ERROR ("Cannot consume word");
 		return false;
 	}
+	// eprintf ("STRUCT NAME ( %s)\n", struct_name.a);
 	struct_name.b = kvc->s.a;
 	skip_spaces (kvc);
 	const char p0 = kvc_peek (kvc, 0);
@@ -697,6 +721,17 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 		skip_spaces (kvc);
 		parse_attributes (kvc);
 		skip_spaces (kvc);
+		// PANCAKE eprintf ("[FIELD]---> (%s)\n", kvc->s.a);
+#if 0
+			const char ch0 = kvc_peek (kvc, 0);
+			if (ch0 == '}') {
+				eprintf ("PEKA\n");
+				// end of struct definition
+				kvc_getch (kvc);
+				kvc_getch (kvc);
+				break;
+			}
+#endif
 
 		KVCToken member_type = {0};
 		KVCToken member_name = {0};
@@ -722,7 +757,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 					kvc->s.a = arg; // member_type.b;
 					if (parse_c_attributes (kvc)) {
 						fail = false;
-						kvc_skipn (kvc, 2);
+						skip_spaces (kvc);
 					} else {
 						R_LOG_WARN ("failed to parse attributes");
 					}
@@ -734,6 +769,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 					R_LOG_ERROR ("Cant find semicolon in struct field chr(%d)='%c'", ch0, ch0);
 				}
 				free (sn);
+				eprintf ("false exit\n");
 				r_strbuf_free (args_sb);
 				return false;
 			}
@@ -745,7 +781,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 		memcpy (&member_name, &member_type, sizeof (member_name));
 		// eprintf ("ENTRY ((%s)))\n", kvctoken_tostring (member_type));
 		kvctoken_typename (&member_type, &member_name);
-		kvc_getch (kvc); // skip semicolon
+		skip_semicolons (kvc);
 		kvctoken_trim (&member_type);
 #if 0
 		member_type.b = kvctoken_lastspace (member_type);
@@ -778,7 +814,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 		char *mn = kvctoken_tostring (member_name);
 		char *md = kvctoken_tostring (member_dimm);
 		if (!*mn) {
-			R_LOG_ERROR ("FJF");
+			kvc_error (kvc, "Missing type, name or dimension in struct field");
 			free (mt);
 			free (mn);
 			free (md);
@@ -787,6 +823,19 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 		massage_type (&mt);
 		r_strf_var (full_scope, 512, "%s.%s", sn, mn);
 		int dimension = 1;
+		// TODO: honor packed attribute too
+		const char *align_attribute = kvc_attr (kvc, "aligned");
+		bool must_be_aligned = align_attribute != NULL;
+		if (must_be_aligned) {
+			size_t av = atoi (align_attribute);
+			if (av < 1) {
+				av = 4;
+			}
+			if (off%av) {
+				const int rest = av - (off % av);
+				off += rest;
+			}
+		}
 		if (md) {
 			dimension = atoi (md);
 			r_strbuf_appendf (kvc->sb, "%s.%s=%s,%d,%s\n", type, full_scope, mt, off, md);
@@ -796,6 +845,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 		if (!strcmp (type, "struct")) {
 			off += kvc_typesize (kvc, mt, dimension);
 		}
+		// eprintf ("DIMENSION %s (%d)\n", mn, dimension);
 		// r_strbuf_appendf (kvc->sb, "%s.%s.meta=0\n", type, mn);
 		apply_attributes (kvc, type, full_scope);
 		r_strbuf_appendf (args_sb, "%s%s", member_idx? ",": "", mn);
@@ -915,7 +965,7 @@ static bool parse_enum(KVCParser *kvc, const char *name) {
 	char ch = kvc_peek (kvc, 0);
 	if (ch == ';') {
 		skip_semicolons (kvc);
-		kvc_getch (kvc);
+		// kvc_getch (kvc);
 	}
 	free (en);
 	return true;
@@ -1065,13 +1115,27 @@ R_IPI char* kvc_parse(const char* header_content, char **errmsg) {
 	while (!kvctoken_eof (kvc->s)) {
 		skip_spaces (kvc);
 		const char *word = kvc_peekn (kvc, 6);
+		// eprintf ("WORD (%s)\n", word);
 		// eprintf ("--> (((%s)))\n", r_str_ndup (word, 10));
 		bool hasparse = false;
 		if (word) {
-			hasparse |= tryparse (kvc, word, "typedef", parse_typedef);
+#if 1
+			hasparse = tryparse (kvc, word, "typedef", parse_typedef);
 			hasparse |= tryparse (kvc, word, "struct", parse_struct);
 			hasparse |= tryparse (kvc, word, "union", parse_struct);
 			hasparse |= tryparse (kvc, word, "enum", parse_enum);
+#else
+			hasparse = tryparse (kvc, word, "typedef", parse_typedef);
+			if (!hasparse) {
+				hasparse = tryparse (kvc, word, "struct", parse_struct);
+			}
+			if (!hasparse) {
+				hasparse = tryparse (kvc, word, "union", parse_struct);
+			}
+			if (!hasparse) {
+				hasparse = tryparse (kvc, word, "enum", parse_enum);
+			}
+#endif
 		}
 #if 1
 		// parse function signature
@@ -1079,9 +1143,11 @@ R_IPI char* kvc_parse(const char* header_content, char **errmsg) {
 			continue;
 		}
 #endif
+		// eprintf ("AFTERWORD(%s)\n", kvc->s.a);
 		skip_spaces (kvc);
 		if (!hasparse) {
 			skip_semicolons (kvc); // hack
+			// PANCAKE eprintf ("[tryfun]--> (%s)\n", kvc->s.a);		     
 			if (!parse_function (kvc)) {
 				kvc_getch (kvc);
 			}
