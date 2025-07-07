@@ -887,7 +887,7 @@ static bool parse_enum(KVCParser *kvc, const char *name) {
 			r_strbuf_appendf (kvc->sb, "enum.0x%"PFMT64x"=%s\n", nv, full_scope);
 #else
 			// old style, backward compat, everything works.
-			if ((ut64)nv < 256) {
+			if ((ut64)nv < 256 || ((st64)nv > -16 && (st64)nv < 32)) {
 				r_strbuf_appendf (kvc->sb, "enum.%s=%"PFMT64d"\n", full_scope, nv);
 				r_strbuf_appendf (kvc->sb, "enum.%s.%"PFMT64d"=%s\n", en, nv, mn);
 			} else {
