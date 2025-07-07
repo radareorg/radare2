@@ -36,6 +36,43 @@ sudosetup() {
 	fi
 }
 
+# if owner of sys/install.sh != uid && uid == 0 { exec sudo -u id -A $SUDO_UID sys/install.sh $* }
+ARGS=""
+while : ; do
+	[ -z "$1" ] && break
+	case "$1" in
+	--help)
+		./configure --help
+		echo
+		echo "NOTE: Use sys/install.sh --install to use 'cp' instead of 'ln'."
+		echo
+		exit 0
+		;;
+	"--with-capstone4")
+		export USE_CS5=1
+		;;
+	"--install")
+		export INSTALL_TARGET="install"
+		;;
+	"--without-pull")
+		export WITHOUT_PULL=1
+		;;
+	'--prefix='*)
+		PREFIX=`echo "$1" | cut -d = -f 2`
+		ARGS="${ARGS} $1"
+		;;
+	-*)
+		# just for the penguin face case
+		ARGS="${ARGS} $1"
+		;;
+	*)
+		ARGS="${ARGS} $1"
+		PREFIX="$1"
+		;;
+	esac
+	shift
+done
+
 sudosetup
 
 echo "$CWD" | grep -q ' '
@@ -92,42 +129,6 @@ export WANT_V35=0
 
 export USE_CS4=0
 export USE_CSNEXT=0
-# if owner of sys/install.sh != uid && uid == 0 { exec sudo -u id -A $SUDO_UID sys/install.sh $* }
-ARGS=""
-while : ; do
-	[ -z "$1" ] && break
-	case "$1" in
-	--help)
-		./configure --help
-		echo
-		echo "NOTE: Use sys/install.sh --install to use 'cp' instead of 'ln'."
-		echo
-		exit 0
-		;;
-	"--with-capstone4")
-		export USE_CS5=1
-		;;
-	"--install")
-		export INSTALL_TARGET="install"
-		;;
-	"--without-pull")
-		export WITHOUT_PULL=1
-		;;
-	'--prefix='*)
-		PREFIX=`echo "$1" | cut -d = -f 2`
-		ARGS="${ARGS} $1"
-		;;
-	-*)
-		# just for the penguin face case
-		ARGS="${ARGS} $1"
-		;;
-	*)
-		ARGS="${ARGS} $1"
-		PREFIX="$1"
-		;;
-	esac
-	shift
-done
 
 if [ -z "${MAKE}" ]; then
 	MAKE=make
