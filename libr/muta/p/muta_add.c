@@ -28,7 +28,7 @@ static int get_key_size(RMutaSession *ms) {
 }
 
 RMutaPlugin r_muta_plugin_add = {
-	.type = R_MUTA_TYPE_CRYPTO,
+	.type = R_MUTA_TYPE_HASH,
 	.meta = {
 		.name = "add",
 		.desc = "Add checksum used by Tar (sum all bytes into ut32)",
