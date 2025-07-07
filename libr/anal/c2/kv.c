@@ -125,6 +125,22 @@ static inline void kvc_skipn(KVCParser *kvc, size_t amount) {
 	}
 }
 
+static const char *kvc_find_semicolon2(KVCParser *kvc) {
+	while (!kvctoken_eof (kvc->s)) {
+		const char c = kvc_peek (kvc, 0);
+		if (c == ';') {
+			// kvc_getch (kvc);
+			return kvc->s.a;
+		}
+		if (!isalnum (c) && !isspace (c) && c != '_') {
+			if (c != '[' && c != ']' && c != '*' && c != '(' && c != ')') {
+				return NULL;
+			}
+		}
+		kvc_getch (kvc);
+	}
+	return NULL;
+}
 static const char *kvc_find_semicolon(KVCParser *kvc) {
 	while (!kvctoken_eof (kvc->s)) {
 		const char c = kvc_peek (kvc, 0);
@@ -268,7 +284,6 @@ static bool parse_attributes(KVCParser *kvc) {
 #if 0
 		skip_spaces (kvc);
 		if (line != kvc->line) {
-		eprintf ("newlines FUUCK (%s)\n", kvc->s.a);
 			// newline found
 			return true;
 		}
@@ -378,6 +393,67 @@ static int kvc_typesize(KVCParser *kvc, const char *name) {
 	return 4;
 }
 
+static void trim_underscores(KVCToken *t) {
+	while (t->a[0] == '_') {
+		t->a++;
+	}
+	while (t->b > t->a) {
+		t->b--;
+		if (t->b[0] != '_') {
+			t->b++;
+			break;
+		}
+	}
+}
+
+static bool parse_c_attributes(KVCParser *kvc) {
+	const char *p = kvc_peekn (kvc, strlen("__attribute__"));
+	if (!p || !r_str_startswith (p, "__attribute__")) {
+		return false;
+	}
+	kvc_skipn (kvc, strlen ("__attribute__"));
+	skip_spaces (kvc);
+	// Expect double parentheses
+	if (kvc_getch (kvc) != '(' || kvc_getch (kvc) != '(') {
+		kvc_error (kvc, "Expected __attribute__((...))");
+		return false;
+	}
+	// Parse attribute name
+	KVCToken attr_name = { .a = kvc->s.a };
+	while (isalnum (*kvc->s.a) || *kvc->s.a == '_') {
+		kvc_getch (kvc);
+	}
+	attr_name.b = kvc->s.a;
+	skip_spaces (kvc);
+	trim_underscores (&attr_name);
+	// Parse optional value
+	KVCToken attr_value = {0};
+	if (kvc_peek (kvc, 0) == '(') {
+		kvc_getch (kvc);
+		attr_value.a = kvc->s.a;
+		const char *close = kvc_find (kvc, ")");
+		if (!close) {
+			kvc_error (kvc, "Missing ')' in __attribute__");
+			return false;
+		}
+		attr_value.b = close;
+		kvc_skipn (kvc, close - kvc->s.a + 1);
+	} else {
+		attr_value.a = "true";
+		attr_value.b = attr_value.a + strlen ("true");
+	}
+	skip_spaces (kvc);
+	if (kvc_getch (kvc) != ')') {
+		kvc_error (kvc, "Expected ')' after __attribute__");
+		return false;
+	}
+	// Store attribute
+	int idx = kvc->attrs.count++;
+	kvc->attrs.keys[idx] = attr_name;
+	kvc->attrs.values[idx] = attr_value;
+	return true;
+}
+
 static bool parse_typedef(KVCParser *kvc, const char *unused) {
 	skip_spaces (kvc);
 	const char *next = kvc_peekn (kvc, 6);
@@ -403,7 +479,7 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 			   e.g. "typedef struct Tag Alias;" */
 			KVCToken alias = { .a = consume_word (kvc) };
 			if (!alias.a) {
-				kvc_error(kvc, "Expected alias in typedef struct forward declaration");
+				kvc_error (kvc, "Expected alias in typedef struct forward declaration");
 				return false;
 			}
 			alias.b = kvc->s.a;
@@ -442,7 +518,7 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 			KVCToken member_name = {0};
 			KVCToken member_dimm = {0};
 			member_type.a = kvc->s.a;
-			member_type.b = kvc_find_semicolon(kvc);
+			member_type.b = kvc_find_semicolon (kvc);
 			if (!member_type.b) {
 				kvc_error(kvc, "Missing semicolon in struct member");
 				r_strbuf_free (args_sb);
@@ -455,7 +531,21 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 			}
 			memcpy (&member_name, &member_type, sizeof (member_name));
 			kvctoken_typename (&member_type, &member_name);
+#if 0
 			kvc_getch (kvc); // Skip the semicolon
+#else
+			// Handle trailing C-style __attribute__ before semicolon
+			skip_spaces (kvc);
+			while (parse_c_attributes (kvc)) {
+				skip_spaces (kvc);
+			}
+			if (kvc_peek (kvc, 0) == ';') {
+				kvc_getch (kvc);
+			} else {
+				kvc_error (kvc, "Expected ';' after struct field");
+				return false;
+			}
+#endif
 			kvctoken_trim (&member_type);
 			// Handle possible array dimensions (e.g. "[10]"):
 			const char *bracket = kvctoken_find (member_name, "[");
@@ -616,12 +706,29 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 				kvc_getch (kvc);
 				break;
 			}
-			if (ch0) {
-				R_LOG_ERROR ("Cant find semicolon in struct field chr(%d)='%c'", ch0, ch0);
+			bool fail = true;
+			if (ch0 == '(') {
+				member_type.b = kvc_find_semicolon2 (kvc);
+				if (member_type.b) {
+					const char *arg = kvctoken_find (member_type, "__attribute");
+					member_type.b = arg - 1;
+					kvc->s.a = arg; // member_type.b;
+					if (parse_c_attributes (kvc)) {
+						fail = false;
+						kvc_skipn (kvc, 2);
+					} else {
+						R_LOG_WARN ("failed to parse attributes");
+					}
+				}
 			}
-			free (sn);
-			r_strbuf_free (args_sb);
-			return false;
+			if (fail) {
+				if (ch0) {
+					R_LOG_ERROR ("Cant find semicolon in struct field chr(%d)='%c'", ch0, ch0);
+				}
+				free (sn);
+				r_strbuf_free (args_sb);
+				return false;
+			}
 		}
 		if (member_type.a == member_type.b) {
 			kvc_getch (kvc);
@@ -841,7 +948,6 @@ static bool parse_function(KVCParser *kvc) {
 	skip_spaces (kvc);
 	char semicolon = kvc_getch (kvc);
 	if (semicolon != ';') {
-		eprintf ("GOT %c\n", semicolon);
 		kvc_error (kvc, "Expected ; after function signature");
 		return false;
 	}
@@ -871,7 +977,7 @@ static bool parse_function(KVCParser *kvc) {
 			comma = r_str_nchr (pa, ',', pb - pa);
 			pa = comma? comma: pb;
 			if (pa == pb) {
-			//	break;
+				//	break;
 			}
 			KVCToken arg_type = { argp, pa };
 			KVCToken arg_name = { argp, pa };
