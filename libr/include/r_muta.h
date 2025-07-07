@@ -174,6 +174,7 @@ extern RMutaPlugin r_muta_plugin_sip;
 extern RMutaPlugin r_muta_plugin_sm4;
 extern RMutaPlugin r_muta_plugin_strhash;
 extern RMutaPlugin r_muta_plugin_xor;
+extern RMutaPlugin r_muta_plugin_add;
 extern RMutaPlugin r_muta_plugin_charset_pokemon;
 
 #ifdef __cplusplus

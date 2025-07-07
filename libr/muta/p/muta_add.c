@@ -3,7 +3,7 @@
 #include <r_lib.h>
 #include <r_muta.h>
 
-static void addsum(struct xor_state *const state, const ut8 *inbuf, ut8 *outbuf, int buflen) {
+static void addsum(const ut8 *inbuf, ut8 *outbuf, int buflen) {
 	int i;
 	ut32 v = 0;
 	for (i = 0; i < buflen; i++) {
@@ -17,7 +17,7 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	if (!obuf) {
 		return false;
 	}
-	xor_crypt (&st, buf, obuf, len);
+	addsum (buf, obuf, len);
 	r_muta_session_append (cj, obuf, len);
 	free (obuf);
 	return true;
@@ -27,7 +27,7 @@ static int get_key_size(RMutaSession *ms) {
 	return 4;
 }
 
-RMutaPlugin r_muta_plugin_xor = {
+RMutaPlugin r_muta_plugin_add = {
 	.type = R_MUTA_TYPE_CRYPTO,
 	.meta = {
 		.name = "add",
@@ -44,7 +44,8 @@ RMutaPlugin r_muta_plugin_xor = {
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CRYPTO,
-	.data = &r_muta_plugin_xor,
+	.data = &r_muta_plugin_add,
 	.version = R2_VERSION
+	.abiversion = R2_ABIVERSION
 };
 #endif
