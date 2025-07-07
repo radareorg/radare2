@@ -1,4 +1,5 @@
-TESTS=lowerdash test test-enum a c b invalid j macho union crash vararg typedef align books
+TESTS=lowerdash test test-enum a c b invalid j macho
+TESTS+=union crash vararg typedef align books dotfun
 
 all:
 	rm -f a.out
