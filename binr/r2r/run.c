@@ -453,14 +453,12 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 			// 	r_sys_perror ("waitpid failed");
 				break;
 			}
-			
 			r_th_lock_enter (subprocs_mutex);
 			R2RSubprocess *proc = pid_to_proc (pid);
 			if (!proc) {
 				r_th_lock_leave (subprocs_mutex);
 				continue;
 			}
-			
 			// Capture exit status while holding only one lock
 			int exit_status = -1;
 #if !__wasi__
@@ -473,6 +471,10 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 			}
 #endif
 
+			// Update process status before signaling
+			r_th_lock_enter (proc->lock);
+			proc->ret = exit_status;
+			r_th_lock_leave (proc->lock);
 			// Signal process completion through killpipe
 			int ret = write (proc->killpipe[1], "", 1);
 			if (ret != 1) {
@@ -480,12 +482,6 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 				r_th_lock_leave (subprocs_mutex);
 				break;
 			}
-			
-			// Update process status after signaling
-			r_th_lock_enter (proc->lock);
-			proc->ret = exit_status;
-			r_th_lock_leave (proc->lock);
-			
 			r_th_lock_leave (subprocs_mutex);
 		}
 	}
@@ -785,7 +781,6 @@ R_API R2RProcessOutput *r2r_subprocess_drain(R2RSubprocess *proc) {
 	if (!proc) {
 		return NULL;
 	}
-	
 	R2RProcessOutput *out = R_NEW0 (R2RProcessOutput);
 	if (proc->lock && r_th_lock_enter (proc->lock)) {
 		out->out = r_strbuf_drain_nofree (&proc->out);
@@ -804,7 +799,6 @@ R_API R2RProcessOutput *r2r_subprocess_drain(R2RSubprocess *proc) {
 		out->ret = proc->ret;
 		out->timeout = false;
 	}
-	
 	return out;
 }
 
@@ -812,25 +806,21 @@ R_API void r2r_subprocess_free(R2RSubprocess *proc) {
 	if (!proc) {
 		return;
 	}
-	
 	// Take mutex to safely modify the subprocs vector
 	if (!r_th_lock_enter (subprocs_mutex)) {
 		// If we can't take the lock, still try to free resources
 		// to avoid leaking, but don't modify shared data structures
 		goto cleanup_without_vector;
 	}
-	
 	// Remove from global vector of subprocesses
 	r_pvector_remove_data (&subprocs, proc);
 	r_th_lock_leave (subprocs_mutex);
-	
 	// Now safely clean up process resources
 cleanup_without_vector:
 	// Acquire the process lock to ensure no one is currently
 	// writing to or reading from its buffers
 	if (proc->lock) {
 		r_th_lock_enter (proc->lock);
-	
 		// Free buffers - only reinitialize them if they haven't been drained
 		// This prevents double frees when r2r_subprocess_drain has been called
 		if (proc->out.ptr) {
@@ -841,7 +831,6 @@ cleanup_without_vector:
 			r_strbuf_fini (&proc->err);
 			r_strbuf_init (&proc->err); // Reinitialize to avoid issues with subsequent r_strbuf_fini
 		}
-		
 		// Release the process lock before freeing it
 		r_th_lock_leave (proc->lock);
 		r_th_lock_free (proc->lock);
@@ -851,7 +840,6 @@ cleanup_without_vector:
 		r_strbuf_fini (&proc->out);
 		r_strbuf_fini (&proc->err);
 	}
-	
 	// Close all open file descriptors
 	if (proc->killpipe[0] != -1) {
 		close (proc->killpipe[0]);
@@ -868,7 +856,6 @@ cleanup_without_vector:
 	if (proc->stderr_fd != -1) {
 		close (proc->stderr_fd);
 	}
-	
 	// Finally free the process struct itself
 	free (proc);
 }
@@ -1009,7 +996,6 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, ut64 timeout_ms, int 
 		r_pvector_push (&envvars, "R2_NOPLUGINS");
 		r_pvector_push (&envvals, "1");
 	}
-	
 	if (extra_env) {
 		RListIter *eit;
 		char *kv;
