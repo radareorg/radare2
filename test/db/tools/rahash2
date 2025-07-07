@@ -162,6 +162,7 @@ NAME=rahash2 -L
 FILE=-
 CMDS=!rahash2 -L
 EXPECT=<<EOF
+hash          add  Add checksum used by Tar (sum all bytes into ut32)
 cryp      aes-ecb  Rijndael block cipher with Electronic Code Book mode
 cryp      aes-cbc  Rijndael block cipher with Cipher Block Chaining mode
 cryp     aes-wrap  Rijndael block cipher with Key Wrap Algorithm (RFC 3394)
