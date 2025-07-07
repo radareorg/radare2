@@ -1155,7 +1155,7 @@ R_IPI char* kvc_parse(const char* header_content, char **errmsg) {
 		skip_spaces (kvc);
 		if (!hasparse) {
 			skip_semicolons (kvc); // hack
-			// PANCAKE eprintf ("[tryfun]--> (%s)\n", kvc->s.a);		     
+			// PANCAKE eprintf ("[tryfun]--> (%s)\n", kvc->s.a);
 			if (!parse_function (kvc)) {
 				kvc_getch (kvc);
 			}
