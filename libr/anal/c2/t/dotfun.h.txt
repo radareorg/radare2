@@ -1,0 +1,6 @@
+bar=func
+func.bar.cc=cdecl
+func.bar=
+func.bar.ret=int foo.
+func.bar.args=0
+
