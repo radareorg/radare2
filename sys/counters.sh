@@ -12,9 +12,9 @@ git grep BROKEN=1 test/db |wc -l
 
 
 printf -- "strcpy\t"
-git grep 'strcpy (' libr | wc -l
+git grep 'strcpy (' libr | grep -v sdb | grep -v gnu | wc -l
 printf -- "sprintf\t"
-git grep 'sprintf (' libr | wc -l
+git grep 'sprintf (' libr | grep -v sdb | grep -v gnu | wc -l
 
 printf -- "eUsage\t"
 git grep 'eprintf (' libr | grep Usage | wc -l

@@ -129,7 +129,8 @@ R_API char *r_anal_cc_get(RAnal *anal, const char *name) {
 	R_RETURN_VAL_IF_FAIL (anal && name, NULL);
 	int i;
 	// get cc by name and print the expr
-	if (strcmp (sdb_const_get (db, name, 0), "cc")) {
+	const char *cc = sdb_const_get (db, name, 0);
+	if (cc && strcmp (cc, "cc")) {
 		R_LOG_ERROR ("Invalid calling convention name (%s)", name);
 		return NULL;
 	}

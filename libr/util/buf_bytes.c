@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - ret2libc */
+/* radare - LGPL - Copyright 2009-2025 - ret2libc */
 
 #include <r_util.h>
 
