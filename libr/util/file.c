@@ -1078,18 +1078,17 @@ err_r_file_mmap_read:
 #elif R2__UNIX__
 	int fd = r_sandbox_open (file, O_RDONLY, 0644);
 	const int pagesize = 4096;
-	int mmlen = len+pagesize;
-	int rest = addr%pagesize;
-	ut8 *mmap_buf;
+	int mmlen = len + pagesize;
+	int rest = addr % pagesize;
 	if (fd == -1) {
 		return -1;
 	}
-	mmap_buf = mmap (NULL, mmlen*2, PROT_READ, MAP_SHARED, fd, (off_t)addr-rest);
+	ut8 *mmap_buf = mmap (NULL, mmlen * 2, PROT_READ, MAP_SHARED, fd, (off_t)addr - rest);
 	if (((int)(size_t)mmap_buf) == -1) {
 		return -1;
 	}
-	memcpy (buf, mmap_buf+rest, len);
-	munmap (mmap_buf, mmlen*2);
+	memcpy (buf, mmap_buf + rest, len);
+	munmap (mmap_buf, mmlen * 2);
 	close (fd);
 	return len;
 #else
@@ -1176,24 +1175,16 @@ R_API RMmap *r_file_mmap_arch(RMmap *mmap, const char *filename, int fd) {
 
 // TODO: add rwx support?
 R_API RMmap *r_file_mmap(const char *file, bool rw, ut64 base) {
-	RMmap *m = NULL;
-	int fd = -1;
 	if (!rw && !r_file_exists (file)) {
-		return m;
+		return NULL;
 	}
-	fd = r_sandbox_open (file, rw? RDWR_FLAGS: O_RDONLY, 0644);
+	int fd = r_sandbox_open (file, rw? RDWR_FLAGS: O_RDONLY, 0644);
 	if (fd == -1 && !rw) {
 		R_LOG_ERROR ("r_file_mmap: file (%s) does not exist", file);
 		//m->buf = malloc (m->len);
-		return m;
-	}
-	m = R_NEW (RMmap);
-	if (!m) {
-		if (fd != -1) {
-			close (fd);
-		}
 		return NULL;
 	}
+	RMmap *m = R_NEW (RMmap);
 	m->base = base;
 	m->rw = rw;
 	m->fd = fd;

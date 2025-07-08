@@ -90,9 +90,6 @@ static ut8 *get_whole_buf(RBuffer *b, ut64 *sz) {
 
 static RBuffer *new_buffer(RBufferType type, const void *user) {
 	RBuffer *b = R_NEW0 (RBuffer);
-	if (!b) {
-		return NULL;
-	}
 	switch (type) {
 	case R_BUFFER_BYTES:
 		b->methods = &buffer_bytes_methods;
@@ -119,6 +116,7 @@ static RBuffer *new_buffer(RBufferType type, const void *user) {
 		R_WARN_IF_REACHED ();
 		break;
 	}
+	b->type = type;
 	if (!buf_init (b, user)) {
 		free (b);
 		return NULL;
@@ -485,6 +483,50 @@ R_API ut8 r_buf_read8_at(RBuffer *b, ut64 addr) {
 	return (r == sizeof (res))? res: b->Oxff_priv;
 }
 
+static size_t buf_format_size(const char *fmt) {
+	size_t res = 0;
+	int i;
+	int m = 1;
+	int tsize = 2;
+
+	for (i = 0; fmt[i]; i++) {
+		switch (fmt[i]) {
+		case '0':
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+		case '8':
+		case '9':
+			if (m == 1) {
+				m = atoi (fmt + i);
+			}
+			continue;
+		case 's': tsize = 2; break;
+		case 'S': tsize = 2; break;
+		case 'i': tsize = 4; break;
+		case 'I': tsize = 4; break;
+		case 'l': tsize = 8; break;
+		case 'L': tsize = 8; break;
+		case 'c': tsize = 1; break;
+		default:
+			  R_LOG_ERROR ("Invalid format");
+			  return -1;
+		}
+		if (m < 1) {
+			R_LOG_ERROR ("Invalid multiply size in format");
+			break;
+		}
+
+		res += (tsize * m);
+		m = 1;
+	}
+	return res;
+}
+
 static st64 buf_format(RBuffer *dst, RBuffer *src, const char *fmt, int n) {
 	st64 res = 0;
 	int i;
@@ -560,11 +602,28 @@ static st64 buf_format(RBuffer *dst, RBuffer *src, const char *fmt, int n) {
 	return res;
 }
 
-// TODO: add r_buf_fnread or nfread for safety reasons. callers never know what they are doing
+// TODO: use r_buf_fread_n for safety reasons. callers never know what they are doing
 R_API st64 r_buf_fread(RBuffer *b, ut8 *buf, const char *fmt, int n) {
 	R_RETURN_VAL_IF_FAIL (b && buf && fmt, -1);
 	// XXX: we assume the caller knows what he's doing
 	RBuffer *dst = r_buf_new_with_pointers (buf, UT64_MAX, false);
+	if (dst) {
+		st64 res = buf_format (dst, b, fmt, n);
+		r_buf_free (dst);
+		return res;
+	}
+	return -1;
+}
+
+R_API st64 r_buf_fread_n(RBuffer *b, ut8 *buf, size_t buf_sz, const char *fmt, int n) {
+	R_RETURN_VAL_IF_FAIL (b && buf && fmt, -1);
+	// XXX: we assume the caller knows what he's doing
+	size_t fmtsz = buf_format_size (fmt);
+	if (fmtsz > buf_sz) {
+		R_LOG_ERROR ("Cannot read");
+		return -1;
+	}
+	RBuffer *dst = r_buf_new_with_pointers (buf, buf_sz, false);
 	if (dst) {
 		st64 res = buf_format (dst, b, fmt, n);
 		r_buf_free (dst);

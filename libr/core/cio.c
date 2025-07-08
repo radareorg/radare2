@@ -442,7 +442,7 @@ R_API int r_core_seek_delta(RCore *core, st64 addr) {
 	return r_core_seek (core, addr, true);
 }
 
-// TODO: R2_600 deprecate this wrapper
+// TODO: R2_610 deprecate this wrapper
 R_API bool r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {
 	R_RETURN_VAL_IF_FAIL (core && buf, false);
 	if (size < 1) {
@@ -500,9 +500,10 @@ R_API bool r_core_extend_at(RCore *core, ut64 addr, int size) {
 }
 
 R_API bool r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
+	R_RETURN_VAL_IF_FAIL (core, false);
 	// bstart - block start, fstart file start
 	ut64 fend = 0, fstart = 0, bstart = 0, file_sz = 0;
-	ut8 * shift_buf = NULL;
+	ut8 *shift_buf = NULL;
 	bool res = false;
 
 	if (!core->io || !core->io->desc) {
@@ -564,9 +565,10 @@ R_API bool r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 }
 
 R_API int r_core_block_read(RCore *core) {
+	R_RETURN_VAL_IF_FAIL (core, -1);
 	int res = -1;
 	R_CRITICAL_ENTER (core);
-	if (core && core->block) {
+	if (core->block) {
 		res = r_io_read_at (core->io, core->addr, core->block, core->blocksize);
 	}
 	R_CRITICAL_LEAVE (core);

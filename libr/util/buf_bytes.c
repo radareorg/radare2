@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - ret2libc */
+/* radare - LGPL - Copyright 2009-2025 - ret2libc */
 
 #include <r_util.h>
 
@@ -76,7 +76,7 @@ static st64 buf_bytes_read(RBuffer *b, ut8 *buf, ut64 len) {
 		return 0;
 	}
 	ut64 real_len = b->rb_bytes->length < b->rb_bytes->offset? 0: R_MIN (b->rb_bytes->length - b->rb_bytes->offset, len);
-	// reproducer: cp /bin/ls aaa ; r2 -qcq -e io.va=0 -c 's 0x4000;wtf aaa' aaa
+	// reproducer: cp /bin/ls aaa ; r2 -qcq -e io.va=0 -c "s 0x4000; wtf aaa" aaa
 	memmove (buf, b->rb_bytes->buf + b->rb_bytes->offset, real_len);
 	// XXX memcpy only works on aligned addresses which may cause segfaults on release builds
 	// memcpy (buf, b->rb_bytes->buf + b->rb_bytes->offset, real_len);
