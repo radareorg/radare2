@@ -488,7 +488,6 @@ static size_t buf_format_size(const char *fmt) {
 	int i;
 	int m = 1;
 	int tsize = 2;
-	bool bigendian = true;
 
 	for (i = 0; fmt[i]; i++) {
 		switch (fmt[i]) {
