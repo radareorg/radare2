@@ -12,9 +12,6 @@ struct buf_bytes_user {
 static bool buf_bytes_init(RBuffer *b, const void *user) {
 	const struct buf_bytes_user *u = user;
 	b->rb_bytes = R_NEW0 (RBufferBytes);
-	if (!b->rb_bytes) {
-		return false;
-	}
 
 	b->rb_bytes->offset = 0;
 	b->rb_bytes->length = u->length;

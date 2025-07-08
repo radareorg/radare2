@@ -964,13 +964,14 @@ R_API char *r_file_readlink(const char *path) {
 #if R2__UNIX__
 		int ret;
 		char pathbuf[4096] = {0};
-		strncpy (pathbuf, path, sizeof (pathbuf) - 1);
-		repeat:
-		ret = readlink (path, pathbuf, sizeof (pathbuf)-1);
-		if (ret != -1) {
+		r_str_ncpy (pathbuf, path, sizeof (pathbuf));
+		for (;;) {
+			ret = readlink (path, pathbuf, sizeof (pathbuf)-1);
+			if (ret == -1) {
+				break;
+			}
 			pathbuf[ret] = 0;
 			path = pathbuf;
-			goto repeat;
 		}
 		return strdup (pathbuf);
 #endif
@@ -1015,14 +1016,13 @@ err_r_file_mmap_write:
 	const int pagesize = getpagesize ();
 	int mmlen = len + pagesize;
 	int rest = addr % pagesize;
-	ut8 *mmap_buf;
 	if (fd == -1) {
 		return -1;
 	}
 	if ((st64)addr < 0) {
 		return -1;
 	}
-	mmap_buf = mmap (NULL, mmlen * 2, PROT_READ|PROT_WRITE, MAP_SHARED, fd, (off_t)addr - rest);
+	ut8 *mmap_buf = mmap (NULL, mmlen * 2, PROT_READ|PROT_WRITE, MAP_SHARED, fd, (off_t)addr - rest);
 	if (((int)(size_t)mmap_buf) == -1) {
 		return -1;
 	}
@@ -1103,11 +1103,12 @@ static RMmap *r_file_mmap_unix(RMmap *m, int fd) {
 #elif R2__UNIX__
 static RMmap *r_file_mmap_unix(RMmap *m, int fd) {
 	ut8 empty = m->len == 0;
-	m->buf = mmap (NULL, (empty?BS:m->len) ,
-		m->rw?PROT_READ|PROT_WRITE:PROT_READ,
+	m->buf = mmap (NULL, (empty? BS: m->len),
+		m->rw? PROT_READ | PROT_WRITE: PROT_READ,
 		MAP_SHARED, fd, (off_t)m->base);
 	if (m->buf == MAP_FAILED) {
 		m->buf = NULL;
+		m->len = 0;
 	}
 	return m;
 }
@@ -1208,6 +1209,16 @@ R_API RMmap *r_file_mmap(const char *file, bool rw, ut64 base) {
 	return r_file_mmap_windows (m, file);
 #else
 	return file_mmap_other (m);
+#endif
+}
+
+R_API ut64 r_file_mmap_size(RMmap *m) {
+#if R2__UNIX__
+	struct stat st;
+	fstat (m->fd, &st);
+	return st.st_size;
+#else
+	return m->len;
 #endif
 }
 

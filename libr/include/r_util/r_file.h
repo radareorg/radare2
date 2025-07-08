@@ -33,6 +33,7 @@ R_API char *r_file_root(const char *root, const char *path);
 R_API RMmap *r_file_mmap(const char *file, bool rw, ut64 base);
 R_API int r_file_mmap_read(const char *file, ut64 addr, ut8 *buf, int len);
 R_API int r_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int len);
+R_API ut64 r_file_mmap_size(RMmap *m);
 R_API void r_file_mmap_free(RMmap *m);
 R_API bool r_file_chmod(const char *file, const char *mod, int recursive);
 R_API char *r_file_temp(const char *prefix);
