@@ -49,7 +49,7 @@ static void kvctoken_trim(KVCToken *t) {
 	while (isspace (*t->a)) {
 		t->a++;
 	}
-	while (t->b >= t->a && isspace (t->b[-1])) {
+	while (t->b > t->a && isspace (t->b[-1])) {
 		t->b--;
 	}
 }
@@ -953,7 +953,7 @@ static bool parse_enum(KVCParser *kvc, const char *name) {
 		return false;
 	}
 	kvc_getch (kvc);
-	int value = 0;
+	ut64 value = 0;
 	bool closing = false;
 	while (!closing) {
 		skip_spaces (kvc);
