@@ -1,16 +1,15 @@
 /* radare - LGPL - Copyright 2009-2025 - ret2libc, pancake */
 
-#include <r_types.h>
 #include <r_util.h>
 #include <r_io.h>
 
-#include "buf_file.c"
-#include "buf_sparse.c"
-#include "buf_bytes.c"
-#include "buf_mmap.c"
-#include "buf_io.c"
-#include "buf_ref.c"
-#include "buf_cache.c"
+#include "buf_file.inc.c"
+#include "buf_sparse.inc.c"
+#include "buf_bytes.inc.c"
+#include "buf_mmap.inc.c"
+#include "buf_io.inc.c"
+#include "buf_ref.inc.c"
+#include "buf_cache.inc.c"
 
 static bool buf_init(RBuffer *b, const void *user) {
 	R_RETURN_VAL_IF_FAIL (b && b->methods, false);
