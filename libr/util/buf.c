@@ -695,30 +695,6 @@ R_API st64 r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, ut64 len) {
 	return r;
 }
 
-#if 0
-static const char *bufnam(RBuffer *b) {
-	if (b->methods == &buffer_bytes_methods) {
-		return "bytes";
-	}
-	if (b->methods == &buffer_mmap_methods) {
-		return "mmap";
-	}
-	if (b->methods == &buffer_sparse_methods) {
-		return "sparse";
-	}
-	if (b->methods == &buffer_ref_methods) {
-		return "ref";
-	}
-	if (b->methods == &buffer_io_methods) {
-		return "io";
-	}
-	if (b->methods == &buffer_file_methods) {
-		return "file";
-	}
-	return "unknown";
-}
-#endif
-
 R_API st64 r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, ut64 len) {
 	R_RETURN_VAL_IF_FAIL (b && buf && !b->readonly, -1);
 	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
@@ -844,13 +820,13 @@ R_API st64 r_buf_sleb128(RBuffer *b, st64 *v) {
 }
 
 static const char *buffer_type_strings[] = {
-    "file",
-    "io",
-    "bytes",
-    "mmap",
-    "sparse",
-    "ref",
-    "cache"
+	"file",
+	"io",
+	"bytes",
+	"mmap",
+	"sparse",
+	"ref",
+	"cache"
 };
 
 #define STATIC_ASSERT(cond, msg) typedef char static_assertion_##msg[(cond) ? 1 : -1]
@@ -858,7 +834,7 @@ STATIC_ASSERT (sizeof (buffer_type_strings) / sizeof (buffer_type_strings[0]) ==
 		buffer_type_strings_mismatch_with_enum);
 
 R_API char *r_buf_describe(RBuffer *b) {
-	const char *type = (b->type >= 0 && b->type < R_BUFFER_COUNT) 
+	const char *type = (b->type >= 0 && b->type < R_BUFFER_COUNT)
 		? buffer_type_strings[b->type]: "unknown";
 	return r_str_newf("RBuffer<%s>(.%s) @ %p", type, b->readonly? "ro": "rw", b);
 }
