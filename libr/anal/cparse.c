@@ -5,6 +5,8 @@
 #include "c/tccgen.c"
 #include "c/tccpp.c"
 #include "c/libtcc.c"
+#define USE_R2 1
+#include <spp/spp.h>
 
 // used to pass anal and s1 to loader
 typedef struct {
@@ -126,8 +128,16 @@ R_API char *r_anal_cparse_file(RAnal *anal, const char *path, const char *dir, c
 	if (anal->opt.newcparser) {
 		char *code = r_file_slurp (path, NULL);
 		if (code) {
-			char *res = r_anal_cparse2 (anal, code, error_msg);
+			struct Proc proc;
+			Output out;
+			out.fout = NULL;
+			out.cout = r_strbuf_new (NULL);
+			spp_proc_set (&proc, "cpp", 1);
+			spp_eval (code, &out);
+			char *data = strdup (r_strbuf_get (out.cout));
+			char *res = r_anal_cparse2 (anal, data, error_msg);
 			free (code);
+			free (data);
 			return res;
 		}
 	}
