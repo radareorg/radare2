@@ -1,4 +1,6 @@
-TESTS=test test-enum a c b invalid j macho union crash vararg typedef
+TESTS=lowerdash test test-enum a c b invalid j macho
+TESTS+=union crash vararg typedef align books dotfun
+TESTS+=typestr fcnptr anonworld
 
 all:
 	rm -f a.out
@@ -7,7 +9,9 @@ all:
 		echo "Testing $$a " \
 		&& ./a.out t/$${a}.h 2> t/$${a}.h.tmperr > t/$${a}.h.tmp \
 		&& if [ -f t/$${a}.h.err ]; then diff -u t/$${a}.h.err t/$${a}.h.tmperr; fi \
-		&& diff -u t/$${a}.h.txt t/$${a}.h.tmp ; \
+		&& diff -u t/$${a}.h.txt t/$${a}.h.tmp || \
+			(echo '# ------------' ; echo '$$ cat t/$${a}.h' ; cat t/$${a}.h ; echo '# -------' ); \
+		[ -z "`echo $${a}| grep invalid`" ] && cat t/$${a}.h.tmperr ; \
 	done
 	rm -f t/*.tmp*
 

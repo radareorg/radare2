@@ -1,8 +1,8 @@
 NAME=td anonymous struct in typedef
 FILE=--
 CMDS=<<EOF
-"td typedef struct {int a;} Foo;"
-"td typedef struct { char *hello; int world[]; } Bar;"
+'td struct Foo {int a;};
+'td struct Bar { char *hello; int world[]; };
 ts~Foo,Bar
 ts Foo
 ts Bar
@@ -20,7 +20,7 @@ FILE=--
 CMDS=<<EOF
 t-*
 ?e --
-"td typedef struct {int a;} Foo;"
+'td typedef struct {int a;} Foo;
 ts
 ts Foo
 ts-Foo
@@ -30,6 +30,7 @@ EOF
 EXPECT=<<EOF
 --
 Foo
+anon_struct_1
 --
 EOF
 RUN
@@ -222,7 +223,7 @@ NAME=t-struct
 FILE=-
 CMDS=<<EOF
 t-*
-"td struct three_elements{int x; char y; float z;}"
+'td struct three_elements{int x; char y; float z;}
 t-three_elements
 ts~?
 EOF
@@ -234,18 +235,15 @@ RUN
 NAME=t-union
 FILE=-
 CMDS=<<EOF
-"td union xoo{int x; int y; int z;}"
+'td union xoo{int x; int y; int z;}
 tk*~union
 t-xoo
 EOF
 EXPECT=<<EOF
 union.xoo=x,y,z
-union.xoo.x=int32_t,0,0
-union.xoo.x.meta=0
-union.xoo.y=int32_t,0,0
-union.xoo.y.meta=0
-union.xoo.z=int32_t,0,0
-union.xoo.z.meta=0
+union.xoo.x=int,0,0
+union.xoo.y=int,0,0
+union.xoo.z=int,0,0
 xoo=union
 EOF
 RUN
@@ -253,7 +251,7 @@ RUN
 NAME=typedef
 FILE=-
 CMDS=<<EOF
-"td typedef int Abracadabra"
+'td typedef int Abracadabra
 t-Abracadabra
 t~?Abracadabra
 EOF
@@ -300,7 +298,7 @@ FILE=-
 CMDS=<<EOF
 td typedef char FILE_NAME;
 tt FILE_NAME
-"td typedef bool FLAG;"
+'td typedef bool FLAG;
 tt FLAG
 EOF
 EXPECT=<<EOF
@@ -313,7 +311,7 @@ NAME=td struct
 FILE=-
 CMDS=<<EOF
 t-*
-"td struct test_struct{int x;int y;};"
+'td struct test_struct{int x;int y;};
 ts~?test_struct
 EOF
 EXPECT=<<EOF
@@ -324,7 +322,7 @@ RUN
 NAME=enum32
 FILE=-
 CMDS=<<EOF
-"td enum v { t=0x123, p=0x321 };"
+'td enum v { t=0x123, p=0x321 };
 te~?
 tk v
 tk enum.v.t
@@ -341,7 +339,7 @@ RUN
 NAME=enum64
 FILE=-
 CMDS=<<EOF
-"td enum v { t=0x8000000000000001, p=0x8000000000000008 };"
+'td enum v { t=0x8000000000000001, p=0x8000000000000008 };
 te~?
 tk enum.v.t
 tk enum.v.p
@@ -461,7 +459,7 @@ RUN
 NAME=tp
 FILE=-
 CMDS=<<EOF
-"td struct person { int age; char name[10]; }"
+'td struct person { int age; char name[10]; }
 s 4
 w Carlos
 s 0
@@ -477,7 +475,7 @@ RUN
 NAME=unions
 FILE=-
 CMDS=<<EOF
-"td union x{float a;int b;}"
+'td union x{float a;int b;}
 tu
 EOF
 EXPECT=<<EOF
@@ -506,26 +504,26 @@ RUN
 NAME=td twice
 FILE=-
 CMDS=<<EOF
-"td int foo(int bar);"
-"td int foo(int bar);"
+'td int foo(int bar);
+'td int foo(int bar);
 tk~foo
 EOF
-EXPECT_ERR=<<EOF
-EOF
+EXPECT_ERR=
 EXPECT=<<EOF
 foo=func
-func.foo.arg.0=int32_t,bar
+func.foo=bar
+func.foo.arg.0=int,bar
 func.foo.args=1
 func.foo.cc=cdecl
-func.foo.ret=int32_t
+func.foo.ret=int
 EOF
 RUN
 
 NAME=struct of struct with ts and pf
 FILE=-
 CMDS=<<EOF
-"td struct bar { int a; int b; };"
-"td struct foo { int x; struct bar moo; };"
+'td struct bar { int a; int b; };
+'td struct foo { int x; struct bar moo; };
 ts foo
 .ts foo
 EOF
@@ -542,8 +540,8 @@ RUN
 NAME=Array of struct with ts
 FILE=-
 CMDS=<<EOF
-"td struct bar { int a; int b; };"
-"td struct foo { int x; struct bar moo[2]; };"
+'td struct bar { int a; int b; };
+'td struct foo { int x; struct bar moo[2]; };
 ts foo
 .ts foo
 EOF
@@ -566,7 +564,7 @@ RUN
 NAME=te <enum>
 FILE=-
 CMDS=<<EOF
-"td enum Foo {COW=1,BAR=2};"
+'td enum Foo {COW=1,BAR=2};
 te
 te Foo
 EOF
@@ -580,7 +578,7 @@ RUN
 NAME=te <enum> <value>
 FILE=-
 CMDS=<<EOF
-"td enum Foo {COW=1,BAR=2};"
+'td enum Foo {COW=1,BAR=2};
 te Foo 1
 EOF
 EXPECT=<<EOF
@@ -591,7 +589,7 @@ RUN
 NAME=teb <enum> <name>
 FILE=-
 CMDS=<<EOF
-"td enum Foo {COW=1,BAR=2};"
+'td enum Foo {COW=1,BAR=2};
 teb Foo COW
 EOF
 EXPECT=<<EOF
@@ -635,7 +633,7 @@ RUN
 NAME=truncated tp
 FILE=-
 CMDS=<<EOF
-"td struct foobar{uint32_t a; uint32_t b; uint32_t c; uint32_t d;}"
+'td struct foobar{uint32_t a; uint32_t b; uint32_t c; uint32_t d;}
 b 64
 woe 1
 tp foobar
@@ -657,7 +655,7 @@ RUN
 NAME=tp with varname
 FILE=bins/elf/struct_sample
 CMDS=<<EOF
-"td struct Books {char  title[50];char  author[50]; char  subject[100];};"
+'td struct Books {char  title[50];char  author[50]; char  subject[100];};
 aa
 s main
 aei
@@ -677,7 +675,7 @@ RUN
 NAME=tpx test
 FILE=-
 CMDS=<<EOF
-"td struct foo {char* a; int b;}"
+'td struct foo {char* a; int b;}
 tpx foo 41414141441414141414420010000000
 EOF
 EXPECT=<<EOF
@@ -692,7 +690,7 @@ CMDS=<<EOF
 e asm.arch = arm
 e asm.bits = 32
 wx 082090e5040081e5
-"td struct foo {int a; int b; int c;};"
+'td struct foo {int a; int b; int c;};
 aht foo.c @ 0x00000000
 aht foo.b @ 0x00000004
 ?e
@@ -710,7 +708,7 @@ FILE=-
 CMDS=<<EOF
 e asm.arch=mips
 wx 08007fac040053800800538c
-"td struct foo {int a; int b; int c;};"
+'td struct foo {int a; int b; int c;};
 aht foo.c @ 0x00000000
 aht foo.c @ 0x00000008
 aht foo.b @ 0x00000004
@@ -730,7 +728,7 @@ FILE=-
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
-"td struct foo {int a; int b ; int c;}"
+'td struct foo {int a; int b ; int c;}
 wx 8b40048951048d500883780800
 ?e
 aht foo.b @ 0x00000000
@@ -754,7 +752,7 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 e asm.comments = false
-"td struct bar {int a ; int b; int c;}"
+'td struct bar {int a ; int b; int c;}
 wx 48C7C058190000488B5004488B4808483B500448BBEFBEADDE00000000488958089090C3
 af
 tl bar = 0x1958
@@ -776,7 +774,7 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 e asm.comments = false
-"td struct bar {int a ; int b; int c;}"
+'td struct bar {int a ; int b; int c;}
 wx 48C7C058190000488B5004488B4808483B500448BBEFBEADDE00000000488958089090C3
 tl bar = 0x1958
 af
@@ -800,8 +798,8 @@ e asm.arch=x86
 e asm.bits=64
 e asm.comments = false
 e asm.flags = false
-"td struct bar {int x; int y; int z;};"
-"td struct foo {int a; int b; int c;};"
+'td struct bar {int x; int y; int z;};
+'td struct foo {int a; int b; int c;};
 wx 48C7C000010000488B5008488B480448C7C000020000488B5008488B48049090C3
 tl bar = 0x200
 tl foo = 0x100
@@ -829,7 +827,7 @@ CMDS=<<EOF
 e asm.var.summary=0
 aa
 s main
-"td struct Books {char  title[50];char  author[50]; char  subject[100];};"
+'td struct Books {char  title[50];char  author[50]; char  subject[100];};
 tl Books = 0x00177f18
 ?e
 pdf~Books
@@ -851,7 +849,7 @@ NAME=tl with ahr (return value hint)
 FILE=bins/elf/struct_2
 CMDS=<<EOF
 aa
-"td struct Test { int a; int  b; char *c;};"
+'td struct Test { int a; int  b; char *c;};
 s main
 ahr 0x00000597 @ 0x00000592
 tl Test = 0x00002020
@@ -871,7 +869,7 @@ NAME=Basic union test
 FILE=bins/elf/union_sample
 CMDS=<<EOF
 aa
-"td union Books {char  title[50];char  author[50]; char  subject[100];};"
+'td union Books {char  title[50];char  author[50]; char  subject[100];};
 tu
 tu Books
 s main
@@ -893,7 +891,7 @@ FILE=-
 CMDS=<<EOF
 e asm.bits=64
 ws hello @ 0xc
-"td struct foo {int x; int (*fp)(int a , int b ); char *b;};"
+'td struct foo {int x; int (*fp)(int a , int b ); char *b;};
 ts foo
 .ts foo
 EOF
@@ -908,8 +906,8 @@ RUN
 NAME=ts general pointers test
 FILE=-
 CMDS=<<EOF
-"td struct normal {int a;char b;};"
-"td struct pointer {char *y;struct normal *obj;};"
+'td struct normal {int a;char b;};
+'td struct pointer {char *y;struct normal *obj;};
 ts pointer
 EOF
 EXPECT=<<EOF
@@ -920,12 +918,12 @@ RUN
 NAME=tsc test
 FILE=-
 CMDS=<<EOF
-"td struct three_elements{int x; char y; float z;}"
+'td struct three_elements{int x; char y; float z;}
 tsc three_elements
 EOF
 EXPECT=<<EOF
 struct three_elements {
-  int32_t x;
+  int x;
   char y;
   float z;
 };
@@ -935,12 +933,12 @@ RUN
 NAME=tsc with array
 FILE=-
 CMDS=<<EOF
-"td struct with_array{int x; char y[50]; float z;}"
+'td struct with_array{int x; char y[50]; float z;}
 tsc with_array
 EOF
 EXPECT=<<EOF
 struct with_array {
-  int32_t x;
+  int x;
   char y[50];
   float z;
 };
@@ -950,7 +948,7 @@ RUN
 NAME=tec test
 FILE=-
 CMDS=<<EOF
-"td enum Foo {COW=1,BAR=2};"
+'td enum Foo {COW=1,BAR=2};
 tec Foo
 EOF
 EXPECT=<<EOF
@@ -964,14 +962,14 @@ RUN
 NAME=tuc test
 FILE=-
 CMDS=<<EOF
-"td union x{int x; int y; int z;}"
+'td union x{int x; int y; int z;}
 tuc x
 EOF
 EXPECT=<<EOF
 union x {
-  int32_t x;
-  int32_t y;
-  int32_t z;
+  int x;
+  int y;
+  int z;
 };
 EOF
 RUN
@@ -979,7 +977,7 @@ RUN
 NAME=ttc test
 FILE=-
 CMDS=<<EOF
-"td typedef char FILE_NAME;"
+'td typedef char FILE_NAME;
 ttc FILE_NAME
 EOF
 EXPECT=<<EOF
@@ -991,15 +989,15 @@ NAME=tcd test
 FILE=-
 CMDS=<<EOF
 t-*
-"td typedef char FILE_NAME;"
-"td union x{int x; int y; int z;}"
-"td enum Foo {COW=1,BAR=2};"
-"td struct three_elements{int x; char y; float z;}"
+'td typedef char FILE_NAME;
+'td union x{int x; int y; int z;}
+'td enum Foo {COW=1,BAR=2};
+'td struct three_elements{int x; char y; float z;}
 tcd
 EOF
 EXPECT=<<EOF
-union x {int32_t x; int32_t y; int32_t z;};
-struct three_elements {int32_t x; char y; float z;};
+union x {int x; int y; int z;};
+struct three_elements {int x; char y; float z;};
 typedef char FILE_NAME;
 enum Foo {COW = 1, BAR = 2};
 EOF
@@ -1493,17 +1491,14 @@ RUN
 
 NAME=types size
 CMDS=<<EOF
-"td struct s1 { int a; int size; int b; };"
+'td struct s1 { int a; int size; int b; };
 tk~struct.s1
 EOF
 EXPECT=<<EOF
 struct.s1=a,size,b
-struct.s1.a=int32_t,0,0
-struct.s1.a.meta=0
-struct.s1.b=int32_t,8,0
-struct.s1.b.meta=0
-struct.s1.size=int32_t,4,0
-struct.s1.size.meta=0
+struct.s1.a=int,0,0
+struct.s1.b=int,8,0
+struct.s1.size=int,4,0
 EOF
 RUN
 
@@ -1528,14 +1523,15 @@ FILE=bins/elf/hello_world
 CMDS=<<EOF
 s main
 af
-"afs int main(int argc);"
+'afs int main(int argc);
 tk~func.main
 EOF
 EXPECT=<<EOF
-func.main.arg.0=int32_t,argc
+func.main=argc
+func.main.arg.0=int,argc
 func.main.args=1
 func.main.cc=cdecl
-func.main.ret=int32_t
+func.main.ret=int
 EOF
 RUN
 
@@ -1546,15 +1542,15 @@ e anal.vars.stackname=true
 s 0x4e2420
 af
 afs
-"afs no_type(int a, char **b);"
+'afs no_type(int a, char **b);
 afs
-"afs char type(int a, char **b);"
+'afs char type(int a, char **b);
 afs
 EOF
 EXPECT=<<EOF
 void fcn.004e2420 (int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg6, int64_t arg_8h);
-int32_t no_type (int32_t a, char **b);
-char type (int32_t a, char **b);
+void no_type (int a, char **b);
+char type (int a, char **b);
 EOF
 RUN
 
@@ -1563,15 +1559,15 @@ FILE=bins/elf/hello_world
 CMDS=<<EOF
 af
 afs
-"afs foo.bar();"
+'afs foo.bar();
 afs
-"afs char foo.bar(int a, ...);"
+'afs char foo.bar(int a, ...);
 afs
 EOF
 EXPECT=<<EOF
 void entry0 (int64_t arg3);
-int32_t foo.bar ();
-char foo.bar (int32_t a);
+void foo.bar ();
+char foo.bar (int a, ...);
 EOF
 RUN
 
@@ -1590,8 +1586,8 @@ RUN
 NAME=td crash
 FILE=-
 CMDS=<<EOF
-"td struct;"
-"td struct crash __attribute__((packed)) { };"
+'td struct;
+'td struct crash __attribute__((packed)) { };
 EOF
 EXPECT=<<EOF
 EOF
@@ -1636,7 +1632,7 @@ RUN
 NAME=td union
 FILE=-
 CMDS=<<EOF
-"td union foo {int a;char b;}"
+'td union foo {int a;char b;}
 tu*~foo
 ts*~foo
 t*~foo
@@ -1647,10 +1643,8 @@ EXPECT=<<EOF
 pf.foo dc a b
 'tk foo=union
 'tk union.foo=a,b
-'tk union.foo.a=int32_t,0,0
-'tk union.foo.a.meta=0
+'tk union.foo.a=int,0,0
 'tk union.foo.b=char,0,0
-'tk union.foo.b.meta=2
 pf dc a b
 pf.foo dc a b
 EOF
@@ -1662,7 +1656,7 @@ CMDS=<<EOF
 wx 0xa00f
 wx 0x401f @ 0x4
 wx 0800000000000080 @ 0x8
-"td struct foo {int a; int b; uint64_t c;};"
+'td struct foo {int a; int b; uint64_t c;};
 tl foo @ 0x0
 pd 1
 EOF
@@ -1680,7 +1674,7 @@ CMDS=<<EOF
 wx 0xa00f
 wx 0x401f @ 0x4
 wx 0800000000000080 @ 0x8
-"td struct foo {};"
+'td struct foo {};
 tl foo @ 0x0
 pd 1
 EOF
@@ -1731,11 +1725,11 @@ FILE=-
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-"td struct foo {char gap;int bar __attribute__((__aligned__(4)));};"
-"td struct foo2 {char gap[1];int bar __attribute__((__aligned__(4)));};"
-"td struct foo3 {char gap[3];int bar __attribute__((__aligned__(4)));};"
-"td struct foo4 {char gap[4];int bar;};"
-"td struct foo5 {int gap;int bar;};"
+'td struct foo {char gap;int bar __attribute__((__aligned__(4)));};
+'td struct foo2 {char gap[1];int bar __attribute__((__aligned__(4)));};
+'td struct foo3 {char gap[3];int bar __attribute__((__aligned__(4)));};
+'td struct foo4 {char gap[4];int bar;};
+'td struct foo5 {int gap;int bar;};
 ahts 4 ~foo
 ?e =
 wx c7400400000000
@@ -1756,8 +1750,8 @@ RUN
 NAME=ahts nested
 FILE=-
 CMDS=<<EOF
-"td struct foo {int bar;int cow;};"
-"td struct spam {int ham;struct foo _foo;int eggs;};"
+'td struct foo {int bar;int cow;};
+'td struct spam {int ham;struct foo _foo;int eggs;};
 ahts 8 ~spam
 EOF
 EXPECT=<<EOF
@@ -1841,7 +1835,7 @@ RUN
 NAME=typedef stuff
 FILE=--
 CMDS=<<EOF
-"td typedef int Number";
+'td typedef int Number;
 tt
 tt Number
 tk~Number
@@ -1849,9 +1843,9 @@ t Number
 EOF
 EXPECT=<<EOF
 Number
-int32_t
+int
 Number=typedef
-typedef.Number=int32_t
+typedef.Number=int
 pf d
 EOF
 RUN

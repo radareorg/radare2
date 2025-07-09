@@ -1,0 +1,14 @@
+Bar=enum
+enum.Bar.COW=0x7b
+enum.Bar.0x7b=COW
+enum.Bar=COW
+Cow=enum
+enum.Cow.LOW=0x7b
+enum.Cow.0x7b=LOW
+enum.Cow=LOW
+foo=struct
+struct.foo.gap=char,0,0
+struct.foo.bar=int,4,0
+struct.foo.bar.@.aligned=4
+struct.foo=gap,bar
+

@@ -92,6 +92,10 @@ R_API char *r_type_enum_member(Sdb *TDB, const char *name, const char *member, u
 		? r_str_newf ("enum.%s.%s", name, member)
 		: r_str_newf ("enum.%s.0x%"PFMT64x, name, val);
 	char *res = sdb_get (TDB, q, 0);
+	if (!res) {
+		q = r_str_newf ("enum.%s.%"PFMT64d, name, val);
+		res = sdb_get (TDB, q, 0);
+	}
 	free (q);
 	return res;
 }

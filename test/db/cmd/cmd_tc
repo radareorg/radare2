@@ -83,7 +83,7 @@ CMDS=.ic*;tc
 EXPECT=<<EOF
 struct Employee {
   struct objc_class *isa;
-  int16_t _shortWord;
+  short _shortWord;
   struct NSString *_username;
   struct NSString *_firstName;
   uint64_t _wideWord;
@@ -356,7 +356,7 @@ EOF
 EXPECT=<<EOF
 struct Employee {
   struct objc_class *isa;
-  int16_t _shortWord;
+  short _shortWord;
   struct NSString *_username;
   struct NSString *_firstName;
   uint64_t _wideWord;
@@ -629,7 +629,7 @@ EOF
 EXPECT=<<EOF
 struct Employee {
   struct objc_class *isa;
-  int16_t _shortWord;
+  short _shortWord;
   struct NSString *_username;
   struct NSString *_firstName;
   uint64_t _wideWord;
@@ -817,7 +817,7 @@ RUN
 NAME=tc typedef
 FILE=-
 CMDS=<<EOF
-"td typedef char *string;"
+'td typedef char *string;
 ttc string
 EOF
 EXPECT=<<EOF

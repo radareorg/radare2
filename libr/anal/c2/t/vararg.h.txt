@@ -1,7 +1,8 @@
-bar=func
-func.bar.arg.0=int,a
-func.bar.arg.1=...,
-func.bar=a,
-func.bar.ret=char foo.
-func.bar.args=2
+foo.bar=func
+func.foo.bar.arg.0=int,a
+func.foo.bar.arg.1=,...
+func.foo.bar.cc=cdecl
+func.foo.bar=a,...
+func.foo.bar.ret=char
+func.foo.bar.args=2
 
