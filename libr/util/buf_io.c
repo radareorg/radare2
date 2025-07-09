@@ -6,9 +6,6 @@
 static bool buf_io_init(RBuffer *b, const void *user) {
 	const RBufferIO *rb_io = user;
 	b->rb_io = R_NEW (RBufferIO);
-	if (!b->rb_io) {
-		return false;
-	}
 	b->rb_io[0] = rb_io[0];
 	return true;
 }

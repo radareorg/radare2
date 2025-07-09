@@ -3,6 +3,7 @@
 #define SAFE_MMAP 1
 
 #include <r_util.h>
+#include <sys/mman.h>
 
 struct buf_mmap_user {
 	const char *filename;
@@ -31,15 +32,22 @@ static bool buf_mmap_fini(RBuffer *b) {
 }
 
 static bool buf_mmap_resize(RBuffer *b, ut64 newsize) {
+	eprintf ("EREISIZIGN mamapa\n");
 	R_WARN_IF_FAIL (b->rb_mmap);
-	if (newsize > b->rb_mmap->mmap->len) {
-		ut8 *t = r_mem_mmap_resize (b->rb_mmap->mmap, newsize);
-		if (!t) {
+	RMmap *map = b->rb_mmap->mmap;
+#if 1
+	if (newsize != map->len) {
+		bool ok = r_file_mmap_resize (map, newsize);
+		if (!ok) {
+			eprintf ("FAILED STO REUSEI\n");
 			return false;
 		}
-		b->rb_mmap->bytes.buf = t;
 	}
+#endif
+	eprintf ("buf_mmap_resize> mmaplen=%d newsize=%d\n", map->len, newsize);
 	b->rb_mmap->bytes.length = newsize;
+	b->rb_mmap->bytes.buf = map->buf;
+	// map->len = newsize;
 	return true;
 }
 
@@ -50,10 +58,15 @@ static st64 buf_mmap_read(RBuffer *b, ut8 *buf, ut64 len) {
 	}
 	RBufferBytes *bb = &b->rb_mmap->bytes;
 #if SAFE_MMAP
+	// TODO: RFile.mmapRead() instead
 	RMmap *m = b->rb_mmap->mmap;
 	ut64 realsize = r_file_mmap_size (m);
+	if (realsize < 1) {
+		return 0;
+	}
 	if (bb->length != realsize) {
-		R_LOG_WARN ("Baked mmap size changed from %"PFMT64d" to %"PFMT64d", writing and reading the same file maybe?", bb->length, realsize);
+		R_LOG_WARN ("mmap baked file changed size from %"PFMT64d" to %"PFMT64d", writing and reading the same file maybe?", bb->length, realsize);
+		buf_mmap_resize (b, realsize);
 		bb->length = realsize;
 	}
 	ut64 left = realsize - bb->offset;
@@ -72,13 +85,59 @@ static st64 buf_mmap_read(RBuffer *b, ut8 *buf, ut64 len) {
 	return real_len;
 }
 
+static st64 buf_mmap_write(RBuffer *b, const ut8 *buf, ut64 len) {
+	eprintf ("write mmap at %d '%s' %d\n", b->rb_bytes->offset, buf, len);
+	// memmove (b->rb_bytes->buf + b->rb_bytes->offset, buf, len);
+	R_WARN_IF_FAIL (b->rb_bytes);
+	// if (b->rb_bytes->offset > b->rb_bytes->length || 
+	if (b->rb_bytes->offset + len >= b->rb_bytes->length) {
+		bool r = r_buf_resize (b, b->rb_bytes->offset + len);
+		if (!r) {
+			return -1;
+		}
+	}
+	memmove (b->rb_bytes->buf + b->rb_bytes->offset, buf, len);
+	msync (b->rb_bytes->buf + b->rb_bytes->offset, len, MS_SYNC);
+	b->rb_bytes->offset += len;
+	return len;
+}
+
+static st64 buf_mmap_seek(RBuffer *b, st64 addr, int whence) {
+	R_WARN_IF_FAIL (b->rb_bytes);
+	if (whence == R_BUF_END) {
+		return r_file_mmap_size (b->rb_mmap->mmap);
+	}
+	if (R_UNLIKELY (addr < 0)) {
+		if (addr > -(st64)UT48_MAX) {
+	       		if (-addr > (st64)b->rb_bytes->offset) {
+				return -1;
+			}
+		} else {
+			return -1;
+		}
+	}
+	ut64 po = b->rb_bytes->offset;
+	if (R_LIKELY (whence == R_BUF_SET)) {
+		// 50%
+		po = addr;
+	} else if (whence == R_BUF_CUR) {
+		// 20%
+		po += addr;
+	} else {
+		// 5%
+		po = b->rb_bytes->length + addr;
+	}
+	b->rb_bytes->offset = po;
+	return po;
+}
 static const RBufferMethods buffer_mmap_methods = {
 	.init = buf_mmap_init,
 	.fini = buf_mmap_fini,
 	.read = buf_mmap_read,
 	//.read = buf_bytes_read,
-	.write = buf_bytes_write,
+	.write = buf_mmap_write,
+	// .write = buf_bytes_write,
 	.get_size = buf_bytes_get_size,
 	.resize = buf_mmap_resize,
-	.seek = buf_bytes_seek,
+	.seek = buf_mmap_seek,
 };
