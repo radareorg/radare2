@@ -33,15 +33,16 @@ static bool buf_mmap_fini(RBuffer *b) {
 static bool buf_mmap_resize(RBuffer *b, ut64 newsize) {
 	R_WARN_IF_FAIL (b->rb_mmap);
 	RMmap *map = b->rb_mmap->mmap;
-#if 1
 	if (newsize != map->len) {
 		bool ok = r_file_mmap_resize (map, newsize);
 		if (!ok) {
 			return false;
 		}
+		// After resize, ensure the buffer's offset is still within bounds
+		if (b->rb_mmap->offset > newsize) {
+			b->rb_mmap->offset = newsize;
+		}
 	}
-#endif
-	// map->len = newsize;
 	return true;
 }
 
@@ -92,9 +93,14 @@ static st64 buf_mmap_write(RBuffer *b, const ut8 *buf, ut64 len) {
 		if (!r) {
 			return -1;
 		}
+		// After resize operation, ensure we're working with the correct buffer pointer
+		// since it may have been remapped
+	}
+	if (!bm->mmap->buf) {
+		return -1;
 	}
 	memmove (bm->mmap->buf + bm->offset, buf, len);
-#if R2__UNIX__
+#if R2__UNIX__ && !__wasi__
 	msync (bm->mmap->buf + bm->offset, len, MS_SYNC);
 #endif
 	bm->offset += len;

@@ -166,11 +166,10 @@ static bool test_r_buf_file(void) {
 }
 
 static bool test_r_buf_bytes(void) {
-	RBuffer *b;
-	const char *content = "Something To\nSay Here..";
-	const int length = 23;
+	const char content[] = "Something To\nSay Here..";
+	const int length = strlen (content); // 23;
 
-	b = r_buf_new_with_bytes ((const ut8 *)content, length);
+	RBuffer *b = r_buf_new_with_bytes ((const ut8 *)content, length);
 	mu_assert_notnull (b, "r_buf_new_with_bytes failed");
 
 	if (test_buf (b) != MU_PASSED) {
@@ -365,8 +364,8 @@ bool test_r_buf_format(void) {
 }
 
 static bool test_r_buf_with_buf(void) {
-	const char *content = "Something To\nSay Here..";
-	const int length = 23;
+	const char content[] = "Something To\nSay Here..";
+	const int length = strlen (content); // 23;
 	RBuffer *buf = r_buf_new_with_bytes ((ut8 *)content, length);
 
 	RBuffer *b = r_buf_new_with_buf (buf);
@@ -468,7 +467,7 @@ bool test_r_buf_slice_too_big(void) {
 int all_tests(void) {
 	mu_run_test (test_r_buf_cache);
 	mu_run_test (test_r_buf_bytes);
-//	mu_run_test (test_r_buf_mmap); // BROKEN
+	mu_run_test (test_r_buf_mmap); // BROKEN
 	mu_run_test (test_r_buf_with_buf);
 	mu_run_test (test_r_buf_slice);
 	// mu_run_test (test_r_buf_io); // BROKEN

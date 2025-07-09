@@ -991,6 +991,7 @@ R_API bool r_file_mmap_resize(RMmap *m, ut64 newsize) {
 	}
 	if (m->buf) {
 		UnmapViewOfFile (m->buf);
+		m->buf = NULL; // Mark as unmapped
 	}
 	if (!r_sys_truncate (m->filename, newsize)) {
 		return false;
@@ -1000,22 +1001,30 @@ R_API bool r_file_mmap_resize(RMmap *m, ut64 newsize) {
 #elif R2__UNIX__ && !__wasi__
 	size_t oldlen = m->len;
 	void *oldbuf = m->buf;
-	if (!r_sys_truncate (m->filename, newsize)) {
-		return false;
-	}
-	m->len = newsize;
-	if (r_file_mmap_fd (m, m->filename, m->fd)) {
+	
+	// First unmap the current mapping
+	if (oldbuf && oldlen > 0) {
 		if (munmap (oldbuf, oldlen) != 0) {
 			return false;
 		}
+		m->buf = NULL; // Mark as unmapped
 	}
-	return true;
-#endif
+	
+	// Then truncate the file
+	if (!r_sys_truncate (m->filename, newsize)) {
+		return false;
+	}
+	
+	// Update length and remap
+	m->len = newsize;
+	return r_file_mmap_fd (m, m->filename, m->fd);
+#else
 	if (!r_sys_truncate (m->filename, newsize)) {
 		return false;
 	}
 	m->len = newsize;
 	return r_file_mmap_fd (m, m->filename, m->fd);
+#endif
 }
 
 R_API int r_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int len) {
@@ -1282,7 +1291,7 @@ R_API ut64 r_file_mmap_size(RMmap *m) {
 	struct stat st;
 	if (fstat (m->fd, &st) == 0) {
 		m->len = st.st_size;
-		return st.st_size;
+		return m->len;
 	}
 	// XXX maybe unsafe
 	return m->len;
