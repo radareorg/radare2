@@ -1512,7 +1512,7 @@ afs
 afn
 EOF
 EXPECT=<<EOF
-int32_t sym.new_function_name (int32_t NEWARGC, char **NEWARGV);
+int sym.new_function_name (int NEWARGC, char **NEWARGV);
 sym.new_function_name
 EOF
 RUN
