@@ -960,7 +960,9 @@ static bool parse_enum(KVCParser *kvc, const char *name) {
 #endif
 			value = nv; // r_num_get (NULL, member_value.a);
 		} else {
-			r_strbuf_appendf (kvc->sb, "enum.%s=%d\n", full_scope, value);
+			r_strbuf_appendf (kvc->sb, "enum.%s=0x%"PFMT64x"\n", full_scope, (ut64)value);
+			r_strbuf_appendf (kvc->sb, "enum.%s.0x%"PFMT64x"=%s\n", en, (ut64)value, mn);
+			//r_strbuf_appendf (kvc->sb, "enum.%s=%d\n", full_scope, value);
 		}
 		if (enumstr) {
 			r_strbuf_appendf (enumstr, ",%s", mn);
