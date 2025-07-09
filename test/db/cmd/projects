@@ -348,7 +348,7 @@ EOF
 EXPECT=<<EOF
 12
 12
-8
+5
 EOF
 RUN
 

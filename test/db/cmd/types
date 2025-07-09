@@ -570,8 +570,8 @@ te Foo
 EOF
 EXPECT=<<EOF
 Foo
-COW = 1
-BAR = 2
+COW = 0x1
+BAR = 0x2
 EOF
 RUN
 
@@ -593,7 +593,7 @@ CMDS=<<EOF
 teb Foo COW
 EOF
 EXPECT=<<EOF
-1
+0x1
 EOF
 RUN
 
