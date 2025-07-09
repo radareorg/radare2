@@ -49,7 +49,7 @@ static void kvctoken_trim(KVCToken *t) {
 	while (isspace (*t->a)) {
 		t->a++;
 	}
-	while (t->b >= t->a && isspace (t->b[-1])) {
+	while (t->b > t->a && isspace (t->b[-1])) {
 		t->b--;
 	}
 }
