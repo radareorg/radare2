@@ -54,6 +54,7 @@ static st64 buf_mmap_read(RBuffer *b, ut8 *buf, ut64 len) {
 	if (!b->rb_bytes->buf) {
 		return 0;
 	}
+	// memset (buf, 0xff, len);
 	RBufferBytes *bb = &b->rb_mmap->bytes;
 #if SAFE_MMAP
 	// TODO: RFile.mmapRead() instead
@@ -67,12 +68,16 @@ static st64 buf_mmap_read(RBuffer *b, ut8 *buf, ut64 len) {
 		buf_mmap_resize (b, realsize);
 		bb->length = realsize;
 	}
-	ut64 left = realsize - bb->offset;
+	// eprintf ("REALSIZE %d\n", realsize);
+	// eprintf ("OFFSET %d\n", bb->offset);
+	ut64 left = realsize - bb->offset + 1;
 #else
 	ut64 left = bb->length - bb->offset;
 #endif
-	ut64 real_len = bb->length < bb->offset? 0: R_MIN (left, len);
-	if (real_len < 1 || b->rb_bytes->offset >= bb->length) {
+	ut64 real_len = R_MIN (left, len);
+	// eprintf ("READ off=%d len=%d left=%d return=%d\n", bb->offset, len, left, real_len);
+	if (real_len < 1 || bb->offset >= bb->length) {
+		memset (buf, 0xff, len);
 		return -1;
 	}
 	// reproducer: cp /bin/ls aaa ; r2 -qcq -e io.va=0 -c "s 0x4000; wtf aaa" aaa
@@ -102,7 +107,11 @@ static st64 buf_mmap_write(RBuffer *b, const ut8 *buf, ut64 len) {
 static st64 buf_mmap_seek(RBuffer *b, st64 addr, int whence) {
 	R_WARN_IF_FAIL (b->rb_bytes);
 	if (whence == R_BUF_END) {
-		return r_file_mmap_size (b->rb_mmap->mmap);
+		st64 r = r_file_mmap_size (b->rb_mmap->mmap);
+		b->rb_bytes->offset = r;
+		b->rb_bytes->length = r;
+		b->rb_mmap->mmap->len = r;
+		return r;
 	}
 	if (R_UNLIKELY (addr < 0)) {
 		if (addr > -(st64)UT48_MAX) {
