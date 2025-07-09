@@ -15,7 +15,7 @@ OBJS+=udiff.o bdiff.o stack.o queue.o tree.o idpool.o assert.o bplist.o treemap.
 OBJS+=punycode.o pkcs7.o x509.o asn1.o asn1_str.o json_parser.o json_indent.o skiplist.o
 OBJS+=pj.o rbtree.o intervaltree.o qrcode.o vector.o str_constpool.o str_trim.o
 OBJS+=chartable.o protobuf.o graph_drawable.o axml.o sstext.o new_rbtree.o token.o
-OBJS+=rvc.o rvc_git.o rvc_rvc.o bscanf.o rprintf.o base32.o bloom.o
+OBJS+=rvc.o rvc_git.o rvc_rvc.o bscanf.o rprintf.o base32.o bloom.o mmap.o
 
 ifeq (${HAVE_GPERF},1)
 OBJS+=d/ascii.o

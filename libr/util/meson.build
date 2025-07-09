@@ -37,6 +37,7 @@ r_util_sources = [
   'list.c',
   'log.c',
   'math.c',
+  'mmap.c',
   'mem.c',
   'name.c',
   'new_rbtree.c',
