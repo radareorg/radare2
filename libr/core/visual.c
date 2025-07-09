@@ -3654,21 +3654,12 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				if (core->cons->cpos.y < 1) {
 					core->cons->cpos.y = 0;
 				}
-       } else if (core->print->cur_enabled) {
-       	const int distance = numbuf_pull (core);
-       	for (i = 0; i < distance; i++) {
-       		cursor_prevrow (core, false);
-       	}
-       	if (r_config_get_b (core->config, "scr.cursor.limit")) {
-       		/* Clamp cursor within the loaded block boundaries */
-       		if (core->print->cur < 0) {
-       			core->print->cur = 0;
-       		}
-       		if ((ut64)core->print->cur >= core->blocksize) {
-       			core->print->cur = core->blocksize > 0 ? core->blocksize - 1 : 0;
-       		}
-       	}
-       } else {
+			} else if (core->print->cur_enabled) {
+				const int distance = numbuf_pull (core);
+				for (i = 0; i < distance; i++) {
+					cursor_prevrow (core, false);
+				}
+			} else {
 				if (r_config_get_b (core->config, "scr.wheel.nkey")) {
 					int i, distance = numbuf_pull (core);
 					if (distance < 1)  {
@@ -3706,20 +3697,11 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				if (core->cons->cpos.y < 1) {
 					core->cons->cpos.y = 0;
 				}
-       } else if (core->print->cur_enabled) {
-       	int distance = numbuf_pull (core);
-       	for (i = 0; i < distance; i++) {
-       		cursor_prevrow (core, true);
-       	}
-       	if (r_config_get_b (core->config, "scr.cursor.limit")) {
-       		/* Clamp cursor within the loaded block boundaries */
-       		if (core->print->cur < 0) {
-       			core->print->cur = 0;
-       		}
-       		if ((ut64)core->print->cur >= core->blocksize) {
-       			core->print->cur = core->blocksize > 0 ? core->blocksize - 1 : 0;
-       		}
-       	}
+			} else if (core->print->cur_enabled) {
+				int distance = numbuf_pull (core);
+				for (i = 0; i < distance; i++) {
+					cursor_prevrow (core, true);
+				}
 			} else {
 				if (core->print->screen_bounds > 1 && core->print->screen_bounds > core->addr) {
 					int delta = (core->print->screen_bounds - core->addr);
