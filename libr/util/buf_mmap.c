@@ -32,19 +32,17 @@ static bool buf_mmap_fini(RBuffer *b) {
 }
 
 static bool buf_mmap_resize(RBuffer *b, ut64 newsize) {
-	eprintf ("EREISIZIGN mamapa\n");
 	R_WARN_IF_FAIL (b->rb_mmap);
 	RMmap *map = b->rb_mmap->mmap;
 #if 1
 	if (newsize != map->len) {
 		bool ok = r_file_mmap_resize (map, newsize);
 		if (!ok) {
-			eprintf ("FAILED STO REUSEI\n");
 			return false;
 		}
 	}
 #endif
-	eprintf ("buf_mmap_resize> mmaplen=%d newsize=%d\n", map->len, newsize);
+	// eprintf ("buf_mmap_resize> mmaplen=%d newsize=%d\n", map->len, newsize);
 	b->rb_mmap->bytes.length = newsize;
 	b->rb_mmap->bytes.buf = map->buf;
 	// map->len = newsize;
@@ -86,7 +84,7 @@ static st64 buf_mmap_read(RBuffer *b, ut8 *buf, ut64 len) {
 }
 
 static st64 buf_mmap_write(RBuffer *b, const ut8 *buf, ut64 len) {
-	eprintf ("write mmap at %d '%s' %d\n", b->rb_bytes->offset, buf, len);
+	// eprintf ("write mmap at %d '%s' %d\n", b->rb_bytes->offset, buf, len);
 	// memmove (b->rb_bytes->buf + b->rb_bytes->offset, buf, len);
 	R_WARN_IF_FAIL (b->rb_bytes);
 	if (b->rb_bytes->offset + len >= b->rb_bytes->length) {
