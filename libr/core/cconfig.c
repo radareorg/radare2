@@ -4439,6 +4439,7 @@ R_API int r_core_config_init(RCore *core) {
 	// RENAME TO scr.mouse
 	SETB ("scr.wheel", "true", "mouse wheel in Visual; temporaryly disable/reenable by right click/Enter)");
 	SETB ("scr.cursor", "false", "keyboard controlled cursor in visual and panels");
+	SETB ("scr.cursor.limit", "true", "limit print cursor within screen boundaries");
 	SETS ("scr.layout", "", "name of the selected panels layout to load as default");
 	SETCB ("scr.breakword", "", &cb_scrbreakword, "emulate console break (^C) when a word is printed (useful for pD)");
 	SETCB ("scr.breaklines", "false", &cb_breaklines, "break lines in Visual instead of truncating them");
