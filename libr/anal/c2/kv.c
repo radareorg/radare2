@@ -953,7 +953,7 @@ static bool parse_enum(KVCParser *kvc, const char *name) {
 		return false;
 	}
 	kvc_getch (kvc);
-	int value = 0;
+	ut64 value = 0;
 	bool closing = false;
 	while (!closing) {
 		skip_spaces (kvc);
