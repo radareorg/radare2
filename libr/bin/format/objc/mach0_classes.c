@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2024 - inisider, pancake */
+/* radare - LGPL - Copyright 2015-2025 - inisider, pancake */
 
 #define R_LOG_ORIGIN "bin"
 
@@ -2103,7 +2103,6 @@ static char *readstr(RBinFile *bf, mach0_ut p, ut32 *offset, ut32 *left) {
 			R_FREE (name);
 			return NULL;
 		}
-		return name;
 	} else {
 		const size_t name_len = MAX_CLASS_NAME_LEN;
 		name = calloc (1, name_len + 1);
@@ -2118,6 +2117,9 @@ static char *readstr(RBinFile *bf, mach0_ut p, ut32 *offset, ut32 *left) {
 		return s;
 #endif
 	}
-
+	if ((ut8)name[0] == 0xff || !*name) {
+		R_FREE (name);
+		return NULL;
+	}
 	return name;
 }
