@@ -136,14 +136,23 @@ static st64 buf_mmap_seek(RBuffer *b, st64 addr, int whence) {
 	b->rb_bytes->offset = po;
 	return po;
 }
+
+static ut64 buf_mmap_get_size(RBuffer *b) {
+	ut64 r = r_file_mmap_size (b->rb_mmap->mmap);
+	b->rb_bytes->length = r;
+	b->rb_mmap->mmap->len = r;
+	return r;
+}
+
 static const RBufferMethods buffer_mmap_methods = {
 	.init = buf_mmap_init,
 	.fini = buf_mmap_fini,
 	.read = buf_mmap_read,
-	//.read = buf_bytes_read,
 	.write = buf_mmap_write,
+	// .read = buf_bytes_read,
 	// .write = buf_bytes_write,
-	.get_size = buf_bytes_get_size,
+	// .get_size = buf_bytes_get_size,
+	.get_size = buf_mmap_get_size,
 	.resize = buf_mmap_resize,
 	.seek = buf_mmap_seek,
 };
