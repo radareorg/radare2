@@ -675,17 +675,23 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 			return false;
 		}
 		const char *p = semicolon - 1;
-		while (p > start && isspace (*p)) {
+		// Skip trailing spaces before alias
+		while (p > start && isspace ((unsigned char)*p)) {
 			p--;
 		}
+		// Mark end of alias
 		const char *alias_end = p + 1;
-		while (p > start && (isalnum (*p) || *p == '_' || *p == '*')) {
+		// Scan backwards over alias characters (alphanumeric and underscore)
+		while (p > start && (isalnum ((unsigned char)*p) || *p == '_')) {
 			p--;
 		}
-		if (!(isalnum (*p) || *p == '_' || *p == '*')) {
+		// If stopped on non-identifier, advance to start of alias
+		if (!(isalnum ((unsigned char)*p) || *p == '_')) {
 			p++;
 		}
+		// Alias token
 		KVCToken alias = { .a = p, .b = alias_end };
+		// Original type spans from start up to alias start
 		KVCToken orig_type = { .a = start, .b = p };
 		kvctoken_trim (&alias);
 		kvctoken_trim (&orig_type);
