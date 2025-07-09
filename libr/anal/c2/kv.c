@@ -132,12 +132,12 @@ static const char *kvc_find_semicolon2(KVCParser *kvc) {
 			// kvc_getch (kvc);
 			return kvc->s.a;
 		}
-            // allow alphanumeric, space, underscore, comma, and [],*,() inside type
-            if (!isalnum (c) && !isspace (c) && c != '_' && c != ',') {
-                if (c != '[' && c != ']' && c != '*' && c != '(' && c != ')') {
-                    return NULL;
-                }
-            }
+		// allow alphanumeric, space, underscore, comma, and [],*,() inside type
+		if (!isalnum (c) && !isspace (c) && c != '_' && c != ',') {
+			if (c != '[' && c != ']' && c != '*' && c != '(' && c != ')') {
+				return NULL;
+			}
+		}
 		kvc_getch (kvc);
 	}
 	return NULL;
@@ -553,19 +553,19 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 			KVCToken member_type = {0};
 			KVCToken member_name = {0};
 			KVCToken member_dimm = {0};
-            // parse member type token up to semicolon
-            member_type.a = kvc->s.a;
-            member_type.b = kvc_find_semicolon (kvc);
-            if (!member_type.b) {
-                kvc_error (kvc, "Missing semicolon in struct member");
-                r_strbuf_free (args_sb);
-                free (struct_tag);
-                return false;
-            }
-            if (member_type.a == member_type.b) {
-                kvc_getch (kvc);
-                break;
-            }
+			// parse member type token up to semicolon
+			member_type.a = kvc->s.a;
+			member_type.b = kvc_find_semicolon (kvc);
+			if (!member_type.b) {
+				kvc_error (kvc, "Missing semicolon in struct member");
+				r_strbuf_free (args_sb);
+				free (struct_tag);
+				return false;
+			}
+			if (member_type.a == member_type.b) {
+				kvc_getch (kvc);
+				break;
+			}
 			memcpy (&member_name, &member_type, sizeof (member_name));
 			kvctoken_typename (&member_type, &member_name);
 #if 1
@@ -753,52 +753,98 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 		KVCToken member_name = {0};
 		KVCToken member_dimm = {0};
 
-            // parse member type up to semicolon or closing '}'
-            member_type.a = kvc->s.a;
-            member_type.b = kvc_find_semicolon (kvc);
-            if (!member_type.b) {
-                const char ch0 = kvc_peek (kvc, 0);
-                if (ch0 == '}') {
-                    // end of struct definition
-                    kvc_getch (kvc);
-                    kvc_getch (kvc);
-                    break;
-                }
-                bool fail = true;
-#if 1
-                if (ch0 == '(') {
-                    member_type.b = kvc_find_semicolon2 (kvc);
-                    if (member_type.b) {
-                        const char *arg = kvctoken_find (member_type, "__attribute");
-                        member_type.b = arg - 1;
-                        kvc->s.a = arg;
-                        if (parse_c_attributes (kvc)) {
-                            fail = false;
-                            skip_spaces (kvc);
-                        } else {
-                            R_LOG_WARN ("failed to parse attributes");
-                        }
-                    }
-                }
-#endif
-                if (fail) {
-                    if (ch0) {
-                        R_LOG_ERROR ("Cant find semicolon in struct field chr(%d)='%c'", ch0, ch0);
-                    }
-                    free (sn);
-                    eprintf ("false exit\n");
-                    r_strbuf_free (args_sb);
-                    return false;
-                }
-            }
-            if (member_type.a == member_type.b) {
-                kvc_getch (kvc);
-                break;
-            }
-            memcpy (&member_name, &member_type, sizeof (member_name));
-            kvctoken_typename (&member_type, &member_name);
-            skip_semicolons (kvc);
-            kvctoken_trim (&member_type);
+		// parse member type up to semicolon or closing '}'
+		// Start parsing field type token
+		member_type.a = kvc->s.a;
+		// Support function pointer fields: allow parentheses when scanning semicolon
+		if (kvctoken_find((KVCToken){ member_type.a, kvc->s.b }, "(*")) {
+			member_type.b = kvc_find_semicolon2 (kvc);
+		} else {
+			member_type.b = kvc_find_semicolon (kvc);
+		}
+		if (!member_type.b) {
+			// attempt extended scan allowing parentheses (attributes or function pointers)
+			const char *semi2 = kvc_find_semicolon2 (kvc);
+			if (!semi2) {
+				const char ch0 = kvc_peek (kvc, 0);
+				if (ch0 == '}') {
+					// end of struct definition
+					kvc_getch (kvc);
+					kvc_getch (kvc);
+					break;
+				}
+				kvc_error (kvc, "Missing semicolon in struct member");
+				r_strbuf_free (args_sb);
+				free (sn);
+				return false;
+			}
+			// check for C-style attribute inside this span
+			const char *attrp = kvctoken_find ((KVCToken){ member_type.a, semi2 }, "__attribute");
+			if (attrp) {
+				member_type.b = attrp - 1;
+				kvc->s.a = attrp;
+				if (!parse_c_attributes (kvc)) {
+					r_strbuf_free (args_sb);
+					return false;
+				}
+				skip_spaces (kvc);
+			} else {
+				// function pointer: include full type span
+				member_type.b = semi2;
+				kvc->s.a = semi2;
+			}
+		}
+		if (member_type.a == member_type.b) {
+			kvc_getch (kvc);
+			break;
+		}
+		memcpy (&member_name, &member_type, sizeof (member_name));
+		kvctoken_typename (&member_type, &member_name);
+		skip_semicolons (kvc);
+		kvctoken_trim (&member_type);
+		// Special-case function pointer fields
+		if (kvctoken_find (member_type, "(*")) {
+			// member_type spans entire function pointer declaration including args
+			const char *start = member_type.a;
+			const char *starp = strstr (start, "(*");
+			if (starp) {
+				// return type
+				char *rtype = r_str_ndup (start, starp - start);
+				r_str_trim (rtype);
+				// member name
+				const char *name_start = starp + 2;
+				const char *name_end = strchr (name_start, ')');
+				char *mname = NULL;
+				if (name_end && name_end > name_start) {
+					mname = r_str_ndup (name_start, name_end - name_start);
+					r_str_trim (mname);
+				}
+				// argument types
+				const char *args_start = strchr (name_end + 1, '(');
+				char *args = NULL;
+				if (args_start && args_start < member_type.b) {
+					const char *args_end = member_type.b;
+					// skip trailing ')'
+					if (args_end > args_start && args_end[-1] == ')') {
+						args_end--;
+					}
+					args = r_str_ndup (args_start + 1, args_end - args_start - 1);
+					r_str_trim (args);
+				}
+				// build full type string
+				char *fulltype = r_str_newf ("%s *(%s)", rtype, args? args: "");
+				free (rtype);
+				free (args);
+				// output member entry
+				r_strbuf_appendf (kvc->sb, "%s.%s.%s=%s,%d,0\n", type, sn, mname, fulltype, off);
+				r_strbuf_appendf (kvc->sb, "%s.%s.%s.meta=0\n", type, sn, mname);
+				off += kvc_typesize (kvc, fulltype, 1);
+				r_strbuf_appendf (args_sb, ",%s", mname);
+				free (fulltype);
+				free (mname);
+				continue;
+			}
+		}
 #if 0
 		member_type.b = kvctoken_lastspace (member_type);
 		// TODO XXX dimensions shouldnt be part of the name
@@ -1048,49 +1094,49 @@ static bool parse_function(KVCParser *kvc) {
 	eprintf ("FPARM (%s)\n", kvctoken_tostring (fun_parm));
 #endif
 
-    RStrBuf *func_args_sb = r_strbuf_new ("");
-    int arg_idx = 0;
-    if (fun_parm.a < fun_parm.b) {
-        const char *pa = fun_parm.a;
-        const char *pb = fun_parm.b;
-        const char *argp = pa;
-        const char *comma = NULL;
-        do {
-            while (pa < pb && isspace ((unsigned char)*pa)) {
-                pa++;
-            }
-            comma = r_str_nchr (pa, ',', pb - pa);
-            pa = comma? comma: pb;
-            if (pa == pb) {
-                // break;
-            }
-            KVCToken arg_type = { argp, pa };
-            KVCToken arg_name = { argp, pa };
-            kvctoken_typename (&arg_type, &arg_name);
+	RStrBuf *func_args_sb = r_strbuf_new ("");
+	int arg_idx = 0;
+	if (fun_parm.a < fun_parm.b) {
+		const char *pa = fun_parm.a;
+		const char *pb = fun_parm.b;
+		const char *argp = pa;
+		const char *comma = NULL;
+		do {
+			while (pa < pb && isspace ((unsigned char)*pa)) {
+				pa++;
+			}
+			comma = r_str_nchr (pa, ',', pb - pa);
+			pa = comma? comma: pb;
+			if (pa == pb) {
+				// break;
+			}
+			KVCToken arg_type = { argp, pa };
+			KVCToken arg_name = { argp, pa };
+			kvctoken_typename (&arg_type, &arg_name);
 #if 0
-            // XXX how do we know this wtf
-            if (!param_name.a) {
-                // unnamed arguments
-                param_name = r_str_newf ("arg%d", arg_idx);
-            }
+			// XXX how do we know this wtf
+			if (!param_name.a) {
+				// unnamed arguments
+				param_name = r_str_newf ("arg%d", arg_idx);
+			}
 #endif
-            char *an = kvctoken_tostring (arg_name);
-            char *at = kvctoken_tostring (arg_type);
-            massage_type (&at);
-            if (R_STR_ISEMPTY (at) && !strcmp (an, "void") && arg_idx == 0) {
-                // TODO: check if its the only arg
-                arg_idx--;
-            } else {
-                r_strbuf_appendf (kvc->sb, "func.%s.arg.%d=%s,%s\n", fn, arg_idx, at, an);
-                r_strbuf_appendf (func_args_sb, "%s%s", arg_idx?",":"", an);
-            }
-            free (an);
-            free (at);
-            arg_idx++;
-            pa++;
-            argp = pa;
-        } while (comma);
-    }
+			char *an = kvctoken_tostring (arg_name);
+			char *at = kvctoken_tostring (arg_type);
+			massage_type (&at);
+			if (R_STR_ISEMPTY (at) && !strcmp (an, "void") && arg_idx == 0) {
+				// TODO: check if its the only arg
+				arg_idx--;
+			} else {
+				r_strbuf_appendf (kvc->sb, "func.%s.arg.%d=%s,%s\n", fn, arg_idx, at, an);
+				r_strbuf_appendf (func_args_sb, "%s%s", arg_idx?",":"", an);
+			}
+			free (an);
+			free (at);
+			arg_idx++;
+			pa++;
+			argp = pa;
+		} while (comma);
+	}
 	char *func_args = r_strbuf_drain (func_args_sb);
 	r_strbuf_appendf (kvc->sb, "func.%s.cc=%s\n", fn, "cdecl");
 	r_strbuf_appendf (kvc->sb, "func.%s=%s\n", fn, func_args);
