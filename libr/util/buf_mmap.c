@@ -52,8 +52,8 @@ static bool buf_mmap_resize(RBuffer *b, ut64 newsize) {
 }
 
 static st64 buf_mmap_read(RBuffer *b, ut8 *buf, ut64 len) {
-	R_WARN_IF_FAIL (b->rb_bytes);
-	if (!b->rb_bytes->buf) {
+	R_WARN_IF_FAIL (b->rb_mmap);
+	if (!b->rb_mmap->bytes.buf) {
 		return 0;
 	}
 	// memset (buf, 0xff, len);
@@ -83,50 +83,50 @@ static st64 buf_mmap_read(RBuffer *b, ut8 *buf, ut64 len) {
 		return -1;
 	}
 	// reproducer: cp /bin/ls aaa ; r2 -qcq -e io.va=0 -c "s 0x4000; wtf aaa" aaa
-	memmove (buf, b->rb_bytes->buf + b->rb_bytes->offset, real_len);
+	memmove (buf, bb->buf + bb->offset, real_len);
 	// XXX memcpy only works on aligned addresses which may cause segfaults on release builds
-	// memcpy (buf, b->rb_bytes->buf + b->rb_bytes->offset, real_len);
-	b->rb_bytes->offset += real_len;
+	// memcpy (buf, bb->buf + bb->offset, real_len);
+	bb->offset += real_len;
 	return real_len;
 }
 
 static st64 buf_mmap_write(RBuffer *b, const ut8 *buf, ut64 len) {
-	// eprintf ("write mmap at %d '%s' %d\n", b->rb_bytes->offset, buf, len);
-	// memmove (b->rb_bytes->buf + b->rb_bytes->offset, buf, len);
-	R_WARN_IF_FAIL (b->rb_bytes);
-	if (b->rb_bytes->offset + len >= b->rb_bytes->length) {
+	// eprintf ("write mmap at %d '%s' %d\n", b->rb_mmap->bytes.offset, buf, len);
+	// memmove (b->rb_mmap->bytes.buf + b->rb_mmap->bytes.offset, buf, len);
+	R_WARN_IF_FAIL (b->rb_mmap);
+	if (b->rb_mmap->bytes.offset + len >= b->rb_mmap->bytes.length) {
 		bool r = r_buf_resize (b, b->rb_bytes->offset + len);
 		if (!r) {
 			return -1;
 		}
 	}
-	memmove (b->rb_bytes->buf + b->rb_bytes->offset, buf, len);
+	memmove (b->rb_mmap->bytes.buf + b->rb_mmap->bytes.offset, buf, len);
 #if R2__UNIX__
-	msync (b->rb_bytes->buf + b->rb_bytes->offset, len, MS_SYNC);
+	msync (b->rb_mmap->bytes.buf + b->rb_mmap->bytes.offset, len, MS_SYNC);
 #endif
-	b->rb_bytes->offset += len;
+	b->rb_mmap->bytes.offset += len;
 	return len;
 }
 
 static st64 buf_mmap_seek(RBuffer *b, st64 addr, int whence) {
-	R_WARN_IF_FAIL (b->rb_bytes);
+	R_WARN_IF_FAIL (b->rb_mmap);
 	if (whence == R_BUF_END) {
 		st64 r = r_file_mmap_size (b->rb_mmap->mmap);
-		b->rb_bytes->offset = r;
-		b->rb_bytes->length = r;
+		b->rb_mmap->bytes.offset = r;
+		b->rb_mmap->bytes.length = r;
 		b->rb_mmap->mmap->len = r;
 		return r;
 	}
 	if (R_UNLIKELY (addr < 0)) {
 		if (addr > -(st64)UT48_MAX) {
-	       		if (-addr > (st64)b->rb_bytes->offset) {
+	       		if (-addr > (st64)b->rb_mmap->bytes.offset) {
 				return -1;
 			}
 		} else {
 			return -1;
 		}
 	}
-	ut64 po = b->rb_bytes->offset;
+	ut64 po = b->rb_mmap->bytes.offset;
 	if (R_LIKELY (whence == R_BUF_SET)) {
 		// 50%
 		po = addr;
@@ -135,9 +135,9 @@ static st64 buf_mmap_seek(RBuffer *b, st64 addr, int whence) {
 		po += addr;
 	} else {
 		// 5%
-		po = b->rb_bytes->length + addr;
+		po = b->rb_mmap->bytes.length + addr;
 	}
-	b->rb_bytes->offset = po;
+	b->rb_mmap->bytes.offset = po;
 	return po;
 }
 
