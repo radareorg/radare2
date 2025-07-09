@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2009-2025 - pancake, ret2libc */
 
+#define SAFER_MAP 1
 #define SAFE_MMAP 1
 
 #include <r_util.h>
@@ -54,6 +55,11 @@ static st64 buf_mmap_read(RBuffer *b, ut8 *buf, ut64 len) {
 	}
 	RMmap *m = b->rb_mmap->mmap;
 	// memset (buf, 0xff, len);
+#if SAFER_MAP
+	int res = r_file_mmap_read (m, bm->offset, buf, len);
+	bm->offset += res;
+	return res;
+#else
 #if SAFE_MMAP
 	// TODO: implement and use RFile.mmapRead() instead
 	ut64 oldsize = m->len;
@@ -83,6 +89,7 @@ static st64 buf_mmap_read(RBuffer *b, ut8 *buf, ut64 len) {
 	// memcpy (buf, bb->buf + bb->offset, real_len);
 	bm->offset += real_len;
 	return real_len;
+#endif
 }
 
 static st64 buf_mmap_write(RBuffer *b, const ut8 *buf, ut64 len) {
