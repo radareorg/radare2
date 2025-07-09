@@ -586,11 +586,14 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 #endif
 			kvctoken_trim (&member_type);
 			// Handle possible array dimensions (e.g. "[10]"):
+			// Handle possible array dimensions (e.g. "[10]"):
 			const char *bracket = kvctoken_find (member_name, "[");
 			if (bracket) {
+				// Extract dimension and adjust member name to exclude brackets
 				member_dimm.a = bracket + 1;
 				member_dimm.b = member_name.b;
-				member_name.b = bracket - 1;
+				// Set name end to bracket start (exclusive) to include full name
+				member_name.b = bracket;
 				const char *close = kvctoken_find (member_dimm, "]");
 				if (close) {
 					member_dimm.b = close;
