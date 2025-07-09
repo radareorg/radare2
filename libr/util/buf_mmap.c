@@ -3,7 +3,9 @@
 #define SAFE_MMAP 1
 
 #include <r_util.h>
+#if R2__UNIX__
 #include <sys/mman.h>
+#endif
 
 struct buf_mmap_user {
 	const char *filename;
@@ -99,7 +101,9 @@ static st64 buf_mmap_write(RBuffer *b, const ut8 *buf, ut64 len) {
 		}
 	}
 	memmove (b->rb_bytes->buf + b->rb_bytes->offset, buf, len);
+#if R2__UNIX__
 	msync (b->rb_bytes->buf + b->rb_bytes->offset, len, MS_SYNC);
+#endif
 	b->rb_bytes->offset += len;
 	return len;
 }
