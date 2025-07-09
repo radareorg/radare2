@@ -183,10 +183,9 @@ static bool test_r_buf_bytes(void) {
 }
 
 static bool test_r_buf_mmap(void) {
-	RBuffer *b;
 	char *filename = "r2-XXXXXX";
-	const char *content = "Something To\nSay Here..";
-	const int length = 23;
+	const char content[] = "Something To\nSay Here..";
+	const int length = strlen (content); // 23
 
 	// Prepare file
 	int fd = r_file_mkstemp ("", &filename);
@@ -196,7 +195,7 @@ static bool test_r_buf_mmap(void) {
 	}
 	close (fd);
 
-	b = r_buf_new_mmap (filename, R_PERM_RW);
+	RBuffer *b = r_buf_new_mmap (filename, R_PERM_RW);
 	mu_assert_notnull (b, "r_buf_new_mmap failed");
 
 	if (test_buf (b) != MU_PASSED) {
@@ -469,7 +468,7 @@ bool test_r_buf_slice_too_big(void) {
 int all_tests(void) {
 	mu_run_test (test_r_buf_cache);
 	mu_run_test (test_r_buf_bytes);
-	// mu_run_test (test_r_buf_mmap); // BROKEN
+	mu_run_test (test_r_buf_mmap); // BROKEN
 	mu_run_test (test_r_buf_with_buf);
 	mu_run_test (test_r_buf_slice);
 	// mu_run_test (test_r_buf_io); // BROKEN

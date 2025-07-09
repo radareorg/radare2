@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+// move into r_file.h
 typedef struct r_mmap_t {
 	ut8 *buf;
 	ut64 base;

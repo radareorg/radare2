@@ -1281,6 +1281,7 @@ R_API ut64 r_file_mmap_size(RMmap *m) {
 #if R2__UNIX__
 	struct stat st;
 	if (fstat (m->fd, &st) == 0) {
+		m->len = st.st_size;
 		return st.st_size;
 	}
 	// XXX maybe unsafe
