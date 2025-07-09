@@ -1,8 +1,8 @@
 NAME=td anonymous struct in typedef
 FILE=--
 CMDS=<<EOF
-'td typedef struct {int a;} Foo;
-'td typedef struct { char *hello; int world[]; } Bar;
+'td struct Foo {int a;};
+'td struct Bar { char *hello; int world[]; };
 ts~Foo,Bar
 ts Foo
 ts Bar
@@ -1523,7 +1523,7 @@ FILE=bins/elf/hello_world
 CMDS=<<EOF
 s main
 af
-"afs int main(int argc);"
+'afs int main(int argc);
 tk~func.main
 EOF
 EXPECT=<<EOF
@@ -1542,9 +1542,9 @@ e anal.vars.stackname=true
 s 0x4e2420
 af
 afs
-"afs no_type(int a, char **b);"
+'afs no_type(int a, char **b);
 afs
-"afs char type(int a, char **b);"
+'afs char type(int a, char **b);
 afs
 EOF
 EXPECT=<<EOF
