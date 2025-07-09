@@ -77,7 +77,7 @@ static st64 buf_mmap_read(RBuffer *b, ut8 *buf, ut64 len) {
 	if (real_len < 1 || b->rb_bytes->offset >= bb->length) {
 		return -1;
 	}
-	// reproducer: cp /bin/ls aaa ; r2 -qcq -e io.va=0 -c 's 0x4000;wtf aaa' aaa
+	// reproducer: cp /bin/ls aaa ; r2 -qcq -e io.va=0 -c "s 0x4000; wtf aaa" aaa
 	memmove (buf, b->rb_bytes->buf + b->rb_bytes->offset, real_len);
 	// XXX memcpy only works on aligned addresses which may cause segfaults on release builds
 	// memcpy (buf, b->rb_bytes->buf + b->rb_bytes->offset, real_len);
@@ -89,7 +89,6 @@ static st64 buf_mmap_write(RBuffer *b, const ut8 *buf, ut64 len) {
 	eprintf ("write mmap at %d '%s' %d\n", b->rb_bytes->offset, buf, len);
 	// memmove (b->rb_bytes->buf + b->rb_bytes->offset, buf, len);
 	R_WARN_IF_FAIL (b->rb_bytes);
-	// if (b->rb_bytes->offset > b->rb_bytes->length || 
 	if (b->rb_bytes->offset + len >= b->rb_bytes->length) {
 		bool r = r_buf_resize (b, b->rb_bytes->offset + len);
 		if (!r) {
