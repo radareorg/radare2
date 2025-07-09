@@ -156,15 +156,20 @@ R_API int r_file_mmap_read(RMmap *m, ut64 addr, ut8 *buf, int len) {
 	if (limit > m->len) {
 		limit = m->len;
 	}
-	if ((addr - base) + (ut64)len > limit) {
+	{
+		ut64 offset64 = (ut64)(addr - base);
+		ut64 readlen = len;
+		if (offset64 >= limit) {
+			UnlockFileEx (m->fh, 0, lenLow, lenHigh, &ov);
+			return 0;
+		}
+		if (offset64 + readlen > limit) {
+			readlen = limit - offset64;
+		}
+		memcpy (buf, (const ut8*)m->buf + offset64, (size_t)readlen);
 		UnlockFileEx (m->fh, 0, lenLow, lenHigh, &ov);
-		return -1;
+		return (int)readlen;
 	}
-	/* Copy from mapped view */
-	memcpy (buf, (const ut8*)m->buf + (addr - base), len);
-	/* Release lock */
-	UnlockFileEx (m->fh, 0, lenLow, lenHigh, &ov);
-	return len;
 #elif __wasi__ || EMSCRIPTEN
 	if (!m || !buf || len < 0) {
 		return -1;
@@ -181,18 +186,25 @@ R_API int r_file_mmap_read(RMmap *m, ut64 addr, ut8 *buf, int len) {
 		return -1;
 	}
 	ut64 limit2 = (ut64)st.st_size;
-	if ((ut64)off + (ut64)len > limit2) {
-		return -1;
+	{
+		ut64 off64 = (ut64)off;
+		ut64 readlen = len;
+		if (off64 >= limit2) {
+			return 0;
+		}
+		if (off64 + readlen > limit2) {
+			readlen = limit2 - off64;
+		}
+		/* Seek and read from file descriptor */
+		if (lseek (m->fd, off, SEEK_SET) == (off_t)-1) {
+			return -1;
+		}
+		ssize_t rd = read (m->fd, buf, (size_t)readlen);
+		if (rd < 0) {
+			return -1;
+		}
+		return (int)rd;
 	}
-	/* Seek and read from file descriptor */
-	if (lseek (m->fd, off, SEEK_SET) == (off_t)-1) {
-		return -1;
-	}
-	ssize_t rd = read (m->fd, buf, len);
-	if (rd < 0 || rd != len) {
-		return -1;
-	}
-	return len;
 #elif R2__UNIX__
 	if (!m || !buf || len < 0) {
 		return -1;
@@ -217,13 +229,20 @@ R_API int r_file_mmap_read(RMmap *m, ut64 addr, ut8 *buf, int len) {
 	if (limit > m->len) {
 		limit = m->len;
 	}
-	if ((ut64)offset + (ut64)len > limit) {
+	{
+		ut64 offset64 = (ut64)offset;
+		ut64 readlen = len;
+		if (offset64 >= limit) {
+			flock (m->fd, LOCK_UN);
+			return 0;
+		}
+		if (offset64 + readlen > limit) {
+			readlen = limit - offset64;
+		}
+		memcpy (buf, (const ut8 *)m->buf + offset64, (size_t)readlen);
 		flock (m->fd, LOCK_UN);
-		return -1;
+		return (int)readlen;
 	}
-	memcpy (buf, (const ut8 *)m->buf + offset, len);
-	flock (m->fd, LOCK_UN);
-	return len;
 #else
 	return -1;
 #endif
