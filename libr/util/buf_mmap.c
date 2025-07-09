@@ -88,7 +88,7 @@ static st64 buf_mmap_read(RBuffer *b, ut8 *buf, ut64 len) {
 static st64 buf_mmap_write(RBuffer *b, const ut8 *buf, ut64 len) {
 	R_WARN_IF_FAIL (b->type == R_BUFFER_MMAP);
 	RBufferMmap *bm = b->rb_mmap;
-	if (bm->offset + len >= bm->mmap->len) {
+	if (bm->offset + len > bm->mmap->len) {
 		bool r = r_buf_resize (b, bm->offset + len);
 		if (!r) {
 			return -1;

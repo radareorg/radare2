@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - ret2libc, pancake */
+/* radare - LGPL - Copyright 2009-2025 - ret2libc, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -300,13 +300,15 @@ R_API ut8 *r_buf_drain(RBuffer *b, ut64 *size) {
 
 R_API bool r_buf_append_bytes(RBuffer *b, const ut8 *buf, ut64 length) {
 	R_RETURN_VAL_IF_FAIL (b && buf && !b->readonly, false);
-#if 1
 	if (b->type == R_BUFFER_MMAP) {
 		// only for mmap imho
 		ut64 oz = r_buf_size (b);
 		buf_resize (b, oz + length);
+		if (r_buf_seek (b, oz, R_BUF_SET) == -1) {
+			return false;
+		}
+		return r_buf_write (b, buf, length) > 0;
 	}
-#endif
 	if (r_buf_seek (b, 0, R_BUF_END) == -1) {
 		return false;
 	}

@@ -45,17 +45,6 @@ static bool test_buf(RBuffer *b) {
 	mu_assert ("string should be appended", res);
 
 	buf_sz = r_buf_size (b);
-	if (0) {
-		ut8 bufs[64];
-		r_buf_seek (b, 0, R_BUF_SET);
-		int res = r_buf_read (b, bufs, sizeof (bufs));
-		eprintf ("RES = %d\n", res);
-		int i;
-		for (i = 0; i<res;i++) {
-			eprintf (" (%d) (%c)\n", i, bufs[i]);
-		}
-		eprintf ("SL+S2L = %d\n", (int)(sl + s2l));
-	}
 	// eprintf ("bufsz %d\n", buf_sz);
 	mu_assert_eq (buf_sz, sl + s2l, "file size should be computed");
 	mu_assert_eq (computed_size, buf_sz, "test_buf: file size should be computed");
@@ -68,7 +57,7 @@ static bool test_buf(RBuffer *b) {
 	const int rl = r_buf_read_at (b, 1, buffer, sizeof (buffer));
 	mu_assert_eq (rl, 9, "only 9 bytes can be read from offset 1");
 	mu_assert_memeq (buffer, (ut8 *)"his is a ", 9, "read right bytes from offset 1");
-	// mu_assert_memeq (buffer, (ut8 *)"his is , ", 9, "read right bytes from offset 1");
+	//mu_assert_memeq (buffer, (ut8 *)"his is , ", 9, "read right bytes from offset 1");
 
 	r_buf_set_bytes (b, (ut8 *)"World", strlen ("World"));
 	char *base = r_buf_tostring (b);
@@ -467,7 +456,7 @@ bool test_r_buf_slice_too_big(void) {
 int all_tests(void) {
 	mu_run_test (test_r_buf_cache);
 	mu_run_test (test_r_buf_bytes);
-	// mu_run_test (test_r_buf_mmap); // BROKEN
+	mu_run_test (test_r_buf_mmap); // BROKEN
 	mu_run_test (test_r_buf_with_buf);
 	mu_run_test (test_r_buf_slice);
 	// mu_run_test (test_r_buf_io); // BROKEN
