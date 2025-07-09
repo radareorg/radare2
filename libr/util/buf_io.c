@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2025 - ret2libc */
+/* radare - LGPL - Copyright 2009-2025 - pancake, ret2libc */
 
 #include <r_util.h>
 #include <r_io.h>
@@ -46,12 +46,14 @@ static bool buf_io_resize(RBuffer *b, ut64 newsize) {
 
 static st64 buf_io_read(RBuffer *b, ut8 *buf, ut64 len) {
 	R_WARN_IF_FAIL (b->rb_io);
-	return b->rb_io->iob->fd_read (b->rb_io->iob->io, b->rb_io->fd, buf, len);
+	RIOBind *iob = b->rb_io->iob;
+	return iob->fd_read (iob->io, b->rb_io->fd, buf, len);
 }
 
 static st64 buf_io_write(RBuffer *b, const ut8 *buf, ut64 len) {
 	R_WARN_IF_FAIL (b->rb_io);
-	return b->rb_io->iob->fd_write (b->rb_io->iob->io, b->rb_io->fd, buf, len);
+	RIOBind *iob = b->rb_io->iob;
+	return iob->fd_write (iob->io, b->rb_io->fd, buf, len);
 }
 
 static const RBufferMethods buffer_io_methods = {

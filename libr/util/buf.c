@@ -258,16 +258,19 @@ R_API ut64 r_buf_tell(RBuffer *b) {
 
 R_API bool r_buf_set_bytes(RBuffer *b, const ut8 *buf, ut64 length) {
 	R_RETURN_VAL_IF_FAIL (b && buf && !b->readonly, false);
+#if 0
 	if (r_buf_seek (b, 0, R_BUF_SET) == -1) {
 		return false;
 	}
+#endif
 	if (!r_buf_resize (b, 0)) {
 		return false;
 	}
 	if (!r_buf_append_bytes (b, buf, length)) {
 		return false;
 	}
-	return r_buf_seek (b, 0, R_BUF_SET) != -1;
+	return r_buf_seek (b, 0, R_BUF_SET) != -1; /// XXX must compare with length imho
+	// return r_buf_seek (b, 0, R_BUF_SET) == length;
 }
 
 R_API bool r_buf_prepend_bytes(RBuffer *b, const ut8 *buf, ut64 length) {
@@ -307,12 +310,13 @@ R_API bool r_buf_append_bytes(RBuffer *b, const ut8 *buf, ut64 length) {
 		if (r_buf_seek (b, oz, R_BUF_SET) == -1) {
 			return false;
 		}
-		return r_buf_write (b, buf, length) > 0;
+		return r_buf_write (b, buf, length) == length;
 	}
 	if (r_buf_seek (b, 0, R_BUF_END) == -1) {
 		return false;
 	}
-	return r_buf_write (b, buf, length) > 0;
+	return r_buf_write (b, buf, length) == length;
+	// return r_buf_write (b, buf, length) > 0;
 }
 
 R_API bool r_buf_append_nbytes(RBuffer *b, ut64 length) {
@@ -732,7 +736,7 @@ R_API st64 r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, ut64 len) {
 	return r;
 }
 
-// XXX R2_590 use r_ref api instead
+// XXX R2_600 use r_ref api instead
 R_API void r_buf_fini(RBuffer *b) {
 	if (!b) {
 		return;
@@ -752,7 +756,7 @@ R_API void r_buf_fini(RBuffer *b) {
 	buf_fini (b);
 }
 
-// XXX R2_590 use r_ref api instead
+// XXX R2_600 use r_ref api instead
 R_API void r_buf_free(RBuffer *b) {
 	if (b) {
 		bool unreferenced = b && b->refctr == 0;
@@ -839,30 +843,22 @@ R_API st64 r_buf_sleb128(RBuffer *b, st64 *v) {
 	return offset / 7;
 }
 
+static const char *buffer_type_strings[] = {
+    "file",
+    "io",
+    "bytes",
+    "mmap",
+    "sparse",
+    "ref",
+    "cache"
+};
+
+#define STATIC_ASSERT(cond, msg) typedef char static_assertion_##msg[(cond) ? 1 : -1]
+STATIC_ASSERT (sizeof (buffer_type_strings) / sizeof (buffer_type_strings[0]) == R_BUFFER_COUNT,
+		buffer_type_strings_mismatch_with_enum);
+
 R_API char *r_buf_describe(RBuffer *b) {
-	const char *type = "unknown";
-	switch (b->type) {
-	case R_BUFFER_CACHE:
-		type = "cache";
-		break;
-	case R_BUFFER_BYTES:
-		type = "bytes";
-		break;
-	case R_BUFFER_MMAP:
-		type = "mmap";
-		break;
-	case R_BUFFER_SPARSE:
-		type = "sparse";
-		break;
-	case R_BUFFER_FILE:
-		type = "file";
-		break;
-	case R_BUFFER_IO:
-		type = "io";
-		break;
-	case R_BUFFER_REF:
-		type = "ref";
-		break;
-	}
-	return r_str_newf ("RBuffer<%s>(.%s) @ %p", type, b->readonly? "ro": "rw", b);
+	const char *type = (b->type >= 0 && b->type < R_BUFFER_COUNT) 
+		? buffer_type_strings[b->type]: "unknown";
+	return r_str_newf("RBuffer<%s>(.%s) @ %p", type, b->readonly? "ro": "rw", b);
 }

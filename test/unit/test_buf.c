@@ -14,7 +14,7 @@ static bool test_buf(RBuffer *b) {
 	mu_assert_eq (buf_sz, length, "test-buf: file size should be computed");
 
 	r = r_buf_read (b, buffer, length);
-	mu_assert_eq (r, length, "r_buf_read_at failed");
+	mu_assert_eq (length, r, "r_buf_read_at failed");
 	mu_assert_memeq (buffer, (ut8 *)content, length, "r_buf_read_at has corrupted content");
 	// return true;
 
@@ -232,7 +232,7 @@ static bool test_r_buf_io2(void) {
 	const int length = strlen (content); // 23
 
 	RIO *io = r_io_new ();
-	RIODesc *desc = r_io_open_at (io, "malloc://23", R_PERM_RW | R_PERM_CREAT, 0644, 0);
+	RIODesc *desc = r_io_open_at (io, "malloc://23", R_PERM_RW, 0644, 0);
 	mu_assert_notnull (desc, "file should be opened for writing");
 
 	bool res = r_io_write_at (io, 0, (ut8 *)content, length);
@@ -460,7 +460,7 @@ int all_tests(void) {
 	mu_run_test (test_r_buf_with_buf);
 	mu_run_test (test_r_buf_slice);
 	mu_run_test (test_r_buf_io);
-	// mu_run_test (test_r_buf_io2); // BROKEN
+//	mu_run_test (test_r_buf_io2); // BROKEN
 	mu_run_test (test_r_buf_sparse);
 	mu_run_test (test_r_buf_sparse2);
 	mu_run_test (test_r_buf_bytes_steal);
