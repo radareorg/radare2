@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2024 - pancake, condret */
+/* radare2 - LGPL - Copyright 2017-2025 - pancake, condret */
 
 #include <r_io.h>
 
@@ -36,10 +36,9 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		R_LOG_ERROR ("rbuf:// doesnt work with sandbox enabled");
 		return NULL;
 	}
-	RIODesc *desc;
 	RBuffer *buf = (RBuffer *)(void *)(size_t)r_num_get (NULL, pathname + 7);
-	if (buf && (desc = r_io_desc_new (io, &r_io_plugin_rbuf, pathname, rw, 0, buf))) {
-		return desc;
+	if (buf) {
+		return r_io_desc_new (io, &r_io_plugin_rbuf, pathname, rw, 0, buf);
 	}
 	return NULL;
 }

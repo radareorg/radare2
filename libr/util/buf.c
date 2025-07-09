@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - ret2libc, pancake */
+/* radare - LGPL - Copyright 2009-2025 - ret2libc, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -36,14 +36,14 @@ static ut64 buf_get_size(RBuffer *b) {
 	return get_size? get_size (b): UT64_MAX;
 }
 
-static st64 buf_read(RBuffer *b, ut8 *buf, size_t len) {
+static inline st64 buf_read(RBuffer *b, ut8 *buf, size_t len) {
 	R_RETURN_VAL_IF_FAIL (b && b->methods, -1);
 	const RBufferRead bufread = b->methods->read;
 	R_RETURN_VAL_IF_FAIL (bufread, -1);
 	return bufread (b, buf, len);
 }
 
-static st64 buf_write(RBuffer *b, const ut8 *buf, size_t len) {
+static inline st64 buf_write(RBuffer *b, const ut8 *buf, size_t len) {
 	R_RETURN_VAL_IF_FAIL (b && b->methods, -1);
 	buf_wholefree (b);
 	const RBufferWrite bufwrite = b->methods->write;
@@ -62,6 +62,7 @@ static bool buf_resize(RBuffer *b, ut64 newsize) {
 	R_RETURN_VAL_IF_FAIL (b && b->methods, -1);
 	const RBufferResize bufresize = b->methods->resize;
 	R_RETURN_VAL_IF_FAIL (bufresize, false);
+	// eprintf("RESIZE TO %d\n", newsize);
 	return bufresize (b, newsize);
 }
 
@@ -257,10 +258,10 @@ R_API ut64 r_buf_tell(RBuffer *b) {
 
 R_API bool r_buf_set_bytes(RBuffer *b, const ut8 *buf, ut64 length) {
 	R_RETURN_VAL_IF_FAIL (b && buf && !b->readonly, false);
-	if (!r_buf_resize (b, 0)) {
+	if (r_buf_seek (b, 0, R_BUF_SET) == -1) {
 		return false;
 	}
-	if (r_buf_seek (b, 0, R_BUF_SET) == -1) {
+	if (!r_buf_resize (b, 0)) {
 		return false;
 	}
 	if (!r_buf_append_bytes (b, buf, length)) {
@@ -299,22 +300,30 @@ R_API ut8 *r_buf_drain(RBuffer *b, ut64 *size) {
 
 R_API bool r_buf_append_bytes(RBuffer *b, const ut8 *buf, ut64 length) {
 	R_RETURN_VAL_IF_FAIL (b && buf && !b->readonly, false);
-
+	if (b->type == R_BUFFER_MMAP) {
+		// only for mmap imho
+		ut64 oz = r_buf_size (b);
+		buf_resize (b, oz + length);
+		if (r_buf_seek (b, oz, R_BUF_SET) == -1) {
+			return false;
+		}
+		return r_buf_write (b, buf, length) > 0;
+	}
 	if (r_buf_seek (b, 0, R_BUF_END) == -1) {
 		return false;
 	}
-	return r_buf_write (b, buf, length) >= 0;
+	return r_buf_write (b, buf, length) > 0;
 }
 
 R_API bool r_buf_append_nbytes(RBuffer *b, ut64 length) {
 	R_RETURN_VAL_IF_FAIL (b && !b->readonly, false);
-	ut8 *buf = R_NEWS0 (ut8, length);
-	if (!buf) {
-		return false;
+	ut8 *buf = calloc (1, length);
+	if (buf) {
+		bool res = r_buf_append_bytes (b, buf, length);
+		free (buf);
+		return res;
 	}
-	bool res = r_buf_append_bytes (b, buf, length);
-	free (buf);
-	return res;
+	return false;
 }
 
 R_API st64 r_buf_insert_bytes(RBuffer *b, ut64 addr, const ut8 *buf, ut64 length) {

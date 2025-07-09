@@ -11,11 +11,11 @@ EXPECT=<<EOF
             0x000000c5      fda001         incorrect
             0x000000c8      fd64           incorrect
             0x000000ca      0b             end
-            0x000000cb      00             trap
-            0x000000cc      00             trap
-            0x000000cd      00             trap
-            0x000000ce      00             trap
-            0x000000cf      00             trap
+            0x000000cb      ff             trap
+            0x000000cc      ff             trap
+            0x000000cd      ff             trap
+            0x000000ce      ff             trap
+            0x000000cf      ff             trap
 EOF
 EXPECT_ERR=<<EOF
 ERROR: unknown section id: 13

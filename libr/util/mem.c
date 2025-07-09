@@ -376,30 +376,6 @@ R_API void r_mem_zero(void *dst, size_t l) {
 #endif
 }
 
-R_API void *r_mem_mmap_resize(RMmap *m, ut64 newsize) {
-#if R2__WINDOWS__
-	if (m->fm != INVALID_HANDLE_VALUE) {
-		CloseHandle (m->fm);
-	}
-	if (m->fh != INVALID_HANDLE_VALUE) {
-		CloseHandle (m->fh);
-	}
-	if (m->buf) {
-		UnmapViewOfFile (m->buf);
-	}
-#elif R2__UNIX__ && !__wasi__
-	if (munmap (m->buf, m->len) != 0) {
-		return NULL;
-	}
-#endif
-	if (!r_sys_truncate (m->filename, newsize)) {
-		return NULL;
-	}
-	m->len = newsize;
-	r_file_mmap_arch (m, m->filename, m->fd);
-	return m->buf;
-}
-
 R_API int r_mem_from_binstring(const char* str, ut8 *buf, size_t len) {
 	int i, j, k, ret;
 	str = r_str_trim_head_ro (str);

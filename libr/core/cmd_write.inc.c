@@ -1812,21 +1812,17 @@ static int cmd_wt(RCore *core, const char *input) {
 			ret = 1;
 			goto leave;
 		case '!': { // "wtf!"
-			RIOMap *map;
 			if (input[2] == '?') {
 				r_core_cmd_help_match (core, help_msg_wt, "wtf!");
 				ret = 1;
 				goto leave;
 			}
-
-			map = r_io_map_get_at (core->io, poff);
+			RIOMap *map = r_io_map_get_at (core->io, poff);
 			if (map) {
 				// convert vaddr to paddr
 				poff = poff - r_io_map_begin (map) + map->delta;
 			}
-
 			sz = r_io_fd_size (core->io, core->io->desc->fd) - core->addr;
-
 			// ignore given size
 			if (argc > 2) {
 				argc = 2;
@@ -1950,6 +1946,7 @@ static int cmd_wt(RCore *core, const char *input) {
 		ret = r_core_dump (core, filename, poff, (ut64)sz, append);
 	}
 
+	// TODO: UPDATE MAPPED SYNC IF MMAP BAKED
 	// dump functions return bool; true on success
 	if (ret) {
 		R_LOG_INFO ("Dumped %" PFMT64d " bytes from 0x%08" PFMT64x" into %s",

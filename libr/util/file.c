@@ -369,7 +369,7 @@ R_API char *r_stdin_readline(int *sz) {
 
 R_API char *r_stdin_slurp(int *sz) {
 #if (R2__UNIX__ || R2__WINDOWS__) && !__wasi__
-	int i, ret, newfd;
+	int i, ret;
 	char *buf = NULL;
 #if R2__WINDOWS__
 	int stdinfd = _fileno (stdin);
@@ -377,7 +377,8 @@ R_API char *r_stdin_slurp(int *sz) {
 #else
 	int stdinfd = fileno (stdin);
 #endif
-	if ((newfd = dup (stdinfd)) < 0) {
+	int newfd = dup (stdinfd);
+	if (newfd < 0) {
 		goto beach;
 	}
 	buf = malloc (BS);
@@ -964,18 +965,65 @@ R_API char *r_file_readlink(const char *path) {
 #if R2__UNIX__
 		int ret;
 		char pathbuf[4096] = {0};
-		strncpy (pathbuf, path, sizeof (pathbuf) - 1);
-		repeat:
-		ret = readlink (path, pathbuf, sizeof (pathbuf)-1);
-		if (ret != -1) {
+		r_str_ncpy (pathbuf, path, sizeof (pathbuf));
+		for (;;) {
+			ret = readlink (path, pathbuf, sizeof (pathbuf)-1);
+			if (ret == -1) {
+				break;
+			}
 			pathbuf[ret] = 0;
 			path = pathbuf;
-			goto repeat;
 		}
 		return strdup (pathbuf);
 #endif
 	}
 	return NULL;
+}
+
+// TODO: rename to r_file_mmap_resize
+R_API bool r_file_mmap_resize(RMmap *m, ut64 newsize) {
+#if R2__WINDOWS__
+	if (m->fm != INVALID_HANDLE_VALUE) {
+		CloseHandle (m->fm);
+		m->fm = INVALID_HANDLE_VALUE;
+	}
+	if (m->fh != INVALID_HANDLE_VALUE) {
+		CloseHandle (m->fh);
+		m->fh = INVALID_HANDLE_VALUE;
+	}
+	if (m->buf) {
+		UnmapViewOfFile (m->buf);
+		m->buf = NULL; // Mark as unmapped
+	}
+	if (!r_sys_truncate (m->filename, newsize)) {
+		return false;
+	}
+	m->len = newsize;
+	return r_file_mmap_fd (m, m->filename, m->fd);
+#elif R2__UNIX__ && !__wasi__
+	size_t oldlen = m->len;
+	void *oldbuf = m->buf;
+	// First unmap the current mapping
+	if (oldbuf && oldlen > 0) {
+		if (munmap (oldbuf, oldlen) != 0) {
+			return false;
+		}
+		m->buf = NULL; // Mark as unmapped
+	}
+	// Then truncate the file
+	if (!r_sys_truncate (m->filename, newsize)) {
+		return false;
+	}
+	// Update length and remap
+	m->len = newsize;
+	return r_file_mmap_fd (m, m->filename, m->fd);
+#else
+	if (!r_sys_truncate (m->filename, newsize)) {
+		return false;
+	}
+	m->len = newsize;
+	return r_file_mmap_fd (m, m->filename, m->fd);
+#endif
 }
 
 R_API int r_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int len) {
@@ -1015,14 +1063,13 @@ err_r_file_mmap_write:
 	const int pagesize = getpagesize ();
 	int mmlen = len + pagesize;
 	int rest = addr % pagesize;
-	ut8 *mmap_buf;
 	if (fd == -1) {
 		return -1;
 	}
 	if ((st64)addr < 0) {
 		return -1;
 	}
-	mmap_buf = mmap (NULL, mmlen * 2, PROT_READ|PROT_WRITE, MAP_SHARED, fd, (off_t)addr - rest);
+	ut8 *mmap_buf = mmap (NULL, mmlen * 2, PROT_READ|PROT_WRITE, MAP_SHARED, fd, (off_t)addr - rest);
 	if (((int)(size_t)mmap_buf) == -1) {
 		return -1;
 	}
@@ -1038,7 +1085,23 @@ err_r_file_mmap_write:
 #endif
 }
 
-R_API int r_file_mmap_read(const char *file, ut64 addr, ut8 *buf, int len) {
+// R2_600 - TODO implement this for rbufmmap
+R_API int r_file_mmap_read(RMmap *m, ut64 addr, ut8 *buf, int len) {
+	R_LOG_TODO ("Implement RFile.mmapRead");
+#if R2__WINDOWS__
+	// TODO
+#elif __wasi__ || EMSCRIPTEN
+	return 0;
+#elif R2__UNIX__
+	// dandandan
+	// flock+fstat+memcpy+funlock
+	return 0;
+#else
+	return 0;
+#endif
+}
+
+R_API int r_file_slurp_mmap(const char *file, ut64 addr, ut8 *buf, int len) {
 #if R2__WINDOWS__
 	HANDLE fm = NULL, fh = INVALID_HANDLE_VALUE;
 	LPTSTR file_ = NULL;
@@ -1097,22 +1160,25 @@ err_r_file_mmap_read:
 }
 
 #if __wasi__ || EMSCRIPTEN
-static RMmap *r_file_mmap_unix(RMmap *m, int fd) {
-	return NULL;
+static bool r_file_mmap_unix(RMmap *m, int fd) {
+	return false;
 }
 #elif R2__UNIX__
-static RMmap *r_file_mmap_unix(RMmap *m, int fd) {
-	ut8 empty = m->len == 0;
-	m->buf = mmap (NULL, (empty?BS:m->len) ,
-		m->rw?PROT_READ|PROT_WRITE:PROT_READ,
+static bool r_file_mmap_unix(RMmap *m, int fd) {
+	const bool empty = m->len == 0;
+	const int perm = m->rw? PROT_READ | PROT_WRITE: PROT_READ;
+	void *map = mmap (NULL, (empty? BS: m->len), perm,
 		MAP_SHARED, fd, (off_t)m->base);
-	if (m->buf == MAP_FAILED) {
+	if (map == MAP_FAILED) {
 		m->buf = NULL;
+		m->len = 0;
+		return false;
 	}
-	return m;
+	m->buf = map;
+	return true;
 }
 #elif R2__WINDOWS__
-static RMmap *r_file_mmap_windows(RMmap *m, const char *file) {
+static bool r_file_mmap_windows(RMmap *m, const char *file) {
 	LPTSTR file_ = r_sys_conv_utf8_to_win (file);
 	bool success = false;
 
@@ -1143,23 +1209,24 @@ err_r_file_mmap_windows:
 		R_FREE (m);
 	}
 	free (file_);
-	return m;
+	return success;
 }
 #else
-static RMmap *file_mmap_other(RMmap *m) {
+static bool file_mmap_other(RMmap *m) {
 	ut8 empty = m->len == 0;
 	m->buf = malloc ((empty? BS: m->len));
 	if (!empty && m->buf) {
 		lseek (m->fd, (off_t)0, SEEK_SET);
 		read (m->fd, m->buf, m->len);
-	} else {
-		R_FREE (m);
+		return true;
 	}
-	return m;
+	R_FREE (m);
+	return false;
 }
 #endif
 
-R_API RMmap *r_file_mmap_arch(RMmap *mmap, const char *filename, int fd) {
+// XXX _arch is a very badname
+R_API bool r_file_mmap_fd(RMmap *mmap, const char *filename, int fd) {
 #if R2__WINDOWS__
 	(void)fd;
 	return r_file_mmap_windows (mmap, filename);
@@ -1190,6 +1257,7 @@ R_API RMmap *r_file_mmap(const char *file, bool rw, ut64 base) {
 	m->fd = fd;
 	m->len = fd != -1? lseek (fd, (off_t)0, SEEK_END) : 0;
 	m->filename = strdup (file);
+	lseek (fd, 0, SEEK_SET);
 
 	if (m->fd == -1) {
 		return m;
@@ -1200,14 +1268,34 @@ R_API RMmap *r_file_mmap(const char *file, bool rw, ut64 base) {
 		R_FREE (m);
 		return NULL;
 	}
+	bool res = false;
 #if R2__UNIX__
-	return r_file_mmap_unix (m, fd);
+	res = r_file_mmap_unix (m, fd);
 #elif R2__WINDOWS__
 	close (fd);
 	m->fd = -1;
-	return r_file_mmap_windows (m, file);
+	res = r_file_mmap_windows (m, file);
 #else
-	return file_mmap_other (m);
+	res = file_mmap_other (m);
+#endif
+	if (!res) {
+		free (m);
+		m = NULL;
+	}
+	return m;
+}
+
+R_API ut64 r_file_mmap_size(RMmap *m) {
+#if R2__UNIX__
+	struct stat st;
+	if (fstat (m->fd, &st) == 0) {
+		m->len = st.st_size;
+		return m->len;
+	}
+	// XXX maybe unsafe
+	return m->len;
+#else
+	return m->len;
 #endif
 }
 
