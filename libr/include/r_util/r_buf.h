@@ -47,6 +47,8 @@ typedef enum {
 	R_BUFFER_SPARSE,
 	R_BUFFER_REF,
 	R_BUFFER_CACHE,
+	// last
+	R_BUFFER_COUNT
 } RBufferType;
 
 typedef struct r_buf_file_t {
