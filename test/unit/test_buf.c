@@ -46,7 +46,7 @@ static bool test_buf(RBuffer *b) {
 
 	buf_sz = r_buf_size (b);
 	// eprintf ("bufsz %d\n", buf_sz);
-	mu_assert_eq (buf_sz, sl + s2l, "file size should be computed");
+	mu_assert_eq (sl + s2l, buf_sz, "file size should be computed");
 	mu_assert_eq (computed_size, buf_sz, "test_buf: file size should be computed");
 
 	res = r_buf_resize (b, 10);
@@ -199,7 +199,7 @@ static bool test_r_buf_mmap(void) {
 }
 
 static bool test_r_buf_io(void) {
-	const char *content = "Something To\nSay Here..";
+	const char content[] = "Something To\nSay Here..";
 	const int length = strlen (content); // 23
 
 	RIO *io = r_io_new ();
@@ -456,10 +456,10 @@ bool test_r_buf_slice_too_big(void) {
 int all_tests(void) {
 	mu_run_test (test_r_buf_cache);
 	mu_run_test (test_r_buf_bytes);
-	mu_run_test (test_r_buf_mmap); // BROKEN
+	mu_run_test (test_r_buf_mmap);
 	mu_run_test (test_r_buf_with_buf);
 	mu_run_test (test_r_buf_slice);
-	// mu_run_test (test_r_buf_io); // BROKEN
+	mu_run_test (test_r_buf_io);
 	// mu_run_test (test_r_buf_io2); // BROKEN
 	mu_run_test (test_r_buf_sparse);
 	mu_run_test (test_r_buf_sparse2);

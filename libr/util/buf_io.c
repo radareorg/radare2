@@ -1,12 +1,10 @@
-/* radare - LGPL - Copyright 2009-2020 - ret2libc */
+/* radare - LGPL - Copyright 2009-2025 - ret2libc */
 
 #include <r_util.h>
 #include <r_io.h>
 
 static bool buf_io_init(RBuffer *b, const void *user) {
-	const RBufferIO *rb_io = user;
-	b->rb_io = R_NEW (RBufferIO);
-	b->rb_io[0] = rb_io[0];
+	b->rb_io = r_mem_dup (user, sizeof (RBufferIO));
 	return true;
 }
 
@@ -37,7 +35,8 @@ static st64 buf_io_seek(RBuffer *b, st64 addr, int whence) {
 
 static ut64 buf_io_get_size(RBuffer *b) {
 	R_WARN_IF_FAIL (b->rb_io);
-	return b->rb_io->iob->fd_size (b->rb_io->iob->io, b->rb_io->fd);
+	RIOBind *iob = b->rb_io->iob;
+	return iob->fd_size (iob->io, b->rb_io->fd);
 }
 
 static bool buf_io_resize(RBuffer *b, ut64 newsize) {

@@ -162,7 +162,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 }
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
-	return r_io_mmap_write(io, fd, buf, len);
+	return r_io_mmap_write (io, fd, buf, len);
 }
 
 static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {

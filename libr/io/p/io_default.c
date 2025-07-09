@@ -220,7 +220,7 @@ static int mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		}
 	}
 
-	int len = r_file_mmap_write (mmo->filename, mmo->addr, buf, count);
+	int len = r_file_mmap_write (mmo->filename, addr, buf, count);
 	if (len != count) {
 		// aim to hack some corner cases?
 		if (lseek (fd->fd, addr, 0) < 0) {
@@ -272,6 +272,7 @@ static int mmap_truncate(RIODesc *fd, RIOMMapFileObj *mmo, ut64 size) {
 	} else if (!res) {
 		R_LOG_ERROR ("Trying to resize the file");
 	}
+	mmo->addr = size;
 	return res;
 }
 

@@ -114,7 +114,8 @@ static st64 buf_mmap_write(RBuffer *b, const ut8 *buf, ut64 len) {
 static st64 buf_mmap_seek(RBuffer *b, st64 addr, int whence) {
 	RBufferMmap *bm = b->rb_mmap;
 	if (whence == R_BUF_END) {
-		return r_file_mmap_size (bm->mmap);
+		bm->offset = r_file_mmap_size (bm->mmap);
+		return bm->offset;
 	}
 	if (R_UNLIKELY (addr < 0)) {
 		if (addr > -(st64)UT48_MAX) {
