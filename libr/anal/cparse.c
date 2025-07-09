@@ -104,6 +104,12 @@ static void __errorFunc(void *opaque, const char *msg) {
 	}
 }
 
+R_IPI char* kvc_parse(const char* header_content, char **errmsg);
+
+R_API char *r_anal_cparse2(RAnal *anal, const char *code, char **error_msg) {
+	return kvc_parse (code, error_msg);
+}
+
 static TCCState *new_tcc(RAnal *anal) {
 	TCCState *ts = tcc_new (anal->config->arch, anal->config->bits, anal->config->os);
 	if (!ts) {
@@ -117,6 +123,14 @@ static TCCState *new_tcc(RAnal *anal) {
 }
 
 R_API char *r_anal_cparse_file(RAnal *anal, const char *path, const char *dir, char **error_msg) {
+	if (anal->opt.newcparser) {
+		char *code = r_file_slurp (path, NULL);
+		if (code) {
+			char *res = r_anal_cparse2 (anal, code, error_msg);
+			free (code);
+			return res;
+		}
+	}
 	char *str = NULL;
 	TCCState *s1 = new_tcc (anal);
 	if (!s1) {
@@ -147,11 +161,6 @@ R_API char *r_anal_cparse_file(RAnal *anal, const char *path, const char *dir, c
 	free (d);
 	tcc_delete (s1);
 	return str;
-}
-
-R_IPI char* kvc_parse(const char* header_content, char **errmsg);
-R_API char *r_anal_cparse2(RAnal *anal, const char *code, char **error_msg) {
-	return kvc_parse (code, error_msg);
 }
 
 R_API char *r_anal_cparse(RAnal *anal, const char *code, char **error_msg) {
