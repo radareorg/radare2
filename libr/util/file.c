@@ -1003,7 +1003,6 @@ R_API bool r_file_mmap_resize(RMmap *m, ut64 newsize) {
 #elif R2__UNIX__ && !__wasi__
 	size_t oldlen = m->len;
 	void *oldbuf = m->buf;
-	
 	// First unmap the current mapping
 	if (oldbuf && oldlen > 0) {
 		if (munmap (oldbuf, oldlen) != 0) {
@@ -1011,12 +1010,10 @@ R_API bool r_file_mmap_resize(RMmap *m, ut64 newsize) {
 		}
 		m->buf = NULL; // Mark as unmapped
 	}
-	
 	// Then truncate the file
 	if (!r_sys_truncate (m->filename, newsize)) {
 		return false;
 	}
-	
 	// Update length and remap
 	m->len = newsize;
 	return r_file_mmap_fd (m, m->filename, m->fd);
