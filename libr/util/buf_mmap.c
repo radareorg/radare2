@@ -86,7 +86,7 @@ static st64 buf_mmap_read(RBuffer *b, ut8 *buf, ut64 len) {
 }
 
 static st64 buf_mmap_write(RBuffer *b, const ut8 *buf, ut64 len) {
-	R_WARN_IF_FAIL (b->rb_mmap);
+	R_WARN_IF_FAIL (b->type == R_BUFFER_MMAP);
 	RBufferMmap *bm = b->rb_mmap;
 	if (bm->offset + len >= bm->mmap->len) {
 		bool r = r_buf_resize (b, bm->offset + len);
@@ -99,12 +99,16 @@ static st64 buf_mmap_write(RBuffer *b, const ut8 *buf, ut64 len) {
 	if (!bm->mmap->buf) {
 		return -1;
 	}
-	memmove (bm->mmap->buf + bm->offset, buf, len);
+	int left = bm->mmap->len - bm->offset;
+	int rlen = R_MIN (len, left);
+	memcpy (bm->mmap->buf + bm->offset, buf, rlen);
+	// memmove (bm->mmap->buf + bm->offset, buf, len);
 #if R2__UNIX__ && !__wasi__
-	msync (bm->mmap->buf + bm->offset, len, MS_SYNC);
+	// msync (bm->mmap->buf + bm->offset, len, MS_SYNC);
+	msync (bm->mmap->buf, len, MS_SYNC);
 #endif
-	bm->offset += len;
-	return len;
+	bm->offset += rlen;
+	return rlen;
 }
 
 static st64 buf_mmap_seek(RBuffer *b, st64 addr, int whence) {

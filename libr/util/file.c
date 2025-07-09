@@ -985,9 +985,11 @@ R_API bool r_file_mmap_resize(RMmap *m, ut64 newsize) {
 #if R2__WINDOWS__
 	if (m->fm != INVALID_HANDLE_VALUE) {
 		CloseHandle (m->fm);
+		m->fm = INVALID_HANDLE_VALUE;
 	}
 	if (m->fh != INVALID_HANDLE_VALUE) {
 		CloseHandle (m->fh);
+		m->fh = INVALID_HANDLE_VALUE;
 	}
 	if (m->buf) {
 		UnmapViewOfFile (m->buf);
