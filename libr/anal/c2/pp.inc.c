@@ -1,13 +1,15 @@
 /* Basic C Preprocessor implementation using KVCToken and r_strbuf */
 
-enum { PP_DEFAULT_CAP = 16, PP_MAX_IF_NEST = 64 };
+enum { PP_DEFAULT_CAP = 16, PP_MAX_IF_NEST = 64, PP_DEFAULT_RECURSION_LIMIT = 16 };
 
 typedef struct {
-	char **keys;
-	char **values;
-	size_t count, cap;
-	bool if_skip[PP_MAX_IF_NEST];
-	size_t if_count;
+   char **keys;
+   char **values;
+   size_t count, cap;
+   bool if_skip[PP_MAX_IF_NEST];
+   size_t if_count;
+   size_t rec_depth;
+   size_t rec_limit;
 } PPState;
 // Forward declaration for clear function
 static void pp_clear_defines(PPState *st);
@@ -20,8 +22,10 @@ R_API PPState *pp_new(void) {
 	st->keys = NULL;
 	st->values = NULL;
 	st->count = st->cap = 0;
-	st->if_count = 0;
-	memset (st->if_skip, 0, sizeof (st->if_skip));
+   st->if_count = 0;
+   memset (st->if_skip, 0, sizeof (st->if_skip));
+   st->rec_depth = 0;
+   st->rec_limit = PP_DEFAULT_RECURSION_LIMIT;
 	return st;
 }
 
@@ -30,9 +34,10 @@ R_API void pp_init(PPState *st) {
 	if (!st) {
 		return;
 	}
-	pp_clear_defines (st);
-	st->if_count = 0;
-	memset (st->if_skip, 0, sizeof (st->if_skip));
+   pp_clear_defines (st);
+   st->if_count = 0;
+   memset (st->if_skip, 0, sizeof (st->if_skip));
+   st->rec_depth = 0;
 }
 
 // Finalize a PPState object (clears defines)
@@ -117,12 +122,16 @@ static bool pp_eval_defined(PPState *st, const char *p, const char **endptr) {
 }
 
 R_API char *pp_preprocess(PPState *st, const char *source) {
-	if (!st || !source) {
-		return NULL;
-	}
+   if (!st || !source) {
+       return NULL;
+   }
+   if (st->rec_depth >= st->rec_limit) {
+       return strdup("");
+   }
+   st->rec_depth++;
 	memset (st->if_skip, 0, sizeof(st->if_skip));
 	st->if_count = 0;
-	RStrBuf *out = r_strbuf_new("");
+   RStrBuf *out = r_strbuf_new("");
 	const char *p = source;
 	const char *end = source + strlen(source);
 	while (p < end) {
@@ -256,5 +265,7 @@ R_API char *pp_preprocess(PPState *st, const char *source) {
 		}
 		p = line_end + (newline ? 1 : 0);
 	}
-	return r_strbuf_drain (out);
+   char *result = r_strbuf_drain (out);
+   st->rec_depth--;
+   return result;
 }
