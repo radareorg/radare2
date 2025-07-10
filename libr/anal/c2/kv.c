@@ -1182,11 +1182,11 @@ static bool tryparse(KVCParser *kvc, const char *word, const char *type, KVCPars
 }
 
 R_IPI char* kvc_parse(const char* header_content, char **errmsg) {
-	char *pre = strdup (header_content); // pp_preprocess (header_content);
-	eprintf ("-pre- %s\n", pre);
+	// char *pre = strdup (header_content); // pp_preprocess (header_content);
+	char *pre = strdup (pp_preprocess (header_content));
 	KVCParser _kvc = {0};
 	KVCParser *kvc = &_kvc;
-	kvcparser_init(&_kvc, pre);
+	kvcparser_init (&_kvc, pre);
 	while (!kvctoken_eof (kvc->s)) {
 		skip_spaces (kvc);
 		const char *word = kvc_peekn (kvc, 6);

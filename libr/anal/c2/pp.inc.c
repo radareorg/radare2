@@ -224,7 +224,5 @@ R_API char *pp_preprocess(const char *source) {
 		}
 		p = line_end + (newline ? 1 : 0);
 	}
-	char *result = r_strbuf_drain (out);
-	r_strbuf_free (out);
-	return result;
+	return r_strbuf_drain (out);
 }
