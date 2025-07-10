@@ -1,0 +1,7 @@
+main=func
+func.main.arg.0=long,cow
+func.main.cc=cdecl
+func.main=cow
+func.main.ret=int
+func.main.args=1
+

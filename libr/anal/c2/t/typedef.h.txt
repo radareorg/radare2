@@ -5,5 +5,5 @@ struct.foo.b=int,4,0
 struct.foo.b.meta=0
 typedef.bar=struct foo
 struct.foo=a,b
-bar=typedef
+bar=struct
 

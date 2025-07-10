@@ -1,9 +1,9 @@
-anon_struct_1=struct
-struct.anon_struct_1.hello=char *,0,0
-struct.anon_struct_1.hello.meta=0
-struct.anon_struct_1.world=int,4,0
-struct.anon_struct_1.world.meta=0
-typedef.Bar=struct anon_struct_1
-struct.anon_struct_1=hello,world
-Bar=typedef
+Bar=struct
+struct.Bar.hello=char *,0,0
+struct.Bar.hello.meta=0
+struct.Bar.world=int,4,0
+struct.Bar.world.meta=0
+typedef.Bar=struct Bar
+struct.Bar=hello,world
+Bar=struct
 

@@ -11,4 +11,8 @@ struct.foo.gap=char,0,0
 struct.foo.bar=int,4,0
 struct.foo.bar.@.aligned=4
 struct.foo=gap,bar
+Row=enum
+enum.Row.ROW=0x7b
+enum.Row.0x7b=ROW
+enum.Row=ROW
 

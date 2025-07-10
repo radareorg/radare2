@@ -45,9 +45,9 @@ EXPECT=<<EOF
 pf [3]d[4]dd x y z
 struct
 x,y,z
-int32_t,0,3
-int32_t,12,4
-int32_t,28,0
+int,0,3
+int,12,4
+int,28,0
 EOF
 RUN
 
@@ -59,16 +59,15 @@ tk~easy,humans,days,tokyo,dangerous
 EOF
 EXPECT=<<EOF
 dangerous=struct
-days=typedef
 easy_prey=typedef
 humans=typedef
 struct.dangerous=neo
 struct.dangerous.neo=uint64_t,0,0
-struct.dangerous.neo.meta=13
-tokyo=typedef
+struct.dangerous.neo.meta=0
+tokyo=struct
 typedef.days=struct dangerous
 typedef.easy_prey=uint32_t
-typedef.humans=uint32_t
+typedef.humans=easy_prey
 typedef.tokyo=struct dangerous
 EOF
 RUN

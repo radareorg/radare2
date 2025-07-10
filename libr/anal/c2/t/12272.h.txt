@@ -1,0 +1,24 @@
+A=struct
+struct.A.num=float,0,0
+struct.A=num
+A=struct
+struct.A.num=int,0,0
+struct.A.num.meta=0
+struct.A.num2=double,4,0
+struct.A.num2.meta=0
+typedef.A=struct A
+struct.A=num,num2
+A=struct
+B=struct
+struct.B.ch=char,0,0
+struct.B.ch.meta=0
+typedef.B=struct B
+struct.B=ch
+B=struct
+O=struct
+struct.O.ptr=char *,0,0
+struct.O.ptr.meta=0
+typedef.O=struct O
+struct.O=ptr
+O=struct
+
