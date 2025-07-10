@@ -48,11 +48,17 @@ Diff imports | fields | symbols | classes | methods.
 .B -j
 Output in JSON format.
 .TP
+.B -l [addr]
+Specify final offset (length) for diffing, can use A:B format to specify different lengths for each file.
+.TP
 .B -m [mode]
 Choose the graph output mode (aditsjJ).
 .TP
 .B -n
 Count number of changes
+.TP
+.B -o [addr]
+Specify initial offset for diffing, can use A:B format to specify different offsets for each file.
 .TP
 .B -O
 Code diffing with opcode bytes only.
@@ -145,6 +151,15 @@ radiff2 -u bin1 bin2
 .TP
 .B "Comparing the opcodes of two functions"
 radiff2 -O bin1 bin2
+.TP
+.B "Compare specific sections of binaries with custom offsets"
+radiff2 -o 0x1000 bin1 bin2
+.TP
+.B "Compare different sections with different offsets"
+radiff2 -o 0x1000:0x2000 bin1 bin2
+.TP
+.B "Compare specific lengths from given offsets"
+radiff2 -o 0x1000 -l 0x500 bin1 bin2
 
 .SH 'C' COMMAND IN R2
 The 'c' command in r2 is used for various comparison operations within data inside the same file. Here are some examples of its usage:
