@@ -1,9 +1,4 @@
 /* Basic C Preprocessor implementation using KVCToken and r_strbuf */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include "r_util.h"
 
 enum { PP_DEFAULT_CAP = 16, PP_MAX_IF_NEST = 64 };
 
@@ -80,7 +75,7 @@ static bool pp_eval_defined(const char *p, const char **endptr) {
 	if (*p == ')') { p++; }
 	if (endptr) { *endptr = p; }
 	bool def = pp_get_define(name) != NULL;
-	free(name);
+	free (name);
 	return def;
 }
 
@@ -129,15 +124,15 @@ R_API char *pp_preprocess(const char *source) {
 				size_t i;
 				for (i = 0; i < st->count; i++) {
 					if (!strcmp(st->keys[i], name)) {
-						free(st->keys[i]);
-						free(st->values[i]);
+						free (st->keys[i]);
+						free (st->values[i]);
 						memmove(&st->keys[i], &st->keys[i+1], (st->count - i - 1) * sizeof(char*));
 						memmove(&st->values[i], &st->values[i+1], (st->count - i - 1) * sizeof(char*));
 						st->count--;
 						break;
 					}
 				}
-				free(name);
+				free (name);
 			} else if ((!strcmp(dir, "ifdef") || !strcmp(dir, "ifndef"))) {
 				while (q < line_end && isspace((unsigned char)*q)) { q++; }
 				const char *name_start = q;
@@ -145,7 +140,7 @@ R_API char *pp_preprocess(const char *source) {
 				size_t name_len = q - name_start;
 				char *name = r_str_ndup(name_start, name_len);
 				bool defined = pp_get_define(name) != NULL;
-				free(name);
+				free (name);
 				bool cond = !strcmp(dir, "ifdef") ? defined : !defined;
 				bool outer = st->if_count ? st->if_skip[st->if_count-1] : false;
 				bool new_skip = outer || !cond;
@@ -183,18 +178,16 @@ R_API char *pp_preprocess(const char *source) {
 					char *fcontent = r_file_slurp (filename, NULL);
 					if (fcontent) {
 						char *inc_pp = pp_preprocess(fcontent);
-						r_strbuf_append(out, inc_pp);
-						free(inc_pp);
-						free(fcontent);
+						r_strbuf_append (out, inc_pp);
+						free (inc_pp);
+						free (fcontent);
 					}
-					free(filename);
+					free (filename);
 				}
 			}
-			if (!skip) {
-				r_strbuf_append_n(out, line_start, line_end - line_start);
-				if (newline) { r_strbuf_append(out, "\n"); }
-			} else {
-				if (newline) { r_strbuf_append(out, "\n"); }
+			// Remove directive lines starting with '#' from output, preserve line breaks
+			if (newline) {
+				r_strbuf_append (out, "\n");
 			}
 		} else {
 			if (!skip) {

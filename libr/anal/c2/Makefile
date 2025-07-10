@@ -1,6 +1,6 @@
 TESTS=lowerdash test test-enum a c b invalid j macho
 TESTS+=union crash vararg typedef align books dotfun
-TESTS+=typestr fcnptr anonworld
+TESTS+=typestr fcnptr anonworld pre
 
 all:
 	rm -f a.out
