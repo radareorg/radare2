@@ -1406,6 +1406,30 @@ R_API void r_core_autocomplete(RCore * R_NULLABLE core, RLineCompletion *complet
 			r_line_completion_clear (completion);
 			char *s = r_core_cmd_strf (core, "%s?", buf->data);
 			eprintf ("%s%s\n%s", core->cons->line->prompt, buf->data, s);
+			RList *list = r_str_split_list (s, "\n", 0);
+			RListIter *iter;
+			char *line;
+			r_list_foreach (list, iter, line) {
+				char *bracket = strstr (line, " [");
+				if (bracket) {
+					if (r_str_startswith (bracket, " [addr]")) {
+						char *s = strchr (line, '[');
+						*s = 0;
+						*bracket = 0;
+						const char *cmd = line;
+						r_core_cmdf (core, "!!!-%s", cmd);
+						r_core_cmdf (core, "!!!%s $flag", cmd);
+					} else if (r_str_startswith (bracket, " [file]")) {
+						char *s = strchr (line, '[');
+						*s = 0;
+						*bracket = 0;
+						const char *cmd = line;
+						r_core_cmdf (core, "!!!-%s", cmd);
+						r_core_cmdf (core, "!!!%s $file", cmd);
+					}
+				}
+			}
+			r_list_free (list);
 			free (s);
 			return;
 		}
