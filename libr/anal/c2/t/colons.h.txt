@@ -1,0 +1,13 @@
+foo=func
+func.foo.arg.0=int,bar
+func.foo.cc=cdecl
+func.foo=bar
+func.foo.ret=int
+func.foo.args=1
+bar=func
+func.bar.arg.0=long,cow
+func.bar.cc=cdecl
+func.bar=cow
+func.bar.ret=long
+func.bar.args=1
+
