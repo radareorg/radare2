@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include "minunit.h"
 
+#define BROKEN 0
+
 static bool test_buf(RBuffer *b) {
 	ut8 buffer[1024] = {0};
 	const char *content = "Something To\nSay Here..";
@@ -227,6 +229,7 @@ static bool test_r_buf_io(void) {
 	mu_end;
 }
 
+#if BROKEN
 static bool test_r_buf_io2(void) {
 	const char *content = "Something To\nSay Here..";
 	const int length = strlen (content); // 23
@@ -254,6 +257,8 @@ static bool test_r_buf_io2(void) {
 	r_io_free (io);
 	mu_end;
 }
+#endif
+
 static bool test_r_buf_sparse(void) {
 	const char content[] = "Something To\nSay Here..";
 	const int length = strlen (content); // 23
@@ -459,8 +464,11 @@ int all_tests(void) {
 	mu_run_test (test_r_buf_mmap);
 	mu_run_test (test_r_buf_with_buf);
 	mu_run_test (test_r_buf_slice);
+	mu_run_test (test_r_buf_file);
 	mu_run_test (test_r_buf_io);
-//	mu_run_test (test_r_buf_io2); // BROKEN
+#if BROKEN
+	mu_run_test (test_r_buf_io2);
+#endif
 	mu_run_test (test_r_buf_sparse);
 	mu_run_test (test_r_buf_sparse2);
 	mu_run_test (test_r_buf_bytes_steal);
