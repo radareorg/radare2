@@ -9,7 +9,7 @@ WRAP_wrap_git_depth:=1
 .PHONY: binaryninja
 
 binaryninja:
-	if [ ! -d "binaryninja" -o "c40a5f04deec68d388b2072dc42b29141089f9ce" != "$(shell cd binaryninja && git rev-parse HEAD)" ]; then rm -rf "binaryninja"; ${MAKE} binaryninja_all; fi
+	if [ ! -d "binaryninja" -o "c40a5f04deec68d388b2072dc42b29141089f9ce" != "$(shell cd binaryninja 2>/dev/null && git rev-parse HEAD)" ]; then rm -rf "binaryninja"; ${MAKE} binaryninja_all; fi
 
 binaryninja_all:
 	git clone --no-checkout  https://github.com/Vector35/binaryninja-api binaryninja
