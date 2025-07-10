@@ -557,8 +557,34 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 		}
 		// Here we have a definition: typedef struct [Tag]? { ... } Alias;
 		kvc_getch (kvc);  // Consume the '{'
-		char *struct_tag = has_tag ? kvctoken_tostring (tag) :
-			r_str_newf ("anon_struct_%d", kvc->line);
+		char *struct_tag = NULL;
+		if (has_tag) {
+			struct_tag = kvctoken_tostring (tag);
+		} else {
+			// Attempt to use typedef alias as struct name for anonymous struct
+			char *alias_name = NULL;
+			const char *closing = kvc_find (kvc, "}");
+			if (closing) {
+				const char *p = closing + 1;
+				// Skip whitespace and semicolons
+				while (p < kvc->s.b && (isspace ((unsigned char)*p) || *p == ';')) {
+					p++;
+				}
+				const char *start = p;
+				while (p < kvc->s.b && (isalnum ((unsigned char)*p) || *p == '_')) {
+					p++;
+				}
+				if (p > start) {
+					KVCToken alias_tok = { .a = start, .b = p };
+					alias_name = kvctoken_tostring (alias_tok);
+				}
+			}
+			if (alias_name) {
+				struct_tag = alias_name;
+			} else {
+				struct_tag = r_str_newf ("anon_struct_%d", kvc->line);
+			}
+		}
 		/* Begin output for the struct definition */
 		// r_strbuf_appendf (kvc->sb, "struct.%s=struct\n", struct_tag);
 		r_strbuf_appendf (kvc->sb, "%s=struct\n", struct_tag);
