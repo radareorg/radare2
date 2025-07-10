@@ -404,7 +404,9 @@ R_API RMmap *r_file_mmap(const char *file, bool rw, ut64 base) {
 	m->fd = fd;
 	m->len = fd != -1? lseek (fd, (off_t)0, SEEK_END) : 0;
 	m->filename = strdup (file);
-	lseek (fd, 0, SEEK_SET);
+	if (fd != -1 && lseek (fd, 0, SEEK_SET) == -1) {
+		R_LOG_ERROR ("Failed to seek to beginning of file");
+	}
 
 	if (m->fd == -1) {
 		return m;
