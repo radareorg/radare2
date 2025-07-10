@@ -45,9 +45,9 @@ EXPECT=<<EOF
 pf [3]d[4]dd x y z
 struct
 x,y,z
-int32_t,0,3
-int32_t,12,4
-int32_t,28,0
+int,0,3
+int,12,4
+int,28,0
 EOF
 RUN
 
