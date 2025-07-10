@@ -187,7 +187,7 @@ R_API char *pp_preprocess(PPState *st, const char *source) {
 				while (q < line_end && is_identifier_char(*q)) { q++; }
 				size_t name_len = q - name_start;
 				char *name = r_str_ndup(name_start, name_len);
-				bool defined = pp_get_define(st, name) != NULL;
+				bool defined = pp_get_define (st, name) != NULL;
 				free (name);
 				bool cond = !strcmp (dir, "ifdef") ? defined : !defined;
 				bool outer = st->if_count ? st->if_skip[st->if_count-1] : false;
@@ -214,6 +214,11 @@ R_API char *pp_preprocess(PPState *st, const char *source) {
 				st->if_skip[st->if_count-1] = new_skip;
 			} else if (!strcmp (dir, "endif") && st->if_count) {
 				st->if_count--;
+			} else if (!strcmp (dir, "warning") && !skip) {
+				R_LOG_WARN ("cpp: %s", q);
+			} else if (!strcmp (dir, "error") && !skip) {
+				R_LOG_ERROR ("cpp: %s", q);
+				goto failure;
 			} else if (!strcmp (dir, "include") && !skip) {
 				while (q < line_end && isspace ((unsigned char)*q)) { q++; }
 				char delim = *q;
@@ -268,4 +273,7 @@ R_API char *pp_preprocess(PPState *st, const char *source) {
 	char *result = r_strbuf_drain (out);
 	st->rec_depth--;
 	return result;
+failure:
+	r_strbuf_free (out);
+	return NULL;
 }

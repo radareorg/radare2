@@ -1186,6 +1186,10 @@ R_IPI char* kvc_parse(const char* header_content, char **errmsg) {
 	// Initialize a preprocessing state for this parse
 	PPState *pps = pp_new ();
 	char *pre = pp_preprocess (pps, header_content);
+	if (!pre) {
+		// preprocessor error happened
+		return NULL;
+	}
 	pp_free (pps);
 	KVCParser _kvc = {0};
 	KVCParser *kvc = &_kvc;
@@ -1241,7 +1245,7 @@ R_IPI char* kvc_parse(const char* header_content, char **errmsg) {
 		kvc->sb = NULL;
 	}
 	kvcparser_fini (kvc);
-	free(pre);
+	free (pre);
 	return res;
 }
 
