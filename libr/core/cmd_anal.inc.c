@@ -4905,7 +4905,7 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 						}
 						// recursively follow fcn->refs again and again
 						if (!r_anal_get_function_at (core->anal, raddr)) {
-							// do not reanalize if theres a function already there
+							// do not reanalyze if theres a function already there
 							r_core_anal_fcn (core, raddr, f->addr, R_ANAL_REF_TYPE_CALL, depth - 1);
 						}
 					}
@@ -14500,7 +14500,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 			logline (core, 96, "Enable anal.types.constraint for experimental type propagation");
 			r_config_set_b (core->config, "anal.types.constraint", true);
 			if (input[2] == 'a') { // "aaaa"
-				logline (core, 97, "Reanalizing graph references to adjust functions count (aarr)");
+				logline (core, 97, "Reanalyzing graph references to adjust functions count (aarr)");
 				r_core_cmd_call (core, "aarr");
 				// const char *mode = core->anal->opt.slow? "slow": "fast";
 				logline (core, 98, "Autoname all functions (.afna@@c:afla)");
