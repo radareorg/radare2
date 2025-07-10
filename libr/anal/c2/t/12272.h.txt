@@ -1,0 +1,7 @@
+A=struct
+struct.A.num=float,0,0
+struct.A=num
+
+B=struct
+struct.B.num=float,0,0
+struct.B=num
