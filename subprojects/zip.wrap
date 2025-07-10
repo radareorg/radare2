@@ -1,0 +1,6 @@
+[wrap-git]
+url = https://github.com/nih-at/libzip.git
+revision = f30f5290de485348442d168cd7b2eb714d1f20f9
+directory = zip
+patch_directory = zip
+depth = 1

@@ -7,7 +7,7 @@ OBJS=${STATIC_OBJS}
 OBJS+=io.o io_plugin.o io_map.o io_desc.o io_cache.o p_cache.o io_stream.o
 OBJS+=io_bank.o io_submap.o undo.o ioutils.o io_fd.o io_memory.o
 
-CFLAGS+=-Wall -DR2_PLUGIN_INCORE
+CFLAGS+=-Wall -DR2_PLUGIN_INCORE -I$(SPRJ)/zip/ -I$(SPRJ)/zip/lib
 
 include ../socket/deps.mk
 include $(SHLR)/ar/deps.mk

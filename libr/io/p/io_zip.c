@@ -2,10 +2,12 @@
 
 // TODO: wrap with r_sandbox api
 
-#include <r_io.h>
 #include <r_lib.h>
+#include <r_io.h>
 #include <r_cons.h>
+
 #include <zip.h>
+
 
 typedef enum {
 	R_IO_PARENT_ZIP = 0x0001,
@@ -160,7 +162,7 @@ static RList * r_io_zip_get_files(char *archivename, ut32 perm, int mode, int rw
 			zip_close (za);
 			return NULL;
 		}
-		num_entries = zip_get_num_files (za);
+		num_entries = zip_get_num_entries (za, 0);
 		for (i = 0; i < num_entries; i++) {
 			zip_stat_init (&sb);
 			zip_stat_index (za, i, 0, &sb);
@@ -191,11 +193,11 @@ int r_io_zip_flush_file(RIOZipFileObj *zfo) {
 	const ut8 *tmp = r_buf_data (zfo->b, &tmpsz);
 	struct zip_source *s = zip_source_buffer (za, tmp, tmpsz, 0);
 	if (s && zfo->entry != -1) {
-		if (zip_replace(za, zfo->entry, s) == 0) {
+		if (zip_file_replace(za, zfo->entry, s, 0) == 0) {
 			res = true;
 		}
 	} else if (s && zfo->name) {
-		if (zip_add (za, zfo->name, s) == 0) {
+		if (zip_file_add (za, zfo->name, s, 0) == 0) {
 			zfo->entry = zip_name_locate (za, zfo->name, 0);
 			res = true;
 		}
@@ -244,7 +246,7 @@ static RIOZipFileObj* alloc_zipfileobj(const char *archivename, const char *file
 	if (!za) {
 		return NULL;
 	}
-	ut64 i, num_entries = zip_get_num_files (za);
+	ut64 i, num_entries = zip_get_num_entries (za, 0);
 
 	for (i = 0; i < num_entries; i++) {
 		zip_stat_init (&sb);
@@ -304,7 +306,7 @@ static RList *r_io_zip_open_many(RIO *io, const char *file, int rw, int mode) {
 		free (zip_uri);
 		return NULL;
 	}
-	ut64 i, num_entries = zip_get_num_files (za);
+	ut64 i, num_entries = zip_get_num_entries (za, 0);
 	for (i = 0; i < num_entries; i++) {
 		zip_stat_init (&sb);
 		zip_stat_index (za, i, 0, &sb);
@@ -346,7 +348,7 @@ static char * r_io_zip_get_by_file_idx(const char * archivename, const char *idx
 		zip_close (za);
 		return filename;
 	}
-	num_entries = zip_get_num_files (za);
+	num_entries = zip_get_num_entries (za, 0);
 	file_idx = atoi (idx);
 	if ((file_idx == 0 && idx[0] != '0') || (file_idx >= num_entries)) {
 		zip_close (za);

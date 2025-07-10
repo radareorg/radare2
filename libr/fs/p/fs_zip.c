@@ -1,9 +1,10 @@
 /* radare - LGPL - Copyright 2022-2025 - pancake */
 
-#include <r_fs.h>
 #include <r_lib.h>
-#include <zip.h>
+#include <r_fs.h>
 #include <sys/stat.h>
+
+#include <zip.h>
 
 static RFSFile *fs_zip_open(RFSRoot *root, const char *path, bool create) {
 	R_LOG_INFO ("zip.open (%s)", path);
@@ -139,7 +140,7 @@ static RList *fs_zip_dir(RFSRoot *root, const char *path, R_UNUSED int view) {
 		free (buf);
 		return NULL;
 	}
-	int num_entries = zip_get_num_files (za);
+	int num_entries = zip_get_num_entries (za, 0);
 	int i;
 	bool hasdir = false;
 	bool hasfailed = false;

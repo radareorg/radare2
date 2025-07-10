@@ -3,7 +3,7 @@ OBJ_ZIP=fs_zip.o
 STATIC_OBJ+=${OBJ_ZIP}
 TARGET_ZIP=fs_zip.${EXT_SO}
 
-CFLAGS+=-I../../shlr/zip/include
+CFLAGS+=-I$(SPRJ)/zip/lib -I$(SPRJ)/zip
 ifeq (${WITHPIC},0)
 LINKFLAGS+=../../util/libr_util.a
 LINKFLAGS+=../../io/libr_io.a
