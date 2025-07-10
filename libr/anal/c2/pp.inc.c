@@ -3,13 +3,13 @@
 enum { PP_DEFAULT_CAP = 16, PP_MAX_IF_NEST = 64, PP_DEFAULT_RECURSION_LIMIT = 16 };
 
 typedef struct {
-   char **keys;
-   char **values;
-   size_t count, cap;
-   bool if_skip[PP_MAX_IF_NEST];
-   size_t if_count;
-   size_t rec_depth;
-   size_t rec_limit;
+	char **keys;
+	char **values;
+	size_t count, cap;
+	bool if_skip[PP_MAX_IF_NEST];
+	size_t if_count;
+	size_t rec_depth;
+	size_t rec_limit;
 } PPState;
 // Forward declaration for clear function
 static void pp_clear_defines(PPState *st);
@@ -22,10 +22,10 @@ R_API PPState *pp_new(void) {
 	st->keys = NULL;
 	st->values = NULL;
 	st->count = st->cap = 0;
-   st->if_count = 0;
-   memset (st->if_skip, 0, sizeof (st->if_skip));
-   st->rec_depth = 0;
-   st->rec_limit = PP_DEFAULT_RECURSION_LIMIT;
+	st->if_count = 0;
+	memset (st->if_skip, 0, sizeof (st->if_skip));
+	st->rec_depth = 0;
+	st->rec_limit = PP_DEFAULT_RECURSION_LIMIT;
 	return st;
 }
 
@@ -34,10 +34,10 @@ R_API void pp_init(PPState *st) {
 	if (!st) {
 		return;
 	}
-   pp_clear_defines (st);
-   st->if_count = 0;
-   memset (st->if_skip, 0, sizeof (st->if_skip));
-   st->rec_depth = 0;
+	pp_clear_defines (st);
+	st->if_count = 0;
+	memset (st->if_skip, 0, sizeof (st->if_skip));
+	st->rec_depth = 0;
 }
 
 // Finalize a PPState object (clears defines)
@@ -70,7 +70,7 @@ static void pp_clear_defines(PPState *st) {
 R_API void pp_set_define(PPState *st, const char *name, const char *value) {
 	size_t i;
 	for (i = 0; i < st->count; i++) {
-		if (!strcmp(st->keys[i], name)) {
+		if (!strcmp (st->keys[i], name)) {
 			free(st->values[i]);
 			st->values[i] = strdup(value);
 			return;
@@ -108,12 +108,12 @@ static bool pp_eval_defined(PPState *st, const char *p, const char **endptr) {
 		return false;
 	}
 	p++;
-	while (isspace((unsigned char)*p)) { p++; }
+	while (isspace ((unsigned char)*p)) { p++; }
 	const char *name_start = p;
-	while (is_identifier_char(*p)) { p++; }
+	while (is_identifier_char (*p)) { p++; }
 	size_t name_len = p - name_start;
-	char *name = r_str_ndup(name_start, name_len);
-	while (isspace((unsigned char)*p)) { p++; }
+	char *name = r_str_ndup (name_start, name_len);
+	while (isspace ((unsigned char)*p)) { p++; }
 	if (*p == ')') { p++; }
 	if (endptr) { *endptr = p; }
 	bool def = pp_get_define(st, name) != NULL;
@@ -122,16 +122,16 @@ static bool pp_eval_defined(PPState *st, const char *p, const char **endptr) {
 }
 
 R_API char *pp_preprocess(PPState *st, const char *source) {
-   if (!st || !source) {
-       return NULL;
-   }
-   if (st->rec_depth >= st->rec_limit) {
-       return strdup("");
-   }
-   st->rec_depth++;
-	memset (st->if_skip, 0, sizeof(st->if_skip));
+	if (!st || !source) {
+		return NULL;
+	}
+	if (st->rec_depth >= st->rec_limit) {
+		return strdup ("");
+	}
+	st->rec_depth++;
+	memset (st->if_skip, 0, sizeof (st->if_skip));
 	st->if_count = 0;
-   RStrBuf *out = r_strbuf_new("");
+	RStrBuf *out = r_strbuf_new("");
 	const char *p = source;
 	const char *end = source + strlen(source);
 	while (p < end) {
@@ -143,79 +143,79 @@ R_API char *pp_preprocess(PPState *st, const char *source) {
 		bool skip = st->if_count ? st->if_skip[st->if_count-1] : false;
 		if (q < line_end && *q == '#') {
 			q++;
-			while (q < line_end && isspace((unsigned char)*q)) { q++; }
+			while (q < line_end && isspace ((unsigned char)*q)) { q++; }
 			const char *dir_start = q;
 			while (q < line_end && isalpha((unsigned char)*q)) { q++; }
 			size_t dir_len = q - dir_start;
 			char dir[16] = {0};
-			if (dir_len < sizeof(dir)) { memcpy(dir, dir_start, dir_len); }
-			if (!strcmp(dir, "define") && !skip) {
-				while (q < line_end && isspace((unsigned char)*q)) { q++; }
+			if (dir_len < sizeof (dir)) { memcpy (dir, dir_start, dir_len); }
+			if (!strcmp (dir, "define") && !skip) {
+				while (q < line_end && isspace ((unsigned char)*q)) { q++; }
 				const char *name_start = q;
-				while (q < line_end && is_identifier_char(*q)) { q++; }
+				while (q < line_end && is_identifier_char (*q)) { q++; }
 				size_t name_len = q - name_start;
-				char *name = r_str_ndup(name_start, name_len);
-				while (q < line_end && isspace((unsigned char)*q)) { q++; }
+				char *name = r_str_ndup (name_start, name_len);
+				while (q < line_end && isspace ((unsigned char)*q)) { q++; }
 				const char *val_start = q;
 				size_t val_len = line_end - q;
-				char *value = r_str_ndup(val_start, val_len);
+				char *value = r_str_ndup (val_start, val_len);
 				r_str_trim (value);
-				pp_set_define(st, name, value);
+				pp_set_define (st, name, value);
 				free (name);
 				free (value);
-			} else if (!strcmp(dir, "undef") && !skip) {
-				while (q < line_end && isspace((unsigned char)*q)) { q++; }
+			} else if (!strcmp (dir, "undef") && !skip) {
+				while (q < line_end && isspace ((unsigned char)*q)) { q++; }
 				const char *name_start = q;
 				while (q < line_end && is_identifier_char(*q)) { q++; }
 				size_t name_len = q - name_start;
 				char *name = r_str_ndup(name_start, name_len);
 				size_t i;
 				for (i = 0; i < st->count; i++) {
-					if (!strcmp(st->keys[i], name)) {
+					if (!strcmp (st->keys[i], name)) {
 						free (st->keys[i]);
 						free (st->values[i]);
-						memmove(&st->keys[i], &st->keys[i+1], (st->count - i - 1) * sizeof(char*));
-						memmove(&st->values[i], &st->values[i+1], (st->count - i - 1) * sizeof(char*));
+						memmove (&st->keys[i], &st->keys[i+1], (st->count - i - 1) * sizeof (char*));
+						memmove (&st->values[i], &st->values[i+1], (st->count - i - 1) * sizeof (char*));
 						st->count--;
 						break;
 					}
 				}
 				free (name);
-			} else if ((!strcmp(dir, "ifdef") || !strcmp(dir, "ifndef"))) {
-				while (q < line_end && isspace((unsigned char)*q)) { q++; }
+			} else if ((!strcmp (dir, "ifdef") || !strcmp (dir, "ifndef"))) {
+				while (q < line_end && isspace ((unsigned char)*q)) { q++; }
 				const char *name_start = q;
 				while (q < line_end && is_identifier_char(*q)) { q++; }
 				size_t name_len = q - name_start;
 				char *name = r_str_ndup(name_start, name_len);
 				bool defined = pp_get_define(st, name) != NULL;
 				free (name);
-				bool cond = !strcmp(dir, "ifdef") ? defined : !defined;
+				bool cond = !strcmp (dir, "ifdef") ? defined : !defined;
 				bool outer = st->if_count ? st->if_skip[st->if_count-1] : false;
 				bool new_skip = outer || !cond;
 				if (st->if_count < PP_MAX_IF_NEST) { st->if_skip[st->if_count++] = new_skip; }
-			} else if (!strcmp(dir, "if")) {
-				while (q < line_end && isspace((unsigned char)*q)) { q++; }
+			} else if (!strcmp (dir, "if")) {
+				while (q < line_end && isspace ((unsigned char)*q)) { q++; }
 				bool cond = false;
-				if (!strncmp(q, "defined", 7)) { cond = pp_eval_defined(st, q, &q); }
+				if (!strncmp (q, "defined", 7)) { cond = pp_eval_defined(st, q, &q); }
 				bool outer = st->if_count ? st->if_skip[st->if_count-1] : false;
 				bool new_skip = outer || !cond;
 				if (st->if_count < PP_MAX_IF_NEST) { st->if_skip[st->if_count++] = new_skip; }
-			} else if (!strcmp(dir, "elif") && st->if_count) {
+			} else if (!strcmp (dir, "elif") && st->if_count) {
 				bool outer = st->if_count > 1 ? st->if_skip[st->if_count-2] : false;
-				while (q < line_end && isspace((unsigned char)*q)) { q++; }
+				while (q < line_end && isspace ((unsigned char)*q)) { q++; }
 				bool cond = false;
-				if (!strncmp(q, "defined", 7)) { cond = pp_eval_defined(st, q, &q); }
+				if (!strncmp (q, "defined", 7)) { cond = pp_eval_defined(st, q, &q); }
 				bool new_skip = outer || !cond;
 				st->if_skip[st->if_count-1] = new_skip;
-			} else if (!strcmp(dir, "else") && st->if_count) {
+			} else if (!strcmp (dir, "else") && st->if_count) {
 				bool outer = st->if_count > 1 ? st->if_skip[st->if_count-2] : false;
 				bool prev = st->if_skip[st->if_count-1];
 				bool new_skip = outer || (!prev && !outer);
 				st->if_skip[st->if_count-1] = new_skip;
-			} else if (!strcmp(dir, "endif") && st->if_count) {
+			} else if (!strcmp (dir, "endif") && st->if_count) {
 				st->if_count--;
-			} else if (!strcmp(dir, "include") && !skip) {
-				while (q < line_end && isspace((unsigned char)*q)) { q++; }
+			} else if (!strcmp (dir, "include") && !skip) {
+				while (q < line_end && isspace ((unsigned char)*q)) { q++; }
 				char delim = *q;
 				if (delim == '"' || delim == '<') {
 					q++;
@@ -265,7 +265,7 @@ R_API char *pp_preprocess(PPState *st, const char *source) {
 		}
 		p = line_end + (newline ? 1 : 0);
 	}
-   char *result = r_strbuf_drain (out);
-   st->rec_depth--;
-   return result;
+	char *result = r_strbuf_drain (out);
+	st->rec_depth--;
+	return result;
 }
