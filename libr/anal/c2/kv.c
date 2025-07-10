@@ -47,10 +47,12 @@ static bool kvctoken_equals(KVCToken a, KVCToken b) {
 }
 
 static void kvctoken_trim(KVCToken *t) {
-	while (isspace (*t->a)) {
+	// Skip leading whitespace and semicolons
+	while (isspace (*t->a) || *t->a == ';') {
 		t->a++;
 	}
-	while (t->b > t->a && isspace (t->b[-1])) {
+	// Skip trailing whitespace and semicolons
+	while (t->b > t->a && (isspace (t->b[-1]) || t->b[-1] == ';')) {
 		t->b--;
 	}
 }
@@ -87,6 +89,23 @@ static void kvc_error(KVCParser *kvc, const char *msg) {
 }
 
 static void massage_type(char **s) {
+	// Skip leading semicolons
+	char *str = *s;
+	while (*str == ';') {
+		str++;
+	}
+	// Skip whitespace after semicolons
+	while (isspace(*str)) {
+		str++;
+	}
+
+	if (str != *s) {
+		char *new_str = strdup(str);
+		free(*s);
+		*s = new_str;
+	}
+
+	// Handle asterisks in type
 	char *star = strchr (*s, '*');
 	if (star) {
 		char *ostar = star;
@@ -198,7 +217,7 @@ static void skip_semicolons(KVCParser *kvc) {
 		if (!ch) {
 			break;
 		}
-		if (ch && ch != ';' && !isspace (ch)) {
+		if (ch != ';' && !isspace (ch)) {
 			break;
 		}
 		kvc_getch (kvc);
@@ -1084,11 +1103,7 @@ static bool parse_function(KVCParser *kvc) {
 	fun_parm.b = kvc->s.a;
 	kvc_skipn (kvc, 1);
 	skip_spaces (kvc);
-	char semicolon = kvc_getch (kvc);
-	if (semicolon != ';') {
-		kvc_error (kvc, "Expected ; after function signature");
-		return false;
-	}
+	skip_semicolons (kvc);
 
 	char *fn = kvctoken_tostring (fun_name);
 	char *fr = kvctoken_tostring (fun_rtyp);
