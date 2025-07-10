@@ -1410,22 +1410,18 @@ R_API void r_core_autocomplete(RCore * R_NULLABLE core, RLineCompletion *complet
 			RListIter *iter;
 			char *line;
 			r_list_foreach (list, iter, line) {
-				char *bracket = strstr (line, " [");
-				if (bracket) {
-					if (r_str_startswith (bracket, " [addr]")) {
-						char *s = strchr (line, '[');
-						*s = 0;
-						*bracket = 0;
+				char *bracket_start = strstr (line, " [");
+				if (bracket_start) {
+					if (r_str_startswith (bracket_start, " [addr]") || r_str_startswith (bracket_start, " [file]")) {
+						const char *registered_option = strstr (bracket_start, "addr") ? "!!!%s $flag" : "!!!%s $file";
+						char *cur = strchr (line, '[');
+						if (cur) {
+							*cur = 0;
+						}
+						*bracket_start = 0;
 						const char *cmd = line;
 						r_core_cmdf (core, "!!!-%s", cmd);
-						r_core_cmdf (core, "!!!%s $flag", cmd);
-					} else if (r_str_startswith (bracket, " [file]")) {
-						char *s = strchr (line, '[');
-						*s = 0;
-						*bracket = 0;
-						const char *cmd = line;
-						r_core_cmdf (core, "!!!-%s", cmd);
-						r_core_cmdf (core, "!!!%s $file", cmd);
+						r_core_cmdf (core, registered_option, cmd);
 					}
 				}
 			}
