@@ -31,7 +31,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 You can contact the author at :
-- xxHash source repository: http://code.google.com/p/xxhash/
+- xxHash source repository: https://code.google.com/p/xxhash/
 #endif
 
 #include <stdlib.h>

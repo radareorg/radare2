@@ -276,7 +276,7 @@ static bool r_coff_get_entry_helper(RBinCoffObj *obj, RBinAddr *address) {
 }
 
 /* Try to get a valid entrypoint using the methods outlined in
- * http://ftp.gnu.org/old-gnu/Manuals/ld-2.9.1/html_mono/ld.html#SEC24 */
+ * https://ftp.gnu.org/old-gnu/Manuals/ld-2.9.1/html_mono/ld.html#SEC24 */
 R_IPI RBinAddr *r_coff_get_entry(RBinCoffObj *obj) {
 	RBinAddr *addr = R_NEW0 (RBinAddr);
 	if (!addr) {

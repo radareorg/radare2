@@ -7,7 +7,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-http://www.apache.org/licenses/LICENSE-2.0
+https://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -396,7 +396,7 @@ void dotnet_parse_tilde_2(
 
 	// Number of rows is the number of bits set to 1 in Valid.
 	// Should use this technique:
-	// http://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetKernighan
+	// https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetKernighan
 	for (i = 0; i < 64; i++) {
 		valid_rows += ((tilde_header->Valid >> i) & 0x01);
 	}

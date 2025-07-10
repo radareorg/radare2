@@ -739,7 +739,7 @@ typedef struct {
 	ut8 *data;
 } RBinDwarfBlock;
 
-// http://www.dwarfstd.org/doc/DWARF4.pdf#page=29&zoom=100,0,0
+// https://www.dwarfstd.org/doc/DWARF4.pdf#page=29http://www.dwarfstd.org/doc/DWARF4.pdf#page=29&zoom=100,0,0zoom=100,0,0
 typedef enum {
 	DW_AT_KIND_ADDRESS,
 	DW_AT_KIND_BLOCK,

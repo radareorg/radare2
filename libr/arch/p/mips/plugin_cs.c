@@ -6,7 +6,7 @@
 
 R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out);
 
-// http://www.mrc.uidaho.edu/mrc/people/jff/digital/MIPSir.html
+// https://www.mrc.uidaho.edu/mrc/people/jff/digital/MIPSir.html
 
 #define OPERAND(x) insn->detail->mips.operands[x]
 #define REGID(x) insn->detail->mips.operands[x].reg

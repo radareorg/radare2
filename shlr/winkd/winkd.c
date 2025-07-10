@@ -306,7 +306,7 @@ int winkd_wait_packet(WindCtx *ctx, const uint32_t type, kd_packet_t **p) {
 	return KD_E_OK;
 }
 
-// http://dfrws.org/2007/proceedings/p62-dolan-gavitt.pdf
+// https://dfrws.org/2007/proceedings/p62-dolan-gavitt.pdf
 R_PACKED (
 	typedef struct {
 	char tag[4];
@@ -624,9 +624,9 @@ RList *winkd_list_threads(WindCtx *ctx) {
 #define PTE_LARGEPAGE   0x0080
 #define PTE_PROTOTYPE   0x0400
 
-// http://blogs.msdn.com/b/ntdebugging/archive/2010/02/05/understanding-pte-part-1-let-s-get-physical.aspx
-// http://blogs.msdn.com/b/ntdebugging/archive/2010/04/14/understanding-pte-part2-flags-and-large-pages.aspx
-// http://blogs.msdn.com/b/ntdebugging/archive/2010/06/22/part-3-understanding-pte-non-pae-and-x64.aspx
+// https://blogs.msdn.com/b/ntdebugging/archive/2010/02/05/understanding-pte-part-1-let-s-get-physical.aspx
+// https://blogs.msdn.com/b/ntdebugging/archive/2010/04/14/understanding-pte-part2-flags-and-large-pages.aspx
+// https://blogs.msdn.com/b/ntdebugging/archive/2010/06/22/part-3-understanding-pte-non-pae-and-x64.aspx
 bool winkd_va_to_pa(WindCtx *ctx, ut64 va, ut64 *pa) {
 	ut64 pml4i, pdpi, pdi, pti;
 	ut64 tmp, mask;

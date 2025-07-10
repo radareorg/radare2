@@ -2,7 +2,7 @@
 
 #include <r_bin.h>
 
-// http://code.google.com/p/smali/wiki/TypesMethodsAndFields
+// https://code.google.com/p/smali/wiki/TypesMethodsAndFields
 R_API char *r_bin_demangle_java(const char *str) {
 	const char *w = NULL;
 	int is_array = 0;

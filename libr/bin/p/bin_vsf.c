@@ -1,6 +1,6 @@
 /* radare - LGPL3 - 2015-2019 - riq */
 
-/* VICE Snapshot File loader: http://vice-emu.sourceforge.net/ */
+/* VICE Snapshot File loader: https://vice-emu.sourceforge.net/ */
 
 #include <r_bin.h>
 #include "vsf/vsf_specs.h"

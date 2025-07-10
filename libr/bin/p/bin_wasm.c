@@ -1,6 +1,6 @@
 /* radare2 - MIT - Copyright 2017-2021 - pancake, cgvwzq */
 
-// http://webassembly.org/docs/binary-encoding/#module-structure
+// https://webassembly.org/docs/binary-encoding/#module-structure
 
 #include <r_types.h>
 #include <r_util.h>

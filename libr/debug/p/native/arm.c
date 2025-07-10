@@ -2,7 +2,7 @@
 
 handling exceptions
 
-  http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0311d/I30195.html
+  https://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0311d/I30195.html
 
 //-----//
 
@@ -32,7 +32,7 @@ Flags
 	// - Parity flag (lsb A)
 	// - counter register value != 0 (cx/ecx)
 
-  http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0153n/CHDJEBEC.html
+  https://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0153n/CHDJEBEC.html
 
   Fields:
   =======

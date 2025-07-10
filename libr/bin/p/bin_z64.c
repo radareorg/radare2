@@ -3,7 +3,7 @@
 /*
  * info comes from here.
  * https://github.com/mikeryan/n64dev
- * http://en64.shoutwiki.com/wiki/N64_Memory
+ * https://en64.shoutwiki.com/wiki/N64_Memory
  */
 
 #include <r_types.h>

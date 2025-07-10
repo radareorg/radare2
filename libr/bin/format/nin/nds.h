@@ -1,7 +1,7 @@
 
 /*
-http://dsibrew.org/wiki/NDS_Format
-http://sourceforge.net/p/devkitpro/ndstool/ci/master/tree/source/header.h
+https://dsibrew.org/wiki/NDS_Format
+https://sourceforge.net/p/devkitpro/ndstool/ci/master/tree/source/header.h
 */
 
 #ifndef NIN_NDS_H

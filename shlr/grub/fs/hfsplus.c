@@ -14,10 +14,10 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
+ *  along with GRUB.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-/* HFS+ is documented at http://developer.apple.com/technotes/tn/tn1150.html */
+/* HFS+ is documented at https://developer.apple.com/technotes/tn/tn1150.html */
 
 #include <grub/err.h>
 #include <grub/file.h>
