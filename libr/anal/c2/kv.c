@@ -928,7 +928,8 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 	}
 	// p = skip_until_semicolon (p);
 #endif
-	kvc_find_semicolon (kvc);
+		// Skip trailing semicolon(s) and whitespace after struct definition
+		skip_semicolons (kvc);
 	char *argstr = r_strbuf_drain (args_sb);
 	r_strbuf_appendf (kvc->sb, "%s.%s=%s\n", type, sn, argstr);
 	free (argstr);
@@ -1193,6 +1194,8 @@ R_IPI char* kvc_parse(const char* header_content, char **errmsg) {
 	KVCParser *kvc = &_kvc;
 	kvcparser_init (&_kvc, pre);
 	while (!kvctoken_eof (kvc->s)) {
+		// Skip leftover semicolons before parsing next construct
+		skip_semicolons (kvc);
 		skip_spaces (kvc);
 		const char *word = kvc_peekn (kvc, 6);
 		// eprintf ("WORD (%s)\n", word);
@@ -1217,22 +1220,23 @@ R_IPI char* kvc_parse(const char* header_content, char **errmsg) {
 			}
 #endif
 		}
+        // If a construct (typedef/struct/union/enum) was parsed, skip trailing semicolons and continue
+        if (hasparse) {
+            skip_semicolons (kvc);
+            continue;
+        }
 #if 1
-		// parse function signature
-		if (parse_attributes (kvc)) {
-			continue;
-		}
+        // parse standalone attributes
+        if (parse_attributes (kvc)) {
+            continue;
+        }
 #endif
-		// eprintf ("AFTERWORD(%s)\n", kvc->s.a);
-		skip_spaces (kvc);
-		if (!hasparse) {
-			skip_semicolons (kvc); // hack
-			// PANCAKE eprintf ("[tryfun]--> (%s)\n", kvc->s.a);
-			if (!parse_function (kvc)) {
-				kvc_getch (kvc);
-			}
-			skip_spaces (kvc);
-		}
+        skip_spaces (kvc);
+        // Attempt to parse a function signature
+        if (!parse_function (kvc)) {
+            kvc_getch (kvc);
+        }
+        skip_spaces (kvc);
 	}
 	char *res = NULL;
 	if (kvc->error && errmsg) {

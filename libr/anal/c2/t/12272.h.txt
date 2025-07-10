@@ -1,7 +1,24 @@
 A=struct
 struct.A.num=float,0,0
 struct.A=num
+anon_struct_5=struct
+struct.anon_struct_5.num=int,0,0
+struct.anon_struct_5.num.meta=0
+struct.anon_struct_5.num2=double,4,0
+struct.anon_struct_5.num2.meta=0
+typedef.A=struct anon_struct_5
+struct.anon_struct_5=num,num2
+A=typedef
+anon_struct_10=struct
+struct.anon_struct_10.ch=char,0,0
+struct.anon_struct_10.ch.meta=0
+typedef.B=struct anon_struct_10
+struct.anon_struct_10=ch
+B=typedef
+O=struct
+struct.O.ptr=char *,0,0
+struct.O.ptr.meta=0
+typedef.O=struct O
+struct.O=ptr
+O=typedef
 
-B=struct
-struct.B.num=float,0,0
-struct.B=num
