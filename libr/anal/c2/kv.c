@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2024-2025 - pancake */
 
+ 
 #include <r_util.h>
 
 typedef struct {
@@ -53,6 +54,8 @@ static void kvctoken_trim(KVCToken *t) {
 		t->b--;
 	}
 }
+
+#include "pp.inc.c"
 
 static inline bool kvctoken_eof(KVCToken t) {
 	return t.a >= t.b;
@@ -1179,9 +1182,11 @@ static bool tryparse(KVCParser *kvc, const char *word, const char *type, KVCPars
 }
 
 R_IPI char* kvc_parse(const char* header_content, char **errmsg) {
+	char *pre = strdup (header_content); // pp_preprocess (header_content);
+	eprintf ("-pre- %s\n", pre);
 	KVCParser _kvc = {0};
 	KVCParser *kvc = &_kvc;
-	kvcparser_init (&_kvc, header_content);
+	kvcparser_init(&_kvc, pre);
 	while (!kvctoken_eof (kvc->s)) {
 		skip_spaces (kvc);
 		const char *word = kvc_peekn (kvc, 6);
@@ -1232,6 +1237,7 @@ R_IPI char* kvc_parse(const char* header_content, char **errmsg) {
 		kvc->sb = NULL;
 	}
 	kvcparser_fini (kvc);
+	free(pre);
 	return res;
 }
 
