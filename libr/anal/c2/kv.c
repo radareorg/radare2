@@ -903,7 +903,6 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 				const int rest = av - (off % av);
 				off += rest;
 			}
-			free (align_attribute);
 		}
 		if (md) {
 			dimension = atoi (md);
