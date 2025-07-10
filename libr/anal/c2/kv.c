@@ -823,7 +823,10 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 					r_str_trim (mname);
 				}
 				// argument types
-				const char *args_start = strchr (name_end + 1, '(');
+				const char *args_start = NULL;
+				if (name_end) {
+					args_start = strchr (name_end + 1, '(');
+				}
 				char *args = NULL;
 				if (args_start && args_start < member_type.b) {
 					const char *args_end = member_type.b;

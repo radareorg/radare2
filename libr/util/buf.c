@@ -306,7 +306,7 @@ R_API bool r_buf_append_bytes(RBuffer *b, const ut8 *buf, ut64 length) {
 		// only for mmap imho
 		ut64 oz = r_buf_size (b);
 		buf_resize (b, oz + length);
-		if (r_buf_seek (b, oz, R_BUF_SET) == -1) {
+		if ((st64)oz < 0 || r_buf_seek (b, oz, R_BUF_SET) == -1) {
 			return false;
 		}
 		return r_buf_write (b, buf, length) == length;
