@@ -30,7 +30,6 @@ EOF
 EXPECT=<<EOF
 --
 Foo
-anon_struct_1
 --
 EOF
 RUN
@@ -135,6 +134,7 @@ e io.cache=false
 e io.cache.read=false
 wc-*
 aa
+-e anal.newcparser=false
 s sym.Java_com_app_ndh_NDHActivity_print
 to bins/headers/jni.h
 td struct NULL { }
@@ -361,8 +361,8 @@ ts~addr,date,dox,name
 t addr
 EOF
 EXPECT_ERR=<<EOF
-ERROR: bins/other/error.h:2: warning: #error your compiler doesn't have support to my API
-
+ERROR: cpp:  your compiler doesn't have support to my API
+ERROR: Cannot find 'addr' type
 EOF
 EXPECT=<<EOF
 char
@@ -388,15 +388,6 @@ unsigned char
 unsigned int
 unsigned short
 void *
-addr
-addr_t
-date
-date_t
-dox
-dox_t
-name
-name_t
-pf [127]z[40]zd street city zip
 EOF
 RUN
 
@@ -440,7 +431,7 @@ dox
 dox_t
 name
 name_t
-pf [127]z[40]zd street city zip
+pf [127]z[40]zi street city zip
 EOF
 RUN
 
@@ -1009,29 +1000,34 @@ CMDS=<<EOF
 to bins/headers/12272.h
 ts A
 ts B
-ts O  # Broken but shouldn't hang
+ts C  # Broken but shouldn't hang
 ?e ----
-tk~typedef.A=,typedef.B=,typedef.O=,struct.A,struct.B,struct.O
+tk~typedef.A=,typedef.B=,typedef.C=,struct.A,struct.B,struct.C
 ?e
-ts~A,B,O
+ts~A,B,C,D
 EOF
 EXPECT=<<EOF
+pf f num
 pf dF num num2
 pf c ch
 ----
 struct.A=num
 struct.A.num=float,0,0
-struct.A.num.meta=9
-struct.O=ptr
-struct.O.ptr=char *,0,0
-struct.O.ptr.meta=4
-typedef.A=struct
-typedef.B=struct
-typedef.O=struct O
+struct.B=num,num2
+struct.B.num=int,0,0
+struct.B.num.meta=0
+struct.B.num2=double,4,0
+struct.B.num2.meta=0
+struct.C=ch
+struct.C.ch=char,0,0
+struct.C.ch.meta=0
+typedef.B=struct B
+typedef.C=struct C
 
 A
 B
-O
+C
+D
 EOF
 RUN
 

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2024 - pancake */
+/* radare - LGPL - Copyright 2013-2025 - pancake */
 
 #include <r_asm.h>
 #include "c/tcc.h"
@@ -128,16 +128,8 @@ R_API char *r_anal_cparse_file(RAnal *anal, const char *path, const char *dir, c
 	if (anal->opt.newcparser) {
 		char *code = r_file_slurp (path, NULL);
 		if (code) {
-			struct Proc proc;
-			Output out;
-			out.fout = NULL;
-			out.cout = r_strbuf_new (NULL);
-			spp_proc_set (&proc, "cpp", 1);
-			spp_eval (code, &out);
-			char *data = strdup (r_strbuf_get (out.cout));
-			char *res = r_anal_cparse2 (anal, data, error_msg);
+			char *res = r_anal_cparse2 (anal, code, error_msg);
 			free (code);
-			free (data);
 			return res;
 		}
 	}

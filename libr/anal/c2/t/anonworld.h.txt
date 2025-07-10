@@ -5,5 +5,5 @@ struct.Bar.world=int,4,0
 struct.Bar.world.meta=0
 typedef.Bar=struct Bar
 struct.Bar=hello,world
-Bar=typedef
+Bar=struct
 

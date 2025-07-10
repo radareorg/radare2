@@ -136,7 +136,7 @@ R_API char *pp_preprocess(PPState *st, const char *source) {
 	const char *end = source + strlen(source);
 	while (p < end) {
 		const char *line_start = p;
-		const char *newline = memchr(p, '\n', end - p);
+		const char *newline = memchr (p, '\n', end - p);
 		const char *line_end = newline ? newline : end;
 		const char *q = line_start;
 		while (q < line_end && (*q == ' ' || *q == '\t')) { q++; }
@@ -215,9 +215,13 @@ R_API char *pp_preprocess(PPState *st, const char *source) {
 			} else if (!strcmp (dir, "endif") && st->if_count) {
 				st->if_count--;
 			} else if (!strcmp (dir, "warning") && !skip) {
-				R_LOG_WARN ("cpp: %s", q);
+				char *s = r_str_ndup (q, (line_end - q));
+				R_LOG_WARN ("cpp: %s", s);
+				free (s);
 			} else if (!strcmp (dir, "error") && !skip) {
-				R_LOG_ERROR ("cpp: %s", q);
+				char *s = r_str_ndup (q, (line_end - q));
+				R_LOG_ERROR ("cpp: %s", s);
+				free (s);
 				goto failure;
 			} else if (!strcmp (dir, "include") && !skip) {
 				while (q < line_end && isspace ((unsigned char)*q)) { q++; }

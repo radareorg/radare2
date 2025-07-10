@@ -701,7 +701,7 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 		}
 		char *argstr = r_strbuf_drain (args_sb);
 		r_strbuf_appendf (kvc->sb, "struct.%s=%s\n", struct_tag, argstr);
-		r_strbuf_appendf (kvc->sb, "%s=typedef\n", alias_str);
+		r_strbuf_appendf (kvc->sb, "%s=struct\n", alias_str);
 		free (argstr);
 		free (struct_tag);
 		free (alias_str);
