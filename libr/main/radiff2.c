@@ -70,6 +70,10 @@ typedef struct {
 	ut64 baddr;
 	bool thready;
 	RCons *cons;
+	ut64 offset_a;
+	ut64 offset_b;
+	ut64 length_a;
+	ut64 length_b;
 } RadiffOptions;
 
 static RCore *opencore(RadiffOptions *ro, const char *f) {
@@ -480,8 +484,10 @@ static int show_help(int v) {
 			"  -g [arg]   graph diff of [sym] or functions in [off1,off2]\n"
 			"  -i [help]  compare bin information (symbols, strings, classes, ..)\n"
 			"  -j         output in json format (see -f json)\n"
+			"  -l [addr]  specify final offset (length) for diffing, same format as -o\n"
 			"  -m [mode]  choose the graph output mode (aditsjJ)\n"
 			"  -n         count of changes\n"
+			"  -o [addr]  specify initial offset for diffing, can use A:B format\n"
 			"  -O         code diffing with opcode bytes only\n"
 			"  -p         use physical addressing (io.va=false) (only for radiff2 -AC)\n"
 			"  -q         quiet mode (disable colors, reduce output)\n"
@@ -1065,6 +1071,10 @@ static void radiff_options_init(RadiffOptions *ro) {
 	if (!ro->cons) {
 		ro->cons = r_cons_new ();
 	}
+	ro->offset_a = 0;
+	ro->offset_b = 0;
+	ro->length_a = UT64_MAX;
+	ro->length_b = UT64_MAX;
 }
 
 static void radiff_options_fini(RadiffOptions *ro) {
@@ -1335,7 +1345,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 
 	radiff_options_init (&ro);
 
-	r_getopt_init (&opt, argc, argv, "Aa:b:B:c:CdDe:f:g:hi:jm:nOprst:TXxuUqvV");
+	r_getopt_init (&opt, argc, argv, "Aa:b:B:c:CdDe:f:g:hi:jl:m:no:Oprst:TXxuUqvV");
 	while ((o = r_getopt_next (&opt)) != -1) {
 		switch (o) {
 		case 'a':
@@ -1404,8 +1414,34 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 				return 1;
 			}
 			break;
+		case 'l':
+			{
+				char *p = strchr (opt.arg, ':');
+				if (p) {
+					*p = 0;
+					ro.length_a = r_num_math (NULL, opt.arg);
+					ro.length_b = r_num_math (NULL, p + 1);
+				} else {
+					ro.length_a = r_num_math (NULL, opt.arg);
+					ro.length_b = ro.length_a;
+				}
+			}
+			break;
 		case 'n':
 			ro.showcount = true;
+			break;
+		case 'o':
+			{
+				char *p = strchr (opt.arg, ':');
+				if (p) {
+					*p = 0;
+					ro.offset_a = r_num_math (NULL, opt.arg);
+					ro.offset_b = r_num_math (NULL, p + 1);
+				} else {
+					ro.offset_a = r_num_math (NULL, opt.arg);
+					ro.offset_b = ro.offset_a;
+				}
+			}
 			break;
 		case 'O': // move to options
 			ro.diffops = true;
@@ -1470,6 +1506,8 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		return 1;
 	}
 
+	ut8 *bufa_orig = NULL;
+	ut8 *bufb_orig = NULL;
 	switch (ro.mode) {
 	case MODE_GRAPH:
 	case MODE_CODE:
@@ -1550,11 +1588,11 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			r_config_set_i (c2->config, "scr.color", 0);
 
 			ut64 addra = r_num_math (c->num, addr);
-			bufa = (ut8 *) r_core_cmd_strf (c, "af;%s @ 0x%08"PFMT64x, r2cmd, addra);
+			bufa_orig = bufa = (ut8 *) r_core_cmd_strf (c, "af;%s @ 0x%08"PFMT64x, r2cmd, addra);
 			sza = (ut64)strlen ((const char *) bufa);
 
 			ut64 addrb = r_num_math (c2->num, addr);
-			bufb = (ut8 *) r_core_cmd_strf (c2, "af;%s @ 0x%08"PFMT64x, r2cmd, addrb);
+			bufb_orig = bufb = (ut8 *) r_core_cmd_strf (c2, "af;%s @ 0x%08"PFMT64x, r2cmd, addrb);
 			szb = (ut64)strlen ((const char *) bufb);
 			ro.mode = MODE_DIFF;
 		} else if (ro.mode == MODE_GRAPH) {
@@ -1597,45 +1635,45 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			}
 		} else if (ro.mode == MODE_DIFF_FIELDS) {
 			int sz;
-			bufa = get_fields (c, &sz);
+			bufa_orig = bufa = get_fields (c, &sz);
 			sza = sz;
-			bufb = get_fields (c2, &sz);
+			bufb_orig = bufb = get_fields (c2, &sz);
 			szb = sz;
 		} else if (ro.mode == MODE_DIFF_METHODS) {
 			int sz;
-			bufa = get_methods (c, &sz);
+			bufa_orig = bufa = get_methods (c, &sz);
 			sza = sz;
-			bufb = get_methods (c2, &sz);
+			bufb_orig = bufb = get_methods (c2, &sz);
 			szb = sz;
 		} else if (ro.mode == MODE_DIFF_CLASSES) {
 			int sz;
-			bufa = get_classes (c, &sz);
+			bufa_orig = bufa = get_classes (c, &sz);
 			sza = sz;
-			bufb = get_classes (c2, &sz);
+			bufb_orig = bufb = get_classes (c2, &sz);
 			szb = sz;
 		} else if (ro.mode == MODE_DIFF_SECTIONS) {
 			int sz;
-			bufa = get_sections (c, &sz);
+			bufa_orig = bufa = get_sections (c, &sz);
 			sza = sz;
-			bufb = get_sections (c2, &sz);
+			bufb_orig = bufb = get_sections (c2, &sz);
 			szb = sz;
 		} else if (ro.mode == MODE_DIFF_SYMBOLS) {
 			int sz;
-			bufa = get_symbols (c, &sz);
+			bufa_orig = bufa = get_symbols (c, &sz);
 			sza = sz;
-			bufb = get_symbols (c2, &sz);
+			bufb_orig = bufb = get_symbols (c2, &sz);
 			szb = sz;
 		} else if (ro.mode == MODE_DIFF_IMPORTS) {
 			int sz;
-			bufa = get_imports (c, &sz);
+			bufa_orig = bufa = get_imports (c, &sz);
 			sza = sz;
-			bufb = get_imports (c2, &sz);
+			bufb_orig = bufb = get_imports (c2, &sz);
 			szb = sz;
 		} else if (ro.mode == MODE_DIFF_STRS) {
 			int sz;
-			bufa = get_strings (c, &sz);
+			bufa_orig = bufa = get_strings (c, &sz);
 			sza = sz;
-			bufb = get_strings (c2, &sz);
+			bufb_orig = bufb = get_strings (c2, &sz);
 			szb = sz;
 		}
 // r_cons_printf (c2->cons, "PENE\n");
@@ -1652,18 +1690,45 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		break;
 	default: {
 		size_t fsz = 0;
-		bufa = slurp (&ro, &c, ro.file, &fsz);
+		bufa_orig = bufa = slurp (&ro, &c, ro.file, &fsz);
 		sza = fsz;
 		if (!bufa) {
 			R_LOG_ERROR ("Cannot open %s", r_str_getf (ro.file));
 			return 1;
 		}
-		bufb = slurp (&ro, &c, ro.file2, &fsz);
+		bufb_orig = bufb = slurp (&ro, &c, ro.file2, &fsz);
 		szb = fsz;
 		if (!bufb) {
 			R_LOG_ERROR ("Cannot open: %s", r_str_getf (ro.file2));
 			free (bufa);
 			return 1;
+		}
+		// Apply offsets and lengths
+		if (ro.offset_a > 0) {
+			if (ro.offset_a >= sza) {
+				R_LOG_ERROR ("First file offset out of bounds");
+				free (bufa);
+				free (bufb);
+				return 1;
+			}
+			bufa += ro.offset_a;
+			sza -= ro.offset_a;
+		}
+		if (ro.offset_b > 0) {
+			if (ro.offset_b >= szb) {
+				R_LOG_ERROR ("Second file offset out of bounds");
+				free (bufa_orig);
+				free (bufb_orig);
+				return 1;
+			}
+			bufb += ro.offset_b;
+			szb -= ro.offset_b;
+		}
+		if (ro.length_a != UT64_MAX && ro.length_a < sza) {
+			sza = ro.length_a;
+		}
+		if (ro.length_b != UT64_MAX && ro.length_b < szb) {
+			szb = ro.length_b;
 		}
 		if (sza != szb) {
 			R_LOG_INFO ("File size differs %"PFMT64u" vs %"PFMT64u, (ut64)sza, (ut64)szb);
@@ -1773,8 +1838,8 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		free (s);
 		ro.pj = NULL;
 	}
-	free (bufa);
-	free (bufb);
+	free (bufa_orig);
+	free (bufb_orig);
 	radiff_options_fini (&ro);
 
 	return 0;
