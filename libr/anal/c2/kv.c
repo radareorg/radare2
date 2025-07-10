@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2024-2025 - pancake */
 
- 
+
 #include <r_util.h>
 
 typedef struct {
@@ -170,11 +170,11 @@ static bool skip_until(KVCParser *kvc, char ch, char ch2) {
 			break;
 		}
 		if (c == ch) {
-	//		kvc_getch (kvc);
+			//		kvc_getch (kvc);
 			return true;
 		}
 		if (ch2 && c != ch2) {
-	//		kvc_getch (kvc);
+			//		kvc_getch (kvc);
 			return true;
 		}
 		kvc_getch (kvc);
@@ -489,7 +489,7 @@ static bool parse_c_attributes(KVCParser *kvc) {
 
 #endif
 	kvc_getch (kvc); // slurp ';'
-	// PANCAKE eprintf ("AFTER ATTR (%s)\n", kvc->s.a);
+			 // PANCAKE eprintf ("AFTER ATTR (%s)\n", kvc->s.a);
 	return true;
 }
 
@@ -675,7 +675,7 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 		   typedef int myint;
 		   In this case we assume that everything from the current pointer until
 		   the semicolon is the declaration, and the last word is the alias.
-		 */
+		   */
 		const char *start = kvc->s.a;
 		const char *semicolon = kvc_find_semicolon (kvc);
 		if (!semicolon) {
@@ -745,14 +745,14 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 		skip_spaces (kvc);
 		// PANCAKE eprintf ("[FIELD]---> (%s)\n", kvc->s.a);
 #if 0
-			const char ch0 = kvc_peek (kvc, 0);
-			if (ch0 == '}') {
-				eprintf ("PEKA\n");
-				// end of struct definition
-				kvc_getch (kvc);
-				kvc_getch (kvc);
-				break;
-			}
+		const char ch0 = kvc_peek (kvc, 0);
+		if (ch0 == '}') {
+			eprintf ("PEKA\n");
+			// end of struct definition
+			kvc_getch (kvc);
+			kvc_getch (kvc);
+			break;
+		}
 #endif
 
 		KVCToken member_type = {0};
@@ -928,8 +928,8 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 	}
 	// p = skip_until_semicolon (p);
 #endif
-		// Skip trailing semicolon(s) and whitespace after struct definition
-		skip_semicolons (kvc);
+	// Skip trailing semicolon(s) and whitespace after struct definition
+	skip_semicolons (kvc);
 	char *argstr = r_strbuf_drain (args_sb);
 	r_strbuf_appendf (kvc->sb, "%s.%s=%s\n", type, sn, argstr);
 	free (argstr);
@@ -1183,19 +1183,14 @@ static bool tryparse(KVCParser *kvc, const char *word, const char *type, KVCPars
 }
 
 R_IPI char* kvc_parse(const char* header_content, char **errmsg) {
-   // char *pre = strdup (header_content); // pp_preprocess (header_content);
-   // Initialize a preprocessing state for this parse
-   PPState *pps = pp_new();
-   char *tmp = pp_preprocess(pps, header_content);
-   char *pre = strdup(tmp);
-   free(tmp);
-   pp_free(pps);
+	// Initialize a preprocessing state for this parse
+	PPState *pps = pp_new ();
+	char *pre = pp_preprocess (pps, header_content);
+	pp_free (pps);
 	KVCParser _kvc = {0};
 	KVCParser *kvc = &_kvc;
 	kvcparser_init (&_kvc, pre);
 	while (!kvctoken_eof (kvc->s)) {
-		// Skip leftover semicolons before parsing next construct
-		skip_semicolons (kvc);
 		skip_spaces (kvc);
 		const char *word = kvc_peekn (kvc, 6);
 		// eprintf ("WORD (%s)\n", word);
@@ -1220,23 +1215,23 @@ R_IPI char* kvc_parse(const char* header_content, char **errmsg) {
 			}
 #endif
 		}
-        // If a construct (typedef/struct/union/enum) was parsed, skip trailing semicolons and continue
-        if (hasparse) {
-            skip_semicolons (kvc);
-            continue;
-        }
+		// If a construct (typedef/struct/union/enum) was parsed, skip trailing semicolons and continue
+		if (hasparse) {
+			skip_semicolons (kvc);
+			continue;
+		}
 #if 1
-        // parse standalone attributes
-        if (parse_attributes (kvc)) {
-            continue;
-        }
+		// parse standalone attributes
+		if (parse_attributes (kvc)) {
+			continue;
+		}
 #endif
-        skip_spaces (kvc);
-        // Attempt to parse a function signature
-        if (!parse_function (kvc)) {
-            kvc_getch (kvc);
-        }
-        skip_spaces (kvc);
+		skip_spaces (kvc);
+		// Attempt to parse a function signature
+		if (!parse_function (kvc)) {
+			kvc_getch (kvc);
+		}
+		skip_spaces (kvc);
 	}
 	char *res = NULL;
 	if (kvc->error && errmsg) {
