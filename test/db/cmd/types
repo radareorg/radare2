@@ -997,7 +997,7 @@ RUN
 NAME=typedef struct
 FILE=-
 CMDS=<<EOF
-to bins/headers/12272.h
+to bins/headers/12273.h
 ts A
 ts B
 ts C  # Broken but shouldn't hang
