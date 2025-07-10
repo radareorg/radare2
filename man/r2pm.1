@@ -1,61 +1,91 @@
-.Dd August 29, 2024
+.Dd Jul 10, 2025
 .Dt R2PM 1
 .Sh NAME
 .Nm r2pm
 .Nd radare2 package manager
 .Sh SYNOPSIS
 .Nm r2pm
-.Op [adhHIijpuUglsv]
-.Op [pkg ...]
+.Op Fl acdeHhijlpqrRstuUvw
+.Op Ar pkgs...
 .Sh DESCRIPTION
 Allows to install, update, uninstall and discover plugins and tools that can be used with radare2.
 .Bl -tag -width Fl
-.It Fl a, Cm repo
-Adds an external r2pm repository, no arguments to -a will list all the registered repos, use '-a - repo' to unregister/remove those repos.
-.It Fl I
-Show information about repository and installed packages
-.It Fl i Ar pkgname
-Install a package
+.It Fl a Ar repository
+Add or delete external repository. Using '-a repository' adds a repository, and '-a -repository' deletes it. Use with no arguments to list all registered repos.
+.It Fl c Op git/dir
+Clear source cache for specified git directory or all if not provided
+.It Fl d, Cm doc Ar pkgname
+Show documentation and source for given package script
 .It Fl e Ar pkgname
-Open the package script with your favourite editor
-.It Fl d Ar pkgname
-Show source code of the r2pm package
-.It Fl gi Ar pkgname
-Install a package in the system directory
-.It Fl u Ar pkgname
-Uninstall a package
-.It Fl uu Ar pkgname
-Force uninstall a package
-.It Fl U
-Initialize or Update the package database
-.It Fl UU
-Same as -U, but then upgrade all the installed packages
-.It Fl gu Ar pkgname
-Uninstall a package from the system directory
+Edit using $EDITOR the given package script
+.It Fl f
+Force operation (Use in combination of -U, -i, -u, ..)
+.It Fl gi Ar pkg
+Global install (system-wide)
+.It Fl h
+Display help message
+.It Fl H Op variable
+List all or selected r2pm environment variables
+.It Fl i Ar pkgname
+Install/update package and its dependencies
+.It Fl I
+Information about the repository and installed packages
 .It Fl j
-Output in JSON if implemented
+JSON output
 .It Fl l
 List installed packages
-.It Fl s Ar keyword
-Search in database for packages matching keyword
+.It Fl q
+Be quiet
+.It Fl r Ar cmd ...args
+Run shell command with R2PM_BINDIR in PATH
+.It Fl R Ar pkgname
+Reload plugin (See R2PM_RELOAD code block package)
+.It Fl s Op keyword
+Search available packages in database matching a string
 .It Fl t Ar YYYY-MM-DD
-Set the R2PM_TIME env var to tell the time to take package source from git
-.It Fl r Ar command ...args
-Run command with R2PM_BINDIR in PATH
-.It Fl R Ar package...
-Display commands to reload the plugin from radare2
-.It Fl p
-Requires -c to clean the R2PM_PLUGDIR
+Set a moment in time to pull the code from the git packages
+.It Fl u Ar pkgname
+Uninstall package (see -f to force uninstall)
+.It Fl uci Ar pkgname
+Uninstall + clean + install
+.It Fl ui Ar pkgname
+Uninstall + install
+.It Fl U
+Download/initialize or update database (-f for a clean clone)
+.It Fl UU
+Same as -U but upgrade all the installed r2 plugins
 .It Fl v
-Show version information
-.It Fl h
-Show usage help message
-.It Fl H
-List all special env-vars defined by r2pm internally
-.It Fl H Ar env-var-name
-Show value of given internal environment variable
-.It Fl c
-Clean the source cache
+Show version
+.El
+.Sh ENVIRONMENT
+.Pp
+.Bl -tag -width Fl
+.It Ev SUDO
+Command to use for system-wide installs (default: sudo)
+.It Ev R2PM_PLUGDIR
+Directory for user plugins (default: ~/.local/share/radare2/plugins)
+.It Ev R2PM_BINDIR
+Directory for user binaries (default: ~/.local/share/radare2/prefix/bin)
+.It Ev R2PM_OFFLINE
+Disable online operations (default: 0)
+.It Ev R2PM_DBDIR
+Directory for r2pm database (default: ~/.local/share/radare2/r2pm/db)
+.It Ev R2PM_GITDIR
+Directory for git repositories (default: ~/.local/share/radare2/r2pm/git)
+.It Ev R2PM_GITSKIP
+Skip git pull operations when set
+.It Ev R2PM_TIME
+Point in time to use for git checkout (format: YYYY-MM-DD)
+.It Ev R2_LOG_LEVEL
+Control verbosity of log messages
+.It Ev R2PM_INCDIR
+Directory for include files
+.It Ev R2PM_LIBDIR
+Directory for libraries
+.It Ev R2PM_PREFIX
+Installation prefix
+.It Ev R2PM_LEGACY
+Enable legacy mode
 .El
 .Sh EXAMPLES
 .Pp
@@ -65,17 +95,21 @@ Install a package
 .Pp
   $ r2pm -i yara3
 .Pp
-Install a test package (don't git pull on $R2PM_GITDIR/yara3)
+Clean cache and then install (don't git pull on $R2PM_GITDIR/yara3)
 .Pp
-  $ R2PM_GITSKIP=1 r2pm -ci yara3
+  $ r2pm -ci yara3
 .Pp
 Avoid init/update calls (don't git pull on $R2PM_DBDIR)
 .Pp
- $ R2PM_OFFLINE=1 r2pm -i yara
+  $ R2PM_OFFLINE=1 r2pm -i yara
 .Pp
 Uninstall a package
 .Pp
   $ r2pm -u yara3
+.Pp
+Force uninstall a package
+.Pp
+  $ r2pm -fu yara3
 .Pp
 Search a package
 .Pp
@@ -84,21 +118,13 @@ Search a package
 List installed packages
 .Pp
   $ r2pm -l
-.Sh ENVIRONMENT
 .Pp
- SUDO=sudo
- R2PM_PLUGDIR=~/.local/share/radare2/plugins
- R2PM_BINDIR=~/.local/share/radare2/prefix/bin
- R2PM_OFFLINE=0
- R2PM_DBDIR=~/.local/share/radare2/r2pm/db
- R2PM_GITDIR=~/.local/share/radare2/r2pm/git
- R2PM_GITSKIP=
- R2PM_TIME=
- R2_LOG_LEVEL
- R2PM_INCDIR
- R2PM_LIBDIR
- R2PM_PREFIX
- R2PM_LEGACY
+Update database and upgrade all installed packages
+.Pp
+  $ r2pm -UU
 .Sh SEE ALSO
 .Pp
 .Xr radare2(1)
+.Sh AUTHORS
+.Pp
+Written by pancake <pancake@nopcode.org>.

@@ -1,67 +1,88 @@
-.Dd Dec 20, 2024
+.Dd Jul 10, 2025
 .Dt R2R 1
 .Sh NAME
 .Nm r2r
 .Nd radare2 regression testsuite
 .Sh SYNOPSIS
 .Nm r2r
-.Op Fl h
-.Op Fl H
-.Op Fl i
-.Op Fl n
-.Op Fl L
-.Op Fl q
-.Op Fl v
-.Op Fl V
-.Op Fl j Ar threads
-.Op Fl f Ar bin-for-json-tests
-.Op Fl F Ar fuzzbindir
-.Op Fl C Ar chdir
+.Op Fl qvVnLiHh
+.Op Fl C Ar dir
+.Op Fl F Ar dir
+.Op Fl f Ar file
 .Op Fl o Ar file
-.Op Fl s Ar ignore
-.Op Fl S Ar shallow
+.Op Fl s Ar test
+.Op Fl S Ar percent
 .Op Fl t Ar seconds
-.Op [test-(dir|file) ...]
+.Op Fl j Ar threads
+.Op Fl u
+.Op Fl g
+.Op Ar test file/dir | @test-type
 .Sh DESCRIPTION
 Run all the radare2 regression tests matching a specific word in the name.
 .Pp
 You need radare2 to be available in $PATH.
 .Sh OPTIONS
 .Bl -tag -width Fl
-.It Fl h
-Show the help/usage message
-.It Fl H
-Display the list of environment variables and their default values
-.It Fl i
-Interactive mode
-.It Fl n
-Do not run any test, just load/parse them
+.It Fl C Ar dir
+Chdir before running r2r (default follows executable symlink + test/new)
+.It Fl F Ar dir
+Run fuzz tests (open and default analysis) on all files in the given dir
 .It Fl L
 Log mode (better printing for CI, logfiles, etc.)
-.It Fl q
-Quiet mode (use like this: r2r -qv)
-.It Fl v
-Show version number
 .It Fl V
-Be verbose
+Verbose
+.It Fl f Ar file
+File to use for json tests (default is bins/elf/crackme0x00b)
+.It Fl g
+Run the tests specified via '// R2R' comments in modified source files
+.It Fl h
+Print help message
+.It Fl H
+Display environment variables
+.It Fl i
+Interactive mode
 .It Fl j Ar threads
-Specify the number of tasks to run in parallel
+How many threads to use for running tests concurrently (default is 8)
 .It Fl n
-Do not run any test, just parse them for linting purposes
-.It Fl f Ar bin-for-json-tests
-Load the given binary when running the JSON tests
-.It Fl C Ar directory
-Early chdir before running any test
-.It Fl F Ar directory
-Specify the path where the fuzzed binaries are
+Do nothing (don't run any test, just load/parse them)
 .It Fl o Ar file
 Output test run information in JSON format to file
+.It Fl q
+Quiet
 .It Fl s Ar test
 Set R2R_SKIP_(TEST)=1 to skip running that test type
-.It Fl S Ar shallow
-Set R2R_SHALLOW=N to skip a random N percentage of the tests
+.It Fl S Ar percent
+Set R2R_SHALLOW=N to skip a random percentage (0-100) of tests
 .It Fl t Ar seconds
-Timeout per test (default is (30*60))
+Timeout per test (default is 3600 seconds)
+.It Fl u
+Do not git pull/clone test/bins (See R2R_OFFLINE)
+.It Fl v
+Show version
+.El
+.Sh ENVIRONMENT
+.Pp
+.Bl -tag -width Fl
+.It Ev R2R_SKIP_ARCHOS
+Do not run the arch-os-specific tests
+.It Ev R2R_SKIP_JSON
+Do not run the JSON tests
+.It Ev R2R_SKIP_FUZZ
+Do not run the fuzz tests
+.It Ev R2R_SKIP_UNIT
+Do not run the unit tests
+.It Ev R2R_SKIP_CMD
+Do not run the cmds tests
+.It Ev R2R_SKIP_ASM
+Do not run the rasm2 tests
+.It Ev R2R_JOBS
+Maximum parallel jobs (default: 8)
+.It Ev R2R_TIMEOUT
+Timeout in seconds (default: 3600 seconds)
+.It Ev R2R_OFFLINE
+Same as passing -u flag
+.It Ev R2R_SHALLOW
+Skip 0-100% random tests
 .El
 .Sh USAGE
 .Pp
@@ -73,6 +94,15 @@ Use the -n flag to not run any test. Just load them.
 Run the tests contained in a directory interactively, if any of those tests fail to run, prompt the user to autofix, edit the commands, etc.
 .Pp
   $ r2r -i test/db/cmd/cmd_pdf
+.Pp
+Run specific test types using @ notation:
+.Pp
+  $ r2r @asm       # Run assembly tests
+  $ r2r @json      # Run JSON tests
+  $ r2r @unit      # Run unit tests
+  $ r2r @fuzz      # Run fuzz tests
+  $ r2r @arch      # Run architecture-specific tests
+  $ r2r @cmd       # Run command tests
 .Sh SEE ALSO
 .Pp
 .Xr radare2(1)

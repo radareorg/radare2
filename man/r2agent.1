@@ -1,35 +1,59 @@
-.Dd Jul 28, 2016
+.Dd Jul 10, 2025
 .Dt R2AGENT 1
 .Sh NAME
 .Nm r2agent
-.Nd radare2 remoting manager TODO
+.Nd radare2 radare2 agent http server
 .Sh SYNOPSIS
 .Nm r2agent
-.Op Fl adhs
-.Op Fl p Ar PORT
+.Op Fl adhsu
+.Op Fl p Ar port
+.Op Fl t Ar file
 .Sh DESCRIPTION
-Spawn a server... TODO
+r2agent is a server that provides remote access to radare2 instances via a simple HTTP API.
+It allows debugging and analyzing binaries remotely using radare2.
 .Bl -tag -width Fl
-.It Fl a, Cm all
+.It Fl a
 Listen for everyone (localhost by default)
-.It Fl d, Cm daemon
-Run in daemon mode
-.It Fl h, Cm help
-Show help prompt
-.It Fl s, Cm sandbox
+.It Fl d
+Run in daemon mode (background)
+.It Fl h
+Show help message
+.It Fl s
 Run in sandbox mode
-.It Fl u, Cm httpauth
-Enable HTTP Authentication support
-.It Fl t, Cm httpauthfile
-user:password authentication file
-.It Fl p, Cm port Ar PORT
-Specify listening port for the agent
-.It Fl v
-Show version information
+.It Fl u
+Enable HTTP authorization access
+.It Fl t Ar file
+User:password authentication file
+.It Fl p Ar port
+Specify listening port (defaults to 8080)
 .El
+.Sh ENVIRONMENT
+.Pp
+r2agent does not use any environment variables.
 .Sh EXAMPLES
 .Pp
-TODO
+Start r2agent on default port (8080):
+.Pp
+  $ r2agent
+.Pp
+Start r2agent on port 9090:
+.Pp
+  $ r2agent -p 9090
+.Pp
+Run r2agent in daemon mode:
+.Pp
+  $ r2agent -d
+.Pp
+Allow connections from any IP address:
+.Pp
+  $ r2agent -a
+.Pp
+Run with authentication enabled:
+.Pp
+  $ r2agent -u -t auth.txt
 .Sh SEE ALSO
 .Pp
 .Xr radare2(1)
+.Sh AUTHORS
+.Pp
+Written by pancake <pancake@nopcode.org>.

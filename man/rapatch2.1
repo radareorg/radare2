@@ -1,22 +1,21 @@
-.TH RAPATCH2 1 "rapatch2 tool" "Sep 27, 2024"
-.SH NAME
-rapatch2 - binary patching utility
-.SH SYNOPSIS
-.B rapatch2
-[-p #] [-R] file patch
-
-.SH DESCRIPTION
-rapatch2 is a tool from the radare2 suite designed for binary patching code and data.
-.PP
-Human friendly text format to apply patches to binary files.
+.Dd Jul 10, 2025
+.Dt RAPATCH2 1
+.Sh NAME
+.Nm rapatch2
+.Nd binary patching utility
+.Sh SYNOPSIS
+.Nm rapatch2
+.Op Fl psRqv
+.Op Ar patchfile
+.Op Ar targetfile
+.Sh DESCRIPTION
+.Nm rapatch2
+is a tool from the radare2 suite designed for applying binary patches to files.
 .Pp
-It supports a wide range of formats and features, including architecture and
-bits specification, delta patching, graph patching, and more.
+It uses a human friendly text format to apply patches to binary files.
 .Pp
 Those patches must be written in files and the syntax looks like the following:
-
-.RS
-.nf
+.Bd -literal -offset indent
 ^# -> comments
 . -> execute command
 ! -> execute command
@@ -25,48 +24,46 @@ OFFSET "string"
 OFFSET 01020304
 OFFSET : assembly
 + {code}|"str"|0210|: asm
-.fi
-.RE
-
-.SH OPTIONS
-.TP
-.B -h
-Show this help message
-.TP
-.B -R
+.Ed
+.Sh OPTIONS
+.Bl -tag -width Fl
+.It Fl p Ar N
+Patch level, skip N directories
+.It Fl R
 Reverse patch
-.TP
-.B -p [num]
-Skip num directories from patch file
-
-.TP
-.B -s
-Be silent
-
-.TP
-.B -v
-Show version string
-
-.SH USAGE EXAMPLES
-.TP
-.B "Comparing two binaries"
-radiff2 -u bin1 bin2 > patch
-
-rapatch2 -p 1 < patch
-
-.TP
-.B "Patch only one file"
-rapatch2 bin1 patch
-
-.SH COMMAND IN R2
-
-See the -p flag and command.
-
-.SH SEE ALSO
-radare2(1)
-
-.Sh WWW
+.It Fl s
+Sandbox mode, disable scripts and r2 command execution
+.It Fl q
+Be quiet
+.It Fl v
+Show version
+.El
+.Sh ENVIRONMENT
 .Pp
-https://www.radare.org/
-.SH AUTHOR
-pancake <pancake@nopcode.org>
+rapatch2 does not use any environment variables.
+.Sh EXAMPLES
+.Pp
+Generate a patch using radiff2 and apply it with rapatch2:
+.Pp
+  $ radiff2 -u bin1 bin2 > patch
+  $ rapatch2 -p 1 < patch
+.Pp
+Patch a specific file:
+.Pp
+  $ rapatch2 bin1 patch
+.Pp
+Create a simple patch file manually:
+.Pp
+  $ cat > mypatch.r2
+  0x100 "Hello World"
+  0x200 9090
+  0x300 : nop
+  ^D
+  $ rapatch2 target_binary mypatch.r2
+.Sh SEE ALSO
+.Pp
+.Xr radare2(1)
+.Xr radiff2(1)
+.Sh AUTHORS
+.Pp
+Written by pancake <pancake@nopcode.org>.

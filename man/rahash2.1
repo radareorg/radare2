@@ -1,81 +1,82 @@
-.Dd Mar 16, 2024
+.Dd Jul 10, 2025
 .Dt RAHASH2 1
 .Sh NAME
 .Nm rahash2
 .Nd block-based hashing, encoding and encryption utility
 .Sh SYNOPSIS
 .Nm rahash2
-.Op Fl BbdehjkLqrv
-.Op Fl a Ar algo
-.Op Fl b Ar size
-.Op Fl c Ar hash
-.Op Fl D Ar deco
-.Op Fl e
-.Op Fl E Ar enco
-.Op Fl f Ar from
+.Op Fl BehjkLqrvX
+.Op Fl b Ar S
+.Op Fl a Ar A
+.Op Fl c Ar H
+.Op Fl E Ar A
+.Op Fl D Ar A
+.Op Fl s Ar S
+.Op Fl f Ar O
+.Op Fl t Ar O
 .Op Fl i Ar num
 .Op Fl I Ar iv
-.Op Fl j
-.Op Fl J
-.Op Fl L
 .Op Fl S Ar seed
-.Op Fl k
-.Op Fl s Ar string
-.Op Fl t Ar to
 .Op Fl x Ar hexstr
-.Op Fl X
-.Op Fl v
-.Op Ar [file] ...
+.Op Ar file ...
 .Sh DESCRIPTION
-This program is part of the radare project.
+This program is part of the radare2 project.
 .Pp
-.Rahash2 allows you to calculate, check, and display hash values of each block of a target file. By default, the block size is set to 32768 bytes. It supports reading from stdin using '-' as a target file. You can compare against a known hash and get the result in the exit status.
+Rahash2 allows you to calculate, check, and display hash values of each block of a target file. By default, the block size is set to 32768 bytes. It supports reading from stdin using '-' as a target file. You can compare against a known hash and get the result in the exit status.
 .Pp
-It's particularly useful for hashing large files and identifying modifications in forensics filesystem analysis.
+It's useful for hashing large files and identifying modifications in forensics filesystem analysis.
 .Pp
-.Rahash2 can be used to calculate the entropy or hashes of specific parts of a file or command-line passed strings. But it is also able to encode, decode, encrypt and decrypt files using a variety of cryptographic algorithms and methods.
-.Pp
-This command provides the same features as the 'ph' command of radare.
+Rahash2 can calculate the entropy or hashes of specific parts of a file or command-line passed strings. It's also able to encode, decode, encrypt and decrypt files using various cryptographic algorithms and methods.
 .Bl -tag -width Fl
 .It Fl a Ar algo
-Comma-separated list of algorithms to use when hashing files or strings. Refer to -L to list supported hashing algorithms. This flag can be passed multiple times instead of separating them by commas.
-.It Fl b Ar size
-Specify the block size.
+Comma separated list of algorithms (default is 'sha256')
+.It Fl b Ar bsize
+Specify the size of the block (instead of full file)
+.It Fl B
+Show per-block hash
 .It Fl c Ar hash
-Compare the computed hash with the provided one. This is allowed only when a single hash is computed.
-.It Fl D Ar deco
-Decrypt using the specified algorithm. Use -S to set the key and -I to set the IV.
+Compare with this hash
 .It Fl e
-Swap endianness to show digests or injest keys in big or little endian.
-.It Fl E Ar enco
-Encrypt using the specified algorithm. Use -S to set the key and -I to set the IV.
+Swap endian (use little endian)
+.It Fl E Ar algo
+Encrypt. Use -S to set key and -I to set IV
+.It Fl D Ar algo
+Decrypt. Use -S to set key and -I to set IV
 .It Fl f Ar from
-Start hashing at the given address.
+Start hashing at given address
 .It Fl i Ar num
-Repeat hash `num` iterations.
+Repeat hash N iterations (f.ex: 3DES)
 .It Fl I Ar iv
-Use the given initialization vector (IV) (hexadecimal or string).
+Use give initialization vector (IV) (hexa or s:string)
 .It Fl j
-Display output in JSON format.
+Output in json
 .It Fl J
-New simplified JSON output format (equivalent to -jj).
-.It Fl k
-Display hash using OpenSSH's randomkey algorithm.
-.It Fl L
-List available hash, checksum and crypto plugins. This flag can be combined with -j to read the results in JSON format.
-.It Fl s Ar string
-Hash the provided string instead of using the 'source' and 'hash-file' arguments.
+New simplified json output (same as -jj)
 .It Fl S Ar seed
-Use the given seed (hexadecimal or string). Use ^ to prefix (key for -E). '-' will slurp the key from stdin, and '@' prefix points to a file.
+Use given seed (hexa or s:string) use ^ to prefix (key for -E)
+(- will slurp the key from stdin, the @ prefix points to a file
+.It Fl k
+Show hash using the openssh's randomkey algorithm
+.It Fl q
+Run in quiet mode (-qq to show only the hash)
+.It Fl L
+List muta plugins (combines with -q, used by -a, -E and -D)
+.It Fl r
+Output radare commands
+.It Fl s Ar string
+Hash this string instead of files
 .It Fl t Ar to
-Stop hashing at the given address.
+Stop hashing at given address
 .It Fl x Ar hexstr
-Hash the provided hexadecimal string instead of using 'source' and 'hash-file' arguments.
+Hash this hexpair string instead of files
 .It Fl X
-Output of encryption in hexpairs instead of raw (see -j for json output)
+Output in hexpairs instead of binary/plain
 .It Fl v
-Display version information.
+Show version information
 .El
+.Sh ENVIRONMENT
+.Pp
+Rahash2 does not use any environment variables.
 .Sh EXAMPLES
 .Pp
 Calculate the MD5 hash of the 'ls' binary:
@@ -96,11 +97,9 @@ Compare CRC32 of the given file didnt changed:
   $ echo $?
   0
 .Pp
-List only the cryptographic plugins loaded:
+List all muta (hash, crypto, encoder, charset) plugins:
 .Pp
-  $ rahash2 -L | grep ^c
-.Pp
-  $ rahash2 -qqa crc32 /bin/ls
+  $ rahash2 -L
 .Pp
 Encode the string "Hello World" with base64:
 .Pp
@@ -126,7 +125,6 @@ Encrypting and decrypting using AES-CBC:
 Encrypting a file using Blowfish and encode it into a json:
 .Pp
   $ rahash2 -E blowfish -S "11111111111111111111111111113211" -j /bin/ls > ls.json
-.Pp
 .Sh DIAGNOSTICS
 .Ex -std
 .Pp
@@ -134,9 +132,6 @@ When using the -c flag, an exit status of 0 indicates a match between the expect
 .Sh SEE ALSO
 .Pp
 .Xr radare2(1)
-.Sh WWW
-.Pp
-https://www.radare.org/
 .Sh AUTHORS
 .Pp
 pancake <pancake@nopcode.org>
