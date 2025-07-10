@@ -1,6 +1,5 @@
 /* radare - LGPL - Copyright 2024-2025 - pancake */
 
-
 #include <r_util.h>
 
 typedef struct {
@@ -95,13 +94,13 @@ static void massage_type(char **s) {
 		str++;
 	}
 	// Skip whitespace after semicolons
-	while (isspace(*str)) {
+	while (isspace (*str)) {
 		str++;
 	}
 
 	if (str != *s) {
-		char *new_str = strdup(str);
-		free(*s);
+		char *new_str = strdup (str);
+		free (*s);
 		*s = new_str;
 	}
 
@@ -189,7 +188,7 @@ static bool skip_until(KVCParser *kvc, char ch, char ch2) {
 			break;
 		}
 		if (c == ch) {
-			//		kvc_getch (kvc);
+			// kvc_getch (kvc);
 			return true;
 		}
 		if (ch2 && c != ch2) {
@@ -424,13 +423,16 @@ static void kvctoken_typename(KVCToken *fun_rtyp, KVCToken *fun_name) {
 
 static int kvc_typesize(KVCParser *kvc, const char *name, int dimension) {
 	if (r_str_endswith (name, "8")) {
-		return 1;
+		return 1 * dimension;
 	}
 	if (r_str_endswith (name, "16")) {
-		return 2;
+		return 2 * dimension;
 	}
 	if (r_str_endswith (name, "64")) {
-		return 8;
+		return 8 * dimension;
+	}
+	if (r_str_startswith (name, "int")) {
+		return 4 * dimension;
 	}
 	if (dimension > 1) {
 		// TODO: honor type size

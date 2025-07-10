@@ -59,16 +59,15 @@ tk~easy,humans,days,tokyo,dangerous
 EOF
 EXPECT=<<EOF
 dangerous=struct
-days=typedef
 easy_prey=typedef
 humans=typedef
 struct.dangerous=neo
 struct.dangerous.neo=uint64_t,0,0
-struct.dangerous.neo.meta=13
+struct.dangerous.neo.meta=0
 tokyo=typedef
 typedef.days=struct dangerous
 typedef.easy_prey=uint32_t
-typedef.humans=uint32_t
+typedef.humans=easy_prey
 typedef.tokyo=struct dangerous
 EOF
 RUN

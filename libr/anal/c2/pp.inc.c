@@ -71,7 +71,7 @@ R_API void pp_set_define(PPState *st, const char *name, const char *value) {
 	size_t i;
 	for (i = 0; i < st->count; i++) {
 		if (!strcmp (st->keys[i], name)) {
-			free(st->values[i]);
+			free (st->values[i]);
 			st->values[i] = strdup(value);
 			return;
 		}

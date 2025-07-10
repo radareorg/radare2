@@ -1,0 +1,6 @@
+S1=struct
+struct.S1.x=int,0,3
+struct.S1.y=int,12,4
+struct.S1.z=int,28,0
+struct.S1=x,y,z
+
