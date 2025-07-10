@@ -1182,8 +1182,13 @@ static bool tryparse(KVCParser *kvc, const char *word, const char *type, KVCPars
 }
 
 R_IPI char* kvc_parse(const char* header_content, char **errmsg) {
-	// char *pre = strdup (header_content); // pp_preprocess (header_content);
-	char *pre = strdup (pp_preprocess (header_content));
+   // char *pre = strdup (header_content); // pp_preprocess (header_content);
+   // Initialize a preprocessing state for this parse
+   PPState *pps = pp_new();
+   char *tmp = pp_preprocess(pps, header_content);
+   char *pre = strdup(tmp);
+   free(tmp);
+   pp_free(pps);
 	KVCParser _kvc = {0};
 	KVCParser *kvc = &_kvc;
 	kvcparser_init (&_kvc, pre);
