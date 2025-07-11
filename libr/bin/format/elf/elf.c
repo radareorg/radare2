@@ -2601,7 +2601,7 @@ char* Elf_(get_cpu)(ELFOBJ *eo) {
 	return cpu? strdup (cpu): NULL;
 }
 
-// http://www.sco.com/developers/gabi/latest/ch4.eheader.html
+// https://www.sco.com/developers/gabi/latest/ch4.eheader.html
 
 char* Elf_(get_machine_name)(ELFOBJ *eo) {
 	switch (eo->ehdr.e_machine) {

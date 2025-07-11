@@ -57,14 +57,14 @@ typedef char bool;
 #include <errno.h>
 
 /* at least MinGW does not provide EOPNOTSUPP, see
- * http://sourceforge.net/p/mingw/bugs/263/
+ * https://sourceforge.net/p/mingw/bugs/263/
  */
 #ifndef EOPNOTSUPP
 #define EOPNOTSUPP EINVAL
 #endif
 
 /* at least MinGW does not provide EOVERFLOW, see
- * http://sourceforge.net/p/mingw/bugs/242/
+ * https://sourceforge.net/p/mingw/bugs/242/
  */
 #ifndef EOVERFLOW
 #define EOVERFLOW EFBIG

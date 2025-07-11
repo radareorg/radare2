@@ -137,7 +137,7 @@
  *
  *   NOTE:  The naming of R and S appears backwards here (R is a SHIFT and
  *   S is a ROTATION) because the SHA-256/384/512 description document
- *   (see http://csrc.nist.gov/cryptval/shs/sha256-384-512.pdf) uses this
+ *   (see https://csrc.nist.gov/cryptval/shs/sha256-384-512.pdf) uses this
  *   same "backwards" definition.
  */
 /* Shift-right (used in SHA-256, SHA-384, and SHA-512): */

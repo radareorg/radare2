@@ -4,7 +4,7 @@
 
 #if 0
 https://es.wikipedia.org/wiki/Amiga_Hunk
-http://amiga-dev.wikidot.com/file-format:hunk
+https://amiga-dev.wikidot.com/file-format:hunk
 https://retro-commodore.eu/files/downloads/amigamanuals-xiik.net/eBooks/AmigaDOS%20Technical%20Reference%20Manual%20-%20eBook-ENG.pdf
 #endif
 

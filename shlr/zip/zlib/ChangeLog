@@ -367,7 +367,7 @@ Changes in 1.2.5.1 (10 Sep 2011)
 - Add dummy name before $(SHAREDLIBV) in Makefile [Bar-Lev, Bowler]
 - Delete line in configure that adds -L. libz.a to LDFLAGS [Weigelt]
 - Add debug records in assmebler code [Londer]
-- Update RFC references to use http://tools.ietf.org/html/... [Li]
+- Update RFC references to use https://tools.ietf.org/html/... [Li]
 - Add --archs option, use of libtool to configure for Mac OS X [Borstel]
 
 Changes in 1.2.5 (19 Apr 2010)
@@ -1158,7 +1158,7 @@ Changes in 1.1.3 (9 July 1998)
 
 Changes in 1.1.2 (19 March 98)
 - added contrib/minzip, mini zip and unzip based on zlib (Gilles Vollant)
-  See http://www.winimage.com/zLibDll/unzip.html
+  See https://www.winimage.com/zLibDll/unzip.html
 - preinitialize the inflate tables for fixed codes, to make the code
   completely thread safe (Mark)
 - some simplifications and slight speed-up to the inflate code (Mark)

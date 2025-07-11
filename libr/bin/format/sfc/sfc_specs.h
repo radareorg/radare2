@@ -1,6 +1,6 @@
 /* radare - LGPL - 2015 - maijin */
 
-//CPU_memory_map: http://wiki.nesdev.com/w/index.php/CPU_memory_map
+//CPU_memory_map: https://wiki.nesdev.com/w/index.php/CPU_memory_map
 
 #ifndef _SFC_SPECS_H
 #define _SFC_SPECS_H

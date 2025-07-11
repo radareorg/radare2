@@ -149,7 +149,7 @@ size_for_capacity(zip_uint64_t capacity) {
     }
 
     /* From Bit Twiddling Hacks by Sean Eron Anderson <seander@cs.stanford.edu>
-     (http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2). */
+     (https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2). */
 
     v--;
     v |= v >> 1;

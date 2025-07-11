@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2017-2023 - pancake, cgvwzq */
 
-// http://webassembly.org/docs/binary-encoding/#module-structure
+// https://webassembly.org/docs/binary-encoding/#module-structure
 
 #include <r_arch.h>
 #include "wasm.h"

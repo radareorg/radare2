@@ -10,7 +10,7 @@
 #if __i386__ || __x86_64__
 /*Macros for XSAVE/XRESTORE*/
 /*
-        From: http://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-software-developers-manual.pdf
+        From: https://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-software-developers-manual.pdf
         Bit 00: x87 state.
         Bit 01: SSE state.
         Bit 02: AVX state.

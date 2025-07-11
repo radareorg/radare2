@@ -167,7 +167,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 // 512 bytes register RAM
 // window selection registers
 //  PSW, INT_MASK, INT_MASK1
-// http://datasheets.chipdb.org/Intel/MCS96/MANUALS/27231703.PDF
+// https://datasheets.chipdb.org/Intel/MCS96/MANUALS/27231703.PDF
 static char *regs(RArchSession *s) {
 	const char *p =
 		"=PC	pc\n"

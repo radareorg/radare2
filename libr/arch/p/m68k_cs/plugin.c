@@ -17,7 +17,7 @@
 
 #if CAPSTONE_HAS_M68K
 #include <capstone/m68k.h>
-// http://www.mrc.uidaho.edu/mrc/people/jff/digital/M68Kir.html
+// https://www.mrc.uidaho.edu/mrc/people/jff/digital/M68Kir.html
 
 // clang-format off
 // Source: https://wiki.neogeodev.org/index.php?title=68k_instructions_timings

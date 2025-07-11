@@ -13,7 +13,7 @@ RR: rec type:
 	05 non-standard; could be "start linear address" AKA "entry point".
 KK = 0 - (sum of all bytes)
 
-//sauce : http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.faqs/ka9903.html
+//sauce : https://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.faqs/ka9903.html
 
 **** example records
 :02000002fffffe		#rec 02 : new seg = 0xffff, so next addresses will be (seg<<4)+AAAA

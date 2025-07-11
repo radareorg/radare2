@@ -36,7 +36,7 @@ typedef struct i8080_opcode_t {
 ///http://dunfield.classiccmp.org/r/8080.txt
 ///https://tobiasvl.github.io/optable/intel-8080/
 ///https://pastraiser.com/cpu/i8080/i8080_opcodes.html
-///http://www.emulator101.com/8080-by-opcode.html
+///https://www.emulator101.com/8080-by-opcode.html
 
 static i8080_opcode_t i8080_opcodes[] = {
 	{ R_ANAL_OP_TYPE_NOP, 1, "nop" }, 				//0x00

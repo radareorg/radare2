@@ -2175,7 +2175,7 @@ static const ut8 *parse_attr_value(RBin *bin, const ut8 *obuf, int obuf_len, RBi
 		return NULL;
 	}
 
-	// http://www.dwarfstd.org/doc/DWARF4.pdf#page=161&zoom=100,0,560
+	// https://www.dwarfstd.org/doc/DWARF4.pdf#page=161http://www.dwarfstd.org/doc/DWARF4.pdf#page=161&zoom=100,0,560zoom=100,0,560
 	switch (def->attr_form) {
 	case DW_FORM_addr:
 		value->kind = DW_AT_KIND_ADDRESS;
@@ -2576,7 +2576,7 @@ static const ut8 *parse_comp_unit(RBin *bin, RBinDwarfDebugInfo *info, Sdb *sdb,
 #endif
 static const ut8 *info_comp_unit_read_hdr(const ut8 *buf, const ut8 *buf_end, RBinDwarfCompUnitHdr *hdr, bool be) {
 	// 32-bit vs 64-bit dwarf formats
-	// http://www.dwarfstd.org/doc/Dwarf3.pdf section 7.4
+	// https://www.dwarfstd.org/doc/Dwarf3.pdf section 7.4
 	hdr->length = READ32 (buf);
 	if (hdr->length == (ut32)DWARF_INIT_LEN_64) { // then its 64bit
 		hdr->length = READ64 (buf);
@@ -2744,7 +2744,7 @@ static RBinDwarfDebugAbbrev *parse_abbrev_raw(const ut8 *obuf, size_t len) {
 				break;
 			}
 			buf = r_uleb128 (buf, (size_t)(buf_end - buf), &attr_form, NULL);
-			// http://www.dwarfstd.org/doc/DWARF5.pdf#page=225
+			// https://www.dwarfstd.org/doc/DWARF5.pdf#page=225
 			if (attr_form == DW_FORM_implicit_const) {
 				buf = r_leb128 (buf, (size_t)(buf_end - buf), &special);
 				tmpdecl->defs[tmpdecl->count].special = special;

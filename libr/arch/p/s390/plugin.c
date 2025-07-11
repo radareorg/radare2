@@ -5,7 +5,7 @@
 #define CAPSTONE_SYSTEMZ_COMPAT_HEADER
 #include <capstone/capstone.h>
 #include <capstone/systemz.h>
-// instruction set: http://www.tachyonsoft.com/inst390m.htm
+// instruction set: https://www.tachyonsoft.com/inst390m.htm
 
 #if CS_API_MAJOR < 2
 #error Old Capstone not supported

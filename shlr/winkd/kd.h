@@ -87,7 +87,7 @@ enum KD_PACKET_MANIPULATE_TYPE {
 #define KD_MAX_PAYLOAD	0x800
 #define KD_PACKET_MAX_SIZE 4000 // Not used ? What is max payload ?
 
-// http://msdn.microsoft.com/en-us/library/cc704588.aspx
+// https://msdn.microsoft.com/en-us/library/cc704588.aspx
 #define KD_RET_OK		0x00000000
 #define KD_RET_ERR		0xC0000001
 #define KD_RET_ENOENT	0xC000000F
