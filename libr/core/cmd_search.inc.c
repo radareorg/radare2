@@ -2350,7 +2350,7 @@ beach:
 		pj_end (param->pj);
 	}
 	r_core_seek (core, oldoff, true);
-	r_esil_free (esil);
+	// r_esil_free (esil);
 	r_cons_break_pop (core->cons);
 	free (buf);
 	free (esp32);
