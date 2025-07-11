@@ -36,6 +36,14 @@ R_API char *r_anal_cparse_file(RAnal *anal, const char *path, const char *dir, c
 		RAnalPlugin *p = resolve_plugin (anal, 1);
 		if (p) {
 			return p->tparse_file (anal, path, dir);
+		} else {
+			RAnalPlugin *p = resolve_plugin (anal, 0);
+			if (p) {
+				char *text = r_file_slurp (path, NULL);
+				char *res = p->tparse_text (anal, text);
+				free (text);
+				return res;
+			}
 		}
 	}
 	char *code = r_file_slurp (path, NULL);

@@ -3283,8 +3283,18 @@ static bool cb_anal_pushret(void *user, void *data) {
 static bool cb_anal_types_parser(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	free (core->anal->opt.tparser);
-	core->anal->opt.tparser = strdup (node->value);
+	if (!strcmp (node->value, "?")) {
+		RAnalPlugin *p;
+		RListIter *iter;
+		r_list_foreach (core->anal->plugins, iter, p) {
+			if (p->tparse_text || p->tparse_file) {
+				r_cons_println (core->cons, p->meta.name);
+			}
+		}
+	} else {
+		free (core->anal->opt.tparser);
+		core->anal->opt.tparser = strdup (node->value);
+	}
 	return true;
 }
 
