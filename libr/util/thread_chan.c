@@ -35,7 +35,7 @@ R_API RThreadChannel *r_th_channel_new(RThreadFunction consumer, void *user) {
 		free (tc);
 		return NULL;
 	}
-	// Create consumer thread
+	// Create consumer thread (caller must call r_th_start to launch)
 	tc->consumer = r_th_new (consumer, user, 0);
 	if (!tc->consumer) {
 		r_list_free (tc->stack);
@@ -72,7 +72,8 @@ R_API RThreadChannelMessage *r_th_channel_message_new(RThreadChannel *tc, const 
 		cm->id = tc->nextid;
 		cm->msg = r_mem_dup (msg, len);
 		cm->len = len;
-		cm->sem = r_th_sem_new (1);
+		// Initialize message semaphore to 0 so readers block until posted
+		cm->sem = r_th_sem_new (0);
 		// r_th_sem_wait (cm->sem); // busy because stack is empty
 		cm->lock = r_th_lock_new (false); // locked here
 	}
@@ -82,46 +83,36 @@ R_API RThreadChannelMessage *r_th_channel_message_new(RThreadChannel *tc, const 
 R_API RThreadChannelMessage *r_th_channel_message_read(RThreadChannel *tc, RThreadChannelMessage *cm) {
 	R_LOG_DEBUG ("r_th_channel_message_read");
 	if (cm) {
-		eprintf ("wait\n");
 		r_th_sem_wait (cm->sem);
-		eprintf ("waited\n");
 	} else {
-		eprintf ("not waited\n");
 		// Don't create a dangling reference
 	}
 	return cm;
 }
 
 R_API RThreadChannelMessage *r_th_channel_promise_wait(RThreadChannelPromise *promise) {
-	// wait for a message to be delivered, find one with the same promise id
-	// RThreadChannelMessage *message = r_th_channel_message_new (promise->tc, "x", 0);
-	// append message into the queue
-	if (!promise || !promise->tc) {
-		R_LOG_ERROR ("Invalid promise or thread channel in r_th_channel_promise_wait");
+	if (!promise || !promise->tc || !promise->message) {
+		R_LOG_ERROR("Invalid promise or thread channel in r_th_channel_promise_wait");
 		return NULL;
 	}
-
-	while (true) {
+	RThreadChannel *tc = promise->tc;
+	RThreadChannelMessage *cm = promise->message;
+	// Wait for the consumer to signal the response
+	r_th_sem_wait(cm->sem);
+	// Remove the message from the responses list to avoid double-free
+	if (tc->responses) {
+		r_th_lock_enter(tc->lock);
 		RListIter *iter;
 		RThreadChannelMessage *res;
-		if (!r_th_lock_enter (promise->tc->lock)) {
-			R_LOG_ERROR ("Failed to acquire lock in r_th_channel_promise_wait");
-			break;
-		}
-		if (promise->tc->responses) {
-			r_list_foreach (promise->tc->responses, iter, res) {
-				if (res && res->id == promise->id) {
-					r_list_split_iter (promise->tc->responses, iter);
-					r_th_lock_leave (promise->tc->lock);
-					return res;
-				}
+		r_list_foreach(tc->responses, iter, res) {
+			if (res == cm) {
+				r_list_split_iter(tc->responses, iter);
+				break;
 			}
 		}
-		r_th_lock_leave (promise->tc->lock);
-		// Sleep briefly to avoid CPU spinning
-		r_sys_usleep (1000);  // 1ms sleep between checks
+		r_th_lock_leave(tc->lock);
 	}
-	return NULL;
+	return cm;
 }
 
 R_API RThreadChannelPromise *r_th_channel_promise_new(RThreadChannel *tc) {
@@ -139,11 +130,12 @@ R_API RThreadChannelPromise *r_th_channel_promise_new(RThreadChannel *tc) {
 
 // to be called only from the consumer thread
 R_API void r_th_channel_post(RThreadChannel *tc, RThreadChannelMessage *cm) {
+	// Post a response from the consumer thread
 	r_th_lock_enter (tc->lock);
-	// TODO: lock struct
 	r_list_append (tc->responses, cm);
-	r_th_sem_post (tc->sem);
 	r_th_lock_leave (tc->lock);
+	// Signal any reader waiting on this message
+	r_th_sem_post (cm->sem);
 }
 
 R_API RThreadChannelPromise *r_th_channel_query(RThreadChannel *tc, RThreadChannelMessage *cm) {
@@ -152,6 +144,8 @@ R_API RThreadChannelPromise *r_th_channel_query(RThreadChannel *tc, RThreadChann
 		return NULL;
 	}
 	promise->id = cm->id;
+	promise->message = cm;
+	// Enqueue the message for processing by the consumer thread
 	r_th_channel_write (tc, cm);
 	return promise;
 }
