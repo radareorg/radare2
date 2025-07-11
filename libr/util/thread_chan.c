@@ -35,7 +35,7 @@ R_API RThreadChannel *r_th_channel_new(RThreadFunction consumer, void *user) {
 		free (tc);
 		return NULL;
 	}
-	// Create consumer thread
+	// Create and start the consumer thread
 	tc->consumer = r_th_new (consumer, user, 0);
 	if (!tc->consumer) {
 		r_list_free (tc->stack);
@@ -45,7 +45,9 @@ R_API RThreadChannel *r_th_channel_new(RThreadFunction consumer, void *user) {
 		free (tc);
 		return NULL;
 	}
-	return tc;
+    // Launch consumer to begin processing
+    r_th_start (tc->consumer);
+    return tc;
 }
 
 R_API void r_th_channel_free(RThreadChannel *tc) {
@@ -72,7 +74,8 @@ R_API RThreadChannelMessage *r_th_channel_message_new(RThreadChannel *tc, const 
 		cm->id = tc->nextid;
 		cm->msg = r_mem_dup (msg, len);
 		cm->len = len;
-		cm->sem = r_th_sem_new (1);
+		// Initialize message semaphore to 0 so readers block until posted
+		cm->sem = r_th_sem_new (0);
 		// r_th_sem_wait (cm->sem); // busy because stack is empty
 		cm->lock = r_th_lock_new (false); // locked here
 	}
@@ -139,11 +142,12 @@ R_API RThreadChannelPromise *r_th_channel_promise_new(RThreadChannel *tc) {
 
 // to be called only from the consumer thread
 R_API void r_th_channel_post(RThreadChannel *tc, RThreadChannelMessage *cm) {
-	r_th_lock_enter (tc->lock);
-	// TODO: lock struct
-	r_list_append (tc->responses, cm);
-	r_th_sem_post (tc->sem);
-	r_th_lock_leave (tc->lock);
+    // Post a response from the consumer thread
+    r_th_lock_enter (tc->lock);
+    r_list_append (tc->responses, cm);
+    r_th_lock_leave (tc->lock);
+    // Signal any reader waiting on this message
+    r_th_sem_post (cm->sem);
 }
 
 R_API RThreadChannelPromise *r_th_channel_query(RThreadChannel *tc, RThreadChannelMessage *cm) {

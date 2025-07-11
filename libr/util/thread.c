@@ -104,10 +104,14 @@ R_API void r_th_set_running(RThread *th, bool b) {
 }
 
 R_API int r_th_push_task(RThread *th, void *user) {
-	int ret = true;
-	th->user = user;
-	r_th_lock_leave (th->lock);
-	return ret;
+    // Push a new task into the thread safely
+    R_RETURN_VAL_IF_FAIL(th, false);
+    int ret = true;
+    // Protect user pointer with lock
+    r_th_lock_enter(th->lock);
+    th->user = user;
+    r_th_lock_leave(th->lock);
+    return ret;
 }
 
 R_API R_TH_TID r_th_self(void) {
@@ -277,8 +281,13 @@ R_API RThread *r_th_new(RThreadFunction fun, void *user, ut32 delay) {
 	return th;
 }
 
+// Signal the thread to stop at the next opportunity
 R_API void r_th_break(RThread *th) {
-	th->breaked = true;
+    R_RETURN_IF_FAIL(th);
+    // Protect break flag with lock to ensure visibility
+    r_th_lock_enter(th->lock);
+    th->breaked = true;
+    r_th_lock_leave(th->lock);
 }
 
 R_API bool r_th_kill(RThread *th, bool force) {
@@ -286,7 +295,10 @@ R_API bool r_th_kill(RThread *th, bool force) {
 		return false;
 	}
 	// First set breaked flag to signal thread to stop
+	// Protect break flag with lock to ensure visibility
+	r_th_lock_enter(th->lock);
 	th->breaked = true;
+	r_th_lock_leave(th->lock);
 	// If force is true, kill the thread immediately
 	if (force) {
 #if HAVE_PTHREAD
@@ -336,8 +348,14 @@ R_API int r_th_wait(struct r_th_t *th) {
 	return ret;
 }
 
+// Check if a thread is still running without blocking
 R_API int r_th_wait_async(struct r_th_t *th) {
-	return th->running;
+    R_RETURN_VAL_IF_FAIL(th, false);
+    // Safely read the running flag
+    r_th_lock_enter(th->lock);
+    bool running = th->running;
+    r_th_lock_leave(th->lock);
+    return running;
 }
 
 R_API void *r_th_free(struct r_th_t *th) {
