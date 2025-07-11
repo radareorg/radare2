@@ -4121,7 +4121,7 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 	const char *arg = strchr (input, ' ');
 	arg = arg? r_str_trim_head_ro (arg + 1): input;
 
-	ut64 repeat = r_num_math (core->num, arg);
+	st64 repeat = r_num_math (core->num, arg);
 	if (repeat < 0) {
 		repeat = 1;
 	}
@@ -4346,7 +4346,14 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 		heaped_block = calloc (repeat + 8, n);
 		r_io_read_at (core->io, core->addr, heaped_block, bs);
 		block = heaped_block;
+		bool breaks = repeat > 1024;
+		if (breaks) {
+			r_cons_break_push (core->cons, NULL, NULL);
+		}
 		do {
+			if (breaks && r_cons_is_breaked (core->cons)) {
+				break;
+			}
 			repeat--;
 			const int p_bits = core->rasm->config->bits / 8;
 #if 0
@@ -4404,6 +4411,9 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 				break;
 			}
 		} while (repeat > 0);
+		if (breaks) {
+			r_cons_break_pop (core->cons);
+		}
 		free (heaped_block);
 		break;
 	}
