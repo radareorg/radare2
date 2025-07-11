@@ -869,9 +869,9 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 		int prev_idx, bool userfnc, ut64 caddr) {
 	RAnal *anal = tps->core->anal;
 	RCons *cons = tps->core->cons;
-	REsilTrace *et = tps->et;
+	TypeTrace *tt = &tps->tt;
 	Sdb *TDB = anal->sdb_types;
-	const int idx = etrace_index (et) -1;
+	const int idx = etrace_index (tt) -1;
 	const bool verbose = r_config_get_b (tps->core->config, "anal.types.verbose"); // XXX
 	bool stack_rev = false, in_stack = false, format = false;
 	R_LOG_DEBUG ("type_match %s %"PFMT64x" %"PFMT64x" %s %d", fcn_name, addr, baddr, cc, prev_idx);
@@ -947,7 +947,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 		for (j = idx; j >= prev_idx; j--) {
 			// r_strf_var (k, 32, "%d.addr", j);
 			// ut64 instr_addr = sdb_num_get (trace, k, 0);
-			ut64 instr_addr = etrace_addrof (et, j);
+			ut64 instr_addr = etrace_addrof (tt, j);
 			R_LOG_DEBUG ("0x%08"PFMT64x" back traceing %d", instr_addr, j);
 			if (instr_addr < baddr) {
 				break;
@@ -964,7 +964,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 				break;
 			}
 			RAnalVar *var = r_anal_get_used_function_var (anal, op->addr);
-			if (op->type == R_ANAL_OP_TYPE_MOV && etrace_have_memread (et, j)) {
+			if (op->type == R_ANAL_OP_TYPE_MOV && etrace_have_memread (tt, j)) {
 				memref = ! (!memref && var && (var->kind != R_ANAL_VAR_KIND_REG));
 			}
 			// Match type from function param to instr
@@ -1004,11 +1004,11 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 					res = true;
 				} else {
 					get_src_regname (tps->core, instr_addr, regname, sizeof (regname));
-					xaddr = get_addr (et, regname, j);
+					xaddr = get_addr (tt, regname, j);
 				}
 			}
 			// Type propagate by following source reg
-			if (!res && *regname && etrace_regwrite_contains (et, j, regname)) {
+			if (!res && *regname && etrace_regwrite_contains (tt, j, regname)) {
 				if (var) {
 					if (!userfnc) {
 						// not a userfunction, propagate the callee's arg types into our function's vars
@@ -1035,7 +1035,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 			} else if (var && res && (xaddr && xaddr != UT64_MAX)) { // Type progation using value
 				char tmp[REGNAME_SIZE] = {0};
 				get_src_regname (tps->core, instr_addr, tmp, sizeof (tmp));
-				ut64 ptr = get_addr (et, tmp, j);
+				ut64 ptr = get_addr (tt, tmp, j);
 				if (ptr == xaddr) {
 					var_retype (anal, var, name, r_str_get_fail (type, "int"), memref, false);
 				}
