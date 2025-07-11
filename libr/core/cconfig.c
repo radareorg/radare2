@@ -3280,10 +3280,21 @@ static bool cb_anal_pushret(void *user, void *data) {
 	return true;
 }
 
-static bool cb_anal_newcparser(void *user, void *data) {
+static bool cb_anal_types_parser(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	core->anal->opt.newcparser = node->i_value;
+	if (!strcmp (node->value, "?")) {
+		RAnalPlugin *p;
+		RListIter *iter;
+		r_list_foreach (core->anal->plugins, iter, p) {
+			if (p->tparse_text || p->tparse_file) {
+				r_cons_println (core->cons, p->meta.name);
+			}
+		}
+	} else {
+		free (core->anal->opt.tparser);
+		core->anal->opt.tparser = strdup (node->value);
+	}
 	return true;
 }
 
@@ -3700,7 +3711,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.trycatch", "false", &cb_anal_trycatch, "honor try.X.Y.{from,to,catch} flags");
 	SETCB ("anal.bb.maxsize", "512K", &cb_anal_bb_max_size, "maximum basic block size");
 	SETCB ("anal.pushret", "false", &cb_anal_pushret, "analyze push+ret as jmp");
-	SETCB ("anal.newcparser", "true", &cb_anal_newcparser, "use the new c parser instead of tcc");
+	SETCB ("anal.types.plugin", "", &cb_anal_types_parser, "use the new c parser instead of tcc");
 
 	n = NODECB ("anal.cxxabi", "itanium", &cb_anal_cxxabi);
 	SETDESC (n, "select C++ RTTI ABI");

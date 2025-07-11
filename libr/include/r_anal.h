@@ -391,8 +391,7 @@ typedef struct r_anal_options_t {
 	bool flagends;
 	bool zigndups;
 	bool icods; // R2_600 -- add anal.icods or anal.xrefs.indirect references. needed for stm8 at least
-	bool newcparser;
-	// R2_600 - add zign_dups field for "zign.dups" config
+	char *tparser;
 } RAnalOptions;
 
 // XXX we have cc / calling conventions / abi settings already no need for a custom enum here
@@ -798,7 +797,9 @@ typedef int (*REsilCB)(REsil *esil);
 typedef int (*REsilLoopCB)(REsil *esil, RAnalOp *op);
 typedef int (*REsilTrapCB)(REsil *esil, int trap_type, int trap_code);
 
-typedef bool (*RAnalTypesParser)(RAnal *a, const char *s);
+typedef char *(*RAnalTypesParser)(RAnal *a, const char *s);
+typedef char *(*RAnalTypesParserFile)(RAnal *a, const char *s, const char *dir);
+typedef char *(*RAnalTypesParserText)(RAnal *a, const char *s);
 
 typedef struct r_anal_plugin_t {
 	RPluginMeta meta;
@@ -813,7 +814,8 @@ typedef struct r_anal_plugin_t {
 	RAnalCmdCallback cmd;
 
 	// implement custom types parser and dumper
-	RAnalTypesParser tparse;
+	RAnalTypesParserText tparse_text;
+	RAnalTypesParserFile tparse_file;
 	RAnalTypesParser tdump;
 #if 1
 	/// XXX unused but referenced, maybe worth checking in case we want them for anal
@@ -1618,6 +1620,7 @@ R_API void r_anal_backtrace_list(RAnal *a, ut64 addr, int opt);
 
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_null;
+extern RAnalPlugin r_anal_plugin_tcc;
 extern RAnalPlugin r_anal_plugin_a2f;
 
 #ifdef __cplusplus

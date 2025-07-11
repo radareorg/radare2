@@ -134,7 +134,7 @@ e io.cache=false
 e io.cache.read=false
 wc-*
 aa
--e anal.newcparser=false
+-e anal.types.plugin=tcc
 s sym.Java_com_app_ndh_NDHActivity_print
 to bins/headers/jni.h
 td struct NULL { }
