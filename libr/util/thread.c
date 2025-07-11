@@ -284,10 +284,8 @@ R_API RThread *r_th_new(RThreadFunction fun, void *user, ut32 delay) {
 // Signal the thread to stop at the next opportunity
 R_API void r_th_break(RThread *th) {
     R_RETURN_IF_FAIL(th);
-    // Protect break flag with lock to ensure visibility
-    r_th_lock_enter(th->lock);
+    // Set break flag without acquiring thread lock to avoid deadlock
     th->breaked = true;
-    r_th_lock_leave(th->lock);
 }
 
 R_API bool r_th_kill(RThread *th, bool force) {
