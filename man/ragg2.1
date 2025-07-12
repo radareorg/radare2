@@ -114,7 +114,6 @@ Using r_egg language:
   /* hello world in r_egg */
   write@syscall(4); //x64 write@syscall(1);
   exit@syscall(1); //x64 exit@syscall(60);
-
   main@global(128) {
     .var0 = "hi!\\n";
     write(1,.var0, 4);

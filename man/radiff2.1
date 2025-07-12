@@ -14,7 +14,6 @@
 .Op Fl t Ar %
 .Op Fl S Ar name
 .Ar file1 file2
-
 .Sh DESCRIPTION
 .Nm radiff2
 is a tool designed for binary diffing code and data from the radare2 suite.
@@ -89,11 +88,9 @@ Show two-column hexdump diffing.
 .It Fl X
 Use xpatch format for the diffing output.
 .El
-
 .Sh ENVIRONMENT
 .Pp
 No environment variables are used.
-
 .Sh "GRAPH OUTPUT FORMATS (-m [mode])"
 .Bl -tag -width Fl
 .It Fl a
@@ -115,7 +112,6 @@ Tiny ASCII art.
 .It Fl i
 Interactive ASCII art.
 .El
-
 .Sh EXAMPLES
 .Bl -tag -width Fl
 .It Comparing two binaries
@@ -135,37 +131,27 @@ $ radiff2 -o 0x1000:0x2000 bin1 bin2
 .It Compare specific lengths from given offsets
 $ radiff2 -o 0x1000 -l 0x500 bin1 bin2
 .El
-
-.Sh 'C' COMMAND IN R2
+.Sh RADARE2 COMMANDS
 The 'c' command in r2 is used for various comparison operations within data inside the same file. Here are some examples of its usage:
-
 .Bl -tag -width Fl
 .It Compare a plain string with escaped chars
 c "string to compare"
-
 .It Compare byte at a specific address with current offset
 c1 0x100
-
 .It Compare block size bytes from current offset and the 0x100 offset
 cc 0x100
-
 .It Unified diff of disassembly from current seek and given address
 cud 0x200 @ 0x100
-
 .It Compare memory hexdumps in unified diff format
 cu 0x100 @ 0x200
 .El
-
 For more detailed usage of the 'c' command, refer to the `c[?dfx] [argument]` help section.
-
 .Sh SEE ALSO
 .Pp
 .Xr radare2 1
-
 .Sh WWW
 .Pp
 https://www.radare.org/
-
 .Sh AUTHOR
 .Pp
 pancake <pancake@nopcode.org>
