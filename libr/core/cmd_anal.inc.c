@@ -7224,8 +7224,8 @@ void cmd_anal_reg(RCore *core, const char *str) {
 
 #if USE_NEW_ESIL
 R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver) {
-	const bool is_x86 = r_str_startswith (r_config_get (core->config, "asm.arch"), "x86");
-	const bool breakoninvalid = r_config_get_b (core->config, "esil.breakoninvalid");
+//	const bool is_x86 = r_str_startswith (r_config_get (core->config, "asm.arch"), "x86");
+//	const bool breakoninvalid = r_config_get_b (core->config, "esil.breakoninvalid");
 	const int esiltimeout = r_config_get_i (core->config, "esil.timeout");
 	int ret = true;
 	ut64 startTime = 0;

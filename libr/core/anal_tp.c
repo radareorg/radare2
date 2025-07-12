@@ -320,7 +320,6 @@ static bool type_trace_op(TypeTrace *trace, REsil *esil, RAnalOp *op) {
 		return false;
 	}
 	trace->cc = 0;
-	
 	RRegItem *ri = r_reg_get (trace->reg, "PC", -1);
 	if (ri) {
 		const bool suc = r_esil_reg_write_silent (esil, ri->name, op->addr + op->size);
