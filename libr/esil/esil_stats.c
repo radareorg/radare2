@@ -104,7 +104,7 @@ R_API void r_esil_mem_ro(REsil *esil, bool mem_readonly) {
 	}
 }
 
-#if UNUSED
+#if MYUNUSED
 static void esil_stats_old(REsil *esil, bool enable) {
 	if (enable) {
 		if (esil->stats) {
