@@ -1,5 +1,10 @@
 # API/ABI/CMD Stability in R2
 
+Since r2-6.0.0 the `ABI_VERSION` define avoid plugins built with different ABI
+to be loaded to avoid segfaults.
+
+## Introduction
+
 Since r2-5.6.0 the development model has changed in order to provide a reliable
 way to push updates without the need to recompile the plugins, tools and api
 bindings.

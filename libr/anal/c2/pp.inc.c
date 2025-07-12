@@ -72,7 +72,7 @@ R_API void pp_set_define(PPState *st, const char *name, const char *value) {
 	for (i = 0; i < st->count; i++) {
 		if (!strcmp (st->keys[i], name)) {
 			free (st->values[i]);
-			st->values[i] = strdup(value);
+			st->values[i] = strdup (value);
 			return;
 		}
 	}
@@ -147,8 +147,7 @@ R_API char *pp_preprocess(PPState *st, const char *source) {
 			const char *dir_start = q;
 			while (q < line_end && isalpha((unsigned char)*q)) { q++; }
 			size_t dir_len = q - dir_start;
-			char dir[16] = {0};
-			if (dir_len < sizeof (dir)) { memcpy (dir, dir_start, dir_len); }
+			char *dir = r_str_ndup (dir_start, dir_len);
 			if (!strcmp (dir, "define") && !skip) {
 				while (q < line_end && isspace ((unsigned char)*q)) { q++; }
 				const char *name_start = q;
@@ -158,8 +157,7 @@ R_API char *pp_preprocess(PPState *st, const char *source) {
 				while (q < line_end && isspace ((unsigned char)*q)) { q++; }
 				const char *val_start = q;
 				size_t val_len = line_end - q;
-				char *value = r_str_ndup (val_start, val_len);
-				r_str_trim (value);
+				char *value = r_str_trim_ndup (val_start, val_len);
 				pp_set_define (st, name, value);
 				free (name);
 				free (value);
@@ -168,7 +166,7 @@ R_API char *pp_preprocess(PPState *st, const char *source) {
 				const char *name_start = q;
 				while (q < line_end && is_identifier_char(*q)) { q++; }
 				size_t name_len = q - name_start;
-				char *name = r_str_ndup(name_start, name_len);
+				char *name = r_str_ndup (name_start, name_len);
 				size_t i;
 				for (i = 0; i < st->count; i++) {
 					if (!strcmp (st->keys[i], name)) {
@@ -186,7 +184,7 @@ R_API char *pp_preprocess(PPState *st, const char *source) {
 				const char *name_start = q;
 				while (q < line_end && is_identifier_char(*q)) { q++; }
 				size_t name_len = q - name_start;
-				char *name = r_str_ndup(name_start, name_len);
+				char *name = r_str_ndup (name_start, name_len);
 				bool defined = pp_get_define (st, name) != NULL;
 				free (name);
 				bool cond = !strcmp (dir, "ifdef") ? defined : !defined;
@@ -242,6 +240,7 @@ R_API char *pp_preprocess(PPState *st, const char *source) {
 					free (filename);
 				}
 			}
+			free (dir);
 			// Remove directive lines starting with '#' from output, preserve line breaks
 			if (newline) {
 				r_strbuf_append (out, "\n");
