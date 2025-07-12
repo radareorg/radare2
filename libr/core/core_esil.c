@@ -85,7 +85,6 @@ static bool core_esil_mem_read (void *core, ut64 addr, ut8 *buf, int len) {
 	if (!addr && c->esil.cfg & R_CORE_ESIL_NONULL) {
 		return false;
 	}
-	
 	if (c->esil.cmd_mdev && c->esil.mdev_range && r_str_range_in (c->esil.mdev_range, addr)) {
 		r_core_cmdf (c, "%s %"PFMT64d" 0", c->esil.cmd_mdev, c->esil.old_pc);
 		return c->num->value;
