@@ -18,9 +18,11 @@
 .Op Fl g
 .Op Ar test file/dir | @test-type
 .Sh DESCRIPTION
-Regression testsuite tool for radare2 and third-party plugins.
+r2r is a command-line regression testing framework for Radare2 and its third-party plugins.
 .Pp
-You need radare2 to be available in $PATH.
+It automates the discovery and execution of diverse test suites—including unit tests, JSON validations, fuzz tests, and architecture-specific checks—to ensure that code changes do not introduce regressions.
+.Pp
+r2r supports parallel test execution, interactive failure handling, custom timeouts, and filtering of tests by type or name. It integrates seamlessly into continuous integration workflows or can be used locally, and requires only that Radare2 be installed and available in the system PATH.
 .Sh OPTIONS
 .Bl -tag -width Fl
 .It Fl C Ar dir

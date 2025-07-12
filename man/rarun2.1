@@ -10,13 +10,11 @@
 .Op Ar script.rr2
 .Op Fl- Ar program Ar args ...
 .Sh DESCRIPTION
-This program is used as a launcher for running programs with different environment, arguments, permissions, directories and overridden default file descriptors.
+A launcher for executing programs with custom environments, arguments, permissions, working directories, and redirected file descriptors.
 .Pp
-rarun2 -t will show the terminal name and wait for a connection from another process. try rarun2 stdio=<ttypath> program=/bin/sh
+Supports inline directive arguments, script files, or program specifications after the '--' separator.
 .Pp
-The program can accept directive arguments, a script file, or specify a program to run after '--'.
-.Pp
-It is useful when you have to run a program using long arguments or pass long data to stdin or things like that usually are required for exploiting crackmes :)
+Ideal for simplifying complex command lines, preparing specialized environments, and automating testing or exploitation scenarios.
 .Sh OPTIONS
 .Bl -tag -width Fl
 .It Fl v

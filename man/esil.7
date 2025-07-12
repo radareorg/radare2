@@ -1,7 +1,8 @@
 .Dd Mar 16, 2024
 .Dt ESIL 7
 .Sh NAME
-ESIL - Evaluable Strings Intermediate Language
+.Nm ESIL
+.Nd Evaluable Strings Intermediate Language
 .Sh SYNOPSIS
 ESIL
 provides an abstract, stack-based format for representing CPU instruction semantics across various architectures, facilitating instruction emulation for analysis and debugging within the radare2 framework.
@@ -77,7 +78,7 @@ Basic math operations like add, sub, mul, mod, div, shift, rotate, and, or
 .Pp
 "|" binary OR
 .Pp
-"!" negate value ins tack
+"!": logical NOT (invert top value on stack)
 .Pp
 "L*": long multiplication
 .Pp
@@ -96,7 +97,7 @@ Comparison words update the internal flags and can be used to make conditional o
 .Pp
 "<=": smaller or equal
 .Pp
-"<=": bigger or equal
+">=": bigger or equal
 .Pp
 ">": bigger than
 .Pp

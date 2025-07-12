@@ -2,7 +2,7 @@
 .Dt RAHASH2 1
 .Sh NAME
 .Nm rahash2
-.Nd block-based hashing, encoding and encryption utility
+.Nd Block-Based Hashing, Encoding, and Encryption Utility
 .Sh SYNOPSIS
 .Nm rahash2
 .Op Fl BehjkLqrvX
@@ -20,13 +20,11 @@
 .Op Fl x Ar hexstr
 .Op Ar file ...
 .Sh DESCRIPTION
-This program is part of the radare2 project.
+A utility for computing, verifying, and displaying hash values for each block of a file, with a default block size of 32768 bytes. Reads from standard input using '-' and supports comparison against known hashes via exit status codes.
 .Pp
-Rahash2 allows you to calculate, check, and display hash values of each block of a target file. By default, the block size is set to 32768 bytes. It supports reading from stdin using '-' as a target file. You can compare against a known hash and get the result in the exit status.
+Commonly used for forensic analysis, detecting file modifications, and efficient processing of large files.
 .Pp
-It's useful for hashing large files and identifying modifications in forensics filesystem analysis.
-.Pp
-Rahash2 can calculate the entropy or hashes of specific parts of a file or command-line passed strings. It's also able to encode, decode, encrypt and decrypt files using various cryptographic algorithms and methods.
+Supports entropy calculation, targeted hashing of file segments or strings, and encoding, decoding, encryption, and decryption using various cryptographic algorithms.
 .Bl -tag -width Fl
 .It Fl a Ar algo
 Comma separated list of algorithms (default is 'sha256')

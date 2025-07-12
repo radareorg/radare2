@@ -2,7 +2,7 @@
 .Dt RABIN2 1
 .Sh NAME
 .Nm rabin2
-.Nd Binary program info extractor
+.Nd Binary Information Extractor
 .Sh SYNOPSIS
 .Nm rabin2
 .Op Fl AcdeEghHiIjJlLMpqQrRsStuUVvwxZ
@@ -24,9 +24,9 @@
 .Op Fl @ Ar addr
 .Ar file
 .Sh DESCRIPTION
-This program allows you to get information about ELF/PE/MZ and CLASS files in a simple way.
+A binary information extractor supporting ELF, PE, MZ, and Mach-O formats, providing details on headers, sections, symbols, imports, exports, and debug data.
 .Pp
-All command-line flags are also available under the i command in radare2. Type i? for help.
+Most options are also available within the radare2 'i' command (type 'i?' for help).
 .Bl -tag -width Fl
 .It Fl @ Ar addr
 Show section, symbol or import at given address
