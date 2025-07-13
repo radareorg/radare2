@@ -1,161 +1,203 @@
-.Dd Nov 22, 2021
+.Dd Jul 10, 2025
 .Dt RABIN2 1
 .Sh NAME
 .Nm rabin2
-.Nd Binary program info extractor
+.Nd Binary Information Extractor
 .Sh SYNOPSIS
 .Nm rabin2
-.Op Fl AceghHiIsSMzlpRrLxvhqQTuUwV
+.Op Fl AcdeEghHiIjJlLMpqQrRsStuUVvwxZ
 .Op Fl a Ar arch
 .Op Fl b Ar bits
 .Op Fl B Ar addr
 .Op Fl C Ar fmt:C:[D]
 .Op Fl D Ar lang sym|-
 .Op Fl f Ar subbin
+.Op Fl F Ar binfmt
 .Op Fl k Ar query
 .Op Fl K Ar algo
-.Op Fl O Ar binop
-.Op Fl o Ar str
 .Op Fl m Ar addr
-.Op Fl @ Ar addr
 .Op Fl n Ar str
+.Op Fl N Ar minlen:maxlen
+.Op Fl o Ar str
+.Op Fl O Ar binop
 .Op Fl X Ar fmt file ...
+.Op Fl @ Ar addr
 .Ar file
 .Sh DESCRIPTION
-This program allows you to get information about ELF/PE/MZ and CLASS files in a simple way.
+A binary information extractor supporting ELF, PE, MZ, and Mach-O formats, providing details on headers, sections, symbols, imports, exports, and debug data.
 .Pp
-All those command-line flags are also available under the i command in radare2. Type i? for help.
+Most options are also available within the radare2 'i' command (type 'i?' for help).
 .Bl -tag -width Fl
 .It Fl @ Ar addr
-Show information (symbol, section, import) of the given address
+Show section, symbol or import at given address
 .It Fl A
 List sub-binaries and their associated arch-bits pairs
 .It Fl a Ar arch
-Set arch (x86, arm, .. accepts underscore for bits x86_32)
+Set arch (x86, arm, .. or <arch>_<bits>)
 .It Fl b Ar bits
 Set bits (32, 64, ...)
 .It Fl B Ar addr
-Override baddr
+Override base address (for address independent binaries)
 .It Fl c
 List classes
 .It Fl cc
 List classes in header format
 .It Fl C Ar [fmt:C[:D]]
-Create [elf,mach0,pe] for arm and x86-32/64 tiny binaries where 'C' is an hexpair list of the code bytes and ':D' is an optional concatenation to describe the bytes for the data section.
+Create [elf,mach0,pe] with Code and Data hexpairs (see -a)
 .It Fl d
 Show debug/dwarf information
 .It Fl D Ar lang symbolname|-
 Demangle symbol name (or - to read from stdin) for lang (cxx, swift, java, cxx, ..)
 .It Fl e
-Show entrypoints for disk and on-memory
+Program entrypoint
 .It Fl ee
-Show constructor/destructors (extended entrypoints)
+Constructor/destructor entrypoints
+.It Fl E
+Globally exportable symbols
 .It Fl f Ar subbin
 Select sub-binary architecture. Useful for fat-mach0 binaries
 .It Fl F Ar binfmt
 Force to use that bin plugin (ignore header check)
 .It Fl g
-Show all possible information
+Same as -SMZIHVResizcld -SS -SSS -ee (show all info)
 .It Fl G Ar addr
-Load address . offset to header
+Load address . address to header
 .It Fl h
-Show usage help message.
+Show this help message
 .It Fl H
-Show header fields (see ih command in r2)
+Header fields
 .It Fl I
-Show binary info (see iI command in r2)
+Binary info
 .It Fl i
-Show imports (symbols imported from libraries) (see ii command in r2)
+Imports (symbols imported from libraries)
 .It Fl j
 Output in json
+.It Fl J Ar var
+Display environment variable
 .It Fl k Ar query
-Perform SDB query on loaded file
+Perform SDB query on loaded file. For example: '*'
 .It Fl K Ar algo
-Select a rahash2 checksum algorithm to be performed on sections listing (and maybe others in the future) i.e 'rabin2 -K md5 -S /bin/ls'
+Calculate section checksums (md5, sha1, ..)
 .It Fl l
 List linked libraries to the binary
-.It Fl L
-List supported bin plugins
-.It Fl M
-Show address of 'main' symbol
+.It Fl L Ar plugin
+List supported bin plugins or plugin details
 .It Fl m Ar addr
-Show source line reference from a given address
-.It Fl N Ar minlen:maxlen
-Force minimum and maximum number of chars per string (see -z and -zz). if (strlen>minlen && (!maxlen || strlen<=maxlen))
+Show source line at addr
+.It Fl M
+Main (show address of main symbol)
 .It Fl n Ar str
-Show information (symbol, section, import) at string offset
+Show section, symbol or import named str
+.It Fl N Ar minlen:maxlen
+Force min:max number of chars per string (see -z and -zz)
 .It Fl o Ar str
 Output file/folder for write operations (out by default)
 .It Fl O Ar binop
-Perform binary operation on target binary (dump, resize, change sections, ...) see '-O help' for more information
+Perform binary operation on target binary (dump, resize, change sections, ...). Use -O help for more information:
+.Bd -literal -offset indent
+ e/0x8048000       change entrypoint
+ d/s/1024          dump symbols
+ d/S/.text         dump section
+ r/.data/1024      resize section
+ R                 remove RPATH
+ a/l/libfoo.dylib  add library
+ p/.data/rwx       change section permissions
+ c                 show Codesign data
+ C                 show LDID entitlements
+.Ed
 .It Fl p
-Disable VA. Always show physical addresses (not the same as -B0)
+Show always physical addresses
 .It Fl P
 Show debug/pdb information
 .It Fl PP
 Download pdb file for binary
 .It Fl q
-Be quiet, just show fewer data
+Be quiet, just show less data
 .It Fl qq
-Show less info (no offset/size for -z for ex.)
+Show less info (no addr/size for -z for ex.)
 .It Fl Q
 Show load address used by dlopen (non-aslr libs)
 .It Fl r
-Show output in radare format
+Radare output
 .It Fl R
-Show relocations
+Relocations
 .It Fl s
-Show exported symbols
+Symbols
 .It Fl S
-Show sections
+Sections
 .It Fl SS
-Show segments
+Segments
+.It Fl SSS
+Sections mapping to segments
 .It Fl t
-Show file hashes
+Display file hashes
 .It Fl T
-Show certificates
+Display file signature, certificates and signing details
 .It Fl u
 Unfiltered (no rename duplicated symbols/sections)
 .It Fl U
-Show resources
+Resources
 .It Fl v
-Show version information
+Display version and quit
 .It Fl V
 Show binary version information
 .It Fl w
-Show try/catch blocks
+Display try/catch blocks
 .It Fl x
-Extract all sub binaries from a fat binary (for example: fatmach0)
+Extract sub-binaries contained in file (for example inside FAT mach-o binaries)
 .It Fl X Ar format file ...
-Package a fat or zip containing all the files passed (fat, zip)
+Package in fat or zip the given files
 .It Fl z
-Show strings inside .data section (like gnu strings does)
+Strings (from data section)
 .It Fl Z
 Guess size of binary program
 .It Fl zz
-Shows strings from raw bins
+Show strings from raw bins
 .It Fl zzz
 Dump raw strings to stdout (for huge files)
 .El
 .Sh ENVIRONMENT
 .Pp
-RABIN2_ARGS ignore cli and use these arguments instead
-.Pp
-RABIN2_LANG same as r2 -e bin.lang for rabin2
-.Pp
-RABIN2_DEMANGLE demangle symbols
-.Pp
-RABIN2_MAXSTRBUF same as r2 -e bin.maxstrbuf for rabin2
-.Pp
-RABIN2_DEBASE64 try to decode all strings as base64 if possible
-.Pp
-RABIN2_STRFILTER same as r2 -e bin.str.filter for rabin2
-.Pp
-RABIN2_STRPURGE same as r2 -e bin.str.purge for rabin2
-.Pp
-RABIN2_DEMANGLE_TRYLIB same as r2 -e bin.demangle.trylib=<bool> - try to dynamically load libraries to demangle
-.Pp
-RABIN2_VERBOSE same as r2 -e bin.verbose=true
+.Bl -tag -width Fl
+.It Ev R2_NOPLUGINS
+Same as r2 -N. Do not load shared plugins
+.It Ev RABIN2_ARGS
+Ignore CLI and use these arguments instead
+.It Ev RABIN2_CHARSET
+Set default value charset for -z strings
+.It Ev RABIN2_CODESIGN_VERBOSE
+Show codesign details at parse time
+.It Ev RABIN2_DEBASE64
+Same as r2 -e bin.str.debase64 - try to decode all strings as base64 if possible
+.It Ev RABIN2_DEMANGLE
+Same as r2 -e bin.demangle - demangle symbols
+.It Ev RABIN2_DEMANGLE_CMD
+Same as r2 -e bin.demangle.cmd - try to purge false positives
+.It Ev RABIN2_DEMANGLE_TRYLIB
+Same as r2 -e bin.demangle.trylib=<bool> - load Swift libs to demangle (default: false)
+.It Ev RABIN2_LANG
+Same as r2 -e bin.lang - assume lang for demangling
+.It Ev RABIN2_MACHO_NOFUNCSTARTS
+If set it will ignore the FUNCSTART information
+.It Ev RABIN2_MACHO_NOSWIFT
+Avoid parsing the swift metadata
+.It Ev RABIN2_MACHO_SKIPFIXUPS
+Do not parse the mach-o chained fixups
+.It Ev RABIN2_MAXSTRBUF
+Same as r2 -e bin.str.maxbuf - specify maximum buffer size
+.It Ev RABIN2_PDBSERVER
+Same as r2 -e pdb.server - use alternative PDB server
+.It Ev RABIN2_PREFIX
+Same as r2 -e bin.prefix - prefix symbols/sections/relocs with a specific string
+.It Ev RABIN2_STRFILTER
+Same as r2 -e bin.str.filter
+.It Ev RABIN2_STRPURGE
+Same as r2 -e bin.str.purge - try to purge false positives
+.It Ev RABIN2_SYMSTORE
+Same as r2 -e pdb.symstore - path to downstream symbol store
+.It Ev RABIN2_VERBOSE
+Same as r2 -e bin.verbose=true - show debugging messages from the parser
+.El
 .Sh EXAMPLES
 .Pp
 List symbols of a program

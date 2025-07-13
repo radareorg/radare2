@@ -1132,7 +1132,6 @@ static void r2pm_envhelp(void) {
 		"SUDO=sudo              # path to the SUDO executable\n"
 		"MAKE=make              # path to the GNU MAKE executable\n"
 		"R2PM_OFFLINE=%d         # don't git pull\n"
-		"R2PM_LEGACY=0\n"
 		"R2PM_TIME=YYYY-MM-DD\n"
 		"R2PM_PLUGDIR=%s\n"
 		"R2PM_PLUGDIR=%s (global)\n"

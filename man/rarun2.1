@@ -1,108 +1,124 @@
-.Dd Aug 18, 2023
+.Dd Jul 10, 2025
 .Dt RARUN2 1
 .Sh NAME
 .Nm rarun2
 .Nd radare2 utility to run programs in exotic environments
 .Sh SYNOPSIS
 .Nm rarun2
-.Op [directives]
-.Op [script.rr2]
-.Op [--] [program] [args]
+.Op Fl vt
+.Op Ar directives ...
+.Op Ar script.rr2
+.Op Fl- Ar program Ar args ...
 .Sh DESCRIPTION
-This program is used as a launcher for running programs with different environment, arguments, permissions, directories and overridden default file descriptors.
+A launcher for executing programs with custom environments, arguments, permissions, working directories, and redirected file descriptors.
 .Pp
-rarun2 -t will show the terminal name and wait for a connection from another process. try rarun2 stdio=<ttypath> program=/bin/sh
+Supports inline directive arguments, script files, or program specifications after the '--' separator.
 .Pp
-The program just accepts a single argument which is the filename of the configuration file to run the program.
-.Pp
-It is useful when you have to run a program using long arguments or pass long data to stdin or things like that usually are required for exploiting crackmes :)
+Ideal for simplifying complex command lines, preparing specialized environments, and automating testing or exploitation scenarios.
+.Sh OPTIONS
+.Bl -tag -width Fl
+.It Fl v
+Show version
+.It Fl t
+Show terminal name
+.It Fl -
+Use remaining arguments as program and program arguments
+.El
 .Sh DIRECTIVES
 .Pp
 The rr2 (rarun2) configuration file accepts the following directives, described as key=value entries and comments defined as lines starting with '#'.
 .Bl -tag -width Fl
-.It Ar arg[0-N]
-set value for argument N passed to the program
-.It Ar aslr
-enable or disable ASLR
-.It Ar bits
-set 32 or 64 bit (if the architecture supports it)
-.It Ar chdir
-change directory before executing the program
-.It Ar chroot
-run the program in chroot. requires some previous setup
-.It Ar clearenv
-unset the whole environment
-.It Ar core
-set no limit the core file size
-.It Ar times
-boolean value (true|false) to print runtime in milliseconds to stderr after program execution
-.It Ar connect
-connect stdin/stdout/stderr to a socket
-.It Ar pty
-use a pty for connection over socket (with connect/listen)
-.It Ar envfile
-set a file with lines like `var=value` to be used as env
-.It Ar fork
-used with the listen option, allow to spawn a different process for each connection. Ignored when debugging.
-.It Ar input
-set string to be passed to the program via stdin
-.It Ar libpath
-override path where the dynamic loader will look for shared libraries
-.It Ar listen
-bound stdin/stdout/stderr to a listening socket
-.It Ar maxstack
-set the maximum size for the stack
-.It Ar maxproc
-set the maximum number of processes
-.It Ar maxfd
-set the maximum number of file descriptors
-.It Ar nice
-set the niceness level of the process
-.It Ar preload
-preload a library (not supported on Windows, only linux,osx,bsd)
-.It Ar daemon
-Set to false by default, otherwise it will run the program in background, detached from the terminal.
-.It Ar program
-path to program to be executed
-.It Ar execve
-use execve instead of posix_spawn (osx tricks)
-.It Ar runlib
-path to the library to be executed
-.It Ar runlib.fcn
-function name to call from runlib library
-.It Ar r2preload
-preload with libr2, kill -USR1 to get an r2 shell or -USR2 to spawn a webserver in a thread
-.It Ar r2preweb
-run the webserver in a thread just at starting the r2preload
-.It Ar setenv
-set value for given environment variable
-.It Ar setegid
-set effective process group id
-.It Ar seteuid
-set effective process uid
-.It Ar setgid
-set process group id
-.It Ar stderrout true|false
-Redirect stderr filedescriptor to stdout
-.It Ar setuid
-set process uid
-.It Ar sleep
-sleep for the given amount of seconds
-.It Ar stdin
-select file to read data from stdin
-.It Ar stdout
-select file to replace stdout file descriptor
-.It Ar system
-execute the given command
-.It Ar timeout
-set a timeout
-.It Ar timeoutsig
-signal to use when killing the child because the timeout happens
-.It Ar unsetenv
-unset one environment variable
+.It Ar program=
+Path to program to be executed
+.It Ar arg0=..argN=
+Set values for arguments passed to the program
+.It Ar aslr=
+Enable or disable ASLR (yes|no)
+.It Ar bits=
+Set 32 or 64 bit (if the architecture supports it)
+.It Ar chdir=
+Change directory before executing the program
+.It Ar chroot=
+Run the program in chroot (requires some previous setup)
+.It Ar clearenv=
+Unset the whole environment (true|false)
+.It Ar connect=
+Connect stdin/stdout/stderr to a socket (host:port)
+.It Ar core=
+Set no limit to the core file size (true|false)
+.It Ar daemon=
+Run in background, detached from terminal (default: false)
+.It Ar envfile=
+Set a file with lines like 'var=value' to be used as env
+.It Ar execve=
+Use execve instead of posix_spawn (osx tricks)
+.It Ar fork=
+Allow spawning different process for each connection with 'listen'
+.It Ar input=
+Set string to be passed to the program via stdin
+.It Ar libpath=
+Override path where the dynamic loader looks for shared libraries
+.It Ar listen=
+Bind stdin/stdout/stderr to a listening socket (port)
+.It Ar maxfd=
+Set the maximum number of file descriptors
+.It Ar maxproc=
+Set the maximum number of processes
+.It Ar maxstack=
+Set the maximum size for the stack
+.It Ar nice=
+Set the niceness level of the process
+.It Ar pid=
+Set process pid
+.It Ar pidfile=
+Write pid to a file
+.It Ar preload=
+Preload a library (not supported on Windows, only linux,osx,bsd)
+.It Ar pty=
+Use a pty for connection over socket (true|false)
+.It Ar r2preload=
+Preload with libr2, kill -USR1 for r2 shell, -USR2 for webserver
+.It Ar r2preweb=
+Run webserver in a thread at start with r2preload
+.It Ar runlib=
+Path to the library to be executed
+.It Ar runlib.fcn=
+Function name to call from runlib library
+.It Ar setegid=
+Set effective process group id
+.It Ar seteuid=
+Set effective process uid
+.It Ar setenv=
+Set value for given environment variable (NAME=VALUE)
+.It Ar setgid=
+Set process group id
+.It Ar setuid=
+Set process uid
+.It Ar sleep=
+Sleep for the given amount of seconds before execution
+.It Ar stderrout=
+Redirect stderr file descriptor to stdout (true|false)
+.It Ar stdio=
+Select file or terminal for stdout/stderr/stdin
+.It Ar stdin=
+Select file to read data from stdin
+.It Ar stdout=
+Select file to replace stdout file descriptor
+.It Ar stderr=
+Select file to replace stderr file descriptor
+.It Ar system=
+Execute the given command
+.It Ar timeout=
+Set a timeout in seconds
+.It Ar timeoutsig=
+Signal to use when killing child on timeout (SIGTERM)
+.It Ar times=
+Print runtime in milliseconds to stderr (true|false)
+.It Ar unsetenv=
+Unset one environment variable
 .El
 .Sh VALUE PREFIXES
-Every value in this configuration file can contain a special
+Every value in this configuration file can contain a special prefix:
 .Pp
 .Bl -tag -width Fl
 .It Ar @filename
@@ -119,9 +135,18 @@ Parse hexpair string and store it in the variable
 Parse hexpair string from output of command and store it in the variable
 .It Ar %1234
 Parses the input string and returns it as integer
+.It Ar @300@ABCD
+300 characters filled with ABCD pattern
+.El
+.Sh ENVIRONMENT
+.Pp
+.Bl -tag -width Fl
+.It Ev RARUN2_ARGS
+Useful to run "rarun2" but parse arguments from environment var
 .El
 .Sh EXAMPLES
-Sample rarun2 script
+.Pp
+Sample rarun2 script:
 .Pp
   $ cat foo.rr2
   #!/usr/bin/rarun2
@@ -135,35 +160,33 @@ Sample rarun2 script
   unsetenv=NOFUN
   # EGG will be the only env variable
   #chroot=.
-  ./foo.rr2
+  $ ./foo.rr2
 .Pp
-Connecting a program to a socket
+Connecting a program to a socket:
 .Pp
-  $ nc \-l 9999
+  $ nc -l 9999
   $ rarun2 program=/bin/ls connect=localhost:9999
 .Pp
-Debugging a program redirecting IO to another terminal
+Debugging a program redirecting IO to another terminal:
 .Pp
   ## open a new terminal and type 'tty' to get
   $ tty ; clear ; sleep 999999
   /dev/ttyS010
   ## in another terminal run r2
-  $ r2 \-r foo.rr2 -d ls
+  $ r2 -r foo.rr2 -d ls
   $ cat foo.rr2
   #!/usr/bin/rarun2
   stdio=/dev/ttys010
   ## Or you can use -R to set a key=value
-  r2 \-R stdio=/dev/ttys010 -d ls
+  r2 -R stdio=/dev/ttys010 -d ls
 .Pp
-You can also use the -- flag to specify program and arguments in a more natural way:
+You can also use the -- flag to specify program and arguments:
 .Pp
   $ rarun2 timeout=2 -- sleep 4
 .Pp
-Run a library function
+Run a library function:
 .Pp
   $ rarun2 runlib=/lib/libc-2.25.so runlib.fcn=system arg1="ls /"
-.Sh ENVIRONMENT
- RARUN2_ARGS     useful to just run "rarun2" but parse arguments from environment var
 .Sh SEE ALSO
 .Pp
 .Xr radare2(1)

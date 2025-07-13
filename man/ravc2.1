@@ -1,39 +1,85 @@
-.Dd Jul 26, 2021
+.Dd Jul 10, 2025
 .Dt RAVC2 1
 .Sh NAME
 .Nm ravc2
-.Nd radare version control
+.Nd Radare2 Version Control Interface
 .Sh SYNOPSIS
 .Nm ravc2
-.Op Fl hv
-.Op [expr] ...
+.Op Fl qvhjH
+.Op Ar action
+.Op Ar args ...
 .Sh DESCRIPTION
-This command is part of the radare project.
-.Pp
-Implements a simple version control system that aims to work as frontend for git, as well as its own structure for versioning project changes.
-.Pp
-This command is pretty new and experimental.
+Provides a simple version control interface for Radare2 projects, functioning as both a Git frontend and a native versioning system for tracking project changes.
 .Sh OPTIONS
 .Bl -tag -width Fl
+.It Fl q
+Quiet mode
+.It Fl v
+Show version information
 .It Fl h
 Show usage help message
-.It Fl v
-Display version
+.It Fl H Op var
+Display variable
+.It Fl j
+JSON output
 .El
-.Sh USAGE
-Available variable types are:
-.Pp
- ravc2 init
- echo hello world > README.md
- ravc2 add README.md
- ravc2 branch
- ravc2 commit
-.Pp
+.Sh ACTIONS
+.Bl -tag -width Fl
+.It Cm init Op git | rvc
+Initialize a repository with the given version control system
+.It Cm branch Op name
+If a name is provided, create a branch with that name otherwise list branches
+.It Cm commit Op message Op files...
+Commit the files with the message
+.It Cm checkout Op branch
+Set the current branch to the given branch
+.It Cm status
+Print a status message
+.It Cm reset
+Remove all uncommited changes
+.It Cm log
+Print all commits
+.El
 .Sh ENVIRONMENT
- RAVC2_USER  overrides cfg.user, which is based on r_sys_whoami() which is used to define the author for the VC commits.
+.Pp
+.Bl -tag -width Fl
+.It Ev RAVC2_USER
+Override cfg.user value to author commit
+.El
+.Sh EXAMPLES
+.Pp
+Initialize a new repository:
+.Pp
+  $ ravc2 init
+.Pp
+Create a new file and add it:
+.Pp
+  $ echo "Hello World" > README.md
+  $ ravc2 add README.md
+.Pp
+Check repository status:
+.Pp
+  $ ravc2 status
+.Pp
+Create and switch to a new branch:
+.Pp
+  $ ravc2 branch feature-branch
+  $ ravc2 checkout feature-branch
+.Pp
+List all branches:
+.Pp
+  $ ravc2 branch
+.Pp
+Commit changes:
+.Pp
+  $ ravc2 commit "Add README file" README.md
+.Pp
+View commit history:
+.Pp
+  $ ravc2 log
 .Sh SEE ALSO
 .Pp
 .Xr radare2(1)
 .Sh AUTHORS
 .Pp
-Written by pancake <pancake@nopcode.org>.
+pancake <pancake@nopcode.org>

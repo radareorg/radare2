@@ -1,301 +1,137 @@
-.TH RASIGN2 1 "17 Mar 2024" "1.0" "Rasign2 User Manuals"
-.SH NAME
-rasign2 \- a tool for generating and managing binary file signatures
-
-.SH SYNOPSIS
-.B rasign2
-[options] [file]
-
-.SH DESCRIPTION
-The rasign2 tool is designed for creating, dumping, and managing signature files for binary analysis. It facilitates the generation of signature databases (SDB) from binary files, making it easier to identify and catalog functions and other symbols. The tool can interpret FLIRT 'I.sig' files, execute custom Radare2 scripts, and output signatures in multiple formats.
-
-.SH OPTIONS
-.TP
-.B \-a
-Perform a more thorough analysis by adding extra 'a' to the analysis command. The more 'A's, the deeper the analysis.
-
-.TP
-.B \-A[AAA]
-Equivalent to
-.B r2 \-A
-. Specifies the depth of analysis, where more 'A's indicate more thorough analysis.
-
-.TP
-.B \-f
-Interpret the input file as a FLIRT 'I.sig' file and dump its signatures.
-
-.TP
-.B \-h
-Display the help menu.
-
-.TP
-.B \-j
-Output signatures in JSON format.
-
-.TP
-.B \-i script.r2
-Execute the specified Radare2 script on the input file.
-
-.TP
-.B \-o sigs.sdb
-Add generated signatures to the specified file. Creates the file if it does not exist.
-
-.TP
-.B \-q
-Enable quiet mode, suppressing normal output.
-
-.TP
-.B \-r
-Show output as Radare2 commands.
-
-.TP
-.B \-S
-Operate on an SDB signature file. Use '-o -' to save to the same file.
-
-.TP
-.B \-s signspace
-Save all signatures under the specified signspace.
-
-.TP
-.B \-c
-Add collision signatures before writing to a file.
-
-.TP
-.B \-v
-Display version information.
-
-.TP
-.B \-m
-Merge or overwrite signatures with the same name.
-
-.SH "USAGE EXAMPLES"
-.PP
-Basic signature generation:
-.RS
-.B rasign2 -o libc.sdb libc.so.6
-.RE
-This command generates signatures from 'libc.so.6' and saves them in 'libc.sdb'.
-.PP
-Enhanced analysis:
-.RS
-.B rasign2 -A -o enhanced_libc.sdb libc.so.6
-.RE
-This performs a deeper analysis before generating signatures, potentially discovering more functions.
-.PP
-Output in Radare2 commands:
-.RS
-.B rasign2 -r input_file | grep main
-.RE
-Prints the discovered signatures for 'main' as Radare2 commands.
-.PP
-JSON output:
-.RS
-.B rasign2 -j input_file
-.RE
-Outputs the generated signatures in JSON format.
-.PP
-Merging signatures:
-.RS
-.B rasign2 -m -o existing_sigs.sdb new_sigs.sdb
-.RE
-Merges or overwrites signatures in 'existing_sigs.sdb' with those from 'new_sigs.sdb'.
-
-
-.SH "THE Z COMMAND IN RADARE2"
-The
-.B z
-command in radare2 is dedicated to the management of binary signatures, known as zignatures. Zignatures are used for identifying and cataloging functions across different binaries by their unique characteristics, such as bytes patterns, graph metrics, and other attributes.
-
-.SH "CONFIGURATION OPTIONS"
-The behavior of zignature processing can be fine-tuned through a variety of configuration options, accessible via 'e??zign.' in radare2. Some key configuration options include:
-
-.TP
-.B zign.autoload
-Autoload all zignatures located in dir.zigns.
-
-.TP
-.B zign.bytes
-Use bytes patterns for matching.
-
-.TP
-.B zign.graph
-Use graph metrics for matching.
-
-.TP
-.B zign.hash
-Use Hash for matching.
-
-.TP
-.B zign.threshold
-Minimum similarity required for inclusion in zb output.
-
-.TP
-.B zign.types
-Use types for matching.
-
-.SH "ADDING ZIGNATURES"
-Zignatures can be added with the 'za' command, supporting a variety of types such as bytes patterns, graph metrics, and more.
-
-.TP
-.B za foo b 558bec..e8........
-Adds a bytes pattern zignature.
-
-.TP
-.B za foo g cc=2 nbbs=3 edges=3 ebbs=1
-Adds a graph metrics zignature.
-
-.SH "ZIGNATURE COMMANDS"
-The
-.B z
-command encompasses several subcommands for managing zignatures:
-
-.TP
-.B z
-Show zignatures.
-
-.TP
-.B z.
-Find matching zignatures in current offset.
-
-.TP
-.B zb
-Search for best match.
-
-.TP
-.B zdzignature
-Diff current function and signature.
-
-.TP
-.B z*
-Show zignatures in radare format.
-
-.TP
-.B zo
-Manage zignature files.
-
-.TP
-.B zf
-Manage FLIRT signatures.
-
-.TP
-.B z/
-Search zignatures.
-
-.TP
-.B zc
-Compare current zignspace zignatures with another one.
-
-.TP
-.B zs
-Manage zignspaces.
-
-.TP
-.B zi
-Show zignatures matching information.
-
-The comprehensive management of zignatures through these commands facilitates a robust workflow for binary analysis, enabling the identification of known functions and facilitating the analysis of binary similarities and differences.
-
-
-.SH "SUPPORTED ZIGNATURE METRICS"
-Zignatures in radare2 can be created with a variety of metrics, each capturing different aspects of binary functions. These metrics include:
-
-.TP
-.B a: bytes pattern
-Radare2 creates a mask from analysis to match bytes patterns.
-
-.TP
-.B b: bytes pattern
-Direct bytes pattern matching.
-
-.TP
-.B c: base64 comment
-Associates a base64-encoded comment with the zignature.
-
-.TP
-.B n: real function name
-Uses the real function name for matching.
-
-.TP
-.B g: graph metrics
-Utilizes graph metrics such as cyclomatic complexity, number of edges, basic blocks, and end blocks.
-
-.TP
-.B o: original offset
-Matches based on the original offset of the function.
-
-.TP
-.B r: references
-Uses references for matching.
-
-.TP
-.B x: cross references
-Incorporates cross references into the zignature.
-
-.TP
-.B h: bbhash
-Employs hashing of function basic blocks for matching.
-
-.TP
-.B v: vars (and args)
-Matches based on variables and arguments.
-
-Each metric allows for a nuanced approach to identifying and comparing functions across binaries, enabling more accurate and comprehensive analysis.
-
-
-.SH "USAGE EXAMPLES FOR THE Z COMMAND"
-The z command in radare2 is versatile, offering various functionalities through its subcommands. Here are five usage examples:
-
-.TP
-.B Show all zignatures
-.RS
-.B z
-.RE
-Displays all zignatures currently loaded in radare2.
-
-.TP
-.B Find matching zignatures at the current offset
-.RS
-.B z.
-.RE
-Searches for and displays zignatures that match at the current offset in the binary.
-
-.TP
-.B Scan all functions to find matching zignatures
-.RS
-.B z/
-.RE
-Searches and match all signatures loaded against all the analyzed functions in order to give a name to every one.
-
-.TP
-.B Load zignature files
-.RS
-.B zo libc.sdb
-.RE
-Loads zignatures from the specified SDB file into the current session.
-
-.TP
-.B Generate zignatures for all functions
-.RS
-.B zaF
-.RE
-Generates zignatures for all identified functions in the binary and adds them to the current session.
-
-.TP
-.B Search for the closest matching zignatures
-.RS
-.B zb
-.RE
-Searches for and displays the closest matching zignatures to the function at the current offset, helping identify similar functions across binaries.
-
-These examples showcase the `z` command's ability to manage zignatures efficiently, aiding in the binary analysis process by leveraging the power of zignatures for function identification and comparison.
-
-.SH SEE ALSO
-.B r2(1),
-.B radare2(1)
-
-.SH WWW
+.Dd Jul 10, 2025
+.Dt RASIGN2 1
+.Sh NAME
+.Nm rasign2
+.Nd radare2 signature management tool
+.Sh SYNOPSIS
+.Nm rasign2
+.Op Fl afjhqrvSm
+.Op Fl A Op AAA
+.Op Fl i Ar script.r2
+.Op Fl o Ar sigs.sdb
+.Op Fl s Ar signspace
+.Op Fl c
+.Op Ar file
+.Sh DESCRIPTION
+Generates, dumps, and manages zignature scripts for function identification and cataloging. Zignatures are Radare2 scripts that capture metadata associated with function signatures.
 .Pp
-https://www.radare.org/
-.SH AUTHORS
+Supports interpretation of FLIRT '.sig' files, execution of zignature scripts, and exporting signatures in various formats.
+.Sh OPTIONS
+.Bl -tag -width Fl
+.It Fl a
+Make signatures from all .o files in the provided .a file
+.It Fl A Op AAA
+Same as r2 -A, the more 'A's the more analysis is performed
+.It Fl f
+Interpret the file as a FLIRT .sig file and dump signatures
+.It Fl h
+Show help menu
+.It Fl j
+Show signatures in json
+.It Fl i Ar script.r2
+Execute this script in the r2 instance
+.It Fl o Ar sigs.sdb
+Add signatures to file, create if it does not exist
+.It Fl q
+Quiet mode
+.It Fl r
+Show output in radare commands
+.It Fl S
+Perform operation on sdb signature file ('-o -' to save to same file)
+.It Fl s Ar signspace
+Save all signatures under this signspace
+.It Fl c
+Add collision signatures before writing file
+.It Fl v
+Show version information
+.It Fl m
+Merge/overwrite signatures with same name
+.El
+.Sh ENVIRONMENT
+.Pp
+rasign2 does not use any environment variables.
+.Sh EXAMPLES
+.Pp
+Generate signatures from a library file:
+.Pp
+  $ rasign2 -o libc.sdb libc.so.6
+.Pp
+Perform deep analysis before generating signatures:
+.Pp
+  $ rasign2 -AA -o enhanced_libc.sdb libc.so.6
+.Pp
+Output signatures in JSON format:
+.Pp
+  $ rasign2 -j input_file
+.Pp
+Show signatures as radare2 commands:
+.Pp
+  $ rasign2 -r input_file
+.Pp
+Merge new signatures into an existing file:
+.Pp
+  $ rasign2 -m -o existing.sdb new_binary
+.Pp
+Extract signatures from a FLIRT .sig file:
+.Pp
+  $ rasign2 -f flirt_signatures.sig
+.Sh THE Z COMMAND IN RADARE2
+.Pp
+The 'z' command in radare2 is dedicated to the management of binary signatures, known as zignatures. Here are the key subcommands:
+.Bl -tag -width Fl
+.It Cm z
+Show zignatures
+.It Cm z.
+Find matching zignatures in current offset
+.It Cm zb
+Search for best match
+.It Cm zd
+Diff current function and signature
+.It Cm z*
+Show zignatures in radare format
+.It Cm zo
+Manage zignature files
+.It Cm zf
+Manage FLIRT signatures
+.It Cm z/
+Search zignatures
+.It Cm zc
+Compare current zignspace zignatures
+.It Cm zs
+Manage zignspaces
+.It Cm zi
+Show zignatures matching information
+.El
+.Pp
+These commands facilitate a robust workflow for binary analysis, enabling the identification of known functions and comparing binary similarities.
+.Sh SUPPORTED ZIGNATURE METRICS
+.Pp
+Zignatures in radare2 can be created with various metrics:
+.Bl -tag -width Fl
+.It Cm a
+Bytes pattern (masked)
+.It Cm b
+Raw bytes pattern
+.It Cm c
+Base64 comment
+.It Cm n
+Real function name
+.It Cm g
+Graph metrics (complexity, edges, basic blocks)
+.It Cm o
+Original offset
+.It Cm r
+References
+.It Cm x
+Cross references
+.It Cm h
+Basic block hashes
+.It Cm v
+Variables and arguments
+.El
+.Sh SEE ALSO
+.Pp
+.Xr radare2(1)
+.Sh AUTHORS
 .Pp
 pancake <pancake@nopcode.org>

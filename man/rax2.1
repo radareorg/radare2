@@ -1,18 +1,14 @@
-.Dd Mar 19, 2024
+.Dd Jul 10, 2025
 .Dt RAX2 1
 .Sh NAME
 .Nm rax2
-.Nd radare base converter
+.Nd Radare2 Base Converter
 .Sh SYNOPSIS
 .Nm rax2
-.Op Fl ebBsSvxkKh
+.Op Fl abcCdDeEfFhHijkKnoqrsStuUvwxXzZ
 .Op [expr] ...
 .Sh DESCRIPTION
-This command is part of the radare project.
-.Pp
-Rax2 is a powerful calculator within the Radare2 suite, primarily used for
-numerical system conversions, encoding and decoding C strings, hexpairs, and
-base64, essential for binary analysis and reverse engineering tasks.
+A versatile calculator for numerical base conversions, string encoding/decoding, and data representation within Radare2, supporting C-string encoding, hexpairs, Base64, and other formats.
 .Pp
 The most common numerical bases include binary (base 2) for direct machine code
 interaction, hexadecimal (base 16) for memory addresses and compact data
@@ -22,7 +18,7 @@ interpretations.
 .Bl -tag -width Fl
 .It Fl a
 Show ASCII table
-.It Fl b
+.It Fl b Ar base
 Force output mode (numeric base)
 .Pp
   f    floating point
@@ -50,22 +46,22 @@ standard for floating point arithmetic
 Read C strings from stdin and output in hexpairs. Useful to load shellcodes
 .It Fl h
 Show usage help message
-.It Fl k
-Keep the same base as the input data
-.It Fl K
-Show randomart key asciiart for values or hexpairs
 .It Fl H
 Convert a string into a hash
 .It Fl i
 Convert LONG to/from IP ADDRESS
 .It Fl j
-Show the output in json format, the same as the r2 `?j 0x804` command.
+Show the output in json format, the same as the r2 `?j 0x804` command
+.It Fl k
+Keep the same base as the input data
+.It Fl K
+Show randomart key asciiart for values or hexpairs
 .It Fl n
-Append newline to the decoded output for human friendlyness
+Append newline to the decoded output for human friendliness
 .It Fl o
 Convert from octal string to char (rax2 -o 162 62)
 .It Fl q
-Be quiet. Show less information or drop the superfluous details in the output. For example: rax2 -qC
+Be quiet. Show less information or drop the superfluous details in the output
 .It Fl r
 Show the same output as the r2's `? 0x804` command.
 When combined with -S (-rS) it will print r2 commands to write the actual binary into radare2
@@ -78,7 +74,7 @@ Convert epoch timestamp to human readable date format
 .It Fl u
 Convert given value to human readable units format
 .It Fl v
-Show program version
+Show version information
 .It Fl w
 Display the result as 16bit signed integer value
 .It Fl x
@@ -89,23 +85,29 @@ hexadecimal. The result can be larger than 64bits
 .It Fl z
 Convert from character string to binary (rax2 \-z hello)
 .It Fl Z
-Convert from binary string to string (rax2 \-l 01000101)
+Convert from binary string to string (rax2 \-Z 01000101)
+.El
 .Sh USAGE
 Available variable types are:
 .Pp
-  int   \->  hex    rax2 10
-  hex   \->  int    rax2 0xa
-  \-int  \->  hex    rax2 \-77
-  \-hex  \->  int    rax2 0xffffffb3
-  int   \->  bin    rax2 b30
-  bin   \->  int    rax2 1010d
-  float \->  hex    rax2 3.33f
-  hex   \->  float  rax2 Fx40551ed8
-  oct   \->  hex    rax2 35o
-  hex   \->  oct    rax2 Ox12 (O is a letter)
-  bin   \->  hex    rax2 1100011b
-  hex   \->  bin    rax2 Bx63
-.Pp
+  int       \->  hex           rax2 10
+  hex       \->  int           rax2 0xa
+  \-int      \->  hex           rax2 \-77
+  \-hex      \->  int           rax2 0xffffffb3
+  int       \->  bin           rax2 b30
+  int       \->  ternary       rax2 t42
+  bin       \->  int           rax2 1010d
+  ternary   \->  int           rax2 1010dt
+  float     \->  hex           rax2 3.33f
+  hex       \->  float         rax2 Fx40551ed8
+  oct       \->  hex           rax2 35o
+  hex       \->  oct           rax2 Ox12 (O is a letter)
+  bin       \->  hex           rax2 1100011b
+  hex       \->  bin           rax2 Bx63
+  ternary   \->  hex           rax2 212t
+  hex       \->  ternary       rax2 Tx23
+  raw       \->  hex           rax2 -S < /binfile
+  hex       \->  raw           rax2 -s 414141
 .Sh EXAMPLES
 With no arguments, rax2 reads values from stdin. You can pass one or more values
 as arguments.
@@ -137,12 +139,28 @@ Encode and decode binary file using base64:
 Use -z/-Z to convert between binary and string:
 .Pp
   $ rax2 -z hello
-  001100000111100000110001001100010011001000110011
-  $ rax2 -Z 0110100001100101011011000110110001101111
+  01101000011001010110110001101100011011110000000000000000
+  $ rax2 -Z 01101000011001010110110001101100011011110000000000000000
   hello
+.Pp
+Hash strings:
+.Pp
+  $ rax2 -H linux osx
+  linux: 0x5ccc1772
+  osx: 0x099bf94f
+.Pp
+Work with IP addresses:
+.Pp
+  $ rax2 -i 127.0.0.1
+  0x0100007f
+  $ rax2 -i 0x0100007f
+  127.0.0.1
 .Pp
 It is a very useful tool for scripting, so you can read floating point values, or get the integer offset of a jump or a stack delta when analyzing programs.
 .Pp
+.Sh ENVIRONMENT
+.Pp
+rax2 does not use any environment variables.
 .Sh SEE ALSO
 .Pp
 .Xr radare2(1)
@@ -151,4 +169,4 @@ It is a very useful tool for scripting, so you can read floating point values, o
 https://www.radare.org
 .Sh AUTHORS
 .Pp
-Written by pancake <pancake@nopcode.org>.
+pancake <pancake@nopcode.org>
