@@ -45,9 +45,9 @@ ESIL Step Until: continue ESIL execution until a specified address is reached.
 .Pp
 "ar":
 Show or modify ESIL registers.
-.Sh WORDS
-The comma separated words in an ESIL expression can be grouped into different scopes:
 .Bl -tag -width Fl
+The comma separated words in an ESIL expression can be grouped into different scopes:
+.Pp
 .It internal flags
 Prefixed with '$' they represent internal states of the esil vm and are used to perform conditional
 .Pp
@@ -131,6 +131,7 @@ STACK POP TODO CLEAR DUP NUM SWAP TRAP BITS SETJT SETJTS SETD
 .Pp
 NAN I2D U2D D2I D2F F2D F== F!= F< F<= F+ F- F* F/ -F CEIL FLOOR ROUND SQRT
 .Pp
+.El
 .Sh BASIC OPERATIONS
 Core operations in ESIL are designed to replicate basic CPU instructions' behavior, including arithmetic, logical, and control flow.
 .Pp
