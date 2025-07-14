@@ -3429,7 +3429,7 @@ static size_t get_num_relocs_dynamic(ELFOBJ *eo) {
 		res += eo->dyn_info.dt_relrsz / eo->dyn_info.dt_relrent;
 	} else if (eo->dyn_info.dt_relrsz) {
 		// If relrent is not set, assume it's the size of an address
-		res += eo->dyn_info.dt_relrsz / sizeof(Elf_(Addr));
+		res += eo->dyn_info.dt_relrsz / sizeof (Elf_(Addr));
 	}
 
 	return res + get_num_relocs_dynamic_plt (eo);
@@ -3526,14 +3526,14 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 			if (!read_reloc (eo, reloc, DT_RELR, eo->dyn_info.dt_relr + offset)) {
 				// If read_reloc fails for RELR, it might be processing a bitmap entry
 				// Try the next entry
-				offset += sizeof(Elf_(Addr));
+				offset += sizeof (Elf_(Addr));
 				continue;
 			}
 			int index = r_vector_index (&eo->g_relocs);
 			ht_uu_insert (eo->rel_cache, reloc->sym + 1, index + 1);
 			fix_rva_and_offset_exec_file (eo, reloc);
 			pos++;
-			offset += sizeof(Elf_(Addr));
+			offset += sizeof (Elf_(Addr));
 		}
 	}
 	// parse rela
@@ -3605,7 +3605,6 @@ static ut64 get_next_not_analysed_offset(ELFOBJ *eo, size_t section_vaddr, size_
 		// determine the end offset. For now, we'll just skip the section entirely.
 		return UT64_MAX;
 	}
-	
 	// Add support for RELR sections
 	if (eo->dyn_info.dt_relr != R_BIN_ELF_ADDR_MAX \
 		&& gvaddr >= eo->dyn_info.dt_relr \
