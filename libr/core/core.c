@@ -2742,6 +2742,7 @@ R_API bool r_core_init(RCore *core) {
 	core->dbg->ev = core->ev;
 #if USE_NEW_ESIL
 	r_core_esil_init (core);
+	// core->esil.reg = core->anal->reg;
 #endif
 	r_core_config_init (core);
 	r_core_loadlibs_init (core);
