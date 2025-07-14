@@ -14,7 +14,6 @@
 #define R_BIN_ELF_SCN_IS_WRITABLE(x)   x & SHF_WRITE
 #define R_BIN_ELF_SCN_IS_COMPRESSED(x)   x & SHF_COMPRESSED
 
-
 #define R_BIN_ELF_SYMTAB_SYMBOLS 1 << 0
 #define R_BIN_ELF_DYNSYM_SYMBOLS 1 << 1
 #define R_BIN_ELF_IMPORT_SYMBOLS (1 << 2 | (eo->ehdr.e_type == ET_REL ? R_BIN_ELF_SYMTAB_SYMBOLS : R_BIN_ELF_DYNSYM_SYMBOLS))
@@ -87,7 +86,10 @@ typedef struct Elf_(dynamic_info) {
 	Elf_(Addr) dt_strtab;
 	Elf_(Addr) dt_symtab;
 	Elf_(Addr) dt_rela;
+	Elf_(Addr) dt_relr;
 	Elf_(Xword) dt_relasz;
+	Elf_(Xword) dt_relrsz;
+	Elf_(Xword) dt_relrent;
 	Elf_(Xword) dt_relaent;
 	Elf_(Xword) dt_strsz;
 	Elf_(Xword) dt_syment;

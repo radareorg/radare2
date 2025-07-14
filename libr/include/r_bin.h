@@ -198,7 +198,7 @@ typedef enum {
 	R_BIN_RELOC_24 = 24,
 	R_BIN_RELOC_32 = 32,
 	R_BIN_RELOC_48 = 48,
-	R_BIN_RELOC_64 = 64
+	R_BIN_RELOC_64 = 64,
 } RBinRelocType;
 #if 0
 R_BIN_RELOC_64     S + A        Pointers, addresses
