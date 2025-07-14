@@ -145,11 +145,12 @@ static bool default_reg_read(void *reg, const char *name, ut64 *val) {
 
 static ut32 default_reg_size(void *reg, const char *name) {
 	RRegItem *ri = r_reg_get ((RReg *)reg, name, -1);
-	if (!ri) {
-		return 0;
+	if (R_LIKELY (ri)) {
+		ut32 size = ri->size;
+		r_unref (ri);
+		return size;
 	}
-	r_unref (ri);
-	return ri->size;
+	return 0;
 }
 
 static REsilRegInterface simple_reg_if = {
@@ -471,9 +472,7 @@ static bool internal_esil_reg_read(REsil *esil, const char *regname, ut64 *num, 
 		}
 		if (num) {
 			*num = r_reg_get_value (esil->anal->reg, ri);
-			if (esil->verbose) {
-				eprintf ("%s < %x\n", regname, (int)*num);
-			}
+			R_LOG_DEBUG ("%s < %x", regname, (int)*num);
 		}
 		r_unref (ri);
 		return true;
@@ -711,14 +710,11 @@ R_API bool r_esil_reg_read_silent(REsil *esil, const char *name, ut64 *val, ut32
 	if (esil->reg_if.reg_size && size) {
 		*size = esil->reg_if.reg_size (esil->reg_if.reg, name);
 	}
-	if (val) {
-		if (!esil->reg_if.reg_read (esil->reg_if.reg, name, val)) {
-			return false;
-		}
-	} else {
+	if (!val) {
 		return esil->reg_if.is_reg (esil->reg_if.reg, name);
 	}
-	return true;
+	*val = 0;
+	return esil->reg_if.reg_read (esil->reg_if.reg, name, val);
 }
 
 R_API const char *r_esil_trapstr(int type) {

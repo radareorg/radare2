@@ -7470,12 +7470,12 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 				R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT);
 		}
 #if 1
-			if (core->dbg->anal->esil->trace) {
+		if (core->dbg->anal->esil->trace) {
 			//	ut64 pc = r_debug_reg_get (core->dbg, "PC");
 			//	ut64 mask = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_VAL;
 			//	RAnalOp *op = r_core_anal_op (core, pc, mask);
-				r_esil_trace_op (core->dbg->anal->esil, &op);
-			}
+			r_esil_trace_op (core->dbg->anal->esil, &op);
+		}
 #endif
 		// if type is JMP then we execute the next N instructions
 		// update the esil pointer because RAnal.op() can change it
@@ -8473,7 +8473,7 @@ static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int ninstr) {
 			r_reg_setv (core->dbg->reg, "PC", aop.addr + aop.size);
 			const char *e = R_STRBUF_SAFEGET (&aop.esil);
 			if (R_STR_ISNOTEMPTY (e)) {
-				 // eprintf ("   0x%08llx %d  %s\n", aop.addr, ret, aop.mnemonic);
+				// eprintf ("   0x%08llx %d  %s\n", aop.addr, ret, aop.mnemonic);
 				(void)r_esil_parse (esil, e);
 			}
 			break;

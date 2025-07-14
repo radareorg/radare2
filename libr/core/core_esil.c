@@ -29,8 +29,9 @@ static bool core_esil_op_interrupt(REsil *esil) {
 	return r_esil_fire_interrupt (esil, (ut32)interrupt);
 }
 
-static bool core_esil_is_reg (void *core, const char *name) {
-	RRegItem *ri = r_reg_get (((RCore *)core)->esil.reg, name, -1);
+static bool core_esil_is_reg(void *_core, const char *name) {
+	RCore *core = _core;
+	RRegItem *ri = r_reg_get (core->anal->reg, name, -1);
 	if (!ri) {
 		return false;
 	}
@@ -38,28 +39,30 @@ static bool core_esil_is_reg (void *core, const char *name) {
 	return true;
 }
 
-static bool core_esil_reg_read (void *core, const char *name, ut64 *val) {
-	RRegItem *ri = r_reg_get (((RCore *)core)->esil.reg, name, -1);
-	if (!ri) {
-		return false;
+static bool core_esil_reg_read(void *_core, const char *name, ut64 *val) {
+	RCore *core = _core;
+	RRegItem *ri = r_reg_get (core->anal->reg, name, -1);
+	if (R_LIKELY (ri)) {
+		*val = r_reg_get_value (core->anal->reg, ri);
+		r_unref (ri);
+		return true;
 	}
-	*val = r_reg_get_value (((RCore *)core)->esil.reg, ri);
-	r_unref (ri);
-	return true;
+	return false;
 }
 
 static bool core_esil_reg_write (void *core, const char *name, ut64 val) {
 	return r_reg_setv (((RCore *)core)->esil.reg, name, val);
 }
 
-static ut32 core_esil_reg_size (void *core, const char *name) {
-	RRegItem *ri = r_reg_get (((RCore *)core)->esil.reg, name, -1);
-	if (!ri) {
-		return 0;
+static ut32 core_esil_reg_size(void *_core, const char *name) {
+	RCore *core = _core;
+	RRegItem *ri = r_reg_get (core->anal->reg, name, -1);
+	if (R_LIKELY (ri)) {
+		const ut32 size = ri->size;
+		r_unref (ri);
+		return size;
 	}
-	const ut32 size = ri->size;
-	r_unref (ri);
-	return size;
+	return 0;
 }
 
 static REsilRegInterface core_esil_reg_if = {
@@ -331,6 +334,7 @@ R_API bool r_core_esil_single_step(RCore *core) {
 	ut32 trap_code = R_ANAL_TRAP_UNALIGNED;
 	const int align = R_MAX (1, r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN));
 	if (pc % align) {
+		R_LOG_ERROR ("Unaligned execution at PC=0x%08"PFMT64x, pc);
 		goto trap;
 	}
 	trap_code = R_ANAL_TRAP_READ_ERR;
@@ -339,6 +343,7 @@ R_API bool r_core_esil_single_step(RCore *core) {
 	//check if pc is within desc and desc is at least readable
 	RIORegion region;
 	if (!r_io_get_region_at (core->io, &region, pc)) {
+		R_LOG_ERROR ("pc not in region %s = 0x%"PFMT64x, pc_name, pc);
 		goto trap;
 	}
 	if ((region.perm & (R_PERM_R | R_PERM_X)) != (R_PERM_R | R_PERM_X) ||

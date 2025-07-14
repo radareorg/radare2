@@ -112,7 +112,7 @@ static bool anal_esil_is_reg (void *user, const char *name) {
 	return true;
 }
 
-static bool anal_esil_reg_read (void *user, const char *name, ut64 *val) {
+static bool anal_esil_reg_read(void *user, const char *name, ut64 *val) {
 	RRegItem *ri = r_reg_get (((RAnal *)user)->reg, name, -1);
 	if (!ri) {
 		return false;
