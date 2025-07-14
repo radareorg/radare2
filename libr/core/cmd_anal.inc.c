@@ -2582,7 +2582,6 @@ static inline REsil *esil_new_setup(RCore *core) {
 		bool stats = r_config_get_b (core->config, "esil.stats");
 		bool nonull = r_config_get_b (core->config, "esil.nonull");
 		r_esil_setup (esil, core->anal, romem, stats, nonull);
-		esil->verbose = r_config_get_i (core->config, "esil.verbose");
 		esil->cmd = r_core_esil_cmd;
 		const char *et = r_config_get (core->config, "cmd.esil.trap");
 		esil->cmd_trap = R_STR_ISNOTEMPTY (et)? strdup (et): NULL;
@@ -7356,8 +7355,8 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 		}
 		// addr = r_reg_getv (core->esil.reg, "PC");
 		addr = r_reg_getv (core->anal->reg, "PC");
+		// ESIL TODO: use StepOptions with .amount
 		if (until_addr == UT64_MAX) {
-			eprintf ("next %llx\n", until_addr);
 			break;
 		}
 	}
@@ -7617,7 +7616,6 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			}
 			tail_return_value = 1;
 		}
-		// esil->verbose ?
 		// eprintf ("REPE 0x%"PFMT64x" %s => 0x%"PFMT64x"\n", addr, R_STRBUF_SAFEGET (&op.esil), r_reg_getv (core->anal->reg, "PC"));
 		ut64 pc = r_reg_getv (core->anal->reg, "PC");
 		if (pc == UT64_MAX || pc == UT32_MAX) {

@@ -35,7 +35,6 @@ R_API REsil *r_esil_new(int stacksize, int iotrap, unsigned int addrsize) {
 		free (esil);
 		return NULL;
 	}
-	esil->verbose = false;
 	esil->stacksize = stacksize;
 	esil->parse_goto_count = R_ESIL_GOTO_LIMIT;
 	esil->ops = ht_pp_new (NULL, esil_ops_free, NULL);
@@ -132,15 +131,15 @@ static bool default_reg_alias(void *reg, int kind, const char *name) {
 
 static bool default_reg_read(void *reg, const char *name, ut64 *val) {
 	RRegItem *ri = r_reg_get ((RReg *)reg, name, -1);
-	if (!ri) {
-		return false;
+	if (R_LIKELY (ri)) {
+		ut64 v = r_reg_get_value ((RReg *)reg, ri);
+		if (val) {
+			*val = v;
+		}
+		r_unref (ri);
+		return true;
 	}
-	ut64 v = r_reg_get_value ((RReg *)reg, ri);
-	if (val) {
-		*val = v;
-	}
-	r_unref (ri);
-	return true;
+	return false;
 }
 
 static ut32 default_reg_size(void *reg, const char *name) {
@@ -869,9 +868,7 @@ static int eval_word(REsil *esil, const char *ostr, const char **str) {
 			esil->parse_goto = -1;
 			return 2;
 		}
-		if (esil->verbose) {
-			R_LOG_ERROR ("Cannot find word %d", esil->parse_goto);
-		}
+		R_LOG_DEBUG ("Cannot find word %d", esil->parse_goto);
 		return 1;
 	}
 	if (esil->parse_stop) {

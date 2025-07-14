@@ -11,7 +11,6 @@
 #include <float.h>
 #include <fenv.h>
 
-#define IFDBG if (esil->verbose > 1)
 #define OP(v, w, x, y, z) r_esil_set_op (esil, v, w, x, y, z, NULL)
 #define OP2(v, w, x, y, z, i) r_esil_set_op (esil, v, w, x, y, z, i)
 #define	OT_UNK	R_ESIL_OP_TYPE_UNKNOWN
@@ -73,14 +72,6 @@ R_API bool r_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 			esil->trap = R_ANAL_TRAP_READ_ERR;
 			esil->trap_code = addr;
 		}
-	}
-	IFDBG {
-		size_t i;
-		eprintf ("0x%08" PFMT64x " R> ", addr);
-		for (i = 0; i < len; i++) {
-			eprintf ("%02x", buf[i]);
-		}
-		eprintf ("\n");
 	}
 	return ret;
 #endif
@@ -722,7 +713,11 @@ static bool esil_regalias(REsil *esil) {
 		ret = true;
 		int kind = r_reg_alias_fromstring (dst);
 		if (kind != -1) {
-			r_reg_alias_setname (esil->anal->reg, kind, src);
+			if (esil->anal) {
+				r_reg_alias_setname (esil->anal->reg, kind, src);
+			} else {
+				R_LOG_ERROR ("ESIL_ANAL_REQUIRED");
+			}
 		}
 	}
 	free (dst);
@@ -898,9 +893,7 @@ static bool esil_lsreq(REsil *esil) {
 	if (dst && r_esil_reg_read (esil, dst, &num, NULL)) {
 		if (src && r_esil_get_parm (esil, src, &num2)) {
 			if (num2 > 63) {
-				if (esil->verbose) {
-					R_LOG_WARN ("Invalid shift at 0x%08"PFMT64x, esil->addr);
-				}
+				R_LOG_DEBUG ("Invalid shift at 0x%08"PFMT64x, esil->addr);
 				num2 = 63;
 			}
 			esil->old = num;
@@ -951,23 +944,17 @@ static bool esil_asreq(REsil *esil) {
 					ut64 left_bits = 0;
 					int shift = regsize - 1;
 					if (shift < 0 || shift > regsize - 1) {
-						if (esil->verbose) {
-							R_LOG_WARN ("Invalid asreq shift of %d at 0x%"PFMT64x, shift, esil->addr);
-						}
+						R_LOG_DEBUG ("Invalid asreq shift of %d at 0x%"PFMT64x, shift, esil->addr);
 						shift = 0;
 					}
 					if (param_num > regsize - 1) {
 						// capstone bug?
-						if (esil->verbose) {
-							R_LOG_WARN ("Invalid asreq shift of %"PFMT64d" at 0x%"PFMT64x, param_num, esil->addr);
-						}
+						R_LOG_DEBUG ("Invalid asreq shift of %"PFMT64d" at 0x%"PFMT64x, param_num, esil->addr);
 						param_num = 30;
 					}
 					if (shift >= 63) {
 						// LL can't handle LShift of 63 or more
-						if (esil->verbose) {
-							R_LOG_WARN ("Invalid asreq shift of %d at 0x%08"PFMT64x, shift, esil->addr);
-						}
+						R_LOG_DEBUG ("Invalid asreq shift of %d at 0x%08"PFMT64x, shift, esil->addr);
 					} else if (op_num & (1LL << shift)) {
 						left_bits = (1 << param_num) - 1;
 						left_bits <<= regsize - param_num;
@@ -984,9 +971,7 @@ static bool esil_asreq(REsil *esil) {
 			// r_esil_pushnum (esil, res);
 			ret = true;
 		} else {
-			if (esil->verbose) {
-				R_LOG_WARN ("esil_asr: empty stack");
-			}
+			R_LOG_DEBUG ("esil_asr: empty stack");
 		}
 	}
 	free (param);
@@ -1004,9 +989,7 @@ static bool esil_asr(REsil *esil) {
 		if (param && r_esil_get_parm (esil, param, &param_num)) {
 			if (param_num > regsize - 1) {
 				// capstone bug?
-				if (esil->verbose) {
-					R_LOG_WARN ("Invalid asr shift of %"PFMT64d" at 0x%"PFMT64x, param_num, esil->addr);
-				}
+				R_LOG_DEBUG ("Invalid asr shift of %"PFMT64d" at 0x%"PFMT64x, param_num, esil->addr);
 				param_num = 30;
 			}
 			bool isNegative;
@@ -1660,6 +1643,8 @@ static bool esil_poke_some(REsil *esil) {
 	char *count, *dst = r_esil_pop (esil);
 
 	if (dst && r_esil_get_parm_size (esil, dst, &tmp, &regsize)) {
+		// ESIL TODO - do not depend on esil->anal
+		const bool be = esil->anal? R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config): false;
 		// reg
 		isregornum (esil, dst, &ptr);
 		count = r_esil_pop (esil);
@@ -1678,7 +1663,7 @@ static bool esil_poke_some(REsil *esil) {
 					}
 					r_esil_get_parm_size (esil, foo, &tmp, &regsize);
 					isregornum (esil, foo, &num64);
-					r_write_ble (b, num64, R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config), regsize);
+					r_write_ble (b, num64, be, regsize);
 					const int size_bytes = regsize / 8;
 					const ut32 written = r_esil_mem_write (esil, ptr, b, size_bytes);
 					if (written != size_bytes) {
@@ -1782,6 +1767,7 @@ static bool esil_peek_some(REsil *esil) {
 		isregornum (esil, dst, &ptr);
 		count = r_esil_pop (esil);
 		if (count) {
+			const bool be = esil->anal? R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config): false;
 			isregornum (esil, count, &regs);
 			if (regs > 0) {
 				ut8 a[4];
@@ -1795,14 +1781,12 @@ static bool esil_peek_some(REsil *esil) {
 					}
 					bool oks = r_esil_mem_read (esil, ptr, a, 4);
 					if (!oks) {
-						if (esil->verbose) {
-							R_LOG_ERROR ("Cannot peek from 0x%08" PFMT64x, ptr);
-						}
+						R_LOG_DEBUG ("Cannot peek from 0x%08" PFMT64x, ptr);
 						free (dst);
 						free (count);
 						return false;
 					}
-					ut32 num32 = r_read_ble32 (a, R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config));
+					ut32 num32 = r_read_ble32 (a, be);
 					r_esil_reg_write (esil, foo, num32);
 					ptr += 4;
 					free (foo);

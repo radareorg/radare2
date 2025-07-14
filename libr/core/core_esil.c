@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2024 - 2025 - condret */
+/* radare - LGPL - Copyright 2024-2025 - condret */
 
 #define R_LOG_ORIGIN "core.esil"
 #include <r_core.h>
@@ -478,7 +478,7 @@ skip:
 		goto trap;
 	}
 	//restore pc
-// eprintf ("PC WRITE %llx\n", core->esil.old_pc);
+	// eprintf ("PC WRITE %llx\n", core->esil.old_pc);
 	r_esil_reg_write_silent (&core->esil.esil, pc_name, core->esil.old_pc);
 	goto trap;
 op_trap:

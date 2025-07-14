@@ -1916,15 +1916,6 @@ static bool cb_esilmaxbacksteps(void *user, void *data) {
 	return true;
 }
 
-static bool cb_esilverbose(void *user, void *data) {
-	RCore *core = user;
-	RConfigNode *node = data;
-	if (core->anal->esil) {
-		core->anal->esil->verbose = node->i_value;
-	}
-	return true;
-}
-
 static bool cb_esilstackdepth(void *user, void *data) {
 	RConfigNode *node = data;
 	if (node->i_value < 3) {
@@ -3818,7 +3809,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("esil.maxsteps", 0, "If !=0 defines the maximum amount of steps to perform on aesu/aec/..");
 	SETICB ("esil.maxbacksteps", 256, &cb_esilmaxbacksteps, "esil back step capacity");
 	SETS ("esil.fillstack", "", "initialize ESIL stack with (random, debruijn, sequence, zeros, ...)");
-	SETICB ("esil.verbose", 0, &cb_esilverbose, "show ESIL verbose level (0, 1, 2)");
 	SETICB ("esil.gotolimit", core->anal->esil_goto_limit, &cb_gotolimit, "maximum number of gotos per ESIL expression");
 	SETICB ("esil.stack.depth", 256, &cb_esilstackdepth, "number of elements that can be pushed on the esilstack");
 	SETI ("esil.stack.size", 0xf0000, "set stack size in ESIL VM");

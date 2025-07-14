@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2022-2024 - pancake */
+/* radare2 - LGPL - Copyright 2022-2025 - pancake */
 
 #ifndef R_ESIL_H
 #define R_ESIL_H
@@ -220,7 +220,6 @@ typedef struct r_esil_t {
 	int parse_stop;
 	int parse_goto;
 	int parse_goto_count;
-	int verbose;
 	ut64 flags;
 	ut64 addr;
 	ut64 stack_addr;

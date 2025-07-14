@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2021-2024 - pancake */
+/* radare - LGPL - Copyright 2021-2025 - pancake */
 
 #include <r_esil.h>
 #include <r_anal.h>
@@ -203,7 +203,6 @@ static void esil2c_setup(REsil *esil) {
 	R_RETURN_IF_FAIL (esil);
 	REsilC *user = R_NEW (REsilC);
 	esil->user = user;
-	esil->verbose = true; // r_config_get_b (core->config, "esil.verbose");
 #if USE_NEW_ESIL
 	r_esil_add_voyeur (esil, NULL, esil2c_mw, R_ESIL_VOYEUR_MEM_WRITE);
 	r_esil_add_voyeur (esil, NULL, esil2c_mr, R_ESIL_VOYEUR_MEM_READ);
