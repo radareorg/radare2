@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2024 - pancake, condret */
+/* radare - LGPL - Copyright 2024-2025 - pancake, condret */
 
 #include <r_esil.h>
 #include <r_anal.h>
@@ -23,6 +23,9 @@
 #define	OT_FLAG R_ESIL_OP_TYPE_FLAG
 #define	OT_TRAP R_ESIL_OP_TYPE_TRAP
 
+static bool isreg(REsil *esil, const char* name) {
+	return r_esil_reg_read (esil, name, NULL, NULL);
+}
 static ut64 reg_getv(REsil *esil, const char* name) {
 	ut64 v = UT64_MAX;
 	if (r_esil_reg_read (esil, name, &v, NULL)) {
@@ -616,8 +619,8 @@ static bool esil_bits(REsil *esil) {
 	if (popRN (esil, &s)) {
 		if (esil->anal && esil->anal->coreb.setArchBits) {
 			esil->anal->coreb.setArchBits (esil->anal->coreb.core, NULL, s);
+			return true;
 		}
-		return true;
 	}
 	R_LOG_DEBUG ("esil_bits: missing parameters in stack");
 	return false;
@@ -642,9 +645,11 @@ static bool esil_syscall(REsil *esil) {
 static bool esil_cmd(REsil *esil) {
 	char *str = r_esil_pop (esil);
 	if (str) {
-		if (esil->anal && esil->anal->coreb.setArchBits) {
+		if (esil->anal && esil->anal->coreb.core) {
 			esil->anal->coreb.cmd (esil->anal->coreb.core, str);
+			return true;
 		}
+		R_LOG_WARN ("Cannot run RCoreBind.cmd");
 	}
 	return false;
 }
@@ -678,20 +683,13 @@ static void pushnums(REsil *esil, const char *src, ut64 num2, const char *dst, u
 	R_RETURN_IF_FAIL (esil);
 	esil->old = num;
 	esil->cur = num - num2;
-	RReg *reg = esil->anal->reg;
-	RRegItem *ri = r_reg_get (reg, dst, -1);
-	if (ri) {
+	if (isreg (esil, dst)) {
 		esil->lastsz = esil_internal_sizeof_reg (esil, dst);
-		r_unref (ri);
-		return;
-	}
-	if (ri = r_reg_get (reg, src, -1), ri) {
+	} else if (isreg (esil, src)) {
 		esil->lastsz = esil_internal_sizeof_reg (esil, src);
-		r_unref (ri);
-		return;
+	} else {
+		esil->lastsz = 64;
 	}
-	// default size is set to 64 as internally operands are ut64
-	esil->lastsz = 64;
 }
 
 // This function also sets internal vars which is used in flag calculations.

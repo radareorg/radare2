@@ -117,7 +117,10 @@ static bool anal_esil_reg_read (void *user, const char *name, ut64 *val) {
 	if (!ri) {
 		return false;
 	}
-	*val = r_reg_get_value (((RAnal *)user)->reg, ri);
+	ut64 v = r_reg_get_value (((RAnal *)user)->reg, ri);
+	if (val) {
+		*val = v;
+	}
 	r_unref (ri);
 	return true;
 }

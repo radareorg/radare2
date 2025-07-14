@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2024 - pancake, condret */
+/* radare - LGPL - Copyright 2014-2025 - pancake, condret */
 
 #define R_LOG_ORIGIN "esil"
 
@@ -135,7 +135,10 @@ static bool default_reg_read(void *reg, const char *name, ut64 *val) {
 	if (!ri) {
 		return false;
 	}
-	*val = r_reg_get_value ((RReg *)reg, ri);
+	ut64 v = r_reg_get_value ((RReg *)reg, ri);
+	if (val) {
+		*val = v;
+	}
 	r_unref (ri);
 	return true;
 }
@@ -578,7 +581,7 @@ R_API int r_esil_get_parm_type(REsil *esil, const char *str) {
 	if (r_str_startswith (str, "0x")) {
 		return R_ESIL_PARM_NUM;
 	}
-	if (!((isdigit(str[0])) || str[0] == '-')) {
+	if (!((isdigit (str[0])) || str[0] == '-')) {
 		return not_a_number (esil, str);
 	}
 	size_t i;
@@ -667,7 +670,7 @@ R_API bool r_esil_reg_read_nocallback(REsil *esil, const char *regname, ut64 *nu
 
 R_API bool r_esil_reg_read(REsil *esil, const char *regname, ut64 *val, ut32 *size) {
 #if USE_NEW_ESIL
-	R_RETURN_VAL_IF_FAIL (esil && regname && val, false);
+	R_RETURN_VAL_IF_FAIL (esil && regname, false);
 	if (R_UNLIKELY (!r_esil_reg_read_silent (esil, regname, val, size))) {
 		return false;
 	}
@@ -702,7 +705,7 @@ R_API bool r_esil_reg_read(REsil *esil, const char *regname, ut64 *val, ut32 *si
 }
 
 R_API bool r_esil_reg_read_silent(REsil *esil, const char *name, ut64 *val, ut32 *size) {
-	R_RETURN_VAL_IF_FAIL (esil && esil->reg_if.reg_read && name && val, false);
+	R_RETURN_VAL_IF_FAIL (esil && esil->reg_if.reg_read && name, false);
 	if (!esil->reg_if.reg_read (esil->reg_if.reg, name, val)) {
 		return false;
 	}

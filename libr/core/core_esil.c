@@ -434,7 +434,11 @@ skip:
 					//this is like r_list_pop_head + r_list_push,
 					//but without expensive calls to malloc and free
 					RListIter *iter = core->esil.stepback.head;
-					iter->p->n = NULL;
+					if (iter->p) {
+						iter->p->n = NULL;
+					} else {
+						R_LOG_ERROR ("iter->p shouldnt be null");
+					}
 					core->esil.stepback.head = iter->p;
 					iter->p = NULL;
 					iter->n = core->esil.stepback.tail;

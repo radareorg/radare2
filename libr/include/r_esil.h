@@ -266,7 +266,7 @@ typedef struct r_esil_t {
 	char *cmd_ioer; // r2 (external) command to run when esil fails to IO
 	char *mdev_range; // string containing the r_str_range to match for read/write accesses
 	bool (*cmd)(ESIL *esil, const char *name, ut64 a0, ut64 a1);
-	void *user;
+	void *user; // RCore *
 	int stack_fd;	// ahem, let's not do this
 	bool in_cmd_step;
 #if 0

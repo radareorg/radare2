@@ -2452,6 +2452,49 @@ static bool mw(int *ec, ut64 addr, const ut8 *old, const ut8 *buf, int len) {
 	return true;
 }
 
+static bool anal_rr(void *_reg, const char *name, ut64 *val) {
+	RReg *reg = _reg;
+	RRegItem *ri = r_reg_get (reg, name, -1);
+	if (ri) {
+#if 0
+		if (len) {
+			*len = ri->size;
+		}
+#endif
+		if (val) {
+			*val = r_reg_get_value (reg, ri);
+		}
+		return true;
+	}
+	return false;
+}
+
+static bool anal_rw(void *_reg, const char *name, ut64 val) {
+	RReg *reg = _reg;
+	return r_reg_setv (reg, name, val);
+}
+
+static bool anal_mw(void *user, ut64 addr, const ut8 *buf, int len) {
+	RCore *core = user;
+	r_io_write_at (core->io, addr, buf, len);
+	return true;
+}
+
+static bool anal_mr(void *user, ut64 addr, ut8 *buf, int len) {
+	RCore *core = user;
+	(void)r_io_read_at (core->io, addr, (ut8 *)buf, len);
+	return true;
+}
+
+static bool anal_ir(void *_reg, const char *name) {
+	RReg *reg = _reg;
+	RRegItem *ri = r_reg_get (reg, name, -1);
+	if (ri) {
+		return true;
+	}
+	return false;
+}
+
 #if 0
 static bool rw(void *null, const char *regname, ut64 old, ut64 num) {
 	return true;
@@ -2544,6 +2587,20 @@ static inline REsil *esil_new_setup(RCore *core) {
 		const char *et = r_config_get (core->config, "cmd.esil.trap");
 		esil->cmd_trap = R_STR_ISNOTEMPTY (et)? strdup (et): NULL;
 	}
+	esil->user = core;
+	// reg
+	esil->reg_if.reg = core->anal->reg;
+	esil->reg_if.reg_write = anal_rw;
+	esil->reg_if.reg_read = anal_rr;
+	esil->reg_if.is_reg = anal_ir;
+	// mem
+	esil->mem_if.user = core;
+	esil->mem_if.mem_read = anal_mr;
+	esil->mem_if.mem_write = anal_mw;
+#if 0
+	esil->cb.hook_mem_write = anal_mw;
+	esil->cb.hook_mem_read = anal_mr;
+#endif
 	// run the esilcb from arch
 	if (core->anal->arch) {
 		r_arch_esilcb (core->anal->arch, R_ARCH_ESIL_ACTION_INIT);
@@ -8046,11 +8103,9 @@ static bool mymemread(REsil *esil, ut64 addr, ut8 *buf, int len) {
 		return false;
 	}
 	n = R_NEW (AeaMemItem);
-	if (n) {
-		n->addr = addr;
-		n->size = len;
-		r_list_push (mymemxsr, n);
-	}
+	n->addr = addr;
+	n->size = len;
+	r_list_push (mymemxsr, n);
 	return true;
 }
 
@@ -8415,6 +8470,7 @@ static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int ninstr) {
 			break;
 		default:
 			r_reg_setv (core->anal->reg, "PC", aop.addr + aop.size);
+eprintf ("%p\n", esil->cb.hook_reg_write);
 			r_reg_setv (core->dbg->reg, "PC", aop.addr + aop.size);
 			const char *e = R_STRBUF_SAFEGET (&aop.esil);
 			if (R_STR_ISNOTEMPTY (e)) {
