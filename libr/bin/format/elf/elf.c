@@ -503,6 +503,8 @@ static void set_default_value_dynamic_info(ELFOBJ *eo) {
 	eo->dyn_info.dt_relr = R_BIN_ELF_ADDR_MAX;
 	eo->dyn_info.dt_relasz = 0;
 	eo->dyn_info.dt_relaent = 0;
+	eo->dyn_info.dt_relrsz = 0;
+	eo->dyn_info.dt_relrent = 0;
 	eo->dyn_info.dt_strsz = 0;
 	eo->dyn_info.dt_syment = 0;
 	eo->dyn_info.dt_rel = R_BIN_ELF_ADDR_MAX;
@@ -571,6 +573,12 @@ static void fill_dynamic_entries(ELFOBJ *eo, ut64 loaded_offset, ut64 dyn_size) 
 			break;
 		case DT_RELR:
 			eo->dyn_info.dt_relr = d.d_un.d_ptr;
+			break;
+		case DT_RELRSZ:
+			eo->dyn_info.dt_relrsz = d.d_un.d_val;
+			break;
+		case DT_RELRENT:
+			eo->dyn_info.dt_relrent = d.d_un.d_val;
 			break;
 		case DT_RELASZ:
 			eo->dyn_info.dt_relasz = d.d_un.d_val;
@@ -1763,6 +1771,9 @@ static size_t get_size_rel_mode(Elf_(Xword) mode) {
 		// CREL uses variable-length encoding, but we need to return a size for alignment
 		// This is just a placeholder - actual parsing will be different
 		return sizeof (Elf_(Rela));
+	} else if (mode == DT_RELR) {
+		// RELR entries are the size of an address
+		return sizeof (Elf_(Addr));
 	}
 	return 0;
 }
@@ -3303,7 +3314,79 @@ static bool read_crel_reloc(ELFOBJ *eo, RBinElfReloc *r, ut64 vaddr, ut64 *next_
 	return true;
 }
 
+// Structure to track RELR state for processing entries
+typedef struct {
+	ut64 next_addr;    // Next address to relocate when processing bitmap
+	bool addr_set;     // Whether next_addr has been set
+} RelrInfo;
+
+// Read and process a RELR entry
+static bool read_relr_entry(ELFOBJ *eo, RBinElfReloc *r, ut64 vaddr, ut64 entry, RelrInfo *info) {
+	R_RETURN_VAL_IF_FAIL (eo && r && info, false);
+
+	// If entry is even (LSB == 0), it's an address to relocate
+	if ((entry & 1) == 0) {
+		// Store address in relocation structure
+		r->mode = DT_RELR;
+		r->offset = entry;
+		r->rva = entry;
+		r->type = R_AARCH64_RELATIVE;
+		r->sym = 0; // RELR relocations don't refer to symbols
+		r->addend = 0; // No explicit addend
+		// Set next_addr to the word after the one pointed to by entry
+		info->next_addr = entry + sizeof (Elf_(Addr));
+		info->addr_set = true;
+		return true;
+	} else {
+		// It's a bitmap - only process if we have a valid next_addr
+		if (!info->addr_set) {
+			return false;
+		}
+		// Find first set bit in bitmap (skipping LSB which is always 1)
+		ut64 bitmap = entry >> 1;
+		int bit_pos = 0;
+		while (bitmap) {
+			if (bitmap & 1) {
+				// Found a set bit, create relocation for this address
+				r->mode = DT_RELR;
+				r->offset = info->next_addr + (bit_pos * sizeof (Elf_(Addr)));
+				r->rva = r->offset;
+				r->type = R_AARCH64_RELATIVE;
+				r->sym = 0; // RELR relocations don't refer to symbols
+				r->addend = 0; // No explicit addend
+				return true;
+			}
+			bitmap >>= 1;
+			bit_pos++;
+		}
+		// No bits set or all processed - update next_addr for next bitmap
+		info->next_addr += (sizeof (Elf_(Addr)) * 8 - 1) * sizeof (Elf_(Addr));
+		return false; // No more bits to process
+	}
+}
+
 static bool read_reloc(ELFOBJ *eo, RBinElfReloc *r, Elf_(Xword) rel_mode, ut64 vaddr) {
+	static RelrInfo relr_info = {0};
+	// Handle RELR entries
+	if (rel_mode == DT_RELR) {
+		ut64 offset = Elf_(v2p_new) (eo, vaddr);
+		if (offset == UT64_MAX) {
+			return false;
+		}
+		// Read the RELR entry
+		ut8 buf[sizeof(Elf_(Addr))] = {0};
+		int res = r_buf_read_at (eo->b, offset, buf, sizeof(Elf_(Addr)));
+		if (res != sizeof(Elf_(Addr))) {
+			return false;
+		}
+		// Parse the RELR entry
+		ut64 entry = 0;
+		for (size_t i = 0; i < sizeof(Elf_(Addr)); i++) {
+			entry |= (ut64)(buf[i]) << (i * 8);
+		}
+		// Process the entry
+		return read_relr_entry(eo, r, vaddr, entry, &relr_info);
+	}
 	// Handle CREL entries differently
 	if (rel_mode == DT_CREL) {
 		ut64 next_offset = 0;
@@ -3314,58 +3397,24 @@ static bool read_reloc(ELFOBJ *eo, RBinElfReloc *r, Elf_(Xword) rel_mode, ut64 v
 	if (offset == UT64_MAX) {
 		return false;
 	}
-
 	size_t size_struct = get_size_rel_mode (rel_mode);
-
 	ut8 buf[sizeof (Elf_(Rela))] = {0};
 	int res = r_buf_read_at (eo->b, offset, buf, size_struct);
 	if (res != size_struct) {
 		return false;
 	}
-
 	size_t i = 0;
 	Elf_(Rela) reloc_info;
-
 	reloc_info.r_offset = R_BIN_ELF_READWORD (buf, i);
 	reloc_info.r_info = R_BIN_ELF_READWORD (buf, i);
-
 	if (rel_mode == DT_RELA) {
 		reloc_info.r_addend = R_BIN_ELF_READWORD (buf, i);
 		r->addend = reloc_info.r_addend;
-	} else if (rel_mode == DT_RELR) {
-#if 0
-// TODO: IMPLEMENT PARSING RELR TYPES TAKE THIS IMPLEMENTATION AS REFERENCE
-		ut8 b = r_buf_read8_at (eo->b, cur++);
-		ut64 delta = 0;
-
-		if (b & 0x80) {
-			delta = r_read_uleb128 (&buf);
-		} else {
-			delta = ((ut64)(b >> 3)) << shift;
-		}
-
-		off += delta;
-		if (b & 0x1) {
-			sym += r_read_sleb128 (&buf);
-		}
-		if (b & 0x2) {
-			type += r_read_sleb128 (&buf);
-		}
-		if (b & 0x4) {
-			addend += r_read_sleb128 (&buf);
-		}
-
-		Elf_(Reloc) r = { .r_offset = off, .r_sym = sym, .r_type = type, .r_addend = addend };
-		r_list_append (eo->relocs, r_mem_dup (&r, sizeof (r)));
-		ut64 at = r_buf_get_at (eo->b, shdr->sh_offset, NULL);
-		cur = shdr->sh_offset + (buf - at);
-#endif
 	}
 	r->mode = rel_mode;
 	r->offset = reloc_info.r_offset;
 	r->sym = ELF_R_SYM (reloc_info.r_info);
 	r->type = ELF_R_TYPE (reloc_info.r_info);
-
 	return true;
 }
 
@@ -3378,6 +3427,16 @@ static size_t get_num_relocs_dynamic(ELFOBJ *eo) {
 
 	if (eo->dyn_info.dt_relent) {
 		res += eo->dyn_info.dt_relsz / eo->dyn_info.dt_relent;
+	}
+	// Add RELR relocations count estimation
+	// Each RELR entry is the size of an address, but bitmap entries can encode multiple relocations
+	// So we use a conservative estimate of the number of relocations
+	if (eo->dyn_info.dt_relrent && eo->dyn_info.dt_relrsz) {
+		// Estimate the number of relocations - in worst case, each entry is just a single relocation
+		res += eo->dyn_info.dt_relrsz / eo->dyn_info.dt_relrent;
+	} else if (eo->dyn_info.dt_relrsz) {
+		// If relrent is not set, assume it's the size of an address
+		res += eo->dyn_info.dt_relrsz / sizeof(Elf_(Addr));
 	}
 
 	return res + get_num_relocs_dynamic_plt (eo);
@@ -3401,11 +3460,14 @@ static Elf_(Xword) get_section_mode(ELFOBJ *eo, size_t pos) {
 			return DT_CREL;
 		}
 	}
+	if (r_str_startswith (section->name, ".relr.") || section->type == SHT_RELR) {
+		return DT_RELR;
+	}
 	return 0;
 }
 
 static bool is_reloc_section(Elf_(Xword) rel_mode) {
-	return rel_mode == DT_REL || rel_mode == DT_RELA || rel_mode == DT_CREL;
+	return rel_mode == DT_REL || rel_mode == DT_RELA || rel_mode == DT_CREL || rel_mode == DT_RELR;
 }
 
 static size_t get_num_relocs_sections(ELFOBJ *eo) {
@@ -3463,15 +3525,23 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 		ht_uu_insert (eo->rel_cache, reloc->sym + 1, index + 1);
 		fix_rva_and_offset_exec_file (eo, reloc);
 	}
-	// parse relr
-	for (offset = 0; offset < eo->dyn_info.dt_relrsz && pos < num_relocs; offset += eo->dyn_info.dt_relaent, pos++) {
-		RBinElfReloc *reloc = r_vector_end (&eo->g_relocs);
-		if (!read_reloc (eo, reloc, DT_RELR, eo->dyn_info.dt_rela + offset)) {
-			break;
+	// parse relr - Relative relocations
+	if (eo->dyn_info.dt_relr != R_BIN_ELF_ADDR_MAX) {
+		offset = 0;
+		while (offset < eo->dyn_info.dt_relrsz && pos < num_relocs) {
+			RBinElfReloc *reloc = r_vector_end (&eo->g_relocs);
+			if (!read_reloc (eo, reloc, DT_RELR, eo->dyn_info.dt_relr + offset)) {
+				// If read_reloc fails for RELR, it might be processing a bitmap entry
+				// Try the next entry
+				offset += sizeof(Elf_(Addr));
+				continue;
+			}
+			int index = r_vector_index (&eo->g_relocs);
+			ht_uu_insert (eo->rel_cache, reloc->sym + 1, index + 1);
+			fix_rva_and_offset_exec_file (eo, reloc);
+			pos++;
+			offset += sizeof(Elf_(Addr));
 		}
-		int index = r_vector_index (&eo->g_relocs);
-		ht_uu_insert (eo->rel_cache, reloc->sym + 1, index + 1);
-		fix_rva_and_offset_exec_file (eo, reloc);
 	}
 	// parse rela
 	for (offset = 0; offset < eo->dyn_info.dt_relasz && pos < num_relocs; offset += eo->dyn_info.dt_relaent, pos++) {
@@ -3541,6 +3611,13 @@ static ut64 get_next_not_analysed_offset(ELFOBJ *eo, size_t section_vaddr, size_
 		// Since CREL sections use variable-length encoding, we can't easily
 		// determine the end offset. For now, we'll just skip the section entirely.
 		return UT64_MAX;
+	}
+	
+	// Add support for RELR sections
+	if (eo->dyn_info.dt_relr != R_BIN_ELF_ADDR_MAX \
+		&& gvaddr >= eo->dyn_info.dt_relr \
+		&& gvaddr < eo->dyn_info.dt_relr + eo->dyn_info.dt_relrsz) {
+		return eo->dyn_info.dt_relr + eo->dyn_info.dt_relrsz - section_vaddr;
 	}
 
 	return offset;
@@ -3982,33 +4059,16 @@ static bool parse_pt_dynamic(RBinFile *bf, RBinSection *ptr) {
 		}
 		switch (entry.d_tag) {
 		case DT_RELR:
-			R_LOG_TODO ("parse relr section");
-#if 0
-				{
-					ut64 offset = dyn->d_un.d_ptr;
-					Elf_(Shdr) *shdr = NULL;
-					for (int j = 0; j < eo->num_sections; j++) {
-						if (eo->sections[j].sh_offset == offset && eo->sections[j].sh_type == SHT_RELR) {
-							shdr = &eo->sections[j];
-							break;
-						}
-					}
-					if (shdr) {
-						parse_crel_section(eo, shdr); // This function already exists in your file!
-					}
-					break;
-				}
-#endif
-#if 0
-			{
-				Elf_(Dyn) *d = &eo->dyn[j];
-				Elf_(Addr) offset = d->d_un.d_ptr;
-				Elf_(Shdr) *shdr = find_section_by_offset (eo, offset);
-				if (shdr && shdr->sh_type == SHT_RELR) {
-					parse_crel_section (eo, shdr);
-				}
-			}
-#endif
+			R_LOG_DEBUG ("RELR section found at 0x%08"PFMT64x, entry.d_un.d_ptr);
+			eo->dyn_info.dt_relr = entry.d_un.d_ptr;
+			break;
+		case DT_RELRSZ:
+			R_LOG_DEBUG ("RELR section size: 0x%08"PFMT64x, entry.d_un.d_val);
+			eo->dyn_info.dt_relrsz = entry.d_un.d_val;
+			break;
+		case DT_RELRENT:
+			R_LOG_DEBUG ("RELR entry size: 0x%08"PFMT64x, entry.d_un.d_val);
+			eo->dyn_info.dt_relrent = entry.d_un.d_val;
 			break;
 		case DT_INIT_ARRAY:
 			R_LOG_DEBUG ("init array");
