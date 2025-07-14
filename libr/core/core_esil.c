@@ -135,8 +135,7 @@ static REsilMemInterface core_esil_mem_if = {
 	.mem_write = core_esil_mem_write
 };
 
-static void core_esil_voyeur_trap_revert_reg_write (void *user, const char *name,
-	ut64 old, ut64 val) {
+static void core_esil_voyeur_trap_revert_reg_write(void *user, const char *name, ut64 old, ut64 val) {
 	RCoreEsil *cesil = user;
 	if (!(cesil->cfg & R_CORE_ESIL_TRAP_REVERT)) {
 		return;
@@ -144,7 +143,7 @@ static void core_esil_voyeur_trap_revert_reg_write (void *user, const char *name
 	r_strbuf_prependf (&cesil->trap_revert, "0x%"PFMT64x",%s,:=,", old, name);
 }
 
-static void core_esil_voyeur_trap_revert_mem_write (void *user, ut64 addr,
+static void core_esil_voyeur_trap_revert_mem_write(void *user, ut64 addr,
 	const ut8 *old, const ut8 *buf, int len) {
 	RCoreEsil *cesil = user;
 	if (!(cesil->cfg & R_CORE_ESIL_TRAP_REVERT)) {
@@ -161,7 +160,7 @@ static void core_esil_voyeur_trap_revert_mem_write (void *user, ut64 addr,
 	}
 }
 
-static void core_esil_stepback_free (void *data) {
+static void core_esil_stepback_free(void *data) {
 	if (data) {
 		RCoreEsilStepBack *cesb = data;
 		free (cesb->expr);
@@ -408,6 +407,7 @@ R_API bool r_core_esil_single_step(RCore *core) {
 	pc += op.size;
 	char *expr = r_strbuf_drain_nofree (&op.esil);
 	r_esil_reg_write_silent (&core->esil.esil, pc_name, pc);
+	r_reg_setv (core->anal->reg, pc_name, pc); // XXX
 	r_anal_op_fini (&op);
 	if (R_STR_ISNOTEMPTY (core->esil.cmd_step)) {
 		r_core_cmdf (core, "%s %"PFMT64d" 0", core->esil.cmd_step, core->esil.old_pc);
@@ -458,7 +458,7 @@ skip:
 				r_strbuf_fini (&core->esil.trap_revert);
 			}
 		}
-		if (core->esil.cmd_step_out) {
+		if (R_STR_ISNOTEMPTY (core->esil.cmd_step_out)) {
 			r_core_cmdf (core, "%s %"PFMT64d" 0", core->esil.cmd_step_out, core->esil.old_pc);
 		}
 		return true;
@@ -474,6 +474,7 @@ skip:
 		goto trap;
 	}
 	//restore pc
+// eprintf ("PC WRITE %llx\n", core->esil.old_pc);
 	r_esil_reg_write_silent (&core->esil.esil, pc_name, core->esil.old_pc);
 	goto trap;
 op_trap:

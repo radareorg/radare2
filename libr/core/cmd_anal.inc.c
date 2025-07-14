@@ -7354,7 +7354,12 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			ret = false;
 			break;
 		}
-		addr = r_reg_getv (core->esil.reg, "PC");
+		// addr = r_reg_getv (core->esil.reg, "PC");
+		addr = r_reg_getv (core->anal->reg, "PC");
+		if (until_addr == UT64_MAX) {
+			eprintf ("next %llx\n", until_addr);
+			break;
+		}
 	}
 out:
 	r_cons_break_pop (core->cons);
