@@ -171,10 +171,14 @@ static void core_esil_stepback_free(void *data) {
 R_API bool r_core_esil_init(RCore *core) {
 	R_RETURN_VAL_IF_FAIL (core && core->io, false);
 	core->esil = (const RCoreEsil){0};
+#if 1	//hack
+	core->esil.reg = core->anal->reg
+#else
 	core->esil.reg = r_reg_new ();
 	if (!core->esil.reg) {
 		return false;
 	}
+#endif
 	core_esil_reg_if.reg = core;
 	core_esil_mem_if.mem = core;
 	if (!r_esil_init (&core->esil.esil, 4096, false, 64,
@@ -521,10 +525,12 @@ R_API void r_core_esil_fini(RCoreEsil *cesil) {
 	r_esil_del_voyeur (&cesil->esil, cesil->tr_mem);
 	r_esil_fini (&cesil->esil);
 	r_strbuf_fini (&cesil->trap_revert);
+#if 0	//hack
 	if (cesil->reg) {
 		r_reg_free (cesil->reg);
 		cesil->reg = NULL;
 	}
+#endif
 	R_FREE (cesil->cmd_step);
 	R_FREE (cesil->cmd_step_out);
 	R_FREE (cesil->cmd_intr);
