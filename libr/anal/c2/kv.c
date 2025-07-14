@@ -1233,7 +1233,7 @@ R_IPI char* kvc_parse(const char* header_content, char **errmsg) {
 	PPState *pps = pp_new ();
 	char *pre = pp_preprocess (pps, header_content);
 	if (!pre) {
-		// preprocessor error happened
+		pp_free (pps);
 		return NULL;
 	}
 	pp_free (pps);
