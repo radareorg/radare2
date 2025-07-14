@@ -252,9 +252,9 @@ typedef struct r_esil_t {
 	REsilRegInterface reg_if;
 	REsilMemInterface mem_if;
 	RIDStorage voyeur[R_ESIL_VOYEUR_LAST];
-	REsilCallbacks cb;
-	REsilCallbacks ocb;
-	bool ocb_set;
+	REsilCallbacks cb; // DEPRECATED
+	REsilCallbacks ocb; // DEPRECATED
+	bool ocb_set; // DEPRECATED
 	// this is so cursed, can we please remove external commands from esil internals.
 	// Function pointers are fine, but not commands
 	char *cmd_step; // r2 (external) command to run before a step is performed

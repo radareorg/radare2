@@ -409,7 +409,7 @@ R_API bool r_core_esil_single_step(RCore *core) {
 	char *expr = r_strbuf_drain_nofree (&op.esil);
 	r_esil_reg_write_silent (&core->esil.esil, pc_name, pc);
 	r_anal_op_fini (&op);
-	if (core->esil.cmd_step) {
+	if (R_STR_ISNOTEMPTY (core->esil.cmd_step)) {
 		r_core_cmdf (core, "%s %"PFMT64d" 0", core->esil.cmd_step, core->esil.old_pc);
 		if (core->num->value) {
 			free (expr);
