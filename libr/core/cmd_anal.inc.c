@@ -8470,7 +8470,6 @@ static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int ninstr) {
 			break;
 		default:
 			r_reg_setv (core->anal->reg, "PC", aop.addr + aop.size);
-eprintf ("%p\n", esil->cb.hook_reg_write);
 			r_reg_setv (core->dbg->reg, "PC", aop.addr + aop.size);
 			const char *e = R_STRBUF_SAFEGET (&aop.esil);
 			if (R_STR_ISNOTEMPTY (e)) {

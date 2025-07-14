@@ -680,7 +680,9 @@ R_API bool r_esil_reg_read(REsil *esil, const char *regname, ut64 *val, ut32 *si
 	}
 	do {
 		REsilVoyeur *voy = r_id_storage_get (&esil->voyeur[R_ESIL_VOYEUR_REG_READ], i);
-		voy->reg_read (voy->user, regname, *val);
+		if (val) {
+			voy->reg_read (voy->user, regname, *val);
+		}
 	} while (r_id_storage_get_next (&esil->voyeur[R_ESIL_VOYEUR_REG_READ], &i));
 	return true;
 #else
@@ -691,7 +693,7 @@ R_API bool r_esil_reg_read(REsil *esil, const char *regname, ut64 *val, ut32 *si
 		val = &localnum;
 	}
 	*val = 0LL;
-	if (size) {
+	if (size && esil->anal && esil->anal->config) {
 		*size = esil->anal->config->bits;
 	}
 	if (esil->cb.hook_reg_read) {
@@ -706,11 +708,15 @@ R_API bool r_esil_reg_read(REsil *esil, const char *regname, ut64 *val, ut32 *si
 
 R_API bool r_esil_reg_read_silent(REsil *esil, const char *name, ut64 *val, ut32 *size) {
 	R_RETURN_VAL_IF_FAIL (esil && esil->reg_if.reg_read && name, false);
-	if (!esil->reg_if.reg_read (esil->reg_if.reg, name, val)) {
-		return false;
-	}
 	if (esil->reg_if.reg_size && size) {
 		*size = esil->reg_if.reg_size (esil->reg_if.reg, name);
+	}
+	if (val) {
+		if (!esil->reg_if.reg_read (esil->reg_if.reg, name, val)) {
+			return false;
+		}
+	} else {
+		return esil->reg_if.is_reg (esil->reg_if.reg, name);
 	}
 	return true;
 }

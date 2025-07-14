@@ -1080,7 +1080,9 @@ static bool tt_reg_read(void *reg, const char *name, ut64 *val) {
 	if (!ri) {
 		return false;
 	}
-	*val = r_reg_get_value ((RReg *)reg, ri);
+	if (val) {
+		*val = r_reg_get_value ((RReg *)reg, ri);
+	}
 	r_unref (ri);
 	return true;
 }
