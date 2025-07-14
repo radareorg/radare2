@@ -3314,78 +3314,71 @@ static bool read_crel_reloc(ELFOBJ *eo, RBinElfReloc *r, ut64 vaddr, ut64 *next_
 	return true;
 }
 
-// Structure to track RELR state for processing entries
 typedef struct {
-	ut64 next_addr;    // Next address to relocate when processing bitmap
-	bool addr_set;     // Whether next_addr has been set
+	ut64 next_addr;
+	bool has_next_addr;
 } RelrInfo;
 
-// Read and process a RELR entry
 static bool read_relr_entry(ELFOBJ *eo, RBinElfReloc *r, ut64 vaddr, ut64 entry, RelrInfo *info) {
 	R_RETURN_VAL_IF_FAIL (eo && r && info, false);
 
 	// If entry is even (LSB == 0), it's an address to relocate
 	if ((entry & 1) == 0) {
-		// Store address in relocation structure
 		r->mode = DT_RELR;
 		r->offset = entry;
 		r->rva = entry;
 		r->type = R_AARCH64_RELATIVE;
 		r->sym = 0; // RELR relocations don't refer to symbols
-		r->addend = 0; // No explicit addend
+		r->addend = 0;
 		// Set next_addr to the word after the one pointed to by entry
 		info->next_addr = entry + sizeof (Elf_(Addr));
-		info->addr_set = true;
+		info->has_next_addr = true;
 		return true;
-	} else {
-		// It's a bitmap - only process if we have a valid next_addr
-		if (!info->addr_set) {
-			return false;
-		}
-		// Find first set bit in bitmap (skipping LSB which is always 1)
-		ut64 bitmap = entry >> 1;
-		int bit_pos = 0;
-		while (bitmap) {
-			if (bitmap & 1) {
-				// Found a set bit, create relocation for this address
-				r->mode = DT_RELR;
-				r->offset = info->next_addr + (bit_pos * sizeof (Elf_(Addr)));
-				r->rva = r->offset;
-				r->type = R_AARCH64_RELATIVE;
-				r->sym = 0; // RELR relocations don't refer to symbols
-				r->addend = 0; // No explicit addend
-				return true;
-			}
-			bitmap >>= 1;
-			bit_pos++;
-		}
-		// No bits set or all processed - update next_addr for next bitmap
-		info->next_addr += (sizeof (Elf_(Addr)) * 8 - 1) * sizeof (Elf_(Addr));
-		return false; // No more bits to process
 	}
+	// It's a bitmap - only process if we have a valid next_addr
+	if (!info->has_next_addr) {
+		return false;
+	}
+	// Find first set bit in bitmap (skipping LSB which is always 1)
+	ut64 bitmap = entry >> 1;
+	int bit_pos = 0;
+	while (bitmap) {
+		if (bitmap & 1) {
+			r->mode = DT_RELR;
+			r->offset = info->next_addr + (bit_pos * sizeof (Elf_(Addr)));
+			r->rva = r->offset;
+			r->type = R_AARCH64_RELATIVE;
+			r->sym = 0; // RELR relocations don't refer to symbols
+			r->addend = 0;
+			return true;
+		}
+		bitmap >>= 1;
+		bit_pos++;
+	}
+	// No bits set or all processed - update next_addr for next bitmap
+	info->next_addr += (sizeof (Elf_(Addr)) * 8 - 1) * sizeof (Elf_(Addr));
+	return false;
 }
 
 static bool read_reloc(ELFOBJ *eo, RBinElfReloc *r, Elf_(Xword) rel_mode, ut64 vaddr) {
 	static RelrInfo relr_info = {0};
 	// Handle RELR entries
 	if (rel_mode == DT_RELR) {
+		size_t i;
 		ut64 offset = Elf_(v2p_new) (eo, vaddr);
 		if (offset == UT64_MAX) {
 			return false;
 		}
-		// Read the RELR entry
-		ut8 buf[sizeof(Elf_(Addr))] = {0};
-		int res = r_buf_read_at (eo->b, offset, buf, sizeof(Elf_(Addr)));
-		if (res != sizeof(Elf_(Addr))) {
+		ut8 buf[sizeof (Elf_(Addr))] = {0};
+		int res = r_buf_read_at (eo->b, offset, buf, sizeof (Elf_(Addr)));
+		if (res != sizeof (Elf_(Addr))) {
 			return false;
 		}
-		// Parse the RELR entry
 		ut64 entry = 0;
-		for (size_t i = 0; i < sizeof(Elf_(Addr)); i++) {
+		for (i = 0; i < sizeof (Elf_(Addr)); i++) {
 			entry |= (ut64)(buf[i]) << (i * 8);
 		}
-		// Process the entry
-		return read_relr_entry(eo, r, vaddr, entry, &relr_info);
+		return read_relr_entry (eo, r, vaddr, entry, &relr_info);
 	}
 	// Handle CREL entries differently
 	if (rel_mode == DT_CREL) {
