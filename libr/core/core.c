@@ -2850,7 +2850,7 @@ R_API void r_core_fini(RCore *c) {
 	r_unref (c->anal->config);
 	*/
 #if USE_NEW_ESIL
-	r_core_esil_fini (&c->esil);
+	r_core_esil_fini (&c->cesil);
 #endif
 	if (c->anal->esil) {
 		c->anal->esil->anal = NULL;

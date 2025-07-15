@@ -256,7 +256,9 @@ typedef struct r_esil_t {
 	bool ocb_set; // DEPRECATED
 	// this is so cursed, can we please remove external commands from esil internals.
 	// Function pointers are fine, but not commands
+#if 0
 	char *cmd_step; // r2 (external) command to run before a step is performed
+#endif
 	char *cmd_step_out; // r2 (external) command to run after a step is performed
 	char *cmd_intr; // r2 (external) command to run when an interrupt occurs
 	char *cmd_trap; // r2 (external) command to run when a trap occurs

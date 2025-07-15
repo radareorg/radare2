@@ -364,7 +364,7 @@ struct r_core_t {
 	RList/*<RCmdDescriptor>*/ *cmd_descriptors;
 	RAnal *anal;
 	RAsm *rasm;
-	RCoreEsil esil;
+	RCoreEsil cesil;
 	/* ^^ */
 	RCoreTimes *times;
 	// RParse *parser;

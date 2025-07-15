@@ -7289,7 +7289,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 	if (esiltimeout > 0) {
 		startTime = r_time_now_mono ();
 	}
-	ut64 addr = r_reg_getv (core->esil.reg, "PC");
+	ut64 addr = r_reg_getv (core->cesil.reg, "PC");
 	r_cons_break_push (core->cons, NULL, NULL);
 	while (addr != until_addr) {
 		if (esiltimeout > 0) {
@@ -7335,13 +7335,13 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			case R_ANAL_OP_TYPE_CRET:
 			case R_ANAL_OP_TYPE_UJMP:
 				if (addr % R_MAX (r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN), 1)) {
-					if (core->esil.cmd_trap) {
-						r_core_cmd0 (core, core->esil.cmd_trap);
+					if (core->cesil.cmd_trap) {
+						r_core_cmd0 (core, core->cesil.cmd_trap);
 					}
 					r_anal_op_fini (&op);
 					goto out;
 				}
-				r_reg_setv (core->esil.reg, "PC", op.addr + op.size);
+				r_reg_setv (core->cesil.reg, "PC", op.addr + op.size);
 				r_anal_op_fini (&op);
 				continue;
 			}
@@ -7353,7 +7353,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			ret = false;
 			break;
 		}
-		// addr = r_reg_getv (core->esil.reg, "PC");
+		// addr = r_reg_getv (core->cesil.reg, "PC");
 		addr = r_reg_getv (core->anal->reg, "PC");
 		// ESIL TODO: use StepOptions with .amount
 		if (until_addr == UT64_MAX) {
@@ -7671,8 +7671,8 @@ tail_return:
 
 #if USE_NEW_ESIL
 R_API bool r_core_esil_step_back(RCore *core) {
-	R_RETURN_VAL_IF_FAIL (core && core->io && core->esil.reg &&
-		r_list_length (&core->esil.stepback), false);
+	R_RETURN_VAL_IF_FAIL (core && core->io && core->cesil.reg &&
+		r_list_length (&core->cesil.stepback), false);
 	r_core_esil_stepback (core);
 	return true;
 }
