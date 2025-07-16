@@ -1,7 +1,7 @@
-include ../../../config-user.mk
-include ../../../libr/config.mk
-include ../../../mk/platform.mk
-include ../../../mk/${COMPILER}.mk
+include ../../config-user.mk
+include ../../libr/config.mk
+include ../../mk/platform.mk
+include ../../mk/${COMPILER}.mk
 
 CFLAGS+=${PIC_CFLAGS}
 
@@ -56,7 +56,7 @@ OBJS = adler32.o crc32.o deflate.o infback.o \
 OFILES= $(OBJS)
 
 CFLAGS+=-Wall
-CFLAGS+=-I../../libr/include -I../include/
+CFLAGS+=-I../../libr/include -I.
 #LDFLAGS+=-L../../../libr/util
 LIBNAME=libr_z.${SOVER}
 LIBAR=libr_z.$(EXT_AR)
@@ -78,3 +78,4 @@ libr_z.$(EXT_AR): ${OFILES}
 
 clean:
 	rm -f ${LIBNAME} *.o *.$(EXT_AR) *.d *.dylib *.so
+
