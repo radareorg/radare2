@@ -20,13 +20,13 @@ RANLIB?=ranlib
 
 all: $(LIBAR)
 
-$(LIBAR): $(SPRJ)/zip/libr_zip.$(EXT_AR)
+$(LIBAR): zip/libr_zip.$(EXT_AR)
 	@echo ${CC_AR} $(SPRJ)/zlib/*.o $(SPRJ)/zip/*.o
 	${CC_AR} $(SPRJ)/zlib/*.o $(SPRJ)/zip/*.o
 	@echo $(RANLIB) librz.$(EXT_AR)
 	$(RANLIB) librz.$(EXT_AR)
 
-zip/libr_zip.$(EXT_AR): $(SPRJ)/zlib/libr_z.$(EXT_AR)
+zip/libr_zip.$(EXT_AR): zlib/libr_z.$(EXT_AR)
 	$(MAKE) -C $(SPRJ)/zip
 
 zlib/libr_z.$(EXT_AR):
