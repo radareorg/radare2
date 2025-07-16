@@ -31,6 +31,7 @@ if not zip_dep.found() or not get_option('use_sys_zip')
     'lib/zip_dirent.c',
     'lib/zip_discard.c',
     'lib/zip_entry.c',
+    'lib/zip_realloc.c',
     'lib/zip_error.c',
     'lib/zip_error_clear.c',
     'lib/zip_error_get.c',
@@ -84,6 +85,7 @@ if not zip_dep.found() or not get_option('use_sys_zip')
     'lib/zip_set_file_comment.c',
     'lib/zip_set_file_compression.c',
     'lib/zip_set_name.c',
+    'lib/zip_err_str.c',
     'lib/zip_source_accept_empty.c',
     'lib/zip_source_begin_write.c',
     'lib/zip_source_begin_write_cloning.c',
@@ -148,7 +150,7 @@ if not zip_dep.found() or not get_option('use_sys_zip')
     ]
   endif
 
-  zip_inc = include_directories('lib')
+  zip_inc = include_directories(['.', 'lib'])
 
   libr2zip = static_library('r2zip', zip_files,
     include_directories: zip_inc,
