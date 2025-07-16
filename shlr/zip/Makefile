@@ -20,20 +20,20 @@ RANLIB?=ranlib
 
 all: $(LIBAR)
 
-$(LIBAR): zip/libr_zip.$(EXT_AR)
-	@echo ${CC_AR} zlib/*.o zip/*.o
-	${CC_AR} zlib/*.o zip/*.o
+$(LIBAR): $(SPRJ)/zip/libr_zip.$(EXT_AR)
+	@echo ${CC_AR} $(SPRJ)/zlib/*.o $(SPRJ)/zip/lib/*.o
+	${CC_AR} $(SPRJ)/zlib/*.o $(SPRJ)/zip/lib/*.o
 	@echo $(RANLIB) librz.$(EXT_AR)
 	$(RANLIB) librz.$(EXT_AR)
 
-zip/libr_zip.$(EXT_AR): zlib/libr_z.$(EXT_AR)
-	$(MAKE) -C zip
+$(SPRJ)/zip/libr_zip.$(EXT_AR): $(SPRJ)/zlib/libr_z.$(EXT_AR)
+	$(MAKE) -C $(SPRJ)/zip
 
-zlib/libr_z.$(EXT_AR):
-	$(MAKE) -C zlib
+$(SPRJ)/zlib/libr_z.$(EXT_AR):
+	$(MAKE) -C $(SPRJ)/zlib
 
 clean:
-	$(MAKE) -C zlib clean
-	$(MAKE) -C zip clean
-	rm -f *.$(EXT_AR) *.${EXT_SO} zlib/*.$(EXT_AR) zip/*.$(EXT_AR)
+	$(MAKE) -C $(SPRJ)/zlib clean
+	$(MAKE) -C $(SPRJ)/zip clean
+	rm -f *.$(EXT_AR) *.${EXT_SO} $(SPRJ)/zlib/*.$(EXT_AR) $(SPRJ)/zip/*.$(EXT_AR)
 endif
