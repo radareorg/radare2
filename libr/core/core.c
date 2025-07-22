@@ -1384,6 +1384,9 @@ static bool check_tabhelp_exceptions(const char *s) {
 	if (r_str_startswith (s, "pf.")) {
 		return true;
 	}
+	if (r_str_startswith (s, "pf*")) {
+		return true;
+	}
 	if (r_str_startswith (s, "pfc.")) {
 		return true;
 	}
