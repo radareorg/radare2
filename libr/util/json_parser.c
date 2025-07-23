@@ -395,6 +395,39 @@ R_API const RJson *r_json_get(const RJson *json, const char *key) {
 	return NULL;
 }
 
+R_API st64 r_json_get_num(const RJson *json, const char *key) {
+	R_RETURN_VAL_IF_FAIL (json && key, 0);
+
+	const RJson *field = r_json_get (json, key);
+	if (!field) {
+		return 0;
+	}
+	switch (field->type) {
+	case R_JSON_STRING:
+		return r_num_get (NULL, field->str_value);
+	case R_JSON_INTEGER:
+		return field->num.s_value;
+	case R_JSON_BOOLEAN:
+		return field->num.u_value;
+	case R_JSON_DOUBLE:
+		return (int)field->num.dbl_value;
+	default:
+		return 0;
+	}
+}
+
+R_API const char *r_json_get_str(const RJson *json, const char *key) {
+	R_RETURN_VAL_IF_FAIL (json && key, NULL);
+
+	const RJson *field = r_json_get (json, key);
+	if (!field || field->type != R_JSON_STRING) {
+		return NULL;
+	}
+
+	return field->str_value;
+}
+
+
 R_API const RJson *r_json_item(const RJson *json, size_t idx) {
 	R_RETURN_VAL_IF_FAIL (json, NULL);
 	RJson *js;
