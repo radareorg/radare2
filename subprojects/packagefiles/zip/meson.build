@@ -5,6 +5,7 @@ project(
   meson_version: '>=0.60.0',
 )
 
+
 # handle zlib dependency
 zlib_dep = dependency('zlib', required: false)
 if not zlib_dep.found() or not get_option('use_sys_zlib')
@@ -134,6 +135,7 @@ if not zip_dep.found() or not get_option('use_sys_zip')
   ]
 
   if host_machine.system() == 'windows'
+    cc = meson.get_compiler('c')
     zip_files += [
       'lib/zip_source_file_win32.c',
       'lib/zip_source_file_win32_named.c',
