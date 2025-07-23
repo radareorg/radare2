@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020-2022 - thestr4ng3r, Yaroslav Stavnichiy, pancake */
+/* radare - LGPL - Copyright 2020-2025 - thestr4ng3r, Yaroslav Stavnichiy, pancake */
 
 #ifndef R_JSON_H
 #define R_JSON_H
@@ -58,6 +58,8 @@ R_API void r_json_free(RJson *js);
 R_API const RJson *r_json_get(const RJson *json, const char *key); // get object's property by key
 R_API const RJson *r_json_item(const RJson *json, size_t idx); // get array element by index
 R_API const char *r_json_type(const RJson *json);
+R_API const char *r_json_get_str(const RJson *json, const char *key);
+R_API st64 r_json_get_num(const RJson *json, const char *key);
 
 #ifdef  __cplusplus
 }
