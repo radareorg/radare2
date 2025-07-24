@@ -5,7 +5,6 @@ project(
   meson_version: '>=0.60.0',
 )
 
-
 # handle zlib dependency
 zlib_dep = dependency('zlib', required: false)
 if not zlib_dep.found() or not get_option('use_sys_zlib')
@@ -157,7 +156,7 @@ if not zip_dep.found() or not get_option('use_sys_zip')
   libr2zip = static_library('r2zip', zip_files,
     include_directories: zip_inc,
     implicit_include_directories: false,
-    dependencies: zlib_dep + libzip_dep
+    dependencies: [zlib_dep, libzip_dep]
   )
 
   zip_dep = declare_dependency(
