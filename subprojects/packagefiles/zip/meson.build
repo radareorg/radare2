@@ -144,7 +144,7 @@ if not zip_dep.found() or not get_option('use_sys_zip')
       'lib/zip_source_file_win32_ansi.c',
       'lib/zip_random_win32.c',
     ]
-    libzip_deps += [cc.find_library('advapi32')]
+    libzip_dep = cc.find_library('advapi32')
   else
     zip_files += [
       'lib/zip_source_file_stdio_named.c',
@@ -157,7 +157,7 @@ if not zip_dep.found() or not get_option('use_sys_zip')
   libr2zip = static_library('r2zip', zip_files,
     include_directories: zip_inc,
     implicit_include_directories: false,
-    dependencies: zlib_dep
+    dependencies: zlib_dep + libzip_dep
   )
 
   zip_dep = declare_dependency(
