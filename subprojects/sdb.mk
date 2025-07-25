@@ -8,7 +8,7 @@ WRAP_wrap_git_depth:=1
 .PHONY: sdb
 
 sdb:
-	if [ ! -d "sdb" -o "dbc79c479a62906145dc2c079696bb4dc68575c6" != "$(shell cd sdb && git rev-parse HEAD)" ]; then rm -rf "sdb"; ${MAKE} sdb_all; fi
+	if [ ! -d "sdb" -o "dbc79c479a62906145dc2c079696bb4dc68575c6" != "$(shell cd sdb 2>/dev/null && git rev-parse HEAD)" ]; then rm -rf "sdb"; ${MAKE} sdb_all; fi
 
 sdb_all:
 	git clone --no-checkout  https://github.com/radareorg/sdb.git sdb

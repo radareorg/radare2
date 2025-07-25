@@ -139,7 +139,7 @@ static RList *fs_zip_dir(RFSRoot *root, const char *path, R_UNUSED int view) {
 		free (buf);
 		return NULL;
 	}
-	int num_entries = zip_get_num_files (za);
+	int num_entries = zip_get_num_entries (za, 0);
 	int i;
 	bool hasdir = false;
 	bool hasfailed = false;
