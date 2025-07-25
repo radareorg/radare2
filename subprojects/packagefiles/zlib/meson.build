@@ -14,6 +14,7 @@ if cc.has_argument('--std=c99')
   add_project_arguments('--std=c99', language: ['c'])
 endif
 
+link_args = []
 if host_machine.system() not in ['windows', 'darwin']
   link_args = cc.get_supported_link_arguments(
     '-Wl,--version-script,@0@/zlib.map'.format(meson.current_source_dir()),
@@ -64,15 +65,6 @@ if host_machine.system() == 'windows'
   endif
   src += win.compile_resources('win32/zlib1.rc', args: win_args)
 endif
-
-src += files(
-  'compress.c',
-  'uncompr.c',
-  'gzclose.c',
-  'gzlib.c',
-  'gzread.c',
-  'gzwrite.c',
-)
 
 zlib = library(
   'z',
