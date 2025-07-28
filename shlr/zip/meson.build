@@ -1,9 +1,9 @@
 # handle zlib dependency
-zlib_dep = dependency('zlib', required: false, default_options: ['default_library=static'])
+zlib_dep = dependency('zlib', required: false)
 if not zlib_dep.found() or not get_option('use_sys_zlib')
   message('Use subprojected zlib')
 
-  zlib_proj = subproject('zlib')
+  zlib_proj = subproject('zlib', default_options: ['default_library=static'])
   zlib_dep = zlib_proj.get_variable('zlib_dep')
 else
   message('Use system-provided zlib library')
