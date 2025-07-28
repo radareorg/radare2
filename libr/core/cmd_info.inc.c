@@ -2322,14 +2322,21 @@ static int cmd_info(void *data, const char *input) {
 	}
 	switch (input[0]) {
 	case 'O': // "iO"
-		switch (input[1]) {
-		case ' ':
-			r_sys_cmdf ("rabin2 -O \"%s\" \"%s\"",
-				r_str_trim_head_ro (input + 1), desc->name);
-			break;
-		default:
-			r_sys_cmdf ("rabin2 -O help");
-			break;
+		{
+			char *res = NULL;
+			switch (input[1]) {
+			case ' ':
+				res = r_sys_cmd_strf ("rabin2 -O \"%s\" \"%s\"",
+					r_str_trim_head_ro (input + 1), desc->name);
+				break;
+			default:
+				res = r_sys_cmd_strf ("rabin2 -O help");
+				break;
+			}
+			if (res) {
+				r_cons_print (core->cons, res);
+				free (res);
+			}
 		}
 		break;
 	case 'i': // "ii"
