@@ -40,11 +40,11 @@ endif
 
 .c.o:
 ifeq ($(SILENT),)
-	$(CC) -c $(CFLAGS) -o $@ $<
+	$(CC) -c $(CFLAGS) -w -o $@ $<
 else
 	#@echo "[$(shell $(LIBR)/count.sh)] CC $<"
 	@echo "[$(shell basename `pwd`)] CC $<"
-	@$(CC) -c $(CFLAGS) -o $@ $<
+	@$(CC) -c $(CFLAGS) -w -o $@ $<
 endif
 
 -include $(TOP)/config-user.mk

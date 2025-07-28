@@ -10,7 +10,7 @@ WRAP_wrap_git_depth:=1
 .PHONY: capstone-v4
 
 capstone-v4:
-	if [ ! -d "capstone-v4" -o "d7e459d026b19d6c3a7b743bfc475d919ff03f74" != "$(shell cd capstone-v4 && git rev-parse HEAD)" ]; then rm -rf "capstone-v4"; ${MAKE} capstone-v4_all; fi
+	if [ ! -d "capstone-v4" -o "d7e459d026b19d6c3a7b743bfc475d919ff03f74" != "$(shell cd capstone-v4 2>/dev/null && git rev-parse HEAD)" ]; then rm -rf "capstone-v4"; ${MAKE} capstone-v4_all; fi
 
 capstone-v4_all:
 	git clone --no-checkout  https://github.com/capstone-engine/capstone.git capstone-v4

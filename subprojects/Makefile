@@ -1,4 +1,4 @@
-DEPS=sdb qjs
+DEPS=sdb qjs zlib zip
 
 ifeq ($(WANT_V35),1)
   DEPS += binaryninja
@@ -29,3 +29,5 @@ else
   include capstone-v5.mk
 endif
 include qjs.mk
+include zlib.mk
+include zip.mk
