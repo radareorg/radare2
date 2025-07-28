@@ -1714,10 +1714,8 @@ static int cmd_wz(RCore *core, const char *input) {
 }
 
 static int cmd_wt(RCore *core, const char *input) {
-	R_BORROW const char *prefix = r_config_get (core->config, "cfg.prefixdump");
-	R_BORROW char *filename = NULL;
+	const char *prefix = r_config_get (core->config, "cfg.prefixdump");
 	char default_filename_sep = '.';
-	char fn_local[32] = {0}; // for using snprintf instead of str_newf; doesnt need free()
 	int ret = 0;
 
 	bool append = false;
@@ -1725,12 +1723,10 @@ static int cmd_wt(RCore *core, const char *input) {
 	ut64 poff = core->addr; // physical address; for writing arbitrary sizes
 
 	int argc;
-	char **argv;
+	char **argv = r_str_argv (input, &argc);
 
-	argv = r_str_argv (input, &argc);
-
-	fn_local[0] = 0;
-	filename = argv[1]; // NULL if argc < 2
+	char *ofilename = argc > 1? strdup (argv[1]): NULL; // NULL if argc < 2
+	char *filename = ofilename;
 
 	input++;
 	switch (*input) {
@@ -1850,23 +1846,16 @@ static int cmd_wt(RCore *core, const char *input) {
 			}
 
 			if (r_str_startswith (filename, "base64:")) {
-				const char *encoded = filename + 7;
-				int len;
-				if (strlen (encoded) > 31) {
-					R_LOG_ERROR ("Base64 blob must be fewer than 32 characters");
-					ret = 1;
-					goto leave;
-				}
-
-				len = r_base64_decode ((ut8 *)fn_local, encoded, -1);
-
-				filename = fn_local;
-
-				if (len < 0) {
+				const char *b64str = filename + strlen ("base64:");
+				ut8 *decoded = r_base64_decode_dyn (b64str , strlen (b64str), NULL);
+				if (!decoded) {
 					R_LOG_ERROR ("Couldn't decode b64 filename");
 					ret = 1;
 					goto leave;
 				}
+				free (filename);
+				ofilename = (char *)decoded;
+				filename = ofilename;
 			}
 			break;
 		}
@@ -1885,9 +1874,10 @@ static int cmd_wt(RCore *core, const char *input) {
 
 	// default filename is prefix.addr
 	if (R_STR_ISEMPTY (filename)) {
-		snprintf (fn_local, sizeof (fn_local), "%s%c0x%08" PFMT64x,
+		free (filename);
+		ofilename = r_str_newf ("%s%c0x%08" PFMT64x,
 				prefix, default_filename_sep, poff);
-		filename = fn_local;
+		filename = ofilename;
 	}
 
 	// don't overwrite forced size
@@ -1945,9 +1935,6 @@ static int cmd_wt(RCore *core, const char *input) {
 	} else {
 		ret = r_core_dump (core, filename, poff, (ut64)sz, append);
 	}
-
-	// TODO: UPDATE MAPPED SYNC IF MMAP BAKED
-	// dump functions return bool; true on success
 	if (ret) {
 		R_LOG_INFO ("Dumped %" PFMT64d " bytes from 0x%08" PFMT64x" into %s",
 				sz, poff, filename);
@@ -1955,6 +1942,7 @@ static int cmd_wt(RCore *core, const char *input) {
 	}
 
 leave:
+	free (ofilename);
 	r_str_argv_free (argv);
 	return ret;
 }
