@@ -58,6 +58,7 @@ src = files([
 headers = files('zconf.h', 'zlib.h')
 
 if host_machine.system() == 'windows'
+  compile_args += '-DWINDOWS'
   win = import('windows')
   win_args = []
   if cc.get_argument_syntax() != 'msvc'
