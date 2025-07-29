@@ -1,20 +1,18 @@
-/* radare2 - LGPL - Copyright 2022-2024 - pancake */
+/* radare2 - LGPL - Copyright 2022-2025 - pancake */
 
 #include <r_arch.h>
 
 R_API RArchSession *r_arch_session(RArch *arch, RArchConfig *cfg, RArchPlugin *ap) {
 	RArchSession *ai = R_NEW0 (RArchSession);
-	if (ai) {
-		ai->arch = arch;
-		ai->config = cfg;
-		ai->plugin = ap;
-		ai->user = NULL;
-		RArchPluginInitCallback init = R_UNWRAP3 (ai, plugin, init);
-		if (init) {
-			bool res = init (ai); // must fill ai->data
-			if (!res) {
-				R_FREE (ai);
-			}
+	ai->arch = arch;
+	ai->config = cfg;
+	ai->plugin = ap;
+	ai->user = arch->user;
+	RArchPluginInitCallback init = R_UNWRAP3 (ai, plugin, init);
+	if (init) {
+		bool res = init (ai); // must fill ai->data
+		if (!res) {
+			R_FREE (ai);
 		}
 	}
 	return ai;

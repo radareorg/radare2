@@ -2643,6 +2643,7 @@ R_API bool r_core_init(RCore *core) {
 	core->rasm = core->egg->rasm;
 	core->rasm->num = core->num;
 	core->anal = r_anal_new ();
+	core->anal->arch->user = core;
 	r_anal_bind (core->anal, &core->egg->rasm->analb);
 	r_anal_bind (core->anal, &(core->rasm->analb));
 	r_asm_set_user_ptr (core->rasm, core);

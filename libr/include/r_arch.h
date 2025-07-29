@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2022-2024 - pancake, condret */
+/* radare2 - LGPL - Copyright 2022-2025 - pancake, condret */
 
 #ifndef R2_ARCH_H
 #define R2_ARCH_H
@@ -95,23 +95,24 @@ typedef struct r_arch_config_t {
 #define	R_ARCH_CONFIG_IS_BIG_ENDIAN(cfg_) (((cfg_)->endian & R_SYS_ENDIAN_BIG) == R_SYS_ENDIAN_BIG)
 
 typedef enum {
-	R_ARCH_OP_MASK_BASIC = 0, // Just fills basic op info , it's fast
-	R_ARCH_OP_MASK_ESIL  = 1, // It fills RAnalop->esil info
-	R_ARCH_OP_MASK_VAL   = 2, // It fills RAnalop->dst/src info
-	R_ARCH_OP_MASK_HINT  = 4, // It calls r_anal_op_hint to override anal options
-	R_ARCH_OP_MASK_OPEX  = 8, // It fills RAnalop->opex info
-	R_ARCH_OP_MASK_DISASM = 16, // It fills RAnalop->mnemonic // should be RAnalOp->disasm // only from r_core_anal_op()
+	R_ARCH_OP_MASK_BASIC = 0, // Just fills basic op info (fast)
+	R_ARCH_OP_MASK_ESIL  = 1, // fills RAnalop->esil info
+	R_ARCH_OP_MASK_VAL   = 2, // fills RAnalop->dst/src info
+	R_ARCH_OP_MASK_HINT  = 4, // calls r_anal_op_hint to override anal options
+	R_ARCH_OP_MASK_OPEX  = 8, // fills RAnalop->opex info
+	R_ARCH_OP_MASK_DISASM = 16, // fills RAnalop->mnemonic // should be RAnalOp->disasm // only from r_core_anal_op()
 	R_ARCH_OP_MASK_ALL   = 1 | 2 | 4 | 8 | 16
 } RAnalOpMask;
 
 typedef struct r_arch_t {
-	RList *plugins;	       // all plugins
+	RList *plugins;	// all plugins
 	RBinBind binb; // required for java, dalvik, wasm, pickle and pyc plugin... pending refactor
 	struct r_esil_t *esil;
 	RNum *num; // XXX maybe not required
 	struct r_arch_session_t *session;
 	RArchConfig *cfg; // global / default config
 	char *platform;
+	void *user; // probably RCore*
 } RArch;
 
 typedef struct r_arch_session_t {
