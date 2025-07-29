@@ -2031,7 +2031,12 @@ local block_state deflate_slow(
              * enough lookahead, the last two strings are not inserted in
              * the hash table.
              */
-            s->lookahead -= s->prev_length-1;
+            /* Prevent underflow when s->prev_length is very large */
+            if (s->lookahead > s->prev_length - 1) {
+                s->lookahead -= s->prev_length - 1;
+            } else {
+                s->lookahead = 0;
+            }
             s->prev_length -= 2;
             do {
                 if (++s->strstart <= max_insert) {

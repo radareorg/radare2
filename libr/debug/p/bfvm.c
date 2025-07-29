@@ -213,8 +213,7 @@ R_API int bfvm_step(BfvmCPU *c, int over) {
 			if (bfvm_get (c) != 0) {
 				do {
 					/* control underflow */
-					if (c->eip < (c->eip-1)) {
-						c->eip = 0;
+					if (c->eip == 0) {
 						break;
 					}
 					c->eip--;
