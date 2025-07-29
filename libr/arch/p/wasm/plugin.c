@@ -630,7 +630,7 @@ static void _kv_free(HtUPKv *kv) {
 }
 
 static bool cache_new(RArchSession *s) {
-	R_RETURN_VAL_IF_FAIL (!s->user, false);
+	R_RETURN_VAL_IF_FAIL (s, false);
 	s->user = ht_up_new (NULL, _kv_free, NULL);
 	return s->user? true: false;
 }
