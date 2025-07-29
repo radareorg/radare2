@@ -1912,11 +1912,7 @@ static int cmd_stdin(void *data, const char *input) {
 			}
 			break;
 		case 'e': // "-e"
-			if (*arg == '?') {
-				r_core_cmd_call (core, "e");
-			} else {
-				r_core_cmdf (core, "e %s", arg);
-			}
+			r_core_cmdf (core, "%s", input);
 			break;
 		case 'A': // -A
 			if (*arg == '?') {
