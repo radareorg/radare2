@@ -877,8 +877,8 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 		return 1;
 	}
 	char *s = have_builddir
-		? r_str_newf ("cd '%s'\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s", pkgdir, script)
-		: r_str_newf ("export MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s", script);
+		? r_str_newf ("cd '%s'\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\nexit 1\n}\n%s", pkgdir, script)
+		: r_str_newf ("export MAKE=make\nR2PM_FAIL(){\n  echo $@\nexit 1\n}\n%s", script);
 	// if no srcdir is defined because no file to pull just dont cd
 	free (pkgdir);
 	int res = r_sandbox_system (s, 1);
