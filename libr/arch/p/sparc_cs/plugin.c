@@ -254,9 +254,10 @@ performed in big-endian byte order.
 			op->type = R_ANAL_OP_TYPE_OR;
 			break;
 		case SPARC_INS_B:
-		case SPARC_INS_BR:
 		case SPARC_INS_BMASK:
-#if !CS_SIX
+#if CS_SIX
+		case SPARC_INS_BR:
+#else
 		case SPARC_INS_BRGEZ:
 		case SPARC_INS_BRGZ:
 		case SPARC_INS_BRLEZ:
