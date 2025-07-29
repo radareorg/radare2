@@ -784,6 +784,8 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 	r_getopt_init (&opt, argc, argv, "a:Ab:Bc:CdDeEf:F:hH:i:jk:l:L@:o:S:pqrs:vwx");
 	if (argc == 2 && !strcmp (argv[1], "-H")) {
 		rasm_show_env (false);
+		rasm_free (as);
+		free (r2arch);
 		return 0;
 	}
 	while ((c = r_getopt_next (&opt)) != -1) {

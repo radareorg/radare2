@@ -39,6 +39,10 @@ static int lz4_compress(ut8 *g_buf, const int uc_length, int max_chain) {
 	for (i = 0; i < HASH_SIZE; i++) {
 		head[i] = -1;
 	}
+	// Initialize tail array to prevent using uninitialized values
+	for (i = 0; i < WINDOW_SIZE; i++) {
+		tail[i] = -1;
+	}
 
 	while (p < uc_length) {
 		best_len = 0;
