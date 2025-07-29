@@ -1385,11 +1385,15 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 	if (r2pm.search) {
 		char *s = r2pm_search (argv[opt.ind], r2pm.json? 'j': 0);
 		if (s) {
-			r_cons_print (cons, s);
-			if (havetoflush) {
-				r_cons_flush (cons);
+			if (*s) {
+				r_cons_print (cons, s);
+				if (havetoflush) {
+					r_cons_flush (cons);
+				}
+				res = 0;
+			} else {
+				res = 1;
 			}
-			res = 0;
 			free (s);
 		} else {
 			res = 1;

@@ -3558,7 +3558,7 @@ static bool cb_prjvctype(void *user, void *data) {
 
 R_API int r_core_config_init(RCore *core) {
 	int i;
-	char buf[128], *p, *tmpdir;
+	char *p, *tmpdir;
 	RConfigNode *n;
 	RConfig *cfg = core->config = r_config_new (core);
 	if (!cfg) {
@@ -4605,15 +4605,18 @@ R_API int r_core_config_init(RCore *core) {
 	/* nkeys */
 	SETS ("key.s", "", "override step into action");
 	SETS ("key.S", "", "override step over action");
-	for (i = 1; i < 13; i++) {
-		snprintf (buf, sizeof (buf), "key.f%d", i);
-		snprintf (buf + 10, sizeof (buf) - 10,
-				"run this when F%d key is pressed in visual mode", i);
-		switch (i) {
-			default: p = ""; break;
+	{
+		char buf[128];
+		for (i = 1; i < 13; i++) {
+			snprintf (buf, sizeof (buf), "key.f%d", i);
+			snprintf (buf + 10, sizeof (buf) - 10,
+					"run this when F%d key is pressed in visual mode", i);
+			switch (i) {
+				default: p = ""; break;
+			}
+			r_config_set (cfg, buf, p);
+			r_config_desc (cfg, buf, buf + 10);
 		}
-		r_config_set (cfg, buf, p);
-		r_config_desc (cfg, buf, buf+10);
 	}
 
 	/* zoom */
