@@ -9,6 +9,12 @@
 #error Old Capstone not supported
 #endif
 
+#if CS_NEXT_VERSION >= 6
+#define CS_SIX 1
+#else
+#define CS_SIX 0
+#endif
+
 #define INSOP(n) insn->detail->sparc.operands[n]
 #define INSCC insn->detail->sparc.cc
 
@@ -172,9 +178,13 @@ performed in big-endian byte order.
 		case SPARC_INS_MOV:
 			op->type = R_ANAL_OP_TYPE_MOV;
 			break;
+#if CS_SIX
+		case SPARC_INS_RETT:
+#else
 		case SPARC_INS_RETT:
 		case SPARC_INS_RET:
 		case SPARC_INS_RETL:
+#endif
 			op->type = R_ANAL_OP_TYPE_RET;
 			op->delay = 1;
 			break;
@@ -205,10 +215,13 @@ performed in big-endian byte order.
 		case SPARC_INS_NOP:
 			op->type = R_ANAL_OP_TYPE_NOP;
 			break;
+#if CS_SIX
+#else
 		case SPARC_INS_CMP:
 			op->type = R_ANAL_OP_TYPE_CMP;
 			break;
 		case SPARC_INS_JMP:
+#endif
 		case SPARC_INS_JMPL:
 			op->type = R_ANAL_OP_TYPE_JMP;
 			op->delay = 1;
@@ -242,12 +255,16 @@ performed in big-endian byte order.
 			break;
 		case SPARC_INS_B:
 		case SPARC_INS_BMASK:
+#if CS_SIX
+		case SPARC_INS_BR:
+#else
 		case SPARC_INS_BRGEZ:
 		case SPARC_INS_BRGZ:
 		case SPARC_INS_BRLEZ:
 		case SPARC_INS_BRLZ:
 		case SPARC_INS_BRNZ:
 		case SPARC_INS_BRZ:
+#endif
 		case SPARC_INS_FB:
 			switch (INSOP(0).type) {
 			case SPARC_OP_REG:
