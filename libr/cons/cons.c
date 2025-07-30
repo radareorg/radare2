@@ -330,9 +330,9 @@ static void __break_signal(int sig) {
 	r_cons_context_break (I->context); // &r_cons_context_default);
 }
 
+#if 0
 static inline void init_cons_instance(void) {
 	return;
-#if 0
 	if (R_LIKELY (I)) {
 		if (!I->context) {
 			I->context = &r_cons_context_default;
@@ -342,8 +342,8 @@ static inline void init_cons_instance(void) {
 		I->context = &r_cons_context_default;
 		init_cons_input (&I->input_state);
 	}
-#endif
 }
+#endif
 
 R_API bool r_cons_is_initialized(void) {
 	return I != NULL;

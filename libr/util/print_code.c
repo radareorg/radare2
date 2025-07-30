@@ -386,27 +386,35 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 }
 
 R_API char *r_print_code_indent(const char *s) {
-	// honors {} not implemented
+	// TODO: implement code indentation honoring the braces {}
 	return NULL;
 }
 
 static bool is_identifier_char(char c) {
-	return c == '_' || isalnum(c);
+	return c == '_' || isalnum (c);
 }
 
-R_API char *r_print_code_tocolor(const char *o) {
-	if (!o) return NULL;
+#define CCV(x,y) ((cc && cc->x) ? cc->x : (y))
 
+R_API char *r_print_code_tocolor(const char *o, RConsCodeColors *cc) {
+	if (!o) {
+		return NULL;
+	}
 	static const char *keywords[] = {
 		"if", "else", "while", "for", "switch", "case", "break",
 		"continue", "return", "goto", "do", "sizeof", "typedef",
-		"struct", "union", "enum", "const", "volatile", "static",
-		"inline", "extern", NULL
+		"struct", "union", "enum", "volatile", "static",
+		"inline", "extern", "NULL", NULL
 	};
 
 	static const char *types[] = {
-		"int", "char", "short", "long", "void", "float", "double",
-		"bool", "signed", "unsigned", NULL
+		"const", "int", "char", "short", "long", "void", "float", "double",
+		"bool", "boolean", "string", "signed", "unsigned",
+		"ut8", "uint8_t", "ut64", "uint64_t", NULL
+	};
+
+	static const char *preprocessor[] = {
+		"R_API", NULL
 	};
 
 	const char *p = o;
@@ -417,11 +425,18 @@ R_API char *r_print_code_tocolor(const char *o) {
 	bool in_line_comment = false;
 	bool in_preproc = false;
 
+	const char *color_string = CCV (string, Color_YELLOW);
+	const char *color_cpp = CCV(cpp, Color_CYAN);
+	const char *color_comment = CCV(cpp, Color_GREEN);
+	const char *color_number = CCV (number, Color_BLUE);
+	const char *color_keyword = CCV(keyword, Color_MAGENTA);
+	const char *color_types = CCV(types, Color_RED);
+
 	while (*p) {
 		if (!in_string && !in_char && !in_comment && *p == '#' && (p == o || *(p - 1) == '\n')) {
 			// Preprocessor
 			in_preproc = true;
-			r_strbuf_append (out, Color_CYAN);
+			r_strbuf_append (out, color_cpp);
 			r_strbuf_append_n (out, p, 1);
 			p++;
 			continue;
@@ -438,7 +453,7 @@ R_API char *r_print_code_tocolor(const char *o) {
 
 		if (!in_string && !in_char && !in_line_comment && !in_comment && *p == '/' && *(p + 1) == '/') {
 			in_line_comment = true;
-			r_strbuf_append (out, Color_GREEN);
+			r_strbuf_append (out, color_comment);
 			r_strbuf_append_n (out, p, 2);
 			p += 2;
 			continue;
@@ -455,7 +470,7 @@ R_API char *r_print_code_tocolor(const char *o) {
 
 		if (!in_string && !in_char && !in_comment && *p == '/' && *(p + 1) == '*') {
 			in_comment = true;
-			r_strbuf_append (out, Color_GREEN);
+			r_strbuf_append (out, color_comment);
 			r_strbuf_append_n (out, p, 2);
 			p += 2;
 			continue;
@@ -475,7 +490,7 @@ R_API char *r_print_code_tocolor(const char *o) {
 
 		if (!in_char && *p == '"') {
 			in_string = !in_string;
-			r_strbuf_append (out, Color_YELLOW);
+			r_strbuf_append (out, color_string);
 			r_strbuf_append_n (out, p++, 1);
 			if (!in_string) {
 			       r_strbuf_append (out, Color_RESET);
@@ -484,7 +499,7 @@ R_API char *r_print_code_tocolor(const char *o) {
 		}
 		if (!in_string && *p == '\'') {
 			in_char = !in_char;
-			r_strbuf_append (out, Color_YELLOW);
+			r_strbuf_append (out, color_string); // TODO
 			r_strbuf_append_n (out, p++, 1);
 			if (!in_char) {
 				r_strbuf_append (out, Color_RESET);
@@ -498,7 +513,7 @@ R_API char *r_print_code_tocolor(const char *o) {
 
 		// Highlight numbers
 		if (IS_DIGIT (*p)) {
-			r_strbuf_append (out, Color_BLUE);
+			r_strbuf_append (out, color_number);
 			while (IS_DIGIT (*p) || *p == 'x' || IS_HEXCHAR (*p)) {
 				r_strbuf_append_n (out, p++, 1);
 			}
@@ -519,7 +534,7 @@ R_API char *r_print_code_tocolor(const char *o) {
 			const char **kw;
 			for (kw = keywords; *kw; kw++) {
 				if (!strcmp (word, *kw)) {
-					r_strbuf_append (out, Color_MAGENTA);
+					r_strbuf_append (out, color_keyword);
 					r_strbuf_append_n (out, start, len);
 					r_strbuf_append (out, Color_RESET);
 					matched = true;
@@ -528,9 +543,21 @@ R_API char *r_print_code_tocolor(const char *o) {
 			}
 			if (!matched) {
 				const char **tp;
+				for (tp = preprocessor; *tp; tp++) {
+					if (!strcmp (word, *tp)) {
+						r_strbuf_append (out, color_cpp);
+						r_strbuf_append_n (out, start, len);
+						r_strbuf_append (out, Color_RESET);
+						matched = true;
+						break;
+					}
+				}
+			}
+			if (!matched) {
+				const char **tp;
 				for (tp = types; *tp; tp++) {
 					if (!strcmp (word, *tp)) {
-						r_strbuf_append (out, Color_RED);
+						r_strbuf_append (out, color_types);
 						r_strbuf_append_n (out, start, len);
 						r_strbuf_append (out, Color_RESET);
 						matched = true;

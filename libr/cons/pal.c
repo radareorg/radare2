@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2013-2025 - pancake, sghctoma, xarkes */
 
 #include <r_cons.h>
+#include <r_util/r_print.h>
 #include <r_th.h>
 
 // R2R db/cmd/cmd_ahi db/cmd/cmd_ec db/cmd/cmd_flags db/cmd/cmd_pd db/cmd/cmd_pd2 db/cmd/cmd_pd_bugs db/cmd/midbb db/cmd/cmd_px
@@ -148,6 +149,7 @@ R_IPI void pal_clone(RConsContext *ctx) {
 		}
 	}
 }
+
 static bool is_valid_color(RColor c) {
 	if (c.r == 0 && c.g == 0 && c.b == 0) {
 		// no black
@@ -782,4 +784,16 @@ R_API char *r_cons_rainbow_get(RCons *cons, int idx, int last, bool bg) {
 		return res;
 	}
 	return r_cons_pal_parse (cons, a, NULL);
+}
+
+R_API RConsCodeColors r_cons_codecolors(RCons *cons) {
+	RConsContext *ctx = cons->context;
+	RConsCodeColors cc = {0};
+	cc.string = ctx->pal.ai_ascii; // = Color_YELLOW;
+	cc.cpp = ctx->pal.label; // = Color_CYAN;
+	cc.comment = ctx->pal.comment; // = Color_GREEN;
+	cc.types = ctx->pal.comment;
+	cc.keyword = ctx->pal.push; // Color_MAGENTA
+	cc.number = ctx->pal.num; // Color_RED
+	return cc;
 }

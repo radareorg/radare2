@@ -74,7 +74,8 @@ typedef const char *(*RPrintNameCallback)(void *user, ut64 addr);
 typedef int (*RPrintSizeCallback)(void *user, ut64 addr);
 typedef char *(*RPrintCommentCallback)(void *user, ut64 addr);
 typedef const char *(*RPrintSectionGet)(void *user, ut64 addr);
-typedef const char *(*RPrintColorFor)(void *user, ut64 addr, ut8 ch, bool verbose);
+typedef const char *(*RPrintColorForByte)(void *user, ut64 addr, ut8 ch, bool verbose);
+// typedef const char *(*RPrintColorForCode)(void *user, const char *type);
 typedef char *(*RPrintHasRefs)(void *user, ut64 addr, int mode);
 
 typedef struct r_print_zoom_t {
@@ -118,7 +119,7 @@ typedef struct r_print_t {
 	RPrintZoom *zoom;
 	RPrintNameCallback offname;
 	RPrintSizeCallback offsize;
-	RPrintColorFor colorfor;
+	RPrintColorForByte colorfor;
 	RPrintHasRefs hasrefs;
 	RPrintCommentCallback get_comments;
 	RPrintSectionGet get_section_name;
@@ -291,7 +292,8 @@ R_API char* r_print_json_human(const char* s);
 R_API char* r_print_json_path(const char* s, int pos);
 
 // code
-R_API char *r_print_code_tocolor(const char *s);
+
+R_API char *r_print_code_tocolor(const char *s, RConsCodeColors *cc);
 R_API char *r_print_code_indent(const char *s);
 #endif
 
