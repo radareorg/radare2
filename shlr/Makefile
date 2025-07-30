@@ -104,7 +104,7 @@ sdb-host:
 	@echo ">>>>>>>>"
 	@echo
 	$(MAKE) -C $(SDB_ROOT) clean ; rm -f $(SDB_ROOT)/src/*.o $(SDB_ROOT)/include/sdb/version.h
-	$(MAKE) -C $(SDB_ROOT)/src "CC=${HOST_CC}" LDFLAGS='${HOST_LDFLAGS}' CPPFLAGS='-I$(SDB_ROOT)/include' CFLAGS='${HOST_CFLAGS} ${PIC}' bin
+	$(MAKE) -C $(SDB_ROOT)/src "CC=${HOST_CC}" LDFLAGS='${HOST_LDFLAGS}' CPPFLAGS='-I$(SDB_ROOT)/include' CFLAGS='${HOST_CFLAGS} -DUSE_MMAN=0 ${PIC}' bin
 	cp -f $(SDB_ROOT)/src/sdb${BUILD_EXT_EXE} $(SDB_ROOT)/src/.sdb${BUILD_EXT_EXE}
 	cp -f $(SDB_ROOT)/src/sdb${BUILD_EXT_EXE} $(SDB_ROOT)/sdb$(BUILD_EXT_EXE)
 	rm -f $(SDB_LIBA)
