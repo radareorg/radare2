@@ -13,13 +13,19 @@ if [ $? = 0 ]; then
 	r2pm -r acr -h > /dev/null 2>&1
 	if [ $? = 0 ]; then
 		echo "Running 'acr -p'..."
-		r2pm -r acr -p
+		r2pm -r acr -p || exit 1
 	else
 		echo "Cannot find 'acr' in PATH"
 	fi
 else
 	echo "Running acr..."
-	acr -p
+	acr -p || exit 1
+
+fi
+if [ -d subprojects ]; then
+	cd subprojects || exit 1
+	sh autogen.sh
+	cd ..
 fi
 V=`./configure -qV | cut -d - -f -1`
 meson rewrite kwargs set project / version "$V"
