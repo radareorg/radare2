@@ -9,11 +9,11 @@ WRAP_wrap_git_depth:=1
 .PHONY: qjs
 
 qjs:
-	if [ ! -d "qjs" -o "7238ee64dbc2fbdea044555cda8cda78785a93ed" != "$(shell cd qjs && git rev-parse HEAD)" ]; then rm -rf "qjs"; ${MAKE} qjs_all; fi
+	if [ ! -d "qjs" -o "7238ee64dbc2fbdea044555cda8cda78785a93ed" != "$(shell cd qjs 2>/dev/null && git rev-parse HEAD)" ]; then rm -rf "qjs"; ${MAKE} qjs_all; fi
 
 qjs_all:
-	git clone --no-checkout  https://github.com/quickjs-ng/quickjs qjs
-	cd qjs && git fetch  origin 7238ee64dbc2fbdea044555cda8cda78785a93ed
+	git clone --no-checkout --depth=1 https://github.com/quickjs-ng/quickjs qjs
+	cd qjs && git fetch --depth=1 origin 7238ee64dbc2fbdea044555cda8cda78785a93ed
 	cd qjs && git checkout FETCH_HEAD
 	cp -rf packagefiles/qjs/* qjs
 

@@ -8,11 +8,11 @@ WRAP_wrap_git_depth:=1
 .PHONY: sdb
 
 sdb:
-	if [ ! -d "sdb" -o "dbc79c479a62906145dc2c079696bb4dc68575c6" != "$(shell cd sdb && git rev-parse HEAD)" ]; then rm -rf "sdb"; ${MAKE} sdb_all; fi
+	if [ ! -d "sdb" -o "dbc79c479a62906145dc2c079696bb4dc68575c6" != "$(shell cd sdb 2>/dev/null && git rev-parse HEAD)" ]; then rm -rf "sdb"; ${MAKE} sdb_all; fi
 
 sdb_all:
-	git clone --no-checkout  https://github.com/radareorg/sdb.git sdb
-	cd sdb && git fetch  origin dbc79c479a62906145dc2c079696bb4dc68575c6
+	git clone --no-checkout --depth=1 https://github.com/radareorg/sdb.git sdb
+	cd sdb && git fetch --depth=1 origin dbc79c479a62906145dc2c079696bb4dc68575c6
 	cd sdb && git checkout FETCH_HEAD
 
 sdb_clean:

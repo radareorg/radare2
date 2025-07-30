@@ -10,11 +10,11 @@ WRAP_wrap_git_depth:=1
 .PHONY: capstone-v5
 
 capstone-v5:
-	if [ ! -d "capstone-v5" -o "accf4df62f1fba6f92cae692985d27063552601c" != "$(shell cd capstone-v5 && git rev-parse HEAD)" ]; then rm -rf "capstone-v5"; ${MAKE} capstone-v5_all; fi
+	if [ ! -d "capstone-v5" -o "accf4df62f1fba6f92cae692985d27063552601c" != "$(shell cd capstone-v5 2>/dev/null && git rev-parse HEAD)" ]; then rm -rf "capstone-v5"; ${MAKE} capstone-v5_all; fi
 
 capstone-v5_all:
-	git clone --no-checkout  https://github.com/capstone-engine/capstone.git capstone-v5
-	cd capstone-v5 && git fetch  origin accf4df62f1fba6f92cae692985d27063552601c
+	git clone --no-checkout --depth=1 https://github.com/capstone-engine/capstone.git capstone-v5
+	cd capstone-v5 && git fetch --depth=1 origin accf4df62f1fba6f92cae692985d27063552601c
 	cd capstone-v5 && git checkout FETCH_HEAD
 	cp -rf packagefiles/capstone-v5/* capstone-v5
 	for a in capstone-v5/capstone-patches/fix-x86-16.patch ; do echo "patch -d capstone-v5 -p1 < $$a" ; patch -d capstone-v5 -p1 < $$a ; done
