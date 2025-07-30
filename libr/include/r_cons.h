@@ -70,6 +70,15 @@ R_LIB_VERSION_HEADER(r_cons);
 typedef const char *const RCoreHelpMessage[];
 #endif
 
+typedef struct r_cons_code_colors_t {
+	char *string; // = Color_YELLOW;
+	char *cpp;// = Color_CYAN;
+	char *comment; // = Color_GREEN;
+	char *number; // = Color_BLUE;
+	char *keyword; //  = Color_MAGENTA;
+	char *types; //  = Color_RED;
+} RConsCodeColors;
+
 typedef struct r_cons_mark_t {
 	ut64 addr;
 	char *name;
@@ -889,6 +898,8 @@ enum {
 	R_CONS_ERRMODE_BUFFER, // no buffer, print = like eprintf()
 	R_CONS_ERRMODE_FLUSH,  // no buffer, print = like eprintf + log
 };
+
+R_API RConsCodeColors r_cons_codecolors(RCons *cons);
 
 R_API void r_cons_context_pal_free(RConsContext *ctx);
 R_DEPRECATE R_API RConsContext *r_cons_context_new(RConsContext * R_NULLABLE parent);

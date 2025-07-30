@@ -1070,7 +1070,8 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	} else {
 		char *s = r_strbuf_drain (state.out);
 		if (r_config_get_i (state.core->config, "scr.color") > 0) {
-			char *ss = r_print_code_tocolor (s);
+			RConsCodeColors codecolors = r_cons_codecolors (core->cons);
+			char *ss = r_print_code_tocolor (s, &codecolors);
 			free (s);
 			s = ss;
 		}

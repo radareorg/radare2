@@ -584,9 +584,13 @@ static inline ut64 cmpstrings(const void *a) {
 	return r_str_hash64 (a);
 }
 
+#include <r_core.h>
+
+
 static void colorcode(RCons *cons) {
 	char *res = r_str_ndup (cons->context->buffer, cons->context->buffer_len);
-	char *cres = r_print_code_tocolor (res);
+	RConsCodeColors codepal = r_cons_codecolors (cons);
+	char *cres = r_print_code_tocolor (res, &codepal);
 	cons->context->buffer_len = strlen (cres);
 	cons->context->buffer_sz = cons->context->buffer_len;
 	free (cons->context->buffer);
