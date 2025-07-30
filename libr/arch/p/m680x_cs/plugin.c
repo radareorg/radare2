@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2015-2024 - pancake */
+/* radare2 - LGPL - Copyright 2015-2025 - pancake */
 
 #include <r_arch.h>
 #include <capstone/capstone.h>
@@ -82,7 +82,7 @@ static char *filter_intel_syntax (char *mnemonic) {
 	return mnemonic;
 }
 
-static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const ut64 addr = op->addr;
 	const ut8 *buf = op->bytes;
 	const int len = op->size;

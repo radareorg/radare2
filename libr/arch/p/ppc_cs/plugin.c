@@ -760,7 +760,7 @@ static void swap4(ut8 *buf) {
 	buf[2] = swap;
 }
 
-static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const ut64 addr = op->addr;
 	ut8 *buf = op->bytes;
 	const int len = op->size;

@@ -1,4 +1,4 @@
-/* radare - MIT - Copyright 2023-2024 - pancake, decaduto */
+/* radare - MIT - Copyright 2023-2025 - pancake, decaduto */
 
 #include <r_arch.h>
 #include <r_lib.h>
@@ -112,8 +112,7 @@ static bool _init(RArchSession *as) {
 	return !!as->data;
 }
 
-
-static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const ut64 addr = op->addr;
 	const int len = op->size;
 	const ut8 *buf = op->bytes;

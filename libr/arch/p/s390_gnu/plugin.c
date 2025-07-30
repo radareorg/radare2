@@ -30,7 +30,7 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
 DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
-static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const ut64 addr = op->addr;
 	const int len = op->size;
 	const ut8 *buf = op->bytes;
@@ -140,7 +140,7 @@ const RArchPlugin r_arch_plugin_s390_gnu = {
 	.arch = "s390",
 	.cpus = "esa,zarch",
 	.bits = R_SYS_BITS_PACK2 (32, 64), // it's actually 31
-	.decode = &decode,
+	.decode = decode,
 	.info = archinfo,
 	.regs = &regs,
 };
