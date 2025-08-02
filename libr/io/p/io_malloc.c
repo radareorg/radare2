@@ -54,7 +54,7 @@ static ut8 *parse_hex_file_contents(const char *content, ut32 *bin_size) {
 	if (bin_buf) {
 		*bin_size = r_hex_str2bin (clean_hex, bin_buf);
 		if ((int)*bin_size < 1) {
-			R_LOG_WARN ("Invalid hex data in '%s'\n", clean_hex);
+			R_LOG_WARN ("Invalid hex data in '%s'", clean_hex);
 			R_FREE (bin_buf);
 		}
 	}
