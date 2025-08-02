@@ -1,0 +1,11 @@
+NAME=hexfile test
+FILE=hexfile://bins/other/example.hex
+CMDS=<<EOF
+b $s
+p8
+EOF
+EXPECT=<<EOF
+414120323341424344
+EOF
+RUN
+
