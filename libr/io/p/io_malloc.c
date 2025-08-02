@@ -1,10 +1,10 @@
-/* radare - LGPL - Copyright 2008-2024 - pancake, condret */
+/* radare - LGPL - Copyright 2008-2025 - pancake, condret */
 
 #include <r_io.h>
 #include <r_lib.h>
-#include <ctype.h>
 #include "../io_memory.h"
 
+// TODO: move into libr/util/hex.c and reuse it from `wxf` command
 static ut8 *parse_hex_file_contents(const char *content, ut32 *bin_size) {
 	if (!content || !bin_size) {
 		return NULL;
