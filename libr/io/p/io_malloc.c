@@ -1,12 +1,70 @@
-/* radare - LGPL - Copyright 2008-2024 - pancake, condret */
+/* radare - LGPL - Copyright 2008-2025 - pancake, condret */
 
 #include <r_io.h>
 #include <r_lib.h>
 #include "../io_memory.h"
 
+// TODO: move into libr/util/hex.c and reuse it from `wxf` command
+static ut8 *parse_hex_file_contents(const char *content, ut32 *bin_size) {
+	if (!content || !bin_size) {
+		return NULL;
+	}
+	const size_t content_len = strlen (content);
+	char *clean_hex = calloc (1, content_len + 1);
+	if (!clean_hex) {
+		return NULL;
+	}
+
+	char *p = clean_hex;
+	bool in_block_comment = false;
+	const char *c = content;
+
+	while (*c) {
+		if (in_block_comment) {
+			if (*c == '*' && *(c + 1) == '/') {
+				in_block_comment = false;
+				c += 2;
+			} else {
+				c++;
+			}
+			continue;
+		}
+		if (*c == '/' && *(c + 1) == '*') {
+			in_block_comment = true;
+			c += 2;
+			continue;
+		}
+		if (*c == '#' || *c == ';' || (*c == '/' && *(c + 1) == '/')) {
+			const char *next_line = strchr (c, '\n');
+			if (next_line) {
+				c = next_line + 1;
+			} else {
+				break; // end of content
+			}
+			continue;
+		}
+		if (isxdigit ((ut8)*c)) {
+			*p++ = *c;
+		}
+		c++;
+	}
+	*p = 0;
+
+	ut8 *bin_buf = calloc (1, strlen (clean_hex) / 2 + 2);
+	if (bin_buf) {
+		*bin_size = r_hex_str2bin (clean_hex, bin_buf);
+		if ((int)*bin_size < 1) {
+			R_LOG_WARN ("Invalid hex data in '%s'", clean_hex);
+			R_FREE (bin_buf);
+		}
+	}
+	free (clean_hex);
+	return bin_buf;
+}
+
 static bool __check(RIO *io, const char *pathname, bool many) {
 	const char *uris[] = {
-		"slurp://", "malloc://", "hex://", "stdin://", NULL
+		"slurp://", "malloc://", "hex://", "stdin://", "hexfile://", NULL
 	};
 	size_t i = 0;
 	while (uris[i]) {
@@ -54,6 +112,20 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 			mal->size = r_hex_str2bin (pathname + 6, mal->buf);
 			if ((int)mal->size < 1) {
 				R_FREE (mal->buf);
+			}
+		} else if (r_str_startswith (pathname, "hexfile://")) {
+			size_t content_size = 0;
+			char *content = r_file_slurp (pathname + 10, &content_size);
+			if (!content || content_size < 1) {
+				free (mal);
+				free (content);
+				return NULL;
+			}
+			mal->buf = parse_hex_file_contents (content, &mal->size);
+			free (content);
+			if (!mal->buf || mal->size < 1) {
+				free (mal);
+				return NULL;
 			}
 		} else {
 			mal->size = r_num_math (NULL, pathname + 9);
@@ -132,7 +204,7 @@ RIOPlugin r_io_plugin_malloc = {
 		.author = "condret",
 		.license = "LGPL-3.0-only",
 	},
-	.uris = "malloc://,hex://,slurp://,stdin://",
+	.uris = "malloc://,hex://,slurp://,stdin://,hexfile://",
 	.open = __open,
 	.close = io_memory_close,
 	.read = io_memory_read,
