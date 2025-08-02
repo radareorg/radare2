@@ -4887,6 +4887,9 @@ repeat_arroba:
 		}
 
 		r_str_trim_tail (ptr);
+		if (!ptr[0] && ptr[1]) {
+			ptr++;
+		}
 
 		if (ptr[1] == '?') {
 			r_core_cmd_help (core, help_msg_at);
@@ -5088,36 +5091,55 @@ repeat_arroba:
 				}
 				break;
 			case 'x': // "@x:" // hexpairs
-				if (ptr[1] == ':') {
-					buf = malloc (strlen (ptr + 2) + 1);
-					if (buf) {
-						len = r_hex_str2bin (ptr + 2, buf);
-						r_core_block_size (core, R_ABS (len));
-						if (len > 0) {
-							RBuffer *b = r_buf_new_with_bytes (buf, len);
-							RIODesc *d = r_io_open_buffer (core->io, b, R_PERM_RWX, 0);
-							if (d) {
-								if (tmpdesc) {
-									r_io_desc_close (tmpdesc);
-								}
-								tmpdesc = d;
-								if (pamode) {
-									r_config_set_b (core->config, "io.va", true);
-								}
-								r_io_map_add (core->io, d->fd, d->perm, 0, core->addr, r_buf_size (b));
-								r_core_block_size (core, len);
-								r_core_block_read (core);
-							}
-						} else {
-							R_LOG_ERROR ("Invalid hexpairs for @x:");
-						}
-						free (buf);
-					} else {
-						R_LOG_ERROR ("cannot allocate");
+				if (ptr[1] == 'f' && ptr[2] == ':') { // "@xf:filename"
+					size_t sz;
+					char *s = r_file_slurp (ptr + 3, &sz);
+					if (!s) {
+						R_LOG_ERROR ("Cannot read %s", ptr + 3);
+						break;
 					}
+					buf = (ut8 *)s;
+					len = sz;
+				} else if (ptr[1] == 'c' && ptr[2] == ':') { // "@xc:command"
+					char *s = r_core_cmd_str (core, ptr + 3);
+					buf = malloc (strlen (s) + 1);
+					if (!buf) {
+						R_LOG_ERROR ("Cannot allocate");
+						break;
+					}
+					// TODO R2_600 Use the hex_from_file
+					len = r_hex_str2bin (s, buf);
+				} else if (ptr[1] == ':') {
+					buf = malloc (strlen (ptr + 2) + 1);
+					if (!buf) {
+						R_LOG_ERROR ("Cannot allocate");
+						break;
+					}
+					len = r_hex_str2bin (ptr + 2, buf);
 				} else {
 					R_LOG_ERROR ("Invalid @x: syntax");
+					break;
 				}
+				if (len > 0) {
+					r_core_block_size (core, len);
+					RBuffer *b = r_buf_new_with_bytes (buf, len);
+					RIODesc *d = r_io_open_buffer (core->io, b, R_PERM_RWX, 0);
+					if (d) {
+						if (tmpdesc) {
+							r_io_desc_close (tmpdesc);
+						}
+						tmpdesc = d;
+						if (pamode) {
+							r_config_set_b (core->config, "io.va", true);
+						}
+						r_io_map_add (core->io, d->fd, d->perm, 0, core->addr, r_buf_size (b));
+						r_core_block_size (core, len);
+						r_core_block_read (core);
+					}
+				} else {
+					R_LOG_ERROR ("Invalid hexpairs for @xc:");
+				}
+				free (buf);
 				break;
 			case 'k': // "@k"
 				 {
