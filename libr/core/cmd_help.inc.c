@@ -57,6 +57,8 @@ static RCoreHelpMessage help_msg_at = {
 	"@s:", "string", "same as above but from a string",
 	"@v:", "value", "modify the current offset to a custom value",
 	"@x:", "909192", "from hex pairs string",
+	"@xc:", "p8 32", "hexpairs from command output (cat $foo, ..)",
+	"@xf:", "foo.hex", "load hexpair string from given file and load it into the current block",
 	"@@=", "1 2 3", "run the previous command at offsets 1, 2 and 3",
 	"@@==", "foo bar", "run the previous command appending a word on each iteration",
 	"@@", " hit*", "run the command on every flag matching 'hit*'",

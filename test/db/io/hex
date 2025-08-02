@@ -9,3 +9,16 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=tmpblock hexfile test
+FILE=-
+CMDS=<<EOF
+x@xc:?e 4141
+x@x:4141
+EOF
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  4141                                     AA
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  4141                                     AA
+EOF
+RUN
