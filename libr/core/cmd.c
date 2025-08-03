@@ -4880,16 +4880,13 @@ repeat_arroba:
 		}
 		ptr = (char *)r_str_trim_head_ro (ptr);
 
-		if (*ptr && ptr[1] == ':') {
+		if (*ptr && (ptr[1] == ':' || (ptr[1] && ptr[2] == ':'))) {
 			/* do nothing here */
 		} else {
 			ptr--;
 		}
 
 		r_str_trim_tail (ptr);
-		if (!ptr[0] && ptr[1]) {
-			ptr++;
-		}
 
 		if (ptr[1] == '?') {
 			r_core_cmd_help (core, help_msg_at);
@@ -4940,7 +4937,7 @@ repeat_arroba:
 				// WAT DU
 				R_LOG_TODO ("what do you expect for @. import offset from file maybe?");
 			}
-		} else if (ptr[0] && ptr[1] && ptr[2]) {
+		} else if (ptr[1] && ptr[2]) {
 			// TODO: getarg(ptr);
 			// TODO move into a separate function
 			switch (ptr[0]) {
