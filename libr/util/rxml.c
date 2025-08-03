@@ -389,7 +389,7 @@ R_API RXmlRet r_xml_parse(RXml *x, int _ch) {
 			x->state = R_XML_STATE_COMMENT4;
 			return R_XML_OK;
 		}
-		if (R_XML_IS_CHAR(ch)) {
+		if (R_XML_IS_CHAR (ch)) {
 			x->state = R_XML_STATE_COMMENT2;
 			return R_XML_OK;
 		}

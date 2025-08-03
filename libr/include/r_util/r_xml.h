@@ -1,5 +1,5 @@
 /* Copyright (c) 2013-2014 Yoran Heling
- // Copyright (c) 2023 - pancake
+// Copyright (c) 2023-2025 - pancake
 
   Permission is hereby granted, free of charge, to any person obtaining
   a copy of this software and associated documentation files (the
@@ -208,11 +208,6 @@ R_API char *r_xml_indent(const char *s);
  * ended while in a comment or processing instruction. */
 R_API RXmlRet r_xml_eof(RXml *);
 
-#ifdef __cplusplus
-}
-#endif
-
-
 /* Returns the length of the element name (x->elem), attribute name (x->attr),
  * or PI name (x->pi). This function should ONLY be used directly after the
  * R_XML_ELEMSTART, R_XML_ATTRSTART or R_XML_PISTART (respectively) tokens have
@@ -222,5 +217,46 @@ R_API RXmlRet r_xml_eof(RXml *);
 static inline size_t r_xml_symlen(RXml *x, const char *s) {
 	return (x->stack + x->stacklen) - (const ut8 *)s;
 }
+
+typedef enum {
+	RXML_NODE_TYPE_ELEMENT,
+	RXML_NODE_TYPE_TEXT
+} RXmlNodeType;
+
+typedef struct RXmlAttr {
+	char *key;
+	char *value;
+	struct RXmlAttr *next;
+} RXmlAttr;
+
+typedef struct RXmlNode {
+	RXmlNodeType type;
+	char *name;
+	char *text;
+	RXmlAttr *attributes;
+	struct RXmlNode *children;
+	struct RXmlNode *next;
+	struct RXmlNode *parent;
+} RXmlNode;
+
+// Parsing
+R_API RXmlNode* rxml_dom_parse(const char *xml_string);
+R_API void rxml_dom_free(RXmlNode *node);
+
+// Node introspection
+R_API const char *rxml_dom_get_attribute(const RXmlNode *node, const char *key);
+R_API const char *rxml_dom_child_value(const RXmlNode *node);
+R_API const char *rxml_dom_name(const RXmlNode *node);
+R_API int rxml_dom_is_element(const RXmlNode *node);
+R_API int rxml_dom_is_text(const RXmlNode *node);
+
+// Navigation
+R_API RXmlNode *rxml_dom_first_child(const RXmlNode *node);
+R_API RXmlNode *rxml_dom_next_sibling(const RXmlNode *node);
+R_API RXmlNode *rxml_dom_parent(const RXmlNode *node);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
