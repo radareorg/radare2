@@ -1294,10 +1294,10 @@ static void rtr_cmds_break(uv_async_t *async) {
 	uv_async_send (async);
 }
 
-R_API void r_core_rtr_cmds(RCore *core, const char *port) {
+R_API bool r_core_rtr_cmds(RCore *core, const char *port) {
 	if (!port || port[0] == '?') {
 		r_cons_printf (core->cons, "Usage: .:[tcp-port]    run r2 commands for clients\n");
-		return;
+		return false;
 	}
 
 	uv_loop_t *loop = R_NEW (uv_loop_t);
@@ -1333,6 +1333,7 @@ R_API void r_core_rtr_cmds(RCore *core, const char *port) {
 	uv_loop_close (loop);
 	free (loop);
 	r_pvector_clear (&context.clients);
+	return true;
 }
 
 #else
