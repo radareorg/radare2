@@ -1215,7 +1215,7 @@ static void rtr_cmds_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *bu
 	} else if (nread == 0) {
 		return;
 	}
-	RCore *core = client_context;
+	RCore *core = client_context->core;
 
 	buf->base[nread] = '\0';
 	char *end = strchr (buf->base, '\n');
@@ -1294,10 +1294,10 @@ static void rtr_cmds_break(uv_async_t *async) {
 	uv_async_send (async);
 }
 
-R_API int r_core_rtr_cmds(RCore *core, const char *port) {
+R_API void r_core_rtr_cmds(RCore *core, const char *port) {
 	if (!port || port[0] == '?') {
 		r_cons_printf (core->cons, "Usage: .:[tcp-port]    run r2 commands for clients\n");
-		return 0;
+		return;
 	}
 
 	uv_loop_t *loop = R_NEW (uv_loop_t);
@@ -1320,23 +1320,19 @@ R_API int r_core_rtr_cmds(RCore *core, const char *port) {
 	int r = uv_listen ((uv_stream_t *)&context.server, 32, rtr_cmds_new_connection);
 	if (r) {
 		R_LOG_ERROR ("Failed to listen: %s", uv_strerror (r));
-		goto beach;
+	} else {
+		uv_async_t stop_async;
+		uv_async_init (loop, &stop_async, rtr_cmds_stop);
+
+		r_cons_break_push (core->cons, (RConsBreak) rtr_cmds_break, &stop_async);
+		context.bed = r_cons_sleep_begin (core->cons);
+		uv_run (loop, UV_RUN_DEFAULT);
+		r_cons_sleep_end (core->cons, context.bed);
+		r_cons_break_pop (core->cons);
 	}
-
-	uv_async_t stop_async;
-	uv_async_init (loop, &stop_async, rtr_cmds_stop);
-
-	r_cons_break_push (core->cons, (RConsBreak) rtr_cmds_break, &stop_async);
-	context.bed = r_cons_sleep_begin (core->cons);
-	uv_run (loop, UV_RUN_DEFAULT);
-	r_cons_sleep_end (core->cons, context.bed);
-	r_cons_break_pop (core->cons);
-
-beach:
 	uv_loop_close (loop);
 	free (loop);
 	r_pvector_clear (&context.clients);
-	return 0;
 }
 
 #else
