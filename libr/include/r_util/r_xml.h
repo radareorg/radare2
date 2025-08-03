@@ -218,10 +218,6 @@ static inline size_t r_xml_symlen(RXml *x, const char *s) {
 	return (x->stack + x->stacklen) - (const ut8 *)s;
 }
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef enum {
 	RXML_NODE_TYPE_ELEMENT,
 	RXML_NODE_TYPE_TEXT
@@ -263,8 +259,4 @@ R_API RXmlNode *rxml_dom_parent(const RXmlNode *node);
 }
 #endif
 
-#endif // USE_RXML
-
-#ifdef __cplusplus
-}
 #endif
