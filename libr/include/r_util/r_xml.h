@@ -244,20 +244,20 @@ typedef struct RXmlNode {
 } RXmlNode;
 
 // Parsing
-RXmlNode* rxml_dom_parse(const char *xml_string);
-void rxml_dom_free(RXmlNode *node);
+R_API RXmlNode* rxml_dom_parse(const char *xml_string);
+R_API void rxml_dom_free(RXmlNode *node);
 
 // Node introspection
-const char *rxml_dom_get_attribute(const RXmlNode *node, const char *key);
-const char *rxml_dom_child_value(const RXmlNode *node);
-const char *rxml_dom_name(const RXmlNode *node);
-int rxml_dom_is_element(const RXmlNode *node);
-int rxml_dom_is_text(const RXmlNode *node);
+R_API const char *rxml_dom_get_attribute(const RXmlNode *node, const char *key);
+R_API const char *rxml_dom_child_value(const RXmlNode *node);
+R_API const char *rxml_dom_name(const RXmlNode *node);
+R_API int rxml_dom_is_element(const RXmlNode *node);
+R_API int rxml_dom_is_text(const RXmlNode *node);
 
 // Navigation
-RXmlNode *rxml_dom_first_child(const RXmlNode *node);
-RXmlNode *rxml_dom_next_sibling(const RXmlNode *node);
-RXmlNode *rxml_dom_parent(const RXmlNode *node);
+R_API RXmlNode *rxml_dom_first_child(const RXmlNode *node);
+R_API RXmlNode *rxml_dom_next_sibling(const RXmlNode *node);
+R_API RXmlNode *rxml_dom_parent(const RXmlNode *node);
 
 #ifdef __cplusplus
 }
