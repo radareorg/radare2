@@ -23,11 +23,6 @@ SECURITY IMPLICATIONS
 #define rtr_n core->rtr_n
 #define rtr_host core->rtr_host
 
-static R_TH_LOCAL RSocket *s = NULL;
-static R_TH_LOCAL RThread *httpthread = NULL;
-static R_TH_LOCAL RThread *rapthread = NULL;
-static R_TH_LOCAL const char *listenport = NULL;
-
 typedef struct {
 	const char *host;
 	const char *port;
@@ -55,10 +50,11 @@ R_API void r_core_wait(RCore *core) {
 		r_core_rtr_http_stop (core);
 	}
 #endif
-	r_th_kill (httpthread, true);
-	r_th_kill (rapthread, true);
-	r_th_wait (httpthread);
-	r_th_wait (rapthread);
+	RCorePriv *priv = core->priv;
+	r_th_kill (priv->httpthread, true);
+	r_th_kill (priv->rapthread, true);
+	r_th_wait (priv->httpthread);
+	r_th_wait (priv->rapthread);
 }
 
 static void http_logf(RCore *core, const char *fmt, ...) {
@@ -181,16 +177,16 @@ beach:
 	free (oldprompt);
 }
 
-R_API int r_core_rtr_http_stop(RCore *u) {
-	RCore *core = (RCore*)u;
+R_API int r_core_rtr_http_stop(RCore *core) {
+	RCorePriv *priv = core->priv;
 	const int timeout = 1; // 1 second
-
 #if R2__WINDOWS__
 	r_socket_http_server_set_breaked (&core->cons->context->breaked);
 #endif
 	core->http_up = false;
-	if (((size_t)u) > 0xff) {
-		char *port = strdup (listenport? listenport: r_config_get (core->config, "http.port"));
+	if (((size_t)core) > 0xff) { // wtf?
+		const char *lp = priv->listenport;
+		char *port = strdup (lp? lp: r_config_get (core->config, "http.port"));
 		char *sport = r_str_startswith (port, "0x")
 			? r_str_newf ("%d", (int)r_num_get (NULL, port))
 			: strdup (port);
@@ -200,8 +196,8 @@ R_API int r_core_rtr_http_stop(RCore *u) {
 		r_socket_free (sock);
 		free (port);
 	}
-	r_socket_free (s);
-	s = NULL;
+	r_socket_free (priv->s);
+	priv->s = NULL;
 	return 0;
 }
 
@@ -921,18 +917,16 @@ R_API void r_core_rtr_remove(RCore *core, const char *input) {
 	}
 }
 
-static char *errmsg_tmpfile = NULL;
-static int errmsg_fd = -1;
-
 R_API void r_core_rtr_event(RCore *core, const char *input) {
+	RCorePriv *priv = core->priv;
 	if (*input == '-') {
 		input++;
 		if (!strcmp (input, "errmsg")) {
-			if (errmsg_tmpfile) {
-				r_file_rm (errmsg_tmpfile);
-				errmsg_tmpfile = NULL;
-				if (errmsg_fd != -1) {
-					close (errmsg_fd);
+			if (priv->errmsg_tmpfile) {
+				r_file_rm (priv->errmsg_tmpfile);
+				priv->errmsg_tmpfile = NULL;
+				if (priv->errmsg_fd > 0) {
+					close (priv->errmsg_fd);
 				}
 			}
 		}
@@ -944,7 +938,7 @@ R_API void r_core_rtr_event(RCore *core, const char *input) {
 		char *f = r_file_temp ("errmsg");
 		r_cons_println (core->cons, f);
 		r_file_rm (f);
-		errmsg_tmpfile = strdup (f);
+		priv->errmsg_tmpfile = strdup (f);
 		int e = mkfifo (f, 0644);
 		if (e == -1) {
 			r_sys_perror ("mkfifo");
@@ -952,13 +946,13 @@ R_API void r_core_rtr_event(RCore *core, const char *input) {
 			int ff = open (f, O_RDWR);
 			if (ff != -1) {
 				dup2 (ff, 2);
-				errmsg_fd = ff;
+				priv->errmsg_fd = ff;
 			} else {
 				R_LOG_ERROR ("Cannot open fifo: %s", f);
 			}
 		}
 		// r_core_event (core, );
-		free (s);
+		free (priv->s);
 		free (f);
 		// TODO: those files are leaked when closing r_core_free () should be deleted
 #else
@@ -1006,6 +1000,7 @@ static RThreadFunctionRet r_core_rtr_rap_thread(RThread *th) {
 }
 
 R_API void r_core_rtr_cmd(RCore *core, const char *input) {
+	RCorePriv *priv = core->priv;
 	unsigned int cmd_len = 0;
 	int fd = atoi (input);
 	if (!fd && *input != '0') {
@@ -1025,25 +1020,18 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 	}
 
 	if (*input == '&') { // "=h&" "=&:9090"
-		if (rapthread) {
+		if (priv->rapthread) {
 			R_LOG_INFO ("RAP Thread is already running");
 			R_LOG_INFO ("This is experimental and probably buggy. Use at your own risk");
 		} else {
 			// TODO: use tasks
 			RapThread *RT = R_NEW0 (RapThread);
-			if (RT) {
-				RT->core = core;
-				RT->input = strdup (input + 1);
-				//RapThread rt = { core, strdup (input + 1) };
-				rapthread = r_th_new (r_core_rtr_rap_thread, RT, false);
-#if 0
-				int cpuaff = (int)r_config_get_i (core->config, "cfg.cpuaffinity");
-				r_th_setaffinity (rapthread, cpuaff);
-#endif
-				r_th_setname (rapthread, "rapthread");
-				r_th_start (rapthread);
-				R_LOG_INFO ("Background rap server started");
-			}
+			RT->core = core;
+			RT->input = strdup (input + 1);
+			priv->rapthread = r_th_new (r_core_rtr_rap_thread, RT, false);
+			r_th_setname (priv->rapthread, "rapthread");
+			r_th_start (priv->rapthread);
+			R_LOG_INFO ("Background rap server started");
 		}
 		return;
 	}
@@ -1227,6 +1215,7 @@ static void rtr_cmds_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *bu
 	} else if (nread == 0) {
 		return;
 	}
+	RCore *core = client_context->core;
 
 	buf->base[nread] = '\0';
 	char *end = strchr (buf->base, '\n');
@@ -1252,11 +1241,9 @@ static void rtr_cmds_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *bu
 	}
 
 	uv_write_t *req = R_NEW (uv_write_t);
-	if (req) {
-		req->data = client_context;
-		uv_buf_t wrbuf = uv_buf_init (client_context->res, (unsigned int) strlen (client_context->res));
-		uv_write (req, client, &wrbuf, 1, rtr_cmds_write);
-	}
+	req->data = client_context;
+	uv_buf_t wrbuf = uv_buf_init (client_context->res, (unsigned int) strlen (client_context->res));
+	uv_write (req, client, &wrbuf, 1, rtr_cmds_write);
 	uv_read_stop (client);
 }
 
@@ -1276,20 +1263,13 @@ static void rtr_cmds_new_connection(uv_stream_t *server, int status) {
 	uv_tcp_init (server->loop, client);
 	if (uv_accept (server, (uv_stream_t *)client) == 0) {
 		rtr_cmds_client_context *client_context = R_NEW (rtr_cmds_client_context);
-		if (!client_context) {
-			uv_close ((uv_handle_t *)client, NULL);
-			return;
-		}
-
 		client_context->core = server->data;
 		client_context->len = 0;
 		client_context->buf[0] = '\0';
 		client_context->res = NULL;
 		client_context->client = client;
 		client->data = client_context;
-
 		uv_read_start ((uv_stream_t *)client, rtr_cmds_alloc_buffer, rtr_cmds_read);
-
 		r_pvector_push (&context->clients, client);
 	} else {
 		uv_close ((uv_handle_t *)client, NULL);
@@ -1314,10 +1294,10 @@ static void rtr_cmds_break(uv_async_t *async) {
 	uv_async_send (async);
 }
 
-R_API int r_core_rtr_cmds(RCore *core, const char *port) {
+R_API bool r_core_rtr_cmds(RCore *core, const char *port) {
 	if (!port || port[0] == '?') {
 		r_cons_printf (core->cons, "Usage: .:[tcp-port]    run r2 commands for clients\n");
-		return 0;
+		return false;
 	}
 
 	uv_loop_t *loop = R_NEW (uv_loop_t);
@@ -1340,28 +1320,27 @@ R_API int r_core_rtr_cmds(RCore *core, const char *port) {
 	int r = uv_listen ((uv_stream_t *)&context.server, 32, rtr_cmds_new_connection);
 	if (r) {
 		R_LOG_ERROR ("Failed to listen: %s", uv_strerror (r));
-		goto beach;
+	} else {
+		uv_async_t stop_async;
+		uv_async_init (loop, &stop_async, rtr_cmds_stop);
+
+		r_cons_break_push (core->cons, (RConsBreak) rtr_cmds_break, &stop_async);
+		context.bed = r_cons_sleep_begin (core->cons);
+		uv_run (loop, UV_RUN_DEFAULT);
+		r_cons_sleep_end (core->cons, context.bed);
+		r_cons_break_pop (core->cons);
 	}
-
-	uv_async_t stop_async;
-	uv_async_init (loop, &stop_async, rtr_cmds_stop);
-
-	r_cons_break_push (core->cons, (RConsBreak) rtr_cmds_break, &stop_async);
-	context.bed = r_cons_sleep_begin (core->cons);
-	uv_run (loop, UV_RUN_DEFAULT);
-	r_cons_sleep_end (core->cons, context.bed);
-	r_cons_break_pop (core->cons);
-
-beach:
 	uv_loop_close (loop);
 	free (loop);
 	r_pvector_clear (&context.clients);
-	return 0;
+	return true;
 }
 
 #else
 
-R_API int r_core_rtr_cmds(RCore *core, const char *port) {
+R_API bool r_core_rtr_cmds(RCore *core, const char * R_NULLABLE port) {
+	R_RETURN_VAL_IF_FAIL (core, false);
+	RCorePriv *priv = core->priv;
 	ut8 buf[4097];
 	RSocket *ch = NULL;
 	int i, ret;
@@ -1384,7 +1363,7 @@ R_API int r_core_rtr_cmds(RCore *core, const char *port) {
 	}
 
 	R_LOG_INFO ("Listening for commands on port %s", port);
-	listenport = port;
+	priv->listenport = port;
 	r_cons_break_push (core->cons, (RConsBreak)r_core_rtr_http_stop, core);
 	for (;;) {
 		if (r_cons_is_breaked (core->cons)) {
@@ -1423,7 +1402,7 @@ R_API int r_core_rtr_cmds(RCore *core, const char *port) {
 	r_cons_break_pop (core->cons);
 	r_socket_free (s);
 	r_socket_free (ch);
-	return 0;
+	return true;
 }
 
 #endif
