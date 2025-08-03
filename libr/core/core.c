@@ -2550,6 +2550,7 @@ R_API bool r_core_init(RCore *core) {
 	r_sys_signal (SIGUSR2, cmdusr2);
 #endif
 	r_w32_init ();
+	core->priv = R_NEW0 (RCorePriv);
 	core->log = r_core_log_new ();
 	core->blocksize = R_CORE_BLOCKSIZE;
 	core->block = (ut8 *)calloc (R_CORE_BLOCKSIZE + 1, 1);
@@ -2810,6 +2811,7 @@ R_API void r_core_fini(RCore *c) {
 #if R2__UNIX__
 	Gcore = NULL;
 #endif
+	free (c->priv);
 	r_log_add_callback (cbcore, NULL);
 	r_muta_free (c->muta);
 	r_th_lock_free (c->lock);

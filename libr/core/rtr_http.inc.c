@@ -608,16 +608,17 @@ static RThreadFunctionRet r_core_rtr_http_thread(RThread *th) {
 #endif
 
 R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path) {
+	RCorePriv *priv = core->priv;
 	int ret;
 	if (r_sandbox_enable (0)) {
 		R_LOG_ERROR ("sandbox: connect is not permitted");
 		return 1;
 	}
 	if (launch == '-') {
-		if (httpthread) {
+		if (priv->httpthread) {
 			R_LOG_INFO ("Press ^C to stop the webserver");
-			r_th_kill_free (httpthread);
-			httpthread = NULL;
+			r_th_kill_free (priv->httpthread);
+			priv->httpthread = NULL;
 		} else {
 			R_LOG_ERROR ("No webserver running");
 		}
@@ -629,7 +630,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 	}
 	if (launch == '&') {
 #if USE_HTTP_THREADS
-		if (httpthread) {
+		if (priv->httpthread) {
 			eprintf ("HTTP Thread is already running\n");
 			eprintf ("This is experimental and probably buggy. Use at your own risk\n");
 			R_LOG_TODO ("Use different eval environ for scr. for the web");
@@ -642,12 +643,12 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 			ht->launch = launch;
 			ht->browse = browse;
 			ht->path = strdup (tpath);
-			httpthread = r_th_new (r_core_rtr_http_thread, ht, false);
-			if (httpthread) {
-				r_th_setname (httpthread, "httpthread");
+			priv->httpthread = r_th_new (r_core_rtr_http_thread, ht, false);
+			if (priv->httpthread) {
+				r_th_setname (priv->httpthread, "httpthread");
 			}
-			r_th_start (httpthread);
-			eprintf ("Background http server started.\n");
+			r_th_start (priv->httpthread);
+			R_LOG_INFO ("Background http server started");
 		}
 		return 0;
 #else

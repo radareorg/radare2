@@ -30,6 +30,7 @@
 #include <r_muta.h>
 #include <r_bind.h>
 #include <r_codemeta.h>
+#include "r_core_priv.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -332,8 +333,6 @@ typedef struct r_core_esil_t {
 #define	R_CORE_ESIL_TRAP_REVERT	0x4
 #define	R_CORE_ESIL_TRAP_REVERT_CONFIG	0x8
 
-typedef struct RCorePriv RCorePriv;
-
 struct r_core_t {
 	RBin *bin;
 	RConfig *config;
@@ -447,7 +446,7 @@ struct r_core_t {
 	int (*r_main_rasm2)(int argc, const char **argv);
 	int (*r_main_rax2)(int argc, const char **argv);
 	int skiplines; // used only for disasm
-	void *priv;
+	void *priv; // Its RCorePriv but only used internally to not break abi
 	bool esil_anal_stop;
 };
 
@@ -886,7 +885,7 @@ R_API char *r_core_bin_attr_tostring(RCore *core, ut64 flags, int mode);
 R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode);
 
 /* rtr */
-R_API int r_core_rtr_cmds(RCore *core, const char *port);
+R_API bool r_core_rtr_cmds(RCore *core, const char *port);
 R_API char *r_core_rtr_cmds_query(RCore *core, const char *host, const char *port, const char *cmd);
 R_API void r_core_rtr_help(RCore *core);
 R_API void r_core_rtr_pushout(RCore *core, const char *input);

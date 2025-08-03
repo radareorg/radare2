@@ -8,9 +8,17 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-typedef struct {
+typedef struct r_core_priv_t {
+	// arch cache
 	int old_bits;
 	char *old_arch;
+	// rtr
+	RSocket *s;
+	RThread *httpthread;
+	RThread *rapthread;
+	const char *listenport;
+	char *errmsg_tmpfile;
+	int errmsg_fd; // -1
 } RCorePriv;
 
 #ifdef __cplusplus
