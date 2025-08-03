@@ -4880,7 +4880,7 @@ repeat_arroba:
 		}
 		ptr = (char *)r_str_trim_head_ro (ptr);
 
-		if (*ptr && (ptr[1] == ':' || (ptr[1] && ptr[2] == ':'))) {
+		if (*ptr && ptr[1] == ':') {
 			/* do nothing here */
 		} else {
 			ptr--;
@@ -4938,6 +4938,10 @@ repeat_arroba:
 				R_LOG_TODO ("what do you expect for @. import offset from file maybe?");
 			}
 		} else if (ptr[1] && ptr[2]) {
+			// hack2
+			if (!ptr[0] && ptr[1] == 'x' && ptr[2] && ptr[3] == ':') {
+				ptr++;
+			}
 			// TODO: getarg(ptr);
 			// TODO move into a separate function
 			switch (ptr[0]) {
