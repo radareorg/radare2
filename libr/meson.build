@@ -476,12 +476,12 @@ include_files = [
   'include/r_types_overflow.h',
   'include/r_util.h',
   'include/r_vector.h',
+  'include/r_event.h',
   'include/r_vec.h',
 ]
 install_headers(include_files, install_dir: r2_incdir)
 
 r_util_files = [
-  'include/r_event.h',
   'include/r_util/bplist.h',
   'include/r_util/pj.h',
   'include/r_util/r_alloc.h',
