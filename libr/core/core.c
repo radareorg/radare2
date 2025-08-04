@@ -2811,7 +2811,6 @@ R_API void r_core_fini(RCore *c) {
 #if R2__UNIX__
 	Gcore = NULL;
 #endif
-	free (c->priv);
 	r_log_add_callback (cbcore, NULL);
 	r_muta_free (c->muta);
 	r_th_lock_free (c->lock);
@@ -2884,6 +2883,7 @@ R_API void r_core_fini(RCore *c) {
 	r_core_log_free (c->log);
 	r_fs_shell_free (c->rfs);
 	free (c->times);
+	free (c->priv);
 }
 
 R_API void r_core_free(RCore * R_NULLABLE c) {
