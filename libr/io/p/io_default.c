@@ -78,12 +78,7 @@ static bool mmap_refresh(RIOMMapFileObj *mmo) {
 	}
 	if (mmo->rawio) {
 		mmo->fd = open_file (mmo->filename, mmo->perm, mmo->mode);
-		if (mmo->nocache) {
-#ifdef F_NOCACHE
-			fcntl (mmo->fd, F_NOCACHE, 1);
-#endif
-		}
-		return mmo->fd != -1;
+		goto done;
 	}
 	const int fd = open_file (mmo->filename, mmo->perm, mmo->mode);
 	if (fd == -1) {
@@ -96,6 +91,7 @@ static bool mmap_refresh(RIOMMapFileObj *mmo) {
 	}
 	mmo->rawio = true;
 	mmo->fd = fd;
+done:
 #ifdef F_NOCACHE
 	if (mmo->nocache) {
 		fcntl (mmo->fd, F_NOCACHE, 1);
@@ -121,11 +117,14 @@ static RIOMMapFileObj *mmap_create(RIO  *io, const char *filename, int perm, int
 	} else if (r_str_startswith (filename, "stdio://")) {
 		filename += strlen ("stdio://");
 		mmo->rawio = true;
+	} else if (r_str_startswith (filename, "nocache://")) {
+		mmo->rawio = true;
+		mmo->nocache = true;
+	} else {
+		// TODO later: mmo->rawio = true;
 	}
-	mmo->nocache = r_str_startswith (filename, "nocache://");
 	if (mmo->nocache) {
 		filename += strlen ("nocache://");
-		mmo->rawio = true;
 	}
 	mmo->filename = strdup (filename);
 	mmo->perm = perm;
