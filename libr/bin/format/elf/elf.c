@@ -1702,8 +1702,8 @@ static ut64 get_import_addr_arm64(ELFOBJ *eo, RBinElfReloc *rel) {
 
 	switch (rel->type) {
 	case R_AARCH64_RELATIVE:
-		R_LOG_WARN ("Unsupported arm64 relocation type for imports %d", rel->type);
-		return UT64_MAX;
+		// Direct binding: adjust by program base for relative relocations.
+		return eo->baddr + rel->addend;
 	case R_AARCH64_IRELATIVE:
 		if (rel->addend > plt_addr) { // start
 			return (plt_addr + pos * 16 + 32) + rel->addend;
