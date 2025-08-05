@@ -1,18 +1,18 @@
-/* radare - LGPL - Copyright 2013-2024 - pancake */
+/* radare - LGPL - Copyright 2013-2025 - pancake */
 
 #include <r_userconf.h>
 #include <r_io.h>
 #include <r_lib.h>
 
 typedef struct r_io_mmo_t {
-	char * filename;
+	char *filename;
 	int mode;
 	int flags;
 	int fd;
 	int opened;
 	ut8 modified;
 	RBuffer *buf;
-	RIO * io_backref;
+	RIO *io_backref;
 } RIOMMapFileObj;
 
 static ut64 r_io_mmap_seek(RIO *io, RIOMMapFileObj *mmo, ut64 offset, int whence) {
@@ -21,16 +21,16 @@ static ut64 r_io_mmap_seek(RIO *io, RIOMMapFileObj *mmo, ut64 offset, int whence
 	case R_IO_SEEK_SET:
 		seek_val = (r_buf_size (mmo->buf) < offset)? r_buf_size (mmo->buf): offset;
 		r_buf_seek (mmo->buf, io->off = seek_val, R_BUF_SET);
-		return seek_val;
+		break;
 	case R_IO_SEEK_CUR:
 		seek_val = (r_buf_size (mmo->buf) < (offset + r_buf_tell (mmo->buf)))? r_buf_size (mmo->buf):
 			offset + r_buf_tell (mmo->buf);
 		r_buf_seek (mmo->buf, io->off = seek_val, R_BUF_SET);
-		return seek_val;
+		break;
 	case R_IO_SEEK_END:
 		seek_val = r_buf_size (mmo->buf);
 		r_buf_seek (mmo->buf, io->off = seek_val, R_BUF_SET);
-		return seek_val;
+		break;
 	}
 	return seek_val;
 }
@@ -50,18 +50,16 @@ static bool r_io_mmap_refresh_buf(RIOMMapFileObj *mmo) {
 }
 
 static void r_io_mmap_free(RIOMMapFileObj *mmo) {
-	free (mmo->filename);
-	r_buf_free (mmo->buf);
-	memset (mmo, 0, sizeof (RIOMMapFileObj));
-	free (mmo);
+	if (mmo) {
+		free (mmo->filename);
+		r_buf_free (mmo->buf);
+		free (mmo);
+	}
 }
 
 RIOMMapFileObj *r_io_mmap_create_new_file(RIO  *io, const char *filename, int mode, int flags) {
 	R_RETURN_VAL_IF_FAIL (io && filename, NULL);
 	RIOMMapFileObj *mmo = R_NEW0 (RIOMMapFileObj);
-	if (!mmo) {
-		return NULL;
-	}
 	mmo->filename = strdup (filename);
 	mmo->fd = r_num_rand (0xFFFF); // XXX: Use r_io_fd api
 	mmo->mode = mode;
@@ -95,15 +93,11 @@ static int r_io_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 }
 
 static int r_io_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
-	RIOMMapFileObj *mmo;
-	int len = count;
-	ut64 addr;
-
 	if (!io || !fd || !fd->data || !buf) {
 		return -1;
 	}
-	mmo = fd->data;
-	addr = io->off;
+	RIOMMapFileObj *mmo = fd->data;
+	ut64 addr = io->off;
 	if (!(mmo->flags & R_PERM_W)) {
 		return -1;
 	}
@@ -111,7 +105,7 @@ static int r_io_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		ut64 sz = count + addr;
 		r_file_truncate (mmo->filename, sz);
 	}
-	len = r_file_mmap_write (mmo->filename, io->off, buf, len);
+	int len = r_file_mmap_write (mmo->filename, io->off, buf, count);
 	if (!r_io_mmap_refresh_buf (mmo) ) {
 		R_LOG_ERROR ("failed to refresh the mmap backed buffer");
 		// XXX - not sure what needs to be done here (error handling).
