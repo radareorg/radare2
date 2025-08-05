@@ -125,6 +125,7 @@ static RIOMMapFileObj *mmap_create(RIO  *io, const char *filename, int perm, int
 	mmo->nocache = r_str_startswith (filename, "nocache://");
 	if (mmo->nocache) {
 		filename += strlen ("nocache://");
+		mmo->rawio = true;
 	}
 	mmo->filename = strdup (filename);
 	mmo->perm = perm;
