@@ -78,14 +78,9 @@ static bool mmap_refresh(RIOMMapFileObj *mmo) {
 	}
 	if (mmo->rawio) {
 		mmo->fd = open_file (mmo->filename, mmo->perm, mmo->mode);
-		if (mmo->nocache) {
-#ifdef F_NOCACHE
-			fcntl (mmo->fd, F_NOCACHE, 1);
-#endif
-		}
-		return mmo->fd != -1;
+		goto done;
 	}
-	int fd = open_file (mmo->filename, mmo->perm, mmo->mode);
+	const int fd = open_file (mmo->filename, mmo->perm, mmo->mode);
 	if (fd == -1) {
 		return false;
 	}
@@ -96,6 +91,7 @@ static bool mmap_refresh(RIOMMapFileObj *mmo) {
 	}
 	mmo->rawio = true;
 	mmo->fd = fd;
+done:
 #ifdef F_NOCACHE
 	if (mmo->nocache) {
 		fcntl (mmo->fd, F_NOCACHE, 1);
@@ -121,8 +117,12 @@ static RIOMMapFileObj *mmap_create(RIO  *io, const char *filename, int perm, int
 	} else if (r_str_startswith (filename, "stdio://")) {
 		filename += strlen ("stdio://");
 		mmo->rawio = true;
+	} else if (r_str_startswith (filename, "nocache://")) {
+		mmo->rawio = true;
+		mmo->nocache = true;
+	} else {
+		// TODO later: mmo->rawio = true;
 	}
-	mmo->nocache = r_str_startswith (filename, "nocache://");
 	if (mmo->nocache) {
 		filename += strlen ("nocache://");
 	}
@@ -162,6 +162,8 @@ static bool uricheck(const char *filename) {
 			filename += strlen ("file://");
 		} else if (r_str_startswith (filename, "stdio://")) {
 			filename += strlen ("stdio://");
+		} else if (r_str_startswith (filename, "nocache://")) {
+			filename += strlen ("nocache://");
 		} else {
 			return false;
 		}
@@ -175,9 +177,6 @@ static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	if (mmo->addr == UT64_MAX) {
 		memset (buf, io->Oxff, count);
 		return count;
-	}
-	if (!mmo) {
-		return -1;
 	}
 	if (mmo->rawio) {
 		if (lseek (mmo->fd, mmo->addr, SEEK_SET) < 0) {
@@ -210,7 +209,7 @@ static int mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		return write (mmo->fd, buf, count);
 	}
 
-	if (mmo && mmo->buf) {
+	if (mmo->buf) {
 		if (!(mmo->perm & R_PERM_W)) {
 			return -1;
 		}
@@ -222,6 +221,7 @@ static int mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 
 	int len = r_file_mmap_write (mmo->filename, addr, buf, count);
 	if (len != count) {
+		// XXX this is wrong. what about non-fd baked mmos?
 		// aim to hack some corner cases?
 		if (lseek (fd->fd, addr, 0) < 0) {
 			return -1;
