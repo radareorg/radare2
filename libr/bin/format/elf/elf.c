@@ -3321,13 +3321,14 @@ typedef struct {
 
 static bool read_relr_entry(ELFOBJ *eo, RBinElfReloc *r, ut64 vaddr, ut64 entry, RelrInfo *info) {
 	R_RETURN_VAL_IF_FAIL (eo && r && info, false);
+	bool arm64 = eo->ehdr.e_machine == EM_AARCH64;
 
 	// If entry is even (LSB == 0), it's an address to relocate
 	if ((entry & 1) == 0) {
 		r->mode = DT_RELR;
 		r->offset = entry;
 		r->rva = entry;
-		r->type = R_AARCH64_RELATIVE;
+		r->type = arm64? R_AARCH64_RELATIVE: R_X86_64_RELATIVE;
 		r->sym = 0; // RELR relocations don't refer to symbols
 		r->addend = 0;
 		// Set next_addr to the word after the one pointed to by entry
@@ -3347,7 +3348,7 @@ static bool read_relr_entry(ELFOBJ *eo, RBinElfReloc *r, ut64 vaddr, ut64 entry,
 			r->mode = DT_RELR;
 			r->offset = info->next_addr + (bit_pos * sizeof (Elf_(Addr)));
 			r->rva = r->offset;
-			r->type = R_AARCH64_RELATIVE;
+			r->type = arm64? R_AARCH64_RELATIVE: R_X86_64_RELATIVE;
 			r->sym = 0; // RELR relocations don't refer to symbols
 			r->addend = 0;
 			return true;

@@ -590,6 +590,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 		case R_X86_64_TPOFF64:   ADD(64, 0); break;
 		case R_X86_64_DTPMOD64:  break; // id of module containing symbol (keep it as zero)
 		case R_X86_64_DTPOFF64:  ADD(64, 0); break; // offset inside module's tls
+		// case 1027: // this is aarc64_relative, if this appears here we are mixing x64 and arm64 reloc types
 		default:
 			R_LOG_WARN ("Unsupported reloc type %d for x64", rel->type);
 			break;
