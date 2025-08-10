@@ -10,6 +10,11 @@
 #include <sys/file.h>  /* for flock */
 #include <sys/stat.h>  /* for struct stat */
 #include <limits.h>
+#if __ANDROID__
+#define FLOCK(fd, op) 0
+#else
+#define FLOCK(fd, op) flock (fd, op)
+#endif
 #endif
 
 #define BS 1024
@@ -182,7 +187,7 @@ R_API int r_file_mmap_read(RMmap *m, ut64 addr, ut8 *buf, int len) {
 	off_t off = (off_t)(addr - base);
 	/* Check bounds via fstat */
 	struct stat st;
-	if (fstat(m->fd, &st) != 0) {
+	if (fstat (m->fd, &st) != 0) {
 		return -1;
 	}
 	ut64 limit2 = (ut64)st.st_size;
@@ -210,39 +215,37 @@ R_API int r_file_mmap_read(RMmap *m, ut64 addr, ut8 *buf, int len) {
 		return -1;
 	}
 	/* Compute offset within mapping */
+	if (addr < m->base) {
+		return -1;
+	}
 	ut64 base = m->base;
-	if (addr < base) {
-		return -1;
-	}
 	off_t offset = (off_t)(addr - base);
-	/* Acquire shared lock for atomic fstat+memcpy */
-	if (flock (m->fd, LOCK_SH) != 0) {
-		return -1;
-	}
+	/* Try to acquire shared lock for atomic fstat+memcpy */
+	const bool flock_acquired = FLOCK (m->fd, LOCK_SH) == 0;
 	struct stat st;
 	if (fstat (m->fd, &st) != 0) {
-		flock (m->fd, LOCK_UN);
+		if (flock_acquired) {
+			FLOCK (m->fd, LOCK_UN);
+		}
 		return -1;
 	}
 	/* Bound check: do not read past file or mapping length */
-	ut64 limit = (ut64)st.st_size;
-	if (limit > m->len) {
-		limit = m->len;
-	}
-	{
-		ut64 offset64 = (ut64)offset;
-		ut64 readlen = len;
-		if (offset64 >= limit) {
-			flock (m->fd, LOCK_UN);
-			return 0;
-		}
+	ut64 limit = R_MIN (m->len, st.st_size);
+	ut64 offset64 = (ut64)offset;
+	ut64 readlen = len;
+	if (offset64 < limit) {
 		if (offset64 + readlen > limit) {
 			readlen = limit - offset64;
 		}
-		memcpy (buf, (const ut8 *)m->buf + offset64, (size_t)readlen);
-		flock (m->fd, LOCK_UN);
-		return (int)readlen;
+		const ut8 *p = (const ut8 *)m->buf + offset64;
+		memcpy (buf, p, (size_t)readlen);
+	} else {
+		readlen = 0;
 	}
+	if (flock_acquired) {
+		FLOCK (m->fd, LOCK_UN);
+	}
+	return (int)readlen;
 #else
 	return -1;
 #endif
