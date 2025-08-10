@@ -257,19 +257,13 @@ R_API ut64 r_buf_tell(RBuffer *b) {
 
 R_API bool r_buf_set_bytes(RBuffer *b, const ut8 *buf, ut64 length) {
 	R_RETURN_VAL_IF_FAIL (b && buf && !b->readonly, false);
-#if 0
-	if (r_buf_seek (b, 0, R_BUF_SET) == -1) {
-		return false;
-	}
-#endif
-	if (!r_buf_resize (b, 0)) {
-		return false;
-	}
+	r_buf_resize (b, 0);
+	r_buf_seek (b, 0, R_BUF_SET);
 	if (!r_buf_append_bytes (b, buf, length)) {
-		return false;
+		eprintf ("FAIL\n");
+	//	return false;
 	}
-	return r_buf_seek (b, 0, R_BUF_SET) != -1; /// XXX must compare with length imho
-	// return r_buf_seek (b, 0, R_BUF_SET) == length;
+	return r_buf_seek (b, 0, R_BUF_SET) != -1;
 }
 
 R_API bool r_buf_prepend_bytes(RBuffer *b, const ut8 *buf, ut64 length) {
