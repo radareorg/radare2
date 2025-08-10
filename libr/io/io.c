@@ -40,22 +40,8 @@ R_API void r_io_free(RIO *io) {
 
 R_API RIODesc *r_io_open_buffer(RIO *io, RBuffer *b, int perm, int mode) {
 	R_RETURN_VAL_IF_FAIL (io && b, NULL);
-#if 0
-	ut64 bufSize = r_buf_size (b);
-	char *uri = r_str_newf ("malloc://%" PFMT64d, bufSize);
-	RIODesc *desc = r_io_open_nomap (io, uri, perm, mode);
-	if (desc) {
-		const ut8 *tmp = r_buf_data (b, &bufSize);
-		r_io_desc_write (desc, tmp, bufSize);
-	}
-	free (uri);
-	return desc;
-#else
-	char *uri = r_str_newf ("rbuf://0x%08"PFMT64x, (ut64)(size_t)(void *)b);
-	RIODesc *desc = r_io_open_nomap (io, uri, perm, mode);
-	free (uri);
-	return desc;
-#endif
+	r_strf_var (uri, 64, "rbuf://0x%08"PFMT64x, (ut64)(size_t)(void *)b);
+	return r_io_open_nomap (io, uri, perm, mode);
 }
 
 R_API RIODesc *r_io_open_nomap(RIO *io, const char *uri, int perm, int mode) {
@@ -83,20 +69,10 @@ R_API RIODesc* r_io_open_at(RIO* io, const char* uri, int perm, int mode, ut64 a
 	R_RETURN_VAL_IF_FAIL (io && uri, NULL);
 
 	RIODesc* desc = r_io_open_nomap (io, uri, perm, mode);
-	if (!desc) {
-		return NULL;
+	if (desc) {
+		ut64 size = r_io_desc_size (desc);
+		r_io_map_add (io, desc->fd, desc->perm, 0LL, at, size);
 	}
-	ut64 size = r_io_desc_size (desc);
-#if 0
-	// second map
-	if (size && ((UT64_MAX - size + 1) < at)) {
-		// split map into 2 maps if only 1 big map results into interger overflow
-		r_io_map_add (io, desc->fd, desc->perm, UT64_MAX - at + 1, 0LL, size - (UT64_MAX - at) - 1);
-		// someone pls take a look at this confusing stuff
-		size = UT64_MAX - at + 1;
-	}
-#endif
-	r_io_map_add (io, desc->fd, desc->perm, 0LL, at, size);
 	return desc;
 }
 
@@ -133,36 +109,28 @@ R_API RList* r_io_open_many(RIO* io, const char* uri, int perm, int mode) {
 	return descs;
 }
 
+R_API bool r_io_reopen(RIO* io, int fd, int perm, int mode) {
+	RIODesc	*fold = r_io_desc_get (io, fd);
+	if (!fold) {
+		return false;
+	}
+	const char *uri = fold->referer? fold->referer: fold->uri;
 #if R2__WINDOWS__
-R_API bool r_io_reopen(RIO* io, int fd, int perm, int mode) {
-	RIODesc	*old, *new;
-	char *uri;
-	if (!(old = r_io_desc_get (io, fd))) {
+	if (fold->plugin->close && !fold->plugin->close (fold)) {
 		return false;
 	}
-	//does this really work, or do we have to handler debuggers ugly
-	uri = old->referer? old->referer: old->uri;
-	if (old->plugin->close && !old->plugin->close (old)) {
-		return false; // TODO: this is an unrecoverable scenario
-	}
-	if (!(new = r_io_open_nomap (io, uri, perm, mode))) {
+	RIODesc *fnew = r_io_open_nomap (io, uri, perm, mode);
+	if (!fnew) {
 		return false;
 	}
-	r_io_desc_exchange (io, old->fd, new->fd);
-	r_io_desc_del (io, old->fd);
+	r_io_desc_exchange (io, fold->fd, fnew->fd);
+	r_io_desc_del (io, fold->fd);
 	return true;
-}
 #else
-R_API bool r_io_reopen(RIO* io, int fd, int perm, int mode) {
-	RIODesc *od = r_io_desc_get (io, fd);
-	if (!od) {
-		return false;
-	}
-	const char *uri = od->referer? od->referer: od->uri;
 	RIODesc *nd = r_io_open_nomap (io, uri, perm, mode);
 	if (nd) {
-		r_io_desc_exchange (io, od->fd, nd->fd);
-		r_io_desc_close (od);
+		r_io_desc_exchange (io, fold->fd, nd->fd);
+		r_io_desc_close (fold);
 		if (nd->perm & R_PERM_W) {
 			io->coreb.cmdf (io->coreb.core, "ompg");
 		}
@@ -170,8 +138,8 @@ R_API bool r_io_reopen(RIO* io, int fd, int perm, int mode) {
 	}
 	R_LOG_ERROR ("Cannot reopen");
 	return false;
-}
 #endif
+}
 
 R_API void r_io_close_all(RIO* io) {
 	R_RETURN_IF_FAIL (io);
@@ -358,8 +326,8 @@ R_API bool r_io_write(RIO* io, ut8* buf, int len) {
 	return false;
 }
 
-R_API ut64 r_io_size(RIO* io) {
 // TODO: rethink this, maybe not needed
+R_API ut64 r_io_size(RIO* io) {
 	return io? r_io_desc_size (io->desc): 0LL;
 }
 

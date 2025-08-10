@@ -19,8 +19,7 @@ static int open_file(const char *file, int perm, int mode) {
 	int fd;
 	if (r_str_startswith (file, "file://")) {
 		file += strlen ("file://");
-	}
-	if (r_str_startswith (file, "stdio://")) {
+	} else if (r_str_startswith (file, "stdio://")) {
 		file += strlen ("stdio://");
 	}
 	if (r_file_is_directory (file)) {
