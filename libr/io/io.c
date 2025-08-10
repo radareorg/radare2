@@ -402,17 +402,22 @@ R_API bool r_io_extend_at(RIO* io, ut64 addr, ut64 size) {
 
 R_API bool r_io_set_write_mask(RIO* io, const ut8* mask, int len) {
 	R_RETURN_VAL_IF_FAIL (io, false);
-	if (len < 1) {
-		return false;
-	}
-	free (io->write_mask);
 	if (!mask) {
+		free (io->write_mask);
 		io->write_mask = NULL;
 		io->write_mask_len = 0;
 		return true;
 	}
-	io->write_mask = (ut8*) malloc (len);
-	memcpy (io->write_mask, mask, len);
+	if (len < 1) {
+		return false;
+	}
+	free (io->write_mask);
+	io->write_mask = (ut8*) malloc ((size_t)len);
+	if (!io->write_mask) {
+		io->write_mask_len = 0;
+		return false;
+	}
+	memcpy (io->write_mask, mask, (size_t)len);
 	io->write_mask_len = len;
 	return true;
 }
