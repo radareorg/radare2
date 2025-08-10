@@ -428,7 +428,7 @@ R_API bool r_io_p2v(RIO *io, ut64 p, ut64 *v) {
 }
 
 R_API ut64 r_io_v2p(RIO *io, ut64 va) {
-	R_RETURN_VAL_IF_FAIL (io, 0);
+	R_RETURN_VAL_IF_FAIL (io, UT64_MAX);
 	RIOMap *map = r_io_map_get_at (io, va);
 	if (map) {
 		return va - r_io_map_begin (map) + map->delta;
