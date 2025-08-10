@@ -30,7 +30,7 @@ zip_files = [
   'lib/zip_dirent.c',
   'lib/zip_discard.c',
   'lib/zip_entry.c',
-  # 'lib/zip_realloc.c',
+  'lib/zip_realloc.c',
   'lib/zip_error.c',
   'lib/zip_error_clear.c',
   'lib/zip_error_get.c',
