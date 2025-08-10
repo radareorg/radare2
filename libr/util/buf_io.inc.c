@@ -47,13 +47,19 @@ static bool buf_io_resize(RBuffer *b, ut64 newsize) {
 static st64 buf_io_read(RBuffer *b, ut8 *buf, ut64 len) {
 	R_WARN_IF_FAIL (b->rb_io);
 	RIOBind *iob = b->rb_io->iob;
-	return iob->fd_read (iob->io, b->rb_io->fd, buf, len);
+	// ut64 cur = b->rb_io->iob->fd_seek (b->rb_io->iob->io, b->rb_io->fd, 0, R_IO_SEEK_CUR);
+	st64 res = iob->fd_read (iob->io, b->rb_io->fd, buf, len);
+	// b->rb_io->iob->fd_seek (b->rb_io->iob->io, b->rb_io->fd, cur, R_IO_SEEK_SET);
+	return res;
 }
 
 static st64 buf_io_write(RBuffer *b, const ut8 *buf, ut64 len) {
 	R_WARN_IF_FAIL (b->rb_io);
 	RIOBind *iob = b->rb_io->iob;
-	return iob->fd_write (iob->io, b->rb_io->fd, buf, len);
+	ut64 cur = b->rb_io->iob->fd_seek (b->rb_io->iob->io, b->rb_io->fd, 0, R_IO_SEEK_CUR);
+	st64 res = iob->fd_write (iob->io, b->rb_io->fd, buf, len);
+	b->rb_io->iob->fd_seek (b->rb_io->iob->io, b->rb_io->fd, cur + res, R_IO_SEEK_SET);
+	return res;
 }
 
 static const RBufferMethods buffer_io_methods = {

@@ -32,14 +32,12 @@ static void iocache_layer_free(void *arg) {
 
 static RIOCacheItem *iocache_item_new(RInterval *itv) {
 	RIOCacheItem *ci = R_NEW0 (RIOCacheItem);
-	if (R_LIKELY (ci)) {
-		ci->data = R_NEWS (ut8, itv->size);
-		ci->odata = R_NEWS (ut8, itv->size);
-		ci->tree_itv = R_NEWCOPY (RInterval, itv);
-		if (ci->data && ci->odata && ci->tree_itv) {
-			ci->itv = (*itv);
-			return ci;
-		}
+	ci->data = R_NEWS (ut8, itv->size);
+	ci->odata = R_NEWS (ut8, itv->size);
+	ci->tree_itv = R_NEWCOPY (RInterval, itv);
+	if (ci->data && ci->odata && ci->tree_itv) {
+		ci->itv = (*itv);
+		return ci;
 	}
 	free (ci->odata);
 	free (ci->data);
