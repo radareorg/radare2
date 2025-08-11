@@ -154,6 +154,9 @@ R_API void r_io_close_all(RIO* io) {
 
 R_API int r_io_pread_at(RIO* io, ut64 paddr, ut8* buf, int len) {
 	R_RETURN_VAL_IF_FAIL (io && buf && len >= 0, -1);
+	if (!io->desc) {
+		return -1;
+	}
 	if (io->ff) {
 		memset (buf, io->Oxff, len);
 	}
@@ -162,6 +165,9 @@ R_API int r_io_pread_at(RIO* io, ut64 paddr, ut8* buf, int len) {
 
 R_API int r_io_pwrite_at(RIO* io, ut64 paddr, const ut8* buf, int len) {
 	R_RETURN_VAL_IF_FAIL (io && buf && len > 0, -1);
+	if (!io->desc) {
+		return -1;
+	}
 	return r_io_desc_write_at (io->desc, paddr, buf, len);
 }
 
@@ -346,11 +352,17 @@ R_API char *r_io_system(RIO* io, const char* cmd) {
 
 R_API bool r_io_resize(RIO* io, ut64 newsize) {
 	R_RETURN_VAL_IF_FAIL (io, false);
+	if (!io->desc) {
+		return false;
+	}
 	return r_io_desc_resize (io->desc, newsize);
 }
 
 R_API bool r_io_close(RIO *io) {
 	R_RETURN_VAL_IF_FAIL (io, false);
+	if (!io->desc) {
+		return false;
+	}
 	return r_io_desc_close (io->desc);
 }
 
@@ -524,7 +536,7 @@ R_API bool r_io_shift(RIO* io, ut64 start, ut64 end, st64 move) {
 }
 
 R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
-	R_RETURN_VAL_IF_FAIL (io, 0);
+	R_RETURN_VAL_IF_FAIL (io, UT64_MAX);
 	switch (whence) {
 	case R_IO_SEEK_SET:
 		io->off = offset;
@@ -534,7 +546,11 @@ R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
 		break;
 	case R_IO_SEEK_END:
 	default:
-		io->off = r_io_desc_seek (io->desc, offset, whence);
+		if (io->desc) {
+			io->off = r_io_desc_seek (io->desc, offset, whence);
+		} else {
+			io->off = UT64_MAX;
+		}
 		break;
 	}
 	return io->off;
