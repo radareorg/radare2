@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2024 - condret, pancake */
+/* radare2 - LGPL - Copyright 2017-2025 - condret, pancake */
 
 #ifndef R2_IO_H
 #define R2_IO_H
