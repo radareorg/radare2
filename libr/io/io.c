@@ -511,7 +511,7 @@ R_API bool r_io_shift(RIO* io, ut64 start, ut64 end, st64 move) {
 	if (!buf) {
 		return false;
 	}
-	const ut64 src = (move > 0)
+	ut64 src = (move > 0)
 		? end - shiftsize
 		: start + shiftsize;
 	while (rest > 0) {
@@ -525,8 +525,7 @@ R_API bool r_io_shift(RIO* io, ut64 start, ut64 end, st64 move) {
 				src = 0;
 			}
 		}
-		ut64 dst = src + move;
-		ut64 dst = (move >= 0) ? src + (ut64)move : src - (ut64)(-move);
+		const ut64 dst = src + move;
 		if (!r_io_read_at (io, src, buf, chunksize)
 				|| !r_io_write_at (io, dst, buf, chunksize)) {
 			free (buf);
