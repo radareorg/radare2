@@ -915,10 +915,11 @@ beach:
 		}
 		free (macdwarf);
 	}
-
 	if (mustclose) {
-		r_io_desc_close (desc);
-		r->io->desc = odesc;
+		r_io_desc_close (mustclose);
+		if (odesc) {
+			r_io_use_fd (r->io, odesc->fd);
+		}
 	}
 	r_flag_space_set (r->flags, "*");
 	return true;
