@@ -296,8 +296,12 @@ R_API bool r_io_desc_is_chardevice(RIODesc *desc) {
 }
 
 R_API bool r_io_desc_exchange(RIO* io, int fd, int fdx) {
-	RIODesc* desc, * descx;
-	if (!(desc = r_io_desc_get (io, fd)) || !(descx = r_io_desc_get (io, fdx))) {
+	RIODesc *desc = r_io_desc_get (io, fd);
+	if (!desc) {
+		return false;
+	}
+	RIODesc *descx = r_io_desc_get (io, fdx);
+	if (!descx) {
 		return false;
 	}
 	desc->fd = fdx;
@@ -401,7 +405,7 @@ R_IPI bool r_io_desc_init(RIO *io) {
 	R_RETURN_VAL_IF_FAIL (io, false);
 	r_io_desc_fini (io);
 	// TODO: it leaks if called twice
-	//fd is signed
+	// fd is signed
 	return r_id_storage_init (&io->files, 3, 0x80000000);
 }
 
