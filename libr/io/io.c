@@ -502,7 +502,7 @@ R_API bool r_io_shift(RIO* io, ut64 start, ut64 end, st64 move) {
 	R_RETURN_VAL_IF_FAIL (io && start < end, false);
 	ut64 chunksize = 0x10000;
 	ut64 saved_off = io->off;
-	ut64 src, shiftsize = r_num_abs (move);
+	ut64 shiftsize = r_num_abs (move);
 	if (!shiftsize || (end - start) <= shiftsize) {
 		return false;
 	}
@@ -511,20 +511,28 @@ R_API bool r_io_shift(RIO* io, ut64 start, ut64 end, st64 move) {
 	if (!buf) {
 		return false;
 	}
-	if (move > 0) {
-		src = end - shiftsize;
-	} else {
-		src = start + shiftsize;
-	}
+	const ut64 src = (move > 0)
+		? end - shiftsize
+		: start + shiftsize;
 	while (rest > 0) {
 		if (chunksize > rest) {
 			chunksize = rest;
 		}
 		if (move > 0) {
-			src -= chunksize;
+			if (src > chunksize) {
+				src -= chunksize;
+			} else {
+				src = 0;
+			}
 		}
-		r_io_read_at (io, src, buf, chunksize);
-		r_io_write_at (io, src + move, buf, chunksize);
+		ut64 dst = src + move;
+		ut64 dst = (move >= 0) ? src + (ut64)move : src - (ut64)(-move);
+		if (!r_io_read_at (io, src, buf, chunksize)
+				|| !r_io_write_at (io, dst, buf, chunksize)) {
+			free (buf);
+			io->off = r_io_desc_seek (io->desc, saved_off, R_IO_SEEK_SET);
+			return false;
+		}
 		if (move < 0) {
 			src += chunksize;
 		}
