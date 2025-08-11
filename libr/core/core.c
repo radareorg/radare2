@@ -2781,11 +2781,13 @@ R_API bool r_core_init(RCore *core) {
 }
 
 R_API void __cons_cb_fkey(RCore *core, int fkey) {
-	char buf[32];
-	snprintf (buf, sizeof (buf), "key.f%d", fkey);
-	const char *v = r_config_get (core->config, buf);
-	if (v && *v) {
-		r_cons_println (core->cons, v);
+	if (fkey < 1) {
+		R_LOG_ERROR ("Invalid function key index %d received", fkey);
+		return;
+	}
+	r_strf_var (keyvar, 64, "key.f%d", fkey);
+	const char *v = r_config_get (core->config, keyvar);
+	if (R_STR_ISNOTEMPTY (v)) {
 		r_core_cmd0 (core, v);
 		r_cons_flush (core->cons);
 	}
