@@ -696,6 +696,8 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	r->bin->options.minstrlen = r_config_get_i (r->config, "bin.str.min");
 	r->bin->options.maxstrbuf = r_config_get_i (r->config, "bin.str.maxbuf");
 	R_CRITICAL_LEAVE (r);
+	RIODesc *odesc = NULL;
+	RIODesc *mustclose = NULL;
 	if (desc && is_io_load) {
 		int desc_fd = desc->fd;
 		// TODO? necessary to restore the desc back?
@@ -704,7 +706,11 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			r_core_file_load_for_debug (r, baddr, filenameuri);
 		} else {
 			if (filenameuri && filenameuri[0] != '-' && strcmp (filenameuri, desc->uri)) {
+				odesc = r->io->desc;
 				r_core_file_open (r, filenameuri, 0, baddr);
+				if (odesc != r->io->desc) {
+					mustclose = r->io->desc;
+				}
 			}
 			r_core_file_load_for_io_plugin (r, baddr, 0LL);
 			desc = r->io->desc;
@@ -716,9 +722,10 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	}
 	desc = r->io->desc;
 	RBinFile *binfile = r_bin_cur (r->bin);
-	if (r->bin->cur && r->bin->cur->bo && r->bin->cur->bo->plugin && r->bin->cur->bo->plugin->strfilter) {
+	RBinPlugin *bp = R_UNWRAP5 (r, bin, cur, bo, plugin);
+	if (bp) {
 		char msg[2];
-		msg[0] = r->bin->cur->bo->plugin->strfilter;
+		msg[0] = bp->strfilter;
 		msg[1] = 0;
 		r_config_set (r->config, "bin.str.filter", msg);
 	}
@@ -822,8 +829,8 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			r_id_storage_foreach (&r->io->files, linkcb, &linkdata);
 			if (linkdata.addr != UT64_MAX) {
 				eprintf ("0x%08"PFMT64x, linkdata.addr);
-				ut64 a = linkdata.addr;
-				ut64 b = imp_addr;
+				const ut64 a = linkdata.addr;
+				const ut64 b = imp_addr;
 				r_core_cmdf (r, "ax 0x%08"PFMT64x" 0x%08"PFMT64x, a, b);
 			}
 		}
@@ -909,6 +916,10 @@ beach:
 		free (macdwarf);
 	}
 
+	if (mustclose) {
+		r_io_desc_close (desc);
+		r->io->desc = odesc;
+	}
 	r_flag_space_set (r->flags, "*");
 	return true;
 }
