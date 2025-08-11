@@ -5964,10 +5964,8 @@ static ut8 *decode_text(RCore *core, ut64 offset, size_t len, bool zeroend) {
 			len = (size_t)r_str_nlen ((const char*)out, len);
 		}
 #else
-		int dl = 0;
 		RIOMap *map = r_io_map_get_at (core->io, core->addr);
 		if (map) {
-			ut64 size = map->itv.size;
 			ut64 mapend = map->itv.addr + map->itv.size + map->delta;
 			ut64 left = mapend - core->addr;
 			len = R_MIN (len, left);
