@@ -257,7 +257,7 @@ static int main_help(int line) {
 
 		r_strbuf_append (sb, "Scripts:\n");
 		r_strbuf_appendf (sb, " system          %s/share/radare2/radare2rc\n", dirPrefix);
-		r_strbuf_append (sb, " user            ~/.radare2rc ${XDG_CONFIG_DIR:=~/.local/share/}/radare2/radare2rc{.d/}\n");
+		r_strbuf_append (sb, " user            ~/.radare2rc ${XDG_CONFIG_DIR:=~/.config/radare2}/rc{.d/}\n");
 		r_strbuf_append (sb, " file            ${filename}.r2\n");
 		r_strbuf_append (sb, "Plugins:\n");
 		r_strbuf_appendf (sb, " R2_LIBR_PLUGINS " R_JOIN_2_PATHS ("%s", R2_PLUGINS) "\n"
