@@ -21,7 +21,7 @@ EXPECT=<<EOF
 0x00000010  6e64 204c 696e 650a ffff ffff ffff ffff  nd Line.........
 hello world
 Second Line
-\xff\xff\xff\xff\xff\xff\xff\xff
+
 EOF
 RUN
 

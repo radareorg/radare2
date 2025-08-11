@@ -75,6 +75,10 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	if (delta != 0) {
 		// rollback the buffer and reset the delta
 		buf = calloc (1, ro->bsize * 2);
+		if (!buf) {
+			R_LOG_ERROR ("Cannot allocate")
+			return 0;
+		}
 		r_io_pread_at (ro->io, addr, buf, ro->bsize * 2);
 		delta = 0;
 	}

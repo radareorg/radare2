@@ -5942,23 +5942,56 @@ static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *ar
 	core->addr = o_offset;
 }
 
-static ut8 *decode_text(RCore *core, ut64 offset, size_t len, bool zeroend) {
-	const char *current_charset = r_config_get (core->config, "cfg.charset");
+#define USE_PREAD 0
+static ut8 * R_NULLABLE decode_text(RCore *core, ut64 offset, size_t len, bool zeroend) {
 	ut8 *out = calloc (len, 10);
-	if (out) {
-		r_io_read_at (core->io, core->addr, out, len);
-		if (zeroend) {
-			len = (size_t)r_str_nlen ((const char*)out, len);
+	if (!out) {
+		return NULL;
+	}
+#if USE_PREAD
+	const ut64 va = core->addr;
+	RIOMap *map = r_io_map_get_at (core->io, va);
+	int dl = 0;
+	if (map) {
+		ut64 pa = va - map->itv.addr + map->delta;
+		dl = r_io_fd_read_at (core->io, map->fd, pa, out, len);
+		if (dl < 0) {
+			dl = 0;
 		}
-		if (!R_STR_ISEMPTY (current_charset)) {
-			size_t out_len = len * 10;
-			ut8 *data = out;
-			out = calloc (len, 10);
-			if (out) {
-				r_io_read_at (core->io, core->addr, data, len);
-				r_charset_encode_str (core->print->charset, out, out_len, data, len, false);
-				free (data);
-			}
+	}
+	if (dl >= 0 && dl <= len) {
+		out[dl] = 0;
+	}
+	if (zeroend) {
+		len = (size_t)r_str_nlen ((const char*)out, len);
+	}
+#else
+	RIOMap *map = r_io_map_get_at (core->io, core->addr);
+	if (map) {
+		ut64 mapend = map->itv.addr + map->itv.size + map->delta;
+		ut64 left = mapend - core->addr;
+		len = R_MIN (len, left);
+	}
+	bool ret = r_io_read_at (core->io, core->addr, out, len);
+	if (zeroend) {
+		if (ret) {
+			len = (size_t)r_str_nlen ((const char*)out, len);
+		} else {
+			len = 0;
+		}
+	}
+#endif
+	out[len] = 0;
+	const char *current_charset = r_config_get (core->config, "cfg.charset");
+	if (R_STR_ISNOTEMPTY (current_charset)) {
+		size_t out_len = (len + 1) * 10;
+		ut8 *data = out;
+		out = calloc (len, 10);
+		if (out) {
+			r_io_read_at (core->io, core->addr, data, len);
+			r_charset_encode_str (core->print->charset, out, out_len, data, len, false);
+			data[len] = 0;
+			free (data);
 		}
 	}
 	return out;
@@ -7898,14 +7931,21 @@ static int cmd_print(void *data, const char *input) {
 		case 'z': // "psz"
 			if (l > 0) {
 				ut8 *s = decode_text (core, core->addr, l, true);
+				if (!s) {
+					break;
+				}
 				if (input[2] == 'j') { // pszj
 					print_json_string (core, (const char *) s,
 						r_str_nlen ((const char*)s, l), NULL);
 				} else if (input[2] == '*') {
 					char *a = r_str_ndup ((const char*)s, l);
 					char *b = (char *)r_base64_encode_dyn ((const ut8 *)a, -1);
-					r_cons_printf (core->cons, "w6e %s\n", b);
-					free (b);
+					if (b) {
+						r_cons_printf (core->cons, "w6e %s\n", b);
+						free (b);
+					} else {
+						R_LOG_ERROR ("Cannot b64 encode");
+					}
 					free (a);
 				} else if (input[2] == '?') {
 					r_core_cmd_help (core, help_msg_psz);
@@ -7943,15 +7983,19 @@ static int cmd_print(void *data, const char *input) {
 		case 'j': // "psj"
 			{
 				ut8 *s = decode_text (core, core->addr, l, false);
-				print_json_string (core, (const char *) s, l, NULL);
-				free (s);
+				if (s) {
+					print_json_string (core, (const char *) s, l, NULL);
+					free (s);
+				}
 			}
 			break;
 		case ' ': // "ps"
 		{
 			ut8 *s = decode_text (core, core->addr, l, false);
-			r_print_string (core->print, core->addr, s, l, 0);
-			free (s);
+			if (s) {
+				r_print_string (core->print, core->addr, s, l, 0);
+				free (s);
+			}
 			break;
 		}
 		case 'u': // "psu"
