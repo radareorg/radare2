@@ -2049,13 +2049,45 @@ repeat:
 				if (buf[0] == 'O' && strchr ("ABCDFH", buf[1]) != NULL) { // O
 					buf[0] = '[';
 				}
-				if (buf[0] == '[') { // [
+				if (buf[0] == 79) {
+					int fkey = 0;
+					ut8 kbuf = buf[1] & 0xff;
+					switch (kbuf) {
+					case 80:
+					case 81:
+					case 82:
+					case 83:
+					case 84:
+						fkey = kbuf - 80 + 1;
+						break;
+					}
+					if (fkey) {
+						if (line->cb_fkey) {
+							line->cb_fkey (line->user, fkey);
+						}
+					}
+				} else if (buf[0] == '[') { // [
+					int fkey = 0;
 					switch (buf[1]) {
 					case '2': // termfix
 						while (true) {
 							ch = r_cons_readchar (cons);
+							if (fkey == 0) {
+								// F9, F10 ,..
+								if (ch >= '0' && ch < '8') {
+									fkey = ch - '0' + 9;
+									if (fkey > 11) {
+										fkey--;
+									}
+								}
+							}
 							if (!isdigit (ch) && ch != ';') {
 								*buf = '\n';
+								if (fkey) {
+									if (line->cb_fkey) {
+										line->cb_fkey (line->user, fkey);
+									}
+								}
 								goto repeat;
 								break;
 							}
@@ -2176,23 +2208,42 @@ repeat:
 					case 'D': // left arrow
 						__move_cursor_left (line);
 						break;
-					case 0x31:	// control + arrow
+						break;
+					case '1': // 0x31 - control + arrow
 						if (line->vtmode == 2) {
 							ch = r_cons_readchar (cons);
-							if (ch == 0x7e) {	// HOME in screen/tmux
+								eprintf ("PENE %d\n", ch);
+							if (ch == 0x7e) { // HOME in screen/tmux
 								// corresponding END is 0x34 below (the 0x7e is ignored there)
 								line->buffer.index = 0;
 								break;
 							}
-							r_cons_readchar (cons);	// should be '5'
-							ch = r_cons_readchar (cons);
+							switch (ch) {
+							case '5':
+								fkey = ch - '0';
+								break;
+							case '6':
+							case '7':
+							case '8':
+							case '9':
+
+								fkey = ch - '0' -1;
+								break;
+							default:
+								R_LOG_ERROR ("Unknown fkey %d pressed", fkey);
+								break;
+							}
+							ch = r_cons_readchar (cons);	// should be '5'
+							// ch = r_cons_readchar (cons);
 						}
 #if R2__WINDOWS__
 						else {
 							ch = buf[2];
+							fkey = ch - '0';
 						}
 #endif
-						int fkey = ch - '0';
+						eprintf ("FKEY %d\n", fkey);
+
 						switch (ch) {
 						case 0x41:
 							// first
