@@ -5942,21 +5942,39 @@ static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *ar
 	core->addr = o_offset;
 }
 
+#define USE_PREAD 1
 static ut8 *decode_text(RCore *core, ut64 offset, size_t len, bool zeroend) {
-	const char *current_charset = r_config_get (core->config, "cfg.charset");
 	ut8 *out = calloc (len, 10);
 	if (out) {
-		r_io_read_at (core->io, core->addr, out, len);
+#if USE_PREAD
+		int dl = r_io_pread_at (core->io, core->addr, out, len);
+		eprintf ("PBRE %d\n", dl);
+		if (dl >= 0 && dl <= len) {
+			out[dl] = 0;
+		}
 		if (zeroend) {
 			len = (size_t)r_str_nlen ((const char*)out, len);
 		}
-		if (!R_STR_ISEMPTY (current_charset)) {
-			size_t out_len = len * 10;
+#else
+		bool ret = r_io_read_at (core->io, core->addr, out, len);
+		if (ret) {
+			if (zeroend) {
+				len = (size_t)r_str_nlen ((const char*)out, len);
+			}
+		} else {
+			len = 0;
+		}
+#endif
+		out[len] = 0;
+		const char *current_charset = r_config_get (core->config, "cfg.charset");
+		if (R_STR_ISNOTEMPTY (current_charset)) {
+			size_t out_len = (len + 1) * 10;
 			ut8 *data = out;
 			out = calloc (len, 10);
 			if (out) {
 				r_io_read_at (core->io, core->addr, data, len);
 				r_charset_encode_str (core->print->charset, out, out_len, data, len, false);
+				data[len] = 0;
 				free (data);
 			}
 		}

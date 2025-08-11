@@ -221,6 +221,7 @@ R_API RIOMap *r_io_map_add_bottom(RIO *io, int fd, int perm, ut64 delta, ut64 ad
 	return NULL;
 }
 
+// Confusing function name
 R_API RIOMap *r_io_map_get_paddr(RIO* io, ut64 paddr) {
 	R_RETURN_VAL_IF_FAIL (io, NULL);
 	RIOBank *bank = r_io_bank_get (io, io->bank);
