@@ -129,7 +129,6 @@ EOF
 EXPECT=<<EOF
  3 * r-x 0x0002daa0 bins/mach0/ls-m1
 --
- 3 * r-x 0x0002daa0 bins/mach0/ls-m1
  5 - rw- 0x00000008 null://8
 * 0 4 x86-64 ba:0x00000000 sz:14705 bins/mach0/hello-puts
 nth vaddr      bind   type   lib name
