@@ -5947,8 +5947,16 @@ static ut8 *decode_text(RCore *core, ut64 offset, size_t len, bool zeroend) {
 	ut8 *out = calloc (len, 10);
 	if (out) {
 #if USE_PREAD
-		int dl = r_io_pread_at (core->io, core->addr, out, len);
-		eprintf ("PBRE %d\n", dl);
+		const ut64 va = core->addr;
+		RIOMap *map = r_io_map_get_at (core->io, va);
+		int dl = 0;
+		if (map) {
+			ut64 pa = va - map->itv.addr + map->delta;
+			dl = r_io_pread_at (core->io, pa, out, len);
+			if (dl < 0) {
+				dl = 0;
+			}
+		}
 		if (dl >= 0 && dl <= len) {
 			out[dl] = 0;
 		}
