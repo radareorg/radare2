@@ -167,15 +167,14 @@ R_API RIODesc *r_io_desc_open_plugin(RIO *io, RIOPlugin *plugin, const char *uri
 }
 
 R_API bool r_io_desc_close(RIODesc *desc) {
-	if (!desc || !desc->io || !desc->plugin) {
-		return false;
-	}
-	RIO *io = desc->io;
-	if (desc->plugin->close && !desc->plugin->close (desc)) {
+	R_RETURN_VAL_IF_FAIL (desc && desc->io && desc->plugin, false);
+	bool (*pclose)(RIODesc *desc);
+	pclose = desc->plugin->close;
+	if (pclose && !pclose (desc)) {
 		return false;
 	}
 	// remove entry from idstorage and free the desc struct
-	r_io_desc_del (io, desc->fd);
+	r_io_desc_del (desc->io, desc->fd);
 	return true;
 }
 
@@ -209,9 +208,7 @@ R_API int r_io_desc_read(RIODesc *desc, ut8 *buf, int len) {
 }
 
 R_API ut64 r_io_desc_seek(RIODesc* desc, ut64 offset, int whence) {
-	if (!desc || !desc->plugin || !desc->plugin->seek) {
-		return (ut64) -1;
-	}
+	R_RETURN_VAL_IF_FAIL (desc && desc->plugin && desc->plugin->seek, UT64_MAX);
 	return desc->plugin->seek (desc->io, desc, offset, whence);
 }
 
@@ -299,8 +296,12 @@ R_API bool r_io_desc_is_chardevice(RIODesc *desc) {
 }
 
 R_API bool r_io_desc_exchange(RIO* io, int fd, int fdx) {
-	RIODesc* desc, * descx;
-	if (!(desc = r_io_desc_get (io, fd)) || !(descx = r_io_desc_get (io, fdx))) {
+	RIODesc *desc = r_io_desc_get (io, fd);
+	if (!desc) {
+		return false;
+	}
+	RIODesc *descx = r_io_desc_get (io, fdx);
+	if (!descx) {
 		return false;
 	}
 	desc->fd = fdx;
@@ -404,7 +405,7 @@ R_IPI bool r_io_desc_init(RIO *io) {
 	R_RETURN_VAL_IF_FAIL (io, false);
 	r_io_desc_fini (io);
 	// TODO: it leaks if called twice
-	//fd is signed
+	// fd is signed
 	return r_id_storage_init (&io->files, 3, 0x80000000);
 }
 

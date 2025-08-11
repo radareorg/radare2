@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2024 - condret */
+/* radare2 - LGPL - Copyright 2017-2025 - condret */
 
 #include <r_io.h>
 
@@ -8,7 +8,12 @@ R_API int r_io_fd_open(RIO *io, const char *uri, int flags, int mode) {
 }
 
 R_API bool r_io_fd_close(RIO *io, int fd) {
-	return r_io_desc_close (r_io_desc_get (io, fd));
+	RIODesc *desc = r_io_desc_get (io, fd);
+	if (desc) {
+		return r_io_desc_close (desc);
+	}
+	R_LOG_DEBUG ("Descriptor for fd %d was already closed");
+	return false;
 }
 
 //returns length of read bytes
