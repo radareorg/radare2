@@ -160,6 +160,7 @@ R_API int r_io_pread_at(RIO* io, ut64 paddr, ut8* buf, int len) {
 	if (io->ff) {
 		memset (buf, io->Oxff, len);
 	}
+	// XXX io->desc is wrong because it assumes the current desc which shouldnt exist
 	return r_io_desc_read_at (io->desc, paddr, buf, len);
 }
 
