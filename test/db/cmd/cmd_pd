@@ -2255,7 +2255,26 @@ pi 10 @e:asm.imm.base=10
 pi 10 @e:asm.imm.base=2
 EOF
 EXPECT=<<EOF
-and esp, 0xfffffff0
-and esp
+and esi, 73
+cmp esi, 1
+sbb eax, eax
+not eax
+and eax, 42
+ret
+nop dword [rax]
+xor eax, eax
+cmp edx, 5
+je 27850
+----
+and esi, 1001001b
+cmp esi, 1b
+sbb eax, eax
+not eax
+and eax, 101010b
+ret
+nop dword [rax]
+xor eax, eax
+cmp edx, 101b
+je 110110011001010b
 EOF
 RUN
