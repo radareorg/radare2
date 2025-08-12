@@ -2736,19 +2736,19 @@ EXPECT=<<EOF
     "methods": [
       {
         "name": "swift56override_swift_task_future_wait(swift::OpaqueValue*, swift::AsyncContext*, swift::AsyncTask*, void ( swiftasynccall*)(swift::AsyncContext* swift_async_context), swift::AsyncContext*, void ( swiftasynccall*)(swift::OpaqueValue*, swift::AsyncContext* swift_async_context, swift::AsyncTask*, void (swift::AsyncContext* swift_async_context), swift::AsyncContext*))",
-        "flag": "method.swift.swift56override_swift_task_future_wait_swift::OpaqueValue__swift::AsyncContext__swift::AsyncTask__void___swiftasynccall__swift::AsyncContext_swift_async_context___swift::AsyncContext__void___swiftasynccall__swift::OpaqueValue__swift::",
+        "flag": "method.swift.swift56override_swift_task_future_wait_swift::OpaqueValue__swift::AsyncContext__swift::AsyncTask__void___swiftasynccall__swift::AsyncContext_swift_async_context___swift::AsyncContext__void___swiftasynccall__swift::OpaqueValue__swift::AsyncContext_swift_async_context__swift::AsyncTask__void__swift::AsyncContext_swift_async_context___swift::AsyncContext__",
         "lang": "c++",
         "addr": 4295109840
       },
       {
         "name": "swift56override_swift_task_future_wait_throwing(swift::OpaqueValue*, swift::AsyncContext*, swift::AsyncTask*, void ( swiftasynccall*)(swift::AsyncContext* swift_async_context, void* swift_context), swift::AsyncContext*, void ( swiftasynccall*)(swift::OpaqueValue*, swift::AsyncContext* swift_async_context, swift::AsyncTask*, void* swift_context, swift::AsyncContext*))",
-        "flag": "method.swift.swift56override_swift_task_future_wait_throwing_swift::OpaqueValue__swift::AsyncContext__swift::AsyncTask__void___swiftasynccall__swift::AsyncContext_swift_async_context__void_swift_context___swift::AsyncContext__void___swiftasynccall",
+        "flag": "method.swift.swift56override_swift_task_future_wait_throwing_swift::OpaqueValue__swift::AsyncContext__swift::AsyncTask__void___swiftasynccall__swift::AsyncContext_swift_async_context__void_swift_context___swift::AsyncContext__void___swiftasynccall__swift::OpaqueValue__swift::AsyncContext_swift_async_context__swift::AsyncTask__void_swift_context__swift::AsyncContext__",
         "lang": "c++",
         "addr": 4295110076
       },
       {
         "name": "swift56override_swift_task_create_common(unsigned long, swift::TaskOptionRecord*, swift::TargetMetadata<swift::InProcess> const*, void ( swiftasynccall*)(swift::AsyncContext* swift_async_context), void*, unsigned long, swift::AsyncTaskAndContext ( swiftcall*)(unsigned long, swift::TaskOptionRecord*, swift::TargetMetadata<swift::InProcess> const*, void (swift::AsyncContext* swift_async_context), void ( swiftasynccall)(swift::AsyncContext* swift_async_context), unsigned long))",
-        "flag": "method.swift.swift56override_swift_task_create_common_unsigned_long__swift::TaskOptionRecord__swift::TargetMetadata_swift::InProcess__const__void___swiftasynccall__swift::AsyncContext_swift_async_context___void__unsigned_long__swift::AsyncTaskAndCont",
+        "flag": "method.swift.swift56override_swift_task_create_common_unsigned_long__swift::TaskOptionRecord__swift::TargetMetadata_swift::InProcess__const__void___swiftasynccall__swift::AsyncContext_swift_async_context___void__unsigned_long__swift::AsyncTaskAndContext___swiftcall__unsigned_long__swift::TaskOptionRecord__swift::TargetMetadata_swift::InProcess__const__void__swift::AsyncContext_swift_async_context___void___swiftasynccall__swift::AsyncContext_swift_async_context___unsigned_long__",
         "lang": "c++",
         "addr": 4295110356
       },
