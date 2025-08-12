@@ -443,6 +443,7 @@ include_files = [
   'include/r_config.h',
   'include/r_cons.h',
   'include/r_core.h',
+  'include/r_core_priv.h',
   'include/r_muta.h',
   'include/r_debug.h',
   'include/r_drx.h',

@@ -148,12 +148,12 @@ done
 : ${INSTALL_PROGRAM_STRIP:=${INSTALL} -m 755 -s}
 : ${INSTALL_MAN:=${INSTALL} -m 444}
 : ${INSTALL_LIB:=${INSTALL} -m 755 -c}
- PKGNAME='radare2' ; VERSION='6.0.0' ; VERSION_MAJOR=6; VERSION_MINOR=0; VERSION_PATCH=0; VERSION_NUMBER=60000; CONTACT_MAIL="pancake@nopcode.org" ; CONTACT_NAME="pancake" ; CONTACT="pancake <pancake@nopcode.org>" ;
+ PKGNAME='radare2' ; VERSION='6.0.2' ; VERSION_MAJOR=6; VERSION_MINOR=0; VERSION_PATCH=2; VERSION_NUMBER=60002; CONTACT_MAIL="pancake@nopcode.org" ; CONTACT_NAME="pancake" ; CONTACT="pancake <pancake@nopcode.org>" ;
 }
 
 show_usage() {
 cat <<EOF2
-'configure' configures radare2-6.0.0 to adapt to many kinds of systems.
+'configure' configures radare2-6.0.2 to adapt to many kinds of systems.
 
 Usage: ./configure [OPTION]... [VAR=VALUE]...
 
@@ -269,10 +269,10 @@ ocho() {
 
 show_version() {
 if [ "$QUIET" = 1 ]; then
-	echo "6.0.0"
+	echo "6.0.2"
 	exit 0
 fi
-echo "radare2-6.0.0 configuration script done with acr v2.2.2.
+echo "radare2-6.0.2 configuration script done with acr v2.2.2.
 The 'Free Software Foundation' message is only for autodetection.
 Originally written by pancake <nopcode.org>."
 exit 0
@@ -301,7 +301,7 @@ case $flag in
 	show_version ; ;;
 -r|--r|--report)
 echo "PKGNAME:     radare2"
-echo "VERSION:     6.0.0"
+echo "VERSION:     6.0.2"
 echo "AUTHOR:      pancake"
 echo "EMAIL:       pancake@nopcode.org"
 echo "DESCRIPTION: The UNIX-like reverse engineering toolkit"
