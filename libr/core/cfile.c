@@ -671,6 +671,9 @@ static bool mustreopen(RCore *core, RIODesc *desc, const char *fn) {
 	if (r_str_startswith (fn, "stdio://")) {
 		return false;
 	}
+	if (r_str_startswith (fn, "file://")) {
+		return false;
+	}
 	if (r_str_startswith (fn, "nocache://")) {
 		return false;
 	}
