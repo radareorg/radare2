@@ -3009,7 +3009,6 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		// this happens only when the instruction is truncated
 		r_anal_op_set_bytes (&ds->asmop, ds->at, buf, len);
 	}
-	meta_size = 0;
 	// handle meta here //
 	if (!ds->asm_meta) {
 		size_t i = 0;
