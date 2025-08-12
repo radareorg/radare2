@@ -2245,3 +2245,17 @@ and esp, 0xfffffff0
 and esp
 EOF
 RUN
+
+NAME=asm.imm.base
+FILE=bins/elf/ls
+CMDS=<<EOF
+s 0x6cdb
+pi 10 @e:asm.imm.base=10
+?e ----
+pi 10 @e:asm.imm.base=2
+EOF
+EXPECT=<<EOF
+and esp, 0xfffffff0
+and esp
+EOF
+RUN
