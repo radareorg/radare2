@@ -208,7 +208,10 @@ R_API int r_io_desc_read(RIODesc *desc, ut8 *buf, int len) {
 }
 
 R_API ut64 r_io_desc_seek(RIODesc* desc, ut64 offset, int whence) {
-	R_RETURN_VAL_IF_FAIL (desc && desc->plugin && desc->plugin->seek, UT64_MAX);
+	R_RETURN_VAL_IF_FAIL (desc, UT64_MAX);
+	if (!desc->plugin || !desc->plugin->seek) {
+		return UT64_MAX;
+	}
 	return desc->plugin->seek (desc->io, desc, offset, whence);
 }
 

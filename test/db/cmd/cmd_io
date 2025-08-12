@@ -142,3 +142,48 @@ nth vaddr      bind   type   lib name
 6   ---------- WEAK   FUNC       __cxa_finalize
 EOF
 RUN
+
+NAME=io-twobin
+FILE=bins/mach0/ls-m1
+# FILE=stdio://bins/mach0/ls-m1
+ARGS=-a arm -b 64
+CMDS=<<EOF
+o
+x 32
+o-*
+o
+x 32
+EOF
+EXPECT=<<EOF
+ 3 * r-x 0x0002daa0 bins/mach0/ls-m1
+ 4 - r-- 0x00002560 null://9568
+- offset -   9091 9293 9495 9697 9899 9A9B 9C9D 9E9F  0123456789ABCDEF
+0x100003a90  7f23 03d5 fc6f baa9 fa67 01a9 f85f 02a9  .#...o...g..._..
+0x100003aa0  f657 03a9 f44f 04a9 fd7b 05a9 fd43 0191  .W...O...{...C..
+- offset -   9091 9293 9495 9697 9899 9A9B 9C9D 9E9F  0123456789ABCDEF
+0x100003a90  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+0x100003aa0  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+EOF
+RUN
+
+NAME=stdio-twobin
+FILE=stdio://bins/mach0/ls-m1
+ARGS=-a arm -b 64
+CMDS=<<EOF
+o
+x 32
+o-*
+o
+x 32
+EOF
+EXPECT=<<EOF
+ 3 * r-x 0x0002daa0 bins/mach0/ls-m1
+ 4 - r-- 0x00002560 null://9568
+- offset -   9091 9293 9495 9697 9899 9A9B 9C9D 9E9F  0123456789ABCDEF
+0x100003a90  7f23 03d5 fc6f baa9 fa67 01a9 f85f 02a9  .#...o...g..._..
+0x100003aa0  f657 03a9 f44f 04a9 fd7b 05a9 fd43 0191  .W...O...{...C..
+- offset -   9091 9293 9495 9697 9899 9A9B 9C9D 9E9F  0123456789ABCDEF
+0x100003a90  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+0x100003aa0  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+EOF
+RUN
