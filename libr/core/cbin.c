@@ -3963,7 +3963,7 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 				char *mflags = r_bin_attr_tostring (sym->attr, false);
 				r_str_replace_char (mflags, ' ', '.');
 				// XXX probably access flags should not be part of the flag name
-				r_strf_var (method, 256, "method%s%s.%s.%s", R_STR_ISEMPTY (mflags)? "":".", mflags, cname, sym_name);
+				r_strf_var (method, R_FLAG_NAME_SIZE, "method%s%s.%s.%s", R_STR_ISEMPTY (mflags)? "":".", mflags, cname, sym_name);
 				R_FREE (mflags);
 				r_name_filter (method, -1);
 				r_flag_set (core->flags, method, sym->vaddr, 1);
