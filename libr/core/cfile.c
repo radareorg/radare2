@@ -667,6 +667,22 @@ static bool linkcb(void *user, void *data, ut32 id) {
 	return true;
 }
 
+static bool mustreopen(RCore *core, RIODesc *desc, const char *fn) {
+	if (r_str_startswith (fn, "stdio://")) {
+		return false;
+	}
+	if (r_str_startswith (fn, "nocache://")) {
+		return false;
+	}
+	if (r_str_startswith (fn, "mmap://")) {
+		return false;
+	}
+	if (fn && fn[0] != '-' && strcmp (fn, desc->uri)) {
+		return true;
+	}
+	return false;
+}
+
 R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	R_RETURN_VAL_IF_FAIL (r && r->io, false);
 	R_CRITICAL_ENTER (r);
@@ -698,6 +714,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	R_CRITICAL_LEAVE (r);
 	RIODesc *odesc = NULL;
 	RIODesc *mustclose = NULL;
+				odesc = r->io->desc;
 	if (desc && is_io_load) {
 		int desc_fd = desc->fd;
 		// TODO? necessary to restore the desc back?
@@ -705,8 +722,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		if ((desc->plugin && desc->plugin->isdbg) || r_config_get_b (r->config, "cfg.debug")) {
 			r_core_file_load_for_debug (r, baddr, filenameuri);
 		} else {
-			if (filenameuri && filenameuri[0] != '-' && strcmp (filenameuri, desc->uri)) {
-				odesc = r->io->desc;
+			if (mustreopen (r, desc, filenameuri)) {
 				r_core_file_open (r, filenameuri, 0, baddr);
 				if (odesc != r->io->desc) {
 					mustclose = r->io->desc;
