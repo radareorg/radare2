@@ -151,6 +151,7 @@ typedef struct r_disasm_state_t {
 	bool show_section_name;
 	bool show_symbols;
 	int show_symbols_col;
+	int default_immbase;
 	bool show_offseg;
 	bool show_flags;
 	bool flags_inline;
@@ -819,6 +820,7 @@ static RDisasmState *ds_init(RCore *core) {
 	}
 	ds->stackptr = core->anal->stackptr;
 	ds->show_offseg = r_config_get_b (core->config, "asm.addr.segment");
+	ds->default_immbase = r_config_get_i (core->config, "asm.imm.base");
 	ds->show_flags = r_config_get_b (core->config, "asm.flags");
 	ds->show_bytes = r_config_get_b (core->config, "asm.bytes");
 	ds->show_bytes_ascii = r_config_get_b (core->config, "asm.bytes.ascii");
@@ -1379,6 +1381,13 @@ static void ds_hint_begin(RDisasmState *ds, ut64 at) {
 		}
 		ds->hint->bits = fcn->bits;
 		ds->hint->new_bits = fcn->bits;
+	}
+	if (ds->default_immbase) {
+		if (!ds->hint) {
+			ds->hint = R_NEW0 (RAnalHint);
+			ds->hint->type = R_ANAL_ADDR_HINT_TYPE_IMMBASE;
+		}
+		ds->hint->immbase = ds->default_immbase;
 	}
 }
 
@@ -2179,16 +2188,6 @@ static void ds_show_functions(RDisasmState *ds) {
 	} else {
 		fcn_name = f->name;
 	}
-#if 0
-	if (core->cons->context->demo) {
-		const char *nl = core->vmode? "\n"R_CONS_CLEAR_LINE: NULL;
-		char *r = r_str_ss (fcn_name, nl, 0);
-		char *s_in = r_str_newf ("%s%s%s", COLOR (ds, color_fname), r, COLOR_RESET (ds));
-		free (r);
-		r_cons_print (core->cons, s_in);
-		free (s_in);
-	}
-#endif
 	RCons *cons = ds->core->cons;
 	ds_begin_line (ds);
 	char *sign = r_anal_function_get_signature (f);
@@ -3064,7 +3063,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 				}
 				r_asm_op_set_asm (&ds->asmop, r_strf (".hex %s%s", op_hex, tail));
 				const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
-				int immbase = (ds->hint && ds->hint->immbase)? ds->hint->immbase: 0;
+				const int immbase = (ds->hint && ds->hint->immbase)? ds->hint->immbase: 0;
 				switch (meta_size) {
 				case 2:
 					ds->analop.val = r_read_ble16 (buf, be);

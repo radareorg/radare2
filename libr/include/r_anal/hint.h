@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 typedef enum r_anal_addr_hint_type_t {
-	R_ANAL_ADDR_HINT_TYPE_IMMBASE,
+	R_ANAL_ADDR_HINT_TYPE_IMMBASE, // XXX 0 should be nothing
 	R_ANAL_ADDR_HINT_TYPE_JUMP,
 	R_ANAL_ADDR_HINT_TYPE_FAIL,
 	R_ANAL_ADDR_HINT_TYPE_STACKFRAME,
