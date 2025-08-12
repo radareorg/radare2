@@ -3955,7 +3955,7 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 		}
 
 		if (IS_MODE_SET (mode)) {
-			r_strf_var (classname, 256, "class.%s", name);
+			r_strf_var (classname, R_FLAG_NAME_SIZE, "class.%s", name);
 			r_flag_set (core->flags, classname, c->addr, 1);
 			r_list_foreach (c->methods, iter2, sym) {
 				const char *sym_name = r_bin_name_tostring (sym->name);
