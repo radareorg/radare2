@@ -2167,6 +2167,7 @@ R_API int r_cons_printf(RCons *cons, const char *format, ...) {
 	return 0;
 }
 
+#if R2_USE_NEW_ABI
 R_API void r_cons_break(RCons *cons) {
 	if (!cons) {
 		if (!I) {
@@ -2180,3 +2181,4 @@ R_API void r_cons_break(RCons *cons) {
 	raise (SIGINT);
 #endif
 }
+#endif
