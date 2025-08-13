@@ -5,7 +5,7 @@
 .Nd Radare2 Agent HTTP Server
 .Sh SYNOPSIS
 .Nm r2agent
-.Op Fl adhsu
+.Op Fl adhsuLjv
 .Op Fl p Ar port
 .Op Fl t Ar file
 .Sh DESCRIPTION
@@ -26,6 +26,12 @@ Enable HTTP authorization access
 User:password authentication file
 .It Fl p Ar port
 Specify listening port (defaults to 8080)
+.It Fl v
+Show r2 version information and exit
+.It Fl L
+List currently loaded r2 sessions and exit
+.It Fl j
+Output JSON when used with -v or -L (modifier; no effect alone)
 .El
 .Sh ENVIRONMENT
 .Pp
@@ -51,6 +57,22 @@ Allow connections from any IP address:
 Run with authentication enabled:
 .Pp
   $ r2agent -u -t auth.txt
+.Pp
+Show version (text):
+.Pp
+  $ r2agent -v
+.Pp
+Show version (JSON):
+.Pp
+  $ r2agent -v -j
+.Pp
+List currently loaded sessions (text):
+.Pp
+  $ r2agent -L
+.Pp
+List currently loaded sessions (JSON):
+.Pp
+  $ r2agent -L -j
 .Sh SEE ALSO
 .Pp
 .Xr radare2(1)
