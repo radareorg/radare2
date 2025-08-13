@@ -32,7 +32,7 @@ static int usage(bool v) {
 R_API int r_main_r2agent(int argc, const char **argv) {
 	RSocket *s;
 	RCons *cons = NULL;
-	RSocketHTTPOptions so;
+	RSocketHTTPOptions so = {0};
 	int c;
 	bool dodaemon = false;
 	bool dosandbox = false;
@@ -40,7 +40,6 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 	const char *port = "8080";
 	const char *httpauthfile = NULL;
 	char *pfile = NULL;
-	memset (&so, 0, sizeof (so));
 
 	RGetopt opt;
 	bool list_sessions = false;
@@ -59,7 +58,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 			dodaemon = true;
 			break;
 		case 'h':
-			return usage (true);
+			return usage(true);
 		case 'v':
 			show_version = true;
 			break;
@@ -79,7 +78,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 			list_json = true;
 			break;
 		default:
-			return usage (false);
+			return usage(false);
 		}
 	}
 	if (opt.ind != argc) {
@@ -117,16 +116,16 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 		}
 
 		size_t sz;
-		pfile = r_file_slurp (httpauthfile, &sz);
+		pfile = r_file_slurp(httpauthfile, &sz);
 		if (pfile) {
-			so.authtokens = r_str_split_list (pfile, "\n", 0);
+			so.authtokens = r_str_split_list(pfile, "\n", 0);
 		} else {
-			R_LOG_ERROR ("Empty list of HTTP users");
-			return usage (false);
+			R_LOG_ERROR("Empty list of HTTP users");
+			return usage(false);
 		}
 	}
 #if USE_IOS_JETSAM
-	memorystatus_control (MEMORYSTATUS_CMD_SET_JETSAM_TASK_LIMIT, r_sys_getpid(), 256, NULL, 0);
+	memorystatus_control(MEMORYSTATUS_CMD_SET_JETSAM_TASK_LIMIT, r_sys_getpid(), 256, NULL, 0);
 #endif
 	if (dodaemon) {
 #if LIBC_HAVE_FORK
@@ -147,17 +146,40 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 	}
 
 	R_LOG_INFO ("http://localhost:%d/", s->port);
+	/* Create a pid file in tmpdir/r2/<pid>.pid so r2 (=l) can discover this server */
+	char *pidfile = NULL;
+	{
+		char *tmpdir = r_file_tmpdir ();
+		char *tmpdir_r2 = r_str_newf ("%s/r2", tmpdir);
+		r_sys_mkdir (tmpdir_r2);
+		int pid = r_sys_getpid ();
+		char *fn = r_str_newf ("%s/%d.pid", tmpdir_r2, pid);
+		char *suri = r_str_newf ("r2web://127.0.0.1:%d/cmd", s->port);
+		if (r_file_dump (fn, (const ut8 *)suri, strlen(suri), false)) {
+			pidfile = fn; /* keep ownership to remove on exit */
+		} else {
+			free (fn);
+		}
+		free (suri);
+		free (tmpdir_r2);
+		free (tmpdir);
+	}
+
 	if (dosandbox && !r_sandbox_enable (true)) {
 		R_LOG_ERROR ("Cannot enable the sandbox");
 		free (pfile);
 		r_list_free (so.authtokens);
 		r_socket_free (s);
+		if (pidfile) {
+			r_file_rm (pidfile);
+			free (pidfile);
+		}
 		return 1;
 	}
 
 	cons = r_cons_new ();
 
-	while (!r_cons_singleton ()->context->breaked) {
+	while (!r_cons_is_breaked (cons)) {
 		char *res = NULL;
 		RSocketHTTPRequest *rs = r_socket_http_accept (s, &so);
 		if (!rs) {
@@ -192,10 +214,10 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 				free (escaped_filename);
 
 				res = r_str_newf ("<html><body>"
-					"<a href='/'>back</a><hr size=1/>"
-					" - <a target='_blank' href='http://localhost:%d/'>open</a><br />"
-					" - <a href='/proc/kill/%d'>kill</a><br />"
-					"</body></html>",
+						 "<a href='/'>back</a><hr size=1/>"
+						 " - <a target='_blank' href='http://localhost:%d/'>open</a><br />"
+						 " - <a href='/proc/kill/%d'>kill</a><br />"
+						 "</body></html>",
 					session_port, pid);
 				R_LOG_DEBUG ("child pid %d", pid);
 			}
@@ -209,5 +231,10 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 	free (pfile);
 	r_list_free (so.authtokens);
 	r_socket_free (s);
+	/* Remove pid file created at startup so sessions list stays clean */
+	if (pidfile) {
+		r_file_rm (pidfile);
+		free (pidfile);
+	}
 	return 0;
 }
