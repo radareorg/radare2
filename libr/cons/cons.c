@@ -2167,3 +2167,18 @@ R_API int r_cons_printf(RCons *cons, const char *format, ...) {
 	return 0;
 }
 
+#if R2_USE_NEW_ABI
+R_API void r_cons_break(RCons *cons) {
+	if (!cons) {
+		if (!I) {
+			return;
+		}
+		cons = I;
+	}
+	r_cons_context_break (cons->context);
+#if R2__UNIX__ && !__wasi__
+	/* Trigger a SIGINT so threads or blocking syscalls can be interrupted. */
+	raise (SIGINT);
+#endif
+}
+#endif
