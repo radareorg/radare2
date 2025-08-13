@@ -19,11 +19,13 @@ Usage Example:
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_socket.h>
+#include <errno.h>
 
 #define R2P_PID(x) (((R2Pipe*)(x)->data)->pid)
 #define R2P_INPUT(x) (((R2Pipe*)(x)->data)->input[0])
 #define R2P_OUTPUT(x) (((R2Pipe*)(x)->data)->output[1])
 
+#define USE_WIP_READ 0
 #if R2__WINDOWS__
 #define NO_CHILD 0
 #else
@@ -72,31 +74,44 @@ R_API int r2pipe_write(R2Pipe *r2pipe, const char *str) {
 #endif
 }
 
-/* TODO: add timeout here ? */
-R_API char *r2pipe_read(R2Pipe *r2pipe) {
-	char *buf = NULL;
-#if HAVE_R2PIPE
-	int bufsz = 0;
-	if (!r2pipe) {
-		return NULL;
+static char *do_r2pipe_read(R2Pipe *r2pipe, char *buf, size_t bufsz) {
+#if USE_WIP_READ
+	char *newbuf = NULL;
+	int fd = r2pipe->output[0];
+	int cur = 0;
+	while (true) {
+		ssize_t n = read (fd, buf + cur, (size_t)bufsz - (size_t)cur - 1);
+		if (n > 0) {
+			cur += (int)n;
+			/* expand buffer if almost full */
+			if (cur + 1 >= bufsz) {
+				int newsz = bufsz + 4096;
+				newbuf = realloc (buf, (size_t)newsz);
+				if (!newbuf) {
+					R_FREE (buf);
+					return NULL;
+				}
+				buf = newbuf;
+				bufsz = newsz;
+			}
+			/* keep reading until EOF or no more data */
+			continue;
+		}
+		if (n == 0) {
+			/* EOF */
+			break;
+		}
+		if (n < 0) {
+			if (errno == EINTR) {
+				continue;
+			}
+			/* on other errors stop reading */
+			break;
+		}
 	}
-	bufsz = 4096;
-	buf = calloc (1, bufsz);
-	if (!buf) {
-		return NULL;
+	if (buf) {
+		buf[cur] = '\0';
 	}
-#if R2__WINDOWS__
-	BOOL bSuccess = FALSE;
-	DWORD dwRead = 0;
-	// TODO: handle > 4096 buffers here
-	bSuccess = ReadFile (r2pipe->pipe, buf, bufsz, &dwRead, NULL);
-	if (!bSuccess || !buf[0]) {
-		return NULL;
-	}
-	if (dwRead > 0) {
-		buf[dwRead] = 0;
-	}
-	buf[bufsz - 1] = 0;
 #else
 	char *newbuf;
 	int i, rv;
@@ -119,6 +134,40 @@ R_API char *r2pipe_read(R2Pipe *r2pipe) {
 		int zpos = (i < bufsz)? i: i - 1;
 		buf[zpos] = 0;
 	}
+#endif
+	return buf;
+}
+
+/* TODO: add timeout here ? */
+R_API char *r2pipe_read(R2Pipe *r2pipe) {
+	R_RETURN_VAL_IF_FAIL (r2pipe, NULL);
+	char *buf = NULL;
+#if HAVE_R2PIPE
+#	/* Read all available data from the pipe into a dynamically
+#	 * growing buffer and return a NUL-terminated string. */
+	/* r2pipe already validated above */
+	int bufsz = 4096;
+	buf = calloc (1, (size_t)bufsz);
+	if (!buf) {
+		return NULL;
+	}
+#if R2__WINDOWS__
+	BOOL bSuccess = FALSE;
+	DWORD dwRead = 0;
+	// Read up to bufsz-1 bytes and NUL-terminate.
+	DWORD toRead = (DWORD)(bufsz - 1);
+	bSuccess = ReadFile (r2pipe->pipe, buf, toRead, &dwRead, NULL);
+	if (!bSuccess || dwRead == 0) {
+		free (buf);
+		return NULL;
+	}
+	if (dwRead > 0 && dwRead < bufsz) {
+		buf[dwRead] = '\0';
+	} else {
+		buf[bufsz - 1] = '\0';
+	}
+#else
+	return do_r2pipe_read (r2pipe, buf, bufsz);
 #endif
 #endif
 	return buf;
