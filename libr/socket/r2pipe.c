@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2024 - pancake */
+/* radare - LGPL - Copyright 2015-2025 - pancake */
 /*
 Usage Example:
 
@@ -19,11 +19,13 @@ Usage Example:
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_socket.h>
+#include <errno.h>
 
 #define R2P_PID(x) (((R2Pipe*)(x)->data)->pid)
 #define R2P_INPUT(x) (((R2Pipe*)(x)->data)->input[0])
 #define R2P_OUTPUT(x) (((R2Pipe*)(x)->data)->output[1])
 
+#define USE_WIP_READ 0
 #if R2__WINDOWS__
 #define NO_CHILD 0
 #else
@@ -45,23 +47,25 @@ static void env(const char *s, int f) {
 #endif
 
 R_API int r2pipe_write(R2Pipe *r2pipe, const char *str) {
+	R_RETURN_VAL_IF_FAIL (r2pipe && str, -1);
 #if HAVE_R2PIPE
-	if (!r2pipe || !str) {
+	/* Build a newline-terminated command buffer. */
+	size_t n = strlen (str);
+	size_t len = n + 2; /* space for '\n' and terminating NUL */
+	char *cmd = malloc (len);
+	if (!cmd) {
 		return -1;
 	}
-	int len = strlen (str) + 2; /* include \n\x00 */
-	char *cmd = malloc (len + 2);
-	if (!cmd) {
-		return 0;
-	}
-	memcpy (cmd, str, len - 1);
-	strcpy (cmd + len - 2, "\n");
+	memcpy (cmd, str, n);
+	cmd[n] = '\n';
+	cmd[n + 1] = '\0';
 #if R2__WINDOWS__
-	DWORD dwWritten = -1;
-	WriteFile (r2pipe->pipe, cmd, len, &dwWritten, NULL);
-	int ret = (dwWritten == len);
+	DWORD dwWritten = 0;
+	WriteFile (r2pipe->pipe, cmd, (DWORD)(len - 1), &dwWritten, NULL);
+	int ret = (dwWritten == (DWORD)(len - 1));
 #else
-	int ret = (write (r2pipe->input[1], cmd, len) == len);
+	ssize_t wrote = write (r2pipe->input[1], cmd, (ssize_t)(len - 1));
+	int ret = (wrote == (ssize_t)(len - 1));
 #endif
 	free (cmd);
 	return ret;
@@ -72,29 +76,32 @@ R_API int r2pipe_write(R2Pipe *r2pipe, const char *str) {
 
 /* TODO: add timeout here ? */
 R_API char *r2pipe_read(R2Pipe *r2pipe) {
+	R_RETURN_VAL_IF_FAIL (r2pipe, NULL);
 	char *buf = NULL;
 #if HAVE_R2PIPE
-	int bufsz = 0;
-	if (!r2pipe) {
-		return NULL;
-	}
-	bufsz = 4096;
-	buf = calloc (1, bufsz);
+#	/* Read all available data from the pipe into a dynamically
+#	 * growing buffer and return a NUL-terminated string. */
+	/* r2pipe already validated above */
+	int bufsz = 4096;
+	buf = calloc (1, (size_t)bufsz);
 	if (!buf) {
 		return NULL;
 	}
 #if R2__WINDOWS__
 	BOOL bSuccess = FALSE;
 	DWORD dwRead = 0;
-	// TODO: handle > 4096 buffers here
-	bSuccess = ReadFile (r2pipe->pipe, buf, bufsz, &dwRead, NULL);
-	if (!bSuccess || !buf[0]) {
+	// Read up to bufsz-1 bytes and NUL-terminate.
+	DWORD toRead = (DWORD)(bufsz - 1);
+	bSuccess = ReadFile (r2pipe->pipe, buf, toRead, &dwRead, NULL);
+	if (!bSuccess || dwRead == 0) {
+		free (buf);
 		return NULL;
 	}
-	if (dwRead > 0) {
-		buf[dwRead] = 0;
+	if (dwRead > 0 && dwRead < bufsz) {
+		buf[dwRead] = '\0';
+	} else {
+		buf[bufsz - 1] = '\0';
 	}
-	buf[bufsz - 1] = 0;
 #else
 	char *newbuf;
 	int i, rv;
@@ -124,9 +131,10 @@ R_API char *r2pipe_read(R2Pipe *r2pipe) {
 
 R_API int r2pipe_close(R2Pipe *r2pipe) {
 #if HAVE_R2PIPE
-	if (!r2pipe) {
-		return 0;
-	}
+	/* r2pipe may be NULL on non-r2pipe builds */
+	R_RETURN_VAL_IF_FAIL (r2pipe, 0);
+#endif
+#if HAVE_R2PIPE
 	/*
 	if (r2pipe->coreb.core && !r2pipe->coreb.puts) {
 		void (*rfre)(void *c) = r_lib_dl_sym (libr, "r_core_free");
@@ -186,7 +194,7 @@ static int w32_createPipe(R2Pipe *r2pipe, const char *cmd) {
 #endif
 
 #if HAVE_R2PIPE
-static R2Pipe* r2p_open_pipes(R2Pipe* r2p, const char *cmd) {
+static R2Pipe* r2p_open_pipes(R2Pipe* r2p) {
 	R_RETURN_VAL_IF_FAIL (r2p, NULL);
 #if R2__UNIX__ || defined(__CYGWIN__)
 	char *out = r_sys_getenv ("R2PIPE_IN");
@@ -217,26 +225,24 @@ static R2Pipe* r2p_open_pipes(R2Pipe* r2p, const char *cmd) {
 
 static R2Pipe *r2pipe_new(void) {
 	R2Pipe *r2pipe = R_NEW0 (R2Pipe);
-	if (r2pipe) {
 #if HAVE_R2PIPE && R2__UNIX__
-		r2pipe->input[0] = r2pipe->input[1] = -1;
-		r2pipe->output[0] = r2pipe->output[1] = -1;
+	r2pipe->input[0] = r2pipe->input[1] = -1;
+	r2pipe->output[0] = r2pipe->output[1] = -1;
 #endif
-		r2pipe->child = NO_CHILD;
-	}
+	r2pipe->child = NO_CHILD;
 	return r2pipe;
 }
 
 R_API R2Pipe *r2pipe_open_corebind(RCoreBind *coreb) {
+	R_RETURN_VAL_IF_FAIL (coreb, NULL);
 	R2Pipe *r2pipe = r2pipe_new ();
-	if (r2pipe) {
-		memcpy (&r2pipe->coreb, coreb, sizeof (RCoreBind));
-	}
+	memcpy (&r2pipe->coreb, coreb, sizeof (RCoreBind));
 	return r2pipe;
 }
 
 R_API R2Pipe *r2pipe_open_dl(const char *libr_path) {
 #if HAVE_R2PIPE
+	R_RETURN_VAL_IF_FAIL (libr_path, NULL);
 	void *libr = r_lib_dl_open (libr_path, false);
 	void* (*rnew)() = r_lib_dl_sym (libr, "r_core_new");
 	char* (*rcmd)(void *c, const char *cmd) = r_lib_dl_sym (libr, "r_core_cmd_str");
@@ -255,7 +261,7 @@ R_API R2Pipe *r2pipe_open_dl(const char *libr_path) {
 	return NULL;
 }
 
-R_API R2Pipe *r2pipe_open(const char *cmd) {
+R_API R2Pipe *r2pipe_open(const char * R_NULLABLE cmd) {
 #if HAVE_R2PIPE
 	R2Pipe *r2p = r2pipe_new ();
 	if (!r2p) {
@@ -263,7 +269,7 @@ R_API R2Pipe *r2pipe_open(const char *cmd) {
 	}
 	if (R_STR_ISEMPTY (cmd)) {
 		r2p->child = NO_CHILD;
-		return r2p_open_pipes(r2p, cmd);
+		return r2p_open_pipes (r2p);
 	}
 #if R2__WINDOWS__
 	w32_createPipe (r2p, cmd);
@@ -357,6 +363,7 @@ R_API char *r2pipe_cmd(R2Pipe *r2p, const char *str) {
 
 R_API char *r2pipe_cmdf(R2Pipe *r2p, const char *fmt, ...) {
 #if HAVE_R2PIPE
+	R_RETURN_VAL_IF_FAIL (r2p && fmt, NULL);
 	int ret, ret2;
 	char *p, string[1024];
 	va_list ap, ap2;
@@ -389,4 +396,3 @@ R_API char *r2pipe_cmdf(R2Pipe *r2p, const char *fmt, ...) {
 	return NULL;
 #endif
 }
-
