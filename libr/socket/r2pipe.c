@@ -74,70 +74,6 @@ R_API int r2pipe_write(R2Pipe *r2pipe, const char *str) {
 #endif
 }
 
-static char *do_r2pipe_read(R2Pipe *r2pipe, char *buf, size_t bufsz) {
-#if USE_WIP_READ
-	char *newbuf = NULL;
-	int fd = r2pipe->output[0];
-	int cur = 0;
-	while (true) {
-		ssize_t n = read (fd, buf + cur, (size_t)bufsz - (size_t)cur - 1);
-		if (n > 0) {
-			cur += (int)n;
-			/* expand buffer if almost full */
-			if (cur + 1 >= bufsz) {
-				int newsz = bufsz + 4096;
-				newbuf = realloc (buf, (size_t)newsz);
-				if (!newbuf) {
-					R_FREE (buf);
-					return NULL;
-				}
-				buf = newbuf;
-				bufsz = newsz;
-			}
-			/* keep reading until EOF or no more data */
-			continue;
-		}
-		if (n == 0) {
-			/* EOF */
-			break;
-		}
-		if (n < 0) {
-			if (errno == EINTR) {
-				continue;
-			}
-			/* on other errors stop reading */
-			break;
-		}
-	}
-	if (buf) {
-		buf[cur] = '\0';
-	}
-#else
-	char *newbuf;
-	int i, rv;
-	for (i = 0; i < bufsz; i++) {
-		rv = read (r2pipe->output[0], buf + i, 1);
-		if (i + 2 >= bufsz) {
-			bufsz += 4096;
-			newbuf = realloc (buf, bufsz);
-			if (!newbuf) {
-				R_FREE (buf);
-				break;
-			}
-			buf = newbuf;
-		}
-		if (rv != 1 || !buf[i]) {
-			break;
-		}
-	}
-	if (buf) {
-		int zpos = (i < bufsz)? i: i - 1;
-		buf[zpos] = 0;
-	}
-#endif
-	return buf;
-}
-
 /* TODO: add timeout here ? */
 R_API char *r2pipe_read(R2Pipe *r2pipe) {
 	R_RETURN_VAL_IF_FAIL (r2pipe, NULL);
@@ -167,7 +103,27 @@ R_API char *r2pipe_read(R2Pipe *r2pipe) {
 		buf[bufsz - 1] = '\0';
 	}
 #else
-	return do_r2pipe_read (r2pipe, buf, bufsz);
+	char *newbuf;
+	int i, rv;
+	for (i = 0; i < bufsz; i++) {
+		rv = read (r2pipe->output[0], buf + i, 1);
+		if (i + 2 >= bufsz) {
+			bufsz += 4096;
+			newbuf = realloc (buf, bufsz);
+			if (!newbuf) {
+				R_FREE (buf);
+				break;
+			}
+			buf = newbuf;
+		}
+		if (rv != 1 || !buf[i]) {
+			break;
+		}
+	}
+	if (buf) {
+		int zpos = (i < bufsz)? i: i - 1;
+		buf[zpos] = 0;
+	}
 #endif
 #endif
 	return buf;
