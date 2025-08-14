@@ -14,10 +14,9 @@ EOF
 RUN
 
 NAME=& + grep
-BROKEN=1
 FILE=-
 CMDS=<<EOF
-"& ?e Hello\nfrom\na task!~task"
+'& ?e Hello\nfrom\na task!~task
 && 1
 &= 1
 EOF
@@ -28,7 +27,6 @@ EOF
 RUN
 
 NAME=& + grep 2
-BROKEN=1
 FILE=-
 CMDS=<<EOF
 '& ?e Hello\nfrom\na task!~task
@@ -37,6 +35,29 @@ CMDS=<<EOF
 EOF
 EXPECT=<<EOF
 a task!
+
+EOF
+RUN
+
+NAME=& list
+BROKEN=1
+FILE=-
+CMDS=<<EOF
+& ?e hello
+& ?e world
+&
+?e --
+&& 2
+&=2
+EOF
+EXPECT=<<EOF
+  0          running  -- MAIN TASK --
+  1     before start  ?e hello
+  2     before start  ?e world
+--
+total running: 0
+--
+world
 
 EOF
 RUN
