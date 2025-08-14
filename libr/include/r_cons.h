@@ -537,6 +537,7 @@ typedef struct r_cons_t {
 	int null; // if set, does not show anything
 	int mouse;
 	int is_wine; // -1, 0, 1
+	struct r_cons_manager_t *manager; // Console Manager (Phase 3)
 	struct r_line_t *line;
 	const char **vline;
 	int vtmode;
@@ -569,6 +570,20 @@ typedef struct r_cons_t {
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 #endif
 } RCons;
+
+typedef struct r_cons_manager_t {
+	RThreadLock *term_lock;
+	RCons *cons;
+} RConsManager;
+
+typedef struct {
+	char *data;
+	size_t len;
+} RConsBuffer;
+
+R_API RConsManager *r_cons_manager_new(RCons *cons);
+R_API void r_cons_manager_free(RConsManager *mgr);
+R_API void r_cons_manager_enqueue_flush(RConsManager *mgr, RConsBuffer *buf, int flags, bool wait);
 
 #define R_CONS_KEY_F1 0xf1
 #define R_CONS_KEY_F2 0xf2
@@ -916,12 +931,6 @@ R_API bool r_cons_context_is_main(RCons *cons, RConsContext *context);
 R_API void r_cons_context_break(RConsContext *context);
 R_API void r_cons_context_break_push(RCons *cons, RConsContext *context, RConsBreak cb, void *user, bool sig);
 R_API void r_cons_context_break_pop(RCons *cons, RConsContext *context, bool sig);
-
-/* Phase 2: context-aware write/flush APIs */
-typedef struct {
-	char *data;
-	size_t len;
-} RConsBuffer;
 
 R_API int r_cons_write_ctx(RConsContext *ctx, const void *data, int len);
 R_API int r_cons_printf_ctx(RConsContext *ctx, const char *fmt, ...) R_PRINTF_CHECK(2, 3);

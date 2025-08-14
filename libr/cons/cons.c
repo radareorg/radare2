@@ -2,6 +2,7 @@
 
 #include <r_cons.h>
 #include <r_util/r_print.h>
+#include "cons_manager.h"
 
 #define COUNT_LINES 1
 
@@ -294,6 +295,8 @@ R_API RCons *r_cons_new2(void) {
 	cons->show_vals = false;
 	r_cons_reset (cons);
 	cons->line = r_line_new (cons);
+	// Manager: serialize terminal writes
+	cons->manager = r_cons_manager_new (cons);
 	return cons;
 }
 
@@ -314,6 +317,7 @@ R_API void r_cons_free2(RCons * R_NULLABLE cons) {
 		r_cons_pop (cons);
 	}
 	r_cons_context_free (cons->context);
+	r_cons_manager_free (cons->manager);
 	r_list_free (cons->ctx_stack);
 #if 0
 	RConsContext *ctx = cons->context;
@@ -526,13 +530,6 @@ R_API void r_cons_context_break_pop(RCons *cons, RConsContext *context, bool sig
 R_API bool r_cons_is_interactive(RCons *cons) {
 	return cons->context->is_interactive;
 }
-
-#if 0
-R_API bool r_cons_default_context_is_interactive(void) {
-	// XXX this is pure evil
-	return I->context->is_interactive;
-}
-#endif
 
 R_API bool r_cons_was_breaked(RCons *cons) {
 #if WANT_DEBUGSTUFF
@@ -1780,11 +1777,26 @@ R_API void r_cons_flush_ctx(RCons *cons, RConsContext *ctx, int flags, bool wait
 	if (!cons || !ctx) {
 		return;
 	}
-	// Synchronous flush: temporarily load the context and use legacy flush
-	RConsContext *saved = cons->context;
-	r_cons_context_load (ctx);
-	r_cons_flush (cons);
-	r_cons_context_load (saved);
+	// Move the buffer out and hand it to the manager
+	RConsBuffer buf = {0};
+	if (!r_cons_context_take_buffer (ctx, &buf) || !buf.data || buf.len == 0) {
+		return;
+	}
+	if (cons->manager) {
+		r_cons_manager_enqueue_flush (cons->manager, &buf, flags, true);
+	} else {
+		// Fallback: flush synchronously without manager
+		RConsContext tmp = {0};
+		tmp.buffer = buf.data;
+		tmp.buffer_len = buf.len;
+		tmp.buffer_sz = buf.len;
+		tmp.pageable = false;
+		RConsContext *saved = cons->context;
+		r_cons_context_load (&tmp);
+		r_cons_flush (cons);
+		r_cons_context_load (saved);
+		free (buf.data);
+	}
 }
 
 R_API bool r_cons_context_is_main(RCons *cons, RConsContext *ctx) {

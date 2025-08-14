@@ -449,15 +449,21 @@ static RThreadFunctionRet task_run(RCoreTask *task) {
 	free (task->res);
 	task->res = res_str;
 
-#if 0
-	if (task != scheduler->main_task && r_cons_default_context_is_interactive ()) {
-		R_LOG_INFO ("Task %d finished", task->id);
+	// Informative end-of-task message in the task's own context (non-intrusive)
+	if (task != scheduler->main_task && r_cons_is_interactive (core->cons)) {
+		if (task->cons_context) {
+			r_cons_printf_ctx (task->cons_context, "Task %d finished\n", task->id);
+		}
 	}
-#endif
 
 	// Restore previous console context if we switched
 	if (saved_ctx) {
 		r_cons_context_load (saved_ctx);
+	}
+
+	// Flush task context buffer synchronously through the Console Manager
+	if (task != scheduler->main_task && task->cons_context) {
+		r_cons_flush_ctx (core->cons, task->cons_context, 0, true);
 	}
 
 	TASK_SIGSET_T old_sigset;
