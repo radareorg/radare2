@@ -301,7 +301,9 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 	current->state = next_state;
 
 	if (stop) {
-		scheduler->tasks_running--;
+		if (scheduler->tasks_running > 0) {
+			scheduler->tasks_running--;
+		}
 	}
 
 	// oneshots always have priority.
