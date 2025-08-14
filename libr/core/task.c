@@ -274,6 +274,11 @@ R_API void r_core_task_decref(RCoreTask *task) {
 	RCoreTaskScheduler *scheduler = &task->core->tasks;
 	tasks_lock_enter (scheduler, &old_sigset);
 	task->refcount--;
+	if (task->refcount < 0) {
+		// Guard against underflow; this should never happen
+		R_LOG_WARN ("RCoreTask %d refcount underflow", task->id);
+		task->refcount = 0;
+	}
 	if (task->refcount <= 0) {
 		task_free (task);
 	}
