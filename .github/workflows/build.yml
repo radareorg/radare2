@@ -612,7 +612,7 @@ jobs:
 
 
   check_abi_compatibility:
-    if: contains(github.ref, 'de345ee04d0777b462f2f98ac383c883')
+    if: contains(github.ref, 'invalid-commit-just-to-skip-that-job-until-rls-fixed')
     needs:
       - linux-static
     runs-on: ubuntu-24.04
@@ -634,7 +634,7 @@ jobs:
     - name: Download Build
       uses: actions/download-artifact@v5
       with:
-        name: linux-static
+        name: linux-static-amd64
         path: /tmp
     - name: Download latest release
       run: |
@@ -720,7 +720,7 @@ jobs:
         dist/artifacts/ios-cydia32/*.deb
         dist/artifacts/ios-cydia/r2ios-sdk-*.zip
         dist/artifacts/android-acr-*/*.tar.gz
-        dist/artifacts/linux-static/*.tar.xz
+        dist/artifacts/linux-static-*/*.tar.xz
         dist/artifacts/linux-acr-deb-*/radare2-dev_*.deb
         dist/artifacts/linux-wasi/*.zip
         dist/artifacts/linux-wasi-api/*.zip
