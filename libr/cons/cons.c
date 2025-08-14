@@ -184,6 +184,7 @@ static void init_cons_context(RCons *cons, RConsContext * R_NULLABLE parent) {
 	ctx->log_callback = NULL;
 	ctx->cmd_str_depth = 0;
 	ctx->noflush = false;
+	ctx->ctx_lock = r_th_lock_new (false);
 
 	if (parent) {
 		ctx->color_mode = parent->color_mode;
@@ -1606,11 +1607,11 @@ R_API void r_cons_context_free(RConsContext * R_NULLABLE ctx) {
 
 		// Free the buffer and lastOutput
 		free (ctx->buffer);
+		r_th_lock_free (ctx->ctx_lock);
 		free (ctx->lastOutput);
 		free (ctx);
 	}
 }
-
 
 R_API RConsContext *r_cons_context_clone(RConsContext *ctx) {
 	RConsContext *c = r_mem_dup (ctx, sizeof (RConsContext));
@@ -1639,7 +1640,151 @@ R_API RConsContext *r_cons_context_clone(RConsContext *ctx) {
 	c->grep.line = -1;
 	c->grep.sort = -1;
 	c->grep.sort_invert = false;
+	// fresh lock for the cloned context
+	c->ctx_lock = r_th_lock_new (false);
 	return c;
+}
+
+// Context-local buffer growth
+static bool ctx_palloc(RConsContext *ctx, size_t moar) {
+	if (moar == 0 || moar > ST32_MAX) {
+		return false;
+	}
+	if (!ctx->buffer) {
+		if (moar > SIZE_MAX - MOAR) {
+			return false;
+		}
+		size_t new_sz = moar + MOAR;
+		void *temp = calloc (1, new_sz);
+		if (temp) {
+			free (ctx->buffer);
+			ctx->buffer_sz = new_sz;
+			ctx->buffer = temp;
+			ctx->buffer[0] = '\0';
+		} else {
+			return false;
+		}
+	} else if (moar + ctx->buffer_len > ctx->buffer_sz) {
+		size_t new_sz = moar + (ctx->buffer_sz * 2);
+		if (new_sz < ctx->buffer_sz || new_sz < moar + ctx->buffer_len) {
+			new_sz = moar + ctx->buffer_sz + MOAR;
+		}
+		if (new_sz < ctx->buffer_sz) {
+			return false;
+		}
+		void *new_buffer = realloc (ctx->buffer, new_sz);
+		if (!new_buffer) {
+			return false;
+		}
+		ctx->buffer = new_buffer;
+		ctx->buffer_sz = new_sz;
+	}
+	return true;
+}
+
+static inline int ctx_chop(RConsContext *ctx, int len) {
+	if (ctx->buffer_limit > 0) {
+		if ((size_t)ctx->buffer_len + (size_t)len >= ctx->buffer_limit) {
+			if ((size_t)ctx->buffer_len >= ctx->buffer_limit) {
+				ctx->breaked = true;
+				return 0;
+			}
+			return (int)(ctx->buffer_limit - ctx->buffer_len);
+		}
+	}
+	return len;
+}
+
+R_API int r_cons_write_ctx(RConsContext *ctx, const void *data, int len) {
+	R_RETURN_VAL_IF_FAIL (ctx && data && len >= 0, -1);
+	if (len < 1 || ctx->breaked) {
+		return 0;
+	}
+	const char *str = (const char *)data;
+	int wrote = 0;
+	if (str && len > 0) {
+		r_th_lock_enter (ctx->ctx_lock);
+		int choplen = ctx_chop (ctx, len);
+		if (choplen > 0 && ctx_palloc (ctx, choplen + 1)) {
+			memcpy (ctx->buffer + ctx->buffer_len, str, choplen);
+			ctx->buffer_len += choplen;
+			ctx->buffer[ctx->buffer_len] = '\0';
+			wrote = choplen;
+		}
+		r_th_lock_leave (ctx->ctx_lock);
+	}
+	return wrote;
+}
+
+R_API int r_cons_printf_ctx(RConsContext *ctx, const char *fmt, ...) {
+	R_RETURN_VAL_IF_FAIL (ctx && fmt, -1);
+	int wrote = 0;
+	va_list ap, ap2;
+	va_start (ap, fmt);
+	va_copy (ap2, ap);
+	r_th_lock_enter (ctx->ctx_lock);
+	if (strchr (fmt, '%')) {
+		if (ctx_palloc (ctx, MOAR + strlen (fmt) * 4)) {
+			bool need_retry = true;
+			while (need_retry) {
+				need_retry = false;
+				size_t left = ctx->buffer_sz - ctx->buffer_len;
+				int n = vsnprintf (ctx->buffer + ctx->buffer_len, left, fmt, ap);
+				if (n < 0) {
+					break;
+				}
+				if ((size_t)n >= left) {
+					if (ctx_palloc (ctx, (size_t)n + 1)) {
+						va_end (ap);
+						va_copy (ap, ap2);
+						need_retry = true;
+					} else {
+						size_t added = (left > 0) ? left - 1 : 0;
+						ctx->buffer_len += added;
+						ctx->breaked = true;
+						wrote += (int)added;
+					}
+				} else {
+					ctx->buffer_len += (size_t)n;
+					wrote += n;
+				}
+			}
+		} else {
+			ctx->breaked = true;
+		}
+	} else {
+		wrote = r_cons_write_ctx (ctx, fmt, (int)strlen (fmt));
+		// r_cons_write_ctx already locked, but we are still holding the lock -> okay because it relocks separately.
+	}
+	r_th_lock_leave (ctx->ctx_lock);
+	va_end (ap2);
+	va_end (ap);
+	return wrote;
+}
+
+R_API bool r_cons_context_take_buffer(RConsContext *ctx, RConsBuffer *out) {
+	R_RETURN_VAL_IF_FAIL (ctx && out, false);
+	r_th_lock_enter (ctx->ctx_lock);
+	out->data = ctx->buffer;
+	out->len = ctx->buffer_len;
+	ctx->buffer = NULL;
+	ctx->buffer_len = 0;
+	ctx->buffer_sz = 0;
+	r_th_lock_leave (ctx->ctx_lock);
+	return true;
+}
+
+R_API void r_cons_flush_ctx(RCons *cons, RConsContext *ctx, int flags, bool wait_for_completion) {
+	(void)flags;
+	(void)wait_for_completion;
+	if (!cons || !ctx) {
+		return;
+	}
+	// Synchronous flush: temporarily load the context and use legacy flush
+	RConsContext *saved = cons->context;
+	r_cons_context_load (ctx);
+	r_cons_flush (cons);
+	r_cons_context_load (saved);
 }
 
 R_API bool r_cons_context_is_main(RCons *cons, RConsContext *ctx) {
