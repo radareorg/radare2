@@ -397,55 +397,9 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 	R_CRITICAL_LEAVE (core);
 }
 
-static void task_wakeup(RCoreTask *current) {
-	return;
-#if 0
-	if (!current) {
-		return;
-	}
-	RCore *core = current->core;
-	R_CRITICAL_ENTER (core);
-	RCoreTaskScheduler *scheduler = &core->tasks;
-
-	TASK_SIGSET_T old_sigset;
-	tasks_lock_enter (scheduler, &old_sigset);
-
-	scheduler->tasks_running++;
-	current->state = R_CORE_TASK_STATE_RUNNING;
-
-	// check if there are other tasks running
-	bool single = scheduler->tasks_running == 1 || scheduler->tasks_running == 0;
-
-	r_th_lock_enter (current->dispatch_lock);
-
-	// if we are not the only task, we must wait until another task signals us.
-
-	if (!single) {
-		r_list_append (scheduler->tasks_queue, current);
-	}
-
-	tasks_lock_leave (scheduler, &old_sigset);
-
-	if (!single) {
-		while (!current->dispatched) {
-			r_th_cond_wait (current->dispatch_cond, current->dispatch_lock);
-		}
-		current->dispatched = false;
-	}
-
-	r_th_lock_leave (current->dispatch_lock);
-
-	scheduler->current_task = current;
-
-	if (current->cons_context) {
-		// core->cons->context = current->cons_context;
-		r_cons_context_load (current->cons_context);
-	} else {
-		r_cons_context_reset (core->cons);
-	}
-	R_CRITICAL_LEAVE (core);
-#endif
-}
+// task_wakeup was previously a cooperative scheduler entrypoint. The current
+// model is thread-per-task and synchronous main-task execution. Keep state
+// management local to call sites; no separate wakeup routine is needed.
 
 R_API void r_core_task_yield(RCoreTaskScheduler *scheduler) {
 	RCoreTask *task = r_core_task_self (scheduler);
@@ -472,8 +426,6 @@ static RThreadFunctionRet task_run(RCoreTask *task) {
 	task->state = R_CORE_TASK_STATE_RUNNING;
 	scheduler->tasks_running++;
 	tasks_lock_leave (scheduler, &__old_sigset);
-
-	task_wakeup (task);
 
 	if (task->cons_context && task->cons_context->breaked) {
 		// breaked in R_CORE_TASK_STATE_BEFORE_START
@@ -624,7 +576,13 @@ R_API void r_core_task_sync_begin(RCoreTaskScheduler *scheduler) {
 	task->cmd_log = false;
 	task->state = R_CORE_TASK_STATE_BEFORE_START;
 	tasks_lock_leave (scheduler, &old_sigset);
-	task_wakeup (task);
+	// Mark main task running and ensure its console context is active
+	tasks_lock_enter (scheduler, &old_sigset);
+	task->state = R_CORE_TASK_STATE_RUNNING;
+	tasks_lock_leave (scheduler, &old_sigset);
+	if (task->cons_context) {
+		r_cons_context_load (task->cons_context);
+	}
 }
 
 /* end running stuff synchronously, initially started with r_core_task_sync_begin() */
@@ -633,8 +591,7 @@ R_API void r_core_task_sync_end(RCoreTaskScheduler *scheduler) {
 	task_end (scheduler->main_task);
 }
 
-/* To be called from within a task.
- * Begin sleeping and schedule other tasks until r_core_task_sleep_end() is called. */
+/* To be called from within a task. Begin sleeping and schedule other tasks until r_core_task_sleep_end() is called. */
 R_API void r_core_task_sleep_begin(RCoreTask *task) {
 	R_RETURN_IF_FAIL (task);
 	r_core_task_schedule (task, R_CORE_TASK_STATE_SLEEPING);
@@ -642,7 +599,8 @@ R_API void r_core_task_sleep_begin(RCoreTask *task) {
 
 R_API void r_core_task_sleep_end(RCoreTask *task) {
 	R_RETURN_IF_FAIL (task);
-	task_wakeup (task);
+	// Return to RUNNING state and restore context via scheduler path
+	r_core_task_schedule (task, R_CORE_TASK_STATE_RUNNING);
 }
 
 R_API const char *r_core_task_status(RCoreTask *task) {
