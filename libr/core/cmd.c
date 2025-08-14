@@ -1242,18 +1242,25 @@ static int cmd_rap(void *data, const char *input) {
 			if (!arg) {
 				break;
 			}
-			int launch = getArg (input[1], 'h');
+            int launch = getArg (input[1], 'h');
 			// Trim tail spaces and detect a trailing '&'
 			r_str_trim_tail (arg);
 			size_t alen = strlen (arg);
-			if (alen > 0 && arg[alen - 1] == '&') {
-				// Drop '&' and whitespace before it
-				arg[alen - 1] = '\0';
-				r_str_trim_tail (arg);
-				launch = '&';
-			}
-			r_core_rtr_http (core, launch, 'h', arg);
-			free (arg);
+            if (alen > 0 && arg[alen - 1] == '&') {
+                // Drop '&' and whitespace before it
+                arg[alen - 1] = '\0';
+                r_str_trim_tail (arg);
+                launch = '&';
+            }
+            if (launch == '&') {
+                // r_core_rtr_http expects path to begin with '&' when launch=='&'
+                char *p = r_str_newf ("& %s", arg);
+                r_core_rtr_http (core, '&', 'h', p);
+                free (p);
+            } else {
+                r_core_rtr_http (core, launch, 'h', arg);
+            }
+            free (arg);
 		}
 		break;
 	case 'H': // "=H"
@@ -1266,16 +1273,22 @@ static int cmd_rap(void *data, const char *input) {
 			if (!arg) {
 				break;
 			}
-			int launch = getArg (input[1], 'H');
+            int launch = getArg (input[1], 'H');
 			r_str_trim_tail (arg);
 			size_t alen = strlen (arg);
-			if (alen > 0 && arg[alen - 1] == '&') {
-				arg[alen - 1] = '\0';
-				r_str_trim_tail (arg);
-				launch = '&';
-			}
-			r_core_rtr_http (core, launch, 'H', arg);
-			free (arg);
+            if (alen > 0 && arg[alen - 1] == '&') {
+                arg[alen - 1] = '\0';
+                r_str_trim_tail (arg);
+                launch = '&';
+            }
+            if (launch == '&') {
+                char *p = r_str_newf ("& %s", arg);
+                r_core_rtr_http (core, '&', 'H', p);
+                free (p);
+            } else {
+                r_core_rtr_http (core, launch, 'H', arg);
+            }
+            free (arg);
 		}
 		break;
 	case '?': // "=?"
@@ -3200,8 +3213,10 @@ static int cmd_tasks(void *data, const char *input) {
 		if (bgcmd && bgcmd[0] == '=' && (bgcmd[1] == 'h' || bgcmd[1] == 'H')) {
 			// Launch HTTP server via its own background thread
 			char browse = (bgcmd[1] == 'H') ? 'H' : 'h';
-			const char *harg = r_str_trim_head_ro (bgcmd + 2);
-			r_core_rtr_http (core, '&', browse, harg);
+			const char *harg_in = r_str_trim_head_ro (bgcmd + 2);
+			char *path = r_str_newf ("& %s", r_str_get_fail (harg_in, ""));
+			r_core_rtr_http (core, '&', browse, path);
+			free (path);
 			break;
 		}
 		RCoreTask *task = r_core_task_new (core, true, input + 1, NULL, core);
