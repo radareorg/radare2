@@ -1236,15 +1236,46 @@ static int cmd_rap(void *data, const char *input) {
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_equalh);
 		} else {
-			r_core_rtr_http (core, getArg (input[1], 'h'), 'h', input + 1);
+			// Support trailing background marker: "=h &" -> same as "=h&"
+			const char *arg_in = r_str_trim_head_ro (input + 1);
+			char *arg = strdup (arg_in ? arg_in : "");
+			if (!arg) {
+				break;
+			}
+			int launch = getArg (input[1], 'h');
+			// Trim tail spaces and detect a trailing '&'
+			r_str_trim_tail (arg);
+			size_t alen = strlen (arg);
+			if (alen > 0 && arg[alen - 1] == '&') {
+				// Drop '&' and whitespace before it
+				arg[alen - 1] = '\0';
+				r_str_trim_tail (arg);
+				launch = '&';
+			}
+			r_core_rtr_http (core, launch, 'h', arg);
+			free (arg);
 		}
 		break;
 	case 'H': // "=H"
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_equalh);
 		} else {
-			const char *arg = r_str_trim_head_ro (input + 1);
-			r_core_rtr_http (core, getArg (input[1], 'H'), 'H', arg);
+			// Support trailing background marker: "=H &" -> same as "=H&"
+			const char *arg_in = r_str_trim_head_ro (input + 1);
+			char *arg = strdup (arg_in ? arg_in : "");
+			if (!arg) {
+				break;
+			}
+			int launch = getArg (input[1], 'H');
+			r_str_trim_tail (arg);
+			size_t alen = strlen (arg);
+			if (alen > 0 && arg[alen - 1] == '&') {
+				arg[alen - 1] = '\0';
+				r_str_trim_tail (arg);
+				launch = '&';
+			}
+			r_core_rtr_http (core, launch, 'H', arg);
+			free (arg);
 		}
 		break;
 	case '?': // "=?"
@@ -3163,6 +3194,15 @@ static int cmd_tasks(void *data, const char *input) {
 		if (r_sandbox_enable (0)) {
 			R_LOG_ERROR ("This command is disabled in sandbox mode");
 			return 0;
+		}
+		// Fast-path background web server: "& =h" / "& =H"
+		const char *bgcmd = r_str_trim_head_ro (input + 1);
+		if (bgcmd && bgcmd[0] == '=' && (bgcmd[1] == 'h' || bgcmd[1] == 'H')) {
+			// Launch HTTP server via its own background thread
+			char browse = (bgcmd[1] == 'H') ? 'H' : 'h';
+			const char *harg = r_str_trim_head_ro (bgcmd + 2);
+			r_core_rtr_http (core, '&', browse, harg);
+			break;
 		}
 		RCoreTask *task = r_core_task_new (core, true, input + 1, NULL, core);
 		if (!task) {
