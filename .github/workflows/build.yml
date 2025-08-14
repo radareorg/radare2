@@ -720,7 +720,7 @@ jobs:
         dist/artifacts/ios-cydia32/*.deb
         dist/artifacts/ios-cydia/r2ios-sdk-*.zip
         dist/artifacts/android-acr-*/*.tar.gz
-        dist/artifacts/linux-static/*.tar.xz
+        dist/artifacts/linux-static-*/*.tar.xz
         dist/artifacts/linux-acr-deb-*/radare2-dev_*.deb
         dist/artifacts/linux-wasi/*.zip
         dist/artifacts/linux-wasi-api/*.zip
