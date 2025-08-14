@@ -634,7 +634,7 @@ jobs:
     - name: Download Build
       uses: actions/download-artifact@v5
       with:
-        name: linux-static
+        name: linux-static-amd64
         path: /tmp
     - name: Download latest release
       run: |
