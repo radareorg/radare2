@@ -43,6 +43,41 @@ static char * R_NONNULL guess_filetype(const char *path) {
 	return strdup ("Content-Type: application/octet-stream\n");
 }
 
+static char *cmdstr (RCore *core, const char *cmd) {
+	char *out;
+	RConsContext *ctx = core->cons->context;
+	ctx->noflush = false;
+	bool restoreSandbox = false;
+	bool oldSandbox = r_config_get_b (core->config, "cfg.sandbox");
+	if (r_config_get_b (core->config, "http.sandbox")) {
+		//(void)r_config_get_i (core->config, "cfg.sandbox");
+		r_config_set_b (core->config, "cfg.sandbox", true);
+		restoreSandbox = true;
+	}
+#if WEBCONFIG
+	const bool orig_scr_html = r_config_get_b (core->config, "scr.html");
+	const int orig_scr_color = r_config_get_i (core->config, "scr.color");
+	const bool orig_scr_interactive = r_config_get_b (core->config, "scr.interactive");
+	r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
+	r_config_set_b (core->config, "asm.bytes", false);
+	r_config_set_b (core->config, "scr.interactive", false);
+#endif
+	out = r_core_cmd_str_pipe (core, cmd);
+#if WEBCONFIG
+	/* refresh settings - run callbacks */
+	r_config_set_b (core->config, "scr.html", orig_scr_html);
+	r_config_set_i (core->config, "scr.color", orig_scr_color);
+	r_config_set_b (core->config, "scr.interactive", orig_scr_interactive);
+#endif
+	if (restoreSandbox) {
+		if (!oldSandbox) {
+			r_sandbox_disable (true);
+		}
+		r_config_set_b (core->config, "cfg.sandbox", oldSandbox);
+	}
+	return out;
+}
+
 // return 1 on error WHY
 static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *path) {
 	RConfig *newcfg = NULL, *origcfg = NULL;
@@ -153,21 +188,6 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 	origcfg = core->config;
 	newcfg = r_config_clone (core->config);
 	core->config = newcfg;
-#if WEBCONFIG
-	const bool orig_scr_html = r_config_get_b (core->config, "scr.html");
-	const int orig_scr_color = r_config_get_i (core->config, "scr.color");
-	const bool orig_scr_interactive = r_config_get_b (core->config, "scr.interactive");
-	r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
-	r_config_set_b (core->config, "asm.bytes", false);
-	r_config_set_b (core->config, "scr.interactive", false);
-#endif
-	bool restoreSandbox = false;
-	bool oldSandbox = r_config_get_b (core->config, "cfg.sandbox");
-	if (r_config_get_b (core->config, "http.sandbox")) {
-		//(void)r_config_get_i (core->config, "cfg.sandbox");
-		r_config_set_b (core->config, "cfg.sandbox", true);
-		restoreSandbox = true;
-	}
 	eprintf ("Starting http server...\n");
 	eprintf ("open http://%s:%s/\n", host, port);
 	eprintf ("r2 -C http://%s:%s/cmd/\n", host, port);
@@ -264,7 +284,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		r_config_set_i (newcfg, "scr.color", r_config_get_i (newcfg, "scr.color"));
 		r_config_set_b (newcfg, "scr.interactive", r_config_get_b (newcfg, "scr.interactive"));
 #endif
-		if (allow && *allow) {
+		if (R_STR_ISNOTEMPTY (allow)) {
 			bool accepted = false;
 			const char *allows_host;
 			char *p, *peer = r_socket_tostring (rs->s);
@@ -405,9 +425,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 								r_core_cmd0 (core, cmd + 1);
 								out = NULL;
 							} else {
-								RConsContext *ctx = core->cons->context;
-								ctx->noflush = false;
-								out = r_core_cmd_str_pipe (core, cmd);
+								out = cmdstr (core, cmd);
 							}
 
 							if (out) {
@@ -563,18 +581,6 @@ the_end:
 	free (pfile);
 	r_socket_free (s);
 	r_config_free (newcfg);
-	if (restoreSandbox) {
-		if (!oldSandbox) {
-			r_sandbox_disable (true);
-		}
-		r_config_set_b (core->config, "cfg.sandbox", oldSandbox);
-	}
-#if WEBCONFIG
-	/* refresh settings - run callbacks */
-	r_config_set_b (core->config, "scr.html", orig_scr_html);
-	r_config_set_i (core->config, "scr.color", orig_scr_color);
-	r_config_set_b (core->config, "scr.interactive", orig_scr_interactive);
-#endif
 	return ret;
 }
 
