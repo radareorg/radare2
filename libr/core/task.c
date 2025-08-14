@@ -2,6 +2,9 @@
 
 #include <r_core.h>
 
+// Per-thread current task pointer (TLS)
+R_TH_LOCAL RCoreTask *task_tls_current = NULL;
+
 R_API void r_core_task_scheduler_init(RCoreTaskScheduler *tasks, RCore *core) {
 	tasks->task_id_next = 0;
 	tasks->tasks = r_list_newf ((RListFree)r_core_task_decref);
@@ -254,7 +257,6 @@ hell:
 }
 
 R_API void r_core_task_incref(RCoreTask *task) {
-	return;
 	if (!task) {
 		return;
 	}
@@ -265,7 +267,6 @@ R_API void r_core_task_incref(RCoreTask *task) {
 }
 
 R_API void r_core_task_decref(RCoreTask *task) {
-	return;
 	if (!task) {
 		return;
 	}
@@ -485,7 +486,12 @@ static RThreadFunctionRet task_run_thread(RThread *th) {
 		return 0;
 	}
 	RCoreTask *task = (RCoreTask *)th->user;
-	return task_run (task);
+	// Set TLS current task for this thread during execution
+	task_tls_current = task;
+	RThreadFunctionRet ret = task_run (task);
+	// Clear TLS on exit
+	task_tls_current = NULL;
+	return ret;
 }
 
 R_API void r_core_task_enqueue(RCoreTaskScheduler *scheduler, RCoreTask *task) {
@@ -537,7 +543,12 @@ R_API void r_core_task_enqueue_oneshot(RCoreTaskScheduler *scheduler, RCoreTaskO
 R_API int r_core_task_run_sync(RCoreTaskScheduler *scheduler, RCoreTask *task) {
 	R_RETURN_VAL_IF_FAIL (scheduler && task, -1);
 	task->thread = NULL;
-	return task_run (task);
+	// Set TLS for synchronous execution within the current thread
+	task_tls_current = task;
+	RThreadFunctionRet ret = task_run (task);
+	// Clear TLS after execution
+	task_tls_current = NULL;
+	return ret;
 }
 
 /* begin running stuff synchronously on the main task */
@@ -598,6 +609,10 @@ R_API const char *r_core_task_status(RCoreTask *task) {
 R_API RCoreTask *r_core_task_self(RCoreTaskScheduler *scheduler) {
 	if (!scheduler) {
 		return NULL;
+	}
+	// Prefer TLS current task if set; fall back to scheduler state
+	if (task_tls_current) {
+		return task_tls_current;
 	}
 	RCoreTask *res = scheduler->current_task ? scheduler->current_task : scheduler->main_task;
 	return res;
