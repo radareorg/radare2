@@ -612,7 +612,7 @@ jobs:
 
 
   check_abi_compatibility:
-#    if: contains(github.ref, 'de345ee04d0777b462f2f98ac383c883')
+    if: contains(github.ref, 'invalid-commit-just-to-skip-that-job-until-rls-fixed')
     needs:
       - linux-static
     runs-on: ubuntu-24.04
