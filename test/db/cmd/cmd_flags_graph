@@ -1,6 +1,6 @@
-NAME=fg
+NAME=fh
 FILE=bins/elf/analysis/ls-alxchk
-CMDS=fg
+CMDS=fh
 EXPECT=<<EOF
  elf_
      header
