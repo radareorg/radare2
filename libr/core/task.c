@@ -433,21 +433,38 @@ static RThreadFunctionRet task_run(RCoreTask *task) {
 	}
 
 	char *res_str;
+	RConsContext *saved_ctx = NULL;
 	if (task == scheduler->main_task) {
 		r_core_cmd (core, task->cmd, task->cmd_log);
 		res_str = NULL;
 	} else {
+		// Ensure background tasks write into their own console context
+		if (task->cons_context) {
+			saved_ctx = core->cons->context;
+			r_cons_context_load (task->cons_context);
+		}
 		res_str = r_core_cmd_str (core, task->cmd);
 	}
 
 	free (task->res);
 	task->res = res_str;
 
-#if 0
-	if (task != scheduler->main_task && r_cons_default_context_is_interactive ()) {
-		R_LOG_INFO ("Task %d finished", task->id);
+	// Informative end-of-task message in the task's own context (non-intrusive)
+	if (task != scheduler->main_task && r_cons_is_interactive (core->cons)) {
+		if (task->cons_context) {
+			r_cons_printf_ctx (task->cons_context, "Task %d finished\n", task->id);
+		}
 	}
-#endif
+
+	// Restore previous console context if we switched
+	if (saved_ctx) {
+		r_cons_context_load (saved_ctx);
+	}
+
+	// Flush task context buffer synchronously through the Console Manager
+	if (task != scheduler->main_task && task->cons_context) {
+		r_cons_flush_ctx (core->cons, task->cons_context, 0, true);
+	}
 
 	TASK_SIGSET_T old_sigset;
 stillbirth:
