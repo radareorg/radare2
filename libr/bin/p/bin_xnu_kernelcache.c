@@ -31,6 +31,7 @@ typedef struct _RKernelCacheObj {
 	ut8 *internal_buffer;
 	int internal_buffer_size;
 	ut64 kernel_base;
+	HtUP *class_by_handle;
 } RKernelCacheObj;
 
 typedef struct _RFileRange {
@@ -60,6 +61,7 @@ typedef struct _RKext {
 	bool own_name;
 	ut64 pa2va_exec;
 	ut64 pa2va_data;
+	RList /*<RIOKitClass>*/ *classes;
 } RKext;
 
 typedef struct _RKextIndex {
@@ -89,6 +91,14 @@ typedef struct _RKmodInfo {
 	char name[0x41];
 	ut64 start;
 } RKmodInfo;
+
+typedef struct {
+	char *name;
+	ut64 size;
+	ut64 meta_va;
+	ut64 supermeta_va;
+	ut64 vtable_va;
+} RIOKitClass;
 
 #define KEXT_SHORT_NAME_FROM_SECTION(io_section) ({\
 	char *result = NULL;\
@@ -126,6 +136,21 @@ typedef struct _RKmodInfo {
 #define IS_PTR_AUTH(x) ((x & (1ULL << 63)) != 0)
 #define IS_PTR_BIND(x) ((x & (1ULL << 62)) != 0)
 
+#define ARM64_BL_MASK       0xFC000000u
+#define ARM64_BL_OPCODE     0x94000000u
+
+#define ARM64_RET_MASK      0xFFFFFC1Fu
+#define ARM64_RET_BASE      0xD65F0000u
+
+#define ARM64_RET_AUTH_MASK 0xFFFFFC00u
+#define ARM64_RET_AUTH_BASE 0xD65F0C00u
+
+#define ARM64_ADRP_MASK     0x9F000000u
+#define ARM64_ADRP_OPCODE   0x90000000u
+
+#define ARM64_ADDI64_MASK   0xFF000000u
+#define ARM64_ADDI64_OPCODE 0x91000000u
+
 static ut64 p_ptr(ut64 decorated_addr, RKernelCacheObj *obj);
 static ut64 r_ptr(ut8 *buf, RKernelCacheObj *obj);
 
@@ -151,6 +176,16 @@ static RList *resolve_mig_subsystem(RKernelCacheObj *obj);
 static void symbols_from_stubs_vec(RVecRBinSymbol *symbols, RBinFile *bf, HtPP *kernel_syms_by_addr, RKext *kext, int ordinal);
 static RStubsInfo *get_stubs_info(struct MACH0_(obj_t) *mach0, ut64 paddr, RKernelCacheObj *obj);
 static int prot2perm(int x);
+static RList *resolve_iokit_classes(RVecRBinSymbol *symbols, ut64 start_offset, RBinFile *bf, RKext *kext);
+static void r_iokit_class_free(void *_c);
+static bool try_read_exec_va(RBinFile *bf, RKext *kext, ut64 va, void *dst, size_t len);
+static bool try_read_printable_cstr(RBinFile *bf, RKext *kext, ut64 va, char **cstr);
+static bool is_bl(ut32 insn);
+static bool is_ret_like(ut32 insn);
+static bool try_parse_movz_w3_imm(ut32 insn, ut32 *imm16);
+static bool try_parse_adrp_add_pair(const ut8 *ptr, ut64 va, int *reg, ut64 *addr);
+static bool try_parse_addi64_same_reg(ut32 insn, int *reg, ut32 *imm12, bool *sh_is_12);
+static bool try_parse_mov_reg_reg(ut32 insn, int *dst_reg, int *src_reg);
 
 static void r_kext_free(RKext *kext);
 static void r_kext_fill_text_range(RKext *kext);
@@ -228,6 +263,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	obj->cache_buf = fbuf;
 	obj->pa2va_exec = prelink_range->pa2va_exec;
 	obj->pa2va_data = prelink_range->pa2va_data;
+	obj->class_by_handle = ht_up_new0 ();
 	R_FREE (prelink_range);
 	bf->bo->bin_obj = obj;
 	r_list_push (pending_bin_files, bf);
@@ -264,23 +300,8 @@ beach:
 }
 
 static void r_ptr_undecorate(RParsedPointer *ptr, ut64 decorated_addr, RKernelCacheObj *obj) {
-	/*
-	 * Logic taken from:
-	 * https://github.com/Synacktiv/kernelcache-laundering/blob/master/ios12_kernel_cache_helper.py
-	 */
-
-	if ((decorated_addr & 0x4000000000000000LL) == 0) {
-		if (decorated_addr & 0x8000000000000000LL) {
-			ptr->address = obj->kernel_base + (decorated_addr & 0xFFFFFFFFLL);
-		} else {
-			ptr->address = ((decorated_addr << 13) & 0xFF00000000000000LL) | (decorated_addr & 0x7ffffffffffLL);
-			if (decorated_addr & 0x40000000000LL) {
-				ptr->address |= 0xfffc0000000000LL;
-			}
-		}
-	} else {
-		ptr->address = decorated_addr;
-	}
+	ut64 target = decorated_addr & ((1 << 30) - 1);
+	ptr->address = obj->kernel_base + target;
 }
 
 static void ensure_kexts_initialized(RKernelCacheObj *obj, RBinFile *bf) {
@@ -695,8 +716,7 @@ static RList *kexts_from_load_commands(RKernelCacheObj *obj, RBinFile *bf) {
 			continue;
 		}
 
-		// r_kext_fill_text_range (kext);
-		kext->vaddr = K_PPTR (kext->vaddr);
+		r_kext_fill_text_range (kext);
 		kext->pa2va_exec = obj->pa2va_exec;
 		kext->pa2va_data = obj->pa2va_data;
 		kext->name = strdup (padded_name);
@@ -717,6 +737,8 @@ static void r_kext_free(RKext *kext) {
 	if (!kext) {
 		return;
 	}
+
+	r_list_free (kext->classes);
 
 	if (kext->mach0) {
 		MACH0_(mach0_free) (kext->mach0);
@@ -1066,7 +1088,7 @@ static void process_constructors_vec(RVecRBinSymbol *symbols, RBinFile *bf, RKer
 		if (!buf) {
 			break;
 		}
-		if (r_buf_read_at (obj->cache_buf, section->paddr + paddr, buf, section->size) < section->size) {
+		if (r_buf_read_at (obj->cache_buf, section->paddr, buf, section->size) < section->size) {
 			free (buf);
 			break;
 		}
@@ -1074,7 +1096,8 @@ static void process_constructors_vec(RVecRBinSymbol *symbols, RBinFile *bf, RKer
 		int count = 0;
 		for (j = 0; j + 7 < section->size; j += 8) {
 			ut64 addr64 = K_RPTR (buf + j);
-			ut64 paddr64 = section->paddr + paddr + j;
+			ut64 paddr64 = addr64 - obj->pa2va_exec;
+
 			if (mode == R_K_CONSTRUCTOR_TO_ENTRY) {
 				R_LOG_WARN ("wrong entrypoint entry not registered");
 				// RBinAddr *ba = newEntry (paddr64, addr64, type);
@@ -1268,6 +1291,8 @@ static void handle_data_sections(RBinSection *sect) {
 static bool symbols_vec(RBinFile *bf) {
 	RKernelCacheObj *obj = (RKernelCacheObj*) bf->bo->bin_obj;
 
+	fprintf (stderr, "symbols_vec()\n");
+
 	struct MACH0_(obj_t) *mo = obj->mach0;
 	RVecRBinSymbol symbols;
 	RVecRBinSymbol_init (&symbols);
@@ -1348,6 +1373,11 @@ static bool symbols_vec(RBinFile *bf) {
 			if (MACH0_(load_symbols) (kext->mach0)) {
 				R_LOG_DEBUG ("--> %d / %d", RVecRBinSymbol_length (kext->mach0->symbols_vec), RVecRBinSymbol_length (&symbols));
 				RVecRBinSymbol_append (&symbols, kext->mach0->symbols_vec, &bin_symbol_copy);
+			}
+
+			ut64 start_offset = RVecRBinSymbol_length (&symbols);
+
+			{
 				process_constructors_vec (&symbols, bf, obj, kext->mach0, kext->range.offset, false, R_K_CONSTRUCTOR_TO_SYMBOL, kext_short_name (kext));
 				const ut32 last_ordinal = RVecRBinSymbol_length (&(bf->bo->symbols_vec));
 				symbols_from_stubs_vec (&symbols, bf, kernel_syms_by_addr, kext, last_ordinal);
@@ -1361,6 +1391,14 @@ static bool symbols_vec(RBinFile *bf) {
 				kext->mach0 = NULL;
 #endif
 			}
+
+			kext->classes = resolve_iokit_classes (&symbols, start_offset, bf, kext);
+			RListIter *iter;
+			RIOKitClass *c;
+			r_list_foreach (kext->classes, iter, c) {
+				ht_up_insert (obj->class_by_handle, c->meta_va, c);
+			}
+
 			break;
 		default:
 			R_LOG_WARN ("Unknown sub-bin");
@@ -1377,6 +1415,27 @@ static bool symbols_vec(RBinFile *bf) {
 	memcpy (&(bf->bo->symbols_vec), &symbols, sizeof (symbols));
 
 	return true;
+}
+
+static RList *classes(RBinFile *bf) {
+	RKernelCacheObj *obj = (RKernelCacheObj*) bf->bo->bin_obj;
+
+	RList *list = r_list_newf ((RListFree) r_bin_class_free);
+
+	int i;
+	RKext *kext;
+	r_kext_index_foreach (obj->kexts, i, kext) {
+		RListIter *iter;
+		RIOKitClass *c;
+		r_list_foreach (kext->classes, iter, c) {
+			RIOKitClass *parent = ht_up_find (obj->class_by_handle, c->supermeta_va, NULL);
+
+			RBinClass *klass = r_bin_class_new (c->name, parent ? parent->name : "NULL", R_BIN_ATTR_PUBLIC);
+			r_list_append (list, klass);
+		}
+	}
+
+	return list;
 }
 
 #define IS_KERNEL_ADDR(x) ((x & 0xfffffff000000000L) == 0xfffffff000000000L)
@@ -1727,17 +1786,22 @@ beach:
 	return NULL;
 }
 
-static ut64 extract_addr_from_code(ut8 *arm64_code, ut64 vaddr) {
-	ut64 addr = vaddr & ~0xfff;
+static ut64 extract_addr_from_code(const ut8 *arm64_code, ut64 vaddr) {
+	const ut64 page = vaddr & ~0xfffULL;
 
-	ut64 adrp = r_read_le32 (arm64_code);
-	ut64 adrp_offset = ((adrp & 0x60000000) >> 29) | ((adrp & 0xffffe0) >> 3);
-	addr += adrp_offset << 12;
+	const ut32 adrp = r_read_le32 (arm64_code);
+	const ut64 immlo = (adrp >> 29) & 0x3;
+	const ut64 immhi = (adrp >> 5) & 0x7ffffULL;
+	ut64 imm21 = (immhi << 2) | immlo;
+	int64_t simm21 = (int64_t) ((imm21 ^ 0x100000) - 0x100000);
+	const ut64 adrp_base = page + ((ut64) simm21 << 12);
 
-	ut64 ldr = r_read_le32 (arm64_code + 4);
-	addr += ((ldr & 0x3ffc00) >> 10) << ((ldr & 0xc0000000) >> 30);
+	const ut32 addi = r_read_le32 (arm64_code + 4);
+	const ut64 imm12 = (addi >> 10) & 0xFFFULL;
+	const ut64 sh = (addi >> 22) & 0x1ULL;
+	const ut64 add_imm = imm12 << (sh ? 12 : 0);
 
-	return addr;
+	return adrp_base + add_imm;
 }
 
 static void symbols_from_stubs_vec(RVecRBinSymbol *symbols, RBinFile *bf, HtPP *kernel_syms_by_addr, RKext *kext, int ordinal) {
@@ -1882,6 +1946,360 @@ static RStubsInfo *get_stubs_info(struct MACH0_(obj_t) *mach0, ut64 paddr, RKern
 	return stubs_info;
 }
 
+static RList *resolve_iokit_classes(RVecRBinSymbol *symbols, ut64 start_offset, RBinFile *bf, RKext *kext) {
+	RList *classes = r_list_newf (r_iokit_class_free);
+
+	const RVector *sections = MACH0_(load_sections) (kext->mach0);
+	if (!sections) {
+		return classes;
+	}
+
+	ut64 i;
+	ut64 end_offset = RVecRBinSymbol_length (symbols);
+	for (i = start_offset; i != end_offset; i++) {
+		RBinSymbol *sym = RVecRBinSymbol_at (symbols, i);
+		if (!strstr (sym->name->oname, ".init.")) {
+			continue;
+		}
+
+		ut64 func_vaddr = sym->vaddr;
+		ut64 reg_values[29] = { 0, };
+
+		ut64 pc;
+		for (pc = func_vaddr; true; pc += 4) {
+			ut8 bytes[8];
+			if (!try_read_exec_va (bf, kext, pc, bytes, sizeof (bytes))) {
+				break;
+			}
+
+			int reg;
+			ut64 addr;
+			if (try_parse_adrp_add_pair (bytes, pc, &reg, &addr)) {
+				if (reg < R_ARRAY_SIZE (reg_values)) {
+					reg_values[reg] = addr;
+				}
+				continue;
+			}
+
+			const ut32 insn = r_read_le32 (bytes);
+
+			int dst_reg, src_reg;
+			if (try_parse_mov_reg_reg (insn, &dst_reg, &src_reg)) {
+				if (dst_reg < R_ARRAY_SIZE (reg_values) &&
+						src_reg < R_ARRAY_SIZE (reg_values)) {
+					reg_values[dst_reg] = reg_values[src_reg];
+				}
+				continue;
+			}
+
+			ut32 imm16 = 0;
+			if (try_parse_movz_w3_imm (insn, &imm16)) {
+				reg_values[3] = imm16;
+				continue;
+			}
+
+			if (is_ret_like (insn)) {
+				break;
+			}
+
+			if (!is_bl (insn)) {
+				continue;
+			}
+
+			const int off26 = (int) ((insn & 0x03FFFFFFu) << 6) >> 6;
+			const ut64 bl_target = pc + ((ut64) off26 << 2);
+
+			if (reg_values[1] == 0) {
+				continue;
+			}
+			char *name = NULL;
+			if (!try_read_printable_cstr (bf, kext, reg_values[1], &name)) {
+				continue;
+			}
+
+			RIOKitClass *c = R_NEW0 (RIOKitClass);
+			c->name = name;
+			c->size = reg_values[3];
+			c->meta_va = reg_values[0];
+			c->supermeta_va = reg_values[2];
+			r_list_append (classes, c);
+		}
+	}
+
+	int num_classes = r_list_length (classes);
+	if (num_classes != 0 && kext->text_range.size != 0) {
+		const ut64 text_start = kext->vaddr;
+		const ut64 text_end = text_start + kext->text_range.size;
+		const ut64 chunk_size = 64 * 1024;
+		const int anchor_back = 8;
+		const int meta_back = 256;
+		const ut64 overlap = (ut64) meta_back * 4;
+
+		ut64 *known_meta = R_NEWS0 (ut64, num_classes);
+		size_t i = 0; RListIter *itc; RIOKitClass *cc;
+		r_list_foreach (classes, itc, cc) {
+			known_meta[i++] = cc->meta_va;
+		}
+
+		ut8 *buf = malloc (chunk_size);
+		ut64 base;
+
+		for (base = text_start; base < text_end; ) {
+			const ut64 emit_start = (base == text_start) ? base : (base + overlap);
+			const ut64 max_len = R_MIN (chunk_size, text_end - base);
+			const ut64 pa = base - kext->pa2va_exec;
+			st64 got = r_buf_read_at (bf->buf, pa, buf, (int) max_len);
+			if (got <= 0) {
+				break;
+			}
+
+			const ut64 chunk_len = (ut64) got;
+			for (ut64 off = 0; off + 4 <= chunk_len; off += 4) {
+				const ut64 pc = base + off;
+				const ut32 insn = r_read_le32 (buf + off);
+
+				int reg_n = -1; ut32 imm12 = 0; bool sh12 = false;
+				if (!try_parse_addi64_same_reg (insn, &reg_n, &imm12, &sh12)) {
+					continue;
+				}
+				if (imm12 != 0x10 || sh12) {
+					continue;
+				}
+
+				bool found_anchor = false;
+				ut64 anchor = 0, vtable = 0;
+				for (int b = 1; b <= anchor_back; b++) {
+					const ut64 p_off = (off >= (ut64) b * 4)
+						? off - (ut64) b * 4
+						: UINT64_MAX;
+					if (p_off == UINT64_MAX || p_off + 8 > chunk_len) {
+						break;
+					}
+					int reg_x = -1; ut64 addr = 0;
+					if (try_parse_adrp_add_pair (buf + p_off, base + p_off, &reg_x, &addr)) {
+						if (reg_x == reg_n) {
+							anchor = addr;
+							vtable = anchor + 0x10;
+							found_anchor = true;
+							break;
+						}
+					}
+				}
+				if (!found_anchor) {
+					continue;
+				}
+
+				ut64 matched_meta = 0;
+				ut64 best_dist = (ut64) -1;
+				for (int b = 1; b <= meta_back; b++) {
+					const ut64 p_off = (off >= (ut64) b * 4)
+						? off - (ut64) b * 4
+						: UINT64_MAX;
+					if (p_off == UINT64_MAX || p_off + 4 > chunk_len) {
+						break;
+					}
+					const ut32 w = r_read_le32 (buf + p_off);
+					if (is_ret_like (w)) {
+						break;
+					}
+					if (p_off + 8 > chunk_len) {
+						continue;
+					}
+					int reg_x = -1; ut64 addr = 0;
+					if (try_parse_adrp_add_pair (buf + p_off, base + p_off, &reg_x, &addr)) {
+						size_t j;
+						for (j = 0; j < num_classes; j++) {
+							if (addr == known_meta[j]) {
+								ut64 dist = (ut64) b;
+								if (dist < best_dist) {
+									matched_meta = addr;
+									best_dist = dist;
+								}
+							}
+						}
+					}
+				}
+				if (!matched_meta) {
+					continue;
+				}
+				if (pc < emit_start) {
+					continue;
+				}
+
+				RListIter *itc;
+				RIOKitClass *cc;
+				r_list_foreach (classes, itc, cc) {
+					if (cc->meta_va == matched_meta) {
+						cc->vtable_va = vtable;
+						break;
+					}
+				}
+			}
+
+			if (base + chunk_size >= text_end) {
+				break;
+			}
+			base += (chunk_size > overlap) ? (chunk_size - overlap) : chunk_size;
+		}
+
+		free (buf);
+		R_FREE (known_meta);
+	}
+
+	RListIter *it;
+	RIOKitClass *c;
+	r_list_foreach (classes, it, c) {
+		RBinSymbol *sym = R_NEW0 (RBinSymbol);
+		sym->name = r_bin_name_new_from (r_str_newf ("%s::gMetaClass", c->name));
+		sym->vaddr = c->meta_va;
+		sym->paddr = c->meta_va - kext->pa2va_exec;
+		sym->size = 8;
+		sym->forwarder = "NONE";
+		sym->bind = "GLOBAL";
+		sym->type = "OBJECT";
+		sym->ordinal = RVecRBinSymbol_length (symbols);
+		RVecRBinSymbol_push_back (symbols, sym);
+
+		if (c->vtable_va) {
+			RBinSymbol *vsym = R_NEW0 (RBinSymbol);
+			vsym->name = r_bin_name_new_from (r_str_newf ("vtable.%s", c->name));
+			vsym->vaddr = c->vtable_va;
+			vsym->paddr = c->vtable_va - kext->pa2va_exec;
+			vsym->size = 0;
+			vsym->forwarder = "NONE";
+			vsym->bind = "GLOBAL";
+			vsym->type = "OBJECT";
+			vsym->ordinal = RVecRBinSymbol_length (symbols);
+			RVecRBinSymbol_push_back (symbols, vsym);
+		}
+	}
+
+	return classes;
+}
+
+static void r_iokit_class_free(void *_c) {
+	RIOKitClass *c = _c;
+	if (c) {
+		free (c->name);
+		free (c);
+	}
+}
+
+static bool try_read_exec_va(RBinFile *bf, RKext *kext, ut64 va, void *dst, size_t len) {
+	return r_buf_read_at (bf->buf, va - kext->pa2va_exec, dst, len) == len;
+}
+
+static bool try_read_printable_cstr(RBinFile *bf, RKext *kext, ut64 va, char **cstr) {
+	*cstr = NULL;
+
+	ut8 buf[128];
+	if (!try_read_exec_va (bf, kext, va, buf, sizeof (buf))) {
+		return false;
+	}
+
+	int i = 0;
+	for (; i < sizeof (buf); i++) {
+		if (!buf[i]) {
+			break;
+		}
+		if (buf[i] < 0x20 || buf[i] > 0x7e) {
+			return false;
+		}
+	}
+	if (i < 1 || i >= (int) sizeof (buf)) {
+		return false;
+	}
+
+	*cstr = r_str_ndup ((char *) buf, i);
+	return true;
+}
+
+static bool is_bl(ut32 insn) {
+	return (insn & ARM64_BL_MASK) == ARM64_BL_OPCODE;
+}
+
+static bool is_ret_like(ut32 insn) {
+	if ((insn & ARM64_RET_MASK) == ARM64_RET_BASE) {
+		return true;
+	}
+	return (insn & ARM64_RET_AUTH_MASK) == ARM64_RET_AUTH_BASE;
+}
+
+static bool try_parse_movz_w3_imm(ut32 insn, ut32 *imm16) {
+	if ((insn & 0xFF80001Fu) == 0x52800003u) {
+		const ut32 imm = ((insn >> 5) & 0xFFFFu);
+		const ut32 hw  = (insn >> 21) & 0x3;
+		*imm16 = imm << (hw * 16);
+		return true;
+	}
+	return false;
+}
+
+static bool try_parse_adrp_add_pair(const ut8 *ptr, ut64 va, int *reg, ut64 *addr) {
+	*reg = -1;
+	*addr = 0;
+
+	const ut32 i0 = r_read_le32 (ptr);
+	const ut32 i1 = r_read_le32 (ptr + 4);
+	if ((i0 & ARM64_ADRP_MASK) != ARM64_ADRP_OPCODE) {
+		return false;
+	}
+	if ((i1 & ARM64_ADDI64_MASK) != ARM64_ADDI64_OPCODE) {
+		return false;
+	}
+
+	const ut32 rd_adrp = (i0 & 0x1Fu);
+	const ut32 rd_add = (i1 & 0x1Fu);
+	const ut32 rn_add = (i1 >> 5) & 0x1Fu;
+	if (rd_add != rd_adrp || rn_add != rd_adrp) {
+		return false;
+	}
+
+	*reg = (int) rd_adrp;
+	*addr = extract_addr_from_code (ptr, va);
+
+	return true;
+}
+
+static bool try_parse_addi64_same_reg(ut32 insn, int *reg, ut32 *imm12, bool *sh_is_12) {
+	if ((insn & ARM64_ADDI64_MASK) != ARM64_ADDI64_OPCODE) {
+		return false;
+	}
+	const ut32 rd = (insn & 0x1Fu);
+	const ut32 rn = (insn >> 5) & 0x1Fu;
+	if (rd != rn) {
+		return false;
+	}
+
+	*reg = (int) rd;
+	*imm12 = (insn >> 10) & 0xFFFu;
+	*sh_is_12 = ((insn >> 22) & 1u) != 0;
+	return true;
+}
+
+static bool try_parse_mov_reg_reg(ut32 insn, int *dst_reg, int *src_reg) {
+	ut32 top = insn & 0xFF000000u;
+	if (top != 0x2A000000u && top != 0xAA000000u) {
+		return false;
+	}
+	if (((insn >> 21) & 1u) != 0) {
+		return false;
+	}
+	if (((insn >> 22) & 3u) != 0) {
+		return false;
+	}
+	if (((insn >> 10) & 0x3Fu) != 0) {
+		return false;
+	}
+	if (((insn >> 5) & 0x1Fu) != 31u) {
+		return false;
+	}
+
+	*dst_reg = (int) (insn & 0x1Fu);
+	*src_reg = (int) ((insn >> 16) & 0x1Fu);
+	return true;
+}
+
 static RBinInfo *info(RBinFile *bf) {
 	bool big_endian = 0;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
@@ -1918,6 +2336,8 @@ static void r_kernel_cache_free(RKernelCacheObj *obj) {
 	if (!obj) {
 		return;
 	}
+
+	ht_up_free (obj->class_by_handle);
 
 	if (obj->mach0) {
 		MACH0_(mach0_free) (obj->mach0);
@@ -2346,6 +2766,7 @@ RBinPlugin r_bin_plugin_xnu_kernelcache = {
 	// .symbols = &symbols,
 	.symbols_vec = &symbols_vec,
 	.sections = &sections,
+	.classes = &classes,
 	.check = &check,
 	.info = &info
 };
