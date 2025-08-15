@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2024 - pancake */
+/* radare - LGPL - Copyright 2012-2025 - pancake */
 
 #include <r_socket.h>
 #include <r_util.h>
@@ -14,9 +14,6 @@ R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *s
 	int pxx = 1, first = 0;
 	char buf[1500], *p, *q;
 	RSocketHTTPRequest *hr = R_NEW0 (RSocketHTTPRequest);
-	if (!hr) {
-		return NULL;
-	}
 	if (so->accept_timeout) {
 		hr->s = r_socket_accept_timeout (s, 1);
 	} else {
@@ -40,8 +37,8 @@ R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *s
 #endif
 		memset (buf, 0, sizeof (buf));
 		xx = r_socket_gets (hr->s, buf, sizeof (buf));
-		yy = r_socket_ready (hr->s, 0, 20 * 1000); //this function uses usecs as argument
-//		eprintf ("READ %d (%s) READY %d\n", xx, buf, yy);
+		yy = r_socket_ready (hr->s, 0, 20 * 1000); // this function uses usecs as argument
+		//		eprintf ("READ %d (%s) READY %d\n", xx, buf, yy);
 		if (!yy || (!xx && !pxx)) {
 			break;
 		}
@@ -83,7 +80,7 @@ R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *s
 				if (!decauthtoken) {
 					return hr;
 				}
-				if (r_base64_decode ((ut8 *)decauthtoken, authtoken, authlen) == -1) {
+				if (r_base64_decode ( (ut8 *)decauthtoken, authtoken, authlen) == -1) {
 					R_LOG_ERROR ("Could not decode authorization token");
 				} else {
 					RListIter *iter;
@@ -103,18 +100,26 @@ R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *s
 		}
 	}
 	if (content_length > 0) {
-		r_socket_read_block (hr->s, (ut8*)buf, 1); // one missing byte wtf
+		r_socket_read_block (hr->s, (ut8 *)buf, 1); // one missing byte wtf
 		if (content_length >= ST32_MAX) {
 			r_socket_http_close (hr);
 			r_socket_free (hr->s);
 			R_LOG_ERROR ("Could not allocate hr data");
 			return NULL;
 		}
-		content_length++;
 		hr->data = malloc (content_length + 1);
 		if (hr->data) {
 			hr->data_length = content_length;
-			r_socket_read_block (hr->s, hr->data, hr->data_length);
+			if (buf[0] == '\r' || buf[0] == '\n') {
+				/* discarded leftover newline; now read the body */
+				r_socket_read_block (hr->s, hr->data, hr->data_length);
+			} else {
+				/* first byte belongs to body */
+				hr->data[0] = buf[0];
+				if (hr->data_length > 1) {
+					r_socket_read_block (hr->s, (ut8 *) (hr->data + 1), hr->data_length - 1);
+				}
+			}
 			hr->data[content_length] = 0;
 		}
 	}
@@ -123,13 +128,12 @@ R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *s
 
 R_API void r_socket_http_response(RSocketHTTPRequest *rs, int code, const char *out, int len, const char *headers) {
 	R_RETURN_IF_FAIL (rs);
-	const char *strcode = \
-		code==200?"ok":
-		code==301?"Moved permanently":
-		code==302?"Found":
-		code==401?"Unauthorized":
-		code==403?"Permission denied":
-		code==404?"not found":
+	const char *strcode =
+		code == 200 ? "ok" : code == 301 ? "Moved permanently" :
+		code == 302 ? "Found" :
+		code == 401 ? "Unauthorized" :
+		code == 403 ? "Permission denied" :
+		code == 404 ? "not found" :
 		"UNKNOWN";
 	if (len < 1) {
 		len = out ? strlen (out) : 0;
@@ -138,7 +142,7 @@ R_API void r_socket_http_response(RSocketHTTPRequest *rs, int code, const char *
 		headers = code == 401 ? "WWW-Authenticate: Basic realm=\"R2 Web UI Access\"\n" : "";
 	}
 	r_socket_printf (rs->s, "HTTP/1.0 %d %s\r\n%s"
-		"Connection: close\r\nContent-Length: %d\r\n\r\n",
+			"Connection: close\r\nContent-Length: %d\r\n\r\n",
 		code, strcode, headers, len);
 	if (out && len > 0) {
 		r_socket_write (rs->s, (void *)out, len);
@@ -149,10 +153,10 @@ R_API ut8 *r_socket_http_handle_upload(const ut8 *str, int len, int *retlen) {
 	if (retlen) {
 		*retlen = 0;
 	}
-	if (!strncmp ((const char *)str, "----------", 10)) {
+	if (r_str_startswith ((const char *)str, "----------")) {
 		int datalen;
 		char *ret;
-		const char *data, *token = (const char *)str+10;
+		const char *data, *token = (const char *)str + 10;
 		const char *end = strchr (token, '\n');
 		if (!end) {
 			return NULL;
@@ -175,7 +179,7 @@ R_API ut8 *r_socket_http_handle_upload(const ut8 *str, int len, int *retlen) {
 			if (*end == 10 || *end == 13) {
 				end--;
 			}
-			datalen = (size_t)(end - data);
+			datalen = (size_t) (end - data);
 			ret = malloc (datalen + 1);
 			if (!ret) {
 				return NULL;
@@ -185,7 +189,7 @@ R_API ut8 *r_socket_http_handle_upload(const ut8 *str, int len, int *retlen) {
 			if (retlen) {
 				*retlen = datalen;
 			}
-			return (ut8*)ret;
+			return (ut8 *)ret;
 		}
 	}
 	return NULL;
@@ -211,7 +215,7 @@ R_API void r_socket_http_free(RSocketHTTPRequest *rs) {
 }
 
 #if MAIN
-int main() {
+int main () {
 	RSocket *s = r_socket_new (false);
 	if (!r_socket_listen (s, "8080", NULL)) {
 		R_LOG_ERROR ("Cannot listen here");
@@ -224,8 +228,8 @@ int main() {
 		}
 		if (!strcmp (rs->method, "GET")) {
 			r_socket_http_response (rs, 200,
-			"<html><body><form method=post action=/>"
-			"<input name=a /><input type=button></form></body>");
+				"<html><body><form method=post action=/>"
+				"<input name=a /><input type=button></form></body>");
 		} else if (!strcmp (rs->method, "POST")) {
 			char *buf = malloc (rs->data_length + 50);
 			if (buf) {

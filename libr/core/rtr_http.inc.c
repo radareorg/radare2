@@ -532,7 +532,20 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 			ut8 *ret;
 			int retlen;
 			char buf[128];
-			if (r_config_get_i (core->config, "http.upload")) {
+			if (r_str_startswith (rs->path, "/cmd")) {
+				char *out = cmdstr (core, (const char *)rs->data);
+				if (out) {
+					char *res = r_str_uri_encode (out);
+					char *newheaders = r_str_newf ("Content-Type: text/plain\n%s", headers);
+					r_socket_http_response (rs, 200, out, 0, newheaders);
+					// eprintf ("(%s)->(%s)\n", cmd, out);
+					free (out);
+					free (newheaders);
+					free (res);
+				} else {
+					r_socket_http_response (rs, 200, "", 0, headers);
+				}
+			} else if (r_config_get_b (core->config, "http.upload")) {
 				ret = r_socket_http_handle_upload (rs->data, rs->data_length, &retlen);
 				if (ret) {
 					ut64 size = r_config_get_i (core->config, "http.maxsize");
