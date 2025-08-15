@@ -6896,18 +6896,19 @@ static int cmd_print(void *data, const char *input) {
 	const char ch0 = *input;
 	switch (ch0) {
 	case 'w': // "pw"
-		if (input[1] == 'n') {
+		if (input[1] == 'n') { // "pwn"
 			cmd_print_pwn (core);
-		} else if (input[1] == 'd') {
+		} else if (input[1] == 'd') { // "pwd"
 			if (!r_sandbox_enable (0)) {
 				char *cwd = r_sys_getdir ();
 				if (cwd) {
 					r_cons_println (core->cons, cwd);
+					r_cons_printf (core->cons, "pene\n");
 					free (cwd);
 				}
 			}
 		} else {
-			r_cons_printf (core->cons, "| pwd               display current working directory\n");
+			r_cons_println (core->cons, "| pwd               display current working directory");
 		}
 		break;
 	case 'j': // "pj"
