@@ -6903,7 +6903,6 @@ static int cmd_print(void *data, const char *input) {
 				char *cwd = r_sys_getdir ();
 				if (cwd) {
 					r_cons_println (core->cons, cwd);
-					r_cons_printf (core->cons, "pene\n");
 					free (cwd);
 				}
 			}
