@@ -1,4 +1,5 @@
 @echo off
+setlocal enabledelayedexpansion
 REM call preconfigure.bat
 
 set MESON_FLAGS=-Dsdb_cgen=false -Dc_std=c11
@@ -18,7 +19,12 @@ if "%*" == "release" (
 set PATH=%CD%\prefix\bin;%PATH%
 set WORKS=0
 if EXIST vs (
-  meson vs %MESON_FLAGS% --backend vs --reconfigure && set WORKS=1
+  for /f "delims=" %%i in ('meson -v') do set MESON_VERSION=%%i
+  powershell -Command "if([version]::Parse('!MESON_VERSION!') -lt [version]::Parse('1.8.0')) {exit 1} else {exit 0}" 2> NUL
+  if errorlevel 1 (
+    set MESON_READONLY_FLAGS=--backend vs
+  )
+  meson vs %MESON_FLAGS% !MESON_READONLY_FLAGS! --reconfigure && set WORKS=1
 ) else (
   meson vs %MESON_FLAGS% --backend vs && set WORKS=1
 )

@@ -1,7 +1,9 @@
 :: Build (and eventually install) r2 for windows
 @echo off
 if "%*" == "clean" (
-  wsl rm -rf b vs
+  REM wsl rm -rf b vs
+  rmdir /s /q b 2> NUL
+  rmdir /s /q vs 2> NUL
   exit /b 0
 )
 
@@ -14,9 +16,6 @@ call ninja.exe --version > NUL 2> NUL && (
       rmdir /q /s prefix 2> NUL
       REM meson install -C b
       call ninja -C b install > NUL
-      copy /y %DESTDIR%\bin\radare2.exe %DESTDIR%\bin\r2.exe
-      REM COPY ASAN DLL FROM HERE
-      REM "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\bin\Hostx64\x64"
       copy /y C:\WINDOWS\System32\vcruntime140.dll %DESTDIR%\bin\vcruntime140.dll
       exit /b 0
     ) || (

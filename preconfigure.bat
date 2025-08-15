@@ -100,7 +100,7 @@ IF "%~1"=="" (
 ECHO VSARCH is set to: !VSARCH!
 
 echo === Finding Visual Studio...
-cl --help > NUL 2> NUL
+cl > NUL 2> NUL
 if %ERRORLEVEL% == 0 (
     echo FOUND
 ) else (
@@ -148,7 +148,7 @@ if %ERRORLEVEL% == 0 (
     )
 )
 
-cl --help > NUL 2> NUL
+cl > NUL 2> NUL
 if %ERRORLEVEL% == 0 (
     echo CL FOUND
 ) else (
