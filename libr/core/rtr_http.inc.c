@@ -533,12 +533,12 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 			int retlen;
 			char buf[128];
 			if (r_str_startswith (rs->path, "/cmd")) {
-				char *cmd = rs->data;
-				char *out = cmdstr (core, cmd);
+				char *out = cmdstr (core, (const char *)rs->data);
 				if (out) {
 					char *res = r_str_uri_encode (out);
 					char *newheaders = r_str_newf ("Content-Type: text/plain\n%s", headers);
 					r_socket_http_response (rs, 200, out, 0, newheaders);
+					// eprintf ("(%s)->(%s)\n", cmd, out);
 					free (out);
 					free (newheaders);
 					free (res);

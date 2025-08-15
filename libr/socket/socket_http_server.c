@@ -80,7 +80,7 @@ R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *s
 				if (!decauthtoken) {
 					return hr;
 				}
-				if (r_base64_decode ((ut8 *)decauthtoken, authtoken, authlen) == -1) {
+				if (r_base64_decode ( (ut8 *)decauthtoken, authtoken, authlen) == -1) {
 					R_LOG_ERROR ("Could not decode authorization token");
 				} else {
 					RListIter *iter;
@@ -142,7 +142,7 @@ R_API void r_socket_http_response(RSocketHTTPRequest *rs, int code, const char *
 		headers = code == 401 ? "WWW-Authenticate: Basic realm=\"R2 Web UI Access\"\n" : "";
 	}
 	r_socket_printf (rs->s, "HTTP/1.0 %d %s\r\n%s"
-		"Connection: close\r\nContent-Length: %d\r\n\r\n",
+			       "Connection: close\r\nContent-Length: %d\r\n\r\n",
 		code, strcode, headers, len);
 	if (out && len > 0) {
 		r_socket_write (rs->s, (void *)out, len);
@@ -215,7 +215,7 @@ R_API void r_socket_http_free(RSocketHTTPRequest *rs) {
 }
 
 #if MAIN
-int main() {
+int main () {
 	RSocket *s = r_socket_new (false);
 	if (!r_socket_listen (s, "8080", NULL)) {
 		R_LOG_ERROR ("Cannot listen here");
