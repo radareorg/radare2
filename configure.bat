@@ -18,7 +18,7 @@ if "%*" == "release" (
 set PATH=%CD%\prefix\bin;%PATH%
 set WORKS=0
 if EXIST vs (
-  meson vs %MESON_FLAGS% --backend vs --reconfigure && set WORKS=1
+  meson vs %MESON_FLAGS% --reconfigure && set WORKS=1
 ) else (
   meson vs %MESON_FLAGS% --backend vs && set WORKS=1
 )
