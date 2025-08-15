@@ -142,7 +142,7 @@ R_API void r_socket_http_response(RSocketHTTPRequest *rs, int code, const char *
 		headers = code == 401 ? "WWW-Authenticate: Basic realm=\"R2 Web UI Access\"\n" : "";
 	}
 	r_socket_printf (rs->s, "HTTP/1.0 %d %s\r\n%s"
-			       "Connection: close\r\nContent-Length: %d\r\n\r\n",
+			"Connection: close\r\nContent-Length: %d\r\n\r\n",
 		code, strcode, headers, len);
 	if (out && len > 0) {
 		r_socket_write (rs->s, (void *)out, len);
@@ -153,7 +153,7 @@ R_API ut8 *r_socket_http_handle_upload(const ut8 *str, int len, int *retlen) {
 	if (retlen) {
 		*retlen = 0;
 	}
-	if (!strncmp ( (const char *)str, "----------", 10)) {
+	if (r_str_startswith ((const char *)str, "----------")) {
 		int datalen;
 		char *ret;
 		const char *data, *token = (const char *)str + 10;
