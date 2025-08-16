@@ -31,6 +31,7 @@ typedef struct _RKernelCacheObj {
 	ut8 *internal_buffer;
 	int internal_buffer_size;
 	ut64 kernel_base;
+	HtUP *class_by_handle;
 } RKernelCacheObj;
 
 typedef struct _RFileRange {
@@ -60,12 +61,19 @@ typedef struct _RKext {
 	bool own_name;
 	ut64 pa2va_exec;
 	ut64 pa2va_data;
+	RList /*<RIOKitClass>*/ *classes;
 } RKext;
 
 typedef struct _RKextIndex {
 	ut64 length;
 	RKext **entries;
 } RKextIndex;
+
+typedef struct {
+	ut8 *buf;
+	ut64 va;
+	ut64 size;
+} RKextTextBlob;
 
 typedef struct _RRebaseInfo {
 	RFileRange *ranges;
@@ -89,6 +97,25 @@ typedef struct _RKmodInfo {
 	char name[0x41];
 	ut64 start;
 } RKmodInfo;
+
+typedef struct {
+	ut64 va;
+	ut32 slots_total;
+	ut32 slots_own;
+} RIOKitVTable;
+
+typedef struct {
+	RIOKitVTable instance;
+	RIOKitVTable metaclass;
+} RIOKitVTables;
+
+typedef struct {
+	char *name;
+	ut64 size;
+	ut64 meta_va;
+	ut64 supermeta_va;
+	RIOKitVTables vt;
+} RIOKitClass;
 
 #define KEXT_SHORT_NAME_FROM_SECTION(io_section) ({\
 	char *result = NULL;\
@@ -126,6 +153,24 @@ typedef struct _RKmodInfo {
 #define IS_PTR_AUTH(x) ((x & (1ULL << 63)) != 0)
 #define IS_PTR_BIND(x) ((x & (1ULL << 62)) != 0)
 
+#define ARM64_BL_MASK        0xFC000000u
+#define ARM64_BL_BASE        0x94000000u
+
+#define ARM64_RET_MASK       0xFFFFFC1Fu
+#define ARM64_RET_BASE       0xD65F0000u
+
+#define ARM64_RET_AUTH_MASK  0xFFFFFC00u
+#define ARM64_RET_AUTH_BASE  0xD65F0C00u
+
+#define ARM64_ADRP_MASK      0x9F000000u
+#define ARM64_ADRP_BASE      0x90000000u
+
+#define ARM64_ADDI64_MASK    0xFF000000u
+#define ARM64_ADDI64_BASE    0x91000000u
+
+#define ARM64_LDRX_UOFF_MASK 0xFFC00000u
+#define ARM64_LDRX_UOFF_BASE 0xF9400000u
+
 static ut64 p_ptr(ut64 decorated_addr, RKernelCacheObj *obj);
 static ut64 r_ptr(ut8 *buf, RKernelCacheObj *obj);
 
@@ -151,6 +196,30 @@ static RList *resolve_mig_subsystem(RKernelCacheObj *obj);
 static void symbols_from_stubs_vec(RVecRBinSymbol *symbols, RBinFile *bf, HtPP *kernel_syms_by_addr, RKext *kext, int ordinal);
 static RStubsInfo *get_stubs_info(struct MACH0_(obj_t) *mach0, ut64 paddr, RKernelCacheObj *obj);
 static int prot2perm(int x);
+static RList *resolve_iokit_classes(RVecRBinSymbol *symbols, ut64 start_offset, RBinFile *bf, RKext *kext);
+static RList *find_class_registrations(RVecRBinSymbol *symbols, ut64 start_offset, RBinFile *bf, RKext *kext);
+static void r_iokit_class_free(void *_c);
+static void find_class_vtables(RList *classes, RBinFile *bf, RKext *kext);
+static void compute_class_vtable_sizes(RList *classes, RBinFile *bf, RKext *kext);
+static void compute_vtable_sizes_for_class(RBinFile *bf, RKext *kext, RIOKitClass *c, const ut64 *vt_sorted, size_t n_sorted);
+static void compute_metaclass_vtable_sizes_for_class(RBinFile *bf, RKext *kext, RIOKitClass *c, const ut64 *vt_sorted, size_t n_sorted);
+static ut32 scan_vtable_total_slots(RBinFile *bf, RKext *kext, ut64 start, const ut64 *vt_sorted, size_t n_sorted);
+static ut64 *build_sorted_vtable_starts(RList *classes, size_t *out_n);
+static int ut64_compare(const void *pa, const void *pb);
+static ut64 next_vtable_after(const ut64 *arr, size_t n, ut64 self_start);
+static bool load_kext_text_blob(RBinFile *bf, RKext *kext, RKextTextBlob *blob);
+static const ut8 *text_ptr(const RKextTextBlob *tb, ut64 va);
+static bool try_read_exec_va(RBinFile *bf, RKext *kext, ut64 va, void *dst, size_t len);
+static bool try_read_data_va(RBinFile *bf, RKext *kext, ut64 va, void *dst, size_t len);
+static bool try_read_printable_cstr(RBinFile *bf, RKext *kext, ut64 va, char **cstr);
+static bool is_bl(ut32 insn);
+static bool is_ret_like(ut32 insn);
+static bool try_parse_movz_w_imm(ut32 insn, int *dst_reg, ut32 *imm);
+static bool try_parse_adrp_add_pair(const ut8 *ptr, ut64 va, int *reg, ut64 *addr);
+static bool try_parse_adrp_ldr_pair(const ut8 *ptr, ut64 va, RBinFile *bf, RKext *kext, int *dst_reg, ut64 *loaded_val);
+static bool try_parse_adrp_base(ut32 insn, ut64 va, ut32 *rd, ut64 *adrp_base);
+static bool try_parse_addi64_same_reg(ut32 insn, int *reg, ut32 *imm12, bool *sh_is_12);
+static bool try_parse_mov_reg_reg(ut32 insn, int *dst_reg, int *src_reg);
 
 static void r_kext_free(RKext *kext);
 static void r_kext_fill_text_range(RKext *kext);
@@ -228,6 +297,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	obj->cache_buf = fbuf;
 	obj->pa2va_exec = prelink_range->pa2va_exec;
 	obj->pa2va_data = prelink_range->pa2va_data;
+	obj->class_by_handle = ht_up_new0 ();
 	R_FREE (prelink_range);
 	bf->bo->bin_obj = obj;
 	r_list_push (pending_bin_files, bf);
@@ -264,23 +334,8 @@ beach:
 }
 
 static void r_ptr_undecorate(RParsedPointer *ptr, ut64 decorated_addr, RKernelCacheObj *obj) {
-	/*
-	 * Logic taken from:
-	 * https://github.com/Synacktiv/kernelcache-laundering/blob/master/ios12_kernel_cache_helper.py
-	 */
-
-	if ((decorated_addr & 0x4000000000000000LL) == 0) {
-		if (decorated_addr & 0x8000000000000000LL) {
-			ptr->address = obj->kernel_base + (decorated_addr & 0xFFFFFFFFLL);
-		} else {
-			ptr->address = ((decorated_addr << 13) & 0xFF00000000000000LL) | (decorated_addr & 0x7ffffffffffLL);
-			if (decorated_addr & 0x40000000000LL) {
-				ptr->address |= 0xfffc0000000000LL;
-			}
-		}
-	} else {
-		ptr->address = decorated_addr;
-	}
+	ut64 target = decorated_addr & ((1 << 30) - 1);
+	ptr->address = obj->kernel_base + target;
 }
 
 static void ensure_kexts_initialized(RKernelCacheObj *obj, RBinFile *bf) {
@@ -695,8 +750,7 @@ static RList *kexts_from_load_commands(RKernelCacheObj *obj, RBinFile *bf) {
 			continue;
 		}
 
-		// r_kext_fill_text_range (kext);
-		kext->vaddr = K_PPTR (kext->vaddr);
+		r_kext_fill_text_range (kext);
 		kext->pa2va_exec = obj->pa2va_exec;
 		kext->pa2va_data = obj->pa2va_data;
 		kext->name = strdup (padded_name);
@@ -717,6 +771,8 @@ static void r_kext_free(RKext *kext) {
 	if (!kext) {
 		return;
 	}
+
+	r_list_free (kext->classes);
 
 	if (kext->mach0) {
 		MACH0_(mach0_free) (kext->mach0);
@@ -1066,7 +1122,7 @@ static void process_constructors_vec(RVecRBinSymbol *symbols, RBinFile *bf, RKer
 		if (!buf) {
 			break;
 		}
-		if (r_buf_read_at (obj->cache_buf, section->paddr + paddr, buf, section->size) < section->size) {
+		if (r_buf_read_at (obj->cache_buf, section->paddr, buf, section->size) < section->size) {
 			free (buf);
 			break;
 		}
@@ -1074,7 +1130,8 @@ static void process_constructors_vec(RVecRBinSymbol *symbols, RBinFile *bf, RKer
 		int count = 0;
 		for (j = 0; j + 7 < section->size; j += 8) {
 			ut64 addr64 = K_RPTR (buf + j);
-			ut64 paddr64 = section->paddr + paddr + j;
+			ut64 paddr64 = addr64 - obj->pa2va_exec;
+
 			if (mode == R_K_CONSTRUCTOR_TO_ENTRY) {
 				R_LOG_WARN ("wrong entrypoint entry not registered");
 				// RBinAddr *ba = newEntry (paddr64, addr64, type);
@@ -1348,6 +1405,11 @@ static bool symbols_vec(RBinFile *bf) {
 			if (MACH0_(load_symbols) (kext->mach0)) {
 				R_LOG_DEBUG ("--> %d / %d", RVecRBinSymbol_length (kext->mach0->symbols_vec), RVecRBinSymbol_length (&symbols));
 				RVecRBinSymbol_append (&symbols, kext->mach0->symbols_vec, &bin_symbol_copy);
+			}
+
+			ut64 start_offset = RVecRBinSymbol_length (&symbols);
+
+			{
 				process_constructors_vec (&symbols, bf, obj, kext->mach0, kext->range.offset, false, R_K_CONSTRUCTOR_TO_SYMBOL, kext_short_name (kext));
 				const ut32 last_ordinal = RVecRBinSymbol_length (&(bf->bo->symbols_vec));
 				symbols_from_stubs_vec (&symbols, bf, kernel_syms_by_addr, kext, last_ordinal);
@@ -1361,6 +1423,14 @@ static bool symbols_vec(RBinFile *bf) {
 				kext->mach0 = NULL;
 #endif
 			}
+
+			kext->classes = resolve_iokit_classes (&symbols, start_offset, bf, kext);
+			RListIter *iter;
+			RIOKitClass *c;
+			r_list_foreach (kext->classes, iter, c) {
+				ht_up_insert (obj->class_by_handle, c->meta_va, c);
+			}
+
 			break;
 		default:
 			R_LOG_WARN ("Unknown sub-bin");
@@ -1377,6 +1447,29 @@ static bool symbols_vec(RBinFile *bf) {
 	memcpy (&(bf->bo->symbols_vec), &symbols, sizeof (symbols));
 
 	return true;
+}
+
+static RList *classes(RBinFile *bf) {
+	RKernelCacheObj *obj = (RKernelCacheObj*) bf->bo->bin_obj;
+
+	RList *list = r_list_newf ((RListFree) r_bin_class_free);
+
+	int i;
+	RKext *kext;
+	r_kext_index_foreach (obj->kexts, i, kext) {
+		RListIter *iter;
+		RIOKitClass *c;
+		r_list_foreach (kext->classes, iter, c) {
+			RIOKitClass *parent = ht_up_find (obj->class_by_handle, c->supermeta_va, NULL);
+
+			RBinClass *klass = r_bin_class_new (c->name, parent ? parent->name : "", R_BIN_ATTR_PUBLIC);
+			klass->instance_size = c->size;
+			klass->addr = c->meta_va;
+			r_list_append (list, klass);
+		}
+	}
+
+	return list;
 }
 
 #define IS_KERNEL_ADDR(x) ((x & 0xfffffff000000000L) == 0xfffffff000000000L)
@@ -1727,17 +1820,22 @@ beach:
 	return NULL;
 }
 
-static ut64 extract_addr_from_code(ut8 *arm64_code, ut64 vaddr) {
-	ut64 addr = vaddr & ~0xfff;
+static ut64 extract_addr_from_code(const ut8 *arm64_code, ut64 vaddr) {
+	const ut64 page = vaddr & ~0xfffULL;
 
-	ut64 adrp = r_read_le32 (arm64_code);
-	ut64 adrp_offset = ((adrp & 0x60000000) >> 29) | ((adrp & 0xffffe0) >> 3);
-	addr += adrp_offset << 12;
+	const ut32 adrp = r_read_le32 (arm64_code);
+	const ut64 immlo = (adrp >> 29) & 0x3;
+	const ut64 immhi = (adrp >> 5) & 0x7ffffULL;
+	ut64 imm21 = (immhi << 2) | immlo;
+	int64_t simm21 = (int64_t) ((imm21 ^ 0x100000) - 0x100000);
+	const ut64 adrp_base = page + ((ut64) simm21 << 12);
 
-	ut64 ldr = r_read_le32 (arm64_code + 4);
-	addr += ((ldr & 0x3ffc00) >> 10) << ((ldr & 0xc0000000) >> 30);
+	const ut32 addi = r_read_le32 (arm64_code + 4);
+	const ut64 imm12 = (addi >> 10) & 0xFFFULL;
+	const ut64 sh = (addi >> 22) & 0x1ULL;
+	const ut64 add_imm = imm12 << (sh ? 12 : 0);
 
-	return addr;
+	return adrp_base + add_imm;
 }
 
 static void symbols_from_stubs_vec(RVecRBinSymbol *symbols, RBinFile *bf, HtPP *kernel_syms_by_addr, RKext *kext, int ordinal) {
@@ -1882,6 +1980,672 @@ static RStubsInfo *get_stubs_info(struct MACH0_(obj_t) *mach0, ut64 paddr, RKern
 	return stubs_info;
 }
 
+static RList *resolve_iokit_classes(RVecRBinSymbol *symbols, ut64 start_offset, RBinFile *bf, RKext *kext) {
+	RList *classes = find_class_registrations (symbols, start_offset, bf, kext);
+	find_class_vtables (classes, bf, kext);
+	compute_class_vtable_sizes (classes, bf, kext);
+
+	RListIter *it;
+	RIOKitClass *c;
+	r_list_foreach (classes, it, c) {
+		RBinSymbol *sym = R_NEW0 (RBinSymbol);
+		sym->name = r_bin_name_new_from (r_str_newf ("%s::gMetaClass", c->name));
+		sym->vaddr = c->meta_va;
+		sym->paddr = c->meta_va - kext->pa2va_exec;
+		sym->size = 8;
+		sym->forwarder = "NONE";
+		sym->bind = "GLOBAL";
+		sym->type = "OBJECT";
+		sym->ordinal = RVecRBinSymbol_length (symbols);
+		RVecRBinSymbol_push_back (symbols, sym);
+
+		if (c->vt.instance.va) {
+			RBinSymbol *vsym = R_NEW0 (RBinSymbol);
+			vsym->name = r_bin_name_new_from (r_str_newf ("%s::vtable", c->name));
+			vsym->vaddr = c->vt.instance.va;
+			vsym->paddr = c->vt.instance.va - kext->pa2va_exec;
+			vsym->size = (ut64) ((c->vt.instance.slots_total ? c->vt.instance.slots_total : 1) * 8);
+			vsym->forwarder = "NONE";
+			vsym->bind = "GLOBAL";
+			vsym->type = "OBJECT";
+			vsym->ordinal = RVecRBinSymbol_length (symbols);
+			RVecRBinSymbol_push_back (symbols, vsym);
+		}
+
+		if (c->vt.metaclass.va) {
+			RBinSymbol *msym = R_NEW0 (RBinSymbol);
+			msym->name = r_bin_name_new_from (r_str_newf ("%s::MetaClass::vtable", c->name));
+			msym->vaddr = c->vt.metaclass.va;
+			msym->paddr = c->vt.metaclass.va - kext->pa2va_exec;
+			msym->size = (ut64) ((c->vt.metaclass.slots_total ? c->vt.metaclass.slots_total : 1) * 8);
+			msym->forwarder = "NONE";
+			msym->bind = "GLOBAL";
+			msym->type = "OBJECT";
+			msym->ordinal = RVecRBinSymbol_length (symbols);
+			RVecRBinSymbol_push_back (symbols, msym);
+		}
+	}
+
+	return classes;
+}
+
+static RList *find_class_registrations(RVecRBinSymbol *symbols, ut64 start_offset, RBinFile *bf, RKext *kext) {
+	RList *classes = r_list_newf (r_iokit_class_free);
+
+	ut64 i;
+	ut64 end_offset = RVecRBinSymbol_length (symbols);
+	for (i = start_offset; i != end_offset; i++) {
+		RBinSymbol *sym = RVecRBinSymbol_at (symbols, i);
+		if (!strstr (sym->name->oname, ".init.")) {
+			continue;
+		}
+
+		ut64 func_vaddr = sym->vaddr;
+		ut64 reg_values[29] = { 0, };
+		ut64 w3_site = 0;
+
+		ut64 pc;
+		for (pc = func_vaddr; true; pc += 4) {
+			ut8 bytes[8];
+			if (!try_read_exec_va (bf, kext, pc, bytes, sizeof (bytes))) {
+				break;
+			}
+
+			int reg;
+			ut64 addr;
+			if (try_parse_adrp_add_pair (bytes, pc, &reg, &addr) ||
+					try_parse_adrp_ldr_pair (bytes, pc, bf, kext, &reg, &addr)) {
+				if (reg < R_ARRAY_SIZE (reg_values)) {
+					reg_values[reg] = addr;
+				}
+				continue;
+			}
+
+			const ut32 insn = r_read_le32 (bytes);
+
+			int dst_reg, src_reg;
+			if (try_parse_mov_reg_reg (insn, &dst_reg, &src_reg)) {
+				if (dst_reg < R_ARRAY_SIZE (reg_values) &&
+						src_reg < R_ARRAY_SIZE (reg_values)) {
+					reg_values[dst_reg] = reg_values[src_reg];
+				}
+				continue;
+			}
+
+			ut32 imm16 = 0;
+			if (try_parse_movz_w_imm (insn, &dst_reg, &imm16)) {
+				if (dst_reg == 2) {
+					reg_values[0] = 0;
+					reg_values[1] = 0;
+					reg_values[2] = 0;
+				} else if (dst_reg == 3) {
+					reg_values[3] = imm16;
+					w3_site = pc;
+				}
+				continue;
+			}
+
+			if (is_ret_like (insn)) {
+				break;
+			}
+
+			if (!is_bl (insn)) {
+				continue;
+			}
+
+			ut64 meta_va = reg_values[0];
+			ut64 name_va = reg_values[1];
+			ut64 supermeta_va = reg_values[2];
+			ut64 size = reg_values[3];
+			reg_values[0] = 0;
+			reg_values[1] = 0;
+			reg_values[2] = 0;
+			reg_values[3] = 0;
+
+			if (meta_va == 0 || name_va == 0 || w3_site == 0) {
+				w3_site = 0;
+				continue;
+			}
+			w3_site = 0;
+
+			/*
+			 * const int off26 = (int) ((insn & 0x03FFFFFFu) << 6) >> 6;
+			 * const ut64 bl_target = pc + ((ut64) off26 << 2);
+			 * TODO: Implement renaming of bl_target.
+			 */
+
+			char *name = NULL;
+			if (!try_read_printable_cstr (bf, kext, name_va, &name)) {
+				continue;
+			}
+
+			RIOKitClass *c = R_NEW0 (RIOKitClass);
+			c->name = name;
+			c->size = size;
+			c->meta_va = meta_va;
+			c->supermeta_va = supermeta_va;
+			r_list_append (classes, c);
+		}
+	}
+
+	return classes;
+}
+
+static void r_iokit_class_free(void *_c) {
+	RIOKitClass *c = _c;
+	if (c) {
+		free (c->name);
+		free (c);
+	}
+}
+
+static void find_class_vtables(RList *classes, RBinFile *bf, RKext *kext) {
+	int num_classes = r_list_length (classes);
+	if (num_classes == 0) {
+		return;
+	}
+
+	RKextTextBlob tb;
+	if (!load_kext_text_blob (bf, kext, &tb)) {
+		return;
+	}
+
+	HtUP *class_by_handle = ht_up_new0 ();
+	RListIter *it;
+	RIOKitClass *c;
+	r_list_foreach (classes, it, c) {
+		ht_up_insert (class_by_handle, c->meta_va, c);
+	}
+
+	const int anchor_back = 8;
+	const int meta_back = 256;
+
+	ut64 pc;
+	for (pc = tb.va; pc + 16 <= tb.va + tb.size; pc += 4) {
+		const ut32 insn = r_read_le32 (text_ptr (&tb, pc));
+
+		int reg_n;
+		ut32 imm12;
+		bool sh12;
+		if (!try_parse_addi64_same_reg (insn, &reg_n, &imm12, &sh12)) {
+			continue;
+		}
+		if (imm12 != 0x10 || sh12) {
+			continue;
+		}
+
+		ut64 va = pc;
+		int b;
+
+		bool found_anchor = false;
+		ut64 anchor = 0;
+		ut64 vtable = 0;
+		for (b = 1; b <= anchor_back; b++) {
+			va -= 4;
+
+			const ut8 *ptr = text_ptr (&tb, va);
+			if (!ptr) {
+				break;
+			}
+
+			int reg_x;
+			ut64 addr;
+			if (try_parse_adrp_add_pair (ptr, va, &reg_x, &addr) && reg_x == reg_n) {
+				anchor = addr;
+				vtable = anchor + 0x10;
+				found_anchor = true;
+				break;
+			}
+		}
+		if (!found_anchor) {
+			continue;
+		}
+
+		RIOKitClass *c_x0 = NULL;
+		{
+			int cur = 0;
+			ut64 tva = pc + 4;
+			int k;
+			for (k = 1; k <= meta_back; k++) {
+				if (tva < tb.va + 4) {
+					break;
+				}
+				tva -= 4;
+
+				const ut8 *ptr = text_ptr (&tb, tva);
+				if (!ptr) {
+					break;
+				}
+
+				const ut32 insn = r_read_le32 (ptr);
+
+				if (is_ret_like (insn)) {
+					break;
+				}
+
+				int rd, rs;
+				if (try_parse_mov_reg_reg (insn, &rd, &rs) && rd == cur) {
+					cur = rs;
+					continue;
+				}
+
+				int rpair;
+				ut64 a;
+				if (try_parse_adrp_add_pair (ptr, tva, &rpair, &a) && rpair == cur) {
+					c_x0 = ht_up_find (class_by_handle, a, NULL);
+					if (c_x0) {
+						break;
+					}
+					continue;
+				}
+
+				ut64 loaded;
+				if (try_parse_adrp_ldr_pair (ptr, tva, bf, kext, &rpair, &loaded) && rpair == cur) {
+					c_x0 = ht_up_find (class_by_handle, loaded, NULL);
+					if (c_x0) {
+						break;
+					}
+					continue;
+				}
+			}
+		}
+
+		if (c_x0) {
+			if (!c_x0->vt.metaclass.va) {
+				c_x0->vt.metaclass.va = vtable;
+			}
+			continue;
+		}
+
+		for (b = 1; b <= meta_back; b++) {
+			va -= 4;
+
+			const ut8 *ptr = text_ptr (&tb, va);
+			if (!ptr) {
+				break;
+			}
+
+			const ut32 insn = r_read_le32 (ptr);
+			if (is_ret_like (insn)) {
+				break;
+			}
+
+			ut64 addr;
+			if (!try_parse_adrp_add_pair (ptr, va, NULL, &addr)) {
+				continue;
+			}
+
+			c = ht_up_find (class_by_handle, addr, NULL);
+			if (c) {
+				if (!c->vt.instance.va) {
+					c->vt.instance.va = vtable;
+				}
+				break;
+			}
+		}
+	}
+
+	ht_up_free (class_by_handle);
+	free (tb.buf);
+}
+
+static void compute_class_vtable_sizes(RList *classes, RBinFile *bf, RKext *kext) {
+	size_t n_sorted = 0;
+	ut64 *vt_sorted = build_sorted_vtable_starts (classes, &n_sorted);
+	if (!vt_sorted) {
+		return;
+	}
+
+	RListIter *it;
+	RIOKitClass *c;
+
+	r_list_foreach (classes, it, c) {
+		compute_vtable_sizes_for_class (bf, kext, c, vt_sorted, n_sorted);
+	}
+
+	r_list_foreach (classes, it, c) {
+		compute_metaclass_vtable_sizes_for_class (bf, kext, c, vt_sorted, n_sorted);
+	}
+
+	R_FREE (vt_sorted);
+}
+
+static void compute_vtable_sizes_for_class(RBinFile *bf, RKext *kext, RIOKitClass *c, const ut64 *vt_sorted, size_t n_sorted) {
+	if (!c->vt.instance.va || c->vt.instance.slots_total) {
+		return;
+	}
+
+	ut32 total = scan_vtable_total_slots (bf, kext, c->vt.instance.va, vt_sorted, n_sorted);
+	c->vt.instance.slots_total = total;
+
+	RKernelCacheObj *obj = (RKernelCacheObj *) bf->bo->bin_obj;
+	RIOKitClass *parent = ht_up_find (obj->class_by_handle, c->supermeta_va, NULL);
+
+	ut32 parent_total = 0;
+	if (parent && parent->vt.instance.va) {
+		compute_vtable_sizes_for_class (bf, kext, parent, vt_sorted, n_sorted);
+		parent_total = parent->vt.instance.slots_total;
+	}
+
+	c->vt.instance.slots_own = (total > parent_total) ? (total - parent_total) : 0;
+}
+
+static void compute_metaclass_vtable_sizes_for_class(RBinFile *bf, RKext *kext, RIOKitClass *c, const ut64 *vt_sorted, size_t n_sorted) {
+	if (!c->vt.metaclass.va || c->vt.metaclass.slots_total) {
+		return;
+	}
+
+	ut32 total = scan_vtable_total_slots (bf, kext, c->vt.metaclass.va, vt_sorted, n_sorted);
+	c->vt.metaclass.slots_total = total;
+
+	RKernelCacheObj *obj = (RKernelCacheObj *) bf->bo->bin_obj;
+	RIOKitClass *parent = ht_up_find (obj->class_by_handle, c->supermeta_va, NULL);
+
+	ut32 parent_total = 0;
+	if (parent && parent->vt.metaclass.va) {
+		compute_metaclass_vtable_sizes_for_class (bf, kext, parent, vt_sorted, n_sorted);
+		parent_total = parent->vt.metaclass.slots_total;
+	}
+
+	c->vt.metaclass.slots_own = (total > parent_total) ? (total - parent_total) : 0;
+}
+
+static ut32 scan_vtable_total_slots(RBinFile *bf, RKext *kext, ut64 start, const ut64 *vt_sorted, size_t n_sorted) {
+	if (!start) {
+		return 0;
+	}
+
+	RKernelCacheObj *obj = (RKernelCacheObj*) bf->bo->bin_obj;
+	const ut64 next_start = next_vtable_after (vt_sorted, n_sorted, start);
+	const ut64 hard_end = next_start ? next_start : (kext->vaddr + kext->range.size);
+
+	const ut64 start_off = start - kext->pa2va_data;
+	const ut64 end_off = hard_end - kext->pa2va_data;
+	ut64 span = end_off - start_off;
+
+	const ut64 one_megabyte = (1ULL << 20);
+	if (span > one_megabyte) {
+		span = one_megabyte;
+	}
+
+	ut8 *buf = malloc (span);
+	if (r_buf_read_at (obj->cache_buf, start_off, buf, span) < span) {
+		free (buf);
+		return 0;
+	}
+
+	ut32 count = 0;
+	const ut8 *p = buf;
+	const ut8 *end = buf + span;
+
+	while (p + 8 <= end) {
+		ut64 decorated = r_read_le64 (p);
+		if (decorated == 0) {
+			break;
+		}
+
+		ut64 fn = K_PPTR (decorated);
+		if (!IS_KERNEL_ADDR (fn)) {
+			break;
+		}
+
+		count++;
+		p += 8;
+	}
+
+	free (buf);
+
+	return count;
+}
+
+static ut64 *build_sorted_vtable_starts(RList *classes, size_t *out_n) {
+	*out_n = 0;
+
+	const size_t n = r_list_length (classes);
+	if (!n) {
+		return NULL;
+	}
+
+	ut64 *arr = R_NEWS0 (ut64, n * 2);
+
+	size_t i = 0;
+	RListIter *it;
+	RIOKitClass *c;
+	r_list_foreach (classes, it, c) {
+		if (c->vt.instance.va) {
+			arr[i++] = c->vt.instance.va;
+		}
+		if (c->vt.metaclass.va) {
+			arr[i++] = c->vt.metaclass.va;
+		}
+	}
+	if (!i) {
+		R_FREE (arr);
+		return NULL;
+	}
+	qsort (arr, i, sizeof (ut64), ut64_compare);
+
+	*out_n = i;
+	return arr;
+}
+
+static int ut64_compare(const void *pa, const void *pb) {
+	const ut64 a = *(const ut64 *) pa;
+	const ut64 b = *(const ut64 *) pb;
+	return (a > b) - (a < b);
+}
+
+static ut64 next_vtable_after(const ut64 *arr, size_t n, ut64 self_start) {
+	size_t lo = 0;
+	size_t hi = n;
+	while (lo < hi) {
+		size_t mid = (lo + hi) >> 1;
+		if (arr[mid] <= self_start) {
+			lo = mid + 1;
+		} else {
+			hi = mid;
+		}
+	}
+	return (lo < n) ? arr[lo] : 0;
+}
+
+static bool load_kext_text_blob(RBinFile *bf, RKext *kext, RKextTextBlob *blob) {
+	RKernelCacheObj *obj = (RKernelCacheObj*) bf->bo->bin_obj;
+	if (!kext->text_range.size) {
+		return false;
+	}
+
+	ut8 *buf = malloc (kext->text_range.size);
+	if (r_buf_read_at (obj->cache_buf, kext->text_range.offset, buf, kext->text_range.size) < kext->text_range.size) {
+		free (buf);
+		return false;
+	}
+	blob->buf = buf;
+	blob->va = kext->vaddr;
+	blob->size = kext->text_range.size;
+	return true;
+}
+
+static const ut8 *text_ptr(const RKextTextBlob *tb, ut64 va) {
+	if (va < tb->va || va + 4 > tb->va + tb->size) {
+		return NULL;
+	}
+	return tb->buf + (va - tb->va);
+}
+
+static bool try_read_exec_va(RBinFile *bf, RKext *kext, ut64 va, void *dst, size_t len) {
+	return r_buf_read_at (bf->buf, va - kext->pa2va_exec, dst, len) == len;
+}
+
+static bool try_read_data_va(RBinFile *bf, RKext *kext, ut64 va, void *dst, size_t len) {
+	return r_buf_read_at (bf->buf, va - kext->pa2va_data, dst, len) == len;
+}
+
+static bool try_read_printable_cstr(RBinFile *bf, RKext *kext, ut64 va, char **cstr) {
+	*cstr = NULL;
+
+	ut8 buf[128];
+	if (!try_read_exec_va (bf, kext, va, buf, sizeof (buf))) {
+		return false;
+	}
+
+	int i = 0;
+	for (; i < sizeof (buf); i++) {
+		if (!buf[i]) {
+			break;
+		}
+		if (buf[i] < 0x20 || buf[i] > 0x7e) {
+			return false;
+		}
+	}
+	if (i < 1 || i >= (int) sizeof (buf)) {
+		return false;
+	}
+
+	*cstr = r_str_ndup ((char *) buf, i);
+	return true;
+}
+
+static bool is_bl(ut32 insn) {
+	return (insn & ARM64_BL_MASK) == ARM64_BL_BASE;
+}
+
+static bool is_ret_like(ut32 insn) {
+	if ((insn & ARM64_RET_MASK) == ARM64_RET_BASE) {
+		return true;
+	}
+	return (insn & ARM64_RET_AUTH_MASK) == ARM64_RET_AUTH_BASE;
+}
+
+static bool try_parse_movz_w_imm(ut32 insn, int *dst_reg, ut32 *imm) {
+	if ((insn & 0xFF800000u) != 0x52800000u) {
+		return false;
+	}
+	const ut32 rd = insn & 0x1Fu;
+	const ut32 imm16 = (insn >> 5) & 0xFFFFu;
+	const ut32 hw = (insn >> 21)  & 0x3u;
+
+	*dst_reg = (int) rd;
+	*imm = imm16 << (hw * 16);
+	return true;
+}
+
+static bool try_parse_adrp_add_pair(const ut8 *ptr, ut64 va, int *reg, ut64 *addr) {
+	const ut32 i0 = r_read_le32 (ptr);
+	const ut32 i1 = r_read_le32 (ptr + 4);
+
+	ut32 rd_adrp;
+	ut64 adrp_base;
+	if (!try_parse_adrp_base (i0, va, &rd_adrp, &adrp_base)) {
+		return false;
+	}
+
+	int rd_add;
+	if (!try_parse_addi64_same_reg (i1, &rd_add, NULL, NULL) || rd_add != rd_adrp) {
+		return false;
+	}
+
+	if (reg) {
+		*reg = (int) rd_adrp;
+	}
+	*addr = extract_addr_from_code (ptr, va);
+	return true;
+}
+
+static bool try_parse_adrp_ldr_pair(const ut8 *ptr, ut64 va, RBinFile *bf, RKext *kext, int *dst_reg, ut64 *loaded_val) {
+	*dst_reg = -1;
+	*loaded_val = 0;
+
+	const ut32 i0 = r_read_le32 (ptr);
+	const ut32 i1 = r_read_le32 (ptr + 4);
+
+	ut32 rd_adrp;
+	ut64 adrp_base;
+	if (!try_parse_adrp_base (i0, va, &rd_adrp, &adrp_base)) {
+		return false;
+	}
+
+	if ((i1 & ARM64_LDRX_UOFF_MASK) != ARM64_LDRX_UOFF_BASE) {
+		return false;
+	}
+	const ut32 rn_ldr = (i1 >> 5) & 0x1Fu;
+	if (rn_ldr != rd_adrp) {
+		return false;
+	}
+
+	const ut32 rd_ldr = i1 & 0x1Fu;
+	const ut32 imm12 = (i1 >> 10) & 0xFFFu;
+	const ut64 addr = adrp_base + ((ut64) imm12 << 3);
+
+	ut64 decorated = 0;
+	if (!try_read_data_va (bf, kext, addr, &decorated, sizeof (decorated))) {
+		return false;
+	}
+
+	RKernelCacheObj *obj = (RKernelCacheObj *) bf->bo->bin_obj;
+	*dst_reg = (int) rd_ldr;
+	*loaded_val = K_PPTR (decorated);
+	return true;
+}
+
+static bool try_parse_adrp_base(ut32 insn, ut64 va, ut32 *rd, ut64 *adrp_base) {
+	if ((insn & ARM64_ADRP_MASK) != ARM64_ADRP_BASE) {
+		return false;
+	}
+	const ut64 page  = va & ~0xfffULL;
+
+	const ut64 immlo = (insn >> 29) & 0x3;
+	const ut64 immhi = (insn >> 5) & 0x7ffffULL;
+	const ut64 imm21 = (immhi << 2) | immlo;
+	const int64_t simm21 = (int64_t) ((imm21 ^ 0x100000) - 0x100000);
+
+	*rd = insn & 0x1Fu;
+	*adrp_base = page + ((ut64) simm21 << 12);
+	return true;
+}
+
+static bool try_parse_addi64_same_reg(ut32 insn, int *reg, ut32 *imm12, bool *sh_is_12) {
+	if ((insn & ARM64_ADDI64_MASK) != ARM64_ADDI64_BASE) {
+		return false;
+	}
+
+	const ut32 rd = (insn & 0x1Fu);
+	const ut32 rn = (insn >> 5) & 0x1Fu;
+	if (rd != rn) {
+		return false;
+	}
+
+	*reg = (int) rd;
+	if (imm12)
+		*imm12 = (insn >> 10) & 0xFFFu;
+	if (sh_is_12)
+		*sh_is_12 = ((insn >> 22) & 1u) != 0;
+	return true;
+}
+
+static bool try_parse_mov_reg_reg(ut32 insn, int *dst_reg, int *src_reg) {
+	ut32 top = insn & 0xFF000000u;
+	if (top != 0x2A000000u && top != 0xAA000000u) {
+		return false;
+	}
+	if (((insn >> 21) & 1u) != 0) {
+		return false;
+	}
+	if (((insn >> 22) & 3u) != 0) {
+		return false;
+	}
+	if (((insn >> 10) & 0x3Fu) != 0) {
+		return false;
+	}
+	if (((insn >> 5) & 0x1Fu) != 31u) {
+		return false;
+	}
+
+	*dst_reg = (int) (insn & 0x1Fu);
+	*src_reg = (int) ((insn >> 16) & 0x1Fu);
+	return true;
+}
+
 static RBinInfo *info(RBinFile *bf) {
 	bool big_endian = 0;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
@@ -1918,6 +2682,8 @@ static void r_kernel_cache_free(RKernelCacheObj *obj) {
 	if (!obj) {
 		return;
 	}
+
+	ht_up_free (obj->class_by_handle);
 
 	if (obj->mach0) {
 		MACH0_(mach0_free) (obj->mach0);
@@ -2346,6 +3112,7 @@ RBinPlugin r_bin_plugin_xnu_kernelcache = {
 	// .symbols = &symbols,
 	.symbols_vec = &symbols_vec,
 	.sections = &sections,
+	.classes = &classes,
 	.check = &check,
 	.info = &info
 };
