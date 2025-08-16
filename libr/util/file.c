@@ -949,6 +949,10 @@ R_API bool r_file_rm(const char *file) {
 	} else {
 #if R2__WINDOWS__
 		LPTSTR file_ = r_sys_conv_utf8_to_win (file);
+		DWORD file_attrs_ = GetFileAttributes(file_);
+		if (file_attrs_ & FILE_ATTRIBUTE_READONLY) {
+			SetFileAttributes(file_, file_attrs_ & ~FILE_ATTRIBUTE_READONLY);
+		}
 		bool ret = DeleteFile (file_);
 
 		free (file_);

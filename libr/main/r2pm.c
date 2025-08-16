@@ -80,7 +80,7 @@ static int git_pull(const char *dir, bool verbose, bool reset) {
 	}
 	const char *quiet = verbose? "": "--quiet";
 #if R2__WINDOWS__
-	char *s = r_str_newf ("cd %s && git pull %s && git diff", dir, quiet);
+	char *s = r_str_newf ("cd /d %s && git pull %s && git diff", dir, quiet);
 #else
 	char *s = r_str_newf ("cd '%s' && git pull %s", dir, quiet);
 #endif
@@ -101,7 +101,7 @@ static int git_clone(const char *dir, const char *url) {
 	}
 	free (git);
 
-	char *cmd = r_str_newf ("git clone --depth=1 --recursive %s %s", url, dir);
+	char *cmd = r_str_newf ("git clone --depth=1 --recursive -c core.autocrlf=input %s %s", url, dir);
 	R_LOG_INFO ("%s", cmd);
 	int rc = r_sandbox_system (cmd, 1);
 	free (cmd);
@@ -580,7 +580,7 @@ static int r2pm_uninstall_pkg(const char *pkg, bool global) {
 		return 1;
 	}
 	char *s = have_builddir
-		? r_str_newf ("cd %s && cd %s && %s", srcdir, pkg, script)
+		? r_str_newf ("cd /d %s && cd %s && %s", srcdir, pkg, script)
 		: r_str_newf ("%s", script);
 	int res = r_sandbox_system (s, 1);
 	free (s);
@@ -847,11 +847,14 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 		R_LOG_ERROR ("This package does not have R2PM_INSTALL_WINDOWS instructions");
 		return 1;
 	}
+	script = r_str_replace_all(script, "\r\n", " & ");
+	script = r_str_replace_all(script, "\n", " & ");
+
 	char *dirname = r2pm_get (pkg, "\nR2PM_DIR ", TT_TEXTLINE);
-	char *s = r_str_newf ("cd %s && cd %s && %s", srcdir, pkg, script);
+	char *s = r_str_newf ("cd /d %s && cd %s && %s", srcdir, pkg, script);
 	if (dirname) {
 		free (s);
-		s = r_str_newf ("cd %s && cd %s && %s", srcdir, dirname, script);
+		s = r_str_newf ("cd /d %s && cd %s && %s", srcdir, dirname, script);
 	}
 	int res = r_sandbox_system (s, 1);
 	free (s);

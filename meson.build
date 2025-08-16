@@ -16,6 +16,7 @@ endif
 
 if cc.get_id() == 'msvc'
   # add_project_arguments('/Zc:preprocessor', language: 'c')
+  add_project_arguments(cc.get_supported_arguments(['/utf-8']), language: 'c')
   if get_option('static_runtime')
     add_global_arguments('/MT', language: 'c')
   endif
