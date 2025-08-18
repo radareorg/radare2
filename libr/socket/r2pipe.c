@@ -1,29 +1,13 @@
 /* radare - LGPL - Copyright 2015-2025 - pancake */
-/*
-Usage Example:
-
-	#include <r_core.h>
-	int main() {
-		RCoreBind rcb;
-		RCore *core = r_core_new ();
-		r_core_bind (core, &rcb);
-		r2pipe_open_corebind (&rcb);
-		char *clippy = r2pipe_cmd ("?E hello");
-		eprintf ("%s\n", clippy);
-		free (clippy);
-		r2pipe_close (r2pipe);
-		r_core_free (core);
-	}
-*/
 
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_socket.h>
 #include <errno.h>
 
-#define R2P_PID(x) (((R2Pipe*)(x)->data)->pid)
-#define R2P_INPUT(x) (((R2Pipe*)(x)->data)->input[0])
-#define R2P_OUTPUT(x) (((R2Pipe*)(x)->data)->output[1])
+#define R2P_PID (x) ( ( (R2Pipe *) (x)->data)->pid)
+#define R2P_INPUT (x) ( ( (R2Pipe *) (x)->data)->input[0])
+#define R2P_OUTPUT (x) ( ( (R2Pipe *) (x)->data)->output[1])
 
 #define USE_WIP_READ 0
 #if R2__WINDOWS__
@@ -32,7 +16,7 @@ Usage Example:
 #define NO_CHILD -1
 #endif
 
-#if defined(__wasi__) && __wasi__
+#if defined (__wasi__) && __wasi__
 #define HAVE_R2PIPE 0
 #else
 #define HAVE_R2PIPE 1
@@ -61,11 +45,11 @@ R_API int r2pipe_write(R2Pipe *r2pipe, const char *str) {
 	cmd[n + 1] = '\0';
 #if R2__WINDOWS__
 	DWORD dwWritten = 0;
-	WriteFile (r2pipe->pipe, cmd, (DWORD)(len - 1), &dwWritten, NULL);
-	int ret = (dwWritten == (DWORD)(len - 1));
+	WriteFile (r2pipe->pipe, cmd, (DWORD) (len - 1), &dwWritten, NULL);
+	int ret = (dwWritten == (DWORD) (len - 1));
 #else
-	ssize_t wrote = write (r2pipe->input[1], cmd, (ssize_t)(len - 1));
-	int ret = (wrote == (ssize_t)(len - 1));
+	ssize_t wrote = write (r2pipe->input[1], cmd, (ssize_t) (len - 1));
+	int ret = (wrote == (ssize_t) (len - 1));
 #endif
 	free (cmd);
 	return ret;
@@ -79,7 +63,7 @@ R_API char *r2pipe_read(R2Pipe *r2pipe) {
 	R_RETURN_VAL_IF_FAIL (r2pipe, NULL);
 	char *buf = NULL;
 #if HAVE_R2PIPE
-#	/* Read all available data from the pipe into a dynamically
+#/* Read all available data from the pipe into a dynamically
 #	 * growing buffer and return a NUL-terminated string. */
 	/* r2pipe already validated above */
 	int bufsz = 4096;
@@ -91,7 +75,7 @@ R_API char *r2pipe_read(R2Pipe *r2pipe) {
 	BOOL bSuccess = FALSE;
 	DWORD dwRead = 0;
 	// Read up to bufsz-1 bytes and NUL-terminate.
-	DWORD toRead = (DWORD)(bufsz - 1);
+	DWORD toRead = (DWORD) (bufsz - 1);
 	bSuccess = ReadFile (r2pipe->pipe, buf, toRead, &dwRead, NULL);
 	if (!bSuccess || dwRead == 0) {
 		free (buf);
@@ -121,7 +105,7 @@ R_API char *r2pipe_read(R2Pipe *r2pipe) {
 		}
 	}
 	if (buf) {
-		int zpos = (i < bufsz)? i: i - 1;
+		int zpos = (i < bufsz) ? i : i - 1;
 		buf[zpos] = 0;
 	}
 #endif
@@ -137,7 +121,7 @@ R_API int r2pipe_close(R2Pipe *r2pipe) {
 #if HAVE_R2PIPE
 	/*
 	if (r2pipe->coreb.core && !r2pipe->coreb.puts) {
-		void (*rfre)(void *c) = r_lib_dl_sym (libr, "r_core_free");
+		void (*rfre) (void *c) = r_lib_dl_sym (libr, "r_core_free");
 		if (rfre) {
 			rfre (r2pipe->coreb.core);
 		}
@@ -171,6 +155,42 @@ R_API int r2pipe_close(R2Pipe *r2pipe) {
 		r2pipe->child = NO_CHILD;
 	}
 #endif
+	/* free http resources if used */
+	if (r2pipe->is_http && r2pipe->http_url) {
+		free (r2pipe->http_url);
+		r2pipe->http_url = NULL;
+		r2pipe->is_http = false;
+	}
+#endif
+	free (r2pipe);
+	return 0;
+#if R2__WINDOWS__
+	if (r2pipe->pipe) {
+		CloseHandle (r2pipe->pipe);
+		r2pipe->pipe = NULL;
+	}
+#else
+	if (r2pipe->input[0] != -1) {
+		close (r2pipe->input[0]);
+		r2pipe->input[0] = -1;
+	}
+	if (r2pipe->input[1] != -1) {
+		close (r2pipe->input[1]);
+		r2pipe->input[1] = -1;
+	}
+	if (r2pipe->output[0] != -1) {
+		close (r2pipe->output[0]);
+		r2pipe->output[0] = -1;
+	}
+	if (r2pipe->output[1] != -1) {
+		close (r2pipe->output[1]);
+		r2pipe->output[1] = -1;
+	}
+	if (r2pipe->child != NO_CHILD) {
+		kill (r2pipe->child, SIGTERM);
+		waitpid (r2pipe->child, NULL, 0);
+		r2pipe->child = NO_CHILD;
+	}
 #endif
 	free (r2pipe);
 	return 0;
@@ -180,9 +200,7 @@ R_API int r2pipe_close(R2Pipe *r2pipe) {
 static int w32_createPipe(R2Pipe *r2pipe, const char *cmd) {
 	CHAR buf[1024];
 	r2pipe->pipe = CreateNamedPipe (TEXT ("\\\\.\\pipe\\R2PIPE_IN"),
-		PIPE_ACCESS_DUPLEX,PIPE_TYPE_MESSAGE | \
-		PIPE_READMODE_MESSAGE | \
-		PIPE_WAIT, PIPE_UNLIMITED_INSTANCES,
+		PIPE_ACCESS_DUPLEX, PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT, PIPE_UNLIMITED_INSTANCES,
 		sizeof (buf), sizeof (buf), 0, NULL);
 	if (r_sys_create_child_proc_w32 (cmd, NULL, NULL, NULL)) {
 		if (ConnectNamedPipe (r2pipe->pipe, NULL)) {
@@ -194,9 +212,9 @@ static int w32_createPipe(R2Pipe *r2pipe, const char *cmd) {
 #endif
 
 #if HAVE_R2PIPE
-static R2Pipe* r2p_open_pipes(R2Pipe* r2p) {
+static R2Pipe *r2p_open_pipes(R2Pipe *r2p) {
 	R_RETURN_VAL_IF_FAIL (r2p, NULL);
-#if R2__UNIX__ || defined(__CYGWIN__)
+#if R2__UNIX__ || defined (__CYGWIN__)
 	char *out = r_sys_getenv ("R2PIPE_IN");
 	char *in = r_sys_getenv ("R2PIPE_OUT");
 	int done = false;
@@ -217,7 +235,7 @@ static R2Pipe* r2p_open_pipes(R2Pipe* r2p) {
 	free (out);
 	return r2p;
 #else
-	R_LOG_ERROR ("r2pipe_open(NULL) not supported on this platform");
+	R_LOG_ERROR ("r2pipe_open (NULL) not supported on this platform");
 	return NULL;
 #endif
 }
@@ -230,6 +248,9 @@ static R2Pipe *r2pipe_new(void) {
 	r2pipe->output[0] = r2pipe->output[1] = -1;
 #endif
 	r2pipe->child = NO_CHILD;
+	/* init http support fields */
+	r2pipe->http_url = NULL;
+	r2pipe->is_http = false;
 	return r2pipe;
 }
 
@@ -244,8 +265,8 @@ R_API R2Pipe *r2pipe_open_dl(const char *libr_path) {
 #if HAVE_R2PIPE
 	R_RETURN_VAL_IF_FAIL (libr_path, NULL);
 	void *libr = r_lib_dl_open (libr_path, false);
-	void* (*rnew)() = r_lib_dl_sym (libr, "r_core_new");
-	char* (*rcmd)(void *c, const char *cmd) = r_lib_dl_sym (libr, "r_core_cmd_str");
+	void * (*rnew) () = r_lib_dl_sym (libr, "r_core_new");
+	char * (*rcmd) (void *c, const char *cmd) = r_lib_dl_sym (libr, "r_core_cmd_str");
 
 	if (rnew && rcmd) {
 		R2Pipe *r2pipe = r2pipe_new ();
@@ -261,11 +282,25 @@ R_API R2Pipe *r2pipe_open_dl(const char *libr_path) {
 	return NULL;
 }
 
-R_API R2Pipe *r2pipe_open(const char * R_NULLABLE cmd) {
+R_API R2Pipe *r2pipe_open(const char *R_NULLABLE cmd) {
 #if HAVE_R2PIPE
 	R2Pipe *r2p = r2pipe_new ();
 	if (!r2p) {
 		return NULL;
+	}
+	/* HTTP/r2web mode: if the command is a http (s):// or r2web:// URL,
+	 * store it in the r2pipe and use HTTP POST for commands. */
+	if (cmd && (r_str_startswith (cmd, "http://") || r_str_startswith (cmd, "https://") || r_str_startswith (cmd, "r2web://"))) {
+		char *u = NULL;
+		if (r_str_startswith (cmd, "r2web://")) {
+			u = r_str_newf ("http://%s", cmd + sizeof ("r2web://") - 1);
+		} else {
+			u = strdup (cmd);
+		}
+		r2p->http_url = u;
+		r2p->is_http = true;
+		r2p->child = NO_CHILD;
+		return r2p;
 	}
 	if (R_STR_ISEMPTY (cmd)) {
 		r2p->child = NO_CHILD;
@@ -351,6 +386,11 @@ R_API R2Pipe *r2pipe_open(const char * R_NULLABLE cmd) {
 R_API char *r2pipe_cmd(R2Pipe *r2p, const char *str) {
 #if HAVE_R2PIPE
 	R_RETURN_VAL_IF_FAIL (r2p && str, NULL);
+	/* HTTP mode: POST the command to the configured endpoint and return the response */
+	if (r2p->is_http) {
+		int len = 0;
+		return r_socket_http_post (r2p->http_url, NULL, str, NULL, &len);
+	}
 	if (!*str || !r2pipe_write (r2p, str)) {
 		r_sys_perror ("r2pipe_write");
 		return NULL;
@@ -391,7 +431,7 @@ R_API char *r2pipe_cmdf(R2Pipe *r2p, const char *fmt, ...) {
 	}
 	va_end (ap2);
 	va_end (ap);
-	return (char*)fmt;
+	return (char *)fmt;
 #else
 	return NULL;
 #endif
