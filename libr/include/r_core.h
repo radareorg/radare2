@@ -354,8 +354,6 @@ struct r_core_t {
 	ut64 rc; // command's return code .. related to num->value;
 	RLib *lib;
 	RCmd *rcmd;
-	RCmdDescriptor root_cmd_descriptor;
-	RList/*<RCmdDescriptor>*/ *cmd_descriptors;
 	RAnal *anal;
 	RAsm *rasm;
 	RCoreEsil esil;
@@ -447,7 +445,7 @@ struct r_core_t {
 	int (*r_main_rax2)(int argc, const char **argv);
 	int skiplines; // used only for disasm
 	void *priv; // Its RCorePriv but only used internally to not break abi
-	bool esil_anal_stop;
+	bool esil_anal_stop; // sounds like must be deprecated
 };
 
 // maybe move into RAnal

@@ -5,17 +5,25 @@
 // Per-thread current task pointer (TLS)
 static R_TH_LOCAL RCoreTask *task_tls_current = NULL;
 
+#define CUSTOMCORE 0
+
 static RCore *mycore_new(RCore *core) {
+#if CUSTOMCORE
 	RCore *c = R_NEW (RCore);
 	memcpy (c, core, sizeof (RCore));
 	c->cons = r_cons_new ();
 	// XXX: RConsBind must disappear. its used in bin, fs and search
 	// TODO: use r_cons_clone instead
 	return c;
+#else
+	return core;
+#endif
 }
 
 static void mycore_free(RCore *a) {
+#if CUSTOMCORE
 	r_cons_free (a->cons);
+#endif
 }
 
 R_API void r_core_task_scheduler_init(RCoreTaskScheduler *tasks, RCore *core) {

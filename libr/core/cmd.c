@@ -6944,7 +6944,6 @@ R_API void r_core_cmd_init(RCore *core) {
 		core->rcmd->macro.num = core->num;
 		core->rcmd->macro.cmd = core_cmd0_wrapper;
 		core->rcmd->nullcallback = r_core_cmd_nullcallback;
-		core->cmd_descriptors = r_list_newf (free);
 		size_t i;
 		for (i = 0; i < R_ARRAY_SIZE (cmds); i++) {
 			r_cmd_add (core->rcmd, cmds[i].cmd, cmds[i].cb);

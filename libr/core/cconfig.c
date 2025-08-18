@@ -4005,7 +4005,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("time.fmt", "%Y-%m-%d %H:%M:%S %u", &cb_cfgdatefmt, "Date format (%Y-%m-%d %H:%M:%S %u)");
 	SETICB ("time.zone", 0, &cb_timezone, "time zone, in hours relative to GMT: +2, -1,..");
 	SETCB ("cfg.corelog", "false", &cb_cfgcorelog, "log changes using the T api needed for realtime syncing");
-	SETB ("cfg.newtab", "false", "show descriptions in command completion");
 	p = r_sys_getenv ("EDITOR");
 #if R2__WINDOWS__
 	r_config_set (cfg, "cfg.editor", r_str_get_fail (p, "notepad"));

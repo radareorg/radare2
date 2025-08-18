@@ -19,12 +19,6 @@ typedef int (*RCmdCb) (void *user, const char *input);
 // typedef RCmdStatus (*RCmdArgvCb) (RCore *core, int argc, const char **argv);
 typedef int (*RCmdNullCb) (void *user);
 
-typedef struct r_cmd_parsed_args_t {
-	int argc;
-	char **argv;
-	bool has_space_after_cmd;
-} RCmdParsedArgs;
-
 typedef struct r_cmd_macro_label_t {
 	char name[80];
 	char *ptr;
@@ -80,15 +74,6 @@ typedef struct r_cmd_t {
 	// RCmdDesc *root_cmd_desc;
 	HtPP *ht_cmds;
 } RCmd;
-
-// TODO: remove this once transitioned to RCmdDesc
-typedef struct r_cmd_descriptor_t {
-	const char *cmd;
-	const char **help_msg;
-	const char **help_detail;
-	const char **help_detail2;
-	struct r_cmd_descriptor_t *sub[127];
-} RCmdDescriptor;
 
 #ifdef R_API
 R_API RCmd *r_cmd_new(void *data);
