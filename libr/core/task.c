@@ -5,6 +5,19 @@
 // Per-thread current task pointer (TLS)
 static R_TH_LOCAL RCoreTask *task_tls_current = NULL;
 
+static RCore *mycore_new(RCore *core) {
+	RCore *c = R_NEW (RCore);
+	memcpy (c, core, sizeof (RCore));
+	c->cons = r_cons_new ();
+	// XXX: RConsBind must disappear. its used in bin, fs and search
+	// TODO: use r_cons_clone instead
+	return c;
+}
+
+static void mycore_free(RCore *a) {
+	r_cons_free (a->cons);
+}
+
 R_API void r_core_task_scheduler_init(RCoreTaskScheduler *tasks, RCore *core) {
 	tasks->task_id_next = 0;
 	tasks->tasks = r_list_newf ( (RListFree)r_core_task_decref);
@@ -432,13 +445,15 @@ static RThreadFunctionRet task_run(RCoreTask *task) {
 		goto stillbirth;
 	}
 
+	RCore *local_core = mycore_new (core);
 	char *res_str;
 	if (task == scheduler->main_task) {
-		r_core_cmd (core, task->cmd, task->cmd_log);
+		r_core_cmd (local_core, task->cmd, task->cmd_log);
 		res_str = NULL;
 	} else {
-		res_str = r_core_cmd_str (core, task->cmd);
+		res_str = r_core_cmd_str (local_core, task->cmd);
 	}
+	mycore_free (local_core);
 
 	free (task->res);
 	task->res = res_str;
