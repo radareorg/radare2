@@ -1,5 +1,6 @@
 r_cons_sources = [
   '2048.c',
+  'cons_manager.c',
   'canvas_line.c',
   'canvas.c',
   'cons.c',

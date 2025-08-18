@@ -466,6 +466,9 @@ typedef struct r_cons_context_t {
 	bool flush;
 	int colors[256];
 	RList *marks;
+
+	// Per-context lock for buffer operations (Phase 2)
+	RThreadLock *ctx_lock;
 } RConsContext;
 
 #define HUD_BUF_SIZE 512
@@ -534,6 +537,7 @@ typedef struct r_cons_t {
 	int null; // if set, does not show anything
 	int mouse;
 	int is_wine; // -1, 0, 1
+	struct r_cons_manager_t *manager; // Console Manager (Phase 3)
 	struct r_line_t *line;
 	const char **vline;
 	int vtmode;
@@ -567,6 +571,20 @@ typedef struct r_cons_t {
 #endif
 } RCons;
 
+typedef struct r_cons_manager_t {
+	RThreadLock *term_lock;
+	RCons *cons;
+} RConsManager;
+
+typedef struct {
+	char *data;
+	size_t len;
+} RConsBuffer;
+
+R_API RConsManager *r_cons_manager_new(RCons *cons);
+R_API void r_cons_manager_free(RConsManager *mgr);
+R_API void r_cons_manager_enqueue_flush(RConsManager *mgr, RConsBuffer *buf, int flags, bool wait);
+
 #define R_CONS_KEY_F1 0xf1
 #define R_CONS_KEY_F2 0xf2
 #define R_CONS_KEY_F3 0xf3
@@ -598,13 +616,13 @@ typedef struct r_cons_t {
 #define Color_BLINK        "\x1b[5m"
 #define Color_INVERT       "\x1b[7m"
 #define Color_INVERT_RESET "\x1b[27m"
-     /* See 'man 4 console_codes' for details:
-      * "ESC c"        -- Reset
-      * "ESC ( K"      -- Select user mapping
-      * "ESC [ 0 m"    -- Reset all display attributes
-      * "ESC [ J"      -- Erase to the end of screen
-      * "ESC [ ? 25 h" -- Make cursor visible
-      */
+/* See 'man 4 console_codes' for details:
+ * "ESC c"        -- Reset
+ * "ESC ( K"      -- Select user mapping
+ * "ESC [ 0 m"    -- Reset all display attributes
+ * "ESC [ J"      -- Erase to the end of screen
+ * "ESC [ ? 25 h" -- Make cursor visible
+ */
 #define Color_RESET_TERMINAL  "\x1b" "c\x1b(K\x1b[0m\x1b[J\x1b[?25h"
 #define Color_RESET      "\x1b[0m" /* reset all */
 #define Color_RESET_NOBG "\x1b[27;22;24;25;28;39m"  /* Reset everything except background (order is important) */
@@ -913,6 +931,11 @@ R_API bool r_cons_context_is_main(RCons *cons, RConsContext *context);
 R_API void r_cons_context_break(RConsContext *context);
 R_API void r_cons_context_break_push(RCons *cons, RConsContext *context, RConsBreak cb, void *user, bool sig);
 R_API void r_cons_context_break_pop(RCons *cons, RConsContext *context, bool sig);
+
+R_API int r_cons_write_ctx(RConsContext *ctx, const void *data, int len);
+R_API int r_cons_printf_ctx(RConsContext *ctx, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
+R_API bool r_cons_context_take_buffer(RConsContext *ctx, RConsBuffer *out);
+R_API void r_cons_flush_ctx(RCons *cons, RConsContext *ctx, int flags, bool wait_for_completion);
 
 /* control */
 R_API char *r_cons_editor(RCons *cons, const char *file, const char *str);
