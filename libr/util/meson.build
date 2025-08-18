@@ -134,7 +134,6 @@ else
   r_util_sources += ['big.c']
 endif
 
-
 r_util = library('r_util', r_util_sources,
   include_directories: platform_inc,
   c_args: library_cflags,
