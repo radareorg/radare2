@@ -1248,34 +1248,6 @@ R_API void r_cons_bind(RCons *cons, RConsBind *bind) {
 	bind->is_breaked = r_cons_is_breaked;
 }
 
-R_API const char* r_cons_get_rune(const ut8 ch) {
-	/* Fast lookup table for runes mapped by RUNECODE_* constants.
-	 * The table is indexed by (ch - RUNECODE_MIN) and covers the
-	 * continuous range [RUNECODE_MIN, RUNECODE_MAX).
-	 */
-	static const char *const rune_table[] = {
-		/* 0xc8 */ RUNE_LINE_VERT,
-		/* 0xc9 */ RUNE_LINE_CROSS,
-		/* 0xca */ RUNE_CORNER_BR,
-		/* 0xcb */ RUNE_CORNER_BL,
-		/* 0xcc */ RUNE_ARROW_RIGHT,
-		/* 0xcd */ RUNE_ARROW_LEFT,
-		/* 0xce */ RUNE_LINE_HORIZ,
-		/* 0xcf */ RUNE_CORNER_TL,
-		/* 0xd0 */ RUNE_CORNER_TR,
-		/* 0xd1 */ RUNE_LINE_UP,
-		/* 0xd2 */ RUNE_CURVE_CORNER_TL,
-		/* 0xd3 */ RUNE_CURVE_CORNER_TR,
-		/* 0xd4 */ RUNE_CURVE_CORNER_BR,
-		/* 0xd5 */ RUNE_CURVE_CORNER_BL,
-	};
-
-	if (ch < RUNECODE_MIN || ch >= RUNECODE_MAX) {
-		return NULL;
-	}
-	return rune_table[ch - RUNECODE_MIN];
-}
-
 #if WITH_STATIC_THEMES
 #include "d_themes.inc.c"
 
