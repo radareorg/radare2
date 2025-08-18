@@ -14,7 +14,7 @@ jobs:
 #    runs-on: ubuntu-22.04
 #    steps:
 #    - name: Checkout
-#      uses: actions/checkout@v4
+#      uses: actions/checkout@v5
 #    - name: Building r2 without network access
 #      run: |
 #        ./preconfigure
@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Setting up bad libnames
       run: |
         mkdir -p /tmp/fakelibs /tmp/fakeincs
@@ -43,7 +43,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Linting
       run: sys/lint.sh
     - name: Building without capstone but with ssl
@@ -85,7 +85,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -108,7 +108,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Installing capstone v5
       run: |
         git clone --branch v5 --single-branch --depth=1 https://github.com/capstone-engine/capstone
@@ -124,7 +124,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Installing with symlinks
       run: |
         export CFLAGS="-O0 -Werror -Wno-unused-result -Wno-stringop-truncation"
@@ -138,7 +138,7 @@ jobs:
 #    if: contains(github.ref, 'ci-')
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Building Radare2
       run: |
         pip install r2pipe wheel
@@ -156,7 +156,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Installing with ssl crypto
       run: sys/install.sh --with-ssl-crypto
     - name: Running rahash2 tests
@@ -167,7 +167,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Installing the musl runtime
       run: |
         sudo apt update --assume-yes
@@ -188,7 +188,7 @@ jobs:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -205,7 +205,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: build and run
       run: |
         # test and build rpath installation
@@ -223,7 +223,7 @@ jobs:
     runs-on: macos-13
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: build and run
       run: |
         # test and build rpath installation
@@ -239,7 +239,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     #- name: XXX this is not possible with make Install from a directory with spaces
     #  run: |
     #    git config pull.rebase false
@@ -275,7 +275,7 @@ jobs:
     continue-on-error: true
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Building Radare2
       run: |
         pip install r2pipe
@@ -307,7 +307,7 @@ jobs:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Building Radare2
       run: |
         pip install r2pipe
@@ -343,7 +343,7 @@ jobs:
           maximum-size: 16GB
           disk-root: "C:"
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - uses: actions/setup-python@v5
       with:
         python-version: '3.10'
@@ -379,7 +379,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Compiling
       run: |
         export PATH=${HOME}/.local/bin:${HOME}/Library/Python/3.9/bin:${PATH}
@@ -394,7 +394,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Compiling
       run: |
         export PATH=${HOME}/.local/bin:${HOME}/Library/Python/3.9/bin:${PATH}
