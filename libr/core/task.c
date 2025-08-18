@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2025 - pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2014-2025 - pancake */
 
 #include <r_core.h>
 
@@ -7,7 +7,7 @@ static R_TH_LOCAL RCoreTask *task_tls_current = NULL;
 
 R_API void r_core_task_scheduler_init(RCoreTaskScheduler *tasks, RCore *core) {
 	tasks->task_id_next = 0;
-	tasks->tasks = r_list_newf ((RListFree)r_core_task_decref);
+	tasks->tasks = r_list_newf ( (RListFree)r_core_task_decref);
 	tasks->tasks_queue = r_list_new ();
 	tasks->oneshot_queue = r_list_newf (free);
 	tasks->oneshots_enqueued = 0;
@@ -105,7 +105,7 @@ R_API void r_core_task_print(RCore *core, RCoreTask *task, PJ *pj, int mode) {
 		}
 		r_cons_printf (core->cons, "%3d %3s %12s  %s\n",
 					   task->id,
-					   task->transient ? "(t)" : "",
+					   task->transient ? " (t)" : "",
 					   r_core_task_status (task),
 					   r_str_get (info));
 		}
@@ -355,7 +355,7 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 	// oneshots always have priority.
 	// if there are any queued, run them immediately.
 	OneShot *oneshot;
-	while ((oneshot = r_list_pop_head (scheduler->oneshot_queue))) {
+	while ( (oneshot = r_list_pop_head (scheduler->oneshot_queue))) {
 		scheduler->oneshots_enqueued--;
 		scheduler->oneshot_running = true;
 		oneshot->func (oneshot->user);
@@ -585,13 +585,13 @@ R_API void r_core_task_sync_begin(RCoreTaskScheduler *scheduler) {
 	}
 }
 
-/* end running stuff synchronously, initially started with r_core_task_sync_begin() */
+/* end running stuff synchronously, initially started with r_core_task_sync_begin () */
 R_API void r_core_task_sync_end(RCoreTaskScheduler *scheduler) {
 	R_RETURN_IF_FAIL (scheduler);
 	task_end (scheduler->main_task);
 }
 
-/* To be called from within a task. Begin sleeping and schedule other tasks until r_core_task_sleep_end() is called. */
+/* To be called from within a task. Begin sleeping and schedule other tasks until r_core_task_sleep_end () is called. */
 R_API void r_core_task_sleep_begin(RCoreTask *task) {
 	R_RETURN_IF_FAIL (task);
 	r_core_task_schedule (task, R_CORE_TASK_STATE_SLEEPING);
