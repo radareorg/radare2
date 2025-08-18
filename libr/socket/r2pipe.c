@@ -114,10 +114,8 @@ R_API char *r2pipe_read(R2Pipe *r2pipe) {
 }
 
 R_API int r2pipe_close(R2Pipe *r2pipe) {
-#if HAVE_R2PIPE
 	/* r2pipe may be NULL on non-r2pipe builds */
 	R_RETURN_VAL_IF_FAIL (r2pipe, 0);
-#endif
 #if HAVE_R2PIPE
 	/*
 	if (r2pipe->coreb.core && !r2pipe->coreb.puts) {
@@ -150,8 +148,7 @@ R_API int r2pipe_close(R2Pipe *r2pipe) {
 		r2pipe->output[1] = -1;
 	}
 	if (r2pipe->child != NO_CHILD) {
-		kill (r2pipe->child, SIGTERM);
-		waitpid (r2pipe->child, NULL, 0);
+		r_sandbox_kill (r2pipe->child, SIGTERM);
 		r2pipe->child = NO_CHILD;
 	}
 #endif
@@ -160,36 +157,6 @@ R_API int r2pipe_close(R2Pipe *r2pipe) {
 		free (r2pipe->http_url);
 		r2pipe->http_url = NULL;
 		r2pipe->is_http = false;
-	}
-#endif
-	free (r2pipe);
-	return 0;
-#if R2__WINDOWS__
-	if (r2pipe->pipe) {
-		CloseHandle (r2pipe->pipe);
-		r2pipe->pipe = NULL;
-	}
-#else
-	if (r2pipe->input[0] != -1) {
-		close (r2pipe->input[0]);
-		r2pipe->input[0] = -1;
-	}
-	if (r2pipe->input[1] != -1) {
-		close (r2pipe->input[1]);
-		r2pipe->input[1] = -1;
-	}
-	if (r2pipe->output[0] != -1) {
-		close (r2pipe->output[0]);
-		r2pipe->output[0] = -1;
-	}
-	if (r2pipe->output[1] != -1) {
-		close (r2pipe->output[1]);
-		r2pipe->output[1] = -1;
-	}
-	if (r2pipe->child != NO_CHILD) {
-		kill (r2pipe->child, SIGTERM);
-		waitpid (r2pipe->child, NULL, 0);
-		r2pipe->child = NO_CHILD;
 	}
 #endif
 	free (r2pipe);
