@@ -1594,7 +1594,6 @@ R_API void r_cons_context_free(RConsContext * R_NULLABLE ctx) {
 	}
 }
 
-
 R_API RConsContext *r_cons_context_clone(RConsContext *ctx) {
 	RConsContext *c = r_mem_dup (ctx, sizeof (RConsContext));
 	if (ctx->buffer) {
