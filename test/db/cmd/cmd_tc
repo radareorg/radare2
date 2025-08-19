@@ -79,7 +79,7 @@ RUN
 NAME=tc4
 FILE=bins/mach0/objc-employee
 ARGS=-e bin.types=true
-CMDS=.ic*;tc
+CMDS=.ic*;tsc;tec
 EXPECT=<<EOF
 struct Employee {
   struct objc_class *isa;
@@ -351,7 +351,7 @@ NAME=tc4 iOS14 arm64
 FILE=bins/mach0/objc-employee-ios14-arm64
 ARGS=-e bin.types=true
 CMDS=<<EOF
-.ic*;tc
+.ic*;tsc;tec
 EOF
 EXPECT=<<EOF
 struct Employee {
@@ -624,7 +624,7 @@ NAME=tc4 iOS14 arm64e
 FILE=bins/mach0/objc-employee-ios14-arm64e
 ARGS=-e bin.types=true
 CMDS=<<EOF
-.ic*;tc
+.ic*;tsc;tec
 EOF
 EXPECT=<<EOF
 struct Employee {

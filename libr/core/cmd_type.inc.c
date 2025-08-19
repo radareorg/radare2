@@ -58,7 +58,7 @@ static RCoreHelpMessage help_msg_tf = {
 	"Usage: tf[...]", "", "",
 	"tf", "", "list all function definitions loaded",
 	"tf", " <name>", "show function signature",
-	"tfc", " <name>", "show function signature in C syntax",
+	"tfc", " [name]", "list all/given function signatures in C output format with newlines",
 	"tfcj", " <name>", "same as above but in JSON",
 	"tfj", "", "list all function definitions in JSON",
 	"tfj", " <name>", "show function signature in JSON",
@@ -498,11 +498,11 @@ static bool stdifstruct(void *user, const char *k, const char *v) {
 }
 
 /*!
- * \brief print the data types details in JSON format
- * \param TDB pointer to the sdb for types
- * \param filter a callback function for the filtering
- * \return 1 if success, 0 if failure
- */
+* \brief print the data types details in JSON format
+* \param TDB pointer to the sdb for types
+* \param filter a callback function for the filtering
+* \return 1 if success, 0 if failure
+*/
 static int print_struct_union_list_json(RCore *core, Sdb *TDB, SdbForeachCallback filter) {
 	PJ *pj = r_core_pj_new (core);
 	if (!pj) {
@@ -1901,6 +1901,18 @@ static int cmd_type(void *data, const char *input) {
 		case 'c': // "tfc"
 			if (input[2] == ' ') {
 				printFunctionTypeC (core, input + 3);
+			} else {
+				// No argument: print all function signatures in C syntax
+				SdbList *l = sdb_foreach_list_filter (TDB, stdiffunc, true);
+				SdbListIter *it;
+				SdbKv *kv;
+				ls_foreach (l, it, kv) {
+					const char *fname = sdbkv_key (kv);
+					if (R_STR_ISNOTEMPTY (fname)) {
+						printFunctionTypeC (core, fname);
+					}
+				}
+				ls_free (l);
 			}
 			break;
 		case 'j': // "tfj"
