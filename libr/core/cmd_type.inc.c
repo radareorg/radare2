@@ -818,21 +818,19 @@ static bool print_typelist_json_cb(void *p, const char *k, const char *v) {
 	char *sizecmd = r_str_newf ("type.%s.size", k);
 	char *size_s = sdb_get (sdb, sizecmd, NULL);
 	char *formatcmd = r_str_newf ("type.%s", k);
+	pj_ks (pj, "type", k);
+	pj_ki (pj, "size", size_s ? atoi (size_s) : -1);
 	char *format_s = sdb_get (sdb, formatcmd, NULL);
-	if (size_s && format_s) {
+	if (format_s) {
 		r_str_trim (format_s);
-		pj_ks (pj, "type", k);
-		pj_ki (pj, "size", size_s ? atoi (size_s) : -1);
-		pj_ks (pj, "format", format_s);
-		pj_end (pj);
-		r_cons_printf (core->cons, "%s", pj_string (pj));
-	} else {
-		R_LOG_DEBUG ("Internal sdb inconsistency for %s", sizecmd);
+		pj_ks (pj, "format", format_s ? format_s : "");
+		free (format_s);
 	}
+	pj_end (pj);
+	r_cons_printf (core->cons, "%s", pj_string (pj));
 	pj_free (pj);
 	free (size_s);
 	free (sizecmd);
-	free (format_s);
 	free (formatcmd);
 	return true;
 }
