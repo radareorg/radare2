@@ -1,7 +1,6 @@
 :: Build (and eventually install) r2 for windows
 @echo off
 if "%*" == "clean" (
-  REM wsl rm -rf b vs
   rmdir /s /q b 2> NUL
   rmdir /s /q vs 2> NUL
   exit /b 0
