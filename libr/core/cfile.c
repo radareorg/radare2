@@ -935,9 +935,22 @@ beach:
 		free (macdwarf);
 	}
 	if (mustclose) {
+#if 0
 		r_io_desc_close (mustclose);
 		if (odesc) {
 			r_io_use_fd (r->io, odesc->fd);
+		}
+#endif
+		RIODesc *lowest = r_io_desc_get_lowest (r->io);
+		RIODesc *highest = r_io_desc_get_highest (r->io);
+		// only close if there are more than one open descs
+		if (lowest && highest && lowest->fd != highest->fd) {
+			r_io_desc_close (mustclose);
+			if (odesc) {
+				r_io_use_fd (r->io, odesc->fd);
+			}
+		} else {
+			R_LOG_DEBUG ("Not closing last descriptor for %s", mustclose ? mustclose->uri : "(null)");
 		}
 	}
 	r_flag_space_set (r->flags, "*");
