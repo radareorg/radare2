@@ -644,7 +644,7 @@ static RCoreHelpMessage help_msg_afc = {
 	"afc", "", "show default function calling convention (same as tcc)",
 	"afcr", "[j]", "show register usage for the current function",
 	"afcf", "[j] [name]", "prints return type function(arg1, arg2...), see afij",
-	"afci", "", "information about the current calling convention",
+	"afci", " [name]", "information about the current calling convention",
 	"afcj", "", "show current calling convention info in JSON",
 	"afck", "", "list SDB details of call loaded calling conventions",
 	"afcl", "", "list all available calling conventions",
@@ -5001,8 +5001,8 @@ static void cmd_aflxj(RCore *core) {
 	ls_free (keys);
 }
 
-static void cmd_afci(RCore *core, RAnalFunction *fcn) {
-	const char *cc = (fcn && fcn->callconv)? fcn->callconv: "reg";
+static void cmd_afci(RCore *core, RAnalFunction *fcn, const char *mycc) {
+	const char *cc = mycc? mycc: (fcn && fcn->callconv)? fcn->callconv: "reg";
 	r_core_cmdf (core, "afcll~%s (", cc);
 }
 
@@ -6172,8 +6172,10 @@ static int cmd_af(RCore *core, const char *input) {
 				r_core_cmd_call (core, "afcfj");
 			} else if (input[3] == '?') {
 				r_core_cmd_help_match (core, help_msg_afc, "afci");
+			} else if (input[3] == ' ') {
+				cmd_afci (core, fcn, r_str_trim_head_ro (input + 4));
 			} else {
-				cmd_afci (core, fcn);
+				cmd_afci (core, fcn, NULL);
 			}
 			break;
 		case 'f': // "afcf" "afcfj"
@@ -6297,8 +6299,11 @@ static int cmd_af(RCore *core, const char *input) {
 			break;
 		}
 		case '?': // "afc?"
-		default:
 			r_core_cmd_help (core, help_msg_afc);
+			break;
+		default:
+			r_core_return_invalid_command (core, "afc", input[2]);
+			break;
 		}
 		break;
 	}
