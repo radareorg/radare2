@@ -82,7 +82,6 @@ static const char *get_syscall_name(ut32 hash) {
 	return NULL;
 }
 
-
 static void analop_esil(RArchSession *a, RAnalOp *op, cs_insn *insn, ut64 addr);
 static void check_and_create_string_flag(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len);
 
@@ -130,7 +129,6 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 					op->type = R_ANAL_OP_TYPE_CALL;
 					op->family = R_ANAL_OP_FAMILY_CPU;
 					op->size = insn->size;
-
 				}
 			} else {
 				op->mnemonic = r_str_newf ("%s%s%s",
@@ -171,7 +169,6 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 				break;
 			case BPF_INS_CALL: ///< eBPF only
 				op->type = R_ANAL_OP_TYPE_CALL;
-
 				// Enhanced call analysis for function detection
 				if (OPCOUNT > 0 && OP(0).type == BPF_OP_IMM) {
 					st32 imm = IMM(0);
@@ -318,7 +315,6 @@ static ut32 detect_string_size_from_next_insn(RArchSession *a, RAnalOp *op, cons
 	if (!a || !a->data || !buf || len < 8) {
 		return default_size;
 	}
-
 	CapstonePluginData *cpd = (CapstonePluginData*)a->data;
 	if (!cpd || !cpd->cs_handle) {
 		return default_size;
@@ -341,7 +337,6 @@ static ut32 detect_string_size_from_next_insn(RArchSession *a, RAnalOp *op, cons
 	if (is_mov_insn && has_detail) {
 		bool is_reg_dest = next_insn->detail->bpf.operands[0].type == BPF_OP_REG;
 		bool is_imm_src = next_insn->detail->bpf.operands[1].type == BPF_OP_IMM;
-
 		if (is_reg_dest && is_imm_src) {
 			ut32 imm_size = next_insn->detail->bpf.operands[1].imm;
 			// Use the immediate value as string size if it's reasonable
@@ -350,7 +345,6 @@ static ut32 detect_string_size_from_next_insn(RArchSession *a, RAnalOp *op, cons
 			}
 		}
 	}
-
 	cs_free(next_insn, n);
 	return string_size;
 }
@@ -359,14 +353,11 @@ static void check_and_create_string_flag(RArchSession *a, RAnalOp *op, ut64 addr
 	if (!a || !a->arch) {
 		return;
 	}
-
 	bool is_valid_program_range = false;
-
 	// Check if it's in the main program range
 	if (addr >= SBPF_PROGRAM_ADDR && addr < SBPF_STACK_ADDR) {
 		is_valid_program_range = true;
 	}
-
 	if (!is_valid_program_range) {
 		return;
 	}
@@ -565,14 +556,12 @@ static void analop_esil(RArchSession *a, RAnalOp *op, cs_insn *insn, ut64 addr) 
 			st64 current_pc = op->addr / 8;
 			st64 target_pc = current_pc + imm + 1;
 			st64 target_addr = target_pc * 8;
-
-			esilprintf(op, "8,pc,+,sp,=[8],8,sp,-=,0x%" PFMT64x ",pc,=", target_addr);
+			esilprintf (op, "8,pc,+,sp,=[8],8,sp,-=,0x%" PFMT64x ",pc,=", target_addr);
 		} else {
-
 			esilprintf (op, "pc,sp,=[8],8,sp,-=,0x%" PFMT64x ",$", IMM (0));
 		}
 		break;
-	case BPF_INS_EXIT:	///< eBPF only
+	case BPF_INS_EXIT: ///< eBPF only
 		esilprintf (op, "8,sp,+=,sp,[8],pc,=");
 		break;
 	case BPF_INS_RET:
@@ -672,8 +661,8 @@ static void analop_esil(RArchSession *a, RAnalOp *op, cs_insn *insn, ut64 addr) 
 		break;
 	case BPF_INS_LDDW:	///< eBPF only: load 64-bit imm
 	{
-		char *reg = regname(insn->bytes[1]+3);
-		ut64 val = r_read_ble64((insn->bytes)+8, 0) + IMM (0); // wtf
+		char *reg = regname (insn->bytes[1]+3);
+		ut64 val = r_read_ble64 ((insn->bytes)+8, 0) + IMM (0); // wtf
 		esilprintf (op, "%" PFMT64d ",%s,=", val, reg);
 		break;
 	}

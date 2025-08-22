@@ -252,7 +252,7 @@ static RList* entries(RBinFile *bf) {
 		ptr->hvaddr = UT64_MAX; // 0x18 + baddr (bf);
 
 		if (ptr->vaddr != (ut64)eo->ehdr.e_entry && Elf_(is_executable) (eo) &&
-		    !Elf_(is_sbpf_binary) (eo)) {
+				!Elf_(is_sbpf_binary) (eo)) {
 			R_LOG_ERROR ("Cannot determine entrypoint, using 0x%08" PFMT64x, ptr->vaddr);
 		}
 
@@ -776,35 +776,35 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 	case EM_SPARC32PLUS:
 		ADD (32, 0);
 		break;
-case EM_BPF:
-	if (!Elf_(is_sbpf_binary) (eo)) {
-		R_LOG_DEBUG ("Unimplemented BPF reloc type %d", rel->type);
+	case EM_BPF:
+		if (!Elf_(is_sbpf_binary) (eo)) {
+			R_LOG_DEBUG ("Unimplemented BPF reloc type %d", rel->type);
+			break;
+		}
+	case EM_SBPF:
+		switch (rel->type) {
+		case R_BPF_64_64: // 64-bit immediate for lddw instruction
+			r->type = R_BIN_RELOC_64;
+			r->vaddr = B + rel->offset;
+			return r;
+		case R_BPF_64_RELATIVE: // PC relative 64-bit address
+			r->type = R_BIN_RELOC_64;
+			r->vaddr = B + rel->offset;
+			return r;
+		case R_BPF_64_32: // 32-bit function/syscall ID for call instruction
+			r->type = R_BIN_RELOC_32;
+			// The immediate value will be a function ID or syscall ID, not an address
+			r->vaddr = B + rel->offset;
+			return r;
+		default:
+			R_LOG_DEBUG ("Unimplemented sBPF reloc type %d", rel->type);
+			break;
+		}
 		break;
-	}
-case EM_SBPF:
-	switch (rel->type) {
-	case R_BPF_64_64: // 64-bit immediate for lddw instruction
-		r->type = R_BIN_RELOC_64;
-		r->vaddr = B + rel->offset;
-		return r;
-	case R_BPF_64_RELATIVE: // PC relative 64-bit address
-		r->type = R_BIN_RELOC_64;
-		r->vaddr = B + rel->offset;
-		return r;
-	case R_BPF_64_32: // 32-bit function/syscall ID for call instruction
-		r->type = R_BIN_RELOC_32;
-		// The immediate value will be a function ID or syscall ID, not an address
-		r->vaddr = B + rel->offset;
-		return r;
 	default:
-		R_LOG_DEBUG ("Unimplemented sBPF reloc type %d", rel->type);
+		R_LOG_ERROR ("Unimplemented ELF reloc type %d", rel->type);
 		break;
 	}
-	break;
-default:
-	R_LOG_ERROR ("Unimplemented ELF reloc type %d", rel->type);
-	break;
-}
 #undef SET
 #undef ADD
 	free (r);
@@ -850,7 +850,6 @@ static ut32 murmur3_32(const char* data, ut32 len, ut32 seed) {
 		tail *= c2;
 		hash ^= tail;
 	}
-
 	// Finalization
 	hash ^= len;
 	hash ^= hash >> 16;
@@ -858,7 +857,6 @@ static ut32 murmur3_32(const char* data, ut32 len, ut32 seed) {
 	hash ^= hash >> 13;
 	hash *= 0xc2b2ae35U;
 	hash ^= hash >> 16;
-
 	return hash;
 }
 
@@ -1157,7 +1155,6 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 				ut64 text_end = text_start + text_size;
 				is_text = (rel->offset >= text_start && rel->offset < text_end);
 			}
-
 			if (is_text) {
 				// In .text: behave like R_BPF_64_64 but ignore symbol and handle addend
 				// Read implicit addend from both immediate fields (lddw instruction)
@@ -1174,7 +1171,6 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 					if (va < SBPF_PROGRAM_ADDR) {
 						va += SBPF_PROGRAM_ADDR;
 					}
-
 					// Write back to both immediate fields
 					r_write_le32 (buf_lo, (ut32)(va & 0xffffffff));
 					r_write_le32 (buf_hi, (ut32)(va >> 32));
@@ -1213,7 +1209,7 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 					}
 				}
 			}
-			if (sym_name && *sym_name) {
+			if (R_STR_ISNOTEMPTY (sym_name)) {
 				// Compute Murmur3 hash with seed 0
 				hash_value = murmur3_32 (sym_name, strlen (sym_name), 0);
 				R_LOG_DEBUG ("sBPF R_BPF_64_32: symbol '%s' -> hash 0x%08x", sym_name, hash_value);
