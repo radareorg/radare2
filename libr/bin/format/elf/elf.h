@@ -183,6 +183,7 @@ struct Elf_(obj_t) {
 int Elf_(has_va)(struct Elf_(obj_t) *bin);
 ut64 Elf_(get_section_addr)(struct Elf_(obj_t) *bin, const char *section_name);
 ut64 Elf_(get_section_offset)(struct Elf_(obj_t) *bin, const char *section_name);
+ut64 Elf_(get_section_size)(struct Elf_(obj_t) *bin, const char *section_name);
 ut64 Elf_(get_baddr)(struct Elf_(obj_t) *bin);
 ut64 Elf_(p2v)(struct Elf_(obj_t) *bin, ut64 paddr);
 ut64 Elf_(v2p)(struct Elf_(obj_t) *bin, ut64 vaddr);

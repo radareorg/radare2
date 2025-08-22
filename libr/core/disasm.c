@@ -4972,7 +4972,10 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				}
 			}
 		}
-		r_io_read_at (core->io, refaddr, (ut8*)msg, len - 1);
+		// If refptr is set, use it to limit string read length. This is meant to support rust string hints.
+		int read_len = refptr > 0 && len > 0 && refptr < len - 1 ? refptr : len - 1;
+		r_io_read_at (core->io, refaddr, (ut8*)msg, read_len);
+		msg[read_len] = 0;
 		if (refptr && ds->show_refptr) {
 			ut64 num = r_read_ble (msg, be, refptr * 8);
 			st64 n = (st64)num;
