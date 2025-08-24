@@ -170,10 +170,10 @@ static RNumCalcValue prim(RNum *num, RNumCalc *nc, int get) {
 		return v;
 	case RNCBNOT:
 		get_token (num, nc);
-		return Bnot (nc->number_value); //prim (num, nc, 1), 1);
+		return Bnot (expr (num, nc, 1));
 	case RNCNEG:
 		get_token (num, nc);
-		return Nneg (nc->number_value); //prim (num, nc, 1), 1);
+		return Nneg (expr (num, nc, 1));
 	case RNCINC:
 		return Naddi (prim (num, nc, 1), 1);
 	case RNCDEC:
