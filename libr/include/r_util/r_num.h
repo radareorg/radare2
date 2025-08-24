@@ -27,6 +27,7 @@ typedef union {
 typedef enum {
 	RNCNAME, RNCNUMBER, RNCEND, RNCINC, RNCDEC,
 	RNCLT, RNCGT, // comparison operators
+    RNCBNOT, RNCBAND, RNCBOR, RNCBXOR, RNCBXNOR, RNCBEQ, RNCBNEQ,
 	RNCPLUS='+', RNCMINUS='-', RNCMUL='*', RNCDIV='/', RNCMOD='%',
 	RNCNEG='~', RNCAND='&', RNCOR='|', RNCXOR='^',
 	RNCPRINT=';', RNCASSIGN='=', RNCLEFTP='(', RNCRIGHTP=')',
