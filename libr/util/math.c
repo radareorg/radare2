@@ -349,18 +349,18 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 	case '=':
 		if (cin_get (num, nc, &c) && c == ch) {
 			switch (ch) {
-				case '^':
-					// "^^" = boolean xor
-					return nc->curr_tok = RNCBXOR;
-				case '&':
-					// "&&" = boolean and
-					return nc->curr_tok = RNCBAND;
-				case '|':
-					// "||" = boolean or
-					return nc->curr_tok = RNCBOR;
-				case '=':
-					// "==" = equality test
-					return nc->curr_tok = RNCBEQ;
+			case '^':
+				// "^^" = boolean xor
+				return nc->curr_tok = RNCBXOR;
+			case '&':
+				// "&&" = boolean and
+				return nc->curr_tok = RNCBAND;
+			case '|':
+				// "||" = boolean or
+				return nc->curr_tok = RNCBOR;
+			case '=':
+				// "==" = equality test
+				return nc->curr_tok = RNCBEQ;
 			}
 		}
 		cin_putback (num, nc, c);
