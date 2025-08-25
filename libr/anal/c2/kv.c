@@ -973,14 +973,25 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 				}
 				// build full type string
 				char *fulltype = r_str_newf("%s *(%s)", rtype, args ? args : "");
+				// Also build a base type without commas for the main k=v field (e.g. "int *")
+				char *basetype = r_str_newf("%s *", rtype);
+				r_str_trim(basetype);
 				free(rtype);
-				free(args);
-				// output member entry
-				r_strbuf_appendf(kvc->sb, "%s.%s.%s=%s,%d,0\n", type, sn, mname, fulltype, off);
+				// output member entry: main legacy entry uses a type without commas
+				r_strbuf_appendf(kvc->sb, "%s.%s.%s=%s,%d,0\n", type, sn, mname, basetype, off);
+				// store full function signature and args in separate keys to avoid comma collisions
+				r_strbuf_appendf(kvc->sb, "%s.%s.%s.fp=%s\n", type, sn, mname, fulltype);
+				if (args) {
+					r_strbuf_appendf(kvc->sb, "%s.%s.%s.fp.args=%s\n", type, sn, mname, args);
+					free(args);
+				} else {
+					r_strbuf_appendf(kvc->sb, "%s.%s.%s.fp.args=\n", type, sn, mname);
+				}
 				r_strbuf_appendf(kvc->sb, "%s.%s.%s.meta=0\n", type, sn, mname);
 				off += kvc_typesize(kvc, fulltype, 1);
 				r_strbuf_appendf(args_sb, ",%s", mname);
 				free(fulltype);
+				free(basetype);
 				free(mname);
 				continue;
 			}
@@ -993,13 +1004,46 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 				/* If typedef stored a function-pointer like "int *(...)" treat it as function pointer */
 				if (strstr(tdef, "*(") || strstr(tdef, " *(")) {
 					char *mname = kvctoken_tostring(member_name);
-					r_strbuf_appendf(kvc->sb, "%s.%s.%s=%s,%d,0\n", type, sn, mname, tdef, off);
-					r_strbuf_appendf(kvc->sb, "%s.%s.%s.meta=0\n", type, sn, mname);
-					off += kvc_typesize(kvc, tdef, 1);
-					r_strbuf_appendf(args_sb, ",%s", mname);
-					free(mname);
-					free(mt_check);
-					continue;
+					// split tdef into rtype and args
+					const char *p = strstr(tdef, "*(");
+					if (!p) {
+						p = strstr(tdef, " *(");
+					}
+					if (p) {
+						int rlen = p - tdef;
+						char *rtype = r_str_ndup(tdef, rlen);
+						r_str_trim(rtype);
+						// find args
+						const char *args_open = strchr(p, '(');
+						char *args_str = NULL;
+						if (args_open) {
+							const char *args_close = strrchr(tdef, ')');
+							if (args_close && args_close > args_open) {
+								args_str = r_str_ndup(args_open + 1, args_close - args_open - 1);
+								r_str_trim(args_str);
+							}
+						}
+						char *basetype = r_str_newf("%s *", rtype);
+						r_str_trim(basetype);
+						r_strbuf_appendf(kvc->sb, "%s.%s.%s=%s,%d,0\n", type, sn, mname, basetype, off);
+						r_strbuf_appendf(kvc->sb, "%s.%s.%s.fp=%s\n", type, sn, mname, tdef);
+						if (args_str) {
+							r_strbuf_appendf(kvc->sb, "%s.%s.%s.fp.args=%s\n", type, sn, mname, args_str);
+						} else {
+							r_strbuf_appendf(kvc->sb, "%s.%s.%s.fp.args=\n", type, sn, mname);
+						}
+						r_strbuf_appendf(kvc->sb, "%s.%s.%s.meta=0\n", type, sn, mname);
+						off += kvc_typesize(kvc, tdef, 1);
+						r_strbuf_appendf(args_sb, ",%s", mname);
+						free(basetype);
+						free(rtype);
+						if (args_str) {
+							free(args_str);
+						}
+						free(mname);
+						free(mt_check);
+						continue;
+					}
 				}
 			}
 			free(mt_check);
