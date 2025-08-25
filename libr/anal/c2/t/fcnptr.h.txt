@@ -1,6 +1,8 @@
 foo=struct
 struct.foo.x=int,0,0
-struct.foo.fp=int *(int a , int b),4,0
+struct.foo.fp=int *,4,0
+struct.foo.fp.fp=int *(int a , int b)
+struct.foo.fp.fp.args=int a , int b
 struct.foo.fp.meta=0
 struct.foo.b=char *,8,0
 struct.foo=x,fp,b

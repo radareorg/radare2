@@ -2,9 +2,14 @@ typedef.fp=int *(int a, int b)
 fp=typedef
 foo=struct
 struct.foo.x=int,0,0
-struct.foo.fp=int *(int a , int b),4,0
+struct.foo.fp=int *,4,0
+struct.foo.fp.fp=int *(int a , int b)
+struct.foo.fp.fp.args=int a , int b
 struct.foo.fp.meta=0
 struct.foo.b=char *,8,0
-struct.foo.fp2=int *(int a, int b),12,0
+struct.foo.fp2=int *,12,0
+struct.foo.fp2.fp=int *(int a, int b)
+struct.foo.fp2.fp.args=int a, int b
 struct.foo.fp2.meta=0
 struct.foo=x,fp,b,fp2
+
