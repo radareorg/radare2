@@ -66,6 +66,7 @@ OBJS+=d/types-arm-ios-16.o
 OBJS+=d/types-arm-ios-32.o
 OBJS+=d/types-arm-ios-64.o
 OBJS+=d/types-darwin.o
+OBJS+=d/types-iokit.o
 OBJS+=d/types-linux.o
 OBJS+=d/types-x86-macos-64.o
 #OBJS+=d/types-windows.o

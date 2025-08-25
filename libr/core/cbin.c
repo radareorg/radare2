@@ -721,6 +721,10 @@ R_API void r_core_anal_type_init(RCore *core) {
 	if (!strcmp (os, "ios") || !strcmp (os, "macos")) {
 		load_types_from (core, "types-darwin");
 	}
+	RBinInfo *info = r_bin_get_info (core->bin);
+	if (info && info->subsystem && !strcmp (info->subsystem, "xnu")) {
+		load_types_from (core, "types-iokit");
+	}
 	load_types_from (core, "types-%d", bits);
 	load_types_from (core, "types-%s-%d", os, bits);
 	load_types_from (core, "types-%s-%d", anal_arch, bits);
