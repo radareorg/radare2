@@ -637,6 +637,8 @@ typedef struct r_bin_class_t {
 	char *visibility_str; // XXX R2_600 - only used by dex+java should be ut32 or bitfield.. should be usable for swift too
 	int index; // should be unsigned?
 	ut64 addr;
+	size_t instance_size;
+	char *typename;
 	char *ns; // namespace // maybe RBinName?
 	// R2_600 - Use RVec here
 	RList *methods; // <RBinSymbol>
