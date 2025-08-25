@@ -28,14 +28,14 @@ typedef struct {
 	size_t tdef_count;
 } KVCParser;
 
-typedef bool (*KVCParserCallback) (KVCParser *, const char *);
+typedef bool(*KVCParserCallback)(KVCParser *, const char *);
 
-static size_t kvctoken_len (KVCToken t) {
+static size_t kvctoken_len(KVCToken t) {
 	R_RETURN_VAL_IF_FAIL (t.a <= t.b, 0);
 	return t.b - t.a;
 }
 
-static char *kvctoken_tostring (KVCToken t) {
+static char *kvctoken_tostring(KVCToken t) {
 	if (t.a && t.b) {
 		size_t len = kvctoken_len (t);
 		return r_str_ndup (t.a, len);
@@ -43,7 +43,7 @@ static char *kvctoken_tostring (KVCToken t) {
 	return NULL;
 }
 
-static bool kvctoken_equals (KVCToken a, KVCToken b) {
+static bool kvctoken_equals(KVCToken a, KVCToken b) {
 	int alen = kvctoken_len (a);
 	int blen = kvctoken_len (b);
 	if (alen != blen) {
@@ -52,7 +52,7 @@ static bool kvctoken_equals (KVCToken a, KVCToken b) {
 	return !memcmp (a.a, b.a, alen);
 }
 
-static void kvctoken_trim (KVCToken *t) {
+static void kvctoken_trim(KVCToken *t) {
 	// Skip leading whitespace and semicolons
 	while (isspace (*t->a) || *t->a == ';') {
 		t->a++;
@@ -65,11 +65,11 @@ static void kvctoken_trim (KVCToken *t) {
 
 #include "pp.inc.c"
 
-static inline bool kvctoken_eof (KVCToken t) {
+static inline bool kvctoken_eof(KVCToken t) {
 	return t.a >= t.b;
 }
 
-static const char kvc_getch (KVCParser *kvc) {
+static const char kvc_getch(KVCParser *kvc) {
 	if (!kvctoken_eof (kvc->s)) {
 		const char ch = * (kvc->s.a);
 		if (ch == '\n') {
@@ -81,20 +81,20 @@ static const char kvc_getch (KVCParser *kvc) {
 	return 0; // EOF
 }
 
-static const char kvc_peek (KVCParser *kvc, int delta) { // rename to peek_at
+static const char kvc_peek(KVCParser *kvc, int delta) { // rename to peek_at
 	if (delta >= 0 && kvc->s.a + delta < kvc->s.b) {
 		return kvc->s.a[delta];
 	}
 	return 0;
 }
 
-static void kvc_error (KVCParser *kvc, const char *msg) {
+static void kvc_error(KVCParser *kvc, const char *msg) {
 	R_LOG_ERROR ("Parsing problem at line %d: %s", kvc->line, msg);
 	kvc->error = msg;
 	kvc->s.a = kvc->s.b;
 }
 
-static void massage_type (char **s) {
+static void massage_type(char **s) {
 	// Skip leading semicolons
 	char *str = *s;
 	while (*str == ';') {
@@ -130,21 +130,21 @@ static void massage_type (char **s) {
 	}
 }
 
-static const char *kvc_peekn (KVCParser *kvc, size_t amount) {
+static const char *kvc_peekn(KVCParser *kvc, size_t amount) {
 	return (kvctoken_len (kvc->s) >= amount) ? kvc->s.a : NULL;
 }
 
-static const char *kvctoken_find (KVCToken t, const char *needle) {
+static const char *kvctoken_find(KVCToken t, const char *needle) {
 	size_t len = kvctoken_len (t);
 	return (const char *)r_mem_mem ( (const ut8 *)t.a, len, (const ut8 *)needle, strlen (needle));
 }
 
-static const char *kvc_find (KVCParser *kvc, const char *needle) {
+static const char *kvc_find(KVCParser *kvc, const char *needle) {
 	size_t len = kvctoken_len (kvc->s);
 	return (const char *)r_mem_mem ( (const ut8 *)kvc->s.a, len, (const ut8 *)needle, strlen (needle));
 }
 
-static inline void kvc_skipn (KVCParser *kvc, size_t amount) {
+static inline void kvc_skipn(KVCParser *kvc, size_t amount) {
 	if (amount <= kvctoken_len (kvc->s)) {
 		kvc->s.a += amount;
 	} else {
@@ -153,7 +153,7 @@ static inline void kvc_skipn (KVCParser *kvc, size_t amount) {
 	}
 }
 
-static const char *kvc_find_semicolon2 (KVCParser *kvc) {
+static const char *kvc_find_semicolon2(KVCParser *kvc) {
 	while (!kvctoken_eof (kvc->s)) {
 		const char c = kvc_peek (kvc, 0);
 		if (c == ';') {
@@ -170,7 +170,7 @@ static const char *kvc_find_semicolon2 (KVCParser *kvc) {
 	}
 	return NULL;
 }
-static const char *kvc_find_semicolon (KVCParser *kvc) {
+static const char *kvc_find_semicolon(KVCParser *kvc) {
 	while (!kvctoken_eof (kvc->s)) {
 		const char c = kvc_peek (kvc, 0);
 		if (c == ';') {
@@ -188,7 +188,7 @@ static const char *kvc_find_semicolon (KVCParser *kvc) {
 }
 
 // rename to until_but
-static bool skip_until (KVCParser *kvc, char ch, char ch2) {
+static bool skip_until(KVCParser *kvc, char ch, char ch2) {
 	while (!kvctoken_eof (kvc->s)) {
 		const char c = kvc_peek (kvc, 0);
 		if (!c) {
@@ -207,7 +207,7 @@ static bool skip_until (KVCParser *kvc, char ch, char ch2) {
 	return false;
 }
 
-static inline void skip_only_spaces (KVCParser *kvc) {
+static inline void skip_only_spaces(KVCParser *kvc) {
 	while (true) {
 		char ch = kvc_peek (kvc, 0);
 		if (!isspace (ch)) {
@@ -217,7 +217,7 @@ static inline void skip_only_spaces (KVCParser *kvc) {
 	}
 }
 
-static void skip_semicolons (KVCParser *kvc) {
+static void skip_semicolons(KVCParser *kvc) {
 	while (true) {
 		char ch = kvc_peek (kvc, 0);
 		if (!ch) {
@@ -230,7 +230,7 @@ static void skip_semicolons (KVCParser *kvc) {
 	}
 }
 
-static void skip_spaces (KVCParser *kvc) { // TODO: rename to skip_only_spacesand_comments
+static void skip_spaces(KVCParser *kvc) { // TODO: rename to skip_only_spacesand_comments
 	bool havespace = false;
 repeat:
 	skip_only_spaces (kvc);
@@ -259,7 +259,7 @@ repeat:
 	}
 }
 
-static const char *consume_word (KVCParser *kvc) {
+static const char *consume_word(KVCParser *kvc) {
 	skip_only_spaces (kvc);
 	const char *word = kvc->s.a;
 	while (true) {
@@ -278,7 +278,7 @@ static const char *consume_word (KVCParser *kvc) {
 	return word;
 }
 
-static const char *kvc_attr (KVCParser *kvc, const char *k) {
+static const char *kvc_attr(KVCParser *kvc, const char *k) {
 	KVCToken s = { .a = k, .b = k + strlen (k) };
 	int i;
 	for (i = 0; i < kvc->attrs.count; i++) {
@@ -289,7 +289,7 @@ static const char *kvc_attr (KVCParser *kvc, const char *k) {
 	return NULL;
 }
 
-static bool parse_attributes (KVCParser *kvc) {
+static bool parse_attributes(KVCParser *kvc) {
 	const char *begin = kvc_peekn (kvc, 3);
 	if (!begin) {
 		return false;
@@ -378,7 +378,7 @@ static bool parse_attributes (KVCParser *kvc) {
 	return true;
 }
 
-static void apply_attributes (KVCParser *kvc, const char *type, const char *scope) {
+static void apply_attributes(KVCParser *kvc, const char *type, const char *scope) {
 	int i;
 	for (i = 0; i < kvc->attrs.count; i++) {
 		KVCToken key = kvc->attrs.keys[i];
@@ -392,7 +392,7 @@ static void apply_attributes (KVCParser *kvc, const char *type, const char *scop
 	kvc->attrs.count = 0; // Reset after applying
 }
 
-static void kvctoken_typename (KVCToken *fun_rtyp, KVCToken *fun_name) {
+static void kvctoken_typename(KVCToken *fun_rtyp, KVCToken *fun_name) {
 	fun_rtyp->b = fun_name->b;
 	kvctoken_trim (fun_rtyp);
 	kvctoken_trim (fun_name);
@@ -427,7 +427,7 @@ static void kvctoken_typename (KVCToken *fun_rtyp, KVCToken *fun_name) {
 	// eprintf ("o TYPENAME n (%s)\n", kvctoken_tostring (*fun_name));
 }
 
-static int kvc_typesize (KVCParser *kvc, const char *name, int dimension) {
+static int kvc_typesize(KVCParser *kvc, const char *name, int dimension) {
 	if (r_str_endswith (name, "8")) {
 		return 1 * dimension;
 	}
@@ -448,7 +448,7 @@ static int kvc_typesize (KVCParser *kvc, const char *name, int dimension) {
 	return 4;
 }
 
-static void trim_underscores (KVCToken *t) {
+static void trim_underscores(KVCToken *t) {
 	while (t->a[0] == '_') {
 		t->a++;
 	}
@@ -461,7 +461,7 @@ static void trim_underscores (KVCToken *t) {
 	}
 }
 
-static bool parse_c_attributes (KVCParser *kvc) {
+static bool parse_c_attributes(KVCParser *kvc) {
 	const char *p = kvc_peekn (kvc, strlen ("__attribute__"));
 	if (!p || !r_str_startswith (p, "__attribute__")) {
 		return false;
@@ -520,7 +520,7 @@ static bool parse_c_attributes (KVCParser *kvc) {
 	return true;
 }
 
-static void kvc_register_typedef (KVCParser *kvc, const char *name, const char *type) {
+static void kvc_register_typedef(KVCParser *kvc, const char *name, const char *type) {
 	if (kvc->tdef_count < (sizeof (kvc->tdefs) / sizeof (kvc->tdefs[0]))) {
 		kvc->tdefs[kvc->tdef_count].name = strdup (name);
 		kvc->tdefs[kvc->tdef_count].type = strdup (type);
@@ -528,7 +528,7 @@ static void kvc_register_typedef (KVCParser *kvc, const char *name, const char *
 	}
 }
 
-static const char *kvc_lookup_typedef (KVCParser *kvc, const char *name) {
+static const char *kvc_lookup_typedef(KVCParser *kvc, const char *name) {
 	int i;
 	for (i = 0; i < (int)kvc->tdef_count; i++) {
 		if (!strcmp (kvc->tdefs[i].name, name)) {
@@ -538,7 +538,7 @@ static const char *kvc_lookup_typedef (KVCParser *kvc, const char *name) {
 	return NULL;
 }
 
-static bool parse_typedef (KVCParser *kvc, const char *unused) {
+static bool parse_typedef(KVCParser *kvc, const char *unused) {
 	skip_spaces (kvc);
 	const char *next = kvc_peekn (kvc, 6);
 	if (next && r_str_startswith (next, "struct")) {
@@ -749,12 +749,12 @@ static bool parse_typedef (KVCParser *kvc, const char *unused) {
 	} else if (next && r_str_startswith (next, "union")) {
 		/* Similar to the struct case, you would parse:
 		   typedef union [Tag]? { ... } Alias;
-		   (Implementation omitted for brevity) */
+ (Implementation omitted for brevity) */
 		kvc_error (kvc, "typedef union not implemented");
 		return false;
 	} else if (next && r_str_startswith (next, "enum")) {
 		/* Similarly, handle typedef enum [Tag]? { ... } Alias;
-		   (Implementation omitted for brevity) */
+ (Implementation omitted for brevity) */
 		kvc_error (kvc, "typedef enum not implemented");
 		return false;
 	} else {
@@ -865,7 +865,7 @@ static bool parse_typedef (KVCParser *kvc, const char *unused) {
 }
 
 // works for unions and structs
-static bool parse_struct (KVCParser *kvc, const char *type) {
+static bool parse_struct(KVCParser *kvc, const char *type) {
 	KVCToken struct_name = { .a = consume_word (kvc) };
 	if (!struct_name.a) {
 		R_LOG_ERROR ("Cannot consume word");
@@ -1153,6 +1153,13 @@ static bool parse_struct (KVCParser *kvc, const char *type) {
 						}
 						r_strbuf_appendf (kvc->sb, "func.%s.%s.ret=%s\n", sn, mname, rtype);
 						off += kvc_typesize (kvc, tdef, 1);
+						// add member name to struct's args list and advance index
+						r_strbuf_appendf (args_sb, "%s%s", member_idx ? "," : "", mname);
+						member_idx++;
+						{
+							r_strf_var (full_scope, 512, "%s.%s", sn, mname);
+							apply_attributes (kvc, "struct", full_scope);
+						}
 						free (type_name);
 						free (rtype);
 						free (args_str);
@@ -1250,7 +1257,7 @@ static bool parse_struct (KVCParser *kvc, const char *type) {
 	return true;
 }
 
-static bool parse_enum (KVCParser *kvc, const char *name) {
+static bool parse_enum(KVCParser *kvc, const char *name) {
 	parse_attributes (kvc);
 	KVCToken enum_name = { .a = consume_word (kvc) };
 	if (!enum_name.a) {
