@@ -689,22 +689,38 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 				break;
 			}
 			r_strf_var(full_scope, 512, "%s.%s", struct_tag, mn);
-			if (R_STR_ISNOTEMPTY(md)) {
-				r_strbuf_appendf(kvc->sb, "struct.%s.%s=%s,%d,%s\n",
-					struct_tag, mn, mt, off, md);
-			} else {
-				r_strbuf_appendf(kvc->sb, "struct.%s.%s=%s,%d,0\n",
-					struct_tag, mn, mt, off);
+			// Detect if this field is a function-pointer (direct or via typedef). If so,
+			// skip the generic append here and let the specialized handling emit the
+			// canonical named type and func.<struct>.<member> entries.
+			bool _is_fp_field = kvctoken_find(member_type, "(*");
+			if (!_is_fp_field) {
+				// check typedefs (mt is a heap string)
+				const char *tdef_local = kvc_lookup_typedef(kvc, mt);
+				if (tdef_local && (strstr(tdef_local, "*(") || strstr(tdef_local, " *("))) {
+					_is_fp_field = true;
+				}
 			}
-			// TODO: this is for backward compat, but imho it should be removed
-			r_strbuf_appendf(kvc->sb, "struct.%s.%s.meta=0\n", struct_tag, mn);
-			off += kvc_typesize(kvc, mt, 1);
-			apply_attributes(kvc, "struct", full_scope);
-			r_strbuf_appendf(args_sb, "%s%s", member_idx ? "," : "", mn);
-			member_idx++;
-			free(mt);
-			free(mn);
-			free(md);
+			if (!_is_fp_field) {
+				if (R_STR_ISNOTEMPTY(md)) {
+					r_strbuf_appendf(kvc->sb, "struct.%s.%s=%s,%d,%s\n",
+						struct_tag, mn, mt, off, md);
+				} else {
+					r_strbuf_appendf(kvc->sb, "struct.%s.%s=%s,%d,0\n",
+						struct_tag, mn, mt, off);
+				}
+				// TODO: this is for backward compat, but imho it should be removed
+				r_strbuf_appendf(kvc->sb, "struct.%s.%s.meta=0\n", struct_tag, mn);
+				off += kvc_typesize(kvc, mt, 1);
+				apply_attributes(kvc, "struct", full_scope);
+				r_strbuf_appendf(args_sb, "%s%s", member_idx ? "," : "", mn);
+				member_idx++;
+				free(mt);
+				free(mn);
+				free(md);
+				// continue with next field
+				continue;
+			}
+			// else: it is a function-pointer field; fall through to specialized handling below
 		}
 		// After the closing '}', we expect the typedef alias:
 		skip_spaces(kvc);
@@ -973,26 +989,86 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 				}
 				// build full type string
 				char *fulltype = r_str_newf("%s *(%s)", rtype, args ? args : "");
-				// Also build a base type without commas for the main k=v field (e.g. "int *")
-				char *basetype = r_str_newf("%s *", rtype);
-				r_str_trim(basetype);
-				free(rtype);
-				// output member entry: main legacy entry uses a type without commas
-				r_strbuf_appendf(kvc->sb, "%s.%s.%s=%s,%d,0\n", type, sn, mname, basetype, off);
-				// store full function signature and args in separate keys to avoid comma collisions
-				r_strbuf_appendf(kvc->sb, "%s.%s.%s.fp=%s\n", type, sn, mname, fulltype);
+				// We'll reference the function-pointer's type by a struct-prefixed name: <struct>.<member>
+				char *type_name = r_str_newf("%s.%s", sn, mname);
+				// Emit the struct member referring to that type name (no commas in the type)
+				r_strbuf_appendf(kvc->sb, "struct.%s.%s=%s,%d,0\n", sn, mname, type_name, off);
+				// Now emit a func.<struct>.<member> set of entries like regular functions (see t/j.h.txt)
+				// func.<struct>.<member>=<argnames>
+				// func.<struct>.<member>.arg.N=<type>,<name>
+				// func.<struct>.<member>.ret=<ret type>
+				// func.<struct>.<member>.cc=cdecl
+				// func.<struct>.<member>.args=<count>
+				// Build func args entries
 				if (args) {
-					r_strbuf_appendf(kvc->sb, "%s.%s.%s.fp.args=%s\n", type, sn, mname, args);
-					free(args);
+					// split args by comma for names list
+					char *args_copy = strdup(args);
+					char *p = args_copy;
+					int arg_idx = 0;
+					RStrBuf *fnames = r_strbuf_new("");
+					while (p) {
+						char *comma = strchr(p, ',');
+						char *tok = NULL;
+						if (comma) {
+							tok = r_str_ndup(p, comma - p);
+							p = comma + 1;
+						} else {
+							tok = strdup(p);
+							p = NULL;
+						}
+						r_str_trim(tok);
+						// now find last space in tok to split type/name
+						char *last_space = strrchr(tok, ' ');
+						char *arg_type = NULL;
+						char *arg_name = NULL;
+						if (last_space) {
+							arg_type = r_str_ndup(tok, last_space - tok);
+							r_str_trim(arg_type);
+							arg_name = strdup(last_space + 1);
+							r_str_trim(arg_name);
+						} else {
+							// no name, use empty
+							arg_type = strdup(tok);
+							r_str_trim(arg_type);
+							arg_name = strdup("");
+						}
+						r_strbuf_appendf(fnames, "%s%s", arg_idx ? "," : "", arg_name);
+						r_strbuf_appendf(kvc->sb, "func.%s.%s.arg.%d=%s,%s\n", sn, mname, arg_idx, arg_type, arg_name);
+						free(arg_type);
+						free(arg_name);
+						free(tok);
+						arg_idx++;
+					}
+					char *fnames_s = r_strbuf_drain(fnames);
+					r_strbuf_appendf(kvc->sb, "func.%s.%s=%s\n", sn, mname, fnames_s);
+					r_strbuf_appendf(kvc->sb, "func.%s.%s.cc=%s\n", sn, mname, "cdecl");
+					r_strbuf_appendf(kvc->sb, "func.%s.%s.args=%d\n", sn, mname, arg_idx);
+					free(fnames_s);
+					free(args_copy);
 				} else {
-					r_strbuf_appendf(kvc->sb, "%s.%s.%s.fp.args=\n", type, sn, mname);
+					r_strbuf_appendf(kvc->sb, "func.%s.%s=\n", sn, mname);
+					r_strbuf_appendf(kvc->sb, "func.%s.%s.cc=%s\n", sn, mname, "cdecl");
+					r_strbuf_appendf(kvc->sb, "func.%s.%s.args=%d\n", sn, mname, 0);
 				}
-				r_strbuf_appendf(kvc->sb, "%s.%s.%s.meta=0\n", type, sn, mname);
+				// return type
+				r_strbuf_appendf(kvc->sb, "func.%s.%s.ret=%s\n", sn, mname, rtype ? rtype : "void");
+				// store the canonical signature too
+				r_strbuf_appendf(kvc->sb, "func.%s.%s=%s\n", sn, mname, args ? args : "");
 				off += kvc_typesize(kvc, fulltype, 1);
-				r_strbuf_appendf(args_sb, ",%s", mname);
-				free(fulltype);
-				free(basetype);
+				// add member name to struct's args list and advance index
+				r_strbuf_appendf(args_sb, "%s%s", member_idx ? "," : "", mname);
+				member_idx++;
+				{
+					r_strf_var(full_scope, 512, "%s.%s", sn, mname);
+					apply_attributes(kvc, "struct", full_scope);
+				}
+				free(type_name);
+				free(rtype);
+				if (args) {
+					free(args);
+				}
 				free(mname);
+				/* mt_check is not defined in this scope */
 				continue;
 			}
 		}
@@ -1023,19 +1099,61 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 								r_str_trim(args_str);
 							}
 						}
-						char *basetype = r_str_newf("%s *", rtype);
-						r_str_trim(basetype);
-						r_strbuf_appendf(kvc->sb, "%s.%s.%s=%s,%d,0\n", type, sn, mname, basetype, off);
-						r_strbuf_appendf(kvc->sb, "%s.%s.%s.fp=%s\n", type, sn, mname, tdef);
+						char *type_name = r_str_newf("%s.%s", sn, mname);
+						// emit struct.<sn>.<m> referring to the named function type
+						r_strbuf_appendf(kvc->sb, "struct.%s.%s=%s,%d,0\n", sn, mname, type_name, off);
+						// emit func.<sn>.<m> signature entries
 						if (args_str) {
-							r_strbuf_appendf(kvc->sb, "%s.%s.%s.fp.args=%s\n", type, sn, mname, args_str);
+							// build arg list and arg entries as in parse_struct above
+							char *args_copy2 = strdup(args_str);
+							char *pp = args_copy2;
+							int arg_idx2 = 0;
+							RStrBuf *fnames2 = r_strbuf_new("");
+							while (pp) {
+								char *comma2 = strchr(pp, ',');
+								char *tok2 = NULL;
+								if (comma2) {
+									tok2 = r_str_ndup(pp, comma2 - pp);
+									pp = comma2 + 1;
+								} else {
+									tok2 = strdup(pp);
+									pp = NULL;
+								}
+								r_str_trim(tok2);
+								char *ls2 = strrchr(tok2, ' ');
+								char *arg_type2 = NULL;
+								char *arg_name2 = NULL;
+								if (ls2) {
+									arg_type2 = r_str_ndup(tok2, ls2 - tok2);
+									r_str_trim(arg_type2);
+									arg_name2 = strdup(ls2 + 1);
+									r_str_trim(arg_name2);
+								} else {
+									arg_type2 = strdup(tok2);
+									r_str_trim(arg_type2);
+									arg_name2 = strdup("");
+								}
+								r_strbuf_appendf(fnames2, "%s%s", arg_idx2 ? "," : "", arg_name2);
+								r_strbuf_appendf(kvc->sb, "func.%s.%s.arg.%d=%s,%s\n", sn, mname, arg_idx2, arg_type2, arg_name2);
+								free(arg_type2);
+								free(arg_name2);
+								free(tok2);
+								arg_idx2++;
+							}
+							char *fnames_s2 = r_strbuf_drain(fnames2);
+							r_strbuf_appendf(kvc->sb, "func.%s.%s=%s\n", sn, mname, fnames_s2);
+							r_strbuf_appendf(kvc->sb, "func.%s.%s.cc=%s\n", sn, mname, "cdecl");
+							r_strbuf_appendf(kvc->sb, "func.%s.%s.args=%d\n", sn, mname, arg_idx2);
+							free(fnames_s2);
+							free(args_copy2);
 						} else {
-							r_strbuf_appendf(kvc->sb, "%s.%s.%s.fp.args=\n", type, sn, mname);
+							r_strbuf_appendf(kvc->sb, "func.%s.%s=\n", sn, mname);
+							r_strbuf_appendf(kvc->sb, "func.%s.%s.cc=%s\n", sn, mname, "cdecl");
+							r_strbuf_appendf(kvc->sb, "func.%s.%s.args=%d\n", sn, mname, 0);
 						}
-						r_strbuf_appendf(kvc->sb, "%s.%s.%s.meta=0\n", type, sn, mname);
+						r_strbuf_appendf(kvc->sb, "func.%s.%s.ret=%s\n", sn, mname, rtype);
 						off += kvc_typesize(kvc, tdef, 1);
-						r_strbuf_appendf(args_sb, ",%s", mname);
-						free(basetype);
+						free(type_name);
 						free(rtype);
 						if (args_str) {
 							free(args_str);
