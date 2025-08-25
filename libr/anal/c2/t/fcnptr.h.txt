@@ -1,13 +1,13 @@
 foo=struct
 struct.foo.x=int,0,0
-struct.foo.*fp=foo.*fp,4,0
-func.foo.*fp.arg.0=int,a
-func.foo.*fp.arg.1=int,b
-func.foo.*fp=a,b
-func.foo.*fp.cc=cdecl
-func.foo.*fp.args=2
-func.foo.*fp.ret=int
-func.foo.*fp=int a , int b
+struct.foo.fp=foo.fp,4,0
+func.foo.fp.arg.0=int,a
+func.foo.fp.arg.1=int,b
+func.foo.fp=a,b
+func.foo.fp.cc=cdecl
+func.foo.fp.args=2
+func.foo.fp.ret=int
+func.foo.fp=int a , int b
 struct.foo.b=char *,8,0
-struct.foo=x,*fp,b
+struct.foo=x,fp,b
 

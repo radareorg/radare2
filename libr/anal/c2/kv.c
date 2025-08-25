@@ -781,7 +781,7 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 		/* Detect function-pointer typedefs like: typedef RET (*alias) (args); */
 		const char *fp_marker = kvctoken_find (decl, " (*");
 		if (fp_marker) {
-			const char *name_start = fp_marker + 2;
+			const char *name_start = fp_marker + 3;
 			const char *name_end = name_start;
 			while (name_end < semicolon && *name_end != ')') {
 				name_end++;
@@ -965,7 +965,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 				char *rtype = r_str_ndup (start, starp - start);
 				r_str_trim (rtype);
 				// member name
-				const char *name_start = starp + 2;
+				const char *name_start = starp + 3;
 				const char *name_end = strchr (name_start, ')');
 				char *mname = NULL;
 				if (name_end && name_end > name_start) {
