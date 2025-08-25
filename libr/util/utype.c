@@ -396,6 +396,7 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 	size_t n;
 	char *fields = r_str_newf ("%s.fields", var);
 	char *nfields = (is_typedef) ? fields : var;
+	// TODO: Use RStrBuf for fmt and vars
 	for (n = 0; (p = sdb_array_get (TDB, nfields, n, NULL)); n++) {
 		char *struct_name = NULL;
 		const char *tfmt = NULL;
@@ -461,7 +462,14 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 					vars = r_str_append (vars, " ");
 				}
 			} else {
+#if 1
+				R_LOG_WARN ("Cannot resolve type '%s' assuming pointer", var3);
+				fmt = r_str_append (fmt, "p");
+				vars = r_str_append (vars, p);
+				vars = r_str_append (vars, " ");
+#else
 				R_LOG_ERROR ("Cannot resolve type '%s'", var3);
+#endif
 			}
 			free (type);
 		}

@@ -18,8 +18,7 @@ RUN
 NAME=ts add and delete
 FILE=--
 CMDS=<<EOF
-t-*
-?e --
+ts-NSString
 'td typedef struct {int a;} Foo;
 ts
 ts Foo
@@ -28,8 +27,8 @@ ts-Foo
 ts~Foo
 EOF
 EXPECT=<<EOF
---
 Foo
+pf d a
 --
 EOF
 RUN

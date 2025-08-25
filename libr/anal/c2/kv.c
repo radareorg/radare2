@@ -1149,6 +1149,8 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 					r_strbuf_appendf (kvc->sb, "func.%s.%s.args=%d\n", sn, mname, 0);
 				}
 				// return type
+				r_strbuf_appendf (kvc->sb, "type.%s.%s=func\n", sn, mname);
+				r_strbuf_appendf (kvc->sb, "%s.%s=func\n", sn, mname);
 				r_strbuf_appendf (kvc->sb, "func.%s.%s.ret=%s\n", sn, mname, rtype ? rtype : "void");
 				// store the canonical signature too
 				r_strbuf_appendf (kvc->sb, "func.%s.%s=%s\n", sn, mname, args ? args : "");
