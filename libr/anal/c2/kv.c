@@ -887,6 +887,101 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 	char *sn = kvctoken_tostring(struct_name);
 	r_strbuf_appendf(kvc->sb, "%s=%s\n", sn, type);
 	apply_attributes(kvc, type, sn);
+	// Lookahead: scan struct body for direct function-pointer members so we can
+	// emit a typedef-like func handle for them (e.g. foo.fp=func)
+	{
+		const char *closing = kvc_find(kvc, "}");
+		if (closing) {
+			const char *p = kvc->s.a;
+			while (p < closing) {
+				const char *st = r_mem_mem((const ut8 *)p, closing - p, (const ut8 *)"(*", 2);
+				if (!st) {
+					break;
+				}
+				// find member name between '(*' and ')'
+				const char *name_start = st + 2;
+				const char *name_end = name_start;
+				while (name_end < closing && *name_end != ')') {
+					name_end++;
+				}
+				if (name_end >= closing) {
+					p = name_end;
+					continue;
+				}
+				KVCToken mtok = { .a = name_start, .b = name_end };
+				kvctoken_trim(&mtok);
+				char *mname_look = kvctoken_tostring(mtok);
+				// find args parentheses after name_end
+				const char *args_open = name_end;
+				while (args_open < closing && *args_open != '(') {
+					args_open++;
+				}
+				char *fnames_s = NULL;
+				if (args_open < closing) {
+					const char *args_close = args_open;
+					int depth = 0;
+					while (args_close < closing) {
+						if (*args_close == '(') {
+							depth++;
+						} else if (*args_close == ')') {
+							depth--;
+							if (depth == 0) {
+								break;
+							}
+						}
+						args_close++;
+					}
+					if (args_close < closing && *args_close == ')') {
+						KVCToken args_tok = { .a = args_open + 1, .b = args_close };
+						char *args_all = kvctoken_tostring(args_tok);
+						r_str_trim(args_all);
+						RStrBuf *fnames = r_strbuf_new("");
+						char *acopy = strdup(args_all);
+						char *pp = acopy;
+						int arg_idx = 0;
+						while (pp) {
+							char *comma = strchr(pp, ',');
+							char *tok = NULL;
+							if (comma) {
+								tok = r_str_ndup(pp, comma - pp);
+								pp = comma + 1;
+							} else {
+								tok = strdup(pp);
+								pp = NULL;
+							}
+							r_str_trim(tok);
+							char *last_space = strrchr(tok, ' ');
+							char *arg_name = NULL;
+							if (last_space) {
+								arg_name = strdup(last_space + 1);
+								r_str_trim(arg_name);
+							} else {
+								arg_name = strdup("");
+							}
+							r_strbuf_appendf(fnames, "%s%s", arg_idx ? "," : "", arg_name);
+							free(arg_name);
+							free(tok);
+							arg_idx++;
+						}
+						fnames_s = r_strbuf_drain(fnames);
+						free(acopy);
+						free(args_all);
+					}
+				}
+				if (mname_look) {
+					const char *tdef = kvc_lookup_typedef(kvc, mname_look);
+					if (tdef) {
+						r_strbuf_appendf(kvc->sb, "%s.%s=func\n", sn, mname_look);
+						if (fnames_s) {
+							free(fnames_s);
+						}
+					}
+					free(mname_look);
+				}
+				p = name_end + 1;
+			}
+		}
+	}
 	int member_idx = 0;
 	int off = 0;
 	while (true) {
