@@ -1,0 +1,10 @@
+typedef.fp=int *(int a, int b)
+fp=typedef
+foo=struct
+struct.foo.x=int,0,0
+struct.foo.fp=int *(int a , int b),4,0
+struct.foo.fp.meta=0
+struct.foo.b=char *,8,0
+struct.foo.fp2=int *(int a, int b),12,0
+struct.foo.fp2.meta=0
+struct.foo=x,fp,b,fp2
