@@ -21,7 +21,7 @@ R_LIB_VERSION_HEADER (r_lib);
 #define R_LIB_SYMNAME "radare_plugin"
 #define R_LIB_SYMFUNC "radare_plugin_function"
 
-#define R2_ABIVERSION 17
+#define R2_ABIVERSION 18
 #define R2_VERSION_ABI R2_ABIVERSION
 
 #define R_LIB_ENV "R2_LIBR_PLUGINS"
