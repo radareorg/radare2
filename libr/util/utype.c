@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2022 - pancake, oddcoder, sivaramaaa */
+/* radare - LGPL - Copyright 2013-2025 - pancake, oddcoder, sivaramaaa */
 
 #include <r_util.h>
 
@@ -457,8 +457,7 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 					r_strbuf_append (vars_sb, " ");
 				} else if (isEnum) {
 					r_strbuf_append (fmt_sb, "E");
-					r_strbuf_appendf (vars_sb, "(%s)%s", type + 5, p);
-					r_strbuf_append (vars_sb, " ");
+					r_strbuf_appendf (vars_sb, "(%s)%s ", type + 5, p);
 				} else {
 					r_strbuf_append (fmt_sb, tfmt);
 					r_strbuf_append (vars_sb, p);
@@ -659,11 +658,9 @@ static inline bool has_r_prefixes(char *func_name, int offset, size_t slen) {
 static char *strip_r_prefixes(char *func_name, size_t slen) {
 	// strip r2 prefixes (sym, sym.imp, etc')
 	int offset = 0;
-
 	while (has_r_prefixes (func_name, offset, slen)) {
 		offset += 4;
 	}
-
 	return func_name + offset;
 }
 
@@ -676,7 +673,6 @@ static char *strip_common_prefixes_stdlib(char *func_name) {
 	} else if (r_str_startswith (func_name, "__GI_")) {
 		func_name += 5;
 	}
-
 	return func_name;
 }
 
@@ -685,7 +681,6 @@ static char *strip_dll_prefix(char *func_name) {
 	if (tmp) {
 		return tmp + 3;
 	}
-
 	return func_name;
 }
 
@@ -694,7 +689,6 @@ static void clean_function_name(char *func_name) {
 	if (!last || !r_str_isnumber (last + 1)) {
 		return;
 	}
-
 	*last = '\0';
 }
 
@@ -723,9 +717,8 @@ R_API R_OWN char *r_type_func_guess(Sdb *TDB, char *R_NONNULL func_name) {
 	str = strdup (str);
 	clean_function_name (str);
 
-	if (*str == '_' && (result = type_func_try_guess (TDB, str + 1))) {
-		free (str);
-		return result;
+	if (*str == '_') {
+		result = type_func_try_guess (TDB, str + 1);
 	}
 
 	free (str);
