@@ -138,19 +138,21 @@ R_API char *r_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val) {
 
 R_API ut64 r_type_get_bitsize(Sdb *TDB, const char *type) {
 	/* Filter out the structure keyword if type looks like "struct mystruc" */
-	const char *tmptype = type;
-	if (r_str_startswith (type, "struct ")) {
-		tmptype = type + strlen ("struct ");
-	} else if (r_str_startswith (type, "union ")) {
-		tmptype = type + strlen ("union ");
+	const char *tmptype;
+	if (!strncmp (type, "struct ", 7)) {
+		tmptype = type + 7;
+	} else if (!strncmp (type, "union ", 6)) {
+		tmptype = type + 6;
+	} else {
+		tmptype = type;
 	}
-	if ( (strstr (type, "*(") || strstr (type, " *")) && !r_str_startswith (type, "char *")) {
+	if ((strstr (type, "*(") || strstr (type, " *")) && strncmp (type, "char *", 7)) {
 		return 32;
 	}
 	const char *t = sdb_const_get (TDB, tmptype, 0);
 	if (!t) {
-		if (r_str_startswith (tmptype, "enum ")) {
-			// XXX: Need a proper way to determine size of enum
+		if (!strncmp (tmptype, "enum ", 5)) {
+			//XXX: Need a proper way to determine size of enum
 			return 32;
 		}
 		return 0;
@@ -163,10 +165,11 @@ R_API ut64 r_type_get_bitsize(Sdb *TDB, const char *type) {
 	}
 	if (!strcmp (t, "struct") || !strcmp (t, "union")) {
 		char *query = r_str_newf ("%s.%s", t, tmptype);
-		ut64 ret = 0;
 		char *members = sdb_get (TDB, query, 0);
+		free (query);
+		char *next, *ptr = members;
+		ut64 ret = 0;
 		if (members) {
-			char *next, *ptr = members;
 			do {
 				char *name = sdb_anext (ptr, &next);
 				if (!name) {
@@ -201,7 +204,6 @@ R_API ut64 r_type_get_bitsize(Sdb *TDB, const char *type) {
 			} while (next);
 			free (members);
 		}
-		free (query);
 		return ret;
 	}
 	return 0;
