@@ -17,7 +17,7 @@ static bool test_r_math_eq(void) {
 	mu_end;
 }
 
-bool test_r_math_neq(void) {
+static bool test_r_math_neq(void) {
 	// 0x1a != 0x1a should yield false
     result = r_num_math(num, "0x1a != 0x1a");
 	mu_assert_eq ((int)(intptr_t)result, (int)(intptr_t)0,
