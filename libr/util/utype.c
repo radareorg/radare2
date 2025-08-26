@@ -101,7 +101,6 @@ R_API char *r_type_enum_member(Sdb *TDB, const char *name, const char *member, u
 }
 
 R_API char *r_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val) {
-	char *ret = NULL;
 	const char *res;
 	int i;
 
@@ -129,9 +128,7 @@ R_API char *r_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val) {
 			r_strbuf_appendf (sb, "0x%x", n);
 		}
 	}
-	ret = r_strbuf_drain (sb);
-	r_strbuf_free (sb);
-	return ret;
+	return r_strbuf_drain (sb);
 }
 
 R_API ut64 r_type_get_bitsize(Sdb *TDB, const char *type) {
