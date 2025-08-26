@@ -30,7 +30,7 @@ static bool test_r_math_neq(void) {
 	mu_end;
 }
 
-bool test_r_math_bool_expr(void) {
+static bool test_r_math_bool_expr(void) {
     // NOT operator
     result = r_num_math(num, "!(0)");
 	mu_assert_eq ((int)(intptr_t)result, (int)(intptr_t)1,
