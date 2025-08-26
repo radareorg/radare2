@@ -133,7 +133,7 @@ static RList *sections(RBinFile *bf) {
 	}
 
 	// add text segment
-	RBinSection *ptr = R_NEW0(RBinSection);
+	RBinSection *ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup("text");
 	ptr->size = h->psize;
 	ptr->vsize = h->psize;
@@ -142,7 +142,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->perm = R_PERM_RX; // r-x
 	ptr->add = true;
 	ptr->has_strings = true;
-	r_list_append(ret, ptr);
+	r_list_append (ret, ptr);
 
 	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup("sign");
@@ -153,7 +153,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->perm = R_PERM_R; // r--
 	ptr->has_strings = true;
 	ptr->add = true;
-	r_list_append(ret, ptr);
+	r_list_append (ret, ptr);
 
 	if (h->cert_sz && h->cert_va > h->vaddr) {
 		ptr = R_NEW0 (RBinSection);
