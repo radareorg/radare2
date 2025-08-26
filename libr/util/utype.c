@@ -101,7 +101,6 @@ R_API char *r_type_enum_member(Sdb *TDB, const char *name, const char *member, u
 }
 
 R_API char *r_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val) {
-	const char *res;
 	int i;
 
 	if (r_type_kind (TDB, name) != R_TYPE_ENUM) {
@@ -115,7 +114,7 @@ R_API char *r_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val) {
 			continue;
 		}
 		char *q = r_str_newf ("enum.%s.0x%x", name, n);
-		res = sdb_const_get (TDB, q, 0);
+		const char *res = sdb_const_get (TDB, q, 0);
 		free (q);
 		if (isFirst) {
 			isFirst = false;
@@ -133,13 +132,11 @@ R_API char *r_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val) {
 
 R_API ut64 r_type_get_bitsize(Sdb *TDB, const char *type) {
 	/* Filter out the structure keyword if type looks like "struct mystruc" */
-	const char *tmptype;
+	const char *tmptype = type;
 	if (r_str_startswith (type, "struct ")) {
 		tmptype = type + strlen ("struct ");
 	} else if (r_str_startswith (type, "union ")) {
 		tmptype = type + strlen ("union ");
-	} else {
-		tmptype = type;
 	}
 	if ( (strstr (type, "*(") || strstr (type, " *")) && !r_str_startswith (type, "char *")) {
 		return 32;
@@ -288,8 +285,10 @@ R_API RList *r_type_get_by_offset(Sdb *TDB, ut64 offset) {
 	SdbListIter *lsi;
 	SdbKv *kv;
 	ls_foreach (ls, lsi, kv) {
+		const char *kk = sdbkv_key (kv);
+		const char *vv = sdbkv_value (kv);
 		// TODO: Add unions support
-		if (r_str_startswith (sdbkv_value (kv), "struct") && !r_str_startswith (sdbkv_key (kv), "struct.")) {
+		if (r_str_startswith (vv, "struct") && !r_str_startswith (kk, "struct.")) {
 			char *res = r_type_get_struct_memb (TDB, sdbkv_key (kv), offset);
 			if (res) {
 				r_list_append (offtypes, res);
@@ -328,7 +327,7 @@ static void types_range_del(Sdb *db, ut64 addr) {
 static void types_range_add(Sdb *db, ut64 addr) {
 	ut64 base = TYPE_RANGE_BASE (addr);
 	r_strf_var (k, 64, "range.%" PFMT64x, base);
- (void)sdb_array_add_num (db, k, addr, 0);
+	(void)sdb_array_add_num (db, k, addr, 0);
 }
 
 R_API char *r_type_link_at(Sdb *TDB, ut64 addr) {
@@ -396,7 +395,8 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 	char *fields = r_str_newf ("%s.fields", var);
 	char *nfields = (is_typedef) ? fields : var;
 	// TODO: Use RStrBuf for fmt and vars
-	RStrBuf *fmt_sb = r_strbuf_new ("\0"), *vars_sb = r_strbuf_new ("\0");
+	RStrBuf *fmt_sb = r_strbuf_new ("");
+	RStrBuf *vars_sb = r_strbuf_new ("");
 	for (n = 0; (p = sdb_array_get (TDB, nfields, n, NULL)); n++) {
 		char *struct_name = NULL;
 		const char *tfmt = NULL;
@@ -445,7 +445,7 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 				r_strbuf_append (vars_sb, p);
 				r_strbuf_append (vars_sb, " ");
 			} else if (tfmt) {
- (void)r_str_replace_ch (type, ' ', '_', true);
+				(void)r_str_replace_ch (type, ' ', '_', true);
 				if (elements > 0) {
 					r_strbuf_appendf (fmt_sb, "[%d]", elements);
 				}
@@ -457,7 +457,7 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 					r_strbuf_append (vars_sb, " ");
 				} else if (isEnum) {
 					r_strbuf_append (fmt_sb, "E");
-					r_strbuf_appendf (vars_sb, " (%s)%s", type + 5, p);
+					r_strbuf_appendf (vars_sb, "(%s)%s", type + 5, p);
 					r_strbuf_append (vars_sb, " ");
 				} else {
 					r_strbuf_append (fmt_sb, tfmt);
