@@ -19,47 +19,47 @@ static bool check(RBinFile *bf, RBuffer *b) {
 }
 
 static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
-	struct nds_hdr *loaded_header = R_NEW0 (struct nds_hdr);
-	if (r_buf_read_at (b, 0, (ut8 *)loaded_header, sizeof (*loaded_header)) == sizeof (*loaded_header)) {
-		bf->bo->bin_obj = loaded_header;
+	struct nds_hdr *lh = R_NEW0 (struct nds_hdr);
+	if (r_buf_read_at (b, 0, (ut8 *)lh, sizeof (*lh)) == sizeof (*lh)) {
+		bf->bo->bin_obj = lh;
 		return true;
 	}
-	free (loaded_header);
+	free (lh);
 	bf->bo->bin_obj = NULL;
 	return false;
 }
 
 static ut64 baddr(RBinFile *bf) {
-	struct nds_hdr *loaded_header = (void *)bf->bo->bin_obj;
-	if (!loaded_header) {
+	struct nds_hdr *lh = (void *)bf->bo->bin_obj;
+	if (!lh) {
 		return 0;
 	}
-	return (ut64)loaded_header->arm9_ram_address;
+	return (ut64)lh->arm9_ram_address;
 }
 
 static RList *sections(RBinFile *bf) {
 	RList *ret = r_list_new ();
-	struct nds_hdr *loaded_header = (void *)bf->bo->bin_obj;
-	if (!loaded_header) {
+	struct nds_hdr *lh = (void *)bf->bo->bin_obj;
+	if (!lh) {
 		return ret;
 	}
 	RBinSection *ptr9 = R_NEW0 (RBinSection);
 
 	ptr9->name = strdup ("arm9");
-	ptr9->size = loaded_header->arm9_size;
-	ptr9->vsize = loaded_header->arm9_size;
-	ptr9->paddr = loaded_header->arm9_rom_offset;
-	ptr9->vaddr = loaded_header->arm9_ram_address;
+	ptr9->size = lh->arm9_size;
+	ptr9->vsize = lh->arm9_size;
+	ptr9->paddr = lh->arm9_rom_offset;
+	ptr9->vaddr = lh->arm9_ram_address;
 	ptr9->perm = r_str_rwx ("rwx");
 	ptr9->add = true;
 	r_list_append (ret, ptr9);
 
 	RBinSection *ptr7 = R_NEW0 (RBinSection);
 	ptr7->name = strdup ("arm7");
-	ptr7->size = loaded_header->arm7_size;
-	ptr7->vsize = loaded_header->arm7_size;
-	ptr7->paddr = loaded_header->arm7_rom_offset;
-	ptr7->vaddr = loaded_header->arm7_ram_address;
+	ptr7->size = lh->arm7_size;
+	ptr7->vsize = lh->arm7_size;
+	ptr7->paddr = lh->arm7_rom_offset;
+	ptr7->vaddr = lh->arm7_ram_address;
 	ptr7->perm = r_str_rwx ("rwx");
 	ptr7->add = true;
 	r_list_append (ret, ptr7);
@@ -69,20 +69,20 @@ static RList *sections(RBinFile *bf) {
 
 static RList *entries(RBinFile *bf) {
 	RList *ret = r_list_new ();
-	struct nds_hdr *loaded_header = (void *)bf->bo->bin_obj;
-	if (bf && bf->buf && loaded_header) {
+	struct nds_hdr *lh = (void *)bf->bo->bin_obj;
+	if (bf && bf->buf && lh) {
 		ret->free = free;
 
 		/* ARM9 entry point */
 		RBinAddr *ptr9 = R_NEW0 (RBinAddr);
-		ptr9->vaddr = loaded_header->arm9_entry_address;
-		// ptr9->paddr = loaded_header.arm9_entry_address;
+		ptr9->vaddr = lh->arm9_entry_address;
+		// ptr9->paddr = lh.arm9_entry_address;
 		r_list_append (ret, ptr9);
 
 		/* ARM7 entry point */
 		RBinAddr *ptr7 = R_NEW0 (RBinAddr);
-		ptr7->vaddr = loaded_header->arm7_entry_address;
-		// ptr7->paddr = loaded_header.arm7_entry_address;
+		ptr7->vaddr = lh->arm7_entry_address;
+		// ptr7->paddr = lh.arm7_entry_address;
 		r_list_append (ret, ptr7);
 	}
 	return ret;
@@ -91,9 +91,10 @@ static RList *entries(RBinFile *bf) {
 static RBinInfo *info(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->buf, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	struct nds_hdr *loaded_header = (void *)bf->bo->bin_obj;
-	char *filepath = r_str_newf ("%.12s - %.4s",
-		loaded_header ? loaded_header->title : "", loaded_header ? loaded_header->gamecode : "");
+	struct nds_hdr *lh = (void *)bf->bo->bin_obj;
+	char *filepath = lh
+		? r_str_newf ("%.12s - %.4s", (const char *)lh->title, (const char *)lh->gamecode)
+		: strdup (" - ");
 	ret->file = filepath;
 	ret->type = strdup ("ROM");
 	ret->machine = strdup ("Nintendo DS");
