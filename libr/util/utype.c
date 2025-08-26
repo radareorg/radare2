@@ -354,11 +354,14 @@ R_API char *r_type_link_at(Sdb *TDB, ut64 addr) {
 				char *lk = r_str_newf ("link.%08" PFMT64x, laddr);
 				char *k = sdb_get (TDB, lk, 0);
 				free (lk);
-				char *res = r_type_get_struct_memb (TDB, k, delta);
-				if (res) {
-					break;
+				if (k) {
+					char *res = r_type_get_struct_memb (TDB, k, delta);
+					if (res) {
+						free (k);
+						return res;
+					}
+					free (k);
 				}
-				free (k);
 			}
 		}
 	}
