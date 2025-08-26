@@ -4105,7 +4105,7 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 			if (c->typename) {
 				pj_ks (pj, "typename", c->typename);
 			}
-			pj_kN (pj, "addr", c->addr);
+			pj_kn (pj, "addr", c->addr);
 			const char *lang = r_bin_lang_tostring (c->lang);
 			if (lang && *lang != '?') {
 				pj_ks (pj, "lang", lang);
