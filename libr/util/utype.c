@@ -452,7 +452,7 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 				if (isStruct) {
 					r_strbuf_append (fmt_sb, "?");
 					if (struct_name) {
-						r_strbuf_appendf (vars_sb, " (%s)%s", struct_name, p);
+						r_strbuf_appendf (vars_sb, "(%s)%s", struct_name, p);
 					}
 					r_strbuf_append (vars_sb, " ");
 				} else if (isEnum) {
