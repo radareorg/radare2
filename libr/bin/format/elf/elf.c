@@ -2043,7 +2043,6 @@ ut64 Elf_(get_baddr)(ELFOBJ *eo) {
 	
 	// Special handling for sBPF: use sBPF program base address
 	if (eo->ehdr.e_machine == EM_BPF || eo->ehdr.e_machine == EM_SBPF) {
-		#define SBPF_PROGRAM_ADDR 0x100000000ULL
 		return SBPF_PROGRAM_ADDR;
 	}
 	

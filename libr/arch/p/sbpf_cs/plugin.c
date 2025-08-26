@@ -73,7 +73,8 @@ static struct {
 };
 
 static const char *get_syscall_name(ut32 hash) {
-	for (int i = 0; solana_syscalls[i].name; i++) {
+	int i;
+	for (i = 0; solana_syscalls[i].name; i++) {
 		if (solana_syscalls[i].hash == hash) {
 			return solana_syscalls[i].name;
 		}
@@ -109,7 +110,7 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 				st32 imm = IMM(0);
 				
 				// Check if this is a syscall first
-				const char *syscall_name = get_syscall_name(imm);
+				const char *syscall_name = get_syscall_name (imm);
 				if (syscall_name) {
 					op->mnemonic = r_str_newf("call %s", syscall_name);
 				
@@ -118,7 +119,7 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 					st64 current_pc = op->addr / 8; 	 		// Current PC in instruction units
 					st64 target_pc = current_pc + imm + 1;  	// Target PC in instruction units
 					st64 target_addr = target_pc * 8;  			// Target address in bytes
-					op->mnemonic = r_str_newf("call 0x%llx", target_addr);
+					op->mnemonic = r_str_newf ("call 0x%"PFMT64x, (ut64)target_addr);
 					
 					// Set jump target for call instruction
 					op->jump = target_addr;
@@ -176,7 +177,7 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 				// Enhanced call analysis for function detection
 				if (OPCOUNT > 0 && OP(0).type == BPF_OP_IMM) {
 					st32 imm = IMM(0);
-					const char *syscall_name = get_syscall_name(imm);
+					const char *syscall_name = get_syscall_name (imm);
 					
 					if (!syscall_name) {
 						// PC-relative call - calculate target and force function creation

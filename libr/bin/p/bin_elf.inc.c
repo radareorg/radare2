@@ -838,9 +838,9 @@ static ut32 murmur3_32(const char* data, ut32 len, ut32 seed) {
 	// Process remaining bytes
 	ut32 tail = 0;
 	switch (len & 3) {
-	case 3: tail ^= bytes[chunks*4+2] << 16; /* fallthrough */
-	case 2: tail ^= bytes[chunks*4+1] << 8;  /* fallthrough */
-	case 1: tail ^= bytes[chunks*4];
+	case 3: tail ^= bytes[chunks * 4 + 2] << 16; /* fallthrough */
+	case 2: tail ^= bytes[chunks * 4 + 1] << 8;  /* fallthrough */
+	case 1: tail ^= bytes[chunks * 4];
 		tail *= c1;
 		tail = rotl32(tail, r1);
 		tail *= c2;
@@ -1125,8 +1125,6 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 	}
 	case EM_BPF: // CHECK: some older solana programs have set an ehdr.e_machine of EM_BPF 
 	case EM_SBPF: {
-		#define SBPF_PROGRAM_ADDR 0x100000000ULL
-
 		switch (rel->type) {
 		case R_BPF_64_64: // 64-bit immediate for lddw instructions
 			V = S + A;
@@ -1135,7 +1133,7 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 				V += SBPF_PROGRAM_ADDR;
 			}
 			// Write as split 32-bit values to immediate fields (offset+4 and offset+12)
-			r_write_le32 (buf, (ut32)(V & 0xffffffff));
+			r_write_le32 (buf, (ut32)(V & UT32_MAX));
 			iob->overlay_write_at (iob->io, rel->rva + 4, buf, 4);
 			r_write_le32 (buf, (ut32)(V >> 32));
 			iob->overlay_write_at (iob->io, rel->rva + 12, buf, 4);
@@ -1199,24 +1197,24 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 				if (rel->sym < bo->imports_by_ord_size && bo->imports_by_ord[rel->sym]) {
 					RBinImport *import = bo->imports_by_ord[rel->sym];
 					if (import && import->name) {
-						sym_name = r_bin_name_tostring(import->name);
+						sym_name = r_bin_name_tostring (import->name);
 					}
 				}
 				// Then check symbols
 				else if (rel->sym < bo->symbols_by_ord_size && bo->symbols_by_ord[rel->sym]) {
 					RBinSymbol *symbol = bo->symbols_by_ord[rel->sym];
 					if (symbol && symbol->name) {
-						sym_name = r_bin_name_tostring(symbol->name);
+						sym_name = r_bin_name_tostring (symbol->name);
 					}
 				}
 			}
 			
 			if (sym_name && *sym_name) {
 				// Compute Murmur3 hash with seed 0
-				hash_value = murmur3_32(sym_name, strlen(sym_name), 0);
-				R_LOG_DEBUG("sBPF R_BPF_64_32: symbol '%s' -> hash 0x%08x", sym_name, hash_value);
+				hash_value = murmur3_32 (sym_name, strlen (sym_name), 0);
+				R_LOG_DEBUG ("sBPF R_BPF_64_32: symbol '%s' -> hash 0x%08x", sym_name, hash_value);
 			} else {
-				R_LOG_WARN("sBPF R_BPF_64_32: no symbol name found for relocation at 0x%"PFMT64x, rel->rva);
+				R_LOG_WARN ("sBPF R_BPF_64_32: no symbol name found for relocation at 0x%"PFMT64x, rel->rva);
 				hash_value = 0;
 			}
 			
