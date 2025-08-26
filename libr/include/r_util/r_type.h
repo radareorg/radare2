@@ -19,7 +19,8 @@ typedef enum {
 	R_TYPE_STRUCT = 2,
 	R_TYPE_UNION = 3,
 	R_TYPE_TYPEDEF = 4,
-	R_TYPE_CLASS = 5
+	R_TYPE_FUNCTION = 5,
+	R_TYPE_CLASS = 6
 } RTypeKind;
 
 R_API bool r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val);
