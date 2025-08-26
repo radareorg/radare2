@@ -394,7 +394,7 @@ R_API int r_type_unlink(Sdb *TDB, ut64 addr) {
 
 static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 	// assumes var list is sorted by offset.. should do more checks here
-	char *p = NULL, *vars = NULL, var2[132], *fmt = NULL;
+	char *p = NULL, var2[132];
 	size_t n;
 	char *fields = r_str_newf ("%s.fields", var);
 	char *nfields = (is_typedef) ? fields : var;
