@@ -48,7 +48,7 @@ static bool check(RBinFile *bf, RBuffer *b) {
 	if (!parse_sbl (b, &h)) {
 		return false;
 	}
-	if (sizeof(SblHeader) < bufsz) {
+	if (sizeof (SblHeader) < bufsz) {
 		if (h.version != 3) { // NAND
 			return false;
 		}
