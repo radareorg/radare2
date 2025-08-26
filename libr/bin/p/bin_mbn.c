@@ -42,7 +42,7 @@ static bool parse_sbl(RBuffer *b, SblHeader *h) {
 }
 
 static bool check(RBinFile *bf, RBuffer *b) {
-	R_RETURN_VAL_IF_FAIL (bf && b, false);
+	R_RETURN_VAL_IF_FAIL (b, false);
 	ut64 bufsz = r_buf_size (b);
 	SblHeader h = { 0 };
 	if (!parse_sbl (b, &h)) {
