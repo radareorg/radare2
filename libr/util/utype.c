@@ -98,22 +98,22 @@ R_API char *r_type_enum_member(Sdb *TDB, const char *name, const char *member, u
 		? r_str_newf ("enum.%s.%s", name, member)
 		: r_str_newf ("enum.%s.0x%" PFMT64x, name, val);
 	char *res = sdb_get (TDB, q, 0);
+	free (q);
 	if (!res) {
 		q = r_str_newf ("enum.%s.%" PFMT64d, name, val);
 		res = sdb_get (TDB, q, 0);
+		free (q);
 	}
-	free (q);
 	return res;
 }
 
 R_API char *r_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val) {
-	int i;
-
 	if (r_type_kind (TDB, name) != R_TYPE_ENUM) {
 		return NULL;
 	}
 	bool isFirst = true;
 	RStrBuf *sb = r_strbuf_newf ("0x%08" PFMT64x " : ", val);
+	int i;
 	for (i = 0; i < 32; i++) {
 		ut32 n = 1ULL << i;
 		if (! (val & n)) {
@@ -305,7 +305,6 @@ R_API RList *r_type_get_by_offset(Sdb *TDB, ut64 offset) {
 	return offtypes;
 }
 
-// XXX 12 is the maxstructsizedelta
 #define TYPE_RANGE_BASE(x) ( (x) >> 16)
 
 static RList *types_range_list(Sdb *db, ut64 addr) {
@@ -337,34 +336,37 @@ static void types_range_add(Sdb *db, ut64 addr) {
 }
 
 R_API char *r_type_link_at(Sdb *TDB, ut64 addr) {
-	if (addr == UT64_MAX) {
+	if (addr == UT64_MAX || addr == (UT64_MAX - 1)) {
 		return NULL;
 	}
 	char *query = r_str_newf ("link.%08" PFMT64x, addr);
 	char *res = sdb_get (TDB, query, 0);
 	free (query);
-	if (!res) { // resolve struct memb if possible for given addr
-		RList *list = types_range_list (TDB, addr);
-		RListIter *iter;
-		const char *s;
-		r_list_foreach (list, iter, s) {
-			ut64 laddr = r_num_get (NULL, s);
-			if (addr > laddr) {
-				int delta = addr - laddr;
-				char *lk = r_str_newf ("link.%08" PFMT64x, laddr);
-				char *k = sdb_get (TDB, lk, 0);
-				free (lk);
-				if (k) {
-					char *res = r_type_get_struct_memb (TDB, k, delta);
-					if (res) {
-						free (k);
-						return res;
-					}
+	if (res) {
+		return res;
+	}
+	// resolve struct memb if possible for given addr
+	RList *list = types_range_list (TDB, addr);
+	RListIter *iter;
+	const char *s;
+	r_list_foreach (list, iter, s) {
+		ut64 laddr = r_num_get (NULL, s);
+		if (addr > laddr) {
+			int delta = addr - laddr;
+			char *lk = r_str_newf ("link.%08" PFMT64x, laddr);
+			char *k = sdb_get (TDB, lk, 0);
+			free (lk);
+			if (k) {
+				char *res = r_type_get_struct_memb (TDB, k, delta);
+				if (res) {
 					free (k);
+					return res;
 				}
+				free (k);
 			}
 		}
 	}
+	r_list_free (list);
 	return res;
 }
 
