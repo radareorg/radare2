@@ -3222,3 +3222,7 @@ fflush_unlocked=func
 func.fflush_unlocked.args=1
 func.fflush_unlocked.arg.0=FILE *,stream
 func.fflush_unlocked.ret=int
+
+func=type
+type.func=p
+type.func.size=8
