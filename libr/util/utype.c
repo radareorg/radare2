@@ -1,4 +1,6 @@
-/* radare - LGPL - Copyright 2013-2022 - pancake, oddcoder, sivaramaaa */
+/* radare - LGPL - Copyright 2013-2025 - pancake, oddcoder, sivaramaaa */
+
+// R2R db/cmd/types
 
 #include <r_util.h>
 
@@ -9,8 +11,9 @@ R_API bool r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
 	if (kind) {
 		const char *p = sdb_const_get (TDB, kind, NULL);
 		if (p) {
-			snprintf (var, sizeof (var), "%s.%s.%s", p, kind, field);
-			int off = sdb_array_get_num (TDB, var, 1, NULL);
+			char *v = r_str_newf ("%s.%s.%s", p, kind, field);
+			int off = sdb_array_get_num (TDB, v, 1, NULL);
+			free (v);
 			// int siz = sdb_array_get_num (DB, var, 2, NULL);
 			eprintf ("wv 0x%08" PFMT64x " @ 0x%08" PFMT64x "\n", val, at + off);
 			return true;
@@ -101,8 +104,6 @@ R_API char *r_type_enum_member(Sdb *TDB, const char *name, const char *member, u
 }
 
 R_API char *r_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val) {
-	char *ret = NULL;
-	const char *res;
 	int i;
 
 	if (r_type_kind (TDB, name) != R_TYPE_ENUM) {
@@ -116,7 +117,7 @@ R_API char *r_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val) {
 			continue;
 		}
 		char *q = r_str_newf ("enum.%s.0x%x", name, n);
-		res = sdb_const_get (TDB, q, 0);
+		const char *res = sdb_const_get (TDB, q, 0);
 		free (q);
 		if (isFirst) {
 			isFirst = false;
@@ -129,20 +130,16 @@ R_API char *r_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val) {
 			r_strbuf_appendf (sb, "0x%x", n);
 		}
 	}
-	ret = r_strbuf_drain (sb);
-	r_strbuf_free (sb);
-	return ret;
+	return r_strbuf_drain (sb);
 }
 
 R_API ut64 r_type_get_bitsize(Sdb *TDB, const char *type) {
 	/* Filter out the structure keyword if type looks like "struct mystruc" */
-	const char *tmptype;
+	const char *tmptype = type;
 	if (r_str_startswith (type, "struct ")) {
 		tmptype = type + strlen ("struct ");
 	} else if (r_str_startswith (type, "union ")) {
 		tmptype = type + strlen ("union ");
-	} else {
-		tmptype = type;
 	}
 	if ( (strstr (type, "*(") || strstr (type, " *")) && !r_str_startswith (type, "char *")) {
 		return 32;
@@ -163,11 +160,10 @@ R_API ut64 r_type_get_bitsize(Sdb *TDB, const char *type) {
 	}
 	if (!strcmp (t, "struct") || !strcmp (t, "union")) {
 		char *query = r_str_newf ("%s.%s", t, tmptype);
-		char *members = sdb_get (TDB, query, 0);
-		free (query);
-		char *next, *ptr = members;
 		ut64 ret = 0;
+		char *members = sdb_get (TDB, query, 0);
 		if (members) {
+			char *next, *ptr = members;
 			do {
 				char *name = sdb_anext (ptr, &next);
 				if (!name) {
@@ -202,6 +198,7 @@ R_API ut64 r_type_get_bitsize(Sdb *TDB, const char *type) {
 			} while (next);
 			free (members);
 		}
+		free (query);
 		return ret;
 	}
 	return 0;
@@ -291,8 +288,10 @@ R_API RList *r_type_get_by_offset(Sdb *TDB, ut64 offset) {
 	SdbListIter *lsi;
 	SdbKv *kv;
 	ls_foreach (ls, lsi, kv) {
+		const char *kk = sdbkv_key (kv);
+		const char *vv = sdbkv_value (kv);
 		// TODO: Add unions support
-		if (r_str_startswith (sdbkv_value (kv), "struct") && !r_str_startswith (sdbkv_key (kv), "struct.")) {
+		if (r_str_startswith (vv, "struct") && !r_str_startswith (kk, "struct.")) {
 			char *res = r_type_get_struct_memb (TDB, sdbkv_key (kv), offset);
 			if (res) {
 				r_list_append (offtypes, res);
@@ -331,7 +330,7 @@ static void types_range_del(Sdb *db, ut64 addr) {
 static void types_range_add(Sdb *db, ut64 addr) {
 	ut64 base = TYPE_RANGE_BASE (addr);
 	r_strf_var (k, 64, "range.%" PFMT64x, base);
- (void)sdb_array_add_num (db, k, addr, 0);
+	(void)sdb_array_add_num (db, k, addr, 0);
 }
 
 R_API char *r_type_link_at(Sdb *TDB, ut64 addr) {
@@ -352,6 +351,7 @@ R_API char *r_type_link_at(Sdb *TDB, ut64 addr) {
 				char *lk = r_str_newf ("link.%08" PFMT64x, laddr);
 				char *k = sdb_get (TDB, lk, 0);
 				free (lk);
+				// TODO: leak free (res)
 				res = r_type_get_struct_memb (TDB, k, delta);
 				if (res) {
 					break;
@@ -399,7 +399,8 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 	char *fields = r_str_newf ("%s.fields", var);
 	char *nfields = (is_typedef) ? fields : var;
 	// TODO: Use RStrBuf for fmt and vars
-	RStrBuf *fmt_sb = r_strbuf_new ("\0"), *vars_sb = r_strbuf_new ("\0");
+	RStrBuf *fmt_sb = r_strbuf_new ("");
+	RStrBuf *vars_sb = r_strbuf_new ("");
 	for (n = 0; (p = sdb_array_get (TDB, nfields, n, NULL)); n++) {
 		char *struct_name = NULL;
 		const char *tfmt = NULL;
@@ -448,20 +449,19 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 				r_strbuf_append (vars_sb, p);
 				r_strbuf_append (vars_sb, " ");
 			} else if (tfmt) {
- (void)r_str_replace_ch (type, ' ', '_', true);
+				(void)r_str_replace_ch (type, ' ', '_', true);
 				if (elements > 0) {
 					r_strbuf_appendf (fmt_sb, "[%d]", elements);
 				}
 				if (isStruct) {
 					r_strbuf_append (fmt_sb, "?");
 					if (struct_name) {
-						r_strbuf_appendf (vars_sb, " (%s)%s", struct_name, p);
+						r_strbuf_appendf (vars_sb, "(%s)%s", struct_name, p);
 					}
 					r_strbuf_append (vars_sb, " ");
 				} else if (isEnum) {
 					r_strbuf_append (fmt_sb, "E");
-					r_strbuf_appendf (vars_sb, " (%s)%s", type + 5, p);
-					r_strbuf_append (vars_sb, " ");
+					r_strbuf_appendf (vars_sb, "(%s)%s ", type + 5, p);
 				} else {
 					r_strbuf_append (fmt_sb, tfmt);
 					r_strbuf_append (vars_sb, p);
@@ -662,11 +662,9 @@ static inline bool has_r_prefixes(char *func_name, int offset, size_t slen) {
 static char *strip_r_prefixes(char *func_name, size_t slen) {
 	// strip r2 prefixes (sym, sym.imp, etc')
 	int offset = 0;
-
 	while (has_r_prefixes (func_name, offset, slen)) {
 		offset += 4;
 	}
-
 	return func_name + offset;
 }
 
@@ -679,7 +677,6 @@ static char *strip_common_prefixes_stdlib(char *func_name) {
 	} else if (r_str_startswith (func_name, "__GI_")) {
 		func_name += 5;
 	}
-
 	return func_name;
 }
 
@@ -688,7 +685,6 @@ static char *strip_dll_prefix(char *func_name) {
 	if (tmp) {
 		return tmp + 3;
 	}
-
 	return func_name;
 }
 
@@ -697,7 +693,6 @@ static void clean_function_name(char *func_name) {
 	if (!last || !r_str_isnumber (last + 1)) {
 		return;
 	}
-
 	*last = '\0';
 }
 
@@ -726,9 +721,8 @@ R_API R_OWN char *r_type_func_guess(Sdb *TDB, char *R_NONNULL func_name) {
 	str = strdup (str);
 	clean_function_name (str);
 
-	if (*str == '_' && (result = type_func_try_guess (TDB, str + 1))) {
-		free (str);
-		return result;
+	if (*str == '_') {
+		result = type_func_try_guess (TDB, str + 1);
 	}
 
 	free (str);
