@@ -1,6 +1,7 @@
 /* radare2 - LGPL - Copyright 2025 - pancake */
 
 // MCLF (MobiCore Load Format) loader based on public resources:
+// * https://gist.github.com/Stolas/e3ecaebaa7369b2d8d6c539b9ac2908e
 // * https://github.com/quarkslab/sboot-binwalk/blob/master/plugins/mclf.py
 // * https://github.com/NeatMonster/mclf-ghidra-loader
 // * https://github.com/ghassani/mclf-ghidra-loader
