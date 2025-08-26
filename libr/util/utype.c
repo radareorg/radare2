@@ -414,7 +414,7 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 		if (type) {
 			char var3[128] = { 0 };
 			// Handle general pointers except for char *
-			if ( (strstr (type, "* (") || strstr (type, " *")) && !r_str_startswith (type, "char *")) {
+			if ( (strstr (type, "*(") || strstr (type, " *")) && !r_str_startswith (type, "char *")) {
 				isfp = true;
 			} else if (r_str_startswith (type, "struct ")) {
 				struct_name = type + 7;
@@ -446,8 +446,7 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 			if (isfp) {
 				// consider function pointer as void * for printing
 				r_strbuf_append (fmt_sb, "p");
-				r_strbuf_append (vars_sb, p);
-				r_strbuf_append (vars_sb, " ");
+				r_strbuf_appendf (vars_sb, "%s ", p);
 			} else if (tfmt) {
 				(void)r_str_replace_ch (type, ' ', '_', true);
 				if (elements > 0) {
@@ -471,8 +470,7 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 #if 1
 				R_LOG_WARN ("Cannot resolve type '%s' assuming pointer", var3);
 				r_strbuf_append (fmt_sb, "p");
-				r_strbuf_append (vars_sb, p);
-				r_strbuf_append (vars_sb, " ");
+				r_strbuf_appendf (vars_sb, "%s ", p);
 #else
 				R_LOG_ERROR ("Cannot resolve type '%s'", var3);
 #endif
@@ -700,10 +698,9 @@ static void clean_function_name(char *func_name) {
 // - symbol names are long and noisy, some of them might not be matched due
 //	 to additional information added around name
 R_API R_OWN char *r_type_func_guess(Sdb *TDB, char *R_NONNULL func_name) {
+	R_RETURN_VAL_IF_FAIL (TDB && func_name, false);
 	char *str = func_name;
 	char *result = NULL;
-	R_RETURN_VAL_IF_FAIL (TDB, false);
-	R_RETURN_VAL_IF_FAIL (func_name, false);
 
 	size_t slen = strlen (str);
 	if (slen < MIN_MATCH_LEN || is_auto_named (str, slen)) {
