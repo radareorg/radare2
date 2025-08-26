@@ -4099,6 +4099,12 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 			if (rname && rname != cname && strcmp (cname, rname)) {
 				pj_ks (pj, "rawclassname", rname);
 			}
+			if (c->instance_size > 0) {
+				pj_kN (pj, "instance_size", c->instance_size);
+			}
+			if (c->typename) {
+				pj_ks (pj, "typename", c->typename);
+			}
 			pj_kN (pj, "addr", c->addr);
 			const char *lang = r_bin_lang_tostring (c->lang);
 			if (lang && *lang != '?') {
