@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2025 - nibble, pancake */
 
 #ifndef R2_ASM_H
 #define R2_ASM_H
@@ -172,6 +172,7 @@ R_API bool r_asm_plugin_add(RAsm *a, RAsmPlugin *plugin);
 R_API bool r_asm_plugin_remove(RAsm *a, RAsmPlugin *plugin);
 
 extern RAsmPlugin r_asm_plugin_6502;
+extern RAsmPlugin r_asm_plugin_8051;
 extern RAsmPlugin r_asm_plugin_arm;
 extern RAsmPlugin r_asm_plugin_att2intel;
 extern RAsmPlugin r_asm_plugin_avr;
@@ -185,6 +186,7 @@ extern RAsmPlugin r_asm_plugin_gb;
 extern RAsmPlugin r_asm_plugin_java;
 extern RAsmPlugin r_asm_plugin_m68k;
 extern RAsmPlugin r_asm_plugin_mips;
+extern RAsmPlugin r_asm_plugin_msp430;
 extern RAsmPlugin r_asm_plugin_null;
 extern RAsmPlugin r_asm_plugin_pickle;
 extern RAsmPlugin r_asm_plugin_ppc;
@@ -196,7 +198,6 @@ extern RAsmPlugin r_asm_plugin_tms320;
 extern RAsmPlugin r_asm_plugin_tricore;
 extern RAsmPlugin r_asm_plugin_v850;
 extern RAsmPlugin r_asm_plugin_wasm;
-extern RAsmPlugin r_asm_plugin_8051;
 extern RAsmPlugin r_asm_plugin_x86;
 extern RAsmPlugin r_asm_plugin_z80;
 
