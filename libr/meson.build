@@ -235,6 +235,7 @@ if get_option('plugins') == ''
     'mach064',
     'mbn',
     'mdmp',
+    'mclf',
     'menuet',
     'mz',
     'ne',
