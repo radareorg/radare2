@@ -638,7 +638,6 @@ typedef struct r_bin_class_t {
 	int index; // should be unsigned?
 	ut64 addr;
 	size_t instance_size;
-	char *typename;
 	char *ns; // namespace // maybe RBinName?
 	// R2_600 - Use RVec here
 	RList *methods; // <RBinSymbol>
