@@ -215,6 +215,7 @@ static RNumCalcValue prim(RNum *num, RNumCalc *nc, int get) {
 	case RNCBAND:
 	case RNCBXOR:
 	case RNCBXNOR:
+	case RNCBNEQ:
 	case RNCBEQ:
 		return v;
 	//default: error (num, nc, "primary expected");
