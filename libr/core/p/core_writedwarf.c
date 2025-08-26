@@ -16,13 +16,13 @@ typedef struct {
 } LineEntry;
 
 // Macros for writing to RBuffer (little-endian)
-#define B(x,y)    r_buf_append_bytes (buf, (const ut8*)(x), (y))
-#define U8(x)     do { ut8 _v = (ut8)(x); r_buf_append_bytes (buf, &_v, 1); } while (0)
-#define U16(x)    r_buf_append_ut16 (buf, (ut16)(x))
-#define U32(x)    r_buf_append_ut32 (buf, (ut32)(x))
-#define U64(x)    do { ut64 _vv = (ut64)(x); r_buf_append_ut32 (buf, (ut32)_vv); r_buf_append_ut32 (buf, (ut32)(_vv >> 32)); } while (0)
-#define Z(n)      r_buf_append_nbytes (buf, (n))
-#define W(off, data, len)  r_buf_write_at (buf, (off), (const ut8*)(data), (len))
+#define B(x,y) r_buf_append_bytes (buf, (const ut8*)(x), (y))
+#define U8(x) do { ut8 _v = (ut8)(x); r_buf_append_bytes (buf, &_v, 1); } while (0)
+#define U16(x) r_buf_append_ut16 (buf, (ut16)(x))
+#define U32(x) r_buf_append_ut32 (buf, (ut32)(x))
+#define U64(x) do { ut64 _vv = (ut64)(x); r_buf_append_ut32 (buf, (ut32)_vv); r_buf_append_ut32 (buf, (ut32)(_vv >> 32)); } while (0)
+#define Z(n) r_buf_append_nbytes (buf, (n))
+#define W(off, data, len) r_buf_write_at (buf, (off), (const ut8*)(data), (len))
 
 
 // Create a Mach-O 64-bit object with minimal DWARF v2 debug info
@@ -733,17 +733,17 @@ static void writedwarf(RCore *core, const char *format, const char *arg) {
 	{
 		LineEntry *le1 = R_NEW0 (LineEntry);
 		le1->addr = 0x1000;
-		le1->file = strdup("main.c");
+		le1->file = strdup ("main.c");
 		le1->line = 42;
 		r_list_append(lines, le1);
 		LineEntry *le2 = R_NEW0 (LineEntry);
 		le2->addr = 0x2000;
-		le2->file = strdup("main.c");
+		le2->file = strdup ("main.c");
 		le2->line = 53;
 		r_list_append(lines, le2);
 		LineEntry *le3 = R_NEW0 (LineEntry);
 		le3->addr = 0x3000;
-		le3->file = strdup("foo.c");
+		le3->file = strdup ("foo.c");
 		le3->line = 63;
 		r_list_append(lines, le3);
 	}
@@ -763,11 +763,11 @@ static void writedwarf(RCore *core, const char *format, const char *arg) {
 	{
 		SymEntry *se1 = R_NEW0 (SymEntry);
 		se1->addr = 0x1000;
-		se1->symbol = strdup("main");
-		r_list_append(symbols, se1);
+		se1->symbol = strdup ("main");
+		r_list_append (symbols, se1);
 		SymEntry *se2 = R_NEW0 (SymEntry);
 		se2->addr = 0x2000;
-		se2->symbol = strdup("check");
+		se2->symbol = strdup ("check");
 		r_list_append(symbols, se2);
 	}
 #endif
