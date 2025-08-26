@@ -1,4 +1,6 @@
-/* radare - LGPL - Copyright 2013-2022 - pancake, oddcoder, sivaramaaa */
+/* radare - LGPL - Copyright 2013-2025 - pancake, oddcoder, sivaramaaa */
+
+// R2R db/cmd/types
 
 #include <r_util.h>
 
@@ -9,8 +11,9 @@ R_API bool r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
 	if (kind) {
 		const char *p = sdb_const_get (TDB, kind, NULL);
 		if (p) {
-			snprintf (var, sizeof (var), "%s.%s.%s", p, kind, field);
-			int off = sdb_array_get_num (TDB, var, 1, NULL);
+			char *v = r_str_newf ("%s.%s.%s", p, kind, field);
+			int off = sdb_array_get_num (TDB, v, 1, NULL);
+			free (v);
 			// int siz = sdb_array_get_num (DB, var, 2, NULL);
 			eprintf ("wv 0x%08" PFMT64x " @ 0x%08" PFMT64x "\n", val, at + off);
 			return true;
@@ -34,6 +37,9 @@ R_API RTypeKind r_type_kind(Sdb *TDB, const char *name) {
 	}
 	if (!strcmp (type, "union")) {
 		return R_TYPE_UNION;
+	}
+	if (!strcmp (type, "func")) {
+		return R_TYPE_FUNCTION;
 	}
 	if (!strcmp (type, "type")) {
 		return R_TYPE_BASIC;
@@ -92,31 +98,29 @@ R_API char *r_type_enum_member(Sdb *TDB, const char *name, const char *member, u
 		? r_str_newf ("enum.%s.%s", name, member)
 		: r_str_newf ("enum.%s.0x%" PFMT64x, name, val);
 	char *res = sdb_get (TDB, q, 0);
+	free (q);
 	if (!res) {
 		q = r_str_newf ("enum.%s.%" PFMT64d, name, val);
 		res = sdb_get (TDB, q, 0);
+		free (q);
 	}
-	free (q);
 	return res;
 }
 
 R_API char *r_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val) {
-	char *ret = NULL;
-	const char *res;
-	int i;
-
 	if (r_type_kind (TDB, name) != R_TYPE_ENUM) {
 		return NULL;
 	}
 	bool isFirst = true;
 	RStrBuf *sb = r_strbuf_newf ("0x%08" PFMT64x " : ", val);
+	int i;
 	for (i = 0; i < 32; i++) {
 		ut32 n = 1ULL << i;
 		if (! (val & n)) {
 			continue;
 		}
 		char *q = r_str_newf ("enum.%s.0x%x", name, n);
-		res = sdb_const_get (TDB, q, 0);
+		const char *res = sdb_const_get (TDB, q, 0);
 		free (q);
 		if (isFirst) {
 			isFirst = false;
@@ -129,28 +133,24 @@ R_API char *r_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val) {
 			r_strbuf_appendf (sb, "0x%x", n);
 		}
 	}
-	ret = r_strbuf_drain (sb);
-	r_strbuf_free (sb);
-	return ret;
+	return r_strbuf_drain (sb);
 }
 
 R_API ut64 r_type_get_bitsize(Sdb *TDB, const char *type) {
 	/* Filter out the structure keyword if type looks like "struct mystruc" */
-	const char *tmptype;
+	const char *tmptype = type;
 	if (r_str_startswith (type, "struct ")) {
 		tmptype = type + strlen ("struct ");
 	} else if (r_str_startswith (type, "union ")) {
 		tmptype = type + strlen ("union ");
-	} else {
-		tmptype = type;
 	}
-	if ( (strstr (type, "*(") || strstr (type, " *")) && !r_str_startswith (type, "char *")) {
+	if ((strstr (type, "*(") || strstr (type, " *")) && strcmp (type, "char *")) {
 		return 32;
 	}
 	const char *t = sdb_const_get (TDB, tmptype, 0);
 	if (!t) {
 		if (r_str_startswith (tmptype, "enum ")) {
-			// XXX: Need a proper way to determine size of enum
+			//XXX: Need a proper way to determine size of enum
 			return 32;
 		}
 		return 0;
@@ -291,8 +291,10 @@ R_API RList *r_type_get_by_offset(Sdb *TDB, ut64 offset) {
 	SdbListIter *lsi;
 	SdbKv *kv;
 	ls_foreach (ls, lsi, kv) {
+		const char *kk = sdbkv_key (kv);
+		const char *vv = sdbkv_value (kv);
 		// TODO: Add unions support
-		if (r_str_startswith (sdbkv_value (kv), "struct") && !r_str_startswith (sdbkv_key (kv), "struct.")) {
+		if (r_str_startswith (vv, "struct") && !r_str_startswith (kk, "struct.")) {
 			char *res = r_type_get_struct_memb (TDB, sdbkv_key (kv), offset);
 			if (res) {
 				r_list_append (offtypes, res);
@@ -303,7 +305,6 @@ R_API RList *r_type_get_by_offset(Sdb *TDB, ut64 offset) {
 	return offtypes;
 }
 
-// XXX 12 is the maxstructsizedelta
 #define TYPE_RANGE_BASE(x) ( (x) >> 16)
 
 static RList *types_range_list(Sdb *db, ut64 addr) {
@@ -331,35 +332,41 @@ static void types_range_del(Sdb *db, ut64 addr) {
 static void types_range_add(Sdb *db, ut64 addr) {
 	ut64 base = TYPE_RANGE_BASE (addr);
 	r_strf_var (k, 64, "range.%" PFMT64x, base);
- (void)sdb_array_add_num (db, k, addr, 0);
+	(void)sdb_array_add_num (db, k, addr, 0);
 }
 
 R_API char *r_type_link_at(Sdb *TDB, ut64 addr) {
-	if (addr == UT64_MAX) {
+	if (addr == UT64_MAX || addr == (UT64_MAX - 1)) {
 		return NULL;
 	}
 	char *query = r_str_newf ("link.%08" PFMT64x, addr);
 	char *res = sdb_get (TDB, query, 0);
 	free (query);
-	if (!res) { // resolve struct memb if possible for given addr
-		RList *list = types_range_list (TDB, addr);
-		RListIter *iter;
-		const char *s;
-		r_list_foreach (list, iter, s) {
-			ut64 laddr = r_num_get (NULL, s);
-			if (addr > laddr) {
-				int delta = addr - laddr;
-				char *lk = r_str_newf ("link.%08" PFMT64x, laddr);
-				char *k = sdb_get (TDB, lk, 0);
-				free (lk);
-				res = r_type_get_struct_memb (TDB, k, delta);
+	if (res) {
+		return res;
+	}
+	// resolve struct memb if possible for given addr
+	RList *list = types_range_list (TDB, addr);
+	RListIter *iter;
+	const char *s;
+	r_list_foreach (list, iter, s) {
+		ut64 laddr = r_num_get (NULL, s);
+		if (addr > laddr) {
+			int delta = addr - laddr;
+			char *lk = r_str_newf ("link.%08" PFMT64x, laddr);
+			char *k = sdb_get (TDB, lk, 0);
+			free (lk);
+			if (k) {
+				char *res = r_type_get_struct_memb (TDB, k, delta);
 				if (res) {
-					break;
+					free (k);
+					return res;
 				}
 				free (k);
 			}
 		}
 	}
+	r_list_free (list);
 	return res;
 }
 
@@ -399,7 +406,8 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 	char *fields = r_str_newf ("%s.fields", var);
 	char *nfields = (is_typedef) ? fields : var;
 	// TODO: Use RStrBuf for fmt and vars
-	RStrBuf *fmt_sb = r_strbuf_new ("\0"), *vars_sb = r_strbuf_new ("\0");
+	RStrBuf *fmt_sb = r_strbuf_new ("");
+	RStrBuf *vars_sb = r_strbuf_new ("");
 	for (n = 0; (p = sdb_array_get (TDB, nfields, n, NULL)); n++) {
 		char *struct_name = NULL;
 		const char *tfmt = NULL;
@@ -413,7 +421,7 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 		if (type) {
 			char var3[128] = { 0 };
 			// Handle general pointers except for char *
-			if ( (strstr (type, "* (") || strstr (type, " *")) && !r_str_startswith (type, "char *")) {
+			if ( (strstr (type, "*(") || strstr (type, " *")) && !r_str_startswith (type, "char *")) {
 				isfp = true;
 			} else if (r_str_startswith (type, "struct ")) {
 				struct_name = type + 7;
@@ -445,23 +453,21 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 			if (isfp) {
 				// consider function pointer as void * for printing
 				r_strbuf_append (fmt_sb, "p");
-				r_strbuf_append (vars_sb, p);
-				r_strbuf_append (vars_sb, " ");
+				r_strbuf_appendf (vars_sb, "%s ", p);
 			} else if (tfmt) {
- (void)r_str_replace_ch (type, ' ', '_', true);
+				(void)r_str_replace_ch (type, ' ', '_', true);
 				if (elements > 0) {
 					r_strbuf_appendf (fmt_sb, "[%d]", elements);
 				}
 				if (isStruct) {
 					r_strbuf_append (fmt_sb, "?");
 					if (struct_name) {
-						r_strbuf_appendf (vars_sb, " (%s)%s", struct_name, p);
+						r_strbuf_appendf (vars_sb, "(%s)%s", struct_name, p);
 					}
 					r_strbuf_append (vars_sb, " ");
 				} else if (isEnum) {
 					r_strbuf_append (fmt_sb, "E");
-					r_strbuf_appendf (vars_sb, " (%s)%s", type + 5, p);
-					r_strbuf_append (vars_sb, " ");
+					r_strbuf_appendf (vars_sb, "(%s)%s ", type + 5, p);
 				} else {
 					r_strbuf_append (fmt_sb, tfmt);
 					r_strbuf_append (vars_sb, p);
@@ -471,8 +477,7 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 #if 1
 				R_LOG_WARN ("Cannot resolve type '%s' assuming pointer", var3);
 				r_strbuf_append (fmt_sb, "p");
-				r_strbuf_append (vars_sb, p);
-				r_strbuf_append (vars_sb, " ");
+				r_strbuf_appendf (vars_sb, "%s ", p);
 #else
 				R_LOG_ERROR ("Cannot resolve type '%s'", var3);
 #endif
@@ -662,11 +667,9 @@ static inline bool has_r_prefixes(char *func_name, int offset, size_t slen) {
 static char *strip_r_prefixes(char *func_name, size_t slen) {
 	// strip r2 prefixes (sym, sym.imp, etc')
 	int offset = 0;
-
 	while (has_r_prefixes (func_name, offset, slen)) {
 		offset += 4;
 	}
-
 	return func_name + offset;
 }
 
@@ -679,7 +682,6 @@ static char *strip_common_prefixes_stdlib(char *func_name) {
 	} else if (r_str_startswith (func_name, "__GI_")) {
 		func_name += 5;
 	}
-
 	return func_name;
 }
 
@@ -688,7 +690,6 @@ static char *strip_dll_prefix(char *func_name) {
 	if (tmp) {
 		return tmp + 3;
 	}
-
 	return func_name;
 }
 
@@ -697,7 +698,6 @@ static void clean_function_name(char *func_name) {
 	if (!last || !r_str_isnumber (last + 1)) {
 		return;
 	}
-
 	*last = '\0';
 }
 
@@ -705,10 +705,9 @@ static void clean_function_name(char *func_name) {
 // - symbol names are long and noisy, some of them might not be matched due
 //	 to additional information added around name
 R_API R_OWN char *r_type_func_guess(Sdb *TDB, char *R_NONNULL func_name) {
+	R_RETURN_VAL_IF_FAIL (TDB && func_name, false);
 	char *str = func_name;
 	char *result = NULL;
-	R_RETURN_VAL_IF_FAIL (TDB, false);
-	R_RETURN_VAL_IF_FAIL (func_name, false);
 
 	size_t slen = strlen (str);
 	if (slen < MIN_MATCH_LEN || is_auto_named (str, slen)) {
@@ -726,9 +725,8 @@ R_API R_OWN char *r_type_func_guess(Sdb *TDB, char *R_NONNULL func_name) {
 	str = strdup (str);
 	clean_function_name (str);
 
-	if (*str == '_' && (result = type_func_try_guess (TDB, str + 1))) {
-		free (str);
-		return result;
+	if (*str == '_') {
+		result = type_func_try_guess (TDB, str + 1);
 	}
 
 	free (str);
