@@ -38,6 +38,9 @@ R_API RTypeKind r_type_kind(Sdb *TDB, const char *name) {
 	if (!strcmp (type, "union")) {
 		return R_TYPE_UNION;
 	}
+	if (!strcmp (type, "func")) {
+		return R_TYPE_FUNCTION;
+	}
 	if (!strcmp (type, "type")) {
 		return R_TYPE_BASIC;
 	}
@@ -351,8 +354,7 @@ R_API char *r_type_link_at(Sdb *TDB, ut64 addr) {
 				char *lk = r_str_newf ("link.%08" PFMT64x, laddr);
 				char *k = sdb_get (TDB, lk, 0);
 				free (lk);
-				// TODO: leak free (res)
-				res = r_type_get_struct_memb (TDB, k, delta);
+				char *res = r_type_get_struct_memb (TDB, k, delta);
 				if (res) {
 					break;
 				}
