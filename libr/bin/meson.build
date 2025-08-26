@@ -17,6 +17,7 @@ r_bin_sources = [
   'p/bin_avr.c',
   'p/bin_bf.c',
   'p/bin_bflt.c',
+  'p/bin_mclf.c',
   'p/bin_bios.c',
   'p/bin_bootimg.c',
   'p/bin_cgc.c',
