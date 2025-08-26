@@ -121,3 +121,40 @@ args: 0
 diff: type: new
 EOF
 RUN
+
+NAME=pseudo msp430
+FILE=bins/elf/msp430.elf
+CMDS=<<EOF
+s main
+af
+e asm.pseudo=true
+e asm.lines=0
+e asm.bytes=0
+pdf
+EOF
+EXPECT=<<EOF
+62: int main (int argc, char **argv, char **envp);
+0x00004438      sp += 0xff9c
+0x0000443c      r15 = loc..strings
+0x00004440      $2 ()
+0x00004444      r15 = sp
+0x00004446      $2 ()
+0x0000444a      r15 = sp
+0x0000444c      $2 ()
+0x00004450      if ($2 == 0) goto _TST_FALSE_
+0x00004452      if (!z) goto $2
+0x00004454      r15 = 0x44c7
+0x00004458      $2 ()
+0x0000445c      goto $2
+0x0000445e      r15 = 0x44e4
+0x00004462      $2 ()
+0x00004466      $2 ()
+; CODE XREF from main @ 0x445c(x)
+0x0000446a      $2 = 0
+0x0000446c      sp += 0x0064
+;-- __stop_progExec__:
+; CODE XREF from main @ 0x4474(x)
+0x00004470      sr |= 0x00f0
+0x00004474      goto $2
+EOF
+RUN
