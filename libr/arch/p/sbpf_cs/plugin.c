@@ -117,7 +117,6 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 					st64 target_pc = current_pc + imm + 1;  	// Target PC in instruction units
 					st64 target_addr = target_pc * 8;  			// Target address in bytes
 					op->mnemonic = r_str_newf ("call 0x%"PFMT64x, (ut64)target_addr);
-
 					// Set jump target for call instruction
 					op->jump = target_addr;
 
@@ -173,7 +172,6 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 				if (OPCOUNT > 0 && OP(0).type == BPF_OP_IMM) {
 					st32 imm = IMM(0);
 					const char *syscall_name = get_syscall_name (imm);
-
 					if (!syscall_name) {
 						// PC-relative call - calculate target and force function creation
 						st64 current_pc = op->addr / 8;
