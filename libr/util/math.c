@@ -66,7 +66,7 @@ static inline RNumCalcValue Ndiv(RNumCalcValue n, RNumCalcValue v) {
 static inline RNumCalcValue Bnot(RNumCalcValue n) { n.n = !n.n; return n; }
 static inline RNumCalcValue Bor(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n = n.n || v.n; return n; }
 static inline RNumCalcValue Band(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n = n.n && v.n; return n; }
-static inline RNumCalcValue Bxor(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n = n.n && !v.n || !n.n && v.n; return n; }
+static inline RNumCalcValue Bxor(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n = (n.n && !v.n) || (!n.n && v.n); return n; }
 static inline RNumCalcValue Beq(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n = n.n == v.n; return n; }
 static inline RNumCalcValue Bneq(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n = n.n != v.n; return n; }
 
