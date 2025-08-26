@@ -4,7 +4,7 @@
 static RNum *num;
 static ut64 result;
 
-bool test_r_math_eq(void) {
+static bool test_r_math_eq(void) {
 	// 2 == 3 should yield false
     result = r_num_math(num, "2 == 3");
 	mu_assert_eq ((int)(intptr_t)result, (int)(intptr_t)0,
