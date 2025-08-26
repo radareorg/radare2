@@ -138,20 +138,18 @@ R_API char *r_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val) {
 
 R_API ut64 r_type_get_bitsize(Sdb *TDB, const char *type) {
 	/* Filter out the structure keyword if type looks like "struct mystruc" */
-	const char *tmptype;
-	if (!strncmp (type, "struct ", 7)) {
-		tmptype = type + 7;
-	} else if (!strncmp (type, "union ", 6)) {
-		tmptype = type + 6;
-	} else {
-		tmptype = type;
+	const char *tmptype = type;
+	if (r_str_startswith (type, "struct ")) {
+		tmptype = type + strlen ("struct ");
+	} else if (r_str_startswith (type, "union ")) {
+		tmptype = type + strlen ("union ");
 	}
-	if ((strstr (type, "*(") || strstr (type, " *")) && strncmp (type, "char *", 7)) {
+	if ((strstr (type, "*(") || strstr (type, " *")) && strcmp (type, "char *")) {
 		return 32;
 	}
 	const char *t = sdb_const_get (TDB, tmptype, 0);
 	if (!t) {
-		if (!strncmp (tmptype, "enum ", 5)) {
+		if (r_str_startswith (tmptype, "enum ")) {
 			//XXX: Need a proper way to determine size of enum
 			return 32;
 		}
