@@ -107,6 +107,7 @@ static RNumCalcValue expr(RNum *num, RNumCalc *nc, int get) {
 		case RNCBXOR: left = Bxor (left, term (num, nc, 1)); break;
 		case RNCBEQ: left = Beq (left, term (num, nc, 1)); break;
 		case RNCBNEQ: left = Bneq (left, term (num, nc, 1)); break;
+		case RNCBXNOR: left = Bxnor (left, term (num, nc, 1)); break;
 		default:
 			return left;
 		}
