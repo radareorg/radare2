@@ -123,7 +123,7 @@ static bool test_r_math_act_on_subexprs(void) {
     mu_end;
 }
 
-int all_tests(void) {
+static int all_tests(void) {
 	mu_run_test(test_r_math_eq);
     mu_run_test(test_r_math_bool_expr);
     mu_run_test(test_r_math_act_on_subexprs);
