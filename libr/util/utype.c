@@ -1,5 +1,7 @@
 /* radare - LGPL - Copyright 2013-2025 - pancake, oddcoder, sivaramaaa */
 
+// R2R db/cmd/types
+
 #include <r_util.h>
 
 R_API bool r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
@@ -9,8 +11,9 @@ R_API bool r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
 	if (kind) {
 		const char *p = sdb_const_get (TDB, kind, NULL);
 		if (p) {
-			snprintf (var, sizeof (var), "%s.%s.%s", p, kind, field);
-			int off = sdb_array_get_num (TDB, var, 1, NULL);
+			char *v = r_str_newf ("%s.%s.%s", p, kind, field);
+			int off = sdb_array_get_num (TDB, v, 1, NULL);
+			free (v);
 			// int siz = sdb_array_get_num (DB, var, 2, NULL);
 			eprintf ("wv 0x%08" PFMT64x " @ 0x%08" PFMT64x "\n", val, at + off);
 			return true;
@@ -157,11 +160,10 @@ R_API ut64 r_type_get_bitsize(Sdb *TDB, const char *type) {
 	}
 	if (!strcmp (t, "struct") || !strcmp (t, "union")) {
 		char *query = r_str_newf ("%s.%s", t, tmptype);
-		char *members = sdb_get (TDB, query, 0);
-		free (query);
-		char *next, *ptr = members;
 		ut64 ret = 0;
+		char *members = sdb_get (TDB, query, 0);
 		if (members) {
+			char *next, *ptr = members;
 			do {
 				char *name = sdb_anext (ptr, &next);
 				if (!name) {
@@ -196,6 +198,7 @@ R_API ut64 r_type_get_bitsize(Sdb *TDB, const char *type) {
 			} while (next);
 			free (members);
 		}
+		free (query);
 		return ret;
 	}
 	return 0;
@@ -348,6 +351,7 @@ R_API char *r_type_link_at(Sdb *TDB, ut64 addr) {
 				char *lk = r_str_newf ("link.%08" PFMT64x, laddr);
 				char *k = sdb_get (TDB, lk, 0);
 				free (lk);
+				// TODO: leak free (res)
 				res = r_type_get_struct_memb (TDB, k, delta);
 				if (res) {
 					break;
