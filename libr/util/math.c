@@ -177,7 +177,6 @@ static RNumCalcValue prim(RNum *num, RNumCalc *nc, int get) {
 	case RNCBNOT:
 		get_token (num, nc);
 		return Bnot (expr (num, nc, 1));
-	case RNCBNEQ:
 	case RNCNEG:
 		get_token (num, nc);
 		return Nneg (expr (num, nc, 1));
