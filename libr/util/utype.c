@@ -436,6 +436,10 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 				}
 
 			}
+			if (tfmt && !strcmp (tfmt, "func")) {
+				isfp = true;
+				// function pointer
+			}
 			if (isfp) {
 				// consider function pointer as void * for printing
 				fmt = r_str_append (fmt, "p");
