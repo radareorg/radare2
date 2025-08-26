@@ -107,7 +107,7 @@ static bool test_r_math_bool_expr(void) {
 	mu_end;
 }
 
-bool test_r_math_act_on_subexprs(void) {
+static bool test_r_math_act_on_subexprs(void) {
     result = r_num_math(num, "!(!(234987))");
 	mu_assert_eq ((int)(intptr_t)result, (int)(intptr_t)1,
 			"NOT (NOT (<any number != 0>)) == 1");
