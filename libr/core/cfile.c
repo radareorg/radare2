@@ -934,12 +934,14 @@ beach:
 		}
 		free (macdwarf);
 	}
-	if (mustclose) {
-		r_io_desc_close (mustclose);
-		if (odesc) {
-			r_io_use_fd (r->io, odesc->fd);
+	#ifndef __wasi__
+		if (mustclose) {
+			r_io_desc_close (mustclose);
+			if (odesc) {
+				r_io_use_fd (r->io, odesc->fd);
+			}
 		}
-	}
+	#endif
 	r_flag_space_set (r->flags, "*");
 	return true;
 }
