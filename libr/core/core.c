@@ -1482,8 +1482,6 @@ R_API void r_core_autocomplete(RCore * R_NULLABLE core, RLineCompletion *complet
 		if (should_complete) {
 			if (eq[1] == ' ') {
 				autocomplete_flags (core, completion, expr_start);
-			} else {
-				r_line_completion_push (completion, "= ");
 			}
 		}
 	} else if (r_str_startswith (buf->data, "ec ")) {

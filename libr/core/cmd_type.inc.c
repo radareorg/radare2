@@ -823,7 +823,7 @@ static bool print_typelist_json_cb(void *p, const char *k, const char *v) {
 	char *format_s = sdb_get (sdb, formatcmd, NULL);
 	if (format_s) {
 		r_str_trim (format_s);
-		pj_ks (pj, "format", format_s ? format_s : "");
+		pj_ks (pj, "format", format_s);
 		free (format_s);
 	}
 	pj_end (pj);
