@@ -1470,6 +1470,28 @@ R_API void r_core_autocomplete(RCore * R_NULLABLE core, RLineCompletion *complet
 			ADDARG ("perl");
 			ADDARG ("python");
 		}
+	} else if (r_str_startswith (buf->data, "f ")) {
+		// Enable address/math completion after "f name = <expr>"
+		char *eq = strchr (buf->data, '=');
+		if (eq) {
+			// Compute the expression window start and end
+			char *expr_start = (eq[1] == ' ')? eq + 2: eq + 1;
+			char *expr_end = strchr (expr_start, ' ');
+			bool should_complete = (buf->data + buf->index) >= eq;
+			if (expr_end) {
+				should_complete &= (buf->data + buf->index) <= expr_end;
+			}
+			if (should_complete) {
+				// When cursor is within the expression after '=',
+				// suggest flags/addresses like after '@ '
+				if (eq[1] == ' ') {
+					autocomplete_flags (core, completion, expr_start);
+				} else {
+					// Encourage typing a space after '='
+					r_line_completion_push (completion, "= ");
+				}
+			}
+		}
 	} else if (r_str_startswith (buf->data, "ec ")) {
 		if (strchr (buf->data + 3, ' ')) {
 			autocomplete_filename (completion, buf, core->rcmd, NULL, 2);
