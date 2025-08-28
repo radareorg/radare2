@@ -637,6 +637,7 @@ static bool fini(RArchSession *as) {
 	R_FREE (as->data);
 	return true;
 }
+#include "preludes.inc.c"
 
 const RArchPlugin r_arch_plugin_arm_gnu = {
 	.meta = {
@@ -657,6 +658,7 @@ const RArchPlugin r_arch_plugin_arm_gnu = {
 	.bits = R_SYS_BITS_PACK3 (16, 32, 64),
 	.info = archinfo,
 	.decode = arm_op,
+	.preludes = anal_preludes,
 	.regs = set_reg_profile,
 	.init = init,
 	.fini = fini,

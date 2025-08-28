@@ -71,6 +71,7 @@ static int archinfo(RArchSession *a, ut32 q) {
 	return 4; // XXX
 }
 
+#include "preludes.inc.c"
 const RArchPlugin r_arch_plugin_arm = {
 	.meta = {
 		.name = "arm.nz",
@@ -79,6 +80,7 @@ const RArchPlugin r_arch_plugin_arm = {
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "arm",
+	.preludes = anal_preludes,
 	.info = archinfo,
 	.bits = R_SYS_BITS_PACK3 (16, 32, 64),
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
