@@ -142,7 +142,6 @@ bool Elf_(is_sbpf_binary)(ELFOBJ *eo) {
 	}
 
 	bool has_solana_symbols = false;
-	int i;
 
 	if (Elf_(load_symbols)(eo)) {
 		RVecRBinElfSymbol *symbols = eo->g_symbols_vec;
