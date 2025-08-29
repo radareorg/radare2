@@ -1,6 +1,6 @@
 .PHONY: default all clean
 
-DEPS=sdb qjs
+DEPS=sdb qjs zydis
 
 ifeq ($(WANT_V35),1)
   DEPS += binaryninja
@@ -23,4 +23,20 @@ all: $(ALL)
 clean:
 	rm -rf $(ALL)
 
+ifeq(1,1)
 include *.mk
+else
+include sdb.mk
+ifeq ($(WANT_V35),1)
+  include binaryninja.mk
+endif
+ifeq ($(USE_CS4),1)
+  include capstone-v4.mk
+else ifeq ($(USE_CSNEXT),1)
+  include capstone-next.mk
+else
+  include capstone-v5.mk
+endif
+include qjs.mk
+include zydis.mk
+endif

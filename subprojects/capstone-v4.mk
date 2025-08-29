@@ -7,7 +7,11 @@ WRAP_wrap_git_directory:=capstone-v4
 WRAP_wrap_git_diff_files:=capstone-v4/capstone-patches/v4/capstone-calloc.patch,capstone-v4/capstone-patches/v4/fix-x86-16.patch,capstone-v4/capstone-patches/v4/sparc-crash.patch,capstone-v4/capstone-patches/v4/sstream-null.patch
 WRAP_wrap_git_depth:=1
 
+<<<<<<< HEAD
 .PHONY: capstone-v4_clean capstone-v4_all
+=======
+.PHONY: capstone-v4 capstone-v4_clean capstone-v4_all
+>>>>>>> bce843e5af (Import the zydis subproject - not yet used)
 
 capstone-v4:
 	if [ ! -d "capstone-v4" -o "d7e459d026b19d6c3a7b743bfc475d919ff03f74" != "$(shell cd capstone-v4 2>/dev/null && git rev-parse HEAD)" ]; then rm -rf "capstone-v4"; ${MAKE} capstone-v4_all; fi
