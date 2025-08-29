@@ -37,11 +37,27 @@ static pyc_opcodes *get_pyc_opcodes(RArchSession *s) {
 	return ops;
 }
 
-static RList *get_pyc_code_obj(RArchSession *as) {
+#if 0
+struct pyc_version {
+	ut32 magic;
+	const char *version;
+	const char *revision;
+};
+typedef struct {
+	ut64 code_start_offset;
+	struct pyc_version version;
+	RList *sections_cache;     // RList<RBinSection*>
+	RList *interned_table;     // RList<char*>
+	RList *cobjs;              // RList<pyc_code_object*>
+} RBinPycObj;
+#endif
+
+static inline RList *get_pyc_code_obj(RArchSession *as) {
 	RBin *b = as->arch->binb.bin;
-	RBinPlugin *plugin = b->cur && b->cur->bo? b->cur->bo->plugin: NULL;
-	bool is_pyc = (plugin && strcmp (plugin->meta.name, "pyc") == 0);
-	return is_pyc? b->cur->bo->bin_obj: NULL;
+	RBinPlugin *plugin = R_UNWRAP4 (b, cur, bo, plugin);
+	const bool is_pyc = (plugin && !strcmp (plugin->meta.name, "pyc"));
+	RBinPycObj *pyc = is_pyc? b->cur->bo->bin_obj: NULL;
+	return pyc? pyc->cobjs: NULL;
 }
 
 static inline pyc_code_object *get_func(ut64 pc, RList *pyobj) {
