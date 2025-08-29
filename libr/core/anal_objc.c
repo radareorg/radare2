@@ -317,12 +317,11 @@ static bool objc_find_refs(RCore *core) {
 			RVecAnalRef_free (xrefs);
 		}
 	}
+	// R_LOG_INFO ("Found %u objc xrefs", (unsigned int)total_xrefs);
 
-	const ut64 pa_selrefs = objc->_selrefs->paddr;
 	const ut64 va_selrefs = objc->_selrefs->vaddr;
 	const ut64 ss_selrefs = va_selrefs + objc->_selrefs->vsize;
 
-	R_LOG_INFO ("Found %u objc xrefs", (unsigned int)total_xrefs);
 	size_t total_words = 0;
 	ut64 a;
 	const size_t word_size = objc->word_size;
