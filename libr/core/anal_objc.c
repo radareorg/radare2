@@ -167,8 +167,11 @@ static bool objc_build_refs(RCoreObjc *objc) {
 		ut64 va = va_const + off;
 		ut64 xrefs_to = (word_size == 8)? r_read_le64 (buf + off): r_read_le32 (buf + off);
 		if (isValid (xrefs_to)) {
-			// array_add (objc, va, xrefs_to);
-			array_add (objc, xrefs_to, va);
+#if 1
+			array_add (objc, va, xrefs_to);
+#else
+			// array_add (objc, xrefs_to, va);
+#endif
 
 		}
 	}
