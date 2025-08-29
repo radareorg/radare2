@@ -251,8 +251,7 @@ static RList* entries(RBinFile *bf) {
 		ptr->hpaddr = 0x18;  // e_entry offset in ELF header
 		ptr->hvaddr = UT64_MAX; // 0x18 + baddr (bf);
 
-		if (ptr->vaddr != (ut64)eo->ehdr.e_entry && Elf_(is_executable) (eo) &&
-				!Elf_(is_sbpf_binary) (eo)) {
+		if (ptr->vaddr != (ut64)eo->ehdr.e_entry && Elf_(is_executable) (eo) && !Elf_(is_sbpf_binary) (eo)) {
 			R_LOG_ERROR ("Cannot determine entrypoint, using 0x%08" PFMT64x, ptr->vaddr);
 		}
 
@@ -1130,6 +1129,7 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 			R_LOG_DEBUG ("Unhandled BPF relocation type %d", rel->type);
 			break;
 		}
+		// fallthrough
 	case EM_SBPF: {
 		switch (rel->type) {
 		case R_BPF_64_64: // 64-bit immediate for lddw instructions

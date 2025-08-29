@@ -320,7 +320,7 @@ static ut32 detect_string_size_from_next_insn(RArchSession *a, RAnalOp *op, cons
 
 	cs_insn *next_insn = NULL;
 	ut64 next_addr = op->addr + op->size;
-	int n = cs_disasm(cpd->cs_handle, buf, 8, next_addr, 1, &next_insn);
+	int n = cs_disasm (cpd->cs_handle, buf, 8, next_addr, 1, &next_insn);
 
 	if (n <= 0 || !next_insn) {
 		return default_size;
@@ -343,7 +343,7 @@ static ut32 detect_string_size_from_next_insn(RArchSession *a, RAnalOp *op, cons
 			}
 		}
 	}
-	cs_free(next_insn, n);
+	cs_free (next_insn, n);
 	return string_size;
 }
 
