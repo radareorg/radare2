@@ -251,7 +251,7 @@ static RList* entries(RBinFile *bf) {
 		ptr->hpaddr = 0x18;  // e_entry offset in ELF header
 		ptr->hvaddr = UT64_MAX; // 0x18 + baddr (bf);
 
-		if (ptr->vaddr != (ut64)eo->ehdr.e_entry && Elf_(is_executable) (eo) && 
+		if (ptr->vaddr != (ut64)eo->ehdr.e_entry && Elf_(is_executable) (eo) &&
 		    eo->ehdr.e_machine != EM_BPF && eo->ehdr.e_machine != EM_SBPF) {
 			R_LOG_ERROR ("Cannot determine entrypoint, using 0x%08" PFMT64x, ptr->vaddr);
 		}
@@ -818,10 +818,10 @@ static ut32 murmur3_32(const char* data, ut32 len, ut32 seed) {
 	const ut32 r2 = 13;
 	const ut32 m = 5;
 	const ut32 n = 0xe6546b64U;
-	
+
 	ut32 hash = seed;
 	const ut8* bytes = (const ut8*)data;
-	
+
 	// Process 4-byte chunks
 	ut32 chunks = len / 4;
 	ut32 i;
@@ -834,7 +834,7 @@ static ut32 murmur3_32(const char* data, ut32 len, ut32 seed) {
 		hash = rotl32(hash, r2);
 		hash = hash * m + n;
 	}
-	
+
 	// Process remaining bytes
 	ut32 tail = 0;
 	switch (len & 3) {
@@ -846,7 +846,7 @@ static ut32 murmur3_32(const char* data, ut32 len, ut32 seed) {
 		tail *= c2;
 		hash ^= tail;
 	}
-	
+
 	// Finalization
 	hash ^= len;
 	hash ^= hash >> 16;
@@ -854,7 +854,7 @@ static ut32 murmur3_32(const char* data, ut32 len, ut32 seed) {
 	hash ^= hash >> 13;
 	hash *= 0xc2b2ae35U;
 	hash ^= hash >> 16;
-	
+
 	return hash;
 }
 
@@ -1123,7 +1123,7 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 		}
 		break;
 	}
-	case EM_BPF: // CHECK: some older solana programs have set an ehdr.e_machine of EM_BPF 
+	case EM_BPF: // CHECK: some older solana programs have set an ehdr.e_machine of EM_BPF
 	case EM_SBPF: {
 		switch (rel->type) {
 		case R_BPF_64_64: // 64-bit immediate for lddw instructions
@@ -1149,24 +1149,24 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 				ut64 text_end = text_start + text_size;
 				is_text = (rel->offset >= text_start && rel->offset < text_end);
 			}
-			
+
 			if (is_text) {
 				// In .text: behave like R_BPF_64_64 but ignore symbol and handle addend
 				// Read implicit addend from both immediate fields (lddw instruction)
 				ut8 buf_lo[4], buf_hi[4];
 				iob->read_at (iob->io, rel->rva + 4, buf_lo, 4);
 				iob->read_at (iob->io, rel->rva + 12, buf_hi, 4);
-				
+
 				ut32 va_lo = r_read_le32 (buf_lo);
 				ut32 va_hi = r_read_le32 (buf_hi);
 				ut64 va = ((ut64)va_hi << 32) | va_lo;
-				
+
 				if (va != 0) {
 					// If looks like physical address, make it virtual
 					if (va < SBPF_PROGRAM_ADDR) {
 						va += SBPF_PROGRAM_ADDR;
 					}
-					
+
 					// Write back to both immediate fields
 					r_write_le32 (buf_lo, (ut32)(va & 0xffffffff));
 					r_write_le32 (buf_hi, (ut32)(va >> 32));
@@ -1178,10 +1178,8 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 				ut8 buf_addend[4];
 				iob->read_at (iob->io, rel->rva + 4, buf_addend, 4);
 				ut32 va = r_read_le32 (buf_addend);
-				
 				// Add base address
 				ut64 result = va + SBPF_PROGRAM_ADDR;
-				
 				// Write back as 64-bit value
 				r_write_le64 (buf, result);
 				iob->overlay_write_at (iob->io, rel->rva, buf, 8);
@@ -1191,7 +1189,6 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 		case R_BPF_64_32: { // 32-bit function/syscall ID for call instruction
 			ut32 hash_value = 0;
 			const char *sym_name = NULL;
-			
 			if (rel->sym) {
 				// Check imports first
 				if (rel->sym < bo->imports_by_ord_size && bo->imports_by_ord[rel->sym]) {
@@ -1208,7 +1205,6 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 					}
 				}
 			}
-			
 			if (sym_name && *sym_name) {
 				// Compute Murmur3 hash with seed 0
 				hash_value = murmur3_32 (sym_name, strlen (sym_name), 0);
@@ -1217,7 +1213,6 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 				R_LOG_WARN ("sBPF R_BPF_64_32: no symbol name found for relocation at 0x%"PFMT64x, rel->rva);
 				hash_value = 0;
 			}
-			
 			// write hash to immediate field (offset + 4)
 			r_write_le32 (buf, hash_value);
 			iob->overlay_write_at (iob->io, rel->rva + 4, buf, 4);

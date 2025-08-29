@@ -105,34 +105,32 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 		}
 	} else {
 		if (mask & R_ARCH_OP_MASK_DISASM) {
-			// Handle CALL instruction 
+			// Handle CALL instruction
 			if (insn->id == BPF_INS_CALL && insn->detail && OPCOUNT > 0 && OP(0).type == BPF_OP_IMM) {
-				st32 imm = IMM(0);
-				
+				st32 imm = IMM (0);
 				// Check if this is a syscall first
 				const char *syscall_name = get_syscall_name (imm);
 				if (syscall_name) {
-					op->mnemonic = r_str_newf("call %s", syscall_name);
-				
+					op->mnemonic = r_str_newf ("call %s", syscall_name);
 				} else {
 					// PC-relative call
 					st64 current_pc = op->addr / 8; 	 		// Current PC in instruction units
 					st64 target_pc = current_pc + imm + 1;  	// Target PC in instruction units
 					st64 target_addr = target_pc * 8;  			// Target address in bytes
 					op->mnemonic = r_str_newf ("call 0x%"PFMT64x, (ut64)target_addr);
-					
+
 					// Set jump target for call instruction
 					op->jump = target_addr;
-					
+
 					// Try to force function creation using hints
 					op->hint.addr = target_addr;
 					op->hint.jump = target_addr;
-					
-					// Mark operation to force function creation 
+
+					// Mark operation to force function creation
 					op->type = R_ANAL_OP_TYPE_CALL;
 					op->family = R_ANAL_OP_FAMILY_CPU;
-					op->size = insn->size;;
-					
+					op->size = insn->size;
+
 				}
 			} else {
 				op->mnemonic = r_str_newf ("%s%s%s",
@@ -141,7 +139,7 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 					insn->op_str);
 			}
 		}
-		if (insn->detail) {			
+		if (insn->detail) {
 			switch (insn->id) {
 #if CS_API_MAJOR > 5
 			case BPF_INS_JAL:
@@ -173,25 +171,25 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 				break;
 			case BPF_INS_CALL: ///< eBPF only
 				op->type = R_ANAL_OP_TYPE_CALL;
-				
+
 				// Enhanced call analysis for function detection
 				if (OPCOUNT > 0 && OP(0).type == BPF_OP_IMM) {
 					st32 imm = IMM(0);
 					const char *syscall_name = get_syscall_name (imm);
-					
+
 					if (!syscall_name) {
 						// PC-relative call - calculate target and force function creation
 						st64 current_pc = op->addr / 8;
 						st64 target_pc = current_pc + imm + 1;
 						st64 target_addr = target_pc * 8;
-						
+
 						// Set jump target for call instruction
 						op->jump = target_addr;
-						
+
 						// Set function hint
 						op->hint.addr = target_addr;
 						op->hint.jump = target_addr;
-						
+
 						// Mark this as a call to force function creation
 						op->type = R_ANAL_OP_TYPE_CALL;
 					}
@@ -320,30 +318,30 @@ static ut32 detect_string_size_from_next_insn(RArchSession *a, RAnalOp *op, cons
 	if (!a || !a->data || !buf || len < 8) {
 		return default_size;
 	}
-	
+
 	CapstonePluginData *cpd = (CapstonePluginData*)a->data;
 	if (!cpd || !cpd->cs_handle) {
 		return default_size;
 	}
-	
+
 	cs_insn *next_insn = NULL;
 	ut64 next_addr = op->addr + op->size;
 	int n = cs_disasm(cpd->cs_handle, buf, 8, next_addr, 1, &next_insn);
-	
+
 	if (n <= 0 || !next_insn) {
 		return default_size;
 	}
-	
+
 	ut32 string_size = default_size;
-	
+
 	// Check if it's a mov REG, IMM instruction
 	bool is_mov_insn = (next_insn->id == BPF_INS_MOV || next_insn->id == BPF_INS_MOV64);
 	bool has_detail = next_insn->detail && next_insn->detail->bpf.op_count > 1;
-	
+
 	if (is_mov_insn && has_detail) {
 		bool is_reg_dest = next_insn->detail->bpf.operands[0].type == BPF_OP_REG;
 		bool is_imm_src = next_insn->detail->bpf.operands[1].type == BPF_OP_IMM;
-		
+
 		if (is_reg_dest && is_imm_src) {
 			ut32 imm_size = next_insn->detail->bpf.operands[1].imm;
 			// Use the immediate value as string size if it's reasonable
@@ -352,7 +350,7 @@ static ut32 detect_string_size_from_next_insn(RArchSession *a, RAnalOp *op, cons
 			}
 		}
 	}
-	
+
 	cs_free(next_insn, n);
 	return string_size;
 }
@@ -361,32 +359,32 @@ static void check_and_create_string_flag(RArchSession *a, RAnalOp *op, ut64 addr
 	if (!a || !a->arch) {
 		return;
 	}
-	
+
 	bool is_valid_program_range = false;
-	
+
 	// Check if it's in the main program range
 	if (addr >= SBPF_PROGRAM_ADDR && addr < SBPF_STACK_ADDR) {
 		is_valid_program_range = true;
 	}
-	
+
 	if (!is_valid_program_range) {
 		return;
 	}
-	
+
 	op->ptr = addr;
-	
+
 	ut32 string_size = SBPF_MAX_STRING_SIZE;
-	
+
 	// check the next instruction(s) after a lddw instruction for a mov REG, IMM pattern
 	string_size = detect_string_size_from_next_insn(a, op, buf, len, string_size);
-	
+
 	// Use the refptr field to indicate a fixed-size string reference
 	op->refptr = string_size;
-	
+
 	op->hint.addr = addr;
 	op->hint.type = R_ANAL_ADDR_HINT_TYPE_SIZE;
 	op->hint.size = string_size;
-	
+
 	op->type |= R_ANAL_OP_TYPE_MEM;
 }
 
@@ -567,7 +565,7 @@ static void analop_esil(RArchSession *a, RAnalOp *op, cs_insn *insn, ut64 addr) 
 			st64 current_pc = op->addr / 8;
 			st64 target_pc = current_pc + imm + 1;
 			st64 target_addr = target_pc * 8;
-			
+
 			esilprintf(op, "8,pc,+,sp,=[8],8,sp,-=,0x%" PFMT64x ",pc,=", target_addr);
 		} else {
 
