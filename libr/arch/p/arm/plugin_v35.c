@@ -2600,13 +2600,7 @@ static int archinfo(RArchSession *anal, ut32 q) {
 	return 4; // XXX
 }
 
-static RList *anal_preludes(RArchSession *as) {
-	RList *l = r_list_newf (free);
-	r_list_append (l, r_str_newf ("f00000d1 f00000ff"));
-	r_list_append (l, r_str_newf ("f00000a9 f00000ff"));
-	r_list_append (l, r_str_newf ("7f2303d5ff"));
-	return l;
-}
+#include "preludes.inc.c"
 
 static const char *v35_insn_name(int id) {
 	Instruction insn = { .operation = id };
