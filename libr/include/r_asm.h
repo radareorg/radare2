@@ -191,6 +191,7 @@ extern RAsmPlugin r_asm_plugin_null;
 extern RAsmPlugin r_asm_plugin_pickle;
 extern RAsmPlugin r_asm_plugin_ppc;
 extern RAsmPlugin r_asm_plugin_riscv;
+extern RAsmPlugin r_asm_plugin_sbpf;
 extern RAsmPlugin r_asm_plugin_sh;
 extern RAsmPlugin r_asm_plugin_sparc;
 extern RAsmPlugin r_asm_plugin_stm8;

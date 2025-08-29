@@ -130,6 +130,35 @@ static bool is_bin_etrel(ELFOBJ *eo) {
 	return eo->ehdr.e_type == ET_REL;
 }
 
+bool Elf_(is_sbpf_binary)(ELFOBJ *eo) {
+	// If it's already marked as EM_SBPF, it's definitely Solana sBPF
+	if (eo->ehdr.e_machine == EM_SBPF) {
+		return true;
+	}
+
+	// If not EM_BPF, it's not sBPF
+	if (eo->ehdr.e_machine != EM_BPF) {
+		return false;
+	}
+
+	bool has_solana_symbols = false;
+
+	if (Elf_(load_symbols)(eo)) {
+		RVecRBinElfSymbol *symbols = eo->g_symbols_vec;
+		if (symbols) {
+			RBinElfSymbol *symbol;
+			R_VEC_FOREACH (symbols, symbol) {
+				if (symbol->name[0] && r_str_startswith(symbol->name, "sol_")) {
+					has_solana_symbols = true;
+					break;
+				}
+			}
+		}
+	}
+
+	return has_solana_symbols;
+}
+
 static bool __is_valid_ident(ut8 *e_ident) {
 	return !strncmp ((char*)e_ident, ELFMAG, SELFMAG) ||
 		!strncmp ((char*)e_ident, CGCMAG, SCGCMAG);
@@ -672,9 +701,15 @@ static int init_dynamic_section(ELFOBJ *eo) {
 		return false;
 	}
 
-	ut64 loaded_offset = Elf_(v2p_new) (eo, dyn_phdr->p_vaddr);
-	if (loaded_offset == UT64_MAX) {
-		return false;
+	// For sBPF, PT_DYNAMIC p_vaddr might not be mappable after rebasing, use p_offset directly
+	ut64 loaded_offset;
+	if (Elf_(is_sbpf_binary) (eo)) {
+		loaded_offset = dyn_phdr->p_offset;
+	} else {
+		loaded_offset = Elf_(v2p_new) (eo, dyn_phdr->p_vaddr);
+		if (loaded_offset == UT64_MAX) {
+			return false;
+		}
 	}
 
 	ut64 dyn_size = dyn_phdr->p_filesz;
@@ -1631,6 +1666,11 @@ ut64 Elf_(get_section_addr_end)(ELFOBJ *eo, const char *section_name) {
 	return section? section->rva + section->size: UT64_MAX;
 }
 
+ut64 Elf_(get_section_size)(ELFOBJ *eo, const char *section_name) {
+	RBinElfSection *section = get_section_by_name (eo, section_name);
+	return section? section->size: UT64_MAX;
+}
+
 static ut64 get_got_entry(ELFOBJ *eo, RBinElfReloc *rel) {
 	if (!rel || !rel->rva || rel->rva == UT64_MAX) {
 		return UT64_MAX;
@@ -1970,6 +2010,13 @@ static ut64 get_import_addr(ELFOBJ *eo, int sym) {
 		return get_import_addr_x86 (eo, rel);
 	case EM_LOONGARCH:
 		return get_import_addr_loongarch (eo, rel);
+	case EM_SBPF:
+		// sBPF relocations are handled in patch_reloc, return the offset for imports
+		return rel->offset;
+	case EM_BPF:
+		if (Elf_(is_sbpf_binary) (eo)) {
+			return rel->offset;
+		}
 	default:
 		R_LOG_WARN ("Unsupported relocs type %" PFMT64u " for arch %d",
 				(ut64) rel->type, eo->ehdr.e_machine);
@@ -2025,6 +2072,11 @@ of the maximum page size
 
 ut64 Elf_(get_baddr)(ELFOBJ *eo) {
 	R_RETURN_VAL_IF_FAIL (eo, 0);
+	// Special handling for sBPF: use sBPF program base address
+	if (Elf_(is_sbpf_binary) (eo)) {
+		return SBPF_PROGRAM_ADDR;
+	}
+
 	ut64 base = UT64_MAX;
 	if (eo->phdr) {
 		size_t i;
@@ -2424,6 +2476,7 @@ char* Elf_(get_arch)(ELFOBJ *eo) {
 	case EM_BA2_NON_STANDARD:
 	case EM_BA2: return strdup ("ba2");
 	case EM_BPF: return strdup ("bpf");
+	case EM_SBPF: return strdup ("sbpf");
 	case EM_CRIS: return strdup ("cris");
 	case EM_68K: return strdup ("m68k");
 	case EM_MIPS:
@@ -2777,6 +2830,7 @@ char* Elf_(get_machine_name)(ELFOBJ *eo) {
 	case EM_MOXIE:         return strdup ("Moxie processor family");
 	case EM_AMDGPU:        return strdup ("AMD GPU architecture");
 	case EM_BPF:           return strdup ("Berkeley Packet Filter");
+	case EM_SBPF:          return strdup ("Solana Berkeley Packet Filter");
 	case EM_LOONGARCH:     return strdup ("Loongson Loongarch");
 	default:               return r_str_newf ("<unknown>: 0x%x", eo->ehdr.e_machine);
 	}
@@ -3112,9 +3166,15 @@ static void fix_rva_and_offset_relocable_file(ELFOBJ *eo, RBinElfReloc *r, size_
 }
 
 static void fix_rva_and_offset_exec_file(ELFOBJ *eo, RBinElfReloc *r) {
-	// read target and fix patch
-	r->rva = r->offset;
-	r->offset = Elf_(v2p) (eo, r->offset);
+	if (Elf_(is_sbpf_binary) (eo)) {
+		ut64 orig_offset = r->offset;
+		// Set rva to rebased sBPF virtual address
+		r->rva = eo->baddr + r->offset;
+		r->offset = Elf_(v2p)(eo, orig_offset);
+	} else {
+		r->rva = r->offset;
+		r->offset = Elf_(v2p)(eo, r->offset);
+	}
 }
 
 static void fix_rva_and_offset(ELFOBJ *eo, RBinElfReloc *r, size_t pos) {
@@ -3547,12 +3607,13 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 		ht_uu_insert (eo->rel_cache, reloc->sym + 1, index + 1);
 		fix_rva_and_offset_exec_file (eo, reloc);
 	}
-	// parse relent
+
 	for (offset = 0; offset < eo->dyn_info.dt_relsz && pos < num_relocs; offset += eo->dyn_info.dt_relent, pos++) {
 		RBinElfReloc *reloc = r_vector_end (&eo->g_relocs);
 		if (!read_reloc (eo, reloc, DT_REL, eo->dyn_info.dt_rel + offset)) {
-			break;
+				break;
 		}
+
 		int index = r_vector_index (&eo->g_relocs);
 		ht_uu_insert (eo->rel_cache, reloc->sym + 1, index + 1);
 		fix_rva_and_offset_exec_file (eo, reloc);
@@ -4251,7 +4312,12 @@ static bool _add_sections_from_phdr(RBinFile *bf, ELFOBJ *eo, bool *found_load) 
 		ptr->size = phdr[i].p_filesz;
 		ptr->vsize = phdr[i].p_memsz;
 		ptr->paddr = phdr[i].p_offset;
-		ptr->vaddr = phdr[i].p_vaddr;
+		if (Elf_(is_sbpf_binary) (eo)) {
+			// For sBPF, use base address + segment address
+			ptr->vaddr = eo->baddr + phdr[i].p_vaddr;
+		} else {
+			ptr->vaddr = phdr[i].p_vaddr;
+		}
 		ptr->perm = phdr[i].p_flags; // perm  are rwx like x=1, w=2, r=4, aka no need to convert from r2's R_PERM
 		ptr->is_segment = true;
 		switch (phdr[i].p_type) {
@@ -5479,6 +5545,11 @@ static int is_in_vphdr(Elf_(Phdr) *p, ut64 addr) {
 ut64 Elf_(p2v) (ELFOBJ *eo, ut64 paddr) {
 	R_RETURN_VAL_IF_FAIL (eo, 0);
 
+	// Special handling for sBPF: always use baddr regardless of file type
+	if (Elf_(is_sbpf_binary) (eo)) {
+		return eo->baddr + paddr;
+	}
+
 	if (!eo->phdr) {
 		if (is_bin_etrel (eo)) {
 			return eo->baddr + paddr;
@@ -5527,6 +5598,11 @@ ut64 Elf_(v2p)(ELFOBJ *eo, ut64 vaddr) {
  * at the program headers in the binary bin */
 ut64 Elf_(p2v_new) (ELFOBJ *eo, ut64 paddr) {
 	R_RETURN_VAL_IF_FAIL (eo, UT64_MAX);
+
+	// Special handling for sBPF: always use baddr regardless of file type
+	if (Elf_(is_sbpf_binary) (eo)) {
+		return eo->baddr + paddr;
+	}
 
 	if (!eo->phdr) {
 		return is_bin_etrel (eo) ? eo->baddr + paddr : UT64_MAX;
@@ -6020,6 +6096,7 @@ static void sdb_init_dtypes(ELFOBJ *eo) {
 			"EM_RISCV=243,"
 			"EM_LANAI=244,"
 			"EM_BPF=247,"
+			"EM_SBPF=263,"
 			"EM_CSKY=252,"
 			"EM_KVX=256,"
 			"EM_LOONGARCH=258"

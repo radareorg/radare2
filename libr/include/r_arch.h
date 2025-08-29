@@ -272,6 +272,7 @@ extern const RArchPlugin r_arch_plugin_avr;
 extern const RArchPlugin r_arch_plugin_bf;
 extern const RArchPlugin r_arch_plugin_bpf;
 extern const RArchPlugin r_arch_plugin_bpf_cs;
+extern const RArchPlugin r_arch_plugin_sbpf_cs;
 extern const RArchPlugin r_arch_plugin_chip8;
 extern const RArchPlugin r_arch_plugin_cr16;
 extern const RArchPlugin r_arch_plugin_cris;

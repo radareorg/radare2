@@ -9,6 +9,9 @@
 #ifndef _INCLUDE_ELF_H_
 #define _INCLUDE_ELF_H_
 
+#define SBPF_PROGRAM_ADDR 	0x100000000ULL
+#define SBPF_STACK_ADDR 	0x200000000ULL
+
 #define R_BIN_ELF_SCN_IS_EXECUTABLE(x) x & SHF_EXECINSTR
 #define R_BIN_ELF_SCN_IS_READABLE(x)   x & SHF_ALLOC
 #define R_BIN_ELF_SCN_IS_WRITABLE(x)   x & SHF_WRITE
@@ -183,6 +186,7 @@ struct Elf_(obj_t) {
 int Elf_(has_va)(struct Elf_(obj_t) *bin);
 ut64 Elf_(get_section_addr)(struct Elf_(obj_t) *bin, const char *section_name);
 ut64 Elf_(get_section_offset)(struct Elf_(obj_t) *bin, const char *section_name);
+ut64 Elf_(get_section_size)(struct Elf_(obj_t) *bin, const char *section_name);
 ut64 Elf_(get_baddr)(struct Elf_(obj_t) *bin);
 ut64 Elf_(p2v)(struct Elf_(obj_t) *bin, ut64 paddr);
 ut64 Elf_(v2p)(struct Elf_(obj_t) *bin, ut64 vaddr);
@@ -234,4 +238,5 @@ ut8 *Elf_(grab_regstate)(struct Elf_(obj_t) *bin, int *len);
 RList *Elf_(get_maps)(ELFOBJ *bin);
 RBinSymbol *Elf_(convert_symbol)(struct Elf_(obj_t) *bin, RBinElfSymbol *symbol);
 R_API RBinSection *r_bin_section_clone(RBinSection *s);
+bool Elf_(is_sbpf_binary)(ELFOBJ *eo);
 #endif
