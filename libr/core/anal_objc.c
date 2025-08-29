@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2019-2024 - pancake */
+/* radare2 - LGPL - Copyright 2019-2025 - pancake */
 
 /* This code has been written by pancake which has been based on Alvaro's
  * r2pipe-python script which was based on FireEye script for IDA Pro.
@@ -215,12 +215,13 @@ static RCoreObjc *core_objc_new(RCore *core) {
 			o->_const = s;
 		}
 	}
-	if (!o->_const || ((o->_selrefs || o->_msgrefs) && !(o->_data && o->_const))) {
+	// if (!o->_const || ((o->_selrefs || o->_msgrefs) && !(o->_data && o->_const))) {
+	// reduce expectations, we dont need that much from objc
+	if (!o->_const || !o->_data) {
 		free (o);
 		return NULL;
 	}
 	o->up = ht_up_new (NULL, kv_array_free, NULL);
-
 	return o;
 }
 
