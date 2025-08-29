@@ -107,7 +107,7 @@ static ut64 getRefPtr(RCoreObjc *o, ut64 classMethodsVA, bool *rfound) {
 	RVector *vec = ht_up_find (o->up, namePtr, rfound);
 	if (!*rfound || !vec) {
 		*rfound = false;
-		return false;
+		return UT64_MAX;
 	}
 	ut64 *addr;
 	r_vector_foreach (vec, addr) {
@@ -126,7 +126,7 @@ static ut64 getRefPtr(RCoreObjc *o, ut64 classMethodsVA, bool *rfound) {
 		*rfound = false;
 		return UT64_MAX;
 	}
-	return isMsgRef? ref - 8: ref;
+	return isMsgRef? ref - o->word_size: ref;
 }
 
 static bool objc_build_refs(RCoreObjc *objc) {
