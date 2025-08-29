@@ -161,18 +161,20 @@ static bool objc_build_refs(RCoreObjc *objc) {
 	const size_t word_size = objc->word_size; // assuming 8 because of the read_le64
 	if (!r_io_read_at (objc->core->io, objc->_const->vaddr, buf, ss_const)) {
 		R_LOG_WARN ("aao: Cannot read the whole const section %u", (unsigned int)ss_const);
-		return false;
+		goto beach;
 	}
-	for (off = 0; off + word_size < ss_const && off + word_size < maxsize; off += word_size) {
+	for (off = 0; off + word_size <= ss_const && off + word_size < maxsize; off += word_size) {
 		ut64 va = va_const + off;
 		ut64 xrefs_to = (word_size == 8)? r_read_le64 (buf + off): r_read_le32 (buf + off);
 		if (isValid (xrefs_to)) {
-			array_add (objc, va, xrefs_to);
+			// array_add (objc, va, xrefs_to);
+			array_add (objc, xrefs_to, va);
+
 		}
 	}
 	if (!r_io_read_at (objc->core->io, va_selrefs, buf, ss_selrefs)) {
 		R_LOG_WARN ("aao: Cannot read the whole selrefs section");
-		return false;
+		goto beach;
 	}
 	for (off = 0; off + word_size < ss_selrefs && off + word_size < maxsize; off += word_size) {
 		ut64 va = va_selrefs + off;
@@ -181,6 +183,22 @@ static bool objc_build_refs(RCoreObjc *objc) {
 			array_add (objc, xrefs_to, va);
 		}
 	}
+	if (objc->_msgrefs) {
+		const ut64 va_msgrefs = objc->_msgrefs->vaddr;
+		size_t ss_msgrefs = R_MIN (objc->_msgrefs->vsize, maxsize);
+		if (!r_io_read_at (objc->core->io, va_msgrefs, buf, ss_msgrefs)) {
+			R_LOG_WARN ("aao: Cannot read the whole msgrefs section");
+			goto beach;
+		}
+		for (off = 0; off + word_size <= ss_msgrefs && off + word_size <= maxsize; off += (word_size * 2)) {
+			ut64 va = va_msgrefs + off;
+			ut64 xrefs_to = (word_size == 8)? r_read_le64 (buf + off): r_read_le32 (buf + off);
+			if (isValid (xrefs_to)) {
+				array_add (objc, xrefs_to, va);
+			}
+		}
+	}
+beach:
 	free (buf);
 	return true;
 }
