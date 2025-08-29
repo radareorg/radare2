@@ -261,6 +261,11 @@ static bool objc_find_refs(RCore *core) {
 		if (!readSuccess || isInvalid (classRoVA)) {
 			continue;
 		}
+		if (objc->word_size == 8) {
+			classRoVA &= ~(ut64)0x7;
+		} else {
+			classRoVA &= ~(ut64)0x3;
+		}
 		ut64 classMethodsVA = readQword (objc, classRoVA + objc2ClassBaseMethsOffs, &readSuccess);
 		if (!readSuccess || isInvalid (classMethodsVA)) {
 			continue;
@@ -312,17 +317,15 @@ static bool objc_find_refs(RCore *core) {
 			RVecAnalRef_free (xrefs);
 		}
 	}
+	// R_LOG_INFO ("Found %u objc xrefs", (unsigned int)total_xrefs);
 
-	const ut64 pa_selrefs = objc->_selrefs->paddr;
 	const ut64 va_selrefs = objc->_selrefs->vaddr;
 	const ut64 ss_selrefs = va_selrefs + objc->_selrefs->vsize;
 
-	R_LOG_INFO ("Found %u objc xrefs", (unsigned int)total_xrefs);
 	size_t total_words = 0;
 	ut64 a;
 	const size_t word_size = objc->word_size;
-	const size_t maxsize = objc->file_size - pa_selrefs;
-	for (a = va_selrefs; a < ss_selrefs && a < maxsize; a += word_size) {
+	for (a = va_selrefs; a < ss_selrefs; a += word_size) {
 		r_meta_set (core->anal, R_META_TYPE_DATA, a, word_size, NULL);
 		total_words++;
 	}
