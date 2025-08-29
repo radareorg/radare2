@@ -1,5 +1,5 @@
-[wrap-git]
-url = https://github.com/zyantific/zydis.git
-revision = v4.1.1
-directory = zydis
-depth = 1
+[wrap-file]
+directory = zydis-4.1.1
+source_url = https://github.com/zyantific/zydis/archive/refs/tags/v4.1.1.tar.gz
+source_filename = zydis-v4.1.1.tar.gz
+source_hash = 943f91eb9ab2a8cc01ab9f8b785e769a273502071e0ee8011cdfcaad93947cec
