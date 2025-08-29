@@ -29,4 +29,6 @@ else
   include capstone-v5.mk
 endif
 include qjs.mk
+
 include zydis.mk
+zydis: ${WRAP_wrap_file_directory}
