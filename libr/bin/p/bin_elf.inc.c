@@ -775,6 +775,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 	case EM_SPARC32PLUS:
 		ADD (32, 0);
 		break;
+<<<<<<< HEAD
 	case EM_BPF:
 		if (!Elf_(is_sbpf_binary) (eo)) {
 			R_LOG_DEBUG ("Unimplemented BPF reloc type %d", rel->type);

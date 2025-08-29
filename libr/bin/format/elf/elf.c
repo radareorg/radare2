@@ -2010,10 +2010,13 @@ static ut64 get_import_addr(ELFOBJ *eo, int sym) {
 		return get_import_addr_x86 (eo, rel);
 	case EM_LOONGARCH:
 		return get_import_addr_loongarch (eo, rel);
-	case EM_BPF:
 	case EM_SBPF:
 		// sBPF relocations are handled in patch_reloc, return the offset for imports
 		return rel->offset;
+	case EM_BPF:
+		if (Elf_(is_sbpf_binary) (eo)) {
+			return rel->offset;
+		}
 	default:
 		R_LOG_WARN ("Unsupported relocs type %" PFMT64u " for arch %d",
 				(ut64) rel->type, eo->ehdr.e_machine);
@@ -3581,8 +3584,7 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 		offset = 0;
 		while (offset < eo->dyn_info.dt_relrsz && pos < num_relocs) {
 			RBinElfReloc *reloc = r_vector_end (&eo->g_relocs);
-			ut64 relr_addr = eo->dyn_info.dt_relr + offset;
-			if (!read_reloc (eo, reloc, DT_RELR, relr_addr)) {
+			if (!read_reloc (eo, reloc, DT_RELR, eo->dyn_info.dt_relr + offset)) {
 				// If read_reloc fails for RELR, it might be processing a bitmap entry
 				// Try the next entry
 				offset += sizeof (Elf_(Addr));
@@ -3598,8 +3600,7 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 	// parse rela
 	for (offset = 0; offset < eo->dyn_info.dt_relasz && pos < num_relocs; offset += eo->dyn_info.dt_relaent, pos++) {
 		RBinElfReloc *reloc = r_vector_end (&eo->g_relocs);
-		ut64 rela_addr = eo->dyn_info.dt_rela + offset;
-		if (!read_reloc (eo, reloc, DT_RELA, rela_addr)) {
+		if (!read_reloc (eo, reloc, DT_RELA, eo->dyn_info.dt_rela + offset)) {
 			break;
 		}
 		int index = r_vector_index (&eo->g_relocs);
