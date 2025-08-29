@@ -118,11 +118,11 @@ CMDS=pd 5
 EXPECT=<<EOF
             ;-- entry0:
             ;-- entrypoint:
-            0x000009b8      bf12000000..   mov64 r2, r1
-            0x000009c0      bfa1000000..   mov64 r1, r10
-            0x000009c8      07010000d0..   add64 r1, 0xffffffd0
-            0x000009d0      8510000005..   call 0x205
-            0x000009d8      79a6d0ff00..   ldxdw r6, [r10+0xffd0]
+            0x1000009b8      bf12000000..   mov64 r2, r1
+            0x1000009c0      bfa1000000..   mov64 r1, r10
+            0x1000009c8      07010000d0..   add64 r1, 0xffffffd0
+            0x1000009d0      8510000005..   call 0x205
+            0x1000009d8      79a6d0ff00..   ldxdw r6, [r10+0xffd0]
 EOF
 RUN
 
@@ -130,11 +130,11 @@ NAME=is
 FILE=bins/bpf/memo_v2.solana.so
 CMDS=is
 EXPECT=<<EOF
-nth paddr      vaddr      bind   type   size lib name         demangled
------------------------------------------------------------------------
-3   0x00000c48 0x00000c48 GLOBAL FUNC   328      custom_panic
-4   0x000009b8 0x000009b8 GLOBAL FUNC   328      entrypoint
-1   ---------- ---------- GLOBAL NOTYPE 16       imp.abort
-2   ---------- ---------- GLOBAL NOTYPE 16       imp.sol_log_
+nth paddr      vaddr       bind   type   size lib name         demangled
+------------------------------------------------------------------------
+3   0x00000c48 0x100000c48 GLOBAL FUNC   328      custom_panic
+4   0x000009b8 0x1000009b8 GLOBAL FUNC   328      entrypoint
+1   ---------- ----------  GLOBAL NOTYPE 16       imp.abort
+2   ---------- ----------  GLOBAL NOTYPE 16       imp.sol_log_
 EOF
 RUN

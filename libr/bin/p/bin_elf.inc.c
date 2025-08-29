@@ -252,7 +252,7 @@ static RList* entries(RBinFile *bf) {
 		ptr->hvaddr = UT64_MAX; // 0x18 + baddr (bf);
 
 		if (ptr->vaddr != (ut64)eo->ehdr.e_entry && Elf_(is_executable) (eo) &&
-		    eo->ehdr.e_machine != EM_BPF && eo->ehdr.e_machine != EM_SBPF) {
+		    !Elf_(is_sbpf_binary) (eo)) {
 			R_LOG_ERROR ("Cannot determine entrypoint, using 0x%08" PFMT64x, ptr->vaddr);
 		}
 
@@ -777,30 +777,34 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 		ADD (32, 0);
 		break;
 case EM_BPF:
-	case EM_SBPF:
-		switch (rel->type) {
-		case R_BPF_64_64: // 64-bit immediate for lddw instruction
-			r->type = R_BIN_RELOC_64;
-			r->vaddr = B + rel->offset;
-			return r;
-		case R_BPF_64_RELATIVE: // PC relative 64-bit address
-			r->type = R_BIN_RELOC_64;
-			r->vaddr = B + rel->offset;
-			return r;
-		case R_BPF_64_32: // 32-bit function/syscall ID for call instruction
-			r->type = R_BIN_RELOC_32;
-			// The immediate value will be a function ID or syscall ID, not an address
-			r->vaddr = B + rel->offset;
-			return r;
-		default:
-			R_LOG_DEBUG ("Unimplemented sBPF reloc type %d", rel->type);
-			break;
-		}
-		break;
-	default:
-		R_LOG_ERROR ("Unimplemented ELF reloc type %d", rel->type);
+	if (!Elf_(is_sbpf_binary) (eo)) {
+		R_LOG_DEBUG ("Unimplemented BPF reloc type %d", rel->type);
 		break;
 	}
+case EM_SBPF:
+	switch (rel->type) {
+	case R_BPF_64_64: // 64-bit immediate for lddw instruction
+		r->type = R_BIN_RELOC_64;
+		r->vaddr = B + rel->offset;
+		return r;
+	case R_BPF_64_RELATIVE: // PC relative 64-bit address
+		r->type = R_BIN_RELOC_64;
+		r->vaddr = B + rel->offset;
+		return r;
+	case R_BPF_64_32: // 32-bit function/syscall ID for call instruction
+		r->type = R_BIN_RELOC_32;
+		// The immediate value will be a function ID or syscall ID, not an address
+		r->vaddr = B + rel->offset;
+		return r;
+	default:
+		R_LOG_DEBUG ("Unimplemented sBPF reloc type %d", rel->type);
+		break;
+	}
+	break;
+default:
+	R_LOG_ERROR ("Unimplemented ELF reloc type %d", rel->type);
+	break;
+}
 #undef SET
 #undef ADD
 	free (r);
@@ -1124,6 +1128,10 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 		break;
 	}
 	case EM_BPF: // CHECK: some older solana programs have set an ehdr.e_machine of EM_BPF
+		if (!Elf_(is_sbpf_binary) (bo)) {
+			R_LOG_DEBUG ("Unhandled BPF relocation type %d", rel->type);
+			break;
+		}
 	case EM_SBPF: {
 		switch (rel->type) {
 		case R_BPF_64_64: // 64-bit immediate for lddw instructions
