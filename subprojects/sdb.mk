@@ -5,7 +5,7 @@ WRAP_wrap_git_revision:=2.2.0
 WRAP_wrap_git_directory:=sdb
 WRAP_wrap_git_depth:=1
 
-.PHONY: sdb
+.PHONY: sdb_clean sdb_all
 
 sdb:
 	if [ ! -d "sdb" -o "2.2.0" != "$(shell cd sdb 2>/dev/null && git rev-parse HEAD)" ]; then rm -rf "sdb"; ${MAKE} sdb_all; fi
