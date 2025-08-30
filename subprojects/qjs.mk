@@ -6,7 +6,7 @@ WRAP_wrap_git_directory:=qjs
 WRAP_wrap_git_patch_directory:=qjs
 WRAP_wrap_git_depth:=1
 
-.PHONY: qjs
+.PHONY: qjs_clean qjs_all
 
 qjs:
 	if [ ! -d "qjs" -o "7238ee64dbc2fbdea044555cda8cda78785a93ed" != "$(shell cd qjs 2>/dev/null && git rev-parse HEAD)" ]; then rm -rf "qjs"; ${MAKE} qjs_all; fi

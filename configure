@@ -101,13 +101,27 @@ if [ -e "${VPATH}/config.guess" ]; then
 	sh ${VPATH}/config.guess
 	return
 fi
-CPU="`uname -m|sed -e 's, ,,g'|cut -d - -f 1`"
+CPU="`uname -m | tr 'A-Z' 'a-z' | sed -e 's, ,,g' | cut -d - -f 1`"
 OS="`uname -s|tr A-Z a-z`"
 uname -r | grep -qE "(Microsoft|WSL)" 2>/dev/null && OS="wsl"
 GNU="`uname --help 2>&1 | grep gnu`"
 [ "${GNU}" ] && OS="${OS}-gnu"
-[ "${CPU}" = ppc ] && CPU="powerpc"
-echo "${CPU}-unknown-${OS}"
+# normalize CPU
+case "${CPU}" in
+	ppc*|powermac*|powermacintosh*|powerpc*)
+		if echo "${CPU}" | grep -q '64'; then
+			CPU=powerpc64
+		else
+			CPU=powerpc
+		fi
+		;;
+	*) ;;
+esac
+VENDOR="unknown"
+if [ "${OS}" = "darwin" ]; then
+	VENDOR=apple
+fi
+echo "${CPU}-${VENDOR}-${OS}"
 }
 
 SEARCHPATH="/usr /usr/local /usr/pkg /sw"
