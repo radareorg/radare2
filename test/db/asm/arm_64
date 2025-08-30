@@ -138,6 +138,8 @@ a "ldr x4, [x6, 0x14]" c44041f8
 a "ldr x5, [x1, -0x20]" 25005ef8
 a "ldr x5, [x1, -0x32]" 25e05cf8
 a "ldr x8, [x3, 0x10]" 680840f9
+ad "ldr x0, [x27, 0x108]" 608740f9
+ad "ldr x0, [x27, 0x110]" 608b40f9
 a "ldr x8, [x3, x1]" 686861f8
 ad "ldrb w2, [x7, -0xa]!" e26c5f38
 ad "ldrb w2, [x7, -0x85]!" e2bc5738
