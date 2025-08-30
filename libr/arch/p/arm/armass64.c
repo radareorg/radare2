@@ -225,8 +225,7 @@ static inline ut32 encode1reg(ArmOp *op) {
 }
 
 static inline ut32 encode2regs(ArmOp *op) {
-	// p/arm/armass64.c:226:37: runtime error: left shift of 5 by 29 places cannot be represented in type 'int'
-	ut32 a0 = op->operands[1].reg;
+	ut32 a0 = (ut32) op->operands[1].reg & UT32_MAX;
 	return ((a0 & 0x7) << 29) | ((a0 & 0x18) << 13) | encode1reg (op);
 }
 
@@ -1052,10 +1051,12 @@ static ut32 lsop(ArmOp *op, int k, ut64 addr) {
 	check_cond (op->operands[1].type == ARM_GPR);
 	check_cond (op->operands[1].reg_type & ARM_REG64);
 	k |= encode2regs (op);
+	bool uwu = false;
 	if (!strcmp (op->mnemonic, "ldrb") || !strcmp (op->mnemonic, "ldrh") || !strcmp (op->mnemonic, "strb") || !strcmp (op->mnemonic, "strh")) {
 		check_cond (op->operands[0].reg_type & ARM_REG32);
 	} else if (!strcmp (op->mnemonic, "ldrsw")) {
 		check_cond (op->operands[0].reg_type & ARM_REG64);
+		uwu = true;
 	} else { // ldrsh, ldrsb
 		if (op->operands[0].reg_type & ARM_REG32) {
 			k |= 0x00004000;
@@ -1129,8 +1130,18 @@ static ut32 lsop(ArmOp *op, int k, ut64 addr) {
 			check_cond (n <= 0x1ffe && !(n & 1))
 				n >>= 1;
 		} else { // w
-			check_cond (n <= 0x3ffc && !(n & 3));
-			n >>= 2;
+			int scale = (op->operands[0].reg_type & ARM_REG64) ? 3 : 2;
+			if (uwu || scale == 2) {
+				check_cond (n <= 0x3ffc && !(n & 3));
+				if (uwu) {
+					n>>= 2;
+				} else {
+					n >>= 3;
+				}
+			} else {
+				check_cond (n <= 0x7ff8 && !(n & 7));
+				n >>= 3;
+			}
 		}
 		data = k | (n & 0x3f) << 18 | (n & 0xfc0) << 2 | 1;
 		return data;
@@ -2159,7 +2170,13 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 	} else if (!strncmp (str, "strh", 4)) {
 		*op = lsop (&ops, 0x00000078, -1);
 	} else if (!strncmp (str, "ldr", 3)) {
-		*op = reglsop (&ops, 0x000040f8);
+		*op = UT32_MAX;
+		if (!strstr (str, " w")) {
+			*op = lsop (&ops, 0x000040f8, -1);
+		}
+		if (*op == UT32_MAX) {
+			*op = reglsop (&ops, 0x000040f8);
+		}
 	} else if (!strncmp (str, "stur", 4)) {
 		*op = regsluop (&ops, 0x000000f8);
 	} else if (!strncmp (str, "ldur", 4)) {
