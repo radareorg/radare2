@@ -407,13 +407,15 @@ R_API bool r_sys_clearenv(void) {
 #if R2__UNIX__
 #if __APPLE__ && !HAVE_ENVIRON
 	/* do nothing */
-	if (!env) {
+	if (!Genv) {
 		r_sys_env_init ();
 		return true;
 	}
-	char **e = env;
-	while (*e) {
-		*e++ = NULL;
+	char **e = Genv;
+	if (e) {
+		while (*e) {
+			*e++ = NULL;
+		}
 	}
 #else
 	if (!environ) {
