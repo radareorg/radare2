@@ -43,7 +43,9 @@ static R_TH_LOCAL bool Gunsignable = false; // OK
 #endif
 #if __APPLE__
 #include <errno.h>
-#ifdef __MAC_10_8
+#include <TargetConditionals.h>
+// iOS don't have this
+#if !TARGET_OS_IPHONE
 #define HAVE_ENVIRON 1
 #else
 #define HAVE_ENVIRON 0
@@ -51,10 +53,9 @@ static R_TH_LOCAL bool Gunsignable = false; // OK
 
 #if HAVE_ENVIRON
 #include <execinfo.h>
+#include <crt_externs.h>
+#define environ (*_NSGetEnviron())
 #endif
-// iOS don't have this we can't hardcode
-// #include <crt_externs.h>
-extern char ***_NSGetEnviron(void);
 # ifndef PROC_PIDPATHINFO_MAXSIZE
 #  define PROC_PIDPATHINFO_MAXSIZE 1024
 int proc_pidpath(int pid, void * buffer, ut32 buffersize);
@@ -70,7 +71,9 @@ int proc_pidpath(int pid, void * buffer, ut32 buffersize);
 # include <sys/wait.h>
 #endif
 # include <signal.h>
+#ifndef __APPLE__
 extern char **environ;
+#endif
 
 #ifdef __HAIKU__
 # define Sleep sleep
