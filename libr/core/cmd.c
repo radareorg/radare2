@@ -10,6 +10,12 @@
 #ifndef __wasi__
 #include <pwd.h>
 #endif
+#ifdef __APPLE__
+#include <TargetConditionals.h>
+#if !TARGET_OS_IPHONE
+#include <crt_externs.h>
+#endif
+#endif
 #endif
 
 #define SPECIAL_CHARS "@;~$#|`\"'()<>"
