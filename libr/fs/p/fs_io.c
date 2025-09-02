@@ -109,8 +109,8 @@ static RList *fs_io_dir(RFSRoot *root, const char *path, int view /*ignored*/) {
 		RJson *json = r_json_parse (res);
 		if (json) {
 			if (json->type == R_JSON_ARRAY) {
-				size_t count = json->children.count;
-				for (size_t i = 0; i < count; i++) {
+				size_t i, count = json->children.count;
+				for (i = 0; i < count; i++) {
 					const RJson *item = r_json_item (json, i);
 					const char *name = r_json_get_str (item, "name");
 					const char *type_str = r_json_get_str (item, "type");
