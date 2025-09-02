@@ -75,8 +75,8 @@ static inline ut32 lev_get_val(Levrow *row, ut32 i) {
 }
 
 /* Clamp st32 values into st16 range while reserving ST16_MIN as a sentinel
-	* value used internally by the algorithm. This helper is defined at file
-	* scope because nested function definitions are not allowed in standard C. */
+ * value used internally by the algorithm. This helper is defined at file
+ * scope because nested function definitions are not allowed in standard C. */
 static inline st16 clamp_st16(st32 v) {
 	if (v <= (st32)ST16_MIN + 1) {
 		return (st16) ((st32)ST16_MIN + 1);
@@ -230,16 +230,20 @@ R_API char *r_diff_buffers_tostring(RDiff *d, const ut8 *a, int la, const ut8 *b
 }
 #endif
 
-#define diffHit() \
-		{ \
-			const size_t i_hit = i - hit; \
-			int ra = la - i_hit; \
-			int rb = lb - i_hit; \
-			struct r_diff_op_t o = { \
-				.a_off = d->off_a + i - hit, .a_buf = a + i - hit, .a_len = R_MIN (hit, ra), .b_off = d->off_b + i - hit, .b_buf = b + i - hit, .b_len = R_MIN (hit, rb) \
-			}; \
-			d->callback (d, d->user, &o); \
-		}
+#define diffHit() { \
+	const size_t i_hit = i - hit; \
+	int ra = la - i_hit; \
+	int rb = lb - i_hit; \
+	struct r_diff_op_t o = { \
+		.a_off = d->off_a + i - hit,\
+		.a_buf = a + i - hit, \
+		.a_len = R_MIN (hit, ra), \
+		.b_off = d->off_b + i - hit, \
+		.b_buf = b + i - hit, \
+		.b_len = R_MIN (hit, rb) \
+	}; \
+	d->callback (d, d->user, &o); \
+}
 
 R_API int r_diff_buffers_static(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
 	int i, len;
@@ -668,13 +672,13 @@ R_API void r_diffchar_print(RDiffChar *diffchar) {
 				printf (a_ch == '\n'
 						? "%c" Color_HLDELETE
 						: Color_HLDELETE "%c",
-					a_ch);
+						a_ch);
 				cur_mode = R2R_DIFF_DELETE;
 			} else if (cur_align == R2R_ALIGN_TOP_GAP) {
 				printf (b_ch == '\n'
 						? "%c" Color_HLINSERT
 						: Color_HLINSERT "%c",
-					b_ch);
+						b_ch);
 				cur_mode = R2R_DIFF_INSERT;
 			}
 		} else if (cur_mode == R2R_DIFF_DELETE) {
@@ -688,12 +692,12 @@ R_API void r_diffchar_print(RDiffChar *diffchar) {
 				printf (a_ch == '\n'
 						? Color_RESET "%c" Color_HLDELETE
 						: "%c",
-					a_ch);
+						a_ch);
 			} else if (cur_align == R2R_ALIGN_TOP_GAP) {
 				printf (b_ch == '\n'
 						? Color_RESET "%c" Color_HLINSERT
 						: Color_HLINSERT "%c",
-					b_ch);
+						b_ch);
 				cur_mode = R2R_DIFF_INSERT;
 			}
 		} else if (cur_mode == R2R_DIFF_INSERT) {
@@ -707,13 +711,13 @@ R_API void r_diffchar_print(RDiffChar *diffchar) {
 				printf (a_ch == '\n'
 						? Color_RESET "%c" Color_HLDELETE
 						: Color_HLDELETE "%c",
-					a_ch);
+						a_ch);
 				cur_mode = R2R_DIFF_DELETE;
 			} else if (cur_align == R2R_ALIGN_TOP_GAP) {
 				printf (b_ch == '\n'
 						? Color_RESET "%c" Color_HLINSERT
 						: "%c",
-					b_ch);
+						b_ch);
 			}
 		}
 		idx_align++;
@@ -768,7 +772,7 @@ static st32 r_diff_levenshtein_nopath(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst,
 	// do the rest of the rows
 	ut32 oldmin = 0; // minimum cell in row 0
 	for (i = 1; i <= alen; i++) { // loop through all rows
-		// switch rows
+				      // switch rows
 		if (row == matrix) {
 			row = prev_row;
 			prev_row = matrix;
@@ -826,21 +830,21 @@ static st32 r_diff_levenshtein_nopath(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst,
 }
 
 /**
-	* \brief Return Levenshtein distance and put array of changes, of unknown
-	* lenght, in chgs
-	* \param bufa Structure to represent starting buffer
-	* \param bufb Structure to represent the buffer to reach
-	* \param maxdst Max Levenshtein distance need, send UT32_MAX if unknown.
-	* \param levdiff Function pointer returning true when there is a difference.
-	* \param chgs Returned array of changes to get from bufa to bufb
-	*
-	* Perform a Levenshtein diff on two buffers and obtain a RLevOp array of
-	* changes. The length of the RLevOp array is NOT provided, it is terminated by
-	* the LEVEND value. Providing a good maxdst value will increase performance of
-	* this algorithm. If computed maxdst is exceeded ST32_MAX will be returned and
-	* chgs will be left NULL. The chgs value must point to a NULL pointer. The
-	* caller must free *chgs.
-	*/
+ ** \brief Return Levenshtein distance and put array of changes, of unknown
+ ** lenght, in chgs
+ ** \param bufa Structure to represent starting buffer
+ ** \param bufb Structure to represent the buffer to reach
+ ** \param maxdst Max Levenshtein distance need, send UT32_MAX if unknown.
+ ** \param levdiff Function pointer returning true when there is a difference.
+ ** \param chgs Returned array of changes to get from bufa to bufb
+ **
+ ** Perform a Levenshtein diff on two buffers and obtain a RLevOp array of
+ ** changes. The length of the RLevOp array is NOT provided, it is terminated by
+ ** the LEVEND value. Providing a good maxdst value will increase performance of
+ ** this algorithm. If computed maxdst is exceeded ST32_MAX will be returned and
+ ** chgs will be left NULL. The chgs value must point to a NULL pointer. The
+ ** caller must free *chgs.
+ **/
 R_API st32 r_diff_levenshtein_path(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RLevMatches levdiff, RLevOp **chgs) {
 	R_RETURN_VAL_IF_FAIL (bufa && bufb && bufa->buf && bufb->buf, -1);
 	R_RETURN_VAL_IF_FAIL (!chgs || !*chgs, -1); // if chgs then it must point at NULL
