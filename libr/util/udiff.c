@@ -431,7 +431,6 @@ R_API bool r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b
 // Use Needleman–Wunsch to diffchar.
 // This is an O(mn) algo in both space and time.
 // Note that 64KB * 64KB * 2 = 8GB.
-// TODO Discard common prefix and suffix
 R_API RDiffChar *r_diffchar_new(const ut8 *a, const ut8 *b) {
 	R_RETURN_VAL_IF_FAIL (a && b, NULL);
 	RDiffChar *diffchar = R_NEW0 (RDiffChar);
@@ -476,26 +475,23 @@ R_API RDiffChar *r_diffchar_new(const ut8 *a, const ut8 *b) {
 	const st16 gap = -1;
 	for (row = 1; row < dim; row++) {
 		for (col = 1; col < dim; col++) {
-			// TODO Clamping [ST16_MIN + 1, ST16_MAX]
+			/* Compute scores in a wider integer type, then clamp into st16
+			 * before storing. This avoids overflow/underflow during the
+			 * intermediate calculations. */
 			const ut8 a_ch = a[col - 1];
 			const ut8 b_ch = b[row - 1];
-			const st16 tl_score = *(align_table + (row - 1) * dim + col - 1)
-				+ (a_ch == b_ch
-					? (a_ch == '\n'
-						? match_nl
-						: match)
-					: mismatch);
-			const st16 t_score = *(align_table + (row - 1) * dim + col) + gap;
-			const st16 l_score = *(align_table + row * dim + col - 1) + gap;
-			st16 score;
-			if (tl_score >= t_score && tl_score >= l_score) {
-				score = tl_score;
-			} else if (t_score >= tl_score && t_score >= l_score) {
-				score = t_score;
+			st32 tl_score32 = (st32) * (align_table + (row - 1) * dim + col - 1) + (a_ch == b_ch ? (a_ch == '\n' ? match_nl : match) : mismatch);
+			st32 t_score32 = (st32) * (align_table + (row - 1) * dim + col) + gap;
+			st32 l_score32 = (st32) * (align_table + row * dim + col - 1) + gap;
+			st32 score32;
+			if (tl_score32 >= t_score32 && tl_score32 >= l_score32) {
+				score32 = tl_score32;
+			} else if (t_score32 >= tl_score32 && t_score32 >= l_score32) {
+				score32 = t_score32;
 			} else {
-				score = l_score;
+				score32 = l_score32;
 			}
-			*(align_table + row * dim + col) = score;
+			*(align_table + row * dim + col) = clamp_st16(score32);
 		}
 	}
 
@@ -537,15 +533,9 @@ R_API RDiffChar *r_diffchar_new(const ut8 *a, const ut8 *b) {
 	size_t pos_row = dim - 1;
 	size_t pos_col = dim - 1;
 	while (pos_row || pos_col) {
-		const st16 tl_score = (pos_row > 0 && pos_col > 0) ?
-				*(align_table + (pos_row - 1) * dim + pos_col - 1) :
-				ST16_MIN;
-		const st16 t_score = pos_row > 0 ?
-				*(align_table + (pos_row - 1) * dim + pos_col) :
-				ST16_MIN;
-		const st16 l_score = pos_col > 0 ?
-				*(align_table + pos_row * dim + pos_col - 1) :
-				ST16_MIN;
+		const st16 tl_score = (pos_row > 0 && pos_col > 0) ? *(align_table + (pos_row - 1) * dim + pos_col - 1) : ST16_MIN;
+		const st16 t_score = pos_row > 0 ? *(align_table + (pos_row - 1) * dim + pos_col) : ST16_MIN;
+		const st16 l_score = pos_col > 0 ? *(align_table + pos_row * dim + pos_col - 1) : ST16_MIN;
 		const bool match = a[idx_a] == b[idx_b];
 		if (t_score >= l_score && (!match || t_score >= tl_score)) {
 			align_a[idx_align] = 0;
@@ -611,11 +601,16 @@ R_API RDiffChar *r_diffchar_new(const ut8 *a, const ut8 *b) {
 }
 
 typedef enum {
-	R2R_ALIGN_MATCH, R2R_ALIGN_MISMATCH, R2R_ALIGN_TOP_GAP, R2R_ALIGN_BOTTOM_GAP
+	R2R_ALIGN_MATCH,
+	R2R_ALIGN_MISMATCH,
+	R2R_ALIGN_TOP_GAP,
+	R2R_ALIGN_BOTTOM_GAP
 } R2RCharAlignment;
 
 typedef enum {
-	R2R_DIFF_MATCH, R2R_DIFF_DELETE, R2R_DIFF_INSERT
+	R2R_DIFF_MATCH,
+	R2R_DIFF_DELETE,
+	R2R_DIFF_INSERT
 } R2RPrintDiffMode;
 
 R_API void r_diffchar_print(RDiffChar *diffchar) {
