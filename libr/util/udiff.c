@@ -198,7 +198,7 @@ static int tostring(RDiff *d, void *user, RDiffOp *op) {
 	}
 	if (op->b_len > 0) {
 		char *b_str = r_str_ndup ((const char *)op->b_buf + op->b_off, op->b_len);
-		u->str = r_str_appendf (u->str, "+ (%s)", b_str);
+		u->str = r_str_appendf (u->str, "+(%s)", b_str);
 #if 0
 		char *bufasm = r_str_prefix_all (b_str, "+ ");
 		u->str = r_str_appendf (u->str, "+ (%s)", bufasm);
