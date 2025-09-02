@@ -230,16 +230,16 @@ R_API char *r_diff_buffers_tostring(RDiff *d, const ut8 *a, int la, const ut8 *b
 }
 #endif
 
-#define diffHit () \
-	{ \
-		const size_t i_hit = i - hit; \
-		int ra = la - i_hit; \
-		int rb = lb - i_hit; \
-		struct r_diff_op_t o = { \
-			.a_off = d->off_a + i - hit, .a_buf = a + i - hit, .a_len = R_MIN (hit, ra), .b_off = d->off_b + i - hit, .b_buf = b + i - hit, .b_len = R_MIN (hit, rb) \
-		}; \
-		d->callback (d, d->user, &o); \
-	}
+#define diffHit() \
+		{ \
+			const size_t i_hit = i - hit; \
+			int ra = la - i_hit; \
+			int rb = lb - i_hit; \
+			struct r_diff_op_t o = { \
+				.a_off = d->off_a + i - hit, .a_buf = a + i - hit, .a_len = R_MIN (hit, ra), .b_off = d->off_b + i - hit, .b_buf = b + i - hit, .b_len = R_MIN (hit, rb) \
+			}; \
+			d->callback (d, d->user, &o); \
+		}
 
 R_API int r_diff_buffers_static(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
 	int i, len;
