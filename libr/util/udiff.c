@@ -299,7 +299,7 @@ R_API char *r_diff_buffers_unified(RDiff *d, const ut8 *a, int la, const ut8 *b,
 	int out_len;
 	char *diff_cmdline = r_str_newf ("%s %s %s", d->diff_cmd, fa, fb);
 	if (diff_cmdline) {
- (void)r_sys_cmd_str_full (diff_cmdline, NULL, 0, &out, &out_len, &err);
+		(void)r_sys_cmd_str_full (diff_cmdline, NULL, 0, &out, &out_len, &err);
 		free (diff_cmdline);
 	}
 	close (fd);
