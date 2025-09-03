@@ -121,7 +121,7 @@ static RList *entries(RBinFile *bf) {
 static RList *sections(RBinFile *bf) {
 	RList *ret = r_list_newf (free);
 	SblHeader *sbl = sbl_from_bf (bf);
-	SblHeader h_local;
+	SblHeader h_local = (SblHeader){0};
 	SblHeader *h = sbl;
 	if (!h) {
 		int rc = r_buf_fread_at (bf->buf, 0, (ut8 *)&h_local, "10i", 1);

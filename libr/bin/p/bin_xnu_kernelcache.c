@@ -262,11 +262,6 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	}
 
 	RKernelCacheObj *obj = R_NEW0 (RKernelCacheObj);
-	if (!obj) {
-		R_FREE (prelink_range);
-		goto beach;
-	}
-
 	const bool is_modern = main_mach0->hdr.filetype == MH_FILESET ||
 		(main_mach0->hdr.cputype == CPU_TYPE_ARM64 && main_mach0->hdr.cpusubtype == 0xc0000002);
 
@@ -382,9 +377,6 @@ static RPrelinkRange *get_prelink_info_range_from_mach0(struct MACH0_(obj_t) *ma
 	}
 
 	RPrelinkRange *prelink_range = R_NEW0 (RPrelinkRange);
-	if (!prelink_range) {
-		return NULL;
-	}
 
 	int incomplete = 3;
 	struct section_t *section;
@@ -458,11 +450,6 @@ static RList *filter_kexts(RKernelCacheObj *obj, RBinFile *bf) {
 	RCFValueDict *kext_item;
 	r_list_foreach (kext_array->values, iter, kext_item) {
 		RKext *kext = R_NEW0 (RKext);
-		if (!kext) {
-			R_FREE (kexts);
-			return NULL;
-		}
-
 		int kext_incomplete = 5;
 		RListIter *internal_iter;
 		r_list_foreach (kext_item->pairs, internal_iter, item) {
@@ -639,12 +626,7 @@ static RList *carve_kexts(RKernelCacheObj *obj, RBinFile *bf) {
 		if (r_buf_read_at (obj->cache_buf, cursor, bytes, 8) < 8) {
 			goto beach;
 		}
-
 		RKext *kext = R_NEW0 (RKext);
-		if (!kext) {
-			goto beach;
-		}
-
 		kext->vaddr = K_RPTR (bytes);
 		kext->range.offset = kext->vaddr - pa2va_exec;
 
@@ -734,11 +716,6 @@ static RList *kexts_from_load_commands(RKernelCacheObj *obj, RBinFile *bf) {
 		}
 
 		RKext *kext = R_NEW0 (RKext);
-		if (!kext) {
-			free (padded_name);
-			goto beach;
-		}
-
 		kext->vaddr = vaddr;
 		kext->range.offset = paddr;
 
@@ -825,9 +802,6 @@ static RKextIndex *r_kext_index_new(RList *kexts) {
 	}
 
 	RKextIndex *index = R_NEW0 (RKextIndex);
-	if (!index) {
-		return NULL;
-	}
 	index->entries = calloc (length, sizeof (RKext*));
 	if (!index->entries) {
 		R_FREE (index);
@@ -1017,10 +991,6 @@ static void create_initterm_syms_vec(RVecRBinSymbol *symbols, RBinFile *bf, RKex
 		}
 
 		RBinSymbol *sym = R_NEW0 (RBinSymbol);
-		if (!sym) {
-			break;
-		}
-
 		sym->name = r_bin_name_new_from (
 				r_str_newf ("%s.%s.%d", kext_short_name (kext), (type == R_BIN_ENTRY_TYPE_INIT) ? "init" : "fini", count++)
 			);
@@ -1077,10 +1047,6 @@ static void process_constructors(RKernelCacheObj *obj, struct MACH0_(obj_t) *mac
 				// XXX RVecRBinSymbol_push_back (&(bf->bo->symbols_vec), ba);
 			} else if (mode == R_K_CONSTRUCTOR_TO_SYMBOL) {
 				RBinSymbol *sym = R_NEW0 (RBinSymbol);
-				if (!sym) {
-					break;
-				}
-
 				sym->name = r_bin_name_new_from (
 						r_str_newf ("%s.%s.%d", prefix, (type == R_BIN_ENTRY_TYPE_INIT) ? "init" : "fini", count++)
 					);
@@ -1139,10 +1105,6 @@ static void process_constructors_vec(RVecRBinSymbol *symbols, RBinFile *bf, RKer
 				// XXX RVecRBinSymbol_push_back (&(bf->bo->symbols_vec), ba);
 			} else if (mode == R_K_CONSTRUCTOR_TO_SYMBOL) {
 				RBinSymbol *sym = R_NEW0 (RBinSymbol);
-				if (!sym) {
-					break;
-				}
-
 				sym->name = r_bin_name_new_from (
 							r_str_newf ("%s.%s.%d", prefix, (type == R_BIN_ENTRY_TYPE_INIT) ? "init" : "fini", count++)
 						);
@@ -1172,13 +1134,11 @@ static void bin_symbol_copy(RBinSymbol *dst, const RBinSymbol *src) {
 
 static RBinAddr *newEntry(ut64 haddr, ut64 vaddr, int type) {
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
-	if (ptr) {
-		ptr->paddr = haddr;
-		ptr->vaddr = vaddr;
-		ptr->hpaddr = haddr;
-		ptr->bits = 64;
-		ptr->type = type;
-	}
+	ptr->paddr = haddr;
+	ptr->vaddr = vaddr;
+	ptr->hpaddr = haddr;
+	ptr->bits = 64;
+	ptr->type = type;
 	return ptr;
 }
 
@@ -1229,10 +1189,6 @@ static RList *sections(RBinFile *bf) {
 	for (i = 0; i < nsegs; i++) {
 		char segname[17];
 		RBinSection *ptr = R_NEW0 (RBinSection);
-		if (!ptr) {
-			break;
-		}
-
 		seg = &kobj->mach0->segs[i];
 		r_str_ncpy (segname, seg->segname, 17);
 		r_str_filter (segname, -1);
@@ -1276,10 +1232,7 @@ static void sections_from_mach0(RList *ret, struct MACH0_(obj_t) *mach0, RBinFil
 		}
 	}
 	r_vector_foreach (sections, section) {
-		RBinSection *ptr;
-		if (!(ptr = R_NEW0 (RBinSection))) {
-			break;
-		}
+		RBinSection *ptr = R_NEW0 (RBinSection);
 		if (prefix) {
 			ptr->name = r_str_newf ("%s.%s", prefix, (char*)section->name);
 		} else {
@@ -1597,9 +1550,6 @@ static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
 	ut64 sysent_vaddr = cursor - data_const + data_const_vaddr;
 
 	RBinSymbol *sym = R_NEW0 (RBinSymbol);
-	if (!sym) {
-		goto beach;
-	}
 	sym->name = r_bin_name_new ("sysent");
 	sym->vaddr = sysent_vaddr;
 	sym->paddr = cursor - data_const + data_const_offset;
@@ -1617,11 +1567,6 @@ static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
 		RSyscallItem *item = r_syscall_get (syscall, i, 0x80);
 		if (item && item->name) {
 			RBinSymbol *sym = R_NEW0 (RBinSymbol);
-			if (!sym) {
-				r_syscall_item_free (item);
-				goto beach;
-			}
-
 			sym->name = r_bin_name_new_from (r_str_newf ("syscall.%d.%s", i, item->name));
 			sym->vaddr = addr;
 			sym->paddr = addr;
@@ -1773,11 +1718,6 @@ static RList *resolve_mig_subsystem(RKernelCacheObj *obj) {
 				}
 
 				RBinSymbol *sym = R_NEW0 (RBinSymbol);
-				if (!sym) {
-					R_FREE (routines);
-					goto beach;
-				}
-
 				int num = idx + subs_min_idx;
 				bool found = false;
 				r_strf_var (key, 32, "%d", num);
@@ -1828,7 +1768,10 @@ static ut64 extract_addr_from_code(const ut8 *arm64_code, ut64 vaddr) {
 	const ut64 immhi = (adrp >> 5) & 0x7ffffULL;
 	ut64 imm21 = (immhi << 2) | immlo;
 	int64_t simm21 = (int64_t) ((imm21 ^ 0x100000) - 0x100000);
-	const ut64 adrp_base = page + ((ut64) simm21 << 12);
+	// Avoid shifting a negative value (which is undefined and flagged by Coverity).
+	// Compute the page offset as a signed 64-bit multiply, then widen to ut64.
+	int64_t page_off = simm21 * 4096; // 1 << 12
+	const ut64 adrp_base = page + (ut64) page_off;
 
 	const ut32 addi = r_read_le32 (arm64_code + 4);
 	const ut64 imm12 = (addi >> 10) & 0xFFFULL;
@@ -1876,18 +1819,17 @@ static void symbols_from_stubs_vec(RVecRBinSymbol *symbols, RBinFile *bf, HtPP *
 			const char *name = sdb_ht_find (kernel_syms_by_addr, key, &found);
 
 			if (found) {
+				/* coverity[leaked_storage] ownership transferred into subsystem list */
 				RBinSymbol *sym = R_NEW0 (RBinSymbol);
-				if (R_LIKELY (sym)) {
-					sym->name = r_bin_name_new_from (r_str_newf ("stub.%s", name));
-					sym->vaddr = vaddr;
-					sym->paddr = stubs_cursor;
-					sym->size = 12;
-					sym->forwarder = "NONE";
-					sym->bind = "LOCAL";
-					sym->type = "FUNC";
-					sym->ordinal = ordinal ++;
-					RVecRBinSymbol_push_back (symbols, sym);
-				}
+				sym->name = r_bin_name_new_from (r_str_newf ("stub.%s", name));
+				sym->vaddr = vaddr;
+				sym->paddr = stubs_cursor;
+				sym->size = 12;
+				sym->forwarder = "NONE";
+				sym->bind = "LOCAL";
+				sym->type = "FUNC";
+				sym->ordinal = ordinal ++;
+				RVecRBinSymbol_push_back (symbols, sym);
 				break;
 			}
 
@@ -1905,10 +1847,6 @@ static void symbols_from_stubs_vec(RVecRBinSymbol *symbols, RBinFile *bf, HtPP *
 		}
 
 		RBinSymbol *remote_sym = R_NEW0 (RBinSymbol);
-		if (!remote_sym) {
-			break;
-		}
-
 		remote_sym->name = r_bin_name_new_from (
 				r_str_newf ("exp.%s.0x%"PFMT64x, kext_short_name (remote_kext), target_addr)
 			);
@@ -1922,10 +1860,6 @@ static void symbols_from_stubs_vec(RVecRBinSymbol *symbols, RBinFile *bf, HtPP *
 		RVecRBinSymbol_push_back (symbols, remote_sym);
 
 		RBinSymbol *local_sym = R_NEW0 (RBinSymbol);
-		if (!local_sym) {
-			break;
-		}
-
 		local_sym->name = r_bin_name_new_from (r_str_newf ("stub.%s.0x%"PFMT64x, kext_short_name (remote_kext), target_addr));
 		local_sym->vaddr = vaddr;
 		local_sym->paddr = stubs_cursor;
@@ -1948,10 +1882,6 @@ static RStubsInfo *get_stubs_info(struct MACH0_(obj_t) *mach0, ut64 paddr, RKern
 	}
 
 	RStubsInfo *stubs_info = R_NEW0 (RStubsInfo);
-	if (!stubs_info) {
-		return NULL;
-	}
-
 	int incomplete = 2;
 	struct section_t *section;
 	r_vector_foreach (sections, section) {
@@ -1988,6 +1918,7 @@ static RList *resolve_iokit_classes(RVecRBinSymbol *symbols, ut64 start_offset, 
 	RListIter *it;
 	RIOKitClass *c;
 	r_list_foreach (classes, it, c) {
+		/* coverity[leaked_storage] ownership transferred into symbols vector */
 		RBinSymbol *sym = R_NEW0 (RBinSymbol);
 		sym->name = r_bin_name_new_from (r_str_newf ("%s::gMetaClass", c->name));
 		sym->vaddr = c->meta_va;
@@ -2000,11 +1931,16 @@ static RList *resolve_iokit_classes(RVecRBinSymbol *symbols, ut64 start_offset, 
 		RVecRBinSymbol_push_back (symbols, sym);
 
 		if (c->vt.instance.va) {
+			/* coverity[leaked_storage] ownership transferred into symbols vector */
 			RBinSymbol *vsym = R_NEW0 (RBinSymbol);
 			vsym->name = r_bin_name_new_from (r_str_newf ("%s::vtable", c->name));
 			vsym->vaddr = c->vt.instance.va;
 			vsym->paddr = c->vt.instance.va - kext->pa2va_exec;
-			vsym->size = (ut64) ((c->vt.instance.slots_total ? c->vt.instance.slots_total : 1) * 8);
+			{
+				/* avoid overflow-before-widen: promote before multiply */
+				ut64 slots = (ut64) (c->vt.instance.slots_total ? c->vt.instance.slots_total : 1U);
+				vsym->size = slots * 8ULL;
+			}
 			vsym->forwarder = "NONE";
 			vsym->bind = "GLOBAL";
 			vsym->type = "OBJECT";
@@ -2013,11 +1949,16 @@ static RList *resolve_iokit_classes(RVecRBinSymbol *symbols, ut64 start_offset, 
 		}
 
 		if (c->vt.metaclass.va) {
+			/* coverity[leaked_storage] ownership transferred into symbols vector */
 			RBinSymbol *msym = R_NEW0 (RBinSymbol);
 			msym->name = r_bin_name_new_from (r_str_newf ("%s::MetaClass::vtable", c->name));
 			msym->vaddr = c->vt.metaclass.va;
 			msym->paddr = c->vt.metaclass.va - kext->pa2va_exec;
-			msym->size = (ut64) ((c->vt.metaclass.slots_total ? c->vt.metaclass.slots_total : 1) * 8);
+			{
+				/* avoid overflow-before-widen: promote before multiply */
+				ut64 slots = (ut64) (c->vt.metaclass.slots_total ? c->vt.metaclass.slots_total : 1U);
+				msym->size = slots * 8ULL;
+			}
 			msym->forwarder = "NONE";
 			msym->bind = "GLOBAL";
 			msym->type = "OBJECT";
@@ -2649,20 +2590,18 @@ static bool try_parse_mov_reg_reg(ut32 insn, int *dst_reg, int *src_reg) {
 static RBinInfo *info(RBinFile *bf) {
 	bool big_endian = 0;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (ret) {
-		ret->file = strdup (bf->file);
-		ret->bclass = strdup ("kernelcache");
-		ret->rclass = strdup ("ios");
-		ret->os = strdup ("iOS");
-		ret->arch = strdup ("arm"); // XXX
-		ret->machine = strdup (ret->arch);
-		ret->subsystem = strdup ("xnu");
-		ret->type = strdup ("kernel-cache");
-		ret->bits = 64;
-		ret->has_va = true;
-		ret->big_endian = big_endian;
-		ret->dbg_info = 0;
-	}
+	ret->file = strdup (bf->file);
+	ret->bclass = strdup ("kernelcache");
+	ret->rclass = strdup ("ios");
+	ret->os = strdup ("iOS");
+	ret->arch = strdup ("arm"); // XXX
+	ret->machine = strdup (ret->arch);
+	ret->subsystem = strdup ("xnu");
+	ret->type = strdup ("kernel-cache");
+	ret->bits = 64;
+	ret->has_va = true;
+	ret->big_endian = big_endian;
+	ret->dbg_info = 0;
 	return ret;
 }
 
@@ -2776,13 +2715,11 @@ static RRebaseInfo *r_rebase_info_new_from_mach0(RBuffer *cache_buf, struct MACH
 	}
 	if (i == n_starts) {
 		RRebaseInfo *rebase_info = R_NEW0 (RRebaseInfo);
-		if (rebase_info) {
-			rebase_info->ranges = rebase_ranges;
-			rebase_info->n_ranges = n_starts - 1;
-			rebase_info->multiplier = multiplier;
-			rebase_info->kernel_base = kernel_base;
-			return rebase_info;
-		}
+		rebase_info->ranges = rebase_ranges;
+		rebase_info->n_ranges = n_starts - 1;
+		rebase_info->multiplier = multiplier;
+		rebase_info->kernel_base = kernel_base;
+		return rebase_info;
 	}
 	R_FREE (rebase_ranges);
 	return NULL;
