@@ -10,7 +10,12 @@ for a in `IFS=+ echo ${CPU}` ; do
 done
 [ -z "${SDK}" ] && SDK=iphoneos
 APPLE_SDK=`echo ${SDK} |tr a-z A-Z`
-CC="xcrun --sdk ${SDK} clang ${CPUS} -fembed-bitcode -DAPPLE_SDK_${APPLE_SDK}=1 -I${IOSINC} -miphoneos-version-min=10.0"
+# Respect EMBED_BITCODE; default off
+BITCODE_FLAG=""
+if [ "${EMBED_BITCODE}" = "1" ]; then
+    BITCODE_FLAG="-fembed-bitcode"
+fi
+CC="xcrun --sdk ${SDK} clang ${CPUS} ${BITCODE_FLAG} -DAPPLE_SDK_${APPLE_SDK}=1 -I${IOSINC} -miphoneos-version-min=10.0"
 echo $CC $*
 ${CC} $*
 r=$?

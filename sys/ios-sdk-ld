@@ -10,7 +10,12 @@ for a in `IFS=+ echo ${CPU}` ; do
 done
 [ -z "${SDK}" ] && SDK=iphoneos
 APPLE_SDK=`echo ${SDK} | tr a-z A-Z`
-LD="xcrun --sdk ${SDK} ld ${CPUS} -bitcode_bundle"
+# Respect EMBED_BITCODE; default off
+BITCODE_BUNDLE=""
+if [ "${EMBED_BITCODE}" = "1" ]; then
+    BITCODE_BUNDLE="-bitcode_bundle"
+fi
+LD="xcrun --sdk ${SDK} ld ${CPUS} ${BITCODE_BUNDLE}"
 if [ "$SDK" = "iphoneos" ]; then
 	LD="$LD -ios_version_min 10.0"
 else
