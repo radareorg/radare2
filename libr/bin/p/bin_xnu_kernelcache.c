@@ -2955,6 +2955,9 @@ static void rebase_buffer_fixup(RKernelCacheObj *kobj, ut64 off, RIODesc *fd, ut
 			continue;
 		}
 		ut64 page_size = obj->chained_starts[i]->page_size;
+		if (page_size < 1) {
+			page_size = 4096;
+		}
 		ut64 start = obj->segs[i].fileoff;
 		ut64 end = start + obj->segs[i].filesize;
 		if (end >= off && start <= eob) {
