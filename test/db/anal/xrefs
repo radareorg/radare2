@@ -1,0 +1,49 @@
+NAME=axt creates
+FILE=bins/mach0/hello-aae
+BROKEN=1
+CMDS=<<EOF
+aae
+pdi 16
+axt str.Hello__World__n
+pdi 16
+EOF
+EXPECT=<<EOF
+0x100000460   sym.func.100000460:
+0x100000460             ff8300d1  sub sp, sp, 0x20
+0x100000464             fd7b01a9  stp x29, x30, [sp, 0x10]
+0x100000468             fd430091  add x29, sp, 0x10
+0x10000046c             08008052  mov w8, 0
+0x100000470             e80b00b9  str w8, [sp, 8]
+0x100000474             bfc31fb8  stur wzr, [x29, -4]
+0x100000478             00000090  adrp x0, sym.__mh_execute_header
+0x10000047c             00801291  add x0, x0, 0x4a0
+0x100000480             05000094  bl sym.imp.printf
+0x100000484             e00b40b9  ldr w0, [sp, 8]
+0x100000488             fd7b41a9  ldp x29, x30, [sp, 0x10]
+0x10000048c             ff830091  add sp, sp, 0x20
+0x100000490             c0035fd6  ret
+0x100000494   sym.imp.printf:
+0x100000494             30000090  adrp x16, reloc.printf
+0x100000498             100240f9  ldr x16, [x16]
+0x10000049c             00021fd6  br x16
+(nofunc) 0x10000047c [STRN:r--] add x0, x0, str.Hello__World__n
+0x100000460   sym.func.100000460:
+0x100000460             ff8300d1  sub sp, sp, 0x20
+0x100000464             fd7b01a9  stp x29, x30, [sp, 0x10]
+0x100000468             fd430091  add x29, sp, 0x10
+0x10000046c             08008052  mov w8, 0
+0x100000470             e80b00b9  str w8, [sp, 8]
+0x100000474             bfc31fb8  stur wzr, [x29, -4]
+0x100000478             00000090  adrp x0, sym.__mh_execute_header
+0x10000047c             00801291  add x0, x0, str.Hello__World__n
+0x100000480             05000094  bl sym.imp.printf
+0x100000484             e00b40b9  ldr w0, [sp, 8]
+0x100000488             fd7b41a9  ldp x29, x30, [sp, 0x10]
+0x10000048c             ff830091  add sp, sp, 0x20
+0x100000490             c0035fd6  ret
+0x100000494   sym.imp.printf:
+0x100000494             30000090  adrp x16, str.Hello__World__n
+0x100000498             100240f9  ldr x16, [x16]
+0x10000049c             00021fd6  br x16
+EOF
+RUN
