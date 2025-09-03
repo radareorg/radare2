@@ -10705,8 +10705,9 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 	core->rasm->parse->pseudo = r_config_get_b (core->config, "asm.pseudo");
 	core->rasm->parse->subrel = r_config_get_i (core->config, "asm.sub.rel");
 	core->rasm->parse->localvar_only = r_config_get_b (core->config, "asm.sub.varonly");
-
+	ut64 osubreladdr = UT64_MAX;
 	if (core->rasm->parse->subrel) {
+		osubreladdr = core->rasm->parse->subrel_addr;
 		core->rasm->parse->subrel_addr = from;
 	}
 	r_io_read_at (core->io, addr, buf, size);
@@ -10740,6 +10741,9 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 		buf_asm = strdup (asmop.mnemonic);
 	}
 	r_asm_op_fini (&asmop);
+	if (osubreladdr != UT64_MAX) {
+		core->rasm->parse->subrel_addr = osubreladdr;
+	}
 	return buf_asm;
 }
 
@@ -11157,10 +11161,9 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					i++;
 				}
 			} else if (input[1] == ' ' || input[1] == 0 || input[1] == '.') { // "axt"
-				RAnalFunction *fcn;
 				RAnalRef *ref;
 				R_VEC_FOREACH (list, ref) {
-					fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
+					RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
 					char *buf_asm = get_buf_asm (core, addr, ref->addr, fcn, true);
 					const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ref->addr);
 					char *print_comment = NULL;
@@ -14322,7 +14325,6 @@ static void cmd_aaa(RCore *core, const char *input) {
 		r_core_cmd0 (core, "afva@@@F");
 	}
 #endif
-
 	// Run pending analysis immediately after analysis
 	// Usefull when running commands with ";" or via r2 -c,-i
 	dh_orig = (core->dbg->current && core->dbg->current->plugin)
