@@ -12,7 +12,7 @@
 
 #include "../../../shlr/qjs/js_require.c"
 #include "../../../shlr/qjs/js_r2papi.c"
-#define QJS_STRING(x) JS_NewString(ctx, x)
+#define QJS_STRING(x) JS_NewString (ctx, x)
 
 typedef struct {
 	R_BORROW JSContext *ctx;
@@ -69,10 +69,10 @@ static void arch_plugin_fini(QjsArchPlugin *ap) {
 	free (ap->arch);
 }
 
-R_VEC_TYPE_WITH_FINI (RVecAsmPlugin, QjsAsmPlugin, parse_plugin_fini);
-R_VEC_TYPE_WITH_FINI (RVecCorePlugin, QjsCorePlugin, core_plugin_fini);
-R_VEC_TYPE_WITH_FINI (RVecArchPlugin, QjsArchPlugin, arch_plugin_fini);
-R_VEC_TYPE (RVecIoPlugin, QjsIoPlugin); // R2_590 add finalizer function
+R_VEC_TYPE_WITH_FINI(RVecAsmPlugin, QjsAsmPlugin, parse_plugin_fini);
+R_VEC_TYPE_WITH_FINI(RVecCorePlugin, QjsCorePlugin, core_plugin_fini);
+R_VEC_TYPE_WITH_FINI(RVecArchPlugin, QjsArchPlugin, arch_plugin_fini);
+R_VEC_TYPE(RVecIoPlugin, QjsIoPlugin); // R2_590 add finalizer function
 
 typedef struct qjs_plugin_manager_t {
 	ut32 magic;
@@ -98,10 +98,9 @@ static bool plugin_manager_init(QjsPluginManager *pm, RCore *core, JSRuntime *rt
 
 static void plugin_manager_add_core_plugin(QjsPluginManager *pm, const char *name, JSContext *ctx, JSValue func) {
 	R_RETURN_IF_FAIL (pm);
-
 	QjsCorePlugin *cp = RVecCorePlugin_emplace_back (&pm->core_plugins);
 	if (cp) {
-		cp->name = name? strdup (name): NULL;
+		cp->name = name ? strdup (name) : NULL;
 		cp->qctx.ctx = ctx;
 		cp->qctx.call_func = func;
 	}
@@ -112,7 +111,7 @@ static QjsIoPlugin *plugin_manager_add_io_plugin(QjsPluginManager *pm, const cha
 
 	QjsIoPlugin *cp = RVecIoPlugin_emplace_back (&pm->io_plugins);
 	if (cp) {
-		cp->name = name? strdup (name): NULL;
+		cp->name = name ? strdup (name) : NULL;
 		cp->ctx = ctx;
 		cp->iop = iop;
 		cp->fn_check_js = func;
@@ -127,7 +126,7 @@ static QjsAsmPlugin *plugin_manager_add_parse_plugin(QjsPluginManager *pm, const
 
 	QjsAsmPlugin *cp = RVecAsmPlugin_emplace_back (&pm->asm_plugins);
 	if (cp) {
-		cp->name = name? strdup (name): NULL;
+		cp->name = name ? strdup (name) : NULL;
 		cp->ctx = ctx;
 		cp->iop = iop;
 		cp->fn_parse_js = func;
@@ -153,25 +152,25 @@ static inline int compare_io_plugin_name(const QjsIoPlugin *cp, const void *data
 static QjsAsmPlugin *plugin_manager_find_parse_plugin(const QjsPluginManager *pm, const char *name) {
 	R_RETURN_VAL_IF_FAIL (pm, NULL);
 
-	return RVecAsmPlugin_find (&pm->asm_plugins, (void*) name, compare_parse_plugin_name);
+	return RVecAsmPlugin_find (&pm->asm_plugins, (void *)name, compare_parse_plugin_name);
 }
 
 static QjsCorePlugin *plugin_manager_find_core_plugin(const QjsPluginManager *pm, const char *name) {
 	R_RETURN_VAL_IF_FAIL (pm, NULL);
 
-	return RVecCorePlugin_find (&pm->core_plugins, (void*) name, compare_core_plugin_name);
+	return RVecCorePlugin_find (&pm->core_plugins, (void *)name, compare_core_plugin_name);
 }
 
 static QjsIoPlugin *plugin_manager_find_io_plugin(const QjsPluginManager *pm, const char *name) {
 	R_RETURN_VAL_IF_FAIL (pm, NULL);
 
-	return RVecIoPlugin_find (&pm->io_plugins, (void*) name, compare_io_plugin_name);
+	return RVecIoPlugin_find (&pm->io_plugins, (void *)name, compare_io_plugin_name);
 }
 
 static bool plugin_manager_remove_parse_plugin(QjsPluginManager *pm, const char *name) {
 	R_RETURN_VAL_IF_FAIL (pm, false);
 
-	ut64 index = RVecAsmPlugin_find_index (&pm->asm_plugins, (void*) name, compare_parse_plugin_name);
+	ut64 index = RVecAsmPlugin_find_index (&pm->asm_plugins, (void *)name, compare_parse_plugin_name);
 	if (index != UT64_MAX) {
 		pm->core->lang->cmdf (pm->core, "Lp-%s", name);
 		RVecAsmPlugin_remove (&pm->asm_plugins, index);
@@ -184,10 +183,10 @@ static bool plugin_manager_remove_parse_plugin(QjsPluginManager *pm, const char 
 static bool plugin_manager_remove_core_plugin(QjsPluginManager *pm, const char *name) {
 	R_RETURN_VAL_IF_FAIL (pm, false);
 
-	ut64 index = RVecCorePlugin_find_index (&pm->core_plugins, (void*) name, compare_core_plugin_name);
+	ut64 index = RVecCorePlugin_find_index (&pm->core_plugins, (void *)name, compare_core_plugin_name);
 	if (index != UT64_MAX) {
 		pm->core->lang->cmdf (pm->core, "L-%s", name);
-		//JS_FreeValue(pm->default_ctx.ctx, pm->default_ctx.call_func);
+		// JS_FreeValue (pm->default_ctx.ctx, pm->default_ctx.call_func);
 		RVecCorePlugin_remove (&pm->core_plugins, index);
 		return true;
 	}
@@ -216,13 +215,13 @@ static inline int compare_arch_plugin_arch(const QjsArchPlugin *ap, const void *
 
 static QjsArchPlugin *plugin_manager_find_arch_plugin(const QjsPluginManager *pm, const char *arch) {
 	R_RETURN_VAL_IF_FAIL (pm, NULL);
-	return RVecArchPlugin_find (&pm->arch_plugins, (void*) arch, compare_arch_plugin_arch);
+	return RVecArchPlugin_find (&pm->arch_plugins, (void *)arch, compare_arch_plugin_arch);
 }
 
 static bool plugin_manager_remove_arch_plugin(QjsPluginManager *pm, const char *arch) {
 	R_RETURN_VAL_IF_FAIL (pm, false);
 
-	ut64 index = RVecArchPlugin_find_index (&pm->arch_plugins, (void*) arch, compare_arch_plugin_arch);
+	ut64 index = RVecArchPlugin_find_index (&pm->arch_plugins, (void *)arch, compare_arch_plugin_arch);
 	if (index != UT64_MAX) {
 		QjsArchPlugin *ap = RVecArchPlugin_at (&pm->arch_plugins, index);
 		pm->core->lang->cmdf (pm->core, "L-%s", ap->name);
@@ -250,7 +249,7 @@ static bool plugin_manager_remove_plugin(QjsPluginManager *pm, const char *type,
 
 	// TODO extend for bin / io / ... plugins
 	// invalid throw exception here
-	// return JS_ThrowRangeError(ctx, "invalid r2plugin type");
+	// return JS_ThrowRangeError (ctx, "invalid r2plugin type");
 	return false;
 }
 
@@ -323,6 +322,7 @@ static JSValue r2log(JSContext *ctx, JSValueConst this_val, int argc, JSValueCon
 	size_t plen;
 	const char *n = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
 	r_cons_printf (pm->core->cons, "%s\n", n);
+	JS_FreeCString (ctx, n);
 	return JS_NewBool (ctx, true);
 }
 
@@ -349,7 +349,7 @@ static JSValue b64(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst
 				ret = r_str_ndup ((const char *)bret, res);
 				free (bret);
 			} else {
-				ret = sdb_encode ((const ut8*)n, -1);
+				ret = sdb_encode ((const ut8 *)n, -1);
 			}
 		}
 	}
@@ -401,14 +401,16 @@ static JSValue r2fdump(JSContext *ctx, JSValueConst this_val, int argc, JSValueC
 	if (argc == 2) {
 		const char *a0 = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
 		const char *a1 = JS_ToCStringLen2 (ctx, &plen, argv[1], false);
-		if (r_file_dump (a1, (const ut8*)a0, strlen (a0), false)) {
+		JS_FreeCString (ctx, a0);
+		JS_FreeCString (ctx, a1);
+		if (r_file_dump (a1, (const ut8 *)a0, strlen (a0), false)) {
 			return JS_NewBool (ctx, true);
 		}
 	} else if (argc == 1) {
 		char *tmpfile = r_file_temp (NULL);
 		if (tmpfile) {
 			const char *a0 = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
-			if (r_file_dump (tmpfile, (const ut8*)a0, strlen (a0), false)) {
+			if (r_file_dump (tmpfile, (const ut8 *)a0, strlen (a0), false)) {
 				JSValue v = JS_NewString (ctx, tmpfile);
 				free (tmpfile);
 				return v;
@@ -517,7 +519,6 @@ static JSValue r2callAt(JSContext *ctx, JSValueConst this_val, int argc, JSValue
 	return JS_NewString (ctx, r_str_get (ret));
 }
 
-
 static JSValue js_write(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
 	int i;
 	const char *str;
@@ -590,20 +591,20 @@ static JSValue js_os_read_write(JSContext *ctx, JSValueConst this_val, int argc,
 }
 
 static const JSCFunctionListEntry js_os_funcs[] = {
-	JS_CFUNC_MAGIC_DEF ("read", 4, js_os_read_write, 0 ),
-	JS_CFUNC_MAGIC_DEF ("write", 4, js_os_read_write, 1 ),
-	JS_CFUNC_MAGIC_DEF ("pending", 4, js_os_pending, 0 ),
+	JS_CFUNC_MAGIC_DEF ("read", 4, js_os_read_write, 0),
+	JS_CFUNC_MAGIC_DEF ("write", 4, js_os_read_write, 1),
+	JS_CFUNC_MAGIC_DEF ("pending", 4, js_os_pending, 0),
 #if 0
-	JS_CFUNC_MAGIC_DEF("setReadHandler", 2, js_os_setReadHandler, 0 ),
-	JS_CFUNC_DEF("setTimeout", 2, js_os_setTimeout ),
-	JS_CFUNC_DEF("clearTimeout", 1, js_os_clearTimeout ),
+	JS_CFUNC_MAGIC_DEF ("setReadHandler", 2, js_os_setReadHandler, 0 ),
+	JS_CFUNC_DEF ("setTimeout", 2, js_os_setTimeout ),
+	JS_CFUNC_DEF ("clearTimeout", 1, js_os_clearTimeout ),
 #endif
-	// JS_CFUNC_DEF("open", 2, js_os_open ),
-	// OS_FLAG(O_RDONLY),
+	// JS_CFUNC_DEF ("open", 2, js_os_open ),
+	// OS_FLAG (O_RDONLY),
 };
 
 static int js_os_init(JSContext *ctx, JSModuleDef *m) {
-	return JS_SetModuleExportList(ctx, m, js_os_funcs, countof (js_os_funcs));
+	return JS_SetModuleExportList (ctx, m, js_os_funcs, countof (js_os_funcs));
 }
 
 static JSModuleDef *js_init_module_os(JSContext *ctx) {
@@ -644,7 +645,7 @@ static JSModuleDef *js_init_module_r2(JSContext *ctx) {
 		JSValue v = JS_NewObjectProtoClass (ctx, name, 0);
 		JS_SetPropertyStr (ctx, global_obj, "r2", v);
 		JS_SetPropertyFunctionList (ctx, v, js_r2_funcs, countof (js_r2_funcs));
-		// JS_AddModuleExportList (ctx, m, js_r2_funcs, countof(js_r2_funcs));
+		// JS_AddModuleExportList (ctx, m, js_r2_funcs, countof (js_r2_funcs));
 	}
 	return m;
 }
@@ -741,7 +742,7 @@ static JSValue qjs_r2pipe_open(JSContext *ctx, JSValueConst this_val, int argc, 
 
 static const JSCFunctionListEntry js_r2pipe_funcs[] = {
 	JS_CFUNC_DEF ("open", 2, qjs_r2pipe_open)
-	// JS_CFUNC_DEF ("openCore", 2, qjs_r2pipe_opencore) // r2pipe_open_corebind()
+	// JS_CFUNC_DEF ("openCore", 2, qjs_r2pipe_opencore) // r2pipe_open_corebind ()
 };
 
 static int js_r2pipe_init(JSContext *ctx, JSModuleDef *m) {
@@ -780,25 +781,25 @@ static void register_helpers(JSContext *ctx) {
 	JS_SetPropertyStr (ctx, global_obj, "write", JS_NewCFunction (ctx, js_write, "write", 1));
 	JS_SetPropertyStr (ctx, global_obj, "flush", JS_NewCFunction (ctx, js_flush, "flush", 1));
 	JS_SetPropertyStr (ctx, global_obj, "print", JS_NewCFunction (ctx, js_print, "print", 1));
-	eval (ctx, "setTimeout = (x,y) => x();");
-	eval (ctx, "function dump(x) {"
-		"if (typeof x==='object' && Object.keys(x)[0] != '0') { for (let k of Object.keys(x)) { console.log(k);}} else "
-		"if (typeof x==='number'&& x > 0x1000){console.log(R.hex(x));}else"
-		"{console.log((typeof x==='string')?x:JSON.stringify(x, null, 2));}"
-		"}");
+	eval (ctx, "setTimeout = (x,y) => x ();");
+	eval (ctx, "function dump (x) {"
+		  "if (typeof x==='object' && Object.keys (x)[0] != '0') { for (let k of Object.keys (x)) { console.log (k);}} else "
+		  "if (typeof x==='number'&& x > 0x1000){console.log (R.hex (x));}else"
+		  "{console.log ((typeof x==='string')?x:JSON.stringify (x, null, 2));}"
+		  "}");
 	eval (ctx, "var console = { log:print, error:print, debug:print };");
-	eval (ctx, "r2.cmd2 = (x) => JSON.parse(r2.cmd(`'{\"cmd\":\"${x}\"}`));");
-	eval (ctx, "r2.cmd2j = (x) => JSON.parse(r2.cmd(`'{\"cmd\":\"${x}\",\"json\":true}`));");
-	eval (ctx, "r2.cmdj = (x) => JSON.parse(r2.cmd(x));");
-	eval (ctx, "r2.cmdAt = (x, a) => r2.cmd(x + ' @ ' + a);");
-	eval (ctx, "r2.call = (x) => r2.cmd('\"\"' + x);");
-	eval (ctx, "r2.callj = (x) => JSON.parse(r2.call(x));");
+	eval (ctx, "r2.cmd2 = (x) => JSON.parse (r2.cmd (`'{\"cmd\":\"${x}\"}`));");
+	eval (ctx, "r2.cmd2j = (x) => JSON.parse (r2.cmd (`'{\"cmd\":\"${x}\",\"json\":true}`));");
+	eval (ctx, "r2.cmdj = (x) => JSON.parse (r2.cmd (x));");
+	eval (ctx, "r2.cmdAt = (x, a) => r2.cmd (x + ' @ ' + a);");
+	eval (ctx, "r2.call = (x) => r2.cmd ('\"\"' + x);");
+	eval (ctx, "r2.callj = (x) => JSON.parse (r2.call (x));");
 	eval (ctx, "var global = globalThis; var G = globalThis;");
 	eval (ctx, js_require_qjs);
-	eval (ctx, "require = function(x) { if (x == 'r2papi') { return new R2Papi(r2); } ; return requirejs(x); }");
+	eval (ctx, "require = function (x) { if (x == 'r2papi') { return new R2Papi (r2); } ; return requirejs (x); }");
 	eval (ctx, "var exports = G;");
-	// eval (ctx, "G.r2pipe = {open: function(){ return R.r2;}};");
-	eval (ctx, "G.R2Pipe=() => R.r2;");
+	// eval (ctx, "G.r2pipe = {open: function (){ return R.r2;}};");
+	eval (ctx, "G.R2Pipe= () => R.r2;");
 	if (r_sys_getenv_asbool ("R2_DEBUG_NOPAPI")) {
 		eval (ctx, "R=r2;");
 	} else {
@@ -817,14 +818,14 @@ static void register_helpers(JSContext *ctx) {
 			// r_file_dump ("rapi.qjs", js_r2papi_qjs, strlen (js_r2papi_qjs), 0);
 		}
 		free (custom_papi);
-		eval (ctx, "R=G.R=new R2Papi(r2);");
-		eval (ctx, "G.Process = new ProcessClass(r2);");
-		eval (ctx, "G.Module = new ModuleClass(r2);");
-		eval (ctx, "G.Thread = new ThreadClass(r2);");
-		eval (ctx, "function ptr(x) { return new NativePointer(x); }");
-		eval (ctx, "G.NULL = ptr(0);");
+		eval (ctx, "R=G.R=new R2Papi (r2);");
+		eval (ctx, "G.Process = new ProcessClass (r2);");
+		eval (ctx, "G.Module = new ModuleClass (r2);");
+		eval (ctx, "G.Thread = new ThreadClass (r2);");
+		eval (ctx, "function ptr (x) { return new NativePointer (x); }");
+		eval (ctx, "G.NULL = ptr (0);");
 	}
-	eval (ctx, "G.Radare2 = { version: r2.cmd('?Vq').trim() };"); // calling r2.cmd requires a delayed initialization
+	eval (ctx, "G.Radare2 = { version: r2.cmd ('?Vq').trim () };"); // calling r2.cmd requires a delayed initialization
 }
 
 static JSContext *JS_NewCustomContext(JSRuntime *rt) {
@@ -843,7 +844,7 @@ static bool eval(JSContext *ctx, const char *code) {
 	QjsPluginManager *pm = JS_GetRuntimeOpaque (rt);
 	RCons *cons = pm->core->cons;
 
-	bool wantRaw = strstr (code, "termInit(");
+	bool wantRaw = strstr (code, "termInit (");
 	if (wantRaw) {
 		r_cons_set_raw (cons, true);
 	}
@@ -933,7 +934,7 @@ static bool init(RLangSession *ls) {
 	qc->ctx = ctx;
 	qc->call_func = func;
 	r2qjs_modules (ctx);
-	JS_SetRuntimeOpaque (rt, pm);  // expose pm to all qjs native functions in R2
+	JS_SetRuntimeOpaque (rt, pm); // expose pm to all qjs native functions in R2
 	ls->plugin_data = pm;
 
 	// requires pm to be set in the plugin_data
