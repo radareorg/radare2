@@ -148,3 +148,4 @@ libr/include/sdb
 # libFuzzer
 crash-*
 corpus*
+libr/anal/d/types-windows.sdb.txt

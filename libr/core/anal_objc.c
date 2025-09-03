@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2019-2024 - pancake */
+/* radare2 - LGPL - Copyright 2019-2025 - pancake */
 
 /* This code has been written by pancake which has been based on Alvaro's
  * r2pipe-python script which was based on FireEye script for IDA Pro.
@@ -107,7 +107,7 @@ static ut64 getRefPtr(RCoreObjc *o, ut64 classMethodsVA, bool *rfound) {
 	RVector *vec = ht_up_find (o->up, namePtr, rfound);
 	if (!*rfound || !vec) {
 		*rfound = false;
-		return false;
+		return UT64_MAX;
 	}
 	ut64 *addr;
 	r_vector_foreach (vec, addr) {
@@ -126,7 +126,7 @@ static ut64 getRefPtr(RCoreObjc *o, ut64 classMethodsVA, bool *rfound) {
 		*rfound = false;
 		return UT64_MAX;
 	}
-	return isMsgRef? ref - 8: ref;
+	return isMsgRef? ref - o->word_size: ref;
 }
 
 static bool objc_build_refs(RCoreObjc *objc) {
@@ -161,18 +161,23 @@ static bool objc_build_refs(RCoreObjc *objc) {
 	const size_t word_size = objc->word_size; // assuming 8 because of the read_le64
 	if (!r_io_read_at (objc->core->io, objc->_const->vaddr, buf, ss_const)) {
 		R_LOG_WARN ("aao: Cannot read the whole const section %u", (unsigned int)ss_const);
-		return false;
+		goto beach;
 	}
-	for (off = 0; off + word_size < ss_const && off + word_size < maxsize; off += word_size) {
+	for (off = 0; off + word_size <= ss_const && off + word_size < maxsize; off += word_size) {
 		ut64 va = va_const + off;
 		ut64 xrefs_to = (word_size == 8)? r_read_le64 (buf + off): r_read_le32 (buf + off);
 		if (isValid (xrefs_to)) {
+#if 1
 			array_add (objc, va, xrefs_to);
+#else
+			// array_add (objc, xrefs_to, va);
+#endif
+
 		}
 	}
 	if (!r_io_read_at (objc->core->io, va_selrefs, buf, ss_selrefs)) {
 		R_LOG_WARN ("aao: Cannot read the whole selrefs section");
-		return false;
+		goto beach;
 	}
 	for (off = 0; off + word_size < ss_selrefs && off + word_size < maxsize; off += word_size) {
 		ut64 va = va_selrefs + off;
@@ -181,6 +186,22 @@ static bool objc_build_refs(RCoreObjc *objc) {
 			array_add (objc, xrefs_to, va);
 		}
 	}
+	if (objc->_msgrefs) {
+		const ut64 va_msgrefs = objc->_msgrefs->vaddr;
+		size_t ss_msgrefs = R_MIN (objc->_msgrefs->vsize, maxsize);
+		if (!r_io_read_at (objc->core->io, va_msgrefs, buf, ss_msgrefs)) {
+			R_LOG_WARN ("aao: Cannot read the whole msgrefs section");
+			goto beach;
+		}
+		for (off = 0; off + word_size <= ss_msgrefs && off + word_size <= maxsize; off += (word_size * 2)) {
+			ut64 va = va_msgrefs + off;
+			ut64 xrefs_to = (word_size == 8)? r_read_le64 (buf + off): r_read_le32 (buf + off);
+			if (isValid (xrefs_to)) {
+				array_add (objc, xrefs_to, va);
+			}
+		}
+	}
+beach:
 	free (buf);
 	return true;
 }
@@ -215,12 +236,13 @@ static RCoreObjc *core_objc_new(RCore *core) {
 			o->_const = s;
 		}
 	}
-	if (!o->_const || ((o->_selrefs || o->_msgrefs) && !(o->_data && o->_const))) {
+	// if (!o->_const || ((o->_selrefs || o->_msgrefs) && !(o->_data && o->_const))) {
+	// reduce expectations, we dont need that much from objc
+	if (!o->_const || !o->_data) {
 		free (o);
 		return NULL;
 	}
 	o->up = ht_up_new (NULL, kv_array_free, NULL);
-
 	return o;
 }
 
@@ -259,6 +281,11 @@ static bool objc_find_refs(RCore *core) {
 		ut64 classRoVA = readQword (objc, va + objc2ClassInfoOffs, &readSuccess);
 		if (!readSuccess || isInvalid (classRoVA)) {
 			continue;
+		}
+		if (objc->word_size == 8) {
+			classRoVA &= ~(ut64)0x7;
+		} else {
+			classRoVA &= ~(ut64)0x3;
 		}
 		ut64 classMethodsVA = readQword (objc, classRoVA + objc2ClassBaseMethsOffs, &readSuccess);
 		if (!readSuccess || isInvalid (classMethodsVA)) {
@@ -311,17 +338,15 @@ static bool objc_find_refs(RCore *core) {
 			RVecAnalRef_free (xrefs);
 		}
 	}
+	// R_LOG_INFO ("Found %u objc xrefs", (unsigned int)total_xrefs);
 
-	const ut64 pa_selrefs = objc->_selrefs->paddr;
 	const ut64 va_selrefs = objc->_selrefs->vaddr;
 	const ut64 ss_selrefs = va_selrefs + objc->_selrefs->vsize;
 
-	R_LOG_INFO ("Found %u objc xrefs", (unsigned int)total_xrefs);
 	size_t total_words = 0;
 	ut64 a;
 	const size_t word_size = objc->word_size;
-	const size_t maxsize = objc->file_size - pa_selrefs;
-	for (a = va_selrefs; a < ss_selrefs && a < maxsize; a += word_size) {
+	for (a = va_selrefs; a < ss_selrefs; a += word_size) {
 		r_meta_set (core->anal, R_META_TYPE_DATA, a, word_size, NULL);
 		total_words++;
 	}

@@ -31,19 +31,11 @@ all:
 		| grep -v '^\.' \
 		| grep -v gitig \
 		| sed -e "s,^,$(R2V)/libr/arch/p/arm/v35/arch-armv7/,"` ; \
-	CS_FILES=`cd $(R2V)/shlr/capstone ; \
-		git ls-files \
-	       	| grep -v pdf \
-		| grep -v xcode \
-		| grep -v '^\.' \
-		| grep -v msvc \
-		| grep -v gitig \
-		| grep -v suite \
-		| grep -v bindings \
-		| grep -v tests \
-		| sed -e "s,^,$(R2V)/shlr/capstone/,"` ; \
+	rm -rf $(R2V)/subprojects/*/.git ; \
 	rm -rf $(R2V)/.git ; \
-	rm -rf $(R2V)/shlr/capstone/.[a-z]* ; \
 	${TAR} "radare2-${VERSION}.tar" $${V64_FILS} $${V32_FILS} $${R2_FILES} $${CS_FILES} "$(R2V)/ChangeLog" ; \
 	${CZ} "radare2-${VERSION}.tar"
 	zip -r radare2-$(VERSION).zip radare2-$(VERSION)
+
+clean:
+	rm -rf radare2-$(VERSION).zip radare2-$(VERSION)

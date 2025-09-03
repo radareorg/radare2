@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Determine current repository
         run: echo "{repo}={${GITHUB_REPOSITORY}}" >> $GITHUB_OUTPUT
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Download Coverity Build Tool
         run: |
           wget -q https://scan.coverity.com/download/cxx/linux64 --post-data "token=$TOKEN&project=radare2" -O cov-analysis-linux64.tar.gz

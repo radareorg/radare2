@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Installing with symlinks
       run: sys/wasi.sh
     - uses: actions/upload-artifact@v4
@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Installing with symlinks
       run: sys/wasi-api.sh
     - uses: actions/upload-artifact@v4
@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Installing with symlinks
       run: |
           cp -f dist/plugins-cfg/plugins.cs6.cfg plugins.cfg
@@ -48,7 +48,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Creating zip and tarball
       run: sys/tarball.sh
     - uses: actions/upload-artifact@v4
@@ -73,7 +73,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Extract r2 version
       shell: bash
       run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
@@ -100,7 +100,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Packaging for RPM
       run: make -C dist/rpm
     - name: Pub
@@ -127,7 +127,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - if: ${{ matrix.gcc }}
       name: Installing crosscompiler
       run: |
@@ -150,7 +150,7 @@ jobs:
 #    container: centos:8
 #    steps:
 #    - name: Checkout
-#      uses: actions/checkout@v4
+#      uses: actions/checkout@v5
 #    - name: Prepare Skeleton
 #      run: |
 #        mkdir -p SOURCES SPECS
@@ -171,7 +171,7 @@ jobs:
 #    container: centos:8
 #    steps:
 #    - name: Checkout
-#      uses: actions/checkout@v4
+#      uses: actions/checkout@v5
 #    - name: Install tools for CentOS:8
 #      run: |
 #        yum install -y patch unzip git gcc make python38 python38-pip rpm-build rpmdevtools wget
@@ -210,7 +210,7 @@ jobs:
     runs-on: macos-13
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Packaging
       env:
         ARCHFLAGS: '-arch ${{ matrix.arch }}'
@@ -236,7 +236,7 @@ jobs:
             sdk: true
     runs-on: macos-13
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Install ldid2 with Homebrew
       run: brew install ldid
     - name: Extract r2 version
@@ -274,7 +274,7 @@ jobs:
             api: 16
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Install dependencies
       run: |
         sudo apt-get --assume-yes update
@@ -302,7 +302,7 @@ jobs:
           # - aarch64
           # - arm
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Install dependencies
       run: |
         sudo apt-get --assume-yes update
@@ -339,7 +339,7 @@ jobs:
           maximum-size: 16GB
           disk-root: "C:"
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - uses: actions/setup-python@v5
       with:
         python-version: '3.10'
@@ -358,7 +358,7 @@ jobs:
         ninja -C build -j1 install
     - name: Create zip artifact
       run: 7z a radare2-${{ steps.r2v.outputs.branch }}-w32.zip $PWD\radare2-${{ steps.r2v.outputs.branch }}-w32
-#    - uses: actions/checkout@v4
+#    - uses: actions/checkout@v5
 #      with:
 #        repository: radareorg/radare2-win-installer
 #        path: ./radare2-win-installer
@@ -381,7 +381,7 @@ jobs:
           maximum-size: 16GB
           disk-root: "C:"
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - uses: actions/setup-python@v5
       with:
         python-version: '3.10'
@@ -433,7 +433,7 @@ jobs:
           maximum-size: 16GB
           disk-root: "C:"
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - uses: actions/setup-python@v5
       with:
         python-version: '3.10'
@@ -459,7 +459,7 @@ jobs:
         ninja -C build install
     - name: Create zip artifact
       run: 7z a radare2-${{ steps.r2v.outputs.branch }}-w64.zip $PWD\radare2-${{ steps.r2v.outputs.branch }}-w64
-#    - uses: actions/checkout@v4
+#    - uses: actions/checkout@v5
 #      with:
 #        repository: radareorg/radare2-win-installer
 #        path: ./radare2-win-installer
@@ -479,7 +479,7 @@ jobs:
         sys: [MINGW64, UCRT64]
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Setup MSYS2
       uses: msys2/setup-msys2@v2
       with:
@@ -506,7 +506,7 @@ jobs:
     runs-on: windows-11-arm
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - uses: actions/setup-python@v5
       with:
         python-version: '3.11'
@@ -545,7 +545,7 @@ jobs:
           maximum-size: 16GB
           disk-root: "C:"
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - uses: actions/setup-python@v5
       with:
         python-version: '3.11'
@@ -578,7 +578,7 @@ jobs:
 #  freebsd:
 #    runs-on: ubuntu-latest
 #    steps:
-#    - uses: actions/checkout@v4
+#    - uses: actions/checkout@v5
 #    - name: Extract r2 version
 #      shell: bash
 #      run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
@@ -690,7 +690,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0 # Download all git history and tags
       - name: Check if is a release
@@ -729,7 +729,7 @@ jobs:
 #       dist/artifacts/msys2-w64-arm-meson/*.zip
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0 # Download all git history and tags
       - name: Extract r2 version

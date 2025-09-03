@@ -58,7 +58,7 @@ static RCoreHelpMessage help_msg_tf = {
 	"Usage: tf[...]", "", "",
 	"tf", "", "list all function definitions loaded",
 	"tf", " <name>", "show function signature",
-	"tfc", " <name>", "show function signature in C syntax",
+	"tfc", " [name]", "list all/given function signatures in C output format with newlines",
 	"tfcj", " <name>", "same as above but in JSON",
 	"tfj", "", "list all function definitions in JSON",
 	"tfj", " <name>", "show function signature in JSON",
@@ -498,11 +498,11 @@ static bool stdifstruct(void *user, const char *k, const char *v) {
 }
 
 /*!
- * \brief print the data types details in JSON format
- * \param TDB pointer to the sdb for types
- * \param filter a callback function for the filtering
- * \return 1 if success, 0 if failure
- */
+* \brief print the data types details in JSON format
+* \param TDB pointer to the sdb for types
+* \param filter a callback function for the filtering
+* \return 1 if success, 0 if failure
+*/
 static int print_struct_union_list_json(RCore *core, Sdb *TDB, SdbForeachCallback filter) {
 	PJ *pj = r_core_pj_new (core);
 	if (!pj) {
@@ -719,12 +719,10 @@ static void printFunctionType(RCore *core, const char *input) {
 	pj_end (pj);
 	pj_end (pj);
 	char *s = pj_drain (pj);
-	if (R_STR_ISEMPTY (s)) {
-		r_cons_printf (core->cons, "{}");
-	} else {
-		r_cons_printf (core->cons, "%s,", s);
+	if (s) {
+		r_cons_printf (core->cons, "%s", s);
+		free (s);
 	}
-	free (s);
 	free (res);
 }
 
@@ -820,21 +818,19 @@ static bool print_typelist_json_cb(void *p, const char *k, const char *v) {
 	char *sizecmd = r_str_newf ("type.%s.size", k);
 	char *size_s = sdb_get (sdb, sizecmd, NULL);
 	char *formatcmd = r_str_newf ("type.%s", k);
+	pj_ks (pj, "type", k);
+	pj_ki (pj, "size", size_s ? atoi (size_s) : -1);
 	char *format_s = sdb_get (sdb, formatcmd, NULL);
-	if (size_s && format_s) {
+	if (format_s) {
 		r_str_trim (format_s);
-		pj_ks (pj, "type", k);
-		pj_ki (pj, "size", size_s ? atoi (size_s) : -1);
 		pj_ks (pj, "format", format_s);
-		pj_end (pj);
-		r_cons_printf (core->cons, "%s,", pj_string (pj));
-	} else {
-		R_LOG_DEBUG ("Internal sdb inconsistency for %s", sizecmd);
+		free (format_s);
 	}
+	pj_end (pj);
+	r_cons_printf (core->cons, "%s", pj_string (pj));
 	pj_free (pj);
 	free (size_s);
 	free (sizecmd);
-	free (format_s);
 	free (formatcmd);
 	return true;
 }
@@ -847,6 +843,7 @@ static void print_keys(Sdb *TDB, RCore *core, SdbForeachCallback filter, SdbFore
 	if (json) {
 		r_cons_print (core->cons, "{\"types\":[");
 	}
+	bool first = true;
 	ls_foreach (l, it, kv) {
 		const char *k = sdbkv_key (kv);
 		const char *v = sdbkv_value (kv);
@@ -854,11 +851,17 @@ static void print_keys(Sdb *TDB, RCore *core, SdbForeachCallback filter, SdbFore
 			continue;
 		}
 		if (v) {
+			if (json) {
+				if (!first) {
+					r_cons_print (core->cons, ",");
+				}
+				first = false;
+			}
 			printfn_cb (core, k, v);
 		}
 	}
 	if (json) {
-		r_cons_println (core->cons, "{}]}\n");
+		r_cons_println (core->cons, "]}\n");
 	}
 	ls_free (l);
 }
@@ -1901,6 +1904,18 @@ static int cmd_type(void *data, const char *input) {
 		case 'c': // "tfc"
 			if (input[2] == ' ') {
 				printFunctionTypeC (core, input + 3);
+			} else {
+				// No argument: print all function signatures in C syntax
+				SdbList *l = sdb_foreach_list_filter (TDB, stdiffunc, true);
+				SdbListIter *it;
+				SdbKv *kv;
+				ls_foreach (l, it, kv) {
+					const char *fname = sdbkv_key (kv);
+					if (R_STR_ISNOTEMPTY (fname)) {
+						printFunctionTypeC (core, fname);
+					}
+				}
+				ls_free (l);
 			}
 			break;
 		case 'j': // "tfj"

@@ -1248,23 +1248,6 @@ R_API void r_cons_bind(RCons *cons, RConsBind *bind) {
 	bind->is_breaked = r_cons_is_breaked;
 }
 
-R_API const char* r_cons_get_rune(const ut8 ch) {
-	switch (ch) {
-	case RUNECODE_LINE_HORIZ: return RUNE_LINE_HORIZ;
-	case RUNECODE_LINE_VERT:  return RUNE_LINE_VERT;
-	case RUNECODE_LINE_CROSS: return RUNE_LINE_CROSS;
-	case RUNECODE_CORNER_TL:  return RUNE_CORNER_TL;
-	case RUNECODE_CORNER_TR:  return RUNE_CORNER_TR;
-	case RUNECODE_CORNER_BR:  return RUNE_CORNER_BR;
-	case RUNECODE_CORNER_BL:  return RUNE_CORNER_BL;
-	case RUNECODE_CURVE_CORNER_TL:  return RUNE_CURVE_CORNER_TL;
-	case RUNECODE_CURVE_CORNER_TR:  return RUNE_CURVE_CORNER_TR;
-	case RUNECODE_CURVE_CORNER_BR:  return RUNE_CURVE_CORNER_BR;
-	case RUNECODE_CURVE_CORNER_BL:  return RUNE_CURVE_CORNER_BL;
-	}
-	return NULL;
-}
-
 #if WITH_STATIC_THEMES
 #include "d_themes.inc.c"
 
@@ -1610,7 +1593,6 @@ R_API void r_cons_context_free(RConsContext * R_NULLABLE ctx) {
 		free (ctx);
 	}
 }
-
 
 R_API RConsContext *r_cons_context_clone(RConsContext *ctx) {
 	RConsContext *c = r_mem_dup (ctx, sizeof (RConsContext));

@@ -1007,7 +1007,6 @@ R_API bool r_cons_set_cup(bool enable);
 R_API char *r_cons_message(RCons *cons, const char *msg);
 R_API bool r_cons_enable_mouse(RCons *cons, const bool enable);
 R_API void r_cons_enable_highlight(RCons *cons, const bool enable);
-R_API const char* r_cons_get_rune(const ut8 ch);
 #endif
 
 /* pixel.c */

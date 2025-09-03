@@ -43,18 +43,32 @@ static R_TH_LOCAL bool Gunsignable = false; // OK
 #endif
 #if __APPLE__
 #include <errno.h>
-#ifdef __MAC_10_8
+#include <TargetConditionals.h>
+// iOS don't have this
+#if !TARGET_OS_IPHONE
 #define HAVE_ENVIRON 1
 #else
 #define HAVE_ENVIRON 0
 #endif
 
-#if HAVE_ENVIRON
-#include <execinfo.h>
+// _NSGetEnviron is used on both macOS and iOS paths
+#if defined(__has_include)
+# if __has_include(<crt_externs.h>)
+#  include <crt_externs.h>
+# endif
+#else
+# include <crt_externs.h>
 #endif
-// iOS don't have this we can't hardcode
-// #include <crt_externs.h>
+// Fallback declaration if header is unavailable
+#ifndef _NSGetEnviron
 extern char ***_NSGetEnviron(void);
+#endif
+
+// Provide environ via _NSGetEnviron when available
+#if HAVE_ENVIRON
+#define environ (*_NSGetEnviron())
+#endif
+
 # ifndef PROC_PIDPATHINFO_MAXSIZE
 #  define PROC_PIDPATHINFO_MAXSIZE 1024
 int proc_pidpath(int pid, void * buffer, ut32 buffersize);
@@ -70,7 +84,9 @@ int proc_pidpath(int pid, void * buffer, ut32 buffersize);
 # include <sys/wait.h>
 #endif
 # include <signal.h>
+#ifndef __APPLE__
 extern char **environ;
+#endif
 
 #ifdef __HAIKU__
 # define Sleep sleep
@@ -334,6 +350,17 @@ R_API ut8 *r_sys_unxz(const ut8 *buf, size_t len, size_t *olen) {
 #define HAVE_BACKTRACE 1
 #endif
 
+// Ensure backtrace() declarations are visible on Apple when supported
+#if defined(__APPLE__) && defined(APPLE_WITH_BACKTRACE)
+# if defined(__has_include)
+#  if __has_include(<execinfo.h>)
+#   include <execinfo.h>
+#  endif
+# else
+// Older SDKs may not have execinfo.h; include only when available above
+# endif
+#endif
+
 R_API void r_sys_backtrace(void) {
 #if WANT_DEBUGSTUFF
 #ifdef HAVE_BACKTRACE
@@ -407,13 +434,15 @@ R_API bool r_sys_clearenv(void) {
 #if R2__UNIX__
 #if __APPLE__ && !HAVE_ENVIRON
 	/* do nothing */
-	if (!env) {
+	if (!Genv) {
 		r_sys_env_init ();
 		return true;
 	}
-	char **e = env;
-	while (*e) {
-		*e++ = NULL;
+	char **e = Genv;
+	if (e) {
+		while (*e) {
+			*e++ = NULL;
+		}
 	}
 #else
 	if (!environ) {

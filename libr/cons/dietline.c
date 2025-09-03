@@ -2061,7 +2061,7 @@ repeat:
 						fkey = kbuf - 80 + 1;
 						break;
 					}
-					if (fkey) {
+					if (fkey > 0 && fkey < 13) {
 						if (line->cb_fkey) {
 							line->cb_fkey (line->user, fkey);
 						}
@@ -2083,7 +2083,8 @@ repeat:
 							}
 							if (!isdigit (ch) && ch != ';') {
 								*buf = '\n';
-								if (fkey) {
+								// if we get fkey15 here its actually control+return
+								if (fkey > 0 && fkey < 13) {
 									if (line->cb_fkey) {
 										line->cb_fkey (line->user, fkey);
 									}

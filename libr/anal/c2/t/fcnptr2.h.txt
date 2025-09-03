@@ -1,0 +1,25 @@
+typedef.fp=func.fp
+fp=typedef
+foo=struct
+foo.fp=func
+struct.foo.x=int,0,0
+struct.foo.fp=foo.fp,4,0
+func.foo.fp.arg.0=int,a
+func.foo.fp.arg.1=int,b
+func.foo.fp=a,b
+func.foo.fp.cc=cdecl
+func.foo.fp.args=2
+type.foo.fp=func
+foo.fp=func
+func.foo.fp.ret=int
+func.foo.fp=int a , int b
+struct.foo.b=char *,8,0
+struct.foo.fp2=fp,12,0
+func.fp.arg.0=int,a
+func.fp.arg.1=int,b
+func.fp=a,b
+func.fp.cc=cdecl
+func.fp.args=2
+func.fp.ret=int
+struct.foo=x,fp,b,fp2
+

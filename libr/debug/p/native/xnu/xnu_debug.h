@@ -70,7 +70,7 @@ int ptrace(int _request, pid_t _pid, caddr_t _addr, int _data);
 #include <sys/ptrace.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <mach/ppc/_types.h>
+#include <ppc/_types.h>
 #include <mach/ppc/thread_status.h>
 // iPhone5
 #elif __aarch64

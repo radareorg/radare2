@@ -44,7 +44,9 @@ MLFLAGS+=-install_name @rpath/libr2.dylib
 endif
 ifeq ($(OSTYPE),ios)
 MLFLAGS+=-install_name @rpath/libr2.dylib
+ifeq ($(EMBED_BITCODE),1)
 MLFLAGS+=-fembed-bitcode
+endif
 endif
 endif
 LDFLAGS+=${SSL_LDFLAGS}

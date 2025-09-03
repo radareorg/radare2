@@ -21,6 +21,7 @@
 #include <mach/host_priv.h>
 #include <mach/thread_status.h>
 #include <mach/vm_statistics.h>
+#include <AvailabilityMacros.h>
 
 #if APPLE_SDK_IPHONEOS
 kern_return_t mach_vm_protect
@@ -631,7 +632,11 @@ RList *xnu_thread_list(RDebug *dbg, int pid, RList *list) {
 	#define CPU_PC R_SYS_BITS_CHECK (dbg->bits, 64)? \
 		state.ts_64.__pc : state.ts_32.__pc
 #elif __POWERPC__
-	#define CPU_PC state.srr0
+	#if MAC_OS_X_VERSION_MAX_ALLOWED < 1050
+		#define CPU_PC state.srr0
+	#else
+		#define CPU_PC state.__srr0
+	#endif
 #elif __x86_64__ || __i386__
 	#define CPU_PC R_SYS_BITS_CHECK (dbg->bits, 64)? \
 		state.uts.ts64.__rip : state.uts.ts32.__eip

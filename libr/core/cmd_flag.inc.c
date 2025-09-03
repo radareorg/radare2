@@ -47,7 +47,8 @@ static RCoreHelpMessage help_msg_f = {
 	"fe-", "", "resets the enumerator counter",
 	"ff", " ([glob])", "distance in bytes to reach the next flag (see sn/sp)",
 	"fi", " [size] | [from] [to]", "show flags in current block or range",
-	"fg", "[*] ([prefix])", "construct a graph with the flag names",
+	"fg", "", "bring coretasks jobs to the foreground (see '&' command)",
+	"fh", "[*] ([prefix])", "construct a graph hirearchy with the flag names",
 	"fj", "", "list flags in JSON format",
 	"fq", "", "list flags in quiet mode",
 	"fl", " (@[flag]) [size]", "show or set flag length (size)",
@@ -1688,6 +1689,17 @@ static int cmd_flag(void *data, const char *input) {
 		}
 		break;
 	case 'g': // "fg"
+		if (input[1]) {
+			if (input[1] == ' ') {
+				r_core_cmdf (core, "&& %d", atoi (input + 2));
+			} else {
+				R_LOG_ERROR ("fg: wait for all backaground jobs to finish");
+			}
+		} else {
+			r_core_cmd0 (core, "&&");
+		}
+		break;
+	case 'h': // "fh"
 		switch (input[1]) {
 		case '*':
 			__flag_graph (core, r_str_trim_head_ro (input + 2), '*');
@@ -1699,7 +1711,7 @@ static int cmd_flag(void *data, const char *input) {
 			__flag_graph (core, r_str_trim_head_ro (input + 1), 0);
 			break;
 		default:
-			r_core_cmd_help_contains (core, help_msg_f, "fg");
+			r_core_cmd_help_contains (core, help_msg_f, "fh");
 			break;
 		}
 		break;

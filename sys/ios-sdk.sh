@@ -7,7 +7,8 @@ USE_SIMULATOR=0
 #SIMULATOR_ARCHS="i386+x86_64"
 SIMULATOR_ARCHS="x86_64"
 PACKAGE_RADARE=0
-EMBED_BITCODE=1
+# Bitcode is deprecated; default off unless explicitly enabled
+EMBED_BITCODE=0
 CFLAGS="-O2 -miphoneos-version-min=10.0"
 DOSH=0
 ARCHS="" # Will be set by -archs argument. If you want to set it -> e.g. ARCHS="armv7+arm64".
@@ -175,12 +176,19 @@ done
 ### BUILD PHASE
 
 # Print which archs we are building for
-echo "Will build for \\c"
-if [ "${#ARCHS}" -gt 0 ]; then
-	echo "$ARCHS \\c"
-	[ "${USE_SIMULATOR}" = 1 ] && echo "and \\c"
+if [ -n "$ARCHS" ] || [ "${USE_SIMULATOR}" = 1 ]; then
+    printf "Will build for "
+    if [ -n "$ARCHS" ]; then
+        printf "%s " "$ARCHS"
+        [ "${USE_SIMULATOR}" = 1 ] && printf "and "
+    fi
+    if [ "${USE_SIMULATOR}" = 1 ]; then
+        printf "simulator(%s)" "$SIMULATOR_ARCHS"
+    fi
+    printf "\n"
+else
+    echo "Will build for default settings"
 fi
-[ "${USE_SIMULATOR}" = 1 ] && echo "simulator($SIMULATOR_ARCHS)"
 
 if [ "${DOSH}" = 1 ]; then
 	echo "Inside ios-sdk shell"

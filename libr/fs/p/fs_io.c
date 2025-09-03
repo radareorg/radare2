@@ -2,6 +2,8 @@
 
 #include <r_fs.h>
 #include <r_lib.h>
+#include <r_util.h>
+#include <r_util/r_json.h>
 #include <sys/stat.h>
 
 static char *enbase(const char *p) {
@@ -97,9 +99,47 @@ static RList *fs_io_dir(RFSRoot *root, const char *path, int view /*ignored*/) {
 		return NULL;
 	}
 	char *uri_path = enbase (path);
-	char *cmd = r_str_newf ("md %s", uri_path);
-	free (uri_path);
+	char *cmd = r_str_newf ("mdj %s", uri_path);
+	if (!cmd) {
+		free (uri_path);
+		return list;
+	}
 	char *res = root->iob.system (root->iob.io, cmd);
+	if (res && *res == '[') {
+		RJson *json = r_json_parse (res);
+		if (json) {
+			if (json->type == R_JSON_ARRAY) {
+				size_t i, count = json->children.count;
+				for (i = 0; i < count; i++) {
+					const RJson *item = r_json_item (json, i);
+					const char *name = r_json_get_str (item, "name");
+					const char *type_str = r_json_get_str (item, "type");
+					st64 nsize = r_json_get_num (item, "size");
+					ut64 fsize = nsize > 0 ? (ut64)nsize : 0;
+					char type = 'f';
+					if (type_str && !strcmp (type_str, "directory")) {
+						type = 'd';
+					}
+					append_file (list, name ? name : "", type, 0, fsize);
+				}
+			}
+			r_json_free (json);
+			free (res);
+			free (cmd);
+			free (uri_path);
+			return list;
+		}
+	}
+
+	// fallback to md
+	free (res);
+	free (cmd);
+	cmd = r_str_newf ("md %s", uri_path);
+	free (uri_path);
+	if (!cmd) {
+		return list;
+	}
+	res = root->iob.system (root->iob.io, cmd);
 	if (res) {
 		size_t i, count = 0;
 		size_t *lines = r_str_split_lines (res, &count);
@@ -116,11 +156,11 @@ static RList *fs_io_dir(RFSRoot *root, const char *path, int view /*ignored*/) {
 				}
 				append_file (list, line, type, 0, 0);
 			}
-			R_FREE (res);
-			R_FREE (lines);
+			free (lines);
 		}
+		free (res);
 	}
-	R_FREE (cmd);
+	free (cmd);
 	return list;
 }
 

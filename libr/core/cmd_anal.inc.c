@@ -644,7 +644,7 @@ static RCoreHelpMessage help_msg_afc = {
 	"afc", "", "show default function calling convention (same as tcc)",
 	"afcr", "[j]", "show register usage for the current function",
 	"afcf", "[j] [name]", "prints return type function(arg1, arg2...), see afij",
-	"afci", "", "information about the current calling convention",
+	"afci", " [name]", "information about the current calling convention",
 	"afcj", "", "show current calling convention info in JSON",
 	"afck", "", "list SDB details of call loaded calling conventions",
 	"afcl", "", "list all available calling conventions",
@@ -5001,8 +5001,8 @@ static void cmd_aflxj(RCore *core) {
 	ls_free (keys);
 }
 
-static void cmd_afci(RCore *core, RAnalFunction *fcn) {
-	const char *cc = (fcn && fcn->callconv)? fcn->callconv: "reg";
+static void cmd_afci(RCore *core, RAnalFunction *fcn, const char *mycc) {
+	const char *cc = mycc? mycc: (fcn && fcn->callconv)? fcn->callconv: "reg";
 	r_core_cmdf (core, "afcll~%s (", cc);
 }
 
@@ -6172,8 +6172,10 @@ static int cmd_af(RCore *core, const char *input) {
 				r_core_cmd_call (core, "afcfj");
 			} else if (input[3] == '?') {
 				r_core_cmd_help_match (core, help_msg_afc, "afci");
+			} else if (input[3] == ' ') {
+				cmd_afci (core, fcn, r_str_trim_head_ro (input + 4));
 			} else {
-				cmd_afci (core, fcn);
+				cmd_afci (core, fcn, NULL);
 			}
 			break;
 		case 'f': // "afcf" "afcfj"
@@ -6297,8 +6299,11 @@ static int cmd_af(RCore *core, const char *input) {
 			break;
 		}
 		case '?': // "afc?"
-		default:
 			r_core_cmd_help (core, help_msg_afc);
+			break;
+		default:
+			r_core_return_invalid_command (core, "afc", input[2]);
+			break;
 		}
 		break;
 	}
@@ -9283,8 +9288,12 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 				envp[i] = 0;
 #if R2__UNIX__
 				if (strstr (input, "$env")) {
+#if defined(__APPLE__) && !TARGET_OS_IPHONE
+					cmd_debug_stack_init (core, argc, argv, (*_NSGetEnviron()));
+#else
 					extern char **environ;
 					cmd_debug_stack_init (core, argc, argv, environ);
+#endif
 				} else {
 					cmd_debug_stack_init (core, argc, argv, envp);
 				}
@@ -10696,8 +10705,9 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 	core->rasm->parse->pseudo = r_config_get_b (core->config, "asm.pseudo");
 	core->rasm->parse->subrel = r_config_get_i (core->config, "asm.sub.rel");
 	core->rasm->parse->localvar_only = r_config_get_b (core->config, "asm.sub.varonly");
-
+	ut64 osubreladdr = UT64_MAX;
 	if (core->rasm->parse->subrel) {
+		osubreladdr = core->rasm->parse->subrel_addr;
 		core->rasm->parse->subrel_addr = from;
 	}
 	r_io_read_at (core->io, addr, buf, size);
@@ -10731,6 +10741,9 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 		buf_asm = strdup (asmop.mnemonic);
 	}
 	r_asm_op_fini (&asmop);
+	if (osubreladdr != UT64_MAX) {
+		core->rasm->parse->subrel_addr = osubreladdr;
+	}
 	return buf_asm;
 }
 
@@ -11148,10 +11161,9 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					i++;
 				}
 			} else if (input[1] == ' ' || input[1] == 0 || input[1] == '.') { // "axt"
-				RAnalFunction *fcn;
 				RAnalRef *ref;
 				R_VEC_FOREACH (list, ref) {
-					fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
+					RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
 					char *buf_asm = get_buf_asm (core, addr, ref->addr, fcn, true);
 					const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ref->addr);
 					char *print_comment = NULL;
@@ -14313,7 +14325,6 @@ static void cmd_aaa(RCore *core, const char *input) {
 		r_core_cmd0 (core, "afva@@@F");
 	}
 #endif
-
 	// Run pending analysis immediately after analysis
 	// Usefull when running commands with ";" or via r2 -c,-i
 	dh_orig = (core->dbg->current && core->dbg->current->plugin)

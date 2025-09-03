@@ -10,6 +10,12 @@
 #ifndef __wasi__
 #include <pwd.h>
 #endif
+#ifdef __APPLE__
+#include <TargetConditionals.h>
+#if !TARGET_OS_IPHONE
+#include <crt_externs.h>
+#endif
+#endif
 #endif
 
 #define SPECIAL_CHARS "@;~$#|`\"'()<>"
@@ -161,6 +167,7 @@ static RCoreHelpMessage help_msg_j = {
 	"js:", "", "enter the interactive repl with autocompletion and colors",
 	"js:", "[file]", "interpret javascript file",
 	"join", " f1 f2", "join the contents of two files",
+	"jobs", "", "list status of background coretask jobs (alias for '&' command, see 'fg' and 'bg')",
 	NULL
 };
 
@@ -757,7 +764,14 @@ static int cmd_undo(void *data, const char *input) {
 		r_core_cmdf (data, "s-%s", input + 1);
 		return 1;
 	case 'w': // "uw"
-		r_core_cmdf (data, "wc%s", input + 1);
+		if (input[1] == 'u') {
+			r_cons_println (core->cons, ":3");
+		} else {
+			if (input[1] == '?') {
+				R_LOG_INFO ("uwu is an alias for 'wc'");
+			}
+			r_core_cmdf (data, "wc%s", input + 1);
+		}
 		return 1;
 	case 0:
 	case ' ':
@@ -1712,6 +1726,13 @@ beach:
 
 static int cmd_j(void *data, const char *input) { // "j"
 	RCore *core = (RCore *)data;
+	if (*input == '?') {
+		r_core_cmd_help (core, help_msg_j);
+		return R_CMD_RC_SUCCESS;
+	}
+	if (r_str_startswith (input, "obs")) {
+		return r_core_cmd0 (core, "&");
+	}
 	if (r_str_startswith (input, "oin")) {
 		return cmd_join (data, input);
 	}
@@ -1805,6 +1826,7 @@ static int cmd_j(void *data, const char *input) { // "j"
 		free (s);
 		return R_CMD_RC_SUCCESS;
 	}
+	r_core_return_invalid_command (core, "j", *input);
 	return R_CMD_RC_FASTQUIT;
 }
 
@@ -2732,6 +2754,13 @@ static int cmd_bsize(void *data, const char *input) {
 		break;
 	case '?': // "b?"
 		r_core_cmd_help (core, help_msg_b);
+		break;
+	case 'g': // "bg"
+		if (input[1] == ' ') {
+			r_core_cmdf (core, "& %s", r_str_trim_head_ro (input + 1));
+		} else {
+			R_LOG_ERROR ("Usage: 'bg r2cmd' # Expected command to run in background, See '&?' for help");
+		}
 		break;
 	default:
 		r_core_return_invalid_command (core, "b", *input);
@@ -6928,7 +6957,6 @@ R_API void r_core_cmd_init(RCore *core) {
 		core->rcmd->macro.num = core->num;
 		core->rcmd->macro.cmd = core_cmd0_wrapper;
 		core->rcmd->nullcallback = r_core_cmd_nullcallback;
-		core->cmd_descriptors = r_list_newf (free);
 		size_t i;
 		for (i = 0; i < R_ARRAY_SIZE (cmds); i++) {
 			r_cmd_add (core->rcmd, cmds[i].cmd, cmds[i].cb);

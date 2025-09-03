@@ -1,10 +1,34 @@
-/* radare - LGPL - Copyright 2014-2025 - pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2014-2025 - pancake */
 
 #include <r_core.h>
 
+// Per-thread current task pointer (TLS)
+static R_TH_LOCAL RCoreTask *task_tls_current = NULL;
+
+#define CUSTOMCORE 0
+
+static RCore *mycore_new(RCore *core) {
+#if CUSTOMCORE
+	RCore *c = R_NEW (RCore);
+	memcpy (c, core, sizeof (RCore));
+	c->cons = r_cons_new ();
+	// XXX: RConsBind must disappear. its used in bin, fs and search
+	// TODO: use r_cons_clone instead
+	return c;
+#else
+	return core;
+#endif
+}
+
+static void mycore_free(RCore *a) {
+#if CUSTOMCORE
+	r_cons_free (a->cons);
+#endif
+}
+
 R_API void r_core_task_scheduler_init(RCoreTaskScheduler *tasks, RCore *core) {
 	tasks->task_id_next = 0;
-	tasks->tasks = r_list_newf ((RListFree)r_core_task_decref);
+	tasks->tasks = r_list_newf ( (RListFree)r_core_task_decref);
 	tasks->tasks_queue = r_list_new ();
 	tasks->oneshot_queue = r_list_newf (free);
 	tasks->oneshots_enqueued = 0;
@@ -17,6 +41,20 @@ R_API void r_core_task_scheduler_init(RCoreTaskScheduler *tasks, RCore *core) {
 }
 
 R_API void r_core_task_scheduler_fini(RCoreTaskScheduler *tasks) {
+	// Join all task threads before freeing lists to avoid races
+	RListIter *iter;
+	RCoreTask *t;
+	r_th_lock_enter (tasks->lock);
+	RList *snapshot = r_list_clone (tasks->tasks, NULL);
+	r_th_lock_leave (tasks->lock);
+	if (snapshot) {
+		r_list_foreach (snapshot, iter, t) {
+			if (t && t->thread) {
+				r_th_wait (t->thread);
+			}
+		}
+		r_list_free (snapshot);
+	}
 	r_list_free (tasks->tasks);
 	r_list_free (tasks->tasks_queue);
 	r_list_free (tasks->oneshot_queue);
@@ -88,7 +126,7 @@ R_API void r_core_task_print(RCore *core, RCoreTask *task, PJ *pj, int mode) {
 		}
 		r_cons_printf (core->cons, "%3d %3s %12s  %s\n",
 					   task->id,
-					   task->transient ? "(t)" : "",
+					   task->transient ? " (t)" : "",
 					   r_core_task_status (task),
 					   r_str_get (info));
 		}
@@ -107,9 +145,25 @@ R_API void r_core_task_list(RCore *core, int mode) {
 		}
 		pj_a (pj);
 	}
+	// Snapshot tasks under lock to avoid printing while holding the lock
 	TASK_SIGSET_T old_sigset;
+	int running_count = 0;
+	RList *snapshot = r_list_new ();
+	if (!snapshot) {
+		if (mode == 'j') {
+			pj_free (pj);
+		}
+		return;
+	}
 	tasks_lock_enter (&core->tasks, &old_sigset);
+	running_count = core->tasks.tasks_running;
 	r_list_foreach (core->tasks.tasks, iter, task) {
+		r_core_task_incref (task);
+		r_list_append (snapshot, task);
+	}
+	tasks_lock_leave (&core->tasks, &old_sigset);
+
+	r_list_foreach (snapshot, iter, task) {
 		r_core_task_print (core, task, pj, mode);
 	}
 	if (mode == 'j') {
@@ -117,9 +171,12 @@ R_API void r_core_task_list(RCore *core, int mode) {
 		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 	} else {
-		r_cons_printf (core->cons, "--\ntotal running: %d\n", core->tasks.tasks_running);
+		r_cons_printf (core->cons, "--\ntotal running: %d\n", running_count);
 	}
-	tasks_lock_leave (&core->tasks, &old_sigset);
+	r_list_foreach (snapshot, iter, task) {
+		r_core_task_decref (task);
+	}
+	r_list_free (snapshot);
 }
 
 R_API int r_core_task_running_tasks_count(RCoreTaskScheduler *scheduler) {
@@ -146,7 +203,6 @@ static void task_join(RCoreTask *task) {
 }
 
 R_API void r_core_task_join(RCoreTaskScheduler *scheduler, RCoreTask *current, int id) {
-//	return;
 	if (current && id == current->id) {
 		return;
 	}
@@ -203,15 +259,23 @@ static void task_free(RCoreTask *task) {
 
 	RThread *thread = task->thread;
 	RThreadLock *lock = task->dispatch_lock;
-	r_th_lock_enter (lock);
+	if (lock) {
+		r_th_lock_enter (lock);
+	}
 	free (task->cmd);
 	free (task->res);
-	r_th_free (thread);
+	if (thread) {
+		r_th_free (thread);
+	}
 	r_th_sem_free (task->running_sem);
 	r_th_cond_free (task->dispatch_cond);
 	r_cons_context_free (task->cons_context);
-	r_th_lock_leave (lock);
-	r_th_lock_free (lock); // task->dispatch_lock);
+	if (lock) {
+		r_th_lock_leave (lock);
+	}
+	if (lock) {
+		r_th_lock_free (lock); // task->dispatch_lock);
+	}
 	free (task);
 	//tasks_lock_leave (scheduler, &old_sigset);
 }
@@ -254,7 +318,6 @@ hell:
 }
 
 R_API void r_core_task_incref(RCoreTask *task) {
-	return;
 	if (!task) {
 		return;
 	}
@@ -265,7 +328,6 @@ R_API void r_core_task_incref(RCoreTask *task) {
 }
 
 R_API void r_core_task_decref(RCoreTask *task) {
-	return;
 	if (!task) {
 		return;
 	}
@@ -273,6 +335,11 @@ R_API void r_core_task_decref(RCoreTask *task) {
 	RCoreTaskScheduler *scheduler = &task->core->tasks;
 	tasks_lock_enter (scheduler, &old_sigset);
 	task->refcount--;
+	if (task->refcount < 0) {
+		// Guard against underflow; this should never happen
+		R_LOG_WARN ("RCoreTask %d refcount underflow", task->id);
+		task->refcount = 0;
+	}
 	if (task->refcount <= 0) {
 		task_free (task);
 	}
@@ -301,13 +368,15 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 	current->state = next_state;
 
 	if (stop) {
-		scheduler->tasks_running--;
+		if (scheduler->tasks_running > 0) {
+			scheduler->tasks_running--;
+		}
 	}
 
 	// oneshots always have priority.
 	// if there are any queued, run them immediately.
 	OneShot *oneshot;
-	while ((oneshot = r_list_pop_head (scheduler->oneshot_queue))) {
+	while ( (oneshot = r_list_pop_head (scheduler->oneshot_queue))) {
 		scheduler->oneshots_enqueued--;
 		scheduler->oneshot_running = true;
 		oneshot->func (oneshot->user);
@@ -343,62 +412,15 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 		scheduler->current_task = current;
 		if (current->cons_context) {
 			r_cons_context_load (current->cons_context);
-		} else {
-			r_cons_context_reset (current->cons_context);
 		}
+		// else: no context to load/reset; keep current
 	}
 	R_CRITICAL_LEAVE (core);
 }
 
-static void task_wakeup(RCoreTask *current) {
-	return;
-#if 0
-	if (!current) {
-		return;
-	}
-	RCore *core = current->core;
-	R_CRITICAL_ENTER (core);
-	RCoreTaskScheduler *scheduler = &core->tasks;
-
-	TASK_SIGSET_T old_sigset;
-	tasks_lock_enter (scheduler, &old_sigset);
-
-	scheduler->tasks_running++;
-	current->state = R_CORE_TASK_STATE_RUNNING;
-
-	// check if there are other tasks running
-	bool single = scheduler->tasks_running == 1 || scheduler->tasks_running == 0;
-
-	r_th_lock_enter (current->dispatch_lock);
-
-	// if we are not the only task, we must wait until another task signals us.
-
-	if (!single) {
-		r_list_append (scheduler->tasks_queue, current);
-	}
-
-	tasks_lock_leave (scheduler, &old_sigset);
-
-	if (!single) {
-		while (!current->dispatched) {
-			r_th_cond_wait (current->dispatch_cond, current->dispatch_lock);
-		}
-		current->dispatched = false;
-	}
-
-	r_th_lock_leave (current->dispatch_lock);
-
-	scheduler->current_task = current;
-
-	if (current->cons_context) {
-		// core->cons->context = current->cons_context;
-		r_cons_context_load (current->cons_context);
-	} else {
-		r_cons_context_reset (core->cons);
-	}
-	R_CRITICAL_LEAVE (core);
-#endif
-}
+// task_wakeup was previously a cooperative scheduler entrypoint. The current
+// model is thread-per-task and synchronous main-task execution. Keep state
+// management local to call sites; no separate wakeup routine is needed.
 
 R_API void r_core_task_yield(RCoreTaskScheduler *scheduler) {
 	RCoreTask *task = r_core_task_self (scheduler);
@@ -419,20 +441,27 @@ static RThreadFunctionRet task_run(RCoreTask *task) {
 	RCore *core = task->core;
 	RCoreTaskScheduler *scheduler = &task->core->tasks;
 
-	task_wakeup (task);
+	// Mark running and account the task under scheduler lock
+	TASK_SIGSET_T __old_sigset;
+	tasks_lock_enter (scheduler, &__old_sigset);
+	task->state = R_CORE_TASK_STATE_RUNNING;
+	scheduler->tasks_running++;
+	tasks_lock_leave (scheduler, &__old_sigset);
 
 	if (task->cons_context && task->cons_context->breaked) {
 		// breaked in R_CORE_TASK_STATE_BEFORE_START
 		goto stillbirth;
 	}
 
+	RCore *local_core = mycore_new (core);
 	char *res_str;
 	if (task == scheduler->main_task) {
-		r_core_cmd (core, task->cmd, task->cmd_log);
+		r_core_cmd (local_core, task->cmd, task->cmd_log);
 		res_str = NULL;
 	} else {
-		res_str = r_core_cmd_str (core, task->cmd);
+		res_str = r_core_cmd_str (local_core, task->cmd);
 	}
+	mycore_free (local_core);
 
 	free (task->res);
 	task->res = res_str;
@@ -483,7 +512,12 @@ static RThreadFunctionRet task_run_thread(RThread *th) {
 		return 0;
 	}
 	RCoreTask *task = (RCoreTask *)th->user;
-	return task_run (task);
+	// Set TLS current task for this thread during execution
+	task_tls_current = task;
+	RThreadFunctionRet ret = task_run (task);
+	// Clear TLS on exit
+	task_tls_current = NULL;
+	return ret;
 }
 
 R_API void r_core_task_enqueue(RCoreTaskScheduler *scheduler, RCoreTask *task) {
@@ -513,13 +547,12 @@ R_API void r_core_task_enqueue_oneshot(RCoreTaskScheduler *scheduler, RCoreTaskO
 		return;
 	}
 	TASK_SIGSET_T old_sigset;
+	bool run_now = false;
 	tasks_lock_enter (scheduler, &old_sigset);
 	if (scheduler->tasks_running == 0) {
-		// nothing is running right now and no other task can be scheduled
-		// while core->tasks_lock is locked => just run it
+		// Execute outside the scheduler lock to avoid deadlocks
 		scheduler->oneshot_running = true;
-		func (user);
-		scheduler->oneshot_running = false;
+		run_now = true;
 	} else {
 		OneShot *oneshot = R_NEW (OneShot);
 		if (oneshot) {
@@ -530,12 +563,24 @@ R_API void r_core_task_enqueue_oneshot(RCoreTaskScheduler *scheduler, RCoreTaskO
 		}
 	}
 	tasks_lock_leave (scheduler, &old_sigset);
+
+	if (run_now) {
+		func (user);
+		tasks_lock_enter (scheduler, &old_sigset);
+		scheduler->oneshot_running = false;
+		tasks_lock_leave (scheduler, &old_sigset);
+	}
 }
 
 R_API int r_core_task_run_sync(RCoreTaskScheduler *scheduler, RCoreTask *task) {
 	R_RETURN_VAL_IF_FAIL (scheduler && task, -1);
 	task->thread = NULL;
-	return task_run (task);
+	// Set TLS for synchronous execution within the current thread
+	task_tls_current = task;
+	RThreadFunctionRet ret = task_run (task);
+	// Clear TLS after execution
+	task_tls_current = NULL;
+	return ret;
 }
 
 /* begin running stuff synchronously on the main task */
@@ -554,17 +599,22 @@ R_API void r_core_task_sync_begin(RCoreTaskScheduler *scheduler) {
 	task->cmd_log = false;
 	task->state = R_CORE_TASK_STATE_BEFORE_START;
 	tasks_lock_leave (scheduler, &old_sigset);
-	task_wakeup (task);
+	// Mark main task running and ensure its console context is active
+	tasks_lock_enter (scheduler, &old_sigset);
+	task->state = R_CORE_TASK_STATE_RUNNING;
+	tasks_lock_leave (scheduler, &old_sigset);
+	if (task->cons_context) {
+		r_cons_context_load (task->cons_context);
+	}
 }
 
-/* end running stuff synchronously, initially started with r_core_task_sync_begin() */
+/* end running stuff synchronously, initially started with r_core_task_sync_begin () */
 R_API void r_core_task_sync_end(RCoreTaskScheduler *scheduler) {
 	R_RETURN_IF_FAIL (scheduler);
 	task_end (scheduler->main_task);
 }
 
-/* To be called from within a task.
- * Begin sleeping and schedule other tasks until r_core_task_sleep_end() is called. */
+/* To be called from within a task. Begin sleeping and schedule other tasks until r_core_task_sleep_end () is called. */
 R_API void r_core_task_sleep_begin(RCoreTask *task) {
 	R_RETURN_IF_FAIL (task);
 	r_core_task_schedule (task, R_CORE_TASK_STATE_SLEEPING);
@@ -572,7 +622,8 @@ R_API void r_core_task_sleep_begin(RCoreTask *task) {
 
 R_API void r_core_task_sleep_end(RCoreTask *task) {
 	R_RETURN_IF_FAIL (task);
-	task_wakeup (task);
+	// Return to RUNNING state and restore context via scheduler path
+	r_core_task_schedule (task, R_CORE_TASK_STATE_RUNNING);
 }
 
 R_API const char *r_core_task_status(RCoreTask *task) {
@@ -596,6 +647,10 @@ R_API const char *r_core_task_status(RCoreTask *task) {
 R_API RCoreTask *r_core_task_self(RCoreTaskScheduler *scheduler) {
 	if (!scheduler) {
 		return NULL;
+	}
+	// Prefer TLS current task if set; fall back to scheduler state
+	if (task_tls_current) {
+		return task_tls_current;
 	}
 	RCoreTask *res = scheduler->current_task ? scheduler->current_task : scheduler->main_task;
 	return res;

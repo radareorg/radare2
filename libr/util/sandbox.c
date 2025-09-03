@@ -516,7 +516,12 @@ R_API int r_sandbox_kill(int pid, int sig) {
 		return -1;
 	}
 #if HAVE_SYSTEM && R2__UNIX__
-	return kill (pid, sig);
+	int ret = kill (pid, sig);
+	const bool sync_kill = false;
+	if (sync_kill) {
+		waitpid (pid, NULL, 0);
+	}
+	return ret;
 #endif
 	return -1;
 }

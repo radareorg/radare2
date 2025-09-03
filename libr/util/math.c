@@ -63,6 +63,18 @@ static inline RNumCalcValue Ndiv(RNumCalcValue n, RNumCalcValue v) {
 	return n;
 }
 
+static inline RNumCalcValue Bnot(RNumCalcValue n) { n.n = !n.n; return n; }
+static inline RNumCalcValue Bor(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n = n.n || v.n; return n; }
+static inline RNumCalcValue Band(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n = n.n && v.n; return n; }
+static inline RNumCalcValue Bxor(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n = (n.n && !v.n) || (!n.n && v.n); return n; }
+static inline RNumCalcValue Bxnor(RNumCalcValue n, RNumCalcValue v) {
+	n.d = v.d;
+	n.n = (n.n && v.n) || (!n.n && !v.n);
+	return n;
+}
+static inline RNumCalcValue Beq(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n = n.n == v.n; return n; }
+static inline RNumCalcValue Bneq(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n = n.n != v.n; return n; }
+
 static RNumCalcValue expr(RNum*, RNumCalc*, int);
 static RNumCalcValue term(RNum*, RNumCalc*, int);
 static void error(RNum*, RNumCalc*, const char *);
@@ -90,6 +102,12 @@ static RNumCalcValue expr(RNum *num, RNumCalc *nc, int get) {
 		case RNCAND: left = Nand (left, term (num, nc, 1)); break;
 		case RNCLT: left = Nlt (left, term (num, nc, 1)); break;
 		case RNCGT: left = Ngt (left, term (num, nc, 1)); break;
+		case RNCBOR: left = Bor (left, term (num, nc, 1)); break;
+		case RNCBAND: left = Band (left, term (num, nc, 1)); break;
+		case RNCBXOR: left = Bxor (left, term (num, nc, 1)); break;
+		case RNCBEQ: left = Beq (left, term (num, nc, 1)); break;
+		case RNCBNEQ: left = Bneq (left, term (num, nc, 1)); break;
+		case RNCBXNOR: left = Bxnor (left, term (num, nc, 1)); break;
 		default:
 			return left;
 		}
@@ -156,9 +174,12 @@ static RNumCalcValue prim(RNum *num, RNumCalc *nc, int get) {
 			Nsubi (v, 1);
 		}
 		return v;
+	case RNCBNOT:
+		get_token (num, nc);
+		return Bnot (expr (num, nc, 1));
 	case RNCNEG:
 		get_token (num, nc);
-		return Nneg (nc->number_value); //prim (num, nc, 1), 1);
+		return Nneg (expr (num, nc, 1));
 	case RNCINC:
 		return Naddi (prim (num, nc, 1), 1);
 	case RNCDEC:
@@ -190,6 +211,12 @@ static RNumCalcValue prim(RNum *num, RNumCalc *nc, int get) {
 	case RNCSHR:
 	case RNCROL:
 	case RNCROR:
+	case RNCBOR:
+	case RNCBAND:
+	case RNCBXOR:
+	case RNCBXNOR:
+	case RNCBNEQ:
+	case RNCBEQ:
 		return v;
 	//default: error (num, nc, "primary expected");
 	}
@@ -327,12 +354,37 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 	case '^':
 	case '&':
 	case '|':
+	case '=':
+		if (cin_get (num, nc, &c) && c == ch) {
+			switch (ch) {
+			case '^':
+				// "^^" = boolean xor
+				return nc->curr_tok = RNCBXOR;
+			case '&':
+				// "&&" = boolean and
+				return nc->curr_tok = RNCBAND;
+			case '|':
+				// "||" = boolean or
+				return nc->curr_tok = RNCBOR;
+			case '=':
+				// "==" = equality test
+				return nc->curr_tok = RNCBEQ;
+			}
+		}
+		cin_putback (num, nc, c);
+		return nc->curr_tok = (RNumCalcToken) ch;
+	case '!':
+		if (cin_get (num, nc, &c) && c == '=') {
+			// "!=" = inequality test
+			return nc->curr_tok = RNCBNEQ;
+		}
+		cin_putback (num, nc, c);
+		return nc->curr_tok = RNCBNOT;
 	case '*':
 	case '%':
 	case '/':
 	case '(':
 	case ')':
-	case '=':
 		return nc->curr_tok = (RNumCalcToken) ch;
 	case '0': case '1': case '2': case '3': case '4':
 	case '5': case '6': case '7': case '8': case '9':

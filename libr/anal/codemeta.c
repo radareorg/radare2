@@ -5,8 +5,7 @@
 
 R_API RCodeMetaItem *r_codemeta_item_clone(RCodeMetaItem *code) {
 	R_RETURN_VAL_IF_FAIL (code, NULL);
-	RCodeMetaItem *mi = r_codemeta_item_new ();
-	memcpy (mi, code, sizeof (RCodeMetaItem));
+	RCodeMetaItem *mi = r_mem_dup (code, sizeof (RCodeMetaItem));
 	switch (mi->type) {
 	case R_CODEMETA_TYPE_FUNCTION_NAME:
 		mi->reference.name = strdup (mi->reference.name);
@@ -84,13 +83,12 @@ R_API bool r_codemeta_item_is_variable(RCodeMetaItem *mi) {
 }
 
 R_API void r_codemeta_free(RCodeMeta *code) {
-	if (!code) {
-		return;
+	if (R_LIKELY (code)) {
+		r_vector_clear (&code->annotations);
+		r_crbtree_free (code->tree);
+		r_free (code->code);
+		r_free (code);
 	}
-	r_vector_clear (&code->annotations);
-	r_crbtree_free (code->tree);
-	r_free (code->code);
-	r_free (code);
 }
 
 static int cmp_ins(void *incoming, void *in, void *user) {
@@ -100,16 +98,17 @@ static int cmp_ins(void *incoming, void *in, void *user) {
 	const size_t mid2 = mi2->start + (mi2->end - mi2->start) / 2;
 	if (mid > mid2) {
 		return -1;
-	} else if (mid < mid2) {
+	}
+	if (mid < mid2) {
 		return 1;
-	} else {
-		const ut32 mod = (mi->end - mi->start) & 0x1;	// this fixes the buggy
-		const ut32 mod2 = (mi2->end - mi2->start) & 0x1;
-		if (mod > mod2) {
-			return -1;
-		} else if (mod < mod2) {
-			return 1;
-		}
+	}
+	const ut32 mod = (mi->end - mi->start) & 0x1;	// this fixes the buggy
+	const ut32 mod2 = (mi2->end - mi2->start) & 0x1;
+	if (mod > mod2) {
+		return -1;
+	}
+	if (mod < mod2) {
+		return 1;
 	}
 	return ((int)mi2->type) - ((int)mi->type);	// avoid weird things
 }
@@ -137,7 +136,8 @@ static int cmp_find_min_mid(void *incoming, void *in, void *user) {
 			}
 		}
 		return -1;
-	} else if (mid == search_mid[0]) {
+	}
+	if (mid == search_mid[0]) {
 		min[0] = mi;
 		return 0;
 	}
@@ -224,17 +224,17 @@ R_API RVector *r_codemeta_line_offsets(RCodeMeta *code) {
 }
 
 #define PALETTE(x) (cons && cons->context->pal.x) ? cons->context->pal.x
-#define PRINT_COLOR(x, str)                             \
-	do {                                       \
-		if (cons && cons->context && cons->context->color_mode) {   \
-			str = r_str_appendf (str, "%s", (x)); \
-		}                                  \
+#define PRINT_COLOR(x) \
+	do { \
+		if (cons && cons->context && cons->context->color_mode) { \
+			r_strbuf_appendf (sb, "%s", (x)); \
+		} \
 	} while (0)
 
 /**
  * @param width maximum nibbles per address
  */
-static char *print_offset_in_binary_line_bar(RCodeMeta *code, ut64 offset, size_t width, char *str) {
+static void print_offset_in_binary_line_bar(RStrBuf *sb, RCodeMeta *code, ut64 offset, size_t width, RCons *cons) {
 	if (width < 8) {
 		width = 8;
 	}
@@ -243,42 +243,44 @@ static char *print_offset_in_binary_line_bar(RCodeMeta *code, ut64 offset, size_
 	}
 	width -= 8;
 
-	RCons *cons = r_cons_singleton ();
-	str = r_str_append (str, "    ");
+	r_strbuf_append (sb, "    ");
 	if (offset == UT64_MAX) {
-		str = r_str_append (str, "          ");
+		r_strbuf_append (sb, "          ");
 		while (width > 0) {
-			str = r_str_append (str, " ");
+			r_strbuf_append (sb, " ");
 			width--;
 		}
 	} else {
-		PRINT_COLOR (PALETTE (addr) : Color_GREEN, str);
-		str = r_str_appendf (str, "0x%08" PFMT64x, offset);
-		PRINT_COLOR (Color_RESET, str);
+		PRINT_COLOR (PALETTE (addr) : Color_GREEN);
+		r_strbuf_appendf (sb, "0x%08" PFMT64x, offset);
+		PRINT_COLOR (Color_RESET);
 	}
-	str = r_str_append (str, "    |");
-	return str;
+	r_strbuf_append (sb, "    |");
 }
 
-static char *print_disasm_in_binary_line_bar(RCodeMeta *code, ut64 offset, size_t width, RAnal *anal, char *str) {
+static void print_disasm_in_binary_line_bar(RStrBuf *sb, RCodeMeta *code, ut64 offset, size_t width, RAnal *anal) {
 	width = 40;
-	RCons *cons = r_cons_singleton ();
-	str = r_str_append (str, "    ");
-	if (offset == UT64_MAX) {
-		const char *pad = r_str_pad (' ', width);
-		str = r_str_appendf (str, "%s", pad);
+	RCore *core = NULL;
+	RCons *cons = NULL;
+	if (anal && anal->coreb.core) {
+		core = anal->coreb.core;
+		cons = core->cons;
 	} else {
-		if (anal && anal->coreb.core) {
-			RCore *core = anal->coreb.core;
+		R_LOG_WARN ("No core for codemeta");
+	}
+	r_strbuf_append (sb, "    ");
+	if (offset == UT64_MAX) {
+		r_strbuf_append (sb, r_str_pad (' ', width));
+	} else {
+		if (core) {
 			char *c = r_str_newf ("pid 1 @ 0x%" PFMT64x " @e:asm.flags=0@e:asm.lines=0@e:asm.bytes=0", offset);
 			char *res = anal->coreb.cmdStrF (core, c);
 			free (c);
 			r_str_trim (res);
 			int w = r_str_ansi_len (res);
-			str = r_str_append (str, res);
+			r_strbuf_append (sb, res);
 			if (w < width) {
-				const char *pad = r_str_pad (' ', width - w);
-				str = r_str_append (str, pad);
+				r_strbuf_append (sb, r_str_pad (' ', width - w));
 			} else {
 				char *p = (char *)r_str_ansi_chrn (res, width);
 				if (p) {
@@ -287,27 +289,22 @@ static char *print_disasm_in_binary_line_bar(RCodeMeta *code, ut64 offset, size_
 			}
 			free (res);
 		} else {
-			PRINT_COLOR (PALETTE (addr) : Color_GREEN, str);
-			str = r_str_appendf (str, "0x%08" PFMT64x, offset);
-			PRINT_COLOR (Color_RESET, str);
+			PRINT_COLOR (PALETTE (addr) : Color_GREEN);
+			r_strbuf_appendf (sb, "0x%08" PFMT64x, offset);
+			PRINT_COLOR (Color_RESET);
 			const char *pad = r_str_pad (' ', width - 11);
-			str = r_str_appendf (str, "%s", pad);
+			r_strbuf_appendf (sb, "%s", pad);
 		}
 	}
-	str = r_str_append (str, "    |");
-	return str;
+	r_strbuf_append (sb, "    |");
 }
 
-static char *r_codemeta_print_internal(RCodeMeta *code, RVector *line_offsets, RAnal *anal) {
-	char *result = r_str_new ("");
-	if (!result) {
-		return NULL;
+static char *r_codemeta_print_internal(RCodeMeta *code, RVector *line_offsets, RAnal *anal, bool doprint) {
+	if (code->annotations.len == 0) {
+		return r_str_newf ("%s\n", code->code);
 	}
 
-	if (code->annotations.len == 0) {
-		result = r_str_appendf (result, "%s\n", code->code);
-		return result;
-	}
+	RStrBuf *sb = r_strbuf_new ("");
 
 	size_t cur = 0;
 	size_t line_idx = 0;
@@ -331,7 +328,14 @@ static char *r_codemeta_print_internal(RCodeMeta *code, RVector *line_offsets, R
 		}
 	}
 
-	RCons *cons = r_cons_singleton ();
+	RCore *core = NULL;
+	RCons *cons = NULL;
+	if (anal && anal->coreb.core) {
+		core = anal->coreb.core;
+		cons = core->cons;
+	} else {
+		R_LOG_WARN ("No core for codemeta");
+	}
 	RCodeMetaItem *annotation;
 	r_vector_foreach (&code->annotations, annotation) {
 		if (annotation->type != R_CODEMETA_TYPE_SYNTAX_HIGHLIGHT) {
@@ -377,19 +381,19 @@ static char *r_codemeta_print_internal(RCodeMeta *code, RVector *line_offsets, R
 				if (line_idx < line_offsets->len) {
 					offset = *(ut64 *)r_vector_index_ptr (line_offsets, line_idx);
 				}
-				if (anal) {
-					result = print_disasm_in_binary_line_bar (code, offset, offset_width, anal, result);
+				if (doprint) {
+					print_disasm_in_binary_line_bar (sb, code, offset, offset_width, anal);
 				} else {
-					result = print_offset_in_binary_line_bar (code, offset, offset_width, result);
+					print_offset_in_binary_line_bar (sb, code, offset, offset_width, cons);
 				}
 				line_idx++;
 			}
-			result = r_str_appendf (result, "%c", code->code[cur]);
+			r_strbuf_appendf (sb, "%c", code->code[cur]);
 		}
 
 		// (3/3)
 		// everything in between the "start" and the "end" inclusive should be highlighted
-		PRINT_COLOR (color, result);
+		PRINT_COLOR (color);
 		for (; cur < annotation->end && cur < len; cur++) {
 			// if we are starting a new line and we are printing with offsets
 			// we need to prepare the bar with offsets on the left handside before that
@@ -398,18 +402,18 @@ static char *r_codemeta_print_internal(RCodeMeta *code, RVector *line_offsets, R
 				if (line_idx < line_offsets->len) {
 					offset = *(ut64 *)r_vector_index_ptr (line_offsets, line_idx);
 				}
-				PRINT_COLOR (Color_RESET, result);
-				if (anal) {
-					result = print_disasm_in_binary_line_bar (code, offset, offset_width, anal, result);
+				PRINT_COLOR (Color_RESET);
+				if (doprint) {
+					print_disasm_in_binary_line_bar (sb, code, offset, offset_width, anal);
 				} else {
-					result = print_offset_in_binary_line_bar (code, offset, offset_width, result);
+					print_offset_in_binary_line_bar (sb, code, offset, offset_width, cons);
 				}
-				PRINT_COLOR (color, result);
+				PRINT_COLOR (color);
 				line_idx++;
 			}
-			result = r_str_appendf (result, "%c", code->code[cur]);
+			r_strbuf_appendf (sb, "%c", code->code[cur]);
 		}
-		PRINT_COLOR (Color_RESET, result);
+		PRINT_COLOR (Color_RESET);
 	}
 	// the rest of the decompiled code should be printed
 	// without any highlighting since we don't have any annotations left
@@ -421,25 +425,30 @@ static char *r_codemeta_print_internal(RCodeMeta *code, RVector *line_offsets, R
 			if (line_idx < line_offsets->len) {
 				offset = *(ut64 *)r_vector_index_ptr (line_offsets, line_idx);
 			}
-			if (anal) {
-				result = print_disasm_in_binary_line_bar (code, offset, offset_width, anal, result);
+			if (doprint) {
+				print_disasm_in_binary_line_bar (sb, code, offset, offset_width, anal);
 			} else {
-				result = print_offset_in_binary_line_bar (code, offset, offset_width, result);
+				print_offset_in_binary_line_bar (sb, code, offset, offset_width, cons);
 			}
 			line_idx++;
 		}
-		result = r_str_appendf (result, "%c", code->code[cur]);
+		r_strbuf_appendf (sb, "%c", code->code[cur]);
 	}
-	return result;
+	return r_strbuf_drain (sb);
 }
 
 R_API char *r_codemeta_print_disasm(RCodeMeta *code, RVector *line_offsets, void *anal) {
-	return r_codemeta_print_internal (code, line_offsets, anal);
+	return r_codemeta_print_internal (code, line_offsets, anal, true);
+}
+
+R_API char *r_codemeta_print2(RCodeMeta *code, RVector *line_offsets, void *anal) {
+	return r_codemeta_print_internal (code, line_offsets, anal, false);
 }
 
 // TODO rename R_API char *r_codemeta_print_offsets(RCodeMeta *code, RVector *line_offsets, bool d) {
 R_API char *r_codemeta_print(RCodeMeta *code, RVector *line_offsets) {
-	return r_codemeta_print_internal (code, line_offsets, NULL);
+	R_LOG_DEBUG ("RCodeMetaPrint is deprecated: use RCodeMetaPrint2 instead");
+	return r_codemeta_print_internal (code, line_offsets, NULL, false);
 }
 
 static bool foreach_offset_annotation(void *user, const ut64 offset, const void *val) {

@@ -64,10 +64,12 @@ R_API bool r_strbuf_copy(RStrBuf *dst, RStrBuf *src) {
 		dst->ptr = p;
 		dst->ptrlen = src->ptrlen;
 	} else {
+		dst->ptrlen = 0;
 		R_FREE (dst->ptr);
 		memcpy (dst->buf, src->buf, sizeof (dst->buf));
 	}
 	dst->len = src->len;
+	dst->weakref = false;
 	return true;
 }
 
@@ -466,7 +468,7 @@ R_API bool r_strbuf_replace(RStrBuf *sb, const char *key, const char *val) {
 		return false;
 	}
 	free (r_strbuf_drain_nofree (sb));
-	return r_strbuf_setptr (sb, tmp, 0);
+	return r_strbuf_setptr (sb, tmp, -1);
 }
 
 R_API bool r_strbuf_replacef(RStrBuf *sb, const char *key, const char *fmt, ...) {
@@ -495,7 +497,7 @@ R_API bool r_strbuf_replacef(RStrBuf *sb, const char *key, const char *fmt, ...)
 		return false;
 	}
 	free (r_strbuf_drain_nofree (sb));
-	return r_strbuf_setptr (sb, tmp, 0);
+	return r_strbuf_setptr (sb, tmp, -1);
 }
 
 R_API void r_strbuf_free(RStrBuf *sb) {

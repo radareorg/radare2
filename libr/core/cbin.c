@@ -721,6 +721,10 @@ R_API void r_core_anal_type_init(RCore *core) {
 	if (!strcmp (os, "ios") || !strcmp (os, "macos")) {
 		load_types_from (core, "types-darwin");
 	}
+	RBinInfo *info = r_bin_get_info (core->bin);
+	if (info && info->subsystem && !strcmp (info->subsystem, "xnu")) {
+		load_types_from (core, "types-iokit");
+	}
 	load_types_from (core, "types-%d", bits);
 	load_types_from (core, "types-%s-%d", os, bits);
 	load_types_from (core, "types-%s-%d", anal_arch, bits);
@@ -4099,7 +4103,10 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 			if (rname && rname != cname && strcmp (cname, rname)) {
 				pj_ks (pj, "rawclassname", rname);
 			}
-			pj_kN (pj, "addr", c->addr);
+			if (c->instance_size > 0) {
+				pj_kN (pj, "instance_size", c->instance_size);
+			}
+			pj_kn (pj, "addr", c->addr);
 			const char *lang = r_bin_lang_tostring (c->lang);
 			if (lang && *lang != '?') {
 				pj_ks (pj, "lang", lang);

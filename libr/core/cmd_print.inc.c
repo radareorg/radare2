@@ -169,10 +169,10 @@ static RCoreHelpMessage help_msg_prg = {
 
 static RCoreHelpMessage help_msg_amper = {
 	"Usage:", "&[-|<cmd>]", "Manage tasks (WARNING: Experimental. Use with caution!)",
-	"&", " <cmd>", "run <cmd> in a new background task",
+	"&", "", "list all tasks (alias for 'jobs' command)",
+	"&", " <cmd>", "run <cmd> in a new background task (alias for 'bg')",
 	"&:", "<cmd>", "queue <cmd> to be executed later when possible",
 	"&t", " <cmd>", "run <cmd> in a new transient background task (auto-delete when it is finished)",
-	"&", "", "list all tasks",
 	"&j", "", "list all tasks (in JSON)",
 	"&=", " 3", "show output of task 3",
 	"&b", " 3", "break task 3",
@@ -180,8 +180,8 @@ static RCoreHelpMessage help_msg_amper = {
 	"&-", " 1", "delete task #1 or schedule for deletion when it is finished",
 	"&", "-*", "delete all done tasks",
 	"&?", "", "show this help",
-	"&&", " 3", "wait until task 3 is finished",
-	"&&", "", "wait until all tasks are finished",
+	"&&", " 3", "wait until task 3 is finished (alias for 'fg')",
+	"&&", "", "wait until all tasks are finished (same as 'fg')",
 	NULL
 };
 
@@ -6896,9 +6896,9 @@ static int cmd_print(void *data, const char *input) {
 	const char ch0 = *input;
 	switch (ch0) {
 	case 'w': // "pw"
-		if (input[1] == 'n') {
+		if (input[1] == 'n') { // "pwn"
 			cmd_print_pwn (core);
-		} else if (input[1] == 'd') {
+		} else if (input[1] == 'd') { // "pwd"
 			if (!r_sandbox_enable (0)) {
 				char *cwd = r_sys_getdir ();
 				if (cwd) {
@@ -6907,7 +6907,7 @@ static int cmd_print(void *data, const char *input) {
 				}
 			}
 		} else {
-			r_cons_printf (core->cons, "| pwd               display current working directory\n");
+			r_cons_println (core->cons, "| pwd               display current working directory");
 		}
 		break;
 	case 'j': // "pj"

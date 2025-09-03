@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2023 - pancake */
+/* radare - LGPL - Copyright 2015-2025 - pancake */
 
 #include "r_types_base.h"
 #include "r_util/r_log.h"
@@ -225,8 +225,7 @@ static inline ut32 encode1reg(ArmOp *op) {
 }
 
 static inline ut32 encode2regs(ArmOp *op) {
-	// p/arm/armass64.c:226:37: runtime error: left shift of 5 by 29 places cannot be represented in type 'int'
-	ut32 a0 = op->operands[1].reg;
+	ut32 a0 = (ut32) op->operands[1].reg & UT32_MAX;
 	return ((a0 & 0x7) << 29) | ((a0 & 0x18) << 13) | encode1reg (op);
 }
 
@@ -355,7 +354,7 @@ static ut32 mov(ArmOp *op) {
 static ut32 cb(ArmOp *op) {
 	ut32 data = UT32_MAX;
 	int k = 0;
-	if (!strncmp (op->mnemonic, "cbnz", 4)) {
+	if (r_str_startswith (op->mnemonic, "cbnz")) {
 		if (op->operands[0].reg_type & ARM_REG64) {
 			k = 0x000000b5;
 		} else if (op->operands[0].reg_type & ARM_REG32) {
@@ -363,7 +362,7 @@ static ut32 cb(ArmOp *op) {
 		} else {
 			return UT32_MAX;
 		}
-	} else if (!strncmp (op->mnemonic, "cbz", 3)) {
+	} else if (r_str_startswith (op->mnemonic, "cbz")) {
 		if (op->operands[0].reg_type & ARM_REG64) {
 			k = 0x000000b4;
 		} else if (op->operands[0].reg_type & ARM_REG32) {
@@ -389,7 +388,7 @@ static ut32 cl(ArmOp *op) {
 	check_cond (op->operands[0].type == ARM_GPR);
 	check_cond (op->operands[1].type == ARM_GPR);
 
-	if (!strncmp (op->mnemonic, "cls", 3)) {
+	if (r_str_startswith (op->mnemonic, "cls")) {
 		if (op->operands[0].reg_type & ARM_REG64) {
 			k = 0x0014c0da;
 		} else if (op->operands[0].reg_type & ARM_REG32) {
@@ -397,7 +396,7 @@ static ut32 cl(ArmOp *op) {
 		} else {
 			return UT32_MAX;
 		}
-	} else if (!strncmp (op->mnemonic, "clz", 3)) {
+	} else if (r_str_startswith (op->mnemonic, "clz")) {
 		if (op->operands[0].reg_type & ARM_REG64) {
 			k = 0x0010c0da;
 		} else if (op->operands[0].reg_type & ARM_REG32) {
@@ -547,7 +546,7 @@ static ut32 ngc(ArmOp *op) {
 	check_cond (op->operands[0].type == ARM_GPR);
 	check_cond (op->operands[1].type == ARM_GPR);
 
-	if (!strncmp (op->mnemonic, "ngc", 3)) {
+	if (r_str_startswith (op->mnemonic, "ngc")) {
 		if (op->operands[0].reg_type & ARM_REG64) {
 			k = 0xe00300da;
 		} else if (op->operands[0].reg_type & ARM_REG32) {
@@ -608,7 +607,7 @@ static ut32 rbit(ArmOp *op) {
 	check_cond (op->operands[1].type == ARM_GPR);
 
 	int k = 0;
-	if (!strncmp (op->mnemonic, "rbit", 4)) {
+	if (r_str_startswith (op->mnemonic, "rbit")) {
 		if (op->operands[0].reg_type & ARM_REG64) {
 			k = 0x0000c0da;
 		} else if (op->operands[0].reg_type & ARM_REG32) {
@@ -630,7 +629,7 @@ static ut32 op_mvn(ArmOp *op) {
 	check_cond (op->operands[1].type == ARM_GPR);
 
 	int k = 0;
-	if (!strncmp (op->mnemonic, "mvn", 3)) {
+	if (r_str_startswith (op->mnemonic, "mvn")) {
 		if (op->operands[0].reg_type & ARM_REG64) {
 			k = 0xe00320aa;
 		} else if (op->operands[0].reg_type & ARM_REG32) {
@@ -805,7 +804,7 @@ static ut32 sxt(ArmOp *op) {
 	check_cond (op->operands[0].type == ARM_GPR);
 	check_cond (op->operands[1].type == ARM_GPR);
 
-	if (!strncmp (op->mnemonic, "sxtb", 4)) {
+	if (r_str_startswith (op->mnemonic, "sxtb")) {
 		if (r64_32) {
 			k = 0x001c4093;
 		} else if (reg_32) {
@@ -813,7 +812,7 @@ static ut32 sxt(ArmOp *op) {
 		} else {
 			return UT32_MAX;
 		}
-	} else if (!strncmp (op->mnemonic, "sxth", 4)) {
+	} else if (r_str_startswith (op->mnemonic, "sxth")) {
 		if (r64_32) {
 			k = 0x003c4093;
 		} else if (reg_32) {
@@ -821,7 +820,7 @@ static ut32 sxt(ArmOp *op) {
 		} else {
 			return UT32_MAX;
 		}
-	} else if (!strncmp (op->mnemonic, "sxtw", 4)) {
+	} else if (r_str_startswith (op->mnemonic, "sxtw")) {
 		if (r64_32) {
 			k = 0x007c4093;
 		} else {
@@ -1052,10 +1051,12 @@ static ut32 lsop(ArmOp *op, int k, ut64 addr) {
 	check_cond (op->operands[1].type == ARM_GPR);
 	check_cond (op->operands[1].reg_type & ARM_REG64);
 	k |= encode2regs (op);
+	bool uwu = false;
 	if (!strcmp (op->mnemonic, "ldrb") || !strcmp (op->mnemonic, "ldrh") || !strcmp (op->mnemonic, "strb") || !strcmp (op->mnemonic, "strh")) {
 		check_cond (op->operands[0].reg_type & ARM_REG32);
 	} else if (!strcmp (op->mnemonic, "ldrsw")) {
 		check_cond (op->operands[0].reg_type & ARM_REG64);
+		uwu = true;
 	} else { // ldrsh, ldrsb
 		if (op->operands[0].reg_type & ARM_REG32) {
 			k |= 0x00004000;
@@ -1129,8 +1130,18 @@ static ut32 lsop(ArmOp *op, int k, ut64 addr) {
 			check_cond (n <= 0x1ffe && !(n & 1))
 				n >>= 1;
 		} else { // w
-			check_cond (n <= 0x3ffc && !(n & 3));
-			n >>= 2;
+			int scale = (op->operands[0].reg_type & ARM_REG64) ? 3 : 2;
+			if (uwu || scale == 2) {
+				check_cond (n <= 0x3ffc && !(n & 3));
+				if (uwu) {
+					n>>= 2;
+				} else {
+					n >>= 3;
+				}
+			} else {
+				check_cond (n <= 0x7ff8 && !(n & 7));
+				n >>= 3;
+			}
 		}
 		data = k | (n & 0x3f) << 18 | (n & 0xfc0) << 2 | 1;
 		return data;
@@ -1214,7 +1225,7 @@ static ut32 bdot(ArmOp *op, ut64 addr, int k) {
 static ut32 mem_barrier(ArmOp *op, ut64 addr, int k) {
 	ut32 data = UT32_MAX;
 	data = k;
-	if (!strncmp (op->mnemonic, "isb", 3)) {
+	if (r_str_startswith (op->mnemonic, "isb")) {
 		if (op->operands[0].mem_option == 15 || op->operands[0].type == ARM_NOTYPE) {
 			return data;
 		} else {
@@ -1621,40 +1632,40 @@ static bool parseOperands(char *str, ArmOp *op) {
 			token++;
 		}
 
-		if (!strncmp (token, "lsl", 3)) {
+		if (r_str_startswith (token, "lsl")) {
 			op->operands[operand].type = ARM_SHIFT;
 			op->operands[operand].shift = ARM_LSL;
-		} else if (!strncmp (token, "lsr", 3)) {
+		} else if (r_str_startswith (token, "lsr")) {
 			op->operands[operand].type = ARM_SHIFT;
 			op->operands[operand].shift = ARM_LSR;
-		} else if (!strncmp (token, "asr", 3)) {
+		} else if (r_str_startswith (token, "asr")) {
 			op->operands[operand].type = ARM_SHIFT;
 			op->operands[operand].shift = ARM_ASR;
-		} else if (!strncmp (token, "ror", 3)) {
+		} else if (r_str_startswith (token, "ror")) {
 			op->operands[operand].type = ARM_SHIFT;
 			op->operands[operand].shift = ARM_ROR;
-		} else if (!strncmp (token, "uxtb", 4)) {
+		} else if (r_str_startswith (token, "uxtb")) {
 			op->operands[operand].type = ARM_EXTEND;
 			op->operands[operand].shift = ARM_UXTB;
-		} else if (!strncmp (token, "uxth", 4)) {
+		} else if (r_str_startswith (token, "uxth")) {
 			op->operands[operand].type = ARM_EXTEND;
 			op->operands[operand].shift = ARM_UXTH;
-		} else if (!strncmp (token, "uxtw", 4)) {
+		} else if (r_str_startswith (token, "uxtw")) {
 			op->operands[operand].type = ARM_EXTEND;
 			op->operands[operand].shift = ARM_UXTW;
-		} else if (!strncmp (token, "uxtx", 4)) {
+		} else if (r_str_startswith (token, "uxtx")) {
 			op->operands[operand].type = ARM_EXTEND;
 			op->operands[operand].shift = ARM_UXTX;
-		} else if (!strncmp (token, "sxtb", 4)) {
+		} else if (r_str_startswith (token, "sxtb")) {
 			op->operands[operand].type = ARM_EXTEND;
 			op->operands[operand].shift = ARM_SXTB;
-		} else if (!strncmp (token, "sxth", 4)) {
+		} else if (r_str_startswith (token, "sxth")) {
 			op->operands[operand].type = ARM_EXTEND;
 			op->operands[operand].shift = ARM_SXTH;
-		} else if (!strncmp (token, "sxtw", 4)) {
+		} else if (r_str_startswith (token, "sxtw")) {
 			op->operands[operand].type = ARM_EXTEND;
 			op->operands[operand].shift = ARM_SXTW;
-		} else if (!strncmp (token, "sxtx", 4)) {
+		} else if (r_str_startswith (token, "sxtx")) {
 			op->operands[operand].type = ARM_EXTEND;
 			op->operands[operand].shift = ARM_SXTX;
 		}
@@ -1716,7 +1727,7 @@ static bool parseOperands(char *str, ArmOp *op) {
 			op->operands[operand].type = ARM_GPR;
 			op->operands[operand].reg_type = ARM_REG64;
 
-			if (!strncmp (token + 1, "zr", 2)) {
+			if (r_str_startswith (token + 1, "zr")) {
 				// XZR
 				op->operands[operand].reg = 31;
 			} else {
@@ -1733,10 +1744,10 @@ static bool parseOperands(char *str, ArmOp *op) {
 			op->operands[operand].type = ARM_GPR;
 			op->operands[operand].reg_type = ARM_REG32;
 
-			if (!strncmp (token + 1, "zr", 2)) {
+			if (r_str_startswith (token + 1, "zr")) {
 				// WZR
 				op->operands[operand].reg = 31;
-			} else if (!strncmp (token + 1, "sp", 2)) {
+			} else if (r_str_startswith (token + 1, "sp")) {
 				// WSP
 				op->operands[operand].reg = 31;
 				op->operands[operand].reg_type |= ARM_SP;
@@ -2094,113 +2105,119 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 	/* TODO: write tests for this and move out the regsize logic into the mov */
 	if (r_str_startswith (str, "mov")) {
 		*op = mov (&ops);
-	} else if (!strncmp (str, "cb", 2)) {
+	} else if (r_str_startswith (str, "cb")) {
 		*op = cb (&ops);
-	} else if (!strncmp (str, "cmp", 3)) {
+	} else if (r_str_startswith (str, "cmp")) {
 		*op = cmp (&ops);
-	} else if (!strncmp (str, "mul ", 4)) {
+	} else if (r_str_startswith (str, "mul ")) {
 		*op = r_n_math (&ops, 0x007c009b, 0x007c001b, has64reg (str));
-	} else if (!strncmp (str, "udiv", 4)) {
+	} else if (r_str_startswith (str, "udiv")) {
 		*op = r_n_math (&ops, 0x0008c09a, 0x0008c01a, has64reg (str));
-	} else if (!strncmp (str, "sdiv", 4)) {
+	} else if (r_str_startswith (str, "sdiv")) {
 		*op = r_n_math (&ops, 0x000cc09a, 0x000cc01a, has64reg (str));
-	} else if (!strncmp (str, "lsl ", 4)) {
+	} else if (r_str_startswith (str, "lsl ")) {
 		*op = r_n_math (&ops, 0x0020c09a, 0x0020c01a, has64reg (str));
-	} else if (!strncmp (str, "lsr ", 4)) {
+	} else if (r_str_startswith (str, "lsr ")) {
 		*op = r_n_math (&ops, 0x0024c09a, 0x0024c01a, has64reg (str));
-	} else if (!strncmp (str, "adc ", 4)) {
+	} else if (r_str_startswith (str, "adc ")) {
 		*op = r_n_math (&ops, 0x0000009a, 0x0000001a, has64reg (str));
-	} else if (!strncmp (str, "adcs", 4)) {
+	} else if (r_str_startswith (str, "adcs")) {
 		*op = r_n_math (&ops, 0x000000ba, 0x0000003a, has64reg (str));
-	} else if (!strncmp (str, "sbc ", 4)) {
+	} else if (r_str_startswith (str, "sbc ")) {
 		*op = r_n_math (&ops, 0x000000da, 0x0000005a, has64reg (str));
-	} else if (!strncmp (str, "asr ", 4)) {
+	} else if (r_str_startswith (str, "asr ")) {
 		*op = asr (&ops);
-	} else if (!strncmp (str, "ror ", 4)) {
+	} else if (r_str_startswith (str, "ror ")) {
 		*op = ror (&ops);
-	} else if (!strncmp (str, "adds", 4)) {
+	} else if (r_str_startswith (str, "adds")) {
 		*op = adds (&ops);
-	} else if (!strncmp (str, "ngc ", 4)) {
+	} else if (r_str_startswith (str, "ngc ")) {
 		*op = ngc (&ops);
-	} else if (!strncmp (str, "rev", 3)) {
+	} else if (r_str_startswith (str, "rev")) {
 		*op = rev (&ops);
-	} else if (!strncmp (str, "mvn", 3)) {
+	} else if (r_str_startswith (str, "mvn")) {
 		*op = op_mvn (&ops);
-	} else if (!strncmp (str, "rbit", 4)) {
+	} else if (r_str_startswith (str, "rbit")) {
 		*op = rbit (&ops);
-	} else if (!strncmp (str, "tst", 3)) {
+	} else if (r_str_startswith (str, "tst")) {
 		*op = tst (&ops);
-	} else if (!strncmp (str, "cls", 3)) {
+	} else if (r_str_startswith (str, "cls")) {
 		*op = cl (&ops);
-	} else if (!strncmp (str, "clz", 3)) {
+	} else if (r_str_startswith (str, "clz")) {
 		*op = cl (&ops);
-	} else if (!strncmp (str, "ccmn", 4)) {
+	} else if (r_str_startswith (str, "ccmn")) {
 		*op = ccmn (&ops, str);
-	} else if (!strncmp (str, "csel", 4)) {
+	} else if (r_str_startswith (str, "csel")) {
 		*op = csel (&ops, str);
-	} else if (!strncmp (str, "cset", 4)) {
+	} else if (r_str_startswith (str, "cset")) {
 		*op = cset (&ops, str);
-	} else if (!strncmp (str, "sxt", 3)) {
+	} else if (r_str_startswith (str, "sxt")) {
 		*op = sxt (&ops);
-	} else if (!strncmp (str, "tb", 2)) {
+	} else if (r_str_startswith (str, "tb")) {
 		*op = tb (&ops);
-	} else if (!strncmp (str, "ldrb", 4)) {
+	} else if (r_str_startswith (str, "ldrb")) {
 		*op = lsop (&ops, 0x00004038, -1);
-	} else if (!strncmp (str, "ldrh", 4)) {
+	} else if (r_str_startswith (str, "ldrh")) {
 		*op = lsop (&ops, 0x00004078, -1);
-	} else if (!strncmp (str, "ldrsh", 5)) {
+	} else if (r_str_startswith (str, "ldrsh")) {
 		*op = lsop (&ops, 0x00008078, -1);
-	} else if (!strncmp (str, "ldrsw", 5)) {
+	} else if (r_str_startswith (str, "ldrsw")) {
 		*op = lsop (&ops, 0x00000098, addr);
-	} else if (!strncmp (str, "ldrsb", 5)) {
+	} else if (r_str_startswith (str, "ldrsb")) {
 		*op = lsop (&ops, 0x00008038, -1);
-	} else if (!strncmp (str, "strb", 4)) {
+	} else if (r_str_startswith (str, "strb")) {
 		*op = lsop (&ops, 0x00000038, -1);
-	} else if (!strncmp (str, "strh", 4)) {
+	} else if (r_str_startswith (str, "strh")) {
 		*op = lsop (&ops, 0x00000078, -1);
-	} else if (!strncmp (str, "ldr", 3)) {
-		*op = reglsop (&ops, 0x000040f8);
-	} else if (!strncmp (str, "stur", 4)) {
+	} else if (r_str_startswith (str, "ldr")) {
+		*op = UT32_MAX;
+		if (!strstr (str, " w")) {
+			*op = lsop (&ops, 0x000040f8, -1);
+		}
+		if (*op == UT32_MAX) {
+			*op = reglsop (&ops, 0x000040f8);
+		}
+	} else if (r_str_startswith (str, "stur")) {
 		*op = regsluop (&ops, 0x000000f8);
-	} else if (!strncmp (str, "ldur", 4)) {
+	} else if (r_str_startswith (str, "ldur")) {
 		*op = regsluop (&ops, 0x000040f8);
-	} else if (!strncmp (str, "str", 3)) {
+	} else if (r_str_startswith (str, "str")) {
 		*op = reglsop (&ops, 0x000000f8);
-	} else if (!strncmp (str, "stp", 3)) {
+	} else if (r_str_startswith (str, "stp")) {
 		*op = stp (&ops, 0x000000a9);
-	} else if (!strncmp (str, "ldp", 3)) {
+	} else if (r_str_startswith (str, "ldp")) {
 		*op = stp (&ops, 0x000040a9);
-	} else if (!strncmp (str, "sub", 3) && strncmp (str, "subg", 4) && strncmp (str, "subp", 4)) { // w, skip this for mte versions of sub, e.g. subg, subp ins
+	} else if (r_str_startswith (str, "sub") && !r_str_startswith (str, "subg") && !r_str_startswith (str, "subp")) { // w, skip this for mte versions of sub, e.g. subg, subp ins
 		*op = arithmetic (&ops, 0xd1);
-	} else if (!strncmp (str, "madd x", 6)) {
+	} else if (r_str_startswith (str, "madd x")) {
 		*op = math (&ops, 0x9b, true);
-	} else if (!strncmp (str, "add x", 5)) {
-		// } else if (!strncmp (str, "add", 3)) {
+	} else if (r_str_startswith (str, "add x")) {
+		// } else if (r_str_startswith (str, "add")) {
 		// *op = math (&ops, 0x8b, has64reg (str));
 		*op = arithmetic (&ops, 0x91);
-	} else if (!strncmp (str, "udiv w", 6) || !strncmp (str, "div w", 5)) {
+	} else if (r_str_startswith (str, "udiv w") || r_str_startswith (str, "div w")) {
 		*op = math (&ops, 0x8c09a, false);
-	} else if (!strncmp (str, "udiv x", 5) || !strncmp (str, "div x", 5)) {
+	} else if (r_str_startswith (str, "udiv x") || r_str_startswith (str, "div x")) {
 		*op = math (&ops, 0x8c09a, true);
-	} else if (!strncmp (str, "adc x", 5)) {
+	} else if (r_str_startswith (str, "adc x")) {
 		*op = math (&ops, 0x9a, true);
-	} else if (!strncmp (str, "mul w", 5)) {
+	} else if (r_str_startswith (str, "mul w")) {
 		*op = math (&ops, 0x007c001b, false);
-	} else if (!strncmp (str, "mul x", 5)) {
+	} else if (r_str_startswith (str, "mul x")) {
 		*op = math (&ops, 0x007c001b, true);
-	} else if (!strncmp (str, "add w", 5)) {
+	} else if (r_str_startswith (str, "add w")) {
 		*op = arithmetic (&ops, 0x11);
 #if 0
-	} else if (!strncmp (str, "eor x", 5)) {
+	} else if (r_str_startswith (str, "eor x")) {
 		*op = math (&ops, 0x4a, true);
-	} else if (!strncmp (str, "eor w", 5)) {
+	} else if (r_str_startswith (str, "eor w")) {
 		*op = math (&ops, 0x4a, false);
-	} else if (!strncmp (str, "and x", 5)) {
+	} else if (r_str_startswith (str, "and x")) {
 		*op = math (&ops, 0xa, true);
-	} else if (!strncmp (str, "and w", 5)) {
+	} else if (r_str_startswith (str, "and w")) {
 		*op = math (&ops, 0xa, false);
 #endif
-	} else if (!strncmp (str, "adr x", 5)) { // w
+	} else if (r_str_startswith (str, "adr x")) { // w
 		*op = adr (&ops, addr);
 	} else if (r_str_startswith (str, "adrp ")) {
 		*op = adrp (&ops, addr);
@@ -2244,37 +2261,37 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 		*op = 0x1f2003d5;
 	} else if (!strcmp (str, "ret")) {
 		*op = 0xc0035fd6;
-	} else if (!strncmp (str, "msr ", 4)) {
+	} else if (r_str_startswith (str, "msr ")) {
 		*op = msr (&ops, 0);
-	} else if (!strncmp (str, "mrs ", 4)) {
+	} else if (r_str_startswith (str, "mrs ")) {
 		*op = msr (&ops, 1);
-	} else if (!strncmp (str, "ands ", 5)) {
+	} else if (r_str_startswith (str, "ands ")) {
 		*op = logical (&ops, false, ARM_ANDS);
-	} else if (!strncmp (str, "and ", 4)) {
+	} else if (r_str_startswith (str, "and ")) {
 		*op = logical (&ops, false, ARM_AND);
-	} else if (!strncmp (str, "bics ", 5)) {
+	} else if (r_str_startswith (str, "bics ")) {
 		*op = logical (&ops, true, ARM_ANDS);
-	} else if (!strncmp (str, "bic ", 4)) {
+	} else if (r_str_startswith (str, "bic ")) {
 		*op = logical (&ops, true, ARM_AND);
-	} else if (!strncmp (str, "eon ", 4)) {
+	} else if (r_str_startswith (str, "eon ")) {
 		*op = logical (&ops, true, ARM_EOR);
-	} else if (!strncmp (str, "eor ", 4)) {
+	} else if (r_str_startswith (str, "eor ")) {
 		*op = logical (&ops, false, ARM_EOR);
-	} else if (!strncmp (str, "orn ", 4)) {
+	} else if (r_str_startswith (str, "orn ")) {
 		*op = logical (&ops, true, ARM_ORR);
-	} else if (!strncmp (str, "orr ", 4)) {
+	} else if (r_str_startswith (str, "orr ")) {
 		*op = logical (&ops, false, ARM_ORR);
-	} else if (!strncmp (str, "svc ", 4)) { // system level exception
+	} else if (r_str_startswith (str, "svc ")) { // system level exception
 		*op = exception (&ops, 0x010000d4);
-	} else if (!strncmp (str, "hvc ", 4)) { // hypervisor level exception
+	} else if (r_str_startswith (str, "hvc ")) { // hypervisor level exception
 		*op = exception (&ops, 0x020000d4);
-	} else if (!strncmp (str, "smc ", 4)) { // secure monitor exception
+	} else if (r_str_startswith (str, "smc ")) { // secure monitor exception
 		*op = exception (&ops, 0x030000d4);
-	} else if (!strncmp (str, "brk ", 4)) { // breakpoint
+	} else if (r_str_startswith (str, "brk ")) { // breakpoint
 		*op = exception (&ops, 0x000020d4);
-	} else if (!strncmp (str, "hlt ", 4)) { // halt
+	} else if (r_str_startswith (str, "hlt ")) { // halt
 		*op = exception (&ops, 0x000040d4);
-	} else if (!strncmp (str, "b ", 2)) {
+	} else if (r_str_startswith (str, "b ")) {
 		*op = branch (&ops, addr, 0x14);
 	} else if (r_str_startswith (str, "b.eq ") || r_str_startswith (str, "beq ")) {
 		*op = bdot (&ops, addr, 0x00000054);
@@ -2304,21 +2321,21 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 		*op = bdot (&ops, addr, 0x0c000054);
 	} else if (r_str_startswith (str, "b.lt ") || r_str_startswith (str, "blt ")) {
 		*op = bdot (&ops, addr, 0x0b000054);
-	} else if (!strncmp (str, "bl ", 3)) {
+	} else if (r_str_startswith (str, "bl ")) {
 		*op = branch (&ops, addr, 0x94);
-	} else if (!strncmp (str, "br x", 4)) {
+	} else if (r_str_startswith (str, "br x")) {
 		*op = branch (&ops, addr, 0x1fd6);
-	} else if (!strncmp (str, "blr x", 5)) {
+	} else if (r_str_startswith (str, "blr x")) {
 		*op = branch (&ops, addr, 0x3fd6);
-	} else if (!strncmp (str, "dmb ", 4)) {
+	} else if (r_str_startswith (str, "dmb ")) {
 		*op = mem_barrier (&ops, addr, 0xbf3003d5);
-	} else if (!strncmp (str, "dsb ", 4)) {
+	} else if (r_str_startswith (str, "dsb ")) {
 		*op = mem_barrier (&ops, addr, 0x9f3003d5);
-	} else if (!strncmp (str, "isb", 3)) {
+	} else if (r_str_startswith (str, "isb")) {
 		*op = mem_barrier (&ops, addr, 0xdf3f03d5);
-	} else if (!strncmp (str, "sbfiz ", 6) || !strncmp (str, "sbfm ", 5) || !strncmp (str, "sbfx ", 5)) {
+	} else if (r_str_startswith (str, "sbfiz ") || r_str_startswith (str, "sbfm ") || r_str_startswith (str, "sbfx ")) {
 		*op = bitfield (&ops, 0x00000013);
-	} else if (!strncmp (str, "ubfiz ", 6) || !strncmp (str, "ubfm ", 5) || !strncmp (str, "ubfx ", 5)) {
+	} else if (r_str_startswith (str, "ubfiz ") || r_str_startswith (str, "ubfm ") || r_str_startswith (str, "ubfx ")) {
 		*op = bitfield (&ops, 0x00000053);
 	} else {
 		*op = UT32_MAX;

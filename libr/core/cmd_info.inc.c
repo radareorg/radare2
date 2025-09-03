@@ -2601,10 +2601,10 @@ static int cmd_info(void *data, const char *input) {
 			if (input[2] == 'q') {
 				mode = R_MODE_SIMPLEST;
 			}
-		// case ',':
-		case ' ':
 		case 0:
+		case ' ':
 		case '.':
+		case ',':
 			break;
 		default:
 			r_core_return_invalid_command (core, "is", input[1]);

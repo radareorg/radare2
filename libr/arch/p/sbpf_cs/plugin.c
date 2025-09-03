@@ -32,8 +32,6 @@ static int get_capstone_mode(RArchSession *as) {
 // the "& 0xffffffff" is for some weird CS bug in JMP
 #define IMM(n) (insn->detail->bpf.operands[n].imm & UT32_MAX)
 #define OPCOUNT insn->detail->bpf.op_count
-
-// calculate jump address from immediate (sBPF uses 16-bit signed offsets in instruction units)
 #define JUMP(n) (op->addr + insn->size + ((st16)(IMM(n) & 0xffff)) * 8)
 
 // Solana syscall name mapping (retrieved from firedancer validator)
@@ -117,7 +115,7 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 					st64 current_pc = op->addr / 8; 	 		// Current PC in instruction units
 					st64 target_pc = current_pc + imm + 1;  	// Target PC in instruction units
 					st64 target_addr = target_pc * 8;  			// Target address in bytes
-					op->mnemonic = r_str_newf ("call 0x%"PFMT64x, target_addr);
+					op->mnemonic = r_str_newf ("call 0x%"PFMT64x, (ut64)target_addr);
 
 					// Set jump target for call instruction
 					op->jump = target_addr;
