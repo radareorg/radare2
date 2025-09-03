@@ -36,3 +36,6 @@ all:
 	${TAR} "radare2-${VERSION}.tar" $${V64_FILS} $${V32_FILS} $${R2_FILES} $${CS_FILES} "$(R2V)/ChangeLog" ; \
 	${CZ} "radare2-${VERSION}.tar"
 	zip -r radare2-$(VERSION).zip radare2-$(VERSION)
+
+clean:
+	rm -rf radare2-$(VERSION).zip radare2-$(VERSION)
