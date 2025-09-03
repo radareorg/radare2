@@ -764,7 +764,14 @@ static int cmd_undo(void *data, const char *input) {
 		r_core_cmdf (data, "s-%s", input + 1);
 		return 1;
 	case 'w': // "uw"
-		r_core_cmdf (data, "wc%s", input + 1);
+		if (input[1] == 'u') {
+			r_cons_println (core->cons, ":3");
+		} else {
+			if (input[1] == '?') {
+				R_LOG_INFO ("uwu is an alias for 'wc'");
+			}
+			r_core_cmdf (data, "wc%s", input + 1);
+		}
 		return 1;
 	case 0:
 	case ' ':

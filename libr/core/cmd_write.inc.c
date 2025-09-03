@@ -1627,6 +1627,9 @@ static int cmd_wc(void *data, const char *input) {
 	case 's': // "wcs" -- write cache squash
 		squash_write_cache (core, input + 1);
 		break;
+	default:
+		r_core_return_invalid_command (core, "wc", input[0]);
+		break;
 	}
 	return 0;
 }
