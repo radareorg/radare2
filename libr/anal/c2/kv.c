@@ -703,7 +703,7 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 			if (!_is_fp_field) {
 				if (R_STR_ISNOTEMPTY (md)) {
 					r_strbuf_appendf (kvc->sb, "struct.%s.%s=%s,%d,%s\n",
-						struct_tag, mn, mt, off, md);
+							struct_tag, mn, mt, off, md);
 				} else {
 					r_strbuf_appendf (kvc->sb, "struct.%s.%s=%s,%d,0\n",
 						struct_tag, mn, mt, off);
@@ -720,7 +720,11 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 				// continue with next field
 				continue;
 			}
-			// else: it is a function-pointer field; fall through to specialized handling below
+			// function-pointer field: release temporary strings to avoid leaks
+			free (mt);
+			free (mn);
+			free (md);
+			continue;
 		}
 		// After the closing '}', we expect the typedef alias:
 		skip_spaces (kvc);
@@ -749,12 +753,12 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 	} else if (next && r_str_startswith (next, "union")) {
 		/* Similar to the struct case, you would parse:
 		   typedef union [Tag]? { ... } Alias;
- (Implementation omitted for brevity) */
+		   (Implementation omitted for brevity) */
 		kvc_error (kvc, "typedef union not implemented");
 		return false;
 	} else if (next && r_str_startswith (next, "enum")) {
 		/* Similarly, handle typedef enum [Tag]? { ... } Alias;
- (Implementation omitted for brevity) */
+		   (Implementation omitted for brevity) */
 		kvc_error (kvc, "typedef enum not implemented");
 		return false;
 	} else {
@@ -766,7 +770,7 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 		const char *start = kvc->s.a;
 		/* First check if this is a function-pointer typedef of the form:
 		   typedef RETTYPE (*alias) (ARGS);
-		*/
+		   */
 		KVCToken decl = { .a = start };
 		/* find semicolon for decl end */
 		const char *semicolon = kvc_find_semicolon2 (kvc);
@@ -1163,6 +1167,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 					apply_attributes (kvc, "struct", full_scope);
 				}
 				free (type_name);
+				free (fulltype);
 				free (rtype);
 				if (args) {
 					free (args);
@@ -1258,6 +1263,10 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 						}
 						r_strbuf_appendf (kvc->sb, "func.%s.ret=%s\n", mt_check, rtype);
 						free (mname);
+						free (rtype);
+						if (args_str) {
+							free (args_str);
+						}
 						free (mt_check);
 						continue;
 					}
@@ -1266,7 +1275,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 			free (mt_check);
 		}
 #if 0
-			member_type.b = kvctoken_lastspace (member_type);
+		member_type.b = kvctoken_lastspace (member_type);
 		// TODO XXX dimensions shouldnt be part of the name
 		if (!member_type.b) {
 			char *s = kvctoken_tostring (member_name);
