@@ -51,11 +51,24 @@ static R_TH_LOCAL bool Gunsignable = false; // OK
 #define HAVE_ENVIRON 0
 #endif
 
+// _NSGetEnviron is used on both macOS and iOS paths
+#if defined(__has_include)
+# if __has_include(<crt_externs.h>)
+#  include <crt_externs.h>
+# endif
+#else
+# include <crt_externs.h>
+#endif
+// Fallback declaration if header is unavailable
+#ifndef _NSGetEnviron
+extern char ***_NSGetEnviron(void);
+#endif
+
+// Provide environ via _NSGetEnviron when available
 #if HAVE_ENVIRON
-#include <execinfo.h>
-#include <crt_externs.h>
 #define environ (*_NSGetEnviron())
 #endif
+
 # ifndef PROC_PIDPATHINFO_MAXSIZE
 #  define PROC_PIDPATHINFO_MAXSIZE 1024
 int proc_pidpath(int pid, void * buffer, ut32 buffersize);
@@ -335,6 +348,17 @@ R_API ut8 *r_sys_unxz(const ut8 *buf, size_t len, size_t *olen) {
   defined(NETBSD_WITH_BACKTRACE) || defined(FREEBSD_WITH_BACKTRACE) || \
   __DragonFly__ || __sun || __HAIKU__
 #define HAVE_BACKTRACE 1
+#endif
+
+// Ensure backtrace() declarations are visible on Apple when supported
+#if defined(__APPLE__) && defined(APPLE_WITH_BACKTRACE)
+# if defined(__has_include)
+#  if __has_include(<execinfo.h>)
+#   include <execinfo.h>
+#  endif
+# else
+// Older SDKs may not have execinfo.h; include only when available above
+# endif
 #endif
 
 R_API void r_sys_backtrace(void) {

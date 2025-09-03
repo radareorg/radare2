@@ -175,10 +175,10 @@ done
 ### BUILD PHASE
 
 # Print which archs we are building for
-echo "Will build for \\c"
+echo "Will build for $@"
 if [ "${#ARCHS}" -gt 0 ]; then
-	echo "$ARCHS \\c"
-	[ "${USE_SIMULATOR}" = 1 ] && echo "and \\c"
+	echo "$ARCHS $@"
+	[ "${USE_SIMULATOR}" = 1 ] && echo "and $@"
 fi
 [ "${USE_SIMULATOR}" = 1 ] && echo "simulator($SIMULATOR_ARCHS)"
 
