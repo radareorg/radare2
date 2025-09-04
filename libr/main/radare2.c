@@ -220,11 +220,10 @@ static int main_help(int line) {
 		" -F [binplug] force to use that rbin plugin\n"
 		" -h, -hh      show help message, -hh for long\n"
 		" -H ([var])   display variable\n"
-		" -i [file]    run script file\n"
+		" -i [file]    run rlang program, r2script file or load plugin\n"
 		" -I [file]    run script file before the file is opened\n"
 		" -j           use json for -v, -L and maybe others\n"
 		" -k [OS/kern] set asm.os (linux, macos, w32, netbsd, ...)\n"
-		" -l [lib]     load plugin file\n"
 		" -L, -LL      list supported IO plugins (-LL list core plugins)\n"
 		" -m [addr]    map file at given address (loadaddr)\n"
 		" -M           do not demangle symbol names\n"
@@ -903,9 +902,6 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		case 'k':
 			free (mr.asmos);
 			mr.asmos = strdup (opt.arg);
-			break;
-		case 'l':
-			r_lib_open (r->lib, opt.arg);
 			break;
 		case 'L':
 			if (mr.do_list_io_plugins) {
