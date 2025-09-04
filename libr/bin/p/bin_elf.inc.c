@@ -1215,7 +1215,7 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 			}
 			if (R_STR_ISNOTEMPTY (sym_name)) {
 				// Compute Murmur3 hash with seed 0
-				hash_value = murmur3_32 (sym_name, strlen (sym_name), 0);
+				ut32 hash_value = murmur3_32 (sym_name, strlen (sym_name), 0);
 				R_LOG_DEBUG ("sBPF R_BPF_64_32: symbol '%s' -> hash 0x%08x", sym_name, hash_value);
 			} else {
 				R_LOG_WARN ("sBPF R_BPF_64_32: no symbol name found for relocation at 0x%"PFMT64x, rel->rva);
