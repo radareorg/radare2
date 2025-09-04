@@ -55,6 +55,18 @@ static inline bool flag_name_prefix_token(const char *name, char **out_tok) {
 	return *out_tok != NULL;
 }
 
+static int flag_skiplist_cmp(const void *va, const void *vb) {
+	const ut64 ao = ((RFlagsAtOffset *)va)->addr;
+	const ut64 bo = ((RFlagsAtOffset *)vb)->addr;
+	if (R_LIKELY (ao < bo)) {
+		return -1;
+	}
+	if (R_LIKELY (ao > bo)) {
+		return 1;
+	}
+	return 0;
+}
+
 static inline RSkipList *prefix_get_list(RFlag *f, const char *tok, bool create) {
 	RSkipList *sl = ht_pp_find (f->ht_pfx, tok, NULL);
 	if (sl || !create) {
@@ -134,18 +146,6 @@ static inline RFlagsAtOffset *pfx_get_nearest_list(RSkipList *sl, ut64 addr, int
 		? (RFlagsAtOffset *)r_skiplist_get_geq (sl, &key)
 		: (RFlagsAtOffset *)r_skiplist_get_leq (sl, &key);
 	return (dir == 0 && flags && flags->addr != addr) ? NULL : flags;
-}
-
-static int flag_skiplist_cmp(const void *va, const void *vb) {
-	const ut64 ao = ((RFlagsAtOffset *)va)->addr;
-	const ut64 bo = ((RFlagsAtOffset *)vb)->addr;
-	if (R_LIKELY (ao < bo)) {
-		return -1;
-	}
-	if (R_LIKELY (ao > bo)) {
-		return 1;
-	}
-	return 0;
 }
 
 static ut64 num_callback(RNum *user, const char *name, bool *ok) {
