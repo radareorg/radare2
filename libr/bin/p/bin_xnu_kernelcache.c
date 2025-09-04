@@ -150,6 +150,8 @@ typedef struct {
 #define K_PPTR(p) p_ptr (p, obj)
 #define K_RPTR(buf) r_ptr (buf, obj)
 
+#define IS_KERNEL_ADDR(x) ((x & 0XFFFFFFF000000000ULL) == 0XFFFFFFF000000000ULL)
+
 #define IS_PTR_AUTH(x) ((x & (1ULL << 63)) != 0)
 #define IS_PTR_BIND(x) ((x & (1ULL << 62)) != 0)
 
@@ -239,6 +241,9 @@ static void create_initterm_syms_vec(RVecRBinSymbol *symbols, RBinFile *bf, RKex
 static void process_constructors(RKernelCacheObj *obj, struct MACH0_(obj_t) *mach0, RList *ret, ut64 paddr, bool is_first, int mode, const char *prefix);
 static void process_constructors_vec(RVecRBinSymbol *symbols, RBinFile *bf, RKernelCacheObj *obj, struct MACH0_(obj_t) *mach0, ut64 paddr, bool is_first, int mode, const char *prefix);
 static RBinAddr *newEntry(ut64 haddr, ut64 vaddr, int type);
+static bool is_30bit_decorated(ut64 p);
+static ut64 undecorate_30bit(ut64 p, const RKernelCacheObj *obj);
+static ut64 undecorate_ios12(ut64 p, const RKernelCacheObj *obj);
 static void ensure_kexts_initialized(RKernelCacheObj *obj, RBinFile *bf);
 
 static void r_kernel_cache_free(RKernelCacheObj *obj);
@@ -328,9 +333,57 @@ beach:
 	return false;
 }
 
-static void r_ptr_undecorate(RParsedPointer *ptr, ut64 decorated_addr, RKernelCacheObj *obj) {
-	ut64 target = decorated_addr & ((1 << 30) - 1);
-	ptr->address = obj->kernel_base + target;
+static void r_ptr_undecorate(RParsedPointer *ptr, ut64 p, RKernelCacheObj *obj) {
+	if (!p || IS_KERNEL_ADDR (p)) {
+		ptr->address = p;
+		return;
+	}
+
+	if (is_30bit_decorated (p)) {
+		ut64 a = undecorate_30bit (p, obj);
+		if (IS_KERNEL_ADDR (a)) {
+			ptr->address = a;
+			return;
+		}
+	}
+
+	ut64 a = undecorate_ios12 (p, obj);
+	if (IS_KERNEL_ADDR (a)) {
+		ptr->address = a;
+		return;
+	}
+
+	a = undecorate_30bit (p, obj);
+	ptr->address = IS_KERNEL_ADDR (a) ? a : p;
+}
+
+static bool is_30bit_decorated(ut64 p) {
+	return (p & (1ULL << 61)) && !IS_KERNEL_ADDR (p);
+}
+
+static ut64 undecorate_30bit(ut64 p, const RKernelCacheObj *obj) {
+	return obj->kernel_base + (p & ((1ULL << 30) - 1));
+}
+
+static ut64 undecorate_ios12(ut64 p, const RKernelCacheObj *obj) {
+	/*
+	 * Logic taken from:
+	 * https://github.com/Synacktiv/kernelcache-laundering/blob/master/ios12_kernel_cache_helper.py
+	 */
+
+	if (p & (1ULL << 62)) {
+		return p;
+	}
+
+	if (p & (1ULL << 63)) {
+		return obj->kernel_base + (p & 0xffffffffULL);
+	}
+
+	ut64 r = ((p << 13) & 0xff00000000000000ULL) | (p & 0x7ffffffffffULL);
+	if (p & 0x40000000000ULL) {
+		r |= 0xfffc0000000000ULL;
+	}
+	return r;
 }
 
 static void ensure_kexts_initialized(RKernelCacheObj *obj, RBinFile *bf) {
@@ -1424,8 +1477,6 @@ static RList *classes(RBinFile *bf) {
 
 	return list;
 }
-
-#define IS_KERNEL_ADDR(x) ((x & 0xfffffff000000000L) == 0xfffffff000000000L)
 
 typedef struct _r_sysent {
 	ut64 sy_call;
