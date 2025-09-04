@@ -1,4 +1,4 @@
-/* radare - LGPL3 - Copyright 2016 - Matthieu (c0riolis) Tardy */
+/* radare - LGPL3 - Copyright 2016-2025 - Matthieu (c0riolis) Tardy */
 
 #ifndef MARSHAL_H
 #define MARSHAL_H
@@ -70,7 +70,15 @@ typedef struct {
 	st64 end_offset;
 } pyc_code_object;
 
-bool get_sections_symbols_from_code_objects(RBuffer *buffer, RList *sections, RList *symbols, RList *objs, ut32 magic);
-ut64 get_code_object_addr(RBuffer *buffer, ut32 magic);
+/* Per-parse context to avoid globals */
+typedef struct {
+	ut32 magic;            /* .pyc magic */
+	ut32 scount;           /* symbol ordinal counter */
+	RList *refs;           /* ref table for FLAG_REF objects */
+	RList *interned_table; /* shared across a file parse */
+} PycUnmarshalCtx;
+
+bool get_sections_symbols_from_code_objects(RBuffer *buffer, RList *sections, RList *symbols, RList *objs, PycUnmarshalCtx *ctx);
+ut64 get_code_object_addr_ctx(RBuffer *buffer, PycUnmarshalCtx *ctx);
 
 #endif

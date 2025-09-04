@@ -6,6 +6,24 @@
 #include <r_util.h>
 #include <r_asm.h>
 
+#if 0
+#include "../../bin/format/pyc/pyc_magic.h"
+#else
+struct pyc_version {
+	ut32 magic;
+	const char *version;
+	const char *revision;
+};
+
+typedef struct {
+	ut64 code_start_offset;
+	struct pyc_version version;
+	RList *sections_cache;     // RList<RBinSection*>
+	RList *interned_table;     // RList<char*>
+	RList *cobjs;              // RList<pyc_code_object*>
+} RBinPycObj;
+#endif
+
 #include "opcode.h"
 
 typedef struct {

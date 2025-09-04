@@ -3,8 +3,19 @@
 #include "pyc.h"
 #include "marshal.h"
 
-bool pyc_get_sections_symbols(RList *sections, RList *symbols, RList *cobjs, RBuffer *buf, ut32 magic) {
-	return get_sections_symbols_from_code_objects (buf, sections, symbols, cobjs, magic);
+bool pyc_get_sections_symbols(RList *sections, RList *symbols, RList *cobjs, RBuffer *buf, ut32 magic, RList *interned_table) {
+	PycUnmarshalCtx ctx = {0};
+	ctx.magic = magic;
+	ctx.scount = 0;
+	ctx.refs = NULL;
+	ctx.interned_table = interned_table;
+	return get_sections_symbols_from_code_objects (buf, sections, symbols, cobjs, &ctx);
+}
+
+ut64 pyc_get_code_object_addr(RBuffer *buf, ut32 magic) {
+	PycUnmarshalCtx ctx = {0};
+	ctx.magic = magic;
+	return get_code_object_addr_ctx (buf, &ctx);
 }
 
 static inline bool pyc_is_object(ut8 b, pyc_marshal_type type) {
