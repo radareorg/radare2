@@ -963,7 +963,7 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 	int fcnlen = 0;
 	RAnalFunction *fcn = r_anal_function_new (core->anal);
 	R_WARN_IF_FAIL (fcn);
-	const char *fcnpfx = r_config_get (core->config, "anal.prefix.default");
+	const char *fcnpfx = r_anal_fcn_prefix_at (core->anal, at);
 #if 0
 	if (R_STR_ISEMPTY (fcnpfx)) {
 		fcnpfx = "fcn";
@@ -1059,7 +1059,7 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 					R_FREE (fcn->name);
 					const char *myfcnpfx = r_anal_functiontype_tostring (fcn->type);
 					if (R_STR_ISEMPTY (myfcnpfx) || !strcmp (myfcnpfx, "fcn")) {
-						myfcnpfx = r_config_get (core->config, "anal.prefix.default");
+						myfcnpfx = r_anal_fcn_prefix_at (core->anal, fcn->addr);
 					}
 					if (R_STR_ISEMPTY (myfcnpfx)) {
 						fcn->name = r_str_newf ("fcn_%08"PFMT64x, fcn->addr);

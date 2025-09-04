@@ -1200,43 +1200,13 @@ static RCoreHelpMessage help_msg_axf = {
 	NULL
 };
 
-#if 0
-static bool fcnNeedsPrefix(const char *name) {
-	if (r_str_startswith (name, "entry")) {
-		return false;
-	}
-	if (r_str_startswith (name, "main")) {
-		return false;
-	}
-	return (!strchr (name, '.'));
-}
-
-static char *getFunctionName(RCore *core, ut64 off, const char *name, bool prefix) {
-	const char *fcnpfx = "";
-	if (prefix) {
-		if (fcnNeedsPrefix (name) && R_STR_ISEMPTY (fcnpfx)) {
-			fcnpfx = "fcn";
-		} else {
-			fcnpfx = r_config_get (core->config, "anal.prefix.default");
-		}
-	}
-	if (r_reg_get (core->anal->reg, name, -1)) {
-		return r_str_newf ("%s.%08"PFMT64x, "fcn", off);
-	}
-	return strdup (name);
-}
-#else
 static char *getFunctionName(RCore *core, ut64 off, const char *name, bool prefix) {
 	if (!name || r_reg_get (core->anal->reg, name, -1)) {
-		const char *fcnpfx = r_config_get (core->config, "anal.prefix.default");
-		if (R_STR_ISEMPTY (fcnpfx)) {
-			return r_str_newf ("fcn_%08"PFMT64x, off);
-		}
+		const char *fcnpfx = r_anal_fcn_prefix_at (core->anal, off);
 		return r_str_newf ("%s.%08"PFMT64x, fcnpfx, off);
 	}
 	return strdup (name);
 }
-#endif
 
 static inline const char *get_arch_name(RCore *core) {
 	return r_config_get (core->config, "asm.arch");
@@ -1448,7 +1418,7 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 		// sdb_num_set (core->anal->sdb_types, k, (ut64)arg_count, 0);
 		free (k);
 		free (v);
- 	}
+	}
 	free (args);
 	r_anal_function_vars_cache_fini (&cache);
 }
@@ -2269,57 +2239,57 @@ static int cmd_afv(RCore *core, const char *str) {
 		}
 		break;
 	case ' ': { // "afvs" "afvb" "afvr"
-		bool isarg = false;
-		const int size = 4;
-		p = strchr (ostr, ' ');
-		if (!p) {
-			var_help (core, type);
-			break;
-		}
-		if (!fcn) {
-			R_LOG_ERROR ("Missing function at 0x%08" PFMT64x, core->addr);
-			break;
-		}
-		*p++ = 0;
-		r_str_trim_head (p);
-		char *name = strchr (p, ' ');
-		if (!name) {
-			R_LOG_ERROR ("Missing name");
-			break;
-		}
-		*name++ = 0;
-		r_str_trim_head (name);
+			  bool isarg = false;
+			  const int size = 4;
+			  p = strchr (ostr, ' ');
+			  if (!p) {
+				  var_help (core, type);
+				  break;
+			  }
+			  if (!fcn) {
+				  R_LOG_ERROR ("Missing function at 0x%08" PFMT64x, core->addr);
+				  break;
+			  }
+			  *p++ = 0;
+			  r_str_trim_head (p);
+			  char *name = strchr (p, ' ');
+			  if (!name) {
+				  R_LOG_ERROR ("Missing name");
+				  break;
+			  }
+			  *name++ = 0;
+			  r_str_trim_head (name);
 
-		if (type == 'r') { // registers
-			RRegItem *ri = r_reg_get (core->anal->reg, p, -1);
-			if (!ri) {
-				R_LOG_ERROR ("Register not found");
-				break;
-			}
-			delta = ri->index;
-			isarg = true;
-			r_unref (ri);
-		} else {
-			delta = r_num_math (core->num, p);
-		}
+			  if (type == 'r') { // registers
+				  RRegItem *ri = r_reg_get (core->anal->reg, p, -1);
+				  if (!ri) {
+					  R_LOG_ERROR ("Register not found");
+					  break;
+				  }
+				  delta = ri->index;
+				  isarg = true;
+				  r_unref (ri);
+			  } else {
+				  delta = r_num_math (core->num, p);
+			  }
 
-		char *vartype = strchr (name, ' ');
-		if (!vartype) {
-			vartype = "int";
-		} else {
-			*vartype++ = 0;
-			r_str_trim (vartype);
-		}
-		if (type == 'b') {
-			delta -= fcn->bp_off;
-		}
-		if ((type == 'b') && delta > 0) {
-			isarg = true;
-		} else if (type == 's' && delta > fcn->maxstack) {
-			isarg = true;
-		}
-		r_anal_function_set_var (fcn, delta, type, vartype, size, isarg, name);
- 		}
+			  char *vartype = strchr (name, ' ');
+			  if (!vartype) {
+				  vartype = "int";
+			  } else {
+				  *vartype++ = 0;
+				  r_str_trim (vartype);
+			  }
+			  if (type == 'b') {
+				  delta -= fcn->bp_off;
+			  }
+			  if ((type == 'b') && delta > 0) {
+				  isarg = true;
+			  } else if (type == 's' && delta > fcn->maxstack) {
+				  isarg = true;
+			  }
+			  r_anal_function_set_var (fcn, delta, type, vartype, size, isarg, name);
+		  }
 		break;
 	default:
 		r_core_cmd_help (core, help_msg_afv);
