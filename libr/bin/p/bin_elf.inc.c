@@ -1194,7 +1194,6 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 			const char *sym_name = NULL;
 			ut64 sym_addr = 0;
 			bool is_import = false;
-			
 			if (rel->sym) {
 				// Check imports first
 				if (rel->sym < bo->imports_by_ord_size && bo->imports_by_ord[rel->sym]) {
@@ -1223,9 +1222,8 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 				iob->overlay_write_at (iob->io, rel->rva + 4, buf, 4);
 				break;
 			}
-			
 			// Check if this is a known Solana syscall by checking if it starts with "sol_"
-			if (is_import || (sym_name && strncmp(sym_name, "sol_", 4) == 0)) {
+			if (is_import || (sym_name && !strncmp (sym_name, "sol_", 4))) {
 				// This is a syscall - compute hash
 				ut32 hash_value = murmur3_32 (sym_name, strlen (sym_name), 0);
 				R_LOG_DEBUG ("sBPF R_BPF_64_32: syscall '%s' -> hash 0x%08x", sym_name, hash_value);
@@ -1234,10 +1232,9 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 			} else if (sym_addr > 0) {
 				// This is a regular function call - compute PC-relative offset
 				st64 current_pc = rel->rva / 8;  // Current instruction in units
-				st64 target_pc = sym_addr / 8;   // Target instruction in units  
+				st64 target_pc = sym_addr / 8;   // Target instruction in units
 				st32 offset = (st32)(target_pc - current_pc - 1); // PC-relative offset
-				
-				R_LOG_DEBUG ("sBPF R_BPF_64_32: function '%s' at 0x%"PFMT64x" -> offset %d (0x%x)", 
+				R_LOG_DEBUG ("sBPF R_BPF_64_32: function '%s' at 0x%"PFMT64x" -> offset %d (0x%x)",
 					sym_name, sym_addr, offset, offset);
 				r_write_le32 (buf, offset);
 				iob->overlay_write_at (iob->io, rel->rva + 4, buf, 4);
