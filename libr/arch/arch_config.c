@@ -74,13 +74,10 @@ R_API bool r_arch_config_set_syntax(RArchConfig *config, int syntax) {
 R_API RArchConfig *r_arch_config_clone(RArchConfig *c) {
 	R_RETURN_VAL_IF_FAIL (c, NULL);
 	RArchConfig *ac = R_NEW0 (RArchConfig);
-	if (R_LIKELY (ac)) {
-		// ac->arch = strdup (c->arch);
-		r_str_ncpy (ac->arch, c->arch, sizeof (c->arch));
-		ac->abi = strdup (c->abi);
-		ac->cpu = strdup (c->cpu);
-		ac->os = strdup (c->os);
-	}
+	r_str_ncpy (ac->arch, c->arch, sizeof (c->arch));
+	ac->abi = c->abi? strdup (c->abi): NULL;
+	ac->cpu = c->cpu? strdup (c->cpu): NULL;
+	ac->os = c->os? strdup (c->os): NULL;
 	return ac;
 }
 
