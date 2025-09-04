@@ -3608,7 +3608,6 @@ R_API int r_core_config_init(RCore *core) {
 	/* anal */
 	SETB ("anal.onchange", "false", "automatically reanalyze function if any byte has changed (EXPERIMENTAL)");
 	SETI ("anal.fcnalign", 0,  "use ArchInfo.funcAlign if zero, otherwise override (used by aap and others)");
-	// New namespaced keys for function name prefixing
 	SETS ("anal.prefix.default", "fcn", "fallback prefix for function names");
 	SETB ("anal.prefix.dynamic", "false", "enable dynamic prefix resolution");
 	SETS ("anal.prefix.marker", "pfx.fcn.", "flag name prefix to identify dynamic prefixes");
