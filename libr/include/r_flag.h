@@ -119,6 +119,7 @@ R_API RFlagItem *r_flag_get_in(RFlag *f, ut64 addr);
 R_API RFlagItem *r_flag_get_by_spaces(RFlag *f, bool prionospace, ut64 addr, ...);
 R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 addr, bool closest);
 R_API RFlagItem *r_flag_closest_in_space(RFlag *f, const char *space, ut64 addr, ut64 radius);
+R_API RFlagItem *r_flag_closest_with_prefix(RFlag *f, const char *pfx, ut64 addr, ut64 radius);
 R_API RList *r_flag_all_list(RFlag *f, bool by_space);
 R_API const RList* /*<RFlagItem*>*/ r_flag_get_list(RFlag *f, ut64 addr);
 R_API char *r_flag_get_liststr(RFlag *f, ut64 addr);
