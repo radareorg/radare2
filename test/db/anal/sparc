@@ -152,12 +152,12 @@ name: main
 EOF
 RUN
 
-NAME=anal.fcnprefix sparc
+NAME=anal.prefix.default sparc
 FILE=bins/elf/elf-solaris-sparc-ls
 CMDS=<<EOF
 s 0x00018c08
 # e anal.flagends=false
-e anal.fcnprefix=root
+e anal.prefix.default=root
 af
 afl
 ?e --
