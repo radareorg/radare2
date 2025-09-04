@@ -52,19 +52,20 @@ typedef struct r_flag_item_t {
 
 
 typedef struct r_flag_t {
-	RSpaces spaces;   /* handle flag spaces */
-	st64 base;         /* base address for all flag items */
-	bool realnames;
-	Sdb *tags;
-	RNum *num;
-	RSkipList *by_addr; /* flags sorted by addr, value=RFlagsAtOffset */
-	HtPP *ht_name; /* hashmap key=item name, value=RFlagItem */
-	HtUP *ht_meta; // hashtable for the flags metadata
-	RList *zones;
-	ut64 mask;
-	RThreadLock *lock;
-	ut32 lastid;
-	R_DIRTY_VAR;
+    RSpaces spaces;   /* handle flag spaces */
+    st64 base;         /* base address for all flag items */
+    bool realnames;
+    Sdb *tags;
+    RNum *num;
+    RSkipList *by_addr; /* flags sorted by addr, value=RFlagsAtOffset */
+    HtPP *ht_name; /* hashmap key=item name, value=RFlagItem */
+    HtUP *ht_meta; // hashtable for the flags metadata
+    HtPP *ht_pfx;  // prefix -> skiplist(RFlagsAtOffset) for nearest-by-prefix queries
+    RList *zones;
+    ut64 mask;
+    RThreadLock *lock;
+    ut32 lastid;
+    R_DIRTY_VAR;
 	// ??? RStrpool *pool; // stringpool can be tricky because removing flags wont free memory
 } RFlag;
 
