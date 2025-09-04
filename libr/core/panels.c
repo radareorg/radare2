@@ -646,7 +646,7 @@ static void __set_decompiler_cache(RCore *core, char *s) {
 
 static void __set_read_only(RCore *core, RPanel *p, const char * R_NULLABLE s) {
 	free (p->model->readOnly);
-	p->model->readOnly = R_STR_DUP (s);
+	p->model->readOnly = strdup (s);
 	__set_dcb (core, p);
 	__set_pcb (p);
 }
@@ -4702,9 +4702,10 @@ static void __print_decompiler_cb(void *user, void *p) {
 		}
 	}
 	return;
+
 #if 0
-	if (core->panels_root->cur_pdc_cache) {
-		cmdstr = R_STR_DUP ((char *)sdb_ptr_get (core->panels_root->cur_pdc_cache,
+    if (core->panels_root->cur_pdc_cache) {
+		cmdstr = strdup ((char *)sdb_ptr_get (core->panels_root->cur_pdc_cache,
 					r_num_as_string (NULL, func->addr, false), 0));
 		if (R_STR_ISNOTEMPTY (cmdstr)) {
 			__set_cmd_str_cache (core, panel, cmdstr);
@@ -5258,7 +5259,7 @@ static void __add_menu(RCore *core, const char *parent, const char *name, RPanel
 	}
 	item->n_sub = 0;
 	item->selectedIndex = 0;
-	item->name = R_STR_DUP (name);
+	item->name = strdup (name);
 	item->sub = NULL;
 	item->cb = cb;
 	item->p = R_NEW0 (RPanel);
@@ -7607,10 +7608,10 @@ R_API bool r_core_panels_root(RCore *core, RPanelsRoot *panels_root) {
 		}
 		const char *pdc_now = r_config_get (core->config, "cmd.pdc");
 		if (sdb_exists (panels_root->pdc_caches, pdc_now)) {
-			panels_root->cur_pdc_cache = sdb_ptr_get (panels_root->pdc_caches, R_STR_DUP (pdc_now), 0);
+			panels_root->cur_pdc_cache = sdb_ptr_get (panels_root->pdc_caches, strdup (pdc_now), 0);
 		} else {
 			Sdb *sdb = sdb_new0();
-			sdb_ptr_set (panels_root->pdc_caches, R_STR_DUP (pdc_now), sdb, 0);
+			sdb_ptr_set (panels_root->pdc_caches, strdup (pdc_now), sdb, 0);
 			panels_root->cur_pdc_cache = sdb;
 		}
 	}

@@ -35,7 +35,7 @@ char *format_MAKE_FUNCTION_arg_36(ut32 oparg) {
 			ret = r_str_appendf (ret, ", %s", MAKE_FUNCTION_FLAGS[i]);
 		} else {
 			free (ret);
-			ret = R_STR_DUP (MAKE_FUNCTION_FLAGS[i]);
+			ret = strdup (MAKE_FUNCTION_FLAGS[i]);
 		}
 		oparg >>= 1;
 	}
@@ -60,7 +60,7 @@ char *format_value_flags_36(ut32 oparg) {
 		// empty fmt_spec.
 		ret = "";
 	}
-	return R_STR_DUP (ret);
+	return strdup (ret);
 }
 
 char *format_extended_arg_36(ut32 oparg) {

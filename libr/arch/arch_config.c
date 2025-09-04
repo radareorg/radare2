@@ -77,9 +77,9 @@ R_API RArchConfig *r_arch_config_clone(RArchConfig *c) {
 	if (R_LIKELY (ac)) {
 		// ac->arch = R_STR_DUP (c->arch);
 		r_str_ncpy (ac->arch, c->arch, sizeof (c->arch));
-		ac->abi = R_STR_DUP (c->abi);
-		ac->cpu = R_STR_DUP (c->cpu);
-		ac->os = R_STR_DUP (c->os);
+		ac->abi = strdup (c->abi);
+		ac->cpu = strdup (c->cpu);
+		ac->os = strdup (c->os);
 	}
 	return ac;
 }

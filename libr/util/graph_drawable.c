@@ -15,8 +15,8 @@ R_API void r_graph_free_node_info(void *ptr) {
 R_API RGraphNodeInfo *r_graph_create_node_info(const char *title, const char *body, ut64 offset) {
 	RGraphNodeInfo *data = R_NEW0 (RGraphNodeInfo);
 	if (data) {
-		data->title = R_STR_DUP (title);
-		data->body = R_STR_DUP (body);
+		data->title = strdup (title);
+		data->body = strdup (body);
 		data->offset = offset;
 	}
 	return data;
