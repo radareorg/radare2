@@ -7,7 +7,11 @@ WRAP_wrap_git_directory:=capstone-next
 WRAP_wrap_git_diff_files:=capstone-next/capstone-patches/fix-x86-16.patch
 WRAP_wrap_git_depth:=1
 
+<<<<<<< HEAD
 .PHONY: capstone-next_clean capstone-next_all
+=======
+.PHONY: capstone-next capstone-next_clean capstone-next_all
+>>>>>>> bce843e5af (Import the zydis subproject - not yet used)
 
 capstone-next:
 	if [ ! -d "capstone-next" -o "ccbc41d3dadb2953deed9e050abfae146876288d" != "$(shell cd capstone-next 2>/dev/null && git rev-parse HEAD)" ]; then rm -rf "capstone-next"; ${MAKE} capstone-next_all; fi
