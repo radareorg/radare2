@@ -1,0 +1,2 @@
+option('use_sys_zlib', type: 'boolean', value: false, yield: true)
+option('static_runtime', type: 'boolean', value: false, description: 'Link all libraries statically', yield: true)

@@ -20,15 +20,17 @@
    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
    MA 02110-1301, USA.  */
 
+#include <r_types.h>
+#include <r_util.h>
 
 #include "../../../include/disas-asm.h"
+#include "../../../include/elf-bfd.h"
+
 #include "arc.h"
+#include "arcompact-dis.h"
 #include "arc-ext.h"
 #include "arc-dis.h"
-#include "arcompact-dis.h"
-#include "../../../include/elf-bfd.h"
-#include "r_types.h"
-#include "r_util.h"
+
 
 static bfd_vma bfd_getm32(unsigned int);
 static bfd_vma bfd_getm32_ac(unsigned int) ATTRIBUTE_UNUSED;
