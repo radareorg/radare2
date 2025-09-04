@@ -171,7 +171,7 @@ static R_MUSTUSE char *function_name(RCore *core, const char *name, ut64 addr) {
 	if (name) {
 		return strdup (name);
 	}
-	const char *pfx = r_config_get (core->config, "anal.fcnprefix");
+	const char *pfx = r_config_get (core->config, "anal.prefix.default");
 	if (R_STR_ISNOTEMPTY (pfx)) {
 		return r_str_newf ("%s.%" PFMT64x, pfx, addr);
 	}
@@ -197,7 +197,7 @@ static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
 
 	RListIter *fcn_iter;
 	bb_t *cur = NULL;
-	const char *pfx = r_config_get (core->config, "anal.fcnprefix");
+	const char *pfx = r_config_get (core->config, "anal.prefix.default");
 	if (!pfx) {
 		pfx = "fcn";
 	}

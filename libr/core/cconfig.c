@@ -303,22 +303,7 @@ static bool cb_analvars(void *user, void *data) {
 	return true;
 }
 
-// Backward-compat mapping for legacy key anal.fcnprefix -> anal.prefix.default
-static bool cb_anal_fcnprefix_get(void *user, void *data) {
-	RCore *core = (RCore *)user;
-	RConfigNode *node = (RConfigNode *)data;
-	const char *v = r_config_get (core->config, "anal.prefix.default");
-	free (node->value);
-	node->value = strdup (r_str_get (v));
-	return true;
-}
-
-static bool cb_anal_fcnprefix_set(void *user, void *data) {
-	RCore *core = (RCore *)user;
-	RConfigNode *node = (RConfigNode *)data;
-	(void) r_config_set (core->config, "anal.prefix.default", node->value);
-	return true;
-}
+// Legacy anal.fcnprefix removed; use anal.prefix.default directly
 
 static bool cb_analvars_stackname(void *user, void *data) {
 	RCore *core = (RCore *)user;
@@ -3628,9 +3613,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("anal.prefix.dynamic", "false", "enable dynamic prefix resolution");
 	SETS ("anal.prefix.marker", "pfx.fcn.", "flag name prefix to identify dynamic prefixes");
 	SETI ("anal.prefix.radius", 0x1000, "max distance to consider a flag as valid for prefix assignment");
-	// Backward-compat: legacy key mapped to anal.prefix.default
-	SETCB ("anal.fcnprefix", "fcn", (RConfigCallback)&cb_anal_fcnprefix_set, "deprecated alias for anal.prefix.default");
-	r_config_set_getter (cfg, "anal.fcnprefix", (RConfigCallback)&cb_anal_fcnprefix_get);
+    // Note: legacy key anal.fcnprefix has been removed; use anal.prefix.default
 	const char *analcc = r_anal_cc_default (core->anal);
 	SETCB ("anal.cc", analcc? analcc: "", (RConfigCallback)&cb_analcc, "specify default calling convention");
 	const char *analsyscc = r_anal_syscc_default (core->anal);

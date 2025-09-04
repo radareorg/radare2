@@ -1217,7 +1217,7 @@ static char *getFunctionName(RCore *core, ut64 off, const char *name, bool prefi
 		if (fcnNeedsPrefix (name) && R_STR_ISEMPTY (fcnpfx)) {
 			fcnpfx = "fcn";
 		} else {
-			fcnpfx = r_config_get (core->config, "anal.fcnprefix");
+			fcnpfx = r_config_get (core->config, "anal.prefix.default");
 		}
 	}
 	if (r_reg_get (core->anal->reg, name, -1)) {
@@ -1228,7 +1228,7 @@ static char *getFunctionName(RCore *core, ut64 off, const char *name, bool prefi
 #else
 static char *getFunctionName(RCore *core, ut64 off, const char *name, bool prefix) {
 	if (!name || r_reg_get (core->anal->reg, name, -1)) {
-		const char *fcnpfx = r_config_get (core->config, "anal.fcnprefix");
+		const char *fcnpfx = r_config_get (core->config, "anal.prefix.default");
 		if (R_STR_ISEMPTY (fcnpfx)) {
 			return r_str_newf ("fcn_%08"PFMT64x, off);
 		}
