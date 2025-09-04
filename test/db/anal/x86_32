@@ -427,11 +427,11 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=anal.fcnprefix
+NAME=anal.prefix.default
 FILE=bins/pe/test.exe
 CMDS=<<EOF
 s 0x401000
-e anal.fcnprefix=root
+e anal.prefix.default=root
 af
 afl
 EOF

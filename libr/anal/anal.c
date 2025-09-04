@@ -401,7 +401,6 @@ R_API void r_anal_purge(RAnal *anal) {
 	r_anal_purge_imports (anal);
 }
 
-
 static int default_archinfo(int res, int q) {
 	if (res < 1) {
 		return 1;
@@ -514,7 +513,7 @@ R_API bool r_anal_noreturn_add(RAnal *anal, const char * R_NULLABLE name, ut64 a
 		tmp_name = fcn ? fcn->name: fi->name;
 		if (fcn) {
 			if (!fcn->is_noreturn) {
-  				fcn->is_noreturn = true;
+				fcn->is_noreturn = true;
 				R_DIRTY_SET (anal);
 			}
 		}
@@ -664,18 +663,29 @@ R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr) {
 	return false;
 }
 
-R_API void r_anal_bind(RAnal *anal, RAnalBind *b) {
-	if (b) {
-		b->anal = anal;
-		b->get_fcn_in = r_anal_get_fcn_in;
-		b->get_hint = r_anal_hint_get;
-		b->encode = (RAnalEncode)r_anal_opasm; // TODO rename to encode.. and use r_arch_encode when all plugs are moved
-		b->decode = (RAnalDecode)r_anal_op; // TODO rename to decode
-		b->opinit = r_anal_op_init;
-		b->mnemonics = r_anal_mnemonics;
-		b->opfini = r_anal_op_fini;
-		b->use = r_anal_use;
+R_API const char * R_NONNULL r_anal_fcn_prefix_at(RAnal *anal, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (anal, "fcn");
+	const char *pfx = NULL;
+	if (anal->coreb.cfgGet) {
+		pfx = anal->coreb.cfgGet (anal->coreb.core, "anal.prefix.default");
 	}
+	if (R_STR_ISEMPTY (pfx)) {
+		pfx = "fcn";
+	}
+	return pfx;
+}
+
+R_API void r_anal_bind(RAnal *anal, RAnalBind *b) {
+	R_RETURN_IF_FAIL (anal && b);
+	b->anal = anal;
+	b->get_fcn_in = r_anal_get_fcn_in;
+	b->get_hint = r_anal_hint_get;
+	b->encode = (RAnalEncode)r_anal_opasm; // TODO rename to encode.. and use r_arch_encode when all plugs are moved
+	b->decode = (RAnalDecode)r_anal_op; // TODO rename to decode
+	b->opinit = r_anal_op_init;
+	b->mnemonics = r_anal_mnemonics;
+	b->opfini = r_anal_op_fini;
+	b->use = r_anal_use;
 }
 
 R_API RList *r_anal_preludes(RAnal *anal) {

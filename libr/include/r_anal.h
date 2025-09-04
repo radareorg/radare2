@@ -986,7 +986,6 @@ R_API bool r_anal_function_rename(RAnalFunction *fcn, const char *name);
 R_API void r_anal_function_add_block(RAnalFunction *fcn, RAnalBlock *bb);
 R_API void r_anal_function_remove_block(RAnalFunction *fcn, RAnalBlock *bb);
 
-
 // size of the entire range that the function spans, including holes.
 // this is exactly r_anal_function_max_addr() - r_anal_function_min_addr()
 R_API ut64 r_anal_function_linear_size(RAnalFunction *fcn);
@@ -1089,7 +1088,6 @@ R_API void r_anal_function_update_analysis(RAnalFunction *fcn);
 
 #define R_ANAL_FCN_VARKIND_LOCAL 'v'
 
-
 R_API int r_anal_function_var_del_byindex(RAnal *a, ut64 fna, const char kind, int scope, ut32 idx);
 /* args */
 R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind, int type);
@@ -1118,6 +1116,7 @@ R_API int r_anal_function_instrcount(RAnalFunction *fcn);
 R_API bool r_anal_function_islineal(RAnalFunction *fcn);
 R_API const char *r_anal_pin_get(RAnal *a, const char *name);
 R_API const char *r_anal_pin_at(RAnal *a, ut64 addr);
+R_API const char * R_NONNULL r_anal_fcn_prefix_at(RAnal *anal, ut64 addr);
 R_API bool r_anal_pin_set(RAnal *a, const char *name, const char *cmd);
 
 typedef bool (* RAnalRefCmp)(RAnalRef *ref, void *data);

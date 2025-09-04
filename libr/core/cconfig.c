@@ -303,6 +303,8 @@ static bool cb_analvars(void *user, void *data) {
 	return true;
 }
 
+// Legacy anal.fcnprefix removed; use anal.prefix.default directly
+
 static bool cb_analvars_stackname(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
@@ -686,9 +688,9 @@ static bool cb_asmcpu(void *user, void *data) {
 	}
 	r_arch_config_set_cpu (core->rasm->config, node->value);
 	const int v = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
- 	if (v >= 0) {
- 		core->anal->config->codealign = v;
- 	}
+	if (v >= 0) {
+		core->anal->config->codealign = v;
+	}
 	r_config_set_i (core->config, "arch.codealign", (v != -1)? v: 0);
 	return true;
 }
@@ -3390,9 +3392,9 @@ static bool cb_linesabs(void *user, void *data) {
 }
 
 static bool cb_malloc(void *user, void *data) {
- 	RCore *core = (RCore*) user;
- 	RConfigNode *node = (RConfigNode*) data;
- 	if (node->value) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	if (node->value) {
 		const char *valid[] = {
 			"glibc",
 			"macos",
@@ -3606,7 +3608,10 @@ R_API int r_core_config_init(RCore *core) {
 	/* anal */
 	SETB ("anal.onchange", "false", "automatically reanalyze function if any byte has changed (EXPERIMENTAL)");
 	SETI ("anal.fcnalign", 0,  "use ArchInfo.funcAlign if zero, otherwise override (used by aap and others)");
-	SETS ("anal.fcnprefix", "fcn",  "prefix new function names with this");
+	SETS ("anal.prefix.default", "fcn", "fallback prefix for function names");
+	SETB ("anal.prefix.dynamic", "false", "enable dynamic prefix resolution");
+	SETS ("anal.prefix.marker", "pfx.fcn.", "flag name prefix to identify dynamic prefixes");
+	SETI ("anal.prefix.radius", 0x1000, "max distance to consider a flag as valid for prefix assignment");
 	const char *analcc = r_anal_cc_default (core->anal);
 	SETCB ("anal.cc", analcc? analcc: "", (RConfigCallback)&cb_analcc, "specify default calling convention");
 	const char *analsyscc = r_anal_syscc_default (core->anal);
