@@ -28,11 +28,111 @@ static const char *str_callback(RNum *user, ut64 addr, bool *ok) {
 }
 
 static void flag_skiplist_free(void *data) {
-	if (data) {
-		RFlagsAtOffset *item = (RFlagsAtOffset *)data;
-		r_list_free (item->flags);
-		free (data);
-	}
+    if (data) {
+        RFlagsAtOffset *item = (RFlagsAtOffset *)data;
+        r_list_free (item->flags);
+        free (data);
+    }
+}
+
+// Prefix index helpers
+static void ht_free_pfx_index(HtPPKv *kv) {
+    if (!kv) {
+        return;
+    }
+    free (kv->key);
+    r_skiplist_free ((RSkipList *)kv->value);
+}
+
+static inline bool flag_name_prefix_token(const char *name, char **out_tok) {
+    *out_tok = NULL;
+    if (!name) return false;
+    const char *dot = strchr (name, '.');
+    if (!dot || dot == name) {
+        return false; // no meaningful prefix
+    }
+    *out_tok = r_str_ndup (name, dot - name);
+    return *out_tok != NULL;
+}
+
+static inline RSkipList *prefix_get_list(RFlag *f, const char *tok, bool create) {
+    RSkipList *sl = ht_pp_find (f->ht_pfx, tok, NULL);
+    if (sl || !create) {
+        return sl;
+    }
+    char *k = strdup (tok);
+    sl = r_skiplist_new (flag_skiplist_free, flag_skiplist_cmp);
+    if (sl && k) {
+        ht_pp_insert (f->ht_pfx, k, sl);
+        return sl;
+    }
+    free (k);
+    if (sl) r_skiplist_free (sl);
+    return NULL;
+}
+
+static inline RFlagsAtOffset *skiplist_flags_exact(RSkipList *sl, ut64 addr) {
+    if (!sl) return NULL;
+    RFlagsAtOffset key = { .addr = addr };
+    RSkipListNode *n = r_skiplist_find (sl, &key);
+    return n ? (RFlagsAtOffset *)n->data : NULL;
+}
+
+static inline RFlagsAtOffset *skiplist_flags_at(RSkipList *sl, ut64 addr) {
+    RFlagsAtOffset *fa = skiplist_flags_exact (sl, addr);
+    if (fa) return fa;
+    fa = R_NEW0 (RFlagsAtOffset);
+    if (!fa) return NULL;
+    fa->addr = addr;
+    fa->flags = r_list_new ();
+    if (!fa->flags) {
+        free (fa);
+        return NULL;
+    }
+    r_skiplist_insert (sl, fa);
+    return fa;
+}
+
+static inline void prefix_index_add(RFlag *f, RFlagItem *fi, ut64 addr) {
+    char *tok;
+    if (!flag_name_prefix_token (fi->name, &tok)) {
+        return;
+    }
+    RSkipList *sl = prefix_get_list (f, tok, true);
+    if (sl) {
+        RFlagsAtOffset *fa = skiplist_flags_at (sl, addr);
+        if (fa) {
+            r_list_append (fa->flags, fi);
+        }
+    }
+    free (tok);
+}
+
+static inline void prefix_index_remove(RFlag *f, RFlagItem *fi, ut64 addr) {
+    char *tok;
+    if (!flag_name_prefix_token (fi->name, &tok)) {
+        return;
+    }
+    RSkipList *sl = prefix_get_list (f, tok, false);
+    if (sl) {
+        RFlagsAtOffset *fa = skiplist_flags_exact (sl, addr);
+        if (fa) {
+            r_list_delete_data (fa->flags, fi);
+            if (r_list_empty (fa->flags)) {
+                r_skiplist_delete (sl, fa);
+            }
+        }
+    }
+    free (tok);
+}
+
+static inline RFlagsAtOffset *pfx_get_nearest_list(RSkipList *sl, ut64 addr, int dir) {
+    if (!sl) return NULL;
+    RFlagsAtOffset key = { .addr = addr };
+    RFlagsAtOffset *flags = (dir >= 0)
+        ? (RFlagsAtOffset *)r_skiplist_get_geq (sl, &key)
+        : (RFlagsAtOffset *)r_skiplist_get_leq (sl, &key);
+    return (dir == 0 && flags && flags->addr != addr) ? NULL : flags;
 }
 
 static int flag_skiplist_cmp(const void *va, const void *vb) {
@@ -149,12 +249,14 @@ static bool update_flag_item_addr(RFlag *f, RFlagItem *fi, ut64 newaddr, bool is
 	if (fi->addr != newaddr || force) {
 		if (!is_new) {
 			remove_addrmap (f, fi);
+			prefix_index_remove (f, fi, fi->addr);
 		}
 		fi->addr = newaddr;
 		RFlagsAtOffset *flagsAtOffset = flags_at_addr (f, newaddr);
 		if (flagsAtOffset) {
 			r_list_append (flagsAtOffset->flags, fi);
 			R_DIRTY_SET (f);
+			prefix_index_add (f, fi, newaddr);
 			return true;
 		}
 	}
@@ -166,6 +268,8 @@ static bool update_flag_item_name(RFlag *f, RFlagItem *item, const char *newname
 	if (!force && (item->name == newname || (item->name && !strcmp (item->name, newname)))) {
 		return false;
 	}
+	char *oldtok = NULL;
+	(void)flag_name_prefix_token (item->name, &oldtok);
 	char *fname = filter_item_name (newname);
 	if (fname) {
 		bool res = (item->name)
@@ -174,9 +278,22 @@ static bool update_flag_item_name(RFlag *f, RFlagItem *item, const char *newname
 		if (res) {
 			set_name (item, fname);
 			R_DIRTY_SET (f);
+			char *newtok = NULL;
+			(void)flag_name_prefix_token (item->name, &newtok);
+			if ((oldtok || newtok) && (!oldtok || !newtok || strcmp (oldtok, newtok))) {
+				if (oldtok) {
+					prefix_index_remove (f, item, item->addr);
+				}
+				if (newtok) {
+					prefix_index_add (f, item, item->addr);
+				}
+			}
+			free (oldtok);
+			free (newtok);
 			return true;
 		}
 		free (fname);
+		free (oldtok);
 	}
 	return false;
 }
@@ -946,12 +1063,13 @@ R_API void r_flag_del_meta(RFlag *f, ut32 id) {
  *
  * NOTE: the item is freed. */
 R_API bool r_flag_unset(RFlag *f, RFlagItem *item) {
-	R_RETURN_VAL_IF_FAIL (f && item, false);
-	r_flag_del_meta (f, item->id);
-	remove_addrmap (f, item);
-	ht_pp_delete (f->ht_name, item->name);
-	R_DIRTY_SET (f);
-	return true;
+    R_RETURN_VAL_IF_FAIL (f && item, false);
+    r_flag_del_meta (f, item->id);
+    remove_addrmap (f, item);
+    prefix_index_remove (f, item, item->addr);
+    ht_pp_delete (f->ht_name, item->name);
+    R_DIRTY_SET (f);
+    return true;
 }
 
 /* unset the first flag item found at addr
@@ -1003,13 +1121,15 @@ R_API bool r_flag_unset_name(RFlag *f, const char *name) {
 
 /* unset all flag items in the RFlag f */
 R_API void r_flag_unset_all(RFlag *f) {
-	R_RETURN_IF_FAIL (f);
-	ht_pp_free (f->ht_name);
-	f->ht_name = ht_pp_new (NULL, ht_free_flag, NULL);
-	r_skiplist_purge (f->by_addr);
-	r_spaces_fini (&f->spaces);
-	new_spaces (f);
-	R_DIRTY_SET (f);
+    R_RETURN_IF_FAIL (f);
+    ht_pp_free (f->ht_name);
+    f->ht_name = ht_pp_new (NULL, ht_free_flag, NULL);
+    r_skiplist_purge (f->by_addr);
+    ht_pp_free (f->ht_pfx);
+    f->ht_pfx = ht_pp_new (NULL, ht_free_pfx_index, NULL);
+    r_spaces_fini (&f->spaces);
+    new_spaces (f);
+    R_DIRTY_SET (f);
 }
 
 struct flag_relocate_t {
@@ -1242,35 +1362,58 @@ R_API RFlagItem *r_flag_closest_with_prefix(RFlag *f, const char *pfx, ut64 addr
 		addr &= f->mask;
 	}
 
-	R_CRITICAL_ENTER (f);
+	// Normalize prefix token (accept "sym" or "sym.")
+	char *tok = NULL;
+	if (pfx) {
+		const char *dot = strchr (pfx, '.');
+		if (dot && dot[1] == '\0') {
+			// trim trailing dot
+			tok = r_str_ndup (pfx, dot - pfx);
+		} else if (dot) {
+			// caller passed a longer string, but only token matters
+			tok = r_str_ndup (pfx, dot - pfx);
+		} else {
+			tok = strdup (pfx);
+		}
+	}
+	if (!tok) {
+		return NULL;
+	}
 
-	// 1) Check exact address first
-	const RFlagsAtOffset *exact = r_flag_get_nearest_list (f, addr, 0);
+	R_CRITICAL_ENTER (f);
+	RSkipList *sl = ht_pp_find (f->ht_pfx, tok, NULL);
+	if (!sl) {
+		R_CRITICAL_LEAVE (f);
+		free (tok);
+		return NULL;
+	}
+
+	// 1) Check exact address first within the prefix index
+	const RFlagsAtOffset *exact = pfx_get_nearest_list (sl, addr, 0);
 	if (exact) {
 		RListIter *it;
 		RFlagItem *fi;
 		r_list_foreach (exact->flags, it, fi) {
-			if (fi->name && r_str_startswith (fi->name, pfx)) {
-				RFlagItem *ret = evalFlag (f, fi);
-				R_CRITICAL_LEAVE (f);
-				return ret;
-			}
+			RFlagItem *ret = evalFlag (f, fi);
+			R_CRITICAL_LEAVE (f);
+			free (tok);
+			return ret;
 		}
 	}
 
-	// 2) Walk outwards using the skiplist: left (<= addr) and right (>= addr)
-	const RFlagsAtOffset *left = r_flag_get_nearest_list (f, addr, -1);
+	// 2) Walk outwards using the prefix skiplist
+	const RFlagsAtOffset *left = pfx_get_nearest_list (sl, addr, -1);
 	if (left && left->addr == addr) {
 		if (addr) {
-			left = r_flag_get_nearest_list (f, addr - 1, -1);
+			left = pfx_get_nearest_list (sl, addr - 1, -1);
 		} else {
 			left = NULL;
 		}
 	}
-	const RFlagsAtOffset *right = r_flag_get_nearest_list (f, addr, +1);
+	const RFlagsAtOffset *right = pfx_get_nearest_list (sl, addr, +1);
 	if (right && right->addr == addr) {
 		if (addr != (ut64)(-1)) {
-			right = r_flag_get_nearest_list (f, addr + 1, +1);
+			right = pfx_get_nearest_list (sl, addr + 1, +1);
 		} else {
 			right = NULL;
 		}
@@ -1300,23 +1443,22 @@ R_API RFlagItem *r_flag_closest_with_prefix(RFlag *f, const char *pfx, ut64 addr
 		RListIter *it;
 		RFlagItem *fi;
 		r_list_foreach (node->flags, it, fi) {
-			if (fi->name && r_str_startswith (fi->name, pfx)) {
-				RFlagItem *ret = evalFlag (f, fi);
-				R_CRITICAL_LEAVE (f);
-				return ret;
-			}
+			RFlagItem *ret = evalFlag (f, fi);
+			R_CRITICAL_LEAVE (f);
+			free (tok);
+			return ret;
 		}
 
 		// advance
 		if (go_left) {
 			if (node->addr) {
-				left = r_flag_get_nearest_list (f, node->addr - 1, -1);
+				left = pfx_get_nearest_list (sl, node->addr - 1, -1);
 			} else {
 				left = NULL;
 			}
 		} else {
 			if (node->addr != (ut64)(-1)) {
-				right = r_flag_get_nearest_list (f, node->addr + 1, +1);
+				right = pfx_get_nearest_list (sl, node->addr + 1, +1);
 			} else {
 				right = NULL;
 			}
@@ -1324,5 +1466,6 @@ R_API RFlagItem *r_flag_closest_with_prefix(RFlag *f, const char *pfx, ut64 addr
 	}
 
 	R_CRITICAL_LEAVE (f);
+	free (tok);
 	return NULL;
 }
