@@ -251,8 +251,7 @@ static RList* entries(RBinFile *bf) {
 		ptr->hpaddr = 0x18;  // e_entry offset in ELF header
 		ptr->hvaddr = UT64_MAX; // 0x18 + baddr (bf);
 
-		if (ptr->vaddr != (ut64)eo->ehdr.e_entry && Elf_(is_executable) (eo) &&
-		    !Elf_(is_sbpf_binary) (eo)) {
+		if (ptr->vaddr != (ut64)eo->ehdr.e_entry && Elf_(is_executable) (eo) && !Elf_(is_sbpf_binary) (eo)) {
 			R_LOG_ERROR ("Cannot determine entrypoint, using 0x%08" PFMT64x, ptr->vaddr);
 		}
 
@@ -776,35 +775,35 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 	case EM_SPARC32PLUS:
 		ADD (32, 0);
 		break;
-case EM_BPF:
-	if (!Elf_(is_sbpf_binary) (eo)) {
-		R_LOG_DEBUG ("Unimplemented BPF reloc type %d", rel->type);
+	case EM_BPF:
+		if (!Elf_(is_sbpf_binary) (eo)) {
+			R_LOG_DEBUG ("Unimplemented BPF reloc type %d", rel->type);
+			break;
+		}
+	case EM_SBPF:
+		switch (rel->type) {
+		case R_BPF_64_64: // 64-bit immediate for lddw instruction
+			r->type = R_BIN_RELOC_64;
+			r->vaddr = B + rel->offset;
+			return r;
+		case R_BPF_64_RELATIVE: // PC relative 64-bit address
+			r->type = R_BIN_RELOC_64;
+			r->vaddr = B + rel->offset;
+			return r;
+		case R_BPF_64_32: // 32-bit function/syscall ID for call instruction
+			r->type = R_BIN_RELOC_32;
+			// The immediate value will be a function ID or syscall ID, not an address
+			r->vaddr = B + rel->offset;
+			return r;
+		default:
+			R_LOG_DEBUG ("Unimplemented sBPF reloc type %d", rel->type);
+			break;
+		}
 		break;
-	}
-case EM_SBPF:
-	switch (rel->type) {
-	case R_BPF_64_64: // 64-bit immediate for lddw instruction
-		r->type = R_BIN_RELOC_64;
-		r->vaddr = B + rel->offset;
-		return r;
-	case R_BPF_64_RELATIVE: // PC relative 64-bit address
-		r->type = R_BIN_RELOC_64;
-		r->vaddr = B + rel->offset;
-		return r;
-	case R_BPF_64_32: // 32-bit function/syscall ID for call instruction
-		r->type = R_BIN_RELOC_32;
-		// The immediate value will be a function ID or syscall ID, not an address
-		r->vaddr = B + rel->offset;
-		return r;
 	default:
-		R_LOG_DEBUG ("Unimplemented sBPF reloc type %d", rel->type);
+		R_LOG_ERROR ("Unimplemented ELF reloc type %d", rel->type);
 		break;
 	}
-	break;
-default:
-	R_LOG_ERROR ("Unimplemented ELF reloc type %d", rel->type);
-	break;
-}
 #undef SET
 #undef ADD
 	free (r);
@@ -850,7 +849,6 @@ static ut32 murmur3_32(const char* data, ut32 len, ut32 seed) {
 		tail *= c2;
 		hash ^= tail;
 	}
-
 	// Finalization
 	hash ^= len;
 	hash ^= hash >> 16;
@@ -858,7 +856,6 @@ static ut32 murmur3_32(const char* data, ut32 len, ut32 seed) {
 	hash ^= hash >> 13;
 	hash *= 0xc2b2ae35U;
 	hash ^= hash >> 16;
-
 	return hash;
 }
 
@@ -1132,6 +1129,7 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 			R_LOG_DEBUG ("Unhandled BPF relocation type %d", rel->type);
 			break;
 		}
+		// fallthrough
 	case EM_SBPF: {
 		switch (rel->type) {
 		case R_BPF_64_64: // 64-bit immediate for lddw instructions
@@ -1157,7 +1155,6 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 				ut64 text_end = text_start + text_size;
 				is_text = (rel->offset >= text_start && rel->offset < text_end);
 			}
-
 			if (is_text) {
 				// In .text: behave like R_BPF_64_64 but ignore symbol and handle addend
 				// Read implicit addend from both immediate fields (lddw instruction)
@@ -1174,7 +1171,6 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 					if (va < SBPF_PROGRAM_ADDR) {
 						va += SBPF_PROGRAM_ADDR;
 					}
-
 					// Write back to both immediate fields
 					r_write_le32 (buf_lo, (ut32)(va & 0xffffffff));
 					r_write_le32 (buf_hi, (ut32)(va >> 32));
@@ -1195,14 +1191,16 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 			break;
 		}
 		case R_BPF_64_32: { // 32-bit function/syscall ID for call instruction
-			ut32 hash_value = 0;
 			const char *sym_name = NULL;
+			ut64 sym_addr = 0;
+			bool is_import = false;
 			if (rel->sym) {
 				// Check imports first
 				if (rel->sym < bo->imports_by_ord_size && bo->imports_by_ord[rel->sym]) {
 					RBinImport *import = bo->imports_by_ord[rel->sym];
 					if (import && import->name) {
 						sym_name = r_bin_name_tostring (import->name);
+						is_import = true;
 					}
 				}
 				// Then check symbols
@@ -1210,20 +1208,41 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 					RBinSymbol *symbol = bo->symbols_by_ord[rel->sym];
 					if (symbol && symbol->name) {
 						sym_name = r_bin_name_tostring (symbol->name);
+						sym_addr = symbol->vaddr;
 					}
 				}
 			}
-			if (sym_name && *sym_name) {
+			if (R_STR_ISNOTEMPTY (sym_name)) {
 				// Compute Murmur3 hash with seed 0
-				hash_value = murmur3_32 (sym_name, strlen (sym_name), 0);
+				ut32 hash_value = murmur3_32 (sym_name, strlen (sym_name), 0);
 				R_LOG_DEBUG ("sBPF R_BPF_64_32: symbol '%s' -> hash 0x%08x", sym_name, hash_value);
 			} else {
 				R_LOG_WARN ("sBPF R_BPF_64_32: no symbol name found for relocation at 0x%"PFMT64x, rel->rva);
-				hash_value = 0;
+				r_write_le32 (buf, 0);
+				iob->overlay_write_at (iob->io, rel->rva + 4, buf, 4);
+				break;
 			}
-			// write hash to immediate field (offset + 4)
-			r_write_le32 (buf, hash_value);
-			iob->overlay_write_at (iob->io, rel->rva + 4, buf, 4);
+			// Check if this is a known Solana syscall by checking if it starts with "sol_"
+			if (is_import || (sym_name && !strncmp (sym_name, "sol_", 4))) {
+				// This is a syscall - compute hash
+				ut32 hash_value = murmur3_32 (sym_name, strlen (sym_name), 0);
+				R_LOG_DEBUG ("sBPF R_BPF_64_32: syscall '%s' -> hash 0x%08x", sym_name, hash_value);
+				r_write_le32 (buf, hash_value);
+				iob->overlay_write_at (iob->io, rel->rva + 4, buf, 4);
+			} else if (sym_addr > 0) {
+				// This is a regular function call - compute PC-relative offset
+				st64 current_pc = rel->rva / 8;  // Current instruction in units
+				st64 target_pc = sym_addr / 8;   // Target instruction in units
+				st32 offset = (st32)(target_pc - current_pc - 1); // PC-relative offset
+				R_LOG_DEBUG ("sBPF R_BPF_64_32: function '%s' at 0x%"PFMT64x" -> offset %d (0x%x)",
+					sym_name, sym_addr, offset, offset);
+				r_write_le32 (buf, offset);
+				iob->overlay_write_at (iob->io, rel->rva + 4, buf, 4);
+			} else {
+				R_LOG_WARN ("sBPF R_BPF_64_32: symbol '%s' has no address", sym_name);
+				r_write_le32 (buf, 0);
+				iob->overlay_write_at (iob->io, rel->rva + 4, buf, 4);
+			}
 			break;
 		}
 		default:

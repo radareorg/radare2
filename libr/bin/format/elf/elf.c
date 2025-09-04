@@ -3611,9 +3611,8 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 	for (offset = 0; offset < eo->dyn_info.dt_relsz && pos < num_relocs; offset += eo->dyn_info.dt_relent, pos++) {
 		RBinElfReloc *reloc = r_vector_end (&eo->g_relocs);
 		if (!read_reloc (eo, reloc, DT_REL, eo->dyn_info.dt_rel + offset)) {
-				break;
+			break;
 		}
-
 		int index = r_vector_index (&eo->g_relocs);
 		ht_uu_insert (eo->rel_cache, reloc->sym + 1, index + 1);
 		fix_rva_and_offset_exec_file (eo, reloc);
