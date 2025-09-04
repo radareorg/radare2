@@ -3,7 +3,7 @@
 #include <r_lang.h>
 
 static bool lang_lib_file_run(RLangSession *user, const char *file) {
-	char *libpath = R_STR_DUP (file);
+	char *libpath = strdup (file);
 	void *lib;
 	if (!libpath) {
 		return false;
@@ -28,7 +28,13 @@ static bool lang_lib_file_run(RLangSession *user, const char *file) {
 		if (fcn) {
 			fcn (user->user_data);
 		} else {
-			R_LOG_ERROR ("Cannot find 'entry' symbol in library");
+			void *rp = r_lib_dl_sym (lib, "radare_plugin");
+			if (rp) {
+				RCore *core = user->lang->user;
+				user->lang->cmdf (core, "'L %s", file);
+			} else {
+				R_LOG_ERROR ("Cannot find 'entry' symbol in library");
+			}
 		}
 		r_lib_dl_close (lib);
 	}
