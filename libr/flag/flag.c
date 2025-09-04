@@ -1235,3 +1235,94 @@ R_API RFlagItem *r_flag_closest_in_space(RFlag *f, const char *space, ut64 addr,
 	R_CRITICAL_LEAVE (f);
 	return NULL;
 }
+
+R_API RFlagItem *r_flag_closest_with_prefix(RFlag *f, const char *pfx, ut64 addr, ut64 radius) {
+	R_RETURN_VAL_IF_FAIL (f && pfx, NULL);
+	if (f->mask) {
+		addr &= f->mask;
+	}
+
+	R_CRITICAL_ENTER (f);
+
+	// 1) Check exact address first
+	const RFlagsAtOffset *exact = r_flag_get_nearest_list (f, addr, 0);
+	if (exact) {
+		RListIter *it;
+		RFlagItem *fi;
+		r_list_foreach (exact->flags, it, fi) {
+			if (fi->name && r_str_startswith (fi->name, pfx)) {
+				RFlagItem *ret = evalFlag (f, fi);
+				R_CRITICAL_LEAVE (f);
+				return ret;
+			}
+		}
+	}
+
+	// 2) Walk outwards using the skiplist: left (<= addr) and right (>= addr)
+	const RFlagsAtOffset *left = r_flag_get_nearest_list (f, addr, -1);
+	if (left && left->addr == addr) {
+		if (addr) {
+			left = r_flag_get_nearest_list (f, addr - 1, -1);
+		} else {
+			left = NULL;
+		}
+	}
+	const RFlagsAtOffset *right = r_flag_get_nearest_list (f, addr, +1);
+	if (right && right->addr == addr) {
+		if (addr != (ut64)(-1)) {
+			right = r_flag_get_nearest_list (f, addr + 1, +1);
+		} else {
+			right = NULL;
+		}
+	}
+
+	for (;;) {
+		ut64 ld = left ? (addr - left->addr) : (ut64)(-1);
+		ut64 rd = right ? (right->addr - addr) : (ut64)(-1);
+
+		bool go_left = false;
+		if (left && right) {
+			go_left = (ld <= rd); // prefer left on tie
+		} else if (left) {
+			go_left = true;
+		} else if (right) {
+			go_left = false;
+		} else {
+			break; // no more nodes
+		}
+
+		ut64 mind = go_left ? ld : rd;
+		if (mind > radius) {
+			break; // out of radius
+		}
+
+		const RFlagsAtOffset *node = go_left ? left : right;
+		RListIter *it;
+		RFlagItem *fi;
+		r_list_foreach (node->flags, it, fi) {
+			if (fi->name && r_str_startswith (fi->name, pfx)) {
+				RFlagItem *ret = evalFlag (f, fi);
+				R_CRITICAL_LEAVE (f);
+				return ret;
+			}
+		}
+
+		// advance
+		if (go_left) {
+			if (node->addr) {
+				left = r_flag_get_nearest_list (f, node->addr - 1, -1);
+			} else {
+				left = NULL;
+			}
+		} else {
+			if (node->addr != (ut64)(-1)) {
+				right = r_flag_get_nearest_list (f, node->addr + 1, +1);
+			} else {
+				right = NULL;
+			}
+		}
+	}
+
+	R_CRITICAL_LEAVE (f);
+	return NULL;
+}
