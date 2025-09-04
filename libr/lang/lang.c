@@ -10,7 +10,7 @@ R_LIB_VERSION (r_lang);
 #include "p/pipe.c"
 #include "p/c.c"
 #include "p/s.c"
-#include "p/v.c"
+// #include "p/v.c"
 #include "p/vala.c"
 #include "p/rust.c"
 #include "p/zig.c"
@@ -59,7 +59,7 @@ R_API RLang *r_lang_new(void) {
 	r_lang_plugin_add (lang, &r_lang_plugin_c);
 	r_lang_plugin_add (lang, &r_lang_plugin_cpipe);
 #endif
-	r_lang_plugin_add (lang, &r_lang_plugin_v);
+//	r_lang_plugin_add (lang, &r_lang_plugin_v);
 	r_lang_plugin_add (lang, &r_lang_plugin_vala);
 	r_lang_plugin_add (lang, &r_lang_plugin_rust);
 	r_lang_plugin_add (lang, &r_lang_plugin_zig);
