@@ -3613,7 +3613,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("anal.prefix.dynamic", "false", "enable dynamic prefix resolution");
 	SETS ("anal.prefix.marker", "pfx.fcn.", "flag name prefix to identify dynamic prefixes");
 	SETI ("anal.prefix.radius", 0x1000, "max distance to consider a flag as valid for prefix assignment");
-    // Note: legacy key anal.fcnprefix has been removed; use anal.prefix.default
 	const char *analcc = r_anal_cc_default (core->anal);
 	SETCB ("anal.cc", analcc? analcc: "", (RConfigCallback)&cb_analcc, "specify default calling convention");
 	const char *analsyscc = r_anal_syscc_default (core->anal);
