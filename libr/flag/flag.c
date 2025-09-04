@@ -28,111 +28,112 @@ static const char *str_callback(RNum *user, ut64 addr, bool *ok) {
 }
 
 static void flag_skiplist_free(void *data) {
-    if (data) {
-        RFlagsAtOffset *item = (RFlagsAtOffset *)data;
-        r_list_free (item->flags);
-        free (data);
-    }
+	if (data) {
+		RFlagsAtOffset *item = (RFlagsAtOffset *)data;
+		r_list_free (item->flags);
+		free (data);
+	}
 }
 
 // Prefix index helpers
 static void ht_free_pfx_index(HtPPKv *kv) {
-    if (!kv) {
-        return;
-    }
-    free (kv->key);
-    r_skiplist_free ((RSkipList *)kv->value);
+	if (!kv) {
+		return;
+	}
+	free (kv->key);
+	r_skiplist_free ((RSkipList *)kv->value);
 }
 
 static inline bool flag_name_prefix_token(const char *name, char **out_tok) {
-    *out_tok = NULL;
-    if (!name) return false;
-    const char *dot = strchr (name, '.');
-    if (!dot || dot == name) {
-        return false; // no meaningful prefix
-    }
-    *out_tok = r_str_ndup (name, dot - name);
-    return *out_tok != NULL;
+	R_RETURN_VAL_IF_FAIL (name && out_tok, false);
+	*out_tok = NULL;
+	const char *dot = strchr (name, '.');
+	if (!dot || dot == name) {
+		return false; // no meaningful prefix
+	}
+	*out_tok = r_str_ndup (name, dot - name);
+	return *out_tok != NULL;
 }
 
 static inline RSkipList *prefix_get_list(RFlag *f, const char *tok, bool create) {
-    RSkipList *sl = ht_pp_find (f->ht_pfx, tok, NULL);
-    if (sl || !create) {
-        return sl;
-    }
-    char *k = strdup (tok);
-    sl = r_skiplist_new (flag_skiplist_free, flag_skiplist_cmp);
-    if (sl && k) {
-        ht_pp_insert (f->ht_pfx, k, sl);
-        return sl;
-    }
-    free (k);
-    if (sl) r_skiplist_free (sl);
-    return NULL;
+	RSkipList *sl = ht_pp_find (f->ht_pfx, tok, NULL);
+	if (sl || !create) {
+		return sl;
+	}
+	char *k = strdup (tok);
+	sl = r_skiplist_new (flag_skiplist_free, flag_skiplist_cmp);
+	if (sl && k) {
+		ht_pp_insert (f->ht_pfx, k, sl);
+		return sl;
+	}
+	free (k);
+	if (sl) r_skiplist_free (sl);
+	return NULL;
 }
 
 static inline RFlagsAtOffset *skiplist_flags_exact(RSkipList *sl, ut64 addr) {
-    if (!sl) return NULL;
-    RFlagsAtOffset key = { .addr = addr };
-    RSkipListNode *n = r_skiplist_find (sl, &key);
-    return n ? (RFlagsAtOffset *)n->data : NULL;
+	R_RETURN_VAL_IF_FAIL (sl, NULL);
+	RFlagsAtOffset key = { .addr = addr };
+	RSkipListNode *n = r_skiplist_find (sl, &key);
+	return n ? (RFlagsAtOffset *)n->data : NULL;
 }
 
 static inline RFlagsAtOffset *skiplist_flags_at(RSkipList *sl, ut64 addr) {
-    RFlagsAtOffset *fa = skiplist_flags_exact (sl, addr);
-    if (fa) return fa;
-    fa = R_NEW0 (RFlagsAtOffset);
-    if (!fa) return NULL;
-    fa->addr = addr;
-    fa->flags = r_list_new ();
-    if (!fa->flags) {
-        free (fa);
-        return NULL;
-    }
-    r_skiplist_insert (sl, fa);
-    return fa;
+	RFlagsAtOffset *fa = skiplist_flags_exact (sl, addr);
+	if (fa) {
+		return fa;
+	}
+	fa = R_NEW0 (RFlagsAtOffset);
+	fa->addr = addr;
+	fa->flags = r_list_new ();
+	if (!fa->flags) {
+		free (fa);
+		return NULL;
+	}
+	r_skiplist_insert (sl, fa);
+	return fa;
 }
 
 static inline void prefix_index_add(RFlag *f, RFlagItem *fi, ut64 addr) {
-    char *tok;
-    if (!flag_name_prefix_token (fi->name, &tok)) {
-        return;
-    }
-    RSkipList *sl = prefix_get_list (f, tok, true);
-    if (sl) {
-        RFlagsAtOffset *fa = skiplist_flags_at (sl, addr);
-        if (fa) {
-            r_list_append (fa->flags, fi);
-        }
-    }
-    free (tok);
+	char *tok;
+	if (!flag_name_prefix_token (fi->name, &tok)) {
+		return;
+	}
+	RSkipList *sl = prefix_get_list (f, tok, true);
+	if (sl) {
+		RFlagsAtOffset *fa = skiplist_flags_at (sl, addr);
+		if (fa) {
+			r_list_append (fa->flags, fi);
+		}
+	}
+	free (tok);
 }
 
 static inline void prefix_index_remove(RFlag *f, RFlagItem *fi, ut64 addr) {
-    char *tok;
-    if (!flag_name_prefix_token (fi->name, &tok)) {
-        return;
-    }
-    RSkipList *sl = prefix_get_list (f, tok, false);
-    if (sl) {
-        RFlagsAtOffset *fa = skiplist_flags_exact (sl, addr);
-        if (fa) {
-            r_list_delete_data (fa->flags, fi);
-            if (r_list_empty (fa->flags)) {
-                r_skiplist_delete (sl, fa);
-            }
-        }
-    }
-    free (tok);
+	char *tok;
+	if (!flag_name_prefix_token (fi->name, &tok)) {
+		return;
+	}
+	RSkipList *sl = prefix_get_list (f, tok, false);
+	if (sl) {
+		RFlagsAtOffset *fa = skiplist_flags_exact (sl, addr);
+		if (fa) {
+			r_list_delete_data (fa->flags, fi);
+			if (r_list_empty (fa->flags)) {
+				r_skiplist_delete (sl, fa);
+			}
+		}
+	}
+	free (tok);
 }
 
 static inline RFlagsAtOffset *pfx_get_nearest_list(RSkipList *sl, ut64 addr, int dir) {
-    if (!sl) return NULL;
-    RFlagsAtOffset key = { .addr = addr };
-    RFlagsAtOffset *flags = (dir >= 0)
-        ? (RFlagsAtOffset *)r_skiplist_get_geq (sl, &key)
-        : (RFlagsAtOffset *)r_skiplist_get_leq (sl, &key);
-    return (dir == 0 && flags && flags->addr != addr) ? NULL : flags;
+	R_RETURN_VAL_IF_FAIL (sl, NULL);
+	RFlagsAtOffset key = { .addr = addr };
+	RFlagsAtOffset *flags = (dir >= 0)
+		? (RFlagsAtOffset *)r_skiplist_get_geq (sl, &key)
+		: (RFlagsAtOffset *)r_skiplist_get_leq (sl, &key);
+	return (dir == 0 && flags && flags->addr != addr) ? NULL : flags;
 }
 
 static int flag_skiplist_cmp(const void *va, const void *vb) {
@@ -475,13 +476,13 @@ static bool print_flag_rad(RFlagItem *flag, void *user) {
 		r_strbuf_appendf (u->sb, "'fa %s %s\n", flag->name, alias);
 		if (comment_b64) {
 			r_strbuf_appendf (u->sb, "'fC %s %s\n",
-				flag->name, r_str_get (comment_b64));
+					flag->name, r_str_get (comment_b64));
 		}
 	} else {
 		r_strbuf_appendf (u->sb, "'f %s %" PFMT64d " 0x%08" PFMT64x "%s%s %s\n",
-			flag->name, flag->size, flag->addr,
-			u->pfx? "+": "", r_str_get (u->pfx),
-			r_str_get (comment_b64));
+				flag->name, flag->size, flag->addr,
+				u->pfx? "+": "", r_str_get (u->pfx),
+				r_str_get (comment_b64));
 	}
 
 	free (comment_b64);
@@ -539,65 +540,65 @@ R_API char *r_flag_list(RFlag *f, int rad, const char * R_NULLABLE pfx) {
 		}
 		break;
 	case 'j': {
-		PJ *pj = pj_new ();
-		struct print_flag_t u = {
-			.f = f,
-			.pj = pj,
-			.in_range = in_range,
-			.range_from = range_from,
-			.range_to = range_to,
-			.real = false
-		};
-		pj_a (pj);
-		r_flag_foreach_space (f, r_flag_space_cur (f), print_flag_json, &u);
-		pj_end (pj);
-		res = pj_drain (pj);
-		break;
-	}
+			  PJ *pj = pj_new ();
+			  struct print_flag_t u = {
+				  .f = f,
+				  .pj = pj,
+				  .in_range = in_range,
+				  .range_from = range_from,
+				  .range_to = range_to,
+				  .real = false
+			  };
+			  pj_a (pj);
+			  r_flag_foreach_space (f, r_flag_space_cur (f), print_flag_json, &u);
+			  pj_end (pj);
+			  res = pj_drain (pj);
+			  break;
+		  }
 	case 1:
 	case '*': {
-		struct print_flag_t u = {
-			.f = f,
-			.in_range = in_range,
-			.range_from = range_from,
-			.range_to = range_to,
-			.fs = NULL,
-			.pfx = pfx,
-			.sb = r_strbuf_new ("")
-		};
-		r_flag_foreach_space (f, r_flag_space_cur (f), print_flag_rad, &u);
-		res = r_strbuf_drain (u.sb);
-		break;
-	}
+			  struct print_flag_t u = {
+				  .f = f,
+				  .in_range = in_range,
+				  .range_from = range_from,
+				  .range_to = range_to,
+				  .fs = NULL,
+				  .pfx = pfx,
+				  .sb = r_strbuf_new ("")
+			  };
+			  r_flag_foreach_space (f, r_flag_space_cur (f), print_flag_rad, &u);
+			  res = r_strbuf_drain (u.sb);
+			  break;
+		  }
 	default:
 	case 'n':
-		if (!pfx || pfx[0] != 'j') {// show original name
-			struct print_flag_t u = {
-				.f = f,
-				.in_range = in_range,
-				.range_from = range_from,
-				.range_to = range_to,
-				.real = (rad == 'n'),
-				.sb = r_strbuf_new ("")
-			};
-			r_flag_foreach_space (f, r_flag_space_cur (f), print_flag_orig_name, &u);
-			res = r_strbuf_drain (u.sb);
-		} else {
-			PJ *pj = pj_new ();
-			struct print_flag_t u = {
-				.f = f,
-				.pj = pj,
-				.in_range = in_range,
-				.range_from = range_from,
-				.range_to = range_to,
-				.real = true
-			};
-			pj_a (pj);
-			r_flag_foreach_space (f, r_flag_space_cur (f), print_flag_json, &u);
-			pj_end (pj);
-			res = pj_drain (pj);
-		}
-		break;
+		  if (!pfx || pfx[0] != 'j') {// show original name
+			  struct print_flag_t u = {
+				  .f = f,
+				  .in_range = in_range,
+				  .range_from = range_from,
+				  .range_to = range_to,
+				  .real = (rad == 'n'),
+				  .sb = r_strbuf_new ("")
+			  };
+			  r_flag_foreach_space (f, r_flag_space_cur (f), print_flag_orig_name, &u);
+			  res = r_strbuf_drain (u.sb);
+		  } else {
+			  PJ *pj = pj_new ();
+			  struct print_flag_t u = {
+				  .f = f,
+				  .pj = pj,
+				  .in_range = in_range,
+				  .range_from = range_from,
+				  .range_to = range_to,
+				  .real = true
+			  };
+			  pj_a (pj);
+			  r_flag_foreach_space (f, r_flag_space_cur (f), print_flag_json, &u);
+			  pj_end (pj);
+			  res = pj_drain (pj);
+		  }
+		  break;
 	}
 	return res? res: strdup ("");
 }
@@ -735,8 +736,8 @@ static bool isFunctionFlag(const char *n) {
 	}
 	if (*n == 'f') {
 		return (r_str_startswith (n, "fn.")
-			|| r_str_startswith (n, "func.")
-			|| r_str_startswith (n, "fcn.0"));
+				|| r_str_startswith (n, "func.")
+				|| r_str_startswith (n, "fcn.0"));
 	}
 	return false;
 }
@@ -852,7 +853,7 @@ R_API char *r_flag_get_liststr(RFlag *f, ut64 addr) {
 	char *p = NULL;
 	r_list_foreach (list, iter, fi) {
 		p = r_str_appendf (p, "%s%s",
-			fi->realname, iter->n? ",": "");
+				fi->realname, iter->n? ",": "");
 	}
 	return p;
 }
@@ -900,7 +901,7 @@ R_API RFlagItem *r_flag_set_inspace(RFlag *f, const char *space, const char *nam
 }
 
 /* create or modify an existing flag item with the given name and parameters.
-** The realname of the item will be the same as the name. NULL is returned in case of errors */
+ ** The realname of the item will be the same as the name. NULL is returned in case of errors */
 R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 addr, ut32 size) {
 	R_RETURN_VAL_IF_FAIL (f && name && *name, NULL);
 	if (f->mask) {
@@ -1026,7 +1027,7 @@ R_API const char *r_flag_item_set_color(RFlag *f, RFlagItem *fi, const char * R_
 }
 
 /* change the name of a flag item, if the new name is available.
-** true is returned if everything works well, false otherwise */
+ ** true is returned if everything works well, false otherwise */
 R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 	R_RETURN_VAL_IF_FAIL (f && item && name && *name, false);
 	return update_flag_item_name (f, item, name, false);
@@ -1063,13 +1064,13 @@ R_API void r_flag_del_meta(RFlag *f, ut32 id) {
  *
  * NOTE: the item is freed. */
 R_API bool r_flag_unset(RFlag *f, RFlagItem *item) {
-    R_RETURN_VAL_IF_FAIL (f && item, false);
-    r_flag_del_meta (f, item->id);
-    remove_addrmap (f, item);
-    prefix_index_remove (f, item, item->addr);
-    ht_pp_delete (f->ht_name, item->name);
-    R_DIRTY_SET (f);
-    return true;
+	R_RETURN_VAL_IF_FAIL (f && item, false);
+	r_flag_del_meta (f, item->id);
+	remove_addrmap (f, item);
+	prefix_index_remove (f, item, item->addr);
+	ht_pp_delete (f->ht_name, item->name);
+	R_DIRTY_SET (f);
+	return true;
 }
 
 /* unset the first flag item found at addr
@@ -1121,15 +1122,15 @@ R_API bool r_flag_unset_name(RFlag *f, const char *name) {
 
 /* unset all flag items in the RFlag f */
 R_API void r_flag_unset_all(RFlag *f) {
-    R_RETURN_IF_FAIL (f);
-    ht_pp_free (f->ht_name);
-    f->ht_name = ht_pp_new (NULL, ht_free_flag, NULL);
-    r_skiplist_purge (f->by_addr);
-    ht_pp_free (f->ht_pfx);
-    f->ht_pfx = ht_pp_new (NULL, ht_free_pfx_index, NULL);
-    r_spaces_fini (&f->spaces);
-    new_spaces (f);
-    R_DIRTY_SET (f);
+	R_RETURN_IF_FAIL (f);
+	ht_pp_free (f->ht_name);
+	f->ht_name = ht_pp_new (NULL, ht_free_flag, NULL);
+	r_skiplist_purge (f->by_addr);
+	ht_pp_free (f->ht_pfx);
+	f->ht_pfx = ht_pp_new (NULL, ht_free_pfx_index, NULL);
+	r_spaces_fini (&f->spaces);
+	new_spaces (f);
+	R_DIRTY_SET (f);
 }
 
 struct flag_relocate_t {
