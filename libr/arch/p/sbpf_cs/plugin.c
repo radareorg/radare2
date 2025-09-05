@@ -555,7 +555,7 @@ static void analop_esil(RArchSession *a, RAnalOp *op, cs_insn *insn, ut64 addr) 
 			const char *syscall_name = get_syscall_name (imm);
 			if (syscall_name) {
 				// This is a syscall - trigger trap instead of setting PC
-				esilprintf(op, "8,pc,+,sp,=[8],8,sp,-=,%" PFMT64d ",TRAP", (ut64)imm);
+				esilprintf (op, "8,pc,+,sp,=[8],8,sp,-=,%" PFMT64d ",TRAP", (ut64)imm);
 			} else {
 				// This is a regular function call - use PC-relative addressing
 				st64 current_pc = op->addr / 8;
