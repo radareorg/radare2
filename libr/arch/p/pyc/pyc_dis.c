@@ -100,14 +100,14 @@ static char *parse_arg(pyc_opcode_object *op, ut32 oparg, pyc_code_object *cobj,
 			arg = r_str_newf ("'%s'", (char *)t->data);
 			break;
 		default:
-			arg = R_STR_DUP (t->data);
+			arg = strdup (t->data);
 		}
 	}
 	if (op->type & HASNAME) {
 		if (names) {
 			t = (pyc_object *)r_list_get_n (names, oparg);
 			if (t) {
-				return R_STR_DUP (t->data);
+				return strdup (t->data);
 			}
 		}
 		return NULL;
@@ -145,7 +145,7 @@ static char *parse_arg(pyc_opcode_object *op, ut32 oparg, pyc_code_object *cobj,
 		if (!t) {
 			return NULL;
 		}
-		arg = R_STR_DUP (t->data);
+		arg = strdup (t->data);
 	}
 	if (op->type & (HASVARGS | HASNARGS)) {
 		arg = r_str_newf ("%u", oparg);

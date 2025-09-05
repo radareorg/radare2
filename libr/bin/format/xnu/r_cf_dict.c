@@ -714,7 +714,7 @@ static RCFValue *r_cf_value_clone(RCFValue *value) {
 	case R_CF_STRING: {
 		RCFValueString *string = R_NEW0 (RCFValueString);
 		if (string) {
-			string->value = R_STR_DUP (((RCFValueString *)value)->value);
+			string->value = strdup (((RCFValueString *)value)->value);
 			if (string->value) {
 				copy = (RCFValue *)string;
 			} else {

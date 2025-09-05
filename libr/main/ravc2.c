@@ -176,7 +176,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			free (rp);
 			return 1;
 		}
-		char *message = R_STR_DUP (opt.argv[opt.ind + 1]);
+		char *message = strdup (opt.argv[opt.ind + 1]);
 		if (message) {
 			RList *files = r_list_new();
 			if (files) {

@@ -242,7 +242,7 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 	}
 
 	it->space = r_spaces_add (&a->zign_spaces, r_str_word_get0 (k2, 1));
-	it->name = R_STR_DUP (r_str_word_get0 (k2, 2));
+	it->name = strdup (r_str_word_get0 (k2, 2));
 
 	// remove newline at end
 	char *save_ptr = NULL;

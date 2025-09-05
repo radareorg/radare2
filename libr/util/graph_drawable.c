@@ -12,22 +12,18 @@ R_API void r_graph_free_node_info(void *ptr) {
 	}
 }
 
-R_API RGraphNodeInfo *r_graph_create_node_info(const char *title, const char *body, ut64 offset) {
+R_API RGraphNodeInfo * R_NONNULL r_graph_create_node_info(const char *title, const char * R_NULLABLE body, ut64 offset) {
+	R_RETURN_VAL_IF_FAIL (title, NULL);
 	RGraphNodeInfo *data = R_NEW0 (RGraphNodeInfo);
-	if (data) {
-		data->title = R_STR_DUP (title);
-		data->body = R_STR_DUP (body);
-		data->offset = offset;
-	}
+	data->title = strdup (title);
+	data->body = body? strdup (body): NULL;
+	data->offset = offset;
 	return data;
 }
 
 R_API RGraphNode *r_graph_add_node_info(RGraph *graph, const char *title, const char *body, ut64 offset) {
 	R_RETURN_VAL_IF_FAIL (graph, NULL);
 	RGraphNodeInfo *data = r_graph_create_node_info (title, body, offset);
-	if (!data) {
-		return NULL;
-	}
 	RGraphNode *node = r_graph_add_nodef (graph, data, r_graph_free_node_info);
 	if (!node) {
 		r_graph_free_node_info (data);

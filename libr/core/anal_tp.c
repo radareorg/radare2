@@ -425,7 +425,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 				break;
 			}
 			const String *type_ = RVecString_at (&types, pos++);
-			type = type_ ? R_STR_DUP (*type_) : NULL;
+			type = type_ ? strdup (*type_) : NULL;
 			R_LOG_DEBUG ("TYPE (%s)", type);
 		} else {
 			type = r_type_func_args_type (TDB, fcn_name, arg_num);

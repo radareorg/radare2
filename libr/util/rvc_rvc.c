@@ -199,15 +199,15 @@ static bool update_blobs(const RList *ignore, RList *blobs, const RList *nh) {
 		if (strcmp (nh->head->data, blob->fname)) {
 			continue;
 		}
-		blob->fhash = R_STR_DUP (nh->tail->data);
+		blob->fhash = strdup (nh->tail->data);
 		return (bool) blob->fhash;
 	}
 	blob = R_NEW (RvcBlob);
 	if (!blob) {
 		return false;
 	}
-	blob->fhash = R_STR_DUP (nh->tail->data);
-	blob->fname = R_STR_DUP (nh->head->data);
+	blob->fhash = strdup (nh->tail->data);
+	blob->fname = strdup (nh->head->data);
 	if (!blob->fhash || !blob->fname) {
 		goto fail_ret;
 	}
@@ -942,7 +942,7 @@ R_API char *curbranch_rvc(Rvc *rvc) {
 	if (!rvc->db) {
 		return NULL;
 	}
-	char *ret = R_STR_DUP (sdb_const_get (rvc->db, CURRENTB, 0)
+	char *ret = strdup (sdb_const_get (rvc->db, CURRENTB, 0)
 			+ r_str_len_utf8 (BPREFIX));
 	return ret;
 }
@@ -1160,7 +1160,7 @@ static RList *uncommited_rvc(Rvc *rvc) {
 			continue;
 		}
 		free (rfp);
-		char *append = R_STR_DUP (file);
+		char *append = strdup (file);
 		if (!append) {
 			goto fail_ret;
 		}
