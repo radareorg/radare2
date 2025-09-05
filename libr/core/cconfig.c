@@ -910,6 +910,15 @@ static bool cb_flag_realnames(void *user, void *data) {
 	return true;
 }
 
+static bool cb_flag_autospace(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (core && core->flags) {
+		core->flags->autospace = node->i_value;
+	}
+	return true;
+}
+
 static bool cb_asmlineswidth(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -3866,7 +3875,9 @@ R_API int r_core_config_init(RCore *core) {
 		"3 = realign at middle flag if sym.*", NULL);
 	SETDESC (n, "realign disassembly if there is a flag in the middle of an instruction");
 	SETCB ("asm.flags.real", "false", &cb_flag_realnames,
-	       "show flags' unfiltered realnames instead of names, except realnames from demangling");
+			"show flags' unfiltered realnames instead of names, except realnames from demangling");
+	SETCB ("cfg.autoflagspace", "false", &cb_flag_autospace,
+			"automatically assign flagspace based on registered name prefixes");
 	SETB ("asm.lbytes", "true", "align disasm bytes to left");
 	SETB ("asm.lines", "true", "show ASCII-art lines at disassembly");
 	SETB ("asm.lines.fcn", "true", "show function boundary lines");
