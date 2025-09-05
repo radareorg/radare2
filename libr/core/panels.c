@@ -4702,9 +4702,8 @@ static void __print_decompiler_cb(void *user, void *p) {
 		}
 	}
 	return;
-
 #if 0
-    if (core->panels_root->cur_pdc_cache) {
+	if (core->panels_root->cur_pdc_cache) {
 		cmdstr = strdup ((char *)sdb_ptr_get (core->panels_root->cur_pdc_cache,
 					r_num_as_string (NULL, func->addr, false), 0));
 		if (R_STR_ISNOTEMPTY (cmdstr)) {
