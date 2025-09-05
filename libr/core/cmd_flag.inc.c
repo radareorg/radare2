@@ -1245,7 +1245,11 @@ static void cmd_fsp(RCore *core, const char *input) {
 		r_core_cmd_help_match (core, help_msg_fs, "fsp");
 		return;
 	}
-	if (!input[2] || input[2] != ' ') {
+	if (!input[2]) {
+		R_LOG_ERROR ("Usage: fsp <flagspace> <flagprefix>");
+		return;
+	}
+	if (input[2] != ' ') {
 		r_core_return_invalid_command (core, "fsp", input[2]);
 		return;
 	}

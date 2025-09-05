@@ -28,3 +28,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ftw
+FILE=--
+CMDS=<<EOF
+fsp imports sym.imp
+fsp exports sym.exp
+fsp symbols sym
+e cfg.autoflagspace =true
+f sym.imp.patata
+f sym.moniato
+fs-registers
+fs
+EOF
+EXPECT=<<EOF
+    0 . exports
+    1 * imports
+    1 . symbols
+EOF
+RUN
