@@ -561,7 +561,7 @@ static void analop_esil(RArchSession *a, RAnalOp *op, cs_insn *insn, ut64 addr) 
 				st64 current_pc = op->addr / 8;
 				st64 target_pc = current_pc + imm + 1;
 				st64 target_addr = target_pc * 8;
-				esilprintf(op, "8,pc,+,sp,=[8],8,sp,-=,0x%" PFMT64x ",pc,=", target_addr);
+				esilprintf (op, "8,pc,+,sp,=[8],8,sp,-=,0x%" PFMT64x ",pc,=", target_addr);
 			}
 		} else {
 			esilprintf (op, "pc,sp,=[8],8,sp,-=,0x%" PFMT64x ",$", IMM (0));
