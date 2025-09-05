@@ -1193,14 +1193,12 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 		case R_BPF_64_32: { // 32-bit function/syscall ID for call instruction
 			const char *sym_name = NULL;
 			ut64 sym_addr = 0;
-			bool is_import = false;
 			if (rel->sym) {
 				// Check imports first
 				if (rel->sym < bo->imports_by_ord_size && bo->imports_by_ord[rel->sym]) {
 					RBinImport *import = bo->imports_by_ord[rel->sym];
 					if (import && import->name) {
 						sym_name = r_bin_name_tostring (import->name);
-						is_import = true;
 					}
 				}
 				// Then check symbols
