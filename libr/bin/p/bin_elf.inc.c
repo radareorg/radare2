@@ -1193,14 +1193,12 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 		case R_BPF_64_32: { // 32-bit function/syscall ID for call instruction
 			const char *sym_name = NULL;
 			ut64 sym_addr = 0;
-			bool is_import = false;
 			if (rel->sym) {
 				// Check imports first
 				if (rel->sym < bo->imports_by_ord_size && bo->imports_by_ord[rel->sym]) {
 					RBinImport *import = bo->imports_by_ord[rel->sym];
 					if (import && import->name) {
 						sym_name = r_bin_name_tostring (import->name);
-						is_import = true;
 					}
 				}
 				// Then check symbols
@@ -1213,7 +1211,7 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 				}
 			}
 			// Check if this is a known Solana syscall
-			if (sym_name && (strncmp (sym_name, "sol_", 4) == 0 || strcmp (sym_name, "abort") == 0)) {
+			if (sym_name && (r_str_startswith (sym_name, "sol_") || !strcmp (sym_name, "abort"))) {
 				// This is a syscall - compute hash
 				ut32 hash_value = murmur3_32 (sym_name, strlen (sym_name), 0);
 				R_LOG_DEBUG ("sBPF R_BPF_64_32: syscall '%s' -> hash 0x%08x", sym_name, hash_value);
