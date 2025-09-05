@@ -552,7 +552,7 @@ static void analop_esil(RArchSession *a, RAnalOp *op, cs_insn *insn, ut64 addr) 
 	case BPF_INS_CALL:	///< eBPF only
 		if (OPCOUNT > 0 && OP(0).type == BPF_OP_IMM) {
 			st32 imm = IMM(0);
-			const char *syscall_name = get_syscall_name (imm);			
+			const char *syscall_name = get_syscall_name (imm);
 			if (syscall_name) {
 				// This is a syscall - trigger trap instead of setting PC
 				esilprintf(op, "8,pc,+,sp,=[8],8,sp,-=,%" PFMT64d ",TRAP", (ut64)imm);
