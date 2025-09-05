@@ -1,10 +1,10 @@
-/* radare - LGPL - Copyright 2019 - pancake, ret2libc */
+/* radare - LGPL - Copyright 2019-2025 - pancake */
 
 #include "r_util/r_spaces.h"
 
 R_API RSpaces *r_spaces_new(const char *name) {
 	RSpaces *sp = R_NEW0 (RSpaces);
-	if (!sp || !r_spaces_init (sp, name)) {
+	if (!r_spaces_init (sp, name)) {
 		free (sp);
 		return NULL;
 	}
@@ -15,6 +15,10 @@ static void space_free(void *data) {
 	RSpace *s = (RSpace *)data;
 	if (s) {
 		free (s->name);
+		if (s->prefixes) {
+			r_list_free (s->prefixes); // list of strdup'ed strings
+			s->prefixes = NULL;
+		}
 		free (s);
 	}
 }
@@ -25,7 +29,6 @@ R_API bool r_spaces_init(RSpaces *sp, const char *name) {
 	if (!sp->name) {
 		goto fail;
 	}
-
 	sp->spaces = r_crbtree_new (space_free);
 	if (!sp->spaces) {
 		goto fail;
@@ -77,6 +80,7 @@ static int name_space_cmp(void *incoming, void *in, void *user) {
 }
 
 R_API RSpace *r_spaces_get(RSpaces *sp, const char *name) {
+	R_RETURN_VAL_IF_FAIL (sp, NULL);
 	if (!name) {
 		return NULL;
 	}
@@ -99,18 +103,12 @@ R_API RSpace *r_spaces_add(RSpaces *sp, const char *name) {
 	if (s) {
 		return s;
 	}
-
 	s = R_NEW0 (RSpace);
-	if (!s) {
-		return NULL;
-	}
-
 	s->name = strdup (name);
 	if (!s->name) {
 		free (s);
 		return NULL;
 	}
-
 	r_crbtree_insert (sp->spaces, s, space_cmp, NULL);
 	return s;
 }
@@ -125,7 +123,6 @@ static inline bool spaces_unset_single(RSpaces *sp, const char *name) {
 	if (!space) {
 		return false;
 	}
-
 	RSpaceEvent ev = { .data.unset.space = space };
 	r_event_send (sp->event, R_SPACE_EVENT_UNSET, &ev);
 	if (sp->current == space) {
@@ -135,10 +132,10 @@ static inline bool spaces_unset_single(RSpaces *sp, const char *name) {
 }
 
 R_API bool r_spaces_unset(RSpaces *sp, const char *name) {
+	R_RETURN_VAL_IF_FAIL (sp, false);
 	if (name) {
 		return spaces_unset_single (sp, name);
 	}
-
 	RList *names = r_list_newf ((RListFree)free);
 	if (!names) {
 		return false;

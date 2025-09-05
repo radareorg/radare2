@@ -814,7 +814,36 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 addr, ut32 size) {
 		f->lastid++;
 	}
 	item->id = f->lastid;
+	// decide flagspace: current by default, or best prefix match if autospace
 	item->space = r_flag_space_cur (f);
+	if (f->autospace && R_STR_ISNOTEMPTY (name)) {
+		size_t best_len = 0;
+		RSpace *best_sp = NULL;
+		RSpaceIter *it;
+		RSpace *sp;
+		r_spaces_foreach (&f->spaces, it, sp) {
+			if (!sp || !sp->prefixes) {
+				continue;
+			}
+			RListIter *pi;
+			char *pfx;
+			r_list_foreach (sp->prefixes, pi, pfx) {
+				if (R_STR_ISEMPTY (pfx)) {
+					continue;
+				}
+				if (r_str_startswith (name, pfx)) {
+					size_t lp = strlen (pfx);
+					if (lp > best_len) {
+						best_len = lp;
+						best_sp = sp;
+					}
+				}
+			}
+		}
+		if (best_sp) {
+			item->space = best_sp;
+		}
+	}
 	item->size = size;
 
 	update_flag_item_addr (f, item, addr + f->base, is_new, true);
