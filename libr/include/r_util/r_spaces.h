@@ -23,9 +23,12 @@ extern "C" {
  * R_SPACE_EVENT_UNSET: called when deleting a RSpace with a given name
  */
 
-// XXX: kill this
 typedef struct r_space_t {
 	char *name;
+	// Optional list of string prefixes associated with this space.
+	// Used by RFlag when cfg.autoflagspace is enabled to auto-assign
+	// flags whose names start with any of these prefixes.
+	RList *prefixes; // <char*>
 } RSpace;
 
 typedef enum {

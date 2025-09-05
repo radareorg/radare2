@@ -55,6 +55,7 @@ typedef struct r_flag_t {
 	RSpaces spaces;   /* handle flag spaces */
 	st64 base;         /* base address for all flag items */
 	bool realnames;
+	bool autospace;    /* auto-assign flagspace by name prefix */
 	Sdb *tags;
 	RNum *num;
 	RSkipList *by_addr; /* flags sorted by addr, value=RFlagsAtOffset */
