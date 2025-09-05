@@ -1,4 +1,4 @@
-/* radare - LPGL - Copyright 2017-2022 condret */
+/* radare - LPGL - Copyright 2017-2025 - condret */
 
 #include <r_lang.h>
 

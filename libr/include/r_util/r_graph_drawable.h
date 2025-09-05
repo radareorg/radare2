@@ -27,7 +27,7 @@ typedef struct r_anal_graph_node_info_t {
 } RGraphNodeInfo;
 
 R_API void r_graph_free_node_info(void *ptr);
-R_API RGraphNodeInfo *r_graph_create_node_info(const char *title, const char *body, ut64 offset);
+R_API RGraphNodeInfo * R_NONNULL r_graph_create_node_info(const char *title, const char * R_NULLABLE body, ut64 offset);
 R_API RGraphNode *r_graph_add_node_info(RGraph *graph, const char *title, const char *body, ut64 offset);
 
 /**

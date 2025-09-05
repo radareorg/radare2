@@ -857,7 +857,7 @@ static void autocomplete_filename(RLineCompletion *completion, RLineBuffer *buf,
 		}
 #endif
 	} else {
-		args = R_STR_DUP (buf->data);
+		args = strdup (buf->data);
 	}
 
 	if (!args) {
@@ -869,7 +869,7 @@ static void autocomplete_filename(RLineCompletion *completion, RLineBuffer *buf,
 		goto out;
 	}
 
-	input = R_STR_DUP (r_str_word_get0 (args, narg));
+	input = strdup (r_str_word_get0 (args, narg));
 	if (!input) {
 		goto out;
 	}
