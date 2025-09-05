@@ -134,6 +134,7 @@ static RCoreHelpMessage help_msg_fs = {
 	"fs", "+foo", "push previous flagspace and set",
 	"fs", "-", "pop to the previous flagspace",
 	"fs", "-.", "remove the current flagspace",
+	"fsr", "[old] [new]", "rename a flagspace",
 	"fsq", "", "list flagspaces in quiet mode",
 	"fsm", " [addr]", "move flags at given address to the current flagspace",
 	"fss", "", "display flagspaces stack",
@@ -1623,13 +1624,15 @@ static int cmd_flag(void *data, const char *input) {
 			r_flag_space_push (core->flags, r_str_trim_head_ro (input + 2));
 			break;
 		case 'r': // "fsr"
-			if (input[2] == ' ') {
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_fs, "fsr");
+			} else if (input[2] == ' ') {
 				char *newname = r_str_trim_dup (input + 3);
 				r_str_trim (newname);
 				r_flag_space_rename (core->flags, NULL, newname);
 				free (newname);
 			} else {
-				r_core_cmd_help_match (core, help_msg_fs, "fsr");
+				r_core_return_invalid_command (core, "fsr", input[2]);
 			}
 			break;
 		case 's': // "fss"
