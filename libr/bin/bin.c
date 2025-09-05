@@ -150,9 +150,9 @@ R_API RBinImport *r_bin_import_clone(RBinImport *o) {
 	RBinImport *res = r_mem_dup (o, sizeof (*o));
 	if (res) {
 		res->name = r_bin_name_clone (o->name);
-		res->libname = strdup (o->libname);
-		res->classname = strdup (o->classname);
-		res->descriptor = strdup (o->descriptor);
+		res->libname = o->libname? strdup (o->libname): NULL;
+		res->classname = o->classname? strdup (o->classname): NULL;
+		res->descriptor = o->descriptor? strdup (o->descriptor): NULL;
 	}
 	return res;
 }
