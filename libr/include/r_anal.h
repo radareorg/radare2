@@ -392,6 +392,10 @@ typedef struct r_anal_options_t {
 	bool zigndups;
 	bool icods; // R2_600 -- add anal.icods or anal.xrefs.indirect references. needed for stm8 at least
 	char *tparser;
+	bool dynprefix;
+	const char *defprefix;
+	const char *prefix_marker;
+	ut64 prefix_radius;
 } RAnalOptions;
 
 // XXX we have cc / calling conventions / abi settings already no need for a custom enum here
