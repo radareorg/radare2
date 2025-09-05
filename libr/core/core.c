@@ -270,6 +270,10 @@ static void archbits(RCore *core, ut64 addr) {
 	r_core_seek_arch_bits (core, addr);
 }
 
+static bool cfggetb(RCore *core, const char *k) {
+	return r_config_get_b (core->config, k);
+}
+
 static int cfggeti(RCore *core, const char *k) {
 	return r_config_get_i (core->config, k);
 }
@@ -350,6 +354,7 @@ R_API void r_core_bind(RCore *core, RCoreBind *bnd) {
 	bnd->getName = (RCoreGetName)getName;
 	bnd->getNameDelta = (RCoreGetNameDelta)getNameDelta;
 	bnd->archBits = (RCoreSeekArchBits)archbits;
+	bnd->cfgGetB = (RCoreConfigGetB)cfggetb;
 	bnd->cfgGetI = (RCoreConfigGetI)cfggeti;
 	bnd->cfgGet = (RCoreConfigGet)cfgget;
 	bnd->numGet = (RCoreNumGet)numget;
