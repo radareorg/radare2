@@ -813,7 +813,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 // Helper macro for left bit rotation
 #define rotl32(x, n) (((x) << (n)) | ((x) >> (32 - (n))))
 
-// Murmur3 32-bit hash function for sBPF syscalls
+// Firedancer-compatible Murmur3 32-bit hash function for sBPF syscalls
 static ut32 murmur3_32(const char* data, ut32 len, ut32 seed) {
 	const ut32 c1 = 0xcc9e2d51U;
 	const ut32 c2 = 0x1b873593U;
@@ -1193,14 +1193,12 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 		case R_BPF_64_32: { // 32-bit function/syscall ID for call instruction
 			const char *sym_name = NULL;
 			ut64 sym_addr = 0;
-			bool is_import = false;
 			if (rel->sym) {
 				// Check imports first
 				if (rel->sym < bo->imports_by_ord_size && bo->imports_by_ord[rel->sym]) {
 					RBinImport *import = bo->imports_by_ord[rel->sym];
 					if (import && import->name) {
 						sym_name = r_bin_name_tostring (import->name);
-						is_import = true;
 					}
 				}
 				// Then check symbols
@@ -1212,18 +1210,8 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 					}
 				}
 			}
-			if (R_STR_ISNOTEMPTY (sym_name)) {
-				// Compute Murmur3 hash with seed 0
-				ut32 hash_value = murmur3_32 (sym_name, strlen (sym_name), 0);
-				R_LOG_DEBUG ("sBPF R_BPF_64_32: symbol '%s' -> hash 0x%08x", sym_name, hash_value);
-			} else {
-				R_LOG_WARN ("sBPF R_BPF_64_32: no symbol name found for relocation at 0x%"PFMT64x, rel->rva);
-				r_write_le32 (buf, 0);
-				iob->overlay_write_at (iob->io, rel->rva + 4, buf, 4);
-				break;
-			}
-			// Check if this is a known Solana syscall by checking if it starts with "sol_"
-			if (is_import || (sym_name && !strncmp (sym_name, "sol_", 4))) {
+			// Check if this is a known Solana syscall
+			if (sym_name && (r_str_startswith (sym_name, "sol_") || !strcmp (sym_name, "abort"))) {
 				// This is a syscall - compute hash
 				ut32 hash_value = murmur3_32 (sym_name, strlen (sym_name), 0);
 				R_LOG_DEBUG ("sBPF R_BPF_64_32: syscall '%s' -> hash 0x%08x", sym_name, hash_value);

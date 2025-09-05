@@ -552,10 +552,17 @@ static void analop_esil(RArchSession *a, RAnalOp *op, cs_insn *insn, ut64 addr) 
 	case BPF_INS_CALL:	///< eBPF only
 		if (OPCOUNT > 0 && OP(0).type == BPF_OP_IMM) {
 			st32 imm = IMM(0);
-			st64 current_pc = op->addr / 8;
-			st64 target_pc = current_pc + imm + 1;
-			st64 target_addr = target_pc * 8;
-			esilprintf (op, "8,pc,+,sp,=[8],8,sp,-=,0x%" PFMT64x ",pc,=", target_addr);
+			const char *syscall_name = get_syscall_name (imm);
+			if (syscall_name) {
+				// This is a syscall - trigger trap instead of setting PC
+				esilprintf (op, "8,pc,+,sp,=[8],8,sp,-=,%" PFMT64d ",TRAP", (ut64)imm);
+			} else {
+				// This is a regular function call - use PC-relative addressing
+				st64 current_pc = op->addr / 8;
+				st64 target_pc = current_pc + imm + 1;
+				st64 target_addr = target_pc * 8;
+				esilprintf (op, "8,pc,+,sp,=[8],8,sp,-=,0x%" PFMT64x ",pc,=", target_addr);
+			}
 		} else {
 			esilprintf (op, "pc,sp,=[8],8,sp,-=,0x%" PFMT64x ",$", IMM (0));
 		}
@@ -832,6 +839,7 @@ static char *regs(RArchSession *as) {
 		"=R0    r0\n"
 		"=SP    sp\n"
 		"=BP    r10\n"
+		"=SN    r0\n"
 		"gpr    z        .32 ?    0\n"
 		"gpr    a        .32 0    0\n"
 		"gpr    x        .32 4    0\n"
