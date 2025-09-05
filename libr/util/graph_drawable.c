@@ -12,10 +12,11 @@ R_API void r_graph_free_node_info(void *ptr) {
 	}
 }
 
-R_API RGraphNodeInfo * R_NONNULL r_graph_create_node_info(const char *title, const char *body, ut64 offset) {
+R_API RGraphNodeInfo * R_NONNULL r_graph_create_node_info(const char *title, const char * R_NULLABLE body, ut64 offset) {
+	R_RETURN_VAL_IF_FAIL (title, NULL);
 	RGraphNodeInfo *data = R_NEW0 (RGraphNodeInfo);
 	data->title = strdup (title);
-	data->body = strdup (body? body: "");
+	data->body = body? strdup (body): NULL;
 	data->offset = offset;
 	return data;
 }
