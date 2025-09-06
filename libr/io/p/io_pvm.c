@@ -21,14 +21,14 @@
 
 // Syscall declarations if not available
 #ifndef process_vm_readv
-ssize_t process_vm_readv(pid_t pid, const struct iovec *local_iov, unsigned long liovcnt, 
+static ssize_t process_vm_readv(pid_t pid, const struct iovec *local_iov, unsigned long liovcnt,
 		const struct iovec *remote_iov, unsigned long riovcnt, unsigned long flags) {
 	return syscall (__NR_process_vm_readv, pid, local_iov, liovcnt, remote_iov, riovcnt, flags);
 }
 #endif
 
-#ifndef process_vm_writev  
-ssize_t process_vm_writev(pid_t pid, const struct iovec *local_iov, unsigned long liovcnt,
+#ifndef process_vm_writev
+static ssize_t process_vm_writev(pid_t pid, const struct iovec *local_iov, unsigned long liovcnt,
 		const struct iovec *remote_iov, unsigned long riovcnt, unsigned long flags) {
 	return syscall (__NR_process_vm_writev, pid, local_iov, liovcnt, remote_iov, riovcnt, flags);
 }
@@ -89,31 +89,26 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	}
 
 	// Extract PID from URI: ptrace://1234
-	pathname += strlen(PTRACE_ENHANCED_URI);
-	pid_t pid = (pid_t)strtol(pathname, NULL, 10);
+	pathname += strlen (PTRACE_ENHANCED_URI);
+	pid_t pid = (pid_t)strtol (pathname, NULL, 10);
 
 	if (pid <= 0 || pid > 4194304) {
-		R_LOG_ERROR("Invalid PID: %d", pid);
+		R_LOG_ERROR ("Invalid PID: %d", pid);
 		return NULL;
 	}
 
 	// Initialize enhanced ptrace data
-	ProcessVmData *data = R_NEW0(ProcessVmData);
-	if (!data) {
-		R_LOG_ERROR("Memory allocation failed");
-		return NULL;
-	}
-
+	ProcessVmData *data = R_NEW0 (ProcessVmData);
 	data->pid = pid;
 	data->buffer_size = DEFAULT_BUFFER_SIZE;
 
 	// Open maps file
 	char maps_path[MAX_PATH_LENGTH];
-	snprintf(maps_path, sizeof(maps_path), "/proc/%d/maps", pid);
+	snprintf (maps_path, sizeof (maps_path), "/proc/%d/maps", pid);
 	data->maps_file = fopen (maps_path, "r");
 
 	if (!data->maps_file) {
-		R_LOG_ERROR ("Cannot open %s: %s", maps_path, strerror(errno));
+		R_LOG_ERROR ("Cannot open %s: %s", maps_path, strerror (errno));
 		free (data);
 		return NULL;
 	}
@@ -144,7 +139,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	data->initialized = true;
 
 	R_LOG_INFO ("Process VM opened for PID %d", pid);
-	return r_io_desc_new (io, &r_io_plugin_pvm, pathname, 
+	return r_io_desc_new (io, &r_io_plugin_pvm, pathname,
 			R_PERM_RW | (rw & R_PERM_X), mode, data);
 }
 
@@ -181,8 +176,8 @@ static ut64 __lseek(RIO *io, RIODesc *desc, ut64 offset, int whence) {
 static bool __close(RIODesc *desc) {
 	ProcessVmData *data = desc->data;
 	if (data) {
-		cleanup_ptrace_data(data);
-		free(data);
+		cleanup_ptrace_data (data);
+		free (data);
 	}
 	return true;
 }
