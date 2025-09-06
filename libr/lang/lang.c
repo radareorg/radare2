@@ -37,45 +37,37 @@ static void r_lang_session_free(void *p) {
 
 R_API RLang *r_lang_new(void) {
 	RLang *lang = R_NEW0 (RLang);
-	if (!lang) {
-		return NULL;
-	}
 	lang->user = NULL;
 	lang->langs = r_list_new ();
-	if (!lang->langs) {
-		r_lang_free (lang);
-		return NULL;
-	}
 	lang->defs = r_list_new ();
-	if (!lang->defs) {
-		r_lang_free (lang);
-		return NULL;
-	}
 	lang->sessions = r_list_newf (r_lang_session_free);
 	lang->defs->free = (RListFree)r_lang_def_free;
+	const bool load_plugins = !r_sys_getenv_asbool ("R2_DEBUG_NOLANG");
+	if (load_plugins) {
 #if HAVE_SYSTEM
 #if R2__UNIX__
-	r_lang_plugin_add (lang, &r_lang_plugin_s);
-	r_lang_plugin_add (lang, &r_lang_plugin_c);
-	r_lang_plugin_add (lang, &r_lang_plugin_cpipe);
+		r_lang_plugin_add (lang, &r_lang_plugin_s);
+		r_lang_plugin_add (lang, &r_lang_plugin_c);
+		r_lang_plugin_add (lang, &r_lang_plugin_cpipe);
 #endif
-//	r_lang_plugin_add (lang, &r_lang_plugin_v);
-	r_lang_plugin_add (lang, &r_lang_plugin_vala);
-	r_lang_plugin_add (lang, &r_lang_plugin_rust);
-	r_lang_plugin_add (lang, &r_lang_plugin_zig);
-	r_lang_plugin_add (lang, &r_lang_plugin_pipe);
+	//	r_lang_plugin_add (lang, &r_lang_plugin_v);
+		r_lang_plugin_add (lang, &r_lang_plugin_vala);
+		r_lang_plugin_add (lang, &r_lang_plugin_rust);
+		r_lang_plugin_add (lang, &r_lang_plugin_zig);
+		r_lang_plugin_add (lang, &r_lang_plugin_pipe);
 #endif
-	r_lang_plugin_add (lang, &r_lang_plugin_go);
-	r_lang_plugin_add (lang, &r_lang_plugin_poke);
-	r_lang_plugin_add (lang, &r_lang_plugin_spp);
-	r_lang_plugin_add (lang, &r_lang_plugin_lib);
-	r_lang_plugin_add (lang, &r_lang_plugin_asm);
+		r_lang_plugin_add (lang, &r_lang_plugin_go);
+		r_lang_plugin_add (lang, &r_lang_plugin_poke);
+		r_lang_plugin_add (lang, &r_lang_plugin_spp);
+		r_lang_plugin_add (lang, &r_lang_plugin_lib);
+		r_lang_plugin_add (lang, &r_lang_plugin_asm);
+		r_lang_plugin_add (lang, &r_lang_plugin_tsc);
+		r_lang_plugin_add (lang, &r_lang_plugin_nim);
+		r_lang_plugin_add (lang, &r_lang_plugin_dart);
+	}
 #if WANT_QJS
 	r_lang_plugin_add (lang, &r_lang_plugin_qjs);
 #endif
-	r_lang_plugin_add (lang, &r_lang_plugin_tsc);
-	r_lang_plugin_add (lang, &r_lang_plugin_nim);
-	r_lang_plugin_add (lang, &r_lang_plugin_dart);
 
 	return lang;
 }
