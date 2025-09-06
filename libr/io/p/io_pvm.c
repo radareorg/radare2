@@ -1,12 +1,12 @@
 /* radare2 - MIT - Copyright 2025 - apkunpacker */
 
+#include <r_io.h>
+#include <r_lib.h>
+#include <r_util.h>
 /* Read remote process memory using process_vm APIs */
 #if __linux__
 
 #define R_LOG_ORIGIN "io.pvm"
-#include <r_io.h>
-#include <r_lib.h>
-#include <r_util.h>
 #include <sys/uio.h>
 #include <sys/syscall.h>
 #include <sys/stat.h>
@@ -63,7 +63,7 @@ static size_t pvm_read_memory(ProcessVmData* data, uint64_t addr, void* buffer, 
 	}
 
 	struct iovec local_iov = {buffer, size};
-	struct iovec remote_iov = {(void*)addr, size};
+	struct iovec remote_iov = {(void *)(uintptr_t)addr, size};
 	ssize_t bytes = process_vm_readv (data->pid, &local_iov, 1, &remote_iov, 1, 0);
 	return bytes < 0 ? 0 : (size_t)bytes;
 }
@@ -73,7 +73,7 @@ static size_t pvm_write_memory(ProcessVmData* data, uint64_t addr, const void* b
 		return 0;
 	}
 	struct iovec local_iov = {(void*)buffer, size};
-	struct iovec remote_iov = {(void*)addr, size};
+	struct iovec remote_iov = {(void *)(uintptr_t)addr, size};
 
 	ssize_t bytes = process_vm_writev (data->pid, &local_iov, 1, &remote_iov, 1, 0);
 	return bytes < 0 ? 0 : (size_t)bytes;
@@ -125,7 +125,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	// Test process_vm_readv access
 	char test_buffer;
 	struct iovec local_iov = {&test_buffer, 1};
-	struct iovec remote_iov = {(void*)0x1, 1};
+	struct iovec remote_iov = {(void *)(uintptr_t)1, 1};
 	errno = 0;
 	process_vm_readv (pid, &local_iov, 1, &remote_iov, 1, 0);
 
