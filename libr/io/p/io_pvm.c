@@ -1,12 +1,13 @@
 /* radare2 - MIT - Copyright 2025 - apkunpacker */
 
+#define R_LOG_ORIGIN "io.pvm"
+
 #include <r_io.h>
 #include <r_lib.h>
 #include <r_util.h>
-/* Read remote process memory using process_vm APIs */
+
 #if __linux__
 
-#define R_LOG_ORIGIN "io.pvm"
 #include <sys/uio.h>
 #include <sys/syscall.h>
 #include <sys/stat.h>
