@@ -1,3 +1,5 @@
+.PHONY: default all clean
+
 DEPS=sdb qjs
 
 ifeq ($(WANT_V35),1)
@@ -12,20 +14,13 @@ else
   DEPS += capstone-v5
 endif
 
-all: $(DEPS)
+ALL=$(basename $(wildcard *.mk))
+
+default: $(DEPS)
+
+all: $(ALL)
 
 clean:
-	rm -rf $(DEPS)
+	rm -rf $(ALL)
 
-include sdb.mk
-ifeq ($(WANT_V35),1)
-  include binaryninja.mk
-endif
-ifeq ($(USE_CS4),1)
-  include capstone-v4.mk
-else ifeq ($(USE_CSNEXT),1)
-  include capstone-next.mk
-else
-  include capstone-v5.mk
-endif
-include qjs.mk
+include *.mk
