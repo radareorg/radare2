@@ -383,6 +383,7 @@ userconf.set10('DEBUGGER', has_debugger)
 userconf.set('ETCDIR', join_paths(r2_prefix, 'etc'))
 userconf.set('PREFIX', r2_prefix)
 userconf.set('BINDIR', join_paths(r2_prefix, 'bin'))
+userconf.set('MANDIR', join_paths(r2_datdir, 'man'))
 if host_machine.system() == 'windows'
   userconf.set('LIBDIR', r2_libdir)
   userconf.set('INCLUDEDIR', r2_incdir)
