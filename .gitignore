@@ -73,6 +73,7 @@ shlr/capstone/
 shlr/java/out
 shlr/java/out.exe
 shlr/spp/config.h
+subprojects/.wraplock
 subprojects/sdb
 subprojects/capstone
 subprojects/capstone-v5
@@ -102,6 +103,8 @@ tags
 .ycm_extra_conf.pyc
 .kdev4/*
 *.kdev4
+radare2-*.tar.xz
+radare2-*.tar.gz
 radare2-*.zip
 # Ignore meson related files
 ./bin
@@ -145,6 +148,7 @@ libr/include/sdb
 **/d/*.sdb.txt.tmp
 # Artifacts
 /dist/artifacts
+/dist/tarball/radare2-*
 # libFuzzer
 crash-*
 corpus*
