@@ -1257,6 +1257,7 @@ static void cmd_fsp(RCore *core, const char *input) {
 	char *sep = strchr (spname, ' ');
 	if (!sep) {
 		R_LOG_ERROR ("Usage: fsp <flagspace> <flagprefix>");
+		free (spname);
 		return;
 	}
 	*sep++ = '\0';
@@ -1280,6 +1281,8 @@ static void cmd_fsp(RCore *core, const char *input) {
 		((RSpace *)target)->prefixes = r_list_newf (free);
 	}
 	r_list_append (((RSpace *)target)->prefixes, strdup (prefix));
+	free (prefix);
+	free (spname);
 }
 
 static void cmd_flag_spaces(RCore *core, const char *input) {
