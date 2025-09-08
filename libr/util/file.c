@@ -1114,7 +1114,7 @@ R_API char *r_file_tmpdir(void) {
 	}
 #else
 	char *path = r_sys_getenv ("XDG_RUNTIME_DIR");
-	if (R_STR_ISEMPTY (path)) {
+	if (R_STR_ISEMPTY (path) || !r_file_is_directory (path)) {
 		free (path);
 		path = r_sys_getenv ("TMPDIR");
 		if (path && !*path) {
@@ -1135,8 +1135,8 @@ R_API char *r_file_tmpdir(void) {
 #endif
 	if (!r_file_is_directory (path)) {
 		free (path);
-		return NULL;
-		//R_LOG_ERROR ("Cannot find dir.tmp '%s'", path);
+		// Always default to "/tmp"
+		path = strdup ("/tmp");
 	}
 	return path;
 }
