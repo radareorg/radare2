@@ -530,7 +530,12 @@ static void cmd_write_value_float(RCore *core, const char *input) {
 
 static void cmd_write_value_long_double(RCore *core, const char *input) {
 	long double v = 0.0;
+#if R2_NO_LONG_DOUBLE_FMT
+	double tmp = strtod (input, NULL);
+	v = (long double)tmp;
+#else
 	sscanf (input, "%Lf", &v);
+#endif
 	r_io_write_at (core->io, core->addr, (const ut8*)&v, sizeof (long double));
 }
 
