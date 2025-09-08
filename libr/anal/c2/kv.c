@@ -976,7 +976,6 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 					const char *tdef = kvc_lookup_typedef (kvc, mname_look);
 					if (tdef) {
 						r_strbuf_appendf (kvc->sb, "%s.%s=func\n", sn, mname_look);
-						free (fnames_s);
 					}
 					free (mname_look);
 				}
