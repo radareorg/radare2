@@ -3,7 +3,7 @@ _INCLUDE_MK_GCC_=1
 EXT_EXE=.wasm
 EXT_SO=wasm
 EXT_AR=a
-CC=emcc
+CC=emcc -DR2_NO_LONG_DOUBLE_FMT=1
 AR=emar
 RANLIB=emranlib
 ONELIB=0
