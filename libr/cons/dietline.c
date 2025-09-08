@@ -52,6 +52,10 @@ static inline bool is_word_break_char(char ch, BreakMode mode) {
 	return false;
 }
 
+static inline bool is_csi_final(char ch) {
+	return (ch == 'm' || ch == 'M' || ch == '~');
+}
+
 static inline void swap_case(RLine *line, int index) {
 	if (isupper (line->buffer.data[index])) {
 		line->buffer.data[index] += 32;
@@ -2095,6 +2099,9 @@ repeat:
 						}
 						break;
 					case '3': // supr or mouse click
+						// printf "\x1b\x5b\x33\x3b\x35\x7e\n" \x1b[3;5~
+						// Insert=2~, Delete=3~, Home=1~, End=4~, PageUp=5~, PageDown=6~…).
+						// Modifier: 2=Shift, 3=Alt, 5=Ctrl, 6=Shift+Ctrl
 						__delete_current_char (line);
 						if (line->vtmode == 2) {
 							buf[1] = r_cons_readchar (cons);
@@ -2109,16 +2116,13 @@ repeat:
 								return NULL;
 							}
 						}
-						for (;;) {
+						do {
 							ch = r_cons_readchar (cons);
 							if (ch < 20) {
 								r_cons_break_pop (cons);
 								return NULL;
 							}
-							if (isupper (ch)) {	// read until 'M'
-								break;
-							}
-						}
+						} while (!is_csi_final (ch));
 						break;
 					case '5': // pag up
 						if (line->vtmode == 2) {
@@ -2162,7 +2166,7 @@ repeat:
 								line->hud->top_entry_n++;
 							}
 						}
-						while (r_cons_readchar (cons) != 'M') {}
+						while (!is_csi_final (r_cons_readchar (cons))) { /* nothing */ }
 						break;
 					/* arrows */
 					case 'A': // up arrow
@@ -2210,10 +2214,9 @@ repeat:
 						__move_cursor_left (line);
 						break;
 						break;
-					case '1': // 0x31 - control + arrow
+					case '1': // 0x31 - control + arrow + home key
 						if (line->vtmode == 2) {
 							ch = r_cons_readchar (cons);
-								eprintf ("PENE %d\n", ch);
 							if (ch == 0x7e) { // HOME in screen/tmux
 								// corresponding END is 0x34 below (the 0x7e is ignored there)
 								line->buffer.index = 0;
@@ -2243,8 +2246,6 @@ repeat:
 							fkey = ch - '0';
 						}
 #endif
-						eprintf ("FKEY %d\n", fkey);
-
 						switch (ch) {
 						case 0x41:
 							// first
@@ -2295,8 +2296,8 @@ repeat:
 						}
 						line->buffer.index = 0;
 						break;
-					case 0x34: // END
-					case 0x38: // END xrvt-unicode
+					case '4': // END
+					case '8': // END xrvt-unicode
 						r_cons_readchar (cons);
 					case 0x46: // END
 						if (line->sel_widget) {
