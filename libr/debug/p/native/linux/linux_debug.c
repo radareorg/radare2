@@ -1029,7 +1029,11 @@ static void print_fpu(RCons *cons, void *f) {
 			}
 			// Using %Lf and %Le even though we do not show the extra precision to avoid another cast
 			// %f with (double)*st_ld would also work
+#if R2_NO_LONG_DOUBLE_FMT
+			r_cons_printf (cons, " %e %f\n", (double)(*st_ld), (double)(*st_ld));
+#else
 			r_cons_printf (cons, " %Le %Lf\n", *st_ld, *st_ld);
+#endif
 		} else {
 			r_cons_printf (cons, "\n");
 		}

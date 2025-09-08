@@ -3075,7 +3075,13 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					sscanf (eq, "%lf", (double*)&dval);
 					val = dval;
 #else
+#if R2_NO_LONG_DOUBLE_FMT
+					double dval = 0.0;
+					sscanf (eq, "%lf", &dval);
+					val = (long double)dval;
+#else
 					sscanf (eq, "%Lf", &val);
+#endif
 #endif
 					r_reg_set_double (core->dbg->reg, item, val);
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, true);
@@ -3084,7 +3090,11 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_FPU, false);
 					long double res = r_reg_get_longdouble (core->dbg->reg, item);
+#if R2_NO_LONG_DOUBLE_FMT
+					r_cons_printf (core->cons, "%f\n", (double)res);
+#else
 					r_cons_printf (core->cons, "%Lf\n", res);
+#endif
 				}
 			} else {
 				/* note, that negative type forces sync to print the regs from the backend */
