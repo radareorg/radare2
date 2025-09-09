@@ -1060,6 +1060,10 @@ static void r_print_format_float(const RPrint* p, int endian, int mode, const ch
 }
 
 static void r_print_format_long_double(const RPrint* p, int endian, int mode, const char *setval, ut64 seeki, ut8* buf, int i, int size) {
+#if R2_NO_LONG_DOUBLE_FMT
+	// just fallback to double
+	r_print_format_double (p, endian, mode, setval, seeki, buf, i, size);
+#else
 	long double val_f = 0.0;
 	ut64 addr = 0;
 	int elem = -1;
@@ -1068,16 +1072,13 @@ static void r_print_format_long_double(const RPrint* p, int endian, int mode, co
 		size %= ARRAYINDEX_COEF;
 	}
 	updateAddr (buf + i, 999, endian, &addr, NULL);
+	// Read value using the appropriate size
 	r_mem_swaporcopy ((ut8*)&val_f, buf + i, sizeof (long double), endian);
 	if (MUSTSET) {
 		r_print_printf (p, "wv8 %s @ 0x%08"PFMT64x"\n", setval,
 				seeki + ((elem >= 0) ? elem * 8 : 0));
 	} else if ((mode & R_PRINT_DOT) || MUSTSEESTRUCT) {
-#if R2_NO_LONG_DOUBLE_FMT
-		r_print_printf (p, "%.17g", (double)val_f);
-#else
 		r_print_printf (p, "%.17Lg", val_f);
-#endif
 	} else {
 		if (MUSTSEE) {
 			if (!SEEVALUE && !ISQUIET) {
@@ -1086,11 +1087,7 @@ static void r_print_format_long_double(const RPrint* p, int endian, int mode, co
 			}
 		}
 		if (size == -1) {
-#if R2_NO_LONG_DOUBLE_FMT
-			r_print_printf (p, "%.17g", (double)val_f);
-#else
 			r_print_printf (p, "%.17Lg", val_f);
-#endif
 		} else {
 			if (!SEEVALUE) {
 				r_print_printf (p, "[ ");
@@ -1100,11 +1097,7 @@ static void r_print_format_long_double(const RPrint* p, int endian, int mode, co
 				updateAddr (buf + i, 9999, endian, &addr, NULL);
 				r_mem_swaporcopy ((ut8*)&val_f, buf + i, sizeof (double), endian);
 				if (elem == -1 || elem == 0) {
-#if R2_NO_LONG_DOUBLE_FMT
-					r_print_printf (p, "%.17g", (double)val_f);
-#else
 					r_print_printf (p, "%.17Lg", val_f);
-#endif
 					if (elem == 0) {
 						elem = -2;
 					}
@@ -1125,6 +1118,7 @@ static void r_print_format_long_double(const RPrint* p, int endian, int mode, co
 			r_print_printf (p, "}");
 		}
 	}
+#endif
 }
 
 static void r_print_format_double(const RPrint* p, int endian, int mode, const char *setval, ut64 seeki, ut8* buf, int i, int size) {
