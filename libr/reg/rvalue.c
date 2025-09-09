@@ -140,16 +140,24 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 		break;
 	case 80: // long double
 	case 96: // long floating value
-		// FIXME: It is a precision loss, please implement me properly!
+		 // FIXME: It is a precision loss, please implement me properly!
 		{
+#if R2_NO_LONG_DOUBLE
+			double ld = r_reg_get_longdouble (reg, item);
+#else
 			long double ld = r_reg_get_longdouble (reg, item);
+#endif
 			return isnan (ld)? UT64_MAX: (ut64)ld;
 		}
 	case 128:
 	case 256:
 		// XXX 128 & 256 bit
 		{
+#if R2_NO_LONG_DOUBLE
+			double ld = r_reg_get_longdouble (reg, item);
+#else
 			long double ld = r_reg_get_longdouble (reg, item);
+#endif
 			if (isnan (ld)) {
 				return UT64_MAX;
 			}
