@@ -468,7 +468,11 @@ static inline void *r_new_copy(int size, void *data) {
 #define PFMTSZd "zd"
 #define PFMTSZu "zu"
 #define PFMTSZo "zo"
+#if R2_NO_LONG_DOUBLE
+#define LDBLFMT "f"
+#else
 #define LDBLFMT "Lf"
+#endif
 #define HHXFMT  "hhx"
 #endif
 

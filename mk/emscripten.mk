@@ -3,7 +3,7 @@ _INCLUDE_MK_GCC_=1
 EXT_EXE=.js
 EXT_SO=.bc
 EXT_AR=a
-CC=emcc -DR2_NO_LONG_DOUBLE_FMT=1
+CC=emcc -DR2_NO_LONG_DOUBLE=1
 AR=emar
 LINK=
 RANLIB=emranlib
