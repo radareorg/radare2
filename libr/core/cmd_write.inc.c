@@ -530,7 +530,7 @@ static void cmd_write_value_float(RCore *core, const char *input) {
 
 static void cmd_write_value_long_double(RCore *core, const char *input) {
 	long double v = 0.0;
-#if R2_NO_LONG_DOUBLE_FMT
+#if R2_NO_LONG_DOUBLE
 	double tmp = strtod (input, NULL);
 	v = (long double)tmp;
 #else

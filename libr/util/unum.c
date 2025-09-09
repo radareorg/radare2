@@ -127,7 +127,7 @@ R_API void r_num_free(RNum *num) {
  * insufficient memory was available.
  */
 R_API char *r_num_units(char *buf, size_t len, ut64 num) {
-#if R2_NO_LONG_DOUBLE_FMT
+#if R2_NO_LONG_DOUBLE
 	double fnum;
 #else
 	long double fnum;
@@ -141,7 +141,7 @@ R_API char *r_num_units(char *buf, size_t len, ut64 num) {
 			return NULL;
 		}
 	}
-#if R2_NO_LONG_DOUBLE_FMT
+#if R2_NO_LONG_DOUBLE
 	fnum = (long double)num;
 #else
 	fnum = (double)num;

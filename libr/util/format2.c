@@ -1033,7 +1033,7 @@ static void r_print_format_float(RPrintFormat *pf, const char *setval, ut64 seek
 }
 
 static void r_print_format_long_double(RPrintFormat *pf, const char *setval, ut64 seeki, ut8* buf, int i, int size) {
-#if R2_NO_LONG_DOUBLE_FMT
+#if R2_NO_LONG_DOUBLE
 	// just fallback to double
 	r_print_format_double (p, endian, mode, setval, seeki, buf, i, size);
 #else
