@@ -142,9 +142,9 @@ R_API char *r_num_units(char *buf, size_t len, ut64 num) {
 		}
 	}
 #if R2_NO_LONG_DOUBLE
-	fnum = (long double)num;
-#else
 	fnum = (double)num;
+#else
+	fnum = (long double)num;
 #endif
 	if (num >= EB) {
 		unit = 'E'; fnum /= EB;
