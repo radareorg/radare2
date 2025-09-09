@@ -161,9 +161,15 @@ R_API char *r_num_units(char *buf, size_t len, ut64 num) {
 	} else {
 		unit = '\0';
 	}
+#if R2_NO_LONG_DOUBLE
+	fmt_str = (ceil (fnum) == fnum)
+		? "%.0" LDBLFMT "%c"
+		: "%.1" LDBLFMT "%c";
+#else
 	fmt_str = ((double)ceill (fnum) == (double)fnum)
 		? "%.0" LDBLFMT "%c"
 		: "%.1" LDBLFMT "%c";
+#endif
 	snprintf (buf, len, fmt_str, fnum, unit);
 	return buf;
 }
