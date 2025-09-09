@@ -1032,67 +1032,6 @@ static void r_print_format_float(RPrintFormat *pf, const char *setval, ut64 seek
 	}
 }
 
-static void r_print_format_long_double(RPrintFormat *pf, const char *setval, ut64 seeki, ut8* buf, int i, int size) {
-#if R2_NO_LONG_DOUBLE
-	// just fallback to double
-	r_print_format_double (p, endian, mode, setval, seeki, buf, i, size);
-#else
-	RPrint *p = pf->p;
-	const int endian = pf->endian;
-	const int mode = pf->mode;
-	long double val_f = 0.0;
-	ut64 addr = 0;
-	int elem = -1;
-	if (size >= ARRAYINDEX_COEF) {
-		elem = size/ARRAYINDEX_COEF - 1;
-		size %= ARRAYINDEX_COEF;
-	}
-	updateAddr (buf + i, 999, endian, &addr, NULL);
-	r_mem_swaporcopy ((ut8*)&val_f, buf + i, sizeof (long double), endian);
-	if (MUSTSET) {
-		r_print_printf (p, "wv8 %s @ 0x%08"PFMT64x"\n", setval,
-				seeki + ((elem >= 0) ? elem * 8 : 0));
-	} else if ((mode & R_PRINT_DOT) || MUSTSEESTRUCT) {
-		r_print_printf (p, "%.17Lg", val_f);
-	} else {
-		if (MUSTSEE) {
-			if (!SEEVALUE && !ISQUIET) {
-				r_print_printf (p, "0x%08"PFMT64x" = ",
-						seeki + ((elem >= 0) ? elem * 8 : 0));
-			}
-		}
-		if (size == -1) {
-			r_print_printf (p, "%.17Lg", val_f);
-		} else {
-			if (!SEEVALUE) {
-				r_print_printf (p, "[ ");
-			}
-			while (size--) {
-				// XXX this 999 is scary
-				updateAddr (buf + i, 9999, endian, &addr, NULL);
-				r_mem_swaporcopy ((ut8*)&val_f, buf + i, sizeof (double), endian);
-				if (elem == -1 || elem == 0) {
-					r_print_printf (p, "%.17Lg", val_f);
-					if (elem == 0) {
-						elem = -2;
-					}
-				}
-				if (size != 0 && elem == -1) {
-					r_print_printf (p, ", ");
-				}
-				if (elem > -1) {
-					elem--;
-				}
-				i += 8;
-			}
-			if (!SEEVALUE) {
-				r_print_printf (p, " ]");
-			}
-		}
-	}
-#endif
-}
-
 static void r_print_format_double(RPrintFormat *pf, const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	const int mode = pf->mode;
 	const RPrint *p = pf->p;
@@ -1164,6 +1103,67 @@ static void r_print_format_double(RPrintFormat *pf, const char *setval, ut64 see
 		}
 		// r_print_printf (p, "\n");
 	}
+}
+
+static void r_print_format_long_double(RPrintFormat *pf, const char *setval, ut64 seeki, ut8* buf, int i, int size) {
+#if R2_NO_LONG_DOUBLE
+	// just fallback to double
+	r_print_format_double (p, endian, mode, setval, seeki, buf, i, size);
+#else
+	RPrint *p = pf->p;
+	const int endian = pf->endian;
+	const int mode = pf->mode;
+	long double val_f = 0.0;
+	ut64 addr = 0;
+	int elem = -1;
+	if (size >= ARRAYINDEX_COEF) {
+		elem = size/ARRAYINDEX_COEF - 1;
+		size %= ARRAYINDEX_COEF;
+	}
+	updateAddr (buf + i, 999, endian, &addr, NULL);
+	r_mem_swaporcopy ((ut8*)&val_f, buf + i, sizeof (long double), endian);
+	if (MUSTSET) {
+		r_print_printf (p, "wv8 %s @ 0x%08"PFMT64x"\n", setval,
+				seeki + ((elem >= 0) ? elem * 8 : 0));
+	} else if ((mode & R_PRINT_DOT) || MUSTSEESTRUCT) {
+		r_print_printf (p, "%.17Lg", val_f);
+	} else {
+		if (MUSTSEE) {
+			if (!SEEVALUE && !ISQUIET) {
+				r_print_printf (p, "0x%08"PFMT64x" = ",
+						seeki + ((elem >= 0) ? elem * 8 : 0));
+			}
+		}
+		if (size == -1) {
+			r_print_printf (p, "%.17Lg", val_f);
+		} else {
+			if (!SEEVALUE) {
+				r_print_printf (p, "[ ");
+			}
+			while (size--) {
+				// XXX this 999 is scary
+				updateAddr (buf + i, 9999, endian, &addr, NULL);
+				r_mem_swaporcopy ((ut8*)&val_f, buf + i, sizeof (double), endian);
+				if (elem == -1 || elem == 0) {
+					r_print_printf (p, "%.17Lg", val_f);
+					if (elem == 0) {
+						elem = -2;
+					}
+				}
+				if (size != 0 && elem == -1) {
+					r_print_printf (p, ", ");
+				}
+				if (elem > -1) {
+					elem--;
+				}
+				i += 8;
+			}
+			if (!SEEVALUE) {
+				r_print_printf (p, " ]");
+			}
+		}
+	}
+#endif
 }
 
 static void r_print_format_word(RPrintFormat *pf, const char *setval, ut64 seeki, ut8* buf, int i, int size, bool sign) {
