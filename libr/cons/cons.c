@@ -1076,6 +1076,7 @@ static bool w32_xterm_get_size(RCons *cons) {
 // XXX: if this function returns <0 in rows or cols expect MAYHEM
 R_API int r_cons_get_size(RCons *cons, int * R_NULLABLE rows) {
 	R_RETURN_VAL_IF_FAIL (cons, 0);
+	bool pick_defaults = false;
 #if R2__WINDOWS__
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	bool ret = GetConsoleScreenBufferInfo (GetStdHandle (STD_OUTPUT_HANDLE), &csbi);
@@ -1087,15 +1088,10 @@ R_API int r_cons_get_size(RCons *cons, int * R_NULLABLE rows) {
 			ret = w32_xterm_get_size (cons);
 		}
 		if (!ret || (cons->columns == -1 && cons->rows == 0)) {
-			// Stdout is probably redirected so we set default values
-			cons->columns = 80;
-			cons->rows = 23;
+			pick_defaults = true;
 		}
 	}
-#elif EMSCRIPTEN || __wasi__
-	cons->columns = 80;
-	cons->rows = 23;
-#elif R2__UNIX__
+#elif R2__UNIX__ && !__wasi__
 	struct winsize win = {0};
 	if (isatty (0) && !ioctl (0, TIOCGWINSZ, &win)) {
 		if ((!win.ws_col) || (!win.ws_row)) {
@@ -1110,44 +1106,38 @@ R_API int r_cons_get_size(RCons *cons, int * R_NULLABLE rows) {
 			if (fd != -1) {
 				int ret = ioctl (fd, TIOCGWINSZ, &win);
 				if (ret || !win.ws_col || !win.ws_row) {
-					win.ws_col = 80;
-					win.ws_row = 23;
+					pick_defaults = true;
 				}
 				close (fd);
 			}
 		}
-		cons->columns = win.ws_col;
-		cons->rows = win.ws_row;
+		if (!pick_defaults) {
+			cons->columns = win.ws_col;
+			cons->rows = win.ws_row;
+		}
 	} else {
-		cons->columns = 80;
-		cons->rows = 23;
-	}
-#else
-	char *str = r_sys_getenv ("COLUMNS");
-	if (str) {
-		cons->columns = atoi (str);
-		cons->rows = 23; // XXX. windows must get console size
-		free (str);
-	} else {
-		cons->columns = 80;
-		cons->rows = 23;
+		pick_defaults = true;
 	}
 #endif
+	if (pick_defaults || cons->columns < 1 || cons->rows < 1) {
+		char *cols = r_sys_getenv ("COLUMNS");
+		cons->columns = cols? atoi (cols): 80;
+		free (cols);
+		char *rows = r_sys_getenv ("ROWS");
+		cons->rows = rows? atoi (rows): 23;
+		free (rows);
+	}
 #if SIMULATE_ADB_SHELL
 	cons->rows = 0;
 	cons->columns = 0;
-#endif
-#if SIMULATE_MAYHEM
-	// expect tons of crashes
-	cons->rows = -1;
-	cons->columns = -1;
-#endif
+#else
 	if (cons->rows < 0) {
 		cons->rows = 0;
 	}
 	if (cons->columns < 0) {
 		cons->columns = 0;
 	}
+#endif
 	if (cons->force_columns) {
 		cons->columns = cons->force_columns;
 	}
@@ -1166,6 +1156,7 @@ R_API int r_cons_get_size(RCons *cons, int * R_NULLABLE rows) {
 	cons->rows = R_MAX (0, cons->rows);
 	return R_MAX (0, cons->columns);
 }
+
 #if 0
 Enable/Disable scrolling in terminal:
 FMI: cd libr/cons/t ; make ti ; ./ti
@@ -1198,14 +1189,6 @@ R_API bool r_cons_set_cup(bool enable) {
 #endif
 	return true;
 }
-
-#if 0
-// same as r_cons_lastline(), but len will be the number of
-// utf-8 characters excluding ansi escape sequences as opposed to just bytes
-R_API char *r_cons_lastline_utf8_ansi_len(int *len) {
-	return r_cons_lastline_utf8_ansi_len (I, len);
-}
-#endif
 
 /* swap color from foreground to background, returned value must be freed */
 R_API char *r_cons_swap_ground(const char *col) {
