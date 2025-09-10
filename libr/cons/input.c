@@ -631,6 +631,8 @@ R_API int r_cons_readchar(RCons *cons) {
 #if R2__WINDOWS__
 	return readchar_w32 (cons, 0);
 #elif __wasi__
+	return getchar ();
+#if 0
 	void *bed = r_cons_sleep_begin (cons);
 	int ret = read (STDIN_FILENO, buf, 1);
 	r_cons_sleep_end (cons, bed);
@@ -640,6 +642,7 @@ R_API int r_cons_readchar(RCons *cons) {
 	}
 	// eprintf ("READ %d = %d\n", ret, buf[0]);
 	return buf[0];
+#endif
 #else
 	void *bed = r_cons_sleep_begin (cons);
 
