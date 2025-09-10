@@ -646,7 +646,10 @@ static void __set_decompiler_cache(RCore *core, char *s) {
 
 static void __set_read_only(RCore *core, RPanel *p, const char * R_NULLABLE s) {
 	free (p->model->readOnly);
-	p->model->readOnly = strdup (s);
+	if(s)
+		p->model->readOnly = strdup (s);
+	else
+		p->model->readOnly = NULL; 
 	__set_dcb (core, p);
 	__set_pcb (p);
 }
