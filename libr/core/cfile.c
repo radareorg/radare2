@@ -668,6 +668,9 @@ static bool linkcb(void *user, void *data, ut32 id) {
 }
 
 static bool mustreopen(RCore *core, RIODesc *desc, const char *fn) {
+	if (r_str_startswith (fn, "slurp://")) {
+		return false;
+	}
 	if (r_str_startswith (fn, "stdio://")) {
 		return false;
 	}
@@ -717,7 +720,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	R_CRITICAL_LEAVE (r);
 	RIODesc *odesc = NULL;
 	RIODesc *mustclose = NULL;
-				odesc = r->io->desc;
+	odesc = r->io->desc;
 	if (desc && is_io_load) {
 		int desc_fd = desc->fd;
 		// TODO? necessary to restore the desc back?
@@ -935,7 +938,7 @@ beach:
 		free (macdwarf);
 	}
 	if (mustclose) {
-		r_io_desc_close (mustclose);
+	//	r_io_desc_close (mustclose);
 		if (odesc) {
 			r_io_use_fd (r->io, odesc->fd);
 		}
