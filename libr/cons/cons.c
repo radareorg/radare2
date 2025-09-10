@@ -1076,9 +1076,9 @@ static bool w32_xterm_get_size(RCons *cons) {
 // XXX: if this function returns <0 in rows or cols expect MAYHEM
 R_API int r_cons_get_size(RCons *cons, int * R_NULLABLE rows) {
 	R_RETURN_VAL_IF_FAIL (cons, 0);
+	bool pick_defaults = false;
 #if R2__WINDOWS__
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
-	bool pick_defaults = false;
 	bool ret = GetConsoleScreenBufferInfo (GetStdHandle (STD_OUTPUT_HANDLE), &csbi);
 	if (ret) {
 		cons->columns = csbi.srWindow.Right - csbi.srWindow.Left + 1;
@@ -1119,7 +1119,7 @@ R_API int r_cons_get_size(RCons *cons, int * R_NULLABLE rows) {
 		pick_defaults = true;
 	}
 #endif
-	if (pick_defaults || cons->cols < 1 || cons->rows < 1) {
+	if (pick_defaults || cons->columns < 1 || cons->rows < 1) {
 		char *cols = r_sys_getenv ("COLUMNS");
 		cons->columns = cols? atoi (cols): 80;
 		free (cols);
