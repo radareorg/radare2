@@ -1430,9 +1430,14 @@ static void cmd_wcf(RCore *core, const char *dfn) {
 		R_LOG_ERROR ("Cache is empty");
 		return;
 	}
-	size_t sfs;
-	ut8 *sfb = (ut8*)r_file_slurp (sfn, &sfs);
-	if (sfb) {
+	ut64 sfs = r_io_desc_size (core->io->desc);
+	ut8 *sfb = malloc (sfs);
+	if (!sfb) {
+		R_LOG_ERROR ("Cannot allocate %"PFMT64d" descsize", sfs);
+		return;
+	}
+	int res = r_io_pread_at (core->io, 0, sfb, sfs);
+	if (res > 0) {
 		void **iter;
 		r_pvector_foreach (layer->vec, iter) {
 			RIOCacheItem *c = *iter;
@@ -1447,8 +1452,10 @@ static void cmd_wcf(RCore *core, const char *dfn) {
 		}
 		// patch buffer
 		r_file_dump (dfn, sfb, sfs, false);
-		free (sfb);
+	} else {
+		R_LOG_ERROR ("Cannot read source data");
 	}
+	free (sfb);
 	free (sfn);
 }
 
