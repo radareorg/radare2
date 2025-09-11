@@ -21,19 +21,14 @@
 #define MAX_PATH_LENGTH 1024
 
 // Syscall declarations if not available
-#ifndef process_vm_readv
-static ssize_t process_vm_readv(pid_t pid, const struct iovec *local_iov, unsigned long liovcnt,
+static ssize_t syscall_pvm_readv(pid_t pid, const struct iovec *local_iov, unsigned long liovcnt,
 		const struct iovec *remote_iov, unsigned long riovcnt, unsigned long flags) {
 	return syscall (__NR_process_vm_readv, pid, local_iov, liovcnt, remote_iov, riovcnt, flags);
 }
-#endif
-
-#ifndef process_vm_writev
-static ssize_t process_vm_writev(pid_t pid, const struct iovec *local_iov, unsigned long liovcnt,
+static ssize_t syscall_pvm_writev(pid_t pid, const struct iovec *local_iov, unsigned long liovcnt,
 		const struct iovec *remote_iov, unsigned long riovcnt, unsigned long flags) {
 	return syscall (__NR_process_vm_writev, pid, local_iov, liovcnt, remote_iov, riovcnt, flags);
 }
-#endif
 
 typedef struct {
 	pid_t pid;
@@ -65,7 +60,7 @@ static size_t pvm_read_memory(ProcessVmData* data, uint64_t addr, void* buffer, 
 
 	struct iovec local_iov = {buffer, size};
 	struct iovec remote_iov = {(void *)(uintptr_t)addr, size};
-	ssize_t bytes = process_vm_readv (data->pid, &local_iov, 1, &remote_iov, 1, 0);
+	ssize_t bytes = syscall_pvm_readv (data->pid, &local_iov, 1, &remote_iov, 1, 0);
 	return bytes < 0 ? 0 : (size_t)bytes;
 }
 
@@ -76,7 +71,7 @@ static size_t pvm_write_memory(ProcessVmData* data, uint64_t addr, const void* b
 	struct iovec local_iov = {(void*)buffer, size};
 	struct iovec remote_iov = {(void *)(uintptr_t)addr, size};
 
-	ssize_t bytes = process_vm_writev (data->pid, &local_iov, 1, &remote_iov, 1, 0);
+	ssize_t bytes = syscall_pvm_writev (data->pid, &local_iov, 1, &remote_iov, 1, 0);
 	return bytes < 0 ? 0 : (size_t)bytes;
 }
 
@@ -191,7 +186,7 @@ static int __getpid(RIODesc *desc) {
 RIOPlugin r_io_plugin_pvm = {
 	.meta = {
 		.name = "pvm",
-		.desc = "Access remote process memory using the Linux process_vm APIs",
+		.desc = "Process memory using the Linux process_vm syscalls",
 		.license = "MIT",
 		.author = "apkunpacker",
 	},
