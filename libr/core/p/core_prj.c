@@ -785,7 +785,7 @@ static void prj_load(RCore *core, const char *file, int mode) {
 					if (hint.kind == 1) { // immbase
 						int base = (int)hint.value;
 						if (mode & MODE_SCRIPT) {
-							eprintf ("ahi %d @ 0x%08"PFMT64x"\n", base, va);
+							eprintf ("'ahi %d @ 0x%08"PFMT64x"\n", base, va);
 						}
 						if (mode & MODE_LOAD) {
 							r_anal_hint_set_immbase (core->anal, va, base);
@@ -793,7 +793,7 @@ static void prj_load(RCore *core, const char *file, int mode) {
 					} else if (hint.kind == 2) { // newbits
 						int nbits = (int)hint.value;
 						if (mode & MODE_SCRIPT) {
-							eprintf ("ahb %d @ 0x%08"PFMT64x"\n", base, nbits);
+							eprintf ("'ahb %d @ 0x%08"PFMT64x"\n", nbits, va);
 						}
 						if (mode & MODE_LOAD) {
 							r_anal_hint_set_newbits (core->anal, va, nbits);
