@@ -13,6 +13,7 @@ enum {
 	RPRJ_BLOB,
 	RPRJ_MODS,
 	RPRJ_STRS,
+	RPRJ_HINTS,
 	RPRJ_MAGIC = 0x4a525052,
 };
 
@@ -70,6 +71,13 @@ typedef struct {
 } R2ProjectComment;
 
 typedef struct {
+	ut32 kind; // 1=immbase, 2=newbits
+	ut32 mod;  // UT32_MAX when absolute address
+	ut64 delta; // relative to mod vmin or absolute if mod==UT32_MAX
+	ut64 value; // value for the hint (base or bits)
+} R2ProjectHint;
+
+typedef struct {
 	RCore *core;
 	R2ProjectStringTable *st;
 	RBuffer *b;
@@ -85,6 +93,7 @@ static const char *entry_type_tostring(int a) {
 	case RPRJ_MODS: return "Mods";
 	case RPRJ_BLOB: return "Blob";
 	case RPRJ_STRS: return "Strings";
+	case RPRJ_HINTS: return "Hints";
 	}
 	return "UNKNOWN";
 }
@@ -206,6 +215,15 @@ static void rprj_flag_read(RBuffer *b, R2ProjectFlag *flag) {
 	flag->size = r_read_le64 (buf + r_offsetof (R2ProjectFlag, size));
 }
 
+static void rprj_hint_read(RBuffer *b, R2ProjectHint *hint) {
+	ut8 buf[sizeof (R2ProjectHint)];
+	r_buf_read (b, buf, sizeof (buf));
+	hint->kind = r_read_le32 (buf + r_offsetof (R2ProjectHint, kind));
+	hint->mod = r_read_le32 (buf + r_offsetof (R2ProjectHint, mod));
+	hint->delta = r_read_le64 (buf + r_offsetof (R2ProjectHint, delta));
+	hint->value = r_read_le64 (buf + r_offsetof (R2ProjectHint, value));
+}
+
 static void rprj_header_write(RBuffer *b) {
 	R2ProjectHeader hdr;
 	r_write_le32 (&hdr.magic, RPRJ_MAGIC);
@@ -232,7 +250,7 @@ static bool rprj_entry_read(RBuffer *b, R2ProjectEntry *entry) {
 	entry->size = r_read_le32 (buf);
 	entry->type = r_read_le32 (buf + 4);
 	R_LOG_DEBUG ("entry at 0x%08"PFMT64x" with type=%d(%s) and size=%d",
-		r_buf_at (b), entry->type, entry_type_tostring (entry->type), entry->size);
+			r_buf_at (b), entry->type, entry_type_tostring (entry->type), entry->size);
 	return true;
 }
 
@@ -398,6 +416,54 @@ static void rprj_mods_write(Cursor *cur) {
 	} while (r_id_storage_get_next (maps, &mapid));
 }
 
+typedef struct {
+	Cursor *cur;
+} HintsCtx;
+
+static bool rprj_hints_collect_cb(ut64 addr, const RVector/*<const RAnalAddrHintRecord>*/ *records, void *user) {
+	HintsCtx *ctx = (HintsCtx*)user;
+	Cursor *cur = ctx->cur;
+	const RAnalAddrHintRecord *record;
+	r_vector_foreach (records, record) {
+		ut32 kind = 0;
+		ut64 val = 0;
+		switch (record->type) {
+		case R_ANAL_ADDR_HINT_TYPE_IMMBASE:
+			kind = 1;
+			val = (ut64)record->immbase;
+			break;
+		case R_ANAL_ADDR_HINT_TYPE_NEW_BITS:
+			kind = 2;
+			val = (ut64)record->newbits;
+			break;
+		default:
+			break;
+		}
+		if (!kind) {
+			continue;
+		}
+		R2ProjectHint hint;
+		ut32 mid = UT32_MAX;
+		R2ProjectMod *mod = find_mod (cur, addr, &mid);
+		r_write_le32 (&hint.kind, kind);
+		if (mod) {
+			r_write_le32 (&hint.mod, mid);
+			r_write_le64 (&hint.delta, addr - mod->vmin);
+		} else {
+			r_write_le32 (&hint.mod, UT32_MAX);
+			r_write_le64 (&hint.delta, addr);
+		}
+		r_write_le64 (&hint.value, val);
+		r_buf_write (cur->b, (const ut8*)&hint, sizeof (hint));
+	}
+	return true;
+}
+
+static void rprj_hints_write(Cursor *cur) {
+	HintsCtx ctx = { cur };
+	r_anal_addr_hints_foreach (cur->core->anal, rprj_hints_collect_cb, &ctx);
+}
+
 static void rprj_info_read(RBuffer *b, R2ProjectInfo *info) {
 	ut8 buf[sizeof (R2ProjectInfo)];
 	r_buf_read (b, buf, sizeof (buf));
@@ -450,6 +516,10 @@ static void prj_save(RCore *core, const char *file) {
 	}
 	if (rprj_entry_begin (b, &at, RPRJ_CMNT, 1)) {
 		rprj_cmnt_write (&cur);
+		rprj_entry_end (b, at);
+	}
+	if (rprj_entry_begin (b, &at, RPRJ_HINTS, 1)) {
+		rprj_hints_write (&cur);
 		rprj_entry_end (b, at);
 	}
 	rprj_st_append (&st, "one string");
@@ -579,24 +649,26 @@ static void prj_load(RCore *core, const char *file, int mode) {
 		}
 		next_entry += entry.size;
 		switch (entry.type) {
-		case RPRJ_STRS: ;
-			// string table
-			const char *data = (const char *)r_buf_data (b, NULL);
-			int i;
-			int p = r_buf_at (b);
-			// for (i = sizeof (R2ProjectEntry); i < entry.size; i++) {
-			if (mode & MODE_LOG) {
-				r_cons_printf (core->cons, "      => (%d) ", (int)strlen (data + p));
-				for (i = 0; i < entry.size - 16; i++) {
-					const char ch = data[p + i];
-					if (ch == 0) {
-						r_cons_printf (core->cons, "\n      => (%d) ", (int)strlen (data + i + p + 1));
+		case RPRJ_STRS:
+			{
+				// string table
+				const char *data = (const char *)r_buf_data (b, NULL);
+				int i;
+				int p = r_buf_at (b);
+				// for (i = sizeof (R2ProjectEntry); i < entry.size; i++)
+				if (mode & MODE_LOG) {
+					r_cons_printf (core->cons, "      => (%d) ", (int)strlen (data + p));
+					for (i = 0; i < entry.size - 16; i++) {
+						const char ch = data[p + i];
+						if (ch == 0) {
+							r_cons_printf (core->cons, "\n      => (%d) ", (int)strlen (data + i + p + 1));
+						}
+						r_cons_printf (core->cons, "%c", ch);
 					}
-					r_cons_printf (core->cons, "%c", ch);
 				}
+				r_cons_printf (core->cons, "\n");
+				break;
 			}
-			r_cons_printf (core->cons, "\n");
-			break;
 		case RPRJ_MODS: // modules
 			if (mode & MODE_LOG) {
 				// walk and print them
@@ -690,6 +762,44 @@ static void prj_load(RCore *core, const char *file, int mode) {
 						eprintf ("Cant find map for %s\n", flag_name);
 					}
 					at += sizeof (flag);
+				}
+			}
+			break;
+		case RPRJ_HINTS:
+			{
+				ut64 at = r_buf_at (b);
+				ut64 last = at + entry.size - 16;
+				while (at < last) {
+					R2ProjectHint hint;
+					rprj_hint_read (b, &hint);
+					ut64 va = 0;
+					if (hint.mod != UT32_MAX) {
+						R2ProjectMod *mod = r_list_get_n (cur.mods, hint.mod);
+						if (mod) {
+							va = mod->vmin + hint.delta;
+						}
+					}
+					if (!va) {
+						va = hint.delta;
+					}
+					if (hint.kind == 1) { // immbase
+						int base = (int)hint.value;
+						if (mode & MODE_SCRIPT) {
+							eprintf ("'ahi %d @ 0x%08"PFMT64x"\n", base, va);
+						}
+						if (mode & MODE_LOAD) {
+							r_anal_hint_set_immbase (core->anal, va, base);
+						}
+					} else if (hint.kind == 2) { // newbits
+						int nbits = (int)hint.value;
+						if (mode & MODE_SCRIPT) {
+							eprintf ("'ahb %d @ 0x%08"PFMT64x"\n", nbits, va);
+						}
+						if (mode & MODE_LOAD) {
+							r_anal_hint_set_newbits (core->anal, va, nbits);
+						}
+					}
+					at += sizeof (hint);
 				}
 			}
 			break;
