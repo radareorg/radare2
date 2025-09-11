@@ -1073,7 +1073,7 @@ static bool w32_xterm_get_size(RCons *cons) {
 }
 #endif
 
-// XXX: if this function returns <0 in rows or cols expect MAYHEM
+// This function will never return rows or cols lower than 0
 R_API int r_cons_get_size(RCons *cons, int * R_NULLABLE rows) {
 	R_RETURN_VAL_IF_FAIL (cons, 0);
 	bool pick_defaults = false;
@@ -1149,6 +1149,9 @@ R_API int r_cons_get_size(RCons *cons, int * R_NULLABLE rows) {
 	}
 	if (cons->fix_rows) {
 		cons->rows += cons->fix_rows;
+	}
+	if (cons->rows < 0) {
+		cons->rows = 0;
 	}
 	if (rows) {
 		*rows = cons->rows;

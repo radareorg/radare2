@@ -3553,6 +3553,11 @@ static bool check_changes(RAGraph *g, bool is_interactive, RCore *core, RAnalFun
 
 static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, RAnalFunction *fcn) {
 	int h, w = r_cons_get_size (core->cons, &h);
+	if (w < 1 || h < 1) {
+		// we cannot determine terminal size, lets use some default values
+		w = 80;
+		h = 24;
+	}
 	bool ret = check_changes (g, is_interactive, core, fcn);
 	if (!ret) {
 		return false;
