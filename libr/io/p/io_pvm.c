@@ -123,7 +123,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	struct iovec local_iov = {&test_buffer, 1};
 	struct iovec remote_iov = {(void *)(uintptr_t)1, 1};
 	errno = 0;
-	process_vm_readv (pid, &local_iov, 1, &remote_iov, 1, 0);
+	syscall_pvm_readv (pid, &local_iov, 1, &remote_iov, 1, 0);
 
 	if (errno == EPERM || errno == ESRCH) {
 		R_LOG_ERROR ("Permission denied or process not found for PID %d", pid);
