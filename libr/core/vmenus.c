@@ -3501,9 +3501,6 @@ static void r_core_visual_anal_refresh_column(RCore *core, int colpos) {
 	const ut64 addr = (level != 0 && level != 1)
 		? core->addr
 		: var_functions_show (core, option, 0, colpos);
-	// RAnalFunction* fcn = r_anal_get_fcn_in(core->anal, addr, R_ANAL_FCN_TYPE_NULL);
-	int h, w = r_cons_get_size (core->cons, &h);
-	// int sz = (fcn)? R_MIN (r_anal_function_size (fcn), h * 15) : 16; // max instr is 15 bytes.
 
 	const char *cmd;
 	if (printMode > 0 && printMode < lastPrintMode) {
@@ -3517,11 +3514,22 @@ static void r_core_visual_anal_refresh_column(RCore *core, int colpos) {
 	}
 	char *output = r_core_cmd_str (core, cmdf);
 	if (output) {
-		// 'h - 2' because we have two new lines in r_cons_printf
-		char *out = r_str_ansi_crop (output, 0, 0, w - colpos, h - 2);
-		r_cons_printf (core->cons, "\n%s\n", out);
-		free (out);
-		R_FREE (output);
+		int h, w = r_cons_get_size (core->cons, &h);
+		if (w > 1 && h > 1) {
+			// 'h - 2' because we have two new lines in r_cons_printf
+			int crop_w = w - colpos;
+			if (crop_w < 0) {
+				crop_w = 0;
+			}
+			int crop_h = h - 2;
+			if (crop_h < 0) {
+				crop_h = 0;
+			}
+			char *out = r_str_ansi_crop (output, 0, 0, crop_w, crop_h);
+			r_cons_printf (core->cons, "\n%s\n", out);
+			free (out);
+			R_FREE (output);
+		}
 	}
 	free (cmdf);
 }
