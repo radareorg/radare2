@@ -2598,40 +2598,41 @@ static bool insert_mode_enabled(RCore *core) {
 	return true;
 }
 
+static const char browsemsg[] = \
+	"# Browse stuff:\n"
+	" _  hud mode (V_)\n"
+	" 1  bit editor (vd1)\n"
+	" a  anal classes\n"
+	" b  blocks\n"
+	" c  classes\n"
+	" C  comments\n"
+	" d  debug traces\n"
+	" e  eval var configurations\n"
+	" E  esil debugger mode\n"
+	" f  flags\n"
+	" F  functions\n"
+	" g  graph\n"
+	" h  history\n"
+	" i  imports\n"
+	" l  same as VT\n"
+	" L  same as TT\n"
+	" m  maps\n"
+	" M  mountpoints\n"
+	" p  pids/threads\n"
+	" q  quit\n"
+	" r  ROP gadgets\n"
+	" s  symbols\n"
+	" t  types\n"
+	" T  themes\n"
+	" v  vars\n"
+	" w  window panels\n"
+	" x  xrefs\n"
+	" X  refs\n"
+	" z  browse function zignatures\n"
+	" :  run command\n"
+;
+
 R_API void r_core_visual_browse(RCore *core, const char *input) {
-	const char *browsemsg = \
-		"# Browse stuff:\n"
-		" _  hud mode (V_)\n"
-		" 1  bit editor (vd1)\n"
-		" a  anal classes\n"
-		" b  blocks\n"
-		" c  classes\n"
-		" C  comments\n"
-		" d  debug traces\n"
-		" e  eval var configurations\n"
-		" E  esil debugger mode\n"
-		" f  flags\n"
-		" F  functions\n"
-		" g  graph\n"
-		" h  history\n"
-		" i  imports\n"
-		" l  same as VT\n"
-		" L  same as TT\n"
-		" m  maps\n"
-		" M  mountpoints\n"
-		" p  pids/threads\n"
-		" q  quit\n"
-		" r  ROP gadgets\n"
-		" s  symbols\n"
-		" t  types\n"
-		" T  themes\n"
-		" v  vars\n"
-		" w  window panels\n"
-		" x  xrefs\n"
-		" X  refs\n"
-		" z  browse function zignatures\n"
-		" :  run command\n"
-	;
 	for (;;) {
 		r_cons_clear00 (core->cons);
 		r_cons_printf (core->cons, "%s\n", browsemsg);
@@ -3962,11 +3963,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			rotateAsmemu (core);
 			break;
 		case '#':
-			if (v->printidx == 1) {
-				r_core_visual_toggle_decompiler_disasm (core, false, false);
-			} else {
-				// do nothing for now :?, px vs pxa?
-			}
+			r_core_visual_matrix (core);
 			break;
 		case '*':
 			if (core->print->cur_enabled) {
