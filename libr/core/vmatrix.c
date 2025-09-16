@@ -14,11 +14,6 @@ typedef struct {
 	int scroll_y;
 } RVMatrix;
 
-static void draw_menubar(RVMatrix *rvm) {
-	r_strf_var (msg, 128, "[0x%08"PFMT64x"> vmatrix", rvm->core->addr);
-	r_cons_canvas_write_at (rvm->can, msg, 0, 0);
-}
-
 static void draw_scrollbar(RVMatrix *rvm) {
 	RConsCanvas *can = rvm->can;
 	int i;
@@ -67,7 +62,6 @@ static void vmatrix_refresh(RVMatrix *rvm) {
 		}
 	}
 	draw_scrollbar (rvm);
-	// draw_menubar (rvm);
 
 	char *s = r_cons_canvas_tostring (can);
 	r_cons_clear00 (cons);
