@@ -53,6 +53,7 @@ static void vmatrix_refresh(RVMatrix *rvm) {
 		r_cons_canvas_box (can, xpos, ypos, boxwidth, rvm->box_h, ""); // Color_RED);
 		char *fname = r_str_ndup (f->name, boxwidth - 4);
 		r_cons_canvas_write_at (can, fname, xpos + 2, ypos + 1);
+		free (fname);
 		xpos += boxwidth + 1;
 		col++;
 		if (col >= rvm->cols) {
@@ -67,6 +68,9 @@ static void vmatrix_refresh(RVMatrix *rvm) {
 	r_cons_clear00 (cons);
 	r_cons_printf (cons, "[0x%08"PFMT64x"\n%s", rvm->core->addr, s);
 	r_cons_visual_flush (cons);
+	free (s);
+	r_cons_canvas_free (can);
+	rvm->can = NULL;
 }
 
 R_API void r_core_visual_matrix(RCore *core) {
