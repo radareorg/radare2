@@ -3522,14 +3522,11 @@ static void r_core_visual_anal_refresh_column(RCore *core, int colpos) {
 				crop_w = 0;
 			}
 			int crop_h = h - 2;
-			if (crop_h < 0) {
-				crop_h = 0;
-			}
 			char *out = r_str_ansi_crop (output, 0, 0, crop_w, crop_h);
 			r_cons_printf (core->cons, "\n%s\n", out);
 			free (out);
-			R_FREE (output);
 		}
+		R_FREE (output);
 	}
 	free (cmdf);
 }
