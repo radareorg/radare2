@@ -358,3 +358,4 @@ You are offline. Some functionality may be unavailable.
 Patching instructions should be illegal
 Are you still watching?
 Downloading update 1 of 1 ...
+Embrace the failure

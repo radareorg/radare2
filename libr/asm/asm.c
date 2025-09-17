@@ -265,6 +265,9 @@ R_API bool r_asm_use_parser(RAsm *a, const char *name) {
 		name = "mips";
 	} else if (r_str_startswith (name, "blackfin")) {
 		name = "arm";
+	} else if (r_str_startswith (name, "sbpf")) {
+		// Use BPF pseudo parser for sBPF as fallback
+		name = "bpf";
 	}
 
 	RListIter *iter;
