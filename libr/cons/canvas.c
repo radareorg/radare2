@@ -388,8 +388,9 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 }
 
 R_API void r_cons_canvas_write_at(RConsCanvas *c, const char *s, int x, int y) {
-	r_cons_canvas_gotoxy (c, x, y);
-	r_cons_canvas_write (c, s);
+	if (r_cons_canvas_gotoxy (c, x, y)) {
+		r_cons_canvas_write (c, s);
+	}
 }
 
 R_API void r_cons_canvas_background(RConsCanvas *c, const char *color) {
@@ -558,7 +559,7 @@ R_API void r_cons_canvas_circle(RConsCanvas *c, int x, int y, int w, int h, cons
 	}
 }
 
-R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const char *color) {
+R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const char * R_NULLABLE color) {
 	// NOTE: As long as utf and curvy flags are tied to the canvas, we need to
 	// regenerate the canvas to get such changes now. before the kons refactoring
 	// this changed when cconfig settings were modified. not sure if its worth.
@@ -567,7 +568,11 @@ R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const c
 	const char *hline = useutf? RUNECODESTR_LINE_HORIZ : "-";
 	const char *vtmp = useutf? RUNECODESTR_LINE_VERT : "|";
 	RStrBuf *vline = r_strbuf_new (NULL);
-	r_strbuf_appendf (vline, Color_RESET"%s%s", color, vtmp);
+	if (color) {
+		r_strbuf_appendf (vline, Color_RESET"%s%s", color, vtmp);
+	} else {
+		r_strbuf_appendf (vline, Color_RESET"%s", vtmp);
+	}
 	const char *tl_corner = useutf ? (usecrv ? RUNECODESTR_CURVE_CORNER_TL : RUNECODESTR_CORNER_TL) : ".";
 	const char *tr_corner = useutf ? (usecrv ? RUNECODESTR_CURVE_CORNER_TR : RUNECODESTR_CORNER_TR) : ".";
 	const char *bl_corner = useutf ? (usecrv ? RUNECODESTR_CURVE_CORNER_BL : RUNECODESTR_CORNER_BL) : "`";
