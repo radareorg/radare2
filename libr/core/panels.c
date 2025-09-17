@@ -4492,7 +4492,7 @@ static void __move_panel_to_left(RCore *core, RPanel *panel, int src) {
 	int i = 1;
 	for (; i < panels->n_panels; i++) {
 		RPanel *tmp = __get_panel (panels, i);
-		/* w is clamped to >=1 above, so no ternary needed */
+		/* w is clamped to >= 1 above, so no ternary needed */
 		int t_x = (int)(((double)tmp->view->pos.x / (double)w) * (double)new_w + p_w);
 		int t_w = (int)(((double)tmp->view->pos.w / (double)w) * (double)new_w + 1);
 		__set_geometry (&tmp->view->pos, t_x, tmp->view->pos.y, t_w, tmp->view->pos.h);
