@@ -11,7 +11,7 @@ address: 0x0
 opcode: add64 r0, r1
 esilcost: 0
 disasm: add64 r0, r1
-pseudo: add64 r0, r1
+pseudo: r0 += r1
 mnemonic: add64
 description: add src to dst (64-bit)
 mask: ffffffffffffffff
@@ -39,7 +39,7 @@ address: 0x0
 opcode: add64 r0, 0x1
 esilcost: 0
 disasm: add64 r0, 0x1
-pseudo: add64 r0, 0x1
+pseudo: r0 += 0x1
 mnemonic: add64
 description: add src to dst (64-bit)
 mask: ffffffffffffffff
@@ -97,7 +97,7 @@ address: 0x0
 opcode: stxw [r2+0x10], r9
 esilcost: 12
 disasm: stxw [r2+0x10], r9
-pseudo: stxw [r2+0x10], r9
+pseudo: [r2+0x10] = r9
 mnemonic: stxw
 description: store word from register
 mask: ffffffffffffffff
