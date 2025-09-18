@@ -21,16 +21,20 @@ endforeach
 format_sdb_env = environment()
 format_sdb_env.set('SDB_OUTPUT_DIR', meson.current_build_dir())
 
-r_bin_d_format_sources = custom_target('format-sdb',
-  input: [],
-  output: format_sdb_files,
-  command: [sdb_exe, '-r', meson.current_source_dir()],
-  env: format_sdb_env,
-  depends: sdb_exe,
-  build_by_default: true,
-  install: true,
-  install_dir: join_paths(r2_sdb, join_paths('format'))
-)
+if host_machine.system() != 'uefi'
+  r_bin_d_format_sources = custom_target('format-sdb',
+    input: [],
+    output: format_sdb_files,
+    command: [sdb_exe, '-r', meson.current_source_dir()],
+    env: format_sdb_env,
+    depends: sdb_exe,
+    build_by_default: true,
+    install: true,
+    install_dir: join_paths(r2_sdb, join_paths('format'))
+  )
+else
+  r_bin_d_format_sources = []
+endif
 
 if get_option('sdb_cgen')
   r_bin_d_sources += r_bin_d_format_sources

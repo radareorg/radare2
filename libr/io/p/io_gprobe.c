@@ -1,10 +1,11 @@
-/* radare - LGPL - Copyright 2018-2024 - Dirk Eibach, Guntermann & Drunck GmbH */
+/* radare - LGPL - Copyright 2018-2025 - Dirk Eibach, Guntermann & Drunck GmbH */
 
 #include <r_io.h>
 #include <r_lib.h>
+#include <r_util.h>
 #include <r_util/r_print.h>
 
-#if !(__wasi__ || __EMSCRIPTEN__)
+#if !(__wasi__ || __EMSCRIPTEN__ || R2_UEFI)
 
 #define USE_OWNTIMER 1
 #if USE_OWNTIMER
@@ -1593,5 +1594,6 @@ RIOPlugin r_io_plugin_gprobe = {
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_gprobe,
-	.version = R2_VERSION};
+	.version = R2_VERSION
+};
 #endif
