@@ -7,7 +7,7 @@ all: build
 
 configure:
 	 rm -rf ../../build-uefi
-	 cd ../.. && meson setup build-uefi --cross-file dist/uefi/cross-uefi.ini -Dstatic_runtime=true -Duse_sys_zlib=false -Duse_sys_magic=false -Duse_sys_openssl=false -Denable_tests=false -Dplugins= -Duse_fork=false -Duse_dylink=false -Ddebugger=false
+	 cd ../.. && meson setup build-uefi --cross-file dist/uefi/cross-uefi.ini -Dstatic_runtime=true -Duse_sys_zlib=false -Duse_sys_magic=false -Duse_sys_openssl=false -Denable_tests=false -Dplugins= -Duse_fork=false -Duse_dylink=false -Ddebugger=false > /dev/null
 
 build: configure
 	 cd ../.. && meson compile -C build-uefi

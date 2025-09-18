@@ -9,7 +9,12 @@ bin_plugins = [ 'any' ]
 bin_ldr_plugins = [ 'ldr_linux' ]
 bin_xtr_plugins = [ 'xtr_sep64' ]
 io_plugins = [ 'malloc', 'cyclic', 'xattr', 'fd', 'default', 'null', 'rbuf', 'r2pipe' ]
-fs_plugins = [ 'r2', 'posix', 'io', 'zip' ]
+fs_plugins = [ 'r2', 'posix', 'io' ]
+
+if get_option('use_zip')
+  io_plugins += [ 'zip' ]
+  fs_plugins += [ 'zip' ]
+endif
 bp_plugins = [ 'null' ]
 muta_plugins = [ 'xor', 'punycode' ]
 core_plugins = [ 'a2f', 'agD' ]
@@ -370,9 +375,8 @@ if get_option('plugins') == ''
     'uf2',
     'winkd',
     'winedbg',
-    'zip'
-  ]
-
+ ]
+ 
   if host_machine.system() == 'windows'
     io_plugins += [
       'windbg',

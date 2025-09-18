@@ -50,8 +50,11 @@ r_io_sources = [
   'p/io_uf2.c',
   'p/io_winkd.c',
   'p/io_winedbg.c',
-  'p/io_zip.c',
 ]
+
+if get_option('use_zip')
+  r_io_sources += [ 'p/io_zip.c' ]
+endif
 
 if host_machine.system() == 'windows'
   r_io_sources += [
@@ -71,7 +74,7 @@ r_io_deps = [
   gdb_dep,
   winkd_dep,
   qnx_dep,
-  zip_dep,
+  get_option('use_zip') ? zip_dep : declare_dependency(),
   ar_dep,
   pth
 ]
@@ -120,7 +123,7 @@ r_io_static_deps = [
   gdb_static_dep,
   qnx_static_dep,
   ar_static_dep,
-  zip_dep,
+  get_option('use_zip') ? zip_dep : declare_dependency(),
   pth
 ]
 
