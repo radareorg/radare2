@@ -58,7 +58,7 @@
 #ifndef _INCLUDE_ELF_SPECS_H
 #define _INCLUDE_ELF_SPECS_H
 
-#define ELF_STRING_LENGTH 256
+#define ELF_STRING_LENGTH 512
 
 // not strictly ELF, but close enough:
 #define        CGCMAG          "\177CGC"
