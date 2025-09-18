@@ -347,7 +347,7 @@ if get_option('plugins') == ''
     ]
   endif
 
-  io_plugins += [
+io_plugins += [
     'ar',
     'fd',
     'reg',
@@ -375,7 +375,11 @@ if get_option('plugins') == ''
     'uf2',
     'winkd',
     'winedbg',
- ]
+  ]
+  
+  if get_option('use_zip')
+    io_plugins += [ 'zip' ]
+  endif
  
   if host_machine.system() == 'windows'
     io_plugins += [

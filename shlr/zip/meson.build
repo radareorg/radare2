@@ -8,10 +8,6 @@ if not zlib_dep.found() or not get_option('use_sys_zlib')
     join_paths('zlib','compress.c'),
     join_paths('zlib','crc32.c'),
     join_paths('zlib','deflate.c'),
-    join_paths('zlib','gzclose.c'),
-    join_paths('zlib','gzlib.c'),
-    join_paths('zlib','gzread.c'),
-    join_paths('zlib','gzwrite.c'),
     join_paths('zlib','infback.c'),
     join_paths('zlib','inffast.c'),
     join_paths('zlib','inflate.c'),
@@ -21,10 +17,24 @@ if not zlib_dep.found() or not get_option('use_sys_zlib')
     join_paths('zlib','zutil.c')
   ]
 
+  if host_machine.system() != 'uefi'
+    zlib_files += [
+      join_paths('zlib','gzclose.c'),
+      join_paths('zlib','gzlib.c'),
+      join_paths('zlib','gzread.c'),
+      join_paths('zlib','gzwrite.c'),
+    ]
+  endif
+
   zlib_inc = [platform_inc, include_directories(join_paths('zlib'))]
+  zlib_cargs = []
+  if host_machine.system() == 'uefi'
+    zlib_cargs += ['-DZ_SOLO=1']
+  endif
 
   libr2zlib = static_library('r2zlib', zlib_files,
     include_directories: zlib_inc,
+    c_args: zlib_cargs,
     implicit_include_directories: false
   )
 
