@@ -19,9 +19,6 @@
 /* speedup analysis by removing some function overlapping checks */
 #define JAYRO_04 1
 
-// 16 KB is the maximum size for a basic block
-#define MAX_FLG_NAME_SIZE 64
-
 #define FIX_JMP_FWD 0
 #define D if (a->verbose)
 
