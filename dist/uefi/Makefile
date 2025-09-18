@@ -1,12 +1,16 @@
-.PHONY: all configure build clean
+.PHONY: all configure build
+
+CFLAGS += -DR2_UEFI
+export CFLAGS
 
 all: build
 
 configure:
-	cd ../.. && meson setup build-uefi --cross-file dist/uefi/cross-uefi.ini -Dstatic=true -Duse_sys_zlib=false -Duse_magic=false -Duse_openssl=false -Dexamples=false -Dtests=false -Dplugins=false
+	 rm -rf ../../build-uefi
+	 cd ../.. && meson setup build-uefi --cross-file dist/uefi/cross-uefi.ini -Dstatic_runtime=true -Duse_sys_zlib=false -Duse_sys_magic=false -Duse_sys_openssl=false -Denable_tests=false -Dplugins= -Duse_fork=false -Duse_dylink=false -Ddebugger=false
 
 build: configure
-	cd ../.. && meson compile -C build-uefi
+	 cd ../.. && meson compile -C build-uefi
 
 clean:
-	cd ../.. && rm -rf build-uefi
+	 cd ../.. && rm -rf build-uefi

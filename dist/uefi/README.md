@@ -35,6 +35,8 @@ meson compile -C build-uefi
 using acr:
 
 ```bash
+cp -f dist/plugins/plugins.uefi.cfg plugins.cfg
+./configure-plugins
 CFLAGS="-ffreestanding -fno-stack-protector -fshort-wchar -mno-red-zone -fPIC" \
 LDFLAGS="-nostdlib -Wl,--subsystem,10" \
 ./configure --host=x86_64-unknown-none --disable-all --enable-static

@@ -435,7 +435,7 @@ ok = cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
 userconf.set10('HAVE_DECL_ADDR_NO_RANDOMIZE', ok)
 
 lrt = []
-if not cc.has_function('clock_gettime', prefix: '#include <time.h>') and cc.has_header_symbol('features.h', '__GLIBC__')
+if not cc.has_function('clock_gettime', prefix: '#include <time.h>') and cc.has_header_symbol('features.h', '__GLIBC__') and host_machine.system() != 'uefi'
   lrt = cc.find_library('rt', required: true)
 endif
 
@@ -532,12 +532,14 @@ else
 copyinout = ['cp', '-f', '@INPUT@', '@OUTPUT@']
 endif
 
-sdb_install = custom_target('r2sdb',
-  input : sdb_exe,
-  output : 'r2sdb',
-  command : copyinout,
-  install : true,
-  install_dir : get_option('bindir'))
+if host_machine.system() != 'uefi'
+  sdb_install = custom_target('r2sdb',
+    input : sdb_exe,
+    output : 'r2sdb',
+    command : copyinout,
+    install : true,
+    install_dir : get_option('bindir'))
+endif
 
 os_name = host_machine.system()
 lib_extension = '.so.' + libsdb_version  # Default for Linux
