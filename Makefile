@@ -14,7 +14,7 @@ else
 BUILDSEC=$(shell date "+__%H:%M:%S")
 endif
 DATADIRS=libr/cons/d libr/flag/d libr/bin/d libr/asm/d libr/syscall/d libr/magic/d libr/anal/d libr/util/d libr/arch/d
-USE_ZIP=YES
+ZIPWINDIST=YES
 ZIP=zip
 
 R2VC=$(shell git rev-list --all --count 2>/dev/null)
@@ -179,7 +179,7 @@ windist:
 	@cp -f doc/hud "${WINDIST}/share/radare2/${VERSION}/hud/main"
 	@mv "${WINDIST}" "radare2-${WINBITS}-${VERSION}"
 	@rm -f "radare2-${WINBITS}-${VERSION}.zip"
-ifneq ($(USE_ZIP),NO)
+ifneq ($(ZIPWINDIST),NO)
 	$(ZIP) -r "${ZIPNAME}" "radare2-${WINBITS}-${VERSION}"
 endif
 

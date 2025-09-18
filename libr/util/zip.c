@@ -2,7 +2,7 @@
 
 #include <r_util.h>
 #include <r_userconf.h>
-#if USE_ZIP
+#if WANT_ZIP
 #include <zlib.h>
 #endif
 
