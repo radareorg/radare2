@@ -158,6 +158,10 @@ endif
 
 library_cflags = ['-DR2_PLUGIN_INCORE=1']
 
+if host_machine.system() == 'uefi'
+  library_cflags = ['-DR2_UEFI=1']
+endif
+
 if host_machine.system() == 'windows'
   r2_prefix = '.'
   r2_libdir = 'lib'

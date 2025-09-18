@@ -3,25 +3,7 @@
 #ifndef R2_UTIL_LIBC_H
 #define R2_UTIL_LIBC_H 1
 
-#if defined(R2_UEFI)
-
-/* OK: UEFI activat via flag del compilador */
-
-#elif defined(GNU_EFI)
-/* gnu-efi sol definir GNU_EFI als headers */
-#define R2_UEFI 1
-
-#elif defined(EFIAPI)
-/* EDK2/gnu-efi */
-#define R2_UEFI 1
-
-#elif defined(MDE_CPU_X64) || defined(MDE_CPU_AARCH64) || defined(MDE_CPU_IA32)
-/* EDK2 macros */
-#define R2_UEFI 1
-
-#else
-#define R2_UEFI 0
-#endif
+#include <r_types_base.h>
 
 #if R2_UEFI
 
