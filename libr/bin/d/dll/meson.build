@@ -164,16 +164,20 @@ endforeach
 sdb_env = environment()
 sdb_env.set('SDB_OUTPUT_DIR', meson.current_build_dir())
 
-r_bin_d_dll_sources = custom_target('dll-sdb',
-  input: [],
-  output: dll_sdb_files,
-  command: [sdb_exe, '-r', meson.current_source_dir()],
-  env: sdb_env,
-  depends: sdb_exe,
-  build_by_default: true,
-  install: true,
-  install_dir: join_paths(r2_sdb, join_paths('format', 'dll'))
-)
+if host_machine.system() != 'uefi'
+  r_bin_d_dll_sources = custom_target('dll-sdb',
+    input: [],
+    output: dll_sdb_files,
+    command: [sdb_exe, '-r', meson.current_source_dir()],
+    env: sdb_env,
+    depends: sdb_exe,
+    build_by_default: true,
+    install: true,
+    install_dir: join_paths(r2_sdb, join_paths('format', 'dll'))
+  )
+else
+  r_bin_d_dll_sources = []
+endif
 
 r_bin_d_sources = []
 if get_option('sdb_cgen')

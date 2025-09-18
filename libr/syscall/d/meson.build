@@ -35,14 +35,18 @@ endforeach
 sdb_env = environment()
 sdb_env.set('SDB_OUTPUT_DIR', meson.current_build_dir())
 
-r_syscall_d_sources = custom_target('syscall-sdb',
-  input: [],
-  output: syscall_sdb_files,
-  command: [sdb_exe, '-r', '-r', meson.current_source_dir()],
-  env: sdb_env,
-  depends: sdb_exe,
-  build_by_default: true,
-  install: true,
-  install_dir: join_paths(r2_sdb, 'syscall')
-)
+if host_machine.system() != 'uefi'
+  r_syscall_d_sources = custom_target('syscall-sdb',
+    input: [],
+    output: syscall_sdb_files,
+    command: [sdb_exe, '-r', '-r', meson.current_source_dir()],
+    env: sdb_env,
+    depends: sdb_exe,
+    build_by_default: true,
+    install: true,
+    install_dir: join_paths(r2_sdb, 'syscall')
+  )
+else
+  r_syscall_d_sources = []
+endif
 

@@ -4,14 +4,17 @@ r_fs_sources = [
   'fs_shell.c',
   'p/fs_io.c',
   'p/fs_posix.c',
-  'p/fs_zip.c',
   'p/fs_r2.c',
 ]
 
-r_fs_deps = [ r_util_dep, zip_dep ]
+if get_option('use_zip')
+  r_fs_sources += [ 'p/fs_zip.c' ]
+endif
+
+r_fs_deps = [ r_util_dep ]
 r_fs_cflags = [ library_cflags ]
 if get_option('blob')
-  r_fs_static_deps = [ r_util_static_dep, zip_dep ]
+  r_fs_static_deps = [ r_util_static_dep ]
 endif
 
 if not user_plugins.contains('nogrub') and not get_option('nogpl')
@@ -58,6 +61,13 @@ if get_option('use_libsqsh')
     if get_option('blob')
       r_fs_static_deps += [ libsqsh_static_dep ]
     endif
+  endif
+endif
+
+if get_option('use_zip')
+  r_fs_deps += [ zip_dep ]
+  if get_option('blob')
+    r_fs_static_deps += [ zip_dep ]
   endif
 endif
 

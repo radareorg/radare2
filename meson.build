@@ -158,6 +158,10 @@ endif
 
 library_cflags = ['-DR2_PLUGIN_INCORE=1']
 
+if host_machine.system() == 'uefi'
+  library_cflags = ['-DR2_UEFI=1']
+endif
+
 if host_machine.system() == 'windows'
   r2_prefix = '.'
   r2_libdir = 'lib'
@@ -380,6 +384,7 @@ userconf.set10('HAVE_LIB_XXHASH', sys_xxhash.found())
 userconf.set10('USE_LIB_XXHASH', use_sys_xxhash)
 userconf.set10('HAVE_LINUX_CAN_H', false)
 userconf.set10('DEBUGGER', has_debugger)
+userconf.set10('WANT_ZIP', get_option('use_zip'))
 userconf.set('ETCDIR', join_paths(r2_prefix, 'etc'))
 userconf.set('PREFIX', r2_prefix)
 userconf.set('BINDIR', join_paths(r2_prefix, 'bin'))
@@ -435,7 +440,7 @@ ok = cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
 userconf.set10('HAVE_DECL_ADDR_NO_RANDOMIZE', ok)
 
 lrt = []
-if not cc.has_function('clock_gettime', prefix: '#include <time.h>') and cc.has_header_symbol('features.h', '__GLIBC__')
+if not cc.has_function('clock_gettime', prefix: '#include <time.h>') and cc.has_header_symbol('features.h', '__GLIBC__') and host_machine.system() != 'uefi'
   lrt = cc.find_library('rt', required: true)
 endif
 
@@ -508,7 +513,11 @@ install_data(script_files, install_dir: r2_scripts)
 
 libsdb_sp = subproject('sdb')
 libsdb_static = libsdb_sp.get_variable('libsdb_static')
-libsdb_dynamic = libsdb_sp.get_variable('libsdb').get_shared_lib()
+if host_machine.system() == 'uefi'
+  libsdb_dynamic = libsdb_static
+else
+  libsdb_dynamic = libsdb_sp.get_variable('libsdb').get_shared_lib()
+endif
 libsdb_includes = libsdb_sp.get_variable('sdb_inc')
 libsdb_version = libsdb_sp.get_variable('sdb_version')
 
@@ -528,12 +537,14 @@ else
 copyinout = ['cp', '-f', '@INPUT@', '@OUTPUT@']
 endif
 
-sdb_install = custom_target('r2sdb',
-  input : sdb_exe,
-  output : 'r2sdb',
-  command : copyinout,
-  install : true,
-  install_dir : get_option('bindir'))
+if host_machine.system() != 'uefi'
+  sdb_install = custom_target('r2sdb',
+    input : sdb_exe,
+    output : 'r2sdb',
+    command : copyinout,
+    install : true,
+    install_dir : get_option('bindir'))
+endif
 
 os_name = host_machine.system()
 lib_extension = '.so.' + libsdb_version  # Default for Linux

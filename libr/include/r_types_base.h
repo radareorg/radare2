@@ -28,6 +28,19 @@ extern "C" {
 # define R_ALIGNED(x) __attribute__((aligned(x)))
 #endif
 
+#if defined(R2_UEFI)
+#elif defined(GNU_EFI)
+#define R2_UEFI 1
+#elif defined(EFIAPI)
+/* EDK2/gnu-efi */
+#define R2_UEFI 1
+#elif defined(MDE_CPU_X64) || defined(MDE_CPU_AARCH64) || defined(MDE_CPU_IA32)
+/* EDK2 macros */
+#define R2_UEFI 1
+#else
+#define R2_UEFI 0
+#endif
+
 #if defined(__GNUC__)
 #define R_LIKELY(x) __builtin_expect((size_t)(x),1)
 #define R_UNLIKELY(x) __builtin_expect((size_t)(x),0)

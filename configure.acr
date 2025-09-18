@@ -105,9 +105,13 @@ IFAND WITH_SYSLZ4 HAVE_PKGCFG_LIBLZ4 {
 }
 
 (( ZIP ))
+ARG_WITHOUT WANT_ZIP zip build without the ZIP/ZLIB support ;
 CHKLIB z
 CHKLIB zip
 ARG_WITH USE_ZIP syszip force to use system's libzip and zlib ;
+IFNOT WANTZIP {
+	USE_ZIP = 0 ;
+}
 IFAND HAVE_LIB_Z USE_ZIP {
 	IF HAVE_LIB_ZIP {
 		USE_LIB_ZIP = 1 ;

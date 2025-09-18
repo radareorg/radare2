@@ -120,7 +120,10 @@ if not get_option('use_sys_lz4')
   library_cflags += ['-DUSE_RLZ4']
 endif
 
-r_util_deps = [ldl, mth, spp_dep, pth, utl, sdb_dep, lz4_dep, zlib_dep, platform_deps]
+r_util_deps = [ldl, mth, spp_dep, pth, utl, sdb_dep, lz4_dep, platform_deps]
+if get_option('use_zip')
+  r_util_deps += [ zlib_dep ]
+endif
 
 if host_machine.system().startswith('freebsd') or host_machine.system().startswith('netbsd') or host_machine.system().startswith('haiku')
   # backtrace_symbols_fd requires -lexecinfo

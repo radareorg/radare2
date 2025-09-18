@@ -111,16 +111,20 @@ windows_type_file = custom_target('windows-type-file',
 )
 
 # Generate all SDB files at once
-r_anal_d_target = custom_target('fcnsign-sdb',
-  input: [],
-  output: fcnsign_sdb_files,
-  command: [sdb_exe, '-r', meson.current_source_dir()],
-  env: sdb_env,
-  depends: [sdb_exe, windows_type_file],
-  build_by_default: true,
-  install: true,
-  install_dir: join_paths(r2_sdb, 'fcnsign')
-)
+if host_machine.system() != 'uefi'
+  r_anal_d_target = custom_target('fcnsign-sdb',
+    input: [],
+    output: fcnsign_sdb_files,
+    command: [sdb_exe, '-r', meson.current_source_dir()],
+    env: sdb_env,
+    depends: host_machine.system() == 'uefi' ? [windows_type_file] : [sdb_exe, windows_type_file],
+    build_by_default: true,
+    install: true,
+    install_dir: join_paths(r2_sdb, 'fcnsign')
+  )
+else
+  r_anal_d_target = []
+endif
 
 r_anal_d_sources = []
 if get_option('sdb_cgen')
