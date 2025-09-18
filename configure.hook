@@ -1,6 +1,6 @@
 #!/bin/sh
 case "$1" in
---report|-r|--version|-qV|--quiet-version|--help)
+--report|-r|--version|-V|-qV|--quiet-version|--help)
 	: # nothing to do here
 	;;
 *)
