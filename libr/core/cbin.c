@@ -2347,8 +2347,6 @@ static const char *symbol_flag_prefix(RBinSymbol *sym) {
 	return "sym";
 }
 
-#define MAXFLAG_LEN_DEFAULT 128
-
 static char *construct_symbol_flagname(const char *pfx, const char *libname, const char *symname, int len) {
 	char *s = r_str_newf ("%s.%s%s%s", pfx, r_str_get (libname), libname ? "_" : "", symname);
 	if (s) {
@@ -2390,12 +2388,12 @@ static void snInit(RCore *core, SymName *sn, RBinSymbol *sym, const char *lang, 
 		resymname = r_str_newf ("%s_%d", sym_name, sym->dup_count);
 		symname = resymname;
 	}
-	sn->nameflag = construct_symbol_flagname (pfx, sym->libname, symname, MAXFLAG_LEN_DEFAULT);
+	sn->nameflag = construct_symbol_flagname (pfx, sym->libname, symname, R_FLAG_NAME_SIZE);
 	free (resymname);
 	if (R_STR_ISNOTEMPTY (sym->classname)) {
 		sn->classname = strdup (sym->classname);
 		sn->classflag = r_str_newf ("sym.%s.%s", sn->classname, sn->name);
-		r_name_filter (sn->classflag, MAXFLAG_LEN_DEFAULT);
+		r_name_filter (sn->classflag, R_FLAG_NAME_SIZE);
 		sn->methname = r_str_newf ("%s::%s", sn->classname, sym_name);
 		sn->methflag = r_str_newf ("sym.%s.%s", sn->classname, sym_name);
 		r_name_filter (sn->methflag, strlen (sn->methflag));
@@ -2715,7 +2713,7 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 				lastfs = 's';
 			}
 			if (core->bin->prefix || *n) { // we don't want unnamed symbol flags
-				char *flagname = construct_symbol_flagname ("sym", sn.libname, n, MAXFLAG_LEN_DEFAULT);
+				char *flagname = construct_symbol_flagname ("sym", sn.libname, n, R_FLAG_NAME_SIZE);
 				if (!flagname) {
 					goto next;
 				}
