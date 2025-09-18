@@ -21,24 +21,26 @@ static void draw_scrollbar(RVMatrix *rvm) {
 	int h = rvm->h - 2;
 	int total_h = rvm->rows * rvm->box_h;
 	int sbpos = rvm->scroll_y * rvm->h / total_h;
+	if (sbpos < 1) {
+		sbpos = 1;
+	}
+	if (sbpos >= h - 1) {
+		sbpos = h - 2;
+	}
 	for (i = 1; i < h; i++) {
-		const char *box = (i == sbpos) ?"|#|": "|.|";
+		const char *box = (i == sbpos) ? "|#|" : "|.|";
 		r_cons_canvas_write_at (can, box, w, i);
 	}
 	r_cons_canvas_write_at (can, "[^]", w, 0);
-	r_cons_canvas_write_at (can, Color_INVERT"[v]"Color_RESET, w, h - 1);
-#if 0
-	r_strf_var (xxx, 128, "(%d)", sbpos);
-	r_cons_canvas_write_at (can, xxx, 5, 5);
-#endif
+	r_cons_canvas_write_at (can, Color_INVERT "[v]" Color_RESET, w, h - 1);
 }
 
 static void vmatrix_refresh(RVMatrix *rvm) {
 	RCons *cons = rvm->core->cons;
-	int h, w = r_cons_get_size (cons, &h);
+	int h, w = r_cons_get_size(cons, &h);
 	rvm->h = h;
 	rvm->w = w;
-	RConsCanvas *can = r_cons_canvas_new (cons, w, h - 1, -2);
+	RConsCanvas *can = r_cons_canvas_new(cons, w, h - 1, -2);
 	rvm->can = can;
 	RListIter *iter;
 	w -= 6;
@@ -66,7 +68,7 @@ static void vmatrix_refresh(RVMatrix *rvm) {
 
 	char *s = r_cons_canvas_tostring (can);
 	r_cons_clear00 (cons);
-	r_cons_printf (cons, "[0x%08"PFMT64x"\n%s", rvm->core->addr, s);
+	r_cons_printf (cons, "[0x%08" PFMT64x "\n%s", rvm->core->addr, s);
 	r_cons_visual_flush (cons);
 	free (s);
 	r_cons_canvas_free (can);
@@ -110,10 +112,10 @@ R_API void r_core_visual_matrix(RCore *core) {
 			// filter
 			break;
 		case 'j':
-			rvm.scroll_y ++;
+			rvm.scroll_y++;
 			break;
 		case 'k':
-			rvm.scroll_y --;
+			rvm.scroll_y--;
 			if (rvm.scroll_y < 0) {
 				rvm.scroll_y = 0;
 			}
@@ -131,7 +133,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 			rvm.scroll_y = 0;
 			break;
 		case 'G':
-			rvm.scroll_y = rvm.rows*rvm.box_h - 1;
+			rvm.scroll_y = rvm.rows * rvm.box_h - 1;
 			break;
 		case 'l':
 		case 'h':
