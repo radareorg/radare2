@@ -27,7 +27,7 @@ static const char *gzerr(int n) {
 		"buffer error", /* Z_BUF_ERROR     (-5) */
 		"incompatible version", /* Z_VERSION_ERROR (-6) */
 	};
-	if (R_UNLIKELY(n < 1 || n > 6)) {
+	if (R_UNLIKELY (n < 1 || n > 6)) {
 		return "unknown";
 	}
 	return errors[n];
@@ -43,7 +43,7 @@ static ut8 *inflatew(const ut8 *src, int srcLen, int *consumed, int *dstLen, int
 		return NULL;
 	}
 
-	memset(&stream, 0, sizeof(z_stream));
+	memset (&stream, 0, sizeof (z_stream));
 	stream.avail_in = srcLen;
 	stream.next_in = (Bytef *)src;
 
@@ -51,13 +51,13 @@ static ut8 *inflatew(const ut8 *src, int srcLen, int *consumed, int *dstLen, int
 	stream.zfree = Z_NULL;
 	stream.opaque = Z_NULL;
 
-	if (inflateInit2(&stream, wbits) != Z_OK) {
+	if (inflateInit2 (&stream, wbits) != Z_OK) {
 		return NULL;
 	}
 
 	do {
 		if (stream.avail_out == 0) {
-			ut8 *tmp_ptr = realloc(dst, stream.total_out + srcLen * 2);
+			ut8 *tmp_ptr = realloc (dst, stream.total_out + srcLen * 2);
 			if (!tmp_ptr) {
 				goto err_exit;
 			}
@@ -69,9 +69,9 @@ static ut8 *inflatew(const ut8 *src, int srcLen, int *consumed, int *dstLen, int
 			stream.next_out = dst + stream.total_out;
 			stream.avail_out = srcLen * 2;
 		}
-		err = inflate(&stream, Z_NO_FLUSH);
+		err = inflate (&stream, Z_NO_FLUSH);
 		if (err < 0) {
-			R_LOG_ERROR("inflate failed: %d %s", err, gzerr(-err));
+			R_LOG_ERROR ("inflate failed: %d %s", err, gzerr (-err));
 			goto err_exit;
 		}
 	} while (err != Z_STREAM_END);
@@ -83,50 +83,50 @@ static ut8 *inflatew(const ut8 *src, int srcLen, int *consumed, int *dstLen, int
 		*consumed = (const ut8 *)stream.next_in - (const ut8 *)src;
 	}
 
-	inflateEnd(&stream);
+	inflateEnd (&stream);
 	return dst;
 
 err_exit:
-	inflateEnd(&stream);
-	free(dst);
+	inflateEnd (&stream);
+	free (dst);
 	return NULL;
 }
 
 R_API ut8 *r_inflate_lz4(const ut8 *src, int srcLen, int *R_NULLABLE consumed, int *dstLen) {
-	R_RETURN_VAL_IF_FAIL(src && dstLen, NULL);
+	R_RETURN_VAL_IF_FAIL (src && dstLen, NULL);
 	ut32 osz = srcLen * 5;
 	int pp = 0;
 
-	ut8 *obuf = calloc(srcLen, 5);
+	ut8 *obuf = calloc (srcLen, 5);
 	if (!obuf) {
 		return NULL;
 	}
 
 #if USE_RLZ4
-	int res = r_lz4_decompress_block((ut8 *)src, srcLen, &pp, obuf, osz);
+	int res = r_lz4_decompress_block ((ut8 *)src, srcLen, &pp, obuf, osz);
 	if (res < 0)
 #else
-	int res = LZ4_decompress_safe((const char *)src, (char *)obuf, (uint32_t)srcLen, (uint32_t)osz);
+	int res = LZ4_decompress_safe ((const char *)src, (char *)obuf, (uint32_t)srcLen, (uint32_t)osz);
 	if (res < 1)
 #endif
 	{
 		const int mul = USE_RLZ4 ? 1 : srcLen / -res;
 		const int nosz = osz * (5 * (mul + 1));
 		if (nosz < osz) {
-			free(obuf);
+			free (obuf);
 			return NULL;
 		}
-		ut8 *nbuf = realloc(obuf, nosz);
+		ut8 *nbuf = realloc (obuf, nosz);
 		if (!nbuf) {
-			free(obuf);
+			free (obuf);
 			return NULL;
 		}
 		obuf = nbuf;
 		osz = nosz;
 #if USE_RLZ4
-		res = r_lz4_decompress_block((ut8 *)src, srcLen, &pp, obuf, osz);
+		res = r_lz4_decompress_block ((ut8 *)src, srcLen, &pp, obuf, osz);
 #else
-		res = LZ4_decompress_safe((const char *)src, (char *)obuf, (uint32_t)srcLen, (uint32_t)osz);
+		res = LZ4_decompress_safe ((const char *)src, (char *)obuf, (uint32_t)srcLen, (uint32_t)osz);
 #endif
 	}
 
@@ -138,7 +138,7 @@ R_API ut8 *r_inflate_lz4(const ut8 *src, int srcLen, int *R_NULLABLE consumed, i
 
 	*dstLen = 0;
 	*consumed = 0;
-	free(obuf);
+	free (obuf);
 	return NULL;
 }
 

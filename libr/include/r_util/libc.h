@@ -3,6 +3,10 @@
 #ifndef R2_UTIL_LIBC_H
 #define R2_UTIL_LIBC_H 1
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <r_types_base.h>
 
 #if R2_UEFI
@@ -32,10 +36,9 @@ static inline void *memmove(void *dst, const void *src, size_t n) {
 			*d++ = *s++;
 		}
 	} else {
-		d += n;
-		s += n;
-		while (n--) {
-			*--d = *--s;
+		size_t i = n;
+		while (i--) {
+			d[i] = s[i];
 		}
 	}
 	return dst;
@@ -49,7 +52,7 @@ static inline void *memset(void *s, int c, size_t n) {
 }
 static inline int memcmp(const void *a, const void *b, size_t n) {
 	const unsigned char *x = a, *y = b;
-	for (; n; --n, ++x, ++y) {
+	for (; n; n--, x++, y++) {
 		if (*x != *y) {
 			return *x - *y;
 		}
@@ -61,17 +64,17 @@ static inline int memcmp(const void *a, const void *b, size_t n) {
 static inline size_t strlen(const char *s) {
 	const char *p = s;
 	while (*p) {
-		++p;
+		p++;
 	}
 	return (size_t)(p - s);
 }
 static inline int strcmp(const char *a, const char *b) {
-	for (; *a && (*a == *b); ++a, ++b) {
+	for (; *a && (*a == *b); a++, b++) {
 	}
 	return (unsigned char)*a - (unsigned char)*b;
 }
 static inline int strncmp(const char *a, const char *b, size_t n) {
-	for (; n && *a && (*a == *b); ++a, ++b, --n) {
+	for (; n && *a && (*a == *b); a++, b++, n--) {
 	}
 	return n ? (unsigned char)*a - (unsigned char)*b : 0;
 }
@@ -81,7 +84,7 @@ static inline char *strchr(const char *s, int c) {
 		if (*s == ch) {
 			return (char *)s;
 		}
-		++s;
+		s++;
 	}
 	return (ch == 0) ? (char *)s : NULL;
 }
@@ -170,6 +173,10 @@ static inline int closedir(DIR *dir) {
 // For readdir64, same as readdir
 #define readdir64 readdir
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

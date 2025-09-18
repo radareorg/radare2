@@ -376,11 +376,9 @@ io_plugins += [
     'winkd',
     'winedbg',
   ]
-  
   if get_option('use_zip')
     io_plugins += [ 'zip' ]
   endif
- 
   if host_machine.system() == 'windows'
     io_plugins += [
       'windbg',
@@ -494,6 +492,7 @@ install_headers(include_files, install_dir: r2_incdir)
 r_util_files = [
   'include/r_util/bplist.h',
   'include/r_util/pj.h',
+  'include/r_util/libc.h',
   'include/r_util/r_alloc.h',
   'include/r_util/r_asn1.h',
   'include/r_util/r_assert.h',
