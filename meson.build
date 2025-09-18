@@ -508,7 +508,11 @@ install_data(script_files, install_dir: r2_scripts)
 
 libsdb_sp = subproject('sdb')
 libsdb_static = libsdb_sp.get_variable('libsdb_static')
-libsdb_dynamic = libsdb_sp.get_variable('libsdb').get_shared_lib()
+if host_machine.system() == 'uefi'
+  libsdb_dynamic = libsdb_static
+else
+  libsdb_dynamic = libsdb_sp.get_variable('libsdb').get_shared_lib()
+endif
 libsdb_includes = libsdb_sp.get_variable('sdb_inc')
 libsdb_version = libsdb_sp.get_variable('sdb_version')
 
