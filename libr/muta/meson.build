@@ -64,7 +64,6 @@ endif
 r_muta = library('r_muta', r_muta_sources,
   include_directories: [platform_inc],
   dependencies: r_muta_deps,
-  link_with: [r_util],
   c_args: library_cflags,
   install: true,
   implicit_include_directories: false,
@@ -73,13 +72,13 @@ r_muta = library('r_muta', r_muta_sources,
 )
 
 r_muta_dep = declare_dependency(link_with: r_muta,
+  dependencies: r_muta_deps,
   include_directories: [platform_inc])
 
 if get_option('blob')
 r_muta_static = static_library('r_muta_static', r_muta_sources,
   include_directories: [platform_inc],
   dependencies: [r_util_static_dep],
-  link_with: [r_util_static],
   c_args: library_cflags,
   install: true,
   implicit_include_directories: false,

@@ -100,7 +100,6 @@ endif
 
 r_io = library('r_io', r_io_sources,
   include_directories: platform_inc,
-  link_with: [r_util, r_cons, r_muta, r_socket],
   dependencies: r_io_deps,
   c_args: library_cflags,
   install: true,
@@ -109,7 +108,7 @@ r_io = library('r_io', r_io_sources,
   soversion: r2_libversion
 )
 
-r_io_dep = declare_dependency(link_with: [r_io, r_muta],
+r_io_dep = declare_dependency(link_with: r_io,
   include_directories: platform_inc)
 
 if get_option('blob')
@@ -129,7 +128,6 @@ r_io_static_deps = [
 
 r_io_static = static_library('r_io_static', r_io_sources,
   include_directories: platform_inc,
-  link_with: [r_util_static, r_muta_static, r_cons_static, r_socket_static],
   dependencies: r_io_static_deps,
   c_args: library_cflags,
   install: true,
