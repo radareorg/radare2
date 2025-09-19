@@ -23,7 +23,7 @@ all: $(ALL)
 clean:
 	rm -rf $(ALL)
 
-ifeq(1,1)
+ifeq (1,1)
 include *.mk
 else
 include sdb.mk
