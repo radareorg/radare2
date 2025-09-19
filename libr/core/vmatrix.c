@@ -15,12 +15,17 @@ typedef struct {
 	int w;
 	int h;
 	int scroll_x;
-	int scroll_y;
+	int scroll_y; // Current scroll position
 	int level; // Current navigation level (0, 1, 2)
 	int selected; // Selected box index
 	int selected_item; // Selected item index within category (for level 1)
 	ut64 selected_addr; // Selected address for disassembly
+	char *selected_flagspace; // Selected flagspace name for level 2 flagspace view
+	int scroll_y_level[3]; // Separate scroll positions for each level
 } RVMatrix;
+
+// Global pointer to current vmatrix instance for event callbacks
+static RVMatrix *g_rvm = NULL;
 
 static void clamp_scroll_position(RVMatrix *rvm) {
 	if (rvm->scroll_y < 0) {
@@ -32,6 +37,18 @@ static void clamp_scroll_position(RVMatrix *rvm) {
 	}
 	if (rvm->scroll_y > max_scroll) {
 		rvm->scroll_y = max_scroll;
+	}
+}
+
+static void switch_level(RVMatrix *rvm, int new_level) {
+	if (new_level >= 0 && new_level <= 2) {
+		// Save current scroll position
+		rvm->scroll_y_level[rvm->level] = rvm->scroll_y;
+		// Switch to new level
+		rvm->level = new_level;
+		// Restore scroll position for new level
+		rvm->scroll_y = rvm->scroll_y_level[new_level];
+		clamp_scroll_position(rvm);
 	}
 }
 
@@ -67,7 +84,11 @@ static char *get_selected_box_title(RVMatrix *rvm) {
 		}
 		break;
 	case 2:
-		snprintf(title, sizeof(title), "0x%" PFMT64x, rvm->selected_addr);
+		if (strcmp(cat, "flagspaces") == 0 && rvm->selected_flagspace) {
+			snprintf(title, sizeof(title), "flagspace:%s", rvm->selected_flagspace);
+		} else {
+			snprintf(title, sizeof(title), "0x%" PFMT64x, rvm->selected_addr);
+		}
 		break;
 	default:
 		snprintf(title, sizeof(title), "unknown");
@@ -79,6 +100,9 @@ static char *get_selected_box_title(RVMatrix *rvm) {
 
 static void draw_scrollbar(RVMatrix *rvm) {
 	RConsCanvas *can = rvm->can;
+	if (!can) {
+		return;
+	}
 	int i;
 	int w = rvm->w - 3;
 	int h = rvm->h - 2;
@@ -98,8 +122,36 @@ static void draw_scrollbar(RVMatrix *rvm) {
 	r_cons_canvas_write_at(can, Color_INVERT "[v]" Color_RESET, w, h - 1);
 }
 
+static void draw_highlighted_box(RConsCanvas *can, int xpos, int ypos, int boxwidth, int boxheight, bool is_selected) {
+	if (!can || boxwidth <= 0 || boxheight <= 0) {
+		return;
+	}
+	const char *box_color = is_selected ? Color_RED : "";
+	r_cons_canvas_box(can, xpos, ypos, boxwidth, boxheight, box_color);
+
+	// Fill top line with #### for selected boxes (between the borders)
+	if (is_selected && boxwidth > 2) {
+		char *top_line = r_str_newf("%s", "");
+		if (top_line) {
+			int len = boxwidth - 2; // Leave space for left and right borders
+			for (int j = 0; j < len; j++) {
+				char *new_line = r_str_append(top_line, "#");
+				if (!new_line) {
+					break; // Allocation failed
+				}
+				top_line = new_line;
+			}
+			r_cons_canvas_write_at(can, top_line, xpos + 1, ypos);
+			free(top_line);
+		}
+	}
+}
+
 static void draw_level0_boxes(RVMatrix *rvm) {
 	RConsCanvas *can = rvm->can;
+	if (!can) {
+		return;
+	}
 	int w = rvm->w - 6;
 	int boxwidth = w / rvm->cols;
 	int xpos = 0;
@@ -109,8 +161,9 @@ static void draw_level0_boxes(RVMatrix *rvm) {
 
 	while (level0_categories[i]) {
 		const char *cat = level0_categories[i];
-		const char *color = (i == rvm->selected) ? Color_INVERT : "";
-		r_cons_canvas_box(can, xpos, ypos, boxwidth, rvm->box_h, color);
+		bool is_selected = (i == rvm->selected);
+		draw_highlighted_box(can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
+
 		char *title = r_str_ndup(cat, boxwidth - 4);
 		r_cons_canvas_write_at(can, title, xpos + 2, ypos + 1);
 		free(title);
@@ -128,6 +181,9 @@ static void draw_level0_boxes(RVMatrix *rvm) {
 
 static void draw_level1_boxes(RVMatrix *rvm) {
 	RConsCanvas *can = rvm->can;
+	if (!can) {
+		return;
+	}
 	const char *cat = level0_categories[rvm->selected];
 	int w = rvm->w - 6;
 	int boxwidth = w / rvm->cols;
@@ -151,8 +207,8 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 			if (item_count >= max_items) {
 				break;
 			}
-			const char *color = (item_count == rvm->selected_item) ? Color_INVERT : "";
-			r_cons_canvas_box(can, xpos, ypos, boxwidth, rvm->box_h, color);
+			bool is_selected = (item_count == rvm->selected_item);
+			draw_highlighted_box(can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
 			char item[256];
 			snprintf(item, sizeof(item), "0x%" PFMT64x, f->addr);
 			char *name = r_str_ndup(f->name, boxwidth - 4 - strlen(item));
@@ -176,8 +232,8 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 			if (item_count >= max_items) {
 				break;
 			}
-			const char *color = (item_count == rvm->selected_item) ? Color_INVERT : "";
-			r_cons_canvas_box(can, xpos, ypos, boxwidth, rvm->box_h, color);
+			bool is_selected = (item_count == rvm->selected_item);
+			draw_highlighted_box(can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
 			char item[256];
 			int count = r_flag_space_count(rvm->core->flags, space->name);
 			snprintf(item, sizeof(item), "%d flags", count);
@@ -203,8 +259,8 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 			if (item_count >= max_items) {
 				break;
 			}
-			const char *color = (item_count == rvm->selected_item) ? Color_INVERT : "";
-			r_cons_canvas_box(can, xpos, ypos, boxwidth, rvm->box_h, color);
+			bool is_selected = (item_count == rvm->selected_item);
+			draw_highlighted_box(can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
 			char item[256];
 			snprintf(item, sizeof(item), "0x%" PFMT64x, flag->addr);
 			char *name = r_str_ndup(flag->name, boxwidth - 4 - strlen(item));
@@ -229,8 +285,8 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 			if (item_count >= max_items) {
 				break;
 			}
-			const char *color = (item_count == rvm->selected_item) ? Color_INVERT : "";
-			r_cons_canvas_box(can, xpos, ypos, boxwidth, rvm->box_h, color);
+			bool is_selected = (item_count == rvm->selected_item);
+			draw_highlighted_box(can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
 			char item[256];
 			snprintf(item, sizeof(item), "0x%" PFMT64x, sym->vaddr);
 			char *name_str = r_bin_name_tostring(sym->name);
@@ -256,8 +312,8 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 			if (item_count >= max_items) {
 				break;
 			}
-			const char *color = (item_count == rvm->selected_item) ? Color_INVERT : "";
-			r_cons_canvas_box(can, xpos, ypos, boxwidth, rvm->box_h, color);
+			bool is_selected = (item_count == rvm->selected_item);
+			draw_highlighted_box(can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
 			char item[256];
 			snprintf(item, sizeof(item), "0x%08" PFMT64x, (ut64)0);
 			char *name_str = r_bin_name_tostring(imp->name);
@@ -284,49 +340,137 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 
 static void draw_level2_disassembly(RVMatrix *rvm) {
 	RConsCanvas *can = rvm->can;
-	int disasm_w = (rvm->w * 70) / 100;
-	int disasm_h = (rvm->h * 90) / 100;
-	int disasm_x = (rvm->w - disasm_w) / 2;
-	int disasm_y = (rvm->h - disasm_h) / 2;
+	if (!can) {
+		return;
+	}
+	const char *cat = level0_categories[rvm->selected];
 
-	r_cons_canvas_box(can, disasm_x, disasm_y, disasm_w, disasm_h, Color_BLUE);
-	char title[256];
-	snprintf(title, sizeof(title), "Disassembly at 0x%" PFMT64x, rvm->selected_addr);
-	r_cons_canvas_write_at(can, title, disasm_x + 2, disasm_y + 1);
+	if (strcmp(cat, "flagspaces") == 0 && rvm->selected_flagspace) {
+		// Show flags in the selected flagspace
+		int flags_w = (rvm->w * 80) / 100;
+		int flags_h = (rvm->h * 90) / 100;
+		int flags_x = (rvm->w - flags_w) / 2;
+		int flags_y = (rvm->h - flags_h) / 2;
 
-	// Get disassembly content
-	RCore *core = rvm->core;
-	char *disasm = r_core_cmd_strf(core, "pd 20 @ 0x%" PFMT64x, rvm->selected_addr);
-	if (disasm) {
-		char *line = disasm;
-		char *next_line;
-		int line_y = disasm_y + 3;
-		int max_lines = disasm_h - 4;
-
-		for (int i = 0; i < max_lines && line; i++) {
-			next_line = strchr(line, '\n');
-			if (next_line) {
-				*next_line = '\0';
-				next_line++;
-			}
-			if (strlen(line) > 0) {
-				r_cons_canvas_write_at(can, line, disasm_x + 2, line_y++);
-			}
-			line = next_line;
+		if (flags_w > 0 && flags_h > 0) {
+			r_cons_canvas_box(can, flags_x, flags_y, flags_w, flags_h, Color_CYAN);
 		}
-		free(disasm);
+		char title[256];
+		char *header_line = r_str_newf("%s", "");
+		if (header_line) {
+			int header_len = flags_w - 4;
+			for (int j = 0; j < header_len && j < 30; j++) {
+				char *new_line = r_str_append(header_line, "=");
+				if (!new_line) {
+					break; // Allocation failed
+				}
+				header_line = new_line;
+			}
+			r_cons_canvas_write_at(can, header_line, flags_x + 2, flags_y);
+			free(header_line);
+		}
+
+		snprintf(title, sizeof(title), "Flags in flagspace '%s'", rvm->selected_flagspace);
+		r_cons_canvas_write_at(can, title, flags_x + 2, flags_y + 1);
+
+		// Get flags from the selected flagspace
+		RCore *core = rvm->core;
+		RList *flags = r_flag_all_list(core->flags, true);
+		if (flags) {
+			RListIter *iter;
+			RFlagItem *flag;
+			int line_y = flags_y + 3;
+			int max_lines = flags_h - 4;
+			int count = 0;
+
+			r_list_foreach (flags, iter, flag) {
+				if (count >= max_lines) {
+					break;
+				}
+				// Only show flags from the selected flagspace
+				if (flag->space && strcmp(flag->space->name, rvm->selected_flagspace) == 0) {
+					char flag_line[256];
+					snprintf(flag_line, sizeof(flag_line), "0x%08" PFMT64x " %4" PFMT64d " %s",
+						flag->addr, flag->size, flag->name);
+					r_cons_canvas_write_at(can, flag_line, flags_x + 2, line_y++);
+					count++;
+				}
+			}
+			r_list_free(flags);
+		}
+	} else {
+		// Original disassembly view
+		int disasm_w = (rvm->w * 70) / 100;
+		int disasm_h = (rvm->h * 90) / 100;
+		int disasm_x = (rvm->w - disasm_w) / 2;
+		int disasm_y = (rvm->h - disasm_h) / 2;
+
+		if (disasm_w > 0 && disasm_h > 0) {
+			r_cons_canvas_box(can, disasm_x, disasm_y, disasm_w, disasm_h, Color_YELLOW);
+		}
+		char title[256];
+		char *header_line = r_str_newf("%s", "");
+		if (header_line) {
+			int header_len = disasm_w - 4;
+			for (int j = 0; j < header_len && j < 30; j++) {
+				char *new_line = r_str_append(header_line, "-");
+				if (!new_line) {
+					break; // Allocation failed
+				}
+				header_line = new_line;
+			}
+			r_cons_canvas_write_at(can, header_line, disasm_x + 2, disasm_y);
+			free(header_line);
+		}
+
+		snprintf(title, sizeof(title), "Disassembly at 0x%" PFMT64x, rvm->selected_addr);
+		r_cons_canvas_write_at(can, title, disasm_x + 2, disasm_y + 1);
+
+		// Get disassembly content
+		RCore *core = rvm->core;
+		char *disasm = r_core_cmd_strf(core, "pd 20 @ 0x%" PFMT64x, rvm->selected_addr);
+		if (disasm) {
+			char *line = disasm;
+			char *next_line;
+			int line_y = disasm_y + 3;
+			int max_lines = disasm_h - 4;
+
+			for (int i = 0; i < max_lines && line; i++) {
+				next_line = strchr(line, '\n');
+				if (next_line) {
+					*next_line = '\0';
+					next_line++;
+				}
+				if (strlen(line) > 0) {
+					r_cons_canvas_write_at(can, line, disasm_x + 2, line_y++);
+				}
+				line = next_line;
+			}
+			free(disasm);
+		}
 	}
 }
 
 static void vmatrix_refresh(RVMatrix *rvm) {
+	if (!rvm || !rvm->core || !rvm->core->cons) {
+		return;
+	}
 	RCons *cons = rvm->core->cons;
 	int h, w = r_cons_get_size(cons, &h);
 	rvm->h = h;
 	rvm->w = w;
 
+	// Check for valid dimensions
+	if (w <= 0 || h <= 1) {
+		return; // Invalid dimensions, skip refresh
+	}
+
 	// Ensure scroll position is within valid bounds
 	clamp_scroll_position(rvm);
-	RConsCanvas *can = r_cons_canvas_new(cons, w, h - 1, -2);
+	RConsCanvas *can = r_cons_canvas_new(cons, w, h - 1, 0);
+	if (!can) {
+		return; // Canvas creation failed, skip refresh
+	}
 	rvm->can = can;
 
 	switch (rvm->level) {
@@ -346,6 +490,11 @@ static void vmatrix_refresh(RVMatrix *rvm) {
 	}
 
 	char *s = r_cons_canvas_tostring(can);
+	if (!s) {
+		r_cons_canvas_free(can);
+		rvm->can = NULL;
+		return; // Canvas tostring failed, skip display
+	}
 	r_cons_clear00(cons);
 	char *selected_title = get_selected_box_title(rvm);
 	const char *cursor_status = rvm->core->print->cur_enabled ? "CURSOR" : "NORMAL";
@@ -357,6 +506,14 @@ static void vmatrix_refresh(RVMatrix *rvm) {
 	rvm->can = NULL;
 }
 
+static void vmatrix_refresh_oneshot(void *user) {
+	// Use the global pointer for safety
+	if (!g_rvm || !g_rvm->core || !g_rvm->core->cons) {
+		return;
+	}
+	vmatrix_refresh(g_rvm);
+}
+
 R_API void r_core_visual_matrix(RCore *core) {
 	RVMatrix rvm = {
 		.core = core,
@@ -366,12 +523,35 @@ R_API void r_core_visual_matrix(RCore *core) {
 		.selected = 0,
 		.selected_item = 0,
 		.selected_addr = core->addr,
+		.selected_flagspace = NULL,
+		.scroll_y_level = { 0, 0, 0 },
 	};
+
+	// Save original event callbacks
+	RConsEvent old_event_resize = core->cons->event_resize;
+	RConsEvent old_event_interrupt = core->cons->context->event_interrupt;
+	void *old_event_data = core->cons->event_data;
+
+	// Set up vmatrix event callbacks
 	r_cons_set_raw(core->cons, true);
 	r_cons_enable_mouse(core->cons, r_config_get_i(core->config, "scr.wheel"));
+	core->cons->event_resize = NULL; // avoid running old event with new data
+	core->cons->context->event_interrupt = NULL;
+	g_rvm = &rvm; // Set global pointer
+	core->cons->event_data = &rvm;
+	core->cons->event_resize = vmatrix_refresh_oneshot;
+	core->cons->context->event_interrupt = vmatrix_refresh_oneshot;
+
+	// Initial refresh to display the matrix
+	vmatrix_refresh(&rvm);
+
+	// Ensure global pointer is still valid
+	if (!g_rvm) {
+		g_rvm = &rvm;
+	}
+
 	bool leave = false;
 	while (!leave) {
-		vmatrix_refresh(&rvm);
 		char ch = r_cons_readchar(core->cons);
 		ch = r_cons_arrow_to_hjkl(core->cons, ch);
 		switch (ch) {
@@ -469,7 +649,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 			break;
 		case 'd':
 			if (rvm.level < 2) {
-				// Set selected_addr based on current selection before entering level 2
+				// Set selected_addr or selected_flagspace based on current selection before entering level 2
 				if (rvm.level == 1) {
 					const char *cat = level0_categories[rvm.selected];
 					if (strcmp(cat, "functions") == 0) {
@@ -480,6 +660,19 @@ R_API void r_core_visual_matrix(RCore *core) {
 						r_list_foreach (fcns, iter, f) {
 							if (count == rvm.selected_item) {
 								rvm.selected_addr = f->addr;
+								break;
+							}
+							count++;
+						}
+					} else if (strcmp(cat, "flagspaces") == 0) {
+						// For flagspaces, set the selected flagspace
+						RSpace *space;
+						RSpaceIter *it;
+						int count = 0;
+						r_flag_space_foreach(rvm.core->flags, it, space) {
+							if (count == rvm.selected_item) {
+								free(rvm.selected_flagspace);
+								rvm.selected_flagspace = strdup(space->name);
 								break;
 							}
 							count++;
@@ -509,7 +702,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 							count++;
 						}
 					}
-					// For flagspaces and imports, keep current address
+					// For imports, keep current address
 				}
 				rvm.level++;
 				clamp_scroll_position(&rvm);
@@ -517,8 +710,12 @@ R_API void r_core_visual_matrix(RCore *core) {
 			break;
 		case 'u':
 			if (rvm.level > 0) {
-				rvm.level--;
-				clamp_scroll_position(&rvm);
+				switch_level(&rvm, rvm.level - 1);
+				// Clear selected_flagspace when leaving level 2
+				if (rvm.level < 2) {
+					free(rvm.selected_flagspace);
+					rvm.selected_flagspace = NULL;
+				}
 			}
 			break;
 		case ':':
@@ -529,8 +726,62 @@ R_API void r_core_visual_matrix(RCore *core) {
 			break;
 		case '\n': // Enter key - alias for 'd'
 			if (rvm.level < 2) {
-				rvm.level++;
-				clamp_scroll_position(&rvm);
+				// Set selected_addr or selected_flagspace based on current selection before entering level 2
+				if (rvm.level == 1) {
+					const char *cat = level0_categories[rvm.selected];
+					if (strcmp(cat, "functions") == 0) {
+						RListIter *iter;
+						RAnalFunction *f;
+						RList *fcns = rvm.core->anal->fcns;
+						int count = 0;
+						r_list_foreach (fcns, iter, f) {
+							if (count == rvm.selected_item) {
+								rvm.selected_addr = f->addr;
+								break;
+							}
+							count++;
+						}
+					} else if (strcmp(cat, "flagspaces") == 0) {
+						// For flagspaces, set the selected flagspace
+						RSpace *space;
+						RSpaceIter *it;
+						int count = 0;
+						r_flag_space_foreach(rvm.core->flags, it, space) {
+							if (count == rvm.selected_item) {
+								free(rvm.selected_flagspace);
+								rvm.selected_flagspace = strdup(space->name);
+								break;
+							}
+							count++;
+						}
+					} else if (strcmp(cat, "flags") == 0) {
+						RListIter *iter;
+						RFlagItem *flag;
+						const RList *flags = r_flag_get_list(rvm.core->flags, 0);
+						int count = 0;
+						r_list_foreach (flags, iter, flag) {
+							if (count == rvm.selected_item) {
+								rvm.selected_addr = flag->addr;
+								break;
+							}
+							count++;
+						}
+					} else if (strcmp(cat, "symbols") == 0) {
+						RBinSymbol *sym;
+						RListIter *iter;
+						const RList *symbols = r_bin_get_symbols(rvm.core->bin);
+						int count = 0;
+						r_list_foreach (symbols, iter, sym) {
+							if (count == rvm.selected_item) {
+								rvm.selected_addr = sym->vaddr;
+								break;
+							}
+							count++;
+						}
+					}
+					// For imports, keep current address
+				}
+				switch_level(&rvm, rvm.level + 1);
 			}
 			break;
 		case '\t': // Tab key - navigate to next item in level 1
@@ -611,16 +862,75 @@ R_API void r_core_visual_matrix(RCore *core) {
 			break;
 		case 'q':
 			if (rvm.level > 0) {
-				rvm.level--;
+				switch_level(&rvm, rvm.level - 1);
+				// Clear selected_flagspace when leaving level 2
+				if (rvm.level < 2) {
+					free(rvm.selected_flagspace);
+					rvm.selected_flagspace = NULL;
+				}
 			} else {
 				leave = true;
 			}
+			break;
+		case '?':
+			// Show help
+			r_cons_clear00(core->cons);
+			r_cons_printf(core->cons, "Visual Matrix Mode Help\n");
+			r_cons_printf(core->cons, "======================\n\n");
+			r_cons_printf(core->cons, "Navigation:\n");
+			r_cons_printf(core->cons, "  h/l       - Move left/right (level 0)\n");
+			r_cons_printf(core->cons, "  j/k       - Move down/up (scrolling)\n");
+			r_cons_printf(core->cons, "  J/K       - Page down/up\n");
+			r_cons_printf(core->cons, "  g/G       - Go to top/bottom\n");
+			r_cons_printf(core->cons, "  Tab/Z     - Next/previous item (level 1)\n\n");
+			r_cons_printf(core->cons, "Level Navigation:\n");
+			r_cons_printf(core->cons, "  d/Enter   - Go down one level (activate selected item)\n");
+			r_cons_printf(core->cons, "  u         - Go up one level\n");
+			r_cons_printf(core->cons, "  q         - Quit or go up one level\n\n");
+			r_cons_printf(core->cons, "Layout Control:\n");
+			r_cons_printf(core->cons, "  1-9       - Set number of columns (1-9)\n");
+			r_cons_printf(core->cons, "  [/]       - Decrease/increase columns\n");
+			r_cons_printf(core->cons, "  +/-       - Decrease/increase box height\n\n");
+			r_cons_printf(core->cons, "Mouse Controls:\n");
+			r_cons_printf(core->cons, "  Left click - Select item\n");
+			r_cons_printf(core->cons, "  Double click - Activate selected item (go down)\n");
+			r_cons_printf(core->cons, "  Title bar - Go up one level\n");
+			r_cons_printf(core->cons, "  Scrollbar - Jump to position\n\n");
+			r_cons_printf(core->cons, "Special Commands:\n");
+			r_cons_printf(core->cons, "  :         - Run r2 command\n");
+			r_cons_printf(core->cons, "  !         - Open panels mode\n");
+			r_cons_printf(core->cons, "  _         - Filter (reserved for future use)\n");
+			r_cons_printf(core->cons, "  ?         - Show this help\n\n");
+			r_cons_printf(core->cons, "Navigation Levels:\n");
+			r_cons_printf(core->cons, "  Level 0 - Categories (flags, flagspaces, functions, etc.)\n");
+			r_cons_printf(core->cons, "  Level 1 - Items within selected category\n");
+			r_cons_printf(core->cons, "  Level 2 - Details (flagspace contents or disassembly)\n\n");
+			r_cons_printf(core->cons, "Visual Feedback:\n");
+			r_cons_printf(core->cons, "  Red borders + #### - Selected items\n");
+			r_cons_printf(core->cons, "  Scroll positions saved per level\n");
+			r_cons_printf(core->cons, "  Level 2: Cyan (flagspaces), Yellow (disassembly)\n\n");
+			r_cons_flush(core->cons);
+			r_cons_any_key(core->cons, "Press any key to continue...");
 			break;
 		default:
 			// Handle mouse clicks
 			if (ch == 0) { // Mouse event
 				int x, y;
 				if (r_cons_get_click(core->cons, &x, &y)) {
+					// Check if click is on title bar (first line)
+					if (y == 0) {
+						// Go up one level
+						if (rvm.level > 0) {
+							switch_level(&rvm, rvm.level - 1);
+							// Clear selected_flagspace when leaving level 2
+							if (rvm.level < 2) {
+								free(rvm.selected_flagspace);
+								rvm.selected_flagspace = NULL;
+							}
+						}
+						break;
+					}
+
 					// Adjust for title offset (title takes 1 line)
 					y -= 1;
 
@@ -636,24 +946,94 @@ R_API void r_core_visual_matrix(RCore *core) {
 								clamp_scroll_position(&rvm);
 							}
 						}
-					} else if (rvm.level == 0 && y >= 0) {
-						// Click on boxes (only in level 0)
+					} else if (y >= 0) {
+						// Click on boxes
 						int boxwidth = (rvm.w - 6) / rvm.cols;
 						int clicked_col = x / (boxwidth + 1);
 						int clicked_row = (y + rvm.scroll_y) / rvm.box_h;
-						int total_boxes = 0;
-						while (level0_categories[total_boxes]) {
-							total_boxes++;
-						}
 
-						if (clicked_col < rvm.cols && clicked_row >= 0) {
-							int box_index = clicked_row * rvm.cols + clicked_col;
-							if (box_index >= 0 && box_index < total_boxes) {
-								rvm.selected = box_index;
-								// Go down into the selected box (like pressing 'd')
-								if (rvm.level < 2) {
-									rvm.level++;
-									clamp_scroll_position(&rvm);
+						if (rvm.level == 0) {
+							// Level 0: select category
+							int total_boxes = 0;
+							while (level0_categories[total_boxes]) {
+								total_boxes++;
+							}
+
+							if (clicked_col < rvm.cols && clicked_row >= 0) {
+								int box_index = clicked_row * rvm.cols + clicked_col;
+								if (box_index >= 0 && box_index < total_boxes) {
+									if (rvm.selected == box_index) {
+										// Same box clicked again, go down one level
+										switch_level(&rvm, rvm.level + 1);
+									} else {
+										// Different box clicked, just select it
+										rvm.selected = box_index;
+									}
+								}
+							}
+						} else if (rvm.level == 1) {
+							// Level 1: select item
+							int clicked_item = clicked_row * rvm.cols + clicked_col;
+							if (clicked_item >= 0 && clicked_item < rvm.rows) {
+								if (rvm.selected_item == clicked_item) {
+									// Same item clicked again, go down one level
+									// Set selected_addr or selected_flagspace based on current selection before entering level 2
+									const char *cat = level0_categories[rvm.selected];
+									if (strcmp(cat, "functions") == 0) {
+										RListIter *iter;
+										RAnalFunction *f;
+										RList *fcns = rvm.core->anal->fcns;
+										int count = 0;
+										r_list_foreach (fcns, iter, f) {
+											if (count == rvm.selected_item) {
+												rvm.selected_addr = f->addr;
+												break;
+											}
+											count++;
+										}
+									} else if (strcmp(cat, "flagspaces") == 0) {
+										// For flagspaces, set the selected flagspace
+										RSpace *space;
+										RSpaceIter *it;
+										int count = 0;
+										r_flag_space_foreach(rvm.core->flags, it, space) {
+											if (count == rvm.selected_item) {
+												free(rvm.selected_flagspace);
+												rvm.selected_flagspace = strdup(space->name);
+												break;
+											}
+											count++;
+										}
+									} else if (strcmp(cat, "flags") == 0) {
+										RListIter *iter;
+										RFlagItem *flag;
+										const RList *flags = r_flag_get_list(rvm.core->flags, 0);
+										int count = 0;
+										r_list_foreach (flags, iter, flag) {
+											if (count == rvm.selected_item) {
+												rvm.selected_addr = flag->addr;
+												break;
+											}
+											count++;
+										}
+									} else if (strcmp(cat, "symbols") == 0) {
+										RBinSymbol *sym;
+										RListIter *iter;
+										const RList *symbols = r_bin_get_symbols(rvm.core->bin);
+										int count = 0;
+										r_list_foreach (symbols, iter, sym) {
+											if (count == rvm.selected_item) {
+												rvm.selected_addr = sym->vaddr;
+												break;
+											}
+											count++;
+										}
+									}
+									// For imports, keep current address
+									switch_level(&rvm, rvm.level + 1);
+								} else {
+									// Different item clicked, just select it
+									rvm.selected_item = clicked_item;
 								}
 							}
 						}
@@ -662,7 +1042,18 @@ R_API void r_core_visual_matrix(RCore *core) {
 			}
 			break;
 		}
+
+		// Refresh the display after each key press
+		vmatrix_refresh(&rvm);
 	}
+
+	// Restore original event callbacks
+	core->cons->event_resize = old_event_resize;
+	core->cons->context->event_interrupt = old_event_interrupt;
+	core->cons->event_data = old_event_data;
+	g_rvm = NULL; // Clear global pointer
+
 	r_cons_enable_mouse(core->cons, false);
 	r_cons_set_raw(core->cons, false);
+	free(rvm.selected_flagspace);
 }
