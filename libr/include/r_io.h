@@ -13,7 +13,6 @@
 #define R_IO_SEEK_SET 0
 #define R_IO_SEEK_CUR 1
 #define R_IO_SEEK_END 2
-// Seek to next hole (region of zeros) greater or equal to offset
 #define R_IO_SEEK_HOLE 3
 
 #define R_IO_UNDOS 64
