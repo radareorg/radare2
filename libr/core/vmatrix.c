@@ -3,7 +3,7 @@
 #include <r_core.h>
 
 static const char *level0_categories[] = {
-	"flags", "flagspaces", "functions", "symbols", "imports", "comments", NULL
+	"flags", "flagspaces", "functions", "symbols", "imports", "comments", "sections", NULL
 };
 
 typedef struct {
@@ -20,6 +20,7 @@ typedef struct {
 	int selected; // Selected box index
 	int selected_item; // Selected item index within category (for level 1)
 	ut64 selected_addr; // Selected address for disassembly
+	ut64 original_addr; // Original address when entering level 2
 	char *selected_flagspace; // Selected flagspace name for level 2 flagspace view
 	int scroll_y_level[3]; // Separate scroll positions for each level
 } RVMatrix;
@@ -48,6 +49,9 @@ static void switch_level(RVMatrix *rvm, int new_level) {
 		rvm->level = new_level;
 		// Restore scroll position for new level
 		rvm->scroll_y = rvm->scroll_y_level[new_level];
+		if (new_level == 2) {
+			rvm->original_addr = rvm->selected_addr;
+		}
 		clamp_scroll_position(rvm);
 	}
 }
@@ -236,10 +240,17 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 			draw_highlighted_box(can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
 			char item[256];
 			int count = r_flag_space_count(rvm->core->flags, space->name);
+#if 0
 			snprintf(item, sizeof(item), "%d flags", count);
 			char *name = r_str_ndup(space->name, boxwidth - 4 - strlen(item));
 			r_cons_canvas_write_at(can, item, xpos + 2, ypos + 1);
 			r_cons_canvas_write_at(can, name, xpos + 2, ypos + 2);
+#else
+			snprintf(item, sizeof(item), "%d", count);
+			char *name = r_str_ndup(space->name, boxwidth - 4 - strlen(item));
+			snprintf(item, sizeof(item), "%d %s", count, name);
+			r_cons_canvas_write_at(can, item, xpos + 2, ypos + 1);
+#endif
 			free(name);
 
 			xpos += boxwidth + 1;
@@ -359,6 +370,32 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 			}
 			item_count++;
 		}
+	} else if (strcmp(cat, "sections") == 0) {
+		RBinSection *section;
+		RListIter *iter;
+		const RList *sections = r_bin_get_sections(rvm->core->bin);
+		r_list_foreach (sections, iter, section) {
+			if (item_count >= max_items) {
+				break;
+			}
+			bool is_selected = (item_count == rvm->selected_item);
+			draw_highlighted_box(can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
+			char addr_str[256];
+			snprintf(addr_str, sizeof(addr_str), "0x%" PFMT64x, section->vaddr);
+			char *name = r_str_ndup(section->name, boxwidth - 4 - strlen(addr_str));
+			r_cons_canvas_write_at(can, addr_str, xpos + 2, ypos + 1);
+			r_cons_canvas_write_at(can, name, xpos + 2, ypos + 2);
+			free(name);
+
+			xpos += boxwidth + 1;
+			col++;
+			if (col >= rvm->cols) {
+				ypos += rvm->box_h;
+				xpos = 0;
+				col = 0;
+			}
+			item_count++;
+		}
 	} else {
 		r_cons_canvas_write_at(can, "Category not implemented yet", 2, ypos);
 	}
@@ -374,58 +411,54 @@ static void draw_level2_disassembly(RVMatrix *rvm) {
 	const char *cat = level0_categories[rvm->selected];
 
 	if (strcmp(cat, "flagspaces") == 0 && rvm->selected_flagspace) {
-		// Show flags in the selected flagspace
-		int flags_w = (rvm->w * 80) / 100;
-		int flags_h = (rvm->h * 90) / 100;
-		int flags_x = (rvm->w - flags_w) / 2;
-		int flags_y = (rvm->h - flags_h) / 2;
+		// Show flags in the selected flagspace in boxed matrix
+		int w = rvm->w - 6;
+		int boxwidth = w / rvm->cols;
+		int xpos = 0;
+		int col = 0;
+		int item_count = 0;
+		int max_items = 100;
 
-		if (flags_w > 0 && flags_h > 0) {
-			r_cons_canvas_box(can, flags_x, flags_y, flags_w, flags_h, Color_CYAN);
-		}
+		// Display category title
 		char title[256];
-		char *header_line = r_str_newf("%s", "");
-		if (header_line) {
-			int header_len = flags_w - 4;
-			for (int j = 0; j < header_len && j < 30; j++) {
-				char *new_line = r_str_append(header_line, "=");
-				if (!new_line) {
-					break; // Allocation failed
-				}
-				header_line = new_line;
-			}
-			r_cons_canvas_write_at(can, header_line, flags_x + 2, flags_y);
-			free(header_line);
-		}
+		snprintf(title, sizeof(title), "Flags in %s", rvm->selected_flagspace);
+		r_cons_canvas_write_at(can, title, 0, 0);
 
-		snprintf(title, sizeof(title), "Flags in flagspace '%s'", rvm->selected_flagspace);
-		r_cons_canvas_write_at(can, title, flags_x + 2, flags_y + 1);
+		int ypos = 2 - rvm->scroll_y;
 
 		// Get flags from the selected flagspace
 		RCore *core = rvm->core;
-		RList *flags = r_flag_all_list(core->flags, true);
-		if (flags) {
+		RList *all_flags = r_flag_all_list(core->flags, true);
+		if (all_flags) {
 			RListIter *iter;
 			RFlagItem *flag;
-			int line_y = flags_y + 3;
-			int max_lines = flags_h - 4;
-			int count = 0;
-
-			r_list_foreach (flags, iter, flag) {
-				if (count >= max_lines) {
+			r_list_foreach (all_flags, iter, flag) {
+				if (item_count >= max_items) {
 					break;
 				}
-				// Only show flags from the selected flagspace
 				if (flag->space && strcmp(flag->space->name, rvm->selected_flagspace) == 0) {
-					char flag_line[256];
-					snprintf(flag_line, sizeof(flag_line), "0x%08" PFMT64x " %4" PFMT64d " %s",
-						flag->addr, flag->size, flag->name);
-					r_cons_canvas_write_at(can, flag_line, flags_x + 2, line_y++);
-					count++;
+					bool is_selected = (item_count == rvm->selected_item);
+					draw_highlighted_box(can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
+					char item[256];
+					snprintf(item, sizeof(item), "0x%" PFMT64x, flag->addr);
+					char *name = r_str_ndup(flag->name, boxwidth - 4 - strlen(item));
+					r_cons_canvas_write_at(can, item, xpos + 2, ypos + 1);
+					r_cons_canvas_write_at(can, name, xpos + 2, ypos + 2);
+					free(name);
+
+					xpos += boxwidth + 1;
+					col++;
+					if (col >= rvm->cols) {
+						ypos += rvm->box_h;
+						xpos = 0;
+						col = 0;
+					}
+					item_count++;
 				}
 			}
-			r_list_free(flags);
+			r_list_free(all_flags);
 		}
+		rvm->rows = (item_count + rvm->cols - 1) / rvm->cols;
 	} else {
 		// Original disassembly view
 		int disasm_w = (rvm->w * 70) / 100;
@@ -452,7 +485,15 @@ static void draw_level2_disassembly(RVMatrix *rvm) {
 		}
 
 		snprintf(title, sizeof(title), "Disassembly at 0x%" PFMT64x, rvm->selected_addr);
-		r_cons_canvas_write_at(can, title, disasm_x + 2, disasm_y + 1);
+		// Crop the title to fit within the disassembly box boundaries
+		int max_title_width = disasm_w - 4; // Leave space for borders
+		char *cropped_title = r_str_ansi_crop(title, 0, 0, max_title_width, -1);
+		if (cropped_title) {
+			r_cons_canvas_write_at(can, cropped_title, disasm_x + 2, disasm_y + 1);
+			free(cropped_title);
+		} else {
+			r_cons_canvas_write_at(can, title, disasm_x + 2, disasm_y + 1);
+		}
 
 		// Get disassembly content
 		RCore *core = rvm->core;
@@ -470,7 +511,15 @@ static void draw_level2_disassembly(RVMatrix *rvm) {
 					next_line++;
 				}
 				if (strlen(line) > 0) {
-					r_cons_canvas_write_at(can, line, disasm_x + 2, line_y++);
+					// Crop the line to fit within the disassembly box boundaries
+					int max_line_width = disasm_w - 4; // Leave space for borders
+					char *cropped_line = r_str_ansi_crop(line, 0, 0, max_line_width, -1);
+					if (cropped_line) {
+						r_cons_canvas_write_at(can, cropped_line, disasm_x + 2, line_y++);
+						free(cropped_line);
+					} else {
+						r_cons_canvas_write_at(can, line, disasm_x + 2, line_y++);
+					}
 				}
 				line = next_line;
 			}
@@ -495,10 +544,13 @@ static void vmatrix_refresh(RVMatrix *rvm) {
 
 	// Ensure scroll position is within valid bounds
 	clamp_scroll_position(rvm);
-	RConsCanvas *can = r_cons_canvas_new(cons, w, h - 1, 0);
+	RConsCanvas *can = r_cons_canvas_new(cons, w, h - 1, -2);
 	if (!can) {
 		return; // Canvas creation failed, skip refresh
 	}
+	r_cons_canvas_fill(can, 0, 0, w, h - 1, ' ');
+	can->linemode = r_config_get_i(rvm->core->config, "graph.linemode");
+	can->color = r_config_get_i(rvm->core->config, "scr.color");
 	rvm->can = can;
 
 	switch (rvm->level) {
@@ -513,7 +565,7 @@ static void vmatrix_refresh(RVMatrix *rvm) {
 		break;
 	}
 
-	if (rvm->level == 0 || rvm->level == 1) {
+	if (rvm->level == 0 || rvm->level == 1 || (rvm->level == 2 && strcmp(level0_categories[rvm->selected], "flagspaces") == 0)) {
 		draw_scrollbar(rvm);
 	}
 
@@ -551,6 +603,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 		.selected = 0,
 		.selected_item = 0,
 		.selected_addr = core->addr,
+		.original_addr = core->addr,
 		.selected_flagspace = NULL,
 		.scroll_y_level = { 0, 0, 0 },
 	};
@@ -729,6 +782,18 @@ R_API void r_core_visual_matrix(RCore *core) {
 							}
 							count++;
 						}
+					} else if (strcmp(cat, "sections") == 0) {
+						RBinSection *section;
+						RListIter *iter;
+						const RList *sections = r_bin_get_sections(rvm.core->bin);
+						int count = 0;
+						r_list_foreach (sections, iter, section) {
+							if (count == rvm.selected_item) {
+								rvm.selected_addr = section->vaddr;
+								break;
+							}
+							count++;
+						}
 					}
 					// For imports, keep current address
 				}
@@ -806,6 +871,18 @@ R_API void r_core_visual_matrix(RCore *core) {
 							}
 							count++;
 						}
+					} else if (strcmp(cat, "sections") == 0) {
+						RBinSection *section;
+						RListIter *iter;
+						const RList *sections = r_bin_get_sections(rvm.core->bin);
+						int count = 0;
+						r_list_foreach (sections, iter, section) {
+							if (count == rvm.selected_item) {
+								rvm.selected_addr = section->vaddr;
+								break;
+							}
+							count++;
+						}
 					}
 					// For imports, keep current address
 				}
@@ -835,6 +912,9 @@ R_API void r_core_visual_matrix(RCore *core) {
 				} else if (strcmp(cat, "imports") == 0) {
 					const RList *imports = r_bin_get_imports(rvm.core->bin);
 					max_items = r_list_length(imports);
+				} else if (strcmp(cat, "sections") == 0) {
+					const RList *sections = r_bin_get_sections(rvm.core->bin);
+					max_items = r_list_length(sections);
 				} else if (strcmp(cat, "comments") == 0) {
 					RIntervalTreeIter it;
 					RAnalMetaItem *item;
@@ -884,6 +964,9 @@ R_API void r_core_visual_matrix(RCore *core) {
 					} else if (strcmp(cat, "imports") == 0) {
 						const RList *imports = r_bin_get_imports(rvm.core->bin);
 						max_items = r_list_length(imports);
+					} else if (strcmp(cat, "sections") == 0) {
+						const RList *sections = r_bin_get_sections(rvm.core->bin);
+						max_items = r_list_length(sections);
 					} else if (strcmp(cat, "comments") == 0) {
 						RIntervalTreeIter it;
 						RAnalMetaItem *item;
@@ -916,6 +999,9 @@ R_API void r_core_visual_matrix(RCore *core) {
 				leave = true;
 			}
 			break;
+		case '/':
+			r_core_cmd0(core, "?i highlight;e scr.highlight=`yp`");
+			break;
 		case '?':
 			// Show help
 			r_cons_clear00(core->cons);
@@ -943,6 +1029,8 @@ R_API void r_core_visual_matrix(RCore *core) {
 			r_cons_printf(core->cons, "Special Commands:\n");
 			r_cons_printf(core->cons, "  :         - Run r2 command\n");
 			r_cons_printf(core->cons, "  !         - Open panels mode\n");
+			r_cons_printf(core->cons, "  /         - Set highlight from clipboard\n");
+			r_cons_printf(core->cons, "  .         - Go back to original address (level 2)\n");
 			r_cons_printf(core->cons, "  _         - Filter (reserved for future use)\n");
 			r_cons_printf(core->cons, "  ?         - Show this help\n\n");
 			r_cons_printf(core->cons, "Navigation Levels:\n");
@@ -962,7 +1050,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 				int x, y;
 				if (r_cons_get_click(core->cons, &x, &y)) {
 					// Check if click is on title bar (first line)
-					if (y == 0) {
+					if (y == 0 || y == 1) {
 						// Go up one level
 						if (rvm.level > 0) {
 							switch_level(&rvm, rvm.level - 1);
@@ -1072,6 +1160,18 @@ R_API void r_core_visual_matrix(RCore *core) {
 											}
 											count++;
 										}
+									} else if (strcmp(cat, "sections") == 0) {
+										RBinSection *section;
+										RListIter *iter;
+										const RList *sections = r_bin_get_sections(rvm.core->bin);
+										int count = 0;
+										r_list_foreach (sections, iter, section) {
+											if (count == rvm.selected_item) {
+												rvm.selected_addr = section->vaddr;
+												break;
+											}
+											count++;
+										}
 									} else if (strcmp(cat, "comments") == 0) {
 										RIntervalTreeIter it;
 										RAnalMetaItem *item;
@@ -1092,6 +1192,30 @@ R_API void r_core_visual_matrix(RCore *core) {
 								} else {
 									// Different item clicked, just select it
 									rvm.selected_item = clicked_item;
+								}
+							}
+						} else if (rvm.level == 2 && strcmp(level0_categories[rvm.selected], "flagspaces") == 0) {
+							// Level 2 flagspaces: select flag and go to disassembly
+							int clicked_item = clicked_row * rvm.cols + clicked_col;
+							if (clicked_item >= 0 && clicked_item < rvm.rows) {
+								// Find the flag at this position
+								RList *all_flags = r_flag_all_list(rvm.core->flags, true);
+								if (all_flags) {
+									RListIter *iter;
+									RFlagItem *flag;
+									int count = 0;
+									r_list_foreach (all_flags, iter, flag) {
+										if (flag->space && strcmp(flag->space->name, rvm.selected_flagspace) == 0) {
+											if (count == clicked_item) {
+												rvm.selected_addr = flag->addr;
+												free(rvm.selected_flagspace);
+												rvm.selected_flagspace = NULL;
+												break;
+											}
+											count++;
+										}
+									}
+									r_list_free(all_flags);
 								}
 							}
 						}
