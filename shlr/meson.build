@@ -97,7 +97,7 @@ qnx_files = [
   'qnx/src/utils.c',
 ]
 
-qnx_inc = [platform_inc, include_directories('qnx/include')]
+qnx_inc = [platform_inc, libsdb_includes, include_directories('qnx/include')]
 
 libr2qnx = static_library('r2qnx', qnx_files,
   dependencies: [r_socket_dep],
