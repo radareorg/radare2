@@ -1902,6 +1902,36 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 			ret = r_list_first (list);
 		}
 	}
+	
+	// If no function was found and nopskip is enabled, search in a small range
+	// around the address to account for functions that may have been adjusted
+	// due to nop instruction skipping
+	if (!ret && anal->opt.nopskip) {
+		const ut64 search_range = 16; // reasonable range for nop instructions
+		for (ut64 search_addr = addr; search_addr < addr + search_range; search_addr++) {
+			RList *search_list = r_anal_get_functions_in (anal, search_addr);
+			if (search_list && !r_list_empty (search_list)) {
+				if (type == R_ANAL_FCN_TYPE_ROOT) {
+					RAnalFunction *fcn;
+					RListIter *iter;
+					r_list_foreach (search_list, iter, fcn) {
+						if (fcn->addr == search_addr) {
+							ret = fcn;
+							break;
+						}
+					}
+				} else {
+					ret = r_list_first (search_list);
+				}
+				r_list_free (search_list);
+				if (ret) {
+					break;
+				}
+			}
+			r_list_free (search_list);
+		}
+	}
+	
 	r_list_free (list);
 	return ret;
 }

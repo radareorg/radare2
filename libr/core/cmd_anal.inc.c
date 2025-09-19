@@ -4818,6 +4818,31 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 	// r_core_anal_undefine (core, core->addr);
 	r_core_anal_fcn (core, addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
+	
+	// If nopskip is enabled and no function was found at the exact address,
+	// search for a function that might have been created at a nearby address
+	// due to nop instruction skipping
+	if (!fcn && core->anal->opt.nopskip) {
+		// Search for a function in a small range around the original address
+		// to account for nop-skip adjustments
+		const ut64 search_range = 16; // reasonable range for nop instructions
+		for (ut64 search_addr = addr; search_addr < addr + search_range; search_addr++) {
+			fcn = r_anal_get_fcn_in (core->anal, search_addr, 0);
+			if (fcn) {
+				// If function was found at a different address due to nop-skip,
+				// create a flag at the original symbol address to maintain the link
+				if (search_addr != addr) {
+					r_flag_space_push (core->flags, R_FLAGS_FS_SYMBOLS);
+					char *flag_name = r_str_newf ("sym.nopskip.0x%"PFMT64x, addr);
+					r_flag_set (core->flags, flag_name, fcn->addr, 1);
+					free (flag_name);
+					r_flag_space_pop (core->flags);
+				}
+				break;
+			}
+		}
+	}
+	
 	if (fcn) {
 		/* ensure we use a proper name */
 		__setFunctionName (core, addr, fcn->name, false);
@@ -4832,7 +4857,18 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 	}
 	if (anal_calls) {
 		SetU *visited = set_u_new ();
-		fcn = r_anal_get_fcn_in (core->anal, addr, 0); /// XXX wrong in case of nopskip
+		
+		// Use the same improved logic here to find the function for call analysis
+		fcn = r_anal_get_fcn_in (core->anal, addr, 0);
+		if (!fcn && core->anal->opt.nopskip) {
+			const ut64 search_range = 16;
+			for (ut64 search_addr = addr; search_addr < addr + search_range; search_addr++) {
+				fcn = r_anal_get_fcn_in (core->anal, search_addr, 0);
+				if (fcn) {
+					break;
+				}
+			}
+		}
 		if (fcn) {
 			RVecAnalRef *refs = r_anal_function_get_refs (fcn);
 			RAnalRef *ref;

@@ -7511,6 +7511,19 @@ static int cmd_print(void *data, const char *input) {
 				if (!f) {
 					f = r_anal_get_fcn_in (core->anal, core->addr, 0);
 				}
+				
+				// If nopskip is enabled and no function was found at the exact address,
+				// search for a function that might have been created at a nearby address
+				if (!f && core->anal->opt.nopskip) {
+					const ut64 search_range = 16; // reasonable range for nop instructions
+					for (ut64 search_addr = core->addr; search_addr < core->addr + search_range; search_addr++) {
+						f = r_anal_get_fcn_in (core->anal, search_addr, 0);
+						if (f) {
+							break;
+						}
+					}
+				}
+				
 				RListIter *locs_it = NULL;
 				if (f) {
 					if (input[2] == 'r') { // "pdfr"
