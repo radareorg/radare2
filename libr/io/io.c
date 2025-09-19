@@ -552,6 +552,22 @@ R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
 	case R_IO_SEEK_CUR:
 		io->off += offset;
 		break;
+
+	case R_IO_SEEK_HOLE: {
+		/* Find the start of the next hole >= offset. We use r_io_map_locate
+		 * with a size of 1 to query the first available unmapped byte at or
+		 * after the supplied offset. If r_io_map_locate fails, fall back to
+		 * returning the descriptor size (EOF) if available, else UT64_MAX. */
+		ut64 candidate = offset;
+		if (r_io_map_locate (io, &candidate, 1ULL, 1ULL)) {
+			io->off = candidate;
+		} else if (io->desc) {
+			io->off = r_io_desc_size (io->desc);
+		} else {
+			io->off = UT64_MAX;
+		}
+		break;
+	}
 	case R_IO_SEEK_END:
 	default:
 		if (io->desc) {
