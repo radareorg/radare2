@@ -524,7 +524,7 @@ static void _overlay_chunk_free(void *data) {
 	free (chunk);
 }
 
-static int _overlay_chunk_insert (void *incoming, void *in, void *user) {
+static int _overlay_chunk_insert(void *incoming, void *in, void *user) {
 	MapOverlayChunk *incoming_chunk = (MapOverlayChunk *)incoming;
 	MapOverlayChunk *in_chunk = (MapOverlayChunk *)in;
 	if (r_itv_begin (incoming_chunk->itv) < r_itv_begin (in_chunk->itv)) {
