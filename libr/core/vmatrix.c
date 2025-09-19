@@ -331,6 +331,34 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 			}
 			item_count++;
 		}
+	} else if (strcmp(cat, "comments") == 0) {
+		RIntervalTreeIter it;
+		RAnalMetaItem *item;
+		r_interval_tree_foreach(&rvm->core->anal->meta, it, item) {
+			if (item_count >= max_items) {
+				break;
+			}
+			if (item->type != R_META_TYPE_COMMENT) {
+				continue;
+			}
+			bool is_selected = (item_count == rvm->selected_item);
+			draw_highlighted_box(can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
+			char addr_str[256];
+			snprintf(addr_str, sizeof(addr_str), "0x%" PFMT64x, r_interval_tree_iter_get(&it)->start);
+			char *comment = r_str_ndup(item->str, boxwidth - 4 - strlen(addr_str));
+			r_cons_canvas_write_at(can, addr_str, xpos + 2, ypos + 1);
+			r_cons_canvas_write_at(can, comment, xpos + 2, ypos + 2);
+			free(comment);
+
+			xpos += boxwidth + 1;
+			col++;
+			if (col >= rvm->cols) {
+				ypos += rvm->box_h;
+				xpos = 0;
+				col = 0;
+			}
+			item_count++;
+		}
 	} else {
 		r_cons_canvas_write_at(can, "Category not implemented yet", 2, ypos);
 	}
@@ -807,6 +835,14 @@ R_API void r_core_visual_matrix(RCore *core) {
 				} else if (strcmp(cat, "imports") == 0) {
 					const RList *imports = r_bin_get_imports(rvm.core->bin);
 					max_items = r_list_length(imports);
+				} else if (strcmp(cat, "comments") == 0) {
+					RIntervalTreeIter it;
+					RAnalMetaItem *item;
+					r_interval_tree_foreach(&rvm.core->anal->meta, it, item) {
+						if (item->type == R_META_TYPE_COMMENT) {
+							max_items++;
+						}
+					}
 				}
 				if (rvm.selected_item >= max_items) {
 					rvm.selected_item = 0; // Wrap around to first item
@@ -848,6 +884,14 @@ R_API void r_core_visual_matrix(RCore *core) {
 					} else if (strcmp(cat, "imports") == 0) {
 						const RList *imports = r_bin_get_imports(rvm.core->bin);
 						max_items = r_list_length(imports);
+					} else if (strcmp(cat, "comments") == 0) {
+						RIntervalTreeIter it;
+						RAnalMetaItem *item;
+						r_interval_tree_foreach(&rvm.core->anal->meta, it, item) {
+							if (item->type == R_META_TYPE_COMMENT) {
+								max_items++;
+							}
+						}
 					}
 					if (max_items > 0) {
 						rvm.selected_item = max_items - 1;
@@ -1024,6 +1068,20 @@ R_API void r_core_visual_matrix(RCore *core) {
 										r_list_foreach (symbols, iter, sym) {
 											if (count == rvm.selected_item) {
 												rvm.selected_addr = sym->vaddr;
+												break;
+											}
+											count++;
+										}
+									} else if (strcmp(cat, "comments") == 0) {
+										RIntervalTreeIter it;
+										RAnalMetaItem *item;
+										int count = 0;
+										r_interval_tree_foreach(&rvm.core->anal->meta, it, item) {
+											if (item->type != R_META_TYPE_COMMENT) {
+												continue;
+											}
+											if (count == rvm.selected_item) {
+												rvm.selected_addr = r_interval_tree_iter_get(&it)->start;
 												break;
 											}
 											count++;
