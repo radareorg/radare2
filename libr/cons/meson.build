@@ -21,11 +21,12 @@ r_cons_sources = [
   'winutils.c'
 ]
 
+r_cons_deps = [r_util_dep]
+
 r_cons = library('r_cons', r_cons_sources,
   include_directories: [platform_inc],
   c_args: library_cflags,
-  dependencies: [r_util_dep],
-  link_with: [r_util],
+  dependencies: r_cons_deps,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
@@ -33,6 +34,7 @@ r_cons = library('r_cons', r_cons_sources,
 )
 
 r_cons_dep = declare_dependency(link_with: r_cons,
+                                dependencies: r_cons_deps,
                                 include_directories: [platform_inc])
 
 if get_option('blob')
@@ -40,7 +42,6 @@ r_cons_static = static_library('r_cons_static', r_cons_sources,
   include_directories: [platform_inc],
   c_args: library_cflags,
   dependencies: [r_util_static_dep],
-  link_with: [r_util_static],
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,

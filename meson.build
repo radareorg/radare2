@@ -134,7 +134,6 @@ message('r2 lib version: ' + r2_libversion)
 # required for linux
 ldl = cc.find_library('dl', required: false)
 pth = dependency('threads', required: false)
-utl = cc.find_library('util', required: false)
 if host_machine.system() == 'sunos'
   # workaround for Solaris until https://github.com/mesonbuild/meson/issues/4328 is fixed
   mth = declare_dependency(link_args: '-lm')
