@@ -61,9 +61,9 @@ static char *get_selected_box_title(RVMatrix *rvm) {
 		break;
 	case 1:
 		if (cat) {
-			snprintf(title, sizeof(title), "%s [%d]", cat, rvm->selected_item);
+			snprintf(title, sizeof(title), "%s item:%d", cat, rvm->selected_item);
 		} else {
-			snprintf(title, sizeof(title), "unknown [%d]", rvm->selected_item);
+			snprintf(title, sizeof(title), "unknown item:%d", rvm->selected_item);
 		}
 		break;
 	case 2:
@@ -109,7 +109,7 @@ static void draw_level0_boxes(RVMatrix *rvm) {
 
 	while (level0_categories[i]) {
 		const char *cat = level0_categories[i];
-		const char *color = (i == rvm->selected) ? Color_RED : "";
+		const char *color = (i == rvm->selected) ? Color_INVERT : "";
 		r_cons_canvas_box(can, xpos, ypos, boxwidth, rvm->box_h, color);
 		char *title = r_str_ndup(cat, boxwidth - 4);
 		r_cons_canvas_write_at(can, title, xpos + 2, ypos + 1);
@@ -126,16 +126,22 @@ static void draw_level0_boxes(RVMatrix *rvm) {
 	rvm->rows = (i + rvm->cols - 1) / rvm->cols;
 }
 
-static void draw_level1_list(RVMatrix *rvm) {
+static void draw_level1_boxes(RVMatrix *rvm) {
 	RConsCanvas *can = rvm->can;
 	const char *cat = level0_categories[rvm->selected];
+	int w = rvm->w - 6;
+	int boxwidth = w / rvm->cols;
+	int xpos = 0;
+	int col = 0;
+	int item_count = 0;
+	int max_items = 100; // Allow more items since we're using boxes
+
+	// Display category title
 	char title[256];
-	snprintf(title, sizeof(title), "%s - %s", cat, "list");
+	snprintf(title, sizeof(title), "%s", cat);
 	r_cons_canvas_write_at(can, title, 0, 0);
 
-	int ypos = 2;
-	int max_items = 20; // Limit for display
-	int item_count = 0;
+	int ypos = 2 - rvm->scroll_y; // Start below title with scroll offset
 
 	if (strcmp(cat, "functions") == 0) {
 		RListIter *iter;
@@ -145,9 +151,48 @@ static void draw_level1_list(RVMatrix *rvm) {
 			if (item_count >= max_items) {
 				break;
 			}
+			const char *color = (item_count == rvm->selected_item) ? Color_INVERT : "";
+			r_cons_canvas_box(can, xpos, ypos, boxwidth, rvm->box_h, color);
 			char item[256];
-			snprintf(item, sizeof(item), "0x%" PFMT64x " %s", f->addr, f->name);
-			r_cons_canvas_write_at(can, item, 2, ypos++);
+			snprintf(item, sizeof(item), "0x%" PFMT64x, f->addr);
+			char *name = r_str_ndup(f->name, boxwidth - 4 - strlen(item));
+			r_cons_canvas_write_at(can, item, xpos + 2, ypos + 1);
+			r_cons_canvas_write_at(can, name, xpos + 2, ypos + 2);
+			free(name);
+
+			xpos += boxwidth + 1;
+			col++;
+			if (col >= rvm->cols) {
+				ypos += rvm->box_h;
+				xpos = 0;
+				col = 0;
+			}
+			item_count++;
+		}
+	} else if (strcmp(cat, "flagspaces") == 0) {
+		RSpace *space;
+		RSpaceIter *it;
+		r_flag_space_foreach(rvm->core->flags, it, space) {
+			if (item_count >= max_items) {
+				break;
+			}
+			const char *color = (item_count == rvm->selected_item) ? Color_INVERT : "";
+			r_cons_canvas_box(can, xpos, ypos, boxwidth, rvm->box_h, color);
+			char item[256];
+			int count = r_flag_space_count(rvm->core->flags, space->name);
+			snprintf(item, sizeof(item), "%d flags", count);
+			char *name = r_str_ndup(space->name, boxwidth - 4 - strlen(item));
+			r_cons_canvas_write_at(can, item, xpos + 2, ypos + 1);
+			r_cons_canvas_write_at(can, name, xpos + 2, ypos + 2);
+			free(name);
+
+			xpos += boxwidth + 1;
+			col++;
+			if (col >= rvm->cols) {
+				ypos += rvm->box_h;
+				xpos = 0;
+				col = 0;
+			}
 			item_count++;
 		}
 	} else if (strcmp(cat, "flags") == 0) {
@@ -158,9 +203,22 @@ static void draw_level1_list(RVMatrix *rvm) {
 			if (item_count >= max_items) {
 				break;
 			}
+			const char *color = (item_count == rvm->selected_item) ? Color_INVERT : "";
+			r_cons_canvas_box(can, xpos, ypos, boxwidth, rvm->box_h, color);
 			char item[256];
-			snprintf(item, sizeof(item), "0x%" PFMT64x " %s", flag->addr, flag->name);
-			r_cons_canvas_write_at(can, item, 2, ypos++);
+			snprintf(item, sizeof(item), "0x%" PFMT64x, flag->addr);
+			char *name = r_str_ndup(flag->name, boxwidth - 4 - strlen(item));
+			r_cons_canvas_write_at(can, item, xpos + 2, ypos + 1);
+			r_cons_canvas_write_at(can, name, xpos + 2, ypos + 2);
+			free(name);
+
+			xpos += boxwidth + 1;
+			col++;
+			if (col >= rvm->cols) {
+				ypos += rvm->box_h;
+				xpos = 0;
+				col = 0;
+			}
 			item_count++;
 		}
 	} else if (strcmp(cat, "symbols") == 0) {
@@ -171,9 +229,23 @@ static void draw_level1_list(RVMatrix *rvm) {
 			if (item_count >= max_items) {
 				break;
 			}
+			const char *color = (item_count == rvm->selected_item) ? Color_INVERT : "";
+			r_cons_canvas_box(can, xpos, ypos, boxwidth, rvm->box_h, color);
 			char item[256];
-			snprintf(item, sizeof(item), "0x%" PFMT64x " %s", sym->vaddr, r_bin_name_tostring(sym->name));
-			r_cons_canvas_write_at(can, item, 2, ypos++);
+			snprintf(item, sizeof(item), "0x%" PFMT64x, sym->vaddr);
+			char *name_str = r_bin_name_tostring(sym->name);
+			char *name = r_str_ndup(name_str, boxwidth - 4 - strlen(item));
+			r_cons_canvas_write_at(can, item, xpos + 2, ypos + 1);
+			r_cons_canvas_write_at(can, name, xpos + 2, ypos + 2);
+			free(name);
+
+			xpos += boxwidth + 1;
+			col++;
+			if (col >= rvm->cols) {
+				ypos += rvm->box_h;
+				xpos = 0;
+				col = 0;
+			}
 			item_count++;
 		}
 	} else if (strcmp(cat, "imports") == 0) {
@@ -184,14 +256,30 @@ static void draw_level1_list(RVMatrix *rvm) {
 			if (item_count >= max_items) {
 				break;
 			}
+			const char *color = (item_count == rvm->selected_item) ? Color_INVERT : "";
+			r_cons_canvas_box(can, xpos, ypos, boxwidth, rvm->box_h, color);
 			char item[256];
-			snprintf(item, sizeof(item), "0x%08" PFMT64x " %s", (ut64)0, r_bin_name_tostring(imp->name));
-			r_cons_canvas_write_at(can, item, 2, ypos++);
+			snprintf(item, sizeof(item), "0x%08" PFMT64x, (ut64)0);
+			char *name_str = r_bin_name_tostring(imp->name);
+			char *name = r_str_ndup(name_str, boxwidth - 4 - strlen(item));
+			r_cons_canvas_write_at(can, item, xpos + 2, ypos + 1);
+			r_cons_canvas_write_at(can, name, xpos + 2, ypos + 2);
+			free(name);
+
+			xpos += boxwidth + 1;
+			col++;
+			if (col >= rvm->cols) {
+				ypos += rvm->box_h;
+				xpos = 0;
+				col = 0;
+			}
 			item_count++;
 		}
 	} else {
 		r_cons_canvas_write_at(can, "Category not implemented yet", 2, ypos);
 	}
+
+	rvm->rows = (item_count + rvm->cols - 1) / rvm->cols;
 }
 
 static void draw_level2_disassembly(RVMatrix *rvm) {
@@ -246,14 +334,14 @@ static void vmatrix_refresh(RVMatrix *rvm) {
 		draw_level0_boxes(rvm);
 		break;
 	case 1:
-		draw_level1_list(rvm);
+		draw_level1_boxes(rvm);
 		break;
 	case 2:
 		draw_level2_disassembly(rvm);
 		break;
 	}
 
-	if (rvm->level == 0) {
+	if (rvm->level == 0 || rvm->level == 1) {
 		draw_scrollbar(rvm);
 	}
 
@@ -381,6 +469,48 @@ R_API void r_core_visual_matrix(RCore *core) {
 			break;
 		case 'd':
 			if (rvm.level < 2) {
+				// Set selected_addr based on current selection before entering level 2
+				if (rvm.level == 1) {
+					const char *cat = level0_categories[rvm.selected];
+					if (strcmp(cat, "functions") == 0) {
+						RListIter *iter;
+						RAnalFunction *f;
+						RList *fcns = rvm.core->anal->fcns;
+						int count = 0;
+						r_list_foreach (fcns, iter, f) {
+							if (count == rvm.selected_item) {
+								rvm.selected_addr = f->addr;
+								break;
+							}
+							count++;
+						}
+					} else if (strcmp(cat, "flags") == 0) {
+						RListIter *iter;
+						RFlagItem *flag;
+						const RList *flags = r_flag_get_list(rvm.core->flags, 0);
+						int count = 0;
+						r_list_foreach (flags, iter, flag) {
+							if (count == rvm.selected_item) {
+								rvm.selected_addr = flag->addr;
+								break;
+							}
+							count++;
+						}
+					} else if (strcmp(cat, "symbols") == 0) {
+						RBinSymbol *sym;
+						RListIter *iter;
+						const RList *symbols = r_bin_get_symbols(rvm.core->bin);
+						int count = 0;
+						r_list_foreach (symbols, iter, sym) {
+							if (count == rvm.selected_item) {
+								rvm.selected_addr = sym->vaddr;
+								break;
+							}
+							count++;
+						}
+					}
+					// For flagspaces and imports, keep current address
+				}
 				rvm.level++;
 				clamp_scroll_position(&rvm);
 			}
@@ -394,14 +524,43 @@ R_API void r_core_visual_matrix(RCore *core) {
 		case ':':
 			r_core_visual_prompt_input(core);
 			break;
+		case '!':
+			r_core_panels_root(core, core->panels_root);
+			break;
 		case '\n': // Enter key - alias for 'd'
 			if (rvm.level < 2) {
 				rvm.level++;
 				clamp_scroll_position(&rvm);
 			}
 			break;
-		case '\t': // Tab key - alias for 'l'
-			if (rvm.level == 0) {
+		case '\t': // Tab key - navigate to next item in level 1
+			if (rvm.level == 1) {
+				rvm.selected_item++;
+				// Add bounds checking for selected_item
+				int max_items = 0;
+				const char *cat = level0_categories[rvm.selected];
+				if (strcmp(cat, "functions") == 0) {
+					max_items = r_list_length(rvm.core->anal->fcns);
+				} else if (strcmp(cat, "flagspaces") == 0) {
+					RSpace *space;
+					RSpaceIter *it;
+					r_flag_space_foreach(rvm.core->flags, it, space) {
+						max_items++;
+					}
+				} else if (strcmp(cat, "flags") == 0) {
+					const RList *flags = r_flag_get_list(rvm.core->flags, 0);
+					max_items = r_list_length(flags);
+				} else if (strcmp(cat, "symbols") == 0) {
+					const RList *symbols = r_bin_get_symbols(rvm.core->bin);
+					max_items = r_list_length(symbols);
+				} else if (strcmp(cat, "imports") == 0) {
+					const RList *imports = r_bin_get_imports(rvm.core->bin);
+					max_items = r_list_length(imports);
+				}
+				if (rvm.selected_item >= max_items) {
+					rvm.selected_item = 0; // Wrap around to first item
+				}
+			} else if (rvm.level == 0) {
 				int max_selected = 0;
 				while (level0_categories[max_selected]) {
 					max_selected++;
@@ -410,6 +569,43 @@ R_API void r_core_visual_matrix(RCore *core) {
 				rvm.selected++;
 				if (rvm.selected > max_selected) {
 					rvm.selected = max_selected;
+				}
+			}
+			break;
+		case 'Z': // Shift-Tab alternative - navigate to previous item in level 1
+			if (rvm.level == 1) {
+				if (rvm.selected_item > 0) {
+					rvm.selected_item--;
+				} else {
+					// Wrap around to last item
+					int max_items = 0;
+					const char *cat = level0_categories[rvm.selected];
+					if (strcmp(cat, "functions") == 0) {
+						max_items = r_list_length(rvm.core->anal->fcns);
+					} else if (strcmp(cat, "flagspaces") == 0) {
+						RSpace *space;
+						RSpaceIter *it;
+						r_flag_space_foreach(rvm.core->flags, it, space) {
+							max_items++;
+						}
+					} else if (strcmp(cat, "flags") == 0) {
+						const RList *flags = r_flag_get_list(rvm.core->flags, 0);
+						max_items = r_list_length(flags);
+					} else if (strcmp(cat, "symbols") == 0) {
+						const RList *symbols = r_bin_get_symbols(rvm.core->bin);
+						max_items = r_list_length(symbols);
+					} else if (strcmp(cat, "imports") == 0) {
+						const RList *imports = r_bin_get_imports(rvm.core->bin);
+						max_items = r_list_length(imports);
+					}
+					if (max_items > 0) {
+						rvm.selected_item = max_items - 1;
+					}
+				}
+			} else if (rvm.level == 0) {
+				rvm.selected--;
+				if (rvm.selected < 0) {
+					rvm.selected = 0;
 				}
 			}
 			break;
