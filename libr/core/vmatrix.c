@@ -22,6 +22,7 @@ typedef struct {
 	ut64 selected_addr; // Selected address for disassembly
 	ut64 original_addr; // Original address when entering level 2
 	char *selected_flagspace; // Selected flagspace name for level 2 flagspace view
+	char *filter; // Filter string for boxes
 	int scroll_y_level[3]; // Separate scroll positions for each level
 } RVMatrix;
 
@@ -75,27 +76,55 @@ static char *get_selected_box_title(RVMatrix *rvm) {
 	switch (rvm->level) {
 	case 0:
 		if (cat) {
-			snprintf (title, sizeof (title), "%s", cat);
+			if (rvm->filter) {
+				snprintf (title, sizeof (title), "%s [filter: %s]", cat, rvm->filter);
+			} else {
+				snprintf (title, sizeof (title), "%s", cat);
+			}
 		} else {
-			snprintf (title, sizeof (title), "unknown");
+			if (rvm->filter) {
+				snprintf (title, sizeof (title), "unknown [filter: %s]", rvm->filter);
+			} else {
+				snprintf (title, sizeof (title), "unknown");
+			}
 		}
 		break;
 	case 1:
 		if (cat) {
-			snprintf (title, sizeof (title), "%s item:%d", cat, rvm->selected_item);
+			if (rvm->filter) {
+				snprintf (title, sizeof (title), "%s item:%d [filter: %s]", cat, rvm->selected_item, rvm->filter);
+			} else {
+				snprintf (title, sizeof (title), "%s item:%d", cat, rvm->selected_item);
+			}
 		} else {
-			snprintf (title, sizeof (title), "unknown item:%d", rvm->selected_item);
+			if (rvm->filter) {
+				snprintf (title, sizeof (title), "unknown item:%d [filter: %s]", rvm->selected_item, rvm->filter);
+			} else {
+				snprintf (title, sizeof (title), "unknown item:%d", rvm->selected_item);
+			}
 		}
 		break;
 	case 2:
 		if (strcmp (cat, "flagspaces") == 0 && rvm->selected_flagspace) {
-			snprintf (title, sizeof (title), "flagspace:%s", rvm->selected_flagspace);
+			if (rvm->filter) {
+				snprintf (title, sizeof (title), "flagspace:%s [filter: %s]", rvm->selected_flagspace, rvm->filter);
+			} else {
+				snprintf (title, sizeof (title), "flagspace:%s", rvm->selected_flagspace);
+			}
 		} else {
-			snprintf (title, sizeof (title), "0x%" PFMT64x, rvm->selected_addr);
+			if (rvm->filter) {
+				snprintf (title, sizeof (title), "0x%" PFMT64x " [filter: %s]", rvm->selected_addr, rvm->filter);
+			} else {
+				snprintf (title, sizeof (title), "0x%" PFMT64x, rvm->selected_addr);
+			}
 		}
 		break;
 	default:
-		snprintf (title, sizeof (title), "unknown");
+		if (rvm->filter) {
+			snprintf (title, sizeof (title), "unknown [filter: %s]", rvm->filter);
+		} else {
+			snprintf (title, sizeof (title), "unknown");
+		}
 		break;
 	}
 
@@ -165,6 +194,10 @@ static void draw_level0_boxes(RVMatrix *rvm) {
 
 	while (level0_categories[i]) {
 		const char *cat = level0_categories[i];
+		if (rvm->filter && !strstr (cat, rvm->filter)) {
+			i++;
+			continue;
+		}
 		bool is_selected = (i == rvm->selected);
 		draw_highlighted_box (can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
 
@@ -211,6 +244,9 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 			if (item_count >= max_items) {
 				break;
 			}
+			if (rvm->filter && !strstr (f->name, rvm->filter)) {
+				continue;
+			}
 			bool is_selected = (item_count == rvm->selected_item);
 			draw_highlighted_box (can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
 			char item[256];
@@ -235,6 +271,9 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 		r_flag_space_foreach (rvm->core->flags, it, space) {
 			if (item_count >= max_items) {
 				break;
+			}
+			if (rvm->filter && !strstr (space->name, rvm->filter)) {
+				continue;
 			}
 			bool is_selected = (item_count == rvm->selected_item);
 			draw_highlighted_box (can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
@@ -270,6 +309,9 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 			if (item_count >= max_items) {
 				break;
 			}
+			if (rvm->filter && !strstr (flag->name, rvm->filter)) {
+				continue;
+			}
 			bool is_selected = (item_count == rvm->selected_item);
 			draw_highlighted_box (can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
 			char item[256];
@@ -296,11 +338,14 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 			if (item_count >= max_items) {
 				break;
 			}
+			char *name_str = r_bin_name_tostring (sym->name);
+			if (rvm->filter && !strstr (name_str, rvm->filter)) {
+				continue;
+			}
 			bool is_selected = (item_count == rvm->selected_item);
 			draw_highlighted_box (can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
 			char item[256];
 			snprintf (item, sizeof (item), "0x%" PFMT64x, sym->vaddr);
-			char *name_str = r_bin_name_tostring (sym->name);
 			char *name = r_str_ndup (name_str, boxwidth - 4 - strlen (item));
 			r_cons_canvas_write_at (can, item, xpos + 2, ypos + 1);
 			r_cons_canvas_write_at (can, name, xpos + 2, ypos + 2);
@@ -323,11 +368,14 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 			if (item_count >= max_items) {
 				break;
 			}
+			char *name_str = r_bin_name_tostring (imp->name);
+			if (rvm->filter && !strstr (name_str, rvm->filter)) {
+				continue;
+			}
 			bool is_selected = (item_count == rvm->selected_item);
 			draw_highlighted_box (can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
 			char item[256];
 			snprintf (item, sizeof (item), "0x%08" PFMT64x, (ut64)0);
-			char *name_str = r_bin_name_tostring (imp->name);
 			char *name = r_str_ndup (name_str, boxwidth - 4 - strlen (item));
 			r_cons_canvas_write_at (can, item, xpos + 2, ypos + 1);
 			r_cons_canvas_write_at (can, name, xpos + 2, ypos + 2);
@@ -350,6 +398,9 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 				break;
 			}
 			if (item->type != R_META_TYPE_COMMENT) {
+				continue;
+			}
+			if (rvm->filter && !strstr (item->str, rvm->filter)) {
 				continue;
 			}
 			bool is_selected = (item_count == rvm->selected_item);
@@ -377,6 +428,9 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 		r_list_foreach (sections, iter, section) {
 			if (item_count >= max_items) {
 				break;
+			}
+			if (rvm->filter && !strstr (section->name, rvm->filter)) {
+				continue;
 			}
 			bool is_selected = (item_count == rvm->selected_item);
 			draw_highlighted_box (can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
@@ -613,6 +667,7 @@ static void vmatrix_show_help(RCore *core) {
 		"  :         - Run r2 command\n"
 		"  !         - Open panels mode\n"
 		"  /         - Set highlight from clipboard\n"
+		"  |         - Filter boxes by text\n"
 		"  .         - Go back to original address (level 2)\n"
 		"  _         - Filter (reserved for future use)\n"
 		"  ?         - Show this help\n\n"
@@ -646,6 +701,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 		.selected_addr = core->addr,
 		.original_addr = core->addr,
 		.selected_flagspace = NULL,
+		.filter = NULL,
 		.scroll_y_level = { 0, 0, 0 },
 	};
 
@@ -942,6 +998,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 					RSpace *space;
 					RSpaceIter *it;
 					r_flag_space_foreach (rvm.core->flags, it, space) {
+ (void)space;
 						max_items++;
 					}
 				} else if (strcmp (cat, "flags") == 0) {
@@ -1043,6 +1100,17 @@ R_API void r_core_visual_matrix(RCore *core) {
 		case '/':
 			r_core_cmd0 (core, "?i highlight;e scr.highlight=`yp`");
 			break;
+		case '|': {
+			char *input = r_cons_input (core->cons, "Filter: ");
+			if (input && *input) {
+				free (rvm.filter);
+				rvm.filter = strdup (input);
+			} else {
+				free (rvm.filter);
+				rvm.filter = NULL;
+			}
+			free (input);
+		} break;
 		case '?':
 			vmatrix_show_help (core);
 			break;
@@ -1138,6 +1206,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 											}
 											count++;
 										}
+ (void)space;
 									} else if (strcmp (cat, "flags") == 0) {
 										RListIter *iter;
 										RFlagItem *flag;
@@ -1240,4 +1309,5 @@ R_API void r_core_visual_matrix(RCore *core) {
 	r_cons_enable_mouse (core->cons, false);
 	r_cons_set_raw (core->cons, false);
 	free (rvm.selected_flagspace);
+	free (rvm.filter);
 }
