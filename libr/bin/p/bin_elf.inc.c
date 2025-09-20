@@ -251,7 +251,7 @@ static RList* entries(RBinFile *bf) {
 		ptr->hpaddr = 0x18;  // e_entry offset in ELF header
 		ptr->hvaddr = UT64_MAX; // 0x18 + baddr (bf);
 
-		if (ptr->vaddr != (ut64)eo->ehdr.e_entry && Elf_(is_executable) (eo) && !Elf_(is_sbpf_binary) (eo)) {
+		if (ptr->vaddr != (ut64)eo->ehdr.e_entry && Elf_(is_executable) (eo) && !eo->is_sbpf) {
 			R_LOG_ERROR ("Cannot determine entrypoint, using 0x%08" PFMT64x, ptr->vaddr);
 		}
 
@@ -776,7 +776,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 		ADD (32, 0);
 		break;
 	case EM_BPF:
-		if (!Elf_(is_sbpf_binary) (eo)) {
+		if (!eo->is_sbpf) {
 			R_LOG_DEBUG ("Unimplemented BPF reloc type %d", rel->type);
 			break;
 		}
@@ -1125,7 +1125,7 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 		break;
 	}
 	case EM_BPF: // CHECK: some older solana programs have set an ehdr.e_machine of EM_BPF
-		if (!Elf_(is_sbpf_binary) (bo)) {
+		if (!bo->is_sbpf) {
 			R_LOG_DEBUG ("Unhandled BPF relocation type %d", rel->type);
 			break;
 		}
