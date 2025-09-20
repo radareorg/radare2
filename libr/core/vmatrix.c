@@ -586,6 +586,47 @@ static void vmatrix_refresh(RVMatrix *rvm) {
 	rvm->can = NULL;
 }
 
+static void vmatrix_show_help(RCore *core) {
+	const char *help_text =
+		"Visual Matrix Mode Help\n"
+		"======================\n\n"
+		"Navigation:\n"
+		"  h/l       - Move left/right (level 0)\n"
+		"  j/k       - Move down/up (scrolling)\n"
+		"  J/K       - Page down/up\n"
+		"  g/G       - Go to top/bottom\n"
+		"  Tab/Z     - Next/previous item (level 1)\n\n"
+		"Level Navigation:\n"
+		"  d/Enter   - Go down one level (activate selected item)\n"
+		"  u         - Go up one level\n"
+		"  q         - Quit or go up one level\n\n"
+		"Layout Control:\n"
+		"  1-9       - Set number of columns (1-9)\n"
+		"  [/]       - Decrease/increase columns\n"
+		"  +/-       - Decrease/increase box height\n\n"
+		"Mouse Controls:\n"
+		"  Left click - Select item\n"
+		"  Double click - Activate selected item (go down)\n"
+		"  Title bar - Go up one level\n"
+		"  Scrollbar - Jump to position\n\n"
+		"Special Commands:\n"
+		"  :         - Run r2 command\n"
+		"  !         - Open panels mode\n"
+		"  /         - Set highlight from clipboard\n"
+		"  .         - Go back to original address (level 2)\n"
+		"  _         - Filter (reserved for future use)\n"
+		"  ?         - Show this help\n\n"
+		"Navigation Levels:\n"
+		"  Level 0 - Categories (flags, flagspaces, functions, etc.)\n"
+		"  Level 1 - Items within selected category\n"
+		"  Level 2 - Details (flagspace contents or disassembly)\n\n"
+		"Visual Feedback:\n"
+		"  Red borders + #### - Selected items\n"
+		"  Scroll positions saved per level\n"
+		"  Level 2: Cyan (flagspaces), Yellow (disassembly)\n\n";
+	r_cons_less (help_text);
+}
+
 static void vmatrix_refresh_oneshot(void *user) {
 	// Use the global pointer for safety
 	if (!g_rvm || !g_rvm->core || !g_rvm->core->cons) {
@@ -1003,46 +1044,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 			r_core_cmd0 (core, "?i highlight;e scr.highlight=`yp`");
 			break;
 		case '?':
-			// Show help
-			r_cons_clear00 (core->cons);
-			r_cons_printf (core->cons, "Visual Matrix Mode Help\n");
-			r_cons_printf (core->cons, "======================\n\n");
-			r_cons_printf (core->cons, "Navigation:\n");
-			r_cons_printf (core->cons, "  h/l       - Move left/right (level 0)\n");
-			r_cons_printf (core->cons, "  j/k       - Move down/up (scrolling)\n");
-			r_cons_printf (core->cons, "  J/K       - Page down/up\n");
-			r_cons_printf (core->cons, "  g/G       - Go to top/bottom\n");
-			r_cons_printf (core->cons, "  Tab/Z     - Next/previous item (level 1)\n\n");
-			r_cons_printf (core->cons, "Level Navigation:\n");
-			r_cons_printf (core->cons, "  d/Enter   - Go down one level (activate selected item)\n");
-			r_cons_printf (core->cons, "  u         - Go up one level\n");
-			r_cons_printf (core->cons, "  q         - Quit or go up one level\n\n");
-			r_cons_printf (core->cons, "Layout Control:\n");
-			r_cons_printf (core->cons, "  1-9       - Set number of columns (1-9)\n");
-			r_cons_printf (core->cons, "  [/]       - Decrease/increase columns\n");
-			r_cons_printf (core->cons, "  +/-       - Decrease/increase box height\n\n");
-			r_cons_printf (core->cons, "Mouse Controls:\n");
-			r_cons_printf (core->cons, "  Left click - Select item\n");
-			r_cons_printf (core->cons, "  Double click - Activate selected item (go down)\n");
-			r_cons_printf (core->cons, "  Title bar - Go up one level\n");
-			r_cons_printf (core->cons, "  Scrollbar - Jump to position\n\n");
-			r_cons_printf (core->cons, "Special Commands:\n");
-			r_cons_printf (core->cons, "  :         - Run r2 command\n");
-			r_cons_printf (core->cons, "  !         - Open panels mode\n");
-			r_cons_printf (core->cons, "  /         - Set highlight from clipboard\n");
-			r_cons_printf (core->cons, "  .         - Go back to original address (level 2)\n");
-			r_cons_printf (core->cons, "  _         - Filter (reserved for future use)\n");
-			r_cons_printf (core->cons, "  ?         - Show this help\n\n");
-			r_cons_printf (core->cons, "Navigation Levels:\n");
-			r_cons_printf (core->cons, "  Level 0 - Categories (flags, flagspaces, functions, etc.)\n");
-			r_cons_printf (core->cons, "  Level 1 - Items within selected category\n");
-			r_cons_printf (core->cons, "  Level 2 - Details (flagspace contents or disassembly)\n\n");
-			r_cons_printf (core->cons, "Visual Feedback:\n");
-			r_cons_printf (core->cons, "  Red borders + #### - Selected items\n");
-			r_cons_printf (core->cons, "  Scroll positions saved per level\n");
-			r_cons_printf (core->cons, "  Level 2: Cyan (flagspaces), Yellow (disassembly)\n\n");
-			r_cons_flush (core->cons);
-			r_cons_any_key (core->cons, "Press any key to continue...");
+			vmatrix_show_help (core);
 			break;
 		default:
 			// Handle mouse clicks
