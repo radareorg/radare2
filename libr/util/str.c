@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2024 - pancake */
+/* radare - LGPL - Copyright 2007-2025 - pancake */
 
 #include <r_bin.h>
 #include <r_userconf.h>
@@ -3371,6 +3371,7 @@ R_API int r_str_do_until_token(str_operation op, char *str, const char tok) {
 }
 
 R_API const char *r_str_pad(const char ch, int sz) {
+	// XXX globals are bad, this function must be replaced with r_str_pad2 which plays with local array or heap
 	static R_TH_LOCAL char pad[1024];
 	if (sz < 0) {
 		sz = 0;

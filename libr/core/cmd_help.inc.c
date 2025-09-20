@@ -1397,13 +1397,13 @@ static int cmd_help(void *data, const char *input) {
 				int len = strlen (text) + 2;
 				RStrBuf *b = r_strbuf_new ("");
 				r_strbuf_append (b, ".");
-				r_strbuf_append (b, r_str_pad('-', len));
+				r_strbuf_append (b, r_str_pad ('-', len));
 				r_strbuf_append (b, ".\n");
 				r_strbuf_append (b, "| ");
 				r_strbuf_append (b, text);
 				r_strbuf_append (b, " |\n");
 				r_strbuf_append (b, "'");
-				r_strbuf_append (b, r_str_pad('-', len));
+				r_strbuf_append (b, r_str_pad ('-', len));
 				r_strbuf_append (b, "'\n");
 				char * s = r_strbuf_drain (b);
 				r_cons_print (core->cons, s);
