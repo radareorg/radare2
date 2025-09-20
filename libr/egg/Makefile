@@ -14,7 +14,15 @@ OBJS+=emit_esil.o
 OBJS+=emit_trace.o
 OBJS+=egg_cfile.o
 
-all: $(LIBSO) $(LIBAR)
+myall:
+	$(MAKE) -C p/sc
+	$(MAKE) libs
+myclean:
+	$(MAKE) -C p/sc clean
+
+EXTRA_CLEAN+=myclean
+
+libs: $(LIBSO) $(LIBAR)
 
 P=p/
 include $(STATIC_EGG_PLUGINS)
