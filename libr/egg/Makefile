@@ -17,6 +17,10 @@ OBJS+=egg_cfile.o
 myall:
 	$(MAKE) -C p/sc
 	$(MAKE) libs
+myclean:
+	$(MAKE) -C p/sc clean
+
+EXTRA_CLEAN+=myclean
 
 libs: $(LIBSO) $(LIBAR)
 

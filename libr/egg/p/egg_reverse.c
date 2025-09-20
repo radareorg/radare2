@@ -2,11 +2,11 @@
 
 #include <r_egg.h>
 
-unsigned long armle_osx_reverse[] = {
+static const ut8 armle_osx_reverse[] =
 #include "sc/src/armle-osx-reverse.c"
 ;
 
-unsigned char x86_freebsd_reverse[] =
+static const ut8 x86_freebsd_reverse[] =
 #include "sc/src/x86-freebsd-reverse.c"
 ;
 

@@ -5,37 +5,37 @@
 #define SUPPORT_UDP 0
 
 static ut8 x86_osx_bind4444[] =
-#include "sc/x86-osx-bind4444.c"
+#include "sc/src/x86-osx-bind4444.c"
 ;
 
 static ut8 x86_solaris_bind4444[] =
-#include "sc/x86-solaris-bind4444.c"
+#include "sc/src/x86-solaris-bind4444.c"
 ;
 
 static ut8 x86_openbsd_bind6969[] =
-#include "sc/x86-openbsd-bind6969.c"
+#include "sc/src/x86-openbsd-bind6969.c"
 ;
 
 static ut8 x86_linux_bind4444[] =
-#include "sc/x86-linux-bind4444.c"
+#include "sc/src/x86-linux-bind4444.c"
 ;
 
 #if SUPPORT_UDP
 static ut8 x86_linux_udp4444[] =
-#include "sc/x86-linux-udp4444.c"
+#include "sc/src/x86-linux-udp4444.c"
 #endif
 
 
 static ut8 arm_linux_bind[] =
-#include "sc/arm-linux-bind.c"
+#include "sc/src/arm-linux-bind.c"
 ;
 
 static ut8 sparc_linux_bind4444[] =
-#include "sc/sparc-linux-bind4444.c"
+#include "sc/src/sparc-linux-bind4444.c"
 ;
 
 static ut8 x86_w32_tcp4444[] =
-#include "sc/x86-w32-tcp4444.c"
+#include "sc/src/x86-w32-tcp4444.c"
 ;
 
 
