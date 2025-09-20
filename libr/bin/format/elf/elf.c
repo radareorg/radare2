@@ -62,6 +62,62 @@ static inline bool is_elfclass64(Elf_(Ehdr) *h) {
 	return h->e_ident[EI_CLASS] == ELFCLASS64;
 }
 
+static bool elf_is_sbpf_by_hdr(const ELFOBJ *eo) {
+	if (!eo) {
+		return false;
+	}
+	const Elf_(Ehdr) *eh = &eo->ehdr;
+	if (!eh) {
+		return false;
+	}
+	/* Treat explicit EM_SBPF as sBPF. */
+	if (eh->e_machine == EM_SBPF) {
+		return true;
+	}
+	/* sBPF-like binaries are 64-bit and use EM_BPF. */
+	if (eh->e_machine != EM_BPF) {
+		return false;
+	}
+	if (eh->e_ident[EI_CLASS] != ELFCLASS64) {
+		return false;
+	}
+	/* Common in practice: ET_DYN or ET_REL (be liberal and allow ET_EXEC). */
+	switch (eh->e_type) {
+	case ET_DYN:
+	case ET_REL:
+	case ET_EXEC:
+		break;
+	default:
+		return false;
+	}
+	/* If program headers are available, prefer having an executable LOAD. */
+	if (eo->phdr && eh->e_phnum > 0) {
+		size_t i;
+		for (i = 0; i < eh->e_phnum; i++) {
+			const Elf_(Phdr) *ph = &eo->phdr[i];
+			if (ph->p_type == PT_LOAD && (ph->p_flags & PF_X)) {
+				return true;
+			}
+		}
+		/* No exec LOAD seen; still consider BPF based on header alone. */
+	}
+	return true;
+}
+
+static ut64 elf_first_exec_load_vaddr(const ELFOBJ *eo) {
+	if (!eo || !eo->phdr) {
+		return 0;
+	}
+	size_t i;
+	for (i = 0; i < eo->ehdr.e_phnum; i++) {
+		const Elf_(Phdr) *ph = &eo->phdr[i];
+		if (ph->p_type == PT_LOAD && (ph->p_flags & PF_X)) {
+			return (ut64)ph->p_vaddr;
+		}
+	}
+	return 0;
+}
+
 static bool is_intel(const ELFOBJ *eo) {
 	switch (eo->ehdr.e_machine) {
 	case EM_386:
@@ -703,7 +759,7 @@ static int init_dynamic_section(ELFOBJ *eo) {
 
 	// For sBPF, PT_DYNAMIC p_vaddr might not be mappable after rebasing, use p_offset directly
 	ut64 loaded_offset;
-	if (Elf_(is_sbpf_binary) (eo)) {
+	if (eo->is_sbpf) {
 		loaded_offset = dyn_phdr->p_offset;
 	} else {
 		loaded_offset = Elf_(v2p_new) (eo, dyn_phdr->p_vaddr);
@@ -1621,6 +1677,9 @@ static bool elf_init(ELFOBJ *eo) {
 		R_LOG_DEBUG ("Cannot initialize program headers");
 	}
 
+	/* Compute cached, header-only flavor flags after headers are parsed. */
+	eo->is_sbpf = elf_is_sbpf_by_hdr (eo);
+
 	if (eo->ehdr.e_type != ET_CORE) {
 		if (!init_shdr (eo)) {
 			R_LOG_DEBUG ("Cannot initialize section headers");
@@ -2014,7 +2073,7 @@ static ut64 get_import_addr(ELFOBJ *eo, int sym) {
 		// sBPF relocations are handled in patch_reloc, return the offset for imports
 		return rel->offset;
 	case EM_BPF:
-		if (Elf_(is_sbpf_binary) (eo)) {
+		if (eo->is_sbpf) {
 			return rel->offset;
 		}
 	default:
@@ -2073,7 +2132,7 @@ of the maximum page size
 ut64 Elf_(get_baddr)(ELFOBJ *eo) {
 	R_RETURN_VAL_IF_FAIL (eo, 0);
 	// Special handling for sBPF: use sBPF program base address
-	if (Elf_(is_sbpf_binary) (eo)) {
+	if (eo->is_sbpf) {
 		return SBPF_PROGRAM_ADDR;
 	}
 
@@ -2182,6 +2241,18 @@ ut64 Elf_(get_entry_offset)(ELFOBJ *eo) {
 
 	if (!Elf_(is_executable) (eo)) {
 		return UT64_MAX;
+	}
+
+	/* For sBPF, prefer first executable PT_LOAD p_vaddr when e_entry is 0. */
+	if (eo->is_sbpf || eo->ehdr.e_machine == EM_SBPF) {
+		ut64 ep_v = eo->ehdr.e_entry;
+		if (!ep_v) {
+			ep_v = elf_first_exec_load_vaddr (eo);
+		}
+		if (ep_v) {
+			return Elf_(v2p) (eo, ep_v);
+		}
+		/* Fallback to generic below if still unknown. */
 	}
 
 	ut64 entry = eo->ehdr.e_entry;
@@ -3165,8 +3236,9 @@ static void fix_rva_and_offset_relocable_file(ELFOBJ *eo, RBinElfReloc *r, size_
 	}
 }
 
+
 static void fix_rva_and_offset_exec_file(ELFOBJ *eo, RBinElfReloc *r) {
-	if (Elf_(is_sbpf_binary) (eo)) {
+	if (eo->is_sbpf) {
 		ut64 orig_offset = r->offset;
 		// Set rva to rebased sBPF virtual address
 		r->rva = eo->baddr + r->offset;
@@ -4311,7 +4383,7 @@ static bool _add_sections_from_phdr(RBinFile *bf, ELFOBJ *eo, bool *found_load) 
 		ptr->size = phdr[i].p_filesz;
 		ptr->vsize = phdr[i].p_memsz;
 		ptr->paddr = phdr[i].p_offset;
-		if (Elf_(is_sbpf_binary) (eo)) {
+		if (eo->is_sbpf) {
 			// For sBPF, use base address + segment address
 			ptr->vaddr = eo->baddr + phdr[i].p_vaddr;
 		} else {
@@ -5545,7 +5617,7 @@ ut64 Elf_(p2v) (ELFOBJ *eo, ut64 paddr) {
 	R_RETURN_VAL_IF_FAIL (eo, 0);
 
 	// Special handling for sBPF: always use baddr regardless of file type
-	if (Elf_(is_sbpf_binary) (eo)) {
+	if (eo->is_sbpf) {
 		return eo->baddr + paddr;
 	}
 
@@ -5599,7 +5671,7 @@ ut64 Elf_(p2v_new) (ELFOBJ *eo, ut64 paddr) {
 	R_RETURN_VAL_IF_FAIL (eo, UT64_MAX);
 
 	// Special handling for sBPF: always use baddr regardless of file type
-	if (Elf_(is_sbpf_binary) (eo)) {
+	if (eo->is_sbpf) {
 		return eo->baddr + paddr;
 	}
 
