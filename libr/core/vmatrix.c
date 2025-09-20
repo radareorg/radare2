@@ -60,74 +60,30 @@ static void switch_level(RVMatrix *rvm, int new_level) {
 static char *get_selected_box_title(RVMatrix *rvm) {
 	static char title[256];
 	const char *cat = level0_categories[rvm->selected];
-
-	// Ensure selected index is within bounds
-	int max_categories = 0;
-	while (level0_categories[max_categories]) {
-		max_categories++;
-	}
-	if (rvm->selected >= max_categories) {
-		rvm->selected = max_categories - 1;
-	}
-	if (rvm->selected < 0) {
-		rvm->selected = 0;
-	}
+	size_t n = 0;
 
 	switch (rvm->level) {
 	case 0:
-		if (cat) {
-			if (rvm->filter) {
-				snprintf (title, sizeof (title), "%s [filter: %s]", cat, rvm->filter);
-			} else {
-				snprintf (title, sizeof (title), "%s", cat);
-			}
-		} else {
-			if (rvm->filter) {
-				snprintf (title, sizeof (title), "unknown [filter: %s]", rvm->filter);
-			} else {
-				snprintf (title, sizeof (title), "unknown");
-			}
-		}
+		n = snprintf (title, sizeof (title), "%s", cat ? cat : "unknown");
 		break;
 	case 1:
-		if (cat) {
-			if (rvm->filter) {
-				snprintf (title, sizeof (title), "%s item:%d [filter: %s]", cat, rvm->selected_item, rvm->filter);
-			} else {
-				snprintf (title, sizeof (title), "%s item:%d", cat, rvm->selected_item);
-			}
-		} else {
-			if (rvm->filter) {
-				snprintf (title, sizeof (title), "unknown item:%d [filter: %s]", rvm->selected_item, rvm->filter);
-			} else {
-				snprintf (title, sizeof (title), "unknown item:%d", rvm->selected_item);
-			}
-		}
+		n = snprintf (title, sizeof (title), "%s item:%d",
+				cat ? cat : "unknown", rvm->selected_item);
 		break;
 	case 2:
-		if (strcmp (cat, "flagspaces") == 0 && rvm->selected_flagspace) {
-			if (rvm->filter) {
-				snprintf (title, sizeof (title), "flagspace:%s [filter: %s]", rvm->selected_flagspace, rvm->filter);
-			} else {
-				snprintf (title, sizeof (title), "flagspace:%s", rvm->selected_flagspace);
-			}
+		if (cat && !strcmp (cat, "flagspaces") && rvm->selected_flagspace) {
+			n = snprintf (title, sizeof (title), "flagspace:%s", rvm->selected_flagspace);
 		} else {
-			if (rvm->filter) {
-				snprintf (title, sizeof (title), "0x%" PFMT64x " [filter: %s]", rvm->selected_addr, rvm->filter);
-			} else {
-				snprintf (title, sizeof (title), "0x%" PFMT64x, rvm->selected_addr);
-			}
+			n = snprintf (title, sizeof (title), "0x%" PFMT64x, rvm->selected_addr);
 		}
 		break;
 	default:
-		if (rvm->filter) {
-			snprintf (title, sizeof (title), "unknown [filter: %s]", rvm->filter);
-		} else {
-			snprintf (title, sizeof (title), "unknown");
-		}
+		n = snprintf (title, sizeof (title), "unknown");
 		break;
 	}
-
+	if (rvm->filter && n < sizeof (title)) {
+		snprintf (title + n, sizeof (title) - n, " [filter: %s]", rvm->filter);
+	}
 	return title;
 }
 
@@ -164,19 +120,8 @@ static void draw_highlighted_box(RConsCanvas *can, int xpos, int ypos, int boxwi
 
 	// Fill top line with #### for selected boxes (between the borders)
 	if (is_selected && boxwidth > 2) {
-		char *top_line = r_str_newf ("%s", "");
-		if (top_line) {
-			int j, len = boxwidth - 2; // Leave space for left and right borders
-			for (j = 0; j < len; j++) {
-				char *new_line = r_str_append (top_line, "#");
-				if (!new_line) {
-					break; // Allocation failed
-				}
-				top_line = new_line;
-			}
-			r_cons_canvas_write_at (can, top_line, xpos + 1, ypos);
-			free (top_line);
-		}
+		const char *top_line = r_str_pad ('#', boxwidth - 2);
+		r_cons_canvas_write_at (can, top_line, xpos + 1, ypos);
 	}
 }
 
@@ -231,7 +176,7 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 
 	int ypos = -rvm->scroll_y; // Start from top with scroll offset
 
-	if (strcmp (cat, "functions") == 0) {
+	if (!strcmp (cat, "functions")) {
 		RListIter *iter;
 		RAnalFunction *f;
 		RList *fcns = rvm->core->anal->fcns;
@@ -260,9 +205,9 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 			}
 			item_count++;
 		}
-	} else if (strcmp (cat, "flagspaces") == 0) {
-		RSpace *space;
+	} else if (!strcmp (cat, "flagspaces")) {
 		RSpaceIter *it;
+		RSpace *space;
 		r_flag_space_foreach (rvm->core->flags, it, space) {
 			if (item_count >= max_items) {
 				break;
@@ -274,17 +219,10 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 			draw_highlighted_box (can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
 			char item[256];
 			int count = r_flag_space_count (rvm->core->flags, space->name);
-#if 0
-			snprintf (item, sizeof (item), "%d flags", count);
-			char *name = r_str_ndup (space->name, boxwidth - 4 - strlen (item));
-			r_cons_canvas_write_at (can, item, xpos + 2, ypos + 1);
-			r_cons_canvas_write_at (can, name, xpos + 2, ypos + 2);
-#else
 			snprintf (item, sizeof (item), "%d", count);
 			char *name = r_str_ndup (space->name, boxwidth - 4 - strlen (item));
 			snprintf (item, sizeof (item), "%d %s", count, name);
 			r_cons_canvas_write_at (can, item, xpos + 2, ypos + 1);
-#endif
 			free (name);
 
 			xpos += boxwidth + 1;
@@ -296,7 +234,7 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 			}
 			item_count++;
 		}
-	} else if (strcmp (cat, "flags") == 0) {
+	} else if (!strcmp (cat, "flags")) {
 		RListIter *iter;
 		RFlagItem *flag;
 		const RList *flags = r_flag_get_list (rvm->core->flags, 0);
@@ -325,7 +263,7 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 			}
 			item_count++;
 		}
-	} else if (strcmp (cat, "symbols") == 0) {
+	} else if (!strcmp (cat, "symbols")) {
 		RBinSymbol *sym;
 		RListIter *iter;
 		const RList *symbols = r_bin_get_symbols (rvm->core->bin);
@@ -355,7 +293,7 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 			}
 			item_count++;
 		}
-	} else if (strcmp (cat, "imports") == 0) {
+	} else if (!strcmp (cat, "imports")) {
 		RBinImport *imp;
 		RListIter *iter;
 		const RList *imports = r_bin_get_imports (rvm->core->bin);
@@ -385,7 +323,7 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 			}
 			item_count++;
 		}
-	} else if (strcmp (cat, "comments") == 0) {
+	} else if (!strcmp (cat, "comments")) {
 		RIntervalTreeIter it;
 		RAnalMetaItem *item;
 		r_interval_tree_foreach (&rvm->core->anal->meta, it, item) {
@@ -416,7 +354,7 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 			}
 			item_count++;
 		}
-	} else if (strcmp (cat, "sections") == 0) {
+	} else if (!strcmp (cat, "sections")) {
 		RBinSection *section;
 		RListIter *iter;
 		const RList *sections = r_bin_get_sections (rvm->core->bin);
@@ -459,7 +397,7 @@ static void draw_level2_disassembly(RVMatrix *rvm) {
 	}
 	const char *cat = level0_categories[rvm->selected];
 
-	if (strcmp (cat, "flagspaces") == 0 && rvm->selected_flagspace) {
+	if (!strcmp (cat, "flagspaces") && rvm->selected_flagspace) {
 		// Show flags in the selected flagspace in boxed matrix
 		int w = rvm->w - 6;
 		int boxwidth = w / rvm->cols;
@@ -480,7 +418,7 @@ static void draw_level2_disassembly(RVMatrix *rvm) {
 				if (item_count >= max_items) {
 					break;
 				}
-				if (flag->space && strcmp (flag->space->name, rvm->selected_flagspace) == 0) {
+				if (flag->space && !strcmp (flag->space->name, rvm->selected_flagspace)) {
 					bool is_selected = (item_count == rvm->selected_item);
 					draw_highlighted_box (can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
 					char item[256];
@@ -609,7 +547,7 @@ static void vmatrix_refresh(RVMatrix *rvm) {
 		break;
 	}
 
-	if (rvm->level == 0 || rvm->level == 1 || (rvm->level == 2 && strcmp (level0_categories[rvm->selected], "flagspaces") == 0)) {
+	if (rvm->level == 0 || rvm->level == 1 || (rvm->level == 2 && !strcmp (level0_categories[rvm->selected], "flagspaces"))) {
 		draw_scrollbar (rvm);
 	}
 
@@ -752,7 +690,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 			// filter
 			break;
 		case 'j':
-			if (rvm.level == 2 && strcmp (level0_categories[rvm.selected], "flagspaces") == 0 && rvm.selected_flagspace) {
+			if (rvm.level == 2 && !strcmp (level0_categories[rvm.selected], "flagspaces") && rvm.selected_flagspace) {
 				// Scroll flagspace boxes down
 				rvm.scroll_y++;
 				clamp_scroll_position (&rvm);
@@ -765,7 +703,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 			}
 			break;
 		case 'k':
-			if (rvm.level == 2 && strcmp (level0_categories[rvm.selected], "flagspaces") == 0 && rvm.selected_flagspace) {
+			if (rvm.level == 2 && !strcmp (level0_categories[rvm.selected], "flagspaces") && rvm.selected_flagspace) {
 				// Scroll flagspace boxes up
 				rvm.scroll_y--;
 				clamp_scroll_position (&rvm);
@@ -780,7 +718,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 			}
 			break;
 		case 'J':
-			if (rvm.level == 2 && strcmp (level0_categories[rvm.selected], "flagspaces") == 0 && rvm.selected_flagspace) {
+			if (rvm.level == 2 && !strcmp (level0_categories[rvm.selected], "flagspaces") && rvm.selected_flagspace) {
 				rvm.scroll_y += rvm.box_h;
 				clamp_scroll_position (&rvm);
 			} else if (rvm.level == 2) {
@@ -791,7 +729,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 			}
 			break;
 		case 'K':
-			if (rvm.level == 2 && strcmp (level0_categories[rvm.selected], "flagspaces") == 0 && rvm.selected_flagspace) {
+			if (rvm.level == 2 && !strcmp (level0_categories[rvm.selected], "flagspaces") && rvm.selected_flagspace) {
 				rvm.scroll_y -= rvm.box_h;
 				clamp_scroll_position (&rvm);
 			} else if (rvm.level == 2) {
@@ -804,7 +742,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 			}
 			break;
 		case 'g':
-			if (rvm.level == 2 && strcmp (level0_categories[rvm.selected], "flagspaces") == 0 && rvm.selected_flagspace) {
+			if (rvm.level == 2 && !strcmp (level0_categories[rvm.selected], "flagspaces") && rvm.selected_flagspace) {
 				rvm.scroll_y = 0;
 			} else if (rvm.level == 2) {
 				rvm.selected_addr = rvm.original_addr;
@@ -813,7 +751,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 			}
 			break;
 		case 'G':
-			if (rvm.level == 2 && strcmp (level0_categories[rvm.selected], "flagspaces") == 0 && rvm.selected_flagspace) {
+			if (rvm.level == 2 && !strcmp (level0_categories[rvm.selected], "flagspaces") && rvm.selected_flagspace) {
 				rvm.scroll_y = rvm.rows * rvm.box_h - 1;
 				clamp_scroll_position (&rvm);
 			} else if (rvm.level == 2) {
@@ -830,7 +768,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 				if (rvm.selected < 0) {
 					rvm.selected = 0;
 				}
-			} else if (rvm.level == 2 && strcmp (level0_categories[rvm.selected], "flagspaces") == 0 && rvm.selected_flagspace) {
+			} else if (rvm.level == 2 && !strcmp (level0_categories[rvm.selected], "flagspaces") && rvm.selected_flagspace) {
 				if (rvm.selected_item > 0) {
 					rvm.selected_item--;
 				}
@@ -847,13 +785,13 @@ R_API void r_core_visual_matrix(RCore *core) {
 				if (rvm.selected > max_selected) {
 					rvm.selected = max_selected;
 				}
-			} else if (rvm.level == 2 && strcmp (level0_categories[rvm.selected], "flagspaces") == 0 && rvm.selected_flagspace) {
+			} else if (rvm.level == 2 && !strcmp (level0_categories[rvm.selected], "flagspaces") && rvm.selected_flagspace) {
 				rvm.selected_item++;
 				// Bounds checking will be done in refresh or mouse handling
 			}
 			break;
 		case 'd':
-			if (rvm.level == 2 && strcmp (level0_categories[rvm.selected], "flagspaces") == 0 && rvm.selected_flagspace) {
+			if (rvm.level == 2 && !strcmp (level0_categories[rvm.selected], "flagspaces") && rvm.selected_flagspace) {
 				// Go to disassembly of selected flag
 				RList *all_flags = r_flag_all_list (rvm.core->flags, true);
 				if (all_flags) {
@@ -861,7 +799,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 					RFlagItem *flag;
 					int count = 0;
 					r_list_foreach (all_flags, iter, flag) {
-						if (flag->space && strcmp (flag->space->name, rvm.selected_flagspace) == 0) {
+						if (flag->space && !strcmp (flag->space->name, rvm.selected_flagspace)) {
 							if (count == rvm.selected_item) {
 								rvm.selected_addr = flag->addr;
 								free (rvm.selected_flagspace);
@@ -877,7 +815,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 				// Set selected_addr or selected_flagspace based on current selection before entering level 2
 				if (rvm.level == 1) {
 					const char *cat = level0_categories[rvm.selected];
-					if (strcmp (cat, "functions") == 0) {
+					if (!strcmp (cat, "functions")) {
 						RListIter *iter;
 						RAnalFunction *f;
 						RList *fcns = rvm.core->anal->fcns;
@@ -889,7 +827,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 							}
 							count++;
 						}
-					} else if (strcmp (cat, "flagspaces") == 0) {
+					} else if (!strcmp (cat, "flagspaces")) {
 						// For flagspaces, set the selected flagspace
 						RSpace *space;
 						RSpaceIter *it;
@@ -902,7 +840,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 							}
 							count++;
 						}
-					} else if (strcmp (cat, "flags") == 0) {
+					} else if (!strcmp (cat, "flags")) {
 						RListIter *iter;
 						RFlagItem *flag;
 						const RList *flags = r_flag_get_list (rvm.core->flags, 0);
@@ -914,7 +852,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 							}
 							count++;
 						}
-					} else if (strcmp (cat, "symbols") == 0) {
+					} else if (!strcmp (cat, "symbols")) {
 						RBinSymbol *sym;
 						RListIter *iter;
 						const RList *symbols = r_bin_get_symbols (rvm.core->bin);
@@ -926,7 +864,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 							}
 							count++;
 						}
-					} else if (strcmp (cat, "sections") == 0) {
+					} else if (!strcmp (cat, "sections")) {
 						RBinSection *section;
 						RListIter *iter;
 						const RList *sections = r_bin_get_sections (rvm.core->bin);
@@ -946,7 +884,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 			}
 			break;
 		case '\n': // Enter key - alias for 'd'
-			if (rvm.level == 2 && strcmp (level0_categories[rvm.selected], "flagspaces") == 0 && rvm.selected_flagspace) {
+			if (rvm.level == 2 && !strcmp (level0_categories[rvm.selected], "flagspaces") && rvm.selected_flagspace) {
 				// Go to disassembly of selected flag
 				RList *all_flags = r_flag_all_list (rvm.core->flags, true);
 				if (all_flags) {
@@ -954,7 +892,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 					RFlagItem *flag;
 					int count = 0;
 					r_list_foreach (all_flags, iter, flag) {
-						if (flag->space && strcmp (flag->space->name, rvm.selected_flagspace) == 0) {
+						if (flag->space && !strcmp (flag->space->name, rvm.selected_flagspace)) {
 							if (count == rvm.selected_item) {
 								rvm.selected_addr = flag->addr;
 								free (rvm.selected_flagspace);
@@ -970,7 +908,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 				// Set selected_addr or selected_flagspace based on current selection before entering level 2
 				if (rvm.level == 1) {
 					const char *cat = level0_categories[rvm.selected];
-					if (strcmp (cat, "functions") == 0) {
+					if (!strcmp (cat, "functions")) {
 						RListIter *iter;
 						RAnalFunction *f;
 						RList *fcns = rvm.core->anal->fcns;
@@ -982,7 +920,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 							}
 							count++;
 						}
-					} else if (strcmp (cat, "flagspaces") == 0) {
+					} else if (!strcmp (cat, "flagspaces")) {
 						// For flagspaces, set the selected flagspace
 						RSpace *space;
 						RSpaceIter *it;
@@ -995,7 +933,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 							}
 							count++;
 						}
-					} else if (strcmp (cat, "flags") == 0) {
+					} else if (!strcmp (cat, "flags")) {
 						RListIter *iter;
 						RFlagItem *flag;
 						const RList *flags = r_flag_get_list (rvm.core->flags, 0);
@@ -1007,7 +945,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 							}
 							count++;
 						}
-					} else if (strcmp (cat, "symbols") == 0) {
+					} else if (!strcmp (cat, "symbols")) {
 						RBinSymbol *sym;
 						RListIter *iter;
 						const RList *symbols = r_bin_get_symbols (rvm.core->bin);
@@ -1019,7 +957,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 							}
 							count++;
 						}
-					} else if (strcmp (cat, "sections") == 0) {
+					} else if (!strcmp (cat, "sections")) {
 						RBinSection *section;
 						RListIter *iter;
 						const RList *sections = r_bin_get_sections (rvm.core->bin);
@@ -1053,106 +991,33 @@ R_API void r_core_visual_matrix(RCore *core) {
 		case '!':
 			r_core_panels_root (core, core->panels_root);
 			break;
-		case '\n': // Enter key - alias for 'd'
-			if (rvm.level < 2) {
-				// Set selected_addr or selected_flagspace based on current selection before entering level 2
-				if (rvm.level == 1) {
-					const char *cat = level0_categories[rvm.selected];
-					if (strcmp (cat, "functions") == 0) {
-						RListIter *iter;
-						RAnalFunction *f;
-						RList *fcns = rvm.core->anal->fcns;
-						int count = 0;
-						r_list_foreach (fcns, iter, f) {
-							if (count == rvm.selected_item) {
-								rvm.selected_addr = f->addr;
-								break;
-							}
-							count++;
-						}
-					} else if (strcmp (cat, "flagspaces") == 0) {
-						// For flagspaces, set the selected flagspace
-						RSpace *space;
-						RSpaceIter *it;
-						int count = 0;
-						r_flag_space_foreach (rvm.core->flags, it, space) {
-							if (count == rvm.selected_item) {
-								free (rvm.selected_flagspace);
-								rvm.selected_flagspace = strdup (space->name);
-								break;
-							}
-							count++;
-						}
-					} else if (strcmp (cat, "flags") == 0) {
-						RListIter *iter;
-						RFlagItem *flag;
-						const RList *flags = r_flag_get_list (rvm.core->flags, 0);
-						int count = 0;
-						r_list_foreach (flags, iter, flag) {
-							if (count == rvm.selected_item) {
-								rvm.selected_addr = flag->addr;
-								break;
-							}
-							count++;
-						}
-					} else if (strcmp (cat, "symbols") == 0) {
-						RBinSymbol *sym;
-						RListIter *iter;
-						const RList *symbols = r_bin_get_symbols (rvm.core->bin);
-						int count = 0;
-						r_list_foreach (symbols, iter, sym) {
-							if (count == rvm.selected_item) {
-								rvm.selected_addr = sym->vaddr;
-								break;
-							}
-							count++;
-						}
-					} else if (strcmp (cat, "sections") == 0) {
-						RBinSection *section;
-						RListIter *iter;
-						const RList *sections = r_bin_get_sections (rvm.core->bin);
-						int count = 0;
-						r_list_foreach (sections, iter, section) {
-							if (count == rvm.selected_item) {
-								rvm.selected_addr = section->vaddr;
-								break;
-							}
-							count++;
-						}
-					}
-					// For imports, keep current address
-				}
-				switch_level (&rvm, rvm.level + 1);
-			}
-			break;
 		case '\t': // Tab key - navigate to next item in level 1
 			if (rvm.level == 1) {
 				rvm.selected_item++;
 				// Add bounds checking for selected_item
 				int max_items = 0;
 				const char *cat = level0_categories[rvm.selected];
-				if (strcmp (cat, "functions") == 0) {
+				if (!strcmp (cat, "functions")) {
 					max_items = r_list_length (rvm.core->anal->fcns);
-				} else if (strcmp (cat, "flagspaces") == 0) {
+				} else if (!strcmp (cat, "flagspaces")) {
 					RSpace *space;
 					RSpaceIter *it;
 					r_flag_space_foreach (rvm.core->flags, it, space) {
- (void)space;
 						max_items++;
 					}
-				} else if (strcmp (cat, "flags") == 0) {
+				} else if (!strcmp (cat, "flags")) {
 					const RList *flags = r_flag_get_list (rvm.core->flags, 0);
 					max_items = r_list_length (flags);
-				} else if (strcmp (cat, "symbols") == 0) {
+				} else if (!strcmp (cat, "symbols")) {
 					const RList *symbols = r_bin_get_symbols (rvm.core->bin);
 					max_items = r_list_length (symbols);
-				} else if (strcmp (cat, "imports") == 0) {
+				} else if (!strcmp (cat, "imports")) {
 					const RList *imports = r_bin_get_imports (rvm.core->bin);
 					max_items = r_list_length (imports);
-				} else if (strcmp (cat, "sections") == 0) {
+				} else if (!strcmp (cat, "sections")) {
 					const RList *sections = r_bin_get_sections (rvm.core->bin);
 					max_items = r_list_length (sections);
-				} else if (strcmp (cat, "comments") == 0) {
+				} else if (!strcmp (cat, "comments")) {
 					RIntervalTreeIter it;
 					RAnalMetaItem *item;
 					r_interval_tree_foreach (&rvm.core->anal->meta, it, item) {
@@ -1164,7 +1029,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 				if (rvm.selected_item >= max_items) {
 					rvm.selected_item = 0; // Wrap around to first item
 				}
-			} else if (rvm.level == 2 && strcmp (level0_categories[rvm.selected], "flagspaces") == 0 && rvm.selected_flagspace) {
+			} else if (rvm.level == 2 && !strcmp (level0_categories[rvm.selected], "flagspaces") && rvm.selected_flagspace) {
 				rvm.selected_item++;
 				// Count flags in the selected flagspace for bounds checking
 				int max_items = 0;
@@ -1173,7 +1038,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 					RListIter *iter;
 					RFlagItem *flag;
 					r_list_foreach (all_flags, iter, flag) {
-						if (flag->space && strcmp (flag->space->name, rvm.selected_flagspace) == 0) {
+						if (flag->space && !strcmp (flag->space->name, rvm.selected_flagspace)) {
 							max_items++;
 						}
 					}
@@ -1202,27 +1067,28 @@ R_API void r_core_visual_matrix(RCore *core) {
 					// Wrap around to last item
 					int max_items = 0;
 					const char *cat = level0_categories[rvm.selected];
-					if (strcmp (cat, "functions") == 0) {
+					if (!strcmp (cat, "functions")) {
 						max_items = r_list_length (rvm.core->anal->fcns);
-					} else if (strcmp (cat, "flagspaces") == 0) {
+					} else if (!strcmp (cat, "flagspaces")) {
 						RSpace *space;
 						RSpaceIter *it;
 						r_flag_space_foreach (rvm.core->flags, it, space) {
+							(void)space;
 							max_items++;
 						}
-					} else if (strcmp (cat, "flags") == 0) {
+					} else if (!strcmp (cat, "flags")) {
 						const RList *flags = r_flag_get_list (rvm.core->flags, 0);
 						max_items = r_list_length (flags);
-					} else if (strcmp (cat, "symbols") == 0) {
+					} else if (!strcmp (cat, "symbols")) {
 						const RList *symbols = r_bin_get_symbols (rvm.core->bin);
 						max_items = r_list_length (symbols);
-					} else if (strcmp (cat, "imports") == 0) {
+					} else if (!strcmp (cat, "imports")) {
 						const RList *imports = r_bin_get_imports (rvm.core->bin);
 						max_items = r_list_length (imports);
-					} else if (strcmp (cat, "sections") == 0) {
+					} else if (!strcmp (cat, "sections")) {
 						const RList *sections = r_bin_get_sections (rvm.core->bin);
 						max_items = r_list_length (sections);
-					} else if (strcmp (cat, "comments") == 0) {
+					} else if (!strcmp (cat, "comments")) {
 						RIntervalTreeIter it;
 						RAnalMetaItem *item;
 						r_interval_tree_foreach (&rvm.core->anal->meta, it, item) {
@@ -1235,7 +1101,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 						rvm.selected_item = max_items - 1;
 					}
 				}
-			} else if (rvm.level == 2 && strcmp (level0_categories[rvm.selected], "flagspaces") == 0 && rvm.selected_flagspace) {
+			} else if (rvm.level == 2 && !strcmp (level0_categories[rvm.selected], "flagspaces") && rvm.selected_flagspace) {
 				if (rvm.selected_item > 0) {
 					rvm.selected_item--;
 				} else {
@@ -1246,7 +1112,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 						RListIter *iter;
 						RFlagItem *flag;
 						r_list_foreach (all_flags, iter, flag) {
-							if (flag->space && strcmp (flag->space->name, rvm.selected_flagspace) == 0) {
+							if (flag->space && !strcmp (flag->space->name, rvm.selected_flagspace)) {
 								max_items++;
 							}
 						}
@@ -1359,7 +1225,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 									// Same item clicked again, go down one level
 									// Set selected_addr or selected_flagspace based on current selection before entering level 2
 									const char *cat = level0_categories[rvm.selected];
-									if (strcmp (cat, "functions") == 0) {
+									if (!strcmp (cat, "functions")) {
 										RListIter *iter;
 										RAnalFunction *f;
 										RList *fcns = rvm.core->anal->fcns;
@@ -1371,7 +1237,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 											}
 											count++;
 										}
-									} else if (strcmp (cat, "flagspaces") == 0) {
+									} else if (!strcmp (cat, "flagspaces")) {
 										// For flagspaces, set the selected flagspace
 										RSpace *space;
 										RSpaceIter *it;
@@ -1384,8 +1250,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 											}
 											count++;
 										}
- (void)space;
-									} else if (strcmp (cat, "flags") == 0) {
+									} else if (!strcmp (cat, "flags")) {
 										RListIter *iter;
 										RFlagItem *flag;
 										const RList *flags = r_flag_get_list (rvm.core->flags, 0);
@@ -1397,7 +1262,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 											}
 											count++;
 										}
-									} else if (strcmp (cat, "symbols") == 0) {
+									} else if (!strcmp (cat, "symbols")) {
 										RBinSymbol *sym;
 										RListIter *iter;
 										const RList *symbols = r_bin_get_symbols (rvm.core->bin);
@@ -1409,7 +1274,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 											}
 											count++;
 										}
-									} else if (strcmp (cat, "sections") == 0) {
+									} else if (!strcmp (cat, "sections")) {
 										RBinSection *section;
 										RListIter *iter;
 										const RList *sections = r_bin_get_sections (rvm.core->bin);
@@ -1421,7 +1286,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 											}
 											count++;
 										}
-									} else if (strcmp (cat, "comments") == 0) {
+									} else if (!strcmp (cat, "comments")) {
 										RIntervalTreeIter it;
 										RAnalMetaItem *item;
 										int count = 0;
@@ -1443,7 +1308,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 									rvm.selected_item = clicked_item;
 								}
 							}
-						} else if (rvm.level == 2 && strcmp (level0_categories[rvm.selected], "flagspaces") == 0) {
+						} else if (rvm.level == 2 && !strcmp (level0_categories[rvm.selected], "flagspaces")) {
 							// Level 2 flagspaces: select flag
 							int clicked_item = clicked_row * rvm.cols + clicked_col;
 							if (clicked_item >= 0 && clicked_item < rvm.rows) {
@@ -1455,7 +1320,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 										RFlagItem *flag;
 										int count = 0;
 										r_list_foreach (all_flags, iter, flag) {
-											if (flag->space && strcmp (flag->space->name, rvm.selected_flagspace) == 0) {
+											if (flag->space && !strcmp (flag->space->name, rvm.selected_flagspace)) {
 												if (count == clicked_item) {
 													rvm.selected_addr = flag->addr;
 													free (rvm.selected_flagspace);
