@@ -53,7 +53,7 @@ static void switch_level(RVMatrix *rvm, int new_level) {
 		if (new_level == 2) {
 			rvm->original_addr = rvm->selected_addr;
 		}
-		clamp_scroll_position(rvm);
+		clamp_scroll_position (rvm);
 	}
 }
 
@@ -77,53 +77,53 @@ static char *get_selected_box_title(RVMatrix *rvm) {
 	case 0:
 		if (cat) {
 			if (rvm->filter) {
-				snprintf(title, sizeof(title), "%s [filter: %s]", cat, rvm->filter);
+				snprintf (title, sizeof (title), "%s [filter: %s]", cat, rvm->filter);
 			} else {
-				snprintf(title, sizeof(title), "%s", cat);
+				snprintf (title, sizeof (title), "%s", cat);
 			}
 		} else {
 			if (rvm->filter) {
-				snprintf(title, sizeof(title), "unknown [filter: %s]", rvm->filter);
+				snprintf (title, sizeof (title), "unknown [filter: %s]", rvm->filter);
 			} else {
-				snprintf(title, sizeof(title), "unknown");
+				snprintf (title, sizeof (title), "unknown");
 			}
 		}
 		break;
 	case 1:
 		if (cat) {
 			if (rvm->filter) {
-				snprintf(title, sizeof(title), "%s item:%d [filter: %s]", cat, rvm->selected_item, rvm->filter);
+				snprintf (title, sizeof (title), "%s item:%d [filter: %s]", cat, rvm->selected_item, rvm->filter);
 			} else {
-				snprintf(title, sizeof(title), "%s item:%d", cat, rvm->selected_item);
+				snprintf (title, sizeof (title), "%s item:%d", cat, rvm->selected_item);
 			}
 		} else {
 			if (rvm->filter) {
-				snprintf(title, sizeof(title), "unknown item:%d [filter: %s]", rvm->selected_item, rvm->filter);
+				snprintf (title, sizeof (title), "unknown item:%d [filter: %s]", rvm->selected_item, rvm->filter);
 			} else {
-				snprintf(title, sizeof(title), "unknown item:%d", rvm->selected_item);
+				snprintf (title, sizeof (title), "unknown item:%d", rvm->selected_item);
 			}
 		}
 		break;
 	case 2:
-		if (strcmp(cat, "flagspaces") == 0 && rvm->selected_flagspace) {
+		if (strcmp (cat, "flagspaces") == 0 && rvm->selected_flagspace) {
 			if (rvm->filter) {
-				snprintf(title, sizeof(title), "flagspace:%s [filter: %s]", rvm->selected_flagspace, rvm->filter);
+				snprintf (title, sizeof (title), "flagspace:%s [filter: %s]", rvm->selected_flagspace, rvm->filter);
 			} else {
-				snprintf(title, sizeof(title), "flagspace:%s", rvm->selected_flagspace);
+				snprintf (title, sizeof (title), "flagspace:%s", rvm->selected_flagspace);
 			}
 		} else {
 			if (rvm->filter) {
-				snprintf(title, sizeof(title), "0x%" PFMT64x " [filter: %s]", rvm->selected_addr, rvm->filter);
+				snprintf (title, sizeof (title), "0x%" PFMT64x " [filter: %s]", rvm->selected_addr, rvm->filter);
 			} else {
-				snprintf(title, sizeof(title), "0x%" PFMT64x, rvm->selected_addr);
+				snprintf (title, sizeof (title), "0x%" PFMT64x, rvm->selected_addr);
 			}
 		}
 		break;
 	default:
 		if (rvm->filter) {
-			snprintf(title, sizeof(title), "unknown [filter: %s]", rvm->filter);
+			snprintf (title, sizeof (title), "unknown [filter: %s]", rvm->filter);
 		} else {
-			snprintf(title, sizeof(title), "unknown");
+			snprintf (title, sizeof (title), "unknown");
 		}
 		break;
 	}
@@ -149,10 +149,10 @@ static void draw_scrollbar(RVMatrix *rvm) {
 	}
 	for (i = 1; i < h; i++) {
 		const char *box = (i == sbpos) ? "|#|" : "|.|";
-		r_cons_canvas_write_at(can, box, w, i);
+		r_cons_canvas_write_at (can, box, w, i);
 	}
-	r_cons_canvas_write_at(can, "[^]", w, 0);
-	r_cons_canvas_write_at(can, Color_INVERT "[v]" Color_RESET, w, h - 1);
+	r_cons_canvas_write_at (can, "[^]", w, 0);
+	r_cons_canvas_write_at (can, Color_INVERT "[v]" Color_RESET, w, h - 1);
 }
 
 static void draw_highlighted_box(RConsCanvas *can, int xpos, int ypos, int boxwidth, int boxheight, bool is_selected) {
@@ -160,22 +160,22 @@ static void draw_highlighted_box(RConsCanvas *can, int xpos, int ypos, int boxwi
 		return;
 	}
 	const char *box_color = is_selected ? Color_RED : "";
-	r_cons_canvas_box(can, xpos, ypos, boxwidth, boxheight, box_color);
+	r_cons_canvas_box (can, xpos, ypos, boxwidth, boxheight, box_color);
 
 	// Fill top line with #### for selected boxes (between the borders)
 	if (is_selected && boxwidth > 2) {
-		char *top_line = r_str_newf("%s", "");
+		char *top_line = r_str_newf ("%s", "");
 		if (top_line) {
 			int len = boxwidth - 2; // Leave space for left and right borders
 			for (int j = 0; j < len; j++) {
-				char *new_line = r_str_append(top_line, "#");
+				char *new_line = r_str_append (top_line, "#");
 				if (!new_line) {
 					break; // Allocation failed
 				}
 				top_line = new_line;
 			}
-			r_cons_canvas_write_at(can, top_line, xpos + 1, ypos);
-			free(top_line);
+			r_cons_canvas_write_at (can, top_line, xpos + 1, ypos);
+			free (top_line);
 		}
 	}
 }
@@ -194,16 +194,16 @@ static void draw_level0_boxes(RVMatrix *rvm) {
 
 	while (level0_categories[i]) {
 		const char *cat = level0_categories[i];
-		if (rvm->filter && !strstr(cat, rvm->filter)) {
+		if (rvm->filter && !strstr (cat, rvm->filter)) {
 			i++;
 			continue;
 		}
 		bool is_selected = (i == rvm->selected);
-		draw_highlighted_box(can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
+		draw_highlighted_box (can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
 
-		char *title = r_str_ndup(cat, boxwidth - 4);
-		r_cons_canvas_write_at(can, title, xpos + 2, ypos + 1);
-		free(title);
+		char *title = r_str_ndup (cat, boxwidth - 4);
+		r_cons_canvas_write_at (can, title, xpos + 2, ypos + 1);
+		free (title);
 		xpos += boxwidth + 1;
 		col++;
 		if (col >= rvm->cols) {
@@ -231,7 +231,7 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 
 	int ypos = -rvm->scroll_y; // Start from top with scroll offset
 
-	if (strcmp(cat, "functions") == 0) {
+	if (strcmp (cat, "functions") == 0) {
 		RListIter *iter;
 		RAnalFunction *f;
 		RList *fcns = rvm->core->anal->fcns;
@@ -239,17 +239,17 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 			if (item_count >= max_items) {
 				break;
 			}
-			if (rvm->filter && !strstr(f->name, rvm->filter)) {
+			if (rvm->filter && !strstr (f->name, rvm->filter)) {
 				continue;
 			}
 			bool is_selected = (item_count == rvm->selected_item);
-			draw_highlighted_box(can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
+			draw_highlighted_box (can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
 			char item[256];
-			snprintf(item, sizeof(item), "0x%" PFMT64x, f->addr);
-			char *name = r_str_ndup(f->name, boxwidth - 4 - strlen(item));
-			r_cons_canvas_write_at(can, item, xpos + 2, ypos + 1);
-			r_cons_canvas_write_at(can, name, xpos + 2, ypos + 2);
-			free(name);
+			snprintf (item, sizeof (item), "0x%" PFMT64x, f->addr);
+			char *name = r_str_ndup (f->name, boxwidth - 4 - strlen (item));
+			r_cons_canvas_write_at (can, item, xpos + 2, ypos + 1);
+			r_cons_canvas_write_at (can, name, xpos + 2, ypos + 2);
+			free (name);
 
 			xpos += boxwidth + 1;
 			col++;
@@ -260,32 +260,32 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 			}
 			item_count++;
 		}
-	} else if (strcmp(cat, "flagspaces") == 0) {
+	} else if (strcmp (cat, "flagspaces") == 0) {
 		RSpace *space;
 		RSpaceIter *it;
-		r_flag_space_foreach(rvm->core->flags, it, space) {
+		r_flag_space_foreach (rvm->core->flags, it, space) {
 			if (item_count >= max_items) {
 				break;
 			}
-			if (rvm->filter && !strstr(space->name, rvm->filter)) {
+			if (rvm->filter && !strstr (space->name, rvm->filter)) {
 				continue;
 			}
 			bool is_selected = (item_count == rvm->selected_item);
-			draw_highlighted_box(can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
+			draw_highlighted_box (can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
 			char item[256];
-			int count = r_flag_space_count(rvm->core->flags, space->name);
+			int count = r_flag_space_count (rvm->core->flags, space->name);
 #if 0
 			snprintf (item, sizeof (item), "%d flags", count);
 			char *name = r_str_ndup (space->name, boxwidth - 4 - strlen (item));
 			r_cons_canvas_write_at (can, item, xpos + 2, ypos + 1);
 			r_cons_canvas_write_at (can, name, xpos + 2, ypos + 2);
 #else
-			snprintf(item, sizeof(item), "%d", count);
-			char *name = r_str_ndup(space->name, boxwidth - 4 - strlen(item));
-			snprintf(item, sizeof(item), "%d %s", count, name);
-			r_cons_canvas_write_at(can, item, xpos + 2, ypos + 1);
+			snprintf (item, sizeof (item), "%d", count);
+			char *name = r_str_ndup (space->name, boxwidth - 4 - strlen (item));
+			snprintf (item, sizeof (item), "%d %s", count, name);
+			r_cons_canvas_write_at (can, item, xpos + 2, ypos + 1);
 #endif
-			free(name);
+			free (name);
 
 			xpos += boxwidth + 1;
 			col++;
@@ -296,25 +296,25 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 			}
 			item_count++;
 		}
-	} else if (strcmp(cat, "flags") == 0) {
+	} else if (strcmp (cat, "flags") == 0) {
 		RListIter *iter;
 		RFlagItem *flag;
-		const RList *flags = r_flag_get_list(rvm->core->flags, 0);
+		const RList *flags = r_flag_get_list (rvm->core->flags, 0);
 		r_list_foreach (flags, iter, flag) {
 			if (item_count >= max_items) {
 				break;
 			}
-			if (rvm->filter && !strstr(flag->name, rvm->filter)) {
+			if (rvm->filter && !strstr (flag->name, rvm->filter)) {
 				continue;
 			}
 			bool is_selected = (item_count == rvm->selected_item);
-			draw_highlighted_box(can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
+			draw_highlighted_box (can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
 			char item[256];
-			snprintf(item, sizeof(item), "0x%" PFMT64x, flag->addr);
-			char *name = r_str_ndup(flag->name, boxwidth - 4 - strlen(item));
-			r_cons_canvas_write_at(can, item, xpos + 2, ypos + 1);
-			r_cons_canvas_write_at(can, name, xpos + 2, ypos + 2);
-			free(name);
+			snprintf (item, sizeof (item), "0x%" PFMT64x, flag->addr);
+			char *name = r_str_ndup (flag->name, boxwidth - 4 - strlen (item));
+			r_cons_canvas_write_at (can, item, xpos + 2, ypos + 1);
+			r_cons_canvas_write_at (can, name, xpos + 2, ypos + 2);
+			free (name);
 
 			xpos += boxwidth + 1;
 			col++;
@@ -325,26 +325,26 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 			}
 			item_count++;
 		}
-	} else if (strcmp(cat, "symbols") == 0) {
+	} else if (strcmp (cat, "symbols") == 0) {
 		RBinSymbol *sym;
 		RListIter *iter;
-		const RList *symbols = r_bin_get_symbols(rvm->core->bin);
+		const RList *symbols = r_bin_get_symbols (rvm->core->bin);
 		r_list_foreach (symbols, iter, sym) {
 			if (item_count >= max_items) {
 				break;
 			}
-			char *name_str = r_bin_name_tostring(sym->name);
-			if (rvm->filter && !strstr(name_str, rvm->filter)) {
+			char *name_str = r_bin_name_tostring (sym->name);
+			if (rvm->filter && !strstr (name_str, rvm->filter)) {
 				continue;
 			}
 			bool is_selected = (item_count == rvm->selected_item);
-			draw_highlighted_box(can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
+			draw_highlighted_box (can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
 			char item[256];
-			snprintf(item, sizeof(item), "0x%" PFMT64x, sym->vaddr);
-			char *name = r_str_ndup(name_str, boxwidth - 4 - strlen(item));
-			r_cons_canvas_write_at(can, item, xpos + 2, ypos + 1);
-			r_cons_canvas_write_at(can, name, xpos + 2, ypos + 2);
-			free(name);
+			snprintf (item, sizeof (item), "0x%" PFMT64x, sym->vaddr);
+			char *name = r_str_ndup (name_str, boxwidth - 4 - strlen (item));
+			r_cons_canvas_write_at (can, item, xpos + 2, ypos + 1);
+			r_cons_canvas_write_at (can, name, xpos + 2, ypos + 2);
+			free (name);
 
 			xpos += boxwidth + 1;
 			col++;
@@ -355,26 +355,26 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 			}
 			item_count++;
 		}
-	} else if (strcmp(cat, "imports") == 0) {
+	} else if (strcmp (cat, "imports") == 0) {
 		RBinImport *imp;
 		RListIter *iter;
-		const RList *imports = r_bin_get_imports(rvm->core->bin);
+		const RList *imports = r_bin_get_imports (rvm->core->bin);
 		r_list_foreach (imports, iter, imp) {
 			if (item_count >= max_items) {
 				break;
 			}
-			char *name_str = r_bin_name_tostring(imp->name);
-			if (rvm->filter && !strstr(name_str, rvm->filter)) {
+			char *name_str = r_bin_name_tostring (imp->name);
+			if (rvm->filter && !strstr (name_str, rvm->filter)) {
 				continue;
 			}
 			bool is_selected = (item_count == rvm->selected_item);
-			draw_highlighted_box(can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
+			draw_highlighted_box (can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
 			char item[256];
-			snprintf(item, sizeof(item), "0x%08" PFMT64x, (ut64)0);
-			char *name = r_str_ndup(name_str, boxwidth - 4 - strlen(item));
-			r_cons_canvas_write_at(can, item, xpos + 2, ypos + 1);
-			r_cons_canvas_write_at(can, name, xpos + 2, ypos + 2);
-			free(name);
+			snprintf (item, sizeof (item), "0x%08" PFMT64x, (ut64)0);
+			char *name = r_str_ndup (name_str, boxwidth - 4 - strlen (item));
+			r_cons_canvas_write_at (can, item, xpos + 2, ypos + 1);
+			r_cons_canvas_write_at (can, name, xpos + 2, ypos + 2);
+			free (name);
 
 			xpos += boxwidth + 1;
 			col++;
@@ -385,27 +385,27 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 			}
 			item_count++;
 		}
-	} else if (strcmp(cat, "comments") == 0) {
+	} else if (strcmp (cat, "comments") == 0) {
 		RIntervalTreeIter it;
 		RAnalMetaItem *item;
-		r_interval_tree_foreach(&rvm->core->anal->meta, it, item) {
+		r_interval_tree_foreach (&rvm->core->anal->meta, it, item) {
 			if (item_count >= max_items) {
 				break;
 			}
 			if (item->type != R_META_TYPE_COMMENT) {
 				continue;
 			}
-			if (rvm->filter && !strstr(item->str, rvm->filter)) {
+			if (rvm->filter && !strstr (item->str, rvm->filter)) {
 				continue;
 			}
 			bool is_selected = (item_count == rvm->selected_item);
-			draw_highlighted_box(can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
+			draw_highlighted_box (can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
 			char addr_str[256];
-			snprintf(addr_str, sizeof(addr_str), "0x%" PFMT64x, r_interval_tree_iter_get(&it)->start);
-			char *comment = r_str_ndup(item->str, boxwidth - 4 - strlen(addr_str));
-			r_cons_canvas_write_at(can, addr_str, xpos + 2, ypos + 1);
-			r_cons_canvas_write_at(can, comment, xpos + 2, ypos + 2);
-			free(comment);
+			snprintf (addr_str, sizeof (addr_str), "0x%" PFMT64x, r_interval_tree_iter_get (&it)->start);
+			char *comment = r_str_ndup (item->str, boxwidth - 4 - strlen (addr_str));
+			r_cons_canvas_write_at (can, addr_str, xpos + 2, ypos + 1);
+			r_cons_canvas_write_at (can, comment, xpos + 2, ypos + 2);
+			free (comment);
 
 			xpos += boxwidth + 1;
 			col++;
@@ -416,25 +416,25 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 			}
 			item_count++;
 		}
-	} else if (strcmp(cat, "sections") == 0) {
+	} else if (strcmp (cat, "sections") == 0) {
 		RBinSection *section;
 		RListIter *iter;
-		const RList *sections = r_bin_get_sections(rvm->core->bin);
+		const RList *sections = r_bin_get_sections (rvm->core->bin);
 		r_list_foreach (sections, iter, section) {
 			if (item_count >= max_items) {
 				break;
 			}
-			if (rvm->filter && !strstr(section->name, rvm->filter)) {
+			if (rvm->filter && !strstr (section->name, rvm->filter)) {
 				continue;
 			}
 			bool is_selected = (item_count == rvm->selected_item);
-			draw_highlighted_box(can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
+			draw_highlighted_box (can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
 			char addr_str[256];
-			snprintf(addr_str, sizeof(addr_str), "0x%" PFMT64x, section->vaddr);
-			char *name = r_str_ndup(section->name, boxwidth - 4 - strlen(addr_str));
-			r_cons_canvas_write_at(can, addr_str, xpos + 2, ypos + 1);
-			r_cons_canvas_write_at(can, name, xpos + 2, ypos + 2);
-			free(name);
+			snprintf (addr_str, sizeof (addr_str), "0x%" PFMT64x, section->vaddr);
+			char *name = r_str_ndup (section->name, boxwidth - 4 - strlen (addr_str));
+			r_cons_canvas_write_at (can, addr_str, xpos + 2, ypos + 1);
+			r_cons_canvas_write_at (can, name, xpos + 2, ypos + 2);
+			free (name);
 
 			xpos += boxwidth + 1;
 			col++;
@@ -446,7 +446,7 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 			item_count++;
 		}
 	} else {
-		r_cons_canvas_write_at(can, "Category not implemented yet", 2, ypos);
+		r_cons_canvas_write_at (can, "Category not implemented yet", 2, ypos);
 	}
 
 	rvm->rows = (item_count + rvm->cols - 1) / rvm->cols;
@@ -459,7 +459,7 @@ static void draw_level2_disassembly(RVMatrix *rvm) {
 	}
 	const char *cat = level0_categories[rvm->selected];
 
-	if (strcmp(cat, "flagspaces") == 0 && rvm->selected_flagspace) {
+	if (strcmp (cat, "flagspaces") == 0 && rvm->selected_flagspace) {
 		// Show flags in the selected flagspace in boxed matrix
 		int w = rvm->w - 6;
 		int boxwidth = w / rvm->cols;
@@ -472,7 +472,7 @@ static void draw_level2_disassembly(RVMatrix *rvm) {
 
 		// Get flags from the selected flagspace
 		RCore *core = rvm->core;
-		RList *all_flags = r_flag_all_list(core->flags, true);
+		RList *all_flags = r_flag_all_list (core->flags, true);
 		if (all_flags) {
 			RListIter *iter;
 			RFlagItem *flag;
@@ -480,15 +480,15 @@ static void draw_level2_disassembly(RVMatrix *rvm) {
 				if (item_count >= max_items) {
 					break;
 				}
-				if (flag->space && strcmp(flag->space->name, rvm->selected_flagspace) == 0) {
+				if (flag->space && strcmp (flag->space->name, rvm->selected_flagspace) == 0) {
 					bool is_selected = (item_count == rvm->selected_item);
-					draw_highlighted_box(can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
+					draw_highlighted_box (can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
 					char item[256];
-					snprintf(item, sizeof(item), "0x%" PFMT64x, flag->addr);
-					char *name = r_str_ndup(flag->name, boxwidth - 4 - strlen(item));
-					r_cons_canvas_write_at(can, item, xpos + 2, ypos + 1);
-					r_cons_canvas_write_at(can, name, xpos + 2, ypos + 2);
-					free(name);
+					snprintf (item, sizeof (item), "0x%" PFMT64x, flag->addr);
+					char *name = r_str_ndup (flag->name, boxwidth - 4 - strlen (item));
+					r_cons_canvas_write_at (can, item, xpos + 2, ypos + 1);
+					r_cons_canvas_write_at (can, name, xpos + 2, ypos + 2);
+					free (name);
 
 					xpos += boxwidth + 1;
 					col++;
@@ -500,7 +500,7 @@ static void draw_level2_disassembly(RVMatrix *rvm) {
 					item_count++;
 				}
 			}
-			r_list_free(all_flags);
+			r_list_free (all_flags);
 		}
 		rvm->rows = (item_count + rvm->cols - 1) / rvm->cols;
 	} else {
@@ -511,37 +511,37 @@ static void draw_level2_disassembly(RVMatrix *rvm) {
 		int disasm_y = (rvm->h - disasm_h) / 2;
 
 		if (disasm_w > 0 && disasm_h > 0) {
-			r_cons_canvas_box(can, disasm_x, disasm_y, disasm_w, disasm_h, Color_YELLOW);
+			r_cons_canvas_box (can, disasm_x, disasm_y, disasm_w, disasm_h, Color_YELLOW);
 		}
 		char title[256];
-		char *header_line = r_str_newf("%s", "");
+		char *header_line = r_str_newf ("%s", "");
 		if (header_line) {
 			int header_len = disasm_w - 4;
 			for (int j = 0; j < header_len && j < 30; j++) {
-				char *new_line = r_str_append(header_line, "-");
+				char *new_line = r_str_append (header_line, "-");
 				if (!new_line) {
 					break; // Allocation failed
 				}
 				header_line = new_line;
 			}
-			r_cons_canvas_write_at(can, header_line, disasm_x + 2, disasm_y);
-			free(header_line);
+			r_cons_canvas_write_at (can, header_line, disasm_x + 2, disasm_y);
+			free (header_line);
 		}
 
-		snprintf(title, sizeof(title), "Disassembly at 0x%" PFMT64x, rvm->selected_addr);
+		snprintf (title, sizeof (title), "Disassembly at 0x%" PFMT64x, rvm->selected_addr);
 		// Crop the title to fit within the disassembly box boundaries
 		int max_title_width = disasm_w - 4; // Leave space for borders
-		char *cropped_title = r_str_ansi_crop(title, 0, 0, max_title_width, -1);
+		char *cropped_title = r_str_ansi_crop (title, 0, 0, max_title_width, -1);
 		if (cropped_title) {
-			r_cons_canvas_write_at(can, cropped_title, disasm_x + 2, disasm_y + 1);
-			free(cropped_title);
+			r_cons_canvas_write_at (can, cropped_title, disasm_x + 2, disasm_y + 1);
+			free (cropped_title);
 		} else {
-			r_cons_canvas_write_at(can, title, disasm_x + 2, disasm_y + 1);
+			r_cons_canvas_write_at (can, title, disasm_x + 2, disasm_y + 1);
 		}
 
 		// Get disassembly content
 		RCore *core = rvm->core;
-		char *disasm = r_core_cmd_strf(core, "pd 20 @ 0x%" PFMT64x, rvm->selected_addr);
+		char *disasm = r_core_cmd_strf (core, "pd 20 @ 0x%" PFMT64x, rvm->selected_addr);
 		if (disasm) {
 			char *line = disasm;
 			char *next_line;
@@ -549,25 +549,25 @@ static void draw_level2_disassembly(RVMatrix *rvm) {
 			int max_lines = disasm_h - 4;
 
 			for (int i = 0; i < max_lines && line; i++) {
-				next_line = strchr(line, '\n');
+				next_line = strchr (line, '\n');
 				if (next_line) {
 					*next_line = '\0';
 					next_line++;
 				}
-				if (strlen(line) > 0) {
+				if (strlen (line) > 0) {
 					// Crop the line to fit within the disassembly box boundaries
 					int max_line_width = disasm_w - 4; // Leave space for borders
-					char *cropped_line = r_str_ansi_crop(line, 0, 0, max_line_width, -1);
+					char *cropped_line = r_str_ansi_crop (line, 0, 0, max_line_width, -1);
 					if (cropped_line) {
-						r_cons_canvas_write_at(can, cropped_line, disasm_x + 2, line_y++);
-						free(cropped_line);
+						r_cons_canvas_write_at (can, cropped_line, disasm_x + 2, line_y++);
+						free (cropped_line);
 					} else {
-						r_cons_canvas_write_at(can, line, disasm_x + 2, line_y++);
+						r_cons_canvas_write_at (can, line, disasm_x + 2, line_y++);
 					}
 				}
 				line = next_line;
 			}
-			free(disasm);
+			free (disasm);
 		}
 	}
 }
@@ -577,7 +577,7 @@ static void vmatrix_refresh(RVMatrix *rvm) {
 		return;
 	}
 	RCons *cons = rvm->core->cons;
-	int h, w = r_cons_get_size(cons, &h);
+	int h, w = r_cons_get_size (cons, &h);
 	rvm->h = h;
 	rvm->w = w;
 
@@ -587,46 +587,46 @@ static void vmatrix_refresh(RVMatrix *rvm) {
 	}
 
 	// Ensure scroll position is within valid bounds
-	clamp_scroll_position(rvm);
-	RConsCanvas *can = r_cons_canvas_new(cons, w, h - 1, -2);
+	clamp_scroll_position (rvm);
+	RConsCanvas *can = r_cons_canvas_new (cons, w, h - 1, -2);
 	if (!can) {
 		return; // Canvas creation failed, skip refresh
 	}
-	r_cons_canvas_fill(can, 0, 0, w, h - 1, ' ');
-	can->linemode = r_config_get_i(rvm->core->config, "graph.linemode");
-	can->color = r_config_get_i(rvm->core->config, "scr.color");
+	r_cons_canvas_fill (can, 0, 0, w, h - 1, ' ');
+	can->linemode = r_config_get_i (rvm->core->config, "graph.linemode");
+	can->color = r_config_get_i (rvm->core->config, "scr.color");
 	rvm->can = can;
 
 	switch (rvm->level) {
 	case 0:
-		draw_level0_boxes(rvm);
+		draw_level0_boxes (rvm);
 		break;
 	case 1:
-		draw_level1_boxes(rvm);
+		draw_level1_boxes (rvm);
 		break;
 	case 2:
-		draw_level2_disassembly(rvm);
+		draw_level2_disassembly (rvm);
 		break;
 	}
 
-	if (rvm->level == 0 || rvm->level == 1 || (rvm->level == 2 && strcmp(level0_categories[rvm->selected], "flagspaces") == 0)) {
-		draw_scrollbar(rvm);
+	if (rvm->level == 0 || rvm->level == 1 || (rvm->level == 2 && strcmp (level0_categories[rvm->selected], "flagspaces") == 0)) {
+		draw_scrollbar (rvm);
 	}
 
-	char *s = r_cons_canvas_tostring(can);
+	char *s = r_cons_canvas_tostring (can);
 	if (!s) {
-		r_cons_canvas_free(can);
+		r_cons_canvas_free (can);
 		rvm->can = NULL;
 		return; // Canvas tostring failed, skip display
 	}
-	r_cons_clear00(cons);
-	char *selected_title = get_selected_box_title(rvm);
+	r_cons_clear00 (cons);
+	char *selected_title = get_selected_box_title (rvm);
 	const char *cursor_status = rvm->core->print->cur_enabled ? "CURSOR" : "NORMAL";
-	r_cons_printf(cons, "[0x%08" PFMT64x " Level:%d Cols:%d %s | %s]\n%s",
+	r_cons_printf (cons, "[0x%08" PFMT64x " Level:%d Cols:%d %s | %s]\n%s",
 		rvm->core->addr, rvm->level, rvm->cols, cursor_status, selected_title, s);
-	r_cons_visual_flush(cons);
-	free(s);
-	r_cons_canvas_free(can);
+	r_cons_visual_flush (cons);
+	free (s);
+	r_cons_canvas_free (can);
 	rvm->can = NULL;
 }
 
@@ -661,7 +661,7 @@ static void vmatrix_show_help(RCore *core) {
 		"  .         - Go back to original address (level 2)\n"
 		"  _         - Filter (reserved for future use)\n"
 		"  ?         - Show this help\n\n";
-	r_cons_less_str(core->cons, help_text, NULL);
+	r_cons_less_str (core->cons, help_text, NULL);
 }
 
 static void vmatrix_refresh_oneshot(void *user) {
@@ -669,7 +669,7 @@ static void vmatrix_refresh_oneshot(void *user) {
 	if (!g_rvm || !g_rvm->core || !g_rvm->core->cons) {
 		return;
 	}
-	vmatrix_refresh(g_rvm);
+	vmatrix_refresh (g_rvm);
 }
 
 R_API void r_core_visual_matrix(RCore *core) {
@@ -693,8 +693,8 @@ R_API void r_core_visual_matrix(RCore *core) {
 	void *old_event_data = core->cons->event_data;
 
 	// Set up vmatrix event callbacks
-	r_cons_set_raw(core->cons, true);
-	r_cons_enable_mouse(core->cons, r_config_get_i(core->config, "scr.wheel"));
+	r_cons_set_raw (core->cons, true);
+	r_cons_enable_mouse (core->cons, r_config_get_i (core->config, "scr.wheel"));
 	core->cons->event_resize = NULL; // avoid running old event with new data
 	core->cons->context->event_interrupt = NULL;
 	g_rvm = &rvm; // Set global pointer
@@ -703,7 +703,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 	core->cons->context->event_interrupt = vmatrix_refresh_oneshot;
 
 	// Initial refresh to display the matrix
-	vmatrix_refresh(&rvm);
+	vmatrix_refresh (&rvm);
 
 	// Ensure global pointer is still valid
 	if (!g_rvm) {
@@ -712,8 +712,8 @@ R_API void r_core_visual_matrix(RCore *core) {
 
 	bool leave = false;
 	while (!leave) {
-		char ch = r_cons_readchar(core->cons);
-		ch = r_cons_arrow_to_hjkl(core->cons, ch);
+		char ch = r_cons_readchar (core->cons);
+		ch = r_cons_arrow_to_hjkl (core->cons, ch);
 		switch (ch) {
 		case '1':
 		case '2':
@@ -725,18 +725,18 @@ R_API void r_core_visual_matrix(RCore *core) {
 		case '8':
 		case '9':
 			rvm.cols = ch - '0';
-			clamp_scroll_position(&rvm);
+			clamp_scroll_position (&rvm);
 			break;
 		case '[':
 			if (rvm.cols > 1) {
 				rvm.cols--;
-				clamp_scroll_position(&rvm);
+				clamp_scroll_position (&rvm);
 			}
 			break;
 		case ']':
 			if (rvm.cols < 9) {
 				rvm.cols++;
-				clamp_scroll_position(&rvm);
+				clamp_scroll_position (&rvm);
 			}
 			break;
 		case '+':
@@ -752,23 +752,23 @@ R_API void r_core_visual_matrix(RCore *core) {
 			// filter
 			break;
 		case 'j':
-			if (rvm.level == 2 && strcmp(level0_categories[rvm.selected], "flagspaces") == 0 && rvm.selected_flagspace) {
+			if (rvm.level == 2 && strcmp (level0_categories[rvm.selected], "flagspaces") == 0 && rvm.selected_flagspace) {
 				// Scroll flagspace boxes down
 				rvm.scroll_y++;
-				clamp_scroll_position(&rvm);
+				clamp_scroll_position (&rvm);
 			} else if (rvm.level == 2) {
 				// Scroll disassembly down
 				rvm.selected_addr += 4; // Simple scroll by instruction
 			} else {
 				rvm.scroll_y++;
-				clamp_scroll_position(&rvm);
+				clamp_scroll_position (&rvm);
 			}
 			break;
 		case 'k':
-			if (rvm.level == 2 && strcmp(level0_categories[rvm.selected], "flagspaces") == 0 && rvm.selected_flagspace) {
+			if (rvm.level == 2 && strcmp (level0_categories[rvm.selected], "flagspaces") == 0 && rvm.selected_flagspace) {
 				// Scroll flagspace boxes up
 				rvm.scroll_y--;
-				clamp_scroll_position(&rvm);
+				clamp_scroll_position (&rvm);
 			} else if (rvm.level == 2) {
 				// Scroll disassembly up
 				if (rvm.selected_addr >= 4) {
@@ -776,35 +776,35 @@ R_API void r_core_visual_matrix(RCore *core) {
 				}
 			} else {
 				rvm.scroll_y--;
-				clamp_scroll_position(&rvm);
+				clamp_scroll_position (&rvm);
 			}
 			break;
 		case 'J':
-			if (rvm.level == 2 && strcmp(level0_categories[rvm.selected], "flagspaces") == 0 && rvm.selected_flagspace) {
+			if (rvm.level == 2 && strcmp (level0_categories[rvm.selected], "flagspaces") == 0 && rvm.selected_flagspace) {
 				rvm.scroll_y += rvm.box_h;
-				clamp_scroll_position(&rvm);
+				clamp_scroll_position (&rvm);
 			} else if (rvm.level == 2) {
 				rvm.selected_addr += 16; // Page scroll disassembly down
 			} else {
 				rvm.scroll_y += rvm.box_h;
-				clamp_scroll_position(&rvm);
+				clamp_scroll_position (&rvm);
 			}
 			break;
 		case 'K':
-			if (rvm.level == 2 && strcmp(level0_categories[rvm.selected], "flagspaces") == 0 && rvm.selected_flagspace) {
+			if (rvm.level == 2 && strcmp (level0_categories[rvm.selected], "flagspaces") == 0 && rvm.selected_flagspace) {
 				rvm.scroll_y -= rvm.box_h;
-				clamp_scroll_position(&rvm);
+				clamp_scroll_position (&rvm);
 			} else if (rvm.level == 2) {
 				if (rvm.selected_addr >= 16) {
 					rvm.selected_addr -= 16; // Page scroll disassembly up
 				}
 			} else {
 				rvm.scroll_y -= rvm.box_h;
-				clamp_scroll_position(&rvm);
+				clamp_scroll_position (&rvm);
 			}
 			break;
 		case 'g':
-			if (rvm.level == 2 && strcmp(level0_categories[rvm.selected], "flagspaces") == 0 && rvm.selected_flagspace) {
+			if (rvm.level == 2 && strcmp (level0_categories[rvm.selected], "flagspaces") == 0 && rvm.selected_flagspace) {
 				rvm.scroll_y = 0;
 			} else if (rvm.level == 2) {
 				rvm.selected_addr = rvm.original_addr;
@@ -813,15 +813,15 @@ R_API void r_core_visual_matrix(RCore *core) {
 			}
 			break;
 		case 'G':
-			if (rvm.level == 2 && strcmp(level0_categories[rvm.selected], "flagspaces") == 0 && rvm.selected_flagspace) {
+			if (rvm.level == 2 && strcmp (level0_categories[rvm.selected], "flagspaces") == 0 && rvm.selected_flagspace) {
 				rvm.scroll_y = rvm.rows * rvm.box_h - 1;
-				clamp_scroll_position(&rvm);
+				clamp_scroll_position (&rvm);
 			} else if (rvm.level == 2) {
 				// For disassembly, G could go to end, but for now keep as is
 				rvm.selected_addr += 100; // Arbitrary large scroll
 			} else {
 				rvm.scroll_y = rvm.rows * rvm.box_h - 1;
-				clamp_scroll_position(&rvm);
+				clamp_scroll_position (&rvm);
 			}
 			break;
 		case 'h':
@@ -830,7 +830,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 				if (rvm.selected < 0) {
 					rvm.selected = 0;
 				}
-			} else if (rvm.level == 2 && strcmp(level0_categories[rvm.selected], "flagspaces") == 0 && rvm.selected_flagspace) {
+			} else if (rvm.level == 2 && strcmp (level0_categories[rvm.selected], "flagspaces") == 0 && rvm.selected_flagspace) {
 				if (rvm.selected_item > 0) {
 					rvm.selected_item--;
 				}
@@ -847,17 +847,37 @@ R_API void r_core_visual_matrix(RCore *core) {
 				if (rvm.selected > max_selected) {
 					rvm.selected = max_selected;
 				}
-			} else if (rvm.level == 2 && strcmp(level0_categories[rvm.selected], "flagspaces") == 0 && rvm.selected_flagspace) {
+			} else if (rvm.level == 2 && strcmp (level0_categories[rvm.selected], "flagspaces") == 0 && rvm.selected_flagspace) {
 				rvm.selected_item++;
 				// Bounds checking will be done in refresh or mouse handling
 			}
 			break;
 		case 'd':
-			if (rvm.level < 2) {
+			if (rvm.level == 2 && strcmp (level0_categories[rvm.selected], "flagspaces") == 0 && rvm.selected_flagspace) {
+				// Go to disassembly of selected flag
+				RList *all_flags = r_flag_all_list (rvm.core->flags, true);
+				if (all_flags) {
+					RListIter *iter;
+					RFlagItem *flag;
+					int count = 0;
+					r_list_foreach (all_flags, iter, flag) {
+						if (flag->space && strcmp (flag->space->name, rvm.selected_flagspace) == 0) {
+							if (count == rvm.selected_item) {
+								rvm.selected_addr = flag->addr;
+								free (rvm.selected_flagspace);
+								rvm.selected_flagspace = NULL;
+								break;
+							}
+							count++;
+						}
+					}
+					r_list_free (all_flags);
+				}
+			} else if (rvm.level < 2) {
 				// Set selected_addr or selected_flagspace based on current selection before entering level 2
 				if (rvm.level == 1) {
 					const char *cat = level0_categories[rvm.selected];
-					if (strcmp(cat, "functions") == 0) {
+					if (strcmp (cat, "functions") == 0) {
 						RListIter *iter;
 						RAnalFunction *f;
 						RList *fcns = rvm.core->anal->fcns;
@@ -869,23 +889,23 @@ R_API void r_core_visual_matrix(RCore *core) {
 							}
 							count++;
 						}
-					} else if (strcmp(cat, "flagspaces") == 0) {
+					} else if (strcmp (cat, "flagspaces") == 0) {
 						// For flagspaces, set the selected flagspace
 						RSpace *space;
 						RSpaceIter *it;
 						int count = 0;
-						r_flag_space_foreach(rvm.core->flags, it, space) {
+						r_flag_space_foreach (rvm.core->flags, it, space) {
 							if (count == rvm.selected_item) {
-								free(rvm.selected_flagspace);
-								rvm.selected_flagspace = strdup(space->name);
+								free (rvm.selected_flagspace);
+								rvm.selected_flagspace = strdup (space->name);
 								break;
 							}
 							count++;
 						}
-					} else if (strcmp(cat, "flags") == 0) {
+					} else if (strcmp (cat, "flags") == 0) {
 						RListIter *iter;
 						RFlagItem *flag;
-						const RList *flags = r_flag_get_list(rvm.core->flags, 0);
+						const RList *flags = r_flag_get_list (rvm.core->flags, 0);
 						int count = 0;
 						r_list_foreach (flags, iter, flag) {
 							if (count == rvm.selected_item) {
@@ -894,10 +914,10 @@ R_API void r_core_visual_matrix(RCore *core) {
 							}
 							count++;
 						}
-					} else if (strcmp(cat, "symbols") == 0) {
+					} else if (strcmp (cat, "symbols") == 0) {
 						RBinSymbol *sym;
 						RListIter *iter;
-						const RList *symbols = r_bin_get_symbols(rvm.core->bin);
+						const RList *symbols = r_bin_get_symbols (rvm.core->bin);
 						int count = 0;
 						r_list_foreach (symbols, iter, sym) {
 							if (count == rvm.selected_item) {
@@ -906,10 +926,10 @@ R_API void r_core_visual_matrix(RCore *core) {
 							}
 							count++;
 						}
-					} else if (strcmp(cat, "sections") == 0) {
+					} else if (strcmp (cat, "sections") == 0) {
 						RBinSection *section;
 						RListIter *iter;
-						const RList *sections = r_bin_get_sections(rvm.core->bin);
+						const RList *sections = r_bin_get_sections (rvm.core->bin);
 						int count = 0;
 						r_list_foreach (sections, iter, section) {
 							if (count == rvm.selected_item) {
@@ -922,31 +942,35 @@ R_API void r_core_visual_matrix(RCore *core) {
 					// For imports, keep current address
 				}
 				rvm.level++;
-				clamp_scroll_position(&rvm);
+				clamp_scroll_position (&rvm);
 			}
-			break;
-		case 'u':
-			if (rvm.level > 0) {
-				switch_level(&rvm, rvm.level - 1);
-				// Clear selected_flagspace when leaving level 2
-				if (rvm.level < 2) {
-					free(rvm.selected_flagspace);
-					rvm.selected_flagspace = NULL;
-				}
-			}
-			break;
-		case ':':
-			r_core_visual_prompt_input(core);
-			break;
-		case '!':
-			r_core_panels_root(core, core->panels_root);
 			break;
 		case '\n': // Enter key - alias for 'd'
-			if (rvm.level < 2) {
+			if (rvm.level == 2 && strcmp (level0_categories[rvm.selected], "flagspaces") == 0 && rvm.selected_flagspace) {
+				// Go to disassembly of selected flag
+				RList *all_flags = r_flag_all_list (rvm.core->flags, true);
+				if (all_flags) {
+					RListIter *iter;
+					RFlagItem *flag;
+					int count = 0;
+					r_list_foreach (all_flags, iter, flag) {
+						if (flag->space && strcmp (flag->space->name, rvm.selected_flagspace) == 0) {
+							if (count == rvm.selected_item) {
+								rvm.selected_addr = flag->addr;
+								free (rvm.selected_flagspace);
+								rvm.selected_flagspace = NULL;
+								break;
+							}
+							count++;
+						}
+					}
+					r_list_free (all_flags);
+				}
+			} else if (rvm.level < 2) {
 				// Set selected_addr or selected_flagspace based on current selection before entering level 2
 				if (rvm.level == 1) {
 					const char *cat = level0_categories[rvm.selected];
-					if (strcmp(cat, "functions") == 0) {
+					if (strcmp (cat, "functions") == 0) {
 						RListIter *iter;
 						RAnalFunction *f;
 						RList *fcns = rvm.core->anal->fcns;
@@ -958,23 +982,23 @@ R_API void r_core_visual_matrix(RCore *core) {
 							}
 							count++;
 						}
-					} else if (strcmp(cat, "flagspaces") == 0) {
+					} else if (strcmp (cat, "flagspaces") == 0) {
 						// For flagspaces, set the selected flagspace
 						RSpace *space;
 						RSpaceIter *it;
 						int count = 0;
-						r_flag_space_foreach(rvm.core->flags, it, space) {
+						r_flag_space_foreach (rvm.core->flags, it, space) {
 							if (count == rvm.selected_item) {
-								free(rvm.selected_flagspace);
-								rvm.selected_flagspace = strdup(space->name);
+								free (rvm.selected_flagspace);
+								rvm.selected_flagspace = strdup (space->name);
 								break;
 							}
 							count++;
 						}
-					} else if (strcmp(cat, "flags") == 0) {
+					} else if (strcmp (cat, "flags") == 0) {
 						RListIter *iter;
 						RFlagItem *flag;
-						const RList *flags = r_flag_get_list(rvm.core->flags, 0);
+						const RList *flags = r_flag_get_list (rvm.core->flags, 0);
 						int count = 0;
 						r_list_foreach (flags, iter, flag) {
 							if (count == rvm.selected_item) {
@@ -983,10 +1007,10 @@ R_API void r_core_visual_matrix(RCore *core) {
 							}
 							count++;
 						}
-					} else if (strcmp(cat, "symbols") == 0) {
+					} else if (strcmp (cat, "symbols") == 0) {
 						RBinSymbol *sym;
 						RListIter *iter;
-						const RList *symbols = r_bin_get_symbols(rvm.core->bin);
+						const RList *symbols = r_bin_get_symbols (rvm.core->bin);
 						int count = 0;
 						r_list_foreach (symbols, iter, sym) {
 							if (count == rvm.selected_item) {
@@ -995,10 +1019,10 @@ R_API void r_core_visual_matrix(RCore *core) {
 							}
 							count++;
 						}
-					} else if (strcmp(cat, "sections") == 0) {
+					} else if (strcmp (cat, "sections") == 0) {
 						RBinSection *section;
 						RListIter *iter;
-						const RList *sections = r_bin_get_sections(rvm.core->bin);
+						const RList *sections = r_bin_get_sections (rvm.core->bin);
 						int count = 0;
 						r_list_foreach (sections, iter, section) {
 							if (count == rvm.selected_item) {
@@ -1010,7 +1034,95 @@ R_API void r_core_visual_matrix(RCore *core) {
 					}
 					// For imports, keep current address
 				}
-				switch_level(&rvm, rvm.level + 1);
+				switch_level (&rvm, rvm.level + 1);
+			}
+			break;
+		case 'u':
+			if (rvm.level > 0) {
+				switch_level (&rvm, rvm.level - 1);
+				// Clear selected_flagspace when leaving level 2
+				if (rvm.level < 2) {
+					free (rvm.selected_flagspace);
+					rvm.selected_flagspace = NULL;
+				}
+			}
+			break;
+		case ':':
+			r_core_visual_prompt_input (core);
+			break;
+		case '!':
+			r_core_panels_root (core, core->panels_root);
+			break;
+		case '\n': // Enter key - alias for 'd'
+			if (rvm.level < 2) {
+				// Set selected_addr or selected_flagspace based on current selection before entering level 2
+				if (rvm.level == 1) {
+					const char *cat = level0_categories[rvm.selected];
+					if (strcmp (cat, "functions") == 0) {
+						RListIter *iter;
+						RAnalFunction *f;
+						RList *fcns = rvm.core->anal->fcns;
+						int count = 0;
+						r_list_foreach (fcns, iter, f) {
+							if (count == rvm.selected_item) {
+								rvm.selected_addr = f->addr;
+								break;
+							}
+							count++;
+						}
+					} else if (strcmp (cat, "flagspaces") == 0) {
+						// For flagspaces, set the selected flagspace
+						RSpace *space;
+						RSpaceIter *it;
+						int count = 0;
+						r_flag_space_foreach (rvm.core->flags, it, space) {
+							if (count == rvm.selected_item) {
+								free (rvm.selected_flagspace);
+								rvm.selected_flagspace = strdup (space->name);
+								break;
+							}
+							count++;
+						}
+					} else if (strcmp (cat, "flags") == 0) {
+						RListIter *iter;
+						RFlagItem *flag;
+						const RList *flags = r_flag_get_list (rvm.core->flags, 0);
+						int count = 0;
+						r_list_foreach (flags, iter, flag) {
+							if (count == rvm.selected_item) {
+								rvm.selected_addr = flag->addr;
+								break;
+							}
+							count++;
+						}
+					} else if (strcmp (cat, "symbols") == 0) {
+						RBinSymbol *sym;
+						RListIter *iter;
+						const RList *symbols = r_bin_get_symbols (rvm.core->bin);
+						int count = 0;
+						r_list_foreach (symbols, iter, sym) {
+							if (count == rvm.selected_item) {
+								rvm.selected_addr = sym->vaddr;
+								break;
+							}
+							count++;
+						}
+					} else if (strcmp (cat, "sections") == 0) {
+						RBinSection *section;
+						RListIter *iter;
+						const RList *sections = r_bin_get_sections (rvm.core->bin);
+						int count = 0;
+						r_list_foreach (sections, iter, section) {
+							if (count == rvm.selected_item) {
+								rvm.selected_addr = section->vaddr;
+								break;
+							}
+							count++;
+						}
+					}
+					// For imports, keep current address
+				}
+				switch_level (&rvm, rvm.level + 1);
 			}
 			break;
 		case '\t': // Tab key - navigate to next item in level 1
@@ -1019,31 +1131,31 @@ R_API void r_core_visual_matrix(RCore *core) {
 				// Add bounds checking for selected_item
 				int max_items = 0;
 				const char *cat = level0_categories[rvm.selected];
-				if (strcmp(cat, "functions") == 0) {
-					max_items = r_list_length(rvm.core->anal->fcns);
-				} else if (strcmp(cat, "flagspaces") == 0) {
+				if (strcmp (cat, "functions") == 0) {
+					max_items = r_list_length (rvm.core->anal->fcns);
+				} else if (strcmp (cat, "flagspaces") == 0) {
 					RSpace *space;
 					RSpaceIter *it;
-					r_flag_space_foreach(rvm.core->flags, it, space) {
-						(void)space;
+					r_flag_space_foreach (rvm.core->flags, it, space) {
+ (void)space;
 						max_items++;
 					}
-				} else if (strcmp(cat, "flags") == 0) {
-					const RList *flags = r_flag_get_list(rvm.core->flags, 0);
-					max_items = r_list_length(flags);
-				} else if (strcmp(cat, "symbols") == 0) {
-					const RList *symbols = r_bin_get_symbols(rvm.core->bin);
-					max_items = r_list_length(symbols);
-				} else if (strcmp(cat, "imports") == 0) {
-					const RList *imports = r_bin_get_imports(rvm.core->bin);
-					max_items = r_list_length(imports);
-				} else if (strcmp(cat, "sections") == 0) {
-					const RList *sections = r_bin_get_sections(rvm.core->bin);
-					max_items = r_list_length(sections);
-				} else if (strcmp(cat, "comments") == 0) {
+				} else if (strcmp (cat, "flags") == 0) {
+					const RList *flags = r_flag_get_list (rvm.core->flags, 0);
+					max_items = r_list_length (flags);
+				} else if (strcmp (cat, "symbols") == 0) {
+					const RList *symbols = r_bin_get_symbols (rvm.core->bin);
+					max_items = r_list_length (symbols);
+				} else if (strcmp (cat, "imports") == 0) {
+					const RList *imports = r_bin_get_imports (rvm.core->bin);
+					max_items = r_list_length (imports);
+				} else if (strcmp (cat, "sections") == 0) {
+					const RList *sections = r_bin_get_sections (rvm.core->bin);
+					max_items = r_list_length (sections);
+				} else if (strcmp (cat, "comments") == 0) {
 					RIntervalTreeIter it;
 					RAnalMetaItem *item;
-					r_interval_tree_foreach(&rvm.core->anal->meta, it, item) {
+					r_interval_tree_foreach (&rvm.core->anal->meta, it, item) {
 						if (item->type == R_META_TYPE_COMMENT) {
 							max_items++;
 						}
@@ -1052,20 +1164,20 @@ R_API void r_core_visual_matrix(RCore *core) {
 				if (rvm.selected_item >= max_items) {
 					rvm.selected_item = 0; // Wrap around to first item
 				}
-			} else if (rvm.level == 2 && strcmp(level0_categories[rvm.selected], "flagspaces") == 0 && rvm.selected_flagspace) {
+			} else if (rvm.level == 2 && strcmp (level0_categories[rvm.selected], "flagspaces") == 0 && rvm.selected_flagspace) {
 				rvm.selected_item++;
 				// Count flags in the selected flagspace for bounds checking
 				int max_items = 0;
-				RList *all_flags = r_flag_all_list(rvm.core->flags, true);
+				RList *all_flags = r_flag_all_list (rvm.core->flags, true);
 				if (all_flags) {
 					RListIter *iter;
 					RFlagItem *flag;
 					r_list_foreach (all_flags, iter, flag) {
-						if (flag->space && strcmp(flag->space->name, rvm.selected_flagspace) == 0) {
+						if (flag->space && strcmp (flag->space->name, rvm.selected_flagspace) == 0) {
 							max_items++;
 						}
 					}
-					r_list_free(all_flags);
+					r_list_free (all_flags);
 				}
 				if (rvm.selected_item >= max_items) {
 					rvm.selected_item = 0; // Wrap around
@@ -1090,30 +1202,30 @@ R_API void r_core_visual_matrix(RCore *core) {
 					// Wrap around to last item
 					int max_items = 0;
 					const char *cat = level0_categories[rvm.selected];
-					if (strcmp(cat, "functions") == 0) {
-						max_items = r_list_length(rvm.core->anal->fcns);
-					} else if (strcmp(cat, "flagspaces") == 0) {
+					if (strcmp (cat, "functions") == 0) {
+						max_items = r_list_length (rvm.core->anal->fcns);
+					} else if (strcmp (cat, "flagspaces") == 0) {
 						RSpace *space;
 						RSpaceIter *it;
-						r_flag_space_foreach(rvm.core->flags, it, space) {
+						r_flag_space_foreach (rvm.core->flags, it, space) {
 							max_items++;
 						}
-					} else if (strcmp(cat, "flags") == 0) {
-						const RList *flags = r_flag_get_list(rvm.core->flags, 0);
-						max_items = r_list_length(flags);
-					} else if (strcmp(cat, "symbols") == 0) {
-						const RList *symbols = r_bin_get_symbols(rvm.core->bin);
-						max_items = r_list_length(symbols);
-					} else if (strcmp(cat, "imports") == 0) {
-						const RList *imports = r_bin_get_imports(rvm.core->bin);
-						max_items = r_list_length(imports);
-					} else if (strcmp(cat, "sections") == 0) {
-						const RList *sections = r_bin_get_sections(rvm.core->bin);
-						max_items = r_list_length(sections);
-					} else if (strcmp(cat, "comments") == 0) {
+					} else if (strcmp (cat, "flags") == 0) {
+						const RList *flags = r_flag_get_list (rvm.core->flags, 0);
+						max_items = r_list_length (flags);
+					} else if (strcmp (cat, "symbols") == 0) {
+						const RList *symbols = r_bin_get_symbols (rvm.core->bin);
+						max_items = r_list_length (symbols);
+					} else if (strcmp (cat, "imports") == 0) {
+						const RList *imports = r_bin_get_imports (rvm.core->bin);
+						max_items = r_list_length (imports);
+					} else if (strcmp (cat, "sections") == 0) {
+						const RList *sections = r_bin_get_sections (rvm.core->bin);
+						max_items = r_list_length (sections);
+					} else if (strcmp (cat, "comments") == 0) {
 						RIntervalTreeIter it;
 						RAnalMetaItem *item;
-						r_interval_tree_foreach(&rvm.core->anal->meta, it, item) {
+						r_interval_tree_foreach (&rvm.core->anal->meta, it, item) {
 							if (item->type == R_META_TYPE_COMMENT) {
 								max_items++;
 							}
@@ -1123,22 +1235,22 @@ R_API void r_core_visual_matrix(RCore *core) {
 						rvm.selected_item = max_items - 1;
 					}
 				}
-			} else if (rvm.level == 2 && strcmp(level0_categories[rvm.selected], "flagspaces") == 0 && rvm.selected_flagspace) {
+			} else if (rvm.level == 2 && strcmp (level0_categories[rvm.selected], "flagspaces") == 0 && rvm.selected_flagspace) {
 				if (rvm.selected_item > 0) {
 					rvm.selected_item--;
 				} else {
 					// Wrap around to last item
 					int max_items = 0;
-					RList *all_flags = r_flag_all_list(rvm.core->flags, true);
+					RList *all_flags = r_flag_all_list (rvm.core->flags, true);
 					if (all_flags) {
 						RListIter *iter;
 						RFlagItem *flag;
 						r_list_foreach (all_flags, iter, flag) {
-							if (flag->space && strcmp(flag->space->name, rvm.selected_flagspace) == 0) {
+							if (flag->space && strcmp (flag->space->name, rvm.selected_flagspace) == 0) {
 								max_items++;
 							}
 						}
-						r_list_free(all_flags);
+						r_list_free (all_flags);
 					}
 					if (max_items > 0) {
 						rvm.selected_item = max_items - 1;
@@ -1153,10 +1265,10 @@ R_API void r_core_visual_matrix(RCore *core) {
 			break;
 		case 'q':
 			if (rvm.level > 0) {
-				switch_level(&rvm, rvm.level - 1);
+				switch_level (&rvm, rvm.level - 1);
 				// Clear selected_flagspace when leaving level 2
 				if (rvm.level < 2) {
-					free(rvm.selected_flagspace);
+					free (rvm.selected_flagspace);
 					rvm.selected_flagspace = NULL;
 				}
 			} else {
@@ -1164,35 +1276,35 @@ R_API void r_core_visual_matrix(RCore *core) {
 			}
 			break;
 		case '/':
-			r_core_cmd0(core, "?i highlight;e scr.highlight=`yp`");
+			r_core_cmd0 (core, "?i highlight;e scr.highlight=`yp`");
 			break;
 		case '|': {
-			char *input = r_cons_input(core->cons, "Filter: ");
+			char *input = r_cons_input (core->cons, "Filter: ");
 			if (input && *input) {
-				free(rvm.filter);
-				rvm.filter = strdup(input);
+				free (rvm.filter);
+				rvm.filter = strdup (input);
 			} else {
-				free(rvm.filter);
+				free (rvm.filter);
 				rvm.filter = NULL;
 			}
-			free(input);
+			free (input);
 		} break;
 		case '?':
-			vmatrix_show_help(core);
+			vmatrix_show_help (core);
 			break;
 		default:
 			// Handle mouse clicks
 			if (ch == 0) { // Mouse event
 				int x, y;
-				if (r_cons_get_click(core->cons, &x, &y)) {
+				if (r_cons_get_click (core->cons, &x, &y)) {
 					// Check if click is on title bar (first line)
 					if (y == 0 || y == 1) {
 						// Go up one level
 						if (rvm.level > 0) {
-							switch_level(&rvm, rvm.level - 1);
+							switch_level (&rvm, rvm.level - 1);
 							// Clear selected_flagspace when leaving level 2
 							if (rvm.level < 2) {
-								free(rvm.selected_flagspace);
+								free (rvm.selected_flagspace);
 								rvm.selected_flagspace = NULL;
 							}
 						}
@@ -1211,7 +1323,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 							int total_h = rvm.rows * rvm.box_h;
 							if (total_h > 0) {
 								rvm.scroll_y = (y - 1) * total_h / (rvm.h - 3);
-								clamp_scroll_position(&rvm);
+								clamp_scroll_position (&rvm);
 							}
 						}
 					} else if (y >= 0) {
@@ -1232,7 +1344,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 								if (box_index >= 0 && box_index < total_boxes) {
 									if (rvm.selected == box_index) {
 										// Same box clicked again, go down one level
-										switch_level(&rvm, rvm.level + 1);
+										switch_level (&rvm, rvm.level + 1);
 									} else {
 										// Different box clicked, just select it
 										rvm.selected = box_index;
@@ -1247,7 +1359,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 									// Same item clicked again, go down one level
 									// Set selected_addr or selected_flagspace based on current selection before entering level 2
 									const char *cat = level0_categories[rvm.selected];
-									if (strcmp(cat, "functions") == 0) {
+									if (strcmp (cat, "functions") == 0) {
 										RListIter *iter;
 										RAnalFunction *f;
 										RList *fcns = rvm.core->anal->fcns;
@@ -1259,24 +1371,24 @@ R_API void r_core_visual_matrix(RCore *core) {
 											}
 											count++;
 										}
-									} else if (strcmp(cat, "flagspaces") == 0) {
+									} else if (strcmp (cat, "flagspaces") == 0) {
 										// For flagspaces, set the selected flagspace
 										RSpace *space;
 										RSpaceIter *it;
 										int count = 0;
-										r_flag_space_foreach(rvm.core->flags, it, space) {
+										r_flag_space_foreach (rvm.core->flags, it, space) {
 											if (count == rvm.selected_item) {
-												free(rvm.selected_flagspace);
-												rvm.selected_flagspace = strdup(space->name);
+												free (rvm.selected_flagspace);
+												rvm.selected_flagspace = strdup (space->name);
 												break;
 											}
 											count++;
 										}
-										(void)space;
-									} else if (strcmp(cat, "flags") == 0) {
+ (void)space;
+									} else if (strcmp (cat, "flags") == 0) {
 										RListIter *iter;
 										RFlagItem *flag;
-										const RList *flags = r_flag_get_list(rvm.core->flags, 0);
+										const RList *flags = r_flag_get_list (rvm.core->flags, 0);
 										int count = 0;
 										r_list_foreach (flags, iter, flag) {
 											if (count == rvm.selected_item) {
@@ -1285,10 +1397,10 @@ R_API void r_core_visual_matrix(RCore *core) {
 											}
 											count++;
 										}
-									} else if (strcmp(cat, "symbols") == 0) {
+									} else if (strcmp (cat, "symbols") == 0) {
 										RBinSymbol *sym;
 										RListIter *iter;
-										const RList *symbols = r_bin_get_symbols(rvm.core->bin);
+										const RList *symbols = r_bin_get_symbols (rvm.core->bin);
 										int count = 0;
 										r_list_foreach (symbols, iter, sym) {
 											if (count == rvm.selected_item) {
@@ -1297,10 +1409,10 @@ R_API void r_core_visual_matrix(RCore *core) {
 											}
 											count++;
 										}
-									} else if (strcmp(cat, "sections") == 0) {
+									} else if (strcmp (cat, "sections") == 0) {
 										RBinSection *section;
 										RListIter *iter;
-										const RList *sections = r_bin_get_sections(rvm.core->bin);
+										const RList *sections = r_bin_get_sections (rvm.core->bin);
 										int count = 0;
 										r_list_foreach (sections, iter, section) {
 											if (count == rvm.selected_item) {
@@ -1309,51 +1421,51 @@ R_API void r_core_visual_matrix(RCore *core) {
 											}
 											count++;
 										}
-									} else if (strcmp(cat, "comments") == 0) {
+									} else if (strcmp (cat, "comments") == 0) {
 										RIntervalTreeIter it;
 										RAnalMetaItem *item;
 										int count = 0;
-										r_interval_tree_foreach(&rvm.core->anal->meta, it, item) {
+										r_interval_tree_foreach (&rvm.core->anal->meta, it, item) {
 											if (item->type != R_META_TYPE_COMMENT) {
 												continue;
 											}
 											if (count == rvm.selected_item) {
-												rvm.selected_addr = r_interval_tree_iter_get(&it)->start;
+												rvm.selected_addr = r_interval_tree_iter_get (&it)->start;
 												break;
 											}
 											count++;
 										}
 									}
 									// For imports, keep current address
-									switch_level(&rvm, rvm.level + 1);
+									switch_level (&rvm, rvm.level + 1);
 								} else {
 									// Different item clicked, just select it
 									rvm.selected_item = clicked_item;
 								}
 							}
-						} else if (rvm.level == 2 && strcmp(level0_categories[rvm.selected], "flagspaces") == 0) {
+						} else if (rvm.level == 2 && strcmp (level0_categories[rvm.selected], "flagspaces") == 0) {
 							// Level 2 flagspaces: select flag
 							int clicked_item = clicked_row * rvm.cols + clicked_col;
 							if (clicked_item >= 0 && clicked_item < rvm.rows) {
 								if (rvm.selected_item == clicked_item) {
 									// Same flag clicked again, go to disassembly
-									RList *all_flags = r_flag_all_list(rvm.core->flags, true);
+									RList *all_flags = r_flag_all_list (rvm.core->flags, true);
 									if (all_flags) {
 										RListIter *iter;
 										RFlagItem *flag;
 										int count = 0;
 										r_list_foreach (all_flags, iter, flag) {
-											if (flag->space && strcmp(flag->space->name, rvm.selected_flagspace) == 0) {
+											if (flag->space && strcmp (flag->space->name, rvm.selected_flagspace) == 0) {
 												if (count == clicked_item) {
 													rvm.selected_addr = flag->addr;
-													free(rvm.selected_flagspace);
+													free (rvm.selected_flagspace);
 													rvm.selected_flagspace = NULL;
 													break;
 												}
 												count++;
 											}
 										}
-										r_list_free(all_flags);
+										r_list_free (all_flags);
 									}
 								} else {
 									// Different flag clicked, just select it
@@ -1368,7 +1480,7 @@ R_API void r_core_visual_matrix(RCore *core) {
 		}
 
 		// Refresh the display after each key press
-		vmatrix_refresh(&rvm);
+		vmatrix_refresh (&rvm);
 	}
 
 	// Restore original event callbacks
@@ -1377,8 +1489,8 @@ R_API void r_core_visual_matrix(RCore *core) {
 	core->cons->event_data = old_event_data;
 	g_rvm = NULL; // Clear global pointer
 
-	r_cons_enable_mouse(core->cons, false);
-	r_cons_set_raw(core->cons, false);
-	free(rvm.selected_flagspace);
-	free(rvm.filter);
+	r_cons_enable_mouse (core->cons, false);
+	r_cons_set_raw (core->cons, false);
+	free (rvm.selected_flagspace);
+	free (rvm.filter);
 }
