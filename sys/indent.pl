@@ -2,14 +2,36 @@
 use strict;
 use warnings;
 
-while (<>) {
-	s/^ +/\t/g;
-	if (/^[A-Za-z0-9]/) {
-		s/\s*\(/(/g;
-	} else {
-		s/\s*\(/ (/g;
+if (@ARGV == 1) {
+	my $file = $ARGV[0];
+	open my $fh, '<', $file or die "Cannot open $file: $!";
+	my @lines = <$fh>;
+	close $fh;
+
+	foreach my $line (@lines) {
+		$line =~ s/^ +/\t/g;
+		if ($line =~ /^[A-Za-z0-9]/) {
+			$line =~ s/\s*\(/(/g;
+		} else {
+			$line =~ s/\s*\(/ (/g;
+		}
+		$line =~ s/'\s\(/'(/g;
+		$line =~ s/\(\s\(/((/g;
 	}
-	s/'\s\(/'(/g;
-	s/\(\s\(/((/g;
-	print;
+
+	open my $out, '>', $file or die "Cannot write to $file: $!";
+	print $out @lines;
+	close $out;
+} else {
+	while (<>) {
+		s/^ +/\t/g;
+		if (/^[A-Za-z0-9]/) {
+			s/\s*\(/(/g;
+		} else {
+			s/\s*\(/ (/g;
+		}
+		s/'\s\(/'(/g;
+		s/\(\s\(/((/g;
+		print;
+	}
 }
