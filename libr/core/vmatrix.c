@@ -670,16 +670,8 @@ static void vmatrix_show_help(RCore *core) {
 		"  |         - Filter boxes by text\n"
 		"  .         - Go back to original address (level 2)\n"
 		"  _         - Filter (reserved for future use)\n"
-		"  ?         - Show this help\n\n"
-		"Navigation Levels:\n"
-		"  Level 0 - Categories (flags, flagspaces, functions, etc.)\n"
-		"  Level 1 - Items within selected category\n"
-		"  Level 2 - Details (flagspace contents or disassembly)\n\n"
-		"Visual Feedback:\n"
-		"  Red borders + #### - Selected items\n"
-		"  Scroll positions saved per level\n"
-		"  Level 2: Cyan (flagspaces), Yellow (disassembly)\n\n";
-	r_cons_less (core->cons, help_text);
+		"  ?         - Show this help\n\n";
+	r_cons_less_str (core->cons, help_text, NULL);
 }
 
 static void vmatrix_refresh_oneshot(void *user) {
