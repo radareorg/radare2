@@ -1,0 +1,175 @@
+.Dd September 20, 2025
+.Dt R_ESIL 3
+.Os
+.Sh NAME
+.Nm r_esil
+.Nd radare2 ESIL (Evaluable Strings Intermediate Language) library
+.Sh SYNOPSIS
+.In r_esil.h
+.Ft REsil *
+.Fn r_esil_new "int stacksize" "int iotrap" "unsigned int addrsize"
+.Ft void
+.Fn r_esil_free "REsil *esil"
+.Ft bool
+.Fn r_esil_parse "REsil *esil" "const char *str"
+.Ft bool
+.Fn r_esil_runword "REsil *esil" "const char *word"
+.Ft bool
+.Fn r_esil_push "REsil *esil" "const char *str"
+.Ft char *
+.Fn r_esil_pop "REsil *esil"
+.Ft bool
+.Fn r_esil_reg_read "REsil *esil" "const char *regname" "ut64 *val" "ut32 *size"
+.Ft bool
+.Fn r_esil_reg_write "REsil *esil" "const char *name" "ut64 val"
+.Ft bool
+.Fn r_esil_mem_read "REsil *esil" "ut64 addr" "ut8 *buf" "int len"
+.Ft bool
+.Fn r_esil_mem_write "REsil *esil" "ut64 addr" "const ut8 *buf" "int len"
+.Sh DESCRIPTION
+The
+.Nm r_esil
+library implements ESIL, a stack-based intermediate language for symbolic execution and emulation in radare2. ESIL allows for architecture-independent representation of CPU instructions, enabling analysis, emulation, and symbolic computation across different architectures.
+.Pp
+The core structure is
+.Vt REsil ,
+which maintains a stack, registers, memory interfaces, and operation handlers for executing ESIL expressions.
+.Sh INITIALIZATION
+.Ft REsil *
+.Fn r_esil_new "int stacksize" "int iotrap" "unsigned int addrsize"
+.Pp
+Creates a new ESIL instance with the specified stack size, I/O trap settings, and address size.
+.Pp
+.Ft bool
+.Fn r_esil_init "REsil *esil" "int stacksize" "bool iotrap" "ut32 addrsize" "REsilRegInterface *reg_if" "REsilMemInterface *mem_if"
+.Pp
+Initializes an existing ESIL structure with register and memory interfaces.
+.Pp
+.Ft void
+.Fn r_esil_free "REsil *esil"
+.Pp
+Frees all resources associated with the ESIL instance.
+.Sh PARSING AND EXECUTION
+.Ft bool
+.Fn r_esil_parse "REsil *esil" "const char *str"
+.Pp
+Parses and executes an ESIL expression string.
+.Pp
+.Ft bool
+.Fn r_esil_runword "REsil *esil" "const char *word"
+.Pp
+Executes a single ESIL operation word.
+.Sh STACK OPERATIONS
+.Ft bool
+.Fn r_esil_push "REsil *esil" "const char *str"
+.Pp
+Pushes a value or expression onto the ESIL stack.
+.Pp
+.Ft char *
+.Fn r_esil_pop "REsil *esil"
+.Pp
+Pops the top value from the ESIL stack.
+.Pp
+.Ft bool
+.Fn r_esil_pushnum "REsil *esil" "ut64 num"
+.Pp
+Pushes a numeric value onto the stack.
+.Sh REGISTER ACCESS
+.Ft bool
+.Fn r_esil_reg_read "REsil *esil" "const char *regname" "ut64 *val" "ut32 *size"
+.Pp
+Reads the value of a register.
+.Pp
+.Ft bool
+.Fn r_esil_reg_write "REsil *esil" "const char *name" "ut64 val"
+.Pp
+Writes a value to a register.
+.Sh MEMORY ACCESS
+.Ft bool
+.Fn r_esil_mem_read "REsil *esil" "ut64 addr" "ut8 *buf" "int len"
+.Pp
+Reads memory at the specified address.
+.Pp
+.Ft bool
+.Fn r_esil_mem_write "REsil *esil" "ut64 addr" "const ut8 *buf" "int len"
+.Pp
+Writes data to memory at the specified address.
+.Sh OPERATIONS
+.Ft bool
+.Fn r_esil_set_op "REsil *esil" "const char *op" "REsilOpCb code" "ut32 push" "ut32 pop" "ut32 type" "const char *info"
+.Pp
+Defines a custom ESIL operation.
+.Pp
+.Ft REsilOp *
+.Fn r_esil_get_op "REsil *esil" "const char *op"
+.Pp
+Retrieves information about an ESIL operation.
+.Sh PLUGINS
+.Ft bool
+.Fn r_esil_plugin_add "REsil *esil" "REsilPlugin *plugin"
+.Pp
+Adds an ESIL plugin for architecture-specific operations.
+.Pp
+.Ft bool
+.Fn r_esil_plugin_activate "REsil *esil" "const char *name"
+.Pp
+Activates an ESIL plugin by name.
+.Sh TRACING
+.Ft REsilTrace *
+.Fn r_esil_trace_new "REsil *esil"
+.Pp
+Creates a new trace for recording ESIL execution.
+.Pp
+.Ft void
+.Fn r_esil_trace_op "REsil *esil" "struct r_anal_op_t *op"
+.Pp
+Traces the execution of an analysis operation.
+.Sh INTERRUPTS AND SYSCALLS
+.Ft bool
+.Fn r_esil_set_interrupt "REsil *esil" "ut32 intr_num" "REsilHandlerCB cb" "void *user"
+.Pp
+Sets a handler for a specific interrupt number.
+.Pp
+.Ft bool
+.Fn r_esil_set_syscall "REsil *esil" "ut32 sysc_num" "REsilHandlerCB cb" "void *user"
+.Pp
+Sets a handler for a specific syscall number.
+.Sh COMPILER
+.Ft REsilCompiler *
+.Fn r_esil_compiler_new "void"
+.Pp
+Creates a new ESIL compiler for converting expressions.
+.Pp
+.Ft bool
+.Fn r_esil_compiler_parse "REsilCompiler *ec" "const char *expr"
+.Pp
+Parses an ESIL expression into the compiler.
+.Sh EXAMPLES
+Basic ESIL execution:
+.Bd -literal -offset indent
+REsil *esil = r_esil_new(32, 0, 64);
+r_esil_parse(esil, "rax,8,+");
+.Ed
+.Pp
+Stack operations:
+.Bd -literal -offset indent
+r_esil_push(esil, "42");
+char *val = r_esil_pop(esil);
+.Ed
+.Pp
+Register access:
+.Bd -literal -offset indent
+ut64 rax_val;
+r_esil_reg_read(esil, "rax", &rax_val, NULL);
+r_esil_reg_write(esil, "rbx", 0x1000);
+.Ed
+.Pp
+Memory access:
+.Bd -literal -offset indent
+ut8 buf[4];
+r_esil_mem_read(esil, 0x400000, buf, 4);
+.Ed
+.Sh SEE ALSO
+.Xr r_anal 3 ,
+.Xr r_reg 3 ,
+.Xr r_io 3

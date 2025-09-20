@@ -1,0 +1,172 @@
+.Dd September 21, 2025
+.Dt R_CONFIG 3
+.Os
+.Sh NAME
+.Nm r_config
+.Nd Configuration management library for radare2
+.Sh SYNOPSIS
+.In r_config.h
+.Ft struct r_config_t *
+.Fn r_config_new "void *user"
+.Ft void
+.Fn r_config_free "struct r_config_t *cfg"
+.Ft struct r_config_node_t *
+.Fn r_config_set "struct r_config_t *cfg" "const char *name" "const char *value"
+.Ft const char *
+.Fn r_config_get "struct r_config_t *cfg" "const char *name"
+.Ft ut64
+.Fn r_config_get_i "struct r_config_t *cfg" "const char *name"
+.Ft bool
+.Fn r_config_get_b "struct r_config_t *cfg" "const char *name"
+.Ft struct r_config_node_t *
+.Fn r_config_set_i "struct r_config_t *cfg" "const char *name" "const ut64 i"
+.Ft struct r_config_node_t *
+.Fn r_config_set_b "struct r_config_t *cfg" "const char *name" "bool b"
+.Ft bool
+.Fn r_config_rm "struct r_config_t *cfg" "const char *name"
+.Ft bool
+.Fn r_config_toggle "struct r_config_t *cfg" "const char *name"
+.Ft char *
+.Fn r_config_list "struct r_config_t *cfg" "const char *str" "int rad"
+.Ft void
+.Fn r_config_lock "struct r_config_t *cfg" "bool lock"
+.Ft struct r_config_hold_t *
+.Fn r_config_hold_new "struct r_config_t *cfg"
+.Ft bool
+.Fn r_config_hold "struct r_config_hold_t *h" "..."
+.Ft void
+.Fn r_config_hold_restore "struct r_config_hold_t *h"
+.Ft void
+.Fn r_config_hold_free "struct r_config_hold_t *h"
+.Ft struct r_config_node_t *
+.Fn r_config_node_new "const char *name" "const char *value"
+.Ft void
+.Fn r_config_node_free "void *n"
+.Ft struct r_config_node_t *
+.Fn r_config_node_desc "struct r_config_node_t *node" "const char *desc"
+.Sh DESCRIPTION
+The
+.Nm r_config
+library provides a flexible configuration management system for radare2.
+It allows storing and retrieving configuration variables of different types (boolean, integer, string)
+with support for callbacks, validation, and serialization.
+.Pp
+The core structure is
+.Vt struct r_config_t ,
+which manages a collection of configuration nodes.
+Each node is represented by
+.Vt struct r_config_node_t ,
+containing the variable name, value, type flags, description, and optional callbacks.
+.Sh INITIALIZATION
+Create a new configuration instance:
+.Bd -literal -offset indent
+RConfig *cfg = r_config_new(user_pointer);
+.Ed
+.Pp
+Free when done:
+.Bd -literal -offset indent
+r_config_free(cfg);
+.Ed
+.Sh SETTING VALUES
+Set configuration variables:
+.Bd -literal -offset indent
+// String value
+r_config_set(cfg, "asm.arch", "x86");
+// Integer value
+r_config_set_i(cfg, "asm.bits", 64);
+// Boolean value
+r_config_set_b(cfg, "asm.pseudo", true);
+.Ed
+.Pp
+Set with callbacks for validation:
+.Bd -literal -offset indent
+bool validate_arch(void *user, void *data) {
+    const char *arch = (const char *)data;
+    return strcmp(arch, "x86") == 0 || strcmp(arch, "arm") == 0;
+}
+r_config_set_cb(cfg, "asm.arch", "x86", validate_arch);
+.Ed
+.Sh GETTING VALUES
+Retrieve configuration values:
+.Bd -literal -offset indent
+const char *arch = r_config_get(cfg, "asm.arch");
+ut64 bits = r_config_get_i(cfg, "asm.bits");
+bool pseudo = r_config_get_b(cfg, "asm.pseudo");
+.Ed
+.Sh ADVANCED FEATURES
+Lock configuration to prevent changes:
+.Bd -literal -offset indent
+r_config_lock(cfg, true);
+// Attempts to set values will fail
+r_config_lock(cfg, false);
+.Ed
+.Pp
+Hold and restore configuration state:
+.Bd -literal -offset indent
+RConfigHold *hold = r_config_hold_new(cfg);
+r_config_hold(hold, "asm.arch", "asm.bits", NULL);
+// Modify config...
+r_config_hold_restore(hold); // Restore original values
+r_config_hold_free(hold);
+.Ed
+.Pp
+Toggle boolean values:
+.Bd -literal -offset indent
+r_config_toggle(cfg, "asm.pseudo");
+.Ed
+.Pp
+List configuration variables:
+.Bd -literal -offset indent
+char *list = r_config_list(cfg, NULL, 0); // All variables
+printf("%s\\n", list);
+free(list);
+.Ed
+.Sh NODE MANAGEMENT
+Create custom configuration nodes:
+.Bd -literal -offset indent
+RConfigNode *node = r_config_node_new("custom.var", "default_value");
+r_config_node_desc(node, "Description of custom variable");
+// Add to config (internal)
+r_config_node_free(node);
+.Ed
+.Sh SERIALIZATION
+Serialize configuration to SDB:
+.Bd -literal -offset indent
+Sdb *db = sdb_new0();
+r_config_serialize(cfg, db);
+// Save to file...
+sdb_free(db);
+.Ed
+.Pp
+Unserialize from SDB:
+.Bd -literal -offset indent
+Sdb *db = sdb_new0();
+// Load from file...
+r_config_unserialize(cfg, db, NULL);
+sdb_free(db);
+.Ed
+.Sh EXAMPLES
+Basic configuration usage:
+.Bd -literal -offset indent
+#include <r_config.h>
+
+int main() {
+    RConfig *cfg = r_config_new(NULL);
+    
+    // Set some values
+    r_config_set(cfg, "asm.arch", "x86");
+    r_config_set_i(cfg, "asm.bits", 64);
+    r_config_set_b(cfg, "asm.pseudo", false);
+    
+    // Get values
+    printf("Arch: %s\\n", r_config_get(cfg, "asm.arch"));
+    printf("Bits: %"PFMT64u"\\n", r_config_get_i(cfg, "asm.bits"));
+    printf("Pseudo: %s\\n", r_config_get_b(cfg, "asm.pseudo") ? "true" : "false");
+    
+    r_config_free(cfg);
+    return 0;
+}
+.Ed
+.Sh SEE ALSO
+.Xr r_core 3 ,
+.Xr r_util 3

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2006-2024 - pancake */
+/* radare - LGPL - Copyright 2006-2025 - pancake */
 
 /* must be included first because of winsock2.h and windows.h */
 #include <r_socket.h>
@@ -171,9 +171,6 @@ static bool __listen_unix(RSocket *s, const char *file) {
 
 R_API RSocket *r_socket_new(bool is_ssl) {
 	RSocket *s = R_NEW0 (RSocket);
-	if (!s) {
-		return NULL;
-	}
 	s->is_ssl = is_ssl;
 	s->port = 0;
 #if __UNIX_

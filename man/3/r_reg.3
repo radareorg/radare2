@@ -1,0 +1,215 @@
+.Dd September 20, 2025
+.Dt R_REG 3
+.Os
+.Sh NAME
+.Nm r_reg
+.Nd radare2 register management library
+.Sh SYNOPSIS
+.In r_reg.h
+.Ft RReg *
+.Fn r_reg_new "void"
+.Ft void
+.Fn r_reg_free "RReg *reg"
+.Ft bool
+.Fn r_reg_set_profile "RReg *reg" "const char *profile"
+.Ft RRegItem *
+.Fn r_reg_get "RReg *reg" "const char *name" "int type"
+.Ft ut64
+.Fn r_reg_getv "RReg *reg" "const char *name"
+.Ft bool
+.Fn r_reg_setv "RReg *reg" "const char *name" "ut64 val"
+.Ft ut64
+.Fn r_reg_get_value "RReg *reg" "RRegItem *item"
+.Ft bool
+.Fn r_reg_set_value "RReg *reg" "RRegItem *item" "ut64 value"
+.Ft ut8 *
+.Fn r_reg_get_bytes "RReg *reg" "int type" "int *size"
+.Ft bool
+.Fn r_reg_set_bytes "RReg *reg" "int type" "const ut8 *buf" "const int len"
+.Sh DESCRIPTION
+The
+.Nm r_reg
+library provides register management for radare2, supporting various CPU architectures with different register types including GPR, FPU, vector registers, flags, and segments. It handles register values, aliases, and arena management for register state.
+.Pp
+The core structure is
+.Vt RReg ,
+which manages register sets, aliases, and arena pools.
+.Sh INITIALIZATION
+.Ft RReg *
+.Fn r_reg_new "void"
+.Pp
+Creates a new register context.
+.Pp
+.Ft void
+.Fn r_reg_free "RReg *reg"
+.Pp
+Frees all resources associated with the register context.
+.Sh PROFILES
+.Ft bool
+.Fn r_reg_set_profile "RReg *reg" "const char *profile"
+.Pp
+Sets the register profile from a string description.
+.Pp
+.Ft bool
+.Fn r_reg_set_profile_string "RReg *reg" "const char *profile"
+.Pp
+Sets the register profile from a string.
+.Pp
+.Ft char *
+.Fn r_reg_profile_to_cc "RReg *reg"
+.Pp
+Converts the register profile to C code.
+.Sh REGISTER ACCESS
+.Ft RRegItem *
+.Fn r_reg_get "RReg *reg" "const char *name" "int type"
+.Pp
+Retrieves a register item by name and type.
+.Pp
+.Ft ut64
+.Fn r_reg_getv "RReg *reg" "const char *name"
+.Pp
+Gets the value of a register by name.
+.Pp
+.Ft bool
+.Fn r_reg_setv "RReg *reg" "const char *name" "ut64 val"
+.Pp
+Sets the value of a register by name.
+.Sh REGISTER VALUES
+.Ft ut64
+.Fn r_reg_get_value "RReg *reg" "RRegItem *item"
+.Pp
+Gets the integer value of a register item.
+.Pp
+.Ft bool
+.Fn r_reg_set_value "RReg *reg" "RRegItem *item" "ut64 value"
+.Pp
+Sets the integer value of a register item.
+.Pp
+.Ft float
+.Fn r_reg_get_float "RReg *reg" "RRegItem *item"
+.Pp
+Gets the float value of a register item.
+.Pp
+.Ft double
+.Fn r_reg_get_double "RReg *reg" "RRegItem *item"
+.Pp
+Gets the double value of a register item.
+.Sh REGISTER LISTS
+.Ft RList *
+.Fn r_reg_get_list "RReg *reg" "int type"
+.Pp
+Gets a list of registers of a specific type.
+.Pp
+.Ft RRegItem *
+.Fn r_reg_index_get "RReg *reg" "int idx"
+.Pp
+Gets a register by index.
+.Sh ALIASES
+.Ft bool
+.Fn r_reg_alias_setname "RReg *reg" "RRegAlias alias" "const char *name"
+.Pp
+Sets a register alias.
+.Pp
+.Ft const char *
+.Fn r_reg_alias_getname "RReg *reg" "RRegAlias alias"
+.Pp
+Gets the name of a register alias.
+.Pp
+.Ft const char *
+.Fn r_reg_alias_tostring "RRegAlias alias"
+.Pp
+Converts a register alias to string.
+.Sh ARENA MANAGEMENT
+.Ft ut8 *
+.Fn r_reg_get_bytes "RReg *reg" "int type" "int *size"
+.Pp
+Gets the byte representation of registers of a type.
+.Pp
+.Ft bool
+.Fn r_reg_set_bytes "RReg *reg" "int type" "const ut8 *buf" "const int len"
+.Pp
+Sets the byte representation of registers of a type.
+.Pp
+.Ft void
+.Fn r_reg_arena_push "RReg *reg"
+.Pp
+Pushes the current register state to the arena stack.
+.Pp
+.Ft void
+.Fn r_reg_arena_pop "RReg *reg"
+.Pp
+Pops the register state from the arena stack.
+.Sh CONDITIONS
+.Ft bool
+.Fn r_reg_cond "RReg *r" "int type"
+.Pp
+Checks a register condition.
+.Pp
+.Ft void
+.Fn r_reg_cond_apply "RReg *r" "RRegFlags *f"
+.Pp
+Applies register flags to conditions.
+.Pp
+.Ft bool
+.Fn r_reg_cond_set "RReg *reg" "const char *name" "bool val"
+.Pp
+Sets a register condition.
+.Sh REGISTER TYPES
+The library supports various register types:
+.Bl -tag -width "R_REG_TYPE_VEC512"
+.It Dv R_REG_TYPE_GPR
+General purpose registers
+.It Dv R_REG_TYPE_FPU
+Floating point unit registers
+.It Dv R_REG_TYPE_VEC128
+128-bit vector registers (XMM)
+.It Dv R_REG_TYPE_VEC256
+256-bit vector registers (YMM)
+.It Dv R_REG_TYPE_VEC512
+512-bit vector registers (ZMM)
+.It Dv R_REG_TYPE_FLG
+CPU flags
+.It Dv R_REG_TYPE_SEG
+Segment registers
+.El
+.Sh REGISTER ALIASES
+Common register aliases include:
+.Bl -tag -width "R_REG_ALIAS_SP"
+.It Dv R_REG_ALIAS_PC
+Program counter
+.It Dv R_REG_ALIAS_SP
+Stack pointer
+.It Dv R_REG_ALIAS_BP
+Base pointer
+.It Dv R_REG_ALIAS_RA
+Return address
+.El
+.Sh EXAMPLES
+Basic register setup:
+.Bd -literal -offset indent
+RReg *reg = r_reg_new();
+r_reg_set_profile(reg, "pc sp bp a0 a1 a2 a3 r0");
+.Ed
+.Pp
+Register access:
+.Bd -literal -offset indent
+ut64 pc_val = r_reg_getv(reg, "pc");
+r_reg_setv(reg, "sp", 0x1000);
+.Ed
+.Pp
+Arena management:
+.Bd -literal -offset indent
+r_reg_arena_push(reg);
+// modify registers
+r_reg_arena_pop(reg); // restore
+.Ed
+.Pp
+Register conditions:
+.Bd -literal -offset indent
+if (r_reg_cond(reg, R_REG_COND_EQ)) {
+    // zero flag set
+}
+.Ed
+.Sh SEE ALSO
+.Xr r_anal 3 ,
+.Xr r_esil 3

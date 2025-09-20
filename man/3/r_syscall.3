@@ -1,0 +1,119 @@
+.Dd September 20, 2025
+.Dt R_SYSCALL 3
+.Os
+.Sh NAME
+.Nm r_syscall
+.Nd radare2 syscall information library
+.Sh SYNOPSIS
+.In r_syscall.h
+.Ft RSyscall *
+.Fn r_syscall_new "void"
+.Ft void
+.Fn r_syscall_free "RSyscall *ctx"
+.Ft bool
+.Fn r_syscall_setup "RSyscall *s" "const char *arch" "int bits" "const char *cpu" "const char *os"
+.Ft RSyscallItem *
+.Fn r_syscall_get "RSyscall *ctx" "int num" "int swi"
+.Ft int
+.Fn r_syscall_get_num "RSyscall *ctx" "const char *str"
+.Ft const char *
+.Fn r_syscall_get_i "RSyscall *ctx" "int num" "int swi"
+.Ft RList *
+.Fn r_syscall_list "RSyscall *ctx"
+.Ft const char *
+.Fn r_syscall_sysreg "RSyscall *s" "const char *type" "ut64 num"
+.Sh DESCRIPTION
+The
+.Nm r_syscall
+library provides syscall information for radare2, supporting various architectures and operating systems. It allows lookup of syscall names, numbers, and arguments across different platforms.
+.Pp
+The core structure is
+.Vt RSyscall ,
+which manages syscall databases and provides lookup functionality.
+.Sh INITIALIZATION
+.Ft RSyscall *
+.Fn r_syscall_new "void"
+.Pp
+Creates a new syscall context.
+.Pp
+.Ft void
+.Fn r_syscall_free "RSyscall *ctx"
+.Pp
+Frees all resources associated with the syscall context.
+.Sh SETUP
+.Ft bool
+.Fn r_syscall_setup "RSyscall *s" "const char *arch" "int bits" "const char *cpu" "const char *os"
+.Pp
+Configures the syscall context for a specific architecture, bitness, CPU, and operating system.
+.Sh SYSCALL LOOKUP
+.Ft RSyscallItem *
+.Fn r_syscall_get "RSyscall *ctx" "int num" "int swi"
+.Pp
+Retrieves syscall information by number and software interrupt.
+.Pp
+.Ft int
+.Fn r_syscall_get_num "RSyscall *ctx" "const char *str"
+.Pp
+Gets the syscall number for a given syscall name.
+.Pp
+.Ft const char *
+.Fn r_syscall_get_i "RSyscall *ctx" "int num" "int swi"
+.Pp
+Gets the syscall name by number and software interrupt.
+.Sh SYSCALL LISTS
+.Ft RList *
+.Fn r_syscall_list "RSyscall *ctx"
+.Pp
+Returns a list of all available syscalls for the current configuration.
+.Sh SYSTEM REGISTERS
+.Ft const char *
+.Fn r_syscall_sysreg "RSyscall *s" "const char *type" "ut64 num"
+.Pp
+Gets system register information by type and number.
+.Sh I/O PORTS
+.Ft const char *
+.Fn r_syscall_get_io "RSyscall *s" "int ioport"
+.Pp
+Gets I/O port information by port number.
+.Sh SYSCALL ITEMS
+.Ft RSyscallItem *
+.Fn r_syscall_item_new_from_string "const char *name" "const char *s"
+.Pp
+Creates a syscall item from string descriptions.
+.Pp
+.Ft void
+.Fn r_syscall_item_free "RSyscallItem *si"
+.Pp
+Frees a syscall item.
+.Sh SOFTWARE INTERRUPTS
+.Ft int
+.Fn r_syscall_get_swi "RSyscall *s"
+.Pp
+Gets the software interrupt number for the current configuration.
+.Sh EXAMPLES
+Basic syscall setup:
+.Bd -literal -offset indent
+RSyscall *sc = r_syscall_new();
+r_syscall_setup(sc, "x86", 64, "intel", "linux");
+.Ed
+.Pp
+Syscall lookup by number:
+.Bd -literal -offset indent
+RSyscallItem *item = r_syscall_get(sc, 1, 0x80); // syscall 1 on x86
+if (item) {
+    printf("Syscall: %s\\n", item->name);
+}
+.Ed
+.Pp
+Syscall lookup by name:
+.Bd -literal -offset indent
+int num = r_syscall_get_num(sc, "write");
+.Ed
+.Pp
+List all syscalls:
+.Bd -literal -offset indent
+RList *syscalls = r_syscall_list(sc);
+.Ed
+.Sh SEE ALSO
+.Xr r_anal 3 ,
+.Xr r_esil 3

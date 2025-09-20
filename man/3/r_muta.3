@@ -1,0 +1,157 @@
+.Dd September 20, 2025
+.Dt R_MUTA 3
+.Os
+.Sh NAME
+.Nm r_muta
+.Nd radare2 mutation/cryptography library
+.Sh SYNOPSIS
+.In r_muta.h
+.Ft RMuta *
+.Fn r_muta_new "void"
+.Ft void
+.Fn r_muta_free "RMuta *cry"
+.Ft RMutaSession *
+.Fn r_muta_use "RMuta *cry" "const char *algo"
+.Ft bool
+.Fn r_muta_session_set_key "RMutaSession *cry" "const ut8 *key" "int keylen" "int mode" "int direction"
+.Ft bool
+.Fn r_muta_session_set_iv "RMutaSession *cry" "const ut8 *iv" "int ivlen"
+.Ft bool
+.Fn r_muta_session_update "RMutaSession *cry" "const ut8 *buf" "int len"
+.Ft bool
+.Fn r_muta_session_end "RMutaSession *cry" "const ut8 *buf" "int len"
+.Ft ut8 *
+.Fn r_muta_session_get_output "RMutaSession *cry" "int *size"
+.Sh DESCRIPTION
+The
+.Nm r_muta
+library provides cryptographic and mutation operations for radare2, including encryption, decryption, hashing, encoding/decoding, and various transformation algorithms. It supports multiple algorithms through a plugin architecture.
+.Pp
+The core structure is
+.Vt RMuta ,
+which manages cryptographic plugins and sessions.
+.Sh INITIALIZATION
+.Ft RMuta *
+.Fn r_muta_new "void"
+.Pp
+Creates a new mutation context with built-in plugins loaded.
+.Pp
+.Ft void
+.Fn r_muta_free "RMuta *cry"
+.Pp
+Frees all resources associated with the mutation context.
+.Sh SESSIONS
+.Ft RMutaSession *
+.Fn r_muta_use "RMuta *cry" "const char *algo"
+.Pp
+Creates a new session for the specified algorithm (e.g., "aes", "xor", "base64").
+.Pp
+.Ft RMutaSession *
+.Fn r_muta_new_session "RMuta *mu" "const char *algo" "RMutaOptions *opt"
+.Pp
+Creates a new session with options.
+.Pp
+.Ft void
+.Fn r_muta_session_free "RMutaSession *cj"
+.Pp
+Frees a session.
+.Sh KEY AND IV SETUP
+.Ft bool
+.Fn r_muta_session_set_key "RMutaSession *cry" "const ut8 *key" "int keylen" "int mode" "int direction"
+.Pp
+Sets the encryption/decryption key for the session.
+.Pp
+.Ft bool
+.Fn r_muta_session_set_iv "RMutaSession *cry" "const ut8 *iv" "int ivlen"
+.Pp
+Sets the initialization vector for the session.
+.Sh PROCESSING
+.Ft bool
+.Fn r_muta_session_update "RMutaSession *cry" "const ut8 *buf" "int len"
+.Pp
+Updates the session with input data for processing.
+.Pp
+.Ft bool
+.Fn r_muta_session_end "RMutaSession *cry" "const ut8 *buf" "int len"
+.Pp
+Finalizes the session processing.
+.Pp
+.Ft int
+.Fn r_muta_session_append "RMutaSession *cry" "const ut8 *buf" "int len"
+.Pp
+Appends data to the session for processing.
+.Sh OUTPUT
+.Ft ut8 *
+.Fn r_muta_session_get_output "RMutaSession *cry" "int *size"
+.Pp
+Retrieves the processed output from the session.
+.Sh PLUGINS
+.Ft bool
+.Fn r_muta_add "RMuta *cry" "RMutaPlugin *h"
+.Pp
+Adds a mutation plugin to the context.
+.Pp
+.Ft char *
+.Fn r_muta_list "RMuta *cry" "RMutaType type" "int mode"
+.Pp
+Lists available plugins of a specific type.
+.Sh MODES AND DIRECTIONS
+The library supports different modes and directions:
+.Bl -tag -width "R_CRYPTO_DIR_ENCRYPT"
+.It Dv R_CRYPTO_DIR_ENCRYPT
+Encryption mode
+.It Dv R_CRYPTO_DIR_DECRYPT
+Decryption mode
+.It Dv R_CRYPTO_DIR_HASH
+Hashing mode
+.El
+.Pp
+Supported modes include ECB, CBC, OFB, CFB.
+.Sh ALGORITHMS
+The library supports various algorithms through plugins:
+.Bl -bullet
+.It AES (ECB, CBC, WRAP)
+.It DES
+.It Blowfish
+.It Serpent
+.It SM4
+.It RC2, RC4, RC6
+.It XOR
+.It ROT, ROL, ROR
+.It Base64, Base91
+.It Bech32
+.It Punycode
+.It Entropy
+.It Ed25519
+.El
+.Sh EXAMPLES
+AES encryption:
+.Bd -literal -offset indent
+RMuta *cry = r_muta_new();
+RMutaSession *s = r_muta_use(cry, "aes");
+ut8 key[16] = {0}; // 128-bit key
+r_muta_session_set_key(s, key, 16, R_CRYPTO_MODE_CBC, R_CRYPTO_DIR_ENCRYPT);
+r_muta_session_update(s, data, len);
+r_muta_session_end(s, NULL, 0);
+ut8 *output = r_muta_session_get_output(s, &outlen);
+.Ed
+.Pp
+Base64 encoding:
+.Bd -literal -offset indent
+RMutaSession *s = r_muta_use(cry, "base64");
+r_muta_session_update(s, data, len);
+r_muta_session_end(s, NULL, 0);
+ut8 *encoded = r_muta_session_get_output(s, &outlen);
+.Ed
+.Pp
+XOR operation:
+.Bd -literal -offset indent
+RMutaSession *s = r_muta_use(cry, "xor");
+ut8 key[4] = {0x41, 0x42, 0x43, 0x44};
+r_muta_session_set_key(s, key, 4, 0, R_CRYPTO_DIR_ENCRYPT);
+r_muta_session_update(s, data, len);
+r_muta_session_end(s, NULL, 0);
+ut8 *xored = r_muta_session_get_output(s, &outlen);
+.Ed
+.Sh SEE ALSO
+.Xr r_hash 3

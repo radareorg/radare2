@@ -1,0 +1,215 @@
+.Dd September 20, 2025
+.Dt R_BP 3
+.Os
+.Sh NAME
+.Nm r_bp
+.Nd radare2 breakpoint library
+.Sh SYNOPSIS
+.In r_bp.h
+.Ft RBreakpoint *
+.Fn r_bp_new "void"
+.Ft RBreakpoint *
+.Fn r_bp_free "RBreakpoint *bp"
+.Ft RBreakpointItem *
+.Fn r_bp_add_sw "RBreakpoint *bp" "ut64 addr" "int size" "int perm"
+.Ft RBreakpointItem *
+.Fn r_bp_add_hw "RBreakpoint *bp" "ut64 addr" "int size" "int perm"
+.Ft bool
+.Fn r_bp_del "RBreakpoint *bp" "ut64 addr"
+.Ft RBreakpointItem *
+.Fn r_bp_enable "RBreakpoint *bp" "ut64 addr" "int set" "int count"
+.Ft RBreakpointItem *
+.Fn r_bp_get_at "RBreakpoint *bp" "ut64 addr"
+.Ft char *
+.Fn r_bp_list "RBreakpoint *bp" "int rad"
+.Sh DESCRIPTION
+The
+.Nm r_bp
+library provides breakpoint management for radare2, supporting software breakpoints, hardware breakpoints, watchpoints, and conditional breakpoints across different architectures.
+.Pp
+The core structure is
+.Vt RBreakpoint ,
+which manages breakpoint lists, plugins, and tracing functionality.
+.Sh INITIALIZATION
+.Ft RBreakpoint *
+.Fn r_bp_new "void"
+.Pp
+Creates a new breakpoint context with built-in plugins loaded.
+.Pp
+.Ft RBreakpoint *
+.Fn r_bp_free "RBreakpoint *bp"
+.Pp
+Frees all resources associated with the breakpoint context.
+.Sh BREAKPOINT MANAGEMENT
+.Ft RBreakpointItem *
+.Fn r_bp_add_sw "RBreakpoint *bp" "ut64 addr" "int size" "int perm"
+.Pp
+Adds a software breakpoint at the specified address.
+.Pp
+.Ft RBreakpointItem *
+.Fn r_bp_add_hw "RBreakpoint *bp" "ut64 addr" "int size" "int perm"
+.Pp
+Adds a hardware breakpoint at the specified address.
+.Pp
+.Ft RBreakpointItem *
+.Fn r_bp_watch_add "RBreakpoint *bp" "ut64 addr" "int size" "int hw" "int rw"
+.Pp
+Adds a watchpoint at the specified address.
+.Pp
+.Ft bool
+.Fn r_bp_del "RBreakpoint *bp" "ut64 addr"
+.Pp
+Deletes the breakpoint at the specified address.
+.Pp
+.Ft bool
+.Fn r_bp_del_all "RBreakpoint *bp"
+.Pp
+Deletes all breakpoints.
+.Sh BREAKPOINT CONTROL
+.Ft RBreakpointItem *
+.Fn r_bp_enable "RBreakpoint *bp" "ut64 addr" "int set" "int count"
+.Pp
+Enables or disables the breakpoint at the specified address.
+.Pp
+.Ft void
+.Fn r_bp_enable_all "RBreakpoint *bp" "int set"
+.Pp
+Enables or disables all breakpoints.
+.Sh BREAKPOINT QUERY
+.Ft RBreakpointItem *
+.Fn r_bp_get_at "RBreakpoint *bp" "ut64 addr"
+.Pp
+Gets the breakpoint at the specified address.
+.Pp
+.Ft RBreakpointItem *
+.Fn r_bp_get_in "RBreakpoint *bp" "ut64 addr" "int perm"
+.Pp
+Gets the breakpoint that covers the specified address with the given permissions.
+.Pp
+.Ft int
+.Fn r_bp_in "RBreakpoint *bp" "ut64 addr" "int perm"
+.Pp
+Checks if there's a breakpoint at the specified address with the given permissions.
+.Sh BREAKPOINT LISTING
+.Ft char *
+.Fn r_bp_list "RBreakpoint *bp" "int rad"
+.Pp
+Lists all breakpoints in the specified format.
+.Pp
+.Ft int
+.Fn r_bp_size "RBreakpoint *bp"
+.Pp
+Returns the number of breakpoints.
+.Sh CONDITIONAL BREAKPOINTS
+.Ft bool
+.Fn r_bp_add_cond "RBreakpoint *bp" "const char *cond"
+.Pp
+Adds a conditional breakpoint with the specified condition.
+.Pp
+.Ft bool
+.Fn r_bp_del_cond "RBreakpoint *bp" "int idx"
+.Pp
+Deletes the conditional breakpoint at the specified index.
+.Sh FAULT BREAKPOINTS
+.Ft void
+.Fn r_bp_add_fault "RBreakpoint *bp" "ut64 addr" "int size" "int perm"
+.Pp
+Adds a fault breakpoint at the specified address.
+.Sh TRACING
+.Ft bool
+.Fn r_bp_set_trace "RBreakpoint *bp" "ut64 addr" "int set"
+.Pp
+Enables or disables tracing for the breakpoint at the specified address.
+.Pp
+.Ft void
+.Fn r_bp_set_trace_all "RBreakpoint *bp" "int set"
+.Pp
+Enables or disables tracing for all breakpoints.
+.Sh PLUGINS
+.Ft int
+.Fn r_bp_plugin_add "RBreakpoint *bp" "RBreakpointPlugin *plugin"
+.Pp
+Adds a breakpoint plugin.
+.Pp
+.Ft int
+.Fn r_bp_plugin_remove "RBreakpoint *bp" "RBreakpointPlugin *plugin"
+.Pp
+Removes a breakpoint plugin.
+.Pp
+.Ft int
+.Fn r_bp_use "RBreakpoint *bp" "const char *name" "int bits"
+.Pp
+Selects the breakpoint plugin to use.
+.Sh RESTORATION
+.Ft int
+.Fn r_bp_restore "RBreakpoint *bp" "bool set"
+.Pp
+Restores all breakpoints to their original state.
+.Pp
+.Ft void
+.Fn r_bp_restore_one "RBreakpoint *bp" "RBreakpointItem *b" "bool set"
+.Pp
+Restores a single breakpoint.
+.Sh TRAPTRACE
+.Ft void
+.Fn r_bp_traptrace_enable "RBreakpoint *bp" "int enable"
+.Pp
+Enables or disables trap tracing.
+.Pp
+.Ft void
+.Fn r_bp_traptrace_reset "RBreakpoint *bp" "int hard"
+.Pp
+Resets trap tracing.
+.Pp
+.Ft int
+.Fn r_bp_traptrace_add "RBreakpoint *bp" "ut64 from" "ut64 to"
+.Pp
+Adds a trap trace range.
+.Sh BREAKPOINT TYPES
+The library supports different breakpoint types:
+.Bl -tag -width "R_BP_TYPE_HW"
+.It Dv R_BP_TYPE_SW
+Software breakpoint
+.It Dv R_BP_TYPE_HW
+Hardware breakpoint
+.It Dv R_BP_TYPE_COND
+Conditional breakpoint
+.It Dv R_BP_TYPE_FAULT
+Fault breakpoint
+.El
+.Sh PERMISSIONS
+Breakpoints can have different permissions:
+.Bl -tag -width "R_BP_PROT_ACCESS"
+.It Dv R_BP_PROT_EXEC
+Execute permission
+.It Dv R_BP_PROT_WRITE
+Write permission
+.It Dv R_BP_PROT_READ
+Read permission
+.It Dv R_BP_PROT_ACCESS
+Access permission
+.El
+.Sh EXAMPLES
+Basic breakpoint setup:
+.Bd -literal -offset indent
+RBreakpoint *bp = r_bp_new();
+RBreakpointItem *b = r_bp_add_sw(bp, 0x400000, 1, R_BP_PROT_EXEC);
+.Ed
+.Pp
+Hardware breakpoint:
+.Bd -literal -offset indent
+RBreakpointItem *hw = r_bp_add_hw(bp, 0x400010, 4, R_BP_PROT_EXEC);
+.Ed
+.Pp
+Watchpoint:
+.Bd -literal -offset indent
+RBreakpointItem *wp = r_bp_watch_add(bp, 0x600000, 8, 1, R_BP_PROT_WRITE);
+.Ed
+.Pp
+Conditional breakpoint:
+.Bd -literal -offset indent
+r_bp_add_cond(bp, "rax == 0x1234");
+.Ed
+.Sh SEE ALSO
+.Xr r_debug 3 ,
+.Xr r_io 3

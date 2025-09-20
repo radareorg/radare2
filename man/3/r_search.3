@@ -1,0 +1,161 @@
+.Dd September 20, 2025
+.Dt R_SEARCH 3
+.Os
+.Sh NAME
+.Nm r_search
+.Nd radare2 search library
+.Sh SYNOPSIS
+.In r_search.h
+.Ft RSearch *
+.Fn r_search_new "int mode"
+.Ft void
+.Fn r_search_free "RSearch *s"
+.Ft RSearchKeyword *
+.Fn r_search_keyword_new "const ut8 *kw" "int kwlen" "const ut8 *bm" "int bmlen" "const char *data"
+.Ft RSearchKeyword *
+.Fn r_search_keyword_new_str "const char *kw" "const char *bm" "const char *data" "bool icase"
+.Ft bool
+.Fn r_search_kw_add "RSearch *s" "RSearchKeyword *kw"
+.Ft int
+.Fn r_search_update "RSearch *s" "ut64 from" "const ut8 *buf" "long len"
+.Ft RList *
+.Fn r_search_find "RSearch *s" "ut64 addr" "const ut8 *buf" "int len"
+.Ft void
+.Fn r_search_set_callback "RSearch *s" "RSearchCallback callback" "void *user"
+.Sh DESCRIPTION
+The
+.Nm r_search
+library provides comprehensive search capabilities for radare2, supporting various search modes including keyword search, regular expressions, cryptographic patterns, strings, and more. It allows for efficient searching through binary data with customizable callbacks and hit management.
+.Pp
+The core structure is
+.Vt RSearch ,
+which manages search keywords, modes, callbacks, and search results.
+.Sh INITIALIZATION
+.Ft RSearch *
+.Fn r_search_new "int mode"
+.Pp
+Creates a new search context with the specified search mode.
+.Pp
+.Ft void
+.Fn r_search_free "RSearch *s"
+.Pp
+Frees all resources associated with the search context.
+.Sh KEYWORD MANAGEMENT
+.Ft RSearchKeyword *
+.Fn r_search_keyword_new "const ut8 *kw" "int kwlen" "const ut8 *bm" "int bmlen" "const char *data"
+.Pp
+Creates a new binary keyword with optional bitmask.
+.Pp
+.Ft RSearchKeyword *
+.Fn r_search_keyword_new_str "const char *kw" "const char *bm" "const char *data" "bool icase"
+.Pp
+Creates a new string keyword with case sensitivity option.
+.Pp
+.Ft RSearchKeyword *
+.Fn r_search_keyword_new_hexstr "const char *xs" "const char *data"
+.Pp
+Creates a keyword from a hexadecimal string.
+.Pp
+.Ft RSearchKeyword *
+.Fn r_search_keyword_new_regexp "const char *str" "const char *data"
+.Pp
+Creates a keyword from a regular expression.
+.Pp
+.Ft bool
+.Fn r_search_kw_add "RSearch *s" "RSearchKeyword *kw"
+.Pp
+Adds a keyword to the search context.
+.Sh SEARCHING
+.Ft int
+.Fn r_search_update "RSearch *s" "ut64 from" "const ut8 *buf" "long len"
+.Pp
+Updates the search with new data buffer.
+.Pp
+.Ft int
+.Fn r_search_update_read "RSearch *s" "ut64 from" "ut64 to"
+.Pp
+Updates the search by reading from I/O within the specified range.
+.Pp
+.Ft RList *
+.Fn r_search_find "RSearch *s" "ut64 addr" "const ut8 *buf" "int len"
+.Pp
+Performs a search on the given buffer and returns a list of hits.
+.Sh SEARCH MODES
+.Ft int
+.Fn r_search_set_mode "RSearch *s" "int mode"
+.Pp
+Sets the search mode (e.g., R_SEARCH_KEYWORD, R_SEARCH_STRING, R_SEARCH_AES).
+.Sh STRINGS
+.Ft int
+.Fn r_search_strings "RSearch *s" "ut32 min" "ut32 max"
+.Pp
+Searches for strings within the specified length range.
+.Pp
+.Ft bool
+.Fn r_search_set_string_limits "RSearch *s" "ut32 min" "ut32 max"
+.Pp
+Sets the minimum and maximum string lengths for string searches.
+.Sh RANGES
+.Ft int
+.Fn r_search_range_add "RSearch *s" "ut64 from" "ut64 to"
+.Pp
+Adds a search range.
+.Pp
+.Ft int
+.Fn r_search_range_reset "RSearch *s"
+.Pp
+Resets all search ranges.
+.Sh CALLBACKS
+.Ft void
+.Fn r_search_set_callback "RSearch *s" "RSearchCallback callback" "void *user"
+.Pp
+Sets the callback function for search hits.
+.Pp
+.Ft void
+.Fn r_search_set_read_cb "RSearch *s" "RSearchRCb cb" "void *user"
+.Pp
+Sets the read callback for search operations.
+.Sh HITS
+.Ft int
+.Fn r_search_hit_new "RSearch *s" "RSearchKeyword *kw" "ut64 addr"
+.Pp
+Records a new search hit.
+.Sh RESET
+.Ft void
+.Fn r_search_reset "RSearch *s" "int mode"
+.Pp
+Resets the search context to the specified mode.
+.Pp
+.Ft void
+.Fn r_search_kw_reset "RSearch *s"
+.Pp
+Resets all keywords in the search context.
+.Sh PATTERNS
+.Ft void
+.Fn r_search_pattern_size "RSearch *s" "int size"
+.Pp
+Sets the pattern size for pattern searches.
+.Sh EXAMPLES
+Basic keyword search:
+.Bd -literal -offset indent
+RSearch *s = r_search_new(R_SEARCH_KEYWORD);
+RSearchKeyword *kw = r_search_keyword_new_str("test", NULL, NULL, false);
+r_search_kw_add(s, kw);
+r_search_update(s, 0x1000, buffer, 1024);
+.Ed
+.Pp
+String search:
+.Bd -literal -offset indent
+r_search_set_mode(s, R_SEARCH_STRING);
+r_search_set_string_limits(s, 4, 100);
+r_search_update_read(s, 0x1000, 0x2000);
+.Ed
+.Pp
+Regular expression search:
+.Bd -literal -offset indent
+RSearchKeyword *re_kw = r_search_keyword_new_regexp("test.*pattern", NULL);
+r_search_kw_add(s, re_kw);
+.Ed
+.Sh SEE ALSO
+.Xr r_io 3 ,
+.Xr r_core 3

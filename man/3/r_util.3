@@ -1,0 +1,284 @@
+.Dd September 20, 2025
+.Dt R_UTIL 3
+.Os
+.Sh NAME
+.Nm r_util
+.Nd radare2 utility library
+.Sh SYNOPSIS
+.In r_util.h
+.Ft RNum *
+.Fn r_num_new "RNumCallback cb" "RNumCallback2 cb2" "void *ptr"
+.Ft ut64
+.Fn r_num_get "RNum *num" "const char *str"
+.Ft ut64
+.Fn r_num_math "RNum *num" "const char *str"
+.Ft RBuffer *
+.Fn r_buf_new "void"
+.Ft st64
+.Fn r_buf_read "RBuffer *b" "ut8 *buf" "ut64 len"
+.Ft st64
+.Fn r_buf_write "RBuffer *b" "const ut8 *buf" "ut64 len"
+.Ft char *
+.Fn r_str_new "const char *str"
+.Ft char *
+.Fn r_str_append "char *str" "const char *new"
+.Ft bool
+.Fn r_str_startswith "const char *str" "const char *needle"
+.Ft RList *
+.Fn r_list_new "void"
+.Ft void
+.Fn r_list_append "RList *list" "void *data"
+.Sh DESCRIPTION
+The
+.Nm r_util
+library provides a comprehensive collection of utility functions for radare2, including number parsing, string manipulation, buffer management, memory operations, file handling, and various data structures. It serves as the foundation for many other radare2 libraries.
+.Sh NUMBERS
+.Ft RNum *
+.Fn r_num_new "RNumCallback cb" "RNumCallback2 cb2" "void *ptr"
+.Pp
+Creates a new number parsing context with custom callbacks.
+.Pp
+.Ft ut64
+.Fn r_num_get "RNum *num" "const char *str"
+.Pp
+Parses a string into a 64-bit unsigned integer, supporting various formats.
+.Pp
+.Ft ut64
+.Fn r_num_math "RNum *num" "const char *str"
+.Pp
+Evaluates mathematical expressions in strings.
+.Pp
+.Ft char *
+.Fn r_num_units "char *buf" "size_t len" "ut64 number"
+.Pp
+Formats a number with appropriate units (KB, MB, etc.).
+.Sh BUFFERS
+.Ft RBuffer *
+.Fn r_buf_new "void"
+.Pp
+Creates a new buffer.
+.Pp
+.Ft st64
+.Fn r_buf_read "RBuffer *b" "ut8 *buf" "ut64 len"
+.Pp
+Reads data from a buffer.
+.Pp
+.Ft st64
+.Fn r_buf_write "RBuffer *b" "const ut8 *buf" "ut64 len"
+.Pp
+Writes data to a buffer.
+.Pp
+.Ft st64
+.Fn r_buf_seek "RBuffer *b" "st64 addr" "int whence"
+.Pp
+Seeks to a position in the buffer.
+.Pp
+.Ft ut64
+.Fn r_buf_size "RBuffer *b"
+.Pp
+Returns the size of the buffer.
+.Sh STRINGS
+.Ft char *
+.Fn r_str_new "const char *str"
+.Pp
+Creates a new string (duplicate).
+.Pp
+.Ft char *
+.Fn r_str_append "char *str" "const char *new"
+.Pp
+Appends a string to another.
+.Pp
+.Ft bool
+.Fn r_str_startswith "const char *str" "const char *needle"
+.Pp
+Checks if a string starts with a prefix.
+.Pp
+.Ft char *
+.Fn r_str_replace "char *str" "const char *find" "const char *replace" "int *count"
+.Pp
+Replaces substrings in a string.
+.Pp
+.Ft RList *
+.Fn r_str_split_list "char *str" "const char *c" "int n"
+.Pp
+Splits a string into a list.
+.Sh LISTS
+.Ft RList *
+.Fn r_list_new "void"
+.Pp
+Creates a new linked list.
+.Pp
+.Ft void
+.Fn r_list_append "RList *list" "void *data"
+.Pp
+Appends data to a list.
+.Pp
+.Ft void *
+.Fn r_list_get_n "RList *list" "int n"
+.Pp
+Gets the nth element from a list.
+.Pp
+.Ft int
+.Fn r_list_length "RList *list"
+.Pp
+Returns the length of a list.
+.Sh MEMORY
+.Ft void *
+.Fn r_mem_alloc "size_t sz"
+.Pp
+Allocates memory.
+.Pp
+.Ft void *
+.Fn r_mem_dup "const void *src" "size_t len"
+.Pp
+Duplicates memory.
+.Pp
+.Ft int
+.Fn r_mem_cmp "const void *a" "const void *b" "size_t len"
+.Pp
+Compares memory regions.
+.Sh FILES
+.Ft bool
+.Fn r_file_exists "const char *str"
+.Pp
+Checks if a file exists.
+.Pp
+.Ft char *
+.Fn r_file_slurp "const char *str" "size_t *usz"
+.Pp
+Reads an entire file into memory.
+.Pp
+.Ft bool
+.Fn r_file_dump "const char *file" "const ut8 *buf" "int len" "bool append"
+.Pp
+Writes data to a file.
+.Sh HEX
+.Ft int
+.Fn r_hex_str2bin "const char *str" "ut8 *buf"
+.Pp
+Converts a hex string to binary.
+.Pp
+.Ft char *
+.Fn r_hex_bin2str "const ut8 *bin" "int len"
+.Pp
+Converts binary data to a hex string.
+.Sh BASE64
+.Ft char *
+.Fn r_base64_encode "const ut8 *bin" "int len"
+.Pp
+Encodes data to base64.
+.Pp
+.Ft ut8 *
+.Fn r_base64_decode "const char *str" "int *olen"
+.Pp
+Decodes base64 data.
+.Sh TABLES
+.Ft RTable *
+.Fn r_table_new "void"
+.Pp
+Creates a new table.
+.Pp
+.Ft void
+.Fn r_table_add_column "RTable *t" "RTableColumnType *type" "const char *name" "int maxwidth"
+.Pp
+Adds a column to a table.
+.Pp
+.Ft void
+.Fn r_table_add_row "RTable *t" "const char *name" "..."
+.Pp
+Adds a row to a table.
+.Sh GRAPHS
+.Ft RGraph *
+.Fn r_graph_new "void"
+.Pp
+Creates a new graph.
+.Pp
+.Ft RGraphNode *
+.Fn r_graph_add_node "RGraph *graph" "void *data"
+.Pp
+Adds a node to a graph.
+.Pp
+.Ft void
+.Fn r_graph_add_edge "RGraph *graph" "RGraphNode *from" "RGraphNode *to"
+.Pp
+Adds an edge between nodes.
+.Sh QUEUES
+.Ft RQueue *
+.Fn r_queue_new "int n"
+.Pp
+Creates a new queue.
+.Pp
+.Ft void
+.Fn r_queue_enqueue "RQueue *q" "void *el"
+.Pp
+Enqueues an element.
+.Pp
+.Ft void *
+.Fn r_queue_dequeue "RQueue *q"
+.Pp
+Dequeues an element.
+.Sh STACKS
+.Ft RStack *
+.Fn r_stack_new "ut32 n"
+.Pp
+Creates a new stack.
+.Pp
+.Ft void
+.Fn r_stack_push "RStack *s" "void *el"
+.Pp
+Pushes an element onto the stack.
+.Pp
+.Ft void *
+.Fn r_stack_pop "RStack *s"
+.Pp
+Pops an element from the stack.
+.Sh TIME
+.Ft ut64
+.Fn r_time_now "void"
+.Pp
+Gets the current time in microseconds.
+.Pp
+.Ft char *
+.Fn r_time_stamp_to_str "ut64 ts"
+.Pp
+Converts a timestamp to a string.
+.Sh LOGGING
+.Ft void
+.Fn r_log_error "const char *fmt" "..."
+.Pp
+Logs an error message.
+.Pp
+.Ft void
+.Fn r_log_info "const char *fmt" "..."
+.Pp
+Logs an info message.
+.Sh EXAMPLES
+Number parsing:
+.Bd -literal -offset indent
+RNum *num = r_num_new(NULL, NULL, NULL);
+ut64 val = r_num_get(num, "0x100");
+r_num_free(num);
+.Ed
+.Pp
+String manipulation:
+.Bd -literal -offset indent
+char *str = r_str_new("hello");
+str = r_str_append(str, " world");
+.Ed
+.Pp
+Buffer operations:
+.Bd -literal -offset indent
+RBuffer *buf = r_buf_new();
+r_buf_write(buf, data, len);
+ut8 *read_data = malloc(len);
+r_buf_read(buf, read_data, len);
+.Ed
+.Pp
+List usage:
+.Bd -literal -offset indent
+RList *list = r_list_new();
+r_list_append(list, item);
+void *first = r_list_get_n(list, 0);
+.Ed
+.Sh SEE ALSO
+.Xr r_types 3

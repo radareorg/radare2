@@ -1,0 +1,198 @@
+.Dd September 20, 2025
+.Dt R_EGG 3
+.Os
+.Sh NAME
+.Nm r_egg
+.Nd radare2 egg shellcode generation library
+.Sh SYNOPSIS
+.In r_egg.h
+.Ft REgg *
+.Fn r_egg_new "void"
+.Ft void
+.Fn r_egg_free "REgg *egg"
+.Ft bool
+.Fn r_egg_setup "REgg *egg" "const char *arch" "int bits" "int endian" "const char *os"
+.Ft void
+.Fn r_egg_load "REgg *egg" "const char *code" "int format"
+.Ft bool
+.Fn r_egg_compile "REgg *egg"
+.Ft bool
+.Fn r_egg_assemble "REgg *egg"
+.Ft int
+.Fn r_egg_run "REgg *egg"
+.Ft RBuffer *
+.Fn r_egg_get_bin "REgg *egg"
+.Ft char *
+.Fn r_egg_get_source "REgg *egg"
+.Sh DESCRIPTION
+The
+.Nm r_egg
+library provides shellcode generation capabilities for radare2, allowing users to write shellcode in a high-level language and compile it to machine code. It supports multiple architectures and provides a framework for creating, compiling, and executing shellcode.
+.Pp
+The core structure is
+.Vt REgg ,
+which manages source code, compiled binary, assembler, syscall information, and language parsing.
+.Sh INITIALIZATION
+.Ft REgg *
+.Fn r_egg_new "void"
+.Pp
+Creates a new egg context with default settings.
+.Pp
+.Ft void
+.Fn r_egg_free "REgg *egg"
+.Pp
+Frees all resources associated with the egg context.
+.Sh SETUP
+.Ft bool
+.Fn r_egg_setup "REgg *egg" "const char *arch" "int bits" "int endian" "const char *os"
+.Pp
+Configures the egg context for the specified architecture, bitness, endianness, and operating system.
+.Sh LOADING CODE
+.Ft void
+.Fn r_egg_load "REgg *egg" "const char *code" "int format"
+.Pp
+Loads source code into the egg context.
+.Pp
+.Ft void
+.Fn r_egg_append "REgg *egg" "const char *src"
+.Pp
+Appends additional source code to the egg context.
+.Sh COMPILATION
+.Ft bool
+.Fn r_egg_compile "REgg *egg"
+.Pp
+Compiles the loaded source code into intermediate representation.
+.Pp
+.Ft bool
+.Fn r_egg_assemble "REgg *egg"
+.Pp
+Assembles the compiled code into machine code.
+.Pp
+.Ft bool
+.Fn r_egg_assemble_asm "REgg *egg" "char **asm_list"
+.Pp
+Assembles the code and returns the assembly listing.
+.Sh EXECUTION
+.Ft int
+.Fn r_egg_run "REgg *egg"
+.Pp
+Executes the compiled shellcode.
+.Pp
+.Ft int
+.Fn r_egg_run_rop "REgg *egg"
+.Pp
+Executes the shellcode using ROP (Return-Oriented Programming) techniques.
+.Sh OUTPUT
+.Ft RBuffer *
+.Fn r_egg_get_bin "REgg *egg"
+.Pp
+Returns the compiled binary code as a buffer.
+.Pp
+.Ft char *
+.Fn r_egg_get_source "REgg *egg"
+.Pp
+Returns the source code.
+.Pp
+.Ft char *
+.Fn r_egg_get_assembly "REgg *egg"
+.Pp
+Returns the assembly representation of the compiled code.
+.Sh SYSCALLS
+.Ft void
+.Fn r_egg_syscall "REgg *egg" "const char *arg" "..."
+.Pp
+Adds a syscall instruction to the shellcode.
+.Sh MEMORY MANAGEMENT
+.Ft void
+.Fn r_egg_alloc "REgg *egg" "int n"
+.Pp
+Allocates memory in the shellcode.
+.Sh CONTROL FLOW
+.Ft void
+.Fn r_egg_label "REgg *egg" "const char *name"
+.Pp
+Defines a label in the shellcode.
+.Pp
+.Ft void
+.Fn r_egg_if "REgg *egg" "const char *reg" "char cmp" "int v"
+.Pp
+Adds a conditional statement.
+.Sh RAW CODE
+.Ft bool
+.Fn r_egg_raw "REgg *egg" "const ut8 *b" "int len"
+.Pp
+Inserts raw binary code into the shellcode.
+.Sh ENCODING
+.Ft bool
+.Fn r_egg_encode "REgg *egg" "const char *name"
+.Pp
+Applies an encoder to the shellcode.
+.Pp
+.Ft bool
+.Fn r_egg_shellcode "REgg *egg" "const char *name"
+.Pp
+Generates shellcode using a specific shellcode template.
+.Sh PATCHING
+.Ft bool
+.Fn r_egg_patch "REgg *egg" "int off" "const ut8 *b" "int l"
+.Pp
+Patches the compiled binary at the specified offset.
+.Sh PLUGINS
+.Ft bool
+.Fn r_egg_plugin_add "REgg *a" "REggPlugin *plugin"
+.Pp
+Adds an egg plugin (encoder or shellcode generator).
+.Pp
+.Ft bool
+.Fn r_egg_plugin_remove "REgg *a" "REggPlugin *plugin"
+.Pp
+Removes an egg plugin.
+.Sh OPTIONS
+.Ft void
+.Fn r_egg_option_set "REgg *egg" "const char *k" "const char *v"
+.Pp
+Sets an option for the egg context.
+.Pp
+.Ft char *
+.Fn r_egg_option_get "REgg *egg" "const char *k"
+.Pp
+Gets an option value from the egg context.
+.Sh INCLUDES
+.Ft bool
+.Fn r_egg_include "REgg *egg" "const char *file" "int format"
+.Pp
+Includes a file in the egg compilation.
+.Pp
+.Ft bool
+.Fn r_egg_include_str "REgg *egg" "const char *arg"
+.Pp
+Includes a string in the egg compilation.
+.Sh FINALIZATION
+.Ft void
+.Fn r_egg_finalize "REgg *egg"
+.Pp
+Finalizes the egg compilation process.
+.Sh EXAMPLES
+Basic shellcode generation:
+.Bd -literal -offset indent
+REgg *egg = r_egg_new();
+r_egg_setup(egg, "x86", 32, 0, "linux");
+r_egg_load(egg, "write(1, \"Hello\", 5); exit(0);", 0);
+r_egg_compile(egg);
+r_egg_assemble(egg);
+RBuffer *bin = r_egg_get_bin(egg);
+.Ed
+.Pp
+Using syscalls:
+.Bd -literal -offset indent
+r_egg_syscall(egg, "exit", 0);
+.Ed
+.Pp
+Adding raw code:
+.Bd -literal -offset indent
+ut8 code[] = {0x90, 0x90}; // NOP NOP
+r_egg_raw(egg, code, 2);
+.Ed
+.Sh SEE ALSO
+.Xr r_asm 3 ,
+.Xr r_syscall 3

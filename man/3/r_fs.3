@@ -1,0 +1,152 @@
+.Dd September 20, 2025
+.Dt R_FS 3
+.Os
+.Sh NAME
+.Nm r_fs
+.Nd radare2 filesystem library
+.Sh SYNOPSIS
+.In r_fs.h
+.Ft RFS *
+.Fn r_fs_new "void"
+.Ft void
+.Fn r_fs_free "RFS *fs"
+.Ft RFSRoot *
+.Fn r_fs_mount "RFS *fs" "const char *fstype" "const char *path" "ut64 delta"
+.Ft bool
+.Fn r_fs_umount "RFS *fs" "const char *path"
+.Ft RFSFile *
+.Fn r_fs_open "RFS *fs" "const char *path" "bool create"
+.Ft void
+.Fn r_fs_close "RFS *fs" "RFSFile *file"
+.Ft int
+.Fn r_fs_read "RFS *fs" "RFSFile *file" "ut64 addr" "int len"
+.Ft int
+.Fn r_fs_write "RFS *fs" "RFSFile *file" "ut64 addr" "const ut8 *data" "int len"
+.Ft RList *
+.Fn r_fs_dir "RFS *fs" "const char *path"
+.Ft RFSFile *
+.Fn r_fs_slurp "RFS *fs" "const char *path"
+.Sh DESCRIPTION
+The
+.Nm r_fs
+library provides filesystem support for radare2, allowing analysis and manipulation of various filesystem types within binary images. It supports mounting, reading, writing, and navigating filesystems embedded in disk images or memory dumps.
+.Pp
+The core structure is
+.Vt RFS ,
+which manages filesystem plugins, mounted roots, and provides a unified interface for filesystem operations.
+.Sh INITIALIZATION
+.Ft RFS *
+.Fn r_fs_new "void"
+.Pp
+Creates a new filesystem context with built-in plugins loaded.
+.Pp
+.Ft void
+.Fn r_fs_free "RFS *fs"
+.Pp
+Frees all resources associated with the filesystem context.
+.Sh MOUNTING
+.Ft RFSRoot *
+.Fn r_fs_mount "RFS *fs" "const char *fstype" "const char *path" "ut64 delta"
+.Pp
+Mounts a filesystem of the specified type at the given path with an offset delta.
+.Pp
+.Ft bool
+.Fn r_fs_umount "RFS *fs" "const char *path"
+.Pp
+Unmounts the filesystem at the specified path.
+.Sh FILE OPERATIONS
+.Ft RFSFile *
+.Fn r_fs_open "RFS *fs" "const char *path" "bool create"
+.Pp
+Opens a file at the specified path, optionally creating it if it doesn't exist.
+.Pp
+.Ft void
+.Fn r_fs_close "RFS *fs" "RFSFile *file"
+.Pp
+Closes an open file handle.
+.Pp
+.Ft int
+.Fn r_fs_read "RFS *fs" "RFSFile *file" "ut64 addr" "int len"
+.Pp
+Reads data from a file at the specified offset.
+.Pp
+.Ft int
+.Fn r_fs_write "RFS *fs" "RFSFile *file" "ut64 addr" "const ut8 *data" "int len"
+.Pp
+Writes data to a file at the specified offset.
+.Sh DIRECTORY OPERATIONS
+.Ft RList *
+.Fn r_fs_dir "RFS *fs" "const char *path"
+.Pp
+Lists the contents of a directory.
+.Pp
+.Ft bool
+.Fn r_fs_dir_dump "RFS *fs" "const char *path" "const char *name"
+.Pp
+Dumps the contents of a directory to disk.
+.Sh FILE SLURPING
+.Ft RFSFile *
+.Fn r_fs_slurp "RFS *fs" "const char *path"
+.Pp
+Loads an entire file into memory for analysis.
+.Sh SEARCHING
+.Ft RList *
+.Fn r_fs_find_name "RFS *fs" "const char *name" "const char *glob"
+.Pp
+Finds files by name using glob patterns.
+.Pp
+.Ft RList *
+.Fn r_fs_find_off "RFS *fs" "const char *name" "ut64 off"
+.Pp
+Finds files containing data at a specific offset.
+.Sh PARTITIONS
+.Ft RList *
+.Fn r_fs_partitions "RFS *fs" "const char *ptype" "ut64 delta"
+.Pp
+Lists partitions in a disk image.
+.Sh PLUGINS
+.Ft bool
+.Fn r_fs_plugin_add "RFS *fs" "RFSPlugin *p"
+.Pp
+Adds a filesystem plugin to the context.
+.Pp
+.Ft bool
+.Fn r_fs_plugin_remove "RFS *fs" "RFSPlugin *p"
+.Pp
+Removes a filesystem plugin from the context.
+.Sh SHELL
+.Ft bool
+.Fn r_fs_shell "RFSShell *shell" "RFS *fs" "const char *root"
+.Pp
+Starts an interactive filesystem shell.
+.Sh FILE TYPES
+.Ft const RFSType *
+.Fn r_fs_type_index "int i"
+.Pp
+Retrieves filesystem type information by index.
+.Sh EXAMPLES
+Basic filesystem setup:
+.Bd -literal -offset indent
+RFS *fs = r_fs_new();
+RFSRoot *root = r_fs_mount(fs, "fat", "/mnt/fat", 0x1000);
+.Ed
+.Pp
+File operations:
+.Bd -literal -offset indent
+RFSFile *file = r_fs_open(fs, "/test.txt", false);
+int len = r_fs_read(fs, file, 0, 1024);
+r_fs_close(fs, file);
+.Ed
+.Pp
+Directory listing:
+.Bd -literal -offset indent
+RList *files = r_fs_dir(fs, "/");
+.Ed
+.Pp
+File slurping:
+.Bd -literal -offset indent
+RFSFile *slurped = r_fs_slurp(fs, "/config.bin");
+.Ed
+.Sh SEE ALSO
+.Xr r_io 3 ,
+.Xr r_core 3

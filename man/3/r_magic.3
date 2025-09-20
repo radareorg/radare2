@@ -1,0 +1,198 @@
+.Dd September 21, 2025
+.Dt R_MAGIC 3
+.Os
+.Sh NAME
+.Nm r_magic
+.Nd File type detection library using magic numbers
+.Sh SYNOPSIS
+.In r_magic.h
+.Ft struct r_magic_set *
+.Fn r_magic_new "int flags"
+.Ft void
+.Fn r_magic_free "struct r_magic_set *magic"
+.Ft const char *
+.Fn r_magic_file "struct r_magic_set *magic" "const char *filename"
+.Ft const char *
+.Fn r_magic_buffer "struct r_magic_set *magic" "const void *buffer" "size_t length"
+.Ft const char *
+.Fn r_magic_descriptor "struct r_magic_set *magic" "int fd"
+.Ft const char *
+.Fn r_magic_error "struct r_magic_set *magic"
+.Ft void
+.Fn r_magic_setflags "struct r_magic_set *magic" "int flags"
+.Ft bool
+.Fn r_magic_load "struct r_magic_set *magic" "const char *filename"
+.Ft bool
+.Fn r_magic_load_buffer "struct r_magic_set *magic" "const ut8 *buffer" "size_t length"
+.Ft bool
+.Fn r_magic_compile "struct r_magic_set *magic" "const char *filename"
+.Ft bool
+.Fn r_magic_check "struct r_magic_set *magic" "const char *filename"
+.Ft int
+.Fn r_magic_errno "struct r_magic_set *magic"
+.Sh DESCRIPTION
+The
+.Nm r_magic
+library provides file type detection using magic number patterns.
+It can identify file types by examining the content of files or buffers,
+similar to the Unix
+.Xr file 1
+command.
+.Pp
+The library uses a database of magic patterns that describe how to
+recognize different file formats based on their binary signatures,
+text patterns, and structural characteristics.
+.Sh INITIALIZATION
+Create a new magic instance:
+.Bd -literal -offset indent
+RMagic *magic = r_magic_new(R_MAGIC_NONE);
+.Ed
+.Pp
+Load default magic database:
+.Bd -literal -offset indent
+r_magic_load(magic, NULL); // Load default database
+.Ed
+.Pp
+Free when done:
+.Bd -literal -offset indent
+r_magic_free(magic);
+.Ed
+.Sh FILE TYPE DETECTION
+Detect file type from filename:
+.Bd -literal -offset indent
+const char *type = r_magic_file(magic, "/path/to/file");
+if (type) {
+    printf("File type: %s\\n", type);
+}
+.Ed
+.Pp
+Detect file type from buffer:
+.Bd -literal -offset indent
+const char *type = r_magic_buffer(magic, buffer, buffer_size);
+if (type) {
+    printf("Buffer type: %s\\n", type);
+}
+.Ed
+.Pp
+Detect file type from file descriptor:
+.Bd -literal -offset indent
+const char *type = r_magic_descriptor(magic, fileno(fp));
+if (type) {
+    printf("Descriptor type: %s\\n", type);
+}
+.Ed
+.Sh CONFIGURATION FLAGS
+Available flags for
+.Fn r_magic_new
+and
+.Fn r_magic_setflags :
+.Bl -tag -width "R_MAGIC_MIME_ENCODING"
+.It Dv R_MAGIC_NONE
+No special flags
+.It Dv R_MAGIC_DEBUG
+Enable debugging output
+.It Dv R_MAGIC_MIME_TYPE
+Return only MIME type
+.It Dv R_MAGIC_MIME_ENCODING
+Return only MIME encoding
+.It Dv R_MAGIC_CONTINUE
+Return all matches, not just first
+.It Dv R_MAGIC_RAW
+Don't translate unprintable characters
+.El
+.Sh ERROR HANDLING
+Check for errors:
+.Bd -literal -offset indent
+const char *error = r_magic_error(magic);
+if (error) {
+    fprintf(stderr, "Magic error: %s\\n", error);
+}
+int errnum = r_magic_errno(magic);
+.Ed
+.Sh DATABASE MANAGEMENT
+Load custom magic file:
+.Bd -literal -offset indent
+if (!r_magic_load(magic, "/path/to/magic/file")) {
+    // Handle error
+}
+.Ed
+.Pp
+Load magic from buffer:
+.Bd -literal -offset indent
+r_magic_load_buffer(magic, magic_data, magic_size);
+.Ed
+.Pp
+Compile magic file:
+.Bd -literal -offset indent
+r_magic_compile(magic, "/path/to/magic/file");
+.Ed
+.Pp
+Check magic file syntax:
+.Bd -literal -offset indent
+if (r_magic_check(magic, "/path/to/magic/file")) {
+    // Syntax is valid
+}
+.Ed
+.Sh SUPPORTED FORMATS
+The library can detect hundreds of file formats including:
+.Bl -bullet
+.It
+Executable formats (ELF, PE, Mach-O)
+.It
+Archives (ZIP, TAR, RAR)
+.It
+Images (JPEG, PNG, GIF, BMP)
+.It
+Documents (PDF, DOC, XLS)
+.It
+Audio/Video (MP3, MP4, AVI)
+.It
+Compressed files (GZ, BZ2, XZ)
+.It
+And many others
+.El
+.Sh EXAMPLES
+Basic file type detection:
+.Bd -literal -offset indent
+#include <r_magic.h>
+
+int main(int argc, char *argv[]) {
+    if (argc < 2) {
+        fprintf(stderr, "Usage: %s <file>\\n", argv[0]);
+        return 1;
+    }
+    
+    RMagic *magic = r_magic_new(R_MAGIC_NONE);
+    if (!magic) {
+        perror("r_magic_new");
+        return 1;
+    }
+    
+    if (!r_magic_load(magic, NULL)) {
+        fprintf(stderr, "Failed to load magic database\\n");
+        r_magic_free(magic);
+        return 1;
+    }
+    
+    const char *type = r_magic_file(magic, argv[1]);
+    if (type) {
+        printf("%s: %s\\n", argv[1], type);
+    } else {
+        const char *error = r_magic_error(magic);
+        fprintf(stderr, "Error: %s\\n", error ? error : "Unknown");
+    }
+    
+    r_magic_free(magic);
+    return 0;
+}
+.Ed
+.Pp
+Detect MIME type only:
+.Bd -literal -offset indent
+r_magic_setflags(magic, R_MAGIC_MIME_TYPE);
+const char *mime = r_magic_buffer(magic, data, size);
+printf("MIME: %s\\n", mime);
+.Ed
+.Sh SEE ALSO
+.Xr r_bin 3 ,
+.Xr r_util 3
