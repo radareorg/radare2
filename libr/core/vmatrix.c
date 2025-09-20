@@ -679,7 +679,7 @@ static void vmatrix_show_help(RCore *core) {
 		"  Red borders + #### - Selected items\n"
 		"  Scroll positions saved per level\n"
 		"  Level 2: Cyan (flagspaces), Yellow (disassembly)\n\n";
-	r_cons_less (help_text);
+	r_cons_less (core->cons, help_text);
 }
 
 static void vmatrix_refresh_oneshot(void *user) {
