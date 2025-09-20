@@ -1000,9 +1000,10 @@ R_API void r_core_visual_matrix(RCore *core) {
 				if (!strcmp (cat, "functions")) {
 					max_items = r_list_length (rvm.core->anal->fcns);
 				} else if (!strcmp (cat, "flagspaces")) {
-					RSpace *space;
+					R_UNUSED RSpace *space;
 					RSpaceIter *it;
 					r_flag_space_foreach (rvm.core->flags, it, space) {
+						(void)space;
 						max_items++;
 					}
 				} else if (!strcmp (cat, "flags")) {
