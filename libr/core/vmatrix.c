@@ -166,8 +166,8 @@ static void draw_highlighted_box(RConsCanvas *can, int xpos, int ypos, int boxwi
 	if (is_selected && boxwidth > 2) {
 		char *top_line = r_str_newf ("%s", "");
 		if (top_line) {
-			int len = boxwidth - 2; // Leave space for left and right borders
-			for (int j = 0; j < len; j++) {
+			int j, len = boxwidth - 2; // Leave space for left and right borders
+			for (j = 0; j < len; j++) {
 				char *new_line = r_str_append (top_line, "#");
 				if (!new_line) {
 					break; // Allocation failed
@@ -516,8 +516,8 @@ static void draw_level2_disassembly(RVMatrix *rvm) {
 		char title[256];
 		char *header_line = r_str_newf ("%s", "");
 		if (header_line) {
-			int header_len = disasm_w - 4;
-			for (int j = 0; j < header_len && j < 30; j++) {
+			int j, header_len = disasm_w - 4;
+			for (j = 0; j < header_len && j < 30; j++) {
 				char *new_line = r_str_append (header_line, "-");
 				if (!new_line) {
 					break; // Allocation failed
@@ -545,10 +545,10 @@ static void draw_level2_disassembly(RVMatrix *rvm) {
 		if (disasm) {
 			char *line = disasm;
 			char *next_line;
-			int line_y = disasm_y + 3;
+			int i, line_y = disasm_y + 3;
 			int max_lines = disasm_h - 4;
 
-			for (int i = 0; i < max_lines && line; i++) {
+			for (i = 0; i < max_lines && line; i++) {
 				next_line = strchr (line, '\n');
 				if (next_line) {
 					*next_line = '\0';
