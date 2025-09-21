@@ -68,7 +68,7 @@ static char *get_selected_box_title(RVMatrix *rvm) {
 		break;
 	case 1:
 		n = snprintf (title, sizeof (title), "%s item:%d",
-				cat ? cat : "unknown", rvm->selected_item);
+			cat ? cat : "unknown", rvm->selected_item);
 		break;
 	case 2:
 		if (cat && !strcmp (cat, "flagspaces") && rvm->selected_flagspace) {
@@ -452,19 +452,10 @@ static void draw_level2_disassembly(RVMatrix *rvm) {
 			r_cons_canvas_box (can, disasm_x, disasm_y, disasm_w, disasm_h, Color_YELLOW);
 		}
 		char title[256];
-		char *header_line = r_str_newf ("%s", "");
-		if (header_line) {
-			int j, header_len = disasm_w - 4;
-			for (j = 0; j < header_len && j < 30; j++) {
-				char *new_line = r_str_append (header_line, "-");
-				if (!new_line) {
-					break; // Allocation failed
-				}
-				header_line = new_line;
-			}
-			r_cons_canvas_write_at (can, header_line, disasm_x + 2, disasm_y);
-			free (header_line);
-		}
+		int header_len = disasm_w - 4;
+		char *header_line = r_str_pad2 (NULL, 0, '-', header_len);
+		r_cons_canvas_write_at (can, header_line, disasm_x + 2, disasm_y);
+		free (header_line);
 
 		snprintf (title, sizeof (title), "Disassembly at 0x%" PFMT64x, rvm->selected_addr);
 		// Crop the title to fit within the disassembly box boundaries
@@ -479,7 +470,7 @@ static void draw_level2_disassembly(RVMatrix *rvm) {
 
 		// Get disassembly content
 		RCore *core = rvm->core;
-		char *disasm = r_core_cmd_strf (core, "pd 20 @ 0x%" PFMT64x, rvm->selected_addr);
+		char *disasm = r_core_cmd_str_at (core, rvm->selected_addr, "pd 20");
 		if (disasm) {
 			char *line = disasm;
 			char *next_line;
@@ -522,6 +513,13 @@ static void vmatrix_refresh(RVMatrix *rvm) {
 	// Check for valid dimensions
 	if (w <= 0 || h <= 1) {
 		return; // Invalid dimensions, skip refresh
+	}
+	// Prevent excessive memory allocation
+	if (w > 10000) {
+		w = 10000;
+	}
+	if (h > 10000) {
+		h = 10000;
 	}
 
 	// Ensure scroll position is within valid bounds
