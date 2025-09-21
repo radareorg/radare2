@@ -35,6 +35,7 @@ typedef struct {
 	FILE* maps_file;
 	size_t buffer_size;
 	uint8_t* buffer;
+	ut64 addr;
 	bool initialized;
 } ProcessVmData;
 
@@ -144,9 +145,7 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int count) {
 	if (!data || !data->initialized) {
 		return -1;
 	}
-
-	ut64 addr = r_io_desc_seek (desc, 0LL, R_IO_SEEK_CUR);
-	return (int)pvm_read_memory (data, addr, buf, count);
+	return (int)pvm_read_memory (data, data->addr, buf, count);
 }
 
 static int __write(RIO *io, RIODesc *desc, const ut8 *buf, int count) {
@@ -154,15 +153,18 @@ static int __write(RIO *io, RIODesc *desc, const ut8 *buf, int count) {
 	if (!data || !data->initialized) {
 		return -1;
 	}
-	ut64 addr = r_io_desc_seek(desc, 0LL, R_IO_SEEK_CUR);
-	return (int)pvm_write_memory (data, addr, buf, count);
+	return (int)pvm_write_memory (data, data->addr, buf, count);
 }
 
 static ut64 __lseek(RIO *io, RIODesc *desc, ut64 offset, int whence) {
+	ProcessVmData *pvmdata = desc->data;
 	switch (whence) {
 	case SEEK_SET:
+		pvmdata->addr = offset;
+		break;
 	case SEEK_CUR:
-		return r_io_desc_seek (desc, offset, whence);
+		offset = pvmdata->addr;
+		break;
 	case SEEK_END:
 		return UT64_MAX; // The the whole address space
 	}
