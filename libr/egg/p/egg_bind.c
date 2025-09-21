@@ -5,7 +5,7 @@
 #define SUPPORT_UDP 0
 
 static ut8 x86_osx_bind4444[] =
-#include "sc/src/x86-osx-bind4444.c"
+#include "sc/out/x86-osx-bind4444.c"
 ;
 
 static ut8 x86_solaris_bind4444[] =

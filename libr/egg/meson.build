@@ -15,6 +15,11 @@ r_egg_sources = [
   'p/egg_xor.c'
 ]
 
+python3 = find_program('python3', required : false)
+if python3.found()
+  run_command(python3, 'p/sc/scmangle.py', '--out-dir', 'p/sc/out', 'p/sc/src/*.c')
+endif
+
 r_egg = library('r_egg', r_egg_sources,
   include_directories: [platform_inc],
   c_args: library_cflags,
