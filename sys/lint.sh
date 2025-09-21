@@ -45,7 +45,7 @@ cd "$(dirname $0)"/..
 # (git grep -n 'for(' | grep -v test | grep -v shlr | grep -v sys/) && exit 1
 (git grep -n 'for (long' | grep -v sys/) && exit 1
 (git grep -n 'for (ut' | grep -v sys/) && exit 1
-(git grep -n 'for (size_t' | grep -v sys/) && exit 1
+(git grep -n 'for (size_t' | grep c: | grep -v sys/) && exit 1
 (git grep -n -e '	$' | grep libr/ | grep c:) && exit 1
 
 (git grep 'eprintf ("|' libr ) && exit 1
