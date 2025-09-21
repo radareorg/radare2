@@ -109,7 +109,6 @@ static RBuffer *build(REgg *egg) {
 	return buf;
 }
 
-//TODO: rename plugin to run
 REggPlugin r_egg_plugin_bind = {
 	.meta = {
 		.name = "bind",
