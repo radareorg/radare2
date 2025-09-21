@@ -1,18 +1,19 @@
 /* radare - LGPL - Copyright 2013-2025 - pancake */
 
 #include <r_egg.h>
+#include "sc/out/decrypt.inc.c"
 
 static const ut8 armle_osx_reverse[] =
-#include "sc/src/armle-osx-reverse.c"
+#include "sc/out/armle-osx-reverse.c"
 ;
 
 static const ut8 x86_freebsd_reverse[] =
-#include "sc/src/x86-freebsd-reverse.c"
+#include "sc/out/x86-freebsd-reverse.c"
 ;
 
 static RBuffer *build(REgg *egg) {
 	RBuffer *buf = r_buf_new ();
-	int scsz = 0;
+	size_t sc_len = 0;
 	const ut8 *sc = NULL;
 	int cd = 0;
 	char *port = r_egg_option_get (egg, "port");
@@ -23,7 +24,7 @@ static RBuffer *build(REgg *egg) {
 		switch (egg->arch) {
 		case R_SYS_ARCH_ARM:
 			sc = (const ut8*)armle_osx_reverse;
-			scsz = sizeof (armle_osx_reverse);
+			sc_len = sizeof (armle_osx_reverse) - 1;
 			cd = 7+36;
 			break;
 		}
@@ -32,7 +33,10 @@ static RBuffer *build(REgg *egg) {
 		switch (egg->arch) {
 		case R_SYS_ARCH_X86:
 			switch (egg->bits) {
-			case 32: sc = x86_freebsd_reverse; break;
+			case 32:
+				sc = x86_freebsd_reverse;
+				sc_len = sizeof (x86_freebsd_reverse) - 1;
+				break;
 			default: R_LOG_ERROR ("Unsupported");
 			}
 			break;
@@ -43,14 +47,22 @@ static RBuffer *build(REgg *egg) {
 		break;
 	}
 	if (sc) {
-		r_buf_set_bytes (buf, sc, scsz? scsz: strlen ((const char *)sc));
-		if (R_STR_ISNOTEMPTY (port)) {
-			if (cd) {
-				ut8 nport = atoi (port);
-				r_buf_write_at (buf, cd, (const ut8*)&nport, 1);
-			} else {
-				R_LOG_ERROR ("Cannot set port");
+		ut8 *dec = sc_decrypt (sc, sc_len ? sc_len: strlen ((const char *)sc));
+		if (dec) {
+			r_buf_set_bytes (buf, dec, sc_len ? sc_len: strlen ((const char *)sc));
+			free (dec);
+			if (R_STR_ISNOTEMPTY (port)) {
+				if (cd) {
+					ut8 nport = atoi (port);
+					r_buf_write_at (buf, cd, (const ut8*)&nport, 1);
+				} else {
+					R_LOG_WARN ("Cannot set port");
+				}
 			}
+		} else {
+			R_LOG_ERROR ("Cannot pull shellcode");
+			r_buf_free (buf);
+			buf = NULL;
 		}
 	}
 	free (port);
