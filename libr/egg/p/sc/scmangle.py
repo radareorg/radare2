@@ -29,6 +29,7 @@ import os
 import re
 import sys
 from typing import List, Tuple
+import glob
 
 # -------------------- Helpers: bit ops & PRNG used by both sides --------------------
 
@@ -321,8 +322,17 @@ def main(argv: List[str]) -> int:
         f.write(decrypt_c)
     print(f"[ok] Wrote {dec_path}")
 
-    # Process each input
+    # Expand glob patterns in inputs (meson passes globs as literal strings)
+    expanded_inputs = []
     for p in args.inputs:
+        matches = glob.glob(p)
+        if matches:
+            expanded_inputs.extend(matches)
+        else:
+            expanded_inputs.append(p)
+
+    # Process each input
+    for p in expanded_inputs:
         process_file(p, args.out_dir, ops)
 
     return 0
