@@ -4121,8 +4121,11 @@ static void dtproceed(RBinFile *bf, ut64 preinit_addr, ut64 preinit_size, int sy
 	ut64 _baddr = Elf_(get_baddr) (bf->bo->bin_obj);
 	ut64 from = Elf_(v2p) (eo, preinit_addr);
 	ut64 to = from + preinit_size;
+	if (to > eo->size) {
+		to = eo->size;
+	}
 	ut64 at;
-	for (at = from; at < to ; at += R_BIN_ELF_WORDSIZE) {
+	for (at = from; at < to; at += R_BIN_ELF_WORDSIZE) {
 		ut64 addr = 0;
 		if (R_BIN_ELF_WORDSIZE == 8) {
 			addr = r_buf_read_ble64_at (bf->buf, at, big_endian);
@@ -4162,6 +4165,9 @@ static bool parse_pt_dynamic(RBinFile *bf, RBinSection *ptr) {
 
 	ut64 paddr = ptr->paddr;
 	ut64 paddr_end = paddr + ptr->size;
+	if (paddr_end > eo->size) {
+		paddr_end = eo->size;
+	}
 	ut64 at;
 	for (at = paddr; at < paddr_end; at += sizeof (Elf_(Dyn))) {
 #if R_BIN_ELF64
