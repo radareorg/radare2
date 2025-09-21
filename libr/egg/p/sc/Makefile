@@ -1,10 +1,11 @@
 SRCS  := $(shell cd src ; ls *.c)
 SCS := $(subst .c,,$(notdir $(SRCS)))
+PYTHON?=python3
 
 all: out
 
 out:
-	python scmangle.py --out-dir out/ src/*
+	$(PYTHON) scmangle.py --out-dir out/ src/*
 
 clean:
 	rm -rf out
