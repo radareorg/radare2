@@ -6086,15 +6086,16 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				r_cons_break_push (core->cons, NULL, NULL);
 				r_core_return_code (core, 0);
 				for (cur = from; cur <= to; cur += step) {
+					/* stop when reaching EOF; when used in resize loops */
+					const ut64 fsz = r_io_size (core->io);
+					if (!fsz || cur >= fsz) {
+						break;
+					}
 					if (r_cons_is_breaked (core->cons)) {
 						break;
 					}
 					(void) r_core_seek (core, cur, true);
 					r_core_cmd (core, cmd, 0);
-					if (core->rc != 0) {
-						R_LOG_INFO ("@@s: sequence interrupted");
-						break;
-					}
 					if (!foreach_newline (core)) {
 						break;
 					}
