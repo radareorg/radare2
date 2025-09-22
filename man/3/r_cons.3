@@ -1,0 +1,286 @@
+.Dd September 20, 2025
+.Dt R_CONS 3
+.Os
+.Sh NAME
+.Nm r_cons
+.Nd Radare2 Console Input/Output Library API
+.Sh SYNOPSIS
+.In r_cons.h
+.Ft RCons *
+.Fn r_cons_new "void"
+.Ft void
+.Fn r_cons_free "RCons *cons"
+.Ft int
+.Fn r_cons_printf "RCons *cons" "const char *format" "..."
+.Ft void
+.Fn r_cons_print "RCons *cons" "const char *str"
+.Ft void
+.Fn r_cons_flush "RCons *cons"
+.Ft int
+.Fn r_cons_readchar "RCons *cons"
+.Ft int
+.Fn r_cons_fgets "RCons *cons" "char *buf" "int len" "int argc" "const char **argv"
+.Ft void
+.Fn r_cons_clear "RCons *cons"
+.Ft void
+.Fn r_cons_gotoxy "RCons *cons" "int x" "int y"
+.Ft RColor
+.Fn r_cons_pal_get "RCons *cons" "const char *key"
+.Ft bool
+.Fn r_cons_pal_set "RCons *cons" "const char *key" "const char *val"
+.Ft RConsCanvas *
+.Fn r_cons_canvas_new "RCons *cons" "int w" "int h" "int flags"
+.Ft void
+.Fn r_cons_canvas_free "RConsCanvas *c"
+.Ft void
+.Fn r_cons_canvas_write "RConsCanvas *c" "const char *_s"
+.Ft void
+.Fn r_cons_grep "RCons *cons" "const char *grep"
+.Ft RLine *
+.Fn r_line_new "RCons *cons"
+.Ft void
+.Fn r_line_free "RLine *line"
+.Ft const char *
+.Fn r_line_readline "RCons *cons"
+.Sh DESCRIPTION
+The
+.Nm r_cons
+library provides console input/output functionality for radare2, including text output, input handling, color management, canvas drawing, and line editing. It abstracts terminal operations and provides a unified interface for console interactions.
+.Pp
+Key concepts:
+.Bl -bullet
+.It
+.Nm RCons
+is the main console structure managing output, input, and state.
+.It
+.Nm RConsCanvas
+allows drawing text-based graphics and layouts.
+.It
+.Nm RLine
+handles line editing and command history.
+.It
+Color palettes support theming and syntax highlighting.
+.It
+Grep functionality filters and processes output.
+.El
+.Sh INITIALIZATION
+.Ft RCons *
+.Fn r_cons_new "void"
+.Pp
+Creates a new console context.
+.Ft void
+.Fn r_cons_free "RCons *cons"
+.Pp
+Frees a console context.
+.Ft RCons *
+.Fn r_cons_singleton "void"
+.Pp
+Returns the global console singleton instance.
+.Sh OUTPUT
+.Ft int
+.Fn r_cons_printf "RCons *cons" "const char *format" "..."
+.Pp
+Prints formatted text to the console.
+.Ft void
+.Fn r_cons_print "RCons *cons" "const char *str"
+.Pp
+Prints a string to the console.
+.Ft void
+.Fn r_cons_println "RCons *cons" "const char *str"
+.Pp
+Prints a string followed by a newline.
+.Ft void
+.Fn r_cons_flush "RCons *cons"
+.Pp
+Flushes the console output buffer.
+.Ft void
+.Fn r_cons_newline "RCons *cons"
+.Pp
+Prints a newline character.
+.Sh INPUT
+.Ft int
+.Fn r_cons_readchar "RCons *cons"
+.Pp
+Reads a single character from input.
+.Ft int
+.Fn r_cons_fgets "RCons *cons" "char *buf" "int len" "int argc" "const char **argv"
+.Pp
+Reads a line from input into the buffer.
+.Ft char *
+.Fn r_cons_input "RCons *cons" "const char *msg"
+.Pp
+Prompts for user input with a message.
+.Ft bool
+.Fn r_cons_yesno "RCons *cons" "int def" "const char *fmt" "..."
+.Pp
+Prompts for a yes/no answer with default value.
+.Sh CONTROL
+.Ft void
+.Fn r_cons_clear "RCons *cons"
+.Pp
+Clears the console screen.
+.Ft void
+.Fn r_cons_gotoxy "RCons *cons" "int x" "int y"
+.Pp
+Moves the cursor to the specified position.
+.Ft void
+.Fn r_cons_show_cursor "RCons *cons" "int cursor"
+.Pp
+Shows or hides the cursor.
+.Ft void
+.Fn r_cons_set_raw "RCons *cons" "bool is_raw"
+.Pp
+Sets raw mode for direct input handling.
+.Sh COLORS
+.Ft RColor
+.Fn r_cons_pal_get "RCons *cons" "const char *key"
+.Pp
+Gets a color from the palette by key.
+.Ft bool
+.Fn r_cons_pal_set "RCons *cons" "const char *key" "const char *val"
+.Pp
+Sets a color in the palette.
+.Ft void
+.Fn r_cons_pal_init "RCons *cons"
+.Pp
+Initializes the color palette.
+.Ft void
+.Fn r_cons_pal_random "RCons *cons"
+.Pp
+Sets random colors in the palette.
+.Ft char *
+.Fn r_cons_rgb_str "RCons *cons" "char *outstr" "size_t sz" "RColor *rcolor"
+.Pp
+Converts a color to ANSI escape sequence string.
+.Sh CANVAS
+.Ft RConsCanvas *
+.Fn r_cons_canvas_new "RCons *cons" "int w" "int h" "int flags"
+.Pp
+Creates a new canvas with specified dimensions.
+.Ft void
+.Fn r_cons_canvas_free "RConsCanvas *c"
+.Pp
+Frees a canvas.
+.Ft void
+.Fn r_cons_canvas_write "RConsCanvas *c" "const char *_s"
+.Pp
+Writes text to the canvas.
+.Ft void
+.Fn r_cons_canvas_gotoxy "RConsCanvas *c" "int x" "int y"
+.Pp
+Moves the canvas cursor.
+.Ft void
+.Fn r_cons_canvas_box "RConsCanvas *c" "int x" "int y" "int w" "int h" "const char *color"
+.Pp
+Draws a box on the canvas.
+.Ft void
+.Fn r_cons_canvas_line "RConsCanvas *c" "int x" "int y" "int x2" "int y2" "RCanvasLineStyle *style"
+.Pp
+Draws a line on the canvas.
+.Sh GREP
+.Ft void
+.Fn r_cons_grep "RCons *cons" "const char *grep"
+.Pp
+Sets grep filtering for output.
+.Ft void
+.Fn r_cons_grep_expression "RCons *cons" "const char *str"
+.Pp
+Sets a grep expression.
+.Ft char *
+.Fn r_cons_grep_strip "char *cmd" "const char *quotestr"
+.Pp
+Strips grep commands from a string.
+.Sh LINE EDITING
+.Ft RLine *
+.Fn r_line_new "RCons *cons"
+.Pp
+Creates a new line editor.
+.Ft void
+.Fn r_line_free "RLine *line"
+.Pp
+Frees a line editor.
+.Ft const char *
+.Fn r_line_readline "RCons *cons"
+.Pp
+Reads a line with editing capabilities.
+.Ft void
+.Fn r_line_set_prompt "RLine *line" "const char *prompt"
+.Pp
+Sets the prompt for line input.
+.Ft bool
+.Fn r_line_hist_add "RLine *line" "const char *text"
+.Pp
+Adds a line to history.
+.Sh PIXEL
+.Ft RConsPixel *
+.Fn r_cons_pixel_new "int w" "int h"
+.Pp
+Creates a new pixel buffer.
+.Ft void
+.Fn r_cons_pixel_free "RConsPixel *p"
+.Pp
+Frees a pixel buffer.
+.Ft void
+.Fn r_cons_pixel_set "RConsPixel *p" "int x" "int y" "ut8 v"
+.Pp
+Sets a pixel value.
+.Ft void
+.Fn r_cons_pixel_flush "RCons *cons" "RConsPixel *p" "int sx" "int sy"
+.Pp
+Flushes the pixel buffer to console.
+.Sh EXAMPLES
+Basic output:
+.Bd -literal
+RCons *cons = r_cons_new();
+r_cons_printf(cons, "Hello, %s!\\n", "world");
+r_cons_flush(cons);
+r_cons_free(cons);
+.Ed
+.Pp
+Reading input:
+.Bd -literal
+RCons *cons = r_cons_new();
+char buf[256];
+r_cons_fgets(cons, buf, sizeof(buf), 0, NULL);
+r_cons_free(cons);
+.Ed
+.Pp
+Using colors:
+.Bd -literal
+RCons *cons = r_cons_new();
+RColor red = r_cons_pal_get(cons, "red");
+char *color_str = r_cons_rgb_str(cons, NULL, 0, &red);
+r_cons_printf(cons, "%sError!%s\\n", color_str, Color_RESET);
+free(color_str);
+r_cons_flush(cons);
+r_cons_free(cons);
+.Ed
+.Pp
+Canvas drawing:
+.Bd -literal
+RCons *cons = r_cons_new();
+RConsCanvas *canvas = r_cons_canvas_new(cons, 80, 24, 0);
+r_cons_canvas_box(canvas, 10, 5, 20, 10, Color_BLUE);
+r_cons_canvas_write_at(canvas, "Hello", 15, 10);
+r_cons_canvas_print(canvas);
+r_cons_canvas_free(canvas);
+r_cons_free(cons);
+.Ed
+.Pp
+Line editing:
+.Bd -literal
+RCons *cons = r_cons_new();
+RLine *line = r_line_new(cons);
+r_line_set_prompt(line, "> ");
+const char *input = r_line_readline(cons);
+if (input) {
+    r_cons_printf(cons, "You entered: %s\\n", input);
+}
+r_line_free(line);
+r_cons_free(cons);
+.Ed
+.Sh SEE ALSO
+.Xr r_core 3 ,
+.Xr r_util 3
+.Sh AUTHORS
+The radare2 project team.

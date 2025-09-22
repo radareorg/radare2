@@ -1,0 +1,245 @@
+.Dd September 20, 2025
+.Dt R_DEBUG 3
+.Os
+.Sh NAME
+.Nm r_debug
+.Nd radare2 debugger library
+.Sh SYNOPSIS
+.In r_debug.h
+.Ft RDebug *
+.Fn r_debug_new "int hard"
+.Ft void
+.Fn r_debug_free "RDebug *dbg"
+.Ft bool
+.Fn r_debug_attach "RDebug *dbg" "int pid"
+.Ft bool
+.Fn r_debug_detach "RDebug *dbg" "int pid"
+.Ft int
+.Fn r_debug_step "RDebug *dbg" "int steps"
+.Ft int
+.Fn r_debug_continue "RDebug *dbg"
+.Ft RDebugReasonType
+.Fn r_debug_wait "RDebug *dbg" "RBreakpointItem **bp"
+.Ft bool
+.Fn r_debug_reg_sync "RDebug *dbg" "int type" "int write"
+.Ft ut64
+.Fn r_debug_reg_get "RDebug *dbg" "const char *name"
+.Ft bool
+.Fn r_debug_reg_set "RDebug *dbg" "const char *name" "ut64 num"
+.Sh DESCRIPTION
+The
+.Nm r_debug
+library provides debugging capabilities for radare2, supporting process attachment, stepping, breakpoints, register manipulation, memory inspection, and various debugging operations across different platforms and architectures.
+.Pp
+The core structure is
+.Vt RDebug ,
+which manages debugger state, plugins, breakpoints, registers, and process information.
+.Sh INITIALIZATION
+.Ft RDebug *
+.Fn r_debug_new "int hard"
+.Pp
+Creates a new debugger context. The 'hard' parameter enables hardware debugging features.
+.Pp
+.Ft void
+.Fn r_debug_free "RDebug *dbg"
+.Pp
+Frees all resources associated with the debugger context.
+.Sh PROCESS CONTROL
+.Ft bool
+.Fn r_debug_attach "RDebug *dbg" "int pid"
+.Pp
+Attaches the debugger to a running process with the specified PID.
+.Pp
+.Ft bool
+.Fn r_debug_detach "RDebug *dbg" "int pid"
+.Pp
+Detaches the debugger from the specified process.
+.Pp
+.Ft bool
+.Fn r_debug_start "RDebug *dbg" "const char *cmd"
+.Pp
+Starts debugging a new process with the given command.
+.Sh EXECUTION CONTROL
+.Ft int
+.Fn r_debug_step "RDebug *dbg" "int steps"
+.Pp
+Executes the specified number of single steps.
+.Pp
+.Ft int
+.Fn r_debug_step_over "RDebug *dbg" "int steps"
+.Pp
+Executes the specified number of steps, stepping over function calls.
+.Pp
+.Ft int
+.Fn r_debug_continue "RDebug *dbg"
+.Pp
+Continues execution until a breakpoint or signal is encountered.
+.Pp
+.Ft bool
+.Fn r_debug_continue_until "RDebug *dbg" "ut64 addr"
+.Pp
+Continues execution until the specified address is reached.
+.Sh WAITING AND REASONS
+.Ft RDebugReasonType
+.Fn r_debug_wait "RDebug *dbg" "RBreakpointItem **bp"
+.Pp
+Waits for the debuggee to stop and returns the reason for stopping.
+.Pp
+.Ft RDebugReasonType
+.Fn r_debug_stop_reason "RDebug *dbg"
+.Pp
+Gets the current reason why the debuggee stopped.
+.Pp
+.Ft const char *
+.Fn r_debug_reason_tostring "int type"
+.Pp
+Converts a debug reason type to a string description.
+.Sh REGISTER MANAGEMENT
+.Ft bool
+.Fn r_debug_reg_sync "RDebug *dbg" "int type" "int write"
+.Pp
+Synchronizes register values between the debugger and debuggee.
+.Pp
+.Ft ut64
+.Fn r_debug_reg_get "RDebug *dbg" "const char *name"
+.Pp
+Gets the value of a register by name.
+.Pp
+.Ft bool
+.Fn r_debug_reg_set "RDebug *dbg" "const char *name" "ut64 num"
+.Pp
+Sets the value of a register by name.
+.Pp
+.Ft bool
+.Fn r_debug_reg_list "RDebug *dbg" "int type" "int size" "PJ *pj" "int rad" "const char *use_color"
+.Pp
+Lists registers of the specified type.
+.Sh BREAKPOINTS
+.Ft RBreakpointItem *
+.Fn r_debug_bp_add "RDebug *dbg" "ut64 addr" "int hw" "bool watch" "int rw" "char *module" "st64 m_delta"
+.Pp
+Adds a breakpoint at the specified address.
+.Pp
+.Ft void
+.Fn r_debug_bp_update "RDebug *dbg"
+.Pp
+Updates all breakpoints after changes.
+.Sh MEMORY MANAGEMENT
+.Ft RList *
+.Fn r_debug_map_list_new "void"
+.Pp
+Creates a new list for memory maps.
+.Pp
+.Ft RDebugMap *
+.Fn r_debug_map_get "RDebug *dbg" "ut64 addr"
+.Pp
+Gets the memory map containing the specified address.
+.Pp
+.Ft bool
+.Fn r_debug_map_protect "RDebug *dbg" "ut64 addr" "int size" "int perms"
+.Pp
+Changes memory protection for the specified region.
+.Sh PROCESS INFORMATION
+.Ft RDebugInfo *
+.Fn r_debug_info "RDebug *dbg" "const char *arg"
+.Pp
+Gets information about the debugged process.
+.Pp
+.Ft void
+.Fn r_debug_info_free "RDebugInfo *rdi"
+.Pp
+Frees process information structure.
+.Sh THREADS AND PROCESSES
+.Ft RList *
+.Fn r_debug_pids "RDebug *dbg" "int pid"
+.Pp
+Gets a list of process IDs.
+.Pp
+.Ft bool
+.Fn r_debug_select "RDebug *dbg" "int pid" "int tid"
+.Pp
+Selects the specified process and thread for debugging.
+.Sh SIGNALS
+.Ft int
+.Fn r_debug_signal_send "RDebug *dbg" "int num"
+.Pp
+Sends a signal to the debugged process.
+.Pp
+.Ft int
+.Fn r_debug_signal_resolve "RDebug *dbg" "const char *signame"
+.Pp
+Resolves a signal name to its number.
+.Pp
+.Ft const char *
+.Fn r_debug_signal_resolve_i "RDebug *dbg" "int signum"
+.Pp
+Resolves a signal number to its name.
+.Sh TRACING
+.Ft RDebugTrace *
+.Fn r_debug_trace_new "void"
+.Pp
+Creates a new trace context.
+.Pp
+.Ft void
+.Fn r_debug_trace_free "RDebugTrace *dbg"
+.Pp
+Frees a trace context.
+.Pp
+.Ft RDebugTracepointItem *
+.Fn r_debug_trace_add "RDebug *dbg" "ut64 addr" "int size"
+.Pp
+Adds a tracepoint at the specified address.
+.Sh PLUGINS
+.Ft bool
+.Fn r_debug_plugin_add "RDebug *dbg" "RDebugPlugin *plugin"
+.Pp
+Adds a debugger plugin.
+.Pp
+.Ft bool
+.Fn r_debug_plugin_remove "RDebug *dbg" "RDebugPlugin *plugin"
+.Pp
+Removes a debugger plugin.
+.Sh EXECUTION
+.Ft bool
+.Fn r_debug_execute "RDebug *dbg" "const ut8 *buf" "int len" "ut64 *ret" "bool restore" "bool ignore_stack"
+.Pp
+Executes code in the context of the debugged process.
+.Sh DEBUG REASONS
+The library defines various reasons why a debuggee might stop:
+.Bl -tag -width "R_DEBUG_REASON_BREAKPOINT"
+.It Dv R_DEBUG_REASON_BREAKPOINT
+Hit a breakpoint
+.It Dv R_DEBUG_REASON_SIGNAL
+Received a signal
+.It Dv R_DEBUG_REASON_STEP
+Completed a step
+.It Dv R_DEBUG_REASON_SEGFAULT
+Segmentation fault
+.El
+.Sh EXAMPLES
+Basic debugging setup:
+.Bd -literal -offset indent
+RDebug *dbg = r_debug_new(0);
+r_debug_attach(dbg, pid);
+r_debug_continue(dbg);
+.Ed
+.Pp
+Register manipulation:
+.Bd -literal -offset indent
+ut64 pc = r_debug_reg_get(dbg, "pc");
+r_debug_reg_set(dbg, "rax", 0x1000);
+.Ed
+.Pp
+Setting breakpoints:
+.Bd -literal -offset indent
+RBreakpointItem *bp = r_debug_bp_add(dbg, 0x400000, 0, false, 0, NULL, 0);
+.Ed
+.Pp
+Memory inspection:
+.Bd -literal -offset indent
+RDebugMap *map = r_debug_map_get(dbg, 0x400000);
+.Ed
+.Sh SEE ALSO
+.Xr r_bp 3 ,
+.Xr r_reg 3 ,
+.Xr r_anal 3

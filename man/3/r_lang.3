@@ -1,0 +1,166 @@
+.Dd September 21, 2025
+.Dt R_LANG 3
+.Os
+.Sh NAME
+.Nm r_lang
+.Nd Scripting language support library for radare2
+.Sh SYNOPSIS
+.In r_lang.h
+.Ft struct r_lang_t *
+.Fn r_lang_new "void"
+.Ft void
+.Fn r_lang_free "struct r_lang_t *lang"
+.Ft bool
+.Fn r_lang_use "struct r_lang_t *lang" "const char *name"
+.Ft bool
+.Fn r_lang_run "struct r_lang_t *lang" "const char *code" "int len"
+.Ft bool
+.Fn r_lang_run_string "struct r_lang_t *lang" "const char *code"
+.Ft bool
+.Fn r_lang_run_file "struct r_lang_t *lang" "const char *file"
+.Ft bool
+.Fn r_lang_prompt "struct r_lang_t *lang"
+.Ft bool
+.Fn r_lang_set_argv "struct r_lang_t *lang" "int argc" "char **argv"
+.Ft void
+.Fn r_lang_set_user_ptr "struct r_lang_t *lang" "void *user"
+.Ft bool
+.Fn r_lang_define "struct r_lang_t *lang" "const char *type" "const char *name" "void *value"
+.Ft void
+.Fn r_lang_undef "struct r_lang_t *lang" "const char *name"
+.Ft struct r_lang_plugin_t *
+.Fn r_lang_get_by_name "struct r_lang_t *lang" "const char *name"
+.Ft struct r_lang_plugin_t *
+.Fn r_lang_get_by_extension "struct r_lang_t *lang" "const char *ext"
+.Sh DESCRIPTION
+The
+.Nm r_lang
+library provides scripting language support for radare2 through a plugin-based system.
+It allows executing code in various programming languages within the radare2 environment,
+enabling automation, custom commands, and extensions.
+.Pp
+The core structure is
+.Vt struct r_lang_t ,
+which manages loaded language plugins and execution sessions.
+Each language is implemented as a plugin (
+.Vt struct r_lang_plugin_t )
+with callbacks for initialization, execution, and cleanup.
+.Sh INITIALIZATION
+Create a new language instance:
+.Bd -literal -offset indent
+RLang *lang = r_lang_new();
+.Ed
+.Pp
+Set user pointer (usually RCore):
+.Bd -literal -offset indent
+r_lang_set_user_ptr(lang, core);
+.Ed
+.Pp
+Free when done:
+.Bd -literal -offset indent
+r_lang_free(lang);
+.Ed
+.Sh EXECUTION
+Select a language:
+.Bd -literal -offset indent
+r_lang_use(lang, "qjs"); // QuickJS JavaScript
+.Ed
+.Pp
+Execute code string:
+.Bd -literal -offset indent
+const char *code = "console.log('Hello from r2!');";
+r_lang_run_string(lang, code);
+.Ed
+.Pp
+Execute code with length:
+.Bd -literal -offset indent
+r_lang_run(lang, code, strlen(code));
+.Ed
+.Pp
+Execute script file:
+.Bd -literal -offset indent
+r_lang_run_file(lang, "script.js");
+.Ed
+.Sh INTERACTIVE MODE
+Start interactive prompt:
+.Bd -literal -offset indent
+r_lang_prompt(lang); // Interactive REPL
+.Ed
+.Sh ARGUMENTS
+Set command-line arguments for scripts:
+.Bd -literal -offset indent
+char *argv[] = {"script.js", "arg1", "arg2"};
+r_lang_set_argv(lang, 3, argv);
+.Ed
+.Sh DEFINITIONS
+Define variables accessible from scripts:
+.Bd -literal -offset indent
+int value = 42;
+r_lang_define(lang, "int", "my_var", &value);
+.Ed
+.Pp
+Remove definition:
+.Bd -literal -offset indent
+r_lang_undef(lang, "my_var");
+.Ed
+.Sh LANGUAGES
+Supported scripting languages include:
+.Bl -bullet
+.It
+JavaScript (QuickJS)
+.It
+C/C++
+.It
+Rust
+.It
+Go
+.It
+Zig
+.It
+Vala
+.It
+Dart
+.It
+Nim
+.It
+TypeScript
+.It
+Assembly
+.It
+And others
+.El
+.Sh EXAMPLES
+Execute JavaScript code:
+.Bd -literal -offset indent
+#include <r_lang.h>
+
+int main() {
+    RLang *lang = r_lang_new();
+    r_lang_use(lang, "qjs");
+    
+    const char *js_code = R"js(
+        console.log("Hello from JavaScript!");
+        var addr = 0x1000;
+        console.log("Address: 0x" + addr.toString(16));
+    )js";
+    
+    r_lang_run_string(lang, js_code);
+    r_lang_free(lang);
+    return 0;
+}
+.Ed
+.Pp
+Define and use variables:
+.Bd -literal -offset indent
+RLang *lang = r_lang_new();
+int my_int = 12345;
+r_lang_define(lang, "int", "global_var", &my_int);
+
+r_lang_use(lang, "qjs");
+r_lang_run_string(lang, "console.log('Value: ' + global_var);");
+
+r_lang_free(lang);
+.Ed
+.Sh SEE ALSO
+.Xr r_core 3 ,
+.Xr r_util 3

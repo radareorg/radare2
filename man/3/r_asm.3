@@ -1,0 +1,173 @@
+.Dd September 21, 2025
+.Dt R_ASM 3
+.Os
+.Sh NAME
+.Nm r_asm
+.Nd Assembler and disassembler library for radare2
+.Sh SYNOPSIS
+.In r_asm.h
+.Ft struct r_asm_t *
+.Fn r_asm_new "void"
+.Ft void
+.Fn r_asm_free "struct r_asm_t *a"
+.Ft bool
+.Fn r_asm_use "struct r_asm_t *a" "const char *name"
+.Ft bool
+.Fn r_asm_set_bits "struct r_asm_t *a" "int bits"
+.Ft bool
+.Fn r_asm_set_big_endian "struct r_asm_t *a" "bool big_endian"
+.Ft int
+.Fn r_asm_set_pc "struct r_asm_t *a" "ut64 pc"
+.Ft struct r_asm_code_t *
+.Fn r_asm_massemble "struct r_asm_t *a" "const char *buf"
+.Ft struct r_asm_code_t *
+.Fn r_asm_mdisassemble "struct r_asm_t *a" "const ut8 *buf" "int len"
+.Ft char *
+.Fn r_asm_tostring "struct r_asm_t *a" "ut64 addr" "const ut8 *b" "int l"
+.Ft ut8 *
+.Fn r_asm_from_string "struct r_asm_t *a" "ut64 addr" "const char *b" "int *l"
+.Ft struct r_parse_t *
+.Fn r_parse_new "void"
+.Ft void
+.Fn r_parse_free "struct r_parse_t *p"
+.Ft char *
+.Fn r_asm_parse_pseudo "struct r_asm_t *a" "const char *data"
+.Ft struct r_asm_code_t *
+.Fn r_asm_code_new "void"
+.Ft void
+.Fn r_asm_code_free "struct r_asm_code_t *acode"
+.Sh DESCRIPTION
+The
+.Nm r_asm
+library provides assembler and disassembler functionality for multiple architectures.
+It supports assembling assembly code into machine code and disassembling machine code back to assembly.
+The library uses a plugin-based architecture with support for numerous CPU architectures.
+.Pp
+The core structure is
+.Vt struct r_asm_t ,
+which manages the current architecture, configuration, and plugin sessions.
+Assembly/disassembly results are stored in
+.Vt struct r_asm_code_t ,
+containing the assembled bytes, assembly string, and metadata.
+.Sh INITIALIZATION
+Create a new assembler instance:
+.Bd -literal -offset indent
+RAsm *a = r_asm_new();
+.Ed
+.Pp
+Set the architecture and bits:
+.Bd -literal -offset indent
+r_asm_use(a, "x86");
+r_asm_set_bits(a, 64);
+r_asm_set_pc(a, 0x1000);
+.Ed
+.Pp
+Free when done:
+.Bd -literal -offset indent
+r_asm_free(a);
+.Ed
+.Sh ASSEMBLY
+Assemble assembly code to machine code:
+.Bd -literal -offset indent
+RAsmCode *code = r_asm_massemble(a, "mov rax, 42\\nnop");
+if (code) {
+    printf("Bytes: ");
+    for(int i = 0; i < code->len; i++) {
+        printf("%02x ", code->bytes[i]);
+    }
+    printf("\\nAssembly: %s\\n", code->assembly);
+    r_asm_code_free(code);
+}
+.Ed
+.Pp
+Assemble from string to buffer:
+.Bd -literal -offset indent
+int len;
+ut8 *buf = r_asm_from_string(a, 0x1000, "add eax, 1", &len);
+if (buf) {
+    // use buf[0..len-1]
+    free(buf);
+}
+.Ed
+.Sh DISASSEMBLY
+Disassemble machine code to assembly:
+.Bd -literal -offset indent
+ut8 bytes[] = {0x48, 0xc7, 0xc0, 0x2a, 0x00, 0x00, 0x00}; // mov rax, 42
+RAsmCode *code = r_asm_mdisassemble(a, bytes, sizeof(bytes));
+if (code) {
+    printf("Assembly: %s\\n", code->assembly);
+    r_asm_code_free(code);
+}
+.Ed
+.Pp
+Disassemble to string:
+.Bd -literal -offset indent
+char *asm_str = r_asm_tostring(a, 0x1000, bytes, sizeof(bytes));
+if (asm_str) {
+    printf("Assembly: %s\\n", asm_str);
+    free(asm_str);
+}
+.Ed
+.Sh PARSING
+Parse pseudo-assembly or filter output:
+.Bd -literal -offset indent
+RParse *p = r_parse_new();
+// Enable pseudo-assembly
+p->pseudo = true;
+char *pseudo = r_asm_parse_pseudo(a, "mov rax, [rbp + 8]");
+if (pseudo) {
+    printf("Pseudo: %s\\n", pseudo);
+    free(pseudo);
+}
+r_parse_free(p);
+.Ed
+.Sh ARCHITECTURES
+Supported architectures include:
+.Bl -bullet
+.It
+x86/x86_64
+.It
+ARM/ARM64
+.It
+MIPS
+.It
+PowerPC
+.It
+SPARC
+.It
+RISC-V
+.It
+And many others
+.El
+.Sh EXAMPLES
+Complete example of assemble and disassemble:
+.Bd -literal -offset indent
+#include <r_asm.h>
+
+int main() {
+    RAsm *a = r_asm_new();
+    r_asm_use(a, "x86");
+    r_asm_set_bits(a, 64);
+    
+    // Assemble
+    RAsmCode *code = r_asm_massemble(a, "mov rax, 42");
+    if (code) {
+        printf("Assembled %d bytes\\n", code->len);
+        
+        // Disassemble back
+        RAsmCode *dis = r_asm_mdisassemble(a, code->bytes, code->len);
+        if (dis) {
+            printf("Disassembled: %s\\n", dis->assembly);
+            r_asm_code_free(dis);
+        }
+        r_asm_code_free(code);
+    }
+    
+    r_asm_free(a);
+    return 0;
+}
+.Ed
+.Sh SEE ALSO
+.Xr r_arch 3 ,
+.Xr r_anal 3 ,
+.Xr r_core 3

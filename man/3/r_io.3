@@ -1,0 +1,191 @@
+.Dd September 20, 2025
+.Dt R_IO 3
+.Os
+.Sh NAME
+.Nm r_io
+.Nd Radare2 Input/Output Library API
+.Sh SYNOPSIS
+.In r_io.h
+.Ft RIO *
+.Fn r_io_new "void"
+.Ft void
+.Fn r_io_init "RIO *io"
+.Ft void
+.Fn r_io_free "RIO *io"
+.Ft RIODesc *
+.Fn r_io_open "RIO *io" "const char *uri" "int perm" "int mode"
+.Ft bool
+.Fn r_io_close "RIO *io"
+.Ft bool
+.Fn r_io_read_at "RIO *io" "ut64 addr" "ut8 *buf" "int len"
+.Ft bool
+.Fn r_io_write_at "RIO *io" "ut64 addr" "const ut8 *buf" "int len"
+.Ft ut64
+.Fn r_io_seek "RIO *io" "ut64 offset" "int whence"
+.Ft RIOMap *
+.Fn r_io_map_add "RIO *io" "int fd" "int flags" "ut64 delta" "ut64 addr" "ut64 size"
+.Ft bool
+.Fn r_io_map_del "RIO *io" "ut32 id"
+.Ft RIOBank *
+.Fn r_io_bank_new "const char *name"
+.Ft bool
+.Fn r_io_bank_add "RIO *io" "RIOBank *bank"
+.Ft bool
+.Fn r_io_cache_write_at "RIO *io" "ut64 addr" "const ut8 *buf" "int len"
+.Ft bool
+.Fn r_io_cache_read_at "RIO *io" "ut64 addr" "ut8 *buf" "int len"
+.Sh DESCRIPTION
+The
+.Nm r_io
+library provides a unified interface for input/output operations in radare2, supporting various backends such as files, memory, network connections, and debuggers. It abstracts file descriptors, memory mappings, caching, and undo functionality.
+.Pp
+Key concepts:
+.Bl -bullet
+.It
+.Nm RIO
+is the main structure representing an I/O context.
+.It
+.Nm RIODesc
+represents an open file or resource descriptor.
+.It
+.Nm RIOMap
+defines memory mappings from file offsets to virtual addresses.
+.It
+.Nm RIOBank
+groups maps for banked memory architectures.
+.It
+Caching allows temporary modifications without altering the underlying data.
+.El
+.Sh INITIALIZATION
+.Ft RIO *
+.Fn r_io_new "void"
+.Pp
+Creates and initializes a new I/O context.
+.Ft void
+.Fn r_io_init "RIO *io"
+.Pp
+Initializes an existing I/O structure.
+.Ft void
+.Fn r_io_free "RIO *io"
+.Pp
+Frees an I/O context and all associated resources.
+.Sh FILE OPERATIONS
+.Ft RIODesc *
+.Fn r_io_open "RIO *io" "const char *uri" "int perm" "int mode"
+.Pp
+Opens a resource specified by URI with given permissions and mode, and maps it at address 0.
+.Ft RIODesc *
+.Fn r_io_open_at "RIO *io" "const char *uri" "int perm" "int mode" "ut64 at"
+.Pp
+Opens a resource and maps it at the specified address.
+.Ft bool
+.Fn r_io_close "RIO *io"
+.Pp
+Closes the current descriptor.
+.Ft bool
+.Fn r_io_read_at "RIO *io" "ut64 addr" "ut8 *buf" "int len"
+.Pp
+Reads len bytes from virtual address addr into buf.
+.Ft bool
+.Fn r_io_write_at "RIO *io" "ut64 addr" "const ut8 *buf" "int len"
+.Pp
+Writes len bytes from buf to virtual address addr.
+.Ft ut64
+.Fn r_io_seek "RIO *io" "ut64 offset" "int whence"
+.Pp
+Seeks to the specified offset. whence can be R_IO_SEEK_SET, R_IO_SEEK_CUR, or R_IO_SEEK_END.
+.Sh MEMORY MAPPING
+.Ft RIOMap *
+.Fn r_io_map_add "RIO *io" "int fd" "int flags" "ut64 delta" "ut64 addr" "ut64 size"
+.Pp
+Creates a new memory map from file descriptor fd at virtual address addr with size size, starting from file offset delta.
+.Ft bool
+.Fn r_io_map_del "RIO *io" "ut32 id"
+.Pp
+Deletes the map with the given id.
+.Ft RIOMap *
+.Fn r_io_map_get "RIO *io" "ut32 id"
+.Pp
+Retrieves the map with the given id.
+.Ft RIOMap *
+.Fn r_io_map_get_at "RIO *io" "ut64 vaddr"
+.Pp
+Gets the map covering the virtual address vaddr.
+.Sh BANKING
+.Ft RIOBank *
+.Fn r_io_bank_new "const char *name"
+.Pp
+Creates a new bank with the given name.
+.Ft bool
+.Fn r_io_bank_add "RIO *io" "RIOBank *bank"
+.Pp
+Adds a bank to the I/O context.
+.Ft bool
+.Fn r_io_bank_use "RIO *io" "ut32 bankid"
+.Pp
+Switches to the specified bank.
+.Sh CACHING
+.Ft bool
+.Fn r_io_cache_write_at "RIO *io" "ut64 addr" "const ut8 *buf" "int len"
+.Pp
+Writes to the cache at the specified address.
+.Ft bool
+.Fn r_io_cache_read_at "RIO *io" "ut64 addr" "ut8 *buf" "int len"
+.Pp
+Reads from the cache at the specified address.
+.Ft void
+.Fn r_io_cache_commit "RIO *io" "ut64 from" "ut64 to" "bool many"
+.Pp
+Commits cached changes to the underlying storage.
+.Sh UNDO FUNCTIONALITY
+.Ft int
+.Fn r_io_undo_init "RIO *io"
+.Pp
+Initializes undo functionality.
+.Ft void
+.Fn r_io_undo_enable "RIO *io" "int seek" "int write"
+.Pp
+Enables seek and/or write undo tracking.
+.Ft void
+.Fn r_io_wundo_new "RIO *io" "ut64 off" "const ut8 *data" "int len"
+.Pp
+Records a write operation for undo.
+.Sh EXAMPLES
+Opening and reading a file:
+.Bd -literal
+RIO *io = r_io_new();
+RIODesc *desc = r_io_open(io, "/bin/ls", R_PERM_R, 0);
+if (desc) {
+    ut8 buf[64];
+    r_io_read_at(io, 0, buf, sizeof(buf));
+}
+r_io_free(io);
+.Ed
+.Pp
+Creating a memory map:
+.Bd -literal
+RIO *io = r_io_new();
+RIODesc *desc = r_io_open_nomap(io, "malloc://1024", R_PERM_RW, 0);
+if (desc) {
+    RIOMap *map = r_io_map_add(io, desc->fd, R_PERM_RW, 0, 0x1000, 1024);
+}
+r_io_free(io);
+.Ed
+.Pp
+Using cache for temporary modifications:
+.Bd -literal
+RIO *io = r_io_new();
+r_io_open(io, "file.bin", R_PERM_RW, 0);
+ut8 data[] = {0x90, 0x90}; // NOP NOP
+r_io_cache_write_at(io, 0x100, data, 2);
+// Changes are cached, not written to file yet
+r_io_cache_commit(io, 0x100, 0x102, false);
+// Now changes are committed
+r_io_free(io);
+.Ed
+.Sh SEE ALSO
+.Xr r_core 3 ,
+.Xr r_bin 3 ,
+.Xr r_anal 3
+.Sh AUTHORS
+The radare2 project team.

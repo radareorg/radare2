@@ -1,0 +1,189 @@
+.Dd September 21, 2025
+.Dt R_ARCH 3
+.Os
+.Sh NAME
+.Nm r_arch
+.Nd Architecture abstraction library for radare2
+.Sh SYNOPSIS
+.In r_arch.h
+.Ft struct r_arch_t *
+.Fn r_arch_new "void"
+.Ft void
+.Fn r_arch_free "struct r_arch_t *arch"
+.Ft bool
+.Fn r_arch_use "struct r_arch_t *arch" "struct r_arch_config_t *config" "const char *name"
+.Ft bool
+.Fn r_arch_decode "struct r_arch_t *a" "struct r_anal_op_t *op" "RArchDecodeMask mask"
+.Ft bool
+.Fn r_arch_encode "struct r_arch_t *a" "struct r_anal_op_t *op" "RArchEncodeMask mask"
+.Ft struct r_arch_session_t *
+.Fn r_arch_session "struct r_arch_t *arch" "struct r_arch_config_t *cfg" "struct r_arch_plugin_t *ap"
+.Ft bool
+.Fn r_arch_session_decode "struct r_arch_session_t *as" "struct r_anal_op_t *op" "RArchDecodeMask mask"
+.Ft bool
+.Fn r_arch_session_encode "struct r_arch_session_t *as" "struct r_anal_op_t *op" "RArchEncodeMask mask"
+.Ft struct r_arch_config_t *
+.Fn r_arch_config_new "void"
+.Ft void
+.Fn r_arch_config_free "struct r_arch_config_t *config"
+.Ft bool
+.Fn r_arch_config_set_bits "struct r_arch_config_t *c" "int bits"
+.Ft bool
+.Fn r_arch_config_set_syntax "struct r_arch_config_t *config" "int syntax"
+.Ft void
+.Fn r_arch_config_set_cpu "struct r_arch_config_t *config" "const char *cpu"
+.Sh DESCRIPTION
+The
+.Nm r_arch
+library provides a unified interface for CPU architecture support in radare2.
+It abstracts disassembler, assembler, and analysis operations across different architectures
+through a plugin-based system. Each architecture plugin implements decode (disassemble),
+encode (assemble), and other operations.
+.Pp
+The core structure is
+.Vt struct r_arch_t ,
+which manages loaded plugins and sessions.
+Configuration is handled by
+.Vt struct r_arch_config_t ,
+specifying architecture name, bits, endianness, syntax, etc.
+Sessions (
+.Vt struct r_arch_session_t )
+provide per-plugin state and operations.
+.Sh INITIALIZATION
+Create a new architecture instance:
+.Bd -literal -offset indent
+RArch *arch = r_arch_new();
+.Ed
+.Pp
+Configure for a specific architecture:
+.Bd -literal -offset indent
+RArchConfig *cfg = r_arch_config_new();
+strcpy(cfg->arch, "x86");
+cfg->bits = 64;
+cfg->endian = R_SYS_ENDIAN_LITTLE;
+cfg->syntax = R_ARCH_SYNTAX_INTEL;
+.Ed
+.Pp
+Use an architecture:
+.Bd -literal -offset indent
+r_arch_use(arch, cfg, "x86");
+.Ed
+.Pp
+Free resources:
+.Bd -literal -offset indent
+r_arch_config_free(cfg);
+r_arch_free(arch);
+.Ed
+.Sh DECODING (DISASSEMBLING)
+Decode machine code to analysis operation:
+.Bd -literal -offset indent
+RAnalOp op = {0};
+ut8 bytes[] = {0x48, 0x89, 0xc7}; // mov rdi, rax
+if (r_arch_decode(arch, &op, R_ARCH_OP_MASK_BASIC)) {
+    printf("Mnemonic: %s\\n", op.mnemonic);
+    printf("Size: %d\\n", op.size);
+}
+.Ed
+.Pp
+With ESIL and value information:
+.Bd -literal -offset indent
+r_arch_decode(arch, &op, R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_VAL);
+printf("ESIL: %s\\n", op.esil);
+.Ed
+.Sh ENCODING (ASSEMBLING)
+Encode assembly to machine code:
+.Bd -literal -offset indent
+RAnalOp op = {0};
+op.mnemonic = "mov rax, 42";
+if (r_arch_encode(arch, &op, 0)) {
+    printf("Bytes: ");
+    for(int i = 0; i < op.size; i++) {
+        printf("%02x ", op.bytes[i]);
+    }
+    printf("\\n");
+}
+.Ed
+.Sh SESSIONS
+Create a session for specific plugin:
+.Bd -literal -offset indent
+RArchSession *session = r_arch_session(arch, cfg, plugin);
+if (session) {
+    r_arch_session_decode(session, &op, mask);
+    // session automatically freed with arch
+}
+.Ed
+.Sh CONFIGURATION
+Modify architecture configuration:
+.Bd -literal -offset indent
+r_arch_config_set_bits(cfg, 32);
+r_arch_config_set_cpu(cfg, "cortex-a53");
+r_arch_config_set_syntax(cfg, R_ARCH_SYNTAX_ATT);
+.Ed
+.Sh ARCHITECTURES
+Supported architectures include:
+.Bl -bullet
+.It
+x86/x86_64 (Intel/AMD)
+.It
+ARM/ARM64
+.It
+MIPS
+.It
+PowerPC
+.It
+SPARC
+.It
+RISC-V
+.It
+And many others (6502, AVR, Z80, etc.)
+.El
+.Sh SYNTAX MODES
+Available syntax options:
+.Bl -tag -width "R_ARCH_SYNTAX_ATT"
+.It Dv R_ARCH_SYNTAX_NONE
+No specific syntax
+.It Dv R_ARCH_SYNTAX_INTEL
+Intel syntax (x86)
+.It Dv R_ARCH_SYNTAX_ATT
+AT&T syntax (x86)
+.It Dv R_ARCH_SYNTAX_MASM
+MASM syntax
+.It Dv R_ARCH_SYNTAX_REGNUM
+Register numbers instead of names
+.El
+.Sh EXAMPLES
+Complete disassemble/assemble example:
+.Bd -literal -offset indent
+#include <r_arch.h>
+
+int main() {
+    RArch *arch = r_arch_new();
+    RArchConfig *cfg = r_arch_config_new();
+    
+    strcpy(cfg->arch, "x86");
+    cfg->bits = 64;
+    cfg->syntax = R_ARCH_SYNTAX_INTEL;
+    
+    r_arch_use(arch, cfg, "x86");
+    
+    // Disassemble
+    RAnalOp op = {0};
+    ut8 code[] = {0x48, 0x89, 0xc7}; // mov rdi, rax
+    r_arch_decode(arch, &op, R_ARCH_OP_MASK_DISASM);
+    printf("Disasm: %s\\n", op.mnemonic);
+    
+    // Assemble
+    RAnalOp op2 = {0};
+    op2.mnemonic = "mov rax, rbx";
+    r_arch_encode(arch, &op2, 0);
+    printf("Assembled %d bytes\\n", op2.size);
+    
+    r_arch_config_free(cfg);
+    r_arch_free(arch);
+    return 0;
+}
+.Ed
+.Sh SEE ALSO
+.Xr r_anal 3 ,
+.Xr r_asm 3 ,
+.Xr r_core 3

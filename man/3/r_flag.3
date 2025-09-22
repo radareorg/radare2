@@ -1,0 +1,228 @@
+.Dd September 20, 2025
+.Dt R_FLAG 3
+.Os
+.Sh NAME
+.Nm r_flag
+.Nd Radare2 Flag Management Library API
+.Sh SYNOPSIS
+.In r_flag.h
+.Ft RFlag *
+.Fn r_flag_new "void"
+.Ft void
+.Fn r_flag_free "RFlag *f"
+.Ft RFlagItem *
+.Fn r_flag_set "RFlag *f" "const char *name" "ut64 addr" "ut32 size"
+.Ft RFlagItem *
+.Fn r_flag_get "RFlag *f" "const char *name"
+.Ft RFlagItem *
+.Fn r_flag_get_at "RFlag *f" "ut64 addr" "bool closest"
+.Ft bool
+.Fn r_flag_unset "RFlag *f" "RFlagItem *item"
+.Ft bool
+.Fn r_flag_unset_name "RFlag *f" "const char *name"
+.Ft bool
+.Fn r_flag_unset_addr "RFlag *f" "ut64 addr"
+.Ft void
+.Fn r_flag_unset_all "RFlag *f"
+.Ft RSpace *
+.Fn r_flag_space_get "RFlag *f" "const char *name"
+.Ft RSpace *
+.Fn r_flag_space_cur "RFlag *f"
+.Ft RSpace *
+.Fn r_flag_space_set "RFlag *f" "const char *name"
+.Ft bool
+.Fn r_flag_space_push "RFlag *f" "const char *name"
+.Ft bool
+.Fn r_flag_space_pop "RFlag *f"
+.Ft const char *
+.Fn r_flag_item_set_comment "RFlag *f" "RFlagItem *fi" "const char *comment"
+.Ft const char *
+.Fn r_flag_item_set_color "RFlag *f" "RFlagItem *item" "const char *color"
+.Ft void
+.Fn r_flag_foreach "RFlag *f" "RFlagItemCb cb" "void *user"
+.Ft bool
+.Fn r_flag_zone_add "RFlag *fz" "const char *name" "ut64 addr"
+.Ft bool
+.Fn r_flag_zone_del "RFlag *fz" "const char *name"
+.Ft RList *
+.Fn r_flag_tags_set "RFlag *f" "const char *name" "const char *words"
+.Sh DESCRIPTION
+The
+.Nm r_flag
+library provides a system for managing named addresses (flags) in radare2, supporting flag spaces, metadata, zones, and tags. Flags are used to label addresses with meaningful names for analysis and debugging.
+.Pp
+Key concepts:
+.Bl -bullet
+.It
+.Nm RFlag
+is the main structure managing all flags.
+.It
+.Nm RFlagItem
+represents a single flag with name, address, size, and metadata.
+.It
+.Nm RSpace
+allows organizing flags into namespaces.
+.It
+Zones define address ranges for grouping flags.
+.It
+Tags provide additional categorization.
+.El
+.Sh INITIALIZATION
+.Ft RFlag *
+.Fn r_flag_new "void"
+.Pp
+Creates a new flag context.
+.Ft void
+.Fn r_flag_free "RFlag *f"
+.Pp
+Frees a flag context and all associated flags.
+.Sh FLAG MANAGEMENT
+.Ft RFlagItem *
+.Fn r_flag_set "RFlag *f" "const char *name" "ut64 addr" "ut32 size"
+.Pp
+Sets a flag with the given name at the specified address and size.
+.Ft RFlagItem *
+.Fn r_flag_get "RFlag *f" "const char *name"
+.Pp
+Retrieves a flag by name.
+.Ft RFlagItem *
+.Fn r_flag_get_at "RFlag *f" "ut64 addr" "bool closest"
+.Pp
+Gets the flag at the specified address, or the closest if closest is true.
+.Ft bool
+.Fn r_flag_unset "RFlag *f" "RFlagItem *item"
+.Pp
+Removes the specified flag item.
+.Ft bool
+.Fn r_flag_unset_name "RFlag *f" "const char *name"
+.Pp
+Removes the flag with the given name.
+.Ft bool
+.Fn r_flag_unset_addr "RFlag *f" "ut64 addr"
+.Pp
+Removes all flags at the specified address.
+.Ft void
+.Fn r_flag_unset_all "RFlag *f"
+.Pp
+Removes all flags.
+.Sh FLAG SPACES
+.Ft RSpace *
+.Fn r_flag_space_get "RFlag *f" "const char *name"
+.Pp
+Gets the flag space with the given name.
+.Ft RSpace *
+.Fn r_flag_space_cur "RFlag *f"
+.Pp
+Returns the current flag space.
+.Ft RSpace *
+.Fn r_flag_space_set "RFlag *f" "const char *name"
+.Pp
+Sets the current flag space.
+.Ft bool
+.Fn r_flag_space_push "RFlag *f" "const char *name"
+.Pp
+Pushes a flag space onto the stack.
+.Ft bool
+.Fn r_flag_space_pop "RFlag *f"
+.Pp
+Pops the current flag space from the stack.
+.Sh METADATA
+.Ft const char *
+.Fn r_flag_item_set_comment "RFlag *f" "RFlagItem *fi" "const char *comment"
+.Pp
+Sets a comment for the flag item.
+.Ft const char *
+.Fn r_flag_item_set_color "RFlag *f" "RFlagItem *item" "const char *color"
+.Pp
+Sets the color for the flag item.
+.Ft const char *
+.Fn r_flag_item_set_type "RFlag *f" "RFlagItem *fi" "const char *type"
+.Pp
+Sets the type for the flag item.
+.Sh ITERATION
+.Ft void
+.Fn r_flag_foreach "RFlag *f" "RFlagItemCb cb" "void *user"
+.Pp
+Iterates over all flags, calling the callback for each.
+.Ft void
+.Fn r_flag_foreach_prefix "RFlag *f" "const char *pfx" "int pfx_len" "RFlagItemCb cb" "void *user"
+.Pp
+Iterates over flags with the given prefix.
+.Sh ZONES
+.Ft bool
+.Fn r_flag_zone_add "RFlag *fz" "const char *name" "ut64 addr"
+.Pp
+Adds a zone at the specified address.
+.Ft bool
+.Fn r_flag_zone_del "RFlag *fz" "const char *name"
+.Pp
+Deletes the zone with the given name.
+.Ft bool
+.Fn r_flag_zone_around "RFlag *fz" "ut64 addr" "const char **prev" "const char **next"
+.Pp
+Finds zones around the given address.
+.Sh TAGS
+.Ft RList *
+.Fn r_flag_tags_set "RFlag *f" "const char *name" "const char *words"
+.Pp
+Sets tags for the flag with the given name.
+.Ft RList *
+.Fn r_flag_tags_get "RFlag *f" "const char *name"
+.Pp
+Gets the tags for the flag.
+.Sh UTILITIES
+.Ft char *
+.Fn r_flag_list "RFlag *f" "int rad" "const char *pfx"
+.Pp
+Lists flags in radare2 format with optional prefix.
+.Ft int
+.Fn r_flag_count "RFlag *f" "const char *glob"
+.Pp
+Counts flags matching the glob pattern.
+.Ft int
+.Fn r_flag_rename "RFlag *f" "RFlagItem *item" "const char *name"
+.Pp
+Renames a flag item.
+.Sh EXAMPLES
+Creating and managing flags:
+.Bd -literal
+RFlag *f = r_flag_new();
+RFlagItem *item = r_flag_set(f, "main", 0x1000, 4);
+if (item) {
+    r_flag_item_set_comment(f, item, "Entry point");
+}
+RFlagItem *got = r_flag_get(f, "main");
+if (got) {
+    printf("Address: 0x%"PFMT64x"\\n", got->addr);
+}
+r_flag_free(f);
+.Ed
+.Pp
+Using flag spaces:
+.Bd -literal
+RFlag *f = r_flag_new();
+r_flag_space_push(f, "functions");
+r_flag_set(f, "func1", 0x2000, 0);
+r_flag_space_push(f, "variables");
+r_flag_set(f, "var1", 0x3000, 4);
+r_flag_space_pop(f); // back to functions
+r_flag_set(f, "func2", 0x2100, 0);
+r_flag_free(f);
+.Ed
+.Pp
+Iterating over flags:
+.Bd -literal
+void print_flag(RFlagItem *fi, void *user) {
+    printf("%s @ 0x%"PFMT64x"\\n", fi->name, fi->addr);
+}
+RFlag *f = r_flag_new();
+// ... set some flags ...
+r_flag_foreach(f, print_flag, NULL);
+r_flag_free(f);
+.Ed
+.Sh SEE ALSO
+.Xr r_core 3 ,
+.Xr r_anal 3 ,
+.Xr r_bin 3
+.Sh AUTHORS
+The radare2 project team.

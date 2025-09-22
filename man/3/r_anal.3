@@ -1,0 +1,199 @@
+.Dd September 20, 2025
+.Dt R_ANAL 3
+.Os
+.Sh NAME
+.Nm r_anal
+.Nd radare2 analysis library
+.Sh SYNOPSIS
+.In r_anal.h
+.Ft RAnal *
+.Fn r_anal_new "void"
+.Ft void
+.Fn r_anal_free "RAnal *anal"
+.Ft bool
+.Fn r_anal_use "RAnal *anal" "const char *name"
+.Ft RAnalFunction *
+.Fn r_anal_create_function "RAnal *anal" "const char *name" "ut64 addr" "int type" "RAnalDiff *diff"
+.Ft RAnalBlock *
+.Fn r_anal_create_block "RAnal *anal" "ut64 addr" "ut64 size"
+.Ft int
+.Fn r_anal_op "RAnal *anal" "RAnalOp *op" "ut64 addr" "const ut8 *data" "int len" "RAnalOpMask mask"
+.Ft bool
+.Fn r_anal_esil_parse "REsil *esil" "const char *expr"
+.Ft bool
+.Fn r_anal_esil_run "REsil *esil" "ut64 addr" "const char *str" "int len" "REsilInterrupt *intr" "int *paddr"
+.Sh DESCRIPTION
+The
+.Nm r_anal
+library provides comprehensive binary analysis capabilities for radare2, including disassembly, function analysis, control flow graph construction, symbolic execution via ESIL (Evaluable Strings Intermediate Language), variable tracking, cross-references, metadata management, and type analysis.
+.Pp
+The core structure is
+.Vt RAnal ,
+which holds the analysis context including architecture configuration, function lists, basic blocks, ESIL emulator, registers, and various analysis options.
+.Sh INITIALIZATION
+.Ft RAnal *
+.Fn r_anal_new "void"
+.Pp
+Creates a new analysis context with default settings. Initializes ESIL, registers, function and block storage, metadata spaces, and loads built-in plugins.
+.Pp
+.Ft void
+.Fn r_anal_free "RAnal *anal"
+.Pp
+Frees all resources associated with the analysis context.
+.Pp
+.Ft bool
+.Fn r_anal_use "RAnal *anal" "const char *name"
+.Pp
+Loads and activates an analysis plugin by name (e.g., "x86", "arm").
+.Sh FUNCTION ANALYSIS
+.Ft RAnalFunction *
+.Fn r_anal_create_function "RAnal *anal" "const char *name" "ut64 addr" "int type" "RAnalDiff *diff"
+.Pp
+Creates and adds a new function to the analysis context.
+.Pp
+.Ft RList *
+.Fn r_anal_get_functions_in "RAnal *anal" "ut64 addr"
+.Pp
+Returns a list of functions containing the given address.
+.Pp
+.Ft RAnalFunction *
+.Fn r_anal_get_function_at "RAnal *anal" "ut64 addr"
+.Pp
+Returns the function with the specified entry point address.
+.Sh BASIC BLOCK MANAGEMENT
+.Ft RAnalBlock *
+.Fn r_anal_create_block "RAnal *anal" "ut64 addr" "ut64 size"
+.Pp
+Creates a new basic block at the given address and size.
+.Pp
+.Ft RAnalBlock *
+.Fn r_anal_block_split "RAnalBlock *bb" "ut64 addr"
+.Pp
+Splits a basic block at the specified address, returning the new block.
+.Pp
+.Ft bool
+.Fn r_anal_block_merge "RAnalBlock *a" "RAnalBlock *b"
+.Pp
+Merges block b into block a if they are contiguous and have identical function lists.
+.Sh OPERATION ANALYSIS
+.Ft int
+.Fn r_anal_op "RAnal *anal" "RAnalOp *op" "ut64 addr" "const ut8 *data" "int len" "RAnalOpMask mask"
+.Pp
+Analyzes a single instruction at the given address, populating the RAnalOp structure with disassembly and analysis information.
+.Pp
+.Ft char *
+.Fn r_anal_op_tostring "RAnal *anal" "RAnalOp *op"
+.Pp
+Converts an analyzed operation to its string representation.
+.Sh VARIABLES
+.Ft RAnalVar *
+.Fn r_anal_function_set_var "RAnalFunction *fcn" "int delta" "char kind" "const char *type" "int size" "bool isarg" "const char *name"
+.Pp
+Creates or updates a variable in a function.
+.Pp
+.Ft bool
+.Fn r_anal_var_rename "RAnal *anal" "RAnalVar *var" "const char *new_name"
+.Pp
+Renames a variable.
+.Pp
+.Ft void
+.Fn r_anal_var_set_type "RAnal *anal" "RAnalVar *var" "const char *type"
+.Pp
+Sets the type of a variable.
+.Sh CROSS-REFERENCES
+.Ft bool
+.Fn r_anal_xrefs_set "RAnal *anal" "ut64 from" "ut64 to" "RAnalRefType type"
+.Pp
+Creates a cross-reference from one address to another.
+.Pp
+.Ft RVecAnalRef *
+.Fn r_anal_xrefs_get "RAnal *anal" "ut64 to"
+.Pp
+Returns all cross-references pointing to the given address.
+.Sh METADATA
+.Ft bool
+.Fn r_meta_set "RAnal *a" "RAnalMetaType type" "ut64 addr" "ut64 size" "const char *str"
+.Pp
+Sets metadata at the specified address and size.
+.Pp
+.Ft RAnalMetaItem *
+.Fn r_meta_get_at "RAnal *a" "ut64 addr" "RAnalMetaType type" "ut64 *size"
+.Pp
+Retrieves metadata at the given address.
+.Sh HINTS
+.Ft void
+.Fn r_anal_hint_set_bits "RAnal *a" "ut64 addr" "int bits"
+.Pp
+Sets a bitness hint at the specified address.
+.Pp
+.Ft void
+.Fn r_anal_hint_set_arch "RAnal *a" "ut64 addr" "const char *arch"
+.Pp
+Sets an architecture hint at the specified address.
+.Sh ESIL
+.Ft bool
+.Fn r_anal_esil_parse "REsil *esil" "const char *expr"
+.Pp
+Parses and executes an ESIL expression.
+.Pp
+.Ft bool
+.Fn r_anal_esil_run "REsil *esil" "ut64 addr" "const char *str" "int len" "REsilInterrupt *intr" "int *paddr"
+.Pp
+Runs ESIL emulation starting from the given address.
+.Pp
+.Ft RAnalEsilCFG *
+.Fn r_anal_esil_cfg_expr "RAnalEsilCFG *cfg" "RAnal *anal" "ut64 off" "char *expr"
+.Pp
+Builds a control flow graph from an ESIL expression.
+.Sh TYPES
+.Ft RAnalType *
+.Fn r_anal_type_new "void"
+.Pp
+Creates a new type structure.
+.Pp
+.Ft RAnalBaseType *
+.Fn r_anal_get_base_type "RAnal *anal" "const char *name"
+.Pp
+Retrieves a base type by name.
+.Sh CLASSES
+.Ft void
+.Fn r_anal_class_create "RAnal *anal" "const char *name"
+.Pp
+Creates a new class in the analysis context.
+.Pp
+.Ft RAnalClassErr
+.Fn r_anal_class_method_set "RAnal *anal" "const char *class_name" "RAnalMethod *meth"
+.Pp
+Adds a method to a class.
+.Sh GLOBALS
+.Ft bool
+.Fn r_anal_global_add "RAnal *anal" "ut64 addr" "const char *type_name" "const char *name"
+.Pp
+Adds a global variable at the specified address.
+.Sh EXAMPLES
+Basic analysis setup:
+.Bd -literal -offset indent
+RAnal *anal = r_anal_new();
+r_anal_use(anal, "x86");
+r_anal_set_bits(anal, 64);
+.Ed
+.Pp
+Function analysis:
+.Bd -literal -offset indent
+RAnalFunction *fcn = r_anal_create_function(anal, "main", 0x1000, R_ANAL_FCN_TYPE_FCN, NULL);
+.Ed
+.Pp
+ESIL emulation:
+.Bd -literal -offset indent
+r_esil_parse(anal->esil, "rax,8,+,rbx,=");
+.Ed
+.Pp
+Variable management:
+.Bd -literal -offset indent
+RAnalVar *var = r_anal_function_set_var(fcn, -8, 'b', "int", 4, false, "local_var");
+.Ed
+.Sh SEE ALSO
+.Xr r_core 3 ,
+.Xr r_bin 3 ,
+.Xr r_esil 3 ,
+.Xr r_arch 3
