@@ -9,7 +9,7 @@ static Rvc *open_git(const char *path) {
 	char *git_path = r_file_new (path, ".git", NULL);
 	if (!git_path || !r_file_is_directory (git_path)) {
 		char *escpath = r_str_escape (path);
-		int ret = r_sys_cmdf ("git init \"%s\" > /dev/null", escpath);
+		int ret = r_sys_cmdf ("git init \"%s\" > %s", escpath, R_SYS_DEVNULL);
 		if (ret != 0) {
 			R_LOG_WARN ("git init failed");
 		}

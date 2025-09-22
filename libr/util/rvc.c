@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2021-2023 - RHL120, pancake */
+/* radare - LGPL - Copyright 2021-2025 - RHL120, pancake */
 
 #define R_LOG_ORIGIN "rvc"
 
