@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2023 - pancake */
+/* radare - LGPL - Copyright 2010-2025 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -436,7 +436,6 @@ static ut32 itmask(char *input) {
 }
 
 static bool err;
-//decode str as number
 static ut64 getnum(const char *str) {
 	char *endptr;
 	err = false;
@@ -446,12 +445,21 @@ static ut64 getnum(const char *str) {
 		err = true;
 		return 0;
 	}
+	// Skip leading whitespace
+	str = r_str_trim_head_ro (str);
+	// Skip assembler immediate/hex prefixes
 	while (*str == '$' || *str == '#') {
 		str++;
 	}
 	val = strtoll (str, &endptr, 0);
-	if (str != endptr && *endptr == '\0') {
-		return val;
+	// Skip any trailing whitespace after the parsed number
+	if (endptr) {
+		while (*endptr && isspace ((unsigned char)*endptr)) {
+			endptr++;
+		}
+		if (str != endptr && *endptr == '\0') {
+			return val;
+		}
 	}
 	err = true;
 	return 0;
