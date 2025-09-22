@@ -764,7 +764,7 @@ static int opbs(RArchSession *a, ut8 *data, const Opcode *op) {
 	ut8 sib = 0;
 
 	if (base == X86R_UNDEFINED) {
-		// disp32 only: rm=101, mod=00, followed by disp32
+		// disp32 only: rm = 101, mod = 00, followed by disp32
 		rm = 5;
 		mod = 0;
 	} else {
@@ -786,7 +786,7 @@ static int opbs(RArchSession *a, ut8 *data, const Opcode *op) {
 			sib = 0x24; // [esp] no index
 			rm = 4;
 		}
-		// [ebp] alone is encoded as [ebp+disp8=0]
+		// [ebp] alone is encoded as [ebp + disp8 = 0]
 		if (rm == 5 && mod == 0 && !use_sib) {
 			mod = 1;
 			disp = 0;
