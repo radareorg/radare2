@@ -6065,6 +6065,49 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		ao->o = o;
 		return 1;
 	}
+	/* ARM-state LDM/STM (multiple load/store) with addressing suffixes */
+	if (r_str_startswith (ao->op, "ldm") || r_str_startswith (ao->op, "stm")) {
+		bool is_ldm = r_str_startswith (ao->op, "ldm");
+		const char *mop = ao->op + 3; // after ldm/stm
+		/* Default IA if unspecified */
+		int P = 0, U = 1;
+		if (r_str_startswith (mop, "ia")) { P = 0; U = 1; }
+		else if (r_str_startswith (mop, "ib")) { P = 1; U = 1; }
+		else if (r_str_startswith (mop, "da")) { P = 0; U = 0; }
+		else if (r_str_startswith (mop, "db")) { P = 1; U = 0; }
+		/* Merge register list across commas if needed */
+		collect_list (ao);
+		/* parse writeback on Rn (rN!) */
+		int rn_wb = getregmembang (ao->a[0]);
+		int rn = (rn_wb >= 0) ? rn_wb : getreg (ao->a[0]);
+		if (rn < 0 || rn > 15) {
+			return 0;
+		}
+		st32 list = getreglist (ao->a[1]);
+		if (list < 0) {
+			return 0;
+		}
+		int W = (rn_wb >= 0) ? 1 : 0;
+		int L = is_ldm ? 1 : 0;
+		int cond = 14; /* default AL */
+		/* Build ARM word then swap to byte order expected by tests */
+		ut32 word = 0;
+		word |= ((ut32)cond & 0xF) << 28;
+		word |= 0x08000000; /* 100 at bits 27-25 */
+		word |= (P & 1) << 24;
+		word |= (U & 1) << 23;
+		/* S bit (bit 22) remains 0 */
+		word |= (W & 1) << 21;
+		word |= (L & 1) << 20;
+		word |= ((ut32)(rn & 0xF)) << 16;
+		word |= (ut32)(list & 0xFFFF);
+		ut8 b3 = (word >> 24) & 0xFF;
+		ut8 b2 = (word >> 16) & 0xFF;
+		ut8 b1 = (word >> 8) & 0xFF;
+		ut8 b0 = (word) & 0xFF;
+		ao->o = ((ut32)b0 << 24) | (((ut32)b1) << 16) | (((ut32)b2) << 8) | (((ut32)b3) );
+		return 1;
+	}
 	/* ARM-state PLD (preload data) */
 	if (r_str_startswith (ao->op, "pld")) {
 		/* Expect forms:
@@ -6125,7 +6168,7 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		return 1;
 	}
 	for (i = 0; ops[i].name; i++) {
-		if (!strncmp (ao->op, ops[i].name, strlen (ops[i].name))) {
+		if (r_str_startswith (ao->op, ops[i].name)) {
 			/* This can be useful when handling cases such as blt or ble
 			 * where strncmp might mistaken blt or ble as bl with conditional
 			 * t or e */
@@ -6143,7 +6186,7 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			if (ao->a[0] || ops[i].type == TYPE_BKP) {
 				switch (ops[i].type) {
 				case TYPE_MEM:
-					if (!strncmp (ops[i].name, "strex", 5)) {
+					if (r_str_startswith (ops[i].name, "strex")) {
 						rex = 1;
 					}
 					if (!strcmp (ops[i].name, "str") || !strcmp (ops[i].name, "ldr")) {
@@ -6467,7 +6510,7 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 						ao->o |= high << 8;
 						ao->o |= a << 24;
 						ao->o |= b << 16;
-					} else if (!strncmp (ao->op, "smla", 4)) {
+					} else if (r_str_startswith (ao->op, "smla")) {
 						if (low > 14 || high > 14 || a > 14) {
 							return 0;
 						}
