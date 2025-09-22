@@ -122,6 +122,7 @@ static ArmOp ops[] = {
 	{ "smull", 0x9000c0e0, TYPE_MUL},
 	{ "umull", 0x900080e0, TYPE_MUL},
 	{ "smlal", 0x9000e0e0, TYPE_MUL},
+	{ "umlal", 0x9000a0e0, TYPE_MUL},
 	{ "smlabb", 0x800000e1, TYPE_MUL},
 	{ "smlabt", 0xc00000e1, TYPE_MUL},
 	{ "smlatb", 0xa00000e1, TYPE_MUL},
@@ -6018,6 +6019,49 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		}
 		/* Next byte (bits 23:20) high nibble: Rd */
 		o |= ((ut32)(rd & 0xF)) << 20;
+		ao->o = o;
+		return 1;
+	}
+	/* ARM-state MSR (PSR fields <- Rm) */
+	if (r_str_startswith (ao->op, "msr")) {
+		cond = 14; // default AL
+		if (*(ao->op + 3)) {
+			int c = arm_cond (ao->op + 3);
+			if (c < 0) {
+				return 0;
+			}
+			cond = c;
+		}
+		if (!ao->a[0] || !ao->a[1]) {
+			return 0;
+		}
+		r_str_case (ao->a[0], false);
+		int rm = getreg (ao->a[1]);
+		if (rm < 0 || rm > 15) {
+			return 0;
+		}
+		ut8 spsr = 0;
+		ut8 mask = interpret_msrbank (ao->a[0], &spsr) & 0xF;
+		if (!mask) {
+			/* Treat plain cpsr/spsr as FC (flags+control) to match disasm */
+			if (!strcmp (ao->a[0], "cpsr")) {
+				mask = 0x9;
+			} else if (!strcmp (ao->a[0], "spsr")) {
+				mask = 0x9;
+				spsr = 1;
+			} else {
+				return 0;
+			}
+		}
+		ut32 o = 0;
+		/* Byte3: cond in high nibble, low nibble 0x1 */
+		o |= (((ut32)cond & 0xF) << 4) | 0x1;
+		/* Byte2: PSR selector (CPSR=0xF0, SPSR=0xF4) */
+		o |= (spsr ? 0xF4 : 0xF0) << 16;
+		/* Byte1: 0x20 | field mask */
+		o |= ((ut32)(0x20 | (mask & 0xF))) << 8;
+		/* Byte0: Rm */
+		o |= (ut32)(rm & 0xF);
 		ao->o = o;
 		return 1;
 	}
