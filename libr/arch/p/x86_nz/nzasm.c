@@ -226,8 +226,8 @@ static int opshiftx(RArchSession *a, ut8 *data, const Opcode *op) {
 
 	int l = 0;
 	int pp;
-	if (!strcmp (op->mnemonic, "shlx")) {
-		pp = 0; // no legacy prefix
+    if (!strcmp (op->mnemonic, "shlx")) {
+        pp = 1; // 66 prefix (Capstone/R2 expect pp=01 for SHLX)
 	} else if (!strcmp (op->mnemonic, "sarx")) {
 		pp = 2; // F3
 	} else if (!strcmp (op->mnemonic, "shrx")) {
@@ -240,10 +240,8 @@ static int opshiftx(RArchSession *a, ut8 *data, const Opcode *op) {
 	int vreg = (cnt->extended ? 8 : 0) | (cnt->reg & 7);
 	l += emit_vex3_prefix_bmi2 (data + l, is64 ? 1 : 0, pp, vreg, dst, src);
 
-	// Opcode bytes: 0F 38 F7
-	data[l++] = 0x0f;
-	data[l++] = 0x38;
-	data[l++] = 0xf7;
+    // Opcode byte (map is carried by VEX): F7
+    data[l++] = 0xf7;
 
 	// ModRM/SIB for (dst, src)
 	int modrm = 0;
