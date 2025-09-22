@@ -4,34 +4,8 @@
 .Sh NAME
 .Nm r_util
 .Nd radare2 utility library
-.Sh SYNOPSIS
-.In r_util.h
-.Ft RNum *
-.Fn r_num_new "RNumCallback cb" "RNumCallback2 cb2" "void *ptr"
-.Ft ut64
-.Fn r_num_get "RNum *num" "const char *str"
-.Ft ut64
-.Fn r_num_math "RNum *num" "const char *str"
-.Ft RBuffer *
-.Fn r_buf_new "void"
-.Ft st64
-.Fn r_buf_read "RBuffer *b" "ut8 *buf" "ut64 len"
-.Ft st64
-.Fn r_buf_write "RBuffer *b" "const ut8 *buf" "ut64 len"
-.Ft char *
-.Fn r_str_new "const char *str"
-.Ft char *
-.Fn r_str_append "char *str" "const char *new"
-.Ft bool
-.Fn r_str_startswith "const char *str" "const char *needle"
-.Ft RList *
-.Fn r_list_new "void"
-.Ft void
-.Fn r_list_append "RList *list" "void *data"
 .Sh DESCRIPTION
-The
-.Nm r_util
-library provides a comprehensive collection of utility functions for radare2, including number parsing, string manipulation, buffer management, memory operations, file handling, and various data structures. It serves as the foundation for many other radare2 libraries.
+The r_util library provides a comprehensive collection of utility functions for radare2, including number parsing, string manipulation, buffer management, memory operations, file handling, and various data structures. It serves as the foundation for many other radare2 libraries.
 .Sh NUMBERS
 .Ft RNum *
 .Fn r_num_new "RNumCallback cb" "RNumCallback2 cb2" "void *ptr"
