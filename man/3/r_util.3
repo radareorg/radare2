@@ -4,9 +4,16 @@
 .Sh NAME
 .Nm r_util
 .Nd radare2 utility library
+.Sh SYNOPSIS
+.In r_util.h
 .Sh DESCRIPTION
-The r_util library provides a comprehensive collection of utility functions for radare2, including number parsing, string manipulation, buffer management, memory operations, file handling, and various data structures. It serves as the foundation for many other radare2 libraries.
+The
+.Nm r_util
+library provides a comprehensive collection of utility functions for radare2, including number parsing, string manipulation, buffer management, memory operations, file handling, and various data structures. It serves as the foundation for many other radare2 libraries.
 .Sh NUMBERS
+.Pp
+Parse and format numeric values, convert textual representations into integers, recognize human-friendly unit suffixes, and evaluate simple mathematical expressions. Useful for configuration parsing, user input handling and preparing numbers for display.
+
 .Ft RNum *
 .Fn r_num_new "RNumCallback cb" "RNumCallback2 cb2" "void *ptr"
 .Pp
@@ -27,6 +34,9 @@ Evaluates mathematical expressions in strings.
 .Pp
 Formats a number with appropriate units (KB, MB, etc.).
 .Sh BUFFERS
+.Pp
+Create and manipulate in-memory buffers that support reading, writing, seeking and size queries — handy for temporary storage, streaming data between components, or abstracting underlying storage.
+
 .Ft RBuffer *
 .Fn r_buf_new "void"
 .Pp
@@ -52,6 +62,9 @@ Seeks to a position in the buffer.
 .Pp
 Returns the size of the buffer.
 .Sh STRINGS
+.Pp
+Common string helpers for allocation, concatenation, searching, replacement and splitting. They make safe text manipulation and higher-level processing simpler and less error-prone.
+
 .Ft char *
 .Fn r_str_new "const char *str"
 .Pp
@@ -77,6 +90,9 @@ Replaces substrings in a string.
 .Pp
 Splits a string into a list.
 .Sh LISTS
+.Pp
+Lightweight linked-list utilities for creating, appending, indexing and querying lists of pointers. Use these when a simple ordered collection is sufficient.
+
 .Ft RList *
 .Fn r_list_new "void"
 .Pp
@@ -97,6 +113,9 @@ Gets the nth element from a list.
 .Pp
 Returns the length of a list.
 .Sh MEMORY
+.Pp
+Convenience wrappers for allocating, duplicating and comparing raw memory blocks. These helpers centralize routine memory tasks and can be adapted for custom allocator hooks or debugging instrumentation.
+
 .Ft void *
 .Fn r_mem_alloc "size_t sz"
 .Pp
@@ -112,6 +131,9 @@ Duplicates memory.
 .Pp
 Compares memory regions.
 .Sh FILES
+.Pp
+Simple filesystem helpers to check existence, read entire files into memory, and write buffers to disk. Intended for straightforward file I/O needs in tools and utilities.
+
 .Ft bool
 .Fn r_file_exists "const char *str"
 .Pp
@@ -127,6 +149,9 @@ Reads an entire file into memory.
 .Pp
 Writes data to a file.
 .Sh HEX
+.Pp
+Routines to convert between hexadecimal text and binary data, commonly used when presenting or parsing hex-encoded blobs.
+
 .Ft int
 .Fn r_hex_str2bin "const char *str" "ut8 *buf"
 .Pp
@@ -137,6 +162,9 @@ Converts a hex string to binary.
 .Pp
 Converts binary data to a hex string.
 .Sh BASE64
+.Pp
+Utilities to encode binary data to base64 and decode it back, useful for transporting or embedding binary content in text contexts.
+
 .Ft char *
 .Fn r_base64_encode "const ut8 *bin" "int len"
 .Pp
@@ -147,6 +175,9 @@ Encodes data to base64.
 .Pp
 Decodes base64 data.
 .Sh TABLES
+.Pp
+Helpers for building textual tables: create table objects, add columns and rows, and format output for display when presenting structured, columnar data.
+
 .Ft RTable *
 .Fn r_table_new "void"
 .Pp
@@ -162,6 +193,9 @@ Adds a column to a table.
 .Pp
 Adds a row to a table.
 .Sh GRAPHS
+.Pp
+APIs to build and traverse basic graph structures made of nodes and edges. Suitable for representing relationships, control-flow, or dependency graphs.
+
 .Ft RGraph *
 .Fn r_graph_new "void"
 .Pp
@@ -177,6 +211,9 @@ Adds a node to a graph.
 .Pp
 Adds an edge between nodes.
 .Sh QUEUES
+.Pp
+A compact FIFO queue API for enqueuing and dequeuing pointer elements; useful in producer/consumer patterns and simple task scheduling.
+
 .Ft RQueue *
 .Fn r_queue_new "int n"
 .Pp
@@ -192,6 +229,9 @@ Enqueues an element.
 .Pp
 Dequeues an element.
 .Sh STACKS
+.Pp
+A lightweight LIFO stack API for pushing and popping pointer elements, handy for depth-first traversals, undo stacks and transient state storage.
+
 .Ft RStack *
 .Fn r_stack_new "ut32 n"
 .Pp
@@ -207,6 +247,9 @@ Pushes an element onto the stack.
 .Pp
 Pops an element from the stack.
 .Sh TIME
+.Pp
+Helpers to obtain timestamps and format them as human-readable strings, used for logging, profiling and displaying time-related information.
+
 .Ft ut64
 .Fn r_time_now "void"
 .Pp
@@ -217,6 +260,9 @@ Gets the current time in microseconds.
 .Pp
 Converts a timestamp to a string.
 .Sh LOGGING
+.Pp
+Minimal logging helpers to emit error and informational messages, acting as thin wrappers for diagnostics and user-facing feedback.
+
 .Ft void
 .Fn r_log_error "const char *fmt" "..."
 .Pp
