@@ -411,18 +411,18 @@ static bool parse_ind_or_abs(RBpfSockFilter *f, int opc, const bpf_token *op) {
 static bool parse_ld(RBpfSockFilter *f, const char *mnemonic, int opc, const bpf_token *op) {
 	switch (mnemonic[2]) {
 	case '\0':
-		PARSE_NEED (opc >= 2);
-		if (TOKEN_EQ (op[1], "m")) {
+		PARSE_NEED (opc >= 1);
+		if (opc == 4 && (TOKEN_EQ (op[0], "M") || TOKEN_EQ (op[0], "m"))) {
 			f->code = BPF_LD | BPF_MEM;
 			PARSE_NEED (opc == 4);
 			PARSE_STR (op[1], "[");
 			PARSE_NEED (parse_k (f, op[2]));
 			PARSE_STR (op[3], "]");
 			return true;
-		} else if (is_k_tok (op[1])) {
+		} else if (opc >= 1 && is_k_tok (op[0])) {
 			f->code = BPF_LD | BPF_IMM;
-			return parse_k (f, op[1]);
-		} else if (TOKEN_EQ (op[1], "len")) {
+			return parse_k (f, op[0]);
+		} else if (opc >= 1 && TOKEN_EQ (op[0], "len")) {
 			f->code = BPF_LD | BPF_LEN;
 			return true;
 		} else {
@@ -432,8 +432,8 @@ static bool parse_ld(RBpfSockFilter *f, const char *mnemonic, int opc, const bpf
 		break;
 	case 'i':
 		f->code = BPF_LD | BPF_IMM;
-		PARSE_NEED (opc == 2);
-		return parse_k (f, op[1]);
+		PARSE_NEED (opc == 1);
+		return parse_k (f, op[0]);
 	case 'b':
 		f->code = BPF_LD_B;
 		return parse_ind_or_abs (f, opc, op);
@@ -443,18 +443,18 @@ static bool parse_ld(RBpfSockFilter *f, const char *mnemonic, int opc, const bpf
 	case 'x':
 		switch (mnemonic[3]) {
 		case '\0':
-			PARSE_NEED (opc >= 2);
-			if (TOKEN_EQ (op[1], "m")) {
+			PARSE_NEED (opc >= 1);
+			if (opc == 4 && (TOKEN_EQ (op[0], "M") || TOKEN_EQ (op[0], "m"))) {
 				f->code = BPF_LDX | BPF_MEM;
 				PARSE_NEED (opc == 4);
 				PARSE_STR (op[1], "[")
 				PARSE_NEED (parse_k (f, op[2]));
 				PARSE_STR (op[3], "]");
 				return true;
-			} else if (is_k_tok (op[1])) {
+			} else if (opc >= 1 && is_k_tok (op[0])) {
 				f->code = BPF_LDX | BPF_IMM;
-				return parse_k (f, op[1]);
-			} else if (TOKEN_EQ (op[1], "len")) {
+				return parse_k (f, op[0]);
+			} else if (opc >= 1 && TOKEN_EQ (op[0], "len")) {
 				f->code = BPF_LDX | BPF_LEN;
 				return true;
 			} else {
@@ -464,21 +464,36 @@ static bool parse_ld(RBpfSockFilter *f, const char *mnemonic, int opc, const bpf
 			break;
 		case 'i':
 			f->code = BPF_LDX | BPF_IMM;
-			PARSE_NEED (opc == 2);
-			return parse_k (f, op[1]);
+			PARSE_NEED (opc == 1);
+			return parse_k (f, op[0]);
 		case 'b':
 			f->code = BPF_LDX_B | BPF_MSH;
-			PARSE_NEED (opc == 10);
-			PARSE_STR (op[1], "4");
-			PARSE_STR (op[2], "*");
-			PARSE_STR (op[3], "(");
-			PARSE_STR (op[4], "[");
-			PARSE_NEED (parse_k (f, op[5]));
-			PARSE_STR (op[6], "]");
-			PARSE_STR (op[7], "&");
-			PARSE_STR (op[8], "0xf");
-			PARSE_STR (op[9], ")");
-			break;
+			// Accept multiple tokenizations: "4","*",..., and "4*",..., and "&0xf" vs "&","0xf"
+			PARSE_NEED (opc >= 7 && opc <= 9);
+			int i = 0;
+			if (opc >= 9 && TOKEN_EQ (op[0], "4") && TOKEN_EQ (op[1], "*")) {
+				i = 2;
+			} else if (TOKEN_EQ (op[0], "4*")) {
+				i = 1;
+			} else {
+				return false;
+			}
+			PARSE_STR (op[i + 0], "(");
+			PARSE_STR (op[i + 1], "[");
+			PARSE_NEED (parse_k (f, op[i + 2]));
+			PARSE_STR (op[i + 3], "]");
+			int rem = opc - (i + 4);
+			if (rem == 3) {
+				PARSE_STR (op[i + 4], "&");
+				PARSE_STR (op[i + 5], "0xf");
+				PARSE_STR (op[i + 6], ")");
+			} else if (rem == 2) {
+				PARSE_STR (op[i + 4], "&0xf");
+				PARSE_STR (op[i + 5], ")");
+			} else {
+				return false;
+			}
+			return true;
 		}
 		return false;
 	}
@@ -491,7 +506,12 @@ static bool parse_j (RBpfSockFilter *f, const char *m, int opc, const bpf_token 
 	if (TOKEN_EQ (m, "jmp") || TOKEN_EQ (m, "ja")) {
 		f->code = BPF_JMP_JA;
 		PARSE_NEED (opc == 1);
-		PARSE_NEED (parse_label (f, op[0]))
+		// Accept absolute address and convert to relative K
+		{
+			ut64 label = 0;
+			PARSE_NEED (parse_label_value (&label, op[0]));
+			f->k = (label - pc - 8) / 8;
+		}
 		return true;
 	}
 
@@ -615,76 +635,7 @@ static bool parse_alu(RBpfSockFilter *f, const char *m, int opc, const bpf_token
 	return false;
 }
 
-static bool parse_instruction(RBpfSockFilter *f, BPFAsmParser *p, ut64 pc) {
-	const char *mnemonic_tok = token_next (p);
-	PARSE_NEED_TOKEN (mnemonic_tok);
-	int mlen = r_str_nlen (mnemonic_tok, 5);
-	if (mlen < 2 || mlen > 4) {
-		R_LOG_ERROR ("invalid mnemonic");
-	}
-
-	char mnemonic[5] = {0};
-	strncpy (mnemonic, mnemonic_tok, 4);
-
-	int opc;
-	bpf_token op[11] = {0};
-	for (opc = 0; opc < (sizeof (op) / sizeof (op[0]));) {
-		const char *t = token_next (p);
-		if (t == NULL) {
-			break;
-		}
-		strncpy (op[opc++], t, TOKEN_MAX_LEN);
-	}
-
-	if (TOKEN_EQ (mnemonic, "txa")) {
-		f->code = BPF_MISC_TXA;
-		return true;
-	}
-	if (TOKEN_EQ (mnemonic, "tax")) {
-		f->code = BPF_MISC_TAX;
-		return true;
-	}
-
-	if (TOKEN_EQ (mnemonic, "ret")) {
-		f->code = BPF_RET;
-		PARSE_NEED (opc == 1);
-		if (is_k_tok (op[0])) {
-			f->code |= BPF_K;
-			return parse_k (f, op[0]);
-		} else if (TOKEN_EQ (op[0], "x")) {
-			f->code |= BPF_X;
-			return true;
-		} else if (TOKEN_EQ (op[0], "a")) {
-			f->code |= BPF_A;
-			return true;
-		} else {
-			return false;
-		}
-	}
-
-	if (strncmp (mnemonic, "ld", 2) == 0) {
-		return parse_ld (f, mnemonic, opc, op);
-	}
-
-	if (strncmp (mnemonic, "st", 2) == 0) {
-		switch (mnemonic[2]) {
-		case '\0': f->code = BPF_ST; break;
-		case 'x': f->code = BPF_STX; break;
-		default: return false;
-		}
-		PARSE_NEED (opc == 4);
-		PARSE_STR (op[1], "[")
-		PARSE_NEED (parse_k (f, op[2]));
-		PARSE_STR (op[3], "]");
-		return true;
-	}
-
-	if (mnemonic[0] == 'j') {
-		return parse_j (f, mnemonic, opc, op, pc);
-	}
-
-	return parse_alu (f, mnemonic, opc, op);
-}
+#include "bpfasm.inc.c"
 
 static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 	RBpfSockFilter f = {0};
