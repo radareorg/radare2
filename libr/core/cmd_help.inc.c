@@ -432,7 +432,7 @@ static RCoreHelpMessage help_msg_greater_sign = {
 	"[cmd] > $alias", "", "save the output of the command as an alias (see $?)",
 	"[cmd] H> [file]", "", "redirect html output of 'cmd' to 'file'",
 	"[cmd] 2> [file]", "", "redirect STDERR of 'cmd' to 'file'",
-	"[cmd] 2> /dev/null", "", "omit the STDERR output of 'cmd'",
+	"[cmd] 2> "R_SYS_DEVNULL, "", "omit the STDERR output of 'cmd'",
 	NULL
 };
 

@@ -23,7 +23,11 @@ static bool lang_vala_file(RLangSession *s, const char *file, bool silent) {
 		strcpy (srcdir, ".");
 	}
 	r_sys_setenv ("PKG_CONFIG_PATH", R2_LIBDIR"/pkgconfig");
-	char *tail = silent?  " > /dev/null 2>&1": "";
+#if R2__WINDOWS__
+	const char *tail = silent?  " >NUL 2>NUL": "";
+#else
+	const char *tail = silent?  " > /dev/null 2>&1": "";
+#endif
 	char *src = r_file_slurp (name, NULL);
 	const char *pkgs = "";
 	const char *libs = "";
