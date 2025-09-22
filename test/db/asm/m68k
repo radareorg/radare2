@@ -1,14 +1,27 @@
-d "ori.b 0xaa, (a1)" 0011
-d "bchg.b 0x18, 0x1234.w" 087800181234
-d "move.b d1, (a5)" 1a81
-d "move.w 0x30(a0, d3.w), d0" 30303030
-d "lea.l 0x80095022.l, a0" 41f980095022
-d "tst.l (a0)" 4a90
-d "reset" 4e70
-d "nop" 4e71
-d "addq.l 0x5, d1" 5a81
-d "bra.w 0xffffff5a" 6000ff58
-d "beq.b 0x18" 6716
-d "moveq 0xf7, d2" 74f7
-d "eor.b d0, (a3)" b113
-d "ror.b 0x1, d4" e21c
+ad "ori.b 0xaa, (a1)" 001100aa
+ad "bchg.b 0x18, 0x1234.w" 087800181234
+ad "move.b d1, (a5)" 1a81
+ad "move.w 0x30(a0, d3.w), d0" 30303030
+adB "move.b 0x31ef(pc), (a7)+" 1efa31ed
+ad "lea.l 0x80095022.l, a0" 41f980095022
+ad "tst.l (a0)" 4a90
+ad "reset" 4e70
+ad "nop" 4e71
+ad "addq.l 0x5, d1" 5a81
+ad "bra.w 0xffffff5a" 6000ff58
+ad "beq.b 0x18" 6716
+ad "moveq 0xf7, d2" 74f7
+ad "eor.b d0, (a3)" b113
+ad "ror.b 0x1, d4" e21c
+ad "moveq 0xf7, d2" 74f7
+ad "addq.w 0x5, d1" 5a41
+ad "subq.w 0x5, d0" 5b40
+ad "bne.b 0x12" 6610
+ad "eor.w d0, d1" b141
+ad "clr.w d3" 4243
+ad "bchg.b d2, d4" 0544
+ad "and.w d2, d1" c242
+ad "and.w d1, d2" c441
+ad "or.b d2, d1" 8202
+ad "btst.l d0, d1" 0101
+ad "move.b 0xa10001.l, d0" 103900a10001
