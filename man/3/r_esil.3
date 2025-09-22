@@ -6,26 +6,7 @@
 .Nd radare2 ESIL (Evaluable Strings Intermediate Language) library
 .Sh SYNOPSIS
 .In r_esil.h
-.Ft REsil *
-.Fn r_esil_new "int stacksize" "int iotrap" "unsigned int addrsize"
-.Ft void
-.Fn r_esil_free "REsil *esil"
-.Ft bool
-.Fn r_esil_parse "REsil *esil" "const char *str"
-.Ft bool
-.Fn r_esil_runword "REsil *esil" "const char *word"
-.Ft bool
-.Fn r_esil_push "REsil *esil" "const char *str"
-.Ft char *
-.Fn r_esil_pop "REsil *esil"
-.Ft bool
-.Fn r_esil_reg_read "REsil *esil" "const char *regname" "ut64 *val" "ut32 *size"
-.Ft bool
-.Fn r_esil_reg_write "REsil *esil" "const char *name" "ut64 val"
-.Ft bool
-.Fn r_esil_mem_read "REsil *esil" "ut64 addr" "ut8 *buf" "int len"
-.Ft bool
-.Fn r_esil_mem_write "REsil *esil" "ut64 addr" "const ut8 *buf" "int len"
+.Pp
 .Sh DESCRIPTION
 The
 .Nm r_esil
@@ -35,6 +16,10 @@ The core structure is
 .Vt REsil ,
 which maintains a stack, registers, memory interfaces, and operation handlers for executing ESIL expressions.
 .Sh INITIALIZATION
+.Pp
+Create and configure ESIL contexts and their runtime dependencies so they are ready
+for parsing, execution and interaction with radare2 analysis and I/O layers.
+.Pp
 .Ft REsil *
 .Fn r_esil_new "int stacksize" "int iotrap" "unsigned int addrsize"
 .Pp
@@ -50,6 +35,11 @@ Initializes an existing ESIL structure with register and memory interfaces.
 .Pp
 Frees all resources associated with the ESIL instance.
 .Sh PARSING AND EXECUTION
+.Pp
+Convert ESIL strings into runtime operations and drive the ESIL virtual machine to
+evaluate or emulate instruction semantics; these routines are the entry points for
+feeding ESIL expressions into the engine.
+.Pp
 .Ft bool
 .Fn r_esil_parse "REsil *esil" "const char *str"
 .Pp
@@ -60,6 +50,10 @@ Parses and executes an ESIL expression string.
 .Pp
 Executes a single ESIL operation word.
 .Sh STACK OPERATIONS
+.Pp
+Manipulate the ESIL evaluation stack directly when constructing or inspecting
+temporary values used during expression evaluation.
+.Pp
 .Ft bool
 .Fn r_esil_push "REsil *esil" "const char *str"
 .Pp
@@ -75,6 +69,11 @@ Pops the top value from the ESIL stack.
 .Pp
 Pushes a numeric value onto the stack.
 .Sh REGISTER ACCESS
+.Pp
+Query and modify the register state the ESIL engine uses; these functions bridge
+ESIL and the radare2 register model (RReg) and are used extensively by core
+components to read/write CPU state silently or with callbacks.
+.Pp
 .Ft bool
 .Fn r_esil_reg_read "REsil *esil" "const char *regname" "ut64 *val" "ut32 *size"
 .Pp
@@ -85,6 +84,11 @@ Reads the value of a register.
 .Pp
 Writes a value to a register.
 .Sh MEMORY ACCESS
+.Pp
+Read from and write into the memory backing used by ESIL. Implementations may
+use the radare2 I/O bindings so ESIL memory operations map to the analyzed
+process or file backend.
+.Pp
 .Ft bool
 .Fn r_esil_mem_read "REsil *esil" "ut64 addr" "ut8 *buf" "int len"
 .Pp
@@ -95,6 +99,10 @@ Reads memory at the specified address.
 .Pp
 Writes data to memory at the specified address.
 .Sh OPERATIONS
+.Pp
+Register, query or remove ESIL operation handlers. Custom operations can be
+installed to extend or override built-in ESIL semantics at runtime.
+.Pp
 .Ft bool
 .Fn r_esil_set_op "REsil *esil" "const char *op" "REsilOpCb code" "ut32 push" "ut32 pop" "ut32 type" "const char *info"
 .Pp
@@ -105,6 +113,11 @@ Defines a custom ESIL operation.
 .Pp
 Retrieves information about an ESIL operation.
 .Sh PLUGINS
+.Pp
+Manage architecture or feature plugins which provide arch-specific ESIL
+initialization, helpers and extra op handlers; activating a plugin hooks it into
+the ESIL instance used by analysis and emulation.
+.Pp
 .Ft bool
 .Fn r_esil_plugin_add "REsil *esil" "REsilPlugin *plugin"
 .Pp
@@ -115,6 +128,11 @@ Adds an ESIL plugin for architecture-specific operations.
 .Pp
 Activates an ESIL plugin by name.
 .Sh TRACING
+.Pp
+Record and inspect execution traces produced while ESIL evaluates expressions.
+The trace subsystem captures ops, memory and register accesses to aid analysis
+and debugging of emulation sessions.
+.Pp
 .Ft REsilTrace *
 .Fn r_esil_trace_new "REsil *esil"
 .Pp
@@ -125,6 +143,11 @@ Creates a new trace for recording ESIL execution.
 .Pp
 Traces the execution of an analysis operation.
 .Sh INTERRUPTS AND SYSCALLS
+.Pp
+Install handlers or trigger software interrupts and syscalls from ESIL; these
+hooks allow embedding environment-specific behavior (e.g. syscalls emulation)
+into ESIL evaluation.
+.Pp
 .Ft bool
 .Fn r_esil_set_interrupt "REsil *esil" "ut32 intr_num" "REsilHandlerCB cb" "void *user"
 .Pp
@@ -135,6 +158,11 @@ Sets a handler for a specific interrupt number.
 .Pp
 Sets a handler for a specific syscall number.
 .Sh COMPILER
+.Pp
+Provide utilities to translate or compile ESIL expressions into other forms
+such as C-like code (esil->c) and to reuse ESIL parsing logic outside a running
+engine.
+.Pp
 .Ft REsilCompiler *
 .Fn r_esil_compiler_new "void"
 .Pp
@@ -145,29 +173,76 @@ Creates a new ESIL compiler for converting expressions.
 .Pp
 Parses an ESIL expression into the compiler.
 .Sh EXAMPLES
-Basic ESIL execution:
+.Pp
+Show how to wire ESIL to minimal register and memory callbacks to evaluate an
+expression and retrieve the result, plus a compact low-level example that
+demonstrates direct stack manipulation and simple expression-level debugging.
+.Pp
+.Sp
+Full example: set up register and memory callbacks, evaluate an ESIL string,
+and read the result:
 .Bd -literal -offset indent
-REsil *esil = r_esil_new(32, 0, 64);
-r_esil_parse(esil, "rax,8,+");
+/* Simple register callbacks that only handle "rax" and "rbx" for demo */
+static bool my_is_reg(void *user, const char *name) {
+    return !strcmp(name, "rax") || !strcmp(name, "rbx");
+}
+static bool my_reg_read(void *user, const char *name, ut64 *res) {
+    if (!strcmp(name, "rax")) { *res = 0x10; return true; }
+    if (!strcmp(name, "rbx")) { *res = 0x20; return true; }
+    return false;
+}
+static bool my_reg_write(void *user, const char *name, ut64 val) {
+    /* store val into your backend */
+    (void)user; (void)name; (void)val; return true;
+}
+static ut32 my_reg_size(void *user, const char *name) { (void)user; (void)name; return 64; }
+
+/* Simple memory callbacks using a flat buffer */
+static ut8 my_mem[0x10000];
+static bool my_mem_read(void *user, ut64 addr, ut8 *buf, int len) {
+    memcpy (buf, my_mem + addr, len); return true;
+}
+static bool my_mem_write(void *user, ut64 addr, const ut8 *buf, int len) {
+    memcpy (my_mem + addr, buf, len); return true;
+}
+
+int main(void) {
+    REsilRegInterface reg_if = { .reg = NULL, .is_reg = my_is_reg, .reg_read = my_reg_read, .reg_write = my_reg_write, .reg_size = my_reg_size };
+    REsilMemInterface mem_if = { .mem = NULL, .mem_read = my_mem_read, .mem_write = my_mem_write };
+
+    REsil *esil = r_esil_new_ex (128, false, 64, &reg_if, &mem_if);
+    if (!esil) return -1;
+
+    // Evaluate an expression that reads RAX, adds 8 and leaves the result on the stack
+    r_esil_parse (esil, "rax,8,+");
+
+    // Pop the result as a string (caller frees it)
+    char *res = r_esil_pop (esil);
+    printf ("esil result: %s\n", res);
+    free (res);
+
+    r_esil_free (esil);
+    return 0;
+}
 .Ed
 .Pp
-Stack operations:
+Low-level example: push/pop and expression-level debugging similar to the
+esil debugger (show stack, run a single operation):
 .Bd -literal -offset indent
-r_esil_push(esil, "42");
-char *val = r_esil_pop(esil);
-.Ed
-.Pp
-Register access:
-.Bd -literal -offset indent
-ut64 rax_val;
-r_esil_reg_read(esil, "rax", &rax_val, NULL);
-r_esil_reg_write(esil, "rbx", 0x1000);
-.Ed
-.Pp
-Memory access:
-.Bd -literal -offset indent
-ut8 buf[4];
-r_esil_mem_read(esil, 0x400000, buf, 4);
+REsil *esil = r_esil_new (32, 0, 64);
+// push two numbers, run the '+' op and inspect the result
+r_esil_pushnum (esil, 2);
+r_esil_pushnum (esil, 3);
+// run the '+' word directly (same as parsing "2,3,+")
+r_esil_runword (esil, "+");
+char *sum = r_esil_pop (esil);
+printf ("2 + 3 = %s\n", sum);
+free (sum);
+
+// dump stack state (useful when interactively debugging expressions)
+r_esil_dumpstack (esil);
+
+r_esil_free (esil);
 .Ed
 .Sh SEE ALSO
 .Xr r_anal 3 ,

@@ -6,42 +6,7 @@
 .Nd Radare2 Console Input/Output Library API
 .Sh SYNOPSIS
 .In r_cons.h
-.Ft RCons *
-.Fn r_cons_new "void"
-.Ft void
-.Fn r_cons_free "RCons *cons"
-.Ft int
-.Fn r_cons_printf "RCons *cons" "const char *format" "..."
-.Ft void
-.Fn r_cons_print "RCons *cons" "const char *str"
-.Ft void
-.Fn r_cons_flush "RCons *cons"
-.Ft int
-.Fn r_cons_readchar "RCons *cons"
-.Ft int
-.Fn r_cons_fgets "RCons *cons" "char *buf" "int len" "int argc" "const char **argv"
-.Ft void
-.Fn r_cons_clear "RCons *cons"
-.Ft void
-.Fn r_cons_gotoxy "RCons *cons" "int x" "int y"
-.Ft RColor
-.Fn r_cons_pal_get "RCons *cons" "const char *key"
-.Ft bool
-.Fn r_cons_pal_set "RCons *cons" "const char *key" "const char *val"
-.Ft RConsCanvas *
-.Fn r_cons_canvas_new "RCons *cons" "int w" "int h" "int flags"
-.Ft void
-.Fn r_cons_canvas_free "RConsCanvas *c"
-.Ft void
-.Fn r_cons_canvas_write "RConsCanvas *c" "const char *_s"
-.Ft void
-.Fn r_cons_grep "RCons *cons" "const char *grep"
-.Ft RLine *
-.Fn r_line_new "RCons *cons"
-.Ft void
-.Fn r_line_free "RLine *line"
-.Ft const char *
-.Fn r_line_readline "RCons *cons"
+.Pp
 .Sh DESCRIPTION
 The
 .Nm r_cons
