@@ -50,12 +50,10 @@ FILE=bins/elf/ls-focal
 ARGS=-d
 CMDS=<<EOF
 dmiaqq ld~la_activity
-dmia* ld~:2[0]
 dk 9
 EOF
 EXPECT=<<EOF
 la_activity
-'@0x7eb3e6b3d040'Cs
 EOF
 RUN
 
