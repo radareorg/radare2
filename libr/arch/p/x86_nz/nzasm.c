@@ -723,34 +723,95 @@ static int opbs(RArchSession *a, ut8 *data, const Opcode *op) {
 				== (op->operands[1].type & ALL_SIZE))) {
 		return -1;
 	}
-	if (op->operands[0].type & OT_GPREG && !(op->operands[0].type & OT_MEMORY)) {
-		if (a->config->bits == 64) {
-			if (op->operands[1].type & OT_MEMORY && op->operands[1].reg_size & OT_DWORD) {
-				data[l++] = 0x67;
-			}
-			if (op->operands[0].type & OT_WORD) {
-				data[l++] = 0x66;
-			}
-			if (op->operands[0].type & OT_QWORD) {
-				data[l++] = 0x48;
-			}
-		} else if (op->operands[0].type & OT_WORD) {
+	if (!(op->operands[0].type & OT_GPREG) || (op->operands[0].type & OT_MEMORY)) {
+		return -1;
+	}
+
+	// Prefixes and operand/address size handling
+	if (a->config->bits == 64) {
+		if (op->operands[1].type & OT_MEMORY && (op->operands[1].reg_size & OT_DWORD)) {
+			// 32-bit addressing in 64-bit mode
+			data[l++] = 0x67;
+		}
+		if (op->operands[0].type & OT_WORD) {
 			data[l++] = 0x66;
 		}
-		data[l++] = 0x0f;
-		if (!strcmp (op->mnemonic, "bsf")) {
-			data[l++] = 0xbc;
-		} else {
-			data[l++] = 0xbd;
+		if (op->operands[0].type & OT_QWORD) {
+			data[l++] = 0x48;
 		}
-		if (op->operands[1].type & OT_GPREG && !(op->operands[1].type & OT_MEMORY)) {
-			data[l] = 0xc0;
-		} else if (!(op->operands[1].type & OT_MEMORY)) {
-			return -1;
-		}
-		data[l] += op->operands[0].reg << 3;
-		data[l++] += op->operands[1].reg;
+	} else if (op->operands[0].type & OT_WORD) {
+		data[l++] = 0x66;
 	}
+
+	// Opcode 0F BC (BSF) / 0F BD (BSR)
+	data[l++] = 0x0f;
+	data[l++] = (!strcmp (op->mnemonic, "bsf")) ? 0xbc : 0xbd;
+
+	// Build ModRM/SIB depending on r/m (second operand)
+	if (op->operands[1].type & OT_GPREG && !(op->operands[1].type & OT_MEMORY)) {
+		// register source: mod=11, reg=dest, r/m=src
+		data[l++] = 0xc0 | (op->operands[0].reg << 3) | (op->operands[1].reg & 7);
+		return l;
+	}
+
+	// memory source
+	int base = op->operands[1].regs[0];
+	int index = op->operands[1].regs[1];
+	int disp = (int)(op->operands[1].offset * op->operands[1].offset_sign);
+	int mod = 0;
+	int rm = 0;
+	bool use_sib = false;
+	ut8 sib = 0;
+
+	if (base == X86R_UNDEFINED) {
+		// disp32 only: rm=101, mod=00, followed by disp32
+		rm = 5;
+		mod = 0;
+	} else {
+		rm = base;
+		if (disp != 0) {
+			if (disp >= -128 && disp <= 127) {
+				mod = 1;
+			} else {
+				mod = 2;
+			}
+		}
+		if (index != X86R_UNDEFINED) {
+			use_sib = true;
+			int sc = getsib (op->operands[1].scale[1]);
+			sib = (ut8)((sc << 6) | ((index & 7) << 3) | (rm & 7));
+			rm = 4; // use SIB
+		} else if (rm == X86R_ESP) {
+			use_sib = true;
+			sib = 0x24; // [esp] no index
+			rm = 4;
+		}
+		// [ebp] alone is encoded as [ebp+disp8=0]
+		if (rm == 5 && mod == 0 && !use_sib) {
+			mod = 1;
+			disp = 0;
+		}
+	}
+
+	data[l++] = (ut8)((mod << 6) | ((op->operands[0].reg & 7) << 3) | (rm & 7));
+	if (use_sib) {
+		data[l++] = sib;
+	}
+	if (base == X86R_UNDEFINED) {
+		// absolute disp32
+		data[l++] = (ut8)disp;
+		data[l++] = (ut8)(disp >> 8);
+		data[l++] = (ut8)(disp >> 16);
+		data[l++] = (ut8)(disp >> 24);
+	} else if (mod == 1) {
+		data[l++] = (ut8)disp;
+	} else if (mod == 2) {
+		data[l++] = (ut8)disp;
+		data[l++] = (ut8)(disp >> 8);
+		data[l++] = (ut8)(disp >> 16);
+		data[l++] = (ut8)(disp >> 24);
+	}
+
 	return l;
 }
 
