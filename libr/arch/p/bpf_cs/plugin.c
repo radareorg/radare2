@@ -5,6 +5,7 @@
 #include <r_lib.h>
 
 #include <capstone/capstone.h>
+#include "../bpf/bpf.h"
 
 #if CS_API_MAJOR >= 5
 
@@ -39,6 +40,309 @@ static void analop_esil(RArchSession *a, RAnalOp *op, cs_insn *insn, ut64 addr);
 static char *mnemonics(RArchSession *s, int id, bool json) {
 	CapstonePluginData *cpd = (CapstonePluginData*)s->data;
 	return r_arch_cs_mnemonics (s, cpd->cs_handle, id, json);
+}
+
+/* Assembler integration (classic + extended via shared parser) */
+
+#define TOKEN_MAX_LEN 15
+typedef char bpf_token[TOKEN_MAX_LEN + 1];
+
+#define TOKEN_EQ(x, s) (strcmp ((x), (s)) == 0)
+
+#define PARSE_NEED_TOKEN(x) \
+	if (x == NULL) { \
+		return false; \
+	}
+#define PARSE_NEED(x) \
+	if (!(x)) { \
+		return false; \
+	}
+#define PARSE_STR(x, s) PARSE_NEED (TOKEN_EQ (x, s))
+
+typedef struct bpf_asm_parser {
+	const char *str;
+	RStrBuf *token;
+} BPFAsmParser;
+
+static void token_fini(BPFAsmParser *t) {
+	if (t->token) {
+		r_strbuf_free (t->token);
+		t->token = NULL;
+	}
+}
+
+static const char *trim_input(const char *p) {
+	while (*p) {
+		switch (*p) {
+			case ' ': case '\t': p++; continue;
+			case ';': return NULL;
+			default: return p;
+		}
+	}
+	return NULL;
+}
+
+static inline bool is_single_char_token(char c) {
+	return c == '(' || c == ')' || c == '[' || c == ']' || c == ',';
+}
+
+static inline bool is_arithmetic(char c) {
+	return c == '+' || c == '-';
+}
+
+static const char *token_next(BPFAsmParser *t) {
+	token_fini (t);
+	t->str = trim_input (t->str);
+	if (!t->str) {
+		return NULL;
+	}
+	RStrBuf *token = r_strbuf_new (NULL);
+	if (!r_strbuf_reserve (token, TOKEN_MAX_LEN + 1)) {
+		r_strbuf_free (token);
+		return NULL;
+	}
+	t->token = token;
+	if (is_single_char_token (t->str[0])) {
+		r_strbuf_append_n (token, t->str++, 1);
+		return r_strbuf_get (token);
+	}
+	int i;
+	for (i = 0; i < TOKEN_MAX_LEN; i++) {
+		if (!isgraph (t->str[0]) || is_single_char_token (t->str[0]) || (is_arithmetic (t->str[0]) && i != 0)) {
+			break;
+		}
+		r_strbuf_append_n (token, t->str++, 1);
+	}
+	return r_strbuf_get (token);
+}
+
+static bool is_k_tok(const char *tok) {
+	return is_arithmetic (tok[0]) || R_BETWEEN ('0', tok[0], '9');
+}
+
+static bool parse_k(RBpfSockFilter *f, const char *t) {
+	char *t2; f->k = strtol (t, &t2, 0); return t != t2;
+}
+
+static bool parse_k_or_x(RBpfSockFilter *f, const char *t) {
+	if (TOKEN_EQ (t, "x")) { f->code |= BPF_X; return true; }
+	f->code |= BPF_K; return parse_k (f, t);
+}
+
+static bool parse_label_value(ut64 *out, const char *t) {
+	char *t2; *out = strtoul (t, &t2, 0); return t != t2;
+}
+
+static bool parse_label(RBpfSockFilter *f, const char *t) {
+	ut64 k = 0; bool r = parse_label_value (&k, t); f->k = k; return r;
+}
+
+static bool parse_jump_targets(RBpfSockFilter *f, int opc, const bpf_token *op, ut64 pc) {
+	PARSE_NEED (opc >= 1);
+	PARSE_NEED (parse_k_or_x (f, op[0]));
+	ut64 label;
+	if (opc >= 2) {
+		parse_label_value (&label, op[1]);
+		f->jt = (label - pc - 8) / 8;
+		f->jf = (pc >> 3) + 1;
+	}
+	if (opc == 3) {
+		parse_label_value (&label, op[2]);
+		f->jf = (label - pc - 8) / 8;
+	}
+	return true;
+}
+
+static bool parse_ind_or_abs(RBpfSockFilter *f, int opc, const bpf_token *op) {
+	PARSE_NEED (opc >= 2);
+	PARSE_STR (op[0], "[");
+	if (TOKEN_EQ (op[1], "x")) {
+		PARSE_NEED (opc == 4);
+		f->code |= BPF_IND;
+		PARSE_NEED (parse_k (f, op[2]));
+		PARSE_STR (op[3], "]");
+	} else {
+		PARSE_NEED (opc == 3);
+		f->code |= BPF_ABS;
+		PARSE_NEED (parse_k (f, op[1]));
+		PARSE_STR (op[2], "]");
+	}
+	return true;
+}
+
+static bool parse_ld(RBpfSockFilter *f, const char *mnemonic, int opc, const bpf_token *op) {
+	switch (mnemonic[2]) {
+	case '\0':
+		PARSE_NEED (opc >= 1);
+		if (opc == 4 && (TOKEN_EQ (op[0], "M") || TOKEN_EQ (op[0], "m"))) {
+			f->code = BPF_LD | BPF_MEM;
+			PARSE_NEED (opc == 4);
+			PARSE_STR (op[1], "[");
+			PARSE_NEED (parse_k (f, op[2]));
+			PARSE_STR (op[3], "]");
+			return true;
+		} else if (opc >= 1 && is_k_tok (op[0])) {
+			f->code = BPF_LD | BPF_IMM;
+			return parse_k (f, op[0]);
+		} else if (opc >= 1 && TOKEN_EQ (op[0], "len")) {
+			f->code = BPF_LD | BPF_LEN;
+			return true;
+		} else {
+			f->code = BPF_LD_W;
+			return parse_ind_or_abs (f, opc, op);
+		}
+		break;
+	case 'i':
+		f->code = BPF_LD | BPF_IMM;
+		PARSE_NEED (opc == 1);
+		return parse_k (f, op[0]);
+	case 'b':
+		f->code = BPF_LD_B;
+		return parse_ind_or_abs (f, opc, op);
+	case 'h':
+		f->code = BPF_LD_H;
+		return parse_ind_or_abs (f, opc, op);
+	case 'x':
+		switch (mnemonic[3]) {
+		case '\0':
+			PARSE_NEED (opc >= 1);
+			if (opc == 4 && (TOKEN_EQ (op[0], "M") || TOKEN_EQ (op[0], "m"))) {
+				f->code = BPF_LDX | BPF_MEM;
+				PARSE_NEED (opc == 4);
+				PARSE_STR (op[1], "[")
+					PARSE_NEED (parse_k (f, op[2]));
+				PARSE_STR (op[3], "]");
+				return true;
+			} else if (opc >= 1 && is_k_tok (op[0])) {
+				f->code = BPF_LDX | BPF_IMM;
+				return parse_k (f, op[0]);
+			} else if (opc >= 1 && TOKEN_EQ (op[0], "len")) {
+				f->code = BPF_LDX | BPF_LEN;
+				return true;
+			} else {
+				f->code = BPF_LDX_W;
+				return parse_ind_or_abs (f, opc, op);
+			}
+			break;
+		case 'i':
+			f->code = BPF_LDX | BPF_IMM;
+			PARSE_NEED (opc == 1);
+			return parse_k (f, op[0]);
+		case 'b':
+			f->code = BPF_LDX_B | BPF_MSH;
+			PARSE_NEED (opc == 9 || opc == 8);
+			int i = 0;
+			if (opc == 9) { PARSE_STR (op[0], "4"); PARSE_STR (op[1], "*"); i = 2; }
+			else { PARSE_STR (op[0], "4*"); i = 1; }
+			PARSE_STR (op[i + 0], "(");
+			PARSE_STR (op[i + 1], "[");
+			PARSE_NEED (parse_k (f, op[i + 2]));
+			PARSE_STR (op[i + 3], "]");
+			int rem = opc - (i + 4);
+			if (rem == 3) {
+				PARSE_STR (op[i + 4], "&"); PARSE_STR (op[i + 5], "0xf"); PARSE_STR (op[i + 6], ")");
+			} else if (rem == 2) {
+				PARSE_STR (op[i + 4], "&0xf"); PARSE_STR (op[i + 5], ")");
+			} else { return false; }
+			return true;
+		}
+		return false;
+	}
+	return false;
+}
+
+static bool parse_j (RBpfSockFilter *f, const char *m, int opc, const bpf_token *op, ut64 pc) {
+	st8 temp;
+	if (TOKEN_EQ (m, "jmp") || TOKEN_EQ (m, "ja")) {
+		f->code = BPF_JMP_JA;
+		PARSE_NEED (opc == 1);
+		ut64 label = 0; PARSE_NEED (parse_label_value (&label, op[0]));
+		f->k = (label - pc - 8) / 8;
+		return true;
+	}
+	if (TOKEN_EQ (m, "jne") || TOKEN_EQ (m, "jneq")) {
+		f->code = BPF_JMP_JEQ; PARSE_NEED (parse_jump_targets (f, opc, op, pc));
+		temp = f->jt; f->jt = f->jf; f->jf = temp; return true;
+	}
+	if (TOKEN_EQ (m, "jeq")) {
+		f->code = BPF_JMP_JEQ; PARSE_NEED (parse_jump_targets (f, opc, op, pc)); return true; }
+	if (TOKEN_EQ (m, "jlt")) {
+		f->code = BPF_JMP_JGE; PARSE_NEED (parse_jump_targets (f, opc, op, pc)); temp = f->jt; f->jt = f->jf; f->jf = temp; return true; }
+	if (TOKEN_EQ (m, "jge")) {
+		f->code = BPF_JMP_JGE; PARSE_NEED (parse_jump_targets (f, opc, op, pc)); return true; }
+	if (TOKEN_EQ (m, "jle")) {
+		f->code = BPF_JMP_JGT; PARSE_NEED (parse_jump_targets (f, opc, op, pc)); temp = f->jt; f->jt = f->jf; f->jf = temp; return true; }
+	if (TOKEN_EQ (m, "jgt")) {
+		f->code = BPF_JMP_JGT; PARSE_NEED (parse_jump_targets (f, opc, op, pc)); return true; }
+	if (TOKEN_EQ (m, "jset")) {
+		f->code = BPF_JMP_JSET; PARSE_NEED (parse_jump_targets (f, opc, op, pc)); return true; }
+	return false;
+}
+
+static bool parse_alu(RBpfSockFilter *f, const char *m, int opc, const bpf_token *op) {
+	if (TOKEN_EQ (m, "add")) { f->code = BPF_ALU_ADD; PARSE_NEED (opc == 1); PARSE_NEED (parse_k_or_x (f, op[0])); return true; }
+	if (TOKEN_EQ (m, "sub")) { f->code = BPF_ALU_SUB; PARSE_NEED (opc == 1); PARSE_NEED (parse_k_or_x (f, op[0])); return true; }
+	if (TOKEN_EQ (m, "mul")) { f->code = BPF_ALU_MUL; PARSE_NEED (opc == 1); PARSE_NEED (parse_k_or_x (f, op[0])); return true; }
+	if (TOKEN_EQ (m, "div")) { f->code = BPF_ALU_DIV; PARSE_NEED (opc == 1); PARSE_NEED (parse_k_or_x (f, op[0])); return true; }
+	if (TOKEN_EQ (m, "mod")) { f->code = BPF_ALU_MOD; PARSE_NEED (opc == 1); PARSE_NEED (parse_k_or_x (f, op[0])); return true; }
+	if (TOKEN_EQ (m, "neg")) { f->code = BPF_ALU_NEG; PARSE_NEED (opc == 0); return true; }
+	if (TOKEN_EQ (m, "and")) { f->code = BPF_ALU_AND; PARSE_NEED (opc == 1); PARSE_NEED (parse_k_or_x (f, op[0])); return true; }
+	if (TOKEN_EQ (m, "or"))  { f->code = BPF_ALU_OR;  PARSE_NEED (opc == 1); PARSE_NEED (parse_k_or_x (f, op[0])); return true; }
+	if (TOKEN_EQ (m, "xor")) { f->code = BPF_ALU_XOR; PARSE_NEED (opc == 1); PARSE_NEED (parse_k_or_x (f, op[0])); return true; }
+	if (TOKEN_EQ (m, "lsh")) { f->code = BPF_ALU_LSH; PARSE_NEED (opc == 1); PARSE_NEED (parse_k_or_x (f, op[0])); return true; }
+	if (TOKEN_EQ (m, "rsh")) { f->code = BPF_ALU_RSH; PARSE_NEED (opc == 1); PARSE_NEED (parse_k_or_x (f, op[0])); return true; }
+	return false;
+}
+
+#ifndef RBPF_DIALECT_T_DEFINED
+typedef enum {
+	R_BPF_DIALECT_CLASSIC = 32,
+	R_BPF_DIALECT_EXTENDED = 64,
+} RBpfDialect;
+#define RBPF_DIALECT_T_DEFINED
+#endif
+
+#include "../bpf/bpfasm.inc.c"
+
+static RBpfDialect get_bpf_dialect2(RArchSession *s) {
+	const char *cpu = s && s->config ? s->config->cpu : NULL;
+	if (cpu) {
+		if (!strcmp (cpu, "classic") || !strcmp (cpu, "cbpf") || !strcmp (cpu, "cBPF")) {
+			return R_BPF_DIALECT_CLASSIC;
+		}
+		if (!strcmp (cpu, "extended") || !strcmp (cpu, "ebpf") || !strcmp (cpu, "eBPF") || !strcmp (cpu, "64")) {
+			return R_BPF_DIALECT_EXTENDED;
+		}
+	}
+	return (s && s->config && s->config->bits == 64) ? R_BPF_DIALECT_EXTENDED : R_BPF_DIALECT_CLASSIC;
+}
+
+static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
+	RBpfDialect dialect = get_bpf_dialect2 (s);
+	RBpfSockFilter f = {0};
+	BPFAsmParser p = { .str = op->mnemonic };
+	ut8 ebuf[16] = {0};
+	int elen = 0;
+	bool ret = parse_instruction (&f, &p, op->addr, dialect, ebuf, &elen);
+	token_fini (&p);
+	if (!ret) return false;
+	if (dialect == R_BPF_DIALECT_EXTENDED) {
+		if (elen == 8 || elen == 16) {
+			r_anal_op_set_bytes (op, op->addr, ebuf, elen);
+			op->size = elen;
+			return true;
+		}
+		return false;
+	} else {
+		ut8 encoded[8];
+		r_write_le16 (encoded, f.code);
+		encoded[2] = f.jt;
+		encoded[3] = f.jf;
+		r_write_le32 (encoded + 4, f.k);
+		r_anal_op_set_bytes (op, op->addr, encoded, 8);
+		op->size = 8;
+		return true;
+	}
 }
 
 static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
@@ -693,6 +997,7 @@ const RArchPlugin r_arch_plugin_bpf_cs = {
 	.regs = &regs,
 	.decode = &decode,
 	.mnemonics = &mnemonics,
+	.encode = &encode,
 	.init = init,
 	.fini = fini
 };
