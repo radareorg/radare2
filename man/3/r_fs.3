@@ -6,34 +6,28 @@
 .Nd radare2 filesystem library
 .Sh SYNOPSIS
 .In r_fs.h
-.Ft RFS *
-.Fn r_fs_new "void"
-.Ft void
-.Fn r_fs_free "RFS *fs"
-.Ft RFSRoot *
-.Fn r_fs_mount "RFS *fs" "const char *fstype" "const char *path" "ut64 delta"
-.Ft bool
-.Fn r_fs_umount "RFS *fs" "const char *path"
-.Ft RFSFile *
-.Fn r_fs_open "RFS *fs" "const char *path" "bool create"
-.Ft void
-.Fn r_fs_close "RFS *fs" "RFSFile *file"
-.Ft int
-.Fn r_fs_read "RFS *fs" "RFSFile *file" "ut64 addr" "int len"
-.Ft int
-.Fn r_fs_write "RFS *fs" "RFSFile *file" "ut64 addr" "const ut8 *data" "int len"
-.Ft RList *
-.Fn r_fs_dir "RFS *fs" "const char *path"
-.Ft RFSFile *
-.Fn r_fs_slurp "RFS *fs" "const char *path"
+.Pp
 .Sh DESCRIPTION
 The
 .Nm r_fs
 library provides filesystem support for radare2, allowing analysis and manipulation of various filesystem types within binary images. It supports mounting, reading, writing, and navigating filesystems embedded in disk images or memory dumps.
 .Pp
+Typical usage in the radare2 core allocates a filesystem context with
+.Ft RFS *
+.Va fs
+via
+.Fn r_fs_new "void",
+and mounts a filesystem with
+.Fn r_fs_mount "RFS *fs" "const char *fstype" "const char *path" "ut64 delta",
+so that commands in the core can list directories, open files and read their contents through the unified API. The core keeps a reference to the returned
+.Vt RFS
+context (see `libr/core/core.c`), and calls
+.Fn r_fs_free "RFS *fs"
+when tearing down.
+.Pp
 The core structure is
 .Vt RFS ,
-which manages filesystem plugins, mounted roots, and provides a unified interface for filesystem operations.
+which manages plugins, mounted roots and binds I/O and console operations (see `libr/include/r_fs.h` for fields and types).
 .Sh INITIALIZATION
 .Ft RFS *
 .Fn r_fs_new "void"
@@ -48,7 +42,11 @@ Frees all resources associated with the filesystem context.
 .Ft RFSRoot *
 .Fn r_fs_mount "RFS *fs" "const char *fstype" "const char *path" "ut64 delta"
 .Pp
-Mounts a filesystem of the specified type at the given path with an offset delta.
+Attachs a filesystem implementation (plugin) to a virtual mount point. The `delta` argument is commonly used when the filesystem is found at an offset inside a disk image or memory buffer. In the radare2 core this is typically invoked as:
+.Bd -literal -offset indent
+RFS *fs = r_fs_new();
+RFSRoot *root = r_fs_mount (fs, "auto", "/root", core->addr /* offset */);
+.Ed
 .Pp
 .Ft bool
 .Fn r_fs_umount "RFS *fs" "const char *path"
@@ -58,7 +56,14 @@ Unmounts the filesystem at the specified path.
 .Ft RFSFile *
 .Fn r_fs_open "RFS *fs" "const char *path" "bool create"
 .Pp
-Opens a file at the specified path, optionally creating it if it doesn't exist.
+Open a file relative to mounted roots; when multiple roots match the path the first matching root is used. Callers in the core often do:
+.Bd -literal -offset indent
+RFSFile *f = r_fs_open (core->fs, "/some/path", false);
+if (f) {
+    r_fs_read (core->fs, f, 0, f->size);
+    r_fs_close (core->fs, f);
+}
+.Ed
 .Pp
 .Ft void
 .Fn r_fs_close "RFS *fs" "RFSFile *file"
@@ -78,7 +83,11 @@ Writes data to a file at the specified offset.
 .Ft RList *
 .Fn r_fs_dir "RFS *fs" "const char *path"
 .Pp
-Lists the contents of a directory.
+Returns a `RList` of `RFSFile` objects for the given virtual directory. The core uses this to implement the `md` command and directory listings; for example:
+.Bd -literal -offset indent
+RList *files = r_fs_dir (core->fs, "/");
+// iterate and inspect file->name, file->size, file->type
+.Ed
 .Pp
 .Ft bool
 .Fn r_fs_dir_dump "RFS *fs" "const char *path" "const char *name"
@@ -88,7 +97,7 @@ Dumps the contents of a directory to disk.
 .Ft RFSFile *
 .Fn r_fs_slurp "RFS *fs" "const char *path"
 .Pp
-Loads an entire file into memory for analysis.
+Convenience helper that opens and reads a file fully into memory returning an `RFSFile` whose `data` and `size` fields are populated. This is useful when a single buffer is required by consumers (e.g. analysis or dumping).
 .Sh SEARCHING
 .Ft RList *
 .Fn r_fs_find_name "RFS *fs" "const char *name" "const char *glob"
@@ -103,7 +112,7 @@ Finds files containing data at a specific offset.
 .Ft RList *
 .Fn r_fs_partitions "RFS *fs" "const char *ptype" "ut64 delta"
 .Pp
-Lists partitions in a disk image.
+Enumerates partitions using the built-in partition detectors or a specific partition type. The returned list contains `RFSPartition` entries describing start and length; callers often use this to discover filesystems inside disk images before mounting them.
 .Sh PLUGINS
 .Ft bool
 .Fn r_fs_plugin_add "RFS *fs" "RFSPlugin *p"
@@ -125,27 +134,33 @@ Starts an interactive filesystem shell.
 .Pp
 Retrieves filesystem type information by index.
 .Sh EXAMPLES
-Basic filesystem setup:
+Common patterns used by the radare2 core and plugins:
+.Pp
 .Bd -literal -offset indent
+// create and mount a filesystem at a given offset
 RFS *fs = r_fs_new();
-RFSRoot *root = r_fs_mount(fs, "fat", "/mnt/fat", 0x1000);
-.Ed
-.Pp
-File operations:
-.Bd -literal -offset indent
-RFSFile *file = r_fs_open(fs, "/test.txt", false);
-int len = r_fs_read(fs, file, 0, 1024);
-r_fs_close(fs, file);
-.Ed
-.Pp
-Directory listing:
-.Bd -literal -offset indent
-RList *files = r_fs_dir(fs, "/");
-.Ed
-.Pp
-File slurping:
-.Bd -literal -offset indent
-RFSFile *slurped = r_fs_slurp(fs, "/config.bin");
+RFSRoot *root = r_fs_mount (fs, "fat", "/mnt/fat", 0x1000);
+
+// open, read full contents and close
+RFSFile *file = r_fs_open (fs, "/README.txt", false);
+if (file) {
+    r_fs_read (fs, file, 0, file->size);
+    r_fs_close (fs, file);
+}
+
+// list a directory
+RList *files = r_fs_dir (fs, "/");
+
+// slurp a file into memory (single call)
+RFSFile *s = r_fs_slurp (fs, "/config.bin");
+if (s) {
+    // use s->data and s->size
+    r_fs_file_free (s);
+}
+
+// find files by name or containing an offset
+RList *matches = r_fs_find_name (fs, "/", "*.so");
+RList *byoff = r_fs_find_off (fs, "/", 0x2000);
 .Ed
 .Sh SEE ALSO
 .Xr r_io 3 ,
