@@ -5986,6 +5986,41 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	int coproc, opc;
 	bool rex = false;
 	int shift, low, high;
+	/* Handle ARM-state MRS early (Rd <- PSR). Thumb variants are handled elsewhere. */
+	if (r_str_startswith (ao->op, "mrs")) {
+		cond = 14; // default AL
+		if (*(ao->op + 3)) {
+			int c = arm_cond (ao->op + 3);
+			if (c < 0) {
+				return 0;
+			}
+			cond = c;
+		}
+		if (!ao->a[0] || !ao->a[1]) {
+			return 0;
+		}
+		int rd = getreg (ao->a[0]);
+		if (rd < 0 || rd > 15) {
+			return 0;
+		}
+		r_str_case (ao->a[1], false);
+		ut32 o = 0;
+		/* Encode in little-endian layout like the rest of arm_assemble */
+		/* Low byte: cond in high nibble, opcode low nibble = 0x1 */
+		o |= (((ut32)cond & 0xF) << 4) | 0x1;
+		/* Next byte: PSR selector */
+		if (!strcmp (ao->a[1], "cpsr") || !strcmp (ao->a[1], "apsr")) {
+			o |= ((ut32)0x0f) << 8; /* CPSR/APSR */
+		} else if (!strcmp (ao->a[1], "spsr")) {
+			o |= ((ut32)0x4f) << 8; /* SPSR */
+		} else {
+			return 0;
+		}
+		/* Next byte (bits 23:20) high nibble: Rd */
+		o |= ((ut32)(rd & 0xF)) << 20;
+		ao->o = o;
+		return 1;
+	}
 	for (i = 0; ops[i].name; i++) {
 		if (!strncmp (ao->op, ops[i].name, strlen (ops[i].name))) {
 			/* This can be useful when handling cases such as blt or ble

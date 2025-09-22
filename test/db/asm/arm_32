@@ -351,3 +351,11 @@ a "cmp r0, r0, asr r0" 500050e1
 a "cmp r0, r0, ror r0" 700050e1
 a "ldr r0, [r1, r2]!" 0200b1e7
 a "ldr r0, [r1, 0x42]!" 4200b1e5
+ad "mrs r0, apsr" 00000fe1
+ad "mrs r1, apsr" 00100fe1
+ad "mrs r1, spsr" 00104fe1
+ad "mrsne r2, spsr" 00204f11
+d "mrs r0, apsr" 00000fe1
+d "mrs r1, apsr" 00100fe1
+d "mrs r1, spsr" 00104fe1
+d "mrsne r2, spsr" 00204f11
