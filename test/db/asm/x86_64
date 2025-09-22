@@ -1322,3 +1322,9 @@ ad "add r10, 4" 4983c204
 ad "mov rax, qword [rip + 0x17792]" 488b0592770100
 a "mov rdx, [0x17792+rip]" 488b0592770100
 ad "inc qword [rcx]" 48ff01
+a "shlx eax, ebx, ecx" c4e2700f38f7c3
+a "shrx eax, ebx, ecx" c4e2730f38f7c3
+a "sarx eax, ebx, ecx" c4e2720f38f7c3
+a "shlx rax, rbx, rcx" c4e2f00f38f7c3
+a "shrx rax, rbx, rcx" c4e2f30f38f7c3
+a "sarx rax, rbx, rcx" c4e2f20f38f7c3
