@@ -7,33 +7,31 @@
 .Sh SYNOPSIS
 .In r_flag.h
 .Sh DESCRIPTION
-The
 .Nm r_flag
-library provides a system for managing named addresses (flags) in radare2, supporting flag spaces, metadata, zones, and tags. Flags are used to label addresses with meaningful names for analysis and debugging.
+is the library that implements radare2's named-address management ("flags"). A flag is a lightweight label attached to an address (or an address range) and carries optional metadata such as comment, alias, color and type. Flags are used throughout radare2 to name functions, variables, user labels and any other addressable symbol used during analysis and debugging.
 .Pp
-Key concepts:
+Terminology and core concepts:
 .Bl -bullet
-.It
-.Nm RFlag
-is the main structure managing all flags.
-.It
-.Nm RFlagItem
-represents a single flag with name, address, size, and metadata.
-.It
-.Nm RSpace
-allows organizing flags into namespaces.
-.It
-Zones define address ranges for grouping flags.
-.It
-Tags provide additional categorization.
+.It Flag
+A Flag (represented by the C structure `RFlagItem`) is a named address descriptor: it has a `name`, a target `addr`, a `size` (length in bytes, 0 for no size), an internal numeric `id`, an optional `realname` (original/demangled name) and a `space` pointer referencing the namespace it belongs to. Flags can also have metadata entries (comment, alias expression, color, type) stored separately by id.
+.It Flag Space
+A Flag Space (type `RSpace`) is a namespace for flags. Spaces let you maintain multiple independent sets of flag names (for example `functions`, `locals`, `vars`). The library supports a current space and a stack of spaces so callers can push/pop contexts. When multiple flags exist at the same address, spaces can be used to prioritize which flag is considered first.
+.It Zone
+Zones (managed as `RFlagZoneItem`) are named address ranges (`from`..`to`) intended to group related regions of the binary (for example a section, module, or logical region). Zones are independent from flag spaces and are frequently used for UI/visualization (bar lists, context lookups).
+.It Tag
+Tags are simple keyword lists associated to a flag name and stored in a key-value database (`sdb`). Tags allow fast grouping and searching of flags by words; internally tags are stored as `tag.<flagname> = "word1 word2 ..."` and matched with glob-like patterns.
+.It Address Indexing and Masking
+Flags are indexed both by name (hash table) and by address using a skiplist (`RFlagsAtOffset`) that holds a list of flags for each normalized address. The `RFlag` context may use an address `mask` to normalize addresses (e.g. page-level grouping).
 .El
 .Sh INITIALIZATION
 .Pp
 Flag management starts with creating a new context to hold all flags. These functions allocate the necessary structures at the beginning of a session and clean them up at the end, ensuring proper resource management in radare2.
+.Pp
 .Ft RFlag *
 .Fn r_flag_new "void"
 .Pp
 Creates a new flag context.
+.Pp
 .Ft void
 .Fn r_flag_free "RFlag *f"
 .Pp
@@ -41,10 +39,12 @@ Frees a flag context and all associated flags.
 .Sh FLAG MANAGEMENT
 .Pp
 These functions provide core operations for creating, retrieving, and removing flags, forming the foundation of flag manipulation in radare2's analysis and debugging workflows.
+.Pp
 .Ft RFlagItem *
 .Fn r_flag_set "RFlag *f" "const char *name" "ut64 addr" "ut32 size"
 .Pp
 Sets a flag with the given name at the specified address and size.
+.Pp
 .Ft RFlagItem *
 .Fn r_flag_get "RFlag *f" "const char *name"
 .Pp
@@ -53,115 +53,110 @@ Retrieves a flag by name.
 .Fn r_flag_get_at "RFlag *f" "ut64 addr" "bool closest"
 .Pp
 Gets the flag at the specified address, or the closest if closest is true.
+.Pp
 .Ft bool
 .Fn r_flag_unset "RFlag *f" "RFlagItem *item"
 .Pp
 Removes the specified flag item.
+.Pp
 .Ft bool
 .Fn r_flag_unset_name "RFlag *f" "const char *name"
 .Pp
 Removes the flag with the given name.
+.Pp
 .Ft bool
 .Fn r_flag_unset_addr "RFlag *f" "ut64 addr"
 .Pp
 Removes all flags at the specified address.
+.Pp
 .Ft void
 .Fn r_flag_unset_all "RFlag *f"
 .Pp
 Removes all flags.
 .Sh FLAG SPACES
 .Pp
-These functions manage flag spaces, which are namespaces that allow organizing flags into logical groups, such as separating functions, variables, and other symbols for better analysis organization.
-.Ft RSpace *
-.Fn r_flag_space_get "RFlag *f" "const char *name"
-.Pp
-Gets the flag space with the given name.
-.Ft RSpace *
-.Fn r_flag_space_cur "RFlag *f"
-.Pp
-Returns the current flag space.
-.Ft RSpace *
-.Fn r_flag_space_set "RFlag *f" "const char *name"
-.Pp
-Sets the current flag space.
-.Ft bool
-.Fn r_flag_space_push "RFlag *f" "const char *name"
-.Pp
-Pushes a flag space onto the stack.
-.Ft bool
-.Fn r_flag_space_pop "RFlag *f"
-.Pp
-Pops the current flag space from the stack.
+Flag spaces provide isolated namespaces for flags. Use them to separate different kinds of symbols (for example `functions`, `locals`, `vars`) or to maintain per-analysis labeling without collisions. Important behaviors implemented in the code:
+.Bl -bullet
+.It
+Getting/creating a space: `r_flag_space_get` returns the `RSpace` for a given name (creates it when requested by other helpers).
+.It
+The current space: `r_flag_space_cur` returns the active space used by operations that do not explicitly specify one.
+.It
+Switching context: `r_flag_space_set` sets the current space; `r_flag_space_push` pushes the current space onto an internal stack and activates another; `r_flag_space_pop` restores the previous space.
+.It
+Priority and lookup: when multiple flags exist at the same address, functions like `r_flag_get_by_spaces` accept an ordered list of space names to resolve which flag should be chosen first. There is also support for a "no space" priority so flags without a space can be preferred.
+.El
 .Sh METADATA
 .Pp
-These functions attach additional metadata to flag items, including comments, colors, and types, enhancing visualization and providing context for flags in the debugging interface.
-.Ft const char *
-.Fn r_flag_item_set_comment "RFlag *f" "RFlagItem *fi" "const char *comment"
+Flag metadata is stored separately from the `RFlagItem` structure and keyed by the flag numeric id. Metadata allows attaching optional properties to flags without changing the main item structure. Typical metadata fields and behavior:
+.Bl -bullet
+.It Comment
+Set or get a human readable comment with `r_flag_item_set_comment`. Empty string removes the comment. Comments are used when exporting flags or printing in the UI; some output formats encode comments as Base64 to preserve arbitrary bytes.
+.It Alias
+An alias is an expression (e.g. arithmetic or symbol expression) associated with a flag using `r_flag_item_set_alias`. When present the library will evaluate the alias using the numeric evaluator (`RNum`) and present the computed address as the flag's address in some queries; alias values are stored in metadata and do not replace the flag's canonical `addr` unless explicitly applied in code.
+.It Color
+Set with `r_flag_item_set_color`, colors are stored in metadata to aid UI rendering and export. Removing the color is supported by passing an empty string.
+.It Type
+Set with `r_flag_item_set_type`, stores a textual type classification for the flag.
+.El
 .Pp
-Sets a comment for the flag item.
-.Ft const char *
-.Fn r_flag_item_set_color "RFlag *f" "RFlagItem *item" "const char *color"
-.Pp
-Sets the color for the flag item.
-.Ft const char *
-.Fn r_flag_item_set_type "RFlag *f" "RFlagItem *fi" "const char *type"
-.Pp
-Sets the type for the flag item.
-.Sh ITERATION
-.Pp
-These functions enable programmatic traversal of flags, allowing for batch processing, custom analysis, or exporting flag data through callback mechanisms.
-.Ft void
-.Fn r_flag_foreach "RFlag *f" "RFlagItemCb cb" "void *user"
-.Pp
-Iterates over all flags, calling the callback for each.
-.Ft void
-.Fn r_flag_foreach_prefix "RFlag *f" "const char *pfx" "int pfx_len" "RFlagItemCb cb" "void *user"
+Internally metadata is held in a hash table (`ht_up`) indexed by the numeric id and freed when flags are removed.
 .Pp
 Iterates over flags with the given prefix.
 .Sh ZONES
 .Pp
-These functions define and manage zones, which are address ranges used to group related flags spatially, facilitating organization of large address spaces in reverse engineering tasks.
-.Ft bool
-.Fn r_flag_zone_add "RFlag *fz" "const char *name" "ut64 addr"
+Zones are named ranges intended to provide a coarse grouping of addresses. Each zone has a `name`, `from` and `to` bounds. Typical uses include section-like grouping, bar-list visualizations, and providing contextual names for UI elements.
 .Pp
-Adds a zone at the specified address.
-.Ft bool
-.Fn r_flag_zone_del "RFlag *fz" "const char *name"
-.Pp
-Deletes the zone with the given name.
-.Ft bool
-.Fn r_flag_zone_around "RFlag *fz" "ut64 addr" "const char **prev" "const char **next"
-.Pp
-Finds zones around the given address.
+API behavior implemented in the source:
+.Bl -bullet
+.It
+`r_flag_zone_add` extends an existing zone or creates a new one. Adding addresses expands zone bounds to cover the new address.
+.It
+`r_flag_zone_del` removes a zone by name; `r_flag_zone_reset` clears all zones.
+.It
+`r_flag_zone_around` returns the nearest zone names located before and after a given address, useful for contextual lookups.
+.It
+`r_flag_zone_list` and `r_flag_zone_barlist` help produce textual or bar-list representations of zones for display.
+.El
 .Sh TAGS
 .Pp
-These functions handle tagging of flags, allowing for categorization and advanced querying capabilities to filter and search flags based on custom tags.
-.Ft RList *
-.Fn r_flag_tags_set "RFlag *f" "const char *name" "const char *words"
-.Pp
-Sets tags for the flag with the given name.
-.Ft RList *
-.Fn r_flag_tags_get "RFlag *f" "const char *name"
-.Pp
-Gets the tags for the flag.
+Tags are simple word lists attached to a flag name and stored in an `sdb` key-value database. They let callers assign keywords to flags and later retrieve all flags that match one or more words. Implementation notes:
+.Bl -bullet
+.It
+`r_flag_tags_set(f, name, words)` stores the space-separated words under the key `tag.<name>`.
+.It
+`r_flag_tags_get(f, name)` returns a list of flags that match the words associated to `name`. The implementation splits the stored words and performs glob-like matching against existing flag names.
+.It
+`r_flag_tags_list` lists all tags present and `r_flag_tags_reset` clears tags for a name or for all flags.
+.El
 .Sh UTILITIES
 .Pp
 These utility functions support common maintenance and interaction tasks, such as listing flags, counting matches, and renaming, aiding in user workflows and automation.
+.Pp
 .Ft char *
 .Fn r_flag_list "RFlag *f" "int rad" "const char *pfx"
 .Pp
 Lists flags in radare2 format with optional prefix.
+.Pp
 .Ft int
 .Fn r_flag_count "RFlag *f" "const char *glob"
 .Pp
 Counts flags matching the glob pattern.
+.Pp
 .Ft int
 .Fn r_flag_rename "RFlag *f" "RFlagItem *item" "const char *name"
 .Pp
+.Ft void
+.Fn r_flag_foreach "RFlag *f" "RFlagItemCb cb" "void *user"
+.Pp
+Iterates over all flags, calling the callback for each.
+.Pp
+.Ft void
+.Fn r_flag_foreach_prefix "RFlag *f" "const char *pfx" "int pfx_len" "RFlagItemCb cb" "void *user"
 Renames a flag item.
 .Sh EXAMPLES
 .Pp
-This section provides practical code examples demonstrating the usage of the r_flag API functions in typical radare2 workflows, including flag creation, space management, and iteration.
+Here there are some practical code examples demonstrating the usage of the r_flag API functions in typical radare2 workflows, including flag creation, space management, and iteration.
 Creating and managing flags:
 .Bd -literal
 RFlag *f = r_flag_new();
