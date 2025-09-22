@@ -161,7 +161,7 @@ static RCoreHelpMessage help_msg_slash_a = {
 	"/ao", " instr", "search for instruction 'instr' (in all offsets)",
 	"/as", "[qjl] ([type])", "search for syscalls (See /at swi and /af priv)",
 	"/at", "[?][qjl] ([type])", "search for instructions of given type",
-	"/az[q]", " ([minstr])", "search assembly constructed strings (q)uiet reduces FP (uses bin.minsz)",
+	"/az", "[q] ([minstr])", "search assembly constructed strings (q)uiet reduces FP (uses bin.minsz)",
 	NULL
 };
 
@@ -4637,15 +4637,25 @@ reread:
 			}
 			break;
 		case 's': // "/asl"
-			if (input[2] == 'l') { // "asl"
-				r_core_cmd_call (core, "asl");
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_slash_a, "/as");
+			} else if (input[2] == 'l') { // "asl"
+				if (input[2] == '?') {
+					r_core_cmd_help_match (core, help_msg_slash_a, "/as");
+				} else {
+					r_core_cmd_call (core, "asl");
+				}
 			} else { // "/as" "/asj"
 				do_syscall_search (core, &param);
 			}
 			dosearch = false;
 			break;
 		case 'u': // "/au"
-			do_unkjmp_search (core, &param, false, r_str_trim_head_ro (input + 2));
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_slash_a, "/az");
+			} else {
+				do_unkjmp_search (core, &param, false, r_str_trim_head_ro (input + 2));
+			}
 			break;
 		case 'z': // "/az"
 			switch (input[2]) {
