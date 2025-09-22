@@ -15,9 +15,10 @@ The core structure is
 .Vt REgg ,
 which manages source code, compiled binary, assembler, syscall information, and language parsing.
 .Sh INITIALIZATION
-." short intro
-." This section describes functions to create, initialize and free an
-." REgg context, and helpers to (re)configure its parsing state.
+.Pp
+This section describes functions to create, initialize and free an REgg
+context and contains helpers to (re)configure the embedded language parser and
+state used during compilation.
 .Ft REgg *
 .Fn r_egg_new "void"
 .Pp
@@ -53,9 +54,9 @@ Frees resources allocated by the embedded language parser.
 .Pp
 Configures the egg context for the specified architecture, bitness, endianness, and operating system.
 .Sh LOADING CODE
-." short intro
-." Functions to load egg source from strings or files and to manage include paths
-." and additional source fragments used during compilation.
+.Pp
+Functions to load egg source from strings or files, append fragments, and
+manage include paths and ancillary source used during compilation.
 .Ft void
 .Fn r_egg_load "REgg *egg" "const char *code" "int format"
 .Pp
@@ -66,10 +67,11 @@ Loads source code into the egg context. `format` indicates input style (egg/c).
 .Pp
 Appends additional source code to the egg context.
 .Sh COMPILATION
-." short intro
-." Compilation is a two-step process: parsing/compiling the egg language to an
-." IR and assembling that IR into machine code. Helpers allow retrieving the
-." produced assembly listing for inspection.
+.Pp
+Compilation is generally a two-step process: parse/compile the egg language
+into an intermediate representation, then assemble that IR into machine code.
+This section lists helpers for both stages and utilities to obtain assembly
+listings for inspection.
 .Ft bool
 .Fn r_egg_compile "REgg *egg"
 .Pp
@@ -85,9 +87,10 @@ Assembles the compiled code into machine code.
 .Pp
 Assembles the code and returns the assembly listing in `asm_list`.
 .Sh EXECUTION
-." short intro
-." Functions that run the generated shellcode either normally or via a ROP
-." execution helper (used by tools that emulate or orchestrate execution).
+.Pp
+Functions that run the generated shellcode either directly or via a ROP
+execution helper; frontends use these to invoke or emulate the generated
+payload.
 .Ft int
 .Fn r_egg_run "REgg *egg"
 .Pp
@@ -98,10 +101,10 @@ Executes the compiled shellcode.
 .Pp
 Executes the shellcode using ROP (Return-Oriented Programming) techniques.
 .Sh OUTPUT
-." short intro
-." Functions to access the results of compilation: the raw binary, the
-." original source and the emitted assembly listing. These are used by the
-." UI/CLI (ragg2, core commands) to print or write outputs.
+.Pp
+Functions to access compilation results: the raw binary buffer, the original
+source text, and the emitted assembly listing. These are commonly used by
+frontends to print, save or further process the produced artifacts.
 .Ft RBuffer *
 .Fn r_egg_get_bin "REgg *egg"
 .Pp
@@ -117,24 +120,27 @@ Returns the source code.
 .Pp
 Returns the assembly representation of the compiled code.
 .Sh SYSCALLS
-." short intro
-." Helpers to insert syscalls (and manage syscall-related parsing state).
+.Pp
+Helpers to insert syscall invocations and to manage syscall-related language
+state (argument marshaling, syscall table entries and emitted code).
 .Ft void
 .Fn r_egg_syscall "REgg *egg" "const char *arg" "..."
 .Pp
 Adds a syscall instruction to the shellcode.
 .Sh MEMORY MANAGEMENT
-." short intro
-." Functions to reserve and manipulate data used by the generated code
-." (data sections, automatic allocations, string placement, etc.).
+.Pp
+Functions to reserve and manipulate data used by generated code: allocate
+space, place strings and manage small data patches emitted into the output
+buffer.
 .Ft void
 .Fn r_egg_alloc "REgg *egg" "int n"
 .Pp
 Allocates memory in the shellcode.
 .Sh CONTROL FLOW
-." short intro
-." Labeling and conditional helpers used by the egg language to implement
-." control flow constructs (labels, if/while, branches, and simple math ops).
+.Pp
+Labeling, branching and conditional helpers used by the egg language to
+implement control flow constructs such as labels, if/while blocks and simple
+arithmetic operations.
 .Ft void
 .Fn r_egg_label "REgg *egg" "const char *name"
 .Pp
@@ -145,18 +151,19 @@ Defines a label in the shellcode.
 .Pp
 Adds a conditional statement.
 .Sh RAW CODE
-." short intro
-." Low-level helpers to insert raw bytes or assemble code directly into the
-." output buffer when the high-level language cannot express a pattern.
+.Pp
+Low-level helpers to insert raw bytes or preassembled snippets directly into
+the output buffer for cases where the high-level language cannot express a
+pattern or when hand-crafted machine code is required.
 .Ft bool
 .Fn r_egg_raw "REgg *egg" "const ut8 *b" "int len"
 .Pp
 Inserts raw binary code into the shellcode.
 .Sh ENCODING
-." short intro
-." Encoder and shellcode-template helpers. Encoders transform the produced
-." binary (eg. XOR, polymorphic encoders) while shellcode templates provide
-." pre-built payloads that can be parameterized.
+.Pp
+Encoder and shellcode-template helpers. Encoders transform the produced
+binary (for obfuscation or packing) while shellcode templates provide
+parameterizable payloads and generators that frontends may select.
 .Ft bool
 .Fn r_egg_encode "REgg *egg" "const char *name"
 .Pp
@@ -167,17 +174,19 @@ Applies an encoder to the shellcode.
 .Pp
 Generates shellcode using a specific shellcode template.
 .Sh PATCHING
-." short intro
-." Functions for binary patching and small modifications of the compiled
-." output. Used by the CLI to apply user-specified byte/word/qword patches.
+.Pp
+Binary patching helpers to apply small modifications to the compiled output
+(bytes, words, qwords). The CLI uses these to apply user-specified patches
+before finalizing output.
 .Ft bool
 .Fn r_egg_patch "REgg *egg" "int off" "const ut8 *b" "int l"
 .Pp
 Patches the compiled binary at the specified offset. Use `-1` for append.
 .Sh PLUGINS
-." short intro
-." Plugin framework used to extend r_egg with shellcode generators and
-." encoders. Plugins are discovered/registered by the host (ragg2/core).
+.Pp
+The plugin framework used to extend r_egg with shellcode generators and
+encoders. Hosts discover and register plugin implementations which are then
+invoked during compilation or encoding phases.
 .Ft bool
 .Fn r_egg_plugin_add "REgg *a" "REggPlugin *plugin"
 .Pp
@@ -188,9 +197,10 @@ Adds an egg plugin (encoder or shellcode generator).
 .Pp
 Removes an egg plugin.
 .Sh OPTIONS
-." short intro
-." Key/value options used to configure behavior (selected encoder, padding,
-." chosen shellcode template, arbitrary key used by encoders/templates).
+.Pp
+Key/value configuration used to control compilation and encoding behavior
+(selected encoder, padding, chosen shellcode template and auxiliary keys used
+by plugins).
 .Ft void
 .Fn r_egg_option_set "REgg *egg" "const char *k" "const char *v"
 .Pp
@@ -201,9 +211,10 @@ Sets an option for the egg context.
 .Pp
 Gets an option value from the egg context.
 .Sh INCLUDES
-." short intro
-." Include helpers to load files or strings (C headers, inline code)
-." referenced by egg source. There are also helpers to manage include paths.
+.Pp
+Include helpers to load files or strings (for example C headers or inline
+code) referenced by egg source. Also contains helpers to manage include
+search paths used by the preprocessor.
 .Ft bool
 .Fn r_egg_include "REgg *egg" "const char *file" "int format"
 .Pp
@@ -224,9 +235,9 @@ Adds an include path used by the egg preprocessor.
 .Pp
 Initializes include-related state (called at setup time by hosts).
 .Sh FINALIZATION
-." short intro
-." Finalizers and convenience helpers used after compilation to finish
-." transformations and release temporary resources.
+.Pp
+Finalizers and convenience helpers called after compilation to finish
+transformations, apply padding/encoders and release temporary resources.
 .Ft void
 .Fn r_egg_finalize "REgg *egg"
 .Pp
