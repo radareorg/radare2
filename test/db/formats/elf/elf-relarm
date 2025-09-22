@@ -15,7 +15,7 @@ fs relocs
 'f reloc.r2 4 0x08000054
 'f reloc.r3 4 0x08000058
 'f reloc.r4 4 0x0800005c
-wv8 0xffffffffffffffff @ 0x8000060
+'@0x8000060'wv8 0xffffffffffffffff
 EOF
 RUN
 

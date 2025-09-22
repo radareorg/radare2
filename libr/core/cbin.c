@@ -143,7 +143,7 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 			*flagname = 0;
 			flagname = dup;
 			if (IS_MODE_RAD (mode)) {
-				r_cons_printf (core->cons, "f %s @ %s\n", flagname, v);
+				r_cons_printf (core->cons, "'@%s'f %s\n", v, flagname);
 			} else if (IS_MODE_SET (mode)) {
 				ut64 nv = r_num_math (core->num, v);
 				r_flag_set (core->flags, flagname, nv, 0);
@@ -210,7 +210,7 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 			free (offset_key);
 			if (off) {
 				if (IS_MODE_RAD (mode)) {
-					r_cons_printf (core->cons, "Cf %d %s @ %s\n", fmtsize, v, off);
+					r_cons_printf (core->cons, "'@%s'Cf %d %s\n", off, fmtsize, v);
 				} else if (IS_MODE_SET (mode)) {
 					ut64 addr = r_num_get (NULL, off);
 					ut8 *buf = malloc (fmtsize);
@@ -479,10 +479,10 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va) {
 				? r_str_newf ("%s.str.%s", core->bin->prefix, string->string)
 				: r_str_newf ("str.%s", string->string);
 			r_name_filter (str, R_FLAG_NAME_SIZE);
-			r_cons_printf (core->cons, "f %s %u 0x%08"PFMT64x"\n"
-				"Cs %u @ 0x%08"PFMT64x"\n",
+			r_cons_printf (core->cons, "'f %s %u 0x%08"PFMT64x"\n"
+				"'@0x%08"PFMT64x"'Cs %u\n",
 				str, string->size, vaddr,
-				string->size, vaddr);
+				vaddr, string->size);
 			free (str);
 		} else {
 			int *block_list;
@@ -1831,7 +1831,7 @@ static void add_metadata(RCore *core, RBinReloc *reloc, ut64 addr, int mode) {
 	if (IS_MODE_SET (mode)) {
 		r_meta_set (core->anal, R_META_TYPE_DATA, reloc->vaddr, cdsz, NULL);
 	} else if (IS_MODE_RAD (mode)) {
-		r_cons_printf (core->cons, "Cd %d @ 0x%08" PFMT64x "\n", cdsz, addr);
+		r_cons_printf (core->cons, "'@0x%08"PFMT64x"'Cd %d\n", addr, cdsz);
 	}
 }
 
@@ -2019,7 +2019,7 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 			} else {
 				ut64 v = reloc->symbol? reloc->symbol->vaddr: reloc->addend;
 				ut64 a = addr;
-				r_cons_printf (core->cons, "wv8 0x%"PFMT64x" @ 0x%"PFMT64x"\n", v, a);
+				r_cons_printf (core->cons, "'@0x%"PFMT64x"'wv8 0x%"PFMT64x"\n", a, v);
 			}
 		} else if (IS_MODE_JSON (mode)) {
 			pj_o (pj);
@@ -3470,17 +3470,17 @@ static bool bin_fields(RCore *core, PJ *pj, int mode, int va) {
 			}
 			if (R_STR_ISNOTEMPTY (cmt)) {
 				char *e = sdb_encode ((const ut8*)cmt, -1);
-				r_cons_printf (core->cons, "CCu base64:%s @ 0x%"PFMT64x"\n", e, addr);
+				r_cons_printf (core->cons, "'@0x%"PFMT64x"'CCu base64:%s\n", addr, e);
 				free (e);
 				char *f = r_name_filter_shell (field->format);
-				r_cons_printf (core->cons, "Cf %d %s @ 0x%"PFMT64x"\n", field->size, f, addr);
+				r_cons_printf (core->cons, "'@0x%"PFMT64x"'Cf %d %s\n", addr, field->size, f);
 				free (f);
 			}
 			if (field->size > 0) {
 				if (field->size == 8) {
-					r_cons_printf (core->cons, "Cd8 @ 0x%"PFMT64x"\n", addr);
+					r_cons_printf (core->cons, "'@0x%"PFMT64x"'Cd8\n", addr);
 				} else if (field->size == 4) {
-					r_cons_printf (core->cons, "Cd4 @ 0x%"PFMT64x"\n", addr);
+					r_cons_printf (core->cons, "'@0x%"PFMT64x"'Cd4\n", addr);
 				}
 			}
 			if (!field->format_named && R_STR_ISNOTEMPTY (field->format)) {
@@ -4259,9 +4259,9 @@ static bool bin_size(RCore *core, PJ *pj, int mode) {
 	} else if (IS_MODE_JSON (mode)) {
 		pj_n (pj, size);
 	} else if (IS_MODE_RAD (mode)) {
-		r_cons_printf (core->cons, "f bin_size @ %"PFMT64u"\n", size);
+		r_cons_printf (core->cons, "'f bin_size = %"PFMT64u"\n", size);
 	} else if (IS_MODE_SET (mode)) {
-		r_core_cmdf (core, "f bin_size @ %"PFMT64u, size);
+		r_core_cmdf (core, "'f bin_size = %"PFMT64u, size);
 	} else {
 		r_cons_printf (core->cons, "%"PFMT64u"\n", size);
 	}

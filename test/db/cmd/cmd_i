@@ -55,7 +55,7 @@ NAME=iZ*
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=iZ*
 EXPECT=<<EOF
-f bin_size @ 4899
+'f bin_size = 4899
 EOF
 RUN
 
@@ -2580,13 +2580,13 @@ CMDS=ir*
 EXPECT=<<EOF
 fs relocs
 'f reloc.__gmon_start__ 4 0x08049690
-Cd 4 @ 0x08049690
+'@0x08049690'Cd 4
 'f reloc.puts 4 0x080496a0
-Cd 4 @ 0x080496a0
+'@0x080496a0'Cd 4
 'f reloc.__gmon_start__ 4 0x080496a4
-Cd 4 @ 0x080496a4
+'@0x080496a4'Cd 4
 'f reloc.__libc_start_main 4 0x080496a8
-Cd 4 @ 0x080496a8
+'@0x080496a8'Cd 4
 EOF
 RUN
 
@@ -3814,8 +3814,8 @@ nth paddr      vaddr      len size section type  string
 -------------------------------------------------------
 0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
 fs strings
-f str.Hello_world_ 13 0x080484b0
-Cs 13 @ 0x080484b0
+'f str.Hello_world_ 13 0x080484b0
+'@0x080484b0'Cs 13
 3
 163
 EOF

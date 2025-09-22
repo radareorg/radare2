@@ -55,7 +55,7 @@ dk 9
 EOF
 EXPECT=<<EOF
 la_activity
-Cs
+'@0x7eb3e6b3d040'Cs
 EOF
 RUN
 

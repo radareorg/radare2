@@ -47,7 +47,7 @@ EXPECT=<<EOF
 'fs+header
 'f header.ELF 1 0x00000000
 'f header.ELF.value 1 0x464c457f
-Cd4 @ 0x0
+'@0x0'Cd4
 pf.ELF x
 'f header.Type 1 0x00000010
 'f header.Type.value 1 0x00000002
@@ -57,22 +57,22 @@ pf.Type w
 pf.Machine w
 'f header.Version 1 0x00000014
 'f header.Version.value 1 0x00000001
-Cd4 @ 0x14
+'@0x14'Cd4
 pf.Version x
 'f header.EntryPoint 1 0x00000018
 'f header.EntryPoint.value 1 0x08048300
-Cd4 @ 0x18
+'@0x18'Cd4
 pf.EntryPoint x
 'f header.PhOff 1 0x0000001c
 'f header.PhOff.value 1 0x00000034
-Cd4 @ 0x1c
+'@0x1c'Cd4
 pf.PhOff x
 'f header.ShOff 1 0x00000020
 'f header.ShOff.value 1 0x000007cc
-Cd4 @ 0x20
+'@0x20'Cd4
 pf.ShOff x
 'f header.Flags 1 0x00000024
-Cd4 @ 0x24
+'@0x24'Cd4
 pf.Flags x
 'f header.EhSize 1 0x00000028
 'f header.EhSize.value 1 0x00000034
