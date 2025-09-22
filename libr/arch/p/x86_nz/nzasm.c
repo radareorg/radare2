@@ -286,6 +286,125 @@ static int opshiftx(RArchSession *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+// POPCNT reg, r/m
+static int oppopcnt(RArchSession *a, ut8 *data, const Opcode *op) {
+	if (op->operands_count != 2) {
+		return -1;
+	}
+	const Operand *dst = &op->operands[0];
+	const Operand *src = &op->operands[1];
+	if (!(dst->type & OT_GPREG) || (dst->type & OT_MEMORY)) {
+		return -1;
+	}
+	int l = 0;
+	// operand-size prefix for 16-bit
+	if (dst->type & OT_WORD) {
+		data[l++] = 0x66;
+	}
+	// F3 prefix is mandatory
+	data[l++] = 0xF3;
+	// REX.W for 64-bit
+	if (a->config->bits == 64 && (dst->type & OT_QWORD)) {
+		ut8 rex = 0x48; // W=1
+		if (dst->extended) rex |= 0x04; // R bit
+						// best-effort B bit for reg/mem source if it's a GP reg
+		if ((src->type & OT_GPREG) && !(src->type & OT_MEMORY) && src->extended) rex |= 0x01;
+		data[l++] = rex;
+	}
+	data[l++] = 0x0f;
+	data[l++] = 0xb8;
+	if (src->type & OT_MEMORY) {
+		int base = src->regs[0];
+		int disp = (int)(src->offset * src->offset_sign);
+		int mod = 0;
+		if (base == X86R_UNDEFINED) {
+			// disp32 only
+			data[l++] = (ut8)(0x00 | (dst->reg << 3) | 5);
+			data[l++] = (ut8)disp;
+			data[l++] = (ut8)(disp >> 8);
+			data[l++] = (ut8)(disp >> 16);
+			data[l++] = (ut8)(disp >> 24);
+			return l;
+		}
+		if (disp != 0) {
+			mod = (disp >= -128 && disp <= 127) ? 1 : 2;
+		}
+		data[l++] = (ut8)((mod << 6) | ((dst->reg & 7) << 3) | (base & 7));
+		if (base == X86R_ESP) {
+			data[l++] = 0x24;
+		}
+		if (mod) {
+			data[l++] = (ut8)disp;
+			if (mod == 2) {
+				data[l++] = (ut8)(disp >> 8);
+				data[l++] = (ut8)(disp >> 16);
+				data[l++] = (ut8)(disp >> 24);
+			}
+		}
+	} else {
+		data[l++] = (ut8)(0xC0 | ((dst->reg & 7) << 3) | (src->reg & 7));
+	}
+	return l;
+}
+
+// LZCNT/TZCNT reg, r/m
+static int opcntz(RArchSession *a, ut8 *data, const Opcode *op) {
+	if (op->operands_count != 2) {
+		return -1;
+	}
+	const Operand *dst = &op->operands[0];
+	const Operand *src = &op->operands[1];
+	if (!(dst->type & OT_GPREG) || (dst->type & OT_MEMORY)) {
+		return -1;
+	}
+	int l = 0;
+	if (dst->type & OT_WORD) {
+		data[l++] = 0x66;
+	}
+	data[l++] = 0xF3; // required prefix
+	if (a->config->bits == 64 && (dst->type & OT_QWORD)) {
+		ut8 rex = 0x48; // W=1
+		if (dst->extended) rex |= 0x04; // R bit
+		if ((src->type & OT_GPREG) && !(src->type & OT_MEMORY) && src->extended) rex |= 0x01; // B bit
+		data[l++] = rex;
+	}
+	data[l++] = 0x0f;
+	// select opcode byte from mnemonic
+	ut8 opc = (!strcmp (op->mnemonic, "lzcnt")) ? 0xbd : 0xbc;
+	data[l++] = opc;
+	if (src->type & OT_MEMORY) {
+		int base = src->regs[0];
+		int disp = (int)(src->offset * src->offset_sign);
+		int mod = 0;
+		if (base == X86R_UNDEFINED) {
+			data[l++] = (ut8)(0x00 | ((dst->reg & 7) << 3) | 5);
+			data[l++] = (ut8)disp;
+			data[l++] = (ut8)(disp >> 8);
+			data[l++] = (ut8)(disp >> 16);
+			data[l++] = (ut8)(disp >> 24);
+			return l;
+		}
+		if (disp != 0) {
+			mod = (disp >= -128 && disp <= 127) ? 1 : 2;
+		}
+		data[l++] = (ut8)((mod << 6) | ((dst->reg & 7) << 3) | (base & 7));
+		if (base == X86R_ESP) {
+			data[l++] = 0x24;
+		}
+		if (mod) {
+			data[l++] = (ut8)disp;
+			if (mod == 2) {
+				data[l++] = (ut8)(disp >> 8);
+				data[l++] = (ut8)(disp >> 16);
+				data[l++] = (ut8)(disp >> 24);
+			}
+		}
+	} else {
+		data[l++] = (ut8)(0xC0 | ((dst->reg & 7) << 3) | (src->reg & 7));
+	}
+	return l;
+}
+
 static int process_16bit_group_1(RArchSession *a, ut8 *data, const Opcode *op, int op1) {
 	is_valid_registers (op);
 	int l = 0;
@@ -4780,6 +4899,9 @@ static const LookupTable oplookup[] = {
 	{ "shlx", 0, &opshiftx, 0},
 	{ "shrx", 0, &opshiftx, 0},
 	{ "sarx", 0, &opshiftx, 0},
+	{ "lzcnt", 0, &opcntz, 0},
+	{ "tzcnt", 0, &opcntz, 0},
+	{ "popcnt", 0, &oppopcnt, 0},
 	{ "sidt", 0, &opsidt, 0},
 	{ "sldt", 0, &opsldt, 0},
 	{ "smsw", 0, &opsmsw, 0},
