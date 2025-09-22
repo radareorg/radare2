@@ -6065,6 +6065,65 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		ao->o = o;
 		return 1;
 	}
+	/* ARM-state PLD (preload data) */
+	if (r_str_startswith (ao->op, "pld")) {
+		/* Expect forms:
+		 *  - pld [Rn, #imm]
+		 *  - pld [Rn, Rm]
+		 */
+		if (!ao->a[0]) {
+			return 0;
+		}
+		/* Immediate form */
+		if (ao->a[1]) {
+			int rn = getregmemstart (ao->a[0]);
+			int imm = getnummemend (ao->a[1]);
+			if (!err) {
+				if (rn < 0 || rn > 15 || imm < -4095 || imm > 4095) {
+					return 0;
+				}
+				ut8 b3 = 0xF5;
+				ut8 b2 = (imm >= 0) ? 0xD0 : 0x50;
+				if (imm < 0) {
+					imm = -imm;
+				}
+				ut8 b1 = 0xF0 | ((imm >> 8) & 0xF);
+				ut8 b0 = imm & 0xFF;
+				b2 |= (rn & 0xF);
+				/* Swap to match test byte order */
+				ut32 o = ((ut32)b3) | (((ut32)b2) << 8) | (((ut32)b1) << 16) | (((ut32)b0) << 24);
+				ao->o = o;
+				return 1;
+			}
+			/* Register form */
+			err = false;
+			int rm = getregmemend (ao->a[1]);
+			int rn2 = getregmemstart (ao->a[0]);
+			if (err || rm < 0 || rm > 15 || rn2 < 0 || rn2 > 15) {
+				return 0;
+			}
+			ut8 b3 = 0xF7;
+			ut8 b2 = 0xD0 | (rn2 & 0xF);
+			ut8 b1 = 0xF0;
+			ut8 b0 = rm & 0xF;
+			/* Swap to match test byte order */
+			ut32 o = ((ut32)b3) | (((ut32)b2) << 8) | (((ut32)b1) << 16) | (((ut32)b0) << 24);
+			ao->o = o;
+			return 1;
+		}
+		/* pld [Rn] alias for immediate 0 */
+		int rn = getregmemstartend (ao->a[0]);
+		if (rn < 0 || rn > 15) {
+			return 0;
+		}
+		{
+			ut8 b3 = 0xF5, b2 = 0xD0 | (rn & 0xF), b1 = 0xF0, b0 = 0x00;
+			/* Swap to match test byte order */
+			ut32 o = ((ut32)b3) | (((ut32)b2) << 8) | (((ut32)b1) << 16) | (((ut32)b0) << 24);
+			ao->o = o;
+		}
+		return 1;
+	}
 	for (i = 0; ops[i].name; i++) {
 		if (!strncmp (ao->op, ops[i].name, strlen (ops[i].name))) {
 			/* This can be useful when handling cases such as blt or ble
