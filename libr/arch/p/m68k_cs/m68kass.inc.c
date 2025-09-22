@@ -1,4 +1,4 @@
-/* radare2 - MIT - Copyright 2024 - pancake */
+/* radare2 - MIT - Copyright 2024-2025 - pancake */
 
 #include <r_util.h>
 
@@ -252,6 +252,15 @@ static bool parse_ea(const char *tok, EA *ea) {
 }
 
 // Implement assembler functions for each instruction
+static int assemble_reset(char tokens[][256], int num_tokens, ut8 *buf, int size, int size_code) {
+	if (size < 2) {
+		return 0; // Cannot assemble, buffer too small
+	}
+	buf[0] = 0x4e;
+	buf[1] = 0x70;
+	return 2;
+}
+
 static int assemble_nop(char tokens[][256], int num_tokens, ut8 *buf, int size, int size_code) {
 	if (size < 2) {
 		return 0; // Cannot assemble, buffer too small
@@ -989,6 +998,7 @@ static int assemble_ror(char tokens[][256], int num_tokens, ut8 *buf, int size, 
 // Global array of instructions
 static Instruction instruction_set[] = {
 	{ "NOP", assemble_nop },
+	{ "RESET", assemble_reset },
 	{ "MOVEQ", assemble_moveq },
 	{ "MOVE", assemble_move },
 	{ "ADDQ", assemble_addq },
@@ -1070,32 +1080,6 @@ static inline int m68kass(const char *instruction_str, ut8 *buf, int size) {
 	}
 	norm[ni] = '\0';
 
-	// First, try exact patterns used by tests (ensures correctness for now)
-	struct Map {
-		const char *k;
-		const ut8 *v;
-		int l;
-	};
-	static const ut8 b_4e70[] = { 0x4e, 0x70 };
-	static const ut8 b_4e71[] = { 0x4e, 0x71 };
-
-	static const struct Map map[] = {
-		{ "reset", b_4e70, sizeof b_4e70 },
-		{ "nop", b_4e71, sizeof b_4e71 },
-		{ NULL, NULL, 0 }
-	};
-
-	for (i = 0; map[i].k; i++) {
-		if (!strcmp (norm, map[i].k)) {
-			if (size < map[i].l) {
-				return 0;
-			}
-			memcpy (buf, map[i].v, map[i].l);
-			return map[i].l;
-		}
-	}
-
-	// TODO use r_str_split_list ()
 	// Tokenize the instruction string
 	char tokens[10][256]; // Up to 10 tokens
 	int num_tokens = tokenize (instr_upper, tokens, 10);
