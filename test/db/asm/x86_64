@@ -1321,3 +1321,4 @@ ad "add r8, 3" 4983c003
 ad "add r10, 4" 4983c204
 ad "mov rax, qword [rip + 0x17792]" 488b0592770100
 a "mov rdx, [0x17792+rip]" 488b0592770100
+ad "inc qword [rcx]" 48ff01
