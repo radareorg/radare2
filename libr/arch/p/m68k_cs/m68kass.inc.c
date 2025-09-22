@@ -345,7 +345,7 @@ static int assemble_btst(char tokens[][256], int num_tokens, ut8* buf, int size)
 
 
 // Global array of instructions
-Instruction instruction_set[] = {
+static Instruction instruction_set[] = {
 	{ "NOP",   assemble_nop },
 	{ "MOVEQ", assemble_moveq },
 	{ "ADDQ",  assemble_addq },
@@ -361,7 +361,7 @@ Instruction instruction_set[] = {
 };
 
 // Main assemble_instruction function
-R_IPI int m68kass(const char* instruction_str, ut8* buf, int size) {
+static inline int m68kass(const char* instruction_str, ut8* buf, int size) {
 	// Convert instruction_str to uppercase
 	char instr_upper[256];
 	int i = 0;

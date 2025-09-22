@@ -1,8 +1,11 @@
-/* radare - LGPL - Copyright 2016-2024 - pancake */
+/* radare - LGPL - Copyright 2016-2025 - pancake */
 
 #include <r_arch.h>
 #include "../../include/opcode/m68k.h"
 #include "../../include/disas-asm.h"
+// Include the lightweight assembler implementation so the gnu arch plugin can
+// also encode instructions using the same assembler used by the cs plugin.
+#include "../m68k_cs/m68kass.inc.c"
 
 typedef struct {
 	const char *name;
@@ -113,6 +116,17 @@ static int info(RArchSession *as, ut32 q) {
 	return 0;
 }
 
+static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
+	R_RETURN_VAL_IF_FAIL (s && op, false);
+	ut8 data[32] = {0};
+	const int len = m68kass (op->mnemonic, data, sizeof (data));
+	if (len > 0) {
+		r_anal_op_set_bytes (op, op->addr, data, len);
+		return true;
+	}
+	return false;
+}
+
 const RArchPlugin r_arch_plugin_m68k_gnu = {
 	.meta = {
 		.name = "m68k.gnu",
@@ -126,6 +140,7 @@ const RArchPlugin r_arch_plugin_m68k_gnu = {
 	.bits = R_SYS_BITS_PACK1 (32),
 	.endian = R_SYS_ENDIAN_BIG,
 	.decode = &decode,
+	.encode = encode,
 	.info = &info,
 };
 

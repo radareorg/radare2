@@ -1,8 +1,8 @@
-/* radare2 - LGPL - Copyright 2015-2024 - pancake */
+/* radare2 - LGPL - Copyright 2015-2025 - pancake */
 
 #include <r_arch.h>
 #include <capstone/capstone.h>
-#include "m68kass.c"
+#include "m68kass.inc.c"
 
 #ifdef CAPSTONE_M68K_H
 #define CAPSTONE_HAS_M68K 1
