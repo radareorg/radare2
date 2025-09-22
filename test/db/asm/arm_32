@@ -355,6 +355,8 @@ ad "mrs r0, apsr" 00000fe1
 ad "mrs r1, apsr" 00100fe1
 ad "mrs r1, spsr" 00104fe1
 ad "mrsne r2, spsr" 00204f11
+ad "pld [r0, 0x20]" 20f0d0f5
+ad "pld [r1, r2]" 02f0d1f7
 ad "mrs r0, apsr" 00000fe1
 ad "mrs r1, apsr" 00100fe1
 ad "mrs r1, spsr" 00104fe1
