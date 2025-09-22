@@ -5,47 +5,36 @@
 .Nm r_lang
 .Nd Scripting language support library for radare2
 .Sh SYNOPSIS
+.Pp
+Use this section to show the public header and the basic include needed to build
+against the r_lang API; it gives the minimal compile-time view of the library.
+.Pp
 .In r_lang.h
-.Ft struct r_lang_t *
-.Fn r_lang_new "void"
-.Ft void
-.Fn r_lang_free "struct r_lang_t *lang"
-.Ft bool
-.Fn r_lang_use "struct r_lang_t *lang" "const char *name"
-.Ft bool
-.Fn r_lang_run "struct r_lang_t *lang" "const char *code" "int len"
-.Ft bool
-.Fn r_lang_run_string "struct r_lang_t *lang" "const char *code"
-.Ft bool
-.Fn r_lang_run_file "struct r_lang_t *lang" "const char *file"
-.Ft bool
-.Fn r_lang_prompt "struct r_lang_t *lang"
-.Ft bool
-.Fn r_lang_set_argv "struct r_lang_t *lang" "int argc" "char **argv"
-.Ft void
-.Fn r_lang_set_user_ptr "struct r_lang_t *lang" "void *user"
-.Ft bool
-.Fn r_lang_define "struct r_lang_t *lang" "const char *type" "const char *name" "void *value"
-.Ft void
-.Fn r_lang_undef "struct r_lang_t *lang" "const char *name"
-.Ft struct r_lang_plugin_t *
-.Fn r_lang_get_by_name "struct r_lang_t *lang" "const char *name"
-.Ft struct r_lang_plugin_t *
-.Fn r_lang_get_by_extension "struct r_lang_t *lang" "const char *ext"
+.Pp
 .Sh DESCRIPTION
+.Pp
+Readers will find here a concise overview of the goals and structure of the
+r_lang module: a plugin-driven runtime that lets radare2 host and run scripts
+and REPLs from multiple languages.
+.Pp
 The
 .Nm r_lang
 library provides scripting language support for radare2 through a plugin-based system.
 It allows executing code in various programming languages within the radare2 environment,
 enabling automation, custom commands, and extensions.
 .Pp
-The core structure is
+At the heart of the API is
 .Vt struct r_lang_t ,
-which manages loaded language plugins and execution sessions.
-Each language is implemented as a plugin (
-.Vt struct r_lang_plugin_t )
-with callbacks for initialization, execution, and cleanup.
+which manages loaded language plugins, user pointers and execution sessions.
+Language implementations register a
+.Vt struct r_lang_plugin_t ,
+supplying callbacks for initialization, running code, running files, interactive
+prompts and cleanup.
 .Sh INITIALIZATION
+.Pp
+This section documents how to create and destroy an r_lang handle and how to
+associate runtime state (typically a pointer to an RCore instance) with it.
+.Pp
 Create a new language instance:
 .Bd -literal -offset indent
 RLang *lang = r_lang_new();
@@ -61,6 +50,11 @@ Free when done:
 r_lang_free(lang);
 .Ed
 .Sh EXECUTION
+.Pp
+Use these calls to select a language plugin, execute code buffers, or invoke
+script files. The typical host (radare2) selects a plugin then calls one of the
+run helpers shown below.
+.Pp
 Select a language:
 .Bd -literal -offset indent
 r_lang_use(lang, "qjs"); // QuickJS JavaScript
@@ -82,17 +76,30 @@ Execute script file:
 r_lang_run_file(lang, "script.js");
 .Ed
 .Sh INTERACTIVE MODE
+.Pp
+Interactive features (REPLs) are implemented per-plugin and can be entered via
+the generic prompt helper; this is the place to learn how to start a language
+REPL from the embedding application.
+.Pp
 Start interactive prompt:
 .Bd -literal -offset indent
 r_lang_prompt(lang); // Interactive REPL
 .Ed
 .Sh ARGUMENTS
+.Pp
+Scripts that expect positional arguments receive them via the argv helpers; the
+API lets hosts set argc/argv before invoking a file or an entry callback.
+.Pp
 Set command-line arguments for scripts:
 .Bd -literal -offset indent
 char *argv[] = {"script.js", "arg1", "arg2"};
 r_lang_set_argv(lang, 3, argv);
 .Ed
 .Sh DEFINITIONS
+.Pp
+Use the definitions API to expose host pointers and typed variables to language
+runtimes; the host can add and remove named definitions visible to scripts.
+.Pp
 Define variables accessible from scripts:
 .Bd -literal -offset indent
 int value = 42;
@@ -104,32 +111,28 @@ Remove definition:
 r_lang_undef(lang, "my_var");
 .Ed
 .Sh LANGUAGES
-Supported scripting languages include:
+.Pp
+This section highlights notable, supported language entry points rather than
+exhaustively listing every plugin. It focuses on the two integration styles
+commonly used by radare2: an embedded VM and native C plugin/script support.
+.Pp
 .Bl -bullet
 .It
-JavaScript (QuickJS)
+JavaScript: a native QuickJS (`qjs`) plugin is available and is the canonical
+embedded scripting VM inside radare2. Use `r_lang_use(..., "qjs")` to select
+it and `r_lang_run_string` / `r_lang_run_file` to execute code.
 .It
-C/C++
-.It
-Rust
-.It
-Go
-.It
-Zig
-.It
-Vala
-.It
-Dart
-.It
-Nim
-.It
-TypeScript
-.It
-Assembly
-.It
-And others
+C scripts: the C plugin compiles a `.c` file into a shared library, opens the
+resulting library, resolves an `entry` symbol and calls it with the current
+`RCore *` (stored in `r_lang->user`) and the configured `argc, argv`. The C
+entry must have the signature `void entry(RCore *core, int argc, const char **argv)`.
 .El
 .Sh EXAMPLES
+.Pp
+The examples below show common usage patterns observed in the radare2 core:
+invoking QuickJS code, running inline expressions via the `#!` hashbang helper,
+and how C scripts are compiled and invoked with the host `RCore` pointer.
+.Pp
 Execute JavaScript code:
 .Bd -literal -offset indent
 #include <r_lang.h>
@@ -160,6 +163,36 @@ r_lang_use(lang, "qjs");
 r_lang_run_string(lang, "console.log('Value: ' + global_var);");
 
 r_lang_free(lang);
+.Ed
+.Pp
+Execute script file:
+.Bd -literal -offset indent
+r_lang_run_file(lang, "script.js");
+.Ed
+.Pp
+Hashbang and `-e` usage (used by the `#!` command in `libr/core/cmd_hash.inc.c`):
+.Bd -literal -offset indent
+// the command handler implemented in libr/core/cmd_hash.inc.c parses `#!` lines
+// and: selects the requested plugin (r_lang_get_by_name/r_lang_use_plugin),
+// sets argv via r_lang_set_argv when file arguments are present, and either
+// runs a file with r_lang_run_file or runs an expression with r_lang_run_string
+// when `-e` is passed; expressions prefixed with `base64:` are decoded first.
+.Ed
+.Pp
+C script example (how the C plugin runs code):
+.Bd -literal -offset indent
+/* example.c */
+#include <r_core.h>
+
+void entry(RCore *core, int argc, const char **argv) {
+    char *s = r_core_cmd_str (core, "?E hello world");
+    printf("%s", s);
+    free (s);
+}
+
+/* The C plugin will compile this file to a shared library and call `entry` with
+   the host RCore pointer (r_lang->user) and any argv configured via
+   r_lang_set_argv(). */
 .Ed
 .Sh SEE ALSO
 .Xr r_core 3 ,

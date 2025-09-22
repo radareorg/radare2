@@ -6,34 +6,6 @@
 .Nd Radare2 Input/Output Library API
 .Sh SYNOPSIS
 .In r_io.h
-.Ft RIO *
-.Fn r_io_new "void"
-.Ft void
-.Fn r_io_init "RIO *io"
-.Ft void
-.Fn r_io_free "RIO *io"
-.Ft RIODesc *
-.Fn r_io_open "RIO *io" "const char *uri" "int perm" "int mode"
-.Ft bool
-.Fn r_io_close "RIO *io"
-.Ft bool
-.Fn r_io_read_at "RIO *io" "ut64 addr" "ut8 *buf" "int len"
-.Ft bool
-.Fn r_io_write_at "RIO *io" "ut64 addr" "const ut8 *buf" "int len"
-.Ft ut64
-.Fn r_io_seek "RIO *io" "ut64 offset" "int whence"
-.Ft RIOMap *
-.Fn r_io_map_add "RIO *io" "int fd" "int flags" "ut64 delta" "ut64 addr" "ut64 size"
-.Ft bool
-.Fn r_io_map_del "RIO *io" "ut32 id"
-.Ft RIOBank *
-.Fn r_io_bank_new "const char *name"
-.Ft bool
-.Fn r_io_bank_add "RIO *io" "RIOBank *bank"
-.Ft bool
-.Fn r_io_cache_write_at "RIO *io" "ut64 addr" "const ut8 *buf" "int len"
-.Ft bool
-.Fn r_io_cache_read_at "RIO *io" "ut64 addr" "ut8 *buf" "int len"
 .Sh DESCRIPTION
 The
 .Nm r_io

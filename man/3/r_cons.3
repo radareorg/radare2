@@ -6,42 +6,7 @@
 .Nd Radare2 Console Input/Output Library API
 .Sh SYNOPSIS
 .In r_cons.h
-.Ft RCons *
-.Fn r_cons_new "void"
-.Ft void
-.Fn r_cons_free "RCons *cons"
-.Ft int
-.Fn r_cons_printf "RCons *cons" "const char *format" "..."
-.Ft void
-.Fn r_cons_print "RCons *cons" "const char *str"
-.Ft void
-.Fn r_cons_flush "RCons *cons"
-.Ft int
-.Fn r_cons_readchar "RCons *cons"
-.Ft int
-.Fn r_cons_fgets "RCons *cons" "char *buf" "int len" "int argc" "const char **argv"
-.Ft void
-.Fn r_cons_clear "RCons *cons"
-.Ft void
-.Fn r_cons_gotoxy "RCons *cons" "int x" "int y"
-.Ft RColor
-.Fn r_cons_pal_get "RCons *cons" "const char *key"
-.Ft bool
-.Fn r_cons_pal_set "RCons *cons" "const char *key" "const char *val"
-.Ft RConsCanvas *
-.Fn r_cons_canvas_new "RCons *cons" "int w" "int h" "int flags"
-.Ft void
-.Fn r_cons_canvas_free "RConsCanvas *c"
-.Ft void
-.Fn r_cons_canvas_write "RConsCanvas *c" "const char *_s"
-.Ft void
-.Fn r_cons_grep "RCons *cons" "const char *grep"
-.Ft RLine *
-.Fn r_line_new "RCons *cons"
-.Ft void
-.Fn r_line_free "RLine *line"
-.Ft const char *
-.Fn r_line_readline "RCons *cons"
+.Pp
 .Sh DESCRIPTION
 The
 .Nm r_cons
@@ -64,171 +29,230 @@ Color palettes support theming and syntax highlighting.
 Grep functionality filters and processes output.
 .El
 .Sh INITIALIZATION
+.Pp
+Initialization functions create, clone and free console contexts and ancillary state used throughout radare2; these are intended to establish a working `RCons` instance (or duplicate its execution context) before any I/O or visual operations are performed.
+.Pp
 .Ft RCons *
 .Fn r_cons_new "void"
 .Pp
 Creates a new console context.
+.Pp
 .Ft void
 .Fn r_cons_free "RCons *cons"
 .Pp
 Frees a console context.
+.Pp
 .Ft RCons *
 .Fn r_cons_singleton "void"
 .Pp
 Returns the global console singleton instance.
 .Sh OUTPUT
+.Pp
+Output helpers format, buffer and emit text to the active console. They are the primary API used by radare2 command handlers to present results, so they are designed to be safe for repeated, high-frequency use and to cooperate with grep/pager/visual layers.
+.Pp
 .Ft int
 .Fn r_cons_printf "RCons *cons" "const char *format" "..."
 .Pp
 Prints formatted text to the console.
+.Pp
 .Ft void
 .Fn r_cons_print "RCons *cons" "const char *str"
 .Pp
 Prints a string to the console.
+.Pp
 .Ft void
 .Fn r_cons_println "RCons *cons" "const char *str"
 .Pp
 Prints a string followed by a newline.
+.Pp
 .Ft void
 .Fn r_cons_flush "RCons *cons"
 .Pp
 Flushes the console output buffer.
+.Pp
 .Ft void
 .Fn r_cons_newline "RCons *cons"
 .Pp
 Prints a newline character.
 .Sh INPUT
+.Pp
+Input helpers provide both simple blocking reads and richer prompts with optional editing; these are used by interactive commands and the visual layer to collect user keystrokes or whole lines, and support timeouts and pushed input for remote/automated workflows.
+.Pp
 .Ft int
 .Fn r_cons_readchar "RCons *cons"
 .Pp
 Reads a single character from input.
+.Pp
 .Ft int
 .Fn r_cons_fgets "RCons *cons" "char *buf" "int len" "int argc" "const char **argv"
 .Pp
 Reads a line from input into the buffer.
+.Pp
 .Ft char *
 .Fn r_cons_input "RCons *cons" "const char *msg"
 .Pp
 Prompts for user input with a message.
+.Pp
 .Ft bool
 .Fn r_cons_yesno "RCons *cons" "int def" "const char *fmt" "..."
 .Pp
 Prompts for a yes/no answer with default value.
 .Sh CONTROL
+.Pp
+Control routines manipulate the terminal state (cursor, screen, raw mode, mouse and similar settings). They are used to prepare the terminal for visual rendering or to temporarily change behaviour while a command runs.
+.Pp
 .Ft void
 .Fn r_cons_clear "RCons *cons"
 .Pp
 Clears the console screen.
+.Pp
 .Ft void
 .Fn r_cons_gotoxy "RCons *cons" "int x" "int y"
 .Pp
 Moves the cursor to the specified position.
+.Pp
 .Ft void
 .Fn r_cons_show_cursor "RCons *cons" "int cursor"
 .Pp
 Shows or hides the cursor.
+.Pp
 .Ft void
 .Fn r_cons_set_raw "RCons *cons" "bool is_raw"
 .Pp
 Sets raw mode for direct input handling.
 .Sh COLORS
+.Pp
+Color management APIs maintain palettes and convert palette entries into escape sequences; these functions are used by output and canvas codepaths to apply consistent theming and highlighting across the UI.
+.Pp
 .Ft RColor
 .Fn r_cons_pal_get "RCons *cons" "const char *key"
 .Pp
 Gets a color from the palette by key.
+.Pp
 .Ft bool
 .Fn r_cons_pal_set "RCons *cons" "const char *key" "const char *val"
 .Pp
 Sets a color in the palette.
+.Pp
 .Ft void
 .Fn r_cons_pal_init "RCons *cons"
 .Pp
 Initializes the color palette.
+.Pp
 .Ft void
 .Fn r_cons_pal_random "RCons *cons"
 .Pp
 Sets random colors in the palette.
+.Pp
 .Ft char *
 .Fn r_cons_rgb_str "RCons *cons" "char *outstr" "size_t sz" "RColor *rcolor"
 .Pp
 Converts a color to ANSI escape sequence string.
 .Sh CANVAS
+.Pp
+Canvas APIs implement an off-screen textual drawing surface that can be composed and flushed to the console; the visual subsystem and custom UI widgets use canvases to build complex layouts without scattering escape sequences through business logic.
+.Pp
 .Ft RConsCanvas *
 .Fn r_cons_canvas_new "RCons *cons" "int w" "int h" "int flags"
 .Pp
 Creates a new canvas with specified dimensions.
+.Pp
 .Ft void
 .Fn r_cons_canvas_free "RConsCanvas *c"
 .Pp
 Frees a canvas.
+.Pp
 .Ft void
 .Fn r_cons_canvas_write "RConsCanvas *c" "const char *_s"
 .Pp
 Writes text to the canvas.
+.Pp
 .Ft void
 .Fn r_cons_canvas_gotoxy "RConsCanvas *c" "int x" "int y"
 .Pp
 Moves the canvas cursor.
+.Pp
 .Ft void
 .Fn r_cons_canvas_box "RConsCanvas *c" "int x" "int y" "int w" "int h" "const char *color"
 .Pp
 Draws a box on the canvas.
+.Pp
 .Ft void
 .Fn r_cons_canvas_line "RConsCanvas *c" "int x" "int y" "int x2" "int y2" "RCanvasLineStyle *style"
 .Pp
 Draws a line on the canvas.
 .Sh GREP
+.Pp
+Grep helpers provide filtering and tokenization of textual output so command code can set filters that limit what is displayed; these are typically applied before printing long command outputs to the console.
+.Pp
 .Ft void
 .Fn r_cons_grep "RCons *cons" "const char *grep"
 .Pp
 Sets grep filtering for output.
+.Pp
 .Ft void
 .Fn r_cons_grep_expression "RCons *cons" "const char *str"
 .Pp
 Sets a grep expression.
+.Pp
 .Ft char *
 .Fn r_cons_grep_strip "char *cmd" "const char *quotestr"
 .Pp
 Strips grep commands from a string.
 .Sh LINE EDITING
+.Pp
+Line-editing utilities expose an editable input line with history and basic editing shortcuts; they are used by interactive modes that accept commands from the user and by higher-level shells embedded in radare2.
+.Pp
 .Ft RLine *
 .Fn r_line_new "RCons *cons"
 .Pp
 Creates a new line editor.
+.Pp
 .Ft void
 .Fn r_line_free "RLine *line"
 .Pp
 Frees a line editor.
+.Pp
 .Ft const char *
 .Fn r_line_readline "RCons *cons"
 .Pp
 Reads a line with editing capabilities.
+.Pp
 .Ft void
 .Fn r_line_set_prompt "RLine *line" "const char *prompt"
 .Pp
 Sets the prompt for line input.
+.Pp
 .Ft bool
 .Fn r_line_hist_add "RLine *line" "const char *text"
 .Pp
 Adds a line to history.
 .Sh PIXEL
+.Pp
+Pixel buffer APIs offer a small raster-like buffer for representing monochrome or low-resolution images that may be converted to character graphics and flushed to the console by the pixel renderer.
+.Pp
 .Ft RConsPixel *
 .Fn r_cons_pixel_new "int w" "int h"
 .Pp
 Creates a new pixel buffer.
+.Pp
 .Ft void
 .Fn r_cons_pixel_free "RConsPixel *p"
 .Pp
 Frees a pixel buffer.
+.Pp
 .Ft void
 .Fn r_cons_pixel_set "RConsPixel *p" "int x" "int y" "ut8 v"
 .Pp
 Sets a pixel value.
+.Pp
 .Ft void
 .Fn r_cons_pixel_flush "RCons *cons" "RConsPixel *p" "int sx" "int sy"
 .Pp
 Flushes the pixel buffer to console.
 .Sh EXAMPLES
+.Pp
+Examples below show common usage patterns observed across `libr/core/` and the `libr/cons` implementation, including context cloning for background tasks, switching to raw mode for visual rendering, and basic printing/reading flows.
 Basic output:
 .Bd -literal
 RCons *cons = r_cons_new();
