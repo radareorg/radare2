@@ -112,6 +112,9 @@ d "js 6" 0f8800000000
 d "lar eax, word [eax]" 0f0200
 d "call [0]" ff1c2500000000
 d "call [eax]" ff18
+ad "call dword [0x11223344]" ff1544332211
+ad "call dword [eax]" ff10
+ad "call dword [ebp + 0x10]" ff5510
 d "lddqu xmm0, xmmword [eax]" f20ff000
 d "ldmxcsr dword [eax]" 0fae10
 d "lds eax, [eax]" c500

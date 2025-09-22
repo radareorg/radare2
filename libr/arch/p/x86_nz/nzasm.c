@@ -801,9 +801,7 @@ static int opcall(RArchSession *a, ut8 *data, const Opcode *op) {
 		mod = 3;
 		data[l++] = mod << 6 | 2 << 3 | op->operands[0].reg;
 	} else if (op->operands[0].type & OT_MEMORY) {
-		if (op->operands[0].regs[0] == X86R_UNDEFINED) {
-			return -1;
-		}
+		// Memory-indirect CALL: handles [reg + disp], [disp32], and RIP-relative (x86-64)
 		if (a->config->bits == 64 && op->operands[0].extended) {
 			data[l++] = 0x41;
 		}
@@ -815,8 +813,9 @@ static int opcall(RArchSession *a, ut8 *data, const Opcode *op) {
 				mod = 2;
 			}
 		}
-		const int reg0 = op->operands[0].regs[0];
-		if (reg0 == 8) { // call [rip+x]
+		int reg0 = op->operands[0].regs[0];
+		// Special case: RIP-relative in 64-bit: call [rip+disp32]
+		if (reg0 == 8) { // X86R_RIP
 			mod = 2;
 			data[l++] = 0x15;
 			data[l++] = offset;
@@ -825,7 +824,26 @@ static int opcall(RArchSession *a, ut8 *data, const Opcode *op) {
 			data[l++] = offset >> 24;
 			return l;
 		}
-		data[l++] = mod << 6 | 2 << 3 | op->operands[0].regs[0];
+		// Absolute disp32 (no base register): call dword [0xNNNNNNNN]
+		if (reg0 == X86R_UNDEFINED) {
+			// Only valid/expected in 32-bit mode; reject on 64-bit
+			if (a->config->bits == 64) {
+				return -1;
+			}
+			mod = 0;
+			data[l++] = (mod << 6) | (2 << 3) | 5; // rm=101b -> disp32
+			data[l++] = offset;
+			data[l++] = offset >> 8;
+			data[l++] = offset >> 16;
+			data[l++] = offset >> 24;
+			return l;
+		}
+		// General [reg + disp] addressing
+		data[l++] = (mod << 6) | (2 << 3) | reg0;
+		// SIB needed for ESP/RSP base
+		if (reg0 == X86R_ESP) {
+			data[l++] = 0x24;
+		}
 		if (mod) {
 			data[l++] = offset;
 			if (mod == 2) {
