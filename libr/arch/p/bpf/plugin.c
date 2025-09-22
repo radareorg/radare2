@@ -430,6 +430,7 @@ typedef char bpf_token[TOKEN_MAX_LEN + 1];
 typedef struct bpf_asm_parser {
 	const char *str;
 	RStrBuf *token;
+	bool ext_tokens; // enable extra single-char tokens for eBPF (e.g., ',')
 } BPFAsmParser;
 
 static void token_fini(BPFAsmParser *t) {
@@ -458,9 +459,8 @@ static const char *trim_input(const char *p) {
 	return NULL;
 }
 
-static int g_bpf_ext_tokens = 0;
-static inline bool is_single_char_token(char c) {
-	if (g_bpf_ext_tokens) {
+static inline bool is_single_char_token(BPFAsmParser *t, char c) {
+	if (t && t->ext_tokens) {
 		return c == '(' || c == ')' || c == '[' || c == ']' || c == ',';
 	}
 	return c == '(' || c == ')' || c == '[' || c == ']';
@@ -490,7 +490,7 @@ static const char *token_next(BPFAsmParser *t) {
 	}
 	t->token = token;
 
-	if (is_single_char_token (t->str[0])) {
+	if (is_single_char_token (t, t->str[0])) {
 		r_strbuf_append_n (token, t->str++, 1);
 		return r_strbuf_get (token);
 	}
@@ -499,7 +499,7 @@ static const char *token_next(BPFAsmParser *t) {
 	// Use isgraph instead of isprint because the latter considers ' ' printable
 	int i;
 	for (i = 0; i < TOKEN_MAX_LEN; i++) {
-		if (!isgraph (t->str[0]) || is_single_char_token (t->str[0]) || (is_arithmetic (t->str[0]) && i != 0)) {
+		if (!isgraph (t->str[0]) || is_single_char_token (t, t->str[0]) || (is_arithmetic (t->str[0]) && i != 0)) {
 			break;
 		}
 		r_strbuf_append_n (token, t->str++, 1);
@@ -814,10 +814,8 @@ static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 	ut8 ebuf[16] = {0};
 	int elen = 0;
 
-	int prev = g_bpf_ext_tokens;
-	g_bpf_ext_tokens = (dialect == R_BPF_DIALECT_EXTENDED);
+	p.ext_tokens = (dialect == R_BPF_DIALECT_EXTENDED);
 	bool ret = parse_instruction (&f, &p, op->addr, dialect, ebuf, &elen);
-	g_bpf_ext_tokens = prev;
 	token_fini (&p);
 	if (ret) {
 		if (dialect == R_BPF_DIALECT_EXTENDED) {

@@ -133,10 +133,6 @@ static bool parse_label_value(ut64 *out, const char *t) {
 	char *t2; *out = strtoul (t, &t2, 0); return t != t2;
 }
 
-static bool parse_label(RBpfSockFilter *f, const char *t) {
-	ut64 k = 0; bool r = parse_label_value (&k, t); f->k = k; return r;
-}
-
 static bool parse_jump_targets(RBpfSockFilter *f, int opc, const bpf_token *op, ut64 pc) {
 	PARSE_NEED (opc >= 1);
 	PARSE_NEED (parse_k_or_x (f, op[0]));
