@@ -160,6 +160,132 @@ static int is_al_reg(const Operand *op) {
 
 static int oprep(RArchSession *a, ut8 *data, const Opcode *op);
 
+// Minimal VEX.3 prefix emission for selected BMI2 GPR ops (SHLX/SHRX/SARX)
+// Encodes: VEX.NDS.LZ.0F38.Wx with computed R', X', B', vvvv'
+static int emit_vex3_prefix_bmi2(ut8 *data, int w, int pp, int vreg, const Operand *dst, const Operand *src) {
+	int l = 0;
+	// VEX 3-byte: C4, RXBmmmmm, WvvvvLpp
+	data[l++] = 0xC4;
+	// m-mmmm = 0x02 -> 0F 38 map
+	const int mmmmm = 0x02;
+	// R' X' B' are inverted bits
+	int R = (dst && (dst->extended)) ? 1 : 0;
+	int B = 0;
+	int X = 0;
+	// Determine B and X from src (r/m side) when it's a GP reg
+	if (src) {
+		if ((src->type & OT_GPREG) && !(src->type & OT_MEMORY)) {
+			B = src->extended ? 1 : 0;
+		} else {
+			// For memory addressing, this assembler doesn't track per-base/index extension flags
+			// Use 0 (no extension) which is fine for low regs; extended bases won't be supported here.
+			B = 0;
+			X = 0;
+		}
+	}
+	ut8 vex2 = ((R ? 0 : 1) << 7) | ((X ? 0 : 1) << 6) | ((B ? 0 : 1) << 5) | (mmmmm & 0x1f);
+	data[l++] = vex2;
+	// vvvv is first source (count register), encode 1's complement in bits 6..3
+	int vvvv = vreg & 0x0f; // include high bit via extended flag in caller
+	ut8 vex3 = ((w & 1) << 7) | (((~vvvv) & 0x0f) << 3) | (0 << 2) | (pp & 3);
+	data[l++] = vex3;
+	return l;
+}
+
+// Encode SHLX/SHRX/SARX (BMI2):
+//   SHLX r32a, r/m32, r32b  => VEX.NDS.LZ.0F38.W0 F7 /r
+//   SHRX r32a, r/m32, r32b  => VEX.NDS.LZ.0F38.W0 F7 /r (pp distinguishes)
+//   SARX r32a, r/m32, r32b  => VEX.NDS.LZ.0F38.W0 F7 /r (pp distinguishes)
+// Same for r64 with W1. We use VEX.pp to distinguish the variants:
+//   SHLX: pp = 0 (none)
+//   SARX: pp = 2 (F3)
+//   SHRX: pp = 3 (F2)
+static int opshiftx(RArchSession *a, ut8 *data, const Opcode *op) {
+	if (op->operands_count != 3) {
+		return -1;
+	}
+	// Validate operand classes
+	const Operand *dst = &op->operands[0];
+	const Operand *src = &op->operands[1];
+	const Operand *cnt = &op->operands[2];
+	if (!(dst->type & OT_GPREG) || (dst->type & OT_MEMORY)) {
+		return -1;
+	}
+	if (!((src->type & OT_GPREG) || (src->type & OT_MEMORY))) {
+		return -1;
+	}
+	if (!(cnt->type & OT_GPREG) || (cnt->type & OT_MEMORY)) {
+		return -1;
+	}
+
+	// Size checks: only 32/64-bit are valid
+	const bool is64 = (dst->type & OT_QWORD) || (src->type & OT_QWORD) || (cnt->type & OT_QWORD);
+	if (!((dst->type & (OT_DWORD | OT_QWORD)) && (src->type & (OT_DWORD | OT_QWORD)) && (cnt->type & (OT_DWORD | OT_QWORD)))) {
+		return -1;
+	}
+
+	int l = 0;
+	int pp;
+	if (!strcmp (op->mnemonic, "shlx")) {
+		pp = 0; // no legacy prefix
+	} else if (!strcmp (op->mnemonic, "sarx")) {
+		pp = 2; // F3
+	} else if (!strcmp (op->mnemonic, "shrx")) {
+		pp = 3; // F2
+	} else {
+		return -1;
+	}
+
+	// Build VEX.3 prefix
+	int vreg = (cnt->extended ? 8 : 0) | (cnt->reg & 7);
+	l += emit_vex3_prefix_bmi2 (data + l, is64 ? 1 : 0, pp, vreg, dst, src);
+
+	// Opcode bytes: 0F 38 F7
+	data[l++] = 0x0f;
+	data[l++] = 0x38;
+	data[l++] = 0xf7;
+
+	// ModRM/SIB for (dst, src)
+	int modrm = 0;
+	if (src->type & OT_MEMORY) {
+		// Only simple [base + disp] addressing here
+		int base = src->regs[0];
+		int disp = (int)(src->offset * src->offset_sign);
+		int mod = 0;
+		if (base == X86R_UNDEFINED) {
+			// rip-relative unsupported here for VEX; use absolute disp32
+			modrm = (0 << 6) | ((dst->reg & 7) << 3) | 5;
+			data[l++] = (ut8)modrm;
+			data[l++] = (ut8)disp;
+			data[l++] = (ut8)(disp >> 8);
+			data[l++] = (ut8)(disp >> 16);
+			data[l++] = (ut8)(disp >> 24);
+			return l;
+		}
+		if (disp != 0) {
+			if (disp >= -128 && disp <= 127) mod = 1; else mod = 2;
+		}
+		modrm = (mod << 6) | ((dst->reg & 7) << 3) | (base & 7);
+		data[l++] = (ut8)modrm;
+		if (base == X86R_ESP) {
+			data[l++] = 0x24; // SIB for [esp]
+		}
+		if (mod) {
+			data[l++] = (ut8)disp;
+			if (mod == 2) {
+				data[l++] = (ut8)(disp >> 8);
+				data[l++] = (ut8)(disp >> 16);
+				data[l++] = (ut8)(disp >> 24);
+			}
+		}
+	} else {
+		// register source
+		modrm = 0xC0 | ((dst->reg & 7) << 3) | (src->reg & 7);
+		data[l++] = (ut8)modrm;
+	}
+	return l;
+}
+
 static int process_16bit_group_1(RArchSession *a, ut8 *data, const Opcode *op, int op1) {
 	is_valid_registers (op);
 	int l = 0;
@@ -4651,6 +4777,9 @@ static const LookupTable oplookup[] = {
 	{ "sgdt", 0, &opsgdt, 0},
 	{ "shl", 0, &process_group_2, 0},
 	{ "shr", 0, &process_group_2, 0},
+	{ "shlx", 0, &opshiftx, 0},
+	{ "shrx", 0, &opshiftx, 0},
+	{ "sarx", 0, &opshiftx, 0},
 	{ "sidt", 0, &opsidt, 0},
 	{ "sldt", 0, &opsldt, 0},
 	{ "smsw", 0, &opsmsw, 0},
