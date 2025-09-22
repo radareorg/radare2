@@ -38,16 +38,16 @@ static int snesDisass(int M_flag, int X_flag, ut64 pc, RAnalOp *op, const ut8 *b
 		break;
 	case SNES_OP_IMM_M:
 		if (M_flag) {
-			op->mnemonic = r_str_newf ("%s 0x%02x", s_op->name, buf[1]);
+			op->mnemonic = r_str_newf ("%s #0x%02x", s_op->name, buf[1]);
 		} else {
-			op->mnemonic = r_str_newf ("%s 0x%04x", s_op->name, ut8p_bw (buf + 1));
+			op->mnemonic = r_str_newf ("%s #0x%04x", s_op->name, ut8p_bw (buf + 1));
 		}
 		break;
 	case SNES_OP_IMM_X:
 		if (X_flag) {
-			op->mnemonic = r_str_newf ("%s 0x%02x", s_op->name, buf[1]);
+			op->mnemonic = r_str_newf ("%s #0x%02x", s_op->name, buf[1]);
 		} else {
-			op->mnemonic = r_str_newf ("%s 0x%04x", s_op->name, ut8p_bw (buf + 1));
+			op->mnemonic = r_str_newf ("%s #0x%04x", s_op->name, ut8p_bw (buf + 1));
 		}
 		break;
 	}
