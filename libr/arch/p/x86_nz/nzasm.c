@@ -226,8 +226,8 @@ static int opshiftx(RArchSession *a, ut8 *data, const Opcode *op) {
 
 	int l = 0;
 	int pp;
-    if (!strcmp (op->mnemonic, "shlx")) {
-        pp = 1; // 66 prefix (Capstone/R2 expect pp=01 for SHLX)
+	if (!strcmp (op->mnemonic, "shlx")) {
+		pp = 1; // 66 prefix (Capstone/R2 expect pp = 01 for SHLX)
 	} else if (!strcmp (op->mnemonic, "sarx")) {
 		pp = 2; // F3
 	} else if (!strcmp (op->mnemonic, "shrx")) {
@@ -240,8 +240,8 @@ static int opshiftx(RArchSession *a, ut8 *data, const Opcode *op) {
 	int vreg = (cnt->extended ? 8 : 0) | (cnt->reg & 7);
 	l += emit_vex3_prefix_bmi2 (data + l, is64 ? 1 : 0, pp, vreg, dst, src);
 
-    // Opcode byte (map is carried by VEX): F7
-    data[l++] = 0xf7;
+	// Opcode byte (map is carried by VEX): F7
+	data[l++] = 0xf7;
 
 	// ModRM/SIB for (dst, src)
 	int modrm = 0;
@@ -281,6 +281,137 @@ static int opshiftx(RArchSession *a, ut8 *data, const Opcode *op) {
 		modrm = 0xC0 | ((dst->reg & 7) << 3) | (src->reg & 7);
 		data[l++] = (ut8)modrm;
 	}
+	return l;
+}
+
+// CRC32 r{32,64}, r/m{8,16,32,64}
+static int opcrc32(RArchSession *a, ut8 *data, const Opcode *op) {
+	if (op->operands_count != 2) {
+		return -1;
+	}
+	const Operand *dst = &op->operands[0];
+	const Operand *src = &op->operands[1];
+	if (!(dst->type & OT_GPREG) || (dst->type & OT_MEMORY)) {
+		return -1;
+	}
+	// Determine src size
+	bool is8 = (src->type & OT_BYTE);
+	bool is16 = (src->type & OT_WORD);
+	bool is32 = (src->type & OT_DWORD);
+	bool is64 = (src->type & OT_QWORD);
+	if (!(is8 || is16 || is32 || is64)) {
+		return -1;
+	}
+	// Only 32/64-bit destination registers are valid
+	bool dst64 = (dst->type & OT_QWORD) != 0;
+	bool dst32 = (dst->type & OT_DWORD) != 0;
+	if (!(dst32 || dst64)) {
+		return -1;
+	}
+	int l = 0;
+	// 16-bit source uses operand-size override 66
+	if (is16) {
+		data[l++] = 0x66;
+	}
+	// Mandatory F2 prefix
+	data[l++] = 0xF2;
+	// REX prefix as needed: W=1 for 64-bit dest (for r/m64 and r/m8 variants)
+	ut8 rex = 0x40;
+	bool need_rex = false;
+	if (dst64) {
+		rex |= 0x08; // W
+		need_rex = true;
+	}
+	if (dst->extended) {
+		rex |= 0x04; // R
+		need_rex = true;
+	}
+	if ((src->type & OT_GPREG) && !(src->type & OT_MEMORY) && src->extended) {
+		rex |= 0x01; // B for reg in r/m field
+		need_rex = true;
+	}
+	if (need_rex) {
+		data[l++] = rex;
+	}
+	// Opcode map and opcode
+	data[l++] = 0x0f;
+	data[l++] = 0x38;
+	data[l++] = is8 ? 0xF0 : 0xF1;
+	// ModRM/SIB
+	if (src->type & OT_MEMORY) {
+		int base = src->regs[0];
+		int disp = (int)(src->offset * src->offset_sign);
+		int mod = 0;
+		if (base == X86R_UNDEFINED) {
+			data[l++] = (ut8)((0 << 6) | ((dst->reg & 7) << 3) | 5);
+			data[l++] = (ut8)disp;
+			data[l++] = (ut8)(disp >> 8);
+			data[l++] = (ut8)(disp >> 16);
+			data[l++] = (ut8)(disp >> 24);
+			return l;
+		}
+		if (disp != 0) {
+			mod = (disp >= -128 && disp <= 127) ? 1 : 2;
+		}
+		data[l++] = (ut8)((mod << 6) | ((dst->reg & 7) << 3) | (base & 7));
+		if (base == X86R_ESP) {
+			data[l++] = 0x24;
+		}
+		if (mod) {
+			data[l++] = (ut8)disp;
+			if (mod == 2) {
+				data[l++] = (ut8)(disp >> 8);
+				data[l++] = (ut8)(disp >> 16);
+				data[l++] = (ut8)(disp >> 24);
+			}
+		}
+	} else {
+		data[l++] = (ut8)(0xC0 | ((dst->reg & 7) << 3) | (src->reg & 7));
+	}
+	return l;
+}
+
+// RDRAND r16/r32/r64: 66 0F C7 /6, 0F C7 /6, REX.W + 0F C7 /6
+static int oprdrand(RArchSession *a, ut8 *data, const Opcode *op) {
+	if (op->operands_count != 1) return -1;
+	const Operand *dst = &op->operands[0];
+	if (!(dst->type & OT_GPREG) || (dst->type & OT_MEMORY)) return -1;
+	int l = 0;
+	if (dst->type & OT_WORD) {
+		data[l++] = 0x66;
+	}
+	if (dst->type & OT_QWORD) {
+		ut8 rex = 0x48; // REX.W
+		if (dst->extended) rex |= 0x01; // B for r/m field
+		data[l++] = rex;
+	} else if (dst->extended) {
+		data[l++] = 0x41; // REX.B for r/m field extension
+	}
+	data[l++] = 0x0f;
+	data[l++] = 0xC7;
+	data[l++] = (ut8)(0xC0 | (6 << 3) | (dst->reg & 7));
+	return l;
+}
+
+// RDSEED r16/r32/r64: 66 0F C7 /7, 0F C7 /7, REX.W + 0F C7 /7
+static int oprdseed(RArchSession *a, ut8 *data, const Opcode *op) {
+	if (op->operands_count != 1) return -1;
+	const Operand *dst = &op->operands[0];
+	if (!(dst->type & OT_GPREG) || (dst->type & OT_MEMORY)) return -1;
+	int l = 0;
+	if (dst->type & OT_WORD) {
+		data[l++] = 0x66;
+	}
+	if (dst->type & OT_QWORD) {
+		ut8 rex = 0x48; // REX.W
+		if (dst->extended) rex |= 0x01; // B for r/m field
+		data[l++] = rex;
+	} else if (dst->extended) {
+		data[l++] = 0x41; // REX.B
+	}
+	data[l++] = 0x0f;
+	data[l++] = 0xC7;
+	data[l++] = (ut8)(0xC0 | (7 << 3) | (dst->reg & 7));
 	return l;
 }
 
@@ -4642,6 +4773,7 @@ static const LookupTable oplookup[] = {
 	{ "cmpsd", 0, NULL, 0xa7, 1},
 	{ "cmpsw", 0, NULL, 0x66a7, 2},
 	{ "cpuid", 0, NULL, 0x0fa2, 2},
+	{ "crc32", 0, &opcrc32, 0},
 	{ "cwd", 0, NULL, 0x6699, 2},
 	{ "cwde", 0, NULL, 0x98, 1},
 	{ "daa", 0, NULL, 0x27, 1},
@@ -4846,6 +4978,8 @@ static const LookupTable oplookup[] = {
 	{ "rdpmc", 0, NULL, 0x0f33, 2},
 	{ "rdtsc", 0, NULL, 0x0f31, 2},
 	{ "rdtscp", 0, NULL, 0x0f01f9, 3},
+	{ "rdrand", 0, &oprdrand, 0},
+	{ "rdseed", 0, &oprdseed, 0},
 	{ "ret", 0, &opret, 0},
 	{ "retf", 0, &opretf, 0},
 	{ "retw", 0, NULL, 0x66c3, 2},

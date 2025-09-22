@@ -1334,3 +1334,12 @@ ad "tzcnt eax, ebx" f30fbcc3
 ad "tzcnt rax, rbx" f3480fbcc3
 ad "popcnt eax, ebx" f30fb8c3
 ad "popcnt rax, rbx" f3480fb8c3
+ad "crc32 eax, ebx" f20f38f1c3
+ad "crc32 eax, bl" f20f38f0c3
+ad "crc32 eax, bx" 66f20f38f1c3
+ad "rdrand eax" 0fc7f0
+ad "rdrand rax" 480fc7f0
+ad "rdrand ax" 660fc7f0
+ad "rdseed eax" 0fc7f8
+ad "rdseed rax" 480fc7f8
+ad "rdseed ax" 660fc7f8
