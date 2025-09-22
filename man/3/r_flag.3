@@ -6,46 +6,6 @@
 .Nd Radare2 Flag Management Library API
 .Sh SYNOPSIS
 .In r_flag.h
-.Ft RFlag *
-.Fn r_flag_new "void"
-.Ft void
-.Fn r_flag_free "RFlag *f"
-.Ft RFlagItem *
-.Fn r_flag_set "RFlag *f" "const char *name" "ut64 addr" "ut32 size"
-.Ft RFlagItem *
-.Fn r_flag_get "RFlag *f" "const char *name"
-.Ft RFlagItem *
-.Fn r_flag_get_at "RFlag *f" "ut64 addr" "bool closest"
-.Ft bool
-.Fn r_flag_unset "RFlag *f" "RFlagItem *item"
-.Ft bool
-.Fn r_flag_unset_name "RFlag *f" "const char *name"
-.Ft bool
-.Fn r_flag_unset_addr "RFlag *f" "ut64 addr"
-.Ft void
-.Fn r_flag_unset_all "RFlag *f"
-.Ft RSpace *
-.Fn r_flag_space_get "RFlag *f" "const char *name"
-.Ft RSpace *
-.Fn r_flag_space_cur "RFlag *f"
-.Ft RSpace *
-.Fn r_flag_space_set "RFlag *f" "const char *name"
-.Ft bool
-.Fn r_flag_space_push "RFlag *f" "const char *name"
-.Ft bool
-.Fn r_flag_space_pop "RFlag *f"
-.Ft const char *
-.Fn r_flag_item_set_comment "RFlag *f" "RFlagItem *fi" "const char *comment"
-.Ft const char *
-.Fn r_flag_item_set_color "RFlag *f" "RFlagItem *item" "const char *color"
-.Ft void
-.Fn r_flag_foreach "RFlag *f" "RFlagItemCb cb" "void *user"
-.Ft bool
-.Fn r_flag_zone_add "RFlag *fz" "const char *name" "ut64 addr"
-.Ft bool
-.Fn r_flag_zone_del "RFlag *fz" "const char *name"
-.Ft RList *
-.Fn r_flag_tags_set "RFlag *f" "const char *name" "const char *words"
 .Sh DESCRIPTION
 The
 .Nm r_flag
@@ -68,6 +28,8 @@ Zones define address ranges for grouping flags.
 Tags provide additional categorization.
 .El
 .Sh INITIALIZATION
+.Pp
+Flag management starts with creating a new context to hold all flags. These functions allocate the necessary structures at the beginning of a session and clean them up at the end, ensuring proper resource management in radare2.
 .Ft RFlag *
 .Fn r_flag_new "void"
 .Pp
@@ -77,6 +39,8 @@ Creates a new flag context.
 .Pp
 Frees a flag context and all associated flags.
 .Sh FLAG MANAGEMENT
+.Pp
+These functions provide core operations for creating, retrieving, and removing flags, forming the foundation of flag manipulation in radare2's analysis and debugging workflows.
 .Ft RFlagItem *
 .Fn r_flag_set "RFlag *f" "const char *name" "ut64 addr" "ut32 size"
 .Pp
@@ -106,6 +70,8 @@ Removes all flags at the specified address.
 .Pp
 Removes all flags.
 .Sh FLAG SPACES
+.Pp
+These functions manage flag spaces, which are namespaces that allow organizing flags into logical groups, such as separating functions, variables, and other symbols for better analysis organization.
 .Ft RSpace *
 .Fn r_flag_space_get "RFlag *f" "const char *name"
 .Pp
@@ -127,6 +93,8 @@ Pushes a flag space onto the stack.
 .Pp
 Pops the current flag space from the stack.
 .Sh METADATA
+.Pp
+These functions attach additional metadata to flag items, including comments, colors, and types, enhancing visualization and providing context for flags in the debugging interface.
 .Ft const char *
 .Fn r_flag_item_set_comment "RFlag *f" "RFlagItem *fi" "const char *comment"
 .Pp
@@ -140,6 +108,8 @@ Sets the color for the flag item.
 .Pp
 Sets the type for the flag item.
 .Sh ITERATION
+.Pp
+These functions enable programmatic traversal of flags, allowing for batch processing, custom analysis, or exporting flag data through callback mechanisms.
 .Ft void
 .Fn r_flag_foreach "RFlag *f" "RFlagItemCb cb" "void *user"
 .Pp
@@ -149,6 +119,8 @@ Iterates over all flags, calling the callback for each.
 .Pp
 Iterates over flags with the given prefix.
 .Sh ZONES
+.Pp
+These functions define and manage zones, which are address ranges used to group related flags spatially, facilitating organization of large address spaces in reverse engineering tasks.
 .Ft bool
 .Fn r_flag_zone_add "RFlag *fz" "const char *name" "ut64 addr"
 .Pp
@@ -162,6 +134,8 @@ Deletes the zone with the given name.
 .Pp
 Finds zones around the given address.
 .Sh TAGS
+.Pp
+These functions handle tagging of flags, allowing for categorization and advanced querying capabilities to filter and search flags based on custom tags.
 .Ft RList *
 .Fn r_flag_tags_set "RFlag *f" "const char *name" "const char *words"
 .Pp
@@ -171,6 +145,8 @@ Sets tags for the flag with the given name.
 .Pp
 Gets the tags for the flag.
 .Sh UTILITIES
+.Pp
+These utility functions support common maintenance and interaction tasks, such as listing flags, counting matches, and renaming, aiding in user workflows and automation.
 .Ft char *
 .Fn r_flag_list "RFlag *f" "int rad" "const char *pfx"
 .Pp
@@ -184,6 +160,8 @@ Counts flags matching the glob pattern.
 .Pp
 Renames a flag item.
 .Sh EXAMPLES
+.Pp
+This section provides practical code examples demonstrating the usage of the r_flag API functions in typical radare2 workflows, including flag creation, space management, and iteration.
 Creating and managing flags:
 .Bd -literal
 RFlag *f = r_flag_new();

@@ -2,27 +2,18 @@
 .Dt R_BP 3
 .Os
 .Sh NAME
+.Pp
+This section provides the manual page name and a short description of the `r_bp` library so you can quickly identify the purpose of the document.
 .Nm r_bp
 .Nd radare2 breakpoint library
 .Sh SYNOPSIS
+.Pp
+The synopsis shows the primary header to include when using the `r_bp` API and gives a high-level cue about how to reference the functions described in this manual.
 .In r_bp.h
-.Ft RBreakpoint *
-.Fn r_bp_new "void"
-.Ft RBreakpoint *
-.Fn r_bp_free "RBreakpoint *bp"
-.Ft RBreakpointItem *
-.Fn r_bp_add_sw "RBreakpoint *bp" "ut64 addr" "int size" "int perm"
-.Ft RBreakpointItem *
-.Fn r_bp_add_hw "RBreakpoint *bp" "ut64 addr" "int size" "int perm"
-.Ft bool
-.Fn r_bp_del "RBreakpoint *bp" "ut64 addr"
-.Ft RBreakpointItem *
-.Fn r_bp_enable "RBreakpoint *bp" "ut64 addr" "int set" "int count"
-.Ft RBreakpointItem *
-.Fn r_bp_get_at "RBreakpoint *bp" "ut64 addr"
-.Ft char *
-.Fn r_bp_list "RBreakpoint *bp" "int rad"
 .Sh DESCRIPTION
+.Pp
+This section gives an overview of the `r_bp` library and the kinds of breakpoint and watchpoint functionality it provides.
+.Pp
 The
 .Nm r_bp
 library provides breakpoint management for radare2, supporting software breakpoints, hardware breakpoints, watchpoints, and conditional breakpoints across different architectures.
@@ -31,6 +22,8 @@ The core structure is
 .Vt RBreakpoint ,
 which manages breakpoint lists, plugins, and tracing functionality.
 .Sh INITIALIZATION
+.Pp
+The initialization section describes how to create and destroy a breakpoint context — the starting point for using the `r_bp` API.
 .Ft RBreakpoint *
 .Fn r_bp_new "void"
 .Pp
@@ -41,6 +34,8 @@ Creates a new breakpoint context with built-in plugins loaded.
 .Pp
 Frees all resources associated with the breakpoint context.
 .Sh BREAKPOINT MANAGEMENT
+.Pp
+This section documents functions to add, remove and manage individual breakpoints and watchpoints — the core primitives for inserting and removing breakpoints.
 .Ft RBreakpointItem *
 .Fn r_bp_add_sw "RBreakpoint *bp" "ut64 addr" "int size" "int perm"
 .Pp
@@ -66,6 +61,8 @@ Deletes the breakpoint at the specified address.
 .Pp
 Deletes all breakpoints.
 .Sh BREAKPOINT CONTROL
+.Pp
+Breakpoint control functions let you enable, disable or change the state of breakpoints globally or individually; this section explains those controls.
 .Ft RBreakpointItem *
 .Fn r_bp_enable "RBreakpoint *bp" "ut64 addr" "int set" "int count"
 .Pp
@@ -76,6 +73,8 @@ Enables or disables the breakpoint at the specified address.
 .Pp
 Enables or disables all breakpoints.
 .Sh BREAKPOINT QUERY
+.Pp
+Query helpers let you inspect and locate breakpoints by address or permissions; use these when you need to check whether a breakpoint is present or which breakpoint covers an address.
 .Ft RBreakpointItem *
 .Fn r_bp_get_at "RBreakpoint *bp" "ut64 addr"
 .Pp
@@ -91,6 +90,8 @@ Gets the breakpoint that covers the specified address with the given permissions
 .Pp
 Checks if there's a breakpoint at the specified address with the given permissions.
 .Sh BREAKPOINT LISTING
+.Pp
+Listing utilities produce human-readable or machine-oriented representations of the current breakpoints and provide counts and summaries for diagnostics.
 .Ft char *
 .Fn r_bp_list "RBreakpoint *bp" "int rad"
 .Pp
@@ -101,6 +102,8 @@ Lists all breakpoints in the specified format.
 .Pp
 Returns the number of breakpoints.
 .Sh CONDITIONAL BREAKPOINTS
+.Pp
+Conditional breakpoints allow expressions or conditions to be attached to breakpoints so they only trigger when the condition holds; this section covers adding and removing those conditions.
 .Ft bool
 .Fn r_bp_add_cond "RBreakpoint *bp" "const char *cond"
 .Pp
@@ -111,11 +114,15 @@ Adds a conditional breakpoint with the specified condition.
 .Pp
 Deletes the conditional breakpoint at the specified index.
 .Sh FAULT BREAKPOINTS
+.Pp
+Fault breakpoints are used to detect memory faults or exceptional accesses; this short section explains how to register fault-related breakpoints.
 .Ft void
 .Fn r_bp_add_fault "RBreakpoint *bp" "ut64 addr" "int size" "int perm"
 .Pp
 Adds a fault breakpoint at the specified address.
 .Sh TRACING
+.Pp
+Tracing features let you record execution or breakpoint hit information; the functions here enable per-breakpoint or global tracing behavior.
 .Ft bool
 .Fn r_bp_set_trace "RBreakpoint *bp" "ut64 addr" "int set"
 .Pp
@@ -126,6 +133,8 @@ Enables or disables tracing for the breakpoint at the specified address.
 .Pp
 Enables or disables tracing for all breakpoints.
 .Sh PLUGINS
+.Pp
+The plugin API lets you extend the breakpoint system with custom backends or behavior; use these functions to register and select plugins.
 .Ft int
 .Fn r_bp_plugin_add "RBreakpoint *bp" "RBreakpointPlugin *plugin"
 .Pp
@@ -141,6 +150,8 @@ Removes a breakpoint plugin.
 .Pp
 Selects the breakpoint plugin to use.
 .Sh RESTORATION
+.Pp
+Restoration functions provide a way to reapply or rollback breakpoint changes, for example when resuming or detaching from a process.
 .Ft int
 .Fn r_bp_restore "RBreakpoint *bp" "bool set"
 .Pp
@@ -151,6 +162,8 @@ Restores all breakpoints to their original state.
 .Pp
 Restores a single breakpoint.
 .Sh TRAPTRACE
+.Pp
+Trap tracing collects ranges and events for traps and exceptions; this section shows how to enable, reset and manage those ranges.
 .Ft void
 .Fn r_bp_traptrace_enable "RBreakpoint *bp" "int enable"
 .Pp
@@ -166,6 +179,8 @@ Resets trap tracing.
 .Pp
 Adds a trap trace range.
 .Sh BREAKPOINT TYPES
+.Pp
+This section enumerates the supported breakpoint kinds and briefly explains their intended use-cases and differences.
 The library supports different breakpoint types:
 .Bl -tag -width "R_BP_TYPE_HW"
 .It Dv R_BP_TYPE_SW
@@ -178,6 +193,8 @@ Conditional breakpoint
 Fault breakpoint
 .El
 .Sh PERMISSIONS
+.Pp
+Permission flags describe what kind of memory accesses the breakpoint should monitor; consult these when creating watchpoints or specifying protection semantics.
 Breakpoints can have different permissions:
 .Bl -tag -width "R_BP_PROT_ACCESS"
 .It Dv R_BP_PROT_EXEC
@@ -190,6 +207,8 @@ Read permission
 Access permission
 .El
 .Sh EXAMPLES
+.Pp
+The examples section provides short code snippets demonstrating common tasks like creating contexts, adding breakpoints, hardware breakpoints, watchpoints, and conditional breakpoints — use these as a quick reference for typical usage.
 Basic breakpoint setup:
 .Bd -literal -offset indent
 RBreakpoint *bp = r_bp_new();
