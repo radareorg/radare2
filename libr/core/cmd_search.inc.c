@@ -3404,6 +3404,9 @@ static void rop_kuery(void *data, const char *input, PJ *pj) {
 		pj_end (pj);
 		pj_end (pj);
 		break;
+	case '?':
+		r_core_cmd_help (core, help_msg_slash_R);
+		break;
 	case ' ':
 		if (!strcmp (input + 1, "nop")) {
 			out = sdb_querys (core->sdb, NULL, 0, "rop/nop/*");
@@ -4583,26 +4586,51 @@ reread:
 			break;
 		case 'd': // "/ad"
 			dosearch = false;
-			do_asm_search (core, &param, input + 1, 0, search_itv);
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_slash_a, "/ad");
+			} else {
+				do_asm_search (core, &param, input + 1, 0, search_itv);
+			}
 			break;
 		case 'e': // "/ae"
 			dosearch = false;
-			do_asm_search (core, &param, input + 2, 'e', search_itv);
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_slash_a, "/ae");
+			} else {
+				do_asm_search (core, &param, input + 2, 'e', search_itv);
+			}
 			break;
 		case 'c': // "/ac"
 			dosearch = false;
-			do_asm_search (core, &param, input + 2, 'c', search_itv);
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_slash_a, "/ac");
+			} else {
+				do_asm_search (core, &param, input + 2, 'c', search_itv);
+			}
 			break;
 		case 'o':  // "/ao"
 			dosearch = false;
-			do_asm_search (core, &param, input + 2, 'o', search_itv);
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_slash_a, "/ao");
+			} else {
+				do_asm_search (core, &param, input + 2, 'o', search_itv);
+			}
 			break;
 		case 'a': // "/aa"
 			dosearch = false;
-			do_asm_search (core, &param, input + 2, 'a', search_itv);
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_slash_a, "/aa");
+			} else {
+				do_asm_search (core, &param, input + 2, 'a', search_itv);
+
+			}
 			break;
 		case 'i': // "/ai"
-			do_asm_search (core, &param, input + 2, 'i', search_itv);
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_slash_a, "/ai");
+			} else {
+				do_asm_search (core, &param, input + 2, 'i', search_itv);
+			}
 			break;
 		case 'b': // "ab"
 			if (input[2] == 'f') {
@@ -4616,10 +4644,18 @@ reread:
 			}
 			break;
 		case '1': // "a1"
-			__core_cmd_search_asm_byteswap (core, (int)r_num_math (core->num, input + 2));
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_slash_a, "/a1");
+			} else {
+				__core_cmd_search_asm_byteswap (core, (int)r_num_math (core->num, input + 2));
+			}
 			break;
 		case 'I': //  "/aI" - infinite
-			__core_cmd_search_asm_infinite (core, r_str_trim_head_ro (input + 1));
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_slash_a, "/aI");
+			} else {
+				__core_cmd_search_asm_infinite (core, r_str_trim_head_ro (input + 1));
+			}
 			break;
 		case ' ': // "a "
 			if (input[param_offset - 1]) {
@@ -4693,6 +4729,10 @@ reread:
 	case 'c': { // "/c"
 		dosearch = true;
 		switch (input[1]) {
+		case '?':
+			r_core_cmd_help (core, help_msg_slash_c);
+			goto beach;
+
 		case 'k': // "/ck"
 			{
 				const bool le = !r_config_get_b (core->config, "cfg.bigendian");
