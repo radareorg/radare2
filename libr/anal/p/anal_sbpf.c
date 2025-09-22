@@ -38,14 +38,11 @@ static RList *sbpf_find_string_xrefs(RAnal *anal, ut64 from, ut64 to, ut64 data_
 		return NULL;
 	}
 
-	R_LOG_DEBUG("Aggressive scan for LDDW instructions from 0x%"PFMT64x" to 0x%"PFMT64x, from, to);
-	R_LOG_DEBUG("Looking for references to data segment 0x%"PFMT64x" - 0x%"PFMT64x, data_start, data_end);
+	R_LOG_DEBUG ("Looking for references to data segment 0x%"PFMT64x" - 0x%"PFMT64x, data_start, data_end);
 
 	// LDDW instructions are 16 bytes but can appear at any 8-byte alignment
 	ut64 addr;
 	ut8 buf[24]; // Read extra to handle unaligned reads
-	int lddw_count = 0;
-	int data_refs = 0;
 
 	for (addr = from; addr < to - 15; addr++) {
 		if (!anal->iob.read_at (anal->iob.io, addr, buf, 16)) {
@@ -60,8 +57,6 @@ static RList *sbpf_find_string_xrefs(RAnal *anal, ut64 from, ut64 to, ut64 data_
 			if (buf[8] != 0x00) {
 				continue;
 			}
-
-			lddw_count++;
 
 			// Extract the 64-bit immediate value
 			ut32 imm_low = r_read_le32 (buf + 4);
@@ -82,13 +77,12 @@ static RList *sbpf_find_string_xrefs(RAnal *anal, ut64 from, ut64 to, ut64 data_
 				}
 
 				if (!duplicate) {
-					data_refs++;
 					SbpfStringRef *ref = R_NEW0 (SbpfStringRef);
 					if (ref) {
 						ref->addr = imm_val;
 						ref->xref_addr = addr;
 						r_list_append (refs, ref);
-						R_LOG_DEBUG("Found LDDW at 0x%"PFMT64x" -> data at 0x%"PFMT64x, addr, imm_val);
+						R_LOG_DEBUG ("Found LDDW at 0x%"PFMT64x" -> data at 0x%"PFMT64x, addr, imm_val);
 					}
 				}
 			}
@@ -97,8 +91,6 @@ static RList *sbpf_find_string_xrefs(RAnal *anal, ut64 from, ut64 to, ut64 data_
 			addr += 7; // Will be incremented by 1 in loop
 		}
 	}
-
-	R_LOG_INFO("Found %d total LDDW instructions, %d reference the data segment", lddw_count, data_refs);
 
 	r_list_sort (refs, sbpf_string_ref_cmp);
 
@@ -161,32 +153,31 @@ static bool is_printable_string(const ut8 *buf, ut32 size) {
 }
 
 static void sbpf_create_string(RAnal *anal, ut64 addr, ut32 size, ut64 xref_addr) {
-	R_LOG_DEBUG("sbpf_create_string called: addr=0x%"PFMT64x" size=%u xref=0x%"PFMT64x, addr, size, xref_addr);
+	R_LOG_DEBUG ("sbpf_create_string called: addr=0x%"PFMT64x" size=%u xref=0x%"PFMT64x, addr, size, xref_addr);
 
 	if (!anal || !anal->iob.io || size == 0 || size > SBPF_MAX_STRING_SIZE) {
-		R_LOG_WARN("String creation skipped: anal=%p, size=%u, max=%u", anal, size, SBPF_MAX_STRING_SIZE);
+		R_LOG_WARN ("String creation skipped: anal=%p, size=%u, max=%u", anal, size, SBPF_MAX_STRING_SIZE);
 		return;
 	}
 
 	ut8 *buf = malloc (size + 1);
 	if (!buf) {
-		R_LOG_ERROR("Failed to allocate memory for string");
+		R_LOG_ERROR ("Failed to allocate memory for string");
 		return;
 	}
 
 	// Read the string data
 	if (!anal->iob.read_at (anal->iob.io, addr, buf, size)) {
-		R_LOG_WARN("Failed to read string data at 0x%"PFMT64x, addr);
+		R_LOG_WARN ("Failed to read string data at 0x%"PFMT64x, addr);
 		free (buf);
 		return;
 	}
 
 	buf[size] = 0;
 
-	R_LOG_DEBUG("Read string data: %.30s%s", buf, size > 30 ? "..." : "");
-
 	ut32 actual_size = 0;
-	for (ut32 i = 0; i < size; i++) {
+	ut32 i;
+	for (i = 0; i < size; i++) {
 		if (buf[i] == 0) {
 			actual_size = i;
 			break;
@@ -197,7 +188,7 @@ static void sbpf_create_string(RAnal *anal, ut64 addr, ut32 size, ut64 xref_addr
 	if (actual_size == 0) {
 		if (is_printable_string (buf, size)) {
 			actual_size = size;
-			buf[size] = 0; 
+			buf[size] = 0;
 		} else {
 			free (buf);
 			return;
@@ -235,15 +226,43 @@ static void sbpf_create_string(RAnal *anal, ut64 addr, ut32 size, ut64 xref_addr
 	// Create xref from the instruction to the string
 	if (xref_addr != UT64_MAX) {
 		r_anal_xrefs_set (anal, xref_addr, addr, R_ANAL_REF_TYPE_STRN | R_ANAL_REF_TYPE_READ);
+
+		// Add a comment at the xref address showing the string content
+		char comment[512];
+		char safe_str[256];
+		ut32 comment_len = str_size < 250 ? str_size : 250;
+		memcpy(safe_str, buf, comment_len);
+		safe_str[comment_len] = 0;
+
+		// Replace non-printable chars with dots for the comment
+		ut32 i;
+		for (i = 0; i < comment_len; i++) {
+			if (safe_str[i] < 0x20 || safe_str[i] > 0x7e) {
+				if (safe_str[i] != '\t' && safe_str[i] != '\n') {
+					safe_str[i] = '.';
+				}
+			}
+		}
+
+		// Create comment with string content (r2 adds "; " prefix automatically)
+		if (str_size > 250) {
+			snprintf (comment, sizeof (comment), "\"%s...\" (truncated, %u bytes total)", safe_str, str_size);
+		} else {
+			snprintf (comment, sizeof (comment), "\"%s\"", safe_str);
+		}
+
+		// Set comment at the instruction address
+		r_meta_set_string (anal, R_META_TYPE_COMMENT, xref_addr, comment);
+		R_LOG_DEBUG ("Added comment at 0x%"PFMT64x": %s", xref_addr, comment);
 	}
 
 	// Create a flag for the string
-	R_LOG_INFO("Attempting to create flag for string at 0x%"PFMT64x, addr);
+	R_LOG_INFO ("Attempting to create flag for string at 0x%"PFMT64x, addr);
 
 	if (!anal->flb.f) {
-		R_LOG_ERROR("anal->flb.f is NULL - cannot create flags");
+		R_LOG_ERROR ("anal->flb.f is NULL - cannot create flags");
 	} else if (!anal->flb.set) {
-		R_LOG_ERROR("anal->flb.set is NULL - cannot create flags");
+		R_LOG_ERROR ("anal->flb.set is NULL - cannot create flags");
 	} else {
 		// Build a proper flag name from the truncated string
 		char flagname[256];
@@ -258,22 +277,22 @@ static void sbpf_create_string(RAnal *anal, ut64 addr, ut32 size, ut64 xref_addr
 		r_str_filter(safe_str, -1);
 
 		// Create the flag name
-		snprintf(flagname, sizeof(flagname), "str.%s", safe_str);
+		snprintf (flagname, sizeof (flagname), "str.%s", safe_str);
 
-		R_LOG_INFO("Calling anal->flb.set with flag name: %s", flagname);
+		R_LOG_INFO ("Calling anal->flb.set with flag name: %s", flagname);
 
 		// Create the flag
 		RFlagItem *item = anal->flb.set(anal->flb.f, flagname, addr, str_size);
 		if (item) {
-			R_LOG_INFO("Successfully created flag %s at 0x%"PFMT64x" size %u", flagname, addr, str_size);
+			R_LOG_INFO ("Successfully created flag %s at 0x%"PFMT64x" size %u", flagname, addr, str_size);
 		} else {
-			snprintf(flagname, sizeof(flagname), "str_%08"PFMT64x, addr);
-			R_LOG_INFO("First flag failed, trying fallback: %s", flagname);
+			snprintf (flagname, sizeof (flagname), "str_%08"PFMT64x, addr);
+			R_LOG_INFO ("First flag failed, trying fallback: %s", flagname);
 			item = anal->flb.set(anal->flb.f, flagname, addr, str_size);
 			if (item) {
-				R_LOG_INFO("Created fallback flag %s at 0x%"PFMT64x" size %u", flagname, addr, str_size);
+				R_LOG_INFO ("Created fallback flag %s at 0x%"PFMT64x" size %u", flagname, addr, str_size);
 			} else {
-				R_LOG_ERROR("Failed to create any flag at 0x%"PFMT64x, addr);
+				R_LOG_ERROR ("Failed to create any flag at 0x%"PFMT64x, addr);
 			}
 		}
 	}
@@ -299,11 +318,6 @@ static bool sbpf_analyze_strings(RAnal *anal) {
 			return false;
 		}
 	}
-
-	R_LOG_INFO ("Scanning CODE segment 0x%"PFMT64x" - 0x%"PFMT64x" for LDDW instructions",
-		code_start, code_end);
-	R_LOG_INFO ("Data segment 0x%"PFMT64x" - 0x%"PFMT64x,
-		data_start, data_end);
 
 	RList *refs = sbpf_find_string_xrefs (anal, code_start, code_end, data_start, data_end);
 	if (!refs) {
@@ -425,7 +439,8 @@ static void sbpf_print_string_xrefs(RAnal *anal) {
 
 			ut32 actual_len = 0;
 			bool found_null = false;
-			for (ut32 i = 0; i < string_size; i++) {
+			ut32 i;
+			for (i = 0; i < string_size; i++) {
 				if (buf[i] == 0) {
 					actual_len = i;
 					found_null = true;
@@ -437,18 +452,18 @@ static void sbpf_print_string_xrefs(RAnal *anal) {
 				if (is_printable_string (buf, string_size)) {
 					actual_len = string_size;
 				} else {
-					free(buf);
+					free (buf);
 					continue;
 				}
 			} else {
 				if (!is_printable_string (buf, actual_len)) {
-					free(buf);
+					free (buf);
 					continue;
 				}
 			}
 
 			if (actual_len < 4) {
-				free(buf);
+				free (buf);
 				continue;
 			}
 
@@ -461,7 +476,7 @@ static void sbpf_print_string_xrefs(RAnal *anal) {
 				display_buf[actual_len] = 0;
 			}
 
-			for (int i = 0; display_buf[i]; i++) {
+			for (i = 0; display_buf[i]; i++) {
 				if (display_buf[i] < 0x20 || display_buf[i] > 0x7e) {
 					display_buf[i] = '.';
 				}
@@ -474,7 +489,7 @@ static void sbpf_print_string_xrefs(RAnal *anal) {
 				}
 			}
 		}
-		free(buf);
+		free (buf);
 	}
 
 	r_list_free (processed);
@@ -507,7 +522,7 @@ static bool sbpf_init(RAnal *anal) {
 		return false;
 	}
 	sbpf_strings_analyzed = false;
-	R_LOG_DEBUG("sBPF analysis plugin initialized");
+	R_LOG_DEBUG ("sBPF analysis plugin initialized");
 
 	sbpf_try_auto_analyze(anal);
 
@@ -521,36 +536,36 @@ static void sbpf_try_auto_analyze(RAnal *anal) {
 
 	// Check if we have proper conditions for analysis
 	if (!anal || !anal->flb.f || !anal->flb.set) {
-		R_LOG_DEBUG("sBPF auto-analysis skipped - flag bindings not ready");
+		R_LOG_DEBUG ("sBPF auto-analysis skipped - flag bindings not ready");
 		return;
 	}
 
 	// Check if we have an iob interface (indicates file is loaded)
 	if (!anal->iob.io) {
-		R_LOG_DEBUG("sBPF auto-analysis skipped - no IO available");
+		R_LOG_DEBUG ("sBPF auto-analysis skipped - no IO available");
 		return;
 	}
 
 	// Check if we have segments loaded
 	ut64 code_start, code_end;
 	if (!sbpf_find_segment_bounds (anal, 0, &code_start, &code_end)) {
-		R_LOG_DEBUG("sBPF auto-analysis skipped - no CODE segment found");
+		R_LOG_DEBUG ("sBPF auto-analysis skipped - no CODE segment found");
 		return;
 	}
 
 	// Check if we have data segment
 	ut64 data_start, data_end;
 	if (!sbpf_find_segment_bounds (anal, 1, &data_start, &data_end)) {
-		R_LOG_DEBUG("sBPF auto-analysis skipped - no DATA segment found");
+		R_LOG_DEBUG ("sBPF analysis skipped - no DATA segment found");
 		return;
 	}
 
-	R_LOG_INFO("Running automatic sBPF string analysis...");
+	R_LOG_INFO ("Running sBPF string analysis");
 	if (sbpf_analyze_strings (anal)) {
-		R_LOG_INFO("sBPF string analysis completed successfully");
+		R_LOG_INFO ("sBPF string analysis completed successfully");
 		sbpf_strings_analyzed = true;
 	} else {
-		R_LOG_WARN("sBPF string analysis failed");
+		R_LOG_WARN ("sBPF string analysis failed");
 	}
 }
 
