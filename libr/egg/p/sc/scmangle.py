@@ -243,9 +243,6 @@ def render_decrypt_inc_c(ops: List[dict]) -> str:
 
     c.append("    return cur;")
     c.append("}")
-    c.append("")
-    # Also emit a tiny helper for callers that want in-place-like API
-    c.append("static inline ut8 *sc_decrypt_dup(const ut8 *buf, size_t len) { return sc_decrypt(buf, len); }")
     return "\n".join(c) + "\n"
 
 # -------------------- Driver --------------------
