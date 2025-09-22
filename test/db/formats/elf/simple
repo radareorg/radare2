@@ -114,8 +114,5 @@ EXPECT=<<EOF
 6267 0x000c9420 0x000c9420 WEAK   FUNC   12        getpid
 8102 0x000c9420 0x000c9420 GLOBAL FUNC   12        __getpid
 0x000c9420 12 sym.getpid
-0x000c9420 12 sym.__getpid
-0x000c9420 12 sym.__GI___getpid
-0x000c9420 12 sym.__GI_getpid
 EOF
 RUN

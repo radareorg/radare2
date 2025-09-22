@@ -2,6 +2,7 @@
 
 #include <r_flag.h>
 #include <r_cons.h>
+#include <limits.h>
 
 R_LIB_VERSION (r_flag);
 
@@ -70,13 +71,13 @@ static ut64 num_callback(RNum *user, const char *name, bool *ok) {
 
 static void free_item_realname(RFlagItem *item) {
 	if (item->name != item->realname) {
-		free (item->realname);
+		R_FREE (item->realname);
 	}
 }
 
 static void free_item_name(RFlagItem *item) {
 	if (item->name != item->realname) {
-		free (item->name);
+		R_FREE (item->name);
 	}
 }
 
@@ -613,16 +614,28 @@ beach:
 	return ret? evalFlag (f, ret): NULL;
 }
 
-static bool isFunctionFlag(const char *n) {
-	if (r_str_startswith (n, "method.") || r_str_startswith (n, "sym.")) {
-		return true;
+static int flagItemPriority(const RFlagItem *item) {
+	R_RETURN_VAL_IF_FAIL (item, 0);
+	const char *n = item->name;
+	if (!n) {
+		return 100;
 	}
-	if (*n == 'f') {
-		return (r_str_startswith (n, "fn.")
-			|| r_str_startswith (n, "func.")
-			|| r_str_startswith (n, "fcn.0"));
+	if (r_str_startswith (n, "method.")) {
+		return 2;
 	}
-	return false;
+	if (r_str_startswith (n, "sym.")) {
+		return 1;
+	}
+	if (r_str_startswith (n, "fn.")) {
+		return 3;
+	}
+	if (r_str_startswith (n, "func.")) {
+		return 4;
+	}
+	if (r_str_startswith (n, "fcn.")) {
+		return 5;
+	}
+	return 6;
 }
 
 static bool isreg(RFlagItem *item) {
@@ -630,6 +643,24 @@ static bool isreg(RFlagItem *item) {
 		if (item->space && r_str_startswith (item->name, "regis")) {
 			return true;
 		}
+	}
+	return false;
+}
+
+static inline bool is_better_flag(RFlag *f, RFlagItem *best, RFlagItem *cand, int *best_prio_out) {
+	if (!cand) {
+		return false;
+	}
+	if (isreg (cand)) {
+		return false;
+	}
+	if (IS_FI_NOTIN_SPACE (f, cand)) {
+		return false;
+	}
+	const int p = flagItemPriority (cand);
+	if (!best || p < *best_prio_out) {
+		*best_prio_out = p;
+		return true;
 	}
 	return false;
 }
@@ -643,6 +674,7 @@ R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 addr, bool closest) {
 	}
 
 	RFlagItem *nice = NULL;
+	int nice_priority = INT_MAX;
 	RListIter *iter;
 	const RFlagsAtOffset *flags_at = r_flag_get_nearest_list (f, addr, -1);
 	if (!flags_at) {
@@ -652,23 +684,17 @@ R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 addr, bool closest) {
 	if (flags_at->addr == addr) {
 		RFlagItem *item;
 		r_list_foreach (flags_at->flags, iter, item) {
-			if (isreg (item)) {
-				continue;
-			}
-			if (IS_FI_NOTIN_SPACE (f, item)) {
-				continue;
-			}
-			if (nice) {
-				if (isFunctionFlag (nice->name)) {
-					nice = item;
-				}
-			} else {
+			if (is_better_flag (f, nice, item, &nice_priority)) {
 				nice = item;
+				if (!nice_priority) {
+					break;
+				}
 			}
 		}
 		if (nice) {
+			RFlagItem *fi = evalFlag (f, nice);
 			R_CRITICAL_LEAVE (f);
-			return evalFlag (f, nice);
+			return fi;
 		}
 	}
 
@@ -679,15 +705,14 @@ R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 addr, bool closest) {
 	while (!nice && flags_at) {
 		RFlagItem *item;
 		r_list_foreach (flags_at->flags, iter, item) {
-			if (isreg (item)) {
-				continue;
-			}
-			if (IS_FI_NOTIN_SPACE (f, item)) {
+			if (isreg (item) || IS_FI_NOTIN_SPACE (f, item)) {
 				continue;
 			}
 			if (item->addr == addr) {
 				R_LOG_DEBUG ("The impossible happened");
-				return evalFlag (f, item);
+				RFlagItem *fi = evalFlag (f, item);
+				R_CRITICAL_LEAVE (f);
+				return fi;
 			}
 			nice = item;
 			break;

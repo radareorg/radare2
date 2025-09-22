@@ -61,6 +61,7 @@ class SomeClass_1 {
 class swift {
   func getRootSuperclass() {}  // 0x100002b70
   func swift51override_conformsToSwiftProtocol(swift::TargetMetadata<swift::InProcess> const*, swift::TargetProtocolDescriptor<swift::InProcess> const*, llvm::StringRef, swift::TargetProtocolConformanceDescriptor<swift::InProcess> const* (*)(swift::TargetMetadata<swift::InProcess> const*, swift::TargetProtocolDescriptor<swift::InProcess> const*, llvm::StringRef)) {}  // 0x100002bb0
+  func swift51override_conformsToSwiftProtocol(swift::TargetMetadata<swift::InProcess> const*, swift::TargetProtocolDescriptor<swift::InProcess> const*, llvm::StringRef, swift::TargetProtocolConformanceDescriptor<swift::InProcess> const* (*)(swift::TargetMetadata<swift::InProcess> const*, swift::TargetProtocolDescriptor<swift::InProcess> const*, llvm::StringRef)) {}  // 0x100002bb0
   func Lazy<(anonymous namespace)::ConformanceState>::defaultInitCallback(void*) {}  // 0x1000031f0
   func getRootSuperclass()::$_0::operator()() const::{lambda(void*)#1}::__invoke(void*) {}  // 0x100003650
   func getRootSuperclass()::$_0::operator()() const::TheLazy {}  // 0x100008568
@@ -2716,6 +2717,13 @@ EXPECT=<<EOF
         "addr": 4295109344
       },
       {
+        "name": "waitFuture(swift::AsyncTask*, swift::AsyncContext*, void ( swiftasynccall*)(swift::AsyncContext* swift_async_context), swift::AsyncContext*, swift::OpaqueValue*)",
+        "flag": "method.swift::AsyncTask.waitFuture_swift::AsyncTask__swift::AsyncContext__void___swiftasynccall__swift::AsyncContext_swift_async_context___swift::AsyncContext__swift::OpaqueValue_",
+        "rawname": "__ZN5swift9AsyncTask10waitFutureEPS0_PNS_12AsyncContextEPU14swiftasynccallFvU19swift_async_contextS3_ES3_PNS_11OpaqueValueE",
+        "lang": "c++",
+        "addr": 4295109344
+      },
+      {
         "name": "flagAsRunning_slow()",
         "flag": "method.swift::AsyncTask.flagAsRunning_slow__",
         "rawname": "__ZN5swift9AsyncTask18flagAsRunning_slowEv",
@@ -2745,6 +2753,20 @@ EXPECT=<<EOF
         "addr": 4295109840
       },
       {
+        "name": "swift56override_swift_task_future_wait(swift::OpaqueValue*, swift::AsyncContext*, swift::AsyncTask*, void ( swiftasynccall*)(swift::AsyncContext* swift_async_context), swift::AsyncContext*, void ( swiftasynccall*)(swift::OpaqueValue*, swift::AsyncContext* swift_async_context, swift::AsyncTask*, void (swift::AsyncContext* swift_async_context), swift::AsyncContext*))",
+        "flag": "method.swift.swift56override_swift_task_future_wait_swift::OpaqueValue__swift::AsyncContext__swift::AsyncTask__void___swiftasynccall__swift::AsyncContext_swift_async_context___swift::AsyncContext__void___swiftasynccall__swift::OpaqueValue__swift::AsyncContext_swift_async_context__swift::AsyncTask__void__swift::AsyncContext_swift_async_context___swift::AsyncContext__",
+        "rawname": "__ZN5swift38swift56override_swift_task_future_waitEPNS_11OpaqueValueEPNS_12AsyncContextEPNS_9AsyncTaskEPU14swiftasynccallFvU19swift_async_contextS3_ES3_PU14swiftasynccallFvS1_U19swift_async_contextS3_S5_S7_S3_E",
+        "lang": "c++",
+        "addr": 4295109840
+      },
+      {
+        "name": "swift56override_swift_task_future_wait_throwing(swift::OpaqueValue*, swift::AsyncContext*, swift::AsyncTask*, void ( swiftasynccall*)(swift::AsyncContext* swift_async_context, void* swift_context), swift::AsyncContext*, void ( swiftasynccall*)(swift::OpaqueValue*, swift::AsyncContext* swift_async_context, swift::AsyncTask*, void* swift_context, swift::AsyncContext*))",
+        "flag": "method.swift.swift56override_swift_task_future_wait_throwing_swift::OpaqueValue__swift::AsyncContext__swift::AsyncTask__void___swiftasynccall__swift::AsyncContext_swift_async_context__void_swift_context___swift::AsyncContext__void___swiftasynccall__swift::OpaqueValue__swift::AsyncContext_swift_async_context__swift::AsyncTask__void_swift_context__swift::AsyncContext__",
+        "rawname": "__ZN5swift47swift56override_swift_task_future_wait_throwingEPNS_11OpaqueValueEPNS_12AsyncContextEPNS_9AsyncTaskEPU14swiftasynccallFvU19swift_async_contextS3_U13swift_contextPvES3_PU14swiftasynccallFvS1_U19swift_async_contextS3_S5_S8_S3_E",
+        "lang": "c++",
+        "addr": 4295110076
+      },
+      {
         "name": "swift56override_swift_task_future_wait_throwing(swift::OpaqueValue*, swift::AsyncContext*, swift::AsyncTask*, void ( swiftasynccall*)(swift::AsyncContext* swift_async_context, void* swift_context), swift::AsyncContext*, void ( swiftasynccall*)(swift::OpaqueValue*, swift::AsyncContext* swift_async_context, swift::AsyncTask*, void* swift_context, swift::AsyncContext*))",
         "flag": "method.swift.swift56override_swift_task_future_wait_throwing_swift::OpaqueValue__swift::AsyncContext__swift::AsyncTask__void___swiftasynccall__swift::AsyncContext_swift_async_context__void_swift_context___swift::AsyncContext__void___swiftasynccall__swift::OpaqueValue__swift::AsyncContext_swift_async_context__swift::AsyncTask__void_swift_context__swift::AsyncContext__",
         "rawname": "__ZN5swift47swift56override_swift_task_future_wait_throwingEPNS_11OpaqueValueEPNS_12AsyncContextEPNS_9AsyncTaskEPU14swiftasynccallFvU19swift_async_contextS3_U13swift_contextPvES3_PU14swiftasynccallFvS1_U19swift_async_contextS3_S5_S8_S3_E",
@@ -2759,11 +2781,25 @@ EXPECT=<<EOF
         "addr": 4295110356
       },
       {
+        "name": "swift56override_swift_task_create_common(unsigned long, swift::TaskOptionRecord*, swift::TargetMetadata<swift::InProcess> const*, void ( swiftasynccall*)(swift::AsyncContext* swift_async_context), void*, unsigned long, swift::AsyncTaskAndContext ( swiftcall*)(unsigned long, swift::TaskOptionRecord*, swift::TargetMetadata<swift::InProcess> const*, void (swift::AsyncContext* swift_async_context), void ( swiftasynccall)(swift::AsyncContext* swift_async_context), unsigned long))",
+        "flag": "method.swift.swift56override_swift_task_create_common_unsigned_long__swift::TaskOptionRecord__swift::TargetMetadata_swift::InProcess__const__void___swiftasynccall__swift::AsyncContext_swift_async_context___void__unsigned_long__swift::AsyncTaskAndContext___swiftcall__unsigned_long__swift::TaskOptionRecord__swift::TargetMetadata_swift::InProcess__const__void__swift::AsyncContext_swift_async_context___void___swiftasynccall__swift::AsyncContext_swift_async_context___unsigned_long__",
+        "rawname": "__ZN5swift40swift56override_swift_task_create_commonEmPNS_16TaskOptionRecordEPKNS_14TargetMetadataINS_9InProcessEEEPU14swiftasynccallFvU19swift_async_contextPNS_12AsyncContextEEPvmPU9swiftcallFNS_19AsyncTaskAndContextEmS1_S6_SA_SB_mE",
+        "lang": "c++",
+        "addr": 4295110356
+      },
+      {
         "name": "swift_task_escalateBackdeploy56(swift::AsyncTask*, swift::JobPriority)",
         "flag": "method.swift.swift_task_escalateBackdeploy56_swift::AsyncTask__swift::JobPriority_",
         "rawname": "__ZN5swift31swift_task_escalateBackdeploy56EPNS_9AsyncTaskENS_11JobPriorityE",
         "lang": "c++",
         "addr": 4295111028
+      },
+      {
+        "name": "swift_task_escalateBackdeploy56(swift::AsyncTask*, swift::JobPriority)::$_2::operator()() const::{lambda(void*)#1}::__invoke(void*)",
+        "flag": "method.swift.swift_task_escalateBackdeploy56_swift::AsyncTask__swift::JobPriority_::__2::operator_____const::lambda_void_1::__invoke_void_",
+        "rawname": "__ZZZN5swift31swift_task_escalateBackdeploy56EPNS_9AsyncTaskENS_11JobPriorityEENK3$_2clEvENUlPvE_8__invokeES4_",
+        "lang": "c++",
+        "addr": 4295111128
       },
       {
         "name": "swift_task_escalateBackdeploy56(swift::AsyncTask*, swift::JobPriority)::$_2::operator()() const::{lambda(void*)#1}::__invoke(void*)",

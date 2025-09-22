@@ -733,28 +733,33 @@ colu: 1
 addr: 0x00001176
 EOF
 EXPECT_ERR=<<EOF
-DEBUG: [cbin.c:3415] (section .dynsym) Cd 8[21] @ 0x3d8
-DEBUG: [cbin.c:3415] (section .dynstr) Css 141 @ 0x480
-DEBUG: [cbin.c:3415] (section .rela.dyn) Cd 8[24] @ 0x550
-DEBUG: [cbin.c:3415] (section .rela.plt) Cd 8[3] @ 0x610
-DEBUG: [cbin.c:3415] (section .init_array) Cd 8[1] @ 0x3db8
-DEBUG: [cbin.c:3415] (section .fini_array) Cd 8[1] @ 0x3dc0
-DEBUG: [cbin.c:3415] (section .dynamic) Cd 8[62] @ 0x3dc8
-DEBUG: [cbin.c:3415] (section .got) Cd 8[9] @ 0x3fb8
-DEBUG: [cbin.c:3415] (section .dynsym) Cd 8[21] @ 0x3d8
-DEBUG: [cbin.c:3415] (section .dynstr) Css 141 @ 0x480
-DEBUG: [cbin.c:3415] (section .rela.dyn) Cd 8[24] @ 0x550
-DEBUG: [cbin.c:3415] (section .rela.plt) Cd 8[3] @ 0x610
-DEBUG: [cbin.c:3415] (section .init_array) Cd 8[1] @ 0x3db8
-DEBUG: [cbin.c:3415] (section .fini_array) Cd 8[1] @ 0x3dc0
-DEBUG: [cbin.c:3415] (section .dynamic) Cd 8[62] @ 0x3dc8
-DEBUG: [cbin.c:3415] (section .got) Cd 8[9] @ 0x3fb8
+DEBUG: [cbin.c:3613] (section .dynsym) Cd 8[21] @ 0x3d8
+DEBUG: [cbin.c:3613] (section .dynstr) Css 141 @ 0x480
+DEBUG: [cbin.c:3613] (section .rela.dyn) Cd 8[24] @ 0x550
+DEBUG: [cbin.c:3613] (section .rela.plt) Cd 8[3] @ 0x610
+DEBUG: [cbin.c:3613] (section .init_array) Cd 8[1] @ 0x3db8
+DEBUG: [cbin.c:3613] (section .fini_array) Cd 8[1] @ 0x3dc0
+DEBUG: [cbin.c:3613] (section .dynamic) Cd 8[62] @ 0x3dc8
+DEBUG: [cbin.c:3613] (section .got) Cd 8[9] @ 0x3fb8
+DEBUG: [cbin.c:3613] (section .dynsym) Cd 8[21] @ 0x3d8
+DEBUG: [cbin.c:3613] (section .dynstr) Css 141 @ 0x480
+DEBUG: [cbin.c:3613] (section .rela.dyn) Cd 8[24] @ 0x550
+DEBUG: [cbin.c:3613] (section .rela.plt) Cd 8[3] @ 0x610
+DEBUG: [cbin.c:3613] (section .init_array) Cd 8[1] @ 0x3db8
+DEBUG: [cbin.c:3613] (section .fini_array) Cd 8[1] @ 0x3dc0
+DEBUG: [cbin.c:3613] (section .dynamic) Cd 8[62] @ 0x3dc8
+DEBUG: [cbin.c:3613] (section .got) Cd 8[9] @ 0x3fb8
 WARN: [cbin.c:1946] Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
-DEBUG: [cbin.c:2642] Cannot resolve symbol address __libc_start_main
-DEBUG: [cbin.c:2642] Cannot resolve symbol address _ITM_deregisterTMCloneTable
-DEBUG: [cbin.c:2642] Cannot resolve symbol address __gmon_start__
-DEBUG: [cbin.c:2642] Cannot resolve symbol address _ITM_registerTMCloneTable
-DEBUG: [cbin.c:2642] Cannot resolve symbol address __cxa_finalize
+DEBUG: [cbin.c:2833] Cannot resolve symbol address __libc_start_main
+DEBUG: [cbin.c:2507] Cannot resolve symbol address __libc_start_main
+DEBUG: [cbin.c:2833] Cannot resolve symbol address _ITM_deregisterTMCloneTable
+DEBUG: [cbin.c:2507] Cannot resolve symbol address _ITM_deregisterTMCloneTable
+DEBUG: [cbin.c:2833] Cannot resolve symbol address __gmon_start__
+DEBUG: [cbin.c:2507] Cannot resolve symbol address __gmon_start__
+DEBUG: [cbin.c:2833] Cannot resolve symbol address _ITM_registerTMCloneTable
+DEBUG: [cbin.c:2507] Cannot resolve symbol address _ITM_registerTMCloneTable
+DEBUG: [cbin.c:2833] Cannot resolve symbol address __cxa_finalize
+DEBUG: [cbin.c:2507] Cannot resolve symbol address __cxa_finalize
 EOF
 RUN
 

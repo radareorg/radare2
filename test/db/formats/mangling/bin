@@ -102,7 +102,7 @@ NAME=MSVC import symbol demangling
 FILE=bins/pe/libzmq-v100-mt-4_0_4.dll
 CMDS=f~0x1004e0f4[2]
 EXPECT=<<EOF
-sym.imp.MSVCP100.dll_public:_void___thiscall_std::basic_ostream_char__struct_std::char_traits_char__::_Osfx_void_
+sym.imp.MSVCP100.dll___Osfx___basic_ostream_DU__char_traits_D_std___std__QAEXXZ
 EOF
 RUN
 

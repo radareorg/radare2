@@ -19,7 +19,7 @@ CMDS=<<EOF
 e asm.lines.jmp=0
 e asm.bytes=0
 e asm.comments=0
-s sym.static_int_Test::callMeNot__
+s method.class.Test.callMeNot
 pd 20~?NSLog
 af
 pd 20~?NSLog

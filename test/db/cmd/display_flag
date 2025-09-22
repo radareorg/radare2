@@ -45,7 +45,6 @@ isq
 EOF
 EXPECT=<<EOF
 ;-- section.0.__TEXT.__text:
-;-- _rt:
 ;-- func.100000f50:
 0x100000f50      55             push rbp
 0x100000000 0 __mh_execute_header

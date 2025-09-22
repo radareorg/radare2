@@ -22,6 +22,8 @@ typedef enum {
 	R_SIGN_GRAPH = 'g', // graph metrics
 	R_SIGN_OFFSET = 'o', // addr
 	R_SIGN_NAME = 'n', // real name
+	R_SIGN_RAWNAME = 'R', // raw name (base64 in radare script)
+	R_SIGN_DEMANGLED = 'd', // demangled name (base64 in radare script)
 	R_SIGN_REFS = 'r', // references
 	R_SIGN_XREFS = 'x', // xrefs
 	R_SIGN_VARS = 'v', // variables
@@ -31,7 +33,7 @@ typedef enum {
 	R_SIGN_BBHASH = 'h', // basic block hash
 	R_SIGN_END = '\x00', // used for sentenal value
 } RSignType;
-#define R_SIGN_TYPEMAX 16
+#define R_SIGN_TYPEMAX 18
 
 typedef struct r_sign_graph_t {
 	int cc;
@@ -55,6 +57,8 @@ typedef struct r_sign_item_t {
 	// use RBinName maybe?
 	char *name;
 	char *realname;
+	char *rawname;
+	char *demangled;
 	char *next;
 	char *comment;
 	char *types;
