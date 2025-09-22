@@ -395,11 +395,11 @@ static int disassemble(RAnalOp *r_op, const ut8 *buf, int len) {
 static RBpfDialect get_bpf_dialect(RArchSession *s) {
 	const char *cpu = s && s->config ? s->config->cpu : NULL;
 	if (cpu) {
-		if (!strcmp (cpu, "classic") || !strcmp (cpu, "cbpf") || !strcmp (cpu, "cBPF")) {
-			return R_BPF_DIALECT_CLASSIC;
-		}
 		if (!strcmp (cpu, "extended") || !strcmp (cpu, "ebpf") || !strcmp (cpu, "eBPF") || !strcmp (cpu, "64")) {
 			return R_BPF_DIALECT_EXTENDED;
+		}
+		if (!strcmp (cpu, "classic") || !strcmp (cpu, "cbpf") || !strcmp (cpu, "cBPF")) {
+			return R_BPF_DIALECT_CLASSIC;
 		}
 	}
 	if (s && s->config && s->config->bits == 64) {
@@ -458,8 +458,12 @@ static const char *trim_input(const char *p) {
 	return NULL;
 }
 
+static int g_bpf_ext_tokens = 0;
 static inline bool is_single_char_token(char c) {
-	return c == '(' || c == ')' || c == '[' || c == ']' || c == ',';
+	if (g_bpf_ext_tokens) {
+		return c == '(' || c == ')' || c == '[' || c == ']' || c == ',';
+	}
+	return c == '(' || c == ')' || c == '[' || c == ']';
 }
 
 static inline bool is_arithmetic(char c) {
@@ -810,7 +814,10 @@ static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 	ut8 ebuf[16] = {0};
 	int elen = 0;
 
+	int prev = g_bpf_ext_tokens;
+	g_bpf_ext_tokens = (dialect == R_BPF_DIALECT_EXTENDED);
 	bool ret = parse_instruction (&f, &p, op->addr, dialect, ebuf, &elen);
+	g_bpf_ext_tokens = prev;
 	token_fini (&p);
 	if (ret) {
 		if (dialect == R_BPF_DIALECT_EXTENDED) {

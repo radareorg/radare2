@@ -118,7 +118,10 @@ static inline bool parse_instruction(RBpfSockFilter *f, BPFAsmParser *p, ut64 pc
 		if (TOKEN_EQ (mnemonic, "rsh64")) { ALU64 (0x77, 0x7f); }
 		if (TOKEN_EQ (mnemonic, "xor64")) { ALU64 (0xa7, 0xaf); }
 		if (TOKEN_EQ (mnemonic, "mod64")) { ALU64 (0x97, 0x9f); }
-		if (TOKEN_EQ (mnemonic, "add")) { ALU32 (0x04, 0x0c); }
+		if (TOKEN_EQ (mnemonic, "add")) {
+			if (opc == 1) { immv = strtoul (op[0], NULL, 0); EMIT (0x04, 0, 0, 0, immv); }
+			ALU32 (0x04, 0x0c);
+		}
 		if (TOKEN_EQ (mnemonic, "sub")) { ALU32 (0x14, 0x1c); }
 		if (TOKEN_EQ (mnemonic, "mul")) { ALU32 (0x24, 0x2c); }
 		if (TOKEN_EQ (mnemonic, "div")) { ALU32 (0x34, 0x3c); }
