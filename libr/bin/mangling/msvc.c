@@ -1,14 +1,11 @@
-/* radare - LGPL - Copyright 2015-2023 - inisider, pancake */
+/* radare - LGPL - Copyright 2015-2025 - inisider, pancake, murphy */
 
-#include <ctype.h>
-#include <string.h>
 #include <r_bin.h>
-#include <r_util.h>
 #include "./microsoft.h"
 
 static bool is_probable_itanium_rtti_name(const char *name) {
 	const unsigned char *s = (const unsigned char *)name;
-	if (!s || !*s) {
+	if (R_STR_ISEMPTY (s)) {
 		return false;
 	}
 	if (*s == '.' || *s == '?' || *s == '@' || *s == '$') {
