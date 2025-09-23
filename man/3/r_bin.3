@@ -6,204 +6,271 @@
 .Nd Radare2 Binary Analysis Library API
 .Sh SYNOPSIS
 .In r_bin.h
-.Ft RBin *
-.Fn r_bin_new "void"
-.Ft void
-.Fn r_bin_free "RBin *bin"
-.Ft bool
-.Fn r_bin_open "RBin *bin" "const char *file" "RBinFileOptions *opt"
-.Ft RBinInfo *
-.Fn r_bin_get_info "RBin *bin"
-.Ft RList *
-.Fn r_bin_get_sections "RBin *bin"
-.Ft RList *
-.Fn r_bin_get_symbols "RBin *bin"
-.Ft RList *
-.Fn r_bin_get_imports "RBin *bin"
-.Ft RList *
-.Fn r_bin_get_entries "RBin *bin"
-.Ft RList *
-.Fn r_bin_get_strings "RBin *bin"
-.Ft RRBTree *
-.Fn r_bin_get_relocs "RBin *bin"
-.Ft RList *
-.Fn r_bin_get_classes "RBin *bin"
-.Ft bool
-.Fn r_bin_plugin_add "RBin *bin" "RBinPlugin *plugin"
-.Ft char *
-.Fn r_bin_demangle "RBinFile *binfile" "const char *lang" "const char *str" "ut64 vaddr" "bool libs"
-.Ft void
-.Fn r_bin_list "RBin *bin" "PJ *pj" "int format"
+.Pp
 .Sh DESCRIPTION
-The
-.Nm r_bin
-library provides binary analysis capabilities in radare2, supporting parsing of various executable formats, extracting symbols, sections, strings, and other metadata. It abstracts binary file parsing through a plugin system.
 .Pp
-Key concepts:
-.Bl -bullet
-.It
+High-level helpers for opening, inspecting and manipulating executable files are exposed through the
+.Nm r_bin
+API. It hides loader and format differences behind a uniform set of objects (for example
 .Nm RBin
-is the main structure managing binary analysis.
-.It
+,
 .Nm RBinFile
-represents an open binary file.
-.It
+and
 .Nm RBinObject
-contains parsed binary data like symbols, sections, etc.
-.It
-Plugins handle different binary formats (ELF, PE, Mach-O, etc.).
-.It
-Demangling converts mangled symbol names to readable form.
-.El
+) and lets callers enumerate symbols, sections, imports, relocations and other useful metadata. The implementation relies on format plugins so callers can work with ELF, PE, Mach-O, DEX and other formats using the same API.
+.Pp
+Main responsibilities: probing and opening files, returning parsed metadata, offering demanglers and helpers to read section bytes or line/debug info. The library does not perform control‑flow analysis — use
+.Xr r_anal 3
+and
+.Xr r_core 3
+for higher level analysis.
 .Sh INITIALIZATION
+.Pp
+Allocate an
+.Nm RBin
+context with
+.Ft r_bin_new ()
+and tear it down with
+.Ft r_bin_free ()
+.Pp
+To parse a file, initialise an
+.Nm RBinFileOptions
+with
+.Ft r_bin_file_options_init ()
+and call
+.Ft r_bin_open ().
+Keep a reference to the previously selected file if you will open extra files (see examples below); the API provides helpers to switch the "current" file and to delete opened binfiles.
+
 .Ft RBin *
 .Fn r_bin_new "void"
 .Pp
-Creates a new binary analysis context.
+Create a new binary analysis context.
 .Ft void
 .Fn r_bin_free "RBin *bin"
 .Pp
-Frees a binary analysis context.
+Free a binary analysis context.
 .Ft bool
 .Fn r_bin_open "RBin *bin" "const char *file" "RBinFileOptions *opt"
 .Pp
-Opens a binary file for analysis with given options.
+Open a binary file for analysis with given options.
 .Sh BINARY INFORMATION
+.Pp
+After opening a file the API exposes a compact
+.Nm RBinInfo
+structure that summarises detected architecture, bits, endianness and a few security-related features (NX, canary, etc.). Use
+.Ft r_bin_get_info ()
+to obtain it.
+.Pp
+Symbol, section and import accessors return either
+.Nm RList
+or vector types such as
+.Nm RVecRBinSymbol
+. For heavy iteration prefer the vector APIs (see examples) because they avoid allocations and match common internal usage patterns in
+.Nm libr/core
+.
+
 .Ft RBinInfo *
 .Fn r_bin_get_info "RBin *bin"
 .Pp
-Retrieves general information about the binary (architecture, OS, etc.).
+Retrieve general information about the binary (architecture, OS, etc.).
 .Ft RList *
 .Fn r_bin_get_sections "RBin *bin"
 .Pp
-Gets a list of sections in the binary.
+Get a list of sections in the binary.
 .Ft RList *
 .Fn r_bin_get_symbols "RBin *bin"
 .Pp
-Gets a list of symbols in the binary.
+Get a list of symbols in the binary.
+.Ft RVecRBinSymbol *
+.Fn r_bin_get_symbols_vec "RBin *bin"
+.Pp
+Get a vector of symbols for efficient iteration.
 .Ft RList *
 .Fn r_bin_get_imports "RBin *bin"
 .Pp
-Gets a list of imported symbols.
+Get a list of imported symbols.
 .Ft RList *
 .Fn r_bin_get_entries "RBin *bin"
 .Pp
-Gets a list of entry points.
+Get a list of entry points.
 .Ft RList *
 .Fn r_bin_get_strings "RBin *bin"
 .Pp
-Gets a list of strings in the binary.
+Get a list of strings in the binary.
 .Ft RRBTree *
 .Fn r_bin_get_relocs "RBin *bin"
 .Pp
-Gets relocation information.
+Get relocation information.
 .Ft RList *
 .Fn r_bin_get_classes "RBin *bin"
 .Pp
-Gets a list of classes (for object-oriented binaries).
+Get a list of classes (for object-oriented binaries).
 .Sh PLUGIN MANAGEMENT
+.Pp
+Format support is implemented as plugins; the bin API exposes helpers to register or list plugins. Normal callers do not need to manipulate plugin objects directly — opening a file triggers plugin discovery automatically based on the file header and configured extract/load plugins.
+
 .Ft bool
 .Fn r_bin_plugin_add "RBin *bin" "RBinPlugin *plugin"
 .Pp
-Adds a binary format plugin.
+Add a binary format plugin to the registry.
 .Ft void
 .Fn r_bin_list "RBin *bin" "PJ *pj" "int format"
 .Pp
-Lists available plugins or loaded binaries.
+List available plugins or loaded binaries (format controls output style).
 .Sh DEMANGLING
+.Pp
+Radare2 exposes several demanglers. Call
+.Ft r_bin_demangle ()
+to attempt demangling with an explicit language name or use language-specific helpers like
+.Ft r_bin_demangle_cxx (),
+.Ft r_bin_demangle_rust ()
+or
+.Ft r_bin_demangle_java ().
+Pass the current
+.Nm RBinFile
+when the demangler needs context (for example some Rust and C++ demanglers consult binary metadata or symbol addresses).
+.Pp
+Note: these functions return heap-allocated strings that must be freed by the caller.
+
 .Ft char *
 .Fn r_bin_demangle "RBinFile *binfile" "const char *lang" "const char *str" "ut64 vaddr" "bool libs"
 .Pp
-Demangles a symbol name using the specified language.
+Attempt to demangle a string using the specified language and optional vaddr.
 .Ft char *
 .Fn r_bin_demangle_java "const char *str"
 .Pp
-Demangles a Java symbol.
+Demangle a Java symbol.
 .Ft char *
 .Fn r_bin_demangle_cxx "RBinFile *binfile" "const char *str" "ut64 vaddr"
 .Pp
-Demangles a C++ symbol.
+Demangle a C++ symbol using optional binary context.
 .Sh FILE OPERATIONS
+.Pp
+r_bin keeps a notion of a "current" opened
+.Nm RBinFile
+that many callers use as implicit context (for example demanglers and format-specific helpers). Obtain it with
+.Ft r_bin_cur ().
+.Pp
+To switch between multiple opened files use
+.Ft r_bin_file_set_cur_binfile ()
+and use
+.Ft r_bin_file_delete ()
+to close and remove opened binfiles when no longer required. When opening secondary files from a running program (for example to look up a symbol in libc) save the previous current file, open the new one and restore the old one when finished — see examples below.
+
 .Ft RBinFile *
 .Fn r_bin_cur "RBin *bin"
 .Pp
-Gets the current binary file.
+Get the current binary file.
 .Ft bool
 .Fn r_bin_select "RBin *bin" "const char *arch" "int bits" "const char *name"
 .Pp
-Selects a binary file by architecture and name.
+Select a binary object by architecture and name.
 .Ft bool
 .Fn r_bin_file_close "RBin *bin" "int bd"
 .Pp
-Closes a binary file descriptor.
+Close a binary file descriptor (helper for raw fd-based operations).
 .Sh ADDRESS LINE INFORMATION
+.Pp
+If the binary contains debug information the bin API can return address → source mappings through
+.Ft r_bin_addrline_at ().
+.Pp
+Address line data is stored per
+.Nm RBinFile
+and callers can reset or iterate the internal storage with
+.Ft r_bin_addrline_reset ()
+and associated helpers. These facilities are commonly used by frontends to show filename/line information for a given instruction address.
+
 .Ft RBinAddrline *
 .Fn r_bin_addrline_at "RBin *bin" "ut64 addr"
 .Pp
-Gets debug line information for an address.
+Get debug line information for an address.
 .Ft void
 .Fn r_bin_addrline_reset "RBin *bin"
 .Pp
-Resets address line information.
+Reset stored address line information for the current file.
 .Sh BINARY WRITING
+.Pp
+Lightweight helpers to patch metadata are provided, such as adding a dependency or changing the entry point. These are convenience wrappers and do not replace a full binary rewriter; use them for small modifications exposed in the CLI and plugins.
+
 .Ft bool
 .Fn r_bin_wr_addlib "RBin *bin" "const char *lib"
 .Pp
-Adds a library dependency to the binary.
+Add a library dependency to the binary.
 .Ft bool
 .Fn r_bin_wr_entry "RBin *bin" "ut64 addr"
 .Pp
-Sets the entry point address.
+Set the entry point address for the current binary.
 .Sh FILTERING
+.Pp
+Symbol and string filters let callers reduce the amount of reported data (for example hiding platform runtime symbols). Use
+.Ft r_bin_load_filter ()
+to set filtering rules and
+.Ft r_bin_string_filter ()
+to test strings against the active filter.
+
 .Ft void
 .Fn r_bin_load_filter "RBin *bin" "ut64 rules"
 .Pp
-Loads symbol filtering rules.
+Load symbol filtering rules into the current context.
 .Ft bool
 .Fn r_bin_string_filter "RBin *bin" "const char *str" "ut64 addr"
 .Pp
-Filters strings based on criteria.
+Test whether a given string matches the active string filter.
 .Sh EXAMPLES
-Opening and analyzing a binary:
+.Pp
+The examples below show common patterns found in
+.Nm libr/core
+—opening a secondary file (for example libc), iterating symbols with the vector API and restoring the previous current file; and using the demanglers.
+.Pp
 .Bd -literal
-RBin *bin = r_bin_new();
-RBinFileOptions opt = {0};
-opt.fd = -1; // use filename
-r_bin_open(bin, "/bin/ls", &opt);
-RBinInfo *info = r_bin_get_info(bin);
+/* Open a file and inspect basic info */
+RBin *bin = r_bin_new ();
+RBinFileOptions opt;
+/* helper that fills sensible defaults */
+r_bin_file_options_init (&opt, -1, 0, 0, false);
+if (!r_bin_open (bin, "/usr/lib/libc.so.6", &opt)) {
+    fprintf (stderr, "failed to open file\n");
+    r_bin_free (bin);
+    return;
+}
+
+/* RBinInfo summarises arch/bits and security features */
+RBinInfo *info = r_bin_get_info (bin);
 if (info) {
-    printf("Arch: %s\\n", info->arch);
+    printf ("file=%s arch=%s bits=%d nx=%d canary=%d\n",
+        info->file, info->arch, info->bits, info->has_nx, info->has_canary);
 }
-RList *symbols = r_bin_get_symbols(bin);
-if (symbols) {
-    // iterate over symbols
+
+/* Iterate symbols efficiently using the vector API (used in core code) */
+RVecRBinSymbol *syms = r_bin_get_symbols_vec (bin);
+RBinSymbol *s;
+R_VEC_FOREACH (syms, s) {
+    const char *name = r_bin_name_tostring (s->name);
+    printf ("%s @ 0x%"PFMT64x"\n", name, s->vaddr);
 }
-r_bin_free(bin);
+
+/* When opening helper libraries from a running process, remember to close them */
+/* Example pattern (used in dmh_glibc.inc.c):
+ *  RBinFile *prev = r_bin_cur (core->bin);
+ *  r_bin_open (core->bin, path, &opt);
+ *  // use core->bin (current) for lookups
+ *  r_bin_file_delete (core->bin, r_bin_cur (core->bin)->id);
+ *  r_bin_file_set_cur_binfile (core->bin, prev);
+ */
+r_bin_free (bin);
 .Ed
 .Pp
-Demangling a symbol:
 .Bd -literal
-RBin *bin = r_bin_new();
-// ... open binary ...
-char *demangled = r_bin_demangle(NULL, "cxx", "_ZN4Test4funcEi", 0, false);
-if (demangled) {
-    printf("Demangled: %s\\n", demangled);
-    free(demangled);
+/* Demangle an identifier using the current file context */
+RBin *bin = r_bin_new ();
+/* open file earlier and make it the current file */
+RBinFile *cur = r_bin_cur (bin);
+char *dem = r_bin_demangle_cxx (cur, "_ZN4Test4funcEi", 0);
+if (dem) {
+    puts (dem);
+    free (dem);
 }
-r_bin_free(bin);
-.Ed
-.Pp
-Listing sections:
-.Bd -literal
-RBin *bin = r_bin_new();
-// ... open binary ...
-RList *sections = r_bin_get_sections(bin);
-RListIter *iter;
-RBinSection *sec;
-r_list_foreach(sections, iter, sec) {
-    printf("Section: %s @ 0x%"PFMT64x"\\n", sec->name, sec->vaddr);
-}
-r_bin_free(bin);
+r_bin_free (bin);
 .Ed
 .Sh SEE ALSO
 .Xr r_core 3 ,
