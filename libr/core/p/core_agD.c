@@ -67,57 +67,58 @@ static bool r_cmd_agD_call(RCorePluginSession *cps, const char *input) {
 		return true;
 	}
 	switch (sub) {
-		case 'v':
-			/* open interactive visual graph for dom tree (mode 3) */
-			r_core_visual_graph (core, dtagraph, NULL, 3);
-			break;
-		case 'd':
-			{
-				/* print graphviz/dot from the dominance graph */
-				r_cons_printf (core->cons, "digraph code {\n");
-				RListIter *it;
-				RGraphNode *node;
-				int idx = 0;
-				HtPPOptions pointer_options = {0};
-				HtPP *map = ht_pp_new_opt (&pointer_options);
-				r_list_foreach (fcn_dtgraph->nodes, it, node) {
-					char *title = _get_title (node->data, NULL);
-					char *body = _get_body (node->data, core);
-					r_cons_printf (core->cons, "  \"n%d\" [label=\"%s\\n%s\"];\n",
-							idx, title? title: "", body? body: "");
-					if (title) { free (title); }
-					if (body) { free (body); }
-					ht_pp_insert (map, node, (void *)(size_t)idx);
-					idx++;
-				}
-				r_list_foreach (fcn_dtgraph->nodes, it, node) {
-					RListIter *it2;
-					RGraphNode *n2;
-					r_list_foreach (node->out_nodes, it2, n2) {
-						bool found;
-						int i1 = (int)(size_t) ht_pp_find (map, node, &found);
-						int i2 = (int)(size_t) ht_pp_find (map, n2, &found);
-						r_cons_printf (core->cons, "  \"n%d\" -> \"n%d\";\n", i1, i2);
-					}
-				}
-				ht_pp_free (map);
-				r_cons_printf (core->cons, "}\n");
-				break;
+	case 'v':
+		/* open interactive visual graph for dom tree (mode 3) */
+		r_core_visual_graph (core, dtagraph, NULL, 3);
+		r_core_cmd0 (core, "reset");
+		break;
+	case 'd':
+		{
+			/* print graphviz/dot from the dominance graph */
+			r_cons_printf (core->cons, "digraph code {\n");
+			RListIter *it;
+			RGraphNode *node;
+			int idx = 0;
+			HtPPOptions pointer_options = {0};
+			HtPP *map = ht_pp_new_opt (&pointer_options);
+			r_list_foreach (fcn_dtgraph->nodes, it, node) {
+				char *title = _get_title (node->data, NULL);
+				char *body = _get_body (node->data, core);
+				r_cons_printf (core->cons, "  \"n%d\" [label=\"%s\\n%s\"];\n",
+						idx, title? title: "", body? body: "");
+				if (title) { free (title); }
+				if (body) { free (body); }
+				ht_pp_insert (map, node, (void *)(size_t)idx);
+				idx++;
 			}
-		case 'j':
-			{
-				PJ *pj = pj_new ();
-				if (pj) {
-					r_agraph_print_json (dtagraph, pj);
-					r_cons_printf (core->cons, "%s\n", pj_string (pj));
-					pj_free (pj);
+			r_list_foreach (fcn_dtgraph->nodes, it, node) {
+				RListIter *it2;
+				RGraphNode *n2;
+				r_list_foreach (node->out_nodes, it2, n2) {
+					bool found;
+					int i1 = (int)(size_t) ht_pp_find (map, node, &found);
+					int i2 = (int)(size_t) ht_pp_find (map, n2, &found);
+					r_cons_printf (core->cons, "  \"n%d\" -> \"n%d\";\n", i1, i2);
 				}
-				break;
 			}
-		default:
-			/* fallback: print ascii graph as before */
-			r_agraph_print (dtagraph, core);
+			ht_pp_free (map);
+			r_cons_printf (core->cons, "}\n");
 			break;
+		}
+	case 'j':
+		{
+			PJ *pj = pj_new ();
+			if (pj) {
+				r_agraph_print_json (dtagraph, pj);
+				r_cons_printf (core->cons, "%s\n", pj_string (pj));
+				pj_free (pj);
+			}
+			break;
+		}
+	default:
+		/* fallback: print ascii graph as before */
+		r_agraph_print (dtagraph, core);
+		break;
 	}
 	r_agraph_free (dtagraph);
 	r_graph_free (fcn_dtgraph);
