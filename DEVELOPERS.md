@@ -108,6 +108,7 @@ coding style as the rest of the code base.
   below.
 
 * See `sys/indent.sh` for indenting your code automatically.
+  * There's also `sys/indent.pl` which takes a file as argument for simpler uses
 
 * A pre-commit hook to check coding style is located at
   `sys/pre-commit-indent.sh`. You can install it by copying it to
