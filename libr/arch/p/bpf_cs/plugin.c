@@ -33,7 +33,7 @@ static int get_capstone_mode(RArchSession *as) {
 #define OPCOUNT insn->detail->bpf.op_count
 
 // calculate jump address from immediate
-#define JUMP(n) (op->addr + insn->size * (1 + IMM (n)))
+#define JUMP(n) (op->addr + insn->size * (st16)(1 + IMM (n)))
 
 static void analop_esil(RArchSession *a, RAnalOp *op, cs_insn *insn, ut64 addr);
 
