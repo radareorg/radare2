@@ -6,26 +6,7 @@
 .Nd radare2 debugger library
 .Sh SYNOPSIS
 .In r_debug.h
-.Ft RDebug *
-.Fn r_debug_new "int hard"
-.Ft void
-.Fn r_debug_free "RDebug *dbg"
-.Ft bool
-.Fn r_debug_attach "RDebug *dbg" "int pid"
-.Ft bool
-.Fn r_debug_detach "RDebug *dbg" "int pid"
-.Ft int
-.Fn r_debug_step "RDebug *dbg" "int steps"
-.Ft int
-.Fn r_debug_continue "RDebug *dbg"
-.Ft RDebugReasonType
-.Fn r_debug_wait "RDebug *dbg" "RBreakpointItem **bp"
-.Ft bool
-.Fn r_debug_reg_sync "RDebug *dbg" "int type" "int write"
-.Ft ut64
-.Fn r_debug_reg_get "RDebug *dbg" "const char *name"
-.Ft bool
-.Fn r_debug_reg_set "RDebug *dbg" "const char *name" "ut64 num"
+.Pp
 .Sh DESCRIPTION
 The
 .Nm r_debug

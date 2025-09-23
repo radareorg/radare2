@@ -6,251 +6,218 @@
 .Nd Radare2 Core Library API
 .Sh SYNOPSIS
 .In r_core.h
-.Ft RCore *
-.Fn r_core_new "void"
-.Ft void
-.Fn r_core_free "RCore *core"
-.Ft int
-.Fn r_core_cmd "RCore *core" "const char *cmd" "bool log"
-.Ft char *
-.Fn r_core_cmd_str "RCore *core" "const char *cmd"
-.Ft bool
-.Fn r_core_seek "RCore *core" "ut64 addr" "bool rb"
-.Ft RAnalOp *
-.Fn r_core_anal_op "RCore *core" "ut64 addr" "int mask"
-.Ft int
-.Fn r_core_print_disasm "RCore *core" "ut64 addr" "ut8 *buf" "int len" "int count" "enum r_pdu_condition_t pdu_condition_type" "const void *pdu_condition" "bool count_bytes" "bool json" "PJ *pj" "RAnalFunction *pdf"
-.Ft bool
-.Fn r_core_bin_load "RCore *core" "const char *file" "ut64 baseaddr"
-.Ft void
-.Fn r_core_visual "RCore *core" "const char *input"
-.Ft bool
-.Fn r_core_project_open "RCore *core" "const char *file"
-.Ft bool
-.Fn r_core_project_save "RCore *core" "const char *file"
-.Ft RCoreTask *
-.Fn r_core_task_new "RCore *core" "bool create_cons" "const char *cmd" "RCoreTaskCallback cb" "void *user"
-.Ft void
-.Fn r_core_undo_push "RCore *core" "RCoreUndo *cu"
-.Ft void
-.Fn r_core_log_add "RCore *core" "const char *msg"
+.Pp
 .Sh DESCRIPTION
 The
 .Nm r_core
-library provides the central functionality of radare2, integrating all subsystems like analysis, disassembly, binary parsing, debugging, and user interface. It serves as the main API for interacting with radare2's core features.
+library provides the central functionality of radare2 and exposes it to programs and bindings. It integrates subsystems such as binary parsing, disassembly, analysis, emulation (ESIL), debugging, and interactive UI control. Callers use `RCore` to drive radare2 workflows: open a binary, run analyses, query information, and programmatically manipulate the project state.
 .Pp
-Key concepts:
+Important points for embedding and scripting:
 .Bl -bullet
 .It
 .Nm RCore
-is the main structure holding all radare2 state and subsystems.
+is the single structure containing the state (io, bin, anal, debug, flags, etc.). Treat it as the main entrypoint for the API.
 .It
-Command execution allows running radare2 commands programmatically.
+Commands are the primary high-level control mechanism; use `r_core_cmd`/`r_core_cmd_str` to invoke existing r2 semantics from code.
 .It
-Seeking manages the current address position.
+Many APIs return heap-allocated strings (for example `r_core_cmd_str`); the caller is responsible for freeing them.
 .It
-Analysis provides disassembly, function analysis, and ESIL emulation.
+Analysis functions (`r_core_anal_fcn`, `r_core_anal_op`) populate internal structures that power higher-level operations (`pdf`, `af`, crossrefs). Run analysis before relying on function graphs.
 .It
-Binary loading handles file parsing and symbol extraction.
-.It
-Visual mode offers interactive UI for analysis.
+Seeking (`r_core_seek`) changes the current offset for subsequent commands; prefer absolute seeks for deterministic behavior in scripts.
 .El
 .Sh INITIALIZATION
 .Ft RCore *
 .Fn r_core_new "void"
 .Pp
-Creates a new radare2 core instance.
+Allocate and initialize a fresh `RCore` instance with its subsystems (io, bin, anal, dbg, flags, etc.). The returned pointer is owned by the caller and must be freed with `r_core_free`.
 .Ft void
 .Fn r_core_free "RCore *core"
 .Pp
-Frees a radare2 core instance.
+Free an `RCore` instance and all associated resources. After calling this, the core pointer must not be used.
 .Ft bool
 .Fn r_core_init "RCore *core"
 .Pp
-Initializes a core instance.
+Perform additional initialization on an existing `RCore` object. Most users call `r_core_new ()` which performs internal initialization already, but this is useful when embedding or recreating a core structure.
 .Sh COMMAND EXECUTION
 .Ft int
 .Fn r_core_cmd "RCore *core" "const char *cmd" "bool log"
 .Pp
-Executes a radare2 command.
+Execute a textual radare2 command. This is the primary way to drive functionality from host programs: opening files (`o`), running analysis (`aaa`), printing (`pd`, `px`), and manipulating flags. `log` controls whether the executed command is recorded in the core's history/log.
 .Ft char *
 .Fn r_core_cmd_str "RCore *core" "const char *cmd"
 .Pp
-Executes a command and returns the output as a string.
+Execute a command and return its output as a newly allocated string. The caller is responsible for freeing the returned pointer (e.g., with `free ()`). This function is heavily used by language bindings and scripts that need to capture command output.
 .Ft int
 .Fn r_core_cmdf "RCore *core" "const char *fmt" "..."
 .Pp
-Executes a formatted command.
+Format and execute a command (convenience wrapper). Useful to build commands with addresses or sizes without manual string handling.
 .Ft int
 .Fn r_core_cmd0 "RCore *core" "const char *cmd"
 .Pp
-Executes a command without logging.
+Execute a command without recording it in the log or history. Use for internal operations or when performance matters.
 .Sh SEEKING
 .Ft bool
 .Fn r_core_seek "RCore *core" "ut64 addr" "bool rb"
 .Pp
-Seeks to the specified address.
+Set the core's current offset to `addr`. Seeking affects subsequent commands that use the current address (for example `pd` or `px`). `rb` indicates whether the core should attempt to read bytes at the destination to validate the seek.
 .Ft bool
 .Fn r_core_seek_delta "RCore *core" "st64 addr"
 .Pp
-Seeks by a relative offset.
+Move the current offset by a signed delta relative to the current position. Useful for short relative moves in scripts.
 .Ft void
 .Fn r_core_seek_previous "RCore *core" "const char *type"
 .Pp
-Seeks to the previous item of the specified type.
+Seek to the previous item of a given `type` (for example a previous function or basic block). Useful to implement backwards navigation in tools that iterate over analysis results.
 .Sh ANALYSIS
 .Ft RAnalOp *
 .Fn r_core_anal_op "RCore *core" "ut64 addr" "int mask"
 .Pp
-Analyzes an instruction at the given address.
+Analyze a single instruction at `addr` and return an `RAnalOp *` describing it. The returned `RAnalOp *` is owned by the caller and must be freed with `r_anal_op_free ()`. This API is ideal when you need structured, per-instruction information without running whole-function analysis.
 .Ft bool
 .Fn r_core_anal_fcn "RCore *core" "ut64 at" "ut64 from" "int reftype" "int depth"
 .Pp
-Analyzes a function starting at the given address.
+Perform function-level analysis starting at address `at`. This populates internal function graphs, basic blocks and cross-references and is typically followed by printing functions (`pdf`) or running decompiler stages.
 .Ft void
 .Fn r_core_anal_esil "RCore *core" "const char *str" "const char *addr"
 .Pp
-Executes ESIL code.
+Evaluate an ESIL expression or code snippet. ESIL is radare2's emulation language; this function helps run small fragments or boot the ESIL VM for scripted emulation.
 .Ft int
 .Fn r_core_esil_step "RCore *core" "ut64 until_addr" "const char *until_expr" "ut64 *prev_addr" "bool stepOver"
 .Pp
-Steps through ESIL execution.
+Step the ESIL VM until an address or condition is met. Useful to implement single-stepping or conditional traces programmatically.
 .Sh DISASSEMBLY
 .Ft int
 .Fn r_core_print_disasm "RCore *core" "ut64 addr" "ut8 *buf" "int len" "int count" "enum r_pdu_condition_t pdu_condition_type" "const void *pdu_condition" "bool count_bytes" "bool json" "PJ *pj" "RAnalFunction *pdf"
 .Pp
-Disassembles instructions at the given address.
+Format and print disassembly for a buffer or address range. High-level commands (`pd`, `pdf`) are implemented using this API; call it when you need controlled, fast formatting and optionally JSON output via `PJ`.
 .Ft char *
 .Fn r_core_disassemble_instr "RCore *core" "ut64 addr" "int l"
 .Pp
-Disassembles a single instruction.
+Return a heap-allocated string containing the disassembly of a single instruction at `addr`. Caller must free it.
 .Ft char *
 .Fn r_core_disassemble_bytes "RCore *core" "ut64 addr" "int b"
 .Pp
-Disassembles a specified number of bytes.
+Disassemble `b` bytes starting at `addr` and return the output as a newly allocated string.
 .Sh BINARY OPERATIONS
 .Ft bool
 .Fn r_core_bin_load "RCore *core" "const char *file" "ut64 baseaddr"
 .Pp
-Loads a binary file for analysis.
+Load a binary into the core for analysis. `file` accepts normal file paths and special providers used in tests (for example `malloc://SIZE` to create an in-memory file). After loading, analysis and printing commands operate on the loaded binary.
 .Ft bool
 .Fn r_core_bin_info "RCore *core" "int action" "PJ *pj" "int mode" "int va" "RCoreBinFilter *filter" "const char *chksum"
 .Pp
-Retrieves binary information.
+Retrieve structured information about the currently loaded binary (sections, symbols, checksums). Use the `PJ` parameter for JSON formatted output.
 .Ft bool
 .Fn r_core_bin_set_cur "RCore *core" "RBinFile *binfile"
 .Pp
-Sets the current binary file.
+Set the `RBinFile` used as current. Useful when the caller manages multiple binaries or wants to switch the active `RBinFile` without reloading from disk.
 .Sh VISUAL MODE
 .Ft void
 .Fn r_core_visual "RCore *core" "const char *input"
 .Pp
-Enters visual mode with optional input.
+Enter the interactive visual mode driven by `RCore`. Frontends can call this to open the TUI and optionally feed initial key events or commands via `input`.
 .Ft int
 .Fn r_core_visual_refs "RCore *core" "bool xref" "bool fcnInsteadOfAddr"
 .Pp
-Displays references in visual mode.
+Show cross-references inside the visual UI. Parameters control whether to show XREFs and whether to present functions instead of raw addresses.
 .Ft bool
 .Fn r_core_visual_hud "RCore *core"
 .Pp
-Shows the heads-up display in visual mode.
+Display or toggle the heads-up display (HUD) that shows contextual information in visual mode.
 .Sh PROJECT MANAGEMENT
 .Ft bool
 .Fn r_core_project_open "RCore *core" "const char *file"
 .Pp
-Opens a radare2 project.
+Open and restore a previously saved `.r2` project. Projects replay seeks, flags and other persistent state so you can continue work without re-running expensive analyses.
 .Ft bool
 .Fn r_core_project_save "RCore *core" "const char *file"
 .Pp
-Saves the current session as a project.
+Save the current session to `file`. After a successful save you can restore it later with `r_core_project_open`.
 .Ft int
 .Fn r_core_project_list "RCore *core" "int mode"
 .Pp
-Lists available projects.
+List available projects. This is handy for UIs exposing multiple saved sessions.
 .Sh TASK MANAGEMENT
 .Ft RCoreTask *
 .Fn r_core_task_new "RCore *core" "bool create_cons" "const char *cmd" "RCoreTaskCallback cb" "void *user"
 .Pp
-Creates a new background task.
+Create a background task associated with the core. Tasks let callers run long-running operations (analysis, large searches) without blocking the main thread. Provide a callback to get notified of completion.
 .Ft void
 .Fn r_core_task_enqueue "RCoreTaskScheduler *scheduler" "RCoreTask *task"
 .Pp
-Enqueues a task for execution.
+Schedule a previously created task for asynchronous execution.
 .Ft int
 .Fn r_core_task_run_sync "RCoreTaskScheduler *scheduler" "RCoreTask *task"
 .Pp
-Runs a task synchronously.
+Run a task synchronously when immediate completion is required (useful for tests and short scripts).
 .Sh UNDO SYSTEM
 .Ft void
 .Fn r_core_undo_push "RCore *core" "RCoreUndo *cu"
 .Pp
-Pushes an undo action.
+Push an undo record representing a reversible change. Frontends and scripts can use this to implement undo/redo flows for user actions.
 .Ft void
 .Fn r_core_undo_pop "RCore *core"
 .Pp
-Pops the last undo action.
+Revert the last undo entry recorded in the core. Restores previous state (flags, bytes, metadata) as captured in the undo record.
 .Ft void
 .Fn r_core_undo_print "RCore *core" "int mode" "RCoreUndoCondition *cond"
 .Pp
-Prints undo history.
+Print or query the undo history for display or automated rollback.
 .Sh LOGGING
 .Ft void
 .Fn r_core_log_add "RCore *core" "const char *msg"
 .Pp
-Adds a message to the log.
+Append a message to the core's internal log. Useful for diagnostics or communicating status from background tasks.
 .Ft void
 .Fn r_core_log_view "RCore *core" "int num" "int shift"
 .Pp
-Views log entries.
+Display a page of log entries. Useful to implement a scrolling log in frontends.
 .Ft char *
 .Fn r_core_log_get "RCore *core" "int index"
 .Pp
-Retrieves a log entry by index.
+Return the requested log message as a newly allocated string (caller must free it).
 .Sh SEARCH
 .Ft int
 .Fn r_core_search_cb "RCore *core" "ut64 from" "ut64 to" "RCoreSearchCallback cb"
 .Pp
-Performs a search with a callback.
+Run a custom search between `from` and `to`, invoking the callback for each hit. This low-level API gives full control over match handling and early termination.
 .Ft int
 .Fn r_core_search_preludes "RCore *core" "bool log"
 .Pp
-Searches for function preludes.
+Scan for common function preludes and heuristics to bootstrap function discovery in stripped binaries. Often used before calling `r_core_anal_fcn` or printing results.
 .Sh EXAMPLES
-Basic core usage:
-.Bd -literal
-RCore *core = r_core_new();
-r_core_cmd(core, "o /bin/ls", false); // open file
-r_core_cmd(core, "aaa", false); // analyze all
-char *disasm = r_core_cmd_str(core, "pd 10"); // disassemble 10 instructions
-printf("%s\\n", disasm);
-free(disasm);
-r_core_free(core);
-.Ed
 .Pp
-Seeking and analysis:
+The examples below illustrate common real-world patterns found in the tree: capturing command output, using in-memory files in tests/fuzzers and combining seeking with single-instruction analysis.
 .Bd -literal
+/* Example 1: open, analyze and capture disassembly */
 RCore *core = r_core_new();
-// ... load binary ...
-r_core_seek(core, 0x1000, true);
-RAnalOp *op = r_core_anal_op(core, 0x1000, R_ANAL_OP_MASK_BASIC);
+r_core_cmd(core, "o /bin/ls", false);  /* open file */
+r_core_cmd(core, "aaa", false);        /* run full analysis */
+char *out = r_core_cmd_str(core, "pd 10"); /* capture output */
+printf("%s\n", out);
+free(out);                                /* must free returned string */
+r_core_free(core);
+
+/* Example 2: in-memory file used by fuzz tests (test/fuzz/fuzz_ia.c) */
+RCore *r = r_core_new();
+/* create an anonymous in-memory file of Size bytes */
+r_core_cmdf (r, "o malloc://%zu", (size_t)4096);
+/* write data into r->io using r_io_write_at (test code) */
+r_core_cmd0 (r, "oba 0");  /* avoid history */
+r_core_cmd0 (r, "ia");     /* run instruction analysis */
+r_core_free (r);
+
+/* Example 3: seek + single-instruction analysis */
+RCore *c2 = r_core_new();
+/* load binary first via r_core_cmd or r_core_bin_load */
+r_core_seek(c2, 0x1000, true);
+RAnalOp *op = r_core_anal_op(c2, 0x1000, R_ANAL_OP_MASK_BASIC);
 if (op) {
-    printf("Instruction: %s\\n", op->mnemonic);
+    printf("Mnemonic: %s\n", op->mnemonic);
     r_anal_op_free(op);
 }
-r_core_free(core);
-.Ed
-.Pp
-Project management:
-.Bd -literal
-RCore *core = r_core_new();
-// ... perform analysis ...
-r_core_project_save(core, "myproject.r2");
-r_core_free(core);
-// Later...
-RCore *core2 = r_core_new();
-r_core_project_open(core2, "myproject.r2");
-// Continue where left off
-r_core_free(core2);
+r_core_free(c2);
 .Ed
 .Sh SEE ALSO
 .Xr r_anal 3 ,
