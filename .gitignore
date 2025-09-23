@@ -1,4 +1,5 @@
 clang-log/
+.cache
 .clang_complete
 .tmp-format
 .#*
