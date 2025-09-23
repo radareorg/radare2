@@ -84,6 +84,7 @@ static void helpvars(int workers_count) {
 		"R2R_TIMEOUT=%d   # timeout after 1 minute (60 * 60)\n"
 		"R2R_OFFLINE=0      # same as passing -u\n"
 		"R2R_SHALLOW=0      # skip 0-100%% random tests\n"
+		"R2R_RADARE2=radare2 # radare2 binary to launch\n"
 		, workers_count, TIMEOUT_DEFAULT
 	       );
 }
@@ -485,6 +486,11 @@ int main(int argc, char **argv) {
 	ut64 time_start = r_time_now_mono ();
 	R2RState state = {{0}};
 	state.run_config.r2_cmd = "radare2";
+	char *r2_cmd = r_sys_getenv("R2R_RADARE2");
+	if (R_STR_ISNOTEMPTY(r2_cmd)) {
+		R_LOG_DEBUG("overriding radare2 command: r2_cmd=%s", r2_cmd);
+		state.run_config.r2_cmd = r2_cmd;
+	}
 	if (shallow > 0) {
 		r_num_irand ();
 		state.run_config.shallow = shallow;
