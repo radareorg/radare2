@@ -1,0 +1,48 @@
+NAME=global functions
+FILE=-
+CMDS="!rabin2 -D msvc \"?Func@@YAXH@Z\""
+EXPECT=<<EOF
+void __cdecl Func(int)
+EOF
+RUN
+
+NAME=Namespaced / Class Methods
+FILE=-
+CMDS="!rabin2 -D msvc \"?DoWork@Worker@@QAEXH@Z\""
+EXPECT=<<EOF
+public: void __thiscall Worker::DoWork(int)
+EOF
+RUN
+
+NAME=Constructors / Destructors
+FILE=-
+CMDS="!rabin2 -D msvc \"??0Foo@@QAE@XZ\""
+EXPECT=<<EOF
+public: void __thiscall Foo::constructor(void)
+EOF
+RUN
+
+NAME=Static Class Methods
+FILE=-
+CMDS="!rabin2 -D msvc \"?create@Factory@@SA?AVProduct@@XZ\""
+EXPECT=<<EOF
+public: static class Product __cdecl Factory::create(void)
+EOF
+RUN
+
+NAME=NAME=Templates Methods
+FILE=-
+CMDS="!rabin2 -D msvc \"?instance@Singleton@@0V1@A\""
+EXPECT=<<EOF
+class Singleton Singleton::instance
+EOF
+RUN
+
+NAME=NAME=RTTI metadata
+FILE=-
+CMDS="!rabin2 -D msvc \"N8CryptoPP19TF_CryptoSystemBaseINS_12PK_DecryptorENS_7TF_BaseINS_23TrapdoorFunctionInverseENS_34PK_EncryptionMessageEncodingMethodEEEEE\""
+EXPECT=<<EOF
+CryptoPP::TF_CryptoSystemBase<CryptoPP::PK_Decryptor,CryptoPP::TF_Base<CryptoPP::TrapdoorFunctionInverse,CryptoPP::PK_EncryptionMessageEncodingMethod>>
+EOF
+RUN
+
