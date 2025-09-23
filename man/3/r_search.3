@@ -6,22 +6,7 @@
 .Nd radare2 search library
 .Sh SYNOPSIS
 .In r_search.h
-.Ft RSearch *
-.Fn r_search_new "int mode"
-.Ft void
-.Fn r_search_free "RSearch *s"
-.Ft RSearchKeyword *
-.Fn r_search_keyword_new "const ut8 *kw" "int kwlen" "const ut8 *bm" "int bmlen" "const char *data"
-.Ft RSearchKeyword *
-.Fn r_search_keyword_new_str "const char *kw" "const char *bm" "const char *data" "bool icase"
-.Ft bool
-.Fn r_search_kw_add "RSearch *s" "RSearchKeyword *kw"
-.Ft int
-.Fn r_search_update "RSearch *s" "ut64 from" "const ut8 *buf" "long len"
-.Ft RList *
-.Fn r_search_find "RSearch *s" "ut64 addr" "const ut8 *buf" "int len"
-.Ft void
-.Fn r_search_set_callback "RSearch *s" "RSearchCallback callback" "void *user"
+.Pp
 .Sh DESCRIPTION
 The
 .Nm r_search
@@ -31,130 +16,234 @@ The core structure is
 .Vt RSearch ,
 which manages search keywords, modes, callbacks, and search results.
 .Sh INITIALIZATION
+.Pp
+Initialization covers creating and freeing a search context. Use these routines to allocate a fresh
+RSearch object configured for a search mode before adding keywords or running updates; free it when
+you no longer need the search context to avoid memory leaks.
+.Pp
 .Ft RSearch *
 .Fn r_search_new "int mode"
 .Pp
-Creates a new search context with the specified search mode.
+Allocates and returns a new search context initialized for the given `mode` (for example
+`R_SEARCH_KEYWORD` or `R_SEARCH_STRING`). The returned object owns internal lists and state used by
+subsequent API calls.
 .Pp
 .Ft void
 .Fn r_search_free "RSearch *s"
 .Pp
-Frees all resources associated with the search context.
+Releases all resources held by the search context, including keyword and hit lists. Do not call any
+other `r_search_*` functions with `s` after freeing it.
 .Sh KEYWORD MANAGEMENT
+.Pp
+Keywords describe the byte sequences, strings or patterns you want to find. Create keywords with the
+`r_search_keyword_new*` helpers and add them to the `RSearch` context. In practice keywords are used to
+implement literal byte searches (hex or binary), case-sensitive or -insensitive string searches, and
+regular expression matching. For example, `r_anal_preludes` uses `r_search_keyword_new_hexstr` to build
+prelude patterns for function detection.
+.Pp
 .Ft RSearchKeyword *
 .Fn r_search_keyword_new "const ut8 *kw" "int kwlen" "const ut8 *bm" "int bmlen" "const char *data"
 .Pp
-Creates a new binary keyword with optional bitmask.
+Creates a binary keyword with optional binary mask. `kw`/`kwlen` specify the pattern bytes; `bm` is
+an optional mask applied per-byte.
 .Pp
 .Ft RSearchKeyword *
 .Fn r_search_keyword_new_str "const char *kw" "const char *bm" "const char *data" "bool icase"
 .Pp
-Creates a new string keyword with case sensitivity option.
+Creates a keyword from a C string; `icase` controls case sensitivity. Use this for human-readable
+searches (e.g. symbol names embedded in the binary).
 .Pp
 .Ft RSearchKeyword *
 .Fn r_search_keyword_new_hexstr "const char *xs" "const char *data"
 .Pp
-Creates a keyword from a hexadecimal string.
+Parses a hex string (like "9090cc") to create a binary keyword. Useful when the search pattern is
+expressed as hexpairs (the core search command constructs keywords this way).
 .Pp
 .Ft RSearchKeyword *
 .Fn r_search_keyword_new_regexp "const char *str" "const char *data"
 .Pp
-Creates a keyword from a regular expression.
+Compiles a regular expression into a keyword for `R_SEARCH_REGEXP` mode.
 .Pp
 .Ft bool
 .Fn r_search_kw_add "RSearch *s" "RSearchKeyword *kw"
 .Pp
-Adds a keyword to the search context.
+Appends the keyword `kw` to the search context `s`. The search context keeps ownership of added
+keywords and will free them when `r_search_free` or `r_search_kw_reset` is called.
 .Sh SEARCHING
+.Pp
+Searching covers feeding data to the search engine and retrieving hits. You can push raw buffers
+directly with `r_search_update`, read ranges from an `RIO` implementation using
+`r_search_update_read`, or search a complete buffer and obtain a ready-made list of hits using
+`r_search_find`. For large inputs distributed across mapped regions use `r_search_maps` to iterate
+over the IO maps and call `r_search_update_read` for each map — the core `search` command does this to
+scan an entire binary efficiently.
+.Pp
 .Ft int
 .Fn r_search_update "RSearch *s" "ut64 from" "const ut8 *buf" "long len"
 .Pp
-Updates the search with new data buffer.
+Process `len` bytes from `buf` starting at virtual address `from`. The active `s->update` handler is
+invoked depending on the search mode set by `r_search_set_mode`.
 .Pp
 .Ft int
 .Fn r_search_update_read "RSearch *s" "ut64 from" "ut64 to"
 .Pp
-Updates the search by reading from I/O within the specified range.
+Read data from the configured I/O callbacks (or `s->consb`) in the address range [`from`, `to`) and
+run the search over that data. This is convenient to scan memory or file-backed regions without
+allocating a single large buffer.
 .Pp
 .Ft RList *
 .Fn r_search_find "RSearch *s" "ut64 addr" "const ut8 *buf" "int len"
 .Pp
-Performs a search on the given buffer and returns a list of hits.
+Convenience wrapper that sets an internal callback which collects hits into a `RList` and calls
+`r_search_update`. Use it when you already have the buffer to search and need a quick list of hits.
 .Sh SEARCH MODES
+.Pp
+Different search engines are implemented behind `RSearch` (keyword, regexp, strings, crypto
+heuristics). Choose the right mode with `r_search_set_mode` before adding keywords or invoking
+updates; some modes (like `R_SEARCH_RABIN_KARP`) expect a different workflow and do not use
+`r_search_update` directly.
+.Pp
 .Ft int
 .Fn r_search_set_mode "RSearch *s" "int mode"
 .Pp
-Sets the search mode (e.g., R_SEARCH_KEYWORD, R_SEARCH_STRING, R_SEARCH_AES).
+Selects the active search algorithm for the context `s` (for example `R_SEARCH_KEYWORD`,
+`R_SEARCH_REGEXP`, `R_SEARCH_STRING`, `R_SEARCH_AES`, etc.). The function sets internal handlers used
+by `r_search_update`.
 .Sh STRINGS
+.Pp
+String search mode detects sequences of printable characters (C-strings, UTF-16 wide strings,
+etc.). Use `r_search_strings` to run the string extraction and `r_search_set_string_limits` to tune
+what counts as a string (minimum and maximum length). This is helpful for harvesting embedded
+identifiers, paths or textual data from a binary before running more targeted keyword searches.
+.Pp
 .Ft int
 .Fn r_search_strings "RSearch *s" "ut32 min" "ut32 max"
 .Pp
-Searches for strings within the specified length range.
+Scans for printable strings with length between `min` and `max` and records them as hits.
 .Pp
 .Ft bool
 .Fn r_search_set_string_limits "RSearch *s" "ut32 min" "ut32 max"
 .Pp
-Sets the minimum and maximum string lengths for string searches.
+Configure the minimum (`min`) and maximum (`max`) string lengths considered when scanning in
+string mode. The function returns `false` if `max` is non-zero and smaller than `min`.
 .Sh RANGES
+.Pp
+Ranges control which address intervals are scanned when the search engine reads from I/O.
+Adding ranges is useful when you want to restrict the search to sections, mapped regions, or other
+subsets of the address space and skip unmapped or irrelevant areas.
+.Pp
 .Ft int
 .Fn r_search_range_add "RSearch *s" "ut64 from" "ut64 to"
 .Pp
-Adds a search range.
+Include the half-open interval [`from`, `to`) in the set of ranges that `r_search_update_read` may
+iterate over.
 .Pp
 .Ft int
 .Fn r_search_range_reset "RSearch *s"
 .Pp
-Resets all search ranges.
+Remove all previously added ranges.
 .Sh CALLBACKS
+.Pp
+Callbacks let you stream matches as they are found, or customize how data is read for `r_search`.
+The typical pattern used in core is to set a callback that appends `RSearchHit` objects into a list
+or emits JSON output. Callbacks are also used to interrupt searches early (for example when a
+maximum number of hits was reached).
+.Pp
 .Ft void
 .Fn r_search_set_callback "RSearch *s" "RSearchCallback callback" "void *user"
 .Pp
-Sets the callback function for search hits.
+Register a hit callback. The callback receives the matching `RSearchKeyword`, the `user` pointer and
+the `addr` of the hit. Return values from the callback can control search continuation.
 .Pp
 .Ft void
 .Fn r_search_set_read_cb "RSearch *s" "RSearchRCb cb" "void *user"
 .Pp
-Sets the read callback for search operations.
+Provide a custom read callback used by `r_search_update_read` to access the backing I/O. Core uses
+the default I/O when this is not set.
 .Sh HITS
+.Pp
+A hit represents a successful match of a keyword at a given virtual address. Hits can be created
+internally by the engine or explicitly via `r_search_hit_new`. When no callback is set hits are stored
+in `s->hits` and can be consumed after the search finishes.
+.Pp
 .Ft int
 .Fn r_search_hit_new "RSearch *s" "RSearchKeyword *kw" "ut64 addr"
 .Pp
-Records a new search hit.
+Append a hit for `kw` found at `addr` into the internal hits list. The function enforces alignment and
+overlap rules configured on the search context and returns status codes used by `r_search_update`.
 .Sh RESET
+.Pp
+Reset routines reinitialize search state between runs and allow switching modes without leaking
+state. Use `r_search_begin` before starting a new search pass if you want to preserve keywords but clear
+per-search counters; use `r_search_kw_reset` to remove all keywords.
+.Pp
 .Ft void
 .Fn r_search_reset "RSearch *s" "int mode"
 .Pp
-Resets the search context to the specified mode.
+Reset the context and set a new `mode`. This clears hit counters and reconfigures internal handlers.
 .Pp
 .Ft void
 .Fn r_search_kw_reset "RSearch *s"
 .Pp
-Resets all keywords in the search context.
+Remove all keywords and clear any stored leftover buffers used by some search algorithms.
 .Sh PATTERNS
+.Pp
+Pattern settings control heuristics such as pattern size used for block-similarity searches and
+delta/differential searches. Adjust these when searching for repetitive or structured data blocks.
+.Pp
 .Ft void
 .Fn r_search_pattern_size "RSearch *s" "int size"
 .Pp
-Sets the pattern size for pattern searches.
+Set the pattern size used by pattern-based search algorithms.
 .Sh EXAMPLES
-Basic keyword search:
+.Pp
+The examples below illustrate realistic usage patterns found in core code: creating keywords from
+prelude hex strings, searching entire mapped regions and collecting hits via a callback.
+.Pp
+1) Simple keyword search returning a list
 .Bd -literal -offset indent
-RSearch *s = r_search_new(R_SEARCH_KEYWORD);
-RSearchKeyword *kw = r_search_keyword_new_str("test", NULL, NULL, false);
-r_search_kw_add(s, kw);
-r_search_update(s, 0x1000, buffer, 1024);
+RSearch *s = r_search_new (R_SEARCH_KEYWORD);
+RSearchKeyword *kw = r_search_keyword_new_str ("password", NULL, NULL, false);
+if (!r_search_kw_add (s, kw)) { /* handle error */ }
+// Convenience: r_search_find collects hits into a new RList using an internal callback
+RList *hits = r_search_find (s, 0x1000, buffer, 1024);
+// iterate `hits` and free it when done
 .Ed
 .Pp
-String search:
+2) Using a callback to stream hits (pattern from core: `listcb`)
 .Bd -literal -offset indent
-r_search_set_mode(s, R_SEARCH_STRING);
-r_search_set_string_limits(s, 4, 100);
-r_search_update_read(s, 0x1000, 0x2000);
+static int listcb(RSearchKeyword *k, void *user, ut64 addr) {
+    RSearchHit *hit = R_NEW0 (RSearchHit);
+    if (!hit) { return 0; }
+    hit->kw = k; hit->addr = addr; r_list_append (user, hit);
+    return 1;
+}
+
+RSearch *s = r_search_new (R_SEARCH_KEYWORD);
+// add keywords...
+r_search_set_callback (s, listcb, my_hits_list);
+r_search_update_read (s, map_from, map_to);
 .Ed
 .Pp
-Regular expression search:
+3) Searching entire IO maps (as `r_search_maps` does in the interactive command)
 .Bd -literal -offset indent
-RSearchKeyword *re_kw = r_search_keyword_new_regexp("test.*pattern", NULL);
-r_search_kw_add(s, re_kw);
+// prepare search context and keywords
+int rc = r_search_maps (s, core->io->maps);
+// `r_search_maps` calls `r_search_update_read` for each mapped region
+.Ed
+.Pp
+4) Building preludes from architecture session data (used by `r_anal_preludes`)
+.Bd -literal -offset indent
+// r_anal_preludes builds a RList of RSearchKeyword* with `r_search_keyword_new_hexstr`:
+RList *preludes = r_anal_preludes (anal);
+// then keywords are appended to a search context to match known function entry patterns
+.Ed
+.Pp
+5) String extraction and limits
+.Bd -literal -offset indent
+r_search_set_mode (s, R_SEARCH_STRING);
+r_search_set_string_limits (s, 4, 256);
+r_search_update_read (s, base, base + size);
 .Ed
 .Sh SEE ALSO
 .Xr r_io 3 ,

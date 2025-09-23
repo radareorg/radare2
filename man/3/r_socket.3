@@ -6,44 +6,7 @@
 .Nd Network socket library for radare2
 .Sh SYNOPSIS
 .In r_socket.h
-.Ft struct r_socket_t *
-.Fn r_socket_new "bool is_ssl"
-.Ft void
-.Fn r_socket_free "struct r_socket_t *s"
-.Ft bool
-.Fn r_socket_connect "struct r_socket_t *s" "const char *host" "const char *port" "int proto" "unsigned int timeout"
-.Ft bool
-.Fn r_socket_listen "struct r_socket_t *s" "const char *port" "const char *certfile"
-.Ft struct r_socket_t *
-.Fn r_socket_accept "struct r_socket_t *s"
-.Ft bool
-.Fn r_socket_close "struct r_socket_t *s"
-.Ft int
-.Fn r_socket_read "struct r_socket_t *s" "ut8 *read" "int len"
-.Ft int
-.Fn r_socket_write "struct r_socket_t *s" "const void *buf" "int len"
-.Ft int
-.Fn r_socket_gets "struct r_socket_t *s" "char *buf" "int size"
-.Ft void
-.Fn r_socket_printf "struct r_socket_t *s" "const char *fmt" "..."
-.Ft bool
-.Fn r_socket_is_connected "struct r_socket_t *s"
-.Ft int
-.Fn r_socket_ready "struct r_socket_t *s" "int secs" "int usecs"
-.Ft char *
-.Fn r_socket_http_get "const char *url" "const char **headers" "int *code" "int *rlen"
-.Ft char *
-.Fn r_socket_http_post "const char *url" "const char **headers" "const char *data" "int *code" "int *rlen"
-.Ft struct r_socket_rap_server_t *
-.Fn r_socket_rap_server_new "bool is_ssl" "const char *port"
-.Ft bool
-.Fn r_socket_rap_server_listen "struct r_socket_rap_server_t *rap_s" "const char *certfile"
-.Ft struct r2pipe_t *
-.Fn r2pipe_open "const char *cmd"
-.Ft char *
-.Fn r2pipe_cmd "struct r2pipe_t *r2pipe" "const char *str"
-.Ft int
-.Fn r2pipe_close "struct r2pipe_t *r2pipe"
+.Pp
 .Sh DESCRIPTION
 The
 .Nm r_socket
