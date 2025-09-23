@@ -1625,6 +1625,7 @@ R_API void r_anal_backtrace_list(RAnal *a, ut64 addr, int opt);
 extern RAnalPlugin r_anal_plugin_null;
 extern RAnalPlugin r_anal_plugin_tcc;
 extern RAnalPlugin r_anal_plugin_a2f;
+extern RAnalPlugin r_anal_plugin_path;
 
 #ifdef __cplusplus
 }
