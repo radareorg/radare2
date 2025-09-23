@@ -14393,8 +14393,8 @@ static void cmd_aaa(RCore *core, const char *input) {
 			run_aaef = false;
 		}
 		if (run_aaef) { // emulate all functions
-				// if (!r_str_startswith (asm_arch, "hex"))  maybe?
-				// XXX moving this oustide the x86 guard breaks some tests, missing types
+			// if (!r_str_startswith (asm_arch, "hex"))  maybe?
+			// XXX moving this oustide the x86 guard breaks some tests, missing types
 			if (cfg_debug) {
 				logline (core, 65, "Skipping function emulation in debugger mode (aaef)");
 				// nothing to do
@@ -14531,6 +14531,8 @@ static int cmd_anal_all(RCore *core, const char *input) {
 	case 'f':
 		if (input[1] == 'e') {  // "aafe"
 			r_core_cmd0 (core, "aef@@F");
+		} else if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_aa, "aaf");
 		} else if (input[1] == 'r') {
 			ut64 cur = core->addr;
 			RListIter *iter;
@@ -15468,7 +15470,6 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 		r_reg_setv (core->anal->reg, "SP", spv + s_width); // temporarily set stack ptr to sync with carg.c
 		RList *list = r_core_get_func_args (core, fcn_name);
 		if (!r_list_empty (list)) {
-	#if 1
 			bool on_stack = false;
 			r_list_foreach (list, iter, arg) {
 				if (r_str_startswith (arg->cc_source, "stack")) {
@@ -15478,7 +15479,6 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 					r_strbuf_appendf (sb, "%s: unk_size", arg->c_type);
 				}
 			}
-	#endif
 			r_list_foreach (list, iter, arg) {
 				nextele = r_list_iter_get_next (iter);
 				if (!arg->fmt) {

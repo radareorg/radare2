@@ -976,6 +976,8 @@ static int archinfo(RArchSession *a, ut32 q) {
 		return 1;
 	case R_ARCH_INFO_DATA_ALIGN:
 		return 1;
+	case R_ARCH_INFO_ISVM:
+		return 0;
 	}
 	return 0;
 }

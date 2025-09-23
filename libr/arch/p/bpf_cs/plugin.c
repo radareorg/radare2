@@ -939,7 +939,8 @@ static char *regs(RArchSession *as) {
 static int archinfo(RArchSession *as, ut32 q) {
 	const int bits = as->config->bits;
 	switch (q) {
-		// R_ARCH_INFO_MINOPSZ
+	case R_ARCH_INFO_ISVM:
+		return 0;
 	case R_ARCH_INFO_MINOP_SIZE:
 		return 8;
 	case R_ARCH_INFO_MAXOP_SIZE:

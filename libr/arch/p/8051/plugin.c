@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2024 - pancake, dkreuter, astuder  */
+/* radare - LGPL - Copyright 2013-2025 - pancake, dkreuter, astuder  */
 
 #include <r_asm.h>
 #include <r_anal.h>
@@ -1191,6 +1191,8 @@ static int archinfo(RArchSession *as, ut32 q) {
 		return 1;
 	case R_ARCH_INFO_DATA_ALIGN:
 		return 1;
+	case R_ARCH_INFO_ISVM:
+		return 0;
 	}
 	return 0;
 }
