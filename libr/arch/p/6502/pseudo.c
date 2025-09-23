@@ -10,107 +10,6 @@ typedef enum {
 	NORM = 2,
 } ADDR_TYPE;
 
-static char *replace(int argc, const char *argv[], ADDR_TYPE type) {
-	int i, j;
-	struct {
-		int narg;
-		const char *op;
-		const char *str;
-	} ops[] = {
-		{1, "lda", "a = 1" },
-		{2, "lda", "a = (1+2)" },
-		{1, "ldx", "x = 1" },
-		{2, "ldx", "x = (1+2)" },
-		{1, "ldy", "y = 1" },
-		{2, "ldy", "y = (1+2)" },
-		{1, "sta", "[1] = a" },
-		{2, "sta", "[1+2 ] = a" },
-		{1, "stx", "[1] = x" },
-		{2, "stx", "[1+2] = x" },
-		{1, "sty", "[1] = y" },
-		{2, "sty", "[1+2] = y" },
-		{1, "dec", "1--" },
-		{2, "dec", "(1+2)--" },
-		{0, "dcx", "x--" },
-		{0, "dcy", "y--" },
-		{1, "inc", "1++" },
-		{2, "inc", "(1+2)++" },
-		{0, "inx", "x++" },
-		{0, "iny", "y++" },
-		{1, "adc", "a += 1" },
-		{2, "adc", "a += (1+2)" },
-		{1, "sbc", "a -= 1" },
-		{2, "sbc", "a -= (1+2)" },
-		{0, "pha", "push a" },
-		{1, "and", "a &= 1" },
-		{2, "and", "a &= (1+2)" },
-		{1, "eor", "a ^= 1" },
-		{2, "eor", "a ^= (1+2)" },
-		{1, "ora", "a |= 1" },
-		{2, "ora", "a |= (1+2)" },
-		{0, "tax", "x = a" },
-		{0, "tay", "y = a" },
-		{0, "txa", "a = x" },
-		{0, "tya", "a = y" },
-		{0, "tsx", "x = s" },
-		{0, "txs", "s = x" },
-		{0, "brk", "break" },
-		{0, "clc", "clear_carry" },
-		{0, "cld", "clear_decimal" },
-		{0, "cli", "clear_interrupt" },
-		{0, "clv", "clear_overflow" },
-		{0, "sec", "set_carry" },
-		{0, "sed", "set_decimal" },
-		{0, "sei", "set_interrupt" },
-		{1, "jsr", "1()" },
-		{0, NULL}};
-
-	RStrBuf *sb = r_strbuf_new ("");
-	for (i = 0; ops[i].op; i++) {
-		if (ops[i].narg) {
-			if (argc - 1 != ops[i].narg) {
-				continue;
-			}
-		}
-		if (!strcmp (ops[i].op, argv[0])) {
-			for (j = 0; ops[i].str[j] != '\0'; j++) {
-				if (isdigit(ops[i].str[j])) {
-					const char *w = argv[ops[i].str[j] - '0'];
-					if (w) {
-						r_strbuf_append (sb, w);
-					}
-				} else {
-					const char ch = ops[i].str[j];
-					r_strbuf_append_n (sb, &ch, 1);
-				}
-			}
-			if (argc == 4 && argv[2][0] == '[') {
-				r_strbuf_append (sb, "+");
-				r_strbuf_append (sb, argv[2]); // wtf+3?
-			}
-			return r_strbuf_drain (sb);
-		}
-	}
-
-	for (i = 0; i < argc; i++) {
-		r_strbuf_append (sb, argv[i]);
-		r_strbuf_append (sb, (i == 0 || i == argc - 1) ? " " : ",");
-	}
-	return r_strbuf_drain (sb);
-}
-
-static ADDR_TYPE addr_type(const char *str) {
-	if (strchr (str, '(')) {
-		char *e = strchr (str, ')');
-		if (!e) {
-			return NORM;
-		}
-		char *o = strchr (e, ',');
-		return (o) ? IND_IDX : IDX_IND;
-	}
-	return NORM;
-}
-
 static const char *pseudo_rules[] = {
 	"lda/1/a = $1",
 	"ldx/1/x = $1",
@@ -204,9 +103,9 @@ static char *transform_operand(const char *op, const char *opcode) {
 			*comma = '\0';
 		} else {
 			// (addr) followed by ,X after )
-			char *after = r_str_trim_head_ro (p + 1);
+			char *after = (char *)r_str_trim_head_ro (p + 1);
 			if (*after == ',') {
-				after = r_str_trim_head_ro (after + 1);
+				after = (char *)r_str_trim_head_ro (after + 1);
 				idx = *after;
 			}
 		}
@@ -230,7 +129,7 @@ static char *transform_operand(const char *op, const char *opcode) {
 		if (c) {
 			*c = '\0';
 			// find index after comma in original string to preserve it
-			char *ci = r_str_trim_head_ro (comma + 1);
+			char *ci = (char *)r_str_trim_head_ro (comma + 1);
 			idx = *ci;
 		}
 		char buf[256];
