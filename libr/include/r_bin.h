@@ -214,9 +214,10 @@ typedef struct r_bin_addr_t {
 	int bits;
 } RBinAddr;
 
+// TODO: this struct must be used from RFlagItem we have this same thing dupped
 typedef struct r_bin_name_t {
 	char *name; // demangled name
-	char *oname; // original (mangled) name
+	char *oname; // original (mangled) name // aka rawname in rflagitem
 	char *fname; // flag name
 	// char *uname; // user-defined custom name TODO
 } RBinName;

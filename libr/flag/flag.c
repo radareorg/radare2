@@ -789,7 +789,6 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 addr, ut32 size) {
 	if (f->mask) {
 		addr &= f->mask;
 	}
-
 	bool is_new = false;
 	char *itemname = filter_item_name (name);
 	if (!itemname) {

@@ -42,7 +42,7 @@ static RCoreHelpMessage help_msg_f = {
 	"fc", "[?][name] [color]", "set color for given flag",
 	"fC", " [name] [cmt]", "set comment for given flag",
 	"fd", "[?] addr", "return flag+delta",
-	"fD", "[?] rawname", "(de)mangle flag or set a new flag",
+	"fD", "[?] rawname", "(de)mangle flag or set a new flag", // XXX we have id isnt'
 	"fe", " [name]", "create flag name.#num# enumerated flag. (f.ex: fe foo @@= 1 2 3 4)",
 	"fe-", "", "resets the enumerator counter",
 	"ff", " ([glob])", "distance in bytes to reach the next flag (see sn/sp)",
@@ -883,6 +883,7 @@ static bool print_function_labels_cb(void *user, const ut64 addr, const void *v)
 			addr,
 			name, ctx->fcn->name,
 			addr - ctx->fcn->addr);
+		break;
 	}
 	return true;
 }

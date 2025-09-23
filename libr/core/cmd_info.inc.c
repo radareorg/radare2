@@ -2593,6 +2593,9 @@ static int cmd_info(void *data, const char *input) {
 		case 'e': // "ise"
 			r_core_cmdf (core, "ies%s", input + 1);
 			return 0;
+		case '*':
+			mode = R_MODE_RADARE;
+			break;
 		case 'j':
 			mode = R_MODE_JSON;
 			INIT_PJ ();
