@@ -941,14 +941,22 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 
 	if (do_demangle) {
 		char *res = NULL;
+		int type = R_BIN_LANG_NONE;
+		if (!*do_demangle || !strcmp (do_demangle, "?") || !strcmp (do_demangle, "help")) {
+			r_bin_demangle_list (core.bin);
+			r_cons_flush (core.cons);
+			r_core_fini (&core);
+			free (state.stdin_buf);
+			return 0;
+		}
 		if ((argc - opt.ind) < 2) {
 			r_core_fini (&core);
 			free (state.stdin_buf);
 			return rabin_show_help (0);
 		}
-		int type = r_bin_demangle_type (do_demangle);
-		bin->options.demangle_trylib = (type == R_BIN_LANG_SWIFT && r_sys_getenv_asbool ("RABIN2_DEMAN_TRYLIB"));
 		file = argv[opt.ind + 1];
+		type = r_bin_demangle_type (do_demangle);
+		bin->options.demangle_trylib = (type == R_BIN_LANG_SWIFT && r_sys_getenv_asbool ("RABIN2_DEMAN_TRYLIB"));
 		if (!strcmp (file, "-")) {
 			for (;;) {
 				file = stdin_gets (&state);
@@ -983,7 +991,6 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			printf ("%s\n", file);
 		}
 		free (res);
-		//eprintf ("%s\n", file);
 		r_core_fini (&core);
 		free (state.stdin_buf);
 		return 1;
