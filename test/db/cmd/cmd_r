@@ -60,8 +60,5 @@ EOF
 EXPECT=<<EOF
 ok
 EOF
-EXPECT_ERR=<<EOF
-WARN: Cannot resize below zero -304 208
-INFO: @@s: sequence interrupted
-EOF
+EXPECT_ERR=
 RUN
