@@ -2535,11 +2535,11 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 		r_flag_space_set (core->flags, R_FLAGS_FS_SYMBOLS);
 	} else if (at == UT64_MAX && exponly) {
 		if (IS_MODE_RAD (mode)) {
-			r_cons_printf (core->cons, "fs exports\n");
+			r_cons_printf (core->cons, "'fs exports\n");
 		}
 	} else if (at == UT64_MAX && !exponly) {
 		if (IS_MODE_RAD (mode)) {
-			r_cons_printf (core->cons, "fs symbols\n");
+			r_cons_printf (core->cons, "'fs symbols\n");
 		}
 	}
 	if (IS_MODE_NORMAL (mode)) {
@@ -2800,19 +2800,18 @@ next:
 			pj_end (pj);
 		}
 	}
-
 	r_spaces_pop (&core->anal->meta_spaces);
 	r_table_free (table);
 	return true;
 }
 
 static char *build_hash_string(PJ *pj, int mode, const char *chksum, ut8 *data, ut32 datalen) {
-	char *chkstr = NULL, *aux = NULL, *ret = NULL;
+	char *aux = NULL, *ret = NULL;
 	RList *hashlist = r_str_split_duplist (chksum, ",", true);
 	RListIter *iter;
 	const char *hashname;
 	r_list_foreach (hashlist, iter, hashname) {
-		chkstr = r_hash_tostring (NULL, hashname, data, datalen);
+		char *chkstr = r_hash_tostring (NULL, hashname, data, datalen);
 		if (!chkstr) {
 			continue;
 		}
@@ -3012,12 +3011,10 @@ static bool bin_map_sections_to_segments(RCore *core, PJ *pj, int mode) {
 		}
 		free (tmp2);
 	}
-
 	if (IS_MODE_JSON (mode)) {
 		pj_end (pj);
 		pj_end (pj);
 	}
-
 	if (IS_MODE_NORMAL (mode)) {
 		r_cons_printf (core->cons, "Section to Segment mapping:\n");
 		char *s = r_table_tostring (table);

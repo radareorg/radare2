@@ -89,7 +89,7 @@ nth vaddr bind type lib name
 fs imports
 nth paddr vaddr bind type size lib name demangled
 -------------------------------------------------
-fs symbols
+'fs symbols
 nth paddr  size vaddr  vsize perm flags type name
 -------------------------------------------------
 fs sections
@@ -159,7 +159,7 @@ EOF
 EXPECT=<<EOF
 nth paddr vaddr bind type size lib name demangled
 -------------------------------------------------
-fs symbols
+'fs symbols
 nth paddr  size vaddr  vsize perm flags type name
 -------------------------------------------------
 fs sections

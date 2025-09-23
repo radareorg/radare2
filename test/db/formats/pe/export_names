@@ -20,7 +20,7 @@ NAME=PE: export function names RAD
 FILE=bins/pe/Lab05-01.dll
 CMDS=iE*
 EXPECT=<<EOF
-fs exports
+'fs exports
 'f sym.xdll.dll_InstallRT 0 0x1000d847
 'f sym.xdll.dll_InstallSA 0 0x1000dec1
 'f sym.xdll.dll_InstallSB 0 0x1000e892
