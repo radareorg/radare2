@@ -58,9 +58,7 @@ static bool is_printable_string(const ut8 *buf, ut32 size) {
 
 // Check if a pointer points to a string structure (string ptr at +0, size at +8)
 static bool sbpf_check_string_pointer(RAnal *anal, ut64 ptr_addr, ut64 data_start, ut64 data_end, ut64 *out_str_addr, ut32 *out_str_size) {
-	if (!anal || !anal->iob.io) {
-		return false;
-	}
+	R_RETURN_VAL_IF_FAIL (anal && anal->iob.io, false);
 
 	// First check if the address itself could be a direct string
 	ut8 struct_buf[16];
@@ -121,9 +119,7 @@ static bool sbpf_check_string_pointer(RAnal *anal, ut64 ptr_addr, ut64 data_star
 }
 
 static RList *sbpf_find_string_xrefs(RAnal *anal, ut64 from, ut64 to, ut64 data_start, ut64 data_end) {
-	if (!anal || !anal->iob.io) {
-		return NULL;
-	}
+	R_RETURN_VAL_IF_FAIL (anal && anal->iob.io, NULL);
 
 	RList *refs = r_list_new();
 	if (!refs) {
@@ -220,9 +216,7 @@ static RList *sbpf_find_string_xrefs(RAnal *anal, ut64 from, ut64 to, ut64 data_
 }
 
 static bool sbpf_find_segment_bounds(RAnal *anal, int segment_index, ut64 *start, ut64 *end) {
-	if (!anal || !anal->iob.io || !start || !end) {
-		return false;
-	}
+	R_RETURN_VAL_IF_FAIL (anal && anal->iob.io && start && end, false);
 
 	// Get sections from the binary, but filter for segments
 	if (anal->binb.get_sections) {
@@ -251,10 +245,7 @@ static bool sbpf_find_segment_bounds(RAnal *anal, int segment_index, ut64 *start
 static void sbpf_create_string(RAnal *anal, ut64 addr, ut32 size, ut64 xref_addr, bool is_pointer) {
 	R_LOG_DEBUG ("sbpf_create_string called: addr=0x%"PFMT64x" size=%u xref=0x%"PFMT64x, addr, size, xref_addr);
 
-	if (!anal || !anal->iob.io || size == 0 || size > SBPF_MAX_STRING_SIZE) {
-		R_LOG_WARN ("String creation skipped: anal=%p, size=%u, max=%u", anal, size, SBPF_MAX_STRING_SIZE);
-		return;
-	}
+	R_RETURN_IF_FAIL (anal && anal->iob.io && size > 0 && size <= SBPF_MAX_STRING_SIZE);
 
 	ut8 *buf = malloc (size + 1);
 	if (!buf) {
@@ -305,8 +296,7 @@ static void sbpf_create_string(RAnal *anal, ut64 addr, ut32 size, ut64 xref_addr
 	// Create a properly null-terminated string for metadata
 	char truncated_str[256];
 	ut32 copy_len = str_size < 255 ? str_size : 255;
-	memcpy(truncated_str, buf, copy_len);
-	truncated_str[copy_len] = 0;
+	r_str_ncpy(truncated_str, (char *)buf, copy_len + 1);
 
 	// Add string metadata to radare2's metadata database
 	if (!r_meta_set (anal, R_META_TYPE_STRING, addr, str_size, truncated_str)) {
@@ -323,8 +313,7 @@ static void sbpf_create_string(RAnal *anal, ut64 addr, ut32 size, ut64 xref_addr
 		char comment[512];
 		char safe_str[256];
 		ut32 comment_len = str_size < 250 ? str_size : 250;
-		memcpy(safe_str, buf, comment_len);
-		safe_str[comment_len] = 0;
+		r_str_ncpy(safe_str, (char *)buf, comment_len + 1);
 
 		// Replace non-printable chars with dots for the comment
 		ut32 i;
@@ -362,8 +351,7 @@ static void sbpf_create_string(RAnal *anal, ut64 addr, ut32 size, ut64 xref_addr
 
 		// Copy only the actual string size
 		ut32 copy_len = str_size < 63 ? str_size : 63;
-		memcpy(safe_str, buf, copy_len);
-		safe_str[copy_len] = 0;
+		r_str_ncpy(safe_str, (char *)buf, copy_len + 1);
 
 		// Filter for safe flag name
 		r_str_filter(safe_str, -1);
@@ -394,9 +382,7 @@ static void sbpf_create_string(RAnal *anal, ut64 addr, ut32 size, ut64 xref_addr
 }
 
 static bool sbpf_analyze_strings(RAnal *anal) {
-	if (!anal) {
-		return false;
-	}
+	R_RETURN_VAL_IF_FAIL (anal, false);
 
 	ut64 code_start, code_end;
 	if (!sbpf_find_segment_bounds (anal, 0, &code_start, &code_end)) {
@@ -491,8 +477,7 @@ static bool sbpf_analyze_strings(RAnal *anal) {
 				// Create safe string for flag name
 				char safe_str[64];
 				ut32 copy_len = size < 63 ? size : 63;
-				memcpy(safe_str, str_buf, copy_len);
-				safe_str[copy_len] = 0;
+				r_str_ncpy(safe_str, (char *)str_buf, copy_len + 1);
 
 				// Filter for safe flag name
 				r_str_filter(safe_str, -1);
@@ -569,9 +554,7 @@ static bool sbpf_analyze_strings(RAnal *anal) {
 }
 
 static void sbpf_print_string_xrefs(RAnal *anal) {
-	if (!anal) {
-		return;
-	}
+	R_RETURN_IF_FAIL (anal);
 
 	ut64 code_start, code_end;
 	if (!sbpf_find_segment_bounds (anal, 0, &code_start, &code_end)) {
@@ -656,8 +639,7 @@ static void sbpf_print_string_xrefs(RAnal *anal) {
 				// Make safe for display
 				char display_buf[256];
 				ut32 display_len = (size < 250) ? size : 250;
-				memcpy(display_buf, str_buf, display_len);
-				display_buf[display_len] = 0;
+				r_str_ncpy(display_buf, (char *)str_buf, display_len + 1);
 
 				ut32 i;
 				for (i = 0; i < display_len; i++) {
@@ -736,11 +718,10 @@ static void sbpf_print_string_xrefs(RAnal *anal) {
 
 			char display_buf[80];
 			if (actual_len > 60) {
-				memcpy(display_buf, buf, 57);
-				strcpy(display_buf + 57, "...");
+				r_str_ncpy(display_buf, (char *)buf, 57);
+				strcat(display_buf, "...");
 			} else {
-				memcpy(display_buf, buf, actual_len);
-				display_buf[actual_len] = 0;
+				r_str_ncpy(display_buf, (char *)buf, actual_len + 1);
 			}
 
 			for (i = 0; display_buf[i]; i++) {
@@ -765,9 +746,7 @@ static void sbpf_print_string_xrefs(RAnal *anal) {
 }
 
 static bool sbpfcmd(RAnal *anal, const char *cmd) {
-	if (!anal || !cmd) {
-		return false;
-	}
+	R_RETURN_VAL_IF_FAIL (anal && cmd, false);
 
 	if (r_str_startswith (cmd, "sbpf.analyze")) {
 		if (sbpf_analyze_strings (anal)) {
@@ -793,27 +772,6 @@ static bool sbpfcmd(RAnal *anal, const char *cmd) {
 	return false;
 }
 
-static bool sbpf_init(RAnal *anal) {
-	if (!anal) {
-		return false;
-	}
-	R_LOG_DEBUG ("sBPF analysis plugin initialized");
-	return true;
-}
-
-
-static bool sbpf_fini(RAnal *anal) {
-	if (!anal) {
-		return false;
-	}
-	R_LOG_DEBUG ("Finalizing sBPF analysis plugin");
-	return true;
-}
-
-static int sbpf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
-	return -1;
-}
-
 RAnalPlugin r_anal_plugin_sbpf = {
 	.meta = {
 		.name = "sbpf",
@@ -821,9 +779,6 @@ RAnalPlugin r_anal_plugin_sbpf = {
 		.license = "LGPL3",
 		.author = "ulexec",
 	},
-	.init = sbpf_init,
-	.fini = sbpf_fini,
-	.op = sbpf_op,
 	.cmd = sbpfcmd,
 };
 
