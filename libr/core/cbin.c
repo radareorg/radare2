@@ -423,13 +423,16 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va) {
 				: r_str_newf ("str.%s", string->string);
 			r_name_filter (str, -1);
 			RFlagItem *fi = r_flag_set (core->flags, str, vaddr, string->size);
-			const bool realstr = r_config_get_i (core->config, "bin.str.real");
-			if (fi && realstr) {
-				char *es = r_str_escape (string->string);
-				char *s = r_str_newf ("\"%s\"", es);
-				r_flag_item_set_realname (core->flags, fi, s);
-				free (s);
-				free (es);
+			if (fi) {
+				fi->rawname = strdup (string->string);
+				const bool realstr = r_config_get_b (core->config, "bin.str.real");
+				if (realstr) {
+					char *es = r_str_escape (string->string);
+					char *s = r_str_newf ("\"%s\"", es);
+					r_flag_item_set_realname (core->flags, fi, s);
+					free (s);
+					free (es);
+				}
 			}
 			free (str);
 		} else if (IS_MODE_SIMPLE (mode)) {
@@ -2620,6 +2623,10 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 					}
 #endif
 				}
+				if (fi) {
+					free (fi->rawname);
+					fi->rawname = strdup (sn.name);
+				}
 			} else {
 				const char *n = sn.demname ? sn.demname : name;
 				const char *fn = sn.demflag ? sn.demflag : sn.nameflag;
@@ -2629,22 +2636,23 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 				if (addr == UT64_MAX) {
 					R_LOG_DEBUG ("Cannot resolve symbol address %s", n);
 				} else {
-					RFlagItem *fi = r_flag_set (core->flags, fnp, addr, symbol->size);
+					RFlagItem *fi = r_flag_get (core->flags, fnp); // addr, false);
+					if (fi) {
+						fi->size = symbol->size;
+					} else {
+						fi = r_flag_set (core->flags, fnp, addr, symbol->size);
+					}
 					if (fi) {
 						r_flag_item_set_realname (core->flags, fi, n);
+						free (fi->rawname);
+						fi->rawname = strdup (sn.name);
+						// if (fi->addr == 0x10e670) eprintf ("SWE RAW NAME OF 0x%"PFMT64x".. %s\n", fi->addr, fi->rawname);
 						const bool is_demangled = (bool)(size_t)sn.demname;
 						if (is_demangled) {
-#if 0 && METAFLAG
-							RFlagItemMeta *fim = r_flag_get_meta2 (core->flags, fi);
-							fim->demangled = true;
-#else
 							fi->demangled = true;
-#endif
 						}
-					} else {
-						if (fn) {
-							R_LOG_WARN ("Can't find flag (%s)", fn);
-						}
+					} else if (fn) {
+						R_LOG_WARN ("Can't find flag (%s)", fn);
 					}
 				}
 				free (fnp);
@@ -3957,15 +3965,27 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 			r_strf_var (classname, R_FLAG_NAME_SIZE, "class.%s", name);
 			r_flag_set (core->flags, classname, c->addr, 1);
 			r_list_foreach (c->methods, iter2, sym) {
-				const char *sym_name = r_bin_name_tostring (sym->name);
-				// char *mflags = r_core_bin_attr_tostring (core, sym->attr, mode);
-				char *mflags = r_bin_attr_tostring (sym->attr, false);
-				r_str_replace_char (mflags, ' ', '.');
-				// XXX probably access flags should not be part of the flag name
-				r_strf_var (method, R_FLAG_NAME_SIZE, "method%s%s.%s.%s", R_STR_ISEMPTY (mflags)? "":".", mflags, cname, sym_name);
-				R_FREE (mflags);
-				r_name_filter (method, -1);
-				r_flag_set (core->flags, method, sym->vaddr, 1);
+				RFlagItem *fi = r_flag_get_at (core->flags, sym->vaddr, false);
+				if (fi) {
+					// eprintf ("%s .. %s\n", sym->name, fi->name);
+				} else {
+					const char *sym_name = r_bin_name_tostring (sym->name);
+					// char *mflags = r_core_bin_attr_tostring (core, sym->attr, mode);
+					char *mflags = r_bin_attr_tostring (sym->attr, false);
+					r_str_replace_char (mflags, ' ', '.');
+					// XXX probably access flags should not be part of the flag name
+					r_strf_var (method, R_FLAG_NAME_SIZE, "method%s%s.%s.%s", R_STR_ISEMPTY (mflags)? "":".", mflags, cname, sym_name);
+					R_FREE (mflags);
+					r_name_filter (method, -1);
+					RFlagItem *fi = r_flag_set (core->flags, method, sym->vaddr, 1);
+					if (fi) {
+						const char *rawname = r_bin_name_tostring2 (sym->name, 'o');
+						if (rawname) {
+							free (fi->rawname);
+							fi->rawname = strdup (rawname);
+						}
+					}
+				}
 			}
 			r_list_foreach (c->fields, iter2, f) {
 				const char *fname = r_bin_name_tostring2 (f->name, pref);

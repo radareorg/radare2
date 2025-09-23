@@ -227,7 +227,7 @@ EXPECT=<<EOF
 |           0x0000124d      e81efeffff     call sym.imp.operator_new_unsigned_long_
 |           0x00001252      4889c3         mov rbx, rax
 |           0x00001255      4889df         mov rdi, rbx                ; int64_t arg1
-|           0x00001258      e827010000     call dbg.Bird::Bird()
+|           0x00001258      e827010000     call dbg.Bird::Bird()       ; Bird::~Bird()
 |           0x0000125d      48895de0       mov qword [b], rbx
 |           0x00001261      bf08000000     mov edi, 8
 |           0x00001266      e805feffff     call sym.imp.operator_new_unsigned_long_

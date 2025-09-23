@@ -108,66 +108,77 @@ EXPECT=<<EOF
       {
         "name": "FindClass(char const*)",
         "flag": "method._JNIEnv.FindClass_char_const_",
+        "rawname": "_ZN7_JNIEnv9FindClassEPKc",
         "lang": "jni",
         "addr": 24672
       },
       {
         "name": "DeleteLocalRef(_jobject*)",
         "flag": "method._JNIEnv.DeleteLocalRef__jobject_",
+        "rawname": "_ZN7_JNIEnv14DeleteLocalRefEP8_jobject",
         "lang": "jni",
         "addr": 24682
       },
       {
         "name": "NewObject(_jclass*, _jmethodID*, ...)",
         "flag": "method._JNIEnv.NewObject__jclass___jmethodID__..._",
+        "rawname": "_ZN7_JNIEnv9NewObjectEP7_jclassP10_jmethodIDz",
         "lang": "jni",
         "addr": 24692
       },
       {
         "name": "GetObjectClass(_jobject*)",
         "flag": "method._JNIEnv.GetObjectClass__jobject_",
+        "rawname": "_ZN7_JNIEnv14GetObjectClassEP8_jobject",
         "lang": "jni",
         "addr": 24718
       },
       {
         "name": "GetMethodID(_jclass*, char const*, char const*)",
         "flag": "method._JNIEnv.GetMethodID__jclass__char_const__char_const_",
+        "rawname": "_ZN7_JNIEnv11GetMethodIDEP7_jclassPKcS3_",
         "lang": "jni",
         "addr": 24728
       },
       {
         "name": "CallObjectMethod(_jobject*, _jmethodID*, ...)",
         "flag": "method._JNIEnv.CallObjectMethod__jobject___jmethodID__..._",
+        "rawname": "_ZN7_JNIEnv16CallObjectMethodEP8_jobjectP10_jmethodIDz",
         "lang": "jni",
         "addr": 24740
       },
       {
         "name": "CallVoidMethod(_jobject*, _jmethodID*, ...)",
         "flag": "method._JNIEnv.CallVoidMethod__jobject___jmethodID__..._",
+        "rawname": "_ZN7_JNIEnv14CallVoidMethodEP8_jobjectP10_jmethodIDz",
         "lang": "jni",
         "addr": 24768
       },
       {
         "name": "GetStaticMethodID(_jclass*, char const*, char const*)",
         "flag": "method._JNIEnv.GetStaticMethodID__jclass__char_const__char_const_",
+        "rawname": "_ZN7_JNIEnv17GetStaticMethodIDEP7_jclassPKcS3_",
         "lang": "jni",
         "addr": 24796
       },
       {
         "name": "CallStaticObjectMethod(_jclass*, _jmethodID*, ...)",
         "flag": "method._JNIEnv.CallStaticObjectMethod__jclass___jmethodID__..._",
+        "rawname": "_ZN7_JNIEnv22CallStaticObjectMethodEP7_jclassP10_jmethodIDz",
         "lang": "jni",
         "addr": 24810
       },
       {
         "name": "CallStaticIntMethod(_jclass*, _jmethodID*, ...)",
         "flag": "method._JNIEnv.CallStaticIntMethod__jclass___jmethodID__..._",
+        "rawname": "_ZN7_JNIEnv19CallStaticIntMethodEP7_jclassP10_jmethodIDz",
         "lang": "jni",
         "addr": 26974
       },
       {
         "name": "CallStaticVoidMethod(_jclass*, _jmethodID*, ...)",
         "flag": "method._JNIEnv.CallStaticVoidMethod__jclass___jmethodID__..._",
+        "rawname": "_ZN7_JNIEnv20CallStaticVoidMethodEP7_jclassP10_jmethodIDz",
         "lang": "jni",
         "addr": 27004
       }
@@ -182,66 +193,77 @@ EXPECT=<<EOF
       {
         "name": "inject(_JNIEnv*, _jobject*, _jstring*, _jstring*)",
         "flag": "method.SystemClassLoaderInjector.inject__JNIEnv___jobject___jstring___jstring_",
+        "rawname": "_ZN25SystemClassLoaderInjector6injectEP7_JNIEnvP8_jobjectP8_jstringS5_",
         "lang": "jni",
         "addr": 29944
       },
       {
         "name": "findBaseDexClassloader(_JNIEnv*, _jobject*)",
         "flag": "method.SystemClassLoaderInjector.findBaseDexClassloader__JNIEnv___jobject_",
+        "rawname": "_ZN25SystemClassLoaderInjector22findBaseDexClassloaderEP7_JNIEnvP8_jobject",
         "lang": "jni",
         "addr": 27036
       },
       {
         "name": "getField(_JNIEnv*, _jobject*, _jobject*, _jstring*)",
         "flag": "method.SystemClassLoaderInjector.getField__JNIEnv___jobject___jobject___jstring_",
+        "rawname": "_ZN25SystemClassLoaderInjector8getFieldEP7_JNIEnvP8_jobjectS3_P8_jstring",
         "lang": "jni",
         "addr": 27180
       },
       {
         "name": "getPathList(_JNIEnv*, _jobject*)",
         "flag": "method.SystemClassLoaderInjector.getPathList__JNIEnv___jobject_",
+        "rawname": "_ZN25SystemClassLoaderInjector11getPathListEP7_JNIEnvP8_jobject",
         "lang": "jni",
         "addr": 27324
       },
       {
         "name": "getDexElements(_JNIEnv*, _jobject*)",
         "flag": "method.SystemClassLoaderInjector.getDexElements__JNIEnv___jobject_",
+        "rawname": "_ZN25SystemClassLoaderInjector14getDexElementsEP7_JNIEnvP8_jobject",
         "lang": "jni",
         "addr": 27380
       },
       {
         "name": "setField(_JNIEnv*, _jobject*, _jobject*, _jstring*, _jobject*)",
         "flag": "method.SystemClassLoaderInjector.setField__JNIEnv___jobject___jobject___jstring___jobject_",
+        "rawname": "_ZN25SystemClassLoaderInjector8setFieldEP7_JNIEnvP8_jobjectS3_P8_jstringS3_",
         "lang": "jni",
         "addr": 27420
       },
       {
         "name": "combineArray(_JNIEnv*, _jobject*, _jobject*)",
         "flag": "method.SystemClassLoaderInjector.combineArray__JNIEnv___jobject___jobject_",
+        "rawname": "_ZN25SystemClassLoaderInjector12combineArrayEP7_JNIEnvP8_jobjectS3_",
         "lang": "jni",
         "addr": 27568
       },
       {
         "name": "injectAboveEqualApiLevel14(_JNIEnv*, _jobject*, _jstring*, _jstring*)",
         "flag": "method.SystemClassLoaderInjector.injectAboveEqualApiLevel14__JNIEnv___jobject___jstring___jstring_",
+        "rawname": "_ZN25SystemClassLoaderInjector26injectAboveEqualApiLevel14EP7_JNIEnvP8_jobjectP8_jstringS5_",
         "lang": "jni",
         "addr": 27904
       },
       {
         "name": "appendArray(_JNIEnv*, _jobject*, _jobject*)",
         "flag": "method.SystemClassLoaderInjector.appendArray__JNIEnv___jobject___jobject_",
+        "rawname": "_ZN25SystemClassLoaderInjector11appendArrayEP7_JNIEnvP8_jobjectS3_",
         "lang": "jni",
         "addr": 28252
       },
       {
         "name": "injectInAliyunOs(_JNIEnv*, _jobject*, _jstring*, _jstring*)",
         "flag": "method.SystemClassLoaderInjector.injectInAliyunOs__JNIEnv___jobject___jstring___jstring_",
+        "rawname": "_ZN25SystemClassLoaderInjector16injectInAliyunOsEP7_JNIEnvP8_jobjectP8_jstringS5_",
         "lang": "jni",
         "addr": 28520
       },
       {
         "name": "injectBelowApiLevel14(_JNIEnv*, _jobject*, _jstring*, _jstring*)",
         "flag": "method.SystemClassLoaderInjector.injectBelowApiLevel14__JNIEnv___jobject___jstring___jstring_",
+        "rawname": "_ZN25SystemClassLoaderInjector21injectBelowApiLevel14EP7_JNIEnvP8_jobjectP8_jstringS5_",
         "lang": "jni",
         "addr": 29196
       }
@@ -256,30 +278,35 @@ EXPECT=<<EOF
       {
         "name": "terminate()",
         "flag": "method.std.terminate__",
+        "rawname": "_ZSt9terminatev",
         "lang": "c++",
         "addr": 38000
       },
       {
         "name": "uncaught_exception()",
         "flag": "method.std.uncaught_exception__",
+        "rawname": "_ZSt18uncaught_exceptionv",
         "lang": "c++",
         "addr": 34924
       },
       {
         "name": "unexpected()",
         "flag": "method.std.unexpected__",
+        "rawname": "_ZSt10unexpectedv",
         "lang": "c++",
         "addr": 38036
       },
       {
         "name": "set_terminate(void (*)())",
         "flag": "method.std.set_terminate_void______",
+        "rawname": "_ZSt13set_terminatePFvvE",
         "lang": "c++",
         "addr": 38060
       },
       {
         "name": "set_unexpected(void (*)())",
         "flag": "method.std.set_unexpected_void______",
+        "rawname": "_ZSt14set_unexpectedPFvvE",
         "lang": "c++",
         "addr": 38088
       }
@@ -294,12 +321,14 @@ EXPECT=<<EOF
       {
         "name": "~exception()",
         "flag": "method.std::exception.exception__",
+        "rawname": "_ZNSt9exceptionD0Ev",
         "lang": "c++",
         "addr": 34948
       },
       {
         "name": "what() const",
         "flag": "method.std::exception.what___const",
+        "rawname": "_ZNKSt9exception4whatEv",
         "lang": "c++",
         "addr": 35060
       }
@@ -314,12 +343,14 @@ EXPECT=<<EOF
       {
         "name": "~bad_exception()",
         "flag": "method.std::bad_exception.bad_exception__",
+        "rawname": "_ZNSt13bad_exceptionD0Ev",
         "lang": "c++",
         "addr": 34972
       },
       {
         "name": "what() const",
         "flag": "method.std::bad_exception.what___const",
+        "rawname": "_ZNKSt13bad_exception4whatEv",
         "lang": "c++",
         "addr": 35076
       }
@@ -334,6 +365,7 @@ EXPECT=<<EOF
       {
         "name": "~__forced_unwind()",
         "flag": "method.__cxxabiv1::__forced_unwind.__forced_unwind__",
+        "rawname": "_ZN10__cxxabiv115__forced_unwindD0Ev",
         "lang": "c++",
         "addr": 35012
       }
@@ -348,6 +380,7 @@ EXPECT=<<EOF
       {
         "name": "~__foreign_exception()",
         "flag": "method.__cxxabiv1::__foreign_exception.__foreign_exception__",
+        "rawname": "_ZN10__cxxabiv119__foreign_exceptionD0Ev",
         "lang": "c++",
         "addr": 35036
       }
@@ -362,6 +395,7 @@ EXPECT=<<EOF
       {
         "name": "~__eh_globals_init()",
         "flag": "method.__eh_globals_init.__eh_globals_init__",
+        "rawname": "_ZN17__eh_globals_initD1Ev",
         "lang": "c++",
         "addr": 35204
       }
@@ -376,12 +410,14 @@ EXPECT=<<EOF
       {
         "name": "__terminate(void (*)())",
         "flag": "method.__cxxabiv1.__terminate_void______",
+        "rawname": "_ZN10__cxxabiv111__terminateEPFvvE",
         "lang": "c++",
         "addr": 37948
       },
       {
         "name": "__unexpected(void (*)())",
         "flag": "method.__cxxabiv1.__unexpected_void______",
+        "rawname": "_ZN10__cxxabiv112__unexpectedEPFvvE",
         "lang": "c++",
         "addr": 38024
       }
@@ -396,6 +432,7 @@ EXPECT=<<EOF
       {
         "name": "~__fundamental_type_info()",
         "flag": "method.__cxxabiv1::__fundamental_type_info.__fundamental_type_info__",
+        "rawname": "_ZN10__cxxabiv123__fundamental_type_infoD0Ev",
         "lang": "c++",
         "addr": 38116
       }
@@ -410,36 +447,42 @@ EXPECT=<<EOF
       {
         "name": "~type_info()",
         "flag": "method.std::type_info.type_info__",
+        "rawname": "_ZNSt9type_infoD0Ev",
         "lang": "c++",
         "addr": 38844
       },
       {
         "name": "__is_pointer_p() const",
         "flag": "method.std::type_info.__is_pointer_p___const",
+        "rawname": "_ZNKSt9type_info14__is_pointer_pEv",
         "lang": "c++",
         "addr": 38868
       },
       {
         "name": "__is_function_p() const",
         "flag": "method.std::type_info.__is_function_p___const",
+        "rawname": "_ZNKSt9type_info15__is_function_pEv",
         "lang": "c++",
         "addr": 38876
       },
       {
         "name": "__do_catch(std::type_info const*, void**, unsigned int) const",
         "flag": "method.std::type_info.__do_catch_std::type_info_const__void__unsigned_int__const",
+        "rawname": "_ZNKSt9type_info10__do_catchEPKS_PPvj",
         "lang": "c++",
         "addr": 38996
       },
       {
         "name": "__do_upcast(__cxxabiv1::__class_type_info const*, void**) const",
         "flag": "method.std::type_info.__do_upcast___cxxabiv1::__class_type_info_const__void__const",
+        "rawname": "_ZNKSt9type_info11__do_upcastEPKN10__cxxabiv117__class_type_infoEPPv",
         "lang": "c++",
         "addr": 38884
       },
       {
         "name": "operator==(std::type_info const&) const",
         "flag": "method.std::type_info.operator_std::type_info_const__const",
+        "rawname": "_ZNKSt9type_infoeqERKS_",
         "lang": "c++",
         "addr": 38920
       }
@@ -454,18 +497,21 @@ EXPECT=<<EOF
       {
         "name": "__is_pointer_p() const",
         "flag": "method.__cxxabiv1::__pointer_type_info.__is_pointer_p___const",
+        "rawname": "_ZNK10__cxxabiv119__pointer_type_info14__is_pointer_pEv",
         "lang": "c++",
         "addr": 38184
       },
       {
         "name": "~__pointer_type_info()",
         "flag": "method.__cxxabiv1::__pointer_type_info.__pointer_type_info__",
+        "rawname": "_ZN10__cxxabiv119__pointer_type_infoD0Ev",
         "lang": "c++",
         "addr": 38192
       },
       {
         "name": "__pointer_catch(__cxxabiv1::__pbase_type_info const*, void**, unsigned int) const",
         "flag": "method.__cxxabiv1::__pointer_type_info.__pointer_catch___cxxabiv1::__pbase_type_info_const__void__unsigned_int__const",
+        "rawname": "_ZNK10__cxxabiv119__pointer_type_info15__pointer_catchEPKNS_17__pbase_type_infoEPPvj",
         "lang": "c++",
         "addr": 38260
       }
@@ -480,18 +526,21 @@ EXPECT=<<EOF
       {
         "name": "~__pbase_type_info()",
         "flag": "method.__cxxabiv1::__pbase_type_info.__pbase_type_info__",
+        "rawname": "_ZN10__cxxabiv117__pbase_type_infoD0Ev",
         "lang": "c++",
         "addr": 40432
       },
       {
         "name": "__do_catch(std::type_info const*, void**, unsigned int) const",
         "flag": "method.__cxxabiv1::__pbase_type_info.__do_catch_std::type_info_const__void__unsigned_int__const",
+        "rawname": "_ZNK10__cxxabiv117__pbase_type_info10__do_catchEPKSt9type_infoPPvj",
         "lang": "c++",
         "addr": 40500
       },
       {
         "name": "__pointer_catch(__cxxabiv1::__pbase_type_info const*, void**, unsigned int) const",
         "flag": "method.__cxxabiv1::__pbase_type_info.__pointer_catch___cxxabiv1::__pbase_type_info_const__void__unsigned_int__const",
+        "rawname": "_ZNK10__cxxabiv117__pbase_type_info15__pointer_catchEPKS0_PPvj",
         "lang": "c++",
         "addr": 40400
       }
@@ -506,24 +555,28 @@ EXPECT=<<EOF
       {
         "name": "~__si_class_type_info()",
         "flag": "method.__cxxabiv1::__si_class_type_info.__si_class_type_info__",
+        "rawname": "_ZN10__cxxabiv120__si_class_type_infoD0Ev",
         "lang": "c++",
         "addr": 38388
       },
       {
         "name": "__do_find_public_src(int, void const*, __cxxabiv1::__class_type_info const*, void const*) const",
         "flag": "method.__cxxabiv1::__si_class_type_info.__do_find_public_src_int__void_const____cxxabiv1::__class_type_info_const__void_const__const",
+        "rawname": "_ZNK10__cxxabiv120__si_class_type_info20__do_find_public_srcEiPKvPKNS_17__class_type_infoES2_",
         "lang": "c++",
         "addr": 38456
       },
       {
         "name": "__do_dyncast(int, __cxxabiv1::__class_type_info::__sub_kind, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__dyncast_result&) const",
         "flag": "method.__cxxabiv1::__si_class_type_info.__do_dyncast_int____cxxabiv1::__class_type_info::__sub_kind____cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info::__dyncast_result__const",
+        "rawname": "_ZNK10__cxxabiv120__si_class_type_info12__do_dyncastEiNS_17__class_type_info10__sub_kindEPKS1_PKvS4_S6_RNS1_16__dyncast_resultE",
         "lang": "c++",
         "addr": 38556
       },
       {
         "name": "__do_upcast(__cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__upcast_result&) const",
         "flag": "method.__cxxabiv1::__si_class_type_info.__do_upcast___cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info::__upcast_result__const",
+        "rawname": "_ZNK10__cxxabiv120__si_class_type_info11__do_upcastEPKNS_17__class_type_infoEPKvRNS1_15__upcast_resultE",
         "lang": "c++",
         "addr": 38780
       }
@@ -538,36 +591,42 @@ EXPECT=<<EOF
       {
         "name": "~__class_type_info()",
         "flag": "method.__cxxabiv1::__class_type_info.__class_type_info__",
+        "rawname": "_ZN10__cxxabiv117__class_type_infoD0Ev",
         "lang": "c++",
         "addr": 39128
       },
       {
         "name": "__do_upcast(__cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__upcast_result&) const",
         "flag": "method.__cxxabiv1::__class_type_info.__do_upcast___cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info::__upcast_result__const",
+        "rawname": "_ZNK10__cxxabiv117__class_type_info11__do_upcastEPKS0_PKvRNS0_15__upcast_resultE",
         "lang": "c++",
         "addr": 39196
       },
       {
         "name": "__do_catch(std::type_info const*, void**, unsigned int) const",
         "flag": "method.__cxxabiv1::__class_type_info.__do_catch_std::type_info_const__void__unsigned_int__const",
+        "rawname": "_ZNK10__cxxabiv117__class_type_info10__do_catchEPKSt9type_infoPPvj",
         "lang": "c++",
         "addr": 39240
       },
       {
         "name": "__do_upcast(__cxxabiv1::__class_type_info const*, void**) const",
         "flag": "method.__cxxabiv1::__class_type_info.__do_upcast___cxxabiv1::__class_type_info_const__void__const",
+        "rawname": "_ZNK10__cxxabiv117__class_type_info11__do_upcastEPKS0_PPv",
         "lang": "c++",
         "addr": 39016
       },
       {
         "name": "__do_find_public_src(int, void const*, __cxxabiv1::__class_type_info const*, void const*) const",
         "flag": "method.__cxxabiv1::__class_type_info.__do_find_public_src_int__void_const____cxxabiv1::__class_type_info_const__void_const__const",
+        "rawname": "_ZNK10__cxxabiv117__class_type_info20__do_find_public_srcEiPKvPKS0_S2_",
         "lang": "c++",
         "addr": 39108
       },
       {
         "name": "__do_dyncast(int, __cxxabiv1::__class_type_info::__sub_kind, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__dyncast_result&) const",
         "flag": "method.__cxxabiv1::__class_type_info.__do_dyncast_int____cxxabiv1::__class_type_info::__sub_kind____cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info::__dyncast_result__const",
+        "rawname": "_ZNK10__cxxabiv117__class_type_info12__do_dyncastEiNS0_10__sub_kindEPKS0_PKvS3_S5_RNS0_16__dyncast_resultE",
         "lang": "c++",
         "addr": 39308
       }
@@ -582,18 +641,21 @@ EXPECT=<<EOF
       {
         "name": "__verbose_terminate_handler()",
         "flag": "method.__gnu_cxx.__verbose_terminate_handler__",
+        "rawname": "_ZN9__gnu_cxx27__verbose_terminate_handlerEv",
         "lang": "c++",
         "addr": 40644
       },
       {
         "name": "__throw_concurrence_lock_error()",
         "flag": "method.__gnu_cxx.__throw_concurrence_lock_error__",
+        "rawname": "_ZN9__gnu_cxx30__throw_concurrence_lock_errorEv",
         "lang": "c++",
         "addr": 75648
       },
       {
         "name": "__throw_concurrence_unlock_error()",
         "flag": "method.__gnu_cxx.__throw_concurrence_unlock_error__",
+        "rawname": "_ZN9__gnu_cxx32__throw_concurrence_unlock_errorEv",
         "lang": "c++",
         "addr": 75720
       }
@@ -608,12 +670,14 @@ EXPECT=<<EOF
       {
         "name": "what() const",
         "flag": "method.__gnu_cxx::__concurrence_lock_error.what___const",
+        "rawname": "_ZNK9__gnu_cxx24__concurrence_lock_error4whatEv",
         "lang": "c++",
         "addr": 75440
       },
       {
         "name": "~__concurrence_lock_error()",
         "flag": "method.__gnu_cxx::__concurrence_lock_error.__concurrence_lock_error__",
+        "rawname": "_ZN9__gnu_cxx24__concurrence_lock_errorD0Ev",
         "lang": "c++",
         "addr": 75512
       }
@@ -628,12 +692,14 @@ EXPECT=<<EOF
       {
         "name": "what() const",
         "flag": "method.__gnu_cxx::__concurrence_unlock_error.what___const",
+        "rawname": "_ZNK9__gnu_cxx26__concurrence_unlock_error4whatEv",
         "lang": "c++",
         "addr": 75456
       },
       {
         "name": "~__concurrence_unlock_error()",
         "flag": "method.__gnu_cxx::__concurrence_unlock_error.__concurrence_unlock_error__",
+        "rawname": "_ZN9__gnu_cxx26__concurrence_unlock_errorD0Ev",
         "lang": "c++",
         "addr": 75472
       }
@@ -648,12 +714,14 @@ EXPECT=<<EOF
       {
         "name": "~bad_cast()",
         "flag": "method.std::bad_cast.bad_cast__",
+        "rawname": "_ZNSt8bad_castD0Ev",
         "lang": "c++",
         "addr": 76760
       },
       {
         "name": "what() const",
         "flag": "method.std::bad_cast.what___const",
+        "rawname": "_ZNKSt8bad_cast4whatEv",
         "lang": "c++",
         "addr": 76744
       }
@@ -668,12 +736,14 @@ EXPECT=<<EOF
       {
         "name": "~bad_typeid()",
         "flag": "method.std::bad_typeid.bad_typeid__",
+        "rawname": "_ZNSt10bad_typeidD0Ev",
         "lang": "c++",
         "addr": 76844
       },
       {
         "name": "what() const",
         "flag": "method.std::bad_typeid.what___const",
+        "rawname": "_ZNKSt10bad_typeid4whatEv",
         "lang": "c++",
         "addr": 76828
       }

@@ -869,7 +869,7 @@ R_API RVecRBinSymbol *r_bin_file_get_symbols_vec(RBinFile *bf);
 R_API ut64 r_bin_file_get_vaddr(RBinFile *bf, ut64 paddr, ut64 vaddr);
 // RBinFile.add
 R_API RBinClass *r_bin_file_add_class(RBinFile *binfile, const char *name, const char *super, ut64 attr);
-R_API RBinSymbol *r_bin_file_add_method(RBinFile *bf, const char *classname, const char *name, int nargs);
+R_API RBinSymbol *r_bin_file_add_method(RBinFile *bf, const char *rawname, const char *classname, const char *name, int nargs);
 R_API RBinField *r_bin_file_add_field(RBinFile *binfile, const char *classname, const char *name);
 // RBinFile.find
 R_API RBinFile *r_bin_file_find_by_arch_bits(RBin *bin, const char *arch, int bits);
