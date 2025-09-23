@@ -1,10 +1,11 @@
-/* radare - LGPL - Copyright 2013-2023 - pancake */
+/* radare - LGPL - Copyright 2013-2025 - pancake */
 
 #include <r_bin.h>
 #include "../i/private.h"
 #include "./cxx/demangle.h"
 
 R_API char *r_bin_demangle_cxx(RBinFile *bf, const char *str, ut64 vaddr) {
+	const char *rawname = str;
 	// DMGL_TYPES | DMGL_PARAMS | DMGL_ANSI | DMGL_VERBOSE
 	// | DMGL_RET_POSTFIX | DMGL_TYPES;
 	int i;
@@ -70,7 +71,7 @@ R_API char *r_bin_demangle_cxx(RBinFile *bf, const char *str, ut64 vaddr) {
 			if (R_STR_ISNOTEMPTY (nerd)) {
 				*nerd = 0;
 				if (bf) {
-					RBinSymbol *sym = r_bin_file_add_method (bf, out, nerd + 2, 0);
+					RBinSymbol *sym = r_bin_file_add_method (bf, rawname, out, nerd + 2, 0);
 					if (sym) {
 						if (sym->vaddr != 0 && sym->vaddr != vaddr) {
 							if (bf && bf->rbin && bf->rbin->options.verbose) {

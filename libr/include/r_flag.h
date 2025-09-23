@@ -43,8 +43,9 @@ typedef struct r_flag_item_meta_t {
 typedef struct r_flag_item_t {
 	ut32 id;        /* unique identifier, maybe use ut64? */
 	char *name;     /* unique name, escaped to avoid issues with r2 shell */
-	char *realname; /* real name, without any escaping */
-	bool demangled; /* real name from demangling? .. maybe we can embed this into realname */
+	char *realname; /* real demangled, display name, without any escaping */
+	char *rawname; /* real name, without any escaping */
+	bool demangled; /* real name from demangling? */
 	ut64 addr;      /* address of the flag */
 	ut64 size;      /* size of the flag item */
 	RSpace *space;  /* flag space this item belongs to */

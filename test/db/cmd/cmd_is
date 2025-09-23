@@ -11,8 +11,8 @@ EXPECT=<<EOF
 13  0x00002b44 0x100002b44 LOCAL  FUNC 0        __ZN7MyClassC2Ev                                                                                                                                   MyClass::MyClass()
 41  0x00003150 0x100003150 LOCAL  FUNC 0        __ZN7MyClassD2Ev                                                                                                                                   MyClass::~MyClass()
 0x00000000 1 class.MyClass
+0x100002a20 0 sym.MyClass::MyClass__
 0x100002b0c 1 method.MyClass.MyClass__
-0x100003150 0 sym.MyClass::MyClass__
 EOF
 RUN
 

@@ -266,6 +266,7 @@ R_API void r_flag_item_free(RFlagItem *fi) {
 		/* release only one of the two pointers if they are the same */
 		free_item_name (fi);
 		free (fi->realname);
+		free (fi->rawname);
 		free (fi);
 	}
 }

@@ -2711,18 +2711,21 @@ EXPECT=<<EOF
       {
         "name": "waitFuture(swift::AsyncTask*, swift::AsyncContext*, void ( swiftasynccall*)(swift::AsyncContext* swift_async_context), swift::AsyncContext*, swift::OpaqueValue*)",
         "flag": "method.swift::AsyncTask.waitFuture_swift::AsyncTask__swift::AsyncContext__void___swiftasynccall__swift::AsyncContext_swift_async_context___swift::AsyncContext__swift::OpaqueValue_",
+        "rawname": "__ZN5swift9AsyncTask10waitFutureEPS0_PNS_12AsyncContextEPU14swiftasynccallFvU19swift_async_contextS3_ES3_PNS_11OpaqueValueE",
         "lang": "c++",
         "addr": 4295109344
       },
       {
         "name": "flagAsRunning_slow()",
         "flag": "method.swift::AsyncTask.flagAsRunning_slow__",
+        "rawname": "__ZN5swift9AsyncTask18flagAsRunning_slowEv",
         "lang": "c++",
         "addr": 4295110372
       },
       {
         "name": "flagAsSuspended_slow()",
         "flag": "method.swift::AsyncTask.flagAsSuspended_slow__",
+        "rawname": "__ZN5swift9AsyncTask20flagAsSuspended_slowEv",
         "lang": "c++",
         "addr": 4295110700
       }
@@ -2737,144 +2740,168 @@ EXPECT=<<EOF
       {
         "name": "swift56override_swift_task_future_wait(swift::OpaqueValue*, swift::AsyncContext*, swift::AsyncTask*, void ( swiftasynccall*)(swift::AsyncContext* swift_async_context), swift::AsyncContext*, void ( swiftasynccall*)(swift::OpaqueValue*, swift::AsyncContext* swift_async_context, swift::AsyncTask*, void (swift::AsyncContext* swift_async_context), swift::AsyncContext*))",
         "flag": "method.swift.swift56override_swift_task_future_wait_swift::OpaqueValue__swift::AsyncContext__swift::AsyncTask__void___swiftasynccall__swift::AsyncContext_swift_async_context___swift::AsyncContext__void___swiftasynccall__swift::OpaqueValue__swift::AsyncContext_swift_async_context__swift::AsyncTask__void__swift::AsyncContext_swift_async_context___swift::AsyncContext__",
+        "rawname": "__ZN5swift38swift56override_swift_task_future_waitEPNS_11OpaqueValueEPNS_12AsyncContextEPNS_9AsyncTaskEPU14swiftasynccallFvU19swift_async_contextS3_ES3_PU14swiftasynccallFvS1_U19swift_async_contextS3_S5_S7_S3_E",
         "lang": "c++",
         "addr": 4295109840
       },
       {
         "name": "swift56override_swift_task_future_wait_throwing(swift::OpaqueValue*, swift::AsyncContext*, swift::AsyncTask*, void ( swiftasynccall*)(swift::AsyncContext* swift_async_context, void* swift_context), swift::AsyncContext*, void ( swiftasynccall*)(swift::OpaqueValue*, swift::AsyncContext* swift_async_context, swift::AsyncTask*, void* swift_context, swift::AsyncContext*))",
         "flag": "method.swift.swift56override_swift_task_future_wait_throwing_swift::OpaqueValue__swift::AsyncContext__swift::AsyncTask__void___swiftasynccall__swift::AsyncContext_swift_async_context__void_swift_context___swift::AsyncContext__void___swiftasynccall__swift::OpaqueValue__swift::AsyncContext_swift_async_context__swift::AsyncTask__void_swift_context__swift::AsyncContext__",
+        "rawname": "__ZN5swift47swift56override_swift_task_future_wait_throwingEPNS_11OpaqueValueEPNS_12AsyncContextEPNS_9AsyncTaskEPU14swiftasynccallFvU19swift_async_contextS3_U13swift_contextPvES3_PU14swiftasynccallFvS1_U19swift_async_contextS3_S5_S8_S3_E",
         "lang": "c++",
         "addr": 4295110076
       },
       {
         "name": "swift56override_swift_task_create_common(unsigned long, swift::TaskOptionRecord*, swift::TargetMetadata<swift::InProcess> const*, void ( swiftasynccall*)(swift::AsyncContext* swift_async_context), void*, unsigned long, swift::AsyncTaskAndContext ( swiftcall*)(unsigned long, swift::TaskOptionRecord*, swift::TargetMetadata<swift::InProcess> const*, void (swift::AsyncContext* swift_async_context), void ( swiftasynccall)(swift::AsyncContext* swift_async_context), unsigned long))",
         "flag": "method.swift.swift56override_swift_task_create_common_unsigned_long__swift::TaskOptionRecord__swift::TargetMetadata_swift::InProcess__const__void___swiftasynccall__swift::AsyncContext_swift_async_context___void__unsigned_long__swift::AsyncTaskAndContext___swiftcall__unsigned_long__swift::TaskOptionRecord__swift::TargetMetadata_swift::InProcess__const__void__swift::AsyncContext_swift_async_context___void___swiftasynccall__swift::AsyncContext_swift_async_context___unsigned_long__",
+        "rawname": "__ZN5swift40swift56override_swift_task_create_commonEmPNS_16TaskOptionRecordEPKNS_14TargetMetadataINS_9InProcessEEEPU14swiftasynccallFvU19swift_async_contextPNS_12AsyncContextEEPvmPU9swiftcallFNS_19AsyncTaskAndContextEmS1_S6_SA_SB_mE",
         "lang": "c++",
         "addr": 4295110356
       },
       {
         "name": "swift_task_escalateBackdeploy56(swift::AsyncTask*, swift::JobPriority)",
         "flag": "method.swift.swift_task_escalateBackdeploy56_swift::AsyncTask__swift::JobPriority_",
+        "rawname": "__ZN5swift31swift_task_escalateBackdeploy56EPNS_9AsyncTaskENS_11JobPriorityE",
         "lang": "c++",
         "addr": 4295111028
       },
       {
         "name": "swift_task_escalateBackdeploy56(swift::AsyncTask*, swift::JobPriority)::$_2::operator()() const::{lambda(void*)#1}::__invoke(void*)",
         "flag": "method.swift.swift_task_escalateBackdeploy56_swift::AsyncTask__swift::JobPriority_::__2::operator_____const::lambda_void_1::__invoke_void_",
+        "rawname": "__ZZZN5swift31swift_task_escalateBackdeploy56EPNS_9AsyncTaskENS_11JobPriorityEENK3$_2clEvENUlPvE_8__invokeES4_",
         "lang": "c++",
         "addr": 4295111128
       },
       {
         "name": "waitForStatusRecordUnlock(swift::AsyncTask*, swift::ActiveTaskStatus&)",
         "flag": "method.swift.waitForStatusRecordUnlock_swift::AsyncTask__swift::ActiveTaskStatus_",
+        "rawname": "__ZN5swiftL25waitForStatusRecordUnlockEPNS_9AsyncTaskERNS_16ActiveTaskStatusE",
         "lang": "c++",
         "addr": 4295111176
       },
       {
         "name": "swift_Concurrency_fatalError(unsigned int, char const*, ...)",
         "flag": "method.swift.swift_Concurrency_fatalError_unsigned_int__char_const__..._",
+        "rawname": "__ZN5swift28swift_Concurrency_fatalErrorEjPKcz",
         "lang": "c++",
         "addr": 4295111400
       },
       {
         "name": "swift_task_getCurrent()",
         "flag": "method.swift.swift_task_getCurrent__",
+        "rawname": "__ZN5swift21swift_task_getCurrentEv",
         "lang": "c++",
         "addr": 4295111412
       },
       {
         "name": "_swift_task_clearCurrent()",
         "flag": "method.swift._swift_task_clearCurrent__",
+        "rawname": "__ZN5swift24_swift_task_clearCurrentEv",
         "lang": "c++",
         "addr": 4295111420
       },
       {
         "name": "adoptTaskVoucher(swift::AsyncTask*)",
         "flag": "method.swift.adoptTaskVoucher_swift::AsyncTask_",
+        "rawname": "__ZN5swift16adoptTaskVoucherEPNS_9AsyncTaskE",
         "lang": "c++",
         "addr": 4295111472
       },
       {
         "name": "restoreTaskVoucher(swift::AsyncTask*)",
         "flag": "method.swift.restoreTaskVoucher_swift::AsyncTask_",
+        "rawname": "__ZN5swift18restoreTaskVoucherEPNS_9AsyncTaskE",
         "lang": "c++",
         "addr": 4295111656
       },
       {
         "name": "_swift_tsan_acquire(void*)",
         "flag": "method.swift._swift_tsan_acquire_void_",
+        "rawname": "__ZN5swift19_swift_tsan_acquireEPv",
         "lang": "c++",
         "addr": 4295111852
       },
       {
         "name": "_swift_tsan_release(void*)",
         "flag": "method.swift._swift_tsan_release_void_",
+        "rawname": "__ZN5swift19_swift_tsan_releaseEPv",
         "lang": "c++",
         "addr": 4295111952
       },
       {
         "name": "_swift_tsan_acquire(void*)::$_0::operator()() const::{lambda(void*)#1}::__invoke(void*)",
         "flag": "method.swift._swift_tsan_acquire_void_::__0::operator_____const::lambda_void_1::__invoke_void_",
+        "rawname": "__ZZZN5swift19_swift_tsan_acquireEPvENK3$_0clEvENUlS0_E_8__invokeES0_",
         "lang": "c++",
         "addr": 4295112052
       },
       {
         "name": "_swift_tsan_release(void*)::$_1::operator()() const::{lambda(void*)#1}::__invoke(void*)",
         "flag": "method.swift._swift_tsan_release_void_::__1::operator_____const::lambda_void_1::__invoke_void_",
+        "rawname": "__ZZZN5swift19_swift_tsan_releaseEPvENK3$_1clEvENUlS0_E_8__invokeES0_",
         "lang": "c++",
         "addr": 4295112100
       },
       {
         "name": "swift_task_enterThreadLocalContextBackdeploy56(char*)",
         "flag": "method.swift.swift_task_enterThreadLocalContextBackdeploy56_char_",
+        "rawname": "__ZN5swift46swift_task_enterThreadLocalContextBackdeploy56EPc",
         "lang": "c++",
         "addr": 4295112200
       },
       {
         "name": "swift_task_exitThreadLocalContextBackdeploy56(char*)",
         "flag": "method.swift.swift_task_exitThreadLocalContextBackdeploy56_char_",
+        "rawname": "__ZN5swift45swift_task_exitThreadLocalContextBackdeploy56EPc",
         "lang": "c++",
         "addr": 4295112300
       },
       {
         "name": "swift_task_enterThreadLocalContextBackdeploy56(char*)::$_0::operator()() const::{lambda(void*)#1}::__invoke(void*)",
         "flag": "method.swift.swift_task_enterThreadLocalContextBackdeploy56_char_::__0::operator_____const::lambda_void_1::__invoke_void_",
+        "rawname": "__ZZZN5swift46swift_task_enterThreadLocalContextBackdeploy56EPcENK3$_0clEvENUlPvE_8__invokeES2_",
         "lang": "c++",
         "addr": 4295112400
       },
       {
         "name": "swift_task_exitThreadLocalContextBackdeploy56(char*)::$_1::operator()() const::{lambda(void*)#1}::__invoke(void*)",
         "flag": "method.swift.swift_task_exitThreadLocalContextBackdeploy56_char_::__1::operator_____const::lambda_void_1::__invoke_void_",
+        "rawname": "__ZZZN5swift45swift_task_exitThreadLocalContextBackdeploy56EPcENK3$_1clEvENUlPvE_8__invokeES2_",
         "lang": "c++",
         "addr": 4295112448
       },
       {
         "name": "swift_task_escalateBackdeploy56(swift::AsyncTask*, swift::JobPriority)::$_2::operator()() const::TheLazy",
         "flag": "method.swift.swift_task_escalateBackdeploy56_swift::AsyncTask__swift::JobPriority_::__2::operator_____const::TheLazy",
+        "rawname": "__ZZZN5swift31swift_task_escalateBackdeploy56EPNS_9AsyncTaskENS_11JobPriorityEENK3$_2clEvE7TheLazy",
         "lang": "c++",
         "addr": 4295181056
       },
       {
         "name": "_swift_tsan_acquire(void*)::$_0::operator()() const::TheLazy",
         "flag": "method.swift._swift_tsan_acquire_void_::__0::operator_____const::TheLazy",
+        "rawname": "__ZZZN5swift19_swift_tsan_acquireEPvENK3$_0clEvE7TheLazy",
         "lang": "c++",
         "addr": 4295181096
       },
       {
         "name": "_swift_tsan_release(void*)::$_1::operator()() const::TheLazy",
         "flag": "method.swift._swift_tsan_release_void_::__1::operator_____const::TheLazy",
+        "rawname": "__ZZZN5swift19_swift_tsan_releaseEPvENK3$_1clEvE7TheLazy",
         "lang": "c++",
         "addr": 4295181112
       },
       {
         "name": "swift_task_enterThreadLocalContextBackdeploy56(char*)::$_0::operator()() const::TheLazy",
         "flag": "method.swift.swift_task_enterThreadLocalContextBackdeploy56_char_::__0::operator_____const::TheLazy",
+        "rawname": "__ZZZN5swift46swift_task_enterThreadLocalContextBackdeploy56EPcENK3$_0clEvE7TheLazy",
         "lang": "c++",
         "addr": 4295181128
       },
       {
         "name": "swift_task_exitThreadLocalContextBackdeploy56(char*)::$_1::operator()() const::TheLazy",
         "flag": "method.swift.swift_task_exitThreadLocalContextBackdeploy56_char_::__1::operator_____const::TheLazy",
+        "rawname": "__ZZZN5swift45swift_task_exitThreadLocalContextBackdeploy56EPcENK3$_1clEvE7TheLazy",
         "lang": "c++",
         "addr": 4295181144
       }
@@ -2889,24 +2916,28 @@ EXPECT=<<EOF
       {
         "name": "init(os_unfair_lock_s&, bool)",
         "flag": "method.swift::MutexPlatformHelper.init_os_unfair_lock_s__bool_",
+        "rawname": "__ZN5swift19MutexPlatformHelper4initER16os_unfair_lock_sb",
         "lang": "c++",
         "addr": 4295112148
       },
       {
         "name": "destroy(os_unfair_lock_s&)",
         "flag": "method.swift::MutexPlatformHelper.destroy_os_unfair_lock_s_",
+        "rawname": "__ZN5swift19MutexPlatformHelper7destroyER16os_unfair_lock_s",
         "lang": "c++",
         "addr": 4295112156
       },
       {
         "name": "lock(os_unfair_lock_s&)",
         "flag": "method.swift::MutexPlatformHelper.lock_os_unfair_lock_s_",
+        "rawname": "__ZN5swift19MutexPlatformHelper4lockER16os_unfair_lock_s",
         "lang": "c++",
         "addr": 4295112160
       },
       {
         "name": "unlock(os_unfair_lock_s&)",
         "flag": "method.swift::MutexPlatformHelper.unlock_os_unfair_lock_s_",
+        "rawname": "__ZN5swift19MutexPlatformHelper6unlockER16os_unfair_lock_s",
         "lang": "c++",
         "addr": 4295112180
       }

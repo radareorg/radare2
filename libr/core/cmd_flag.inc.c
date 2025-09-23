@@ -67,6 +67,7 @@ static RCoreHelpMessage help_msg_f = {
 	"ft", "[?]*", "flag tags, useful to find all flags matching some words",
 	"fV", "[*-] [nkey] [offset]", "dump/restore visual marks (mK/'K)",
 	"fx", "[d]", "show hexdump (or disasm) of flag:flagsize",
+	"fu", " [name]", "show unreal flag information (yeah that names is pretty bad)",
 	"fz", "[?][name]", "add named flag zone -name to delete. see fz?[name]",
 	NULL
 };
@@ -572,7 +573,6 @@ static void flagbars(RCore *core, const char *glob) {
 	if (cols < 0) {
 		cols += 80;
 	}
-
 	struct flagbar_t u = { .core = core, .cols = cols };
 	r_flag_foreach_space_glob (core->flags, glob, r_flag_space_cur (core->flags), flagbar_foreach, &u);
 }
@@ -765,7 +765,6 @@ static void flag_ordinals(RCore *core, const char *str) {
 	if (p) {
 		*p = 0;
 	}
-
 	struct rename_flag_t u = { .core = core, .pfx = pfx, .count = 0 };
 	r_flag_foreach_glob (core->flags, glob, rename_flag_ordinal, &u);
 	free (pfx);
@@ -1365,6 +1364,91 @@ static void cmd_flag_spaces(RCore *core, const char *input) {
 		break;
 	}
 }
+
+static void cmd_fu(RCore *core, const char *input) {
+	if (input[1] == '=') {
+		char *a = r_str_trim_dup (input + 2);
+		RList *args = r_str_split_list (a, " ", 0);
+		/* Expected args: <size> <name> <rawname_b64> <realname_b64> */
+		char *szs = (char *)r_list_pop_head (args);
+		char *nme = (char *)r_list_pop_head (args);
+		char *rawb64 = (char *)r_list_pop_head (args);
+		char *realb64 = (char *)r_list_pop_head (args);
+		ut64 sz = 1;
+		if (R_STR_ISNOTEMPTY (szs)) {
+			sz = r_num_math (core->num, szs);
+		}
+		RFlagItem *item = r_flag_get_in (core->flags, core->addr);
+		if (!item) {
+			if (R_STR_ISNOTEMPTY (nme)) {
+				item = r_flag_set (core->flags, nme, core->addr, (ut32)sz);
+			} else {
+				R_LOG_ERROR ("fu=: missing flag at this address and no name provided");
+				r_list_free (args);
+				return;
+			}
+		} else {
+			item->size = sz;
+			if (nme && *nme && strcmp (item->name, nme)) {
+				(void)r_flag_rename (core->flags, item, nme);
+			}
+		}
+		if (rawb64 && *rawb64) {
+			char *rawdec = (char *)r_base64_decode_dyn (rawb64, -1, NULL);
+			free (item->rawname);
+			item->rawname = rawdec? rawdec: NULL;
+		}
+		if (realb64 && *realb64) {
+			char *realdec = (char *)r_base64_decode_dyn (realb64, -1, NULL);
+			if (realdec) {
+				(void)r_flag_item_set_realname (core->flags, item, realdec);
+				free (realdec);
+			} else {
+				(void)r_flag_item_set_realname (core->flags, item, NULL);
+			}
+		}
+		r_list_free (args);
+		free (a);
+	} else if (input[1] == '*') {
+		const char *arg = r_str_trim_head_ro (input + 2);
+		RFlagItem *item = r_flag_get (core->flags, arg);
+		if (!item) {
+			ut64 addr = *arg? r_num_math (core->num, arg): core->addr;
+			item = r_flag_get_in (core->flags, addr);
+		}
+		if (item) {
+			char *rawname = item->rawname? r_base64_encode_dyn ((void*)item->rawname, strlen (item->rawname)): NULL;
+			char *realname = item->realname? r_base64_encode_dyn ((void*)item->realname, strlen (item->realname)): NULL;
+			r_cons_printf (core->cons, "'@0x%08"PFMT64x"'fu %d %s %s %s\n",
+					item->addr, item->size, item->name, rawname, realname);
+		} else {
+			R_LOG_WARN ("Unable to find a flag by %s", arg);
+		}
+	} else if (input[1] == ' ' || input[1] == '.' || input[1] == 0) {
+		RFlagItem *item;
+		if (input[1] == '.' || !input[1]) {
+			item = r_flag_get_in (core->flags, core->addr);
+		} else {
+			const char *arg = r_str_trim_head_ro (input + 2);
+			item = r_flag_get (core->flags, arg);
+			if (!item) {
+				ut64 addr = r_num_math (core->num, arg);
+				item = r_flag_get_in (core->flags, addr);
+			}
+		}
+		if (item) {
+			r_cons_printf (core->cons, "addr 0x%08"PFMT64x"\n", item->addr);
+			r_cons_printf (core->cons, "name %s\n", item->name);
+			r_cons_printf (core->cons, "rawn %s\n", item->rawname);
+			r_cons_printf (core->cons, "disp %s\n", item->realname);
+		} else {
+			R_LOG_WARN ("Unable to find a flag");
+		}
+	} else {
+		r_core_return_invalid_command (core, "fu", input[1]);
+	}
+}
+
 static int cmd_flag(void *data, const char *input) {
 	static R_TH_LOCAL int flagenum = 0;
 	RCore *core = (RCore *)data;
@@ -1735,12 +1819,15 @@ static int cmd_flag(void *data, const char *input) {
 	case 'z': // "fz"
 		cmd_fz (core, input + 1);
 		break;
-	case 'x':
+	case 'u': // "fu"
+		cmd_fu (core, input);
+		break;
+	case 'x': // "fx"
 		if (input[1] == '?') {
 			r_core_cmd_help_contains (core, help_msg_f, "fx");
 		} else if (input[1] == ' ') {
 			RFlagItem *item = r_flag_get_in (core->flags,
-				r_num_math (core->num, input+2));
+				r_num_math (core->num, input + 2));
 			if (item) {
 				r_cons_printf (core->cons, "0x%08"PFMT64x"\n", item->addr);
 				r_core_cmdf (core, "px@%"PFMT64d":%"PFMT64d, item->addr, item->size);
@@ -1814,8 +1901,7 @@ static int cmd_flag(void *data, const char *input) {
 			ut64 addr = (input[1] && input[2] != '*' && input[2]) ? r_num_math (core->num, input + 2): core->addr;
 			RList *list_to_free = (input[1] && input[2] == '*')? r_flag_all_list (core->flags, false): NULL;
 			const RList *list = (input[1] && input[2] == '*')?
-				list_to_free
-				: r_flag_get_list (core->flags, addr);
+				list_to_free: r_flag_get_list (core->flags, addr);
 			r_list_foreach (list, iter, fi) {
 				r_flag_item_set_color (core->flags, fi, "");
 			}

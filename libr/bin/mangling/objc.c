@@ -1,10 +1,11 @@
-/* radare - LGPL - Copyright 2012-2024 - pancake */
+/* radare - LGPL - Copyright 2012-2025 - pancake */
 
 #include <r_bin.h>
 #include "../i/private.h"
 
 R_API char *r_bin_demangle_objc(RBinFile *bf, const char *sym) {
 	R_RETURN_VAL_IF_FAIL ((!bf || (bf && bf->bo && bf->bo->classes)) && sym, NULL);
+	const char *rawname = sym;
 	char *clas = NULL;
 	char *name = NULL;
 	char *args = NULL;
@@ -127,7 +128,7 @@ R_API char *r_bin_demangle_objc(RBinFile *bf, const char *sym) {
 			if (R_STR_ISNOTEMPTY (name) && type) {
 				ret = r_str_newf ("%s int %s::%s(%s)", type, clas, name, args);
 				if (bf) {
-					r_bin_file_add_method (bf, clas, name, nargs);
+					r_bin_file_add_method (bf, rawname, clas, name, nargs);
 				}
 			}
 		}
