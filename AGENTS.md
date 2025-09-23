@@ -35,6 +35,7 @@
   - We assume system-wide installations via symlinks by default, so there's no need to install after compiling for testing
 - Run tests with `r2r`. For example: `r2r test/db/cmd/cmd_print`
   - Source files can reference tests with `// R2R` comments (so you can also run against C files: `r2r foo.c`)
+- Verify syntax and indentation with `sys/lint.sh`
 - When implementing assembler/disassemblers use `rasm2` oneliners
   - To assemble `rasm2 -a ARCH -b BITS 'nop'`
   - To disassemble `rasm2 -a ARCH -b BITS -d '909090'`
