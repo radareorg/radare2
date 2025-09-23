@@ -6,113 +6,180 @@
 .Nd radare2 syscall information library
 .Sh SYNOPSIS
 .In r_syscall.h
-.Ft RSyscall *
-.Fn r_syscall_new "void"
-.Ft void
-.Fn r_syscall_free "RSyscall *ctx"
-.Ft bool
-.Fn r_syscall_setup "RSyscall *s" "const char *arch" "int bits" "const char *cpu" "const char *os"
-.Ft RSyscallItem *
-.Fn r_syscall_get "RSyscall *ctx" "int num" "int swi"
-.Ft int
-.Fn r_syscall_get_num "RSyscall *ctx" "const char *str"
-.Ft const char *
-.Fn r_syscall_get_i "RSyscall *ctx" "int num" "int swi"
-.Ft RList *
-.Fn r_syscall_list "RSyscall *ctx"
-.Ft const char *
-.Fn r_syscall_sysreg "RSyscall *s" "const char *type" "ut64 num"
+.Pp
 .Sh DESCRIPTION
 The
 .Nm r_syscall
-library provides syscall information for radare2, supporting various architectures and operating systems. It allows lookup of syscall names, numbers, and arguments across different platforms.
+API provides a lightweight, architecture- and OS-aware syscall database used by radare2 components such as the assembler, disassembler and analyzer. It exposes utilities to load platform specific syscall tables, query syscall names and numbers, parse syscall item descriptions and access related system registers and I/O port mappings.
 .Pp
-The core structure is
+The primary object is
 .Vt RSyscall ,
-which manages syscall databases and provides lookup functionality.
+which holds loaded SDB databases and small lookup helpers. The API is designed for fast in-process lookups and shallow ownership rules: callers allocate and free the context with the provided constructors and share references with
+.Fn r_syscall_ref "RSyscall *sc" .
 .Sh INITIALIZATION
+Create and destroy syscall contexts using the following helpers. The constructor returns a new, zero-initialized context with internal SDB containers ready to be loaded by
+.Fn r_syscall_setup "RSyscall *s" "const char *arch" "int bits" "const char *cpu" "const char *os" .
+.Pp
 .Ft RSyscall *
 .Fn r_syscall_new "void"
 .Pp
-Creates a new syscall context.
+Allocates and returns a new
+.Vt RSyscall
+instance. New instances have internal SDB fields allocated and default platform values set (but no syscall data loaded until
+.Fn r_syscall_setup "RSyscall *s" "const char *arch" "int bits" "const char *cpu" "const char *os" is called).
 .Pp
 .Ft void
 .Fn r_syscall_free "RSyscall *ctx"
 .Pp
-Frees all resources associated with the syscall context.
+Decrements the reference counter and frees the context when no more references remain. The API uses simple reference counting; use
+.Fn r_syscall_ref "RSyscall *sc" to create an additional reference when sharing the object between subsystems (for example binding the analyzer and assembler to the same syscall database).
 .Sh SETUP
+Loading the correct syscall and sysregs tables for the target platform is done with
 .Ft bool
 .Fn r_syscall_setup "RSyscall *s" "const char *arch" "int bits" "const char *cpu" "const char *os"
 .Pp
-Configures the syscall context for a specific architecture, bitness, CPU, and operating system.
-.Sh SYSCALL LOOKUP
+Call this after creating the context (or when the target architecture / OS changes). The function chooses the appropriate SDB file (or embedded gperf table) using the pattern "syscall/<os>-<arch>-<bits>" and "sysregs/<arch>-<bits>-<cpu>".
+.Pp
+Typical usage: the assembler/disassembler initializes its local syscall context and calls
+.Fn r_syscall_setup "RSyscall *s" "const char *arch" "int bits" "const char *cpu" "const char *os" with the same parameters used to configure the engine. Example from `libr/main/rasm2.c`:
+.Bd -literal -offset indent
+as->a->syscall = r_syscall_new();
+r_syscall_setup (as->a->syscall, arch, bits, as->opt.cpu, as->opt.kernel);
+.Ed
+.Pp
+Note: the function normalizes common aliases (for example `android` -> `linux`) and may switch internal defaults for certain architectures (e.g. x86 syscall port tables).
+.Sh LOOKUP BY NUMBER AND NAME
+The main operations allow mapping from numbers to names (and more structured items), and from names to numbers. These helpers are the most used by analysis and assembly codepaths.
+.Pp
 .Ft RSyscallItem *
 .Fn r_syscall_get "RSyscall *ctx" "int num" "int swi"
 .Pp
-Retrieves syscall information by number and software interrupt.
+Given a syscall number and an optional software interrupt selector (swi), returns a newly allocated
+.Vt RSyscallItem
+describing the syscall (name, number, swi and argument information). The caller owns the returned item and must free it with
+.Fn r_syscall_item_free "RSyscallItem *si" .
+.Pp
+Example (used in `libr/core/canal.c` to label discovered SWI instructions):
+.Bd -literal -offset indent
+int sig = r_syscall_get_num (core->anal->syscall, sysnumstr);
+RSyscallItem *si = r_syscall_get (core->anal->syscall, snv, -1);
+if (si) {
+    // annotate flags or print name
+    r_flag_set_next (core->flags, r_strf ("syscall.%s", si->name), cur, 1);
+    r_syscall_item_free (si);
+} else {
+    r_flag_set_next (core->flags, r_strf ("syscall.%d", snv), cur, 1);
+}
+.Ed
 .Pp
 .Ft int
 .Fn r_syscall_get_num "RSyscall *ctx" "const char *str"
 .Pp
-Gets the syscall number for a given syscall name.
+Look up the numerical identifier for a syscall by name. This returns -1 on errors or when the database is not loaded. Commonly used when an assembler or scripting helper needs to convert textual syscall names into numbers to emit proper immediates.
+.Pp
+Example: get the syscall number for `write`:
+.Bd -literal -offset indent
+int write_num = r_syscall_get_num (sc, "write");
+.Ed
 .Pp
 .Ft const char *
 .Fn r_syscall_get_i "RSyscall *ctx" "int num" "int swi"
 .Pp
-Gets the syscall name by number and software interrupt.
-.Sh SYSCALL LISTS
+Returns the raw string key for a syscall entry (often the dotted key stored in the SDB). This helper is useful when you only need the textual mapping without allocating a full
+.Vt RSyscallItem .
+.Sh LISTING
 .Ft RList *
 .Fn r_syscall_list "RSyscall *ctx"
 .Pp
-Returns a list of all available syscalls for the current configuration.
-.Sh SYSTEM REGISTERS
+Enumerate the syscalls currently available for the loaded configuration. The function returns a newly allocated
+.Vt RList
+of
+.Vt RSyscallItem
+objects; the caller is responsible for the list and item deallocation. Use this when building UIs or dump utilities that need a complete picture of the available syscall set.
+.Bd -literal -offset indent
+RList *list = r_syscall_list (sc);
+// iterate and free using r_list_foreach or r_list_pop
+.Ed
+.Sh SYSREGS AND I/O PORTS
+Some platforms provide named system registers (sysregs) and well-known I/O port names. These helpers query the loaded sysregs DB or fall back to small built-in tables.
+.Pp
 .Ft const char *
 .Fn r_syscall_sysreg "RSyscall *s" "const char *type" "ut64 num"
 .Pp
-Gets system register information by type and number.
-.Sh I/O PORTS
+Return a string describing a system register or resource of a given
+.Vt type
+(for example `io`, `sr` or vendor-specific namespaces) indexed by
+.Vt num . The string points into the SDB internal storage and must not be freed by the caller.
+.Pp
 .Ft const char *
 .Fn r_syscall_get_io "RSyscall *s" "int ioport"
 .Pp
-Gets I/O port information by port number.
-.Sh SYSCALL ITEMS
+Convenience wrapper to get an I/O port name by number. Internally it tries `r_syscall_sysreg (s, "io", ioport)` first and then consults a small in-memory table for common ports (for example on x86).
+.Sh SYSITEM CREATION AND LIFETIME
 .Ft RSyscallItem *
 .Fn r_syscall_item_new_from_string "const char *name" "const char *s"
 .Pp
-Creates a syscall item from string descriptions.
+Parse a compact SDB-style syscall description string and return an allocated
+.Vt RSyscallItem . The format is typically a comma separated string describing the swi, number, argument count and argument descriptors. This helper is used internally by the lookup functions and is exposed for tools that need to construct items from raw SDB values.
 .Pp
 .Ft void
 .Fn r_syscall_item_free "RSyscallItem *si"
 .Pp
-Frees a syscall item.
-.Sh SOFTWARE INTERRUPTS
+Free an item previously returned by the API.
+.Sh SOFTWARE INTERRUPTS (SWI)
+Some architectures multiplex syscall tables through different SWI numbers or selectors. The API exposes a small helper to retrieve the current default SWI for the loaded database.
+.Pp
 .Ft int
 .Fn r_syscall_get_swi "RSyscall *s"
 .Pp
-Gets the software interrupt number for the current configuration.
+Returns the default software interrupt number used by the currently loaded syscall table, or -1 on error.
+.Pp
+Typical callers pass `-1` for the `swi` parameter of
+.Fn r_syscall_get "RSyscall *ctx" "int num" "int swi" , which causes the implementation to substitute the configured default value (see the internal `getswi` helper used by the library).
 .Sh EXAMPLES
-Basic syscall setup:
+This section contains practical code snippets extracted from radare2 sources showing common usage patterns.
+.Pp
+1) Binding and sharing a syscall context between analyzer and assembler:
 .Bd -literal -offset indent
-RSyscall *sc = r_syscall_new();
-r_syscall_setup(sc, "x86", 64, "intel", "linux");
+// when initializing core subsystems
+core->rasm->syscall = r_syscall_ref (core->anal->syscall); // share reference
+
+// when creating an independent assembler context (rasm2 example)
+as->a->syscall = r_syscall_new();
+r_syscall_setup (as->a->syscall, arch, bits, as->opt.cpu, as->opt.kernel);
 .Ed
 .Pp
-Syscall lookup by number:
+2) Annotating discovered SWI instructions in the analysis pipeline (from `libr/core/canal.c`):
 .Bd -literal -offset indent
-RSyscallItem *item = r_syscall_get(sc, 1, 0x80); // syscall 1 on x86
-if (item) {
-    printf("Syscall: %s\\n", item->name);
+int snv = (arch == R2_ARCH_THUMB)? op.val: (int)r_reg_getv (core->anal->reg, sn);
+if (snv > 0 && snv < 0xFFFF) {
+    RSyscallItem *si = r_syscall_get (core->anal->syscall, snv, -1);
+    if (si) {
+        r_flag_set_next (core->flags, r_strf ("syscall.%s", si->name), cur, 1);
+        r_syscall_item_free (si);
+    } else {
+        r_flag_set_next (core->flags, r_strf ("syscall.%d", snv), cur, 1);
+    }
 }
 .Ed
 .Pp
-Syscall lookup by name:
+3) Looking up a numeric value from a textual name for assembly and scripting helpers:
 .Bd -literal -offset indent
-int num = r_syscall_get_num(sc, "write");
+int num = r_syscall_get_num (sc, "write");
+if (num >= 0) {
+    // emit syscall immediate or use it in analysis
+}
 .Ed
 .Pp
-List all syscalls:
+4) Enumerating and printing all loaded syscalls:
 .Bd -literal -offset indent
-RList *syscalls = r_syscall_list(sc);
+RList *list = r_syscall_list (sc);
+RListIter *it;
+RSyscallItem *si;
+r_list_foreach (list, it, si) {
+    printf ("%s: swi=%d num=%d args=%d\n", si->name, si->swi, si->num, si->args);
+}
+r_list_free (list);
 .Ed
 .Sh SEE ALSO
 .Xr r_anal 3 ,

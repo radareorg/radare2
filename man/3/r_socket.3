@@ -6,156 +6,171 @@
 .Nd Network socket library for radare2
 .Sh SYNOPSIS
 .In r_socket.h
-.Ft struct r_socket_t *
-.Fn r_socket_new "bool is_ssl"
-.Ft void
-.Fn r_socket_free "struct r_socket_t *s"
-.Ft bool
-.Fn r_socket_connect "struct r_socket_t *s" "const char *host" "const char *port" "int proto" "unsigned int timeout"
-.Ft bool
-.Fn r_socket_listen "struct r_socket_t *s" "const char *port" "const char *certfile"
-.Ft struct r_socket_t *
-.Fn r_socket_accept "struct r_socket_t *s"
-.Ft bool
-.Fn r_socket_close "struct r_socket_t *s"
-.Ft int
-.Fn r_socket_read "struct r_socket_t *s" "ut8 *read" "int len"
-.Ft int
-.Fn r_socket_write "struct r_socket_t *s" "const void *buf" "int len"
-.Ft int
-.Fn r_socket_gets "struct r_socket_t *s" "char *buf" "int size"
-.Ft void
-.Fn r_socket_printf "struct r_socket_t *s" "const char *fmt" "..."
-.Ft bool
-.Fn r_socket_is_connected "struct r_socket_t *s"
-.Ft int
-.Fn r_socket_ready "struct r_socket_t *s" "int secs" "int usecs"
-.Ft char *
-.Fn r_socket_http_get "const char *url" "const char **headers" "int *code" "int *rlen"
-.Ft char *
-.Fn r_socket_http_post "const char *url" "const char **headers" "const char *data" "int *code" "int *rlen"
-.Ft struct r_socket_rap_server_t *
-.Fn r_socket_rap_server_new "bool is_ssl" "const char *port"
-.Ft bool
-.Fn r_socket_rap_server_listen "struct r_socket_rap_server_t *rap_s" "const char *certfile"
-.Ft struct r2pipe_t *
-.Fn r2pipe_open "const char *cmd"
-.Ft char *
-.Fn r2pipe_cmd "struct r2pipe_t *r2pipe" "const char *str"
-.Ft int
-.Fn r2pipe_close "struct r2pipe_t *r2pipe"
+.Pp
 .Sh DESCRIPTION
-The
+Networking and local process I/O used across radare2 is provided by the
 .Nm r_socket
-library provides network socket functionality for radare2, including
-TCP/UDP connections, SSL/TLS support, HTTP client/server, RAP protocol,
-and process communication pipes.
+API. It exposes a small, portable socket wrapper that supports plain TCP/UDP,
+SSL/TLS (when compiled with OpenSSL), Unix domain sockets, serial and virtual
+protocols (RAP and r2pipe). The API is intentionally small so higher level
+components in the tree (for example `libr/core` and `libr/main`) can combine
+connect/listen, HTTP helpers and process pipes to implement r2web, r2agent and
+remote file access.
 .Pp
-The core structure is
+The main opaque type is
 .Vt struct r_socket_t ,
-which represents a network socket with support for both plain and SSL connections.
+which holds the underlying file descriptor and optional SSL context when
+TLS is used.
 .Sh INITIALIZATION
-Create a new socket:
+Before using any socket operations allocate an `RSocket` and free it when
+finished. The constructor lets callers request an SSL-capable socket; a
+socket created with `is_ssl=true` will attempt TLS negotiation on connect or
+accept when OpenSSL is available.
+.Pp
+Function signatures:
 .Bd -literal -offset indent
-RSocket *s = r_socket_new(false); // Plain socket
-RSocket *ssl_s = r_socket_new(true); // SSL socket
+RSocket *r_socket_new (bool is_ssl);
+RSocket *r_socket_new_from_fd (int fd);
+void r_socket_free (RSocket *s);
 .Ed
 .Pp
-Free when done:
-.Bd -literal -offset indent
-r_socket_free(s);
-.Ed
+`r_socket_new ()` never returns `NULL` (see project allocation conventions),
+but the socket may still fail to connect or bind. Use the free function to
+release sockets created with any constructor.
 .Sh CONNECTIONS
-Connect to a host:
+Establishing an outgoing connection is done with `r_socket_connect` or the
+provided convenience macros. The API supports a timeout parameter and a
+protocol selector so the same call surface can be used for TCP, UDP or Unix
+sockets.
+.Pp
+Function signatures:
 .Bd -literal -offset indent
-if (r_socket_connect(s, "127.0.0.1", "8080", R_SOCKET_PROTO_TCP, 5000)) {
-    // Connected successfully
-}
+bool r_socket_connect (RSocket *s, const char *host, const char *port, int proto, unsigned int timeout);
+bool r_socket_connect_tcp (RSocket *s, const char *host, const char *port, unsigned int timeout);
+bool r_socket_connect_udp (RSocket *s, const char *host, const char *port, unsigned int timeout);
+int r_socket_connect_serial (RSocket *sock, const char *path, int speed, int parity);
 .Ed
 .Pp
-Convenience macros:
-.Bd -literal -offset indent
-r_socket_connect_tcp(s, "example.com", "80", 5000);
-r_socket_connect_udp(s, "127.0.0.1", "53", 1000);
-.Ed
+Return value: these functions return `true` on success and `false` on
+failure. Timeouts are expressed in milliseconds for connect. Use
+`r_socket_is_connected ()` and `r_socket_ready ()` to check socket state after
+connect if needed.
+.Pp
+When using SSL sockets created with `r_socket_new (true)`, TLS negotiation
+is performed during `r_socket_connect ()` (client) or `r_socket_accept ()`
+(server) if OpenSSL is enabled at build time.
 .Sh SERVERS
-Listen for connections:
+To accept incoming connections create an `RSocket`, call `r_socket_listen`
+to bind the port and then repeatedly accept clients. A server socket may be
+plain or TLS-enabled by passing a certificate file path to
+`r_socket_listen ()`.
+.Pp
+Function signatures:
 .Bd -literal -offset indent
-if (r_socket_listen(s, "8080", NULL)) { // NULL for no SSL cert
-    RSocket *client = r_socket_accept(s);
-    if (client) {
-        // Handle client connection
-        r_socket_free(client);
-    }
-}
+bool r_socket_listen (RSocket *s, const char *port, const char *certfile);
+RSocket *r_socket_accept (RSocket *s);
+RSocket *r_socket_accept_timeout (RSocket *s, unsigned int timeout);
+bool r_socket_close (RSocket *s);
 .Ed
+.Pp
+Typical loop: call `r_socket_accept ()` (or the timeout variant) and handle
+the returned `RSocket *` for the client; free it when done. `r_socket_close`
+closes the underlying listening descriptor when the server should stop.
 .Sh DATA TRANSFER
-Read data:
+Data transfer functions provide blocking and non-blocking reads/writes as
+well as convenience helpers for formatted output and line-oriented input.
+.Pp
+Function signatures:
 .Bd -literal -offset indent
-ut8 buffer[1024];
-int bytes = r_socket_read(s, buffer, sizeof(buffer));
+int r_socket_write (RSocket *s, const void *buf, int len);
+int r_socket_puts (RSocket *s, char *buf);
+void r_socket_printf (RSocket *s, const char *fmt, ...);
+int r_socket_read (RSocket *s, ut8 *read, int len);
+int r_socket_read_block (RSocket *s, unsigned char *buf, int len);
+int r_socket_gets (RSocket *s, char *buf, int size);
+int r_socket_flush (RSocket *s);
+ut8 *r_socket_slurp (RSocket *s, int *len);
+int r_socket_ready (RSocket *s, int secs, int usecs);
+bool r_socket_is_connected (RSocket *s);
 .Ed
 .Pp
-Write data:
-.Bd -literal -offset indent
-const char *data = "Hello, World!";
-int sent = r_socket_write(s, data, strlen(data));
-.Ed
-.Pp
-Read line:
-.Bd -literal -offset indent
-char line[256];
-if (r_socket_gets(s, line, sizeof(line)) > 0) {
-    printf("Received: %s\\n", line);
-}
-.Ed
-.Pp
-Formatted output:
-.Bd -literal -offset indent
-r_socket_printf(s, "GET / HTTP/1.0\\r\\nHost: %s\\r\\n\\r\\n", hostname);
-.Ed
+Notes:
+- `r_socket_gets ()` reads until newline (or buffer full) and returns the
+  number of bytes read (or negative on error). Use it for simple line-based
+  protocols (for example debugging servers in tests).
+- `r_socket_read_block ()` attempts to read the requested number of bytes;
+  use it when an exact size is expected. Plain `r_socket_read ()` reads up to
+  the provided buffer length and may return sooner.
+- After sending a response on an accepted connection call `r_socket_flush ()`
+  to ensure buffered data is written before closing the socket.
+- Use `r_socket_ready ()` to poll for readability/writability without busy
+  looping.
 .Sh HTTP CLIENT
-HTTP GET request:
+r_socket contains simple HTTP client helpers used by several parts of
+radare2 to fetch small resources (for example `rtr` and plugin download
+helpers). These are intentionally light-weight: they return an allocated
+buffer with the full response body (no streaming API) and are convenient for
+short fetches.
+.Pp
+Function signatures:
 .Bd -literal -offset indent
-int code, rlen;
-char *response = r_socket_http_get("http://example.com/api", NULL, &code, &rlen);
-if (response) {
-    printf("HTTP %d: %s\\n", code, response);
-    free(response);
-}
+char *r_socket_http_get (const char *url, const char **headers, int *code, int *rlen);
+char *r_socket_http_post (const char *url, const char **headers, const char *data, int *code, int *rlen);
 .Ed
 .Pp
-HTTP POST request:
-.Bd -literal -offset indent
-char *post_data = "key=value";
-char *response = r_socket_http_post("http://example.com/api", NULL, post_data, &code, &rlen);
-.Ed
+Behaviour and ownership: the returned pointer is malloc'd by the callee and
+must be freed by the caller. `code` receives the HTTP status code (when not
+NULL) and `rlen` receives the length of the returned buffer. When fetching
+large resources prefer other I/O hooks (for example `libr/io`) to avoid
+holding large blobs in memory.
 .Sh RAP PROTOCOL
-Create RAP server:
+The RAP protocol is a compact request/reply protocol used to expose file
+operations remotely (open/read/write/seek). radare2 exposes both server and
+client helpers that wrap RSocket so callers can implement remote file access
+or forward commands across a socket.
+.Pp
+Function signatures:
 .Bd -literal -offset indent
-RSocketRapServer *rap_s = r_socket_rap_server_new(false, "9080");
-if (r_socket_rap_server_listen(rap_s, NULL)) {
-    while (r_socket_rap_server_continue(rap_s)) {
-        // Handle RAP commands
-    }
-}
-r_socket_rap_server_free(rap_s);
+RSocketRapServer *r_socket_rap_server_new (bool is_ssl, const char *port);
+RSocketRapServer *r_socket_rap_server_create (const char *pathname);
+void r_socket_rap_server_free (RSocketRapServer *rap_s);
+bool r_socket_rap_server_listen (RSocketRapServer *rap_s, const char *certfile);
+RSocket *r_socket_rap_server_accept (RSocketRapServer *rap_s);
+bool r_socket_rap_server_continue (RSocketRapServer *rap_s);
 .Ed
-.Sh R2PIPE
-Open radare2 pipe:
+.Pp
+Typical usage: create the server with `r_socket_rap_server_new ()`, call
+`r_socket_rap_server_listen ()` and loop while
+`r_socket_rap_server_continue ()` returns true. The RAP helpers allow
+implementing remote access to files or exposing r2 commands across a socket.
+.Sh R2PIPE AND PROCESS PIPES
+r2pipe is a convenience layer built on top of the process pipe helpers in
+the socket module. It allows spawning a radare2 process (or any local
+command) and sending/receiving text commands via a pipe. The implementation
+uses `r_socket_proc_*` APIs under the hood.
+.Pp
+Function signatures:
 .Bd -literal -offset indent
-R2Pipe *r2p = r2pipe_open("r2 -q /bin/ls");
-if (r2p) {
-    char *result = r2pipe_cmd(r2p, "i");
-    if (result) {
-        printf("Info: %s\\n", result);
-        free(result);
-    }
-    r2pipe_close(r2p);
-}
+R2Pipe *r2pipe_open (const char *cmd);
+char *r2pipe_cmd (R2Pipe *r2pipe, const char *str);
+RSocketProc *r_socket_proc_open (char *const argv[]);
+int r_socket_proc_close (RSocketProc *sp);
+int r_socket_proc_read (RSocketProc *sp, unsigned char *buf, int len);
+int r_socket_proc_gets (RSocketProc *sp, char *buf, int size);
+int r_socket_proc_write (RSocketProc *sp, void *buf, int len);
+void r_socket_proc_printf (RSocketProc *sp, const char *fmt, ...);
 .Ed
+.Pp
+`r2pipe_cmd()` returns a malloc'd string that the caller must free. Use the
+`r_socket_proc_*` primitives when you need lower-level control over the
+child process I/O (for example non-blocking reads or scripted interactions).
 .Sh PROTOCOLS
-Supported protocols:
+The API exposes a small set of protocol constants to select the transport
+used by `r_socket_connect ()`. Most users will choose TCP or UDP; unix
+domain sockets are used by local-only services and serial/CAN constants are
+present to support platform-specific backends.
+.Pp
+Supported protocol constants:
 .Bl -tag -width "R_SOCKET_PROTO_UNIX"
 .It Dv R_SOCKET_PROTO_TCP
 TCP connections
@@ -169,46 +184,70 @@ Serial connections
 CAN bus (Linux only)
 .El
 .Sh EXAMPLES
-Simple TCP client:
+The examples below are drawn from real test code and from how core components
+use the socket APIs. They illustrate common patterns: simple clients,
+TLS-capable servers and HTTP handling with the `r_socket_http_*` helpers.
+.Pp
+Minimal TCP client (pattern from `test/unit/legacy_unit/socket/client.c`):
 .Bd -literal -offset indent
 #include <r_socket.h>
 
-int main() {
-    RSocket *s = r_socket_new(false);
-    if (!r_socket_connect_tcp(s, "127.0.0.1", "8080", 5000)) {
-        fprintf(stderr, "Connection failed\\n");
-        r_socket_free(s);
-        return 1;
+int main(void) {
+    char buf[1024];
+    RSocket *s = r_socket_new (false);
+    if (r_socket_connect (s, "localhost", "9090", R_SOCKET_PROTO_TCP, 10000)) {
+        while (r_socket_gets (s, buf, sizeof (buf)) >= 0) {
+            eprintf ("((%s))\n", buf);
+        }
     }
-    
-    r_socket_printf(s, "Hello Server\\n");
-    
-    char response[256];
-    int len = r_socket_gets(s, response, sizeof(response));
-    if (len > 0) {
-        printf("Server: %s\\n", response);
-    }
-    
-    r_socket_close(s);
-    r_socket_free(s);
+    r_socket_free (s);
     return 0;
 }
 .Ed
 .Pp
-Simple HTTP server:
+TLS server that accepts a client and responds with a simple HTTP page
+(adapted from `test/unit/legacy_unit/socket/serverssl.c`):
 .Bd -literal -offset indent
-RSocket *server = r_socket_new(false);
-if (r_socket_listen(server, "8080", NULL)) {
-    printf("Server listening on port 8080\\n");
-    RSocket *client = r_socket_accept(server);
-    if (client) {
-        r_socket_printf(client, "HTTP/1.0 200 OK\\r\\n\\r\\nHello World!");
-        r_socket_close(client);
-        r_socket_free(client);
+#include <r_socket.h>
+#define PORT "4433"
+
+int main (int argc, char **argv) {
+    char buf[2048];
+    RSocket *s, *cli;
+    if (argc < 2) {
+        eprintf ("Use %s <cert>\n", argv[0]);
+        return 1;
+    }
+    s = r_socket_new (true);
+    if (!r_socket_listen (s, PORT, argv[1])) {
+        eprintf ("Error, cant listen at port: %s\n", PORT);
+        return 1;
+    }
+    while ((cli = r_socket_accept (s))) {
+        r_socket_read (cli, (unsigned char *)buf, 9);
+        strcpy (buf, "HTTP/1.0 200 OK\r\nServer: EKRServer\r\n\r\nServer test page\r\n");
+        r_socket_write (cli, buf, strlen (buf));
+        r_socket_flush (cli);
+        r_socket_free (cli);
+    }
+    r_socket_free (s);
+    return 0;
+}
+.Ed
+.Pp
+HTTP server loop and reply (pattern used by `libr/core` HTTP handlers):
+.Bd -literal -offset indent
+RSocket *server = r_socket_new (false);
+if (r_socket_listen (server, "8080", NULL)) {
+    for (;;) {
+        RSocketHTTPRequest *req = r_socket_http_accept (server, NULL);
+        if (!req) { break; }
+        /* req->path, req->method and req->data are populated by the helper */
+        r_socket_http_response (req, 200, "Hello World", 0, NULL);
+        r_socket_http_free (req);
     }
 }
-r_socket_close(server);
-r_socket_free(server);
+/* remember to close/free the listening socket when done */
 .Ed
 .Sh SEE ALSO
 .Xr r_core 3 ,

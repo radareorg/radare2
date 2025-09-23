@@ -26,6 +26,7 @@ langs.cfg
 *.pdb
 *.lib
 *.ilk
+libr/egg/p/sc/out
 binr/r2agent/r2agent
 binr/r2agent/r2agent.exe
 binr/rvc2/rvc2

@@ -6,26 +6,7 @@
 .Nd radare2 debugger library
 .Sh SYNOPSIS
 .In r_debug.h
-.Ft RDebug *
-.Fn r_debug_new "int hard"
-.Ft void
-.Fn r_debug_free "RDebug *dbg"
-.Ft bool
-.Fn r_debug_attach "RDebug *dbg" "int pid"
-.Ft bool
-.Fn r_debug_detach "RDebug *dbg" "int pid"
-.Ft int
-.Fn r_debug_step "RDebug *dbg" "int steps"
-.Ft int
-.Fn r_debug_continue "RDebug *dbg"
-.Ft RDebugReasonType
-.Fn r_debug_wait "RDebug *dbg" "RBreakpointItem **bp"
-.Ft bool
-.Fn r_debug_reg_sync "RDebug *dbg" "int type" "int write"
-.Ft ut64
-.Fn r_debug_reg_get "RDebug *dbg" "const char *name"
-.Ft bool
-.Fn r_debug_reg_set "RDebug *dbg" "const char *name" "ut64 num"
+.Pp
 .Sh DESCRIPTION
 The
 .Nm r_debug
@@ -38,172 +19,300 @@ which manages debugger state, plugins, breakpoints, registers, and process infor
 .Ft RDebug *
 .Fn r_debug_new "int hard"
 .Pp
-Creates a new debugger context. The 'hard' parameter enables hardware debugging features.
+Creates and returns a new debugger context. Use this as the first step when
+writing code that drives the debugger programmatically. The optional
+`hard` parameter enables hardware-specific debugging features (when
+available) such as hardware breakpoints. Typical usage is to create the
+context with `r_debug_new ()`, configure the `RDebug` fields (for example
+setting the core pointer or event hooks), then call `r_debug_start ()` or
+`r_debug_attach ()` to begin debugging.
+.Pp
+Always free the returned object with `r_debug_free ()` once debugging is
+finished to avoid leaking resources.
 .Pp
 .Ft void
 .Fn r_debug_free "RDebug *dbg"
 .Pp
-Frees all resources associated with the debugger context.
+Frees all resources associated with the debugger context and its
+substructures. After calling this function the `RDebug *` must not be
+used. Typical pattern:
+.Bd -literal -offset indent
+RDebug *dbg = r_debug_new (0);
+// configure dbg->coreb.core, dbg->anal, etc.
+// attach or start target
+// debug loop
+r_debug_free (dbg);
+.Ed
 .Sh PROCESS CONTROL
 .Ft bool
 .Fn r_debug_attach "RDebug *dbg" "int pid"
 .Pp
-Attaches the debugger to a running process with the specified PID.
+Attach to an existing process and prepare the internal plugin and IO
+callbacks for controlling the target. After a successful attach you
+usually call `r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false)` to populate
+register state and `r_debug_bp_update (dbg)` if breakpoints need to be
+resolved against symbol expressions. When attaching to remote backends the
+plugin selected (the `dbg->current->plugin`) determines the behaviour of
+`r_debug_attach ()` and subsequent I/O.
 .Pp
 .Ft bool
 .Fn r_debug_detach "RDebug *dbg" "int pid"
 .Pp
-Detaches the debugger from the specified process.
+Detach the debugger from the target process. Use this when you want to
+leave the debuggee running under its own control. After detaching you may
+still call `r_debug_info ()` to read cached information, but most control
+functions will no longer be available.
 .Pp
 .Ft bool
 .Fn r_debug_start "RDebug *dbg" "const char *cmd"
 .Pp
-Starts debugging a new process with the given command.
+Start and spawn a new process for debugging with the given command. This
+sets up the debugging plugin's process creation flow (for example using
+`fork/exec` on native backends or a remote protocol for remote backends).
+After `r_debug_start ()` the usual flow is to call `r_debug_wait ()` to
+observe the initial stop event, then set breakpoints and continue.
 .Sh EXECUTION CONTROL
 .Ft int
 .Fn r_debug_step "RDebug *dbg" "int steps"
 .Pp
-Executes the specified number of single steps.
+Perform one or more single instruction steps on the selected thread. Use
+`r_debug_step ()` for instruction-level stepping. For higher-level stepping
+that steps over function calls use `r_debug_step_over ()`. If you need to
+execute until a given address use `r_debug_continue_until ()`.
+.Pp
+When stepping after hitting a software breakpoint, the library handles
+the "recoil" process (clearing the breakpoint, stepping once, restoring
+the breakpoint). Callers do not normally need to implement recoiling
+themselves but should be aware that `r_debug_step ()` may return a value
+less than requested when a breakpoint was involved.
 .Pp
 .Ft int
 .Fn r_debug_step_over "RDebug *dbg" "int steps"
 .Pp
-Executes the specified number of steps, stepping over function calls.
+Step over function calls for `steps` instructions. This is useful when
+implementing source-level stepping or when the caller wants to skip
+stepping into library code.
 .Pp
 .Ft int
 .Fn r_debug_continue "RDebug *dbg"
 .Pp
-Continues execution until a breakpoint or signal is encountered.
+Resume execution until the debuggee stops due to a breakpoint, signal or
+other event. Before calling `r_debug_continue ()` ensure that software
+breakpoints are properly restored by calling `r_debug_bp_update ()` if
+you modified breakpoint expressions, and sync registers if you modified
+them locally. For multi-threaded targets prefer using the `continue_all_threads`
+flag on `RDebug` when supported by the backend.
 .Pp
 .Ft bool
 .Fn r_debug_continue_until "RDebug *dbg" "ut64 addr"
 .Pp
-Continues execution until the specified address is reached.
+Resume execution and stop when the program counter reaches `addr`. This
+is convenient for implementing temporary range stepping: add a temporary
+breakpoint with `r_debug_bp_add ()` and then call `r_debug_continue ()`,
+or use `r_debug_continue_until ()` to avoid explicit breakpoint
+management when supported by the plugin.
 .Sh WAITING AND REASONS
 .Ft RDebugReasonType
 .Fn r_debug_wait "RDebug *dbg" "RBreakpointItem **bp"
 .Pp
-Waits for the debuggee to stop and returns the reason for stopping.
+Block until the debuggee stops and return the reason (an `RDebugReasonType`).
+`r_debug_wait ()` is the canonical way to implement a debugging loop: call
+it after `r_debug_continue ()` or `r_debug_step ()` and inspect the
+returned reason via `r_debug_stop_reason ()` or by testing the return
+value. If `bp` is non-NULL and the stop reason involves a breakpoint,
+`*bp` will be set to the `RBreakpointItem *` that was hit.
+.Pp
+Typical usage pattern:
+.Bd -literal -offset indent
+r_debug_continue (dbg);
+RBreakpointItem *bp = NULL;
+RDebugReasonType why = r_debug_wait (dbg, &bp);
+if (why == R_DEBUG_REASON_BREAKPOINT && bp) {
+    // inspect registers and memory here
+}
+.Ed
 .Pp
 .Ft RDebugReasonType
 .Fn r_debug_stop_reason "RDebug *dbg"
 .Pp
-Gets the current reason why the debuggee stopped.
+Return the last stop reason stored in `dbg->reason`. This is useful when
+you cannot block on `r_debug_wait ()` (for example when integrating with
+an event loop) and need to poll the current state.
 .Pp
 .Ft const char *
 .Fn r_debug_reason_tostring "int type"
 .Pp
-Converts a debug reason type to a string description.
+Return a human-readable string for the given reason code. Useful for
+logging or user-facing messages when reporting why a debuggee stopped.
 .Sh REGISTER MANAGEMENT
 .Ft bool
 .Fn r_debug_reg_sync "RDebug *dbg" "int type" "int write"
 .Pp
-Synchronizes register values between the debugger and debuggee.
+Synchronize registers between the local `RReg` view and the debuggee.
+Call with `write == false` to read registers from the debuggee into the
+local `RReg` and with `write == true` to push local register values into the
+debuggee. Always call `r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false)` after
+attaching to ensure that `r_debug_reg_get ()` returns meaningful values.
 .Pp
 .Ft ut64
 .Fn r_debug_reg_get "RDebug *dbg" "const char *name"
 .Pp
-Gets the value of a register by name.
+Return the value of the register named `name` using the local `RReg`
+cache. This value is only as up-to-date as the last `r_debug_reg_sync ()`.
 .Pp
 .Ft bool
 .Fn r_debug_reg_set "RDebug *dbg" "const char *name" "ut64 num"
 .Pp
-Sets the value of a register by name.
+Set a register locally. After calling `r_debug_reg_set ()` call
+`r_debug_reg_sync (dbg, R_REG_TYPE_GPR, true)` to write the change to the
+debuggee. Common pattern: read PC with `r_debug_reg_get ()`, update a
+register, write back with `r_debug_reg_sync ()`, then `r_debug_continue ()`.
 .Pp
 .Ft bool
 .Fn r_debug_reg_list "RDebug *dbg" "int type" "int size" "PJ *pj" "int rad" "const char *use_color"
 .Pp
-Lists registers of the specified type.
+Produce a formatted list of registers suitable for printing. Useful for
+implementing `info registers` style commands in front-ends.
 .Sh BREAKPOINTS
 .Ft RBreakpointItem *
 .Fn r_debug_bp_add "RDebug *dbg" "ut64 addr" "int hw" "bool watch" "int rw" "char *module" "st64 m_delta"
 .Pp
-Adds a breakpoint at the specified address.
+Add a breakpoint at `addr`. Use `hw` to request a hardware breakpoint when
+supported by the backend, `watch` to indicate a watchpoint and `rw` to
+specify read/write conditions for watchpoints. `module` and `m_delta` are
+used for module-relative expressions. After adding breakpoints call
+`r_debug_bp_update ()` to resolve expression-based breakpoints and make
+sure the plugin has the correct breakpoint list loaded.
+.Pp
+The library distinguishes software and hardware breakpoints: software
+breakpoints are typically implemented by writing a trap instruction to
+the target process and therefore must be temporarily removed when the
+debugger needs to execute target code (for example when implementing
+recoil). Hardware breakpoints do not require patching memory but are
+usually limited in number.
 .Pp
 .Ft void
 .Fn r_debug_bp_update "RDebug *dbg"
 .Pp
-Updates all breakpoints after changes.
+Resolve breakpoint expressions and update the internal breakpoint
+addresses. Call this after adding breakpoints by name/expression. The
+implementation calls `r_bp_get_at ()` and `r_bp_restore ()` internally
+to manage software breakpoints; front-ends should not duplicate that
+logic.
 .Sh MEMORY MANAGEMENT
 .Ft RList *
 .Fn r_debug_map_list_new "void"
 .Pp
-Creates a new list for memory maps.
+Create an empty list used to store memory map entries (the same format
+used by `r_debug_map_get ()`). Use this to enumerate memory regions when
+implementing memory listing or to build a synthetic map for analysis.
 .Pp
 .Ft RDebugMap *
 .Fn r_debug_map_get "RDebug *dbg" "ut64 addr"
 .Pp
-Gets the memory map containing the specified address.
+Return the `RDebugMap` corresponding to the memory region that contains
+`addr`. The returned map is owned by the `RDebug` internals; callers
+should not free it directly. Use `r_debug_map_protect ()` to change
+memory protections for writable patching or to make a region executable
+for `r_debug_execute ()`.
 .Pp
 .Ft bool
 .Fn r_debug_map_protect "RDebug *dbg" "ut64 addr" "int size" "int perms"
 .Pp
-Changes memory protection for the specified region.
+Change memory protection for a region starting at `addr`. This is useful
+when you want to write code into the target and execute it (for example
+for trampolines). Many backends require cooperation with the plugin,
+and the call will fail if the underlying OS does not permit the kind of
+change requested.
 .Sh PROCESS INFORMATION
 .Ft RDebugInfo *
 .Fn r_debug_info "RDebug *dbg" "const char *arg"
 .Pp
-Gets information about the debugged process.
+Query miscellaneous information about the debugged process, such as its
+current working directory, command line and executable path. Backends
+populate this structure from platform-specific sources; it is convenient
+for front-ends that need to show process metadata.
 .Pp
 .Ft void
 .Fn r_debug_info_free "RDebugInfo *rdi"
 .Pp
-Frees process information structure.
+Free the `RDebugInfo` structure returned by `r_debug_info ()`.
 .Sh THREADS AND PROCESSES
 .Ft RList *
 .Fn r_debug_pids "RDebug *dbg" "int pid"
 .Pp
-Gets a list of process IDs.
+Return a list of process/thread identifiers that the backend knows about.
+Use this to implement thread list UIs. Each list element is typically an
+`RDebugPid` or similar structure depending on the plugin.
 .Pp
 .Ft bool
 .Fn r_debug_select "RDebug *dbg" "int pid" "int tid"
 .Pp
-Selects the specified process and thread for debugging.
+Select a specific process and thread (if supported) for subsequent
+operations. After selecting a thread, calls like `r_debug_step ()` or
+`r_debug_reg_sync ()` operate on the selected thread. Remember to call
+`r_debug_reg_sync ()` after switching threads to refresh register state.
 .Sh SIGNALS
 .Ft int
 .Fn r_debug_signal_send "RDebug *dbg" "int num"
 .Pp
-Sends a signal to the debugged process.
+Send the signal `num` to the debuggee. This can be used to emulate user
+actions such as `SIGINT` or to forward signals from a front-end.
 .Pp
 .Ft int
 .Fn r_debug_signal_resolve "RDebug *dbg" "const char *signame"
 .Pp
-Resolves a signal name to its number.
+Resolve a textual signal name like "SIGINT" to its numeric value.
 .Pp
 .Ft const char *
 .Fn r_debug_signal_resolve_i "RDebug *dbg" "int signum"
 .Pp
-Resolves a signal number to its name.
+Return the canonical name for `signum` (for example, `SIGSEGV`). Useful
+for logging and user messages.
 .Sh TRACING
 .Ft RDebugTrace *
 .Fn r_debug_trace_new "void"
 .Pp
-Creates a new trace context.
+Create and initialize a trace context used by the tracing facilities in
+the debugger. The trace APIs provide a way to record program execution
+history (PCs, memory snapshots) for later analysis.
 .Pp
 .Ft void
 .Fn r_debug_trace_free "RDebugTrace *dbg"
 .Pp
-Frees a trace context.
+Free a trace context created with `r_debug_trace_new ()`.
 .Pp
 .Ft RDebugTracepointItem *
 .Fn r_debug_trace_add "RDebug *dbg" "ut64 addr" "int size"
 .Pp
-Adds a tracepoint at the specified address.
+Add a tracepoint at `addr`. When the tracepoint is hit the tracer may
+record state according to the trace configuration.
 .Sh PLUGINS
 .Ft bool
 .Fn r_debug_plugin_add "RDebug *dbg" "RDebugPlugin *plugin"
 .Pp
-Adds a debugger plugin.
+Register a debugger plugin implementation with the `RDebug` instance.
+Plugins implement architecture/OS-specific behaviour such as process
+control, register IO and memory access. The built-in backends (native,
+gdb, etc.) are provided as plugins; front-ends can add custom plugins to
+support additional transports.
 .Pp
 .Ft bool
 .Fn r_debug_plugin_remove "RDebug *dbg" "RDebugPlugin *plugin"
 .Pp
-Removes a debugger plugin.
+Unregister a previously added plugin. Removing the current plugin while
+debugging is not supported and will typically fail.
 .Sh EXECUTION
 .Ft bool
 .Fn r_debug_execute "RDebug *dbg" "const ut8 *buf" "int len" "ut64 *ret" "bool restore" "bool ignore_stack"
 .Pp
-Executes code in the context of the debugged process.
+Execute the machine code in `buf` of length `len` inside the debugged
+process and optionally return a value via `ret`. If `restore` is true
+the original memory contents and registers are restored after execution.
+The `ignore_stack` flag lets the plugin adjust stack-related safety
+checks when injecting code. This function is useful to evaluate small
+snippets in the target process for dynamic analysis or for implementing
+functions that need to run in the target context.
 .Sh DEBUG REASONS
 The library defines various reasons why a debuggee might stop:
 .Bl -tag -width "R_DEBUG_REASON_BREAKPOINT"
@@ -217,27 +326,55 @@ Completed a step
 Segmentation fault
 .El
 .Sh EXAMPLES
-Basic debugging setup:
+.Pp
+The examples below show common real-world sequences found in
+radare2's front-ends and plugins. They assume a native backend but the
+same patterns apply to remote backends via their plugin implementations.
+.Pp
+Minimal attach-and-continue loop:
 .Bd -literal -offset indent
-RDebug *dbg = r_debug_new(0);
-r_debug_attach(dbg, pid);
-r_debug_continue(dbg);
+RDebug *dbg = r_debug_new (0);
+// attach and populate registers
+if (!r_debug_attach (dbg, pid)) {
+    // handle error
+}
+if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false)) {
+    // cannot read registers
+}
+// set a breakpoint at a symbol or address
+RBreakpointItem *bp = r_debug_bp_add (dbg, 0x400000, 0, false, 0, NULL, 0);
+r_debug_bp_update (dbg);
+// resume and wait for events
+r_debug_continue (dbg);
+RBreakpointItem *hit = NULL;
+RDebugReasonType why = r_debug_wait (dbg, &hit);
+if (why == R_DEBUG_REASON_BREAKPOINT && hit) {
+    ut64 pc = r_debug_reg_get (dbg, "PC");
+    // inspect/modify registers or memory
+}
 .Ed
 .Pp
-Register manipulation:
+Step-and-inspect example (useful for implementing a step debugger):
 .Bd -literal -offset indent
-ut64 pc = r_debug_reg_get(dbg, "pc");
-r_debug_reg_set(dbg, "rax", 0x1000);
+RDebug *dbg = r_debug_new (0);
+// start or attach
+r_debug_step (dbg, 1);
+if (r_debug_wait (dbg, NULL) == R_DEBUG_REASON_STEP) {
+    // make sure registers are synced
+    r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
+    ut64 sp = r_debug_reg_get (dbg, "SP");
+    // read memory via dbg->iob.read_at or use r_debug_map_get to find protections
+}
 .Ed
 .Pp
-Setting breakpoints:
+Executing injected snippets safely:
 .Bd -literal -offset indent
-RBreakpointItem *bp = r_debug_bp_add(dbg, 0x400000, 0, false, 0, NULL, 0);
-.Ed
-.Pp
-Memory inspection:
-.Bd -literal -offset indent
-RDebugMap *map = r_debug_map_get(dbg, 0x400000);
+// prepare the small machine code to run (architecture dependent)
+const ut8 code[] = { 0x90, 0x90 }; // nop; nop
+ut64 ret = 0;
+if (r_debug_execute (dbg, code, sizeof (code), &ret, true, false)) {
+    // result available in ret
+}
 .Ed
 .Sh SEE ALSO
 .Xr r_bp 3 ,

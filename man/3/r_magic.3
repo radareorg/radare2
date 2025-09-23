@@ -6,30 +6,7 @@
 .Nd File type detection library using magic numbers
 .Sh SYNOPSIS
 .In r_magic.h
-.Ft struct r_magic_set *
-.Fn r_magic_new "int flags"
-.Ft void
-.Fn r_magic_free "struct r_magic_set *magic"
-.Ft const char *
-.Fn r_magic_file "struct r_magic_set *magic" "const char *filename"
-.Ft const char *
-.Fn r_magic_buffer "struct r_magic_set *magic" "const void *buffer" "size_t length"
-.Ft const char *
-.Fn r_magic_descriptor "struct r_magic_set *magic" "int fd"
-.Ft const char *
-.Fn r_magic_error "struct r_magic_set *magic"
-.Ft void
-.Fn r_magic_setflags "struct r_magic_set *magic" "int flags"
-.Ft bool
-.Fn r_magic_load "struct r_magic_set *magic" "const char *filename"
-.Ft bool
-.Fn r_magic_load_buffer "struct r_magic_set *magic" "const ut8 *buffer" "size_t length"
-.Ft bool
-.Fn r_magic_compile "struct r_magic_set *magic" "const char *filename"
-.Ft bool
-.Fn r_magic_check "struct r_magic_set *magic" "const char *filename"
-.Ft int
-.Fn r_magic_errno "struct r_magic_set *magic"
+.Pp
 .Sh DESCRIPTION
 The
 .Nm r_magic
@@ -43,49 +20,65 @@ The library uses a database of magic patterns that describe how to
 recognize different file formats based on their binary signatures,
 text patterns, and structural characteristics.
 .Sh INITIALIZATION
-Create a new magic instance:
+A magic context holds the parsed magic database and runtime state; allocate one
+before attempting to probe files or buffers and free it when finished.
 .Bd -literal -offset indent
+/* allocate and free a magic context */
+RMagic *r_magic_new(int flags);
+void r_magic_free(RMagic *ms);
+
+/* example */
 RMagic *magic = r_magic_new(R_MAGIC_NONE);
+if (!magic) { /* handle allocation error */ }
 .Ed
 .Pp
-Load default magic database:
+After creating the instance you must load a magic database (or a buffer
+containing a magic database) before asking it to identify content.
 .Bd -literal -offset indent
-r_magic_load(magic, NULL); // Load default database
-.Ed
-.Pp
-Free when done:
-.Bd -literal -offset indent
-r_magic_free(magic);
+/* load default database */
+bool r_magic_load(RMagic *ms, const char *magicfile);
+bool r_magic_load_buffer(RMagic *ms, const ut8 *buf, size_t len);
 .Ed
 .Sh FILE TYPE DETECTION
-Detect file type from filename:
+Once a magic instance is loaded it can inspect files, file descriptors or
+in-memory buffers. The functions return a pointer to an internal, NUL-terminated
+string describing the matching type (do not free it). If no match is found
+they return NULL and you may call
+.Fn r_magic_error
+to obtain diagnostics.
 .Bd -literal -offset indent
-const char *type = r_magic_file(magic, "/path/to/file");
-if (type) {
-    printf("File type: %s\\n", type);
-}
+/* signatures */
+const char *r_magic_file(RMagic *ms, const char *path);
+const char *r_magic_descriptor(RMagic *ms, int fd);
+const char *r_magic_buffer(RMagic *ms, const void *buf, size_t nb);
 .Ed
 .Pp
-Detect file type from buffer:
+Use the buffer API when the data is already in memory (for example a block
+read from a file or a memory map). `libr/core` uses this approach when
+detecting the type of the current block being inspected (see
+`libr/core/cmd_magic.inc.c`), then combines the returned description with
+further actions (flags, printing or nested probes using offsets).
 .Bd -literal -offset indent
-const char *type = r_magic_buffer(magic, buffer, buffer_size);
+/* example: probe a memory buffer */
+const char *type = r_magic_buffer(magic, data, data_len);
 if (type) {
-    printf("Buffer type: %s\\n", type);
-}
-.Ed
-.Pp
-Detect file type from file descriptor:
-.Bd -literal -offset indent
-const char *type = r_magic_descriptor(magic, fileno(fp));
-if (type) {
-    printf("Descriptor type: %s\\n", type);
+    printf("Buffer type: %s\n", type);
+} else {
+    const char *err = r_magic_error(magic);
+    fprintf(stderr, "magic failed: %s\n", err ? err : "unknown");
 }
 .Ed
 .Sh CONFIGURATION FLAGS
-Available flags for
-.Fn r_magic_new
-and
+Flags control how the magic engine behaves (what it searches for and the
+format of the output). Set flags when creating the instance or at runtime
+with
 .Fn r_magic_setflags :
+.Bd -literal -offset indent
+void r_magic_setflags(RMagic *ms, int flags);
+.Ed
+.Pp
+Common flags include MIME-only output or enabling debug diagnostics; many
+others tune which checks are performed (compressed files, ELF details, etc.).
 .Bl -tag -width "R_MAGIC_MIME_ENCODING"
 .It Dv R_MAGIC_NONE
 No special flags
@@ -98,40 +91,43 @@ Return only MIME encoding
 .It Dv R_MAGIC_CONTINUE
 Return all matches, not just first
 .It Dv R_MAGIC_RAW
-Don't translate unprintable characters
+Do not translate unprintable characters
 .El
 .Sh ERROR HANDLING
-Check for errors:
+The magic API reports human-readable error messages and an errno-like value
+when operations fail (for example, inability to open the magic file or parse
+its contents). Query these functions after an operation returns NULL/false.
 .Bd -literal -offset indent
-const char *error = r_magic_error(magic);
-if (error) {
-    fprintf(stderr, "Magic error: %s\\n", error);
-}
-int errnum = r_magic_errno(magic);
+const char *r_magic_error(RMagic *ms);
+int r_magic_errno(RMagic *ms);
 .Ed
+.Pp
+Callers should always check the return value of load/probe functions and
+then inspect `r_magic_error` for diagnostics. In long-running programs keep
+the magic instance around and reload only when the database changes (this is
+the pattern used in `libr/core`).
 .Sh DATABASE MANAGEMENT
-Load custom magic file:
+The magic database can be loaded from the system default path, from a
+specific file, or from a buffer in memory. Helper functions also allow
+compiling and syntax-checking magic files.
 .Bd -literal -offset indent
-if (!r_magic_load(magic, "/path/to/magic/file")) {
-    // Handle error
+/* signatures */
+bool r_magic_load(RMagic *ms, const char *magicfile);
+bool r_magic_load_buffer(RMagic *ms, const ut8 *buf, size_t len);
+bool r_magic_compile(RMagic *ms, const char *magicfile);
+bool r_magic_check(RMagic *ms, const char *magicfile);
+.Ed
+.Pp
+In practice `libr/core` will call `r_magic_load` once (using the `dir.magic`
+configuration key) and reuse the returned context for multiple buffer probes.
+If you wish to supply a custom database at runtime use
+`r_magic_load_buffer` or `r_magic_compile` to validate a file first.
+.Bd -literal -offset indent
+/* example: load custom magic then probe a buffer */
+if (!r_magic_load(magic, "/usr/share/magic/magic.mgc")) {
+    fprintf(stderr, "failed to load magic: %s\n", r_magic_error(magic));
 }
-.Ed
-.Pp
-Load magic from buffer:
-.Bd -literal -offset indent
-r_magic_load_buffer(magic, magic_data, magic_size);
-.Ed
-.Pp
-Compile magic file:
-.Bd -literal -offset indent
-r_magic_compile(magic, "/path/to/magic/file");
-.Ed
-.Pp
-Check magic file syntax:
-.Bd -literal -offset indent
-if (r_magic_check(magic, "/path/to/magic/file")) {
-    // Syntax is valid
-}
+const char *t = r_magic_buffer(magic, data, data_len);
 .Ed
 .Sh SUPPORTED FORMATS
 The library can detect hundreds of file formats including:
@@ -151,47 +147,54 @@ Compressed files (GZ, BZ2, XZ)
 .It
 And many others
 .El
-.Sh EXAMPLES
-Basic file type detection:
+The following examples demonstrate common, practical usages of the API.
+.Pp
+1) Simple command-line file probe — same pattern used by `rabin2` and the
+   `cmd.magic` implementation in `libr/core`.
 .Bd -literal -offset indent
 #include <r_magic.h>
+#include <stdio.h>
 
-int main(int argc, char *argv[]) {
-    if (argc < 2) {
-        fprintf(stderr, "Usage: %s <file>\\n", argv[0]);
+int main(int argc, char **argv) {
+    if (argc < 2) { return 1; }
+    RMagic *m = r_magic_new(R_MAGIC_NONE);
+    if (!m) { perror("r_magic_new"); return 1; }
+    if (!r_magic_load(m, NULL)) {
+        fprintf(stderr, "load failed: %s\n", r_magic_error(m));
+        r_magic_free(m);
         return 1;
     }
-    
-    RMagic *magic = r_magic_new(R_MAGIC_NONE);
-    if (!magic) {
-        perror("r_magic_new");
-        return 1;
-    }
-    
-    if (!r_magic_load(magic, NULL)) {
-        fprintf(stderr, "Failed to load magic database\\n");
-        r_magic_free(magic);
-        return 1;
-    }
-    
-    const char *type = r_magic_file(magic, argv[1]);
-    if (type) {
-        printf("%s: %s\\n", argv[1], type);
-    } else {
-        const char *error = r_magic_error(magic);
-        fprintf(stderr, "Error: %s\\n", error ? error : "Unknown");
-    }
-    
-    r_magic_free(magic);
+    const char *t = r_magic_file(m, argv[1]);
+    if (t) printf("%s: %s\n", argv[1], t);
+    r_magic_free(m);
     return 0;
 }
 .Ed
 .Pp
-Detect MIME type only:
+2) Inspecting an in-memory block and reacting to generic "data" results.
+   `libr/core` probes the current block and, when the result is generic
+   (for example "data"), it may choose to continue searching at a different
+   alignment or attempt more specific heuristics.
 .Bd -literal -offset indent
-r_magic_setflags(magic, R_MAGIC_MIME_TYPE);
-const char *mime = r_magic_buffer(magic, data, size);
-printf("MIME: %s\\n", mime);
+RMagic *m = r_magic_new(0);
+r_magic_load(m, NULL);
+const char *info = r_magic_buffer(m, block, block_len);
+if (info) {
+    if (!strcmp(info, "data")) {
+        /* fallback: try different alignments or other detectors */
+    } else {
+        printf("info: %s\n", info);
+    }
+}
+r_magic_free(m);
+.Ed
+.Pp
+3) Request MIME-only output — useful when integrating magic into
+   automated pipelines.
+.Bd -literal -offset indent
+r_magic_setflags(m, R_MAGIC_MIME_TYPE);
+const char *mime = r_magic_buffer(m, data, size);
+printf("MIME: %s\n", mime ? mime : "unknown");
 .Ed
 .Sh SEE ALSO
 .Xr r_bin 3 ,

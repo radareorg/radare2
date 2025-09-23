@@ -6,181 +6,134 @@
 .Nd Hashing and checksum library for radare2
 .Sh SYNOPSIS
 .In r_hash.h
-.Ft struct r_hash_t *
+.Ft RHash *
 .Fn r_hash_new "bool rst" "ut64 flags"
 .Ft void
-.Fn r_hash_free "struct r_hash_t *ctx"
+.Fn r_hash_free "RHash *ctx"
+.Pp
+The following are representative function prototypes used throughout the library and examples in this manual page; more prototypes are provided in the header.
+.Sh DESCRIPTION
+The
+.Nm r_hash
+library implements many common hashing and checksum primitives (MD4/MD5/SHA family, CRCs, Adler, SipHash, xxHash, ssdeep, etc.), plus analysis helpers such as entropy and hamming distance.
+.Pp
+The main structure is
+.Vt struct r_hash_t ,
+which stores intermediate contexts for several algorithms and an aligned digest buffer.
+.Sh INITIALIZATION
+Initialization and cleanup functions handle allocation and freeing of a hash context. The `rst` argument controls whether the context is reset between operations and `flags` selects which algorithms to prepare.
+.Ft RHash *
+.Fn r_hash_new "bool rst" "ut64 flags"
+.Ft void
+.Fn r_hash_free "RHash *ctx"
+.Pp
+Typical usage in applications: create a context once with the algorithms you need (for example `R_HASH_MD5 | R_HASH_SHA256`) and reuse it for multiple inputs to avoid repeated allocations, calling `r_hash_free` when done.
+.Sh CORE OPERATIONS
+Core single-shot and multi-algorithm operations compute digests and expose helpers to map names and sizes.
 .Ft ut8 *
-.Fn r_hash_do_md5 "struct r_hash_t *ctx" "const ut8 *input" "int len"
+.Fn r_hash_do_md5 "RHash *ctx" "const ut8 *input" "int len"
 .Ft ut8 *
-.Fn r_hash_do_sha1 "struct r_hash_t *ctx" "const ut8 *input" "int len"
+.Fn r_hash_do_sha1 "RHash *ctx" "const ut8 *input" "int len"
 .Ft ut8 *
-.Fn r_hash_do_sha256 "struct r_hash_t *ctx" "const ut8 *input" "int len"
-.Ft ut8 *
-.Fn r_hash_do_sha384 "struct r_hash_t *ctx" "const ut8 *input" "int len"
-.Ft ut8 *
-.Fn r_hash_do_sha512 "struct r_hash_t *ctx" "const ut8 *input" "int len"
-.Ft ut8 *
-.Fn r_hash_do_hmac_sha256 "struct r_hash_t *ctx" "const ut8 *input" "int len" "const ut8 *key" "int klen"
-.Ft ut8 *
-.Fn r_hash_do_md4 "struct r_hash_t *ctx" "const ut8 *input" "int len"
-.Ft ut8 *
-.Fn r_hash_do_sip "struct r_hash_t *ctx" "const ut8 *input" "int len"
-.Ft ut8 *
-.Fn r_hash_do_ssdeep "struct r_hash_t *ctx" "const ut8 *input" "int len"
-.Ft ut8 *
-.Fn r_hash_do_elf "struct r_hash_t *ctx" "const ut8 *input" "int len"
+.Fn r_hash_do_sha256 "RHash *ctx" "const ut8 *input" "int len"
 .Ft int
-.Fn r_hash_calculate "struct r_hash_t *ctx" "ut64 algobit" "const ut8 *input" "int len"
+.Fn r_hash_calculate "RHash *ctx" "ut64 algobit" "const ut8 *input" "int len"
 .Ft const char *
 .Fn r_hash_name "ut64 bit"
-.Ft ut64
-.Fn r_hash_name_to_bits "const char *name"
 .Ft int
 .Fn r_hash_size "ut64 bit"
 .Ft char *
-.Fn r_hash_tostring "struct r_hash_t *ctx" "const char *name" "const ut8 *data" "int len"
+.Fn r_hash_tostring "RHash *ctx" "const char *name" "const ut8 *data" "int len"
+.Pp
+Use `r_hash_calculate` when you want to compute several algorithms into the context's `digest` buffer at once; it returns the digest size in bytes for the requested algorithm bit. Use `r_hash_name` and `r_hash_size` to print properly sized hex dumps.
+.Sh CHECKSUMS AND ANALYSIS
+The library provides many lightweight checksum and analysis helpers useful when scanning binary buffers or computing features for heuristics (entropy, parity, xor, Adler32, xxhash, ssdeep fingerprinting, etc.).
 .Ft ut32
 .Fn r_hash_adler32 "const ut8 *buf" "int len"
 .Ft ut32
 .Fn r_hash_xxhash "const ut8 *buf" "ut64 len"
 .Ft ut8
 .Fn r_hash_xor "const ut8 *b" "ut64 len"
-.Ft ut16
-.Fn r_hash_xorpair "const ut8 *a" "ut64 len"
-.Ft int
-.Fn r_hash_parity "const ut8 *buf" "ut64 len"
-.Ft ut8
-.Fn r_hash_mod255 "const ut8 *b" "ut64 len"
-.Ft ut64
-.Fn r_hash_luhn "const ut8 *buf" "ut64 len"
-.Ft char *
-.Fn r_hash_ssdeep "const ut8 *buf" "size_t len"
-.Ft utcrc
-.Fn r_hash_crc_preset "const ut8 *data" "ut32 size" "enum CRC_PRESETS preset"
-.Ft ut64
-.Fn r_hash_sip "const ut8* buf" "ut64 len"
-.Ft ut8
-.Fn r_hash_hamdist "const ut8 *buf" "int len"
 .Ft double
 .Fn r_hash_entropy "const ut8 *data" "ut64 len"
-.Ft double
-.Fn r_hash_entropy_fraction "const ut8 *data" "ut64 len"
-.Ft int
-.Fn r_hash_pcprint "const ut8 *buffer" "ut64 len"
+.Ft char *
+.Fn r_hash_ssdeep "const ut8 *buf" "size_t len"
+.Pp
+In radare2, these helpers are used for file heuristics (for example computing entropy to detect packed or compressed regions) and for concise diagnostics (e.g., showing a `ssdeep` fuzzy hash for similarity). `r_hash_entropy_fraction` returns a normalized value [0..1] used by UI code.
+.Sh ADVANCED / INCREMENTAL USAGE
+For streaming or incremental hashing (hashing a large file chunk-by-chunk), the library exposes begin/end primitives and `r_hash_do_spice` for repeated re-hashing with a seed (used by `rahash2` to perform iterative strengthening).
 .Ft void
-.Fn r_hash_do_begin "struct r_hash_t *ctx" "ut64 flags"
+.Fn r_hash_do_begin "RHash *ctx" "ut64 flags"
 .Ft void
-.Fn r_hash_do_end "struct r_hash_t *ctx" "ut64 flags"
+.Fn r_hash_do_end "RHash *ctx" "ut64 flags"
 .Ft void
-.Fn r_hash_do_spice "struct r_hash_t *ctx" "ut64 algo" "int loops" "RHashSeed *seed"
-.Sh DESCRIPTION
-The
-.Nm r_hash
-library provides a comprehensive set of hashing and checksum algorithms for use within radare2.
-It supports various cryptographic hash functions (MD4, MD5, SHA-1, SHA-256, SHA-384, SHA-512),
-non-cryptographic hashes (Adler32, XXHash, SipHash), checksums (CRC variants, XOR, parity),
-and analysis functions (entropy, hamming distance, printable character percentage).
+.Fn r_hash_do_spice "RHash *ctx" "ut64 algo" "int loops" "RHashSeed *seed"
+.Ft ut8 *
+.Fn r_hash_do_hmac_sha256 "RHash *ctx" "const ut8 *input" "int len" "const ut8 *key" "int klen"
 .Pp
-The core structure is
-.Vt struct r_hash_t ,
-which holds contexts for different hash algorithms and a digest buffer.
-Hash algorithms are selected using bit flags defined as
-.Dv R_HASH_* macros.
-.Sh INITIALIZATION
-To use the hash library, first create a new hash context:
+A common pattern (see `rahash2` and `r_hash` usage in `libr/main/rahash2.c`) is:
 .Bd -literal -offset indent
-RHash *ctx = r_hash_new(true, R_HASH_MD5 | R_HASH_SHA256);
+r_hash_do_begin (ctx, R_HASH_SHA256);
+// feed chunks with r_hash_calculate or algorithm-specific functions
+r_hash_calculate (ctx, R_HASH_SHA256, chunk, chunk_len);
+r_hash_do_end (ctx, R_HASH_SHA256);
+// result is in ctx->digest
 .Ed
 .Pp
-The first argument
-.Fa rst
-controls whether to reset the context after each operation.
-The second argument
-.Fa flags
-specifies which hash algorithms to initialize.
+When you need to perform key-based MACs, use `r_hash_do_hmac_sha256` to obtain the HMAC-SHA256 digest in a single call.
+.Sh PRACTICAL EXAMPLES
+The examples below show real-life usage patterns found in `libr/main/rahash2.c`, `libr/core/cbin.c` and `libr/core/cmd_print.inc.c`.
 .Pp
-After use, free the context:
+Example: compute chunked hashes of a file (adapted from `rahash2`):
 .Bd -literal -offset indent
-r_hash_free(ctx);
-.Ed
-.Sh CORE OPERATIONS
-Hash a buffer with a specific algorithm:
-.Bd -literal -offset indent
-ut8 *digest = r_hash_do_md5(ctx, data, data_len);
-.Ed
-.Pp
-For multiple algorithms at once:
-.Bd -literal -offset indent
-r_hash_calculate(ctx, R_HASH_MD5 | R_HASH_SHA1, data, len);
-.Ed
-.Pp
-Get hash name or size:
-.Bd -literal -offset indent
-const char *name = r_hash_name(R_HASH_SHA256);  // "sha256"
-int size = r_hash_size(R_HASH_SHA256);  // 32
+// open file and create ctx with the chosen algorithm bit
+RHash *ctx = r_hash_new (true, R_HASH_SHA256);
+// incremental mode: begin, feed chunks, end
+r_hash_do_begin (ctx, R_HASH_SHA256);
+for (offset = 0; offset < file_size; offset += block_size) {
+    int len = MIN (block_size, file_size - offset);
+    r_io_pread_at (io, offset, buf, len); // read into buf
+    r_hash_calculate (ctx, R_HASH_SHA256, buf, len);
+}
+r_hash_do_end (ctx, R_HASH_SHA256);
+// ctx->digest contains the SHA-256 result (32 bytes)
+char *s = r_hash_tostring (ctx, "sha256", ctx->digest, 32);
+printf ("sha256: %s\n", s);
+free (s);
+r_hash_free (ctx);
 .Ed
 .Pp
-Convert hash bits to string:
+Example: compute entropy and display as a 0..255 value (used by `cmd_print`):
 .Bd -literal -offset indent
-char *hex = r_hash_tostring(ctx, "md5", digest, 16);
-.Ed
-.Sh CHECKSUMS AND ANALYSIS
-Compute simple checksums:
-.Bd -literal -offset indent
-ut32 adler = r_hash_adler32(data, len);
-ut8 xor_sum = r_hash_xor(data, len);
+double ent = r_hash_entropy_fraction (data, data_size);
+ut8 visual = (ut8)(ent * 255);
+printf ("entropy_frac=%.3f, visual=%u\n", ent, visual);
 .Ed
 .Pp
-Calculate entropy:
+Example: compare a computed digest against an expected one (pattern from `rahash2`):
 .Bd -literal -offset indent
-double entropy = r_hash_entropy(data, len);
+RHash *ctx = r_hash_new (true, R_HASH_MD5);
+r_hash_calculate (ctx, R_HASH_MD5, buf, len);
+if (!memcmp (ctx->digest, expected_digest, 16)) {
+    puts ("match");
+} else {
+    puts ("mismatch");
+}
+r_hash_free (ctx);
 .Ed
 .Pp
-CRC with preset:
+Example: produce a `ssdeep` fuzzy hash string for a buffer:
 .Bd -literal -offset indent
-utcrc crc = r_hash_crc_preset(data, size, CRC_PRESET_32);
-.Ed
-.Sh ADVANCED FEATURES
-For incremental hashing, use begin/end:
-.Bd -literal -offset indent
-r_hash_do_begin(ctx, R_HASH_SHA256);
-r_hash_do_sha256(ctx, chunk1, len1);
-r_hash_do_sha256(ctx, chunk2, len2);
-r_hash_do_end(ctx, R_HASH_SHA256);
-.Ed
-.Pp
-HMAC-SHA256:
-.Bd -literal -offset indent
-ut8 *hmac = r_hash_do_hmac_sha256(ctx, msg, msg_len, key, key_len);
-.Ed
-.Sh EXAMPLES
-Compute MD5 and SHA256 of a string:
-.Bd -literal -offset indent
-#include <r_hash.h>
-
-int main() {
-    const char *data = "Hello, World!";
-    RHash *ctx = r_hash_new(true, R_HASH_MD5 | R_HASH_SHA256);
-    
-    r_hash_calculate(ctx, R_HASH_MD5 | R_HASH_SHA256, (ut8*)data, strlen(data));
-    
-    printf("MD5: ");
-    for(int i=0; i<16; i++) printf("%02x", ctx->digest[i]);
-    printf("\\nSHA256: ");
-    for(int i=16; i<48; i++) printf("%02x", ctx->digest[i]);
-    printf("\\n");
-    
-    r_hash_free(ctx);
-    return 0;
+char *fuzzy = r_hash_ssdeep (buf, len);
+if (fuzzy) {
+    printf ("ssdeep: %s\n", fuzzy);
+    free (fuzzy);
 }
 .Ed
+.Sh NOTES
+Function names and bitmasks are declared in `libr/include/r_hash.h`. Pick the exact algorithm using `r_hash_name_to_bits`/`r_hash_name` helpers when mapping user strings to bit flags.
 .Pp
-Calculate file entropy:
-.Bd -literal -offset indent
-double entropy = r_hash_entropy(file_buffer, file_size);
-printf("File entropy: %.2f\\n", entropy);
-.Ed
+Many radare2 internal users create a single `RHash` and call `r_hash_calculate` repeatedly; prefer incremental `do_begin`/`do_end` when hashing very large streams to avoid copying large buffers into memory.
 .Sh SEE ALSO
 .Xr r_bin 3 ,
 .Xr r_core 3 ,
