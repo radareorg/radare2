@@ -6,22 +6,7 @@
 .Nd radare2 syscall information library
 .Sh SYNOPSIS
 .In r_syscall.h
-.Ft RSyscall *
-.Fn r_syscall_new "void"
-.Ft void
-.Fn r_syscall_free "RSyscall *ctx"
-.Ft bool
-.Fn r_syscall_setup "RSyscall *s" "const char *arch" "int bits" "const char *cpu" "const char *os"
-.Ft RSyscallItem *
-.Fn r_syscall_get "RSyscall *ctx" "int num" "int swi"
-.Ft int
-.Fn r_syscall_get_num "RSyscall *ctx" "const char *str"
-.Ft const char *
-.Fn r_syscall_get_i "RSyscall *ctx" "int num" "int swi"
-.Ft RList *
-.Fn r_syscall_list "RSyscall *ctx"
-.Ft const char *
-.Fn r_syscall_sysreg "RSyscall *s" "const char *type" "ut64 num"
+.Pp
 .Sh DESCRIPTION
 The
 .Nm r_syscall
