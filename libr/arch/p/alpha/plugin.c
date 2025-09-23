@@ -134,6 +134,10 @@ static char *regs(RArchSession *as) {
 }
 
 static int info(RArchSession *s, ut32 q) {
+	switch (q) {
+	case R_ARCH_INFO_ISVM:
+		return 0;
+	}
 	return 4;
 }
 

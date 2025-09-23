@@ -1,4 +1,4 @@
-/* radare2 - BSD - Copyright 2013-2024 - pancake, condret */
+/* radare2 - BSD - Copyright 2013-2025 - pancake, condret */
 
 #include <r_arch.h>
 
@@ -631,8 +631,11 @@ static char *regs(RArchSession *s) {
 }
 
 static int archinfo(RArchSession *cfg, ut32 q) {
-	if (q == R_ARCH_INFO_JMPMID) {
+	switch (q) {
+	case R_ARCH_INFO_JMPMID:
 		return -1;
+	case R_ARCH_INFO_ISVM:
+		return 0;
 	}
 	return 4;
 }

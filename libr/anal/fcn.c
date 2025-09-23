@@ -746,7 +746,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	bool has_variadic_reg = !!variadic_reg;
 	bool nopskip = anal->opt.nopskip;
 	if (nopskip) {
-		const bool isvm = r_anal_archinfo (anal, R_ARCH_INFO_ISVM);
+		const bool isvm = r_anal_archinfo (anal, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM;
 		if (isvm) {
 			nopskip = false;
 		}

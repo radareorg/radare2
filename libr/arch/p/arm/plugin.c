@@ -57,6 +57,8 @@ static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 
 static int archinfo(RArchSession *a, ut32 q) {
 	switch (q) {
+	case R_ARCH_INFO_ISVM:
+		return 0;
 	case R_ARCH_INFO_DATA_ALIGN:
 	case R_ARCH_INFO_INVOP_SIZE:
 	case R_ARCH_INFO_MAXOP_SIZE:
