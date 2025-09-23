@@ -1541,10 +1541,18 @@ static int cmd_flag(void *data, const char *input) {
 		}
 		break;
 	case 'm': // "fm"
-		r_flag_move (core->flags, core->addr, r_num_math (core->num, input+1));
+		if (input[1] == '?') {
+			r_core_cmd_help_contains (core, help_msg_f, "fm");
+		} else {
+			r_flag_move (core->flags, core->addr, r_num_math (core->num, input+1));
+		}
 		break;
 	case 'R': // "fR"
-		cmd_fR (core, str);
+		if (input[1] == '?') {
+			r_core_cmd_help_contains (core, help_msg_f, "fR");
+		} else {
+			cmd_fR (core, str);
+		}
 		break;
 	case 'b': // "fb"
 		switch (input[1]) {
@@ -1572,7 +1580,11 @@ static int cmd_flag(void *data, const char *input) {
 		}
 		break;
 	case '+': // "f+'
-		cmd_flag_add (core, str, 1);
+		if (input[1] == '?') {
+			r_core_cmd_help_contains (core, help_msg_f, "f+");
+		} else {
+			cmd_flag_add (core, str, 1);
+		}
 		break;
 	case ' ': // "f "
 		cmd_flag_add (core, str, 0);
@@ -1723,7 +1735,9 @@ static int cmd_flag(void *data, const char *input) {
 		cmd_fz (core, input + 1);
 		break;
 	case 'x':
-		if (input[1] == ' ') {
+		if (input[1] == '?') {
+			r_core_cmd_help_contains (core, help_msg_f, "fx");
+		} else if (input[1] == ' ') {
 			RFlagItem *item = r_flag_get_in (core->flags,
 				r_num_math (core->num, input+2));
 			if (item) {
@@ -1745,7 +1759,9 @@ static int cmd_flag(void *data, const char *input) {
 		break;
 	case 'g': // "fg"
 		if (input[1]) {
-			if (input[1] == ' ') {
+			if (input[1] == '?') {
+				r_core_cmd_help_contains (core, help_msg_f, "fg");
+			} else if (input[1] == ' ') {
 				r_core_cmdf (core, "&& %d", atoi (input + 2));
 			} else {
 				R_LOG_ERROR ("fg: wait for all backaground jobs to finish");
@@ -1756,6 +1772,9 @@ static int cmd_flag(void *data, const char *input) {
 		break;
 	case 'h': // "fh"
 		switch (input[1]) {
+		case '?':
+			r_core_cmd_help_contains (core, help_msg_f, "fh");
+			break;
 		case '*':
 			__flag_graph (core, r_str_trim_head_ro (input + 2), '*');
 			break;
@@ -1885,10 +1904,18 @@ static int cmd_flag(void *data, const char *input) {
 		}
 		break;
 	case 'o': // "fo"
-		r_core_fortune_print_random (core);
+		if (input[1] == '?') {
+			r_core_cmd_help_contains (core, help_msg_f, "fo");
+		} else {
+			r_core_fortune_print_random (core);
+		}
 		break;
 	case 'O': // "fO"
-		flag_ordinals (core, input + 1);
+		if (input[1] == '?') {
+			r_core_cmd_help_contains (core, help_msg_f, "fO");
+		} else {
+			flag_ordinals (core, input + 1);
+		}
 		break;
 	case 'r': // "fr"
 		if (input[1] == '?') {
@@ -2013,7 +2040,9 @@ static int cmd_flag(void *data, const char *input) {
 		}
 		break;
 	case 'i': // "fi"
-		if (input[1] == ' ' || (input[1] && input[2] == ' ')) {
+		if (input[1] == '?') {
+			r_core_cmd_help_contains (core, help_msg_f, "fi");
+		} else if (input[1] == ' ' || (input[1] && input[2] == ' ')) {
 			char *arg = strdup (r_str_trim_head_ro (input + 2));
 			if (*arg) {
 				char *sp = strchr (arg, ' ');
