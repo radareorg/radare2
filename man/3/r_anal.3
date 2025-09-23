@@ -5,23 +5,14 @@
 .Nm r_anal
 .Nd radare2 analysis library
 .Sh SYNOPSIS
+.Pp
+Include the public header for the analysis API and create an analysis context before calling other
+functions. A typical flow is: create an `RAnal` with `r_anal_new`, configure architecture and
+bitness with `r_anal_use` / `r_anal_set_bits`, then perform operation-level analysis with
+`r_anal_op` and higher-level analysis using function/block/ESIL APIs.
+.Pp
 .In r_anal.h
-.Ft RAnal *
-.Fn r_anal_new "void"
-.Ft void
-.Fn r_anal_free "RAnal *anal"
-.Ft bool
-.Fn r_anal_use "RAnal *anal" "const char *name"
-.Ft RAnalFunction *
-.Fn r_anal_create_function "RAnal *anal" "const char *name" "ut64 addr" "int type" "RAnalDiff *diff"
-.Ft RAnalBlock *
-.Fn r_anal_create_block "RAnal *anal" "ut64 addr" "ut64 size"
-.Ft int
-.Fn r_anal_op "RAnal *anal" "RAnalOp *op" "ut64 addr" "const ut8 *data" "int len" "RAnalOpMask mask"
-.Ft bool
-.Fn r_anal_esil_parse "REsil *esil" "const char *expr"
-.Ft bool
-.Fn r_anal_esil_run "REsil *esil" "ut64 addr" "const char *str" "int len" "REsilInterrupt *intr" "int *paddr"
+.Pp
 .Sh DESCRIPTION
 The
 .Nm r_anal
@@ -31,6 +22,12 @@ The core structure is
 .Vt RAnal ,
 which holds the analysis context including architecture configuration, function lists, basic blocks, ESIL emulator, registers, and various analysis options.
 .Sh INITIALIZATION
+.Pp
+Initialization functions create and tear down the global analysis context used across
+radare2 components (core, visual, pseudo, etc.). Call `r_anal_new` once per context and
+`r_anal_free` when finished; bind per-core callbacks with `r_anal_bind` and select an
+architecture plugin with `r_anal_use`.
+.Pp
 .Ft RAnal *
 .Fn r_anal_new "void"
 .Pp
@@ -46,6 +43,12 @@ Frees all resources associated with the analysis context.
 .Pp
 Loads and activates an analysis plugin by name (e.g., "x86", "arm").
 .Sh FUNCTION ANALYSIS
+.Pp
+These APIs manage analyzed functions: creating, querying and iterating them. In practice
+`libr/core` queries functions with `r_anal_get_fcn_in` / `r_anal_get_function_at` when
+displaying or transforming code, and creates new functions with `r_anal_create_function`
+when importing symbols or recovering code.
+.Pp
 .Ft RAnalFunction *
 .Fn r_anal_create_function "RAnal *anal" "const char *name" "ut64 addr" "int type" "RAnalDiff *diff"
 .Pp
@@ -61,6 +64,11 @@ Returns a list of functions containing the given address.
 .Pp
 Returns the function with the specified entry point address.
 .Sh BASIC BLOCK MANAGEMENT
+.Pp
+Basic block helpers let callers construct and manipulate the control-flow graph (CFG).
+Typical usage: recover blocks with `r_anal_create_block`, split or merge blocks while
+building CFGs, and query blocks from functions when rendering views or computing offsets.
+.Pp
 .Ft RAnalBlock *
 .Fn r_anal_create_block "RAnal *anal" "ut64 addr" "ut64 size"
 .Pp
@@ -76,6 +84,11 @@ Splits a basic block at the specified address, returning the new block.
 .Pp
 Merges block b into block a if they are contiguous and have identical function lists.
 .Sh OPERATION ANALYSIS
+.Pp
+Operation-level analysis (`r_anal_op`) is the entry point for per-instruction work: it
+disassembles, decodes semantics and fills `RAnalOp`. GUI, disassembly and emulation code in
+`libr/core` call this repeatedly to render instructions or to feed ESIL emulation.
+.Pp
 .Ft int
 .Fn r_anal_op "RAnal *anal" "RAnalOp *op" "ut64 addr" "const ut8 *data" "int len" "RAnalOpMask mask"
 .Pp
@@ -86,6 +99,12 @@ Analyzes a single instruction at the given address, populating the RAnalOp struc
 .Pp
 Converts an analyzed operation to its string representation.
 .Sh VARIABLES
+.Pp
+Variable and type APIs are used to track function-local variables, arguments and their
+types. `r_anal_function_set_var` is commonly used when recovering stack or register
+variables; callers can rename variables or set types to improve pseudocode and decompilation
+results.
+.Pp
 .Ft RAnalVar *
 .Fn r_anal_function_set_var "RAnalFunction *fcn" "int delta" "char kind" "const char *type" "int size" "bool isarg" "const char *name"
 .Pp
@@ -101,6 +120,12 @@ Renames a variable.
 .Pp
 Sets the type of a variable.
 .Sh CROSS-REFERENCES
+.Pp
+Xref APIs record references between addresses (calls, jumps, data references). The
+core UI and analysis logic use `r_anal_xrefs_set` and `r_anal_xrefs_get` to display callers
+and to propagate dataflow information; set references when you discover a target during
+disassembly or relocation processing.
+.Pp
 .Ft bool
 .Fn r_anal_xrefs_set "RAnal *anal" "ut64 from" "ut64 to" "RAnalRefType type"
 .Pp
@@ -111,6 +136,11 @@ Creates a cross-reference from one address to another.
 .Pp
 Returns all cross-references pointing to the given address.
 .Sh METADATA
+.Pp
+Metadata routines attach arbitrary typed information to addresses (names, comments,
+function prototypes, etc.). Use `r_meta_set` / `r_meta_get_at` to persist and query
+additional annotations discovered during analysis or imported from debug info.
+.Pp
 .Ft bool
 .Fn r_meta_set "RAnal *a" "RAnalMetaType type" "ut64 addr" "ut64 size" "const char *str"
 .Pp
@@ -121,6 +151,11 @@ Sets metadata at the specified address and size.
 .Pp
 Retrieves metadata at the given address.
 .Sh HINTS
+.Pp
+Hints let you provide the analyzer with guidance (bitness, architecture, alignment).
+`libr/core` often sets hints derived from sections, relocations or user commands so the
+analysis chooses the correct decoding and emulation models.
+.Pp
 .Ft void
 .Fn r_anal_hint_set_bits "RAnal *a" "ut64 addr" "int bits"
 .Pp
@@ -131,6 +166,12 @@ Sets a bitness hint at the specified address.
 .Pp
 Sets an architecture hint at the specified address.
 .Sh ESIL
+.Pp
+ESIL (the Evaluable Strings Intermediate Language) provides symbolic execution and
+emulation. Use `r_anal_esil_parse` / `r_anal_esil_run` to evaluate instruction effects,
+and `r_anal_esil_cfg_expr` to build a small CFG from ESIL expressions when you need to
+simulate sequences or compute register/stack deltas.
+.Pp
 .Ft bool
 .Fn r_anal_esil_parse "REsil *esil" "const char *expr"
 .Pp
@@ -146,6 +187,11 @@ Runs ESIL emulation starting from the given address.
 .Pp
 Builds a control flow graph from an ESIL expression.
 .Sh TYPES
+.Pp
+Type and base-type helpers are used by the type parser and by UI commands to store and
+query type information for variables and globals. Use `r_anal_type_new` and the type
+lookup helpers when importing or constructing type metadata.
+.Pp
 .Ft RAnalType *
 .Fn r_anal_type_new "void"
 .Pp
@@ -156,6 +202,11 @@ Creates a new type structure.
 .Pp
 Retrieves a base type by name.
 .Sh CLASSES
+.Pp
+Class and method APIs are used to model OO constructs and method dispatch when available
+from type information or debug info. They are typically used together with the type
+system to provide richer decompilation results.
+.Pp
 .Ft void
 .Fn r_anal_class_create "RAnal *anal" "const char *name"
 .Pp
@@ -166,31 +217,80 @@ Creates a new class in the analysis context.
 .Pp
 Adds a method to a class.
 .Sh GLOBALS
+.Pp
+Global variable helpers let analysis record statically allocated symbols with types and
+names. The core loader sets globals when parsing symbol tables or relocations so UI and
+analysis code can resolve references to static data.
+.Pp
 .Ft bool
 .Fn r_anal_global_add "RAnal *anal" "ut64 addr" "const char *type_name" "const char *name"
 .Pp
 Adds a global variable at the specified address.
 .Sh EXAMPLES
-Basic analysis setup:
+.Pp
+The following snippets illustrate common, practical patterns found in `libr/core`.
+They show how to initialize an analysis context, perform per-instruction analysis with
+`r_anal_op`, register or lookup functions, record cross-references and metadata, and
+how ESIL is used via the `r_esil` API (ESIL itself lives in `libr/esil`).
+.Pp
 .Bd -literal -offset indent
-RAnal *anal = r_anal_new();
-r_anal_use(anal, "x86");
-r_anal_set_bits(anal, 64);
+/* Initialization / core-style setup */
+RAnal *anal = r_anal_new ();
+/* select architecture plugin (e.g. "x86", "arm") and bitness */
+r_anal_use (anal, "x86");
+r_anal_set_bits (anal, 64);
+/* optionally bind callbacks or a host object (core sets a user pointer) */
+r_anal_set_user_ptr (anal, core);
+r_anal_bind (anal, &core->rasm->analb);
 .Ed
 .Pp
-Function analysis:
 .Bd -literal -offset indent
-RAnalFunction *fcn = r_anal_create_function(anal, "main", 0x1000, R_ANAL_FCN_TYPE_FCN, NULL);
+/* Analyze a single instruction (typical loop uses r_anal_op repeatedly) */
+unsigned char buf[64];
+RAnalOp op;
+r_anal_op_init (&op);
+int n = anal->iob.read_at (anal->iob.io, 0x1000, buf, sizeof (buf));
+if (n > 0 && r_anal_op (anal, &op, 0x1000, buf, n, R_ANAL_OP_MASK_BASIC) > 0) {
+    /* inspect op.size, op.type, op.jump, op.fail, op.mnemonic, op.esil, ... */
+}
+r_anal_op_fini (&op);
 .Ed
 .Pp
-ESIL emulation:
 .Bd -literal -offset indent
-r_esil_parse(anal->esil, "rax,8,+,rbx,=");
+/* Register (declare) a function vs. finding a function that contains an address */
+RAnalFunction *decl = r_anal_create_function (anal, "sym_main", 0x401000,
+    R_ANAL_FCN_TYPE_SYM, NULL); /* registers a function entry (not a full recover) */
+
+RAnalFunction *f = r_anal_get_fcn_in (anal, 0x401123, 0); /* lookup containing function */
 .Ed
 .Pp
-Variable management:
 .Bd -literal -offset indent
-RAnalVar *var = r_anal_function_set_var(fcn, -8, 'b', "int", 4, false, "local_var");
+/* Walk a function range, record xrefs discovered while decoding instructions */
+RAnalOp aop;
+r_anal_op_init (&aop);
+for (ut64 pc = f->addr; pc < r_anal_function_max_addr (f); pc += aop.size) {
+    int len = anal->iob.read_at (anal->iob.io, pc, buf, sizeof (buf));
+    if (r_anal_op (anal, &aop, pc, buf, len, R_ANAL_OP_MASK_BASIC) < 1) {
+        break;
+    }
+    if (aop.jump != UT64_MAX) {
+        r_anal_xrefs_set (anal, pc, aop.jump, R_ANAL_REF_TYPE_CALL);
+    }
+}
+r_anal_op_fini (&aop);
+.Ed
+.Pp
+.Bd -literal -offset indent
+/* Set a local variable for a function and add a comment metadata entry */
+r_anal_function_set_var (f, -8, 'b', "int", 4, false, "local_var");
+r_meta_set (anal, R_META_TYPE_COMMENT, f->addr, 0, "Recovered function entry");
+.Ed
+.Pp
+.Bd -literal -offset indent
+/* ESIL usage: ESIL emulation/parsing is provided by libr/esil; r_anal exposes an
+ * `esil` instance on the analyzer but evaluation uses r_esil_* helpers. */
+/* Example: parse an ESIL expression into the ESIL VM attached to the analyzer */
+/* r_esil_parse (anal->esil, "rax,8,+,rbx,="); */
 .Ed
 .Sh SEE ALSO
 .Xr r_core 3 ,
