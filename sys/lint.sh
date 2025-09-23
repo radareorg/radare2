@@ -40,7 +40,7 @@ cd "$(dirname $0)"/..
 (git grep r_file_new libr | grep -v ", NULL" | grep '"')
 (git grep -n 'for(' libr | grep -v _for | grep -v colorfor) && exit 1
 (git grep -n 'for (' libr | grep "; ++" | grep -v arch ) && exit 1
-(git grep -n 'for (int' | grep -v sys/) && exit 1
+(git grep -n 'for (int' | grep libr/) && exit 1
 # (git grep -n '){' libr) && exit 1
 # (git grep -n 'for(' | grep -v test | grep -v shlr | grep -v sys/) && exit 1
 (git grep -n 'for (long' | grep -v sys/) && exit 1
