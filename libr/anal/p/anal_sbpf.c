@@ -4,10 +4,13 @@
 #include <r_lib.h>
 #include <r_bin.h>
 #include <r_util.h>
+#include <r_cons.h>
+#include <r_flag.h>
 #include <r_util/r_new_rbtree.h>
 
 #define SBPF_PROGRAM_ADDR 	0x100000000ULL
 #define SBPF_MAX_STRING_SIZE 0x100
+#define SBPF_COMMENT_SIZE 512
 
 typedef struct {
 	ut64 addr;
@@ -121,7 +124,7 @@ static bool sbpf_check_string_pointer(RAnal *anal, ut64 ptr_addr, ut64 data_star
 static RList *sbpf_find_string_xrefs(RAnal *anal, ut64 from, ut64 to, ut64 data_start, ut64 data_end) {
 	R_RETURN_VAL_IF_FAIL (anal && anal->iob.io, NULL);
 
-	RList *refs = r_list_new();
+	RList *refs = r_list_new ();
 	if (!refs) {
 		return NULL;
 	}
@@ -296,7 +299,7 @@ static void sbpf_create_string(RAnal *anal, ut64 addr, ut32 size, ut64 xref_addr
 	// Create a properly null-terminated string for metadata
 	char truncated_str[256];
 	ut32 copy_len = str_size < 255 ? str_size : 255;
-	r_str_ncpy(truncated_str, (char *)buf, copy_len + 1);
+	r_str_ncpy (truncated_str, (char *)buf, copy_len + 1);
 
 	// Add string metadata to radare2's metadata database
 	if (!r_meta_set (anal, R_META_TYPE_STRING, addr, str_size, truncated_str)) {
@@ -310,10 +313,10 @@ static void sbpf_create_string(RAnal *anal, ut64 addr, ut32 size, ut64 xref_addr
 		r_anal_xrefs_set (anal, xref_addr, addr, R_ANAL_REF_TYPE_STRN | R_ANAL_REF_TYPE_READ);
 
 		// Add a comment at the xref address showing the string content
-		char comment[512];
+		char comment[SBPF_COMMENT_SIZE];
 		char safe_str[256];
 		ut32 comment_len = str_size < 250 ? str_size : 250;
-		r_str_ncpy(safe_str, (char *)buf, comment_len + 1);
+		r_str_ncpy (safe_str, (char *)buf, comment_len + 1);
 
 		// Replace non-printable chars with dots for the comment
 		ut32 i;
@@ -346,15 +349,15 @@ static void sbpf_create_string(RAnal *anal, ut64 addr, ut32 size, ut64 xref_addr
 		R_LOG_ERROR ("anal->flb.set is NULL - cannot create flags");
 	} else {
 		// Build a proper flag name from the truncated string
-		char flagname[256];
+		char flagname[R_FLAG_NAME_SIZE];
 		char safe_str[64];
 
 		// Copy only the actual string size
 		ut32 copy_len = str_size < 63 ? str_size : 63;
-		r_str_ncpy(safe_str, (char *)buf, copy_len + 1);
+		r_str_ncpy (safe_str, (char *)buf, copy_len + 1);
 
 		// Filter for safe flag name
-		r_str_filter(safe_str, -1);
+		r_str_filter (safe_str, -1);
 
 		// Create the flag name with appropriate prefix
 		const char *prefix = is_pointer ? "ptr" : "str";
@@ -470,17 +473,17 @@ static bool sbpf_analyze_strings(RAnal *anal) {
 				continue;
 			}
 
-			char flagname[256];
+			char flagname[R_FLAG_NAME_SIZE];
 			if (anal->iob.read_at (anal->iob.io, str_ptr, str_buf, size)) {
 				str_buf[size] = 0;
 
 				// Create safe string for flag name
 				char safe_str[64];
 				ut32 copy_len = size < 63 ? size : 63;
-				r_str_ncpy(safe_str, (char *)str_buf, copy_len + 1);
+				r_str_ncpy (safe_str, (char *)str_buf, copy_len + 1);
 
 				// Filter for safe flag name
-				r_str_filter(safe_str, -1);
+				r_str_filter (safe_str, -1);
 
 				// Create flag with format: ptr.<pointer_addr>_<string>
 				snprintf (flagname, sizeof (flagname), "ptr.%"PFMT64x"_%s", ref->addr, safe_str);
@@ -573,14 +576,31 @@ static void sbpf_print_string_xrefs(RAnal *anal) {
 
 	r_list_sort (refs, sbpf_string_ref_cmp);
 
-	RList *processed = r_list_new();
+	RList *processed = r_list_new ();
 	if (!processed) {
 		r_list_free (refs);
 		return;
 	}
 
-	eprintf ("nth xref          vaddr         len size section  type  string\n");
-	eprintf ("―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――\n");
+	// Create table for output
+	RTable *table = r_table_new ("sbpf_strings");
+	if (!table) {
+		r_list_free (processed);
+		r_list_free (refs);
+		return;
+	}
+
+	RTableColumnType *n = r_table_type ("number");
+	RTableColumnType *s = r_table_type ("string");
+
+	r_table_add_column (table, n, "nth", 0);
+	r_table_add_column (table, n, "xref", 0);
+	r_table_add_column (table, n, "vaddr", 0);
+	r_table_add_column (table, n, "len", 0);
+	r_table_add_column (table, n, "size", 0);
+	r_table_add_column (table, s, "section", 0);
+	r_table_add_column (table, s, "type", 0);
+	r_table_add_column (table, s, "string", 0);
 
 	RListIter *iter, *next_iter, *iter2;
 	SbpfStringRef *ref, *next_ref, *ref2;
@@ -628,7 +648,7 @@ static void sbpf_print_string_xrefs(RAnal *anal) {
 			}
 
 			// Read the actual string
-			ut8 *str_buf = malloc(size + 1);
+			ut8 *str_buf = malloc (size + 1);
 			if (!str_buf) {
 				continue;
 			}
@@ -639,7 +659,7 @@ static void sbpf_print_string_xrefs(RAnal *anal) {
 				// Make safe for display
 				char display_buf[256];
 				ut32 display_len = (size < 250) ? size : 250;
-				r_str_ncpy(display_buf, (char *)str_buf, display_len + 1);
+				r_str_ncpy (display_buf, (char *)str_buf, display_len + 1);
 
 				ut32 i;
 				for (i = 0; i < display_len; i++) {
@@ -648,12 +668,13 @@ static void sbpf_print_string_xrefs(RAnal *anal) {
 					}
 				}
 				if (size > 0x100) {
-					strcat(display_buf, "...");
+					strcat (display_buf, "...");
 				}
 
-				// Display the pointer structure
-				eprintf ("%-3d 0x%010"PFMT64x" 0x%010"PFMT64x" %-3u %-4u .rodata  pointer \"%s\"\n",
-					nth++, ref->xref_addr, ref->addr, (ut32)size, (ut32)size + 1, display_buf);
+				// Add pointer structure to table
+				r_table_add_rowf (table, "xxxxxsss",
+					(ut64)nth++, ref->xref_addr, ref->addr, (ut64)size, (ut64)(size + 1),
+					".rodata", "pointer", display_buf);
 			}
 			free (str_buf);
 			continue;
@@ -678,7 +699,7 @@ static void sbpf_print_string_xrefs(RAnal *anal) {
 			}
 		}
 
-		ut8 *buf = malloc(string_size + 1);
+		ut8 *buf = malloc (string_size + 1);
 		if (!buf) {
 			continue;
 		}
@@ -718,10 +739,10 @@ static void sbpf_print_string_xrefs(RAnal *anal) {
 
 			char display_buf[80];
 			if (actual_len > 60) {
-				r_str_ncpy(display_buf, (char *)buf, 57);
-				strcat(display_buf, "...");
+				r_str_ncpy (display_buf, (char *)buf, 57);
+				strcat (display_buf, "...");
 			} else {
-				r_str_ncpy(display_buf, (char *)buf, actual_len + 1);
+				r_str_ncpy (display_buf, (char *)buf, actual_len + 1);
 			}
 
 			for (i = 0; display_buf[i]; i++) {
@@ -733,14 +754,23 @@ static void sbpf_print_string_xrefs(RAnal *anal) {
 			r_list_foreach (refs, iter2, ref2) {
 				if (ref2->addr == ref->addr) {
 					const char *type = ref2->is_pointer ? "pointer" : "ascii";
-					eprintf ("%-3d 0x%010"PFMT64x" 0x%010"PFMT64x" %-3u %-4u .rodata  %-7s \"%s\"\n",
-						nth++, ref2->xref_addr, ref2->addr, actual_len, actual_len + 1, type, display_buf);
+					r_table_add_rowf (table, "xxxxxsss",
+						(ut64)nth++, ref2->xref_addr, ref2->addr, (ut64)actual_len, (ut64)(actual_len + 1),
+						".rodata", type, display_buf);
 				}
 			}
 		}
 		free (buf);
 	}
 
+	// Print the table
+	char *table_str = r_table_tostring (table);
+	if (table_str) {
+		eprintf ("%s\n", table_str);
+		free (table_str);
+	}
+
+	r_table_free (table);
 	r_list_free (processed);
 	r_list_free (refs);
 }
