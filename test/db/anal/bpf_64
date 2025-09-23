@@ -138,3 +138,21 @@ nth paddr      vaddr       bind   type   size lib name         demangled
 2   ---------- ----------  GLOBAL NOTYPE 16       imp.sol_log_
 EOF
 RUN
+
+NAME=negative jmp targets
+FILE=malloc://128
+CMDS=<<EOF
+e asm.arch=bpf
+e asm.bits=64
+wx 7b 1a f8 ff 00 00 00 00  79 a1 f8 ff 00 00 00 00  07 01 00 00 01 00 00 00  7b 1a f8 ff 00 00 00 00  05 00 fc ff 00 00 00 00
+pd 5 @0
+EOF
+EXPECT=<<EOF
+            0x00000000      7b1af8ff00..   stxdw [r10+0xfff8], r1
+        .-> 0x00000008      79a1f8ff00..   ldxdw r1, [r10+0xfff8]
+        :   0x00000010      0701000001..   add64 r1, 0x1
+        :   0x00000018      7b1af8ff00..   stxdw [r10+0xfff8], r1
+        `=< 0x00000020      0500fcff00..   jmp +0xfffc
+EOF
+RUN
+
