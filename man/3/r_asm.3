@@ -6,166 +6,217 @@
 .Nd Assembler and disassembler library for radare2
 .Sh SYNOPSIS
 .In r_asm.h
-.Ft struct r_asm_t *
-.Fn r_asm_new "void"
-.Ft void
-.Fn r_asm_free "struct r_asm_t *a"
-.Ft bool
-.Fn r_asm_use "struct r_asm_t *a" "const char *name"
-.Ft bool
-.Fn r_asm_set_bits "struct r_asm_t *a" "int bits"
-.Ft bool
-.Fn r_asm_set_big_endian "struct r_asm_t *a" "bool big_endian"
-.Ft int
-.Fn r_asm_set_pc "struct r_asm_t *a" "ut64 pc"
-.Ft struct r_asm_code_t *
-.Fn r_asm_massemble "struct r_asm_t *a" "const char *buf"
-.Ft struct r_asm_code_t *
-.Fn r_asm_mdisassemble "struct r_asm_t *a" "const ut8 *buf" "int len"
-.Ft char *
-.Fn r_asm_tostring "struct r_asm_t *a" "ut64 addr" "const ut8 *b" "int l"
-.Ft ut8 *
-.Fn r_asm_from_string "struct r_asm_t *a" "ut64 addr" "const char *b" "int *l"
-.Ft struct r_parse_t *
-.Fn r_parse_new "void"
-.Ft void
-.Fn r_parse_free "struct r_parse_t *p"
-.Ft char *
-.Fn r_asm_parse_pseudo "struct r_asm_t *a" "const char *data"
-.Ft struct r_asm_code_t *
-.Fn r_asm_code_new "void"
-.Ft void
-.Fn r_asm_code_free "struct r_asm_code_t *acode"
+.Pp
 .Sh DESCRIPTION
 The
 .Nm r_asm
-library provides assembler and disassembler functionality for multiple architectures.
-It supports assembling assembly code into machine code and disassembling machine code back to assembly.
-The library uses a plugin-based architecture with support for numerous CPU architectures.
+API exposes radare2's high level assembler and disassembler primitives and the glue between them.
 .Pp
-The core structure is
-.Vt struct r_asm_t ,
-which manages the current architecture, configuration, and plugin sessions.
-Assembly/disassembly results are stored in
-.Vt struct r_asm_code_t ,
-containing the assembled bytes, assembly string, and metadata.
+.Pp
+It is implemented as a frontend for the r_arch api that provides the architecture logic to encode and decode instructions. But offers support for multiline assembler with directive handling and pseudo disassembling and parsing plugins.
+Routines operate on the
+.Vt RAsm
+context which holds architecture configuration, current program counter and parser state. Results for multi-instruction operations are returned in
+.Vt RAsmCode
+objects which contain raw bytes, the disassembly text and per-assembly metadata.
 .Sh INITIALIZATION
-Create a new assembler instance:
+Before assembling or disassembling you must create and configure an
+.Vt RAsm
+.instance. Typical setup includes selecting the architecture, the bit width and the program counter. When used from a higher-level component (for example from
+.Nm r2
+.core code), the
+.Vt RAsm
+.context can store a user pointer (via
+.Fn r_asm_set_user_ptr ()
+.) pointing to a
+.Vt RCore
+.so some helpers (like address-size prediction) work correctly.
+.Pp
+.Bd -literal -offset indent
+/* Initialization API (prototypes) */
+RParse *r_parse_new (void);
+void r_parse_free (RParse *p);
+
+RAsm *r_asm_new (void);
+void r_asm_free (RAsm *a);
+void r_asm_set_user_ptr (RAsm *a, void *user);
+bool r_asm_use (RAsm *a, const char *name);
+int r_asm_set_bits (RAsm *a, int bits);
+int r_asm_set_pc (RAsm *a, ut64 pc);
+.Ed
+Example initialization and cleanup:
 .Bd -literal -offset indent
 RAsm *a = r_asm_new();
-.Ed
-.Pp
-Set the architecture and bits:
-.Bd -literal -offset indent
-r_asm_use(a, "x86");
-r_asm_set_bits(a, 64);
-r_asm_set_pc(a, 0x1000);
-.Ed
-.Pp
-Free when done:
-.Bd -literal -offset indent
-r_asm_free(a);
+/* choose architecture and word size */
+r_asm_use (a, "x86");
+r_asm_set_bits (a, 64);
+/* set current location for relative operands and disassembly helpers */
+r_asm_set_pc (a, 0x1000);
+/* when embedding in r2: r_asm_set_user_ptr (a, core); */
+
+r_asm_free (a);
 .Ed
 .Sh ASSEMBLY
-Assemble assembly code to machine code:
-.Bd -literal -offset indent
-RAsmCode *code = r_asm_massemble(a, "mov rax, 42\\nnop");
-if (code) {
-    printf("Bytes: ");
-    for(int i = 0; i < code->len; i++) {
-        printf("%02x ", code->bytes[i]);
-    }
-    printf("\\nAssembly: %s\\n", code->assembly);
-    r_asm_code_free(code);
-}
-.Ed
+The assembler API provides two levels of convenience. Use
+.Fn r_asm_massemble ()
+when you need multi-line assembly, directive handling or want a
+.Vt RAsmCode
+result with both bytes and the produced assembly text. For single-line or binding-specific assembly callbacks use
+.Fn r_asm_rasm_assemble ()
+or the lower-level encode callbacks that plugins expose.
+If you only need a raw buffer of bytes from a textual instruction, the utility
+.Fn r_asm_from_string ()
+.returns a malloc'ed byte buffer and its length.
 .Pp
-Assemble from string to buffer:
 .Bd -literal -offset indent
-int len;
-ut8 *buf = r_asm_from_string(a, 0x1000, "add eax, 1", &len);
-if (buf) {
-    // use buf[0..len-1]
-    free(buf);
+/* Assembly API (prototypes) */
+RAsmCode* r_asm_massemble (RAsm *a, const char *buf);
+RAsmCode* r_asm_rasm_assemble (RAsm *a, const char *buf, bool use_spp);
+ut8 *r_asm_from_string (RAsm *a, ut64 addr, const char *b, int *l);
+void r_asm_code_free (RAsm *acode);
+.Ed
+The assembler honors directives embedded in the input (such as
+.Em .bits ,
+.Em .arch , or
+.Em .endian ) and uses the configured parser plugin to support pseudo-instructions.
+.Bd -literal -offset indent
+/* assemble several instructions and inspect bytes */
+RAsmCode *code = r_asm_massemble (a, "mov rax, 42\nnop");
+if (code) {
+    for (int i = 0; i < code->len; i++) {
+        printf ("%02x ", code->bytes[i]);
+    }
+    printf ("%s\n", code->assembly);
+    r_asm_code_free (code);
 }
+
+/* get a plain buffer (useful for embedding into other APIs) */
+int len;
+ut8 *buf = r_asm_from_string (a, 0x1000, "add eax, 1", &len);
+if (buf) { free (buf); }
 .Ed
 .Sh DISASSEMBLY
-Disassemble machine code to assembly:
+There are two complementary disassembly APIs. The low-level
+.Fn r_asm_disassemble ()
+.decodes a single instruction into a
+.Vt RAnalOp
+.structure (size, mnemonic, operands and auxiliary analysis data) and is the preferred API when you need per-instruction fields or to feed the result to the analysis engine. The convenience API
+.Fn r_asm_mdisassemble ()
+.walks a buffer producing a
+.Vt RAsmCode
+.where the assembly for each decoded instruction is appended into a single string; it is useful for quick dumps or tools that only need textual output.
+.Pp
 .Bd -literal -offset indent
-ut8 bytes[] = {0x48, 0xc7, 0xc0, 0x2a, 0x00, 0x00, 0x00}; // mov rax, 42
-RAsmCode *code = r_asm_mdisassemble(a, bytes, sizeof(bytes));
-if (code) {
-    printf("Assembly: %s\\n", code->assembly);
-    r_asm_code_free(code);
+/* Disassembly API (prototypes) */
+int r_asm_disassemble (RAsm *a, RAnalOp *op, const ut8 *buf, int len);
+RAsmCode* r_asm_mdisassemble (RAsm *a, const ut8 *buf, int len);
+char *r_asm_tostring (RAsm *a, ut64 addr, const ut8 *b, int l);
+RAsmCode* r_asm_mdisassemble_hexstr (RAsm *a, RParse *p, const char *hexstr);
+void r_asm_op_init (RAnalOp *op);
+void r_asm_op_fini (RAnalOp *op);
+.Ed
+The typical decoding loop used in
+.Nm rasm2
+and other tools calls
+.Fn r_asm_disassemble ()
+repeatedly, updates the PC via
+.Fn r_asm_set_pc (),
+and finalizes each
+.Vt RAnalOp
+with
+.Fn r_asm_op_fini ().
+.Bd -literal -offset indent
+/* decode a buffer instruction-by-instruction */
+RAnalOp op;
+int off = 0;
+while (off < buflen) {
+    r_asm_op_init (&op);
+    r_asm_set_pc (a, base_addr + off);
+    int sz = r_asm_disassemble (a, &op, buf + off, buflen - off);
+    if (sz <= 0) { break; }
+    printf ("%s\n", op.mnemonic);
+    off += op.size;
+    r_asm_op_fini (&op);
+}
+.Ed
+
+For quick textual conversion of a byte buffer use
+.Fn r_asm_tostring ()
+or
+.Fn r_asm_mdisassemble ()
+; to parse a hex string and optionally run the pseudo-assembly parser pass use
+.Fn r_asm_mdisassemble_hexstr ().
+.Sh PARSING
+The assembler includes a lightweight parse/filter layer used to transform or annotate the produced assembly. The
+.Vt RParse
+.structure controls filters such as pseudo-assembly, immediate trimming and variable substitution. Parser plugins are architecture-specific and can be selected with
+.Fn r_asm_use_parser ().
+.Pp
+.Bd -literal -offset indent
+/* Parsing API (prototypes) */
+RParse *r_parse_new (void);
+void r_parse_free (RParse *p);
+bool r_asm_use_parser (RAsm *a, const char *name);
+char *r_asm_parse_pseudo (RAsm *a, const char *data);
+.Ed
+Common usage patterns are: run
+.Fn r_asm_mdisassemble_hexstr ()
+with an
+.Vt RParse
+instance to post-process a hex string, or call
+.Fn r_asm_parse_pseudo ()
+on a previously decoded mnemonic to get a human-friendly representation (for example replacing memory operands with symbolic names). Example:
+.Bd -literal -offset indent
+RParse *p = r_parse_new();
+p->pseudo = true; /* enable pseudo transformations */
+RAsmCode *c = r_asm_mdisassemble_hexstr (a, p, "4868 2a000000");
+if (c) { printf ("%s\n", c->assembly); r_asm_code_free (c); }
+r_parse_free (p);
+.Ed
+.Sh EXAMPLES
+Below are short examples that mirror patterns used across the codebase (see
+.Pq libr/main/rasm2.c
+and
+.Pq libr/core/cmd_print.inc.c
+for complete usages).
+.Pp
+Assemble multiple lines and print the encoded bytes:
+.Bd -literal -offset indent
+RAsmCode *ac = r_asm_massemble (a, ".bits 64\nmov rax, 42\nnop");
+if (ac) {
+    for (int i = 0; i < ac->len; i++) printf ("%02x", ac->bytes[i]);
+    r_asm_code_free (ac);
 }
 .Ed
 .Pp
-Disassemble to string:
+Assemble and analyze instructions producing ESIL (pattern used by the
+.Nm r2
+commands that print analysis):
 .Bd -literal -offset indent
-char *asm_str = r_asm_tostring(a, 0x1000, bytes, sizeof(bytes));
-if (asm_str) {
-    printf("Assembly: %s\\n", asm_str);
-    free(asm_str);
+RAsmCode *acode = r_asm_massemble (a, "mov rax, 42\nadd rax, 1");
+if (acode) {
+    RAnalOp aop = {0};
+    int printed = 0;
+    while (printed < acode->len) {
+        aop.size = 0;
+        if (r_anal_op (anal, &aop, base_addr, acode->bytes + printed, acode->len - printed,
+                       R_ARCH_OP_MASK_ESIL) > 0) {
+            printf ("%s\n", R_STRBUF_SAFEGET (&aop.esil));
+        }
+        printed += aop.size;
+        r_anal_op_fini (&aop);
+    }
+    r_asm_code_free (acode);
 }
 .Ed
-.Sh PARSING
-Parse pseudo-assembly or filter output:
+.Pp
+Disassemble a hex string and run the pseudo-parser (as used by the print command):
 .Bd -literal -offset indent
 RParse *p = r_parse_new();
-// Enable pseudo-assembly
 p->pseudo = true;
-char *pseudo = r_asm_parse_pseudo(a, "mov rax, [rbp + 8]");
-if (pseudo) {
-    printf("Pseudo: %s\\n", pseudo);
-    free(pseudo);
-}
-r_parse_free(p);
-.Ed
-.Sh ARCHITECTURES
-Supported architectures include:
-.Bl -bullet
-.It
-x86/x86_64
-.It
-ARM/ARM64
-.It
-MIPS
-.It
-PowerPC
-.It
-SPARC
-.It
-RISC-V
-.It
-And many others
-.El
-.Sh EXAMPLES
-Complete example of assemble and disassemble:
-.Bd -literal -offset indent
-#include <r_asm.h>
-
-int main() {
-    RAsm *a = r_asm_new();
-    r_asm_use(a, "x86");
-    r_asm_set_bits(a, 64);
-    
-    // Assemble
-    RAsmCode *code = r_asm_massemble(a, "mov rax, 42");
-    if (code) {
-        printf("Assembled %d bytes\\n", code->len);
-        
-        // Disassemble back
-        RAsmCode *dis = r_asm_mdisassemble(a, code->bytes, code->len);
-        if (dis) {
-            printf("Disassembled: %s\\n", dis->assembly);
-            r_asm_code_free(dis);
-        }
-        r_asm_code_free(code);
-    }
-    
-    r_asm_free(a);
-    return 0;
-}
+RAsmCode *c = r_asm_mdisassemble_hexstr (a, p, "4868 2a000000");
+if (c) { puts (c->assembly); r_asm_code_free (c); }
+r_parse_free (p);
 .Ed
 .Sh SEE ALSO
 .Xr r_arch 3 ,

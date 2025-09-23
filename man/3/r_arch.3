@@ -5,182 +5,335 @@
 .Nm r_arch
 .Nd Architecture abstraction library for radare2
 .Sh SYNOPSIS
-.In r_arch.h
-.Ft struct r_arch_t *
-.Fn r_arch_new "void"
-.Ft void
-.Fn r_arch_free "struct r_arch_t *arch"
-.Ft bool
-.Fn r_arch_use "struct r_arch_t *arch" "struct r_arch_config_t *config" "const char *name"
-.Ft bool
-.Fn r_arch_decode "struct r_arch_t *a" "struct r_anal_op_t *op" "RArchDecodeMask mask"
-.Ft bool
-.Fn r_arch_encode "struct r_arch_t *a" "struct r_anal_op_t *op" "RArchEncodeMask mask"
-.Ft struct r_arch_session_t *
-.Fn r_arch_session "struct r_arch_t *arch" "struct r_arch_config_t *cfg" "struct r_arch_plugin_t *ap"
-.Ft bool
-.Fn r_arch_session_decode "struct r_arch_session_t *as" "struct r_anal_op_t *op" "RArchDecodeMask mask"
-.Ft bool
-.Fn r_arch_session_encode "struct r_arch_session_t *as" "struct r_anal_op_t *op" "RArchEncodeMask mask"
-.Ft struct r_arch_config_t *
-.Fn r_arch_config_new "void"
-.Ft void
-.Fn r_arch_config_free "struct r_arch_config_t *config"
-.Ft bool
-.Fn r_arch_config_set_bits "struct r_arch_config_t *c" "int bits"
-.Ft bool
-.Fn r_arch_config_set_syntax "struct r_arch_config_t *config" "int syntax"
-.Ft void
-.Fn r_arch_config_set_cpu "struct r_arch_config_t *config" "const char *cpu"
-.Sh DESCRIPTION
-The
-.Nm r_arch
-library provides a unified interface for CPU architecture support in radare2.
-It abstracts disassembler, assembler, and analysis operations across different architectures
-through a plugin-based system. Each architecture plugin implements decode (disassemble),
-encode (assemble), and other operations.
 .Pp
-The core structure is
-.Vt struct r_arch_t ,
-which manages loaded plugins and sessions.
-Configuration is handled by
-.Vt struct r_arch_config_t ,
-specifying architecture name, bits, endianness, syntax, etc.
-Sessions (
-.Vt struct r_arch_session_t )
-provide per-plugin state and operations.
+The primary functions and types provided by the r_arch API are used to
+select architecture plugins, configure decoding/encoding behaviour and create
+per-plugin sessions for advanced callbacks (for example to fetch register
+profiles or run ESIL hooks). Use `r_arch_config_new` to create a configuration
+and `r_arch_use` to activate an architecture plugin.
+.Pp
+.In r_arch.h
+.Pp
+.Sh DESCRIPTION
+.Pp
+r_arch implements a thin, stable interface that core consumers (such as
+`libr/core` and `libr/anal`) use to perform disassembly, assembly and to
+access plugin-specific capabilities. The API exposes helpers to query plugin
+limits (e.g. maximum opcode size), run the generic decode/encode paths and to
+wrap plugin sessions when direct access to plugin callbacks is required.
+.Pp
+Key concepts and why they matter in practice:
+.Bl -bullet
+.It
+`RArch` — holds available arch plugins and an active session; most
+clients keep a single `RArch` per `RCore` or `RAnal` instance so the arch
+state (current plugin, esil, reg profile) is shared.
+.It
+`RArchConfig` — describes desired architecture parameters (name, bits,
+endianness, syntax). Set this before calling `r_arch_use` so the right plugin
+variant is selected.
+.It
+`RAnalOp` — the container for decoded instruction information. Decoders fill
+`op.size`, `op.mnemonic`, `op.esil` and other fields depending on the decode
+mask. Consumers such as the ESIL executor rely on `op.esil` to obtain
+instruction semantics.
+.It
+`RArchSession` — per-plugin state allowing callers to directly invoke plugin
+callbacks (for example, `plugin->regs` to obtain a register profile). Use a
+session when you need functionality not exposed by the generic decode/encode
+wrappers.
+.El
 .Sh INITIALIZATION
-Create a new architecture instance:
+.Pp
+Before decoding or encoding, create an `RArch` instance and configure the
+plugin you want to use. The configuration controls bits, syntax and other
+plugin-specific options.
+Pp
+.Ft RArch *
+.Fn r_arch_new "void"
+.Pp
+.Ft RArchConfig *
+.Fn r_arch_config_new "void"
+.Pp
+.Ft void
+.Fn r_arch_config_free "RArchConfig *cfg"
+.Pp
+.Ft bool
+.Fn r_arch_use "RArch *arch" "RArchConfig *config" "const char *name"
+.Pp
+.Ft void
+.Fn r_arch_free "RArch *arch"
+.Pp
+Typical initialization steps used across core components:
+.Bl -bullet
+.It
+Create an arch object with `r_arch_new` and a configuration with
+`r_arch_config_new`.
+.It
+Set desired options (`cfg->arch`, `cfg->bits`, `cfg->endian`, `cfg->syntax`)
+and call `r_arch_use (arch, cfg, name)` to activate the plugin.
+.It
+Query plugin capabilities via `r_arch_info` (for example
+`R_ARCH_INFO_MAXOP_SIZE`), or create an `RArchSession` with
+`r_arch_session` when you need plugin callbacks, such as `regs()`.
+.El
+.Pp
+Example (typical init):
 .Bd -literal -offset indent
 RArch *arch = r_arch_new();
-.Ed
-.Pp
-Configure for a specific architecture:
-.Bd -literal -offset indent
 RArchConfig *cfg = r_arch_config_new();
-strcpy(cfg->arch, "x86");
+strcpy (cfg->arch, "x86");
 cfg->bits = 64;
-cfg->endian = R_SYS_ENDIAN_LITTLE;
 cfg->syntax = R_ARCH_SYNTAX_INTEL;
-.Ed
-.Pp
-Use an architecture:
-.Bd -literal -offset indent
-r_arch_use(arch, cfg, "x86");
-.Ed
-.Pp
-Free resources:
-.Bd -literal -offset indent
-r_arch_config_free(cfg);
-r_arch_free(arch);
+if (!r_arch_use (arch, cfg, "x86")) {
+    // handle error: requested plugin not available
+}
+// later
+r_arch_config_free (cfg);
+// r_arch_free (arch) when done
 .Ed
 .Sh DECODING (DISASSEMBLING)
-Decode machine code to analysis operation:
+.Pp
+Decoding converts raw bytes to a populated `RAnalOp`. The API supports
+masks to control what information the plugin should fill — for example basic
+fields, ESIL semantics or value operands. Real-world clients first query the
+plugin for its maximum opcode length so they read enough bytes from IO.
+Pp
+.Ft int
+.Fn r_arch_info "RArch *arch" "int query"
+.Pp
+.Ft bool
+.Fn r_arch_decode "RArch *a" "RAnalOp *op" "RArchDecodeMask mask"
+.Pp
+.Ft void
+.Fn r_anal_op_init "RAnalOp *op"
+.Pp
+.Ft bool
+.Fn r_anal_op_set_bytes "RAnalOp *op" "ut64 addr" "const ut8 *data" "int size"
+.Pp
+.Ft void
+.Fn r_anal_op_fini "RAnalOp *op"
+.Pp
+Practical sequence used in `r_core_esil_single_step`:
+.Bl -bullet
+.It
+Query maximum opcode size: `r_arch_info (arch, R_ARCH_INFO_MAXOP_SIZE)`.
+.It
+Read up to `max_op_size` bytes from the IO layer into a buffer.
+.It
+Initialize and populate an `RAnalOp` with `r_anal_op_init` and
+`r_anal_op_set_bytes`.
+.It
+Call `r_arch_decode (arch, &op, mask)` with masks such as
+`R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL` to obtain decoding and ESIL
+semantics.
+.It
+On success inspect `op.size`, `op.esil`, `op.mnemonic` and other fields and
+clean up with `r_anal_op_fini`.
+.El
+.Pp
+Minimal decode example (pattern taken from `r_core_esil_single_step`):
 .Bd -literal -offset indent
-RAnalOp op = {0};
-ut8 bytes[] = {0x48, 0x89, 0xc7}; // mov rdi, rax
-if (r_arch_decode(arch, &op, R_ARCH_OP_MASK_BASIC)) {
-    printf("Mnemonic: %s\\n", op.mnemonic);
-    printf("Size: %d\\n", op.size);
+int max_op = r_arch_info (arch, R_ARCH_INFO_MAXOP_SIZE);
+if (max_op < 1) { max_op = 32; }
+ut8 buf[64];
+if (!r_io_read_at (io, pc, buf, max_op)) {
+    // read failure
 }
+RAnalOp op;
+r_anal_op_init (&op);
+r_anal_op_set_bytes (&op, pc, buf, max_op);
+if (!r_arch_decode (arch, &op, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL)) {
+    r_anal_op_fini (&op);
+    // decode failed
+}
+// use op.size, op.esil, op.mnemonic ...
+r_anal_op_fini (&op);
 .Ed
 .Pp
-With ESIL and value information:
-.Bd -literal -offset indent
-r_arch_decode(arch, &op, R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_VAL);
-printf("ESIL: %s\\n", op.esil);
-.Ed
+Notes and gotchas:
+.Bl -bullet
+.It
+Always ensure you read at least `R_ARCH_INFO_MAXOP_SIZE` bytes (or a safe
+fallback) before calling `r_arch_decode`; plugins may require several bytes
+to decide instruction length.
+.It
+Check `op.size` and `op.type` after decoding. The core implementation uses
+hints (`r_anal_hint_get`) to override `op.size` or `op.esil` when available.
+.It
+When decoding for emulation (ESIL) prefer to request ESIL with the
+`R_ARCH_OP_MASK_ESIL` mask so the plugin fills `op.esil` with the instruction
+semantics.
+.El
 .Sh ENCODING (ASSEMBLING)
-Encode assembly to machine code:
+.Pp
+Encoding converts textual mnemonics to machine code and populates the
+`RAnalOp` bytes. The common workflow in `libr/anal` (see `r_anal_opasm`) first
+tries the encoder callback provided by the active plugin/session and falls
+back to other encoders when necessary.
+Pp
+.Ft bool
+.Fn r_arch_encode "RArch *a" "RAnalOp *op" "RArchEncodeMask mask"
+.Pp
+.Ft RAnalOp *
+.Fn r_anal_op_new "void"
+.Pp
+.Ft void
+.Fn r_anal_op_free "void *op"
+.Pp
+.Ft bool
+.Fn r_anal_op_set_mnemonic "RAnalOp *op" "ut64 addr" "const char *s"
+.Pp
+Key points:
+.Bl -bullet
+.It
+Prepare an `RAnalOp` with the mnemonic (for example using
+`r_anal_op_set_mnemonic`) and call `r_arch_encode` to attempt encoding.
+.It
+If the plugin cannot encode the instruction, query `r_arch_info` for
+fallback sizes: `R_ARCH_INFO_INVOP_SIZE` (size of an invalid instruction
+placeholder) or `R_ARCH_INFO_CODE_ALIGN` to choose a reasonable number of
+bytes to reserve.
+.El
+.Pp
+Encoding example (conceptual):
 .Bd -literal -offset indent
-RAnalOp op = {0};
-op.mnemonic = "mov rax, 42";
-if (r_arch_encode(arch, &op, 0)) {
-    printf("Bytes: ");
-    for(int i = 0; i < op.size; i++) {
-        printf("%02x ", op.bytes[i]);
-    }
-    printf("\\n");
+RAnalOp *op = r_anal_op_new ();
+r_anal_op_set_mnemonic (op, 0, "mov rax, 42");
+if (r_arch_encode (arch, op, 0)) {
+    // op->bytes and op->size now contain encoded data
+} else {
+    int sz = r_arch_info (arch, R_ARCH_INFO_INVOP_SIZE);
+    if (sz < 1) sz = r_arch_info (arch, R_ARCH_INFO_CODE_ALIGN);
+    if (sz < 1) sz = 1;
+    // reserve `sz` bytes as fallback
 }
+r_anal_op_free (op);
 .Ed
 .Sh SESSIONS
-Create a session for specific plugin:
+.Pp
+When you need direct access to plugin callbacks (for example to obtain a
+register profile string or to use plugin-specific preludes), create a
+session with `r_arch_session`. Sessions wrap a `RArchPlugin` and expose
+`session->plugin` which contains callbacks such as `regs()` or `esilcb()`.
+Pp
+.Ft RArchSession *
+.Fn r_arch_session "RArch *arch" "RArchConfig *cfg" "RArchPlugin *ap"
+.Pp
+.Ft int
+.Fn r_arch_session_info "RArchSession *as" "int q"
+.Pp
+.Ft RList *
+.Fn r_arch_session_preludes "RArchSession *as"
+.Pp
+Real usage example from `r_core_esil_load_arch`:
 .Bd -literal -offset indent
-RArchSession *session = r_arch_session(arch, cfg, plugin);
-if (session) {
-    r_arch_session_decode(session, &op, mask);
-    // session automatically freed with arch
+// after activating arch and creating core->anal->arch->session
+char *rp = core->anal->arch->session->plugin->regs (core->anal->arch->session);
+if (rp) {
+    r_reg_set_profile_string (core->esil.reg, rp);
+    free (rp);
 }
+// the plugin may also register ESIL callbacks via session->plugin->esilcb
 .Ed
+.Pp
+Other session helpers:
+.Bl -bullet
+.It
+`r_arch_session_info(session, q)` — query plugin-specific values.
+.It
+`r_arch_session_preludes(session)` — obtain RList of preludes injected by
+plugins (used by disassemblers/emitters to add prologue code, etc.).
+.El
 .Sh CONFIGURATION
-Modify architecture configuration:
+.Pp
+`RArchConfig` and its helpers let you specify architecture attributes before
+loading a plugin. Use `r_arch_config_set_bits`, `r_arch_config_set_cpu` and
+`r_arch_config_set_syntax` to set common options. Plugins can read these
+fields when `r_arch_use` is called to select appropriate variants.
+Pp
+.Ft bool
+.Fn r_arch_config_set_bits "RArchConfig *c" "int bits"
+.Pp
+.Ft void
+.Fn r_arch_config_set_cpu "RArchConfig *config" "const char *cpu"
+.Pp
+.Ft bool
+.Fn r_arch_config_set_syntax "RArchConfig *config" "int syntax"
+.Pp
+.Ft RArchConfig *
+.Fn r_arch_config_new "void"
+.Pp
+.Ft void
+.Fn r_arch_config_free "RArchConfig *cfg"
+.Pp
+Example: set CPU and syntax before calling `r_arch_use`:
 .Bd -literal -offset indent
 r_arch_config_set_bits(cfg, 32);
 r_arch_config_set_cpu(cfg, "cortex-a53");
 r_arch_config_set_syntax(cfg, R_ARCH_SYNTAX_ATT);
+r_arch_use(arch, cfg, NULL);
 .Ed
 .Sh ARCHITECTURES
-Supported architectures include:
-.Bl -bullet
-.It
-x86/x86_64 (Intel/AMD)
-.It
-ARM/ARM64
-.It
-MIPS
-.It
-PowerPC
-.It
-SPARC
-.It
-RISC-V
-.It
-And many others (6502, AVR, Z80, etc.)
-.El
+.Pp
+The architecture plugins are located under `libr/arch/p/*` and provide
+implementations for decoders/encoders and ESIL callbacks. `r_arch_find` and
+`r_arch_use` select and activate a plugin by name (plugins often use short
+names such as `x86`, `arm`, `mips`).
+.Pp
+To discover which plugins were built inspect the `libr/arch/p` directory or
+call `r_arch_platform_list` at runtime.
 .Sh SYNTAX MODES
-Available syntax options:
-.Bl -tag -width "R_ARCH_SYNTAX_ATT"
-.It Dv R_ARCH_SYNTAX_NONE
-No specific syntax
-.It Dv R_ARCH_SYNTAX_INTEL
-Intel syntax (x86)
-.It Dv R_ARCH_SYNTAX_ATT
-AT&T syntax (x86)
-.It Dv R_ARCH_SYNTAX_MASM
-MASM syntax
-.It Dv R_ARCH_SYNTAX_REGNUM
-Register numbers instead of names
-.El
+.Pp
+Some plugins support multiple syntax modes (for x86 this is commonly Intel or
+AT&T). The syntax influences disassembly formatting and sometimes encoding.
+Set `cfg->syntax` with `r_arch_config_set_syntax` before calling `r_arch_use`.
+.Pp
+Common syntax constants are `R_ARCH_SYNTAX_INTEL`, `R_ARCH_SYNTAX_ATT` and
+`R_ARCH_SYNTAX_MASM`. Use `R_ARCH_SYNTAX_REGNUM` to request register numbers
+instead of names when supported.
 .Sh EXAMPLES
-Complete disassemble/assemble example:
+.Pp
+Below are practical snippets adapted from core components to show how
+decoding, ESIL integration and session usage combine to solve real tasks.
+.Pp
+Example 1 — ESIL single-step (short sequence based on
+`r_core_esil_single_step`):
 .Bd -literal -offset indent
-#include <r_arch.h>
-
-int main() {
-    RArch *arch = r_arch_new();
-    RArchConfig *cfg = r_arch_config_new();
-    
-    strcpy(cfg->arch, "x86");
-    cfg->bits = 64;
-    cfg->syntax = R_ARCH_SYNTAX_INTEL;
-    
-    r_arch_use(arch, cfg, "x86");
-    
-    // Disassemble
-    RAnalOp op = {0};
-    ut8 code[] = {0x48, 0x89, 0xc7}; // mov rdi, rax
-    r_arch_decode(arch, &op, R_ARCH_OP_MASK_DISASM);
-    printf("Disasm: %s\\n", op.mnemonic);
-    
-    // Assemble
-    RAnalOp op2 = {0};
-    op2.mnemonic = "mov rax, rbx";
-    r_arch_encode(arch, &op2, 0);
-    printf("Assembled %d bytes\\n", op2.size);
-    
-    r_arch_config_free(cfg);
-    r_arch_free(arch);
-    return 0;
+// 1. get max opcode size
+int max_op = r_arch_info (arch, R_ARCH_INFO_MAXOP_SIZE);
+if (max_op < 1) { max_op = 32; }
+// 2. read bytes from IO
+ut8 buf[64];
+if (!r_io_read_at (io, pc, buf, max_op)) { /* read error */ }
+// 3. decode requesting ESIL
+RAnalOp op; r_anal_op_init (&op);
+r_anal_op_set_bytes (&op, pc, buf, max_op);
+if (!r_arch_decode (arch, &op, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL)) {
+    r_anal_op_fini (&op);
+    // decode failed or unknown instruction
+}
+// 4. check op.size and apply hints if needed (core uses r_anal_hint_get)
+if (op.size < 1 || op.type == R_ANAL_OP_TYPE_ILL) { /* trap handling */ }
+// 5. run ESIL expression (op.esil) in the REsil context
+char *esil_expr = r_strbuf_drain_nofree (&op.esil);
+// r_esil_parse(core_esil, esil_expr);
+free (esil_expr);
+r_anal_op_fini (&op);
+.Ed
+.Pp
+Example 2 — load architecture register profile into core ESIL (from
+`r_core_esil_load_arch`):
+.Bd -literal -offset indent
+// after arch/plugin/session are initialized
+if (core->anal->arch->session && core->anal->arch->session->plugin &&
+    core->anal->arch->session->plugin->regs) {
+    char *reg_profile = core->anal->arch->session->plugin->regs (
+        core->anal->arch->session);
+    if (reg_profile) {
+        r_reg_set_profile_string (core->esil.reg, reg_profile);
+        free (reg_profile);
+    }
 }
 .Ed
 .Sh SEE ALSO
