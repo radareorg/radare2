@@ -21,7 +21,7 @@ ARCHS=sparc_gnu.mk java.mk arm_gnu.mk
 ARCHS+=x86_as.mk x86_nz.mk cris_gnu.mk arc.mk
 ARCHS+=ppc_as.mk x86_nasm.mk avr.mk
 ARCHS+=sh.mk tms320.mk ebc.mk
-ARCHS+=cr16.mk v850.mk jdh8.mk riscv.mk
+ARCHS+=cr16.mk v850.mk vax.mk jdh8.mk riscv.mk
 ARCHS+=lm32.mk mcore.mk stm8.mk 8051.mk
 # ARCHS+=loongarch_gnu.mk
 include $(ARCHS)
