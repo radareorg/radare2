@@ -1,6 +1,6 @@
 OBJ_6502PSEUDO+=$(LIBR)/arch/p/6502/pseudo.o
 
-OBJ_SNESPSEUDO+=$(LIBR)/arch/p/6502/snes_pseudo.o
+OBJ_SNESPSEUDO+=$(LIBR)/arch/p/snes/pseudo.o
 
 TARGET_6502PSEUDO=parse_6502_pseudo.${EXT_SO}
 TARGET_SNESPSEUDO=parse_snes_pseudo.${EXT_SO}
