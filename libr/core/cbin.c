@@ -2625,7 +2625,7 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 				}
 				if (fi) {
 					free (fi->rawname);
-					fi->rawname = strdup (sn.name);
+					fi->rawname = sn.name? strdup (sn.name): NULL;
 				}
 			} else {
 				const char *n = sn.demname ? sn.demname : name;
@@ -2645,7 +2645,7 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 					if (fi) {
 						r_flag_item_set_realname (core->flags, fi, n);
 						free (fi->rawname);
-						fi->rawname = strdup (sn.name);
+						fi->rawname = sn.name? strdup (sn.name): NULL;
 						// if (fi->addr == 0x10e670) eprintf ("SWE RAW NAME OF 0x%"PFMT64x".. %s\n", fi->addr, fi->rawname);
 						const bool is_demangled = (bool)(size_t)sn.demname;
 						if (is_demangled) {
