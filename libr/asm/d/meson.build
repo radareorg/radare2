@@ -1,8 +1,6 @@
 sdb_files = [
   '6502',
   '8051',
-  'LH5801', ## todo lowercase
-  'stm8',
   'arc',
   'arm',
   'avr',
@@ -15,6 +13,7 @@ sdb_files = [
   'i4004',
   'i8080',
   'java',
+  'LH5801', ## todo lowercase
   'lm32',
   'm68k',
   'mips',
@@ -25,12 +24,15 @@ sdb_files = [
   'propeller',
   'riscv',
   's390',
+  'sbpf',
   'sh',
   'sparc',
+  'stm8',
   'tms320',
   'tricore',
   'v810',
   'v850',
+  'vax',
   'x86',
   'xtensa',
   'z80',

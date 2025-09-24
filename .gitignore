@@ -155,3 +155,4 @@ libr/include/sdb
 crash-*
 corpus*
 libr/anal/d/types-windows.sdb.txt
+libr/bin/d/dll/*.c
