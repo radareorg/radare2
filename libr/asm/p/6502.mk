@@ -1,7 +1,11 @@
 OBJ_6502PSEUDO+=$(LIBR)/arch/p/6502/pseudo.o
 
+OBJ_SNESPSEUDO+=$(LIBR)/arch/p/6502/snes_pseudo.o
+
 TARGET_6502PSEUDO=parse_6502_pseudo.${EXT_SO}
+TARGET_SNESPSEUDO=parse_snes_pseudo.${EXT_SO}
 STATIC_OBJ+=${OBJ_6502PSEUDO}
+STATIC_OBJ+=${OBJ_SNESPSEUDO}
 LIBDEPS=-L../../util -lr_util
 LIBDEPS+=-L../../flag -lr_flag
 
@@ -10,4 +14,9 @@ ALL_TARGETS+=${TARGET_6502PSEUDO}
 ${TARGET_6502PSEUDO}: ${OBJ_6502PSEUDO}
 	${CC} $(call libname,parse_6502_pseudo) ${LIBDEPS} $(LDFLAGS) \
 		$(LDFLAGS_SHARED) ${CFLAGS} -o ${TARGET_6502PSEUDO} ${OBJ_6502PSEUDO}
+
+
+${TARGET_SNESPSEUDO}: ${OBJ_SNESPSEUDO}
+	${CC} $(call libname,parse_snes_pseudo) ${LIBDEPS} $(LDFLAGS) \
+		$(LDFLAGS_SHARED) ${CFLAGS} -o ${TARGET_SNESPSEUDO} ${OBJ_SNESPSEUDO}
 endif
