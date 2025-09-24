@@ -1421,6 +1421,8 @@ static void cmd_fu(RCore *core, const char *input) {
 			char *realname = item->realname? r_base64_encode_dyn ((void*)item->realname, strlen (item->realname)): NULL;
 			r_cons_printf (core->cons, "'@0x%08"PFMT64x"'fu %d %s %s %s\n",
 					item->addr, item->size, item->name, rawname, realname);
+			free (rawname);
+			free (realname);
 		} else {
 			R_LOG_WARN ("Unable to find a flag by %s", arg);
 		}

@@ -1356,9 +1356,9 @@ R_API RBinSymbol *r_bin_file_add_method(RBinFile *bf, const char *rawname, const
 		r_list_append (c->methods, sym);
 		free (name);
 	}
-	if (sym) {
+	if (sym && sym->name) {
 		free (sym->name->oname);
-		sym->name->oname = strdup (rawname);
+		sym->name->oname = rawname? strdup (rawname): NULL;
 	}
 	return sym;
 }
