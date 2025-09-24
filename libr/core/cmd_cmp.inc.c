@@ -470,7 +470,7 @@ static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len, int 
 		}
 	}
 	if (mode == 0) {
-		R_LOG_INFO ("Compare %d/%d equal bytes (%d%%)", eq, len, (eq / len) * 100);
+		R_LOG_INFO ("Compare %d/%d equal bytes (%d%%)", eq, len, 100 * eq / len);
 	} else if (mode == 'j') {
 		pj_end (pj);
 		pj_ki (pj, "equal_bytes", eq);
