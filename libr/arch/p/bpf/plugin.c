@@ -670,7 +670,7 @@ static bool parse_ld(RBpfSockFilter *f, const char *mnemonic, int opc, const bpf
 	return false;
 }
 
-static bool parse_j (RBpfSockFilter *f, const char *m, int opc, const bpf_token *op, ut64 pc) {
+static bool parse_j(RBpfSockFilter *f, const char *m, int opc, const bpf_token *op, ut64 pc) {
 	st8 temp;
 
 	if (TOKEN_EQ (m, "jmp") || TOKEN_EQ (m, "ja")) {

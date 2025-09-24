@@ -764,7 +764,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 		}
 		break;
 	case EM_LOONGARCH:
-		// 3 and 5 :: switch (rel->type) {
+		// 3 and 5 :: switch (rel->type)
 		ADD (32, 0);
 		break;
 	case EM_MIPS:
@@ -800,8 +800,17 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 			break;
 		}
 		break;
+	case EM_VAX:
+		switch (rel->type) {
+		case 21:
+			r->type = R_BIN_RELOC_32;
+			r->vaddr = B + rel->offset;
+			break;
+		}
+		break;
 	default:
-		R_LOG_ERROR ("Unimplemented ELF reloc type %d", rel->type);
+		R_LOG_ERROR ("Unimplemented ELF reloc type %d for arch %d",
+			rel->type, eo->ehdr.e_machine);
 		break;
 	}
 #undef SET
