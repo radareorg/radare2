@@ -1201,17 +1201,17 @@ bool linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		memset(fpu_regs, 0, sizeof(fpu_regs));
 		iov.iov_base = fpu_regs;
 		iov.iov_len = sizeof(fpu_regs);
-		
-		ret = r_debug_ptrace(dbg, PTRACE_GETREGSET, pid, (void*)(size_t)NT_ARM_VFP, &iov);
+
+		ret = r_debug_ptrace(dbg, PTRACE_GETREGSET, pid, (void*)(size_t)NT_PRFPREG, &iov);
 		if (ret != 0) {
-			r_sys_perror("PTRACE_GETREGSET NT_ARM_VFP");
+			r_sys_perror("PTRACE_GETREGSET NT_PRFPREG");
 			return false;
 		}
-		
+
 		if (showfpu) {
 			print_fpu((void *)fpu_regs);
 		}
-		
+
 		size = R_MIN(iov.iov_len, size);
 		memcpy(buf, fpu_regs, size);
 		return size;
@@ -1366,10 +1366,10 @@ bool linux_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 		struct iovec iov;
 		iov.iov_base = (void*)buf;
 		iov.iov_len = size;
-		
-		int ret = r_debug_ptrace(dbg, PTRACE_SETREGSET, pid, (void*)(size_t)NT_ARM_VFP, &iov);
+
+		int ret = r_debug_ptrace(dbg, PTRACE_SETREGSET, pid, (void*)(size_t)NT_PRFPREG, &iov);
 		if (ret != 0) {
-			r_sys_perror("PTRACE_SETREGSET NT_ARM_VFP");
+			r_sys_perror("PTRACE_SETREGSET NT_PRFPREG");
 			return false;
 		}
 		return true;
