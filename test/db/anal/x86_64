@@ -4107,8 +4107,8 @@ EXPECT=<<EOF
 address: 0x140001358
 opcode: movdqa xmm0, xmmword [rip + 0x1fce0]
 esilcost: 16
-disasm: movdqa xmm0, xmmword [str._n_2.__1__a]
-pseudo: xmm0 = xmmword [str._n_2.__1__a]
+disasm: movdqa xmm0, xmmword [str._n_2.__1__a_]
+pseudo: xmm0 = xmmword [str._n_2.__1__a_]
 mnemonic: movdqa
 description: move aligned double quadword
 mask: ffffff0000000000
@@ -4125,8 +4125,8 @@ scale: 1
 esil: 0x1fce0,rip,+,[16],xmm0,=
 direction: read
 family: vec
-            0x140001358      660f6f05e0..   movdqa xmm0, xmmword [str._n_2.__1__a] ; [0x140021040:16]=-1 ; "\n*,2.)%#1%#)a~\x7f"
-            ;-- str._n_2.__1__a:
+            0x140001358      660f6f05e0..   movdqa xmm0, xmmword [str._n_2.__1__a_] ; [0x140021040:16]=-1 ; "\n*,2.)%#1%#)a~\x7f"
+            ;-- str._n_2.__1__a_:
             ; STRN XREF from main @ +0x38(r)
             0x140021040     .string "\n*,2.)%#1%#)a~" ; len=15
 EOF
