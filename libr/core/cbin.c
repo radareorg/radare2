@@ -2608,12 +2608,14 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 					sn.methflag = prname;
 					r_name_filter (sn.methflag, -1);
 				}
-				if (fi) {
-					r_flag_item_set_realname (core->flags, fi, sn.methname);
-					if ((fi->addr - core->flags->base) == addr) {
-						r_flag_unset (core->flags, fi);
-					}
-				} else {
+					if (fi) {
+						r_flag_item_set_realname (core->flags, fi, sn.methname);
+						if ((fi->addr - core->flags->base) == addr) {
+							r_flag_unset (core->flags, fi);
+							/* r_flag_unset frees the RFlagItem, avoid using fi afterwards */
+							fi = NULL;
+						}
+					} else {
 					fi = r_flag_set (core->flags, sn.methflag, addr, symbol->size);
 #if 0
 					char *comment = (fi && fi->comment) ? strdup (fi->comment) : NULL;
@@ -2623,10 +2625,13 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 					}
 #endif
 				}
-				if (fi) {
-					free (fi->rawname);
-					fi->rawname = sn.name? strdup (sn.name): NULL;
-				}
+					if (fi) {
+						RFlagItem *fi2 = r_flag_get (core->flags, sn.methflag);
+						if (fi2) {
+							free (fi2->rawname);
+							fi2->rawname = sn.name? strdup (sn.name): NULL;
+						}
+					}
 			} else {
 				const char *n = sn.demname ? sn.demname : name;
 				const char *fn = sn.demflag ? sn.demflag : sn.nameflag;
@@ -2644,8 +2649,11 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 					}
 					if (fi) {
 						r_flag_item_set_realname (core->flags, fi, n);
-						free (fi->rawname);
-						fi->rawname = sn.name? strdup (sn.name): NULL;
+						RFlagItem *fi2 = r_flag_get (core->flags, fnp);
+						if (fi2) {
+							free (fi2->rawname);
+							fi2->rawname = sn.name? strdup (sn.name): NULL;
+						}
 						// if (fi->addr == 0x10e670) eprintf ("SWE RAW NAME OF 0x%"PFMT64x".. %s\n", fi->addr, fi->rawname);
 						const bool is_demangled = (bool)(size_t)sn.demname;
 						if (is_demangled) {
@@ -3981,8 +3989,11 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 					if (fi) {
 						const char *rawname = r_bin_name_tostring2 (sym->name, 'o');
 						if (rawname) {
-							free (fi->rawname);
-							fi->rawname = strdup (rawname);
+							RFlagItem *fi2 = r_flag_get (core->flags, method);
+							if (fi2) {
+								free (fi2->rawname);
+								fi2->rawname = strdup (rawname);
+							}
 						}
 					}
 				}
