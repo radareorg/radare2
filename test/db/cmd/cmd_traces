@@ -14,7 +14,7 @@ s main
 pdf
 EOF
 EXPECT=<<EOF
-            ;-- section.0.__TEXT.__text, entry0, sym._main, sym.func.100003f84:
+            ;-- section.0.__TEXT.__text, entry0, sym._main:
 / 36: int main (int argc);
 |           ; arg int argc @ x0
 |           ; var int64_t var_8h @ sp+0x8

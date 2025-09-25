@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #include <r_core.h>
 #include <r_vec.h>
@@ -74,6 +74,24 @@ R_API RList *r_sign_fcn_xrefs(RAnal *a, RAnalFunction *fcn) {
 	r_list_uniq (ret, valstr);
 	RVecAnalRef_free (xrefs);
 	return ret;
+}
+
+static RFlagItem *get_sym_flag_at(RCore *core, ut64 addr) {
+	if (!core || !core->flags) {
+		return NULL;
+	}
+	const RList *list = r_flag_get_list (core->flags, addr);
+	if (!list) {
+		return NULL;
+	}
+	RListIter *it;
+	RFlagItem *fi;
+	r_list_foreach (list, it, fi) {
+		if (fi && fi->name && r_str_startswith (fi->name, "sym.")) {
+			return fi;
+		}
+	}
+	return NULL;
 }
 
 R_API RList *r_sign_fcn_refs(RAnal *a, RAnalFunction *fcn) {
@@ -270,6 +288,18 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 		}
 		RSignType st = (RSignType)*word;
 		switch (st) {
+		case R_SIGN_RAWNAME: {
+			DBL_VAL_FAIL (it->rawname, R_SIGN_RAWNAME);
+			char *dec = (char *)r_base64_decode_dyn (token, -1, NULL);
+			it->rawname = dec? dec: strdup (token);
+			break;
+		}
+		case R_SIGN_DEMANGLED: {
+			DBL_VAL_FAIL (it->demangled, R_SIGN_DEMANGLED);
+			char *dec = (char *)r_base64_decode_dyn (token, -1, NULL);
+			it->demangled = dec? dec: strdup (token);
+			break;
+		}
 		case R_SIGN_NAME:
 			DBL_VAL_FAIL (it->realname, R_SIGN_NAME);
 			it->realname = strdup (token);
@@ -353,6 +383,14 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 			break;
 		}
 	}
+
+	// Legacy mapping: if only legacy realname is present, assume
+	// name=mangled and realname=demangled (as previously produced
+	// when zign.mangled=false)
+	if (!it->rawname && !it->demangled && it->realname) {
+		it->rawname = strdup (it->name);
+		it->demangled = strdup (it->realname);
+	}
 out:
 	free (k2);
 	free (v2);
@@ -410,6 +448,12 @@ static inline size_t serial_val_reserv(RSignItem *it) {
 	}
 	if (it->realname) {
 		reserve += 0x10;
+	}
+	if (it->rawname) {
+		reserve += strlen (it->rawname) * 2 + 0x10; // base64
+	}
+	if (it->demangled) {
+		reserve += strlen (it->demangled) * 2 + 0x10; // base64
 	}
 	if (it->next) {
 		reserve += 0x20;
@@ -496,6 +540,29 @@ static char *serialize_value(RSignItem *it) {
 		FreeRet_on_fail (r_strbuf_appendf (sb, "|%c:%s", R_SIGN_COMMENT, it->comment), sb);
 	}
 
+	if (it->rawname) {
+		char *b64 = r_base64_encode_dyn ((const ut8 *)it->rawname, -1);
+		bool ok = b64 && r_strbuf_appendf (sb, "|%c:%s", R_SIGN_RAWNAME, b64);
+		free (b64);
+		FreeRet_on_fail (ok, sb);
+	}
+
+	/* Only serialize demangled if it provides additional information
+	 * different from the rawname. Avoids emitting redundant demangled
+	 * entries when the value equals the rawname (e.g. non-mangled names). */
+	if (it->demangled) {
+		bool emit_demangled = true;
+		if (it->rawname && it->demangled && !strcmp (it->demangled, it->rawname)) {
+			emit_demangled = false;
+		}
+		if (emit_demangled) {
+			char *b64 = r_base64_encode_dyn ((const ut8 *)it->demangled, -1);
+			bool ok = b64 && r_strbuf_appendf (sb, "|%c:%s", R_SIGN_DEMANGLED, b64);
+			free (b64);
+			FreeRet_on_fail (ok, sb);
+		}
+	}
+
 	if (it->realname && !strchr (it->realname, '|')) {
 		FreeRet_on_fail (r_strbuf_appendf (sb, "|%c:%s", R_SIGN_NAME, it->realname), sb);
 	}
@@ -567,6 +634,8 @@ static inline void merge_item_clobber(RSignItem *dst, RSignItem *src) {
 	// strings
 	quick_merge (comment, free);
 	quick_merge (realname, free);
+	quick_merge (rawname, free);
+	quick_merge (demangled, free);
 	quick_merge (next, free);
 	quick_merge (types, free);
 
@@ -857,6 +926,8 @@ static RSignHash *r_sign_fcn_bbhash(RAnal *a, RAnalFunction *fcn) {
 	return hash;
 }
 
+static char *real_function_name(RAnal *a, RAnalFunction *fcn);
+
 static RSignItem *item_from_func(RAnal *a, RAnalFunction *fcn, const char *name) {
 	if (r_list_empty (fcn->bbs)) {
 		R_LOG_WARN ("Function with no basic blocks at 0x%08"PFMT64x, fcn->addr);
@@ -864,6 +935,27 @@ static RSignItem *item_from_func(RAnal *a, RAnalFunction *fcn, const char *name)
 	}
 	RSignItem *it = item_new_named (a, name? name: fcn->name);
 	if (it) {
+		// Prefer names from flag item if available
+		RFlagItem *fi = get_sym_flag_at (a->coreb.core, fcn->addr);
+		if (fi) {
+			/* Prefer the original binary/symbol name as rawname, not the flag
+			 * name. Flags use `fi->name` (e.g. "sym.main") which is a
+			 * namespaced/escaped representation; the original symbol text is in
+			 * `fi->rawname` (from RBinName->oname). Use that when available so
+			 * we don't mix flag names into the signature's rawname. */
+			it->rawname = fi->rawname? strdup (fi->rawname): strdup (fcn->name);
+			/* For demangled prefer the flag's realname (if set), otherwise
+			 * fall back to the analysis-provided real name. */
+			if (fi->realname) {
+				it->demangled = strdup (fi->realname);
+			} else {
+				it->demangled = real_function_name (a, fcn);
+			}
+		} else {
+			/* Fallback to function/analysis names */
+			it->rawname = strdup (fcn->name);
+			it->demangled = real_function_name (a, fcn);
+		}
 		if (name && strcmp (name, fcn->name)) {
 			it->realname = strdup (name);
 		}
@@ -915,25 +1007,27 @@ static char *get_unique_name(Sdb *sdb, const char *name, const RSpace *sp) {
 
 static char *real_function_name(RAnal *a, RAnalFunction *fcn) {
 	RCore *core = a->coreb.core;
-#if 0
-	if (fcn->realname) {
-	//	return strdup (fcn->realname); // r_bin_name_tostring2 (fcn->name, 'o'));
+	if (!core || !fcn || !fcn->name) {
+		return NULL;
 	}
-	return strdup (fcn->name); // r_bin_name_tostring2 (fcn->name, 'o'));
-#endif
-#if 1
-	ut64 addr = fcn->addr;
-	const char *name = fcn->name;
-	// resolve the manged name
-	char *res = a->coreb.cmdStrF (core, "is,vaddr/eq/0x%"PFMT64x",demangled/cols,a/head/1,:quiet", addr);
-	if (res) {
-		r_str_trim (res);
-		if (*res) {
-			return res;
+	// Prefer demangled name stored in flags
+	RFlagItem *fi = get_sym_flag_at (core, fcn->addr);
+	if (fi && fi->realname) {
+		return strdup (fi->realname);
+	}
+	// Fallback to rbin demangler honoring settings
+	bool demangle = a->coreb.cfgGetB (core, "bin.demangle");
+	const char *lang = demangle? a->coreb.cfgGet (core, "bin.lang"): NULL;
+	bool keep_lib = a->coreb.cfgGetB (core, "bin.demangle.pfxlib");
+	char *name = strdup (fcn->name);
+	if (demangle && a->binb.demangle) {
+		char *tmp = a->binb.demangle (NULL, lang, name, fcn->addr, keep_lib);
+		if (tmp) {
+			free (name);
+			name = tmp;
 		}
 	}
-	return strdup (name);
-#endif
+	return name;
 }
 
 R_API int r_sign_all_functions(RAnal *a, bool merge) {
@@ -1566,6 +1660,8 @@ static void list_sanitise_warn(char *s, const char *name, const char *field) {
 		bool sanitized = false;
 		for (; *s; s++) {
 			switch (*name) {
+			case '\t':
+			case ' ':
 			case '`':
 			case '$':
 			case '{':
@@ -1657,21 +1753,30 @@ static void listGraph(RAnal *a, RSignItem *it, PJ *pj, int format) {
 	}
 }
 
-static void liststring(RAnal *a, RSignType t, char *value, PJ *pj, int format, char *name) {
-	if (value) {
-		if (format == 'j') {
-			pj_ks (pj, r_sign_type_to_name (t), value);
-		} else {
-			const char *type = r_sign_type_to_name (t);
-			list_sanitise_warn (value, name, type);
-			if (format == 'q') {
-				a->cb_printf ("\n ; %s\n", value);
-			} else if (format == '*') {
-				// comment injection via CCu..
-				a->cb_printf ("za %s %c %s\n", name, t, value);
+static void liststring(RAnal *a, RSignType t, char *value, PJ *pj, int format, const char *name) {
+	if (!value) {
+		return;
+	}
+	if (format == 'j') {
+		pj_ks (pj, r_sign_type_to_name (t), value);
+	} else {
+		const char *type = r_sign_type_to_name (t);
+		list_sanitise_warn (value, name, type);
+		if (format == 'q') {
+			a->cb_printf ("\n ; %s\n", value);
+		} else if (format == '*') {
+			// comment injection via CCu..
+			if (t == R_SIGN_RAWNAME || t == R_SIGN_DEMANGLED) {
+				char *b64 = r_base64_encode_dyn ((const ut8 *)value, -1);
+				if (b64) {
+					a->cb_printf ("za %s %c %s\n", name, t, b64);
+					free (b64);
+				}
 			} else {
-				a->cb_printf ("  %s: %s\n", type, value);
+				a->cb_printf ("za %s %c %s\n", name, t, value);
 			}
+		} else {
+			a->cb_printf ("  %s: %s\n", type, value);
 		}
 	}
 }
@@ -1885,6 +1990,8 @@ static bool listCB(RSignItem *it, void *user) {
 	}
 
 	liststring (a, R_SIGN_NAME, it->realname, ctx->pj, ctx->format, it->name);
+	liststring (a, R_SIGN_RAWNAME, it->rawname, ctx->pj, ctx->format, it->name);
+	liststring (a, R_SIGN_DEMANGLED, it->demangled, ctx->pj, ctx->format, it->name);
 	liststring (a, R_SIGN_COMMENT, it->comment, ctx->pj, ctx->format, it->name);
 	liststring (a, R_SIGN_NEXT, it->next, ctx->pj, ctx->format, it->name);
 	liststring (a, R_SIGN_TYPES, it->types, ctx->pj, ctx->format, it->name);
@@ -1973,6 +2080,10 @@ R_API const char *r_sign_type_to_name(int type) {
 		return "addr";
 	case R_SIGN_NAME:
 		return "realname";
+	case R_SIGN_RAWNAME:
+		return "rawname";
+	case R_SIGN_DEMANGLED:
+		return "demangled";
 	case R_SIGN_REFS:
 		return "refs";
 	case R_SIGN_XREFS:
@@ -2886,6 +2997,8 @@ R_API RSignItem *r_sign_item_new(void) {
 R_API void r_sign_item_free(RSignItem *item) {
 	if (item) {
 		free (item->name);
+		free (item->rawname);
+		free (item->demangled);
 		free (item->next);
 		r_sign_bytes_free (item->bytes);
 		r_sign_hash_free (item->hash);
@@ -3100,6 +3213,17 @@ static bool load_json_signature(RAnal *a, const RJson *child) {
 #endif
 	if (rname && rname->type == R_JSON_STRING) {
 		it->realname = strdup (rname->str_value);
+	}
+	const RJson *jm = r_json_get (child, "rawname");
+	if (!jm) {
+		jm = r_json_get (child, "mangled");
+	}
+	if (jm && jm->type == R_JSON_STRING) {
+		it->rawname = strdup (jm->str_value);
+	}
+	const RJson *jd = r_json_get (child, "demangled");
+	if (jd && jd->type == R_JSON_STRING) {
+		it->demangled = strdup (jd->str_value);
 	}
 	const RJson *bytes = r_json_get (child, "bytes");
 	const RJson *mask = r_json_get (child, "mask");

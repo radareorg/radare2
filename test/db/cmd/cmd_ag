@@ -29,7 +29,7 @@ EXPECT=<<EOF
 'agn "0x000007f6"
 'agn "sym.imp.strcat"
 'agn "0x00000827"
-'agn "section..plt.got"
+'agn "sym.imp.__cxa_finalize"
 'agn "0x0000077e"
 'age "0x0000083f" "sym.imp.free"
 'age "0x00000814" "sym.imp.strcpy"
@@ -38,7 +38,7 @@ EXPECT=<<EOF
 'age "0x000007de" "sym.imp.strlen"
 'age "0x000007f6" "sym.imp.malloc"
 'age "0x00000827" "sym.imp.strcat"
-'age "0x0000077e" "section..plt.got"
+'age "0x0000077e" "sym.imp.__cxa_finalize"
 EOF
 RUN
 
@@ -50,9 +50,9 @@ aa 2> /dev/null
 agx* @ main
 EOF
 EXPECT=<<EOF
-'agn "main"
+'agn "sym.main"
 'agn "0x000006bd"
-'age "0x000006bd" "main"
+'age "0x000006bd" "sym.main"
 EOF
 RUN
 
@@ -75,7 +75,7 @@ EXPECT=<<EOF
     |
     |
 .--------------------.
-|  main              |
+|  sym.main          |
 `--------------------'
 digraph code {
 rankdir=LR;
@@ -103,7 +103,7 @@ node [fillcolor=white, style=filled shape=box fontsize="8" fontname="Courier"];
 11 [URL="sym.imp.strcat", color="lightgray", label="sym.imp.strcat"]
 12 [URL="0x00000827", color="lightgray", label="0x00000827"]
 12 -> 11
-13 [URL="section..plt.got", color="lightgray", label="section..plt.got"]
+13 [URL="sym.imp.__cxa_finalize", color="lightgray", label="sym.imp.__cxa_finalize"]
 14 [URL="0x0000077e", color="lightgray", label="0x0000077e"]
 14 -> 13
 }
@@ -166,7 +166,7 @@ directed 1
   ]
   node [
     id  13
-    label  "section..plt.got"
+    label  "sym.imp.__cxa_finalize"
   ]
   node [
     id  14
@@ -205,18 +205,18 @@ directed 1
     target  13
   ]
 ]
-{"nodes":[{"id":0,"title":"sym.imp.free","offset":1584,"out_nodes":[]},{"id":1,"title":"0x0000083f","offset":2111,"out_nodes":[0]},{"id":2,"title":"sym.imp.strcpy","offset":1600,"out_nodes":[]},{"id":3,"title":"0x00000814","offset":2068,"out_nodes":[2]},{"id":4,"title":"sym.imp.puts","offset":1616,"out_nodes":[]},{"id":5,"title":"0x00000833","offset":2099,"out_nodes":[4]},{"id":6,"title":"sym.imp.strlen","offset":1632,"out_nodes":[]},{"id":7,"title":"0x000007cf","offset":1999,"out_nodes":[6]},{"id":8,"title":"0x000007de","offset":2014,"out_nodes":[6]},{"id":9,"title":"sym.imp.malloc","offset":1648,"out_nodes":[]},{"id":10,"title":"0x000007f6","offset":2038,"out_nodes":[9]},{"id":11,"title":"sym.imp.strcat","offset":1664,"out_nodes":[]},{"id":12,"title":"0x00000827","offset":2087,"out_nodes":[11]},{"id":13,"title":"section..plt.got","offset":1680,"out_nodes":[]},{"id":14,"title":"0x0000077e","offset":1918,"out_nodes":[13]}]}
+{"nodes":[{"id":0,"title":"sym.imp.free","offset":1584,"out_nodes":[]},{"id":1,"title":"0x0000083f","offset":2111,"out_nodes":[0]},{"id":2,"title":"sym.imp.strcpy","offset":1600,"out_nodes":[]},{"id":3,"title":"0x00000814","offset":2068,"out_nodes":[2]},{"id":4,"title":"sym.imp.puts","offset":1616,"out_nodes":[]},{"id":5,"title":"0x00000833","offset":2099,"out_nodes":[4]},{"id":6,"title":"sym.imp.strlen","offset":1632,"out_nodes":[]},{"id":7,"title":"0x000007cf","offset":1999,"out_nodes":[6]},{"id":8,"title":"0x000007de","offset":2014,"out_nodes":[6]},{"id":9,"title":"sym.imp.malloc","offset":1648,"out_nodes":[]},{"id":10,"title":"0x000007f6","offset":2038,"out_nodes":[9]},{"id":11,"title":"sym.imp.strcat","offset":1664,"out_nodes":[]},{"id":12,"title":"0x00000827","offset":2087,"out_nodes":[11]},{"id":13,"title":"sym.imp.__cxa_finalize","offset":1680,"out_nodes":[]},{"id":14,"title":"0x0000077e","offset":1918,"out_nodes":[13]}]}
 agraph.color_box=G1swbQ==
 agraph.delta_x=0x4d
 agraph.delta_y=0x1
-agraph.h=0xf
+agraph.h=0x10
 agraph.is_callgraph=false
-agraph.nodes=sym.imp.free,0x0000083f,sym.imp.strcpy,0x00000814,sym.imp.puts,0x00000833,sym.imp.strlen,0x000007cf,0x000007de,sym.imp.malloc,0x000007f6,sym.imp.strcat,0x00000827,section..plt.got,0x0000077e
+agraph.nodes=sym.imp.free,0x0000083f,sym.imp.strcpy,0x00000814,sym.imp.puts,0x00000833,sym.imp.strlen,0x000007cf,0x000007de,sym.imp.malloc,0x000007f6,sym.imp.strcat,0x00000827,sym.imp.__cxa_finalize,0x0000077e
 agraph.nodes.0x0000077e.body=base64:
 agraph.nodes.0x0000077e.h=0x3
-agraph.nodes.0x0000077e.neighbours=section..plt.got
+agraph.nodes.0x0000077e.neighbours=sym.imp.__cxa_finalize
 agraph.nodes.0x0000077e.w=0x16
-agraph.nodes.0x0000077e.x=0xb6
+agraph.nodes.0x0000077e.x=0xbd
 agraph.nodes.0x0000077e.y=0x4d
 agraph.nodes.0x000007cf.body=base64:
 agraph.nodes.0x000007cf.h=0x3
@@ -246,7 +246,7 @@ agraph.nodes.0x00000827.body=base64:
 agraph.nodes.0x00000827.h=0x3
 agraph.nodes.0x00000827.neighbours=sym.imp.strcat
 agraph.nodes.0x00000827.w=0x16
-agraph.nodes.0x00000827.x=0x9c
+agraph.nodes.0x00000827.x=0xa0
 agraph.nodes.0x00000827.y=0x4d
 agraph.nodes.0x00000833.body=base64:
 agraph.nodes.0x00000833.h=0x3
@@ -260,45 +260,45 @@ agraph.nodes.0x0000083f.neighbours=sym.imp.free
 agraph.nodes.0x0000083f.w=0x16
 agraph.nodes.0x0000083f.x=0
 agraph.nodes.0x0000083f.y=0x4d
-agraph.nodes.section..plt.got.body=base64:
-agraph.nodes.section..plt.got.h=0x3
-agraph.nodes.section..plt.got.w=0x16
-agraph.nodes.section..plt.got.x=0xb6
-agraph.nodes.section..plt.got.y=0x55
+agraph.nodes.sym.imp.__cxa_finalize.body=base64:
+agraph.nodes.sym.imp.__cxa_finalize.h=0x3
+agraph.nodes.sym.imp.__cxa_finalize.w=0x1c
+agraph.nodes.sym.imp.__cxa_finalize.x=0xba
+agraph.nodes.sym.imp.__cxa_finalize.y=0x56
 agraph.nodes.sym.imp.free.body=base64:
 agraph.nodes.sym.imp.free.h=0x3
 agraph.nodes.sym.imp.free.w=0x16
 agraph.nodes.sym.imp.free.x=0
-agraph.nodes.sym.imp.free.y=0x55
+agraph.nodes.sym.imp.free.y=0x56
 agraph.nodes.sym.imp.malloc.body=base64:
 agraph.nodes.sym.imp.malloc.h=0x3
 agraph.nodes.sym.imp.malloc.w=0x16
 agraph.nodes.sym.imp.malloc.x=0x82
-agraph.nodes.sym.imp.malloc.y=0x55
+agraph.nodes.sym.imp.malloc.y=0x56
 agraph.nodes.sym.imp.puts.body=base64:
 agraph.nodes.sym.imp.puts.h=0x3
 agraph.nodes.sym.imp.puts.w=0x16
 agraph.nodes.sym.imp.puts.x=0x34
-agraph.nodes.sym.imp.puts.y=0x55
+agraph.nodes.sym.imp.puts.y=0x56
 agraph.nodes.sym.imp.strcat.body=base64:
 agraph.nodes.sym.imp.strcat.h=0x3
 agraph.nodes.sym.imp.strcat.w=0x16
-agraph.nodes.sym.imp.strcat.x=0x9c
-agraph.nodes.sym.imp.strcat.y=0x55
+agraph.nodes.sym.imp.strcat.x=0xa0
+agraph.nodes.sym.imp.strcat.y=0x56
 agraph.nodes.sym.imp.strcpy.body=base64:
 agraph.nodes.sym.imp.strcpy.h=0x3
 agraph.nodes.sym.imp.strcpy.w=0x16
 agraph.nodes.sym.imp.strcpy.x=0x1a
-agraph.nodes.sym.imp.strcpy.y=0x55
+agraph.nodes.sym.imp.strcpy.y=0x56
 agraph.nodes.sym.imp.strlen.body=base64:
 agraph.nodes.sym.imp.strlen.h=0x3
 agraph.nodes.sym.imp.strlen.w=0x16
 agraph.nodes.sym.imp.strlen.x=0x5b
-agraph.nodes.sym.imp.strlen.y=0x55
-agraph.w=0xcc
+agraph.nodes.sym.imp.strlen.y=0x56
+agraph.w=0xd6
 
 
-*  *  *  *  *  *  *   *
-*  *  *   *    *  *   *
+*  *  *  *  *  *   *   *
+*  *  *   *    *   *  *
 EOF
 RUN

@@ -625,7 +625,7 @@ EXPECT=<<EOF
 |           0x00401999      b801000000     mov eax, 1
 |           0x0040199e      bf01000000     mov edi, 1                  ; int64_t arg2
 |           0x004019a3      89c6           mov esi, eax                ; int64_t arg_8h
-|           0x004019a5      e8b6a10200     call sym.unit_crt_gotoxy_tcrtcoord_tcrtcoord_ ; unit crt gotoxy(tcrtcoord,tcrtcoord)
+|           0x004019a5      e8b6a10200     call sym.CRT____GOTOXY_TCRTCOORD_TCRTCOORD ; unit crt gotoxy(tcrtcoord,tcrtcoord)
 |           0x004019aa      66448b65f0     mov r12w, word [szel]
 |           0x004019af      66c745ec0100   mov word [i], 1
 |           0x004019b5      66443b65ec     cmp r12w, word [i]
@@ -635,6 +635,6 @@ EXPECT=<<EOF
 |       |   0x004019c6      6690           nop
 |       |   ; CODE XREF from unit p$mozgkigyo palya(smallint,smallint) @ 0x4019ff(x)
 |       |   0x004019c8      668145ec0100   add word [i], 1
-|       |   0x004019ce      e82d280200     call sym.fpc_get_output__   ; fpc_get_output()
+|       |   0x004019ce      e82d280200     call sym.fpc_get_output     ; fpc_get_output()
 EOF
 RUN

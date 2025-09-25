@@ -24,6 +24,8 @@ DEBUG: [core.bin] (section .dynamic) Cd 8[58] @ 0x403e20
 DEBUG: [core.bin] (section .got) Cd 8[2] @ 0x403ff0
 WARN: [core.bin] Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
 DEBUG: [core.bin] Cannot resolve symbol address __libc_start_main
+DEBUG: [core.bin] Cannot resolve symbol address __libc_start_main
+DEBUG: [core.bin] Cannot resolve symbol address __gmon_start__
 DEBUG: [core.bin] Cannot resolve symbol address __gmon_start__
 EOF
 RUN

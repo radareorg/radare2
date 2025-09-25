@@ -167,8 +167,9 @@ EXPECT=<<EOF
 0x00000000 [0x100002b70 - 0x100008568]  23032 c++ class 10 swift
 0x100002b70 c++   method   0      getRootSuperclass()
 0x100002bb0 c++   method   1      swift51override_conformsToSwiftProtocol(swift::TargetMetadata<swift::InProcess> const*, swift::TargetProtocolDescriptor<swift::InProcess> const*, llvm::StringRef, swift::TargetProtocolConformanceDescriptor<swift::InProcess> const* (*)(swift::TargetMetadata<swift::InProcess> const*, swift::TargetProtocolDescriptor<swift::InProcess> const*, llvm::StringRef))
-0x1000031f0 c++   method   2      Lazy<(anonymous namespace)::ConformanceState>::defaultInitCallback(void*)
-0x100003650 c++   method   3      getRootSuperclass()::$_0::operator()() const::{lambda(void*)#1}::__invoke(void*)
-0x100008568 c++   method   4      getRootSuperclass()::$_0::operator()() const::TheLazy
+0x100002bb0 c++   method   2      swift51override_conformsToSwiftProtocol(swift::TargetMetadata<swift::InProcess> const*, swift::TargetProtocolDescriptor<swift::InProcess> const*, llvm::StringRef, swift::TargetProtocolConformanceDescriptor<swift::InProcess> const* (*)(swift::TargetMetadata<swift::InProcess> const*, swift::TargetProtocolDescriptor<swift::InProcess> const*, llvm::StringRef))
+0x1000031f0 c++   method   3      Lazy<(anonymous namespace)::ConformanceState>::defaultInitCallback(void*)
+0x100003650 c++   method   4      getRootSuperclass()::$_0::operator()() const::{lambda(void*)#1}::__invoke(void*)
+0x100008568 c++   method   5      getRootSuperclass()::$_0::operator()() const::TheLazy
 EOF
 RUN

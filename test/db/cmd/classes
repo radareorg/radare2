@@ -129,7 +129,7 @@ class Employer_1 {
     "methods": [
       {
         "name": "symbolic main.Greet.",
-        "flag": "section.5.__TEXT.__swift5_typeref",
+        "flag": "method.Greet.symbolic_main.Greet.",
         "rawname": "_symbolic $s4main5GreetP",
         "addr": 4294983428
       }

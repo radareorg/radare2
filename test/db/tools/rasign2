@@ -18,7 +18,7 @@ NAME=rasign2 -r
 FILE=-
 CMDS=!!rasign2 -r bins/elf/hello_world~main?
 EXPECT=<<EOF
-17
+18
 EOF
 RUN
 
@@ -26,7 +26,7 @@ NAME=rasign2 -rj
 FILE=-
 CMDS=!!rasign2 -rj bins/elf/hello_world~main?
 EXPECT=<<EOF
-18
+19
 EOF
 RUN
 
@@ -34,7 +34,7 @@ NAME=rasign2 -rAA
 FILE=-
 CMDS=!!rasign2 -rAA bins/elf/hello_world~main?
 EXPECT=<<EOF
-17
+18
 EOF
 RUN
 
@@ -42,15 +42,15 @@ NAME=rasign2 -AArj
 FILE=-
 CMDS=!!rasign2 -AArj bins/elf/hello_world~main?
 EXPECT=<<EOF
-18
+19
 EOF
 RUN
 
 NAME=rasign2 bytes
 FILE=-
-CMDS=!!rasign2 -r bins/elf/libverifyPass.so~za sym.imp.memcpy b
+CMDS=!!rasign2 -r bins/elf/libverifyPass.so~za memcpy b
 EXPECT=<<EOF
-za sym.imp.memcpy b 00c68fe202ca8ce2f4fbbce5
+za memcpy b 00c68fe202ca8ce2f4fbbce5
 EOF
 RUN
 
@@ -106,7 +106,7 @@ RUN
 
 NAME=rasign2 collision check
 FILE=-
-CMDS=!!rasign2 -cr bins/elf/hello_world~sym.imp.free~ C ?
+CMDS=!!rasign2 -cr bins/elf/hello_world~free~ C ?
 EXPECT=<<EOF
 7
 EOF

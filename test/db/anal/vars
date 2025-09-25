@@ -601,7 +601,6 @@ EOF
 EXPECT=<<EOF
             ;-- section.0.__TEXT.__text:
             ;-- entry0:
-            ;-- _main:
             ;-- func.100003f64:
 / 68: int main (int argc, char **argv, char **envp);
 |           ; arg int argc @ x0
@@ -630,7 +629,6 @@ EXPECT=<<EOF
 \           0x100003fa4      c0035fd6       ret
             ;-- section.0.__TEXT.__text:
             ;-- entry0:
-            ;-- _main:
             ;-- func.100003f64:
 / 68: int main (int argc, char **argv, char **envp);
 |           ; arg int argc @ x0

@@ -79,7 +79,6 @@ WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e 
 ret paths
          .-------------------------------------.
          |  0x100007ed8                        |
-         |   ;-- func.100007ed8:               |
          | 92: sym._retbool (int64_t arg_20h); |
          | ; arg int64_t arg_20h @ sp+0x40     |
          | ; var int64_t var_10h @ sp+0x10     |
@@ -190,7 +189,6 @@ EOF
 EXPECT=<<EOF
   ;-- section.0.__TEXT.__text:
   ;-- entry0:
-  ;-- _main:
   ;-- func.100003f88:
 32: int main (int argc);
 ; arg int argc @ x0

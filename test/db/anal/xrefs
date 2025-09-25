@@ -7,7 +7,7 @@ axt str.Hello__World__n
 pdi 16
 EOF
 EXPECT=<<EOF
-0x100000460   sym.func.100000460:
+0x100000460   sym._main:
 0x100000460             ff8300d1  sub sp, sp, 0x20
 0x100000464             fd7b01a9  stp x29, x30, [sp, 0x10]
 0x100000468             fd430091  add x29, sp, 0x10
@@ -26,7 +26,7 @@ EXPECT=<<EOF
 0x100000498             100240f9  ldr x16, [x16]
 0x10000049c             00021fd6  br x16
 (nofunc) 0x10000047c [STRN:r--] add x0, x0, str.Hello__World__n
-0x100000460   sym.func.100000460:
+0x100000460   sym._main:
 0x100000460             ff8300d1  sub sp, sp, 0x20
 0x100000464             fd7b01a9  stp x29, x30, [sp, 0x10]
 0x100000468             fd430091  add x29, sp, 0x10

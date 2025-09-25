@@ -15,7 +15,6 @@ var int64_t var_10h @ sp+0x10
 ---
             ;-- section.0.__TEXT.__text:
             ;-- entry0:
-            ;-- _main:
             ;-- func.100003f68:
             ;-- pc:
 / 56: int main (int64_t argc);

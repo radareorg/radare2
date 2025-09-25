@@ -84,8 +84,8 @@ EXPECT=<<EOF
 0x97bc 0x97d4 0x97dc 0x9854 0x97e4 0x9808
 0x9528 0x9530 0x9574
 0x9df0 0x9e34 0x9dd0
-0x95f4 0x9638 0x969c 0x977c
-0x98d8 0x991c 0x9948 0x9868 0x98c4 0x998c
+0x95f4 0x9638 0x9638 0x969c 0x969c 0x977c 0x977c
+0x98d8 0x991c 0x991c 0x9948 0x9868 0x98c4 0x998c 0x998c
 0x9ec4 0x12780 0x127c8
 0x126b0 0x126f8
 0x126c0 0x126d0
@@ -567,11 +567,32 @@ EXPECT=<<EOF
         "addr": 38456
       },
       {
+        "name": "__do_find_public_src(int, void const*, __cxxabiv1::__class_type_info const*, void const*) const",
+        "flag": "method.__cxxabiv1::__si_class_type_info.__do_find_public_src_int__void_const____cxxabiv1::__class_type_info_const__void_const__const",
+        "rawname": "_ZNK10__cxxabiv120__si_class_type_info20__do_find_public_srcEiPKvPKNS_17__class_type_infoES2_",
+        "lang": "c++",
+        "addr": 38456
+      },
+      {
         "name": "__do_dyncast(int, __cxxabiv1::__class_type_info::__sub_kind, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__dyncast_result&) const",
         "flag": "method.__cxxabiv1::__si_class_type_info.__do_dyncast_int____cxxabiv1::__class_type_info::__sub_kind____cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info::__dyncast_result__const",
         "rawname": "_ZNK10__cxxabiv120__si_class_type_info12__do_dyncastEiNS_17__class_type_info10__sub_kindEPKS1_PKvS4_S6_RNS1_16__dyncast_resultE",
         "lang": "c++",
         "addr": 38556
+      },
+      {
+        "name": "__do_dyncast(int, __cxxabiv1::__class_type_info::__sub_kind, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__dyncast_result&) const",
+        "flag": "method.__cxxabiv1::__si_class_type_info.__do_dyncast_int____cxxabiv1::__class_type_info::__sub_kind____cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info::__dyncast_result__const",
+        "rawname": "_ZNK10__cxxabiv120__si_class_type_info12__do_dyncastEiNS_17__class_type_info10__sub_kindEPKS1_PKvS4_S6_RNS1_16__dyncast_resultE",
+        "lang": "c++",
+        "addr": 38556
+      },
+      {
+        "name": "__do_upcast(__cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__upcast_result&) const",
+        "flag": "method.__cxxabiv1::__si_class_type_info.__do_upcast___cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info::__upcast_result__const",
+        "rawname": "_ZNK10__cxxabiv120__si_class_type_info11__do_upcastEPKNS_17__class_type_infoEPKvRNS1_15__upcast_resultE",
+        "lang": "c++",
+        "addr": 38780
       },
       {
         "name": "__do_upcast(__cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__upcast_result&) const",
@@ -603,6 +624,13 @@ EXPECT=<<EOF
         "addr": 39196
       },
       {
+        "name": "__do_upcast(__cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__upcast_result&) const",
+        "flag": "method.__cxxabiv1::__class_type_info.__do_upcast___cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info::__upcast_result__const",
+        "rawname": "_ZNK10__cxxabiv117__class_type_info11__do_upcastEPKS0_PKvRNS0_15__upcast_resultE",
+        "lang": "c++",
+        "addr": 39196
+      },
+      {
         "name": "__do_catch(std::type_info const*, void**, unsigned int) const",
         "flag": "method.__cxxabiv1::__class_type_info.__do_catch_std::type_info_const__void__unsigned_int__const",
         "rawname": "_ZNK10__cxxabiv117__class_type_info10__do_catchEPKSt9type_infoPPvj",
@@ -622,6 +650,13 @@ EXPECT=<<EOF
         "rawname": "_ZNK10__cxxabiv117__class_type_info20__do_find_public_srcEiPKvPKS0_S2_",
         "lang": "c++",
         "addr": 39108
+      },
+      {
+        "name": "__do_dyncast(int, __cxxabiv1::__class_type_info::__sub_kind, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__dyncast_result&) const",
+        "flag": "method.__cxxabiv1::__class_type_info.__do_dyncast_int____cxxabiv1::__class_type_info::__sub_kind____cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info::__dyncast_result__const",
+        "rawname": "_ZNK10__cxxabiv117__class_type_info12__do_dyncastEiNS0_10__sub_kindEPKS0_PKvS3_S5_RNS0_16__dyncast_resultE",
+        "lang": "c++",
+        "addr": 39308
       },
       {
         "name": "__do_dyncast(int, __cxxabiv1::__class_type_info::__sub_kind, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__dyncast_result&) const",
@@ -836,15 +871,20 @@ fs classes
 'f class.__cxxabiv1::__si_class_type_info = 0x95f4
 'f method.__cxxabiv1::__si_class_type_info.~__si_class_type_info() = 0x95f4
 'f method.__cxxabiv1::__si_class_type_info.__do_find_public_src(int,_void_const*,___cxxabiv1::__class_type_info_const*,_void_const*)_const = 0x9638
+'f method.__cxxabiv1::__si_class_type_info.__do_find_public_src(int,_void_const*,___cxxabiv1::__class_type_info_const*,_void_const*)_const = 0x9638
 'f method.__cxxabiv1::__si_class_type_info.__do_dyncast(int,___cxxabiv1::__class_type_info::__sub_kind,___cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info::__dyncast_result&)_const = 0x969c
+'f method.__cxxabiv1::__si_class_type_info.__do_dyncast(int,___cxxabiv1::__class_type_info::__sub_kind,___cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info::__dyncast_result&)_const = 0x969c
+'f method.__cxxabiv1::__si_class_type_info.__do_upcast(__cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info::__upcast_result&)_const = 0x977c
 'f method.__cxxabiv1::__si_class_type_info.__do_upcast(__cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info::__upcast_result&)_const = 0x977c
 'td struct __cxxabiv1::__si_class_type_info { char empty[0];};
 'f class.__cxxabiv1::__class_type_info = 0x9868
 'f method.__cxxabiv1::__class_type_info.~__class_type_info() = 0x98d8
 'f method.__cxxabiv1::__class_type_info.__do_upcast(__cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info::__upcast_result&)_const = 0x991c
+'f method.__cxxabiv1::__class_type_info.__do_upcast(__cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info::__upcast_result&)_const = 0x991c
 'f method.__cxxabiv1::__class_type_info.__do_catch(std::type_info_const*,_void**,_unsigned_int)_const = 0x9948
 'f method.__cxxabiv1::__class_type_info.__do_upcast(__cxxabiv1::__class_type_info_const*,_void**)_const = 0x9868
 'f method.__cxxabiv1::__class_type_info.__do_find_public_src(int,_void_const*,___cxxabiv1::__class_type_info_const*,_void_const*)_const = 0x98c4
+'f method.__cxxabiv1::__class_type_info.__do_dyncast(int,___cxxabiv1::__class_type_info::__sub_kind,___cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info::__dyncast_result&)_const = 0x998c
 'f method.__cxxabiv1::__class_type_info.__do_dyncast(int,___cxxabiv1::__class_type_info::__sub_kind,___cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info::__dyncast_result&)_const = 0x998c
 'td struct __cxxabiv1::__class_type_info { char empty[0];};
 'f class.__gnu_cxx = 0x9ec4

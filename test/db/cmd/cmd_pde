@@ -121,7 +121,6 @@ pde 12
 EOF
 EXPECT=<<EOF
 ;-- entry0:
-;-- __start:
 ;-- _start:
 ;-- pc:
 0x000804f0      bal 0x804f8

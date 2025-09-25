@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake, nibble, Dennis Goodlett */
+/* radare - LGPL - Copyright 2009-2025 - pancake, nibble, Dennis Goodlett */
 
 #if R_INCLUDE_BEGIN
 
@@ -173,6 +173,25 @@ static inline bool za_add(RCore *core, const char *input) {
 	case R_SIGN_NAME:
 		ret = r_sign_add_name (core->anal, name, sig);
 		break;
+	case R_SIGN_RAWNAME:
+	case R_SIGN_DEMANGLED:
+		{
+			char *dec = (char *)r_base64_decode_dyn (sig, -1, NULL);
+			RSignItem *it = item_new_named (core->anal, name);
+			if (it) {
+				if (t == R_SIGN_RAWNAME) {
+					it->rawname = dec? dec: strdup (sig);
+				} else {
+					it->demangled = dec? dec: strdup (sig);
+				}
+				ret = r_sign_add_item (core->anal, it);
+				if (!ret) {
+					free (dec);
+				}
+				r_sign_item_free (it);
+			}
+			break;
+		}
 	case R_SIGN_TYPES:
 		ret = r_sign_add_types (core->anal, name, sig);
 		break;
@@ -462,7 +481,18 @@ struct ctxSearchCB {
 
 static void apply_name(RCore *core, RAnalFunction *fcn, RSignItem *it, bool rad) {
 	R_RETURN_IF_FAIL (core && fcn && it && it->name);
-	const char *name = it->realname? it->realname: it->name;
+	// Prefer demangled or mangled depending on setting; keep the alternate as realname
+	const bool prefer_mangled = r_config_get_b (core->config, "zign.mangled");
+	const char *best = NULL;
+	const char *alt = NULL;
+	if (prefer_mangled) {
+		best = it->rawname? it->rawname: it->name;
+		alt = it->demangled? it->demangled: it->realname;
+	} else {
+		best = it->demangled? it->demangled: it->name;
+		alt = it->rawname? it->rawname: it->realname;
+	}
+	const char *name = best? best: (it->realname? it->realname: it->name);
 	if (rad) {
 		char *tmp = r_name_filter_dup (name);
 		if (tmp) {
@@ -476,6 +506,13 @@ static void apply_name(RCore *core, RAnalFunction *fcn, RSignItem *it, bool rad)
 		r_flag_rename (core->flags, flag, name);
 	}
 	r_anal_function_rename (fcn, name);
+	// set alternate spelling as realname for the function flag if available
+	if (R_STR_ISNOTEMPTY (alt)) {
+		RFlagItem *nf = r_flag_get (core->flags, fcn->name);
+		if (nf) {
+			r_flag_item_set_realname (core->flags, nf, alt);
+		}
+	}
 	if (core->anal->cb.on_fcn_rename) {
 		core->anal->cb.on_fcn_rename (core->anal, core->anal->user, fcn, name);
 	}
