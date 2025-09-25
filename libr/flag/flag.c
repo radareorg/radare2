@@ -621,10 +621,10 @@ static int flagItemPriority(const RFlagItem *item) {
 		return 100;
 	}
 	if (r_str_startswith (n, "method.")) {
-		return 2;
+		return 1;
 	}
 	if (r_str_startswith (n, "sym.")) {
-		return 1;
+		return 2;
 	}
 	if (r_str_startswith (n, "fn.")) {
 		return 3;

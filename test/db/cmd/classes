@@ -129,7 +129,7 @@ class Employer_1 {
     "methods": [
       {
         "name": "symbolic main.Greet.",
-        "flag": "section.5.__TEXT.__swift5_typeref",
+        "flag": "sym.Greet._symbolic__s4main5GreetP",
         "rawname": "_symbolic $s4main5GreetP",
         "addr": 4294983428
       }
@@ -142,7 +142,7 @@ class Employer_1 {
     "methods": [
       {
         "name": "symbolic main.Employee.allocator",
-        "flag": "method.Employee_1.symbolic_main.Employee.allocator",
+        "flag": "sym.Employee._symbolic_______4main8EmployeeC",
         "rawname": "_symbolic _____ 4main8EmployeeC",
         "addr": 4294983444
       }
@@ -155,7 +155,7 @@ class Employer_1 {
     "methods": [
       {
         "name": "symbolic main.Employer.allocator",
-        "flag": "method.Employer_1.symbolic_main.Employer.allocator",
+        "flag": "sym.Employer._symbolic_______4main8EmployerC",
         "rawname": "_symbolic _____ 4main8EmployerC",
         "addr": 4294983454
       }
