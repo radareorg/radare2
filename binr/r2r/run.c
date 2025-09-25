@@ -567,6 +567,9 @@ R_API R2RSubprocess *r2r_subprocess_start(
 		r_sys_perror ("subproc-start fcntl");
 		goto error;
 	}
+	/* Prevent these internal notif pipes from being inherited by children */
+	(void)fcntl (proc->killpipe[0], F_SETFD, FD_CLOEXEC);
+	(void)fcntl (proc->killpipe[1], F_SETFD, FD_CLOEXEC);
 
 	if (pipe (stdin_pipe) == -1) {
 		r_sys_perror ("subproc-start pipe");
@@ -603,6 +606,9 @@ R_API R2RSubprocess *r2r_subprocess_start(
 		return NULL;
 	}
 	if (proc->pid == 0) {
+		/* Ensure child is leader of a new process group so the whole
+		 * subtree can be killed by signaling the group. */
+		(void)setpgid (0, 0);
 		dup_retry (stdin_pipe, 0, STDIN_FILENO);
 		dup_retry (stdout_pipe, 1, STDOUT_FILENO);
 		dup_retry (stderr_pipe, 1, STDERR_FILENO);
@@ -625,6 +631,11 @@ R_API R2RSubprocess *r2r_subprocess_start(
 	}
 
 	// parent
+	/* Best-effort: set the child's pgid from the parent side too. It may
+	 * fail if the child already changed pgid, so ignore errors. */
+	if (proc->pid > 0) {
+		(void)setpgid (proc->pid, proc->pid);
+	}
 	close (stdin_pipe[0]);
 	close (stdout_pipe[1]);
 	close (stderr_pipe[1]);
@@ -764,8 +775,9 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 }
 
 R_API void r2r_subprocess_kill(R2RSubprocess *proc) {
-	if (kill (proc->pid, SIGKILL) == -1) {
-		r_sys_perror ("kill");
+	/* Kill the whole process group to ensure grandchildren are terminated */
+	if (kill (-proc->pid, SIGKILL) == -1) {
+		r_sys_perror ("killpg");
 	}
 }
 
