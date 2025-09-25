@@ -1205,7 +1205,6 @@ fs
 afl
 EOF
 EXPECT=<<EOF
-    0 * classes
     0 * format
     4 * functions
    24 * registers
