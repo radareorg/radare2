@@ -4125,7 +4125,7 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 	RBinClass *c;
 	RBinField *f;
 	RList *cs = r_bin_get_classes (core->bin);
-	if (!cs) {
+	if (!cs || r_list_empty (cs)) {
 		if (IS_MODE_JSON (mode)) {
 			pj_a (pj);
 			pj_end (pj);
