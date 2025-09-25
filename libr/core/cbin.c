@@ -2608,14 +2608,14 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 					sn.methflag = prname;
 					r_name_filter (sn.methflag, -1);
 				}
-					if (fi) {
-						r_flag_item_set_realname (core->flags, fi, sn.methname);
-						if ((fi->addr - core->flags->base) == addr) {
-							r_flag_unset (core->flags, fi);
-							/* r_flag_unset frees the RFlagItem, avoid using fi afterwards */
-							fi = NULL;
-						}
-					} else {
+				if (fi) {
+					r_flag_item_set_realname (core->flags, fi, sn.methname);
+					if ((fi->addr - core->flags->base) == addr) {
+						r_flag_unset (core->flags, fi);
+						/* r_flag_unset frees the RFlagItem, avoid using fi afterwards */
+						fi = NULL;
+					}
+				} else {
 					fi = r_flag_set (core->flags, sn.methflag, addr, symbol->size);
 #if 0
 					char *comment = (fi && fi->comment) ? strdup (fi->comment) : NULL;
@@ -2625,13 +2625,13 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 					}
 #endif
 				}
-					if (fi) {
-						RFlagItem *fi2 = r_flag_get (core->flags, sn.methflag);
-						if (fi2) {
-							free (fi2->rawname);
-							fi2->rawname = sn.name? strdup (sn.name): NULL;
-						}
+				if (fi) {
+					RFlagItem *fi2 = r_flag_get (core->flags, sn.methflag);
+					if (fi2) {
+						free (fi2->rawname);
+						fi2->rawname = sn.name? strdup (sn.name): NULL;
 					}
+				}
 			} else {
 				const char *n = sn.demname ? sn.demname : name;
 				const char *fn = sn.demflag ? sn.demflag : sn.nameflag;
