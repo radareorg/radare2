@@ -167,12 +167,6 @@ static bool r2r_chdir(const char *argv0) {
 #endif
 }
 
-
-struct TestExec {
-	pid_t pid;
-	int out_r, err_r; /* read ends */
-};
-
 static bool r2r_test_run_unit(void) {
 	char *make = r_file_path ("gmake");
 	if (!make) {
