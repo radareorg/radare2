@@ -1,12 +1,6 @@
 /* radare - LGPL - Copyright 2020-2025 - pancake, thestr4ng3r */
 
 #include "r2r.h"
-#include <fcntl.h>
-#include <signal.h>
-#include <sys/wait.h>
-#include <pthread.h>
-#include <poll.h>
-#include <unistd.h>
 
 #ifndef PATH_MAX
 #define PATH_MAX 4096
