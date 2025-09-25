@@ -58,7 +58,7 @@ EXPECT=<<EOF
 |      ..-> 0x00015660      7100ee010000   invoke-static {}, Lcom/stericson/RootTools/RootTools.isAccessGiven()Z ; 0x1ee ; method.public.static.Lcom_stericson_RootTools_RootTools.Lcom_stericson_RootTools_RootTools.method.isAccessGiven__Z
 |      ::   0x00015666      0a04           move-result v4
 |     ,===< 0x00015668      39041e00       if-nez v4, 0x000156a4
-|     |::   0x0001566c      1a044201       const-string v4, str.ERROR:_No_root_access_to_this_device._ ; 0x2c9dd ; "&ERROR: No root access to this device.\n"
+|     |::   0x0001566c      1a044201       const-string v4, str.ERROR:_No_root_access_to_this_device. ; 0x2c9dd ; "&ERROR: No root access to this device.\n"
 |     |::   0x00015670      6e2027024800   invoke-virtual {v8, v4}, Lcom/stericson/RootTools/SanityCheckRootTools.print(Ljava/lang/CharSequence;)V ; 0x227 ; method.protected.Lcom_stericson_RootTools_SanityCheckRootTools.Lcom_stericson_RootTools_SanityCheckRootTools.method.print_Ljava_lang_CharSequence__V
 |     |::   ; CODE XREFS from entry0 @ 0xea(x), 0x156e2(x)
 |   ..----> 0x00015676      0e00           return-void
