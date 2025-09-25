@@ -2784,7 +2784,13 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 					r_name_filter (sn.methflag, -1);
 				}
 				if (fi) {
-					r_flag_item_set_realname (core->flags, fi, sn.methname);
+					/* Prefer demangled method name when available */
+					char *meth_realname = NULL;
+					if (sn.demname && sn.classname) {
+						meth_realname = r_str_newf ("%s::%s", sn.classname, sn.demname);
+					}
+					r_flag_item_set_realname (core->flags, fi, meth_realname? meth_realname: sn.methname);
+					free (meth_realname);
 					if ((fi->addr - core->flags->base) == addr) {
 						r_flag_unset (core->flags, fi);
 						/* r_flag_unset frees the RFlagItem, avoid using fi afterwards */
@@ -2870,7 +2876,8 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 				pj_ks (pj, "demname", sn.demname);
 			}
 			pj_ks (pj, "flagname", (bin_demangle && sn.demflag) ? sn.demflag : sn.nameflag);
-			pj_ks (pj, "realname", r_symbol_name); // (bin_demangle && sn.demname) ? sn.demname : r_symbol_name);
+			/* Prefer demangled real name when available */
+			pj_ks (pj, "realname", (bin_demangle && sn.demname) ? sn.demname : r_symbol_name);
 			if (rawname) {
 				pj_ks (pj, "rawname", rawname);
 			}
