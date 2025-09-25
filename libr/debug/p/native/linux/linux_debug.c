@@ -1198,22 +1198,22 @@ bool linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		// ARM64 FPU register reading using ptrace GETREGSET
 		struct iovec iov;
 		ut8 fpu_regs[512]; // ARM64 FPU register space (32 * 16 bytes for v0-v31)
-		memset(fpu_regs, 0, sizeof(fpu_regs));
+		memset (fpu_regs, 0, sizeof (fpu_regs));
 		iov.iov_base = fpu_regs;
-		iov.iov_len = sizeof(fpu_regs);
+		iov.iov_len = sizeof (fpu_regs);
 
-		ret = r_debug_ptrace(dbg, PTRACE_GETREGSET, pid, (void*)(size_t)NT_PRFPREG, &iov);
+		ret = r_debug_ptrace (dbg, PTRACE_GETREGSET, pid, (void*)(size_t)NT_PRFPREG, &iov);
 		if (ret != 0) {
-			r_sys_perror("PTRACE_GETREGSET NT_PRFPREG");
+			r_sys_perror ("PTRACE_GETREGSET NT_PRFPREG");
 			return false;
 		}
 
 		if (showfpu) {
-			print_fpu((void *)fpu_regs);
+			print_fpu (cons, (void *)fpu_regs);
 		}
 
-		size = R_MIN(iov.iov_len, size);
-		memcpy(buf, fpu_regs, size);
+		size = R_MIN (iov.iov_len, size);
+		memcpy (buf, fpu_regs, size);
 		return size;
 #else
 		if (showfpu) {
@@ -1367,9 +1367,9 @@ bool linux_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 		iov.iov_base = (void*)buf;
 		iov.iov_len = size;
 
-		int ret = r_debug_ptrace(dbg, PTRACE_SETREGSET, pid, (void*)(size_t)NT_PRFPREG, &iov);
+		int ret = r_debug_ptrace (dbg, PTRACE_SETREGSET, pid, (void*)(size_t)NT_PRFPREG, &iov);
 		if (ret != 0) {
-			r_sys_perror("PTRACE_SETREGSET NT_PRFPREG");
+			r_sys_perror ("PTRACE_SETREGSET NT_PRFPREG");
 			return false;
 		}
 		return true;
