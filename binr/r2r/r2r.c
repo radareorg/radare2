@@ -167,119 +167,11 @@ static bool r2r_chdir(const char *argv0) {
 #endif
 }
 
-#if 0
-static pthread_mutex_t r2r_print_mx = PTHREAD_MUTEX_INITIALIZER;
-
-static void r2r_print_fail_block(const char *buf, size_t len) {
-	pthread_mutex_lock (&r2r_print_mx);
-	(void)write (STDOUT_FILENO, buf, len);
-	pthread_mutex_unlock (&r2r_print_mx);
-}
-static int mkpipe_cloexec(int p[2]) {
-	if (pipe (p) == -1) {
-		return -1;
-	}
-	fcntl (p[0], F_SETFD, FD_CLOEXEC);
-	fcntl (p[1], F_SETFD, FD_CLOEXEC);
-	return 0;
-}
-#endif
-
 
 struct TestExec {
 	pid_t pid;
 	int out_r, err_r; /* read ends */
 };
-
-#if 0
-static bool spawn_test_proc(char *const argv[], struct TestExec *tx) {
-	int pout[2], perr[2];
-	if (mkpipe_cloexec (pout) || mkpipe_cloexec (perr)) {
-		return false;
-	}
-	pid_t pid = fork ();
-	if (pid < 0) {
-		close (pout[0]);
-		close (pout[1]);
-		close (perr[0]);
-		close (perr[1]);
-		return false;
-	}
-	if (pid == 0) {
-		setpgid (0, 0);
-		dup2 (pout[1], STDOUT_FILENO);
-		dup2 (perr[1], STDERR_FILENO);
-		close (pout[0]);
-		close (pout[1]);
-		close (perr[0]);
-		close (perr[1]);
-		execvp (argv[0], argv);
-		_exit (127);
-	}
-	setpgid (pid, pid);
-	close (pout[1]);
-	close (perr[1]);
-	tx->pid = pid;
-	tx->out_r = pout[0];
-	tx->err_r = perr[0];
-	return true;
-}
-
-static void kill_and_drain(struct TestExec *tx, int timeout_ms,
-	RStrBuf *out, RStrBuf *err) {
-	const int nfds = 2;
-	struct pollfd pf[nfds];
-	pf[0].fd = tx->out_r;
-	pf[0].events = POLLIN;
-	pf[1].fd = tx->err_r;
-	pf[1].events = POLLIN;
-	int status = 0;
-	bool running = true;
-	int elapsed = 0;
-	const int step = 25; /* ms */
-	while (running) {
-		pid_t w = waitpid (tx->pid, &status, WNOHANG);
-		if (w == tx->pid) {
-			break;
-		}
-		if (timeout_ms > 0 && elapsed >= timeout_ms) {
-			/* kill whole process group */
-			killpg (tx->pid, SIGKILL);
-		}
- (void)poll (pf, nfds, step);
-		for (int i = 0; i < nfds; i++) {
-			if (pf[i].revents & POLLIN) {
-				char buf[4096];
-				ssize_t n = read (pf[i].fd, buf, sizeof (buf));
-				if (n > 0) {
- (i == 0 ? r_strbuf_append_n (out, buf, n)
-						: r_strbuf_append_n (err, buf, n));
-				}
-			}
-		}
-		elapsed += step;
-	}
-	/* drain until EOF */
-	for (;;) {
-		int ready = poll (pf, nfds, 50);
-		if (ready <= 0) {
-			break;
-		}
-		for (int i = 0; i < nfds; i++) {
-			if (pf[i].revents & POLLIN) {
-				char buf[4096];
-				ssize_t n = read (pf[i].fd, buf, sizeof (buf));
-				if (n > 0) {
- (i == 0 ? r_strbuf_append_n (out, buf, n)
-						: r_strbuf_append_n (err, buf, n));
-				}
-			}
-		}
-	}
-	close (tx->out_r);
-	close (tx->err_r);
-}
-#endif
 
 static bool r2r_test_run_unit(void) {
 	char *make = r_file_path ("gmake");
