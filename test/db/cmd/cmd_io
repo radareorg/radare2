@@ -51,6 +51,7 @@ subsys   any
 va       false
   ;-- entry1:
   ;-- sym.TestVariableSwitchUp.TestMultipleVariable:
+  ;-- TestMultipleVariable:
 / (fcn) method.TestVariableSwitchUp.TestMultipleVariable 37
 | 0x000002fd      1064           bipush 100
 | 0x000002ff      b8000f         invokestatic java/lang/Integer/valueOf(I)Ljava/lang/Integer;
