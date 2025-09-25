@@ -36,6 +36,8 @@ typedef struct r2r_state_t {
 } R2RState;
 
 static RThreadFunctionRet worker_th(RThread *th);
+/* Mutex to serialize multi-line failure printing across threads */
+static RThreadLock *r2r_print_lock = NULL;
 static void print_state(R2RState *state, ut64 prev_completed);
 static void print_log(R2RState *state, ut64 prev_completed, ut64 prev_paths_completed);
 static void interact(R2RState *state);
@@ -472,6 +474,9 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 	atexit (r2r_subprocess_fini);
+
+	/* print lock for atomic multi-line output */
+	r2r_print_lock = r_th_lock_new (false);
 
 	char *have_options = r_sys_getenv ("ASAN_OPTIONS");
 	if (have_options) {
@@ -980,9 +985,13 @@ R_API bool r_test_cmp_cmd_output(const char *output, const char *expect, const c
 }
 
 static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
+    if (r2r_print_lock) {
+        r_th_lock_enter (r2r_print_lock);
+    }
 	if (result->run_failed) {
 		printf (Color_RED "RUN FAILED (e.g. wrong radare2 path)" Color_RESET "\n");
-		return;
+        if (r2r_print_lock) { r_th_lock_leave (r2r_print_lock); }
+        return;
 	}
 	switch (result->test->type) {
 	case R2R_TEST_TYPE_CMD: {
@@ -1019,6 +1028,9 @@ static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
 		printf ("-- stderr\n%s\n", result->proc_out->err);
 		printf ("-- exit status: "Color_RED"%d"Color_RESET"\n", result->proc_out->ret);
 		break;
+	}
+	if (r2r_print_lock) {
+		r_th_lock_leave (r2r_print_lock);
 	}
 }
 
