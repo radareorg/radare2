@@ -4125,15 +4125,6 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 	RBinClass *c;
 	RBinField *f;
 	RList *cs = r_bin_get_classes (core->bin);
-	if (!cs || r_list_empty (cs)) {
-		if (IS_MODE_JSON (mode)) {
-			pj_a (pj);
-			pj_end (pj);
-			return true;
-		}
-		return false;
-	}
-	// XXX: support for classes is broken and needs more love
 	if (IS_MODE_JSON (mode)) {
 		pj_a (pj);
 	} else if (IS_MODE_SET (mode)) {
@@ -4141,6 +4132,14 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 	} else if (IS_MODE_RAD (mode) && !IS_MODE_CLASSDUMP (mode)) {
 		r_cons_println (core->cons, "fs classes");
 	}
+	if (!cs || r_list_empty (cs)) {
+		if (IS_MODE_JSON (mode)) {
+			pj_end (pj);
+			return true;
+		}
+		return false;
+	}
+	// XXX: support for classes is broken and needs more love
 	/* Don’t emit class flags when demangling is disabled; keeps “mangled-only” views clean */
 	if (!r_config_get_b (core->config, "bin.demangle")) {
 		return true; /* still fill JSON if needed, but skip flags/pretty names */

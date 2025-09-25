@@ -336,6 +336,7 @@ CMDS=<<EOF
 fs
 EOF
 EXPECT=<<EOF
+    0 * classes
     5 * format
     3 * imports
     3 * relocs
@@ -354,6 +355,7 @@ aa;fs *;fs
 afl~?
 EOF
 EXPECT=<<EOF
+    0 * classes
     5 * format
     0 * functions
     3 * imports
@@ -373,6 +375,7 @@ CMDS=<<EOF
 s entry0+4; af;fs *;fs
 EOF
 EXPECT=<<EOF
+    0 * classes
     5 * format
     1 * functions
     3 * imports
