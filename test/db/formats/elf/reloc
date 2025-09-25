@@ -108,7 +108,7 @@ EXPECT=<<EOF
 call reloc.__fentry__
 push ebp
 mov ebp, esp
-push str.8D___n
+push str.8D____n
 call reloc.printk
 xor eax, eax
 leave

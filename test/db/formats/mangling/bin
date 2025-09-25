@@ -207,7 +207,7 @@ EXPECT=<<EOF
             ; CALL XREF from sym._init @ 0x8049008(x)
             ; CALL XREF from QtPrivate::RefCount::deref() @ 0x8049349(x) ; method.QtPrivate::RefCount.deref__
             ; CALL XREF from QString::QString(char const*) @ 0x804939d(x) ; method.QString.QString_char_const_
-            ; CALL XREF from QString::~QString() @ 0x80493e5(x) ; method.QString.QString__
+            ; CALL XREF from QString::~QString() @ 0x80493e5(x) ; method.QString._QString__
             ; CALL XREF from sym._fini @ 0x80495d4(x)
 / 4: sym.__x86.get_pc_thunk.bx ();
 |           0x08049140      mov ebx, dword [esp]
@@ -220,7 +220,7 @@ EXPECT=<<EOF
 |   ; CALL XREF from QString::QString(char const*) @ 0x804939d(x) |
 |     ; method.QString.QString_char_const_                        |
 |   ; CALL XREF from QString::~QString() @ 0x80493e5(x)           |
-|     ; method.QString.QString__                                  |
+|     ; method.QString._QString__                                 |
 |   ; CALL XREF from sym._fini @ 0x80495d4(x)                     |
 | 4: sym.__x86.get_pc_thunk.bx ();                                |
 | mov ebx, dword [esp]                                            |
@@ -230,7 +230,7 @@ EXPECT=<<EOF
             ; CALL XREF from sym._init @ 0x8049008(x)
             ; CALL XREF from method.QtPrivate::RefCount.deref__ @ 0x8049349(x)
             ; CALL XREF from method.QString.QString_char_const_ @ 0x804939d(x)
-            ; CALL XREF from method.QString.QString__ @ 0x80493e5(x)
+            ; CALL XREF from method.QString._QString__ @ 0x80493e5(x)
             ; CALL XREF from sym._fini @ 0x80495d4(x)
 / 4: sym.__x86.get_pc_thunk.bx ();
 |           0x08049140      mov ebx, dword [esp]
