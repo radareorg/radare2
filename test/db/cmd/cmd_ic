@@ -320,7 +320,7 @@ EXPECT=<<EOF
     "methods": [
       {
         "name": "~exception()",
-        "flag": "method.std::exception.exception__",
+        "flag": "method.std::exception._exception__",
         "rawname": "_ZNSt9exceptionD0Ev",
         "lang": "c++",
         "addr": 34948
@@ -342,7 +342,7 @@ EXPECT=<<EOF
     "methods": [
       {
         "name": "~bad_exception()",
-        "flag": "method.std::bad_exception.bad_exception__",
+        "flag": "method.std::bad_exception._bad_exception__",
         "rawname": "_ZNSt13bad_exceptionD0Ev",
         "lang": "c++",
         "addr": 34972
@@ -364,7 +364,7 @@ EXPECT=<<EOF
     "methods": [
       {
         "name": "~__forced_unwind()",
-        "flag": "method.__cxxabiv1::__forced_unwind.__forced_unwind__",
+        "flag": "method.__cxxabiv1::__forced_unwind.___forced_unwind__",
         "rawname": "_ZN10__cxxabiv115__forced_unwindD0Ev",
         "lang": "c++",
         "addr": 35012
@@ -379,7 +379,7 @@ EXPECT=<<EOF
     "methods": [
       {
         "name": "~__foreign_exception()",
-        "flag": "method.__cxxabiv1::__foreign_exception.__foreign_exception__",
+        "flag": "method.__cxxabiv1::__foreign_exception.___foreign_exception__",
         "rawname": "_ZN10__cxxabiv119__foreign_exceptionD0Ev",
         "lang": "c++",
         "addr": 35036
@@ -394,7 +394,7 @@ EXPECT=<<EOF
     "methods": [
       {
         "name": "~__eh_globals_init()",
-        "flag": "method.__eh_globals_init.__eh_globals_init__",
+        "flag": "method.__eh_globals_init.___eh_globals_init__",
         "rawname": "_ZN17__eh_globals_initD1Ev",
         "lang": "c++",
         "addr": 35204
@@ -431,7 +431,7 @@ EXPECT=<<EOF
     "methods": [
       {
         "name": "~__fundamental_type_info()",
-        "flag": "method.__cxxabiv1::__fundamental_type_info.__fundamental_type_info__",
+        "flag": "method.__cxxabiv1::__fundamental_type_info.___fundamental_type_info__",
         "rawname": "_ZN10__cxxabiv123__fundamental_type_infoD0Ev",
         "lang": "c++",
         "addr": 38116
@@ -446,7 +446,7 @@ EXPECT=<<EOF
     "methods": [
       {
         "name": "~type_info()",
-        "flag": "method.std::type_info.type_info__",
+        "flag": "method.std::type_info._type_info__",
         "rawname": "_ZNSt9type_infoD0Ev",
         "lang": "c++",
         "addr": 38844
@@ -503,7 +503,7 @@ EXPECT=<<EOF
       },
       {
         "name": "~__pointer_type_info()",
-        "flag": "method.__cxxabiv1::__pointer_type_info.__pointer_type_info__",
+        "flag": "method.__cxxabiv1::__pointer_type_info.___pointer_type_info__",
         "rawname": "_ZN10__cxxabiv119__pointer_type_infoD0Ev",
         "lang": "c++",
         "addr": 38192
@@ -525,7 +525,7 @@ EXPECT=<<EOF
     "methods": [
       {
         "name": "~__pbase_type_info()",
-        "flag": "method.__cxxabiv1::__pbase_type_info.__pbase_type_info__",
+        "flag": "method.__cxxabiv1::__pbase_type_info.___pbase_type_info__",
         "rawname": "_ZN10__cxxabiv117__pbase_type_infoD0Ev",
         "lang": "c++",
         "addr": 40432
@@ -554,7 +554,7 @@ EXPECT=<<EOF
     "methods": [
       {
         "name": "~__si_class_type_info()",
-        "flag": "method.__cxxabiv1::__si_class_type_info.__si_class_type_info__",
+        "flag": "method.__cxxabiv1::__si_class_type_info.___si_class_type_info__",
         "rawname": "_ZN10__cxxabiv120__si_class_type_infoD0Ev",
         "lang": "c++",
         "addr": 38388
@@ -590,7 +590,7 @@ EXPECT=<<EOF
     "methods": [
       {
         "name": "~__class_type_info()",
-        "flag": "method.__cxxabiv1::__class_type_info.__class_type_info__",
+        "flag": "method.__cxxabiv1::__class_type_info.___class_type_info__",
         "rawname": "_ZN10__cxxabiv117__class_type_infoD0Ev",
         "lang": "c++",
         "addr": 39128
@@ -676,7 +676,7 @@ EXPECT=<<EOF
       },
       {
         "name": "~__concurrence_lock_error()",
-        "flag": "method.__gnu_cxx::__concurrence_lock_error.__concurrence_lock_error__",
+        "flag": "method.__gnu_cxx::__concurrence_lock_error.___concurrence_lock_error__",
         "rawname": "_ZN9__gnu_cxx24__concurrence_lock_errorD0Ev",
         "lang": "c++",
         "addr": 75512
@@ -698,7 +698,7 @@ EXPECT=<<EOF
       },
       {
         "name": "~__concurrence_unlock_error()",
-        "flag": "method.__gnu_cxx::__concurrence_unlock_error.__concurrence_unlock_error__",
+        "flag": "method.__gnu_cxx::__concurrence_unlock_error.___concurrence_unlock_error__",
         "rawname": "_ZN9__gnu_cxx26__concurrence_unlock_errorD0Ev",
         "lang": "c++",
         "addr": 75472
@@ -713,7 +713,7 @@ EXPECT=<<EOF
     "methods": [
       {
         "name": "~bad_cast()",
-        "flag": "method.std::bad_cast.bad_cast__",
+        "flag": "method.std::bad_cast._bad_cast__",
         "rawname": "_ZNSt8bad_castD0Ev",
         "lang": "c++",
         "addr": 76760
@@ -735,7 +735,7 @@ EXPECT=<<EOF
     "methods": [
       {
         "name": "~bad_typeid()",
-        "flag": "method.std::bad_typeid.bad_typeid__",
+        "flag": "method.std::bad_typeid._bad_typeid__",
         "rawname": "_ZNSt10bad_typeidD0Ev",
         "lang": "c++",
         "addr": 76844
