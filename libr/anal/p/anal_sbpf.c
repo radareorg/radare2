@@ -365,6 +365,15 @@ static void sbpf_create_string(RAnal *anal, ut64 addr, ut32 size, ut64 xref_addr
 
 		R_LOG_INFO ("Calling anal->flb.set with flag name: %s", flagname);
 
+		// Unset any existing flag at this address first
+		if (anal->flb.get_at) {
+			RFlagItem *existing = anal->flb.get_at (anal->flb.f, addr, false);
+			if (existing && anal->flb.unset) {
+				R_LOG_DEBUG ("Unsetting existing flag %s at 0x%"PFMT64x, existing->name, addr);
+				anal->flb.unset (anal->flb.f, existing);
+			}
+		}
+
 		// Create the flag
 		RFlagItem *item = anal->flb.set(anal->flb.f, flagname, addr, str_size);
 		if (item) {
@@ -467,13 +476,15 @@ static bool sbpf_analyze_strings(RAnal *anal) {
 				size = SBPF_MAX_STRING_SIZE;
 			}
 
-			// Read the actual string for the flag name
+			// Read the actual string for the flag name and comment
 			ut8 *str_buf = malloc (size + 1);
 			if (!str_buf) {
 				continue;
 			}
 
 			char flagname[R_FLAG_NAME_SIZE];
+			char comment_str[256] = {0};
+
 			if (anal->iob.read_at (anal->iob.io, str_ptr, str_buf, size)) {
 				str_buf[size] = 0;
 
@@ -487,17 +498,52 @@ static bool sbpf_analyze_strings(RAnal *anal) {
 
 				// Create flag with format: ptr.<pointer_addr>_<string>
 				snprintf (flagname, sizeof (flagname), "ptr.%"PFMT64x"_%s", ref->addr, safe_str);
+
+				// Save string for comment (unfiltered for readability)
+				ut32 comment_len = size < 250 ? size : 250;
+				r_str_ncpy (comment_str, (char *)str_buf, comment_len + 1);
+
+				// Replace non-printable chars with dots for the comment
+				ut32 i;
+				for (i = 0; i < comment_len; i++) {
+					if (comment_str[i] < 0x20 || comment_str[i] > 0x7e) {
+						if (comment_str[i] != '\t' && comment_str[i] != '\n') {
+							comment_str[i] = '.';
+						}
+					}
+				}
 			} else {
 				snprintf (flagname, sizeof (flagname), "ptr.%"PFMT64x, ref->addr);
 			}
 
 			if (anal->flb.set && anal->flb.f) {
+				// Unset any existing flag at this address first
+				if (anal->flb.get_at) {
+					RFlagItem *existing = anal->flb.get_at (anal->flb.f, ref->addr, false);
+					if (existing && anal->flb.unset) {
+						R_LOG_DEBUG ("Unsetting existing flag %s at 0x%"PFMT64x, existing->name, ref->addr);
+						anal->flb.unset (anal->flb.f, existing);
+					}
+				}
+
 				RFlagItem *item = anal->flb.set(anal->flb.f, flagname, ref->addr, 16);
 				if (item) {
 					R_LOG_INFO ("Created pointer flag %s at 0x%"PFMT64x, flagname, ref->addr);
 				} else {
 					R_LOG_ERROR ("Failed to create pointer flag %s at 0x%"PFMT64x, flagname, ref->addr);
 				}
+			}
+
+			// Add comment at the instruction address showing the string value
+			if (ref->xref_addr != UT64_MAX && strlen(comment_str) > 0) {
+				char comment[SBPF_COMMENT_SIZE];
+				if (size > 250) {
+					snprintf (comment, sizeof (comment), "ptr -> \"%s...\" (truncated, %u bytes total)", comment_str, (ut32)size);
+				} else {
+					snprintf (comment, sizeof (comment), "ptr -> \"%s\"", comment_str);
+				}
+				r_meta_set_string (anal, R_META_TYPE_COMMENT, ref->xref_addr, comment);
+				R_LOG_DEBUG ("Added pointer comment at 0x%"PFMT64x": %s", ref->xref_addr, comment);
 			}
 
 			free (str_buf);
