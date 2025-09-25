@@ -1,6 +1,16 @@
 /* radare - LGPL - Copyright 2020-2025 - pancake, thestr4ng3r */
 
 #include "r2r.h"
+#include <fcntl.h>
+#include <signal.h>
+#include <sys/wait.h>
+#include <pthread.h>
+#include <poll.h>
+#include <unistd.h>
+
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
 #if ALLINC
 #include "load.c"
 #include "run.c"
@@ -9,10 +19,10 @@
 #define WORKERS_DEFAULT        8
 #define JSON_TEST_FILE_DEFAULT "bins/elf/crackme0x00b"
 // 30 seconds is the maximum time a test can run -- not enough for asan builds
-#define TIMEOUT_DEFAULT        (60*60)
+#define TIMEOUT_DEFAULT (60 * 60)
 
-#define STRV(x) #x
-#define STR(x) STRV(x)
+#define STRV(x)             #x
+#define STR(x)              STRV(x)
 #define WORKERS_DEFAULT_STR STR(WORKERS_DEFAULT)
 #define TIMEOUT_DEFAULT_STR STR(TIMEOUT_DEFAULT)
 
@@ -46,12 +56,12 @@ static void interact_diffchar(R2RTestResultInfo *result);
 
 R_IPI const char *getarchos(void) {
 	if (R_SYS_BITS_CHECK (R_SYS_BITS, 64)) {
-		return R_SYS_OS "-"R_SYS_ARCH "_64";
+		return R_SYS_OS "-" R_SYS_ARCH "_64";
 	}
 	if (R_SYS_BITS_CHECK (R_SYS_BITS, 32)) {
-		return R_SYS_OS "-"R_SYS_ARCH "_32";
+		return R_SYS_OS "-" R_SYS_ARCH "_32";
 	}
-	return R_SYS_OS "-"R_SYS_ARCH;
+	return R_SYS_OS "-" R_SYS_ARCH;
 }
 
 static void parse_skip(const char *arg) {
@@ -84,38 +94,38 @@ static void helpvars(int workers_count) {
 		"R2R_TIMEOUT=%d   # timeout after 1 minute (60 * 60)\n"
 		"R2R_OFFLINE=0      # same as passing -u\n"
 		"R2R_SHALLOW=0      # skip 0-100%% random tests\n"
-		"R2R_RADARE2=radare2 # radare2 binary to launch\n"
-		, workers_count, TIMEOUT_DEFAULT
-	       );
+		"R2R_RADARE2=radare2 # radare2 binary to launch\n",
+		workers_count, TIMEOUT_DEFAULT);
 }
 
 static int help(bool verbose, int workers_count) {
 	printf ("Usage: r2r [-qvVnLi] [-C dir] [-F dir] [-f file] [-o file] [-s test] [-t seconds] [-j threads] [test file/dir | @test-type]\n");
 	if (verbose) {
 		printf (
-		" -C [dir]     chdir before running r2r (default follows executable symlink + test/new\n"
-		" -F [dir]     run fuzz tests (open and default analysis) on all files in the given dir\n"
-		" -L           log mode (better printing for CI, logfiles, etc.)\n"
-		" -V           verbose\n"
-		" -f [file]    file to use for json tests (default is "JSON_TEST_FILE_DEFAULT")\n"
-		" -g           run the tests specified via '// R2R' comments in modified source files\n"
-		" -h           print this help\n"
-		" -H           display environment variables\n"
-		" -i           interactive mode\n"
-		" -j [threads] how many threads to use for running tests concurrently (default is "WORKERS_DEFAULT_STR")\n"
-		" -n           do nothing (don't run any test, just load/parse them)\n"
-		" -o [file]    output test run information in JSON format to file\n"
-		" -q           quiet\n"
-		" -s [test]    set R2R_SKIP_(TEST)=1 to skip running that test type\n"
-		" -S [0-100]   set R2R_SHALLOW=N to skip a random percentage of tests\n"
-		" -t [seconds] timeout per test (default is "TIMEOUT_DEFAULT_STR")\n"
-		" -u           do not git pull/clone test/bins (See R2R_OFFLINE)\n"
-		" -v           show version\n"
-		"\n");
+			" -C [dir]     chdir before running r2r (default follows executable symlink + test/new\n"
+			" -F [dir]     run fuzz tests (open and default analysis) on all files in the given dir\n"
+			" -L           log mode (better printing for CI, logfiles, etc.)\n"
+			" -V           verbose\n"
+			" -f [file]    file to use for json tests (default is " JSON_TEST_FILE_DEFAULT ")\n"
+			" -g           run the tests specified via '// R2R' comments in modified source files\n"
+			" -h           print this help\n"
+			" -H           display environment variables\n"
+			" -i           interactive mode\n"
+			" -j [threads] how many threads to use for running tests concurrently (default is " WORKERS_DEFAULT_STR ")\n"
+			" -n           do nothing (don't run any test, just load/parse them)\n"
+			" -o [file]    output test run information in JSON format to file\n"
+			" -q           quiet\n"
+			" -s [test]    set R2R_SKIP_ (TEST)=1 to skip running that test type\n"
+			" -S [0-100]   set R2R_SHALLOW=N to skip a random percentage of tests\n"
+			" -t [seconds] timeout per test (default is " TIMEOUT_DEFAULT_STR ")\n"
+			" -u           do not git pull/clone test/bins (See R2R_OFFLINE)\n"
+			" -v           show version\n"
+			"\n");
 		helpvars (workers_count);
 		printf ("\n"
-		"Supported test types: @asm @json @unit @fuzz @arch @cmd\n"
-		"OS/Arch for archos tests: %s\n", getarchos ());
+		       "Supported test types: @asm @json @unit @fuzz @arch @cmd\n"
+		       "OS/Arch for archos tests: %s\n",
+			getarchos ());
 	}
 	return 1;
 }
@@ -162,6 +172,120 @@ static bool r2r_chdir(const char *argv0) {
 	return false;
 #endif
 }
+
+#if 0
+static pthread_mutex_t r2r_print_mx = PTHREAD_MUTEX_INITIALIZER;
+
+static void r2r_print_fail_block(const char *buf, size_t len) {
+	pthread_mutex_lock (&r2r_print_mx);
+	(void)write (STDOUT_FILENO, buf, len);
+	pthread_mutex_unlock (&r2r_print_mx);
+}
+static int mkpipe_cloexec(int p[2]) {
+	if (pipe (p) == -1) {
+		return -1;
+	}
+	fcntl (p[0], F_SETFD, FD_CLOEXEC);
+	fcntl (p[1], F_SETFD, FD_CLOEXEC);
+	return 0;
+}
+#endif
+
+
+struct TestExec {
+	pid_t pid;
+	int out_r, err_r; /* read ends */
+};
+
+#if 0
+static bool spawn_test_proc(char *const argv[], struct TestExec *tx) {
+	int pout[2], perr[2];
+	if (mkpipe_cloexec (pout) || mkpipe_cloexec (perr)) {
+		return false;
+	}
+	pid_t pid = fork ();
+	if (pid < 0) {
+		close (pout[0]);
+		close (pout[1]);
+		close (perr[0]);
+		close (perr[1]);
+		return false;
+	}
+	if (pid == 0) {
+		setpgid (0, 0);
+		dup2 (pout[1], STDOUT_FILENO);
+		dup2 (perr[1], STDERR_FILENO);
+		close (pout[0]);
+		close (pout[1]);
+		close (perr[0]);
+		close (perr[1]);
+		execvp (argv[0], argv);
+		_exit (127);
+	}
+	setpgid (pid, pid);
+	close (pout[1]);
+	close (perr[1]);
+	tx->pid = pid;
+	tx->out_r = pout[0];
+	tx->err_r = perr[0];
+	return true;
+}
+
+static void kill_and_drain(struct TestExec *tx, int timeout_ms,
+	RStrBuf *out, RStrBuf *err) {
+	const int nfds = 2;
+	struct pollfd pf[nfds];
+	pf[0].fd = tx->out_r;
+	pf[0].events = POLLIN;
+	pf[1].fd = tx->err_r;
+	pf[1].events = POLLIN;
+	int status = 0;
+	bool running = true;
+	int elapsed = 0;
+	const int step = 25; /* ms */
+	while (running) {
+		pid_t w = waitpid (tx->pid, &status, WNOHANG);
+		if (w == tx->pid) {
+			break;
+		}
+		if (timeout_ms > 0 && elapsed >= timeout_ms) {
+			/* kill whole process group */
+			killpg (tx->pid, SIGKILL);
+		}
+ (void)poll (pf, nfds, step);
+		for (int i = 0; i < nfds; i++) {
+			if (pf[i].revents & POLLIN) {
+				char buf[4096];
+				ssize_t n = read (pf[i].fd, buf, sizeof (buf));
+				if (n > 0) {
+ (i == 0 ? r_strbuf_append_n (out, buf, n)
+						: r_strbuf_append_n (err, buf, n));
+				}
+			}
+		}
+		elapsed += step;
+	}
+	/* drain until EOF */
+	for (;;) {
+		int ready = poll (pf, nfds, 50);
+		if (ready <= 0) {
+			break;
+		}
+		for (int i = 0; i < nfds; i++) {
+			if (pf[i].revents & POLLIN) {
+				char buf[4096];
+				ssize_t n = read (pf[i].fd, buf, sizeof (buf));
+				if (n > 0) {
+ (i == 0 ? r_strbuf_append_n (out, buf, n)
+						: r_strbuf_append_n (err, buf, n));
+				}
+			}
+		}
+	}
+	close (tx->out_r);
+	close (tx->err_r);
+}
+#endif
 
 static bool r2r_test_run_unit(void) {
 	char *make = r_file_path ("gmake");
@@ -272,7 +396,7 @@ static void r2r_from_sourcecomments(RList *list, const char *path) {
 
 static void r2r_git(void) {
 	int max = 10;
-	while (max --> 0) {
+	while (max-- > 0) {
 		if (r_file_is_directory (".git")) {
 			break;
 		}
@@ -375,12 +499,10 @@ int main(int argc, char **argv) {
 		case 's':
 			parse_skip (opt.arg);
 			break;
-		case 'S':
-			{
-				shallow = atoi (opt.arg);
-				r_sys_setenv_asut64 ("R2R_SHALLOW", shallow);
-			}
-			break;
+		case 'S': {
+			shallow = atoi (opt.arg);
+			r_sys_setenv_asut64 ("R2R_SHALLOW", shallow);
+		} break;
 		case 'F':
 			free (fuzz_dir);
 			fuzz_dir = strdup (opt.arg);
@@ -484,11 +606,11 @@ int main(int argc, char **argv) {
 	r_sys_setenv ("R2_DEBUG_EPRINT", "0");
 	r_sys_setenv ("TZ", "UTC");
 	ut64 time_start = r_time_now_mono ();
-	R2RState state = {{0}};
+	R2RState state = { { 0 } };
 	state.run_config.r2_cmd = "radare2";
-	char *r2_cmd = r_sys_getenv("R2R_RADARE2");
-	if (R_STR_ISNOTEMPTY(r2_cmd)) {
-		R_LOG_DEBUG("overriding radare2 command: r2_cmd=%s", r2_cmd);
+	char *r2_cmd = r_sys_getenv ("R2R_RADARE2");
+	if (R_STR_ISNOTEMPTY (r2_cmd)) {
+		R_LOG_DEBUG ("overriding radare2 command: r2_cmd=%s", r2_cmd);
 		state.run_config.r2_cmd = r2_cmd;
 	}
 	if (shallow > 0) {
@@ -524,7 +646,7 @@ int main(int argc, char **argv) {
 	}
 
 	if (opt.ind < argc) {
-		// Manually specified path(s)
+		// Manually specified path (s)
 		int i;
 		for (i = opt.ind; i < argc; i++) {
 			const char *arg = argv[i];
@@ -571,7 +693,7 @@ int main(int argc, char **argv) {
 				int grc = 0;
 				r_list_foreach (tests, iter, test) {
 					R_LOG_INFO ("Running %s", test);
-					int rc = r_sys_cmdf ("r2r %s %s", interactive? "-i": "", test);
+					int rc = r_sys_cmdf ("r2r %s %s", interactive ? "-i" : "", test);
 					if (rc != 0) {
 						grc = rc;
 					}
@@ -641,7 +763,7 @@ int main(int argc, char **argv) {
 					*count = 0;
 					ht_pp_insert (state.path_left, test->path, count);
 				}
-				(*count)++;
+ (*count)++;
 			}
 		}
 	}
@@ -701,10 +823,10 @@ int main(int argc, char **argv) {
 	printf ("Finished in");
 	if (seconds > 60) {
 		ut64 minutes = seconds / 60;
-		printf (" %"PFMT64d" minutes and", seconds / 60);
+		printf (" %" PFMT64d " minutes and", seconds / 60);
 		seconds -= (minutes * 60);
 	}
-	printf (" %"PFMT64d" seconds.\n", seconds % 60);
+	printf (" %" PFMT64d " seconds.\n", seconds % 60);
 
 	if (output_file) {
 		pj_end (state.test_results);
@@ -741,9 +863,9 @@ beach:
 	free (fuzz_dir);
 #if R2__WINDOWS__
 	if (old_cp) {
-		(void)SetConsoleOutputCP (old_cp);
+ (void)SetConsoleOutputCP (old_cp);
 		// chcp doesn't pick up the code page switch for some reason
-		(void)r_sys_cmdf ("chcp %u > NUL", old_cp);
+ (void)r_sys_cmdf ("chcp %u > NUL", old_cp);
 	}
 #endif
 	return ret;
@@ -851,7 +973,7 @@ static RThreadFunctionRet worker_th(RThread *th) {
 		if (state->path_left) {
 			ut64 *count = ht_pp_find (state->path_left, test->path, NULL);
 			if (count) {
-				(*count)--;
+ (*count)--;
 				if (!*count) {
 					r_pvector_push (&state->completed_paths, (void *)test->path);
 				}
@@ -895,7 +1017,7 @@ static void print_diff(const char *actual, const char *expected, bool diffchar, 
 		d->diff_cmd = "git diff --no-index --word-diff=porcelain --word-diff-regex=.";
 	}
 	char *uni = r_diff_buffers_tostring (d, (const ut8 *)expected, (int)strlen (expected),
-			(const ut8 *)output, (int)strlen (output));
+ (const ut8 *)output, (int)strlen (output));
 	r_diff_free (d);
 
 	RList *lines = r_str_split_duplist (uni, "\n", false);
@@ -917,10 +1039,10 @@ static void print_diff(const char *actual, const char *expected, bool diffchar, 
 		char c = *line;
 		switch (c) {
 		case '+':
-			printf ("%s"Color_INSERT, diffchar ? Color_BGINSERT : "");
+			printf ("%s" Color_INSERT, diffchar ? Color_BGINSERT : "");
 			break;
 		case '-':
-			printf ("%s"Color_DELETE, diffchar ? Color_BGDELETE : "");
+			printf ("%s" Color_DELETE, diffchar ? Color_BGDELETE : "");
 			break;
 		case '~': // can't happen if !diffchar
 			printf ("\n");
@@ -988,14 +1110,14 @@ static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
 	case R2R_TEST_TYPE_CMD: {
 		r2r_run_cmd_test (config, result->test->cmd_test, print_runner, NULL);
 		const char *expect = result->test->cmd_test->expect.value;
-		const char *out = result->proc_out? result->proc_out->out: "";
+		const char *out = result->proc_out ? result->proc_out->out : "";
 		const char *regexp_out = result->test->cmd_test->regexp_out.value;
 		if ((expect || regexp_out) && !r_test_cmp_cmd_output (out, expect, regexp_out)) {
 			printf ("-- stdout\n");
 			print_diff (out, expect, false, regexp_out);
 		}
 		expect = result->test->cmd_test->expect_err.value;
-		const char *err = result->proc_out? result->proc_out->err: "";
+		const char *err = result->proc_out ? result->proc_out->err : "";
 		const char *regexp_err = result->test->cmd_test->regexp_err.value;
 		if ((expect || regexp_err) && !r_test_cmp_cmd_output (err, expect, regexp_err)) {
 			printf ("-- stderr\n");
@@ -1004,7 +1126,7 @@ static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
 			printf ("-- stderr\n%s\n", err);
 		}
 		if (result->proc_out && result->proc_out->ret != 0) {
-			printf ("-- exit status: "Color_RED"%d"Color_RESET"\n", result->proc_out->ret);
+			printf ("-- exit status: " Color_RED "%d" Color_RESET "\n", result->proc_out->ret);
 		}
 		break;
 	}
@@ -1017,7 +1139,7 @@ static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
 		r2r_run_fuzz_test (config, result->test->fuzz_test, print_runner, NULL);
 		printf ("-- stdout\n%s\n", result->proc_out->out);
 		printf ("-- stderr\n%s\n", result->proc_out->err);
-		printf ("-- exit status: "Color_RED"%d"Color_RESET"\n", result->proc_out->ret);
+		printf ("-- exit status: " Color_RED "%d" Color_RESET "\n", result->proc_out->ret);
 		break;
 	}
 }
@@ -1038,25 +1160,25 @@ static void print_new_results(R2RState *state, ut64 prev_completed) {
 		if (!name) {
 			continue;
 		}
-		printf ("\n"R_CONS_CURSOR_UP R_CONS_CLEAR_LINE);
+		printf ("\n" R_CONS_CURSOR_UP R_CONS_CLEAR_LINE);
 		switch (result->result) {
 		case R2R_TEST_RESULT_OK:
-			printf (Color_GREEN"[OK]"Color_RESET);
+			printf (Color_GREEN "[OK]" Color_RESET);
 			break;
 		case R2R_TEST_RESULT_FAILED:
-			printf (Color_RED"[XX]"Color_RESET);
+			printf (Color_RED "[XX]" Color_RESET);
 			break;
 		case R2R_TEST_RESULT_BROKEN:
-			printf (Color_BLUE"[BR]"Color_RESET);
+			printf (Color_BLUE "[BR]" Color_RESET);
 			break;
 		case R2R_TEST_RESULT_FIXED:
-			printf (Color_CYAN"[FX]"Color_RESET);
+			printf (Color_CYAN "[FX]" Color_RESET);
 			break;
 		}
 		if (result->timeout) {
-			printf (Color_CYAN" TIMEOUT"Color_RESET);
+			printf (Color_CYAN " TIMEOUT" Color_RESET);
 		}
-		printf (" %s "Color_YELLOW"%s"Color_RESET"\n", result->test->path, name);
+		printf (" %s " Color_YELLOW "%s" Color_RESET "\n", result->test->path, name);
 		if (result->result == R2R_TEST_RESULT_FAILED || (state->verbose && result->result == R2R_TEST_RESULT_BROKEN)) {
 			print_result_diff (&state->run_config, result);
 		}
@@ -1065,9 +1187,9 @@ static void print_new_results(R2RState *state, ut64 prev_completed) {
 }
 
 static void print_state_counts(R2RState *state) {
-	printf ("%8"PFMT64u" OK  %8"PFMT64u" BR %8"PFMT64u" XX %8"PFMT64u" SK %8"PFMT64u" FX",
-			state->ok_count, state->br_count, state->xx_count,
-			state->sk_count, state->fx_count);
+	printf ("%8" PFMT64u " OK  %8" PFMT64u " BR %8" PFMT64u " XX %8" PFMT64u " SK %8" PFMT64u " FX",
+		state->ok_count, state->br_count, state->xx_count,
+		state->sk_count, state->fx_count);
 }
 
 static void print_state(R2RState *state, ut64 prev_completed) {
@@ -1080,7 +1202,7 @@ static void print_state(R2RState *state, ut64 prev_completed) {
 	printf (R_CONS_CLEAR_LINE);
 	ut64 a = (ut64)r_pvector_length (&state->results);
 	ut64 b = (ut64)r_pvector_length (&state->db->tests);
-	int w = printf ("[%"PFMT64u"/%"PFMT64u"]", a, b);
+	int w = printf ("[%" PFMT64u "/%" PFMT64u "]", a, b);
 	while (w >= 0 && w < 20) {
 		printf (" ");
 		w++;
@@ -1099,9 +1221,9 @@ static void print_log(R2RState *state, ut64 prev_completed, ut64 prev_paths_comp
 	int a = r_pvector_length (&state->queue);
 	for (; prev_paths_completed < paths_completed; prev_paths_completed++) {
 		printf ("[%d/%d] %40s ",
-				(int)paths_completed,
-				(int)(a + prev_paths_completed),
-				(const char *)r_pvector_at (&state->completed_paths, prev_paths_completed));
+ (int)paths_completed,
+ (int) (a + prev_paths_completed),
+ (const char *)r_pvector_at (&state->completed_paths, prev_paths_completed));
 		print_state_counts (state);
 		printf ("\n");
 	}
@@ -1124,15 +1246,15 @@ static void interact(R2RState *state) {
 	bool use_fancy_stuff = !r_cons_is_windows ();
 #if R2__WINDOWS__
 	// XXX move to rcons
-	(void)SetConsoleOutputCP (65001); // UTF-8
+ (void)SetConsoleOutputCP (65001); // UTF-8
 #endif
 	printf ("\n");
 	printf ("#####################\n");
 	if (use_fancy_stuff) {
-		printf (" %"PFMT64u" failed test(s)"R_UTF8_POLICE_CARS_REVOLVING_LIGHT"\n",
-			(ut64)r_pvector_length (&failed_results));
+		printf (" %" PFMT64u " failed test (s)" R_UTF8_POLICE_CARS_REVOLVING_LIGHT "\n",
+ (ut64)r_pvector_length (&failed_results));
 	} else {
-		printf (" %"PFMT64u" failed test(s)\n", (ut64)r_pvector_length (&failed_results));
+		printf (" %" PFMT64u " failed test (s)\n", (ut64)r_pvector_length (&failed_results));
 	}
 	bool always_fix = false;
 
@@ -1145,20 +1267,20 @@ static void interact(R2RState *state) {
 
 		printf ("#####################\n\n");
 		print_result_diff (&state->run_config, result);
-menu:
+	menu:
 		if (use_fancy_stuff) {
 			printf ("Wat do?    "
-					"(f)ix "R_UTF8_WHITE_HEAVY_CHECK_MARK R_UTF8_VS16 R_UTF8_VS16 R_UTF8_VS16"  "
-					"(F)ixAll "R_UTF8_WHITE_HEAVY_CHECK_MARK R_UTF8_VS16 R_UTF8_VS16 R_UTF8_VS16"  "
-					"(i)gnore "R_UTF8_SEE_NO_EVIL_MONKEY"  "
-					"(b)roken "R_UTF8_SKULL_AND_CROSSBONES R_UTF8_VS16 R_UTF8_VS16 R_UTF8_VS16"  "
-					"(c)ommands "R_UTF8_KEYBOARD R_UTF8_VS16"  "
-					"(d)iffchar "R_UTF8_LEFT_POINTING_MAGNIFYING_GLASS"  "
-					"(q)uit "R_UTF8_DOOR"\n");
+			       " (f)ix " R_UTF8_WHITE_HEAVY_CHECK_MARK R_UTF8_VS16 R_UTF8_VS16 R_UTF8_VS16 "  "
+			       " (F)ixAll " R_UTF8_WHITE_HEAVY_CHECK_MARK R_UTF8_VS16 R_UTF8_VS16 R_UTF8_VS16 "  "
+			       " (i)gnore " R_UTF8_SEE_NO_EVIL_MONKEY "  "
+			       " (b)roken " R_UTF8_SKULL_AND_CROSSBONES R_UTF8_VS16 R_UTF8_VS16 R_UTF8_VS16 "  "
+			       " (c)ommands " R_UTF8_KEYBOARD R_UTF8_VS16 "  "
+			       " (d)iffchar " R_UTF8_LEFT_POINTING_MAGNIFYING_GLASS "  "
+			       " (q)uit " R_UTF8_DOOR "\n");
 		} else {
-			printf ("Wat do?  (f)ix  (F)ixAll  (i)gnore  (b)roken  (c)ommands  (d)iffchar  (q)uit\n");
+			printf ("Wat do? (f)ix (F)ixAll (i)gnore (b)roken (c)ommands (d)iffchar (q)uit\n");
 		}
-		char buf[32] = {0};
+		char buf[32] = { 0 };
 		if (always_fix) {
 			printf ("> f\n");
 			fflush (stdout);
@@ -1273,26 +1395,26 @@ static void fixup_tests(RPVector *results, const char *edited_file, ut64 start_l
 		test->run_line += delta;
 
 #define DO_KEY_STR(key, field) \
-		if (test->field.value) { \
-			if (test->field.line_begin >= start_line) { \
-				test->field.line_begin += delta; \
-			} \
-			if (test->field.line_end >= start_line) { \
-				test->field.line_end += delta; \
-			} \
-		}
+	if (test->field.value) { \
+		if (test->field.line_begin >= start_line) { \
+			test->field.line_begin += delta; \
+		} \
+		if (test->field.line_end >= start_line) { \
+			test->field.line_end += delta; \
+		} \
+	}
 
 #define DO_KEY_BOOL(key, field) \
-		if (test->field.set && test->field.line >= start_line) { \
-			test->field.line += delta; \
-		}
+	if (test->field.set && test->field.line >= start_line) { \
+		test->field.line += delta; \
+	}
 
 #define DO_KEY_NUM(key, field) \
-		if (test->field.set && test->field.line >= start_line) { \
-			test->field.line += delta; \
-		}
+	if (test->field.set && test->field.line >= start_line) { \
+		test->field.line += delta; \
+	}
 
-		R2R_CMD_TEST_FOREACH_RECORD(DO_KEY_STR, DO_KEY_BOOL, DO_KEY_NUM)
+		R2R_CMD_TEST_FOREACH_RECORD (DO_KEY_STR, DO_KEY_BOOL, DO_KEY_NUM)
 #undef DO_KEY_STR
 #undef DO_KEY_BOOL
 #undef DO_KEY_NUM
@@ -1331,7 +1453,7 @@ static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end
 		return;
 	}
 	if (r_file_dump (path, (const ut8 *)newc, -1, false)) {
-#if R2__UNIX__ && !(__wasi__ || __EMSCRIPTEN__)
+#if R2__UNIX__ && ! (__wasi__ || __EMSCRIPTEN__)
 		sync ();
 #endif
 	} else {

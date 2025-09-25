@@ -13,7 +13,9 @@ if (@ARGV) {
 			if ($line =~ /^[A-Za-z0-9]/) {
 				$line =~ s/\s*\(/(/g;
 			} else {
-				$line =~ s/\s*\(/ (/g;
+				if (!($line =~/define/)) {
+					$line =~ s/\s*\(/ (/g;
+				}
 			}
 			$line =~ s/'\s\(/'(/g;
 			$line =~ s/\(\s\(/((/g;
