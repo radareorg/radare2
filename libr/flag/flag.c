@@ -623,21 +623,24 @@ static int flagItemPriority(const RFlagItem *item) {
 	if (r_str_startswith (n, "method.")) {
 		return 1;
 	}
-	if (r_str_startswith (n, "sym.func.")) {
-		// lower prio than "sym."
-		return 4;
-	}
-	if (r_str_startswith (n, "sym.")) {
+	if (r_str_startswith (n, "class.")) {
 		return 2;
 	}
-	if (r_str_startswith (n, "fn.")) {
+	if (r_str_startswith (n, "sym.func.")) {
+		// lower prio than "sym."
+		return 5;
+	}
+	if (r_str_startswith (n, "sym.")) {
 		return 3;
 	}
-	if (r_str_startswith (n, "func.")) {
+	if (r_str_startswith (n, "fn.")) {
 		return 4;
 	}
-	if (r_str_startswith (n, "fcn.")) {
+	if (r_str_startswith (n, "func.")) {
 		return 5;
+	}
+	if (r_str_startswith (n, "fcn.")) {
+		return 6;
 	}
 	return 6;
 }

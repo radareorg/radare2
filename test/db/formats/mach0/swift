@@ -832,14 +832,14 @@ EXPECT=<<EOF
       },
       {
         "name": "wkWeb.allocator.Configuration...o0deJ0CvpWvd",
-        "flag": "field.class.WheresMyBrowser.WKWebViewPreferencesManager.var.wkWebViewConfiguration",
+        "flag": "method.WKPreferencesViewController.wkWeb.allocator.Configuration...o0deJ0CvpWvd",
         "rawname": "_$s15WheresMyBrowser27WKWebViewPreferencesManagerC05wkWebE13ConfigurationSo0deJ0CvpWvd",
         "lang": "swift",
         "addr": 4295119864
       },
       {
         "name": "option_ids.allocator__Array: allocator, option_ids: allocator, S(...ySSGvpWvd)",
-        "flag": "field.class.WheresMyBrowser.WKWebViewPreferencesManager.var.option_ids",
+        "flag": "method.WKPreferencesViewController.option_ids.allocator__Array:_allocator__option_ids:_allocator__S_...ySSGvpWvd_",
         "rawname": "_$s15WheresMyBrowser27WKWebViewPreferencesManagerC10option_idsSaySSGvpWvd",
         "lang": "swift",
         "addr": 4295119880

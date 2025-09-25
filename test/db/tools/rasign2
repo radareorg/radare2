@@ -18,7 +18,7 @@ NAME=rasign2 -r
 FILE=-
 CMDS=!!rasign2 -r bins/elf/hello_world~main?
 EXPECT=<<EOF
-19
+18
 EOF
 RUN
 
@@ -26,7 +26,7 @@ NAME=rasign2 -rj
 FILE=-
 CMDS=!!rasign2 -rj bins/elf/hello_world~main?
 EXPECT=<<EOF
-20
+19
 EOF
 RUN
 
@@ -34,7 +34,7 @@ NAME=rasign2 -rAA
 FILE=-
 CMDS=!!rasign2 -rAA bins/elf/hello_world~main?
 EXPECT=<<EOF
-19
+18
 EOF
 RUN
 
@@ -42,7 +42,7 @@ NAME=rasign2 -AArj
 FILE=-
 CMDS=!!rasign2 -AArj bins/elf/hello_world~main?
 EXPECT=<<EOF
-20
+19
 EOF
 RUN
 

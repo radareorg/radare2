@@ -3475,15 +3475,26 @@ DEBUG: Naming fixup reloc with string escape
 DEBUG: Naming fixup reloc with string locale
 DEBUG: Naming fixup reloc with string clocale
 DEBUG: Cannot resolve symbol address __progname
+DEBUG: Cannot resolve symbol address __progname
+DEBUG: Cannot resolve symbol address _ITM_deregisterTMCloneTable
 DEBUG: Cannot resolve symbol address _ITM_deregisterTMCloneTable
 DEBUG: Cannot resolve symbol address stdout
+DEBUG: Cannot resolve symbol address stdout
+DEBUG: Cannot resolve symbol address optind
 DEBUG: Cannot resolve symbol address optind
 DEBUG: Cannot resolve symbol address optarg
+DEBUG: Cannot resolve symbol address optarg
+DEBUG: Cannot resolve symbol address program_invocation_name
 DEBUG: Cannot resolve symbol address program_invocation_name
 DEBUG: Cannot resolve symbol address __progname_full
+DEBUG: Cannot resolve symbol address __progname_full
+DEBUG: Cannot resolve symbol address _Jv_RegisterClasses
 DEBUG: Cannot resolve symbol address _Jv_RegisterClasses
 DEBUG: Cannot resolve symbol address _ITM_registerTMCloneTable
+DEBUG: Cannot resolve symbol address _ITM_registerTMCloneTable
 DEBUG: Cannot resolve symbol address program_invocation_short_name
+DEBUG: Cannot resolve symbol address program_invocation_short_name
+DEBUG: Cannot resolve symbol address stderr
 DEBUG: Cannot resolve symbol address stderr
 EOF
 RUN
