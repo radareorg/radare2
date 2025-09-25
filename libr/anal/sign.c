@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #include <r_core.h>
 #include <r_vec.h>
@@ -547,11 +547,20 @@ static char *serialize_value(RSignItem *it) {
 		FreeRet_on_fail (ok, sb);
 	}
 
+	/* Only serialize demangled if it provides additional information
+	 * different from the rawname. Avoids emitting redundant demangled
+	 * entries when the value equals the rawname (e.g. non-mangled names). */
 	if (it->demangled) {
-		char *b64 = r_base64_encode_dyn ((const ut8 *)it->demangled, -1);
-		bool ok = b64 && r_strbuf_appendf (sb, "|%c:%s", R_SIGN_DEMANGLED, b64);
-		free (b64);
-		FreeRet_on_fail (ok, sb);
+		bool emit_demangled = true;
+		if (it->rawname && it->demangled && !strcmp (it->demangled, it->rawname)) {
+			emit_demangled = false;
+		}
+		if (emit_demangled) {
+			char *b64 = r_base64_encode_dyn ((const ut8 *)it->demangled, -1);
+			bool ok = b64 && r_strbuf_appendf (sb, "|%c:%s", R_SIGN_DEMANGLED, b64);
+			free (b64);
+			FreeRet_on_fail (ok, sb);
+		}
 	}
 
 	if (it->realname && !strchr (it->realname, '|')) {
@@ -929,10 +938,21 @@ static RSignItem *item_from_func(RAnal *a, RAnalFunction *fcn, const char *name)
 		// Prefer names from flag item if available
 		RFlagItem *fi = get_sym_flag_at (a->coreb.core, fcn->addr);
 		if (fi) {
-			it->rawname = strdup (fi->name);
-			it->demangled = fi->realname? strdup (fi->realname): strdup (fcn->name);
+			/* Prefer the original binary/symbol name as rawname, not the flag
+			 * name. Flags use `fi->name` (e.g. "sym.main") which is a
+			 * namespaced/escaped representation; the original symbol text is in
+			 * `fi->rawname` (from RBinName->oname). Use that when available so
+			 * we don't mix flag names into the signature's rawname. */
+			it->rawname = fi->rawname? strdup (fi->rawname): strdup (fcn->name);
+			/* For demangled prefer the flag's realname (if set), otherwise
+			 * fall back to the analysis-provided real name. */
+			if (fi->realname) {
+				it->demangled = strdup (fi->realname);
+			} else {
+				it->demangled = real_function_name (a, fcn);
+			}
 		} else {
-			// Fallback to function/analysis names
+			/* Fallback to function/analysis names */
 			it->rawname = strdup (fcn->name);
 			it->demangled = real_function_name (a, fcn);
 		}
