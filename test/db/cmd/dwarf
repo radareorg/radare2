@@ -313,7 +313,7 @@ EXPECT=<<EOF
 |           0x000057a4      c784249c00..   mov dword [var_9ch], 5
 |           0x000057af      c78424a000..   mov dword [var_a0h], 0
 |           0x000057ba      c78424a400..   mov dword [var_a4h], 6
-|           0x000057c5      488b05842b..   mov rax, qword [0x00038350] ; [0x38350:8]=0x38330 reloc.fixup.Before:__After:_beachartcardeal
+|           0x000057c5      488b05842b..   mov rax, qword [0x00038350] ; [0x38350:8]=0x38330 reloc.fixup.Before:_After:_beachartcardeal
 |           0x000057cc      488d8c2480..   lea rcx, [numbers]
 |           0x000057d4      48898c24e8..   mov qword [var_e8h], rcx
 |           0x000057dc      488b8c24e8..   mov rcx, qword [var_e8h]
