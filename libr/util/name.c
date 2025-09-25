@@ -17,7 +17,7 @@ R_API bool r_name_validate_print(const char ch) {
 
 // used to determine if we want to replace those chars with '_' in r_name_filter()
 R_API bool r_name_validate_dash(const char ch) {
-	const char chars[] = " -_/\\()~\t\n[]<>!?$;%@`,\"";
+	const char chars[] = " -_/\\()~[]<>!?$;%@`,\"";
 	return strchr (chars, ch);
 }
 
