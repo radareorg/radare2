@@ -237,10 +237,16 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 	}
 	RCons *cons = core->cons;
 	r_reg_arena_push (core->anal->reg);
+#if USE_NEW_ESIL
+	REsil *esil = r_esil_new_simple (addrsize, core->anal->reg, &core->anal->iob);
+	const char *pc_name = r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_PC);
+	r_reg_setv (core->anal->reg, pc_name, core->addr);
+#else
 	REsil *esil = r_esil_new (20, 0, addrsize);
 	r_esil_setup (esil, core->anal, false, false, false);
 	// esil->anal = core->anal;
 	r_esil_set_pc (esil, core->addr);
+#endif
 	char *expr = NULL;
 	bool refresh = false;
 	for (;;) {
@@ -336,19 +342,29 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 		case 'P':
 			x = 0;
 			r_esil_free (esil);
-			esil = r_esil_new (20, 0, addrsize);
-			esil->anal = core->anal;
 			r_core_cmd0 (core, "so+1");
+#if USE_NEW_ESIL
+			esil = r_esil_new_simple (addrsize, core->anal->reg, &core->anal->iob);
+			r_reg_setv (core->anal->reg, pc_name, core->addr);
+#else
+			esil = r_esil_new (20, 0, addrsize);
 			r_esil_set_pc (esil, core->addr);
+#endif
+			esil->anal = core->anal;
 			break;
 		case 'N':
 		case 'p':
 			x = 0;
 			r_esil_free (esil);
-			esil = r_esil_new (20, 0, addrsize);
-			esil->anal = core->anal;
 			r_core_cmd0 (core, "so-1");
+#if USE_NEW_ESIL
+			esil = r_esil_new_simple (addrsize, core->anal->reg, &core->anal->iob);
+			r_reg_setv (core->anal->reg, pc_name, core->addr);
+#else
+			esil = r_esil_new (20, 0, addrsize);
 			r_esil_set_pc (esil, core->addr);
+#endif
+			esil->anal = core->anal;
 			break;
 		case '=':
 		{ // TODO: edit
