@@ -147,7 +147,7 @@ static inline bool za_add(RCore *core, const char *input) {
 	char *stype = r_str_tok_r (NULL, " ", &save_ptr);
 	char *sig = r_str_tok_r (NULL, "", &save_ptr);
 
-	if (!stype || !sig || stype[1] != '\0') {
+	if (!name || !stype || !sig || stype[1] != '\0') {
 		R_LOG_ERROR ("Invalid input");
 		free (args);
 		return false;
@@ -176,19 +176,21 @@ static inline bool za_add(RCore *core, const char *input) {
 	case R_SIGN_RAWNAME:
 	case R_SIGN_DEMANGLED:
 		{
-			char *dec = (char *)r_base64_decode_dyn (sig, -1, NULL);
 			RSignItem *it = item_new_named (core->anal, name);
 			if (it) {
-				if (t == R_SIGN_RAWNAME) {
-					it->rawname = dec? dec: strdup (sig);
-				} else {
-					it->demangled = dec? dec: strdup (sig);
+				char *dec = (char *)r_base64_decode_dyn (sig, -1, NULL);
+				if (dec) {
+					if (t == R_SIGN_RAWNAME) {
+						it->rawname = dec;
+					} else {
+						it->demangled = dec;
+					}
+					ret = r_sign_add_item (core->anal, it);
+					if (!ret) {
+						free (dec);
+						r_sign_item_free (it);
+					}
 				}
-				ret = r_sign_add_item (core->anal, it);
-				if (!ret) {
-					free (dec);
-				}
-				r_sign_item_free (it);
 			}
 			break;
 		}
