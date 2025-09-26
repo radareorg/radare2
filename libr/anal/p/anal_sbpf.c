@@ -33,6 +33,24 @@ static int sbpf_string_ref_cmp(const void *a, const void *b) {
 	return 0;
 }
 
+// Sanitize string for display, replacing non-printable chars with dots
+// Returns the actual length copied (capped at max_len)
+static ut32 sanitize_string(char *dest, const ut8 *src, ut32 src_size, ut32 max_len) {
+	ut32 len = R_MIN (src_size, max_len);
+	ut32 i;
+
+	for (i = 0; i < len; i++) {
+		char ch = src[i];
+		if (!IS_PRINTABLE (ch) && ch != '\t' && ch != '\n') {
+			dest[i] = '.';
+		} else {
+			dest[i] = ch;
+		}
+	}
+	dest[len] = '\0';
+	return len;
+}
+
 static bool is_printable_string(const ut8 *buf, ut32 size) {
 	if (size < 1) {
 		return false;
@@ -315,18 +333,7 @@ static void sbpf_create_string(RAnal *anal, ut64 addr, ut32 size, ut64 xref_addr
 		// Add a comment at the xref address showing the string content
 		char comment[SBPF_COMMENT_SIZE];
 		char safe_str[256];
-		ut32 comment_len = str_size < 250 ? str_size : 250;
-		r_str_ncpy (safe_str, (char *)buf, comment_len + 1);
-
-		// Replace non-printable chars with dots for the comment
-		ut32 i;
-		for (i = 0; i < comment_len; i++) {
-			if (safe_str[i] < 0x20 || safe_str[i] > 0x7e) {
-				if (safe_str[i] != '\t' && safe_str[i] != '\n') {
-					safe_str[i] = '.';
-				}
-			}
-		}
+		sanitize_string (safe_str, buf, str_size, 250);
 
 		// Create comment with string content (r2 adds "; " prefix automatically)
 		if (str_size > 0x100) {
@@ -499,19 +506,8 @@ static bool sbpf_analyze_strings(RAnal *anal) {
 				// Create flag with format: ptr.<pointer_addr>_<string>
 				snprintf (flagname, sizeof (flagname), "ptr.%"PFMT64x"_%s", ref->addr, safe_str);
 
-				// Save string for comment (unfiltered for readability)
-				ut32 comment_len = size < 250 ? size : 250;
-				r_str_ncpy (comment_str, (char *)str_buf, comment_len + 1);
-
-				// Replace non-printable chars with dots for the comment
-				ut32 i;
-				for (i = 0; i < comment_len; i++) {
-					if (comment_str[i] < 0x20 || comment_str[i] > 0x7e) {
-						if (comment_str[i] != '\t' && comment_str[i] != '\n') {
-							comment_str[i] = '.';
-						}
-					}
-				}
+				// Sanitize string for comment
+				sanitize_string (comment_str, str_buf, size, 250);
 			} else {
 				snprintf (flagname, sizeof (flagname), "ptr.%"PFMT64x, ref->addr);
 			}
