@@ -113,9 +113,9 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 					op->mnemonic = r_str_newf ("call %s", syscall_name);
 				} else {
 					// PC-relative call
-					st64 current_pc = op->addr / 8; 	 		// Current PC in instruction units
-					st64 target_pc = current_pc + imm + 1;  	// Target PC in instruction units
-					st64 target_addr = target_pc * 8;  			// Target address in bytes
+					st64 current_pc = op->addr / 8;        // Current PC in instruction units
+					st64 target_pc = current_pc + imm + 1; // Target PC in instruction units
+					st64 target_addr = target_pc * 8;      // Target address in bytes
 					op->mnemonic = r_str_newf ("call 0x%"PFMT64x, (ut64)target_addr);
 					// Set jump target for call instruction
 					op->jump = target_addr;
@@ -130,10 +130,46 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 					op->size = insn->size;
 				}
 			} else {
-				op->mnemonic = r_str_newf ("%s%s%s",
-					insn->mnemonic,
-					insn->op_str[0]? " ": "",
-					insn->op_str);
+				switch (insn->id) {
+				case BPF_INS_JEQ:
+				case BPF_INS_JGT:
+				case BPF_INS_JGE:
+				case BPF_INS_JSET:
+				case BPF_INS_JNE:
+				case BPF_INS_JSGT:
+				case BPF_INS_JSGE:
+				case BPF_INS_JLT:
+				case BPF_INS_JLE:
+				case BPF_INS_JSLT:
+				case BPF_INS_JSLE:
+					{
+						char *opstr = strdup (insn->op_str);
+						char *comma = strchr (opstr, ',');
+						if (comma) {
+							comma = strchr (comma + 1, ',');
+							if (comma) {
+								*comma = 0;
+							}
+						}
+						op->mnemonic = r_str_newf ("%s %s, 0x%08"PFMT64x,
+								insn->mnemonic, opstr, JUMP (2));
+					}
+					break;
+#if CS_VERSION_MAJOR > 5
+				case BPF_INS_JAL:
+#else
+				case BPF_INS_JMP:
+#endif
+					op->mnemonic = r_str_newf ("%s 0x%08"PFMT64x,
+							insn->mnemonic, JUMP (0));
+					break;
+				default:
+					op->mnemonic = r_str_newf ("%s%s%s",
+							insn->mnemonic,
+							insn->op_str[0]? " ": "",
+							insn->op_str);
+					break;
+				}
 			}
 		}
 		if (insn->detail) {
