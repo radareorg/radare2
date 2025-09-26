@@ -75,6 +75,7 @@ static char *transform_operand(const char *op, const char *opcode) {
 	}
 	char *s = r_str_trim_dup (op);
 	if (R_STR_ISEMPTY (s)) {
+		free (s);
 		return NULL;
 	}
 	if (s[0] == '#') {
@@ -148,6 +149,7 @@ static char *parse(RAsmPluginSession *s, const char *data) {
 	}
 	char *copy = r_str_new (data);
 	if (R_STR_ISEMPTY (copy)) {
+		free (copy);
 		return NULL;
 	}
 	r_str_trim (copy);

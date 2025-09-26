@@ -2362,8 +2362,8 @@ static char *construct_symbol_flagname(const char *pfx, const char *libname, con
 }
 
 /* Return a unique flag name derived from `basename`. If a flag with that
- * name already exists at the requested address, reuse it; otherwise append
- * a numeric suffix to the *base* name. */
+ * name exists at the requested address, reuse it; otherwise append * a numeric
+ * suffix to the *base* name. */
 static bool rawname_matches(const char *raw, const char *name) {
 	if (!raw || !name) {
 		return false;
@@ -2407,7 +2407,7 @@ static char *unique_symflag_for_addr(RCore *core, const char *pfx, const char *l
 		if (match || firstsym) {
 			RFlagItem *reuse = match ? match : firstsym;
 			if (match) {
-				const char *prefix = (core && core->bin && core->bin->prefix) ? core->bin->prefix : NULL;
+				const char *prefix = (core->bin && core->bin->prefix) ? core->bin->prefix : NULL;
 				char *prefixed_base = NULL;
 				const char *target_name = base;
 				if (prefix && *prefix && reuse->name && r_str_startswith (reuse->name, prefix)) {
