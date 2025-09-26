@@ -526,7 +526,7 @@ static bool sbpf_analyze_strings(RAnal *anal) {
 					}
 				}
 
-				RFlagItem *item = anal->flb.set(anal->flb.f, flagname, ref->addr, 16);
+				RFlagItem *item = anal->flb.set (anal->flb.f, flagname, ref->addr, 16);
 				if (item) {
 					R_LOG_INFO ("Created pointer flag %s at 0x%"PFMT64x, flagname, ref->addr);
 				} else {
