@@ -535,7 +535,7 @@ static bool sbpf_analyze_strings(RAnal *anal) {
 			}
 
 			// Add comment at the instruction address showing the string value
-			if (ref->xref_addr != UT64_MAX && strlen(comment_str) > 0) {
+			if (ref->xref_addr != UT64_MAX && *comment_str) {
 				char comment[SBPF_COMMENT_SIZE];
 				if (size > 250) {
 					snprintf (comment, sizeof (comment), "ptr -> \"%s...\" (truncated, %u bytes total)", comment_str, (ut32)size);
