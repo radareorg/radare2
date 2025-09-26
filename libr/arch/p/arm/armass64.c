@@ -876,19 +876,58 @@ static ut32 tb(ArmOp *op) {
 			return UT32_MAX;
 		}
 	}
-	ut64 dst = op->operands[2].immediate;
-	st64 delta = dst - op->addr;
+	/*
+	 * The third operand can be provided either as an absolute address (bytes)
+	 * or as the raw immediate field for TBZ/TBNZ (imm14). To keep behavior
+	 * consistent with other branch-like encoders (e.g. CBZ/CBNZ) and to
+	 * support existing tests, prefer absolute address semantics when the
+	 * value is 4-byte aligned. Otherwise, treat it as the raw imm14 value
+	 * and scale it accordingly.
+	 */
+	st64 delta;
+	st64 imm = (st64) op->operands[2].immediate;
+	/*
+	 * Accept both encodings for the 3rd operand:
+	 *  - small values within signed imm14 range are treated as raw imm14
+	 *    (scaled by 4 when encoding), regardless of alignment.
+	 *  - larger values are treated as absolute addresses relative to op->addr.
+	 *  - if op->addr is unknown (UT64_MAX), force raw imm14 semantics.
+	 */
+	if (op->addr == UT64_MAX || (imm >= -0x4000 && imm <= 0x3fff)) {
+		/* raw imm14 (unscaled) */
+		delta = imm << 2;
+	} else {
+		/* absolute destination address */
+		delta = (st64) ((ut64) op->operands[2].immediate - op->addr);
+	}
 	ut64 maxis = R_ABS (delta);
 	if ((delta & 3) || maxis > 0xfffc) {
 		R_LOG_ERROR ("invalid destination for %s", op->mnemonic);
 		return UT32_MAX;
 	}
-	data = k;
-	data |= (op->operands[0].reg & 0x1f) << 24;
-	data |= (op->operands[1].immediate & 0x1f) << 11;
-	data |= (delta & 0x1c) << 27;
-	data |= (delta & 0x1fe0) << 11;
-	data |= ((delta >> 13) & 7) << 8;
+	/* Build instruction using architectural bit positions. */
+	{
+		ut32 base = r_str_startswith (op->mnemonic, "tbnz") ? 0x37000000 : 0x36000000;
+		ut32 bitnum = (ut32) op->operands[1].immediate;
+		ut32 rt = (ut32) (op->operands[0].reg & 0x1f);
+		st64 v = delta / 4; /* imm14 signed value */
+		ut32 imm14 = (ut32) (v & 0x3fff);
+
+		data = base;
+		/* b5 (high bit of bit number). */
+		data |= ((bitnum >> 5) & 1) << 31;
+		/* b40 (low 5 bits of bit number). */
+		data |= (bitnum & 0x1f) << 19;
+		/* imm14 at bits [18:5]. */
+		data |= (imm14 & 0x3fff) << 5;
+		/* Rt. */
+		data |= rt;
+		// swap endian
+		ut32 data2;
+		r_mem_swapendian (&data2, &data, sizeof (data));
+		data = data2;
+		
+	}
 	return data;
 }
 
@@ -2118,6 +2157,8 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 		*op = mov (&ops);
 	} else if (r_str_startswith (str, "cb")) {
 		*op = cb (&ops);
+	} else if (r_str_startswith (str, "tb")) {
+		*op = tb (&ops);
 	} else if (r_str_startswith (str, "cmp")) {
 		*op = cmp (&ops);
 	} else if (r_str_startswith (str, "mul ")) {

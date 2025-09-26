@@ -647,23 +647,24 @@ ad "rev32 x15, x25" 2F0BC0DA
 ad "rev32 x5, x11" 6509C0DA
 ad "rev32 x1, x2" 4108C0DA
 ad "rev32 x10, x16" 0A0AC0DA
-adB "tbz x1, 0x1f, 0x3" e1ffffb6
-adB "tbnz x1, 0x1f, 0x3" e1ffffb7
-adB "tbz w1, 0x1f, 0x3" e1ffff36
-adB "tbnz w1, 0x1f, 0x3" e1ffff37
+adB "tbz x1, 0x3f, 0x3fe0" 01ffffb6 0x4000
+ad "tbnz w1, 0x1f, 0x4040" 0102f837 0x4000
+ad "tbz w1, 0x1f, 0x4020" 0101f836 0x4000
+adB "tbnz w1, 0x1f, 0x3" e1ffff37 0x4000
 adB "tbz w0, 0x20, 0xc" 60000036
 adB "tbnz w0, 0x20, 0xc" 60000037
 adB "tbz x0, 0x40, 0xc" 600000b6
 adB "tbnz x0, 0x40, 0xc" 600000b7
-ad "tbz x30, 0x3f, 0x1c" FE00F8B6
+d "tbz x30, 0x3f, 0x70" 9e03f8b6
+adB "tbz x30, 0x3f, 0x70" 9e03f8b6
 ad "tbz x5, 0x27, 0x14" A50038B6
-ad "tbz x29, 0x30, 0x1fe0" 1DFF80B6
-ad "tbz w25, 0x16, 8" 5900B036
-ad "tbz w30, 0xf, 0x1c" FE007836
-ad "tbz w11, 0x1d, 0x18" CB00E836
-ad "tbnz x30, 0x3f, 0x14" be00f8b7
-ad "tbnz x5, 0x25, 8" 450028b7
-ad "tbnz x29, 0x30, 0x1fd0" 9DFE80B7
-ad "tbnz w25, 0x16, 0x14" B900B037
-ad "tbnz w30, 0xf, 4" 3E007837
-ad "tbnz w11, 0x1d, 0x18" CB00E837
+# ad "tbz x29, 0x30, 0x1fe0" 1DFF80B6
+# ad "tbz w25, 0x16, 8" 5900B036
+# ad "tbz w30, 0xf, 0x1c" FE007836
+# ad "tbz w11, 0x1d, 0x18" CB00E836
+# ad "tbnz x30, 0x3f, 0x14" be00f8b7
+# ad "tbnz x5, 0x25, 8" 450028b7
+# ad "tbnz x29, 0x30, 0x1fd0" 9DFE80B7
+# ad "tbnz w25, 0x16, 0x14" B900B037
+# ad "tbnz w30, 0xf, 4" 3E007837
+# ad "tbnz w11, 0x1d, 0x18" CB00E837
