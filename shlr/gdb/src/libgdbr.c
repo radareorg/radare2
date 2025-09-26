@@ -116,7 +116,7 @@ char *gdbr_get_reg_profile(int arch, int bits) {
 #include "reg/bpf.h"
 		break;
 	default:
-		R_LOG_ERROR("gdbr_get_reg_profile: unsupported arch %d", arch);
+		R_LOG_ERROR ("gdbr_get_reg_profile: unsupported arch %d", arch);
 		break;
 	}
 	return NULL;
