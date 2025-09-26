@@ -366,7 +366,7 @@ static void sbpf_create_string(RAnal *anal, ut64 addr, ut32 size, ut64 xref_addr
 		R_LOG_INFO ("Calling anal->flb.set with flag name: %s", flagname);
 
 		// Unset any existing flag at this address first
-		if (anal->flb.get_at) {
+		if (anal->flb.get_at && anal->flb.unset) {
 			RFlagItem *existing = anal->flb.get_at (anal->flb.f, addr, false);
 			if (existing && anal->flb.unset) {
 				R_LOG_DEBUG ("Unsetting existing flag %s at 0x%"PFMT64x, existing->name, addr);
