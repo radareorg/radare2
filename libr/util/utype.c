@@ -522,10 +522,22 @@ R_API char *r_type_format(Sdb *TDB, const char *t) {
 }
 
 R_API void r_type_del(Sdb *TDB, const char *name) {
-	r_strf_buffer (64);
+	r_strf_buffer (512);
+	if (strstr (name, ".arg.")) {
+		// ignore func argument definitions as they are not types
+		return;
+	}
+	if (r_str_endswith (name, ".include")) {
+		// ignore .include headers
+		return;
+	}
 	const char *kind = sdb_const_get (TDB, name, 0);
 	if (!kind) {
 		return;
+	}
+	char *comma = strchr (kind, ',');
+	if (comma) {
+		R_LOG_WARN ("Unexpected comma in kind (%s) for (%s)", kind, name);
 	}
 	if (!strcmp (kind, "type")) {
 		sdb_unset (TDB, r_strf ("type.%s", name), 0);
@@ -574,7 +586,7 @@ R_API void r_type_del(Sdb *TDB, const char *name) {
 		free (buf);
 		sdb_unset (TDB, name, 0);
 	} else {
-		eprintf ("Unrecognized type kind \"%s\"\n", kind);
+		R_LOG_WARN ("Unrecognized type kind \"%s\" for (%s)", kind, name);
 	}
 }
 
