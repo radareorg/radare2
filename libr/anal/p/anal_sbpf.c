@@ -698,7 +698,7 @@ static bool sbpfcmd(RAnal *anal, const char *cmd) {
 
 	if (r_str_startswith (cmd, "sbpf.analyze")) {
 		const char *result = sbpf_analyze_strings (anal)? "completed": "failed";
-		R_LOG_INFO ("sBPF string analysis %s\n", result);
+		R_LOG_INFO ("sBPF string analysis %s", result);
 		return true;
 	}
 
