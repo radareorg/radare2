@@ -242,12 +242,20 @@ static void sbpf_create_string(RAnal *anal, ut64 addr, ut32 size, ut64 xref_addr
 
 	ut32 actual_size = r_str_nlen (buf, size);
 
-	// If no null terminator found in the range, check if it's printable up to size
-	if (actual_size == 0) {
-		actual_size = size;
+	// If there is no terminator within `size`, treat the buffer as length `size`.
+	if (actual_size == size) {
+		// no null terminator found within `size`
+		// ensure nul-termination for safety
 		buf[size] = 0;
+	} else {
+		// found a null terminator; if it's empty, skip
+		if (actual_size == 0) {
+			return;
+		}
 	}
-	if (!is_printable_string (buf, size)) {
+
+	// Validate printable using the actual length we intend to use
+	if (!is_printable_string (buf, actual_size == size ? size : actual_size)) {
 		return;
 	}
 
@@ -315,19 +323,24 @@ static void sbpf_create_string(RAnal *anal, ut64 addr, ut32 size, ut64 xref_addr
 		}
 
 		// Create the flag
-		RFlagItem *item = anal->flb.set (anal->flb.f, flagname, addr, str_size);
-		if (item) {
-			R_LOG_INFO ("Successfully created flag %s at 0x%"PFMT64x" size %u", flagname, addr, str_size);
-		} else {
-			r_strf_var (flagname, 64, "str_%08"PFMT64x, addr);
-			R_LOG_INFO ("First flag failed, trying fallback: %s", flagname);
+		RFlagItem *item = NULL;
+		if (anal->flb.set && anal->flb.f) {
 			item = anal->flb.set (anal->flb.f, flagname, addr, str_size);
 			if (item) {
-				R_LOG_INFO ("Created fallback flag %s at 0x%"PFMT64x" size %u", flagname, addr, str_size);
+				R_LOG_INFO ("Successfully created flag %s at 0x%"PFMT64x" size %u", flagname, addr, str_size);
 			} else {
-				R_LOG_ERROR ("Failed to create any flag at 0x%"PFMT64x, addr);
+				char fallback[64];
+				r_strf_var (fallback, sizeof (fallback), "str_%08" PFMT64x, addr);
+				R_LOG_INFO ("First flag failed, trying fallback: %s", fallback);
+				item = anal->flb.set (anal->flb.f, fallback, addr, str_size);
+				if (item) {
+					R_LOG_INFO ("Created fallback flag %s at 0x%"PFMT64x" size %u", fallback, addr, str_size);
+				} else {
+					R_LOG_ERROR ("Failed to create any flag at 0x%"PFMT64x, addr);
+				}
 			}
 		}
+		free (flagname);
 	}
 }
 
@@ -402,7 +415,7 @@ static bool sbpf_analyze_strings(RAnal *anal) {
 			}
 
 			char flagname[R_FLAG_NAME_SIZE];
-			char comment_str[256] = {0};
+			char comment_str[SBPF_MAX_STRING_SIZE + 4] = {0};
 			char str_buf[SBPF_MAX_STRING_SIZE + 1];
 
 			if (anal->iob.read_at (anal->iob.io, str_ptr, (ut8 *)str_buf, size)) {
@@ -584,8 +597,8 @@ static void sbpf_print_string_xrefs(RAnal *anal) {
 
 			// Read the actual string
 			char str_buf[SBPF_MAX_STRING_SIZE + 1] = {0};
-			if (size > sizeof (str_buf)) {
-				size = sizeof (str_buf);
+			if (size >= sizeof (str_buf)) {
+				size = sizeof (str_buf) - 1;
 			}
 
 			if (anal->iob.read_at (anal->iob.io, str_ptr, (ut8 *)str_buf, size)) {
@@ -598,6 +611,10 @@ static void sbpf_print_string_xrefs(RAnal *anal) {
 				r_table_add_rowf (table, "xxxxxsss",
 						(ut64)nth++, ref->xref_addr, ref->addr, (ut64)size, (ut64)(size + 1),
 						".rodata", "pointer", str_buf);
+				// Add a comment showing the actual string
+				char *pcomment = r_str_newf ("ptr -> \"%s\"", str_buf);
+				r_meta_set_string (anal, R_META_TYPE_COMMENT, ref->xref_addr, pcomment);
+				free (pcomment);
 			}
 			continue;
 		}
@@ -636,17 +653,15 @@ static void sbpf_print_string_xrefs(RAnal *anal) {
 				}
 			}
 
-			bool is_printable = is_printable_string (buf, actual_len);
 			if (found_null) {
-				if (!is_printable) {
+				if (!is_printable_string (buf, actual_len)) {
 					continue;
 				}
 			} else {
-				if (is_printable) {
-					actual_len = string_size;
-				} else {
+				if (!is_printable_string (buf, string_size)) {
 					continue;
 				}
+				actual_len = string_size;
 			}
 
 			if (actual_len < 4) {
