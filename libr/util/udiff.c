@@ -277,6 +277,10 @@ R_API char *r_diff_buffers_unified(RDiff *d, const ut8 *a, int la, const ut8 *b,
 	char *fb = NULL;
 	int fd = r_file_mkstemp ("r_diff", &fa);
 	int fe = r_file_mkstemp ("r_diff", &fb);
+	// immediately close fds, as we only need filenames later
+	close (fd);
+	close (fe);
+
 	if (fd == -1 || fe == -1) {
 		R_LOG_ERROR ("Failed to create temporary files");
 		return NULL;
@@ -306,8 +310,6 @@ R_API char *r_diff_buffers_unified(RDiff *d, const ut8 *a, int la, const ut8 *b,
 		(void)r_sys_cmd_str_full (diff_cmdline, NULL, 0, &out, &out_len, &err);
 		free (diff_cmdline);
 	}
-	close (fd);
-	close (fe);
 	r_file_rm (fa);
 	r_file_rm (fb);
 	free (fa);
