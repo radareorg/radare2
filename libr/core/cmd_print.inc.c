@@ -4138,7 +4138,7 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 		if (input[1]) {
 			input++;
 		} else {
-			r_core_cmdf (core, "ps");
+			r_core_cmd0 (core, "ps");
 			break;
 		}
 		for (i = 0; stack[i]; i++) {
@@ -7769,7 +7769,9 @@ static int cmd_print(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg_ps);
 			break;
 		case 'o':
-			{
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_ps, "pso");
+			} else {
 				char *s = print_analstr (core, core->addr, 128);
 				if (s) {
 					if (input[2] == 'j') {
@@ -7791,7 +7793,9 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		case 'i': // "psi"
-			if (l > 0) {
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_ps, "psi");
+			} else if (l > 0) {
 				ut8 *buf = malloc (1024 + 1);
 				int delta = 512;
 				ut8 *p, *e, *b;
@@ -7862,15 +7866,23 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		case 'x': // "psx"
-			if (l > 0) {
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_ps, "psx");
+			} else if (l > 0) {
 				r_print_string (core->print, core->addr, block, len, R_PRINT_STRING_ESC_NL);
 			}
 			break;
 		case 'a': // "psa"
-			cmd_psa (core, input + 1);
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_ps, "psa");
+			} else {
+				cmd_psa (core, input + 1);
+			}
 			break;
 		case 'b': // "psb"
-			if (l > 0) {
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_ps, "psb");
+			} else if (l > 0) {
 				int quiet = input[2] == 'q'; // "psbq"
 				RStrBuf *sb = r_strbuf_new ("");
 				int i, hasnl = 0;
@@ -7929,7 +7941,9 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		case 'z': // "psz"
-			if (l > 0) {
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_ps, "psz");
+			} else if (l > 0) {
 				ut8 *s = decode_text (core, core->addr, l, true);
 				if (!s) {
 					break;
@@ -7958,10 +7972,16 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		case 'p': // "psp"
-			print_pascal_string (core, input + 2, l);
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_ps, "psp");
+			} else {
+				print_pascal_string (core, input + 2, l);
+			}
 			break;
 		case 'w': // "psw"
-			if (l > 0) {
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_ps, "psw");
+			} else if (l > 0) {
 				if (input[2] == 'j') { // pswj
 					print_json_string (core, (const char *) core->block, len, "wide");
 				} else {
@@ -7971,7 +7991,9 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		case 'W': // "psW"
-			if (l > 0) {
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_ps, "psW");
+			} else if (l > 0) {
 				if (input[2] == 'j') { // psWj
 					print_json_string (core, (const char *) core->block, len, "wide32");
 				} else {
@@ -7981,7 +8003,9 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		case 'j': // "psj"
-			{
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_ps, "psj");
+			} else {
 				ut8 *s = decode_text (core, core->addr, l, false);
 				if (s) {
 					print_json_string (core, (const char *) s, l, NULL);
@@ -7990,16 +8014,20 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		case ' ': // "ps"
-		{
-			ut8 *s = decode_text (core, core->addr, l, false);
-			if (s) {
-				r_print_string (core->print, core->addr, s, l, 0);
-				free (s);
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_ps, "ps");
+			} else {
+				ut8 *s = decode_text (core, core->addr, l, false);
+				if (s) {
+					r_print_string (core->print, core->addr, s, l, 0);
+					free (s);
+				}
 			}
 			break;
-		}
 		case 'u': // "psu"
-			if (l > 0) {
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_ps, "psu");
+			} else if (l > 0) {
 				bool json = input[2] == 'j'; // "psuj"
 				if (input[2] == 'z') { // "psuz"
 					int i, z;
@@ -8024,10 +8052,16 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		case 'q': // "psq"
-			r_core_cmd0 (core, "pqs");
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_ps, "psq");
+			} else {
+				r_core_cmd0 (core, "pqs");
+			}
 			break;
 		case 's': // "pss"
-			if (l > 0) {
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_ps, "pss");
+			} else if (l > 0) {
 				int h, w = r_cons_get_size (core->cons, &h);
 				int colwidth = r_config_get_i (core->config, "hex.cols") * 2;
 				core->print->width = (colwidth == 32)?w: colwidth; // w;
@@ -8042,7 +8076,9 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		case '+': // "ps+"
-			if (l > 0) {
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_ps, "ps+");
+			} else if (l > 0) {
 				const bool json = input[2] == 'j'; // ps+j
 				ut64 bitness = r_config_get_i (core->config, "asm.bits");
 				if (bitness != 32 && bitness != 64) {
@@ -8063,7 +8099,7 @@ static int cmd_print(void *data, const char *input) {
 				}
 			}
 			break;
-		default: // "ps"
+		case 0:
 			{
 				const char *current_charset = r_config_get (core->config, "cfg.charset");
 				if (R_STR_ISEMPTY (current_charset)) {
@@ -8087,6 +8123,9 @@ static int cmd_print(void *data, const char *input) {
 				}
 				break;
 			}
+		default: // "ps"
+			r_core_return_invalid_command (core, "ps", input[2]);
+			break;
 		}
 		break;
 	case 'm': // "pm"
