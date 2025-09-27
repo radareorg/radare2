@@ -25,6 +25,7 @@ static int sbpf_string_ref_cmp(const void *a, const void *b) {
 	return 0;
 }
 
+// TODO, this can be simplified too, we have primitives in r_iutil for that
 static bool is_printable_string(const char *buf, ut32 size) {
 	if (size < 1) {
 		return false;
@@ -358,7 +359,7 @@ static bool sbpf_analyze_strings(RAnal *anal) {
 	SbpfStringRef *ref, *next_ref;
 	int strings_created = 0;
 
-	RList *created_addrs = r_list_newf (NULL);
+	SetU *created_addrs = set_u_new ();
 
 	r_list_foreach (refs, iter, ref) {
 		if (ref->addr < data_start || ref->addr >= data_end) {
@@ -367,15 +368,7 @@ static bool sbpf_analyze_strings(RAnal *anal) {
 		}
 
 		// Check if we've already created a string at this address
-		bool already_created = false;
-		RListIter *addr_iter;
-		void *addr_ptr;
-		r_list_foreach (created_addrs, addr_iter, addr_ptr) {
-			if ((ut64)(size_t)addr_ptr == ref->addr) {
-				already_created = true;
-				break;
-			}
-		}
+		bool already_created = set_u_contains (created_addrs, ref->addr);
 
 		// Skip substring entries (they have no direct xref)
 		if (ref->xref_addr == UT64_MAX) {
@@ -448,7 +441,7 @@ static bool sbpf_analyze_strings(RAnal *anal) {
 				r_meta_set_string (anal, R_META_TYPE_COMMENT, ref->xref_addr, comment);
 				R_LOG_DEBUG ("Added pointer comment at 0x%"PFMT64x": %s", ref->xref_addr, comment);
 			}
-			r_list_append (created_addrs, (void*)(size_t)ref->addr);
+			set_u_add (created_addrs, ref->addr);
 			strings_created++;
 			continue;
 		}
@@ -491,11 +484,11 @@ static bool sbpf_analyze_strings(RAnal *anal) {
 		// Pointer structures are already handled above
 		sbpf_create_string (anal, ref->addr, string_size, ref->xref_addr, false);
 		// XXX this is wrong for 32bit systems
-		r_list_append (created_addrs, (void*)(size_t)ref->addr);
+		set_u_add (created_addrs, ref->addr);
 		strings_created++;
 	}
 
-	r_list_free (created_addrs);
+	set_u_free (created_addrs);
 
 	R_LOG_INFO ("Created %d strings", strings_created);
 
