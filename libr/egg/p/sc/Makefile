@@ -1,9 +1,10 @@
 SRCS  := $(shell cd src ; ls *.c)
 SCS := $(subst .c,,$(notdir $(SRCS)))
 PYTHON3?=python3
-HAVE_PYTHON=$(shell $(PYTHON3) --version && echo 1)
+HAVE_PYTHON=$(shell $(PYTHON3) --version > /dev/null 2>&1 && echo 1)
 
 all: out
+	@echo HAVE_PYTHON=$(HAVE_PYTHON)
 
 out:
 ifeq ($(HAVE_PYTHON),1)
