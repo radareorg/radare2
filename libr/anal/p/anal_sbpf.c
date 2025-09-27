@@ -329,8 +329,7 @@ static void sbpf_create_string(RAnal *anal, ut64 addr, ut32 size, ut64 xref_addr
 			if (item) {
 				R_LOG_INFO ("Successfully created flag %s at 0x%"PFMT64x" size %u", flagname, addr, str_size);
 			} else {
-				char fallback[64];
-				r_strf_var (fallback, sizeof (fallback), "str_%08" PFMT64x, addr);
+				r_strf_var (fallback, 64, "str_%08" PFMT64x, addr);
 				R_LOG_INFO ("First flag failed, trying fallback: %s", fallback);
 				item = anal->flb.set (anal->flb.f, fallback, addr, str_size);
 				if (item) {
