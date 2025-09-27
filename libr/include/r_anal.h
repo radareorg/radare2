@@ -789,6 +789,8 @@ typedef bool (*RAnalCmdCallback)(/* Rcore */RAnal *anal, const char* input);
 typedef int (*RAnalOpCallback)(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask);
 typedef int (*RAnalOpAsmCallback)(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int outlen);
 
+typedef bool (*RAnalPluginEligible)(RAnal *a);
+
 typedef bool (*RAnalRegProfCallback)(RAnal *a);
 typedef char*(*RAnalRegProfGetCallback)(RAnal *a);
 typedef int (*RAnalFPBBCallback)(RAnal *a, RAnalBlock *bb);
@@ -812,6 +814,7 @@ typedef struct r_anal_plugin_t {
 
 	bool (*init)(RAnal *a);
 	bool (*fini)(RAnal *a);
+	RAnalPluginEligible eligible;
 
 	// legacy r_anal_functions
 	RAnalOpCallback op;
