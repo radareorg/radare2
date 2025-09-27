@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2025 - pancake, nibble */
 
 // needed for spp
 #define USE_R2 1
@@ -320,6 +320,9 @@ static void load_asm_descriptions(RAsm *a) {
 	const char *arch = a->config->arch;
 	if (!arch || !strcmp (arch, "any")) {
 		arch = a->config->cpu;
+	}
+	if (arch, "sbpf") {
+		arch = "bpf";
 	}
 	if (!arch) {
 		return;
