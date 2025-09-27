@@ -190,6 +190,8 @@ static inline bool za_add(RCore *core, const char *input) {
 						free (dec);
 						r_sign_item_free (it);
 					}
+				} else {
+					r_sign_item_free (it);
 				}
 			}
 			break;

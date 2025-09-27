@@ -153,6 +153,7 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 						}
 						op->mnemonic = r_str_newf ("%s %s, 0x%08"PFMT64x,
 								insn->mnemonic, opstr, JUMP (2));
+						free (opstr);
 					}
 					break;
 #if CS_VERSION_MAJOR > 5
