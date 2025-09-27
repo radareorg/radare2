@@ -1,6 +1,6 @@
 [package]
 name = "pancake/radiff2"
-version = "6.0.3"
+version = "6.0.4"
 description = "Unix-Like Reverse Engineering Framework"
 license = "LGPL3"
 readme = "README.md"

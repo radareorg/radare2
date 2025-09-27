@@ -1,5 +1,5 @@
 PKGNAME radare2
-VERSION 6.0.3
+VERSION 6.0.4
 CONTACT pancake ; pancake@nopcode.org
 
 DESCRIPTION The UNIX-like reverse engineering toolkit ;
@@ -109,7 +109,7 @@ ARG_WITHOUT WANT_ZIP zip build without the ZIP/ZLIB support ;
 CHKLIB z
 CHKLIB zip
 ARG_WITH USE_ZIP syszip force to use system's libzip and zlib ;
-IFNOT WANTZIP {
+IFNOT WANT_ZIP {
 	USE_ZIP = 0 ;
 }
 IFAND HAVE_LIB_Z USE_ZIP {
