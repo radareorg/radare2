@@ -111,6 +111,13 @@ char *gdbr_get_reg_profile(int arch, int bits) {
 	case R_SYS_ARCH_V850:
 #include "reg/v850.h"
 		break;
+	case R_SYS_ARCH_BPF:
+	case R_SYS_ARCH_SBPF:
+#include "reg/bpf.h"
+		break;
+	default:
+		R_LOG_ERROR ("gdbr_get_reg_profile: unsupported arch %d", arch);
+		break;
 	}
 	return NULL;
 }
