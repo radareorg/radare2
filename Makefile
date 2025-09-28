@@ -205,18 +205,23 @@ pkgcfg:
 install-man:
 	mkdir -p "${DESTDIR}${MANDIR}/man1"
 	mkdir -p "${DESTDIR}${MANDIR}/man7"
+	mkdir -p "${DESTDIR}${MANDIR}/man3"
 	for FILE in man/*.1 ; do ${INSTALL_MAN} "$$FILE" "${DESTDIR}${MANDIR}/man1" ; done
 	cd "${DESTDIR}${MANDIR}/man1" && ln -fs radare2.1 r2.1
 	for FILE in man/*.7 ; do ${INSTALL_MAN} "$$FILE" "${DESTDIR}${MANDIR}/man7" ; done
+	for FILE in man/3/*.3 ; do ${INSTALL_MAN} "$$FILE" "${DESTDIR}${MANDIR}/man3" ; done
 
 install-man-symlink:
 	mkdir -p "${DESTDIR}${MANDIR}/man1"
 	mkdir -p "${DESTDIR}${MANDIR}/man7"
+	mkdir -p "${DESTDIR}${MANDIR}/man3"
 	for FILE in $(shell cd man && ls *.1) ; do \
 		ln -fs "${PWD}/man/$$FILE" "${DESTDIR}${MANDIR}/man1/$$FILE" ; done
 	cd "${DESTDIR}${MANDIR}/man1" && ln -fs radare2.1 r2.1
 	for FILE in $(shell cd man && ls *.7) ; do \
 		ln -fs "${PWD}/man/$$FILE" "${DESTDIR}${MANDIR}/man7/$$FILE" ; done
+	for FILE in $(shell cd man/3 && ls *.3) ; do \
+		ln -fs "${PWD}/man/3/$$FILE" "${DESTDIR}${MANDIR}/man3/$$FILE" ; done
 
 install-doc:
 	mkdir -p "${DESTDIR}${DOCDIR}"
@@ -329,6 +334,8 @@ deinstall uninstall:
 purge-doc:
 	rm -rf "${DESTDIR}${DOCDIR}"
 	cd man ; for FILE in *.1 ; do rm -f "${DESTDIR}${MANDIR}/man1/$$FILE" ; done
+	cd man ; for FILE in *.7 ; do rm -f "${DESTDIR}${MANDIR}/man7/$$FILE" ; done
+	cd man/3 ; for FILE in *.3 ; do rm -f "${DESTDIR}${MANDIR}/man3/$$FILE" ; done
 	rm -f "${DESTDIR}${MANDIR}/man1/r2.1"
 
 user-wrap=echo "\#!/bin/sh" > ~/bin/"$1" \
