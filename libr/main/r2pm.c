@@ -7,6 +7,10 @@
 
 #define R2PM_GITURL "https://github.com/radareorg/radare2-pm"
 
+#ifndef R2PM_STALE_DAYS
+#define R2PM_STALE_DAYS 14
+#endif
+
 static int r2pm_install(RList *targets, bool uninstall, bool clean, bool force, bool global);
 
 static const char *helpmsg =
@@ -359,6 +363,40 @@ static int r2pm_update(bool force) {
 	free (gpath);
 	free (pmpath);
 	return rc;
+}
+
+static void r2pm_check_pull_age(void) {
+	char *gpath = r2pm_gitdir ();
+	if (!gpath) {
+		return;
+	}
+	char *pmpath = r_str_newf ("%s/%s", gpath, "radare2-pm");
+	free (gpath);
+	if (!r_file_is_directory (pmpath)) {
+		free (pmpath);
+		return;
+	}
+	/* Get unix epoch of last commit */
+	char *out = r_sys_cmd_strf ("git -C '%s' log -1 --format=%%ct 2>/dev/null", pmpath);
+	free (pmpath);
+	if (!out) {
+		return;
+	}
+	r_str_trim (out);
+	if (!*out) {
+		free (out);
+		return;
+	}
+	long long commit_ts = atoll (out);
+	free (out);
+	if (commit_ts <= 0) {
+		return;
+	}
+	time_t now = time (NULL);
+	const long stale_seconds = (long)R2PM_STALE_DAYS * 24L * 3600L;
+	if ((now - (time_t)commit_ts) > (time_t)stale_seconds) {
+		R_LOG_WARN ("r2pm database seems older than %d day(s). Run 'r2pm -U' to update it.", R2PM_STALE_DAYS);
+	}
 }
 
 // set python virtual environment when available
@@ -1352,6 +1390,11 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		}
 		free (readme);
 		free (dbdir);
+	}
+
+	/* warn the user if the radare2-pm clone is stale */
+	if (!r2pm.init && !r2pm.quiet) {
+		r2pm_check_pull_age ();
 	}
 	if (r2pm.run) {
 		int i;
