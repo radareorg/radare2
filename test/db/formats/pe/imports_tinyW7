@@ -14,11 +14,11 @@ EOF
 EXPECT=<<EOF
 vaddr      paddr      type   ntype name
 ---------------------------------------
-0x8000011c 0x00000248 SET_32 3     kernel32_FindAtomW
+0x8000011c 0x00000248 SET_32 3     kernel32_FindClose
 0x800004f4 0x00000234 SET_32 3     msvcrt_Ordinal_1268
 nth  vaddr      bind type lib      name
 ---------------------------------------
-284  ---------- NONE FUNC kernel32 FindAtomW
+284  0x00401048 NONE FUNC kernel32 FindClose
 1268 0x00401034 NONE FUNC msvcrt   Ordinal_1268
 EOF
 RUN

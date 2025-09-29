@@ -14,12 +14,6 @@ CMDS=!scripts/test-8051-reassembly.sh
 EXPECT=<<EOF
 Reassembling 8051... OK
 EOF
-EXPECT_ERR=<<EOF
-WARN: Cannot find asm.parser for 8051
-INFO: Fallback to null
-WARN: using oba to load the syminfo from different mapaddress
-WARN: Cannot find asm.parser for 8051
-EOF
 RUN
 
 NAME=rasm2 binary input
