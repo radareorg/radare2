@@ -286,15 +286,9 @@ static int assemble_moveq(char tokens[][256], int num_tokens, ut8 *buf, int size
 		R_LOG_ERROR ("Cannot parse immediate %s", tokens[1]);
 		return 0; // Immediate parse failed
 	}
-	if (imm_value < -128 || imm_value > 127) {
-		if (imm_value <= 0xff || imm_value > 0) {
-			int8_t byte_value = (int8_t) (imm_value & 0xff);
-			imm_value = byte_value;
-		} else {
-			R_LOG_ERROR ("Immediate %d out of range", imm_value);
-			return 0; // Immediate value out of range
-		}
-	}
+
+	int8_t byte_value = (int8_t) (imm_value & 0xff);
+	imm_value = byte_value;
 
 	int register_number = parse_register (tokens[2]);
 	if (register_number < 0) {
