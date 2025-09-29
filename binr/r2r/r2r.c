@@ -321,6 +321,11 @@ int main(int argc, char **argv) {
 	bool get_bins = !r_sys_getenv_asbool ("R2R_OFFLINE");
 	int ret = 0;
 
+	if (!r_sys_getenv("R2_BIN")) {
+		r_sys_setenv("R2_BIN", R2_BINDIR);
+		r_sys_setenv_sep("PATH", R2_BINDIR, false);
+	}
+
 #if R2__WINDOWS__
 	UINT old_cp = GetConsoleOutputCP ();
 	{
@@ -490,16 +495,11 @@ int main(int argc, char **argv) {
 	r_sys_setenv ("TZ", "UTC");
 	ut64 time_start = r_time_now_mono ();
 	R2RState state = {{0}};
-	state.run_config.r2_cmd = "radare2";
-	char *r2_cmd = r_sys_getenv("R2R_RADARE2");
-	if (R_STR_ISNOTEMPTY(r2_cmd)) {
-		R_LOG_DEBUG("overriding radare2 command: r2_cmd=%s", r2_cmd);
-		state.run_config.r2_cmd = r2_cmd;
-	}
 	if (shallow > 0) {
 		r_num_irand ();
 		state.run_config.shallow = shallow;
 	}
+	state.run_config.r2_cmd = "radare2";
 	state.run_config.skip_cmd = r_sys_getenv_asbool ("R2R_SKIP_CMD");
 	state.run_config.skip_asm = r_sys_getenv_asbool ("R2R_SKIP_ASM");
 	state.run_config.skip_json = r_sys_getenv_asbool ("R2R_SKIP_JSON");
