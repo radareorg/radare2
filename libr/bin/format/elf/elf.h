@@ -124,9 +124,6 @@ struct Elf_(obj_t) {
 	Elf_(Phdr) *phdr;
 	Elf_(Shdr) *shdr;
 
-	/* Cached flavor flags computed after parsing headers. */
-	bool is_sbpf;
-
 	Elf_(Shdr) *strtab_section;
 	ut64 strtab_size;
 	char *strtab;

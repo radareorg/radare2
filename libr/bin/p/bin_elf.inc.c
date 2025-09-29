@@ -251,7 +251,7 @@ static RList* entries(RBinFile *bf) {
 		ptr->hpaddr = 0x18;  // e_entry offset in ELF header
 		ptr->hvaddr = UT64_MAX; // 0x18 + baddr (bf);
 
-		if (ptr->vaddr != (ut64)eo->ehdr.e_entry && Elf_(is_executable) (eo) && !eo->is_sbpf) {
+		if (ptr->vaddr != (ut64)eo->ehdr.e_entry && Elf_(is_executable) (eo)) {
 			R_LOG_ERROR ("Cannot determine entrypoint, using 0x%08" PFMT64x, ptr->vaddr);
 		}
 
@@ -776,10 +776,6 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 		ADD (32, 0);
 		break;
 	case EM_BPF:
-		if (!eo->is_sbpf) {
-			R_LOG_DEBUG ("Unimplemented BPF reloc type %d", rel->type);
-			break;
-		}
 	case EM_SBPF:
 		switch (rel->type) {
 		case R_BPF_64_64: // 64-bit immediate for lddw instruction
@@ -796,7 +792,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 			r->vaddr = B + rel->offset;
 			return r;
 		default:
-			R_LOG_DEBUG ("Unimplemented sBPF reloc type %d", rel->type);
+			R_LOG_DEBUG ("Unimplemented BPF reloc type %d", rel->type);
 			break;
 		}
 		break;
@@ -1134,19 +1130,10 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 		break;
 	}
 	case EM_BPF: // CHECK: some older solana programs have set an ehdr.e_machine of EM_BPF
-		if (!bo->is_sbpf) {
-			R_LOG_DEBUG ("Unhandled BPF relocation type %d", rel->type);
-			break;
-		}
-		// fallthrough
 	case EM_SBPF: {
 		switch (rel->type) {
 		case R_BPF_64_64: // 64-bit immediate for lddw instructions
 			V = S + A;
-			// Add sBPF base address if result < base address
-			if (V < SBPF_PROGRAM_ADDR) {
-				V += SBPF_PROGRAM_ADDR;
-			}
 			// Write as split 32-bit values to immediate fields (offset+4 and offset+12)
 			r_write_le32 (buf, (ut32)(V & UT32_MAX));
 			iob->overlay_write_at (iob->io, rel->rva + 4, buf, 4);
@@ -1176,10 +1163,6 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 				ut64 va = ((ut64)va_hi << 32) | va_lo;
 
 				if (va != 0) {
-					// If looks like physical address, make it virtual
-					if (va < SBPF_PROGRAM_ADDR) {
-						va += SBPF_PROGRAM_ADDR;
-					}
 					// Write back to both immediate fields
 					r_write_le32 (buf_lo, (ut32)(va & 0xffffffff));
 					r_write_le32 (buf_hi, (ut32)(va >> 32));
