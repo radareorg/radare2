@@ -150,7 +150,7 @@ R_API bool r_io_cache_write_at(RIO *io, ut64 addr, const ut8 *buf, int len) {
 				if (tail_ci) {
 					// Copy the tail data from the original cache entry
 					ut64 tail_offset_in_orig = new_write_end - _ci->tree_itv->addr;
-					memcpy(tail_ci->data, _ci->data + tail_offset_in_orig, tail_itv.size);
+					memcpy (tail_ci->data, _ci->data + tail_offset_in_orig, tail_itv.size);
 					memcpy(tail_ci->odata, _ci->odata + tail_offset_in_orig, tail_itv.size);
 
 					// Insert the tail after we finish processing
