@@ -155,7 +155,7 @@ R_API bool r_io_cache_write_at(RIO *io, ut64 addr, const ut8 *buf, int len) {
 
 					// Insert the tail after we finish processing
 					r_crbtree_insert (layer->tree, tail_ci, _ci_start_cmp_cb, NULL);
-					r_pvector_push(layer->vec, tail_ci);
+					r_pvector_push (layer->vec, tail_ci);
 				}
 			}
 
