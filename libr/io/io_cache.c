@@ -146,7 +146,7 @@ R_API bool r_io_cache_write_at(RIO *io, ut64 addr, const ut8 *buf, int len) {
 			if (orig_end > new_write_end) {
 				// Create a new cache item for the tail portion
 				RInterval tail_itv = (RInterval){new_write_end, orig_end - new_write_end};
-				RIOCacheItem *tail_ci = iocache_item_new(io, &tail_itv);
+				RIOCacheItem *tail_ci = iocache_item_new (io, &tail_itv);
 				if (tail_ci) {
 					// Copy the tail data from the original cache entry
 					ut64 tail_offset_in_orig = new_write_end - _ci->tree_itv->addr;
