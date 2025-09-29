@@ -1,5 +1,8 @@
 /* radare - LGPL - Copyright 2009-2025 - pancake */
 
+#include "r_userconf.h"
+#include "r_util/r_str.h"
+#include "r_util/r_sys.h"
 #define USE_THREADS 1
 #define ALLOW_THREADED 1
 #define UNCOLORIZE_NONTTY 0
@@ -720,6 +723,10 @@ R_API int r_main_radare2(int argc, const char **argv) {
 #endif
 
 	r_sys_env_init ();
+	if (!r_sys_getenv("R2_BIN")) {
+		r_sys_setenv("R2_BIN", R2_BINDIR);
+		r_sys_setenv_sep("PATH", R2_BINDIR, false);
+	}
 	// Create rarun2 profile with startup environ
 	char **env = r_sys_get_environ ();
 	mr.envprofile = r_run_get_environ_profile (env);
