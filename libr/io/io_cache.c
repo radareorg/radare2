@@ -138,6 +138,28 @@ R_API bool r_io_cache_write_at(RIO *io, ut64 addr, const ut8 *buf, int len) {
 	if (node) {
 		RIOCacheItem *_ci = (RIOCacheItem *)node->data;
 		if (itv.addr > _ci->tree_itv->addr) {
+			// Check if the existing entry extends beyond our write
+			ut64 orig_end = r_itv_end (_ci->tree_itv[0]);
+			ut64 new_write_end = r_itv_end (itv);
+
+			// If the existing entry extends past our write, we need to preserve the tail
+			if (orig_end > new_write_end) {
+				// Create a new cache item for the tail portion
+				RInterval tail_itv = (RInterval){new_write_end, orig_end - new_write_end};
+				RIOCacheItem *tail_ci = iocache_item_new (io, &tail_itv);
+				if (tail_ci) {
+					// Copy the tail data from the original cache entry
+					ut64 tail_offset_in_orig = new_write_end - _ci->tree_itv->addr;
+					memcpy (tail_ci->data, _ci->data + tail_offset_in_orig, tail_itv.size);
+					memcpy (tail_ci->odata, _ci->odata + tail_offset_in_orig, tail_itv.size);
+
+					// Insert the tail after we finish processing
+					r_crbtree_insert (layer->tree, tail_ci, _ci_start_cmp_cb, NULL);
+					r_pvector_push (layer->vec, tail_ci);
+				}
+			}
+
+			// Now truncate the original entry to end at our write start
 			_ci->tree_itv->size = itv.addr - _ci->tree_itv->addr;
 			node = r_rbnode_next (node);
 			_ci = node? (RIOCacheItem *)node->data: NULL;
