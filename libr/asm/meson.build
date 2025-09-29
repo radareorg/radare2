@@ -27,10 +27,15 @@ r_asm_sources = [
   '../arch/p/chip8/pseudo.c',
   '../arch/p/bpf/pseudo.c',
   '../arch/p/6502/pseudo.c',
+  '../arch/p/8051/pseudo.c',
   '../arch/p/arm/pseudo.c',
   '../arch/p/x86_nz/pseudo.c',
   '../arch/p/x86_nz/att2intel.c',
   '../arch/p/avr/pseudo.c',
+  '../arch/p/msp430/pseudo.c',
+  '../arch/p/pickle/pseudo.c',
+  '../arch/p/stm8/pseudo.c',
+  '../arch/p/vax/pseudo.c',
 ]
 
 r_asm_inc = [

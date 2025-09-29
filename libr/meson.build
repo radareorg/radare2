@@ -1,9 +1,9 @@
 use_gpl = not get_option('nogpl')
 user_plugins = get_option('plugins').split(',')
 
-esil_plugins = [ 'null', 'dummy' ]
+esil_plugins = [ 'dummy', 'forth', 'null' ]
 asm_plugins = [ 'null', 'att2intel' ]
-anal_plugins = [ 'null' ]
+anal_plugins = [ 'null', 'tcc' ]
 arch_plugins = [ 'null' ]
 bin_plugins = [ 'any' ]
 bin_ldr_plugins = [ 'ldr_linux' ]
@@ -16,7 +16,7 @@ if get_option('use_zip')
   fs_plugins += [ 'zip' ]
 endif
 bp_plugins = [ 'null' ]
-muta_plugins = [ 'xor', 'punycode' ]
+muta_plugins = [ ]
 core_plugins = [ 'a2f', 'agD' ]
 egg_plugins = [ 'xor' ]
 debug_plugins = [ 'null', 'io', 'esil', 'rap' ]
@@ -175,6 +175,7 @@ if get_option('plugins') == ''
     'riscv_cs',
     'rsp',
     's390_cs',
+    'sm5xx',
     'sh',
     'sh_cs',
     'snes',
@@ -182,6 +183,7 @@ if get_option('plugins') == ''
     'tms320',
     'tricore',
     'tricore_cs',
+    'v810',
     'v850',
     'vax',
     'wasm',
@@ -234,14 +236,17 @@ if get_option('plugins') == ''
     'elf',
     'elf64',
     'fs',
+    'io',
     'java',
     'le',
+    'hunk',
     'mach0',
     'mach064',
     'mbn',
     'mdmp',
     'mclf',
     'menuet',
+    'msx',
     'mz',
     'ne',
     'nes',
@@ -252,10 +257,12 @@ if get_option('plugins') == ''
     'nro',
     'nso',
     'omf',
+    'off',
     'p9',
     'pe',
     'pe64',
     'pebble',
+    'pef',
     'prg',
     'psxexe',
     'qnx',
@@ -303,16 +310,21 @@ if get_option('plugins') == ''
   ]
 
   muta_plugins += [
-    'null',
+    'add',
     'aes',
     'aes_cbc',
     'aes_wrap',
     'base64',
     'base91',
+    'bech32',
     'blowfish',
+    'charset_pokemon',
     'cps2',
     'des',
     'ed25519',
+    'entropy',
+    'null',
+    'punycode',
     'rc2',
     'rc4',
     'rc6',
@@ -320,6 +332,10 @@ if get_option('plugins') == ''
     'ror',
     'rot',
     'serpent',
+    'sip',
+    'sm4',
+    'strhash',
+    'xor',
   ]
 
   debug_plugins += [
@@ -414,22 +430,32 @@ io_plugins += [
 
   asm_plugins += [
     '6502',
+    '8051',
     'bpf',
+    'cosmac',
     'evm',
     'arm',
     'avr',
     'chip8',
     'dalvik',
+    'gb',
+    'java',
     'm68k',
     'mips',
+    'pickle',
     'ppc',
     'riscv',
     'sh',
+    'stm8',
+    'sparc',
     'tms320',
+    'tricore',
     'v850',
+    'vax',
     'x86',
     'z80',
-    'wasm'
+    'wasm',
+    'msp430',
   ]
 endif
 

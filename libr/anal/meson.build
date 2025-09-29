@@ -43,12 +43,13 @@ r_anal_sources = [
   'xrefs.c',
   'p/anal_null.c',
   'p/anal_sbpf.c',
+  'p/anal_tcc.c',
 ]
 
 r_anal_sources += r_anal_d_sources
 
-# tcc
-tcc_files = [
+# tcc_sources are not used, because p/anal_tcc.c directly includes these .c files
+tcc_sources = [
   'c/libtcc.c',
   'c/tccgen.c',
   'c/tccpp.c'

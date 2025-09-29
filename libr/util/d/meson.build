@@ -15,9 +15,10 @@ sdb_files = [
   'hiragana',
   'iso8859_1',
   'iso_646',
+  'jis7',
   'katakana',
   'macintosh',
-  'pokered'
+  'pokered',
 ]
 
 # Build all sdb files at once using 'sdb -r .'
