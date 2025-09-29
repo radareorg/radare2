@@ -395,7 +395,7 @@ static void r2pm_check_pull_age(void) {
 	time_t now = time (NULL);
 	const long stale_seconds = (long)R2PM_STALE_DAYS * 24L * 3600L;
 	if ((now - (time_t)commit_ts) > (time_t)stale_seconds) {
-		R_LOG_WARN ("r2pm database seems older than %d day(s). Run 'r2pm -U' to update it.", R2PM_STALE_DAYS);
+		R_LOG_WARN ("r2pm database seems older than %d days: Run 'r2pm -U' to update it", R2PM_STALE_DAYS);
 	}
 }
 
