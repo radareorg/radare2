@@ -4,6 +4,7 @@
 #include <r_util.h>
 #include <sdb/ht_uu.h>
 #include "pe.h"
+#include "r_util/r_str.h"
 
 #define PE_IMAGE_FILE_MACHINE_RPI2 452
 #define MAX_METADATA_STRING_LENGTH 256
@@ -547,8 +548,10 @@ static int bin_pe_parse_imports(RBinPEObj* pe,
 				// remove the trailling ".dll"
 				size_t len = strlen (symdllname);
 				r_str_case (symdllname, 0);
-				len = len < 4? 0: len - 4;
-				symdllname[len] = 0;
+				if (r_str_endswith (symdllname, ".dll")) {
+					len -= 4;
+					symdllname[len] = 0;
+				}
 
 				char* filename = NULL;
 				if (!sdb_module || strcmp (symdllname, sdb_module)) {
