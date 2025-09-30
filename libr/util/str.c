@@ -1698,14 +1698,14 @@ R_API char *r_str_encoded_json(const char *buf, int buf_size, int encoding) {
 	} else if (encoding == PJ_ENCODING_STR_STRIP) {
 		encoded_str = escape_and_strip (buf, buf_sz);
 	} else {
-		encoded_str = r_str_escape_utf8_for_json (buf, buf_sz);
+		encoded_str = r_str_escape_json (buf, buf_sz);
 	}
 	return encoded_str;
 }
 
 
 // TODO: very long and bad name here
-R_API char *r_str_escape_utf8_for_json(const char *buf, int buf_size) {
+R_API char *r_str_escape_json(const char *buf, int buf_size) {
 	char *new_buf, *q;
 	const char *p, *end;
 	RRune ch;

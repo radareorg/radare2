@@ -344,7 +344,7 @@ static bool r_bin_xtac_read_nt_native_pathname(RBinXtacObj *bin) {
 		return false;
 	}
 
-	if (!(bin->nt_path_name_u8 = r_str_escape_utf8_for_json (nt_path_name_u8_raw, -1))) {
+	if (!(bin->nt_path_name_u8 = r_str_escape_json (nt_path_name_u8_raw, -1))) {
 		R_FREE (bin->nt_path_name_u16);
 		R_FREE (nt_path_name_u8_raw);
 		return false;
