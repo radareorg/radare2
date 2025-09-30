@@ -2080,7 +2080,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, GraphOptions *
 		sdb_set (DB, "type", r_anal_functiontype_tostring (fcn->type), 0);
 	} else if (go->is_json) {
 		// TODO: show vars, refs and xrefs
-		char *fcn_name_escaped = r_str_escape_utf8_for_json (fcn->name, -1);
+		char *fcn_name_escaped = r_str_escape_json (fcn->name, -1);
 		pj_o (pj);
 		pj_ks (pj, "name", r_str_getf (fcn_name_escaped));
 		free (fcn_name_escaped);

@@ -231,7 +231,7 @@ R_API PJ *pj_s(PJ *j, const char *k) {
 	R_RETURN_VAL_IF_FAIL (j && k, j);
 	pj_comma (j);
 	pj_raw (j, "\"");
-	char *ek = r_str_escape_utf8_for_json (k, -1);
+	char *ek = r_str_escape_json (k, -1);
 	if (ek) {
 		pj_raw (j, ek);
 		free (ek);
