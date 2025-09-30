@@ -130,7 +130,7 @@ block    0x100
 e cfg.bigendian=false
 e asm.bits=64
 e asm.dwarf=false
-e asm.codealign=1
+e arch.codealign=1
 binsz    1024
 bits     64
 canary   false
@@ -141,7 +141,7 @@ havecode false
 e cfg.bigendian=false
 e asm.bits=64
 e asm.dwarf=false
-e asm.codealign=1
+e arch.codealign=1
 EOF
 RUN
 
