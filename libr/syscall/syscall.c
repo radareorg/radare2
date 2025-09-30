@@ -1,5 +1,4 @@
 /* radare - Copyright 2008-2025 - LGPL -- pancake */
-
 #include <r_syscall.h>
 
 R_LIB_VERSION (r_syscall);
@@ -39,7 +38,6 @@ R_API void r_syscall_free(RSyscall *s) {
 }
 
 R_API SdbGperf *r_syscall_get_gperf(const char *k);
-
 static Sdb *openDatabase(Sdb *db, const char *name) {
 	SdbGperf *sg = r_syscall_get_gperf (name);
 	if (sg) {
@@ -87,7 +85,6 @@ static inline bool sysregs_reload_needed(RSyscall *s, const char *arch, int bits
 R_API bool r_syscall_setup(RSyscall *s, const char *arch, int bits, const char *cpu, const char *os) {
 	R_RETURN_VAL_IF_FAIL (s, false);
 	bool syscall_changed, sysregs_changed;
-
 	if (!os || !*os) {
 		os = R_SYS_OS;
 	}
@@ -99,18 +96,13 @@ R_API bool r_syscall_setup(RSyscall *s, const char *arch, int bits, const char *
 	}
 	syscall_changed = syscall_reload_needed (s, os, arch, bits);
 	sysregs_changed = sysregs_reload_needed (s, arch, bits, cpu);
-
 	free (s->os);
 	s->os = strdup (os);
-
 	free (s->cpu);
 	s->cpu = strdup (cpu);
-
 	free (s->arch);
 	s->arch = strdup (arch);
-
 	s->bits = bits;
-
 	if (!strcmp (os, "any")) { // ignored
 		return true;
 	}
@@ -129,7 +121,6 @@ R_API bool r_syscall_setup(RSyscall *s, const char *arch, int bits, const char *
 	//	syscall_changed = true;
 		bits = 32;
 	}
-
 	if (syscall_changed) {
 		char *dbName = r_str_newf (R_JOIN_2_PATHS ("syscall", "%s-%s-%d"),
 			os, arch, bits);
@@ -138,7 +129,6 @@ R_API bool r_syscall_setup(RSyscall *s, const char *arch, int bits, const char *
 			free (dbName);
 		}
 	}
-
 	if (sysregs_changed) {
 		char *dbName = r_str_newf (R_JOIN_2_PATHS ("sysregs", "%s-%d-%s"),
 			arch, bits, cpu);
@@ -163,7 +153,6 @@ R_API RSyscallItem *r_syscall_item_new_from_string(const char *name, const char 
 		free (o);
 		return NULL;
 	}
-
 	RSyscallItem *si = R_NEW0 (RSyscallItem);
 	si->name = strdup (name);
 	si->swi = (int)r_num_get (NULL, r_str_word_get0 (o, 0));
