@@ -915,7 +915,7 @@ static bool bin_info(RCore *core, PJ *pj, int mode, ut64 laddr) {
 				info->bits,
 				r_str_bool (R_BIN_DBG_STRIPPED &info->dbg_info));
 			int v = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
-			r_cons_printf (core->cons, "e asm.codealign=%d\n", (v > 0)? v: 0);
+			r_cons_printf (core->cons, "e arch.codealign=%d\n", (v > 0)? v: 0);
 			if (R_STR_ISNOTEMPTY (info->lang) && info->lang[0] != '?') {
 				r_cons_printf (core->cons, "e bin.lang=%s\n", info->lang);
 			}
