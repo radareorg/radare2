@@ -721,11 +721,13 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	sigaddset (&sigBlockMask, SIGWINCH);
 	r_signal_sigmask (SIG_BLOCK, &sigBlockMask, NULL);
 #endif
-
 	r_sys_env_init ();
-	if (!r_sys_getenv("R2_BIN")) {
-		r_sys_setenv("R2_BIN", R2_BINDIR);
-		r_sys_setenv_sep("PATH", R2_BINDIR, false);
+	char *r2_bin = r_sys_getenv ("R2_BIN");
+	if (r2_bin) {
+		free (r2_bin);
+	} else {
+		r_sys_setenv ("R2_BIN", R2_BINDIR);
+		r_sys_setenv_sep ("PATH", R2_BINDIR, false);
 	}
 	// Create rarun2 profile with startup environ
 	char **env = r_sys_get_environ ();
