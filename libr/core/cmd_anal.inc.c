@@ -1495,6 +1495,9 @@ static bool print_flag_refs_cb(RFlagItem *fi, void *user) {
 		return false;
 	}
 	RVecAnalRef *list = r_anal_xrefs_get (core->anal, fi->addr);
+	if (!list) {
+		return true;
+	}
 	RAnalRef *ref;
 	R_VEC_FOREACH (list, ref) {
 		r_cons_printf (core->cons, "0x%"PFMT64x" %s %s %s\n", ref->addr,
@@ -1510,16 +1513,16 @@ static void find_refs(RCore *core, const char *glob) {
 	ut64 curseek = core->addr;
 	glob = r_str_trim_head_ro (glob);
 	if (!*glob) {
-		glob = "str.";
+		glob = "str.*";
+	//	glob = "*";
 	}
-	if (*glob == '?') {
+	if (*glob != '?') {
+		R_LOG_INFO ("Finding references of flags matching '%s'", glob);
+		r_flag_foreach_glob (core->flags, glob, print_flag_refs_cb, core);
+		r_core_seek (core, curseek, true);
+	} else {
 		r_core_cmd_help_match (core, help_msg_ax, "axF");
-		return;
 	}
-	R_LOG_INFO ("Finding references of flags matching '%s'", glob);
-	/* Iterate flags matching glob and print their xrefs directly */
-	r_flag_foreach_glob (core->flags, glob, print_flag_refs_cb, core);
-	r_core_seek (core, curseek, true);
 }
 
 static ut64 sort64val(const void *a) {
