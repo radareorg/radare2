@@ -1489,6 +1489,23 @@ static void cmd_aft(RCore *core, const char *input) {
 	r_cons_break_pop (core->cons);
 }
 
+static bool print_flag_refs_cb(RFlagItem *fi, void *user) {
+	RCore *core = (RCore *)user;
+	if (r_cons_is_breaked (core->cons)) {
+		return false;
+	}
+	RVecAnalRef *list = r_anal_xrefs_get (core->anal, fi->addr);
+	RAnalRef *ref;
+	R_VEC_FOREACH (list, ref) {
+		r_cons_printf (core->cons, "0x%"PFMT64x" %s %s %s\n", ref->addr,
+				r_anal_ref_perm_tostring (ref),
+				r_anal_ref_type_tostring (ref->type),
+				fi->name? fi->name: "?");
+	}
+	RVecAnalRef_free (list);
+	return true;
+}
+
 static void find_refs(RCore *core, const char *glob) {
 	ut64 curseek = core->addr;
 	glob = r_str_trim_head_ro (glob);
@@ -1499,13 +1516,10 @@ static void find_refs(RCore *core, const char *glob) {
 		r_core_cmd_help_match (core, help_msg_ax, "axF");
 		return;
 	}
-	R_LOG_WARN ("Finding references of flags matching '%s'", glob);
-	char *cmd = r_str_newf (".(findstref) @@=`f~%s[0]`", glob);
-	r_core_cmd0 (core, "(findstref;f here=$$;s entry0;/r here;f-here)");
-	r_core_cmd0 (core, cmd);
-	r_core_cmd0 (core, "(-findstref)");
+	R_LOG_INFO ("Finding references of flags matching '%s'", glob);
+	/* Iterate flags matching glob and print their xrefs directly */
+	r_flag_foreach_glob (core->flags, glob, print_flag_refs_cb, core);
 	r_core_seek (core, curseek, true);
-	free (cmd);
 }
 
 static ut64 sort64val(const void *a) {
