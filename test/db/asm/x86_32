@@ -2192,3 +2192,5 @@ a "dec DWORD PTR [esi+0x8]" ff4e08
 a "dec DWORD PTR [esp]" ff0c24
 a "dec DWORD PTR [esp+0x10]" ff4c2410
 ad "bsr eax, dword [4]" 0fbd0504000000
+ad "nop2" 0f1a
+d "nop2" 0f1b
