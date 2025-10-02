@@ -4946,6 +4946,7 @@ static const LookupTable oplookup[] = {
 	{ "mwait", 0, NULL, 0x0f01c9, 3},
 	{ "neg", 0, &opneg, 0},
 	{ "nop", 0, NULL, 0x90, 1},
+	{ "nop2", 0, NULL, 0x0f1a, 2},
 	{ "not", 0, &opnot, 0},
 	{ "or", 0, &opor, 0},
 	{ "out", 0, &opout, 0},
