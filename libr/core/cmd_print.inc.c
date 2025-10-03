@@ -159,11 +159,12 @@ static RCoreHelpMessage help_msg_pr = {
 };
 
 static RCoreHelpMessage help_msg_prg = {
-	"Usage: prg[?ilo]", " [len]", "print raw inflated/decompressed block",
+	"Usage: prg[?ilor]", " [len]", "print raw inflated/decompressed block",
 	"prg", "", "print gunzipped data of current block",
 	"prgl", "", "decompress current block using LZ4 (adjust blocksize)",
 	"prgi", "", "show consumed bytes when inflating",
 	"prgo", "", "show output bytes after inflating",
+	"prgr", "", "print raw deflate decompressed data (no ZLIB headers)",
 	NULL
 };
 
@@ -8259,6 +8260,20 @@ static int cmd_print(void *data, const char *input) {
 			case '?':
 				r_core_cmd_help (core, help_msg_prg);
 				break;
+			case 'r': // "prgr" // raw deflate
+			{
+				int outlen = 0;
+				int inConsumed = 0;
+				ut8 *out;
+				out = r_inflate_raw (block, core->blocksize, &inConsumed, &outlen);
+				if (out) {
+					r_cons_write (core->cons, (const char *) out, outlen);
+					free (out);
+				} else {
+					R_LOG_ERROR ("inflate failed: raw deflate decompression error");
+				}
+			}
+			break;
 			case 'l': // "prgl" // lz4
 				{
 					ut8 *dst = calloc (len, 4);
