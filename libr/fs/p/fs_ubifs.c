@@ -64,6 +64,7 @@
 #define UBIFS_S_KEY_BLOCK_MASK 0x1FFFFFFF
 
 // UBI Erase Counter Header
+R_PACKED (
 typedef struct {
 	ut32 magic;
 	ut8 version;
@@ -74,9 +75,10 @@ typedef struct {
 	ut32 image_seq;
 	ut8 padding2[32];
 	ut32 hdr_crc;
-} __attribute__((packed)) ubi_ec_hdr_t;
+}) ubi_ec_hdr_t;
 
 // UBI Volume ID Header
+R_PACKED (
 typedef struct {
 	ut32 magic;
 	ut8 version;
@@ -94,9 +96,10 @@ typedef struct {
 	ut64 sqnum;
 	ut8 padding3[12];
 	ut32 hdr_crc;
-} __attribute__((packed)) ubi_vid_hdr_t;
+}) ubi_vid_hdr_t;
 
 // UBI Volume Table Record
+R_PACKED (
 typedef struct {
 	ut32 reserved_pebs;
 	ut32 alignment;
@@ -108,9 +111,10 @@ typedef struct {
 	ut8 flags;
 	ut8 padding[23];
 	ut32 crc;
-} __attribute__((packed)) ubi_vtbl_rec_t;
+}) ubi_vtbl_rec_t;
 
 // UBIFS Common Header
+R_PACKED (
 typedef struct {
 	ut32 magic;
 	ut32 crc;
@@ -119,9 +123,10 @@ typedef struct {
 	ut8 node_type;
 	ut8 group_type;
 	ut8 padding[2];
-} __attribute__((packed)) ubifs_ch_t;
+}) ubifs_ch_t;
 
 // UBIFS Superblock Node
+R_PACKED (
 typedef struct {
 	ubifs_ch_t ch;
 	ut8 padding[2];
@@ -153,9 +158,10 @@ typedef struct {
 	ut16 hash_algo;
 	ut8 hash_mst[64];
 	ut8 padding2[3774];
-} __attribute__((packed)) ubifs_sb_node_t;
+}) ubifs_sb_node_t;
 
 // UBIFS Master Node
+R_PACKED (
 typedef struct {
 	ubifs_ch_t ch;
 	ut64 highest_inum;
@@ -190,25 +196,28 @@ typedef struct {
 	ut8 hash_lpt[64];
 	ut8 hmac[64];
 	ut8 padding[152];
-} __attribute__((packed)) ubifs_mst_node_t;
+}) ubifs_mst_node_t;
 
 // UBIFS Index Node
+R_PACKED (
 typedef struct {
 	ubifs_ch_t ch;
 	ut16 child_cnt;
 	ut16 level;
 	// branches follow
-} __attribute__((packed)) ubifs_idx_node_t;
+}) ubifs_idx_node_t;
 
 // UBIFS Branch
+R_PACKED (
 typedef struct {
 	ut32 lnum;
 	ut32 offs;
 	ut32 len;
 	ut8 key[UBIFS_SK_LEN];
-} __attribute__((packed)) ubifs_branch_t;
+}) ubifs_branch_t;
 
 // UBIFS Inode Node
+R_PACKED (
 typedef struct {
 	ubifs_ch_t ch;
 	ut8 key[UBIFS_MAX_KEY_LEN];
@@ -233,9 +242,10 @@ typedef struct {
 	ut16 compr_type;
 	ut8 padding2[26];
 	// data follows
-} __attribute__((packed)) ubifs_ino_node_t;
+}) ubifs_ino_node_t;
 
 // UBIFS Directory Entry Node
+R_PACKED (
 typedef struct {
 	ubifs_ch_t ch;
 	ut8 key[UBIFS_MAX_KEY_LEN];
@@ -245,9 +255,10 @@ typedef struct {
 	ut16 nlen;
 	ut32 cookie;
 	// name follows
-} __attribute__((packed)) ubifs_dent_node_t;
+}) ubifs_dent_node_t;
 
 // UBIFS Data Node
+R_PACKED (
 typedef struct {
 	ubifs_ch_t ch;
 	ut8 key[UBIFS_MAX_KEY_LEN];
@@ -255,7 +266,7 @@ typedef struct {
 	ut16 compr_type;
 	ut16 plaintext_size;
 	// data follows
-} __attribute__((packed)) ubifs_data_node_t;
+}) ubifs_data_node_t;
 
 // Parsed key structure
 typedef struct {
