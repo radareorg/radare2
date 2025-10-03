@@ -91,7 +91,7 @@ R_API bool r_fs_cmd(RFS *fs, const char *cmd) {
 	RFSPlugin *p;
 	/* Prefer plugin associated to last mounted root */
 	if (fs->roots) {
-		root = r_list_get_last (fs->roots);
+		root = r_list_last (fs->roots);
 	}
 	if (root && root->p && root->p->cmd) {
 		if (root->p->cmd (fs, cmd)) {
