@@ -72,6 +72,8 @@ typedef struct r_fs_plugin_t {
 	void (*fini)(void);
 	bool (*mount)(RFSRoot *root);
 	void (*umount)(RFSRoot *root);
+	/* callback to run plugin-specific commands (e.g. m:cmd) */
+	bool (*cmd)(RFS *fs, const char *cmd);
 } RFSPlugin;
 
 typedef struct r_fs_partition_t {
@@ -178,6 +180,9 @@ R_API bool r_fs_shell(RFSShell *shell, RFS *fs, const char *root);
 R_API RFSFile *r_fs_file_new(RFSRoot *root, const char *path);
 R_API void r_fs_file_free(RFSFile *file);
 R_API char* r_fs_file_copy_abs_path(RFSFile* file);
+
+/* run a command against registered fs plugins. Returns true if handled */
+R_API bool r_fs_cmd(RFS *fs, const char *cmd);
 
 // root
 R_API RList *r_fs_root(RFS *fs, const char *path);

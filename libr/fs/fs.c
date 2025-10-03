@@ -85,6 +85,28 @@ R_API RFSPlugin* r_fs_plugin_get(RFS* fs, const char* name) {
 	return NULL;
 }
 
+R_API bool r_fs_cmd(RFS *fs, const char *cmd) {
+	R_RETURN_VAL_IF_FAIL (fs && cmd, false);
+	RFSRoot *root = NULL;
+	RFSPlugin *p;
+	/* Prefer plugin associated to last mounted root */
+	if (fs->roots) {
+		root = r_list_last (fs->roots);
+	}
+	if (root && root->p && root->p->cmd) {
+		if (root->p->cmd (fs, cmd)) {
+			return true;
+		}
+	}
+	RListIter *iter;
+	r_list_foreach (fs->plugins, iter, p) {
+		if (p->cmd && p->cmd (fs, cmd)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 R_API void r_fs_free(RFS* fs) {
 	if (fs) {
 		//r_io_free (fs->iob.io);

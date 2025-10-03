@@ -31,6 +31,13 @@ static RCoreHelpMessage help_msg_m = {
 	NULL
 };
 
+static RCoreHelpMessage help_msg_mcolon = {
+	"Usage:", "m:", "[plugin-command]",
+	"m:", "", "list the fs plugins",
+	"m:", "posix", "run the command associated with the 'posix' fs plugin",
+	NULL
+};
+
 static RCoreHelpMessage help_msg_mf = {
 	"Usage:", "mf[no] [...]", "search files matching name or offset",
 	"mfn", " /foo *.c","search files by name in /foo path",
@@ -748,6 +755,19 @@ static int cmd_mount(void *data, const char *_input) {
 			r_fs_close (core->fs, file);
 		} else {
 			R_LOG_ERROR ("Cannot open file");
+		}
+		break;
+	case ':':
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_mcolon);
+		} else if (input[1] == 'l' || !input[1]) {
+			RListIter *iter;
+			RFSPlugin *plug;
+			r_list_foreach (core->fs->plugins, iter, plug) {
+				r_cons_println (core->cons, plug->meta.name);
+			}
+		} else {
+			r_fs_cmd (core->fs, r_str_trim_head_ro (input + 1));
 		}
 		break;
 	case '?':
