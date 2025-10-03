@@ -701,6 +701,7 @@ R_API void r_core_anal_undefine(RCore *core, ut64 off);
 R_API void r_core_anal_hint_print(RCore* core, ut64 addr, int mode);
 R_API void r_core_anal_hint_list(RCore *core, int mode);
 R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode);
+R_API int r_core_anal_search_multi(RCore *core, ut64 from, ut64 to, RList *refs, int mode);
 R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int rad);
 R_API int r_core_anal_data(RCore *core, ut64 addr, int count, int depth, int wordsize);
 R_API void r_core_anal_datarefs(RCore *core, ut64 addr);

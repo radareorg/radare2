@@ -22,6 +22,11 @@ static void loganal(ut64 from, ut64 to, int depth) {
 	eprintf (R_CONS_CLEAR_LINE "0x%08"PFMT64x" > 0x%08"PFMT64x" %d\r", from, to, depth);
 }
 
+/* Forward declarations for functions used by multi-search */
+static bool found_xref(RCore *core, ut64 at, ut64 xref_to, RAnalRefType type, PJ *pj, int rad, bool cfg_debug, bool cfg_anal_strings);
+static ut64 r_anal_perm_to_reftype(int perm);
+
+
 static int cmpsize(const void *a, const void *b) {
 	ut64 as = r_anal_function_linear_size ((RAnalFunction *) a);
 	ut64 bs = r_anal_function_linear_size ((RAnalFunction *) b);
@@ -82,6 +87,12 @@ static int cmpnbbs(const void *_a, const void *_b) {
 static int cmpaddr(const void *_a, const void *_b) {
 	const RAnalFunction *a = _a, *b = _b;
 	return (a->addr > b->addr)? 1: (a->addr < b->addr)? -1: 0;
+}
+
+static int ut64_cmp(const void *a, const void *b) {
+    const ut64 aa = *(const ut64*)a;
+    const ut64 bb = *(const ut64*)b;
+    return (aa > bb) - (aa < bb);
 }
 
 static void init_addr2klass(RCore *core, RBinObject *bo) {
@@ -4533,6 +4544,205 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 	free (buf);
 	r_anal_op_fini (&op);
 	return count;
+}
+
+R_API int r_core_anal_search_multi(RCore *core, ut64 from, ut64 to, RList *refs, int mode) {
+    R_RETURN_VAL_IF_FAIL (core, -1);
+    if (!refs) {
+        return r_core_anal_search (core, from, to, UT64_MAX, mode);
+    }
+    int refcount = r_list_length (refs);
+    if (refcount == 0) {
+        return r_core_anal_search (core, from, to, UT64_MAX, mode);
+    }
+
+    /* Build a sorted array of target addresses for fast membership checks */
+    ut64 *targets = (ut64 *)malloc (sizeof (ut64) * refcount);
+    if (!targets) {
+        return -1;
+    }
+    int idx = 0;
+    RListIter *iter;
+    ut64 *aptr;
+    r_list_foreach (refs, iter, aptr) {
+        targets[idx++] = aptr? *aptr: UT64_MAX;
+    }
+    qsort (targets, refcount, sizeof (ut64), ut64_cmp);
+
+    ut8 *buf = (ut8 *)malloc (core->blocksize);
+    if (!buf) {
+        free (targets);
+        return -1;
+    }
+    int ptrdepth = r_config_get_i (core->config, "anal.ptrdepth");
+    int i, count = 0;
+    RAnalOp op = {0};
+    ut64 at;
+    char bckwrds, do_bckwrd_srch;
+    int arch = -1;
+    if (core->rasm->config->bits == 64) {
+        if (core->rasm->config) {
+            if (r_str_startswith (core->rasm->config->arch, "arm")) {
+                arch = R2_ARCH_ARM64;
+            }
+        }
+    }
+    do_bckwrd_srch = bckwrds = core->search->bckwrds;
+    r_cons_break_push (core->cons, NULL, NULL);
+    if (core->blocksize > OPSZ) {
+        if (bckwrds) {
+            if (from + core->blocksize > to) {
+                at = from;
+                do_bckwrd_srch = false;
+            } else {
+                at = to - core->blocksize;
+            }
+        } else {
+            at = from;
+        }
+
+        while ((!bckwrds && at < to) || bckwrds) {
+            if (r_cons_is_breaked (core->cons)) {
+                break;
+            }
+            size_t left = R_MIN (to - at, core->blocksize);
+            if (!r_io_read_at (core->io, at, buf, left)) {
+                break;
+            }
+            if (left < core->blocksize) {
+                memset (buf + left, 0, core->blocksize - left);
+            }
+            for (i = bckwrds ? (core->blocksize - OPSZ - 1) : 0;
+                 (!bckwrds && i < core->blocksize - OPSZ) ||
+                 (bckwrds && i > 0); bckwrds ? i-- : i++) {
+                if (r_cons_is_breaked (core->cons)) {
+                    break;
+                }
+                switch (mode) {
+                case 'c':
+                    if (!opiscall (core, &op, at + i, buf + i, core->blocksize - i, arch)) {
+                        continue;
+                    }
+                    break;
+                case 'r':
+                case 'w':
+                case 'x':
+                    {
+                        r_anal_op_fini (&op);
+                        r_anal_op (core->anal, &op, at + i, buf + i, core->blocksize - i, R_ARCH_OP_MASK_BASIC);
+                        int mask = (mode == 'r') ? 1 : mode == 'w' ? 2: mode == 'x' ? 4: 0;
+                        if (op.direction == mask) {
+                            i += op.size;
+                        }
+                        r_anal_op_fini (&op);
+                        continue;
+                    }
+                    break;
+                default:
+                    r_anal_op_fini (&op);
+                    if (!r_anal_op (core->anal, &op, at + i, buf + i, core->blocksize - i, R_ARCH_OP_MASK_BASIC)) {
+                        r_anal_op_fini (&op);
+                        continue;
+                    }
+                }
+                /* handle jump/call/ptr similarly to single-ref search, but check
+                 * whether the found target exists in our targets array */
+                if (op.jump != UT64_MAX) {
+                    ut64 cand = op.jump;
+                    if (bsearch (&cand, targets, refcount, sizeof (ut64), ut64_cmp) != NULL) {
+                        if (core_anal_followptr (core, R_ANAL_REF_TYPE_CALL, at + i, cand, cand, true, 0)) {
+                            /* print refs for this flag as they are discovered */
+                            RFlagItem *fi = r_flag_get_at (core->flags, cand, false);
+                            if (fi) {
+                                RVecAnalRef *list = r_anal_xrefs_get (core->anal, fi->addr);
+                                if (list) {
+                                    RAnalRef *ref;
+                                    R_VEC_FOREACH (list, ref) {
+                                        r_cons_printf (core->cons, "0x%"PFMT64x" %s %s %s\n", ref->addr,
+                                            r_anal_ref_perm_tostring (ref),
+                                            r_anal_ref_type_tostring (ref->type),
+                                            fi->name? fi->name: "?");
+                                    }
+                                    RVecAnalRef_free (list);
+                                }
+                            }
+                            count++;
+                        }
+                    }
+                }
+                if (op.ptr != UT64_MAX) {
+                    ut64 cand = op.ptr;
+                    if (bsearch (&cand, targets, refcount, sizeof (ut64), ut64_cmp) != NULL) {
+                        const int type = core_type_by_addr (core, op.ptr);
+                        const ut64 perm = (type == R_ANAL_REF_TYPE_STRN)? R_ANAL_OP_DIR_READ: (op.direction &= (~R_ANAL_OP_DIR_REF));
+                        const int reftype = type | r_anal_perm_to_reftype (perm);
+                        if (found_xref (core, op.addr, cand, reftype, NULL, 0, false, false)) {
+                            RFlagItem *fi = r_flag_get_at (core->flags, cand, false);
+                            if (fi) {
+                                RVecAnalRef *list = r_anal_xrefs_get (core->anal, fi->addr);
+                                if (list) {
+                                    RAnalRef *ref;
+                                    R_VEC_FOREACH (list, ref) {
+                                        r_cons_printf (core->cons, "0x%"PFMT64x" %s %s %s\n", ref->addr,
+                                            r_anal_ref_perm_tostring (ref),
+                                            r_anal_ref_type_tostring (ref->type),
+                                            fi->name? fi->name: "?");
+                                    }
+                                    RVecAnalRef_free (list);
+                                }
+                            }
+                            count++;
+                        }
+                    } else {
+                        if (op.disp && op.disp != UT64_MAX) {
+                            ut64 cand2 = op.disp;
+                            if (bsearch (&cand2, targets, refcount, sizeof (ut64), ut64_cmp) != NULL) {
+                                if (found_xref (core, op.addr, cand2, R_ANAL_REF_TYPE_DATA, NULL, 0, false, false)) {
+                                    RFlagItem *fi2 = r_flag_get_at (core->flags, cand2, false);
+                                    if (fi2) {
+                                        RVecAnalRef *list2 = r_anal_xrefs_get (core->anal, fi2->addr);
+                                        if (list2) {
+                                            RAnalRef *ref2;
+                                            R_VEC_FOREACH (list2, ref2) {
+                                                r_cons_printf (core->cons, "0x%"PFMT64x" %s %s %s\n", ref2->addr,
+                                                    r_anal_ref_perm_tostring (ref2),
+                                                    r_anal_ref_type_tostring (ref2->type),
+                                                    fi2->name? fi2->name: "?");
+                                            }
+                                            RVecAnalRef_free (list2);
+                                        }
+                                    }
+                                    count++;
+                                }
+                            }
+                        }
+                    }
+                }
+                i += op.size - 1;
+                r_anal_op_fini (&op);
+            }
+            if (bckwrds) {
+                if (!do_bckwrd_srch) {
+                    break;
+                }
+                if (at > from + core->blocksize - OPSZ) {
+                    at -= core->blocksize;
+                } else {
+                    do_bckwrd_srch = false;
+                    at = from;
+                }
+            } else {
+                at += core->blocksize - OPSZ;
+            }
+        }
+    } else {
+        R_LOG_ERROR ("block size too small");
+    }
+    r_cons_break_pop (core->cons);
+    free (targets);
+    free (buf);
+    r_anal_op_fini (&op);
+    return count;
 }
 
 static void add_string_ref(RCore *core, ut64 xref_from, ut64 xref_to) {
