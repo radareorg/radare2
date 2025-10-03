@@ -667,3 +667,5 @@ ad "tbnz x29, 0x30, 0x1fd0" 9DFE80B7
 ad "tbnz w25, 0x16, 0x14" B900B037
 ad "tbnz w30, 0xf, 4" 3E007837
 ad "tbnz w11, 0x1d, 0x18" CB00E837
+ad "msub x7, x8, x9, x5" 0795099b
+ad "str x2, [x16, 0x2058]" 022e10f9
