@@ -917,3 +917,129 @@ EXPECT=<<EOF
 size     0x5
 EOF
 RUN
+
+NAME=md ubifs
+FILE=bins/fs/ubifs.img
+ARGS=-n
+CMDS=<<EOF
+m /mnt ubifs 0
+md /mnt | sort
+EOF
+EXPECT=<<EOF
+d bin
+d dev
+d etc
+d lib
+d mnt
+d overlay
+d proc
+d rom
+d root
+d sbin
+d sys
+d tmp
+d usr
+d www
+l var
+EOF
+RUN
+
+NAME=md ubifs subdirectory
+FILE=bins/fs/ubifs.img
+ARGS=-n
+CMDS=<<EOF
+m /mnt ubifs 0
+md /mnt/etc | sort | head -10
+EOF
+EXPECT=<<EOF
+d board.d
+d config
+d crontabs
+d dropbear
+d hotplug.d
+d init.d
+d iproute2
+d luci-uploads
+d modules-boot.d
+d modules.d
+EOF
+RUN
+
+NAME=mc ubifs cat file
+FILE=bins/fs/ubifs.img
+ARGS=-n
+CMDS=<<EOF
+m /mnt ubifs 0
+mc /mnt/etc/banner
+EOF
+EXPECT=<<EOF
+  _______                     ________        __
+ |       |.-----.-----.-----.|  |  |  |.----.|  |_
+ |   -   ||  _  |  -__|     ||  |  |  ||   _||   _|
+ |_______||   __|_____|__|__||________||__|  |____|
+          |__| W I R E L E S S   F R E E D O M
+ -----------------------------------------------------
+ OpenWrt 18.06.6, r7957-d81a8a3e29
+ -----------------------------------------------------
+
+EOF
+RUN
+
+NAME=mi ubifs file info
+FILE=bins/fs/ubifs.img
+ARGS=-n
+CMDS=<<EOF
+m /mnt ubifs 0
+mi /mnt/etc/banner
+EOF
+EXPECT=<<EOF
+'f file 396 0x004ec398
+EOF
+RUN
+
+NAME=md ubifs nested directory
+FILE=bins/fs/ubifs.img
+ARGS=-n
+CMDS=<<EOF
+m /mnt ubifs 0
+md /mnt/www/luci-static | sort
+EOF
+EXPECT=<<EOF
+d bootstrap
+d resources
+EOF
+RUN
+
+NAME=mis ubifs file info and seek
+FILE=bins/fs/ubifs.img
+ARGS=-n
+CMDS=<<EOF
+m /mnt ubifs 0
+mis /mnt/etc/banner
+s
+EOF
+EXPECT=<<EOF
+'f file 396 0x004ec398
+0x4ec398
+EOF
+RUN
+
+NAME=prgr ubifs print raw from address
+FILE=bins/fs/ubifs.img
+ARGS=-n
+CMDS=<<EOF
+m /mnt ubifs 0
+s 0x4ec398
+prgr 396
+EOF
+EXPECT=<<EOF
+  _______                     ________        __
+ |       |.-----.-----.-----.|  |  |  |.----.|  |_
+ |   -   ||  _  |  -__|     ||  |  |  ||   _||   _|
+ |_______||   __|_____|__|__||________||__|  |____|
+          |__| W I R E L E S S   F R E E D O M
+ -----------------------------------------------------
+ OpenWrt 18.06.6, r7957-d81a8a3e29
+ -----------------------------------------------------
+EOF
+RUN
