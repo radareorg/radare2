@@ -19,6 +19,7 @@
 typedef struct r2r_state_t {
 	R2RRunConfig run_config;
 	bool verbose;
+	bool quiet;
 	R2RTestDatabase *db;
 	PJ *test_results;
 
@@ -358,6 +359,7 @@ int main(int argc, char **argv) {
 			goto beach;
 		case 'q':
 			quiet = true;
+			r_log_set_quiet (true);
 			break;
 		case 'v':
 			if (quiet) {
@@ -508,6 +510,7 @@ int main(int argc, char **argv) {
 	state.run_config.json_test_file = json_test_file ? json_test_file : JSON_TEST_FILE_DEFAULT;
 	state.run_config.timeout_ms = (timeout_sec > UT64_MAX / 1000) ? UT64_MAX : timeout_sec * 1000;
 	state.verbose = verbose;
+	state.quiet = quiet;
 	state.db = r2r_test_database_new ();
 	if (!state.db) {
 		return -1;
@@ -610,7 +613,9 @@ int main(int argc, char **argv) {
 
 	R_FREE (cwd);
 	uint32_t loaded_tests = r_pvector_length (&state.db->tests);
-	printf ("Loaded %u tests.\n", loaded_tests);
+	if (!state.quiet) {
+		printf ("Loaded %u tests.\n", loaded_tests);
+	}
 	if (nothing) {
 		goto coast;
 	}
@@ -692,8 +697,6 @@ int main(int argc, char **argv) {
 
 	r_th_lock_leave (state.lock);
 
-	printf ("\n");
-
 	void **it;
 	r_pvector_foreach (&workers, it) {
 		RThread *th = *it;
@@ -702,14 +705,17 @@ int main(int argc, char **argv) {
 	}
 	r_pvector_clear (&workers);
 
-	ut64 seconds = (r_time_now_mono () - time_start) / 1000000;
-	printf ("Finished in");
-	if (seconds > 60) {
-		ut64 minutes = seconds / 60;
-		printf (" %"PFMT64d" minutes and", seconds / 60);
-		seconds -= (minutes * 60);
+	if (!state.quiet) {
+		printf ("\n");
+		ut64 seconds = (r_time_now_mono () - time_start) / 1000000;
+		printf ("Finished in");
+		if (seconds > 60) {
+			ut64 minutes = seconds / 60;
+			printf (" %"PFMT64d" minutes and", seconds / 60);
+			seconds -= (minutes * 60);
+		}
+		printf (" %"PFMT64d" seconds.\n", seconds % 60);
 	}
-	printf (" %"PFMT64d" seconds.\n", seconds % 60);
 
 	if (output_file) {
 		pj_end (state.test_results);
@@ -1044,7 +1050,12 @@ static void print_new_results(R2RState *state, ut64 prev_completed) {
 		if (state->test_results && !result->run_skipped) {
 			test_result_to_json (state->test_results, result);
 		}
-		if (!state->verbose && (result->result == R2R_TEST_RESULT_OK || result->result == R2R_TEST_RESULT_FIXED || result->result == R2R_TEST_RESULT_BROKEN)) {
+		/* In quiet mode only print failing tests; otherwise follow verbose flag rules */
+		if (state->quiet) {
+			if (result->result != R2R_TEST_RESULT_FAILED) {
+				continue;
+			}
+		} else if (!state->verbose && (result->result == R2R_TEST_RESULT_OK || result->result == R2R_TEST_RESULT_FIXED || result->result == R2R_TEST_RESULT_BROKEN)) {
 			continue;
 		}
 		char *name = r2r_test_name (result->test);
@@ -1087,9 +1098,13 @@ static void print_state(R2RState *state, ut64 prev_completed) {
 #if R2__WINDOWS__
 	setvbuf (stdout, NULL, _IOFBF, 8192);
 #endif
+	/* Always print new failing results; in quiet mode skip summary/status line */
 	print_new_results (state, prev_completed);
+	if (state->quiet) {
+		return;
+	}
 
-	// [x/x] OK  42 BR  0 ...
+	/* [x/x] OK  42 BR  0 ... */
 	printf (R_CONS_CLEAR_LINE);
 	ut64 a = (ut64)r_pvector_length (&state->results);
 	ut64 b = (ut64)r_pvector_length (&state->db->tests);
@@ -1107,7 +1122,11 @@ static void print_state(R2RState *state, ut64 prev_completed) {
 }
 
 static void print_log(R2RState *state, ut64 prev_completed, ut64 prev_paths_completed) {
+	/* Always print new failing results; in quiet mode skip per-path summaries */
 	print_new_results (state, prev_completed);
+	if (state->quiet) {
+		return;
+	}
 	ut64 paths_completed = r_pvector_length (&state->completed_paths);
 	int a = r_pvector_length (&state->queue);
 	for (; prev_paths_completed < paths_completed; prev_paths_completed++) {
