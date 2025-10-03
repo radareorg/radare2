@@ -694,6 +694,7 @@ R_API int r_core_get_stacksz(RCore *core, ut64 from, ut64 to);
 R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask);
 R_IPI int core_type_by_addr(RCore *core, ut64 addr);
 R_API void r_core_anal_esil(RCore *core, const char *str, const char *addr);
+R_API void r_core_anal_esil_multi(RCore *core, const char *str, RList *targets);
 R_API void r_core_anal_fcn_merge(RCore *core, ut64 addr, ut64 addr2);
 R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr, ut8 ch, bool verbose);
 R_API ut64 r_core_anal_address(RCore *core, ut64 addr);

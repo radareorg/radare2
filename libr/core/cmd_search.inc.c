@@ -189,11 +189,11 @@ static RCoreHelpMessage help_msg_slash_cc = {
 };
 
 static RCoreHelpMessage help_msg_slash_r = {
-	"Usage:", "/r[acerwx] [address]", " search references to this specific address",
-	"/r", " [addr]", "search references to this specific address",
+	"Usage:", "/r[acerwx] [address ...]", " search references to one or more addresses (space separated)",
+	"/r", " [addr ...]", "search references to one or more addresses (space separated)",
 	"/ra", "", "search all references",
 	"/rc", " ([addr])", "search for call references",
-	"/re", " [addr]", "search references using esil",
+	"/re", " [addr ...]", "search references using esil (accepts multiple space-separated addresses)",
 	"/rr", "", "find read references",
 	"/ru", "[*qj]", "search for UDS CAN database tables (binbloom)",
 	"/rw", "", "find write references",
@@ -4508,20 +4508,37 @@ reread:
 			break;
 		case 'e': // "/re"
 			if (input[2] == ' ') {
+				// allow multiple addresses separated by space
+				char *ptr = strdup (r_str_trim_head_ro ((char *)input + 2));
+				int n = r_str_word_set0 (ptr);
+				RList *targets = r_list_newf (free);
+				int i;
+				for (i = 0; i < n; i++) {
+					const char *tok = r_str_word_get0 (ptr, i);
+					if (!tok) {
+						continue;
+					}
+					ut64 val = r_num_math (core->num, tok);
+					r_list_append (targets, ut64_new (val));
+				}
 				RListIter *iter;
 				RIOMap *map;
 				r_list_foreach (param.boundaries, iter, map) {
 					R_LOG_DEBUG ("-- 0x%"PFMT64x" 0x%"PFMT64x, r_io_map_begin (map), r_io_map_end (map));
-					ut64 refptr = r_num_math (core->num, input + 2);
 					ut64 curseek = core->addr;
 					r_core_seek (core, r_io_map_begin (map), true);
 					char *arg = r_str_newf (" %"PFMT64d, r_io_map_size (map));
-					char *trg = refptr? r_str_newf (" %"PFMT64d, refptr): strdup ("");
-					r_core_anal_esil (core, arg, trg);
+					r_core_cmd0 (core, "aeim");
+					if (r_config_get_b (core->config, "anal.esil.debug")) {
+						r_cons_printf (core->cons, "ESIL-MULTI: scanning map 0x%"PFMT64x"-0x%"PFMT64x" size=%s targets=%d\n",
+								r_io_map_begin (map), r_io_map_end (map), arg, r_list_length (targets));
+					}
+					r_core_anal_esil_multi (core, arg, targets);
 					free (arg);
-					free (trg);
 					r_core_seek (core, curseek, true);
 				}
+				r_list_free (targets);
+				free (ptr);
 			} else {
 				r_core_cmd_help_match (core, help_msg_slash_r, "/re");
 				dosearch = false;
@@ -4559,8 +4576,41 @@ reread:
 					ut64 from = r_io_map_begin (map);
 					ut64 to = r_io_map_end (map);
 					if (input[param_offset - 1] == ' ') {
-						r_core_anal_search (core, from, to, r_num_math (core->num, input + 2), 0);
-						do_ref_search (core, r_num_math (core->num, input + 2), from, to, &param);
+						char *ptr = strdup (r_str_trim_head_ro ((char *)input + 2));
+						int n = r_str_word_set0 (ptr);
+						if (n <= 0) {
+							free (ptr);
+							break;
+						}
+						if (n == 1) {
+							ut64 val = r_num_math (core->num, ptr);
+							r_core_anal_search (core, from, to, val, 0);
+							do_ref_search (core, val, from, to, &param);
+						} else {
+							RList *targets = r_list_newf (free);
+							int i;
+							for (i = 0; i < n; i++) {
+								const char *tok = r_str_word_get0 (ptr, i);
+								if (!tok) {
+									continue;
+								}
+								ut64 val = r_num_math (core->num, tok);
+								r_list_append (targets, ut64_new (val));
+							}
+							/* perform a single multi-target scan for this map */
+							r_core_anal_search_multi (core, from, to, targets, 0);
+							/* print results per target */
+							RListIter *it;
+							ut64 *ap;
+							r_list_foreach (targets, it, ap) {
+								if (!ap) {
+									continue;
+								}
+								do_ref_search (core, *ap, from, to, &param);
+							}
+							r_list_free (targets);
+						}
+						free (ptr);
 					} else {
 						r_core_anal_search (core, from, to, core->addr, 0);
 						do_ref_search (core, core->addr, from, to, &param);

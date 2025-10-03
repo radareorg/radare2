@@ -3703,6 +3703,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("anal.hasnext", "false", "continue analysis after each function");
 	SETICB ("anal.nonull", 0, &cb_anal_nonull, "do not analyze regions of N null bytes");
 	SETB ("anal.esil", "false", "use the new ESIL code analysis");
+	SETB ("anal.esil.debug", "false", "enable ESIL debug prints for /re/aae (internal use)");
 	SETB ("anal.strings", "false", "flag strings when performing analysis (see af,aar, e bin.strings)");
 	SETS ("anal.types.spec", "gcc",  "set profile for specifying format chars used in type analysis");
 	SETB ("anal.types.verbose", "false", "verbose output from type analysis");

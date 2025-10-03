@@ -1146,6 +1146,7 @@ static RCoreHelpMessage help_msg_ax = {
 	"axC", " addr [at]", "add code call ref",
 	"axd", " addr [at]", "add data ref",
 	"axF", " [flg-glob]", "find data/code references of flags",
+	"axFe", " [flg-glob]", "find data/code references of flags using ESIL emulation",
 	"axf", "[?] [addr]", "find data/code references from this address",
 	"axff", "[*jqQ] [addr]", "find data/code references from this function",
 	"axg", "[*j] [addr]", "show xrefs graph to reach current function",
@@ -1511,73 +1512,118 @@ static bool print_flag_refs_cb(RFlagItem *fi, void *user) {
 
 
 static bool collect_flag_addrs_cb(RFlagItem *fi, void *user) {
-    RList *list = (RList *)user;
-    if (!list || !fi) {
-        return true;
-    }
-    r_list_append (list, ut64_new (fi->addr));
-    return true;
+	RList *list = (RList *)user;
+	if (!list || !fi) {
+		return true;
+	}
+	r_list_append (list, ut64_new (fi->addr));
+	return true;
 }
 
 static void find_refs(RCore *core, const char *glob) {
-    ut64 curseek = core->addr;
-    glob = r_str_trim_head_ro (glob);
-    if (!*glob) {
-        glob = "str.*";
-    }
-    if (*glob != '?') {
-        R_LOG_INFO ("Finding references of flags matching '%s'", glob);
+	ut64 curseek = core->addr;
+	glob = r_str_trim_head_ro (glob);
+	if (!*glob) {
+		glob = "str.*";
+	}
+	if (*glob != '?') {
+		R_LOG_INFO ("Finding references of flags matching '%s'", glob);
 
-        /* Collect flag addresses matching the glob */
-        RList *flag_addrs = r_list_newf (free);
-        if (!flag_addrs) {
-            r_core_seek (core, curseek, true);
-            return;
-        }
-        r_flag_foreach_glob (core->flags, glob, collect_flag_addrs_cb, flag_addrs);
+		/* Collect flag addresses matching the glob */
+		RList *flag_addrs = r_list_newf (free);
+		if (!flag_addrs) {
+			r_core_seek (core, curseek, true);
+			return;
+		}
+		r_flag_foreach_glob (core->flags, glob, collect_flag_addrs_cb, flag_addrs);
 
-        if (!r_list_empty (flag_addrs)) {
-            /* Get memory boundaries to search (honour search.in) */
-            const char *mode = r_config_get (core->config, "search.in");
-            RList *bounds = r_core_get_boundaries_prot (core, -1, mode, "search");
-            if (bounds) {
-                RListIter *miter;
-                RIOMap *map;
-                RListIter *fiter;
-                ut64 *addrptr;
-                r_cons_break_push (core->cons, NULL, NULL);
-                r_list_foreach (bounds, miter, map) {
-                    ut64 from = r_io_map_begin (map);
-                    ut64 to = r_io_map_end (map);
-                    /* For each flag address, scan this map for references */
-                    r_list_foreach (flag_addrs, fiter, addrptr) {
-                        ut64 flag_addr = addrptr? *addrptr: 0;
-                        /* scan this map once for all flag addresses */
-                        if (!r_list_empty (flag_addrs) && from < to) {
-                            r_core_anal_search_multi (core, from, to, flag_addrs, 0);
-                            /* after the multi-search we can stop iterating flags for this map */
-                            break;
-                        }
-                        if (r_cons_is_breaked (core->cons)) {
-                            break;
-                        }
-                    }
-                    if (r_cons_is_breaked (core->cons)) {
-                        break;
-                    }
-                }
-                r_cons_break_pop (core->cons);
-                r_list_free (bounds);
-            }
-        }
+		if (!r_list_empty (flag_addrs)) {
+			/* Get memory boundaries to search (honour search.in) */
+			const char *mode = r_config_get (core->config, "search.in");
+			RList *bounds = r_core_get_boundaries_prot (core, -1, mode, "search");
+			if (bounds) {
+				RListIter *miter;
+				RIOMap *map;
+				RListIter *fiter;
+				ut64 *addrptr;
+				r_cons_break_push (core->cons, NULL, NULL);
+				r_list_foreach (bounds, miter, map) {
+					ut64 from = r_io_map_begin (map);
+					ut64 to = r_io_map_end (map);
+					/* For each flag address, scan this map for references */
+					r_list_foreach (flag_addrs, fiter, addrptr) {
+						ut64 flag_addr = addrptr? *addrptr: 0;
+						/* scan this map once for all flag addresses */
+						if (!r_list_empty (flag_addrs) && from < to) {
+							r_core_anal_search_multi (core, from, to, flag_addrs, 0);
+							/* after the multi-search we can stop iterating flags for this map */
+							break;
+						}
+						if (r_cons_is_breaked (core->cons)) {
+							break;
+						}
+					}
+					if (r_cons_is_breaked (core->cons)) {
+						break;
+					}
+				}
+				r_cons_break_pop (core->cons);
+				r_list_free (bounds);
+			}
+		}
 
-        /* Print xrefs for the matching flags (analysis populates the xrefs) */
-        r_flag_foreach_glob (core->flags, glob, print_flag_refs_cb, core);
-        r_core_seek (core, curseek, true);
-        r_list_free (flag_addrs);
-    } else {
-        r_core_cmd_help_match (core, help_msg_ax, "axF");
-    }
+		/* Print xrefs for the matching flags (analysis populates the xrefs) */
+		r_flag_foreach_glob (core->flags, glob, print_flag_refs_cb, core);
+		r_core_seek (core, curseek, true);
+		r_list_free (flag_addrs);
+	} else {
+		r_core_cmd_help_match (core, help_msg_ax, "axF");
+	}
+}
+
+static void find_refs_esil(RCore *core, const char *glob) {
+	ut64 curseek = core->addr;
+	glob = r_str_trim_head_ro (glob);
+	if (!*glob) {
+		glob = "str.*";
+	}
+	if (*glob != '?') {
+		R_LOG_INFO ("Finding ESIL references of flags matching '%s'", glob);
+		RList *flag_addrs = r_list_newf (free);
+		if (!flag_addrs) {
+			r_core_seek (core, curseek, true);
+			return;
+		}
+		r_flag_foreach_glob (core->flags, glob, collect_flag_addrs_cb, flag_addrs);
+		if (!r_list_empty (flag_addrs)) {
+			const char *mode = r_config_get (core->config, "search.in");
+			RList *bounds = r_core_get_boundaries_prot (core, -1, mode, "search");
+			if (bounds) {
+				RListIter *iter;
+				RIOMap *map;
+				r_cons_break_push (core->cons, NULL, NULL);
+				r_list_foreach (bounds, iter, map) {
+					ut64 from = r_io_map_begin (map);
+					ut64 to = r_io_map_end (map);
+					if (from < to) {
+						char *arg = r_str_newf (" %"PFMT64d, r_io_map_size (map));
+						r_core_anal_esil_multi (core, arg, flag_addrs);
+						free (arg);
+					}
+					if (r_cons_is_breaked (core->cons)) {
+						break;
+					}
+				}
+				r_cons_break_pop (core->cons);
+				r_list_free (bounds);
+			}
+		}
+		r_flag_foreach_glob (core->flags, glob, print_flag_refs_cb, core);
+		r_core_seek (core, curseek, true);
+		r_list_free (flag_addrs);
+	} else {
+		r_core_cmd_help_match (core, help_msg_ax, "axF");
+	}
 }
 
 static ut64 sort64val(const void *a) {
@@ -11418,7 +11464,35 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		}
 		break;
 	case 'F': // "axF"
-		find_refs (core, input + 1);
+		{
+			if (input[1] == '?') {
+				r_core_cmd_help_match (core, help_msg_ax, "axF");
+				break;
+			}
+			char *ptr = strdup (r_str_trim_head_ro ((char *)input + 1));
+			if (!ptr) {
+				break;
+			}
+			int n = r_str_word_set0 (ptr);
+			const char *first = n? r_str_word_get0 (ptr, 0): NULL;
+			if (first && !strcmp (first, "e")) {
+				/* axFe subcommand: esil-based search */
+				if (n > 1 && r_str_word_get0 (ptr, 1) && r_str_word_get0 (ptr, 1)[0] == '?') {
+					r_core_cmd_help_match (core, help_msg_ax, "axF");
+				} else {
+					const char *glob = (n > 1)? r_str_word_get0 (ptr, 1): "";
+					find_refs_esil (core, glob);
+				}
+			} else {
+				/* standard axF behaviour */
+				if (first && first[0] == '?') {
+					r_core_cmd_help_match (core, help_msg_ax, "axF");
+				} else {
+					find_refs (core, ptr);
+				}
+			}
+			free (ptr);
+		}
 		break;
 	case 'C': // "axC"
 	case 'c': // "axc"

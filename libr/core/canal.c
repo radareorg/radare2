@@ -90,9 +90,9 @@ static int cmpaddr(const void *_a, const void *_b) {
 }
 
 static int ut64_cmp(const void *a, const void *b) {
-    const ut64 aa = *(const ut64*)a;
-    const ut64 bb = *(const ut64*)b;
-    return (aa > bb) - (aa < bb);
+	const ut64 aa = *(const ut64*)a;
+	const ut64 bb = *(const ut64*)b;
+	return (aa > bb) - (aa < bb);
 }
 
 static void init_addr2klass(RCore *core, RBinObject *bo) {
@@ -4547,202 +4547,202 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 }
 
 R_API int r_core_anal_search_multi(RCore *core, ut64 from, ut64 to, RList *refs, int mode) {
-    R_RETURN_VAL_IF_FAIL (core, -1);
-    if (!refs) {
-        return r_core_anal_search (core, from, to, UT64_MAX, mode);
-    }
-    int refcount = r_list_length (refs);
-    if (refcount == 0) {
-        return r_core_anal_search (core, from, to, UT64_MAX, mode);
-    }
+	R_RETURN_VAL_IF_FAIL (core, -1);
+	if (!refs) {
+		return r_core_anal_search (core, from, to, UT64_MAX, mode);
+	}
+	int refcount = r_list_length (refs);
+	if (refcount == 0) {
+		return r_core_anal_search (core, from, to, UT64_MAX, mode);
+	}
 
-    /* Build a sorted array of target addresses for fast membership checks */
-    ut64 *targets = (ut64 *)malloc (sizeof (ut64) * refcount);
-    if (!targets) {
-        return -1;
-    }
-    int idx = 0;
-    RListIter *iter;
-    ut64 *aptr;
-    r_list_foreach (refs, iter, aptr) {
-        targets[idx++] = aptr? *aptr: UT64_MAX;
-    }
-    qsort (targets, refcount, sizeof (ut64), ut64_cmp);
+	/* Build a sorted array of target addresses for fast membership checks */
+	ut64 *targets = (ut64 *)malloc (sizeof (ut64) * refcount);
+	if (!targets) {
+		return -1;
+	}
+	int idx = 0;
+	RListIter *iter;
+	ut64 *aptr;
+	r_list_foreach (refs, iter, aptr) {
+		targets[idx++] = aptr? *aptr: UT64_MAX;
+	}
+	qsort (targets, refcount, sizeof (ut64), ut64_cmp);
 
-    ut8 *buf = (ut8 *)malloc (core->blocksize);
-    if (!buf) {
-        free (targets);
-        return -1;
-    }
-    int ptrdepth = r_config_get_i (core->config, "anal.ptrdepth");
-    int i, count = 0;
-    RAnalOp op = {0};
-    ut64 at;
-    char bckwrds, do_bckwrd_srch;
-    int arch = -1;
-    if (core->rasm->config->bits == 64) {
-        if (core->rasm->config) {
-            if (r_str_startswith (core->rasm->config->arch, "arm")) {
-                arch = R2_ARCH_ARM64;
-            }
-        }
-    }
-    do_bckwrd_srch = bckwrds = core->search->bckwrds;
-    r_cons_break_push (core->cons, NULL, NULL);
-    if (core->blocksize > OPSZ) {
-        if (bckwrds) {
-            if (from + core->blocksize > to) {
-                at = from;
-                do_bckwrd_srch = false;
-            } else {
-                at = to - core->blocksize;
-            }
-        } else {
-            at = from;
-        }
+	ut8 *buf = (ut8 *)malloc (core->blocksize);
+	if (!buf) {
+		free (targets);
+		return -1;
+	}
+	int ptrdepth = r_config_get_i (core->config, "anal.ptrdepth");
+	int i, count = 0;
+	RAnalOp op = {0};
+	ut64 at;
+	char bckwrds, do_bckwrd_srch;
+	int arch = -1;
+	if (core->rasm->config->bits == 64) {
+		if (core->rasm->config) {
+			if (r_str_startswith (core->rasm->config->arch, "arm")) {
+				arch = R2_ARCH_ARM64;
+			}
+		}
+	}
+	do_bckwrd_srch = bckwrds = core->search->bckwrds;
+	r_cons_break_push (core->cons, NULL, NULL);
+	if (core->blocksize > OPSZ) {
+		if (bckwrds) {
+			if (from + core->blocksize > to) {
+				at = from;
+				do_bckwrd_srch = false;
+			} else {
+				at = to - core->blocksize;
+			}
+		} else {
+			at = from;
+		}
 
-        while ((!bckwrds && at < to) || bckwrds) {
-            if (r_cons_is_breaked (core->cons)) {
-                break;
-            }
-            size_t left = R_MIN (to - at, core->blocksize);
-            if (!r_io_read_at (core->io, at, buf, left)) {
-                break;
-            }
-            if (left < core->blocksize) {
-                memset (buf + left, 0, core->blocksize - left);
-            }
-            for (i = bckwrds ? (core->blocksize - OPSZ - 1) : 0;
-                 (!bckwrds && i < core->blocksize - OPSZ) ||
-                 (bckwrds && i > 0); bckwrds ? i-- : i++) {
-                if (r_cons_is_breaked (core->cons)) {
-                    break;
-                }
-                switch (mode) {
-                case 'c':
-                    if (!opiscall (core, &op, at + i, buf + i, core->blocksize - i, arch)) {
-                        continue;
-                    }
-                    break;
-                case 'r':
-                case 'w':
-                case 'x':
-                    {
-                        r_anal_op_fini (&op);
-                        r_anal_op (core->anal, &op, at + i, buf + i, core->blocksize - i, R_ARCH_OP_MASK_BASIC);
-                        int mask = (mode == 'r') ? 1 : mode == 'w' ? 2: mode == 'x' ? 4: 0;
-                        if (op.direction == mask) {
-                            i += op.size;
-                        }
-                        r_anal_op_fini (&op);
-                        continue;
-                    }
-                    break;
-                default:
-                    r_anal_op_fini (&op);
-                    if (!r_anal_op (core->anal, &op, at + i, buf + i, core->blocksize - i, R_ARCH_OP_MASK_BASIC)) {
-                        r_anal_op_fini (&op);
-                        continue;
-                    }
-                }
-                /* handle jump/call/ptr similarly to single-ref search, but check
-                 * whether the found target exists in our targets array */
-                if (op.jump != UT64_MAX) {
-                    ut64 cand = op.jump;
-                    if (bsearch (&cand, targets, refcount, sizeof (ut64), ut64_cmp) != NULL) {
-                        if (core_anal_followptr (core, R_ANAL_REF_TYPE_CALL, at + i, cand, cand, true, 0)) {
-                            /* print refs for this flag as they are discovered */
-                            RFlagItem *fi = r_flag_get_at (core->flags, cand, false);
-                            if (fi) {
-                                RVecAnalRef *list = r_anal_xrefs_get (core->anal, fi->addr);
-                                if (list) {
-                                    RAnalRef *ref;
-                                    R_VEC_FOREACH (list, ref) {
-                                        r_cons_printf (core->cons, "0x%"PFMT64x" %s %s %s\n", ref->addr,
-                                            r_anal_ref_perm_tostring (ref),
-                                            r_anal_ref_type_tostring (ref->type),
-                                            fi->name? fi->name: "?");
-                                    }
-                                    RVecAnalRef_free (list);
-                                }
-                            }
-                            count++;
-                        }
-                    }
-                }
-                if (op.ptr != UT64_MAX) {
-                    ut64 cand = op.ptr;
-                    if (bsearch (&cand, targets, refcount, sizeof (ut64), ut64_cmp) != NULL) {
-                        const int type = core_type_by_addr (core, op.ptr);
-                        const ut64 perm = (type == R_ANAL_REF_TYPE_STRN)? R_ANAL_OP_DIR_READ: (op.direction &= (~R_ANAL_OP_DIR_REF));
-                        const int reftype = type | r_anal_perm_to_reftype (perm);
-                        if (found_xref (core, op.addr, cand, reftype, NULL, 0, false, false)) {
-                            RFlagItem *fi = r_flag_get_at (core->flags, cand, false);
-                            if (fi) {
-                                RVecAnalRef *list = r_anal_xrefs_get (core->anal, fi->addr);
-                                if (list) {
-                                    RAnalRef *ref;
-                                    R_VEC_FOREACH (list, ref) {
-                                        r_cons_printf (core->cons, "0x%"PFMT64x" %s %s %s\n", ref->addr,
-                                            r_anal_ref_perm_tostring (ref),
-                                            r_anal_ref_type_tostring (ref->type),
-                                            fi->name? fi->name: "?");
-                                    }
-                                    RVecAnalRef_free (list);
-                                }
-                            }
-                            count++;
-                        }
-                    } else {
-                        if (op.disp && op.disp != UT64_MAX) {
-                            ut64 cand2 = op.disp;
-                            if (bsearch (&cand2, targets, refcount, sizeof (ut64), ut64_cmp) != NULL) {
-                                if (found_xref (core, op.addr, cand2, R_ANAL_REF_TYPE_DATA, NULL, 0, false, false)) {
-                                    RFlagItem *fi2 = r_flag_get_at (core->flags, cand2, false);
-                                    if (fi2) {
-                                        RVecAnalRef *list2 = r_anal_xrefs_get (core->anal, fi2->addr);
-                                        if (list2) {
-                                            RAnalRef *ref2;
-                                            R_VEC_FOREACH (list2, ref2) {
-                                                r_cons_printf (core->cons, "0x%"PFMT64x" %s %s %s\n", ref2->addr,
-                                                    r_anal_ref_perm_tostring (ref2),
-                                                    r_anal_ref_type_tostring (ref2->type),
-                                                    fi2->name? fi2->name: "?");
-                                            }
-                                            RVecAnalRef_free (list2);
-                                        }
-                                    }
-                                    count++;
-                                }
-                            }
-                        }
-                    }
-                }
-                i += op.size - 1;
-                r_anal_op_fini (&op);
-            }
-            if (bckwrds) {
-                if (!do_bckwrd_srch) {
-                    break;
-                }
-                if (at > from + core->blocksize - OPSZ) {
-                    at -= core->blocksize;
-                } else {
-                    do_bckwrd_srch = false;
-                    at = from;
-                }
-            } else {
-                at += core->blocksize - OPSZ;
-            }
-        }
-    } else {
-        R_LOG_ERROR ("block size too small");
-    }
-    r_cons_break_pop (core->cons);
-    free (targets);
-    free (buf);
-    r_anal_op_fini (&op);
-    return count;
+		while ((!bckwrds && at < to) || bckwrds) {
+			if (r_cons_is_breaked (core->cons)) {
+				break;
+			}
+			size_t left = R_MIN (to - at, core->blocksize);
+			if (!r_io_read_at (core->io, at, buf, left)) {
+				break;
+			}
+			if (left < core->blocksize) {
+				memset (buf + left, 0, core->blocksize - left);
+			}
+			for (i = bckwrds ? (core->blocksize - OPSZ - 1) : 0;
+					(!bckwrds && i < core->blocksize - OPSZ) ||
+					(bckwrds && i > 0); bckwrds ? i-- : i++) {
+				if (r_cons_is_breaked (core->cons)) {
+					break;
+				}
+				switch (mode) {
+				case 'c':
+					if (!opiscall (core, &op, at + i, buf + i, core->blocksize - i, arch)) {
+						continue;
+					}
+					break;
+				case 'r':
+				case 'w':
+				case 'x':
+					{
+						r_anal_op_fini (&op);
+						r_anal_op (core->anal, &op, at + i, buf + i, core->blocksize - i, R_ARCH_OP_MASK_BASIC);
+						int mask = (mode == 'r') ? 1 : mode == 'w' ? 2: mode == 'x' ? 4: 0;
+						if (op.direction == mask) {
+							i += op.size;
+						}
+						r_anal_op_fini (&op);
+						continue;
+					}
+					break;
+				default:
+					r_anal_op_fini (&op);
+					if (!r_anal_op (core->anal, &op, at + i, buf + i, core->blocksize - i, R_ARCH_OP_MASK_BASIC)) {
+						r_anal_op_fini (&op);
+						continue;
+					}
+				}
+				/* handle jump/call/ptr similarly to single-ref search, but check
+				 * whether the found target exists in our targets array */
+				if (op.jump != UT64_MAX) {
+					ut64 cand = op.jump;
+					if (bsearch (&cand, targets, refcount, sizeof (ut64), ut64_cmp) != NULL) {
+						if (core_anal_followptr (core, R_ANAL_REF_TYPE_CALL, at + i, cand, cand, true, 0)) {
+							/* print refs for this flag as they are discovered */
+							RFlagItem *fi = r_flag_get_at (core->flags, cand, false);
+							if (fi) {
+								RVecAnalRef *list = r_anal_xrefs_get (core->anal, fi->addr);
+								if (list) {
+									RAnalRef *ref;
+									R_VEC_FOREACH (list, ref) {
+										r_cons_printf (core->cons, "0x%"PFMT64x" %s %s %s\n", ref->addr,
+												r_anal_ref_perm_tostring (ref),
+												r_anal_ref_type_tostring (ref->type),
+												fi->name? fi->name: "?");
+									}
+									RVecAnalRef_free (list);
+								}
+							}
+							count++;
+						}
+					}
+				}
+				if (op.ptr != UT64_MAX) {
+					ut64 cand = op.ptr;
+					if (bsearch (&cand, targets, refcount, sizeof (ut64), ut64_cmp) != NULL) {
+						const int type = core_type_by_addr (core, op.ptr);
+						const ut64 perm = (type == R_ANAL_REF_TYPE_STRN)? R_ANAL_OP_DIR_READ: (op.direction &= (~R_ANAL_OP_DIR_REF));
+						const int reftype = type | r_anal_perm_to_reftype (perm);
+						if (found_xref (core, op.addr, cand, reftype, NULL, 0, false, false)) {
+							RFlagItem *fi = r_flag_get_at (core->flags, cand, false);
+							if (fi) {
+								RVecAnalRef *list = r_anal_xrefs_get (core->anal, fi->addr);
+								if (list) {
+									RAnalRef *ref;
+									R_VEC_FOREACH (list, ref) {
+										r_cons_printf (core->cons, "0x%"PFMT64x" %s %s %s\n", ref->addr,
+												r_anal_ref_perm_tostring (ref),
+												r_anal_ref_type_tostring (ref->type),
+												fi->name? fi->name: "?");
+									}
+									RVecAnalRef_free (list);
+								}
+							}
+							count++;
+						}
+					} else {
+						if (op.disp && op.disp != UT64_MAX) {
+							ut64 cand2 = op.disp;
+							if (bsearch (&cand2, targets, refcount, sizeof (ut64), ut64_cmp) != NULL) {
+								if (found_xref (core, op.addr, cand2, R_ANAL_REF_TYPE_DATA, NULL, 0, false, false)) {
+									RFlagItem *fi2 = r_flag_get_at (core->flags, cand2, false);
+									if (fi2) {
+										RVecAnalRef *list2 = r_anal_xrefs_get (core->anal, fi2->addr);
+										if (list2) {
+											RAnalRef *ref2;
+											R_VEC_FOREACH (list2, ref2) {
+												r_cons_printf (core->cons, "0x%"PFMT64x" %s %s %s\n", ref2->addr,
+														r_anal_ref_perm_tostring (ref2),
+														r_anal_ref_type_tostring (ref2->type),
+														fi2->name? fi2->name: "?");
+											}
+											RVecAnalRef_free (list2);
+										}
+									}
+									count++;
+								}
+							}
+						}
+					}
+				}
+				i += op.size - 1;
+				r_anal_op_fini (&op);
+			}
+			if (bckwrds) {
+				if (!do_bckwrd_srch) {
+					break;
+				}
+				if (at > from + core->blocksize - OPSZ) {
+					at -= core->blocksize;
+				} else {
+					do_bckwrd_srch = false;
+					at = from;
+				}
+			} else {
+				at += core->blocksize - OPSZ;
+			}
+		}
+	} else {
+		R_LOG_ERROR ("block size too small");
+	}
+	r_cons_break_pop (core->cons);
+	free (targets);
+	free (buf);
+	r_anal_op_fini (&op);
+	return count;
 }
 
 static void add_string_ref(RCore *core, ut64 xref_from, ut64 xref_to) {
@@ -5586,6 +5586,9 @@ typedef struct {
 	RAnalFunction *fcn;
 	char *spname;
 	ut64 initial_sp;
+	/* optional multi-target list for ESIL callbacks */
+	ut64 *targets;
+	int targets_count;
 } EsilBreakCtx;
 
 typedef int RPerm;
@@ -5713,16 +5716,36 @@ static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 		}
 		// TODO incorrect
 		if (trace && myvalid (core, refptr)) {
-			if (ntarget == UT64_MAX || ntarget == refptr) {
+			bool match = false;
+			EsilBreakCtx *ctx = esil->user;
+			if (ctx && ctx->targets && ctx->targets_count > 0) {
+				/* check membership against provided target list */
+				if (bsearch (&refptr, ctx->targets, ctx->targets_count, sizeof (ut64), ut64_cmp) != NULL) {
+					match = true;
+				}
+			} else {
+				/* fallback to legacy ntarget behaviour */
+				if (ntarget == UT64_MAX || ntarget == refptr) {
+					match = true;
+				}
+			}
+			/* Debug: print ESIL read detections so we can compare aae vs /re */
+			if (r_config_get_b (core->config, "anal.esil.debug")) {
+				r_cons_printf (core->cons, "ESIL-READ: esil.addr=0x%"PFMT64x" mem=0x%"PFMT64x" val=0x%"PFMT64x" match=%d targets=%d\n",
+						esil->addr, addr, refptr, match, ctx? ctx->targets_count: 0);
+			}
+			if (match) {
 				str[0] = 0;
 				if (r_io_read_at (core->io, refptr, str, sizeof (str)) < 1) {
-					//eprintf ("Invalid read\n");
 					str[0] = 0;
 				} else {
 					r_anal_xrefs_set (core->anal, esil->addr, refptr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
 					str[sizeof (str) - 1] = 0;
 					add_string_ref (core, esil->addr, refptr);
 					esilbreak_last_data = UT64_MAX;
+					if (r_config_get_b (core->config, "anal.esil.debug")) {
+						r_cons_printf (core->cons, "ESIL-XREF: from=0x%"PFMT64x" to=0x%"PFMT64x"\n", esil->addr, refptr);
+					}
 				}
 			}
 		}
@@ -6595,6 +6618,215 @@ repeat:
 	// r_core_cmd0 (core, "wc--");
 	// restore register
 	r_reg_arena_pop (core->anal->reg);
+}
+
+R_API void r_core_anal_esil_multi(RCore *core, const char *str /* len */, RList *targets) {
+	/* Adapted from r_core_anal_esil to support multiple target addresses
+	 * The implementation sets up a sorted array of targets and during ESIL
+	 * execution it checks membership against that array to decide when to
+	 * register xrefs. If targets is NULL or empty, behaviour is the same
+	 * as a wildcard (match any reference). */
+	if (!core) {
+		return;
+	}
+	int targets_count = r_list_length (targets);
+	ut64 *targs = NULL;
+	if (targets_count > 0) {
+		targs = (ut64 *)malloc (sizeof (ut64) * targets_count);
+		if (!targs) {
+			return;
+		}
+		int i = 0;
+		RListIter *iter;
+		ut64 *aptr;
+		r_list_foreach (targets, iter, aptr) {
+			targs[i++] = aptr? *aptr: UT64_MAX;
+		}
+		qsort (targs, targets_count, sizeof (ut64), ut64_cmp);
+	}
+
+	/* reuse most of r_core_anal_esil flow but with membership checks against targs */
+	bool cfg_anal_strings = r_config_get_b (core->config, "anal.strings");
+	bool emu_lazy = r_config_get_b (core->config, "emu.lazy");
+	const bool gp_fixed = r_config_get_b (core->config, "anal.fixed.gp");
+	bool newstack = r_config_get_b (core->config, "anal.var.newstack");
+	REsil *ESIL = core->anal->esil;
+	RAnalOp op = {0};
+	bool end_address_set = false;
+	int iend;
+	int minopsize = 4;
+	bool archIsArm = false;
+	ut64 start = core->addr;
+	ut64 end = 0LL;
+	core->esil_anal_stop = false;
+
+	if (!strcmp (str, "?")) {
+		free (targs);
+		return;
+	}
+
+	/* local helper to check membership */
+#define ESIL_CHECKREF(x) ( (targets_count == 0) || (bsearch (&(x), targs, targets_count, sizeof (ut64), ut64_cmp) != NULL) )
+
+	ut64 ntarget_local = UT64_MAX; /* unused meaning when targets provided */
+	if (str && *str) {
+		end = start + r_num_math (core->num, str);
+	} else {
+		RIOMap *map = r_io_map_get_at (core->io, start);
+		if (map) {
+			end = r_io_map_end (map);
+		} else {
+			end = start + core->blocksize;
+		}
+	}
+
+	bool is_fcn = false;
+	RAnalFunction *fcn = NULL;
+	if (!strcmp (str, "f")) {
+		fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
+		if (fcn) {
+			start = fcn->addr;
+			end = fcn->addr + r_anal_function_linear_size (fcn);
+			is_fcn = true;
+		}
+	}
+
+	/* Setup ESIL callbacks (reuse existing ones which set xrefs). They
+	 * will consult ESIL_CHECKREF via the captured targs array where needed. */
+	ESIL->cb.hook_reg_write = &esilbreak_reg_write;
+	ESIL->cb.hook_mem_read = &esilbreak_mem_read;
+	ESIL->cb.hook_mem_write = &esilbreak_mem_write;
+
+	/* Provide ESIL user context (EsilBreakCtx) so the callbacks have
+	 * access to the current op/fcn/stack state. This mirrors what
+	 * r_core_anal_esil does so that callbacks (esilbreak_*) behave
+	 * consistently when invoked here. */
+	EsilBreakCtx *esil_ctx = NULL;
+	{
+		const char *kspname = r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_SP);
+		char *spname = NULL;
+		if (!R_STR_ISEMPTY (kspname)) {
+			spname = strdup (kspname);
+		} else {
+			spname = strdup ("sp");
+		}
+		esil_ctx = malloc (sizeof (EsilBreakCtx));
+		if (esil_ctx) {
+			esil_ctx->op = &op;
+			esil_ctx->fcn = NULL;
+			esil_ctx->spname = spname;
+			esil_ctx->initial_sp = r_reg_getv (core->anal->reg, esil_ctx->spname);
+			esil_ctx->targets = targs;
+			esil_ctx->targets_count = targets_count;
+			ESIL->user = esil_ctx;
+		} else {
+			free (spname);
+		}
+	}
+
+	r_cons_break_push (core->cons, NULL, NULL);
+	ut64 cur = start;
+	ut64 curaddr = start;
+	ut8 *block = NULL;
+	size_t blocksz = core->blocksize;
+	if (blocksz < 4096) {
+		blocksz = 4096;
+	}
+	block = calloc (1, blocksz + 64);
+	if (!block) {
+		r_cons_break_pop (core->cons);
+		free (targs);
+		return;
+	}
+
+	while (cur < end) {
+		if (r_cons_is_breaked (core->cons) || core->esil_anal_stop) {
+			break;
+		}
+		size_t left = R_MIN ((ut64)blocksz, end - cur);
+		if (!r_io_read_at (core->io, cur, block, left)) {
+			break;
+		}
+		int i = 0;
+		while (i < (int)left) {
+			if (r_cons_is_breaked (core->cons) || core->esil_anal_stop) {
+				break;
+			}
+			int ret = r_anal_op (core->anal, &op, cur + i, block + i, left - i, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
+			if (ret < 1) {
+				i++;
+				continue;
+			}
+			/* emulate op using ESIL where appropriate */
+			{
+				const char *esilstr = R_STRBUF_SAFEGET (&op.esil);
+				if (esilstr && *esilstr) {
+					if (r_config_get_b (core->config, "anal.esil.debug")) {
+						r_cons_printf (core->cons, "ESIL-EXEC: pc=0x%"PFMT64x" esil='%s'\n", cur + i, esilstr);
+					}
+					r_esil_set_pc (ESIL, cur + i);
+					r_esil_parse (ESIL, esilstr);
+
+					/* Some references are discovered via ESIL side-effects
+					 * (esilbreak_last_data, ESIL->cur). Mirror the logic
+					 * used by r_core_anal_esil so /re and aae find the same refs. */
+					ut64 dst = esilbreak_last_data;
+					if (dst != UT64_MAX) {
+						if (ESIL_CHECKREF (dst) && myvalid (core, dst)) {
+							r_anal_xrefs_set (core->anal, cur + i, dst, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
+							if (r_config_get_b (core->config, "anal.esil.debug")) {
+								r_cons_printf (core->cons, "ESIL-XREF: from=0x%"PFMT64x" to=0x%"PFMT64x" (esil_last_data)\n", cur + i, dst);
+							}
+						}
+						esilbreak_last_data = UT64_MAX;
+					}
+					/* Also check ESIL current value */
+					if (ESIL->cur != UT64_MAX) {
+						ut64 cval = ESIL->cur;
+						if (ESIL_CHECKREF (cval) && myvalid (core, cval)) {
+							r_anal_xrefs_set (core->anal, cur + i, cval, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
+							if (r_config_get_b (core->config, "anal.esil.debug")) {
+								r_cons_printf (core->cons, "ESIL-XREF: from=0x%"PFMT64x" to=0x%"PFMT64x" (esil.cur)\n", cur + i, cval);
+							}
+						}
+					}
+				}
+			}
+			/* After ESIL run, some callbacks may have recorded xrefs for addresses that
+			 * match targets (via ESIL_CHECKREF). We can also proactively check
+			 * op.jump/op.ptr against targets here for CALL/JMP cases and register. */
+			if (op.jump != UT64_MAX) {
+				if (ESIL_CHECKREF (op.jump) && r_io_is_valid_offset (core->io, op.jump, !core->anal->opt.noncode)) {
+					r_anal_xrefs_set (core->anal, cur + i, op.jump, R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_EXEC);
+				}
+			}
+			if (op.ptr != UT64_MAX) {
+				if (ESIL_CHECKREF (op.ptr) && myvalid (core, op.ptr)) {
+					r_anal_xrefs_set (core->anal, cur + i, op.ptr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
+				}
+			}
+			i += R_MAX (1, ret);
+		}
+		cur += left;
+	}
+
+	r_cons_break_pop (core->cons);
+	r_anal_op_fini (&op);
+	free (block);
+	if (ESIL) {
+		/* if we allocated an esil_ctx we must free it; esil_ctx->spname was freed below */
+		if (esil_ctx) {
+			ESIL->user = NULL;
+		}
+	}
+	if (esil_ctx) {
+		if (esil_ctx->spname) {
+			free (esil_ctx->spname);
+		}
+		free (esil_ctx);
+	}
+	free (targs);
+#undef ESIL_CHECKREF
 }
 
 static bool isValidAddress(RCore *core, ut64 addr) {
