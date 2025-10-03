@@ -692,12 +692,18 @@ static ut64 ubifs_lookup_path(ubifs_ctx_t *ctx, const char *path) {
 		return 0;
 	}
 
-	char *save_ptr = NULL;
-	char *component = strtok_r (path_copy, "/", &save_ptr);
+	RList *components = r_str_split_list (path_copy, "/", 0);
+	if (!components) {
+		free (path_copy);
+		return 0;
+	}
 
-	while (component) {
+	RListIter *comp_iter;
+	char *component;
+	r_list_foreach (components, comp_iter, component) {
 		ubifs_inode_t *dir_inode = ubifs_get_inode (ctx, dir_inum);
 		if (!dir_inode || !dir_inode->dent_nodes) {
+			r_list_free (components);
 			free (path_copy);
 			return 0;
 		}
@@ -731,13 +737,13 @@ static ut64 ubifs_lookup_path(ubifs_ctx_t *ctx, const char *path) {
 		}
 
 		if (!found) {
+			r_list_free (components);
 			free (path_copy);
 			return 0;
 		}
-
-		component = strtok_r (NULL, "/", &save_ptr);
 	}
 
+	r_list_free (components);
 	free (path_copy);
 	return dir_inum;
 }
