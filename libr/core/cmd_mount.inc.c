@@ -17,6 +17,7 @@ static RCoreHelpMessage help_msg_m = {
 	"mf", "[?] [o|n]", "search files for given filename or for offset",
 	"mg", " /foo [offset size]", "get fs file/dir and dump to disk (support base64:)",
 	"mi", " /foo/bar", "get offset and size of given file",
+	"mis", " /foo/bar", "get offset and size of given file and seek to it",
 	"mj", "", "list mounted filesystems in JSON",
 	"mo", " /foo/bar", "open given file into a malloc://",
 	"mp", " msdos 0", "show partitions in msdos format at offset 0",
@@ -515,6 +516,17 @@ static int cmd_mount(void *data, const char *_input) {
 	case 'i':
 		if (input[1] == '?') { // "mi?"
 			r_core_cmd_help_match (core, help_msg_m, "mi");
+		} else if (input[1] == 's') { // "mis"
+			input = (char *)r_str_trim_head_ro (input + 2);
+			file = r_fs_open (core->fs, input, false);
+			if (file) {
+				r_fs_read (core->fs, file, 0, file->size);
+				r_core_seek (core, file->off, true);
+				r_cons_printf (core->cons, "'f file %d 0x%08"PFMT64x"\n", file->size, file->off);
+				r_fs_close (core->fs, file);
+			} else {
+				R_LOG_ERROR ("Cannot open file");
+			}
 		} else {
 			input = (char *)r_str_trim_head_ro (input + 1);
 			file = r_fs_open (core->fs, input, false);
