@@ -80,6 +80,13 @@ static void FSP(_umount)(RFSRoot *root) {
 	root->ptr = NULL;
 }
 
+#ifdef FSDETAILS
+static void FSP(details)(RFSRoot *root, RStrBuf *sb) {
+	R_RETURN_IF_FAIL (root && sb);
+	FSDETAILS (root, sb);
+}
+#endif
+
 RFSPlugin FSS(r_fs_plugin) = {
 	.meta = {
 		.name = FSNAME,
@@ -93,6 +100,9 @@ RFSPlugin FSS(r_fs_plugin) = {
 	.dir = FSP(_dir),
 	.mount = FSP(_mount),
 	.umount = FSP(_umount),
+#ifdef FSDETAILS
+	.details = FSP(details),
+#endif
 };
 #else
 RFSPlugin FSS(r_fs_plugin) = {

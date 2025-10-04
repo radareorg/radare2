@@ -63,7 +63,7 @@
 // Key parsing macros
 #define UBIFS_S_KEY_BLOCK_MASK 0x1FFFFFFF
 
-// UBI Erase Counter Header
+// Erase Counter Header
 R_PACKED (
 typedef struct {
 	ut32 magic;
@@ -77,7 +77,7 @@ typedef struct {
 	ut32 hdr_crc;
 }) ubi_ec_hdr_t;
 
-// UBI Volume ID Header
+// Volume ID Header
 R_PACKED (
 typedef struct {
 	ut32 magic;
@@ -98,7 +98,7 @@ typedef struct {
 	ut32 hdr_crc;
 }) ubi_vid_hdr_t;
 
-// UBI Volume Table Record
+// Volume Table Record
 R_PACKED (
 typedef struct {
 	ut32 reserved_pebs;
@@ -113,7 +113,7 @@ typedef struct {
 	ut32 crc;
 }) ubi_vtbl_rec_t;
 
-// UBIFS Common Header
+// Common Header
 R_PACKED (
 typedef struct {
 	ut32 magic;
@@ -125,7 +125,7 @@ typedef struct {
 	ut8 padding[2];
 }) ubifs_ch_t;
 
-// UBIFS Superblock Node
+// Superblock Node
 R_PACKED (
 typedef struct {
 	ubifs_ch_t ch;
@@ -160,7 +160,7 @@ typedef struct {
 	ut8 padding2[3774];
 }) ubifs_sb_node_t;
 
-// UBIFS Master Node
+// Master Node
 R_PACKED (
 typedef struct {
 	ubifs_ch_t ch;
@@ -198,7 +198,7 @@ typedef struct {
 	ut8 padding[152];
 }) ubifs_mst_node_t;
 
-// UBIFS Index Node
+// Index Node
 R_PACKED (
 typedef struct {
 	ubifs_ch_t ch;
@@ -207,7 +207,6 @@ typedef struct {
 	// branches follow
 }) ubifs_idx_node_t;
 
-// UBIFS Branch
 R_PACKED (
 typedef struct {
 	ut32 lnum;
@@ -216,7 +215,7 @@ typedef struct {
 	ut8 key[UBIFS_SK_LEN];
 }) ubifs_branch_t;
 
-// UBIFS Inode Node
+// Inode Node
 R_PACKED (
 typedef struct {
 	ubifs_ch_t ch;
@@ -244,7 +243,7 @@ typedef struct {
 	// data follows
 }) ubifs_ino_node_t;
 
-// UBIFS Directory Entry Node
+// Directory Entry Node
 R_PACKED (
 typedef struct {
 	ubifs_ch_t ch;
@@ -257,7 +256,6 @@ typedef struct {
 	// name follows
 }) ubifs_dent_node_t;
 
-// UBIFS Data Node
 R_PACKED (
 typedef struct {
 	ubifs_ch_t ch;
@@ -279,16 +277,19 @@ typedef struct {
 typedef struct {
 	ut64 ino_num;
 	ubifs_ino_node_t *ino;
-	RList *data_nodes; // List of data node offsets
-	RList *dent_nodes; // List of dent node offsets
+	RList *data_nodes;
+	RList *dent_nodes;
 } ubifs_inode_t;
 
-// UBIFS filesystem context
+// Filesystem context
 typedef struct {
 	RIOBind *iob;
 	ut64 delta;
 	ut32 leb_size;
 	ut32 min_io_size;
+	ut32 leb_cnt;
+	ut32 max_leb_cnt;
+	ut16 default_compr;
 	ut32 root_lnum;
 	ut32 root_offs;
 	HtUP *inodes; // Hash table: ino_num -> ubifs_inode_t
@@ -519,9 +520,13 @@ static bool fs_ubifs_mount(RFSRoot *root) {
 		goto fail;
 	}
 
-	ubifs_sb_node_t *sb = (ubifs_sb_node_t *)sb_buf;
-	ctx->leb_size = r_read_le32 ((ut8 *)&sb->leb_size);
-	ctx->min_io_size = r_read_le32 ((ut8 *)&sb->min_io_size);
+	// Read fields directly from the buffer at correct offsets to avoid structure packing issues
+	// The C structure offsets don't match the on-disk format
+	ctx->leb_size = r_read_le32 (sb_buf + 36);
+	ctx->min_io_size = r_read_le32 (sb_buf + 32);
+	ctx->leb_cnt = r_read_le32 (sb_buf + 40);
+	ctx->max_leb_cnt = r_read_le32 (sb_buf + 44);
+	ctx->default_compr = r_read_le16 (sb_buf + 0x54);
 
 	free (sb_buf);
 
@@ -928,6 +933,44 @@ static void fs_ubifs_close(RFSFile *file) {
 	}
 }
 
+static void fs_ubifs_details(RFSRoot *root, RStrBuf *sb) {
+	R_RETURN_IF_FAIL (root && sb);
+
+	ubifs_ctx_t *ctx = (ubifs_ctx_t *)root->ptr;
+	if (!ctx) {
+		return;
+	}
+
+	const char *compr_name = "Unknown";
+	switch (ctx->default_compr) {
+	case UBIFS_COMPR_NONE:
+		compr_name = "None";
+		break;
+	case UBIFS_COMPR_LZO:
+		compr_name = "LZO";
+		break;
+	case UBIFS_COMPR_ZLIB:
+		compr_name = "ZLIB";
+		break;
+	case UBIFS_COMPR_ZSTD:
+		compr_name = "ZSTD";
+		break;
+	}
+
+	ut64 total_size = (ut64)ctx->leb_size * ctx->leb_cnt;
+	ut64 max_size = (ut64)ctx->leb_size * ctx->max_leb_cnt;
+
+	r_strbuf_append (sb, "Type: UBIFS (Unsorted Block Image File System)\n");
+	r_strbuf_appendf (sb, "Block Size (LEB): %u bytes\n", ctx->leb_size);
+	r_strbuf_appendf (sb, "Min I/O Size: %u bytes\n", ctx->min_io_size);
+	r_strbuf_appendf (sb, "LEB Count: %u\n", ctx->leb_cnt);
+	r_strbuf_appendf (sb, "Max LEB Count: %u\n", ctx->max_leb_cnt);
+	r_strbuf_appendf (sb, "Total Size: %"PFMT64u" bytes (%.2f MB)\n", total_size, (double)total_size / (1024.0 * 1024.0));
+	r_strbuf_appendf (sb, "Max Size: %"PFMT64u" bytes (%.2f MB)\n", max_size, (double)max_size / (1024.0 * 1024.0));
+	r_strbuf_appendf (sb, "Compression: %s\n", compr_name);
+	r_strbuf_append (sb, "Purpose: Flash filesystem for embedded devices (MTD/UBI)\n");
+}
+
 RFSPlugin r_fs_plugin_ubifs = {
 	.meta = {
 		.name = "ubifs",
@@ -941,6 +984,7 @@ RFSPlugin r_fs_plugin_ubifs = {
 	.dir = fs_ubifs_dir,
 	.mount = fs_ubifs_mount,
 	.umount = fs_ubifs_umount,
+	.details = fs_ubifs_details,
 };
 
 #ifndef R2_PLUGIN_INCORE

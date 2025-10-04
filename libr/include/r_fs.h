@@ -74,6 +74,8 @@ typedef struct r_fs_plugin_t {
 	void (*umount)(RFSRoot *root);
 	/* callback to run plugin-specific commands (e.g. m:cmd) */
 	bool (*cmd)(RFS *fs, const char *cmd);
+	/* callback to print filesystem-specific details */
+	void (*details)(RFSRoot *root, RStrBuf *sb);
 } RFSPlugin;
 
 typedef struct r_fs_partition_t {
