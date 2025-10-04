@@ -560,27 +560,6 @@ static ut32 ngc(ArmOp *op) {
 	return data;
 }
 
-// multiply-subtract (Rd = Rn * Rm - Ra)
-static ut32 msub_emit(ArmOp *op) {
-    ut32 data = UT32_MAX;
-    check_cond (op->operands_count >= 4);
-    check_cond (op->operands[0].type == ARM_GPR);
-    check_cond (op->operands[1].type == ARM_GPR);
-    check_cond (op->operands[2].type == ARM_GPR);
-    check_cond (op->operands[3].type == ARM_GPR);
-
-    /* Opcode template chosen to match canonical encodings (clang/llvm).
-     * Register fields are OR'ed in below.
-     */
-    data = 0x0094089b;
-    if (op->operands[0].reg_type & ARM_REG64) {
-        data |= 0x80;
-    }
-    data |= encode3regs (op);
-    data |= (op->operands[3].reg & 0x1f) << 16; // Ra
-    return data;
-}
-
 static ut32 rev(ArmOp *op) {
 	ut32 data = UT32_MAX;
 	int k = 0;
@@ -2203,28 +2182,17 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 	} else if (r_str_startswith (str, "ldur")) {
 		*op = regsluop (&ops, 0x000040f8);
 	} else if (r_str_startswith (str, "str")) {
-#if 0
-		// AITODO: maybe
-		*op = reglsop (&ops, 0x000000f8);
-#else
 		*op = UT32_MAX;
 		*op = lsop (&ops, 0x000000f8, -1);
 		if (*op == UT32_MAX) {
 			*op = reglsop (&ops, 0x000000f8);
 		}
-#endif
 	} else if (r_str_startswith (str, "stp")) {
 		*op = stp (&ops, 0x000000a9);
 	} else if (r_str_startswith (str, "ldp")) {
 		*op = stp (&ops, 0x000040a9);
 	} else if (r_str_startswith (str, "sub") && !r_str_startswith (str, "subg") && !r_str_startswith (str, "subp")) { // w, skip this for mte versions of sub, e.g. subg, subp ins
 		*op = arithmetic (&ops, 0xd1);
-#if 0
-		// AITODO
-	} else if (r_str_startswith (str, "msub x")) {
-		/* msub: multiply-subtract (Rd = Rn * Rm - Ra) */
-		*op = math (&ops, 0x1b008000, true);
-#endif
 	} else if (r_str_startswith (str, "madd x")) {
 		*op = math (&ops, 0x9b, true);
 	} else if (r_str_startswith (str, "add x")) {
