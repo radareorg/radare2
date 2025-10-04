@@ -1129,24 +1129,25 @@ static ut32 lsop(ArmOp *op, int k, ut64 addr) {
 		} else if (width == 'h') {
 			check_cond (n <= 0x1ffe && !(n & 1))
 				n >>= 1;
-	} else { // w
-		int scale = (op->operands[0].reg_type & ARM_REG64) ? 3 : 2;
-		if (uwu || scale == 2) {
-			check_cond (n <= 0x3ffc && !(n & 3));
-			if (uwu) {
-				n >>= 2;
+		} else { // w
+			int scale = (op->operands[0].reg_type & ARM_REG64) ? 3 : 2;
+			if (uwu || scale == 2) {
+				check_cond (n <= 0x3ffc && !(n & 3));
+				if (uwu) {
+					n >>= 2;
+				} else {
+					n >>= 2;
+				}
 			} else {
-				n >>= 2;
+				check_cond (n <= 0x7ff8 && !(n & 7));
+				n >>= 3;
 			}
-		} else {
-			check_cond (n <= 0x7ff8 && !(n & 7));
-			n >>= 3;
 		}
-	}
 		data = k | (n & 0x3f) << 18 | (n & 0xfc0) << 2 | 1;
 		return data;
 	}
-	check_cond (-0x100 <= n && n < 0x100) if (op->operands[2].preindex) {
+	check_cond (-0x100 <= n && n < 0x100);
+	if (op->operands[2].preindex) {
 		k |= 0x00080000;
 	}
 	data = k | encodeImm9 (n) | 0x00040000;
