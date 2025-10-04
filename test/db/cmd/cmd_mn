@@ -1,0 +1,216 @@
+NAME=mn ext2 details
+FILE=bins/fs/ext2.img
+CMDS=<<EOF
+m /mnt ext2 @ 0
+mn
+EOF
+EXPECT=<<EOF
+Filesystem Type: ext2
+UUID: 201f53c3-fc0f-4d0c-ae45-aa999efcfe7f
+Last Mounted: /mnt
+Last Mount Time: 2017-11-06 17:51:29
+Last Write Time: 2017-11-06 17:52:01
+Last Check Time: 2017-11-06 17:51:27
+Block Size: 1024 bytes
+Total Blocks: 1024
+Free Blocks: 837
+Reserved Blocks: 51
+Total Size: 1048576 bytes (1.00 MB)
+Used Size: 191488 bytes (0.18 MB)
+Free Size: 857088 bytes (0.82 MB)
+Reserved Size: 52224 bytes (0.05 MB)
+Inodes Count: 128
+Free Inodes: 112
+Inodes per Group: 128
+Blocks per Group: 8192
+Inode Size: 128 bytes
+Filesystem State: cleanly unmounted
+Mount Count: 1
+Max Mount Count: -1
+Creator OS: Linux
+Revision Level: 1
+Compatible Features: EXT_ATTR RESIZE_INODE DIR_INDEX
+Incompatible Features: FILETYPE
+Read-Only Compatible Features: SPARSE_SUPER LARGE_FILE
+EOF
+RUN
+
+NAME=mn ext3 details
+FILE=bins/fs/ext3.img
+CMDS=<<EOF
+m /mnt ext2 @ 0
+mn
+EOF
+EXPECT=<<EOF
+Filesystem Type: ext2
+Volume Name: MIKI_FS_TEST
+UUID: f0640c63-5163-4e94-91e5-2cd257b82419
+Last Mounted: /tmp/ext3_mount
+Last Mount Time: 2025-10-04 03:11:58
+Last Write Time: 2025-10-04 03:17:01
+Last Check Time: 2025-10-04 03:09:29
+Block Size: 1024 bytes
+Total Blocks: 2048
+Free Blocks: 904
+Reserved Blocks: 102
+Total Size: 2097152 bytes (2.00 MB)
+Used Size: 1171456 bytes (1.12 MB)
+Free Size: 925696 bytes (0.88 MB)
+Reserved Size: 104448 bytes (0.10 MB)
+Inodes Count: 256
+Free Inodes: 220
+Inodes per Group: 256
+Blocks per Group: 8192
+Inode Size: 256 bytes
+Filesystem State: cleanly unmounted
+Mount Count: 2
+Max Mount Count: -1
+Creator OS: Linux
+Revision Level: 1
+Compatible Features: HAS_JOURNAL EXT_ATTR RESIZE_INODE DIR_INDEX
+Incompatible Features: FILETYPE
+Read-Only Compatible Features: SPARSE_SUPER LARGE_FILE
+EOF
+RUN
+
+NAME=mn ext4 details
+FILE=bins/fs/ext4.img
+CMDS=<<EOF
+m /mnt ext2 @ 0
+mn
+EOF
+EXPECT=<<EOF
+Filesystem Type: ext4
+Volume Name: MIKI_FS_TEST
+UUID: 6ae0a5d0-f36d-4361-985c-adf92365736f
+Last Mounted: /tmp/ext4_mount
+Last Mount Time: 2025-10-04 03:43:41
+Last Write Time: 2025-10-04 03:43:41
+Last Check Time: 2025-10-04 03:29:32
+Block Size: 1024 bytes
+Total Blocks: 2048
+Free Blocks: 909
+Reserved Blocks: 102
+Total Size: 2097152 bytes (2.00 MB)
+Used Size: 1166336 bytes (1.11 MB)
+Free Size: 930816 bytes (0.89 MB)
+Reserved Size: 104448 bytes (0.10 MB)
+Inodes Count: 256
+Free Inodes: 220
+Inodes per Group: 256
+Blocks per Group: 8192
+Inode Size: 256 bytes
+Filesystem State: cleanly unmounted
+Mount Count: 2
+Max Mount Count: -1
+Creator OS: Linux
+Revision Level: 1
+Compatible Features: HAS_JOURNAL EXT_ATTR RESIZE_INODE DIR_INDEX
+Incompatible Features: FILETYPE RECOVER EXTENTS FLEX_BG
+Read-Only Compatible Features: SPARSE_SUPER LARGE_FILE HUGE_FILE DIR_NLINK EXTRA_ISIZE
+EOF
+RUN
+
+NAME=mn fat details
+FILE=bins/fs/fat.img
+CMDS=<<EOF
+m /mnt fat @ 0
+mn
+EOF
+EXPECT=<<EOF
+Filesystem Type: FAT12
+Volume Label: NO NAME
+OEM Name: mkfs.fat
+Serial Number: 25192549
+FS Type String: FAT12
+Media Type: 0xf8
+Bytes per Sector: 512
+Sectors per Cluster: 4
+Cluster Size: 2048 bytes
+Reserved Sectors: 1
+Number of FATs: 2
+Sectors per FAT: 1
+FAT Size: 512 bytes
+Root Directory Entries: 512
+Root Directory Sectors: 32
+Total Sectors: 1024
+Data Sectors: 989
+Total Clusters: 247
+First Data Sector: 35
+Total Size: 524288 bytes (0.50 MB)
+EOF
+RUN
+
+NAME=mn iso9660 details
+FILE=bins/fs/iso.img
+CMDS=<<EOF
+m /mnt iso9660 @ 0
+mn
+EOF
+EXPECT=<<EOF
+Filesystem Type: ISO9660
+Volume ID: CDROM
+System ID: Mac OS X
+Application: MKISOFS ISO9660/HFS/UDF FILESYSTEM BUILDER & CDRECORD CD/DVD/BluRay CREATOR (C) 1993 E.YOUNGDALE (C) 1997 J.PEARSON/J.SCHILLING
+Creation Date: 2017-11-06 23:38:57.93
+Logical Block Size: 2048 bytes
+Volume Space Size: 526 blocks
+Total Size: 1077248 bytes (1.03 MB)
+Path Table Size: 10 bytes
+Volume Set Size: 1
+Volume Sequence Number: 1
+File Structure Version: 1
+EOF
+RUN
+
+NAME=mn hfs details
+FILE=bins/fs/hfs.img
+CMDS=<<EOF
+m /mnt hfs @ 0
+mn
+EOF
+EXPECT=<<EOF
+Filesystem Type: HFS
+Volume Name: Untitled
+Create Date: 2017-11-06 09:32:06 (HFS timestamp: 3592805526)
+Modify Date: 2017-11-06 17:34:43 (HFS timestamp: 3592834483)
+Block Size: 512 bytes
+Total Blocks: 2042
+Free Blocks: 1724
+Total Size: 1045504 bytes (1.00 MB)
+Used Size: 162816 bytes (0.16 MB)
+Free Size: 882688 bytes (0.84 MB)
+File Count: 3
+Directory Count: 2
+Allocation Clump Size: 2048 bytes
+Catalog Clump Size: 7680 bytes
+Extents Clump Size: 7680 bytes
+EOF
+RUN
+
+NAME=mn ntfs details
+FILE=bins/fs/ntfs.img
+CMDS=<<EOF
+m /mnt ntfs @ 0
+mn
+EOF
+EXPECT=<<EOF
+Filesystem Type: NTFS
+OEM ID: NTFS
+Volume Label: MIKI_FS_TEST
+Volume Serial Number: 05021d2f1a141f34
+Volume Creation Time: 2025-10-04 02:35:28
+Volume Modification Time: 2025-10-04 02:35:28
+Bytes per Sector: 512
+Sectors per Cluster: 8
+Cluster Size: 4096 bytes
+Total Sectors: 4095
+Total Size: 2096640 bytes (2.00 MB)
+MFT Cluster: 4
+MFT Offset: 0x4000
+MFT Mirror Cluster: 255
+MFT Record Size: 1024 bytes
+Index Block Size: 4096 bytes
+Media Descriptor: 0xf8
+EOF
+RUN

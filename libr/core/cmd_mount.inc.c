@@ -19,6 +19,7 @@ static RCoreHelpMessage help_msg_m = {
 	"mi", " /foo/bar", "get offset and size of given file",
 	"mis", " /foo/bar", "get offset and size of given file and seek to it",
 	"mj", "", "list mounted filesystems in JSON",
+	"mn", " [mountpoint]", "show filesystem information details",
 	"mo", " /foo/bar", "open given file into a malloc://",
 	"mp", " msdos 0", "show partitions in msdos format at offset 0",
 	"mp", "", "list all supported partition types",
@@ -426,6 +427,47 @@ static int cmd_mount(void *data, const char *_input) {
 			pj_end (pj);
 			r_cons_printf (core->cons, "%s\n", pj_string (pj));
 			pj_free (pj);
+		}
+		break;
+	case 'n': // "mn"
+		if (input[1] == '?') { // "mn?"
+			r_core_cmd_help_match (core, help_msg_m, "mn");
+		} else {
+			input = (char *)r_str_trim_head_ro (input + 1);
+			RFSRoot *target_root = NULL;
+
+			if (*input) {
+				r_list_foreach (core->fs->roots, iter, root) {
+					if (!strcmp (root->path, input)) {
+						target_root = root;
+						break;
+					}
+				}
+				if (!target_root) {
+					R_LOG_ERROR ("Mountpoint '%s' not found", input);
+					break;
+				}
+			} else {
+				// Use first mounted filesystem if no mountpoint specified
+				target_root = r_list_first (core->fs->roots);
+				if (!target_root) {
+					R_LOG_ERROR ("No filesystems mounted");
+					break;
+				}
+			}
+
+			if (target_root->p->details) {
+				RStrBuf *sb = r_strbuf_new ("");
+				target_root->p->details (target_root, sb);
+				const char *details_str = r_strbuf_get (sb);
+				if (details_str && *details_str) {
+					r_cons_printf (core->cons, "%s", details_str);
+				}
+				r_strbuf_free (sb);
+			} else {
+				R_LOG_ERROR ("Filesystem does not provide details information");
+				break;
+			}
 		}
 		break;
 	case '*': // "m*"
