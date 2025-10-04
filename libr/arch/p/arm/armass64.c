@@ -532,11 +532,8 @@ static ut32 ror(ArmOp *op) {
 		data = k | op->operands[0].reg << 24;
 		data |= (op->operands[1].reg & 0x7) << 29;
 		data |= (op->operands[1].reg & 0x18) << 13;
-		data |= (op->operands[1].reg & 0x1f) << 10;
-		{
-			ut32 imm7 = (ut32)(op->operands[3].immediate >> 4) & 0x7f;
-			data |= imm7 << 16;
-		}
+		data |= (op->operands[1].reg & 0x1f) << 8;
+		data |= op->operands[2].immediate << 18;
 		return data;
 	}
 	return data;
@@ -561,6 +558,27 @@ static ut32 ngc(ArmOp *op) {
 	data = k | op->operands[0].reg << 24;
 	data |= op->operands[1].reg << 8;
 	return data;
+}
+
+// multiply-subtract (Rd = Rn * Rm - Ra)
+static ut32 msub_emit(ArmOp *op) {
+    ut32 data = UT32_MAX;
+    check_cond (op->operands_count >= 4);
+    check_cond (op->operands[0].type == ARM_GPR);
+    check_cond (op->operands[1].type == ARM_GPR);
+    check_cond (op->operands[2].type == ARM_GPR);
+    check_cond (op->operands[3].type == ARM_GPR);
+
+    /* Opcode template chosen to match canonical encodings (clang/llvm).
+     * Register fields are OR'ed in below.
+     */
+    data = 0x0094089b;
+    if (op->operands[0].reg_type & ARM_REG64) {
+        data |= 0x80;
+    }
+    data |= encode3regs (op);
+    data |= (op->operands[3].reg & 0x1f) << 16; // Ra
+    return data;
 }
 
 static ut32 rev(ArmOp *op) {
@@ -1132,20 +1150,20 @@ static ut32 lsop(ArmOp *op, int k, ut64 addr) {
 		} else if (width == 'h') {
 			check_cond (n <= 0x1ffe && !(n & 1))
 				n >>= 1;
-		} else { // w
-			int scale = (op->operands[0].reg_type & ARM_REG64) ? 3 : 2;
-			if (uwu || scale == 2) {
-				check_cond (n <= 0x3ffc && !(n & 3));
-				if (uwu) {
-					n>>= 2;
-				} else {
-					n >>= 3;
-				}
+	} else { // w
+		int scale = (op->operands[0].reg_type & ARM_REG64) ? 3 : 2;
+		if (uwu || scale == 2) {
+			check_cond (n <= 0x3ffc && !(n & 3));
+			if (uwu) {
+				n >>= 2;
 			} else {
-				check_cond (n <= 0x7ff8 && !(n & 7));
-				n >>= 3;
+				n >>= 2;
 			}
+		} else {
+			check_cond (n <= 0x7ff8 && !(n & 7));
+			n >>= 3;
 		}
+	}
 		data = k | (n & 0x3f) << 18 | (n & 0xfc0) << 2 | 1;
 		return data;
 	}
