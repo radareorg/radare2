@@ -115,12 +115,14 @@ static int rafs2_details(Rafs2Options *opt) {
 	RList *roots = r_fs_root(opt->fs, opt->mountpoint);
 	if (!roots || r_list_empty(roots)) {
 		R_LOG_ERROR("No mounted filesystem found at %s", opt->mountpoint);
+		r_list_free(roots);
 		return 1;
 	}
 
 	RFSRoot *root = (RFSRoot *)r_list_get_n(roots, 0);
 	if (!root || !root->p || !root->p->details) {
 		R_LOG_ERROR("This filesystem doesn't support details");
+		r_list_free(roots);
 		return 1;
 	}
 
@@ -128,6 +130,7 @@ static int rafs2_details(Rafs2Options *opt) {
 	root->p->details(root, sb);
 	printf("%s", r_strbuf_get(sb));
 	r_strbuf_free(sb);
+	r_list_free(roots);
 	return 0;
 }
 
