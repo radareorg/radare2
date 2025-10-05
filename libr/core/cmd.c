@@ -360,6 +360,7 @@ static RCoreHelpMessage help_msg_r = {
 	"radare2", " [...]", "run radare2's main",
 	"radiff2", " [...]", "run radiff2's main",
 	"rafind2", " [...]", "run rafind2's main",
+	"rafs2", " [...]", "run rafs2's main",
 	"rahash2", " [...]", "run rahash2's main",
 	"rasm2", " [...]", "run rasm2's main",
 	"ravc2", " [...]", "run ravc2's main",
@@ -2782,8 +2783,11 @@ static int __runMain(RMainCallback cb, const char *arg) {
 static bool cmd_r2cmd(RCore *core, const char *_input) {
 	char *input = r_str_newf ("r%s", _input);
 	int rc = 0;
+
 	if (r_str_startswith (input, "rax2")) {
 		rc = __runMain (core->r_main_rax2, input);
+	} else if (r_str_startswith (input, "r2")) {
+		rc = __runMain (core->r_main_radare2, input);
 	} else if (r_str_startswith (input, "rapatch2")) {
 		r_sys_cmdf ("%s", input);
 		// rc = __runMain (r_main_rapatch2, input);
@@ -2799,6 +2803,8 @@ static bool cmd_r2cmd(RCore *core, const char *_input) {
 	} else if (r_str_startswith (input, "ragg2")) {
 		r_sys_cmdf ("%s", input);
 		// rc = __runMain (core->r_main_ragg2, input);
+	} else if (r_str_startswith (input, "rafs2")) {
+		rc = __runMain (core->r_main_rafs2, input);
 	} else if (r_str_startswith (input, "ravc2")) {
 		rc = __runMain (core->r_main_ravc2, input);
 	} else if (r_str_startswith (input, "r2pm")) {
@@ -2816,7 +2822,7 @@ static bool cmd_r2cmd(RCore *core, const char *_input) {
 		// rc = __runMain (core->r_main_radare2, input);
 	} else {
 		const char *r2cmds[] = {
-			"rax2", "r2pm", "rasm2", "rabin2", "rahash2", "rafind2", "rarun2", "ragg2", "radare2", "r2", NULL
+			"rax2", "r2pm", "rafs2", "rasm2", "rabin2", "rahash2", "rafind2", "rarun2", "ragg2", "radare2", "r2", NULL
 		};
 		int i;
 		for (i = 0; r2cmds[i]; i++) {
@@ -2825,12 +2831,12 @@ static bool cmd_r2cmd(RCore *core, const char *_input) {
 				return true;
 			}
 		}
+		r_core_cmd_help_contains (core, help_msg_r, "ra");
 		free (input);
 		return false;
 	}
 	free (input);
 	r_core_return_value (core, rc);
-	// r_core_return_code (core, rc);
 	return true;
 }
 
@@ -2870,7 +2876,7 @@ static int cmd_resize(void *data, const char *input) {
 		return cmd_rebase (core, input + 1);
 	case '2': // "r2" // XXX should be handled already in cmd_r2cmd()
 		if (r_str_startswith (input + 1, "ai")) {
-			R_LOG_ERROR ("Missing plugin. Run: r2pm -ci r2yara");
+			R_LOG_ERROR ("Missing plugin. Run: r2pm -ci r2ai");
 			r_core_return_code (core, 1);
 			return true;
 		}

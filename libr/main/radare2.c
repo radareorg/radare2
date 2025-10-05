@@ -764,6 +764,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	r->r_main_rabin2 = r_main_rabin2;
 	r->r_main_ragg2 = r_main_ragg2;
 	r->r_main_rasm2 = r_main_rasm2;
+	r->r_main_rafs2 = r_main_rafs2;
 	r->r_main_rax2 = r_main_rax2;
 	r->r_main_ravc2 = r_main_ravc2;
 	r->r_main_r2pm = r_main_r2pm;
