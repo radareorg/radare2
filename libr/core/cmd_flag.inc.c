@@ -148,11 +148,14 @@ static RCoreHelpMessage help_msg_fs = {
 
 static RCoreHelpMessage help_msg_fz = {
 	"Usage: f", "[?|-name| name] [@addr]", " # Manage flagzones",
-	"fz", " math", "add new flagzone named 'math'",
+	"fz", " math", "seek to that flag zone by name",
+	"fz+", "math", "add new flagzone named 'math'",
 	"fz-", "math", "remove the math flagzone",
 	"fz-", "*", "remove all flagzones",
 	"fz.", "", "show around flagzone context",
-	"fz:", "", "show what's in scr.flagzone for visual",
+	"fzv", "", "useful for cmd.vprompt to view previous and next flag zones",
+	"fzn", "", "seek to next flag zone",
+	"fzp", "", "seek to previous flag zone",
 	"fz*", "", "dump into r2 commands, for projects",
 	NULL
 };
@@ -428,7 +431,9 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 		RListIter *iter;
 		FlagContext *ctx;
 		r_list_foreach (stack, iter, ctx) {
-			if (!ctx) continue;
+			if (!ctx) {
+				continue;
+			}
 			if (ctx->processed) {
 				ht_pp_free (ctx->processed);
 			}
@@ -497,7 +502,7 @@ static void cmd_fz(RCore *core, const char *input) {
 			r_cons_printf (core->cons, "%s %s\n", r_str_get_fail (a, "~"), r_str_get_fail (b, "~"));
 		}
 		break;
-	case ':': // "fz:"
+	case 'v': // "fzv"
 		{
 			const char *a, *b;
 			int a_len = 0;
@@ -528,13 +533,60 @@ static void cmd_fz(RCore *core, const char *input) {
 		}
 		break;
 	case ' ':
-		r_flag_zone_add (core->flags, r_str_trim_head_ro (input + 1), core->addr);
+		{
+			const char *name = r_str_trim_head_ro (input + 1);
+			RFlagZoneItem *fz = r_flag_zone_get (core->flags, name);
+			if (fz) {
+				r_core_seek (core, fz->from, true);
+			} else {
+				R_LOG_ERROR ("There is no flag zone with this name");
+			}
+		}
+		break;
+	case '+':
+		{
+			const char *name = r_str_trim_head_ro (input + 1);
+			RFlagZoneItem *fz = r_flag_zone_get (core->flags, name);
+			if (fz) {
+				R_LOG_ERROR ("This flagzone already exists, delete it with 'fz-' or seek there with 'fzs'");
+			} else {
+				r_flag_zone_add (core->flags, name, core->addr);
+			}
+		}
 		break;
 	case '-':
 		if (input[1] == '*') {
 			r_flag_zone_reset (core->flags);
 		} else {
 			r_flag_zone_del (core->flags, input + 1);
+		}
+		break;
+	case 'n': // "fzn"
+		{
+			const char *next = NULL;
+			r_flag_zone_around (core->flags, core->addr, NULL, &next);
+			if (next) {
+				RFlagZoneItem *zi = r_flag_zone_get (core->flags, next);
+				if (zi) {
+					r_core_seek (core, zi->from, true);
+				}
+			} else {
+				R_LOG_ERROR ("No next flag zone");
+			}
+		}
+		break;
+	case 'p': // "fzp"
+		{
+			const char *prev = NULL;
+			r_flag_zone_around (core->flags, core->addr, &prev, NULL);
+			if (prev) {
+				RFlagZoneItem *zi = r_flag_zone_get (core->flags, prev);
+				if (zi) {
+					r_core_seek (core, zi->from, true);
+				}
+			} else {
+				R_LOG_ERROR ("No previous flag zone");
+			}
 		}
 		break;
 	case '*':
@@ -544,6 +596,9 @@ static void cmd_fz(RCore *core, const char *input) {
 			r_cons_print (core->cons, s);
 			free (s);
 		}
+		break;
+	default:
+		r_core_return_invalid_command (core, "fz", *input);
 		break;
 	}
 }

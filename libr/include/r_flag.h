@@ -51,7 +51,6 @@ typedef struct r_flag_item_t {
 	RSpace *space;  /* flag space this item belongs to */
 } RFlagItem;
 
-
 typedef struct r_flag_t {
 	RSpaces spaces;   /* handle flag spaces */
 	st64 base;         /* base address for all flag items */
@@ -230,6 +229,7 @@ R_API RList *r_flag_tags_get(RFlag *f, const char *name);
 R_API void r_flag_zone_item_free(void *a);
 R_API bool r_flag_zone_add(RFlag *fz, const char *name, ut64 addr);
 R_API bool r_flag_zone_del(RFlag *fz, const char *name);
+R_API RFlagZoneItem *r_flag_zone_get(RFlag *fz, const char *name);
 R_API bool r_flag_zone_around(RFlag *fz, ut64 addr, const char **prev, const char **next);
 R_API char *r_flag_zone_list(RFlag *fz, int mode);
 R_API bool r_flag_zone_reset(RFlag *f);

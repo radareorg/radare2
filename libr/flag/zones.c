@@ -2,7 +2,7 @@
 
 #include <r_flag.h>
 
-static RFlagZoneItem *r_flag_zone_get(RFlag *f, const char *name) {
+R_API RFlagZoneItem *r_flag_zone_get(RFlag *f, const char *name) {
 	RListIter *iter;
 	RFlagZoneItem *zi;
 	RList *db = f->zones;
@@ -70,7 +70,6 @@ R_API bool r_flag_zone_del(RFlag *f, const char *name) {
 	return false;
 }
 
-
 R_API void r_flag_zone_item_free(void *a) {
 	if (R_UNLIKELY (a)) {
 		RFlagZoneItem *zi = a;
@@ -79,23 +78,26 @@ R_API void r_flag_zone_item_free(void *a) {
 	}
 }
 
-R_API bool r_flag_zone_around(RFlag *f, ut64 addr, const char **prev, const char **next) {
-	R_RETURN_VAL_IF_FAIL (f && prev && next, false);
+R_API bool r_flag_zone_around(RFlag *f, ut64 addr, const char ** R_NULLABLE prev, const char ** R_NULLABLE next) {
+	R_RETURN_VAL_IF_FAIL (f, false);
 	RListIter *iter;
 	RFlagZoneItem *zi;
 	*prev = *next = NULL;
 	ut64 h = UT64_MAX, l = 0LL;
 	RList *db = f->zones;
 
+	bool res = false;
 	r_list_foreach (db, iter, zi) {
 		if (zi->from > addr) {
 			if (h == UT64_MAX) {
 				h = zi->from;
 				*next = zi->name;
+				res = true;
 			} else {
 				if (zi->from < h) {
 					h = zi->from;
 					*next = zi->name;
+					res = true;
 				}
 			}
 		}
@@ -103,10 +105,12 @@ R_API bool r_flag_zone_around(RFlag *f, ut64 addr, const char **prev, const char
 			if (l == UT64_MAX) {
 				l = zi->from;
 				*prev = zi->name;
+				res = true;
 			} else {
 				if (zi->from >= l) {
 					l = zi->from;
 					*prev = zi->name;
+					res = true;
 				}
 			}
 		}
@@ -114,9 +118,11 @@ R_API bool r_flag_zone_around(RFlag *f, ut64 addr, const char **prev, const char
 			if (l == UT64_MAX) {
 				l = zi->to;
 				*prev = zi->name;
+				res = true;
 			} else {
 				if (zi->to >= l) {
 					l = zi->to;
+					res = true;
 					*prev = zi->name;
 				}
 			}
@@ -124,16 +130,18 @@ R_API bool r_flag_zone_around(RFlag *f, ut64 addr, const char **prev, const char
 		if (zi->to > addr) {
 			if (h == UT64_MAX) {
 				h = zi->to;
+				res = true;
 				*next = zi->name;
 			} else {
 				if (zi->to < h) {
 					h = zi->to;
+					res = true;
 					*next = zi->name;
 				}
 			}
 		}
 	}
-	return true;
+	return res;
 }
 
 R_API RList *r_flag_zone_barlist(RFlag *f, ut64 from, ut64 bsize, int rows) {
