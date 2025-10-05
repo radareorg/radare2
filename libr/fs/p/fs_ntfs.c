@@ -138,7 +138,11 @@ static void details_ntfs(RFSRoot *root, RStrBuf *sb) {
 	ut64 creation_time = 0;
 	ut64 modification_time = 0;
 
-	ut8 *mft_record = malloc(mft_record_size);
+	if (mft_record_size == 0 || mft_record_size > 65536) {
+		goto print_info;
+	}
+
+	ut8 *mft_record = calloc(1, mft_record_size);
 	if (mft_record) {
 		ut64 volume_mft_offset = mft_offset + (3 * mft_record_size);
 		if (root->iob.read_at (root->iob.io, volume_mft_offset, mft_record, mft_record_size)) {
@@ -193,6 +197,7 @@ static void details_ntfs(RFSRoot *root, RStrBuf *sb) {
 		free (mft_record);
 	}
 
+print_info:
 	r_strbuf_append (sb, "Filesystem Type: NTFS\n");
 	r_strbuf_appendf (sb, "OEM ID: %s\n", oem_id);
 
