@@ -2531,9 +2531,9 @@ static void esilmemrefs(RCore *core, const char *expr) {
 }
 
 static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int fmt) {
-	bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 	bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
-	core->rasm->parse->subrel = r_config_get_i (core->config, "asm.sub.rel");
+	core->rasm->parse->subrel = r_config_get_b (core->config, "asm.sub.rel");
 	int ret, i, j, idx, size;
 	const char *color = "";
 	const char *esilstr;
@@ -2643,6 +2643,8 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			char *strsub = r_asm_parse_subvar (core->rasm, NULL,
 				core->addr + idx, asmop.size, asmop.mnemonic);
 			ut64 killme = UT64_MAX;
+			ut64 osubreladdr = core->rasm->parse->subrel_addr;
+
 			if (r_io_read_i (core->io, op.ptr, &killme, op.refptr, be)) {
 				core->rasm->parse->subrel_addr = killme;
 			}
@@ -2814,6 +2816,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 			pj_ks (pj, "family", r_anal_op_family_tostring (op.family));
 			pj_end (pj);
+			core->rasm->parse->subrel_addr = osubreladdr;
 		} else if (fmt == 'r') {
 			if (R_STR_ISNOTEMPTY (esilstr)) {
 				if (use_color) {
@@ -2833,6 +2836,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				R_LOG_ERROR ("invalid");
 				break;
 			}
+			ut64 osubreladdr = core->rasm->parse->subrel_addr;
 			char *disasm = r_asm_parse_subvar (core->rasm, NULL,
 				core->addr + idx,
 				asmop.size, text);
@@ -2843,6 +2847,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			if (r_io_read_i (core->io, op.ptr, &killme, op.refptr, be)) {
 				core->rasm->parse->subrel_addr = killme;
 			}
+				core->rasm->parse->subrel_addr = UT64_MAX;
 			if (disasm) {
 				char *disasm2 = r_asm_parse_filter (core->rasm, addr, core->flags, hint, disasm);
 				if (disasm2) {
@@ -3019,8 +3024,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			if (op.stackptr) {
 				printline ("stackptr", "%"PFMT64u"\n", op.stackptr);
 			}
+			core->rasm->parse->subrel_addr = osubreladdr;
 		}
-		//r_cons_printf (core->cons, "false: 0x%08"PFMT64x"\n", core->addr+idx);
+		//r_cons_printf (core->cons, "false: 0x%08"PFMT64x"\n", core->addr + idx);
 		//free (hint);
 		free (mnem);
 		r_anal_hint_free (hint);
