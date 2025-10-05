@@ -296,22 +296,6 @@ typedef struct {
 	bool mounted;
 } ubifs_ctx_t;
 
-// CRC32 verification is optional for read-only access
-// Reference ubi_reader implementation also skips CRC validation
-R_UNUSED static ut32 ubi_crc32(const ut8 *buf, ut32 len) {
-	(void)buf;
-	(void)len;
-	return 0;
-}
-
-static inline ut32 ubi_read_be32(const ut8 *buf) {
-	return (buf[0] << 24) | (buf[1] << 16) | (buf[2] << 8) | buf[3];
-}
-
-static inline ut64 ubi_read_be64(const ut8 *buf) {
-	return ((ut64)ubi_read_be32 (buf) << 32) | ubi_read_be32 (buf + 4);
-}
-
 static ubifs_key_t ubifs_parse_key(const ut8 *key_buf) {
 	ubifs_key_t key = { 0 };
 	ut32 hkey = r_read_le32 (key_buf);
@@ -366,7 +350,11 @@ static bool ubifs_walk_index(ubifs_ctx_t *ctx, ut32 lnum, ut32 offs) {
 	ut32 node_len = r_read_le32 ((ut8 *)&ch.len);
 	ut8 node_type = ch.node_type;
 
-	ut8 *buf = malloc (node_len);
+	if (node_len == 0 || node_len > ctx->leb_size) {
+		return false;
+	}
+
+	ut8 *buf = calloc (1, node_len);
 	if (!buf) {
 		return false;
 	}
@@ -387,7 +375,8 @@ static bool ubifs_walk_index(ubifs_ctx_t *ctx, ut32 lnum, ut32 offs) {
 		ut8 *branch_ptr;
 		ut16 i;
 
-		if (branch_size < sizeof (ubifs_branch_t)) {
+		ut32 max_children = branches_size / sizeof (ubifs_branch_t);
+		if (child_cnt == 0 || child_cnt > max_children || branch_size < sizeof (ubifs_branch_t)) {
 			break;
 		}
 
@@ -510,7 +499,13 @@ static bool fs_ubifs_mount(RFSRoot *root) {
 	}
 
 	ut32 sb_len = r_read_le32 ((ut8 *)&ch.len);
-	ut8 *sb_buf = malloc (sb_len);
+	// UBIFS spec sets superblock structure is ~4KB, use 64KB as reasonable maximum
+	if (sb_len == 0 || sb_len > 65536) {
+		R_LOG_ERROR ("Invalid superblock length: %u", sb_len);
+		goto fail;
+	}
+
+	ut8 *sb_buf = calloc (1, sb_len);
 	if (!sb_buf) {
 		goto fail;
 	}
@@ -542,7 +537,7 @@ static bool fs_ubifs_mount(RFSRoot *root) {
 	}
 
 	ut32 mst_len = r_read_le32 ((ut8 *)&ch.len);
-	ut8 *mst_buf = malloc (mst_len);
+	ut8 *mst_buf = calloc (1, mst_len);
 	if (!mst_buf) {
 		goto fail;
 	}
@@ -841,11 +836,16 @@ static int fs_ubifs_read(RFSFile *file, ut64 addr, int len) {
 		free (file->data);
 	}
 
-	file->data = malloc (file_size);
+	ut64 max_fs_size = (ut64)ctx->leb_size * ctx->leb_cnt;
+	if (file_size > max_fs_size) {
+		R_LOG_ERROR ("File size (%"PFMT64u") exceeds filesystem size (%"PFMT64u")", file_size, max_fs_size);
+		return -1;
+	}
+
+	file->data = calloc (1, file_size);
 	if (!file->data) {
 		return -1;
 	}
-	memset (file->data, 0, file_size);
 
 	RListIter *iter;
 	ut64 *data_off;
@@ -872,7 +872,7 @@ static int fs_ubifs_read(RFSFile *file, ut64 addr, int len) {
 			continue;
 		}
 
-		ut8 *comp_buf = malloc (data_size);
+		ut8 *comp_buf = calloc (1, data_size);
 		if (!comp_buf) {
 			continue;
 		}
