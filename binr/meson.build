@@ -20,6 +20,7 @@ if cli_enabled
     subdir('rapatch2')
     subdir('rafind2')
     subdir('rasign2')
+    subdir('rafs2')
     subdir('ravc2')
     subdir('rax2')
   endif

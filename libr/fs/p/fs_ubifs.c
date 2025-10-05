@@ -296,22 +296,6 @@ typedef struct {
 	bool mounted;
 } ubifs_ctx_t;
 
-// CRC32 verification is optional for read-only access
-// Reference ubi_reader implementation also skips CRC validation
-R_UNUSED static ut32 ubi_crc32(const ut8 *buf, ut32 len) {
-	(void)buf;
-	(void)len;
-	return 0;
-}
-
-static inline ut32 ubi_read_be32(const ut8 *buf) {
-	return (buf[0] << 24) | (buf[1] << 16) | (buf[2] << 8) | buf[3];
-}
-
-static inline ut64 ubi_read_be64(const ut8 *buf) {
-	return ((ut64)ubi_read_be32 (buf) << 32) | ubi_read_be32 (buf + 4);
-}
-
 static ubifs_key_t ubifs_parse_key(const ut8 *key_buf) {
 	ubifs_key_t key = { 0 };
 	ut32 hkey = r_read_le32 (key_buf);

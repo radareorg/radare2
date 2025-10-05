@@ -28,6 +28,8 @@ langs.cfg
 *.lib
 *.ilk
 libr/egg/p/sc/out
+binr/rafs2/rafs2
+binr/rafs2/rafs2.exe
 binr/r2agent/r2agent
 binr/r2agent/r2agent.exe
 binr/rvc2/rvc2
