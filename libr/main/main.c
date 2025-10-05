@@ -1,16 +1,17 @@
-/* radare - LGPL - Copyright 2012-2024 - pancake */
+/* radare - LGPL - Copyright 2012-2025 - pancake */
 
 #include <r_main.h>
 
 R_LIB_VERSION(r_main);
 
-static RMain foo[] = {
+static const RMain foo[] = {
 	{ "r2pm", r_main_r2pm },
 	{ "rax2", r_main_rax2 },
 	{ "radiff2", r_main_radiff2 },
 	{ "rafind2", r_main_rafind2 },
 	{ "ravc2", r_main_ravc2 },
 	{ "rarun2", r_main_rarun2 },
+	{ "rafs2", r_main_rafs2 },
 	{ "rasm2", r_main_rasm2 },
 	{ "ragg2", r_main_ragg2 },
 	{ "rapatch2", r_main_rapatch2 },
