@@ -19,6 +19,7 @@ OBJS+=radiff2.o
 OBJS+=rapatch2.o
 OBJS+=radare2.o
 OBJS+=rahash2.o
+OBJS+=rafs2.o
 
 # See MAIN_LINK_ALL
 include deps.mk

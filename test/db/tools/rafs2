@@ -1,0 +1,135 @@
+NAME=rafs2 -l list FAT root directory
+FILE=--
+CMDS=!rafs2 -t fat -l / bins/fs/fat.img 2>/dev/null
+EXPECT=<<EOF
+d          0  etc
+d          0  bin
+f          0  README.md
+EOF
+RUN
+
+NAME=rafs2 -l list ext2 root directory
+FILE=--
+CMDS=!rafs2 -t ext2 -l / bins/fs/ext2.img 2>/dev/null
+EXPECT=<<EOF
+d          0  .
+d          0  ..
+d          0  lost+found
+d          0  bin
+d          0  etc
+f          0  README.md
+EOF
+RUN
+
+NAME=rafs2 -l list ntfs root directory
+FILE=--
+CMDS=!rafs2 -t ntfs -l / bins/fs/ntfs.img 2>/dev/null | grep folder
+EXPECT=<<EOF
+d          0  folder1
+d          0  folder2
+d          0  folder3
+EOF
+RUN
+
+NAME=rafs2 -c cat file from ext2
+FILE=--
+CMDS=!rafs2 -t ext2 -c /README.md bins/fs/ext2.img 2>/dev/null
+EXPECT=<<EOF
+This is an EXT2 partition
+EOF
+RUN
+
+NAME=rafs2 -c cat file from FAT
+FILE=--
+CMDS=!rafs2 -t fat -c /README.md bins/fs/fat.img 2>/dev/null
+EXPECT=<<EOF
+This is a FAT partition
+EOF
+RUN
+
+NAME=rafs2 -x extract file from ext2
+FILE=--
+CMDS=!rafs2 -t ext2 -x /README.md:/tmp/rafs2_test_ext2.txt bins/fs/ext2.img 2>/dev/null
+EXPECT=<<EOF
+Extracted /README.md -> /tmp/rafs2_test_ext2.txt (26 bytes)
+EOF
+RUN
+
+NAME=rafs2 -x extract file from FAT
+FILE=--
+CMDS=!rafs2 -t fat -x /README.md:/tmp/rafs2_test_fat.txt bins/fs/fat.img 2>/dev/null
+EXPECT=<<EOF
+Extracted /README.md -> /tmp/rafs2_test_fat.txt (24 bytes)
+EOF
+RUN
+
+NAME=rafs2 -n FAT filesystem details
+FILE=--
+CMDS=!rafs2 -t fat -n bins/fs/fat.img 2>/dev/null | head -5
+EXPECT=<<EOF
+Filesystem Type: FAT12
+Volume Label: NO NAME
+OEM Name: mkfs.fat
+Serial Number: 25192549
+FS Type String: FAT12
+EOF
+RUN
+
+NAME=rafs2 -n ext2 filesystem details
+FILE=--
+CMDS=!rafs2 -t ext2 -n bins/fs/ext2.img 2>/dev/null | head -3
+EXPECT=<<EOF
+Filesystem Type: ext2
+UUID: 201f53c3-fc0f-4d0c-ae45-aa999efcfe7f
+Last Mounted: /mnt
+EOF
+RUN
+
+NAME=rafs2 -n ISO9660 filesystem details
+FILE=--
+CMDS=!rafs2 -t iso9660 -n bins/fs/iso.img 2>/dev/null | head -3
+EXPECT=<<EOF
+Filesystem Type: ISO9660
+Volume ID: CDROM
+System ID: Mac OS X
+EOF
+RUN
+
+NAME=rafs2 -n NTFS filesystem details
+FILE=--
+CMDS=!rafs2 -t ntfs -n bins/fs/ntfs.img 2>/dev/null | head -3
+EXPECT=<<EOF
+Filesystem Type: NTFS
+OEM ID: NTFS
+Volume Label: MIKI_FS_TEST
+EOF
+RUN
+
+NAME=rafs2 with offset
+FILE=--
+CMDS=!rafs2 -t ext2 -o 0 -l / bins/fs/ext2.img 2>/dev/null | head -3
+EXPECT=<<EOF
+d          0  .
+d          0  ..
+d          0  lost+found
+EOF
+RUN
+
+NAME=rafs2 help output
+FILE=--
+CMDS=!rafs2 -h | head -1
+EXPECT=<<EOF
+Usage: rafs2 [options] -t <fstype> <file>
+EOF
+RUN
+
+NAME=rafs2 -L list filesystem types
+FILE=--
+CMDS=!rafs2 -L | grep -E "(ext2|fat|ntfs|iso9660)"
+EXPECT=<<EOF
+  ext2         ext2 filesystem
+  fat          FAT filesystem
+  iso9660      ISO9660 filesystem
+  ntfs         NTFS filesystem
+EOF
+RUN

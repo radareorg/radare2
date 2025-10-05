@@ -6,7 +6,7 @@ BTOP=$(shell pwd)
 
 .PHONY: all clean install install-symlink deinstall uninstall mrproper preload
 
-BINS=r2r r2pm ravc2 rax2 rasm2 rabin2 rahash2 radiff2 rapatch2 radare2 rafind2 rarun2 ragg2 r2agent rasign2
+BINS=r2r r2pm ravc2 rax2 rasm2 rabin2 rahash2 radiff2 rapatch2 radare2 rafind2 rarun2 ragg2 r2agent rasign2 rafs2
 
 LIBR2=$(call libname-version,libr2.$(EXT_SO),${LIBVERSION})
 
