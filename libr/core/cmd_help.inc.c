@@ -226,6 +226,7 @@ static RCoreHelpMessage help_msg_root = {
 	"k", "[?] [query]", "evaluate an sdb query",
 	"l", "[?] [filepattern]", "list files and directories",
 	"L", "[?] [-] [plugin]", "list, unload load r2 plugins",
+	"Lc", "[j]", "list core plugins",
 	"m", "[?]", "mount filesystems and inspect its contents",
 	"o", "[?] [file] ([addr])", "open file at optional address",
 	"p", "[?] [len]", "print current block with format and length",
