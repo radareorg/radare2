@@ -74,9 +74,11 @@ static void details_ext2(RFSRoot *root, RStrBuf *sb) {
 		return;
 	}
 
+	ut32 feature_compat = r_read_le32 ((ut8 *)&super.s_feature_compat);
 	ut32 feature_incompat = r_read_le32 ((ut8 *)&super.s_feature_incompat);
+
 	const char *fs_type = "ext2";
-	if (feature_incompat & 0x0004) { // EXT3_FEATURE_INCOMPAT_RECOVER
+	if (feature_compat & 0x0004) { // EXT3_FEATURE_COMPAT_HAS_JOURNAL
 		fs_type = "ext3";
 	}
 	if (feature_incompat & 0x0040) { // EXT4_FEATURE_INCOMPAT_EXTENTS
@@ -99,7 +101,6 @@ static void details_ext2(RFSRoot *root, RStrBuf *sb) {
 	ut16 state = r_read_le16 ((ut8 *)&super.s_state);
 	ut32 rev_level = r_read_le32 ((ut8 *)&super.s_rev_level);
 	ut32 creator_os = r_read_le32 ((ut8 *)&super.s_creator_os);
-	ut32 feature_compat = r_read_le32 ((ut8 *)&super.s_feature_compat);
 	ut32 feature_ro_compat = r_read_le32 ((ut8 *)&super.s_feature_ro_compat);
 
 	ut32 block_size = 1024 << log_block_size;
