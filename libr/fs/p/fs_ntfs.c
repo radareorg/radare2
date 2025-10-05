@@ -142,7 +142,7 @@ static void details_ntfs(RFSRoot *root, RStrBuf *sb) {
 		goto print_info;
 	}
 
-	ut8 *mft_record = calloc(1, mft_record_size);
+	ut8 *mft_record = calloc (1, mft_record_size);
 	if (mft_record) {
 		ut64 volume_mft_offset = mft_offset + (3 * mft_record_size);
 		if (root->iob.read_at (root->iob.io, volume_mft_offset, mft_record, mft_record_size)) {
@@ -183,7 +183,7 @@ static void details_ntfs(RFSRoot *root, RStrBuf *sb) {
 								name_chars = 127;
 							}
 							for (j = 0; j < name_chars; j++) {
-								ut16 c = r_read_le16(name_utf16 + (j * 2));
+								ut16 c = r_read_le16 (name_utf16 + (j * 2));
 								volume_label[j] = (c < 128) ? (char)c : '?';
 							}
 							volume_label[name_chars] = 0;
@@ -208,8 +208,8 @@ print_info:
 	r_strbuf_appendf (sb, "Volume Serial Number: %016"PFMT64x"\n", volume_serial);
 
 	if (creation_time) {
-		time_t t = ntfs_filetime_to_unix(creation_time);
-		struct tm *tm = gmtime(&t);
+		time_t t = ntfs_filetime_to_unix (creation_time);
+		struct tm *tm = gmtime (&t);
 		if (tm) {
 			r_strbuf_appendf (sb, "Volume Creation Time: %04d-%02d-%02d %02d:%02d:%02d\n",
 				tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
@@ -217,8 +217,8 @@ print_info:
 		}
 	}
 	if (modification_time) {
-		time_t t = ntfs_filetime_to_unix(modification_time);
-		struct tm *tm = gmtime(&t);
+		time_t t = ntfs_filetime_to_unix (modification_time);
+		struct tm *tm = gmtime (&t);
 		if (tm) {
 			r_strbuf_appendf (sb, "Volume Modification Time: %04d-%02d-%02d %02d:%02d:%02d\n",
 				tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
