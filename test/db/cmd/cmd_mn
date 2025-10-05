@@ -42,7 +42,7 @@ m /mnt ext2 @ 0
 mn
 EOF
 EXPECT=<<EOF
-Filesystem Type: ext2
+Filesystem Type: ext3
 Volume Name: MIKI_FS_TEST
 UUID: f0640c63-5163-4e94-91e5-2cd257b82419
 Last Mounted: /tmp/ext3_mount
