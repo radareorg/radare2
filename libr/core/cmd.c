@@ -2831,7 +2831,9 @@ static bool cmd_r2cmd(RCore *core, const char *_input) {
 				return true;
 			}
 		}
-		r_core_cmd_help_contains (core, help_msg_r, "ra");
+		if (_input[0] == 'a') {
+			r_core_cmd_help_contains (core, help_msg_r, "ra");
+		}
 		free (input);
 		return false;
 	}
