@@ -28,12 +28,18 @@ static Avatar avatar_croco = {
 	.name = "croco",
 	.w = 16,
 	.h = 6,
-	.count = 1,
+	.count = 2,
 	.lines = {
 		" __   __        ",
 		"(o |_| o)_____  ",
 		"|  ___________) ",
 		"\\            /  ",
+		" \\          /   ",
+		"  \\________/    ",
+		" __   __        ",
+		"( o|_|o )_____  ",
+		"| .___________) ",
+		"\\  `___'     /  ",
 		" \\          /   ",
 		"  \\________/    "
 	}
@@ -65,7 +71,7 @@ static Avatar avatar_cybcat = {
 
 static Avatar avatar_clippy_utf8 = {
 	.name = "clippy",
-	.w = 16, // utf8 hacks
+	.w = 7,
 	.h = 7,
 	.count = 3,
 	.lines = {
