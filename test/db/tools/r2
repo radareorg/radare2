@@ -165,6 +165,7 @@ INFO: Type matching analysis for all functions (aaft)
 INFO: Propagate noreturn information (aanr)
 INFO: Use -AA or aaaa to perform additional experimental analysis
 --
+INFO: Second cons!
 INFO: Analyze all flags starting with sym. and entry0 (aa)
 INFO: Analyze imports (af@@@i)
 INFO: Analyze symbols (af@@@s)
