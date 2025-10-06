@@ -154,6 +154,7 @@ static RCoreHelpMessage help_msg_fz = {
 	"fz-", "*", "remove all flagzones",
 	"fz.", "", "show around flagzone context",
 	"fz*", "", "dump into r2 commands, for projects",
+	"fzj", "", "list all flag zones in json",
 	"fzn", "", "seek to next flag zone",
 	"fzp", "", "seek to previous flag zone",
 	"fzs", " math", "seek to that flag zone by name",
@@ -610,6 +611,23 @@ static void cmd_fz(RCore *core, const char *input) {
 			}
 		}
 		break;
+	case 'j': // "fzj"
+		{
+			PJ *pj = r_core_pj_new (core);
+			pj_a (pj);
+			RListIter *iter;
+			RFlagZoneItem *zone;
+			r_list_foreach (core->flags->zones, iter, zone) {
+				pj_o (pj);
+				pj_kn (pj, "from", zone->from);
+				pj_kn (pj, "to", zone->to);
+				pj_ks (pj, "name", zone->name);
+				pj_end (pj);
+			}
+			pj_end (pj);
+			r_cons_println (core->cons, pj_string (pj));
+			pj_free (pj);
+		} break;
 	case '*':
 	case 0:
 		{
