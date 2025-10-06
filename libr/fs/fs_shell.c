@@ -208,6 +208,24 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 		free (abspath);
 	} else if (r_str_startswith (buf, "cat")) {
 		eprintf ("Usage: cat [filename] ([> localfile])\n");
+	} else if (r_str_startswith (buf, "get64 ")) {
+		const char *input = r_str_trim_head_ro (buf + 6);
+		char *abspath = fs_abspath (shell, input);
+		file = r_fs_open (fs, abspath, false);
+		if (file) {
+			r_fs_read (fs, file, 0, file->size);
+			if (file->data) {
+				char *b64 = r_base64_encode_dyn ((const ut8 *)file->data, file->size);
+				if (b64) {
+					cb_printf (cons, "%s\n", b64);
+					free (b64);
+				}
+			}
+			r_fs_close (fs, file);
+		} else {
+			R_LOG_ERROR ("Cannot open file");
+		}
+		free (abspath);
 	} else if (r_str_startswith (buf, "get ")) {
 		const char *input = r_str_trim_head_ro (buf + 3);
 		char *abspath = fs_abspath (shell, input);
@@ -252,6 +270,89 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 			R_LOG_ERROR ("Cannot create directory");
 		}
 		free (abspath);
+	} else if (r_str_startswith (buf, "set64 ")) {
+		char *data = strdup (buf + 6);
+		if (!data) {
+			return true;
+		}
+		char *space = strchr (data, ' ');
+		if (!space) {
+			R_LOG_ERROR ("Usage: set64 <file> <base64>");
+			free (data);
+			return true;
+		}
+		*space++ = 0;
+		char *abspath = fs_abspath (shell, data);
+		if (!abspath) {
+			R_LOG_ERROR ("Cannot resolve path");
+			free (data);
+			return true;
+		}
+		r_str_trim_path (abspath);
+		if (!*abspath) {
+			free (abspath);
+			abspath = strdup ("/");
+			if (!abspath) {
+				free (data);
+				return true;
+			}
+		}
+		int outlen = 0;
+		ut8 *decoded = (ut8 *)sdb_decode (space, &outlen);
+		if (!decoded && *space) {
+			R_LOG_ERROR ("Invalid base64");
+			free (abspath);
+			free (data);
+			return true;
+		}
+		RFSFile *f = r_fs_open (fs, abspath, true);
+		if (f) {
+			r_fs_write (fs, f, 0, decoded? decoded: (const ut8 *)"", decoded? (size_t)outlen: 0);
+			r_fs_close (fs, f);
+			r_fs_file_free (f);
+		} else {
+			R_LOG_ERROR ("Cannot open file for writing");
+		}
+		free (decoded);
+		free (abspath);
+		free (data);
+	} else if (r_str_startswith (buf, "set ")) {
+		char *data = strdup (buf + 4);
+		if (!data) {
+			return true;
+		}
+		char *space = strchr (data, ' ');
+		if (!space) {
+			R_LOG_ERROR ("Usage: set <file> <contents>");
+			free (data);
+			return true;
+		}
+		*space++ = 0;
+		char *abspath = fs_abspath (shell, data);
+		if (!abspath) {
+			R_LOG_ERROR ("Cannot resolve path");
+			free (data);
+			return true;
+		}
+		r_str_trim_path (abspath);
+		if (!*abspath) {
+			free (abspath);
+			abspath = strdup ("/");
+			if (!abspath) {
+				free (data);
+				return true;
+			}
+		}
+		RFSFile *f = r_fs_open (fs, abspath, true);
+		if (f) {
+			r_fs_write (fs, f, 0, (const ut8 *)space, strlen (space));
+			r_fs_close (fs, f);
+			r_fs_file_free (f);
+		} else {
+			R_LOG_ERROR ("Cannot open file for writing");
+		}
+		free (abspath);
+		free (data);
 	} else if (r_str_startswith (buf, "o ") || r_str_startswith (buf, "open ")) {
 		char *data = strdup (buf);
 		const char *input = r_str_nextword (data, ' ');
@@ -279,7 +380,10 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 			" cd path     ; change current directory\n"
 			" cat file    ; print contents of file\n"
 			" get file    ; dump file to local disk\n"
+			" get64 file  ; print base64 contents\n"
 			" mkdir dir   ; create directory\n"
+			" set file txt; write text into file\n"
+			" set64 file b; write base64 contents\n"
 			" getall      ; fetch all files in current rfs directory to local cwd\n"
 			" o/open file ; open file with r2\n"
 			" mount       ; show mount points\n"
