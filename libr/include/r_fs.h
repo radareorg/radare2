@@ -214,6 +214,7 @@ extern RFSPlugin r_fs_plugin_minix;
 extern RFSPlugin r_fs_plugin_ntfs;
 extern RFSPlugin r_fs_plugin_posix;
 extern RFSPlugin r_fs_plugin_r2;
+extern RFSPlugin r_fs_plugin_tmp;
 extern RFSPlugin r_fs_plugin_reiserfs;
 extern RFSPlugin r_fs_plugin_sfs;
 extern RFSPlugin r_fs_plugin_squashfs;
