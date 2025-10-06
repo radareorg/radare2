@@ -5,6 +5,7 @@ r_fs_sources = [
   'p/fs_io.c',
   'p/fs_posix.c',
   'p/fs_r2.c',
+  'p/fs_tmp.c',
   'p/fs_ubifs.c',
 ]
 
