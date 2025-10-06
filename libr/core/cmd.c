@@ -3935,6 +3935,10 @@ static int handle_command_call(RCore *core, const char *cmd) {
 	}
 	if (R_UNLIKELY (*cmd == '\'')) {
 		bool isaddr = cmd[1] == '@';
+		if (!strcmp (cmd, "'?")) {
+			r_core_cmd_help (core, help_msg_single_quote);
+			return true;
+		}
 		if (isaddr) {
 			cmd += 2;
 		} else {
