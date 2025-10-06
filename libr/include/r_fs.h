@@ -68,6 +68,7 @@ typedef struct r_fs_plugin_t {
 	int (*read)(RFSFile *fs, ut64 addr, int len);
 	void (*close)(RFSFile *fs);
 	RList *(*dir)(RFSRoot *root, const char *path, int view);
+	bool (*mkdir)(RFSRoot *root, const char *path);
 	bool (*init)(void);
 	void (*fini)(void);
 	bool (*mount)(RFSRoot *root);
@@ -167,6 +168,7 @@ R_API int r_fs_write(RFS* fs, RFSFile* file, ut64 addr, const ut8 *data, int len
 R_API RFSFile *r_fs_slurp(RFS* fs, const char *path);
 R_API RList *r_fs_dir(RFS* fs, const char *path);
 R_API bool r_fs_dir_dump(RFS* fs, const char *path, const char *name);
+R_API bool r_fs_mkdir(RFS *fs, const char *path);
 
 R_API RList *r_fs_find_name(RFS* fs, const char *name, const char *glob);
 R_API RList *r_fs_find_off(RFS* fs, const char *name, ut64 off);
