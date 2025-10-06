@@ -3339,12 +3339,14 @@ R_API char *r_str_wrap(const char *str, int w) {
 			*r++ = *str++;
 			cw = 0;
 		} else {
-			if (cw >= w) {
+			if (cw > w) {
 				*r++ = '\n';
-				cw = 0;
+				*r++ = *str++;
+				cw = 1;
+			} else {
+				*r++ = *str++;
+				cw++;
 			}
-			*r++ = *str++;
-			cw++;
 		}
 	}
 	*r = 0;
