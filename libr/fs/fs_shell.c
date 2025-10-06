@@ -198,7 +198,7 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 			}
 			if (file->data && !handlePipes (fs, abspath, file->data, fname)) {
 				char *s = r_str_ndup ((const char *)file->data, file->size);
-				cb_printf (cons, "%s", s);
+				cb_printf (cons, "%s\n", s);
 				free (s);
 			}
 			r_fs_close (fs, file);
@@ -228,6 +228,30 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 			free (f);
 		}
 		free (abspath);
+	} else if (r_str_startswith (buf, "mkdir ")) {
+		const char *input = r_str_trim_head_ro (buf + 5);
+		if (R_STR_ISEMPTY (input)) {
+			R_LOG_ERROR ("Usage: mkdir [path]");
+			return true;
+		}
+		char *abspath = fs_abspath (shell, input);
+		if (!abspath) {
+			R_LOG_ERROR ("Cannot resolve path");
+			return true;
+		}
+		r_str_trim_path (abspath);
+		if (!*abspath) {
+			free (abspath);
+			abspath = strdup ("/");
+			if (!abspath) {
+				R_LOG_ERROR ("Cannot resolve path");
+				return true;
+			}
+		}
+		if (!r_fs_mkdir (fs, abspath)) {
+			R_LOG_ERROR ("Cannot create directory");
+		}
+		free (abspath);
 	} else if (r_str_startswith (buf, "o ") || r_str_startswith (buf, "open ")) {
 		char *data = strdup (buf);
 		const char *input = r_str_nextword (data, ' ');
@@ -255,6 +279,7 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 			" cd path     ; change current directory\n"
 			" cat file    ; print contents of file\n"
 			" get file    ; dump file to local disk\n"
+			" mkdir dir   ; create directory\n"
 			" getall      ; fetch all files in current rfs directory to local cwd\n"
 			" o/open file ; open file with r2\n"
 			" mount       ; show mount points\n"
