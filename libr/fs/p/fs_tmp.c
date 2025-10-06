@@ -158,41 +158,22 @@ static RFSTmpNode *tmp_root(RFSRoot *root) {
 }
 
 static char *tmp_file_fullpath(RFSFile *file) {
-	R_RETURN_VAL_IF_FAIL (file && file->root, NULL);
+	R_RETURN_VAL_IF_FAIL (file, NULL);
 	char *rel = r_fs_file_copy_abs_path (file);
 	if (!rel) {
 		return NULL;
 	}
-	char *full = NULL;
-	const char *base = file->root->path;
-	if (base && strlen (base) > 1) {
-		if (*rel == '/') {
-			full = r_str_newf ("%s%s", base, rel);
-		} else {
-			full = r_str_newf ("%s/%s", base, rel);
-		}
+	r_str_trim_path (rel);
+	char *path = NULL;
+	if (!*rel) {
+		path = strdup ("/");
+	} else if (*rel == '/') {
+		path = strdup (rel);
 	} else {
-		if (*rel == '/') {
-			full = strdup (rel);
-		} else {
-			full = r_str_newf ("/%s", rel);
-		}
+		path = r_str_newf ("/%s", rel);
 	}
 	free (rel);
-	if (!full) {
-		return NULL;
-	}
-	r_str_trim_path (full);
-	if (!*full) {
-		free (full);
-		return strdup ("/");
-	}
-	if (*full != '/') {
-		char *tmp = r_str_newf ("/%s", full);
-		free (full);
-		full = tmp;
-	}
-	return full;
+	return path;
 }
 
 static RFSFile *fs_tmp_open(RFSRoot *root, const char *path, bool create) {
