@@ -226,7 +226,6 @@ static RCoreHelpMessage help_msg_root = {
 	"k", "[?] [query]", "evaluate an sdb query",
 	"l", "[?] [filepattern]", "list files and directories",
 	"L", "[?] [-] [plugin]", "list, unload load r2 plugins",
-	"Lc", "[j]", "list core plugins",
 	"m", "[?]", "mount filesystems and inspect its contents",
 	"o", "[?] [file] ([addr])", "open file at optional address",
 	"p", "[?] [len]", "print current block with format and length",
@@ -1722,6 +1721,40 @@ static int cmd_help(void *data, const char *input) {
 		// TODO #7967 help refactor
 		r_core_cmd_help (core, help_msg_intro);
 		r_core_cmd_help (core, help_msg_root);
+		/* Dynamically list core plugins in root help */
+		{
+			RListIter *iter;
+			RCorePlugin *pl;
+			int count = 0;
+			if (core->rcmd && core->rcmd->plist) {
+				/* count plugins */
+				r_list_foreach (core->rcmd->plist, iter, pl) {
+					count++;
+				}
+			}
+			if (count > 0) {
+				int items = 3 + (count * 3) + 1;
+				const char **help = (const char **)malloc (items * sizeof (char*));
+				if (help) {
+					int idx = 0;
+					help[idx++] = "Core plugins:";
+					help[idx++] = "";
+					help[idx++] = "";
+					if (core->rcmd && core->rcmd->plist) {
+						r_list_foreach (core->rcmd->plist, iter, pl) {
+							const char *name = pl->meta.name? pl->meta.name: "";
+							const char *desc = pl->meta.desc? pl->meta.desc: "";
+							help[idx++] = name;
+							help[idx++] = "[?]";
+							help[idx++] = desc;
+						}
+					}
+					help[idx++] = NULL;
+					r_core_cmd_help (core, help);
+					free ((void*)help);
+				}
+			}
+		}
 		break;
 	default:
 		r_core_return_invalid_command (core, "?", input[0]);
