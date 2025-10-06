@@ -374,6 +374,50 @@ R_API RList* r_fs_dir(RFS* fs, const char* p) {
 	return ret;
 }
 
+R_API bool r_fs_mkdir(RFS *fs, const char *path) {
+	R_RETURN_VAL_IF_FAIL (fs && path, false);
+	char *npath = r_str_trim_dup (path);
+	if (!npath) {
+		return false;
+	}
+	r_str_trim_path (npath);
+	if (!*npath) {
+		free (npath);
+		return false;
+	}
+	if (*npath != '/') {
+		free (npath);
+		return false;
+	}
+	bool res = false;
+	RList *roots = r_fs_root (fs, npath);
+	RListIter *iter;
+	RFSRoot *root;
+	r_list_foreach (roots, iter, root) {
+		if (!root || !root->p || !root->p->mkdir) {
+			continue;
+		}
+		const char *dir = npath;
+		size_t plen = strlen (root->path);
+		if (plen > 1) {
+			if (strncmp (npath, root->path, plen)) {
+				continue;
+			}
+			dir = npath + plen;
+			if (!*dir) {
+				dir = "/";
+			}
+		}
+		res = root->p->mkdir (root, dir);
+		if (res) {
+			break;
+		}
+	}
+	r_list_free (roots);
+	free (npath);
+	return res;
+}
+
 R_API bool r_fs_dir_dump(RFS* fs, const char* path, const char* name) {
 	R_RETURN_VAL_IF_FAIL (fs && path && name, false);
 	RListIter* iter;
