@@ -24,6 +24,7 @@ static RCoreHelpMessage help_msg_m = {
 	"mp", " msdos 0", "show partitions in msdos format at offset 0",
 	"mp", "", "list all supported partition types",
 	"ms", " /mnt", "open filesystem shell at /mnt (or fs.cwd if not defined)",
+	"md+", " /dir", "create directory inside mounted filesystem",
 	"mw", " [file] [data]", "write data into file",
 	"mwf", " [diskfile] [r2filepath]", "write contents of local diskfile into r2fs mounted path",
 	"my", "", "yank contents of file into clipboard",
@@ -510,6 +511,48 @@ static int cmd_mount(void *data, const char *_input) {
 	case 'd': // "md"
 		if (input[1] == '?') { // "md?"
 			r_core_cmd_help_contains (core, help_msg_m, "md");
+		} else if (input[1] == '+' && input[2] == '?') { // "md+?"
+			r_core_cmd_help_contains (core, help_msg_m, "md+");
+		} else if (input[1] == '+') { // "md+"
+			const char *arg = r_str_trim_head_ro (input + 2);
+			if (R_STR_ISEMPTY (arg)) {
+				R_LOG_ERROR ("Usage: md+ /path");
+				r_core_return_value (core, R_CMD_RC_FAILURE);
+				break;
+			}
+			char *target = strdup (arg);
+			if (!target) {
+				r_core_return_value (core, R_CMD_RC_FAILURE);
+				break;
+			}
+			r_str_trim (target);
+			char *abspath = NULL;
+			if (*target == '/') {
+				abspath = strdup (target);
+			} else {
+				const char *cwd = r_config_get (core->config, "fs.cwd");
+				abspath = r_str_newf ("%s/%s", cwd, target);
+			}
+			free (target);
+			if (!abspath) {
+				r_core_return_value (core, R_CMD_RC_FAILURE);
+				break;
+			}
+			r_str_trim_path (abspath);
+			if (!*abspath) {
+				free (abspath);
+				abspath = strdup ("/");
+				if (!abspath) {
+					r_core_return_value (core, R_CMD_RC_FAILURE);
+					break;
+				}
+			}
+			bool ok = r_fs_mkdir (core->fs, abspath);
+			if (!ok) {
+				R_LOG_ERROR ("Cannot create directory");
+			}
+			free (abspath);
+			r_core_return_value (core, ok? R_CMD_RC_SUCCESS: R_CMD_RC_FAILURE);
 		} else {
 			cmd_mount_ls (core, input + 1);
 		}
