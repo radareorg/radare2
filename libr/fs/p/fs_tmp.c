@@ -1,8 +1,6 @@
 /* radare - LGPL - Copyright 2025 - pancake */
 
 #include <r_fs.h>
-#include <r_lib.h>
-#include <string.h>
 
 typedef struct r_fs_tmp_node_t {
 	char *name;
@@ -16,11 +14,9 @@ typedef struct r_fs_tmp_node_t {
 static void tmp_node_free(void *ptr);
 
 static RFSTmpNode *tmp_node_new(const char *name, bool is_dir) {
+	R_RETURN_VAL_IF_FAIL (name, NULL);
 	RFSTmpNode *node = R_NEW0 (RFSTmpNode);
-	if (!node) {
-		return NULL;
-	}
-	node->name = name? strdup (name): strdup ("");
+	node->name = strdup (name);
 	if (!node->name) {
 		tmp_node_free (node);
 		return NULL;
@@ -38,16 +34,15 @@ static RFSTmpNode *tmp_node_new(const char *name, bool is_dir) {
 }
 
 static void tmp_node_free(void *ptr) {
-	RFSTmpNode *node = (RFSTmpNode *)ptr;
-	if (!node) {
-		return;
+	if (ptr) {
+		RFSTmpNode *node = (RFSTmpNode *)ptr;
+		if (node->children) {
+			r_list_free (node->children);
+		}
+		free (node->data);
+		free (node->name);
+		free (node);
 	}
-	if (node->children) {
-		r_list_free (node->children);
-	}
-	free (node->data);
-	free (node->name);
-	free (node);
 }
 
 static RFSTmpNode *tmp_node_child(RFSTmpNode *dir, const char *name) {
@@ -62,37 +57,28 @@ static RFSTmpNode *tmp_node_child(RFSTmpNode *dir, const char *name) {
 	return NULL;
 }
 
-static char *tmp_normalize_path(const char *path) {
-	if (R_STR_ISEMPTY (path)) {
-		return strdup ("/");
-	}
-	char *dup = r_str_trim_dup (path);
-	if (!dup) {
-		return NULL;
-	}
-	r_str_trim_path (dup);
-	if (!*dup) {
-		free (dup);
-		return strdup ("/");
-	}
-	if (*dup != '/') {
-		char *tmp = r_str_newf ("/%s", dup);
-		free (dup);
-		dup = tmp;
-	}
-	if (!dup) {
-		return NULL;
-	}
-	if (!*dup) {
-		free (dup);
-		return strdup ("/");
-	}
-	return dup;
-}
-
 static RFSTmpNode *tmp_walk(RFSTmpNode *root, const char *path, bool create_dirs, bool create_leaf, bool leaf_is_dir) {
 	R_RETURN_VAL_IF_FAIL (root && path, NULL);
-	char *norm = tmp_normalize_path (path);
+	char *norm = r_str_trim_dup (path);
+	if (!norm) {
+		return NULL;
+	}
+	r_str_trim_path (norm);
+	if (!*norm) {
+		free (norm);
+		norm = strdup ("/");
+		if (!norm) {
+			return NULL;
+		}
+	}
+	if (*norm != '/') {
+		char *tmp = r_str_newf ("/%s", norm);
+		free (norm);
+		norm = tmp;
+		if (!norm) {
+			return NULL;
+		}
+	}
 	if (!norm) {
 		return NULL;
 	}
@@ -264,9 +250,6 @@ static int fs_tmp_write(RFSFile *file, ut64 addr, const ut8 *data, int len) {
 	return len;
 }
 
-static void fs_tmp_close(R_UNUSED RFSFile *file) {
-}
-
 static RList *fs_tmp_dir(RFSRoot *root, const char *path, R_UNUSED int view) {
 	RFSTmpNode *tnode = tmp_root (root);
 	if (!tnode) {
@@ -285,8 +268,7 @@ static RList *fs_tmp_dir(RFSRoot *root, const char *path, R_UNUSED int view) {
 	r_list_foreach (dir->children, iter, child) {
 		RFSFile *f = r_fs_file_new (NULL, child->name);
 		if (!f) {
-			r_list_free (list);
-			return NULL;
+			break;
 		}
 		f->type = child->is_dir? R_FS_FILE_TYPE_DIRECTORY: R_FS_FILE_TYPE_REGULAR;
 		f->size = child->size;
@@ -322,9 +304,7 @@ static bool fs_tmp_mount(RFSRoot *root) {
 }
 
 static void fs_tmp_umount(RFSRoot *root) {
-	if (!root) {
-		return;
-	}
+	R_RETURN_IF_FAIL (root);
 	if (root->ptr) {
 		tmp_node_free (root->ptr);
 		root->ptr = NULL;
@@ -335,12 +315,12 @@ RFSPlugin r_fs_plugin_tmp = {
 	.meta = {
 		.name = "tmp",
 		.desc = "Temporary in-memory filesystem",
+		.author = "pancake",
 		.license = "MIT",
 	},
 	.open = fs_tmp_open,
 	.write = fs_tmp_write,
 	.read = fs_tmp_read,
-	.close = fs_tmp_close,
 	.dir = fs_tmp_dir,
 	.mkdir = fs_tmp_mkdir,
 	.mount = fs_tmp_mount,
