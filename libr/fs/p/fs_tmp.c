@@ -79,9 +79,6 @@ static RFSTmpNode *tmp_walk(RFSTmpNode *root, const char *path, bool create_dirs
 			return NULL;
 		}
 	}
-	if (!norm) {
-		return NULL;
-	}
 	if (!strcmp (norm, "/")) {
 		free (norm);
 		return root;
