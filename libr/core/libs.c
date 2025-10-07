@@ -19,18 +19,18 @@
 		return r_ ## x ## _plugin_remove (core->y, hand); \
 	}
 
-CB (io, io)
-CB (core, rcmd)
-CB (debug, dbg)
-CB (bp, dbg->bp)
-CB (lang, lang)
-CB (anal, anal)
-CB (esil, anal->esil)
-CB (asm, rasm)
-CB (bin, bin)
-CB (egg, egg)
-CB (fs, fs)
-CB (arch, anal->arch);
+CB(io, io)
+CB(core, rcmd)
+CB(debug, dbg)
+CB(bp, dbg->bp)
+CB(lang, lang)
+CB(anal, anal)
+CB(esil, anal->esil)
+CB(asm, rasm)
+CB(bin, bin)
+CB(egg, egg)
+CB(fs, fs)
+CB(arch, anal->arch);
 
 #if R2_LOADLIBS
 static void open_plugins_at(RCore *core, const char *arg, const char *user_path) {
@@ -78,7 +78,7 @@ static void load_plugins(RCore *core, int where, const char *path) {
 	}
 }
 #else
-static void load_plugins(RCore *core, int where, const char *path) {
+static void load_plugins(RCore *core, int where, const char *path){
 	(void)
 #warning built without the ability to load plugins dynamically
 }
@@ -86,7 +86,7 @@ static void load_plugins(RCore *core, int where, const char *path) {
 
 R_API void r_core_loadlibs_init(RCore *core) {
 	ut64 prev = r_time_now_mono ();
-#define DF(x, y, z) r_lib_add_handler (core->lib, R_LIB_TYPE_ ## x, y, &__lib_ ## z ## _cb, &__lib_ ## z ## _dt, core);
+#define DF(x, y, z) r_lib_add_handler(core->lib, R_LIB_TYPE_ ## x, y, &__lib_ ## z ## _cb, &__lib_ ## z ## _dt, core);
 	core->lib = r_lib_new (NULL, NULL);
 	DF (IO, "io plugins", io);
 	DF (CORE, "core plugins", core);
@@ -106,21 +106,16 @@ R_API void r_core_loadlibs_init(RCore *core) {
 
 static bool is_script(const char *name) {
 	const char *ext = r_file_extension (name);
-	if (ext) {
-		if (0
-		|| !strcmp (ext, "c")
-		|| !strcmp (ext, "go")
-		|| !strcmp (ext, "ts")
-		|| !strcmp (ext, "js")
-		|| !strcmp (ext, "qjs")
-		|| !strcmp (ext, "lua")
-		|| !strcmp (ext, "pl")
-		|| !strcmp (ext, "py")
-		|| !strcmp (ext, "rs")
-		|| !strcmp (ext, "v")
-		|| !strcmp (ext, "nim")
-		|| !strcmp (ext, "vala")
-		|| !strcmp (ext, "wren")) {
+	if (!ext) {
+		return false;
+	}
+	static const char *exts[] = {
+		"c", "go", "ts", "js", "qjs", "lua", "pl", "py",
+		"rs", "v", "nim", "vala", "wren", NULL
+	};
+	const char **e;
+	for (e = exts; *e; e++) {
+		if (!strcmp (ext, *e)) {
 			return true;
 		}
 	}

@@ -20,8 +20,7 @@ static Avatar avatar_orangg = {
 		"  '|\\|  `---'/     ",
 		"     | /----. \\    ",
 		"     | \\___/  |___ ",
-		"     `-----'`-----'"
-	}
+		"     `-----'`-----'" }
 };
 
 static Avatar avatar_croco = {
@@ -41,8 +40,7 @@ static Avatar avatar_croco = {
 		"| .___________) ",
 		"\\  `___'     /  ",
 		" \\          /   ",
-		"  \\________/    "
-	}
+		"  \\________/    " }
 };
 
 static Avatar avatar_cybcat = {
@@ -65,8 +63,7 @@ static Avatar avatar_cybcat = {
 		" '--   =   =   --' ",
 		"----     Y     ----",
 		"  _.-    U    -._  ",
-		"                   "
-	}
+		"                   " }
 };
 
 static Avatar avatar_clippy_utf8 = {
@@ -95,8 +92,7 @@ static Avatar avatar_clippy_utf8 = {
 		" │  │╷ ",
 		" │  ││ ",
 		" │ ─╯│ ",
-		" ╰───╯ "
-	}
+		" ╰───╯ " }
 };
 
 static Avatar avatar_clippy = {
@@ -125,8 +121,7 @@ static Avatar avatar_clippy = {
 		" |  ||  ",
 		" | _:|  ",
 		" |   |  ",
-		" `---'  "
-	}
+		" `---'  " }
 };
 
 enum {
@@ -147,7 +142,17 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 			if (!space) {
 				space = msg;
 			}
-			type = (*msg == '+')? R_AVATAR_ORANGG: (*msg == 'C')? R_AVATAR_CROCO: R_AVATAR_CYBCAT;
+			switch (*msg) {
+			case '+':
+				type = R_AVATAR_ORANGG;
+				break;
+			case 'C':
+				type = R_AVATAR_CROCO;
+				break;
+			case '3':
+				type = R_AVATAR_CYBCAT;
+				break;
+			}
 			msg = space + 1;
 		}
 		break;
@@ -170,7 +175,7 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 		avatar = &avatar_cybcat;
 		break;
 	default:
-		avatar = utf8? &avatar_clippy_utf8 : &avatar_clippy;
+		avatar = utf8? &avatar_clippy_utf8: &avatar_clippy;
 		break;
 	}
 	int baseline = 0;
@@ -185,7 +190,7 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 	if (lines_length == 1) {
 		bubble_w = strlen (m);
 	} else {
-		bubble_w = (w < margin_right) ? 10: w - margin_right;
+		bubble_w = (w < margin_right)? 10: w - margin_right;
 	}
 	int rows = R_MAX (lines_length + 4, avatar->h);
 	for (i = 0; i < rows; i++) {
@@ -249,7 +254,7 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 						r_cons_printf (core->cons, "─");
 					}
 				} else {
-				r_cons_printf (core->cons, r_str_pad ('-', bubble_w));
+					r_cons_printf (core->cons, r_str_pad ('-', bubble_w));
 				}
 			} else {
 				r_cons_printf (core->cons, r_str_pad (' ', bubble_w));

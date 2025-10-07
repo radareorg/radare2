@@ -1,0 +1,311 @@
+#!/usr/bin/env python3
+
+import argparse
+import os
+import re
+import subprocess
+import sys
+import tempfile
+
+
+def parse_args():
+	parser = argparse.ArgumentParser(
+		description="Format files using clang-format followed by radare2 indentation rules."
+	)
+	parser.add_argument(
+		"files",
+		nargs="+",
+		help="Files to format in place.",
+	)
+	parser.add_argument(
+		"--clang-format",
+		dest="clang_format",
+		default=os.environ.get("CLANG_FORMAT", "clang-format"),
+		help="clang-format executable to use (default: env CLANG_FORMAT or clang-format).",
+	)
+	return parser.parse_args()
+
+
+def convert_leading_spaces(line):
+	match = re.match(r"^([ \t]+)", line)
+	if not match:
+		return line
+	ws = match.group(1)
+	width = 0
+	for ch in ws:
+		if ch == ' ':
+			width += 1
+		elif ch == '\t':
+			width += 8
+	tabs = "\t" * (width // 8)
+	return tabs + line[len(ws):]
+
+
+def fix_paren_spacing(line):
+	line_starts_alnum = bool(line and re.match(r"[A-Za-z0-9]", line))
+	in_single = False
+	in_double = False
+	escape = False
+	result = []
+	length = len(line)
+	i = 0
+	while i < length:
+		ch = line[i]
+		if escape:
+			result.append(ch)
+			escape = False
+			i += 1
+			continue
+		if ch == "\\" and (in_single or in_double):
+			result.append(ch)
+			escape = True
+			i += 1
+			continue
+		if ch == "'" and not in_double:
+			in_single = not in_single
+			result.append(ch)
+			i += 1
+			continue
+		if ch == '"' and not in_single:
+			in_double = not in_double
+			result.append(ch)
+			i += 1
+			continue
+		if not in_single and not in_double and ch == "(":
+			while result and result[-1] == " ":
+				result.pop()
+			prev = result[-1] if result else ""
+			if not line_starts_alnum and prev not in ("", "(", "\t", "\n") and not line.startswith("#"):
+				result.append(" ")
+			result.append("(")
+			i += 1
+			continue
+		result.append(ch)
+		i += 1
+	return "".join(result)
+
+
+def split_line_ending(line):
+	if line.endswith("\r\n"):
+		return line[:-2], "\r\n"
+	if line.endswith("\n"):
+		return line[:-1], "\n"
+	return line, ""
+
+
+CASE_OPEN_RE = re.compile(r"^(\s*(?:case\b.*:|default:))\s*\{(\s*//.*)?$")
+CASE_CLOSE_BREAK_RE = re.compile(r"^(\s*)\}\s*break;(.*)$")
+CASE_CLOSE_ONLY_RE = re.compile(r"^(\s*)\}(.*)$")
+
+
+def fix_case_blocks(lines):
+	fixed = []
+	case_indent_stack = []
+	for line in lines:
+		content, ending = split_line_ending(line)
+		line_sep = ending or "\n"
+		match_open = CASE_OPEN_RE.match(content)
+		if match_open:
+			case_line = match_open.group(1).rstrip()
+			comment = match_open.group(2)
+			if comment:
+				case_line = f"{case_line} {comment.strip()}"
+			indent_match = re.match(r"^(\s*)", content)
+			indent = indent_match.group(1) if indent_match else ""
+			fixed.append(case_line + line_sep)
+			fixed.append(indent + "\t{" + line_sep)
+			case_indent_stack.append((indent, indent + "\t", indent + "\t\t"))
+			continue
+		match_close = CASE_CLOSE_BREAK_RE.match(content)
+		if match_close:
+			indent = match_close.group(1)
+			comment = match_close.group(2).strip()
+			if case_indent_stack:
+				_, inner_indent, body_indent = case_indent_stack.pop()
+			else:
+				inner_indent = indent
+			fixed.append(inner_indent + "}" + line_sep)
+			if comment:
+				fixed.append(inner_indent + "break; " + comment + line_sep)
+			else:
+				fixed.append(inner_indent + "break;" + line_sep)
+			continue
+		match_close_only = CASE_CLOSE_ONLY_RE.match(content)
+		if match_close_only and case_indent_stack:
+			indent = match_close_only.group(1)
+			case_indent, inner_indent, body_indent = case_indent_stack[-1]
+			if indent == case_indent:
+				case_indent_stack.pop()
+				remainder = match_close_only.group(2).strip()
+				if remainder:
+					fixed.append(inner_indent + "}" + " " + remainder + line_sep)
+				else:
+					fixed.append(inner_indent + "}" + line_sep)
+				continue
+		if case_indent_stack:
+			_, inner_indent, body_indent = case_indent_stack[-1]
+			if content and not content.lstrip().startswith("{") and not content.lstrip().startswith("case ") and not ("||" in content or "&&" in content) and not content.lstrip().startswith("?") and not content.lstrip().startswith(":"):
+				if content.startswith(inner_indent):
+					adjusted = body_indent + content[len(inner_indent):]
+					fixed.append(adjusted + line_sep)
+					continue
+		fixed.append(line)
+	return fixed
+
+
+def fix_ternary_spacing(line):
+	in_single = False
+	in_double = False
+	escape = False
+	question_depth = 0
+	result = []
+	length = len(line)
+	i = 0
+	while i < length:
+		ch = line[i]
+		if escape:
+			result.append(ch)
+			escape = False
+			i += 1
+			continue
+		if ch == "\\" and (in_single or in_double):
+			result.append(ch)
+			escape = True
+			i += 1
+			continue
+		if ch == "'" and not in_double:
+			in_single = not in_single
+			result.append(ch)
+			i += 1
+			continue
+		if ch == '"' and not in_single:
+			in_double = not in_double
+			result.append(ch)
+			i += 1
+			continue
+		if not in_single and not in_double:
+			if ch == "?":
+				question_depth += 1
+				while result and result[-1] == " ":
+					result.pop()
+				result.append("?")
+				i += 1
+				while i < length and line[i] in " \t":
+					i += 1
+				if i < length and line[i] not in (" ", "\t", "\n", ")", ",", ";", ":"):
+					result.append(" ")
+				continue
+			if ch == ":" and question_depth > 0:
+				question_depth -= 1
+				while result and result[-1] == " ":
+					result.pop()
+				result.append(":")
+				i += 1
+				while i < length and line[i] in " \t":
+					i += 1
+				if i < length and line[i] not in (" ", "\t", "\n", ")", ",", ";"):
+					result.append(" ")
+				continue
+		result.append(ch)
+		i += 1
+	return "".join(result)
+
+
+def fix_hash_spacing(line):
+	return re.sub(r'\s*##\s*', ' ## ', line)
+
+
+def fix_ternary_lines(lines):
+	fixed = []
+	i = 0
+	while i < len(lines):
+		line = lines[i]
+		content, ending = split_line_ending(line)
+		# Check if line has ? and the ? is not followed by : in the same line
+		if '?' in content and not re.search(r'\?\s*[^:]*$', content):
+			# If next line starts with spaces and :
+			if i + 1 < len(lines):
+				next_line = lines[i + 1]
+				next_content, next_ending = split_line_ending(next_line)
+				if next_content.strip().startswith(':'):
+					# Find the last ? in content
+					last_q = content.rfind('?')
+					if last_q != -1:
+						before_q = content[:last_q]
+						after_q = content[last_q:]
+						# The after_q is ? ... 
+						# The next_content is spaces : ...
+						# Get the indent of next_content
+						indent_match = re.match(r'^(\s*)', next_content)
+						indent = indent_match.group(1) if indent_match else ''
+						# New line 1: before_q + next_content.strip()
+						new_line1 = before_q + next_content.strip() + ending
+						# New line 2: indent + after_q + next_ending
+						new_line2 = indent + after_q + next_ending
+						fixed.append(new_line1)
+						fixed.append(new_line2)
+						i += 2
+						continue
+		fixed.append(line)
+		i += 1
+	return fixed
+
+
+def apply_indent_rules(text):
+	lines = []
+	for line in text.splitlines(True):
+		line = convert_leading_spaces(line)
+		line = fix_paren_spacing(line)
+		line = fix_ternary_spacing(line)
+		line = fix_hash_spacing(line)
+		lines.append(line)
+	lines = fix_case_blocks(lines)
+	lines = fix_ternary_lines(lines)
+	return "".join(lines)
+
+
+def format_file(path, clang_format):
+	if not os.path.isfile(path):
+		raise FileNotFoundError(f"{path}: no such file")
+	try:
+		result = subprocess.run(
+			[clang_format, "-style=file", path],
+			check=True,
+			stdout=subprocess.PIPE,
+			stderr=subprocess.PIPE,
+			text=True,
+		)
+	except subprocess.CalledProcessError as exc:
+		raise RuntimeError(
+			f"clang-format failed for {path}: {exc.stderr.strip() or exc}"
+		) from exc
+	indented = apply_indent_rules(result.stdout)
+	with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False) as tmp:
+		tmp.write(indented)
+		temp_name = tmp.name
+	os.replace(temp_name, path)
+
+
+def main():
+	args = parse_args()
+	clang_format = args.clang_format
+	if not shutil.which(clang_format):
+		print(
+			f"radare2-format: cannot find clang-format ({clang_format})",
+			file=sys.stderr,
+		)
+		return 1
+	exit_code = 0
+	for path in args.files:
+		try:
+			format_file(path, clang_format)
+		except (FileNotFoundError, RuntimeError, OSError) as err:
+			print(f"radare2-format: {err}", file=sys.stderr)
+			exit_code = 1
+	return exit_code
+
+
+if __name__ == "__main__":
+	import shutil
+
+	sys.exit(main())
