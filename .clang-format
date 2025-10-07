@@ -1,4 +1,14 @@
 BasedOnStyle: LLVM
+# .clang-format
+SpaceBeforeParens: ControlStatements
+SpaceBeforeParensOptions:
+  AfterControlStatements: true
+  AfterFunctionDefinitionName: false
+  AfterFunctionDeclarationName: false
+  AfterFunctionCallName: true
+  AfterIfMacros: true
+  AfterForeachMacros: true
+  BeforeNonEmptyParentheses: false
 Language: Cpp
 PointerAlignment: Right
 AlwaysBreakAfterDefinitionReturnType: None
@@ -6,14 +16,6 @@ BinPackParameters: true
 MaxEmptyLinesToKeep: 1
 SpaceInEmptyParentheses: false
 SpacesInContainerLiterals: true
-SpaceBeforeParens: Custom
-SpaceBeforeParensOptions:
-  AfterIfMacros: true
-  AfterFunctionDefinitionName: false
-  AfterFunctionDeclarationName: false
-  AfterForeachMacros: true
-  AfterControlStatements: true
-  BeforeNonEmptyParentheses: false
 SpacesInParentheses: false
 InsertBraces: true
 ContinuationIndentWidth: 8
