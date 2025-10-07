@@ -3203,7 +3203,7 @@ static int cmd_tasks(void *data, const char *input) {
 			R_LOG_ERROR ("This command is disabled in sandbox mode");
 			return 0;
 		}
-		RCoreTask *task = r_core_task_new (core, true, input + 1, NULL, core);
+		RCoreTask *task = r_core_task_new (core, core->tasks.default_mode, true, input + 1, NULL, core);
 		if (!task) {
 			break;
 		}

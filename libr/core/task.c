@@ -35,8 +35,11 @@ R_API void r_core_task_scheduler_init(RCoreTaskScheduler *tasks, RCore *core) {
 	tasks->lock = r_th_lock_new (true);
 	tasks->tasks_running = 0;
 	tasks->oneshot_running = false;
-	tasks->main_task = r_core_task_new (core, false, NULL, NULL, NULL);
+	tasks->main_task = r_core_task_new (core, R_CORE_TASK_MODE_COOP, false, NULL, NULL, NULL);
 	r_list_append (tasks->tasks, tasks->main_task);
+	tasks->foreground_task = tasks->main_task;
+	tasks->default_mode = R_CORE_TASK_MODE_COOP;
+	tasks->main_core = core;
 	tasks->current_task = NULL;
 }
 
@@ -280,7 +283,7 @@ static void task_free(RCoreTask *task) {
 	//tasks_lock_leave (scheduler, &old_sigset);
 }
 
-R_API RCoreTask *r_core_task_new(RCore *core, bool create_cons, const char *cmd, RCoreTaskCallback cb, void *user) {
+R_API RCoreTask *r_core_task_new(RCore *core, RCoreTaskMode mode, bool create_cons, const char *cmd, RCoreTaskCallback cb, void *user) {
 	RCoreTask *task = R_NEW0 (RCoreTask);
 	task->thread = NULL;
 	task->cmd = cmd ? strdup (cmd) : NULL;
@@ -307,6 +310,12 @@ R_API RCoreTask *r_core_task_new(RCore *core, bool create_cons, const char *cmd,
 	task->refcount = 1;
 	task->transient = false;
 	task->core = core;
+	task->mode = mode;
+	task->task_core = NULL;
+	task->task_addr = core ? core->addr : 0;
+	task->pid = -1;
+	task->result_pipe[0] = -1;
+	task->result_pipe[1] = -1;
 	task->user = user;
 	task->cb = cb;
 

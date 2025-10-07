@@ -344,7 +344,7 @@ static int cmd_log(void *data, const char *input) {
 			} else {
 				// TODO: Sucks that we can't enqueue functions, only commands
 				R_LOG_INFO ("Background thread syncing with http.sync started");
-				RCoreTask *task = r_core_task_new (core, true, "T=&&", NULL, core);
+				RCoreTask *task = r_core_task_new (core, core->tasks.default_mode, true, "T=&&", NULL, core);
 				r_core_task_enqueue (&core->tasks, task);
 			}
 		} else {
