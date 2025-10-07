@@ -1471,7 +1471,7 @@ static int opmovx(RArchSession *a, ut8 *data, const Opcode *op) {
 				mod = (off >= -128 && off <= 127) ? 1 : 2;
 			}
 			if (mod == 0 && rm == 5) {
-				mod = 1; off = 0; // [rbp]/[r13] needs disp8=0
+				mod = 1; off = 0; // [rbp]/[r13] needs disp8 = 0
 			}
 			if (rm == 4) {
 				use_sib = true; sib = 0x24; rm = 4; // [rsp]
@@ -1500,7 +1500,7 @@ static int opmovx(RArchSession *a, ut8 *data, const Opcode *op) {
 		}
 	} else {
 		// Do not set REX.B for memory base without explicit extended flag support.
-		// Memory operands here do not carry per-base extended state, so keep B=0.
+		// Memory operands here do not carry per-base extended state, so keep B = 0.
 	}
 
 	// Emit bytes in normal order
