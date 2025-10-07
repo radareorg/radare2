@@ -3,7 +3,7 @@
 #include "ne.h"
 
 static char *__get_target_os(r_bin_ne_obj_t *bin) {
-	const int targetOS = (int) R_UNWRAP3 (bin, ne_header, targOS);
+	const int targetOS = (bin->ne_header) ? bin->ne_header->targOS: 0;
 	switch (targetOS) {
 	case 1:
 		return "OS/2";

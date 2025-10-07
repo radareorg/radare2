@@ -1156,7 +1156,11 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	if (!bf || !bf->rbin || !bf->rbin->iob.desc_get) {
 		return false;
 	}
-	const char * io_plugin_name = bf->rbin->iob.desc_get (bf->rbin->iob.io, bf->fd)->plugin->meta.name;
+	RIODesc *desc = bf->rbin->iob.desc_get (bf->rbin->iob.io, bf->fd);
+	if (!desc) {
+		return false;
+	}
+	const char * io_plugin_name = desc->plugin->meta.name;
 	if (strcmp (io_plugin_name, "dsc") != 0) {
 		R_LOG_ERROR ("Use dsc:// for dyld caches");
 		return false;
