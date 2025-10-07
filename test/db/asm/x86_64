@@ -1,4 +1,14 @@
 a "lea rax, [0x1000]" 488d05f90f0000
+ad "movzx rax, byte [rbx]" 480fb603
+ad "movzx rax, word [rbx]" 480fb703
+ad "movsx rax, byte [rbx]" 480fbe03
+ad "movsx rax, word [rbx]" 480fbf03
+ad "movzx eax, byte [rbx]" 0fb603
+ad "movzx eax, word [rbx]" 0fb703
+ad "movsx eax, byte [rbx]" 0fbe03
+ad "movsx eax, word [rbx]" 0fbf03
+ad "movzx rax, al" 480fb6c0
+ad "movsx rax, al" 480fbec0
 d "lea rax, [rip + 0xff9]" 488d05f90f0000
 ad "nop" 90
 ad "mov r11, qword [rbp + 8]" 4c8b5d08
