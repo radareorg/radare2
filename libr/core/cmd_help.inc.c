@@ -286,16 +286,13 @@ static RCoreHelpMessage help_msg_question_e = {
 
 static RCoreHelpMessage help_msg_question = {
 	"Usage: ?[?[?]] expression", "", "",
-	"?!", " [cmd]", "run cmd if $? == 0",
-	"?", " eip-0x804800", "show all representation result for this math expr",
+	"?_", " hudfile", "load hud menu with given file",
+	"??", "", "show help for ? commands",
 	"?'", "", "show help for the single quote (do not evaluate special characters in command)",
-	"?$", "", "show value all the variables ($)",
-	"?+", " [cmd]", "run cmd if $? > 0",
-	"?-", " [cmd]", "run cmd if $? < 0",
+	"?", " eip-0x804800", "show all representation result for this math expr",
 	"?=", " eip-0x804800", "update $? return code with result of operation",
 	"?==", " x86 `e asm.arch`", "strcmp two strings",
-	"??", " [cmd]", "run cmd if $? != 0",
-	"??", "", "show value of operation",
+	"?$", "", "show value all the variables ($)",
 	"?a", "", "show ascii table",
 	"?B", " [elem]", "show range boundaries like 'e?search.in",
 	"?b", " [num]", "show binary value of number",
@@ -303,12 +300,16 @@ static RCoreHelpMessage help_msg_question = {
 	"?btw", " num|expr num|expr num|expr", "returns boolean value of a <= b <= c",
 	"?d", " [num]", "disasssemble given number as a little and big endian dword",
 	"?e", "[=bdgnpst] arg", "echo messages, bars, pie charts and more (see ?e? for details)",
+	"?eq", " [cmd]", "run cmd if $? == 0",
 	"?f", " [num] [str]", "map each bit of the number as flag string index",
 	"?F", "", "flush cons output",
+	"?ge", " [cmd]", "run cmd if $? > 0",
 	"?h", " [str]", "calculate hash for given string",
 	"?i", "[?] arg", "prompt for number or Yes,No,Msg,Key,Path and store in $$?",
 	"?j", " arg", "same as '? num' but in JSON",
 	"?l", "[q] str", "returns the length of string ('q' for quiet, just set $?)",
+	"?le", " [cmd]", "run cmd if $? < 0",
+	"?ne", " [cmd]", "run cmd if $? != 0",
 	"?o", " num", "get octal value",
 	"?P", " paddr", "get virtual address for given physical one",
 	"?p", " vaddr", "get physical address for given virtual address",
@@ -319,15 +320,14 @@ static RCoreHelpMessage help_msg_question = {
 	"?T", "", "show loading times",
 	"?u", " num", "get value in human units (KB, MB, GB, TB)",
 	"?v", " num|expr", "show hex value of math expr (no expr prints $?)",
+	"?V", "", "show library version of r_core",
 	"?vi", "[1248] num|expr", "show decimal value of math expr [n bytes]",
 	"?vx", " num|expr", "show 8 digit padding in hex",
-	"?V", "", "show library version of r_core",
 	"?w", " addr", "show what's in this address (like pxr/pxq does)",
 	"?X", " num|expr", "returns the hexadecimal value numeric expr",
 	"?x", " str", "returns the hexpair of number or string",
-	"?x", "+num", "like ?v, but in hexpairs honoring cfg.bigendian",
 	"?x", "-hexst", "convert hexpair into raw string with newline",
-	"?_", " hudfile", "load hud menu with given file",
+	"?x", "+num", "like ?v, but in hexpairs honoring cfg.bigendian",
 	"[cmd]?*", "", "recursive help for the given cmd",
 	NULL
 };
@@ -1068,6 +1068,26 @@ static int cmd_help(void *data, const char *input) {
 			}
 		}
 		return true;
+	case 'g':
+		if (input[1] == 'e') { // "?ge"
+			const char *cmd = r_str_trim_head_ro (input + 3);
+			if (*cmd && core->num->value > 0) {
+				r_core_cmd (core, cmd, 0);
+			}
+		} else {
+			r_core_return_invalid_command (core, "?g", input[1]);
+		}
+		break;
+	case 'n':
+		if (input[1] == 'e') { // "?ne"
+			const char *cmd = r_str_trim_head_ro (input + 3);
+			if (*cmd && core->num->value) {
+				r_core_cmd (core, cmd, 0);
+			}
+		} else {
+			r_core_return_invalid_command (core, "?n", input[1]);
+		}
+		break;
 	case 'V': // "?V"
 		switch (input[1]) {
 		case '?': // "?V?"
@@ -1126,13 +1146,20 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'l': // "?l"
-		if (input[1] == 'q') {
+		if (input[1] == 'e') { // "?le"
+			const char *cmd = r_str_trim_head_ro (input + 3);
+			if (*cmd && core->num->value < 0) {
+				r_core_cmd (core, cmd, 0);
+			}
+		} else if (input[1] == 'q') {
 			for (input += 2; input[0] == ' '; input++);
 			r_core_return_value (core, strlen (input));
-		} else {
+		} else if (input[1]) {
 			input = r_str_trim_head_ro (input + 1);
 			r_core_return_value (core, strlen (input));
 			r_cons_printf (core->cons, "%" PFMT64d "\n", core->num->value);
+		} else {
+			r_core_return_invalid_command (core, "?l", input[1]);
 		}
 		break;
 	case 'X': // "?X"
@@ -1173,6 +1200,15 @@ static int cmd_help(void *data, const char *input) {
 		r_core_clippy (core, input + 1);
 		break;
 	case 'e': // "?e" echo
+		if (input[1] == 'q') { // "?eq"
+			const char *cmd = r_str_trim_head_ro (input + 3);
+			if (*cmd && core->num->value == 0) {
+				r_core_cmd (core, cmd, 0);
+			} else {
+				r_core_return_value (core, core->num->value);
+			}
+			break;
+		}
 		if (input[1] == ' ' && (input[2] == '"' || input[2] == '\'')) {
 			r_str_trim_args ((char *)input);
 		}
@@ -1389,17 +1425,20 @@ static int cmd_help(void *data, const char *input) {
 				  r_list_free (llist);
 			  }
 			break;
-		case ' ': {
-			const char *msg = r_str_trim_head_ro (input + 1);
-			// TODO: replace all ${flagname} by its value in hexa
-			char *newmsg = filterFlags (core, msg);
-			r_str_unescape (newmsg);
-			r_cons_println (core->cons, newmsg);
-			free (newmsg);
+		case ' ':
+			{
+				const char *msg = r_str_trim_head_ro (input + 1);
+				// TODO: replace all ${flagname} by its value in hexa
+				char *newmsg = filterFlags (core, msg);
+				r_str_unescape (newmsg);
+				r_cons_println (core->cons, newmsg);
+				free (newmsg);
+				r_core_return_value (core, 0);
 			}
 			break;
 		case 0: // "?e"
 			r_cons_newline (core->cons);
+			r_core_return_value (core, 0);
 			break;
 		case '?': // "?e?"
 			r_core_cmd_help (core, help_msg_question_e);
@@ -1551,22 +1590,13 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case '?': // "??"
-		if (input[1] == '?') {
-			if (input[2] == '?') { // "???"
-				r_core_clippy (core, "What are you doing?");
-				return 0;
-			}
-			if (input[2]) {
-				if (core->num->value) {
-					r_core_cmd (core, input + 1, 0);
-				}
-				break;
-			}
+		if (input[1] == 0) { // "??"
 			r_core_cmd_help (core, help_msg_question);
 			return 0;
 		} else if (input[1]) {
 			if (core->num->value) {
-				r_core_return_value (core, r_core_cmd (core, input + 1, 0));
+				r_core_cmd (core, input + 1, 0);
+				//r_core_return_value (core, rc);
 			}
 		} else {
 			if (core->num->dbz) {
