@@ -1436,22 +1436,97 @@ static int opmovx(RArchSession *a, ut8 *data, const Opcode *op) {
 	int word = 0;
 	char *movx = op->mnemonic + 3;
 
-	if (!(op->operands[0].type & OT_REGTYPE && op->operands[1].type & OT_MEMORY)) {
+	// Allow reg, r/m8 and reg, r/m16 encodings
+	if (!(op->operands[0].type & OT_REGTYPE)) {
+		return -1;
+	}
+	if (!((op->operands[1].type & OT_MEMORY) || (op->operands[1].type & OT_REGTYPE))) {
 		return -1;
 	}
 	if (op->operands[1].type & OT_WORD) {
 		word = 1;
 	}
 
-	data[l++] = 0x0f;
+	// Decide opcode first
+	ut8 opc = 0;
 	if (!strcmp (movx, "zx")) {
-		data[l++] = 0xb6 + word;
+		opc = 0xb6 + word;
 	} else if (!strcmp (movx, "sx")) {
-		data[l++] = 0xbe + word;
+		opc = 0xbe + word;
 	}
-	data[l++] = op->operands[0].reg << 3 | op->operands[1].regs[0];
-	if (op->operands[1].regs[0] == X86R_ESP) {
-		data[l++] = 0x24;
+
+	// Build addressing info first
+	bool mem = (op->operands[1].type & OT_MEMORY) != 0;
+	int base = mem ? op->operands[1].regs[0] : 0;
+	int off = mem ? (int)(op->operands[1].offset * op->operands[1].offset_sign) : 0;
+	int mod = 0;
+	int rm = 0;
+	bool use_sib = false;
+	ut8 sib = 0;
+
+	if (mem) {
+		rm = (base == X86R_UNDEFINED) ? 5 : (base & 7);
+		if (base != X86R_UNDEFINED) {
+			if (off != 0) {
+				mod = (off >= -128 && off <= 127) ? 1 : 2;
+			}
+			if (mod == 0 && rm == 5) {
+				mod = 1; off = 0; // [rbp]/[r13] needs disp8=0
+			}
+			if (rm == 4) {
+				use_sib = true; sib = 0x24; rm = 4; // [rsp]
+			}
+		}
+	} else {
+		rm = op->operands[1].reg & 7;
+		mod = 3;
+	}
+
+	// Compute REX after determining rm/base
+	bool need_rex = false;
+	ut8 rex = 0x40;
+	if (a->config->bits == 64 && (op->operands[0].type & OT_QWORD)) {
+		rex |= 0x08; // W
+		need_rex = true;
+	}
+	if (op->operands[0].extended) {
+		rex |= 0x04; // R
+		need_rex = true;
+	}
+	if (!mem) {
+		if ((op->operands[1].type & OT_GPREG) && op->operands[1].extended) {
+			rex |= 0x01; // B for r/m reg
+			need_rex = true;
+		}
+	} else {
+		// Do not set REX.B for memory base without explicit extended flag support.
+		// Memory operands here do not carry per-base extended state, so keep B=0.
+	}
+
+	// Emit bytes in normal order
+	if (need_rex) {
+		data[l++] = rex;
+	}
+	data[l++] = 0x0f;
+	data[l++] = opc;
+
+	if (mem) {
+		data[l++] = (ut8)((mod << 6) | ((op->operands[0].reg & 7) << 3) | (rm & 7));
+		if (use_sib) {
+			data[l++] = sib;
+		}
+		if (base == X86R_UNDEFINED) {
+			data[l++] = (ut8)off; data[l++] = (ut8)(off >> 8);
+			data[l++] = (ut8)(off >> 16); data[l++] = (ut8)(off >> 24);
+		} else if (mod == 1) {
+			data[l++] = (ut8)off;
+		} else if (mod == 2) {
+			data[l++] = (ut8)off; data[l++] = (ut8)(off >> 8);
+			data[l++] = (ut8)(off >> 16); data[l++] = (ut8)(off >> 24);
+		}
+	} else {
+		// register source: mod=11
+		data[l++] = 0xc0 | ((op->operands[0].reg & 7) << 3) | (op->operands[1].reg & 7);
 	}
 
 	return l;
