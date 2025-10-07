@@ -1,9 +1,10 @@
-/* radare - LGPL - Copyright 2019-2024 - GustavoLCR */
+/* radare - LGPL - Copyright 2019-2025 - GustavoLCR */
 
 #include "ne.h"
 
 static char *__get_target_os(r_bin_ne_obj_t *bin) {
-	switch (bin->ne_header->targOS) {
+	const int targetOS = (int) R_UNWRAP3 (bin, ne_header, targOS);
+	switch (targetOS) {
 	case 1:
 		return "OS/2";
 	case 2:
@@ -77,7 +78,7 @@ static char *__func_name_from_ord(const char *module, ut16 ordinal) {
 
 RList *r_bin_ne_get_segments(r_bin_ne_obj_t *bin) {
 	int i;
-	if (!bin || !bin->segment_entries) {
+	if (!bin || !bin->segment_entries || !bin->ne_header) {
 		return NULL;
 	}
 	RList *segments = r_list_newf (free);
@@ -107,6 +108,9 @@ static int __find_symbol_by_paddr(const void *paddr, const void *sym) {
 
 RList *r_bin_ne_get_symbols(r_bin_ne_obj_t *bin) {
 	RBinSymbol *sym;
+	if (!bin->ne_header) {
+		return NULL;
+	}
 	ut16 off = bin->ne_header->ResidNamTable + bin->header_offset;
 	RList *symbols = r_list_newf (free);
 	if (!symbols) {
@@ -138,9 +142,6 @@ RList *r_bin_ne_get_symbols(r_bin_ne_obj_t *bin) {
 		name[sz] = '\0';
 		off += sz;
 		sym = R_NEW0 (RBinSymbol);
-		if (!sym) {
-			break;
-		}
 		sym->name = r_bin_name_new_from (name);
 		if (!first) {
 			sym->bind = R_BIN_BIND_GLOBAL_STR;
@@ -267,7 +268,7 @@ static void __free_resource(void *resource) {
 }
 
 static bool __ne_get_resources(r_bin_ne_obj_t *bin) {
-	if (!bin->resources) {
+	if (!bin->resources || !bin->ne_header) {
 		bin->resources = r_list_newf (__free_resource);
 	}
 	ut16 resoff = bin->ne_header->ResTableOffset + bin->header_offset;
@@ -319,7 +320,7 @@ static bool __ne_get_resources(r_bin_ne_obj_t *bin) {
 
 RList *r_bin_ne_get_imports(r_bin_ne_obj_t *bin) {
 	RList *imports = r_list_newf ((RListFree)r_bin_import_free);
-	if (!imports) {
+	if (!imports || !bin->ne_header) {
 		return NULL;
 	}
 	ut16 off = bin->ne_header->ImportNameTable + bin->header_offset + 1;
@@ -351,13 +352,10 @@ RList *r_bin_ne_get_imports(r_bin_ne_obj_t *bin) {
 }
 
 RList *r_bin_ne_get_entrypoints(r_bin_ne_obj_t *bin) {
-	if (!bin->entry_table) {
+	if (!bin->entry_table || !bin->ne_header) {
 		return NULL;
 	}
 	RList *entries = r_list_newf (free);
-	if (!entries) {
-		return NULL;
-	}
 	RList *segments = r_bin_ne_get_segments (bin);
 	if (!segments) {
 		r_list_free (entries);
@@ -438,7 +436,7 @@ RList *r_bin_ne_get_entrypoints(r_bin_ne_obj_t *bin) {
 
 RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin) {
 	RList *segments = bin->segments;
-	if (!segments) {
+	if (!segments || !bin->ne_header) {
 		return NULL;
 	}
 	RList *entries = bin->entries;
@@ -597,9 +595,6 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin) {
 void __init(RBuffer *buf, r_bin_ne_obj_t *bin) {
 	bin->header_offset = r_buf_read_le16_at (buf, 0x3c);
 	bin->ne_header = R_NEW0 (NE_image_header);
-	if (!bin->ne_header) {
-		return;
-	}
 	bin->buf = buf;
 	if (r_buf_fread_at (buf, bin->header_offset, (ut8 *)bin->ne_header, "4c2si4c4si8si3s2c3s2c", 1) < 1) {
 		R_FREE (bin->ne_header);
@@ -657,9 +652,6 @@ void r_bin_ne_free(r_bin_ne_obj_t *bin) {
 
 r_bin_ne_obj_t *r_bin_ne_new_buf(RBuffer *buf, bool verbose) {
 	r_bin_ne_obj_t *bin = R_NEW0 (r_bin_ne_obj_t);
-	if (!bin) {
-		return NULL;
-	}
-	__init(buf, bin);
+	__init (buf, bin);
 	return bin;
 }

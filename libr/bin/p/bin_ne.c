@@ -77,10 +77,10 @@ static void header(RBinFile *bf) {
 static RBinInfo *info(RBinFile *bf) {
 	r_bin_ne_obj_t *ne = bf->bo->bin_obj;
 	RBinInfo *i = R_NEW0 (RBinInfo);
-	if (i) {
-		i->bits = 16;
-		i->arch = strdup ("x86");
-		i->os = strdup (ne->os);
+	i->bits = 16;
+	i->arch = strdup ("x86");
+	i->os = strdup (ne->os? ne->os: "os2");
+	if (ne->ne_header) {
 		i->claimed_checksum = r_str_newf ("%08x", ne->ne_header->FileLoadCRC);
 	}
 	return i;
