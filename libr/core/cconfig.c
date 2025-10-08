@@ -3655,7 +3655,7 @@ R_API int r_core_config_init(RCore *core) {
 	}
 #endif
 	SETCB ("cmd.times", "", &cb_cmdtimes, "run when a command is repeated (number prefix)");
-	SETS ("cfg.taskmode", "cooperative", "default execution mode for new core tasks");
+	SETCB ("cfg.taskmode", "coop", &cb_cfg_taskmode, "default execution mode for new core tasks (core, thread, fork)");
 	/* pdb */
 	SETS ("pdb.useragent", "microsoft-symbol-server/6.11.0001.402", "User agent for Microsoft symbol server");
 	SETS ("pdb.server", "https://msdl.microsoft.com/download/symbols", "Space separated list of base URLs for Microsoft symbol servers");

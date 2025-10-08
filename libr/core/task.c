@@ -700,7 +700,7 @@ R_API void r_core_task_break(RCoreTaskScheduler *scheduler, int id) {
 	}
 	TASK_SIGSET_T old_sigset;
 	tasks_lock_enter (scheduler, &old_sigset);
-	RCoreTask *task = task_get (scheduler, id);
+	RCoreTask *task = r_core_task_get (scheduler, id);
 	if (!task || task->state == R_CORE_TASK_STATE_DONE) {
 		tasks_lock_leave (scheduler, &old_sigset);
 		return;
@@ -775,7 +775,7 @@ R_API void r_core_task_set_foreground(RCoreTaskScheduler *scheduler, int task_id
 	}
 	TASK_SIGSET_T old_sigset;
 	tasks_lock_enter (scheduler, &old_sigset);
-	RCoreTask *t = task_get (scheduler, task_id);
+	RCoreTask *t = r_core_task_get (scheduler, task_id);
 	if (t) {
 		scheduler->foreground_task = t;
 	}
