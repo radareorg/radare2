@@ -2833,7 +2833,11 @@ R_API void r_core_fini(RCore *c) {
 	r_log_add_callback (cbcore, NULL);
 	r_muta_free (c->muta);
 	r_th_lock_free (c->lock);
-	r_core_task_break_all (&c->tasks);
+	{ RCoreTask *t; RListIter *it; r_list_foreach (c->tasks.tasks, it, t) {
+		if (t && t->state != R_CORE_TASK_STATE_DONE) {
+			r_core_task_cancel (t, true);
+		}
+	} }
 	r_core_task_join (&c->tasks, NULL, -1);
 	r_core_wait (c);
 	/* TODO: it leaks as shit */

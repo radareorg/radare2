@@ -33,7 +33,7 @@ static void mycore_free(RCore *a) {
 
 R_API void r_core_task_scheduler_init(RCoreTaskScheduler *tasks, RCore *core) {
 	tasks->task_id_next = 0;
-	tasks->tasks = r_list_newf ( (RListFree)r_core_task_decref);
+    tasks->tasks = r_list_newf ( free );
 	tasks->tasks_queue = r_list_new ();
 	tasks->oneshot_queue = r_list_newf (free);
 	tasks->oneshots_enqueued = 0;
@@ -102,7 +102,12 @@ typedef struct oneshot_t {
 	void *user;
 } OneShot;
 
-R_API void r_core_task_print(RCore *core, RCoreTask *task, PJ *pj, int mode) {
+static void r_core_task_print(RCore *core, RCoreTask *task, PJ *pj, int mode);
+void r_core_task_list(RCore *core, int mode);
+
+static void task_free(RCoreTask *task);
+
+static void r_core_task_print(RCore *core, RCoreTask *task, PJ *pj, int mode) {
 	switch (mode) {
 	case 'j': {
 		pj_o (pj);
@@ -142,7 +147,7 @@ R_API void r_core_task_print(RCore *core, RCoreTask *task, PJ *pj, int mode) {
 	}
 }
 
-R_API void r_core_task_list(RCore *core, int mode) {
+void r_core_task_list(RCore *core, int mode) {
 	RListIter *iter;
 	RCoreTask *task;
 	PJ *pj = NULL;
@@ -165,10 +170,9 @@ R_API void r_core_task_list(RCore *core, int mode) {
 	}
 	tasks_lock_enter (&core->tasks, &old_sigset);
 	running_count = core->tasks.tasks_running;
-	r_list_foreach (core->tasks.tasks, iter, task) {
-		r_core_task_incref (task);
-		r_list_append (snapshot, task);
-	}
+    r_list_foreach (core->tasks.tasks, iter, task) {
+        r_list_append (snapshot, task);
+    }
 	tasks_lock_leave (&core->tasks, &old_sigset);
 
 	r_list_foreach (snapshot, iter, task) {
@@ -181,9 +185,7 @@ R_API void r_core_task_list(RCore *core, int mode) {
 	} else {
 		r_cons_printf (core->cons, "--\ntotal running: %d\n", running_count);
 	}
-	r_list_foreach (snapshot, iter, task) {
-		r_core_task_decref (task);
-	}
+    // no incref/decref bookkeeping anymore
 	r_list_free (snapshot);
 }
 
@@ -214,32 +216,26 @@ R_API void r_core_task_join(RCoreTaskScheduler *scheduler, RCoreTask *current, i
 	if (current && id == current->id) {
 		return;
 	}
-	if (id >= 0) {
-		RCoreTask *task = r_core_task_get_incref (scheduler, id);
-		if (!task) {
-			return;
-		}
-		if (current) {
-			r_core_task_sleep_begin (current);
-		}
-		task_join (task);
-		if (current) {
-			r_core_task_sleep_end (current);
-		}
-		r_core_task_decref (task);
-	} else {
+    if (id >= 0) {
+        RCoreTask *task = r_core_task_get (scheduler, id);
+        if (!task) {
+            return;
+        }
+        if (current) {
+            r_core_task_sleep_begin (current);
+        }
+        task_join (task);
+        if (current) {
+            r_core_task_sleep_end (current);
+        }
+    } else {
 		TASK_SIGSET_T old_sigset;
 		tasks_lock_enter (scheduler, &old_sigset);
 		RList *tasks = r_list_clone (scheduler->tasks, NULL);
 		RListIter *iter;
 		RCoreTask *task;
-		r_list_foreach (tasks, iter, task) {
-			if (current == task) {
-				continue;
-			}
-			r_core_task_incref (task);
-		}
-		tasks_lock_leave (scheduler, &old_sigset);
+        // snapshot holds raw pointers only
+        tasks_lock_leave (scheduler, &old_sigset);
 
 		r_list_foreach (tasks, iter, task) {
 			if (current == task) {
@@ -252,7 +248,7 @@ R_API void r_core_task_join(RCoreTaskScheduler *scheduler, RCoreTask *current, i
 			if (current) {
 				r_core_task_sleep_end (current);
 			}
-			r_core_task_decref (task);
+			/* no refcounting */
 		}
 		r_list_free (tasks);
 	}
@@ -284,7 +280,7 @@ static void task_free(RCoreTask *task) {
 	if (lock) {
 		r_th_lock_free (lock); // task->dispatch_lock);
 	}
-	free (task);
+    free (task);
 	//tasks_lock_leave (scheduler, &old_sigset);
 }
 
@@ -312,7 +308,7 @@ R_API RCoreTask *r_core_task_new(RCore *core, RCoreTaskMode mode, bool create_co
 
 	task->id = core->tasks.task_id_next++;
 	task->state = R_CORE_TASK_STATE_BEFORE_START;
-	task->refcount = 1;
+    // refcount removed
 	task->transient = false;
 	task->core = core;
 	// Accept -1 as "use cooperative default"
@@ -335,34 +331,7 @@ hell:
 	return NULL;
 }
 
-R_API void r_core_task_incref(RCoreTask *task) {
-	if (!task) {
-		return;
-	}
-	TASK_SIGSET_T old_sigset;
-	tasks_lock_enter (&task->core->tasks, &old_sigset);
-	task->refcount++;
-	tasks_lock_leave (&task->core->tasks, &old_sigset);
-}
-
-R_API void r_core_task_decref(RCoreTask *task) {
-	if (!task) {
-		return;
-	}
-	TASK_SIGSET_T old_sigset;
-	RCoreTaskScheduler *scheduler = &task->core->tasks;
-	tasks_lock_enter (scheduler, &old_sigset);
-	task->refcount--;
-	if (task->refcount < 0) {
-		// Guard against underflow; this should never happen
-		R_LOG_WARN ("RCoreTask %d refcount underflow", task->id);
-		task->refcount = 0;
-	}
-	if (task->refcount <= 0) {
-		task_free (task);
-	}
-	tasks_lock_leave (scheduler, &old_sigset);
-}
+// incref/decref APIs removed; scheduler owns task lifetime
 
 R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 	if (!current) {
@@ -688,52 +657,10 @@ R_API RCoreTask *r_core_task_get(RCoreTaskScheduler *scheduler, int id) {
 	return NULL;
 }
 
-R_API RCoreTask *r_core_task_get_incref(RCoreTaskScheduler *scheduler, int id) {
-	if (!scheduler) {
-		return NULL;
-	}
-	TASK_SIGSET_T old_sigset;
-	tasks_lock_enter (scheduler, &old_sigset);
-	RCoreTask *task = r_core_task_get (scheduler, id);
-	if (task) {
-		r_core_task_incref (task);
-	}
-	tasks_lock_leave (scheduler, &old_sigset);
-	return task;
-}
+// r_core_task_get_incref removed; use r_core_task_get
 
-R_API void r_core_task_break(RCoreTaskScheduler *scheduler, int id) {
-	if (!scheduler) {
-		return;
-	}
-	TASK_SIGSET_T old_sigset;
-	tasks_lock_enter (scheduler, &old_sigset);
-	RCoreTask *task = r_core_task_get (scheduler, id);
-	if (!task || task->state == R_CORE_TASK_STATE_DONE) {
-		tasks_lock_leave (scheduler, &old_sigset);
-		return;
-	}
-	if (task->cons_context) {
-		r_cons_context_break (task->cons_context);
-	}
-	tasks_lock_leave (scheduler, &old_sigset);
-}
-
-R_API void r_core_task_break_all(RCoreTaskScheduler *scheduler) {
-	if (!scheduler) {
-		return;
-	}
-	TASK_SIGSET_T old_sigset;
-	tasks_lock_enter (scheduler, &old_sigset);
-	RCoreTask *task;
-	RListIter *iter;
-	r_list_foreach (scheduler->tasks, iter, task) {
-		if (task && task->state != R_CORE_TASK_STATE_DONE) {
-			r_cons_context_break (task->cons_context);
-		}
-	}
-	tasks_lock_leave (scheduler, &old_sigset);
-}
+/* r_core_task_break and r_core_task_break_all have been merged into
+ * r_core_task_cancel. Use r_core_task_cancel(t, hard) on each task. */
 
 R_API int r_core_task_del(RCoreTaskScheduler *scheduler, int id) {
 	if (!scheduler) {
@@ -919,10 +846,7 @@ R_API bool r_core_task_cancel(RCoreTask *t, bool hard) {
 }
 
 R_API void r_core_task_free(RCoreTask *t) {
-	if (t) {
-		if (t->thread) {
-			r_th_wait (t->thread);
-		}
-	}
-	r_core_task_decref (t);
+    if (t && t->thread) {
+        r_th_wait (t->thread);
+    }
 }

@@ -1906,12 +1906,17 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				bool y_save_project = (ret & 8) >> 3;
 
 				if (r_core_task_running_tasks_count (&r->tasks) > 0) {
-					if (r_cons_yesno (r->cons, 'y', "There are running background tasks. Do you want to kill them? (Y/n)")) {
-						r_core_task_break_all (&r->tasks);
-						r_core_task_join (&r->tasks, r->tasks.main_task, -1);
-					} else {
-						continue;
-					}
+						if (r_cons_yesno (r->cons, 'y', "There are running background tasks. Do you want to kill them? (Y/n)")) {
+							RCoreTask *t; RListIter *it;
+							r_list_foreach (r->tasks.tasks, it, t) {
+								if (t && t->state != R_CORE_TASK_STATE_DONE) {
+									r_core_task_cancel (t, true);
+								}
+							}
+							r_core_task_join (&r->tasks, r->tasks.main_task, -1);
+						} else {
+							continue;
+						}
 				}
 
 				if (mr.debug) {

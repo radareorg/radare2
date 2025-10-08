@@ -69,14 +69,10 @@ typedef struct r_core_tasks_t {
 R_API void r_core_task_scheduler_init(RCoreTaskScheduler *tasks, RCore *core);
 R_API void r_core_task_scheduler_fini(RCoreTaskScheduler *tasks);
 R_API RCoreTask *r_core_task_get(RCoreTaskScheduler *scheduler, int id);
-R_API RCoreTask *r_core_task_get_incref(RCoreTaskScheduler *scheduler, int id);
-R_API void r_core_task_print(RCore *core, RCoreTask *task, PJ *pj, int mode);
-R_API void r_core_task_list(RCore *core, int mode);
+/* Internal: task printing helpers are not part of public API */
 R_API int r_core_task_running_tasks_count(RCoreTaskScheduler *scheduler);
 R_API const char *r_core_task_status(RCoreTask *task);
 R_API RCoreTask *r_core_task_new(RCore *core, RCoreTaskMode mode, bool create_cons, const char *cmd, RCoreTaskCallback cb, void *user);
-R_API void r_core_task_incref(RCoreTask *task);
-R_API void r_core_task_decref(RCoreTask *task);
 R_API void r_core_task_enqueue(RCoreTaskScheduler *scheduler, RCoreTask *task);
 R_API void r_core_task_enqueue_oneshot(RCoreTaskScheduler *scheduler, RCoreTaskOneShot func, void *user);
 R_API int r_core_task_run_sync(RCoreTaskScheduler *scheduler, RCoreTask *task);
@@ -85,8 +81,7 @@ R_API void r_core_task_sync_end(RCoreTaskScheduler *scheduler);
 R_API void r_core_task_yield(RCoreTaskScheduler *scheduler);
 R_API void r_core_task_sleep_begin(RCoreTask *task);
 R_API void r_core_task_sleep_end(RCoreTask *task);
-R_API void r_core_task_break(RCoreTaskScheduler *scheduler, int id);
-R_API void r_core_task_break_all(RCoreTaskScheduler *scheduler);
+/* Deprecated: prefer r_core_task_cancel() per task */
 R_API int r_core_task_del(RCoreTaskScheduler *scheduler, int id);
 R_API void r_core_task_del_all_done(RCoreTaskScheduler *scheduler);
 R_API RCoreTask *r_core_task_self(RCoreTaskScheduler *scheduler);
