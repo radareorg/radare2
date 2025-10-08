@@ -94,9 +94,7 @@ R_API void r_core_task_join(RCoreTaskScheduler *scheduler, RCoreTask *current, i
 // New APIs for threaded task execution
 R_API void r_core_task_set_foreground(RCoreTaskScheduler *scheduler, int task_id);
 R_API RCoreTask *r_core_task_get_foreground(RCoreTaskScheduler *scheduler);
-R_API int r_core_task_run_threaded(RCoreTaskScheduler *scheduler, RCoreTask *task);
-R_API int r_core_task_run_forked(RCoreTaskScheduler *scheduler, RCoreTask *task);
-R_API RCore *r_core_clone_for_task(RCore *core);
+/* Hidden: task run helpers are internal; use enqueue/new with mode */
 R_API void r_core_task_scheduler_set_default_mode(RCoreTaskScheduler *scheduler, RCoreTaskMode mode);
 R_API RCoreTaskMode r_core_task_scheduler_get_default_mode(RCoreTaskScheduler *scheduler);
 

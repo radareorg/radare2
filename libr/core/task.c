@@ -6,6 +6,11 @@
 // Per-thread current task pointer (TLS)
 static R_TH_LOCAL RCoreTask *task_tls_current = NULL;
 
+// Internal helpers (not exposed in headers)
+static RCore *r_core_clone_for_task(RCore *core);
+static int r_core_task_run_threaded(RCoreTaskScheduler *scheduler, RCoreTask *task);
+static int r_core_task_run_forked(RCoreTaskScheduler *scheduler, RCoreTask *task);
+
 #define CUSTOMCORE 0
 
 static RCore *mycore_new(RCore *core) {
@@ -789,25 +794,25 @@ R_API RCoreTask *r_core_task_get_foreground(RCoreTaskScheduler *scheduler) {
 	return scheduler->foreground_task ? scheduler->foreground_task : scheduler->main_task;
 }
 
-R_API int r_core_task_run_threaded(RCoreTaskScheduler *scheduler, RCoreTask *task) {
+static int r_core_task_run_threaded(RCoreTaskScheduler *scheduler, RCoreTask *task) {
 	if (!scheduler || !task) {
 		return -1;
 	}
 	task->mode = R_CORE_TASK_MODE_THREAD;
-	if (!task->task_core) {
-		task->task_core = r_core_clone_for_task (task->core);
+    if (!task->task_core) {
+        task->task_core = r_core_clone_for_task (task->core);
 	}
 	r_core_task_enqueue (scheduler, task);
 	return task->id;
 }
 
-R_API int r_core_task_run_forked(RCoreTaskScheduler *scheduler, RCoreTask *task) {
+static int r_core_task_run_forked(RCoreTaskScheduler *scheduler, RCoreTask *task) {
 	if (!scheduler || !task) {
 		return -1;
 	}
 	task->mode = R_CORE_TASK_MODE_FORK;
-	if (!task->task_core) {
-		task->task_core = r_core_clone_for_task (task->core);
+    if (!task->task_core) {
+        task->task_core = r_core_clone_for_task (task->core);
 	}
 	if (pipe (task->result_pipe) == -1) {
 		// pipe failed; mark as unavailable
@@ -818,7 +823,7 @@ R_API int r_core_task_run_forked(RCoreTaskScheduler *scheduler, RCoreTask *task)
 	return task->id;
 }
 
-R_API RCore *r_core_clone_for_task(RCore *core) {
+static RCore *r_core_clone_for_task(RCore *core) {
 	if (!core) {
 		return NULL;
 	}
