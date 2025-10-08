@@ -67,8 +67,8 @@ static int _cmd_tasks_impl(void *data, const char *input) {
 			r_core_task_list (core, 0);
 			break;
 		}
-		// schedule command using default taskmode; capture output into task->res
-		RCoreTask *t = r_core_task_submit (core, cmd, NULL, NULL, true, -1);
+		// schedule command using cooperative mode for backward compatibility; capture output into task->res
+		RCoreTask *t = r_core_task_submit (core, cmd, NULL, NULL, true, R_CORE_TASK_MODE_THREAD);
 		if (t) {
 			int tid = r_core_task_id (t);
 			r_cons_printf (core->cons, "[%d] %s\n", tid, cmd);

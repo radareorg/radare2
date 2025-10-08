@@ -113,14 +113,32 @@ static const char *state_tostring(int s) {
 	return "unknown";
 }
 
+static const char *mode_tostring(RCoreTaskMode m) {
+	switch (m) {
+	case R_CORE_TASK_MODE_COOP:
+		return "coop";
+	case R_CORE_TASK_MODE_THREAD:
+		return "thread";
+	case R_CORE_TASK_MODE_FORK:
+		return "fork";
+	}
+	return "unknown";
+}
+
 static void r_core_task_print(RCore *core, RCoreTask *task, PJ *pj, int mode) {
 	switch (mode) {
 	case 'j':
 		pj_o (pj);
 		pj_ki (pj, "id", task->id);
+		pj_ks (pj, "mode", mode_tostring (task->mode));
+		pj_kb (pj, "foreground", task == core->tasks.foreground_task);
 		pj_ks (pj, "state", state_tostring (task->state));
 		pj_kb (pj, "transient", task->transient);
-		pj_ks (pj, "cmd", r_str_get_fail (task->cmd, "null"));
+		const char *cmd_info = task->cmd;
+		if (task == core->tasks.main_task) {
+			cmd_info = "-- MAIN TASK --";
+		}
+		pj_ks (pj, "cmd", cmd_info);
 		pj_end (pj);
 		break;
 	default:
@@ -142,14 +160,28 @@ static void r_core_task_print(RCore *core, RCoreTask *task, PJ *pj, int mode) {
 R_API void r_core_task_list(RCore *core, int mode) {
 	RListIter *iter;
 	RCoreTask *task;
+	RTable *t = NULL;
 	PJ *pj = NULL;
+
 	if (mode == 'j') {
 		pj = r_core_pj_new (core);
 		if (!pj) {
 			return;
 		}
 		pj_a (pj);
+	} else {
+		t = r_core_table_new (core, "tasks");
+		RTableColumnType *typeNumber = r_table_type ("number");
+		RTableColumnType *typeString = r_table_type ("string");
+		RTableColumnType *typeBool = r_table_type ("bool");
+		r_table_add_column (t, typeNumber, "id", 0);
+		r_table_add_column (t, typeString, "mode", 0);
+		r_table_add_column (t, typeString, "fg", 0);
+		r_table_add_column (t, typeString, "state", 0);
+		r_table_add_column (t, typeBool, "transient", 0);
+		r_table_add_column (t, typeString, "cmd", 0);
 	}
+
 	// Snapshot tasks under lock to avoid printing while holding the lock
 	TASK_SIGSET_T old_sigset;
 	int running_count = 0;
@@ -157,6 +189,8 @@ R_API void r_core_task_list(RCore *core, int mode) {
 	if (!snapshot) {
 		if (mode == 'j') {
 			pj_free (pj);
+		} else {
+			r_table_free (t);
 		}
 		return;
 	}
@@ -168,14 +202,38 @@ R_API void r_core_task_list(RCore *core, int mode) {
 	tasks_lock_leave (&core->tasks, &old_sigset);
 
 	r_list_foreach (snapshot, iter, task) {
-		r_core_task_print (core, task, pj, mode);
+		if (mode == 'j') {
+			r_core_task_print (core, task, pj, mode);
+		} else {
+			const char *info = task->cmd;
+			if (task == core->tasks.main_task) {
+				info = "-- MAIN TASK --";
+			}
+			const char *fg = (task == core->tasks.foreground_task) ? "*" : "";
+			{
+				RList *items = r_list_newf (free);
+				r_list_append (items, r_str_newf ("%d", task->id));
+				r_list_append (items, strdup (mode_tostring (task->mode)));
+				r_list_append (items, strdup (fg));
+				r_list_append (items, strdup (r_core_task_status (task)));
+				r_list_append (items, strdup (r_str_bool (task->transient)));
+				r_list_append (items, strdup (r_str_get (info)));
+				r_table_add_row_list (t, items);
+			}
+		}
 	}
 	if (mode == 'j') {
 		pj_end (pj);
 		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 	} else {
-		r_cons_printf (core->cons, "--\ntotal running: %d\n", running_count);
+		if (r_table_query (t, "")) {
+			char *s = r_table_tostring (t);
+			r_cons_printf (core->cons, "%s\n", s);
+			free (s);
+		}
+		r_cons_printf (core->cons, "total running: %d\n", running_count);
+		r_table_free (t);
 	}
 	r_list_free (snapshot);
 }
@@ -457,9 +515,11 @@ stillbirth:
 		r_th_sem_post (task->running_sem);
 	}
 
-	if (task->cons_context && task->cons_context->break_stack) {
+#if 0
+	if (task->cons_context && task->cons_context->break_stack && task->mode != R_CORE_TASK_MODE_COOP) {
 		r_cons_context_break_pop (core->cons, task->cons_context, false);
 	}
+#endif
 
 	int ret = R_TH_STOP;
 	if (task->transient) {
