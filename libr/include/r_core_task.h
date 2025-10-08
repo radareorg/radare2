@@ -24,18 +24,15 @@ typedef struct r_core_task_t {
 	int id;
 	RTaskState state;
 	bool transient; // delete when finished
-	int refcount;
 	RThreadSemaphore *running_sem;
 	void *user;
 	RCore *core;
 	// Execution mode and isolation
 	RCoreTaskMode mode;
 	RCore *task_core; // Isolated core (NULL for cooperative)
-	ut64 task_addr; // Per-task address context
 	// Thread/fork specific
 	RThread *thread; // Thread handle (for thread mode)
 	int pid; // Process ID (for fork mode)
-	int result_pipe[2]; // Pipe for fork result sync
 	// Existing dispatch mechanism
 	bool dispatched;
 	RThreadCond *dispatch_cond;
