@@ -316,6 +316,10 @@ R_API RCoreTask *r_core_task_new(RCore *core, RCoreTaskMode mode, bool create_co
 	task->refcount = 1;
 	task->transient = false;
 	task->core = core;
+	// Accept -1 as "use cooperative default"
+	if ((int)mode == -1) {
+		mode = R_CORE_TASK_MODE_COOP;
+	}
 	task->mode = mode;
 	task->task_core = NULL;
 	task->task_addr = core ? core->addr : 0;
