@@ -71,7 +71,7 @@ static int findstrings(RSearch *s, ut64 from, const ut8 *buf, int len, RSearchKe
 			if (matches < max_matches) {
 				matches++;
 			} else {
-				R_LOG_WARN ("Truncated match, keyword is too large at 0x%08"PFMT64x, from + i);
+				R_LOG_WARN ("Truncated match (%d), keyword is too large at 0x%08"PFMT64x, max_matches, from + i);
 				matches = 0;
 			}
 		} else {

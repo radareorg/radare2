@@ -15,9 +15,6 @@ typedef struct {
 
 R_API RSearch *r_search_new(int mode) {
 	RSearch *s = R_NEW0 (RSearch);
-	if (!s) {
-		return NULL;
-	}
 	if (!r_search_set_mode (s, mode)) {
 		free (s);
 		R_LOG_ERROR ("Cannot init search for mode %d", mode);
@@ -35,7 +32,7 @@ R_API RSearch *r_search_new(int mode) {
 	s->overlap = false;
 	s->pattern_size = 0;
 	s->longest = -1;
-	s->string_max = 640;
+	s->string_max = 1024;
 	s->string_min = 3;
 	s->hits = r_list_newf (free);
 	s->maxhits = 0;
