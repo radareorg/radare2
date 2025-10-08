@@ -8533,10 +8533,14 @@ static int cmd_print(void *data, const char *input) {
 				ut64 from = r_config_get_i (core->config, "diff.from");
 				ut64 to = r_config_get_i (core->config, "diff.to");
 				if (from == to && !from) {
-					r_core_block_size (core, len);
-					len = core->blocksize;
-					r_print_hexdump (core->print, core->addr,
-						core->block, core->blocksize, 16, 1, 1);
+					ut8 *data = calloc (1, len + 1);
+					if (data) {
+						r_io_read_at (core->io, core->addr, data, len);
+						r_core_block_size (core, len);
+						r_print_hexdump (core->print, core->addr,
+							data, len, 16, 1, 1);
+						free (data);
+					}
 				} else {
 					r_core_print_cmp (core, from, to);
 				}

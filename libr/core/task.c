@@ -13,6 +13,22 @@ static int _task_run_forked(RCoreTaskScheduler *scheduler, RCoreTask *task);
 #define CUSTOMCORE 0
 
 static RCore *mycore_new(RCore *core) {
+	// For task threads (non-main tasks), create a separate RCore with its own RCons
+	if (task_tls_current && task_tls_current != core->tasks.main_task) {
+		RCore *c = R_NEW (RCore);
+		if (!c) {
+			return core;
+		}
+		memcpy (c, core, sizeof (RCore));
+		c->cons = r_cons_new ();
+		if (!c->cons) {
+			free (c);
+			return core;
+		}
+		// XXX: RConsBind must disappear. its used in bin, fs and search
+		// TODO: use r_cons_clone instead
+		return c;
+	}
 #if CUSTOMCORE
 	RCore *c = R_NEW (RCore);
 	memcpy (c, core, sizeof (RCore));
@@ -26,6 +42,16 @@ static RCore *mycore_new(RCore *core) {
 }
 
 static void mycore_free(RCore *a) {
+	if (a && a->cons) {
+		// If this is a task-specific core (has its own cons), free it but not the context
+		RCons *global_cons = r_cons_singleton();
+		if (a->cons != global_cons) {
+			a->cons->context = NULL; // Don't free the shared context
+			r_cons_free (a->cons);
+			free (a);
+			return;
+		}
+	}
 #if CUSTOMCORE
 	r_cons_free (a->cons);
 #endif
@@ -477,6 +503,15 @@ static RThreadFunctionRet task_run(RCoreTask *task) {
 	}
 
 	RCore *local_core = mycore_new (core);
+	// For task-specific cores, share the context
+	if (local_core != core && task->cons_context) {
+		local_core->cons->context = task->cons_context;
+	}
+	// Capture interrupted state before command execution
+	bool interrupted = false;
+	if (task->cons_context) {
+		interrupted = task->cons_context->breaked;
+	}
 	char *res_str;
 	if (task == scheduler->main_task) {
 		r_core_cmd (local_core, task->cmd, task->cmd_log);
@@ -484,6 +519,7 @@ static RThreadFunctionRet task_run(RCoreTask *task) {
 	} else {
 		res_str = r_core_cmd_str (local_core, task->cmd);
 	}
+	// Note: We don't check breaked after command to avoid UAF, as context may be freed
 	mycore_free (local_core);
 
 	free (task->res);
@@ -501,11 +537,7 @@ stillbirth:
 
 	task_end (task);
 
-	// Determine interruption vs finished
-	bool interrupted = false;
-	if (task->cons_context && task->cons_context->breaked) {
-		interrupted = true;
-	}
+	// Determine interruption vs finished (already captured above)
 
 	if (task->cb) {
 		task->cb (task->user, task->res);
@@ -549,6 +581,8 @@ static RThreadFunctionRet task_run_thread(RThread *th) {
 	RCoreTask *task = (RCoreTask *)th->user;
 	// Set TLS current task for this thread during execution
 	task_tls_current = task;
+	// Initialize thread-local RCons for this task thread
+	r_cons_thready ();
 	RThreadFunctionRet ret = task_run (task);
 	// Clear TLS on exit
 	task_tls_current = NULL;
