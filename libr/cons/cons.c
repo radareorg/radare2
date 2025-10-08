@@ -1333,11 +1333,6 @@ R_API int r_cons_write(RCons *cons, const void *data, int len) {
 			return rlen;
 		}
 	}
-	static R_TH_LOCAL int __write_log_count = 0;
-	if (__write_log_count < 5) {
-		R_LOG_WARN ("r_cons_write cons=%p len=%d", (void *)cons, len);
-		__write_log_count++;
-	}
 	if (str && len > 0 && !cons->null) {
 		R_CRITICAL_ENTER (cons);
 		if (cons_palloc (cons, len + 1)) {

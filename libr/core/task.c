@@ -541,17 +541,6 @@ static RThreadFunctionRet task_run(RCoreTask *task) {
 	free (task->res);
 	task->res = res_str;
 
-	if (task->res) {
-		char *escaped = r_str_escape (task->res);
-		R_LOG_WARN ("task %d result: %s (len=%d)", task->id, escaped, (int)strlen (task->res));
-		free (escaped);
-	} else {
-		R_LOG_WARN ("task %d result: (null)", task->id);
-	}
-	if (task->cons_context && task->cons_context->grep.strings) {
-		R_LOG_WARN ("task %d grep strings len: %d", task->id, r_list_length (task->cons_context->grep.strings));
-	}
-
 #if 0
 	if (task != scheduler->main_task && r_cons_default_context_is_interactive ()) {
 		R_LOG_INFO ("Task %d finished", task->id);
