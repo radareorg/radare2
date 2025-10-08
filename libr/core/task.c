@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2014-2025 - pancake */
 
 #include <r_core.h>
+#include <unistd.h>
 
 // Per-thread current task pointer (TLS)
 static R_TH_LOCAL RCoreTask *task_tls_current = NULL;
@@ -128,10 +129,10 @@ R_API void r_core_task_print(RCore *core, RCoreTask *task, PJ *pj, int mode) {
 			info = "-- MAIN TASK --";
 		}
 		r_cons_printf (core->cons, "%3d %3s %12s  %s\n",
-					   task->id,
-					   task->transient ? " (t)" : "",
-					   r_core_task_status (task),
-					   r_str_get (info));
+				   task->id,
+				   task->transient ? " (t)" : "",
+				   r_core_task_status (task),
+				   r_str_get (info));
 		}
 		break;
 	}
@@ -665,7 +666,7 @@ R_API RCoreTask *r_core_task_self(RCoreTaskScheduler *scheduler) {
 	return res;
 }
 
-static RCoreTask *task_get(RCoreTaskScheduler *scheduler, int id) {
+R_API RCoreTask *r_core_task_get(RCoreTaskScheduler *scheduler, int id) {
 	if (!scheduler) {
 		return NULL;
 	}
@@ -764,4 +765,79 @@ R_API void r_core_task_del_all_done(RCoreTaskScheduler *scheduler) {
 			r_list_delete (scheduler->tasks, iter);
 		}
 	}
+}
+
+/* New API implementations */
+
+R_API void r_core_task_set_foreground(RCoreTaskScheduler *scheduler, int task_id) {
+	if (!scheduler) {
+		return;
+	}
+	TASK_SIGSET_T old_sigset;
+	tasks_lock_enter (scheduler, &old_sigset);
+	RCoreTask *t = task_get (scheduler, task_id);
+	if (t) {
+		scheduler->foreground_task = t;
+	}
+	tasks_lock_leave (scheduler, &old_sigset);
+}
+
+R_API RCoreTask *r_core_task_get_foreground(RCoreTaskScheduler *scheduler) {
+	if (!scheduler) {
+		return NULL;
+	}
+	return scheduler->foreground_task ? scheduler->foreground_task : scheduler->main_task;
+}
+
+R_API int r_core_task_run_threaded(RCoreTaskScheduler *scheduler, RCoreTask *task) {
+	if (!scheduler || !task) {
+		return -1;
+	}
+	task->mode = R_CORE_TASK_MODE_THREAD;
+	if (!task->task_core) {
+		task->task_core = r_core_clone_for_task (task->core);
+	}
+	r_core_task_enqueue (scheduler, task);
+	return task->id;
+}
+
+R_API int r_core_task_run_forked(RCoreTaskScheduler *scheduler, RCoreTask *task) {
+	if (!scheduler || !task) {
+		return -1;
+	}
+	task->mode = R_CORE_TASK_MODE_FORK;
+	if (!task->task_core) {
+		task->task_core = r_core_clone_for_task (task->core);
+	}
+	if (pipe (task->result_pipe) == -1) {
+		// pipe failed; mark as unavailable
+		task->result_pipe[0] = -1;
+		task->result_pipe[1] = -1;
+	}
+	r_core_task_enqueue (scheduler, task);
+	return task->id;
+}
+
+R_API RCore *r_core_clone_for_task(RCore *core) {
+	if (!core) {
+		return NULL;
+	}
+	return mycore_new (core);
+}
+
+R_API void r_core_task_scheduler_set_default_mode(RCoreTaskScheduler *scheduler, RCoreTaskMode mode) {
+	if (!scheduler) {
+		return;
+	}
+	TASK_SIGSET_T old_sigset;
+	tasks_lock_enter (scheduler, &old_sigset);
+	scheduler->default_mode = mode;
+	tasks_lock_leave (scheduler, &old_sigset);
+}
+
+R_API RCoreTaskMode r_core_task_scheduler_get_default_mode(RCoreTaskScheduler *scheduler) {
+	if (!scheduler) {
+		return R_CORE_TASK_MODE_COOP;
+	}
+	return scheduler->default_mode;
 }
