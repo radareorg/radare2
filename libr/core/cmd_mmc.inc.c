@@ -4,16 +4,22 @@
 
 #include <r_core.h>
 
-#define MMC_COLOR_BG_FG     "\x1b[34m"
-#define MMC_COLOR_FG        "\x1b[37m"
-#define MMC_COLOR_SELECT_FG "\x1b[36m"
-#define MMC_COLOR_SELECT    "\x1b[46;30m"
-#define MMC_COLOR_DIR       "\x1b[1;37m"
-#define MMC_COLOR_FILE      "\x1b[37m"
-#define MMC_COLOR_FRAME     "\x1b[36m"
-#define MMC_COLOR_TITLE     "\x1b[1;33m"
-#define MMC_COLOR_HOTKEY    "\x1b[1;33m"
-#define MMC_COLOR_RESET     "\x1b[0m"
+#define MMC_COLOR_BG_FG        "\x1b[34m"
+#define MMC_COLOR_BG_BLUE      "\x1b[44m"
+#define MMC_COLOR_BG_CYAN      "\x1b[46m"
+#define MMC_COLOR_FG           "\x1b[37m"
+#define MMC_COLOR_FG_BLACK     "\x1b[30m"
+#define MMC_COLOR_FG_YELLOW    "\x1b[33m"
+#define MMC_COLOR_FG_RED       "\x1b[31m"
+#define MMC_COLOR_SELECT_FG    "\x1b[36m"
+#define MMC_COLOR_SELECT       "\x1b[46;30m"
+#define MMC_COLOR_DIR          "\x1b[1;37m"
+#define MMC_COLOR_FILE         "\x1b[37m"
+#define MMC_COLOR_FRAME        "\x1b[36m"
+#define MMC_COLOR_TITLE        "\x1b[1;33m"
+#define MMC_COLOR_HOTKEY       "\x1b[1;33m"
+#define MMC_COLOR_BOLD_CYAN    "\x1b[1;36m"
+#define MMC_COLOR_RESET        "\x1b[0m"
 
 typedef enum {
 	MMC_ORDER_NATURAL,
@@ -81,8 +87,6 @@ static void mmc_panel_load_fs(RCore *core, MMCPanel *panel, MMCOrderMode orderin
 	panel->selected = 0;
 	panel->scroll_offset = 0;
 
-	R_LOG_DEBUG ("Loading FS panel: path=%s", panel->path);
-
 	if (strcmp (panel->path, "/") != 0) {
 		panel->count = 1;
 		panel->entries = R_NEWS (char *, 1);
@@ -95,24 +99,18 @@ static void mmc_panel_load_fs(RCore *core, MMCPanel *panel, MMCOrderMode orderin
 	list = r_fs_dir (core->fs, panel->path);
 	if (list) {
 		fs_count = r_list_length (list);
-		R_LOG_DEBUG ("Found %d files in r_fs_dir", fs_count);
 		panel->count += fs_count;
 		panel->entries = realloc (panel->entries, sizeof (char *) * panel->count);
 		panel->types = realloc (panel->types, panel->count);
 
 		idx = start_idx;
 		r_list_foreach (list, iter, file) {
-			R_LOG_DEBUG ("  File: %s (type=%c)", file->name, file->type);
 			panel->entries[idx] = strdup (file->name);
 			panel->types[idx] = file->type;
 			idx++;
 		}
 		r_list_free (list);
-	} else {
-		R_LOG_DEBUG ("r_fs_dir returned NULL");
 	}
-
-	R_LOG_DEBUG ("Panel loaded: count=%d", panel->count);
 
 	r_list_foreach (core->fs->roots, iter, root) {
 		if (!strncmp (panel->path, root->path, strlen (panel->path))) {
@@ -157,8 +155,6 @@ static void mmc_panel_load_local(RCore *core, MMCPanel *panel, MMCOrderMode orde
 	panel->selected = 0;
 	panel->scroll_offset = 0;
 
-	R_LOG_DEBUG ("Loading local panel: path=%s", panel->path);
-
 	if (strcmp (panel->path, "/") != 0 && strcmp (panel->path, "") != 0) {
 		panel->count = 1;
 		panel->entries = R_NEWS (char *, 1);
@@ -171,7 +167,6 @@ static void mmc_panel_load_local(RCore *core, MMCPanel *panel, MMCOrderMode orde
 	files = r_sys_dir (panel->path);
 	if (files) {
 		file_count = r_list_length (files);
-		R_LOG_DEBUG ("Found %d files in r_sys_dir", file_count);
 
 		valid_count = 0;
 		r_list_foreach (files, iter, name) {
@@ -190,7 +185,6 @@ static void mmc_panel_load_local(RCore *core, MMCPanel *panel, MMCOrderMode orde
 			if (!strcmp (name, ".") || !strcmp (name, "..")) {
 				continue;
 			}
-			R_LOG_DEBUG ("  File: %s", name);
 			panel->entries[idx] = strdup (name);
 			fullpath = r_str_newf ("%s/%s", panel->path, name);
 			panel->types[idx] = r_file_is_directory (fullpath) ? 'd' : 'f';
@@ -198,62 +192,9 @@ static void mmc_panel_load_local(RCore *core, MMCPanel *panel, MMCOrderMode orde
 			idx++;
 		}
 		r_list_free (files);
-	} else {
-		R_LOG_DEBUG ("r_sys_dir returned NULL");
 	}
-
-	R_LOG_DEBUG ("Panel loaded: count=%d", panel->count);
 
 	mmc_panel_sort (panel, ordering_mode);
-}
-
-static int mmc_compare_alpha(const void *a, const void *b, void *user) {
-	const char *sa = *(const char **)a;
-	const char *sb = *(const char **)b;
-	if (!strcmp (sa, "..")) {
-		return -1;
-	}
-	if (!strcmp (sb, "..")) {
-		return 1;
-	}
-	return strcmp (sa, sb);
-}
-
-static int mmc_compare_size(const void *a, const void *b, void *user) {
-	MMCPanel *panel = (MMCPanel *)user;
-	const char *sa = *(const char **)a;
-	const char *sb = *(const char **)b;
-	int i, idx_a = -1, idx_b = -1;
-
-	if (!strcmp (sa, "..")) {
-		return -1;
-	}
-	if (!strcmp (sb, "..")) {
-		return 1;
-	}
-
-	for (i = 0; i < panel->count; i++) {
-		if (panel->entries[i] == sa) {
-			idx_a = i;
-		}
-		if (panel->entries[i] == sb) {
-			idx_b = i;
-		}
-	}
-
-	if (idx_a < 0 || idx_b < 0) {
-		return 0;
-	}
-
-	if (panel->types[idx_a] == 'd' && panel->types[idx_b] != 'd') {
-		return -1;
-	}
-	if (panel->types[idx_a] != 'd' && panel->types[idx_b] == 'd') {
-		return 1;
-	}
-
-	// Getting actual file sizes would require stat calls, defer for now
-	return strcmp (sa, sb);
 }
 
 static void mmc_panel_sort(MMCPanel *panel, MMCOrderMode mode) {
@@ -338,7 +279,7 @@ static void mmc_panel_draw(RCore *core, RConsCanvas *canvas, MMCPanel *panel, in
 	const char *name, *text_color, *bg_color;
 	char type_char;
 
-	r_cons_canvas_bgfill (canvas, x + 1, y + 1, w - 2, h - 2, "\x1b[34m");
+	r_cons_canvas_bgfill (canvas, x + 1, y + 1, w - 2, h - 2, MMC_COLOR_BG_FG);
 	r_cons_canvas_box (canvas, x, y, w, h, core->cons->context->pal.graph_box);
 
 	max_title_len = w - 10;
@@ -352,18 +293,18 @@ static void mmc_panel_draw(RCore *core, RConsCanvas *canvas, MMCPanel *panel, in
 	}
 
 	title_x = x + 2;
-	colored_title = r_str_newf ("\x1b[44m%s%s%s", MMC_COLOR_TITLE, safe_path, MMC_COLOR_RESET);
+	colored_title = r_str_newf ("%s%s%s%s", MMC_COLOR_BG_BLUE, MMC_COLOR_TITLE, safe_path, MMC_COLOR_RESET);
 	r_cons_canvas_write_at (canvas, colored_title, title_x, y);
 	free (colored_title);
 	free (safe_path);
 
 	if (active) {
-		indicator = r_str_newf ("\x1b[44m%s>%s", MMC_COLOR_TITLE, MMC_COLOR_RESET);
+		indicator = r_str_newf ("%s%s>%s", MMC_COLOR_BG_BLUE, MMC_COLOR_TITLE, MMC_COLOR_RESET);
 		r_cons_canvas_write_at (canvas, indicator, x, y);
 		free (indicator);
 	}
 
-	count_str = r_str_newf ("\x1b[44m%s(%d)%s", MMC_COLOR_FG, panel->count, MMC_COLOR_RESET);
+	count_str = r_str_newf ("%s%s(%d)%s", MMC_COLOR_BG_BLUE, MMC_COLOR_FG, panel->count, MMC_COLOR_RESET);
 	r_cons_canvas_write_at (canvas, count_str, x + w - 6, y);
 	free (count_str);
 
@@ -380,11 +321,11 @@ static void mmc_panel_draw(RCore *core, RConsCanvas *canvas, MMCPanel *panel, in
 		text_color = (type_char == 'd' || type_char == 'm') ? MMC_COLOR_DIR : MMC_COLOR_FILE;
 
 		if (is_selected) {
-			r_cons_canvas_bgfill (canvas, x + 1, line_y, w - 2, 1, "\x1b[36m");
-			bg_color = "\x1b[46m";
-			text_color = "\x1b[30m";
+			r_cons_canvas_bgfill (canvas, x + 1, line_y, w - 2, 1, MMC_COLOR_SELECT_FG);
+			bg_color = MMC_COLOR_BG_CYAN;
+			text_color = MMC_COLOR_FG_BLACK;
 		} else {
-			bg_color = "\x1b[44m";
+			bg_color = MMC_COLOR_BG_BLUE;
 		}
 
 		line = NULL;
@@ -396,36 +337,6 @@ static void mmc_panel_draw(RCore *core, RConsCanvas *canvas, MMCPanel *panel, in
 
 		r_cons_canvas_write_at (canvas, line, x + 1, line_y);
 		free (line);
-	}
-}
-
-static void mmc_draw_bottom_bar(RCore *core, RConsCanvas *canvas, int y, int w) {
-	int i, x = 0, label_len;
-	char *label_text, *space;
-	const char *labels[] = {
-		"Help", "Menu", "View", "Edit", "Copy", "RenMov", "Mkdir", "Delete", "PullDn", "Quit"
-	};
-
-	r_cons_canvas_bgfill (canvas, 0, y, w, 1, "\x1b[36m");
-
-	for (i = 0; i < 10; i++) {
-		label_text = r_str_newf ("\x1b[46m\x1b[30m%d\x1b[46m\x1b[30m%s", i + 1, labels[i]);
-		r_cons_canvas_write_at (canvas, label_text, x, y);
-
-		label_len = 1 + strlen (labels[i]);
-		if (i == 9) {
-			label_len++;
-		}
-		x += label_len;
-
-		if (i < 9) {
-			space = r_str_newf ("\x1b[46m\x1b[30m ");
-			r_cons_canvas_write_at (canvas, space, x, y);
-			free (space);
-			x++;
-		}
-
-		free (label_text);
 	}
 }
 
@@ -484,42 +395,6 @@ static void mmc_panel_navigate_enter(RCore *core, MMCPanel *panel, MMCOrderMode 
 	} else {
 		mmc_panel_load_local (core, panel, ordering_mode);
 	}
-}
-
-static void mmc_copy_file(RCore *core, MMCState *state) {
-	MMCPanel *src = state->active;
-	MMCPanel *dst = (state->active == &state->left) ? &state->right : &state->left;
-
-	if (src->count == 0 || src->selected >= src->count) {
-		r_cons_message (core->cons, "No file selected");
-		return;
-	}
-
-	char *selected_name = src->entries[src->selected];
-	if (!strcmp (selected_name, "..")) {
-		r_cons_message (core->cons, "Cannot copy parent directory");
-		return;
-	}
-
-	char *src_path;
-	if (!strcmp (src->path, "/")) {
-		src_path = r_str_newf ("/%s", selected_name);
-	} else {
-		src_path = r_str_newf ("%s/%s", src->path, selected_name);
-	}
-
-	char *dst_path;
-	if (!strcmp (dst->path, "/")) {
-		dst_path = r_str_newf ("/%s", selected_name);
-	} else {
-		dst_path = r_str_newf ("%s/%s", dst->path, selected_name);
-	}
-
-	char *msg = r_str_newf ("Copy: %s -> %s (not implemented yet)", src_path, dst_path);
-	r_cons_message (core->cons, msg);
-	free (msg);
-	free (src_path);
-	free (dst_path);
 }
 
 static void mmc_move_file(RCore *core, MMCState *state) {
@@ -666,7 +541,7 @@ static void mmc_view_file(RCore *core, MMCState *state) {
 			padding_left = 0;
 		}
 
-		r_cons_printf (core->cons, "\x1b[46m\x1b[30m");
+		r_cons_printf (core->cons, "%s%s", MMC_COLOR_BG_CYAN, MMC_COLOR_FG_BLACK);
 		for (i = 0; i < padding_left; i++) {
 			r_cons_printf (core->cons, " ");
 		}
@@ -674,7 +549,7 @@ static void mmc_view_file(RCore *core, MMCState *state) {
 		for (i = 0; i < width - title_len - padding_left; i++) {
 			r_cons_printf (core->cons, " ");
 		}
-		r_cons_printf (core->cons, "\x1b[0m\n");
+		r_cons_printf (core->cons, "%s\n", MMC_COLOR_RESET);
 
 		canvas = r_cons_canvas_new (core->cons, width, height - 1, R_CONS_CANVAS_FLAG_INHERIT);
 		if (!canvas) {
@@ -687,7 +562,7 @@ static void mmc_view_file(RCore *core, MMCState *state) {
 		pane_x = 2;
 		pane_y = 0;
 
-		r_cons_canvas_bgfill (canvas, pane_x, pane_y, pane_w, pane_h, "\x1b[34m");
+		r_cons_canvas_bgfill (canvas, pane_x, pane_y, pane_w, pane_h, MMC_COLOR_BG_FG);
 		r_cons_canvas_box (canvas, pane_x, pane_y, pane_w, pane_h, core->cons->context->pal.graph_box);
 
 		mode_str = hex_mode ? "Hex View" : "Text View";
@@ -695,17 +570,17 @@ static void mmc_view_file(RCore *core, MMCState *state) {
 		r_cons_canvas_write_at (canvas, title, pane_x + 1, pane_y);
 		free (title);
 
-		info1 = r_str_newf ("\x1b[44m\x1b[37m File: %s (%s) ", selected_name, fullpath);
+		info1 = r_str_newf ("%s%s File: %s (%s) ", MMC_COLOR_BG_BLUE, MMC_COLOR_FG, selected_name, fullpath);
 
 		end_addr = start_addr + (size > 0 ? size - 1 : 0);
 		if (has_timestamp) {
 			memset (time_str, 0, sizeof (time_str));
 			tm_info = localtime (&file_time);
 			strftime (time_str, sizeof (time_str), "%Y-%m-%d %H:%M:%S", tm_info);
-			info2 = r_str_newf ("\x1b[44m\x1b[37m Size: %zu bytes | Start: 0x%08"PFMT64x" | End: 0x%08"PFMT64x" | Date: %s ",
+			info2 = r_str_newf ("%s%s Size: %zu bytes | Start: 0x%08"PFMT64x" | End: 0x%08"PFMT64x" | Date: %s ", MMC_COLOR_BG_BLUE, MMC_COLOR_FG,
 				size, start_addr, end_addr, time_str);
 		} else {
-			info2 = r_str_newf ("\x1b[44m\x1b[37m Size: %zu bytes | Start: 0x%08"PFMT64x" | End: 0x%08"PFMT64x" ",
+			info2 = r_str_newf ("%s%s Size: %zu bytes | Start: 0x%08"PFMT64x" | End: 0x%08"PFMT64x" ", MMC_COLOR_BG_BLUE, MMC_COLOR_FG,
 				size, start_addr, end_addr);
 		}
 
@@ -735,8 +610,8 @@ static void mmc_view_file(RCore *core, MMCState *state) {
 					ascii_ptr += sprintf (ascii_ptr, "%c", IS_PRINTABLE (byte) ? byte : '.');
 				}
 
-				pline = r_str_newf ("\x1b[44m\x1b[1;33m%08x\x1b[1;37m: \x1b[1;36m%-48s \x1b[1;37m%s",
-					line_offset, hex, ascii);
+				pline = r_str_newf ("%s%s%08x%s: %s%-48s %s%s", MMC_COLOR_BG_BLUE, MMC_COLOR_TITLE,
+					line_offset, MMC_COLOR_DIR, MMC_COLOR_BOLD_CYAN, hex, MMC_COLOR_DIR, ascii);
 
 				r_cons_canvas_write_at (canvas, pline, pane_x + 1, content_y + i);
 				free (pline);
@@ -769,7 +644,7 @@ static void mmc_view_file(RCore *core, MMCState *state) {
 				}
 
 				text_line[text_pos] = '\0';
-				pline = r_str_newf ("\x1b[44m\x1b[1;37m%s", text_line);
+				pline = r_str_newf ("%s%s%s", MMC_COLOR_BG_BLUE, MMC_COLOR_DIR, text_line);
 				r_cons_canvas_write_at (canvas, pline, pane_x + 1, content_y + i);
 				free (pline);
 			}
@@ -787,7 +662,7 @@ static void mmc_view_file(RCore *core, MMCState *state) {
 		shortcuts[6] = "q:Quit";
 		num_shortcuts = 7;
 
-		r_cons_printf (core->cons, "\x1b[46m\x1b[30m");
+		r_cons_printf (core->cons, "%s%s", MMC_COLOR_BG_CYAN, MMC_COLOR_FG_BLACK);
 		footer_len = 0;
 		for (i = 0; i < num_shortcuts; i++) {
 			r_cons_printf (core->cons, " %s", shortcuts[i]);
@@ -796,7 +671,7 @@ static void mmc_view_file(RCore *core, MMCState *state) {
 		for (i = footer_len; i < width; i++) {
 			r_cons_printf (core->cons, " ");
 		}
-		r_cons_printf (core->cons, "\x1b[0m\n");
+		r_cons_printf (core->cons, "%s\n", MMC_COLOR_RESET);
 
 		r_cons_visual_flush (core->cons);
 
@@ -989,15 +864,11 @@ static void mmc_delete_file(RCore *core, MMCState *state) {
 			R_LOG_ERROR ("Delete from filesystem not implemented yet");
 		} else {
 			if (r_file_is_directory (fullpath)) {
-				if (r_file_rm_rf (fullpath)) {
-					R_LOG_INFO ("Deleted directory: %s", fullpath);
-				} else {
+				if (!r_file_rm_rf (fullpath)) {
 					R_LOG_ERROR ("Failed to delete directory: %s", fullpath);
 				}
 			} else {
-				if (r_file_rm (fullpath)) {
-					R_LOG_INFO ("Deleted file: %s", fullpath);
-				} else {
+				if (!r_file_rm (fullpath)) {
 					R_LOG_ERROR ("Failed to delete file: %s", fullpath);
 				}
 			}
@@ -1038,7 +909,7 @@ static void mmc_show_info(RCore *core, MMCState *state, int width, int height) {
 		padding_left = 0;
 	}
 
-	r_cons_printf (core->cons, "\x1b[46m\x1b[30m");
+	r_cons_printf (core->cons, "%s%s", MMC_COLOR_BG_CYAN, MMC_COLOR_FG_BLACK);
 	for (i = 0; i < padding_left; i++) {
 		r_cons_printf (core->cons, " ");
 	}
@@ -1046,7 +917,7 @@ static void mmc_show_info(RCore *core, MMCState *state, int width, int height) {
 	for (i = 0; i < width - title_len - padding_left; i++) {
 		r_cons_printf (core->cons, " ");
 	}
-	r_cons_printf (core->cons, "\x1b[0m\n");
+	r_cons_printf (core->cons, "%s\n", MMC_COLOR_RESET);
 
 	pane_w = width - 8;
 	pane_h = height - 2;
@@ -1059,10 +930,10 @@ static void mmc_show_info(RCore *core, MMCState *state, int width, int height) {
 	}
 	canvas->color = r_config_get_i (core->config, "scr.color");
 
-	r_cons_canvas_bgfill (canvas, pane_x, pane_y, pane_w, pane_h, "\x1b[44m");
+	r_cons_canvas_bgfill (canvas, pane_x, pane_y, pane_w, pane_h, MMC_COLOR_BG_BLUE);
 	r_cons_canvas_box (canvas, pane_x, pane_y, pane_w, pane_h, core->cons->context->pal.graph_box);
 
-	info_title = r_str_newf ("\x1b[1;37m File Information: %s ", selected_name);
+	info_title = r_str_newf ("%s File Information: %s ", MMC_COLOR_DIR, selected_name);
 	r_cons_canvas_write_at (canvas, info_title, pane_x + 2, pane_y);
 	free (info_title);
 	if (!strcmp (panel->path, "/")) {
@@ -1074,7 +945,7 @@ static void mmc_show_info(RCore *core, MMCState *state, int width, int height) {
 	int y = pane_y + 2;
 	char *line;
 
-	line = r_str_newf ("\x1b[44m\x1b[37m  Path: %s", fullpath);
+	line = r_str_newf ("%s%s  Path: %s", MMC_COLOR_BG_BLUE, MMC_COLOR_FG, fullpath);
 	r_cons_canvas_write_at (canvas, line, pane_x + 2, y++);
 	free (line);
 	y++;
@@ -1082,25 +953,25 @@ static void mmc_show_info(RCore *core, MMCState *state, int width, int height) {
 	if (panel->is_fs_panel) {
 		RFSFile *file = r_fs_open (core->fs, fullpath, false);
 		if (file) {
-			line = r_str_newf ("\x1b[44m\x1b[1;33m  File Details:");
+			line = r_str_newf ("%s%s  File Details:", MMC_COLOR_BG_BLUE, MMC_COLOR_TITLE);
 			r_cons_canvas_write_at (canvas, line, pane_x + 2, y++);
 			free (line);
 
-			line = r_str_newf ("\x1b[44m\x1b[37m    Type: %c", file->type);
+			line = r_str_newf ("%s%s    Type: %c", MMC_COLOR_BG_BLUE, MMC_COLOR_FG, file->type);
 			r_cons_canvas_write_at (canvas, line, pane_x + 2, y++);
 			free (line);
 
-			line = r_str_newf ("\x1b[44m\x1b[37m    Size: %d bytes", file->size);
+			line = r_str_newf ("%s%s    Size: %d bytes", MMC_COLOR_BG_BLUE, MMC_COLOR_FG, file->size);
 			r_cons_canvas_write_at (canvas, line, pane_x + 2, y++);
 			free (line);
 
-			line = r_str_newf ("\x1b[44m\x1b[37m    Offset: 0x%08"PFMT64x, file->off);
+			line = r_str_newf ("%s%s    Offset: 0x%08"PFMT64x, MMC_COLOR_BG_BLUE, MMC_COLOR_FG, file->off);
 			r_cons_canvas_write_at (canvas, line, pane_x + 2, y++);
 			free (line);
 
 			r_fs_close (core->fs, file);
 		} else {
-			line = r_str_newf ("\x1b[44m\x1b[1;33m  File Details:");
+			line = r_str_newf ("%s%s  File Details:", MMC_COLOR_BG_BLUE, MMC_COLOR_TITLE);
 			r_cons_canvas_write_at (canvas, line, pane_x + 2, y++);
 			free (line);
 
@@ -1114,18 +985,18 @@ static void mmc_show_info(RCore *core, MMCState *state, int width, int height) {
 				type_str = "Mountpoint";
 			}
 
-			line = r_str_newf ("\x1b[44m\x1b[37m    Type: %s (type=%c)", type_str, type);
+			line = r_str_newf ("%s%s    Type: %s (type=%c)", MMC_COLOR_BG_BLUE, MMC_COLOR_FG, type_str, type);
 			r_cons_canvas_write_at (canvas, line, pane_x + 2, y++);
 			free (line);
 
-			line = r_str_newf ("\x1b[44m\x1b[33m    Cannot open file (may be symlink or special file)");
+			line = r_str_newf ("%s%s    Cannot open file (may be symlink or special file)", MMC_COLOR_BG_BLUE, MMC_COLOR_FG_YELLOW);
 			r_cons_canvas_write_at (canvas, line, pane_x + 2, y++);
 			free (line);
 		}
 
 		y++;
 
-		line = r_str_newf ("\x1b[44m\x1b[1;33m  Filesystem Information:");
+		line = r_str_newf ("%s%s  Filesystem Information:", MMC_COLOR_BG_BLUE, MMC_COLOR_TITLE);
 		r_cons_canvas_write_at (canvas, line, pane_x + 2, y++);
 		free (line);
 
@@ -1141,7 +1012,7 @@ static void mmc_show_info(RCore *core, MMCState *state, int width, int height) {
 			char *mn_line;
 			r_list_foreach (lines, iter, mn_line) {
 				if (*mn_line && y < pane_y + pane_h - 2) {
-					line = r_str_newf ("\x1b[44m\x1b[37m    %s", mn_line);
+					line = r_str_newf ("%s%s    %s", MMC_COLOR_BG_BLUE, MMC_COLOR_FG, mn_line);
 					r_cons_canvas_write_at (canvas, line, pane_x + 2, y++);
 					free (line);
 				}
@@ -1152,26 +1023,26 @@ static void mmc_show_info(RCore *core, MMCState *state, int width, int height) {
 	} else {
 		struct stat st;
 		if (stat (fullpath, &st) == 0) {
-			line = r_str_newf ("\x1b[44m\x1b[1;33m  File Details:");
+			line = r_str_newf ("%s%s  File Details:", MMC_COLOR_BG_BLUE, MMC_COLOR_TITLE);
 			r_cons_canvas_write_at (canvas, line, pane_x + 2, y++);
 			free (line);
 
-			line = r_str_newf ("\x1b[44m\x1b[37m    Type: %s", S_ISDIR(st.st_mode) ? "Directory" : "File");
+			line = r_str_newf ("%s%s    Type: %s", MMC_COLOR_BG_BLUE, MMC_COLOR_FG, S_ISDIR(st.st_mode) ? "Directory" : "File");
 			r_cons_canvas_write_at (canvas, line, pane_x + 2, y++);
 			free (line);
 
-			line = r_str_newf ("\x1b[44m\x1b[37m    Size: %lld bytes", (long long)st.st_size);
+			line = r_str_newf ("%s%s    Size: %lld bytes", MMC_COLOR_BG_BLUE, MMC_COLOR_FG, (long long)st.st_size);
 			r_cons_canvas_write_at (canvas, line, pane_x + 2, y++);
 			free (line);
 
 			char time_str[64] = {0};
 			struct tm *tm_info = localtime (&st.st_mtime);
 			strftime (time_str, sizeof (time_str), "%Y-%m-%d %H:%M:%S", tm_info);
-			line = r_str_newf ("\x1b[44m\x1b[37m    Modified: %s", time_str);
+			line = r_str_newf ("%s%s    Modified: %s", MMC_COLOR_BG_BLUE, MMC_COLOR_FG, time_str);
 			r_cons_canvas_write_at (canvas, line, pane_x + 2, y++);
 			free (line);
 		} else {
-			line = r_str_newf ("\x1b[44m\x1b[31m  Cannot stat file");
+			line = r_str_newf ("%s%s  Cannot stat file", MMC_COLOR_BG_BLUE, MMC_COLOR_FG_RED);
 			r_cons_canvas_write_at (canvas, line, pane_x + 2, y++);
 			free (line);
 		}
@@ -1182,12 +1053,12 @@ static void mmc_show_info(RCore *core, MMCState *state, int width, int height) {
 	r_cons_canvas_print (canvas);
 	r_cons_canvas_free (canvas);
 
-	r_cons_printf (core->cons, "\x1b[46m\x1b[30m");
+	r_cons_printf (core->cons, "%s%s", MMC_COLOR_BG_CYAN, MMC_COLOR_FG_BLACK);
 	r_cons_printf (core->cons, " q:Close");
 	for (i = 9; i < width; i++) {
 		r_cons_printf (core->cons, " ");
 	}
-	r_cons_printf (core->cons, "\x1b[0m\n");
+	r_cons_printf (core->cons, "%s\n", MMC_COLOR_RESET);
 
 	r_cons_visual_flush (core->cons);
 
@@ -1233,10 +1104,6 @@ static void mmc_seek_to_file(RCore *core, MMCState *state) {
 		r_core_seek (core, addr, true);
 
 		state->running = false;
-
-		char *msg = r_str_newf ("Seeked to %s at 0x%08"PFMT64x, selected_name, addr);
-		R_LOG_INFO ("%s", msg);
-		free (msg);
 	} else {
 		r_cons_message (core->cons, "Failed to open file");
 	}
@@ -1400,7 +1267,7 @@ static void mmc_show_help(RCore *core, int width, int height) {
 		padding_left = 0;
 	}
 
-	r_cons_printf (core->cons, "\x1b[46m\x1b[30m");
+	r_cons_printf (core->cons, "%s%s", MMC_COLOR_BG_CYAN, MMC_COLOR_FG_BLACK);
 	for (i = 0; i < padding_left; i++) {
 		r_cons_printf (core->cons, " ");
 	}
@@ -1408,7 +1275,7 @@ static void mmc_show_help(RCore *core, int width, int height) {
 	for (i = 0; i < width - title_len - padding_left; i++) {
 		r_cons_printf (core->cons, " ");
 	}
-	r_cons_printf (core->cons, "\x1b[0m\n");
+	r_cons_printf (core->cons, "%s\n", MMC_COLOR_RESET);
 
 	int pane_w = width - 8;
 	int pane_h = height - 2;
@@ -1421,10 +1288,10 @@ static void mmc_show_help(RCore *core, int width, int height) {
 	}
 	canvas->color = r_config_get_i (core->config, "scr.color");
 
-	r_cons_canvas_bgfill (canvas, pane_x, pane_y, pane_w, pane_h, "\x1b[44m");
+	r_cons_canvas_bgfill (canvas, pane_x, pane_y, pane_w, pane_h, MMC_COLOR_BG_BLUE);
 	r_cons_canvas_box (canvas, pane_x, pane_y, pane_w, pane_h, core->cons->context->pal.graph_box);
 
-	char *help_title = r_str_newf ("\x1b[1;37m Miknight Commander - Help ");
+	char *help_title = r_str_newf ("%s Miknight Commander - Help ", MMC_COLOR_DIR);
 	r_cons_canvas_write_at (canvas, help_title, pane_x + 2, pane_y);
 	free (help_title);
 
@@ -1454,7 +1321,7 @@ static void mmc_show_help(RCore *core, int width, int height) {
 
 	int y = pane_y + 2;
 	for (i = 0; i < (int)(sizeof (help_lines) / sizeof (help_lines[0])) && y < pane_h - 1; i++) {
-		char *line = r_str_newf ("\x1b[44m\x1b[37m%s", help_lines[i]);
+		char *line = r_str_newf ("%s%s%s", MMC_COLOR_BG_BLUE, MMC_COLOR_FG, help_lines[i]);
 		r_cons_canvas_write_at (canvas, line, pane_x + 2, y++);
 		free (line);
 	}
@@ -1462,12 +1329,12 @@ static void mmc_show_help(RCore *core, int width, int height) {
 	r_cons_canvas_print (canvas);
 	r_cons_canvas_free (canvas);
 
-	r_cons_printf (core->cons, "\x1b[46m\x1b[30m");
+	r_cons_printf (core->cons, "%s%s", MMC_COLOR_BG_CYAN, MMC_COLOR_FG_BLACK);
 	r_cons_printf (core->cons, " q:Close");
 	for (i = 9; i < width; i++) {
 		r_cons_printf (core->cons, " ");
 	}
-	r_cons_printf (core->cons, "\x1b[0m\n");
+	r_cons_printf (core->cons, "%s\n", MMC_COLOR_RESET);
 
 	r_cons_visual_flush (core->cons);
 
@@ -1608,7 +1475,7 @@ static int cmd_mmc(void *data, const char *input) {
 			"d:Delete", "r:Refresh", "s:Seek", "o:Order", "q:Quit"
 		};
 
-		r_cons_printf (core->cons, "\x1b[46m\x1b[30m");
+		r_cons_printf (core->cons, "%s%s", MMC_COLOR_BG_CYAN, MMC_COLOR_FG_BLACK);
 		footer_len = 0;
 		for (i = 0; i < 10; i++) {
 			r_cons_printf (core->cons, " %s", shortcuts[i]);
@@ -1617,7 +1484,7 @@ static int cmd_mmc(void *data, const char *input) {
 		for (i = footer_len; i < state.width; i++) {
 			r_cons_printf (core->cons, " ");
 		}
-		r_cons_printf (core->cons, "\x1b[0m\n");
+		r_cons_printf (core->cons, "%s\n", MMC_COLOR_RESET);
 
 		r_cons_visual_flush (core->cons);
 
