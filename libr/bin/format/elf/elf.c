@@ -2355,7 +2355,7 @@ bool Elf_(get_stripped)(ELFOBJ *eo) {
 	}
 	size_t i;
 	for (i = 0; i < eo->ehdr.e_shnum; i++) {
-		if (eo->shdr[i].sh_type == SHT_SYMTAB) {
+		if (eo->shdr[i].sh_type == SHT_SYMTAB || eo->shdr[i].sh_type == SHT_DYNSYM) {
 			return false;
 		}
 	}
