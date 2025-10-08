@@ -51,13 +51,10 @@ typedef struct r_core_tasks_t {
 	int task_id_next;
 	RList *tasks;
 	RList *tasks_queue;
-	RList *oneshot_queue;
-	int oneshots_enqueued;
 	struct r_core_task_t *current_task;
 	struct r_core_task_t *main_task;
 	RThreadLock *lock;
 	int tasks_running;
-	bool oneshot_running;
 	struct r_core_task_t *foreground_task; // Current ^C target
 	RCoreTaskMode default_mode; // Default execution mode
 	RCore *main_core; // Reference to main core
@@ -89,28 +86,28 @@ R_API RCoreTask *r_core_task_get_foreground(RCoreTaskScheduler *scheduler);
 /* Hidden: task run helpers are internal; use enqueue/new with mode */
 /* Preferred public API: clearer scheduler controls */
 /* Set and get the scheduler default execution mode (coop/thread/fork) */
-R_API void r_core_task_set_default_mode (RCoreTaskScheduler *scheduler, RCoreTaskMode mode);
-R_API RCoreTaskMode r_core_task_get_default_mode (RCoreTaskScheduler *scheduler);
+R_API void r_core_task_set_default_mode(RCoreTaskScheduler *scheduler, RCoreTaskMode mode);
+R_API RCoreTaskMode r_core_task_get_default_mode(RCoreTaskScheduler *scheduler);
 /* Run task with selected mode: -1 to use default, otherwise explicit mode */
-R_API int r_core_task_run (RCoreTaskScheduler *scheduler, RCoreTask *task, int mode);
+R_API int r_core_task_run(RCoreTaskScheduler *scheduler, RCoreTask *task, int mode);
 /* Convenience wrappers */
-R_API int r_core_task_run_threaded (RCoreTaskScheduler *scheduler, RCoreTask *task);
-R_API int r_core_task_run_forked (RCoreTaskScheduler *scheduler, RCoreTask *task);
+R_API int r_core_task_run_threaded(RCoreTaskScheduler *scheduler, RCoreTask *task);
+R_API int r_core_task_run_forked(RCoreTaskScheduler *scheduler, RCoreTask *task);
 /* Foreground task helpers */
-R_API void r_core_task_set_foreground (RCoreTaskScheduler *scheduler, int task_id);
-R_API RCoreTask *r_core_task_get_foreground (RCoreTaskScheduler *scheduler);
+R_API void r_core_task_set_foreground(RCoreTaskScheduler *scheduler, int task_id);
+R_API RCoreTask *r_core_task_get_foreground(RCoreTaskScheduler *scheduler);
 
 /* Minimal lifecycle API for tasks */
-R_API RCoreTask *r_core_task_submit (RCore *core, const char *cmd, RCoreTaskCallback cb, void *user, bool capture_cons, int mode);
-R_API int         r_core_task_id (const RCoreTask *t);
+R_API RCoreTask *r_core_task_submit(RCore *core, const char *cmd, RCoreTaskCallback cb, void *user, bool capture_cons, int mode);
+R_API int r_core_task_id(const RCoreTask *t);
 /* Join with optional timeout (0 = non-blocking poll) */
-R_API bool        r_core_task_wait (RCoreTask *t, ut64 timeout_ms);
+R_API bool r_core_task_wait(RCoreTask *t, ut64 timeout_ms);
 /* Cancel task; if hard=true try to kill forcefully when supported */
-R_API bool        r_core_task_cancel (RCoreTask *t, bool hard);
+R_API bool r_core_task_cancel(RCoreTask *t, bool hard);
 /* Cancel all tasks in a core */
-R_API void        r_core_task_cancel_all (RCore *core, bool hard);
+R_API void r_core_task_cancel_all(RCore *core, bool hard);
 /* Free handle; task must be done or canceled */
-R_API void        r_core_task_free (RCoreTask *t);
+R_API void r_core_task_free(RCoreTask *t);
 
 #ifdef __cplusplus
 }
