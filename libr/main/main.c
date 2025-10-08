@@ -147,7 +147,6 @@ R_API bool r_main_r2_build_flags(char **out_cflags, char **out_ldflags) {
 #endif
 			*out_ldflags = r_strbuf_drain (sb);
 		}
-		ok = true;
 	}
 	if (!*out_cflags) {
 		*out_cflags = strdup ("");
@@ -157,5 +156,5 @@ R_API bool r_main_r2_build_flags(char **out_cflags, char **out_ldflags) {
 	}
 	free (libdir);
 	free (incdir);
-	return ok;
+	return true;
 }
