@@ -3,6 +3,7 @@
 #include "r_userconf.h"
 #include "r_util/r_str.h"
 #include "r_util/r_sys.h"
+#include <r_main.h>
 #define USE_THREADS 1
 #define ALLOW_THREADED 1
 #define UNCOLORIZE_NONTTY 0
@@ -269,6 +270,8 @@ static int main_help(int line) {
 		" R2_COLOR        sets the initial value for 'scr.color'. set to 0 for no color\n"
 		" R2_ARGS         ignore cli arguments and use these ones instead\n"
 		" R2_DEBUG        if defined, show error messages and crash signal\n"
+		" R2_CFLAGS       compiler flags to build against libr\n"
+		" R2_LDFLAGS      linker flags to build against libr\n"
 		" R2_PAPI_SCRIPT  path to the custom r2papi csript\n"
 		" R2_DEBUG_NOPAPI do not load r2papi in the -j qjs shell\n"
 		" R2_DEBUG_NOLANG do not load rlang plugins (except qjs)\n"
@@ -328,6 +331,9 @@ static int main_print_var(const char *var_name) {
 	char *magicpath = r_str_r2_prefix (R2_SDB_MAGIC);
 	char *historyhome = r_xdg_cachedir ("history");
 	const char *r2prefix = r_sys_prefix (NULL);
+	char *r2_cflags = NULL;
+	char *r2_ldflags = NULL;
+	r_main_r2_build_flags (&r2_cflags, &r2_ldflags);
 	struct {
 		const char *name;
 		const char *value;
@@ -348,6 +354,8 @@ static int main_print_var(const char *var_name) {
 		{ "R2_LIBR_PLUGINS", plugins },
 		{ "R2_USER_PLUGINS", homeplugins },
 		{ "R2_ZIGNS_HOME", homezigns },
+		{ "R2_CFLAGS", r2_cflags },
+		{ "R2_LDFLAGS", r2_ldflags },
 		{ NULL, NULL }
 	};
 	int delta = 0;
@@ -376,6 +384,8 @@ static int main_print_var(const char *var_name) {
 	free (homezigns);
 	free (plugins);
 	free (magicpath);
+	free (r2_cflags);
+	free (r2_ldflags);
 	return 0;
 }
 
