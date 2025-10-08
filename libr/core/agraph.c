@@ -3752,8 +3752,8 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 	return res;
 }
 
-static void agraph_refresh_oneshot(struct agraph_refresh_data *grd) {
-	r_core_task_enqueue_oneshot (&grd->core->tasks, (RCoreTaskOneShot) agraph_refresh, grd);
+static void agraph_refresh_queued(struct agraph_refresh_data *grd) {
+	agraph_refresh (grd);
 }
 
 static void agraph_set_need_reload_nodes(struct agraph_refresh_data *grd) {
@@ -4214,7 +4214,7 @@ find_next:
 				r_core_visual_prompt_input (core);
 				g->can->flags = r_cons_canvas_flags (cons);
 				r_cons_set_raw (cons, true);
-				cons->event_resize = (RConsEvent)agraph_refresh_oneshot;
+				cons->event_resize = (RConsEvent)agraph_refresh_queued;
 			}
 			if (c == 'n' || c == 'j') {
 				goto find_next;
@@ -4546,7 +4546,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 
 	core->cons->event_resize = NULL; // avoid running old event with new data
 	core->cons->event_data = grd;
-	core->cons->event_resize = (RConsEvent) agraph_refresh_oneshot;
+	core->cons->event_resize = (RConsEvent) agraph_refresh_queued;
 
 	r_cons_break_push (core->cons, NULL, NULL);
 	if (mode == 3) { // XXX wrong usage or buggy RGraph.domTree()
@@ -5170,7 +5170,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 			r_core_visual_prompt_input (core);
 			g->can->flags = r_cons_canvas_flags (core->cons);
 			r_cons_set_raw (core->cons, true);
-			core->cons->event_resize = (RConsEvent)agraph_refresh_oneshot;
+			core->cons->event_resize = (RConsEvent)agraph_refresh_queued;
 			if (!g) {
 				g->need_reload_nodes = true; // maybe too slow and unnecessary sometimes? better be safe and reload
 				get_bbupdate (g, core, fcn);

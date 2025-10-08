@@ -908,7 +908,7 @@ static void selection_widget_erase(RLine *line) {
 			cons->event_resize (cons->event_data);
 			RCore *core = (RCore *) (cons->user);
 			if (core) {
-				cons->cb_task_oneshot (&core->tasks, print_rline_task, core);
+				print_rline_task (core);
 			}
 		}
 		printf ("%s", R_CONS_CLEAR_FROM_CURSOR_TO_END);

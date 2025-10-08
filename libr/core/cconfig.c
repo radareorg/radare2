@@ -1587,6 +1587,33 @@ static bool cb_cmdtimes(void *user, void *data) {
 	return true;
 }
 
+static RCoreTaskMode taskmode_from_string(const char *s) {
+	if (s) {
+		if (r_str_startswith (s, "coop")) {
+			return R_CORE_TASK_MODE_COOP;
+		}
+		if (r_str_startswith (s, "thread")) {
+			return R_CORE_TASK_MODE_THREAD;
+		}
+		if (r_str_startswith (s, "fork")) {
+			return R_CORE_TASK_MODE_FORK;
+		}
+	}
+	return R_CORE_TASK_MODE_COOP; // default
+}
+
+static bool cb_cfg_taskmode(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (*node->value == '?') {
+		r_cons_printf (core->cons, "coop\nthread\nfork\n");
+		return false;
+	}
+	RCoreTaskMode mode = taskmode_from_string (node->value);
+	r_core_task_set_default_mode (&core->tasks, mode);
+	return true;
+}
+
 static bool cb_prefix_marker(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -3627,6 +3654,7 @@ R_API int r_core_config_init(RCore *core) {
 	}
 #endif
 	SETCB ("cmd.times", "", &cb_cmdtimes, "run when a command is repeated (number prefix)");
+	SETCB ("cfg.taskmode", "thread", &cb_cfg_taskmode, "default execution mode for new core tasks (core, thread, fork)");
 	/* pdb */
 	SETS ("pdb.useragent", "microsoft-symbol-server/6.11.0001.402", "User agent for Microsoft symbol server");
 	SETS ("pdb.server", "https://msdl.microsoft.com/download/symbols", "Space separated list of base URLs for Microsoft symbol servers");

@@ -138,19 +138,6 @@ Save the current session to `file`. After a successful save you can restore it l
 .Fn r_core_project_list "RCore *core" "int mode"
 .Pp
 List available projects. This is handy for UIs exposing multiple saved sessions.
-.Sh TASK MANAGEMENT
-.Ft RCoreTask *
-.Fn r_core_task_new "RCore *core" "bool create_cons" "const char *cmd" "RCoreTaskCallback cb" "void *user"
-.Pp
-Create a background task associated with the core. Tasks let callers run long-running operations (analysis, large searches) without blocking the main thread. Provide a callback to get notified of completion.
-.Ft void
-.Fn r_core_task_enqueue "RCoreTaskScheduler *scheduler" "RCoreTask *task"
-.Pp
-Schedule a previously created task for asynchronous execution.
-.Ft int
-.Fn r_core_task_run_sync "RCoreTaskScheduler *scheduler" "RCoreTask *task"
-.Pp
-Run a task synchronously when immediate completion is required (useful for tests and short scripts).
 .Sh UNDO SYSTEM
 .Ft void
 .Fn r_core_undo_push "RCore *core" "RCoreUndo *cu"
@@ -164,19 +151,6 @@ Revert the last undo entry recorded in the core. Restores previous state (flags,
 .Fn r_core_undo_print "RCore *core" "int mode" "RCoreUndoCondition *cond"
 .Pp
 Print or query the undo history for display or automated rollback.
-.Sh LOGGING
-.Ft void
-.Fn r_core_log_add "RCore *core" "const char *msg"
-.Pp
-Append a message to the core's internal log. Useful for diagnostics or communicating status from background tasks.
-.Ft void
-.Fn r_core_log_view "RCore *core" "int num" "int shift"
-.Pp
-Display a page of log entries. Useful to implement a scrolling log in frontends.
-.Ft char *
-.Fn r_core_log_get "RCore *core" "int index"
-.Pp
-Return the requested log message as a newly allocated string (caller must free it).
 .Sh SEARCH
 .Ft int
 .Fn r_core_search_cb "RCore *core" "ut64 from" "ut64 to" "RCoreSearchCallback cb"

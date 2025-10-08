@@ -1907,7 +1907,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 				if (r_core_task_running_tasks_count (&r->tasks) > 0) {
 					if (r_cons_yesno (r->cons, 'y', "There are running background tasks. Do you want to kill them? (Y/n)")) {
-						r_core_task_break_all (&r->tasks);
+						/* Use scheduler API to cancel all and join */
+						r_core_task_cancel_all (r, true);
 						r_core_task_join (&r->tasks, r->tasks.main_task, -1);
 					} else {
 						continue;

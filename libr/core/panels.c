@@ -4847,8 +4847,8 @@ static void __do_panels_resize(RCore *core) {
 	__do_panels_refresh (core);
 }
 
-static void __do_panels_refreshOneShot(RCore *core) {
-	r_core_task_enqueue_oneshot (&core->tasks, (RCoreTaskOneShot) __do_panels_resize, core);
+static void __do_panels_refreshQueued(RCore *core) {
+	__do_panels_resize (core);
 }
 
 static void __print_graph_cb(void *user, void *p) {
@@ -4862,7 +4862,7 @@ static void __print_graph_cb(void *user, void *p) {
 	}
 	core->cons->event_resize = NULL;
 	core->cons->event_data = core;
-	core->cons->event_resize = (RConsEvent) __do_panels_refreshOneShot;
+	core->cons->event_resize = (RConsEvent) __do_panels_refreshQueued;
 	__update_panel_contents (core, panel, cmdstr);
 	free (cmdstr);
 }
@@ -6929,7 +6929,7 @@ repeat:
 	core->panels = panels;
 	core->cons->event_resize = NULL; // avoid running old event with new data
 	core->cons->event_data = core;
-	core->cons->event_resize = (RConsEvent) __do_panels_refreshOneShot;
+	core->cons->event_resize = (RConsEvent) __do_panels_refreshQueued;
 	__panels_layout_refresh (core);
 	RPanel *cur = __get_cur_panel (panels);
 	r_cons_set_raw (core->cons, true);

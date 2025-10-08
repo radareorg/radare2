@@ -273,18 +273,7 @@ typedef struct {
 
 R_API void r_core_gadget_free(RCoreGadget *g);
 
-typedef struct r_core_tasks_t {
-	int task_id_next;
-	RList *tasks;
-	RList *tasks_queue;
-	RList *oneshot_queue;
-	int oneshots_enqueued;
-	struct r_core_task_t *current_task;
-	struct r_core_task_t *main_task;
-	RThreadLock *lock;
-	int tasks_running;
-	bool oneshot_running;
-} RCoreTaskScheduler;
+#include "r_core_task.h"
 
 typedef struct r_core_project_t {
 	char *name;
@@ -762,7 +751,6 @@ R_API RList *r_core_asm_back_disassemble_instr(RCore *core, ut64 addr, int len, 
 R_API RList *r_core_asm_back_disassemble_byte(RCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding);
 R_API ut32 r_core_asm_bwdis_len(RCore* core, int* len, ut64* start_addr, ut32 l);
 
-
 enum r_pdu_condition_t {
 	//pdu_esil,
 	pdu_instruction,
@@ -1009,67 +997,10 @@ R_API void cmd_agfb(RCore *core);
 R_API void cmd_agfb2(RCore *core, const char *s);
 R_API void cmd_agfb3(RCore *core, const char *s, int x, int y);
 
-/* tasks */
-
-typedef void (*RCoreTaskCallback)(void *user, char *out);
-
-typedef enum {
-	R_CORE_TASK_STATE_BEFORE_START,
-	R_CORE_TASK_STATE_RUNNING,
-	R_CORE_TASK_STATE_SLEEPING,
-	R_CORE_TASK_STATE_DONE
-} RTaskState;
-
-typedef struct r_core_task_t {
-	int id;
-	RTaskState state;
-	bool transient; // delete when finished
-	int refcount;
-	RThreadSemaphore *running_sem;
-	void *user;
-	RCore *core;
-	bool dispatched;
-	RThreadCond *dispatch_cond;
-	RThreadLock *dispatch_lock;
-	RThread *thread;
-	char *cmd;
-	char *res;
-	bool cmd_log;
-	RConsContext *cons_context;
-	RCoreTaskCallback cb;
-} RCoreTask;
-
-typedef void (*RCoreTaskOneShot)(void *);
-
 R_API void r_print_list(RCore *core, const char *input);
 R_API void r_core_echo(RCore *core, const char *msg);
 R_API RTable *r_core_table(RCore *core, const char *name);
 
-R_API void r_core_task_scheduler_init(RCoreTaskScheduler *tasks, RCore *core);
-R_API void r_core_task_scheduler_fini(RCoreTaskScheduler *tasks);
-R_API RCoreTask *r_core_task_get(RCoreTaskScheduler *scheduler, int id);
-R_API RCoreTask *r_core_task_get_incref(RCoreTaskScheduler *scheduler, int id);
-R_API void r_core_task_print(RCore *core, RCoreTask *task, PJ *pj, int mode);
-R_API void r_core_task_list(RCore *core, int mode);
-R_API int r_core_task_running_tasks_count(RCoreTaskScheduler *scheduler);
-R_API const char *r_core_task_status(RCoreTask *task);
-R_API RCoreTask *r_core_task_new(RCore *core, bool create_cons, const char *cmd, RCoreTaskCallback cb, void *user);
-R_API void r_core_task_incref(RCoreTask *task);
-R_API void r_core_task_decref(RCoreTask *task);
-R_API void r_core_task_enqueue(RCoreTaskScheduler *scheduler, RCoreTask *task);
-R_API void r_core_task_enqueue_oneshot(RCoreTaskScheduler *scheduler, RCoreTaskOneShot func, void *user);
-R_API int r_core_task_run_sync(RCoreTaskScheduler *scheduler, RCoreTask *task);
-R_API void r_core_task_sync_begin(RCoreTaskScheduler *scheduler);
-R_API void r_core_task_sync_end(RCoreTaskScheduler *scheduler);
-R_API void r_core_task_yield(RCoreTaskScheduler *scheduler);
-R_API void r_core_task_sleep_begin(RCoreTask *task);
-R_API void r_core_task_sleep_end(RCoreTask *task);
-R_API void r_core_task_break(RCoreTaskScheduler *scheduler, int id);
-R_API void r_core_task_break_all(RCoreTaskScheduler *scheduler);
-R_API int r_core_task_del(RCoreTaskScheduler *scheduler, int id);
-R_API void r_core_task_del_all_done(RCoreTaskScheduler *scheduler);
-R_API RCoreTask *r_core_task_self(RCoreTaskScheduler *scheduler);
-R_API void r_core_task_join(RCoreTaskScheduler *scheduler, RCoreTask *current, int id);
 typedef void (*inRangeCb) (RCore *core, ut64 from, ut64 to, int vsize, void *cb_user);
 R_IPI int r_core_search_value_in_range(RCore *core, bool relative, RInterval search_itv, ut64 vmin, ut64 vmax, int vsize, inRangeCb cb, void *cb_user);
 
