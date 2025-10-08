@@ -69,6 +69,7 @@ R_VEC_TYPE(RVecAnalRef, RAnalRef);
 #include "cmd_quit.inc.c"
 #include "cmd_hash.inc.c"
 #include "cmd_debug.inc.c"
+#include "cmd_task.inc.c"
 #include "cmd_log.inc.c"
 #include "cmd_yank.inc.c"
 #include "cmd_flag.inc.c"
