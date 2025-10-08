@@ -2810,8 +2810,8 @@ static bool cmd_r2cmd(RCore *core, const char *_input) {
 		r_sys_cmdf ("%s", input);
 		// rc = __runMain (core->r_main_radare2, input);
 	} else if (r_str_startswith (input, "rasm2")) {
-		r_sys_cmdf ("%s", input);
-		// rc = __runMain (core->r_main_rasm2, input);
+		// r_sys_cmdf ("%s", input);
+		rc = __runMain (core->r_main_rasm2, input);
 	} else if (r_str_startswith (input, "rabin2")) {
 		r_sys_cmdf ("%s", input);
 		// rc = __runMain (core->r_main_rabin2, input);
