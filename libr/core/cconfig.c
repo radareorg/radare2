@@ -1588,17 +1588,16 @@ static bool cb_cmdtimes(void *user, void *data) {
 }
 
 static RCoreTaskMode taskmode_from_string(const char *s) {
-	if (!s || !*s) {
-		return R_CORE_TASK_MODE_COOP;
-	}
-	if (r_str_startswith (s, "coop")) {
-		return R_CORE_TASK_MODE_COOP;
-	}
-	if (r_str_startswith (s, "thread")) {
-		return R_CORE_TASK_MODE_THREAD;
-	}
-	if (r_str_startswith (s, "fork")) {
-		return R_CORE_TASK_MODE_FORK;
+	if (s) {
+		if (r_str_startswith (s, "coop")) {
+			return R_CORE_TASK_MODE_COOP;
+		}
+		if (r_str_startswith (s, "thread")) {
+			return R_CORE_TASK_MODE_THREAD;
+		}
+		if (r_str_startswith (s, "fork")) {
+			return R_CORE_TASK_MODE_FORK;
+		}
 	}
 	return R_CORE_TASK_MODE_COOP; // default
 }
@@ -1611,7 +1610,6 @@ static bool cb_cfg_taskmode(void *user, void *data) {
 		return false;
 	}
 	RCoreTaskMode mode = taskmode_from_string (node->value);
-	/* Use new clearer API; old kept for compat */
 	r_core_task_set_default_mode (&core->tasks, mode);
 	return true;
 }

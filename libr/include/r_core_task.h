@@ -109,25 +109,12 @@ R_API void r_core_task_set_foreground (RCoreTaskScheduler *scheduler, int task_i
 R_API RCoreTask *r_core_task_get_foreground (RCoreTaskScheduler *scheduler);
 
 /* Minimal lifecycle API for tasks */
-typedef struct r_core_task_spec_t {
-    const char *cmd;
-    RCoreTaskCallback cb;
-    void *user;
-    bool capture_cons; // whether to clone cons context
-    RCoreTaskMode mode; // -1 to use scheduler default
-} RCoreTaskSpec;
-
-R_API RCoreTask *r_core_task_submit (RCore *core, const RCoreTaskSpec *sp);
+R_API RCoreTask *r_core_task_submit (RCore *core, const char *cmd, RCoreTaskCallback cb, void *user, bool capture_cons, int mode);
 R_API int         r_core_task_id (const RCoreTask *t);
-R_API RCoreTaskMode r_core_task_mode (const RCoreTask *t);
-
 /* Join with optional timeout (0 = non-blocking poll) */
-R_API bool        r_core_task_join2 (RCoreTask *t, ut64 timeout_ms);
-/* Cooperative cancel request (best-effort) */
-R_API bool        r_core_task_cancel (RCoreTask *t);
-/* Hard kill when possible (thread/fork as supported) */
-R_API bool        r_core_task_kill (RCoreTask *t);
-R_API bool        r_core_task_is_done (const RCoreTask *t);
+R_API bool        r_core_task_wait (RCoreTask *t, ut64 timeout_ms);
+/* Cancel task; if hard=true try to kill forcefully when supported */
+R_API bool        r_core_task_cancel (RCoreTask *t, bool hard);
 /* Free handle; task must be done or canceled */
 R_API void        r_core_task_free (RCoreTask *t);
 
