@@ -2839,7 +2839,6 @@ R_API void r_core_fini(RCore *c) {
 	// avoid double free
 	r_list_free (c->ropchain);
 	r_table_free (c->table);
-	r_event_free (c->ev);
 	R_FREE (c->cmdlog);
 	free (c->lastsearch);
 	r_list_free (c->cmdqueue);
@@ -2860,6 +2859,7 @@ R_API void r_core_fini(RCore *c) {
 	r_list_free (c->watchers);
 	r_list_free (c->scriptstack);
 	r_core_task_scheduler_fini (&c->tasks);
+	r_event_free (c->ev);
 	// Free cmd and its plugins before freeing event system
 	c->rcmd = r_cmd_free (c->rcmd);
 	r_lib_free (c->lib);
