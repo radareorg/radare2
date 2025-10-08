@@ -62,7 +62,6 @@ R_API void r_core_task_scheduler_fini(RCoreTaskScheduler *tasks) {
 	}
 	r_list_free (tasks->tasks);
 	r_list_free (tasks->tasks_queue);
-	/* no oneshot queue to free */
 	r_th_lock_free (tasks->lock);
 }
 
@@ -504,8 +503,6 @@ R_API void r_core_task_enqueue(RCoreTaskScheduler *scheduler, RCoreTask *task) {
 	tasks_lock_leave (scheduler, &old_sigset);
 }
 
-/* r_core_task_enqueue_oneshot removed */
-
 R_API int r_core_task_run_sync(RCoreTaskScheduler *scheduler, RCoreTask *task) {
 	R_RETURN_VAL_IF_FAIL (scheduler && task, -1);
 	task->thread = NULL;
@@ -603,11 +600,6 @@ R_API RCoreTask *r_core_task_get(RCoreTaskScheduler *scheduler, int id) {
 	}
 	return NULL;
 }
-
-// r_core_task_get_incref removed; use r_core_task_get
-
-/* r_core_task_break and r_core_task_break_all have been merged into
-* r_core_task_cancel. Use r_core_task_cancel (t, hard) on each task. */
 
 R_API int r_core_task_del(RCoreTaskScheduler *scheduler, int id) {
 	if (!scheduler) {
