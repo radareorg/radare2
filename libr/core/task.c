@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2014-2025 - pancake */
 
 #include <r_core.h>
-#include <unistd.h>
 
 // Per-thread current task pointer (TLS)
 static R_TH_LOCAL RCoreTask *task_tls_current = NULL;
@@ -776,12 +775,8 @@ R_API void r_core_task_del_all_done(RCoreTaskScheduler *scheduler) {
 	}
 }
 
-/* New API implementations */
-
 R_API void r_core_task_set_foreground(RCoreTaskScheduler *scheduler, int task_id) {
-	if (!scheduler) {
-		return;
-	}
+	R_RETURN_IF_FAIL (scheduler);
 	TASK_SIGSET_T old_sigset;
 	tasks_lock_enter (scheduler, &old_sigset);
 	RCoreTask *t = r_core_task_get (scheduler, task_id);
@@ -792,16 +787,12 @@ R_API void r_core_task_set_foreground(RCoreTaskScheduler *scheduler, int task_id
 }
 
 R_API RCoreTask *r_core_task_get_foreground(RCoreTaskScheduler *scheduler) {
-	if (!scheduler) {
-		return NULL;
-	}
+	R_RETURN_VAL_IF_FAIL (scheduler, NULL);
 	return scheduler->foreground_task ? scheduler->foreground_task : scheduler->main_task;
 }
 
 static int _task_run_threaded(RCoreTaskScheduler *scheduler, RCoreTask *task) {
-	if (!scheduler || !task) {
-		return -1;
-	}
+	R_RETURN_VAL_IF_FAIL (scheduler && task, -1);
 	task->mode = R_CORE_TASK_MODE_THREAD;
 	if (!task->task_core) {
 		task->task_core = r_core_clone_for_task (task->core);
@@ -811,9 +802,7 @@ static int _task_run_threaded(RCoreTaskScheduler *scheduler, RCoreTask *task) {
 }
 
 static int _task_run_forked(RCoreTaskScheduler *scheduler, RCoreTask *task) {
-	if (!scheduler || !task) {
-		return -1;
-	}
+	R_RETURN_VAL_IF_FAIL (scheduler && task, -1);
 
 #if defined(__WINDOWS__) || defined(__EMSCRIPTEN__)
 	// Fork mode is not supported on Windows or WebAssembly
@@ -835,17 +824,12 @@ static int _task_run_forked(RCoreTaskScheduler *scheduler, RCoreTask *task) {
 }
 
 static RCore *r_core_clone_for_task(RCore *core) {
-	if (!core) {
-		return NULL;
-	}
+	R_RETURN_VAL_IF_FAIL (core, NULL);
 	return mycore_new (core);
 }
 
-/* Backward compat shim; prefer r_core_task_set_default_mode () */
-R_API void r_core_task_setmode(RCoreTaskScheduler *scheduler, RCoreTaskMode mode) {
-	if (!scheduler) {
-		return;
-	}
+R_API void r_core_task_set_default_mode (RCoreTaskScheduler *scheduler, RCoreTaskMode mode) {
+	R_RETURN_IF_FAIL (scheduler);
 	TASK_SIGSET_T old_sigset;
 	tasks_lock_enter (scheduler, &old_sigset);
 #if defined(__WINDOWS__) || defined(__EMSCRIPTEN__)
@@ -860,21 +844,8 @@ R_API void r_core_task_setmode(RCoreTaskScheduler *scheduler, RCoreTaskMode mode
 	tasks_lock_leave (scheduler, &old_sigset);
 }
 
-/* Backward compat shim; prefer r_core_task_get_default_mode () */
-R_API RCoreTaskMode r_core_task_scheduler_get_default_mode(RCoreTaskScheduler *scheduler) {
-	if (!scheduler) {
-		return R_CORE_TASK_MODE_COOP;
-	}
-	return scheduler->default_mode;
-}
-
-/* New clearer public APIs */
-R_API void r_core_task_set_default_mode (RCoreTaskScheduler *scheduler, RCoreTaskMode mode) {
-	r_core_task_setmode (scheduler, mode);
-}
-
 R_API RCoreTaskMode r_core_task_get_default_mode (RCoreTaskScheduler *scheduler) {
-	return r_core_task_scheduler_get_default_mode (scheduler);
+	return R_CORE_TASK_MODE_COOP;
 }
 
 R_API int r_core_task_run (RCoreTaskScheduler *scheduler, RCoreTask *task, int mode) {
@@ -936,8 +907,7 @@ R_API bool r_core_task_cancel(RCoreTask *t, bool hard) {
 	R_RETURN_VAL_IF_FAIL (t, false);
 #if !defined(__WINDOWS__) && !defined(__EMSCRIPTEN__)
 	if (hard && t->mode == R_CORE_TASK_MODE_FORK && t->pid > 0) {
-		int r = kill (t->pid, SIGKILL);
-		return r == 0;
+		return kill (t->pid, SIGKILL) == 0;
 	}
 #endif
 	// Cooperative: request break via cons context if present
@@ -949,13 +919,10 @@ R_API bool r_core_task_cancel(RCoreTask *t, bool hard) {
 }
 
 R_API void r_core_task_free(RCoreTask *t) {
-	if (!t) {
-		return;
+	if (t) {
+		if (t->thread) {
+			r_th_wait (t->thread);
+		}
 	}
-	// Ensure finished
-	if (t->thread) {
-		r_th_wait (t->thread);
-	}
-	// Drop the last reference
 	r_core_task_decref (t);
 }
