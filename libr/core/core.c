@@ -2832,10 +2832,9 @@ R_API void r_core_fini(RCore *c) {
 	r_log_add_callback (cbcore, NULL);
 	r_muta_free (c->muta);
 	r_th_lock_free (c->lock);
-		r_core_task_cancel_all (c, true);
+	r_core_task_cancel_all (c, true);
 	r_core_task_join (&c->tasks, NULL, -1);
 	r_core_wait (c);
-	/* TODO: it leaks as shit */
 	//update_sdb (c);
 	// avoid double free
 	r_list_free (c->ropchain);
