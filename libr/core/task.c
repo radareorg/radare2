@@ -670,7 +670,7 @@ static int _task_run_threaded(RCoreTaskScheduler *scheduler, RCoreTask *task) {
 static int _task_run_forked(RCoreTaskScheduler *scheduler, RCoreTask *task) {
 	R_RETURN_VAL_IF_FAIL (scheduler && task, -1);
 
-#if defined(__WINDOWS__) || defined(__EMSCRIPTEN__)
+#if R2__WINDOWS__ || defined(__EMSCRIPTEN__)
 	// Fork mode is not supported on Windows or WebAssembly
 	R_LOG_WARN ("task: fork mode is not supported on this platform; running in thread mode instead");
 	return _task_run_threaded (scheduler, task);
@@ -694,7 +694,7 @@ R_API void r_core_task_set_default_mode(RCoreTaskScheduler *scheduler, RCoreTask
 	R_RETURN_IF_FAIL (scheduler);
 	TASK_SIGSET_T old_sigset;
 	tasks_lock_enter (scheduler, &old_sigset);
-#if defined(__WINDOWS__) || defined(__EMSCRIPTEN__)
+#if R2__WINDOWS__ || defined(__EMSCRIPTEN__)
 	if (mode == R_CORE_TASK_MODE_FORK) {
 		// Disallow fork default on unsupported platforms
 		scheduler->default_mode = R_CORE_TASK_MODE_THREAD;
@@ -773,9 +773,11 @@ R_API bool r_core_task_wait(RCoreTask *t, ut64 timeout_ms) {
 
 R_API bool r_core_task_cancel(RCoreTask *t, bool hard) {
 	R_RETURN_VAL_IF_FAIL (t, false);
-#if !defined(__WINDOWS__) && !defined(__EMSCRIPTEN__)
+#if R2__WINDOWS__
+	// cant hard cancel
+#else
 	if (hard && t->mode == R_CORE_TASK_MODE_FORK && t->pid > 0) {
-		return kill (t->pid, SIGKILL) == 0;
+		return r_sandbox_kill (t->pid, 9) == 0;
 	}
 #endif
 	// Cooperative: request break via cons context if present
