@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #include <r_th.h>
 #include <r_util.h>
@@ -17,13 +17,6 @@
 #include <kernel/scheduler.h>
 #endif
 
-#if HAVE_PTHREAD
-// 1MB per thread. otherwise running analysis can segfault
-// this is pthread-specific for now, and will be good if we can have control
-// on this at some point, via api or dynamically depending on the task.
-#define THREAD_STACK_SIZE (1024 * 1024)
-#endif
-
 #if R2__WINDOWS__
 static DWORD WINAPI _r_th_launcher(void *_th) {
 #else
@@ -38,10 +31,10 @@ static void *_r_th_launcher(void *_th) {
 		r_th_lock_leave (th->lock);
 		while (!is_ready) {
 			// spinlock
-#ifdef	__GNUC__
+#ifdef __GNUC__
 			__asm__ volatile ("nop");
 #else
-	//		r_sys_usleep (1);
+			// r_sys_usleep (1);
 #endif
 			r_th_lock_enter (th->lock);
 			if (th->breaked) {
@@ -163,11 +156,11 @@ R_API bool r_th_getname(RThread *th, char *name, size_t len) {
 		R_LOG_ERROR ("Failed to get thread name");
 		return false;
 	}
-#elif (__FreeBSD__ &&  __FreeBSD_version >= 1200000) || __DragonFly__  || (__OpenBSD__ && OpenBSD >= 201905)
+#elif __DragonFly__ ||(__FreeBSD__ && __FreeBSD_version >= 1200000) ||(__OpenBSD__ && OpenBSD >= 201905)
 	pthread_get_name_np (th->tid, name, len);
 #elif defined(__HAIKU__)
 	thread_info ti;
-	size_t flen = len < B_OS_NAME_LENGTH ? len : B_OS_NAME_LENGTH;
+	size_t flen = len < B_OS_NAME_LENGTH? len: B_OS_NAME_LENGTH;
 
 	if (get_thread_info ((thread_id)th->tid, &ti) != B_OK) {
 		R_LOG_ERROR ("Failed to get thread name");
@@ -182,78 +175,6 @@ R_API bool r_th_getname(RThread *th, char *name, size_t len) {
 	return true;
 }
 
-#if 0
-// disabled because its not really useful and hard to compile
-R_API bool r_th_setaffinity(RThread *th, int cpuid) {
-#if !WANT_THREADS || defined(__wasi__) || defined(_WASI_EMULATED_SIGNAL)
-	return true;
-#elif __linux__
-#if defined(__GLIBC__) && defined (__GLIBC_MINOR__) && (__GLIBC__ <= 2) && (__GLIBC_MINOR__ <= 2)
-	// Old versions of GNU libc don't have this feature
-#pragma message("warning r_th_setaffinity not implemented")
-#else
-	cpu_set_t c;
-	CPU_ZERO(&c);
-	CPU_SET(cpuid, &c);
-#if 0
-	if (sched_setaffinity (th->tid, sizeof (c), &c) != 0) {
-		R_LOG_ERROR ("Failed to set cpu affinity");
-		return false;
-	}
-#endif
-#endif
-#elif __FreeBSD__ || __DragonFly__
-	cpuset_t c;
-	CPU_ZERO(&c);
-	CPU_SET(cpuid, &c);
-
-	if (pthread_setaffinity_np (th->tid, sizeof (c), &c) != 0) {
-		R_LOG_ERROR ("Failed to set cpu affinity");
-		return false;
-	}
-#elif __NetBSD__
-	cpuset_t *c;
-	c = cpuset_create ();
-
-	if (pthread_setaffinity_np (th->tid, cpuset_size(c), c) != 0) {
-		cpuset_destroy (c);
-		R_LOG_ERROR ("Failed to set cpu affinity");
-		return false;
-	}
-
-	cpuset_destroy (c);
-#elif __APPLE__
-	thread_affinity_policy_data_t c = {cpuid};
-	if (thread_policy_set (pthread_mach_thread_np (th->tid),
-		THREAD_AFFINITY_POLICY, (thread_policy_t)&c, 1) != KERN_SUCCESS) {
-		R_LOG_ERROR ("Failed to set cpu affinity");
-		return false;
-	}
-#elif R2__WINDOWS__
-	if (SetThreadAffinityMask (th->tid, (DWORD_PTR)1 << cpuid) == 0) {
-		R_LOG_ERROR ("Failed to set cpu affinity");
-		return false;
-	}
-#elif __sun
-	psetid_t c;
-
-	pset_create (&c);
-	pset_assign (c, cpuid, NULL);
-
-	if (pset_bind (c, P_PID, r_sys_getpid (), NULL)) {
-		pset_destroy (c);
-		R_LOG_ERROR ("Failed to set cpu affinity");
-		return false;
-	}
-
-	pset_destroy (c);
-#else
-#pragma message("warning r_th_setaffinity not implemented")
-#endif
-	return true;
-}
-#endif
-
 R_API RThread *r_th_new(RThreadFunction fun, void *user, ut32 delay) {
 	RThread *th = R_NEW0 (RThread);
 	th->lock = r_th_lock_new (true);
@@ -264,12 +185,12 @@ R_API RThread *r_th_new(RThreadFunction fun, void *user, ut32 delay) {
 	th->breaked = false;
 	th->ready = false;
 #if HAVE_PTHREAD
+	const size_t THREAD_STACK_SIZE = 8 * 1024 * 1024; // 8MB
 	pthread_attr_t *pattr = NULL;
 	pthread_attr_t attr;
-	int rc = pthread_attr_init(&attr);
+	int rc = pthread_attr_init (&attr);
 	if (rc != -1) {
-		rc = pthread_attr_setstacksize (&attr, THREAD_STACK_SIZE);
-		if (rc != -1) {
+		if (pthread_attr_setstacksize (&attr, THREAD_STACK_SIZE) != -1) {
 			pattr = &attr;
 		}
 	}
@@ -324,7 +245,7 @@ R_API bool r_th_start(RThread *th) {
 		return false;
 	}
 	if (th->ready) {
-		//thread is currently running and has launched user function
+		// thread is currently running and has launched user function
 		r_th_lock_leave (th->lock);
 		return true;
 	}
@@ -376,16 +297,3 @@ R_API void *r_th_kill_free(struct r_th_t *th) {
 	r_th_free (th);
 	return NULL;
 }
-
-#if 0
-
-// Thread Pipes
-typedef struct r_th_pipe_t {
-	RList *msglist;
-	RThread *th;
-	//RThreadLock *lock;
-} RThreadPipe;
-
-r_th_pipe_new();
-
-#endif
