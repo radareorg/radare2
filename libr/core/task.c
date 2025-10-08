@@ -8,8 +8,8 @@ static R_TH_LOCAL RCoreTask *task_tls_current = NULL;
 
 // Internal helpers (not exposed in headers)
 static RCore *r_core_clone_for_task(RCore *core);
-static int r_core_task_run_threaded(RCoreTaskScheduler *scheduler, RCoreTask *task);
-static int r_core_task_run_forked(RCoreTaskScheduler *scheduler, RCoreTask *task);
+static int _task_run_threaded(RCoreTaskScheduler *scheduler, RCoreTask *task);
+static int _task_run_forked(RCoreTaskScheduler *scheduler, RCoreTask *task);
 
 #define CUSTOMCORE 0
 
@@ -798,19 +798,19 @@ R_API RCoreTask *r_core_task_get_foreground(RCoreTaskScheduler *scheduler) {
 	return scheduler->foreground_task ? scheduler->foreground_task : scheduler->main_task;
 }
 
-static int r_core_task_run_threaded(RCoreTaskScheduler *scheduler, RCoreTask *task) {
+static int _task_run_threaded(RCoreTaskScheduler *scheduler, RCoreTask *task) {
 	if (!scheduler || !task) {
 		return -1;
 	}
 	task->mode = R_CORE_TASK_MODE_THREAD;
-    if (!task->task_core) {
-        task->task_core = r_core_clone_for_task (task->core);
+	if (!task->task_core) {
+		task->task_core = r_core_clone_for_task (task->core);
 	}
 	r_core_task_enqueue (scheduler, task);
 	return task->id;
 }
 
-static int r_core_task_run_forked(RCoreTaskScheduler *scheduler, RCoreTask *task) {
+static int _task_run_forked(RCoreTaskScheduler *scheduler, RCoreTask *task) {
 	if (!scheduler || !task) {
 		return -1;
 	}
@@ -818,11 +818,11 @@ static int r_core_task_run_forked(RCoreTaskScheduler *scheduler, RCoreTask *task
 #if defined(__WINDOWS__) || defined(__EMSCRIPTEN__)
 	// Fork mode is not supported on Windows or WebAssembly
 	R_LOG_WARN ("task: fork mode is not supported on this platform; running in thread mode instead");
-	return r_core_task_run_threaded (scheduler, task);
+    return _task_run_threaded (scheduler, task);
 #else
 	task->mode = R_CORE_TASK_MODE_FORK;
-    if (!task->task_core) {
-        task->task_core = r_core_clone_for_task (task->core);
+	if (!task->task_core) {
+		task->task_core = r_core_clone_for_task (task->core);
 	}
 	if (pipe (task->result_pipe) == -1) {
 		// pipe failed; mark as unavailable
@@ -841,6 +841,7 @@ static RCore *r_core_clone_for_task(RCore *core) {
 	return mycore_new (core);
 }
 
+/* Backward compat shim; prefer r_core_task_set_default_mode () */
 R_API void r_core_task_setmode(RCoreTaskScheduler *scheduler, RCoreTaskMode mode) {
 	if (!scheduler) {
 		return;
@@ -859,9 +860,37 @@ R_API void r_core_task_setmode(RCoreTaskScheduler *scheduler, RCoreTaskMode mode
 	tasks_lock_leave (scheduler, &old_sigset);
 }
 
+/* Backward compat shim; prefer r_core_task_get_default_mode () */
 R_API RCoreTaskMode r_core_task_scheduler_get_default_mode(RCoreTaskScheduler *scheduler) {
 	if (!scheduler) {
 		return R_CORE_TASK_MODE_COOP;
 	}
 	return scheduler->default_mode;
 }
+
+/* New clearer public APIs */
+R_API void r_core_task_set_default_mode (RCoreTaskScheduler *scheduler, RCoreTaskMode mode) {
+	r_core_task_setmode (scheduler, mode);
+}
+
+R_API RCoreTaskMode r_core_task_get_default_mode (RCoreTaskScheduler *scheduler) {
+	return r_core_task_scheduler_get_default_mode (scheduler);
+}
+
+R_API int r_core_task_run (RCoreTaskScheduler *scheduler, RCoreTask *task, int mode) {
+	R_RETURN_VAL_IF_FAIL (scheduler && task, -1);
+	RCoreTaskMode m = (mode < 0) ? r_core_task_get_default_mode (scheduler) : (RCoreTaskMode)mode;
+	switch (m) {
+	case R_CORE_TASK_MODE_COOP:
+		// cooperative: run synchronously in scheduler context
+		return r_core_task_run_sync (scheduler, task);
+	case R_CORE_TASK_MODE_THREAD:
+		return _task_run_threaded (scheduler, task);
+	case R_CORE_TASK_MODE_FORK:
+		return _task_run_forked (scheduler, task);
+	}
+	return -1;
+}
+
+R_API int r_core_task_run_threaded (RCoreTaskScheduler *scheduler, RCoreTask *task) { return _task_run_threaded (scheduler, task); }
+R_API int r_core_task_run_forked (RCoreTaskScheduler *scheduler, RCoreTask *task) { return _task_run_forked (scheduler, task); }

@@ -95,8 +95,18 @@ R_API void r_core_task_join(RCoreTaskScheduler *scheduler, RCoreTask *current, i
 R_API void r_core_task_set_foreground(RCoreTaskScheduler *scheduler, int task_id);
 R_API RCoreTask *r_core_task_get_foreground(RCoreTaskScheduler *scheduler);
 /* Hidden: task run helpers are internal; use enqueue/new with mode */
-R_API void r_core_task_setmode(RCoreTaskScheduler *scheduler, RCoreTaskMode mode);
-R_API RCoreTaskMode r_core_task_scheduler_get_default_mode(RCoreTaskScheduler *scheduler);
+/* Preferred public API: clearer scheduler controls */
+/* Set and get the scheduler default execution mode (coop/thread/fork) */
+R_API void r_core_task_set_default_mode (RCoreTaskScheduler *scheduler, RCoreTaskMode mode);
+R_API RCoreTaskMode r_core_task_get_default_mode (RCoreTaskScheduler *scheduler);
+/* Run task with selected mode: -1 to use default, otherwise explicit mode */
+R_API int r_core_task_run (RCoreTaskScheduler *scheduler, RCoreTask *task, int mode);
+/* Convenience wrappers */
+R_API int r_core_task_run_threaded (RCoreTaskScheduler *scheduler, RCoreTask *task);
+R_API int r_core_task_run_forked (RCoreTaskScheduler *scheduler, RCoreTask *task);
+/* Foreground task helpers */
+R_API void r_core_task_set_foreground (RCoreTaskScheduler *scheduler, int task_id);
+R_API RCoreTask *r_core_task_get_foreground (RCoreTaskScheduler *scheduler);
 
 #ifdef __cplusplus
 }
