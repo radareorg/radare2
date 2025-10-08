@@ -845,6 +845,35 @@ R_API bool r_core_task_cancel(RCoreTask *t, bool hard) {
 	return false;
 }
 
+/* Cancel all running or pending tasks in the scheduler */
+R_API void r_core_task_cancel_all(RCore *core, bool hard) {
+    R_RETURN_IF_FAIL (core);
+    RCoreTaskScheduler *scheduler = &core->tasks;
+    TASK_SIGSET_T old_sigset;
+    tasks_lock_enter (scheduler, &old_sigset);
+    RListIter *it;
+    RCoreTask *t;
+    r_list_foreach (scheduler->tasks, it, t) {
+        if (!t) {
+            continue;
+        }
+        if (t->state != R_CORE_TASK_STATE_DONE) {
+            /* avoid killing the main task; only request break */
+            if (t == scheduler->main_task) {
+                if (t->cons_context) {
+                    r_cons_context_break (t->cons_context);
+                }
+                continue;
+            }
+            /* release lock while canceling to avoid potential callbacks deadlocks */
+            tasks_lock_leave (scheduler, &old_sigset);
+            r_core_task_cancel (t, hard);
+            tasks_lock_enter (scheduler, &old_sigset);
+        }
+    }
+    tasks_lock_leave (scheduler, &old_sigset);
+}
+
 R_API void r_core_task_free(RCoreTask *t) {
     if (t && t->thread) {
         r_th_wait (t->thread);

@@ -110,6 +110,8 @@ R_API int         r_core_task_id (const RCoreTask *t);
 R_API bool        r_core_task_wait (RCoreTask *t, ut64 timeout_ms);
 /* Cancel task; if hard=true try to kill forcefully when supported */
 R_API bool        r_core_task_cancel (RCoreTask *t, bool hard);
+/* Cancel all tasks in a core */
+R_API void        r_core_task_cancel_all (RCore *core, bool hard);
 /* Free handle; task must be done or canceled */
 R_API void        r_core_task_free (RCoreTask *t);
 
