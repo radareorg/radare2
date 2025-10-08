@@ -1,6 +1,10 @@
 /* radare - LGPL - Copyright 2012-2025 - pancake */
 
 #include <r_main.h>
+#include <r_userconf.h>
+#include <r_util.h>
+#include <ctype.h>
+#include <string.h>
 
 R_LIB_VERSION(r_main);
 
@@ -83,4 +87,75 @@ R_API int r_main_version_print(const char *progname, int mode) {
 		break;
 	}
 	return 0;
+}
+
+R_API bool r_main_r2_build_flags(char **out_cflags, char **out_ldflags) {
+	R_RETURN_VAL_IF_FAIL (out_cflags && out_ldflags, false);
+	*out_cflags = NULL;
+	*out_ldflags = NULL;
+#if R2__WINDOWS__
+	char *libdir = r_str_r2_prefix (R2_LIBDIR);
+	char *incdir = r_str_r2_prefix (R2_INCDIR);
+#else
+	char *libdir = strdup (R2_LIBDIR);
+	char *incdir = strdup (R2_INCDIR);
+#endif
+	if (!libdir || !incdir) {
+		free (libdir);
+		free (incdir);
+		return false;
+	}
+	if (!*out_cflags) {
+		*out_cflags = r_str_newf ("-I%s", incdir);
+	}
+	if (!*out_ldflags) {
+		RStrBuf *sb = r_strbuf_new ("");
+		const char *libs_default[] = {
+			"-lr_core",
+			"-lr_config",
+			"-lr_debug",
+			"-lr_bin",
+			"-lr_lang",
+			"-lr_anal",
+			"-lr_bp",
+			"-lr_egg",
+			"-lr_asm",
+			"-lr_flag",
+			"-lr_search",
+			"-lr_syscall",
+			"-lr_fs",
+			"-lr_io",
+			"-lr_socket",
+			"-lr_cons",
+			"-lr_magic",
+			"-lr_muta",
+			"-lr_arch",
+			"-lr_esil",
+			"-lr_reg",
+			"-lr_util",
+			NULL
+		};
+		if (sb) {
+			r_strbuf_appendf (sb, "-L%s", libdir);
+			int i = 0;
+			while (libs_default[i]) {
+				r_strbuf_appendf (sb, " %s", libs_default[i]);
+				i++;
+			}
+#if R2__UNIX__ && !__APPLE__
+			r_strbuf_append (sb, " -ldl");
+#endif
+			*out_ldflags = r_strbuf_drain (sb);
+		}
+		ok = true;
+	}
+	if (!*out_cflags) {
+		*out_cflags = strdup ("");
+	}
+	if (!*out_ldflags) {
+		*out_ldflags = strdup ("");
+	}
+	free (libdir);
+	free (incdir);
+	return ok;
 }

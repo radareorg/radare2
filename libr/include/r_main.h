@@ -41,6 +41,7 @@ R_API int r_main_rasign2(int argc, const char **argv);
 R_API int r_main_r2pm(int argc, const char **argv);
 R_API int r_main_rapatch2(int argc, const char **argv);
 R_API int r_main_rafs2(int argc, const char **argv);
+R_API bool r_main_r2_build_flags(char **out_cflags, char **out_ldflags);
 
 #ifdef __cplusplus
 }
