@@ -894,3 +894,86 @@ R_API int r_core_task_run (RCoreTaskScheduler *scheduler, RCoreTask *task, int m
 
 R_API int r_core_task_run_threaded (RCoreTaskScheduler *scheduler, RCoreTask *task) { return _task_run_threaded (scheduler, task); }
 R_API int r_core_task_run_forked (RCoreTaskScheduler *scheduler, RCoreTask *task) { return _task_run_forked (scheduler, task); }
+
+/* Minimal lifecycle API implementation */
+R_API RCoreTask *r_core_task_submit(RCore *core, const RCoreTaskSpec *sp) {
+	R_RETURN_VAL_IF_FAIL (core && sp && sp->cmd, NULL);
+	bool cap = sp->capture_cons;
+	RCoreTaskMode mode = sp->mode;
+	RCoreTask *t = r_core_task_new (core, mode, cap, sp->cmd, sp->cb, sp->user);
+	if (!t) {
+		return NULL;
+	}
+	if (mode == (RCoreTaskMode)-1) {
+		mode = core->tasks.default_mode;
+	}
+	if (mode == R_CORE_TASK_MODE_COOP) {
+		// Run synchronously on current thread
+		r_core_task_run_sync (&core->tasks, t);
+	} else if (mode == R_CORE_TASK_MODE_THREAD) {
+		_task_run_threaded (&core->tasks, t);
+	} else {
+		_task_run_forked (&core->tasks, t);
+	}
+	return t;
+}
+
+R_API int r_core_task_id(const RCoreTask *t) {
+	return t ? t->id : -1;
+}
+
+R_API RCoreTaskMode r_core_task_mode(const RCoreTask *t) {
+	return t ? t->mode : R_CORE_TASK_MODE_COOP;
+}
+
+R_API bool r_core_task_join2(RCoreTask *t, ut64 timeout_ms) {
+	R_RETURN_VAL_IF_FAIL (t, false);
+	if (!t->thread) {
+		// Synchronous or already joined
+		return true;
+	}
+	if (timeout_ms == 0) {
+		return t->state == R_CORE_TASK_STATE_DONE;
+	}
+	// Fallback: blocking wait (no timed wait API in r_th)
+	r_th_wait (t->thread);
+	return true;
+}
+
+R_API bool r_core_task_cancel(RCoreTask *t) {
+	R_RETURN_VAL_IF_FAIL (t, false);
+	// Cooperative: request break via cons context if present
+	if (t->cons_context) {
+		r_cons_context_break (t->cons_context);
+		return true;
+	}
+	return false;
+}
+
+R_API bool r_core_task_kill(RCoreTask *t) {
+	R_RETURN_VAL_IF_FAIL (t, false);
+#if !defined(__WINDOWS__) && !defined(__EMSCRIPTEN__)
+	if (t->mode == R_CORE_TASK_MODE_FORK && t->pid > 0) {
+		int r = kill (t->pid, SIGKILL);
+		return r == 0;
+	}
+#endif
+	// Threads: no safe portable hard-kill; fall back to cancel
+	return r_core_task_cancel (t);
+}
+
+R_API bool r_core_task_is_done(const RCoreTask *t) {
+	return t ? (t->state == R_CORE_TASK_STATE_DONE) : true;
+}
+
+R_API void r_core_task_free(RCoreTask *t) {
+	if (!t) {
+		return;
+	}
+	// Ensure finished
+	if (t->thread) {
+		r_th_wait (t->thread);
+	}
+	// Drop the last reference
+	r_core_task_decref (t);
+}
