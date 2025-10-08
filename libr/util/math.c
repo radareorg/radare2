@@ -236,7 +236,10 @@ R_API const char *r_num_math_index(RNum *num, const char *p) {
 		num->nc.calc_len = strlen (p);
 		num->nc.calc_i = 0;
 	}
-	return num->nc.calc_buf + num->nc.calc_i;
+	if (num->nc.calc_buf) {
+		return num->nc.calc_buf + num->nc.calc_i;
+	}
+	return NULL;
 }
 
 static bool cin_get(RNum *num, RNumCalc *nc, char *c) {
@@ -421,15 +424,16 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 			} else if (ch == ']') {
 				error (num, nc, "cannot find opening [");
 				return 0;
-			}
-			while (cin_get (num, nc, &ch) && isvalidchar ((ut8)ch)) {
-				if (i >= R_NUMCALC_STRSZ) {
-					error (num, nc, "string too long");
-					return 0;
+			} else {
+				while (cin_get (num, nc, &ch) && isvalidchar ((ut8)ch)) {
+					if (i >= R_NUMCALC_STRSZ) {
+						error (num, nc, "string too long");
+						return 0;
+					}
+					stringValueAppend (ch);
 				}
-				stringValueAppend (ch);
+				stringValueAppend (0);
 			}
-			stringValueAppend (0);
 			if (ch != '\'') {
 				cin_putback (num, nc, ch);
 			}
