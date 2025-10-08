@@ -97,8 +97,6 @@ R_API int r_num_to_ternary(char *out, ut64 num);
 R_API int r_num_rand(int max);
 R_API ut64 r_num_genmask(int max);
 R_API void r_num_irand(void);
-R_API ut64 r_get_input_num_value(RNum *num, const char *input_value);
-R_API bool r_is_valid_input_num_value(RNum *num, const char *input_value);
 R_API int r_num_between(RNum *num, const char *input_value);
 R_API bool r_num_is_op(const char c);
 R_API int r_num_str_len(const char *str);

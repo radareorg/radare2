@@ -7242,6 +7242,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 		if (sp) {
 			int n = (int) r_num_math (core->num, r_str_trim_head_ro (sp));
+			// int n = (int) r_num_math (NULL, r_str_trim_head_ro (sp));
 			if (!n) {
 				goto beach;
 			}
