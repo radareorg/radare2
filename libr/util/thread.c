@@ -170,7 +170,7 @@ R_API bool r_th_getname(RThread *th, char *name, size_t len) {
 		R_LOG_ERROR ("Failed to get thread name");
 		return false;
 	}
-#elif(__FreeBSD__ && __FreeBSD_version >= 1200000) || __DragonFly__ ||(__OpenBSD__ && OpenBSD >= 201905)
+#elif __DragonFly__ ||(__FreeBSD__ && __FreeBSD_version >= 1200000) ||(__OpenBSD__ && OpenBSD >= 201905)
 	pthread_get_name_np (th->tid, name, len);
 #elif defined(__HAIKU__)
 	thread_info ti;
