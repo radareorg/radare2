@@ -686,7 +686,7 @@ R_API RCoreTask *r_core_task_get_incref(RCoreTaskScheduler *scheduler, int id) {
 	}
 	TASK_SIGSET_T old_sigset;
 	tasks_lock_enter (scheduler, &old_sigset);
-	RCoreTask *task = task_get (scheduler, id);
+	RCoreTask *task = r_core_task_get (scheduler, id);
 	if (task) {
 		r_core_task_incref (task);
 	}
