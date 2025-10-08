@@ -95,7 +95,7 @@ R_API void r_core_task_join(RCoreTaskScheduler *scheduler, RCoreTask *current, i
 R_API void r_core_task_set_foreground(RCoreTaskScheduler *scheduler, int task_id);
 R_API RCoreTask *r_core_task_get_foreground(RCoreTaskScheduler *scheduler);
 /* Hidden: task run helpers are internal; use enqueue/new with mode */
-R_API void r_core_task_scheduler_set_default_mode(RCoreTaskScheduler *scheduler, RCoreTaskMode mode);
+R_API void r_core_task_setmode(RCoreTaskScheduler *scheduler, RCoreTaskMode mode);
 R_API RCoreTaskMode r_core_task_scheduler_get_default_mode(RCoreTaskScheduler *scheduler);
 
 #ifdef __cplusplus

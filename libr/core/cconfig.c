@@ -1611,7 +1611,7 @@ static bool cb_cfg_taskmode(void *user, void *data) {
 		return false;
 	}
 	RCoreTaskMode mode = taskmode_from_string (node->value);
-	r_core_task_scheduler_set_default_mode (&core->tasks, mode);
+	r_core_task_setmode (&core->tasks, mode);
 	return true;
 }
 

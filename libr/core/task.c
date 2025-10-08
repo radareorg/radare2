@@ -837,7 +837,7 @@ static RCore *r_core_clone_for_task(RCore *core) {
 	return mycore_new (core);
 }
 
-R_API void r_core_task_scheduler_set_default_mode(RCoreTaskScheduler *scheduler, RCoreTaskMode mode) {
+R_API void r_core_task_setmode(RCoreTaskScheduler *scheduler, RCoreTaskMode mode) {
 	if (!scheduler) {
 		return;
 	}
