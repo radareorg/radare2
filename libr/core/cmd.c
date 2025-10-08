@@ -6761,6 +6761,9 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 	if (--core->cons->context->cmd_str_depth == 0) {
 		core->cons->context->noflush = false;
 	}
+	if (core->cons->context->grep.strings) {
+		R_LOG_WARN ("cmd_str grep strings len: %d", r_list_length (core->cons->context->grep.strings));
+	}
 	r_cons_filter (core->cons);
 	const char *static_str = r_cons_get_buffer (core->cons, NULL);
 	char *retstr = strdup (r_str_get (static_str));

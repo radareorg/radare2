@@ -25,6 +25,7 @@ static RCore *mycore_new(RCore *core) {
 			free (c);
 			return core;
 		}
+		c->cons->fdout = -1;
 		// XXX: RConsBind must disappear. its used in bin, fs and search
 		// TODO: use r_cons_clone instead
 		return c;
@@ -503,27 +504,53 @@ static RThreadFunctionRet task_run(RCoreTask *task) {
 	}
 
 	RCore *local_core = mycore_new (core);
-	// For task-specific cores, share the context
-	if (local_core != core && task->cons_context) {
-		local_core->cons->context = task->cons_context;
+	RCons *local_cons = local_core? local_core->cons: NULL;
+	if (local_core != core && task->cons_context && local_cons) {
+		local_cons->context = task->cons_context;
 	}
 	// Capture interrupted state before command execution
 	bool interrupted = false;
 	if (task->cons_context) {
 		interrupted = task->cons_context->breaked;
 	}
-	char *res_str;
-	if (task == scheduler->main_task) {
-		r_core_cmd (local_core, task->cmd, task->cmd_log);
-		res_str = NULL;
-	} else {
-		res_str = r_core_cmd_str (local_core, task->cmd);
+
+	RCons *saved_cons = core->cons;
+	char *res_str = NULL;
+
+	R_CRITICAL_ENTER (core);
+	if (local_cons) {
+		core->cons = local_cons;
+		r_core_bind_cons (core);
 	}
-	// Note: We don't check breaked after command to avoid UAF, as context may be freed
+	if (task == scheduler->main_task) {
+		r_core_cmd (core, task->cmd, task->cmd_log);
+	} else {
+		res_str = r_core_cmd_str (core, task->cmd);
+	}
+	if (local_cons) {
+		core->cons = saved_cons;
+		r_core_bind_cons (core);
+	}
+	R_CRITICAL_LEAVE (core);
+
+	if (local_core != core && local_cons) {
+		local_cons->context = NULL;
+	}
 	mycore_free (local_core);
 
 	free (task->res);
 	task->res = res_str;
+
+	if (task->res) {
+		char *escaped = r_str_escape (task->res);
+		R_LOG_WARN ("task %d result: %s (len=%d)", task->id, escaped, (int)strlen (task->res));
+		free (escaped);
+	} else {
+		R_LOG_WARN ("task %d result: (null)", task->id);
+	}
+	if (task->cons_context && task->cons_context->grep.strings) {
+		R_LOG_WARN ("task %d grep strings len: %d", task->id, r_list_length (task->cons_context->grep.strings));
+	}
 
 #if 0
 	if (task != scheduler->main_task && r_cons_default_context_is_interactive ()) {
