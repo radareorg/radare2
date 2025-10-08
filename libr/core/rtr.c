@@ -1019,19 +1019,20 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		return;
 	}
 
-	if (*input == '&') { // "=h&" "=&:9090"
+	if (*input == '&') { // "=h&" "=&:9090" -> start in background using taskmode
 		if (priv->rapthread) {
 			R_LOG_INFO ("RAP Thread is already running");
 			R_LOG_INFO ("This is experimental and probably buggy. Use at your own risk");
 		} else {
-			// TODO: use tasks
+			// Use core tasks so it honors cfg.taskmode
 			RapThread *RT = R_NEW0 (RapThread);
 			RT->core = core;
 			RT->input = strdup (input + 1);
-			priv->rapthread = r_th_new (r_core_rtr_rap_thread, RT, false);
-			r_th_setname (priv->rapthread, "rapthread");
-			r_th_start (priv->rapthread);
-			R_LOG_INFO ("Background rap server started");
+			// Submit background task; empty cmd label
+			RCoreTask *t = r_core_task_submit (core, "rap&", (RCoreTaskCallback)r_core_rtr_rap_thread, RT, false, -1);
+			if (t) {
+				R_LOG_INFO ("Background rap server started (task %d)", r_core_task_id (t));
+			}
 		}
 		return;
 	}

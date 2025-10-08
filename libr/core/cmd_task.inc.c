@@ -55,6 +55,26 @@ static int _cmd_tasks_impl(void *data, const char *input) {
 		}
 		break;
 	}
+	default: { // "& <COMMAND>" -> run command in background task
+		if (r_sandbox_enable (0)) {
+			R_LOG_ERROR ("The & command is disabled in sandbox mode");
+			return 0;
+		}
+		const char *cmd = r_str_trim_head_ro (input);
+		if (!*cmd) {
+			// no subcmd: list tasks
+			extern void r_core_task_list(RCore *core, int mode);
+			r_core_task_list (core, 0);
+			break;
+		}
+		// schedule command using default taskmode; capture output into task->res
+		RCoreTask *t = r_core_task_submit (core, cmd, NULL, NULL, true, -1);
+		if (t) {
+			int tid = r_core_task_id (t);
+			r_cons_printf (core->cons, "[%d] %s\n", tid, cmd);
+		}
+		break;
+	}
 	}
 	return true;
 }
