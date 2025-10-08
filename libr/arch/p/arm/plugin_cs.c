@@ -1378,12 +1378,10 @@ static void arm64fpmath(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf
 }
 
 static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
-	const char *postfix = NULL;
-
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "");
 
-	postfix = arm_prefix_cond (op, insn->detail->arm64.cc);
+	const char *postfix = arm_prefix_cond (op, insn->detail->arm64.cc);
 
 	switch (insn->id) {
 	case ARM64_INS_BRK:
