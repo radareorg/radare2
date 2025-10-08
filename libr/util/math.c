@@ -236,10 +236,13 @@ R_API const char *r_num_math_index(RNum *num, const char *p) {
 		num->nc.calc_len = strlen (p);
 		num->nc.calc_i = 0;
 	}
-	return num->nc.calc_buf + num->nc.calc_i;
+	if (num->nc.calc_buf) {
+		return num->nc.calc_buf + num->nc.calc_i;
+	}
+	return NULL;
 }
 
-static int cin_get(RNum *num, RNumCalc *nc, char *c) {
+static bool cin_get(RNum *num, RNumCalc *nc, char *c) {
 	if (nc->oc) {
 		*c = nc->oc;
 		nc->oc = 0;
@@ -247,7 +250,7 @@ static int cin_get(RNum *num, RNumCalc *nc, char *c) {
 		if (R_STR_ISEMPTY (nc->calc_buf)) {
 			nc->calc_i = 0;
 			nc->calc_buf = NULL;
-			return 0;
+			return false;
 		}
 		*c = nc->calc_buf[nc->calc_i];
 		if (*c) {
@@ -255,10 +258,10 @@ static int cin_get(RNum *num, RNumCalc *nc, char *c) {
 		} else {
 			nc->calc_i = 0;
 			nc->calc_buf = NULL;
-			return 0;
+			return false;
 		}
 	}
-	return 1;
+	return true;
 }
 
 static int cin_get_num(RNum *num, RNumCalc *nc, RNumCalcValue *n) {
@@ -429,8 +432,8 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 					}
 					stringValueAppend (ch);
 				}
+				stringValueAppend (0);
 			}
-			stringValueAppend (0);
 			if (ch != '\'') {
 				cin_putback (num, nc, ch);
 			}
@@ -497,26 +500,3 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 	}
 	return ret;
 }
-
-#ifdef TEST
-int main(int argc, char* argv[]) {
-	RNumCalcValue n;
-	RNumCalc nc;
-	while (!feof (stdin)) {
-		get_token (nc);
-		if (nc.curr_tok == RNCEND) {
-			break;
-		}
-		if (nc.curr_tok == RNCPRINT) {
-			continue;
-		}
-		n = expr (num, nc, 0);
-		if (n.d == ((double)(int)n.d)) {
-			printf ("0x%"PFMT64x"\n", n.n);
-		} else {
-			printf ("%lf\n", n.d);
-		}
-	}
-	return nc->errors;
-}
-#endif

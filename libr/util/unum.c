@@ -677,10 +677,8 @@ R_API char* r_num_as_string(RNum *___, ut64 n, bool printable_only) {
 			str[stri] = 0;
 		} else if (!printable_only && (off = escape_char (str + stri, ch)) != 0) {
 			stri += off;
-		} else {
-			if (ch) {
-				return NULL;
-			}
+		} else if (ch) {
+			return NULL;
 		}
 		ret |= (num & 0xff);
 		num >>= 8;
@@ -692,19 +690,6 @@ R_API char* r_num_as_string(RNum *___, ut64 n, bool printable_only) {
 		return strdup ("\\0");
 	}
 	return NULL;
-}
-
-R_API bool r_is_valid_input_num_value(RNum * R_NULLABLE num, const char *input_value) {
-	if (!input_value) {
-		return false;
-	}
-	ut64 value = r_num_math (num, input_value);
-	return !(value == 0 && *input_value != '0');
-}
-
-// SHITTY API
-R_API ut64 r_get_input_num_value(RNum *num, const char *str) {
-	return (str && *str)? r_num_math (num, str) : 0;
 }
 
 // SHITTY API

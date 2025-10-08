@@ -46,6 +46,7 @@ sleep 1
 =0 ?e hello remote world
 EOF
 EXPECT=<<EOF
+[1] !rarun2 timeout=3 daemon=1 system="r2 -N -e http.root=/404 -e http.port=9292 -c=h -qcq -"
 0 fd:-1 http://127.0.0.1:9292/cmd/
 hello remote world
 EOF

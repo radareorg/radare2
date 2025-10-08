@@ -15,6 +15,15 @@ static const int i4004_ins_len[16] = {
 	1, 2, 3, 1, 2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1
 };
 
+
+static bool is_valid_input_num_value(RNum * R_NULLABLE num, const char *input_value) {
+	if (!input_value) {
+		return false;
+	}
+	ut64 value = r_num_math (num, input_value);
+	return !(value == 0 && *input_value != '0');
+}
+
 static const char *i4004_e[16] = {
 	"wrm",
 	"wmp",
@@ -230,7 +239,7 @@ static bool i4004_encode(RArchSession *se, RAnalOp *op, RArchEncodeMask mask) {
 	char **elems = r_str_argv (s, &nelems);
 	RStrBuf *sbuf = r_strbuf_new (elems[0]);
 	for (i = 1; i < nelems; i++) {
-		if (r_is_valid_input_num_value (NULL, elems[i])) {
+		if (is_valid_input_num_value (NULL, elems[i])) {
 			r_strbuf_appendf (sbuf, " 0x%"PFMT64x, r_num_get (NULL, elems[i]));
 		} else {
 			r_strbuf_appendf (sbuf, " %s", elems[i]);
@@ -261,8 +270,8 @@ static bool i4004_encode(RArchSession *se, RAnalOp *op, RArchEncodeMask mask) {
 	int ret = 0;
 	switch (elems[0][0] << 16 | elems[0][1] << 8 | elems[0][2]) {
 	case 0x6a636e: // jcn
-		if (nelems > 2 && r_is_valid_input_num_value (NULL, elems[1])
-			&& r_is_valid_input_num_value (NULL, elems[2])) {
+		if (nelems > 2 && is_valid_input_num_value (NULL, elems[1])
+			&& is_valid_input_num_value (NULL, elems[2])) {
 			ut64 v = r_num_get (NULL, elems[1]);
 			if (v < 0x10) {
 				outbuf[0] = 0x10 | (ut8)v;
@@ -275,7 +284,7 @@ static bool i4004_encode(RArchSession *se, RAnalOp *op, RArchEncodeMask mask) {
 		}
 		break;
 	case 0x66696d: // fim
-		if (nelems > 3 && !strcmp (elems[2], "_") && r_is_valid_input_num_value (NULL, elems[3])) {
+		if (nelems > 3 && !strcmp (elems[2], "_") && is_valid_input_num_value (NULL, elems[3])) {
 			const ut64 v = r_num_get (NULL, elems[3]);
 			if (v < 0x100) {
 				ret = 2;
@@ -310,7 +319,7 @@ static bool i4004_encode(RArchSession *se, RAnalOp *op, RArchEncodeMask mask) {
 		}
 		break;
 	case 0x6a756e: // jun
-		if (nelems > 1 && r_is_valid_input_num_value (NULL, elems[1])) {
+		if (nelems > 1 && is_valid_input_num_value (NULL, elems[1])) {
 			const ut64 v = r_num_get (NULL, elems[1]);
 			if (v < 0x1000) {
 				outbuf[0] = 0x40 | (v & 0xf00) >> 8;
@@ -320,7 +329,7 @@ static bool i4004_encode(RArchSession *se, RAnalOp *op, RArchEncodeMask mask) {
 		}
 		break;
 	case 0x6a6d73: // jms
-		if (nelems > 1 && r_is_valid_input_num_value (NULL, elems[1])) {
+		if (nelems > 1 && is_valid_input_num_value (NULL, elems[1])) {
 			const ut64 v = r_num_get (NULL, elems[1]);
 			if (v < 0x1000) {
 				outbuf[0] = 0x50 | (v & 0xf00) >> 8;
@@ -330,8 +339,8 @@ static bool i4004_encode(RArchSession *se, RAnalOp *op, RArchEncodeMask mask) {
 		}
 		break;
 	case 0x69737a: // isz
-		if (nelems > 3 && elems[1][0] == 'r' && r_is_valid_input_num_value (NULL, &elems[1][1])
-			&& !strcmp (elems[2], "_") && r_is_valid_input_num_value (NULL, elems[3])) {
+		if (nelems > 3 && elems[1][0] == 'r' && is_valid_input_num_value (NULL, &elems[1][1])
+			&& !strcmp (elems[2], "_") && is_valid_input_num_value (NULL, elems[3])) {
 			ut64 v = r_num_get (NULL, &elems[1][1]);
 			if (v < 0x10) {
 				outbuf[0] = 0x70 | (ut8)v;

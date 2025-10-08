@@ -203,6 +203,15 @@ static RCoreHelpMessage help_msg_ood = {
 	NULL
 };
 
+// TODO: deprecate this hack
+static bool is_valid_input_num_value(RNum * R_NULLABLE num, const char *input_value) {
+	if (!input_value) {
+		return false;
+	}
+	ut64 value = r_num_math (num, input_value);
+	return !(value == 0 && *input_value != '0');
+}
+
 static bool isfile(const char *filename) {
 	return R_STR_ISNOTEMPTY (filename)
 		&& (
@@ -347,8 +356,8 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			break;
 		}
 		tmp = r_str_word_get0 (v, 0);
-		id = *v && r_is_valid_input_num_value (core->num, tmp)
-			? r_get_input_num_value (core->num, tmp): UT32_MAX;
+		id = (*v && R_STR_ISNOTEMPTY (tmp) && is_valid_input_num_value (core->num, tmp))
+			? r_num_math (core->num, tmp): UT32_MAX;
 		if (n == 2) {
 			tmp = r_str_word_get0 (v, 1);
 		} else {
@@ -445,8 +454,8 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				R_LOG_ERROR ("Invalid argument");
 				break;
 			}
-			id = (*value && r_is_valid_input_num_value (core->num, value)) ?
-					r_get_input_num_value (core->num, value) : UT32_MAX;
+			id = (*value && is_valid_input_num_value (core->num, value)) ?
+					r_num_math (core->num, value) : UT32_MAX;
 			RBinFile *bf = r_bin_file_find_by_id (core->bin, id);
 			if (bf) {
 				int bfid = bf->id;
