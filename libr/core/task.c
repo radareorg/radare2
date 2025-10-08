@@ -409,6 +409,10 @@ static RThreadFunctionRet task_run(RCoreTask *task) {
 	scheduler->tasks_running++;
 	tasks_lock_leave (scheduler, &__old_sigset);
 
+	if (core && core->ev) {
+		r_event_send (core->ev, R_EVENT_CORE_TASK_STARTED, task);
+	}
+
 	if (task->cons_context && task->cons_context->breaked) {
 		// breaked in R_CORE_TASK_STATE_BEFORE_START
 		goto stillbirth;
@@ -439,6 +443,12 @@ stillbirth:
 
 	task_end (task);
 
+	// Determine interruption vs finished
+	bool interrupted = false;
+	if (task->cons_context && task->cons_context->breaked) {
+		interrupted = true;
+	}
+
 	if (task->cb) {
 		task->cb (task->user, task->res);
 	}
@@ -465,6 +475,10 @@ stillbirth:
 	}
 
 	tasks_lock_leave (scheduler, &old_sigset);
+	if (core && core->ev) {
+		const int et = interrupted? R_EVENT_CORE_TASK_INTERRUPTED: R_EVENT_CORE_TASK_FINISHED;
+		r_event_send (core->ev, et, task);
+	}
 	return ret;
 }
 
