@@ -600,7 +600,7 @@ static void vmatrix_show_help(RCore *core) {
 	r_cons_less_str (core->cons, help_text, NULL);
 }
 
-static void vmatrix_refresh_oneshot(void *user) {
+static void vmatrix_refresh_queued(void *user) {
 	// Use the global pointer for safety
 	if (!g_rvm || !g_rvm->core || !g_rvm->core->cons) {
 		return;
@@ -635,8 +635,8 @@ R_API void r_core_visual_matrix(RCore *core) {
 	core->cons->context->event_interrupt = NULL;
 	g_rvm = &rvm; // Set global pointer
 	core->cons->event_data = &rvm;
-	core->cons->event_resize = vmatrix_refresh_oneshot;
-	core->cons->context->event_interrupt = vmatrix_refresh_oneshot;
+	core->cons->event_resize = vmatrix_refresh_queued;
+	core->cons->context->event_interrupt = vmatrix_refresh_queued;
 
 	// Initial refresh to display the matrix
 	vmatrix_refresh (&rvm);

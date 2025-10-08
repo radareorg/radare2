@@ -35,11 +35,8 @@ R_API void r_core_task_scheduler_init(RCoreTaskScheduler *tasks, RCore *core) {
 	tasks->task_id_next = 0;
 	tasks->tasks = r_list_newf (free);
 	tasks->tasks_queue = r_list_new ();
-	tasks->oneshot_queue = r_list_newf (free);
-	tasks->oneshots_enqueued = 0;
 	tasks->lock = r_th_lock_new (true);
 	tasks->tasks_running = 0;
-	tasks->oneshot_running = false;
 	tasks->main_task = r_core_task_new (core, R_CORE_TASK_MODE_COOP, false, NULL, NULL, NULL);
 	r_list_append (tasks->tasks, tasks->main_task);
 	tasks->foreground_task = tasks->main_task;
@@ -65,7 +62,7 @@ R_API void r_core_task_scheduler_fini(RCoreTaskScheduler *tasks) {
 	}
 	r_list_free (tasks->tasks);
 	r_list_free (tasks->tasks_queue);
-	r_list_free (tasks->oneshot_queue);
+	/* no oneshot queue to free */
 	r_th_lock_free (tasks->lock);
 }
 
@@ -101,10 +98,7 @@ static void tasks_lock_leave(RCoreTaskScheduler *scheduler, TASK_SIGSET_T *old_s
 	tasks_lock_block_signals_reset (old_sigset);
 }
 
-typedef struct oneshot_t {
-	RCoreTaskOneShot func;
-	void *user;
-} OneShot;
+/* OneShot support removed */
 
 static const char *state_tostring(int s) {
 	switch (s) {
@@ -323,8 +317,6 @@ hell:
 	return NULL;
 }
 
-// incref/decref APIs removed; scheduler owns task lifetime
-
 R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 	if (!current) {
 		return;
@@ -336,7 +328,7 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 	R_CRITICAL_ENTER (core);
 	TASK_SIGSET_T old_sigset;
 	tasks_lock_enter (scheduler, &old_sigset);
-	if (scheduler->oneshot_running || (!stop && scheduler->tasks_running == 1 && scheduler->oneshots_enqueued == 0)) {
+	if ((!stop && scheduler->tasks_running == 1)) {
 		tasks_lock_leave (scheduler, &old_sigset);
 		R_CRITICAL_LEAVE (core);
 		return;
@@ -352,16 +344,7 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 		}
 	}
 
-	// oneshots always have priority.
-	// if there are any queued, run them immediately.
-	OneShot *oneshot;
-	while ((oneshot = r_list_pop_head (scheduler->oneshot_queue))) {
-		scheduler->oneshots_enqueued--;
-		scheduler->oneshot_running = true;
-		oneshot->func (oneshot->user);
-		scheduler->oneshot_running = false;
-		free (oneshot);
-	}
+	/* oneshot support removed */
 
 	RCoreTask *next = r_list_pop_head (scheduler->tasks_queue);
 
@@ -521,35 +504,7 @@ R_API void r_core_task_enqueue(RCoreTaskScheduler *scheduler, RCoreTask *task) {
 	tasks_lock_leave (scheduler, &old_sigset);
 }
 
-R_API void r_core_task_enqueue_oneshot(RCoreTaskScheduler *scheduler, RCoreTaskOneShot func, void *user) {
-	if (!scheduler || !func) {
-		return;
-	}
-	TASK_SIGSET_T old_sigset;
-	bool run_now = false;
-	tasks_lock_enter (scheduler, &old_sigset);
-	if (scheduler->tasks_running == 0) {
-		// Execute outside the scheduler lock to avoid deadlocks
-		scheduler->oneshot_running = true;
-		run_now = true;
-	} else {
-		OneShot *oneshot = R_NEW (OneShot);
-		if (oneshot) {
-			oneshot->func = func;
-			oneshot->user = user;
-			r_list_append (scheduler->oneshot_queue, oneshot);
-			scheduler->oneshots_enqueued++;
-		}
-	}
-	tasks_lock_leave (scheduler, &old_sigset);
-
-	if (run_now) {
-		func (user);
-		tasks_lock_enter (scheduler, &old_sigset);
-		scheduler->oneshot_running = false;
-		tasks_lock_leave (scheduler, &old_sigset);
-	}
-}
+/* r_core_task_enqueue_oneshot removed */
 
 R_API int r_core_task_run_sync(RCoreTaskScheduler *scheduler, RCoreTask *task) {
 	R_RETURN_VAL_IF_FAIL (scheduler && task, -1);

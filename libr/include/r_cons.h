@@ -512,7 +512,7 @@ typedef struct r_cons_t {
 	RConsSleepBeginCallback cb_sleep_begin;
 	RConsSleepEndCallback cb_sleep_end;
 	RConsClickCallback cb_click;
-	RConsQueueTaskOneshot cb_task_oneshot;
+    /* cb_task_oneshot removed; use core task APIs directly */
 	RConsFunctionKey cb_fkey;
 
 	void *user; // Used by <RCore*>

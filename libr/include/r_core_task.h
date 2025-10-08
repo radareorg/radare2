@@ -45,7 +45,6 @@ typedef struct r_core_task_t {
 	RCoreTaskCallback cb;
 } RCoreTask;
 
-typedef void (*RCoreTaskOneShot)(void *);
 
 typedef struct r_core_tasks_t {
 	int task_id_next;
@@ -63,12 +62,10 @@ typedef struct r_core_tasks_t {
 R_API void r_core_task_scheduler_init(RCoreTaskScheduler *tasks, RCore *core);
 R_API void r_core_task_scheduler_fini(RCoreTaskScheduler *tasks);
 R_API RCoreTask *r_core_task_get(RCoreTaskScheduler *scheduler, int id);
-/* Internal: task printing helpers are not part of public API */
 R_API int r_core_task_running_tasks_count(RCoreTaskScheduler *scheduler);
 R_API const char *r_core_task_status(RCoreTask *task);
 R_API RCoreTask *r_core_task_new(RCore *core, RCoreTaskMode mode, bool create_cons, const char *cmd, RCoreTaskCallback cb, void *user);
 R_API void r_core_task_enqueue(RCoreTaskScheduler *scheduler, RCoreTask *task);
-R_API void r_core_task_enqueue_oneshot(RCoreTaskScheduler *scheduler, RCoreTaskOneShot func, void *user);
 R_API int r_core_task_run_sync(RCoreTaskScheduler *scheduler, RCoreTask *task);
 R_API void r_core_task_sync_begin(RCoreTaskScheduler *scheduler);
 R_API void r_core_task_sync_end(RCoreTaskScheduler *scheduler);

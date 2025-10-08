@@ -3654,8 +3654,8 @@ static ut64 r_core_visual_anal_refresh(RCore *core) {
 	return addr;
 }
 
-static void r_core_visual_anal_refresh_oneshot(RCore *core) {
-	r_core_task_enqueue_oneshot (&core->tasks, (RCoreTaskOneShot) r_core_visual_anal_refresh, core);
+static void r_core_visual_anal_refresh_queued(RCore *core) {
+	r_core_visual_anal_refresh (core);
 }
 
 static void r_core_visual_debugtraces_help(RCore *core) {
@@ -3783,7 +3783,7 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 
 	core->cons->event_resize = NULL; // avoid running old event with new data
 	core->cons->event_data = core;
-	core->cons->event_resize = (RConsEvent) r_core_visual_anal_refresh_oneshot;
+	core->cons->event_resize = (RConsEvent) r_core_visual_anal_refresh_queued;
 
 	level = 0;
 	coldelta = 0;

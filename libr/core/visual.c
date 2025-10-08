@@ -4689,8 +4689,8 @@ R_IPI void visual_refresh(RCore *core) {
 	show_cursor (core);
 }
 
-static void visual_refresh_oneshot(RCore *core) {
-	r_core_task_enqueue_oneshot (&core->tasks, (RCoreTaskOneShot) visual_refresh, core);
+static void visual_refresh_queued(RCore *core) {
+	visual_refresh (core);
 }
 
 static int varcount(RCore *core, RAnalFunction *f) {
@@ -4931,7 +4931,7 @@ dodo:
 		r_cons_enable_mouse (core->cons, r_config_get_b (core->config, "scr.wheel"));
 		core->cons->event_resize = NULL; // avoid running old event with new data
 		core->cons->event_data = core;
-		core->cons->event_resize = (RConsEvent) visual_refresh_oneshot;
+		core->cons->event_resize = (RConsEvent) visual_refresh_queued;
 		flags = core->print->flags;
 		core->visual.color = r_config_get_i (core->config, "scr.color");
 		if (core->visual.color) {
