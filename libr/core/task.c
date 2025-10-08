@@ -810,6 +810,12 @@ static int r_core_task_run_forked(RCoreTaskScheduler *scheduler, RCoreTask *task
 	if (!scheduler || !task) {
 		return -1;
 	}
+
+#if defined(__WINDOWS__) || defined(__EMSCRIPTEN__)
+	// Fork mode is not supported on Windows or WebAssembly
+	R_LOG_WARN ("task: fork mode is not supported on this platform; running in thread mode instead");
+	return r_core_task_run_threaded (scheduler, task);
+#else
 	task->mode = R_CORE_TASK_MODE_FORK;
     if (!task->task_core) {
         task->task_core = r_core_clone_for_task (task->core);
@@ -821,6 +827,7 @@ static int r_core_task_run_forked(RCoreTaskScheduler *scheduler, RCoreTask *task
 	}
 	r_core_task_enqueue (scheduler, task);
 	return task->id;
+#endif
 }
 
 static RCore *r_core_clone_for_task(RCore *core) {
@@ -836,7 +843,15 @@ R_API void r_core_task_scheduler_set_default_mode(RCoreTaskScheduler *scheduler,
 	}
 	TASK_SIGSET_T old_sigset;
 	tasks_lock_enter (scheduler, &old_sigset);
-	scheduler->default_mode = mode;
+#if defined(__WINDOWS__) || defined(__EMSCRIPTEN__)
+	if (mode == R_CORE_TASK_MODE_FORK) {
+		// Disallow fork default on unsupported platforms
+		scheduler->default_mode = R_CORE_TASK_MODE_THREAD;
+	} else
+#endif
+	{
+		scheduler->default_mode = mode;
+	}
 	tasks_lock_leave (scheduler, &old_sigset);
 }
 
