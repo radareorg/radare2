@@ -904,6 +904,131 @@ static void mmc_view_file(RCore *core, MMCState *state) {
 	free (fullpath);
 }
 
+static int mmc_preview_next_line_offset(ut8 *data, size_t size, int current_offset, int chars_per_line) {
+	int offset = current_offset;
+	int line_chars = 0;
+	ut8 byte;
+
+	while (offset < (int)size) {
+		byte = data[offset++];
+		if (byte == '\n') {
+			return offset;
+		}
+		if (byte == '\r') {
+			continue;
+		}
+		if (byte == '\t') {
+			line_chars += 4 - (line_chars % 4);
+		} else {
+			line_chars++;
+		}
+		if (line_chars >= chars_per_line) {
+			return offset;
+		}
+	}
+	return offset;
+}
+
+static int mmc_preview_prev_line_offset(ut8 *data, size_t size, int current_offset, int chars_per_line) {
+	int offset = current_offset;
+	int line_start = 0;
+	int line_chars = 0;
+	ut8 byte;
+
+	if (offset <= 0) {
+		return 0;
+	}
+
+	offset--;
+	if (offset > 0 && data[offset] == '\n') {
+		offset--;
+	}
+
+	while (offset > 0) {
+		if (data[offset] == '\n') {
+			line_start = offset + 1;
+			break;
+		}
+		offset--;
+	}
+
+	line_chars = 0;
+	while (line_start < current_offset) {
+		byte = data[line_start];
+		if (byte == '\n') {
+			break;
+		}
+		if (byte == '\r') {
+			line_start++;
+			continue;
+		}
+		if (byte == '\t') {
+			line_chars += 4 - (line_chars % 4);
+		} else {
+			line_chars++;
+		}
+		line_start++;
+		if (line_chars >= chars_per_line) {
+			break;
+		}
+	}
+
+	return offset >= 0 ? (offset == 0 ? 0 : offset + 1) : 0;
+}
+
+static void mmc_preview_scroll_text(RCore *core, MMCState *state, bool down, int panel_w) {
+	MMCPanel *left_panel = &state->left;
+	char *selected_name, *fullpath;
+	ut8 *data = NULL;
+	size_t size = 0;
+	RFSFile *file;
+	int chars_per_line;
+
+	if (left_panel->count == 0 || left_panel->selected >= left_panel->count) {
+		return;
+	}
+
+	selected_name = left_panel->entries[left_panel->selected];
+	if (!strcmp (selected_name, "..") || (left_panel->types && left_panel->types[left_panel->selected] == 'd')) {
+		return;
+	}
+
+	if (!strcmp (left_panel->path, "/")) {
+		fullpath = r_str_newf ("/%s", selected_name);
+	} else {
+		fullpath = r_str_newf ("%s/%s", left_panel->path, selected_name);
+	}
+
+	if (left_panel->is_fs_panel) {
+		file = r_fs_open (core->fs, fullpath, false);
+		if (file) {
+			size = file->size;
+			if (size > 0) {
+				r_fs_read (core->fs, file, 0, file->size);
+				data = malloc (size);
+				if (data) {
+					memcpy (data, file->data, size);
+				}
+			}
+			r_fs_close (core->fs, file);
+		}
+	} else {
+		data = (ut8 *)r_file_slurp (fullpath, &size);
+	}
+
+	if (data && size > 0) {
+		chars_per_line = (panel_w * state->panel_split_ratio / 100) - 4;
+		if (down) {
+			state->preview_offset = mmc_preview_next_line_offset (data, size, state->preview_offset, chars_per_line);
+		} else {
+			state->preview_offset = mmc_preview_prev_line_offset (data, size, state->preview_offset, chars_per_line);
+		}
+	}
+
+	free (data);
+	free (fullpath);
+}
+
 static void mmc_draw_file_preview(RCore *core, RConsCanvas *canvas, MMCState *state, int x, int y, int w, int h) {
 	MMCPanel *left_panel = &state->left;
 	char *selected_name, *fullpath;
@@ -1873,9 +1998,7 @@ static int cmd_mmc(void *data, const char *input) {
 						state.preview_offset -= 16;
 					}
 				} else {
-					if (state.preview_offset > 0) {
-						state.preview_offset--;
-					}
+					mmc_preview_scroll_text (core, &state, false, state.width);
 				}
 			} else {
 				mmc_panel_navigate_up (state.active, panel_h - 2);
@@ -1889,7 +2012,7 @@ static int cmd_mmc(void *data, const char *input) {
 				if (state.preview_hex_mode) {
 					state.preview_offset += 16;
 				} else {
-					state.preview_offset++;
+					mmc_preview_scroll_text (core, &state, true, state.width);
 				}
 			} else {
 				mmc_panel_navigate_down (state.active, panel_h - 2);
