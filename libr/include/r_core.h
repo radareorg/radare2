@@ -544,6 +544,7 @@ R_API void r_core_seek_next(RCore *core, const char *type);
 R_API int r_core_seek_align(RCore *core, ut64 align, int count);
 R_API void r_core_arch_bits_at(RCore *core, ut64 addr, R_OUT int * R_NULLABLE bits, R_OUT R_BORROW const char ** R_NULLABLE arch);
 R_API void r_core_seek_arch_bits(RCore *core, ut64 addr);
+R_API ut8 *r_core_readblock(RCore *core, ut64 size);
 R_API int r_core_block_read(RCore *core);
 R_API int r_core_block_size(RCore *core, int bsize);
 R_API int r_core_seek_size(RCore *core, ut64 addr, int bsize);

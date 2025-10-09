@@ -22,6 +22,7 @@ R_API RLine *r_line_new(RCons *cons) {
 	line->contents = NULL;
 	line->enable_vi_mode = false;
 	line->clipboard = NULL;
+	line->hist_size = R_LINE_HISTSIZE;
 	line->kill_ring = r_list_newf (free);
 	line->kill_ring_ptr = -1;
 #if R2__WINDOWS__
@@ -110,6 +111,5 @@ R_API void r_line_completion_clear(RLineCompletion *completion) {
 	completion->quit = false;
 	r_pvector_clear (&completion->args);
 }
-
 
 #include "dietline.c"

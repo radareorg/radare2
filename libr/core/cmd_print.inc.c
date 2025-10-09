@@ -2385,15 +2385,18 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 
 			/* Load format from name into fmt to get the size */
 			/* Make sure the structure will be printed entirely */
+			int bufsize = core->blocksize;
 			char *fmt = sdb_get (core->print->formats, name, NULL);
 			if (fmt) {
 				// TODO: what is +10 magic number?
 				// Backtracks to commit e5e23c237755cdeb13ba15938c93ada590e453db / issue #2808
-				int size = r_print_format_struct_size (core->print, fmt, mode, 0) + 10;
-				if (size > core->blocksize) {
-					r_core_block_size (core, size);
-				}
+				int struct_size = r_print_format_struct_size (core->print, fmt, mode, 0) + 10;
+				bufsize = R_MAX (bufsize, struct_size);
 				free (fmt);
+			}
+			ut8 *buf = r_core_readblock (core, bufsize);
+			if (!buf) {
+				goto err_name;
 			}
 			/* display a format */
 			if (dot) {
@@ -2404,15 +2407,17 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 					r_str_trim_tail (name);
 					mode = R_PRINT_MUSTSET;
 					r_print_format (core->print, core->addr,
-						core->block, core->blocksize, name, mode, eq, dot);
+						buf, bufsize, name, mode, eq, dot);
+					r_io_write_at (core->io, core->addr, buf, bufsize);
 				} else {
 					r_print_format (core->print, core->addr,
-						core->block, core->blocksize, name, mode, NULL, dot);
+						buf, bufsize, name, mode, NULL, dot);
 				}
 			} else {
 				r_print_format (core->print, core->addr,
-					core->block, core->blocksize, name, mode, NULL, NULL);
+					buf, bufsize, name, mode, NULL, NULL);
 			}
+			free (buf);
 		err_name:
 			free (name);
 		}
@@ -3532,19 +3537,12 @@ static void cmd_print_op(RCore *core, const char *input) {
 }
 
 static void printraw(RCore *core, int len, int mode) {
-	int obsz = core->blocksize;
-	int restore_obsz = 0;
-	if (len != obsz) {
-		if (!r_core_block_size (core, len)) {
-			len = core->blocksize;
-		} else {
-			restore_obsz = 1;
-		}
+	ut8 *buf = r_core_readblock (core, len);
+	if (!buf) {
+		return;
 	}
-	r_print_raw (core->print, core->addr, core->block, len, mode);
-	if (restore_obsz) {
-		(void) r_core_block_size (core, obsz);
-	}
+	r_print_raw (core->print, core->addr, buf, len, mode);
+	free (buf);
 }
 
 static void _handle_call(RCore *core, char *line, char **str) {
@@ -4002,7 +4000,7 @@ restore_conf:
 
 static bool cmd_print_ph(RCore *core, const char *input) {
 	char *algo = NULL;
-	ut32 osize = 0, len = core->blocksize;
+	ut32 len = core->blocksize;
 	int handled_cmd = false;
 
 	const char i0 = input[0];
@@ -4046,20 +4044,13 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 	char *len_str = r_list_get_n (args, 1);
 	if (len_str) {
 		len = r_num_math (core->num, len_str);
-		osize = core->blocksize;
-		if (len > core->blocksize) {
-			r_core_block_size (core, len);
-			if (len != core->blocksize) {
-				R_LOG_ERROR ("Invalid block size");
-				r_core_block_size (core, osize);
-				return false;
-			}
-			r_core_block_read (core);
-		}
-	} else {
-		osize = len;
 	}
-	r_cons_printf (core->cons, "%s\n", r_hash_tostring (NULL, algo, core->block, len));
+	ut8 *buf = r_core_readblock (core, len);
+	if (!buf) {
+		return false;
+	}
+	r_cons_printf (core->cons, "%s\n", r_hash_tostring (NULL, algo, buf, len));
+	free (buf);
 	return handled_cmd;
 }
 
@@ -4082,10 +4073,14 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 		"ret", "arg0", "arg1", "arg2", "arg3", "arg4", NULL
 	};
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->print->config);
-	ut8 *block = core->block;
 	int blocksize = core->blocksize;
+	ut8 *block = r_core_readblock (core, 0);
+	if (!block) {
+		return;
+	}
+	ut8 *orig_block = block;
 	ut8 *heaped_block = NULL;
-	ut8 *block_end = core->block + blocksize;
+	ut8 *block_end = block + blocksize;
 	int i, n = core->rasm->config->bits / 8;
 	int type = 'v';
 	bool fixed_size = true;
@@ -4418,6 +4413,7 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 		free (heaped_block);
 		break;
 	}
+	free (orig_block);
 }
 
 static bool cmd_print_blocks(RCore *core, const char *input) {
@@ -4971,7 +4967,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		}
 			break;
 		default:
-			r_print_columns (core->print, core->block, core->blocksize, 14);
+			r_print_columns (core->print, ptr, nblocks, 14);
 			break;
 		}
 		break;
@@ -4996,20 +4992,22 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		ptr = NULL;
 		if (input[2]) {
 			ut64 bufsz = r_num_math (core->num, input + 3);
-			ut64 curbsz = core->blocksize;
 			if (bufsz < 1) {
-				bufsz = curbsz;
+				bufsz = core->blocksize;
 			}
-			if (bufsz > core->blocksize) {
-				r_core_block_size (core, bufsz);
-				r_core_block_read (core);
+			ut8 *buf = r_core_readblock (core, bufsz);
+			if (!buf) {
+				break;
 			}
-			cmd_print_eq_dict (core, core->block, bufsz);
-			if (bufsz != curbsz) {
-				r_core_block_size (core, curbsz);
-			}
+			cmd_print_eq_dict (core, buf, bufsz);
+			free (buf);
 		} else {
-			cmd_print_eq_dict (core, core->block, core->blocksize);
+			ut8 *buf = r_core_readblock (core, 0);
+			if (!buf) {
+				break;
+			}
+			cmd_print_eq_dict (core, buf, core->blocksize);
+			free (buf);
 		}
 		break;
 	case 'j': // "p=j" cjmp and jmp
@@ -6397,6 +6395,10 @@ static void bitimage(RCore *core, int cols) {
 static void cmd_pri(RCore *core, const char *input) {
 	int cols = r_config_get_i (core->config, "hex.cols");
 	bool has_color = r_config_get_i (core->config, "scr.color") > 0;
+	ut8 *buf = r_core_readblock (core, 0);
+	if (!buf) {
+		return;
+	}
 	switch (input[2]) {
 	case '?':
 		r_core_cmd_help (core, help_msg_pri);
@@ -6408,20 +6410,21 @@ static void cmd_pri(RCore *core, const char *input) {
 		bitimage (core, 1);
 		break;
 	case 'g': // gresycale
-		r_cons_image (core->block, core->blocksize, cols, 'g', 3);
+		r_cons_image (buf, core->blocksize, cols, 'g', 3);
 		break;
 	case 's': // sixel
-		r_cons_image (core->block, core->blocksize, cols, 's', 3);
+		r_cons_image (buf, core->blocksize, cols, 's', 3);
 		break;
 	case '4':
-		r_cons_image (core->block, core->blocksize, cols, 'r', 4);
+		r_cons_image (buf, core->blocksize, cols, 'r', 4);
 		break;
 	case 'r':
 	default:
 		// int mode = r_config_get_i (core->config, "scr.color")? 0: 'a';
-		r_cons_image (core->block, core->blocksize, cols, has_color? 'r': 'a', 3);
+		r_cons_image (buf, core->blocksize, cols, has_color? 'r': 'a', 3);
 		break;
 	}
+	free (buf);
 }
 
 #if 0
