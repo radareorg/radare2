@@ -327,12 +327,67 @@ def fix_hash_spacing(line):
 	return re.sub(r'\s*##\s*', ' ## ', line)
 
 
+def format_macro_body(body):
+	if not body:
+		return body
+	formatted = fix_paren_spacing(body)
+	formatted = fix_ternary_spacing(formatted)
+	formatted = fix_hash_spacing(formatted)
+	return formatted
+
+
+def normalize_define_line(line):
+	rest = line[len("#define"):].lstrip()
+	if not rest:
+		return "#define"
+	i = 0
+	while i < len(rest) and (rest[i].isalnum() or rest[i] == '_'):
+		i += 1
+	name = rest[:i]
+	if not name:
+		return line
+	j = i
+	while j < len(rest) and rest[j] == ' ':
+		j += 1
+	header = f"#define {name}"
+	body = ""
+	if j < len(rest) and rest[j] == '(':
+		params_start = j
+		depth = 0
+		k = params_start
+		while k < len(rest):
+			ch = rest[k]
+			if ch == '(':
+				depth += 1
+			elif ch == ')':
+				depth -= 1
+				if depth == 0:
+					k += 1
+					break
+			k += 1
+		if depth != 0:
+			return line
+		params = rest[params_start:k]
+		header = f"{header}{params}"
+		body = rest[k:].lstrip()
+	else:
+		body = rest[j:].lstrip()
+	if not body:
+		return header
+	body = format_macro_body(body)
+	return f"{header} {body}"
+
+
 def fix_preprocessor_line(line):
 	content, ending = split_line_ending(line)
 	stripped = content.lstrip()
 	if not stripped.startswith('#'):
 		return line
 	adjusted = stripped.replace('\t', ' ')
+	if adjusted.startswith('#define'):
+		adjusted = normalize_define_line(adjusted)
+	else:
+		adjusted = fix_hash_spacing(adjusted)
 	adjusted = fix_hash_spacing(adjusted)
 	return adjusted + ending
 
