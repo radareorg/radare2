@@ -327,12 +327,60 @@ def fix_hash_spacing(line):
 	return re.sub(r'\s*##\s*', ' ## ', line)
 
 
+def fix_logical_spacing(line):
+	in_single = False
+	in_double = False
+	escape = False
+	result = []
+	length = len(line)
+	i = 0
+	while i < length:
+		ch = line[i]
+		if escape:
+			result.append(ch)
+			escape = False
+			i += 1
+			continue
+		if ch == "\\" and (in_single or in_double):
+			result.append(ch)
+			escape = True
+			i += 1
+			continue
+		if ch == "'" and not in_double:
+			in_single = not in_single
+			result.append(ch)
+			i += 1
+			continue
+		if ch == '"' and not in_single:
+			in_double = not in_double
+			result.append(ch)
+			i += 1
+			continue
+		if not in_single and not in_double:
+			if ch == '&' and i + 1 < length and line[i+1] == '&':
+				result.append("&&")
+				i += 2
+				if i < length and line[i] not in (' ', '\t', '\n'):
+					result.append(" ")
+				continue
+			elif ch == '|' and i + 1 < length and line[i+1] == '|':
+				result.append("||")
+				i += 2
+				if i < length and line[i] not in (' ', '\t', '\n'):
+					result.append(" ")
+				continue
+		result.append(ch)
+		i += 1
+	return "".join(result)
+
+
 def format_macro_body(body):
 	if not body:
 		return body
 	formatted = fix_paren_spacing(body)
 	formatted = fix_ternary_spacing(formatted)
 	formatted = fix_hash_spacing(formatted)
+	formatted = fix_logical_spacing(formatted)
 	return formatted
 
 
@@ -441,6 +489,7 @@ def apply_indent_rules(text):
 		line = fix_paren_spacing(line)
 		line = fix_ternary_spacing(line)
 		line = fix_hash_spacing(line)
+		line = fix_logical_spacing(line)
 		lines.append(line)
 	lines = fix_case_blocks(lines)
 	lines = fix_ternary_lines(lines)
