@@ -16205,8 +16205,7 @@ static int cmd_anal(void *data, const char *input) {
 			break;
 		case 'k': // "adk"
 			{
-				ut8 *data = calloc (tbs + 1, 1);
-				r_io_read_at (core->io, addr, data, tbs);
+				ut8 *data = r_core_readblock (core, tbs);
 				r = r_anal_data_kind (core->anal, addr, data, tbs);
 				r_cons_println (core->cons, r);
 				free (data);

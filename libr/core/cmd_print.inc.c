@@ -4967,7 +4967,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		}
 			break;
 		default:
-			r_print_columns (core->print, core->block, core->blocksize, 14);
+			r_print_columns (core->print, block, bsz, 14);
 			break;
 		}
 		break;
