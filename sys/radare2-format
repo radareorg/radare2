@@ -13,7 +13,7 @@ import tempfile
 VERSION = "radare2-format 1.0"
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir))
-AUTO_WHITELIST_PATH = os.path.join(SCRIPT_DIR, "indent-whitelist.sh")
+AUTO_WHITELIST_PATH = os.path.join(SCRIPT_DIR, "auto-format-files.txt")
 
 
 def parse_args():
@@ -84,38 +84,16 @@ def load_auto_files():
 	paths = []
 	try:
 		with open(AUTO_WHITELIST_PATH, "r", encoding="utf-8") as fd:
-			in_block = False
 			for line in fd:
 				stripped = line.strip()
-				if not in_block:
-					if stripped.startswith("FILES=\""):
-						content = stripped[7:]
-						if stripped == "FILES=\"":
-							content = ""
-						if content.endswith("\""):
-							content = content[:-1]
-						else:
-							in_block = True
-						for item in content.split():
-							paths.append(item)
+				if not stripped or stripped.startswith("#"):
 					continue
-				if stripped == "\"":
-					in_block = False
-					continue
-				if stripped.endswith("\""):
-					stripped = stripped[:-1]
-					in_block = False
-				if not stripped:
-					continue
-				for item in stripped.split():
-					paths.append(item)
+				paths.append(stripped)
 	except OSError:
 		return []
 	result = []
 	seen = set()
 	for entry in paths:
-		if not entry or entry.startswith("#"):
-			continue
 		path = entry if os.path.isabs(entry) else os.path.join(PROJECT_ROOT, entry)
 		if path in seen or not os.path.isfile(path):
 			continue
