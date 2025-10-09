@@ -351,8 +351,9 @@ def normalize_define_line(line):
 		j += 1
 	header = f"#define {name}"
 	body = ""
-	if j < len(rest) and rest[j] == '(':
-		params_start = j
+	rest_after_name = rest[i:]
+	if rest_after_name.startswith('('):
+		params_start = i
 		depth = 0
 		k = params_start
 		while k < len(rest):
@@ -371,6 +372,8 @@ def normalize_define_line(line):
 		header = f"{header}{params}"
 		body = rest[k:].lstrip()
 	else:
+		while j < len(rest) and rest[j] in (' ', '\t'):
+			j += 1
 		body = rest[j:].lstrip()
 	if not body:
 		return header
