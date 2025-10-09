@@ -1052,11 +1052,13 @@ static void mmc_show_info(RCore *core, MMCState *state, int width, int height) {
 	} else {
 		struct stat st;
 		if (stat (fullpath, &st) == 0) {
+			const char *file_type;
 			line = r_str_newf ("%s%s  File Details:", MMC_GET_BG(state), MMC_GET_TITLE(state));
 			r_cons_canvas_write_at (canvas, line, pane_x + 2, y++);
 			free (line);
 
-			line = r_str_newf ("%s%s    Type: %s", MMC_GET_BG(state), MMC_GET_FG(state), S_ISDIR(st.st_mode) ? "Directory" : "File");
+			file_type = r_file_is_directory (fullpath) ? "Directory" : "File";
+			line = r_str_newf ("%s%s    Type: %s", MMC_GET_BG(state), MMC_GET_FG(state), file_type);
 			r_cons_canvas_write_at (canvas, line, pane_x + 2, y++);
 			free (line);
 
