@@ -33,7 +33,7 @@ static bool lang_lib_file_run(RLangSession *user, const char *file) {
 				RCore *core = user->lang->user;
 				user->lang->cmdf (core, "'L %s", file);
 			} else {
-				R_LOG_ERROR ("Cannot find 'entry' symbol in library");
+				R_LOG_ERROR ("Cannot find 'entry' or 'radare_plugin' symbols in library");
 			}
 		}
 		r_lib_dl_close (lib);

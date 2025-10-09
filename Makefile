@@ -7,7 +7,7 @@ B=$(DESTDIR)$(BINDIR)
 L=$(DESTDIR)$(LIBDIR)
 MESON?=meson
 PYTHON?=python
-R2BINS=$(shell cd binr ; echo r*2 r2agent r2pm r2-indent r2r r2sdb)
+R2BINS=$(shell cd binr ; echo r*2 r2agent r2pm clang-format-radare2 r2r r2sdb)
 ifdef SOURCE_DATE_EPOCH
 BUILDSEC=$(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+__%H:%M:%S" 2>/dev/null || date -u -r "$(SOURCE_DATE_EPOCH)" "+__%H:%M:%S" 2>/dev/null || date -u "+__%H:%M:%S")
 else
@@ -250,7 +250,9 @@ install: install-doc install-man install-panels install-www install-pkgconfig
 	rm -rf "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud"
 	mkdir -p "${DESTDIR}${BINDIR}"
-	#${INSTALL_SCRIPT} "${PWD}/sys/indent.sh" "${DESTDIR}${BINDIR}/r2-indent"
+	rm -f "${DESTDIR}${BINDIR}/clang-format-radare2"
+	rm -f "${DESTDIR}${BINDIR}/r2-indent"
+	${INSTALL_SCRIPT} "${PWD}/sys/clang-format-radare2" "${DESTDIR}${BINDIR}/clang-format-radare2"
 	cp -f doc/hud "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud/main"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/"
 	$(SHELL) ./configure-plugins --rm-static $(DESTDIR)$(LIBDIR)/radare2/last/
@@ -306,7 +308,9 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 	cd binr && ${MAKE} install-symlink
 	cd shlr && ${MAKE} install-symlink
 	mkdir -p "${DESTDIR}${BINDIR}"
-	ln -fs "${PWD}/sys/indent.sh" "${DESTDIR}${BINDIR}/r2-indent"
+	rm -f "${DESTDIR}${BINDIR}/clang-format-radare2"
+	rm -f "${DESTDIR}${BINDIR}/r2-indent"
+	ln -fs "${PWD}/sys/clang-format-radare2" "${DESTDIR}${BINDIR}/clang-format-radare2"
 	rm -rf "${DESTDIR}${DATADIR}/radare2/${VERSION}/scripts"
 	ln -fs scripts "${DESTDIR}${DATADIR}/radare2/${VERSION}/scripts"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud"
@@ -319,7 +323,7 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 	$(SHELL) ./configure-plugins --rm-static $(DESTDIR)/$(LIBDIR)/radare2/last/
 
 deinstall uninstall:
-	rm -f $(DESTDIR)$(BINDIR)/r2-indent
+	rm -f $(DESTDIR)$(BINDIR)/clang-format-radare2
 	cd libr && ${MAKE} uninstall
 	cd binr && ${MAKE} uninstall
 	cd shlr && ${MAKE} uninstall

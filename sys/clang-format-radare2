@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
 
 import argparse
+import difflib
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
+
+
+VERSION = "clang-format-radare2 1.0"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir))
+AUTO_WHITELIST_PATH = os.path.join(SCRIPT_DIR, "auto-format-files.txt")
 
 
 def parse_args():
@@ -13,9 +21,28 @@ def parse_args():
 		description="Format files using clang-format followed by radare2 indentation rules."
 	)
 	parser.add_argument(
+		"-n",
+		"--no-update",
+		dest="no_update",
+		action="store_true",
+		help="Do not modify files; report differences and exit with error if formatting is needed.",
+	)
+	parser.add_argument(
+		"-v",
+		"--version",
+		action="store_true",
+		help="Show the clang-format-radare2 version and exit.",
+	)
+	parser.add_argument(
+		"-a",
+		"--auto",
+		action="store_true",
+		help="Auto mode: ignore provided paths and use the indentation whitelist.",
+	)
+	parser.add_argument(
 		"files",
-		nargs="+",
-		help="Files to format in place.",
+		nargs="*",
+		help="Files or directories to format in place.",
 	)
 	parser.add_argument(
 		"--clang-format",
@@ -24,6 +51,69 @@ def parse_args():
 		help="clang-format executable to use (default: env CLANG_FORMAT or clang-format).",
 	)
 	return parser.parse_args()
+
+
+def is_source_file(path):
+	ext = os.path.splitext(path)[1].lower()
+	return ext in (".c", ".h")
+
+
+def expand_targets(paths):
+	files = []
+	seen = set()
+	for target in paths:
+		if not target or target in seen:
+			continue
+		if os.path.isdir(target):
+			for root, _, filenames in os.walk(target):
+				for name in filenames:
+					if not is_source_file(name):
+						continue
+					full = os.path.join(root, name)
+					if full in seen:
+						continue
+					files.append(full)
+					seen.add(full)
+		else:
+			files.append(target)
+			seen.add(target)
+	return files
+
+
+def load_auto_files():
+	paths = []
+	try:
+		with open(AUTO_WHITELIST_PATH, "r", encoding="utf-8") as fd:
+			for line in fd:
+				stripped = line.strip()
+				if not stripped or stripped.startswith("#"):
+					continue
+				paths.append(stripped)
+	except OSError:
+		return []
+	result = []
+	seen = set()
+	for entry in paths:
+		path = entry if os.path.isabs(entry) else os.path.join(PROJECT_ROOT, entry)
+		if path in seen or not os.path.isfile(path):
+			continue
+		result.append(path)
+		seen.add(path)
+	return result
+
+
+def show_diff(path, original, formatted):
+	try:
+		display_path = os.path.relpath(path)
+	except ValueError:
+		display_path = path
+	for line in difflib.unified_diff(
+		original.splitlines(True),
+		formatted.splitlines(True),
+		fromfile=display_path,
+		tofile=f"{display_path} (formatted)",
+	):
+		sys.stdout.write(line)
 
 
 def convert_leading_spaces(line):
@@ -75,7 +165,7 @@ def fix_paren_spacing(line):
 			while result and result[-1] == " ":
 				result.pop()
 			prev = result[-1] if result else ""
-			if not line_starts_alnum and prev not in ("", "(", "\t", "\n") and not line.startswith("#"):
+			if not line_starts_alnum and prev not in ("", "(", "\t", "\n") and prev != "*" and prev != "_" and prev != "&" and prev != "[" and not line.startswith("#"):
 				result.append(" ")
 			result.append("(")
 			i += 1
@@ -215,6 +305,122 @@ def fix_hash_spacing(line):
 	return re.sub(r'\s*##\s*', ' ## ', line)
 
 
+def fix_logical_spacing(line):
+	in_single = False
+	in_double = False
+	escape = False
+	result = []
+	length = len(line)
+	i = 0
+	while i < length:
+		ch = line[i]
+		if escape:
+			result.append(ch)
+			escape = False
+			i += 1
+			continue
+		if ch == "\\" and (in_single or in_double):
+			result.append(ch)
+			escape = True
+			i += 1
+			continue
+		if ch == "'" and not in_double:
+			in_single = not in_single
+			result.append(ch)
+			i += 1
+			continue
+		if ch == '"' and not in_single:
+			in_double = not in_double
+			result.append(ch)
+			i += 1
+			continue
+		if not in_single and not in_double:
+			if ch == '&' and i + 1 < length and line[i+1] == '&':
+				result.append("&&")
+				i += 2
+				if i < length and line[i] not in (' ', '\t', '\n'):
+					result.append(" ")
+				continue
+			elif ch == '|' and i + 1 < length and line[i+1] == '|':
+				result.append("||")
+				i += 2
+				if i < length and line[i] not in (' ', '\t', '\n'):
+					result.append(" ")
+				continue
+		result.append(ch)
+		i += 1
+	return "".join(result)
+
+
+def format_macro_body(body):
+	if not body:
+		return body
+	formatted = fix_paren_spacing(body)
+	formatted = fix_ternary_spacing(formatted)
+	formatted = fix_hash_spacing(formatted)
+	formatted = fix_logical_spacing(formatted)
+	return formatted
+
+
+def normalize_define_line(line):
+	rest = line[len("#define"):].lstrip()
+	if not rest:
+		return "#define"
+	i = 0
+	while i < len(rest) and (rest[i].isalnum() or rest[i] == '_'):
+		i += 1
+	name = rest[:i]
+	if not name:
+		return line
+	j = i
+	while j < len(rest) and rest[j] == ' ':
+		j += 1
+	header = f"#define {name}"
+	body = ""
+	rest_after_name = rest[i:]
+	if rest_after_name.startswith('('):
+		params_start = i
+		depth = 0
+		k = params_start
+		while k < len(rest):
+			ch = rest[k]
+			if ch == '(':
+				depth += 1
+			elif ch == ')':
+				depth -= 1
+				if depth == 0:
+					k += 1
+					break
+			k += 1
+		if depth != 0:
+			return line
+		params = rest[params_start:k]
+		header = f"{header}{params}"
+		body = rest[k:].lstrip()
+	else:
+		while j < len(rest) and rest[j] in (' ', '\t'):
+			j += 1
+		body = rest[j:].lstrip()
+	if not body:
+		return header
+	body = format_macro_body(body)
+	return f"{header} {body}"
+
+
+def fix_preprocessor_line(line):
+	content, ending = split_line_ending(line)
+	stripped = content.lstrip()
+	if not stripped.startswith('#'):
+		return line
+	adjusted = stripped.replace('\t', ' ')
+	if adjusted.startswith('#define'):
+		adjusted = normalize_define_line(adjusted)
+	else:
+		adjusted = fix_hash_spacing(adjusted)
+	adjusted = fix_hash_spacing(adjusted)
+	return adjusted + ending
+
+
 def fix_ternary_lines(lines):
 	fixed = []
 	i = 0
@@ -254,19 +460,25 @@ def fix_ternary_lines(lines):
 def apply_indent_rules(text):
 	lines = []
 	for line in text.splitlines(True):
+		if line.lstrip().startswith('#'):
+			lines.append(fix_preprocessor_line(line))
+			continue
 		line = convert_leading_spaces(line)
 		line = fix_paren_spacing(line)
 		line = fix_ternary_spacing(line)
 		line = fix_hash_spacing(line)
+		line = fix_logical_spacing(line)
 		lines.append(line)
 	lines = fix_case_blocks(lines)
 	lines = fix_ternary_lines(lines)
 	return "".join(lines)
 
 
-def format_file(path, clang_format):
+def format_file(path, clang_format, check_only=False):
 	if not os.path.isfile(path):
 		raise FileNotFoundError(f"{path}: no such file")
+	with open(path, "r", encoding="utf-8") as current:
+		original = current.read()
 	try:
 		result = subprocess.run(
 			[clang_format, "-style=file", path],
@@ -280,32 +492,57 @@ def format_file(path, clang_format):
 			f"clang-format failed for {path}: {exc.stderr.strip() or exc}"
 		) from exc
 	indented = apply_indent_rules(result.stdout)
+	if original == indented:
+		return False
+	if check_only:
+		show_diff(path, original, indented)
+		return True
 	with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False) as tmp:
 		tmp.write(indented)
 		temp_name = tmp.name
 	os.replace(temp_name, path)
+	return True
 
 
 def main():
 	args = parse_args()
+	if args.version:
+		print(VERSION)
+		return 0
+	paths = args.files
+	if args.auto:
+		paths = load_auto_files()
+		if not paths:
+			print(
+				"clang-format-radare2: auto mode whitelist is empty or missing",
+				file=sys.stderr,
+			)
+			return 1
+	if not paths:
+		print("clang-format-radare2: no input files", file=sys.stderr)
+		return 1
 	clang_format = args.clang_format
 	if not shutil.which(clang_format):
 		print(
-			f"radare2-format: cannot find clang-format ({clang_format})",
+			f"clang-format-radare2: cannot find clang-format ({clang_format})",
 			file=sys.stderr,
 		)
 		return 1
+	files = expand_targets(paths)
+	if not files:
+		print("clang-format-radare2: no input files", file=sys.stderr)
+		return 1
 	exit_code = 0
-	for path in args.files:
+	for path in files:
 		try:
-			format_file(path, clang_format)
+			changed = format_file(path, clang_format, args.no_update)
+			if args.no_update and changed:
+				exit_code = 1
 		except (FileNotFoundError, RuntimeError, OSError) as err:
-			print(f"radare2-format: {err}", file=sys.stderr)
+			print(f"clang-format-radare2: {err}", file=sys.stderr)
 			exit_code = 1
 	return exit_code
 
 
 if __name__ == "__main__":
-	import shutil
-
 	sys.exit(main())
