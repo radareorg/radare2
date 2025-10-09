@@ -8,6 +8,83 @@
 static R_TH_LOCAL RCons *I = NULL;
 static R_TH_LOCAL RConsContext *r_cons_current_context = NULL;
 
+typedef struct r_cons_tls_ctx_t {
+	RCons *cons;
+	RConsContext *ctx;
+	struct r_cons_tls_ctx_t *next;
+} RConsTLSCtx;
+
+static R_TH_LOCAL RConsTLSCtx *r_cons_tls_ctx = NULL;
+
+static RConsTLSCtx *r_cons_tls_find(RCons *cons) {
+	RConsTLSCtx *it = r_cons_tls_ctx;
+	for (; it; it = it->next) {
+		if (it->cons == cons) {
+			return it;
+		}
+	}
+	return NULL;
+}
+
+static void r_cons_tls_set(RCons *cons, RConsContext *ctx) {
+	if (!cons) {
+		return;
+	}
+	RConsTLSCtx *node = r_cons_tls_find (cons);
+	if (!node) {
+		node = R_NEW0 (RConsTLSCtx);
+		if (!node) {
+			return;
+		}
+		node->cons = cons;
+		node->next = r_cons_tls_ctx;
+		r_cons_tls_ctx = node;
+	}
+	node->ctx = ctx;
+	if (!I) {
+		I = cons;
+	}
+	if (cons == I) {
+		r_cons_current_context = ctx;
+	}
+}
+
+static void r_cons_tls_unset(RCons *cons) {
+	if (!cons) {
+		return;
+	}
+	RConsTLSCtx **pit = &r_cons_tls_ctx;
+	while (*pit) {
+		RConsTLSCtx *it = *pit;
+		if (it->cons == cons) {
+			*pit = it->next;
+			free (it);
+			break;
+		}
+		pit = &(*pit)->next;
+	}
+	if (cons == I) {
+		r_cons_current_context = NULL;
+	}
+}
+
+static RConsContext *r_cons_ctx_for(RCons *cons) {
+	if (!cons) {
+		cons = I;
+	}
+	if (!cons) {
+		return NULL;
+	}
+	RConsTLSCtx *node = r_cons_tls_find (cons);
+	if (node && node->ctx) {
+		if (cons == I) {
+			r_cons_current_context = node->ctx;
+		}
+		return node->ctx;
+	}
+	return cons->context;
+}
+
 R_LIB_VERSION (r_cons);
 
 static RCons s_cons_global = {0};
@@ -17,8 +94,8 @@ static void __break_signal(int sig);
 #define MOAR (4096 * 8)
 
 static bool cons_palloc(RCons *cons, size_t moar) {
-	RConsContext *C = r_cons_current_context;
-	if (moar == 0 || moar > ST32_MAX) {
+	RConsContext *C = r_cons_ctx_for (cons);
+	if (!C || moar == 0 || moar > ST32_MAX) {
 		return false;
 	}
 	if (!C->buffer) {
@@ -294,9 +371,10 @@ R_API RCons *r_cons_new2(void) {
 	cons->show_vals = false;
 	r_cons_reset (cons);
 	cons->line = r_line_new (cons);
-	r_cons_current_context = cons->context;
+	r_cons_tls_set (cons, cons->context);
 	return cons;
 }
+
 
 R_API void r_cons_free2(RCons * R_NULLABLE cons) {
 	if (!cons) {
@@ -329,7 +407,10 @@ R_API void r_cons_free2(RCons * R_NULLABLE cons) {
 }
 
 static void __break_signal(int sig) {
-	r_cons_context_break (r_cons_current_context); // &r_cons_context_default);
+	RConsContext *ctx = r_cons_ctx_for (NULL);
+	if (ctx) {
+		r_cons_context_break (ctx); // &r_cons_context_default);
+	}
 }
 
 #if 0
@@ -450,6 +531,9 @@ R_API RConsContext *r_cons_context(void) {
 R_API RCons *r_cons_global(RCons *c) {
 	if (c) {
 		I = c;
+		r_cons_tls_set (c, c->context);
+	} else if (I) {
+		r_cons_tls_set (I, I->context);
 	}
 	return I;
 }
@@ -525,7 +609,8 @@ R_API void r_cons_context_break_pop(RCons *cons, RConsContext *context, bool sig
 }
 
 R_API bool r_cons_is_interactive(RCons *cons) {
-	return r_cons_current_context->is_interactive;
+	RConsContext *ctx = r_cons_ctx_for (cons);
+	return ctx? ctx->is_interactive: false;
 }
 
 #if 0
@@ -537,9 +622,12 @@ R_API bool r_cons_default_context_is_interactive(void) {
 
 R_API bool r_cons_was_breaked(RCons *cons) {
 #if WANT_DEBUGSTUFF
-	const bool res = r_cons_is_breaked (cons) || r_cons_current_context->was_breaked;
-	r_cons_current_context->breaked = false;
-	r_cons_current_context->was_breaked = false;
+	RConsContext *ctx = r_cons_ctx_for (cons);
+	const bool res = r_cons_is_breaked (cons) || (ctx && ctx->was_breaked);
+	if (ctx) {
+		ctx->breaked = false;
+		ctx->was_breaked = false;
+	}
 	return res;
 #else
 	return false;
@@ -548,7 +636,10 @@ R_API bool r_cons_was_breaked(RCons *cons) {
 
 R_API bool r_cons_is_breaked(RCons *cons) {
 #if WANT_DEBUGSTUFF
-	RConsContext *C = r_cons_current_context;
+	RConsContext *C = r_cons_ctx_for (cons);
+	if (!C) {
+		return false;
+	}
 	if (R_UNLIKELY (cons->cb_break)) {
 		cons->cb_break (cons->user);
 	}
@@ -714,17 +805,18 @@ R_API bool r_cons_enable_mouse(RCons *cons, const bool enable) {
 }
 
 R_API RCons *r_cons_new(void) {
+	bool had_cons = I != NULL;
 	RCons *cons = r_cons_new2 ();
-	if (I) {
+	if (had_cons) {
 		R_LOG_INFO ("Second cons!");
-		I = cons;
-	} else {
-		I = cons;
 	}
+	I = cons;
+	r_cons_tls_set (cons, cons->context);
 	return cons;
 }
 
 R_API void r_cons_free(RCons *cons) {
+	r_cons_tls_unset (cons);
 	r_cons_free2 (cons);
 	if (cons == I) {
 		I = NULL; // hack for globals
@@ -783,7 +875,7 @@ R_API void r_cons_context_load(RConsContext *context) {
 		I = &s_cons_global;
 	}
 	I->context = context;
-	r_cons_current_context = context;
+	r_cons_tls_set (I, context);
 }
 
 R_API void r_cons_context_reset(RConsContext *context) {
@@ -1291,7 +1383,10 @@ R_API void r_cons_set_utf8(RCons *cons, bool b) {
 }
 
 static int kons_chop(RCons *cons, int len) {
-	RConsContext *ctx = cons->context;
+	RConsContext *ctx = r_cons_ctx_for (cons);
+	if (!ctx) {
+		return 0;
+	}
 	if (ctx->buffer_limit > 0) {
 		if (ctx->buffer_len + len >= ctx->buffer_limit) {
 			if (ctx->buffer_len >= ctx->buffer_limit) {
@@ -1305,8 +1400,8 @@ static int kons_chop(RCons *cons, int len) {
 }
 
 R_API void r_cons_memset(RCons *cons, char ch, int len) {
-	RConsContext *C = cons->context;
-	if (C->breaked) {
+	RConsContext *C = r_cons_ctx_for (cons);
+	if (!C || C->breaked) {
 		return;
 	}
 	if (!cons->null && len > 0) {
@@ -1324,8 +1419,8 @@ R_API void r_cons_memset(RCons *cons, char ch, int len) {
 R_API int r_cons_write(RCons *cons, const void *data, int len) {
 	R_RETURN_VAL_IF_FAIL (data && len >= 0, -1);
 	const char *str = data;
-	RConsContext *ctx = r_cons_current_context;
-	if (len < 1 || ctx->breaked) {
+	RConsContext *ctx = r_cons_ctx_for (cons);
+	if (!ctx || len < 1 || ctx->breaked) {
 		return 0;
 	}
 
@@ -1699,6 +1794,7 @@ R_API void r_cons_push(RCons *cons) {
 	nc->buffer_sz = 0;
 	nc->buffer_len = 0;
 	cons->context = nc;
+	r_cons_tls_set (cons, nc);
 	// global hacks
 	RCons *Gcons = r_cons_singleton ();
 	if (cons == Gcons) {
@@ -1730,6 +1826,7 @@ R_API bool r_cons_pop(RCons *cons) {
 	RConsContext *ctx = r_list_pop (cons->ctx_stack);
 	r_cons_context_free (cons->context);
 	cons->context = ctx;
+	r_cons_tls_set (cons, ctx);
 	// global hacks
 	RCons *Gcons = r_cons_singleton ();
 	if (cons == Gcons) {

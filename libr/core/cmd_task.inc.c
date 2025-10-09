@@ -45,6 +45,7 @@ static int _cmd_tasks_impl(void *data, const char *input) {
 		if (tid) {
 			RCoreTask *task = r_core_task_get (&core->tasks, tid);
 			if (task) {
+				r_core_task_wait (task, -1);
 				if (task->res) {
 					r_cons_println (core->cons, task->res);
 				}
