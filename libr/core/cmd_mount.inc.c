@@ -2,6 +2,8 @@
 
 #if R_INCLUDE_BEGIN
 
+#include "cmd_mmc.inc.c"
+
 static RCoreHelpMessage help_msg_m = {
 	"Usage:", "m[-?*dgy] [...] ", "Mountpoints management",
 	"m", " /mnt ext2 0", "mount ext2 fs at /mnt with delta 0 on IO",
@@ -19,6 +21,7 @@ static RCoreHelpMessage help_msg_m = {
 	"mi", " /foo/bar", "get offset and size of given file",
 	"mis", " /foo/bar", "get offset and size of given file and seek to it",
 	"mj", "", "list mounted filesystems in JSON",
+	"mmc", "[left_path] [right_path]", "Mountpoint Miknight Commander (dual-panel file manager)",
 	"mn", " [mountpoint]", "show filesystem information details",
 	"mo", " /foo/bar", "open given file into a malloc://",
 	"mp", " msdos 0", "show partitions in msdos format at offset 0",
@@ -623,6 +626,11 @@ static int cmd_mount(void *data, const char *_input) {
 			} else {
 				R_LOG_ERROR ("Cannot open file");
 			}
+		}
+		break;
+	case 'm': // "mm"
+		if (input[1] == 'c') { // "mmc"
+			return cmd_mmc (core, input + 2);
 		}
 		break;
 	case 'c': // "mc"
