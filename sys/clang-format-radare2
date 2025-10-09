@@ -10,7 +10,7 @@ import sys
 import tempfile
 
 
-VERSION = "radare2-format 1.0"
+VERSION = "clang-format-radare2 1.0"
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir))
 AUTO_WHITELIST_PATH = os.path.join(SCRIPT_DIR, "auto-format-files.txt")
@@ -31,7 +31,7 @@ def parse_args():
 		"-v",
 		"--version",
 		action="store_true",
-		help="Show the radare2-format version and exit.",
+		help="Show the clang-format-radare2 version and exit.",
 	)
 	parser.add_argument(
 		"-a",
@@ -514,23 +514,23 @@ def main():
 		paths = load_auto_files()
 		if not paths:
 			print(
-				"radare2-format: auto mode whitelist is empty or missing",
+				"clang-format-radare2: auto mode whitelist is empty or missing",
 				file=sys.stderr,
 			)
 			return 1
 	if not paths:
-		print("radare2-format: no input files", file=sys.stderr)
+		print("clang-format-radare2: no input files", file=sys.stderr)
 		return 1
 	clang_format = args.clang_format
 	if not shutil.which(clang_format):
 		print(
-			f"radare2-format: cannot find clang-format ({clang_format})",
+			f"clang-format-radare2: cannot find clang-format ({clang_format})",
 			file=sys.stderr,
 		)
 		return 1
 	files = expand_targets(paths)
 	if not files:
-		print("radare2-format: no input files", file=sys.stderr)
+		print("clang-format-radare2: no input files", file=sys.stderr)
 		return 1
 	exit_code = 0
 	for path in files:
@@ -539,7 +539,7 @@ def main():
 			if args.no_update and changed:
 				exit_code = 1
 		except (FileNotFoundError, RuntimeError, OSError) as err:
-			print(f"radare2-format: {err}", file=sys.stderr)
+			print(f"clang-format-radare2: {err}", file=sys.stderr)
 			exit_code = 1
 	return exit_code
 
