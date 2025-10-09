@@ -327,6 +327,16 @@ def fix_hash_spacing(line):
 	return re.sub(r'\s*##\s*', ' ## ', line)
 
 
+def fix_preprocessor_line(line):
+	content, ending = split_line_ending(line)
+	stripped = content.lstrip()
+	if not stripped.startswith('#'):
+		return line
+	adjusted = stripped.replace('\t', ' ')
+	adjusted = fix_hash_spacing(adjusted)
+	return adjusted + ending
+
+
 def fix_ternary_lines(lines):
 	fixed = []
 	i = 0
@@ -366,6 +376,9 @@ def fix_ternary_lines(lines):
 def apply_indent_rules(text):
 	lines = []
 	for line in text.splitlines(True):
+		if line.lstrip().startswith('#'):
+			lines.append(fix_preprocessor_line(line))
+			continue
 		line = convert_leading_spaces(line)
 		line = fix_paren_spacing(line)
 		line = fix_ternary_spacing(line)
