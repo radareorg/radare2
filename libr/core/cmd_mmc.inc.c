@@ -64,6 +64,7 @@ typedef struct {
 	bool interactive_preview;
 	bool preview_hex_mode;
 	int preview_offset;
+	int panel_split_ratio;
 	char *clipboard_path;
 	bool clipboard_cut;
 	MMCOrderMode ordering_mode;
@@ -1536,6 +1537,7 @@ static void mmc_show_help(RCore *core, MMCState *state, int width, int height) {
 		"  PANEL OPERATIONS:",
 		"    r          Refresh both panels",
 		"    o          Change sort order (fs/name/size)",
+		"    z/Z        Decrease/Increase left panel width",
 		"",
 		"  OTHER:",
 		"    i          Show file/filesystem info",
@@ -1758,6 +1760,7 @@ static int cmd_mmc(void *data, const char *input) {
 	state.interactive_preview = false;
 	state.preview_hex_mode = true;
 	state.preview_offset = 0;
+	state.panel_split_ratio = 50;
 	state.ordering_mode = MMC_ORDER_NATURAL;
 	mmc_update_colors(&state);
 
@@ -1816,7 +1819,7 @@ static int cmd_mmc(void *data, const char *input) {
 
 		r_cons_canvas_background (canvas, state.colors.bg_pane);
 
-		panel_w = state.width / 2;
+		panel_w = (state.width * state.panel_split_ratio) / 100;
 		panel_h = state.height - 1;
 
 		left_active = (state.active == &state.left);
@@ -1971,6 +1974,16 @@ static int cmd_mmc(void *data, const char *input) {
 		case 'o':
 		case 'O':
 			mmc_cycle_ordering (&state);
+			break;
+		case 'z':
+			if (state.panel_split_ratio > 20) {
+				state.panel_split_ratio -= 5;
+			}
+			break;
+		case 'Z':
+			if (state.panel_split_ratio < 80) {
+				state.panel_split_ratio += 5;
+			}
 			break;
 		default:
 			break;
