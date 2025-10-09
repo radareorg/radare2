@@ -1373,6 +1373,124 @@ static void mmc_show_help(RCore *core, MMCState *state, int width, int height) {
 	r_cons_readchar (core->cons);
 }
 
+static bool mmc_handle_mouse_click(RCore *core, MMCState *state, int click_x, int click_y, int panel_w, int panel_h) {
+	MMCPanel *clicked_panel = NULL;
+	int file_y_offset, clicked_index;
+	char prompt_msg[256];
+	int ch;
+	int i, footer_len;
+	RConsCanvas *canvas;
+	bool left_active;
+
+	if (click_x < panel_w) {
+		clicked_panel = &state->left;
+	} else if (click_x < state->width) {
+		clicked_panel = &state->right;
+	} else {
+		return false;
+	}
+
+	if (click_y < 2 || click_y >= panel_h) {
+		return false;
+	}
+
+	file_y_offset = click_y - 2;
+	clicked_index = clicked_panel->scroll_offset + file_y_offset;
+
+	if (clicked_index < 0 || clicked_index >= clicked_panel->count) {
+		return false;
+	}
+
+	state->active = clicked_panel;
+	clicked_panel->selected = clicked_index;
+
+	r_cons_clear00 (core->cons);
+
+	canvas = r_cons_canvas_new (core->cons, state->width, state->height, R_CONS_CANVAS_FLAG_INHERIT);
+	if (!canvas) {
+		return false;
+	}
+	canvas->color = r_config_get_i (core->config, "scr.color");
+
+	r_cons_canvas_background (canvas, MMC_GET_BG_PANE(state));
+
+	left_active = (state->active == &state->left);
+	mmc_panel_draw (core, canvas, &state->left, state, 0, 0, panel_w, panel_h, left_active);
+	mmc_panel_draw (core, canvas, &state->right, state, panel_w, 0, state->width - panel_w, panel_h, !left_active);
+
+	r_cons_canvas_print (canvas);
+	r_cons_canvas_free (canvas);
+
+	const char *shortcuts[] = {
+		"h:Help", "i:Info", "v:View", "c:Copy", "m:Mkdir",
+		"d:Delete", "r:Refresh", "s:Seek", "o:Order", "q:Quit"
+	};
+
+	r_cons_printf (core->cons, "%s%s", MMC_GET_SEL_BG(state), MMC_GET_FG_BLACK(state));
+	footer_len = 0;
+	for (i = 0; i < 10; i++) {
+		r_cons_printf (core->cons, " %s", shortcuts[i]);
+		footer_len += strlen (shortcuts[i]) + 1;
+	}
+	for (i = footer_len; i < state->width; i++) {
+		r_cons_printf (core->cons, " ");
+	}
+	r_cons_printf (core->cons, "%s\n", MMC_GET_RESET(state));
+
+	r_cons_visual_flush (core->cons);
+
+	snprintf (prompt_msg, sizeof (prompt_msg),
+		"\r%s%sAction for '%s'? [i:Info v:View c:Copy m:Mkdir d:Delete s:Seek q:Cancel]%s ",
+		core->cons->context->pal.reset,
+		MMC_GET_SEL_BG(state),
+		clicked_panel->entries[clicked_index],
+		core->cons->context->pal.reset);
+
+	r_cons_gotoxy (core->cons, 0, state->height - 1);
+	r_cons_printf (core->cons, "%s", prompt_msg);
+	r_cons_flush (core->cons);
+
+	ch = r_cons_readchar (core->cons);
+	if (ch == -1 || ch == 4) {
+		return true;
+	}
+
+	if (ch == 27) {
+		int nav_ch = r_cons_arrow_to_hjkl (core->cons, ch);
+		if (!nav_ch) {
+			return true;
+		}
+		ch = nav_ch;
+	}
+
+	switch (ch) {
+	case 'i': case 'I':
+		mmc_show_info (core, state, state->width, state->height);
+		return true;
+	case 'v': case 'V':
+		mmc_view_file (core, state);
+		return true;
+	case 'c': case 'C':
+		mmc_copy_file_confirmed (core, state);
+		return true;
+	case 'm': case 'M':
+		mmc_make_directory (core, state);
+		return true;
+	case 'd': case 'D':
+		mmc_delete_file (core, state);
+		return true;
+	case 's': case 'S':
+		mmc_seek_to_file (core, state);
+		return true;
+	case 'q': case 'Q':
+		// dismiss the prompt, don´t quit the mc
+		return true;
+	default:
+		// invalid command, dismiss, don´t refresh
+		return false;
+	}
+}
+
 static int cmd_mmc(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 
@@ -1475,8 +1593,11 @@ static int cmd_mmc(void *data, const char *input) {
 
 	state.active = &state.left;
 
+	int old_vtmode = r_config_get_i (core->config, "scr.vtmode");
+	r_config_set_i (core->config, "scr.vtmode", 2);
 	r_cons_set_raw (core->cons, true);
 	r_cons_show_cursor (core->cons, false);
+	r_cons_enable_mouse (core->cons, r_config_get_i (core->config, "scr.wheel"));
 
 	while (state.running) {
 		int i, footer_len, panel_w, panel_h;
@@ -1527,6 +1648,14 @@ static int cmd_mmc(void *data, const char *input) {
 		}
 
 		int nav_ch = r_cons_arrow_to_hjkl (core->cons, ch);
+
+		if (!nav_ch) {
+			int click_x, click_y;
+			if (r_cons_get_click (core->cons, &click_x, &click_y)) {
+				mmc_handle_mouse_click (core, &state, click_x, click_y, panel_w, panel_h);
+				continue;
+			}
+		}
 
 		if (nav_ch == 'k') {
 			mmc_panel_navigate_up (state.active, panel_h - 2);
@@ -1598,8 +1727,10 @@ static int cmd_mmc(void *data, const char *input) {
 		}
 	}
 
+	r_cons_enable_mouse (core->cons, false);
 	r_cons_show_cursor (core->cons, true);
 	r_cons_set_raw (core->cons, false);
+	r_config_set_i (core->config, "scr.vtmode", old_vtmode);
 	mmc_panel_free (&state.left);
 	mmc_panel_free (&state.right);
 	free (state.clipboard_path);
