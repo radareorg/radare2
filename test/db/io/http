@@ -6,12 +6,8 @@ b 64
 ps
 EOF
 EXPECT=<<EOF
-1256
-<!doctype html>
-<html>
-<head>
-    <title>Example Domain</title>
-
+513
+<!doctype html><html lang="en"><head><title>Example Domain</titl
 EOF
 RUN
 
