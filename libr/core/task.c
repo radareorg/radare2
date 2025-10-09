@@ -25,7 +25,6 @@ static RCore *mycore_new(RCore *core) {
 			free (c);
 			return core;
 		}
-		c->cons->fdout = -1;
 		// XXX: RConsBind must disappear. its used in bin, fs and search
 		// TODO: use r_cons_clone instead
 		return c;
@@ -56,6 +55,52 @@ static void mycore_free(RCore *a) {
 #if CUSTOMCORE
 	r_cons_free (a->cons);
 #endif
+}
+
+static RCons *task_cons_create(RCons *base, RConsContext *task_ctx, bool *attached_ctx_out) {
+	RCons *cons = r_cons_new2 ();
+	if (!cons) {
+		return NULL;
+	}
+	cons->use_utf8 = base->use_utf8;
+	cons->use_utf8_curvy = base->use_utf8_curvy;
+	cons->dotted_lines = base->dotted_lines;
+	cons->break_lines = base->break_lines;
+	cons->vtmode = base->vtmode;
+	cons->linesleep = base->linesleep;
+	cons->pagesize = base->pagesize;
+	cons->maxpage = base->maxpage;
+	cons->mouse = base->mouse;
+	cons->timeout = base->timeout;
+	cons->otimeout = base->otimeout;
+	cons->null = base->null;
+	cons->rgbstr = base->rgbstr;
+	cons->enable_highlight = base->enable_highlight;
+	cons->fdout = base->fdout;
+	cons->click_set = base->click_set;
+	cons->click_x = base->click_x;
+	cons->click_y = base->click_y;
+
+	if (task_ctx) {
+		RConsContext *owned_ctx = cons->context;
+		cons->context = task_ctx;
+		r_cons_context_free (owned_ctx);
+		if (attached_ctx_out) {
+			*attached_ctx_out = true;
+		}
+	} else if (base->context) {
+		RConsContext *owned_ctx = cons->context;
+		cons->context = r_cons_context_clone (base->context);
+		r_cons_context_free (owned_ctx);
+		if (!cons->context) {
+			r_cons_free2 (cons);
+			return NULL;
+		}
+		if (attached_ctx_out) {
+			*attached_ctx_out = false;
+		}
+	}
+	return cons;
 }
 
 R_API void r_core_task_scheduler_init(RCoreTaskScheduler *tasks, RCore *core) {
@@ -498,45 +543,53 @@ static RThreadFunctionRet task_run(RCoreTask *task) {
 		r_event_send (core->ev, R_EVENT_CORE_TASK_STARTED, task);
 	}
 
+	RCore *exec_core = task->task_core? task->task_core: core;
+	RCons *saved_cons = exec_core->cons;
+	RCons *task_cons = NULL;
+	bool attached_ctx = false;
+	bool interrupted = false;
+
 	if (task->cons_context && task->cons_context->breaked) {
-		// breaked in R_CORE_TASK_STATE_BEFORE_START
 		goto stillbirth;
 	}
 
-	RCore *local_core = mycore_new (core);
-	RCons *local_cons = local_core? local_core->cons: NULL;
-	if (local_core != core && task->cons_context && local_cons) {
-		local_cons->context = task->cons_context;
+	if (task != scheduler->main_task) {
+		task_cons = task_cons_create (saved_cons, task->cons_context, &attached_ctx);
+		if (task_cons) {
+			r_cons_global (task_cons);
+			exec_core->cons = task_cons;
+			r_core_bind_cons (exec_core);
+		}
 	}
-	// Capture interrupted state before command execution
-	bool interrupted = false;
+
 	if (task->cons_context) {
 		interrupted = task->cons_context->breaked;
+	} else if (task_cons && task_cons->context) {
+		interrupted = task_cons->context->breaked;
 	}
 
-	RCons *saved_cons = core->cons;
 	char *res_str = NULL;
-
-	R_CRITICAL_ENTER (core);
-	if (local_cons) {
-		core->cons = local_cons;
-		r_core_bind_cons (core);
-	}
 	if (task == scheduler->main_task) {
-		r_core_cmd (core, task->cmd, task->cmd_log);
+		r_core_cmd (exec_core, task->cmd, task->cmd_log);
 	} else {
-		res_str = r_core_cmd_str (core, task->cmd);
+		res_str = r_core_cmd_str (exec_core, task->cmd);
 	}
-	if (local_cons) {
-		core->cons = saved_cons;
-		r_core_bind_cons (core);
-	}
-	R_CRITICAL_LEAVE (core);
 
-	if (local_core != core && local_cons) {
-		local_cons->context = NULL;
+	if (task->cons_context) {
+		interrupted = task->cons_context->breaked;
+	} else if (task_cons && task_cons->context) {
+		interrupted = task_cons->context->breaked;
 	}
-	mycore_free (local_core);
+
+	if (task_cons) {
+		exec_core->cons = saved_cons;
+		r_core_bind_cons (exec_core);
+		r_cons_global (saved_cons);
+		if (attached_ctx) {
+			task_cons->context = NULL;
+		}
+		r_cons_free2 (task_cons);
+	}
 
 	free (task->res);
 	task->res = res_str;
