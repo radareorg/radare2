@@ -149,7 +149,7 @@ static void mmc_panel_load_fs(RCore *core, MMCPanel *panel, MMCOrderMode orderin
 }
 
 static void mmc_panel_load_local(RCore *core, MMCPanel *panel, MMCOrderMode ordering_mode) {
-	int i, start_idx = 0, file_count, valid_count, idx;
+	int i, start_idx = 0, valid_count, idx;
 	RList *files;
 	RListIter *iter;
 	const char *name;
@@ -180,8 +180,6 @@ static void mmc_panel_load_local(RCore *core, MMCPanel *panel, MMCOrderMode orde
 
 	files = r_sys_dir (panel->path);
 	if (files) {
-		file_count = r_list_length (files);
-
 		valid_count = 0;
 		r_list_foreach (files, iter, name) {
 			if (!strcmp (name, ".") || !strcmp (name, "..")) {
@@ -533,7 +531,7 @@ static void mmc_view_file(RCore *core, MMCState *state) {
 		int pane_w, pane_h, pane_x, pane_y;
 		int content_y, max_lines, lines_per_page;
 		int line_offset, remaining, line_bytes;
-		int chars_per_line, line_idx, char_offset, text_pos, spaces;
+		int chars_per_line, char_offset, text_pos, spaces;
 		int num_shortcuts, footer_len, ch;
 		char hex[64], ascii[20], text_line[512];
 		char *hex_ptr, *ascii_ptr;
@@ -632,7 +630,6 @@ static void mmc_view_file(RCore *core, MMCState *state) {
 			}
 		} else {
 			chars_per_line = pane_w - 2;
-			line_idx = 0;
 			char_offset = offset;
 
 			for (i = 0; i < max_lines && char_offset < (int)size; i++) {
@@ -900,8 +897,7 @@ static void mmc_show_info(RCore *core, MMCState *state, int width, int height) {
 	int pane_w, pane_h, pane_x, pane_y;
 	const char *title_text;
 	RConsCanvas *canvas;
-	char *selected_name, *info_title, *fullpath, *size_str, *type_str, *offset_str;
-	char *mn_output;
+	char *selected_name, *info_title, *fullpath;
 
 	if (panel->count == 0 || panel->selected >= panel->count) {
 		r_cons_message (core->cons, "No file selected");
