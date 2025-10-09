@@ -187,7 +187,7 @@ def fix_paren_spacing(line):
 			while result and result[-1] == " ":
 				result.pop()
 			prev = result[-1] if result else ""
-			if not line_starts_alnum and prev not in ("", "(", "\t", "\n") and not line.startswith("#"):
+			if not line_starts_alnum and prev not in ("", "(", "\t", "\n") and prev != "*" and prev != "_" and prev != "&" and not line.startswith("#"):
 				result.append(" ")
 			result.append("(")
 			i += 1
