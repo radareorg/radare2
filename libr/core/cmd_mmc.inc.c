@@ -1346,7 +1346,7 @@ static void mmc_show_help(RCore *core, MMCState *state, int width, int height) {
 		"  OTHER:",
 		"    i          Show file/filesystem info",
 		"    s          Seek to file address and quit to r2",
-		"    t          Toggle theme (MC / r2 colors)",
+		"    R          Toggle theme (MC / r2 colors)",
 		"    h          Show this help",
 		"    q          Quit Miknight Commander",
 	};
@@ -1670,8 +1670,7 @@ static int cmd_mmc(void *data, const char *input) {
 		case 'Q':
 			state.running = false;
 			break;
-		case 't':
-		case 'T':
+		case 'R':
 			state.use_r2_theme = !state.use_r2_theme;
 			break;
 		case '\t':
@@ -1710,7 +1709,6 @@ static int cmd_mmc(void *data, const char *input) {
 			mmc_delete_file (core, &state);
 			break;
 		case 'r':
-		case 'R':
 			mmc_panel_load_fs (core, &state.left, state.ordering_mode);
 			mmc_panel_load_local (core, &state.right, state.ordering_mode);
 			break;
