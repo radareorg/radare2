@@ -89,6 +89,19 @@ R_VEC_TYPE(RVecAnalRef, RAnalRef);
 #include "cmd_mount.inc.c"
 #include "cmd_seek.inc.c"
 #include "cmd_search.inc.c" // defines incDigitBuffer... used by cmd_print
+
+static ut8 *r_core_readblock(RCore *core, ut64 size) {
+	if (size == 0) {
+		size = core->blocksize;
+	}
+	ut8 *buf = malloc (size);
+	if (!buf) {
+		return NULL;
+	}
+	r_io_read_at (core->io, core->addr, buf, size);
+	return buf;
+}
+
 #include "cmd_print.inc.c"
 #include "cmd_help.inc.c"
 

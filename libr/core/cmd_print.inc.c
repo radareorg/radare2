@@ -2394,11 +2394,10 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 				bufsize = R_MAX (bufsize, struct_size);
 				free (fmt);
 			}
-			ut8 *buf = malloc (bufsize);
+			ut8 *buf = r_core_readblock (core, bufsize);
 			if (!buf) {
 				goto err_name;
 			}
-			r_io_read_at (core->io, core->addr, buf, bufsize);
 			/* display a format */
 			if (dot) {
 				*dot++ = 0;
@@ -3538,11 +3537,10 @@ static void cmd_print_op(RCore *core, const char *input) {
 }
 
 static void printraw(RCore *core, int len, int mode) {
-	ut8 *buf = malloc (len);
+	ut8 *buf = r_core_readblock (core, len);
 	if (!buf) {
 		return;
 	}
-	r_io_read_at (core->io, core->addr, buf, len);
 	r_print_raw (core->print, core->addr, buf, len, mode);
 	free (buf);
 }
@@ -4047,11 +4045,10 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 	if (len_str) {
 		len = r_num_math (core->num, len_str);
 	}
-	ut8 *buf = malloc (len);
+	ut8 *buf = r_core_readblock (core, len);
 	if (!buf) {
 		return false;
 	}
-	r_io_read_at (core->io, core->addr, buf, len);
 	r_cons_printf (core->cons, "%s\n", r_hash_tostring (NULL, algo, buf, len));
 	free (buf);
 	return handled_cmd;
@@ -4076,10 +4073,14 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 		"ret", "arg0", "arg1", "arg2", "arg3", "arg4", NULL
 	};
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->print->config);
-	ut8 *block = core->block;
 	int blocksize = core->blocksize;
+	ut8 *block = r_core_readblock (core, 0);
+	if (!block) {
+		return;
+	}
+	ut8 *orig_block = block;
 	ut8 *heaped_block = NULL;
-	ut8 *block_end = core->block + blocksize;
+	ut8 *block_end = block + blocksize;
 	int i, n = core->rasm->config->bits / 8;
 	int type = 'v';
 	bool fixed_size = true;
@@ -4412,6 +4413,7 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 		free (heaped_block);
 		break;
 	}
+	free (orig_block);
 }
 
 static bool cmd_print_blocks(RCore *core, const char *input) {
@@ -4990,20 +4992,22 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		ptr = NULL;
 		if (input[2]) {
 			ut64 bufsz = r_num_math (core->num, input + 3);
-			ut64 curbsz = core->blocksize;
 			if (bufsz < 1) {
-				bufsz = curbsz;
+				bufsz = core->blocksize;
 			}
-			if (bufsz > core->blocksize) {
-				r_core_block_size (core, bufsz);
-				r_core_block_read (core);
+			ut8 *buf = r_core_readblock (core, bufsz);
+			if (!buf) {
+				break;
 			}
-			cmd_print_eq_dict (core, core->block, bufsz);
-			if (bufsz != curbsz) {
-				r_core_block_size (core, curbsz);
-			}
+			cmd_print_eq_dict (core, buf, bufsz);
+			free (buf);
 		} else {
-			cmd_print_eq_dict (core, core->block, core->blocksize);
+			ut8 *buf = r_core_readblock (core, 0);
+			if (!buf) {
+				break;
+			}
+			cmd_print_eq_dict (core, buf, core->blocksize);
+			free (buf);
 		}
 		break;
 	case 'j': // "p=j" cjmp and jmp
@@ -6391,6 +6395,10 @@ static void bitimage(RCore *core, int cols) {
 static void cmd_pri(RCore *core, const char *input) {
 	int cols = r_config_get_i (core->config, "hex.cols");
 	bool has_color = r_config_get_i (core->config, "scr.color") > 0;
+	ut8 *buf = r_core_readblock (core, 0);
+	if (!buf) {
+		return;
+	}
 	switch (input[2]) {
 	case '?':
 		r_core_cmd_help (core, help_msg_pri);
@@ -6402,20 +6410,21 @@ static void cmd_pri(RCore *core, const char *input) {
 		bitimage (core, 1);
 		break;
 	case 'g': // gresycale
-		r_cons_image (core->block, core->blocksize, cols, 'g', 3);
+		r_cons_image (buf, core->blocksize, cols, 'g', 3);
 		break;
 	case 's': // sixel
-		r_cons_image (core->block, core->blocksize, cols, 's', 3);
+		r_cons_image (buf, core->blocksize, cols, 's', 3);
 		break;
 	case '4':
-		r_cons_image (core->block, core->blocksize, cols, 'r', 4);
+		r_cons_image (buf, core->blocksize, cols, 'r', 4);
 		break;
 	case 'r':
 	default:
 		// int mode = r_config_get_i (core->config, "scr.color")? 0: 'a';
-		r_cons_image (core->block, core->blocksize, cols, has_color? 'r': 'a', 3);
+		r_cons_image (buf, core->blocksize, cols, has_color? 'r': 'a', 3);
 		break;
 	}
+	free (buf);
 }
 
 #if 0
