@@ -1933,8 +1933,14 @@ static int cmd_mmc(void *data, const char *input) {
 		int i, footer_len, panel_w, panel_h;
 		bool left_active;
 		RConsCanvas *canvas;
+		int new_width, new_height;
 
 		r_cons_clear00 (core->cons);
+		new_width = r_cons_get_size (core->cons, &new_height);
+		if (new_width != state.width || new_height != state.height) {
+			state.width = new_width;
+			state.height = new_height;
+		}
 
 		canvas = r_cons_canvas_new (core->cons, state.width, state.height, R_CONS_CANVAS_FLAG_INHERIT);
 		if (!canvas) {
