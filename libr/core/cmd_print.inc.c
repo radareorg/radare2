@@ -4000,7 +4000,7 @@ restore_conf:
 
 static bool cmd_print_ph(RCore *core, const char *input) {
 	char *algo = NULL;
-	ut32 osize = 0, len = core->blocksize;
+	ut32 len = core->blocksize;
 	int handled_cmd = false;
 
 	const char i0 = input[0];
@@ -4967,7 +4967,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		}
 			break;
 		default:
-			r_print_columns (core->print, block, bsz, 14);
+			r_print_columns (core->print, ptr, nblocks, 14);
 			break;
 		}
 		break;
