@@ -310,7 +310,7 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 	mkdir -p "${DESTDIR}${BINDIR}"
 	rm -f "${DESTDIR}${BINDIR}/radare2-format"
 	rm -f "${DESTDIR}${BINDIR}/r2-indent"
-	ln -fs "${PWD}/sys/radare2-indent" "${DESTDIR}${BINDIR}/radare2-format"
+	ln -fs "${PWD}/sys/radare2-format" "${DESTDIR}${BINDIR}/radare2-format"
 	rm -rf "${DESTDIR}${DATADIR}/radare2/${VERSION}/scripts"
 	ln -fs scripts "${DESTDIR}${DATADIR}/radare2/${VERSION}/scripts"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud"
