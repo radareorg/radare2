@@ -59,22 +59,13 @@ R_API int r_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int 
 }
 
 R_API void r_mem_copybits(ut8 *dst, const ut8 *src, int bits) {
-	ut8 srcmask, dstmask;
-	int bytes = (int) (bits / 8);
-	bits = bits % 8;
+	const ut8 srcmask[8] = {0x00, 0x80, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC, 0xFE};
+	const ut8 dstmask[8] = {0x00, 0x7F, 0x3F, 0x1F, 0x0F, 0x07, 0x03, 0x01};
+	const int bytes = bits / 8;
+	const int modbits = bits % 8;
 	memcpy (dst, src, bytes);
-	if (bits) {
-		srcmask = dstmask = 0;
-		switch (bits) {
-		case 1: srcmask = 0x80; dstmask = 0x7f; break;
-		case 2: srcmask = 0xc0; dstmask = 0x3f; break;
-		case 3: srcmask = 0xe0; dstmask = 0x1f; break;
-		case 4: srcmask = 0xf0; dstmask = 0x0f; break;
-		case 5: srcmask = 0xf8; dstmask = 0x07; break;
-		case 6: srcmask = 0xfc; dstmask = 0x03; break;
-		case 7: srcmask = 0xfe; dstmask = 0x01; break;
-		}
-		dst[bytes] = ((dst[bytes] & dstmask) | (src[bytes] & srcmask));
+	if (modbits) {
+		dst[bytes] = (dst[bytes] & dstmask[modbits]) | (src[bytes] & srcmask[modbits]);
 	}
 }
 
