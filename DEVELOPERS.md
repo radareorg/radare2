@@ -101,23 +101,17 @@ r2 provides several empty macros to make function signatures more informative.
 In order to contribute patches or plugins, we encourage you to use the same
 coding style as the rest of the code base.
 
-* Please use `./sys/clang-format-diff.py` before submitting a PR to be sure you
+* Please use `./sys/clang-format-radare2` before submitting a PR to be sure you
   are following the coding style, as described in
   [CONTRIBUTING.md](CONTRIBUTING.md#Getting Started). If you find a bug in this
   script, please submit a bug report issue. A detailed style guide can be found
   below.
 
-* See `sys/indent.sh` for indenting your code automatically.
-  * There's also `sys/indent.pl` which takes a file as argument for simpler uses
-
-* A pre-commit hook to check coding style is located at
-  `sys/pre-commit-indent.sh`. You can install it by copying it to
-  `.git/hooks/pre-commit`. To preserve your existing pre-commit hook, use
-  `cat sys/pre-commit-indent.sh >> .git/hooks/pre-commit` instead.
-
 * For a premade `.vimrc`, see `doc/vim`.
 
-* See `.clang-format` for work-in-progress support for automated indentation.
+* See `.clang-format` for work-in-progress support for automated indentation, but
+  take into account that clang-format is not able to format he code properly
+  without the help of the `sys/clang-format-radare2` script.
 
 #### Guidelines
 
