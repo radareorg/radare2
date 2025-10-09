@@ -13,6 +13,22 @@ static int _task_run_forked(RCoreTaskScheduler *scheduler, RCoreTask *task);
 #define CUSTOMCORE 0
 
 static RCore *mycore_new(RCore *core) {
+	// For task threads (non-main tasks), create a separate RCore with its own RCons
+	if (task_tls_current && task_tls_current != core->tasks.main_task) {
+		RCore *c = R_NEW (RCore);
+		if (!c) {
+			return core;
+		}
+		memcpy (c, core, sizeof (RCore));
+		c->cons = r_cons_new ();
+		if (!c->cons) {
+			free (c);
+			return core;
+		}
+		// XXX: RConsBind must disappear. its used in bin, fs and search
+		// TODO: use r_cons_clone instead
+		return c;
+	}
 #if CUSTOMCORE
 	RCore *c = R_NEW (RCore);
 	memcpy (c, core, sizeof (RCore));
@@ -26,9 +42,65 @@ static RCore *mycore_new(RCore *core) {
 }
 
 static void mycore_free(RCore *a) {
+	if (a && a->cons) {
+		// If this is a task-specific core (has its own cons), free it but not the context
+		RCons *global_cons = r_cons_singleton();
+		if (a->cons != global_cons) {
+			a->cons->context = NULL; // Don't free the shared context
+			r_cons_free (a->cons);
+			free (a);
+			return;
+		}
+	}
 #if CUSTOMCORE
 	r_cons_free (a->cons);
 #endif
+}
+
+static RCons *task_cons_create(RCons *base, RConsContext *task_ctx, bool *attached_ctx_out) {
+	RCons *cons = r_cons_new2 ();
+	if (!cons) {
+		return NULL;
+	}
+	cons->use_utf8 = base->use_utf8;
+	cons->use_utf8_curvy = base->use_utf8_curvy;
+	cons->dotted_lines = base->dotted_lines;
+	cons->break_lines = base->break_lines;
+	cons->vtmode = base->vtmode;
+	cons->linesleep = base->linesleep;
+	cons->pagesize = base->pagesize;
+	cons->maxpage = base->maxpage;
+	cons->mouse = base->mouse;
+	cons->timeout = base->timeout;
+	cons->otimeout = base->otimeout;
+	cons->null = base->null;
+	cons->rgbstr = base->rgbstr;
+	cons->enable_highlight = base->enable_highlight;
+	cons->fdout = base->fdout;
+	cons->click_set = base->click_set;
+	cons->click_x = base->click_x;
+	cons->click_y = base->click_y;
+
+	if (task_ctx) {
+		RConsContext *owned_ctx = cons->context;
+		cons->context = task_ctx;
+		r_cons_context_free (owned_ctx);
+		if (attached_ctx_out) {
+			*attached_ctx_out = true;
+		}
+	} else if (base->context) {
+		RConsContext *owned_ctx = cons->context;
+		cons->context = r_cons_context_clone (base->context);
+		r_cons_context_free (owned_ctx);
+		if (!cons->context) {
+			r_cons_free2 (cons);
+			return NULL;
+		}
+		if (attached_ctx_out) {
+			*attached_ctx_out = false;
+		}
+	}
+	return cons;
 }
 
 R_API void r_core_task_scheduler_init(RCoreTaskScheduler *tasks, RCore *core) {
@@ -471,20 +543,53 @@ static RThreadFunctionRet task_run(RCoreTask *task) {
 		r_event_send (core->ev, R_EVENT_CORE_TASK_STARTED, task);
 	}
 
+	RCore *exec_core = task->task_core? task->task_core: core;
+	RCons *saved_cons = exec_core->cons;
+	RCons *task_cons = NULL;
+	bool attached_ctx = false;
+	bool interrupted = false;
+
 	if (task->cons_context && task->cons_context->breaked) {
-		// breaked in R_CORE_TASK_STATE_BEFORE_START
 		goto stillbirth;
 	}
 
-	RCore *local_core = mycore_new (core);
-	char *res_str;
-	if (task == scheduler->main_task) {
-		r_core_cmd (local_core, task->cmd, task->cmd_log);
-		res_str = NULL;
-	} else {
-		res_str = r_core_cmd_str (local_core, task->cmd);
+	if (task != scheduler->main_task) {
+		task_cons = task_cons_create (saved_cons, task->cons_context, &attached_ctx);
+		if (task_cons) {
+			r_cons_global (task_cons);
+			exec_core->cons = task_cons;
+			r_core_bind_cons (exec_core);
+		}
 	}
-	mycore_free (local_core);
+
+	if (task->cons_context) {
+		interrupted = task->cons_context->breaked;
+	} else if (task_cons && task_cons->context) {
+		interrupted = task_cons->context->breaked;
+	}
+
+	char *res_str = NULL;
+	if (task == scheduler->main_task) {
+		r_core_cmd (exec_core, task->cmd, task->cmd_log);
+	} else {
+		res_str = r_core_cmd_str (exec_core, task->cmd);
+	}
+
+	if (task->cons_context) {
+		interrupted = task->cons_context->breaked;
+	} else if (task_cons && task_cons->context) {
+		interrupted = task_cons->context->breaked;
+	}
+
+	if (task_cons) {
+		exec_core->cons = saved_cons;
+		r_core_bind_cons (exec_core);
+		r_cons_global (saved_cons);
+		if (attached_ctx) {
+			task_cons->context = NULL;
+		}
+		r_cons_free2 (task_cons);
+	}
 
 	free (task->res);
 	task->res = res_str;
@@ -501,11 +606,7 @@ stillbirth:
 
 	task_end (task);
 
-	// Determine interruption vs finished
-	bool interrupted = false;
-	if (task->cons_context && task->cons_context->breaked) {
-		interrupted = true;
-	}
+	// Determine interruption vs finished (already captured above)
 
 	if (task->cb) {
 		task->cb (task->user, task->res);
@@ -549,6 +650,8 @@ static RThreadFunctionRet task_run_thread(RThread *th) {
 	RCoreTask *task = (RCoreTask *)th->user;
 	// Set TLS current task for this thread during execution
 	task_tls_current = task;
+	// Initialize thread-local RCons for this task thread
+	r_cons_thready ();
 	RThreadFunctionRet ret = task_run (task);
 	// Clear TLS on exit
 	task_tls_current = NULL;

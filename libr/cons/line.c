@@ -24,6 +24,7 @@ R_API RLine *r_line_new(RCons *cons) {
 	line->clipboard = NULL;
 	line->kill_ring = r_list_newf (free);
 	line->kill_ring_ptr = -1;
+	line->hist_size = R_LINE_HISTSIZE;
 #if R2__WINDOWS__
 	line->vtmode = win_is_vtcompat ();
 #else

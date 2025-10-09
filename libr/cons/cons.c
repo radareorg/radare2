@@ -1602,11 +1602,32 @@ R_API RConsContext *r_cons_context_clone(RConsContext *ctx) {
 	c->pal.rainbow = NULL;
 	pal_clone (c);
 	// rainbow_clone (c);
-	memset (&c->grep, 0, sizeof (c->grep));
+
+	c->grep = ctx->grep;
+	c->grep.str = ctx->grep.str? strdup (ctx->grep.str): NULL;
+	c->grep.json_path = ctx->grep.json_path? strdup (ctx->grep.json_path): NULL;
 	c->grep.strings = r_list_newf ((RListFree)grep_word_free);
-	c->grep.line = -1;
-	c->grep.sort = -1;
-	c->grep.sort_invert = false;
+	if (ctx->grep.strings && c->grep.strings) {
+		RListIter *iter;
+		RConsGrepWord *gw;
+		r_list_foreach (ctx->grep.strings, iter, gw) {
+			RConsGrepWord *ngw = R_NEW0 (RConsGrepWord);
+			if (!ngw) {
+				continue;
+			}
+			*ngw = *gw;
+			ngw->str = NULL;
+			if (gw->str) {
+				ngw->str = strdup (gw->str);
+				if (!ngw->str) {
+					free (ngw);
+					continue;
+				}
+			}
+			r_list_append (c->grep.strings, ngw);
+		}
+	}
+	// Note: tokens array is copied via r_mem_dup
 	return c;
 }
 
