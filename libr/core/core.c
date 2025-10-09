@@ -2461,7 +2461,6 @@ static void ev_iowrite_cb(REvent *ev, int type, void *user, void *data) {
 
 static RThreadFunctionRet thchan_handler(RThread *th) {
 	RCore *core = (RCore *)th->user;
-	// r_cons_thready ();
 	while (r_th_is_running (th) && !th->breaked) {
 		r_th_sem_wait (core->chan->sem); // busy because stack is empty
 		if (!r_th_is_running (th) || th->breaked) {
@@ -2644,6 +2643,7 @@ R_API bool r_core_init(RCore *core) {
 	core->cons = r_cons_new ();
 	core->cons->line->user = core;
 	r_cons_bind (core->cons, &core->print->consb);
+	core->tasks.main_task->cons_context = core->cons->context;
 	core->cmdlog = NULL;
 	// XXX causes uaf
 	r_log_add_callback (cbcore, core);

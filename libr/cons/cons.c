@@ -54,7 +54,7 @@ static bool cons_palloc(RCons *cons, size_t moar) {
 }
 
 
-#include "thread.inc.c"
+
 #include "private.h"
 
 typedef struct {
@@ -1324,7 +1324,7 @@ R_API void r_cons_memset(RCons *cons, char ch, int len) {
 R_API int r_cons_write(RCons *cons, const void *data, int len) {
 	R_RETURN_VAL_IF_FAIL (data && len >= 0, -1);
 	const char *str = data;
-	RConsContext *ctx = cons->context;
+	RConsContext *ctx = r_cons_current_context;
 	if (len < 1 || ctx->breaked) {
 		return 0;
 	}
@@ -1491,6 +1491,7 @@ R_API void r_cons_printf_list(RCons *cons, const char *format, va_list ap) {
 			while (need_retry) {
 				need_retry = false;
 				size_t left = cons->context->buffer_sz - cons->context->buffer_len;
+				// AITODO cons->context->buffer is NULL sometimes!
 				size_t written = vsnprintf (cons->context->buffer + cons->context->buffer_len, left, format, ap3);
 				if (written >= left) {
 					if (cons_palloc (cons, written + 1)) {

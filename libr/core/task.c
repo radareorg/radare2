@@ -38,7 +38,6 @@ R_API void r_core_task_scheduler_init(RCoreTaskScheduler *tasks, RCore *core) {
 	tasks->lock = r_th_lock_new (true);
 	tasks->tasks_running = 0;
 	tasks->main_task = r_core_task_new (core, R_CORE_TASK_MODE_COOP, false, NULL, NULL, NULL);
-	tasks->main_task->cons_context = core->cons->context;
 	r_list_append (tasks->tasks, tasks->main_task);
 	tasks->foreground_task = tasks->main_task;
 	tasks->default_mode = R_CORE_TASK_MODE_COOP;
@@ -477,7 +476,14 @@ static RThreadFunctionRet task_run(RCoreTask *task) {
 		goto stillbirth;
 	}
 
+	if (task->cons_context) {
+		r_cons_context_load(task->cons_context);
+	}
+
 	RCore *local_core = mycore_new (core);
+	if (task->cons_context) {
+		r_cons_context_load(task->cons_context);
+	}
 	char *res_str;
 	if (task == scheduler->main_task) {
 		r_core_cmd (local_core, task->cmd, task->cmd_log);
@@ -486,6 +492,9 @@ static RThreadFunctionRet task_run(RCoreTask *task) {
 		res_str = r_core_cmd_str (local_core, task->cmd);
 	}
 	mycore_free (local_core);
+	if (task != scheduler->main_task && scheduler->main_task->cons_context) {
+		r_cons_context_load(scheduler->main_task->cons_context);
+	}
 
 	free (task->res);
 	task->res = res_str;
