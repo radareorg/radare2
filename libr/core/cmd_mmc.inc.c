@@ -61,6 +61,9 @@ typedef struct {
 	int height;
 	bool running;
 	bool use_r2_theme;
+	bool interactive_preview;
+	bool preview_hex_mode;
+	int preview_offset;
 	char *clipboard_path;
 	bool clipboard_cut;
 	MMCOrderMode ordering_mode;
@@ -900,6 +903,163 @@ static void mmc_view_file(RCore *core, MMCState *state) {
 	free (fullpath);
 }
 
+static void mmc_draw_file_preview(RCore *core, RConsCanvas *canvas, MMCState *state, int x, int y, int w, int h) {
+	MMCPanel *left_panel = &state->left;
+	char *selected_name, *fullpath;
+	ut8 *data = NULL;
+	size_t size = 0;
+	ut64 addr = 0;
+	int i, content_y, max_lines, line, bytes_per_line;
+	char hex[64], ascii[20];
+	char *hex_ptr, *ascii_ptr;
+	ut8 byte;
+	char *title;
+	RFSFile *file;
+	int line_offset, remaining, line_bytes;
+	const char *mode_str;
+	bool is_active;
+	int chars_per_line, char_offset, line_chars;
+	char text_line[512];
+	char *line_str;
+
+	is_active = (state->active == &state->right);
+
+	if (left_panel->count == 0 || left_panel->selected >= left_panel->count) {
+		r_cons_canvas_box (canvas, x, y, w, h, core->cons->context->pal.graph_box);
+		title = r_str_newf ("%s%s Preview %s", state->colors.bg, state->colors.title, state->colors.reset);
+		r_cons_canvas_write_at (canvas, title, x + 1, y);
+		free (title);
+		return;
+	}
+
+	selected_name = left_panel->entries[left_panel->selected];
+	if (!strcmp (selected_name, "..")) {
+		r_cons_canvas_box (canvas, x, y, w, h, core->cons->context->pal.graph_box);
+		title = r_str_newf ("%s%s Preview %s", state->colors.bg, state->colors.title, state->colors.reset);
+		r_cons_canvas_write_at (canvas, title, x + 1, y);
+		free (title);
+		return;
+	}
+
+	if (left_panel->types && left_panel->types[left_panel->selected] == 'd') {
+		r_cons_canvas_box (canvas, x, y, w, h, core->cons->context->pal.graph_box);
+		title = r_str_newf ("%s%s Preview: %s (directory) %s", state->colors.bg, state->colors.title, selected_name, state->colors.reset);
+		r_cons_canvas_write_at (canvas, title, x + 1, y);
+		free (title);
+		return;
+	}
+
+	if (!strcmp (left_panel->path, "/")) {
+		fullpath = r_str_newf ("/%s", selected_name);
+	} else {
+		fullpath = r_str_newf ("%s/%s", left_panel->path, selected_name);
+	}
+
+	if (left_panel->is_fs_panel) {
+		file = r_fs_open (core->fs, fullpath, false);
+		if (file) {
+			size = file->size;
+			addr = file->off;
+			if (size > 0) {
+				r_fs_read (core->fs, file, 0, file->size);
+				data = malloc (size);
+				if (data) {
+					memcpy (data, file->data, size);
+				}
+			}
+			r_fs_close (core->fs, file);
+		}
+	} else {
+		data = (ut8 *)r_file_slurp (fullpath, &size);
+	}
+
+	r_cons_canvas_box (canvas, x, y, w, h, core->cons->context->pal.graph_box);
+	mode_str = state->preview_hex_mode ? "Hex" : "Text";
+	if (is_active) {
+		title = r_str_newf ("%s%s Preview: %s [%s] (arrows:scroll t:text x:hex) %s",
+			state->colors.sel_bg, state->colors.fg_black, selected_name, mode_str, state->colors.reset);
+	} else {
+		title = r_str_newf ("%s%s Preview: %s [%s] %s",
+			state->colors.bg, state->colors.title, selected_name, mode_str, state->colors.reset);
+	}
+	r_cons_canvas_write_at (canvas, title, x + 1, y);
+	free (title);
+
+	if (!data || size == 0) {
+		free (fullpath);
+		free (data);
+		return;
+	}
+
+	content_y = y + 1;
+	max_lines = h - 2;
+	bytes_per_line = 16;
+
+	if (state->preview_hex_mode) {
+		for (line = 0; line < max_lines && state->preview_offset + line * bytes_per_line < (int)size; line++) {
+			line_offset = state->preview_offset + line * bytes_per_line;
+			remaining = (int)size - line_offset;
+			line_bytes = (remaining < bytes_per_line) ? remaining : bytes_per_line;
+
+			hex_ptr = hex;
+			ascii_ptr = ascii;
+
+			for (i = 0; i < line_bytes; i++) {
+				byte = data[line_offset + i];
+				hex_ptr += sprintf (hex_ptr, "%02x ", byte);
+				*ascii_ptr++ = (byte >= 32 && byte <= 126) ? byte : '.';
+			}
+			*ascii_ptr = '\0';
+
+			for (i = line_bytes; i < bytes_per_line; i++) {
+				hex_ptr += sprintf (hex_ptr, "   ");
+			}
+
+			line_str = r_str_newf ("%s%s%08"PFMT64x"%s  %s%s%s %s%s%s",
+				state->colors.bg_pane, state->colors.bold_cyan, addr + line_offset, state->colors.reset,
+				state->colors.bg_pane, state->colors.fg, hex,
+				state->colors.bg_pane, state->colors.fg_yellow, ascii);
+			r_cons_canvas_write_at (canvas, line_str, x + 2, content_y + line);
+			free (line_str);
+		}
+	} else {
+		chars_per_line = w - 4;
+		char_offset = state->preview_offset;
+		for (line = 0; line < max_lines && char_offset < (int)size; line++) {
+			line_chars = 0;
+			text_line[0] = '\0';
+
+			while (char_offset < (int)size && line_chars < chars_per_line) {
+				byte = data[char_offset++];
+				if (byte == '\n') {
+					break;
+				}
+				if (byte == '\r') {
+					continue;
+				}
+				if (byte == '\t') {
+					int spaces = 4 - (line_chars % 4);
+					for (i = 0; i < spaces && line_chars < chars_per_line; i++) {
+						text_line[line_chars++] = ' ';
+					}
+				} else if (byte >= 32 && byte <= 126) {
+					text_line[line_chars++] = byte;
+				} else {
+					text_line[line_chars++] = '.';
+				}
+			}
+			text_line[line_chars] = '\0';
+
+			line_str = r_str_newf ("%s%s%s%s", state->colors.bg_pane, state->colors.fg, text_line, state->colors.reset);
+			r_cons_canvas_write_at (canvas, line_str, x + 2, content_y + line);
+			free (line_str);
+		}
+	}
+
+	free (data);
+	free (fullpath);
+}
+
 static void mmc_delete_file(RCore *core, MMCState *state) {
 	MMCPanel *panel = state->active;
 	if (panel->count == 0 || panel->selected >= panel->count) {
@@ -1379,6 +1539,7 @@ static void mmc_show_help(RCore *core, MMCState *state, int width, int height) {
 		"",
 		"  OTHER:",
 		"    i          Show file/filesystem info",
+		"    I          Toggle interactive preview mode",
 		"    s          Seek to file address and quit to r2",
 		"    R          Toggle theme (MC / r2 colors)",
 		"    h          Show this help",
@@ -1498,9 +1659,12 @@ static bool mmc_handle_mouse_click(RCore *core, MMCState *state, int click_x, in
 	}
 
 	switch (ch) {
-	case 'i': case 'I':
+	case 'i':
 		mmc_show_info (core, state, state->width, state->height);
 		return true;
+	case 'I':
+		state->interactive_preview = !state->interactive_preview;
+		return false;
 	case 'v': case 'V':
 		mmc_view_file (core, state);
 		return true;
@@ -1591,6 +1755,9 @@ static int cmd_mmc(void *data, const char *input) {
 	state.core = core;
 	state.running = true;
 	state.use_r2_theme = true;
+	state.interactive_preview = false;
+	state.preview_hex_mode = true;
+	state.preview_offset = 0;
 	state.ordering_mode = MMC_ORDER_NATURAL;
 	mmc_update_colors(&state);
 
@@ -1654,7 +1821,11 @@ static int cmd_mmc(void *data, const char *input) {
 
 		left_active = (state.active == &state.left);
 		mmc_panel_draw (core, canvas, &state.left, &state, 0, 0, panel_w, panel_h, left_active);
-		mmc_panel_draw (core, canvas, &state.right, &state, panel_w, 0, state.width - panel_w, panel_h, !left_active);
+		if (state.interactive_preview) {
+			mmc_draw_file_preview (core, canvas, &state, panel_w, 0, state.width - panel_w, panel_h);
+		} else {
+			mmc_panel_draw (core, canvas, &state.right, &state, panel_w, 0, state.width - panel_w, panel_h, !left_active);
+		}
 
 		r_cons_canvas_print (canvas);
 		r_cons_canvas_free (canvas);
@@ -1693,10 +1864,36 @@ static int cmd_mmc(void *data, const char *input) {
 		}
 
 		if (nav_ch == 'k') {
-			mmc_panel_navigate_up (state.active, panel_h - 2);
+			if (state.interactive_preview && state.active == &state.right) {
+				if (state.preview_hex_mode) {
+					if (state.preview_offset >= 16) {
+						state.preview_offset -= 16;
+					}
+				} else {
+					if (state.preview_offset > 0) {
+						state.preview_offset--;
+					}
+				}
+			} else {
+				mmc_panel_navigate_up (state.active, panel_h - 2);
+				if (state.interactive_preview && state.active == &state.left) {
+					state.preview_offset = 0;
+				}
+			}
 			continue;
 		} else if (nav_ch == 'j') {
-			mmc_panel_navigate_down (state.active, panel_h - 2);
+			if (state.interactive_preview && state.active == &state.right) {
+				if (state.preview_hex_mode) {
+					state.preview_offset += 16;
+				} else {
+					state.preview_offset++;
+				}
+			} else {
+				mmc_panel_navigate_down (state.active, panel_h - 2);
+				if (state.interactive_preview && state.active == &state.left) {
+					state.preview_offset = 0;
+				}
+			}
 			continue;
 		}
 
@@ -1721,8 +1918,27 @@ static int cmd_mmc(void *data, const char *input) {
 			mmc_show_help (core, &state, state.width, state.height);
 			break;
 		case 'i':
-		case 'I':
 			mmc_show_info (core, &state, state.width, state.height);
+			break;
+		case 'I':
+			state.interactive_preview = !state.interactive_preview;
+			if (state.interactive_preview) {
+				state.preview_offset = 0;
+			}
+			break;
+		case 't':
+		case 'T':
+			if (state.interactive_preview) {
+				state.preview_hex_mode = false;
+				state.preview_offset = 0;
+			}
+			break;
+		case 'x':
+		case 'X':
+			if (state.interactive_preview) {
+				state.preview_hex_mode = true;
+				state.preview_offset = 0;
+			}
 			break;
 		case 'v':
 		case 'V':
