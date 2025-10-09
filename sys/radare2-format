@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
 
 import argparse
+import difflib
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
+
+
+VERSION = "radare2-format 1.0"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir))
+AUTO_WHITELIST_PATH = os.path.join(SCRIPT_DIR, "indent-whitelist.sh")
 
 
 def parse_args():
@@ -13,9 +21,28 @@ def parse_args():
 		description="Format files using clang-format followed by radare2 indentation rules."
 	)
 	parser.add_argument(
+		"-n",
+		"--no-update",
+		dest="no_update",
+		action="store_true",
+		help="Do not modify files; report differences and exit with error if formatting is needed.",
+	)
+	parser.add_argument(
+		"-v",
+		"--version",
+		action="store_true",
+		help="Show the radare2-format version and exit.",
+	)
+	parser.add_argument(
+		"-a",
+		"--auto",
+		action="store_true",
+		help="Auto mode: ignore provided paths and use the indentation whitelist.",
+	)
+	parser.add_argument(
 		"files",
-		nargs="+",
-		help="Files to format in place.",
+		nargs="*",
+		help="Files or directories to format in place.",
 	)
 	parser.add_argument(
 		"--clang-format",
@@ -24,6 +51,91 @@ def parse_args():
 		help="clang-format executable to use (default: env CLANG_FORMAT or clang-format).",
 	)
 	return parser.parse_args()
+
+
+def is_source_file(path):
+	ext = os.path.splitext(path)[1].lower()
+	return ext in (".c", ".h")
+
+
+def expand_targets(paths):
+	files = []
+	seen = set()
+	for target in paths:
+		if not target or target in seen:
+			continue
+		if os.path.isdir(target):
+			for root, _, filenames in os.walk(target):
+				for name in filenames:
+					if not is_source_file(name):
+						continue
+					full = os.path.join(root, name)
+					if full in seen:
+						continue
+					files.append(full)
+					seen.add(full)
+		else:
+			files.append(target)
+			seen.add(target)
+	return files
+
+
+def load_auto_files():
+	paths = []
+	try:
+		with open(AUTO_WHITELIST_PATH, "r", encoding="utf-8") as fd:
+			in_block = False
+			for line in fd:
+				stripped = line.strip()
+				if not in_block:
+					if stripped.startswith("FILES=\""):
+						content = stripped[7:]
+						if stripped == "FILES=\"":
+							content = ""
+						if content.endswith("\""):
+							content = content[:-1]
+						else:
+							in_block = True
+						for item in content.split():
+							paths.append(item)
+					continue
+				if stripped == "\"":
+					in_block = False
+					continue
+				if stripped.endswith("\""):
+					stripped = stripped[:-1]
+					in_block = False
+				if not stripped:
+					continue
+				for item in stripped.split():
+					paths.append(item)
+	except OSError:
+		return []
+	result = []
+	seen = set()
+	for entry in paths:
+		if not entry or entry.startswith("#"):
+			continue
+		path = entry if os.path.isabs(entry) else os.path.join(PROJECT_ROOT, entry)
+		if path in seen or not os.path.isfile(path):
+			continue
+		result.append(path)
+		seen.add(path)
+	return result
+
+
+def show_diff(path, original, formatted):
+	try:
+		display_path = os.path.relpath(path)
+	except ValueError:
+		display_path = path
+	for line in difflib.unified_diff(
+		original.splitlines(True),
+		formatted.splitlines(True),
+		fromfile=display_path,
+		tofile=f"{display_path} (formatted)",
+	):
+		sys.stdout.write(line)
 
 
 def convert_leading_spaces(line):
@@ -264,9 +376,11 @@ def apply_indent_rules(text):
 	return "".join(lines)
 
 
-def format_file(path, clang_format):
+def format_file(path, clang_format, check_only=False):
 	if not os.path.isfile(path):
 		raise FileNotFoundError(f"{path}: no such file")
+	with open(path, "r", encoding="utf-8") as current:
+		original = current.read()
 	try:
 		result = subprocess.run(
 			[clang_format, "-style=file", path],
@@ -280,14 +394,35 @@ def format_file(path, clang_format):
 			f"clang-format failed for {path}: {exc.stderr.strip() or exc}"
 		) from exc
 	indented = apply_indent_rules(result.stdout)
+	if original == indented:
+		return False
+	if check_only:
+		show_diff(path, original, indented)
+		return True
 	with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False) as tmp:
 		tmp.write(indented)
 		temp_name = tmp.name
 	os.replace(temp_name, path)
+	return True
 
 
 def main():
 	args = parse_args()
+	if args.version:
+		print(VERSION)
+		return 0
+	paths = args.files
+	if args.auto:
+		paths = load_auto_files()
+		if not paths:
+			print(
+				"radare2-format: auto mode whitelist is empty or missing",
+				file=sys.stderr,
+			)
+			return 1
+	if not paths:
+		print("radare2-format: no input files", file=sys.stderr)
+		return 1
 	clang_format = args.clang_format
 	if not shutil.which(clang_format):
 		print(
@@ -295,10 +430,16 @@ def main():
 			file=sys.stderr,
 		)
 		return 1
+	files = expand_targets(paths)
+	if not files:
+		print("radare2-format: no input files", file=sys.stderr)
+		return 1
 	exit_code = 0
-	for path in args.files:
+	for path in files:
 		try:
-			format_file(path, clang_format)
+			changed = format_file(path, clang_format, args.no_update)
+			if args.no_update and changed:
+				exit_code = 1
 		except (FileNotFoundError, RuntimeError, OSError) as err:
 			print(f"radare2-format: {err}", file=sys.stderr)
 			exit_code = 1
@@ -306,6 +447,4 @@ def main():
 
 
 if __name__ == "__main__":
-	import shutil
-
 	sys.exit(main())
