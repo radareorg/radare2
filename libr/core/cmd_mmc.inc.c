@@ -412,35 +412,54 @@ static void mmc_panel_navigate_enter(RCore *core, MMCPanel *panel, MMCOrderMode 
 static void mmc_move_file(RCore *core, MMCState *state) {
 	MMCPanel *src = state->active;
 	MMCPanel *dst = (state->active == &state->left) ? &state->right : &state->left;
+	char *src_path, *dst_path, *selected_name, *prompt, *answer, *msg;
 
 	if (src->count == 0 || src->selected >= src->count) {
 		r_cons_message (core->cons, "No file selected");
 		return;
 	}
 
-	char *selected_name = src->entries[src->selected];
+	selected_name = src->entries[src->selected];
 	if (!strcmp (selected_name, "..")) {
 		r_cons_message (core->cons, "Cannot move parent directory");
 		return;
 	}
 
-	char *src_path;
 	if (!strcmp (src->path, "/")) {
 		src_path = r_str_newf ("/%s", selected_name);
 	} else {
 		src_path = r_str_newf ("%s/%s", src->path, selected_name);
 	}
 
-	char *dst_path;
 	if (!strcmp (dst->path, "/")) {
 		dst_path = r_str_newf ("/%s", selected_name);
 	} else {
 		dst_path = r_str_newf ("%s/%s", dst->path, selected_name);
 	}
 
-	char *msg = r_str_newf ("Move: %s -> %s (not implemented yet)", src_path, dst_path);
-	r_cons_message (core->cons, msg);
-	free (msg);
+	prompt = r_str_newf ("Move %s to %s? (y/N) ", src_path, dst_path);
+	answer = r_cons_input (core->cons, prompt);
+	free (prompt);
+
+	if (answer && (answer[0] == 'y' || answer[0] == 'Y')) {
+		if (src->is_fs_panel || dst->is_fs_panel) {
+			r_cons_message (core->cons, "Cannot move to/from mounted filesystem");
+		} else {
+			if (rename (src_path, dst_path) == 0) {
+				msg = r_str_newf ("Moved %s -> %s", selected_name, dst_path);
+				r_cons_message (core->cons, msg);
+				free (msg);
+				mmc_panel_load_local (core, src, state->ordering_mode);
+				mmc_panel_load_local (core, dst, state->ordering_mode);
+			} else {
+				msg = r_str_newf ("Failed to move %s: %s", selected_name, strerror (errno));
+				r_cons_message (core->cons, msg);
+				free (msg);
+			}
+		}
+	}
+
+	free (answer);
 	free (src_path);
 	free (dst_path);
 }
@@ -1546,6 +1565,10 @@ static int cmd_mmc(void *data, const char *input) {
 		case 'c':
 		case 'C':
 			mmc_copy_file_confirmed (core, &state);
+			break;
+		case 'p':
+		case 'P':
+			mmc_move_file (core, &state);
 			break;
 		case 'm':
 		case 'M':
