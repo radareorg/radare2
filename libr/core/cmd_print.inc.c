@@ -2385,16 +2385,20 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 
 			/* Load format from name into fmt to get the size */
 			/* Make sure the structure will be printed entirely */
+			int bufsize = core->blocksize;
 			char *fmt = sdb_get (core->print->formats, name, NULL);
 			if (fmt) {
 				// TODO: what is +10 magic number?
 				// Backtracks to commit e5e23c237755cdeb13ba15938c93ada590e453db / issue #2808
-				int size = r_print_format_struct_size (core->print, fmt, mode, 0) + 10;
-				if (size > core->blocksize) {
-					r_core_block_size (core, size);
-				}
+				int struct_size = r_print_format_struct_size (core->print, fmt, mode, 0) + 10;
+				bufsize = R_MAX (bufsize, struct_size);
 				free (fmt);
 			}
+			ut8 *buf = malloc (bufsize);
+			if (!buf) {
+				goto err_name;
+			}
+			r_io_read_at (core->io, core->addr, buf, bufsize);
 			/* display a format */
 			if (dot) {
 				*dot++ = 0;
@@ -2404,15 +2408,17 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 					r_str_trim_tail (name);
 					mode = R_PRINT_MUSTSET;
 					r_print_format (core->print, core->addr,
-						core->block, core->blocksize, name, mode, eq, dot);
+						buf, bufsize, name, mode, eq, dot);
+					r_io_write_at (core->io, core->addr, buf, bufsize);
 				} else {
 					r_print_format (core->print, core->addr,
-						core->block, core->blocksize, name, mode, NULL, dot);
+						buf, bufsize, name, mode, NULL, dot);
 				}
 			} else {
 				r_print_format (core->print, core->addr,
-					core->block, core->blocksize, name, mode, NULL, NULL);
+					buf, bufsize, name, mode, NULL, NULL);
 			}
+			free (buf);
 		err_name:
 			free (name);
 		}
@@ -3532,19 +3538,13 @@ static void cmd_print_op(RCore *core, const char *input) {
 }
 
 static void printraw(RCore *core, int len, int mode) {
-	int obsz = core->blocksize;
-	int restore_obsz = 0;
-	if (len != obsz) {
-		if (!r_core_block_size (core, len)) {
-			len = core->blocksize;
-		} else {
-			restore_obsz = 1;
-		}
+	ut8 *buf = malloc (len);
+	if (!buf) {
+		return;
 	}
-	r_print_raw (core->print, core->addr, core->block, len, mode);
-	if (restore_obsz) {
-		(void) r_core_block_size (core, obsz);
-	}
+	r_io_read_at (core->io, core->addr, buf, len);
+	r_print_raw (core->print, core->addr, buf, len, mode);
+	free (buf);
 }
 
 static void _handle_call(RCore *core, char *line, char **str) {
@@ -4046,20 +4046,14 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 	char *len_str = r_list_get_n (args, 1);
 	if (len_str) {
 		len = r_num_math (core->num, len_str);
-		osize = core->blocksize;
-		if (len > core->blocksize) {
-			r_core_block_size (core, len);
-			if (len != core->blocksize) {
-				R_LOG_ERROR ("Invalid block size");
-				r_core_block_size (core, osize);
-				return false;
-			}
-			r_core_block_read (core);
-		}
-	} else {
-		osize = len;
 	}
-	r_cons_printf (core->cons, "%s\n", r_hash_tostring (NULL, algo, core->block, len));
+	ut8 *buf = malloc (len);
+	if (!buf) {
+		return false;
+	}
+	r_io_read_at (core->io, core->addr, buf, len);
+	r_cons_printf (core->cons, "%s\n", r_hash_tostring (NULL, algo, buf, len));
+	free (buf);
 	return handled_cmd;
 }
 
