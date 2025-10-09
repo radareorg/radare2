@@ -1707,6 +1707,9 @@ static bool mmc_handle_mouse_click(RCore *core, MMCState *state, int click_x, in
 	if (click_x < panel_w) {
 		clicked_panel = &state->left;
 	} else if (click_x < state->width) {
+		if (state->interactive_preview) {
+			return false;
+		}
 		clicked_panel = &state->right;
 	} else {
 		return false;
