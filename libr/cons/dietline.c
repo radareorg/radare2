@@ -646,7 +646,12 @@ R_API bool r_line_hist_add(RLine *line, const char *text) {
 		return false;
 	}
 	if (!line->history.data) {
-		inithist (line);
+		if (!inithist (line)) {
+			return false;
+		}
+	}
+	if (!line->history.data || line->history.size <= 0) {
+		return false;
 	}
 	/* ignore dup */
 	if (line->history.top > 0) {

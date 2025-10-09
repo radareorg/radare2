@@ -16062,6 +16062,7 @@ static void cmd_an(RCore *core, const char *input) {
 static int cmd_anal(void *data, const char *input) {
 	const char *r;
 	RCore *core = (RCore *)data;
+	ut64 addr = core->addr;
 	ut32 tbs = core->blocksize;
 	switch (input[0]) {
 	case 0: // "a"
@@ -16203,17 +16204,22 @@ static int cmd_anal(void *data, const char *input) {
 			}
 			break;
 		case 'k': // "adk"
-			r = r_anal_data_kind (core->anal, core->addr, core->block, core->blocksize);
-			r_cons_println (core->cons, r);
+			{
+				ut8 *data = calloc (tbs + 1, 1);
+				r_io_read_at (core->io, addr, data, tbs);
+				r = r_anal_data_kind (core->anal, addr, data, tbs);
+				r_cons_println (core->cons, r);
+				free (data);
+			}
 			break;
 		case '\0': // "ad"
-			r_core_anal_data (core, core->addr, 2 + (core->blocksize / 4), 1, 0);
+			r_core_anal_data (core, core->addr, 2 + (tbs / 4), 1, 0);
 			break;
 		case '4': // "ad4"
-			r_core_anal_data (core, core->addr, 2 + (core->blocksize / 4), 1, 4);
+			r_core_anal_data (core, core->addr, 2 + (tbs / 4), 1, 4);
 			break;
 		case '8': // "ad8"
-			r_core_anal_data (core, core->addr, 2 + (core->blocksize / 4), 1, 8);
+			r_core_anal_data (core, core->addr, 2 + (tbs / 4), 1, 8);
 			break;
 		case '?':
 			r_core_cmd_help (core, help_msg_ad);
