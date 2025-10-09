@@ -38,6 +38,7 @@ R_API void r_core_task_scheduler_init(RCoreTaskScheduler *tasks, RCore *core) {
 	tasks->lock = r_th_lock_new (true);
 	tasks->tasks_running = 0;
 	tasks->main_task = r_core_task_new (core, R_CORE_TASK_MODE_COOP, false, NULL, NULL, NULL);
+	tasks->main_task->cons_context = core->cons->context;
 	r_list_append (tasks->tasks, tasks->main_task);
 	tasks->foreground_task = tasks->main_task;
 	tasks->default_mode = R_CORE_TASK_MODE_COOP;

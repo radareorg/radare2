@@ -6,6 +6,7 @@
 #define COUNT_LINES 1
 
 static R_TH_LOCAL RCons *I = NULL;
+static R_TH_LOCAL RConsContext *r_cons_current_context = NULL;
 
 R_LIB_VERSION (r_cons);
 
@@ -16,7 +17,7 @@ static void __break_signal(int sig);
 #define MOAR (4096 * 8)
 
 static bool cons_palloc(RCons *cons, size_t moar) {
-	RConsContext *C = cons->context;
+	RConsContext *C = r_cons_current_context;
 	if (moar == 0 || moar > ST32_MAX) {
 		return false;
 	}
@@ -293,6 +294,7 @@ R_API RCons *r_cons_new2(void) {
 	cons->show_vals = false;
 	r_cons_reset (cons);
 	cons->line = r_line_new (cons);
+	r_cons_current_context = cons->context;
 	return cons;
 }
 
@@ -327,7 +329,7 @@ R_API void r_cons_free2(RCons * R_NULLABLE cons) {
 }
 
 static void __break_signal(int sig) {
-	r_cons_context_break (I->context); // &r_cons_context_default);
+	r_cons_context_break (r_cons_current_context); // &r_cons_context_default);
 }
 
 #if 0
@@ -523,21 +525,21 @@ R_API void r_cons_context_break_pop(RCons *cons, RConsContext *context, bool sig
 }
 
 R_API bool r_cons_is_interactive(RCons *cons) {
-	return cons->context->is_interactive;
+	return r_cons_current_context->is_interactive;
 }
 
 #if 0
 R_API bool r_cons_default_context_is_interactive(void) {
 	// XXX this is pure evil
-	return I->context->is_interactive;
+	return r_cons_current_context->is_interactive;
 }
 #endif
 
 R_API bool r_cons_was_breaked(RCons *cons) {
 #if WANT_DEBUGSTUFF
-	const bool res = r_cons_is_breaked (cons) || cons->context->was_breaked;
-	cons->context->breaked = false;
-	cons->context->was_breaked = false;
+	const bool res = r_cons_is_breaked (cons) || r_cons_current_context->was_breaked;
+	r_cons_current_context->breaked = false;
+	r_cons_current_context->was_breaked = false;
 	return res;
 #else
 	return false;
@@ -546,7 +548,7 @@ R_API bool r_cons_was_breaked(RCons *cons) {
 
 R_API bool r_cons_is_breaked(RCons *cons) {
 #if WANT_DEBUGSTUFF
-	RConsContext *C = cons->context;
+	RConsContext *C = r_cons_current_context;
 	if (R_UNLIKELY (cons->cb_break)) {
 		cons->cb_break (cons->user);
 	}
@@ -781,6 +783,7 @@ R_API void r_cons_context_load(RConsContext *context) {
 		I = &s_cons_global;
 	}
 	I->context = context;
+	r_cons_current_context = context;
 }
 
 R_API void r_cons_context_reset(RConsContext *context) {
