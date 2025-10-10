@@ -15,7 +15,7 @@ static size_t socket_slurp(RSocket *s, RBuffer *buf) {
 	if (r_socket_ready (s, 1, 0) != 1) {
 		return 0;
 	}
-	r_socket_block_time (s, true, 0, 1000);
+	r_socket_block_time (s, true, 1, 0);
 	for (i = 0; i < SOCKET_HTTP_MAX_HEADER_LENGTH; i += 1) {
 		ut8 c;
 		int olen = r_socket_read_block (s, &c, 1);
