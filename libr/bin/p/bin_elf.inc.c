@@ -454,6 +454,12 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 	R_RETURN_VAL_IF_FAIL (eo && rel, NULL);
 	ut64 B = eo->baddr;
 	ut64 P = rel->rva; // rva has taken baddr into account
+
+	// For sBPF, recalculate rva from paddr using p2v to handle custom baddr
+	if (eo->ehdr.e_machine == EM_SBPF) {
+		P = Elf_(p2v)(eo, rel->offset);
+	}
+
 	RBinReloc *r = R_NEW0 (RBinReloc);
 	r->import = NULL;
 	r->ntype = rel->type;
@@ -487,7 +493,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 			r->symbol = eo->symbols_by_ord[rel->sym];
 		}
 	}
-	r->vaddr = rel->rva;
+	r->vaddr = (eo->ehdr.e_machine == EM_SBPF) ? P : rel->rva;
 	r->paddr = rel->offset;
 	r->laddr = rel->laddr;
 
@@ -780,16 +786,19 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 		switch (rel->type) {
 		case R_BPF_64_64: // 64-bit immediate for lddw instruction
 			r->type = R_BIN_RELOC_64;
-			r->vaddr = B + rel->offset;
+			// P is already correctly computed via p2v for sBPF (see lines 458-462)
+			r->vaddr = P;
 			return r;
 		case R_BPF_64_RELATIVE: // PC relative 64-bit address
 			r->type = R_BIN_RELOC_64;
-			r->vaddr = B + rel->offset;
+			// P is already correctly computed via p2v for sBPF (see lines 458-462)
+			r->vaddr = P;
 			return r;
 		case R_BPF_64_32: // 32-bit function/syscall ID for call instruction
 			r->type = R_BIN_RELOC_32;
 			// The immediate value will be a function ID or syscall ID, not an address
-			r->vaddr = B + rel->offset;
+			// P is already correctly computed via p2v for sBPF (see lines 458-462)
+			r->vaddr = P;
 			return r;
 		default:
 			R_LOG_DEBUG ("Unimplemented BPF reloc type %d", rel->type);
@@ -818,7 +827,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 // Helper macro for left bit rotation
 #define rotl32(x, n) (((x) << (n)) | ((x) >> (32 - (n))))
 
-// Firedancer-compatible Murmur3 32-bit hash function for sBPF syscalls
+// Murmur3 32-bit hash function for sBPF syscalls
 static ut32 murmur3_32(const char* data, ut32 len, ut32 seed) {
 	const ut32 c1 = 0xcc9e2d51U;
 	const ut32 c2 = 0x1b873593U;
@@ -1132,53 +1141,86 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 	case EM_BPF: // CHECK: some older solana programs have set an ehdr.e_machine of EM_BPF
 	case EM_SBPF: {
 		switch (rel->type) {
-		case R_BPF_64_64: // 64-bit immediate for lddw instructions
-			V = S + A;
-			// Write as split 32-bit values to immediate fields (offset+4 and offset+12)
+		case R_BPF_64_64: { // 64-bit immediate for lddw instructions
+			// Read the current value from the immediate fields (addend)
+			ut8 buf_lo[4], buf_hi[4];
+			ut64 addend = 0;
+			if (r_buf_read_at (bo->b, rel->offset + 4, buf_lo, 4) == 4 &&
+			    r_buf_read_at (bo->b, rel->offset + 12, buf_hi, 4) == 4) {
+				ut32 va_lo = r_read_le32 (buf_lo);
+				ut32 va_hi = r_read_le32 (buf_hi);
+				addend = ((ut64)va_hi << 32) | va_lo;
+			}
+
+			// V = symbol value + addend
+			V = S + addend;
+
+			// Normalize address: if V < base_addr, add base_addr
+			if (V < B) {
+				V += B;
+			}
+
+			// Write as split 32-bit values to immediate fields (rva+4 and rva+12)
 			r_write_le32 (buf, (ut32)(V & UT32_MAX));
 			iob->overlay_write_at (iob->io, rel->rva + 4, buf, 4);
 			r_write_le32 (buf, (ut32)(V >> 32));
 			iob->overlay_write_at (iob->io, rel->rva + 12, buf, 4);
 			break;
+		}
 
 		case R_BPF_64_RELATIVE: { // PC relative 64-bit address
 
-			// Check if relocation is in .text section
+			// Get addend - try explicit addend first, then implicit from file
+			ut64 addend = rel->addend;
+
+			// rel->offset is already a physical address (paddr), not a virtual address
+			ut64 paddr = rel->offset;
+
+			// Check if relocation is in .text section (check using paddr)
 			bool is_text = false;
 			ut64 text_start = Elf_(get_section_offset)(bo, ".text");
 			ut64 text_size = Elf_(get_section_size)(bo, ".text");
 			if (text_start != UT64_MAX && text_size != UT64_MAX) {
 				ut64 text_end = text_start + text_size;
-				is_text = (rel->offset >= text_start && rel->offset < text_end);
+				is_text = (paddr >= text_start && paddr < text_end);
 			}
+
 			if (is_text) {
 				// In .text: behave like R_BPF_64_64 but ignore symbol and handle addend
-				// Read implicit addend from both immediate fields (lddw instruction)
-				ut8 buf_lo[4], buf_hi[4];
-				iob->read_at (iob->io, rel->rva + 4, buf_lo, 4);
-				iob->read_at (iob->io, rel->rva + 12, buf_hi, 4);
-
-				ut32 va_lo = r_read_le32 (buf_lo);
-				ut32 va_hi = r_read_le32 (buf_hi);
-				ut64 va = ((ut64)va_hi << 32) | va_lo;
-
-				if (va != 0) {
-					// Write back to both immediate fields
-					r_write_le32 (buf_lo, (ut32)(va & 0xffffffff));
-					r_write_le32 (buf_hi, (ut32)(va >> 32));
-					iob->overlay_write_at (iob->io, rel->rva + 4, buf_lo, 4);
-					iob->overlay_write_at (iob->io, rel->rva + 12, buf_hi, 4);
+				// For lddw instruction, addend is split across two immediate fields
+				if (addend == 0 && bo && paddr != UT64_MAX) {
+					// Read from the immediate fields - use physical offset
+					ut8 buf_lo[4], buf_hi[4];
+					if (r_buf_read_at (bo->b, paddr + 4, buf_lo, 4) == 4 &&
+					    r_buf_read_at (bo->b, paddr + 12, buf_hi, 4) == 4) {
+						ut32 va_lo = r_read_le32 (buf_lo);
+						ut32 va_hi = r_read_le32 (buf_hi);
+						addend = ((ut64)va_hi << 32) | va_lo;
+					}
 				}
+
+				// Apply relocation: B + addend
+				ut64 result = B + addend;
+				// Get the virtual address where this relocation should be written
+				ut64 write_vaddr = Elf_(p2v)(bo, rel->offset);
+				// Write to both immediate fields (lddw instruction)
+				r_write_le32 (buf, (ut32)(result & 0xffffffff));
+				iob->overlay_write_at (iob->io, write_vaddr + 4, buf, 4);
+				r_write_le32 (buf, (ut32)(result >> 32));
+				iob->overlay_write_at (iob->io, write_vaddr + 12, buf, 4);
 			} else {
-				// Outside .text: do 64-bit write
-				ut8 buf_addend[4];
-				iob->read_at (iob->io, rel->rva + 4, buf_addend, 4);
-				ut32 va = r_read_le32 (buf_addend);
-				// Add base address
-				ut64 result = va + SBPF_PROGRAM_ADDR;
-				// Write back as 64-bit value
+				// Outside .text: Read 32-bit value, add base, write 64-bit result
+				ut32 refd_addr_32 = 0;
+				ut8 buf_32[4];
+				if (r_buf_read_at (bo->b, paddr + 4, buf_32, 4) == 4) {
+					refd_addr_32 = r_read_le32 (buf_32);
+				}
+				ut64 result = (ut64)refd_addr_32 + B;
+
+				// Write 64-bit value at rel->rva (not at offset+4!)
+				ut64 write_vaddr = Elf_(p2v)(bo, rel->offset);
 				r_write_le64 (buf, result);
-				iob->overlay_write_at (iob->io, rel->rva, buf, 8);
+				iob->overlay_write_at (iob->io, write_vaddr, buf, 8);
 			}
 			break;
 		}
@@ -1321,8 +1363,16 @@ static RList* patch_relocs(RBinFile *bf) {
 			}
 		}
 		// ut64 raddr = sym_addr? sym_addr: vaddr;
-		ut64 raddr = (sym_addr && sym_addr != UT64_MAX)? sym_addr: vaddr;
-		_patch_reloc (eo, eo->ehdr.e_machine, &b->iob, reloc, raddr, 0, plt_entry_addr);
+		// For sBPF, use rel->rva for relocations without symbols (like R_BPF_64_RELATIVE)
+		ut64 raddr;
+		if (sym_addr && sym_addr != UT64_MAX) {
+			raddr = sym_addr;
+		} else if (eo->ehdr.e_machine == EM_SBPF && reloc->type == R_BPF_64_RELATIVE) {
+			raddr = reloc->rva;
+		} else {
+			raddr = vaddr;
+		}
+		_patch_reloc (eo, eo->ehdr.e_machine, &b->iob, reloc, raddr, eo->baddr, plt_entry_addr);
 		ptr = reloc_convert (eo, reloc, n_vaddr);
 		if (!ptr) {
 			continue;
@@ -1331,9 +1381,13 @@ static RList* patch_relocs(RBinFile *bf) {
 		if (sym_addr && sym_addr != UT64_MAX) {
 			ptr->vaddr = sym_addr;
 		} else {
-			ptr->vaddr = vaddr;
-			ht_uu_insert (relocs_by_sym, reloc->sym, vaddr);
-			vaddr += cdsz;
+			// For sBPF, use the vaddr from reloc_convert (which was set by p2v)
+			// Don't overwrite it with the .got.r2 address
+			if (eo->ehdr.e_machine != EM_SBPF) {
+				ptr->vaddr = vaddr;
+				ht_uu_insert (relocs_by_sym, reloc->sym, vaddr);
+				vaddr += cdsz;
+			}
 		}
 		r_list_append (ret, ptr);
 	}
