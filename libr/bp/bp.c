@@ -298,6 +298,7 @@ R_API char *r_bp_list(RBreakpoint *bp, int rad) {
 			pj_kb (pj, "valid", r_bp_is_valid (bp, b));
 			pj_ks (pj, "data", r_str_get (b->data));
 			pj_ks (pj, "cond", r_str_get (b->cond));
+			pj_ks (pj, "name", r_str_get (b->name));
 			pj_end (pj);
 		} else if (rad) {
 			if (b->module_name) {
