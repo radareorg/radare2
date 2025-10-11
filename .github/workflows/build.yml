@@ -67,14 +67,12 @@ jobs:
       matrix:
         arch:
           - amd64
-          - arm64
           - i386
+        runner: [ubuntu-22.04]
         include:
           - arch: arm64
-            gcc: aarch64-linux-gnu
-          - arch: i386
-            gcc: multilib
-    runs-on: ubuntu-22.04
+            runner: ubuntu-22.04-arm
+    runs-on: ${{ matrix.runner }}
     steps:
     - name: Checkout
       uses: actions/checkout@v5
@@ -82,11 +80,13 @@ jobs:
       shell: bash
       run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
       id: r2v
-    - name: Installing the musl runtime and crosscompiler
+    - name: Installing the musl runtime
       run: |
-        sudo apt update --assume-yes
-        sudo apt install --assume-yes musl-tools
-        if [ -n "${{ matrix.gcc }}" ]; then sudo apt install --assume-yes gcc-${{ matrix.gcc }}; fi
+        sudo apt-get update 
+        sudo apt-get install -y musl-tools
+    - name: Installing the i386 crosscompiler
+      if: matrix.arch == 'i386'
+      run: sudo apt-get install -y gcc-multilib
     - name: Building static r2 with acr
       run: |
         cp -f dist/plugins-cfg/plugins.static.nogpl.cfg plugins.cfg
@@ -120,23 +120,21 @@ jobs:
       matrix:
         arch:
           - amd64
-          - arm64
           - i386
+        runner: [ubuntu-22.04]
         include:
           - arch: arm64
-            gcc: aarch64-linux-gnu
-          - arch: i386
-            gcc: multilib
+            runner: ubuntu-22.04-arm
     # TODO: Update to 22.04 when xpatch.c warnings have been fixed
-    runs-on: ubuntu-22.04
+    runs-on: ${{ matrix.runner }}
     steps:
     - name: Checkout
       uses: actions/checkout@v5
-    - if: ${{ matrix.gcc }}
-      name: Installing crosscompiler
+    - name: Installing the i386 crosscompiler
+      if: matrix.arch == 'i386'
       run: |
-        sudo apt update --assume-yes
-        sudo apt install --assume-yes gcc-${{ matrix.gcc }} gperf
+        sudo apt-get update
+        sudo apt-get install -y gcc-multilib gperf
     - name: Packaging for Debian
       run: |
         gcc -v
