@@ -7,8 +7,6 @@ ARG=$1
 
 if [ "$ARG" = "arm64" ]; then
   ARCH=arm64
-  CFGARGS="--with-compiler=aarch64-linux-gnu-gcc"
-  export CC="aarch64-linux-gnu-gcc"
 elif [ "$ARG" = "amd64" ]; then
   ARCH=amd64
   export CFLAGS="-Werror"
