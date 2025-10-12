@@ -5,7 +5,7 @@ e scr.interactive=false
 pd 1~..
 EOF
 EXPECT_ERR=<<EOF
-ERROR: Internal less requires scr.interactive=true
+WARN: Internal less requires scr.interactive=true
 EOF
 RUN
 
