@@ -118,71 +118,139 @@ static char *readman(RCore *core, const char *page) {
 		}
 	}
 	if (res) {
-		char *p = strstr (res, ".");
-		while (p) {
-			if (p[1] == '\\' || p != res) {
-				p++;
+		// Process man page macros to markdown
+		RStrBuf *sb = r_strbuf_new ("");
+		char *lines = res;
+		char *line = lines;
+		bool in_code_block = false;
+		bool in_list = false;
+
+		while (line && *line) {
+			char *next_line = strchr (line, '\n');
+			if (next_line) {
+				*next_line = '\0';
+				next_line++;
 			}
-			switch (p[1]) {
-			case '\\': // ".\""
-				p--; *p = ' ';
-				while (*p && *p != '\n') {
-					*p = ' ';
-					p++;
+
+			// Skip empty lines at the beginning
+			if (!*line) {
+				line = next_line;
+				continue;
+			}
+
+			// Check if this is a man macro line
+			if (*line == '.') {
+				char *macro = line + 1;
+				char *args_str = strchr (macro, ' ');
+				const char *args_trimmed = NULL;
+				if (args_str) {
+					*args_str = '\0';
+					args_trimmed = r_str_trim_head_ro (args_str + 1);
 				}
-				break;
-			case 'T': // ".Tn"
-				if (p[2] == 'P') {
-					memset (p, ' ', 3);
-					break;
-				}
-				if (p[2] == 'H') {
-					memcpy (p, "\n#", 2);
-					break;
-				}
-				// fallthrough
-			case 'B': // ".Bl"
-				if (p[2] == ' ') {
-					char *nl = strchr (p, '\n');
-					if (nl) {
-						memmove (p, p + 1, nl - p - 1);
-						memcpy (p, " '", 2);
-						nl[-1] = '\'';
-						p = nl;
+
+				if (!strcmp (macro, "Sh")) {
+					// Section header
+					r_strbuf_appendf (sb, "\n## %s\n\n", args_trimmed ? args_trimmed : "");
+					in_list = false;
+				} else if (!strcmp (macro, "Ss")) {
+					// Subsection header
+					r_strbuf_appendf (sb, "\n### %s\n\n", args_trimmed ? args_trimmed : "");
+					in_list = false;
+				} else if (!strcmp (macro, "Pp")) {
+					// Paragraph break
+					r_strbuf_append (sb, "\n\n");
+				} else if (!strcmp (macro, "Bl")) {
+					// Begin list
+					in_list = true;
+				} else if (!strcmp (macro, "El")) {
+					// End list
+					in_list = false;
+					r_strbuf_append (sb, "\n");
+				} else if (!strcmp (macro, "It")) {
+					// List item
+					if (in_list) {
+						if (args_trimmed) {
+							// Handle tagged list items
+							if (!strcmp (args_trimmed, "Fl")) {
+								r_strbuf_append (sb, "\n- `-`: ");
+							} else if (r_str_startswith (args_trimmed, "Fl ")) {
+								const char *flag = args_trimmed + 3; // Skip "Fl "
+								r_strbuf_appendf (sb, "\n- `-%s`: ", flag);
+							} else if (!strcmp (args_trimmed, "Ar")) {
+								r_strbuf_append (sb, "\n- `<arg>`: ");
+							} else {
+								r_strbuf_appendf (sb, "\n- `%s`: ", args_trimmed);
+							}
+						} else {
+							r_strbuf_append (sb, "\n- ");
+						}
+					} else {
+						r_strbuf_appendf (sb, "\n   * %s", args_trimmed ? args_trimmed : "");
 					}
-					break;
+				} else if (!strcmp (macro, "Nm")) {
+					// Name
+					r_strbuf_appendf (sb, "%s", args_trimmed ? args_trimmed : "");
+				} else if (!strcmp (macro, "Nd")) {
+					// Description
+					r_strbuf_appendf (sb, " - %s", args_trimmed ? args_trimmed : "");
+				} else if (!strcmp (macro, "Ft")) {
+					// Function type
+					r_strbuf_appendf (sb, "\n**%s** ", args_trimmed ? args_trimmed : "");
+				} else if (!strcmp (macro, "Fn")) {
+					// Function name
+					r_strbuf_appendf (sb, "`%s`", args_trimmed ? args_trimmed : "");
+				} else if (!strcmp (macro, "Fl")) {
+					// Flag option
+					r_strbuf_appendf (sb, "`-%s`", args_trimmed ? args_trimmed : "");
+				} else if (!strcmp (macro, "Ar")) {
+					// Argument
+					r_strbuf_appendf (sb, "`%s`", args_trimmed ? args_trimmed : "");
+				} else if (!strcmp (macro, "Op")) {
+					// Optional argument - ignore for now
+				} else if (!strcmp (macro, "In")) {
+					// Include file
+					r_strbuf_appendf (sb, "\n`%s`", args_trimmed ? args_trimmed : "");
+				} else if (!strcmp (macro, "Dl")) {
+					// Display literal
+					r_strbuf_appendf (sb, "\n```\n%s\n```\n", args_trimmed ? args_trimmed : "");
+				} else if (!strcmp (macro, "Bd")) {
+					// Begin display
+					r_strbuf_append (sb, "\n```\n");
+					in_code_block = true;
+				} else if (!strcmp (macro, "Ed")) {
+					// End display
+					r_strbuf_append (sb, "\n```\n");
+					in_code_block = false;
+				} else if (!strcmp (macro, "Os")) {
+					// Operating system - ignore
+				} else if (!strcmp (macro, "Dt")) {
+					// Title - ignore
+				} else {
+					// Unknown macro - remove the line
 				}
-			case 'F': // ".Fl"
-				while (*p && *p != '\n') {
-					*p = ' ';
-					p++;
+			} else {
+				// Regular text line
+				if (in_code_block) {
+					r_strbuf_appendf (sb, "%s\n", line);
+				} else {
+					// Clean up extra spaces and format text
+					char *trimmed = r_str_trim_dup (line);
+					if (*trimmed) {
+						r_strbuf_appendf (sb, "%s\n", trimmed);
+					}
+					free (trimmed);
 				}
-				break;
-			case 'R': // ".RS" ".RE"
-			case 'E': // ".El"
-			case 'N': // ".Nm"
-			case 'X': // ".Xr"
-			case 'D': // ".Dt"
-			case 'P': // ".Dt"
-			case 'A': // ".Ar"
-				memset (p, ' ', 3);
-				break;
-			case 'O': // ".Op Fl"
-				memset (p, ' ', 6);
-				p[6] = '-';
-				break;
-			case 'S': //  .Sh section header
-				memcpy (p, "\n##", 3);
-				break;
-			case 'I': // ".It"
-				memcpy (p, "\n   * ", 6);
-				break;
 			}
-			p = strstr (p, "\n.");
+
+			line = next_line;
 		}
-		// replace \n.XX with stuff
+
+		free (res);
+		res = r_strbuf_drain (sb);
+
+		// Clean up extra whitespace
+		res = r_str_replace_all (res, "\n\n\n", "\n\n");
 		res = r_str_replace_all (res, "\\-", "-");
-		res = r_str_replace_all (res, " Ar ", " ");
 	}
 	free (p);
 	return res;
