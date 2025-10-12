@@ -105,6 +105,18 @@ static char *readman(RCore *core, const char *page) {
 		p = r_str_newf ("%s/man/man%d/%s.%d", "/usr/share", cat, page, cat);
 		res = r_file_slurp (p, NULL);
 	}
+	if (!res && cat == 1) {
+		// Try man3 if man1 not found
+		free (p);
+		cat = 3;
+		p = r_str_newf ("%s/man/man%d/%s.%d", R2_DATDIR, cat, page, cat);
+		res = r_file_slurp (p, NULL);
+		if (!res) {
+			free (p);
+			p = r_str_newf ("%s/man/man%d/%s.%d", "/usr/share", cat, page, cat);
+			res = r_file_slurp (p, NULL);
+		}
+	}
 	if (res) {
 		char *p = strstr (res, ".");
 		while (p) {
