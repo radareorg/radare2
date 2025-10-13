@@ -19,6 +19,8 @@ static void prepend_current_pc(RDebug *dbg, RList *list) {
 		if (frame) {
 			frame->addr = addr;
 			frame->size = 0;
+			frame->sp = r_reg_getv (dbg->reg, "SP");
+			frame->bp = r_reg_getv (dbg->reg, "BP");
 			r_list_prepend (list, frame);
 		}
 	}
