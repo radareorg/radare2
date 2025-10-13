@@ -15,6 +15,48 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir))
 AUTO_WHITELIST_PATH = os.path.join(SCRIPT_DIR, "auto-format-files.txt")
 
+CLANG_FORMAT_CONFIG = """BasedOnStyle: LLVM
+Language: Cpp
+PointerAlignment: Right
+AlwaysBreakAfterDefinitionReturnType: None
+BinPackParameters: true
+MaxEmptyLinesToKeep: 1
+SpaceInEmptyParentheses: false
+SpacesInContainerLiterals: true
+SpaceBeforeParens: Custom
+SpaceBeforeParensOptions:
+  AfterIfMacros: true
+  AfterFunctionDefinitionName: false
+  AfterFunctionDeclarationName: false
+  AfterForeachMacros: true
+  AfterControlStatements: true
+  BeforeNonEmptyParentheses: false
+SpacesInParentheses: false
+InsertBraces: true
+ContinuationIndentWidth: 8
+IndentCaseLabels: false
+IndentFunctionDeclarationAfterType: false
+IndentWidth: 8
+UseTab: ForContinuationAndIndentation
+ColumnLimit: 0
+BreakBeforeBraces: Attach
+BreakBeforeTernaryOperators: true
+SpaceBeforeSquareBrackets: false
+SpaceInEmptyBlock: false
+AllowShortIfStatementsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortLoopsOnASingleLine: false
+AlignAfterOpenBracket: DontAlign
+AlignEscapedNewlines: DontAlign
+AlignConsecutiveMacros: true
+AlignTrailingComments: false
+AlignOperands: false
+Cpp11BracedListStyle: false
+ForEachMacros: ['r_list_foreach', 'ls_foreach', 'fcn_tree_foreach_intersect', 'r_skiplist_foreach', 'graph_foreach_anode', 'r_list_foreach_safe', 'r_pvector_foreach', 'r_rbtree_foreach', 'r_interval_tree_foreach']
+SortIncludes: false
+"""
+
 
 def parse_args():
 	parser = argparse.ArgumentParser(
@@ -49,6 +91,11 @@ def parse_args():
 		dest="clang_format",
 		default=os.environ.get("CLANG_FORMAT", "clang-format"),
 		help="clang-format executable to use (default: env CLANG_FORMAT or clang-format).",
+	)
+	parser.add_argument(
+		"--print-config",
+		action="store_true",
+		help="Print the embedded .clang-format configuration to stdout and exit.",
 	)
 	return parser.parse_args()
 
@@ -474,14 +521,14 @@ def apply_indent_rules(text):
 	return "".join(lines)
 
 
-def format_file(path, clang_format, check_only=False):
+def format_file(path, clang_format, style_file, check_only=False):
 	if not os.path.isfile(path):
 		raise FileNotFoundError(f"{path}: no such file")
 	with open(path, "r", encoding="utf-8") as current:
 		original = current.read()
 	try:
 		result = subprocess.run(
-			[clang_format, "-style=file", path],
+			[clang_format, "-style=file:" + style_file, path],
 			check=True,
 			stdout=subprocess.PIPE,
 			stderr=subprocess.PIPE,
@@ -506,41 +553,54 @@ def format_file(path, clang_format, check_only=False):
 
 def main():
 	args = parse_args()
+	if args.print_config:
+		print(CLANG_FORMAT_CONFIG)
+		return 0
 	if args.version:
 		print(VERSION)
 		return 0
-	paths = args.files
-	if args.auto:
-		paths = load_auto_files()
+	temp_dir = tempfile.gettempdir()
+	style_file = os.path.join(temp_dir, "clang-format-radare2.tmp")
+	try:
+		with open(style_file, "w", encoding="utf-8") as f:
+			f.write(CLANG_FORMAT_CONFIG)
+		paths = args.files
+		if args.auto:
+			paths = load_auto_files()
+			if not paths:
+				print(
+					"clang-format-radare2: auto mode whitelist is empty or missing",
+					file=sys.stderr,
+				)
+				return 1
 		if not paths:
+			print("clang-format-radare2: no input files", file=sys.stderr)
+			return 1
+		clang_format = args.clang_format
+		if not shutil.which(clang_format):
 			print(
-				"clang-format-radare2: auto mode whitelist is empty or missing",
+				f"clang-format-radare2: cannot find clang-format ({clang_format})",
 				file=sys.stderr,
 			)
 			return 1
-	if not paths:
-		print("clang-format-radare2: no input files", file=sys.stderr)
-		return 1
-	clang_format = args.clang_format
-	if not shutil.which(clang_format):
-		print(
-			f"clang-format-radare2: cannot find clang-format ({clang_format})",
-			file=sys.stderr,
-		)
-		return 1
-	files = expand_targets(paths)
-	if not files:
-		print("clang-format-radare2: no input files", file=sys.stderr)
-		return 1
-	exit_code = 0
-	for path in files:
-		try:
-			changed = format_file(path, clang_format, args.no_update)
-			if args.no_update and changed:
+		files = expand_targets(paths)
+		if not files:
+			print("clang-format-radare2: no input files", file=sys.stderr)
+			return 1
+		exit_code = 0
+		for path in files:
+			try:
+				changed = format_file(path, clang_format, style_file, args.no_update)
+				if args.no_update and changed:
+					exit_code = 1
+			except (FileNotFoundError, RuntimeError, OSError) as err:
+				print(f"clang-format-radare2: {err}", file=sys.stderr)
 				exit_code = 1
-		except (FileNotFoundError, RuntimeError, OSError) as err:
-			print(f"clang-format-radare2: {err}", file=sys.stderr)
-			exit_code = 1
+	finally:
+		try:
+			os.remove(style_file)
+		except OSError:
+			pass
 	return exit_code
 
 
