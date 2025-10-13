@@ -2,34 +2,63 @@
 
 static int iscallret(RDebug *dbg, ut64 addr) {
 	ut8 buf[32];
-	if (addr == 0LL || addr == UT64_MAX)
+	RAnalOp op = {0};
+	int i;
+	if (addr == 0LL || addr == UT64_MAX) {
 		return 0;
+	}
 	/* check if region is executable */
 	/* check if previous instruction is a call */
-	/* if x86 expect CALL to be 5 byte length */
+	/* try looking back up to 16 bytes to find a call instruction */
 	if (dbg->arch && !strcmp (dbg->arch, "x86")) {
-		(void)dbg->iob.read_at (dbg->iob.io, addr-5, buf, 5);
-		if (buf[0] == 0xe8) {
-			return 1;
+		// On x86, try to find CALL instructions of various lengths
+		// Check for common patterns
+		int maxdist = (dbg->bits == 64) ? 16 : 8;
+		if (!dbg->iob.read_at (dbg->iob.io, addr - maxdist, buf, maxdist)) {
+			return 0;
 		}
-		if (buf[3] == 0xff  /* bits 4-5 (from right) of next byte must be 01 */
-				&& ((buf[4] & 0xf0) == 0xd0  /* Mod is 11 */
-					|| ((buf[4] & 0xf0) == 0x10  /* Mod is 00 */
-						&& (buf[4] & 0x06) != 0x04))) {  /* R/M not 10x */
-			return 1;
+		// Look backwards for CALL instructions
+		for (i = maxdist - 1; i >= 0; i--) {
+			// Direct CALL (e8 xx xx xx xx)
+			if (buf[i] == 0xe8 && (i + 5 == maxdist)) {
+				return 1;
+			}
+			// Indirect CALL (ff /2)
+			if (buf[i] == 0xff) {
+				int modrm = (i + 1 < maxdist) ? buf[i + 1] : 0;
+				int reg = (modrm >> 3) & 7;
+				if (reg == 2) { // CALL r/m
+					// Estimate instruction length based on ModR/M
+					int mod = (modrm >> 6) & 3;
+					int rm = modrm & 7;
+					int len = 2;
+					if (mod == 0 && rm == 5) {
+						len = 6; // disp32
+					} else if (mod == 1) {
+						len = 3; // disp8
+					} else if (mod == 2) {
+						len = 6; // disp32
+					}
+					if (i + len == maxdist) {
+						return 1;
+					}
+				}
+			}
 		}
-		// IMMAMISSINGANYOP
 	} else {
-		RAnalOp op;
-		(void) dbg->iob.read_at (dbg->iob.io, addr-8, buf, 8);
-		(void) r_anal_op (dbg->anal, &op, addr-8, buf, 8, R_ARCH_OP_MASK_BASIC);
-		if (op.type == R_ANAL_OP_TYPE_CALL || op.type == R_ANAL_OP_TYPE_UCALL) {
-			return 1;
+		// For non-x86, use anal to check
+		int maxdist = 16;
+		if (!dbg->iob.read_at (dbg->iob.io, addr - maxdist, buf, maxdist)) {
+			return 0;
 		}
-		/* delay slot */
-		(void) r_anal_op (dbg->anal, &op, addr-4, buf, 4, R_ARCH_OP_MASK_BASIC);
-		if (op.type == R_ANAL_OP_TYPE_CALL || op.type == R_ANAL_OP_TYPE_UCALL) {
-			return 1;
+		// Try different positions
+		for (i = maxdist - 1; i >= maxdist - 8 && i >= 0; i--) {
+			if (r_anal_op (dbg->anal, &op, addr - (maxdist - i), buf + i, maxdist - i, R_ARCH_OP_MASK_BASIC) > 0) {
+				if ((op.type == R_ANAL_OP_TYPE_CALL || op.type == R_ANAL_OP_TYPE_UCALL) &&
+				    (addr - (maxdist - i) + op.size == addr)) {
+					return 1;
+				}
+			}
 		}
 	}
 	return 0;
