@@ -92,6 +92,11 @@ def parse_args():
 		default=os.environ.get("CLANG_FORMAT", "clang-format"),
 		help="clang-format executable to use (default: env CLANG_FORMAT or clang-format).",
 	)
+	parser.add_argument(
+		"--print-config",
+		action="store_true",
+		help="Print the embedded .clang-format configuration to stdout and exit.",
+	)
 	return parser.parse_args()
 
 
@@ -548,6 +553,9 @@ def format_file(path, clang_format, style_file, check_only=False):
 
 def main():
 	args = parse_args()
+	if args.print_config:
+		print(CLANG_FORMAT_CONFIG)
+		return 0
 	if args.version:
 		print(VERSION)
 		return 0
