@@ -554,3 +554,9 @@ swift_unownedRelease=swift.refcount
 swift_retainCount=swift.refcount
 swift_bridgeObjectRetain=swift.refcount
 swift_unknownObjectRetain"
+eeprom_read=eeprom
+eeprom_write=eeprom
+eeprom_create=eeprom
+eeprom_destroy=eeprom
+eeprom_prepare=eeprom
+eeprom_unprepare=eeprom
