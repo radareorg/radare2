@@ -300,108 +300,42 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 		s = r_str_replace (s, " lsr ", " >> ", 1);
 		s = r_str_replace (s, "+ -", "- ", 1);
 		s = r_str_replace (s, "- -", "+ ", 1);
-		
+
 		// Simplify "reg = reg OP val" to "reg OP= val"
 		// Pattern: "x9 = x9 * x10" -> "x9 *= x10"
 		char *eq = strstr (s, " = ");
 		if (eq) {
 			char *start = s;
-			char *op_pos = NULL;
-			// Find operator after '='
-			if ((op_pos = strstr (eq + 3, " * "))) {
-				char reg[32] = {0};
-				size_t reg_len = eq - start;
-				if (reg_len < sizeof (reg)) {
-					strncpy (reg, start, reg_len);
-					// Check if same register appears after '='
-					if (!strncmp (eq + 3, reg, reg_len) && eq[3 + reg_len] == ' ') {
-						// Create new string: "reg *= rest"
-						char *rest = op_pos + 3;
-						char *new_s = r_str_newf ("%s *= %s", reg, rest);
-						free (s);
-						s = new_s;
-					}
-				}
-			} else if ((op_pos = strstr (eq + 3, " / "))) {
-				char reg[32] = {0};
-				size_t reg_len = eq - start;
-				if (reg_len < sizeof (reg)) {
-					strncpy (reg, start, reg_len);
-					// Check for "(unsigned) reg /" pattern
-					char *check_pos = eq + 3;
-					if (!strncmp (check_pos, "(unsigned) ", 11)) {
-						check_pos += 11; // skip "(unsigned) "
-					}
-					if (!strncmp (check_pos, reg, reg_len) && check_pos[reg_len] == ' ') {
-						char *rest = op_pos + 3;
-						char *new_s = r_str_newf ("%s /= %s", reg, rest);
-						free (s);
-						s = new_s;
-					}
-				}
-			} else if ((op_pos = strstr (eq + 3, " & "))) {
-				char reg[32] = {0};
-				size_t reg_len = eq - start;
-				if (reg_len < sizeof (reg)) {
-					strncpy (reg, start, reg_len);
-					if (!strncmp (eq + 3, reg, reg_len) && eq[3 + reg_len] == ' ') {
-						char *rest = op_pos + 3;
-						char *new_s = r_str_newf ("%s &= %s", reg, rest);
-						free (s);
-						s = new_s;
-					}
-				}
-			} else if ((op_pos = strstr (eq + 3, " | "))) {
-				char reg[32] = {0};
-				size_t reg_len = eq - start;
-				if (reg_len < sizeof (reg)) {
-					strncpy (reg, start, reg_len);
-					if (!strncmp (eq + 3, reg, reg_len) && eq[3 + reg_len] == ' ') {
-						char *rest = op_pos + 3;
-						char *new_s = r_str_newf ("%s |= %s", reg, rest);
-						free (s);
-						s = new_s;
-					}
-				}
-			} else if ((op_pos = strstr (eq + 3, " ^ "))) {
-				char reg[32] = {0};
-				size_t reg_len = eq - start;
-				if (reg_len < sizeof (reg)) {
-					strncpy (reg, start, reg_len);
-					if (!strncmp (eq + 3, reg, reg_len) && eq[3 + reg_len] == ' ') {
-						char *rest = op_pos + 3;
-						char *new_s = r_str_newf ("%s ^= %s", reg, rest);
-						free (s);
-						s = new_s;
-					}
-				}
-			} else if ((op_pos = strstr (eq + 3, " + "))) {
-				char reg[32] = {0};
-				size_t reg_len = eq - start;
-				if (reg_len < sizeof (reg)) {
-					strncpy (reg, start, reg_len);
-					if (!strncmp (eq + 3, reg, reg_len) && eq[3 + reg_len] == ' ') {
-						char *rest = op_pos + 3;
-						char *new_s = r_str_newf ("%s += %s", reg, rest);
-						free (s);
-						s = new_s;
-					}
-				}
-			} else if ((op_pos = strstr (eq + 3, " - "))) {
-				char reg[32] = {0};
-				size_t reg_len = eq - start;
-				if (reg_len < sizeof (reg)) {
-					strncpy (reg, start, reg_len);
-					if (!strncmp (eq + 3, reg, reg_len) && eq[3 + reg_len] == ' ') {
-						char *rest = op_pos + 3;
-						char *new_s = r_str_newf ("%s -= %s", reg, rest);
-						free (s);
-						s = new_s;
+			// List of operators to check: *, /, &, |, ^, +, -
+			const char *operators[] = { " * ", " / ", " & ", " | ", " ^ ", " + ", " - ", NULL };
+			const char *compound[] = { " *= ", " /= ", " &= ", " |= ", " ^= ", " += ", " -= " };
+
+			for (int i = 0; operators[i]; i++) {
+				char *op_pos = strstr (eq + 3, operators[i]);
+				if (op_pos) {
+					char reg[32] = {0};
+					size_t reg_len = eq - start;
+					if (reg_len < sizeof (reg)) {
+						strncpy (reg, start, reg_len);
+						// Check for "(unsigned) reg /" pattern (special case for division)
+						char *check_pos = eq + 3;
+						if (i == 1 && !strncmp (check_pos, "(unsigned) ", 11)) {
+							check_pos += 11; // skip "(unsigned) "
+						}
+						// Check if same register appears after '='
+						if (!strncmp (check_pos, reg, reg_len) && check_pos[reg_len] == ' ') {
+							// Create new string: "reg OP= rest"
+							char *rest = op_pos + strlen (operators[i]);
+							char *new_s = r_str_newf ("%s%s%s", reg, compound[i], rest);
+							free (s);
+							s = new_s;
+							break;
+						}
 					}
 				}
 			}
 		}
-		
+
 		s = r_str_fixspaces (s);
 	}
 	free (buf);
