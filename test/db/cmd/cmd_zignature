@@ -1069,7 +1069,7 @@ za sym._dl_malloc g cc=8 nbbs=12 edges=16 ebbs=2 bbsum=396
 za sym._dl_malloc o 0x00002a1c
 za sym._dl_malloc R X2RsX21hbGxvYw==
 za sym._dl_malloc t void sym._dl_malloc (int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4, int32_t arg_10h)
-za sym._dl_malloc r sym._dl_dprintf sym._dl_dprintf sym._dl_dprintf
+za sym._dl_malloc r sym._dl_dprintf sym._dl_dprintf
 za sym._dl_malloc v fs-4:var_4h:int32_t, fs-12:var_24h:int32_t, fs-16:var_20h:int32_t, fs-20:var_1ch:int32_t, fs-8:var_28h:int32_t, fs-24:var_18h:int32_t, fs-32:var_10h:int32_t, fs-80:var_10h_2:int32_t, fs-76:var_14h:int32_t, tb16:arg_10h:int32_t, fs-28:var_24h_2:int32_t, fs-36:var_1ch_2:int32_t, fs-40:var_18h_2:int32_t, tr4:arg1:int32_t, tr6:arg3:int32_t, tr7:arg4:int32_t, tr5:arg2:int32_t
 za sym._dl_malloc h ec986971438cf486e01f14e9bc442d9f4c457854207d30fe4aa9f1ffdf892911
 EOF

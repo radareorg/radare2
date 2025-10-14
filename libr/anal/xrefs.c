@@ -541,6 +541,27 @@ static RVecAnalRef *fcn_get_all_refs(RAnalFunction *fcn, RefManager *rm, Collect
 		}
 
 		RVecAnalRef_sort (anal_refs, compare_ref);
+
+		// Remove duplicates after sorting
+		if (!RVecAnalRef_empty (anal_refs)) {
+			RAnalRef *write_ptr = anal_refs->_start;
+			RAnalRef *read_ptr = anal_refs->_start + 1;
+			RAnalRef *end_ptr = anal_refs->_end;
+
+			while (read_ptr < end_ptr) {
+				// Only keep if different from previous
+				if (compare_ref (write_ptr, read_ptr) != 0) {
+					write_ptr++;
+					if (write_ptr != read_ptr) {
+						*write_ptr = *read_ptr;
+					}
+				}
+				read_ptr++;
+			}
+
+			// Truncate by adjusting end pointer
+			anal_refs->_end = write_ptr + 1;
+		}
 	}
 
 	return anal_refs;
