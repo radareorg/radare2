@@ -1868,7 +1868,6 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		// AES instructions
 		break;
 	case X86_INS_AND:
-	case X86_INS_ANDN:
 	case X86_INS_ANDPD:
 	case X86_INS_ANDNPD:
 		{
@@ -1889,6 +1888,18 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			free (src);
 			free (dst);
 			free (dst2);
+		}
+		break;
+	case X86_INS_ANDN:
+		{
+			ut32 bitsize;
+			char *src1 = getarg (&gop, 1, 0, NULL, NULL);
+			char *src2 = getarg (&gop, 2, 0, NULL, NULL);
+			dst = getarg (&gop, 0, 1, NULL, &bitsize);
+			esilprintf (op, "%s,%s,~,&,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=,0,cf,:=,0,of,:=", src2, src1, dst, bitsize - 1);
+			free (src1);
+			free (src2);
+			free (dst);
 		}
 		break;
 	case X86_INS_PANDN:
