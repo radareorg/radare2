@@ -1262,3 +1262,241 @@ EOF
 EXPECT=<<EOF
 EOF
 RUN
+
+
+NAME=arm movw+movt ptr value simple
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+wx 40f20000 c0f20000
+s 0
+ao 2~ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x00000000
+ptr: 0x00000000
+EOF
+RUN
+
+NAME=arm movw+movt ptr value 0x1fffc000
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+wx 4cf20000 c1f6ff70
+s 0
+ao 2~ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x0000c000
+ptr: 0x1fffc000
+EOF
+RUN
+
+NAME=arm movw+movt ptr value 0x08001234
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+wx 41f23420 c0f60000
+s 0
+ao 2~ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x00001234
+ptr: 0x08001234
+EOF
+RUN
+
+NAME=arm movw+movt different registers no combine
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+wx 4cf20001 c1f6ff70
+s 0
+ao 2~ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x0000c000
+ptr: 0x1fff0000
+EOF
+RUN
+
+NAME=arm movw+movt to r1
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+wx 4cf20001 c1f6ff71
+s 0
+ao 2~ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x0000c000
+ptr: 0x1fffc000
+EOF
+RUN
+
+NAME=arm movw+movt to r7
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+wx 4af6cd37 c1f23427
+s 0
+ao 2~ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x0000abcd
+ptr: 0x1234abcd
+EOF
+RUN
+
+NAME=arm movw+movt to lr
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+wx 45f2786e c9f6bc2e
+s 0
+ao 2~ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x00005678
+ptr: 0x9abc5678
+EOF
+RUN
+
+NAME=arm movw standalone without movt
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+wx 4cf20000 0000
+s 0
+ao 1~ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x0000c000
+EOF
+RUN
+
+NAME=arm movt standalone without movw
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+wx c1f6ff70
+s 0
+ao 1~ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x1fff0000
+EOF
+RUN
+
+NAME=arm movw+movt register overwrite
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+wx 41f21110 42f22220 c3f23330
+s 0
+ao 3~ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x00001111
+ptr: 0x00002222
+ptr: 0x33332222
+EOF
+RUN
+
+NAME=arm movw+movt max values
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+wx 4ff6ff70 cff6ff70
+s 0
+ao 2~ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x0000ffff
+ptr: 0xffffffff
+EOF
+RUN
+
+NAME=arm movw+movt zero values
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+wx 40f20000 c0f20000
+s 0
+ao 2~ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x00000000
+ptr: 0x00000000
+EOF
+RUN
+
+NAME=arm movw opcode identification
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+wx 4cf20000
+s 0
+ao 1~opcode
+EOF
+EXPECT=<<EOF
+opcode: movw r0, 0xc000
+EOF
+RUN
+
+NAME=arm movt opcode identification
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+wx c1f6ff70
+s 0
+ao 1~opcode
+EOF
+EXPECT=<<EOF
+opcode: movt r0, 0x1fff
+EOF
+RUN
+
+NAME=arm movw+movt val field
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+wx 4cf20000 c1f6ff70
+s 0
+ao 2~^val
+EOF
+EXPECT=<<EOF
+val: 0x0000c000
+val: 0x00001fff
+EOF
+RUN
+
+NAME=arm movw+movt type mov
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+wx 4cf20000 c1f6ff70
+s 0
+ao 2~type
+EOF
+EXPECT=<<EOF
+type: mov
+type: mov
+EOF
+RUN
