@@ -221,6 +221,49 @@ fin:;
 	return newstr;
 }
 
+static const char *operators[] = { " * ", " / ", " & ", " | ", " ^ ", " + ", " - ", NULL };
+static const char *compound[]  = { " *= ", " /= ", " &= ", " |= ", " ^= ", " += ", " -= " };
+static char *simplify_compound_assign(char *s) {
+	if (!s) {
+		return NULL;
+	}
+	char *eq = strstr (s, " = ");
+	if (!eq || eq == s) {
+		return s;
+	}
+	char *start = r_str_trim_head_ro (s);
+	int i;
+	/* copy lhs register into small buffer once */
+	size_t lhs_len = (size_t)(eq - start);
+	char reg[32];
+	if (lhs_len >= sizeof (reg)) {
+		/* too long, bail out */
+		return s;
+	}
+	memcpy (reg, start, lhs_len);
+	reg[lhs_len] = '\0';
+	char *rhs = eq + 3;
+	for (i = 0; operators[i]; i++) {
+		const char *op_pos = strstr (rhs, operators[i]);
+		if (!op_pos) {
+			continue;
+		}
+		/* special case: division may be prefixed with "(unsigned) " */
+		char *check_pos = rhs;
+		if (i == 1 && r_str_startswith (check_pos, "(unsigned) ")) {
+			check_pos += strlen ("(unsigned) ");
+		}
+		/* ensure RHS starts with same register and is name-bounded */
+		if (!strncmp (check_pos, reg, lhs_len) && (check_pos[lhs_len] == ' ' || !check_pos[lhs_len])) {
+			char *rest = op_pos + strlen (operators[i]);
+			char *new_s = r_str_newf ("%s%s%s", reg, compound[i], rest);
+			free (s);
+			return new_s;
+		}
+	}
+	return s;
+}
+
 static char *parse(RAsmPluginSession *aps, const char *data) {
 	char w0[256], w1[256], w2[256], w3[256], w4[256];
 	char *ptr, *optr;
@@ -300,41 +343,7 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 		s = r_str_replace (s, "+ -", "- ", 1);
 		s = r_str_replace (s, "- -", "+ ", 1);
 
-		// Simplify "reg = reg OP val" to "reg OP= val"
-		// Pattern: "x9 = x9 * x10" -> "x9 *= x10"
-		char *eq = strstr (s, " = ");
-		if (eq) {
-			char *start = s;
-			// List of operators to check: *, /, &, |, ^, +, -
-			const char *operators[] = { " * ", " / ", " & ", " | ", " ^ ", " + ", " - ", NULL };
-			const char *compound[] = { " *= ", " /= ", " &= ", " |= ", " ^= ", " += ", " -= " };
-
-			int i;
-			for (i = 0; operators[i]; i++) {
-				char *op_pos = strstr (eq + 3, operators[i]);
-				if (op_pos) {
-					char reg[32];
-					size_t reg_len = eq - start;
-					if (reg_len < sizeof (reg)) {
-						r_str_ncpy (reg, start, reg_len);
-						// Check for "(unsigned) reg /" pattern (special case for division)
-						char *check_pos = eq + 3;
-						if (i == 1 && r_str_startswith (check_pos, "(unsigned) ")) {
-							check_pos += strlen ("(unsigned) ");
-						}
-						// Check if same register appears after '='
-						if (!strncmp (check_pos, reg, reg_len) && check_pos[reg_len] == ' ') {
-							// Create new string: "reg OP= rest"
-							char *rest = op_pos + strlen (operators[i]);
-							char *new_s = r_str_newf ("%s%s%s", reg, compound[i], rest);
-							free (s);
-							s = new_s;
-							break;
-						}
-					}
-				}
-			}
-		}
+		s = simplify_compound_assign (s);
 
 		s = r_str_fixspaces (s);
 	}
