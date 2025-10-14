@@ -30,6 +30,7 @@ static char *replace(int argc, const char *argv[]) {
 		{ 0, "adrp", "# = #", { 1, 2 } },
 		{ 0, "adr", "# = #", { 1, 2 } },
 		{ 0, "and", "# = # & #", { 1, 2, 3 } },
+		{ 2, "and", "# &= #", { 1, 2 } },
 		{ 0, "ands", "# &= #", { 1, 2 } },
 		{ 0, "asls", "# = # << #", { 1, 2, 3 } },
 		{ 0, "asl", "# = # << #", { 1, 2, 3 } },
@@ -68,6 +69,7 @@ static char *replace(int argc, const char *argv[]) {
 		{ 2, "cset", "# = (#)? 1 : 0", { 1, 2 } },
 		{ 0, "dvf", "# = # / #", { 1, 2, 3 } },
 		{ 0, "eor", "# = # ^ #", { 1, 2, 3 } },
+		{ 2, "eor", "# ^= #", { 1, 2 } },
 		{ 3, "tbnz", "if (# != #) goto #", { 1, 2, 3 } },
 		{ 3, "tbz", "if (# == #) goto #", { 1, 2, 3 } },
 		{ 1, "bkpt", "breakpoint #", { 1 } },
@@ -112,14 +114,23 @@ static char *replace(int argc, const char *argv[]) {
 		{ 0, "vmov.i32", "# = #", { 1, 2 } },
 		{ 0, "muf", "# = # * #", { 1, 2, 3 } },
 		{ 0, "mul", "# = # * #", { 1, 2, 3 } },
+		{ 2, "mul", "# *= #", { 1, 2 } },
 		{ 0, "fmul", "# = # * #", { 1, 2, 3 } },
+		{ 2, "fmul", "# *= #", { 1, 2 } },
 		{ 0, "smul", "# = # * #", { 1, 2, 3 } },
+		{ 2, "smul", "# *= #", { 1, 2 } },
 		{ 0, "muls", "# = # * #", { 1, 2, 3 } },
+		{ 2, "muls", "# *= #", { 1, 2 } },
 		{ 0, "div", "# = # / #", { 1, 2, 3 } },
+		{ 2, "div", "# /= #", { 1, 2 } },
 		{ 0, "sdiv", "# = # / #", { 1, 2, 3 } },
+		{ 2, "sdiv", "# /= #", { 1, 2 } },
 		{ 0, "fdiv", "# = # / #", { 1, 2, 3 } },
+		{ 2, "fdiv", "# /= #", { 1, 2 } },
 		{ 0, "udiv", "# = (unsigned) # / #", { 1, 2, 3 } },
+		{ 2, "udiv", "# /= #", { 1, 2 } },
 		{ 0, "orr", "# = # | #", { 1, 2, 3 } },
+		{ 2, "orr", "# |= #", { 1, 2 } },
 		{ 0, "rmf", "# = # % #", { 1, 2, 3 } },
 		{ 0, "bge", "(>=) goto #", { 1 } },
 		{ 0, "sbc", "# = # - #", { 1, 2, 3 } },
@@ -289,6 +300,108 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 		s = r_str_replace (s, " lsr ", " >> ", 1);
 		s = r_str_replace (s, "+ -", "- ", 1);
 		s = r_str_replace (s, "- -", "+ ", 1);
+		
+		// Simplify "reg = reg OP val" to "reg OP= val"
+		// Pattern: "x9 = x9 * x10" -> "x9 *= x10"
+		char *eq = strstr (s, " = ");
+		if (eq) {
+			char *start = s;
+			char *op_pos = NULL;
+			// Find operator after '='
+			if ((op_pos = strstr (eq + 3, " * "))) {
+				char reg[32] = {0};
+				size_t reg_len = eq - start;
+				if (reg_len < sizeof (reg)) {
+					strncpy (reg, start, reg_len);
+					// Check if same register appears after '='
+					if (!strncmp (eq + 3, reg, reg_len) && eq[3 + reg_len] == ' ') {
+						// Create new string: "reg *= rest"
+						char *rest = op_pos + 3;
+						char *new_s = r_str_newf ("%s *= %s", reg, rest);
+						free (s);
+						s = new_s;
+					}
+				}
+			} else if ((op_pos = strstr (eq + 3, " / "))) {
+				char reg[32] = {0};
+				size_t reg_len = eq - start;
+				if (reg_len < sizeof (reg)) {
+					strncpy (reg, start, reg_len);
+					// Check for "(unsigned) reg /" pattern
+					char *check_pos = eq + 3;
+					if (!strncmp (check_pos, "(unsigned) ", 11)) {
+						check_pos += 11; // skip "(unsigned) "
+					}
+					if (!strncmp (check_pos, reg, reg_len) && check_pos[reg_len] == ' ') {
+						char *rest = op_pos + 3;
+						char *new_s = r_str_newf ("%s /= %s", reg, rest);
+						free (s);
+						s = new_s;
+					}
+				}
+			} else if ((op_pos = strstr (eq + 3, " & "))) {
+				char reg[32] = {0};
+				size_t reg_len = eq - start;
+				if (reg_len < sizeof (reg)) {
+					strncpy (reg, start, reg_len);
+					if (!strncmp (eq + 3, reg, reg_len) && eq[3 + reg_len] == ' ') {
+						char *rest = op_pos + 3;
+						char *new_s = r_str_newf ("%s &= %s", reg, rest);
+						free (s);
+						s = new_s;
+					}
+				}
+			} else if ((op_pos = strstr (eq + 3, " | "))) {
+				char reg[32] = {0};
+				size_t reg_len = eq - start;
+				if (reg_len < sizeof (reg)) {
+					strncpy (reg, start, reg_len);
+					if (!strncmp (eq + 3, reg, reg_len) && eq[3 + reg_len] == ' ') {
+						char *rest = op_pos + 3;
+						char *new_s = r_str_newf ("%s |= %s", reg, rest);
+						free (s);
+						s = new_s;
+					}
+				}
+			} else if ((op_pos = strstr (eq + 3, " ^ "))) {
+				char reg[32] = {0};
+				size_t reg_len = eq - start;
+				if (reg_len < sizeof (reg)) {
+					strncpy (reg, start, reg_len);
+					if (!strncmp (eq + 3, reg, reg_len) && eq[3 + reg_len] == ' ') {
+						char *rest = op_pos + 3;
+						char *new_s = r_str_newf ("%s ^= %s", reg, rest);
+						free (s);
+						s = new_s;
+					}
+				}
+			} else if ((op_pos = strstr (eq + 3, " + "))) {
+				char reg[32] = {0};
+				size_t reg_len = eq - start;
+				if (reg_len < sizeof (reg)) {
+					strncpy (reg, start, reg_len);
+					if (!strncmp (eq + 3, reg, reg_len) && eq[3 + reg_len] == ' ') {
+						char *rest = op_pos + 3;
+						char *new_s = r_str_newf ("%s += %s", reg, rest);
+						free (s);
+						s = new_s;
+					}
+				}
+			} else if ((op_pos = strstr (eq + 3, " - "))) {
+				char reg[32] = {0};
+				size_t reg_len = eq - start;
+				if (reg_len < sizeof (reg)) {
+					strncpy (reg, start, reg_len);
+					if (!strncmp (eq + 3, reg, reg_len) && eq[3 + reg_len] == ' ') {
+						char *rest = op_pos + 3;
+						char *new_s = r_str_newf ("%s -= %s", reg, rest);
+						free (s);
+						s = new_s;
+					}
+				}
+			}
+		}
+		
 		s = r_str_fixspaces (s);
 	}
 	free (buf);
