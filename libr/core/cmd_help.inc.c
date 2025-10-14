@@ -1152,14 +1152,14 @@ static int cmd_help(void *data, const char *input) {
 				r_core_cmd (core, cmd, 0);
 			}
 		} else if (input[1] == 'q') {
-			for (input += 2; input[0] == ' '; input++);
+			input = r_str_trim_head_ro (input + 2);
 			r_core_return_value (core, strlen (input));
-		} else if (input[1]) {
+		} else if (input[1] == '?') {
+			r_core_cmd_help_contains (core, help_msg_question, "?l");
+		} else {
 			input = r_str_trim_head_ro (input + 1);
 			r_core_return_value (core, strlen (input));
 			r_cons_printf (core->cons, "%" PFMT64d "\n", core->num->value);
-		} else {
-			r_core_return_invalid_command (core, "?l", input[1]);
 		}
 		break;
 	case 'X': // "?X"
