@@ -627,11 +627,10 @@ static char *subvar(RAsmPluginSession *s, RAnalFunction *f, ut64 addr, int oplen
 			comma = strchr (comma + 1, ',');
 			if (comma && !strchr (tstr, '[')) {
 				// This is a three-operand instruction without memory access brackets
-				// Check if it's an add instruction that sets up frame pointer
-				if ((strstr (tstr, "add") == tstr || strstr (tstr, "ADD") == tstr) &&
-				    (strstr (tstr, "x29") || strstr (tstr, "X29") ||
-				     strstr (tstr, "fp") || strstr (tstr, "FP"))) {
-					// Don't substitute when setting up frame pointer
+				// Check if it's an add/sub instruction
+				if (strstr (tstr, "add") == tstr || strstr (tstr, "sub") == tstr ||
+				    strstr (tstr, "ADD") == tstr || strstr (tstr, "SUB") == tstr) {
+					// Don't substitute in these cases
 					return tstr;
 				}
 			}
