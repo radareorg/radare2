@@ -546,7 +546,7 @@ R_API RRegItem *r_reg_next_diff(RReg *reg, int type, const ut8 *buf, int buflen,
 	int offset;
 	r_list_foreach (list, iter, ri) {
 		offset = ri->offset / 8;
-		if (offset > prev_offset) {
+		if (offset >= prev_offset) {
 			if (memcmp (arena->bytes + offset, buf + offset, ri->size / 8)) {
 				return ri;
 			}
