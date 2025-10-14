@@ -231,7 +231,7 @@ static char *simplify_compound_assign(char *s) {
 	if (!eq || eq == s) {
 		return s;
 	}
-	char *start = r_str_trim_head_ro (s);
+	const char *start = r_str_trim_head_ro (s);
 	int i;
 	/* copy lhs register into small buffer once */
 	size_t lhs_len = (size_t)(eq - start);
