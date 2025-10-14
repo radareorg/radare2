@@ -30,6 +30,7 @@ static char *replace(int argc, const char *argv[]) {
 		{ 0, "adrp", "# = #", { 1, 2 } },
 		{ 0, "adr", "# = #", { 1, 2 } },
 		{ 0, "and", "# = # & #", { 1, 2, 3 } },
+		{ 2, "and", "# &= #", { 1, 2 } },
 		{ 0, "ands", "# &= #", { 1, 2 } },
 		{ 0, "asls", "# = # << #", { 1, 2, 3 } },
 		{ 0, "asl", "# = # << #", { 1, 2, 3 } },
@@ -68,6 +69,7 @@ static char *replace(int argc, const char *argv[]) {
 		{ 2, "cset", "# = (#)? 1 : 0", { 1, 2 } },
 		{ 0, "dvf", "# = # / #", { 1, 2, 3 } },
 		{ 0, "eor", "# = # ^ #", { 1, 2, 3 } },
+		{ 2, "eor", "# ^= #", { 1, 2 } },
 		{ 3, "tbnz", "if (# != #) goto #", { 1, 2, 3 } },
 		{ 3, "tbz", "if (# == #) goto #", { 1, 2, 3 } },
 		{ 1, "bkpt", "breakpoint #", { 1 } },
@@ -111,14 +113,23 @@ static char *replace(int argc, const char *argv[]) {
 		{ 0, "vmov.i32", "# = #", { 1, 2 } },
 		{ 0, "muf", "# = # * #", { 1, 2, 3 } },
 		{ 0, "mul", "# = # * #", { 1, 2, 3 } },
+		{ 2, "mul", "# *= #", { 1, 2 } },
 		{ 0, "fmul", "# = # * #", { 1, 2, 3 } },
+		{ 2, "fmul", "# *= #", { 1, 2 } },
 		{ 0, "smul", "# = # * #", { 1, 2, 3 } },
+		{ 2, "smul", "# *= #", { 1, 2 } },
 		{ 0, "muls", "# = # * #", { 1, 2, 3 } },
+		{ 2, "muls", "# *= #", { 1, 2 } },
 		{ 0, "div", "# = # / #", { 1, 2, 3 } },
+		{ 2, "div", "# /= #", { 1, 2 } },
 		{ 0, "sdiv", "# = # / #", { 1, 2, 3 } },
+		{ 2, "sdiv", "# /= #", { 1, 2 } },
 		{ 0, "fdiv", "# = # / #", { 1, 2, 3 } },
+		{ 2, "fdiv", "# /= #", { 1, 2 } },
 		{ 0, "udiv", "# = (unsigned) # / #", { 1, 2, 3 } },
+		{ 2, "udiv", "# /= #", { 1, 2 } },
 		{ 0, "orr", "# = # | #", { 1, 2, 3 } },
+		{ 2, "orr", "# |= #", { 1, 2 } },
 		{ 0, "rmf", "# = # % #", { 1, 2, 3 } },
 		{ 0, "bge", "(>=) goto #", { 1 } },
 		{ 0, "sbc", "# = # - #", { 1, 2, 3 } },
@@ -288,6 +299,43 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 		s = r_str_replace (s, " lsr ", " >> ", 1);
 		s = r_str_replace (s, "+ -", "- ", 1);
 		s = r_str_replace (s, "- -", "+ ", 1);
+
+		// Simplify "reg = reg OP val" to "reg OP= val"
+		// Pattern: "x9 = x9 * x10" -> "x9 *= x10"
+		char *eq = strstr (s, " = ");
+		if (eq) {
+			char *start = s;
+			// List of operators to check: *, /, &, |, ^, +, -
+			const char *operators[] = { " * ", " / ", " & ", " | ", " ^ ", " + ", " - ", NULL };
+			const char *compound[] = { " *= ", " /= ", " &= ", " |= ", " ^= ", " += ", " -= " };
+
+			int i;
+			for (i = 0; operators[i]; i++) {
+				char *op_pos = strstr (eq + 3, operators[i]);
+				if (op_pos) {
+					char reg[32];
+					size_t reg_len = eq - start;
+					if (reg_len < sizeof (reg)) {
+						r_str_ncpy (reg, start, reg_len);
+						// Check for "(unsigned) reg /" pattern (special case for division)
+						char *check_pos = eq + 3;
+						if (i == 1 && r_str_startswith (check_pos, "(unsigned) ")) {
+							check_pos += strlen ("(unsigned) ")
+						}
+						// Check if same register appears after '='
+						if (!strncmp (check_pos, reg, reg_len) && check_pos[reg_len] == ' ') {
+							// Create new string: "reg OP= rest"
+							char *rest = op_pos + strlen (operators[i]);
+							char *new_s = r_str_newf ("%s%s%s", reg, compound[i], rest);
+							free (s);
+							s = new_s;
+							break;
+						}
+					}
+				}
+			}
+		}
+
 		s = r_str_fixspaces (s);
 	}
 	free (buf);
