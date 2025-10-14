@@ -604,6 +604,10 @@ static char *patch(RAsmPluginSession *s, RAnalOp *aop, const char *op) {
 	return r_core_hack_arm (s, aop, op);
 }
 
+static bool is_frame_pointer_setup(const char *str) {
+	return str && (r_str_casestr (str, "add") == str || r_str_casestr (str, "sub") == str);
+}
+
 static char *subvar(RAsmPluginSession *s, RAnalFunction *f, ut64 addr, int oplen, const char *data) {
 	R_RETURN_VAL_IF_FAIL (s, false);
 	RAsm *a = s->rasm;
@@ -619,20 +623,12 @@ static char *subvar(RAsmPluginSession *s, RAnalFunction *f, ut64 addr, int oplen
 		return false;
 	}
 
-	// Don't substitute variables in address calculation instructions
-	// like "add x29, sp, 0x20" which sets up frame pointers
 	if (tstr) {
 		const char *comma = strchr (tstr, ',');
 		if (comma) {
 			comma = strchr (comma + 1, ',');
-			if (comma && !strchr (tstr, '[')) {
-				// This is a three-operand instruction without memory access brackets
-				// Check if it's an add/sub instruction
-				if (strstr (tstr, "add") == tstr || strstr (tstr, "sub") == tstr ||
-				    strstr (tstr, "ADD") == tstr || strstr (tstr, "SUB") == tstr) {
-					// Don't substitute in these cases
-					return tstr;
-				}
+			if (comma && !strchr (tstr, '[') && is_frame_pointer_setup (tstr)) {
+				return tstr;
 			}
 		}
 	}
