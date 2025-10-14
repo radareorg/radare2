@@ -255,7 +255,7 @@ static char *simplify_compound_assign(char *s) {
 		}
 		/* ensure RHS starts with same register and is name-bounded */
 		if (!strncmp (check_pos, reg, lhs_len) && (check_pos[lhs_len] == ' ' || !check_pos[lhs_len])) {
-			char *rest = op_pos + strlen (operators[i]);
+			const char *rest = op_pos + strlen (operators[i]);
 			char *new_s = r_str_newf ("%s%s%s", reg, compound[i], rest);
 			free (s);
 			return new_s;
