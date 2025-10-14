@@ -410,7 +410,7 @@ static int opblsi_blsmsk_blsr(RArchSession *a, ut8 *data, const Opcode *op) {
 		return -1;
 	}
 
-	// Build VEX.3 prefix (LZ, so vvvv=0)
+	// Build VEX.3 prefix (LZ, so vvvv = 0)
 	int vreg = 0; // LZ
 	l += emit_vex3_prefix_bmi2 (data + l, 0, pp, vreg, dst, src);
 
