@@ -1353,3 +1353,19 @@ ad "rdrand ax" 660fc7f0
 ad "rdseed eax" 0fc7f8
 ad "rdseed rax" 480fc7f8
 ad "rdseed ax" 660fc7f8
+ad "bsf rax, rbx" 480fbcc3
+ad "bsf eax, ebx" 0fbcc3
+ad "tzcnt rax, rbx" f3480fbcc3
+ad "tzcnt eax, ebx" f30fbcc3
+ad "andn eax, ebx, ecx" c4e260f2c1
+ad "bextr eax, ebx, ecx" c4e270f7c3
+a "blsi eax, ebx" c4e27af3db
+a "blsmsk eax, ebx" c4e27af3d3
+a "blsr eax, ebx" c4e27af3cb
+a "andn eax, ebx, ecx" c4e260f2c1
+a "andn rax, rbx, rcx" c4e260f2c1
+a "bextr eax, ebx, ecx" c4e270f7c3
+a "bextr rax, rbx, rcx" c4e270f7c3
+a "blsi rax, rbx" c4e27af3db
+a "blsmsk rax, rbx" c4e27af3d3
+a "blsr rax, rbx" c4e27af3cb
