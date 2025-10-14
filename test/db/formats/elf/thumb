@@ -118,7 +118,7 @@ EXPECT=<<EOF
 push {r7, lr}
 add r7, sp, 0
 push {r7, lr}
-add r7, var_0h
+add r7, sp, 0
 EOF
 RUN
 
