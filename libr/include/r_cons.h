@@ -547,6 +547,8 @@ typedef struct r_cons_t {
 	int break_word_len;
 	ut64 timeout;
 	int otimeout;
+	bool timeout_break;
+	bool timeout_warned;
 	char* (*rgbstr)(struct r_cons_t *cons, char *str, size_t sz, ut64 addr);
 	bool click_set;
 	int click_x;

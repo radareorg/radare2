@@ -205,6 +205,8 @@ R_API RCons *r_cons_new2(void) {
 	r_cons_get_size (cons, &cons->pagesize);
 	cons->num = NULL;
 	cons->null = 0;
+	cons->timeout_break = false;
+	cons->timeout_warned = false;
 #if R2__WINDOWS__
 	cons->old_cp = GetConsoleOutputCP ();
 	cons->vtmode = win_is_vtcompat ();
@@ -457,16 +459,26 @@ R_API bool r_cons_is_breaked(RCons *cons) {
 		cons->cb_break (cons->user);
 	}
 	if (R_UNLIKELY (cons->timeout)) {
-		if (r_stack_size (C->break_stack) > 0) {
-			if (r_time_now_mono () > cons->timeout) {
-				C->breaked = true;
-				C->was_breaked = true;
-				r_cons_break_timeout (cons, cons->otimeout);
-			}
+		// if (r_stack_size (C->break_stack) > 0) {
+		const ut64 now = r_time_now_mono();
+		if (now > cons->timeout) {
+			// eprintf ("%lld - %lld\n", now, cons->timeout);
+			R_LOG_INFO ("Timeout interruption after %ds", (now - cons->timeout) / 1000);
+			C->breaked = true;
+			C->was_breaked = true;
+			cons->timeout_break = true;
+			// r_cons_break_timeout (cons, cons->otimeout); // don't reset
 		}
+		// }
 	}
 	if (R_UNLIKELY (!C->was_breaked)) {
 		C->was_breaked = C->breaked;
+	}
+	if (cons->timeout_break && !cons->timeout_warned) {
+		R_LOG_WARN ("Stopped because of timeout");
+		C->breaked = true;
+		C->was_breaked = true;
+		cons->timeout_warned = true;
 	}
 	return R_UNLIKELY (C && C->breaked);
 #else
@@ -532,11 +544,15 @@ static inline void cfmakeraw(struct termios *tm) {
 
 R_API void r_cons_break_timeout(RCons *cons, int timeout) {
 	if (timeout > 0) {
-		cons->timeout = r_time_now_mono () + (timeout * 1000);
+		cons->timeout = r_time_now_mono () + (timeout * 1000000LL);
 		cons->otimeout = timeout;
+		cons->timeout_break = false;
+		cons->timeout_warned = false;
 	} else {
 		cons->otimeout = 0;
 		cons->timeout = 0;
+		cons->timeout_break = false;
+		cons->timeout_warned = false;
 	}
 #if 0
 	I->timeout = (timeout && !I->timeout)
