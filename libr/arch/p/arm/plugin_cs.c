@@ -21,6 +21,7 @@ typedef struct plugin_data_t {
 	csh cs_handle;
 	HtUU *ht_itblock;
 	HtUU *ht_it;
+	HtUU *ht_movw;  // Track MOVW values per register for MOVW+MOVT xref detection
 } PluginData;
 
 static inline csh *cs_handle_for_session(RArchSession *as) {
@@ -39,6 +40,12 @@ static inline HtUU *ht_it_for_session (RArchSession *as) {
 	R_RETURN_VAL_IF_FAIL (as && as->data, NULL);
 	PluginData *pd = (PluginData*) as->data;
 	return pd->ht_it;
+}
+
+static inline HtUU *ht_movw_for_session (RArchSession *as) {
+	R_RETURN_VAL_IF_FAIL (as && as->data, NULL);
+	PluginData *pd = (PluginData*) as->data;
+	return pd->ht_movw;
 }
 
 /* arm64 */
@@ -4135,6 +4142,19 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->cycles = 2;
 		break;
 	case ARM_INS_MOV:
+		// MOVW/MOVT instruction pair handling for 32-bit immediate loads
+		// In ARM/Thumb-2, loading a 32-bit constant into a register typically uses:
+		//   movw r0, #0xc000  ; Load lower 16 bits
+		//   movt r0, #0x1fff  ; Set upper 16 bits, creating 0x1fffc000
+		// Note: In Thumb mode, Capstone decodes MOVW/MOVT as ARM_INS_MOV,
+		// so we check the mnemonic string to differentiate them
+		if (insn->mnemonic && r_str_startswith (insn->mnemonic, "movw")) {
+			goto handle_movw;
+		}
+		if (insn->mnemonic && r_str_startswith (insn->mnemonic, "movt")) {
+			goto handle_movt;
+		}
+		
 		if (REGID(0) == ARM_REG_PC) {
 			if (REGID(1) == ARM_REG_LR) {
 				op->type = op->cond == R_ANAL_CONDTYPE_AL ? R_ANAL_OP_TYPE_RET : R_ANAL_OP_TYPE_CRET;
@@ -4148,8 +4168,45 @@ jmp $$ + 4 + ( [delta] * 2 )
 			op->val = IMM(1);
 		}
 		break;
-	case ARM_INS_MOVT:
+	handle_movw:
 	case ARM_INS_MOVW:
+		op->type = R_ANAL_OP_TYPE_MOV;
+		// MOVW (Move Wide) sets lower 16 bits: movw r0, #0xc000
+		// Track this value in case next instruction is MOVT to same register
+		if (ISIMM(1) && insn->detail && insn->detail->arm.op_count >= 2 &&
+		    insn->detail->arm.operands[0].type == ARM_OP_REG) {
+			op->val = IMM(1);
+			op->ptr = (ut64)IMM(1);
+			// Store lower 16 bits indexed by register number for MOVT to retrieve
+			HtUU *ht = ht_movw_for_session (as);
+			if (ht) {
+				ut64 reg = (ut64)insn->detail->arm.operands[0].reg;
+				ut64 lower = IMM(1) & 0xFFFF;
+				ht_uu_update (ht, reg, lower);
+			}
+		}
+		break;
+	handle_movt:
+	case ARM_INS_MOVT:
+		op->type = R_ANAL_OP_TYPE_MOV;
+		// MOVT (Move Top) sets upper 16 bits: movt r0, #0x1fff
+		// Combined with preceding MOVW to same register, creates full 32-bit address
+		if (ISIMM(1) && insn->detail && insn->detail->arm.op_count >= 2 &&
+		    insn->detail->arm.operands[0].type == ARM_OP_REG) {
+			op->val = IMM(1);
+			ut64 upper = (ut64)(IMM(1) & 0xFFFF) << 16;
+			// Check if we have a previous MOVW to the same register
+			HtUU *ht = ht_movw_for_session (as);
+			if (ht) {
+				ut64 reg = (ut64)insn->detail->arm.operands[0].reg;
+				bool found = false;
+				ut64 lower = ht_uu_find (ht, reg, &found);
+				op->ptr = found ? (upper | lower) : upper;
+			} else {
+				op->ptr = upper;
+			}
+		}
+		break;
 	case ARM_INS_VMOVL:
 	case ARM_INS_VMOVN:
 	case ARM_INS_VQMOVUN:
@@ -4983,6 +5040,16 @@ static bool init(RArchSession* as) {
 		R_FREE (as->data);
 		return false;
 	}
+	
+	pd->ht_movw = ht_uu_new0 ();
+	if (!pd->ht_movw) {
+		R_LOG_ERROR ("Cannot initialize 'ht_movw'");
+		ht_uu_free (pd->ht_itblock);
+		ht_uu_free (pd->ht_it);
+		cs_close (&(pd->cs_handle));
+		R_FREE (as->data);
+		return false;
+	}
 	return true;
 }
 
@@ -4992,6 +5059,7 @@ static bool fini(RArchSession *as) {
 	PluginData *pd = (PluginData*) as->data;
 	ht_uu_free (pd->ht_itblock);
 	ht_uu_free (pd->ht_it);
+	ht_uu_free (pd->ht_movw);
 	free (pd->cpu);
 	cs_close (&(pd->cs_handle));
 	R_FREE (as->data);
