@@ -317,7 +317,7 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 					char reg[32] = {0};
 					size_t reg_len = eq - start;
 					if (reg_len < sizeof (reg)) {
-						strncpy (reg, start, reg_len);
+						r_str_ncpy (reg, start, reg_len);
 						// Check for "(unsigned) reg /" pattern (special case for division)
 						char *check_pos = eq + 3;
 						if (i == 1 && !strncmp (check_pos, "(unsigned) ", 11)) {
