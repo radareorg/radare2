@@ -310,7 +310,7 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 			const char *operators[] = { " * ", " / ", " & ", " | ", " ^ ", " + ", " - ", NULL };
 			const char *compound[] = { " *= ", " /= ", " &= ", " |= ", " ^= ", " += ", " -= " };
 
-			int;
+			int i;
 			for (i = 0; operators[i]; i++) {
 				char *op_pos = strstr (eq + 3, operators[i]);
 				if (op_pos) {
