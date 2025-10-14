@@ -412,3 +412,20 @@ EXPECT=<<EOF
 8
 EOF
 RUN
+
+NAME=ARM64 frame pointer setup should not substitute variables
+FILE=malloc://1024
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+wx fd7bbfa9fd030091  @ 0
+af @ 0
+pd 2 @ 0
+EOF
+EXPECT=<<EOF
+/ 12: fcn.00000000 ();
+|           0x00000000      fd7bbfa9       stp x29, x30, [sp, -0x10]!
+|           0x00000004      fd030091       mov x29, sp
+EOF
+RUN
