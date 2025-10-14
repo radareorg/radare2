@@ -1402,6 +1402,9 @@ R_API void r_core_autocomplete(RCore * R_NULLABLE core, RLineCompletion *complet
 				&& !strchr (buf->data, ' ')) {
 			r_line_completion_clear (completion);
 			char *s = r_core_cmd_strf (core, "%s?", buf->data);
+			if (!s) {
+				return;
+			}
 			eprintf ("%s%s\n%s", core->cons->line->prompt, buf->data, s);
 			r_str_ansi_filter (s, NULL, NULL, -1);
 			r_str_trim (s);
