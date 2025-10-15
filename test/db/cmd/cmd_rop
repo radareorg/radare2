@@ -331,3 +331,191 @@ EOF
 EXPECT_ERR=<<EOF
 EOF
 RUN
+
+NAME=ARM32 rop gadget count
+FILE=bins/elf/analysis/hello-arm32
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+/Rq~?
+EOF
+EXPECT=<<EOF
+2
+EOF
+RUN
+
+NAME=ARM32 rop search for branch with link
+FILE=bins/elf/analysis/hello-arm32
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+/R bl
+EOF
+EXPECT=<<EOF
+  0x000101c0           80402de9  push {r7, lr}
+  0x000101c4           00708de2  add r7, sp, 0
+  0x000101c8           000200e3  movw r0, 0x200
+  0x000101cc           010040e3  movt r0, 1
+  0x000101d0           f1ffffeb  bl 0x1019c
+
+  0x000101d4           0030b0e3  movs r3, 0
+  0x000101d8           0300a0e1  mov r0, r3
+  0x000101dc           f1ffffeb  bl 0x101a8
+
+EOF
+RUN
+
+NAME=ARM64 rop gadget count
+FILE=bins/elf/jni/jniO0-arm64
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+/Rq~?
+EOF
+EXPECT=<<EOF
+19
+EOF
+RUN
+
+NAME=ARM64 rop search for adrp gadgets quiet mode
+FILE=bins/elf/jni/jniO0-arm64
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+e search.maxhits=3
+/Rq adrp
+EOF
+EXPECT=<<EOF
+0x000004d0: stp x16, x30, [sp, -0x10]!; adrp x16, 0x10000; ldr x17, [x16, 0xfc8]; add x16, x16, 0xfc8; br x17;
+0x000004f0: adrp x16, 0x10000; ldr x17, [x16, 0xfd0]; add x16, x16, 0xfd0; br x17;
+0x00000500: adrp x16, 0x10000; ldr x17, [x16, 0xfd8]; add x16, x16, 0xfd8; br x17;
+EOF
+RUN
+
+NAME=ARM64 rop search for store pair instruction
+FILE=bins/elf/jni/jniO0-arm64
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+/R stp
+EOF
+EXPECT=<<EOF
+  0x000004d0           f07bbfa9  stp x16, x30, [sp, -0x10]!
+  0x000004d4           90000090  adrp x16, 0x10000
+  0x000004d8           11e647f9  ldr x17, [x16, 0xfc8]
+  0x000004dc           10223f91  add x16, x16, 0xfc8
+  0x000004e0           20021fd6  br x17
+
+  0x0000054c           fd7bbfa9  stp x29, x30, [sp, -0x10]!
+  0x00000550           fd030091  mov x29, sp
+  0x00000554           400000b4  cbz x0, 0x55c
+  0x00000558           00003fd6  blr x0
+
+EOF
+RUN
+
+NAME=x86-64 rop gadget count
+FILE=bins/elf/analysis/calls_x64
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+/Rq~?
+EOF
+EXPECT=<<EOF
+116
+EOF
+RUN
+
+NAME=x86-64 rop search for call instructions
+FILE=bins/elf/analysis/calls_x64
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e search.maxhits=2
+/R call
+EOF
+EXPECT=<<EOF
+  0x0040024f               dcc7  fadd st(7), st(0)
+  0x00400251               346a  xor al, 0x6a
+  0x00400253         0d3f262786  or eax, 0x8627263f
+  0x00400258       318e5eae5410  xor dword [rsi + 0x1054ae5e], ecx
+  0x0040025e         e8cf010000  call 0x400432
+
+  0x004003a8           4883ec08  sub rsp, 8
+  0x004003ac     488b054d052000  mov rax, qword [rip + 0x20054d]
+  0x004003b3             4885c0  test rax, rax
+  0x004003b6               7405  je 0x4003bd
+  0x004003b8         e843000000  call 0x400400
+
+EOF
+RUN
+
+NAME=x86-64 rop search regex for mov register
+FILE=bins/elf/analysis/calls_x64
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e search.maxhits=2
+"/R/ mov r(ax|cx|di)"
+EOF
+EXPECT=<<EOF
+  0x004003a8           4883ec08  sub rsp, 8
+  0x004003ac     488b054d052000  mov rax, qword [rip + 0x20054d]
+  0x004003b3             4885c0  test rax, rax
+  0x004003b6               7405  je 0x4003bd
+  0x004003b8         e843000000  call 0x400400
+
+  0x004003a9             83ec08  sub esp, 8
+  0x004003ac     488b054d052000  mov rax, qword [rip + 0x20054d]
+  0x004003b3             4885c0  test rax, rax
+  0x004003b6               7405  je 0x4003bd
+  0x004003b8         e843000000  call 0x400400
+
+EOF
+RUN
+
+NAME=x86-32 rop with custom gadget length limit
+FILE=bins/elf/analysis/x86-helloworld-phdr
+ARGS=-n
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+e rop.len=2
+/Rq
+EOF
+EXPECT=<<EOF
+0x000000c0: int 0x80; ret;
+EOF
+RUN
+
+NAME=ARM64 rop search with maxhits configuration
+FILE=bins/elf/jni/jniO0-arm64
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+e search.maxhits=1
+/Rq br
+EOF
+EXPECT=<<EOF
+0x000004d0: stp x16, x30, [sp, -0x10]!; adrp x16, 0x10000; ldr x17, [x16, 0xfc8]; add x16, x16, 0xfc8; br x17;
+EOF
+RUN
+
+NAME=x86-64 rop search for conditional jumps
+FILE=bins/elf/analysis/calls_x64
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e search.maxhits=1
+/R je
+EOF
+EXPECT=<<EOF
+  0x004003a8           4883ec08  sub rsp, 8
+  0x004003ac     488b054d052000  mov rax, qword [rip + 0x20054d]
+  0x004003b3             4885c0  test rax, rax
+  0x004003b6               7405  je 0x4003bd
+  0x004003b8         e843000000  call 0x400400
+
+EOF
+RUN
+
