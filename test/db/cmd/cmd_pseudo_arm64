@@ -249,3 +249,33 @@ EXPECT=<<EOF
             0x00000000      4218631e       d2 /= d3
 EOF
 RUN
+
+NAME=ARM64 no variable substitution in frame pointer setup (add x29, sp, 0x20)
+FILE=malloc://4
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+e asm.pseudo=true
+wx fd830091
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000      fd830091       x29 = sp + 0x20
+EOF
+RUN
+
+NAME=ARM64 variable substitution with frame pointer setup
+FILE=malloc://12
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+e asm.pseudo=true
+wx ffc300d1fd7b02a9fd830091
+af
+pd 3~x29
+EOF
+EXPECT=<<EOF
+|           0x00000004      fd7b02a9       [var_20h] = (x29, 2)
+\           0x00000008      fd830091       x29 = sp + 0x20
+EOF
+RUN
