@@ -1071,7 +1071,7 @@ static int cmd_help(void *data, const char *input) {
 	case 'g':
 		if (input[1] == 'e') { // "?ge"
 			const char *cmd = r_str_trim_head_ro (input + 3);
-			if (*cmd && core->num->value > 0) {
+			if (*cmd && (st64)core->num->value > 0) {
 				r_core_cmd (core, cmd, 0);
 			}
 		} else {
@@ -1148,7 +1148,7 @@ static int cmd_help(void *data, const char *input) {
 	case 'l': // "?l"
 		if (input[1] == 'e') { // "?le"
 			const char *cmd = r_str_trim_head_ro (input + 3);
-			if (*cmd && core->num->value < 0) {
+			if (*cmd && (st64)core->num->value < 0) {
 				r_core_cmd (core, cmd, 0);
 			}
 		} else if (input[1] == 'q') {
