@@ -7,9 +7,9 @@ bool test_r_io_seek_hole_virtual(void) {
 	io->va = true;
 
 	/* create two maps: [0..9] and [20..29], so hole [10..19] exists */
-	int fd0 = r_io_open_at (io, "malloc://10", R_PERM_R, 0, 0);
+	RIODesc *fd0 = r_io_open_at (io, "malloc://10", R_PERM_R, 0, 0);
 	mu_assert ("open_at failed", fd0);
-	int fd1 = r_io_open_at (io, "malloc://10", R_PERM_R, 0, 20);
+	RIODesc *fd1 = r_io_open_at (io, "malloc://10", R_PERM_R, 0, 20);
 	mu_assert ("open_at failed", fd1);
 
 	/* offset at start of file -> first hole starts at 10 */

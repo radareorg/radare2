@@ -155,10 +155,10 @@ b821000000
 EOF
 RUN
 
-NAME=hash comment and double quote
+NAME=hash vi code and ocomment
 FILE=malloc://1024
 CMDS=<<EOF
-?? # ;o"
+?vi $? # ;o
 EOF
 EXPECT=<<EOF
 0
