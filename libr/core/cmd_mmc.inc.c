@@ -973,7 +973,7 @@ static int mmc_preview_prev_line_offset(ut8 *data, size_t size, int current_offs
 		}
 	}
 
-	return offset >= 0 ? (offset == 0 ? 0 : offset + 1) : 0;
+	return offset == 0 ? 0 : offset + 1;
 }
 
 static void mmc_preview_scroll_text(RCore *core, MMCState *state, bool down, int panel_w) {
