@@ -44,11 +44,11 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=subhelp commands
 FILE=malloc://1024
 CMDS=<<EOF
 ?v
 ?=
-??
 ?e
 ?b
 ?f
@@ -65,7 +65,6 @@ EOF
 EXPECT=<<EOF
 0
 0x0
-0
 
 0b
 | ?f [num] [str]  map each bit of the number as flag string index

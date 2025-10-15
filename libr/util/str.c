@@ -2152,8 +2152,9 @@ R_API char *r_str_ansi_resetbg(const char *str, const char *bgcolor) {
  *
  * it returns the number of normal characters found in str
  */
-R_API int r_str_ansi_filter(char *str, char **out, int **cposs, int len) {
-	int i, j, *cps;
+R_API int r_str_ansi_filter(char *str, char ** R_NULLABLE out, int ** R_NULLABLE cposs, int len) {
+	R_RETURN_VAL_IF_FAIL (str, -1);
+	int i, j;
 
 	if (len == 0) {
 		return 0;
@@ -2166,7 +2167,7 @@ R_API int r_str_ansi_filter(char *str, char **out, int **cposs, int len) {
 		return -1;
 	}
 	memcpy (tmp, str, len + 1);
-	cps = calloc (len + 1, sizeof (int));
+	int *cps = calloc (len + 1, sizeof (int));
 	if (!cps) {
 		free (tmp);
 		return -1;
@@ -2186,19 +2187,16 @@ R_API int r_str_ansi_filter(char *str, char **out, int **cposs, int len) {
 		}
 	}
 	str[j] = tmp[i];
-
 	if (out) {
 		*out = tmp;
 	} else {
 		free (tmp);
 	}
-
 	if (cposs) {
 		*cposs = cps;
 	} else {
 		free (cps);
 	}
-
 	return j;
 }
 

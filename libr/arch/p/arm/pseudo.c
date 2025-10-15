@@ -30,6 +30,7 @@ static char *replace(int argc, const char *argv[]) {
 		{ 0, "adrp", "# = #", { 1, 2 } },
 		{ 0, "adr", "# = #", { 1, 2 } },
 		{ 0, "and", "# = # & #", { 1, 2, 3 } },
+		{ 2, "and", "# &= #", { 1, 2 } },
 		{ 0, "ands", "# &= #", { 1, 2 } },
 		{ 0, "asls", "# = # << #", { 1, 2, 3 } },
 		{ 0, "asl", "# = # << #", { 1, 2, 3 } },
@@ -68,6 +69,7 @@ static char *replace(int argc, const char *argv[]) {
 		{ 2, "cset", "# = (#)? 1 : 0", { 1, 2 } },
 		{ 0, "dvf", "# = # / #", { 1, 2, 3 } },
 		{ 0, "eor", "# = # ^ #", { 1, 2, 3 } },
+		{ 2, "eor", "# ^= #", { 1, 2 } },
 		{ 3, "tbnz", "if (# != #) goto #", { 1, 2, 3 } },
 		{ 3, "tbz", "if (# == #) goto #", { 1, 2, 3 } },
 		{ 1, "bkpt", "breakpoint #", { 1 } },
@@ -101,8 +103,7 @@ static char *replace(int argc, const char *argv[]) {
 		{ 0, "fmov", "# = #", { 1, 2 } },
 		{ 0, "mvn", "# = ~#", { 1, 2 } },
 		{ 0, "movz", "# = #", { 1, 2 } },
-		// { 4, "movk", "# = # # #", { 1, 2, 3, 4 } },
-		{ 3, "movk", "# = # #", { 1, 2, 3 } },
+		{ 3, "movk", "# |= # #", { 1, 2, 3 } },
 		{ 0, "movn", "# = ~#", { 1, 2 } },
 		{ 0, "neg", "# = -#", { 1, 2 } },
 		{ 0, "sxtw", "# = #", { 1, 2 } },
@@ -112,14 +113,23 @@ static char *replace(int argc, const char *argv[]) {
 		{ 0, "vmov.i32", "# = #", { 1, 2 } },
 		{ 0, "muf", "# = # * #", { 1, 2, 3 } },
 		{ 0, "mul", "# = # * #", { 1, 2, 3 } },
+		{ 2, "mul", "# *= #", { 1, 2 } },
 		{ 0, "fmul", "# = # * #", { 1, 2, 3 } },
+		{ 2, "fmul", "# *= #", { 1, 2 } },
 		{ 0, "smul", "# = # * #", { 1, 2, 3 } },
+		{ 2, "smul", "# *= #", { 1, 2 } },
 		{ 0, "muls", "# = # * #", { 1, 2, 3 } },
+		{ 2, "muls", "# *= #", { 1, 2 } },
 		{ 0, "div", "# = # / #", { 1, 2, 3 } },
+		{ 2, "div", "# /= #", { 1, 2 } },
 		{ 0, "sdiv", "# = # / #", { 1, 2, 3 } },
+		{ 2, "sdiv", "# /= #", { 1, 2 } },
 		{ 0, "fdiv", "# = # / #", { 1, 2, 3 } },
+		{ 2, "fdiv", "# /= #", { 1, 2 } },
 		{ 0, "udiv", "# = (unsigned) # / #", { 1, 2, 3 } },
+		{ 2, "udiv", "# /= #", { 1, 2 } },
 		{ 0, "orr", "# = # | #", { 1, 2, 3 } },
+		{ 2, "orr", "# |= #", { 1, 2 } },
 		{ 0, "rmf", "# = # % #", { 1, 2, 3 } },
 		{ 0, "bge", "(>=) goto #", { 1 } },
 		{ 0, "sbc", "# = # - #", { 1, 2, 3 } },
@@ -211,6 +221,49 @@ fin:;
 	return newstr;
 }
 
+static const char *operators[] = { " * ", " / ", " & ", " | ", " ^ ", " + ", " - ", NULL };
+static const char *compound[]  = { " *= ", " /= ", " &= ", " |= ", " ^= ", " += ", " -= " };
+static char *simplify_compound_assign(char *s) {
+	if (!s) {
+		return NULL;
+	}
+	char *eq = strstr (s, " = ");
+	if (!eq || eq == s) {
+		return s;
+	}
+	const char *start = r_str_trim_head_ro (s);
+	int i;
+	/* copy lhs register into small buffer once */
+	size_t lhs_len = (size_t)(eq - start);
+	char reg[32];
+	if (lhs_len >= sizeof (reg)) {
+		/* too long, bail out */
+		return s;
+	}
+	memcpy (reg, start, lhs_len);
+	reg[lhs_len] = '\0';
+	char *rhs = eq + 3;
+	for (i = 0; operators[i]; i++) {
+		const char *op_pos = strstr (rhs, operators[i]);
+		if (!op_pos) {
+			continue;
+		}
+		/* special case: division may be prefixed with "(unsigned) " */
+		char *check_pos = rhs;
+		if (i == 1 && r_str_startswith (check_pos, "(unsigned) ")) {
+			check_pos += strlen ("(unsigned) ");
+		}
+		/* ensure RHS starts with same register and is name-bounded */
+		if (!strncmp (check_pos, reg, lhs_len) && (check_pos[lhs_len] == ' ' || !check_pos[lhs_len])) {
+			const char *rest = op_pos + strlen (operators[i]);
+			char *new_s = r_str_newf ("%s%s%s", reg, compound[i], rest);
+			free (s);
+			return new_s;
+		}
+	}
+	return s;
+}
+
 static char *parse(RAsmPluginSession *aps, const char *data) {
 	char w0[256], w1[256], w2[256], w3[256], w4[256];
 	char *ptr, *optr;
@@ -289,6 +342,9 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 		s = r_str_replace (s, " lsr ", " >> ", 1);
 		s = r_str_replace (s, "+ -", "- ", 1);
 		s = r_str_replace (s, "- -", "+ ", 1);
+
+		s = simplify_compound_assign (s);
+
 		s = r_str_fixspaces (s);
 	}
 	free (buf);
