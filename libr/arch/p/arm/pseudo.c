@@ -604,6 +604,10 @@ static char *patch(RAsmPluginSession *s, RAnalOp *aop, const char *op) {
 	return r_core_hack_arm (s, aop, op);
 }
 
+static bool is_frame_pointer_setup(const char *str) {
+	return str && (r_str_casestr (str, "add") == str || r_str_casestr (str, "sub") == str);
+}
+
 static char *subvar(RAsmPluginSession *s, RAnalFunction *f, ut64 addr, int oplen, const char *data) {
 	R_RETURN_VAL_IF_FAIL (s, false);
 	RAsm *a = s->rasm;
@@ -617,6 +621,16 @@ static char *subvar(RAsmPluginSession *s, RAnalFunction *f, ut64 addr, int oplen
 	char *tstr = strdup (data);
 	if (!tstr) {
 		return false;
+	}
+
+	if (tstr) {
+		const char *comma = strchr (tstr, ',');
+		if (comma) {
+			comma = strchr (comma + 1, ',');
+			if (comma && !strchr (tstr, '[') && is_frame_pointer_setup (tstr)) {
+				return tstr;
+			}
+		}
 	}
 
 	if (p->subrel) {
