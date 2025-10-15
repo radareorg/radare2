@@ -168,22 +168,8 @@ static int emit_vex3_prefix_bmi2(ut8 *data, int w, int pp, int vreg, const Opera
 	data[l++] = 0xC4;
 	// m-mmmm = 0x02 -> 0F 38 map
 	const int mmmmm = 0x02;
-	// R' X' B' are inverted bits
-	int R = (dst && (dst->extended)) ? 1 : 0;
-	int B = 0;
-	int X = 0;
-	// Determine B and X from src (r/m side) when it's a GP reg
-	if (src) {
-		if ((src->type & OT_GPREG) && !(src->type & OT_MEMORY)) {
-			B = src->extended ? 1 : 0;
-		} else {
-			// For memory addressing, this assembler doesn't track per-base/index extension flags
-			// Use 0 (no extension) which is fine for low regs; extended bases won't be supported here.
-			B = 0;
-			X = 0;
-		}
-	}
-	ut8 vex2 = ((R ? 0 : 1) << 7) | ((X ? 0 : 1) << 6) | ((B ? 0 : 1) << 5) | (mmmmm & 0x1f);
+	// R' X' B' are inverted bits, always 1 for this assembler
+	ut8 vex2 = (1 << 7) | (1 << 6) | (1 << 5) | (mmmmm & 0x1f);
 	data[l++] = vex2;
 	// vvvv is first source (count register), encode 1's complement in bits 6..3
 	int vvvv = vreg & 0x0f; // include high bit via extended flag in caller
