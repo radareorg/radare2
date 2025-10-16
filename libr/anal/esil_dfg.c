@@ -1554,7 +1554,11 @@ R_API RAnalEsilDFG *r_anal_esil_dfg_new(RAnal* anal, bool use_map_info, bool use
 		free (dfg);
 		return NULL;
 	}
+#if USE_NEW_ESIL
+	dfg->esil = r_esil_new_simple (1, anal->reg, &anal->iob);
+#else
 	dfg->esil = r_esil_new (4096, 0, 1);
+#endif
 	if (!dfg->esil) {
 		r_reg_free (dfg->reg);
 		free (dfg);
@@ -1644,13 +1648,17 @@ R_API void r_anal_esil_dfg_free(RAnalEsilDFG *dfg) {
 R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, RAnalEsilDFG * R_NULLABLE dfg, const char *expr,
 	bool use_map_info, bool use_maps) {
 	R_RETURN_VAL_IF_FAIL (anal && expr, NULL);
+#if USE_NEW_ESIL
+	REsil *esil = r_esil_new_simple (1, anal->reg, &anal->iob);
+#else
 	REsil *esil = r_esil_new (4096, 0, 1);
+#endif
 	if (!esil) {
 		return NULL;
 	}
 	esil->anal = anal;
 
-	RAnalEsilDFG *edf = dfg ? dfg : r_anal_esil_dfg_new (anal, use_map_info, use_maps);
+	RAnalEsilDFG *edf = dfg? dfg: r_anal_esil_dfg_new (anal, use_map_info, use_maps);
 	if (!edf) {
 		r_esil_free (esil);
 		return NULL;

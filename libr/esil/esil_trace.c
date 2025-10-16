@@ -339,11 +339,8 @@ R_API void r_esil_trace_op(REsil *esil, struct r_anal_op_t *op) {
 	esil->cb.hook_mem_read = trace_hook_mem_read;
 	esil->cb.hook_mem_write = trace_hook_mem_write;
 	/* evaluate esil expression */
-	const int esil_verbose = esil->verbose;
-	esil->verbose = 0; // disable verbose logs when tracing
 	r_esil_parse (esil, expr);
 	r_esil_stack_free (esil);
-	esil->verbose = esil_verbose;
 	/* restore hooks */
 	esil->cb = esil->ocb;
 	esil->ocb_set = false;
