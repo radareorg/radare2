@@ -113,6 +113,7 @@ static RIOMMapFileObj *mmap_create(RIO  *io, const char *filename, int perm, int
 	RIOMMapFileObj *mmo = R_NEW0 (RIOMMapFileObj);
 	if (r_str_startswith (filename, "file://")) {
 		filename += strlen ("file://");
+		mmo->rawio = false; // causes test_io_buf to fail if set to true
 	} else if (r_str_startswith (filename, "stdio://")) {
 		filename += strlen ("stdio://");
 		mmo->rawio = true;
@@ -120,9 +121,10 @@ static RIOMMapFileObj *mmap_create(RIO  *io, const char *filename, int perm, int
 		mmo->rawio = true;
 		mmo->nocache = true;
 	} else {
-		// TODO later: mmo->rawio = true;
+		mmo->rawio = true;
 	}
 	if (mmo->nocache) {
+		// TODO later: mmo->rawio = true;
 		filename += strlen ("nocache://");
 	}
 	mmo->filename = strdup (filename);
