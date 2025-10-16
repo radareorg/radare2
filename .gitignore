@@ -158,3 +158,8 @@ crash-*
 corpus*
 libr/anal/d/types-windows.sdb.txt
 libr/bin/d/dll/*.c
+
+# Personal testing and debug files
+.personal_files/
+*:Zone.Identifier
+test/db/cmd/cmd_rop.backup
