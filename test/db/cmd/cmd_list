@@ -19,6 +19,7 @@ java
 m68k
 mips
 msp430
+nds32
 null
 pickle
 ppc

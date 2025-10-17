@@ -187,6 +187,7 @@ extern RAsmPlugin r_asm_plugin_java;
 extern RAsmPlugin r_asm_plugin_m68k;
 extern RAsmPlugin r_asm_plugin_mips;
 extern RAsmPlugin r_asm_plugin_msp430;
+extern RAsmPlugin r_asm_plugin_nds32;
 extern RAsmPlugin r_asm_plugin_null;
 extern RAsmPlugin r_asm_plugin_pickle;
 extern RAsmPlugin r_asm_plugin_ppc;
