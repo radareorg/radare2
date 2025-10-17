@@ -18,6 +18,7 @@ sdb_files = [
   'm68k',
   'mips',
   'msp430',
+  'nds32',
   'pic18c',
   'pickle',
   'ppc',
