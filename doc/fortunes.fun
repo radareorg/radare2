@@ -360,3 +360,4 @@ Are you still watching?
 Downloading update 1 of 1 ...
 Embrace the failure
 It's like progress but backwards
+My other fortunes are funnier

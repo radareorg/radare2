@@ -3,25 +3,25 @@
 ## Locations
 
 - Header files are located in the `./libr/include` directory
-- API manpages in the `./man/3` directory provide a good quick start
+- Manpages documenting the most common APIs in radare2 are in `./man/3`
 - Plugins are located under the `/p` subdirectories on each `./libr/*`
 
-## Coding Style
+## Formatting Style
 
-- `R_NEW`/`R_NEW0` macros never return NULL
-- Do not check for NULL before calling `free` or any other `*_free` function
-- The `r_json_parse` does not own the string passed, we must free it after freeing the parser
+- Follow the `radare2` coding style (run `clang-format-radare2 file.c`)
+- Indent with **TABS** for code and spaces for comments
 - Function calls require a space before the parenthesis. (p.ex: Use `foo ()` instead of `foo()`)
-- Always indent code using **TABS**
-- Follow the `radare2` coding style (see `./third_party/radare2/DEVELOPERS.md`)
 - Prefer `!strcmp ()` over `strcmp () == 0`
 - Always use `{}` braces, even one line conditionals
-- Use `R_RETURN_*` macros in the public APIs (those marked with `R_API` to specify preconditions for null parameters.
 - The `case` lines under the `switch` statements must be indented at the same column.
-- Always define loop variables before the `for` statements. For example: `int i;\nfor (i = 0; i ..)`
+- Do not define variables inside for parenthesis, do it like this: `int i;\nfor (i = 0; i ..)`
 
 ## Coding Rules
 
+- The `r_json_parse` does not own the string passed, we must free it after freeing the parser
+- Use `R_RETURN_*` macros in the public `R_API` functions
+- Do not check for NULL before calling `free` or any other `*_free` function
+- The `R_NEW`/`R_NEW0` macros never return NULL
 - Keep changes minimal and take smart decisions
 - When implementing commands, handle the `?` subcommand to show its help
 - Do not use `r_str_append`, better use an `r_strbuf_new` and concatenate for loops
@@ -31,11 +31,11 @@
 ## Actions
 
 - Compile your changes with: `make -j > /dev/null`
-  - Run `make` in the working directory where you made the changes to avoid recompiling everything
-  - We assume system-wide installations via symlinks by default, so there's no need to install after compiling for testing
+  - Run `make` in the working directory to compile just this part.
+  - Assume system-wide installations via symlinks (do not install after every change)
 - Run tests with `r2r`. For example: `r2r test/db/cmd/cmd_print`
   - Source files can reference tests with `// R2R` comments (so you can also run against C files: `r2r foo.c`)
-- Verify syntax and indentation with `sys/lint.sh`
+- Verify syntax and indentation with `sys/lint.sh` and `clang-format-radare2`
 - When implementing assembler/disassemblers use `rasm2` oneliners
   - To assemble `rasm2 -a ARCH -b BITS 'nop'`
   - To disassemble `rasm2 -a ARCH -b BITS -d '909090'`
