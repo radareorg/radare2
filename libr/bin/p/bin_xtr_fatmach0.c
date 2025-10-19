@@ -1,10 +1,8 @@
-/* radare - LGPL - Copyright 2009-2024 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2025 - nibble, pancake */
 
 #include <r_bin.h>
 #include "mach0/fatmach0.h"
 #include "mach0/mach0.h"
-
-static RBinXtrData *extract(RBin *bin, int idx);
 
 static bool checkHeader(RBuffer *b) {
 	ut8 buf[4];
@@ -69,18 +67,7 @@ static RBinXtrData *extract(RBin* bin, int idx) {
 		return NULL;
 	}
 	RBinXtrMetadata *metadata = R_NEW0 (RBinXtrMetadata);
-	if (!metadata) {
-		r_buf_free (arch->b);
-		free (arch);
-		return NULL;
-	}
 	struct MACH0_(mach_header) *hdr = MACH0_(get_hdr) (arch->b);
-	if (!hdr) {
-		free (metadata);
-		free (arch);
-		free (hdr);
-		return NULL;
-	}
 	fill_metadata_info_from_hdr (metadata, hdr);
 	RBinXtrData * res = r_bin_xtrdata_new (arch->b, arch->offset, arch->size, narch, metadata);
 	r_buf_free (arch->b);
@@ -103,19 +90,17 @@ static RBinXtrData *oneshot_buffer(RBin *bin, RBuffer *b, int idx) {
 	struct r_bin_fatmach0_arch_t *arch = r_bin_fatmach0_extract (fb, idx, &narch);
 	if (arch) {
 		RBinXtrMetadata *metadata = R_NEW0 (RBinXtrMetadata);
-		if (metadata) {
-			struct MACH0_(mach_header) *hdr = MACH0_(get_hdr) (arch->b);
-			if (hdr) {
-				fill_metadata_info_from_hdr (metadata, hdr);
-				RBinXtrData *res = r_bin_xtrdata_new (arch->b, arch->offset, arch->size, narch, metadata);
-				r_buf_free (arch->b);
-				free (arch);
-				free (hdr);
-				return res;
-			}
-			free (metadata->type);
-			free (metadata);
+		struct MACH0_(mach_header) *hdr = MACH0_(get_hdr) (arch->b);
+		if (hdr) {
+			fill_metadata_info_from_hdr (metadata, hdr);
+			RBinXtrData *res = r_bin_xtrdata_new (arch->b, arch->offset, arch->size, narch, metadata);
+			r_buf_free (arch->b);
+			free (arch);
+			free (hdr);
+			return res;
 		}
+		free (metadata->type);
+		free (metadata);
 		free (arch);
 	}
 	return NULL;
@@ -127,10 +112,6 @@ static RList *oneshotall_buffer(RBin *bin, RBuffer *b) {
 		// XXX - how do we validate a valid narch?
 		int narch = data->file_count;
 		RList *res = r_list_newf (r_bin_xtrdata_free);
-		if (!res) {
-			r_bin_xtrdata_free (data);
-			return NULL;
-		}
 		r_list_append (res, data);
 		int i = 0;
 		for (i = 1; data && i < narch; i++) {

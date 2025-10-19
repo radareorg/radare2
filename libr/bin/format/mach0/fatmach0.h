@@ -6,7 +6,7 @@
 
 struct r_bin_fatmach0_obj_t {
 	const char *file;
-	int size;
+	ut64 size;
 	int nfat_arch;
 	struct fat_header hdr;
 	struct fat_arch *archs;
@@ -14,8 +14,8 @@ struct r_bin_fatmach0_obj_t {
 };
 
 struct r_bin_fatmach0_arch_t {
-	int size;
-	int offset;
+	ut64 size;
+	ut64 offset;
 	RBuffer *b;
 	int last;
 };
