@@ -1,8 +1,8 @@
 foo.bar=func
 func.foo.bar.arg.0=int,a
-func.foo.bar.arg.1=,...
+func.foo.bar.arg.1=...,varg
 func.foo.bar.cc=cdecl
-func.foo.bar=a,...
+func.foo.bar=a,varg
 func.foo.bar.ret=char
 func.foo.bar.args=2
 
