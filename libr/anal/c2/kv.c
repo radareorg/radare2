@@ -1550,11 +1550,11 @@ static bool parse_function(KVCParser *kvc) {
 				char *full = kvctoken_tostring ( (KVCToken){argp, pa} );
 				r_str_trim (full);
 				if (!strcmp (full, "...")) {
-					// vararg, keep name as is
+					// vararg, set name to varg
 					free(at);
 					at = full;
 					free(an);
-					an = strdup("");
+					an = strdup("varg");
 				} else if (!kvctoken_len (arg_type)) {
 					// unnamed type
 					free(at);
