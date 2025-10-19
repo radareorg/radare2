@@ -666,17 +666,17 @@ static struct nds32_opcode nds32_opcodes[] =
 
 static const keyword_t keyword_gpr[] =
 {
-  {"r0", 0, ATTR (RDREG)}, {"r1", 1, ATTR (RDREG)}, {"r2", 2, ATTR (RDREG)},
-  {"r3", 3, ATTR (RDREG)}, {"r4", 4, ATTR (RDREG)}, {"r5", 5, ATTR (RDREG)},
-  {"r6", 6, ATTR (RDREG)}, {"r7", 7, ATTR (RDREG)}, {"r8", 8, ATTR (RDREG)},
-  {"r9", 9, ATTR (RDREG)}, {"r10", 10, ATTR (RDREG)},
-  {"r11", 11, 0}, {"r12", 12, 0}, {"r13", 13, 0}, {"r14", 14, 0},
-  {"r15", 15, ATTR (RDREG)},
-  {"r16", 16, 0}, {"r17", 17, 0}, {"r18", 18, 0}, {"r19", 19, 0}, {"r20", 20, 0},
-  {"r21", 21, 0}, {"r22", 22, 0}, {"r23", 23, 0}, {"r24", 24, 0}, {"r25", 25, 0},
-  {"r26", 26, 0}, {"r27", 27, 0},
-  {"r28", 28, ATTR (RDREG)}, {"r29", 29, ATTR (RDREG)},
-  {"r30", 30, ATTR (RDREG)}, {"r31", 31, ATTR (RDREG)},
+  {"a0", 0, ATTR (RDREG)}, {"a1", 1, ATTR (RDREG)}, {"a2", 2, ATTR (RDREG)},
+  {"a3", 3, ATTR (RDREG)}, {"a4", 4, ATTR (RDREG)}, {"a5", 5, ATTR (RDREG)},
+  {"s0", 6, ATTR (RDREG)}, {"s1", 7, ATTR (RDREG)}, {"s2", 8, ATTR (RDREG)},
+  {"s3", 9, ATTR (RDREG)}, {"s4", 10, ATTR (RDREG)},
+  {"s5", 11, 0}, {"s6", 12, 0}, {"s7", 13, 0}, {"s8", 14, 0},
+  {"ta", 15, ATTR (RDREG)},
+  {"t0", 16, 0}, {"t1", 17, 0}, {"t2", 18, 0}, {"t3", 19, 0}, {"t4", 20, 0},
+  {"t5", 21, 0}, {"t6", 22, 0}, {"t7", 23, 0}, {"t8", 24, 0}, {"t9", 25, 0},
+  {"p0", 26, 0}, {"p1", 27, 0},
+  {"fp", 28, ATTR (RDREG)}, {"gp", 29, ATTR (RDREG)},
+  {"lp", 30, ATTR (RDREG)}, {"sp", 31, ATTR (RDREG)},
 
   {"ta", 15, ATTR (RDREG)}, {"p0", 26, 0}, {"p1", 27, 0},
   {"fp", 28, ATTR (RDREG)}, {"gp", 29, ATTR (RDREG)},
