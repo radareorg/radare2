@@ -1471,6 +1471,15 @@ static bool parse_enum(KVCParser *kvc, const char *name) {
 static bool parse_function(KVCParser *kvc) {
 	parse_attributes (kvc);
 	// eprintf ("PARSE FUNCTION (%s)\n", kvc->s.a);
+	// Check for 'static' keyword
+	bool is_static = false;
+	skip_spaces (kvc);
+	const char *word = kvc_peekn (kvc, 6);
+	if (word && !strncmp (word, "static", 6) && (word[6] == ' ' || word[6] == '\t' || word[6] == '\n' || word[6] == 0 || word[6] == ';')) {
+		kvc_skipn (kvc, 6);
+		skip_spaces (kvc);
+		is_static = true;
+	}
 	KVCToken fun_name = { 0 };
 	KVCToken fun_rtyp = { 0 };
 	KVCToken fun_parm = { 0 };
@@ -1587,6 +1596,9 @@ static bool parse_function(KVCParser *kvc) {
 	char *func_args = r_strbuf_drain (func_args_sb);
 	r_strbuf_appendf (kvc->sb, "func.%s.cc=%s\n", fn, "cdecl");
 	r_strbuf_appendf (kvc->sb, "func.%s=%s\n", fn, func_args);
+	if (is_static) {
+		r_strbuf_appendf (kvc->sb, "func.%s.@.static=true\n", fn);
+	}
 	r_strbuf_appendf (kvc->sb, "func.%s.ret=%s\n", fn, fr);
 	r_strbuf_appendf (kvc->sb, "func.%s.args=%d\n", fn, arg_idx);
 #if 0
