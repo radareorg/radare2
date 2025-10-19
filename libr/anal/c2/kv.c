@@ -1546,7 +1546,30 @@ static bool parse_function(KVCParser *kvc) {
 #endif
 			char *an = kvctoken_tostring (arg_name);
 			char *at = kvctoken_tostring (arg_type);
+			{
+				char *full = kvctoken_tostring ( (KVCToken){argp, pa} );
+				r_str_trim (full);
+				if (!strcmp (full, "...")) {
+					// vararg, keep name as is
+					free(at);
+					at = full;
+					free(an);
+					an = strdup("");
+				} else if (!kvctoken_len (arg_type)) {
+					// unnamed type
+					free(at);
+					at = full;
+					free(an);
+					an = r_str_newf("arg%d", arg_idx);
+				} else {
+					free(full);
+				}
+			}
 			massage_type (&at);
+			if ((!an || !*an) && strcmp (at, "...") != 0) {
+				free(an);
+				an = r_str_newf("arg%d", arg_idx);
+			}
 			if (R_STR_ISEMPTY (at) && !strcmp (an, "void") && arg_idx == 0) {
 				// TODO: check if its the only arg
 				arg_idx--;
