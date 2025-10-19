@@ -1,13 +1,8 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #define R_LOG_ORIGIN "cfile"
 
 #include <r_core.h>
-
-#define UPDATE_TIME(a) (r->times->file_open_time = r_time_now_mono () - (a))
-
-static int r_core_file_load_for_debug(RCore *r, ut64 loadaddr, const char *filenameuri);
-static int r_core_file_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr);
 
 static bool close_but_cb(void *user, void *data, ut32 id) {
 	RCore *core = (RCore *)user;
@@ -21,13 +16,13 @@ static bool close_but_cb(void *user, void *data, ut32 id) {
 	return true;
 }
 
-// TODO: move to IO as a helper?
+// TODO: move to IO as a helper? .. rename to close_others? close_therest?
 R_API bool r_core_file_close_all_but(RCore *core) {
 	r_id_storage_foreach (&core->io->files, close_but_cb, core);
 	return true;
 }
 
-static bool its_a_mips(RCore *core) {
+static inline bool its_a_mips(RCore *core) {
 	RArchConfig *cfg = core->rasm->config;
 	return cfg && r_str_startswith (cfg->arch, "mips");
 }
