@@ -33,7 +33,7 @@ static bool check(RBinFile *bf, RBuffer *buf) {
 }
 
 static void free_xtr(void *xtr_obj) {
-	r_bin_fatmach0_free ((struct r_bin_fatmach0_obj_t*)xtr_obj);
+	r_bin_fatmach0_free ((struct r_bin_fatmach0_obj_t *)xtr_obj);
 }
 
 static void destroy(RBin *bin) {
@@ -49,7 +49,7 @@ static int size(RBin *bin) {
 	return 0;
 }
 
-static inline void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct MACH0_(mach_header) *hdr) {
+static inline void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct MACH0_(mach_header) * hdr) {
 	meta->arch = strdup (MACH0_(get_cputype_from_hdr) (hdr));
 	meta->bits = MACH0_(get_bits_from_hdr) (hdr);
 	meta->machine = MACH0_(get_cpusubtype_from_hdr) (hdr);
@@ -59,21 +59,23 @@ static inline void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct MAC
 }
 
 // XXX deprecate
-static RBinXtrData *extract(RBin* bin, int idx) {
+static RBinXtrData *extract(RBin *bin, int idx) {
 	int narch;
 	struct r_bin_fatmach0_obj_t *fb = bin->cur->xtr_obj;
 	struct r_bin_fatmach0_arch_t *arch = r_bin_fatmach0_extract (fb, idx, &narch);
-	if (!arch) {
-		return NULL;
+	if (arch) {
+		RBinXtrMetadata *metadata = R_NEW0 (RBinXtrMetadata);
+		struct MACH0_(mach_header) *hdr = MACH0_(get_hdr) (arch->b);
+		if (hdr) {
+			fill_metadata_info_from_hdr (metadata, hdr);
+			RBinXtrData *res = r_bin_xtrdata_new (arch->b, arch->offset, arch->size, narch, metadata);
+			r_buf_free (arch->b);
+			free (arch);
+			free (hdr);
+			return res;
+		}
 	}
-	RBinXtrMetadata *metadata = R_NEW0 (RBinXtrMetadata);
-	struct MACH0_(mach_header) *hdr = MACH0_(get_hdr) (arch->b);
-	fill_metadata_info_from_hdr (metadata, hdr);
-	RBinXtrData * res = r_bin_xtrdata_new (arch->b, arch->offset, arch->size, narch, metadata);
-	r_buf_free (arch->b);
-	free (arch);
-	free (hdr);
-	return res;
+	return NULL;
 }
 
 static RBinXtrData *oneshot_buffer(RBin *bin, RBuffer *b, int idx) {
