@@ -25,6 +25,10 @@ R_VEC_TYPE(RVecAnalRef, RAnalRef);
 static R_TH_LOCAL ut64 Goaddr = UT64_MAX;
 static R_TH_LOCAL char *Gsection = NULL; // maybe as a fixed array size is less racy, but still incorrect as its not guarded and its global
 
+static bool isarm(RCore *core) {
+	return r_str_startswith (r_config_get (core->config, "asm.arch"), "arm");
+}
+
 static const char* r_vline_a[] = {
 	"|",  // LINE_VERT
 	"|-", // LINE_CROSS
@@ -484,8 +488,7 @@ static void ds_print_ref_lines(RDisasmState *ds, char *line, char *line_col, boo
 
 static void get_bits_comment(RCore *core, RAnalFunction *f, char *cmt, int cmt_size) {
 	if (core && f && cmt && cmt_size > 0 && f->bits && f->bits != core->rasm->config->bits) {
-		const char *asm_arch = r_config_get (core->config, "asm.arch");
-		if (R_STR_ISNOTEMPTY (asm_arch) && strstr (asm_arch, "arm")) {
+		if (isarm (core)) {
 			switch (f->bits) {
 			case 16: strcpy (cmt, " (thumb)"); break;
 			case 32: strcpy (cmt, " (arm)"); break;
@@ -3651,7 +3654,7 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *obuf, int ib, int si
 	}
 
 	if (size == 4 || size == 8) {
-		if (r_str_startswith (r_config_get (core->config, "asm.arch"), "arm")) {
+		if (isarm (core)) {
 			ut64 bits = r_config_get_i (core->config, "asm.bits");
 			// adjust address for arm/thumb address
 			if ((bits < 64) && (n & 1)) {
@@ -4825,7 +4828,7 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refadd
 	}
 	// do not resolve strings on arm64 pointed with ADRP
 	if (ds->analop.type == R_ANAL_OP_TYPE_LEA) {
-		if (ds->core->rasm->config->bits == 64 && r_str_startswith (r_config_get (ds->core->config, "asm.arch"), "arm")) {
+		if (ds->core->rasm->config->bits == 64 && isarm (ds->core)) {
 			return;
 		}
 	}
@@ -5454,7 +5457,7 @@ static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 				ignored = true;
 				break;
 			case R_ANAL_OP_TYPE_LEA:
-				if (ds->core->rasm->config->bits == 64 && r_str_startswith (r_config_get (ds->core->config, "asm.arch"), "arm")) {
+				if (ds->core->rasm->config->bits == 64 && isarm (ds->core)) {
 					ignored = true;
 				}
 				break;
@@ -5644,6 +5647,19 @@ static void ds_print_bbline(RDisasmState *ds) {
 	}
 }
 
+static const char *getarg(RCore *core, const char *cc, int nth) {
+	if (isarm (core) && core->rasm->config->bits == 32) {
+		// workaround for arm32
+		const char *ccargs[] = {"r0", "r1", "r2", "r3"};
+		if (nth >= 0 && nth < 4) {
+			return ccargs[nth];
+		}
+		return NULL;
+	}
+	return r_anal_cc_arg (core->anal, cc, nth, 0);
+}
+
+// print function arguments when emu.str=true
 static void print_fcn_arg(RCore *core, int nth, const char *type, const char *name,
 			   const char *fmt, ut64 addr, const int on_stack, int asm_types) {
 	if (on_stack == 1 && asm_types > 1) {
@@ -5652,7 +5668,7 @@ static void print_fcn_arg(RCore *core, int nth, const char *type, const char *na
 	if (addr == UT32_MAX || addr == UT64_MAX || addr == 0) {
 		// if argument address cannot be resolved, fallback to use the calling convention
 		const char *cc = r_config_get (core->config, "anal.cc"); // XXX
-		const char *reg = r_anal_cc_arg (core->anal, cc, nth, 0);
+		const char *reg = getarg (core, cc, nth);
 		if (reg) {
 			ut64 rv = r_reg_getv (core->anal->reg, reg);
 			if (rv >> 63) {
