@@ -215,11 +215,26 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 		if (arch && strcmp (arch, h->meta.name)) {
 			continue;
 		}
-		const char *feat = "___";
+		const char *feat = "____";
 		if (h->encode) {
-			feat = h->decode? "ade": "a__";
+			feat = h->decode? "ade_": "a___";
 		} else {
-			feat = "_de";
+			feat = "_de_";
+		}
+		// Check for parse plugin
+		bool has_parse = false;
+		RListIter *iter_parse;
+		RAsmPluginSession *aps;
+		r_list_foreach (as->a->sessions, iter_parse, aps) {
+			if (!strcmp (aps->plugin->meta.name, h->meta.name)) {
+				has_parse = true;
+				break;
+			}
+		}
+		if (has_parse) {
+			char *new_feat = r_str_newf ("%c%c%c%c",
+				feat[0], feat[1], feat[2], 'p');
+			feat = new_feat;
 		}
 		ut64 bits = h->bits;
 		RList *bitslist = r_list_newf (NULL);
@@ -733,7 +748,7 @@ static void rasm_show_env(bool show_desc) {
 			printf ("%s\t%s\n", env[id].name, env[id].desc);
 		} else {
 			printf ("%s=", env[id].name);
-			rasm_env_print(env[id].name);
+			rasm_env_print (env[id].name);
 		}
 	}
 }
