@@ -32,8 +32,6 @@ R_API char *r_cons_hud_file(RCons *cons, const char *f) {
 	return NULL;
 }
 
-static char *r_cons_hud_line(RCons *cons, RList *list, const char *prompt);
-
 // Display a buffer in the hud (splitting it line-by-line and ignoring
 // the lines starting with # )
 R_API char *r_cons_hud_line_string(RCons *cons, const char *s) {
@@ -69,7 +67,7 @@ R_API char *r_cons_hud_line_string(RCons *cons, const char *s) {
 			os = o + i + 1;
 		}
 	}
-	ret = r_cons_hud_line (cons, fl, NULL);
+	ret = r_cons_hud (cons, fl, NULL);
 	free (o);
 	r_list_free (fl);
 	return ret;
@@ -170,27 +168,28 @@ static bool __matchString(char *entry, char *filter, char *mask, const int mask_
 	return true;
 }
 
-static RList *hud_filter(RCons *cons, RList *list, char *user_input, int top_entry_n, int *current_entry_n, char **selected_entry, bool simple) {
+static RList *hud_filter(RHudData *data, bool simple, int selected_index) {
 	RListIter *iter;
 	char *current_entry;
 	char mask[HUD_BUF_SIZE];
 	char *p, *x;
 	int j, rows;
-	(void) r_cons_get_size (cons, &rows);
+	(void) r_cons_get_size (data->cons, &rows);
 	int counter = 0;
 	rows -=2; // room for the prompt! PANCAKE
 	bool first_line = true;
+	int visible_index = 0;
 	RList *res = r_list_newf (free);
-	r_list_foreach (list, iter, current_entry) {
+	r_list_foreach (data->list, iter, current_entry) {
 		memset (mask, 0, HUD_BUF_SIZE);
-		if (*user_input && !__matchString (current_entry, user_input, mask, HUD_BUF_SIZE)) {
+		if (*data->user_input && !__matchString (current_entry, data->user_input, mask, HUD_BUF_SIZE)) {
 			continue;
 		}
-		if (++counter == rows + top_entry_n) {
+		if (++counter == rows + data->hud->top_entry_n) {
 			break;
 		}
 		// if the user scrolled down the list, do not print the first entries
-		if (!top_entry_n || *current_entry_n >= top_entry_n) {
+		if (!data->hud->top_entry_n || data->current_entry_n >= data->hud->top_entry_n) {
 			// remove everything after a tab (in ??, it contains the commands)
 			x = strchr (current_entry, '\t');
 			if (x) {
@@ -199,17 +198,17 @@ static RList *hud_filter(RCons *cons, RList *list, char *user_input, int top_ent
 			p = strdup (current_entry);
 			// if the filter is empty, print the entry and move on
 			if (simple) {
-				for (j = 0; p[j] && user_input[0]; j++) {
+				for (j = 0; p[j] && data->user_input[0]; j++) {
 					if (mask[j]) {
 						p[j] = toupper ((unsigned char) p[j]);
 					}
 				}
 				r_list_append (res, strdup (p));
-			} else if (!user_input[0]) {
+			} else if (!data->user_input[0]) {
 				r_list_append (res, r_str_newf (" %c %s", first_line? '-': ' ', p));
 			} else {
 				// otherwise we need to emphasize the matching part
-				if (cons->context->color_mode) {
+				if (data->cons->context->color_mode) {
 					int last_color_change = 0;
 					int last_mask = 0;
 					char *str = r_str_newf (" %c ", first_line? '-': ' ');
@@ -250,12 +249,14 @@ static RList *hud_filter(RCons *cons, RList *list, char *user_input, int top_ent
 			if (x) {
 				*x = '\t';
 			}
-			if (first_line) {
-				*selected_entry = current_entry;
+			if (visible_index == selected_index) {
+				free (data->selected_entry);
+				data->selected_entry = strdup (current_entry);
 			}
+			visible_index++;
 			first_line = false;
 		}
-		(*current_entry_n)++;
+		data->current_entry_n++;
 
 	}
 	return res;
@@ -268,7 +269,7 @@ static void mht_free_kv(HtPPKv *kv) {
 
 static void hud_render_prompt(RCons *cons, const char *user_input, RList *filtered_list) {
 	// TODO: trim user-input if larger than screen width
-	r_cons_printf (cons, "(%d)> %s\n", r_list_length (filtered_list), user_input);
+	r_cons_printf (cons, "(%08d)> %s\n", r_list_length (filtered_list), user_input);
 #if 0
 	int slen = 0;
 	char *row;
@@ -289,13 +290,14 @@ static void hud_render(RHudData *data) {
 	RCons *cons = data->cons;
 	RLineHud *hud = data->hud;
 	char *user_input = data->user_input;
-	RList *list = data->list;
-	char *selected_entry = NULL;
-	int current_entry_n = 0;
 
 	r_cons_clear00 (cons);
 
-	RList *filtered_list = hud_filter (cons, list, user_input, hud->top_entry_n, &current_entry_n, &selected_entry, false);
+	free (data->selected_entry);
+	data->selected_entry = NULL;
+	data->current_entry_n = 0;
+
+	RList *filtered_list = hud_filter (data, false, hud->current_entry_n);
 	int w = r_cons_get_size (cons, NULL);
 	RListIter *iter;
 	char *row;
@@ -312,8 +314,6 @@ static void hud_render(RHudData *data) {
 	}
 	r_list_free (filtered_list);
 
-	data->selected_entry = selected_entry;
-	data->current_entry_n = current_entry_n;
 	r_cons_flush (cons);
 }
 
@@ -322,47 +322,7 @@ static void hud_refresh_callback(void *user) {
 	hud_render (data);
 }
 
-static void hud_render_line(RCons *cons, RLineHud *hud, RList *list, const char *prompt, char *user_input, HtPP *ht, char **selected_entry) {
-	exit(1);
-	hud->current_entry_n = 0;
 
-	if (hud->top_entry_n < 0) {
-		hud->top_entry_n = 0;
-	}
-	*selected_entry = NULL;
-	// AITODO this prompt is never visible wtf
-	r_cons_printf (cons, "\r%s", R_CONS_CLEAR_LINE);
-	if (R_STR_ISNOTEMPTY (prompt)) {
-		r_cons_printf (cons, ">> %s [ ", prompt);
-	}
-	char *row;
-
-	bool found = false;
-	RList *filtered_list = ht_pp_find (ht, user_input, &found);
-	if (!found) {
-		filtered_list = hud_filter (cons, list, user_input,
-			hud->top_entry_n, &(hud->current_entry_n), selected_entry, true);
-#if HUD_CACHE
-		ht_pp_insert (ht, user_input, filtered_list);
-#endif
-	}
-	r_cons_printf (cons, "(%d)> %s [", r_list_length (filtered_list), user_input);
-	int slen = 0;
-	int w = r_cons_get_size (cons, NULL);
-	RListIter *iter;
-	r_list_foreach (filtered_list, iter, row) {
-		slen += strlen (row);
-		if (slen >= w) {
-			break;
-		}
-		r_cons_printf (cons, " %s,", row);
-	}
-#if !HUD_CACHE
-	r_list_free (filtered_list);
-#endif
-	r_cons_printf (cons, "]");
-	r_cons_flush (cons);
-}
 
 R_API char *r_cons_hud(RCons *cons, RList *list, const char *prompt) {
 	bool demo = cons->context->demo;
@@ -413,9 +373,10 @@ R_API char *r_cons_hud(RCons *cons, RList *list, const char *prompt) {
 
 		if (!hud->activate) {
 			hud->top_entry_n = 0;
-			if (data->current_entry_n >= 1 && data->selected_entry) {
+			if (data->selected_entry) {
 				// restore
 				cons->event_resize = old_event_resize;
+				char *se = data->selected_entry;
 				cons->context->event_interrupt = old_event_interrupt;
 				cons->event_data = old_event_data;
 				R_FREE (cons->line->hud);
@@ -424,9 +385,7 @@ R_API char *r_cons_hud(RCons *cons, RList *list, const char *prompt) {
 				r_cons_show_cursor (cons, true);
 				r_cons_set_raw (cons, false);
 				free(data);
-				eprintf ("PENE (%s)\n", data->selected_entry);
-				sleep(1);
-				return data->selected_entry ? strdup (data->selected_entry) : NULL;
+				return se;
 			} else {
 				goto _beach;
 			}
@@ -443,78 +402,12 @@ _beach:
 	r_cons_enable_mouse (cons, false);
 	r_cons_set_raw (cons, false);
 	ht_pp_free (ht);
+	free(data->selected_entry);
 	free(data);
 	return NULL;
 }
 
-static char *r_cons_hud_line(RCons *cons, RList *list, const char *prompt) {
-	char user_input[HUD_BUF_SIZE + 1];
-	char *selected_entry = NULL;
 
-	// Save original event callbacks
-	RConsEvent old_event_resize = cons->event_resize;
-	RConsEvent old_event_interrupt = cons->context->event_interrupt;
-	void *old_event_data = cons->event_data;
-
-	// Set up hud event callbacks
-	cons->event_resize = NULL; // avoid running old event
-	cons->context->event_interrupt = NULL;
-	cons->event_data = NULL;
-
-	HtPP *ht = ht_pp_new (NULL, (HtPPKvFreeFunc)mht_free_kv, (HtPPCalcSizeV)strlen);
-	RLineHud *hud = (RLineHud*) R_NEW (RLineHud);
-	hud->activate = 0;
-	hud->vi = 0;
-	cons->line->echo = false;
-	cons->line->hud = hud;
-	user_input [0] = 0;
-	user_input[HUD_BUF_SIZE] = 0;
-	hud->top_entry_n = 0;
-	r_cons_show_cursor (cons, false);
-	r_cons_enable_mouse (cons, false);
-	r_cons_set_raw (cons, true);
-
-	r_cons_reset (cons);
-	// Repeat until the user exits the hud
-	for (;;) {
-		exit(1);
-		hud_render_line(cons, hud, list, prompt, user_input, ht, &selected_entry);
-		(void) r_line_readline (cons);
-		r_str_ncpy (user_input, cons->line->buffer.data, HUD_BUF_SIZE);
-
-		if (!hud->activate) {
-			hud->top_entry_n = 0;
-			if (hud->current_entry_n >= 1 && selected_entry) {
-				// Restore original event callbacks
-				cons->event_resize = old_event_resize;
-				cons->context->event_interrupt = old_event_interrupt;
-				cons->event_data = old_event_data;
-
-				R_FREE (cons->line->hud);
-				cons->line->echo = true;
-				r_cons_enable_mouse (cons, false);
-				r_cons_show_cursor (cons, true);
-				r_cons_set_raw (cons, false);
-				return selected_entry ? strdup (selected_entry) : NULL;
-			} else {
-				goto _beach;
-			}
-		}
-	}
-_beach:
-	// Restore original event callbacks
-	cons->event_resize = old_event_resize;
-	cons->context->event_interrupt = old_event_interrupt;
-	cons->event_data = old_event_data;
-
-	R_FREE (cons->line->hud);
-	cons->line->echo = true;
-	r_cons_show_cursor (cons, true);
-	r_cons_enable_mouse (cons, false);
-	r_cons_set_raw (cons, false);
-	ht_pp_free (ht);
-	return NULL;
-}
 
 // Display the list of files in a directory
 R_API char *r_cons_hud_path(RCons *cons, const char *path, int dir) {
