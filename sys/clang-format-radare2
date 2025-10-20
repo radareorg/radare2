@@ -468,6 +468,31 @@ def fix_preprocessor_line(line):
 	return adjusted + ending
 
 
+def fix_multiline_comments(lines):
+	result = []
+	in_comment = False
+	for line in lines:
+		content, ending = split_line_ending(line)
+		stripped = content.strip()
+		if '/*' in stripped and not in_comment:
+			in_comment = True
+		if in_comment and re.match(r'^\s*\*', content):
+			# Ensure exactly one space before *
+			match = re.match(r'^(\s*)\*(.*)$', content)
+			if match:
+				indent = match.group(1)
+				rest = match.group(2)
+				if indent and indent[-1] != ' ':
+					indent += ' '
+				elif not indent:
+					indent = ' '
+				content = indent + '*' + rest
+		if '*/' in stripped and in_comment:
+			in_comment = False
+		result.append(content + ending)
+	return result
+
+
 def fix_ternary_lines(lines):
 	fixed = []
 	i = 0
@@ -518,6 +543,7 @@ def apply_indent_rules(text):
 		lines.append(line)
 	lines = fix_case_blocks(lines)
 	lines = fix_ternary_lines(lines)
+	lines = fix_multiline_comments(lines)
 	return "".join(lines)
 
 
