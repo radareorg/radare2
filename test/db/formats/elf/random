@@ -47,7 +47,7 @@ EXPECT=<<EOF
 |           0x08000840      2001803d       str q0, [x9]
 |           0x08000844      080940f9       ldr x8, [x8, 0x10]
 |           0x08000848      280900f9       str x8, [x9, 0x10]
-|           0x0800084c      5f0000b9       str wzr, [x2]               ; arg3
+|           0x0800084c      5f0000b9       str wzr, [x2]               ; arg1
 EOF
 EXPECT_ERR=<<EOF
 WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08000074
@@ -128,7 +128,7 @@ EXPECT=<<EOF
 |           0x00000fd4      2001803d       str q0, [x9]
 |           0x00000fd8      080940f9       ldr x8, [x8, 0x10]
 |           0x00000fdc      280900f9       str x8, [x9, 0x10]
-|           0x00000fe0      5f0000b9       str wzr, [x2]               ; arg3
+|           0x00000fe0      5f0000b9       str wzr, [x2]               ; arg1
 0x00005fb8  0x5a8a51be3e7c0a4f                       O.|>.Q.Z
 EOF
 EXPECT_ERR=<<EOF
