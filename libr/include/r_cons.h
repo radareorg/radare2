@@ -858,9 +858,7 @@ R_API bool r_cons_default_context_is_interactive(void);
 R_API void r_cons_break_clear(RCons *cons);
 R_API void r_cons_break_timeout(RCons *cons, int timeout);
 R_API void r_cons_break_end(RCons *cons);
-#if R2_USE_NEW_ABI
 R_API void r_cons_break(RCons *cons);
-#endif
 
 /* pipe */
 R_API int r_cons_pipe_open(RCons *cons, const char *file, int fdn, int append);

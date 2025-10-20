@@ -12,6 +12,7 @@ r_cons_sources = [
   'input.c',
   'less.c',
   'line.c',
+  'msg.c',
   'pager.c',
   'pal.c',
   'pixel.c',
