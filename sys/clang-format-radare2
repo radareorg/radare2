@@ -476,19 +476,19 @@ def fix_multiline_comments(lines):
 		stripped = content.strip()
 		if '/*' in stripped and not in_comment:
 			in_comment = True
-		if '*/' in stripped and in_comment:
-			in_comment = False
 		if in_comment and re.match(r'^\s*\*', content):
 			# Ensure exactly one space before *
 			match = re.match(r'^(\s*)\*(.*)$', content)
 			if match:
 				indent = match.group(1)
 				rest = match.group(2)
-				if indent and not indent[-1].isspace():
+				if indent and indent[-1] != ' ':
 					indent += ' '
 				elif not indent:
 					indent = ' '
 				content = indent + '*' + rest
+		if '*/' in stripped and in_comment:
+			in_comment = False
 		result.append(content + ending)
 	return result
 
