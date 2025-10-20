@@ -532,11 +532,8 @@ static ut32 ror(ArmOp *op) {
 		data = k | op->operands[0].reg << 24;
 		data |= (op->operands[1].reg & 0x7) << 29;
 		data |= (op->operands[1].reg & 0x18) << 13;
-		data |= (op->operands[1].reg & 0x1f) << 10;
-		{
-			ut32 imm7 = (ut32)(op->operands[3].immediate >> 4) & 0x7f;
-			data |= imm7 << 16;
-		}
+		data |= (op->operands[1].reg & 0x1f) << 8;
+		data |= op->operands[2].immediate << 18;
 		return data;
 	}
 	return data;
@@ -1137,9 +1134,9 @@ static ut32 lsop(ArmOp *op, int k, ut64 addr) {
 			if (uwu || scale == 2) {
 				check_cond (n <= 0x3ffc && !(n & 3));
 				if (uwu) {
-					n>>= 2;
+					n >>= 2;
 				} else {
-					n >>= 3;
+					n >>= 2;
 				}
 			} else {
 				check_cond (n <= 0x7ff8 && !(n & 7));
@@ -1149,7 +1146,8 @@ static ut32 lsop(ArmOp *op, int k, ut64 addr) {
 		data = k | (n & 0x3f) << 18 | (n & 0xfc0) << 2 | 1;
 		return data;
 	}
-	check_cond (-0x100 <= n && n < 0x100) if (op->operands[2].preindex) {
+	check_cond (-0x100 <= n && n < 0x100);
+	if (op->operands[2].preindex) {
 		k |= 0x00080000;
 	}
 	data = k | encodeImm9 (n) | 0x00040000;
@@ -1461,18 +1459,10 @@ static ut32 stp(ArmOp *op, int k) {
 	}
 
 	data = k;
-	{
-		ut32 rt = (ut32)(op->operands[0].reg & 0x1f);
-		ut32 rn = (ut32)(op->operands[2].reg & 0x1f);
-		ut32 rt2 = (ut32)(op->operands[1].reg & 0x1f);
-		ut32 imm7 = (ut32)((op->operands[3].immediate >> 4) & 0x7f);
-		ut32 b0 = rt | ((rn & 0x7) << 5);
-		ut32 b1 = ((rn >> 3) & 0x3) | (rt2 << 2);
-		ut32 b2 = imm7;
-		ut32 b3 = (ut32)(k & 0xff);
-		data = (b3 << 24) | (b2 << 16) | (b1 << 8) | b0;
-	}
-	return r_swap_ut32(data);
+	data |= encode2regs (op);
+	data += (op->operands[3].immediate & 0x8) << 20;
+	data += (op->operands[3].immediate >> 4) << 8;
+	return data;
 }
 
 static ut32 exception(ArmOp *op, ut32 k) {
@@ -2193,7 +2183,11 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 	} else if (r_str_startswith (str, "ldur")) {
 		*op = regsluop (&ops, 0x000040f8);
 	} else if (r_str_startswith (str, "str")) {
-		*op = reglsop (&ops, 0x000000f8);
+		*op = UT32_MAX;
+		*op = lsop (&ops, 0x000000f8, -1);
+		if (*op == UT32_MAX) {
+			*op = reglsop (&ops, 0x000000f8);
+		}
 	} else if (r_str_startswith (str, "stp")) {
 		*op = stp (&ops, 0x000000a9);
 	} else if (r_str_startswith (str, "ldp")) {
