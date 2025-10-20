@@ -14,6 +14,8 @@ typedef struct {
 	size_t rec_limit;
 } PPState;
 
+R_API char *pp_preprocess(PPState *st, const char *source);
+
 // Allocate a new PPState object
 R_API PPState *pp_new(void) {
 	PPState *st = R_NEW0 (PPState);
@@ -277,30 +279,6 @@ static char *pp_handle_include(PPState *st, const char *q, const char *line_end)
 	return inc_pp;
 }
 
-static void pp_process_line(PPState *st, RStrBuf *out, const char *line_start, const char *line_end) {
-	const char *rptr = line_start;
-	while (rptr < line_end) {
-		if (is_identifier_char (*rptr)) {
-			const char *id_start = rptr;
-			while (rptr < line_end && is_identifier_char (*rptr)) {
-				rptr++;
-			}
-			KVCToken tok = { id_start, rptr };
-			char *name = kvctoken_tostring (tok);
-			const char *val = pp_get_define (st, name);
-			if (val) {
-				r_strbuf_append (out, val);
-			} else {
-				r_strbuf_append_n (out, tok.a, kvctoken_len (tok));
-			}
-			free (name);
-		} else {
-			r_strbuf_append_n (out, rptr, 1);
-			rptr++;
-		}
-	}
-}
-
 static bool pp_handle_directive(PPState *st, RStrBuf *out, const char *dir, const char *q, const char *line_end, bool skip) {
 	if (!strcmp (dir, "define") && !skip) {
 		pp_handle_define (st, q, line_end);
@@ -329,6 +307,30 @@ static bool pp_handle_directive(PPState *st, RStrBuf *out, const char *dir, cons
 		}
 	}
 	return true;
+}
+
+static void pp_process_line(PPState *st, RStrBuf *out, const char *line_start, const char *line_end) {
+	const char *rptr = line_start;
+	while (rptr < line_end) {
+		if (is_identifier_char (*rptr)) {
+			const char *id_start = rptr;
+			while (rptr < line_end && is_identifier_char (*rptr)) {
+				rptr++;
+			}
+			KVCToken tok = { id_start, rptr };
+			char *name = kvctoken_tostring (tok);
+			const char *val = pp_get_define (st, name);
+			if (val) {
+				r_strbuf_append (out, val);
+			} else {
+				r_strbuf_append_n (out, tok.a, kvctoken_len (tok));
+			}
+			free (name);
+		} else {
+			r_strbuf_append_n (out, rptr, 1);
+			rptr++;
+		}
+	}
 }
 
 R_API char *pp_preprocess(PPState *st, const char *source) {
