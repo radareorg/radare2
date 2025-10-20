@@ -39,7 +39,7 @@ CMDS=<<EOF
 !!rasm2 -L~4004
 EOF
 EXPECT=<<EOF
-ade 4           i4004       The classic Intel 4004
+ade_ 4           i4004       The classic Intel 4004
 EOF
 RUN
 
