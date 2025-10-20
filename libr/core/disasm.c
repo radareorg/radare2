@@ -5645,11 +5645,28 @@ static void ds_print_bbline(RDisasmState *ds) {
 }
 
 static void print_fcn_arg(RCore *core, int nth, const char *type, const char *name,
-			   const char *fmt, const ut64 addr, const int on_stack, int asm_types) {
+			   const char *fmt, ut64 addr, const int on_stack, int asm_types) {
 	if (on_stack == 1 && asm_types > 1) {
 		r_cons_printf (core->cons, "%s", type);
 	}
-	if (fmt && addr != UT32_MAX && addr != UT64_MAX  && addr != 0) {
+	if (addr == UT32_MAX || addr == UT64_MAX || addr == 0) {
+		// if argument address cannot be resolved, fallback to use the calling convention
+		const char *cc = r_config_get (core->config, "anal.cc"); // XXX
+		const char *reg = r_anal_cc_arg (core->anal, cc, nth, 0);
+		if (reg) {
+			ut64 rv = r_reg_getv (core->anal->reg, reg);
+			if (rv >> 63) {
+				fmt = NULL;
+			} else if (rv < 16) {
+				fmt = NULL;
+			} else {
+				addr = rv;
+			}
+		} else {
+			fmt = NULL;
+		}
+	}
+	if (fmt) {
 		char *res = NULL;
 		if (!strcmp (fmt, "z")) {
 			const char *strconv = r_config_get (core->config, "scr.strconv");
