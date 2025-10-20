@@ -226,7 +226,7 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 		RListIter *iter_parse;
 		RAsmPluginSession *aps;
 		r_list_foreach (as->a->sessions, iter_parse, aps) {
-			if (!strcmp (aps->plugin->meta.name, h->meta.name)) {
+			if (r_str_startswith (h->meta.name, aps->plugin->meta.name)) {
 				has_parse = true;
 				break;
 			}
