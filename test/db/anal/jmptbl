@@ -153,7 +153,7 @@ EXPECT=<<EOF
 0x100004148      ldr x8, [x8, 0x390]
 0x10000414c      ldr x8, [x8]
 0x100004150      stur x8, [x29, -0x60]
-0x100004154      str x1, [var_80h]                                     ; arg2
+0x100004154      str x1, [var_80h]
 0x100004158      lsr x25, x1, 0x3e                                     ; arg2
 0x10000415c      adrp x24, reloc.Foundation.__DataStorage.bytes.allocator_...itcfc_ ; 0x10000c000
 0x100004160      ldr x24, [x24, 0x398]
@@ -195,7 +195,7 @@ EXPECT=<<EOF
 0x1000041b8      stur x24, [x29, -0x68]
 0x1000041bc      cmp x26, 0
 0x1000041c0      csel x1, x26, xzr, gt
-0x1000041c4      str x0, [arg_140hx88]                                 ; arg1
+0x1000041c4      str x0, [arg_140hx88]
 0x1000041c8      sub x20, x29, 0x68
 0x1000041cc      mov w0, 0
 0x1000041d0      mov w2, 0
