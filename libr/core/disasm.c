@@ -5650,7 +5650,7 @@ static void ds_print_bbline(RDisasmState *ds) {
 static const char *getarg(RCore *core, const char *cc, int nth) {
 	if (isarm (core) && core->rasm->config->bits == 32) {
 		// workaround for arm32
-		const char *ccargs[] = {"r0", "r1", "r2", "r3"};
+		static const char *ccargs[] = {"r0", "r1", "r2", "r3"};
 		if (nth >= 0 && nth < 4) {
 			return ccargs[nth];
 		}
@@ -5673,7 +5673,7 @@ static void print_fcn_arg(RCore *core, int nth, const char *type, const char *na
 			ut64 rv = r_reg_getv (core->anal->reg, reg);
 			if (rv >> 63) {
 				fmt = NULL;
-			} else if (rv < 16) {
+			} else if (rv < 64) {
 				fmt = NULL;
 			} else {
 				addr = rv;
@@ -5723,7 +5723,7 @@ static void print_fcn_arg(RCore *core, int nth, const char *type, const char *na
 			ut64 rv = r_reg_getv (core->anal->reg, reg);
 			if (rv >> 63) {
 				r_cons_printf (core->cons, "-1");
-			} else if (rv < 16) {
+			} else if (rv < 64) {
 				r_cons_printf (core->cons, "%"PFMT64d, rv);
 			} else {
 				r_cons_printf (core->cons, "0x%"PFMT64x, rv);
