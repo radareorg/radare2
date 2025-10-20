@@ -153,6 +153,12 @@ static void var_rename(RAnal *anal, RAnalVar *v, const char *name, ut64 addr) {
 static void var_retype(RAnal *anal, RAnalVar *var, const char *vname, const char *type, bool ref, bool pfx) {
 	R_LOG_DEBUG ("Var retype %s %s", var->name, type);
 	R_RETURN_IF_FAIL (anal && var && type);
+	// Skip type inference for arguments of entry functions
+	if (var->isarg && var->fcn && var->fcn->name && r_str_startswith (var->fcn->name, "entry")) {
+		return;
+	}
+	// Temporary: skip for all args to test
+	// if (var->isarg) return;
 	// XXX types should be passed without spaces to trim
 	type = r_str_trim_head_ro (type);
 	// default type if none is provided
@@ -619,6 +625,11 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	int cur_idx, prev_idx = 0;
 	TPState *tps = tps_init (core);
 	if (!tps) {
+		return;
+	}
+	// Skip type propagation for entry functions to avoid incorrect type inference
+	if (fcn->name && r_str_startswith (fcn->name, "entry")) {
+		tps_fini (tps);
 		return;
 	}
 	// TODO: maybe move into tps

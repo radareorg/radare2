@@ -364,40 +364,46 @@ pdf
 agf
 EOF
 EXPECT=<<EOF
-/ 8: fcn.00008174 (func main, int argc);
-|           ; arg func main @ r0
+/ 8: fcn.00008174 (func fini, int argc, char **ubp_av, func init);
+|           ; arg func fini @ r0
 |           ; arg int argc @ r1
+|           ; arg char **ubp_av @ r2
+|           ; arg func init @ r3
 |           0x00008174      b80000eb       bl sym.__libc_start_main    ; lr=0x8178 -> 0xeb0002a4 ; pc=0x845c -> 0xe92d41f0
-|                                                                      ; int __libc_start_main(0, 0, -1, -1, -1, -1, -1)
+|                                                                      ; int __libc_start_main(0, 0, 0, 0, -1, -1, -1)
 \           0x00008178      a40200eb       bl sym.abort                ; lr=0x817c -> 0xe92d4030 ; pc=0x8c10 -> 0xe59f62a0
 \                                                                      ; void abort(void)
 
-/ 8: fcn.00008174 (func main, int argc);
-|           ; arg func main @ r0
+/ 8: fcn.00008174 (func fini, int argc, char **ubp_av, func init);
+|           ; arg func fini @ r0
 |           ; arg int argc @ r1
+|           ; arg char **ubp_av @ r2
+|           ; arg func init @ r3
 |              ; lr=0x8178 -> 0xeb0002a4
 |              ; pc=0x845c -> 0xe92d41f0 sym.__libc_start_main
-|              ; int __libc_start_main(0, 0, -1, -1, -1, -1, -1)
+|              ; int __libc_start_main(0, 0, 0, 0, -1, -1, -1)
 |           0x00008174      b80000eb       bl sym.__libc_start_main
 |              ; lr=0x817c -> 0xe92d4030
 |              ; pc=0x8c10 -> 0xe59f62a0 sym.abort
 |              ; void abort(void)
 \           0x00008178      a40200eb       bl sym.abort
 
-.------------------------------------------------------.
-|  0x8174                                              |
-| 8: fcn.00008174 (func main, int argc);               |
-| ; arg func main @ r0                                 |
-| ; arg int argc @ r1                                  |
-|    ; lr=0x8178 -> 0xeb0002a4                         |
-|    ; pc=0x845c -> 0xe92d41f0 sym.__libc_start_main   |
-|    ; int __libc_start_main(0, 0, -1, -1, -1, -1, -1) |
-| bl sym.__libc_start_main;[oa]                        |
-|    ; lr=0x817c -> 0xe92d4030                         |
-|    ; pc=0x8c10 -> 0xe59f62a0 sym.abort               |
-|    ; void abort(void)                                |
-| bl sym.abort;[ob]                                    |
-`------------------------------------------------------'
+.------------------------------------------------------------------.
+|  0x8174                                                          |
+| 8: fcn.00008174 (func fini, int argc, char **ubp_av, func init); |
+| ; arg func fini @ r0                                             |
+| ; arg int argc @ r1                                              |
+| ; arg char **ubp_av @ r2                                         |
+| ; arg func init @ r3                                             |
+|    ; lr=0x8178 -> 0xeb0002a4                                     |
+|    ; pc=0x845c -> 0xe92d41f0 sym.__libc_start_main               |
+|    ; int __libc_start_main(0, 0, 0, 0, -1, -1, -1)               |
+| bl sym.__libc_start_main;[oa]                                    |
+|    ; lr=0x817c -> 0xe92d4030                                     |
+|    ; pc=0x8c10 -> 0xe59f62a0 sym.abort                           |
+|    ; void abort(void)                                            |
+| bl sym.abort;[ob]                                                |
+`------------------------------------------------------------------'
 EOF
 RUN
 
