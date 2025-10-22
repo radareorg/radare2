@@ -56,7 +56,7 @@ static RCoreHelpMessage help_msg_p8 = {
 	"p8f", "[j]", "print hexpairs of function (linear)",
 	"p8fm", "[j]", "print linear function byte:mask pattern (zero-filled bbgaps)",
 	"p8j", "", "print hexpairs in JSON array",
-	"p8s", "", "space separated hex bytes",
+	"p8s", "", "print escaped string (alias for pcs)",
 	"p8x", "", "print hexpairs honoring hex.cols",
 	NULL
 };
@@ -9096,9 +9096,7 @@ static int cmd_print(void *data, const char *input) {
 			if (input[1] == 'j') { // "p8j"
 				r_core_cmdf (core, "pcj %s", input + 2);
 			} else if (input[1] == 's') { // "p8s"
-				r_core_block_read (core);
-				block = core->block;
-				r_print_bytes (core->print, block, l, "%02x", ' ');
+				r_core_cmdf (core, "pcs %s", input + 2);
 			} else if (input[1] == ',') { // "p8,"
 				r_core_block_read (core);
 				block = core->block;
