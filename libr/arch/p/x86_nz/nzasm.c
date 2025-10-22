@@ -5678,6 +5678,10 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 			op->type |= OT_MEMORY | OT_OWORD | OT_GPREG;
 			op->dest_size = OT_OWORD;
 			explicit_size = true;
+		} else if (!r_str_ncasecmp (str + pos, "xmmword", 7)) {
+			op->type |= OT_MEMORY | OT_OWORD | OT_XMMREG;
+			op->dest_size = OT_OWORD;
+			explicit_size = true;
 		} else if (!r_str_ncasecmp (str + pos, "tbyte", 5)) {
 			op->type |= OT_MEMORY | OT_TBYTE | OT_GPREG;
 			op->dest_size = OT_TBYTE;
