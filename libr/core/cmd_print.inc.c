@@ -2622,6 +2622,20 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				note[j] = r_str_newf (";%s", comment);
 				marks = true;
 			}
+			// collect functions
+			RAnalFunction *fcn = r_anal_get_function_at (core->anal, addr + j);
+			if (fcn) {
+				if (show_section) {
+					r_cons_printf (core->cons, "%20s ", "");
+				}
+				if (usecolor) {
+					r_cons_printf (core->cons, "%s", Color_YELLOW);
+				}
+				r_cons_printf (core->cons, "             /fcn.%s\n", fcn->name);
+				if (usecolor) {
+					r_cons_printf (core->cons, "%s", Color_RESET);
+				}
+			}
 			const RList *list = r_flag_get_list (core->flags, addr + j);
 			RListIter *iter;
 			RFlagItem *fi;
