@@ -78,15 +78,15 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 		char *f_name = strdup (string->string);
 		r_name_filter (f_name, -1);
 		if (bin->prefix) {
-			io->cb_printf ("f %s.str.%s %u @ 0x%08"PFMT64x"\n"
-					"Cs %u @ 0x%08"PFMT64x"\n",
-					bin->prefix, f_name, string->size, addr,
-					string->size, addr);
+			io->cb_printf ("'0x%08"PFMT64x"'f %s.str.%s %u\n"
+					"'0x%08"PFMT64x"'Cs %u\n",
+					addr, bin->prefix, f_name, string->size,
+					addr, string->size);
 		} else {
-			io->cb_printf ("f str.%s %u @ 0x%08"PFMT64x"\n"
-					"Cs %u @ 0x%08"PFMT64x"\n",
-					f_name, string->size, addr,
-					string->size, addr);
+			io->cb_printf ("'0x%08"PFMT64x"'f str.%s %u\n"
+					"'0x%08"PFMT64x"'Cs %u\n",
+					addr, f_name, string->size,
+					addr, string->size);
 		}
 		free (f_name);
 		break;
@@ -751,18 +751,16 @@ R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, ut64 file_sz, RBinFi
 
 static RBinPlugin *get_plugin_from_buffer(RBin *bin, RBinFile *bf, const char *pluginname, RBuffer *buf) {
 	RBinPlugin *plugin = bin->force? r_bin_get_binplugin_by_name (bin, bin->force): NULL;
-	if (plugin) {
-		return plugin;
+	if (!plugin) {
+		plugin = pluginname? r_bin_get_binplugin_by_name (bin, pluginname): NULL;
+		if (!plugin) {
+			plugin = r_bin_get_binplugin_by_buffer (bin, bf, buf);
+			if (!plugin) {
+				return r_bin_get_binplugin_by_name (bin, "any");
+			}
+		}
 	}
-	plugin = pluginname? r_bin_get_binplugin_by_name (bin, pluginname): NULL;
-	if (plugin) {
-		return plugin;
-	}
-	plugin = r_bin_get_binplugin_by_buffer (bin, bf, buf);
-	if (plugin) {
-		return plugin;
-	}
-	return r_bin_get_binplugin_by_name (bin, "any");
+	return plugin;
 }
 
 R_API bool r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf, ut64 baseaddr, ut64 loadaddr, RBinXtrData *data) {

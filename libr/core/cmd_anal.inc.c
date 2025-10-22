@@ -9561,7 +9561,7 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 	r_anal_op_init (&analop);
 	r_anal_op_set_bytes (&analop, core->addr, buf, sizeof (ut64));
 	(void)r_anal_op (core->anal, &analop, core->addr, buf, sizeof (buf), R_ARCH_OP_MASK_DISASM);
-	int last = R_MIN (8, analop.size);
+	int last = R_MIN (sizeof (buf), analop.size);
 	PJ *pj = (mode == 'j')? r_core_pj_new (core): NULL;
 	if (last < 1) {
 		return;
@@ -9668,7 +9668,7 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 			int pi = 0;
 			char *s = r_strbuf_drain (sb);
 			char *p = s;
-			ut8 finalmask[8] = {0};
+			ut8 finalmask[32] = {0};
 			for (; *p; p++) {
 				int byte_index = (pi / 8);
 				int bit_index = (pi % 8);
@@ -9685,7 +9685,7 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 				}
 			}
 			free (s);
-			for (i = 0; i < 8 && i < last; i++) {
+			for (i = 0; i < last; i++) {
 				r_cons_printf (core->cons, "%02x", finalmask[i]);
 			}
 			r_cons_newline (core->cons);

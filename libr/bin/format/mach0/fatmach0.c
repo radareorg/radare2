@@ -53,8 +53,10 @@ struct r_bin_fatmach0_arch_t *r_bin_fatmach0_extract(struct r_bin_fatmach0_obj_t
 	if (idx < 0 || idx > bin->nfat_arch) {
 		return NULL;
 	}
-	if (bin->archs[idx].offset > bin->size ||
-		bin->archs[idx].offset + bin->archs[idx].size > bin->size) {
+	ut64 ai_offset = bin->archs[idx].offset;
+	ut64 ai_offsiz = ai_offset + bin->archs[idx].size;
+	if (ai_offset > bin->size || ai_offsiz > bin->size) {
+		R_LOG_WARN ("Corrupted fat macho size 0x%08"PFMT64x" vs 0x%08"PFMT64x, ai_offset, bin->size);
 		return NULL;
 	}
 	if (narch) {

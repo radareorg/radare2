@@ -360,7 +360,7 @@ ts~addr,date,dox,name
 t addr
 EOF
 EXPECT_ERR=<<EOF
-ERROR: cpp:  your compiler doesn't have support to my API
+ERROR: cpp: your compiler doesn't have support to my API
 ERROR: Cannot find 'addr' type
 EOF
 EXPECT=<<EOF

@@ -327,10 +327,8 @@ R_API bool r_core_bin_set_cur(RCore *core, RBinFile *binfile) {
 	if (!core->bin) {
 		return false;
 	}
-	if (!binfile) {
-		if (core && core->io->desc) {
-			fd = core->io->desc->fd;
-		}
+	if (!binfile && core->io->desc) {
+		fd = core->io->desc->fd;
 	}
 	// Find first available binfile
 	if (fd == UT32_MAX) {

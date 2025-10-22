@@ -2130,6 +2130,13 @@ R_API char *r_anal_function_get_signature(RAnalFunction *function) {
 				}
 			}
 		}
+		// for variadic arguments, don't include the name
+		if (r_str_startswith (arg_i, "...")) {
+			char *comma = strchr (arg_i, ' ');
+			if (comma) {
+				*comma = 0;
+			}
+		}
 		char *new_args = (i + 1 == argc)
 			? r_str_newf ("%s%s", args, arg_i)
 			: r_str_newf ("%s%s, ", args, arg_i);
