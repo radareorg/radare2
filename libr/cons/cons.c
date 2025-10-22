@@ -3,8 +3,6 @@
 #include <r_cons.h>
 #include <r_util/r_print.h>
 
-#define COUNT_LINES 1
-
 static R_TH_LOCAL RCons *I = NULL;
 
 R_LIB_VERSION (r_cons);
@@ -12,6 +10,32 @@ R_LIB_VERSION (r_cons);
 static RCons s_cons_global = {0};
 
 static void __break_signal(int sig);
+
+// Count display lines, treating long lines (>80 chars) as multiple lines
+static int count_display_lines(const char *buffer, size_t len) {
+	if (!buffer || len == 0) {
+		return 0;
+	}
+	int lines = 0;
+	int line_chars = 0;
+	for (size_t i = 0; i < len; i++) {
+		if (buffer[i] == '\n') {
+			lines++;
+			line_chars = 0;
+		} else {
+			line_chars++;
+			// Count extra line for every 80 characters in a single line
+			if (line_chars > 0 && line_chars % 80 == 0) {
+				lines++;
+			}
+		}
+	}
+	// Add one more line if buffer doesn't end with newline
+	if (line_chars > 0) {
+		lines++;
+	}
+	return lines;
+}
 
 #define MOAR (4096 * 8)
 
@@ -859,26 +883,11 @@ R_API void r_cons_flush(RCons *cons) {
 			r_sys_cmd_str_full (cons->pager, ctx->buffer, -1, NULL, NULL, NULL);
 			r_cons_reset (cons);
 		} else if (cons->maxpage > 0 && ctx->buffer_len > cons->maxpage) {
-#if COUNT_LINES
-			char *buffer = ctx->buffer;
-			int i, lines = 0;
-			for (i = 0; buffer[i]; i++) {
-				if (buffer[i] == '\n') {
-					lines ++;
-				}
-			}
+			int lines = count_display_lines (ctx->buffer, ctx->buffer_len);
 			if (lines > 0 && !r_cons_yesno (cons, 'n',"Do you want to print %d lines? (y/N)", lines)) {
 				r_cons_reset (cons);
 				return;
 			}
-#else
-			char buf[8];
-			r_num_units (buf, sizeof (buf), ctx->buffer_len);
-			if (!r_cons_yesno (cons, 'n', "Do you want to print %s chars? (y/N)", buf)) {
-				r_cons_reset (cons);
-				return;
-			}
-#endif
 			// fix | more | less problem
 			r_cons_set_raw (cons, true);
 		}
