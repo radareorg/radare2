@@ -21,8 +21,12 @@ static bool encode(RArchSession *a, RAnalOp *op, RArchEncodeMask mask) {
 	}
 
 	const char *buf = op->mnemonic;
+	// Strip size specifiers that NASM doesn't support (xmmword, ymmword, zmmword)
+	char *clean_buf = r_str_replace (r_str_replace (r_str_replace (
+		strdup (buf), "xmmword ", "", 1), "ymmword ", "", 1), "zmmword ", "", 1);
 	char *asm_buf = r_str_newf ("[BITS %i]\nORG 0x%"PFMT64x"\n%s\n",
-		a->config->bits, op->addr, buf);
+		a->config->bits, op->addr, clean_buf);
+	free (clean_buf);
 	if (asm_buf) {
 		int slen = strlen (asm_buf);
 		int wlen = write (ifd, asm_buf, slen);
