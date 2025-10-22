@@ -66,6 +66,7 @@ static bool is_intel(const ELFOBJ *eo) {
 	switch (eo->ehdr.e_machine) {
 	case EM_386:
 	case EM_X86_64:
+	case EM_IAMCU:
 		return true;
 	}
 	return false;
@@ -227,7 +228,7 @@ static bool read_phdr(ELFOBJ *eo) {
 	const size_t _128K = 1024 * 128;
 	// Enable this hack only for the X86 64bit ELFs
 	const bool linux_kern_hack = r_buf_size (eo->b) > _128K &&
-		(eo->ehdr.e_machine == EM_X86_64 || eo->ehdr.e_machine == EM_386);
+		(eo->ehdr.e_machine == EM_X86_64 || eo->ehdr.e_machine == EM_386 || eo->ehdr.e_machine == EM_IAMCU);
 	if (linux_kern_hack) {
 		bool load_header_found = false;
 
@@ -1973,6 +1974,7 @@ static ut64 get_import_addr(ELFOBJ *eo, int sym) {
 		return get_import_addr_ppc (eo, rel);
 	case EM_386:
 	case EM_X86_64:
+	case EM_IAMCU:
 		return get_import_addr_x86 (eo, rel);
 	case EM_LOONGARCH:
 		return get_import_addr_loongarch (eo, rel);
@@ -2500,6 +2502,7 @@ char* Elf_(get_arch)(ELFOBJ *eo) {
 		return strdup ("nds32");
 	case EM_386:
 	case EM_X86_64:
+	case EM_IAMCU:
 		return strdup ("x86");
 	case EM_NONE:
 		return strdup ("null");
@@ -2639,6 +2642,7 @@ char* Elf_(get_machine_name)(ELFOBJ *eo) {
 	case EM_386:           return strdup ("Intel 80386");
 	case EM_68K:           return strdup ("Motorola m68k family");
 	case EM_88K:           return strdup ("Motorola m88k family");
+	case EM_IAMCU:         return strdup ("Intel 80486");
 	case EM_860:           return strdup ("Intel 80860");
 	case EM_MIPS:          return strdup ("MIPS R3000");
 	case EM_S370:          return strdup ("IBM System/370");
@@ -3048,6 +3052,7 @@ ut8 *Elf_(grab_regstate)(ELFOBJ *eo, int *len) {
 			regdelta = reginf[ARM].regdelta;
 			break;
 		case EM_386:
+		case EM_IAMCU:
 			regsize = reginf[X86].regsize;
 			regdelta = reginf[X86].regdelta;
 			break;
