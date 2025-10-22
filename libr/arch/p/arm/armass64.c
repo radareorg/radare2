@@ -891,6 +891,22 @@ static ut32 math(ArmOp *op, ut32 data, bool is64) {
 	return data | encode3regs (op);
 }
 
+/* For MADD/MSUB: 4-register encoding (Rd, Rn, Rm, Ra) */
+static ut32 math4(ArmOp *op, ut32 data) {
+	check_cond (op->operands_count == 4);
+	check_cond (op->operands[0].type == ARM_GPR);
+	check_cond (op->operands[1].type == ARM_GPR);
+	check_cond (op->operands[2].type == ARM_GPR);
+	check_cond (op->operands[3].type == ARM_GPR);
+	
+	ut32 Rd = op->operands[0].reg & 0x1f;
+	ut32 Rn = op->operands[1].reg & 0x1f;
+	ut32 Rm = op->operands[2].reg & 0x1f;
+	ut32 Ra = op->operands[3].reg & 0x1f;
+	
+	return data | Rd | (Rn << 5) | (Ra << 10) | (Rm << 16);
+}
+
 static ut32 cmp(ArmOp *op) {
 	ut32 data = UT32_MAX;
 	int k = 0;
@@ -2194,10 +2210,11 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 	} else if (r_str_startswith (str, "sub") && !r_str_startswith (str, "subg") && !r_str_startswith (str, "subp")) { // w, skip this for mte versions of sub, e.g. subg, subp ins
 		*op = arithmetic (&ops, 0xd1);
 	} else if (r_str_startswith (str, "msub x")) {
-		/* msub: multiply-subtract (Rd = Rn * Rm - Ra) */
-		*op = math (&ops, 0x1b008000, true);
+		/* msub: multiply-subtract (Rd = Rn - Rm * Ra) */
+		*op = math4 (&ops, 0x9b008000);
 	} else if (r_str_startswith (str, "madd x")) {
-		*op = math (&ops, 0x9b, true);
+		/* madd: multiply-add (Rd = Ra + Rn * Rm) */
+		*op = math4 (&ops, 0x9b000000);
 	} else if (r_str_startswith (str, "add x")) {
 		// } else if (r_str_startswith (str, "add")) {
 		// *op = math (&ops, 0x8b, has64reg (str));
