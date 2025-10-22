@@ -9562,6 +9562,9 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 	r_anal_op_set_bytes (&analop, core->addr, buf, sizeof (ut64));
 	(void)r_anal_op (core->anal, &analop, core->addr, buf, sizeof (buf), R_ARCH_OP_MASK_DISASM);
 	int last = R_MIN (sizeof (buf), analop.size);
+	if (analop.size > sizeof (buf)) {
+		R_LOG_WARN ("Instruction size (%d bytes) exceeds buffer limit (%zu bytes), truncating", analop.size, sizeof (buf));
+	}
 	PJ *pj = (mode == 'j')? r_core_pj_new (core): NULL;
 	if (last < 1) {
 		return;
