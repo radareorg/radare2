@@ -417,6 +417,13 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 			}
 		} else {
 			ret = -1;
+			// Check for command suggestion in SDB
+			if (core && core->sdb) {
+				const char *suggestion = sdb_const_get (core->sdb, input, NULL);
+				if (suggestion) {
+					R_LOG_INFO ("%s", suggestion);
+				}
+			}
 		}
 		free (nstr);
 	}

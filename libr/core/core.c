@@ -1778,6 +1778,25 @@ static void update_sdb(RCore *core) {
 	}
 }
 
+static void init_cmd_suggestions(RCore *core) {
+	if (!core || !core->sdb) {
+		return;
+	}
+	// Fallback commands with ?e (safe echo) for missing plugin commands
+	// Using fallbackcmd.* prefix to distinguish from regular SDB entries
+	sdb_set (core->sdb, "fallbackcmd.pdd", "?e You need to install the plugin with r2pm -ci r2dec", 0);
+	sdb_set (core->sdb, "fallbackcmd.pdg", "?e You need to install the plugin with r2pm -ci r2ghidra", 0);
+	sdb_set (core->sdb, "fallbackcmd.pdz", "?e You need to install the plugin with r2pm -ci r2retdec", 0);
+	sdb_set (core->sdb, "fallbackcmd.pdv", "?e You need to install the plugin with r2pm -ci east", 0);
+	
+	// Suggestions for common user-facing command names (redirect to actual commands)
+	sdb_set (core->sdb, "fallbackcmd.r2dec", "?e You are probably looking for the pdd command", 0);
+	sdb_set (core->sdb, "fallbackcmd.r2ghidra", "?e You are probably looking for the pdg command", 0);
+	
+	// Users can add custom fallback commands at runtime using:
+	// k fallbackcmd.mycommand=?e Use 'othercommand' instead
+}
+
 #define MINLEN 1
 static int is_string(const ut8 *buf, int size, int *len) {
 	int i;
@@ -2782,6 +2801,7 @@ R_API bool r_core_init(RCore *core) {
 	r_config_set (core->config, "asm.arch", R_SYS_ARCH);
 	r_bp_use (core->dbg->bp, R_SYS_ARCH, core->anal->config->bits);
 	update_sdb (core);
+	init_cmd_suggestions (core);
 	{
 		char *a = r_str_r2_prefix (R2_FLAGS);
 		if (a) {
