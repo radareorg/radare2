@@ -683,7 +683,7 @@ EXPECT=<<EOF
 |           0x00010420      00482de9       push {fp, lr}
 |           0x00010424      04b08de2       add fp, sp, 4
 |           0x00010428      08d04de2       sub sp, sp, 8
-|           0x0001042c      08000be5       str r0, [var_8h]            ; 8 ; arg1
+|           0x0001042c      08000be5       str r0, [var_8h]            ; 8
 |           0x00010430      14009fe5       ldr r0, [0x0001044c]        ; [0x1044c:4]=0x104f0 "%d"
 |           0x00010434      08101be5       ldr r1, [var_8h]            ; 8
 |           0x00010438      a2ffffeb       bl sym.imp.printf
@@ -697,7 +697,7 @@ EXPECT=<<EOF
 |           0x00010420      00482de9       push {fp, lr}
 |           0x00010424      04b08de2       add fp, sp, 4
 |           0x00010428      08d04de2       sub sp, sp, 8
-|           0x0001042c      08000be5       str r0, [var_8h]            ; 8 ; arg1
+|           0x0001042c      08000be5       str r0, [var_8h]            ; 8
 |           0x00010430      14009fe5       ldr r0, [0x0001044c]        ; [0x1044c:4]=0x104f0 "%d"
 |           0x00010434      08101be5       ldr r1, [var_8h]            ; 8
 |           0x00010438      a2ffffeb       bl sym.imp.printf
@@ -1211,7 +1211,7 @@ EXPECT=<<EOF
 |           0x000083c0      04109de4       pop {r1}
 |           0x000083c4      0d20a0e1       mov r2, sp
 |           0x000083c8      04202de5       str r2, [sp, -4]!
-|           0x000083cc      04002de5       str r0, [sp, -4]!           ; arg1
+|           0x000083cc      04002de5       str r0, [sp, -4]!
 |           0x000083d0      10c09fe5       ldr ip, fcn.00008664        ; [0x83e8:4]=0x8664 fcn.00008664
 |           0x000083d4      04c02de5       str ip, [sp, -4]!
 |           0x000083d8      0c009fe5       ldr r0, main                ; [0x83ec:4]=0x8470 main

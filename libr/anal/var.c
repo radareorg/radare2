@@ -1361,12 +1361,14 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 				}
 				continue;
 			}
-			if (is_reg_in_src (regname, anal, op) || STR_EQUAL (regname, opdreg)) {
+			if (is_reg_in_src (regname, anal, op)) {
 				reg_set[i] = 1;
 			}
 			if (var) {
 				r_anal_var_set_access (anal, var, var->regname, op->addr, R_PERM_R, 0);
-				r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, var->name);
+				if (is_reg_in_src (regname, anal, op)) {
+					r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, var->name);
+				}
 			}
 		}
 	}
@@ -1386,7 +1388,9 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			if (newvar) {
 				r_anal_var_set_access (anal, newvar, newvar->regname, op->addr, R_PERM_R, 0);
 			}
-			r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, vname);
+			if (is_reg_in_src (selfreg, anal, op)) {
+				r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, vname);
+			}
 			free (vname);
 			(*count)++;
 		} else {

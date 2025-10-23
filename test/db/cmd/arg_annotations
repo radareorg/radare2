@@ -1,0 +1,33 @@
+NAME=Register argument annotations show on sources not destinations (AT&T)
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.syntax=att
+wx 4889fa89f1
+aaa
+e asm.comments=true
+pd 2~mov
+EOF
+EXPECT=<<EOF
+|           0x00000000      4889fa         movq %rdi, %rdx             ; arg3
+|           0x00000003      89f1           movl %esi, %ecx             ; arg4
+EOF
+RUN
+
+NAME=Register argument annotations show on sources not destinations (Intel)
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.syntax=intel
+wx 4889fa89f1
+aaa
+e asm.comments=true
+pd 2~mov
+EOF
+EXPECT=<<EOF
+|           0x00000000      4889fa         mov rdx, rdi                ; arg1
+|           0x00000003      89f1           mov ecx, esi                ; arg2
+EOF
+RUN
