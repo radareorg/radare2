@@ -50,12 +50,17 @@ static RCoreHelpMessage help_msg_ic = {
 };
 
 static RCoreHelpMessage help_msg_iz = {
-	"Usage: iz", "[][jq*]", "List strings",
+	"Usage: iz", "[auwW:charset][zjq*]", "List strings with optional type/charset filter",
 	"iz", "", "strings in data sections (in JSON/Base64)",
+	"iza", "", "show only ascii strings",
+	"izu", "", "show only utf8/unicode strings",
+	"izw", "", "show only wide (utf16) strings",
+	"izW", "", "show only wide32 (utf32) strings",
+	"iz:", "charset", "show only strings with specific charset (ascii, utf8, wide, wide32, base64)",
 	"iz,", "[:help]", "perform a table query on strings listing",
 	"iz-", " [addr]", "purge string via bin.str.purge",
 	"iz*", "", "print flags and comments r2 commands for all the strings",
-	"izz", "", "search for Strings in the whole binary",
+	"izz", "[auwW:charset]", "search for Strings in the whole binary (with optional type filter)",
 	"izz*", "", "same as iz* but exposing the strings of the whole binary",
 	"izzz", "", "dump Strings from whole binary to r2 shell (for huge files)",
 	NULL
@@ -1386,8 +1391,42 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 	}
 }
 
+// Helper to parse string type filter from command argument
+static int parse_str_type_filter(const char ch, const char *name) {
+	if (ch) {
+		switch (ch) {
+		case 'a': return R_STRING_TYPE_ASCII;
+		case 'u': return R_STRING_TYPE_UTF8;
+		case 'w': return R_STRING_TYPE_WIDE;
+		case 'W': return R_STRING_TYPE_WIDE32;
+		case 'b': return R_STRING_TYPE_BASE64;
+		}
+	}
+	if (name) {
+		if (!strcmp (name, "ascii")) {
+			return R_STRING_TYPE_ASCII;
+		}
+		if (!strcmp (name, "utf8") || !strcmp (name, "unicode")) {
+			return R_STRING_TYPE_UTF8;
+		}
+		if (!strcmp (name, "wide") || !strcmp (name, "utf16")) {
+			return R_STRING_TYPE_WIDE;
+		}
+		if (!strcmp (name, "wide32") || !strcmp (name, "utf32")) {
+			return R_STRING_TYPE_WIDE32;
+		}
+		if (!strcmp (name, "base64")) {
+			return R_STRING_TYPE_BASE64;
+		}
+	}
+	return 0; // no filter
+}
+
 static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const char *input) {
 	bool rdump = false;
+	int str_type_filter = 0;
+	RCoreBinFilter filter = {0};
+	
 	if (input[1] == '-') { // "iz-"
 		char *strpurge = core->bin->strpurge;
 		ut64 addr = core->addr;
@@ -1408,6 +1447,20 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 				addr);
 		core->tmpseek = old_tmpseek;
 	} else if (input[1] == 'z') { // "izz"
+		// Check for type filter after izz
+		if (input[2] == 'a' || input[2] == 'u' || input[2] == 'w' || input[2] == 'W' || input[2] == 'b') {
+			str_type_filter = parse_str_type_filter (input[2], NULL);
+			input++;
+		} else if (input[2] == ':') { // "izz:charset"
+			const char *charset = input + 3;
+			str_type_filter = parse_str_type_filter (0, charset);
+			// Skip to end or next modifier
+			while (*input && *input != '*' && *input != 'j' && *input != 'q') {
+				input++;
+			}
+			input--; // Will be incremented in switch
+		}
+		
 		switch (input[2]) {
 		case 'z':// "izzz"
 			rdump = true;
@@ -1440,11 +1493,27 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 				r_list_free (res);
 			}
 		} else {
-			RBININFO ("strings", R_CORE_BIN_ACC_RAW_STRINGS, NULL, 0);
+			filter.str_type = str_type_filter;
+			r_core_bin_info (core, R_CORE_BIN_ACC_RAW_STRINGS, pj, mode, va, &filter, NULL);
 		}
 	} else {
 		// "iz"
 		bool validcmd = true;
+		
+		// Check for type filter after iz
+		if (input[1] == 'a' || input[1] == 'u' || input[1] == 'w' || input[1] == 'W' || input[1] == 'b') {
+			str_type_filter = parse_str_type_filter (input[1], NULL);
+			input++;
+		} else if (input[1] == ':') { // "iz:charset"
+			const char *charset = input + 2;
+			str_type_filter = parse_str_type_filter (0, charset);
+			// Skip to end or next modifier
+			while (*input && *input != ',' && *input != '*' && *input != 'j' && *input != 'q' && *input != ' ') {
+				input++;
+			}
+			input--; // Will be incremented below
+		}
+		
 		switch (input[1]) {
 		case ',': // "iz,"
 			R_FREE (core->table_query);
@@ -1466,7 +1535,10 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 			input++;
 			break;
 		default:
-			// invalid subcommand handler?
+			// Could be end of filter, check if valid
+			if (str_type_filter) {
+				validcmd = true;
+			}
 			break;
 		}
 		if (validcmd) {
@@ -1474,11 +1546,11 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 			RListIter *iter;
 			RBinFile *bf;
 			RBinFile *cur = core->bin->cur;
+			filter.str_type = str_type_filter;
 			r_list_foreach (bfiles, iter, bf) {
 				core->bin->cur = bf;
 				RBinObject *bo = r_bin_cur_object (core->bin);
-				RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL,
-						(bo && bo->strings)? r_list_length (bo->strings): 0);
+				r_core_bin_info (core, R_CORE_BIN_ACC_STRINGS, pj, mode, va, &filter, NULL);
 			}
 			core->bin->cur = cur;
 			r_list_free (bfiles);

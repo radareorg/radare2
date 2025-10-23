@@ -864,6 +864,7 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly);
 typedef struct r_core_bin_filter_t {
 	ut64 addr;
 	const char *name;
+	int str_type; // filter strings by type (0 = no filter, 'a' = ascii, 'u' = utf8, 'w' = wide, 'W' = wide32, 'b' = base64)
 } RCoreBinFilter;
 
 R_API bool r_core_bin_info(RCore *core, int action, PJ *pj, int mode, int va, RCoreBinFilter *filter, const char *chksum);

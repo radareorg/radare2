@@ -342,7 +342,7 @@ R_API bool r_core_bin_set_cur(RCore *core, RBinFile *binfile) {
 	return true;
 }
 
-static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va) {
+static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va, int str_type_filter) {
 	RTable *table = r_core_table_new (core, "strings");
 	if (!table) {
 		return;
@@ -374,6 +374,10 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va) {
 		const char *section_name, *type_string;
 		ut64 paddr = string->paddr;
 		ut64 vaddr = rva (core->bin, paddr, string->vaddr, va);
+		// Apply string type filter if specified
+		if (str_type_filter != 0 && string->type != str_type_filter) {
+			continue;
+		}
 		if (!r_bin_string_filter (bin, string->string, vaddr)) {
 			continue;
 		}
@@ -572,7 +576,7 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va) {
 	R_CRITICAL_LEAVE (core);
 }
 
-static bool bin_raw_strings(RCore *core, PJ *pj, int mode, int va) {
+static bool bin_raw_strings(RCore *core, PJ *pj, int mode, int va, int str_type_filter) {
 	RBinFile *bf = r_bin_cur (core->bin);
 	bool new_bf = false;
 	if (bf && strstr (bf->file, "malloc://")) {
@@ -613,7 +617,7 @@ static bool bin_raw_strings(RCore *core, PJ *pj, int mode, int va) {
 		va = false;
 	}
 	RList *l = r_bin_raw_strings (bf, 0);
-	_print_strings (core, l, pj, mode, va);
+	_print_strings (core, l, pj, mode, va, str_type_filter);
 	r_list_free (l);
 	if (new_bf) {
 		r_buf_free (bf->buf);
@@ -624,7 +628,7 @@ static bool bin_raw_strings(RCore *core, PJ *pj, int mode, int va) {
 	return true;
 }
 
-static bool bin_strings(RCore *core, PJ *pj, int mode, int va) {
+static bool bin_strings(RCore *core, PJ *pj, int mode, int va, int str_type_filter) {
 	RBinFile *binfile = r_bin_cur (core->bin);
 	RBinPlugin *plugin = r_bin_file_cur_plugin (binfile);
 	int rawstr = r_config_get_i (core->config, "bin.str.raw");
@@ -646,7 +650,7 @@ static bool bin_strings(RCore *core, PJ *pj, int mode, int va) {
 	}
 	RList *list = r_bin_get_strings (core->bin);
 	if (list) {
-		_print_strings (core, list, pj, mode, va);
+		_print_strings (core, list, pj, mode, va, str_type_filter);
 		return true;
 	}
 	return false;
@@ -5045,6 +5049,7 @@ static bool bin_signature(RCore *core, PJ *pj, int mode) {
 R_API bool r_core_bin_info(RCore *core, int action, PJ *pj, int mode, int va, RCoreBinFilter *filter, const char *chksum) {
 	R_RETURN_VAL_IF_FAIL (core, false);
 	const char *name = (filter && filter->name)? filter->name : NULL;
+	int str_type_filter = (filter && filter->str_type)? filter->str_type : 0;
 	bool ret = true;
 	ut64 at = UT64_MAX, loadaddr = r_bin_get_laddr (core->bin);
 	if (filter && filter->addr) {
@@ -5053,9 +5058,9 @@ R_API bool r_core_bin_info(RCore *core, int action, PJ *pj, int mode, int va, RC
 	// use our internal values for va
 	va = va ? VA_TRUE : VA_FALSE;
 	if ((action & R_CORE_BIN_ACC_RAW_STRINGS)) {
-		ret &= bin_raw_strings (core, pj, mode, va);
+		ret &= bin_raw_strings (core, pj, mode, va, str_type_filter);
 	} else if ((action & R_CORE_BIN_ACC_STRINGS)) {
-		ret &= bin_strings (core, pj, mode, va);
+		ret &= bin_strings (core, pj, mode, va, str_type_filter);
 	}
 	if ((action & R_CORE_BIN_ACC_INFO)) {
 		ret &= bin_info (core, pj, mode, loadaddr);
