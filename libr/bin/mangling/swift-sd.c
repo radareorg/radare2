@@ -190,11 +190,11 @@ static char *swift_demangle_lib(const char *s) {
 		if (!lib) {
 			lib = r_lib_dl_open ("/usr/lib/libswiftCore." R_LIB_EXT, false);
 			if (!lib) {
-				lib = r_lib_dl_open ("libswiftCore", false);
+				lib = r_lib_dl_open ("libswiftCore." R_LIB_EXT, false);
 				if (!lib) {
 					lib = r_lib_dl_open ("/usr/lib/swift/libswiftDemangle." R_LIB_EXT, false);
 					if (!lib) {
-						lib = r_lib_dl_open ("libswiftDemangle", false);
+						lib = r_lib_dl_open ("libswiftDemangle." R_LIB_EXT, false);
 					}
 				}
 			}
