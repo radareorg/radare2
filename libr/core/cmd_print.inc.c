@@ -9147,6 +9147,10 @@ static int cmd_print(void *data, const char *input) {
 					break;
 				}
 			} else {
+				if (!rad && input[1] && input[1] != ' ') {
+					r_core_return_invalid_command (core, "p8", input[1]);
+					break;
+				}
 				r_core_block_read (core);
 				block = core->block;
 				if (rad) {
