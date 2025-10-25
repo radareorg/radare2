@@ -1050,21 +1050,12 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 			} else { /* Instruction */
 				char *str = ptr_start;
 				r_str_trim (str);
-				if (acode->equs) {
-					if (!*ptr_start) {
-						continue;
-					}
-					str = r_asm_code_equ_replace (acode, strdup (ptr_start));
-					ret = r_asm_assemble (a, &op, str);
-					free (str);
-				} else {
-					if (!*ptr_start) {
-						continue;
-					}
-					char *arg = strdup (ptr_start);
-					ret = r_asm_assemble (a, &op, arg);
-					free (arg);
+				if (!*ptr_start) {
+					continue;
 				}
+				str = r_asm_code_equ_replace (acode, ptr_start);
+				ret = r_asm_assemble (a, &op, str);
+				free (str);
 			}
 			if (stage == STAGES - 1) {
 				if (ret < 1) {
