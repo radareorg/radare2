@@ -48,11 +48,10 @@ RUN
 
 NAME=thumb sym
 FILE=bins/elf/analysis/thumb
-BROKEN=1
 CMDS=is~main
 EXPECT=<<EOF
-107 0x00000424 0x00008424 GLOBAL   FUNC   16 main
-001 0x000002bc 0x000082bc GLOBAL   FUNC   16 imp.__libc_start_main
+107 0x00000424 0x00008424 GLOBAL FUNC   16       main
+1   0x000002bc 0x000082bc GLOBAL FUNC   16       imp.__libc_start_main
 EOF
 RUN
 
@@ -118,7 +117,7 @@ EXPECT=<<EOF
 push {r7, lr}
 add r7, sp, 0
 push {r7, lr}
-add r7, var_0h
+add r7, sp, 0
 EOF
 RUN
 

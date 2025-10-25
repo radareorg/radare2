@@ -504,7 +504,7 @@ afvW
 |           ; var int16_t var_4h @ sp+0xc
 |           0x00000000      80b4           push {r7}
 |           0x00000002      83b0           sub sp, 0xc
-|           0x00000004      00af           add r7, var_10h
+|           0x00000004      00af           add r7, sp, 0
 |           0x00000006      7860           str r0, [r7, 4]
 |           0x00000008      0b46           mov r3, r1
 |           0x0000000a      7b80           strh r3, [r7, 2]
@@ -584,7 +584,7 @@ EXPECT=<<EOF
 |           ; var int16_t var_90h @ sp+0x90
 |           0x00000000      2de9f04f       push.w {r4, r5, r6, r7, r8, sb, sl, fp, lr}
 ...
-|           0x0000002a      0df5d260       add.w r0, config
+|           0x0000002a      0df5d260       add.w r0, sp, 0x690
 EOF
 RUN
 
