@@ -3,7 +3,9 @@
 #include <r_asm.h>
 
 R_API RAsmCode *r_asm_code_new(void) {
-	return R_NEW0 (RAsmCode);
+	RAsmCode *ac = R_NEW0 (RAsmCode);
+	ac->equs = ht_pp_new0 ();
+	return ac;
 }
 
 R_API void r_asm_code_free(RAsmCode *acode) {
@@ -17,9 +19,6 @@ R_API void r_asm_code_free(RAsmCode *acode) {
 
 R_API void r_asm_code_set_equ(RAsmCode *code, const char *key, const char *value) {
 	R_RETURN_IF_FAIL (code && key && value);
-	if (!code->equs) {
-		code->equs = ht_pp_new0 ();
-	}
 	ht_pp_insert (code->equs, key, strdup (value));
 }
 
@@ -36,16 +35,12 @@ static bool replace_cb(void *user, const void *key, const void *value) {
 
 R_API char *r_asm_code_equ_replace(RAsmCode *code, const char *_str) {
 	R_RETURN_VAL_IF_FAIL (code && _str, NULL);
-	char *str = strdup (_str);
 	UserData data = {
 		.code = code,
-		.str = str
+		.str = strdup (_str)
 	};
-	if (code->equs) {
-		ht_pp_foreach (code->equs, replace_cb, &data);
-		str = data.str;
-	}
-	return str;
+	ht_pp_foreach (code->equs, replace_cb, &data);
+	return data.str;
 }
 
 R_API char* r_asm_code_get_hex(RAsmCode *acode) {
