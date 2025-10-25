@@ -1,0 +1,43 @@
+; ARM/Thumb Linux execve /bin/sh shellcode
+; Assembly equivalent of libr/egg/p/sc/src/thumb-linux-binsh.c
+;
+; Starts in ARM mode, switches to Thumb, then calls execve
+; Note: rasm2 doesn't support mixed ARM/Thumb in single file,
+; so this file documents the assembly but uses .byte for exact encoding
+
+; ARM mode - switch to Thumb
+.byte 0x01  ; add r3, pc, 1
+.byte 0x30
+.byte 0x8f
+.byte 0xe2
+.byte 0x13  ; bx r3 (switches to Thumb mode)
+.byte 0xff
+.byte 0x2f
+.byte 0xe1
+
+; Thumb mode instructions
+.byte 0x78  ; mov r0, pc
+.byte 0x46
+.byte 0x0c  ; adds r0, 0xc
+.byte 0x30
+.byte 0xc0  ; mov r8, r8 (nop)
+.byte 0x46
+.byte 0x01  ; str r0, [sp, 4]
+.byte 0x90
+.byte 0x49  ; subs r1, r1, r1
+.byte 0x1a
+.byte 0x92  ; subs r2, r2, r2
+.byte 0x1a
+.byte 0x0b  ; movs r7, 0xb
+.byte 0x27
+.byte 0x01  ; svc 1
+.byte 0xdf
+
+; "/bin/sh" string
+.byte 0x2f
+.byte 0x62
+.byte 0x69
+.byte 0x6e
+.byte 0x2f
+.byte 0x73
+.byte 0x68
