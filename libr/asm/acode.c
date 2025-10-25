@@ -41,8 +41,10 @@ R_API char *r_asm_code_equ_replace(RAsmCode *code, const char *_str) {
 		.code = code,
 		.str = str
 	};
-	ht_pp_foreach (code->equs, replace_cb, &data);
-	str = data.str;
+	if (code->equs) {
+		ht_pp_foreach (code->equs, replace_cb, &data);
+		str = data.str;
+	}
 	return str;
 }
 
