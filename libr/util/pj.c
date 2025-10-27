@@ -99,17 +99,20 @@ R_API PJ *pj_a(PJ *j) {
 R_API PJ *pj_end(PJ *j) {
 	R_RETURN_VAL_IF_FAIL (j, j);
 	if (j->level < 1) {
+		j->is_key = false;
 		return j;
 	}
 	if (--j->level < 1) {
 		char msg[2] = { j->braces[j->level], 0 };
 		pj_raw (j, msg);
 		j->level = 0;
+		j->is_key = false;
 		return j;
 	}
 	j->is_first = false;
 	char msg[2] = { j->braces[j->level], 0 };
 	pj_raw (j, msg);
+	j->is_key = false;
 	return j;
 }
 
