@@ -1549,7 +1549,6 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 			filter.str_type = str_type_filter;
 			r_list_foreach (bfiles, iter, bf) {
 				core->bin->cur = bf;
-				RBinObject *bo = r_bin_cur_object (core->bin);
 				r_core_bin_info (core, R_CORE_BIN_ACC_STRINGS, pj, mode, va, &filter, NULL);
 			}
 			core->bin->cur = cur;
