@@ -28,8 +28,22 @@ R_API bool r_asm_plugin_add(RAsm *a, RAsmPlugin *foo) {
 }
 
 R_API bool r_asm_plugin_remove(RAsm *a, RAsmPlugin *plugin) {
-	// TODO implement
-	return true;
+	R_RETURN_VAL_IF_FAIL (a && plugin, false);
+	RListIter *iter;
+	RAsmPluginSession *aps;
+	r_list_foreach (a->sessions, iter, aps) {
+		if (aps->plugin == plugin) {
+			if (aps == a->cur) {
+				a->cur = NULL;
+			}
+			if (aps->plugin->fini) {
+				aps->plugin->fini (aps);
+			}
+			r_list_delete (a->sessions, iter);
+			return true;
+		}
+	}
+	return false;
 }
 
 /* pseudo.c - private api */
