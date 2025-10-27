@@ -5,6 +5,9 @@
 extern "C" {
 #endif
 
+#include <stdarg.h>
+#include <r_types.h>
+
 typedef struct {
 	char buf[32];
 	size_t len; // string length in chars or binary buffer size

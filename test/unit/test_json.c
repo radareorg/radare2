@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2020 - thestr4ng3r, Yaroslav Stavnichiy */
 /* r_json based on nxjson by Yaroslav Stavnichiy */
 
+#include <r_util/pj.h>
 #include <r_util/r_json.h>
 #include <r_util/r_strbuf.h>
 #include "minunit.h"
@@ -976,6 +977,106 @@ static int check_expected_48(RJson *j) {
 	return MU_PASSED;
 }
 
+static int test_pj_param_raw(void) {
+	PJ *pj = pj_new ();
+	mu_assert_notnull (pj, "pj_new");
+
+	pj_a (pj);
+	pj_o (pj);
+	pj_ks (pj, "key1", "value1");
+	pj_ko (pj, "fu");
+	pj_ks (pj, "key2", "value2");
+	pj_k (pj, "param");
+	pj_raw (pj, "{}");
+	pj_end (pj);
+	pj_end (pj);
+	pj_o (pj);
+	pj_ks (pj, "key3", "value3");
+	pj_k (pj, "key4");
+	pj_raw (pj, "123");
+	pj_end (pj);
+	pj_end (pj);
+
+	const char *json = pj_string (pj);
+	mu_assert_notnull (json, "pj_string");
+	char *copy = strdup (json);
+	mu_assert_notnull (copy, "json copy");
+	pj_free (pj);
+
+	RJson *parsed = r_json_parse (copy);
+	mu_assert_notnull (parsed, "parse failed");
+	mu_assert_eq (parsed->type, R_JSON_ARRAY, "root type");
+	mu_assert_eq (parsed->children.count, 2, "root size");
+
+	RJson *first = parsed->children.first;
+	mu_assert_notnull (first, "first element");
+	mu_assert_null (first->key, "first element key");
+	mu_assert_eq (first->type, R_JSON_OBJECT, "first element type");
+	mu_assert_eq (first->children.count, 2, "first element size");
+
+	RJson *entry = first->children.first;
+	mu_assert_notnull (entry, "key1 entry");
+	mu_assert_notnull (entry->key, "key1 name");
+	mu_assert_streq (entry->key, "key1", "key1 name");
+	mu_assert_eq (entry->type, R_JSON_STRING, "key1 type");
+	mu_assert_streq (entry->str_value, "value1", "key1 value");
+
+	entry = entry->next;
+	mu_assert_notnull (entry, "fu entry");
+	mu_assert_notnull (entry->key, "fu name");
+	mu_assert_streq (entry->key, "fu", "fu name");
+	mu_assert_eq (entry->type, R_JSON_OBJECT, "fu type");
+	mu_assert_eq (entry->children.count, 2, "fu size");
+
+	RJson *fu_child = entry->children.first;
+	mu_assert_notnull (fu_child, "key2 entry");
+	mu_assert_notnull (fu_child->key, "key2 name");
+	mu_assert_streq (fu_child->key, "key2", "key2 name");
+	mu_assert_eq (fu_child->type, R_JSON_STRING, "key2 type");
+	mu_assert_streq (fu_child->str_value, "value2", "key2 value");
+
+	fu_child = fu_child->next;
+	mu_assert_notnull (fu_child, "param entry");
+	mu_assert_notnull (fu_child->key, "param name");
+	mu_assert_streq (fu_child->key, "param", "param name");
+	mu_assert_eq (fu_child->type, R_JSON_OBJECT, "param type");
+	mu_assert_eq (fu_child->children.count, 0, "param size");
+	mu_assert_null (fu_child->children.first, "param children");
+
+	fu_child = fu_child->next;
+	mu_assert_null (fu_child, "fu tail");
+
+	RJson *second = first->next;
+	mu_assert_notnull (second, "second element");
+	mu_assert_null (second->key, "second element key");
+	mu_assert_eq (second->type, R_JSON_OBJECT, "second element type");
+	mu_assert_eq (second->children.count, 2, "second element size");
+
+	RJson *second_entry = second->children.first;
+	mu_assert_notnull (second_entry, "key3 entry");
+	mu_assert_notnull (second_entry->key, "key3 name");
+	mu_assert_streq (second_entry->key, "key3", "key3 name");
+	mu_assert_eq (second_entry->type, R_JSON_STRING, "key3 type");
+	mu_assert_streq (second_entry->str_value, "value3", "key3 value");
+
+	second_entry = second_entry->next;
+	mu_assert_notnull (second_entry, "key4 entry");
+	mu_assert_notnull (second_entry->key, "key4 name");
+	mu_assert_streq (second_entry->key, "key4", "key4 name");
+	mu_assert_eq (second_entry->type, R_JSON_INTEGER, "key4 type");
+	mu_assert_eq (second_entry->num.u_value, 123, "key4 value");
+
+	second_entry = second_entry->next;
+	mu_assert_null (second_entry, "second tail");
+
+	second = second->next;
+	mu_assert_null (second, "array tail");
+
+	r_json_free (parsed);
+	free (copy);
+	mu_end;
+}
+
 JsonTest tests[] = {
 	{ // 0
 		"    {\n      \"some-int\": 195,\n      \"array1\": [ 3, 5.1, -7, \"nin"
@@ -1208,6 +1309,8 @@ static int test_json(int test_number, char *input, int(*check)(RJson *j)) {
 
 static int all_tests(void) {
 	size_t i;
+
+	mu_run_test_named (test_pj_param_raw, "test_pj_param_raw");
 	for (i = 1; i < sizeof (tests) / sizeof (tests[0]); i++) {
 		char *input = strdup (tests[i].json);
 		char testname[256];
