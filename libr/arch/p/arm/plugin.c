@@ -44,11 +44,11 @@ static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 				r_write_be32 (opbuf, opcode);
 			}
 		} else if (opsize == 2) {
-			r_write_ble16 (opbuf, opcode & UT16_MAX, !be);
+			r_write_ble16 (opbuf, opcode & UT16_MAX, be);
 		}
 	} else {
 		opsize = 4;
-		r_write_ble32 (opbuf, opcode, !be);
+		r_write_ble32 (opbuf, opcode, be);
 	}
 	r_anal_op_set_bytes (op, op->addr, opbuf, opsize);
 	// r_strbuf_setbin (&op->buf, opbuf, opsize);

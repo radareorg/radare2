@@ -865,17 +865,6 @@ static ut32 tb(ArmOp *op) {
 	} else {
 		return UT32_MAX;
 	}
-	if (reg64_imm) {
-		if (op->operands[1].immediate > 0x3f) {
-			R_LOG_ERROR ("Bit to be tested must be in range 0-63 for %s", op->mnemonic);
-			return UT32_MAX;
-		}
-	} else if (reg32_imm) {
-		if (op->operands[1].immediate > 0x1f) {
-			R_LOG_ERROR ("Bit to be tested must be in range 0-31 for %s", op->mnemonic);
-			return UT32_MAX;
-		}
-	}
 	ut64 dst = op->operands[2].immediate;
 	st64 delta = dst - op->addr;
 	ut64 maxis = R_ABS (delta);
@@ -900,6 +889,22 @@ static ut32 math(ArmOp *op, ut32 data, bool is64) {
 	check_cond (op->operands[1].type == ARM_GPR);
 	check_cond (op->operands[2].type == ARM_GPR);
 	return data | encode3regs (op);
+}
+
+/* For MADD/MSUB: 4-register encoding (Rd, Rn, Rm, Ra) */
+static ut32 math4(ArmOp *op, ut32 data) {
+	check_cond (op->operands_count == 4);
+	check_cond (op->operands[0].type == ARM_GPR);
+	check_cond (op->operands[1].type == ARM_GPR);
+	check_cond (op->operands[2].type == ARM_GPR);
+	check_cond (op->operands[3].type == ARM_GPR);
+	
+	ut32 Rd = op->operands[0].reg & 0x1f;
+	ut32 Rn = op->operands[1].reg & 0x1f;
+	ut32 Rm = op->operands[2].reg & 0x1f;
+	ut32 Ra = op->operands[3].reg & 0x1f;
+	
+	return data | Rd | (Rn << 5) | (Ra << 10) | (Rm << 16);
 }
 
 static ut32 cmp(ArmOp *op) {
@@ -2193,15 +2198,23 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 	} else if (r_str_startswith (str, "ldur")) {
 		*op = regsluop (&ops, 0x000040f8);
 	} else if (r_str_startswith (str, "str")) {
-		*op = reglsop (&ops, 0x000000f8);
+		*op = UT32_MAX;
+		*op = lsop (&ops, 0x000000f8, -1);
+		if (*op == UT32_MAX) {
+			*op = reglsop (&ops, 0x000000f8);
+		}
 	} else if (r_str_startswith (str, "stp")) {
 		*op = stp (&ops, 0x000000a9);
 	} else if (r_str_startswith (str, "ldp")) {
 		*op = stp (&ops, 0x000040a9);
 	} else if (r_str_startswith (str, "sub") && !r_str_startswith (str, "subg") && !r_str_startswith (str, "subp")) { // w, skip this for mte versions of sub, e.g. subg, subp ins
 		*op = arithmetic (&ops, 0xd1);
+	} else if (r_str_startswith (str, "msub x")) {
+		/* msub: multiply-subtract (Rd = Rn - Rm * Ra) */
+		*op = math4 (&ops, 0x9b008000);
 	} else if (r_str_startswith (str, "madd x")) {
-		*op = math (&ops, 0x9b, true);
+		/* madd: multiply-add (Rd = Ra + Rn * Rm) */
+		*op = math4 (&ops, 0x9b000000);
 	} else if (r_str_startswith (str, "add x")) {
 		// } else if (r_str_startswith (str, "add")) {
 		// *op = math (&ops, 0x8b, has64reg (str));
