@@ -247,6 +247,7 @@ static char *parse_value(RJson *parent, const char * R_NULLABLE key, char *p) {
 					R_LOG_ERROR ("trailing comma (%s)", commapos);
 					return NULL;
 				}
+				continue;
 			} else if (*p == '}') {
 				return p + 1; // end of object
 			}
@@ -276,6 +277,7 @@ static char *parse_value(RJson *parent, const char * R_NULLABLE key, char *p) {
 					R_LOG_ERROR ("trailing comma (%s)", commapos);
 					return NULL;
 				}
+				continue;
 			} else if (*p == ']') {
 				return p + 1; // end of array
 			} else {
