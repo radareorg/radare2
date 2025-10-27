@@ -1,15 +1,27 @@
 NAME=PE: corkami tls64.exe - open
 FILE=bins/pe/tls64.exe
 ARGS=-A
-CMDS=iee;q!
+CMDS=<<EOF
+iee
+EOF
 EXPECT=<<EOF
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00000200 0x00401000 0x00000378 ---------- tls
 EOF
 RUN
 
 NAME=PE: another tls64
 FILE=bins/pe/WindowsUI-App.exe
-ARGS=iee
-CMDS=q!
+CMDS=<<EOF
+iee
+f~entry
+EOF
 EXPECT=<<EOF
+paddr      vaddr       phaddr     vhaddr     type
+-------------------------------------------------
+0x00000400 0x140001000 0x00003698 ---------- tls
+0x140001000 1 entry1
+0x140001fc0 1 entry0
 EOF
 RUN
