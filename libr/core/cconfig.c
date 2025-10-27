@@ -577,6 +577,13 @@ static bool cb_asmpseudo(void *user, void *data) {
 	return true;
 }
 
+static bool cb_assembly_spp(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->rasm->use_spp = node->i_value;
+	return true;
+}
+
 static bool cb_asmsubsec(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -3970,6 +3977,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("asm.anal", "false", "analyze code and refs while disassembling (see anal.strings)");
 	SETI ("asm.symbol.col", 40, "columns width to show asm.section");
 	SETCB ("asm.assembler", "", &cb_asmassembler, "set the plugin name to use when assembling");
+	SETCB ("asm.spp", "false", &cb_assembly_spp, "use the Simple PreProcessor (SPP) while assembling");
 	RConfigNode *asmcpu = NODECB ("asm.cpu", R_SYS_ARCH, &cb_asmcpu);
 	SETDESC (asmcpu, "set the kind of asm.arch cpu");
 	RConfigNode *asmarch = NODECB ("asm.arch", R_SYS_ARCH, &cb_asmarch);

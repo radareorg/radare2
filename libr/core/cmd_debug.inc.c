@@ -6242,7 +6242,7 @@ static int cmd_debug(void *data, const char *input) {
 				break;
 			}
 			r_asm_set_pc (core->rasm, core->addr);
-			acode = r_asm_massemble (core->rasm, input + 2);
+			acode = r_asm_assemble (core->rasm, input + 2);
 			if (acode) {
 				r_reg_arena_push (core->dbg->reg);
 				if (!r_debug_execute (core->dbg, acode->bytes, acode->len, NULL, false, false)) {

@@ -49,7 +49,7 @@ R_API void r_core_asm_hit_free(void *_hit) {
 R_API char* r_core_asm_search(RCore *core, const char *input) {
 	RAsmCode *acode;
 	char *ret;
-	if (!(acode = r_asm_massemble (core->rasm, input))) {
+	if (!(acode = r_asm_assemble (core->rasm, input))) {
 		return NULL;
 	}
 	ret = r_asm_code_get_hex (acode);

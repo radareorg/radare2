@@ -50,12 +50,12 @@ static int readline_callback(RCons *cons, void *_a, const char *str) {
 			);
 	} else if (a->amode) {
 		r_asm_code_free (a->acode);
-		a->acode = r_asm_massemble (a->core->rasm, str);
+		a->acode = r_asm_assemble (a->core->rasm, str);
 	} else {
 #if 0
 		r_asm_code_free (a->acode);
 		char *fmthex = r_str_newf (".hex %s", str);
-		a->acode = r_asm_massemble (a->core->rasm, fmthex);
+		a->acode = r_asm_assemble (a->core->rasm, fmthex);
 		free (fmthex);
 #else
 		ut8 out[1024];

@@ -58,20 +58,18 @@ r_asm_free (a);
 .Ed
 .Sh ASSEMBLY
 The assembler API provides two levels of convenience. Use
-.Fn r_asm_massemble ()
+.Fn r_asm_assemble ()
 when you need multi-line assembly, directive handling or want a
 .Vt RAsmCode
 result with both bytes and the produced assembly text. For single-line or binding-specific assembly callbacks use
-.Fn r_asm_rasm_assemble ()
-or the lower-level encode callbacks that plugins expose.
+the lower-level encode callbacks that plugins expose.
 If you only need a raw buffer of bytes from a textual instruction, the utility
 .Fn r_asm_from_string ()
 .returns a malloc'ed byte buffer and its length.
 .Pp
 .Bd -literal -offset indent
 /* Assembly API (prototypes) */
-RAsmCode* r_asm_massemble (RAsm *a, const char *buf);
-RAsmCode* r_asm_rasm_assemble (RAsm *a, const char *buf, bool use_spp);
+RAsmCode* r_asm_assemble (RAsm *a, const char *buf);
 ut8 *r_asm_from_string (RAsm *a, ut64 addr, const char *b, int *l);
 void r_asm_code_free (RAsm *acode);
 .Ed
@@ -81,7 +79,7 @@ The assembler honors directives embedded in the input (such as
 .Em .endian ) and uses the configured parser plugin to support pseudo-instructions.
 .Bd -literal -offset indent
 /* assemble several instructions and inspect bytes */
-RAsmCode *code = r_asm_massemble (a, "mov rax, 42\nnop");
+RAsmCode *code = r_asm_assemble (a, "mov rax, 42\nnop");
 if (code) {
     for (int i = 0; i < code->len; i++) {
         printf ("%02x ", code->bytes[i]);
@@ -182,7 +180,7 @@ for complete usages).
 .Pp
 Assemble multiple lines and print the encoded bytes:
 .Bd -literal -offset indent
-RAsmCode *ac = r_asm_massemble (a, ".bits 64\nmov rax, 42\nnop");
+RAsmCode *ac = r_asm_assemble (a, ".bits 64\nmov rax, 42\nnop");
 if (ac) {
     for (int i = 0; i < ac->len; i++) printf ("%02x", ac->bytes[i]);
     r_asm_code_free (ac);
@@ -193,7 +191,7 @@ Assemble and analyze instructions producing ESIL (pattern used by the
 .Nm r2
 commands that print analysis):
 .Bd -literal -offset indent
-RAsmCode *acode = r_asm_massemble (a, "mov rax, 42\nadd rax, 1");
+RAsmCode *acode = r_asm_assemble (a, "mov rax, 42\nadd rax, 1");
 if (acode) {
     RAnalOp aop = {0};
     int printed = 0;

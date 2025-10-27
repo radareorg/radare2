@@ -365,7 +365,7 @@ R_API bool r_egg_assemble_asm(REgg *egg, char **asm_list) {
 				ret = true;
 			}
 		} else {
-			RAsmCode *asmcode = r_asm_massemble (egg->rasm, code);
+			RAsmCode *asmcode = r_asm_assemble (egg->rasm, code);
 			if (asmcode && asmcode->len > 0) {
 				ret = true;
 				r_buf_append_bytes (egg->bin, asmcode->bytes, asmcode->len);

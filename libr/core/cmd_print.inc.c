@@ -6991,7 +6991,7 @@ static int cmd_print(void *data, const char *input) {
 				int bufsz;
 				RAnalOp aop = {0};
 				r_asm_set_pc (core->rasm, core->addr);
-				RAsmCode *acode = r_asm_massemble (core->rasm, input + 2);
+				RAsmCode *acode = r_asm_assemble (core->rasm, input + 2);
 				if (acode) {
 					bufsz = acode->len;
 					while (printed < bufsz) {
@@ -7070,7 +7070,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 		} else {
 			r_asm_set_pc (core->rasm, core->addr);
-			RAsmCode *acode = r_asm_massemble (core->rasm, input + 1);
+			RAsmCode *acode = r_asm_assemble (core->rasm, input + 1);
 			if (acode) {
 				if (!acode->len) {
 					r_core_cmd_help_contains (core, help_msg_pa, "pa");
