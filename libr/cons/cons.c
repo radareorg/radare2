@@ -18,7 +18,8 @@ static int count_display_lines(const char *buffer, size_t len) {
 	}
 	int lines = 0;
 	int line_chars = 0;
-	for (size_t i = 0; i < len; i++) {
+	size_t i;
+	for (i = 0; i < len; i++) {
 		if (buffer[i] == '\n') {
 			lines++;
 			line_chars = 0;
