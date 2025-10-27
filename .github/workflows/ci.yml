@@ -98,7 +98,7 @@ jobs:
         sys/install.sh
     - name: Running tests
       run: r2r -o /tmp/r2r.json test/db/cmd
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v5
       with:
         name: r2r.json
         path: /tmp/r2r.json
@@ -148,7 +148,7 @@ jobs:
       run: |
         export LD_LIBRARY_PATH=/usr/local/lib
         make tests
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v5
       with:
         name: results.json
         path: test/results.json
@@ -385,7 +385,7 @@ jobs:
         export PATH=${HOME}/.local/bin:${HOME}/Library/Python/3.9/bin:${PATH}
         sudo apt-get --assume-yes install python3-wheel gperf python3-setuptools cabextract gperf gcc-mingw-w64
         sys/mingw32.sh
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v5
       with:
         name: w32-mingw
         path: radare2*.zip
@@ -400,7 +400,7 @@ jobs:
         export PATH=${HOME}/.local/bin:${HOME}/Library/Python/3.9/bin:${PATH}
         sudo apt-get --assume-yes install python3-wheel gperf python3-setuptools cabextract gperf gcc-mingw-w64
         sys/mingw64.sh
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v5
       with:
         name: w64-mingw
         path: radare2*.zip
