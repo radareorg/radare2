@@ -76,6 +76,7 @@ typedef struct r_asm_t {
 	int codealign;
 	HtPP *flags;
 	bool pseudo; // should be implicit by RParse
+	bool use_spp;
 	RParse *parse;
 } RAsm;
 
@@ -137,8 +138,8 @@ R_API int r_asm_set_pc(RAsm *a, ut64 pc);
 R_API int r_asm_disassemble(RAsm *a, RAnalOp *op, const ut8 *buf, int len);
 R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len);
 R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, RParse *p, const char *hexstr);
-R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf);
-R_API RAsmCode* r_asm_rasm_assemble(RAsm *a, const char *buf, bool use_spp);
+R_API RAsmCode* r_asm_assemble(RAsm *a, const char *buf);
+
 R_API char *r_asm_tostring(RAsm *a, ut64 addr, const ut8 *b, int l);
 /* to ease the use of the native bindings (not used in r2) */
 R_API ut8 *r_asm_from_string(RAsm *a, ut64 addr, const char *b, int *l);

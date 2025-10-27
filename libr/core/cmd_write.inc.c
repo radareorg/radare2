@@ -2142,7 +2142,7 @@ static int cmd_wa(void *data, const char *input) {
 	case '*': {
 		const char *file = r_str_trim_head_ro (input + 1);
 		r_asm_set_pc (core->rasm, core->addr);
-		RAsmCode *acode = r_asm_massemble (core->rasm, file);
+		RAsmCode *acode = r_asm_assemble (core->rasm, file);
 		if (acode) {
 			if (input[0] == 'n') { // "wan"
 				int delta = 0;
@@ -2233,7 +2233,7 @@ repeat:
 						}
 					}
 					if (*b) {
-						RAsmCode *ac = r_asm_massemble (core->rasm, b);
+						RAsmCode *ac = r_asm_assemble (core->rasm, b);
 						if (ac) {
 							r_io_write_at (core->io, addr, ac->bytes, ac->len);
 							r_asm_code_free (ac);
@@ -2256,7 +2256,7 @@ repeat:
 			r_asm_set_pc (core->rasm, core->addr);
 			char *f = r_file_slurp (file, NULL);
 			if (f) {
-				RAsmCode *acode = r_asm_massemble (core->rasm, f);
+				RAsmCode *acode = r_asm_assemble (core->rasm, f);
 				if (acode) {
 					char* hex = r_asm_code_get_hex (acode);
 					if (input[1] == '*') {

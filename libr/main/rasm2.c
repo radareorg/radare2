@@ -600,8 +600,9 @@ static bool rasm_asm(RAsmState *as, const char *buf, ut64 offset, ut64 len, int 
 	int i, j, ret = 0;
 
 	r_asm_set_pc (as->a, offset);
+	as->a->use_spp = as->opt.use_spp;
 
-	RAsmCode *acode = r_asm_rasm_assemble (as->a, buf, as->opt.use_spp);
+	RAsmCode *acode = r_asm_assemble (as->a, buf);
 	if (!acode) {
 		return false;
 	}
@@ -1116,7 +1117,8 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 			if (dis == 3) {
 				if (isalpha (usrstr[0]) & 0xff) {
 					// assemble and get the string back
-					RAsmCode *acode = r_asm_rasm_assemble (as->a, usrstr, as->opt.use_spp);
+					as->a->use_spp = as->opt.use_spp;
+					RAsmCode *acode = r_asm_assemble (as->a, usrstr);
 					if (!acode) {
 						return false;
 					}

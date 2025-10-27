@@ -103,18 +103,6 @@ static inline int r_asm_pseudo_intN(RAsm *a, RAnalOp *op, char *input, int n) {
 	return n;
 }
 
-static inline int r_asm_pseudo_int16(RAsm *a, RAnalOp *op, char *input) {
-	return r_asm_pseudo_intN (a, op, input, 2);
-}
-
-static inline int r_asm_pseudo_int32(RAsm *a, RAnalOp *op, char *input) {
-	return r_asm_pseudo_intN (a, op, input, 4);
-}
-
-static inline int r_asm_pseudo_int64(RAsm *a, RAnalOp *op, char *input) {
-	return r_asm_pseudo_intN (a, op, input, 8);
-}
-
 static inline int r_asm_pseudo_byte(RAnalOp *op, char *input) {
 	int i, len = 0;
 	r_str_replace_char (input, ',', ' ');
@@ -200,6 +188,7 @@ R_API RAsm *r_asm_new(void) {
 	a->codealign = 1;
 	a->dataalign = 1;
 	a->pseudo = false;
+	a->use_spp = false;
 	a->sessions = r_list_newf (free);
 	a->config = r_arch_config_new ();
 	a->parse = r_parse_new ();
@@ -572,7 +561,7 @@ R_API void r_asm_list_directives(void) {
 }
 
 // returns instruction size.. but we have the size in analop and should return bool because thats just a wrapper around analb.encode
-static int r_asm_assemble(RAsm *a, RAnalOp *op, const char *buf) {
+static int r_asm_assemble_single(RAsm *a, RAnalOp *op, const char *buf) {
 	R_RETURN_VAL_IF_FAIL (a && op && buf, 0);
 	int ret = 0;
 	char *b = strdup (buf);
@@ -777,20 +766,20 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 		r_syscall_setup (a->syscall, a->config->arch, a->config->bits, asmcpu, ptr + 4);
 	} else if (r_str_startswith (ptr, ".hex ")) {
 		ret = r_asm_op_set_hex (op, ptr + 5);
+	} else if (r_str_startswith (ptr, ".byte ") || r_str_startswith (ptr, ".int8 ")) {
+		ret = r_asm_pseudo_byte (op, ptr + 6);
 	} else if ((r_str_startswith (ptr, ".int16 ")) || r_str_startswith (ptr, ".short ")) {
-		ret = r_asm_pseudo_int16 (a, op, ptr + 7);
+		ret = r_asm_pseudo_intN (a, op, ptr + 7, 2);
 	} else if (r_str_startswith (ptr, ".int32 ")) {
-		ret = r_asm_pseudo_int32 (a, op, ptr + 7);
+		ret = r_asm_pseudo_intN (a, op, ptr + 7, 4);
 	} else if (r_str_startswith (ptr, ".int64 ")) {
 		char *str = r_asm_code_equ_replace (acode, ptr + 7);
-		ret = r_asm_pseudo_int64 (a, op, str); // ptr + 7);
+		ret = r_asm_pseudo_intN (a, op, ptr + 7, 8);
 		free (str);
 	} else if (r_str_startswith (ptr, ".size")) {
 		ret = 0; // do nothing, ignored
 	} else if (r_str_startswith (ptr, ".section")) {
 		ret = 0; // do nothing, ignored
-	} else if (r_str_startswith (ptr, ".byte ") || r_str_startswith (ptr, ".int8 ")) {
-		ret = r_asm_pseudo_byte (op, ptr + 6);
 	} else if (r_str_startswith (ptr, ".glob")) {
 		// .global .globl
 		R_LOG_DEBUG (".global directive does nothing for now");
@@ -852,7 +841,7 @@ static inline char *next_token(const char *tok) {
 	return NULL;
 }
 
-R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
+R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 	int num, stage, ret, idx, ctr, i, linenum = 0;
 	char *ptr = NULL, *ptr_start = NULL;
 	RAnalOp op = {0};
@@ -882,6 +871,21 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 	acode->bytes = calloc (1, 64);
 
 	char *lbuf = strdup (assembly);
+	if (a->use_spp) {
+		Output out = {
+			.fout = NULL,
+			.cout = r_strbuf_new ("")
+		};
+		r_strbuf_init (out.cout);
+		struct Proc proc;
+		spp_proc_set (&proc, "spp", 1);
+
+		lbuf = replace_directives (lbuf);
+		spp_eval (lbuf, &out);
+		free (lbuf);
+		lbuf = strdup (r_strbuf_get (out.cout));
+		r_strbuf_free (out.cout);
+	}
 	acode->code_align = 0;
 
 	/* consider ,, an alias for a newline */
@@ -1068,7 +1072,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 					continue;
 				}
 				str = r_asm_code_equ_replace (acode, ptr_start);
-				ret = r_asm_assemble (a, &op, str);
+				ret = r_asm_assemble_single (a, &op, str);
 				free (str);
 			}
 			if (stage == STAGES - 1) {
@@ -1132,7 +1136,7 @@ R_API char *r_asm_tostring(RAsm *a, ut64 addr, const ut8 *b, int l) {
 
 R_API ut8 *r_asm_from_string(RAsm *a, ut64 addr, const char *b, int *l) {
 	r_asm_set_pc (a, addr);
-	RAsmCode *code = r_asm_massemble (a, b);
+	RAsmCode *code = r_asm_assemble (a, b);
 	if (code) {
 		ut8 *buf = code->bytes;
 		if (l) {
@@ -1186,31 +1190,7 @@ R_API int r_asm_mnemonics_byname(RAsm *a, const char *name) {
 	return 0;
 }
 
-// XXX find better name for this function asm_rasm_assemble wtf
-R_API RAsmCode* r_asm_rasm_assemble(RAsm *a, const char *buf, bool use_spp) {
-	R_RETURN_VAL_IF_FAIL (a && buf, NULL);
-	char *lbuf = strdup (buf);
-	if (!lbuf) {
-		return NULL;
-	}
-	if (use_spp) {
-		Output out = {
-			.fout = NULL,
-			.cout = r_strbuf_new ("")
-		};
-		r_strbuf_init (out.cout);
-		struct Proc proc;
-		spp_proc_set (&proc, "spp", 1);
 
-		lbuf = replace_directives (lbuf);
-		spp_eval (lbuf, &out);
-		free (lbuf);
-		lbuf = strdup (r_strbuf_get (out.cout));
-	}
-	RAsmCode *acode = r_asm_massemble (a, lbuf);
-	free (lbuf);
-	return acode;
-}
 
 R_API RList *r_asm_cpus(RAsm *a) {
 	R_RETURN_VAL_IF_FAIL (a, NULL);
