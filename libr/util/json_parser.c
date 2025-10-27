@@ -249,10 +249,9 @@ static char *parse_value(RJson *parent, const char * R_NULLABLE key, char *p) {
 				}
 			} else if (*p == '}') {
 				return p + 1; // end of object
-			} else {
-				R_LOG_ERROR ("unexpected chars (%s)", p);
-				return NULL;
 			}
+			R_LOG_ERROR ("unexpected chars (%s)", p);
+			return NULL;
 		}
 	case '[':
 		js = create_json (R_JSON_ARRAY, key, parent);
