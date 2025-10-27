@@ -1,6 +1,14 @@
 NAME=PE: corkami tls64.exe - open
 FILE=bins/pe/tls64.exe
 ARGS=-A
+CMDS=iee;q!
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=PE: another tls64
+FILE=bins/pe/WindowsUI-App.exe
+ARGS=iee
 CMDS=q!
 EXPECT=<<EOF
 EOF

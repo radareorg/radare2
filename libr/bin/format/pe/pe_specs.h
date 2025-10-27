@@ -450,7 +450,16 @@ typedef struct {
 	ut32 AddressOfCallBacks;
 	ut32 SizeOfZeroFill;
 	ut32 Characteristics;
-} Pe32_image_tls_directory, Pe64_image_tls_directory;
+} Pe32_image_tls_directory;
+
+typedef struct {
+	ut64 StartAddressOfRawData;
+	ut64 EndAddressOfRawData;
+	ut64 AddressOfIndex;
+	ut64 AddressOfCallBacks;
+	ut64 SizeOfZeroFill;
+	ut64 Characteristics;
+} Pe64_image_tls_directory;
 
 typedef struct {
 	ut32 dwLength;
