@@ -3140,9 +3140,9 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		ds->asmop.size = (ds->hint && ds->hint->size) ? ds->hint->size : 1;
 	} else {
 		ds->lastfail = 0;
-		ds->asmop.size = (ds->hint && ds->hint->size)
-				? ds->hint->size
-				: ds->asmop.size;
+		if (ds->hint && ds->hint->size) {
+			ds->asmop.size = ds->hint->size;
+		}
 	}
 	ds->oplen = ds->asmop.size;
 	if (ds->pseudo) {
