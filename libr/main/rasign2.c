@@ -15,26 +15,26 @@ typedef struct {
 
 static void rasign_show_help(void) {
 	printf ("Usage: rasign2 [options] [file]\n"
-		" -a               make signatures from all .o files in the provided .a file\n"
-		" -A[AAA]          same as r2 -A, the more 'A's the more analysis is performed\n"
-		" -f               interpret the file as a FLIRT .sig file and dump signatures\n"
-		" -h               help menu\n"
-		" -j               show signatures in json\n"
-		" -i script.r2     execute this script in the \n"
-		" -o sigs.sdb      add signatures to file, create if it does not exist\n"
-		" -q               quiet mode\n"
-		" -r               show output in radare commands\n"
-		" -S               perform operation on sdb signature file ('-o -' to save to same file)\n"
-		" -s signspace     save all signatures under this signspace\n"
-		" -c               add collision signatures before writing file\n"
-		" -v               show version information\n"
-		" -m               merge/overwrite signatures with same name\n"
-		"Examples:\n"
-		"  rasign2 -o libc.sdb libc.so.6\n");
+	" -a               make signatures from all .o files in the provided .a file\n"
+	" -A[AAA]          same as r2 -A, the more 'A's the more analysis is performed\n"
+	" -f               interpret the file as a FLIRT .sig file and dump signatures\n"
+	" -h               help menu\n"
+	" -j               show signatures in json\n"
+	" -i script.r2     execute this script in the \n"
+	" -o sigs.sdb      add signatures to file, create if it does not exist\n"
+	" -q               quiet mode\n"
+	" -r               show output in radare commands\n"
+	" -S               perform operation on sdb signature file ('-o -' to save to same file)\n"
+	" -s signspace     save all signatures under this signspace\n"
+	" -c               add collision signatures before writing file\n"
+	" -v               show version information\n"
+	" -m               merge/overwrite signatures with same name\n"
+	"Examples:\n"
+	"  rasign2 -o libc.sdb libc.so.6\n");
 }
 
 static RCore *opencore(const char *fname) {
-	RIODesc * rfile = NULL;
+	RIODesc *rfile = NULL;
 	RCore *c = r_core_new ();
 	if (!c) {
 		R_LOG_ERROR ("Count not get core");
@@ -248,7 +248,7 @@ static int handle_archive_files(const char *fname, RasignOptions *conf) {
 R_API int r_main_rasign2(int argc, const char **argv) {
 	int c;
 	RGetopt opt;
-	RasignOptions conf = {0};
+	RasignOptions conf = { 0 };
 
 	r_getopt_init (&opt, argc, argv, "Aafhjmo:qrSs:cvi:");
 	while ((c = r_getopt_next (&opt)) != -1) {

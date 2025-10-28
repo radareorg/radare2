@@ -1195,9 +1195,9 @@ static void setprintmode(RCore *core, int n) {
 	switch (v->printidx) {
 	case R_CORE_VISUAL_MODE_PD:
 	case R_CORE_VISUAL_MODE_DB:
-		r_asm_op_init (&op);
+		r_anal_op_init (&op);
 		r_asm_disassemble (core->rasm, &op, core->block, R_MIN (32, core->blocksize));
-		r_asm_op_fini (&op);
+		r_anal_op_fini (&op);
 		break;
 	default:
 		break;
@@ -2260,12 +2260,12 @@ static void cursor_prevrow(RCore *core, bool use_ocur) {
 			} else {
 				RAnalOp op;
 				prev_roff = 0;
-				r_asm_op_init (&op);
+				r_anal_op_init (&op);
 				r_core_seek (core, prev_addr, true);
 				r_asm_set_pc (core->rasm, prev_addr);
 				prev_sz = r_asm_disassemble (core->rasm, &op,
 					core->block, 32);
-				r_asm_op_fini (&op);
+				r_anal_op_fini (&op);
 			}
 		} else {
 			prev_sz = roff - prev_roff;
@@ -2340,7 +2340,7 @@ static bool fix_cursor(RCore *core) {
 				p->ocur = R_MAX (p->ocur - sz, 0);
 			}
 			res |= off_is_visible;
-			r_asm_op_fini (&op);
+			r_anal_op_fini (&op);
 		}
 	} else if (core->print->cur >= offscreen) {
 		r_core_seek (core, core->addr + p->cols, true);
@@ -3587,7 +3587,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 							RAnalOp op;
 							if (isDisasmPrint (v->printidx)) {
 								r_core_visual_disasm_down (core, &op, &cols);
-								r_asm_op_fini (&op);
+								r_anal_op_fini (&op);
 							} else if (!strcmp (__core_visual_print_command (core),
 									"prc")) {
 								cols = r_config_get_i (core->config, "hex.cols");
@@ -3628,7 +3628,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					if (isDisasmPrint (v->printidx)) {
 						if (core->print->screen_bounds == core->addr) {
 							r_asm_disassemble (core->rasm, &op, core->block, 32);
-							r_asm_op_fini (&op);
+							r_anal_op_fini (&op);
 						}
 						if (addr == core->addr || addr == UT64_MAX) {
 							addr = core->addr + 48;

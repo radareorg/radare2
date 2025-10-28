@@ -15,24 +15,24 @@ extern int memorystatus_control(uint32_t command, pid_t pid, uint32_t flags, voi
 #endif
 
 static int usage(bool v) {
-	printf("Usage: r2agent [-adhsLjv] [-p port]\n"
-	       "  -a        listen for everyone (localhost by default)\n"
-	       "  -d        run in daemon mode (background)\n"
-	       "  -h        show this help message\n"
-	       "  -s        run in sandbox mode\n"
-	       "  -u        enable http authorization access\n"
-	       "  -t        user:password authentication file\n"
-	       "  -p [port] specify listening port (defaults to 8080)\n"
-	       "  -L        list currently loaded r2 sessions and exit\n"
-	       "  -v        show r2 version information and exit\n"
-	       "  -j        output JSON when used with -v or -L\n");
+	printf ("Usage: r2agent [-adhsLjv] [-p port]\n"
+	"  -a        listen for everyone (localhost by default)\n"
+	"  -d        run in daemon mode (background)\n"
+	"  -h        show this help message\n"
+	"  -s        run in sandbox mode\n"
+	"  -u        enable http authorization access\n"
+	"  -t        user:password authentication file\n"
+	"  -p [port] specify listening port (defaults to 8080)\n"
+	"  -L        list currently loaded r2 sessions and exit\n"
+	"  -v        show r2 version information and exit\n"
+	"  -j        output JSON when used with -v or -L\n");
 	return !v;
 }
 
 R_API int r_main_r2agent(int argc, const char **argv) {
 	RSocket *s;
 	RCons *cons = NULL;
-	RSocketHTTPOptions so = {0};
+	RSocketHTTPOptions so = { 0 };
 	int c;
 	bool dodaemon = false;
 	bool dosandbox = false;
@@ -58,7 +58,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 			dodaemon = true;
 			break;
 		case 'h':
-			return usage(true);
+			return usage (true);
 		case 'v':
 			show_version = true;
 			break;
@@ -78,7 +78,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 			list_json = true;
 			break;
 		default:
-			return usage(false);
+			return usage (false);
 		}
 	}
 	if (opt.ind != argc) {
@@ -86,7 +86,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 	}
 
 	if (show_version) {
-		int mode = list_json ? 'j' : 0;
+		int mode = list_json? 'j': 0;
 		return r_main_version_print ("r2agent", mode);
 	}
 
@@ -96,7 +96,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 			R_LOG_ERROR ("Unable to create RCore instance");
 			return 1;
 		}
-		const char *cmd = list_json ? "=lj" : "=l";
+		const char *cmd = list_json? "=lj": "=l";
 		char *out = r_core_cmd_str (core, cmd);
 		if (out) {
 			printf ("%s\n", out);
@@ -116,16 +116,16 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 		}
 
 		size_t sz;
-		pfile = r_file_slurp(httpauthfile, &sz);
+		pfile = r_file_slurp (httpauthfile, &sz);
 		if (pfile) {
-			so.authtokens = r_str_split_list(pfile, "\n", 0);
+			so.authtokens = r_str_split_list (pfile, "\n", 0);
 		} else {
-			R_LOG_ERROR("Empty list of HTTP users");
-			return usage(false);
+			R_LOG_ERROR ("Empty list of HTTP users");
+			return usage (false);
 		}
 	}
 #if USE_IOS_JETSAM
-	memorystatus_control(MEMORYSTATUS_CMD_SET_JETSAM_TASK_LIMIT, r_sys_getpid(), 256, NULL, 0);
+	memorystatus_control (MEMORYSTATUS_CMD_SET_JETSAM_TASK_LIMIT, r_sys_getpid (), 256, NULL, 0);
 #endif
 	if (dodaemon) {
 #if LIBC_HAVE_FORK
@@ -155,7 +155,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 		int pid = r_sys_getpid ();
 		char *fn = r_str_newf ("%s/%d.pid", tmpdir_r2, pid);
 		char *suri = r_str_newf ("r2web://127.0.0.1:%d/cmd", s->port);
-		if (r_file_dump (fn, (const ut8 *)suri, strlen(suri), false)) {
+		if (r_file_dump (fn, (const ut8 *)suri, strlen (suri), false)) {
 			pidfile = fn; /* keep ownership to remove on exit */
 		} else {
 			free (fn);
@@ -192,7 +192,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 		if (!strcmp (rs->method, "GET")) {
 			if (r_str_startswith (rs->path, "/proc/kill/")) {
 				/* TODO: show page here? */
-				int pid = atoi (rs->path + strlen("/proc/kill/"));
+				int pid = atoi (rs->path + strlen ("/proc/kill/"));
 				if (pid > 0) {
 #if R2__WINDOWS__
 					r_sandbox_kill (pid, 0);
@@ -205,7 +205,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 				char *filename = rs->path + strlen ("/file/open/");
 				char *escaped_filename = r_str_escape (filename);
 				char *cmd = r_str_newf ("r2 -q %s-e http.port=%d -c=h \"%s\"",
-					listenlocal ? "" : "-e http.bind=public ",
+					listenlocal? "": "-e http.bind=public ",
 					session_port, escaped_filename);
 
 				/* TODO: use r_sys api to get pid when running in bg */
@@ -214,15 +214,15 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 				free (escaped_filename);
 
 				res = r_str_newf ("<html><body>"
-						 "<a href='/'>back</a><hr size=1/>"
-						 " - <a target='_blank' href='http://localhost:%d/'>open</a><br />"
-						 " - <a href='/proc/kill/%d'>kill</a><br />"
-						 "</body></html>",
+						"<a href='/'>back</a><hr size=1/>"
+						" - <a target='_blank' href='http://localhost:%d/'>open</a><br />"
+						" - <a href='/proc/kill/%d'>kill</a><br />"
+						"</body></html>",
 					session_port, pid);
 				R_LOG_DEBUG ("child pid %d", pid);
 			}
 		}
-		r_socket_http_response (rs, 200, res ? res : page_index, 0, NULL);
+		r_socket_http_response (rs, 200, res? res: page_index, 0, NULL);
 		r_socket_http_close (rs);
 		R_FREE (res);
 	}

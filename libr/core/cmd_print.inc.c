@@ -8184,7 +8184,7 @@ static int cmd_print(void *data, const char *input) {
 					}
 					r_cons_printf (core->cons, "  // %s\n", asmop.mnemonic);
 					i--;
-					r_asm_op_fini (&asmop);
+					r_anal_op_fini (&asmop);
 				}
 				r_cons_printf (core->cons, ".equ shellcode_len, %d\n", len);
 			} else {

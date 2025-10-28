@@ -156,17 +156,7 @@ R_API R_MUSTUSE char *r_asm_code_equ_replace(RAsmCode *code, const char *str);
 R_API char* r_asm_code_get_hex(RAsmCode *acode);
 R_API char *r_asm_code_equ_get(RAsmCode *code, const char *key);
 
-/* op.c XXX Deprecate the use of all those apis and just use RArchOp */
-R_API RAnalOp *r_asm_op_new(void);
-R_API void r_asm_op_init(RAnalOp *op);
-R_API void r_asm_op_free(RAnalOp *op);
-R_API void r_asm_op_fini(RAnalOp *op);
-R_API char *r_asm_op_get_hex(RAnalOp *op);
-R_API int r_asm_op_get_size(RAnalOp *op);
-R_API void r_asm_op_set_asm(RAnalOp *op, const char *str);
-R_API int r_asm_op_set_hex(RAnalOp *op, const char *str);
-R_API int r_asm_op_set_hexbuf(RAnalOp *op, const ut8 *buf, int len);
-R_API void r_asm_op_set_buf(RAnalOp *op, const ut8 *str, int len);
+
 
 /* plugins */
 R_API bool r_asm_plugin_add(RAsm *a, RAsmPlugin *plugin);

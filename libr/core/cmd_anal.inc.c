@@ -3031,7 +3031,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		free (mnem);
 		r_anal_hint_free (hint);
 		r_anal_op_fini (&op);
-		r_asm_op_fini (&asmop);
+		r_anal_op_fini (&asmop);
 	}
 	r_anal_op_fini (&op);
 	if (fmt == 's') {
@@ -10719,7 +10719,7 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 	} else {
 		buf_asm = strdup (asmop.mnemonic);
 	}
-	r_asm_op_fini (&asmop);
+	r_anal_op_fini (&asmop);
 	if (osubreladdr != UT64_MAX) {
 		core->rasm->parse->subrel_addr = osubreladdr;
 	}

@@ -7,7 +7,6 @@
 #include <r_util/r_print.h>
 #include <r_muta.h>
 
-
 typedef struct {
 	int quiet;
 	int iterations;
@@ -55,7 +54,7 @@ static void do_hash_seed(RahashOptions *ro, const char *seed) {
 		ro->s.len = (size_t)len;
 		return;
 	}
-	ro->s.buf = (ut8 *) malloc (strlen (seed) + 128);
+	ro->s.buf = (ut8 *)malloc (strlen (seed) + 128);
 	if (!ro->s.buf) {
 		ro->_s = NULL;
 		return;
@@ -67,7 +66,7 @@ static void do_hash_seed(RahashOptions *ro, const char *seed) {
 		ro->s.prefix = 0;
 	}
 	if (r_str_startswith (sptr, "s:")) {
-		strcpy ((char *) ro->s.buf, sptr + 2);
+		strcpy ((char *)ro->s.buf, sptr + 2);
 		ro->s.len = strlen (sptr + 2);
 	} else if (r_str_startswith (sptr, "+")) {
 		// TODO: honor endian
@@ -77,7 +76,7 @@ static void do_hash_seed(RahashOptions *ro, const char *seed) {
 	} else {
 		ro->s.len = r_hex_str2bin (sptr, ro->s.buf);
 		if (ro->s.len < 1) {
-			strcpy ((char *) ro->s.buf, sptr);
+			strcpy ((char *)ro->s.buf, sptr);
 			ro->s.len = strlen (sptr);
 			R_LOG_WARN ("Expected seed/key in hexpair format, use 0x or s: prefix instead")
 			// assuming a string, prefix it with 's:' to skip this message");
@@ -105,7 +104,7 @@ static void do_hash_hexprint(const ut8 *c, int len, int ule, PJ *pj, int rad) {
 	} else if (rad == 'J') {
 		pj_s (pj, buf);
 	} else {
-		printf ("%s%s", buf, rad == 'n' ? "" : "\n");
+		printf ("%s%s", buf, rad == 'n'? "": "\n");
 	}
 	free (buf);
 }
@@ -118,13 +117,13 @@ static void do_hash_print(RHash *ctx, RahashOptions *ro, ut64 hash, int dlen, PJ
 	switch (rad) {
 	case 0:
 		if (!ro->quiet) {
-			printf ("0x%08"PFMT64x "-0x%08"PFMT64x " %s: ",
+			printf ("0x%08" PFMT64x "-0x%08" PFMT64x " %s: ",
 				ro->from, ro->to > 0? ro->to - 1: 0, hname);
 		}
 		if (hash & R_HASH_SSDEEP) {
 			printf ("%s\n", ctx->digest);
 		} else if (dlen == R_HASH_SIZE_ENTROPY) {
-			printf("%.8f\n", ctx->entropy);
+			printf ("%.8f\n", ctx->entropy);
 		} else {
 			do_hash_hexprint (c, dlen, ule, pj, rad);
 		}
@@ -358,17 +357,18 @@ static void algolist(int mode) {
 	r_muta_free (cry);
 }
 
-#define setHashString(x, y) {\
-	if (hashstr) {\
-		R_LOG_WARN ("Hashstring already defined");\
-		ret (1);\
-	}\
-	hashstr_hex = y;\
-	hashstr = strdup (x);\
-}
+#define setHashString(x, y) \
+	{ \
+		if (hashstr) { \
+			R_LOG_WARN ("Hashstring already defined"); \
+			ret (1); \
+		} \
+		hashstr_hex = y; \
+		hashstr = strdup (x); \
+	}
 
 static bool is_power_of_two(const ut64 x) {
-	return x && !(x & (x - 1));
+	return x && ! (x &(x - 1));
 }
 
 static void print_result(RahashOptions *ro, const ut8 *result, int result_size) {
@@ -423,7 +423,7 @@ static int encrypt_or_decrypt(RahashOptions *ro, const char *hashstr, int hashst
 					return 0;
 				}
 
-				r_muta_session_update (cj, (const ut8 *) buf, buflen);
+				r_muta_session_update (cj, (const ut8 *)buf, buflen);
 
 				int result_size = 0;
 				ut8 *result = r_muta_session_get_output (cj, &result_size);
@@ -544,8 +544,8 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 	ut8 *compareBin = NULL;
 	int hashstr_len = -1;
 	int hashstr_hex = 0;
-	size_t bytes_read = 0;// bytes read from stdin
-	RahashOptions _ro = {0};
+	size_t bytes_read = 0; // bytes read from stdin
+	RahashOptions _ro = { 0 };
 	RahashOptions *ro = &_ro;
 	RList *algos = r_list_newf (free);
 	ut64 algobit;
@@ -556,7 +556,11 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 
 	ro->direction = -1;
 	ro->incremental = true;
-#define ret(x) {_ret=x;goto beach;}
+#define ret(x) \
+	{ \
+		_ret = x; \
+		goto beach; \
+	}
 	RGetopt opt;
 	r_getopt_init (&opt, argc, argv, "p:jJD:rveE:a:i:I:S:s:x:b:nBhf:t:kLqc:X");
 	while ((c = r_getopt_next (&opt)) != -1) {
@@ -578,29 +582,32 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 		case 'I': ivseed = opt.arg; break;
 		case 'n': numblocks = 1; break;
 		case 'D':
-			  if (ro->direction != -1) {
-				  R_LOG_ERROR ("Cannot use -D and -E at the same time");
-				  ret (1);
-			  }
-			  ro->direction = R_CRYPTO_DIR_DECRYPT;
-			  ro->algorithm = opt.arg;
-			  break;
+			if (ro->direction != -1) {
+				R_LOG_ERROR ("Cannot use -D and -E at the same time");
+				ret (1);
+			}
+			ro->direction = R_CRYPTO_DIR_DECRYPT;
+			ro->algorithm = opt.arg;
+			break;
 		case 'E':
-			  if (ro->direction != -1) {
-				  R_LOG_ERROR ("Cannot use -D and -E at the same time");
-				  ret (1);
-			  }
-			  ro->direction = R_CRYPTO_DIR_ENCRYPT;
-			  ro->algorithm = opt.arg;
-			  break;
+			if (ro->direction != -1) {
+				R_LOG_ERROR ("Cannot use -D and -E at the same time");
+				ret (1);
+			}
+			ro->direction = R_CRYPTO_DIR_ENCRYPT;
+			ro->algorithm = opt.arg;
+			break;
 		case 'L': listplugins = true; break;
-		case 'e': ule = 1; ro->endian = !ro->endian; break;
+		case 'e':
+			ule = 1;
+			ro->endian = !ro->endian;
+			break;
 		case 'r': rad = 1; break;
 		case 'k': rad = 2; break;
 		case 'p': ptype = opt.arg; break;
 		case 'a': add_algo (algos, opt.arg); break;
 		case 'B': ro->incremental = false; break;
-		case 'b': bsize = (int) r_num_math (NULL, opt.arg); break;
+		case 'b': bsize = (int)r_num_math (NULL, opt.arg); break;
 		case 'f': ro->from = r_num_math (NULL, opt.arg); break;
 		case 't': ro->to = 1 + r_num_math (NULL, opt.arg); break;
 		case 'v': show_version = true; break;
@@ -622,7 +629,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 		algolist (rad);
 		ret (0);
 	}
-	algo = r_list_empty (algos) ? strdup ("sha1") : r_str_list_join (algos, ",");
+	algo = r_list_empty (algos)? strdup ("sha1"): r_str_list_join (algos, ",");
 	if (compareStr) {
 		int compareBin_len;
 		if (bsize && !ro->incremental) {
@@ -649,7 +656,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 			free (compareBin);
 			ret (1);
 		}
-		if (compareBin_len != r_hash_size (algobit))   {
+		if (compareBin_len != r_hash_size (algobit)) {
 			R_LOG_ERROR ("Given -c hash has %d byte(s) but the selected algorithm returns %d byte(s)",
 				compareBin_len,
 				r_hash_size (algobit));
@@ -658,7 +665,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 		}
 	}
 	ro->mode = rad;
-	if ((st64) ro->from >= 0 && (st64) ro->to < 0) {
+	if ((st64)ro->from >= 0 && (st64)ro->to < 0) {
 		ro->to = 0; // end of file
 	}
 	if (ro->from || ro->to) {
@@ -679,14 +686,14 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 	}
 	// convert iv to hex or string.
 	if (ivseed) {
-		iv = (ut8 *) malloc (strlen (ivseed) + 128);
+		iv = (ut8 *)malloc (strlen (ivseed) + 128);
 		if (!strncmp (ivseed, "s:", 2)) {
-			strcpy ((char *) iv, ivseed + 2);
+			strcpy ((char *)iv, ivseed + 2);
 			ivlen = strlen (ivseed + 2);
 		} else {
 			ivlen = r_hex_str2bin (ivseed, iv);
 			if (ivlen < 1) {
-				strcpy ((char *) iv, ivseed);
+				strcpy ((char *)iv, ivseed);
 				ivlen = strlen (ivseed);
 			}
 		}
@@ -701,7 +708,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 			if (!hashstr) {
 				ret (1);
 			}
-			bytes_read = fread ((void *) hashstr, 1, INSIZE - 1, stdin);
+			bytes_read = fread ((void *)hashstr, 1, INSIZE - 1, stdin);
 			if (bytes_read < 1) {
 				bytes_read = 0;
 			}
@@ -717,7 +724,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 				ret (1);
 			}
 			free (hashstr);
-			hashstr = (char *) out;
+			hashstr = (char *)out;
 			/* out memleaks here, hashstr can't be freed */
 		} else {
 			if (!bytes_read) {
@@ -747,7 +754,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 		if (ro->direction != -1) {
 			ret (encrypt_or_decrypt (ro, nhashstr, hashstr_len, iv, ivlen, 0));
 		} else {
-			char *str = (char *) nhashstr;
+			char *str = (char *)nhashstr;
 			int strsz = hashstr_len;
 			if (ro->_s) {
 				// alloc/concat/resize
@@ -795,7 +802,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 					ctx = r_hash_new (true, hashbit);
 					ro->from = 0;
 					ro->to = strsz;
-					do_hash_internal (ctx, ro, hashbit, (const ut8 *) str, strsz, pj, rad, 1);
+					do_hash_internal (ctx, ro, hashbit, (const ut8 *)str, strsz, pj, rad, 1);
 					compare_hashes (ctx, ro, compareBin, r_hash_size (algobit), &_ret, mode);
 					r_hash_free (ctx);
 				}
@@ -846,7 +853,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 			RIODesc *desc = NULL;
 			if (!strcmp (argv[i], "-")) {
 				int sz = 0;
-				ut8 *buf = (ut8 *) r_stdin_slurp (&sz);
+				ut8 *buf = (ut8 *)r_stdin_slurp (&sz);
 				char *uri = r_str_newf ("malloc://%d", sz);
 				if (sz > 0) {
 					desc = r_io_open_nomap (io, uri, R_PERM_R, 0);

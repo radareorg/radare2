@@ -295,7 +295,7 @@ static int cmd_seek_opcode_backward(RCore *core, int numinstr) {
 			}
 			val += op.size;
 			addr = prev_addr;
-			r_asm_op_fini (&op);
+			r_anal_op_fini (&op);
 		}
 	}
 	r_core_seek (core, addr, true);

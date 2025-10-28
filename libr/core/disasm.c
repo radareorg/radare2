@@ -3051,48 +3051,48 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 			}
 			int sz = R_MIN (16, meta_size);
 			ds->asmop.size = sz;
-			r_asm_op_set_hexbuf (&ds->asmop, buf, sz);
+			r_anal_op_set_bytes (&ds->asmop, 0, buf, sz);
 			const char *tail = (meta_size > 16)? "...": "";
 			r_strf_buffer (256);
 			switch (meta->type) {
 			case R_META_TYPE_STRING:
-				r_asm_op_set_asm (&ds->asmop, r_strf (".string \"%s%s\"", meta->str, tail));
+				r_anal_op_set_mnemonic (&ds->asmop, 0, r_strf (".string \"%s%s\"", meta->str, tail));
 				break;
 			default: {
-				char *op_hex = r_asm_op_get_hex (&ds->asmop);
+				char *op_hex = r_hex_bin2strdup (ds->asmop.bytes, ds->asmop.size);
 				if (!op_hex) {
 					R_LOG_ERROR ("Cannot get hex");
 					break;
 				}
-				r_asm_op_set_asm (&ds->asmop, r_strf (".hex %s%s", op_hex, tail));
+				r_anal_op_set_mnemonic (&ds->asmop, 0, r_strf (".hex %s%s", op_hex, tail));
 				const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 				const int immbase = (ds->hint && ds->hint->immbase)? ds->hint->immbase: 0;
 				switch (meta_size) {
 				case 2:
 					ds->analop.val = r_read_ble16 (buf, be);
-					r_asm_op_set_asm (&ds->asmop, r_strf (".word 0x%04hx%s", (ut16)ds->analop.val, tail));
+					r_anal_op_set_mnemonic (&ds->asmop, 0, r_strf (".word 0x%04hx%s", (ut16)ds->analop.val, tail));
 					break;
 				case 4:
 					ds->analop.val = r_read_ble32 (buf, be);
 					switch (immbase) {
 					case 10:
-						r_asm_op_set_asm (&ds->asmop, r_strf (".int32 %d%s", (st32)ds->analop.val, tail));
+						r_anal_op_set_mnemonic (&ds->asmop, 0, r_strf (".int32 %d%s", (st32)ds->analop.val, tail));
 						break;
 					case 32:
 						{
 							ut32 oval = ds->analop.val;
 							ut32 eval  = r_read_le32 (&oval);
-							r_asm_op_set_asm (&ds->asmop, r_strf (".ipaddr 0x%08x%s", (ut32)eval, tail));
+							r_anal_op_set_mnemonic (&ds->asmop, 0, r_strf (".ipaddr 0x%08x%s", (ut32)eval, tail));
 						}
 						break;
 					default:
-						r_asm_op_set_asm (&ds->asmop, r_strf (".dword 0x%08x%s", (ut32)ds->analop.val, tail));
+						r_anal_op_set_mnemonic (&ds->asmop, 0, r_strf (".dword 0x%08x%s", (ut32)ds->analop.val, tail));
 						break;
 					}
 					break;
 				case 8:
 					ds->analop.val = r_read_ble64 (buf, be);
-					r_asm_op_set_asm (&ds->asmop, r_strf (".qword 0x%016"PFMT64x"%s", ds->analop.val, tail));
+					r_anal_op_set_mnemonic (&ds->asmop, 0, r_strf (".qword 0x%016"PFMT64x"%s", ds->analop.val, tail));
 					break;
 				}
 				free (op_hex);
@@ -3140,9 +3140,9 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		ds->asmop.size = (ds->hint && ds->hint->size) ? ds->hint->size : 1;
 	} else {
 		ds->lastfail = 0;
-		ds->asmop.size = (ds->hint && ds->hint->size)
-				? ds->hint->size
-				: r_asm_op_get_size (&ds->asmop);
+		if (ds->hint && ds->hint->size) {
+			ds->asmop.size = ds->hint->size;
+		}
 	}
 	ds->oplen = ds->asmop.size;
 	if (ds->pseudo) {
@@ -4034,7 +4034,7 @@ static void ds_print_bytes(RDisasmState *ds) {
 			free (_opsize);
 		} else {
 #if 0
-			str = r_asm_op_get_hex (&ds->asmop);
+			str = r_hex_bin2strdup (&ds->asmop->bytes, &ds->asmop->size);
 #else
 			if (ds->oplen < 1) {
 				int minopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
@@ -7559,7 +7559,7 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 			pj_kn (pj, "addr", at);
 			pj_ki (pj, "size", 1);
 			if (asmop.bytes) {
-				char *hex = r_asm_op_get_hex (&asmop);
+				char *hex = r_hex_bin2strdup (asmop.bytes, asmop.size);
 				pj_ks (pj, "bytes", hex);
 				free (hex);
 			}
@@ -7592,11 +7592,11 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 		if (ds->subvar && f) {
 			char *res = r_asm_parse_subvar (core->rasm, f, at, ds->analop.size, asmop.mnemonic);
 			if (res) {
-				r_asm_op_set_asm (&asmop, res);
+				r_anal_op_set_mnemonic (&asmop, 0, res);
 				free (res);
 			}
 		}
-		ds->oplen = r_asm_op_get_size (&asmop);
+		ds->oplen = asmop.size;
 		ds->at = at;
 		skip_bytes_flag = handleMidFlags (core, ds, false);
 		if (ds->midbb) {
@@ -7623,7 +7623,7 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 			}
 			char *res = r_asm_parse_filter (core->rasm, ds->vat, core->flags, ds->hint, disasm);
 			if (res) {
-				r_asm_op_set_asm (&asmop, res);
+				r_anal_op_set_mnemonic (&asmop, 0, res);
 				free (disasm);
 				disasm = res;
 			}
@@ -7647,7 +7647,7 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 		pj_ks (pj, "disasm", disasm);
 		free (disasm);
 		{
-			char *hex = r_asm_op_get_hex (&asmop);
+			char *hex = r_hex_bin2strdup (asmop.bytes, asmop.size);
 			pj_ks (pj, "bytes", hex);
 			free (hex);
 		}
@@ -7884,7 +7884,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 					char *sp = strchr (str, ' ');
 					if (sp) {
 						char *end = sp + 60 + 1;
-						char *src = r_asm_op_get_hex (&asmop);
+						char *src = r_hex_bin2strdup (asmop.bytes, asmop.size);
 						char *dst = sp + 1 + (i * 2);
 						int len = strlen (src);
 						if (dst < end) {
@@ -7901,7 +7901,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 				}
 				break;
 			case 'j': {
-				char *op_hex = r_asm_op_get_hex (&asmop);
+				char *op_hex = r_hex_bin2strdup (asmop.bytes, asmop.size);
 				pj_o (pj);
 				pj_kn (pj, "addr", addr + i);
 				pj_ks (pj, "bytes", op_hex);
@@ -7911,7 +7911,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 				break;
 			}
 			default: {
-				char *op_hex = r_asm_op_get_hex (&asmop);
+				char *op_hex = r_hex_bin2strdup (asmop.bytes, asmop.size);
 				r_cons_printf (core->cons, "0x%08"PFMT64x" %20s  %s\n",
 						addr + i, op_hex,
 						asmop.mnemonic);
@@ -8096,7 +8096,7 @@ toro:
 			r_cons_println (core->cons, "invalid");
 		} else {
 			if (show_bytes && asmop.bytes) {
-				char *op_hex = r_asm_op_get_hex (&asmop);
+				char *op_hex = r_hex_bin2strdup (asmop.bytes, asmop.size);
 				if (op_hex) {
 					r_cons_printf (core->cons, "%20s  ", op_hex);
 					free (op_hex);

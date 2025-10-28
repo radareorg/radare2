@@ -963,7 +963,7 @@ static int r_print_format_10bytes(const RPrint* p, int mode, const char *setval,
 
 static int r_print_format_hexpairs(const RPrint* p, int endian, int mode, const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	int j;
-	size = (size == -1) ? 1 : size;
+	if (size == -1) size = 1;
 	if (MUSTSET) {
 		r_print_printf (p, "?e pf X not yet implemented\n");
 	} else if (mode & R_PRINT_DOT) {
@@ -971,7 +971,7 @@ static int r_print_format_hexpairs(const RPrint* p, int endian, int mode, const 
 			r_print_printf (p, "%02x", buf[i + j]);
 		}
 	} else if (MUSTSEE) {
-		size = (size < 1) ? 1 : size;
+		if (size < 1) size = 1;
 		if (!SEEVALUE && !ISQUIET) {
 			r_print_printf (p, "0x%08" PFMT64x " = ", seeki);
 		}
@@ -992,7 +992,7 @@ static int r_print_format_hexpairs(const RPrint* p, int endian, int mode, const 
 		}
 		r_print_printf (p, ")");
 	} else if (MUSTSEEJSON || MUSTSEESTRUCT) {
-		size = (size < 1) ? 1 : size;
+		if (size < 1) size = 1;
 		r_print_printf (p, "[ %d", buf[0]);
 		j = 1;
 		for (; j < 10; j++) {
