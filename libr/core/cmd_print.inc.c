@@ -2629,11 +2629,9 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 					r_cons_printf (core->cons, "%20s ", "");
 				}
 				if (usecolor) {
-					r_cons_printf (core->cons, "%s", Color_YELLOW);
-				}
-				r_cons_printf (core->cons, "             /fcn.%s\n", fcn->name);
-				if (usecolor) {
-					r_cons_printf (core->cons, "%s", Color_RESET);
+					r_cons_printf (core->cons, "%s/fcn.%s%s\n", Color_YELLOW, fcn->name, Color_RESET);
+				} else {
+					r_cons_printf (core->cons, "/fcn.%s\n", fcn->name);
 				}
 			}
 			const RList *list = r_flag_get_list (core->flags, addr + j);
