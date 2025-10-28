@@ -1508,7 +1508,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 				char *opstr_n = r_str_newf (" %s", R_STRBUF_SAFEGET (&analop.esil));
 				r_list_append (ropList, (void *) opstr_n);
 			}
-			char *asm_op_hex = r_asm_op_get_hex (&asmop);
+			char *asm_op_hex = r_hex_bin2strdup(asmop.bytes, asmop.size);
 			if (colorize) {
 				char *buf_asm = r_print_colorize_opcode (core->print, asmop.mnemonic,
 					core->cons->context->pal.reg, core->cons->context->pal.num, false, 0);

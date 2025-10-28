@@ -2,7 +2,6 @@ subdir('d')
 
 r_asm_sources = [
   'asm.c',
-  'aop.c',
   'acode.c',
   'parse.c',
   'filter.c',

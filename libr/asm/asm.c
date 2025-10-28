@@ -117,7 +117,7 @@ static inline int r_asm_pseudo_byte(RAnalOp *op, char *input) {
 		int num = (int)r_num_math (NULL, word);
 		buf[i] = num;
 	}
-	r_asm_op_set_buf (op, buf, len);
+	r_anal_op_set_bytes(op, 0, buf, len);
 	free (buf);
 	return len;
 }
@@ -143,7 +143,7 @@ static inline int r_asm_pseudo_fill(RAnalOp *op, const char *input) {
 			for (i = 0; i < size; i += sizeof (value)) {
 				memcpy (&buf[i], &value, sizeof (value));
 			}
-			r_asm_op_set_buf (op, buf, size);
+			r_anal_op_set_bytes(op, 0, buf, size);
 			free (buf);
 		}
 	} else {
@@ -441,7 +441,7 @@ static bool is_invalid(RAnalOp *op) {
 
 R_API int r_asm_disassemble(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (a && buf && op, -1);
-	r_asm_op_init (op);
+	r_anal_op_init (op);
 	if (len < 1) {
 		return 0;
 	}
@@ -765,7 +765,10 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 	} else if (r_str_startswith (ptr, ".os ")) {
 		r_syscall_setup (a->syscall, a->config->arch, a->config->bits, asmcpu, ptr + 4);
 	} else if (r_str_startswith (ptr, ".hex ")) {
-		ret = r_asm_op_set_hex (op, ptr + 5);
+		ut8 *bytes = malloc (strlen (ptr + 5) / 2);
+		int size = r_hex_str2bin (ptr + 5, bytes);
+		ret = r_anal_op_set_bytes (op, 0, bytes, size) ? size : 0;
+		free (bytes);
 	} else if (r_str_startswith (ptr, ".byte ") || r_str_startswith (ptr, ".int8 ")) {
 		ret = r_asm_pseudo_byte (op, ptr + 6);
 	} else if ((r_str_startswith (ptr, ".int16 ")) || r_str_startswith (ptr, ".short ")) {
@@ -1106,12 +1109,12 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 	}
 	free (lbuf);
 	free (tokens);
-	r_asm_op_fini (&op);
+	r_anal_op_fini (&op);
 	return acode;
 fail:
 	free (lbuf);
 	free (tokens);
-	r_asm_op_fini (&op);
+	r_anal_op_fini (&op);
 	r_asm_code_free (acode);
 	return NULL;
 }

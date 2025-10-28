@@ -1637,7 +1637,7 @@ static void __fix_cursor_down(RCore *core) {
 			if (sz < 1) {
 				sz = 1;
 			}
-			r_asm_op_fini (&op);
+			r_anal_op_fini (&op);
 			r_core_seek_delta (core, sz);
 			print->cur = R_MAX (print->cur - sz, 0);
 			if (print->ocur != -1) {
@@ -2940,7 +2940,7 @@ static void __direction_disassembly_cb(void *user, int direction) {
 			r_core_visual_disasm_down (core, &op, &cols);
 			r_core_seek (core, core->addr + cols, true);
 			__set_panel_addr (core, cur, core->addr);
-			r_asm_op_fini (&op);
+			r_anal_op_fini (&op);
 		}
 		break;
 	}

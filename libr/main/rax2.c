@@ -12,33 +12,33 @@
 #include <r_util/r_str.h>
 
 typedef struct {
-	bool hexstr2raw;	// -s
-	bool swapendian;	// -e
-	bool raw2hexstr;	// -S
-	bool binstr2raw;	// -Z
-	bool hashstr;		// -H
-	bool keepbase;		// -k
-	bool floating;		// -f
-	bool decimal;		// -d
-	bool randomart;		// -K
-	bool binarynum;		// -x
-	bool showunits;		// -u
-	bool timestamp;		// -t
-	bool b64encode;		// -E
-	bool b64decode;		// -D
-	bool slurphex;		// -F
-	bool binaryraw;		// -c
-	bool signedword;	// -w
-	bool str2hexstr;	// -z
-	bool manybases;		// -r
-	bool binstr2hex;	// -X
-	bool dumpcstr;		// -C
-	bool octal2raw;		// -o
-	bool ipaddr2num;	// -i
-	bool newline;		// -n
-	bool jsonbases;		// -j
-	bool forcebase;		// -b
-	bool quiet;		// -q
+	bool hexstr2raw; // -s
+	bool swapendian; // -e
+	bool raw2hexstr; // -S
+	bool binstr2raw; // -Z
+	bool hashstr; // -H
+	bool keepbase; // -k
+	bool floating; // -f
+	bool decimal; // -d
+	bool randomart; // -K
+	bool binarynum; // -x
+	bool showunits; // -u
+	bool timestamp; // -t
+	bool b64encode; // -E
+	bool b64decode; // -D
+	bool slurphex; // -F
+	bool binaryraw; // -c
+	bool signedword; // -w
+	bool str2hexstr; // -z
+	bool manybases; // -r
+	bool binstr2hex; // -X
+	bool dumpcstr; // -C
+	bool octal2raw; // -o
+	bool ipaddr2num; // -i
+	bool newline; // -n
+	bool jsonbases; // -j
+	bool forcebase; // -b
+	bool quiet; // -q
 } RaxActions;
 
 typedef struct {
@@ -52,7 +52,7 @@ static int use_stdin(RNum *num, RaxActions *flags, RaxMode *mode, PJ **pj) {
 	R_RETURN_VAL_IF_FAIL (num && flags, -1);
 	int rc = 0;
 	if (flags->slurphex) {
-		char buf[1]= {0};
+		char buf[1] = { 0 };
 		if (!rax (num, buf, 1, 0, flags, mode, pj)) {
 			rc = 1;
 		}
@@ -96,8 +96,8 @@ static bool format_output(RNum *num, char mode, const char *s, RaxMode m, RaxAct
 	}
 	if (flags.swapendian) {
 		ut64 n2 = n;
-		r_mem_swapendian ((ut8 *) &n, (ut8 *) &n2, 8);
-		if (!(int) n) {
+		r_mem_swapendian ((ut8 *)&n, (ut8 *)&n2, 8);
+		if (! (int)n) {
 			n >>= 32;
 		}
 	}
@@ -108,10 +108,11 @@ static bool format_output(RNum *num, char mode, const char *s, RaxMode m, RaxAct
 	case '0':
 		printf ("0x%" PFMT64x "\n", n);
 		break;
-	case 'F': {
-		int n2 = (int) n;
-		float *f = (float *) &n2;
-		printf ("%ff\n", *f);
+	case 'F':
+		{
+			int n2 = (int)n;
+			float *f = (float *)&n2;
+			printf ("%ff\n", *f);
 		}
 		break;
 	case 'V':
@@ -123,8 +124,8 @@ static bool format_output(RNum *num, char mode, const char *s, RaxMode m, RaxAct
 	case 'l':
 		{
 			R_STATIC_ASSERT (sizeof (float) == 4);
-			float f = (float) num->fvalue;
-			ut32 *p = (ut32 *) &f;
+			float f = (float)num->fvalue;
+			ut32 *p = (ut32 *)&f;
 			printf ("Fx%08x\n", *p);
 		}
 		break;
@@ -206,8 +207,7 @@ static int help(void) {
 		"  -x         output in hexpairs   ;  rax2 -x 0x1234 # 34120000\n"
 		"  -X         bin -> hex(bignum)   ;  rax2 -X 111111111 # 0x1ff\n"
 		"  -z         str -> bin           ;  rax2 -z hello\n"
-		"  -Z         bin -> str           ;  rax2 -Z 01000101 01110110\n"
-	);
+		"  -Z         bin -> str           ;  rax2 -Z 01000101 01110110\n");
 	return true;
 }
 
@@ -308,7 +308,7 @@ dotherax:
 		int n = ((strlen (str)) >> 1) + 1;
 		buf = calloc (1, n);
 		if (buf) {
-			n = r_hex_str2bin (str, (ut8 *) buf);
+			n = r_hex_str2bin (str, (ut8 *)buf);
 			if (n > 0) {
 				fwrite (buf, n, 1, stdout);
 			}
@@ -324,7 +324,7 @@ dotherax:
 			for (i = 0; i < len;) {
 				printf ("wx+");
 				for (j = 0; j < 80 && i < len; j++, i++) {
-					printf ("%02x", (ut8) str[i]);
+					printf ("%02x", (ut8)str[i]);
 				}
 				printf ("\n");
 			}
@@ -332,14 +332,14 @@ dotherax:
 			printf ("\n");
 		} else {
 			for (i = 0; i < len; i++) {
-				printf ("%02x", (ut8) str[i]);
+				printf ("%02x", (ut8)str[i]);
 			}
 			printf ("\n");
 		}
 		return true;
 	}
 	if (flags->binstr2raw) { // -Z
-		ut8 out[256] = {0};
+		ut8 out[256] = { 0 };
 		if (r_mem_from_binstring (str, out, sizeof (out) - 1)) {
 			printf ("%s\n", out); // TODO accept non null terminated strings
 		} else {
@@ -360,12 +360,12 @@ dotherax:
 	if (flags->randomart) { // -K
 		int n = ((strlen (str)) >> 1) + 1;
 		char *s = NULL;
-		buf = (ut8 *) calloc (1, n);
+		buf = (ut8 *)calloc (1, n);
 		if (!buf) {
 			return false;
 		}
-		ut32 *m = (ut32 *) buf;
-		n = r_hex_str2bin (str, (ut8 *) buf);
+		ut32 *m = (ut32 *)buf;
+		n = r_hex_str2bin (str, (ut8 *)buf);
 		if (n < 1 || r_str_startswith (str, "0x")) {
 			ut64 q = r_num_math_err (num, str, &errstr);
 			if (errstr) {
@@ -373,15 +373,15 @@ dotherax:
 				free (buf);
 				return false;
 			}
-			s = r_print_randomart ((ut8 *) &q, sizeof (q), q);
+			s = r_print_randomart ((ut8 *)&q, sizeof (q), q);
 		} else {
-			s = r_print_randomart ((ut8 *) buf, n, *m);
+			s = r_print_randomart ((ut8 *)buf, n, *m);
 		}
 		printf ("%s\n", s);
 		free (s);
 		free (m);
 		return true;
-}
+	}
 	if (flags->binarynum) { // -x
 		ut64 n = r_num_math_err (num, str, &errstr);
 		if (errstr) {
@@ -402,7 +402,7 @@ dotherax:
 			}
 		} else {
 			/* is 32 bit value */
-			ut32 n32 = (ut32) n;
+			ut32 n32 = (ut32)n;
 			if (flags->hexstr2raw) {
 				fwrite (&n32, sizeof (n32), 1, stdout);
 			} else {
@@ -416,7 +416,7 @@ dotherax:
 		}
 		return true;
 	} else if (flags->str2hexstr) { // -z (bin -> str)
-		char *newstr = r_mem_to_binstring((const ut8*)str, strlen (str));
+		char *newstr = r_mem_to_binstring ((const ut8 *)str, strlen (str));
 		printf ("%s\n", newstr);
 		free (newstr);
 		return true;
@@ -428,11 +428,11 @@ dotherax:
 		}
 		if (n >> 31) {
 			// is >32bit
-			n = (st64) (st32) n;
+			n = (st64) (st32)n;
 		} else if (n >> 14) {
-			n = (st64) (st16) n;
+			n = (st64) (st16)n;
 		} else if (n >> 7) {
-			n = (st64) (st8) n;
+			n = (st64) (st8)n;
 		}
 		printf ("%" PFMT64d "\n", n);
 		return true;
@@ -456,7 +456,7 @@ dotherax:
 			}
 		} else {
 			/* is 32 bit value */
-			ut32 n32 = (ut32) n;
+			ut32 n32 = (ut32)n;
 			if (flags->hexstr2raw) {
 				fwrite (&n32, sizeof (n32), 1, stdout);
 			} else {
@@ -470,7 +470,7 @@ dotherax:
 		}
 		return true;
 	} else if (flags->showunits) { // -u
-		char buf[8] = {0};
+		char buf[8] = { 0 };
 		r_num_units (buf, sizeof (buf), r_num_math_err (NULL, str, &errstr));
 		if (errstr) {
 			R_LOG_ERROR (errstr);
@@ -483,7 +483,7 @@ dotherax:
 		char *ts = r_list_head (split)->data;
 		const char *gmt = NULL;
 		if (r_list_length (split) >= 2 && strlen (r_list_head (split)->n->data) > 2) {
-			gmt = (const char*) r_list_head (split)->n->data + 2;
+			gmt = (const char *)r_list_head (split)->n->data + 2;
 		}
 		ut32 n = r_num_math_err (num, ts, &errstr);
 		if (errstr) {
@@ -498,14 +498,14 @@ dotherax:
 				return false;
 			}
 		}
-		r_print_date_unix (p, (const ut8 *) &n, sizeof (ut32));
+		r_print_date_unix (p, (const ut8 *)&n, sizeof (ut32));
 		r_print_free (p);
 		r_list_free (split);
 		return true;
 	} else if (flags->b64encode) { // -E
 		// TODO: use the dynamic b64 encoder so we dont have to manually calloc here
 		/* https://stackoverflow.com/questions/4715415/base64-what-is-the-worst-possible-increase-in-space-usage */
-		char *out = calloc (1, (len + 2) / 3 * 4 + 1); // ceil(n/3)*4 plus 1 for NUL
+		char *out = calloc (1, (len + 2) / 3 * 4 + 1); // ceil (n/3)*4 plus 1 for NUL
 		if (out) {
 			int olen = r_base64_encode (out, (const ut8 *)str, len);
 			if (olen > 0) {
@@ -569,14 +569,14 @@ dotherax:
 		a = n & 0x0fff;
 		r_num_units (unit, sizeof (unit), n);
 		if (n >> 32) {
-			printf ("int64   %"PFMT64d"\n", (st64)n);
-			printf ("uint64  %"PFMT64u"\n", (ut64)n);
+			printf ("int64   %" PFMT64d "\n", (st64)n);
+			printf ("uint64  %" PFMT64u "\n", (ut64)n);
 		} else {
 			printf ("int32   %d\n", (st32)n);
 			printf ("uint32  %u\n", (ut32)n);
 		}
-		printf ("hex     0x%"PFMT64x"\n", n);
-		printf ("octal   0%"PFMT64o"\n", n);
+		printf ("hex     0x%" PFMT64x "\n", n);
+		printf ("octal   0%" PFMT64o "\n", n);
 		printf ("unit    %s\n", unit);
 		printf ("segment %04x:%04x\n", s, a);
 		if (asnum) {
@@ -625,12 +625,12 @@ dotherax:
 			pj_o (*pj);
 		}
 
-		pj_ks (*pj, "int32", r_strf ("%d", (st32)(n & UT32_MAX)));
+		pj_ks (*pj, "int32", r_strf ("%d", (st32) (n & UT32_MAX)));
 		pj_ks (*pj, "uint32", r_strf ("%u", (ut32)n));
-		pj_ks (*pj, "int64", r_strf ("%"PFMT64d, (st64)n));
-		pj_ks (*pj, "uint64", r_strf ("%"PFMT64u, (ut64)n));
-		pj_ks (*pj, "hex", r_strf ("0x%08"PFMT64x, n));
-		pj_ks (*pj, "octal", r_strf ("0%"PFMT64o, n));
+		pj_ks (*pj, "int64", r_strf ("%" PFMT64d, (st64)n));
+		pj_ks (*pj, "uint64", r_strf ("%" PFMT64u, (ut64)n));
+		pj_ks (*pj, "hex", r_strf ("0x%08" PFMT64x, n));
+		pj_ks (*pj, "octal", r_strf ("0%" PFMT64o, n));
 
 		/* decimal, hexa, octal */
 		s = n >> 16 << 12;
@@ -665,16 +665,16 @@ dotherax:
 		return true;
 	}
 	if (flags->dumpcstr) { // -C
-		RStrBuf *sb = r_strbuf_new (flags->quiet ?"  ": "unsigned char buf[] = {\n  ");
+		RStrBuf *sb = r_strbuf_new (flags->quiet? "  ": "unsigned char buf[] = {\n  ");
 		const int byte_per_col = 12;
 		for (i = 0; i < len - 1; i++) {
 			// wrapping every N bytes
 			if (i > 0 && (i % byte_per_col) == 0) {
 				r_strbuf_append (sb, "\n  ");
 			}
-			r_strbuf_appendf (sb, "0x%02x, ", (ut8) str[i]);
+			r_strbuf_appendf (sb, "0x%02x, ", (ut8)str[i]);
 		}
-		r_strbuf_appendf (sb, "0x%02x\n", (ut8) str[len - 1]);
+		r_strbuf_appendf (sb, "0x%02x\n", (ut8)str[len - 1]);
 		if (!flags->quiet) {
 			r_strbuf_append (sb, "};\n");
 			r_strbuf_appendf (sb, "unsigned int buf_len = %d;\n", len);
@@ -742,7 +742,7 @@ dotherax:
 	}
 	// no flags passed
 
-	if  (str[0] == '0' && (tolower ((ut8)str[1]) == 'x')) {
+	if (str[0] == '0' && (tolower ((ut8)str[1]) == 'x')) {
 		out_mode = (flags->keepbase)? '0': 'I';
 	} else if (r_str_startswith (str, "b")) {
 		out_mode = 'B';
@@ -793,8 +793,8 @@ R_API int r_main_rax2(int argc, const char **argv) {
 		// use_stdin (num, NULL, &fm);
 	} else {
 		RNum *num = r_num_new (NULL, NULL, NULL);
-		RaxActions flags = {0};
-		RaxMode mode = {0};
+		RaxActions flags = { 0 };
+		RaxMode mode = { 0 };
 		PJ *pj = NULL;
 		for (i = 1; i < argc; i++) {
 			char *argv_i = strdup (argv[i]);

@@ -37,8 +37,7 @@ static void help(void) {
 		" checkout   [branch]             set the current branch to the given branch\n"
 		" status                        print a status message\n"
 		" reset                         remove all uncommited changes\n"
-		" log                           print all commits\n"
-	);
+		" log                           print all commits\n");
 	ravc_show_env (true);
 }
 
@@ -53,7 +52,7 @@ static char *get_author(void) {
 
 static void ravc_env_print(const char *name) {
 	char *value = r_sys_getenv (name);
-	printf ("%s\n", R_STR_ISNOTEMPTY (value) ? value : "");
+	printf ("%s\n", R_STR_ISNOTEMPTY (value)? value: "");
 	free (value);
 }
 
@@ -64,7 +63,7 @@ static void ravc_show_env(bool show_desc) {
 			printf ("%s\t%s\n", env[id].name, env[id].desc);
 		} else {
 			printf ("%s=", env[id].name);
-			ravc_env_print(env[id].name);
+			ravc_env_print (env[id].name);
 		}
 	}
 }
@@ -146,7 +145,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			R_LOG_ERROR ("unknown option %s", opt.argv[opt.ind + 1]);
 		}
 		free (rp);
-		return rvc? !rvc_save (rvc) : 1;
+		return rvc? !rvc_save (rvc): 1;
 	}
 	Rvc *rvc = rvc_open (rp, RVC_TYPE_ANY);
 	if (!rvc) {
@@ -178,7 +177,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		}
 		char *message = strdup (opt.argv[opt.ind + 1]);
 		if (message) {
-			RList *files = r_list_new();
+			RList *files = r_list_new ();
 			if (files) {
 				size_t i;
 				for (i = 2; i < argc - 1; i++) {
@@ -189,7 +188,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 						goto ret;
 					}
 				}
-				char *author = get_author();
+				char *author = get_author ();
 				if (author) {
 					save = rvc->p->commit (rvc, message, author, files);
 					free (author);
@@ -199,7 +198,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			free (message);
 		}
 	} else if (!strcmp (action, "checkout") && opt.argc > 2) {
-		save =  rvc_checkout (rvc, opt.argv[opt.ind + 1]);
+		save = rvc_checkout (rvc, opt.argv[opt.ind + 1]);
 	} else if (!strcmp (action, "status")) {
 		char *current_branch = rvc->p->curbranch (rvc);
 		if (current_branch) {

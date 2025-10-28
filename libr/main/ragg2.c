@@ -86,8 +86,8 @@ static void __es_free(REggState *es) {
 
 static int usage(int v) {
 	printf ("Usage: ragg2 [-FOLsrxhvz] [-a arch] [-b bits] [-k os] [-o file] [-I path]\n"
-		"             [-i sc] [-E enc] [-B hex] [-c k=v] [-C file] [-p pad] [-q off]\n"
-		"             [-S string] [-f fmt] [-nN dword] [-dDw off:hex] [-e expr] file|f.asm|-\n");
+	"             [-i sc] [-E enc] [-B hex] [-c k=v] [-C file] [-p pad] [-q off]\n"
+	"             [-S string] [-f fmt] [-nN dword] [-dDw off:hex] [-e expr] file|f.asm|-\n");
 	if (v) {
 		printf (
 			" -a [arch]       select architecture (x86, mips, arm)\n"
@@ -124,11 +124,10 @@ static int usage(int v) {
 			" -x              execute\n"
 			" -X [hexpairs]   execute rop chain, using the stack provided\n"
 			" -z              output in C string syntax\n");
-			ragg_show_env (true);
+		ragg_show_env (true);
 	}
 	return 1;
 }
-
 
 static void list(REgg *egg) {
 	RListIter *iter;
@@ -198,7 +197,7 @@ static int openfile(const char *f, int x) {
 
 static void ragg_env_print(const char *name) {
 	char *value = r_sys_getenv (name);
-	printf ("%s\n", R_STR_ISNOTEMPTY (value) ? value : "");
+	printf ("%s\n", R_STR_ISNOTEMPTY (value)? value: "");
 	free (value);
 }
 
@@ -209,7 +208,7 @@ static void ragg_show_env(bool show_desc) {
 			printf ("%s\t%s\n", env[id].name, env[id].desc);
 		} else {
 			printf ("%s=", env[id].name);
-			ragg_env_print(env[id].name);
+			ragg_env_print (env[id].name);
 		}
 	}
 }
@@ -231,7 +230,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 	bool show_raw = false;
 	int append = 0;
 	int show_str = 0;
-	ut64 get_offset  = 0;
+	ut64 get_offset = 0;
 	const char *shellcode = NULL;
 	const char *encoder = NULL;
 	const char *eggprg = NULL;
@@ -290,72 +289,72 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 			break;
 		case 'w':
 			{
-			char *arg = strdup (opt.arg);
-			char *p = strchr (arg, ':');
-			if (p) {
-				int len, off;
-				ut8 *b;
-				*p++ = 0;
-				off = r_num_math (NULL, arg);
-				b = calloc (1, strlen (opt.arg) + 1);
-				len = r_hex_str2bin (p, b);
-				if (len > 0) {
-					r_egg_patch (es->e, off, (const ut8 *)b, len);
+				char *arg = strdup (opt.arg);
+				char *p = strchr (arg, ':');
+				if (p) {
+					int len, off;
+					ut8 *b;
+					*p++ = 0;
+					off = r_num_math (NULL, arg);
+					b = calloc (1, strlen (opt.arg) + 1);
+					len = r_hex_str2bin (p, b);
+					if (len > 0) {
+						r_egg_patch (es->e, off, (const ut8 *)b, len);
+					} else {
+						R_LOG_ERROR ("Invalid hexstr for -w");
+					}
+					free (b);
 				} else {
-					R_LOG_ERROR ("Invalid hexstr for -w");
+					R_LOG_ERROR ("Missing colon in -w");
 				}
-				free (b);
-			} else {
-				R_LOG_ERROR ("Missing colon in -w");
-			}
-			free (arg);
+				free (arg);
 			}
 			break;
 		case 'n':
 			{
-			ut32 n = r_num_math (NULL, opt.arg);
-			append = 1;
-			r_egg_patch (es->e, -1, (const ut8 *)&n, 4);
+				ut32 n = r_num_math (NULL, opt.arg);
+				append = 1;
+				r_egg_patch (es->e, -1, (const ut8 *)&n, 4);
 			}
 			break;
 		case 'N':
 			{
-			ut64 n = r_num_math (NULL, opt.arg);
-			r_egg_patch (es->e, -1, (const ut8 *)&n, 8);
-			append = 1;
+				ut64 n = r_num_math (NULL, opt.arg);
+				r_egg_patch (es->e, -1, (const ut8 *)&n, 8);
+				append = 1;
 			}
 			break;
 		case 'd':
 			{
-			ut32 off, n;
-			char *p = strchr (opt.arg, ':');
-			if (p) {
-				*p = 0;
-				off = r_num_math (NULL, opt.arg);
-				n = r_num_math (NULL, p + 1);
-				*p = ':';
-				ut8 word[4];
-				r_write_le32 (word, (ut32)n);
-				// TODO: support big endian
-				r_egg_patch (es->e, off, word, sizeof (word));
-			} else {
-				R_LOG_ERROR ("Missing colon in -d");
-			}
+				ut32 off, n;
+				char *p = strchr (opt.arg, ':');
+				if (p) {
+					*p = 0;
+					off = r_num_math (NULL, opt.arg);
+					n = r_num_math (NULL, p + 1);
+					*p = ':';
+					ut8 word[4];
+					r_write_le32 (word, (ut32)n);
+					// TODO: support big endian
+					r_egg_patch (es->e, off, word, sizeof (word));
+				} else {
+					R_LOG_ERROR ("Missing colon in -d");
+				}
 			}
 			break;
 		case 'D':
 			{
-			char *p = strchr (opt.arg, ':');
-			if (p) {
-				ut64 n, off = r_num_math (NULL, opt.arg);
-				n = r_num_math (NULL, p + 1);
-				// TODO: honor endianness here
-				ut8 word[8];
-				r_write_le64 (word, n);
-				r_egg_patch (es->e, off, word, sizeof (word));
-			} else {
-				R_LOG_ERROR ("Missing colon in -d");
-			}
+				char *p = strchr (opt.arg, ':');
+				if (p) {
+					ut64 n, off = r_num_math (NULL, opt.arg);
+					n = r_num_math (NULL, p + 1);
+					// TODO: honor endianness here
+					ut8 word[8];
+					r_write_le64 (word, n);
+					r_egg_patch (es->e, off, word, sizeof (word));
+				} else {
+					R_LOG_ERROR ("Missing colon in -d");
+				}
 			}
 			break;
 		case 'S':
@@ -387,13 +386,13 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 			break;
 		case 'c':
 			{
-			char *p = strchr (opt.arg, '=');
-			if (p) {
-				*p++ = 0;
-				r_egg_option_set (es->e, opt.arg, p);
-			} else {
-				r_egg_option_set (es->e, opt.arg, "true");
-			}
+				char *p = strchr (opt.arg, '=');
+				if (p) {
+					*p++ = 0;
+					r_egg_option_set (es->e, opt.arg, p);
+				} else {
+					r_egg_option_set (es->e, opt.arg, "true");
+				}
 			}
 			break;
 		case 'F':
@@ -613,13 +612,12 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 		bytes = NULL;
 	}
 
-
 	/* set output (create output file if needed) */
 	if (ofileauto) {
 		if (file) {
 			char *o, *q, *p = strdup (file);
 			if ((o = strchr (p, '.'))) {
-				while ( (q = strchr (o + 1, '.')) ) {
+				while ((q = strchr (o + 1, '.'))) {
 					o = q;
 				}
 				*o = 0;
@@ -673,7 +671,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 	if (!es->e->bin) {
 		es->e->bin = r_buf_new ();
 	}
-	if (!(b = r_egg_get_bin (es->e))) {
+	if (! (b = r_egg_get_bin (es->e))) {
 		R_LOG_ERROR ("r_egg_get_bin: invalid egg :(");
 		goto fail;
 	}
@@ -734,7 +732,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 						printf ("%02x", tmp[i]);
 					}
 					printf ("\n");
-				} // else show_raw is_above()
+				} // else show_raw is_above ()
 				break;
 			case 'p': // PE/python
 				if (strlen (format) > 2 && format[1] == 'y') { // Python

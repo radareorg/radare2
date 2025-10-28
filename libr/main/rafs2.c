@@ -33,26 +33,26 @@ static void rafs2_options_fini(Rafs2Options *opt) {
 
 static void show_usage(void) {
 	printf ("Usage: rafs2 [options] -t <fstype> <file>\n"
-	       "Options:\n"
-	       "  -t <type>    Filesystem type (ext2, fat, ntfs, iso9660, hfs, ubifs, etc.)\n"
-	       "  -o <offset>  Offset to mount filesystem (default: 0)\n"
-	       "  -m <path>    Mount point path (default: /)\n"
-	       "  -i           Interactive mode (shell)\n"
-	       "  -l <path>    List directory contents\n"
-	       "  -c <file>    Cat file contents\n"
-	       "  -x <src:dst> Extract file from image to host\n"
-	       "  -n           Show filesystem details (like 'mn' command)\n"
-	       "  -L           List available filesystem types\n"
-	       "  -h           Show this help\n"
-	       "  -v           Show version\n"
-	       "\n"
-	       "Examples:\n"
-	       "  rafs2 -L\n"
-	       "  rafs2 -t ext2 -l / image.img\n"
-	       "  rafs2 -t fat -o 0x1000 -c /boot/config.txt disk.img\n"
-	       "  rafs2 -t ntfs -n filesystem.img\n"
-	       "  rafs2 -t iso9660 -i cdrom.iso\n"
-	       "  rafs2 -t ext2 -x /etc/passwd:passwd.txt image.img\n");
+	"Options:\n"
+	"  -t <type>    Filesystem type (ext2, fat, ntfs, iso9660, hfs, ubifs, etc.)\n"
+	"  -o <offset>  Offset to mount filesystem (default: 0)\n"
+	"  -m <path>    Mount point path (default: /)\n"
+	"  -i           Interactive mode (shell)\n"
+	"  -l <path>    List directory contents\n"
+	"  -c <file>    Cat file contents\n"
+	"  -x <src:dst> Extract file from image to host\n"
+	"  -n           Show filesystem details (like 'mn' command)\n"
+	"  -L           List available filesystem types\n"
+	"  -h           Show this help\n"
+	"  -v           Show version\n"
+	"\n"
+	"Examples:\n"
+	"  rafs2 -L\n"
+	"  rafs2 -t ext2 -l / image.img\n"
+	"  rafs2 -t fat -o 0x1000 -c /boot/config.txt disk.img\n"
+	"  rafs2 -t ntfs -n filesystem.img\n"
+	"  rafs2 -t iso9660 -i cdrom.iso\n"
+	"  rafs2 -t ext2 -x /etc/passwd:passwd.txt image.img\n");
 }
 
 static int rafs2_list_plugins(void) {
@@ -67,7 +67,7 @@ static int rafs2_list_plugins(void) {
 	RFSPlugin *plugin;
 	r_list_foreach (fs->plugins, iter, plugin) {
 		if (plugin->meta.name) {
-			const char *desc = plugin->meta.desc ? plugin->meta.desc : "";
+			const char *desc = plugin->meta.desc? plugin->meta.desc: "";
 			printf ("  %-12s %s\n", plugin->meta.name, desc);
 		}
 	}
@@ -202,7 +202,7 @@ static int rafs2_shell(Rafs2Options *opt) {
 	bool ret = r_fs_shell (shell, opt->fs, opt->mountpoint);
 	r_fs_shell_free (shell);
 
-	return ret ? 0 : 1;
+	return ret? 0: 1;
 }
 
 R_API int r_main_rafs2(int argc, const char **argv) {
@@ -250,7 +250,7 @@ R_API int r_main_rafs2(int argc, const char **argv) {
 		case 'h':
 		default:
 			show_usage ();
-			return c == 'h' ? 0 : 1;
+			return c == 'h'? 0: 1;
 		}
 	}
 
