@@ -67,11 +67,11 @@ jobs:
       matrix:
         arch:
           - amd64
-          - i386
+#         - i386
         runner: [ubuntu-22.04]
-        include:
-          - arch: arm64
-            runner: ubuntu-22.04-arm
+#       include:
+#         - arch: arm64
+#           runner: ubuntu-22.04-arm
     runs-on: ${{ matrix.runner }}
     steps:
     - name: Checkout
@@ -676,7 +676,7 @@ jobs:
     needs:
       - linux-wasi
       - tarball
-      - linux-static
+#      - linux-static
 #      - linux-acr-rpm-64
       - linux-acr-deb
       - macos-acr
@@ -722,12 +722,12 @@ jobs:
         dist/artifacts/ios-cydia32/*.deb
         dist/artifacts/ios-cydia/r2ios-sdk-*.zip
         dist/artifacts/android-acr-*/*.tar.gz
-        dist/artifacts/linux-static-*/*.tar.xz
         dist/artifacts/linux-acr-deb-*/radare2-dev_*.deb
         dist/artifacts/linux-wasi/*.zip
         dist/artifacts/linux-wasi-api/*.zip
         dist/artifacts/w64-static/*.zip
         dist/artifacts/w64-arm-meson/*.zip
+#       dist/artifacts/linux-static-*/*.tar.xz
 #       dist/artifacts/msys2-w64-arm-meson/*.zip
     steps:
       - name: Checkout code
