@@ -369,6 +369,10 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 	}
 	if (a->analb.anal) {
 		if (a->analb.use (a->analb.anal, name)) {
+			a->dcur = a->analb.anal->arch->session;
+			if (a->dcur) {
+				a->ecur = a->dcur->encoder ? a->dcur->encoder : a->dcur;
+			}
 			load_asm_descriptions (a);
 			return true;
 		}
