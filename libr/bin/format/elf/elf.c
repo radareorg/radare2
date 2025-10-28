@@ -2572,7 +2572,7 @@ char* Elf_(get_abi)(ELFOBJ *eo) {
 	case EM_SBPF:
 		// sBPF version detection from e_flags
 		// v0 = 0, v1 = 1, v2 = 2, v3 = 3
-		return r_str_newf("sbpfv5d", eflags);
+		return r_str_newf("sbpfv%d", eflags);
 	}
 	return NULL;
 }
@@ -4259,6 +4259,23 @@ TODO: ptr->flags = elf_flags_tostring (section->flags);
 	}
 }
 
+static st64 calculate_sbpf_base_delta(ELFOBJ *eo) {
+	if (eo->user_baddr == UT64_MAX || eo->ehdr.e_machine != EM_SBPF) {
+		return 0;
+	}
+
+	// Find original base from first PT_LOAD segment
+	size_t i;
+	for (i = 0; i < eo->ehdr.e_phnum; i++) {
+		if (eo->phdr[i].p_type == PT_LOAD) {
+			ut64 align = eo->phdr[i].p_align ? eo->phdr[i].p_align : 0x10000;
+			ut64 orig_base = eo->phdr[i].p_vaddr & ~(align - 1);
+			return (st64)eo->user_baddr - (st64)orig_base;
+		}
+	}
+	return 0;
+}
+
 static bool _add_sections_from_phdr(RBinFile *bf, ELFOBJ *eo, bool *found_load) {
 	Elf_(Phdr) *phdr = eo->phdr;
 	// program headers is another section
@@ -4278,19 +4295,7 @@ static bool _add_sections_from_phdr(RBinFile *bf, ELFOBJ *eo, bool *found_load) 
 	int i = 0, n = 0;
 
 	// Calculate base address delta for sBPF with custom baddr
-	st64 base_delta = 0;
-	if (eo->user_baddr != UT64_MAX && eo->ehdr.e_machine == EM_SBPF) {
-		// Find original base from first PT_LOAD segment
-		int j;
-		for (j = 0; j < num; j++) {
-			if (phdr[j].p_type == PT_LOAD) {
-				ut64 align = phdr[j].p_align ? phdr[j].p_align : 0x10000;
-				ut64 orig_base = phdr[j].p_vaddr & ~(align - 1);
-				base_delta = (st64)eo->user_baddr - (st64)orig_base;
-				break;
-			}
-		}
-	}
+	st64 base_delta = calculate_sbpf_base_delta(eo);
 
 	for (i = 0; i < num; i++) {
 		RBinSection *ptr = r_vector_end (&eo->cached_sections);
@@ -5552,22 +5557,8 @@ ut64 Elf_(p2v) (ELFOBJ *eo, ut64 paddr) {
 			ut64 vaddr = p->p_vaddr + paddr - p->p_offset;
 
 			// If user specified a custom base address, adjust the virtual address
-			if (eo->user_baddr != UT64_MAX && eo->ehdr.e_machine == EM_SBPF) {
-				// Calculate the original base address from first LOAD segment
-				ut64 orig_base = UT64_MAX;
-				size_t j;
-				for (j = 0; j < eo->ehdr.e_phnum; j++) {
-					if (eo->phdr[j].p_type == PT_LOAD) {
-						ut64 align = eo->phdr[j].p_align ? eo->phdr[j].p_align : 0x10000;
-						orig_base = eo->phdr[j].p_vaddr & ~(align - 1);
-						break;
-					}
-				}
-				if (orig_base != UT64_MAX) {
-					st64 delta = (st64)eo->user_baddr - (st64)orig_base;
-					vaddr = (ut64)((st64)vaddr + delta);
-				}
-			}
+			st64 delta = calculate_sbpf_base_delta(eo);
+			vaddr = (ut64)((st64)vaddr + delta);
 
 			return vaddr;
 		}
