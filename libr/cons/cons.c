@@ -12,14 +12,17 @@ static RCons s_cons_global = {0};
 static void __break_signal(int sig);
 
 // Count display lines, treating long lines (>80 chars) as multiple lines
-static int count_display_lines(const char *buffer, size_t len) {
+// Stops counting at R_CONS_MAX_LINES to avoid performance issues with huge outputs
+#define R_CONS_MAX_LINES 10000
+
+static unsigned int count_display_lines(const char *buffer, size_t len) {
 	if (!buffer || len == 0) {
 		return 0;
 	}
-	int lines = 0;
-	int line_chars = 0;
+	unsigned int lines = 0;
+	unsigned int line_chars = 0;
 	size_t i;
-	for (i = 0; i < len; i++) {
+	for (i = 0; i < len && lines < R_CONS_MAX_LINES; i++) {
 		if (buffer[i] == '\n') {
 			lines++;
 			line_chars = 0;
@@ -28,11 +31,14 @@ static int count_display_lines(const char *buffer, size_t len) {
 			// Count extra line for every 80 characters in a single line
 			if (line_chars > 0 && line_chars % 80 == 0) {
 				lines++;
+				if (lines >= R_CONS_MAX_LINES) {
+					break;
+				}
 			}
 		}
 	}
 	// Add one more line if buffer doesn't end with newline
-	if (line_chars > 0) {
+	if (line_chars > 0 && lines < R_CONS_MAX_LINES) {
 		lines++;
 	}
 	return lines;
@@ -884,7 +890,7 @@ R_API void r_cons_flush(RCons *cons) {
 			r_sys_cmd_str_full (cons->pager, ctx->buffer, -1, NULL, NULL, NULL);
 			r_cons_reset (cons);
 		} else if (cons->maxpage > 0 && ctx->buffer_len > cons->maxpage) {
-			int lines = count_display_lines (ctx->buffer, ctx->buffer_len);
+			unsigned int lines = count_display_lines (ctx->buffer, ctx->buffer_len);
 			if (lines > 0 && !r_cons_yesno (cons, 'n',"Do you want to print %d lines? (y/N)", lines)) {
 				r_cons_reset (cons);
 				return;
