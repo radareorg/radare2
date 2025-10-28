@@ -2793,46 +2793,48 @@ static int __runMain(RMainCallback cb, const char *arg) {
 	return res;
 }
 
+#define ISCMD(x) (!strcmp (input, x) || r_str_startswith (input, x " "))
+
 static bool cmd_r2cmd(RCore *core, const char *_input) {
 	char *input = r_str_newf ("r%s", _input);
 	int rc = 0;
 
-	if (r_str_startswith (input, "rax2")) {
+	if (ISCMD ("rax2")) {
 		rc = __runMain (core->r_main_rax2, input);
-	} else if (r_str_startswith (input, "r2pm")) {
+	} else if (ISCMD ("r2pm")) {
 		rc = __runMain (core->r_main_r2pm , input);
-	} else if (r_str_startswith (input, "r2")) {
+	} else if (ISCMD ("r2")) {
 		rc = __runMain (core->r_main_radare2, input);
-	} else if (r_str_startswith (input, "rapatch2")) {
+	} else if (ISCMD ("rapatch2")) {
 		r_sys_cmdf ("%s", input);
 		// rc = __runMain (r_main_rapatch2, input);
-	} else if (r_str_startswith (input, "radare2")) {
+	} else if (ISCMD ("radare2")) {
 		r_sys_cmdf ("%s", input);
 		// rc = __runMain (core->r_main_radare2, input);
-	} else if (r_str_startswith (input, "rasm2")) {
+	} else if (ISCMD ("rasm2")) {
+#if __wasi__
 		// TODO: fix this (rcons)
-		#if __wasi__
- 		  rc = __runMain (core->r_main_rasm2, input);
- 		#else
- 			r_sys_cmdf ("%s", input);
- 		#endif
-	} else if (r_str_startswith (input, "rabin2")) {
+		rc = __runMain (core->r_main_rasm2, input);
+#else
+		r_sys_cmdf ("%s", input);
+#endif
+	} else if (ISCMD ("rabin2")) {
 		r_sys_cmdf ("%s", input);
 		// rc = __runMain (core->r_main_rabin2, input);
-	} else if (r_str_startswith (input, "ragg2")) {
+	} else if (ISCMD ("ragg2")) {
 		r_sys_cmdf ("%s", input);
 		// rc = __runMain (core->r_main_ragg2, input);
-	} else if (r_str_startswith (input, "rafs2")) {
+	} else if (ISCMD ("rafs2")) {
 		rc = __runMain (core->r_main_rafs2, input);
-	} else if (r_str_startswith (input, "ravc2")) {
+	} else if (ISCMD ("ravc2")) {
 		rc = __runMain (core->r_main_ravc2, input);
-	} else if (r_str_startswith (input, "r2pm")) {
+	} else if (ISCMD ("r2pm")) {
 		rc = __runMain (core->r_main_r2pm, input);
-	} else if (r_str_startswith (input, "radiff2")) {
+	} else if (ISCMD ("radiff2")) {
 		rc = __runMain (core->r_main_radiff2, input);
-	} else if (r_str_startswith (input, "r2.")) {
+	} else if (ISCMD ("r2.")) {
 		r_core_cmdf (core, "'js console.log(r2.%s)", input + 3);
-	} else if (r_str_startswith (input, "r2")) {
+	} else if (ISCMD ("r2")) {
 		if (input[2] == ' ' || input[2] == 0) {
 			r_sys_cmdf ("%s", input);
 		} else {
