@@ -2039,6 +2039,11 @@ of the maximum page size
 ut64 Elf_(get_baddr)(ELFOBJ *eo) {
 	R_RETURN_VAL_IF_FAIL (eo, 0);
 
+	// If user specified a base address via -B flag, use it
+	if (eo->user_baddr != UT64_MAX) {
+		return eo->user_baddr;
+	}
+
 	ut64 base = UT64_MAX;
 	if (eo->phdr) {
 		size_t i;
@@ -2057,11 +2062,6 @@ ut64 Elf_(get_baddr)(ELFOBJ *eo) {
 		// we return our own base address for ET_REL type
 		// we act as a loader for ELF
 		return 0x08000000;
-	}
-
-	// If user specified a base address via -B flag, use it
-	if (eo->user_baddr != UT64_MAX) {
-		return eo->user_baddr;
 	}
 
 	return base;
@@ -2572,16 +2572,7 @@ char* Elf_(get_abi)(ELFOBJ *eo) {
 	case EM_SBPF:
 		// sBPF version detection from e_flags
 		// v0 = 0, v1 = 1, v2 = 2, v3 = 3
-		if (eflags == 3) {
-			return strdup ("sbpfv3");
-		} else if (eflags == 2) {
-			return strdup ("sbpfv2");
-		} else if (eflags == 1) {
-			return strdup ("sbpfv1");
-		} else {
-			return strdup ("sbpfv0");
-		}
-		break;
+		return r_str_newf("sbpfv5d", eflags);
 	}
 	return NULL;
 }
@@ -4290,7 +4281,8 @@ static bool _add_sections_from_phdr(RBinFile *bf, ELFOBJ *eo, bool *found_load) 
 	st64 base_delta = 0;
 	if (eo->user_baddr != UT64_MAX && eo->ehdr.e_machine == EM_SBPF) {
 		// Find original base from first PT_LOAD segment
-		for (int j = 0; j < num; j++) {
+		int j;
+		for (j = 0; j < num; j++) {
 			if (phdr[j].p_type == PT_LOAD) {
 				ut64 align = phdr[j].p_align ? phdr[j].p_align : 0x10000;
 				ut64 orig_base = phdr[j].p_vaddr & ~(align - 1);
@@ -5563,7 +5555,8 @@ ut64 Elf_(p2v) (ELFOBJ *eo, ut64 paddr) {
 			if (eo->user_baddr != UT64_MAX && eo->ehdr.e_machine == EM_SBPF) {
 				// Calculate the original base address from first LOAD segment
 				ut64 orig_base = UT64_MAX;
-				for (size_t j = 0; j < eo->ehdr.e_phnum; j++) {
+				size_t j;
+				for (j = 0; j < eo->ehdr.e_phnum; j++) {
 					if (eo->phdr[j].p_type == PT_LOAD) {
 						ut64 align = eo->phdr[j].p_align ? eo->phdr[j].p_align : 0x10000;
 						orig_base = eo->phdr[j].p_vaddr & ~(align - 1);
