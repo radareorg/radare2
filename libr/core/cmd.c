@@ -2802,6 +2802,13 @@ static bool cmd_r2cmd(RCore *core, const char *_input) {
 	} else if (r_str_startswith (input, "r2pm")) {
 		rc = __runMain (core->r_main_r2pm , input);
 	} else if (r_str_startswith (input, "r2")) {
+		// Check SDB for suggestions before attempting to run
+		const char *msg = sdb_const_get (core->sdb, input, NULL);
+		if (msg) {
+			R_LOG_INFO ("%s", msg);
+			free (input);
+			return true;
+		}
 		rc = __runMain (core->r_main_radare2, input);
 	} else if (r_str_startswith (input, "rapatch2")) {
 		r_sys_cmdf ("%s", input);
@@ -6367,7 +6374,13 @@ static int run_cmd_depth(RCore *core, char *cmd) {
 		}
 		ret = r_core_cmd_subst (core, rcmd);
 		if (R_UNLIKELY (ret == -1)) {
-			R_LOG_ERROR ("Invalid command '%s' (0x%02x)", rcmd, *rcmd);
+			// Check for command suggestion in SDB
+			const char *suggestion = sdb_const_get (core->sdb, rcmd, NULL);
+			if (suggestion) {
+				R_LOG_INFO ("%s", suggestion);
+			} else {
+				R_LOG_ERROR ("Invalid command '%s' (0x%02x)", rcmd, *rcmd);
+			}
 			break;
 		}
 		if (!ptr) {

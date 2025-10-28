@@ -1778,6 +1778,24 @@ static void update_sdb(RCore *core) {
 	}
 }
 
+static void init_cmd_suggestions(RCore *core) {
+	if (!core || !core->sdb) {
+		return;
+	}
+	// Suggestions for actual plugin commands (pd* variants)
+	sdb_set (core->sdb, "pdd", "You need to install the plugin with r2pm -ci r2dec", 0);
+	sdb_set (core->sdb, "pdg", "You need to install the plugin with r2pm -ci r2ghidra", 0);
+	sdb_set (core->sdb, "pdz", "You need to install the plugin with r2pm -ci r2retdec", 0);
+	sdb_set (core->sdb, "pdv", "You need to install the plugin with r2pm -ci east", 0);
+	
+	// Suggestions for common user-facing command names (redirect to actual commands)
+	sdb_set (core->sdb, "r2dec", "You are probably looking for the pdd command", 0);
+	sdb_set (core->sdb, "r2ghidra", "You are probably looking for the pdg command", 0);
+	
+	// Users can add custom suggestions to this database at runtime using:
+	// k cmd_name=suggestion message
+}
+
 #define MINLEN 1
 static int is_string(const ut8 *buf, int size, int *len) {
 	int i;
@@ -2782,6 +2800,7 @@ R_API bool r_core_init(RCore *core) {
 	r_config_set (core->config, "asm.arch", R_SYS_ARCH);
 	r_bp_use (core->dbg->bp, R_SYS_ARCH, core->anal->config->bits);
 	update_sdb (core);
+	init_cmd_suggestions (core);
 	{
 		char *a = r_str_r2_prefix (R2_FLAGS);
 		if (a) {
