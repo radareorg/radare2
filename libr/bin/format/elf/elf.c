@@ -2570,9 +2570,7 @@ char* Elf_(get_abi)(ELFOBJ *eo) {
 	case EM_V850:
 		break;
 	case EM_SBPF:
-		// sBPF version detection from e_flags
-		// v0 = 0, v1 = 1, v2 = 2, v3 = 3
-		return r_str_newf("sbpfv%d", eflags);
+		return r_str_newf ("sbpfv%d", eflags);
 	}
 	return NULL;
 }
@@ -4295,7 +4293,7 @@ static bool _add_sections_from_phdr(RBinFile *bf, ELFOBJ *eo, bool *found_load) 
 	int i = 0, n = 0;
 
 	// Calculate base address delta for sBPF with custom baddr
-	st64 base_delta = calculate_sbpf_base_delta(eo);
+	st64 base_delta = calculate_sbpf_base_delta (eo);
 
 	for (i = 0; i < num; i++) {
 		RBinSection *ptr = r_vector_end (&eo->cached_sections);
@@ -5557,7 +5555,7 @@ ut64 Elf_(p2v) (ELFOBJ *eo, ut64 paddr) {
 			ut64 vaddr = p->p_vaddr + paddr - p->p_offset;
 
 			// If user specified a custom base address, adjust the virtual address
-			st64 delta = calculate_sbpf_base_delta(eo);
+			st64 delta = calculate_sbpf_base_delta (eo);
 			vaddr = (ut64)((st64)vaddr + delta);
 
 			return vaddr;
