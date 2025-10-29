@@ -786,18 +786,15 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 		switch (rel->type) {
 		case R_BPF_64_64: // 64-bit immediate for lddw instruction
 			r->type = R_BIN_RELOC_64;
-			// P is already correctly computed via p2v for sBPF (see lines 458-462)
 			r->vaddr = P;
 			return r;
 		case R_BPF_64_RELATIVE: // PC relative 64-bit address
 			r->type = R_BIN_RELOC_64;
-			// P is already correctly computed via p2v for sBPF (see lines 458-462)
 			r->vaddr = P;
 			return r;
 		case R_BPF_64_32: // 32-bit function/syscall ID for call instruction
 			r->type = R_BIN_RELOC_32;
 			// The immediate value will be a function ID or syscall ID, not an address
-			// P is already correctly computed via p2v for sBPF (see lines 458-462)
 			r->vaddr = P;
 			return r;
 		default:
@@ -1143,12 +1140,9 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 		switch (rel->type) {
 		case R_BPF_64_64: { // 64-bit immediate for lddw instructions
 			// Read the current value from the immediate fields (addend)
-			ut8 buf_lo[4], buf_hi[4];
+			ut32 va_lo, va_hi;
 			ut64 addend = 0;
-			if (r_buf_read_at (bo->b, rel->offset + 4, buf_lo, 4) == 4 &&
-			    r_buf_read_at (bo->b, rel->offset + 12, buf_hi, 4) == 4) {
-				ut32 va_lo = r_read_le32 (buf_lo);
-				ut32 va_hi = r_read_le32 (buf_hi);
+			if (r_buf_fread_at (bo->b, rel->offset + 4, (ut8 *)"xx", &va_lo, &va_hi)) {
 				addend = ((ut64)va_hi << 32) | va_lo;
 			}
 
@@ -1190,11 +1184,8 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 				// For lddw instruction, addend is split across two immediate fields
 				if (addend == 0 && bo && paddr != UT64_MAX) {
 					// Read from the immediate fields - use physical offset
-					ut8 buf_lo[4], buf_hi[4];
-					if (r_buf_read_at (bo->b, paddr + 4, buf_lo, 4) == 4 &&
-					    r_buf_read_at (bo->b, paddr + 12, buf_hi, 4) == 4) {
-						ut32 va_lo = r_read_le32 (buf_lo);
-						ut32 va_hi = r_read_le32 (buf_hi);
+					ut32 va_lo, va_hi;
+					if (r_buf_fread_at (bo->b, paddr + 4, (ut8 *)"xx", &va_lo, &va_hi)) {
 						addend = ((ut64)va_hi << 32) | va_lo;
 					}
 				}
@@ -1204,7 +1195,7 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 				// Get the virtual address where this relocation should be written
 				ut64 write_vaddr = Elf_(p2v)(bo, rel->offset);
 				// Write to both immediate fields (lddw instruction)
-				r_write_le32 (buf, (ut32)(result & 0xffffffff));
+				r_write_le32 (buf, (ut32)(result & UT32_MAX));
 				iob->overlay_write_at (iob->io, write_vaddr + 4, buf, 4);
 				r_write_le32 (buf, (ut32)(result >> 32));
 				iob->overlay_write_at (iob->io, write_vaddr + 12, buf, 4);
