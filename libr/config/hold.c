@@ -51,15 +51,12 @@ R_API bool r_config_hold(RConfigHold *h, ...) {
 	return true;
 }
 
-R_API RConfigHold* r_config_hold_new(RConfig *cfg) {
+R_API RConfigHold* R_NONNULL r_config_hold_new(RConfig *cfg) {
 	R_RETURN_VAL_IF_FAIL (cfg, NULL);
 	RConfigHold *hold = R_NEW0 (RConfigHold);
-	if (hold) {
-		hold->list = r_list_newf ((RListFree)r_config_holder_free);
-		hold->cfg = cfg;
-		return hold;
-	}
-	return NULL;
+	hold->list = r_list_newf ((RListFree)r_config_holder_free);
+	hold->cfg = cfg;
+	return hold;
 }
 
 R_API void r_config_hold_restore(RConfigHold *h) {
