@@ -49,8 +49,7 @@ static Sdb* get_sdb(RBinFile *bf) {
 }
 
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
-	ut64 user_baddr = bf->user_baddr;
-	ELFOBJ *res = Elf_(new_buf) (buf, user_baddr, bf->rbin->options.verbose);
+	ELFOBJ *res = Elf_(new_buf) (buf, bf->user_baddr, bf->rbin->options.verbose);
 	if (res) {
 	//	sdb_ns_set (sdb, "info", res->kv);
 		res->limit = bf->rbin->options.limit;
