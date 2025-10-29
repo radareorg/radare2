@@ -7296,7 +7296,9 @@ static int cmd_print(void *data, const char *input) {
 			processed_cmd = true;
 			break;
 		case 'c': // "pdc" // "pDc"
-			if (input[2] == 'l') {
+			if (input[2] == '.') {
+				// do nothing, all the decompilers should be handling "pdc." to be listed
+			} else if (input[2] == 'l') {
 				linear_pseudo (core, input + 3);
 			} else {
 				r_core_pseudo_code (core, input + 2);
