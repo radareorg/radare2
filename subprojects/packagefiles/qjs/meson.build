@@ -5,7 +5,7 @@ sources = [
   'libregexp.c',
   'libunicode.c',
   'quickjs.c',
-  'xsum.c'
+  'dtoa.c'
 ]
 
 incs = include_directories('.')

@@ -12,7 +12,7 @@
 
 #include "../../../shlr/qjs/js_require.c"
 #include "../../../shlr/qjs/js_r2papi.c"
-#define QJS_STRING(x) JS_NewString (ctx, x)
+#define QJS_STRING(x) JS_NewString(ctx, x)
 
 typedef struct {
 	R_BORROW JSContext *ctx;
@@ -100,7 +100,7 @@ static void plugin_manager_add_core_plugin(QjsPluginManager *pm, const char *nam
 	R_RETURN_IF_FAIL (pm);
 	QjsCorePlugin *cp = RVecCorePlugin_emplace_back (&pm->core_plugins);
 	if (cp) {
-		cp->name = name ? strdup (name) : NULL;
+		cp->name = name? strdup (name): NULL;
 		cp->qctx.ctx = ctx;
 		cp->qctx.call_func = func;
 	}
@@ -111,7 +111,7 @@ static QjsIoPlugin *plugin_manager_add_io_plugin(QjsPluginManager *pm, const cha
 
 	QjsIoPlugin *cp = RVecIoPlugin_emplace_back (&pm->io_plugins);
 	if (cp) {
-		cp->name = name ? strdup (name) : NULL;
+		cp->name = name? strdup (name): NULL;
 		cp->ctx = ctx;
 		cp->iop = iop;
 		cp->fn_check_js = func;
@@ -126,7 +126,7 @@ static QjsAsmPlugin *plugin_manager_add_parse_plugin(QjsPluginManager *pm, const
 
 	QjsAsmPlugin *cp = RVecAsmPlugin_emplace_back (&pm->asm_plugins);
 	if (cp) {
-		cp->name = name ? strdup (name) : NULL;
+		cp->name = name? strdup (name): NULL;
 		cp->ctx = ctx;
 		cp->iop = iop;
 		cp->fn_parse_js = func;
@@ -295,13 +295,10 @@ static void r2qjs_dump_obj(JSContext *ctx, JSValueConst val) {
 }
 
 static void js_std_dump_error1(JSContext *ctx, JSValueConst exception_val) {
-	JSValue val;
-	bool is_error;
-
-	is_error = JS_IsError (ctx, exception_val);
+	bool is_error = JS_IsError (exception_val);
 	r2qjs_dump_obj (ctx, exception_val);
 	if (is_error) {
-		val = JS_GetPropertyStr (ctx, exception_val, "stack");
+		JSValue val = JS_GetPropertyStr (ctx, exception_val, "stack");
 		if (!JS_IsUndefined (val)) {
 			r2qjs_dump_obj (ctx, val);
 		}
@@ -310,8 +307,7 @@ static void js_std_dump_error1(JSContext *ctx, JSValueConst exception_val) {
 }
 
 static void js_std_dump_error(JSContext *ctx) {
-	JSValue exception_val;
-	exception_val = JS_GetException (ctx);
+	JSValue exception_val = JS_GetException (ctx);
 	js_std_dump_error1 (ctx, exception_val);
 	JS_FreeValue (ctx, exception_val);
 }
@@ -783,10 +779,10 @@ static void register_helpers(JSContext *ctx) {
 	JS_SetPropertyStr (ctx, global_obj, "print", JS_NewCFunction (ctx, js_print, "print", 1));
 	eval (ctx, "setTimeout = (x,y) => x ();");
 	eval (ctx, "function dump (x) {"
-		  "if (typeof x==='object' && Object.keys (x)[0] != '0') { for (let k of Object.keys (x)) { console.log (k);}} else "
-		  "if (typeof x==='number'&& x > 0x1000){console.log (R.hex (x));}else"
-		  "{console.log ((typeof x==='string')?x:JSON.stringify (x, null, 2));}"
-		  "}");
+		"if (typeof x==='object' && Object.keys (x)[0] != '0') { for (let k of Object.keys (x)) { console.log (k);}} else "
+		"if (typeof x==='number'&& x > 0x1000){console.log (R.hex (x));}else"
+		"{console.log ((typeof x==='string')?x:JSON.stringify (x, null, 2));}"
+		"}");
 	eval (ctx, "var console = { log:print, error:print, debug:print };");
 	eval (ctx, "r2.cmd2 = (x) => JSON.parse (r2.cmd (`'{\"cmd\":\"${x}\"}`));");
 	eval (ctx, "r2.cmd2j = (x) => JSON.parse (r2.cmd (`'{\"cmd\":\"${x}\",\"json\":true}`));");

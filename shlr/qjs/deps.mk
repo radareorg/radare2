@@ -12,7 +12,7 @@ QJSFILES+=libregexp.c
 QJSFILES+=libunicode.c
 # https://github.com/quickjs-ng/quickjs/issues/17
 # QJSFILES+=libbf.c
-QJSFILES+=xsum.c
+QJSFILES+=dtoa.c
 ifeq ($(QJS_LIBC),1)
 QJSFILES+=quickjs-libc.c
 endif
