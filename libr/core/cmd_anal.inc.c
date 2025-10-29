@@ -16131,7 +16131,6 @@ static int cmd_anal(void *data, const char *input) {
 	case 'F': // "aF"
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_aF);
-			break;
 		} else if (input[1] == 0) {
 			r_core_anal_fcn (core, core->addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, 1);
 		} else {

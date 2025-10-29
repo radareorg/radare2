@@ -1,8 +1,8 @@
-NAME=aFr on ELF
+NAME=aF on ELF
 FILE=bins/elf/msp430.elf
 CMDS=<<EOF
 s main
-aFr
+aF
 pif
 afi
 ?e --
@@ -65,13 +65,13 @@ data-xrefs:
 EOF
 RUN
 
-NAME=aFr on same but ihex and .r2 script
+NAME=aF on same but ihex and .r2 script
 BROKEN=1
 FILE=ihex://bins/microcorruption/tutorial
 CMDS=<<EOF
 . bins/microcorruption/tutorial.r2
 s main
-aFr
+aF
 pif
 afi
 EOF

@@ -1054,7 +1054,6 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 					//}
 					ptr_start = ptr + 1;
 				}
-				ptr = ptr_start;
 			}
 			if (!*ptr_start) {
 				ret = 0;
