@@ -18,6 +18,40 @@ typedef struct {
 	R_BORROW JSContext *ctx;
 	JSValue call_func;
 } QjsContext;
+
+// Global variable to store current context for break handler
+static R_TH_LOCAL JSContext *current_ctx = NULL;
+
+static int qjs_interrupt_handler(JSRuntime *rt, void *opaque) {
+	RCons *cons = (RCons *)opaque;
+	if (cons && cons->context && cons->context->breaked) {
+		return 1;
+	}
+	return 0;
+}
+
+static void qjs_break_handler(void *user) {
+	R_LOG_ERROR ("JavaScript execution interrupted");
+
+	if (current_ctx) {
+		// Create an error object to get the stack trace
+		JSValue error_obj = JS_NewError (current_ctx);
+		if (!JS_IsException (error_obj)) {
+			JSValue stack_val = JS_GetPropertyStr (current_ctx, error_obj, "stack");
+			if (!JS_IsException (stack_val) && !JS_IsUndefined (stack_val)) {
+				const char *stack_str = JS_ToCString (current_ctx, stack_val);
+				if (stack_str) {
+					R_LOG_ERROR ("JavaScript stack trace:");
+					R_LOG_ERROR ("%s", stack_str);
+					JS_FreeCString (current_ctx, stack_str);
+				}
+				JS_FreeValue (current_ctx, stack_val);
+			}
+			JS_FreeValue (current_ctx, error_obj);
+		}
+	}
+}
+
 #define QJS_CORE_MAGIC 0x07534617
 
 // TODO: deprecate
@@ -836,9 +870,18 @@ static bool eval(JSContext *ctx, const char *code) {
 	if (R_STR_ISEMPTY (code)) {
 		return false;
 	}
+
+	current_ctx = ctx;
+
 	JSRuntime *rt = JS_GetRuntime (ctx);
 	QjsPluginManager *pm = JS_GetRuntimeOpaque (rt);
 	RCons *cons = pm->core->cons;
+
+	// Register break handler for JS execution
+	r_cons_context_break_push (pm->core->cons, cons->context, qjs_break_handler, NULL, false);
+
+	// Set interrupt handler for JS runtime
+	JS_SetInterruptHandler (rt, qjs_interrupt_handler, cons);
 
 	bool wantRaw = strstr (code, "termInit (");
 	if (wantRaw) {
@@ -861,6 +904,12 @@ static bool eval(JSContext *ctx, const char *code) {
 	}
 	// restore raw console
 	JS_FreeValue (ctx, v);
+
+	// Unregister break handler
+	r_cons_context_break_pop (pm->core->cons, cons->context, false);
+	JS_SetInterruptHandler (rt, NULL, NULL);
+	current_ctx = NULL;
+
 	return true;
 }
 
@@ -935,6 +984,7 @@ static bool init(RLangSession *ls) {
 
 	// requires pm to be set in the plugin_data
 	register_helpers (ctx);
+
 	return true;
 }
 
