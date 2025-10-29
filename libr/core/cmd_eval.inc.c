@@ -2,6 +2,12 @@
 
 #if R_INCLUDE_BEGIN
 
+static RCoreHelpMessage help_msg_ex = {
+	"Usage ex", "[it|port]", " posix shell aliases only",
+	"exit", " [v]", "alias for 'q'",
+	"export", "[k=[v]]", "alias for '%'",
+	NULL
+};
 static RCoreHelpMessage help_msg_ecH = {
 	"Usage ecH[iw-?]", "", "",
 	"ecHi", "[color]", "highlight current instruction with 'color' background",
@@ -43,6 +49,7 @@ static RCoreHelpMessage help_msg_e = {
 	"er", " [key]", "set config key as readonly. no way back",
 	"es", " [space]", "list all eval spaces [or keys]",
 	"et", " [key]", "show type of given config variable",
+	"ex", "[?]", "prefix for posix shells like exit and export",
 	"ev", " [key]", "list config vars in verbose format",
 	"evj", " [key]", "list config vars in verbose format in JSON",
 	NULL
@@ -809,8 +816,19 @@ static int cmd_eval(void *data, const char *input) {
 		}
 		return true;
 	case 'x': // "ex"
-		// XXX we need headers for the cmd_xxx files.
-		return cmd_quit (data, "");
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_ex);
+			break;
+		}
+		if (r_str_startswith (input, "xit")) { // "exit"
+			return cmd_quit (data, r_str_trim_head_ro (input + strlen ("xit")));
+		}
+		if (r_str_startswith (input, "xport")) { // "export"
+			const char *arg = r_str_trim_head_ro (input + strlen ("xport"));
+			return r_core_cmdf (core, "%%%s", arg);
+		}
+		r_core_return_invalid_command (core, "ex", input[1]);
+		break;
 	case 'J': // "eJ"
 		core_config_list (core, NULL, 'J');
 		break;
