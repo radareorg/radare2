@@ -1140,10 +1140,11 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 		switch (rel->type) {
 		case R_BPF_64_64: { // 64-bit immediate for lddw instructions
 			// Read the current value from the immediate fields (addend)
-			ut32 va_lo, va_hi;
+			// offset+4 = imm_lo, offset+8 = second instruction, offset+12 = imm_hi
+			ut32 vals[3];
 			ut64 addend = 0;
-			if (r_buf_fread_at (bo->b, rel->offset + 4, (ut8 *)"xx", &va_lo, &va_hi)) {
-				addend = ((ut64)va_hi << 32) | va_lo;
+			if (r_buf_fread_at (bo->b, rel->offset + 4, (ut8 *)vals, "iii", 1) == 12) {
+				addend = ((ut64)vals[2] << 32) | vals[0];
 			}
 
 			// V = symbol value + addend
@@ -1184,9 +1185,10 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 				// For lddw instruction, addend is split across two immediate fields
 				if (addend == 0 && bo && paddr != UT64_MAX) {
 					// Read from the immediate fields - use physical offset
-					ut32 va_lo, va_hi;
-					if (r_buf_fread_at (bo->b, paddr + 4, (ut8 *)"xx", &va_lo, &va_hi)) {
-						addend = ((ut64)va_hi << 32) | va_lo;
+					// paddr+4 = imm_lo, paddr+8 = second instruction, paddr+12 = imm_hi
+					ut32 vals[3];
+					if (r_buf_fread_at (bo->b, paddr + 4, (ut8 *)vals, "iii", 1) == 12) {
+						addend = ((ut64)vals[2] << 32) | vals[0];
 					}
 				}
 
@@ -1371,14 +1373,11 @@ static RList* patch_relocs(RBinFile *bf) {
 
 		if (sym_addr && sym_addr != UT64_MAX) {
 			ptr->vaddr = sym_addr;
-		} else {
-			// For sBPF, use the vaddr from reloc_convert (which was set by p2v)
-			// Don't overwrite it with the .got.r2 address
-			if (eo->ehdr.e_machine != EM_SBPF) {
-				ptr->vaddr = vaddr;
-				ht_uu_insert (relocs_by_sym, reloc->sym, vaddr);
-				vaddr += cdsz;
-			}
+		} else if (!ptr->vaddr || ptr->vaddr == n_vaddr) {
+			// Only assign .got.r2 address if vaddr wasn't already set by reloc_convert
+			ptr->vaddr = vaddr;
+			ht_uu_insert (relocs_by_sym, reloc->sym, vaddr);
+			vaddr += cdsz;
 		}
 		r_list_append (ret, ptr);
 	}
