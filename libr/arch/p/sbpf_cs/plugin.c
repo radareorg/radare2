@@ -13,6 +13,47 @@
 // We need to cap the string size to avoid reading garbage
 #define SBPF_MAX_STRING_SIZE 0x100
 
+// sBPF Version Detection (from ELF e_flags field at offset 0x30)
+#define SBPF_V0 0
+#define SBPF_V1 1
+#define SBPF_V2 2
+#define SBPF_V3 3
+#define SBPF_VERSION_COUNT 4
+#define E_FLAGS_OFFSET 0x30
+#define E_FLAGS_SBPF_V2 0x20U
+
+// sBPF v1
+#define SBPF_INS_ADD64_IMM 		0x07
+#define SBPF_INS_CALLX			0x8d
+// sBPF v2
+#define SBPF_INS_STQ			0x97
+#define SBPF_INS_LDXQ			0x9c
+#define SBPF_INS_STXQ			0x9f
+#define SBPF_INS_LDXB			0x2c
+#define SBPF_INS_STXB			0x2f
+#define SBPF_INS_STB			0x27
+#define SBPF_INS_STH			0x37
+#define SBPF_INS_LDXH			0x3c
+#define SBPF_INS_STXH			0x3f
+#define SBPF_INS_STW			0x87
+#define SBPF_INS_LDXW			0x8c
+#define SBPF_INS_LMUL32_IMM		0x86
+#define SBPF_INS_STXW			0x8f
+#define SBPF_INS_UHMUL64_IMM	0x36
+#define SBPF_INS_UDIV32_IMM 	0x46
+#define SBPF_INS_UDIV64_IMM 	0x56
+#define SBPF_INS_UREM32_IMM 	0x66
+#define SBPF_INS_UHMUL64_REG 	0x3e
+#define SBPF_INS_LMUL64_IMM 	0x96
+#define SBPF_INS_LMUL64_REG 	0x9e
+#define SBPF_INS_HOR64			0xf7
+// sBPF v3
+#define SBPF_INS_EXIT_V3		0x9d
+
+// Global variable to cache the detected sBPF version
+static ut32 g_sbpf_version = SBPF_V0;
+static bool g_version_detected = false;
+
 #if CS_API_MAJOR >= 5
 
 #define CSINC BPF
@@ -36,7 +77,7 @@ static int get_capstone_mode(RArchSession *as) {
 // calculate jump address from immediate (sBPF uses 16-bit signed offsets in instruction units)
 #define JUMP(n) (op->addr + insn->size + ((st16)(IMM(n) & 0xffff)) * 8)
 
-// Solana syscall name mapping (retrieved from firedancer validator)
+// Solana syscall name mapping
 static struct {
 	ut32 hash;
 	const char *name;
@@ -82,8 +123,57 @@ static const char *get_syscall_name(ut32 hash) {
 	return NULL;
 }
 
+static void print_sbpf_version(void) {
+	const char *version_str = "unknown";
+	switch (g_sbpf_version) {
+	case SBPF_V0: version_str = "V0"; break;
+	case SBPF_V1: version_str = "V1"; break;
+	case SBPF_V2: version_str = "V2"; break;
+	case SBPF_V3: version_str = "V3"; break;
+	}
+	R_LOG_INFO ("[sBPF] Detected sBPF version: %s\n", version_str);
+}
+
+static ut32 detect_sbpf_version(RArchSession *a) {
+	// Return cached version if already detected
+	if (g_version_detected) {
+		return g_sbpf_version;
+	}
+
+	// Get version from RBin's info->abi which was set by the ELF parser
+	if (!a || !a->arch || !a->arch->binb.bin) {
+		return SBPF_V0;
+	}
+
+	RBin *bin = a->arch->binb.bin;
+	if (!bin->cur || !bin->cur->bo || !bin->cur->bo->info || !bin->cur->bo->info->abi) {
+		// Info not available yet, will try again later
+		return SBPF_V0;
+	}
+
+	const char *abi = bin->cur->bo->info->abi;
+
+	// Parse the version from the ABI string set by the ELF parser
+	if (!strcmp (abi, "sbpfv0")) {
+		g_sbpf_version = SBPF_V0;
+	} else if (!strcmp (abi, "sbpfv1")) {
+		g_sbpf_version = SBPF_V1;
+	} else if (!strcmp (abi, "sbpfv2")) {
+		g_sbpf_version = SBPF_V2;
+	} else if (!strcmp (abi, "sbpfv3")) {
+		g_sbpf_version = SBPF_V3;
+	} else {
+		// Default to v0 for unknown/missing ABI
+		g_sbpf_version = SBPF_V0;
+	}
+
+	g_version_detected = true;
+	print_sbpf_version ();
+
+	return g_sbpf_version;
+}
+
 static void analop_esil(RArchSession *a, RAnalOp *op, cs_insn *insn, ut64 addr);
-static void check_and_create_string_flag(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len);
 
 static char *mnemonics(RArchSession *s, int id, bool json) {
 	CapstonePluginData *cpd = (CapstonePluginData*)s->data;
@@ -95,22 +185,394 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	const ut8 *buf = op->bytes;
 	const int len = op->size;
 	op->size = 8;
+
+	// Detect sBPF version once at the start
+	ut32 sbpf_version = detect_sbpf_version (a);
+
 	cs_insn *insn = NULL;
 	int n = cs_disasm (cpd->cs_handle, (ut8*)buf, len, op->addr, 1, &insn);
 	if (n < 1) {
-		op->type = R_ANAL_OP_TYPE_ILL;
-		if (mask & R_ARCH_OP_MASK_DISASM) {
-			op->mnemonic = strdup ("invalid");
+		// Check for instructions that Capstone doesn't decode correctly
+		// In sBPF V3 opcodes for exit and syscall seems that are swapped
+		if (len >= 8 && buf[0] == SBPF_INS_EXIT_V3 && sbpf_version >= SBPF_V3) {
+			op->type = R_ANAL_OP_TYPE_RET;
+			op->mnemonic = r_str_newf ("exit");
+			return true;
+		} else if (len >= 8 && buf[0] == SBPF_INS_STQ && sbpf_version >= SBPF_V2) {
+			// Opcode 0x97 = STQ (store quad word / 64-bit immediate to memory)
+			ut8 dst_reg = buf[1] & 0x0F;
+			st16 offset = r_read_le16 (buf + 2);
+			st32 imm = r_read_le32 (buf + 4);
+
+			op->type = R_ANAL_OP_TYPE_STORE;
+			op->ptr = offset;
+			if (mask & R_ARCH_OP_MASK_DISASM) {
+				if (offset >= 0) {
+					op->mnemonic = r_str_newf ("stq [r%d+0x%x], 0x%x", dst_reg, offset, imm);
+				} else {
+					op->mnemonic = r_str_newf ("stq [r%d-0x%x], 0x%x", dst_reg, -offset, imm);
+				}
+			}
+			return true;
+		} else if (len >= 8 && buf[0] == SBPF_INS_LDXQ && sbpf_version >= SBPF_V2) {
+			// Opcode 0x9c = LDXQ (load quad word / 64-bit from memory)
+			ut8 dst_reg = buf[1] & 0x0F;
+			ut8 src_reg = (buf[1] >> 4) & 0x0F;
+			st16 offset = r_read_le16 (buf + 2);
+
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			op->ptr = offset;
+			if (mask & R_ARCH_OP_MASK_DISASM) {
+				if (offset >= 0) {
+					op->mnemonic = r_str_newf ("ldxq r%d, [r%d+0x%x]", dst_reg, src_reg, offset);
+				} else {
+					op->mnemonic = r_str_newf ("ldxq r%d, [r%d-0x%x]", dst_reg, src_reg, -offset);
+				}
+			}
+			return true;
+		} else if (len >= 8 && buf[0] == SBPF_INS_STXQ && sbpf_version >= SBPF_V2) {
+			// Opcode 0x9f = STXQ (store quad word / 64-bit register to memory)
+			ut8 dst_reg = buf[1] & 0x0F;
+			ut8 src_reg = (buf[1] >> 4) & 0x0F;
+			st16 offset = r_read_le16 (buf + 2);
+
+			op->type = R_ANAL_OP_TYPE_STORE;
+			op->ptr = offset;
+			if (mask & R_ARCH_OP_MASK_DISASM) {
+				if (offset >= 0) {
+					op->mnemonic = r_str_newf ("stxq [r%d+0x%x], r%d", dst_reg, offset, src_reg);
+				} else {
+					op->mnemonic = r_str_newf ("stxq [r%d-0x%x], r%d", dst_reg, -offset, src_reg);
+				}
+			}
+			return true;
+		} else if (len >= 8 && buf[0] == SBPF_INS_LDXB && sbpf_version >= SBPF_V2) {
+			// Opcode 0x2c = LDXB (load byte from memory to register) - v2+
+			// Despite being class 0x7 in bit encoding, this is a memory operation in sBPF
+			ut8 dst_reg = buf[1] & 0x0F;
+			ut8 src_reg = (buf[1] >> 4) & 0x0F;
+			st16 offset = r_read_le16 (buf + 2);
+
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			op->ptr = offset;
+			if (mask & R_ARCH_OP_MASK_DISASM) {
+				if (offset >= 0) {
+					op->mnemonic = r_str_newf ("ldxb r%d, [r%d+0x%x]", dst_reg, src_reg, offset);
+				} else {
+					op->mnemonic = r_str_newf ("ldxb r%d, [r%d-0x%x]", dst_reg, src_reg, -offset);
+				}
+			}
+			return true;
+		} else if (len >= 8 && buf[0] == SBPF_INS_STXB && sbpf_version >= SBPF_V2) {
+			// Opcode 0x2f = STXB (store byte from register to memory) - v2+
+			// Despite being class 0x7 in bit encoding, this is a memory operation in sBPF
+			ut8 dst_reg = buf[1] & 0x0F;
+			ut8 src_reg = (buf[1] >> 4) & 0x0F;
+			st16 offset = r_read_le16 (buf + 2);
+
+			op->type = R_ANAL_OP_TYPE_STORE;
+			op->ptr = offset;
+			if (mask & R_ARCH_OP_MASK_DISASM) {
+				if (offset >= 0) {
+					op->mnemonic = r_str_newf ("stxb [r%d+0x%x], r%d", dst_reg, offset, src_reg);
+				} else {
+					op->mnemonic = r_str_newf ("stxb [r%d-0x%x], r%d", dst_reg, -offset, src_reg);
+				}
+			}
+			return true;
+		} else if (len >= 8 && buf[0] == SBPF_INS_STB && sbpf_version >= SBPF_V2) {
+			// Opcode 0x27 = STB (store byte immediate to memory) - v2+
+			// Despite being class 0x7 in bit encoding, this is a memory operation in sBPF
+			ut8 dst_reg = buf[1] & 0x0F;
+			st16 offset = r_read_le16 (buf + 2);
+			st32 imm = r_read_le32 (buf + 4);
+
+			op->type = R_ANAL_OP_TYPE_STORE;
+			op->ptr = offset;
+			if (mask & R_ARCH_OP_MASK_DISASM) {
+				if (offset >= 0) {
+					op->mnemonic = r_str_newf ("stb [r%d+0x%x], 0x%x", dst_reg, offset, imm & 0xFF);
+				} else {
+					op->mnemonic = r_str_newf ("stb [r%d-0x%x], 0x%x", dst_reg, -offset, imm & 0xFF);
+				}
+			}
+			return true;
+		} else if (len >= 8 && buf[0] == SBPF_INS_STH && sbpf_version >= SBPF_V2) {
+			// Opcode 0x37 = STH (store half-word immediate) - v2+
+			ut8 dst_reg = buf[1] & 0x0F;
+			st16 offset = r_read_le16 (buf + 2);
+			st32 imm = r_read_le32 (buf + 4);
+
+			op->type = R_ANAL_OP_TYPE_STORE;
+			op->ptr = offset;
+			if (mask & R_ARCH_OP_MASK_DISASM) {
+				if (offset >= 0) {
+					op->mnemonic = r_str_newf ("sth [r%d+0x%x], 0x%x", dst_reg, offset, imm & 0xFFFF);
+				} else {
+					op->mnemonic = r_str_newf ("sth [r%d-0x%x], 0x%x", dst_reg, -offset, imm & 0xFFFF);
+				}
+			}
+			return true;
+		} else if (len >= 8 && buf[0] == SBPF_INS_LDXH && sbpf_version >= SBPF_V2) {
+			// Opcode 0x3c = LDXH (load half-word from register) - v2+
+			ut8 dst_reg = buf[1] & 0x0F;
+			ut8 src_reg = (buf[1] >> 4) & 0x0F;
+			st16 offset = r_read_le16 (buf + 2);
+
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			op->ptr = offset;
+			if (mask & R_ARCH_OP_MASK_DISASM) {
+				if (offset >= 0) {
+					op->mnemonic = r_str_newf ("ldxh r%d, [r%d+0x%x]", dst_reg, src_reg, offset);
+				} else {
+					op->mnemonic = r_str_newf ("ldxh r%d, [r%d-0x%x]", dst_reg, src_reg, -offset);
+				}
+			}
+			return true;
+		} else if (len >= 8 && buf[0] == SBPF_INS_STXH && sbpf_version >= SBPF_V2) {
+			// Opcode 0x3f = STXH (store half-word from register) - v2+
+			ut8 dst_reg = buf[1] & 0x0F;
+			ut8 src_reg = (buf[1] >> 4) & 0x0F;
+			st16 offset = r_read_le16 (buf + 2);
+
+			op->type = R_ANAL_OP_TYPE_STORE;
+			op->ptr = offset;
+			if (mask & R_ARCH_OP_MASK_DISASM) {
+				if (offset >= 0) {
+					op->mnemonic = r_str_newf ("stxh [r%d+0x%x], r%d", dst_reg, offset, src_reg);
+				} else {
+					op->mnemonic = r_str_newf ("stxh [r%d-0x%x], r%d", dst_reg, -offset, src_reg);
+				}
+			}
+			return true;
+		} else if (len >= 8 && buf[0] == SBPF_INS_STW && sbpf_version >= SBPF_V2) {
+			// Opcode 0x87 = STW (store word immediate) - v2+
+			ut8 dst_reg = buf[1] & 0x0F;
+			st16 offset = r_read_le16 (buf + 2);
+			st32 imm = r_read_le32 (buf + 4);
+
+			op->type = R_ANAL_OP_TYPE_STORE;
+			op->ptr = offset;
+			if (mask & R_ARCH_OP_MASK_DISASM) {
+				if (offset >= 0) {
+					op->mnemonic = r_str_newf ("stw [r%d+0x%x], 0x%x", dst_reg, offset, imm);
+				} else {
+					op->mnemonic = r_str_newf ("stw [r%d-0x%x], 0x%x", dst_reg, -offset, imm);
+				}
+			}
+			return true;
+		} else if (len >= 8 && buf[0] == SBPF_INS_LDXW && sbpf_version >= SBPF_V2) {
+			// Opcode 0x8c = LDXW (load word from register) - v2+
+			ut8 dst_reg = buf[1] & 0x0F;
+			ut8 src_reg = (buf[1] >> 4) & 0x0F;
+			st16 offset = r_read_le16 (buf + 2);
+
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			op->ptr = offset;
+			if (mask & R_ARCH_OP_MASK_DISASM) {
+				if (offset >= 0) {
+					op->mnemonic = r_str_newf ("ldxw r%d, [r%d+0x%x]", dst_reg, src_reg, offset);
+				} else {
+					op->mnemonic = r_str_newf ("ldxw r%d, [r%d-0x%x]", dst_reg, src_reg, -offset);
+				}
+			}
+			return true;
+		} else if (len >= 8 && buf[0] == SBPF_INS_LMUL32_IMM && sbpf_version >= SBPF_V2) {
+			// Opcode 0x86 = LMUL32_IMM (lower half of 32×32 multiply with immediate) - v2+
+			ut8 dst_reg = buf[1] & 0x0F;
+			st32 imm = r_read_le32 (buf + 4);
+
+			op->type = R_ANAL_OP_TYPE_MUL;
+			if (mask & R_ARCH_OP_MASK_DISASM) {
+				op->mnemonic = r_str_newf ("lmul32 r%d, 0x%x", dst_reg, imm);
+			}
+			return true;
+		} else if (len >= 8 && buf[0] == SBPF_INS_STXW && sbpf_version >= SBPF_V2) {
+			// Opcode 0x8f = STXW (store word from register) - v2+
+			ut8 dst_reg = buf[1] & 0x0F;
+			ut8 src_reg = (buf[1] >> 4) & 0x0F;
+			st16 offset = r_read_le16 (buf + 2);
+
+			op->type = R_ANAL_OP_TYPE_STORE;
+			op->ptr = offset;
+			if (mask & R_ARCH_OP_MASK_DISASM) {
+				if (offset >= 0) {
+					op->mnemonic = r_str_newf ("stxw [r%d+0x%x], r%d", dst_reg, offset, src_reg);
+				} else {
+					op->mnemonic = r_str_newf ("stxw [r%d-0x%x], r%d", dst_reg, -offset, src_reg);
+				}
+			}
+			return true;
+		} else if (len >= 8 && buf[0] == SBPF_INS_UHMUL64_IMM && sbpf_version >= SBPF_V2) {
+			// Opcode 0x36 = UHMUL64_IMM (upper half of unsigned 64×64 multiply with immediate) - v2+
+			ut8 dst_reg = buf[1] & 0x0F;
+			st32 imm = r_read_le32 (buf + 4);
+
+			op->type = R_ANAL_OP_TYPE_MUL;
+			if (mask & R_ARCH_OP_MASK_DISASM) {
+				op->mnemonic = r_str_newf ("uhmul64 r%d, 0x%x", dst_reg, imm);
+			}
+			return true;
+		} else if (len >= 8 && buf[0] == SBPF_INS_UDIV32_IMM && sbpf_version >= SBPF_V2) {
+			// Opcode 0x46 = UDIV32_IMM (unsigned 32-bit divide by immediate) - v2+
+			ut8 dst_reg = buf[1] & 0x0F;
+			st32 imm = r_read_le32 (buf + 4);
+
+			op->type = R_ANAL_OP_TYPE_DIV;
+			if (mask & R_ARCH_OP_MASK_DISASM) {
+				op->mnemonic = r_str_newf ("udiv32 r%d, 0x%x", dst_reg, imm);
+			}
+			return true;
+		} else if (len >= 8 && buf[0] == SBPF_INS_UDIV64_IMM && sbpf_version >= SBPF_V2) {
+			// Opcode 0x56 = UDIV64_IMM (unsigned 64-bit divide by immediate) - v2+
+			ut8 dst_reg = buf[1] & 0x0F;
+			st32 imm = r_read_le32 (buf + 4);
+
+			op->type = R_ANAL_OP_TYPE_DIV;
+			if (mask & R_ARCH_OP_MASK_DISASM) {
+				op->mnemonic = r_str_newf ("udiv64 r%d, 0x%x", dst_reg, imm);
+			}
+			return true;
+		} else if (len >= 8 && buf[0] == SBPF_INS_UREM32_IMM && sbpf_version >= SBPF_V2) {
+			// Opcode 0x66 = UREM32_IMM (unsigned 32-bit remainder by immediate) - v2+
+			ut8 dst_reg = buf[1] & 0x0F;
+			st32 imm = r_read_le32 (buf + 4);
+
+			op->type = R_ANAL_OP_TYPE_MOD;
+			if (mask & R_ARCH_OP_MASK_DISASM) {
+				op->mnemonic = r_str_newf ("urem32 r%d, 0x%x", dst_reg, imm);
+			}
+			return true;
+		} else if (len >= 8 && buf[0] == SBPF_INS_UHMUL64_REG && sbpf_version >= SBPF_V2) {
+			// Opcode 0x3e = UHMUL64_REG (upper half of unsigned 64×64 multiply) - v2+
+			ut8 dst_reg = buf[1] & 0x0F;
+			ut8 src_reg = (buf[1] >> 4) & 0x0F;
+
+			op->type = R_ANAL_OP_TYPE_MUL;
+			if (mask & R_ARCH_OP_MASK_DISASM) {
+				op->mnemonic = r_str_newf ("uhmul64 r%d, r%d", dst_reg, src_reg);
+			}
+			return true;
+		} else if (len >= 8 && buf[0] == SBPF_INS_LMUL64_IMM && sbpf_version >= SBPF_V2) {
+			// Opcode 0x96 = LMUL64_IMM (lower half of 64×64 multiply with immediate) - v2+
+			ut8 dst_reg = buf[1] & 0x0F;
+			st32 imm = r_read_le32 (buf + 4);
+
+			op->type = R_ANAL_OP_TYPE_MUL;
+			if (mask & R_ARCH_OP_MASK_DISASM) {
+				op->mnemonic = r_str_newf ("lmul64 r%d, 0x%x", dst_reg, imm);
+			}
+			return true;
+		} else if (len >= 8 && buf[0] == SBPF_INS_LMUL64_REG && sbpf_version >= SBPF_V2) {
+			// Opcode 0x9e = LMUL64_REG (lower half of signed 64×64 multiply) - v2+
+			ut8 dst_reg = buf[1] & 0x0F;
+			ut8 src_reg = (buf[1] >> 4) & 0x0F;
+
+			op->type = R_ANAL_OP_TYPE_MUL;
+			if (mask & R_ARCH_OP_MASK_DISASM) {
+				op->mnemonic = r_str_newf ("lmul64 r%d, r%d", dst_reg, src_reg);
+			}
+			return true;
+		} else if (len >= 8 && buf[0] == SBPF_INS_HOR64 && sbpf_version >= SBPF_V2) {
+			// Opcode 0xf7 = HOR64 (horizontal or) - v2+ only
+			ut8 dst_reg = buf[1] & 0x0F;
+			st32 imm = r_read_le32 (buf + 4);
+
+			op->type = R_ANAL_OP_TYPE_OR;
+			if (mask & R_ARCH_OP_MASK_DISASM) {
+				op->mnemonic = r_str_newf ("hor64 r%d, 0x%x", dst_reg, imm);
+			}
+		} else if (len >= 8 && buf[0] == SBPF_INS_ADD64_IMM && sbpf_version >= SBPF_V1) {
+			// Opcode 0x07 = ADD64_IMM (usually used with r10 for dynamic stack frames in v1+)
+			ut8 dst_reg = buf[1] & 0x0F;
+			st32 imm = r_read_le32 (buf + 4);
+
+			if (sbpf_version >= SBPF_V1 && (imm % 64) == 0) {
+				// Valid stack frame allocation in v1+
+				op->type = R_ANAL_OP_TYPE_ADD;
+				if (mask & R_ARCH_OP_MASK_DISASM) {
+					op->mnemonic = r_str_newf ("add64 r%d, 0x%x", dst_reg, imm);
+				}
+			} else {
+				op->type = R_ANAL_OP_TYPE_ILL;
+				if (mask & R_ARCH_OP_MASK_DISASM) {
+					op->mnemonic = strdup ("invalid");
+				}
+			}
+		}  else { 
+			op->type = R_ANAL_OP_TYPE_ILL;
+			if (mask & R_ARCH_OP_MASK_DISASM) {
+				op->mnemonic = strdup ("invalid");
+			}
 		}
 	} else {
 		if (mask & R_ARCH_OP_MASK_DISASM) {
+			if (insn->id == BPF_INS_CALLX) {
+				op->type = R_ANAL_OP_TYPE_UCALL;
+
+				if (sbpf_version >= SBPF_V2) {
+					// v2+: src field (SIMD-0174)
+					ut8 src_reg = (buf[1] >> 4) & 0x0F;
+					if (mask & R_ARCH_OP_MASK_DISASM) {
+						op->mnemonic = r_str_newf ("callx r%d", src_reg);
+					}
+				} else {
+					// v0/v1: imm field
+					st32 reg_num = IMM (0);
+					if (mask & R_ARCH_OP_MASK_DISASM) {
+						op->mnemonic = r_str_newf ("callx r%d", reg_num);
+					}
+				}
+			} else if (insn->id ==  BPF_INS_EXIT ) {
+				if (sbpf_version >= SBPF_V3) {
+					op->type = R_ANAL_OP_TYPE_CALL;
+				
+					st32 imm = r_read_le32 (buf + 4);
+					const char *syscall_name = get_syscall_name (imm);
+					if (syscall_name) {
+						op->mnemonic = r_str_newf ("syscall %s", syscall_name);
+					} else {
+						op->mnemonic = r_str_newf ("syscall (invalid)");
+					}
+				} else {
+					op->type = R_ANAL_OP_TYPE_RET;
+					op->mnemonic = r_str_newf ("exit");
+				}
+			// Handle SUB instruction - operands swapped in v2+ (SIMD-0174)
+			} else if ((insn->id == BPF_INS_SUB || insn->id == BPF_INS_SUB64) && insn->detail && OPCOUNT > 1) {
+				const char *suffix = (insn->id == BPF_INS_SUB64) ? "64" : "";
+				if (OP(1).type == BPF_OP_IMM && sbpf_version >= SBPF_V2) {
+					// v2+: dst = imm - dst (swapped)
+					op->mnemonic = r_str_newf ("sub%s r%d, 0x%x",
+						suffix, OP(0).reg, (int)IMM(1));
+				} else {
+					// v0/v1: normal eBPF disassembly (dst = dst - src/imm)
+					op->mnemonic = r_str_newf ("%s%s%s",
+						insn->mnemonic,
+						insn->op_str[0]? " ": "",
+						insn->op_str);
+				}
+			// Handle LDDW instruction - disabled in v2+ (SIMD-0173)
+			} else if (insn->id == BPF_INS_LDDW) {
+				if (sbpf_version >= SBPF_V2) {
+					op->mnemonic = r_str_newf ("%s%s%s ; DISABLED in v%d",
+						insn->mnemonic,
+						insn->op_str[0]? " ": "",
+						insn->op_str,
+						sbpf_version);
+				} else {
+					op->mnemonic = r_str_newf ("%s%s%s",
+						insn->mnemonic,
+						insn->op_str[0]? " ": "",
+						insn->op_str);
+				}
 			// Handle CALL instruction
-			if (insn->id == BPF_INS_CALL && insn->detail && OPCOUNT > 0 && OP(0).type == BPF_OP_IMM) {
+			} else if (insn->id == BPF_INS_CALL && insn->detail && OPCOUNT > 0 && OP(0).type == BPF_OP_IMM) {
 				st32 imm = IMM (0);
 				// Check if this is a syscall first
 				const char *syscall_name = get_syscall_name (imm);
 				if (syscall_name) {
-					op->mnemonic = r_str_newf ("call %s", syscall_name);
+					op->mnemonic = r_str_newf ("syscall %s", syscall_name);
 				} else {
 					// PC-relative call
 					st64 current_pc = op->addr / 8;        // Current PC in instruction units
@@ -227,10 +689,11 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 					}
 				}
 				break;
-			case BPF_INS_EXIT: ///< eBPF only
-				//op->type = R_ANAL_OP_TYPE_TRAP;
-				op->type = R_ANAL_OP_TYPE_RET;
-				break;
+			// case BPF_INS_EXIT: ///< eBPF only
+			// 	//op->type = R_ANAL_OP_TYPE_TRAP;
+			// 	op->type = R_ANAL_OP_TYPE_CALL;
+			// 	op->type = R_ANAL_OP_TYPE_RET;
+			// 	break;
 			case BPF_INS_RET:
 				op->type = R_ANAL_OP_TYPE_RET;
 				break;
@@ -299,8 +762,6 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 				} else if (insn->size == 16) { // lddw is a 16-byte instruction
 					op->val = r_read_ble64 (insn->bytes + 8, 0) + IMM (0);
 				}
-				// Check if the loaded address might contain string data
-				check_and_create_string_flag(a, op, op->val, buf + insn->size, len - insn->size);
 				break;
 				///< Byteswap: eBPF only
 			case BPF_INS_LE16:
@@ -344,74 +805,6 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 		cs_free (insn, n);
 	}
 	return true;
-}
-
-static ut32 detect_string_size_from_next_insn(RArchSession *a, RAnalOp *op, const ut8 *buf, int len, ut32 default_size) {
-	if (!a || !a->data || !buf || len < 8) {
-		return default_size;
-	}
-	CapstonePluginData *cpd = (CapstonePluginData*)a->data;
-	if (!cpd || !cpd->cs_handle) {
-		return default_size;
-	}
-
-	cs_insn *next_insn = NULL;
-	ut64 next_addr = op->addr + op->size;
-	int n = cs_disasm (cpd->cs_handle, buf, 8, next_addr, 1, &next_insn);
-
-	if (n <= 0 || !next_insn) {
-		return default_size;
-	}
-
-	ut32 string_size = default_size;
-
-	// Check if it's a mov REG, IMM instruction
-	bool is_mov_insn = (next_insn->id == BPF_INS_MOV || next_insn->id == BPF_INS_MOV64);
-	bool has_detail = next_insn->detail && next_insn->detail->bpf.op_count > 1;
-
-	if (is_mov_insn && has_detail) {
-		bool is_reg_dest = next_insn->detail->bpf.operands[0].type == BPF_OP_REG;
-		bool is_imm_src = next_insn->detail->bpf.operands[1].type == BPF_OP_IMM;
-		if (is_reg_dest && is_imm_src) {
-			ut32 imm_size = next_insn->detail->bpf.operands[1].imm;
-			// Use the immediate value as string size if it's reasonable
-			if (imm_size > 0 && imm_size <= SBPF_MAX_STRING_SIZE) {
-				string_size = imm_size;
-			}
-		}
-	}
-	cs_free (next_insn, n);
-	return string_size;
-}
-
-static void check_and_create_string_flag(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
-	if (!a || !a->arch) {
-		return;
-	}
-	bool is_valid_program_range = false;
-	// Check if it's in the main program range
-	if (addr >= SBPF_PROGRAM_ADDR && addr < SBPF_STACK_ADDR) {
-		is_valid_program_range = true;
-	}
-	if (!is_valid_program_range) {
-		return;
-	}
-
-	op->ptr = addr;
-
-	ut32 string_size = SBPF_MAX_STRING_SIZE;
-
-	// check the next instruction(s) after a lddw instruction for a mov REG, IMM pattern
-	string_size = detect_string_size_from_next_insn(a, op, buf, len, string_size);
-
-	// Use the refptr field to indicate a fixed-size string reference
-	op->refptr = string_size;
-
-	op->hint.addr = addr;
-	op->hint.type = R_ANAL_ADDR_HINT_TYPE_SIZE;
-	op->hint.size = string_size;
-
-	op->type |= R_ANAL_OP_TYPE_MEM;
 }
 
 static char* regname(uint8_t reg) {
@@ -937,9 +1330,9 @@ static bool fini(RArchSession *s) {
 const RArchPlugin r_arch_plugin_sbpf_cs = {
 	.meta = {
 		.name = "sbpf",
-		.desc = "Capstone-based Solana Berkeley Packet Filtering bytecode",
+		.desc = "Solana Berkeley Packet Filtering Bytecode",
 		.license = "BSD-3-Clause",
-		.author = "ulexec,radare,terori,",
+		.author = "ulexec,radare",
 	},
 	.arch = "sbpf",
 	.endian = R_SYS_ENDIAN_LITTLE,
