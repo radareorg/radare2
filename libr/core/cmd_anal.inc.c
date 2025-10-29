@@ -16132,11 +16132,14 @@ static int cmd_anal(void *data, const char *input) {
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_aF);
 			break;
+		} else if (input[1] == 0) {
+			r_core_anal_fcn (core, core->addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, 1);
+		} else {
+			r_core_return_invalid_command (core, "aF", input[1]);
 		}
-		r_core_anal_fcn (core, core->addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, 1);
 		break;
 	case 'l':
-		{
+		if (input[1] == 0) {
 			RList *l = r_asm_cpus (core->rasm);
 			RListIter *iter;
 			char *c;
@@ -16144,6 +16147,10 @@ static int cmd_anal(void *data, const char *input) {
 				r_cons_printf (core->cons, "- %s\n", c);
 			}
 			r_list_free (l);
+		} else if (input[1] == '?') {
+			R_LOG_INFO ("al is an alias for e asm.cpu=?");
+		} else {
+			r_core_return_invalid_command (core, "al", input[1]);
 		}
 		break;
 	case 'f': // "af"
