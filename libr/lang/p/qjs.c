@@ -33,22 +33,21 @@ static int qjs_interrupt_handler(JSRuntime *rt, void *opaque) {
 static void qjs_break_handler(void *user) {
 	R_LOG_ERROR ("JavaScript execution interrupted");
 
-	if (current_ctx) {
-		// Create an error object to get the stack trace
-		JSValue error_obj = JS_NewError (current_ctx);
-		if (!JS_IsException (error_obj)) {
-			JSValue stack_val = JS_GetPropertyStr (current_ctx, error_obj, "stack");
-			if (!JS_IsException (stack_val) && !JS_IsUndefined (stack_val)) {
-				const char *stack_str = JS_ToCString (current_ctx, stack_val);
-				if (stack_str) {
-					R_LOG_ERROR ("JavaScript stack trace:");
-					R_LOG_ERROR ("%s", stack_str);
-					JS_FreeCString (current_ctx, stack_str);
-				}
-				JS_FreeValue (current_ctx, stack_val);
+	if (!current_ctx) {
+		return;
+	}
+	JSValue error_obj = JS_NewError (current_ctx);
+	if (!JS_IsException (error_obj)) {
+		JSValue stack_val = JS_GetPropertyStr (current_ctx, error_obj, "stack");
+		if (!JS_IsException (stack_val) && !JS_IsUndefined (stack_val)) {
+			const char *stack_str = JS_ToCString (current_ctx, stack_val);
+			if (stack_str) {
+				R_LOG_ERROR ("StackTrace: %s", stack_str);
+				JS_FreeCString (current_ctx, stack_str);
 			}
-			JS_FreeValue (current_ctx, error_obj);
+			JS_FreeValue (current_ctx, stack_val);
 		}
+		JS_FreeValue (current_ctx, error_obj);
 	}
 }
 
