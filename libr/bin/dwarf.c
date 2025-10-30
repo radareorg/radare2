@@ -439,7 +439,7 @@ static RBinSection *getsection(RBin *bin, int sn) {
 			}
 		}
 		r_list_foreach (o->sections, iter, section) {
-			if (strstr (section->name, name_str)) {
+			if (section->name && strstr (section->name, name_str)) {
 				/* accept matching section, including compressed or zdebug variants */
 				lastSection[sn] = section;
 				return section;
