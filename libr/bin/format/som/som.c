@@ -308,6 +308,7 @@ R_IPI void *r_bin_som_load_buffer(RBinFile *bf, RBuffer *b, ut64 laddr, Sdb *s) 
 					size_t len = r_str_nlen (embedded, max_len);
 					char *en = r_str_ndup (embedded, len);
 					R_LOG_INFO ("EmbeddedName: %s", en);
+					free (en);
 					// embedded name is the program name aka argv[0]
 				}
 			}
