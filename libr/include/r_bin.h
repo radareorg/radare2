@@ -1022,6 +1022,7 @@ extern RBinPlugin r_bin_plugin_s390;
 extern RBinPlugin r_bin_plugin_sfc;
 extern RBinPlugin r_bin_plugin_smd;
 extern RBinPlugin r_bin_plugin_sms;
+extern RBinPlugin r_bin_plugin_som;
 extern RBinPlugin r_bin_plugin_symbols;
 extern RBinPlugin r_bin_plugin_te;
 extern RBinPlugin r_bin_plugin_tic;
