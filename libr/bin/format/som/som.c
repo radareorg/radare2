@@ -306,7 +306,6 @@ R_IPI void *r_bin_som_load_buffer(RBinFile *bf, RBuffer *b, ut64 laddr, Sdb *s) 
 					const size_t max_len = obj->dl_hdr->string_table_size - off;
 					const char *embedded = obj->dl_strings + off;
 					size_t len = r_str_nlen (embedded, max_len);
-					eprintf ("%d %s\n", len, embedded);
 					char *en = r_str_ndup (embedded, len);
 					R_LOG_INFO ("EmbeddedName: %s", en);
 					// embedded name is the program name aka argv[0]
