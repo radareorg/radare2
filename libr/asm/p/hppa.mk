@@ -1,0 +1,11 @@
+OBJ_HPPAPSEUDO+=$(LIBR)/arch/p/hppa/pseudo.o
+
+TARGET_HPPAPSEUDO=parse_hppa_pseudo.${EXT_SO}
+STATIC_OBJ+=${OBJ_HPPAPSEUDO}
+
+ifeq ($(WITHPIC),1)
+ALL_TARGETS+=${TARGET_HPPAPSEUDO}
+${TARGET_HPPAPSEUDO}: ${OBJ_HPPAPSEUDO}
+	${CC} $(call libname,parse_hppa_pseudo) ${LIBDEPS} $(LDFLAGS) \
+		$(LDFLAGS_SHARED) ${CFLAGS} -o ${TARGET_HPPAPSEUDO} ${OBJ_HPPAPSEUDO}
+endif

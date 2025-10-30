@@ -174,6 +174,7 @@ extern RAsmPlugin r_asm_plugin_dalvik;
 extern RAsmPlugin r_asm_plugin_dummy;
 extern RAsmPlugin r_asm_plugin_evm;
 extern RAsmPlugin r_asm_plugin_gb;
+extern RAsmPlugin r_asm_plugin_hppa;
 extern RAsmPlugin r_asm_plugin_java;
 extern RAsmPlugin r_asm_plugin_m68k;
 extern RAsmPlugin r_asm_plugin_mips;
