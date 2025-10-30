@@ -52,7 +52,7 @@ static void set_opdir(RAnalOp *op) {
  * So in our example we are inserting (0xf, 0x42)
  */
 static int evm_add_push_to_db(RArchSession *s, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
-	EvmPluginData *epd = (EvmPluginData*)s->data;
+	EvmPluginData *epd = (EvmPluginData *)s->data;
 	ut64 dst_addr = 0;
 	size_t i;
 
@@ -70,7 +70,7 @@ static int evm_add_push_to_db(RArchSession *s, RAnalOp *op, ut64 addr, const ut8
 }
 
 static ut64 evm_get_jmp_addr(RArchSession *s, ut64 addr) {
-	EvmPluginData *epd = (EvmPluginData*)s->data;
+	EvmPluginData *epd = (EvmPluginData *)s->data;
 	return sdb_num_nget (epd->pushs_db, addr, 0);
 }
 
@@ -90,7 +90,7 @@ static bool decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	const ut64 addr = op->addr;
 	const ut8 *buf = op->bytes;
 	const int len = op->size;
-	EvmPluginData *epd = (EvmPluginData*)s->data;
+	EvmPluginData *epd = (EvmPluginData *)s->data;
 
 	int opsize = -1;
 	cs_insn *insn;
@@ -364,8 +364,7 @@ static char *regs(RArchSession *as) {
 		"gpr	pc	.32	0	0\n"
 		"gpr	sp	.32	4	0\n"
 		"gpr	bp	.32	8	0\n"
-		"gpr	r0	.32	12	0\n"
-	);
+		"gpr	r0	.32	12	0\n");
 }
 
 static bool init(RArchSession *s) {
@@ -375,7 +374,7 @@ static bool init(RArchSession *s) {
 		return false;
 	}
 	s->data = R_NEW0 (EvmPluginData);
-	EvmPluginData *epd = (EvmPluginData*)s->data;
+	EvmPluginData *epd = (EvmPluginData *)s->data;
 	if (!r_arch_cs_init (s, &epd->cs_handle)) {
 		R_LOG_ERROR ("Cannot initialize capstone");
 		R_FREE (s->data);
@@ -387,7 +386,7 @@ static bool init(RArchSession *s) {
 
 static bool fini(RArchSession *s) {
 	R_RETURN_VAL_IF_FAIL (s, false);
-	EvmPluginData *epd = (EvmPluginData*)s->data;
+	EvmPluginData *epd = (EvmPluginData *)s->data;
 	sdb_free (epd->pushs_db);
 	cs_close (&epd->cs_handle);
 	R_FREE (s->data);
@@ -407,7 +406,7 @@ static int archinfo(RArchSession *a, ut32 q) {
 }
 
 static char *mnemonics(RArchSession *s, int id, bool json) {
-	EvmPluginData *epd = (EvmPluginData*)s->data;
+	EvmPluginData *epd = (EvmPluginData *)s->data;
 	return r_arch_cs_mnemonics (s, epd->cs_handle, id, json);
 }
 
