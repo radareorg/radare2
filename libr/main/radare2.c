@@ -887,10 +887,15 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				if (!strcmp (opt.arg, "q")) {
 					r_core_cmd0 (r, "eq");
 				} else {
-					char *res = r_config_eval (r->config, opt.arg, false, NULL);
-					r_cons_print (r->cons, res);
-					free (res);
-					r_list_append (mr.evals, (void *)strdup (opt.arg));
+					if (strchr (opt.arg, '=')) {
+						// TODO: i think r_config_eval must disapear
+						char *res = r_config_eval (r->config, opt.arg, false, NULL);
+						r_cons_print (r->cons, res);
+						free (res);
+						r_list_append (mr.evals, (void *)strdup (opt.arg));
+					} else {
+						R_LOG_ERROR ("Needed -e key=value");
+					}
 				}
 			}
 			break;
