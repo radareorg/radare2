@@ -676,11 +676,7 @@ static const keyword_t keyword_gpr[] =
   {"t5", 21, 0}, {"t6", 22, 0}, {"t7", 23, 0}, {"t8", 24, 0}, {"t9", 25, 0},
   {"p0", 26, 0}, {"p1", 27, 0},
   {"fp", 28, ATTR (RDREG)}, {"gp", 29, ATTR (RDREG)},
-  {"lp", 30, ATTR (RDREG)}, {"sp", 31, ATTR (RDREG)},
-
-  {"ta", 15, ATTR (RDREG)}, {"p0", 26, 0}, {"p1", 27, 0},
-  {"fp", 28, ATTR (RDREG)}, {"gp", 29, ATTR (RDREG)},
-  {"lp", 30, ATTR (RDREG)}, {"sp", 31, ATTR (RDREG)},
+  {"lp", 30, ATTR (RDREG)}, {"sp", 31, ATTR (RDREG)}, 
 
   {NULL, 0, 0}
 };
