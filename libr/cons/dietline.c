@@ -1700,6 +1700,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 		line->buffer.data[0] = '\0';
 		if (line->hud) {
 			line->hud->activate = true;
+			line->hud->current_entry_n = 0;
 		}
 	}
 	int mouse_status = cons->mouse;
@@ -2176,8 +2177,8 @@ repeat:
 					/* arrows */
 					case 'A': // up arrow
 						if (line->hud) {
-							if (line->hud->top_entry_n > 0) {
-								line->hud->top_entry_n--;
+							if (line->hud->current_entry_n > 0) {
+								line->hud->current_entry_n--;
 							}
 						} else if (line->sel_widget) {
 							selection_widget_up (line, 1);
@@ -2194,9 +2195,7 @@ repeat:
 						break;
 					case 'B': // down arrow
 						if (line->hud) {
-							if (line->hud->top_entry_n + 1 < line->hud->current_entry_n) {
-								line->hud->top_entry_n++;
-							}
+							line->hud->current_entry_n++;
 						} else if (line->sel_widget) {
 							selection_widget_down (line, 1);
 							selection_widget_draw (cons);

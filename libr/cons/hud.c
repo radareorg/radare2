@@ -12,7 +12,6 @@ typedef struct {
 	char *selected_entry;
 	int current_entry_n;
 	RListIter iter;
-	bool demo;
 } RHudData;
 
 // Display the content of a file in the hud
@@ -29,7 +28,7 @@ R_API char *r_cons_hud_file(RCons *cons, const char *f) {
 }
 
 // Display a buffer in the hud (splitting it line-by-line and ignoring
-// the lines starting with # )
+// the lines starting with # ) returns the selected line
 R_API char *r_cons_hud_line_string(RCons *cons, const char *s) {
 	R_RETURN_VAL_IF_FAIL (cons && s, NULL);
 	if (!r_cons_is_interactive (cons)) {
@@ -194,6 +193,7 @@ static RList *hud_filter(RHudData *data, bool simple, int selected_index) {
 				*x = 0;
 			}
 			p = strdup (current_entry);
+			char marker = (visible_index == selected_index) ? '>' : (first_line ? '-' : ' ');
 			// if the filter is empty, print the entry and move on
 			if (simple) {
 				for (j = 0; p[j] && data->user_input[0]; j++) {
@@ -201,15 +201,15 @@ static RList *hud_filter(RHudData *data, bool simple, int selected_index) {
 						p[j] = toupper ((unsigned char)p[j]);
 					}
 				}
-				r_list_append (res, strdup (p));
+				r_list_append (res, r_str_newf ("%c %s", marker, p));
 			} else if (!data->user_input[0]) {
-				r_list_append (res, r_str_newf (" %c %s", first_line? '-': ' ', p));
+				r_list_append (res, r_str_newf ("%c %s", marker, p));
 			} else {
 				// otherwise we need to emphasize the matching part
 				if (data->cons->context->color_mode) {
 					int last_color_change = 0;
 					int last_mask = 0;
-					char *str = r_str_newf (" %c ", first_line? '-': ' ');
+					char *str = r_str_newf (" %c ", marker);
 					// Instead of printing one char at the time
 					// (which would be slow), we group substrings of the same color
 					for (j = 0; p[j] && j < HUD_BUF_SIZE; j++) {
@@ -239,7 +239,7 @@ static RList *hud_filter(RHudData *data, bool simple, int selected_index) {
 							p[j] = toupper ((unsigned char)p[j]);
 						}
 					}
-					r_list_append (res, r_str_newf (" %c %s", first_line? '-': ' ', p));
+					r_list_append (res, r_str_newf (" %c %s", marker, p));
 				}
 			}
 			// Clean up and restore the tab character (if any)
@@ -294,6 +294,12 @@ static void hud_render(RHudData *data) {
 	data->current_entry_n = 0;
 
 	RList *filtered_list = hud_filter (data, false, hud->current_entry_n);
+	int len = r_list_length (filtered_list);
+	if (hud->current_entry_n >= len && len > 0) {
+		hud->current_entry_n = len - 1;
+		r_list_free (filtered_list);
+		filtered_list = hud_filter (data, false, hud->current_entry_n);
+	}
 	int w = r_cons_get_size (cons, NULL);
 	RListIter *iter;
 	char *row;
@@ -320,7 +326,6 @@ static void hud_refresh_callback(void *user) {
 }
 
 R_API char *r_cons_hud(RCons *cons, RList *list, const char *prompt) {
-	bool demo = cons->context->demo;
 	char user_input[HUD_BUF_SIZE + 1];
 
 	// Save original event callbacks
@@ -329,9 +334,10 @@ R_API char *r_cons_hud(RCons *cons, RList *list, const char *prompt) {
 	void *old_event_data = cons->event_data;
 
 	HtPP *ht = ht_pp_new (NULL, (HtPPKvFreeFunc)mht_free_kv, (HtPPCalcSizeV)strlen);
-	RLineHud *hud = (RLineHud *)R_NEW (RLineHud);
+	RLineHud *hud = (RLineHud *)R_NEW0 (RLineHud);
 	hud->activate = 0;
 	hud->vi = 0;
+	hud->current_entry_n = 0;
 	cons->line->echo = false;
 	cons->line->hud = hud;
 	user_input[0] = 0;
@@ -349,7 +355,6 @@ R_API char *r_cons_hud(RCons *cons, RList *list, const char *prompt) {
 	data->list = list;
 	data->selected_entry = NULL;
 	data->current_entry_n = 0;
-	data->demo = demo;
 	memcpy (data->user_input, user_input, sizeof (user_input));
 
 	// Set up hud event callbacks
