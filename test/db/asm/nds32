@@ -1,2 +1,2 @@
 d "fs2cmp? fs16, fs0, fs2" 6b000b14
-d "mfusr r2, ?" 422f8c20
+d "mfusr a2, ?" 422f8c20
