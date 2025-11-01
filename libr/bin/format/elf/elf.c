@@ -2039,6 +2039,11 @@ of the maximum page size
 ut64 Elf_(get_baddr)(ELFOBJ *eo) {
 	R_RETURN_VAL_IF_FAIL (eo, 0);
 
+	// If user specified a base address via -B flag, use it
+	if (eo->user_baddr != UT64_MAX) {
+		return eo->user_baddr;
+	}
+
 	ut64 base = UT64_MAX;
 	if (eo->phdr) {
 		size_t i;
@@ -2564,6 +2569,8 @@ char* Elf_(get_abi)(ELFOBJ *eo) {
 	case EM_V800:
 	case EM_V850:
 		break;
+	case EM_SBPF:
+		return r_str_newf ("sbpfv%d", eflags);
 	}
 	return NULL;
 }
@@ -4250,6 +4257,23 @@ TODO: ptr->flags = elf_flags_tostring (section->flags);
 	}
 }
 
+static st64 calculate_sbpf_base_delta(ELFOBJ *eo) {
+	if (eo->user_baddr == UT64_MAX || eo->ehdr.e_machine != EM_SBPF) {
+		return 0;
+	}
+
+	// Find original base from first PT_LOAD segment
+	size_t i;
+	for (i = 0; i < eo->ehdr.e_phnum; i++) {
+		if (eo->phdr[i].p_type == PT_LOAD) {
+			ut64 align = eo->phdr[i].p_align ? eo->phdr[i].p_align : 0x10000;
+			ut64 orig_base = eo->phdr[i].p_vaddr & ~(align - 1);
+			return (st64)eo->user_baddr - (st64)orig_base;
+		}
+	}
+	return 0;
+}
+
 static bool _add_sections_from_phdr(RBinFile *bf, ELFOBJ *eo, bool *found_load) {
 	Elf_(Phdr) *phdr = eo->phdr;
 	// program headers is another section
@@ -4267,6 +4291,10 @@ static bool _add_sections_from_phdr(RBinFile *bf, ELFOBJ *eo, bool *found_load) 
 	}
 
 	int i = 0, n = 0;
+
+	// Calculate base address delta for sBPF with custom baddr
+	st64 base_delta = calculate_sbpf_base_delta (eo);
+
 	for (i = 0; i < num; i++) {
 		RBinSection *ptr = r_vector_end (&eo->cached_sections);
 		if (!ptr) {
@@ -4277,6 +4305,12 @@ static bool _add_sections_from_phdr(RBinFile *bf, ELFOBJ *eo, bool *found_load) 
 		ptr->vsize = phdr[i].p_memsz;
 		ptr->paddr = phdr[i].p_offset;
 		ptr->vaddr = phdr[i].p_vaddr;
+
+		// Adjust vaddr for sBPF with custom base address
+		if (base_delta != 0) {
+			ptr->vaddr = (ut64)((st64)ptr->vaddr + base_delta);
+		}
+
 		ptr->perm = phdr[i].p_flags; // perm  are rwx like x=1, w=2, r=4, aka no need to convert from r2's R_PERM
 		ptr->is_segment = true;
 		switch (phdr[i].p_type) {
@@ -5518,7 +5552,13 @@ ut64 Elf_(p2v) (ELFOBJ *eo, ut64 paddr) {
 			if (!p->p_vaddr && !p->p_offset) {
 				continue;
 			}
-			return p->p_vaddr + paddr - p->p_offset;
+			ut64 vaddr = p->p_vaddr + paddr - p->p_offset;
+
+			// If user specified a custom base address, adjust the virtual address
+			st64 delta = calculate_sbpf_base_delta (eo);
+			vaddr = (ut64)((st64)vaddr + delta);
+
+			return vaddr;
 		}
 	}
 
