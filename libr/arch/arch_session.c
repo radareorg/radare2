@@ -2,17 +2,34 @@
 
 #include <r_arch.h>
 
+static void _arch_session_free(RArchSession *s) {
+	if (s) {
+		free (s->name);
+		r_unref (s->config);
+		r_unref (s->encoder);
+		RArchPluginFiniCallback fini = R_UNWRAP3 (s, plugin, fini);
+		if (fini) {
+			fini (s);
+		}
+		free (s);
+	}
+}
+
 R_API RArchSession *r_arch_session(RArch *arch, RArchConfig *cfg, RArchPlugin *ap) {
 	RArchSession *ai = R_NEW0 (RArchSession);
+	r_ref_init (ai, _arch_session_free);
 	ai->arch = arch;
 	ai->config = cfg;
+	r_ref (ai->config);
 	ai->plugin = ap;
 	ai->user = arch->user;
 	RArchPluginInitCallback init = R_UNWRAP3 (ai, plugin, init);
 	if (init) {
 		bool res = init (ai); // must fill ai->data
 		if (!res) {
-			R_FREE (ai);
+			// On init failure, drop our refcounted session to release owned refs
+			r_unref (ai);
+			ai = NULL;
 		}
 	}
 	return ai;
