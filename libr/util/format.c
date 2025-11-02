@@ -38,6 +38,19 @@ static inline const char *pf_color_num(const RPrint *p) {
 	return (p->consb.cons && p->consb.cons->context && p->consb.cons->context->color_mode) ? p->consb.cons->context->pal.b0xff : "";
 }
 
+static inline const char *pf_color_for_value(const RPrint *p, ut64 value) {
+	if (!p->consb.cons || !p->consb.cons->context || !p->consb.cons->context->color_mode) {
+		return "";
+	}
+	if (p->colorfor && (p->flags & R_PRINT_FLAGS_REFS)) {
+		const char *color = p->colorfor (p->user, value, 0, true);
+		if (color) {
+			return color;
+		}
+	}
+	return pf_color_num (p);
+}
+
 static inline const char *pf_color_reset(const RPrint *p) {
 	return (p->consb.cons && p->consb.cons->context && p->consb.cons->context->color_mode) ? Color_RESET : "";
 }
@@ -47,9 +60,8 @@ static inline void pf_print_addr(const RPrint *p, ut64 addr) {
 	r_print_printf (p, "%s0x%08"PFMT64x"%s", pf_color_addr(p), addr, pf_color_reset(p));
 }
 
-// Print hex value with color (used in pf output)
 static inline void pf_print_value_hex(const RPrint *p, const char *fmt, ut64 value) {
-	r_print_printf (p, "%s", pf_color_num(p));
+	r_print_printf (p, "%s", pf_color_for_value(p, value));
 	r_print_printf (p, fmt, value);
 	r_print_printf (p, "%s", pf_color_reset(p));
 }
