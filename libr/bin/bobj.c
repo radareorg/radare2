@@ -473,6 +473,9 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 		if (!bo->sections) {
 			bo->sections = p->sections (bf);
 		}
+		if (bo->sections) {
+			bo->sections->free = (RListFree)r_bin_section_free;
+		}
 		REBASE_PADDR (bo, bo->sections, RBinSection);
 		if (bin->filter) {
 			r_bin_filter_sections (bf, bo->sections);
