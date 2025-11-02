@@ -271,7 +271,7 @@ R_API RCons *r_cons_new2(void) {
 	cons->fix_columns = 0;
 	cons->fix_rows = 0;
 	RVecFdPairs_init (&cons->fds);
-	cons->mouse_event = 0;
+	cons->mouse_event = false;
 	cons->force_rows = 0;
 	cons->force_columns = 0;
 	cons->event_resize = NULL;
@@ -685,7 +685,7 @@ R_API void r_cons_set_click(RCons * R_NONNULL cons, int x, int y) {
 	cons->click_x = x;
 	cons->click_y = y;
 	cons->click_set = true;
-	cons->mouse_event = 1;
+	cons->mouse_event = true;
 }
 
 R_API bool r_cons_get_click(RCons * R_NONNULL cons, int *x, int *y) {
