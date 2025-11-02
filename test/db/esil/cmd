@@ -8,3 +8,45 @@ EXPECT=<<EOF
 hello world 1 2
 EOF
 RUN
+
+NAME=cmd.esil.trap via invalid pc
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e cmd.esil.trap=?e its a trap
+dr PC=0xdeadbeef
+aes
+EOF
+EXPECT=<<EOF
+its a trap 0 7
+EOF
+RUN
+
+NAME=cmd.esil.trap via invalid op
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e cmd.esil.trap=?e its a trap
+e io.cache=1
+wx ffffffffffffffffffffffffffffffffffffffff
+ao~type
+aes
+EOF
+EXPECT=<<EOF
+type: ill
+its a trap 0 7
+EOF
+RUN
+
+NAME=cmd.esil.trap hint TRAP
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e cmd.esil.trap=?e its a trap
+ahe TRAP
+aes
+EOF
+EXPECT=<<EOF
+its a trap 0 7
+EOF
+RUN
