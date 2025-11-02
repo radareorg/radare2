@@ -1,11 +1,13 @@
 /* radare - LGPL - Copyright 2006-2025 - pancake */
 
+#define R_LOG_ORIGIN "config"
+
 #include "r_config.h"
 
 R_API RConfigNode* r_config_node_new(const char *name, const char *value) {
 	R_RETURN_VAL_IF_FAIL (name && *name && value, NULL);
 	RConfigNode *node = R_NEW0 (RConfigNode);
-	node->name = strdup (name);
+	node->name = strdup (name); // use r_strpool instead
 	node->value = strdup (r_str_get (value));
 	node->flags = CN_RW | CN_STR;
 	node->i_value = r_num_get (NULL, value);
@@ -237,7 +239,7 @@ R_API char *r_config_list(RConfig *cfg, const char *str, int rad) {
 		}
 		break;
 	case 's':
-		if (str && *str) {
+		if (R_STR_ISNOTEMPTY (str)) {
 			r_list_foreach (cfg->nodes, iter, node) {
 				char *space = strdup (node->name);
 				char *dot = strchr (space, '.');
@@ -264,9 +266,8 @@ R_API char *r_config_list(RConfig *cfg, const char *str, int rad) {
 					}
 					free (oldSpace);
 					oldSpace = space;
-				} else {
-					oldSpace = space;
 				}
+				oldSpace = space;
 				r_strbuf_appendf (sb, "%s\n", space);
 			}
 			free (oldSpace);
@@ -330,9 +331,8 @@ R_API const char* r_config_get(RConfig *cfg, const char *name) {
 			return r_str_bool (r_str_is_true (node->value));
 		}
 		return node->value;
-	} else {
-		R_LOG_WARN ("Variable '%s' not found", name);
 	}
+	R_LOG_WARN ("Variable '%s' not found", name);
 	return NULL;
 }
 
@@ -388,7 +388,7 @@ R_API const char* r_config_node_type(RConfigNode *node) {
 		return "str";
 	}
 	if (r_config_node_is_int (node)) {
-		if (!strncmp (node->value, "0x", 2)) {
+		if (r_str_startswith (node->value, "0x")) {
 			return "addr";
 		}
 		return "int";
@@ -430,10 +430,10 @@ static inline bool is_true_or_false(const char *s) {
 
 /* TODO: reduce number of strdups here */
 R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *value) {
-	char *ov = NULL;
-	ut64 oi;
 	R_RETURN_VAL_IF_FAIL (cfg && cfg->ht, NULL);
 	R_RETURN_VAL_IF_FAIL (!IS_NULLSTR (name), NULL);
+	char *ov = NULL;
+	ut64 oi;
 	RConfigNode *node = r_config_node_get (cfg, name);
 	if (node) {
 		if (r_config_node_is_ro (node)) {
@@ -443,9 +443,6 @@ R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *valu
 		oi = node->i_value;
 		if (node->value) {
 			ov = strdup (node->value);
-			if (!ov) {
-				return node;
-			}
 		} else {
 			node->value = strdup ("");
 		}
@@ -459,13 +456,10 @@ R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *valu
 				node->value = value;
 			}
 		} else {
-			if (!value) {
-				free (node->value);
-				node->value = strdup ("");
-				node->i_value = 0;
-			} else {
+			if (value) {
 				if (node->value == value) {
-					goto beach;
+					free (ov);
+					return node;
 				}
 				free (node->value);
 				node->value = strdup (value);
@@ -479,11 +473,17 @@ R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *valu
 					node->i_value = 0;
 				}
 				node->flags |= CN_INT;
+			} else {
+				free (node->value);
+				node->value = strdup ("");
+				node->i_value = 0;
 			}
 		}
 	} else { // Create a new RConfigNode
 		oi = UT64_MAX;
-		if (!cfg->lock) {
+		if (R_LIKELY (cfg->lock)) {
+			R_LOG_ERROR ("variable '%s' not found", name);
+		} else {
 			node = r_config_node_new (name, value);
 			if (R_LIKELY (node)) {
 				if (is_true_or_false (value)) {
@@ -495,25 +495,18 @@ R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *valu
 			} else {
 				R_LOG_ERROR ("unable to create a new RConfigNode");
 			}
-		} else {
-			R_LOG_ERROR ("variable '%s' not found", name);
 		}
 	}
-
 	if (node && node->setter) {
 		if (!node->setter (cfg->user, node)) {
 			if (oi != UT64_MAX) {
 				node->i_value = oi;
 			}
 			free (node->value);
-			node->value = strdup (r_str_get (ov));
-			if (ov) {
-				free (ov);
-			}
-			return NULL;
+			node->value = ov;
+			return node;
 		}
 	}
-beach:
 	free (ov);
 	return node;
 }
@@ -549,12 +542,12 @@ R_API bool r_config_rm(RConfig *cfg, const char *name) {
 R_API void r_config_node_value_format_i(char *buf, size_t buf_size, const ut64 i, RConfigNode * R_NULLABLE node) {
 	if (node && r_config_node_is_bool (node)) {
 		r_str_ncpy (buf, r_str_bool ((int) i), buf_size);
-		return;
-	}
-	if (i < 1024) {
-		snprintf (buf, buf_size, "%" PFMT64d, i);
 	} else {
-		snprintf (buf, buf_size, "0x%08" PFMT64x, i);
+		if (i < 1024) {
+			snprintf (buf, buf_size, "%" PFMT64d, i);
+		} else {
+			snprintf (buf, buf_size, "0x%08" PFMT64x, i);
+		}
 	}
 }
 
@@ -635,9 +628,9 @@ beach:
 	return node;
 }
 
-static void eval_config_string(RConfig *cfg, char *name, RStrBuf *sb) {
+static bool eval_config_string(RConfig *cfg, char *name, RStrBuf *sb) {
 	if (!*name) {
-		return;
+		return true;
 	}
 	char *eq = strchr (name, '=');
 	if (eq) {
@@ -645,7 +638,9 @@ static void eval_config_string(RConfig *cfg, char *name, RStrBuf *sb) {
 		r_str_trim (name);
 		r_str_trim (eq);
 		if (*name) {
-			(void) r_config_set (cfg, name, eq);
+			if (!r_config_set (cfg, name, eq)) {
+				return false;
+			}
 		}
 	} else {
 		if (r_str_endswith (name, ".") && !r_str_endswith (name, "..")) {
@@ -658,9 +653,11 @@ static void eval_config_string(RConfig *cfg, char *name, RStrBuf *sb) {
 				r_strbuf_appendf (sb, "%s\n", v);
 			} else {
 				R_LOG_ERROR ("Invalid config key %s", name);
+				return false;
 			}
 		}
 	}
+	return true;
 }
 
 R_API char *r_config_eval(RConfig *cfg, const char *str, bool many, bool *error) {
@@ -668,38 +665,22 @@ R_API char *r_config_eval(RConfig *cfg, const char *str, bool many, bool *error)
 	RStrBuf *sb = r_strbuf_new ("");
 
 	char *s = r_str_trim_dup (str);
-		if (error) {
-			*error = false;
-		}
-
-	if (!*s || !strcmp (s, "help")) { // 580 wtf is help here
-		char *res = r_config_list (cfg, NULL, 0);
-		r_strbuf_appendf (sb, "%s\n", res);
-		free (res);
-		free (s);
-		if (error) {
-			*error = true;
-		}
-	}
-
-	if (*s == '-') {
-		r_config_rm (cfg, s + 1);
-		free (s);
-		if (error) {
-			*error = true;
-		}
-	}
+	bool err = false;
 	if (many) {
+		// XXX i think that shouldnt exist
 		RList *list = r_str_split_list (s, ":", 0);
 		RListIter *iter;
 		char *name;
 		r_list_foreach (list, iter, name) {
-			eval_config_string (cfg, name, sb);
+			err |= eval_config_string (cfg, name, sb);
 		}
 	} else {
-		eval_config_string (cfg, s, sb);
+		err |= eval_config_string (cfg, s, sb);
 	}
 	free (s);
+	if (error) {
+		*error = err;
+	}
 	return r_strbuf_drain (sb);
 }
 

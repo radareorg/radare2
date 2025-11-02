@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2019 thestr4ng3r */
 
+/// XXX this api sucks a lot because it's basically the SdbSet API with a minor tweak
 #include "r_util/r_str_constpool.h"
 
 static void kv_fini(HtPPKv *kv) {
