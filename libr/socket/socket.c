@@ -728,11 +728,15 @@ R_API bool r_socket_block_time(RSocket *s, bool block, int sec, int usec) {
 #elif R2__WINDOWS__
 	ioctlsocket (s->fd, FIONBIO, (u_long FAR*)&block);
 #endif
-	if (sec > 0 || usec > 0) {
-		struct timeval tv = {sec, usec};
-		if (setsockopt (s->fd, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof (tv)) < 0) {
-			return false;
-		}
+	if (sec < 0) {
+		sec = 0;
+	}
+	if (usec < 0) {
+		usec = 0;
+	}
+	struct timeval tv = {sec, usec};
+	if (setsockopt (s->fd, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof (tv)) < 0) {
+		return false;
 	}
 	return true;
 }
@@ -750,12 +754,18 @@ R_API int r_socket_flush(RSocket *s) {
 /* returns -1 on error, 0 is false, 1 is true */
 R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
 	fd_set rfds;
-	struct timeval tv = {secs, usecs};
+	if (secs < 0) {
+		secs = 0;
+	}
+	if (usecs < 0) {
+		usecs = 0;
+	}
 	if (s->fd == R_INVALID_SOCKET) {
 		return -1;
 	}
 	FD_ZERO (&rfds);
 	FD_SET (s->fd, &rfds);
+	struct timeval tv = {secs, usecs};
 	return select (s->fd + 1, &rfds, NULL, NULL, &tv);
 }
 
