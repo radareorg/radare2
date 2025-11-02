@@ -31,27 +31,27 @@
 
 // Helper functions for colorized pf output
 static inline const char *pf_color_addr(const RPrint *p) {
-	return (p->consb.cons && p->consb.cons->context) ? p->consb.cons->context->pal.addr : "";
+	return (p->consb.cons && p->consb.cons->context && p->consb.cons->context->color_mode) ? p->consb.cons->context->pal.addr : "";
 }
 
 static inline const char *pf_color_num(const RPrint *p) {
-	return (p->consb.cons && p->consb.cons->context) ? p->consb.cons->context->pal.b0xff : "";
+	return (p->consb.cons && p->consb.cons->context && p->consb.cons->context->color_mode) ? p->consb.cons->context->pal.b0xff : "";
 }
 
-static inline const char *pf_color_reset(void) {
-	return Color_RESET;
+static inline const char *pf_color_reset(const RPrint *p) {
+	return (p->consb.cons && p->consb.cons->context && p->consb.cons->context->color_mode) ? Color_RESET : "";
 }
 
 // Print address with color (used in pf output)
 static inline void pf_print_addr(const RPrint *p, ut64 addr) {
-	r_print_printf (p, "%s0x%08"PFMT64x"%s", pf_color_addr(p), addr, pf_color_reset());
+	r_print_printf (p, "%s0x%08"PFMT64x"%s", pf_color_addr(p), addr, pf_color_reset(p));
 }
 
 // Print hex value with color (used in pf output)
 static inline void pf_print_value_hex(const RPrint *p, const char *fmt, ut64 value) {
 	r_print_printf (p, "%s", pf_color_num(p));
 	r_print_printf (p, fmt, value);
-	r_print_printf (p, "%s", pf_color_reset());
+	r_print_printf (p, "%s", pf_color_reset(p));
 }
 
 // FOR MINGW only
@@ -151,7 +151,7 @@ static void r_print_format_quadword(const RPrint* p, int endian, int mode,
 		}
 		if (size == -1) {
 			if (addr64 == UT32_MAX || ((st64)addr64 < 0 && (st64)addr64 > -4096)) {
-				r_print_printf (p, "%s%d%s", pf_color_num(p), (int)(addr64), pf_color_reset());
+				r_print_printf (p, "%s%d%s", pf_color_num(p), (int)(addr64), pf_color_reset(p));
 			} else {
 				pf_print_value_hex (p, "0x%016"PFMT64x, addr64);
 			}
@@ -727,7 +727,7 @@ static void r_print_format_int(const RPrint* p, int endian, int mode, const char
 			r_print_printf (p, " = ");
 		}
 		if (size == -1) {
-			r_print_printf (p, "%s%"PFMT64d"%s", pf_color_num(p), (st64)(st32)addr, pf_color_reset());
+			r_print_printf (p, "%s%"PFMT64d"%s", pf_color_num(p), (st64)(st32)addr, pf_color_reset(p));
 		} else {
 			if (!SEEVALUE) {
 				r_print_printf (p, "[ ");
@@ -735,7 +735,7 @@ static void r_print_format_int(const RPrint* p, int endian, int mode, const char
 			while (size--) {
 				updateAddr (buf + i, size - i, endian, &addr, NULL);
 				if (elem == -1 || elem == 0) {
-					r_print_printf (p, "%s%"PFMT64d"%s", pf_color_num(p), (st64)(st32)addr, pf_color_reset());
+					r_print_printf (p, "%s%"PFMT64d"%s", pf_color_num(p), (st64)(st32)addr, pf_color_reset(p));
 					if (elem == 0) {
 						elem = -2;
 					}
@@ -816,7 +816,7 @@ static void r_print_format_octal(const RPrint* p, int endian, int mode, const ch
 			r_print_printf (p, "(octal) ");
 		}
 		if (size == -1) {
-			r_print_printf (p, "%s 0%08"PFMT64o"%s", pf_color_num(p), addr, pf_color_reset());
+			r_print_printf (p, "%s 0%08"PFMT64o"%s", pf_color_num(p), addr, pf_color_reset(p));
 		} else {
 			if (!SEEVALUE) {
 				r_print_printf (p, "[ ");
@@ -824,7 +824,7 @@ static void r_print_format_octal(const RPrint* p, int endian, int mode, const ch
 			while (size--) {
 				updateAddr (buf + i, size - i, endian, &addr, NULL);
 				if (elem == -1 || elem == 0) {
-					r_print_printf (p, "%s0%08"PFMT64o"%s", pf_color_num(p), addr, pf_color_reset());
+					r_print_printf (p, "%s0%08"PFMT64o"%s", pf_color_num(p), addr, pf_color_reset(p));
 					if (elem == 0) {
 						elem = -2;
 					}
@@ -1261,7 +1261,7 @@ static void r_print_format_word(const RPrint* p, int endian, int mode, const cha
 		}
 		if (size == -1) {
 			if (sign) {
-				r_print_printf (p, "%s%"PFMT64d"%s", pf_color_num(p), (st64)(short)addr, pf_color_reset());
+				r_print_printf (p, "%s%"PFMT64d"%s", pf_color_num(p), (st64)(short)addr, pf_color_reset(p));
 			} else {
 				pf_print_value_hex (p, "0x%04"PFMT64x, addr);
 			}
