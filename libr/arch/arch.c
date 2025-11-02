@@ -153,6 +153,7 @@ R_API bool r_arch_use(RArch *arch, RArchConfig *config, const char *name) {
 }
 
 R_API bool r_arch_use_decoder(RArch *arch, const char *dname) {
+	R_RETURN_VAL_IF_FAIL (arch && arch->cfg, false);
 	RArchConfig *cfg = r_arch_config_clone (arch->cfg);
 	bool r = r_arch_use (arch, cfg, dname);
 	r_unref (cfg);
