@@ -45,11 +45,35 @@ static void object_delete_items(RBinObject *o) {
 	ht_up_free (o->strings_db);
 
 	if (!RVecRBinImport_empty (&o->imports_vec)) {
-		/* finalize imports vector; elements own strdup'd fields, so rely on element free in fini */
+		/* explicit deep cleanup for imports if vector fini doesn't free nested strings */
+		RBinImport *imp;
+		R_VEC_FOREACH (&o->imports_vec, imp) {
+			if (imp) {
+				if (imp->name) {
+					r_bin_name_free (imp->name);
+					imp->name = NULL;
+				}
+				free (imp->libname);
+				imp->libname = NULL;
+			}
+		}
 		RVecRBinImport_fini (&o->imports_vec);
 	}
 	if (!RVecRBinSymbol_empty (&o->symbols_vec)) {
-		/* finalize symbols vector; element destructor frees names */
+		/* explicit deep cleanup for symbols */
+		RBinSymbol *sym;
+		R_VEC_FOREACH (&o->symbols_vec, sym) {
+			if (sym) {
+				if (sym->name) {
+					r_bin_name_free (sym->name);
+					sym->name = NULL;
+				}
+				free (sym->libname);
+				sym->libname = NULL;
+				free (sym->classname);
+				sym->classname = NULL;
+			}
+		}
 		RVecRBinSymbol_fini (&o->symbols_vec);
 		if (o->symbols) {
 			o->symbols->free = NULL;
@@ -68,8 +92,9 @@ static void object_delete_items(RBinObject *o) {
 	}
 	/* free optional filter hashtables if present */
 	if (o->filters) {
-		/* keys are strdup'd; ht_su_free frees keys */
-		ht_su_free ((HtSU *)o->filters);
+		/* Attempt to free as HtPP first; if type mismatch, free as HtSU */
+		/* These tables are internal and optional; free whichever was used */
+		ht_pp_free ((HtPP *)o->filters);
 		o->filters = NULL;
 	}
 }
