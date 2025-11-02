@@ -610,13 +610,13 @@ R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 			p->_stdin = strdup (e);
 		}
 	} else if (!strcmp (b, "stdout")) {
-		p->_stdout = strdup (e);
+		p->_stdout = getstr (e, NULL);
 	} else if (!strcmp (b, "stdin")) {
-		p->_stdin = strdup (e);
+		p->_stdin = getstr (e, NULL);
 	} else if (!strcmp (b, "stderr")) {
 		p->_stderr = strdup (e);
 	} else if (!strcmp (b, "input")) {
-		p->_input = strdup (e);
+		p->_input = getstr (e, NULL);
 	} else if (!strcmp (b, "chdir")) {
 		p->_chgdir = strdup (e);
 	} else if (!strcmp (b, "core")) {
