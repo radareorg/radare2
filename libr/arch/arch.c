@@ -155,9 +155,7 @@ R_API bool r_arch_use(RArch *arch, RArchConfig *config, const char *name) {
 R_API bool r_arch_use_decoder(RArch *arch, const char *dname) {
 	RArchConfig *cfg = r_arch_config_clone (arch->cfg);
 	bool r = r_arch_use (arch, cfg, dname);
-	if (!r) {
-		r_unref (cfg);
-	}
+	r_unref (cfg);
 	return r;
 }
 
@@ -184,6 +182,7 @@ R_API bool r_arch_set_bits(RArch *arch, ut32 bits) {
 			arch->cfg = NULL;
 			return false;
 		}
+		r_unref (cfg);
 		return true;
 	}
 	arch->cfg->bits = bits;
@@ -285,6 +284,7 @@ R_API void r_arch_free(RArch *arch) {
 	if (arch) {
 		free (arch->platform);
 		r_list_free (arch->plugins);
+		r_unref (arch->session);
 		r_unref (arch->cfg);
 		free (arch);
 	}
