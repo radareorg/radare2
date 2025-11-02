@@ -3,8 +3,6 @@
 #include <r_cons.h>
 #include <r_util/r_print.h>
 
-#define COUNT_LINES 1
-
 static R_TH_LOCAL RCons *I = NULL;
 
 R_LIB_VERSION (r_cons);
@@ -12,6 +10,31 @@ R_LIB_VERSION (r_cons);
 static RCons s_cons_global = {0};
 
 static void __break_signal(int sig);
+#define MAX_DISPLAY_LINES 9000
+
+static unsigned int count_display_lines(RCons *cons, const char *buffer, size_t len) {
+	int columns = r_cons_get_size (cons, NULL);
+	if (columns < 1) {
+		columns = 80;
+	}
+	unsigned int lines = 0;
+	const char *ptr = buffer;
+	const char *end = buffer + len;
+
+	while (ptr < end && lines < MAX_DISPLAY_LINES) {
+		const char *nl = strchr (ptr, '\n');
+		if (!nl || nl >= end) {
+			nl = end;
+		}
+		size_t line_len = nl - ptr;
+		lines += line_len ? ((line_len + columns - 1) / columns) : 1;
+		ptr = nl + 1;
+		if (nl == end) {
+			break;
+		}
+	}
+	return lines;
+}
 
 #define MOAR (4096 * 8)
 
@@ -859,26 +882,11 @@ R_API void r_cons_flush(RCons *cons) {
 			r_sys_cmd_str_full (cons->pager, ctx->buffer, -1, NULL, NULL, NULL);
 			r_cons_reset (cons);
 		} else if (cons->maxpage > 0 && ctx->buffer_len > cons->maxpage) {
-#if COUNT_LINES
-			char *buffer = ctx->buffer;
-			int i, lines = 0;
-			for (i = 0; buffer[i]; i++) {
-				if (buffer[i] == '\n') {
-					lines ++;
-				}
-			}
-			if (lines > 0 && !r_cons_yesno (cons, 'n',"Do you want to print %d lines? (y/N)", lines)) {
+			unsigned int lines = count_display_lines (cons, ctx->buffer, ctx->buffer_len);
+			if (lines > 0 && !r_cons_yesno (cons, 'n',"Do you want to print %u lines? (y/N)", lines)) {
 				r_cons_reset (cons);
 				return;
 			}
-#else
-			char buf[8];
-			r_num_units (buf, sizeof (buf), ctx->buffer_len);
-			if (!r_cons_yesno (cons, 'n', "Do you want to print %s chars? (y/N)", buf)) {
-				r_cons_reset (cons);
-				return;
-			}
-#endif
 			// fix | more | less problem
 			r_cons_set_raw (cons, true);
 		}
