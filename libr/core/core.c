@@ -1788,11 +1788,11 @@ static void init_cmd_suggestions(RCore *core) {
 	sdb_set (core->sdb, "fallbackcmd.pdg", "?e You need to install the plugin with r2pm -ci r2ghidra", 0);
 	sdb_set (core->sdb, "fallbackcmd.pdz", "?e You need to install the plugin with r2pm -ci r2retdec", 0);
 	sdb_set (core->sdb, "fallbackcmd.pdv", "?e You need to install the plugin with r2pm -ci east", 0);
-	
+
 	// Suggestions for common user-facing command names (redirect to actual commands)
 	sdb_set (core->sdb, "fallbackcmd.r2dec", "?e You are probably looking for the pdd command", 0);
 	sdb_set (core->sdb, "fallbackcmd.r2ghidra", "?e You are probably looking for the pdg command", 0);
-	
+
 	// Users can add custom fallback commands at runtime using:
 	// k fallbackcmd.mycommand=?e Use 'othercommand' instead
 }
