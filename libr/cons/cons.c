@@ -10,36 +10,28 @@ R_LIB_VERSION (r_cons);
 static RCons s_cons_global = {0};
 
 static void __break_signal(int sig);
+#define MAX_DISPLAY_LINES 9000
 
-// Count display lines, treating long lines (>80 chars) as multiple lines
-// Stops counting at R_CONS_MAX_LINES to avoid performance issues with huge outputs
-#define R_CONS_MAX_LINES 10000
-
-static unsigned int count_display_lines(const char *buffer, size_t len) {
-	if (!buffer || len == 0) {
-		return 0;
+static unsigned int count_display_lines(RCons *cons, const char *buffer, size_t len) {
+	int columns = r_cons_get_size (cons, NULL);
+	if (columns < 1) {
+		columns = 80;
 	}
 	unsigned int lines = 0;
-	unsigned int line_chars = 0;
-	size_t i;
-	for (i = 0; i < len && lines < R_CONS_MAX_LINES; i++) {
-		if (buffer[i] == '\n') {
-			lines++;
-			line_chars = 0;
-		} else {
-			line_chars++;
-			// Count extra line for every 80 characters in a single line
-			if (line_chars > 0 && line_chars % 80 == 0) {
-				lines++;
-				if (lines >= R_CONS_MAX_LINES) {
-					break;
-				}
-			}
+	const char *ptr = buffer;
+	const char *end = buffer + len;
+
+	while (ptr < end && lines < MAX_DISPLAY_LINES) {
+		const char *nl = strchr (ptr, '\n');
+		if (!nl || nl >= end) {
+			nl = end;
 		}
-	}
-	// Add one more line if buffer doesn't end with newline
-	if (line_chars > 0 && lines < R_CONS_MAX_LINES) {
-		lines++;
+		size_t line_len = nl - ptr;
+		lines += line_len ? ((line_len + columns - 1) / columns) : 1;
+		ptr = nl + 1;
+		if (nl == end) {
+			break;
+		}
 	}
 	return lines;
 }
@@ -890,8 +882,8 @@ R_API void r_cons_flush(RCons *cons) {
 			r_sys_cmd_str_full (cons->pager, ctx->buffer, -1, NULL, NULL, NULL);
 			r_cons_reset (cons);
 		} else if (cons->maxpage > 0 && ctx->buffer_len > cons->maxpage) {
-			unsigned int lines = count_display_lines (ctx->buffer, ctx->buffer_len);
-			if (lines > 0 && !r_cons_yesno (cons, 'n',"Do you want to print %d lines? (y/N)", lines)) {
+			unsigned int lines = count_display_lines (cons, ctx->buffer, ctx->buffer_len);
+			if (lines > 0 && !r_cons_yesno (cons, 'n',"Do you want to print %u lines? (y/N)", lines)) {
 				r_cons_reset (cons);
 				return;
 			}
