@@ -621,7 +621,8 @@ R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 	} else if (!strcmp (b, "stderr")) {
 		p->_stderr = strdup (e);
 	} else if (!strcmp (b, "input")) {
-		p->_input = getstr (e, NULL, false);
+		// p->_input = getstr (e, NULL, false);
+		p->_input = strdup (e);
 	} else if (!strcmp (b, "chdir")) {
 		p->_chgdir = strdup (e);
 	} else if (!strcmp (b, "core")) {
