@@ -16,7 +16,11 @@ d "bts dword [eax], eax" 0fab00
 d "call 4" 66e80000
 ad "jecxz 2" e300
 ad "jecxz 0" e3fe
-dB "cdqe" 98
+ad "cwde" 98
+ad "pushfd" 9c
+ad "pushf" 669c
+ad "popfd" 9d
+ad "popf" 669d
 d "cmova eax, dword [eax]" 0f4700
 d "cmovae eax, dword [eax]" 0f4300
 d "cmovb eax, dword [eax]" 0f4200
