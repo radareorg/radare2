@@ -505,7 +505,7 @@ typedef struct r_cons_t {
 	int (*user_fgets)(struct r_cons_t * cons, char *buf, int len);
 	RConsEvent event_resize;
 	void *event_data;
-	int mouse_event;
+	bool mouse_event;
 
 	RConsEditorCallback cb_editor;
 	RConsBreakCallback cb_break;

@@ -99,7 +99,7 @@ R_API int r_cons_arrow_to_hjkl(RCons *cons, int ch) {
 		return cons->mouse_event && (ut8)ch == UT8_MAX ? 0 : ch;
 	}
 #endif
-	cons->mouse_event = 0;
+	cons->mouse_event = false;
 	/* emacs */
 	switch ((ut8)ch) {
 	case 0xc3: r_cons_readchar (cons); ch = 'K'; break; // emacs repag (alt + v)
@@ -176,6 +176,7 @@ R_API int r_cons_arrow_to_hjkl(RCons *cons, int ch) {
 						p = 0;
 					}
 				} while (ch != 'M' && ch != 'm');
+				cons->mouse_event = true;
 				int nvel = atoi (vel);
 				switch (nvel) {
 				case 2: // right click
@@ -219,7 +220,6 @@ R_API int r_cons_arrow_to_hjkl(RCons *cons, int ch) {
 			ch = r_cons_readchar (cons);
 			// 6 is up
 			// 7 is down
-			cons->mouse_event = 1;
 			if (ch == '6') {
 				ch = 'k';
 			} else if (ch == '7') {
@@ -232,6 +232,7 @@ R_API int r_cons_arrow_to_hjkl(RCons *cons, int ch) {
 			do {
 				ch2 = r_cons_readchar (cons);
 			} while (ch2 != 'M');
+			cons->mouse_event = true;
 			break;
 		case '3':
 			// handle mouse down /up events (35 vs 32)

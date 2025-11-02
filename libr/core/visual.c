@@ -2883,7 +2883,6 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	char buf[4096]; // TODO: remove this var, use local ones for each specific case
 	const char *key_s;
 	int i, cols = core->print->cols;
-	int wheelspeed;
 	int ch = och;
 	r_cons_set_raw (core->cons, true);
 	if ((ut8)ch == KEY_ALTQ) {
@@ -2891,6 +2890,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		ch = 'q';
 	}
 	ch = r_cons_arrow_to_hjkl (core->cons, ch);
+	int wheelspeed = (core->cons->mouse_event)
+		? r_config_get_i (core->config, "scr.wheel.speed"): 1;
 	ch = visual_nkey (core, ch);
 	if (ch < 2) {
 		ch = process_get_click (core, ch);
@@ -2917,11 +2918,6 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		och = 0;
 		ch = 0;
 		return 1;
-	}
-	if (core->cons->mouse_event) {
-		wheelspeed = r_config_get_i (core->config, "scr.wheel.speed");
-	} else {
-		wheelspeed = 1;
 	}
 	RCoreVisual *v = &core->visual;
 	if (ch == 'l' && och == 6) {
