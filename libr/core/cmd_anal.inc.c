@@ -7230,6 +7230,9 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			esil->trap = R_ANAL_TRAP_EXEC_ERR;
 			esil->trap_code = addr;
 			R_LOG_INFO ("[ESIL] Trap, trying to execute on non-executable memory");
+			if (esil->cmd_trap) {
+				esil->cmd (esil, esil->cmd_trap, esil->addr, R_ANAL_TRAP_INVALID);
+			}
 			return_tail (1);
 		}
 		// eprintf ("addr %"PFMT64x"\n", addr);
