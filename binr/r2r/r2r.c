@@ -501,7 +501,14 @@ int main(int argc, char **argv) {
 		r_num_irand ();
 		state.run_config.shallow = shallow;
 	}
-	state.run_config.r2_cmd = "radare2";
+
+	char *r2_binary = r_sys_getenv("R2R_RADARE2");
+	if (R_STR_ISNOTEMPTY (r2_binary)) {
+			R_LOG_INFO("Using custom r2 binary: %s", r2_binary);
+			state.run_config.r2_cmd = r2_binary;
+	} else {
+			state.run_config.r2_cmd = "radare2";
+	}
 	state.run_config.skip_cmd = r_sys_getenv_asbool ("R2R_SKIP_CMD");
 	state.run_config.skip_asm = r_sys_getenv_asbool ("R2R_SKIP_ASM");
 	state.run_config.skip_json = r_sys_getenv_asbool ("R2R_SKIP_JSON");
