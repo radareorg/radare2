@@ -27,7 +27,9 @@ R_API RArchSession *r_arch_session(RArch *arch, RArchConfig *cfg, RArchPlugin *a
 	if (init) {
 		bool res = init (ai); // must fill ai->data
 		if (!res) {
-			R_FREE (ai);
+			// On init failure, drop our refcounted session to release owned refs
+			r_unref (ai);
+			ai = NULL;
 		}
 	}
 	return ai;

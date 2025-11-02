@@ -202,6 +202,7 @@ R_API bool r_arch_set_endian(RArch *arch, ut32 endian) {
 			arch->cfg = NULL;
 			return false;
 		}
+		r_unref (cfg);
 		return true;
 	}
 	arch->cfg->endian = endian;
@@ -221,6 +222,7 @@ R_API bool r_arch_set_arch(RArch *arch, char *archname) {
 			r_unref (cfg);
 			return false;
 		}
+		r_unref (cfg);
 	}
 	r_str_ncpy (cfg->arch, archname, sizeof (cfg->arch));
 	return true;
