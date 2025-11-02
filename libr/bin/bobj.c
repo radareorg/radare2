@@ -36,6 +36,7 @@ static void object_delete_items(RBinObject *o) {
 	ht_up_free (o->addr2klassmethod);
 	r_list_free (o->entries);
 	r_list_free (o->fields);
+	/* imports list elements may carry strdup'd names; ensure list has free cb or purge manually */
 	r_list_free (o->imports);
 	r_list_free (o->libs);
 	r_crbtree_free (o->relocs);
@@ -44,9 +45,11 @@ static void object_delete_items(RBinObject *o) {
 	ht_up_free (o->strings_db);
 
 	if (!RVecRBinImport_empty (&o->imports_vec)) {
+		/* finalize imports vector; elements own strdup'd fields, so rely on element free in fini */
 		RVecRBinImport_fini (&o->imports_vec);
 	}
 	if (!RVecRBinSymbol_empty (&o->symbols_vec)) {
+		/* finalize symbols vector; element destructor frees names */
 		RVecRBinSymbol_fini (&o->symbols_vec);
 		if (o->symbols) {
 			o->symbols->free = NULL;
@@ -62,6 +65,12 @@ static void object_delete_items(RBinObject *o) {
 	r_list_free (o->mem);
 	for (i = 0; i < R_BIN_SYM_LAST; i++) {
 		free (o->binsym[i]);
+	}
+	/* free optional filter hashtables if present */
+	if (o->filters) {
+		/* keys are strdup'd; ht_su_free frees keys */
+		ht_su_free ((HtSU *)o->filters);
+		o->filters = NULL;
 	}
 }
 
