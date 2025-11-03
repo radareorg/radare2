@@ -10,18 +10,23 @@ R_LIB_VERSION (r_cons);
 static RCons s_cons_global = {0};
 
 static void __break_signal(int sig);
-#define MAX_DISPLAY_LINES 9000
+#define MAX_PAGES 100
 
 static unsigned int count_display_lines(RCons *cons, const char *buffer, size_t len) {
-	int columns = r_cons_get_size (cons, NULL);
+	int columns, rows;
+	columns = r_cons_get_size (cons, &rows);
 	if (columns < 1) {
 		columns = 80;
 	}
+	if (rows < 1) {
+		rows = 24;
+	}
+	unsigned int max_lines = MAX_PAGES * rows;
 	unsigned int lines = 0;
 	const char *ptr = buffer;
 	const char *end = buffer + len;
 
-	while (ptr < end && lines < MAX_DISPLAY_LINES) {
+	while (ptr < end && lines < max_lines) {
 		const char *nl = strchr (ptr, '\n');
 		if (!nl || nl >= end) {
 			nl = end;
