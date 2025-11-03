@@ -184,7 +184,7 @@ static int help(void) {
 		"  float      ->  hex              ;  rax2 3.33f\n"
 		"  hex        ->  float            ;  rax2 Fx40551ed8\n"
 		"  BF16       ->  hex              ;  rax2 1.5g\n"
-		"  hex        ->  BF16              ;  rax2 Gx3f80\n"
+		"  hex        ->  BF16             ;  rax2 Gx3f80\n"
 		"  oct        ->  hex              ;  rax2 35o\n"
 		"  hex        ->  oct              ;  rax2 Ox12 (O is a letter)\n"
 		"  bin        ->  hex              ;  rax2 1100011b\n"
