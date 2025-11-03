@@ -436,6 +436,7 @@ static RCoreHelpMessage help_detail_pf = {
 	" ", "e", "temporally swap endian",
 	" ", "E", "resolve enum name (see t?)",
 	" ", "f", "float value (4 bytes)",
+	" ", "g", "BF16 value (2 bytes)",
 	" ", "F", "double value (8 bytes)",
 	" ", "G", "long double value (16 bytes (10 with padding))",
 	" ", "i", "signed integer value (4 bytes) (see 'd' and 'x')",

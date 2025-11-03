@@ -121,12 +121,26 @@ static bool format_output(RNum *num, char mode, const char *s, RaxMode m, RaxAct
 	case 'f':
 		printf ("%.01lf\n", num->fvalue);
 		break;
-	case 'l':
+		case 'l':
 		{
 			R_STATIC_ASSERT (sizeof (float) == 4);
 			float f = (float)num->fvalue;
 			ut32 *p = (ut32 *)&f;
 			printf ("Fx%08x\n", *p);
+		}
+		break;
+	case 'g':
+		{
+			R_STATIC_ASSERT (sizeof (float) == 4);
+			float f = (float)num->fvalue;
+			ut16 bf16 = r_num_float_to_bf16(f);
+			printf ("Gx%04x\n", bf16);
+		}
+		break;
+	case 'G':
+		{
+			float f = r_num_bf16_to_float((ut16)n);
+			printf ("%.9g\n", f);
 		}
 		break;
 	case 'O': printf ("0%" PFMT64o "\n", n); break;
@@ -147,7 +161,7 @@ static bool format_output(RNum *num, char mode, const char *s, RaxMode m, RaxAct
 		}
 		break;
 	default:
-		R_LOG_ERROR ("Unknown output mode %d", m.omode);
+		R_LOG_ERROR ("Unknown output mode %c", m.omode);
 		return false;
 	}
 	return true;
@@ -169,6 +183,8 @@ static int help(void) {
 		"  ternary    ->  int              ;  rax2 1010dt\n"
 		"  float      ->  hex              ;  rax2 3.33f\n"
 		"  hex        ->  float            ;  rax2 Fx40551ed8\n"
+		"  BF16       ->  hex              ;  rax2 1.5g\n"
+		"  hex        ->  BF16              ;  rax2 Gx3f80\n"
 		"  oct        ->  hex              ;  rax2 35o\n"
 		"  hex        ->  oct              ;  rax2 Ox12 (O is a letter)\n"
 		"  bin        ->  hex              ;  rax2 1100011b\n"
@@ -588,6 +604,7 @@ dotherax:
 		memcpy (&f, &n, sizeof (f));
 		memcpy (&d, &n, sizeof (d));
 		printf ("float   %ff\n", f);
+		printf ("bf16    Gx%04x\n", r_num_float_to_bf16(f));
 		printf ("double  %lf\n", d);
 		printf ("binary  0b%s\n", out);
 
@@ -647,6 +664,7 @@ dotherax:
 
 		pj_ks (*pj, "fvalue", r_strf ("%.1lf", num->fvalue));
 		pj_ks (*pj, "float", r_strf ("%ff", f));
+		pj_ks (*pj, "bf16", r_strf ("Gx%04x", r_num_float_to_bf16(f)));
 		pj_ks (*pj, "double", r_strf ("%lf", d));
 		pj_ks (*pj, "binary", r_strf ("0b%s", out));
 		char b36str[16];
@@ -756,6 +774,9 @@ dotherax:
 	} else if (r_str_startswith (str, "Bx")) {
 		out_mode = 'B';
 		*str = '0';
+	} else if (r_str_startswith (str, "Gx")) {
+		out_mode = 'G';
+		*str = '0';
 	} else if (r_str_startswith (str, "Tx")) {
 		out_mode = 'T';
 		*str = '0';
@@ -768,6 +789,8 @@ dotherax:
 		// TODO: Move print into format_output
 	} else if (r_str_endswith (str, "f")) {
 		out_mode = 'l';
+	} else if (r_str_endswith (str, "g")) {
+		out_mode = 'g';
 	} else if (r_str_endswith (str, "dt")) {
 		out_mode = 'I';
 		str[strlen (str) - 2] = 't';

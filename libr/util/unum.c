@@ -500,6 +500,16 @@ R_API double r_num_get_double(RNum *num, const char *str) {
 	return d;
 }
 
+R_API ut16 r_num_float_to_bf16(float f) {
+	ut32 u = *(ut32*)&f;
+	return (ut16)(u >> 16);
+}
+
+R_API float r_num_bf16_to_float(ut16 b) {
+	ut32 u = (ut32)b << 16;
+	return *(float*)&u;
+}
+
 R_API int r_num_to_bits(char *out, ut64 num) {
 	int size = 64, i;
 

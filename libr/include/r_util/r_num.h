@@ -111,6 +111,8 @@ R_API size_t r_num_bit_clz64(ut64 val);
 R_API size_t r_num_bit_ctz32(ut32 val);
 R_API size_t r_num_bit_ctz64(ut64 val);
 R_API double r_num_get_double(RNum *num, const char *str);
+R_API ut16 r_num_float_to_bf16(float f);
+R_API float r_num_bf16_to_float(ut16 b);
 
 static inline st64 r_num_abs(st64 num) {
 	return num < 0 ? -num : num;
