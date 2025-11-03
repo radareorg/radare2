@@ -1426,7 +1426,7 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 	bool rdump = false;
 	int str_type_filter = 0;
 	RCoreBinFilter filter = {0};
-	
+
 	if (input[1] == '-') { // "iz-"
 		char *strpurge = core->bin->strpurge;
 		ut64 addr = core->addr;
@@ -1460,7 +1460,7 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 			}
 			input--; // Will be incremented in switch
 		}
-		
+
 		switch (input[2]) {
 		case 'z':// "izzz"
 			rdump = true;
@@ -1499,7 +1499,7 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 	} else {
 		// "iz"
 		bool validcmd = true;
-		
+
 		// Check for type filter after iz
 		if (input[1] == 'a' || input[1] == 'u' || input[1] == 'w' || input[1] == 'W' || input[1] == 'b') {
 			str_type_filter = parse_str_type_filter (input[1], NULL);
@@ -1513,7 +1513,7 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 			}
 			input--; // Will be incremented below
 		}
-		
+
 		switch (input[1]) {
 		case ',': // "iz,"
 			R_FREE (core->table_query);
