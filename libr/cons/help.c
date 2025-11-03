@@ -127,22 +127,24 @@ R_API void r_cons_cmd_help(RCons *cons, RCoreHelpMessage help, bool use_color) {
  * If exact is false, will match any command that contains the search text.
  * For example, ("pd", 'r', false) matches both `pdr` and `pdr.`.
  */
-R_API void r_cons_cmd_help_match(RCons *cons, RCoreHelpMessage help, bool use_color, R_BORROW char * R_NONNULL cmd, char spec, bool exact) {
+R_API void r_cons_cmd_help_match(RCons *cons, RCoreHelpMessage help, bool use_color, const char * R_NONNULL cmd, char spec, bool exact) {
 	RVector/*<int>*/ *match_indices = r_vector_new (sizeof (int), NULL, NULL);
 	char **matches = NULL;
 	size_t num_matches;
 	int *current_index_ptr;
 	size_t matches_copied;
 	size_t i;
+	char *search_cmd = NULL;
 
 	if (spec) {
-		/* We now own cmd */
-		cmd = r_str_newf ("%s%c", cmd, spec);
+		search_cmd = r_str_newf ("%s%c", cmd, spec);
+	} else {
+		search_cmd = (char *)cmd;
 	}
 
 	/* Collect matching indices */
 	for (i = 0; help[i]; i += 3) {
-		if (exact? (bool)!strcmp (help[i], cmd): (bool)strstr (help[i], cmd)) {
+		if (exact? (bool)!strcmp (help[i], search_cmd): (bool)strstr (help[i], search_cmd)) {
 			r_vector_push (match_indices, &i);
 		}
 	}
@@ -169,6 +171,6 @@ out:
 	free (matches);
 	r_vector_free (match_indices);
 	if (spec) {
-		free (cmd);
+		free (search_cmd);
 	}
 }
