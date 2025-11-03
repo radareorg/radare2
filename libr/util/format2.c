@@ -1071,7 +1071,7 @@ static void r_print_format_bf16(RPrintFormat *pf, const char *setval, ut64 seeki
 			}
 			while (size--) {
 				val_u16 = updateAddr (buf + i, 2, endian, &addr, NULL);
-				val_f = r_num_bf16_to_float(val_u16);
+				val_f = r_num_bf16_to_float (val_u16);
 				if (elem == -1 || elem == 0) {
 					r_print_printf (p, "%.9g", val_f);
 					if (elem == 0) {
