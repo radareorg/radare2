@@ -317,6 +317,7 @@ static RCoreHelpMessage help_msg_pd = {
 	"pD", " N", "disassemble N bytes",
 	"pd", " -N", "disassemble N instructions backwards",
 	"pd", " N", "disassemble N instructions",
+	"pd:", "[cmd]", "run pseudo-decompiler plugin command (pdg is now pd:g, ..)",
 	"pd--", " N", "context disassembly of N instructions",
 	"pda", "", "disassemble all possible opcodes (byte per byte)",
 	"pdaj", "", "disassemble all possible opcodes (byte per byte) in JSON",
@@ -7313,10 +7314,17 @@ static int cmd_print(void *data, const char *input) {
 			processed_cmd = true;
 			break;
 		}
+		case ':': // "pd:"
+			if (input[2] == '?') {
+				// nothing
+			} else if (!input[2]) {
+				r_core_cmd0 (core, "pd:?");
+			} else {
+				R_LOG_ERROR ("Unknown subcommand");
+			}
+			return 0;
 		case 'c': // "pdc" // "pDc"
-			if (input[2] == '.') {
-				// do nothing, all the decompilers should be handling "pdc." to be listed
-			} else if (input[2] == 'l') {
+			if (input[2] == 'l') {
 				linear_pseudo (core, input + 3);
 			} else {
 				r_core_pseudo_code (core, input + 2);

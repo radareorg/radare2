@@ -1786,6 +1786,7 @@ static void init_cmd_suggestions(RCore *core) {
 	// Using fallbackcmd.* prefix to distinguish from regular SDB entries
 	sdb_set (core->sdb, "fallbackcmd.pdd", "?e You need to install the plugin with r2pm -ci r2dec", 0);
 	sdb_set (core->sdb, "fallbackcmd.pdg", "?e You need to install the plugin with r2pm -ci r2ghidra", 0);
+	sdb_set (core->sdb, "fallbackcmd.pd:g", "?e You need to install the plugin with r2pm -ci r2ghidra", 0);
 	sdb_set (core->sdb, "fallbackcmd.pdz", "?e You need to install the plugin with r2pm -ci r2retdec", 0);
 	sdb_set (core->sdb, "fallbackcmd.pdv", "?e You need to install the plugin with r2pm -ci east", 0);
 
