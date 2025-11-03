@@ -133,13 +133,13 @@ static bool format_output(RNum *num, char mode, const char *s, RaxMode m, RaxAct
 		{
 			R_STATIC_ASSERT (sizeof (float) == 4);
 			float f = (float)num->fvalue;
-			ut16 bf16 = r_num_float_to_bf16(f);
+			ut16 bf16 = r_num_float_to_bf16 (f);
 			printf ("Gx%04x\n", bf16);
 		}
 		break;
 	case 'G':
 		{
-			float f = r_num_bf16_to_float((ut16)n);
+			float f = r_num_bf16_to_float ((ut16)n);
 			printf ("%.9g\n", f);
 		}
 		break;
@@ -604,7 +604,7 @@ dotherax:
 		memcpy (&f, &n, sizeof (f));
 		memcpy (&d, &n, sizeof (d));
 		printf ("float   %ff\n", f);
-		printf ("bf16    Gx%04x\n", r_num_float_to_bf16(f));
+		printf ("bf16    Gx%04x\n", r_num_float_to_bf16 (f));
 		printf ("double  %lf\n", d);
 		printf ("binary  0b%s\n", out);
 
@@ -664,7 +664,7 @@ dotherax:
 
 		pj_ks (*pj, "fvalue", r_strf ("%.1lf", num->fvalue));
 		pj_ks (*pj, "float", r_strf ("%ff", f));
-		pj_ks (*pj, "bf16", r_strf ("Gx%04x", r_num_float_to_bf16(f)));
+		pj_ks (*pj, "bf16", r_strf ("Gx%04x", r_num_float_to_bf16 (f)));
 		pj_ks (*pj, "double", r_strf ("%lf", d));
 		pj_ks (*pj, "binary", r_strf ("0b%s", out));
 		char b36str[16];
