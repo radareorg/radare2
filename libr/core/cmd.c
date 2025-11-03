@@ -6369,7 +6369,18 @@ static int run_cmd_depth(RCore *core, char *cmd) {
 		}
 		ret = r_core_cmd_subst (core, rcmd);
 		if (R_UNLIKELY (ret == -1)) {
-			R_LOG_ERROR ("Invalid command '%s' (0x%02x)", rcmd, *rcmd);
+			// Check for fallback command in SDB (fallbackcmd.* namespace)
+			char *fallback_key = r_str_newf ("fallbackcmd.%s", rcmd);
+			const char *fallback_cmd = sdb_const_get (core->sdb, fallback_key, NULL);
+			if (fallback_cmd) {
+				if (r_str_startswith (fallback_cmd, "?e ")) {
+					// Execute safe ?e (echo) command only
+					r_core_cmd0 (core, fallback_cmd);
+				}
+			} else {
+				R_LOG_ERROR ("Invalid command '%s' (0x%02x)", rcmd, *rcmd);
+			}
+			free (fallback_key);
 			break;
 		}
 		if (!ptr) {
