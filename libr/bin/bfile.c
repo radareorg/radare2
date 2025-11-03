@@ -718,6 +718,7 @@ static void addrline_store_fini(RBinAddrLineStore *als) {
 		r_bloom_free (store->bloomGet);
 #endif
 		r_list_free (store->list);
+		r_strpool_free (store->pool);
 	}
 	free (als->storage);
 }

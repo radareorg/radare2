@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2024 - pancake */
+/* radare - LGPL - Copyright 2015-2025 - pancake */
 
 #include <r_bin.h>
 #include <sdb/ht_su.h>
@@ -118,6 +118,13 @@ R_API void r_bin_filter_symbols(RBinFile *bf, RList *list) {
 		RBinSymbol *sym;
 		r_list_foreach (list, iter, sym) {
 			r_bin_filter_sym (bf, ht, sym->vaddr, sym);
+		}
+		if (bf && bf->bo) {
+			if (bf->bo->filters) {
+				ht_pp_free ((HtPP *)bf->bo->filters);
+			}
+			bf->bo->filters = ht;
+			return;
 		}
 		ht_pp_free (ht);
 	}
