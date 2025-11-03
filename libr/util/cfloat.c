@@ -11,18 +11,18 @@ R_API double r_cfloat_parse(const ut8 *buf, size_t buf_size, const RCFloatProfil
 		return NAN;
 	}
 	ut64 value_low = r_read_ble64 (buf, profile->big_endian);
-	value_low &= (total_bits == 64) ? ~0ULL : ((1ULL << total_bits) - 1);
+	value_low &= (total_bits == 64)? ~0ULL: ((1ULL << total_bits) - 1);
 
 	int sign_pos = total_bits - profile->sign_bits;
 	int exp_pos = sign_pos - profile->exp_bits;
 	int mant_pos = 0;
 
-	ut64 sign = (value_low >> sign_pos) & ((1ULL << profile->sign_bits) - 1);
-	ut64 exp = (value_low >> exp_pos) & ((1ULL << profile->exp_bits) - 1);
-	ut64 mant = (value_low >> mant_pos) & ((1ULL << profile->mant_bits) - 1);
+	ut64 sign = (value_low >> sign_pos) &((1ULL << profile->sign_bits) - 1);
+	ut64 exp = (value_low >> exp_pos) &((1ULL << profile->exp_bits) - 1);
+	ut64 mant = (value_low >> mant_pos) &((1ULL << profile->mant_bits) - 1);
 
 	if (profile->sign_bits == 1) {
-		sign = sign ? 1 : 0;
+		sign = sign? 1: 0;
 	} else {
 		// for multiple sign bits, perhaps not standard, assume 0 or 1
 		sign = sign != 0;
@@ -32,45 +32,45 @@ R_API double r_cfloat_parse(const ut8 *buf, size_t buf_size, const RCFloatProfil
 
 	if (exp == 0) {
 		if (mant == 0) {
-			return sign ? -0.0 : 0.0;
+			return sign? -0.0: 0.0;
 		} else {
 			// subnormal
 			double mant_val = mant;
 			if (profile->explicit_leading_bit) {
 				// for x87, mant includes leading bit
 				int leading = (mant >> (profile->mant_bits - 1)) & 1;
-				mant_val = (mant & ((1ULL << (profile->mant_bits - 1)) - 1));
-				mant_val /= (double)(1ULL << (profile->mant_bits - 1));
+				mant_val = (mant &((1ULL << (profile->mant_bits - 1)) - 1));
+				mant_val /= (double) (1ULL << (profile->mant_bits - 1));
 				mant_val += leading;
 			} else {
-				mant_val /= (double)(1ULL << profile->mant_bits);
+				mant_val /= (double) (1ULL << profile->mant_bits);
 			}
-			return (sign ? -1.0 : 1.0) * mant_val * pow (2.0, 1.0 - profile->bias);
+			return (sign? -1.0: 1.0) * mant_val * pow (2.0, 1.0 - profile->bias);
 		}
 	} else if (exp == exp_max) {
 		if (mant == 0) {
-			return sign ? -INFINITY : INFINITY;
+			return sign? -INFINITY: INFINITY;
 		}
-		return sign ? -NAN : NAN;
+		return sign? -NAN: NAN;
 	} else {
 		// normal
 		double mant_val = mant;
 		if (profile->explicit_leading_bit) {
 			int leading = (mant >> (profile->mant_bits - 1)) & 1;
-			mant_val = (mant & ((1ULL << (profile->mant_bits - 1)) - 1));
-			mant_val /= (double)(1ULL << (profile->mant_bits - 1));
+			mant_val = (mant &((1ULL << (profile->mant_bits - 1)) - 1));
+			mant_val /= (double) (1ULL << (profile->mant_bits - 1));
 			mant_val += leading;
 		} else {
-			mant_val = 1.0 + mant_val / (double)(1ULL << profile->mant_bits);
+			mant_val = 1.0 + mant_val / (double) (1ULL << profile->mant_bits);
 		}
-		return (sign ? -1.0 : 1.0) * mant_val * pow (2.0, (double)exp - profile->bias);
+		return (sign? -1.0: 1.0) * mant_val * pow (2.0, (double)exp - profile->bias);
 	}
 }
 
-// Convenience function with exp_bits and mant_bits, assuming sign=1, bias= (1<<(exp_bits-1))-1, little endian, implicit
+// Convenience function with exp_bits and mant_bits, assuming sign=1, bias= (1<< (exp_bits-1))-1, little endian, implicit
 R_API double r_cfloat_parse_simple(const ut8 *buf, size_t buf_size, int exp_bits, int mant_bits) {
 	R_RETURN_VAL_IF_FAIL (buf && buf_size > 0, (double)0.0);
-	RCFloatProfile profile = {1, exp_bits, mant_bits, (1 << (exp_bits - 1)) - 1, false, false};
+	RCFloatProfile profile = { 1, exp_bits, mant_bits, (1 << (exp_bits - 1)) - 1, false, false };
 	return r_cfloat_parse (buf, buf_size, &profile);
 }
 
@@ -117,7 +117,7 @@ R_API bool r_cfloat_write(double value, const RCFloatProfile *profile, ut8 *buf,
 			mant = 0;
 		}
 
-		ut64 mant_bits = (ut64)round (mant * (1ULL << profile->mant_bits));
+		ut64 mant_bits = (ut64)round (mant *(1ULL << profile->mant_bits));
 		if (!profile->explicit_leading_bit && exp > 0) {
 			mant_bits &= (1ULL << profile->mant_bits) - 1;
 		}
@@ -132,6 +132,6 @@ R_API bool r_cfloat_write(double value, const RCFloatProfile *profile, ut8 *buf,
 
 R_API bool r_cfloat_write_simple(double value, int exp_bits, int mant_bits, ut8 *buf, size_t buf_size) {
 	R_RETURN_VAL_IF_FAIL (buf && buf_size > 0, false);
-	RCFloatProfile profile = {1, exp_bits, mant_bits, (1 << (exp_bits - 1)) - 1, false, false};
+	RCFloatProfile profile = { 1, exp_bits, mant_bits, (1 << (exp_bits - 1)) - 1, false, false };
 	return r_cfloat_write (value, &profile, buf, buf_size);
 }
