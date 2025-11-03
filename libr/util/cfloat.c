@@ -4,24 +4,14 @@
 #include <math.h>
 
 R_API double r_cfloat_parse(const ut8 *buf, size_t buf_size, const RCFloatProfile *profile) {
-	if (!buf || !profile) {
+	R_RETURN_VAL_IF_FAIL (buf && profile, NAN);
+
+	const int total_bits = profile->sign_bits + profile->exp_bits + profile->mant_bits;
+	if (total_bits > 64 || buf_size * 8 < total_bits) {
 		return NAN;
 	}
-	int total_bits = profile->sign_bits + profile->exp_bits + profile->mant_bits;
-	if (total_bits > 128 || buf_size * 8 < total_bits) {
-		return NAN;
-	}
-	ut64 value_low = 0;
-	ut64 value_high = 0;
-	if (total_bits <= 64) {
-		value_low = r_read_ble64 (buf, profile->big_endian);
-		value_low &= (total_bits == 64) ? ~0ULL : ((1ULL << total_bits) - 1);
-	} else {
-		// for >64, assume little endian for simplicity, read two 64-bit
-		// but to handle endianness, it's complicated.
-		// For now, assume total_bits <=64
-		return NAN;
-	}
+	ut64 value_low = r_read_ble64 (buf, profile->big_endian);
+	value_low &= (total_bits == 64) ? ~0ULL : ((1ULL << total_bits) - 1);
 
 	int sign_pos = total_bits - profile->sign_bits;
 	int exp_pos = sign_pos - profile->exp_bits;
@@ -60,9 +50,8 @@ R_API double r_cfloat_parse(const ut8 *buf, size_t buf_size, const RCFloatProfil
 	} else if (exp == exp_max) {
 		if (mant == 0) {
 			return sign ? -INFINITY : INFINITY;
-		} else {
-			return sign ? -NAN : NAN;
 		}
+		return sign ? -NAN : NAN;
 	} else {
 		// normal
 		double mant_val = mant;
@@ -80,14 +69,13 @@ R_API double r_cfloat_parse(const ut8 *buf, size_t buf_size, const RCFloatProfil
 
 // Convenience function with exp_bits and mant_bits, assuming sign=1, bias= (1<<(exp_bits-1))-1, little endian, implicit
 R_API double r_cfloat_parse_simple(const ut8 *buf, size_t buf_size, int exp_bits, int mant_bits) {
+	R_RETURN_VAL_IF_FAIL (buf && buf_size > 0, (double)0.0);
 	RCFloatProfile profile = {1, exp_bits, mant_bits, (1 << (exp_bits - 1)) - 1, false, false};
 	return r_cfloat_parse (buf, buf_size, &profile);
 }
 
 R_API bool r_cfloat_write(double value, const RCFloatProfile *profile, ut8 *buf, size_t buf_size) {
-	if (!profile || !buf) {
-		return false;
-	}
+	R_RETURN_VAL_IF_FAIL (profile && buf, false);
 	int total_bits = profile->sign_bits + profile->exp_bits + profile->mant_bits;
 	if (total_bits > 64 || buf_size * 8 < total_bits) {
 		return false;
@@ -138,17 +126,12 @@ R_API bool r_cfloat_write(double value, const RCFloatProfile *profile, ut8 *buf,
 		bits |= (ut64)exp << profile->mant_bits;
 		bits |= mant_bits;
 	}
-
-	// write to buffer
-	if (profile->big_endian) {
-		r_write_be64 (buf, bits);
-	} else {
-		r_write_le64 (buf, bits);
-	}
+	r_write_ble64 (buf, bits, profile->big_endian);
 	return true;
 }
 
 R_API bool r_cfloat_write_simple(double value, int exp_bits, int mant_bits, ut8 *buf, size_t buf_size) {
+	R_RETURN_VAL_IF_FAIL (buf && buf_size > 0, false);
 	RCFloatProfile profile = {1, exp_bits, mant_bits, (1 << (exp_bits - 1)) - 1, false, false};
 	return r_cfloat_write (value, &profile, buf, buf_size);
 }
