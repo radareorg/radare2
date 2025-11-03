@@ -16,6 +16,7 @@ r_util_sources = [
   'bplist.c',
   'bscanf.c',
   'buf.c',
+  'cfloat.c',
   'charset.c',
   'chartable.c',
   'chmod.c',
