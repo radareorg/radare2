@@ -3,6 +3,7 @@
 #include <r_cons.h>
 #include <r_util.h>
 #include <r_util/r_print.h>
+#include <r_util/r_num.h>
 #include <r_reg.h>
 
 // W T F :D
@@ -1027,6 +1028,63 @@ static void r_print_format_float(RPrintFormat *pf, const char *setval, ut64 seek
 					elem--;
 				}
 				i += 4;
+			}
+			if (!SEEVALUE) {
+				r_print_printf (p, " ]");
+			}
+		}
+	}
+	if (!MUSTSEESTRUCT) {
+		// r_print_printf (p, "\n");
+	}
+}
+
+static void r_print_format_bf16(RPrintFormat *pf, const char *setval, ut64 seeki, ut8 *buf, int i, int size) {
+	RPrint *p = pf->p;
+	const int endian = pf->endian;
+	const int mode = pf->mode;
+	ut64 addr = 0;
+	int elem = -1;
+	if (size >= ARRAYINDEX_COEF) {
+		elem = size / ARRAYINDEX_COEF - 1;
+		size %= ARRAYINDEX_COEF;
+	}
+	ut16 val_u16 = updateAddr (buf + i, 2, endian, &addr, NULL);
+	float val_f = r_num_bf16_to_float(val_u16);
+	if (MUSTSET) {
+		r_print_printf (p, "wv2 %s @ 0x%08" PFMT64x "\n", setval,
+			seeki + ((elem >= 0)? elem * 2: 0));
+	} else if ((mode & R_PRINT_DOT) || MUSTSEESTRUCT) {
+		r_print_printf (p, "%.9g", val_f);
+	} else {
+		if (MUSTSEE) {
+			if (!SEEVALUE && !ISQUIET) {
+				r_print_printf (p, "0x%08" PFMT64x " = ",
+					seeki + ((elem >= 0)? elem * 2: 0));
+			}
+		}
+		if (size == -1) {
+			r_print_printf (p, "%.9g", val_f);
+		} else {
+			if (!SEEVALUE) {
+				r_print_printf (p, "[ ");
+			}
+			while (size--) {
+				val_u16 = updateAddr (buf + i, 2, endian, &addr, NULL);
+				val_f = r_num_bf16_to_float (val_u16);
+				if (elem == -1 || elem == 0) {
+					r_print_printf (p, "%.9g", val_f);
+					if (elem == 0) {
+						elem = -2;
+					}
+				}
+				if (size != 0 && elem == -1) {
+					r_print_printf (p, ", ");
+				}
+				if (elem > -1) {
+					elem--;
+				}
+				i += 2;
 			}
 			if (!SEEVALUE) {
 				r_print_printf (p, " ]");
@@ -2536,6 +2594,10 @@ R_API int r_print_format_internal(RPrint *p, RPrintFormat *pf, ut64 seek, const 
 				case 'f':
 					r_print_format_float (pf, setval, seeki, buf, i, size);
 					i += (size == -1)? 4: 4 * size;
+					break;
+				case 'g':
+					r_print_format_bf16 (pf, setval, seeki, buf, i, size);
+					i += (size == -1)? 2: 2 * size;
 					break;
 				case 'F':
 					r_print_format_double (pf, setval, seeki, buf, i, size);
