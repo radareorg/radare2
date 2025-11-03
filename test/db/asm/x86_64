@@ -154,6 +154,8 @@ a "jmp qword ptr [rax+0x123456]" ffa056341200
 a "jmp qword ptr [rax-0x12345678]" ffa088a9cbed
 a "jmp qword ptr [rax+0x12345678]" ffa078563412
 a "jmp rbx" ffe3
+a "notrack jmp rax" 3effe0
+a "notrack call rax" 3effd0
 a "lea rax, [rax+0]" 488d00
 a "lea rax, [rax+1]" 488d4001
 a "lea rax, [rax-0]" 488d00

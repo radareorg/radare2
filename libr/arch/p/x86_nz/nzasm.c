@@ -131,6 +131,7 @@ typedef struct r_x86nz_opcode_t {
 	int operands_count;
 	Operand operands[MAX_OPERANDS];
 	bool has_bnd;
+	bool has_notrack;
 } Opcode;
 
 static bool immediate_out_of_range(int bits, ut64 immediate) {
@@ -5922,7 +5923,12 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 
 static int parseOpcode(RArchSession *a, const char *op, Opcode *out) {
 	out->has_bnd = false;
+	out->has_notrack = false;
 	bool isrepop = false;
+	if (r_str_startswith (op, "notrack ")) {
+		out->has_notrack = true;
+		op += 8;
+	}
 	if (r_str_startswith (op, "bnd ")) {
 		out->has_bnd = true;
 		op += 4;
@@ -6045,27 +6051,38 @@ R_API int x86nz_assemble(RArchSession *a, RAnalOp *ao, const char *str) {
 		if (!r_str_casecmp (instr.mnemonic, lt_ptr->mnemonic)) {
 			if (lt_ptr->opcode > 0) {
 				if (!lt_ptr->only_x32 || a->config->bits != 64) {
+					int pl = 0;
+					if (instr.has_bnd) {
+						__data[pl++] = 0xf2;
+						instr.has_bnd = false;
+					}
+					if (instr.has_notrack && a->config->bits == 64) {
+						__data[pl++] = 0x3e;
+						instr.has_notrack = false;
+					}
 					ut64 opcode = lt_ptr->opcode;
 					int i = lt_ptr->size - 1;
 					for (; i >= 0; i--) {
-						data[i] = opcode & 0xff;
+						__data[pl + i] = opcode & 0xff;
 						opcode >>= 8;
 					}
-					retval = lt_ptr->size;
-					ao->size = lt_ptr->size;
+					retval = pl + lt_ptr->size;
+					ao->size = retval;
 				}
 			} else {
 				if (lt_ptr->opdo) {
+					int pl = 0;
 					if (instr.has_bnd) {
-						data[0] = 0xf2;
-						data ++;
+						__data[pl++] = 0xf2;
+						instr.has_bnd = false;
 					}
+					if (instr.has_notrack && a->config->bits == 64) {
+						__data[pl++] = 0x3e;
+						instr.has_notrack = false;
+					}
+					data = __data + pl;
 					retval = lt_ptr->opdo (a, data, &instr);
-					// if op supports bnd then the first byte will
-					// be 0xf2.
-					if (instr.has_bnd) {
-						retval++;
-					}
+					retval += pl;
 				}
 			}
 			break;
