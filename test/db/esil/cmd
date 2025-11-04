@@ -50,3 +50,72 @@ EXPECT=<<EOF
 its a trap 0 7
 EOF
 RUN
+
+NAME=cmd.esil.intr
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx cd21
+e cmd.esil.intr=?e its an intr
+aes
+EOF
+EXPECT=<<EOF
+its an intr 33 0
+EOF
+RUN
+
+NAME=cmd.esil.ioer
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8900  # mov dword [rax], eax
+e cmd.esil.ioer=?e its an ioer
+aer rax=0xdeadbeef
+aes
+EOF
+EXPECT=<<EOF
+its an ioer 0 0
+its an ioer 0 0
+EOF
+RUN
+
+NAME=cmd.esil.pin
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 90
+e cmd.esil.pin=?e pin triggered
+aep 0x1337
+aes
+EOF
+EXPECT=<<EOF
+pin triggered 0x1337
+EOF
+RUN
+
+NAME=cmd.esil.step
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 90
+e cmd.esil.step=?e step triggered
+aes
+EOF
+EXPECT=<<EOF
+step triggered 0 0
+EOF
+RUN
+
+NAME=cmd.esil.stepout
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx c3
+e cmd.esil.stepout=?e stepout triggered
+aa
+aef 0
+EOF
+EXPECT=<<EOF
+stepout triggered 0 0
+EOF
+RUN
