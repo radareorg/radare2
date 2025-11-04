@@ -562,9 +562,11 @@ static RCoreHelpMessage help_msg_po = {
 };
 
 static RCoreHelpMessage help_msg_pq = {
-	"Usage:", "pq[?z] [len]", "generate QR code in ascii art",
+	"Usage:", "pq[?isz] [len]", "generate QR code in ascii art",
 	"pq", " 32", "print QR code with the current 32 bytes",
-	"pqz", "", "print QR code with current string in current offset",
+	"pqi", "", "print inverted QR code",
+	"pqs", "", "print QR code with current string in current offset",
+	"pqz", "", "alias for pqs",
 	NULL
 };
 
