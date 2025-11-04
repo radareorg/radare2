@@ -9949,9 +9949,11 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		hooks = r_core_anal_cycles (core, ccl); // analyse
 		r_list_foreach (hooks, iter, hook) {
 			instr_tmp = r_core_disassemble_instr (core, hook->addr, 1);
-			r_cons_printf (core->cons, "After %4i cycles:\t%s", (ccl - hook->cycles), instr_tmp);
-			r_cons_flush (core->cons);
-			free (instr_tmp);
+			if (instr_tmp) {
+				r_cons_printf (core->cons, "After %4i cycles:\t%s", (ccl - hook->cycles), instr_tmp);
+				r_cons_flush (core->cons);
+				free (instr_tmp);
+			}
 		}
 		r_list_free (hooks);
 
