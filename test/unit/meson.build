@@ -58,6 +58,7 @@ if get_option('enable_tests')
     'scanf',
     'printf',
     'table',
+    'thread',
     'tree',
     'uleb128',
     'unum',
