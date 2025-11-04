@@ -226,7 +226,7 @@ extern "C" {
 	} \
 	static inline R_MAYBE_UNUSED R_MUSTUSE bool R_VEC_FUNC(vec_type, empty)(const vec_type *vec) { \
 		R_RETURN_VAL_IF_FAIL (vec, false); \
-		return vec->_start && vec->_start == vec->_end; \
+		return !vec->_start || vec->_start == vec->_end; \
 	} \
 	static inline R_MAYBE_UNUSED R_MUSTUSE type *R_VEC_FUNC(vec_type, at)(const vec_type *vec, ut64 index) { \
 		R_RETURN_VAL_IF_FAIL (vec, NULL); \
