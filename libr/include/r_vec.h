@@ -226,7 +226,7 @@ extern "C" {
 	} \
 	static inline R_MAYBE_UNUSED R_MUSTUSE bool R_VEC_FUNC(vec_type, empty)(const vec_type *vec) { \
 		R_RETURN_VAL_IF_FAIL (vec, false); \
-		return vec->_start == vec->_end; \
+		return vec->_start && vec->_start == vec->_end; \
 	} \
 	static inline R_MAYBE_UNUSED R_MUSTUSE type *R_VEC_FUNC(vec_type, at)(const vec_type *vec, ut64 index) { \
 		R_RETURN_VAL_IF_FAIL (vec, NULL); \
@@ -469,11 +469,10 @@ extern "C" {
 	} \
 	static inline R_MAYBE_UNUSED void R_VEC_FUNC(vec_type, sort)(vec_type *vec, R_VEC_CMP(vec_type) cmp_fn) { \
 		R_RETURN_IF_FAIL (vec && cmp_fn); \
-		if (R_VEC_FUNC(vec_type, empty) (vec)) { \
-			return; \
+		if (!R_VEC_FUNC(vec_type, empty) (vec)) { \
+			qsort (vec->_start, R_VEC_FUNC(vec_type, length) (vec), sizeof (type), \
+				(int (*)(const void *, const void *)) cmp_fn); \
 		} \
-		qsort (vec->_start, R_VEC_FUNC(vec_type, length) (vec), sizeof (type), \
-			(int (*)(const void *, const void *)) cmp_fn); \
 	} \
 	static inline R_MAYBE_UNUSED void R_VEC_FUNC(vec_type, uniq)(vec_type *vec, R_VEC_CMP(vec_type) cmp_fn) { \
 		R_RETURN_IF_FAIL (vec && cmp_fn); \
