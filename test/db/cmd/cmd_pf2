@@ -180,7 +180,7 @@ NAME=pf only one size
 FILE=malloc://1024
 CMDS=pf 16 16
 EXPECT=<<EOF
-| pf fmt  show data using the given format-string. See 'pf??' and 'pf???'.
+| pf fmt  show data using the given format-string (see 'pf??' and 'pf???')
 | pf?    help on commands
 | pf??   help on format characters
 | pf???  show usage examples
@@ -191,7 +191,7 @@ NAME=pf refuse space between size and format-string
 FILE=malloc://1024
 CMDS=pf 16 16
 EXPECT=<<EOF
-| pf fmt  show data using the given format-string. See 'pf??' and 'pf???'.
+| pf fmt  show data using the given format-string (see 'pf??' and 'pf???')
 | pf?    help on commands
 | pf??   help on format characters
 | pf???  show usage examples
