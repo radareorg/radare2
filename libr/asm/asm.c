@@ -134,6 +134,30 @@ static inline int r_asm_pseudo_intN(RAsm *a, RAnalOp *op, char *input, int n, bo
 	return n;
 }
 
+static inline int r_asm_pseudo_float(RAsm *a, RAnalOp *op, char *input, const RCFloatProfile *profile) {
+	R_RETURN_VAL_IF_FAIL (a && op && input && profile, -1);
+	char *trimmed = r_str_trim_dup (input);
+	if (!trimmed) {
+		return -1;
+	}
+	double value = strtod (trimmed, NULL);
+	free (trimmed);
+	int total_bits = profile->sign_bits + profile->exp_bits + profile->mant_bits;
+	int byte_size = (total_bits + 7) / 8;
+	ut8 *buf = malloc (byte_size);
+	if (!buf) {
+		return -1;
+	}
+	bool success = r_cfloat_write (value, profile, buf, byte_size);
+	if (!success) {
+		free (buf);
+		return -1;
+	}
+	r_anal_op_set_bytes (op, op->addr, buf, byte_size);
+	free (buf);
+	return byte_size;
+}
+
 static inline int r_asm_pseudo_byte(RAnalOp *op, char *input) {
 	int i, len = 0;
 	r_str_replace_char (input, ',', ' ');
@@ -924,6 +948,45 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 	} else if (r_str_startswith (ptr, ".data")) {
 		acode->data_offset = a->pc;
 		ret = 0;
+	} else if (r_str_startswith (ptr, ".cfloat ")) {
+		char *args = r_str_trim_dup (ptr + 8);
+		if (!args) {
+			ret = -1;
+		} else {
+			int count = r_str_word_count (args);
+			if (count != 6) {
+				R_LOG_ERROR ("Invalid .cfloat directive: expected 6 arguments");
+				free (args);
+				ret = -1;
+			} else {
+				r_str_word_set0 (args);
+				acode->cfloat_profile.sign_bits = atoi (r_str_word_get0 (args, 0));
+				acode->cfloat_profile.exp_bits = atoi (r_str_word_get0 (args, 1));
+				acode->cfloat_profile.mant_bits = atoi (r_str_word_get0 (args, 2));
+				acode->cfloat_profile.bias = atoi (r_str_word_get0 (args, 3));
+				acode->cfloat_profile.big_endian = atoi (r_str_word_get0 (args, 4));
+				acode->cfloat_profile.explicit_leading_bit = atoi (r_str_word_get0 (args, 5));
+				ret = 0;
+				free (args);
+			}
+		}
+	} else if (r_str_startswith (ptr, ".float ")) {
+		ret = r_asm_pseudo_float (a, op, ptr + 7, &acode->cfloat_profile);
+		if (ret < 0) {
+			return ret;
+		}
+	} else if (r_str_startswith (ptr, ".double ")) {
+		RCFloatProfile profile = {1, 11, 52, 1023, false, false};
+		ret = r_asm_pseudo_float (a, op, ptr + 8, &profile);
+		if (ret < 0) {
+			return ret;
+		}
+	} else if (r_str_startswith (ptr, ".bf16 ")) {
+		RCFloatProfile profile = {1, 8, 7, 127, false, false};
+		ret = r_asm_pseudo_float (a, op, ptr + 6, &profile);
+		if (ret < 0) {
+			return ret;
+		}
 	} else if (r_str_startswith (ptr, ".incbin")) {
 		if (ptr[7] != ' ') {
 			R_LOG_ERROR ("incbin missing filename");

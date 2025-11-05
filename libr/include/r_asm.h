@@ -7,6 +7,7 @@
 #include <r_anal.h>
 #include <r_bin.h> // only for binding, no hard dep required
 #include <r_bind.h>
+#include <r_util/r_cfloat.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,6 +34,7 @@ typedef struct r_asm_code_t {
 	ut64 code_offset;
 	ut64 data_offset;
 	int code_align;
+	RCFloatProfile cfloat_profile;
 } RAsmCode;
 
 typedef RList* (*RAnalVarList)(RAnalFunction *fcn, int kind);

@@ -5,6 +5,12 @@
 R_API RAsmCode *r_asm_code_new(void) {
 	RAsmCode *ac = R_NEW0 (RAsmCode);
 	ac->equs = ht_pp_new0 ();
+	ac->cfloat_profile.sign_bits = 1;
+	ac->cfloat_profile.exp_bits = 8;
+	ac->cfloat_profile.mant_bits = 23;
+	ac->cfloat_profile.bias = 127;
+	ac->cfloat_profile.big_endian = false;
+	ac->cfloat_profile.explicit_leading_bit = false;
 	return ac;
 }
 
