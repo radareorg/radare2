@@ -976,13 +976,13 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 			return ret;
 		}
 	} else if (r_str_startswith (ptr, ".double ")) {
-		RCFloatProfile profile = {1, 11, 52, 1023, false, false};
+		RCFloatProfile profile = { 1, 11, 52, 1023, false, false };
 		ret = r_asm_pseudo_float (a, op, ptr + 8, &profile);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if (r_str_startswith (ptr, ".bf16 ")) {
-		RCFloatProfile profile = {1, 8, 7, 127, false, false};
+		RCFloatProfile profile = { 1, 8, 7, 127, false, false };
 		ret = r_asm_pseudo_float (a, op, ptr + 6, &profile);
 		if (ret < 0) {
 			return ret;
