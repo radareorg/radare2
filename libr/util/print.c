@@ -102,6 +102,8 @@ R_API char *r_print_columns(RPrint *p, const ut8 *buf, int len, int height) {
 	return r_strbuf_drain (sb);
 }
 
+/* muta charset session will be initialized in r_print_init below */
+
 R_API int r_util_lines_getline(ut64 *lines_cache, int lines_cache_sz, ut64 off) {
 	int imax = lines_cache_sz;
 	int imin = 0;
@@ -283,8 +285,8 @@ R_API void r_print_init(RPrint *p) {
 	p->strconv_mode = NULL;
 	memset (&p->consb, 0, sizeof (p->consb));
 	p->io_unalloc_ch = '.';
-	p->enable_progressbar = true;
-	p->charset = r_charset_new ();
+    p->enable_progressbar = true;
+    // Charset callbacks are set by RCore; nothing to do here
 }
 
 R_API RPrint* r_print_new(void) {
@@ -307,7 +309,7 @@ R_API bool r_print_fini(RPrint * R_NONNULL p) {
 	}
 	R_FREE (p->lines_cache);
 	R_FREE (p->row_offsets);
-	r_charset_free (p->charset);
+    // Charset callbacks/context are owned by RCore; do not free here
 	r_unref (p->config);
 	return true;
 }
@@ -1379,21 +1381,21 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					ut8 ch = (use_unalloc && p && !p->iob.is_valid_offset (p->iob.io, addr + j, false))
 						? ' ' : buf[j];
 					ut8 ch2 = (j + 1 < len)? buf[j + 1]: 0;
-					if (p && p->charset && p->charset->loaded) {
-						ut8 input[3] = { ch, ch2, 0 };
-						ut8 output[32];
-						size_t cw = p->charset->decode_maxkeylen;
-						size_t len = r_charset_encode_str (p->charset, output, sizeof (output), input, cw, false);
-						if (len < 1 || (invalidchar (output[0]) && invalidchar (output[1]))) {
-							r_print_printf (p, "%s", ".");
-						} else {
-							r_print_printf (p, "%s", output);
-						}
-						ch = (len > 0)? *output: '.';
-						if (len > 1) {
-							j++;
-						}
-					} else {
+                        if (p && p->charset_decode) {
+                            ut8 input[2] = { ch, 0 };
+                            ut8 *out = NULL;
+                            int olen = p->charset_decode (p->charset_ctx, input, 1, &out);
+                            if (!out || olen < 1 || (invalidchar (out[0]) && (olen < 2 || invalidchar (out[1])))) {
+                                r_print_printf (p, "%s", ".");
+                            } else {
+                                r_print_printf (p, "%.*s", olen, out);
+                            }
+                            ch = (olen > 0)? *out: '.';
+                            if (olen > 1) {
+                                j++;
+                            }
+                            free (out);
+                        } else {
 						r_print_byte (p, addr + j, "%c", j, ch);
 					}
 					bytes++;

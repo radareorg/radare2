@@ -175,7 +175,27 @@ extern RMutaPlugin r_muta_plugin_sm4;
 extern RMutaPlugin r_muta_plugin_strhash;
 extern RMutaPlugin r_muta_plugin_xor;
 extern RMutaPlugin r_muta_plugin_add;
+extern RMutaPlugin r_muta_plugin_charset_ascii;
+extern RMutaPlugin r_muta_plugin_charset_ascii_ansi;
+extern RMutaPlugin r_muta_plugin_charset_ascii_oem;
+extern RMutaPlugin r_muta_plugin_charset_arabic_iso;
+extern RMutaPlugin r_muta_plugin_charset_arabic_windows;
+extern RMutaPlugin r_muta_plugin_charset_big5;
+extern RMutaPlugin r_muta_plugin_charset_cyrillic_iso;
+extern RMutaPlugin r_muta_plugin_charset_cyrillic_windows;
 extern RMutaPlugin r_muta_plugin_charset_pokemon;
+extern RMutaPlugin r_muta_plugin_charset_ebcdic37;
+extern RMutaPlugin r_muta_plugin_charset_iso8859_1;
+extern RMutaPlugin r_muta_plugin_charset_greek_iso;
+extern RMutaPlugin r_muta_plugin_charset_greek_windows;
+extern RMutaPlugin r_muta_plugin_charset_hebrew_iso;
+extern RMutaPlugin r_muta_plugin_charset_hebrew_windows;
+extern RMutaPlugin r_muta_plugin_charset_hiragana;
+extern RMutaPlugin r_muta_plugin_charset_iso_646;
+extern RMutaPlugin r_muta_plugin_charset_jis7;
+extern RMutaPlugin r_muta_plugin_charset_katakana;
+extern RMutaPlugin r_muta_plugin_charset_macintosh;
+extern RMutaPlugin r_muta_plugin_charset_pokered;
 
 #ifdef __cplusplus
 }

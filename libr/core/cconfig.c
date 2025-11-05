@@ -1050,7 +1050,8 @@ static bool cb_asmos(void *user, void *data) {
 }
 
 static void update_cfgcharsets_options(RCore *core, RConfigNode *node) {
-	// static void autocomplete_charsets (RCore *core, RLineCompletion *completion, const char *str) {
+<<<<<<< HEAD
+#if 0
 	char *name;
 	RListIter *iter;
 	RList *chs = r_charset_list (core->print->charset);
@@ -1059,6 +1060,23 @@ static void update_cfgcharsets_options(RCore *core, RConfigNode *node) {
 		SETOPTIONS (node, name, NULL);
 	}
 	r_list_free (chs);
+#else
+	r_config_node_purge_options (node);
+	if (!core->muta) {
+		core->muta = r_muta_new ();
+	}
+	char *lst = r_muta_list (core->muta, R_MUTA_TYPE_CHARSET, 'q');
+	if (!lst) {
+		return;
+	}
+	RList *chs = r_str_split_list (lst, "\n", 0);
+	RListIter *iter; char *name;
+	r_list_foreach (chs, iter, name) {
+		SETOPTIONS (node, name, NULL);
+	}
+	r_list_free (chs);
+	free (lst);
+#endif
 }
 
 static void update_asmparser_options(RCore *core, RConfigNode *node) {
@@ -1402,6 +1420,7 @@ static void list_available_plugins(RCore *core, const char *path) {
 }
 
 static bool cb_cfgcharset(void *user, void *data) {
+<<<<<<< HEAD
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
 	const char *cf = r_str_trim_head_ro (node->value);
@@ -1422,6 +1441,40 @@ static bool cb_cfgcharset(void *user, void *data) {
 		}
 	}
 	return rc;
+=======
+    RCore *core = (RCore*) user;
+    RConfigNode *node = (RConfigNode*) data;
+    const char *cf = r_str_trim_head_ro (node->value);
+    if (!*cf) {
+        if (core->charset_session) {
+            r_muta_session_free (core->charset_session);
+            core->charset_session = NULL;
+        }
+        return true;
+    }
+    bool rc = false;
+    if (*cf == '?') {
+        char *lst = r_muta_list (core->muta, R_MUTA_TYPE_CHARSET, 'q');
+        if (lst) {
+            r_cons_println (core->cons, lst);
+            free (lst);
+        }
+    } else {
+        if (!core->muta) {
+            core->muta = r_muta_new ();
+        }
+        if (core->charset_session) {
+            r_muta_session_free (core->charset_session);
+            core->charset_session = NULL;
+        }
+        core->charset_session = r_muta_use (core->muta, cf);
+        rc = core->charset_session != NULL;
+        if (!rc) {
+            R_LOG_WARN ("Cannot load muta charset '%s'", cf);
+        }
+    }
+    return rc;
+>>>>>>> 33698422f3 (Port all charsets from r_charset to rmuta via charset plugins ##muta)
 }
 
 static bool cb_cfgdatefmt(void *user, void *data) {
