@@ -586,7 +586,7 @@ static RCoreHelpMessage help_msg_af = {
 	"afb", "[?] [addr]", "List basic blocks of given function",
 	"afc", "[?] type @[addr]", "set calling convention for function",
 	"afC", "[?] ([addr])@[addr]", "calculate the Cycles (afC) or Cyclomatic Complexity (afCc)",
-	"afd", "[addr]", "show function + delta for given offset",
+	"afd", " [addr]", "show function name + delta for 'addr'",
 	"afe", "", "analyze where the function entrypoints are",
 	"afF", "[1|0|]", "fold/unfold/toggle",
 	"afi", "[?] [addr|fcn.name]", "show function(s) information (verbose afl)",
@@ -788,7 +788,8 @@ static RCoreHelpMessage help_msg_afn = {
 static RCoreHelpMessage help_msg_afs = {
 	"Usage:", "afs[r]", " Analyze function signatures",
 	"afs", " ([fcnsign])", "get/set function signature at current address (afs! uses cfg.editor)",
-	"afsq", "", "same as afs without the error message (See afsQ for non-current offset)",
+	"afsq", "", "same as afs without the error message",
+	"afsQ", "", "same as afsq, silent at function entry",
 	"afs!", "", "edit current function signature with cfg.editor",
 	"afs*", " ([signame])", "get function signature in flags",
 	"afsj", " ([signame])", "get function signature in JSON",
@@ -918,7 +919,7 @@ static RCoreHelpMessage help_msg_agn = {
 	"Usage:", "agn [title] [body]", "",
 	"Examples:", "", "",
 	"agn", " title1 body1", "add a node with title \"title1\" and body \"body1\"",
-	"agn", " \"title with space\" \"body with space\"", "add a node with spaces in the title and in the body",
+	"agn", " \"the title\" \"the body\"", "add a node with spaces in both title and body",
 	"agn", " title1 base64:Ym9keTE=", "add a node with the body specified as base64",
 	"agn-", " title1", "remove a node with title \"title1\"",
 	"agn?", "", "show this help",
@@ -936,7 +937,7 @@ static RCoreHelpMessage help_msg_ah = {
 	"ah*", " offset", "list hints in radare commands format",
 	"aha", " ppc @ 0x42", "force arch ppc for all addrs >= 0x42 or until the next hint",
 	"aha", " 0 @ 0x84", "disable the effect of arch hints for all addrs >= 0x84 or until the next hint",
-	"ahb", "[-*] [8,16,32,64] @ 0x42", "get/set asm.bits for given address and beyond",
+	"ahb", "[-*] [8,16,32,64] @ addr", "get/set asm.bits for 'addr' and beyond",
 	"ahc", " 0x804804", "override call/jump address",
 	"ahd", " foo a0,33", "replace opcode string",
 	"ahe", " 3,eax,+=", "set vm analysis string",
@@ -1182,7 +1183,7 @@ static RCoreHelpMessage help_msg_axv = {
 
 static RCoreHelpMessage help_msg_axt = {
 	"Usage:", "axt[?gq*]", "find data/code references to this address",
-	"axtj", " ([addr])", "find data/code references to this address and print in json format",
+	"axtj", " ([addr])", "find data/code references to 'addr' and print in json format",
 	"axtg", " ([addr])", "display commands to generate graphs according to the xrefs",
 	"axtq", " ([addr])", "find and list the data/code references in quiet mode",
 	"axtm", " ([addr])", "show xrefs to in 'make' syntax (see aflm and axfm)",
@@ -1192,7 +1193,7 @@ static RCoreHelpMessage help_msg_axt = {
 
 static RCoreHelpMessage help_msg_axf = {
 	"Usage:", "axf[?gq*]", "find data/code references from this address",
-	"axfj", " [addr]", "find data/code references to this address and print in json format",
+	"axfj", " [addr]", "find data/code references from 'addr' and print in json format",
 	"axfg", " [addr]", "display commands to generate graphs according to the xrefs",
 	"axfq", " [addr]", "find and list the data/code references in quiet mode",
 	"axfm", " [addr]", "show refs to in 'make' syntax (see aflm and axtm)",

@@ -9,7 +9,7 @@ static RCoreHelpMessage help_msg_hash = {
 	"#!!", "", "reset rlang session context (see js!)",
 	"#!?", "", "show this help message",
 	"#!?j", "", "list all available interpreters in JSON",
-	"#!?q", "", "list all available lang plugin names (See Ll?)",
+	"#!?q", "", "list all available lang plugin names (see Ll?)",
 	"#!<lang>?", "", "show help for <lang> (v, python, mujs, ..)",
 	"#!<lang>", " [file]", "interpret the given file with lang plugin",
 	"#!<lang>", " -e [expr|base64:..]", "run the given expression with lang plugin",
