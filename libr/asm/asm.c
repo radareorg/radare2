@@ -96,9 +96,8 @@ static inline int r_asm_pseudo_intN(RAsm *a, RAnalOp *op, char *input, int n) {
 		free (buf);
 		return 0;
 	}
-	free (op->bytes);
-	op->bytes = buf;
-	op->size = n;
+	r_anal_op_set_bytes (op, op->addr, buf, n);
+	free (buf);
 	return n;
 }
 
@@ -777,6 +776,22 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 	} else if (r_str_startswith (ptr, ".int64 ")) {
 		char *str = r_asm_code_equ_replace (acode, ptr + 7);
 		ret = r_asm_pseudo_intN (a, op, ptr + 7, 8);
+		free (str);
+	} else if (r_str_startswith (ptr, ".db ")) {
+		ret = r_asm_pseudo_byte (op, ptr + 4);
+	} else if (r_str_startswith (ptr, ".word ")) {
+		ret = r_asm_pseudo_intN (a, op, ptr + 6, 2);
+	} else if (r_str_startswith (ptr, ".dw ")) {
+		ret = r_asm_pseudo_intN (a, op, ptr + 4, 2);
+	} else if (r_str_startswith (ptr, ".dword ")) {
+		ret = r_asm_pseudo_intN (a, op, ptr + 7, 4);
+	} else if (r_str_startswith (ptr, ".dd ")) {
+		ret = r_asm_pseudo_intN (a, op, ptr + 4, 4);
+	} else if (r_str_startswith (ptr, ".qword ")) {
+		ret = r_asm_pseudo_intN (a, op, ptr + 7, 8);
+	} else if (r_str_startswith (ptr, ".dq ")) {
+		char *str = r_asm_code_equ_replace (acode, ptr + 4);
+		ret = r_asm_pseudo_intN (a, op, ptr + 4, 8);
 		free (str);
 	} else if (r_str_startswith (ptr, ".size")) {
 		ret = 0; // do nothing, ignored
