@@ -5134,6 +5134,9 @@ static void cmd_afsv(RCore *core, ut64 pcv, int mode) {
 	RListIter *nextele;
 	const char *fcn_name = NULL;
 	RAnalOp *aop = r_core_anal_op (core, pcv, 0);
+	if (R_UNLIKELY (!aop)) {
+		return;
+	}
 	switch (aop->type) {
 	case R_ANAL_OP_TYPE_JMP:
 	case R_ANAL_OP_TYPE_CALL:
