@@ -2,6 +2,7 @@
 
 #include <r_core.h>
 #include <r_types_base.h>
+#include <r_util/r_cfloat.h>
 
 #define NODECB(w,x,y) r_config_set_cb (cfg,w,x,y)
 #define NODEICB(w,x,y) r_config_set_i_cb (cfg,w,x,y)
@@ -1302,6 +1303,66 @@ static bool cb_bigendian(void *user, void *data) {
 
 	core->rasm->config->endian = endianType;
 	r_arch_set_endian (core->anal->arch, endianType);
+	return true;
+}
+
+static bool cb_cfg_float(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	const char *value = node->value;
+	if (!value) {
+		return false;
+	}
+	RCFloatProfile profile;
+	if (!strcmp (value, "ieee754")) {
+		profile = R_CFLOAT_PROFILE_BINARY64; // default IEEE 754
+	} else if (r_str_startswith (value, "custom:")) {
+		// Parse custom:sign_bits,exp_bits,mant_bits,bias,big_endian,explicit_leading_bit
+		const char *params = value + 7; // skip "custom:"
+		char *dup = strdup (params);
+		if (!dup) {
+			return false;
+		}
+		RList *list = r_str_split_list (dup, ",", 0);
+		if (r_list_length (list) != 6) {
+			r_list_free (list);
+			free (dup);
+			return false;
+		}
+		int sign_bits = atoi (r_list_get_n (list, 0));
+		int exp_bits = atoi (r_list_get_n (list, 1));
+		int mant_bits = atoi (r_list_get_n (list, 2));
+		int bias = atoi (r_list_get_n (list, 3));
+		bool big_endian = atoi (r_list_get_n (list, 4));
+		bool explicit_leading_bit = atoi (r_list_get_n (list, 5));
+		r_list_free (list);
+		free (dup);
+		// Validate ranges
+		if (sign_bits < 0 || exp_bits < 0 || mant_bits < 0 || sign_bits + exp_bits + mant_bits > 64) {
+			return false;
+		}
+		profile.sign_bits = sign_bits;
+		profile.exp_bits = exp_bits;
+		profile.mant_bits = mant_bits;
+		profile.bias = bias;
+		profile.big_endian = big_endian;
+		profile.explicit_leading_bit = explicit_leading_bit;
+	} else {
+		// Check if it's a named profile
+		const RCFloatProfile *p = r_cfloat_profile_from_name (value);
+		if (p) {
+			profile = *p;
+		} else {
+			return false;
+		}
+	}
+	// Set the profile in the arch config
+	if (core->rasm && core->rasm->config) {
+		core->rasm->config->cfloat_profile = profile;
+	}
+	if (core->anal && core->anal->arch && core->anal->arch->cfg) {
+		core->anal->arch->cfg->cfloat_profile = profile;
+	}
 	return true;
 }
 
@@ -4114,6 +4175,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("cfg.sandbox.grain", "all", &cb_cfgsanbox_grain, "select which sand grains must pass the filter (all, net, files, socket, exec, disk)");
 	SETB ("cfg.wseek", "false", "Seek after write");
 	SETCB ("cfg.bigendian", "false", &cb_bigendian, "use little (false) or big (true) endianness");
+	SETCB ("cfg.float", "ieee754", &cb_cfg_float, "FPU profile for floating point operations (use -e cfg.float=? for list)");
 	SETI ("cfg.cpuaffinity", 0, "run on cpuid");
 
 	/* log */

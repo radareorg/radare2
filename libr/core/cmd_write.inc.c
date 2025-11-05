@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -192,9 +192,10 @@ static RCoreHelpMessage help_msg_wv = {
 	"wv8", " 234", "write qword (8 bytes) with this number",
 	"wvF", " 3.14", "write double value (8 bytes)",
 	"wvf", " 3.14", "write float value (4 bytes)",
+	"wvg", " 3.14", "write custom float (see cfg.float)",
 	"wvG", " 3.14", "write long double value (10/16 bytes)",
 	"wvp", " 934", "write 4 or 8 byte pointer, depending on asm.bits",
-	"Supported sizes are:", "1, 2, 4, 8", "",
+	"Supported sizes: ", "1, 2, 4, 8", "",
 	NULL
 };
 
@@ -545,6 +546,14 @@ static void cmd_write_value_double(RCore *core, const char *input) {
 	r_io_write_at (core->io, core->addr, (const ut8*)&v, sizeof (double));
 }
 
+static const char *fpuhelp = \
+	"Available FPU profiles:\n"
+	"  ieee754 - IEEE 754 standard (binary64)\n"
+	"  binary16, binary32, binary64, binary128, bfloat16, x87_80, etc.\n"
+	"  custom:sign,exp,mant,bias,endian,explicit - specify custom parameters\n"
+	"Use: wvg [value] to write with current profile\n"
+	"Use: -e cfg.float=profile to set profile\n";
+
 static void cmd_write_value(RCore *core, const char *input) {
 	int type = 0;
 	ut64 off = 0LL;
@@ -570,11 +579,35 @@ static void cmd_write_value(RCore *core, const char *input) {
 	case 'G': // "wvG"
 		cmd_write_value_long_double (core, r_str_trim_head_ro (input + 1));
 		return;
+	case 'd': // "wvd"
+		cmd_write_value_double (core, r_str_trim_head_ro (input + 1));
+		return;
+	case 'g': // "wvg"
+		{
+			if (input[1] == '?') {
+				r_cons_printf (core->cons, fpuhelp);
+			} else {
+				const RCFloatProfile *profile = &core->rasm->config->cfloat_profile;
+				double value = strtod (r_str_trim_head_ro (input + 1), NULL);
+				ut8 buf[16];
+				size_t buf_size = (profile->sign_bits + profile->exp_bits + profile->mant_bits + 7) / 8;
+				if (buf_size > sizeof (buf)) {
+					R_LOG_ERROR ("Float size too large");
+				} else if (!r_cfloat_write (value, profile, buf, buf_size)) {
+					R_LOG_ERROR ("Failed to write float");
+				} else {
+					r_io_write_at (core->io, core->addr, buf, buf_size);
+				}
+			}
+		}
+		return;
 	case '1': type = 1; break;
 	case '2': type = 2; break;
 	case '4': type = 4; break;
 	case '8': type = 8; break;
 	}
+
+	// second step to write
 	ut64 addr = core->addr;
 	char *inp = r_str_trim_dup (input[0] ? input + 1: input);
 	RList *list = r_str_split_list (inp, " ", 0); // or maybe comma :?

@@ -35,11 +35,11 @@ R_API double r_cfloat_parse(const ut8 *buf, size_t buf_size, const RCFloatProfil
 			return sign? -0.0: 0.0;
 		} else {
 			// subnormal
-			double mant_val = mant;
+			double mant_val = (double)mant;
 			if (profile->explicit_leading_bit) {
 				// for x87, mant includes leading bit
 				int leading = (mant >> (profile->mant_bits - 1)) & 1;
-				mant_val = (mant &((1ULL << (profile->mant_bits - 1)) - 1));
+				mant_val = (double)(mant &((1ULL << (profile->mant_bits - 1)) - 1));
 				mant_val /= (double) (1ULL << (profile->mant_bits - 1));
 				mant_val += leading;
 			} else {
@@ -54,10 +54,10 @@ R_API double r_cfloat_parse(const ut8 *buf, size_t buf_size, const RCFloatProfil
 		return sign? -NAN: NAN;
 	} else {
 		// normal
-		double mant_val = mant;
+		double mant_val = (double)mant;
 		if (profile->explicit_leading_bit) {
 			int leading = (mant >> (profile->mant_bits - 1)) & 1;
-			mant_val = (mant &((1ULL << (profile->mant_bits - 1)) - 1));
+			mant_val = (double)(mant &((1ULL << (profile->mant_bits - 1)) - 1));
 			mant_val /= (double) (1ULL << (profile->mant_bits - 1));
 			mant_val += leading;
 		} else {
@@ -153,4 +153,59 @@ R_API bool r_cfloat_write_simple(double value, int exp_bits, int mant_bits, ut8 
 	R_RETURN_VAL_IF_FAIL (buf && buf_size > 0, false);
 	RCFloatProfile profile = { 1, exp_bits, mant_bits, (1 << (exp_bits - 1)) - 1, false, false };
 	return r_cfloat_write (value, &profile, buf, buf_size);
+}
+
+static const RCFloatProfile binary16_profile = {1, 5, 10, 15, false, false};
+static const RCFloatProfile binary32_profile = {1, 8, 23, 127, false, false};
+static const RCFloatProfile binary64_profile = {1, 11, 52, 1023, false, false};
+static const RCFloatProfile binary128_profile = {1, 15, 112, 16383, false, false};
+static const RCFloatProfile bfloat16_profile = {1, 8, 7, 127, false, false};
+static const RCFloatProfile x87_80_profile = {1, 15, 64, 16383, false, true};
+static const RCFloatProfile vax_f_profile = {1, 8, 23, 64, true, true};
+static const RCFloatProfile vax_d_profile = {1, 8, 55, 64, true, true};
+static const RCFloatProfile vax_g_profile = {1, 11, 52, 1024, true, true};
+static const RCFloatProfile ibm370_short_profile = {1, 7, 24, 64, true, true};
+static const RCFloatProfile ibm370_long_profile = {1, 7, 56, 64, true, true};
+static const RCFloatProfile cray_48_profile = {1, 11, 36, 1024, true, false};
+static const RCFloatProfile cray_64_profile = {1, 15, 48, 16384, true, false};
+static const RCFloatProfile cray_128_profile = {1, 15, 112, 16384, true, false};
+static const RCFloatProfile bfloat8_profile = {1, 4, 3, 8, false, false};
+static const RCFloatProfile tf32_profile = {1, 8, 10, 127, false, false};
+static const RCFloatProfile binary96_profile = {1, 15, 80, 16383, false, true};
+static const RCFloatProfile binary128_ibm_profile = {1, 15, 112, 16383, true, true};
+static const RCFloatProfile binary256_profile = {1, 19, 236, 262143, false, false};
+
+R_API const RCFloatProfile *r_cfloat_profile_from_name(const char *name) {
+	R_RETURN_VAL_IF_FAIL (name, NULL);
+	static const struct {
+		const char *name;
+		const RCFloatProfile *profile;
+	} profiles[] = {
+		{ "binary16", &binary16_profile },
+		{ "binary32", &binary32_profile },
+		{ "binary64", &binary64_profile },
+		{ "binary128", &binary128_profile },
+		{ "bfloat16", &bfloat16_profile },
+		{ "x87_80", &x87_80_profile },
+		{ "vax_f", &vax_f_profile },
+		{ "vax_d", &vax_d_profile },
+		{ "vax_g", &vax_g_profile },
+		{ "ibm370_short", &ibm370_short_profile },
+		{ "ibm370_long", &ibm370_long_profile },
+		{ "cray48", &cray_48_profile },
+		{ "cray64", &cray_64_profile },
+		{ "cray128", &cray_128_profile },
+		{ "bfloat8", &bfloat8_profile },
+		{ "tf32", &tf32_profile },
+		{ "binary96", &binary96_profile },
+		{ "binary128_ibm", &binary128_ibm_profile },
+		{ "binary256", &binary256_profile },
+	};
+	size_t i;
+	for (i = 0; i < sizeof (profiles) / sizeof (profiles[0]); i++) {
+		if (!strcmp (name, profiles[i].name)) {
+			return profiles[i].profile;
+		}
+	}
+	return NULL;
 }

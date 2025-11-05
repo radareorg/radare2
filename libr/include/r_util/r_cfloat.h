@@ -44,6 +44,8 @@ R_API double r_cfloat_parse_simple(const ut8 *buf, size_t buf_size, int exp_bits
 R_API bool r_cfloat_write(double value, const RCFloatProfile *profile, ut8 *buf, size_t buf_size);
 R_API bool r_cfloat_write_simple(double value, int exp_bits, int mant_bits, ut8 *buf, size_t buf_size);
 
+R_API const RCFloatProfile *r_cfloat_profile_from_name(const char *name);
+
 #ifdef __cplusplus
 }
 #endif

@@ -1,0 +1,33 @@
+NAME=wvg decimal value
+FILE=-
+CMDS=<<EOF
+wvg 3.14159
+pf F
+EOF
+EXPECT=<<EOF
+0x00000000 = 6.2831799999999998
+EOF
+RUN
+
+NAME=wvg negative number
+FILE=-
+CMDS=<<EOF
+wvg -123.45
+pf F
+EOF
+EXPECT=<<EOF
+0x00000000 = -246.90000000000001
+EOF
+RUN
+
+NAME=wvg positive integer
+FILE=-
+CMDS=<<EOF
+wvg 42
+pf F
+EOF
+EXPECT=<<EOF
+0x00000000 = 84
+EOF
+RUN
+
