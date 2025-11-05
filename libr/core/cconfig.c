@@ -1052,15 +1052,21 @@ static bool cb_asmos(void *user, void *data) {
 }
 
 static void update_cfgcharsets_options(RCore *core, RConfigNode *node) {
-	// static void autocomplete_charsets(RCore *core, RLineCompletion *completion, const char *str) {
-	char *name;
-	RListIter *iter;
-	RList *chs = r_charset_list (core->print->charset);
-	r_config_node_purge_options (node);
-	r_list_foreach (chs, iter, name) {
-		SETOPTIONS (node, name, NULL);
-	}
-	r_list_free (chs);
+    r_config_node_purge_options (node);
+    if (!core->muta) {
+        core->muta = r_muta_new ();
+    }
+    char *lst = r_muta_list (core->muta, R_MUTA_TYPE_CHARSET, 0);
+    if (!lst) {
+        return;
+    }
+    RList *chs = r_str_split_list (lst, "\n", 0);
+    RListIter *iter; char *name;
+    r_list_foreach (chs, iter, name) {
+        SETOPTIONS (node, name, NULL);
+    }
+    r_list_free (chs);
+    free (lst);
 }
 
 static void update_asmparser_options(RCore *core, RConfigNode *node) {
@@ -1383,26 +1389,38 @@ static void list_available_plugins(RCore *core, const char *path) {
 }
 
 static bool cb_cfgcharset(void *user, void *data) {
-	RCore *core = (RCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
-	const char *cf = r_str_trim_head_ro (node->value);
-	if (!*cf) {
-		r_charset_close (core->print->charset);
-		return true;
-	}
-	bool rc = false;
-	if (*cf == '?') {
-		const char *cs = R2_PREFIX R_SYS_DIR R2_SDB R_SYS_DIR "charsets" R_SYS_DIR;
-		list_available_plugins (core, cs);
-	} else {
-		rc = r_charset_use (core->print->charset, cf);
-		if (rc) {
-			r_sys_setenv ("RABIN2_CHARSET", cf);
-		} else {
-			R_LOG_WARN ("Cannot load charset file '%s'", cf);
-		}
-	}
-	return rc;
+    RCore *core = (RCore*) user;
+    RConfigNode *node = (RConfigNode*) data;
+    const char *cf = r_str_trim_head_ro (node->value);
+    if (!*cf) {
+        if (core->charset_session) {
+            r_muta_session_free (core->charset_session);
+            core->charset_session = NULL;
+        }
+        return true;
+    }
+    bool rc = false;
+    if (*cf == '?') {
+        char *lst = r_muta_list (core->muta, R_MUTA_TYPE_CHARSET, 0);
+        if (lst) {
+            r_cons_println (core->cons, lst);
+            free (lst);
+        }
+    } else {
+        if (!core->muta) {
+            core->muta = r_muta_new ();
+        }
+        if (core->charset_session) {
+            r_muta_session_free (core->charset_session);
+            core->charset_session = NULL;
+        }
+        core->charset_session = r_muta_use (core->muta, cf);
+        rc = core->charset_session != NULL;
+        if (!rc) {
+            R_LOG_WARN ("Cannot load muta charset '%s'", cf);
+        }
+    }
+    return rc;
 }
 
 static bool cb_cfgdatefmt(void *user, void *data) {
