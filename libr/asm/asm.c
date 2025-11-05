@@ -164,8 +164,8 @@ static int r_asm_pseudo_byte(RAnalOp *op, char *input) {
 	for (i = 0; i < len; i++) {
 		const char *word = r_str_word_get0 (input, i);
 		int num = (int)r_num_math (NULL, word);
-		if (num < -128 || num > 255) {
-			R_LOG_ERROR ("byte value %d out of range (-128-255)", num);
+		if (num < 0 || num > 255) {
+			R_LOG_ERROR ("byte value %d out of range (0-255)", num);
 			free (buf);
 			return -1;
 		}
@@ -970,13 +970,16 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 		}
 		free (args);
 	} else if (r_str_startswith (ptr, ".float ")) {
-		acode->cfloat_profile.big_endian = a->config->big_endian;
+		const bool be = (a->config->big_endian & R_SYS_ENDIAN_BIG);
+		acode->cfloat_profile.big_endian = be;
+		// acode->cfloat_profile.big_endian = false;
 		ret = r_asm_pseudo_float (a, op, ptr + 7, &acode->cfloat_profile);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if (r_str_startswith (ptr, ".double ")) {
-		RCFloatProfile profile = { 1, 11, 52, 1023, a->config->big_endian, false };
+		const bool be = (a->config->big_endian & R_SYS_ENDIAN_BIG);
+		RCFloatProfile profile = { 1, 11, 52, 1023, be, false };
 		ret = r_asm_pseudo_float (a, op, ptr + 8, &profile);
 		if (ret < 0) {
 			return ret;
