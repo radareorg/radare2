@@ -136,7 +136,7 @@ static char *reorder(char *buf) {
 		if (end) {
 			r_str_ncpy (reg, par + 1, end - par);
 			r_str_ncpy (arg, arr, par - arr + 1);
-			sprintf (buf, "%s[%s]", reg, arg);
+			snprintf (buf, 128, "%s[%s]", reg, arg);
 		}
 	}
 	return buf;

@@ -5,6 +5,7 @@
 R_API RAsmCode *r_asm_code_new(void) {
 	RAsmCode *ac = R_NEW0 (RAsmCode);
 	ac->equs = ht_pp_new0 ();
+	ac->cfloat_profile = R_CFLOAT_PROFILE_BINARY32;
 	return ac;
 }
 
@@ -43,28 +44,14 @@ R_API char *r_asm_code_equ_replace(RAsmCode *code, const char *_str) {
 	return data.str;
 }
 
-R_API char* r_asm_code_get_hex(RAsmCode *acode) {
+R_API char *r_asm_code_get_hex(RAsmCode *acode) {
 	R_RETURN_VAL_IF_FAIL (acode, NULL);
-	char* str = calloc (acode->len + 1, 2);
+	char *str = calloc (acode->len + 1, 2);
 	if (str) {
 		r_hex_bin2str (acode->bytes, acode->len, str);
 	}
 	return str;
 }
-
-#if 0
-// R2_600 - r_asm_code_set_hex (a->acode, "90909090"); see libr/core/vasm.c
-R_API bool r_asm_code_set_hex(RAsmCode *acode, const char *hexstr) {
-	ut8 out[1024];
-	int len = r_hex_str2bin (str, out);
-	if (len > 0) {
-		free (a->acode->bytes);
-		a->acode->bytes = r_mem_dup (out, len);
-		a->acode->len = len;
-	}
-	a->codebuf[0] = 0;
-}
-#endif
 
 R_API char *r_asm_code_equ_get(RAsmCode *code, const char *key) {
 	R_RETURN_VAL_IF_FAIL (code && key, NULL);

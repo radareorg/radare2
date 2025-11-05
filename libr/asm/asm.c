@@ -69,7 +69,7 @@ static int r_asm_pseudo_string(RAnalOp *op, char *input, bool zero) {
 	return len;
 }
 
-static inline int r_asm_pseudo_intN(RAsm *a, RAnalOp *op, char *input, int n, bool is_unsigned) {
+static int r_asm_pseudo_intN(RAsm *a, RAnalOp *op, char *input, int n, bool is_unsigned) {
 	short s;
 	int i;
 	long int l;
@@ -134,7 +134,25 @@ static inline int r_asm_pseudo_intN(RAsm *a, RAnalOp *op, char *input, int n, bo
 	return n;
 }
 
-static inline int r_asm_pseudo_byte(RAnalOp *op, char *input) {
+static int r_asm_pseudo_float(RAsm *a, RAnalOp *op, char *input, const RCFloatProfile *profile) {
+	R_RETURN_VAL_IF_FAIL (a && op && input && profile, -1);
+	ut8 buf[16];
+	double value = strtod (r_str_trim_head_ro (input), NULL);
+	const int total_bits = profile->sign_bits + profile->exp_bits + profile->mant_bits;
+	const int byte_size = (total_bits + 7) / 8;
+	if (byte_size > sizeof (buf)) {
+		R_LOG_ERROR ("Too many bits");
+		return -1;
+	}
+	bool success = r_cfloat_write (value, profile, buf, byte_size);
+	if (success) {
+		r_anal_op_set_bytes (op, op->addr, buf, byte_size);
+		return byte_size;
+	}
+	return -1;
+}
+
+static int r_asm_pseudo_byte(RAnalOp *op, char *input) {
 	int i, len = 0;
 	r_str_replace_char (input, ',', ' ');
 	len = r_str_word_count (input);
@@ -146,8 +164,8 @@ static inline int r_asm_pseudo_byte(RAnalOp *op, char *input) {
 	for (i = 0; i < len; i++) {
 		const char *word = r_str_word_get0 (input, i);
 		int num = (int)r_num_math (NULL, word);
-		if (num < -128 || num > 255) {
-			R_LOG_ERROR ("byte value %d out of range (-128-255)", num);
+		if (num < 0 || num > 255) {
+			R_LOG_ERROR ("byte value %d out of range (0-255)", num);
 			free (buf);
 			return -1;
 		}
@@ -158,7 +176,7 @@ static inline int r_asm_pseudo_byte(RAnalOp *op, char *input) {
 	return len;
 }
 
-static inline int r_asm_pseudo_fill(RAnalOp *op, const char *input) {
+static int r_asm_pseudo_fill(RAnalOp *op, const char *input) {
 	int i, repeat = 0, size = 0, value = 0;
 	if (strchr (input, ',')) {
 		int res = sscanf (input, "%d,%d,%d", &repeat, &size, &value); // use r_num?
@@ -188,7 +206,7 @@ static inline int r_asm_pseudo_fill(RAnalOp *op, const char *input) {
 	return size;
 }
 
-static inline int r_asm_pseudo_incbin(RAnalOp *op, char *input) {
+static int r_asm_pseudo_incbin(RAnalOp *op, char *input) {
 	size_t bytes_read = 0;
 	r_str_replace_char (input, ',', ' ');
 	// int len = r_str_word_count (input);
@@ -924,6 +942,54 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 	} else if (r_str_startswith (ptr, ".data")) {
 		acode->data_offset = a->pc;
 		ret = 0;
+	} else if (r_str_startswith (ptr, ".cfloat ")) {
+		char *args = r_str_trim_dup (ptr + strlen (".cfloat "));
+		ret = -1;
+		if (args) {
+			if (r_str_word_count (args) == 6) {
+				ret = 0;
+			} else {
+				R_LOG_ERROR ("The .cfloat directive expects 6 arguments: (sign_bits, exp_bits, mant_bits, bias, big_endian, explicit_leading_bit)");
+				R_LOG_INFO ("Example (float): .cfloat 1 8 23 127 0 0");
+				R_LOG_INFO ("Example (double): .cfloat 1 11 52 1023 0 0");
+				R_LOG_INFO ("Example (bf16): .cfloat 1 8 7 127 0 0");
+				R_LOG_INFO ("Example (x86-80): .cfloat 1 15 64 16383 0 1");
+			}
+		}
+		if (ret == 0) {
+			r_str_word_set0 (args);
+			RCFloatProfile fp = {
+				.sign_bits = atoi (r_str_word_get0 (args, 0)),
+				.exp_bits = atoi (r_str_word_get0 (args, 1)),
+				.mant_bits = atoi (r_str_word_get0 (args, 2)),
+				.bias = atoi (r_str_word_get0 (args, 3)),
+				.big_endian = atoi (r_str_word_get0 (args, 4)),
+				.explicit_leading_bit = atoi (r_str_word_get0 (args, 5))
+			};
+			acode->cfloat_profile = fp;
+		}
+		free (args);
+	} else if (r_str_startswith (ptr, ".float ")) {
+		const bool be = (a->config->big_endian & R_SYS_ENDIAN_BIG);
+		acode->cfloat_profile.big_endian = be;
+		// acode->cfloat_profile.big_endian = false;
+		ret = r_asm_pseudo_float (a, op, ptr + 7, &acode->cfloat_profile);
+		if (ret < 0) {
+			return ret;
+		}
+	} else if (r_str_startswith (ptr, ".double ")) {
+		const bool be = (a->config->big_endian & R_SYS_ENDIAN_BIG);
+		RCFloatProfile profile = { 1, 11, 52, 1023, be, false };
+		ret = r_asm_pseudo_float (a, op, ptr + 8, &profile);
+		if (ret < 0) {
+			return ret;
+		}
+	} else if (r_str_startswith (ptr, ".bf16 ")) {
+		RCFloatProfile profile = { 1, 8, 7, 127, false, false };
+		ret = r_asm_pseudo_float (a, op, ptr + 6, &profile);
+		if (ret < 0) {
+			return ret;
+		}
 	} else if (r_str_startswith (ptr, ".incbin")) {
 		if (ptr[7] != ' ') {
 			R_LOG_ERROR ("incbin missing filename");

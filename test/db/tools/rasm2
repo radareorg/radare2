@@ -874,3 +874,35 @@ EXPECT=<<EOF
 212c
 EOF
 RUN
+
+NAME=rasm2 .float directive
+FILE=-
+CMDS=!rasm2 -a x86 -b 64 ".float 3.14"
+EXPECT=<<EOF
+c3f5c840
+EOF
+RUN
+
+NAME=rasm2 .double directive
+FILE=-
+CMDS=!rasm2 -a x86 -b 64 ".double 3.14"
+EXPECT=<<EOF
+1f85eb51b81e1940
+EOF
+RUN
+
+NAME=rasm2 .bf16 directive
+FILE=-
+CMDS=!rasm2 -a x86 -b 64 ".bf16 3.14"
+EXPECT=<<EOF
+c940
+EOF
+RUN
+
+NAME=rasm2 .cfloat directive
+FILE=-
+CMDS=!rasm2 -a x86 -b 64 ".cfloat 1 8 23 127 0 0;.float 3.14"
+EXPECT=<<EOF
+c3f5c840
+EOF
+RUN

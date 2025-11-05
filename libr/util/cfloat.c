@@ -103,9 +103,9 @@ R_API bool r_cfloat_write(double value, const RCFloatProfile *profile, ut8 *buf,
 		bits |= (ut64)sign << (total_bits - profile->sign_bits);
 	} else {
 		// normal or subnormal
-		int exp;
-		double mant = frexp (value, &exp);
-		exp += profile->bias;
+		int frexp_exp;
+		double mant = frexp (value, &frexp_exp);
+		int exp = frexp_exp + profile->bias;
 
 		if (exp <= 0) {
 			// subnormal
@@ -117,7 +117,14 @@ R_API bool r_cfloat_write(double value, const RCFloatProfile *profile, ut8 *buf,
 			mant = 0;
 		}
 
-		ut64 mant_bits = (ut64)round (mant *(1ULL << profile->mant_bits));
+		ut64 mant_bits;
+		if (exp == 0) {
+			// subnormal
+			double mant_frexp = mant / pow (2.0, profile->bias);
+			mant_bits = (ut64)round (mant_frexp * pow (2.0, frexp_exp + profile->mant_bits + profile->bias - 1));
+		} else {
+			mant_bits = (ut64)round ((mant * 2.0 - 1.0) *(double) (1ULL << profile->mant_bits));
+		}
 		if (!profile->explicit_leading_bit && exp > 0) {
 			mant_bits &= (1ULL << profile->mant_bits) - 1;
 		}
@@ -126,7 +133,19 @@ R_API bool r_cfloat_write(double value, const RCFloatProfile *profile, ut8 *buf,
 		bits |= (ut64)exp << profile->mant_bits;
 		bits |= mant_bits;
 	}
-	r_write_ble64 (buf, bits, profile->big_endian);
+	int byte_size = (total_bits + 7) / 8;
+	if (byte_size == 1) {
+		r_write_ble8 (buf, (ut8)bits);
+	} else if (byte_size == 2) {
+		r_write_ble16 (buf, (ut16)bits, profile->big_endian);
+	} else if (byte_size == 4) {
+		r_write_ble32 (buf, (ut32)bits, profile->big_endian);
+	} else if (byte_size <= 8) {
+		r_write_ble64 (buf, bits, profile->big_endian);
+	} else {
+		// for larger, but since total_bits <=64, byte_size <=8
+		return false;
+	}
 	return true;
 }
 
