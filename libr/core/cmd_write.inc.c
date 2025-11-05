@@ -574,6 +574,9 @@ static void cmd_write_value(RCore *core, const char *input) {
 		cmd_write_value_float (core, r_str_trim_head_ro (input + 1));
 		return;
 	case 'F': // "wvF"
+		cmd_write_value_double (core, r_str_trim_head_ro (input + 1));
+		return;
+	case 'G': // "wvG"
 		cmd_write_value_long_double (core, r_str_trim_head_ro (input + 1));
 		return;
 	case 'd': // "wvd"
