@@ -1,16 +1,113 @@
-# TODO: read arch/p/cosmac/plugin.c and finish this
-ldn=load D with (R)
-idl=idle or wait for interrupt or dma request
-inc=increment
-dec=decrement
-irx=increment register X
-plo=put low register
-phi=put high register
-ghi=get high register
-sep=set program counter register
-sex=set register as data pointer
+ldn=Load D with (R)
+idl=Idle or wait for interrupt or DMA request
+inc=Increment (R)
+dec=Decrement (R)
+br=Short branch
+bq=Short branch on Q=1
+bz=Short branch on D=0
+bdf=Short branch on DF=1
+b1=Short branch on EF1=1
+b2=Short branch on EF2=1
+b3=Short branch on EF3=1
+b4=Short branch on EF4=1
+skp=Skip next byte
+bnq=Short branch on Q=0
+bnz=Short branch on D!=0
+bnf=Short branch on DF=0
+bn1=Short branch on EF1=0
+bn2=Short branch on EF2=0
+bn3=Short branch on EF3=0
+bn4=Short branch on EF4=0
+lda=Load D from (R), increment R
+str=Store D to (R)
+irx=Increment register X
+out=Output (R(X)); Increment R(X), N=
+doublefetch=Opcode for double fetched instructions
+inp=Input to (R(X)) and D, N=
+ret=Return from interrupt, set IE=1
+dis=Disable. Return from interrupt, set IE=0
+ldxa=Load via X and advance
+stxd=Store via X and decrement
+adc=Add with carry
+sdb=Subtract D with borrow
+shrc=Shift right with carry
+smb=Subtract memory with borrow
+sav=Save
+mark=Push X,P; mark subroutine call
+req=Reset Q=0
+seq=Set Q=1
+adci=Add with carry immediate
+sdbi=Subtract D with borrow immediate
+shlc=Shift left with carry
+smbi=Subtract memory with borrow, immediate
+glo=Get low register R
+ghi=Get high register R
+plo=Put low register R
+phi=Put high register R
+lbr=Long branch
+lbq=Long branch on Q=1
+lbz=Long branch on D=0
+lbdf=Long branch on DF=1
+nop=No operation
+lsnq=Long skip on Q=0
+lsnz=Long skip on D!=0
+lsnf=Long skip on DF=0
+lskp=Long skip
+lbnq=Long branch on Q=0
+lbnz=Long branch on D!=0
+lbnf=Long branch on DF=0
+lsie=Long skip on IE=1
+lsq=Long skip on Q=1
+lsz=Long skip on D=0
+lsdf=Long skip on DF=1
+sep=Set P=R as program counter
+sex=Set P=R as datapointer
+ldx=Pop stack. Place value in D register
+or=Logical OR D with (R(X))
+and=Logical AND: D with (R(X))
+xor=Logical exclusive OR D with (R(X))
+add=Add D: D,DF= D+(R(X))
+sd=Subtract D: D,DF=(R(X))-D
+shr=Shift right D
+sm=Subtract memory: DF,D=D-(R(X))
+ldi=Load D immediate
+ori=Logical OR D with value
+ani=Logical AND D with value
+xri=Logical XOR D with value
+adi=Add D,DF with value
+sdi=Subtract D,DF from value
+shl=Shift left D
+smi=Subtract D,DF to value
 stpc=stop counter
+dtc=decrement timer/counter
+spm2=set pulse width mode 2 and start
+scm2=set counter mode 2 and start
+spm1=set pulse width mode 1 and start
+scm1=set counter mode 1 and start
+ldc=load counter
+stm=set timer mode and start
+gec=get counter
+etq=enable toggle Q
+xie=external interrupt enable
+xid=external interrupt disable
+cie=counter interrupt enable
+cid=counter interrupt disable
+invalid=INVALID INSTRUCTION
+dbnz=decrement R and long branch if not 0
+bci=short branch on counter interrupt
+bxi=short branch on external interrupt
+rlxa=load memory to R
+dadc=decimal add with carry
+dsav=save T,D,DF
+dsmb=decimal subtract memory with borrow
+daci=decimal add with carry immediate
+dsbi=decimal subtract memory with borrow, immediate
+scal=standard call to (R)
 sret=standard return to (R)
-rsxd=store register in memory
+rsxd=store register R in memory
+rnx=copy register R to R(X)
+rldi=register load immediate R
 dadd=decimal add
-dsm=decimal substract memory
+dsm=decimal subtract memory
+dadi=decimal add immediate
+dsmi=decimal subtract memory, immediate
