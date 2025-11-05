@@ -5,7 +5,7 @@
 #include <config.h>
 #include <r_util/r_assert.h>
 
-R_LIB_VERSION (r_muta);
+R_LIB_VERSION(r_muta);
 
 static RMutaPlugin *muta_static_plugins[] = {
 	R_MUTA_STATIC_PLUGINS
@@ -41,7 +41,6 @@ R_API RMuta *r_muta_new(void) {
 	r_muta_init (cry);
 	return cry;
 }
-
 
 R_API void r_muta_free(RMuta *cry) {
 	if (cry) {
@@ -203,4 +202,3 @@ R_API void r_muta_ed25519_keypair(const ut8 *seed, ut8 *privkey, ut8 *pubkey) {
 	ge_scalarmult_base (&A, privkey);
 	ge_p3_tobytes (pubkey, &A);
 }
-
