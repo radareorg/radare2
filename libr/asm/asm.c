@@ -69,7 +69,7 @@ static int r_asm_pseudo_string(RAnalOp *op, char *input, bool zero) {
 	return len;
 }
 
-static inline int r_asm_pseudo_intN(RAsm *a, RAnalOp *op, char *input, int n, bool is_unsigned) {
+static int r_asm_pseudo_intN(RAsm *a, RAnalOp *op, char *input, int n, bool is_unsigned) {
 	short s;
 	int i;
 	long int l;
@@ -134,31 +134,25 @@ static inline int r_asm_pseudo_intN(RAsm *a, RAnalOp *op, char *input, int n, bo
 	return n;
 }
 
-static inline int r_asm_pseudo_float(RAsm *a, RAnalOp *op, char *input, const RCFloatProfile *profile) {
+static int r_asm_pseudo_float(RAsm *a, RAnalOp *op, char *input, const RCFloatProfile *profile) {
 	R_RETURN_VAL_IF_FAIL (a && op && input && profile, -1);
-	char *trimmed = r_str_trim_dup (input);
-	if (!trimmed) {
-		return -1;
-	}
-	double value = strtod (trimmed, NULL);
-	free (trimmed);
-	int total_bits = profile->sign_bits + profile->exp_bits + profile->mant_bits;
-	int byte_size = (total_bits + 7) / 8;
-	ut8 *buf = malloc (byte_size);
-	if (!buf) {
+	ut8 buf[16];
+	double value = strtod (r_str_trim_head_ro (input), NULL);
+	const int total_bits = profile->sign_bits + profile->exp_bits + profile->mant_bits;
+	const int byte_size = (total_bits + 7) / 8;
+	if (byte_size > sizeof (buf)) {
+		R_LOG_ERROR ("Too many bits");
 		return -1;
 	}
 	bool success = r_cfloat_write (value, profile, buf, byte_size);
-	if (!success) {
-		free (buf);
-		return -1;
+	if (success) {
+		r_anal_op_set_bytes (op, op->addr, buf, byte_size);
+		return byte_size;
 	}
-	r_anal_op_set_bytes (op, op->addr, buf, byte_size);
-	free (buf);
-	return byte_size;
+	return -1;
 }
 
-static inline int r_asm_pseudo_byte(RAnalOp *op, char *input) {
+static int r_asm_pseudo_byte(RAnalOp *op, char *input) {
 	int i, len = 0;
 	r_str_replace_char (input, ',', ' ');
 	len = r_str_word_count (input);
@@ -182,7 +176,7 @@ static inline int r_asm_pseudo_byte(RAnalOp *op, char *input) {
 	return len;
 }
 
-static inline int r_asm_pseudo_fill(RAnalOp *op, const char *input) {
+static int r_asm_pseudo_fill(RAnalOp *op, const char *input) {
 	int i, repeat = 0, size = 0, value = 0;
 	if (strchr (input, ',')) {
 		int res = sscanf (input, "%d,%d,%d", &repeat, &size, &value); // use r_num?
@@ -212,7 +206,7 @@ static inline int r_asm_pseudo_fill(RAnalOp *op, const char *input) {
 	return size;
 }
 
-static inline int r_asm_pseudo_incbin(RAnalOp *op, char *input) {
+static int r_asm_pseudo_incbin(RAnalOp *op, char *input) {
 	size_t bytes_read = 0;
 	r_str_replace_char (input, ',', ' ');
 	// int len = r_str_word_count (input);
@@ -949,27 +943,32 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 		acode->data_offset = a->pc;
 		ret = 0;
 	} else if (r_str_startswith (ptr, ".cfloat ")) {
-		char *args = r_str_trim_dup (ptr + 8);
-		if (!args) {
-			ret = -1;
-		} else {
-			int count = r_str_word_count (args);
-			if (count != 6) {
-				R_LOG_ERROR ("Invalid .cfloat directive: expected 6 arguments");
-				free (args);
-				ret = -1;
-			} else {
-				r_str_word_set0 (args);
-				acode->cfloat_profile.sign_bits = atoi (r_str_word_get0 (args, 0));
-				acode->cfloat_profile.exp_bits = atoi (r_str_word_get0 (args, 1));
-				acode->cfloat_profile.mant_bits = atoi (r_str_word_get0 (args, 2));
-				acode->cfloat_profile.bias = atoi (r_str_word_get0 (args, 3));
-				acode->cfloat_profile.big_endian = atoi (r_str_word_get0 (args, 4));
-				acode->cfloat_profile.explicit_leading_bit = atoi (r_str_word_get0 (args, 5));
+		char *args = r_str_trim_dup (ptr + strlen (".cfloat "));
+		ret = -1;
+		if (args) {
+			if (r_str_word_count (args) == 6) {
 				ret = 0;
-				free (args);
+			} else {
+				R_LOG_ERROR ("The .cfloat directive expects 6 arguments: (sign_bits, exp_bits, mant_bits, bias, big_endian, explicit_leading_bit)");
+				R_LOG_INFO ("Example (float): .cfloat 1 8 23 127 0 0");
+				R_LOG_INFO ("Example (double): .cfloat 1 11 52 1023 0 0");
+				R_LOG_INFO ("Example (bf16): .cfloat 1 8 7 127 0 0");
+				R_LOG_INFO ("Example (x86-80): .cfloat 1 15 64 16383 0 1");
 			}
 		}
+		if (ret == 0) {
+			r_str_word_set0 (args);
+			RCFloatProfile fp = {
+				.sign_bits = atoi (r_str_word_get0 (args, 0)),
+				.exp_bits = atoi (r_str_word_get0 (args, 1)),
+				.mant_bits = atoi (r_str_word_get0 (args, 2)),
+				.bias = atoi (r_str_word_get0 (args, 3)),
+				.big_endian = atoi (r_str_word_get0 (args, 4)),
+				.explicit_leading_bit = atoi (r_str_word_get0 (args, 5))
+			};
+			acode->cfloat_profile = fp;
+		}
+		free (args);
 	} else if (r_str_startswith (ptr, ".float ")) {
 		ret = r_asm_pseudo_float (a, op, ptr + 7, &acode->cfloat_profile);
 		if (ret < 0) {
