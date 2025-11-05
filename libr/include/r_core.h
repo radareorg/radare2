@@ -358,6 +358,7 @@ struct r_core_t {
 	RFS *fs;
 	RFSShell *rfs;
 	REgg *egg;
+	RMutaSession *charset_session;
 	RCoreLog *log;
 	RAGraph *graph;
 	RPanelsRoot *panels_root;

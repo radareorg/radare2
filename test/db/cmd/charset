@@ -88,7 +88,14 @@ iso_646
 jis7
 katakana
 macintosh
+pokemon
 pokered
+punycode
+ascii
+ebcdic37
+iso8859_1
+jis7
+
 
 ground-to-protect<PAGE>itself-fr
 EOF
@@ -128,7 +135,14 @@ iso_646
 jis7
 katakana
 macintosh
+pokemon
 pokered
+punycode
+ascii
+ebcdic37
+iso8859_1
+jis7
+
 --------Self-replicating----arbi
 --------Self-replicating----arbi
 --------Self-replicating----arbi
@@ -151,7 +165,14 @@ iso_646
 jis7
 katakana
 macintosh
+pokemon
 pokered
+punycode
+ascii
+ebcdic37
+iso8859_1
+jis7
+
 --------Self-replicating----arbi
 --------Self-replicating----arbi
 EOF

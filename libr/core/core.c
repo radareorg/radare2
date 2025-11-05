@@ -1240,17 +1240,78 @@ static void autocomplete_ms_file(RCore* core, RLineCompletion *completion, const
 }
 
 static void autocomplete_charsets(RCore *core, RLineCompletion *completion, const char *str) {
-	R_RETURN_IF_FAIL (str);
-	int len = strlen (str);
-	char *name;
-	RListIter *iter;
-	RList *chs = r_charset_list (core->print->charset);
-	r_list_foreach (chs, iter, name) {
-		if (!len || !strncmp (str, name, len)) {
-			r_line_completion_push (completion, name);
-		}
-	}
-	r_list_free (chs);
+    R_RETURN_IF_FAIL (str);
+    int len = strlen (str);
+    if (!core->muta) {
+        core->muta = r_muta_new ();
+    }
+    char *lst = r_muta_list (core->muta, R_MUTA_TYPE_CHARSET, 0);
+    if (!lst) {
+        return;
+    }
+    RList *chs = r_str_split_list (lst, "\n", 0);
+    RListIter *iter; char *name;
+    r_list_foreach (chs, iter, name) {
+        if (!len || !strncmp (str, name, len)) {
+            r_line_completion_push (completion, name);
+        }
+    }
+    r_list_free (chs);
+    free (lst);
+}
+
+int r_core_charset_decode_cb(void *ctx, const ut8 *in, int len, ut8 **out, int *consumed) {
+    RCore *core = (RCore*)ctx;
+    if (!core || !core->charset_session || !out || !consumed) {
+        return 0;
+    }
+    RMutaPlugin *h = core->charset_session->h;
+    if (h && h->decode) {
+        return h->decode (core->charset_session, in, len, out, consumed);
+    }
+    // fallback to old way
+    *consumed = len;
+    core->charset_session->dir = R_CRYPTO_DIR_DECRYPT;
+    r_muta_session_update (core->charset_session, in, len);
+    int olen = 0;
+    ut8 *obuf = r_muta_session_get_output (core->charset_session, &olen);
+    if (olen < 1) {
+        *out = NULL;
+        return 0;
+    }
+    ut8 *cpy = malloc (olen);
+    if (!cpy) {
+        *out = NULL;
+        return 0;
+    }
+    memcpy (cpy, obuf, olen);
+    *out = cpy;
+    core->charset_session->output_len = 0;
+    return olen;
+}
+
+int r_core_charset_encode_cb(void *ctx, const ut8 *in, int len, ut8 **out) {
+    RCore *c = (RCore*)ctx;
+    if (!c || !c->charset_session || !out) {
+        return 0;
+    }
+    c->charset_session->dir = R_CRYPTO_DIR_ENCRYPT;
+    r_muta_session_update (c->charset_session, in, len);
+    int olen = 0;
+    ut8 *obuf = r_muta_session_get_output (c->charset_session, &olen);
+    if (olen < 1) {
+        *out = NULL;
+        return 0;
+    }
+    ut8 *cpy = malloc (olen);
+    if (!cpy) {
+        *out = NULL;
+        return 0;
+    }
+    memcpy (cpy, obuf, olen);
+    *out = cpy;
+    c->charset_session->output_len = 0;
+    return olen;
 }
 
 static void autocomplete_theme(RCore *core, RLineCompletion *completion, const char *str) {
@@ -2677,19 +2738,20 @@ R_API bool r_core_init(RCore *core) {
 	core_visual_init (&core->visual);
 	core->lastcmd = NULL;
 
-	if (core->print->charset) {
-		sdb_free (core->print->charset->db);
-		core->print->charset->db = sdb_ns (core->sdb, "charset", 1);
-		core->print->charset->db->refs++; // increase reference counter to avoid double-free
-	}
+    // charset SDB no longer wired here; handled via RMuta in core
 	// ideally sdb_ns_set should be used here, but it doesnt seems to work well. must fix
 	// sdb_ns_set (core->sdb, "charset", core->print->charset->db);
 	core->stkcmd = NULL;
 	core->cmdqueue = r_list_newf (free);
 	core->cmdrepeat = true;
 	core->yank_buf = r_buf_new ();
-	core->muta = r_muta_new ();
-	core->egg = r_egg_new ();
+        // Initialize RMuta and wire print charset callbacks
+        core->muta = r_muta_new ();
+        core->charset_session = r_muta_use (core->muta, "ascii");
+        core->print->charset_ctx = core;
+        core->print->charset_decode = r_core_charset_decode_cb;
+        core->print->charset_encode = r_core_charset_encode_cb;
+        core->egg = r_egg_new ();
 // 	core->egg->rasm = core->rasm;
 
 	core->undos = r_list_newf ((RListFree)r_core_undo_free);

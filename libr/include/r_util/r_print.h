@@ -157,8 +157,11 @@ typedef struct r_print_t {
 	ut64 screen_bounds;
 	// HACK: Used to temporarily disable the progress bar when it doesn't make sense to have it,
 	// eg. when setting the default flag tags on startup. Does not override scr.progressbar.
-	bool enable_progressbar;
-	RCharset *charset;
+    bool enable_progressbar;
+     // Charset transform callbacks provided by RCore to avoid r_util->r_muta dep
+     void *charset_ctx;
+     int (*charset_decode)(void *ctx, const ut8 *in, int len, ut8 **out, int *consumed);
+     int (*charset_encode)(void *ctx, const ut8 *in, int len, ut8 **out);
 
 	// segmented memory addressing
 	int nbcolor;

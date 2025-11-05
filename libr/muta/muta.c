@@ -5,7 +5,7 @@
 #include <config.h>
 #include <r_util/r_assert.h>
 
-R_LIB_VERSION (r_muta);
+R_LIB_VERSION(r_muta);
 
 static RMutaPlugin *muta_static_plugins[] = {
 	R_MUTA_STATIC_PLUGINS
@@ -21,7 +21,12 @@ R_API void r_muta_init(RMuta *cry) {
 		if (p) {
 			r_muta_add (cry, p);
 		}
-	}
+}
+	// add charset plugins
+	r_muta_add (cry, &r_muta_plugin_charset_ascii);
+	r_muta_add (cry, &r_muta_plugin_charset_ebcdic37);
+	r_muta_add (cry, &r_muta_plugin_charset_iso8859_1);
+	r_muta_add (cry, &r_muta_plugin_charset_jis7);
 }
 
 R_API bool r_muta_add(RMuta *cry, RMutaPlugin *h) {
@@ -42,7 +47,6 @@ R_API RMuta *r_muta_new(void) {
 	return cry;
 }
 
-
 R_API void r_muta_free(RMuta *cry) {
 	if (cry) {
 #if 0
@@ -54,8 +58,9 @@ R_API void r_muta_free(RMuta *cry) {
 				p->fini (cry, p);
 			}
 		}
-#endif
+		// XXX leaks
 		r_list_free (cry->plugins);
+#endif
 		free (cry);
 	}
 }
@@ -203,4 +208,3 @@ R_API void r_muta_ed25519_keypair(const ut8 *seed, ut8 *privkey, ut8 *pubkey) {
 	ge_scalarmult_base (&A, privkey);
 	ge_p3_tobytes (pubkey, &A);
 }
-
