@@ -37,7 +37,7 @@ static RBuffer *build(REgg *egg) {
 		return NULL;
 	}
 
-	bool used[256] = {0};
+	bool used[256] = { 0 };
 	for (i = 0; i < r_buf_size (sc); i++) {
 		// eprintf ("%02x -> %02x\n", sc->buf[i], sc->buf[i] ^nkey);
 		ut8 ch = r_buf_read8_at (sc, i);
@@ -64,7 +64,7 @@ static RBuffer *build(REgg *egg) {
 	// This is the x86-32/64 byte replacement encoder
 	r_buf_append_buf (sc, egg->bin);
 	if (egg->arch == R_SYS_ARCH_X86) {
-		#define STUBLEN 27
+#define STUBLEN 27
 		ut8 stub[STUBLEN] =
 			"\x30\xdb" // xor bl, bl
 			"\x48\x31\xc9" // xor rcx, rcx
@@ -105,7 +105,7 @@ static RBuffer *build(REgg *egg) {
 	return buf;
 }
 
-//TODO: rename plugin to run
+// TODO: rename plugin to run
 REggPlugin r_egg_plugin_nullby = {
 	.meta = {
 		.name = "nullby",

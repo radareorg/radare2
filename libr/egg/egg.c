@@ -3,7 +3,7 @@
 #include <r_egg.h>
 #include <config.h>
 
-R_LIB_VERSION (r_egg);
+R_LIB_VERSION(r_egg);
 
 // TODO: must be plugins
 extern REggEmit emit_x86;
@@ -13,8 +13,7 @@ extern REggEmit emit_a64;
 extern REggEmit emit_esil;
 extern REggEmit emit_trace;
 
-static REggPlugin *egg_static_plugins[] =
-	{ R_EGG_STATIC_PLUGINS };
+static REggPlugin *egg_static_plugins[] = { R_EGG_STATIC_PLUGINS };
 
 struct egg_patch_t {
 	RBuffer *b;
@@ -118,7 +117,7 @@ R_API void r_egg_free(REgg *egg) {
 		r_buf_free (egg->bin);
 		r_list_free (egg->list);
 		r_asm_free (egg->rasm);
-	//	r_anal_free (egg->anal);
+		//	r_anal_free (egg->anal);
 		r_syscall_free (egg->syscall);
 		sdb_free (egg->db);
 		r_list_free (egg->plugins);
@@ -148,8 +147,8 @@ R_API bool r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const 
 	egg->remit = NULL;
 
 	egg->os = os? r_str_hash (os): R_EGG_OS_DEFAULT;
-	//eprintf ("%s -> %x (linux=%x) (darwin=%x)\n", os, egg->os, R_EGG_OS_LINUX, R_EGG_OS_DARWIN);
-	// TODO: setup egg->arch for all archs
+	// eprintf ("%s -> %x (linux=%x) (darwin=%x)\n", os, egg->os, R_EGG_OS_LINUX, R_EGG_OS_DARWIN);
+	//  TODO: setup egg->arch for all archs
 	if (!strcmp (arch, "x86")) {
 		egg->arch = R_SYS_ARCH_X86;
 		switch (bits) {
@@ -186,7 +185,7 @@ R_API bool r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const 
 			break;
 		}
 	} else if (!strcmp (arch, "trace")) {
-		//r_syscall_setup (egg->syscall, arch, os, bits);
+		// r_syscall_setup (egg->syscall, arch, os, bits);
 		egg->remit = &emit_trace;
 		egg->bits = bits;
 		egg->endian = endian;
@@ -195,7 +194,7 @@ R_API bool r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const 
 }
 
 R_API bool r_egg_include_str(REgg *egg, const char *arg) {
-	r_buf_append_bytes (egg->src, (const ut8*)arg, strlen (arg));
+	r_buf_append_bytes (egg->src, (const ut8 *)arg, strlen (arg));
 	return true;
 }
 
@@ -239,7 +238,7 @@ R_API void r_egg_syscall(REgg *egg, const char *arg, ...) {
 	RSyscallItem *item = r_syscall_get (egg->syscall,
 		r_syscall_get_num (egg->syscall, arg), -1);
 	if (!strcmp (arg, "close")) {
-		//egg->remit->syscall_args ();
+		// egg->remit->syscall_args ();
 	}
 	if (!item) {
 		return;
@@ -258,7 +257,7 @@ R_API void r_egg_label(REgg *egg, const char *name) {
 
 R_API void r_egg_math(REgg *egg) { //, char eq, const char *vs, char type, const char *sr
 	// TODO
-	//e->mathop (egg, op, type, eq, p);
+	// e->mathop (egg, op, type, eq, p);
 }
 
 R_API bool r_egg_raw(REgg *egg, const ut8 *b, int len) {
@@ -395,7 +394,7 @@ R_API bool r_egg_compile(REgg *egg) {
 	}
 	// only emit begin if code is found
 	r_egg_lang_init (egg);
-	for (; b; ) {
+	for (; b;) {
 		r_egg_lang_parsechar (egg, b);
 		if (egg->lang.elem_n >= sizeof (egg->lang.elem)) {
 			R_LOG_ERROR ("too large element");
@@ -405,7 +404,7 @@ R_API bool r_egg_compile(REgg *egg) {
 		if (r != sizeof (b)) {
 			break;
 		}
-		// XXX: some parse fail errors are false positives :(
+		// XXX: some parse fail errors are false positives : (
 	}
 	if (egg->context > 0) {
 		R_LOG_ERROR ("expected '}' at the end of the file. %d left", egg->context);
@@ -419,7 +418,7 @@ R_API RBuffer *r_egg_get_bin(REgg *egg) {
 	return egg->bin;
 }
 
-//R_API int r_egg_dump (REgg *egg, const char *file) { }
+// R_API int r_egg_dump (REgg *egg, const char *file) { }
 
 R_API char *r_egg_get_source(REgg *egg) {
 	return r_buf_tostring (egg->src);
@@ -430,7 +429,7 @@ R_API char *r_egg_get_assembly(REgg *egg) {
 }
 
 R_API void r_egg_append(REgg *egg, const char *src) {
-	r_buf_append_bytes (egg->src, (const ut8*)src, strlen (src));
+	r_buf_append_bytes (egg->src, (const ut8 *)src, strlen (src));
 }
 
 /* JIT : TODO: accept arguments here */
@@ -461,8 +460,8 @@ static inline char *eon(char *n) {
 }
 
 /* padding looks like:
-  ([snatSNAT][0-9]+)*
-*/
+([snatSNAT][0-9]+)*
+ */
 R_API bool r_egg_padding(REgg *egg, const char *pad) {
 	int number;
 	ut8 *buf, padding_byte;
@@ -477,11 +476,13 @@ R_API bool r_egg_padding(REgg *egg, const char *pad) {
 			free (o);
 			return false;
 		}
-		p = eon(p);
+		p = eon (p);
 
 		switch (f) {
-		case 's': case 'S': padding_byte = 0; break;
-		case 'n': case 'N': padding_byte = 0x90; break;
+		case 's':
+		case 'S': padding_byte = 0; break;
+		case 'n':
+		case 'N': padding_byte = 0x90; break;
 		case 'a':
 		case 'A': padding_byte = 'A'; break;
 		case 't':
@@ -505,9 +506,9 @@ R_API bool r_egg_padding(REgg *egg, const char *pad) {
 
 		memset (buf, padding_byte, number);
 		if (f >= 'a' && f <= 'z') {
-			r_egg_prepend_bytes(egg, buf, number);
+			r_egg_prepend_bytes (egg, buf, number);
 		} else {
-			r_egg_append_bytes(egg, buf, number);
+			r_egg_append_bytes (egg, buf, number);
 		}
 		free (buf);
 	}
@@ -611,7 +612,7 @@ R_API void r_egg_finalize(REgg *egg) {
 R_API void r_egg_pattern(REgg *egg, int size) {
 	char *ret = r_debruijn_pattern ((int)size, 0, NULL);
 	if (ret) {
-		r_egg_prepend_bytes (egg, (const ut8*)ret, strlen(ret));
+		r_egg_prepend_bytes (egg, (const ut8 *)ret, strlen (ret));
 		free (ret);
 	} else {
 		R_LOG_ERROR ("Invalid debruijn pattern length");

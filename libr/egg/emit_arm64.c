@@ -37,15 +37,16 @@ static char *emit_syscall(REgg *egg, int num) {
 		svc = 0;
 		break;
 	}
-	return r_str_newf (": mov "R_AX ", `.arg`\n: svc 0x%x\n", svc);
+	return r_str_newf (": mov " R_AX ", `.arg`\n: svc 0x%x\n", svc);
 }
 
 static void emit_frame(REgg *egg, int sz) {
 	// r_egg_printf (egg, "  push {fp,lr}\n");
 	if (sz > 0) {
 		r_egg_printf (egg,
-			"  add x29, sp, $4\n"      // size of arguments
-			"  sub sp, sp, %d\n", sz); // size of stackframe 8, 16, ..
+			"  add x29, sp, $4\n" // size of arguments
+			"  sub sp, sp, %d\n",
+			sz); // size of stackframe 8, 16, ..
 	}
 }
 
@@ -158,11 +159,11 @@ static void emit_arg(REgg *egg, int xs, int num, const char *str) {
 		break;
 	case '&':
 		if (d) {
-			r_egg_printf (egg, "  add "R_BP ", %d\n", d);
+			r_egg_printf (egg, "  add " R_BP ", %d\n", d);
 		}
 		// r_egg_printf (egg, "  push { "R_BP " }\n");
 		if (d) {
-			r_egg_printf (egg, "  sub "R_BP ", %d\n", d);
+			r_egg_printf (egg, "  sub " R_BP ", %d\n", d);
 		}
 		break;
 	}
@@ -178,22 +179,25 @@ static void emit_restore_stack(REgg *egg, int size) {
 }
 
 static void emit_get_while_end(REgg *egg, char *str, const char *ctxpush, const char *label) {
-	// XXX sprintf (str, "  push {%s}\n  b %s\n", ctxpush, label);
+	// XXXsnprintf (str, 32, "  push {%s}\n  b %s\n", ctxpush, label);
 	// not implemented
 }
 
 static void emit_while_end(REgg *egg, const char *labelback) {
 	r_egg_printf (egg,
-		"  pop "R_AX "\n"
-		"  cmp "R_AX ", "R_AX "\n"	// XXX MUST SUPPORT != 0 COMPARE HERE
-		"  beq %s\n", labelback);
+		"  pop " R_AX "\n"
+		"  cmp " R_AX ", " R_AX "\n" // XXX MUST SUPPORT != 0 COMPARE HERE
+		"  beq %s\n",
+		labelback);
 }
 
 static void emit_get_var(REgg *egg, int type, char *out, int idx) {
 	switch (type) {
-	case 0: sprintf (out, "sp, %d", idx - 1); break;/* variable */
-	case 1: sprintf (out, "r%d", idx); break;	/* registers */
-// sp,$%d", idx); break; /* argument */ // XXX: MUST BE r0, r1, r2, ..
+	case 0: snprintf (out, 32, "sp, %d", idx - 1); break; /* variable */
+	case 1:
+		snprintf (out, 32, "r%d", idx);
+		break; /* registers */
+		// sp,$%d", idx); break; /* argument */ // XXX: MUST BE r0, r1, r2, ..
 	}
 }
 
@@ -230,11 +234,11 @@ static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, c
 	}
 
 	if (*arg == '=') {
-		arg++;		/* for <=, >=, ... */
+		arg++; /* for <=, >=, ... */
 	}
 	p = r_egg_mkvar (egg, str, arg, 0);
 	// r_egg_printf (egg, "  pop "R_AX "\n");	/* TODO: add support for more than one arg get arg0 */
-	r_egg_printf (egg, "  cmp %s, "R_AX "\n", p);
+	r_egg_printf (egg, "  cmp %s, " R_AX "\n", p);
 	// if (context>0)
 	r_egg_printf (egg, "  %s %s\n", op, dst);
 	free (p);
@@ -243,17 +247,17 @@ static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, c
 static void emit_load(REgg *egg, const char *dst, int sz) {
 	switch (sz) {
 	case 'l':
-		r_egg_printf (egg, "  mov "R_AX ", %s\n", dst);
-		r_egg_printf (egg, "  mov "R_AX ", ["R_AX "]\n");
+		r_egg_printf (egg, "  mov " R_AX ", %s\n", dst);
+		r_egg_printf (egg, "  mov " R_AX ", [" R_AX "]\n");
 		break;
 	case 'b':
-		r_egg_printf (egg, "  mov "R_AX ", %s\n", dst);
-		r_egg_printf (egg, "  movz "R_AX ", ["R_AX "]\n");
+		r_egg_printf (egg, "  mov " R_AX ", %s\n", dst);
+		r_egg_printf (egg, "  movz " R_AX ", [" R_AX "]\n");
 		break;
 	default:
-		// TODO: unhandled?!?
-		r_egg_printf (egg, "  mov "R_AX ", %s\n", dst);
-		r_egg_printf (egg, "  mov "R_AX ", ["R_AX "]\n");
+		// TODO: unhandled? !?
+		r_egg_printf (egg, "  mov " R_AX ", %s\n", dst);
+		r_egg_printf (egg, "  mov " R_AX ", [" R_AX "]\n");
 	}
 }
 
@@ -267,7 +271,7 @@ static void emit_mathop(REgg *egg, int ch, int vs, int type, const char *eq, con
 	case '+': op = "add"; break;
 	case '*': op = "mul"; break;
 	case '/': op = "div"; break;
-	default:  op = "mov"; break;
+	default: op = "mov"; break;
 	}
 	if (!eq) {
 		eq = R_AX;

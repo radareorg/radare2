@@ -72,7 +72,7 @@ static void emit_set_string(REgg *egg, const char *dstvar, const char *str, int 
 
 static void emit_jmp(REgg *egg, const char *str, int atr) {
 	if (atr) {
-		r_egg_printf (egg, "%s,[%d],PC,:=", str, (egg->bits==64)?8:4);
+		r_egg_printf (egg, "%s,[%d],PC,:=", str, (egg->bits == 64)? 8: 4);
 	} else {
 		r_egg_printf (egg, "%s,PC,:=", str);
 	}
@@ -135,7 +135,7 @@ static void emit_arg(REgg *egg, int xs, int num, const char *str) {
 }
 
 static void emit_get_result(REgg *egg, const char *ocn) {
-//	r_egg_printf (egg, "  mov %s, r0\n", ocn);
+	//	r_egg_printf (egg, "  mov %s, r0\n", ocn);
 }
 
 static void emit_restore_stack(REgg *egg, int size) {
@@ -144,7 +144,7 @@ static void emit_restore_stack(REgg *egg, int size) {
 }
 
 static void emit_get_while_end(REgg *egg, char *str, const char *ctxpush, const char *label) {
-//	sprintf (str, "  push {%s}\n  b %s\n", ctxpush, label);
+	// snprintf (str, 32, "  push {%s}\n  b %s\n", ctxpush, label);
 }
 
 static void emit_while_end(REgg *egg, const char *labelback) {
@@ -159,8 +159,8 @@ static void emit_while_end(REgg *egg, const char *labelback) {
 static void emit_get_var(REgg *egg, int type, char *out, int idx) {
 #if 0
 	switch (type) {
-	case 0: sprintf (out, "sp, %d", idx - 1); break;/* variable */
-	case 1: sprintf (out, "r%d", idx); break;	/* registers */
+	case 0:snprintf (out, 32, "sp, %d", idx - 1); break;/* variable */
+	case 1:snprintf (out, 32, "r%d", idx); break;	/* registers */
 // sp,$%d", idx); break; /* argument */ // XXX: MUST BE r0, r1, r2, ..
 	}
 #endif
@@ -239,12 +239,12 @@ static void emit_mathop(REgg *egg, int ch, int vs, int type, const char *eq, con
 	case '+': op = "+"; break;
 	case '*': op = "*"; break;
 	case '/': op = "/"; break;
-	default:  op = ":="; break;
+	default: op = ":="; break;
 	}
 	if (!eq) {
 		eq = R_AX;
 	}
-		eq = R_AX;
+	eq = R_AX;
 	if (!p) {
 		p = R_AX;
 	}

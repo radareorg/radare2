@@ -19,33 +19,33 @@ struct cEnv_t {
 static char *r_egg_cfile_getCompiler(const char *arch, int bits) {
 	const char *compilers[] = { "llvm-gcc", "gcc", "clang", NULL };
 	const char *compiler = compilers[0];
-  	char *compiler_path;
-  	char *env_cc = r_sys_getenv ("CC");
+	char *compiler_path;
+	char *env_cc = r_sys_getenv ("CC");
 	int i;
 
 	if (env_cc) {
 		return env_cc;
 	}
 
-  	// Override gcc compilers for arm64 and arm32
-  	// TODO: I don't seem to be able to make clang work with -target
-  	if (!strcmp (arch, "arm") && bits == 64) {
+	// Override gcc compilers for arm64 and arm32
+	// TODO: I don't seem to be able to make clang work with -target
+	if (!strcmp (arch, "arm") && bits == 64) {
 		compiler = "aarch64-linux-gnu-gcc";
 		compiler_path = r_file_path (compiler);
 		if (compiler_path) {
 			free (compiler_path);
 			return strdup (compiler);
 		}
-  	}
+	}
 
-  	if (!strcmp (arch, "arm") && bits == 32) {
+	if (!strcmp (arch, "arm") && bits == 32) {
 		compiler = "arm-linux-gnueabihf-gcc";
 		compiler_path = r_file_path (compiler);
 		if (compiler_path) {
 			free (compiler_path);
 			return strdup (compiler);
 		}
-  	}
+	}
 
 	for (i = 0; (compiler = compilers[i]); i++) {
 		compiler_path = r_file_path (compiler);
@@ -61,9 +61,7 @@ static char *r_egg_cfile_getCompiler(const char *arch, int bits) {
 }
 
 static inline bool r_egg_cfile_armOrMips(const char *arch) {
-	return (!strcmp (arch, "arm") || !strcmp (arch, "arm64") || !strcmp (arch, "aarch64")
-	  	|| !strcmp (arch, "thumb") || !strcmp (arch, "arm32") || !strcmp (arch, "mips")
-		|| !strcmp (arch, "mips32") || !strcmp (arch, "mips64"));
+	return (!strcmp (arch, "arm") || !strcmp (arch, "arm64") || !strcmp (arch, "aarch64") || !strcmp (arch, "thumb") || !strcmp (arch, "arm32") || !strcmp (arch, "mips") || !strcmp (arch, "mips32") || !strcmp (arch, "mips64"));
 }
 
 static void r_egg_cfile_free_cEnv(struct cEnv_t *cEnv) {
@@ -79,16 +77,14 @@ static void r_egg_cfile_free_cEnv(struct cEnv_t *cEnv) {
 }
 
 static inline bool r_egg_cfile_check_cEnv(struct cEnv_t *cEnv) {
-	return (!cEnv->SFLIBPATH || !cEnv->CC || !cEnv->CFLAGS || !cEnv->LDFLAGS
-		|| !cEnv->SHDR || !cEnv->TRIPLET);
+	return (!cEnv->SFLIBPATH || !cEnv->CC || !cEnv->CFLAGS || !cEnv->LDFLAGS || !cEnv->SHDR || !cEnv->TRIPLET);
 }
 
 static inline bool isXNU(const char *os) {
-	return (!strcmp (os, "darwin") || !strcmp (os, "macos")
-		|| !strcmp (os, "tvos") || !strcmp (os, "watchos") || !strcmp (os, "ios"));
+	return (!strcmp (os, "darwin") || !strcmp (os, "macos") || !strcmp (os, "tvos") || !strcmp (os, "watchos") || !strcmp (os, "ios"));
 }
 
-static struct cEnv_t* r_egg_cfile_set_cEnv(const char *arch, const char *os, int bits) {
+static struct cEnv_t *r_egg_cfile_set_cEnv(const char *arch, const char *os, int bits) {
 	struct cEnv_t *cEnv = calloc (1, sizeof (struct cEnv_t));
 	bool use_clang;
 	char *buffer = NULL;
@@ -98,7 +94,7 @@ static struct cEnv_t* r_egg_cfile_set_cEnv(const char *arch, const char *os, int
 		return NULL;
 	}
 
-	if (!(cEnv->CC = r_egg_cfile_getCompiler(arch, bits))) {
+	if (! (cEnv->CC = r_egg_cfile_getCompiler (arch, bits))) {
 		goto fail;
 	}
 
@@ -111,12 +107,12 @@ static struct cEnv_t* r_egg_cfile_set_cEnv(const char *arch, const char *os, int
 		}
 
 		output[strlen (output) - 1] = '\0'; // strip the ending '\n'
-		if (!(cEnv->SFLIBPATH = r_str_newf ("%s/sflib", output))) {
+		if (! (cEnv->SFLIBPATH = r_str_newf ("%s/sflib", output))) {
 			goto fail;
 		}
 	}
 
-	cEnv->JMP = r_egg_cfile_armOrMips (arch) ? "b" : "jmp";
+	cEnv->JMP = r_egg_cfile_armOrMips (arch)? "b": "jmp";
 
 	// TODO: Missing -Os .. caused some rip-relative LEA to be MOVQ on PIE in CLANG.. so sad
 	if (isXNU (os)) {
@@ -139,7 +135,8 @@ static struct cEnv_t* r_egg_cfile_set_cEnv(const char *arch, const char *os, int
 		cEnv->OBJCOPY = "objcopy";
 		cEnv->FMT = "elf";
 		cEnv->SHDR = r_str_newf ("\n.section .text\n.globl  main\n"
-				   "// .type   main, @function\n%s main\n", cEnv->JMP);
+					"// .type   main, @function\n%s main\n",
+			cEnv->JMP);
 		if (!strcmp (arch, "x86")) {
 			if (bits == 32) {
 				cEnv->CFLAGS = strdup ("-fPIC -fPIE -pie -fpic -m32");
@@ -180,7 +177,7 @@ static struct cEnv_t* r_egg_cfile_set_cEnv(const char *arch, const char *os, int
 	}
 
 	buffer = r_str_newf ("%s -fno-stack-protector -nostdinc -include '%s'/'%s'/sflib.h",
-	  		cEnv->CFLAGS, cEnv->SFLIBPATH, cEnv->TRIPLET);
+		cEnv->CFLAGS, cEnv->SFLIBPATH, cEnv->TRIPLET);
 	if (!buffer) {
 		goto fail;
 	}
@@ -190,7 +187,8 @@ static struct cEnv_t* r_egg_cfile_set_cEnv(const char *arch, const char *os, int
 	if (use_clang) {
 		free (buffer);
 		buffer = r_str_newf ("%s -fomit-frame-pointer"
-		  		" -fno-zero-initialized-in-bss", cEnv->CFLAGS);
+				" -fno-zero-initialized-in-bss",
+			cEnv->CFLAGS);
 		if (!buffer) {
 			goto fail;
 		}
@@ -199,7 +197,8 @@ static struct cEnv_t* r_egg_cfile_set_cEnv(const char *arch, const char *os, int
 	} else {
 		free (buffer);
 		buffer = r_str_newf ("%s -z execstack -fomit-frame-pointer"
-				" -finline-functions -fno-zero-initialized-in-bss", cEnv->CFLAGS);
+				" -finline-functions -fno-zero-initialized-in-bss",
+			cEnv->CFLAGS);
 		if (!buffer) {
 			goto fail;
 		}
@@ -253,7 +252,7 @@ static bool r_egg_cfile_parseCompiled(const char *file) {
 
 	free (fileExt);
 	fileExt = r_str_newf ("%s.s", file);
-	if (!r_file_dump (fileExt, (const ut8*) buffer, strlen (buffer), true)) {
+	if (!r_file_dump (fileExt, (const ut8 *)buffer, strlen (buffer), true)) {
 		R_LOG_ERROR ("while opening %s.s", file);
 		goto fail;
 	}
@@ -268,7 +267,7 @@ fail:
 	return false;
 }
 
-R_API char* r_egg_cfile_parser(const char *file, const char *arch, const char *os, int bits) {
+R_API char *r_egg_cfile_parser(const char *file, const char *arch, const char *os, int bits) {
 	char *output = NULL;
 	char *fileExt = NULL; // "file" with extension (.s, .text, ...)
 	struct cEnv_t *cEnv = r_egg_cfile_set_cEnv (arch, os, bits);
@@ -287,11 +286,11 @@ R_API char* r_egg_cfile_parser(const char *file, const char *arch, const char *o
 	if (rc != 0) {
 		goto fail;
 	}
-	if (!(fileExt = r_str_newf ("%s.s", file))) {
+	if (! (fileExt = r_str_newf ("%s.s", file))) {
 		goto fail;
 	}
 
-	if (!r_file_dump (fileExt, (const ut8*) cEnv->SHDR, strlen (cEnv->SHDR), false)) {
+	if (!r_file_dump (fileExt, (const ut8 *)cEnv->SHDR, strlen (cEnv->SHDR), false)) {
 		R_LOG_ERROR ("while opening %s.s", file);
 		goto fail;
 	}
@@ -317,7 +316,7 @@ R_API char* r_egg_cfile_parser(const char *file, const char *arch, const char *o
 	}
 
 	free (fileExt);
-	if (!(fileExt = r_str_newf ("%s.o", file))) {
+	if (! (fileExt = r_str_newf ("%s.o", file))) {
 		goto fail;
 	}
 
@@ -327,7 +326,7 @@ R_API char* r_egg_cfile_parser(const char *file, const char *arch, const char *o
 	}
 
 	free (fileExt);
-	if (!(fileExt = r_str_newf ("%s.text", file))) {
+	if (! (fileExt = r_str_newf ("%s.text", file))) {
 		goto fail;
 	}
 	if (r_file_size (fileExt) == 0) {
@@ -335,10 +334,10 @@ R_API char* r_egg_cfile_parser(const char *file, const char *arch, const char *o
 		free (output);
 		if (isXNU (os)) {
 			output = r_sys_cmd_strf ("'%s' -j 0.__TEXT.__text -O binary '%s.o' '%s.text'",
-					cEnv->OBJCOPY, file, file);
+				cEnv->OBJCOPY, file, file);
 		} else {
 			output = r_sys_cmd_strf ("'%s' -j .text -O binary '%s.o' '%s.text'",
-					cEnv->OBJCOPY, file, file);
+				cEnv->OBJCOPY, file, file);
 		}
 		if (!output) {
 			R_LOG_ERROR ("objcopy failed!");
@@ -350,7 +349,7 @@ R_API char* r_egg_cfile_parser(const char *file, const char *arch, const char *o
 	const char *extArray[] = { "bin", "tmp", "s", "o" };
 	for (i = 0; i < 4; i++) {
 		free (fileExt);
-		if (!(fileExt = r_str_newf ("%s.%s", file, extArray[i]))) {
+		if (! (fileExt = r_str_newf ("%s.%s", file, extArray[i]))) {
 			goto fail;
 		}
 		r_file_rm (fileExt);

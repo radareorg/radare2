@@ -97,8 +97,8 @@ static void emit_while_end(REgg *egg, const char *labelback) {
 
 static void emit_get_var(REgg *egg, int type, char *out, int idx) {
 	switch (type) {
-	case 0: sprintf (out, "fp,$%d", -idx); break; /* variable */
-	case 1: sprintf (out, "sp,$%d", idx); break; /* argument */ // XXX: MUST BE r0, r1, r2, ..
+	case 0: snprintf (out, 32, "fp,$%d", -idx); break; /* variable */
+	case 1: snprintf (out, 32, "sp,$%d", idx); break; /* argument */ // XXX: MUST BE r0, r1, r2, ..
 	}
 }
 
@@ -159,7 +159,7 @@ static void emit_mathop(REgg *egg, int ch, int vs, int type, const char *eq, con
 	case '+': op = "add"; break;
 	case '*': op = "mul"; break;
 	case '/': op = "div"; break;
-	default:  op = "mov"; break;
+	default: op = "mov"; break;
 	}
 	if (!eq) {
 		eq = R_AX;
@@ -180,8 +180,8 @@ static void emit_mathop(REgg *egg, int ch, int vs, int type, const char *eq, con
 	}
 }
 
-static const char* emit_regs(REgg *egg, int idx) {
-	return regs[idx%R_NGP];
+static const char *emit_regs(REgg *egg, int idx) {
+	return regs[idx % R_NGP];
 }
 
 REggEmit EMIT_NAME = {
