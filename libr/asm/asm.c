@@ -970,12 +970,13 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 		}
 		free (args);
 	} else if (r_str_startswith (ptr, ".float ")) {
+		acode->cfloat_profile.big_endian = a->config->big_endian;
 		ret = r_asm_pseudo_float (a, op, ptr + 7, &acode->cfloat_profile);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if (r_str_startswith (ptr, ".double ")) {
-		RCFloatProfile profile = { 1, 11, 52, 1023, false, false };
+		RCFloatProfile profile = { 1, 11, 52, 1023, a->config->big_endian, false };
 		ret = r_asm_pseudo_float (a, op, ptr + 8, &profile);
 		if (ret < 0) {
 			return ret;
