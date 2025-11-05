@@ -36,7 +36,7 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
     if (cj->dir == R_CRYPTO_DIR_DECRYPT) {
         for (int i = 0; i < len; i++) {
             const char *s = decode_byte (buf[i]);
-            if (!s) { char tmp[5]; snprintf (tmp, sizeof(tmp), "."); r_strbuf_append (sb, tmp); }
+            if (!s) { r_strbuf_append (sb, "?"); }
             else r_strbuf_append (sb, s);
         }
         const char *out = r_strbuf_get (sb);
@@ -55,7 +55,7 @@ static bool end(RMutaSession *cj, const ut8 *b, int l) { return update (cj, b, l
 static bool check(const char *algo) { return !strcmp (algo, "ebcdic37"); }
 
 RMutaPlugin r_muta_plugin_charset_ebcdic37 = {
-    .meta = { .name = "charset_ebcdic37", .license = "MIT", .desc = "EBCDIC CP37 charset" },
+    .meta = { .name = "ebcdic37", .license = "MIT", .desc = "EBCDIC CP37 charset" },
     .type = R_MUTA_TYPE_CHARSET,
     .check = check,
     .update = update,

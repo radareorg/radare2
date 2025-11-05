@@ -49,7 +49,7 @@ static bool update(RMutaSession*cj,const ut8*b,int l){
 }
 static bool end(RMutaSession*cj,const ut8*b,int l){return update(cj,b,l);} 
 RMutaPlugin r_muta_plugin_charset_katakana={
-    .meta={.name="charset_katakana",.license="MIT",.desc="Katakana mapping (legacy-compatible)"},
+    .meta={.name="katakana",.license="MIT",.desc="Katakana mapping (legacy-compatible)"},
     .type=R_MUTA_TYPE_CHARSET,.check=check,.update=update,.end=end};
 #ifndef R2_PLUGIN_INCORE
 RLibStruct radare_plugin={.type=R_LIB_TYPE_MUTA,.data=&r_muta_plugin_charset_katakana};

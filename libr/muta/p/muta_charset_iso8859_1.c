@@ -32,7 +32,7 @@ static bool end(RMutaSession*cj,const ut8*b,int l){return update(cj,b,l);}
 static bool check(const char*algo){return !strcmp(algo,"iso8859_1");}
 
 RMutaPlugin r_muta_plugin_charset_iso8859_1={
-    .meta={.name="charset_iso8859_1",.license="MIT",.desc="ISO-8859-1 charset"},
+    .meta={.name="iso8859_1",.license="MIT",.desc="ISO-8859-1 charset"},
     .type=R_MUTA_TYPE_CHARSET,
     .check=check,
     .update=update,

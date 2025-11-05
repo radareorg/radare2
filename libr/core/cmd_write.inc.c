@@ -2658,7 +2658,7 @@ static int cmd_write(void *data, const char *input) {
                 ut8 *out = NULL;
                 new_len = core->print->charset_encode (core->print->charset_ctx, (const ut8*)str + 1, (int)in_len, &out);
                 if (new_len > 0 && out) {
-                    cmd_w (core, (const char *)out);
+                    r_core_write_at (core, addr, out, new_len);
                     free (out);
                 }
                 addr += new_len;

@@ -50,7 +50,7 @@ static bool end(RMutaSession*cj,const ut8*b,int l){return update(cj,b,l);}
 static bool check(const char *algo){return !strcmp(algo,"iso_646");}
 
 RMutaPlugin r_muta_plugin_charset_iso_646={
-    .meta={.name="charset_iso_646",.license="MIT",.desc="ISO 646 (IRV)"},
+    .meta={.name="iso_646",.license="MIT",.desc="ISO 646 (IRV)"},
     .type=R_MUTA_TYPE_CHARSET,
     .check=check,
     .update=update,

@@ -27,7 +27,7 @@ static bool update(RMutaSession*cj,const ut8*buf,int len){ if(!cj||!buf||len<0) 
   r_strbuf_free(sb); return true; }
 static bool end(RMutaSession*cj,const ut8*b,int l){return update(cj,b,l);} 
 static bool check(const char *algo){return !strcmp(algo,"greek_windows");}
-RMutaPlugin r_muta_plugin_charset_greek_windows={ .meta={.name="charset_greek_windows",.license="MIT",.desc="Windows-1253 (partial)"}, .type=R_MUTA_TYPE_CHARSET,.check=check,.update=update,.end=end};
+RMutaPlugin r_muta_plugin_charset_greek_windows={ .meta={.name="greek_windows",.license="MIT",.desc="Windows-1253 (partial)"}, .type=R_MUTA_TYPE_CHARSET,.check=check,.update=update,.end=end};
 #ifndef R2_PLUGIN_INCORE
 RLibStruct radare_plugin={.type=R_LIB_TYPE_MUTA,.data=&r_muta_plugin_charset_greek_windows};
 #endif

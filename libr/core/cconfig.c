@@ -1056,7 +1056,7 @@ static void update_cfgcharsets_options(RCore *core, RConfigNode *node) {
     if (!core->muta) {
         core->muta = r_muta_new ();
     }
-    char *lst = r_muta_list (core->muta, R_MUTA_TYPE_CHARSET, 0);
+    char *lst = r_muta_list (core->muta, R_MUTA_TYPE_CHARSET, 'q');
     if (!lst) {
         return;
     }
@@ -1401,7 +1401,7 @@ static bool cb_cfgcharset(void *user, void *data) {
     }
     bool rc = false;
     if (*cf == '?') {
-        char *lst = r_muta_list (core->muta, R_MUTA_TYPE_CHARSET, 0);
+        char *lst = r_muta_list (core->muta, R_MUTA_TYPE_CHARSET, 'q');
         if (lst) {
             r_cons_println (core->cons, lst);
             free (lst);
