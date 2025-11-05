@@ -4,22 +4,22 @@
 
 #include <r_core.h>
 
-#define MMC_COLOR_BG_FG        "\x1b[34m"
-#define MMC_COLOR_BG_BLUE      "\x1b[44m"
-#define MMC_COLOR_BG_CYAN      "\x1b[46m"
-#define MMC_COLOR_FG           "\x1b[37m"
-#define MMC_COLOR_FG_BLACK     "\x1b[30m"
-#define MMC_COLOR_FG_YELLOW    "\x1b[33m"
-#define MMC_COLOR_FG_RED       "\x1b[31m"
-#define MMC_COLOR_SELECT_FG    "\x1b[36m"
-#define MMC_COLOR_SELECT       "\x1b[46;30m"
-#define MMC_COLOR_DIR          "\x1b[1;37m"
-#define MMC_COLOR_FILE         "\x1b[37m"
-#define MMC_COLOR_FRAME        "\x1b[36m"
-#define MMC_COLOR_TITLE        "\x1b[1;33m"
-#define MMC_COLOR_HOTKEY       "\x1b[1;33m"
-#define MMC_COLOR_BOLD_CYAN    "\x1b[1;36m"
-#define MMC_COLOR_RESET        "\x1b[0m"
+#define MMC_COLOR_BG_FG "\x1b[34m"
+#define MMC_COLOR_BG_BLUE "\x1b[44m"
+#define MMC_COLOR_BG_CYAN "\x1b[46m"
+#define MMC_COLOR_FG "\x1b[37m"
+#define MMC_COLOR_FG_BLACK "\x1b[30m"
+#define MMC_COLOR_FG_YELLOW "\x1b[33m"
+#define MMC_COLOR_FG_RED "\x1b[31m"
+#define MMC_COLOR_SELECT_FG "\x1b[36m"
+#define MMC_COLOR_SELECT "\x1b[46;30m"
+#define MMC_COLOR_DIR "\x1b[1;37m"
+#define MMC_COLOR_FILE "\x1b[37m"
+#define MMC_COLOR_FRAME "\x1b[36m"
+#define MMC_COLOR_TITLE "\x1b[1;33m"
+#define MMC_COLOR_HOTKEY "\x1b[1;33m"
+#define MMC_COLOR_BOLD_CYAN "\x1b[1;36m"
+#define MMC_COLOR_RESET "\x1b[0m"
 
 typedef struct {
 	const char *bg;
@@ -237,7 +237,7 @@ static void mmc_panel_load_local(RCore *core, MMCPanel *panel, MMCOrderMode orde
 			}
 			panel->entries[idx] = strdup (name);
 			fullpath = r_str_newf ("%s/%s", panel->path, name);
-			panel->types[idx] = r_file_is_directory (fullpath) ? 'd' : 'f';
+			panel->types[idx] = r_file_is_directory (fullpath)? 'd': 'f';
 			free (fullpath);
 			idx++;
 		}
@@ -368,7 +368,7 @@ static void mmc_panel_draw(RCore *core, RConsCanvas *canvas, MMCPanel *panel, MM
 		name = panel->entries[i];
 		type_char = panel->types[i];
 
-		text_color = (type_char == 'd' || type_char == 'm') ? state->colors.dir : state->colors.fg;
+		text_color = (type_char == 'd' || type_char == 'm')? state->colors.dir: state->colors.fg;
 
 		if (is_selected) {
 			r_cons_canvas_bgfill (canvas, x + 1, line_y, w - 2, 1, state->colors.sel_fg);
@@ -449,7 +449,7 @@ static void mmc_panel_navigate_enter(RCore *core, MMCPanel *panel, MMCOrderMode 
 
 static void mmc_move_file(RCore *core, MMCState *state) {
 	MMCPanel *src = state->active;
-	MMCPanel *dst = (state->active == &state->left) ? &state->right : &state->left;
+	MMCPanel *dst = (state->active == &state->left)? &state->right: &state->left;
 	char *src_path, *dst_path, *selected_name, *prompt, *answer, *msg;
 
 	if (src->count == 0 || src->selected >= src->count) {
@@ -634,22 +634,22 @@ static void mmc_view_file(RCore *core, MMCState *state) {
 		r_cons_canvas_bgfill (canvas, pane_x, pane_y, pane_w, pane_h, state->colors.bg_pane);
 		r_cons_canvas_box (canvas, pane_x, pane_y, pane_w, pane_h, core->cons->context->pal.graph_box);
 
-		mode_str = hex_mode ? "Hex View" : "Text View";
+		mode_str = hex_mode? "Hex View": "Text View";
 		title = r_str_newf (" %s - %s ", selected_name, mode_str);
 		r_cons_canvas_write_at (canvas, title, pane_x + 1, pane_y);
 		free (title);
 
 		info1 = r_str_newf ("%s%s File: %s (%s) ", state->colors.bg, state->colors.fg, selected_name, fullpath);
 
-		end_addr = start_addr + (size > 0 ? size - 1 : 0);
+		end_addr = start_addr + (size > 0? size - 1: 0);
 		if (has_timestamp) {
 			memset (time_str, 0, sizeof (time_str));
 			tm_info = localtime (&file_time);
 			strftime (time_str, sizeof (time_str), "%Y-%m-%d %H:%M:%S", tm_info);
-			info2 = r_str_newf ("%s%s Size: %zu bytes | Start: 0x%08"PFMT64x" | End: 0x%08"PFMT64x" | Date: %s ", state->colors.bg, state->colors.fg,
+			info2 = r_str_newf ("%s%s Size: %zu bytes | Start: 0x%08" PFMT64x " | End: 0x%08" PFMT64x " | Date: %s ", state->colors.bg, state->colors.fg,
 				size, start_addr, end_addr, time_str);
 		} else {
-			info2 = r_str_newf ("%s%s Size: %zu bytes | Start: 0x%08"PFMT64x" | End: 0x%08"PFMT64x" ", state->colors.bg, state->colors.fg,
+			info2 = r_str_newf ("%s%s Size: %zu bytes | Start: 0x%08" PFMT64x " | End: 0x%08" PFMT64x " ", state->colors.bg, state->colors.fg,
 				size, start_addr, end_addr);
 		}
 
@@ -666,7 +666,7 @@ static void mmc_view_file(RCore *core, MMCState *state) {
 			for (i = 0; i < max_lines && (offset + i * bytes_per_line) < (int)size; i++) {
 				line_offset = offset + i * bytes_per_line;
 				remaining = size - line_offset;
-				line_bytes = (remaining < bytes_per_line) ? remaining : bytes_per_line;
+				line_bytes = (remaining < bytes_per_line)? remaining: bytes_per_line;
 
 				memset (hex, 0, sizeof (hex));
 				memset (ascii, 0, sizeof (ascii));
@@ -675,8 +675,8 @@ static void mmc_view_file(RCore *core, MMCState *state) {
 
 				for (j = 0; j < line_bytes; j++) {
 					byte = data[line_offset + j];
-					hex_ptr += sprintf (hex_ptr, "%02x ", byte);
-					ascii_ptr += sprintf (ascii_ptr, "%c", IS_PRINTABLE (byte) ? byte : '.');
+					hex_ptr += snprintf (hex_ptr, sizeof (hex) - (hex_ptr - hex), "%02x ", byte);
+					ascii_ptr += snprintf (ascii_ptr, sizeof (ascii) - (ascii_ptr - ascii), "%c", IS_PRINTABLE (byte)? byte: '.');
 				}
 
 				pline = r_str_newf ("%s%s%08x%s: %s%-48s %s%s", state->colors.bg, state->colors.title,
@@ -973,7 +973,7 @@ static int mmc_preview_prev_line_offset(ut8 *data, size_t size, int current_offs
 		}
 	}
 
-	return offset == 0 ? 0 : offset + 1;
+	return offset == 0? 0: offset + 1;
 }
 
 static void mmc_preview_scroll_text(RCore *core, MMCState *state, bool down, int panel_w) {
@@ -1100,7 +1100,7 @@ static void mmc_draw_file_preview(RCore *core, RConsCanvas *canvas, MMCState *st
 	}
 
 	r_cons_canvas_box (canvas, x, y, w, h, core->cons->context->pal.graph_box);
-	mode_str = state->preview_hex_mode ? "Hex" : "Text";
+	mode_str = state->preview_hex_mode? "Hex": "Text";
 	if (is_active) {
 		title = r_str_newf ("%s%s Preview: %s [%s] (arrows:scroll t:text x:hex) %s",
 			state->colors.sel_bg, state->colors.fg_black, selected_name, mode_str, state->colors.reset);
@@ -1125,23 +1125,23 @@ static void mmc_draw_file_preview(RCore *core, RConsCanvas *canvas, MMCState *st
 		for (line = 0; line < max_lines && state->preview_offset + line * bytes_per_line < (int)size; line++) {
 			line_offset = state->preview_offset + line * bytes_per_line;
 			remaining = (int)size - line_offset;
-			line_bytes = (remaining < bytes_per_line) ? remaining : bytes_per_line;
+			line_bytes = (remaining < bytes_per_line)? remaining: bytes_per_line;
 
 			hex_ptr = hex;
 			ascii_ptr = ascii;
 
 			for (i = 0; i < line_bytes; i++) {
 				byte = data[line_offset + i];
-				hex_ptr += sprintf (hex_ptr, "%02x ", byte);
-				*ascii_ptr++ = (byte >= 32 && byte <= 126) ? byte : '.';
+				hex_ptr += snprintf (hex_ptr, sizeof (hex) - (hex_ptr - hex), "%02x ", byte);
+				*ascii_ptr++ = (byte >= 32 && byte <= 126)? byte: '.';
 			}
 			*ascii_ptr = '\0';
 
 			for (i = line_bytes; i < bytes_per_line; i++) {
-				hex_ptr += sprintf (hex_ptr, "   ");
+				hex_ptr += snprintf (hex_ptr, sizeof (hex) - (hex_ptr - hex), "   ");
 			}
 
-			line_str = r_str_newf ("%s%s%08"PFMT64x"%s  %s%s%s %s%s%s",
+			line_str = r_str_newf ("%s%s%08" PFMT64x "%s  %s%s%s %s%s%s",
 				state->colors.bg_pane, state->colors.bold_cyan, addr + line_offset, state->colors.reset,
 				state->colors.bg_pane, state->colors.fg, hex,
 				state->colors.bg_pane, state->colors.fg_yellow, ascii);
@@ -1314,7 +1314,7 @@ static void mmc_show_info(RCore *core, MMCState *state, int width, int height) {
 			r_cons_canvas_write_at (canvas, line, pane_x + 2, y++);
 			free (line);
 
-			line = r_str_newf ("%s%s    Offset: 0x%08"PFMT64x, state->colors.bg, state->colors.fg, file->off);
+			line = r_str_newf ("%s%s    Offset: 0x%08" PFMT64x, state->colors.bg, state->colors.fg, file->off);
 			r_cons_canvas_write_at (canvas, line, pane_x + 2, y++);
 			free (line);
 
@@ -1352,7 +1352,7 @@ static void mmc_show_info(RCore *core, MMCState *state, int width, int height) {
 		r_cons_push (core->cons);
 		r_core_cmd0 (core, "mn");
 		const char *buffer = r_cons_get_buffer (core->cons, NULL);
-		char *mn_output = buffer ? strdup (buffer) : NULL;
+		char *mn_output = buffer? strdup (buffer): NULL;
 		r_cons_pop (core->cons);
 
 		if (mn_output && *mn_output) {
@@ -1377,7 +1377,7 @@ static void mmc_show_info(RCore *core, MMCState *state, int width, int height) {
 			r_cons_canvas_write_at (canvas, line, pane_x + 2, y++);
 			free (line);
 
-			file_type = r_file_is_directory (fullpath) ? "Directory" : "File";
+			file_type = r_file_is_directory (fullpath)? "Directory": "File";
 			line = r_str_newf ("%s%s    Type: %s", state->colors.bg, state->colors.fg, file_type);
 			r_cons_canvas_write_at (canvas, line, pane_x + 2, y++);
 			free (line);
@@ -1386,7 +1386,7 @@ static void mmc_show_info(RCore *core, MMCState *state, int width, int height) {
 			r_cons_canvas_write_at (canvas, line, pane_x + 2, y++);
 			free (line);
 
-			char time_str[64] = {0};
+			char time_str[64] = { 0 };
 			struct tm *tm_info = localtime (&st.st_mtime);
 			strftime (time_str, sizeof (time_str), "%Y-%m-%d %H:%M:%S", tm_info);
 			line = r_str_newf ("%s%s    Modified: %s", state->colors.bg, state->colors.fg, time_str);
@@ -1500,7 +1500,7 @@ static void mmc_make_directory(RCore *core, MMCState *state) {
 
 static void mmc_copy_file_confirmed(RCore *core, MMCState *state) {
 	MMCPanel *src = state->active;
-	MMCPanel *dst = (state->active == &state->left) ? &state->right : &state->left;
+	MMCPanel *dst = (state->active == &state->left)? &state->right: &state->left;
 
 	if (src->count == 0 || src->selected >= src->count) {
 		r_cons_message (core->cons, "No file selected");
@@ -1674,7 +1674,7 @@ static void mmc_show_help(RCore *core, MMCState *state, int width, int height) {
 	};
 
 	int y = pane_y + 2;
-	for (i = 0; i < (int)(sizeof (help_lines) / sizeof (help_lines[0])) && y < pane_h - 1; i++) {
+	for (i = 0; i < (int) (sizeof (help_lines) / sizeof (help_lines[0])) && y < pane_h - 1; i++) {
 		char *line = r_str_newf ("%s%s%s", state->colors.bg, state->colors.fg, help_lines[i]);
 		r_cons_canvas_write_at (canvas, line, pane_x + 2, y++);
 		free (line);
@@ -1795,22 +1795,28 @@ static bool mmc_handle_mouse_click(RCore *core, MMCState *state, int click_x, in
 	case 'I':
 		state->interactive_preview = !state->interactive_preview;
 		return false;
-	case 'v': case 'V':
+	case 'v':
+	case 'V':
 		mmc_view_file (core, state);
 		return true;
-	case 'c': case 'C':
+	case 'c':
+	case 'C':
 		mmc_copy_file_confirmed (core, state);
 		return true;
-	case 'm': case 'M':
+	case 'm':
+	case 'M':
 		mmc_make_directory (core, state);
 		return true;
-	case 'd': case 'D':
+	case 'd':
+	case 'D':
 		mmc_delete_file (core, state);
 		return true;
-	case 's': case 'S':
+	case 's':
+	case 'S':
 		mmc_seek_to_file (core, state);
 		return true;
-	case 'q': case 'Q':
+	case 'q':
+	case 'Q':
 		// dismiss the prompt, don´t quit the mc
 		return true;
 	default:
@@ -1848,8 +1854,7 @@ static int cmd_mmc(void *data, const char *input) {
 			"  r: Refresh both panels\n"
 			"  s: Seek to file address and quit to r2\n"
 			"  o: Change sort order (fs/name/size)\n"
-			"  q: Quit Miknight Commander\n"
-		);
+			"  q: Quit Miknight Commander\n");
 		return 0;
 	}
 
@@ -1881,7 +1886,7 @@ static int cmd_mmc(void *data, const char *input) {
 		}
 	}
 
-	MMCState state = {0};
+	MMCState state = { 0 };
 	state.core = core;
 	state.running = true;
 	state.use_r2_theme = true;
@@ -1890,7 +1895,7 @@ static int cmd_mmc(void *data, const char *input) {
 	state.preview_offset = 0;
 	state.panel_split_ratio = 50;
 	state.ordering_mode = MMC_ORDER_NATURAL;
-	mmc_update_colors(&state);
+	mmc_update_colors (&state);
 
 	state.width = r_cons_get_size (core->cons, &state.height);
 
@@ -2039,10 +2044,10 @@ static int cmd_mmc(void *data, const char *input) {
 			break;
 		case 'R':
 			state.use_r2_theme = !state.use_r2_theme;
-			mmc_update_colors(&state);
+			mmc_update_colors (&state);
 			break;
 		case '\t':
-			state.active = (state.active == &state.left) ? &state.right : &state.left;
+			state.active = (state.active == &state.left)? &state.right: &state.left;
 			break;
 		case '\n':
 		case '\r':
