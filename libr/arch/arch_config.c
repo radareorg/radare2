@@ -90,6 +90,7 @@ R_API RArchConfig *r_arch_config_clone(RArchConfig *c) {
 	ac->invhex = c->invhex;
 	ac->bitshift = c->bitshift;
 	ac->gp = c->gp;
+	ac->cfloat_profile = c->cfloat_profile;
 	r_ref_init (ac, &_ac_free);
 	return ac;
 }
@@ -105,5 +106,6 @@ R_API RArchConfig *r_arch_config_new(void) {
 	ac->syntax = R_ARCH_SYNTAX_INTEL;
 	r_ref_init (ac, &_ac_free);
 	ac->endian = R_SYS_ENDIAN_NONE;
+	ac->cfloat_profile = R_CFLOAT_PROFILE_BINARY64; // default
 	return (RArchConfig *)ac;
 }

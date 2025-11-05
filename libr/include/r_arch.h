@@ -89,6 +89,7 @@ typedef struct r_arch_config_t {
 	int bitshift;
 	char *abi;
 	ut64 gp;
+	RCFloatProfile cfloat_profile;
 	R_REF_TYPE;
 } RArchConfig;
 
