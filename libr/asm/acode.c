@@ -5,12 +5,7 @@
 R_API RAsmCode *r_asm_code_new(void) {
 	RAsmCode *ac = R_NEW0 (RAsmCode);
 	ac->equs = ht_pp_new0 ();
-	ac->cfloat_profile.sign_bits = 1;
-	ac->cfloat_profile.exp_bits = 8;
-	ac->cfloat_profile.mant_bits = 23;
-	ac->cfloat_profile.bias = 127;
-	ac->cfloat_profile.big_endian = false;
-	ac->cfloat_profile.explicit_leading_bit = false;
+	ac->cfloat_profile = R_CFLOAT_PROFILE_BINARY32;
 	return ac;
 }
 
@@ -57,20 +52,6 @@ R_API char *r_asm_code_get_hex(RAsmCode *acode) {
 	}
 	return str;
 }
-
-#if 0
-// R2_600 - r_asm_code_set_hex (a->acode, "90909090"); see libr/core/vasm.c
-R_API bool r_asm_code_set_hex(RAsmCode *acode, const char *hexstr) {
-	ut8 out[1024];
-	int len = r_hex_str2bin (str, out);
-	if (len > 0) {
-		free (a->acode->bytes);
-		a->acode->bytes = r_mem_dup (out, len);
-		a->acode->len = len;
-	}
-	a->codebuf[0] = 0;
-}
-#endif
 
 R_API char *r_asm_code_equ_get(RAsmCode *code, const char *key) {
 	R_RETURN_VAL_IF_FAIL (code && key, NULL);
