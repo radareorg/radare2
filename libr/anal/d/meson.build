@@ -106,7 +106,7 @@ sdb_env.set('SDB_OUTPUT_DIR', meson.current_build_dir())
 windows_type_file = custom_target('windows-type-file',
   input: types_windows_sdbtxt,
   output: 'windows-type-file-created',
-  command: ['cp', '@INPUT@', join_paths(meson.current_source_dir(), 'types-windows.sdb.txt')],
+  command: [py, '-c', 'import shutil, sys; shutil.copy(sys.argv[1], sys.argv[2])', '@INPUT@', join_paths(meson.current_source_dir(), 'types-windows.sdb.txt')],
   build_by_default: true
 )
 
