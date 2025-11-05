@@ -16,7 +16,7 @@ if get_option('use_zip')
   fs_plugins += [ 'zip' ]
 endif
 bp_plugins = [ 'null' ]
-muta_plugins = [ ]
+muta_plugins = [ 'null' ]
 core_plugins = [ 'a2f', 'agD' ]
 egg_plugins = [ 'xor' ]
 debug_plugins = [ 'null', 'io', 'esil', 'rap' ]
