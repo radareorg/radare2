@@ -768,3 +768,109 @@ test
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=rasm2 .db directive
+FILE=-
+CMDS=!rasm2 ".db 33"
+EXPECT=<<EOF
+21
+EOF
+RUN
+
+NAME=rasm2 .word directive
+FILE=-
+CMDS=!rasm2 ".word 0x1234"
+EXPECT=<<EOF
+3412
+EOF
+RUN
+
+NAME=rasm2 .dw directive
+FILE=-
+CMDS=!rasm2 ".dw 0x1234"
+EXPECT=<<EOF
+3412
+EOF
+RUN
+
+NAME=rasm2 .dword directive
+FILE=-
+CMDS=!rasm2 ".dword 0x12345678"
+EXPECT=<<EOF
+78563412
+EOF
+RUN
+
+NAME=rasm2 .dd directive
+FILE=-
+CMDS=!rasm2 ".dd 0x12345678"
+EXPECT=<<EOF
+78563412
+EOF
+RUN
+
+NAME=rasm2 .qword directive
+FILE=-
+CMDS=!rasm2 ".qword 0x123456789abcdef0"
+EXPECT=<<EOF
+f0debc9a78563412
+EOF
+RUN
+
+NAME=rasm2 .dq directive
+FILE=-
+CMDS=!rasm2 ".dq 0x123456789abcdef0"
+EXPECT=<<EOF
+f0debc9a78563412
+EOF
+RUN
+
+NAME=rasm2 .uint8 directive
+FILE=-
+CMDS=!rasm2 ".uint8 255"
+EXPECT=<<EOF
+ff
+EOF
+RUN
+
+NAME=rasm2 .uint16 directive
+FILE=-
+CMDS=!rasm2 ".uint16 0x1234"
+EXPECT=<<EOF
+3412
+EOF
+RUN
+
+NAME=rasm2 .uint32 directive
+FILE=-
+CMDS=!rasm2 ".uint32 0x12345678"
+EXPECT=<<EOF
+78563412
+EOF
+RUN
+
+NAME=rasm2 .uint64 directive
+FILE=-
+CMDS=!rasm2 ".uint64 0x123456789abcdef0"
+EXPECT=<<EOF
+f0debc9a78563412
+EOF
+RUN
+
+NAME=rasm2 .db out of range
+FILE=-
+CMDS=!rasm2 ".db 256"
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: byte value 256 out of range (0-255)
+EOF
+RUN
+
+NAME=rasm2 multiple directives
+FILE=-
+CMDS=!rasm2 ".db 33;.db 44"
+EXPECT=<<EOF
+212c
+EOF
+RUN
