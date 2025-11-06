@@ -1362,11 +1362,14 @@ static RList* patch_relocs(RBinFile *bf) {
 
 		if (sym_addr && sym_addr != UT64_MAX) {
 			ptr->vaddr = sym_addr;
-		} else if (!ptr->vaddr || ptr->vaddr == n_vaddr) {
-			// Only assign .got.r2 address if vaddr wasn't already set by reloc_convert
-			ptr->vaddr = vaddr;
-			ht_uu_insert (relocs_by_sym, reloc->sym, vaddr);
-			vaddr += cdsz;
+		} else {
+			// For sBPF, use the vaddr from reloc_convert (which was set by p2v)
+			// Don't overwrite it with the .got.r2 address
+			if (eo->ehdr.e_machine != EM_SBPF) {
+				ptr->vaddr = vaddr;
+				ht_uu_insert (relocs_by_sym, reloc->sym, vaddr);
+				vaddr += cdsz;
+			}
 		}
 		r_list_append (ret, ptr);
 	}
