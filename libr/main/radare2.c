@@ -805,7 +805,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	set_color_default (r);
 
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "=012AjMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSzuXt");
+	r_getopt_init (&opt, argc, argv, "=012AjMCwxfF:H:hm:e:Enk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSzuXt");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'j':
@@ -853,6 +853,10 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		case 'X':
 			r_config_set_b (r->config, "bin.usextr", false);
 			break;
+		case 'E':
+			r_core_cmd0 (r, "ed!");
+			// leaks
+			return 0;
 		case 'c':
 			r_list_append (mr.cmds, (void *)strdup (opt.arg));
 			break;
@@ -864,6 +868,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			mr.debug = 1;
 #else
 			R_LOG_ERROR ("Sorry. I'm built without debugger support");
+			// leaks
 			return 1;
 #endif
 			break;

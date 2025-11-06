@@ -193,6 +193,7 @@ static RCoreHelpMessage help_msg_dash = {
 	"-b", " 32", "same as e or r2 -e",
 	"-c", " cpu", "same as r2 -e asm.cpu=",
 	"-e", " k=v", "same as r2 -b or e asm.bits",
+	"-E", "", "same as r2 -E or 'ed'",
 	"-h", "", "show this help (same as -?)",
 	"-H", " key", "same as r2 -H",
 	"-k", " kernel", "same as r2 -k or e asm.os",
