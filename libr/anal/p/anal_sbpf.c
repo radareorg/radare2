@@ -74,13 +74,18 @@ static bool sbpf_check_string_pointer(RAnal *anal, ut64 ptr_addr, ut64 data_star
 	// Get size from offset 8
 	ut64 size = r_read_le64 (struct_buf + 8);
 
+	R_LOG_DEBUG ("  Checking potential string pointer: str_ptr=0x%"PFMT64x", size=0x%"PFMT64x, str_ptr, size);
+
 	// Validate size is reasonable (but not too small, and not a typical pointer value)
 	if (size == 0 || size > 0x100) {
+		R_LOG_DEBUG ("  Rejected: size out of range (0 or > 0x100)");
 		return false;
 	}
 
 	// Check if string pointer is in data segment
 	if (str_ptr < data_start || str_ptr >= data_end) {
+		R_LOG_DEBUG ("  Rejected: str_ptr 0x%"PFMT64x" not in data segment [0x%"PFMT64x" - 0x%"PFMT64x")",
+			str_ptr, data_start, data_end);
 		return false;
 	}
 
@@ -88,9 +93,11 @@ static bool sbpf_check_string_pointer(RAnal *anal, ut64 ptr_addr, ut64 data_star
 	char sample[0x100];
 	ut32 sample_size = (size < 0x100) ? size : 0x100;
 	if (!anal->iob.read_at (anal->iob.io, str_ptr, (ut8 *)sample, sample_size)) {
+		R_LOG_DEBUG ("  Rejected: failed to read string at 0x%"PFMT64x, str_ptr);
 		return false;
 	}
 	if (!is_printable_string (sample, sample_size)) {
+		R_LOG_DEBUG ("  Rejected: string at 0x%"PFMT64x" is not printable", str_ptr);
 		return false;
 	}
 	if (out_str_addr) {
@@ -144,25 +151,30 @@ static RList *sbpf_find_string_xrefs(RAnal *anal, ut64 from, ut64 to, ut64 data_
 		// Check if this is a LDDW instruction (0x18 in first byte)
 		else if ((buf[0] & 0xff) == SBPF_INS_LDDW) {
 			// Second instruction should have opcode 0x00
-			if (buf[8] == 0x00) {
-				// Extract the 64-bit immediate value
-				ut32 imm_low = r_read_le32 (buf + 4);
-				ut32 imm_high = r_read_le32 (buf + 12);
-				imm_val = ((ut64)imm_high << 32) | imm_low;
-				found_pattern = true;
-				R_LOG_DEBUG ("Found LDDW at 0x%"PFMT64x" -> 0x%"PFMT64x, addr, imm_val);
+			if (buf[8] != 0x00) {
+				continue;
 			}
-		}
 
-		if (found_pattern) {
+			// Extract the 64-bit immediate value
+			ut32 imm_low = r_read_le32 (buf + 4);
+			ut32 imm_high = r_read_le32 (buf + 12);
+			ut64 imm_val = ((ut64)imm_high << 32) | imm_low;
 
 			// Check if the immediate points to the data segment
 			if (imm_val >= data_start && imm_val < data_end) {
+				R_LOG_DEBUG ("  LDDW value 0x%"PFMT64x" is in data segment [0x%"PFMT64x" - 0x%"PFMT64x")",
+					imm_val, data_start, data_end);
+
 				// First check if this is a string pointer structure
 				ut64 actual_str_addr;
 				ut32 actual_str_size;
 				bool is_string_pointer = sbpf_check_string_pointer (anal, imm_val, data_start, data_end,
 						&actual_str_addr, &actual_str_size);
+
+				R_LOG_DEBUG ("  sbpf_check_string_pointer returned: %s", is_string_pointer ? "true" : "false");
+				if (is_string_pointer) {
+					R_LOG_DEBUG ("    -> points to string at 0x%"PFMT64x" size %u", actual_str_addr, actual_str_size);
+				}
 
 				// Check if we already have this reference (avoid duplicates)
 				bool duplicate = false;
@@ -178,6 +190,7 @@ static RList *sbpf_find_string_xrefs(RAnal *anal, ut64 from, ut64 to, ut64 data_
 				}
 
 				if (!duplicate) {
+					R_LOG_DEBUG ("  Not a duplicate, adding reference");
 					if (is_string_pointer) {
 						// Add BOTH the pointer structure AND the string it points to
 						// First, add the pointer structure reference
@@ -187,7 +200,7 @@ static RList *sbpf_find_string_xrefs(RAnal *anal, ut64 from, ut64 to, ut64 data_
 						ptr_ref->is_pointer = true;
 						ptr_ref->size = actual_str_size;
 						r_list_append (refs, ptr_ref);
-						R_LOG_DEBUG ("Found pointer structure at 0x%"PFMT64x" (from instruction at 0x%"PFMT64x")",
+						R_LOG_DEBUG ("  Added pointer structure at 0x%"PFMT64x" (from LDDW at 0x%"PFMT64x")",
 								imm_val, addr);
 
 						// Also add the actual string address as a reference
@@ -225,6 +238,14 @@ static RList *sbpf_find_string_xrefs(RAnal *anal, ut64 from, ut64 to, ut64 data_
 static bool sbpf_find_segment_bounds(RAnal *anal, int segment_index, ut64 *start, ut64 *end) {
 	R_RETURN_VAL_IF_FAIL (anal && anal->iob.io && start && end, false);
 
+	// Get base address - try to get it from core config
+	ut64 baddr = 0;
+	if (anal->coreb.core && anal->coreb.cfgGetI) {
+		// Get bin.baddr from config which includes user-specified -B value
+		baddr = anal->coreb.cfgGetI (anal->coreb.core, "bin.baddr");
+		R_LOG_DEBUG ("Got baddr from config: 0x%"PFMT64x, baddr);
+	}
+
 	// Get sections from the binary, but filter for segments
 	if (anal->binb.get_sections) {
 		RList *sections = anal->binb.get_sections (anal->binb.bin);
@@ -236,8 +257,8 @@ static bool sbpf_find_segment_bounds(RAnal *anal, int segment_index, ut64 *start
 				// Only process segments (program headers)
 				if (section && section->is_segment) {
 					if (idx == segment_index) {
-						*start = section->vaddr;
-						*end = section->vaddr + section->vsize;
+						*start = section->vaddr + baddr;
+						*end = section->vaddr + section->vsize + baddr;
 						return true;
 					}
 					idx++;
@@ -262,39 +283,33 @@ static void sbpf_create_string(RAnal *anal, ut64 addr, ut32 size, ut64 xref_addr
 		return;
 	}
 
+	// Rust strings are NOT null-terminated - they use exact size
+	// Force null termination for our buffer
 	buf[size] = 0;
 
-	ut32 actual_size = r_str_nlen (buf, size);
+	// For Rust strings, we use the exact size from the structure
+	ut32 str_size = size;
 
-	// If there is no terminator within `size`, treat the buffer as length `size`.
-	if (actual_size == size) {
-		// no null terminator found within `size`
-		// ensure nul-termination for safety
-		buf[size] = 0;
-	} else {
-		// found a null terminator; if it's empty, skip
-		if (actual_size == 0) {
-			return;
-		}
-	}
-
-	// Validate printable using the actual length we intend to use
-	if (!is_printable_string (buf, actual_size == size ? size : actual_size)) {
+	// Validate printable using the exact size
+	if (!is_printable_string (buf, size)) {
 		return;
 	}
-
-	// Use the actual string size
-	ut32 str_size = actual_size;
 
 	// First, delete any existing metadata at this address
 	r_meta_del (anal, R_META_TYPE_STRING, addr, UT64_MAX);
 
 	// Create a properly null-terminated string for metadata
-	char truncated_str[256];
-	ut32 copy_len = str_size < 255 ? str_size : 255;
-	r_str_ncpy (truncated_str, (char *)buf, copy_len + 1);
+	// Rust strings are NOT null-terminated, so we must be careful
+	// We need to create a string that's EXACTLY the size specified
+	char *truncated_str = calloc(1, str_size + 1);
+	if (!truncated_str) {
+		return;
+	}
+	memcpy (truncated_str, buf, str_size);
+	truncated_str[str_size] = '\0';  // Ensure null termination
 
 	// Add string metadata to radare2's metadata database
+	// Pass the exact size so r2 knows where the string ends
 	if (!r_meta_set (anal, R_META_TYPE_STRING, addr, str_size, truncated_str)) {
 		R_LOG_DEBUG ("Failed to set string metadata at 0x%"PFMT64x, addr);
 	} else {
@@ -313,6 +328,9 @@ static void sbpf_create_string(RAnal *anal, ut64 addr, ut32 size, ut64 xref_addr
 		free (comment_str);
 	}
 
+	// Free the allocated string
+	free (truncated_str);
+
 	// Create a flag for the string
 	R_LOG_INFO ("Attempting to create flag for string at 0x%"PFMT64x, addr);
 
@@ -322,7 +340,7 @@ static void sbpf_create_string(RAnal *anal, ut64 addr, ut32 size, ut64 xref_addr
 		R_LOG_ERROR ("anal->flb.set is NULL - cannot create flags");
 	} else {
 		// Build a proper flag name from the truncated string
-		char safe_str[64];
+		char safe_str[64] = {0};
 
 		// Copy only the actual string size
 		ut32 copy_len = str_size < 63 ? str_size : 63;
@@ -375,6 +393,7 @@ static bool sbpf_analyze_strings(RAnal *anal) {
 		R_LOG_WARN ("Could not determine CODE segment bounds for string analysis");
 		return false;
 	}
+	R_LOG_INFO ("CODE segment bounds: 0x%"PFMT64x" - 0x%"PFMT64x, code_start, code_end);
 
 	ut64 data_start, data_end;
 	if (!sbpf_find_segment_bounds (anal, 1, &data_start, &data_end)) {
@@ -383,6 +402,7 @@ static bool sbpf_analyze_strings(RAnal *anal) {
 			return false;
 		}
 	}
+	R_LOG_INFO ("DATA segment bounds: 0x%"PFMT64x" - 0x%"PFMT64x, data_start, data_end);
 
 	RList *refs = sbpf_find_string_xrefs (anal, code_start, code_end, data_start, data_end);
 	if (!refs) {
@@ -693,7 +713,14 @@ static void sbpf_print_string_xrefs(RAnal *anal) {
 			if (actual_len < 2) {
 				continue;
 			}
-			r_str_filter (buf, -1);
+			// Ensure the buffer is null-terminated at the actual string length
+			buf[actual_len] = '\0';
+			r_str_filter (buf, actual_len);
+			if (actual_len > 60) {
+				buf[57] = '.';
+				buf[58] = '.';
+				buf[59] = '\0';
+			}
 			r_list_foreach (refs, iter2, ref2) {
 				if (ref2->addr == ref->addr) {
 					const char *type = ref2->is_pointer ? "pointer" : "ascii";
