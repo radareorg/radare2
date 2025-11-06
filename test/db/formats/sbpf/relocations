@@ -1,0 +1,63 @@
+NAME=sBPF: Segments with custom base address 0x10000000
+FILE=bins/elf/sbpf_example.so
+ARGS=-B 0x10000000
+CMDS=<<EOF
+iSS
+EOF
+EXPECT=<<EOF
+nth paddr          size vaddr         vsize perm flags type name
+----------------------------------------------------------------
+0   0x00000120  0x29818 0x10000120  0x29818 -r-x 0x0   MAP  LOAD0
+1   0x00029938   0x4f48 0x10029938   0x4f48 -rw- 0x0   MAP  LOAD1
+2   0x0002e930   0x44a8 0x1002e930   0x44a8 -r-- 0x0   MAP  LOAD2
+3   0x0002e880     0xb0 0x1002e880     0xb0 -rw- 0x0   MAP  DYNAMIC
+4   0x00000000     0x40 0x10000000     0x40 -rw- 0x0   MAP  ehdr
+EOF
+RUN
+
+NAME=sBPF: Verify relocations are present
+FILE=bins/elf/sbpf_example.so
+ARGS=-B 0x10000000
+CMDS=<<EOF
+ir | head -10
+EOF
+EXPECT=<<EOF
+vaddr      paddr      type   ntype name
+---------------------------------------
+0x100003d0 0x000003d0 SET_64 8
+0x10000408 0x00000408 SET_64 8
+0x10000460 0x00000460 SET_64 8
+0x10000620 0x00000620 SET_64 8
+0x10000800 0x00000800 SET_64 8
+0x10000838 0x00000838 SET_64 8
+0x10000890 0x00000890 SET_64 8
+0x10000cd8 0x00000cd8 SET_64 8
+EOF
+RUN
+
+NAME=sBPF: String analysis finds string pointers
+FILE=bins/elf/sbpf_example.so
+ARGS=-B 0x10000000 -e bin.cache=true
+CMDS=<<EOF
+a:sbpf.analyze 2>&1 | tail -20
+EOF
+EXPECT=<<EOF
+INFO: Created pointer flag ptr.1002e680_core/src/fmt/mod.rs: the len is w/platform-tools/out/rust/library/alloc/src/slice.rsrss/btree/navigate.rs.... at 0x1002e680
+INFO: Created pointer flag ptr.1002e698_begin <= end (od.rs: the len is w/platform-tools/out/rust/library/alloc/src/slice.rsrss/btree/navigate.rs.... at 0x1002e698
+INFO: Created pointer flag ptr.1002e6d8_byte index d (od.rs: the len is w/platform-tools/out/rust/library/alloc/src/slice.rsrss/btree/navigate.rs.... at 0x1002e6d8
+INFO: Created pointer flag ptr.1002e728_byte index d (od.rs: the len is w/platform-tools/out/rust/library/alloc/src/slice.rsrss/btree/navigate.rs.... at 0x1002e728
+INFO: Created pointer flag ptr.1002e758_core/src/str/mod.rs: the len is w/platform-tools/out/rust/library/alloc/src/slice.rsrss/btree/navigate.rs.... at 0x1002e758
+INFO: Created pointer flag ptr.1002e770_core/src/unicode/printable.rsis w/platform-tools/out/rust/library/alloc/src/slice.rsrss/btree/navigate.rs.... at 0x1002e770
+INFO: Created pointer flag ptr.1002e788_core/src/unicode/printable.rsis w/platform-tools/out/rust/library/alloc/src/slice.rsrss/btree/navigate.rs.... at 0x1002e788
+INFO: Created pointer flag ptr.1002e7a0_core/src/unicode/unicode_data.rsw/platform-tools/out/rust/library/alloc/src/slice.rsrss/btree/navigate.rs.... at 0x1002e7a0
+INFO: Created pointer flag ptr.1002e7b8_core/src/unicode/unicode_data.rsw/platform-tools/out/rust/library/alloc/src/slice.rsrss/btree/navigate.rs.... at 0x1002e7b8
+INFO: Created pointer flag ptr.1002e7d0_number not in the range 0..=a.rsw/platform-tools/out/rust/library/alloc/src/slice.rsrss/btree/navigate.rs.... at 0x1002e7d0
+INFO: Created pointer flag ptr.1002e7f0_core/src/fmt/num.rsange 0..=a.rsw/platform-tools/out/rust/library/alloc/src/slice.rsrss/btree/navigate.rs.... at 0x1002e7f0
+INFO: Created pointer flag ptr.1002e808_core/src/fmt/num.rsange 0..=a.rsw/platform-tools/out/rust/library/alloc/src/slice.rsrss/btree/navigate.rs.... at 0x1002e808
+INFO: Created pointer flag ptr.1002e820_range start index sange 0..=a.rsw/platform-tools/out/rust/library/alloc/src/slice.rsrss/btree/navigate.rs.... at 0x1002e820
+INFO: Created pointer flag ptr.1002e840_range end index x sange 0..=a.rsw/platform-tools/out/rust/library/alloc/src/slice.rsrss/btree/navigate.rs.... at 0x1002e840
+INFO: Created pointer flag ptr.1002e860_slice index starts at e 0..=a.rsw/platform-tools/out/rust/library/alloc/src/slice.rsrss/btree/navigate.rs.... at 0x1002e860
+INFO: Created 505 strings
+INFO: sBPF string analysis completed
+EOF
+RUN
