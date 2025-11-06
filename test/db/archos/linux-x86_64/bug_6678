@@ -1,7 +1,7 @@
 NAME="bug 6678: crash case"
 CMDS=-d malloc://512 -'
 EXPECT=<<EOF
-Usage: -  open editor and run the r2 commands in the saved document
+Usage: -  open editor and run the r2 commands saved in the file
 | '-' '.-' '. -'   those three commands do the same
 | -8              same as s-8, but shorter to type (see +? command)
 | -a x86          same as r2 -a x86 or e asm.arch=x86

@@ -112,7 +112,7 @@ static RCoreHelpMessage help_msg_i = {
 	"iD", " lang sym", "demangle symbolname for given language",
 	"ie", "[?][es]", "ie=entrypoint, iee=constructors+destructors, ies=epsymbols",
 	"iE", "[?]", "exports (global symbols)",
-	"ig", "[?][h]", "guess size of binary program (igh use human units instead of number of bytes)",
+	"ig", "[?][h]", "guess size of binary program (h for human friendly unit)",
 	"ih", "[?]", "show binary headers (see iH)",
 	"iH", "[?]", "show binary headers fields",
 	"ii", "[?][cj*,]", "list the symbols imported from other libraries",

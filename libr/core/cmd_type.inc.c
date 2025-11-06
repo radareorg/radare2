@@ -135,7 +135,7 @@ static RCoreHelpMessage help_msg_tl = {
 
 static RCoreHelpMessage help_msg_tn = {
 	"Usage:", "tn [-][0xaddr|symname]", " manage no-return marks",
-	"tn[a]", " 0x3000", "stop function analysis if call/jmp to this address",
+	"tn[a]", " [addr]", "stop function analysis if call/jmp to 'addr'",
 	"tn[n]", " sym.imp.exit", "same as above but for flag/fcn names",
 	"tnf", "", "same as `afl,noret/eq/1`",
 	"tn-", " 0x3000 sym.imp.exit ...", "remove some no-return references",

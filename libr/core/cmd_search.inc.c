@@ -102,7 +102,7 @@ static RCoreHelpMessage help_msg_slash = {
 	"/F", " file [off] [sz]", "search contents of file with offset and size",
 	// TODO: add subcommands to find paths between functions and filter only function names instead of offsets, etc
 	"/g", "[g] [from]", "find all graph paths A to B (/gg follow jumps, see search.count and anal.depth)",
-	"/h", "[?*] [algorithm] [digest] [size]", "find block of size bytes having this digest. See ph",
+	"/h", "[?*] [algo] [digest] [size]", "find block of size bytes having this digest (see ph)",
 	"/i", " foo", "search for string 'foo' ignoring case",
 	"/k", " foo", "search for string 'foo' using Rabin Karp alg",
 	"/m", "[?][ebm] magicfile", "search for magic, filesystems or binary headers",

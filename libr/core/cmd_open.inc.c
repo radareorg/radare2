@@ -18,20 +18,20 @@ static RCoreHelpMessage help_msg_o = {
 	"o:", " [len]", "open a malloc://[len] copying the bytes from current offset", // XXX R2_590 - should be an alias for ':' no need for a malloc:// wrapper imho
 	"o=", "(#fd)", "select fd or list opened files in ascii-art",
 	"oL", "", "list all IO plugins registered",
-	"oa", "[-] [A] [B] [filename]", "specify arch and bits for given file",
+	"oa", "[-] [A] [B] [file]", "specify arch and bits for given 'file'",
 	"ob", "[?] [lbdos] [...]", "list opened binary files backed by fd",
 	"oc", " [file]", "open core file, like relaunching r2",
 	"of", "[?] [file]", "open file without creating any map",
-	"oe", " [filename]", "open cfg.editor with given file",
+	"oe", " [file]", "open cfg.editor with given 'file'",
 	"oj", "", "list opened files in JSON format",
 	"om", "[?]", "create, list, remove IO maps",
-	"on", "[?][n] [file] 0x4000", "map raw file at 0x4000 (no r_bin involved)",
+	"on", "[?][n] [file] 0x4000", "map raw 'file' at 0x4000 (no r_bin involved)",
 	"oo", "[?][+bcdnm]", "reopen current file (see oo?) (reload in rw or debugger)",
 	"op", "[npr] [fd]", "select priorized file by fd (see ob), opn/opp/opr = next/previous/rotate",
 	"ot", " [file]", "same as `touch [file]`",
 	"oq", "[q]", "list all open files or show current fd 'oqq'",
 	"ox", " fd fdx", "exchange the descs of fd and fdx and keep the mapping",
-	"open", " [file]", "use system xdg-open/open on a file",
+	"open", " [file]", "use system xdg-open/open on 'file'",
 	NULL
 };
 

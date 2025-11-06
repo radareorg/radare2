@@ -115,7 +115,7 @@ static RCoreHelpMessage help_msg_equal_l = {
 	NULL
 };
 static RCoreHelpMessage help_msg_dollar = {
-	"Usage:", "$alias[=cmd] [args...]", "Alias commands and data (See ?$? for help on $variables)",
+	"Usage:", "$alias[=cmd] [args...]", "Alias commands and data (see ?$? for help on $variables)",
 	"$", "", "list all defined aliases",
 	"$*", "", "list all defined aliases and their values, with unprintable characters escaped",
 	"$**", "", "same as above, but if an alias contains unprintable characters, b64 encode it",
@@ -185,7 +185,7 @@ static RCoreHelpMessage help_msg_j = {
 };
 
 static RCoreHelpMessage help_msg_dash = {
-	"Usage:", "-", "open editor and run the r2 commands in the saved document",
+	"Usage:", "-", "open editor and run the r2 commands saved in the file",
 	"", "'-' '.-' '. -'", " those three commands do the same",
 	"-", "8", "same as s-8, but shorter to type (see +? command)",
 	"-a", " x86", "same as r2 -a x86 or e asm.arch=x86",
