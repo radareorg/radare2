@@ -5136,6 +5136,10 @@ static void cmd_afsv(RCore *core, ut64 pcv, int mode) {
 	const char *fcn_name = NULL;
 	RAnalOp *aop = r_core_anal_op (core, pcv, 0);
 	if (R_UNLIKELY (!aop)) {
+		if (pj) {
+			pj_end (pj);
+			r_core_pj_end (core, pj);
+		}
 		return;
 	}
 	switch (aop->type) {
