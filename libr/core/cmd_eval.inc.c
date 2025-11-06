@@ -38,7 +38,7 @@ static RCoreHelpMessage help_msg_e = {
 	"e!", "a", "invert the boolean value of 'a' var",
 	"ec", "[?] [k] [color]", "set color for given key (prompt, offset, ...)",
 	"ee", " [var]", "open cfg.editor to change the value of var",
-	"ed", "", "open editor to change the ~/.radare2rc",
+	"ed", " ([file])", "open editor to change the ~/.radare2rc or [file]",
 	"ed*", "", "show contents of your ~/.radare2c",
 	"ed+", "", "add or set an eval config line into your ~/.radare2c",
 	"ed-", "[!]", "delete ~/.radare2c (Use ed-! to delete without prompting)",
@@ -263,7 +263,7 @@ R_API RList *r_core_list_themes(RCore *core) {
 }
 
 static void nextpal(RCore *core, int mode) {
-	// TODO: use r_core_list_themes() here instead of rewalking all the time
+	// TODO: use r_core_list_themes () here instead of rewalking all the time
 	RList *files = NULL;
 	RListIter *iter;
 	const char *fn;
@@ -355,7 +355,7 @@ done:
 		return;
 	}
 	if (mode == 'l' && !core->theme && !r_list_empty (files)) {
-		//nextpal (core, mode);
+		// nextpal (core, mode);
 	} else if (mode == 'n' || mode == 'p') {
 		if (R_STR_ISNOTEMPTY (core->theme)) {
 			r_core_cmd_callf (core, "eco %s", core->theme);
@@ -373,7 +373,7 @@ done:
 R_API void r_core_echo(RCore *core, const char *input) {
 	if (r_str_startswith (input, "64 ")) {
 		char *buf = strdup (input);
-		r_base64_decode ((ut8*)buf, input + 3, -1);
+		r_base64_decode ((ut8 *)buf, input + 3, -1);
 		if (*buf) {
 			r_cons_echo (core->cons, buf);
 		}
@@ -417,20 +417,20 @@ static bool cmd_ec(RCore *core, const char *input) {
 			}
 			break;
 		case '*': // "eco*"
-			{
-				const char *theme_name = core->theme;
-				if (input[3]) {
-					theme_name = r_str_trim_head_ro (input + 3);
-				}
-				char *theme_script = get_theme_script (core, theme_name);
-				if (R_STR_ISNOTEMPTY (theme_script)) {
-					r_cons_printf (core->cons, "%s\n", theme_script);
-				} else {
-					R_LOG_ERROR ("Cannot find theme '%s'", theme_name);
-				}
-				free (theme_script);
+		{
+			const char *theme_name = core->theme;
+			if (input[3]) {
+				theme_name = r_str_trim_head_ro (input + 3);
 			}
-			break;
+			char *theme_script = get_theme_script (core, theme_name);
+			if (R_STR_ISNOTEMPTY (theme_script)) {
+				r_cons_printf (core->cons, "%s\n", theme_script);
+			} else {
+				R_LOG_ERROR ("Cannot find theme '%s'", theme_name);
+			}
+			free (theme_script);
+		}
+		break;
 		case '!':
 			free (r_core_editor (core, core->themepath, NULL));
 			cmd_load_theme (core, core->theme); // reload
@@ -450,35 +450,35 @@ static bool cmd_ec(RCore *core, const char *input) {
 			break;
 		default:
 			{
-			RList *themes_list = r_core_list_themes (core);
-			RListIter *th_iter;
-			const char *th;
-			const RConsTheme *themes = r_cons_themes ();
-			const RConsTheme *theme = themes;
+				RList *themes_list = r_core_list_themes (core);
+				RListIter *th_iter;
+				const char *th;
+				const RConsTheme *themes = r_cons_themes ();
+				const RConsTheme *theme = themes;
 			while (theme && theme->name) {
-				const char *th = theme->name;
-				if (input[2] == 'q') {
-					r_cons_printf (core->cons, "%s\n", th);
+					const char *th = theme->name;
+					if (input[2] == 'q') {
+						r_cons_printf (core->cons, "%s\n", th);
 				} else if (core->theme && !strcmp (core->theme, th)) {
-					r_cons_printf (core->cons, "- %s\n", th);
-				} else {
-					r_cons_printf (core->cons, "  %s\n", th);
+						r_cons_printf (core->cons, "- %s\n", th);
+					} else {
+						r_cons_printf (core->cons, "  %s\n", th);
+					}
+					theme++;
 				}
-				theme++;
-			}
-			r_list_foreach (themes_list, th_iter, th) {
-				if (is_static_theme (th)) {
-					continue;
-				}
-				if (input[2] == 'q') {
-					r_cons_printf (core->cons, "%s\n", th);
+				r_list_foreach (themes_list, th_iter, th) {
+					if (is_static_theme (th)) {
+						continue;
+					}
+					if (input[2] == 'q') {
+						r_cons_printf (core->cons, "%s\n", th);
 				} else if (core->theme && !strcmp (core->theme, th)) {
-					r_cons_printf (core->cons, "- %s\n", th);
-				} else {
-					r_cons_printf (core->cons, "  %s\n", th);
+						r_cons_printf (core->cons, "- %s\n", th);
+					} else {
+						r_cons_printf (core->cons, "  %s\n", th);
+					}
 				}
-			}
-			r_list_free (themes_list);
+				r_list_free (themes_list);
 			}
 			break;
 		}
@@ -518,115 +518,116 @@ static bool cmd_ec(RCore *core, const char *input) {
 	case 'p': // "ecp"
 		nextpal (core, 'p');
 		break;
-	case 'H': { // "ecH"
-			  char *color_code = NULL;
-			  char *word = NULL;
-			  int argc = 0;
-			  int delta = (input[2])? 3: 2;
-			  char** argv = r_str_argv (r_str_trim_head_ro (input + delta), &argc);
-			  switch (input[2]) {
-			  case '?':
-				  r_core_cmd_help (core, help_msg_ecH);
-				  r_str_argv_free (argv);
-				  return false;
-			  case '-': // ecH-
-				  if (input[3] == '*') {
-					  r_meta_del (core->anal, R_META_TYPE_HIGHLIGHT, 0, UT64_MAX);
-				  } else {
-					  r_meta_del (core->anal, R_META_TYPE_HIGHLIGHT, core->addr, 1);
-					  // r_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->addr, "");
-				  }
-				  r_str_argv_free (argv);
-				  return false;
-			  case '.':
-				  r_meta_print_list_in_function (core->anal, R_META_TYPE_HIGHLIGHT, 0, core->addr, NULL, NULL);
-				  r_str_argv_free (argv);
-				  return false;
-			  case '\0':
-				  r_meta_print_list_all (core->anal, R_META_TYPE_HIGHLIGHT, 0, NULL, NULL);
-				  r_str_argv_free (argv);
-				  return false;
-			  case 'j':
-				  r_meta_print_list_all (core->anal, R_META_TYPE_HIGHLIGHT, 'j', NULL, NULL);
-				  r_str_argv_free (argv);
-				  return false;
-			  case '*':
-				  r_meta_print_list_all (core->anal, R_META_TYPE_HIGHLIGHT, '*', NULL, NULL);
-				  r_str_argv_free (argv);
-				  return false;
-			  case ' ':
-			  case 'i': // "ecHi"
-				  if (argc) {
-					  char *dup = r_str_newf ("bgonly %s", argv[0]);
-					  color_code = r_cons_pal_parse (core->cons, dup, NULL);
-					  free (dup);
-					  if (!color_code) {
-						  R_LOG_ERROR ("Unknown color %s", argv[0]);
-						  r_str_argv_free (argv);
-						  return true;
-					  }
-				  }
-				  break;
-			  case 'w': // "ecHw"
-				  if (!argc) {
-					  r_core_cmd_help_match (core, help_msg_ecH, "ecHw");
-					  r_str_argv_free (argv);
-					  return true;
-				  }
-				  word = strdup (argv[0]);
-				  if (argc > 1) {
-					  char *dup = r_str_newf ("bgonly %s", argv[1]);
-					  color_code = r_cons_pal_parse (core->cons, dup, NULL);
-					  R_FREE (dup);
-					  if (!color_code) {
-						  R_LOG_ERROR ("Unknown color %s", argv[1]);
-						  r_str_argv_free (argv);
-						  free (word);
-						  return true;
-					  }
-				  }
-				  break;
-			  default:
-				  R_LOG_INFO ("See ecH?");
-				  r_str_argv_free (argv);
-				  return true;
-			  }
-			  r_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->addr, "");
-			  const char *str = r_meta_get_string (core->anal, R_META_TYPE_HIGHLIGHT, core->addr);
-			  char *dup = r_str_newf ("%s \"%s%s\"", r_str_get (str), r_str_get (word),
-					  color_code ? color_code : core->cons->context->pal.wordhl);
-			  r_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->addr, dup);
-			  r_str_argv_free (argv);
-			  free (color_code);
-			  R_FREE (word);
-			  R_FREE (dup);
-		  }
-		  break;
+	case 'H': // "ecH"
+	{
+		char *color_code = NULL;
+		char *word = NULL;
+		int argc = 0;
+		int delta = (input[2])? 3: 2;
+		char **argv = r_str_argv (r_str_trim_head_ro (input + delta), &argc);
+		switch (input[2]) {
+		case '?':
+			r_core_cmd_help (core, help_msg_ecH);
+			r_str_argv_free (argv);
+			return false;
+		case '-': // ecH-
+			if (input[3] == '*') {
+				r_meta_del (core->anal, R_META_TYPE_HIGHLIGHT, 0, UT64_MAX);
+			} else {
+				r_meta_del (core->anal, R_META_TYPE_HIGHLIGHT, core->addr, 1);
+				// r_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->addr, "");
+			}
+			r_str_argv_free (argv);
+			return false;
+		case '.':
+			r_meta_print_list_in_function (core->anal, R_META_TYPE_HIGHLIGHT, 0, core->addr, NULL, NULL);
+			r_str_argv_free (argv);
+			return false;
+		case '\0':
+			r_meta_print_list_all (core->anal, R_META_TYPE_HIGHLIGHT, 0, NULL, NULL);
+			r_str_argv_free (argv);
+			return false;
+		case 'j':
+			r_meta_print_list_all (core->anal, R_META_TYPE_HIGHLIGHT, 'j', NULL, NULL);
+			r_str_argv_free (argv);
+			return false;
+		case '*':
+			r_meta_print_list_all (core->anal, R_META_TYPE_HIGHLIGHT, '*', NULL, NULL);
+			r_str_argv_free (argv);
+			return false;
+		case ' ':
+		case 'i': // "ecHi"
+			if (argc) {
+				char *dup = r_str_newf ("bgonly %s", argv[0]);
+				color_code = r_cons_pal_parse (core->cons, dup, NULL);
+				free (dup);
+				if (!color_code) {
+					R_LOG_ERROR ("Unknown color %s", argv[0]);
+					r_str_argv_free (argv);
+					return true;
+				}
+			}
+			break;
+		case 'w': // "ecHw"
+			if (!argc) {
+				r_core_cmd_help_match (core, help_msg_ecH, "ecHw");
+				r_str_argv_free (argv);
+				return true;
+			}
+			word = strdup (argv[0]);
+			if (argc > 1) {
+				char *dup = r_str_newf ("bgonly %s", argv[1]);
+				color_code = r_cons_pal_parse (core->cons, dup, NULL);
+				R_FREE (dup);
+				if (!color_code) {
+					R_LOG_ERROR ("Unknown color %s", argv[1]);
+					r_str_argv_free (argv);
+					free (word);
+					return true;
+				}
+			}
+			break;
+		default:
+			R_LOG_INFO ("See ecH?");
+			r_str_argv_free (argv);
+			return true;
+		}
+		r_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->addr, "");
+		const char *str = r_meta_get_string (core->anal, R_META_TYPE_HIGHLIGHT, core->addr);
+		char *dup = r_str_newf ("%s \"%s%s\"", r_str_get (str), r_str_get (word),
+			color_code? color_code: core->cons->context->pal.wordhl);
+		r_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->addr, dup);
+		r_str_argv_free (argv);
+		free (color_code);
+		R_FREE (word);
+		R_FREE (dup);
+	}
+	break;
 	case ' ':
-		  {
-			 char *p = strdup (input + 2);
-			 char *q = strchr (p, '=');
-			 if (!q) {
-				 q = strchr (p, ' ');
-			 }
-			 if (q) {
-				 // Set color
-				 *q++ = 0;
-				 if (r_cons_pal_set (core->cons, p, q)) {
-					 r_cons_pal_reload (core->cons);
-				 }
-			 } else {
-				 char color[32] = {0};
-				 RColor rcolor = r_cons_pal_get (core->cons, p);
-				 r_cons_rgb_str (core->cons, color, sizeof (color), &rcolor);
-				 if (*color) {
-					 eprintf ("(%s)(%sCOLOR"Color_RESET")\n", p, color);
-				 } else {
-					 R_LOG_ERROR ("Invalid palette color '%s'", p);
-				 }
-			 }
-			 free (p);
-		 }
+		{
+			char *p = strdup (input + 2);
+			char *q = strchr (p, '=');
+			if (!q) {
+				q = strchr (p, ' ');
+			}
+			if (q) {
+				// Set color
+				*q++ = 0;
+				if (r_cons_pal_set (core->cons, p, q)) {
+					r_cons_pal_reload (core->cons);
+				}
+			} else {
+				char color[32] = { 0 };
+				RColor rcolor = r_cons_pal_get (core->cons, p);
+				r_cons_rgb_str (core->cons, color, sizeof (color), &rcolor);
+				if (*color) {
+					eprintf ("(%s)(%sCOLOR" Color_RESET ")\n", p, color);
+				} else {
+					R_LOG_ERROR ("Invalid palette color '%s'", p);
+				}
+			}
+			free (p);
+		}
 		break;
 	default:
 		r_core_return_invalid_command (core, "ec", input[1]);
@@ -635,7 +636,7 @@ static bool cmd_ec(RCore *core, const char *input) {
 	return true;
 }
 
-static void r2rc_set(RCore *core, const char * R_NULLABLE k, const char * R_NULLABLE v) {
+static void r2rc_set(RCore *core, const char *R_NULLABLE k, const char *R_NULLABLE v) {
 	char *rcfile = r_file_home (".radare2rc");
 	char *rcdata = r_file_slurp (rcfile, NULL);
 	if (k) {
@@ -671,7 +672,7 @@ static void r2rc_set(RCore *core, const char * R_NULLABLE k, const char * R_NULL
 			char *out = r_strbuf_drain (sb);
 			r_list_free (lines);
 			r_str_trim (out);
-			r_file_dump (rcfile, (const ut8*)out, -1, false);
+			r_file_dump (rcfile, (const ut8 *)out, -1, false);
 			free (out);
 		} else {
 			r_strbuf_free (sb);
@@ -733,7 +734,7 @@ static int cmd_eval(void *data, const char *input) {
 		if (input[1] == 'a') {
 			r_cons_printf (cons, "%s\n", (r_num_rand (10) % 2)? "wen": "son");
 		} else if (input[1] == ' ' && input[2]) {
-			RConfigNode *node = r_config_node_get (core->config, input+2);
+			RConfigNode *node = r_config_node_get (core->config, input + 2);
 			if (node) {
 				const char *type = r_config_node_type (node);
 				if (type && *type) {
@@ -846,6 +847,10 @@ static int cmd_eval(void *data, const char *input) {
 	case 'd': // "ed"
 		if (input[1] == '?') {
 			r_core_cmd_help_contains (core, help_msg_e, "ed");
+		} else if (input[1] == '!') {
+			char *file = r_file_home (".radare2rc");
+			free (r_cons_editor (cons, file, NULL));
+			free (file);
 		} else if (input[1] == '*') {
 			char *file = r_file_home (".radare2rc");
 			char *data = r_file_slurp (file, NULL);
@@ -865,17 +870,35 @@ static int cmd_eval(void *data, const char *input) {
 				free (file);
 			}
 		} else {
-			char *file = r_file_home (".radare2rc");
-			if (r_cons_is_interactive (cons)) {
-				r_file_touch (file);
-				char *res = r_cons_editor (cons, file, NULL);
-				if (res) {
-					if (r_cons_yesno (cons, 'y', "Reload? (Y/n)")) {
-						r_core_run_script (core, file);
-					}
+			const char *arg = strchr (input, ' ');
+			char *file = NULL;
+			bool is_config = true;
+			if (arg) {
+				arg = r_str_trim_head_ro (arg + 1);
+				if (arg[0] == '~') {
+					file = r_file_home (arg + 1);
+				} else {
+					file = strdup (arg);
 				}
+				is_config = false;
 			} else {
-				r_core_run_script (core, file);
+				file = r_file_home (".radare2rc");
+			}
+			if (file) {
+				if (r_cons_is_interactive (cons)) {
+					if (is_config) {
+						r_file_touch (file);
+					}
+					char *res = r_cons_editor (cons, file, NULL);
+					if (res && is_config) {
+						if (r_cons_yesno (cons, 'y', "Reload? (Y/n)")) {
+							r_core_run_script (core, file);
+						}
+					}
+					free (res);
+				} else if (is_config) {
+					r_core_run_script (core, file);
+				}
 			}
 			free (file);
 		}
@@ -887,7 +910,7 @@ static int cmd_eval(void *data, const char *input) {
 		if (input[1] == ' ') {
 			char *p;
 			const char *input2 = strchr (input + 2, ' ');
-			input2 = (input2) ? input2 + 1 : input + 2;
+			input2 = (input2)? input2 + 1: input + 2;
 			const char *val = r_config_get (core->config, input2);
 			p = r_core_editor (core, NULL, val);
 			if (p) {
@@ -913,7 +936,7 @@ static int cmd_eval(void *data, const char *input) {
 		break;
 	case '-': // "e-"
 		r_core_config_init (core);
-		//eprintf ("BUG: 'e-' command locks the eval hashtable. patches are welcome :)\n");
+		// eprintf ("BUG: 'e-' command locks the eval hashtable. patches are welcome :)\n");
 		break;
 	case '*': // "e*"
 		core_config_list (core, NULL, 1);
