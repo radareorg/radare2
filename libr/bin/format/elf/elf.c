@@ -2564,6 +2564,8 @@ char* Elf_(get_abi)(ELFOBJ *eo) {
 	case EM_V800:
 	case EM_V850:
 		break;
+	case EM_SBPF:
+		return r_str_newf ("sbpfv%d", eflags);
 	}
 	return NULL;
 }
@@ -4267,6 +4269,7 @@ static bool _add_sections_from_phdr(RBinFile *bf, ELFOBJ *eo, bool *found_load) 
 	}
 
 	int i = 0, n = 0;
+
 	for (i = 0; i < num; i++) {
 		RBinSection *ptr = r_vector_end (&eo->cached_sections);
 		if (!ptr) {
@@ -4277,6 +4280,7 @@ static bool _add_sections_from_phdr(RBinFile *bf, ELFOBJ *eo, bool *found_load) 
 		ptr->vsize = phdr[i].p_memsz;
 		ptr->paddr = phdr[i].p_offset;
 		ptr->vaddr = phdr[i].p_vaddr;
+
 		ptr->perm = phdr[i].p_flags; // perm  are rwx like x=1, w=2, r=4, aka no need to convert from r2's R_PERM
 		ptr->is_segment = true;
 		switch (phdr[i].p_type) {
@@ -5518,7 +5522,8 @@ ut64 Elf_(p2v) (ELFOBJ *eo, ut64 paddr) {
 			if (!p->p_vaddr && !p->p_offset) {
 				continue;
 			}
-			return p->p_vaddr + paddr - p->p_offset;
+			ut64 vaddr = p->p_vaddr + paddr - p->p_offset;
+			return vaddr;
 		}
 	}
 
