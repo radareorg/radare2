@@ -761,6 +761,24 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		mainr2_fini (&mr);
 		return main_help (1);
 	}
+	// Handle -H early to avoid creating RCore and loading plugins
+	RGetopt opt_h;
+	r_getopt_init (&opt_h, argc, argv, "H");
+	int c_h;
+	const char *h_arg = NULL;
+	while ((c_h = r_getopt_next (&opt_h)) != -1) {
+		if (c_h == 'H') {
+			if (opt_h.ind < argc && argv[opt_h.ind][0] != '-') {
+				h_arg = argv[opt_h.ind];
+			}
+			break;
+		}
+	}
+	if (c_h == 'H' || (argc > 1 && !strcmp (argv[1], "-H"))) {
+		main_print_var (h_arg);
+		mainr2_fini (&mr);
+		return 0;
+	}
 	RCore *r = r_core_new ();
 	if (!r) {
 		R_LOG_ERROR ("Cannot initialize RCore");
@@ -795,17 +813,10 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		argv++;
 	}
 
-	// -H option without argument
-	if (argc == 2 && !strcmp (argv[1], "-H")) {
-		main_print_var (NULL);
-		mainr2_fini (&mr);
-		return 0;
-	}
-
 	set_color_default (r);
 
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "=012AjMCwxfF:H:hm:e:Enk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSzuXt");
+	r_getopt_init (&opt, argc, argv, "=012AjMCwxfF:hm:e:Enk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSzuXt");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'j':
@@ -911,13 +922,6 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			free (mr.forcebin);
 			mr.forcebin = strdup (opt.arg);
 			break;
-		case 'h':
-			mr.help++;
-			break;
-		case 'H':
-			main_print_var (opt.arg);
-			mainr2_fini (&mr);
-			return 0;
 		case 'i':
 			if (R_STR_ISEMPTY (opt.arg)) {
 				R_LOG_ERROR ("Cannot open empty script path");
