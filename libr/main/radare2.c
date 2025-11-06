@@ -764,6 +764,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	// Handle -H early to avoid creating RCore and loading plugins
 	RGetopt opt_h;
 	r_getopt_init (&opt_h, argc, argv, "H");
+	opt_h.err = 0;
 	int c_h;
 	const char *h_arg = NULL;
 	while ((c_h = r_getopt_next (&opt_h)) != -1) {
