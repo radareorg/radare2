@@ -2043,7 +2043,6 @@ ut64 Elf_(get_baddr)(ELFOBJ *eo) {
 	if (eo->user_baddr != UT64_MAX) {
 		return eo->user_baddr;
 	}
-
 	ut64 base = UT64_MAX;
 	if (eo->phdr) {
 		size_t i;

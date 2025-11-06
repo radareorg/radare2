@@ -1146,15 +1146,12 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 			if (r_buf_fread_at (bo->b, rel->offset + 4, (ut8 *)vals, "iii", 1) == 12) {
 				addend = ((ut64)vals[2] << 32) | vals[0];
 			}
-
 			// V = symbol value + addend
 			V = S + addend;
-
 			// Normalize address: if V < base_addr, add base_addr
 			if (V < B) {
 				V += B;
 			}
-
 			// Write as split 32-bit values to immediate fields (rva+4 and rva+12)
 			r_write_le32 (buf, (ut32)(V & UT32_MAX));
 			iob->overlay_write_at (iob->io, rel->rva + 4, buf, 4);
@@ -1164,13 +1161,10 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 		}
 
 		case R_BPF_64_RELATIVE: { // PC relative 64-bit address
-
 			// Get addend - try explicit addend first, then implicit from file
 			ut64 addend = rel->addend;
-
 			// rel->offset is already a physical address (paddr), not a virtual address
 			ut64 paddr = rel->offset;
-
 			// Check if relocation is in .text section (check using paddr)
 			bool is_text = false;
 			ut64 text_start = Elf_(get_section_offset)(bo, ".text");
@@ -1191,7 +1185,6 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 						addend = ((ut64)vals[2] << 32) | vals[0];
 					}
 				}
-
 				// Apply relocation: B + addend
 				ut64 result = B + addend;
 				// Get the virtual address where this relocation should be written
@@ -1204,12 +1197,8 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 			} else {
 				// Outside .text: Read 32-bit value, add base, write 64-bit result
 				ut32 refd_addr_32 = 0;
-				ut8 buf_32[4];
-				if (r_buf_read_at (bo->b, paddr + 4, buf_32, 4) == 4) {
-					refd_addr_32 = r_read_le32 (buf_32);
-				}
+				r_buf_fread_at (bo->b, paddr + 4, (ut8*)&refd_addr_32, "I", 1);
 				ut64 result = (ut64)refd_addr_32 + B;
-
 				// Write 64-bit value at rel->rva (not at offset+4!)
 				ut64 write_vaddr = Elf_(p2v)(bo, rel->offset);
 				r_write_le64 (buf, result);
