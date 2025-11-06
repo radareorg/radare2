@@ -855,7 +855,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			break;
 		case 'E':
 			r_core_cmd0 (r, "ed!");
-			// leaks
+			mainr2_fini (&mr);
 			return 0;
 		case 'c':
 			r_list_append (mr.cmds, (void *)strdup (opt.arg));
@@ -868,7 +868,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			mr.debug = 1;
 #else
 			R_LOG_ERROR ("Sorry. I'm built without debugger support");
-			// leaks
+			mainr2_fini (&mr);
 			return 1;
 #endif
 			break;
@@ -1054,7 +1054,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		return rc;
 	}
 	if (mr.show_versions) {
-		return r_main_version_verify (r, 0, mr.json);
+		int rc = r_main_version_verify (r, 0, mr.json);
+		mainr2_fini (&mr);
+		return rc;
 	}
 	if (mr.show_version) {
 		int mode = 0;
@@ -1165,7 +1167,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		} else {
 			r_core_cmd_call (r, "js:");
 		}
-		r_core_free (r);
+		mainr2_fini (&mr);
 		return 0;
 	}
 
