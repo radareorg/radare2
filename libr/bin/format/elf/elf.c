@@ -2039,10 +2039,12 @@ of the maximum page size
 ut64 Elf_(get_baddr)(ELFOBJ *eo) {
 	R_RETURN_VAL_IF_FAIL (eo, 0);
 
+#if 0
 	// If user specified a base address via -B flag, use it
 	if (eo->user_baddr != UT64_MAX) {
 		return eo->user_baddr;
 	}
+#endif
 	ut64 base = UT64_MAX;
 	if (eo->phdr) {
 		size_t i;
