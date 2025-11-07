@@ -5138,7 +5138,9 @@ static void cmd_afsv(RCore *core, ut64 pcv, int mode) {
 	if (R_UNLIKELY (!aop)) {
 		if (pj) {
 			pj_end (pj);
-			r_core_pj_end (core, pj);
+			char *s = pj_drain (pj);
+			r_cons_println (core->cons, s);
+			free (s);
 		}
 		return;
 	}
