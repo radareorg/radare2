@@ -2628,6 +2628,9 @@ char* Elf_(get_cpu)(ELFOBJ *eo) {
 	case EM_V850:
 		cpu = v850_flags_to_cpu (eo->ehdr.e_flags & EF_V850_ARCH);
 		break;
+	case EM_SBPF:
+		cpu = r_str_newf ("sbpfv%d", eo->ehdr.e_flags);
+		break;
 	default:
 		break;
 	}

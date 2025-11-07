@@ -133,41 +133,30 @@ static void print_sbpf_version(ut32 sbpf_version) {
 	case SBPF_V2: version_str = "V2"; break;
 	case SBPF_V3: version_str = "V3"; break;
 	}
-	R_LOG_INFO ("[sBPF] Detected sBPF version: %s\n", version_str);
+	R_LOG_INFO ("[sBPF] Detected sBPF version: %s", version_str);
 }
 
 static ut32 detect_sbpf_version(RArchSession *a) {
 	SbpfPluginData *spd = (SbpfPluginData*)a->data;
 
-	// Return cached version if already detected
 	if (spd->version_detected) {
 		return spd->sbpf_version;
 	}
 
-	// Get version from RBin's info->abi which was set by the ELF parser
-	if (!a || !a->arch || !a->arch->binb.bin) {
-		return SBPF_V0;
-	}
+	const char *cpu = (a && a->config) ? a->config->cpu : NULL;
 
-	RBin *bin = a->arch->binb.bin;
-	if (!bin->cur || !bin->cur->bo || !bin->cur->bo->info || !bin->cur->bo->info->abi) {
-		// Info not available yet, will try again later
-		return SBPF_V0;
-	}
-
-	const char *abi = bin->cur->bo->info->abi;
-
-	// Parse the version from the ABI string set by the ELF parser
-	if (!strcmp (abi, "sbpfv0")) {
+	if (!cpu || !*cpu) {
 		spd->sbpf_version = SBPF_V0;
-	} else if (!strcmp (abi, "sbpfv1")) {
+	} else if (!strcmp (cpu, "sbpfv0")) {
+		spd->sbpf_version = SBPF_V0;
+	} else if (!strcmp (cpu, "sbpfv1")) {
 		spd->sbpf_version = SBPF_V1;
-	} else if (!strcmp (abi, "sbpfv2")) {
+	} else if (!strcmp (cpu, "sbpfv2")) {
 		spd->sbpf_version = SBPF_V2;
-	} else if (!strcmp (abi, "sbpfv3")) {
+	} else if (!strcmp (cpu, "sbpfv3")) {
 		spd->sbpf_version = SBPF_V3;
 	} else {
-		// Default to v0 for unknown/missing ABI
+		// Default to v2 for unknown CPU string
 		spd->sbpf_version = SBPF_V0;
 	}
 
@@ -503,7 +492,7 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 					op->mnemonic = strdup ("invalid");
 				}
 			}
-		}  else { 
+		} else {
 			op->type = R_ANAL_OP_TYPE_ILL;
 			if (mask & R_ARCH_OP_MASK_DISASM) {
 				op->mnemonic = strdup ("invalid");
@@ -530,7 +519,6 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 			} else if (insn->id ==  BPF_INS_EXIT ) {
 				if (sbpf_version >= SBPF_V3) {
 					op->type = R_ANAL_OP_TYPE_CALL;
-				
 					st32 imm = r_read_le32 (buf + 4);
 					const char *syscall_name = get_syscall_name (imm);
 					if (syscall_name) {
@@ -1341,6 +1329,7 @@ const RArchPlugin r_arch_plugin_sbpf_cs = {
 		.author = "ulexec,radare",
 	},
 	.arch = "sbpf",
+	.cpus = "sbpfv0,sbpfv1,sbpfv2,sbpfv3",
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.bits = R_SYS_BITS_PACK1(64),
 	.info = archinfo,
