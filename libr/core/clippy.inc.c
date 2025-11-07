@@ -139,8 +139,8 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 		pos0 = true;
 		msg++;
 		break;
-	case '+':
-	case '3':
+	case 'K':
+	case 'O':
 	case 'C':
 		{
 			const char *space = strchr (msg, ' ');
@@ -154,7 +154,7 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 			case 'C':
 				type = R_AVATAR_CROCO;
 				break;
-			case '3':
+			case 'K':
 				type = R_AVATAR_CYBCAT;
 				break;
 			}

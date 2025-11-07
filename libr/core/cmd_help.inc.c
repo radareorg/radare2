@@ -264,6 +264,15 @@ static RCoreHelpMessage help_msg_question_i = {
 	NULL
 };
 
+static RCoreHelpMessage help_msg_clippy = {
+	"Usage: ?E[CO] msg", "print a message with clippy", "",
+	"?E", " hello", "Clippy will say hello",
+	"?EC", " world", "Croco will say world",
+	"?EK", " meoww", "Cybercat will say meoww",
+	"?EO", " tung", "Orangg says tuuung",
+	NULL
+};
+
 static RCoreHelpMessage help_msg_question_e = {
 	"Usage: ?e[=bdgnpst] arg", "print/echo things", "",
 	"?e", "", "echo message with newline",
@@ -1197,7 +1206,11 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'E': // "?E" clippy echo
-		r_core_clippy (core, input + 1);
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_clippy);
+		} else {
+			r_core_clippy (core, input + 1);
+		}
 		break;
 	case 'e': // "?e" echo
 		if (input[1] == 'q') { // "?eq"
