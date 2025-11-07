@@ -13,10 +13,9 @@
 
 R_API void r_getopt_init(RGetopt *opt, int argc, const char **argv, const char *ostr) {
 	memset (opt, 0, sizeof (RGetopt));
-	opt->err = 1;
+	opt->err = true;
 	opt->ind = 1;
 	opt->opt = 0;
-	opt->reset = 0;
 	opt->arg = NULL;
 	opt->argc = argc;
 	opt->argv = argv;
@@ -24,11 +23,10 @@ R_API void r_getopt_init(RGetopt *opt, int argc, const char **argv, const char *
 }
 
 R_API int r_getopt_next(RGetopt *opt) {
-	static const char *place = EMSG; // option letter processing
-	const char *oli; // option letter list index
+	static const char *place = EMSG;
+	const char *oli;
 
-	if (opt->reset || !*place) { // update scanning pointer
-		opt->reset = 0;
+	if (!*place) {
 		if (opt->ind >= opt->argc || *(place = opt->argv[opt->ind]) != '-') {
 			place = EMSG;
 			return -1;
@@ -60,8 +58,8 @@ R_API int r_getopt_next(RGetopt *opt) {
 		}
 		return BADCH;
 	}
-	if (*++oli == ':') { /* need argument */
-		if (*place) { /* no white space */
+	if (*++oli == ':') {
+		if (*place) {
 			opt->arg = place;
 		} else if (opt->argc <= ++opt->ind) {  /* no arg */
 			place = EMSG;
@@ -72,9 +70,8 @@ R_API int r_getopt_next(RGetopt *opt) {
 				(void)eprintf ("%s: option requires an argument -- %c\n", opt->argv[0], opt->opt);
 			}
 			return BADCH;
-		} else { /* white space */
-			opt->arg = opt->argv[opt->ind];
 		}
+		opt->arg = opt->argv[opt->ind];
 		place = EMSG;
 		opt->ind++;
 	} else {
@@ -83,6 +80,5 @@ R_API int r_getopt_next(RGetopt *opt) {
 			opt->ind++;
 		}
 	}
-	// dump back option letter
 	return opt->opt;
 }
