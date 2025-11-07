@@ -2833,6 +2833,15 @@ static bool cb_scrnkey(void *user, void *data) {
 	return true;
 }
 
+static bool cb_scrclippy(void *user, void *data) {
+	RConfigNode *node = (RConfigNode*) data;
+	if (!strcmp (node->value, "help") || *node->value == '?') {
+		print_node_options (user, node);
+		return false;
+	}
+	return true;
+}
+
 static bool cb_scr_demo(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -4660,6 +4669,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETOPTIONS (n, "asciiesc", "asciidot", "raw", "pascal", NULL); // TODO: add ebcdic here and other charset plugins here!!
 	SETB ("scr.confirmquit", "false", "Confirm on quit");
 	SETB ("scr.progressbar", "false", "display a progress bar when running scripts.");
+	n = NODECB ("scr.clippy", "clippy", &cb_scrclippy);
+	SETDESC (n, "default clippy avatar for ?E command");
+	SETOPTIONS (n, "clippy", "orangg", "croco", "cybercat", NULL);
 
 	/* str */
 	SETCB ("str.escbslash", "false", &cb_str_escbslash, "escape the backslash"); // XXX this is the only var starting with 'str.'

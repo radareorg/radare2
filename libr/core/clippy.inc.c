@@ -132,21 +132,23 @@ enum {
 };
 
 R_API void r_core_clippy(RCore *core, const char *msg) {
+	// Get default type from config
+	const char *clippy_type = r_config_get (core->config, "scr.clippy");
 	int type = R_AVATAR_CLIPPY;
-	bool pos0 = false;
-	switch (*msg) {
-	case '0':
-		pos0 = true;
-		msg++;
-		break;
-	case 'K':
-	case 'O':
-	case 'C':
-		{
-			const char *space = strchr (msg, ' ');
-			if (!space) {
-				space = msg;
-			}
+	if (!strcmp (clippy_type, "orangg")) {
+		type = R_AVATAR_ORANGG;
+	} else if (!strcmp (clippy_type, "croco")) {
+		type = R_AVATAR_CROCO;
+	} else if (!strcmp (clippy_type, "cybercat")) {
+		type = R_AVATAR_CYBCAT;
+	}
+
+	int frame = -1; // -1 means random
+	while (*msg && *msg != ' ') {
+		if (isdigit (*msg)) {
+			frame = *msg - '0';
+			msg++;
+		} else if (isalpha (*msg)) {
 			switch (*msg) {
 			case 'O':
 				type = R_AVATAR_ORANGG;
@@ -157,10 +159,17 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 			case 'K':
 				type = R_AVATAR_CYBCAT;
 				break;
+			default:
+				type = R_AVATAR_CLIPPY;
+				break;
 			}
-			msg = space + 1;
+			msg++;
+		} else {
+			break;
 		}
-		break;
+	}
+	if (*msg == ' ') {
+		msg++;
 	}
 
 	int w = r_cons_get_size (core->cons, NULL);
@@ -184,7 +193,11 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 		break;
 	}
 	int baseline = 0;
-	if (!pos0 && avatar->count > 1) {
+	if (frame != -1) {
+		if (frame < avatar->count) {
+			baseline = frame * avatar->h;
+		}
+	} else if (avatar->count > 1) {
 		baseline += r_num_rand (avatar->count) * avatar->h;
 	}
 	msg = r_str_trim_head_ro (msg);
