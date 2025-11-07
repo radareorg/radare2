@@ -1891,12 +1891,12 @@ R_API size_t r_str_ansi_strip(char *str) {
 	while (str[i]) {
 		size_t chlen = __str_ansi_length (str + i);
 		size_t sanitize_len = __str_ansi_sanitize_length (str + i);
-		if (chlen > 1) {
+		if (str[i] == 0x1b && chlen > 1) {
 			r_str_cpy (str + i, str + i + chlen);
 		} else if (sanitize_len > 0) {
 			r_str_cpy (str + i, str + i + sanitize_len);
 		} else {
-			i++;
+			i += chlen;
 		}
 	}
 	return i;

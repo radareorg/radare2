@@ -958,14 +958,10 @@ static const ut8 *str_form_value(entry_descriptor desc, RBin *bin, const ut8 *bu
 };
 
 static const ut8 *data16_form_value(entry_descriptor desc, const ut8 *buf, const ut8 *buf_end, ut8 val[16]) {
-	if (desc.form != DW_FORM_data16) {
+	if (desc.form != DW_FORM_data16 || buf + 16 >= buf_end) {
 		R_LOG_DEBUG ("Expected form type data16 but got: %#x", desc.form);
 		return NULL;
 	}
-	if (buf + 16 >= buf_end) {
-		return NULL;
-	}
-
 	memcpy (val, buf, 16);
 	buf += 16;
 	return buf;
@@ -2230,7 +2226,12 @@ static const ut8 *parse_attr_value(RBin *bin, const ut8 *obuf, int obuf_len, RBi
 		value->kind = DW_AT_KIND_STRING;
 		if (*buf) {
 			char *name = r_str_ndup ((const char *)buf, buf_end - buf);
+			// go programs contain multibyte chars in the symbol names and strings we dont want to strip them here
+#if 0
+			eprintf ("-(%s)\n", name);
 			r_str_ansi_strip (name);
+			eprintf ("+(%s)\n", name);
+#endif
 			r_str_replace_ch (name, '\n', 0, true);
 			r_str_replace_ch (name, '\t', 0, true);
 			value->string.content = name;
@@ -2283,7 +2284,11 @@ static const ut8 *parse_attr_value(RBin *bin, const ut8 *obuf, int obuf_len, RBi
 			? getsection (bin, DWARF_SN_STR) : getsection (bin, DWARF_SN_LINE_STR);
 		char *str = get_section_string (bin, section, value->string.offset);
 		if (str) {
+#if 0
+			eprintf ("-(%s)\n", str);
 			r_str_ansi_strip (str);
+			eprintf ("+(%s)\n", str);
+#endif
 			r_str_replace_ch (str, '\n', 0, true);
 			r_str_replace_ch (str, '\t', 0, true);
 			value->string.content = str;
@@ -2479,7 +2484,11 @@ static const ut8 *parse_die(RBin *bin, const ut8 *buf, const ut8 *buf_end, RBinD
 			}
 			if (attribute->attr_name == DW_AT_comp_dir && is_valid_string_form) {
 				comp_dir = strdup (attribute->string.content);
+#if 0
+				eprintf ("-(%s)\n", comp_dir);
 				r_str_ansi_strip (comp_dir);
+				eprintf ("+(%s)\n", comp_dir);
+#endif
 				r_str_replace_ch (comp_dir, '\n', 0, true);
 				r_str_replace_ch (comp_dir, '\t', 0, true);
 			}
