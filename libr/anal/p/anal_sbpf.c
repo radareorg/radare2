@@ -158,11 +158,15 @@ static RList *sbpf_find_string_xrefs(RAnal *anal, ut64 from, ut64 to, ut64 data_
 			// Extract the 64-bit immediate value
 			ut32 imm_low = r_read_le32 (buf + 4);
 			ut32 imm_high = r_read_le32 (buf + 12);
-			ut64 imm_val = ((ut64)imm_high << 32) | imm_low;
+			imm_val = ((ut64)imm_high << 32) | imm_low;
+			found_pattern = true;
+		}
 
+		// Process any found 64-bit immediate value (from either MOV+HOR64 or LDDW)
+		if (found_pattern) {
 			// Check if the immediate points to the data segment
 			if (imm_val >= data_start && imm_val < data_end) {
-				R_LOG_DEBUG ("  LDDW value 0x%"PFMT64x" is in data segment [0x%"PFMT64x" - 0x%"PFMT64x")",
+				R_LOG_DEBUG ("  Immediate value 0x%"PFMT64x" is in data segment [0x%"PFMT64x" - 0x%"PFMT64x")",
 					imm_val, data_start, data_end);
 
 				// First check if this is a string pointer structure
@@ -240,9 +244,13 @@ static bool sbpf_find_segment_bounds(RAnal *anal, int segment_index, ut64 *start
 
 	// Get base address - try to get it from core config
 	ut64 baddr = 0;
-	if (anal->coreb.core && anal->coreb.cfgGetI) {
+	if (anal->coreb.core && anal->coreb.cfgGet) {
 		// Get bin.baddr from config which includes user-specified -B value
-		baddr = anal->coreb.cfgGetI (anal->coreb.core, "bin.baddr");
+		// Use cfgGet instead of cfgGetI to handle 64-bit addresses properly
+		const char *baddr_str = anal->coreb.cfgGet (anal->coreb.core, "bin.baddr");
+		if (baddr_str) {
+			baddr = r_num_get (NULL, baddr_str);
+		}
 		R_LOG_DEBUG ("Got baddr from config: 0x%"PFMT64x, baddr);
 	}
 
