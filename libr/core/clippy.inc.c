@@ -79,13 +79,13 @@ static Avatar avatar_clippy_utf8 = {
 		" ││ ││ ",
 		" │└─┘│ ",
 		" ╰───╯ ",
-		" ╭──╮   ",
-		" │ ╶│╶  ",
-		" │ O o  ",
-		" │  │  ╱",
-		" │ ╭┘ ╱ ",
-		" │ ╰ ╱  ",
-		" ╰──'   ",
+		" ╭──╮  ",
+		" │ ╶│╶ ",
+		" │ O o ",
+		" │  │  ",
+		" │ ╭┘ ╱",
+		" │ ╰ ╱ ",
+		" ╰──'  ",
 		" ╭──╮  ",
 		" │ _│_ ",
 		" │ O O ",
@@ -188,7 +188,7 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 	const int lines_length = r_list_length (lines);
 	int bubble_w;
 	if (lines_length == 1) {
-		bubble_w = strlen (m);
+		bubble_w = r_utf8_strlen ( (const ut8 *)m);
 	} else {
 		bubble_w = (w < margin_right)? 10: w - margin_right;
 	}
@@ -242,7 +242,7 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 			RListIter *line = r_list_get_nth (lines, i - 2);
 			if (line) {
 				r_cons_printf (core->cons, "%s", line->data);
-				const int tw = strlen (line->data);
+				const int tw = r_utf8_strlen (line->data);
 				r_cons_printf (core->cons, r_str_pad (' ', bubble_w - tw));
 			}
 		} else {
