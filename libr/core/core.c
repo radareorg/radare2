@@ -274,7 +274,7 @@ static bool cfggetb(RCore *core, const char *k) {
 	return r_config_get_b (core->config, k);
 }
 
-static int cfggeti(RCore *core, const char *k) {
+static ut64 cfggeti(RCore *core, const char *k) {
 	return r_config_get_i (core->config, k);
 }
 
