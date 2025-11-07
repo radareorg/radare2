@@ -1559,7 +1559,7 @@ R_API char *r_str_escape_utf32be(const char *buf, int buf_size, bool show_asciid
 	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF32BE, show_asciidot, esc_bslash, false);
 }
 
-static char *escape_and_strip(const char *buf, int buf_size) {
+static char *escape_utf8(const char *buf, int buf_size, bool escape_non_printable) {
 	char *new_buf, *q;
 	const char *p, *end;
 	RRune ch;
@@ -1612,7 +1612,15 @@ static char *escape_and_strip(const char *buf, int buf_size) {
 			default:
 				if (IS_PRINTABLE (*p)) {
 					*q++ = *p;
+				} else if (escape_non_printable) {
+					*q++ = '\\';
+					*q++ = 'u';
+					*q++ = '0';
+					*q++ = '0';
+					*q++ = "0123456789abcdef"[*p >> 4 & 0xf];
+					*q++ = "0123456789abcdef"[*p & 0xf];
 				}
+				// else skip non-printable
 			}
 		} else if (ch_bytes == 4) {
 			if (r_isprint (ch)) {
@@ -1652,13 +1660,27 @@ static char *escape_and_strip(const char *buf, int buf_size) {
 					*q++ = "0123456789abcdef"[ch >> 4 * i & 0xf];
 				}
 			}
-		} else {
+		} else { // ch_bytes == 0
+			if (escape_non_printable) {
+				// Outside JSON spec, but apparently no better
+				// alternative if need to reconstruct the original string
+				*q++ = '\\';
+				*q++ = 'u';
+				*q++ = '0';
+				*q++ = '0';
+				*q++ = "0123456789abcdef"[*p >> 4 & 0xf];
+				*q++ = "0123456789abcdef"[*p & 0xf];
+			}
 			ch_bytes = 1;
 		}
 		p += ch_bytes;
 	}
 	*q = '\0';
 	return new_buf;
+}
+
+static char *escape_and_strip(const char *buf, int buf_size) {
+	return escape_utf8 (buf, buf_size, false);
 }
 
 R_API char *r_str_encoded_json(const char *buf, int buf_size, int encoding) {
@@ -1706,127 +1728,7 @@ R_API char *r_str_encoded_json(const char *buf, int buf_size, int encoding) {
 
 // TODO: very long and bad name here
 R_API char *r_str_escape_json(const char *buf, int buf_size) {
-	char *new_buf, *q;
-	const char *p, *end;
-	RRune ch;
-	int i, len, ch_bytes;
-
-	if (!buf) {
-		return NULL;
-	}
-	len = buf_size < 0 ? strlen (buf) : buf_size;
-	end = buf + len;
-	/* Worst case scenario, we convert every byte to \u00hh */
-	new_buf = malloc (1 + (len * 6));
-	if (!new_buf) {
-		return NULL;
-	}
-	p = buf;
-	q = new_buf;
-	while (p < end) {
-		ch_bytes = r_utf8_decode ((ut8 *)p, end - p, &ch);
-		if (ch_bytes == 1) {
-			switch (*p) {
-			case '\n':
-				*q++ = '\\';
-				*q++ = 'n';
-				break;
-			case '\r':
-				*q++ = '\\';
-				*q++ = 'r';
-				break;
-			case '\\':
-				*q++ = '\\';
-				*q++ = '\\';
-				break;
-			case '\t':
-				*q++ = '\\';
-				*q++ = 't';
-				break;
-			case '"' :
-				*q++ = '\\';
-				*q++ = '"';
-				break;
-			case '\f':
-				*q++ = '\\';
-				*q++ = 'f';
-				break;
-			case '\b':
-				*q++ = '\\';
-				*q++ = 'b';
-				break;
-			default:
-				if (!IS_PRINTABLE (*p)) {
-					*q++ = '\\';
-					*q++ = 'u';
-					*q++ = '0';
-					*q++ = '0';
-					*q++ = "0123456789abcdef"[*p >> 4 & 0xf];
-					*q++ = "0123456789abcdef"[*p & 0xf];
-				} else {
-					*q++ = *p;
-				}
-			}
-		} else if (ch_bytes == 4) {
-			if (r_isprint (ch)) {
-				// Assumes buf is UTF8-encoded
-				for (i = 0; i < ch_bytes; i++) {
-					*q++ = *(p + i);
-				}
-			} else {
-				RRune high, low;
-				ch -= 0x10000;
-				high = 0xd800 + (ch >> 10 & 0x3ff);
-				low = 0xdc00 + (ch & 0x3ff);
-				*q++ = '\\';
-				*q++ = 'u';
-				for (i = 2; i >= 0; i -= 2) {
-					*q++ = "0123456789abcdef"[high >> 4 * (i + 1) & 0xf];
-					*q++ = "0123456789abcdef"[high >> 4 * i & 0xf];
-				}
-				*q++ = '\\';
-				*q++ = 'u';
-				for (i = 2; i >= 0; i -= 2) {
-					*q++ = "0123456789abcdef"[low >> 4 * (i + 1) & 0xf];
-					*q++ = "0123456789abcdef"[low >> 4 * i & 0xf];
-				}
-			}
-		} else if (ch_bytes > 1) {
-			if (r_isprint (ch)) {
-				// Assumes buf is UTF8-encoded
-				for (i = 0; i < ch_bytes; i++) {
-					*q++ = *(p + i);
-				}
-			} else {
-				*q++ = '\\';
-				*q++ = 'u';
-				for (i = 2; i >= 0; i -= 2) {
-					*q++ = "0123456789abcdef"[ch >> 4 * (i + 1) & 0xf];
-					*q++ = "0123456789abcdef"[ch >> 4 * i & 0xf];
-				}
-			}
-		} else { // ch_bytes == 0
-			// Outside JSON spec, but apparently no better
-			// alternative if need to reconstruct the original string
-#if 1
-			*q++ = '\\';
-			*q++ = 'u';
-			*q++ = '0';
-			*q++ = '0';
-			*q++ = "0123456789abcdef"[*p >> 4 & 0xf];
-			*q++ = "0123456789abcdef"[*p & 0xf];
-#else
-			*q++ = '\\';
-			*q++ = 'x';
-			*q++ = "0123456789abcdef"[*p >> 4 & 0xf];
-			*q++ = "0123456789abcdef"[*p & 0xf];
-#endif
-			ch_bytes = 1;
-		}
-		p += ch_bytes;
-	}
-	*q = '\0';
-	return new_buf;
+	return escape_utf8 (buf, buf_size, true);
 }
 
 // https://daviddeley.com/autohotkey/parameters/parameters.htm#WINCRULES
