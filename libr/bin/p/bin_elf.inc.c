@@ -1172,7 +1172,7 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 			if (is_text) {
 				// In .text: behave like R_BPF_64_64 but ignore symbol and handle addend
 				// For lddw instruction, addend is split across two immediate fields
-				if (addend == 0 && bo && paddr != UT64_MAX) {
+				if (addend == 0 && paddr != UT64_MAX) {
 					// Read from the immediate fields - use physical offset
 					// paddr+4 = imm_lo, paddr+8 = second instruction, paddr+12 = imm_hi
 					ut32 vals[3];
