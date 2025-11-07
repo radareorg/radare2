@@ -755,28 +755,20 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		mainr2_fini (&mr);
 		return main_help (1);
 	}
-	// Pre-RCore commandline flags
-	RGetopt opt = {0};
-	r_getopt_init (&opt, argc, argv, OPTARGS);
-	int ch;
-	while ((ch = r_getopt_next (&opt)) != -1) {
-		switch (ch) {
-		case 'q':
-		case 'Q':
+	// Pre-RCore commandline flags - manually parse only the options we need before RCore creation
+	for (int i = 1; i < argc; i++) {
+		const char *arg = argv[i];
+		if (!strcmp (arg, "-q") || !strcmp (arg, "-Q")) {
 			mr.quiet = true;
-			break;
-		case 'h':
+		} else if (!strcmp (arg, "-h")) {
 			mr.help++;
-			break;
-		case 'j':
+		} else if (!strcmp (arg, "-j")) {
 			mr.json = true;
-			break;
-		case 'v':
+		} else if (!strcmp (arg, "-v")) {
 			mr.show_version = true;
-			break;
-		case 'H':
-			if (opt.ind < argc) {
-				main_print_var (argv[opt.ind]);
+		} else if (!strcmp (arg, "-H")) {
+			if (i + 1 < argc) {
+				main_print_var (argv[i + 1]);
 			} else {
 				main_print_var (NULL);
 			}
@@ -784,6 +776,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			return 0;
 		}
 	}
+	RGetopt opt = { 0 };
 	if (mr.help > 0) {
 		int ret = main_help (mr.help > 1? 2: 0);
 		mainr2_fini (&mr);
@@ -1060,9 +1053,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			break;
 		case 'V':
 			{
-			int rc = r_main_version_verify (r, 1, mr.json);
-			mainr2_fini (&mr);
-			return rc;
+				int rc = r_main_version_verify (r, 1, mr.json);
+				mainr2_fini (&mr);
+				return rc;
 			}
 		case 'w':
 			mr.perms |= R_PERM_W;
