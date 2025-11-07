@@ -60,8 +60,8 @@ R_API int r_getopt_next(RGetopt *opt) {
 		}
 		return BADCH;
 	}
-	if (*++oli == ':') { /* need argument */
-		if (*place) { /* no white space */
+	if (*++oli == ':') {
+		if (*place) {
 			opt->arg = place;
 		} else if (opt->argc <= ++opt->ind) {  /* no arg */
 			place = EMSG;
@@ -72,7 +72,7 @@ R_API int r_getopt_next(RGetopt *opt) {
 				(void)eprintf ("%s: option requires an argument -- %c\n", opt->argv[0], opt->opt);
 			}
 			return BADCH;
-		} else { /* white space */
+		} else {
 			opt->arg = opt->argv[opt->ind];
 		}
 		place = EMSG;
@@ -83,6 +83,5 @@ R_API int r_getopt_next(RGetopt *opt) {
 			opt->ind++;
 		}
 	}
-	// dump back option letter
 	return opt->opt;
 }

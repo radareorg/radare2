@@ -6,7 +6,6 @@
 #include <r_main.h>
 #define USE_THREADS 1
 #define ALLOW_THREADED 1
-#define UNCOLORIZE_NONTTY 0
 #ifdef _MSC_VER
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -720,6 +719,8 @@ static void dp_write(RCore *core, const char *s) {
 	}
 }
 
+#define OPTARGS "=012AjMCwxfF:hm:e:Enk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSzuXt"
+
 R_API int r_main_radare2(int argc, const char **argv) {
 	int c, ret;
 	RMainRadare2 mr;
@@ -732,13 +733,6 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	r_signal_sigmask (SIG_BLOCK, &sigBlockMask, NULL);
 #endif
 	r_sys_env_init ();
-	char *r2_bin = r_sys_getenv ("R2_BIN");
-	if (r2_bin) {
-		free (r2_bin);
-	} else {
-		r_sys_setenv ("R2_BIN", R2_BINDIR);
-		r_sys_setenv_sep ("PATH", R2_BINDIR, false);
-	}
 	// Create rarun2 profile with startup environ
 	char **env = r_sys_get_environ ();
 	mr.envprofile = r_run_get_environ_profile (env);
@@ -761,24 +755,50 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		mainr2_fini (&mr);
 		return main_help (1);
 	}
-	// Handle -H early to avoid creating RCore and loading plugins
-	RGetopt opt_h;
-	r_getopt_init (&opt_h, argc, argv, "H");
-	opt_h.err = 0;
-	int c_h;
-	const char *h_arg = NULL;
-	while ((c_h = r_getopt_next (&opt_h)) != -1) {
-		if (c_h == 'H') {
-			if (opt_h.ind < argc && argv[opt_h.ind][0] != '-') {
-				h_arg = argv[opt_h.ind];
-			}
+	// Pre-RCore commandline flags
+	RGetopt opt = {0};
+	r_getopt_init (&opt, argc, argv, OPTARGS);
+	int ch;
+	while ((ch = r_getopt_next (&opt)) != -1) {
+		switch (ch) {
+		case 'q':
+		case 'Q':
+			mr.quiet = true;
 			break;
+		case 'h':
+			mr.help++;
+			break;
+		case 'j':
+			mr.json = true;
+			break;
+		case 'v':
+			mr.show_version = true;
+			break;
+		case 'H':
+			if (opt.ind < argc) {
+				main_print_var (argv[opt.ind]);
+			} else {
+				main_print_var (NULL);
+			}
+			mainr2_fini (&mr);
+			return 0;
 		}
 	}
-	if (c_h == 'H' || (argc > 1 && !strcmp (argv[1], "-H"))) {
-		main_print_var (h_arg);
+	if (mr.help > 0) {
+		int ret = main_help (mr.help > 1? 2: 0);
 		mainr2_fini (&mr);
-		return 0;
+		return ret;
+	}
+	if (mr.show_version) {
+		int mode = 0;
+		if (mr.json) {
+			mode = 'j';
+		} else if (mr.quiet) {
+			mode = 'q';
+		}
+		int res = r_main_version_print ("radare2", mode);
+		mainr2_fini (&mr);
+		return res;
 	}
 	RCore *r = r_core_new ();
 	if (!r) {
@@ -816,12 +836,11 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 	set_color_default (r);
 
-	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "=012AjMCwxfF:hm:e:Enk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSzuXt");
+	r_getopt_init (&opt, argc, argv, OPTARGS);
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'j':
-			mr.json = true;
+			// already parsed
 			break;
 		case '=':
 			R_FREE (r->cmdremote);
@@ -1037,11 +1056,14 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			break;
 #endif
 		case 'v':
-			mr.show_version = true;
+			// already parsed
 			break;
 		case 'V':
-			mr.show_versions = true;
-			break;
+			{
+			int rc = r_main_version_verify (r, 1, mr.json);
+			mainr2_fini (&mr);
+			return rc;
+			}
 		case 'w':
 			mr.perms |= R_PERM_W;
 			break;
@@ -1050,29 +1072,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			r_config_set_b (r->config, "io.exec", false);
 			break;
 		default:
-			mr.help++;
+			break;
 		}
-	}
-	if (mr.show_versions) {
-		int rc = r_main_version_verify (r, 1, mr.json);
-		mainr2_fini (&mr);
-		return rc;
-	}
-	if (mr.show_versions) {
-		int rc = r_main_version_verify (r, 0, mr.json);
-		mainr2_fini (&mr);
-		return rc;
-	}
-	if (mr.show_version) {
-		int mode = 0;
-		if (mr.json) {
-			mode = 'j';
-		} else if (mr.quiet) {
-			mode = 'q';
-		}
-		int res = r_main_version_print ("radare2", mode);
-		mainr2_fini (&mr);
-		return res;
 	}
 	if (mr.stderrToStdout) {
 #if __wasi__
@@ -1174,12 +1175,6 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		}
 		mainr2_fini (&mr);
 		return 0;
-	}
-
-	if (mr.help > 0) {
-		int ret = main_help (mr.help > 1? 2: 0);
-		mainr2_fini (&mr);
-		return ret;
 	}
 #if R2__WINDOWS__
 	{
@@ -1841,13 +1836,6 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			perform_analysis (r, mr.do_analysis);
 		}
 	}
-#if UNCOLORIZE_NONTTY
-#if R2__UNIX__
-	if (!r_cons_is_tty ()) {
-		r_config_set_i (r->config, "scr.color", COLOR_MODE_DISABLED);
-	}
-#endif
-#endif
 	if (mr.fullfile) {
 		r_core_block_size (r, r_io_desc_size (mr.iod));
 	}
@@ -2010,12 +1998,7 @@ beach:
 		r_th_wait (mr.th_ana);
 		r_th_free (mr.th_ana);
 	}
-
 	r_core_task_sync_end (&r->tasks);
-
-	// not really needed, cause r_core_fini will close the file
-	// and this fh may be come stale during the command execution.
-	// r_core_file_close (r, fh);
 	mainr2_fini (&mr);
 	return (ret < 0? 0: ret);
 }
