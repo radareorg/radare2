@@ -3215,7 +3215,8 @@ R_API char *r_str_wrap(const char *str, int w) {
 	if (w < 1 || !str) {
 		return strdup ("");
 	}
-	size_t r_size = 8 * strlen (str);
+	/* Use utf8 length to better estimate allocation size and match API types */
+	size_t r_size = 8 * r_utf8_strlen ((const ut8 *)str);
 	char *r = malloc (r_size);
 	if (!r) {
 		return NULL;
