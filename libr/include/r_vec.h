@@ -222,7 +222,7 @@ extern "C" {
 	} \
 	static inline R_MAYBE_UNUSED R_MUSTUSE ut64 R_VEC_FUNC(vec_type, length)(const vec_type *vec) { \
 		R_RETURN_VAL_IF_FAIL (vec, 0); \
-		return vec->_end - vec->_start; \
+		return vec->_start ? (ut64)(vec->_end - vec->_start) : 0; \
 	} \
 	static inline R_MAYBE_UNUSED R_MUSTUSE bool R_VEC_FUNC(vec_type, empty)(const vec_type *vec) { \
 		R_RETURN_VAL_IF_FAIL (vec, false); \
@@ -393,7 +393,7 @@ extern "C" {
 		} \
 	} \
 	static inline R_MAYBE_UNUSED void R_VEC_FUNC(vec_type, remove)(vec_type *vec, ut64 index) { \
-		R_RETURN_IF_FAIL (vec && vec->_start != vec->_end && index < (ut64)(size_t)(vec->_start - vec->_end)); \
+		R_RETURN_IF_FAIL (vec && vec->_start != vec->_end && index < (ut64)(size_t)(vec->_end - vec->_start)); \
 		type *ptr = R_VEC_FUNC(vec_type, at) (vec, index); \
 		const ut64 num_elems_after = vec->_end - ptr; \
 		R_MAYBE_GENERATE(has_fini, fini_fn (ptr)); \
