@@ -17,6 +17,7 @@ R_API int r_utf8_decode(const ut8 *ptr, int ptrlen, RRune *ch);
 R_API int r_utf8_encode_str(const RRune *str, ut8 *dst, const int dst_length);
 R_API int r_utf8_size(const ut8 *ptr);
 R_API int r_utf8_strlen(const ut8 *str);
+R_API int r_utf8_display_width(const ut8 *str);
 R_API int r_isprint(const RRune c);
 R_API char *r_utf16_to_utf8_l(const wchar_t *wc, int len);
 R_API const char *r_utf_block_name(int idx);

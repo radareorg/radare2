@@ -602,6 +602,41 @@ R_API int r_utf8_strlen(const ut8 *str) {
 	return len;
 }
 
+static int rune_display_width(RRune ch) {
+	if (ch < 0x80) {
+		return 1;
+	}
+	// CJK and wide characters
+	if ((ch >= 0x1100 && ch <= 0x115F) ||  // Hangul Jamo
+	    (ch >= 0x2E80 && ch <= 0x9FFF) ||  // CJK
+	    (ch >= 0xAC00 && ch <= 0xD7AF) ||  // Hangul Syllables
+	    (ch >= 0xF900 && ch <= 0xFAFF) ||  // CJK Compatibility Ideographs
+	    (ch >= 0xFE10 && ch <= 0xFE1F) ||  // Vertical Forms
+	    (ch >= 0xFE30 && ch <= 0xFE4F) ||  // CJK Compatibility Forms
+	    (ch >= 0x1F000 && ch <= 0x1FFFF) || // Emojis and symbols
+	    (ch >= 0x20000 && ch <= 0x2FFFF)) { // CJK Extension B, C, D, E, F
+		return 2;
+	}
+	return 1;
+}
+
+R_API int r_utf8_display_width(const ut8 *str) {
+	int width = 0;
+	const ut8 *p = str;
+	while (*p) {
+		RRune ch;
+		int len = r_utf8_decode(p, -1, &ch);
+		if (len == 0) {
+			width += 1; // invalid byte, assume 1
+			p++;
+		} else {
+			width += rune_display_width(ch);
+			p += len;
+		}
+	}
+	return width;
+}
+
 // XXX this function name is really bad, rename to r_utf8_is_printable()
 // XXX but a single char rune is useless without processing the next chars
 // XXX not to mention int != bool
