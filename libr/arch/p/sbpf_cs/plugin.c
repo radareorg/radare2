@@ -50,11 +50,13 @@
 // sBPF v3
 #define SBPF_INS_EXIT_V3		0x9d
 
-// Global variable to cache the detected sBPF version
-static ut32 g_sbpf_version = SBPF_V0;
-static bool g_version_detected = false;
-
 #if CS_API_MAJOR >= 5
+
+typedef struct {
+	csh cs_handle;
+	ut32 sbpf_version;
+	bool version_detected;
+} SbpfPluginData;
 
 #define CSINC BPF
 #define CSINC_MODE get_capstone_mode(as)
@@ -123,9 +125,9 @@ static const char *get_syscall_name(ut32 hash) {
 	return NULL;
 }
 
-static void print_sbpf_version(void) {
+static void print_sbpf_version(ut32 sbpf_version) {
 	const char *version_str = "unknown";
-	switch (g_sbpf_version) {
+	switch (sbpf_version) {
 	case SBPF_V0: version_str = "V0"; break;
 	case SBPF_V1: version_str = "V1"; break;
 	case SBPF_V2: version_str = "V2"; break;
@@ -135,9 +137,11 @@ static void print_sbpf_version(void) {
 }
 
 static ut32 detect_sbpf_version(RArchSession *a) {
+	SbpfPluginData *spd = (SbpfPluginData*)a->data;
+
 	// Return cached version if already detected
-	if (g_version_detected) {
-		return g_sbpf_version;
+	if (spd->version_detected) {
+		return spd->sbpf_version;
 	}
 
 	// Get version from RBin's info->abi which was set by the ELF parser
@@ -155,33 +159,33 @@ static ut32 detect_sbpf_version(RArchSession *a) {
 
 	// Parse the version from the ABI string set by the ELF parser
 	if (!strcmp (abi, "sbpfv0")) {
-		g_sbpf_version = SBPF_V0;
+		spd->sbpf_version = SBPF_V0;
 	} else if (!strcmp (abi, "sbpfv1")) {
-		g_sbpf_version = SBPF_V1;
+		spd->sbpf_version = SBPF_V1;
 	} else if (!strcmp (abi, "sbpfv2")) {
-		g_sbpf_version = SBPF_V2;
+		spd->sbpf_version = SBPF_V2;
 	} else if (!strcmp (abi, "sbpfv3")) {
-		g_sbpf_version = SBPF_V3;
+		spd->sbpf_version = SBPF_V3;
 	} else {
 		// Default to v0 for unknown/missing ABI
-		g_sbpf_version = SBPF_V0;
+		spd->sbpf_version = SBPF_V0;
 	}
 
-	g_version_detected = true;
-	print_sbpf_version ();
+	spd->version_detected = true;
+	print_sbpf_version (spd->sbpf_version);
 
-	return g_sbpf_version;
+	return spd->sbpf_version;
 }
 
 static void analop_esil(RArchSession *a, RAnalOp *op, cs_insn *insn, ut64 addr);
 
 static char *mnemonics(RArchSession *s, int id, bool json) {
-	CapstonePluginData *cpd = (CapstonePluginData*)s->data;
-	return r_arch_cs_mnemonics (s, cpd->cs_handle, id, json);
+	SbpfPluginData *spd = (SbpfPluginData*)s->data;
+	return r_arch_cs_mnemonics (s, spd->cs_handle, id, json);
 }
 
 static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
-	CapstonePluginData *cpd = (CapstonePluginData*)a->data;
+	SbpfPluginData *spd = (SbpfPluginData*)a->data;
 	const ut8 *buf = op->bytes;
 	const int len = op->size;
 	op->size = 8;
@@ -190,7 +194,7 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	ut32 sbpf_version = detect_sbpf_version (a);
 
 	cs_insn *insn = NULL;
-	int n = cs_disasm (cpd->cs_handle, (ut8*)buf, len, op->addr, 1, &insn);
+	int n = cs_disasm (spd->cs_handle, (ut8*)buf, len, op->addr, 1, &insn);
 	if (n < 1) {
 		// Check for instructions that Capstone doesn't decode correctly
 		// In sBPF V3 opcodes for exit and syscall seems that are swapped
@@ -1309,9 +1313,11 @@ static bool init(RArchSession *s) {
 		R_LOG_WARN ("Already initialized");
 		return false;
 	}
-	s->data = R_NEW0 (CapstonePluginData);
-	CapstonePluginData *cpd = (CapstonePluginData*)s->data;
-	if (!r_arch_cs_init (s, &cpd->cs_handle)) {
+	s->data = R_NEW0 (SbpfPluginData);
+	SbpfPluginData *spd = (SbpfPluginData*)s->data;
+	spd->sbpf_version = SBPF_V0;
+	spd->version_detected = false;
+	if (!r_arch_cs_init (s, &spd->cs_handle)) {
 		R_LOG_ERROR ("Cannot initialize capstone");
 		R_FREE (s->data);
 		return false;
@@ -1321,8 +1327,8 @@ static bool init(RArchSession *s) {
 
 static bool fini(RArchSession *s) {
 	R_RETURN_VAL_IF_FAIL (s, false);
-	CapstonePluginData *cpd = (CapstonePluginData*)s->data;
-	cs_close (&cpd->cs_handle);
+	SbpfPluginData *spd = (SbpfPluginData*)s->data;
+	cs_close (&spd->cs_handle);
 	R_FREE (s->data);
 	return true;
 }
