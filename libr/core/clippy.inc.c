@@ -210,7 +210,7 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 				bubble_end = "─╮";
 			} else {
 				bubble_begin = " .-";
-				bubble_end = "-. ";
+				bubble_end = "-.";
 			}
 		} else if (i == 2) {
 			bubble_begin = "<  ";
@@ -225,15 +225,15 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 				bubble_end = "─╯";
 			} else {
 				bubble_begin = " `-";
-				bubble_end = "-' ";
+				bubble_end = "-'";
 			}
 		} else if (i < lines_length + 3) {
 			if (utf8) {
 				bubble_begin = " │ ";
-				bubble_end = " │ ";
+				bubble_end = " │";
 			} else {
 				bubble_begin = " | ";
-				bubble_end = " | ";
+				bubble_end = " |";
 			}
 		}
 		r_cons_print (core->cons, bubble_begin);
