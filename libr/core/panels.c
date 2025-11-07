@@ -782,7 +782,7 @@ static void __update_help_title(RCore *core, RPanel *panel) {
 		}
 	}
 	if (r_cons_canvas_gotoxy (can, panel->view->pos.x + 1, panel->view->pos.y + 1)) {
-		char *s = r_str_ndup (r_strbuf_get (title), panel->view->pos.w - 1);
+		char *s = r_str_ansi_crop (r_strbuf_get (title), 0, 0, panel->view->pos.w - 1, 1);
 		r_cons_canvas_write (can, s);
 		free (s);
 	}
@@ -854,7 +854,7 @@ static void __update_panel_title(RCore *core, RPanel *panel) {
 	char *cmd_title  = __apply_filter_cmd (core, panel);
 	if (cmd_title) {
 #if 1
-		char *tit = r_str_ndup (panel->model->title, panel->view->pos.w - 6);
+		char *tit = r_str_ansi_crop (panel->model->title, 0, 0, panel->view->pos.w - 6, 1);
 		if (!tit) {
 			tit = strdup ("");
 		}
