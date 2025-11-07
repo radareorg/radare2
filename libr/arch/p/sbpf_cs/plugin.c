@@ -189,7 +189,7 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 		// In sBPF V3 opcodes for exit and syscall seems that are swapped
 		if (len >= 8 && buf[0] == SBPF_INS_EXIT_V3 && sbpf_version >= SBPF_V3) {
 			op->type = R_ANAL_OP_TYPE_RET;
-			op->mnemonic = r_str_newf ("exit");
+			op->mnemonic = strdup ("exit");
 			return true;
 		} else if (len >= 8 && buf[0] == SBPF_INS_STQ && sbpf_version >= SBPF_V2) {
 			// Opcode 0x97 = STQ (store quad word / 64-bit immediate to memory)
@@ -523,12 +523,10 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 					const char *syscall_name = get_syscall_name (imm);
 					if (syscall_name) {
 						op->mnemonic = r_str_newf ("syscall %s", syscall_name);
-					} else {
-						op->mnemonic = r_str_newf ("syscall (invalid)");
 					}
 				} else {
 					op->type = R_ANAL_OP_TYPE_RET;
-					op->mnemonic = r_str_newf ("exit");
+					op->mnemonic = strdup ("exit");
 				}
 			// Handle SUB instruction - operands swapped in v2+ (SIMD-0174)
 			} else if ((insn->id == BPF_INS_SUB || insn->id == BPF_INS_SUB64) && insn->detail && OPCOUNT > 1) {
@@ -681,11 +679,6 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 					}
 				}
 				break;
-			// case BPF_INS_EXIT: ///< eBPF only
-			// 	//op->type = R_ANAL_OP_TYPE_TRAP;
-			// 	op->type = R_ANAL_OP_TYPE_CALL;
-			// 	op->type = R_ANAL_OP_TYPE_RET;
-			// 	break;
 			case BPF_INS_RET:
 				op->type = R_ANAL_OP_TYPE_RET;
 				break;
