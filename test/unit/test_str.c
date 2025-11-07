@@ -14,7 +14,7 @@ bool test_r_file(void) {
 //TODO test r_str_chop_path
 bool test_r_str_wrap(void) {
 	char *s = r_str_wrap ("hello world\nhow are you\n", 5);
-	char *res = strdup ("hello \nworld\nhow ar\ne you\n");
+	char *res = strdup ("hello\n worl\nd\nhow a\nre yo\nu\n");
 	mu_assert_streq (s, res, "error, invalid string wrapping");
 	free (s);
 	free (res);
@@ -297,13 +297,13 @@ bool test_r_str_ansi_len(void) {
 	mu_assert_eq (len, 7, "len(ascii + ansi ending with H)");
 
 	len = r_str_ansi_len ("r\xc3\xa4""dare2");
-	mu_assert_eq (len, 8, "len(ascii + 2 byte utf-8 counted as 2 chars)");
+	mu_assert_eq (len, 7, "len(ascii + 2 byte utf-8 counted as 1 char)");
 
 	len = r_str_ansi_len ("radar\xe2\x82\xac""2");
-	mu_assert_eq (len, 9, "len(ascii + 3 byte utf-8 counted as 3 chars)");
+	mu_assert_eq (len, 7, "len(ascii + 3 byte utf-8 counted as 1 char)");
 
 	len = r_str_ansi_len ("radar\xf0\x9d\x84\x9e""2");
-	mu_assert_eq (len, 10, "len(ascii + 4 byte utf-8 counted as 4 chars)");
+	mu_assert_eq (len, 7, "len(ascii + 4 byte utf-8 counted as 1 char)");
 
 	mu_end;
 }

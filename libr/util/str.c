@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2007-2025 - pancake */
 
+#include <limits.h>
 #include <r_bin.h>
 #include <r_userconf.h>
 
@@ -1791,6 +1792,24 @@ R_API char *r_str_format_msvc_argv(size_t argc, const char **argv) {
 	return r_strbuf_drain_nofree (&sb);
 }
 
+static int rune_display_width(RRune ch) {
+	if (ch < 0x80) {
+		return 1;
+	}
+	// CJK and wide characters
+	if ((ch >= 0x1100 && ch <= 0x115F) ||  // Hangul Jamo
+	    (ch >= 0x2E80 && ch <= 0x9FFF) ||  // CJK
+	    (ch >= 0xAC00 && ch <= 0xD7AF) ||  // Hangul Syllables
+	    (ch >= 0xF900 && ch <= 0xFAFF) ||  // CJK Compatibility Ideographs
+	    (ch >= 0xFE10 && ch <= 0xFE1F) ||  // Vertical Forms
+	    (ch >= 0xFE30 && ch <= 0xFE4F) ||  // CJK Compatibility Forms
+	    (ch >= 0x1F000 && ch <= 0x1FFFF) || // Emojis and symbols
+	    (ch >= 0x20000 && ch <= 0x2FFFF)) { // CJK Extension B, C, D, E, F
+		return 2;
+	}
+	return 1;
+}
+
 static size_t __str_ansi_length(char const *str) {
 	size_t i = 1;
 	if (str[0] == 0x1b) {
@@ -1807,6 +1826,11 @@ static size_t __str_ansi_length(char const *str) {
 		if (str[i]) {
 			i++;
 		}
+	} else {
+		// not ANSI, get UTF-8 length
+		RRune ch;
+		int len = r_utf8_decode ((const ut8*)str, -1, &ch);
+		i = len > 0 ? len : 1;
 	}
 	return i;
 }
@@ -1817,8 +1841,15 @@ R_API size_t r_str_ansi_nlen(const char *str, size_t slen) {
 	if (slen > 0) {
 		while (str[i] && i < slen) {
 			size_t chlen = __str_ansi_length (str + i);
-			if (chlen == 1) {
-				len ++;
+			if (str[i] != 0x1b) {
+				// UTF-8 character
+				RRune ch;
+				int ulen = r_utf8_decode ((const ut8*)str + i, chlen, &ch);
+				if (ulen > 0) {
+					len += rune_display_width (ch);
+				} else {
+					len += 1; // invalid byte
+				}
 			}
 			i += chlen;
 		}
@@ -1826,8 +1857,15 @@ R_API size_t r_str_ansi_nlen(const char *str, size_t slen) {
 	}
 	while (str[i]) {
 		size_t chlen = __str_ansi_length (str + i);
-		if (chlen == 1) {
-			len ++;
+		if (str[i] != 0x1b) {
+			// UTF-8 character
+			RRune ch;
+			int ulen = r_utf8_decode ((const ut8*)str + i, chlen, &ch);
+			if (ulen > 0) {
+				len += rune_display_width (ch);
+			} else {
+				len += 1; // invalid byte
+			}
 		}
 		i += chlen;
 	}
@@ -1880,6 +1918,11 @@ R_API char *r_str_insert(R_OWN char *src, int pos, const char *str) {
 R_API size_t r_str_ansi_len(const char *str) {
 	R_RETURN_VAL_IF_FAIL (str, 0);
 	return r_str_ansi_nlen (str, 0);
+}
+
+R_API int r_str_display_width(const char *str) {
+	size_t len = r_str_ansi_len (str);
+	return (len > INT_MAX)? INT_MAX: (int)len;
 }
 
 R_API size_t r_str_nlen(const char *str, int n) {
@@ -1993,10 +2036,6 @@ R_API size_t r_wstr_clen(const char *s) {
 
 // TODO: rename to r_str_ansi_at() ? or find better name?
 R_API const char *r_str_ansi_chrn(const char *str, size_t n) {
-#if 0
-	size_t pos = r_str_ansi_nlen (str, at);
-	return str + pos;
-#endif
 	int len, i, li;
 	for (li = i = len = 0; str[i] && (n != len); i++) {
 		size_t chlen = __str_ansi_length (str + i);
@@ -2728,6 +2767,14 @@ R_API size_t r_str_len_utf8_ansi(const char *str) {
 		char ch = str[i];
 		size_t chlen = __str_ansi_length (str + i);
 		if (chlen > 1) {
+			if (str[i] != 0x1b) {
+				len++; // multi-byte UTF-8
+				if (str_len - i >= 4) {
+					if (r_str_char_fullwidth (str + i, 4)) {
+						fullwidths++;
+					}
+				}
+			}
 			i += chlen - 1;
 		} else if ((ch & 0xc0) != 0x80) { // utf8
 			len++;
@@ -3210,12 +3257,11 @@ R_API char *r_str_crop(const char *str, unsigned int x, unsigned int y,
 	return ret;
 }
 
-// TODO: improve loop to wrap by words
+// TODO: improve loop to wrap by words. add a boolean to wrap by words
 R_API char *r_str_wrap(const char *str, int w) {
 	if (w < 1 || !str) {
 		return strdup ("");
 	}
-	/* Use utf8 length to better estimate allocation size and match API types */
 	size_t r_size = 8 * r_utf8_strlen ((const ut8 *)str);
 	char *r = malloc (r_size);
 	if (!r) {
@@ -3227,10 +3273,39 @@ R_API char *r_str_wrap(const char *str, int w) {
 	while (*str && r + 1 < end) {
 		size_t ansilen = __str_ansi_length (str);
 		if (ansilen > 1) {
-			memcpy (r, str, ansilen);
-			str += ansilen;
-			r += ansilen;
-			continue;
+			if (*str == 0x1b) {
+				// ANSI
+				memcpy (r, str, ansilen);
+				str += ansilen;
+				r += ansilen;
+				continue;
+			} else {
+				// UTF-8 multi-byte
+				RRune ch;
+				int ulen = r_utf8_decode((const ut8*)str, ansilen, &ch);
+				if (ulen > 0) {
+					int dw = rune_display_width(ch);
+					if (cw + dw > w) {
+						*r++ = '\n';
+						cw = dw;
+					} else {
+						cw += dw;
+					}
+					memcpy (r, str, ansilen);
+					str += ansilen;
+					r += ansilen;
+				} else {
+					// invalid
+					if (cw >= w) {
+						*r++ = '\n';
+						cw = 1;
+					} else {
+						cw++;
+					}
+					*r++ = *str++;
+				}
+				continue;
+			}
 		}
 		if (*str == '\t') {
 			// skip
@@ -3240,7 +3315,7 @@ R_API char *r_str_wrap(const char *str, int w) {
 			*r++ = *str++;
 			cw = 0;
 		} else {
-			if (cw > w) {
+			if (cw >= w) {
 				*r++ = '\n';
 				*r++ = *str++;
 				cw = 1;
@@ -3286,20 +3361,26 @@ R_API const char *r_str_pad(const char ch, int sz) {
 }
 
 R_API char *r_str_pad2(char *pad, size_t padsz, const char ch, int sz) {
-	if (pad == NULL) {
-		pad = malloc (sz + 1);
+	if (sz < 0) {
+		sz = 0;
+	}
+	if (!pad) {
+		padsz = sz + 1;
+		pad = malloc (padsz);
 		if (!pad) {
 			return NULL;
 		}
 	}
-	if (sz < 0) {
-		sz = 0;
+	if (!padsz) {
+		return pad;
 	}
-	memset (pad, ch, R_MIN (sz, sizeof (pad)));
-	if (sz < sizeof (pad)) {
-		pad[sz] = 0;
+	if (padsz == 1) {
+		pad[0] = 0;
+		return pad;
 	}
-	pad[sizeof (pad) - 1] = 0;
+	size_t fill = R_MIN ((size_t)sz, padsz - 1);
+	memset (pad, ch, fill);
+	pad[fill] = 0;
 	return pad;
 }
 

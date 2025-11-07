@@ -489,6 +489,12 @@ R_API const char *r_utf_block_name(int idx) {
 
 /* Convert an UTF-8 buf into a unicode RRune */
 R_API int r_utf8_decode(const ut8 *ptr, int ptrlen, RRune *ch) {
+	if (ptrlen < 0) {
+		ptrlen = r_utf8_size (ptr);
+		if (ptrlen < 1) {
+			ptrlen = 1;
+		}
+	}
 	if (ptrlen < 1) {
 		return 0;
 	}
@@ -625,12 +631,12 @@ R_API int r_utf8_display_width(const ut8 *str) {
 	const ut8 *p = str;
 	while (*p) {
 		RRune ch;
-		int len = r_utf8_decode(p, -1, &ch);
+		int len = r_utf8_decode (p, -1, &ch);
 		if (len == 0) {
 			width += 1; // invalid byte, assume 1
 			p++;
 		} else {
-			width += rune_display_width(ch);
+			width += rune_display_width (ch);
 			p += len;
 		}
 	}
