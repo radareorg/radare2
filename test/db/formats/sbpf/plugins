@@ -5,7 +5,7 @@ CMDS=<<EOF
 s 0x100007528; pd 1
 EOF
 EXPECT=<<EOF
-            0x100007528      9d00000000..   exit
+            0x100007528      9d00000000..   return
 EOF
 RUN
 
