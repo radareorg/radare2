@@ -328,6 +328,7 @@ R_API bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_a
 	r_vector_init (&v, sizeof (ut64), NULL, NULL);
 	int len = 0;
 	const char *cmp_reg = NULL;
+	ut64 cmp_val = 0;
 	for (i = 0; i + 8 < search_sz; i += len) {
 		len = r_anal_op (anal, &tmp_aop, lea_addr + i, buf + i, search_sz - i, R_ARCH_OP_MASK_BASIC);
 		if (len < 1) {
@@ -341,6 +342,9 @@ R_API bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_a
 			}
 
 			*default_case = tmp_aop.jump == tmp_aop.jump + len ? tmp_aop.fail : tmp_aop.jump;
+			if (tmp_aop.cond == R_ANAL_CONDTYPE_HI) {
+				*table_size = cmp_val;
+			}
 			r_anal_op_fini (&tmp_aop);
 			break;
 		}
@@ -359,12 +363,15 @@ R_API bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_a
 		if (tmp_aop.val == UT64_MAX && tmp_aop.refptr == 0) {
 			isValid = true;
 			*table_size = 0;
+			cmp_val = 0;
 		} else if (tmp_aop.refptr == 0) {
 			isValid = tmp_aop.val < 0x200;
 			*table_size = tmp_aop.val + 1;
+			cmp_val = tmp_aop.val;
 		} else {
 			isValid = tmp_aop.refptr < 0x200;
 			*table_size = tmp_aop.refptr + 1;
+			cmp_val = tmp_aop.refptr;
 		}
 		r_vector_push (&v, &i);
 		r_anal_op (anal, &tmp_aop, lea_addr + i, buf + i, search_sz - i, R_ARCH_OP_MASK_VAL);
@@ -504,6 +511,7 @@ R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnal
 	isValid = false;
 
 	const char *cmp_reg = NULL;
+	ut64 cmp_val = 0;
 	for (i = prev_bb->ninstr - 1; i >= 0; i--) {
 		const ut64 prev_pos = r_anal_bb_offset_inst (prev_bb, i);
 		const ut64 op_addr = r_anal_bb_opaddr_i (prev_bb, i);
@@ -528,12 +536,15 @@ R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnal
 		if (tmp_aop.val == UT64_MAX && tmp_aop.refptr == 0) {
 			isValid = true;
 			*table_size = 0;
+			cmp_val = 0;
 		} else if (tmp_aop.refptr == 0 || tmp_aop.val != UT64_MAX) {
 			isValid = tmp_aop.val < 0x200;
 			*table_size = tmp_aop.val + 1;
+			cmp_val = tmp_aop.val;
 		} else {
 			isValid = tmp_aop.refptr < 0x200;
 			*table_size = tmp_aop.refptr + 1;
+			cmp_val = tmp_aop.refptr;
 		}
 		if (isValid) {
 			r_anal_op_fini (&tmp_aop);
