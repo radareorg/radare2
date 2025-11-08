@@ -114,19 +114,23 @@ R_API bool try_walkthrough_casetbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *
 			break;
 		}
 
-		switch (sz) {
-		case 1:
-			jmpptr = r_read_le8 (jmptbl + jmpptr_idx);
-			break;
-		case 2:
-			jmpptr = r_read_le16 (jmptbl + jmpptr_idx * 2);
-			break;
-		case 4:
-			jmpptr = r_read_le32 (jmptbl + jmpptr_idx * 4);
-			break;
-		default:
-			jmpptr = r_read_le64 (jmptbl + jmpptr_idx * 8);
-			break;
+		if (jmptbl_loc == jmptbl_off) {
+			jmpptr = jmptbl_off + (jmpptr_idx << (sz >> 1));
+		} else {
+			switch (sz) {
+			case 1:
+				jmpptr = r_read_le8 (jmptbl + jmpptr_idx);
+				break;
+			case 2:
+				jmpptr = r_read_le16 (jmptbl + jmpptr_idx * 2);
+				break;
+			case 4:
+				jmpptr = r_read_le32 (jmptbl + jmpptr_idx * 4);
+				break;
+			default:
+				jmpptr = r_read_le64 (jmptbl + jmpptr_idx * 8);
+				break;
+			}
 		}
 		if (jmpptr == 0 || jmpptr == UT32_MAX || jmpptr == UT64_MAX) {
 			break;
@@ -150,7 +154,7 @@ R_API bool try_walkthrough_casetbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *
 		r_anal_hint_set_immbase (anal, jmpptr_idx_off, 10);
 
 		int casenum = case_idx + start_casenum_shift;
-		apply_case (anal, block, ip, sz, jmpptr, casenum, jmptbl_loc + jmpptr_idx * sz, false);
+		apply_case (anal, block, ip, jmptbl_loc == jmptbl_off ? 1 : sz, jmpptr, casenum, jmptbl_loc == jmptbl_off ? casetbl_loc + case_idx : jmptbl_loc + jmpptr_idx * sz, false);
 		analyze_new_case (anal, fcn, block, ip, jmpptr, depth);
 	}
 
@@ -158,7 +162,7 @@ R_API bool try_walkthrough_casetbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *
 		if (default_case == 0) {
 			default_case = UT64_MAX;
 		}
-		apply_switch (anal, ip, jmptbl_loc, case_idx, default_case);
+		apply_switch (anal, ip, jmptbl_loc == jmptbl_off ? casetbl_loc : jmptbl_loc, case_idx, default_case);
 	}
 
 	free (jmptbl);

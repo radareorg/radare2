@@ -1076,6 +1076,9 @@ noskip:
 				last_reg_mov_lea_val = op->ptr;
 				last_is_reg_mov_lea = true;
 			}
+			if (op->type == R_ANAL_OP_TYPE_ADD && dst && dst->reg && last_reg_mov_lea_name && !strcmp (dst->reg, last_reg_mov_lea_name) && op->val != UT64_MAX) {
+				last_reg_mov_lea_val += op->val;
+			}
 #endif
 			// skip lea reg,[reg]
 			if (anal->opt.hpskip && regs_exist (src0, dst) && !strcmp (src0->reg, dst->reg)) {
@@ -1112,7 +1115,7 @@ noskip:
 					if (ready) {
 						ret = casetbl_addr == op->ptr
 							? r_anal_jmptbl_walk (anal, fcn, bb, depth, addr, case_shift, jmptbl_addr, op->ptr, 4, table_size, default_case, 4)
-							: try_walkthrough_casetbl (anal, fcn, bb, depth, addr, case_shift, jmptbl_addr, casetbl_addr, op->ptr, 4, table_size, default_case, 4);
+							: try_walkthrough_casetbl (anal, fcn, bb, depth, addr, case_shift, jmptbl_addr, casetbl_addr, jmptbl_addr, 4, table_size, default_case, 4);
 						if (ret) {
 							anal->lea_jmptbl_ip = addr;
 						}
