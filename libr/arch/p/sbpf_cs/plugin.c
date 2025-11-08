@@ -439,8 +439,9 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 						op->mnemonic = r_str_newf ("callx r%d", src_reg);
 					}
 				} else {
-					// v0/v1: imm field
-					st32 reg_num = IMM (0);
+					// v0/v1: register number is in lower 4 bits of imm field
+					st32 imm = r_read_le32 (buf + 4);
+					ut8 reg_num = imm & 0x0F;  // Lower 4 bits of imm field
 					if (mask & R_ARCH_OP_MASK_DISASM) {
 						op->mnemonic = r_str_newf ("callx r%d", reg_num);
 					}
