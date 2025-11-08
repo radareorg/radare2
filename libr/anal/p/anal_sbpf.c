@@ -136,7 +136,9 @@ static RList *sbpf_find_string_xrefs(RAnal *anal, ut64 from, ut64 to, ut64 data_
 		bool found_pattern = false;
 
 		// Check for MOV + HOR64 pattern (v2+ sBPF: opcodes 0xb4 or 0xb7 followed by 0xf7)
-		if ((buf[0] == SBPF_INS_MOV_IMM || buf[0] == SBPF_INS_MOV64_IMM) && buf[8] == SBPF_INS_HOR64) {
+		const ut8 b0 = buf[0];
+		const bool ismov = (b0 == SBPF_INS_MOV_IMM || b0 == SBPF_INS_MOV64_IMM);
+		if (ismov && buf[8] == SBPF_INS_HOR64) {
 			// Check that both instructions use the same destination register
 			ut8 dst_reg_mov = buf[1] & 0x0F;
 			ut8 dst_reg_hor = buf[9] & 0x0F;
