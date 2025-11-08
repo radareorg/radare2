@@ -403,6 +403,90 @@ R_API bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_a
 }
 
 // TODO: find a better function name
+R_API int walkthrough_arm64_jmptbl_style(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, int depth, ut64 ip, ut64 jmptbl_loc, ut64 sz, ut64 jmptbl_size, ut64 default_case, int ret0) {
+	/*
+	 * ARM64 jump table pattern:
+	 *
+	 * 0x183997038      8a000010       adr x10, 0x183997048       ; load base address
+	 * 0x18399703c      2b697438       ldrb w11, [x9, x20]        ; load byte from jump table
+	 * 0x183997040      4a090b8b       add x10, x10, x11, lsl 2  ; calculate target: base + offset * 4
+	 * 0x183997044      40011fd6       br x10                    ; branch to calculated target
+	 *
+	 * The jump table contains byte offsets (not branch instructions like ARM32)
+	 * Each byte is an offset that gets multiplied by 4 and added to the base address
+	 */
+
+	ut64 offs, jmpptr;
+	int ret = ret0;
+	ut8 *jmpbuf = NULL;
+
+	eprintf ("[ARM64 JMPTBL] Processing jump table at 0x%08"PFMT64x" with size %d\n", jmptbl_loc, jmptbl_size);
+
+	if (jmptbl_size == 0) {
+		jmptbl_size = JMPTBL_MAXSZ;
+	}
+
+	// For ARM64, we need to read the jump table bytes and calculate targets
+	jmpbuf = calloc (jmptbl_size, sz);
+	if (!jmpbuf) {
+		return ret;
+	}
+
+	if (anal->iob.read_at (anal->iob.io, jmptbl_loc, jmpbuf, jmptbl_size * sz) != jmptbl_size * sz) {
+		free (jmpbuf);
+		return ret;
+	}
+
+	// Find the base address from the adr instruction in the current block
+	ut64 base_addr = UT64_MAX;
+	ut8 *bb_buf = malloc (block->size);
+	if (bb_buf) {
+		anal->iob.read_at (anal->iob.io, block->addr, bb_buf, block->size);
+		RAnalOp op = {0};
+		int i;
+		for (i = 0; i < block->ninstr; i++) {
+			ut64 op_addr = r_anal_bb_opaddr_i (block, i);
+			ut64 op_off = r_anal_bb_offset_inst (block, i);
+			int len = r_anal_op (anal, &op, op_addr, bb_buf + op_off, block->size - op_off, R_ARCH_OP_MASK_BASIC);
+			if (len > 0 && op.type == R_ANAL_OP_TYPE_LEA) {
+				// Found the adr instruction, use its target as base address
+				if (op.ptr != UT64_MAX) {
+					base_addr = op.ptr;
+					eprintf ("[ARM64 JMPTBL] Found base address 0x%08"PFMT64x" from adr instruction\n", base_addr);
+				}
+			}
+			r_anal_op_fini (&op);
+		}
+		free (bb_buf);
+	}
+
+	if (base_addr == UT64_MAX) {
+		eprintf ("[ARM64 JMPTBL] Could not find base address\n");
+		free (jmpbuf);
+		return ret;
+	}
+
+	// Process each byte in the jump table
+	for (offs = 0; offs < jmptbl_size; offs++) {
+		ut8 byte_offset = jmpbuf[offs];
+		// Calculate target: base_addr + byte_offset * 4
+		jmpptr = base_addr + (byte_offset * 4);
+		eprintf ("[ARM64 JMPTBL] Case %d: offset=0x%02x, target=0x%08"PFMT64x"\n", (int)offs, byte_offset, jmpptr);
+		apply_case (anal, block, ip, 1, jmpptr, offs, jmptbl_loc + offs, true);
+		analyze_new_case (anal, fcn, block, ip, jmpptr, depth);
+	}
+
+	free (jmpbuf);
+
+	if (jmptbl_size > 0) {
+		if (default_case == 0 || default_case == UT32_MAX) {
+			default_case = UT64_MAX;
+		}
+		apply_switch (anal, ip, jmptbl_loc, jmptbl_size, default_case);
+	}
+	return ret;
+}
+
 R_API int walkthrough_arm_jmptbl_style(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, int depth, ut64 ip, ut64 jmptbl_loc, ut64 sz, ut64 jmptbl_size, ut64 default_case, int ret0) {
 	/*
 	 * Example about arm jump table
