@@ -204,7 +204,7 @@ static RList *sbpf_find_string_xrefs(RAnal *anal, ut64 from, ut64 to, ut64 data_
 						ptr_ref->is_pointer = true;
 						ptr_ref->size = actual_str_size;
 						r_list_append (refs, ptr_ref);
-						R_LOG_DEBUG ("  Added pointer structure at 0x%"PFMT64x" (from LDDW at 0x%"PFMT64x")",
+						R_LOG_DEBUG ("Added pointer structure at 0x%"PFMT64x" (from LDDW at 0x%"PFMT64x")",
 								imm_val, addr);
 
 						// Also add the actual string address as a reference
@@ -244,13 +244,9 @@ static bool sbpf_find_segment_bounds(RAnal *anal, int segment_index, ut64 *start
 
 	// Get base address - try to get it from core config
 	ut64 baddr = 0;
-	if (anal->coreb.core && anal->coreb.cfgGet) {
+	if (anal->coreb.core && anal->coreb.cfgGetI) {
 		// Get bin.baddr from config which includes user-specified -B value
-		// Use cfgGet instead of cfgGetI to handle 64-bit addresses properly
-		const char *baddr_str = anal->coreb.cfgGet (anal->coreb.core, "bin.baddr");
-		if (baddr_str) {
-			baddr = r_num_get (NULL, baddr_str);
-		}
+		baddr = anal->coreb.cfgGetI (anal->coreb.core, "bin.baddr");
 		R_LOG_DEBUG ("Got baddr from config: 0x%"PFMT64x, baddr);
 	}
 
@@ -465,9 +461,14 @@ static bool sbpf_analyze_strings(RAnal *anal) {
 				size = SBPF_MAX_STRING_SIZE;
 			}
 
-			char flagname[R_FLAG_NAME_SIZE];
-			char comment_str[SBPF_MAX_STRING_SIZE + 4] = {0};
-			char str_buf[SBPF_MAX_STRING_SIZE + 1];
+			char *flagname = NULL;
+			char *comment_str = NULL;
+			char *str_buf = malloc (size + 1);
+
+			if (!str_buf) {
+				R_LOG_ERROR ("Failed to allocate memory for string buffer");
+				continue;
+			}
 
 			if (anal->iob.read_at (anal->iob.io, str_ptr, (ut8 *)str_buf, size)) {
 				str_buf[size] = 0;  // Null terminate at the size boundary
@@ -475,11 +476,13 @@ static bool sbpf_analyze_strings(RAnal *anal) {
 				ut32 actual_len = r_str_nlen (str_buf, size);
 				str_buf[actual_len] = 0;  // Ensure termination at actual length
 				r_str_filter (str_buf, -1);
-				snprintf (flagname, sizeof (flagname), "ptr.%"PFMT64x"_%s", ref->addr, str_buf);
-				snprintf (comment_str, sizeof (comment_str), "%s", str_buf);
+				flagname = r_str_newf ("ptr.%"PFMT64x"_%s", ref->addr, str_buf);
+				comment_str = strdup (str_buf);
 			} else {
-				snprintf (flagname, sizeof (flagname), "ptr.%"PFMT64x, ref->addr);
+				flagname = r_str_newf ("ptr.%"PFMT64x, ref->addr);
+				comment_str = strdup ("");
 			}
+			free (str_buf);
 
 			if (anal->flb.set && anal->flb.f) {
 				// Unset any existing flag at this address first
@@ -500,14 +503,17 @@ static bool sbpf_analyze_strings(RAnal *anal) {
 			}
 
 			// Add comment at the instruction address showing the string value
-			if (ref->xref_addr != UT64_MAX && *comment_str) {
+			if (ref->xref_addr != UT64_MAX && comment_str && *comment_str) {
 				char *comment = r_str_newf ("ptr -> \"%s\"", comment_str);
 				if (strlen (comment) > 64) {
 					strcpy (comment + 50, "...\"");
 				}
 				r_meta_set_string (anal, R_META_TYPE_COMMENT, ref->xref_addr, comment);
 				R_LOG_DEBUG ("Added pointer comment at 0x%"PFMT64x": %s", ref->xref_addr, comment);
+				free (comment);
 			}
+			free (flagname);
+			free (comment_str);
 			set_u_add (created_addrs, ref->addr);
 			strings_created++;
 			continue;
