@@ -36,7 +36,7 @@ RUN
 
 NAME=sBPF: Analysis plugin string detection for v3
 FILE=bins/elf/sbpf_example_v3.so
-ARGS=-B 0x000000000-e log.level=0
+ARGS=-B 0x000000000 -e log.level=0
 CMDS=<<EOF
 a:sbpf.analyze
 a:sbpf.strings~?
