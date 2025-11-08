@@ -1,6 +1,7 @@
 /* radare2 - LGPL - Copyright 2025 - Analysis plugin for Solana BPF */
 
 #include <r_anal.h>
+#include <r_core.h>
 
 #define SBPF_MAX_STRING_SIZE 0x100
 #define SBPF_COMMENT_SIZE 512
@@ -749,7 +750,14 @@ static void sbpf_print_string_xrefs(RAnal *anal) {
 	// Print the table
 	char *table_str = r_table_tostring (table);
 	if (table_str) {
-		eprintf ("%s\n", table_str);
+		if (anal->coreb.core) {
+			void *core = anal->coreb.core;
+			// Use r_cons_printf if we have access to core
+			r_cons_printf (((RCore*)core)->cons, "%s", table_str);
+		} else {
+			// Fallback to printf
+			printf ("%s", table_str);
+		}
 		free (table_str);
 	}
 
