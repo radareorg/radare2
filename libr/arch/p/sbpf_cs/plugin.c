@@ -426,7 +426,7 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 			}
 			break;
 		}
-	// some instructions are decodeable by capstone by changes are required for some opcodes
+	// For instructions supported by Capstone, apply required sBPF version changes for some opcodes
 	} else {
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			if (insn->id == BPF_INS_CALLX) {
