@@ -145,7 +145,7 @@ static ut32 detect_sbpf_version(RArchSession *a) {
 
 	const char *cpu = (a && a->config) ? a->config->cpu : NULL;
 
-	if (!cpu || !*cpu) {
+	if (R_STR_ISEMPTY (cpu)) {
 		spd->sbpf_version = SBPF_V0;
 	} else if (!strcmp (cpu, "sbpfv0")) {
 		spd->sbpf_version = SBPF_V0;
