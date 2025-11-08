@@ -504,7 +504,7 @@ static bool sbpf_analyze_strings(RAnal *anal) {
 			}
 
 			// Add comment at the instruction address showing the string value
-			if (ref->xref_addr != UT64_MAX && comment_str && *comment_str) {
+			if (ref->xref_addr != UT64_MAX && R_STR_ISNOTEMPTY (comment_str)) {
 				char *comment = r_str_newf ("ptr -> \"%s\"", comment_str);
 				if (strlen (comment) > 64) {
 					strcpy (comment + 50, "...\"");
