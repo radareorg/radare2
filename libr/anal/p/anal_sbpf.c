@@ -732,7 +732,7 @@ static void sbpf_print_string_xrefs(RAnal *anal) {
 			buf[actual_len] = '\0';
 			r_str_filter (buf, actual_len);
 			if (actual_len > 60) {
-				buf[57] = '.';
+				strcpy (buf + 37, "..");
 				buf[58] = '.';
 				buf[59] = '\0';
 			}
