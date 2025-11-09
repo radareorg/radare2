@@ -46,7 +46,10 @@ static RCoreHelpMessage help_msg_slash_forward = {
 };
 
 static RCoreHelpMessage help_msg_slash_sections = {
-	"Usage: /s[*]", "[threshold]", "finds sections by grouping blocks with similar entropy.",
+	"Usage: /s[*]", "[threshold]", "Find sections by grouping blocks with similar entropy.",
+	"/s", "[threshold]", "find sections using human friendly output",
+	"/sj", "[threshold]", "use json output",
+	"/s*", "[threshold]", "use r2 flavor output",
 	NULL
 };
 
@@ -3109,6 +3112,11 @@ static void do_section_search(RCore *core, struct search_parameters *param, cons
 	if (!buf) {
 		return;
 	}
+	PJ *pj = NULL;
+	if (param->outmode == R_MODE_JSON) {
+		pj = r_core_pj_new (core);
+		pj_a (pj);
+	}
 	double oe = 0;
 	RListIter *iter;
 	RIOMap *map;
@@ -3135,6 +3143,12 @@ static void do_section_search(RCore *core, struct search_parameters *param, cons
 			if (diff > threshold) {
 				if (r2mode) {
 					r_cons_printf (core->cons, "f entropy_section_%d 0x%08"PFMT64x" 0x%08"PFMT64x"\n", index, end - begin, begin);
+				} else if (pj) {
+					pj_o (pj);
+					pj_kn (pj, "start", begin);
+					pj_kn (pj, "end", end);
+					pj_kd (pj, "entropy", e);
+					pj_end (pj);
 				} else {
 					r_cons_printf (core->cons, "0x%08"PFMT64x" - 0x%08"PFMT64x" ~ %lf\n", begin, end, e);
 				}
@@ -3158,6 +3172,13 @@ static void do_section_search(RCore *core, struct search_parameters *param, cons
 	}
 	r_cons_break_pop(core->cons);
 	free (buf);
+
+	if (pj) {
+		pj_end (pj);
+		RCons *cons = r_cons_singleton ();
+		r_cons_print (cons, pj_string (pj));
+		pj_free (pj);
+	}
 }
 
 static void do_asm_search(RCore *core, struct search_parameters *param, const char *input, int mode, RInterval search_itv) {
@@ -5512,6 +5533,10 @@ reread:
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_slash_sections);
 			break;
+		}
+		if (input[1] == 'j') { // "/sj"
+			param.outmode = R_MODE_JSON;
+			input++;
 		}
 		do_section_search (core, &param, input + 1);
 		break;

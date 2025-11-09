@@ -1871,3 +1871,39 @@ EXPECT=<<EOF
 pdb @@= 0x0000142e 0x000014c7 0x0000161a 0x00001655
 EOF
 RUN
+
+NAME=search entropy
+FILE=bins/elf/ioli/crackme0x00
+CMDS=<<EOF
+/s
+EOF
+EXPECT=<<EOF
+0x08049f0c - 0x0804a00c ~ 2.876932
+0x0804a00c - 0x0804a10c ~ 0.549518
+0x08048000 - 0x08048100 ~ 3.073115
+0x08048100 - 0x08048300 ~ 4.166293
+EOF
+RUN
+
+NAME=search entropy r2mode
+FILE=bins/elf/ioli/crackme0x00
+CMDS=<<EOF
+/s*
+EOF
+EXPECT=<<EOF
+f entropy_section_0 0x00000100 0x08049f0c
+f entropy_section_1 0x00000100 0x0804a00c
+f entropy_section_2 0x00000100 0x08048000
+f entropy_section_3 0x00000200 0x08048100
+EOF
+RUN
+
+NAME=search entropy json
+FILE=bins/elf/ioli/crackme0x00
+CMDS=<<EOF
+/sj
+EOF
+EXPECT=<<EOF
+[{"start":134520588,"end":134520844,"entropy":2.877},{"start":134520844,"end":134521100,"entropy":0.550},{"start":134512640,"end":134512896,"entropy":3.073},{"start":134512896,"end":134513408,"entropy":4.166}]
+EOF
+RUN
