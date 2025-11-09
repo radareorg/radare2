@@ -46,7 +46,10 @@ static RCoreHelpMessage help_msg_slash_forward = {
 };
 
 static RCoreHelpMessage help_msg_slash_sections = {
-	"Usage: /s[*]", "[threshold]", "finds sections by grouping blocks with similar entropy.",
+	"Usage: /s[*]", "[threshold]", "Find sections by grouping blocks with similar entropy.",
+	"/s", "[threshold]", "find sections using himan friendly output",
+	"/sj", "[threshold]", "use json output",
+	"/s*", "[threshold]", "use r2 flavor output",
 	NULL
 };
 
