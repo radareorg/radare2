@@ -1692,7 +1692,7 @@ const RArchPlugin r_arch_plugin_sbpf_cs = {
 		.name = "sbpf",
 		.desc = "Solana Berkeley Packet Filtering Bytecode",
 		.license = "BSD-3-Clause",
-		.author = "ulexec,radare",
+		.author = "ulexec,terorie",
 	},
 	.arch = "sbpf",
 	.cpus = "sbpfv0,sbpfv1,sbpfv2,sbpfv3",
