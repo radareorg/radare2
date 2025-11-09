@@ -5291,6 +5291,10 @@ reread:
 		break;
 	case 'k': // "/k" Rabin Karp String search
 		{
+			if (input[1] == '?') {
+				  r_core_cmd_help_match (core, help_msg_slash, "/k");
+				  break;
+			}
 			inp = r_str_trim_dup (input + 1 + ignorecase + (param.outmode == R_MODE_JSON ? 1 : 0));
 			len = r_str_unescape (inp);
 			r_search_reset (core->search, R_SEARCH_RABIN_KARP);
