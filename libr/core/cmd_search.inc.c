@@ -3114,7 +3114,7 @@ static void do_section_search(RCore *core, struct search_parameters *param, cons
 	}
 	PJ *pj = NULL;
 	if (param->outmode == R_MODE_JSON) {
-		pj = pj_new ();
+		pj = r_core_pj_new (core);
 		pj_a (pj);
 	}
 	double oe = 0;
