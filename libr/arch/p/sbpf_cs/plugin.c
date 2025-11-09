@@ -248,40 +248,41 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 		switch (sbpf_version) {
 			// In sBPF V3 opcodes for exit and syscall seems that are swapped
 			case SBPF_V3:
-				if (opcode == SBPF_INS_EXIT_V3) {  // 0x9d - RETURN in v3
-					op->type = R_ANAL_OP_TYPE_RET;
-					op->mnemonic = strdup ("return");
-					return true;
-				}
-				if (opcode == SBPF_INS_SYSCALL) {  // 0x95 - SYSCALL in v3 (was EXIT in v0-v2)
-					op->type = R_ANAL_OP_TYPE_SWI;
-					if (mask & R_ARCH_OP_MASK_DISASM) {
-						const char *syscall_name = get_syscall_name (imm);
-						if (syscall_name) {
-							op->mnemonic = r_str_newf ("syscall %s", syscall_name);
-						} else {
-							op->mnemonic = r_str_newf ("syscall 0x%x", imm);
+				switch (opcode) {
+					case SBPF_INS_EXIT_V3:
+						// Opcode 0x9d = RETURN in v3
+						op->type = R_ANAL_OP_TYPE_RET;
+						op->mnemonic = strdup ("return");
+						return true;
+					case SBPF_INS_SYSCALL:
+						// Opcode 0x95 = SYSCALL (was EXIT in v0-v2)
+						op->type = R_ANAL_OP_TYPE_SWI;
+						if (mask & R_ARCH_OP_MASK_DISASM) {
+							const char *syscall_name = get_syscall_name (imm);
+							if (syscall_name) {
+								op->mnemonic = r_str_newf ("syscall %s", syscall_name);
+							} else {
+								op->mnemonic = r_str_newf ("syscall 0x%x", imm);
+							}
 						}
-					}
-					return true;
+						return true;
 				}
 			case SBPF_V2:
-				// Handle v2 specific instructions
-				if (opcode == SBPF_INS_SYSCALL) { // 0x95 - EXIT in v2 (becomes SYSCALL in v3)
-					op->type = R_ANAL_OP_TYPE_RET;
-					if (mask & R_ARCH_OP_MASK_DISASM) {
-						op->mnemonic = strdup ("exit");
-					}
-					return true;
-				}
-				if (opcode == SBPF_INS_EXIT_V3) { // 0x9d - Invalid in v2 (becomes RETURN in v3)
-					op->type = R_ANAL_OP_TYPE_ILL;
-					if (mask & R_ARCH_OP_MASK_DISASM) {
-						op->mnemonic = strdup ("invalid");
-					}
-					return true;
-				}
 				switch(opcode) {
+					case SBPF_INS_SYSCALL:
+						// Opcode 0x95 = EXIT (in v2 becomes SYSCALL in v3)
+						op->type = R_ANAL_OP_TYPE_RET;
+						if (mask & R_ARCH_OP_MASK_DISASM) {
+							op->mnemonic = strdup ("exit");
+						}
+						return true;
+					case SBPF_INS_EXIT_V3:
+						// Opcode 0x9d = RETURN (invalid in v2 becomes RETURN in v3)
+						op->type = R_ANAL_OP_TYPE_ILL;
+						if (mask & R_ARCH_OP_MASK_DISASM) {
+							op->mnemonic = strdup ("invalid");
+						}
+						return true;
 					case SBPF_INS_LDXB:
 						// Opcode 0x2c = LDXB (load byte from memory to register) - v2+
 						op->type = R_ANAL_OP_TYPE_LOAD;
@@ -846,25 +847,16 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			if (insn->id == BPF_INS_CALLX) {
 				op->type = R_ANAL_OP_TYPE_UCALL;
-
 				if (sbpf_version >= SBPF_V2) {
 					// v2+: src field (SIMD-0174)
-					ut8 src_reg = (buf[1] >> 4) & 0x0F;
-					if (mask & R_ARCH_OP_MASK_DISASM) {
-						op->mnemonic = r_str_newf ("callx r%d", src_reg);
-					}
+					op->mnemonic = r_str_newf ("callx r%d", src_reg);
 				} else {
 					// v0/v1: register number is in lower 4 bits of imm field
-					st32 imm = r_read_le32 (buf + 4);
-					ut8 reg_num = imm & 0x0F;  // Lower 4 bits of imm field
-					if (mask & R_ARCH_OP_MASK_DISASM) {
-						op->mnemonic = r_str_newf ("callx r%d", reg_num);
-					}
+					op->mnemonic = r_str_newf ("callx r%d", imm & 0x0F);
 				}
 			} else if (insn->id ==  BPF_INS_EXIT ) {
 				if (sbpf_version >= SBPF_V3) {
 					op->type = R_ANAL_OP_TYPE_CALL;
-					st32 imm = r_read_le32 (buf + 4);
 					const char *syscall_name = get_syscall_name (imm);
 					if (syscall_name) {
 						op->mnemonic = r_str_newf ("syscall %s", syscall_name);
@@ -903,7 +895,6 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 				}
 			// Handle CALL instruction
 			} else if (insn->id == BPF_INS_CALL && insn->detail && OPCOUNT > 0 && OP(0).type == BPF_OP_IMM) {
-				st32 imm = IMM (0);
 				// Check if this is a syscall first
 				const char *syscall_name = get_syscall_name (imm);
 				if (syscall_name) {

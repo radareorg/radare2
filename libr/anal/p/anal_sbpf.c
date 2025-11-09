@@ -4,7 +4,6 @@
 #include <r_core.h>
 
 #define SBPF_MAX_STRING_SIZE 0x100
-#define SBPF_COMMENT_SIZE 512
 
 #define SBPF_INS_HOR64			0xf7
 #define SBPF_INS_MOV_IMM 		0xb4
@@ -45,7 +44,6 @@ static bool is_printable_string(const char *buf, ut32 size) {
 	return r_str_is_printable_limited ((const char *)buf, actual_size);
 }
 
-// Check if a pointer points to a string structure (string ptr at +0, size at +8)
 static bool sbpf_check_string_pointer(RAnal *anal, ut64 ptr_addr, ut64 data_start, ut64 data_end, ut64 *out_str_addr, ut32 *out_str_size) {
 	R_RETURN_VAL_IF_FAIL (anal && anal->iob.io, false);
 
@@ -188,7 +186,6 @@ static RList *sbpf_find_string_xrefs(RAnal *anal, ut64 from, ut64 to, ut64 data_
 				SbpfStringRef *existing;
 				r_list_foreach (refs, iter, existing) {
 					// Check if we already have this exact reference
-					// (same address loaded by same instruction)
 					if (existing->addr == imm_val && existing->xref_addr == addr) {
 						duplicate = true;
 						break;
@@ -198,8 +195,7 @@ static RList *sbpf_find_string_xrefs(RAnal *anal, ut64 from, ut64 to, ut64 data_
 				if (!duplicate) {
 					R_LOG_DEBUG ("Not a duplicate, adding reference");
 					if (is_string_pointer) {
-						// Add BOTH the pointer structure AND the string it points to
-						// First, add the pointer structure reference
+						// Add both the pointer structure and the string it points to
 						SbpfStringRef *ptr_ref = R_NEW0 (SbpfStringRef);
 						ptr_ref->addr = imm_val;  // The pointer structure address
 						ptr_ref->xref_addr = addr;
@@ -260,7 +256,6 @@ static bool sbpf_find_segment_bounds(RAnal *anal, int segment_index, ut64 *start
 			RBinSection *section;
 			int idx = 0;
 			r_list_foreach (sections, iter, section) {
-				// Only process segments (program headers)
 				if (section && section->is_segment) {
 					if (idx == segment_index) {
 						*start = section->vaddr + baddr;
@@ -289,30 +284,22 @@ static void sbpf_create_string(RAnal *anal, ut64 addr, ut32 size, ut64 xref_addr
 		return;
 	}
 
-	// Rust strings are NOT null-terminated - they use exact size
-	// Force null termination for our buffer
+	// Rust strings are not null-terminated
 	buf[size] = 0;
-
-	// For Rust strings, we use the exact size from the structure
 	ut32 str_size = size;
-
-	// Validate printable using the exact size
 	if (!is_printable_string (buf, size)) {
 		return;
 	}
 
-	// First, delete any existing metadata at this address
+	// Delete any existing metadata at this address
 	r_meta_del (anal, R_META_TYPE_STRING, addr, UT64_MAX);
 
 	// Create a properly null-terminated string for metadata
-	// Rust strings are NOT null-terminated, so we need to create a
-	// string that's EXACTLY the size specified
 	char *truncated_str = r_str_ndup (buf, str_size);
 	if (!truncated_str) {
 		return;
 	}
 	// Add string metadata to radare2's metadata database
-	// Pass the exact size so r2 knows where the string ends
 	if (!r_meta_set (anal, R_META_TYPE_STRING, addr, str_size, truncated_str)) {
 		R_LOG_DEBUG ("Failed to set string metadata at 0x%"PFMT64x, addr);
 	} else {
@@ -330,11 +317,7 @@ static void sbpf_create_string(RAnal *anal, ut64 addr, ut32 size, ut64 xref_addr
 		free (s);
 		free (comment_str);
 	}
-
-	// Free the allocated string
 	free (truncated_str);
-
-	// Create a flag for the string
 	R_LOG_INFO ("Attempting to create flag for string at 0x%"PFMT64x, addr);
 
 	if (!anal->flb.f) {
@@ -342,14 +325,10 @@ static void sbpf_create_string(RAnal *anal, ut64 addr, ut32 size, ut64 xref_addr
 	} else if (!anal->flb.set) {
 		R_LOG_ERROR ("anal->flb.set is NULL - cannot create flags");
 	} else {
-		// Build a proper flag name from the truncated string
 		char safe_str[64] = {0};
-
-		// Copy only the actual string size
 		ut32 copy_len = str_size < 63 ? str_size : 63;
 		r_str_ncpy (safe_str, (char *)buf, copy_len + 1);
 
-		// Filter for safe flag name
 		r_str_filter (safe_str, -1);
 
 		// Create the flag name with appropriate prefix
@@ -448,7 +427,6 @@ static bool sbpf_analyze_strings(RAnal *anal) {
 
 		// Handle pointer structures separately
 		if (ref->is_pointer) {
-			// This is a pointer structure, create a pointer flag
 			ut8 struct_buf[16];
 			if (!anal->iob.read_at (anal->iob.io, ref->addr, struct_buf, 16)) {
 				continue;
@@ -470,10 +448,9 @@ static bool sbpf_analyze_strings(RAnal *anal) {
 			}
 
 			if (anal->iob.read_at (anal->iob.io, str_ptr, (ut8 *)str_buf, size)) {
-				str_buf[size] = 0;  // Null terminate at the size boundary
-				// Find actual string length (up to first null terminator)
 				ut32 actual_len = r_str_nlen (str_buf, size);
 				str_buf[actual_len] = 0;  // Ensure termination at actual length
+
 				r_str_filter (str_buf, -1);
 				flagname = r_str_newf ("ptr.%"PFMT64x"_%s", ref->addr, str_buf);
 				comment_str = strdup (str_buf);
@@ -522,16 +499,15 @@ static bool sbpf_analyze_strings(RAnal *anal) {
 		ut32 string_size = SBPF_MAX_STRING_SIZE;
 
 		if (ref->size > 0) {
-			// Use pre-calculated size if available (from pointer structure)
+			// Use pre-calculated size from pointer structure
 			string_size = ref->size;
 		} else {
 			// For direct strings, calculate size based on next reference address
-			// This includes ALL entries: direct strings, pointer structures, and substrings
+			// This includes all entries: direct strings, pointer structures, and substrings
 			next_iter = iter->n;
 			while (next_iter) {
 				next_ref = (SbpfStringRef *)next_iter->data;
-				// Use any reference that comes after this one as a boundary
-				// Don't skip substring entries - they are valid boundaries!
+				// Don't skip substring entries
 				if (next_ref->addr > ref->addr && next_ref->addr < data_end) {
 					string_size = next_ref->addr - ref->addr;
 					break;
@@ -553,9 +529,7 @@ static bool sbpf_analyze_strings(RAnal *anal) {
 		}
 
 		// Only create strings for non-pointer entries
-		// Pointer structures are already handled above
 		sbpf_create_string (anal, ref->addr, string_size, ref->xref_addr, false);
-		// XXX this is wrong for 32bit systems
 		set_u_add (created_addrs, ref->addr);
 		strings_created++;
 	}
@@ -645,7 +619,6 @@ static void sbpf_print_string_xrefs(RAnal *anal) {
 		ut32 string_size = SBPF_MAX_STRING_SIZE;
 
 		if (ref->is_pointer) {
-			// This is a pointer structure
 			// Read the pointer structure to get the actual string
 			ut8 struct_buf[16];
 			if (!anal->iob.read_at (anal->iob.io, ref->addr, struct_buf, 16)) {
@@ -679,8 +652,8 @@ static void sbpf_print_string_xrefs(RAnal *anal) {
 		}
 		// Calculate size based on next reference (any type)
 		r_list_foreach (refs, next_iter, next_ref) {
-			// Use ANY reference that comes after this one as a boundary
-			// Including substring entries - they are valid boundaries!
+			// Use any reference that comes after this one as a boundary
+			// Including substring entries
 			if (next_ref->addr > ref->addr && next_ref->addr < data_end) {
 				string_size = next_ref->addr - ref->addr;
 				break;
