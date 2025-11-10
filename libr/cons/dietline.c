@@ -53,7 +53,7 @@ static inline bool is_word_break_char(char ch, BreakMode mode) {
 }
 
 static inline bool is_csi_final(char ch) {
-	return (ch == 'm' || ch == 'M' || ch == '~');
+	return (ch >= '@' && ch <= '~');
 }
 
 static inline void swap_case(RLine *line, int index) {
