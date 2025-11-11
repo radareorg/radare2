@@ -1180,25 +1180,21 @@ static void __print_prompt(RCons *cons) {
 	if (cons->line->prompt_type == R_LINE_PROMPT_OFFSET) {
 		r_cons_gotoxy (cons, 0, cons->rows);
 	}
-    // printf ("%s", promptcolor ());
-    // Non-destructive redraw to prevent flicker: do not clear whole line.
-		printf ("\r%s", R_CONS_CLEAR_FROM_CURSOR_TO_END);
-        if (cons->context->color_mode > 0) {
-            printf ("%s%s%s", Color_RESET, promptcolor (cons), line->prompt);
-        } else {
-            printf ("%s", line->prompt);
-        }
-#if 1
-    if (line->buffer.length > 0) {
-        int maxlen = R_MIN (line->buffer.length, cols);
-        if (maxlen > 0) {
-            fwrite (line->buffer.data, maxlen, 1, stdout);
-            if (line->buffer.length > cols) {
-                fwrite (" >", 2, 1, stdout);
-            }
-        }
-    }
-#endif
+	printf ("\r%s", R_CONS_CLEAR_FROM_CURSOR_TO_END);
+	if (cons->context->color_mode > 0) {
+		printf ("%s%s%s", Color_RESET, promptcolor (cons), line->prompt);
+	} else {
+		printf ("%s", line->prompt);
+	}
+	if (line->buffer.length > 0) {
+		int maxlen = R_MIN (line->buffer.length, cols);
+		if (maxlen > 0) {
+			fwrite (line->buffer.data, maxlen, 1, stdout);
+			if (line->buffer.length > cols) {
+				fwrite (" >", 2, 1, stdout);
+			}
+		}
+	}
 	if (line->demo) {
 		// 15% cpu usage, but yeah its fancy demoscene. may be good to optimize
 		int pos = (D.count > 0)? D.count % strlen (line->prompt): 0;
@@ -1230,36 +1226,14 @@ static void __print_prompt(RCons *cons) {
 	} else {
 		i = 0;
 	}
-    len = line->buffer.index - i;
-    if (len > 0 && (i + len) <= line->buffer.length) {
-        if (i < line->buffer.length) {
-            size_t slen = R_MIN (len, (line->buffer.length - i));
-            if (slen > 0 && i < sizeof (line->buffer.data)) {
-                fwrite (line->buffer.data + i, 1, slen, stdout);
-            }
-        }
-    }
-#if 0
-    // Overwrite tail leftovers from previous draw with minimal spaces.
-    {
-        static int last_vis_len = 0;
-        int cur_vis_len = r_str_ansi_len (line->prompt) + R_MIN (line->buffer.length, cols);
-        int pad = last_vis_len - cur_vis_len;
-        if (pad > 0) {
-            const int kmax = 199;
-            char spaces[200];
-            while (pad > 0) {
-                int n = R_MIN (pad, kmax);
-                memset (spaces, ' ', n);
-                spaces[n] = '\0';
-                fwrite (spaces, n, 1, stdout);
-                pad -= n;
-            }
-        }
-        last_vis_len = cur_vis_len;
-    }
-#endif
-    // fflush (stdout);
+	len = line->buffer.index - i;
+	if (len > 0 && (i + len) <= line->buffer.length && i < line->buffer.length) {
+		size_t slen = R_MIN (len, (line->buffer.length - i));
+		if (slen > 0 && i < sizeof (line->buffer.data)) {
+			fwrite (line->buffer.data + i, 1, slen, stdout);
+		}
+	}
+	fflush (stdout);
 }
 
 static inline void vi_delete_commands(RCons *cons, int rep) {
