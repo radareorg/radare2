@@ -1338,11 +1338,11 @@ static int cmd_help(void *data, const char *input) {
 						  char *d = r_str_donut (i);
 						  r_cons_gotoxy (core->cons, 0, 0);
 						  r_str_trim_tail (d);
-						  r_cons_clear_line (core->cons, 0);
+						  r_cons_clear_line (core->cons, false, true);
 						  r_cons_printf (core->cons, "Downloading the Gibson...\n\n");
 						  r_core_cmdf (core, "?e=%d", i);
 						  r_cons_print (core->cons, d);
-						  r_cons_clear_line (core->cons, 0);
+						  r_cons_clear_line (core->cons, false, true);
 						  r_cons_newline (core->cons);
 						  free (d);
 						  r_cons_flush (core->cons);

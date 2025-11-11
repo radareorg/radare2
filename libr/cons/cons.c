@@ -1945,7 +1945,7 @@ R_API void r_cons_last(RCons *cons) {
 	}
 }
 
-R_API void r_cons_clear_line(RCons *cons, int std_err) {
+R_API void r_cons_clear_line(RCons *cons, bool std_err, bool flush) {
 #if R2__WINDOWS__
 	if (cons->vtmode) {
 		fprintf (std_err? stderr: stdout,"%s", R_CONS_CLEAR_LINE);
@@ -1964,7 +1964,9 @@ R_API void r_cons_clear_line(RCons *cons, int std_err) {
 #else
 	fprintf (std_err? stderr: stdout,"%s", R_CONS_CLEAR_LINE);
 #endif
-	fflush (std_err? stderr: stdout);
+	if (flush) {
+		fflush (std_err? stderr: stdout);
+	}
 }
 
 R_API void r_cons_clear(RCons *cons) {

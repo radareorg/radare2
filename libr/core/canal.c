@@ -1102,7 +1102,7 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 						}
 						// TODO: ensure next address is function after padding (nop or trap or wat)
 						// XXX noisy for test cases because we want to clear the stderr
-						r_cons_clear_line (core->cons, 1);
+						r_cons_clear_line (core->cons, true, true);
 						if (verbose) {
 							loganal (fcn->addr, at, 10000 - depth);
 						}
@@ -5052,7 +5052,7 @@ R_API RList* r_core_anal_cycles(RCore *core, int ccl) {
 	while (cf && !r_cons_is_breaked (cons)) {
 		if ((op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_BASIC)) && (op->cycles) && (ccl > 0)) {
 			if (verbose) {
-				r_cons_clear_line (cons, 1);
+				r_cons_clear_line (cons, true, true);
 			}
 			addr += op->size;
 			switch (op->type) {
