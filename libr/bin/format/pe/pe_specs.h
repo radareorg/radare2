@@ -457,8 +457,8 @@ typedef struct {
 	ut64 EndAddressOfRawData;
 	ut64 AddressOfIndex;
 	ut64 AddressOfCallBacks;
-	ut64 SizeOfZeroFill;
-	ut64 Characteristics;
+	ut32 SizeOfZeroFill;
+	ut32 Characteristics;
 } Pe64_image_tls_directory;
 
 typedef struct {
