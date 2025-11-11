@@ -1182,10 +1182,9 @@ static void __print_prompt(RCons *cons) {
 		r_cons_flush (cons);
 	}
     // printf ("%s", promptcolor ());
-    // Avoid full-line clears on Windows non-VT to prevent flicker.
+    // Non-destructive redraw to prevent flicker: do not clear whole line.
 #if R2__WINDOWS__
     if (!cons->vtmode) {
-        // Move to start of line and redraw prompt without erasing whole row
         printf ("\r");
         if (cons->context->color_mode > 0) {
             printf ("%s%s%s", Color_RESET, promptcolor (cons), line->prompt);
@@ -1195,23 +1194,23 @@ static void __print_prompt(RCons *cons) {
     } else
 #endif
     {
-        r_cons_clear_line (cons, 0);
+        printf ("\r");
         if (cons->context->color_mode > 0) {
-            printf ("\r%s%s%s", Color_RESET, promptcolor (cons), line->prompt);
+            printf ("%s%s%s", Color_RESET, promptcolor (cons), line->prompt);
         } else {
-            printf ("\r%s", line->prompt);
+            printf ("%s", line->prompt);
         }
     }
 #if 1
-	if (line->buffer.length > 0) {
-		int maxlen = R_MIN (line->buffer.length, cols);
-		if (maxlen > 0) {
-			fwrite (line->buffer.data, maxlen, 1, stdout);
-			if (line->buffer.length > cols) {
-				fwrite (" >", 2, 1, stdout);
-			}
-		}
-	}
+    if (line->buffer.length > 0) {
+        int maxlen = R_MIN (line->buffer.length, cols);
+        if (maxlen > 0) {
+            fwrite (line->buffer.data, maxlen, 1, stdout);
+            if (line->buffer.length > cols) {
+                fwrite (" >", 2, 1, stdout);
+            }
+        }
+    }
 #endif
 	if (line->demo) {
 		// 15% cpu usage, but yeah its fancy demoscene. may be good to optimize
@@ -1244,15 +1243,33 @@ static void __print_prompt(RCons *cons) {
 	} else {
 		i = 0;
 	}
-	len = line->buffer.index - i;
-	if (len > 0 && (i + len) <= line->buffer.length) {
-		if (i < line->buffer.length) {
-			size_t slen = R_MIN (len, (line->buffer.length - i));
-			if (slen > 0 && i < sizeof (line->buffer.data)) {
-				fwrite (line->buffer.data + i, 1, slen, stdout);
-			}
-		}
-	}
+    len = line->buffer.index - i;
+    if (len > 0 && (i + len) <= line->buffer.length) {
+        if (i < line->buffer.length) {
+            size_t slen = R_MIN (len, (line->buffer.length - i));
+            if (slen > 0 && i < sizeof (line->buffer.data)) {
+                fwrite (line->buffer.data + i, 1, slen, stdout);
+            }
+        }
+    }
+    // Overwrite tail leftovers from previous draw with minimal spaces.
+    {
+        static int last_vis_len = 0;
+        int cur_vis_len = r_str_ansi_len (line->prompt) + R_MIN (line->buffer.length, cols);
+        int pad = last_vis_len - cur_vis_len;
+        if (pad > 0) {
+            const int kmax = 128;
+            char spaces[kmax + 1];
+            while (pad > 0) {
+                int n = R_MIN (pad, kmax);
+                memset (spaces, ' ', n);
+                spaces[n] = '\0';
+                fwrite (spaces, n, 1, stdout);
+                pad -= n;
+            }
+        }
+        last_vis_len = cur_vis_len;
+    }
     fflush (stdout);
 }
 
@@ -1807,9 +1824,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 #endif
 		bool o_do_setup_match = line->history.do_setup_match;
 		line->history.do_setup_match = true;
-		if (line->echo && cons->context->color_mode) {
-			r_cons_clear_line (cons, 0);
-		}
+		// Avoid clearing the whole line before redraw to prevent flicker.
 	repeat:
 		(void)r_cons_get_size (cons, &rows);
 		switch (*buf) {
