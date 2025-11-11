@@ -1181,13 +1181,27 @@ static void __print_prompt(RCons *cons) {
 		r_cons_gotoxy (cons, 0, cons->rows);
 		r_cons_flush (cons);
 	}
-	// printf ("%s", promptcolor ());
-	r_cons_clear_line (cons, 0);
-	if (cons->context->color_mode > 0) {
-		printf ("\r%s%s%s", Color_RESET, promptcolor (cons), line->prompt);
-	} else {
-		printf ("\r%s", line->prompt);
-	}
+    // printf ("%s", promptcolor ());
+    // Avoid full-line clears on Windows non-VT to prevent flicker.
+#if R2__WINDOWS__
+    if (!cons->vtmode) {
+        // Move to start of line and redraw prompt without erasing whole row
+        printf ("\r");
+        if (cons->context->color_mode > 0) {
+            printf ("%s%s%s", Color_RESET, promptcolor (cons), line->prompt);
+        } else {
+            printf ("%s", line->prompt);
+        }
+    } else
+#endif
+    {
+        r_cons_clear_line (cons, 0);
+        if (cons->context->color_mode > 0) {
+            printf ("\r%s%s%s", Color_RESET, promptcolor (cons), line->prompt);
+        } else {
+            printf ("\r%s", line->prompt);
+        }
+    }
 #if 1
 	if (line->buffer.length > 0) {
 		int maxlen = R_MIN (line->buffer.length, cols);
@@ -1239,7 +1253,7 @@ static void __print_prompt(RCons *cons) {
 			}
 		}
 	}
-	fflush (stdout);
+    fflush (stdout);
 }
 
 static inline void vi_delete_commands(RCons *cons, int rep) {
