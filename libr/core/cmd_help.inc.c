@@ -1678,15 +1678,25 @@ static void cmd_head(void *data, const char *_input) { // "head"
 
 static int cmd_h(void *data, const char *_input) { // "head"
 	RCore *core = (RCore *)data;
-	if (r_str_startswith (_input, "ead")) {
-		cmd_head (data, _input);
-		return 0;
+	if (_input[0] == 'e') {
+		if (r_str_startswith (_input, "ead")) {
+			cmd_head (data, _input);
+			return 0;
+		}
+		if (r_str_startswith (_input, "elp")) {
+			r_cons_printf (core->cons, "%s\n", help_message);
+			return 0;
+		}
+		if (_input[1] == '?') {
+			r_core_cmd_help ((RCore*)data, help_msg_h);
+		} else {
+			r_core_return_invalid_command (core, "he", _input[1]);
+		}
+	} else if (_input[0] == '?') {
+		r_core_cmd_help ((RCore*)data, help_msg_h);
+	} else {
+		r_core_return_invalid_command (core, "h", _input[0]);
 	}
-	if (r_str_startswith (_input, "elp")) {
-		r_cons_printf (core->cons, "%s\n", help_message);
-		return 0;
-	}
-	r_core_cmd_help ((RCore*)data, help_msg_h);
 	return 0; // invalid command
 }
 #endif
