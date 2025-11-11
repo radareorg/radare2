@@ -7,7 +7,7 @@
 
 #if R2__WINDOWS__
 #include <windows.h>
-#define printf(...) r_cons_win_printf (r_cons_singleton (), false, __VA_ARGS__)
+#define printf(...) r_cons_win_printf(r_cons_singleton(), false, __VA_ARGS__)
 #define USE_UTF8 1
 static int r_line_readchar_win(RCons *cons, ut8 *s, int slen);
 #else
@@ -29,7 +29,7 @@ typedef struct {
 	int gcomp_idx;
 } Dietline;
 
-static R_TH_LOCAL Dietline D = {0};
+static R_TH_LOCAL Dietline D = { 0 };
 
 typedef enum {
 	MINOR_BREAK,
@@ -52,8 +52,20 @@ static inline bool is_word_break_char(char ch, BreakMode mode) {
 	return false;
 }
 
-static inline bool is_csi_final(char ch) {
-	return (ch >= '@' && ch <= '~');
+static bool drain_csi_sequence(RCons *cons) {
+	R_RETURN_VAL_IF_FAIL (cons, false);
+	int ch;
+	for (;;) {
+		ch = r_cons_readchar (cons);
+		if (ch < 20) {
+			return false;
+		}
+		// check if it's a CSI terminator character
+		if (ch >= '@' && ch <= '~') {
+			break;
+		}
+	}
+	return true;
 }
 
 static inline void swap_case(RLine *line, int index) {
@@ -84,8 +96,7 @@ static void goto_word_start(RLine *line, int *cursor, BreakMode break_mode) {
 		}
 	} else if (is_word_break_char (line->buffer.data[*cursor], MINOR_BREAK)) {
 		/* move cursor backwards to the next non-word-break char OR MAJOR break char */
-		while (*cursor >= 0 && is_word_break_char (line->buffer.data[*cursor], MINOR_BREAK)
-		       && !is_word_break_char (line->buffer.data[*cursor], MAJOR_BREAK)) {
+		while (*cursor >= 0 && is_word_break_char (line->buffer.data[*cursor], MINOR_BREAK) && !is_word_break_char (line->buffer.data[*cursor], MAJOR_BREAK)) {
 			(*cursor)--;
 		}
 	} else {
@@ -108,8 +119,7 @@ static void goto_word_end(RLine *line, int *cursor, BreakMode break_mode) {
 		}
 	} else if (is_word_break_char (line->buffer.data[*cursor], MINOR_BREAK)) {
 		/* move cursor forward to the next non-word-break char or MAJOR break char */
-		while (*cursor < line->buffer.length && is_word_break_char (line->buffer.data[*cursor], MINOR_BREAK)
-		       && !is_word_break_char (line->buffer.data[*cursor], MAJOR_BREAK)) {
+		while (*cursor < line->buffer.length && is_word_break_char (line->buffer.data[*cursor], MINOR_BREAK) && !is_word_break_char (line->buffer.data[*cursor], MAJOR_BREAK)) {
 			(*cursor)++;
 		}
 	}
@@ -279,12 +289,10 @@ static void delete_in_word(RLine *line, BreakMode break_mode) {
 				i--;
 			}
 		} else {
-			while (i < line->buffer.length && is_word_break_char (line->buffer.data[i], MINOR_BREAK)
-			       && !is_word_break_char (line->buffer.data[i], MAJOR_BREAK)) {
+			while (i < line->buffer.length && is_word_break_char (line->buffer.data[i], MINOR_BREAK) && !is_word_break_char (line->buffer.data[i], MAJOR_BREAK)) {
 				i++;
 			}
-			if (i == line->buffer.length - 1 && is_word_break_char (line->buffer.data[i], MINOR_BREAK)
-			    && !is_word_break_char (line->buffer.data[i], MAJOR_BREAK)) {
+			if (i == line->buffer.length - 1 && is_word_break_char (line->buffer.data[i], MINOR_BREAK) && !is_word_break_char (line->buffer.data[i], MAJOR_BREAK)) {
 				i--;
 			}
 		}
@@ -307,7 +315,7 @@ static void delete_in_word(RLine *line, BreakMode break_mode) {
  * how it works:
  *   - start by looking for the start char backwards
  *   - if not found look forward
- *   - call indexof() to get the index of the closing char
+ *   - call indexof () to get the index of the closing char
  *   - shift (resize) the buffer
  * note: doesn't work well with nested chars like ((test))
  * would need a stack for that
@@ -376,7 +384,7 @@ static int inithist(RLine *line) {
 	if (line->history.data) {
 		int new_size = line->hist_size;
 		if (new_size > 0 && line->history.size != new_size) {
-			char **new_data = (char **) calloc (new_size, sizeof (char *));
+			char **new_data = (char **)calloc (new_size, sizeof (char *));
 			if (new_data) {
 				int nb_copy_lines = R_MIN (line->history.top + 1, new_size);
 				memcpy (new_data, line->history.data + (line->history.top + 1 - nb_copy_lines), sizeof (char *) * nb_copy_lines);
@@ -398,7 +406,7 @@ static int inithist(RLine *line) {
 	if (line->history.size <= 0) {
 		return false;
 	}
-	line->history.data = (char **) calloc (line->history.size, sizeof (char *));
+	line->history.data = (char **)calloc (line->history.size, sizeof (char *));
 	if (!line->history.data) {
 		return false;
 	}
@@ -508,7 +516,7 @@ do_it_again:
 					0
 				};
 				memcpy (chbuf, &(irInBuf.Event.KeyEvent.uChar), 2);
-				char *tmp = r_sys_conv_win_to_utf8_l ((PTCHAR) &chbuf, 1);
+				char *tmp = r_sys_conv_win_to_utf8_l ((PTCHAR)&chbuf, 1);
 				if (tmp) {
 					r_str_ncpy (buf, tmp, sizeof (buf));
 					free (tmp);
@@ -516,20 +524,20 @@ do_it_again:
 			} else {
 				int idx = 0;
 				buf[idx++] = 27;
-				buf[idx++] = '[';	// Simulate escaping
+				buf[idx++] = '['; // Simulate escaping
 				if (irInBuf.Event.KeyEvent.dwControlKeyState & 8) {
-					buf[idx++] = '1';	// control key
+					buf[idx++] = '1'; // control key
 				}
 				switch (irInBuf.Event.KeyEvent.wVirtualKeyCode) {
 				case VK_UP: buf[idx++] = 'A'; break;
 				case VK_DOWN: buf[idx++] = 'B'; break;
 				case VK_RIGHT: buf[idx++] = 'C'; break;
 				case VK_LEFT: buf[idx++] = 'D'; break;
-				case VK_PRIOR: buf[idx++] = '5'; break;	// PAGE UP
-				case VK_NEXT: buf[idx++] = '6'; break;	// PAGE DOWN
-				case VK_DELETE: buf[idx++] = '3'; break;// SUPR KEY
-				case VK_HOME: buf[idx++] = 'H'; break;	// HOME KEY
-				case VK_END: buf[idx++] = 'F'; break;	// END KEY
+				case VK_PRIOR: buf[idx++] = '5'; break; // PAGE UP
+				case VK_NEXT: buf[idx++] = '6'; break; // PAGE DOWN
+				case VK_DELETE: buf[idx++] = '3'; break; // SUPR KEY
+				case VK_HOME: buf[idx++] = 'H'; break; // HOME KEY
+				case VK_END: buf[idx++] = 'F'; break; // END KEY
 				default: buf[0] = 0; break;
 				}
 			}
@@ -538,9 +546,9 @@ do_it_again:
 	if (!buf[0]) {
 		goto do_it_again;
 	}
-	r_str_ncpy ((char *) s, buf, slen);
+	r_str_ncpy ((char *)s, buf, slen);
 	SetConsoleMode (h, mode);
-	return strlen ((char *) s);
+	return strlen ((char *)s);
 }
 
 #endif
@@ -767,7 +775,7 @@ R_API bool r_line_hist_save(RLine *line, const char *file) {
 	// R_LOG_DEBUG ("SAVE %s", file);
 	int i;
 	bool ret = false;
-	char *p = (char *) r_str_lastbut (file, R_SYS_DIR[0], NULL);
+	char *p = (char *)r_str_lastbut (file, R_SYS_DIR[0], NULL);
 	if (p) {
 		*p = 0;
 		if (!r_sys_mkdirp (file)) {
@@ -822,7 +830,7 @@ static void selection_widget_draw(RCons *cons) {
 	bool scrollbar = sel_widget->options_len > R_SELWIDGET_MAXH;
 	int scrollbar_y = 0, scrollbar_l = 0;
 	if (scrollbar) {
-		scrollbar_y = (R_SELWIDGET_MAXH * (sel_widget->selection - sel_widget->scroll)) / sel_widget->options_len;
+		scrollbar_y = (R_SELWIDGET_MAXH *(sel_widget->selection - sel_widget->scroll)) / sel_widget->options_len;
 		scrollbar_l = (R_SELWIDGET_MAXH * R_SELWIDGET_MAXH) / sel_widget->options_len;
 	}
 
@@ -837,14 +845,14 @@ static void selection_widget_draw(RCons *cons) {
 		r_cons_printf (cons, "%s", sel_widget->selection == y + scroll? selected_color: background_color);
 		r_cons_printf (cons, "%-*.*s", sel_widget->w, sel_widget->w, option);
 		if (scrollbar && R_BETWEEN (scrollbar_y, y, scrollbar_y + scrollbar_l)) {
-			r_cons_write (cons, (const ut8*)Color_INVERT " "Color_INVERT_RESET, 10);
+			r_cons_write (cons, (const ut8 *)Color_INVERT " " Color_INVERT_RESET, 10);
 		} else {
-			r_cons_write (cons, (const ut8*)" ", 1);
+			r_cons_write (cons, (const ut8 *)" ", 1);
 		}
 	}
 
 	r_cons_gotoxy (cons, pos_x + line->buffer.length, pos_y);
-	r_cons_write (cons, (const ut8*)Color_RESET_BG, 5);
+	r_cons_write (cons, (const ut8 *)Color_RESET_BG, 5);
 	r_cons_flush (cons);
 }
 
@@ -941,7 +949,7 @@ static void selection_widget_select(RLine *line) {
 
 static void selection_widget_update(RLine *line) {
 	int argc = r_pvector_length (&line->completion.args);
-	const char **argv = (const char **) r_pvector_data (&line->completion.args);
+	const char **argv = (const char **)r_pvector_data (&line->completion.args);
 	if (argc == 0 || (argc == 1 && line->buffer.length >= strlen (argv[0]))) {
 		selection_widget_erase (line);
 		return;
@@ -979,7 +987,7 @@ R_API void r_line_autocomplete(RCons *cons) {
 		line->completion.opt = false;
 		line->completion.run (&line->completion, &line->buffer, line->prompt_type, line->completion.run_user);
 		argc = r_pvector_length (&line->completion.args);
-		argv = (const char **) r_pvector_data (&line->completion.args);
+		argv = (const char **)r_pvector_data (&line->completion.args);
 		opt = line->completion.opt;
 	}
 	if (line->sel_widget && !line->sel_widget->complete_common) {
@@ -988,12 +996,12 @@ R_API void r_line_autocomplete(RCons *cons) {
 	}
 
 	if (opt) {
-		p = (char *) r_sub_str_lchr (line->buffer.data, 0, line->buffer.index, '=');
+		p = (char *)r_sub_str_lchr (line->buffer.data, 0, line->buffer.index, '=');
 	} else {
-		p = (char *) r_sub_str_lchr (line->buffer.data, 0, line->buffer.index, ' ');
+		p = (char *)r_sub_str_lchr (line->buffer.data, 0, line->buffer.index, ' ');
 	}
 	if (!p) {
-		p = (char *) r_sub_str_lchr (line->buffer.data, 0, line->buffer.index, '@'); // HACK FOR r2
+		p = (char *)r_sub_str_lchr (line->buffer.data, 0, line->buffer.index, '@'); // HACK FOR r2
 	}
 	if (p) {
 		p++;
@@ -1006,8 +1014,7 @@ R_API void r_line_autocomplete(RCons *cons) {
 	if (argc == 1) {
 		const char *end_word = r_sub_str_rchr (line->buffer.data,
 			line->buffer.index, strlen (line->buffer.data), ' ');
-		const char *t = end_word?
-				end_word: line->buffer.data + line->buffer.index;
+		const char *t = end_word? end_word: line->buffer.data + line->buffer.index;
 		int largv0 = strlen (r_str_get (argv[0]));
 		size_t len_t = strlen (t);
 		p[largv0] = '\0';
@@ -1045,7 +1052,9 @@ R_API void r_line_autocomplete(RCons *cons) {
 				if (!argv[i]) {
 					break;
 				}
-				while (argv[i][j] == root[j] && root[j] != '\0') j++;
+				while (argv[i][j] == root[j] && root[j] != '\0') {
+					j++;
+				}
 				if (j < min_common_len) {
 					min_common_len = j;
 				}
@@ -1194,8 +1203,8 @@ static void __print_prompt(RCons *cons) {
 		// 15% cpu usage, but yeah its fancy demoscene. may be good to optimize
 		int pos = (D.count > 0)? D.count % strlen (line->prompt): 0;
 		char *a = strdup (line->prompt);
-		char *kb = (char *) r_str_ansi_chrn (a, pos);
-		char *kc = (char *) r_str_ansi_chrn (kb, 3);
+		char *kb = (char *)r_str_ansi_chrn (a, pos);
+		char *kc = (char *)r_str_ansi_chrn (kb, 3);
 		char *b = r_str_ndup (kb, kc - kb);
 		char *c = strdup (kc);
 		char *rb = r_str_newf (Color_WHITE "%s%s", b, promptcolor (cons));
@@ -1377,7 +1386,7 @@ static inline void vi_delete_commands(RCons *cons, int rep) {
 			break;
 		}
 		__print_prompt (cons);
-	}	// end of while (rep--)
+	} // end of while (rep--)
 }
 
 static inline void __move_cursor_right(RLine *line) {
@@ -1411,7 +1420,7 @@ static void __update_prompt_color(RCons *cons) {
 		}
 		// END = cons->context->pal.reset;
 	}
-	char *prompt = r_str_escape (line->prompt);		// remove the color
+	char *prompt = r_str_escape (line->prompt); // remove the color
 	free (line->prompt);
 	line->prompt = r_str_newf ("%s%s%s", BEGIN, prompt, END);
 }
@@ -1429,15 +1438,15 @@ static bool __vi_mode(RCons *cons) {
 		if (line->echo) {
 			__print_prompt (cons);
 		}
-		if (line->vi_mode != CONTROL_MODE) {// exit if insert mode is selected
+		if (line->vi_mode != CONTROL_MODE) { // exit if insert mode is selected
 			__update_prompt_color (cons);
 			break;
 		}
 		bool o_do_setup_match = line->history.do_setup_match;
 		line->history.do_setup_match = true;
 		ch = r_cons_readchar (cons);
-		while (isdigit (ch)) {			// handle commands like 3b
-			if (ch == '0' && rep == 0) {	// to handle the command 0
+		while (isdigit (ch)) { // handle commands like 3b
+			if (ch == '0' && rep == 0) { // to handle the command 0
 				break;
 			}
 			int tmp = ch - '0';
@@ -1630,7 +1639,7 @@ static bool __vi_mode(RCons *cons) {
 		/* fall through */
 		case '\n':
 			return true;
-		default:					// escape key
+		default: // escape key
 			ch = tolower (r_cons_arrow_to_hjkl (cons, ch));
 			switch (ch) {
 			case 'k': // up
@@ -1690,7 +1699,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 #if USE_UTF8
 	int utflen;
 #endif
-	int ch = 0, key, i = 0;	/* grep completion */
+	int ch = 0, key, i = 0; /* grep completion */
 	char *tmp_ed_cmd, prev = 0;
 	int prev_buflen = -1;
 	// RCons *cons = r_cons_singleton ();
@@ -1751,7 +1760,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 			}
 		}
 #if USE_UTF8
-		utflen = readchar_utf8 (cons, (ut8 *) buf, sizeof (buf));
+		utflen = readchar_utf8 (cons, (ut8 *)buf, sizeof (buf));
 		if (utflen < (line->demo? 0: 1)) {
 			r_cons_break_pop (cons);
 			return NULL;
@@ -1766,7 +1775,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 #else
 #if R2__WINDOWS__
 		{
-			int len = r_line_readchar_win (cons, (ut8 *) buf, sizeof (buf));
+			int len = r_line_readchar_win (cons, (ut8 *)buf, sizeof (buf));
 			if (len < 1) {
 				r_cons_break_pop (cons);
 				return NULL;
@@ -1787,13 +1796,13 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 		if (line->echo && cons->context->color_mode) {
 			r_cons_clear_line (cons, 0);
 		}
-repeat:
-		(void) r_cons_get_size (cons, &rows);
+	repeat:
+		(void)r_cons_get_size (cons, &rows);
 		switch (*buf) {
-		case 0:	// control-space
+		case 0: // control-space
 			/* ignore atm */
 			break;
-		case 1:	// ^A
+		case 1: // ^A
 			if (D.gcomp > 0) {
 				strcpy (line->buffer.data, gcomp_line);
 				line->buffer.length = strlen (line->buffer.data);
@@ -1802,16 +1811,16 @@ repeat:
 			}
 			line->buffer.index = 0;
 			break;
-		case 2:	// ^b // emacs left
+		case 2: // ^b // emacs left
 			__move_cursor_left (line);
 			break;
-		case 5:	// ^E
+		case 5: // ^E
 			if (D.gcomp > 0) {
 				strcpy (line->buffer.data, gcomp_line);
 				line->buffer.index = strlen (line->buffer.data);
 				line->buffer.length = line->buffer.index;
 				D.gcomp = 0;
-			} else if (prev == 24) {// ^X = 0x18
+			} else if (prev == 24) { // ^X = 0x18
 				line->buffer.data[line->buffer.length] = 0; // probably unnecessary
 				tmp_ed_cmd = line->cons->cb_editor (line->user, NULL, line->buffer.data);
 				if (tmp_ed_cmd) {
@@ -1830,7 +1839,7 @@ repeat:
 				line->buffer.index = line->buffer.length;
 			}
 			break;
-		case 3:	// ^C
+		case 3: // ^C
 			if (line->hud) {
 				line->hud->activate = false;
 				line->hud->current_entry_n = -1;
@@ -1842,8 +1851,8 @@ repeat:
 			*line->buffer.data = '\0';
 			D.gcomp = 0;
 			goto _end;
-		case 4:	// ^D
-			if (!line->buffer.data[0]) {/* eof */
+		case 4: // ^D
+			if (!line->buffer.data[0]) { /* eof */
 				if (line->echo) {
 					eprintf ("^D\n");
 				}
@@ -1855,33 +1864,33 @@ repeat:
 				__delete_current_char (line);
 			}
 			break;
-		case 11:// ^K
+		case 11: // ^K
 			line->buffer.data[line->buffer.index] = '\0';
 			line->buffer.length = line->buffer.index;
 			break;
-		case 6:	// ^f // emacs right
+		case 6: // ^f // emacs right
 			__move_cursor_right (line);
 			break;
-		case 12:// ^L -- clear screen
+		case 12: // ^L -- clear screen
 			if (line->echo) {
 				eprintf ("\x1b[2J\x1b[0;0H");
 			}
 			fflush (stdout);
 			break;
-		case 18:// ^R -- autocompletion
+		case 18: // ^R -- autocompletion
 			if (D.gcomp > 0) {
 				D.gcomp_idx++;
 			}
 			D.gcomp = 1;
 			break;
-		case 19:// ^S -- backspace
+		case 19: // ^S -- backspace
 			if (D.gcomp > 0) {
 				D.gcomp--;
 			} else {
 				__move_cursor_left (line);
 			}
 			break;
-		case 21:// ^U - cut
+		case 21: // ^U - cut
 			free (line->clipboard);
 			line->clipboard = strdup (line->buffer.data);
 			r_line_clipboard_push (line, line->clipboard);
@@ -1890,7 +1899,7 @@ repeat:
 			line->buffer.index = 0;
 			break;
 #if R2__WINDOWS__
-		case 22:// ^V - Paste from windows clipboard
+		case 22: // ^V - Paste from windows clipboard
 		{
 			HANDLE hClipBoard;
 			PTCHAR clipText;
@@ -1925,17 +1934,17 @@ repeat:
 		}
 		break;
 #endif
-		case 23:// ^W ^w unix-word-rubout
+		case 23: // ^W ^w unix-word-rubout
 			unix_word_rubout (cons);
 			break;
-		case 24:// ^X
+		case 24: // ^X
 			if (line->buffer.index > 0) {
 				strncpy (line->buffer.data, line->buffer.data + line->buffer.index, line->buffer.length);
 				line->buffer.length -= line->buffer.index;
 				line->buffer.index = 0;
 			}
 			break;
-		case 25:// ^Y - paste
+		case 25: // ^Y - paste
 			paste (line);
 			D.yank_flag = true;
 			break;
@@ -1946,10 +1955,10 @@ repeat:
 		case 20: // ^t Kill from point to the end of the current word,
 			kill_word (line, MINOR_BREAK, 'w');
 			break;
-		case 15:// ^o kill backward
+		case 15: // ^o kill backward
 			backward_kill_word (line, MINOR_BREAK);
 			break;
-		case 14:// ^n
+		case 14: // ^n
 			if (line->hud) {
 				if (line->hud->top_entry_n + 1 < line->hud->current_entry_n) {
 					line->hud->top_entry_n++;
@@ -1966,7 +1975,7 @@ repeat:
 				r_line_hist_down (line);
 			}
 			break;
-		case 16:// ^p
+		case 16: // ^p
 			if (line->hud) {
 				if (line->hud->top_entry_n >= 0) {
 					line->hud->top_entry_n--;
@@ -1981,10 +1990,10 @@ repeat:
 				r_line_hist_up (line);
 			}
 			break;
-		case 27:// esc-5b-41-00-00 alt/meta key
+		case 27: // esc-5b-41-00-00 alt/meta key
 #if R2__WINDOWS__
 			// always skip escape
-			memmove (buf, buf + 1, strlen ((char *) buf));
+			memmove (buf, buf + 1, strlen ((char *)buf));
 #else
 			buf[0] = r_cons_readchar_timeout (cons, 50);
 #endif
@@ -2000,23 +2009,21 @@ repeat:
 					if (__vi_mode (cons)) {
 						goto _end;
 					}
-				}
-				;
+				};
 				if (line->sel_widget) {
 					selection_widget_erase (line);
 				}
 				break;
-			case 1:	// begin
+			case 1: // begin
 				line->buffer.index = 0;
 				break;
-			case 5:	// end
+			case 5: // end
 				line->buffer.index = line->buffer.length;
 				break;
 			case 'B':
 			case 'b':
 				for (i = line->buffer.index - 2; i >= 0; i--) {
-					if (is_word_break_char (line->buffer.data[i], MINOR_BREAK)
-					    && !is_word_break_char (line->buffer.data[i + 1], MINOR_BREAK)) {
+					if (is_word_break_char (line->buffer.data[i], MINOR_BREAK) && !is_word_break_char (line->buffer.data[i + 1], MINOR_BREAK)) {
 						line->buffer.index = i + 1;
 						break;
 					}
@@ -2033,8 +2040,7 @@ repeat:
 			case 'f':
 				// next word
 				for (i = line->buffer.index + 1; i < line->buffer.length; i++) {
-					if (!is_word_break_char (line->buffer.data[i], MINOR_BREAK)
-					    && is_word_break_char (line->buffer.data[i - 1], MINOR_BREAK)) {
+					if (!is_word_break_char (line->buffer.data[i], MINOR_BREAK) && is_word_break_char (line->buffer.data[i - 1], MINOR_BREAK)) {
 						line->buffer.index = i;
 						break;
 					}
@@ -2071,7 +2077,7 @@ repeat:
 						case 84:
 							{
 								int fkey = kbuf - 80 + 1;
-								if (fkey > 0 && fkey < 13) {
+							if (fkey > 0 && fkey < 13) {
 									line->cb_fkey (line->user, fkey);
 								}
 							}
@@ -2113,14 +2119,10 @@ repeat:
 						// VTMode: 0=UNIX, 1=Windows, 2=Visual???
 						__delete_current_char (line);
 						if (line->vtmode == 0) {
-							// while (!is_csi_final (r_cons_readchar (cons))) { /* nothing */ }
-							do {
-								ch = r_cons_readchar (cons);
-								if (ch < 20) {
-									r_cons_break_pop (cons);
-									return NULL;
-								}
-							} while (!is_csi_final (ch));
+							if (!drain_csi_sequence (cons)) {
+								r_cons_break_pop (cons);
+								return NULL;
+							}
 						} else if (line->vtmode == 2) {
 							key = r_cons_readchar (cons);
 							if (key == 126) {
@@ -2130,6 +2132,10 @@ repeat:
 								continue;
 							}
 							if (key == -1) {
+								r_cons_break_pop (cons);
+								return NULL;
+							}
+							if (!drain_csi_sequence (cons)) {
 								r_cons_break_pop (cons);
 								return NULL;
 							}
@@ -2177,7 +2183,7 @@ repeat:
 								line->hud->top_entry_n++;
 							}
 						}
-						while (!is_csi_final (r_cons_readchar (cons))) { /* nothing */ }
+						drain_csi_sequence (cons);
 						break;
 					/* arrows */
 					case 'A': // up arrow
@@ -2240,13 +2246,13 @@ repeat:
 							case '8':
 							case '9':
 
-								fkey = ch - '0' -1;
+								fkey = ch - '0' - 1;
 								break;
 							default:
 								R_LOG_ERROR ("Unknown fkey %d pressed", fkey);
 								break;
 							}
-							ch = r_cons_readchar (cons);	// should be '5'
+							ch = r_cons_readchar (cons); // should be '5'
 							// ch = r_cons_readchar (cons);
 						}
 #if R2__WINDOWS__
@@ -2328,7 +2334,7 @@ repeat:
 			}
 			__delete_prev_char (line);
 			break;
-		case 9:	// TAB tab
+		case 9: // TAB tab
 			if (line->buffer.length > 0 && line->buffer.data[line->buffer.length - 1] == '@') {
 				strcpy (line->buffer.data + line->buffer.length, " ");
 				line->buffer.length++;
@@ -2349,8 +2355,8 @@ repeat:
 				r_line_autocomplete (cons);
 			}
 			break;
-		case 10:// ^J
-		case 13:// enter
+		case 10: // ^J
+		case 13: // enter
 			if (line->hud) {
 				line->hud->activate = false;
 				break;

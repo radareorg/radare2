@@ -2161,4 +2161,3 @@ R_API void r_cons_break(RCons *cons) {
 	raise (SIGINT);
 #endif
 }
-
