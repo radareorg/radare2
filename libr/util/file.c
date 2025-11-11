@@ -104,13 +104,12 @@ R_API bool r_file_truncate(const char *filename, ut64 newsize) {
 #else
 	int r = ftruncate (fd, newsize);
 #endif
-	if (r != 0) {
+	const bool res = r == 0;
+	if (!res) {
 		R_LOG_ERROR ("Could not resize %s file", filename);
-		close (fd);
-		return false;
 	}
 	close (fd);
-	return true;
+	return res;
 }
 
 /*
