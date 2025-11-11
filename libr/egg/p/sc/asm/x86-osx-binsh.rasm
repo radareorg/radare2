@@ -1,6 +1,6 @@
 ; x86_64 macOS execve /bin/sh shellcode with setuid(0)
 ; Assembly equivalent of the bytes in libr/egg/p/sc/src/x86-osx-binsh.c
-; 
+;
 ; This shellcode first calls setuid(0) and then execve("/bin/sh", argv, NULL)
 ; Uses jmp/call technique for position-independent string address
 ;
