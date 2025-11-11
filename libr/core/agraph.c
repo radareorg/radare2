@@ -4182,8 +4182,7 @@ find_next:
 		} else {
 			visual_refresh (core);
 		}
-
-		r_cons_clear_line (cons, 0);
+		r_cons_clear_line (cons, false, false);
 		r_cons_printf (cons, Color_RESET);
 		if (addr > 0) {
 			r_cons_gotoxy (cons, 0, 0);
@@ -4254,7 +4253,7 @@ static void goto_asmqjmps(RAGraph *g, RCore *core) {
 
 	r_cons_get_size (cons, &rows);
 	r_cons_gotoxy (cons, 0, rows);
-	r_cons_clear_line (cons, 0);
+	r_cons_clear_line (cons, false, false);
 	r_cons_print (cons, Color_RESET);
 	r_cons_print (cons, h);
 	r_cons_flush (cons);

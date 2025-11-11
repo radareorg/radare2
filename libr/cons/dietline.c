@@ -904,7 +904,7 @@ static void print_rline_task(void *_core) {
 	RCore *core = (RCore *)_core;
 	RCons *cons = core->cons;
 	RLine *line = cons->line;
-	r_cons_clear_line (cons, 0);
+	r_cons_clear_line (cons, false, false);
 	r_cons_printf (cons, "%s%s%s", Color_RESET, line->prompt, line->buffer.data);
 	r_cons_flush (cons);
 }
@@ -1170,17 +1170,14 @@ static const char *promptcolor(RCons *cons) {
 }
 
 static void __print_prompt(RCons *cons) {
-	if (!cons) {
-		cons = r_cons_singleton ();
-		R_LOG_WARN ("printing prompt without cons is wrong");
-	}
+	R_RETURN_IF_FAIL (cons);
 	RLine *line = cons->line;
 	int columns = r_cons_get_size (cons, NULL) - 2;
 	int len, i, cols = R_MAX (1, columns - r_str_ansi_len (line->prompt) - 2);
 	if (cons->line->prompt_type == R_LINE_PROMPT_OFFSET) {
 		r_cons_gotoxy (cons, 0, cons->rows);
 	}
-	printf ("\r%s", R_CONS_CLEAR_FROM_CURSOR_TO_END);
+	r_cons_clear_line (cons, false, false);
 	if (cons->context->color_mode > 0) {
 		printf ("%s%s%s", Color_RESET, promptcolor (cons), line->prompt);
 	} else {

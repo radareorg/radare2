@@ -1945,26 +1945,28 @@ R_API void r_cons_last(RCons *cons) {
 	}
 }
 
-R_API void r_cons_clear_line(RCons *cons, int std_err) {
+R_API void r_cons_clear_line(RCons *cons, bool std_err, bool flush) {
 #if R2__WINDOWS__
 	if (cons->vtmode) {
 		fprintf (std_err? stderr: stdout,"%s", R_CONS_CLEAR_LINE);
 	} else {
-		char white[1024];
-		memset (&white, ' ', sizeof (white));
-		if (cons->columns > 0 && cons->columns < sizeof (white)) {
-			white[cons->columns - 1] = 0;
-		} else if (cons->columns == 0) {
-			white[0] = 0;
-		} else {
-			white[sizeof (white) - 1] = 0; // HACK
+		int len = cons->columns;
+		if (len > 0) {
+			char *white = malloc (len + 1);
+			if (white) {
+				memset (white, ' ', len);
+				white[len] = 0;
+				fprintf (std_err? stderr: stdout, "\r%s\r", white);
+				free (white);
+			}
 		}
-		fprintf (std_err? stderr: stdout, "\r%s\r", white);
 	}
 #else
 	fprintf (std_err? stderr: stdout,"%s", R_CONS_CLEAR_LINE);
 #endif
-	fflush (std_err? stderr: stdout);
+	if (flush) {
+		fflush (std_err? stderr: stdout);
+	}
 }
 
 R_API void r_cons_clear(RCons *cons) {
