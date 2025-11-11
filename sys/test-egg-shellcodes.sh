@@ -1,5 +1,9 @@
 #!/bin/sh
 # Test shellcode assembly files against original C versions
+# Usage: sys/test-egg-shellcodes.sh [path-to-sc-dir]
+
+SC_DIR="${1:-libr/egg/p/sc}"
+cd "$SC_DIR" || exit 1
 
 fail=0
 
@@ -18,25 +22,25 @@ for rasm in asm/*.rasm; do
 	
 	# Determine architecture and bits from filename
 	case "$base" in
-		x86-linux-binsh)
-			actual=$(rasm2 -a x86 -b 32 -f "$rasm" 2>/dev/null)
-			;;
-		x86_64-linux-binsh)
-			actual=$(rasm2 -a x86 -b 64 -f "$rasm" 2>/dev/null)
-			;;
-		x86-osx-binsh|x86-osx-suidbinsh)
-			actual=$(rasm2 -a x86 -b 64 -f "$rasm" 2>/dev/null)
-			;;
-		arm-linux-binsh)
-			actual=$(rasm2 -a arm -b 32 -f "$rasm" 2>/dev/null)
-			;;
-		thumb-linux-binsh)
-			actual=$(rasm2 -a arm -f "$rasm" 2>/dev/null)
-			;;
-		*)
-			echo "  [--] $base: Unknown architecture, skipping"
-			continue
-			;;
+	x86-linux-binsh)
+		actual=$(rasm2 -a x86 -b 32 -f "$rasm" 2>/dev/null)
+		;;
+	x86_64-linux-binsh)
+		actual=$(rasm2 -a x86 -b 64 -f "$rasm" 2>/dev/null)
+		;;
+	x86-osx-binsh|x86-osx-suidbinsh)
+		actual=$(rasm2 -a x86 -b 64 -f "$rasm" 2>/dev/null)
+		;;
+	arm-linux-binsh)
+		actual=$(rasm2 -a arm -b 32 -f "$rasm" 2>/dev/null)
+		;;
+	thumb-linux-binsh)
+		actual=$(rasm2 -a arm -f "$rasm" 2>/dev/null)
+		;;
+	*)
+		echo "  [--] $base: Unknown architecture, skipping"
+		continue
+		;;
 	esac
 	
 	if [ "$actual" = "$expected" ]; then

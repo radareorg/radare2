@@ -25,6 +25,6 @@ test: test-shellcodes
 
 test-shellcodes:
 	@echo "Testing shellcode assembly..."
-	@cd "$(shell pwd)" && ./test-shellcodes.sh
+	@$(SHELL) ../../../../sys/test-egg-shellcodes.sh .
 
 .PHONY: all clean test test-shellcodes
