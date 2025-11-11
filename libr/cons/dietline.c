@@ -1179,16 +1179,13 @@ static void __print_prompt(RCons *cons) {
 	int len, i, cols = R_MAX (1, columns - r_str_ansi_len (line->prompt) - 2);
 	if (cons->line->prompt_type == R_LINE_PROMPT_OFFSET) {
 		r_cons_gotoxy (cons, 0, cons->rows);
-		r_cons_flush (cons);
 	}
-	// printf ("%s", promptcolor ());
-	r_cons_clear_line (cons, 0);
+	printf ("\r%s", R_CONS_CLEAR_FROM_CURSOR_TO_END);
 	if (cons->context->color_mode > 0) {
-		printf ("\r%s%s%s", Color_RESET, promptcolor (cons), line->prompt);
+		printf ("%s%s%s", Color_RESET, promptcolor (cons), line->prompt);
 	} else {
-		printf ("\r%s", line->prompt);
+		printf ("%s", line->prompt);
 	}
-#if 1
 	if (line->buffer.length > 0) {
 		int maxlen = R_MIN (line->buffer.length, cols);
 		if (maxlen > 0) {
@@ -1198,7 +1195,6 @@ static void __print_prompt(RCons *cons) {
 			}
 		}
 	}
-#endif
 	if (line->demo) {
 		// 15% cpu usage, but yeah its fancy demoscene. may be good to optimize
 		int pos = (D.count > 0)? D.count % strlen (line->prompt): 0;
@@ -1231,12 +1227,10 @@ static void __print_prompt(RCons *cons) {
 		i = 0;
 	}
 	len = line->buffer.index - i;
-	if (len > 0 && (i + len) <= line->buffer.length) {
-		if (i < line->buffer.length) {
-			size_t slen = R_MIN (len, (line->buffer.length - i));
-			if (slen > 0 && i < sizeof (line->buffer.data)) {
-				fwrite (line->buffer.data + i, 1, slen, stdout);
-			}
+	if (len > 0 && (i + len) <= line->buffer.length && i < line->buffer.length) {
+		size_t slen = R_MIN (len, (line->buffer.length - i));
+		if (slen > 0 && i < sizeof (line->buffer.data)) {
+			fwrite (line->buffer.data + i, 1, slen, stdout);
 		}
 	}
 	fflush (stdout);
@@ -1793,9 +1787,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 #endif
 		bool o_do_setup_match = line->history.do_setup_match;
 		line->history.do_setup_match = true;
-		if (line->echo && cons->context->color_mode) {
-			r_cons_clear_line (cons, 0);
-		}
+		// Avoid clearing the whole line before redraw to prevent flicker.
 	repeat:
 		(void)r_cons_get_size (cons, &rows);
 		switch (*buf) {
