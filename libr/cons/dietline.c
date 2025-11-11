@@ -1179,28 +1179,15 @@ static void __print_prompt(RCons *cons) {
 	int len, i, cols = R_MAX (1, columns - r_str_ansi_len (line->prompt) - 2);
 	if (cons->line->prompt_type == R_LINE_PROMPT_OFFSET) {
 		r_cons_gotoxy (cons, 0, cons->rows);
-		r_cons_flush (cons);
 	}
     // printf ("%s", promptcolor ());
     // Non-destructive redraw to prevent flicker: do not clear whole line.
-#if R2__WINDOWS__
-    if (!cons->vtmode) {
-        printf ("\r");
+		printf ("\r%s", R_CONS_CLEAR_FROM_CURSOR_TO_END);
         if (cons->context->color_mode > 0) {
             printf ("%s%s%s", Color_RESET, promptcolor (cons), line->prompt);
         } else {
             printf ("%s", line->prompt);
         }
-    } else
-#endif
-    {
-        printf ("\r");
-        if (cons->context->color_mode > 0) {
-            printf ("%s%s%s", Color_RESET, promptcolor (cons), line->prompt);
-        } else {
-            printf ("%s", line->prompt);
-        }
-    }
 #if 1
     if (line->buffer.length > 0) {
         int maxlen = R_MIN (line->buffer.length, cols);
@@ -1252,14 +1239,15 @@ static void __print_prompt(RCons *cons) {
             }
         }
     }
+#if 0
     // Overwrite tail leftovers from previous draw with minimal spaces.
     {
         static int last_vis_len = 0;
         int cur_vis_len = r_str_ansi_len (line->prompt) + R_MIN (line->buffer.length, cols);
         int pad = last_vis_len - cur_vis_len;
         if (pad > 0) {
-            const int kmax = 128;
-            char spaces[kmax + 1];
+            const int kmax = 199;
+            char spaces[200];
             while (pad > 0) {
                 int n = R_MIN (pad, kmax);
                 memset (spaces, ' ', n);
@@ -1270,7 +1258,8 @@ static void __print_prompt(RCons *cons) {
         }
         last_vis_len = cur_vis_len;
     }
-    fflush (stdout);
+#endif
+    // fflush (stdout);
 }
 
 static inline void vi_delete_commands(RCons *cons, int rep) {
