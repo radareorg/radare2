@@ -1049,8 +1049,8 @@ static void r_print_format_bf16(RPrintFormat *pf, const char *setval, ut64 seeki
 		elem = size / ARRAYINDEX_COEF - 1;
 		size %= ARRAYINDEX_COEF;
 	}
-	ut16 val_u16 = updateAddr (buf + i, 2, endian, &addr, NULL);
-	float val_f = r_num_bf16_to_float(val_u16);
+	ut16 val_u16 = (ut16) updateAddr (buf + i, 2, endian, &addr, NULL) & UT16_MAX;
+	float val_f = r_num_bf16_to_float (val_u16);
 	if (MUSTSET) {
 		r_print_printf (p, "wv2 %s @ 0x%08" PFMT64x "\n", setval,
 			seeki + ((elem >= 0)? elem * 2: 0));
@@ -1070,7 +1070,7 @@ static void r_print_format_bf16(RPrintFormat *pf, const char *setval, ut64 seeki
 				r_print_printf (p, "[ ");
 			}
 			while (size--) {
-				val_u16 = updateAddr (buf + i, 2, endian, &addr, NULL);
+				val_u16 = (ut16) updateAddr (buf + i, 2, endian, &addr, NULL) & UT16_MAX;
 				val_f = r_num_bf16_to_float (val_u16);
 				if (elem == -1 || elem == 0) {
 					r_print_printf (p, "%.9g", val_f);
