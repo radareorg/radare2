@@ -987,6 +987,19 @@ noskip:
 		}
 		// this call may cause regprofile changes which cause ranalop.regitem references to be invalid
 		analyze_retpoline (anal, op);
+
+		RListIter *eiter;
+		RAnalPlugin *p;
+		r_list_foreach (anal->eligible, eiter, p) {
+			RAnalOpFlow res = {0};
+			if (p->opflow) {
+				res = p->opflow (anal, op);
+				if (res.jmptbl_found) {
+					eprintf ("JUMP TABLE FOUND\n");
+				}
+			}
+		}
+
 		switch (op->type & R_ANAL_OP_TYPE_MASK) {
 		case R_ANAL_OP_TYPE_CMOV:
 		case R_ANAL_OP_TYPE_MOV:
@@ -1182,6 +1195,8 @@ noskip:
 			} else if (is_arm) {
 				const int bits = anal->config->bits;
 				if (bits == 64) {
+					// ut64 jmpptr_table = UT64_MAX;
+					ut64 jmptbl_addr = UT64_MAX;
 					if (last_is_reg_mov_lea) {
 						// incremement the leaddr
 						leaddr_pair *la;
@@ -1189,8 +1204,17 @@ noskip:
 						RListIter *iter;
 						r_list_foreach_prev (anal->leaddrs, iter, la) {
 							la->leaddr += op->val;
+							jmptbl_addr = la->leaddr;
 							break;
 						}
+					}
+				ut64 casetbl_addr = jmptbl_addr;
+				RAnalOp jmp_aop ;
+					if (jmptbl_addr != UT64_MAX) {
+						eprintf ("CHKLS PTR TABLE AT %llx\n", jmptbl_addr);
+				if (is_delta_pointer_table (&ra, anal, fcn, op->addr, op->ptr, &jmptbl_addr, &casetbl_addr, &jmp_aop)) {
+					eprintf("ISDELTA\n");
+				}
 					}
 				} else if (bits == 32) {
 					if (len >= 4 && !memcmp (buf, "\x00\xe0\x8f\xe2", 4)) {
@@ -1571,6 +1595,18 @@ noskip:
 							count++;
 						}
 						// table_addr = 0x100004114;
+#if 0
+						table_addr = 0x183997048;
+						eprintf ("IFSIH 0x%llx\n", table_addr);
+						// try_walkthrough_casetbl (anal, fcn, bb, depth - 1, op->addr, case_shift, op->ptr, prev_op->disp, op->ptr, anal->config->bits >> 3, table_size, default_case, ret);
+						ret = r_anal_jmptbl_walk (anal,
+								fcn, bb, depth - 1,
+								op->addr + 8, 0,
+								table_addr,
+								op->addr + 4, 1,
+								6, // table size is autodetected
+								UT64_MAX, ret);
+#else
 						ret = r_anal_jmptbl_walk (anal,
 								fcn, bb, depth - 1,
 								op->addr - 12, 0,
@@ -1578,6 +1614,7 @@ noskip:
 								op->addr + 4, 4,
 								0, // table size is autodetected
 								UT64_MAX, ret);
+#endif
 						// skip inlined jumptable
 						// idx += table_size;
 					} else if (op->ptrsize == 1) { // TBB

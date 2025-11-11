@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2024 - nibble, alvaro, pancake, th3str4ng3r */
+/* radare - LGPL - Copyright 2010-2025 - nibble, alvaro, pancake, th3str4ng3r */
 
 #include <r_anal.h>
 
@@ -326,7 +326,8 @@ R_API bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_a
 		return false;
 	}
 	// search for a cmp register with a reasonable size
-	anal->iob.read_at (anal->iob.io, lea_addr, (ut8 *)buf, search_sz);
+	// AITODO: check if read fails
+	int res = anal->iob.read_at (anal->iob.io, lea_addr, (ut8 *)buf, search_sz);
 
 	RVector v;
 	r_vector_init (&v, sizeof (ut64), NULL, NULL);
