@@ -53,7 +53,7 @@ static inline bool is_word_break_char(char ch, BreakMode mode) {
 }
 
 static inline bool is_csi_final(char ch) {
-	return (ch == 'm' || ch == 'M' || ch == '~');
+	return (ch >= '@' && ch <= '~');
 }
 
 static inline void swap_case(RLine *line, int index) {
@@ -2044,7 +2044,7 @@ repeat:
 				}
 				break;
 			default:;
-#if !R2__WINDOWS__
+#if R2__UNIX__
 				if (line->vtmode == 2) {
 					buf[1] = r_cons_readchar_timeout (cons, 50);
 					if (buf[1] == -1) { // alt+e
@@ -2060,20 +2060,22 @@ repeat:
 					buf[0] = '[';
 				}
 				if (buf[0] == 79) {
-					int fkey = 0;
-					ut8 kbuf = buf[1] & 0xff;
-					switch (kbuf) {
-					case 80:
-					case 81:
-					case 82:
-					case 83:
-					case 84:
-						fkey = kbuf - 80 + 1;
-						break;
-					}
-					if (fkey > 0 && fkey < 13) {
-						if (line->cb_fkey) {
-							line->cb_fkey (line->user, fkey);
+					// Function Keys
+					if (line->cb_fkey) {
+						ut8 kbuf = buf[1] & 0xff;
+						switch (kbuf) {
+						case 80:
+						case 81:
+						case 82:
+						case 83:
+						case 84:
+							{
+								int fkey = kbuf - 80 + 1;
+								if (fkey > 0 && fkey < 13) {
+									line->cb_fkey (line->user, fkey);
+								}
+							}
+							break;
 						}
 					}
 				} else if (buf[0] == '[') { // [
@@ -2108,27 +2110,30 @@ repeat:
 						// printf "\x1b\x5b\x33\x3b\x35\x7e\n" \x1b[3;5~
 						// Insert=2~, Delete=3~, Home=1~, End=4~, PageUp=5~, PageDown=6~…).
 						// Modifier: 2=Shift, 3=Alt, 5=Ctrl, 6=Shift+Ctrl
+						// VTMode: 0=UNIX, 1=Windows, 2=Visual???
 						__delete_current_char (line);
-						if (line->vtmode == 2) {
-							buf[1] = r_cons_readchar (cons);
-							if (buf[1] == 126) {
+						if (line->vtmode == 0) {
+							// while (!is_csi_final (r_cons_readchar (cons))) { /* nothing */ }
+							do {
+								ch = r_cons_readchar (cons);
+								if (ch < 20) {
+									r_cons_break_pop (cons);
+									return NULL;
+								}
+							} while (!is_csi_final (ch));
+						} else if (line->vtmode == 2) {
+							key = r_cons_readchar (cons);
+							if (key == 126) {
 								// handle SUPR key
 								r_cons_break_pop (cons);
 								__print_prompt (cons);
 								continue;
 							}
-							if (buf[1] == -1) {
+							if (key == -1) {
 								r_cons_break_pop (cons);
 								return NULL;
 							}
 						}
-						do {
-							ch = r_cons_readchar (cons);
-							if (ch < 20) {
-								r_cons_break_pop (cons);
-								return NULL;
-							}
-						} while (!is_csi_final (ch));
 						break;
 					case '5': // pag up
 						if (line->vtmode == 2) {
