@@ -5633,10 +5633,16 @@ again:
 		do_string_search (core, search_itv, &param);
 	} else if (dosearch_read) {
 		// TODO: update pattern search to work with this
+		if (param.outmode == R_MODE_JSON) {
+			pj_a (param.pj);
+		}
 		if (search->mode != R_SEARCH_PATTERN) {
 			r_search_set_read_cb (search, &_cb_hit_sz, &param);
 		}
 		r_search_maps (search, param.boundaries);
+		if (param.outmode == R_MODE_JSON) {
+			pj_end (param.pj);
+		}
 	}
 beach:
 	if (errcode != -1) {
