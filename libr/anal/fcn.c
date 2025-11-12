@@ -913,7 +913,6 @@ noskip:
 			r_anal_op_fini (op);
 			continue;
 		}
-
 		if (delay.cnt > 0) {
 			// if we had passed a branch delay instruction, keep
 			// track of how many still to process.
@@ -965,7 +964,7 @@ noskip:
 		if (op->ptr && op->ptr != UT64_MAX && op->ptr != UT32_MAX) {
 			// swapped parameters wtf
 			// its read or wr
-			int dir = 0;
+			RAnalRefType dir = 0;
 			if (op->direction & R_ANAL_OP_DIR_READ) {
 				dir |= R_ANAL_REF_TYPE_READ;
 			}
@@ -987,7 +986,7 @@ noskip:
 		}
 		// this call may cause regprofile changes which cause ranalop.regitem references to be invalid
 		analyze_retpoline (anal, op);
-
+#if 0
 		RListIter *eiter;
 		RAnalPlugin *p;
 		r_list_foreach (anal->eligible, eiter, p) {
@@ -999,7 +998,7 @@ noskip:
 				}
 			}
 		}
-
+#endif
 		switch (op->type & R_ANAL_OP_TYPE_MASK) {
 		case R_ANAL_OP_TYPE_CMOV:
 		case R_ANAL_OP_TYPE_MOV:
@@ -1128,7 +1127,7 @@ noskip:
 					if (ready) {
 						ret = casetbl_addr == op->ptr
 							? r_anal_jmptbl_walk (anal, fcn, bb, depth, addr, case_shift, jmptbl_addr, op->ptr, 4, table_size, default_case, 4)
-							: try_walkthrough_casetbl (anal, fcn, bb, depth, addr, case_shift, jmptbl_addr, casetbl_addr, jmptbl_addr, 4, table_size, default_case, 4);
+							: try_walkthrough_casetbl (anal, fcn, bb, depth, addr, case_shift, jmptbl_addr, casetbl_addr, op->ptr, 4, table_size, default_case, 4);
 						if (ret) {
 							anal->lea_jmptbl_ip = addr;
 						}
@@ -1196,7 +1195,7 @@ noskip:
 				const int bits = anal->config->bits;
 				if (bits == 64) {
 					// ut64 jmpptr_table = UT64_MAX;
-					ut64 jmptbl_addr = UT64_MAX;
+					// ut64 jmptbl_addr = UT64_MAX;
 					if (last_is_reg_mov_lea) {
 						// incremement the leaddr
 						leaddr_pair *la;
@@ -1204,18 +1203,20 @@ noskip:
 						RListIter *iter;
 						r_list_foreach_prev (anal->leaddrs, iter, la) {
 							la->leaddr += op->val;
-							jmptbl_addr = la->leaddr;
+							// jmptbl_addr = la->leaddr;
 							break;
 						}
 					}
-				ut64 casetbl_addr = jmptbl_addr;
-				RAnalOp jmp_aop ;
+#if 0
+					ut64 casetbl_addr = jmptbl_addr;
+					RAnalOp jmp_aop ;
 					if (jmptbl_addr != UT64_MAX) {
 						eprintf ("CHKLS PTR TABLE AT %llx\n", jmptbl_addr);
-				if (is_delta_pointer_table (&ra, anal, fcn, op->addr, op->ptr, &jmptbl_addr, &casetbl_addr, &jmp_aop)) {
-					eprintf("ISDELTA\n");
-				}
+						if (is_delta_pointer_table (&ra, anal, fcn, op->addr, op->ptr, &jmptbl_addr, &casetbl_addr, &jmp_aop)) {
+							eprintf("ISDELTA\n");
+						}
 					}
+#endif
 				} else if (bits == 32) {
 					if (len >= 4 && !memcmp (buf, "\x00\xe0\x8f\xe2", 4)) {
 						// add lr, pc, 0 //
