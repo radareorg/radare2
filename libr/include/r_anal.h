@@ -493,6 +493,7 @@ typedef struct r_anal_t {
 	RAnalBacktraces btstore;
 	/* private */
 	RThreadLock *lock;
+	RList *eligible;
 	ut64 cmpval;
 	ut64 lea_jmptbl_ip;
 	int cs_obits;
@@ -786,7 +787,12 @@ typedef struct r_anal_esil_dfg_node_t {
 
 typedef bool (*RAnalCmdCallback)(/* Rcore */RAnal *anal, const char* input);
 
+typedef struct {
+	bool jmptbl_found;
+} RAnalOpFlow;
+
 typedef int (*RAnalOpCallback)(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask);
+typedef RAnalOpFlow (*RAnalOpFlowCallback)(RAnal *a, RAnalOp *op);
 typedef int (*RAnalOpAsmCallback)(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int outlen);
 
 typedef bool (*RAnalPluginEligible)(RAnal *a);
@@ -819,6 +825,7 @@ typedef struct r_anal_plugin_t {
 	// legacy r_anal_functions
 	RAnalOpCallback op;
 	RAnalCmdCallback cmd;
+	RAnalOpFlowCallback opflow;
 
 	// implement custom types parser and dumper
 	RAnalTypesParserText tparse_text;

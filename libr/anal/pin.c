@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2024 - pancake */
+/* radare - LGPL - Copyright 2015-2025 - pancake */
 
 #include <r_anal.h>
 
@@ -118,24 +118,12 @@ R_API const char *r_anal_pin_call(RAnal *a, ut64 addr) {
 		const char *cmd = sdb_const_get (DB, ckey, NULL);
 		if (R_STR_ISNOTEMPTY (cmd)) {
 			a->coreb.cmdf (a->coreb.core, "%s", cmd);
-	//		r_cons_flush (cons);
-		} else { if (name && a->pincmd) {
-			a->coreb.cmdf (a->coreb.core, "%s %s", a->pincmd, name);
-	//		r_cons_flush (cons);
-		}
-		return name;
-	}
-#if 0
-		const char *name;
-		if (name) {
-			REsilPin fcnptr = (REsilPin)
-				sdb_ptr_get (DB, name, NULL);
-			if (fcnptr) {
-				fcnptr (a);
-				return true;
+		} else {
+			if (name && a->pincmd) {
+				a->coreb.cmdf (a->coreb.core, "%s %s", a->pincmd, name);
 			}
+			return name;
 		}
-#endif
 	}
 	return NULL;
 }
@@ -144,13 +132,12 @@ static bool cb_list(void *user, const char *k, const char *v) {
 	RAnal *a = (RAnal*)user;
 	if (*k == '0') {
 		// bind
-		a->cb_printf ("aep %s @ %s\n", v, k);
-	//	a->cb_printf ("%s = %s\n", k, v);
+		a->cb_printf ("'@%s'aep %s\n", k, v);
 	} else {
 		if (r_str_startswith (k, "cmd.")) {
-			a->cb_printf ("\"aep %s=%s\"\n", k + 4, v);
+			a->cb_printf ("'aep %s=%s\n", k + 4, v);
 		} else {
-			a->cb_printf ("\"aep %s\"\n", k);
+			a->cb_printf ("'aep %s\n", k);
 		}
 	}
 	return true;

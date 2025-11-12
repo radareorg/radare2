@@ -149,7 +149,7 @@ static int _graphnode_delete_always_0_cmp(void *incoming, void *in, void *user) 
 	return 0;
 }
 
-void _handle_if_enter (EsilCfgGen *gen, ut32 id, const bool has_next) {
+static void _handle_if_enter(EsilCfgGen *gen, ut32 id, const bool has_next) {
 	if (!has_next) {
 		return;
 	}
@@ -180,7 +180,7 @@ void _handle_if_enter (EsilCfgGen *gen, ut32 id, const bool has_next) {
 	gen->cur = entered_node;
 }
 
-void _handle_else_enter (EsilCfgGen *gen, ut32 id, const bool has_next) {
+static void _handle_else_enter(EsilCfgGen *gen, ut32 id, const bool has_next) {
 	if (!has_next || r_stack_is_empty (gen->ifelse)) {
 		// no cookie no todo
 		return;
@@ -213,7 +213,7 @@ void _handle_else_enter (EsilCfgGen *gen, ut32 id, const bool has_next) {
 	gen->cur = entered_node;
 }
 
-void _handle_fi_leave(EsilCfgGen *gen, ut32 id, const bool has_next) {
+static void _handle_fi_leave(EsilCfgGen *gen, ut32 id, const bool has_next) {
 	EsilCfgScopeCookie *cookie = r_stack_pop (gen->ifelse);
 	if (!cookie) {
 		// no if, no fi todo
@@ -240,7 +240,7 @@ void _handle_fi_leave(EsilCfgGen *gen, ut32 id, const bool has_next) {
 
 // this function handles '?{','}{’ and '}'
 // return type should probably be a bool, but idk
-void _handle_control_flow_ifelsefi (EsilCfgGen *gen, char *atom, ut32 id) {
+static void _handle_control_flow_ifelsefi(EsilCfgGen *gen, char *atom, ut32 id) {
 	// we're probably going to see more ?{ and }, than }{
 	// so checking against ?{ and } befor }{ is therefor better for perf (lololol)
 	if (!strcmp (atom, "?{")) {
@@ -258,7 +258,7 @@ void _handle_control_flow_ifelsefi (EsilCfgGen *gen, char *atom, ut32 id) {
 
 // this little function is expected to generate a subgraph with most nodes in it
 // but not all edges. It's expected to handle if, else and fi
-bool _round_0_cb (void *user, void *data, ut32 id) {
+static bool _round_0_cb (void *user, void *data, ut32 id) {
 	EsilCfgGen *gen = (EsilCfgGen *)user;
 	char *atom = (char *)data;
 	RAnalEsilBB *bb = (RAnalEsilBB *)gen->cur->data;
@@ -270,7 +270,7 @@ bool _round_0_cb (void *user, void *data, ut32 id) {
 	return true;
 }
 
-RGraphNode *_common_break_goto (EsilCfgGen *gen, ut32 id) {
+static RGraphNode *_common_break_goto(EsilCfgGen *gen, ut32 id) {
 	RAnalEsilEOffset off = { gen->off, (ut16)id };
 	RGraphNode *gnode = r_crbtree_find (gen->blocks, &off, _graphnode_esilbb_find_cmp, NULL);
 	RAnalEsilBB *bb = (RAnalEsilBB *)gnode->data;
@@ -296,11 +296,11 @@ RGraphNode *_common_break_goto (EsilCfgGen *gen, ut32 id) {
 	// r_graph_add_edge(gen->cfg->g, gnode, gen->cfg->end);
 }
 
-void _handle_break (EsilCfgGen *gen, ut32 id) {
+static void _handle_break(EsilCfgGen *gen, ut32 id) {
 	r_graph_add_edge (gen->cfg->g, _common_break_goto (gen, id), gen->cfg->end);
 }
 
-void _handle_goto (EsilCfgGen *gen, ut32 idx) {
+static void _handle_goto(EsilCfgGen *gen, ut32 idx) {
 	RGraphNode *gnode = _common_break_goto (gen, idx);
 	RAnalEsilBB *bb = (RAnalEsilBB *)gnode->data;
 	// so what we're doing here is emulating this block with a certain degree of abstraction:
@@ -374,7 +374,7 @@ beach:
 	}
 }
 
-bool _round_1_cb(void *user, void *data, ut32 id) {
+static bool _round_1_cb(void *user, void *data, ut32 id) {
 	EsilCfgGen *gen = (EsilCfgGen *)user;
 	char *atom = (char *)data;
 	REsilOp *op = esil_get_op (gen->esil, atom);
@@ -389,7 +389,7 @@ bool _round_1_cb(void *user, void *data, ut32 id) {
 	return true;
 }
 
-void _round_2_cb (RGraphNode *n, RGraphVisitor *vi) {
+static void _round_2_cb(RGraphNode *n, RGraphVisitor *vi) {
 	RAnalEsilBB *bb = (RAnalEsilBB *)n->data;
 	EsilCfgGen *gen = (EsilCfgGen *)vi->data;
 	RStrBuf *buf = r_strbuf_new (n == gen->cfg->end ? NULL: (char *)r_id_storage_get (gen->atoms, bb->first.idx));
