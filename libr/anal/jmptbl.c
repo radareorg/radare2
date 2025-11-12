@@ -534,6 +534,11 @@ R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnal
 			r_anal_op_fini (&tmp_aop);
 			continue;
 		}
+		if (tmp_aop.cond == R_ANAL_CONDTYPE_HI) {
+			*table_size = cmp_val;
+			r_anal_op_fini (&tmp_aop);
+			continue;
+		}
 		// get the value of the cmp
 		// for operands in op, check if type is immediate and val is sane
 		// TODO: How? opex?
