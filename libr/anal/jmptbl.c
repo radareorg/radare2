@@ -110,29 +110,28 @@ R_API bool try_walkthrough_casetbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *
 	}
 	for (case_idx = 0; case_idx < jmptbl_size; case_idx++) {
 		jmpptr_idx = casetbl[case_idx];
-
 		if (jmpptr_idx >= jmptbl_size) {
 			ret = false;
 			break;
 		}
-
+#if 0
 		if (jmptbl_loc == jmptbl_off) {
 			jmpptr = jmptbl_off + (jmpptr_idx << (sz >> 1));
-		} else {
-			switch (sz) {
-			case 1:
-				jmpptr = r_read_le8 (jmptbl + jmpptr_idx);
-				break;
-			case 2:
-				jmpptr = r_read_le16 (jmptbl + jmpptr_idx * 2);
-				break;
-			case 4:
-				jmpptr = r_read_le32 (jmptbl + jmpptr_idx * 4);
-				break;
-			default:
-				jmpptr = r_read_le64 (jmptbl + jmpptr_idx * 8);
-				break;
-			}
+		} else
+#endif
+		switch (sz) {
+		case 1:
+			jmpptr = r_read_le8 (jmptbl + jmpptr_idx);
+			break;
+		case 2:
+			jmpptr = r_read_le16 (jmptbl + jmpptr_idx * 2);
+			break;
+		case 4:
+			jmpptr = r_read_le32 (jmptbl + jmpptr_idx * 4);
+			break;
+		default:
+			jmpptr = r_read_le64 (jmptbl + jmpptr_idx * 8);
+			break;
 		}
 		if (jmpptr == 0 || jmpptr == UT32_MAX || jmpptr == UT64_MAX) {
 			break;
