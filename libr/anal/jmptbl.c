@@ -327,8 +327,10 @@ R_API bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_a
 		return false;
 	}
 	// search for a cmp register with a reasonable size
-	// AITODO: check if read fails
-	int res = anal->iob.read_at (anal->iob.io, lea_addr, (ut8 *)buf, search_sz);
+	if (!anal->iob.read_at (anal->iob.io, lea_addr, (ut8 *)buf, search_sz)) {
+		R_LOG_ERROR ("Cannot read at 0x%08"PFMT64x, lea_addr);
+		return false;
+	}
 
 	RVector v;
 	r_vector_init (&v, sizeof (ut64), NULL, NULL);
