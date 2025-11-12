@@ -58,6 +58,6 @@ w HELLO WORLD
 /ej /[A-Z]*/
 EOF
 EXPECT=<<EOF
-{"addr":0,"type":"string","data":"HELLO WORLD"}
+[{"addr":0,"type":"string","data":"HELLO WORLD"}]
 EOF
 RUN
