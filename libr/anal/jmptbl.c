@@ -4,7 +4,7 @@
 
 #define JMPTBL_MAXSZ 512
 
-// R2R db/anal/x86_64
+// R2R db/anal/x86_64 db/anal/x86_32
 
 static void apply_case(RAnal *anal, RAnalBlock *block, ut64 switch_addr, ut64 offset_sz, ut64 case_addr, ut64 id, ut64 case_addr_loc, bool case_is_insn) {
 	// eprintf("case!\n");
@@ -348,11 +348,9 @@ R_API bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_a
 				continue;
 			}
 			*default_case = tmp_aop.jump == tmp_aop.jump + len ? tmp_aop.fail : tmp_aop.jump;
-#if 0
 			if (tmp_aop.cond == R_ANAL_CONDTYPE_HI) {
 				*table_size = cmp_val;
 			}
-#endif
 			r_anal_op_fini (&tmp_aop);
 			break;
 		}

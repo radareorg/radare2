@@ -73,7 +73,9 @@ R_API const char *r_anal_global_get_type(RAnal *anal, ut64 addr) {
 	if (fi) {
 		RFlag *flags = anal->flb.f;
 		RFlagItemMeta *fim = r_flag_get_meta (flags, fi->id);
-		return fim? fim->type: NULL;
+		if (fim) {
+			return fim->type;
+		}
 	}
 	return NULL;
 }

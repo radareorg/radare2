@@ -16,9 +16,6 @@
 #define BB_ALIGN 0x10
 #define MAX_SCAN_SIZE 0x7ffffff
 
-/* speedup analysis by removing some function overlapping checks */
-#define JAYRO_04 1
-
 #define FIX_JMP_FWD 0
 #define D if (a->verbose)
 
