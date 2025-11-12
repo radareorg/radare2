@@ -117,7 +117,7 @@ R_API bool try_walkthrough_casetbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *
 #if 0
 		if (jmptbl_loc == jmptbl_off) {
 			jmpptr = jmptbl_off + (jmpptr_idx << (sz >> 1));
-		} else
+		}
 #endif
 		switch (sz) {
 		case 1:
