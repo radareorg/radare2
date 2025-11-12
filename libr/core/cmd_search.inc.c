@@ -191,6 +191,13 @@ static RCoreHelpMessage help_msg_slash_cc = {
 	NULL
 };
 
+static RCoreHelpMessage help_msg_slash_k = {
+	"Usage:", "/k[j] [foo]", "search for string using Rabin Karp algorithm",
+	"/k", " foo", "search for string 'foo'",
+	"/kj", " foo", "same as above but using json as output",
+	NULL
+};
+
 static RCoreHelpMessage help_msg_slash_r = {
 	"Usage:", "/r[acerwx] [address]", " search references to this specific address",
 	"/r", " [addr]", "search references to this specific address",
@@ -5313,8 +5320,8 @@ reread:
 	case 'k': // "/k" Rabin Karp String search
 		{
 			if (input[1] == '?') {
-				  r_core_cmd_help_match (core, help_msg_slash, "/k");
-				  break;
+				r_core_cmd_help (core, help_msg_slash_k);
+				break;
 			}
 			inp = r_str_trim_dup (input + 1 + ignorecase + (param.outmode == R_MODE_JSON ? 1 : 0));
 			len = r_str_unescape (inp);
@@ -5633,10 +5640,16 @@ again:
 		do_string_search (core, search_itv, &param);
 	} else if (dosearch_read) {
 		// TODO: update pattern search to work with this
+		if (param.outmode == R_MODE_JSON) {
+			pj_a (param.pj);
+		}
 		if (search->mode != R_SEARCH_PATTERN) {
 			r_search_set_read_cb (search, &_cb_hit_sz, &param);
 		}
 		r_search_maps (search, param.boundaries);
+		if (param.outmode == R_MODE_JSON) {
+			pj_end (param.pj);
+		}
 	}
 beach:
 	if (errcode != -1) {

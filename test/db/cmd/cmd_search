@@ -1312,6 +1312,17 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=/kj at start
+FILE=-
+CMDS=<<EOF
+w AAABAAABAAA
+/kj AAABAAA
+EOF
+EXPECT=<<EOF
+[{"addr":0,"type":"string","data":"AAABAAABAAA"}]
+EOF
+RUN
+
 NAME=/k with overlap, middle
 FILE=-
 CMDS=<<EOF
@@ -1320,6 +1331,17 @@ w ZAAABAAABAAA
 EOF
 EXPECT=<<EOF
 0x00000001 hit0_0 "ZAAABAAABAAA"
+EOF
+RUN
+
+NAME=/kj with overlap, middle
+FILE=-
+CMDS=<<EOF
+w ZAAABAAABAAA
+/kj AAABAAA
+EOF
+EXPECT=<<EOF
+[{"addr":1,"type":"string","data":"ZAAABAAABAAA"}]
 EOF
 RUN
 
@@ -1333,6 +1355,18 @@ EXPECT=<<EOF
 0x00000004 hit0_0 "ZZZZAAABAAA"
 EOF
 RUN
+
+NAME=/kj at end
+FILE=-
+CMDS=<<EOF
+w ZZZZAAABAAA
+/kj AAABAAA
+EOF
+EXPECT=<<EOF
+[{"addr":4,"type":"string","data":"ZZZZAAABAAA"}]
+EOF
+RUN
+
 NAME=pm lzma
 FILE=bins/other/hello-world.lzma
 CMDS=<<EOF
