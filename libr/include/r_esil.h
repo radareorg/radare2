@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2022-2024 - pancake */
+/* radare2 - LGPL - Copyright 2022-2025 - pancake */
 
 #ifndef R_ESIL_H
 #define R_ESIL_H
@@ -14,7 +14,7 @@
 extern "C" {
 #endif
 
-#define	USE_NEW_ESIL	0
+#define	USE_NEW_ESIL	1
 
 #define esilprintf(op, fmt, ...) r_strbuf_setf (&op->esil, fmt, ##__VA_ARGS__)
 // only flags that affect control flow
@@ -220,7 +220,6 @@ typedef struct r_esil_t {
 	int parse_stop;
 	int parse_goto;
 	int parse_goto_count;
-	int verbose;
 	ut64 flags;
 	ut64 addr;
 	ut64 stack_addr;
@@ -252,9 +251,9 @@ typedef struct r_esil_t {
 	REsilRegInterface reg_if;
 	REsilMemInterface mem_if;
 	RIDStorage voyeur[R_ESIL_VOYEUR_LAST];
-	REsilCallbacks cb;
-	REsilCallbacks ocb;
-	bool ocb_set;
+	REsilCallbacks cb; // DEPRECATED
+	REsilCallbacks ocb; // DEPRECATED
+	bool ocb_set; // DEPRECATED
 	// this is so cursed, can we please remove external commands from esil internals.
 	// Function pointers are fine, but not commands
 	char *cmd_step; // r2 (external) command to run before a step is performed
@@ -266,7 +265,7 @@ typedef struct r_esil_t {
 	char *cmd_ioer; // r2 (external) command to run when esil fails to IO
 	char *mdev_range; // string containing the r_str_range to match for read/write accesses
 	bool (*cmd)(ESIL *esil, const char *name, ut64 a0, ut64 a1);
-	void *user;
+	void *user; // RCore *
 	int stack_fd;	// ahem, let's not do this
 	bool in_cmd_step;
 #if 0

@@ -2417,6 +2417,71 @@ R_API char *cmd_syscall_dostr(RCore *core, st64 n, ut64 addr) {
 	r_syscall_item_free (item);
 	return r_str_append (res, ")");
 }
+#if USE_NEW_ESIL
+static bool mw(int *ec, ut64 addr, const ut8 *old, const ut8 *buf, int len) {
+	*ec += (len * 2);
+	return true;
+}
+
+static bool anal_rr(void *_reg, const char *name, ut64 *val) {
+	RReg *reg = _reg;
+	RRegItem *ri = r_reg_get (reg, name, -1);
+	if (ri) {
+#if 0
+		if (len) {
+			*len = ri->size;
+		}
+#endif
+		if (val) {
+			*val = r_reg_get_value (reg, ri);
+		}
+		return true;
+	}
+	return false;
+}
+
+static bool anal_rw(void *_reg, const char *name, ut64 val) {
+	RReg *reg = _reg;
+	return r_reg_setv (reg, name, val);
+}
+
+static bool anal_mw(void *user, ut64 addr, const ut8 *buf, int len) {
+	RCore *core = user;
+	r_io_write_at (core->io, addr, buf, len);
+	return true;
+}
+
+static bool anal_mr(void *user, ut64 addr, ut8 *buf, int len) {
+	RCore *core = user;
+	(void)r_io_read_at (core->io, addr, (ut8 *)buf, len);
+	return true;
+}
+
+static bool anal_ir(void *_reg, const char *name) {
+	RReg *reg = _reg;
+	RRegItem *ri = r_reg_get (reg, name, -1);
+	if (ri) {
+		return true;
+	}
+	return false;
+}
+
+#if 0
+static bool rw(void *null, const char *regname, ut64 old, ut64 num) {
+	return true;
+}
+
+static bool rr(void *null, const char *regname, ut64 num) {
+	return true;
+}
+#endif
+
+static bool mr(int *ec, ut64 addr, const ut8 *buf, int len) {
+	*ec += len;
+	return true;
+}
+
+#else
 
 static bool mw(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	int *ec = (int*)esil->user;
@@ -2437,12 +2502,24 @@ static bool mr(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	*ec += len;
 	return true;
 }
+#endif
 
 static int esil_cost(RCore *core, ut64 addr, const char *expr) {
 	if (R_STR_ISEMPTY (expr)) {
 		return 0;
 	}
 	int ec = 0;
+#if USE_NEW_ESIL
+	REsil *e = r_esil_new_simple (0, core->anal->reg, &core->anal->iob);
+	e->anal = core->anal;	//XXX
+	//preserve regs? enforce ro mem access?
+	r_esil_add_voyeur (e, &ec, mr, R_ESIL_VOYEUR_MEM_READ);
+	r_esil_add_voyeur (e, &ec, mw, R_ESIL_VOYEUR_MEM_WRITE);
+#if 0
+	r_esil_add_voyeur (e, NULL, rr, R_ESIL_VOYEUR_REG_READ);
+	r_esil_add_voyeur (e, NULL, rw, R_ESIL_VOYEUR_REG_WRITE);
+#endif
+#else
 	REsil *e = r_esil_new (256, 0, 0);
 	r_esil_setup (e, core->anal, false, false, false);
 	e->user = &ec;
@@ -2450,6 +2527,7 @@ static int esil_cost(RCore *core, ut64 addr, const char *expr) {
 	e->cb.mem_write = mw;
 	e->cb.reg_write = rw;
 	e->cb.reg_read = rr;
+#endif
 	r_esil_parse (e, expr);
 	r_esil_free (e);
 	return ec;
@@ -2475,11 +2553,24 @@ static inline REsil *esil_new_setup(RCore *core) {
 		bool stats = r_config_get_b (core->config, "esil.stats");
 		bool nonull = r_config_get_b (core->config, "esil.nonull");
 		r_esil_setup (esil, core->anal, romem, stats, nonull);
-		esil->verbose = r_config_get_i (core->config, "esil.verbose");
 		esil->cmd = r_core_esil_cmd;
 		const char *et = r_config_get (core->config, "cmd.esil.trap");
 		esil->cmd_trap = R_STR_ISNOTEMPTY (et)? strdup (et): NULL;
 	}
+	esil->user = core;
+	// reg
+	esil->reg_if.reg = core->anal->reg;
+	esil->reg_if.reg_write = anal_rw;
+	esil->reg_if.reg_read = anal_rr;
+	esil->reg_if.is_reg = anal_ir;
+	// mem
+	esil->mem_if.user = core;
+	esil->mem_if.mem_read = anal_mr;
+	esil->mem_if.mem_write = anal_mw;
+#if 0
+	esil->cb.hook_mem_write = anal_mw;
+	esil->cb.hook_mem_read = anal_mr;
+#endif
 	// run the esilcb from arch
 	if (core->anal->arch) {
 		r_arch_esilcb (core->anal->arch, R_ARCH_ESIL_ACTION_INIT);
@@ -2511,22 +2602,36 @@ static void val_tojson(PJ *pj, RAnalValue *val) {
 	pj_end (pj);
 }
 
-
+#if USE_NEW_ESIL
+static bool mw2(void *null, ut64 addr, const ut8 *old, const ut8 *buf, int len) {
+#else
 static bool mw2(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	R_LOG_INFO ("WRITE 0x%08"PFMT64x" %d", addr, len);
+#endif
 	return true;
 }
 
+#if USE_NEW_ESIL
+static bool mr2(void *null, ut64 addr, const ut8 *buf, int len) {
+#else
 static bool mr2(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	R_LOG_INFO ("READ 0x%08"PFMT64x" %d", addr, len);
+#endif
 	return true;
 }
 
 static void esilmemrefs(RCore *core, const char *expr) {
+#if USE_NEW_ESIL
+	REsil *e = r_esil_new_simple (0, core->anal->reg, &core->anal->iob);
+	r_esil_add_voyeur (e, NULL, mw2, R_ESIL_VOYEUR_MEM_WRITE);
+	r_esil_add_voyeur (e, NULL, mr2, R_ESIL_VOYEUR_MEM_READ);
+	e->anal = core->anal;	//XXX
+#else
 	REsil *e = r_esil_new (256, 0, 0);
 	r_esil_setup (e, core->anal, false, false, false);
 	e->cb.mem_read = mr2;
 	e->cb.mem_write = mw2;
+#endif
 	r_esil_parse (e, expr);
 	r_esil_free (e);
 }
@@ -2544,20 +2649,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	ut64 addr;
 	PJ *pj = NULL;
 	int totalsize = 0;
-#if 1
-	REsil *esil = r_esil_new (256, 0, 0);
-	r_esil_setup (esil, core->anal, false, false, false);
-	esil->user = &core;
-	esil->cb.mem_read = mr;
-	esil->cb.mem_write = mw;
-#else
-	REsil *esil = core->anal->esil;
-	//esil->user = &ec;
-	esil->cb.mem_read = mr;
-	esil->cb.mem_write = mw;
-#endif
 
-	// Variables required for setting up ESIL to REIL conversion
 	if (use_color) {
 		color = core->cons->context->pal.label;
 	}
@@ -3042,7 +3134,6 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 	}
-	r_esil_free (esil);
 }
 
 static int bb_cmp(const void *a, const void *b) {
@@ -7178,6 +7269,95 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	}
 }
 
+#if USE_NEW_ESIL
+R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver) {
+//	const bool is_x86 = r_str_startswith (r_config_get (core->config, "asm.arch"), "x86");
+//	const bool breakoninvalid = r_config_get_b (core->config, "esil.breakoninvalid");
+	const int esiltimeout = r_config_get_i (core->config, "esil.timeout");
+	int ret = true;
+	ut64 startTime = 0;
+
+	if (esiltimeout > 0) {
+		startTime = r_time_now_mono ();
+	}
+	ut64 addr = r_reg_getv (core->cesil.reg, "PC");
+	r_cons_break_push (core->cons, NULL, NULL);
+	while (addr != until_addr) {
+		if (esiltimeout > 0) {
+			ut64 elapsedTime = r_time_now_mono () - startTime;
+			elapsedTime >>= 20;
+			if (elapsedTime >= esiltimeout) {
+				R_LOG_INFO ("[ESIL] Timeout exceeded");
+				ret = false;
+				break;
+			}
+		}
+		RAnalOp op;
+		if (until_expr || stepOver) {
+			r_anal_op_init (&op);
+			ut8 buf[64];
+			r_io_read_at (core->io, addr, buf, 64);
+			r_anal_op_set_bytes (&op, addr, buf, 64);
+			r_arch_decode (core->anal->arch, &op, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL);
+		}
+		if (until_expr) {
+			RAnalHint *hint = r_anal_hint_get (core->anal, addr);
+			if (hint && hint->esil) {
+				r_strbuf_set (&op.esil, hint->esil);
+			}
+			if (!strcmp (r_strbuf_get (&op.esil), until_expr)) {
+				r_anal_op_fini (&op);
+				break;
+			}
+		}
+		if (prev_addr) {
+			prev_addr[0] = addr;
+		}
+		if (stepOver) {
+			switch (op.type) {
+			case R_ANAL_OP_TYPE_SWI:
+			case R_ANAL_OP_TYPE_UCALL:
+			case R_ANAL_OP_TYPE_CALL:
+			case R_ANAL_OP_TYPE_JMP:
+			case R_ANAL_OP_TYPE_RCALL:
+			case R_ANAL_OP_TYPE_RJMP:
+			case R_ANAL_OP_TYPE_CJMP:
+			case R_ANAL_OP_TYPE_RET:
+			case R_ANAL_OP_TYPE_CRET:
+			case R_ANAL_OP_TYPE_UJMP:
+				if (addr % R_MAX (r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN), 1)) {
+					if (core->cesil.cmd_trap) {
+						r_core_cmd0 (core, core->cesil.cmd_trap);
+					}
+					r_anal_op_fini (&op);
+					goto out;
+				}
+				r_reg_setv (core->cesil.reg, "PC", op.addr + op.size);
+				r_anal_op_fini (&op);
+				continue;
+			}
+		}
+		if (until_expr || stepOver) {
+			r_anal_op_fini (&op);
+		}
+		if (!r_core_esil_single_step (core)) {
+			ret = false;
+			break;
+		}
+		// addr = r_reg_getv (core->cesil.reg, "PC");
+		addr = r_reg_getv (core->anal->reg, "PC");
+		// ESIL TODO: use StepOptions with .amount
+		if (until_addr == UT64_MAX) {
+			break;
+		}
+	}
+out:
+	r_cons_break_pop (core->cons);
+	return ret;
+}
+
+#else
+
 R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver) {
 #define return_tail(x) { tail_return_value = x; goto tail_return; }
 	int tail_return_value = 0;
@@ -7288,12 +7468,12 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 				R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT);
 		}
 #if 1
-			if (core->dbg->anal->esil->trace) {
+		if (core->dbg->anal->esil->trace) {
 			//	ut64 pc = r_debug_reg_get (core->dbg, "PC");
 			//	ut64 mask = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_VAL;
 			//	RAnalOp *op = r_core_anal_op (core, pc, mask);
-				r_esil_trace_op (core->dbg->anal->esil, &op);
-			}
+			r_esil_trace_op (core->dbg->anal->esil, &op);
+		}
 #endif
 		// if type is JMP then we execute the next N instructions
 		// update the esil pointer because RAnal.op() can change it
@@ -7430,7 +7610,6 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			}
 			tail_return_value = 1;
 		}
-		// esil->verbose ?
 		// eprintf ("REPE 0x%"PFMT64x" %s => 0x%"PFMT64x"\n", addr, R_STRBUF_SAFEGET (&op.esil), r_reg_getv (core->anal->reg, "PC"));
 		ut64 pc = r_reg_getv (core->anal->reg, "PC");
 		if (pc == UT64_MAX || pc == UT32_MAX) {
@@ -7482,6 +7661,17 @@ tail_return:
 	r_cons_break_pop (core->cons);
 	return tail_return_value;
 }
+#endif
+
+#if USE_NEW_ESIL
+R_API bool r_core_esil_step_back(RCore *core) {
+	R_RETURN_VAL_IF_FAIL (core && core->io && core->cesil.reg &&
+		r_list_length (&core->cesil.stepback), false);
+	r_core_esil_stepback (core);
+	return true;
+}
+
+#else
 
 R_API bool r_core_esil_step_back(RCore *core) {
 	R_RETURN_VAL_IF_FAIL (core && core->anal, false);
@@ -7498,6 +7688,7 @@ R_API bool r_core_esil_step_back(RCore *core) {
 	}
 	return false;
 }
+#endif
 
 static void cmd_address_info(RCore *core, const char *addrstr, int fmt) {
 	ut64 addr = R_STR_ISEMPTY (addrstr)? core->addr: r_num_math (core->num, addrstr);
@@ -7909,11 +8100,9 @@ static bool mymemread(REsil *esil, ut64 addr, ut8 *buf, int len) {
 		return false;
 	}
 	n = R_NEW (AeaMemItem);
-	if (n) {
-		n->addr = addr;
-		n->size = len;
-		r_list_push (mymemxsr, n);
-	}
+	n->addr = addr;
+	n->size = len;
+	r_list_push (mymemxsr, n);
 	return true;
 }
 
@@ -8281,7 +8470,7 @@ static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int ninstr) {
 			r_reg_setv (core->dbg->reg, "PC", aop.addr + aop.size);
 			const char *e = R_STRBUF_SAFEGET (&aop.esil);
 			if (R_STR_ISNOTEMPTY (e)) {
-				 // eprintf ("   0x%08llx %d  %s\n", aop.addr, ret, aop.mnemonic);
+				// eprintf ("   0x%08llx %d  %s\n", aop.addr, ret, aop.mnemonic);
 				(void)r_esil_parse (esil, e);
 			}
 			break;
@@ -8421,6 +8610,7 @@ static void cmd_debug_stack_init(RCore *core, int argc, char **argv, char **envp
 }
 
 R_IPI void cmd_aei(RCore *core) {
+//TODO use core_esil here
 	REsil *esil = esil_new_setup (core);
 	if (esil) {
 		r_esil_free (core->anal->esil);
