@@ -436,7 +436,6 @@ static const char *rotateAsmemu(RCore *core) {
 		return "afsQ;pdcl";
 	}
 	return "afsQ;pd $r";  // ASSEMBLY
-	// return "pd";
 }
 
 R_API void r_core_visual_showcursor(RCore *core, int x) {
@@ -4251,7 +4250,6 @@ static void visual_title(RCore *core, int color) {
 	if (core->print->cur < 0) {
 		core->print->cur = 0;
 	}
-
 	if (color) {
 		r_cons_print (core->cons, BEGIN);
 	}
@@ -4571,25 +4569,21 @@ R_IPI void visual_refresh(RCore *core) {
 	if (vsplit) {
 		// XXX: slow
 		cons->blankline = false;
-		{
-			int hex_cols = r_config_get_i (core->config, "hex.cols");
-			int split_w = 12 + 4 + hex_cols + (hex_cols * 3);
-			if (split_w > w) {
-				// do not show column contents
+		int hex_cols = r_config_get_i (core->config, "hex.cols");
+		int split_w = 12 + 4 + hex_cols + (hex_cols * 3);
+		if (split_w <= w) {
+			r_cons_printf (cons, "[cmd.cprompt=%s]\n", vi);
+			if (core->visual.oseek != UT64_MAX) {
+				r_core_seek (core, core->visual.oseek, true);
+			}
+			r_core_cmd0 (core, vi);
+			r_cons_column (cons, split_w);
+			if (r_str_startswith (vi, "p=") && core->print->cur_enabled) {
+				core->visual.oseek = core->addr;
+				core->print->cur_enabled = false;
+				r_core_seek (core, core->num->value, true);
 			} else {
-				r_cons_printf (cons, "[cmd.cprompt=%s]\n", vi);
-				if (core->visual.oseek != UT64_MAX) {
-					r_core_seek (core, core->visual.oseek, true);
-				}
-				r_core_cmd0 (core, vi);
-				r_cons_column (cons, split_w);
-				if (r_str_startswith (vi, "p=") && core->print->cur_enabled) {
-					core->visual.oseek = core->addr;
-					core->print->cur_enabled = false;
-					r_core_seek (core, core->num->value, true);
-				} else {
-					core->visual.oseek = UT64_MAX;
-				}
+				core->visual.oseek = UT64_MAX;
 			}
 		}
 		r_cons_gotoxy (cons, 0, 0);
@@ -4685,10 +4679,6 @@ R_IPI void visual_refresh(RCore *core) {
 	show_cursor (core);
 }
 
-static void visual_refresh_queued(RCore *core) {
-	visual_refresh (core);
-}
-
 static int varcount(RCore *core, RAnalFunction *f) {
 	int mode = r_config_get_i (core->config, "asm.var.summary");
 	if (mode != 0) {
@@ -4717,30 +4707,24 @@ R_API void r_core_visual_disasm_up(RCore *core, int *cols) {
 			*cols = 4;
 		}
 	} else {
+		int delta = r_core_visual_prevopsz (core, core->addr);
 		if (f && core->addr == f->addr) {
 			if (core->skiplines > 0) {
 				core->skiplines--;
-				*cols = 0;
-			} else {
-				int delta = r_core_visual_prevopsz (core, core->addr);
-				*cols = delta;
+				delta = 0;
 			}
-			return;
-		}
-		int delta = r_core_visual_prevopsz (core, core->addr);
-		if (f && core->addr - delta == f->addr) {
-			int nvars = varcount (core, f);
-			if (nvars < 20) {
-				core->skiplines = nvars;
-				if (core->skiplines > 0) {
-					core->skiplines--;
-				}
-			}
-			*cols = delta;
 		} else {
-			*cols = delta;
-			// *cols = 0;
+			if (f && core->addr - delta == f->addr) {
+				int nvars = varcount (core, f);
+				if (nvars < 20) {
+					core->skiplines = nvars;
+					if (core->skiplines > 0) {
+						core->skiplines--;
+					}
+				} /* else { delta = 0; } */
+			}
 		}
+		*cols = delta;
 	}
 }
 
@@ -4808,8 +4792,7 @@ R_API void r_core_visual_disasm_down(RCore *core, RAnalOp *op, int *cols) {
 	}
 }
 
-
-static bool is_mintty(RCons *cons) {
+static inline bool is_mintty(RCons *cons) {
 #ifdef R2__WINDOWS__
 	return cons->term_xterm;
 #else
@@ -4927,7 +4910,7 @@ dodo:
 		r_cons_enable_mouse (core->cons, r_config_get_b (core->config, "scr.wheel"));
 		core->cons->event_resize = NULL; // avoid running old event with new data
 		core->cons->event_data = core;
-		core->cons->event_resize = (RConsEvent) visual_refresh_queued;
+		core->cons->event_resize = (RConsEvent) visual_refresh;
 		flags = core->print->flags;
 		core->visual.color = r_config_get_i (core->config, "scr.color");
 		if (core->visual.color) {
