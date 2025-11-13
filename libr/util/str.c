@@ -3315,7 +3315,7 @@ R_API char *r_str_wrap(const char *str, int w) {
 			*r++ = *str++;
 			cw = 0;
 		} else {
-			if (cw >= w) {
+			if (cw > w) {
 				*r++ = '\n';
 				*r++ = *str++;
 				cw = 1;
@@ -3779,6 +3779,7 @@ err_r_str_mb_to_wc:
 	return res_buf;
 }
 
+// XXX: this function name is awful
 R_API char* r_str_wc_to_mb_l(const wchar_t *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (buf, NULL);
 	char *res_buf = NULL;
