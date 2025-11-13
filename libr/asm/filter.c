@@ -424,7 +424,7 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 			if (bits == 16 && x86 && *pnum == ':') {
 				pnum++;
 				is_hex = false;
-				if (!strncmp (pnum, "0x", 2)) {
+				if (r_str_startswith (pnum, "0x")) {
 					is_hex = true;
 					pnum += 2;
 				}
