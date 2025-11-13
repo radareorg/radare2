@@ -2040,7 +2040,21 @@ R_API const char *r_str_ansi_chrn(const char *str, size_t n) {
 	for (li = i = len = 0; str[i] && (n != len); i++) {
 		size_t chlen = __str_ansi_length (str + i);
 		if (chlen > 1) {
-			i += chlen - 1;
+			if (str[i] == 0x1b) {
+				// ANSI escape sequence, skip without incrementing len
+				i += chlen - 1;
+			} else {
+				// UTF-8 multibyte character
+				RRune ch;
+				int ulen = r_utf8_decode ((const ut8*)str + i, chlen, &ch);
+				if (ulen > 0) {
+					len += rune_display_width (ch);
+				} else {
+					len += 1; // invalid, assume 1
+				}
+				i += chlen - 1;
+				li = i;
+			}
 		} else {
 			if ((str[i] & 0xc0) != 0x80) {
 				len++;
