@@ -4,25 +4,18 @@
 #include <r_util/r_time.h>
 #include "private.h"
 
-static int real_strlen(const char *ptr) {
-	return r_str_display_width (ptr);
-}
-
 static void print_fps(RCons *cons, int col) {
 	int fps = 0, w = r_cons_get_size (cons, NULL);
-	fps = 0;
+	ut64 now = r_time_now_mono ();
 	if (cons->prev) {
-		ut64 now = r_time_now_mono ();
 		st64 diff = (st64)(now - cons->prev);
 		if (diff <= 0) {
 			fps = 0;
 		} else {
 			fps = (diff < 1000000)? (int)(1000000.0 / diff): 0;
 		}
-		cons->prev = now;
-	} else {
-		cons->prev = r_time_now_mono ();
 	}
+	cons->prev = now;
 	if (col < 1) {
 		col = 12;
 	}
@@ -62,7 +55,7 @@ R_API void r_cons_visual_write(RCons *cons, char *buffer) {
 		bool line_wraps = false;
 
 		*nl = 0;
-		alen = real_strlen (ptr);
+		alen = r_str_display_width (ptr);
 		*nl = '\n';
 		pptr = ptr > buffer ? ptr - 1 : ptr;
 		plen = ptr > buffer ? len : len - 1;

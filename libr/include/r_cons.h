@@ -906,7 +906,6 @@ R_API void r_cons_context_pal_free(RConsContext *ctx);
 R_DEPRECATE R_API RConsContext *r_cons_context_new(RConsContext * R_NULLABLE parent);
 R_API void r_cons_context_free(RConsContext *context);
 R_API void r_cons_context_load(RConsContext *context);
-R_API void r_cons_context_reset(RConsContext *context);
 R_API bool r_cons_context_is_main(RCons *cons, RConsContext *context);
 R_API void r_cons_context_break(RConsContext *context);
 R_API void r_cons_context_break_push(RCons *cons, RConsContext *context, RConsBreak cb, void *user, bool sig);
@@ -1157,7 +1156,6 @@ R_API int r_line_hist_cmd_up(RLine *line);
 R_API int r_line_hist_cmd_down(RLine *line);
 
 R_API void r_line_completion_init(RLineCompletion *completion, size_t args_limit);
-R_API void r_line_completion_fini(RLineCompletion *completion);
 R_API void r_line_completion_push(RLineCompletion *completion, const char *str);
 R_API void r_line_completion_set(RLineCompletion *completion, int argc, const char **argv);
 R_API void r_line_completion_clear(RLineCompletion *completion);
