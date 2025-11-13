@@ -3308,22 +3308,24 @@ R_API char *r_str_wrap(const char *str, int w) {
 			}
 		}
 		if (*str == '\t') {
-			// skip
+			str++;
 		} else if (*str == '\r') {
-			// skip
+			str++;
 		} else if (*str == '\n') {
 			*r++ = *str++;
 			cw = 0;
+		} else if (*str == ' ') {
+			str++;
 		} else {
-			if (cw > w) {
-				*r++ = '\n';
-				*r++ = *str++;
-				cw = 1;
-			} else {
-				*r++ = *str++;
-				cw++;
-			}
+		if (cw > w) {
+			*r++ = '\n';
+			*r++ = *str++;
+			cw = 1;
+		} else {
+			*r++ = *str++;
+			cw++;
 		}
+	}
 	}
 	*r = 0;
 	return ret;

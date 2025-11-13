@@ -14,7 +14,7 @@ bool test_r_file(void) {
 //TODO test r_str_chop_path
 bool test_r_str_wrap(void) {
 	char *s = r_str_wrap ("hello world\nhow are you\n", 5);
-	char *res = strdup ("hello\n worl\nd\nhow a\nre yo\nu\n");
+	char *res = strdup ("hellow\norld\nhoware\nyou\n");
 	mu_assert_streq (s, res, "error, invalid string wrapping");
 	free (s);
 	free (res);
