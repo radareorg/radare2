@@ -189,13 +189,16 @@ static void print_sbpf_version(ut32 sbpf_version) {
 }
 
 static ut32 detect_sbpf_version(RArchSession *a) {
+	if (!a || !a->data) {
+		return SBPF_V0;
+	}
 	SbpfPluginData *spd = (SbpfPluginData*)a->data;
 
 	if (spd->version_detected) {
 		return spd->sbpf_version;
 	}
 
-	const char *cpu = (a && a->config) ? a->config->cpu : NULL;
+	const char *cpu = a->config ? a->config->cpu : NULL;
 
 	if (R_STR_ISEMPTY (cpu)) {
 		spd->sbpf_version = SBPF_V0;
@@ -267,6 +270,7 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 						}
 						return true;
 				}
+				/* fall through */
 			case SBPF_V2:
 				switch(opcode) {
 					case SBPF_INS_SYSCALL:
@@ -611,6 +615,7 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 						}
 						return true;
 				}
+				/* fall through */
 			case SBPF_V0:
 			case SBPF_V1:
 			// Handle v0/v1 specific instructions

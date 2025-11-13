@@ -80,7 +80,7 @@ R_API void r_cons_visual_write(RCons *cons, char *buffer) {
 				}
 			}
 		} else {
-			if (lines > 0) {
+			if (lines > 0 && cols > 0) {
 				int w = cols - (alen % cols == 0 ? cols : alen % cols);
 				__cons_write (cons, pptr, plen);
 				if (!line_wraps && cons->blankline && w > 0 && white) {

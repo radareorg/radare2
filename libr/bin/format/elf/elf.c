@@ -2615,18 +2615,27 @@ static const char *v850_flags_to_cpu(ut32 type) {
 }
 
 char* Elf_(get_cpu)(ELFOBJ *eo) {
-	const char *cpu = NULL;
+	char *cpu = NULL;
+
 	switch (eo->ehdr.e_machine) {
 	case EM_MIPS:
 		if (is_mips_micro (&eo->ehdr)) {
-			cpu = "micro";
-		} else {
-			cpu = eo->phdr ? mips_flags_to_cpu (eo->ehdr.e_flags & EF_MIPS_ARCH): NULL;
+			cpu = strdup ("micro");
+		} else if (eo->phdr) {
+			const char *mips_cpu = mips_flags_to_cpu (eo->ehdr.e_flags & EF_MIPS_ARCH);
+			if (mips_cpu) {
+				cpu = strdup (mips_cpu);
+			}
 		}
 		break;
 	case EM_V800:
 	case EM_V850:
-		cpu = v850_flags_to_cpu (eo->ehdr.e_flags & EF_V850_ARCH);
+	{
+		const char *v850_cpu = v850_flags_to_cpu (eo->ehdr.e_flags & EF_V850_ARCH);
+		if (v850_cpu) {
+			cpu = strdup (v850_cpu);
+		}
+	}
 		break;
 	case EM_SBPF:
 		cpu = r_str_newf ("sbpfv%d", eo->ehdr.e_flags);
@@ -2634,7 +2643,7 @@ char* Elf_(get_cpu)(ELFOBJ *eo) {
 	default:
 		break;
 	}
-	return cpu? strdup (cpu): NULL;
+	return cpu;
 }
 
 // https://www.sco.com/developers/gabi/latest/ch4.eheader.html

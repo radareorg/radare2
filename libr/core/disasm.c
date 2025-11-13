@@ -1591,7 +1591,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 		ut64 i = 0;
 		RAnalRef *refi;
 		R_VEC_FOREACH (xrefs, refi) {
-			const bool is_at_second_last = i == length - 1;
+			const bool is_at_second_last = (i + 1 == length);
 			const char *t = r_anal_ref_type_tostring (refi->type);
 			if (t && strcmp (t, "NULL")) {
 				ds_comment (ds, false, "%s 0x%08"PFMT64x"  ", t, refi->addr);
@@ -1633,7 +1633,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 		if (refi->at == ds->at) {
 			realname = NULL;
 			fun = fcnIn (ds, refi->addr, -1);
-			const bool is_at_second_last = i == length - 1;
+			const bool is_at_second_last = (i + 1 == length);
 			if (fun) {
 				if (!is_at_second_last) {
 					const RAnalRef *next = RVecAnalRef_at (xrefs, i + 1);

@@ -106,7 +106,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 	RBin *bin = bf->rbin;
 	const bool strings_nofp = bin->strings_nofp;
 	ut8 tmp[64]; // temporal buffer to encode characters in utf8 form
-	RStrBuf *sb = r_strbuf_new ("");
+	RStrBuf *sb = NULL;
 	ut64 str_start, needle = from;
 	int i, rc, runes;
 	int str_type = R_STRING_TYPE_DETECT;
@@ -140,6 +140,11 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 	}
 	ut8 *buf = calloc (len, 1);
 	if (!buf || !min) {
+		free (buf);
+		return -1;
+	}
+	sb = r_strbuf_new ("");
+	if (!sb) {
 		free (buf);
 		return -1;
 	}
