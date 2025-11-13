@@ -594,6 +594,16 @@ R_API char *r_asm_parse_filter(RAsm *a, ut64 addr, RFlag *f, RAnalHint *hint, co
 	if (!str) {
 		str = strdup (data);
 	}
+	// Handle AT&T syntax immediate base conversion
+	if (hint && hint->immbase && a->config) {
+		if (a->config->syntax == R_ARCH_SYNTAX_ATT) {
+			char *res = r_asm_parse_immbase (a, str, hint->immbase);
+			if (res) {
+				free (str);
+				str = res;
+			}
+		}
+	}
 	RAsmPlugin *ap = R_UNWRAP3 (a, cur, plugin);
 	if (ap && ap->filter) {
 		char *res = ap->filter (aps, addr, f, str);
