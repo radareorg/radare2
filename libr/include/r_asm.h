@@ -115,6 +115,7 @@ R_API char *r_asm_parse_pseudo(RAsm *a, const char *data);
 R_API char *r_asm_parse_filter(RAsm *a, ut64 addr, RFlag *f, RAnalHint *hint, const char *data);
 R_API char *r_asm_parse_subvar(RAsm *a, RAnalFunction *f, ut64 addr, int oplen, const char *data);
 R_API char *r_asm_parse_immtrim(RAsm *a, const char *opstr);
+R_API char *r_asm_parse_immbase(RAsm *a, const char *opstr, int base);
 R_API char *r_asm_parse_patch(RAsm *a, RAnalOp *aop, const char *newop);
 
 

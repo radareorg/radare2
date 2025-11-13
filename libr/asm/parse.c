@@ -61,6 +61,49 @@ R_API char *r_asm_parse_immtrim(RAsm *a, const char *_opstr) {
 	return opstr;
 }
 
+R_API char *r_asm_parse_immbase(RAsm *a, const char *_opstr, int base) {
+	R_RETURN_VAL_IF_FAIL (a && _opstr && base > 1, NULL);
+	if (R_STR_ISEMPTY (_opstr)) {
+		return NULL;
+	}
+	char *opstr = strdup (_opstr);
+	if (!opstr) {
+		return NULL;
+	}
+	RStrBuf *sb = r_strbuf_new ("");
+	char *p = opstr;
+	char *last = opstr;
+	while ((p = strstr (p, "$"))) {
+		r_strbuf_append_n (sb, last, p - last);
+		p++; // skip $
+		char *end = p;
+		ut64 num = strtoull (p, &end, 0);
+		if (end != p) {
+			char buf[64];
+			if (base == 16) {
+				snprintf (buf, sizeof (buf), "0x%"PFMT64x, num);
+			} else if (base == 10) {
+				snprintf (buf, sizeof (buf), "%"PFMT64u, num);
+			} else if (base == 8) {
+				snprintf (buf, sizeof (buf), "0%"PFMT64o, num);
+			} else {
+				r_strbuf_append_n (sb, p - 1, end - (p - 1));
+				last = end;
+				p = end;
+				continue;
+			}
+			r_strbuf_append (sb, "$");
+			r_strbuf_append (sb, buf);
+			last = end;
+			p = end;
+		} else {
+			p = end;
+		}
+	}
+	r_strbuf_append (sb, last);
+	return r_strbuf_drain (sb);
+}
+
 // TODO : make them internal?
 R_API char *r_asm_parse_subvar(RAsm *a, RAnalFunction * R_NULLABLE f, ut64 addr, int oplen, const char *data) {
 	R_RETURN_VAL_IF_FAIL (a, false);
