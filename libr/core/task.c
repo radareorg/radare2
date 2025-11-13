@@ -413,7 +413,6 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 	tasks_lock_leave (scheduler, &old_sigset);
 
 	if (next) {
-		r_cons_context_reset (current->cons_context);
 		r_th_lock_enter (next->dispatch_lock);
 		next->dispatched = true;
 		r_th_lock_leave (next->dispatch_lock);

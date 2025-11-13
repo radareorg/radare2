@@ -4,15 +4,6 @@
 
 #include <r_cons.h>
 
-#if 0
-// XXX kill this global NOW
-static R_TH_LOCAL RLine r_line_instance = {0};
-
-R_API RLine *r_line_singleton(void) {
-	return &r_line_instance;
-}
-#endif
-
 R_API RLine *r_line_new(RCons *cons) {
 	RLine *line = R_NEW0 (RLine);
 	line->cons = cons;
@@ -40,18 +31,20 @@ R_API void r_line_free(RLine *line) {
 		line->prompt = NULL;
 		r_list_free (line->kill_ring);
 		r_line_hist_free (line);
-		r_line_completion_fini (&line->completion);
+		r_line_completion_clear (&line->completion);
 		free (line);
 	}
 }
 
 R_API void r_line_clipboard_push(RLine *line, const char *str) {
+	R_RETURN_IF_FAIL (line && str);
 	line->kill_ring_ptr += 1;
 	r_list_insert (line->kill_ring, line->kill_ring_ptr, strdup (str));
 }
 
 // handle const or dynamic prompts?
 R_API void r_line_set_prompt(RLine *line, const char *prompt) {
+	R_RETURN_IF_FAIL (line && prompt);
 	free (line->prompt);
 	line->prompt = strdup (prompt);
 	line->cb_fkey = line->cons->cb_fkey;
@@ -59,6 +52,7 @@ R_API void r_line_set_prompt(RLine *line, const char *prompt) {
 
 // handle const or dynamic prompts?
 R_API char *r_line_get_prompt(RLine *line) {
+	R_RETURN_VAL_IF_FAIL (line, NULL);
 	return strdup (line->prompt);
 }
 
@@ -67,10 +61,6 @@ R_API void r_line_completion_init(RLineCompletion *completion, size_t args_limit
 	completion->run_user = NULL;
 	completion->args_limit = args_limit;
 	r_pvector_init (&completion->args, free);
-}
-
-R_API void r_line_completion_fini(RLineCompletion *completion) {
-	r_line_completion_clear (completion);
 }
 
 R_API void r_line_completion_push(RLineCompletion *completion, const char *str) {
@@ -111,5 +101,3 @@ R_API void r_line_completion_clear(RLineCompletion *completion) {
 	completion->quit = false;
 	r_pvector_clear (&completion->args);
 }
-
-#include "dietline.c"

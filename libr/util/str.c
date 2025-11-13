@@ -2040,7 +2040,21 @@ R_API const char *r_str_ansi_chrn(const char *str, size_t n) {
 	for (li = i = len = 0; str[i] && (n != len); i++) {
 		size_t chlen = __str_ansi_length (str + i);
 		if (chlen > 1) {
-			i += chlen - 1;
+			if (str[i] == 0x1b) {
+				// ANSI escape sequence, skip without incrementing len
+				i += chlen - 1;
+			} else {
+				// UTF-8 multibyte character
+				RRune ch;
+				int ulen = r_utf8_decode ((const ut8*)str + i, chlen, &ch);
+				if (ulen > 0) {
+					len += rune_display_width (ch);
+				} else {
+					len += 1; // invalid, assume 1
+				}
+				i += chlen - 1;
+				li = i;
+			}
 		} else {
 			if ((str[i] & 0xc0) != 0x80) {
 				len++;
@@ -3308,22 +3322,31 @@ R_API char *r_str_wrap(const char *str, int w) {
 			}
 		}
 		if (*str == '\t') {
-			// skip
+			str++;
 		} else if (*str == '\r') {
-			// skip
+			str++;
 		} else if (*str == '\n') {
 			*r++ = *str++;
 			cw = 0;
-		} else {
+		} else if (*str == ' ') {
 			if (cw >= w) {
 				*r++ = '\n';
-				*r++ = *str++;
 				cw = 1;
 			} else {
-				*r++ = *str++;
 				cw++;
 			}
+			*r++ = *str++;
+			continue;
+		} else {
+		if (cw > w) {
+			*r++ = '\n';
+			*r++ = *str++;
+			cw = 1;
+		} else {
+			*r++ = *str++;
+			cw++;
 		}
+	}
 	}
 	*r = 0;
 	return ret;
@@ -3779,6 +3802,7 @@ err_r_str_mb_to_wc:
 	return res_buf;
 }
 
+// XXX: this function name is awful
 R_API char* r_str_wc_to_mb_l(const wchar_t *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (buf, NULL);
 	char *res_buf = NULL;
