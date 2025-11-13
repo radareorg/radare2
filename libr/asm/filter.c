@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2024 - nibble, pancake, maijin */
+/* radare2 - LGPL - Copyright 2009-2025 - pancake */
 
 #include <r_asm.h>
 
@@ -594,9 +594,10 @@ R_API char *r_asm_parse_filter(RAsm *a, ut64 addr, RFlag *f, RAnalHint *hint, co
 	if (!str) {
 		str = strdup (data);
 	}
-	// Handle AT&T syntax immediate base conversion
+	// Handle immediate base conversion
 	if (hint && hint->immbase && a->config) {
-		if (a->config->syntax == R_ARCH_SYNTAX_ATT) {
+		// Use r_asm_parse_immbase for standard bases (8, 10, 16)
+		if (hint->immbase == 8 || hint->immbase == 10 || hint->immbase == 16) {
 			char *res = r_asm_parse_immbase (a, str, hint->immbase);
 			if (res) {
 				free (str);
