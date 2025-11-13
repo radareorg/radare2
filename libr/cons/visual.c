@@ -4,14 +4,8 @@
 #include <r_util/r_time.h>
 #include "private.h"
 
-static int real_strlen(const char *ptr, int len) {
-	int utf8len = r_str_len_utf8 (ptr);
-	int ansilen = r_str_ansi_len (ptr);
-	int diff = len - utf8len;
-	if (diff > 0) {
-		diff--;
-	}
-	return ansilen - diff;
+static int real_strlen(const char *ptr) {
+	return r_str_display_width (ptr);
 }
 
 static void print_fps(RCons *cons, int col) {
@@ -45,29 +39,39 @@ static void print_fps(RCons *cons, int col) {
 }
 
 R_API void r_cons_visual_write(RCons *cons, char *buffer) {
-	char white[1024];
 	int cols = cons->columns;
 	int alen, plen, lines = cons->rows;
 	bool break_lines = cons->break_lines;
 	const char *endptr;
 	char *nl, *ptr = buffer, *pptr;
+	char *white = NULL;
+	int white_len = 0;
 
 	if (cons->null) {
 		return;
 	}
-	memset (&white, ' ', sizeof (white));
+	if (cols > 0) {
+		white = r_str_pad2 (NULL, 0, ' ', cols);
+		if (white) {
+			white_len = cols;
+		}
+	}
 	while ((nl = strchr (ptr, '\n'))) {
 		int len = ((int)(size_t)(nl - ptr)) + 1;
 		int lines_needed = 0;
+		bool line_wraps = false;
 
 		*nl = 0;
-		alen = real_strlen (ptr, len);
+		alen = real_strlen (ptr);
 		*nl = '\n';
 		pptr = ptr > buffer ? ptr - 1 : ptr;
 		plen = ptr > buffer ? len : len - 1;
 
 		if (break_lines) {
 			lines_needed = alen / cols + (alen % cols == 0 ? 0 : 1);
+			line_wraps = lines_needed > 1;
+		} else {
+			line_wraps = alen > cols;
 		}
 		if ((break_lines && lines < lines_needed && lines > 0)
 		    || (!break_lines && alen > cols)) {
@@ -86,8 +90,8 @@ R_API void r_cons_visual_write(RCons *cons, char *buffer) {
 			if (lines > 0) {
 				int w = cols - (alen % cols == 0 ? cols : alen % cols);
 				__cons_write (cons, pptr, plen);
-				if (cons->blankline && w > 0) {
-					__cons_write (cons, white, R_MIN (w, sizeof (white)));
+				if (!line_wraps && cons->blankline && w > 0 && white) {
+					__cons_write (cons, white, R_MIN (w, white_len));
 				}
 			}
 			// TRICK to empty columns.. maybe buggy in w32
@@ -104,11 +108,12 @@ R_API void r_cons_visual_write(RCons *cons, char *buffer) {
 		ptr = nl + 1;
 	}
 	/* fill the rest of screen */
-	if (lines > 0) {
+	if (white && lines > 0) {
 		while (--lines >= 0) {
-			__cons_write (cons, white, R_MIN (cols, sizeof (white)));
+			__cons_write (cons, white, R_MIN (cols, white_len));
 		}
 	}
+	free (white);
 }
 
 R_API void r_cons_visual_flush(RCons *cons) {
@@ -134,4 +139,3 @@ R_API void r_cons_visual_flush(RCons *cons) {
 		print_fps (cons, 0);
 	}
 }
-
