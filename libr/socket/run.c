@@ -981,7 +981,7 @@ R_API bool r_run_config_env(RRunProfile *p) {
 				r_socket_free (fd);
 				return false;
 			}
-			r_socket_block_time(fd, true, 99999, 0);
+			r_socket_block_time(fd, true, 0, 0);
 
 			if (p->_pty) {
 				if (!redirect_socket_to_pty (fd)) {
