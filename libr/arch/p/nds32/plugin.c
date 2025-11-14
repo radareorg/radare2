@@ -239,7 +239,7 @@ static void decode_esil(RAnalOp *op) {
 		char *dr = r_list_get_n (args, 0);
 		char *sr = r_list_get_n (args, 1);
 		char *si = r_list_get_n (args, 2);
-		r_strbuf_setf (&op->esil, "%s,%s,-,%s,:=", si, sr, dr);
+		r_strbuf_setf (&op->esil, "%s,%s,-,%s,:=", sr, si, dr);
 	} else if (is_any ("andi")) {
 		char *dr = r_list_get_n (args, 0);
 		char *sr = r_list_get_n (args, 1);
