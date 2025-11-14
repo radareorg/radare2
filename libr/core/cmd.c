@@ -1495,8 +1495,12 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 						free (shell);
 					}
 					ret = true;
-				} else if (!strcmp (ext, "r2s")) {
-					r_core_visual_slides (core, file);
+				} else if (!strcmp (ext, "md") || !strcmp (ext, "txt")) {
+					if (r_str_endswith (file, ".r2.md")) {
+						r_core_visual_slides (core, file);
+					} else {
+						R_LOG_ERROR ("Not running text files");
+					}
 					ret = true;
 				} else if (!strcmp (ext, "qjs")) {
 					if (r_lang_use (core->lang, "qjs")) {

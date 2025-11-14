@@ -52,7 +52,7 @@ static RCoreHelpMessage help_msg_mf = {
 };
 
 static bool is_document(const char *name) {
-	return r_str_endswith (name, ".r2s") || r_str_endswith (name, ".md") || r_str_endswith (name, ".txt");
+	return r_str_endswith (name, ".r2.md") || r_str_endswith (name, ".md") || r_str_endswith (name, ".txt");
 }
 
 static char *readman(RCore *core, const char *page) {
@@ -81,7 +81,7 @@ static char *readman(RCore *core, const char *page) {
 	}
 	char *n = r_str_newf (R2_DATDIR"/doc/radare2/%s", page);
 	if (r_file_exists (n)) {
-		if (r_str_endswith (page, ".r2s")) {
+		if (r_str_endswith (page, ".r2.md")) {
 			r_core_cmdf (core, ". %s", n);
 			free (n);
 			return NULL;
