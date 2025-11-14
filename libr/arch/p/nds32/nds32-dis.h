@@ -429,7 +429,7 @@ print_insn16 (bfd_vma pc, disassemble_info *info, uint32_t insn)
       return;
     case 0x3c:			/* ifcall9 */
       func (stream, "%s\t", mnemonic_96[__GF (insn, 9, 6)]);
-      info->print_address_func ((IMMU (insn, 9) << 1) + pc, info);
+      info->print_address_func ((IMMS (insn, 9) << 1) + pc, info);
       return;
     case 0x3d:			/* movpi45 */
       func (stream, "%s\t%s, %d", mnemonic_96[__GF (insn, 9, 6)],

@@ -669,6 +669,46 @@ static char *regs(RArchSession *as) {
 	return strdup (p);
 }
 
+static bool nds32_encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
+	const char *str = op->mnemonic;
+	if (r_str_startswith (str, "ifcall")) {
+		const char *arg = str + strlen ("ifcall");
+		const char *space = strchr (arg, ' ');
+		if (space) {
+			ut64 num = r_num_get (NULL, space + 1);
+			st64 disp = ((st64)num - op->addr) >> 1;
+			if (disp < -256 || disp > 255) {
+				R_LOG_ERROR ("Out of range");
+				return false;
+			}
+			ut16 imm = (ut16)disp & 0x1FF;
+			ut8 bytes[2] = { 0xf8 | ((imm >> 8) & 1), imm & 0xFF };
+			op->size = 2;
+			free (op->bytes);
+			op->bytes = r_mem_dup (bytes, 2);
+			return true;
+		}
+		return false;
+	}
+	if (r_str_startswith (str, "ifret")) {
+		ut8 bytes[2] = { 0x83, 0xff };
+		op->size = 2;
+		free (op->bytes);
+		op->bytes = r_mem_dup (bytes, 2);
+		return true;
+	}
+	if (r_str_startswith (str, "ex9.it ")) {
+		char *arg = (char *)str + 7; // skip "ex9.it "
+		ut8 val = (ut8) r_num_get (NULL, arg);
+		ut8 bytes[2] = { 0xea, val };
+		op->size = 2;
+		free (op->bytes);
+		op->bytes = r_mem_dup (bytes, 2);
+		return true;
+	}
+	return false;
+}
+
 const RArchPlugin r_arch_plugin_nds32 = {
 	.meta = {
 		.name = "nds32",
@@ -679,6 +719,7 @@ const RArchPlugin r_arch_plugin_nds32 = {
 	.arch = "nds32",
 	.bits = R_SYS_BITS_PACK1 (32),
 	.endian = R_SYS_ENDIAN_LITTLE,
+	.encode = &nds32_encode,
 	.decode = &decode,
 	.regs = regs,
 	.init = &_init,
