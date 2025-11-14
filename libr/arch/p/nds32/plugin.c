@@ -532,10 +532,156 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	} else if (is_any ("ret", "iret")) {
 		op->type = R_ANAL_OP_TYPE_RET;
 	} else if (is_any ("add45")) {
-		op->type = R_ANAL_OP_TYPE_ADD;
 	} else if (is_any ("smw.bi")) {
-		op->type = R_ANAL_OP_TYPE_STORE;
 	}
+}
+
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
+	const ut64 addr = op->addr;
+	const int len = op->size;
+	const ut8 *buf = op->bytes;
+	ut8 bytes[8] = { 0 };
+	insn_t word = { 0 };
+	struct disassemble_info disasm_obj = { 0 };
+	RStrBuf *sb = r_strbuf_new (NULL);
+	memcpy (bytes, buf, R_MIN (sizeof (bytes), len)); // TODO handle thumb
+	/* prepare disassembler */
+	disasm_obj.buffer = bytes;
+	disasm_obj.buffer_vma = addr;
+	disasm_obj.read_memory_func = &nds32_buffer_read_memory;
+	disasm_obj.symbol_at_address_func = &symbol_at_address;
+	disasm_obj.memory_error_func = &memory_error_func;
+	disasm_obj.print_address_func = &generic_print_address_func;
+	disasm_obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
+	disasm_obj.fprintf_func = &generic_fprintf_func;
+	disasm_obj.stream = sb;
+	disasm_obj.mach = 0; // TODO: detect_cpu (as->config->cpu);
+	op->size = print_insn_nds32 ((bfd_vma)addr, &disasm_obj);
+
+	if (true) { // mask & R_ARCH_OP_MASK_DISASM) {
+		op->mnemonic = r_strbuf_drain (sb);
+		sb = NULL;
+		r_str_replace_ch (op->mnemonic, '\t', ' ', true);
+	}
+	int left = R_MIN (len, op->size);
+	if (left < 1 || (left > 0 && !memcmp (buf, "\xff\xff\xff\xff\xff\xff\xff\xff", left))) {
+		free (op->mnemonic);
+		op->type = R_ANAL_OP_TYPE_ILL;
+		op->mnemonic = strdup ("invalid");
+		r_strbuf_free (sb);
+		return true;
+	}
+	if (*op->mnemonic == 0) {
+		// probably instructions not implemented
+		free (op->mnemonic);
+		op->type = R_ANAL_OP_TYPE_NOP;
+		op->mnemonic = strdup ("invalid?");
+		r_strbuf_free (sb);
+		return true;
+	}
+	if (strstr (op->mnemonic, "unknown")) {
+		free (op->mnemonic);
+		op->type = R_ANAL_OP_TYPE_ILL;
+		op->mnemonic = strdup ("invalid");
+		r_strbuf_free (sb);
+		return true;
+	}
+	if (as->config->syntax == R_ARCH_SYNTAX_INTEL) {
+		r_str_replace_in (op->mnemonic, -1, "$", "", true);
+		r_str_replace_in (op->mnemonic, -1, "#", "", true);
+		r_str_replace_in (op->mnemonic, -1, "+ -", "-", true);
+	}
+	char *name = strdup (op->mnemonic);
+#if 0
+	PluginData *pd = as->data;
+	struct nds32_opcode *o = nds32_get_opcode (pd, word);
+	if (o) {
+		if (op->mnemonic) {
+			name = op->mnemonic;
+		}
+	}
+#endif
+
+	const char *arg = strstr (name, "0x");
+	if (!arg) {
+		arg = strstr (name, ", ");
+		if (arg) {
+			arg += 2;
+		} else {
+			arg = strchr (name, ' ');
+			if (arg) {
+				arg++;
+			}
+		}
+	}
+	if (is_any ("jral5")) {
+		op->type = R_ANAL_OP_TYPE_RJMP; // call?
+		// jump to register r1.. if .. 5?
+	} else if (is_any ("jal ", "jral ", "j ")) {
+// decide whether it's jump or call
+#ifndef OP_MASK_RD
+#define OP_MASK_RD 0x1f
+#define OP_SH_RD 11
+#endif
+		int rd = (word >> OP_SH_RD) & OP_MASK_RD;
+		op->type = (rd == 0)? R_ANAL_OP_TYPE_JMP: R_ANAL_OP_TYPE_CALL;
+		// op->jump = EXTRACT_UJTYPE_IMM (word) + addr;
+		op->jump = arg? r_num_get (NULL, arg): op->addr;
+		if (op->type == R_ANAL_OP_TYPE_CALL) {
+			op->fail = addr + op->size;
+		}
+	}
+	if (mask & R_ARCH_OP_MASK_ESIL) {
+		decode_esil (op);
+	}
+	if (is_any ("jr ")) {
+		op->type = R_ANAL_OP_TYPE_RJMP;
+	} else if (is_any ("jral ")) {
+		op->type = R_ANAL_OP_TYPE_RCALL;
+	} else if (is_any ("swi")) {
+		op->type = R_ANAL_OP_TYPE_SWI;
+	} else if (is_any ("ori")) {
+		op->type = R_ANAL_OP_TYPE_OR;
+	} else if (is_any ("ret", "iret")) {
+		op->type = R_ANAL_OP_TYPE_RET;
+	} else if (is_any ("addi", "addri")) {
+		op->type = R_ANAL_OP_TYPE_ADD;
+	} else if (is_any ("subi", "subri", "sub")) {
+		op->type = R_ANAL_OP_TYPE_SUB;
+	} else if (is_any ("xori")) {
+		op->type = R_ANAL_OP_TYPE_XOR;
+	} else if (is_any ("andi")) {
+		op->type = R_ANAL_OP_TYPE_AND;
+	} else if (is_any ("xori")) {
+		op->type = R_ANAL_OP_TYPE_XOR;
+	} else if (is_any ("sh", "sl", "slli")) {
+		op->type = R_ANAL_OP_TYPE_SHL;
+	} else if (is_any ("srli", "srai")) {
+		op->type = R_ANAL_OP_TYPE_SHR;
+	} else if (is_any ("lb", "lw", "ld", "lh", "lwi", "lbi", "lbi.gp", "lwi.gp")) {
+		op->type = R_ANAL_OP_TYPE_LOAD;
+	} else if (is_any ("mov", "movi")) {
+		op->type = R_ANAL_OP_TYPE_MOV;
+	} else if (is_any ("st", "sb", "sd", "sh", "swi", "sbi", "sbi.gp", "swi.gp", "shi.gp")) {
+		op->type = R_ANAL_OP_TYPE_STORE;
+	} else if (is_any ("addi.gp", "addri36.sp")) {
+		op->type = R_ANAL_OP_TYPE_ADD;
+	} else if (is_any ("ifcall")) {
+		op->type = R_ANAL_OP_TYPE_CCALL;
+		op->jump = arg? r_num_get (NULL, arg): op->addr;
+		op->fail = addr + op->size;
+	} else if (is_any ("bl")) { // "bgezal ", "bltzal ")) {
+		op->type = R_ANAL_OP_TYPE_CALL;
+		op->jump = arg? r_num_get (NULL, arg): op->addr;
+		op->fail = addr + op->size;
+	} else if (is_any ("beqz", "bnes", "beq", "blez", "bgez", "ble", "bltz", "bgtz", "bnez", "bne ", "bnezs8")) {
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		// op->jump = EXTRACT_SBTYPE_IMM (word) + addr;
+		op->jump = arg? r_num_get (NULL, arg): op->addr;
+		op->fail = addr + op->size;
+	}
+	free (name);
+	r_strbuf_free (sb);
 	return op->size > 0;
 }
 
