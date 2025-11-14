@@ -152,6 +152,75 @@ static void decode_esil(RAnalOp *op) {
 		char *s0 = r_list_get_n (args, 0);
 		char *di = r_list_get_n (args, 1);
 		r_strbuf_setf (&op->esil, "%s,0,==,$z,!,?{,%s,pc,:=,}", s0, di);
+	} else if (is_any ("sbi.gp")) {
+		char *val = r_list_get_n (args, 0);
+		char *off = r_list_get_n (args, 1);
+		if (off) {
+			r_str_trim (off);
+			// assume format [+num] or num
+			char *num = off;
+			if (*num == '[') num++;
+			if (*num == '+') num++;
+			char *end = strchr (num, ']');
+			if (end) *end = 0;
+			r_strbuf_setf (&op->esil, "%s,gp,%s,+,[1],:=", val, num);
+		}
+	} else if (is_any ("lbi.gp")) {
+		char *reg = r_list_get_n (args, 0);
+		char *off = r_list_get_n (args, 1);
+		if (off) {
+			r_str_trim (off);
+			char *num = off;
+			if (*num == '[') num++;
+			if (*num == '+') num++;
+			char *end = strchr (num, ']');
+			if (end) *end = 0;
+			r_strbuf_setf (&op->esil, "gp,%s,+,[1],%s,:=", num, reg);
+		}
+	} else if (is_any ("lwi.gp")) {
+		char *reg = r_list_get_n (args, 0);
+		char *off = r_list_get_n (args, 1);
+		if (off) {
+			r_str_trim (off);
+			char *num = off;
+			if (*num == '[') num++;
+			if (*num == '+') num++;
+			char *end = strchr (num, ']');
+			if (end) *end = 0;
+			r_strbuf_setf (&op->esil, "gp,%s,+,[4],%s,:=", num, reg);
+		}
+	} else if (is_any ("swi.gp")) {
+		char *val = r_list_get_n (args, 0);
+		char *off = r_list_get_n (args, 1);
+		if (off) {
+			r_str_trim (off);
+			char *num = off;
+			if (*num == '[') num++;
+			if (*num == '+') num++;
+			char *end = strchr (num, ']');
+			if (end) *end = 0;
+			r_strbuf_setf (&op->esil, "%s,gp,%s,+,[4],:=", val, num);
+		}
+	} else if (is_any ("shi.gp")) {
+		char *val = r_list_get_n (args, 0);
+		char *off = r_list_get_n (args, 1);
+		if (off) {
+			r_str_trim (off);
+			char *num = off;
+			if (*num == '[') num++;
+			if (*num == '+') num++;
+			char *end = strchr (num, ']');
+			if (end) *end = 0;
+			r_strbuf_setf (&op->esil, "%s,gp,%s,+,[2],:=", val, num);
+		}
+	} else if (is_any ("addi.gp")) {
+		char *reg = r_list_get_n (args, 0);
+		char *imm = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "gp,%s,+,%s,:=", imm, reg);
+	} else if (is_any ("addri36.sp")) {
+		char *reg = r_list_get_n (args, 0);
+		char *imm = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "sp,%s,+,%s,:=", imm, reg);
 	} else if (is_any ("ori")) {
 		char *dr = r_list_get_n (args, 0);
 		char *sr = r_list_get_n (args, 1);
@@ -343,12 +412,14 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		op->type = R_ANAL_OP_TYPE_SHL;
 	} else if (is_any ("srli", "srai")) {
 		op->type = R_ANAL_OP_TYPE_SHR;
-	} else if (is_any ("lb", "lw", "ld", "lh", "lwi", "lbi")) {
+	} else if (is_any ("lb", "lw", "ld", "lh", "lwi", "lbi", "lbi.gp", "lwi.gp")) {
 		op->type = R_ANAL_OP_TYPE_LOAD;
 	} else if (is_any ("mov", "movi")) {
 		op->type = R_ANAL_OP_TYPE_MOV;
-	} else if (is_any ("st", "sb", "sd", "sh", "swi", "sbi")) {
+	} else if (is_any ("st", "sb", "sd", "sh", "swi", "sbi", "sbi.gp", "swi.gp", "shi.gp")) {
 		op->type = R_ANAL_OP_TYPE_STORE;
+	} else if (is_any ("addi.gp", "addri36.sp")) {
+		op->type = R_ANAL_OP_TYPE_ADD;
 	} else if (is_any ("ifcall")) {
 		op->type = R_ANAL_OP_TYPE_CCALL;
 		op->jump = arg? r_num_get (NULL, arg): op->addr;
