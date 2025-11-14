@@ -11,13 +11,6 @@
 typedef uint32_t insn_t;
 #define OP_MASK_OP 0x7f
 
-#if 0
-static CpuKv cpus[] = {
-	{ "nds32", nds32 },
-	{ NULL, 0 }
-};
-#endif
-
 typedef struct plugin_data_t {
 	bool init0;
 	const struct nds32_opcode *nds32_hash[OP_MASK_OP + 1];
@@ -51,31 +44,6 @@ static int info(RArchSession *as, ut32 q) {
 	}
 	return 0;
 }
-
-#if 0
-static inline unsigned int nds32_insn_length(insn_t insn) {
-	return 4;
-}
-
-static struct nds32_opcode *nds32_get_opcode(PluginData *pd, insn_t word) {
-	struct nds32_opcode *op = NULL;
-
-#define OP_HASH_IDX(i) ((i) &(nds32_insn_length (i) == 2? 3: OP_MASK_OP))
-	if (!pd->init0) {
-		size_t i;
-		for (i = 0; i < OP_MASK_OP + 1; i++) {
-			pd->nds32_hash[i] = 0;
-		}
-		for (op = nds32_opcodes; op <= &nds32_opcodes[NUMOPCODES - 1]; op++) {
-			//if (!pd->nds32_hash[OP_HASH_IDX (op->match)]) {
-			//	pd->nds32_hash[OP_HASH_IDX (op->match)] = op;
-			//}
-		}
-		pd->init0 = true;
-	}
-	return (struct nds32_opcode *) pd->nds32_hash[OP_HASH_IDX (word)];
-}
-#endif
 
 static int nds32_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
 	int delta = (memaddr - info->buffer_vma);
@@ -406,7 +374,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		}
 	}
 #endif
-
 	const char *arg = strstr (name, "0x");
 	if (!arg) {
 		arg = strstr (name, ", ");
@@ -493,7 +460,7 @@ static char *regs(RArchSession *as) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	sp\n"
-		"=BP	sp\n"
+		"=BP	fp\n"
 		"=LR	lr\n"
 		"=SN	r0\n"
 		"=R0	r0\n"
@@ -501,29 +468,77 @@ static char *regs(RArchSession *as) {
 		"=A1	r1\n"
 		"=A2	r2\n"
 		"gpr	r0	4	0	0\n"
+		"gpr	a0	4	0	0\n"
 		"gpr	r1	4	4	0\n"
+		"gpr	a1	4	4	0\n"
 		"gpr	r2	4	8	0\n"
+		"gpr	a2	4	8	0\n"
 		"gpr	r3	4	12	0\n"
+		"gpr	a3	4	12	0\n"
 		"gpr	r4	4	16	0\n"
+		"gpr	a4	4	16	0\n"
 		"gpr	r5	4	20	0\n"
+		"gpr	a5	4	20	0\n"
 		"gpr	r6	4	24	0\n"
+		"gpr	s0	4	24	0\n"
 		"gpr	r7	4	28	0\n"
+		"gpr	s1	4	28	0\n"
 		"gpr	r8	4	32	0\n"
+		"gpr	s2	4	32	0\n"
 		"gpr	r9	4	36	0\n"
+		"gpr	s3	4	36	0\n"
+		"gpr	h9	4	36	0\n"
 		"gpr	r10	4	40	0\n"
+		"gpr	s4	4	40	0\n"
 		"gpr	r11	4	44	0\n"
+		"gpr	s5	4	44	0\n"
 		"gpr	r12	4	48	0\n"
+		"gpr	s6	4	48	0\n"
 		"gpr	r13	4	52	0\n"
+		"gpr	s7	4	52	0\n"
 		"gpr	r14	4	56	0\n"
+		"gpr	s8	4	56	0\n"
 		"gpr	r15	4	60	0\n"
+		"gpr	ta	4	60	0\n"
 		"gpr	r16	4	64	0\n"
+		"gpr	t0	4	64	0\n"
+		"gpr	h12	4	64	0\n"
 		"gpr	r17	4	68	0\n"
+		"gpr	t1	4	68	0\n"
+		"gpr	h13	4	68	0\n"
 		"gpr	r18	4	72	0\n"
+		"gpr	t2	4	72	0\n"
+		"gpr	h14	4	72	0\n"
 		"gpr	r19	4	76	0\n"
+		"gpr	t3	4	76	0\n"
+		"gpr	h15	4	76	0\n"
 		"gpr	r20	4	80	0\n"
-		"gpr	pc	4	84	0\n"
-		"gpr	lr	4	88	0\n"
-		"gpr	sp	4	92	0\n";
+		"gpr	t4	4	80	0\n"
+		"gpr	r21	4	84	0\n"
+		"gpr	t5	4	84	0\n"
+		"gpr	r22	4	88	0\n"
+		"gpr	t6	4	88	0\n"
+		"gpr	r23	4	92	0\n"
+		"gpr	t7	4	92	0\n"
+		"gpr	r24	4	96	0\n"
+		"gpr	t8	4	96	0\n"
+		"gpr	r25	4	100	0\n"
+		"gpr	t9	4	100	0\n"
+		"gpr	r26	4	104	0\n"
+		"gpr	p0	4	104	0\n"
+		"gpr	r27	4	108	0\n"
+		"gpr	p1	4	108	0\n"
+		"gpr	r28	4	112	0\n"
+		"gpr	s9	4	112	0\n"
+		"gpr	fp	4	112	0\n"
+		"gpr	r29	4	116	0\n"
+		"gpr	gp	4	116	0\n"
+		"gpr	r30	4	120	0\n"
+		"gpr	lp	4	120	0\n"
+		"gpr	lr	4	120	0\n"
+		"gpr	r31	4	124	0\n"
+		"gpr	sp	4	124	0\n"
+		"gpr	pc	4	128	0\n";
 	return strdup (p);
 }
 
