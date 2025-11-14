@@ -1328,7 +1328,7 @@ noskip:
 			break;
 		case R_ANAL_OP_TYPE_CMP:
 			{
-				ut64 val = (is_x86 || is_v850)? op->val : op->ptr;
+				ut64 val = (is_x86 || is_arm || is_v850)? op->val : op->ptr;
 				if (val) {
 					anal->cmpval = val;
 					bb->cmpval = anal->cmpval;
