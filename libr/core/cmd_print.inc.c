@@ -2137,7 +2137,7 @@ static bool is_pfo_file(const char *fn) {
 }
 static void cmd_print_format(RCore *core, const char *_input, const ut8* block, int len) {
 	char *input = NULL;
-	bool v2 = false;
+	bool v2 = r_config_get_b (core->config, "cfg.newpf");
 	int mode = R_PRINT_MUSTSEE;
 	if (_input[1] == '2') {
 		// "pf2"

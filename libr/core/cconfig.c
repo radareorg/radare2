@@ -4186,6 +4186,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("cfg.bigendian", "false", &cb_bigendian, "use little (false) or big (true) endianness");
 	SETCB ("cfg.float", "ieee754", &cb_cfg_float, "FPU profile for floating point operations (use -e cfg.float=? for list)");
 	SETI ("cfg.cpuaffinity", 0, "run on cpuid");
+	SETB ("cfg.newpf", 0, "use pf2 when calling pf");
 
 	/* log */
 	SETICB ("log.level", R_LOG_LEVEL_DEFAULT, cb_config_log_level, "Target log level/severity (0:FATAL 1:ERROR 2:INFO 3:WARN 4:TODO 5:DEBUG)");
