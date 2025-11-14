@@ -11,13 +11,6 @@
 typedef uint32_t insn_t;
 #define OP_MASK_OP 0x7f
 
-#if 0
-static CpuKv cpus[] = {
-	{ "nds32", nds32 },
-	{ NULL, 0 }
-};
-#endif
-
 typedef struct plugin_data_t {
 	bool init0;
 	const struct nds32_opcode *nds32_hash[OP_MASK_OP + 1];
@@ -51,31 +44,6 @@ static int info(RArchSession *as, ut32 q) {
 	}
 	return 0;
 }
-
-#if 0
-static inline unsigned int nds32_insn_length(insn_t insn) {
-	return 4;
-}
-
-static struct nds32_opcode *nds32_get_opcode(PluginData *pd, insn_t word) {
-	struct nds32_opcode *op = NULL;
-
-#define OP_HASH_IDX(i) ((i) &(nds32_insn_length (i) == 2? 3: OP_MASK_OP))
-	if (!pd->init0) {
-		size_t i;
-		for (i = 0; i < OP_MASK_OP + 1; i++) {
-			pd->nds32_hash[i] = 0;
-		}
-		for (op = nds32_opcodes; op <= &nds32_opcodes[NUMOPCODES - 1]; op++) {
-			//if (!pd->nds32_hash[OP_HASH_IDX (op->match)]) {
-			//	pd->nds32_hash[OP_HASH_IDX (op->match)] = op;
-			//}
-		}
-		pd->init0 = true;
-	}
-	return (struct nds32_opcode *) pd->nds32_hash[OP_HASH_IDX (word)];
-}
-#endif
 
 static int nds32_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
 	int delta = (memaddr - info->buffer_vma);
@@ -406,7 +374,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		}
 	}
 #endif
-
 	const char *arg = strstr (name, "0x");
 	if (!arg) {
 		arg = strstr (name, ", ");
@@ -502,36 +469,20 @@ static char *regs(RArchSession *as) {
 		"=A2	r2\n"
 		"gpr	r0	4	0	0\n"
 		"gpr	a0	4	0	0\n"
-		"gpr	h0	4	0	0\n"
-		"gpr	o0	4	0	0\n"
 		"gpr	r1	4	4	0\n"
 		"gpr	a1	4	4	0\n"
-		"gpr	h1	4	4	0\n"
-		"gpr	o1	4	4	0\n"
 		"gpr	r2	4	8	0\n"
 		"gpr	a2	4	8	0\n"
-		"gpr	h2	4	8	0\n"
-		"gpr	o2	4	8	0\n"
 		"gpr	r3	4	12	0\n"
 		"gpr	a3	4	12	0\n"
-		"gpr	h3	4	12	0\n"
-		"gpr	o3	4	12	0\n"
 		"gpr	r4	4	16	0\n"
 		"gpr	a4	4	16	0\n"
-		"gpr	h4	4	16	0\n"
-		"gpr	o4	4	16	0\n"
 		"gpr	r5	4	20	0\n"
 		"gpr	a5	4	20	0\n"
-		"gpr	h5	4	20	0\n"
-		"gpr	o5	4	20	0\n"
 		"gpr	r6	4	24	0\n"
 		"gpr	s0	4	24	0\n"
-		"gpr	h6	4	24	0\n"
-		"gpr	o6	4	24	0\n"
 		"gpr	r7	4	28	0\n"
 		"gpr	s1	4	28	0\n"
-		"gpr	h7	4	28	0\n"
-		"gpr	o7	4	28	0\n"
 		"gpr	r8	4	32	0\n"
 		"gpr	s2	4	32	0\n"
 		"gpr	h8	4	32	0\n"
