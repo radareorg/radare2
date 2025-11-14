@@ -215,6 +215,32 @@ static void decode_esil(RAnalOp *op) {
 			}
 			r_strbuf_setf (&op->esil, "%s,gp,%s,+,[2],:=", val, num);
 		}
+	} else if (is_any ("shi")) {
+		char *val = r_list_get_n (args, 0);
+		char *addr = r_list_get_n (args, 1);
+		if (addr) {
+			r_str_trim (addr);
+			if (*addr == '[') {
+				addr++;
+			}
+			char *plus = strstr (addr, " + ");
+			if (plus) {
+				*plus = 0;
+				char *reg = addr;
+				char *off = plus + 3;
+				char *end = strchr (off, ']');
+				if (end) {
+					*end = 0;
+				}
+				r_strbuf_setf (&op->esil, "%s,%s,%s,+,[2],:=", val, reg, off);
+			} else {
+				char *end = strchr (addr, ']');
+				if (end) {
+					*end = 0;
+				}
+				r_strbuf_setf (&op->esil, "%s,%s,[2],:=", val, addr);
+			}
+		}
 	} else if (is_any ("addi.gp")) {
 		char *reg = r_list_get_n (args, 0);
 		char *imm = r_list_get_n (args, 1);
@@ -243,6 +269,10 @@ static void decode_esil(RAnalOp *op) {
 		char *sr = r_list_get_n (args, 1);
 		char *si = r_list_get_n (args, 2);
 		r_strbuf_setf (&op->esil, "%s,%s,&,%s,:=", si, sr, dr);
+	} else if (is_any ("addi45")) {
+		char *rt = r_list_get_n (args, 0);
+		char *imm = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "%s,%s,+,%s,:=", imm, rt, rt);
 	} else if (is_any ("xori")) {
 		char *dr = r_list_get_n (args, 0);
 		char *sr = r_list_get_n (args, 1);
@@ -279,10 +309,105 @@ static void decode_esil(RAnalOp *op) {
 		char *sr = r_list_get_n (args, 0);
 		char *dr = r_list_get_n (args, 1);
 		r_strbuf_setf (&op->esil, "%s,%s,[4],:=", sr, dr);
+		// else if (is_any ("addi", "addri"))
+	} else if (is_any ("pop25")) {
+		char *reg = r_list_get_n (args, 0);
+		// pop reg from stack: reg = [sp], sp += 4
+		r_strbuf_setf (&op->esil, "sp,[4],%s,:=,sp,4,+,sp,:=", reg);
+	} else if (is_any ("maddr32")) {
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		char *rb = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,%s,*,%s,+,%s,:=", rb, ra, rt, rt);
+	} else if (is_any ("add_slli")) {
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		char *rb = r_list_get_n (args, 2);
+		char *sh = r_list_get_n (args, 3);
+		r_strbuf_setf (&op->esil, "%s,%s,<<,%s,+,%s,:=", sh, rb, ra, rt);
+	} else if (is_any ("sub333")) {
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		char *rb = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,%s,-,%s,:=", rb, ra, rt);
+	} else if (is_any ("add333")) {
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		char *rb = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,%s,+,%s,:=", rb, ra, rt);
+	} else if (is_any ("lmw.adm")) {
+		r_strbuf_set (&op->esil, "");
+	} else if (is_any ("smw.adm")) {
+		r_strbuf_set (&op->esil, "");
+	} else if (is_any ("subi333")) {
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		char *imm = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,%s,-,%s,:=", imm, ra, rt);
+	} else if (is_any ("mtusr")) {
+		r_strbuf_set (&op->esil, "");
+	} else if (is_any ("zeh33")) {
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "0xffff,%s,&,%s,:=", ra, rt);
+	} else if (is_any ("srli45")) {
+		char *rt = r_list_get_n (args, 0);
+		char *imm = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "%s,%s,>>,%s,:=", imm, rt, rt);
+	} else if (is_any ("divr")) {
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		char *rb = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,%s,/,%s,:=", rb, ra, rt);
+	} else if (is_any ("or33")) {
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "%s,%s,|,%s,:=", ra, rt, rt);
+	} else if (is_any ("mul")) {
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		char *rb = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,%s,*,%s,:=", rb, ra, rt);
+	} else if (is_any ("slt45")) {
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "%s,%s,<,?{,1,0,},%s,:=", rt, ra, rt);
+	} else if (is_any ("mul33")) {
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "%s,%s,*,%s,:=", ra, rt, rt);
+	} else if (is_any ("isb")) {
+		r_strbuf_set (&op->esil, "");
+	} else if (is_any ("bgtz")) {
+		char *reg = r_list_get_n (args, 0);
+		char *addr = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "%s,0,>,?{,%s,pc,:=,}", reg, addr);
 	} else if (is_any ("lbi")) {
 		char *dr = r_list_get_n (args, 0);
-		char *sr = r_list_get_n (args, 1);
-		r_strbuf_setf (&op->esil, "%s,[1],%s,:=", sr, dr);
+		char *addr = r_list_get_n (args, 1);
+		if (addr && *addr == '[') {
+			r_str_trim (addr);
+			addr++;
+			char *plus = strstr (addr, " + ");
+			if (plus) {
+				*plus = 0;
+				char *reg = addr;
+				char *off = plus + 3;
+				char *end = strchr (off, ']');
+				if (end) {
+					*end = 0;
+				}
+				r_strbuf_setf (&op->esil, "%s,%s,+,[1],%s,:=", reg, off, dr);
+			} else {
+				char *end = strchr (addr, ']');
+				if (end) {
+					*end = 0;
+				}
+				r_strbuf_setf (&op->esil, "%s,[1],%s,:=", addr, dr);
+			}
+		} else {
+			r_strbuf_setf (&op->esil, "%s,[1],%s,:=", addr, dr);
+		}
 	} else if (is_any ("sbi")) {
 		char *sr = r_list_get_n (args, 0);
 		char *dr = r_list_get_n (args, 1);
@@ -374,6 +499,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		}
 	}
 #endif
+
 	const char *arg = strstr (name, "0x");
 	if (!arg) {
 		arg = strstr (name, ", ");
@@ -452,6 +578,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		op->jump = arg? r_num_get (NULL, arg): op->addr;
 		op->fail = addr + op->size;
 	}
+	free (name);
 	r_strbuf_free (sb);
 	return op->size > 0;
 }
