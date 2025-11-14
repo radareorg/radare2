@@ -139,11 +139,83 @@ static void decode_esil(RAnalOp *op) {
 		char *s1 = r_list_get_n (args, 1);
 		char *di = r_list_get_n (args, 2);
 		r_strbuf_setf (&op->esil, "%s,%s,==,$z,?{,%s,pc,:=,}", s0, s1, di);
+	} else if (is_any ("bne")) {
+		char *s0 = r_list_get_n (args, 0);
+		char *s1 = r_list_get_n (args, 1);
+		char *di = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,%s,==,$z,!,?{,%s,pc,:=,}", s0, s1, di);
+	} else if (is_any ("beqz")) {
+		char *s0 = r_list_get_n (args, 0);
+		char *di = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "%s,0,==,$z,?{,%s,pc,:=,}", s0, di);
+	} else if (is_any ("bnez")) {
+		char *s0 = r_list_get_n (args, 0);
+		char *di = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "%s,0,==,$z,!,?{,%s,pc,:=,}", s0, di);
 	} else if (is_any ("ori")) {
 		char *dr = r_list_get_n (args, 0);
 		char *sr = r_list_get_n (args, 1);
 		char *si = r_list_get_n (args, 2);
 		r_strbuf_setf (&op->esil, "%s,%s,|,%s,:=", si, sr, dr);
+	} else if (is_any ("addi")) {
+		char *dr = r_list_get_n (args, 0);
+		char *sr = r_list_get_n (args, 1);
+		char *si = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,%s,+,%s,:=", si, sr, dr);
+	} else if (is_any ("subri")) {
+		char *dr = r_list_get_n (args, 0);
+		char *sr = r_list_get_n (args, 1);
+		char *si = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,%s,-,%s,:=", si, sr, dr);
+	} else if (is_any ("andi")) {
+		char *dr = r_list_get_n (args, 0);
+		char *sr = r_list_get_n (args, 1);
+		char *si = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,%s,&,%s,:=", si, sr, dr);
+	} else if (is_any ("xori")) {
+		char *dr = r_list_get_n (args, 0);
+		char *sr = r_list_get_n (args, 1);
+		char *si = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,%s,^,%s,:=", si, sr, dr);
+	} else if (is_any ("slli")) {
+		char *dr = r_list_get_n (args, 0);
+		char *sr = r_list_get_n (args, 1);
+		char *si = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,%s,<<,%s,:=", si, sr, dr);
+	} else if (is_any ("srli")) {
+		char *dr = r_list_get_n (args, 0);
+		char *sr = r_list_get_n (args, 1);
+		char *si = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,%s,>>,%s,:=", si, sr, dr);
+	} else if (is_any ("srai")) {
+		char *dr = r_list_get_n (args, 0);
+		char *sr = r_list_get_n (args, 1);
+		char *si = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,%s,>>>>,%s,:=", si, sr, dr);
+	} else if (is_any ("movi")) {
+		char *dr = r_list_get_n (args, 0);
+		char *si = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "%s,%s,:=", si, dr);
+	} else if (is_any ("mov")) {
+		char *dr = r_list_get_n (args, 0);
+		char *sr = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "%s,%s,:=", sr, dr);
+	} else if (is_any ("lwi")) {
+		char *dr = r_list_get_n (args, 0);
+		char *sr = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "%s,[4],%s,:=", sr, dr);
+	} else if (is_any ("swi")) {
+		char *sr = r_list_get_n (args, 0);
+		char *dr = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "%s,%s,[4],:=", sr, dr);
+	} else if (is_any ("lbi")) {
+		char *dr = r_list_get_n (args, 0);
+		char *sr = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "%s,[1],%s,:=", sr, dr);
+	} else if (is_any ("sbi")) {
+		char *sr = r_list_get_n (args, 0);
+		char *dr = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "%s,%s,[1],:=", sr, dr);
 	}
 	r_list_free (args);
 	free (name);
@@ -265,13 +337,17 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		op->type = R_ANAL_OP_TYPE_XOR;
 	} else if (is_any ("andi")) {
 		op->type = R_ANAL_OP_TYPE_AND;
-	} else if (is_any ("sh", "sl")) {
+	} else if (is_any ("xori")) {
+		op->type = R_ANAL_OP_TYPE_XOR;
+	} else if (is_any ("sh", "sl", "slli")) {
 		op->type = R_ANAL_OP_TYPE_SHL;
-	} else if (is_any ("lb", "lw", "ld", "lh")) {
+	} else if (is_any ("srli", "srai")) {
+		op->type = R_ANAL_OP_TYPE_SHR;
+	} else if (is_any ("lb", "lw", "ld", "lh", "lwi", "lbi")) {
 		op->type = R_ANAL_OP_TYPE_LOAD;
-	} else if (is_any ("mov")) {
+	} else if (is_any ("mov", "movi")) {
 		op->type = R_ANAL_OP_TYPE_MOV;
-	} else if (is_any ("st", "sb", "sd", "sh")) {
+	} else if (is_any ("st", "sb", "sd", "sh", "swi", "sbi")) {
 		op->type = R_ANAL_OP_TYPE_STORE;
 	} else if (is_any ("ifcall")) {
 		op->type = R_ANAL_OP_TYPE_CCALL;
