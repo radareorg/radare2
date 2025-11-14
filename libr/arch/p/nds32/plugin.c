@@ -671,6 +671,43 @@ static char *regs(RArchSession *as) {
 
 static bool nds32_encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 	const char *str = op->mnemonic;
+	if (r_str_startswith (str, "ifcall")) {
+		const char *arg = str + strlen ("ifcall");
+		const char *space = strchr (arg, ' ');
+		if (space) {
+			ut64 num = r_num_get (NULL, space + 1);
+			ut8 bytes[2] = { 0xf8, 0x00 };
+			if (num > op->addr) {
+				ut64 n = (num - op->addr) >> 1;
+				ut8 n8 = n & 0x7f;
+				if (n != n8) {
+					R_LOG_ERROR ("Out of range");
+				} else {
+					bytes[1] = n8;
+				}
+			} else {
+				ut64 n = (op->addr - num) >> 1;
+				st8 n8 = n & 0x7f;
+				if (n != n8) {
+					R_LOG_ERROR ("Out of range");
+				} else {
+					bytes[1] = -n8;
+				}
+			}
+			op->size = 2;
+			free (op->bytes);
+			op->bytes = r_mem_dup (bytes, 2);
+			return true;
+		}
+		return false;
+	}
+	if (r_str_startswith (str, "ifret")) {
+		ut8 bytes[2] = { 0x83, 0xff };
+		op->size = 2;
+		free (op->bytes);
+		op->bytes = r_mem_dup (bytes, 2);
+		return true;
+	}
 	if (r_str_startswith (str, "ex9.it ")) {
 		char *arg = (char *)str + 7; // skip "ex9.it "
 		ut8 val = (ut8) r_num_get (NULL, arg);
