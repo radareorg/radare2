@@ -1,0 +1,39 @@
+NAME=pp
+FILE=-
+CMDS=<<EOF
+pp0 4
+pp1 4
+pp2 2
+pp4 1
+pp8 1
+ppf 4
+ppd 4
+ppa 2
+ppn 2
+pp?
+pp0?
+ppz
+EOF
+EXPECT=<<EOF
+00000000
+00010203
+00000001
+00000000
+0000000000000000
+ffffffff
+41414142
+AAAA BAAA 
+0000 1000 
+Usage: pp[0|1|2|4|8|a|d|f|n] [len]  print patterns
+| pp0 [len]      print buffer filled with zeros
+| pp1 [len]      print incremental byte pattern (honors lower bits of current address and block size)
+| pp2 [len]      print incremental word pattern
+| pp4 [len]      print incremental dword pattern
+| pp8 [len]      print incremental qword pattern
+| ppa[lu] [len]  print latin alphabet patterns (lowercase/uppercase)
+| ppd [len]      print debruijn pattern (see ragg2 -P, -q and wopD)
+| ppf [len]      print buffer filled with 0xff
+| ppn [len]      print numeric pin patterns
+| pp0 [len]  print buffer filled with zeros
+EOF
+RUN
