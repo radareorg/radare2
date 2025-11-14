@@ -9,7 +9,7 @@
 #include "nds32-dis.h"
 
 typedef uint32_t insn_t;
-#define OP_MASK_OP		0x7f
+#define OP_MASK_OP 0x7f
 
 #if 0
 static CpuKv cpus[] = {
@@ -23,7 +23,7 @@ typedef struct plugin_data_t {
 	const struct nds32_opcode *nds32_hash[OP_MASK_OP + 1];
 } PluginData;
 
-#define is_any(...) _is_any(name, __VA_ARGS__, NULL)
+#define is_any(...) _is_any (name, __VA_ARGS__, NULL)
 static bool _is_any(const char *str, ...) {
 	char *cur;
 	va_list va;
@@ -60,7 +60,7 @@ static inline unsigned int nds32_insn_length(insn_t insn) {
 static struct nds32_opcode *nds32_get_opcode(PluginData *pd, insn_t word) {
 	struct nds32_opcode *op = NULL;
 
-#define OP_HASH_IDX(i) ((i) & (nds32_insn_length (i) == 2 ? 3 : OP_MASK_OP))
+#define OP_HASH_IDX(i) ((i) &(nds32_insn_length (i) == 2? 3: OP_MASK_OP))
 	if (!pd->init0) {
 		size_t i;
 		for (i = 0; i < OP_MASK_OP + 1; i++) {
@@ -162,10 +162,16 @@ static void decode_esil(RAnalOp *op) {
 			r_str_trim (off);
 			// assume format [+num] or num
 			char *num = off;
-			if (*num == '[') num++;
-			if (*num == '+') num++;
+			if (*num == '[') {
+				num++;
+			}
+			if (*num == '+') {
+				num++;
+			}
 			char *end = strchr (num, ']');
-			if (end) *end = 0;
+			if (end) {
+				*end = 0;
+			}
 			r_strbuf_setf (&op->esil, "%s,gp,%s,+,[1],:=", val, num);
 		}
 	} else if (is_any ("lbi.gp")) {
@@ -174,10 +180,16 @@ static void decode_esil(RAnalOp *op) {
 		if (off) {
 			r_str_trim (off);
 			char *num = off;
-			if (*num == '[') num++;
-			if (*num == '+') num++;
+			if (*num == '[') {
+				num++;
+			}
+			if (*num == '+') {
+				num++;
+			}
 			char *end = strchr (num, ']');
-			if (end) *end = 0;
+			if (end) {
+				*end = 0;
+			}
 			r_str_trim (num);
 			r_strbuf_setf (&op->esil, "gp,%s,+,[1],%s,:=", num, reg);
 		}
@@ -187,10 +199,16 @@ static void decode_esil(RAnalOp *op) {
 		if (off) {
 			r_str_trim (off);
 			char *num = off;
-			if (*num == '[') num++;
-			if (*num == '+') num++;
+			if (*num == '[') {
+				num++;
+			}
+			if (*num == '+') {
+				num++;
+			}
 			char *end = strchr (num, ']');
-			if (end) *end = 0;
+			if (end) {
+				*end = 0;
+			}
 			r_strbuf_setf (&op->esil, "gp,%s,+,[4],%s,:=", num, reg);
 		}
 	} else if (is_any ("swi.gp")) {
@@ -199,10 +217,16 @@ static void decode_esil(RAnalOp *op) {
 		if (off) {
 			r_str_trim (off);
 			char *num = off;
-			if (*num == '[') num++;
-			if (*num == '+') num++;
+			if (*num == '[') {
+				num++;
+			}
+			if (*num == '+') {
+				num++;
+			}
 			char *end = strchr (num, ']');
-			if (end) *end = 0;
+			if (end) {
+				*end = 0;
+			}
 			r_strbuf_setf (&op->esil, "%s,gp,%s,+,[4],:=", val, num);
 		}
 	} else if (is_any ("shi.gp")) {
@@ -211,10 +235,16 @@ static void decode_esil(RAnalOp *op) {
 		if (off) {
 			r_str_trim (off);
 			char *num = off;
-			if (*num == '[') num++;
-			if (*num == '+') num++;
+			if (*num == '[') {
+				num++;
+			}
+			if (*num == '+') {
+				num++;
+			}
 			char *end = strchr (num, ']');
-			if (end) *end = 0;
+			if (end) {
+				*end = 0;
+			}
 			r_strbuf_setf (&op->esil, "%s,gp,%s,+,[2],:=", val, num);
 		}
 	} else if (is_any ("addi.gp")) {
@@ -299,12 +329,12 @@ static void decode_esil(RAnalOp *op) {
 	} else if (is_any ("fexti33")) {
 		char *rt = r_list_get_n (args, 0);
 		char *imm = r_list_get_n (args, 1);
-		// field extract: assume rt = rt & ((1 << imm) - 1)
+		// field extract: assume rt = rt &((1 << imm) - 1)
 		r_strbuf_setf (&op->esil, "1,%s,<<,1,-,%s,&,%s,:=", imm, rt, rt);
 	} else if (is_any ("slti45")) {
 		char *rt = r_list_get_n (args, 0);
 		char *imm = r_list_get_n (args, 1);
-		// set if less than immediate: rt = (rt < imm) ? 1 : 0
+		// set if less than immediate: rt = (rt < imm)? 1: 0
 		r_strbuf_setf (&op->esil, "%s,%s,<,?{,1,0,},%s,:=", rt, imm, rt);
 	}
 	r_list_free (args);
@@ -315,9 +345,9 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const ut64 addr = op->addr;
 	const int len = op->size;
 	const ut8 *buf = op->bytes;
-	ut8 bytes[8] = {0};
-	insn_t word = {0};
-	struct disassemble_info disasm_obj = {0};
+	ut8 bytes[8] = { 0 };
+	insn_t word = { 0 };
+	struct disassemble_info disasm_obj = { 0 };
 	RStrBuf *sb = r_strbuf_new (NULL);
 	memcpy (bytes, buf, R_MIN (sizeof (bytes), len)); // TODO handle thumb
 	/* prepare disassembler */
@@ -393,13 +423,13 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		op->type = R_ANAL_OP_TYPE_RJMP; // call?
 		// jump to register r1.. if .. 5?
 	} else if (is_any ("jal ", "jral ", "j ")) {
-		// decide whether it's jump or call
-		#ifndef OP_MASK_RD
-			#define OP_MASK_RD		0x1f
-			#define OP_SH_RD		11
-		#endif
+// decide whether it's jump or call
+#ifndef OP_MASK_RD
+#define OP_MASK_RD 0x1f
+#define OP_SH_RD 11
+#endif
 		int rd = (word >> OP_SH_RD) & OP_MASK_RD;
-		op->type = (rd == 0) ? R_ANAL_OP_TYPE_JMP: R_ANAL_OP_TYPE_CALL;
+		op->type = (rd == 0)? R_ANAL_OP_TYPE_JMP: R_ANAL_OP_TYPE_CALL;
 		// op->jump = EXTRACT_UJTYPE_IMM (word) + addr;
 		op->jump = arg? r_num_get (NULL, arg): op->addr;
 		if (op->type == R_ANAL_OP_TYPE_CALL) {
@@ -407,7 +437,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		}
 	}
 	if (mask & R_ARCH_OP_MASK_ESIL) {
-		decode_esil(op);
+		decode_esil (op);
 	}
 	if (is_any ("jr ")) {
 		op->type = R_ANAL_OP_TYPE_RJMP;
@@ -493,8 +523,7 @@ static char *regs(RArchSession *as) {
 		"gpr	r20	4	80	0\n"
 		"gpr	pc	4	84	0\n"
 		"gpr	lr	4	88	0\n"
-		"gpr	sp	4	92	0\n"
-		;
+		"gpr	sp	4	92	0\n";
 	return strdup (p);
 }
 
