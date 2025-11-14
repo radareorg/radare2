@@ -302,4 +302,5 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 	r_list_free (list);
 	free (data);
 	r_config_set_b (core->config, "scr.interactive", true);
+	r_cons_clear00 (core->cons);
 }
