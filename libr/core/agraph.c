@@ -4581,6 +4581,21 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 		key = r_cons_arrow_to_hjkl (core->cons, okey);
 
 		if (core->cons->mouse_event) {
+			int x, y;
+			if (r_cons_get_click (core->cons, &x, &y)) {
+				int ax = x - g->can->sx;
+				int ay = y - g->can->sy;
+				const RList *nodes = r_graph_get_nodes (g->graph);
+				RListIter *it;
+				RGraphNode *gn;
+				RANode *n;
+				graph_foreach_anode (nodes, it, gn, n) {
+					if (ax >= n->x && ax < n->x + n->w && ay >= n->y && ay < n->y + n->h + 2) {
+						r_agraph_set_curnode (g, n);
+						break;
+					}
+				}
+			}
 			movspeed = r_config_get_i (core->config, "scr.wheel.speed");
 			switch (key) {
 			case 'h':
