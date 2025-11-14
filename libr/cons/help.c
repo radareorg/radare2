@@ -20,7 +20,6 @@ R_API void r_cons_cmd_help_json(RCons *cons, RCoreHelpMessage help) {
 			max_length = R_MAX (max_length, len_cmd + len_args);
 		}
 	}
-
 	PJ *pj = pj_new ();
 	pj_o (pj);
 	for (i = 0; help[i]; i += 3) {
@@ -132,7 +131,7 @@ R_API int r_cons_cmd_help_match(RCons *cons, RCoreHelpMessage help, bool use_col
 	int *current_index_ptr;
 	size_t matches_copied;
 	size_t i;
-	char *search_cmd = spec? r_str_newf ("%s%c", cmd, spec): cmd;
+	char *search_cmd = spec? r_str_newf ("%s%c", cmd, spec): strdup (cmd);
 
 	/* Collect matching indices */
 	for (i = 0; help[i]; i += 3) {
@@ -158,8 +157,6 @@ R_API int r_cons_cmd_help_match(RCons *cons, RCoreHelpMessage help, bool use_col
 	}
 	free (matches);
 	r_vector_free (match_indices);
-	if (spec) {
-		free (search_cmd);
-	}
+	free (search_cmd);
 	return num_matches;
 }
