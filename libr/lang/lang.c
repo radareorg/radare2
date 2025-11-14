@@ -68,7 +68,6 @@ R_API RLang *r_lang_new(void) {
 #if WANT_QJS
 	r_lang_plugin_add (lang, &r_lang_plugin_qjs);
 #endif
-
 	return lang;
 }
 
@@ -112,9 +111,11 @@ R_API bool r_lang_define(RLang *lang, const char *type, const char *name, void *
 }
 
 R_API void r_lang_def_free(RLangDef *def) {
-	free (def->name);
-	free (def->type);
-	free (def);
+	if (def) {
+		free (def->name);
+		free (def->type);
+		free (def);
+	}
 }
 
 R_API void r_lang_undef(RLang *lang, const char *name) {
@@ -212,8 +213,7 @@ R_API RLangSession *r_lang_session(RLang *lang, RLangPlugin *h) {
 			// session->plugin_data = h->init (session);
 			if (!h->init (session)) {
 				R_LOG_ERROR ("Cannot initialize plugin for this rlang session");
-				free (session);
-				return NULL;
+				R_FREE (session);
 			}
 		}
 	}
@@ -296,12 +296,12 @@ R_API bool r_lang_run_file(RLang *lang, const char *file) {
 			if (p->run) {
 				size_t len;
 				char *code = r_file_slurp (file, &len);
-				if (!code) {
+				if (code) {
+					ret = lang->session->plugin->run (lang->session, code, (int)len);
+					free (code);
+				} else {
 					R_LOG_ERROR ("Could not open '%s'", file);
-					return 0;
 				}
-				ret = lang->session->plugin->run (lang->session, code, (int)len);
-				free (code);
 			}
 		}
 	}

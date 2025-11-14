@@ -159,7 +159,9 @@ import('os').catch(console.error).then((os) => {
 
     function term_read_handler () {
       const l = os.read(term_fd, term_read_buf.buffer, 0, term_read_buf.length);
-      for (let i = 0; i < l; i++) {
+      if (l < 1) {
+        running = false;
+      } else for (let i = 0; i < l; i++) {
 	handle_byte(term_read_buf[i]);
       }
     }
