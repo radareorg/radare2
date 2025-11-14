@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2024 - pancake */
+/* radare2 - LGPL - Copyright 2013-2025 - pancake */
 
 #include <r_arch.h>
 #include <sdb/ht_uu.h>
@@ -3703,10 +3703,15 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 #endif
 		op->type = R_ANAL_OP_TYPE_NOT;
 		break;
+	case ARM64_INS_CMP:
+		op->type = R_ANAL_OP_TYPE_CMP;
+		if (ISIMM64(1)) {
+			op->val = IMM64(1);
+		}
+		break;
 	case ARM64_INS_FCMP:
 	case ARM64_INS_CCMP:
 	case ARM64_INS_CCMN:
-	case ARM64_INS_CMP:
 	case ARM64_INS_CMN:
 	case ARM64_INS_TST:
 		op->type = R_ANAL_OP_TYPE_CMP;
