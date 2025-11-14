@@ -2305,6 +2305,10 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 	bool listFormats = false;
 	if (input[1] == '.') {
 		listFormats = true;
+		if (input[2] == '?') {
+			r_core_cmd_help_contains (core, help_msg_pf, "pf.");
+			return;
+		}
 	} else if (!strcmp (input, "*") && mode == R_PRINT_SEEFLAGS) {
 		listFormats = true;
 	}
