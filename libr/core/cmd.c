@@ -463,8 +463,8 @@ R_API void r_core_cmd_help_json(const RCore *core, RCoreHelpMessage help) {
 	r_cons_cmd_help_json (core->cons, help);
 }
 
-R_API void r_core_cmd_help_match(const RCore *core, RCoreHelpMessage help, const char * R_NONNULL cmd) {
-	r_cons_cmd_help_match (core->cons, help, core->print->flags & R_PRINT_FLAGS_COLOR, cmd, 0, true);
+R_API int r_core_cmd_help_match(const RCore *core, RCoreHelpMessage help, const char * R_NONNULL cmd) {
+	return r_cons_cmd_help_match (core->cons, help, core->print->flags & R_PRINT_FLAGS_COLOR, cmd, 0, true);
 }
 
 R_API void r_core_cmd_help_contains(const RCore *core, RCoreHelpMessage help, const char * R_NONNULL cmd) {
