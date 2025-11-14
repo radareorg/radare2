@@ -424,6 +424,7 @@ static void decode_esil(RAnalOp *op) {
 	free (name);
 }
 
+#if 0
 static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const ut64 addr = op->addr;
 	const int len = op->size;
@@ -531,10 +532,9 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		op->type = R_ANAL_OP_TYPE_OR;
 	} else if (is_any ("ret", "iret")) {
 		op->type = R_ANAL_OP_TYPE_RET;
-	} else if (is_any ("add45")) {
-	} else if (is_any ("smw.bi")) {
 	}
 }
+#endif
 
 static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const ut64 addr = op->addr;
