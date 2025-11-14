@@ -220,18 +220,24 @@ static void decode_esil(RAnalOp *op) {
 		char *addr = r_list_get_n (args, 1);
 		if (addr) {
 			r_str_trim (addr);
-			if (*addr == '[') addr++;
+			if (*addr == '[') {
+				addr++;
+			}
 			char *plus = strstr (addr, " + ");
 			if (plus) {
 				*plus = 0;
 				char *reg = addr;
 				char *off = plus + 3;
 				char *end = strchr (off, ']');
-				if (end) *end = 0;
+				if (end) {
+					*end = 0;
+				}
 				r_strbuf_setf (&op->esil, "%s,%s,%s,+,[2],:=", val, reg, off);
 			} else {
 				char *end = strchr (addr, ']');
-				if (end) *end = 0;
+				if (end) {
+					*end = 0;
+				}
 				r_strbuf_setf (&op->esil, "%s,%s,[2],:=", val, addr);
 			}
 		}
@@ -303,7 +309,7 @@ static void decode_esil(RAnalOp *op) {
 		char *sr = r_list_get_n (args, 0);
 		char *dr = r_list_get_n (args, 1);
 		r_strbuf_setf (&op->esil, "%s,%s,[4],:=", sr, dr);
-	// else if (is_any ("addi", "addri"))
+		// else if (is_any ("addi", "addri"))
 	} else if (is_any ("pop25")) {
 		char *reg = r_list_get_n (args, 0);
 		// pop reg from stack: reg = [sp], sp += 4
@@ -388,11 +394,15 @@ static void decode_esil(RAnalOp *op) {
 				char *reg = addr;
 				char *off = plus + 3;
 				char *end = strchr (off, ']');
-				if (end) *end = 0;
+				if (end) {
+					*end = 0;
+				}
 				r_strbuf_setf (&op->esil, "%s,%s,+,[1],%s,:=", reg, off, dr);
 			} else {
 				char *end = strchr (addr, ']');
-				if (end) *end = 0;
+				if (end) {
+					*end = 0;
+				}
 				r_strbuf_setf (&op->esil, "%s,[1],%s,:=", addr, dr);
 			}
 		} else {
