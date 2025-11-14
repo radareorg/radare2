@@ -152,6 +152,9 @@ static void decode_esil(RAnalOp *op) {
 		char *s0 = r_list_get_n (args, 0);
 		char *di = r_list_get_n (args, 1);
 		r_strbuf_setf (&op->esil, "%s,0,==,$z,!,?{,%s,pc,:=,}", s0, di);
+	} else if (is_any ("bnezs8")) {
+		char *di = r_list_get_n (args, 0);
+		r_strbuf_setf (&op->esil, "r5,0,==,$z,!,?{,%s,pc,:=,}", di);
 	} else if (is_any ("sbi.gp")) {
 		char *val = r_list_get_n (args, 0);
 		char *off = r_list_get_n (args, 1);
@@ -175,6 +178,7 @@ static void decode_esil(RAnalOp *op) {
 			if (*num == '+') num++;
 			char *end = strchr (num, ']');
 			if (end) *end = 0;
+			r_str_trim (num);
 			r_strbuf_setf (&op->esil, "gp,%s,+,[1],%s,:=", num, reg);
 		}
 	} else if (is_any ("lwi.gp")) {
@@ -285,6 +289,23 @@ static void decode_esil(RAnalOp *op) {
 		char *sr = r_list_get_n (args, 0);
 		char *dr = r_list_get_n (args, 1);
 		r_strbuf_setf (&op->esil, "%s,%s,[1],:=", sr, dr);
+	} else if (is_any ("push25")) {
+		char *reg = r_list_get_n (args, 0);
+		// push reg to stack: sp -= 4, [sp] = reg
+		r_strbuf_setf (&op->esil, "sp,4,-,sp,:=,%s,sp,[4],:=", reg);
+	} else if (is_any ("ex9.it")) {
+		// execute IT instruction, probably no ESIL effect
+		r_strbuf_set (&op->esil, "");
+	} else if (is_any ("fexti33")) {
+		char *rt = r_list_get_n (args, 0);
+		char *imm = r_list_get_n (args, 1);
+		// field extract: assume rt = rt & ((1 << imm) - 1)
+		r_strbuf_setf (&op->esil, "1,%s,<<,1,-,%s,&,%s,:=", imm, rt, rt);
+	} else if (is_any ("slti45")) {
+		char *rt = r_list_get_n (args, 0);
+		char *imm = r_list_get_n (args, 1);
+		// set if less than immediate: rt = (rt < imm) ? 1 : 0
+		r_strbuf_setf (&op->esil, "%s,%s,<,?{,1,0,},%s,:=", rt, imm, rt);
 	}
 	r_list_free (args);
 	free (name);
@@ -428,7 +449,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		op->type = R_ANAL_OP_TYPE_CALL;
 		op->jump = arg? r_num_get (NULL, arg): op->addr;
 		op->fail = addr + op->size;
-	} else if (is_any ("beqz", "bnes", "beq", "blez", "bgez", "ble", "bltz", "bgtz", "bnez", "bne ")) {
+	} else if (is_any ("beqz", "bnes", "beq", "blez", "bgez", "ble", "bltz", "bgtz", "bnez", "bne ", "bnezs8")) {
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		// op->jump = EXTRACT_SBTYPE_IMM (word) + addr;
 		op->jump = arg? r_num_get (NULL, arg): op->addr;
