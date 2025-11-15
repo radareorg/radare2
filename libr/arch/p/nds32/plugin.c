@@ -41,6 +41,12 @@ static int info(RArchSession *as, ut32 q) {
 		return 6;
 	case R_ARCH_INFO_MINOP_SIZE:
 		return 2;
+	case R_ARCH_INFO_FUNC_ALIGN:
+		return 4;
+	case R_ARCH_INFO_CODE_ALIGN:
+		return 2;
+	case R_ARCH_INFO_INVOP_SIZE:
+		return 2;
 	}
 	return 0;
 }

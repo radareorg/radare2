@@ -17,21 +17,17 @@ static inline const char *get_xrefname(RCore *core, ut64 addr) {
 }
 
 static const char *get_refname(RCore *core, ut64 addr) {
-	RFlagItem *item;
-	RListIter *iter;
-
 	const RList *list = r_flag_get_list (core->flags, addr);
-	if (!list) {
-		return NULL;
-	}
-
-	r_list_foreach (list, iter, item) {
-		if (!item->name || !r_str_startswith (item->name, "sym.")) {
-			continue;
+	if (list) {
+		RFlagItem *item;
+		RListIter *iter;
+		r_list_foreach (list, iter, item) {
+			if (!item->name || !r_str_startswith (item->name, "sym.")) {
+				continue;
+			}
+			return item->name;
 		}
-		return item->name;
 	}
-
 	return NULL;
 }
 
@@ -49,11 +45,9 @@ R_API RList *r_sign_fcn_xrefs(RAnal *a, RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (a && fcn, NULL);
 
 	RCore *core = a->coreb.core;
-
 	if (!core) {
 		return NULL;
 	}
-
 	RList *ret = r_list_newf ((RListFree) free);
 	RVecAnalRef *xrefs = r_anal_xrefs_get (a, fcn->addr);
 	if (!xrefs) {

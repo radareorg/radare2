@@ -4620,7 +4620,6 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn,
 	case R_ANAL_OP_TYPE_ROL:
 	case R_ANAL_OP_TYPE_CAST:
 		for (i = 1; i < count; i++) {
-#if CS_API_MAJOR > 3
 			if (bits == 64) {
 				cs_arm64_op arm64op = INSOP64 (i);
 				if (arm64op.access == CS_AC_WRITE) {
@@ -4632,10 +4631,8 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn,
 					continue;
 				}
 			}
-#endif
 			break;
 		}
-#if 1
 		// TODO arch plugins should NOT set register values
 		{
 			int j;
@@ -4644,7 +4641,6 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn,
 			}
 			set_src_dst (r_vector_at (&op->dsts, 0), &handle, insn, 0, bits);
 		}
-#endif
 		break;
 	case R_ANAL_OP_TYPE_STORE:
 		if (count > 2) {
@@ -4660,7 +4656,6 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn,
 				}
 			}
 		}
-#if 1
 		// TODO arch plugins should NOT set register values
 		{
 			set_src_dst (r_vector_at (&op->dsts, 0), &handle, insn, --count, bits);
@@ -4669,7 +4664,6 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn,
 				set_src_dst (r_vector_at (&op->srcs, j), &handle, insn, j, bits);
 			}
 		}
-#endif
 		break;
 	default:
 		break;
