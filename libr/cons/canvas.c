@@ -2,12 +2,31 @@
 
 #include <r_cons.h>
 #include <r_util/r_assert.h>
+#include <r_util.h>
 #include <math.h>
 
 #define PI 3.14159265359
 
 #define W(y) r_cons_canvas_write (c, y)
 #define G(x, y) r_cons_canvas_gotoxy (c, x, y)
+
+static int rune_display_width(RRune ch) {
+	if (ch < 0x80) {
+		return 1;
+	}
+	// CJK and wide characters
+	if ((ch >= 0x1100 && ch <= 0x115F) ||  // Hangul Jamo
+	    (ch >= 0x2E80 && ch <= 0x9FFF) ||  // CJK
+	    (ch >= 0xAC00 && ch <= 0xD7AF) ||  // Hangul Syllables
+	    (ch >= 0xF900 && ch <= 0xFAFF) ||  // CJK Compatibility Ideographs
+	    (ch >= 0xFE10 && ch <= 0xFE1F) ||  // Vertical Forms
+	    (ch >= 0xFE30 && ch <= 0xFE4F) ||  // CJK Compatibility Forms
+	    (ch >= 0x1F000 && ch <= 0x1FFFF) || // Emojis and symbols
+	    (ch >= 0x20000 && ch <= 0x2FFFF)) { // CJK Extension B, C, D, E, F
+		return 2;
+	}
+	return 1;
+}
 
 static const char* r_cons_get_rune(const ut8 ch) {
 	/* Fast lookup table for runes mapped by RUNECODE_* constants.
@@ -104,33 +123,46 @@ static const char *set_attr(RConsCanvas *c, const char *s) {
 }
 
 static int __getUtf8Length(const char *s, int n) {
-	int i = 0, j = 0, fullwidths = 0;
+	int i = 0, len = 0;
 	while (s[i] && n > 0) {
 		if ((s[i] & 0xc0) != 0x80) {
-			j++;
-			if (r_str_char_fullwidth (s + i, n)) {
-				fullwidths++;
+			RRune ch;
+			int ulen = r_utf8_decode ((const ut8*)s + i, n - i, &ch);
+			if (ulen > 0) {
+				len += rune_display_width (ch);
+				i += ulen;
+				n -= ulen;
+			} else {
+				len += 1;
+				i++;
+				n--;
 			}
+		} else {
+			i++;
+			n--;
 		}
-		n--;
-		i++;
 	}
-	return j + fullwidths;
+	return len;
 }
 
 static int __getUtf8Length2(const char *s, int n, int left) {
-	int i = 0, fullwidths = 0;
-	while (n > -1 && i < left && s[i]) {
-		if (r_str_char_fullwidth (s + i, left - i)) {
-			fullwidths++;
-		}
+	int i = 0, len = 0;
+	while (i < left && s[i] && len < n) {
 		if ((s[i] & 0xc0) != 0x80) {
-			n--;
+			RRune ch;
+			int ulen = r_utf8_decode ((const ut8*)s + i, left - i, &ch);
+			if (ulen > 0) {
+				len += rune_display_width (ch);
+				i += ulen;
+			} else {
+				len += 1;
+				i++;
+			}
+		} else {
+			i++;
 		}
-		i++;
 	}
-	i -= fullwidths;
-	return n == -1 ? i - 1 : i;
+	return i;
 }
 
 static bool __expandLine(RConsCanvas *c, int real_len, int utf8_len) {
@@ -425,7 +457,7 @@ R_API char *r_cons_canvas_tostring(RConsCanvas *c) {
 		}
 		is_first = false;
 		attr_x = 0;
-		for (x = 0; x < c->blen[y]; x++) {
+		for (x = 0; x < c->blen[y]; ) {
 			if ((c->b[y][x] & 0xc0) != 0x80) {
 				const char *atr = __attributeAt (c, (y * c->w) + attr_x);
 				if (atr) {
@@ -433,22 +465,35 @@ R_API char *r_cons_canvas_tostring(RConsCanvas *c) {
 					memcpy (o + olen, atr, len);
 					olen += len;
 				}
-				attr_x++;
-				if (r_str_char_fullwidth (c->b[y] + x, c->blen[y] - x)) {
+				if (!c->b[y][x] || c->b[y][x] == '\n') {
+					o[olen++] = ' ';
 					attr_x++;
+					x++;
+					continue;
 				}
-			}
-			if (!c->b[y][x] || c->b[y][x] == '\n') {
-				o[olen++] = ' ';
-				continue;
-			}
-			const char *rune = r_cons_get_rune ((const ut8)c->b[y][x]);
-			if (rune) {
-				size_t rune_len = strlen (rune);
-				memcpy (o + olen, rune, rune_len + 1);
-				olen += rune_len;
+				const char *rune = r_cons_get_rune ((const ut8)c->b[y][x]);
+				if (rune) {
+					size_t rune_len = strlen (rune);
+					memcpy (o + olen, rune, rune_len + 1);
+					olen += rune_len;
+					attr_x++;
+					x++;
+				} else {
+					RRune ch;
+					int ulen = r_utf8_decode ((const ut8*)c->b[y] + x, c->blen[y] - x, &ch);
+					if (ulen > 0) {
+						memcpy (o + olen, c->b[y] + x, ulen);
+						olen += ulen;
+						attr_x += rune_display_width (ch);
+						x += ulen;
+					} else {
+						o[olen++] = c->b[y][x];
+						attr_x++;
+						x++;
+					}
+				}
 			} else {
-				o[olen++] = c->b[y][x];
+				x++;
 			}
 		}
 		while (olen > 0 && o[olen - 1] == ' ') {
