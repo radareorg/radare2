@@ -1362,13 +1362,13 @@ noskip:
 				if (is_arm) {
 					switch (op->cond) {
 					case R_ANAL_CONDTYPE_HI:
-						R_LOG_DEBUG ("maxcase %d\n", anal->cmpval);
+						R_LOG_DEBUG ("maxcase %d", anal->cmpval);
 						break;
 					case R_ANAL_CONDTYPE_LO:
-						R_LOG_DEBUG ("lowcase %d\n", anal->cmpval);
+						R_LOG_DEBUG ("lowcase %d", anal->cmpval);
 						break;
 					default:
-						R_LOG_DEBUG ("unkcase %d\n", anal->cmpval);
+						R_LOG_DEBUG ("unkcase %d", anal->cmpval);
 						break;
 					}
 				}
