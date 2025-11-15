@@ -1359,7 +1359,21 @@ noskip:
 				bb->cond->type = op->cond;
 			}
 			if (anal->opt.jmptbl && !is_mips) {
+				if (is_arm) {
+					switch (op->cond) {
+					case R_ANAL_CONDTYPE_HI:
+						R_LOG_DEBUG ("maxcase %d", anal->cmpval);
+						break;
+					case R_ANAL_CONDTYPE_LO:
+						R_LOG_DEBUG ("lowcase %d", anal->cmpval);
+						break;
+					default:
+						R_LOG_DEBUG ("unkcase %d", anal->cmpval);
+						break;
+					}
+				}
 				if (op->ptr != UT64_MAX) {
+					// TODO : i assume this is for x86 only
 					ut64 table_size, default_case;
 					table_size = anal->cmpval + 1;
 					default_case = op->fail; // is this really default case?

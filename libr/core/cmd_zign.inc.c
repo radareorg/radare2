@@ -123,6 +123,7 @@ static RSignItem *item_new_named(RAnal *a, const char *n) {
 	r_sign_item_free (it);
 	return NULL;
 }
+
 static bool r_sign_add_next(RAnal *a, const char *name, const char *nextname) {
 	R_RETURN_VAL_IF_FAIL (a && name && nextname, false);
 
@@ -336,7 +337,6 @@ static int cmd_za(void *data, const char *input) {
 		r_core_return_invalid_command (core, "za", *input);
 		return false;
 	}
-
 	return true;
 }
 
