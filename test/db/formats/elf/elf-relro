@@ -562,7 +562,7 @@ EXPECT=<<EOF
 |     :||   0x0002def0      7080bde8       pop {r4, r5, r6, pc}
 |    .-`--> 0x0002def4      0400a0e1       mov r0, r4
 |    :: |   0x0002def8      50f2ffeb       bl 0x2a840
-|    :: |   0x0002defc      010070e3       cmn r0, 1                   ; 1
+|    :: |   0x0002defc      010070e3       cmn r0, 1
 |    `====< 0x0002df00      fbffff1a       bne 0x2def4
 |     : |   0x0002df04      b40494e5       ldr r0, [r4, 0x4b4]
 |     : |   0x0002df08      53a6ffeb       bl rsym.Curl_rm_connc
@@ -574,7 +574,7 @@ EXPECT=<<EOF
 |     : |   0x0002df20      0120c417       strbne r2, [r4, r1]
 |     `===< 0x0002df24      f0ffff1a       bne 0x2deec
 |       `-> 0x0002df28      042094e5       ldr r2, [r4, 4]
-|           0x0002df2c      010052e3       cmp r2, 1                   ; 1
+|           0x0002df2c      010052e3       cmp r2, 1
 |       ,=< 0x0002df30      4e00000a       beq 0x2e070
 |       |   ; CODE XREF from sym.Curl_close @ 0x2e080(x)
 |      .--> 0x0002df34      58e19fe5       ldr lr, [0x0002e094]        ; [0x2e094:4]=0x85c2
