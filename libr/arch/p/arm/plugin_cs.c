@@ -3706,7 +3706,7 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_CMP:
 		op->type = R_ANAL_OP_TYPE_CMP;
 		if (ISIMM64 (1)) {
-			op->ptr = IMM64 (1);
+			op->val = IMM64 (1);
 		}
 		break;
 	case ARM64_INS_FCMP:
