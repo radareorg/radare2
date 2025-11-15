@@ -1371,7 +1371,8 @@ noskip:
 						R_LOG_DEBUG ("unkcase %d\n", anal->cmpval);
 						break;
 					}
-				} else if (op->ptr != UT64_MAX) {
+				}
+				if (op->ptr != UT64_MAX) {
 					// TODO : i assume this is for x86 only
 					ut64 table_size, default_case;
 					table_size = anal->cmpval + 1;
