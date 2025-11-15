@@ -89,7 +89,7 @@ static bool _init(RArchSession *as) {
 static void decode_esil(RAnalOp *op) {
 	char *name = strdup (op->mnemonic);
 	char *space = strchr (name, ' ');
-	RList *args = r_list_new ();
+	RList *args = NULL;
 	if (space) {
 		*space++ = 0;
 		args = r_str_split_list (space, ",", 0);
