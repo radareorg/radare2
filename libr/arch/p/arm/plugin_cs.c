@@ -4201,7 +4201,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_CMN:
 	case ARM_INS_TST:
 		if (ISIMM(1)) {
-			op->ptr = IMM(1);
+			op->val = IMM(1);
 		}
 		op->reg = r_str_getf (cs_reg_name (handle, INSOP (0).reg));
 		/* fall-thru */
