@@ -7,28 +7,28 @@
 
 #define PI 3.14159265359
 
-#define W(y) r_cons_canvas_write (c, y)
-#define G(x, y) r_cons_canvas_gotoxy (c, x, y)
+#define W(y) r_cons_canvas_write(c, y)
+#define G(x, y) r_cons_canvas_gotoxy(c, x, y)
 
 static int rune_display_width(RRune ch) {
 	if (ch < 0x80) {
 		return 1;
 	}
 	// CJK and wide characters
-	if ((ch >= 0x1100 && ch <= 0x115F) ||  // Hangul Jamo
-	    (ch >= 0x2E80 && ch <= 0x9FFF) ||  // CJK
-	    (ch >= 0xAC00 && ch <= 0xD7AF) ||  // Hangul Syllables
-	    (ch >= 0xF900 && ch <= 0xFAFF) ||  // CJK Compatibility Ideographs
-	    (ch >= 0xFE10 && ch <= 0xFE1F) ||  // Vertical Forms
-	    (ch >= 0xFE30 && ch <= 0xFE4F) ||  // CJK Compatibility Forms
-	    (ch >= 0x1F000 && ch <= 0x1FFFF) || // Emojis and symbols
-	    (ch >= 0x20000 && ch <= 0x2FFFF)) { // CJK Extension B, C, D, E, F
+	if ((ch >= 0x1100 && ch <= 0x115F) || // Hangul Jamo
+		(ch >= 0x2E80 && ch <= 0x9FFF) || // CJK
+		(ch >= 0xAC00 && ch <= 0xD7AF) || // Hangul Syllables
+		(ch >= 0xF900 && ch <= 0xFAFF) || // CJK Compatibility Ideographs
+		(ch >= 0xFE10 && ch <= 0xFE1F) || // Vertical Forms
+		(ch >= 0xFE30 && ch <= 0xFE4F) || // CJK Compatibility Forms
+		(ch >= 0x1F000 && ch <= 0x1FFFF) || // Emojis and symbols
+		(ch >= 0x20000 && ch <= 0x2FFFF)) { // CJK Extension B, C, D, E, F
 		return 2;
 	}
 	return 1;
 }
 
-static const char* r_cons_get_rune(const ut8 ch) {
+static const char *r_cons_get_rune(const ut8 ch) {
 	/* Fast lookup table for runes mapped by RUNECODE_* constants.
 	 * The table is indexed by (ch - RUNECODE_MIN) and covers the
 	 * continuous range [RUNECODE_MIN, RUNECODE_MAX).
@@ -65,7 +65,7 @@ static int __getAnsiPiece(const char *p, char *chr) {
 	if (!p) {
 		return 0;
 	}
-	while (p && *p && *p != '\n' && ! __isAnsiSequence (p)) {
+	while (p && *p && *p != '\n' && !__isAnsiSequence (p)) {
 		p++;
 	}
 	if (chr) {
@@ -127,7 +127,7 @@ static int __getUtf8Length(const char *s, int n) {
 	while (s[i] && n > 0) {
 		if ((s[i] & 0xc0) != 0x80) {
 			RRune ch;
-			int ulen = r_utf8_decode ((const ut8*)s + i, n - i, &ch);
+			int ulen = r_utf8_decode ((const ut8 *)s + i, n, &ch);
 			if (ulen > 0) {
 				len += rune_display_width (ch);
 				i += ulen;
@@ -150,7 +150,7 @@ static int __getUtf8Length2(const char *s, int n, int left) {
 	while (i < left && s[i] && len < n) {
 		if ((s[i] & 0xc0) != 0x80) {
 			RRune ch;
-			int ulen = r_utf8_decode ((const ut8*)s + i, left - i, &ch);
+			int ulen = r_utf8_decode ((const ut8 *)s + i, left - i, &ch);
 			if (ulen > 0) {
 				len += rune_display_width (ch);
 				i += ulen;
@@ -175,8 +175,8 @@ static bool __expandLine(RConsCanvas *c, int real_len, int utf8_len) {
 
 	if (padding) {
 		if (padding > 0 && c->blen[c->y] + padding > c->bsize[c->y]) {
-			int newsize = R_MAX ((int)(c->bsize[c->y] * 1.5), c->blen[c->y] + padding);
-			char * newline = realloc (c->b[c->y], sizeof (*c->b[c->y])*(newsize));
+			int newsize = R_MAX ((int) (c->bsize[c->y] * 1.5), c->blen[c->y] + padding);
+			char *newline = realloc (c->b[c->y], sizeof (*c->b[c->y]) *(newsize));
 			if (!newline) {
 				return false;
 			}
@@ -193,7 +193,7 @@ static bool __expandLine(RConsCanvas *c, int real_len, int utf8_len) {
 		memcpy (tmp, start, size);
 		if (padding < 0) {
 			int lap = R_MAX (0, c->b[c->y] - (start + padding));
-			memcpy (start + padding + lap,  tmp + lap, size - lap);
+			memcpy (start + padding + lap, tmp + lap, size - lap);
 			free (tmp);
 			c->blen[c->y] += padding;
 			return true;
@@ -262,7 +262,7 @@ R_API bool r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y) {
 		ret = false;
 	}
 	if (x < 0) {
-		//c->x = 0;
+		// c->x = 0;
 		ret = false;
 	}
 	if (x > c->blen[y] * 2) {
@@ -362,7 +362,7 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 	c->x = __getUtf8Length2 (c->b[c->y], c->x, c->blen[c->y]);
 
 	/* split the string into pieces of non-ANSI chars and print them normally,
-	** using the ANSI chars to set the attr of the canvas */
+	 ** using the ANSI chars to set the attr of the canvas */
 	r_cons_break_push (cons, NULL, NULL);
 	do {
 		const char *s_part = set_attr (c, s);
@@ -402,7 +402,7 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 			__stampAttribute (c, c->y * c->w + attr_x, 0);
 			c->y++;
 			s++;
-			if (*s == '\0' || c->y  >= c->h) {
+			if (*s == '\0' || c->y >= c->h) {
 				break;
 			}
 			c->x = __getUtf8Length2 (c->b[c->y], orig_x, c->blen[c->y]);
@@ -457,7 +457,7 @@ R_API char *r_cons_canvas_tostring(RConsCanvas *c) {
 		}
 		is_first = false;
 		attr_x = 0;
-		for (x = 0; x < c->blen[y]; ) {
+		for (x = 0; x < c->blen[y];) {
 			if ((c->b[y][x] & 0xc0) != 0x80) {
 				const char *atr = __attributeAt (c, (y * c->w) + attr_x);
 				if (atr) {
@@ -480,7 +480,7 @@ R_API char *r_cons_canvas_tostring(RConsCanvas *c) {
 					x++;
 				} else {
 					RRune ch;
-					int ulen = r_utf8_decode ((const ut8*)c->b[y] + x, c->blen[y] - x, &ch);
+					int ulen = r_utf8_decode ((const ut8 *)c->b[y] + x, c->blen[y] - x, &ch);
 					if (ulen > 0) {
 						memcpy (o + olen, c->b[y] + x, ulen);
 						olen += ulen;
@@ -555,7 +555,7 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 	char *newline = NULL;
 	for (i = 0; i < h; i++) {
 		if (i < c->h) {
-			newline = realloc (c->b[i], sizeof (*c->b[i]) * (w + 1));
+			newline = realloc (c->b[i], sizeof (*c->b[i]) *(w + 1));
 			if (newline) {
 				c->b[i] = newline;
 			}
@@ -582,7 +582,7 @@ R_API void r_cons_canvas_circle(RConsCanvas *c, int x, int y, int w, int h, cons
 	if (color) {
 		c->attr = color;
 	}
-	double xfactor = 1; //(double)w / (double)h;
+	double xfactor = 1; // (double)w / (double)h;
 	double yfactor = (double)h / 24; // 0.8; // 24  10
 	double size = w;
 	double a = 0.0;
@@ -592,8 +592,8 @@ R_API void r_cons_canvas_circle(RConsCanvas *c, int x, int y, int w, int h, cons
 		double ca = r_num_cos (a);
 		double cx = s * ca + (size / 2);
 		double cy = s * sa + (size / 4);
-		int X = x + (int)(xfactor * cx) - 2;
-		int Y = y + (int)((yfactor/2) * cy);
+		int X = x + (int) (xfactor * cx) - 2;
+		int Y = y + (int) ((yfactor / 2) * cy);
 		if (G (X, Y)) {
 			W ("=");
 		}
@@ -604,24 +604,24 @@ R_API void r_cons_canvas_circle(RConsCanvas *c, int x, int y, int w, int h, cons
 	}
 }
 
-R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const char * R_NULLABLE color) {
+R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const char *R_NULLABLE color) {
 	// NOTE: As long as utf and curvy flags are tied to the canvas, we need to
 	// regenerate the canvas to get such changes now. before the kons refactoring
 	// this changed when cconfig settings were modified. not sure if its worth.
 	const bool useutf = c->flags & R_CONS_CANVAS_FLAG_UTF8;
 	const bool usecrv = c->flags & R_CONS_CANVAS_FLAG_CURVY;
-	const char *hline = useutf? RUNECODESTR_LINE_HORIZ : "-";
-	const char *vtmp = useutf? RUNECODESTR_LINE_VERT : "|";
+	const char *hline = useutf? RUNECODESTR_LINE_HORIZ: "-";
+	const char *vtmp = useutf? RUNECODESTR_LINE_VERT: "|";
 	RStrBuf *vline = r_strbuf_new (NULL);
 	if (color) {
-		r_strbuf_appendf (vline, Color_RESET"%s%s", color, vtmp);
+		r_strbuf_appendf (vline, Color_RESET "%s%s", color, vtmp);
 	} else {
-		r_strbuf_appendf (vline, Color_RESET"%s", vtmp);
+		r_strbuf_appendf (vline, Color_RESET "%s", vtmp);
 	}
-	const char *tl_corner = useutf ? (usecrv ? RUNECODESTR_CURVE_CORNER_TL : RUNECODESTR_CORNER_TL) : ".";
-	const char *tr_corner = useutf ? (usecrv ? RUNECODESTR_CURVE_CORNER_TR : RUNECODESTR_CORNER_TR) : ".";
-	const char *bl_corner = useutf ? (usecrv ? RUNECODESTR_CURVE_CORNER_BL : RUNECODESTR_CORNER_BL) : "`";
-	const char *br_corner = useutf ? (usecrv ? RUNECODESTR_CURVE_CORNER_BR : RUNECODESTR_CORNER_BR) : "'";
+	const char *tl_corner = useutf? (usecrv? RUNECODESTR_CURVE_CORNER_TL: RUNECODESTR_CORNER_TL): ".";
+	const char *tr_corner = useutf? (usecrv? RUNECODESTR_CURVE_CORNER_TR: RUNECODESTR_CORNER_TR): ".";
+	const char *bl_corner = useutf? (usecrv? RUNECODESTR_CURVE_CORNER_BL: RUNECODESTR_CORNER_BL): "`";
+	const char *br_corner = useutf? (usecrv? RUNECODESTR_CURVE_CORNER_BR: RUNECODESTR_CORNER_BR): "'";
 	int i, x_mod;
 	int roundcorners = 0;
 	char *row = NULL, *row_ptr;
@@ -674,7 +674,7 @@ R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const c
 	r_strbuf_free (vline);
 	if (color) {
 		c->attr = Color_RESET;
-		for (i = -1; i < h ; i++) {
+		for (i = -1; i < h; i++) {
 			if (G (x + w, y + i)) {
 				W (Color_RESET);
 			}
@@ -712,7 +712,7 @@ R_API void r_cons_canvas_bgfill(RConsCanvas *c, int x, int y, int w, int h, cons
 		free (bgcolor);
 		bgcolor = strdup (Color_BGBLUE);
 	}
-	char *row = r_str_newf ("%s%s"Color_RESET, bgcolor, pad);
+	char *row = r_str_newf ("%s%s" Color_RESET, bgcolor, pad);
 	for (i = 0; i < h; i++) {
 		if (G (x, y + i)) {
 			W (row);
@@ -730,7 +730,7 @@ R_API void r_cons_canvas_line(RConsCanvas *c, int x, int y, int x2, int y2, RCan
 	}
 }
 
-R_API int r_cons_canvas_flags(RCons * R_NONNULL cons) {
+R_API int r_cons_canvas_flags(RCons *R_NONNULL cons) {
 	R_RETURN_VAL_IF_FAIL (cons, 0);
 	int flags = 0;
 	if (cons->use_utf8) {
