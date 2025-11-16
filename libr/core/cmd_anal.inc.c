@@ -2028,10 +2028,9 @@ static int cmd_afv(RCore *core, const char *str) {
 			free (type);
 			free (p);
 			return true;
-		} else {
-			R_LOG_ERROR ("Cannot find function in 0x%08"PFMT64x, core->addr);
-			return false;
 		}
+		R_LOG_ERROR ("Cannot find function in 0x%08"PFMT64x, core->addr);
+		return false;
 	case 'n': // "afvn"
 		if (str[1]) {
 			RAnalOp *op = r_core_anal_op (core, core->addr, R_ARCH_OP_MASK_BASIC);
@@ -2319,8 +2318,8 @@ static void print_trampolines(RCore *core, ut64 a, ut64 b, size_t element_size) 
 
 static void cmd_anal_trampoline(RCore *core, const char *input) {
 	int bits = r_config_get_i (core->config, "asm.bits");
-	char *p, *inp = strdup (input);
-	p = strchr (inp, ' ');
+	char *inp = strdup (input);
+	char *p = strchr (inp, ' ');
 	if (p) {
 		*p = 0;
 	}
@@ -2544,32 +2543,18 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	ut64 addr;
 	PJ *pj = NULL;
 	int totalsize = 0;
-#if 1
 	REsil *esil = r_esil_new (256, 0, 0);
 	r_esil_setup (esil, core->anal, false, false, false);
 	esil->user = &core;
 	esil->cb.mem_read = mr;
 	esil->cb.mem_write = mw;
-#else
-	REsil *esil = core->anal->esil;
-	//esil->user = &ec;
-	esil->cb.mem_read = mr;
-	esil->cb.mem_write = mw;
-#endif
-
 	// Variables required for setting up ESIL to REIL conversion
 	if (use_color) {
 		color = core->cons->context->pal.label;
 	}
-	switch (fmt) {
-	case 'j': {
+	if (fmt == 'j') {
 		pj = r_core_pj_new (core);
-		if (!pj) {
-			break;
-		}
 		pj_a (pj);
-		break;
-	}
 	}
 	const bool smart_mask = r_config_get_b (core->config, "anal.mask");
 	for (i = idx = ret = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
@@ -3653,17 +3638,17 @@ static bool anal_fcn_del_bb(RCore *core, const char *input) {
 			while (!r_list_empty (fcn->bbs)) {
 				r_anal_function_remove_block (fcn, r_list_first (fcn->bbs));
 			}
-		} else {
-			RAnalBlock *b;
-			RListIter *iter;
-			r_list_foreach (fcn->bbs, iter, b) {
-				if (b->addr == addr) {
-					r_anal_function_remove_block (fcn, b);
-					return true;
-				}
-			}
-			R_LOG_ERROR ("Cannot find basic block");
+			return true;
 		}
+		RAnalBlock *b;
+		RListIter *iter;
+		r_list_foreach (fcn->bbs, iter, b) {
+			if (b->addr == addr) {
+				r_anal_function_remove_block (fcn, b);
+				return true;
+			}
+		}
+		R_LOG_ERROR ("Cannot find basic block");
 	}
 	return false;
 }
@@ -3808,14 +3793,11 @@ static void r_core_anal_fmap(RCore *core, const char *input) {
 		return;
 	}
 
-	// for each function
 	r_list_foreach (core->anal->fcns, iter, fcn) {
-		// for each basic block in the function
 		r_list_foreach (fcn->bbs, iter2, b) {
-			// if it is not within range, continue
-			if ((fcn->addr < base_addr) || (fcn->addr >= base_addr+code_size))
+			if ((fcn->addr < base_addr) || (fcn->addr >= base_addr+code_size)) {
 				continue;
-			// otherwise mark each byte in the BB in the bitmap
+			}
 			int counter = 1;
 			for (counter = 0; counter < b->size; counter++) {
 				bitmap[b->addr+counter-base_addr] = '=';
@@ -4199,7 +4181,9 @@ static void __core_cmd_anal_fcn_allstats(RCore *core, const char *input) {
 	r_table_add_column (t, typeNumber, "addr", 0);
 	ls_foreach (ls, it, kv) {
 		const char *key = sdbkv_key (kv);
-		if (*key == '.') continue;
+		if (*key == '.') {
+			continue;
+		}
 		r_table_add_column (t, typeNumber, key, 0);
 	}
 	sdb_free (d);
