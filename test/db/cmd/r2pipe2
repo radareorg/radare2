@@ -62,7 +62,7 @@ EXPECT=<<EOF
     {
       "type": "INFO",
       "origin": "logline",
-      "message": "Analyze all functions arguments/locals (afva@@@F)"
+      "message": "Analyze all functions arguments/locals (afva@@F)"
     },
     {
       "type": "INFO",
