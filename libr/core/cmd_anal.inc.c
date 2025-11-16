@@ -2806,6 +2806,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			if (strcmp (p1, "null")) {
 				pj_ks (pj, "stack", p1);
 			}
+			if (op.ptrsize) {
+				pj_kn (pj, "ptrsize", op.ptrsize);
+			}
 			pj_kn (pj, "stackptr", op.stackptr);
 			if (op.direction != 0) {
 				pj_ks (pj, "direction", r_anal_op_direction_tostring (&op));

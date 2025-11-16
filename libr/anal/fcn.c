@@ -6,10 +6,10 @@
 #include <r_core.h>
 #include <r_vec.h>
 
+#define JTDBG 0
 #define READ_AHEAD 1
 #define SDB_KEY_BB "bb.0x%"PFMT64x ".0x%"PFMT64x
 // XXX must be configurable by the user
-#define JMPTBLSZ 512
 #define JMPTBL_LEA_SEARCH_SZ 64
 #define JMPTBL_MAXFCNSIZE 4096
 #define R_ANAL_MAX_INCSTACK 8096
@@ -131,13 +131,13 @@ static RAnalBlock *fcn_append_basic_block(RAnal *anal, RAnalFunction *fcn, ut64 
 
 static bool is_invalid_memory(RAnal *anal, const ut8 *buf, int len) {
 	if (len > 8) {
-		if (!memcmp (buf, "\x00\x00\x00\x00\x00\x00\x00\x00", R_MIN (len, 8))) {
+		if (!memcmp (buf, "\x00\x00\x00\x00\x00\x00\x00\x00", 8)) {
 			const char *arch = R_UNWRAP3 (anal, config, arch);
 			if (arch) {
-				if (anal->config->bits == 16 && !strcmp (arch, "x86")) {
+				if (anal->config->bits == 16 && r_str_startswith (arch, "x86")) {
 					return true;
 				}
-				if (!strcmp (arch, "java") || !strcmp (arch, "riscv")) {
+				if (!strcmp (arch, "java") || r_str_startswith (arch, "riscv")) {
 					return true;
 				}
 			}
@@ -1090,7 +1090,9 @@ noskip:
 				last_reg_mov_lea_val += op->val;
 			}
 #endif
-			// eprintf ("0x%08llx - LEA %d\n", op->addr, op->ptrsize);
+#if JTDBG
+			eprintf ("0x%08llx - LEA 0x%llx\n", op->addr, op->ptr);
+#endif
 			// skip lea reg,[reg]
 			if (anal->opt.hpskip && regs_exist (src0, dst) && !strcmp (src0->reg, dst->reg)) {
 				const int skip_ret = skip_hp (anal, fcn, op, bb, at, oplen, delay.un_idx, &idx);
@@ -1140,10 +1142,10 @@ noskip:
 			//v1 = UT64_MAX; // reset v1 jmptable pointer value for mips only
 			// on stm8 this must be disabled.. but maybe we need a global option to disable icod refs
 			const bool want_icods = anal->opt.icods && !is_stm8;
-#if 0
+#if JTDBG
 			if (anal->opt.jmptbl) {
 				eprintf ("0x%08llx - LDRB %d\n", op->addr, op->ptrsize);
-				eprintf ("JMPTBL %d\n", );
+				// eprintf ("JMPTBL %d\n", );
 			}
 #endif
 			if (want_icods && anal->iob.is_valid_offset (anal->iob.io, op->ptr, 0)) {
@@ -1157,8 +1159,7 @@ noskip:
 					if (is_mips && anal->opt.jmptbl) {
 						const char *esil = r_strbuf_get (&op->esil);
 						if (strstr (esil, "v1,=")) {
-							// eprintf("iftarget is v1 (%s)\n", esil);
-							// eprintf ("LOAD FROM %llx -> %llx\n", op->ptr, da);
+							// eprintf("iftarget is v1 (%s) %llx %llx\n", esil, op->ptr, da);
 							v1 = da;
 						}
 					}
@@ -1193,7 +1194,9 @@ noskip:
 			} else if (is_arm) {
 				const int bits = anal->config->bits;
 				if (bits == 64) {
-					// eprintf ("0x%08llx - ADD %d\n", op->addr, op->ptrsize);
+#if JTDBG
+					eprintf ("0x%08llx - ADD %lld\n", op->addr, op->val);
+#endif
 					// ut64 jmpptr_table = UT64_MAX;
 					// ut64 jmptbl_addr = UT64_MAX;
 					if (last_is_reg_mov_lea) {
@@ -1374,6 +1377,9 @@ noskip:
 						R_LOG_DEBUG ("unkcase %d", anal->cmpval);
 						break;
 					}
+#if JTDBG
+					eprintf ("0x%08llx - CJMP %lld\n", op->addr, anal->cmpval);
+#endif
 				}
 				if (op->ptr != UT64_MAX) {
 					// TODO : i assume this is for x86 only
@@ -1569,7 +1575,9 @@ noskip:
 					movdisp = UT64_MAX;
 #endif
 				} else if (is_arm) {
-					// eprintf ("0x%08llx - BX %d\n", op->addr, op->ptrsize);
+#if JTDBG
+					eprintf ("0x%08llx - BX %d\n", op->addr, op->ptrsize);
+#endif
 					if (op->ptrsize == 0 && anal->config->bits == 64) {
 						if (op->reg && op->ireg) {
 							// braa x16, x17 (when bra takes 2 args we skip jump tables dont do that

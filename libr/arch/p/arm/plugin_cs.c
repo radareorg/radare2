@@ -3575,12 +3575,16 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 				//add sp, sp, 0x10
 				op->stackptr = -(st64)IMM64 (2);
 			}
-			op->val = op->stackptr;
+			// op->val = op->stackptr;
 		} else if ((arm64_reg) REGID64 (0) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_RESET;
 			op->stackptr = 0;
 		} else {
-			op->val = IMM64 (2);
+			if (ISIMM64 (2)) {
+				op->val = IMM64 (2);
+			} else {
+				op->val = 0;
+			}
 		}
 		op->cycles = 1;
 		op->type = R_ANAL_OP_TYPE_ADD;
