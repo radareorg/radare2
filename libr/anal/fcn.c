@@ -628,6 +628,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	const bool is_x86 = is_arm ? false: arch && !strncmp (arch, "x86", 3);
 	const bool is_amd64 = is_x86 ? fcn->callconv && !strcmp (fcn->callconv, "amd64") : false;
 	const bool is_dalvik = is_x86 ? false : arch && !strncmp (arch, "dalvik", 6);
+	const bool is_stm8 = (is_x86 || is_arm || is_dalvik || is_mips) ? false : arch && r_str_startswith (arch, "stm8");
 	const bool propagate_noreturn = anal->opt.propagate_noreturn;
 	ut64 v1 = UT64_MAX;
 
@@ -1089,6 +1090,7 @@ noskip:
 				last_reg_mov_lea_val += op->val;
 			}
 #endif
+			// eprintf ("0x%08llx - LEA %d\n", op->addr, op->ptrsize);
 			// skip lea reg,[reg]
 			if (anal->opt.hpskip && regs_exist (src0, dst) && !strcmp (src0->reg, dst->reg)) {
 				const int skip_ret = skip_hp (anal, fcn, op, bb, at, oplen, delay.un_idx, &idx);
@@ -1137,13 +1139,13 @@ noskip:
 			// R2R db/anal/arm db/esil/apple
 			//v1 = UT64_MAX; // reset v1 jmptable pointer value for mips only
 			// on stm8 this must be disabled.. but maybe we need a global option to disable icod refs
-			bool want_icods = anal->opt.icods;
-			{
-				const char *arch = R_UNWRAP3 (anal, config, arch);
-				if (r_str_startswith (arch, "stm8")) {
-					want_icods = false;
-				}
+			const bool want_icods = anal->opt.icods && !is_stm8;
+#if 0
+			if (anal->opt.jmptbl) {
+				eprintf ("0x%08llx - LDRB %d\n", op->addr, op->ptrsize);
+				eprintf ("JMPTBL %d\n", );
 			}
+#endif
 			if (want_icods && anal->iob.is_valid_offset (anal->iob.io, op->ptr, 0)) {
 				// TODO: what about the qword loads!??!?
 				ut8 dd[4] = {0};
@@ -1191,6 +1193,7 @@ noskip:
 			} else if (is_arm) {
 				const int bits = anal->config->bits;
 				if (bits == 64) {
+					// eprintf ("0x%08llx - ADD %d\n", op->addr, op->ptrsize);
 					// ut64 jmpptr_table = UT64_MAX;
 					// ut64 jmptbl_addr = UT64_MAX;
 					if (last_is_reg_mov_lea) {
@@ -1566,6 +1569,7 @@ noskip:
 					movdisp = UT64_MAX;
 #endif
 				} else if (is_arm) {
+					// eprintf ("0x%08llx - BX %d\n", op->addr, op->ptrsize);
 					if (op->ptrsize == 0 && anal->config->bits == 64) {
 						if (op->reg && op->ireg) {
 							// braa x16, x17 (when bra takes 2 args we skip jump tables dont do that
