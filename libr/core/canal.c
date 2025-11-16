@@ -2115,6 +2115,7 @@ R_API bool r_core_anal_bb_seek(RCore *core, ut64 addr) {
 	return false;
 }
 
+// XXX wtf is this function seems to be broken
 R_API int r_core_anal_esil_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
 	while (1) {
 		// TODO: Implement the proper logic for doing esil analysis
@@ -5868,6 +5869,13 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	if (!strcmp (str, "f")) {
 		fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
 		if (fcn) {
+			ut64 ls = r_anal_function_linear_size (fcn);
+			ut64 fs = r_anal_function_realsize (fcn);
+			if (ls > fs + 4096) {
+				R_LOG_INFO ("Function is too sparse, must be analyzed with recursive");
+				r_core_anal_esil_function (core, core->addr);
+				return;
+			}
 			start = r_anal_function_min_addr (fcn);
 			if (start != UT64_MAX) {
 				start = fcn->addr;

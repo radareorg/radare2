@@ -8471,7 +8471,7 @@ static bool regwrite_hook(REsil *esil, const char *name, ut64 *val) {
 	return false;
 }
 
-static void __anal_esil_function(RCore *core, ut64 addr) {
+R_API void r_core_anal_esil_function(RCore *core, ut64 addr) {
 	RListIter *iter;
 	RAnalBlock *bb;
 #if 0
@@ -9383,9 +9383,8 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 	case 'f': // "aef"
 		if (input[1] == 'a') { // "aefa"
 			r_anal_aefa (core, r_str_trim_head_ro (input + 2));
-		} else { // This should be aefb -> because its emulating all the bbs
-			// anal ESIL to REIL.
-			__anal_esil_function (core, core->addr);
+		} else {
+			r_core_anal_esil_function (core, core->addr);
 		} break;
 	case 't': // "aet"
 		cmd_aet (core, input);
