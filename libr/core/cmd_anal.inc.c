@@ -2892,6 +2892,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				}
 				free (pseudo);
 			}
+			if (op.ptrsize) {
+				printline ("ptrsize", "%d\n", op.ptrsize);
+			}
 			printline ("mnemonic", "%s\n", mnem);
 			{
 				char *sp = strchr (disasm, ' ');
