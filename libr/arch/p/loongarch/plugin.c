@@ -1253,11 +1253,21 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	case LA_INS_BNE:
 	case LA_INS_BLT:
 	case LA_INS_BGE:
+	case LA_INS_BGT:
+	case LA_INS_BGTU:
+	case LA_INS_BGEZ:
 	case LA_INS_BLTU:
-	case LA_INS_BGEU:
+	case LA_INS_BLTZ:
 		op->jump = addr + I16s2_SX(opcode);
 		op->fail = addr + INSNLEN;
 		break;
+	case LA_INS_BLE:
+	case LA_INS_BLEZ:
+	case LA_INS_BLEU:
+		op->jump = addr + I16s2_SX(opcode);
+		op->fail = addr + INSNLEN;
+		break;
+	case LA_INS_BGEU:
 	case LA_INS_BEQZ:
 	case LA_INS_BNEZ:
 		op->jump = addr + I21s2_SX(opcode);
@@ -1281,6 +1291,9 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		/* op->val = sign_extend32(I_I20(opcode)<<12, 32); */
 		break;
 	default:
+		if (op->type == R_ANAL_OP_TYPE_CJMP) {
+			eprintf ("UNK %d\n", insn_id);
+		}
 		break;
 	}
 
