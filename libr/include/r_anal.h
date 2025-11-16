@@ -1014,7 +1014,7 @@ R_API ut64 r_anal_function_max_addr(RAnalFunction *fcn);
 R_API ut64 r_anal_function_size_from_entry(RAnalFunction *fcn);
 
 // the "real" size of the function, that is the sum of the size of the
-// basicblocks this function is composed of
+// basicblocks this function is composed of -- i think it should be just _size()
 R_API ut64 r_anal_function_realsize(const RAnalFunction *fcn);
 
 // returns whether the function contains a basic block that contains addr

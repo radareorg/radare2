@@ -5870,10 +5870,10 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
 		if (fcn) {
 			ut64 ls = r_anal_function_linear_size (fcn);
-			ut64 fs = r_anal_function_size (fcn);
+			ut64 fs = r_anal_function_realsize (fcn);
 			if (ls > fs + 4096) {
 				R_LOG_INFO ("Function is too sparse, must be analyzed with recursive");
-				__anal_esil_function (core, core->addr);
+				r_core_anal_esil_function (core, core->addr);
 				return;
 			}
 			start = r_anal_function_min_addr (fcn);
