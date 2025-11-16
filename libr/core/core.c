@@ -3192,6 +3192,7 @@ R_API int r_core_seek_size(RCore *core, ut64 addr, int bsize) {
 	}
 	if (bsize > core->blocksize_max) {
 		R_LOG_ERROR ("Block size %d is too big", bsize);
+		// r_sys_breakpoint ();
 		return false;
 	}
 	R_CRITICAL_ENTER (core);

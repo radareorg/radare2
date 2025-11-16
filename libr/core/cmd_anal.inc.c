@@ -14240,7 +14240,7 @@ static bool cmd_aa(RCore *core, bool aaa) {
 	if (!aaa) {
 		// R2_600 - drop this code? we already recover vars later in aaa. should be fine to if 0
 		if (anal_vars) {
-			logline (core, 22, "Recovering variables (afva@@@F)");
+			logline (core, 22, "Recovering variables (afva@@F)");
 			/* Set fcn type to R_ANAL_FCN_TYPE_SYM for symbols */
 			r_list_foreach_prev (core->anal->fcns, iter, fcni) {
 				if (r_cons_is_breaked (core->cons)) {
@@ -14320,9 +14320,9 @@ static void cmd_aaa(RCore *core, const char *input) {
 	// TODO: should not be run sometimes
 	// Run afvn in all fcns
 	if (r_config_get_b (core->config, "anal.vars")) {
-		logline (core, 15, "Analyze all functions arguments/locals (afva@@@F)");
+		logline (core, 15, "Analyze all functions arguments/locals (afva@@F)");
 		// r_core_cmd0 (core, "afva@@f");
-		r_core_cmd0 (core, "afva@@@F");
+		r_core_cmd0 (core, "afva@@F");
 	}
 #endif
 	// Run pending analysis immediately after analysis
