@@ -39,11 +39,14 @@ if [ ! -s .l ]; then
   git log ${PREV}..${VERS} > .l
 fi
 grep ^Author .l | cut -d : -f 2- | sed -e 's,radare,pancake,' | sort -u > .A
+ABI0="`git show ${PREV}:libr/include/r_lib.h | grep 'R2_ABIVERSION ' | cut -d ' ' -f 3`"
+ABI1="`git grep 'R2_ABIVERSION ' libr/include/r_lib.h|cut -d ' ' -f 3`"
 
 echo "## Release Notes"
 echo
 echo "Version: ${VERS}"
 echo "Previous: ${PREV}"
+echo "AbiDiff: ${ABI0}-${ABI1}"
 printf "Commits: "
 grep ^commit .l | wc -l | xargs echo
 echo "Contributors: `wc -l .A | awk '{print $1}'`"
