@@ -1371,9 +1371,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		/* op->val = sign_extend32(I_I20(opcode)<<12, 32); */
 		break;
 	default:
-		if (op->type == R_ANAL_OP_TYPE_CJMP) {
-			eprintf ("UNK %d\n", insn_id);
-		}
 		break;
 	}
 
