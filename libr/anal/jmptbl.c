@@ -23,7 +23,7 @@ static void apply_case(RAnal *anal, RAnalBlock *block, ut64 switch_addr, ut64 of
 	}
 	if (anal->flb.set) {
 		char flagname[64];
-		int iid = R_ABS ((int)id);
+		const int iid = R_ABS ((int)id);
 		snprintf (flagname, sizeof (flagname), "case.0x%"PFMT64x ".%d", (ut64)switch_addr, iid);
 		anal->flb.set (anal->flb.f, flagname, case_addr, 1);
 	}
@@ -264,8 +264,6 @@ R_API bool r_anal_jmptbl_walk(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block
 				break;
 			}
 		}
-		//apply_case (anal, block, ip, sz, jmpptr, offs / sz, jmptbl_loc + offs, false);
-		//(void)r_anal_function_bb (anal, fcn, jmpptr, depth - 1);
 		int case_idx = offs / sz;
 		int casenum = case_idx + start_casenum_shift;
 		apply_case (anal, block, ip, sz, jmpptr, casenum, jmptbl_loc + offs, false);

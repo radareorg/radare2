@@ -1958,6 +1958,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 			size = REGSIZE64 (0);
 			break;
 		}
+		op->ptrsize = size;
 		if (ISMEM64 (1)) {
 			if (HASMEMINDEX64 (1)) {
 				if (LSHIFT2_64 (1) || EXT64 (1)) {
