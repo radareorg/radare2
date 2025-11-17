@@ -617,7 +617,7 @@ R_API void r_anal_jmptbl_list(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, u
 				kase->jump, true);
 		set_u_add (s, kase->jump);
 	// 	eprintf ("%d %llx -> 0x%llx\n", i, saddr, kase->jump);
-		analyze_new_case (anal, fcn, bb, saddr, kase->jump, 10);
+		analyze_new_case (anal, fcn, bb, saddr, kase->jump, 999);
 	}
 	set_u_free (s);
 }
