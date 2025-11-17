@@ -907,14 +907,11 @@ static bool plugin_changed(RArchSession *as) {
 }
 
 static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
-	PluginData *pd = as->data;
 	ut64 addr = op->addr;
 	const ut8 *buf = op->bytes;
 	const int len = op->size;
 	csh handle = cs_handle_for_session (as);
-	if (!pd || handle == 0) {
-		return false;
-	}
+	PluginData *pd;
 	cs_insn *insn = NULL;
 	if (as->config->syntax == R_ARCH_SYNTAX_REGNUM) {
 		cs_option (handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_NOREGNAME);
@@ -926,6 +923,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		fini (as);
 		init (as);
 		handle = cs_handle_for_session (as);
+	}
+	pd = as->data;
+	if (!pd || handle == 0) {
+		return false;
 	}
 	int n, opsize = -1;
 
