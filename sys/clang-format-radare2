@@ -63,6 +63,13 @@ def parse_args():
 		description="Format files using clang-format followed by radare2 indentation rules."
 	)
 	parser.add_argument(
+		"-i",
+		"--in-place",
+		dest="in_place",
+		action="store_true",
+		help="Do nothing, because that's the default behaviour, for muscle memory compatibility reasons with clang-format",
+	)
+	parser.add_argument(
 		"-n",
 		"--no-update",
 		dest="no_update",
