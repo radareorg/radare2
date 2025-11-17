@@ -104,11 +104,7 @@ static char *r_core_prompt_substitute(RCore *core, char *key) {
 			: "0x%08" PFMT64x;
 		return r_str_newf (fmt_addr, core->addr);
 	} else if (!strcmp (key, "cwd")) {
-		char *cwd = r_sys_getdir ();
-		if (cwd) {
-			return cwd;
-		}
-		return strdup ("");
+		return r_sys_getdir ();
 	} else if (!strcmp (key, "cwdn")) {
 		char *cwd = r_sys_getdir ();
 		if (cwd) {
@@ -118,8 +114,7 @@ static char *r_core_prompt_substitute(RCore *core, char *key) {
 		}
 		return NULL;
 	} else if (!strcmp (key, "user") || !strcmp (key, "username")) {
-		char *username = r_sys_whoami ();
-		return username;
+		return r_sys_whoami ();
 	} else if (!strcmp (key, "host") || !strcmp (key, "hostname")) {
 		RSysInfo *si = r_sys_info ();
 		if (si) {
