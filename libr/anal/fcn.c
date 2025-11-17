@@ -605,7 +605,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	int ret = R_ANAL_RET_END;
 	bool overlapped = false;
 	int oplen, idx = 0;
-	size_t lea_cnt = 0;
+	int lea_cnt = 0;
 	size_t nop_prefix_cnt = 0;
 	struct {
 		int cnt;
@@ -1064,10 +1064,6 @@ noskip:
 #else
 			if (op->ptr != UT64_MAX) {
 				leaddr_pair *pair = R_NEW0 (leaddr_pair);
-				if (!pair) {
-					R_LOG_ERROR ("Cannot create leaddr_pair");
-					gotoBeach (R_ANAL_RET_ERROR);
-				}
 				pair->op_addr = op->addr;
 				pair->leaddr = op->ptr; // XXX movdisp is dupped but seems to be trashed sometimes(?), better track leaddr separately
 				pair->reg = op->reg
