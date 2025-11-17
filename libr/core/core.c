@@ -389,6 +389,7 @@ static const char *str_callback(RNum *user, ut64 off, bool *ok) {
 }
 
 #include "numvars.inc.c"
+#include "prompt.inc.c"
 
 R_API RCore *r_core_new(void) {
 	RCore *c = R_NEW0 (RCore);
@@ -2991,8 +2992,8 @@ static void chop_prompt(RCore *core, const char *filename, char *tmp, size_t max
 	const char DOTS[] = "...";
 
 	int w = r_cons_get_size (core->cons, NULL);
-	size_t file_len = strlen (filename);
-	size_t tmp_len = strlen (tmp);
+	size_t file_len = r_str_display_width (filename);
+	size_t tmp_len = r_str_display_width (tmp);
 	int p_len = R_MAX (0, w - 6);
 	if (file_len + tmp_len + OTHRSCH >= p_len) {
 		size_t dots_size = sizeof (DOTS);
@@ -3006,6 +3007,16 @@ static void chop_prompt(RCore *core, const char *filename, char *tmp, size_t max
 static void set_prompt(RCore *core) {
 	if (core->incomment) {
 		r_line_set_prompt (core->cons->line, " * ");
+		return;
+	}
+	const char *fmt = r_config_get (core->config, "scr.prompt.format");
+	if (R_STR_ISNOTEMPTY (fmt)) {
+		// Use custom format
+		char *prompt = r_core_prompt_format_apply (core, fmt);
+		if (prompt) {
+			r_line_set_prompt (core->cons->line, prompt);
+			free (prompt);
+		}
 		return;
 	}
 	char tmp[128];
