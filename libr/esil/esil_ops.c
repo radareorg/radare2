@@ -2607,13 +2607,13 @@ static bool esil_double_to_float(REsil *esil) {
 				profile = R_CFLOAT_PROFILE_BINARY128;
 			} else {
 				profile = R_CFLOAT_PROFILE_BINARY256;
-			}
-			profile.big_endian = false;
-			
-			RCFloatValue fval;
-			r_cfloat_value_from_double (&fval, d.f64, &profile);
-			
-			ret = r_esil_pushnum (esil, fval.words[0]);
+		}
+		profile.big_endian = false;
+
+		RCFloatValue fval;
+		r_cfloat_value_from_double (&fval, d.f64, &profile);
+
+		ret = r_esil_pushnum (esil, fval.words[0]);
 		} else {
 			ret = r_esil_pushnum (esil, d.u64);
 		}
@@ -2651,13 +2651,13 @@ static bool esil_float_to_double(REsil *esil) {
 				profile = R_CFLOAT_PROFILE_BINARY128;
 			} else {
 				profile = R_CFLOAT_PROFILE_BINARY256;
-			}
-			profile.big_endian = false;
-			
-			RCFloatValue fval = {{0}};
-			fval.words[0] = d.u64;
-			
-			double result = r_cfloat_value_to_double (&fval, &profile);
+		}
+		profile.big_endian = false;
+
+		RCFloatValue fval = {{0}};
+		fval.words[0] = d.u64;
+
+		double result = r_cfloat_value_to_double (&fval, &profile);
 			ret = esil_pushnum_float (esil, result);
 		} else {
 			ret = esil_pushnum_float (esil, d.f64);
