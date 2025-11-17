@@ -3206,19 +3206,17 @@ R_API int r_core_prompt_exec(RCore *r) {
 			r_core_cmd_queue (r, NULL);
 			break;
 		}
-		if (r->cons && r->cons->context->use_tts) {
+		if (r->cons->context->use_tts) {
 			const char *buf = r_cons_get_buffer (r->cons, NULL);
 			if (R_STR_ISNOTEMPTY (buf)) {
 				r_sys_tts (buf, true);
 			}
 			r->cons->context->use_tts = false;
 		}
-		if (r->cons) {
-			r_cons_echo (r->cons, NULL);
-			r_cons_flush (r->cons);
-			if (r->cons->line && r->cons->line->zerosep) {
-				r_cons_zero (r->cons);
-			}
+		r_cons_echo (r->cons, NULL);
+		r_cons_flush (r->cons);
+		if (r->cons->line && r->cons->line->zerosep) {
+			r_cons_zero (r->cons);
 		}
 	}
 	return ret;
