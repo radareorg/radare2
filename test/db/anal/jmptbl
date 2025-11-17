@@ -29,30 +29,34 @@ EXPECT=<<EOF
 0x10000403c      mov x25, 0
 0x100004040      adrp x9, sym.func.100004000                           ; 0x100004000
 0x100004044      add x9, x9, 0x114
-0x100004048      adr x10, 0x100004048
+;-- switch:
+0x100004048      adr x10, switch.0x100004048                           ; switch table (4 cases) at 0x100004114
 0x10000404c      ldrsw x11, [x9, x8, lsl 2]
 0x100004050      add x10, x10, x11
 0x100004054      br x10
 | // true: 0x100004058
-;-- case 0:                                                            ; from 0x6000034390e0
+;-- case 0:                                                            ; from 0x100004048
+; CODE XREF from sym.func.100004000 @ 0x100004048(x)
 0x100004058      ubfx x25, x4, 0x30, 8                                 ; arg5
-0x10000405c      b case.0x6000034390e0.3
+0x10000405c      b case.0x100004048.3
 | // true: 0x100004080
-;-- case 1:                                                            ; from 0x6000034390e0
+;-- case 1:                                                            ; from 0x100004048
+; CODE XREF from sym.func.100004000 @ 0x100004048(x)
 0x100004060      lsr x8, x3, 0x20                                      ; arg4
 0x100004064      subs w8, w8, w3
 0x100004068      b.vs 0x10000410c
 | // true: 0x10000410c  false: 0x10000406c
 0x10000406c      sxtw x25, w8
-0x100004070      b case.0x6000034390e0.3
+0x100004070      b case.0x100004048.3
 | // true: 0x100004080
-;-- case 2:                                                            ; from 0x6000034390e0
+;-- case 2:                                                            ; from 0x100004048
+; CODE XREF from sym.func.100004000 @ 0x100004048(x)
 0x100004074      ldp x9, x8, [x3, 0x10]                                ; arg4
 0x100004078      subs x25, x8, x9
 0x10000407c      b.vs 0x100004110
 | // true: 0x100004110  false: 0x100004080
-;-- case 3:                                                            ; from 0x6000034390e0
-; CODE XREFS from sym.func.100004000 @ 0x10000405c(x), 0x100004070(x)
+;-- case 3:                                                            ; from 0x100004048
+; CODE XREFS from sym.func.100004000 @ 0x100004048(x), 0x10000405c(x), 0x100004070(x)
 0x100004080      ldr x28, [x26]
 0x100004084      ldr x27, [x28, 0x10]
 0x100004088      mov x0, x28
@@ -156,17 +160,20 @@ EXPECT=<<EOF
 0x100004164      mov x19, x21
 0x100004168      adrp x8, sym.func.100004000                           ; 0x100004000
 0x10000416c      add x8, x8, 0x4ac
-0x100004170      adr x9, 0x100004170
+;-- switch:
+0x100004170      adr x9, switch.0x100004170                            ; switch table (4 cases) at 0x1000044ac
 0x100004174      ldrsw x10, [x8, x25, lsl 2]
 0x100004178      add x9, x9, x10
 0x10000417c      br x9
 | // true: 0x100004180
-;-- case 0:                                                            ; from 0x600002850dc0
+;-- case 0:                                                            ; from 0x100004170
+; CODE XREF from sym.func.100004124 @ 0x100004170(x)
 0x100004180      ldr x8, [var_80h]
 0x100004184      ubfx x26, x8, 0x30, 8
 0x100004188      b 0x1000041ac
 | // true: 0x1000041ac
-;-- case 1:                                                            ; from 0x600002850dc0
+;-- case 1:                                                            ; from 0x100004170
+; CODE XREF from sym.func.100004124 @ 0x100004170(x)
 0x10000418c      lsr x8, x0, 0x20                                      ; arg1
 0x100004190      subs w8, w8, w0
 0x100004194      b.vs 0x100004498
@@ -174,7 +181,8 @@ EXPECT=<<EOF
 0x100004198      sxtw x26, w8
 0x10000419c      b 0x1000041ac
 | // true: 0x1000041ac
-;-- case 2:                                                            ; from 0x600002850dc0
+;-- case 2:                                                            ; from 0x100004170
+; CODE XREF from sym.func.100004124 @ 0x100004170(x)
 0x1000041a0      ldp x9, x8, [x0, 0x10]                                ; arg1
 0x1000041a4      subs x26, x8, x9
 0x1000041a8      b.vs 0x10000449c
@@ -182,7 +190,7 @@ EXPECT=<<EOF
 ; CODE XREFS from sym.func.100004124 @ 0x100004188(x), 0x10000419c(x)
 0x1000041ac      adrp x24, reloc.Foundation.__DataStorage.bytes.allocator_...itcfc_ ; 0x10000c000
 0x1000041b0      ldr x24, [x24, 0x398]
-0x1000041b4      cbz x26, case.0x600002850dc0.3
+0x1000041b4      cbz x26, case.0x100004170.3
 | // true: 0x100004438  false: 0x1000041b8
 0x1000041b8      stur x24, [x29, -0x68]
 0x1000041bc      cmp x26, 0
@@ -375,7 +383,8 @@ EXPECT=<<EOF
 ; CODE XREF from sym.func.100004124 @ 0x10000440c(x)
 0x100004434      ldr x19, [sp]
 | // true: 0x100004438
-;-- case 3:                                                            ; from 0x600002850dc0
+;-- case 3:                                                            ; from 0x100004170
+; CODE XREF from sym.func.100004124 @ 0x100004170(x)
 0x100004438      ldur x8, [x29, -0x60]
 0x10000443c      adrp x9, reloc.Foundation.__DataStorage.bytes.allocator_...itcfc_ ; 0x10000c000
 0x100004440      ldr x9, [x9, 0x390]
