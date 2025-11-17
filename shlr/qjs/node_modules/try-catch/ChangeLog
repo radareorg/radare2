@@ -1,0 +1,55 @@
+2022.03.07, v3.0.1
+
+feature:
+- (package) eslint v8.10.0
+- (package) madrun v9.0.0
+- (package) supertape v7.2.0
+- (package) eslint-plugin-putout v14.4.0
+- (package) putout v25.2.0
+
+
+2020.02.24, v3.0.0
+
+feature:
+- (try-catch) drop support of node < 6
+- (package) madrun v5.4.2
+- (package) eslint-plugin-putout v3.2.1
+- (package) putout v7.13.1
+- (package) eslint-plugin-node v11.0.0
+- (package) nyc v15.0.0
+
+
+2019.09.12, v2.0.1
+
+feature:
+- (try-catch) add madrun
+- (package) eslint v6.3.0
+- (package) nyc v14.1.1
+- (package) nyc v12.0.2
+- (try-catch) changed the way result is returned
+
+
+2018.02.08, v2.0.0
+
+feature:
+- (try-catch) changed the way arguments returned
+
+
+2014.11.24, v1.0.2
+
+feature:
+- (trammel) rm util-io
+- (size) rm exec
+
+
+2014.11.20, v1.0.1
+
+feature:
+- (trammel) util-io v1.6.3
+
+
+2014.11.19, v1.0.0
+
+feature:
+- (size) trammel.get -> trammel
+

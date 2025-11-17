@@ -1,0 +1,87 @@
+option(
+  'minimal',
+  type: 'feature',
+  value: 'disabled',
+  description: 'Enable minimal mode (forces ZYDIS_DECODER_MODE_MINIMAL runtime option)',
+)
+option(
+  'decoder',
+  type: 'feature',
+  value: 'auto',
+  description: 'Enable instruction decoding functionality',
+)
+option(
+  'encoder',
+  type: 'feature',
+  value: 'auto',
+  description: 'Enable instruction encoding functionality',
+)
+option(
+  'formatter',
+  type: 'feature',
+  value: 'auto',
+  description: 'Enable instruction formatting functionality',
+)
+option(
+  'avx512',
+  type: 'feature',
+  value: 'auto',
+  description: 'Enable support for AVX-512 instructions',
+)
+option(
+  'knc',
+  type: 'feature',
+  value: 'auto',
+  description: 'Enable support for KNC instructions',
+)
+option(
+  'segment',
+  type: 'feature',
+  value: 'auto',
+  description: 'Enable instruction segment API',
+)
+
+option(
+  'examples',
+  type: 'feature',
+  value: 'auto',
+  description: 'Build examples',
+)
+option(
+  'tools',
+  type: 'feature',
+  value: 'auto',
+  description: 'Build tools',
+)
+option(
+  'man',
+  type: 'feature',
+  value: 'auto',
+  description: 'Build manpages for the tools (requires Ronn-NG)',
+)
+option(
+  'doc',
+  type: 'feature',
+  value: 'auto',
+  description: 'Build doxygen documentation (requires Doxygen)',
+)
+option(
+  'tests',
+  type: 'feature',
+  value: 'auto',
+  description: 'Build tests',
+)
+
+option(
+  'nolibc',
+  type: 'boolean',
+  value: false,
+  description: 'Do not use any C standard library functions (for exotic build-envs like kernel drivers)',
+)
+
+option(
+  'llvm-fuzz',
+  type: 'boolean',
+  value: false,
+  description: 'Enables LLVM libfuzzer mode and reduces prints in ZydisFuzzIn',
+)

@@ -1,0 +1,44 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpunpckldq [ENC: VEX, MAP: 0F, OPC: 0x62]
+     LENGTH:  5
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AVX
+    ISA-SET: AVX
+    ISA-EXT: AVX
+ EXCEPTIONS: AVX4
+ ATTRIBUTES: HAS_MODRM HAS_VEX ACCEPTS_SEGMENT 
+  OPTIMIZED: C5 49 62 76 0C 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128      4      32      UINT                        xmm14
+ 1   REGISTER    EXPLICIT       R        NDSNDD    128      4      32      UINT                         xmm6
+ 2     MEMORY    EXPLICIT       R      MODRM_RM    128      4      32      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rsi
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x000000000000000C
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpunpckldq 0x0C(%rsi), %xmm6, %xmm14
+   RELATIVE: vpunpckldq 0x0C(%rsi), %xmm6, %xmm14
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpunpckldq xmm14, xmm6, xmmword ptr ds:[rsi+0x0C]
+   RELATIVE: vpunpckldq xmm14, xmm6, xmmword ptr ds:[rsi+0x0C]
+
+== [ SEGMENTS ] ============================================================================================
+C5 49 62 76 0C 
+:     :  :  :..DISP
+:     :  :..MODRM
+:     :..OPCODE
+:..VEX

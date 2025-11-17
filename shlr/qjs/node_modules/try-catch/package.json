@@ -1,0 +1,34 @@
+{
+  "name": "try-catch",
+  "version": "3.0.1",
+  "type": "commonjs",
+  "author": "coderaiser <mnemonic.enemy@gmail.com> (https://github.com/coderaiser)",
+  "description": "functional try-catch wrapper",
+  "homepage": "http://github.com/coderaiser/try-catch",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/coderaiser/try-catch.git"
+  },
+  "scripts": {
+    "test": "madrun test",
+    "lint": "madrun lint",
+    "fix:lint": "madrun fix:lint",
+    "coverage": "madrun coverage",
+    "report": "madrun report"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "c8": "^7.11.0",
+    "eslint": "^8.10.0",
+    "eslint-plugin-node": "^11.0.0",
+    "eslint-plugin-putout": "^14.4.0",
+    "madrun": "^9.0.0",
+    "putout": "^25.2.0",
+    "supertape": "^7.2.0"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=6"
+  },
+  "main": "lib/try-catch.js"
+}

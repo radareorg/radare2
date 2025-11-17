@@ -1,0 +1,45 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vfnmaddsd [ENC: VEX, MAP: 0F3A, OPC: 0x7B]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 64
+       EASZ: 64
+   CATEGORY: FMA4
+    ISA-SET: FMA4
+    ISA-EXT: FMA4
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_VEX ACCEPTS_SEGMENT 
+  OPTIMIZED: C4 C3 B1 7B 08 F0 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128      2      64   FLOAT64                         xmm1
+ 1   REGISTER    EXPLICIT       R        NDSNDD    128      2      64   FLOAT64                         xmm9
+ 2   REGISTER    EXPLICIT       R           IS4    128      2      64   FLOAT64                        xmm15
+ 3     MEMORY    EXPLICIT       R      MODRM_RM     64      1      64   FLOAT64  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                  r8
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000000000000
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 256
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vfnmaddsd (%r8), %xmm15, %xmm9, %xmm1
+   RELATIVE: vfnmaddsd (%r8), %xmm15, %xmm9, %xmm1
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vfnmaddsd xmm1, xmm9, xmm15, qword ptr ds:[r8]
+   RELATIVE: vfnmaddsd xmm1, xmm9, xmm15, qword ptr ds:[r8]
+
+== [ SEGMENTS ] ============================================================================================
+C4 83 B5 7B 08 F7 
+:        :  :  :..IMM
+:        :  :..MODRM
+:        :..OPCODE
+:..VEX

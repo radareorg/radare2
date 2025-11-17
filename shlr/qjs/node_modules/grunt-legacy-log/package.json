@@ -1,0 +1,39 @@
+{
+  "name": "grunt-legacy-log",
+  "description": "The Grunt 0.4.x logger.",
+  "version": "0.1.3",
+  "author": "\"Cowboy\" Ben Alman (http://benalman.com/)",
+  "homepage": "http://gruntjs.com/",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/gruntjs/grunt-legacy-log.git"
+  },
+  "bugs": {
+    "url": "http://github.com/gruntjs/grunt-legacy-log/issues"
+  },
+  "license": "MIT",
+  "main": "index.js",
+  "scripts": {
+    "test": "grunt test"
+  },
+  "engines": {
+    "node": ">= 0.8.0"
+  },
+  "keywords": [
+    "grunt",
+    "legacy"
+  ],
+  "dependencies": {
+    "colors": "~0.6.2",
+    "grunt-legacy-log-utils": "~0.1.1",
+    "hooker": "~0.2.3",
+    "lodash": "~2.4.1",
+    "underscore.string": "~2.3.3"
+  },
+  "devDependencies": {
+    "grunt": "0.4.4",
+    "grunt-contrib-jshint": "~0.10.0",
+    "grunt-contrib-nodeunit": "~0.3.3",
+    "grunt-contrib-watch": "~0.6.1"
+  }
+}

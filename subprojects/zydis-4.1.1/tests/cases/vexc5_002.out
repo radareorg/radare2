@@ -1,0 +1,37 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vcvttss2si [ENC: VEX, MAP: 0F, OPC: 0x2C]
+     LENGTH:  4
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: CONVERT
+    ISA-SET: AVX
+    ISA-EXT: AVX
+ EXCEPTIONS: AVX3
+ ATTRIBUTES: HAS_MODRM HAS_VEX 
+  OPTIMIZED: C5 7A 2C E0 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG     32      1      32       INT                         r12d
+ 1   REGISTER    EXPLICIT       R      MODRM_RM     32      1      32   FLOAT32                         xmm0
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 256
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vcvttss2si %xmm0, %r12d
+   RELATIVE: vcvttss2si %xmm0, %r12d
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vcvttss2si r12d, xmm0
+   RELATIVE: vcvttss2si r12d, xmm0
+
+== [ SEGMENTS ] ============================================================================================
+C5 7E 2C E0 
+:     :  :..MODRM
+:     :..OPCODE
+:..VEX

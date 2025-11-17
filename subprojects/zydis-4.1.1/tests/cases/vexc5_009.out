@@ -1,0 +1,44 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpslld [ENC: VEX, MAP: 0F, OPC: 0xF2]
+     LENGTH:  5
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AVX2
+    ISA-SET: AVX2
+    ISA-EXT: AVX2
+ EXCEPTIONS: AVX4
+ ATTRIBUTES: HAS_MODRM HAS_VEX ACCEPTS_SEGMENT 
+  OPTIMIZED: C5 95 F2 6B 43 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    256      8      32      UINT                         ymm5
+ 1   REGISTER    EXPLICIT       R        NDSNDD    256      8      32      UINT                        ymm13
+ 2     MEMORY    EXPLICIT       R      MODRM_RM    128      2      64      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rbx
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000000000043
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 256
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpslldx 0x43(%rbx), %ymm13, %ymm5
+   RELATIVE: vpslldx 0x43(%rbx), %ymm13, %ymm5
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpslld ymm5, ymm13, xmmword ptr ds:[rbx+0x43]
+   RELATIVE: vpslld ymm5, ymm13, xmmword ptr ds:[rbx+0x43]
+
+== [ SEGMENTS ] ============================================================================================
+C5 95 F2 6B 43 
+:     :  :  :..DISP
+:     :  :..MODRM
+:     :..OPCODE
+:..VEX

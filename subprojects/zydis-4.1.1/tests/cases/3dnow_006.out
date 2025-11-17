@@ -1,0 +1,33 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: pfcmpge [ENC: 3DNOW, MAP: 0F0F, OPC: 0x90]
+     LENGTH:  4
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AMD3DNOW
+    ISA-SET: AMD3DNOW
+    ISA-EXT: AMD3DNOW
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM 
+  OPTIMIZED: 0F 0F F5 90 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT      RW     MODRM_REG     64      1      64       INT                          mm6
+ 1   REGISTER    EXPLICIT       R      MODRM_RM     64      1      64       INT                          mm5
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: pfcmpge %mm5, %mm6
+   RELATIVE: pfcmpge %mm5, %mm6
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: pfcmpge mm6, mm5
+   RELATIVE: pfcmpge mm6, mm5
+
+== [ SEGMENTS ] ============================================================================================
+0F 0F F5 90 
+:     :  :..OPCODE
+:     :..MODRM
+:..OPCODE

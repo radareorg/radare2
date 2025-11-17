@@ -1,0 +1,45 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vprotd [ENC: XOP, MAP: XOP8, OPC: 0xC2]
+     LENGTH: 10
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: XOP
+    ISA-SET: XOP
+    ISA-EXT: XOP
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_XOP ACCEPTS_SEGMENT 
+  OPTIMIZED: 8F C8 78 C2 86 80 31 EE 39 0A 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128      4      32      UINT                         xmm0
+ 1     MEMORY    EXPLICIT       R      MODRM_RM    128      4      32      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 r14
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000039EE3180
+ 2  IMMEDIATE    EXPLICIT       R         UIMM8      8      1       8      UINT  [U A  8] 0x000000000000000A
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vprotd $0x0A, 0x39EE3180(%r14), %xmm0
+   RELATIVE: vprotd $0x0A, 0x39EE3180(%r14), %xmm0
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vprotd xmm0, xmmword ptr ds:[r14+0x39EE3180], 0x0A
+   RELATIVE: vprotd xmm0, xmmword ptr ds:[r14+0x39EE3180], 0x0A
+
+== [ SEGMENTS ] ============================================================================================
+8F 88 78 C2 86 80 31 EE 39 0A 
+:        :  :  :           :..IMM
+:        :  :  :..DISP
+:        :  :..MODRM
+:        :..OPCODE
+:..XOP

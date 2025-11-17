@@ -1,0 +1,48 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpunpcklbw [ENC: EVEX, MAP: 0F, OPC: 0x60]
+     LENGTH: 10
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AVX512
+    ISA-SET: AVX512BW_256
+    ISA-EXT: AVX512EVEX
+ EXCEPTIONS: E4NF
+ ATTRIBUTES: HAS_MODRM HAS_EVEX ACCEPTS_SEGMENT 
+  OPTIMIZED: 62 41 3D A1 60 8E 35 5E 7A 8E 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    256     32       8      UINT                        ymm25
+ 1   REGISTER    EXPLICIT       R          MASK     64     64       1       INT                           k1
+ 2   REGISTER    EXPLICIT       R        NDSNDD    256     32       8      UINT                        ymm24
+ 3     MEMORY    EXPLICIT       R      MODRM_RM    256     32       8      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 r14
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0xFFFFFFFF8E7A5E35
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 256
+  BROADCAST: NONE
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k1 [ZEROING]
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpunpcklbw -0x7185A1CB(%r14), %ymm24, %ymm25 {%k1} {z}
+   RELATIVE: vpunpcklbw -0x7185A1CB(%r14), %ymm24, %ymm25 {%k1} {z}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpunpcklbw ymm25 {k1} {z}, ymm24, ymmword ptr ds:[r14-0x7185A1CB]
+   RELATIVE: vpunpcklbw ymm25 {k1} {z}, ymm24, ymmword ptr ds:[r14-0x7185A1CB]
+
+== [ SEGMENTS ] ============================================================================================
+62 41 3D A1 60 8E 35 5E 7A 8E 
+:           :  :  :..DISP
+:           :  :..MODRM
+:           :..OPCODE
+:..EVEX

@@ -1,0 +1,38 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpshaq [ENC: XOP, MAP: XOP9, OPC: 0x9B]
+     LENGTH:  5
+        SSZ: 64
+       EOSZ: 64
+       EASZ: 64
+   CATEGORY: XOP
+    ISA-SET: XOP
+    ISA-EXT: XOP
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_XOP 
+  OPTIMIZED: 8F E9 60 9B F0 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128      2      64       INT                         xmm6
+ 1   REGISTER    EXPLICIT       R        NDSNDD    128      2      64       INT                         xmm0
+ 2   REGISTER    EXPLICIT       R      MODRM_RM    128      2      64       INT                         xmm3
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpshaq %xmm3, %xmm0, %xmm6
+   RELATIVE: vpshaq %xmm3, %xmm0, %xmm6
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpshaq xmm6, xmm0, xmm3
+   RELATIVE: vpshaq xmm6, xmm0, xmm3
+
+== [ SEGMENTS ] ============================================================================================
+8F A9 F8 9B F3 
+:        :  :..MODRM
+:        :..OPCODE
+:..XOP

@@ -1,0 +1,46 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpinsrw [ENC: VEX, MAP: 0F, OPC: 0xC4]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AVX
+    ISA-SET: AVX
+    ISA-EXT: AVX
+ EXCEPTIONS: AVX5
+ ATTRIBUTES: HAS_MODRM HAS_VEX ACCEPTS_SEGMENT 
+  OPTIMIZED: C5 41 C4 75 AA 5D 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128      8      16      UINT                        xmm14
+ 1   REGISTER    EXPLICIT       R        NDSNDD    128      8      16      UINT                         xmm7
+ 2     MEMORY    EXPLICIT       R      MODRM_RM     16      1      16      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  ss
+                                                                                 BASE  =                 rbp
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0xFFFFFFFFFFFFFFAA
+ 3  IMMEDIATE    EXPLICIT       R         UIMM8      8      1       8      UINT  [U A  8] 0x000000000000005D
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpinsrww $0x5D, -0x56(%rbp), %xmm7, %xmm14
+   RELATIVE: vpinsrww $0x5D, -0x56(%rbp), %xmm7, %xmm14
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpinsrw xmm14, xmm7, word ptr ss:[rbp-0x56], 0x5D
+   RELATIVE: vpinsrw xmm14, xmm7, word ptr ss:[rbp-0x56], 0x5D
+
+== [ SEGMENTS ] ============================================================================================
+C5 41 C4 75 AA 5D 
+:     :  :  :  :..IMM
+:     :  :  :..DISP
+:     :  :..MODRM
+:     :..OPCODE
+:..VEX

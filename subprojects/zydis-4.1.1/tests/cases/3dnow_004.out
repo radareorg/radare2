@@ -1,0 +1,40 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: pmulhrw [ENC: 3DNOW, MAP: 0F0F, OPC: 0xB7]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 64
+       EASZ: 64
+   CATEGORY: AMD3DNOW
+    ISA-SET: AMD3DNOW
+    ISA-EXT: AMD3DNOW
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_REX ACCEPTS_SEGMENT 
+  OPTIMIZED: 41 0F 0F 6F 7A B7 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT      RW     MODRM_REG     64      1      64       INT                          mm5
+ 1     MEMORY    EXPLICIT       R      MODRM_RM     64      1      64       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 r15
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x000000000000007A
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: pmulhrw 0x7A(%r15), %mm5
+   RELATIVE: pmulhrw 0x7A(%r15), %mm5
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: pmulhrw mm5, qword ptr ds:[r15+0x7A]
+   RELATIVE: pmulhrw mm5, qword ptr ds:[r15+0x7A]
+
+== [ SEGMENTS ] ============================================================================================
+4F 0F 0F 6F 7A B7 
+:  :     :  :  :..OPCODE
+:  :     :  :..DISP
+:  :     :..MODRM
+:  :..OPCODE
+:..REX

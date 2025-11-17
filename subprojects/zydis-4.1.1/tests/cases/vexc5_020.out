@@ -1,0 +1,43 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpor [ENC: VEX, MAP: 0F, OPC: 0xEB]
+     LENGTH:  4
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: LOGICAL
+    ISA-SET: AVX
+    ISA-EXT: AVX
+ EXCEPTIONS: AVX4
+ ATTRIBUTES: HAS_MODRM HAS_VEX ACCEPTS_SEGMENT 
+  OPTIMIZED: C5 31 EB 1A 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128      1     128      UINT                        xmm11
+ 1   REGISTER    EXPLICIT       R        NDSNDD    128      1     128      UINT                         xmm9
+ 2     MEMORY    EXPLICIT       R      MODRM_RM    128      1     128      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rdx
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000000000000
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpor (%rdx), %xmm9, %xmm11
+   RELATIVE: vpor (%rdx), %xmm9, %xmm11
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpor xmm11, xmm9, xmmword ptr ds:[rdx]
+   RELATIVE: vpor xmm11, xmm9, xmmword ptr ds:[rdx]
+
+== [ SEGMENTS ] ============================================================================================
+C5 31 EB 1A 
+:     :  :..MODRM
+:     :..OPCODE
+:..VEX

@@ -1,0 +1,44 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vfmsubadd132ps [ENC: VEX, MAP: 0F38, OPC: 0x97]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: VFMA
+    ISA-SET: FMA
+    ISA-EXT: FMA
+ EXCEPTIONS: AVX2
+ ATTRIBUTES: HAS_MODRM HAS_VEX ACCEPTS_SEGMENT 
+  OPTIMIZED: C4 C2 5D 97 7A 50 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT      RW     MODRM_REG    256      8      32   FLOAT32                         ymm7
+ 1   REGISTER    EXPLICIT       R        NDSNDD    256      8      32   FLOAT32                         ymm4
+ 2     MEMORY    EXPLICIT       R      MODRM_RM    256      8      32   FLOAT32  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 r10
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000000000050
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 256
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vfmsubadd132ps 0x50(%r10), %ymm4, %ymm7
+   RELATIVE: vfmsubadd132ps 0x50(%r10), %ymm4, %ymm7
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vfmsubadd132ps ymm7, ymm4, ymmword ptr ds:[r10+0x50]
+   RELATIVE: vfmsubadd132ps ymm7, ymm4, ymmword ptr ds:[r10+0x50]
+
+== [ SEGMENTS ] ============================================================================================
+C4 82 5D 97 7A 50 
+:        :  :  :..DISP
+:        :  :..MODRM
+:        :..OPCODE
+:..VEX

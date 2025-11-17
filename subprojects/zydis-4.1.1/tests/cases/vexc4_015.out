@@ -1,0 +1,44 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpsubsw [ENC: VEX, MAP: 0F, OPC: 0xE9]
+     LENGTH:  9
+        SSZ: 64
+       EOSZ: 64
+       EASZ: 64
+   CATEGORY: AVX
+    ISA-SET: AVX
+    ISA-EXT: AVX
+ EXCEPTIONS: AVX4
+ ATTRIBUTES: HAS_MODRM HAS_VEX ACCEPTS_SEGMENT 
+  OPTIMIZED: C4 41 31 E9 95 C8 FF 9A F7 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128      8      16       INT                        xmm10
+ 1   REGISTER    EXPLICIT       R        NDSNDD    128      8      16       INT                         xmm9
+ 2     MEMORY    EXPLICIT       R      MODRM_RM    128      8      16       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 r13
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0xFFFFFFFFF79AFFC8
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpsubsw -0x8650038(%r13), %xmm9, %xmm10
+   RELATIVE: vpsubsw -0x8650038(%r13), %xmm9, %xmm10
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpsubsw xmm10, xmm9, xmmword ptr ds:[r13-0x8650038]
+   RELATIVE: vpsubsw xmm10, xmm9, xmmword ptr ds:[r13-0x8650038]
+
+== [ SEGMENTS ] ============================================================================================
+C4 41 B1 E9 95 C8 FF 9A F7 
+:        :  :  :..DISP
+:        :  :..MODRM
+:        :..OPCODE
+:..VEX

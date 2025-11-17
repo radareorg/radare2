@@ -1,0 +1,47 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vscalefpd [ENC: EVEX, MAP: 0F38, OPC: 0x2C]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 64
+       EASZ: 64
+   CATEGORY: AVX512
+    ISA-SET: AVX512F_512
+    ISA-EXT: AVX512EVEX
+ EXCEPTIONS: E2
+ ATTRIBUTES: HAS_MODRM HAS_EVEX ACCEPTS_SEGMENT 
+  OPTIMIZED: 62 D2 9D 43 2C 16 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT     RCW     MODRM_REG    512      8      64   FLOAT64                         zmm2
+ 1   REGISTER    EXPLICIT       R          MASK     64     64       1       INT                           k3
+ 2   REGISTER    EXPLICIT       R        NDSNDD    512      8      64   FLOAT64                        zmm28
+ 3     MEMORY    EXPLICIT       R      MODRM_RM    512      8      64   FLOAT64  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 r14
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000000000000
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 512
+  BROADCAST: NONE
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k3 [MERGING]
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vscalefpd (%r14), %zmm28, %zmm2 {%k3}
+   RELATIVE: vscalefpd (%r14), %zmm28, %zmm2 {%k3}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vscalefpd zmm2 {k3}, zmm28, zmmword ptr ds:[r14]
+   RELATIVE: vscalefpd zmm2 {k3}, zmm28, zmmword ptr ds:[r14]
+
+== [ SEGMENTS ] ============================================================================================
+62 D2 9D 43 2C 16 
+:           :  :..MODRM
+:           :..OPCODE
+:..EVEX

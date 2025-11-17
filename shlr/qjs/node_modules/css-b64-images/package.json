@@ -1,0 +1,30 @@
+{
+  "author": "Filirom1 <filirom1@gmail.com>",
+  "name": "css-b64-images",
+  "description": "Base64 images in your css",
+  "version": "0.2.5",
+  "main": "lib/css-b64-images.js",
+  "bin": "bin/css-b64-images",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Filirom1/css-base64-images.git"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "mocha": "~1.1.0",
+    "should": "~0.6.3"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "http://www.opensource.org/licenses/MIT"
+    }
+  ],
+  "optionalDependencies": {},
+  "engines": {
+    "node": "*"
+  }
+}

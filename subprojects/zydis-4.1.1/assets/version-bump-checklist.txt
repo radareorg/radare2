@@ -1,0 +1,7 @@
+- CMakeLists (VERSION)
+- Doxyfile
+- resources/VersionInfo.rc (4 locations)
+- include/Zydis/Zydis.h (ZYDIS_VERSION macro)
+- create a tagged release of zycore
+- sync revision in dependencies/zycore.wrap
+- create a tagged release of zydis

@@ -1,0 +1,33 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: pfmax [ENC: 3DNOW, MAP: 0F0F, OPC: 0xA4]
+     LENGTH:  4
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AMD3DNOW
+    ISA-SET: AMD3DNOW
+    ISA-EXT: AMD3DNOW
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM 
+  OPTIMIZED: 0F 0F E2 A4 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT      RW     MODRM_REG     64      1      64       INT                          mm4
+ 1   REGISTER    EXPLICIT       R      MODRM_RM     64      1      64       INT                          mm2
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: pfmax %mm2, %mm4
+   RELATIVE: pfmax %mm2, %mm4
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: pfmax mm4, mm2
+   RELATIVE: pfmax mm4, mm2
+
+== [ SEGMENTS ] ============================================================================================
+0F 0F E2 A4 
+:     :  :..OPCODE
+:     :..MODRM
+:..OPCODE

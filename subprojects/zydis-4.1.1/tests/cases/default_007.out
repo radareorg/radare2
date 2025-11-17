@@ -1,0 +1,42 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: scasd [ENC: DEFAULT, MAP: DEFAULT, OPC: 0xAF]
+     LENGTH:  1
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: STRINGOP
+    ISA-SET: I386
+    ISA-EXT: BASE
+ EXCEPTIONS: NONE
+ ATTRIBUTES: CPUFLAG_ACCESS ACCEPTS_REPE ACCEPTS_REPZ ACCEPTS_REPNE ACCEPTS_REPNZ 
+  OPTIMIZED: AF 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER      HIDDEN       R          NONE     32      1      32       INT                          eax
+ 1     MEMORY      HIDDEN       R          NONE     32      1      32       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  es
+                                                                                 BASE  =                 rdi
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000000000000
+ 2   REGISTER      HIDDEN      RW          NONE     64     64       1       INT                       rflags
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [    FLAGS ] ============================================================================================
+    ACTIONS: [CF  : M  ] [PF  : M  ] [AF  : M  ] [ZF  : M  ] [SF  : M  ] [DF  : T  ] [OF  : M  ] 
+       READ: 0x00000400
+    WRITTEN: 0x000008D5
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: scasd
+   RELATIVE: scasd
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: scasd
+   RELATIVE: scasd
+
+== [ SEGMENTS ] ============================================================================================
+AF 
+:..OPCODE

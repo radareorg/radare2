@@ -1,0 +1,51 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpsubd [ENC: MVEX, MAP: 0F, OPC: 0xFA]
+     LENGTH:  7
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: KNC
+    ISA-SET: KNCE
+    ISA-EXT: KNCE
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_MVEX ACCEPTS_SEGMENT 
+  OPTIMIZED: 62 E1 61 26 FA 45 7B 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT     RCW     MODRM_REG    512     16      32   FLOAT32                        zmm16
+ 1   REGISTER    EXPLICIT       R          MASK     16     16       1       INT                           k6
+ 2   REGISTER    EXPLICIT       R        NDSNDD    512     16      32   FLOAT32                        zmm19
+ 3     MEMORY    EXPLICIT       R      MODRM_RM    128      4      32       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ss
+                                                                                 BASE  =                 rbp
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x00000000000007B0
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 512
+  BROADCAST: 4_TO_16
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k6 [MERGING]
+         EH: N
+    SWIZZLE: NONE
+    CONVERT: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpsubd 0x7B0(%rbp) {4to16}, %zmm19, %zmm16 {%k6}
+   RELATIVE: vpsubd 0x7B0(%rbp) {4to16}, %zmm19, %zmm16 {%k6}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpsubd zmm16 {k6}, zmm19, xmmword ptr ss:[rbp+0x7B0] {4to16}
+   RELATIVE: vpsubd zmm16 {k6}, zmm19, xmmword ptr ss:[rbp+0x7B0] {4to16}
+
+== [ SEGMENTS ] ============================================================================================
+62 E1 61 26 FA 45 7B 
+:           :  :  :..DISP
+:           :  :..MODRM
+:           :..OPCODE
+:..MVEX

@@ -1,0 +1,53 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vcmpps [ENC: MVEX, MAP: 0F, OPC: 0xC2]
+     LENGTH: 11
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: KNC
+    ISA-SET: KNCE
+    ISA-EXT: KNCE
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_MVEX ACCEPTS_SEGMENT 
+  OPTIMIZED: 62 D1 68 CF C2 A3 44 46 84 30 69 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT     RCW     MODRM_REG     16     16       1       INT                           k4
+ 1   REGISTER    EXPLICIT       R          MASK     16     16       1       INT                           k7
+ 2   REGISTER    EXPLICIT       R        NDSNDD    512     16      32   FLOAT32                         zmm2
+ 3     MEMORY    EXPLICIT       R      MODRM_RM    128     16       8      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 r11
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000030844644
+ 4  IMMEDIATE    EXPLICIT       R         UIMM8      8      1       5        CC  [U A  8] 0x0000000000000069
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 512
+  BROADCAST: NONE
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k7 [MERGING]
+         EH: Y
+    SWIZZLE: NONE
+    CONVERT: UINT8
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vcmpps $0x69, 0x30844644(%r11) {uint8} {eh}, %zmm2, %k4 {%k7}
+   RELATIVE: vcmpps $0x69, 0x30844644(%r11) {uint8} {eh}, %zmm2, %k4 {%k7}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vcmpps k4 {k7}, zmm2, xmmword ptr ds:[r11+0x30844644] {uint8} {eh}, 0x69
+   RELATIVE: vcmpps k4 {k7}, zmm2, xmmword ptr ds:[r11+0x30844644] {uint8} {eh}, 0x69
+
+== [ SEGMENTS ] ============================================================================================
+62 91 68 CF C2 A3 44 46 84 30 69 
+:           :  :  :           :..IMM
+:           :  :  :..DISP
+:           :  :..MODRM
+:           :..OPCODE
+:..MVEX

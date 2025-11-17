@@ -1,0 +1,44 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vmulsd [ENC: VEX, MAP: 0F, OPC: 0x59]
+     LENGTH:  5
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AVX
+    ISA-SET: AVX
+    ISA-EXT: AVX
+ EXCEPTIONS: AVX3
+ ATTRIBUTES: HAS_MODRM HAS_SIB HAS_VEX ACCEPTS_SEGMENT 
+  OPTIMIZED: C5 EB 59 04 11 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128      2      64   FLOAT64                         xmm0
+ 1   REGISTER    EXPLICIT       R        NDSNDD    128      2      64   FLOAT64                         xmm2
+ 2     MEMORY    EXPLICIT       R      MODRM_RM     64      1      64   FLOAT64  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rcx
+                                                                                 INDEX =                 rdx
+                                                                                 SCALE =                   1
+                                                                                 DISP  =  0x0000000000000000
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vmulsdq (%rcx,%rdx,1), %xmm2, %xmm0
+   RELATIVE: vmulsdq (%rcx,%rdx,1), %xmm2, %xmm0
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vmulsd xmm0, xmm2, qword ptr ds:[rcx+rdx*1]
+   RELATIVE: vmulsd xmm0, xmm2, qword ptr ds:[rcx+rdx*1]
+
+== [ SEGMENTS ] ============================================================================================
+C5 EB 59 04 11 
+:     :  :  :..SIB
+:     :  :..MODRM
+:     :..OPCODE
+:..VEX

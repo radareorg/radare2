@@ -1,0 +1,46 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vcomiss [ENC: EVEX, MAP: 0F, OPC: 0x2F]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AVX512
+    ISA-SET: AVX512F_SCALAR
+    ISA-EXT: AVX512EVEX
+ EXCEPTIONS: E3NF
+ ATTRIBUTES: HAS_MODRM HAS_EVEX CPUFLAG_ACCESS 
+  OPTIMIZED: 62 F1 7C 18 2F C1 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       R     MODRM_REG    128      4      32   FLOAT32                         xmm0
+ 1   REGISTER    EXPLICIT       R      MODRM_RM    128      4      32   FLOAT32                         xmm1
+ 2   REGISTER      HIDDEN       W          NONE     64     64       1       INT                       rflags
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [    FLAGS ] ============================================================================================
+    ACTIONS: [CF  : M  ] [PF  : M  ] [AF  : 0  ] [ZF  : M  ] [SF  : 0  ] [OF  : 0  ] 
+       READ: 0x00000000
+    WRITTEN: 0x000008D5
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+   ROUNDING: DEFAULT
+        SAE: Y
+       MASK: k0 [DISABLED]
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vcomiss %xmm1 {sae}, %xmm0
+   RELATIVE: vcomiss %xmm1 {sae}, %xmm0
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vcomiss xmm0, xmm1 {sae}
+   RELATIVE: vcomiss xmm0, xmm1 {sae}
+
+== [ SEGMENTS ] ============================================================================================
+62 F1 7C 18 2F C1 
+:           :  :..MODRM
+:           :..OPCODE
+:..EVEX

@@ -1,0 +1,51 @@
+diff --git a/test/db/cmd/classes b/test/db/cmd/classes
+index 759e5c10f4..325c4ef1fd 100644
+--- a/test/db/cmd/classes
++++ b/test/db/cmd/classes
+@@ -8,7 +8,7 @@ pd 3
+ EOF
+ EXPECT=<<EOF
+ GADDevice::jailbroken
+-method.GADDevice.jailbroken
++sym.func.1000fbef0
+             ;-- method.GADDevice.jailbroken:
+             ;-- func.1000fbef0:
+             0x1000fbef0      f44fbea9       stp x20, x19, [sp, -0x20]!
+(1/3) Stage this hunk [y,n,q,a,d,j,J,g,/,e,?]? n
+@@ -142,7 +142,7 @@ class Employer_1 {
+     "methods": [
+       {
+         "name": "symbolic main.Employee.allocator",
+-        "flag": "method.Employee_1.symbolic_main.Employee.allocator",
++        "flag": "sym.Employee._symbolic_______4main8EmployeeC",
+         "rawname": "_symbolic _____ 4main8EmployeeC",
+         "addr": 4294983444
+       }
+(2/3) Stage this hunk [y,n,q,a,d,K,j,J,g,/,e,?]? n
+@@ -155,7 +155,7 @@ class Employer_1 {
+     "methods": [
+       {
+         "name": "symbolic main.Employer.allocator",
+-        "flag": "method.Employer_1.symbolic_main.Employer.allocator",
++        "flag": "sym.Employer._symbolic_______4main8EmployerC",
+         "rawname": "_symbolic _____ 4main8EmployerC",
+         "addr": 4294983454
+       }
+(3/3) Stage this hunk [y,n,q,a,d,K,g,/,e,?]? n
+
+diff --git a/test/db/cmd/cmd_af b/test/db/cmd/cmd_af
+index 9b37582de2..a55cc04731 100644
+--- a/test/db/cmd/cmd_af
++++ b/test/db/cmd/cmd_af
+@@ -453,8 +453,8 @@ pd 2
+ EOF
+ EXPECT=<<EOF
+ 0x1000047a8
+-            ;-- func.1000047a8:
+-/ 688: sym.il.piltrafilla (int64_t arg1, int64_t arg2, int64_t arg3);
++            ;-- sym.il.piltrafilla:
++/ 688: sym.func.1000047a8 (int64_t arg1, int64_t arg2, int64_t arg3);
+ | `- args(x0, x1, x2) vars(5:sp[0x10..0x50])
+ |           0x1000047a8      7f2303d5       pacibsp
+ |           0x1000047ac      fc6fbaa9       stp x28, x27, [sp, -0x60]!
+(1/1) Stage this hunk [y,n,q,a,d,e,?]? n

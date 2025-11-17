@@ -1,0 +1,38 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpmulhw [ENC: VEX, MAP: 0F, OPC: 0xE5]
+     LENGTH:  4
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AVX
+    ISA-SET: AVX
+    ISA-EXT: AVX
+ EXCEPTIONS: AVX4
+ ATTRIBUTES: HAS_MODRM HAS_VEX 
+  OPTIMIZED: C5 39 E5 F7 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128      8      16       INT                        xmm14
+ 1   REGISTER    EXPLICIT       R        NDSNDD    128      8      16       INT                         xmm8
+ 2   REGISTER    EXPLICIT       R      MODRM_RM    128      8      16       INT                         xmm7
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpmulhw %xmm7, %xmm8, %xmm14
+   RELATIVE: vpmulhw %xmm7, %xmm8, %xmm14
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpmulhw xmm14, xmm8, xmm7
+   RELATIVE: vpmulhw xmm14, xmm8, xmm7
+
+== [ SEGMENTS ] ============================================================================================
+C5 39 E5 F7 
+:     :  :..MODRM
+:     :..OPCODE
+:..VEX

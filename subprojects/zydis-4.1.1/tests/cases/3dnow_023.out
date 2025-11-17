@@ -1,0 +1,39 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: pf2iw [ENC: 3DNOW, MAP: 0F0F, OPC: 0x1C]
+     LENGTH:  8
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AMD3DNOW
+    ISA-SET: AMD3DNOW
+    ISA-EXT: AMD3DNOW
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM ACCEPTS_SEGMENT 
+  OPTIMIZED: 0F 0F 92 BA C8 41 5E 1C 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT      RW     MODRM_REG     64      1      64       INT                          mm2
+ 1     MEMORY    EXPLICIT       R      MODRM_RM     64      1      64       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rdx
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x000000005E41C8BA
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: pf2iw 0x5E41C8BA(%rdx), %mm2
+   RELATIVE: pf2iw 0x5E41C8BA(%rdx), %mm2
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: pf2iw mm2, qword ptr ds:[rdx+0x5E41C8BA]
+   RELATIVE: pf2iw mm2, qword ptr ds:[rdx+0x5E41C8BA]
+
+== [ SEGMENTS ] ============================================================================================
+0F 0F 92 BA C8 41 5E 1C 
+:     :  :           :..OPCODE
+:     :  :..DISP
+:     :..MODRM
+:..OPCODE

@@ -1,0 +1,12 @@
+/** @dir include
+ * @brief Top-level include dir
+ */
+/** @dir include/Zydis
+ * @brief Zydis include dir
+ */
+/** @dir include/Zydis/Generated
+ * @brief Generated files
+ */
+/** @dir include/Zydis/Internal
+ * @brief Internal APIs
+ */

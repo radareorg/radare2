@@ -1,0 +1,36 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: pop [ENC: DEFAULT, MAP: DEFAULT, OPC: 0x5F]
+     LENGTH:  1
+        SSZ: 64
+       EOSZ: 64
+       EASZ: 64
+   CATEGORY: POP
+    ISA-SET: I86
+    ISA-EXT: BASE
+ EXCEPTIONS: NONE
+  OPTIMIZED: 5F 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W        OPCODE     64      1      64       INT                          rdi
+ 1   REGISTER      HIDDEN      RW          NONE     64      1      64       INT                          rsp
+ 2     MEMORY      HIDDEN       R          NONE     64      1      64       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ss
+                                                                                 BASE  =                 rsp
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000000000000
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: pop %rdi
+   RELATIVE: pop %rdi
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: pop rdi
+   RELATIVE: pop rdi
+
+== [ SEGMENTS ] ============================================================================================
+5F 
+:..OPCODE

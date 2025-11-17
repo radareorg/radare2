@@ -1,0 +1,34 @@
+HW reg “C / ABI” name Other aliases / notes
+-------------------------------------------
+r0 a0 h0 / o0 in 16-bit encodings
+r1 a1 h1 / o1
+r2 a2 h2 / o2
+r3 a3 h3 / o3
+r4 a4 h4 / o4
+r5 a5 h5 / o5 – implied for beqs38/bnes38
+r6 s0 h6 / o6 – callee-saved
+r7 s1 h7 / o7 – callee-saved
+r8 s2 h8 – callee-saved
+r9 s3 h9 – callee-saved
+r10 s4 h10 – callee-saved
+r11 s5 h11 – callee-saved
+r12 s6 callee-saved
+r13 s7 callee-saved
+r14 s8 callee-saved
+r15 ta temp reg for assembler / implied for some branches
+r16 t0 h12 – caller-saved
+r17 t1 h13 – caller-saved
+r18 t2 h14 – caller-saved
+r19 t3 h15 – caller-saved
+r20 t4 caller-saved
+r21 t5 caller-saved
+r22 t6 caller-saved
+r23 t7 caller-saved
+r24 t8 caller-saved
+r25 t9 caller-saved
+r26 p0 reserved for privileged-mode
+r27 p1 reserved for privileged-mode
+r28 s9 / fp frame pointer, callee-saved
+r29 gp global pointer
+r30 lp link pointer (what you call lr)
+r31 sp stack pointer

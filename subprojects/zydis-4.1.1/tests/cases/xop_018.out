@@ -1,0 +1,45 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpcomuw [ENC: XOP, MAP: XOP8, OPC: 0xED]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: XOP
+    ISA-SET: XOP
+    ISA-EXT: XOP
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_XOP ACCEPTS_SEGMENT 
+  OPTIMIZED: 8F 48 30 ED 09 EC 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128      8      16      UINT                         xmm9
+ 1   REGISTER    EXPLICIT       R        NDSNDD    128      8      16      UINT                         xmm9
+ 2     MEMORY    EXPLICIT       R      MODRM_RM    128      8      16      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                  r9
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000000000000
+ 3  IMMEDIATE    EXPLICIT       R         UIMM8      8      1       8      UINT  [U A  8] 0x00000000000000EC
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpcomuw $0xEC, (%r9), %xmm9, %xmm9
+   RELATIVE: vpcomuw $0xEC, (%r9), %xmm9, %xmm9
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpcomuw xmm9, xmm9, xmmword ptr ds:[r9], 0xEC
+   RELATIVE: vpcomuw xmm9, xmm9, xmmword ptr ds:[r9], 0xEC
+
+== [ SEGMENTS ] ============================================================================================
+8F 08 30 ED 09 EC 
+:        :  :  :..IMM
+:        :  :..MODRM
+:        :..OPCODE
+:..XOP

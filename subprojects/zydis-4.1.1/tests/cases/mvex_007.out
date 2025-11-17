@@ -1,0 +1,50 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vblendmps [ENC: MVEX, MAP: 0F38, OPC: 0x65]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: BLEND
+    ISA-SET: KNCE
+    ISA-EXT: KNCE
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_MVEX ACCEPTS_SEGMENT 
+  OPTIMIZED: 62 42 41 C4 65 30 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT     RCW     MODRM_REG    512     16      32   FLOAT32                        zmm30
+ 1   REGISTER    EXPLICIT       R          MASK     16     16       1       INT                           k4
+ 2   REGISTER    EXPLICIT       R        NDSNDD    512     16      32   FLOAT32                        zmm23
+ 3     MEMORY    EXPLICIT       R      MODRM_RM    128     16       8      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                  r8
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000000000000
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 512
+  BROADCAST: NONE
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k4 [MERGING]
+         EH: Y
+    SWIZZLE: NONE
+    CONVERT: UINT8
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vblendmps (%r8) {uint8} {eh}, %zmm23, %zmm30 {%k4}
+   RELATIVE: vblendmps (%r8) {uint8} {eh}, %zmm23, %zmm30 {%k4}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vblendmps zmm30 {k4}, zmm23, xmmword ptr ds:[r8] {uint8} {eh}
+   RELATIVE: vblendmps zmm30 {k4}, zmm23, xmmword ptr ds:[r8] {uint8} {eh}
+
+== [ SEGMENTS ] ============================================================================================
+62 02 41 C4 65 30 
+:           :  :..MODRM
+:           :..OPCODE
+:..MVEX

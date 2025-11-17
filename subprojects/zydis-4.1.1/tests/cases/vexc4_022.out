@@ -1,0 +1,38 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: sarx [ENC: VEX, MAP: 0F38, OPC: 0xF7]
+     LENGTH:  5
+        SSZ: 64
+       EOSZ: 64
+       EASZ: 64
+   CATEGORY: BMI2
+    ISA-SET: BMI2
+    ISA-EXT: BMI2
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_VEX 
+  OPTIMIZED: C4 C2 A2 F7 CC 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG     64      1      64       INT                          rcx
+ 1   REGISTER    EXPLICIT       R      MODRM_RM     64      1      64       INT                          r12
+ 2   REGISTER    EXPLICIT       R        NDSNDD     64      1      64       INT                          r11
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: sarx %r11, %r12, %rcx
+   RELATIVE: sarx %r11, %r12, %rcx
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: sarx rcx, r12, r11
+   RELATIVE: sarx rcx, r12, r11
+
+== [ SEGMENTS ] ============================================================================================
+C4 82 A2 F7 CC 
+:        :  :..MODRM
+:        :..OPCODE
+:..VEX

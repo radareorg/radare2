@@ -1,0 +1,44 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: fist [ENC: DEFAULT, MAP: DEFAULT, OPC: 0xDF]
+     LENGTH:  3
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: X87_ALU
+    ISA-SET: X87
+    ISA-EXT: X87
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM CPUFLAG_ACCESS ACCEPTS_SEGMENT 
+  OPTIMIZED: DF 17 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0     MEMORY    EXPLICIT       W      MODRM_RM     16      1      16       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rdi
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000000000000
+ 1   REGISTER      HIDDEN       R          NONE     80      1      80   FLOAT80                          st0
+ 2   REGISTER      HIDDEN       W          NONE     16      1      16    STRUCT                    x87status
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [    FLAGS ] ============================================================================================
+    ACTIONS: [C0  : U  ] [C1  : M  ] [C2  : U  ] [C3  : U  ] 
+       READ: 0x00000000
+    WRITTEN: 0x00000000
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: fist (%rdi)
+   RELATIVE: fist (%rdi)
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: fist word ptr ds:[rdi]
+   RELATIVE: fist word ptr ds:[rdi]
+
+== [ SEGMENTS ] ============================================================================================
+26 DF 17 
+:  :  :..MODRM
+:  :..OPCODE
+:..PREFIXES

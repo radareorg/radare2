@@ -1,0 +1,57 @@
+ZydisInfo(1) -- detailed instruction information
+================================================
+
+## SYNOPSIS
+
+`ZydisInfo` <machine_mode> [<stack_width>] <hexbytes>
+
+## DESCRIPTION
+
+`ZydisInfo` allows you to decode X86 & X86-64 assembly displaying lots of information about it.
+
+## OPTIONS
+
+`ZydisInfo` supports four different machine modes
+
+  * `-real`:
+    real machine mode
+
+  * `-16`:
+    16 bits machine mode
+
+  * `-32`:
+    32 bits machine mode
+
+  * `-64`:
+    64 bits machine mode
+
+You can also specify the stack width one of the following options
+
+  * `-16`:
+    16 bits
+
+  * `-32`:
+    32 bits
+  
+  * `-64`:
+    64 bits
+
+## EXAMPLES
+
+    $ ZydisInfo -64 66 3E 65 2E F0 F2 F3 48 01 A4 98 2C 01 00 00
+    == [    BASIC ] ==================================================
+       MNEMONIC: add [ENC: DEFAULT, MAP: DEFAULT, OPC: 0x01]
+         LENGTH: 15
+            SSZ: 64
+           EOSZ: 64
+           EASZ: 64
+       CATEGORY: BINARY
+        ISA-SET: I86
+        ISA-EXT: BASE
+     EXCEPTIONS: NONE
+     ATTRIBUTES: HAS_MODRM HAS_SIB HAS_REX CPUFLAG_ACCESS ACCEPTS_LOCK
+    [...more info...]
+
+## SEE ALSO
+
+ZydisDisasm(1)

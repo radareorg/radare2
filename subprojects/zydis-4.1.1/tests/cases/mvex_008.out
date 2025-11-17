@@ -1,0 +1,51 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpmaxud [ENC: MVEX, MAP: 0F38, OPC: 0x3F]
+     LENGTH:  7
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: KNC
+    ISA-SET: KNCE
+    ISA-EXT: KNCE
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_MVEX ACCEPTS_SEGMENT 
+  OPTIMIZED: 62 62 79 4B 3F 56 A7 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT     RCW     MODRM_REG    512     16      32   FLOAT32                        zmm26
+ 1   REGISTER    EXPLICIT       R          MASK     16     16       1       INT                           k3
+ 2   REGISTER    EXPLICIT       R        NDSNDD    512     16      32   FLOAT32                         zmm0
+ 3     MEMORY    EXPLICIT       R      MODRM_RM    128     16       8      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rsi
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0xFFFFFFFFFFFFFA70
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 512
+  BROADCAST: NONE
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k3 [MERGING]
+         EH: N
+    SWIZZLE: NONE
+    CONVERT: UINT8
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpmaxud -0x590(%rsi) {uint8}, %zmm0, %zmm26 {%k3}
+   RELATIVE: vpmaxud -0x590(%rsi) {uint8}, %zmm0, %zmm26 {%k3}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpmaxud zmm26 {k3}, zmm0, xmmword ptr ds:[rsi-0x590] {uint8}
+   RELATIVE: vpmaxud zmm26 {k3}, zmm0, xmmword ptr ds:[rsi-0x590] {uint8}
+
+== [ SEGMENTS ] ============================================================================================
+62 22 79 4B 3F 56 A7 
+:           :  :  :..DISP
+:           :  :..MODRM
+:           :..OPCODE
+:..MVEX

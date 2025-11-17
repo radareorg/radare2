@@ -1,0 +1,37 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: leave [ENC: DEFAULT, MAP: DEFAULT, OPC: 0xC9]
+     LENGTH:  2
+        SSZ: 64
+       EOSZ: 64
+       EASZ: 64
+   CATEGORY: MISC
+    ISA-SET: I186
+    ISA-EXT: BASE
+ EXCEPTIONS: NONE
+  OPTIMIZED: C9 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0     MEMORY      HIDDEN       R          NONE     64      1      64       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ss
+                                                                                 BASE  =                 rbp
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000000000000
+ 1   REGISTER      HIDDEN      RW          NONE     64      1      64       INT                          rbp
+ 2   REGISTER      HIDDEN      RW          NONE     64      1      64       INT                          rsp
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: leave
+   RELATIVE: leave
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: leave
+   RELATIVE: leave
+
+== [ SEGMENTS ] ============================================================================================
+26 C9 
+:  :..OPCODE
+:..PREFIXES

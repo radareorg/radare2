@@ -1,0 +1,44 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vdivps [ENC: VEX, MAP: 0F, OPC: 0x5E]
+     LENGTH:  8
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AVX
+    ISA-SET: AVX
+    ISA-EXT: AVX
+ EXCEPTIONS: AVX2
+ ATTRIBUTES: HAS_MODRM HAS_VEX ACCEPTS_SEGMENT 
+  OPTIMIZED: C5 D4 5E AE EB DA 88 BE 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    256      8      32   FLOAT32                         ymm5
+ 1   REGISTER    EXPLICIT       R        NDSNDD    256      8      32   FLOAT32                         ymm5
+ 2     MEMORY    EXPLICIT       R      MODRM_RM    256      8      32   FLOAT32  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rsi
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0xFFFFFFFFBE88DAEB
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 256
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vdivps -0x41772515(%rsi), %ymm5, %ymm5
+   RELATIVE: vdivps -0x41772515(%rsi), %ymm5, %ymm5
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vdivps ymm5, ymm5, ymmword ptr ds:[rsi-0x41772515]
+   RELATIVE: vdivps ymm5, ymm5, ymmword ptr ds:[rsi-0x41772515]
+
+== [ SEGMENTS ] ============================================================================================
+C5 D4 5E AE EB DA 88 BE 
+:     :  :  :..DISP
+:     :  :..MODRM
+:     :..OPCODE
+:..VEX

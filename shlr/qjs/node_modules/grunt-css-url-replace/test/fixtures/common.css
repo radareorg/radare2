@@ -1,0 +1,5 @@
+.head .link1{background-image:url ("images/a.png")} .head .link2{background-image:url("./images/b.png");}
+.head .link3{background-image:url("./images/c.png");}
+.head .link4{background-image:url("./images/d.png");}
+.head .link5{background-image:url("/images/e.png");}
+.head .link6{background-image:url("/images/f.png");}

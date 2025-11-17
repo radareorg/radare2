@@ -1,0 +1,289 @@
+# PF3: A New Design Proposal for Radare2 Format Strings
+
+## Design Principles
+
+1. **Simplicity First**: Easy to read, write, and understand
+2. **Backward Compatibility**: Existing pf syntax should work with minimal changes
+3. **Extensibility**: Easy to add new types and features
+4. **Consistency**: Uniform behavior across all operations
+5. **Performance**: Efficient parsing and execution
+6. **Testability**: Modular design with clear interfaces
+
+## Core Architecture
+
+### State Management
+```c
+typedef struct {
+    RPrint *print;
+    int mode;
+    bool endian;
+    PJ *json;
+    int indent;
+    int depth;
+    RStack *type_stack;      // For nested types
+    RHash *type_cache;       // Parsed format cache
+    RList *errors;           // Error collection
+} PFContext;
+```
+
+### Parser Design
+- **Token-based lexer**: Clear token boundaries
+- **Recursive descent parser**: Handle nested structures cleanly
+- **AST generation**: Separate parsing from execution
+- **Error recovery**: Continue parsing after errors
+
+### Output System
+- **Unified output interface**: Single entry point for all formats
+- **Format-specific handlers**: Modular, testable functions
+- **JSON-first design**: Consistent JSON schema
+- **Text output generation**: Derived from JSON structure
+
+## Syntax Proposal
+
+### Backward Compatible Base
+Keep existing format characters but with clear separation:
+
+```
+# Current syntax (still works)
+pf 3xi foo bar
+pf iwq foo bar troll
+pf [4]w[7]i
+
+# Enhanced syntax (new features)
+pf 3*x:iw foo bar           # Clear array syntax
+pf point:{x:w y:w}          # Named struct
+pf data:<a:d b:w[2] c:b[4]> # Union syntax
+pf items:5*point:{x:w y:w}  # Array of structs
+```
+
+### Enhanced Syntax Rules
+
+#### 1. Type Annotations
+```
+# Basic types with optional names
+x:offset          # hex with name "offset"
+w:size            # word with name "size"
+i:count           # integer with name "count"
+
+# Multiple fields
+x:offset w:size i:count
+```
+
+#### 2. Struct Definitions
+```
+# Anonymous struct
+{x:w y:w z:b}
+
+# Named struct
+point:{x:w y:w}
+
+# Nested structs
+header:{magic:i data:{x:w y:w}}
+```
+
+#### 3. Array Syntax
+```
+# Simple arrays
+5*w              # 5 words
+10*b             # 10 bytes
+
+# Arrays of structs
+3*point:{x:w y:w}
+
+# Named arrays
+coords:5*point:{x:w y:w}
+```
+
+#### 4. Union Syntax
+```
+# Anonymous union
+<a:d b:w[2] c:b[4]>
+
+# Named union
+flags:<a:d b:w[2] c:b[4]>
+
+# Union with struct
+header:<magic:i size:w>:{data:b[4]}
+```
+
+#### 5. Pointer Handling
+```
+# Pointer dereference
+*x                # pointer to word
+**i               # pointer to pointer to int
+
+# Named pointers
+ptr:*w
+data:**i
+```
+
+#### 6. Endian Specification
+```
+# Per-field endian
+little:<w:d>      # little endian word and dword
+big:>x:i          # big endian hex and int
+
+# Global endian override
+pf --endian=big "x:i w:d"
+```
+
+#### 7. Conditional Fields
+```
+# Conditional based on previous field
+version:i ?(version>1){extra:w} :default:w
+
+# Optional fields
+name:?z           # optional null-terminated string
+```
+
+## Implementation Strategy
+
+### Phase 1: Core Infrastructure
+1. **Lexer**: Tokenize format strings
+2. **Parser**: Build AST from tokens
+3. **Context**: Clean state management
+4. **Error System**: Comprehensive error handling
+
+### Phase 2: Format Handlers
+1. **Base Types**: Implement all current format characters
+2. **Struct/Union**: Handle nested types
+3. **Arrays**: Efficient array processing
+4. **Pointers**: Safe pointer dereference
+
+### Phase 3: Advanced Features
+1. **Conditionals**: Runtime field selection
+2. **Validation**: Type checking and bounds
+3. **Optimization**: AST caching and reuse
+4. **Extensions**: Plugin system for custom types
+
+### Phase 4: Migration
+1. **Compatibility Layer**: Parse old syntax
+2. **Translation Tool**: Convert old to new syntax
+3. **Documentation**: Complete reference and examples
+4. **Testing**: Comprehensive test suite
+
+## API Design
+
+### Public Interface
+```c
+// Main format function
+R_API int pf_format(PFContext *ctx, ut64 addr, const char *format, ...);
+
+// Context management
+R_API PFContext *pf_context_new(RPrint *print);
+R_API void pf_context_free(PFContext *ctx);
+
+// Error handling
+R_API const char *pf_get_error(PFContext *ctx);
+R_API void pf_clear_errors(PFContext *ctx);
+
+// Type registration
+R_API bool pf_register_type(PFContext *ctx, const char *name, PFFormatHandler *handler);
+```
+
+### Format Handler Interface
+```c
+typedef struct {
+    const char *name;
+    int size;
+    int (*parse)(PFContext *ctx, PFAST *node, const char *input);
+    int (*execute)(PFContext *ctx, PFAST *node, ut64 addr, ut8 *buf);
+    int (*validate)(PFContext *ctx, PFAST *node);
+} PFFormatHandler;
+```
+
+## JSON Schema
+
+### Consistent Structure
+```json
+{
+  "offset": 0x1000,
+  "fields": [
+    {
+      "name": "magic",
+      "type": "uint32_t",
+      "value": 0xdeadbeef,
+      "offset": 0x1000,
+      "size": 4
+    },
+    {
+      "name": "data",
+      "type": "struct",
+      "offset": 0x1004,
+      "size": 8,
+      "fields": [
+        {
+          "name": "x",
+          "type": "uint16_t",
+          "value": 42,
+          "offset": 0x1004,
+          "size": 2
+        }
+      ]
+    }
+  ],
+  "total_size": 12
+}
+```
+
+## Migration Path
+
+### Compatibility Strategy
+1. **Dual Syntax Support**: Both old and new syntax work
+2. **Gradual Migration**: Users can adopt new features incrementally
+3. **Clear Deprecation**: Old syntax shows warnings
+4. **Translation Tools**: Automatic conversion utilities
+
+### Example Migration
+```
+# Old syntax (still works)
+pf 3xi foo bar
+pf iwq foo bar troll
+pf [4]w[7]i
+
+# New equivalent (recommended)
+pf 3*x:iw foo bar
+pf i:w:q foo bar troll
+pf 4*w 7*i
+
+# Enhanced new syntax
+pf items:3*item:{x:i w:q} foo bar
+```
+
+## Benefits Over Current Implementation
+
+### 1. Maintainability
+- Modular design with clear interfaces
+- Separation of parsing and execution
+- Comprehensive test coverage
+- Well-documented code structure
+
+### 2. Extensibility
+- Plugin system for custom types
+- Easy addition of new format features
+- Clear extension points
+- Backward compatible enhancements
+
+### 3. Performance
+- AST caching for repeated formats
+- Efficient memory management
+- Optimized array handling
+- Reduced string allocations
+
+### 4. Usability
+- Clearer syntax with better readability
+- Consistent behavior across all types
+- Better error messages
+- Comprehensive documentation
+
+### 5. Reliability
+- Proper input validation
+- Graceful error handling
+- Memory safety
+- Comprehensive testing
+
+## Conclusion
+
+This PF3 proposal addresses all identified limitations while maintaining backward compatibility. The modular architecture, clear syntax, and comprehensive error handling make it a solid foundation for future development. The gradual migration path ensures existing users can transition at their own pace while new users benefit from the improved design immediately.
+
+The key innovation is the dual-syntax approach that preserves existing workflows while providing a clear path to a more powerful and maintainable system.

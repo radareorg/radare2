@@ -1,0 +1,38 @@
+{
+  "name": "grunt-lib-contrib",
+  "description": "Common functionality shared across grunt-contrib tasks.",
+  "version": "0.6.1",
+  "homepage": "http://github.com/gruntjs/grunt-lib-contrib",
+  "author": {
+    "name": "Grunt Team",
+    "url": "http://gruntjs.com/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/gruntjs/grunt-lib-contrib.git"
+  },
+  "bugs": {
+    "url": "https://github.com/gruntjs/grunt-lib-contrib/issues"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "http://github.com/gruntjs/grunt-lib-contrib/blob/master/LICENSE-MIT"
+    }
+  ],
+  "engines": {
+    "node": ">= 0.8.0"
+  },
+  "scripts": {
+    "test": "grunt test"
+  },
+  "devDependencies": {
+    "grunt-contrib-jshint": "~0.1.1",
+    "grunt-contrib-nodeunit": "~0.1.2",
+    "grunt": "~0.4.0"
+  },
+  "main": "lib/contrib",
+  "dependencies": {
+    "zlib-browserify": "0.0.1"
+  }
+}

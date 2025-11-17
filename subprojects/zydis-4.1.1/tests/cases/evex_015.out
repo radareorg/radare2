@@ -1,0 +1,48 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpermi2d [ENC: EVEX, MAP: 0F38, OPC: 0x76]
+     LENGTH:  7
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AVX512
+    ISA-SET: AVX512F_512
+    ISA-EXT: AVX512EVEX
+ EXCEPTIONS: E4NF
+ ATTRIBUTES: HAS_MODRM HAS_EVEX ACCEPTS_SEGMENT 
+  OPTIMIZED: 62 E2 05 45 76 41 36 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT     RCW     MODRM_REG    512     16      32      UINT                        zmm16
+ 1   REGISTER    EXPLICIT       R          MASK     64     64       1       INT                           k5
+ 2   REGISTER    EXPLICIT       R        NDSNDD    512     16      32      UINT                        zmm31
+ 3     MEMORY    EXPLICIT       R      MODRM_RM    512     16      32      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rcx
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000000000D80
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 512
+  BROADCAST: NONE
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k5 [MERGING]
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpermi2d 0xD80(%rcx), %zmm31, %zmm16 {%k5}
+   RELATIVE: vpermi2d 0xD80(%rcx), %zmm31, %zmm16 {%k5}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpermi2d zmm16 {k5}, zmm31, zmmword ptr ds:[rcx+0xD80]
+   RELATIVE: vpermi2d zmm16 {k5}, zmm31, zmmword ptr ds:[rcx+0xD80]
+
+== [ SEGMENTS ] ============================================================================================
+62 E2 05 45 76 41 36 
+:           :  :  :..DISP
+:           :  :..MODRM
+:           :..OPCODE
+:..EVEX

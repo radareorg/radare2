@@ -1,0 +1,100 @@
+==37475==ERROR: AddressSanitizer: heap-use-after-free on address 0x61e000062600 at pc 0x0001002816b8 bp 0x00016fd65ed0 sp 0x00016fd65ec8
+READ of size 1 at 0x61e000062600 thread T0
+    #0 0x1002816b4 in r_cons_write cons.c:1325
+    #1 0x1002836c4 in r_cons_print cons.c:2144
+    #2 0x105ef7a6c in visual_refresh visual.c:4650
+    #3 0x105f266a0 in r_core_visual visual.c:4957
+    #4 0x1059c52f4 in cmd_visual cmd.c:3125
+    #5 0x106105e0c in r_cmd_call cmd_api.c:414
+    #6 0x105a3da4c in r_core_cmd_subst_i cmd.c:5371
+    #7 0x105a1d238 in r_core_cmd_subst cmd.c:4058
+    #8 0x105861c6c in run_cmd_depth cmd.c:6352
+    #9 0x105835f28 in r_core_cmd cmd.c:6455
+    #10 0x105774688 in r_core_prompt_exec core.c:3128
+    #11 0x105773724 in r_core_prompt_loop core.c:2925
+    #12 0x101b60aac in r_main_radare2 radare2.c:1896
+    #13 0x10008af70 in main radare2.c:119
+    #14 0x18c996b94 in start+0x17b8 (dyld:arm64e+0xfffffffffff3ab94)
+
+0x61e000062600 is located 384 bytes inside of 2776-byte region [0x61e000062480,0x61e000062f58)
+freed by thread T0 here:
+    #0 0x108b34d40 in free+0x98 (libclang_rt.asan_osx_dynamic.dylib:arm64e+0x54d40)
+    #1 0x1002788a8 in r_cons_context_free cons.c:1579
+    #2 0x10027d948 in r_cons_pop cons.c:1748
+    #3 0x1058490a0 in r_core_cmd_str cmd.c:6770
+    #4 0x105ef7a00 in visual_refresh visual.c:4646
+    #5 0x105f266a0 in r_core_visual visual.c:4957
+    #6 0x1059c52f4 in cmd_visual cmd.c:3125
+    #7 0x106105e0c in r_cmd_call cmd_api.c:414
+    #8 0x105a3da4c in r_core_cmd_subst_i cmd.c:5371
+    #9 0x105a1d238 in r_core_cmd_subst cmd.c:4058
+    #10 0x105861c6c in run_cmd_depth cmd.c:6352
+    #11 0x105835f28 in r_core_cmd cmd.c:6455
+    #12 0x105774688 in r_core_prompt_exec core.c:3128
+    #13 0x105773724 in r_core_prompt_loop core.c:2925
+    #14 0x101b60aac in r_main_radare2 radare2.c:1896
+    #15 0x10008af70 in main radare2.c:119
+    #16 0x18c996b94 in start+0x17b8 (dyld:arm64e+0xfffffffffff3ab94)
+
+previously allocated by thread T0 here:
+    #0 0x108b34c04 in malloc+0x94 (libclang_rt.asan_osx_dynamic.dylib:arm64e+0x54c04)
+    #1 0x102667828 in r_mem_dup mem.c:308
+    #2 0x100299efc in r_cons_context_clone cons.c:1584
+    #3 0x1063c0464 in r_core_task_new task.c:376
+    #4 0x1063ceda4 in r_core_task_submit task.c:865
+    #5 0x1057a97bc in _cmd_tasks_impl cmd_task.inc.c:71
+    #6 0x1057a883c in cmd_tasks cmd_task.inc.c:84
+    #7 0x106105e0c in r_cmd_call cmd_api.c:414
+    #8 0x105a3da4c in r_core_cmd_subst_i cmd.c:5371
+    #9 0x105a1d238 in r_core_cmd_subst cmd.c:4058
+    #10 0x105861c6c in run_cmd_depth cmd.c:6352
+    #11 0x105835f28 in r_core_cmd cmd.c:6455
+    #12 0x105e98710 in r_core_visual_prompt visual.c:830
+    #13 0x105e95be8 in r_core_visual_prompt_input visual.c:802
+    #14 0x105ee5504 in r_core_visual_cmd visual.c:4076
+    #15 0x105f29150 in r_core_visual visual.c:5064
+    #16 0x1059c52f4 in cmd_visual cmd.c:3125
+    #17 0x106105e0c in r_cmd_call cmd_api.c:414
+    #18 0x105a3da4c in r_core_cmd_subst_i cmd.c:5371
+    #19 0x105a1d238 in r_core_cmd_subst cmd.c:4058
+    #20 0x105861c6c in run_cmd_depth cmd.c:6352
+    #21 0x105835f28 in r_core_cmd cmd.c:6455
+    #22 0x105774688 in r_core_prompt_exec core.c:3128
+    #23 0x105773724 in r_core_prompt_loop core.c:2925
+    #24 0x101b60aac in r_main_radare2 radare2.c:1896
+    #25 0x10008af70 in main radare2.c:119
+    #26 0x18c996b94 in start+0x17b8 (dyld:arm64e+0xfffffffffff3ab94)
+
+SUMMARY: AddressSanitizer: heap-use-after-free cons.c:1325 in r_cons_write
+Shadow bytes around the buggy address:
+  0x61e000062380: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x61e000062400: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x61e000062480: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x61e000062500: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x61e000062580: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+=>0x61e000062600:[fd]fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x61e000062680: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x61e000062700: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x61e000062780: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x61e000062800: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x61e000062880: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+Shadow byte legend (one shadow byte represents 8 application bytes):
+  Addressable:           00
+  Partially addressable: 01 02 03 04 05 06 07 
+  Heap left redzone:       fa
+  Freed heap region:       fd
+  Stack left redzone:      f1
+  Stack mid redzone:       f2
+  Stack right redzone:     f3
+  Stack after return:      f5
+  Stack use after scope:   f8
+  Global redzone:          f9
+  Global init order:       f6
+  Poisoned by user:        f7
+  Container overflow:      fc
+  Array cookie:            ac
+  Intra object redzone:    bb
+  ASan internal:           fe
+  Left alloca redzone:     ca
+  Right alloca redzone:    cb
+==37475==ABORTING

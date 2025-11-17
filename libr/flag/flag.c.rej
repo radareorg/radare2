@@ -1,0 +1,16 @@
+@@ -414,13 +422,11 @@
+ 	}
+ 	char *res = NULL;
+ 	switch (rad) {
+-	case 'q':
+-		{
++	case 'q': {
+ 		RStrBuf *sb = r_strbuf_new("");
+ 		r_flag_foreach_space(f, r_flag_space_cur(f), print_flag_name, sb);
+ 		res = r_strbuf_drain(sb);
+-		}
+-		break;
++	} break;
+ 	case 'j': {
+ 		PJ *pj = pj_new();
+ 		struct print_flag_t u = {

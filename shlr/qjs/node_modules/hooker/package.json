@@ -1,0 +1,41 @@
+{
+  "name": "hooker",
+  "description": "Monkey-patch (hook) functions for debugging and stuff.",
+  "version": "0.2.3",
+  "homepage": "http://github.com/cowboy/javascript-hooker",
+  "author": {
+    "name": "\"Cowboy\" Ben Alman",
+    "url": "http://benalman.com/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/cowboy/javascript-hooker.git"
+  },
+  "bugs": {
+    "url": "https://github.com/cowboy/javascript-hooker/issues"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://github.com/cowboy/javascript-hooker/blob/master/LICENSE-MIT"
+    }
+  ],
+  "dependencies": {},
+  "devDependencies": {
+    "grunt": "~0.2.1"
+  },
+  "keywords": [
+    "patch",
+    "hook",
+    "function",
+    "debug",
+    "aop"
+  ],
+  "engines": {
+    "node": "*"
+  },
+  "main": "lib/hooker",
+  "scripts": {
+    "test": "grunt test"
+  }
+}

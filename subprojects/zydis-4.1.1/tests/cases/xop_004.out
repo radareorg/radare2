@@ -1,0 +1,46 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpmacsdqh [ENC: XOP, MAP: XOP8, OPC: 0x9F]
+     LENGTH:  7
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: XOP
+    ISA-SET: XOP
+    ISA-EXT: XOP
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_XOP ACCEPTS_SEGMENT 
+  OPTIMIZED: 8F 68 58 9F 76 1C 10 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128      2      64       INT                        xmm14
+ 1   REGISTER    EXPLICIT       R        NDSNDD    128      4      32       INT                         xmm4
+ 2     MEMORY    EXPLICIT       R      MODRM_RM    128      4      32       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rsi
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x000000000000001C
+ 3   REGISTER    EXPLICIT       R           IS4    128      2      64       INT                         xmm1
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpmacsdqh %xmm1, 0x1C(%rsi), %xmm4, %xmm14
+   RELATIVE: vpmacsdqh %xmm1, 0x1C(%rsi), %xmm4, %xmm14
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpmacsdqh xmm14, xmm4, xmmword ptr ds:[rsi+0x1C], xmm1
+   RELATIVE: vpmacsdqh xmm14, xmm4, xmmword ptr ds:[rsi+0x1C], xmm1
+
+== [ SEGMENTS ] ============================================================================================
+8F 68 58 9F 76 1C 1A 
+:        :  :  :  :..IMM
+:        :  :  :..DISP
+:        :  :..MODRM
+:        :..OPCODE
+:..XOP

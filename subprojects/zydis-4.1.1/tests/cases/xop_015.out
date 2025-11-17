@@ -1,0 +1,44 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpshlw [ENC: XOP, MAP: XOP9, OPC: 0x95]
+     LENGTH:  9
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: XOP
+    ISA-SET: XOP
+    ISA-EXT: XOP
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_XOP IS_RELATIVE ACCEPTS_SEGMENT 
+  OPTIMIZED: 8F 69 68 95 25 5F 5C 16 C9 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128      8      16      UINT                        xmm12
+ 1     MEMORY    EXPLICIT       R      MODRM_RM    128      8      16      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rip
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0xFFFFFFFFC9165C5F
+ 2   REGISTER    EXPLICIT       R        NDSNDD    128      8      16      UINT                         xmm2
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpshlw %xmm2, 0xFFFFFFFFC9165C68, %xmm12
+   RELATIVE: vpshlw %xmm2, -0x36E9A3A1(%rip), %xmm12
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpshlw xmm12, xmmword ptr ds:[0xFFFFFFFFC9165C68], xmm2
+   RELATIVE: vpshlw xmm12, xmmword ptr ds:[rip-0x36E9A3A1], xmm2
+
+== [ SEGMENTS ] ============================================================================================
+8F 09 68 95 25 5F 5C 16 C9 
+:        :  :  :..DISP
+:        :  :..MODRM
+:        :..OPCODE
+:..XOP

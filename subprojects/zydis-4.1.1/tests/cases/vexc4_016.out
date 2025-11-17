@@ -1,0 +1,38 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpor [ENC: VEX, MAP: 0F, OPC: 0xEB]
+     LENGTH:  5
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: LOGICAL
+    ISA-SET: AVX
+    ISA-EXT: AVX
+ EXCEPTIONS: AVX4
+ ATTRIBUTES: HAS_MODRM HAS_VEX 
+  OPTIMIZED: C4 C1 71 EB D3 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128      1     128      UINT                         xmm2
+ 1   REGISTER    EXPLICIT       R        NDSNDD    128      1     128      UINT                         xmm1
+ 2   REGISTER    EXPLICIT       R      MODRM_RM    128      1     128      UINT                        xmm11
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpor %xmm11, %xmm1, %xmm2
+   RELATIVE: vpor %xmm11, %xmm1, %xmm2
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpor xmm2, xmm1, xmm11
+   RELATIVE: vpor xmm2, xmm1, xmm11
+
+== [ SEGMENTS ] ============================================================================================
+C4 C1 71 EB D3 
+:        :  :..MODRM
+:        :..OPCODE
+:..VEX

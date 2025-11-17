@@ -1,0 +1,28 @@
+#!/usr/bin/env node
+var fs = require('fs'),
+    commander = require('commander'),
+    Uglify = require('../lib/uglify'),
+    packageConfig;
+
+packageConfig = JSON.parse(
+    fs.readFileSync(__dirname + '/../package.json').toString()
+);
+commander.version(packageConfig.version)
+    .option('-s, --source <items>', 'source files', function(val) { return val.split(','); } , [])
+    .option('-o, --output [value]', 'output file', null)
+    .option('-c, --css', 'whether uglify css files', false)
+    .option('-r, --root [value]', 'static root directory name, used to replace css urls with absolute path', null);
+
+commander.on('--help', function(){
+    console.log('  Examples:');
+    console.log('');
+    console.log('    $ uglify -s ~/application.js,~/home.js -o ~/home.min.js');
+    console.log('    $ uglify -s ~/application.css,~/home.css -o ~/home.min.css -c');
+    console.log('    $ uglify -s ~/application.css,~/home.css -o ~/home.min.css -r public -c');
+    console.log('');
+});
+
+commander.parse(process.argv);
+
+uglify = new Uglify(commander.source, commander.output, commander.css, commander.root);
+uglify.run();

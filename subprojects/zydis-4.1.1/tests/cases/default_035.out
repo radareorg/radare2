@@ -1,0 +1,39 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: bndldx [ENC: DEFAULT, MAP: 0F, OPC: 0x1A]
+     LENGTH:  8
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: MPX
+    ISA-SET: MPX
+    ISA-EXT: MPX
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_SIB ACCEPTS_SEGMENT 
+  OPTIMIZED: 0F 1A 84 03 37 13 37 13 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128      1     128       INT                         bnd0
+ 1     MEMORY    EXPLICIT    NONE      MODRM_RM    192      3      64      UINT  TYPE  =                 MIB
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rbx
+                                                                                 INDEX =                 rax
+                                                                                 SCALE =                   2
+                                                                                 DISP  =  0x0000000013371337
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: bndldx 0x13371337(%rbx,%rax), %bnd0
+   RELATIVE: bndldx 0x13371337(%rbx,%rax), %bnd0
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: bndldx bnd0, ds:[rbx+rax+0x13371337]
+   RELATIVE: bndldx bnd0, ds:[rbx+rax+0x13371337]
+
+== [ SEGMENTS ] ============================================================================================
+0F 1A 84 43 37 13 37 13 
+:     :  :  :..DISP
+:     :  :..SIB
+:     :..MODRM
+:..OPCODE

@@ -1,0 +1,46 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpcomud [ENC: XOP, MAP: XOP8, OPC: 0xEE]
+     LENGTH: 10
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: XOP
+    ISA-SET: XOP
+    ISA-EXT: XOP
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_XOP ACCEPTS_SEGMENT 
+  OPTIMIZED: 8F C8 70 EE BE A1 6E 55 A6 D3 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128      4      32      UINT                         xmm7
+ 1   REGISTER    EXPLICIT       R        NDSNDD    128      4      32      UINT                         xmm1
+ 2     MEMORY    EXPLICIT       R      MODRM_RM    128      4      32      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 r14
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0xFFFFFFFFA6556EA1
+ 3  IMMEDIATE    EXPLICIT       R         UIMM8      8      1       8      UINT  [U A  8] 0x00000000000000D3
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpcomud $0xD3, -0x59AA915F(%r14), %xmm1, %xmm7
+   RELATIVE: vpcomud $0xD3, -0x59AA915F(%r14), %xmm1, %xmm7
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpcomud xmm7, xmm1, xmmword ptr ds:[r14-0x59AA915F], 0xD3
+   RELATIVE: vpcomud xmm7, xmm1, xmmword ptr ds:[r14-0x59AA915F], 0xD3
+
+== [ SEGMENTS ] ============================================================================================
+8F 88 70 EE BE A1 6E 55 A6 D3 
+:        :  :  :           :..IMM
+:        :  :  :..DISP
+:        :  :..MODRM
+:        :..OPCODE
+:..XOP

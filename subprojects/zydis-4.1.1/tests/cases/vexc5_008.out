@@ -1,0 +1,44 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpaddusb [ENC: VEX, MAP: 0F, OPC: 0xDC]
+     LENGTH:  8
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AVX
+    ISA-SET: AVX
+    ISA-EXT: AVX
+ EXCEPTIONS: AVX4
+ ATTRIBUTES: HAS_MODRM HAS_VEX IS_RELATIVE ACCEPTS_SEGMENT 
+  OPTIMIZED: C5 59 DC 0D 3A A2 0F 89 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128     16       8      UINT                         xmm9
+ 1   REGISTER    EXPLICIT       R        NDSNDD    128     16       8      UINT                         xmm4
+ 2     MEMORY    EXPLICIT       R      MODRM_RM    128     16       8      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rip
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0xFFFFFFFF890FA23A
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpaddusb 0xFFFFFFFF890FA242, %xmm4, %xmm9
+   RELATIVE: vpaddusb -0x76F05DC6(%rip), %xmm4, %xmm9
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpaddusb xmm9, xmm4, xmmword ptr ds:[0xFFFFFFFF890FA242]
+   RELATIVE: vpaddusb xmm9, xmm4, xmmword ptr ds:[rip-0x76F05DC6]
+
+== [ SEGMENTS ] ============================================================================================
+C5 59 DC 0D 3A A2 0F 89 
+:     :  :  :..DISP
+:     :  :..MODRM
+:     :..OPCODE
+:..VEX

@@ -1,0 +1,8 @@
+.arch x86
+.bits 64
+.int16 823489
+.dword 33
+nop
+nop
+nop
+nop

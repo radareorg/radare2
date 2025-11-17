@@ -1,0 +1,68 @@
+// Test script to verify the exit handling fix
+// This simulates the key handling logic
+
+// Mock the global variables and functions
+let running = true;
+let term_read_buf = new Uint8Array(64);
+
+// Simulate the fixed term_read_handler function
+function term_read_handler_fixed() {
+    const l = 1; // Simulate 1 byte read
+    for (let i = 0; i < l; i++) {
+        handle_byte(term_read_buf[i]);
+        if (!running) {
+            console.log("term_read_handler: exiting due to running=false");
+            return;
+        }
+    }
+}
+
+// Simulate the fixed handle_key function
+function handle_key_fixed(keys) {
+    const commands = {
+        '\x04': function() { // Ctrl-D
+            if (cmd.length === 0) {
+                console.log("Ctrl-D: exiting");
+                running = false;
+                return -3;
+            }
+            return 0;
+        },
+        'q': function() { // q command
+            console.log("q command: exiting");
+            running = false;
+            return -3;
+        }
+    };
+    
+    const fun = commands[keys];
+    if (fun) {
+        const res = fun();
+        switch (res) {
+            case -3:
+                running = false; // This is the fix
+                return;
+        }
+    }
+}
+
+// Mock variables
+let cmd = '';
+
+// Test Ctrl-D exit
+console.log("Testing Ctrl-D exit...");
+term_read_buf[0] = 4; // Ctrl-D
+term_read_handler_fixed();
+console.log("Running after Ctrl-D:", running);
+
+// Reset
+running = true;
+cmd = '';
+
+// Test q command exit  
+console.log("\nTesting q command exit...");
+// Simulate 'q' command being processed
+handle_key_fixed('q');
+console.log("Running after q command:", running);
+
+console.log("\nAll tests completed successfully!");

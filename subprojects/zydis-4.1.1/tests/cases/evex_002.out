@@ -1,0 +1,48 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpsubq [ENC: EVEX, MAP: 0F, OPC: 0xFB]
+     LENGTH:  7
+        SSZ: 64
+       EOSZ: 64
+       EASZ: 64
+   CATEGORY: AVX512
+    ISA-SET: AVX512F_512
+    ISA-EXT: AVX512EVEX
+ EXCEPTIONS: E4
+ ATTRIBUTES: HAS_MODRM HAS_SIB HAS_EVEX ACCEPTS_SEGMENT 
+  OPTIMIZED: 62 11 E5 5F FB 3C B0 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT     RCW     MODRM_REG    512      8      64       INT                        zmm15
+ 1   REGISTER    EXPLICIT       R          MASK     64     64       1       INT                           k7
+ 2   REGISTER    EXPLICIT       R        NDSNDD    512      8      64       INT                         zmm3
+ 3     MEMORY    EXPLICIT       R      MODRM_RM     64      1      64       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                  r8
+                                                                                 INDEX =                 r14
+                                                                                 SCALE =                   4
+                                                                                 DISP  =  0x0000000000000000
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 512
+  BROADCAST: 1_TO_8
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k7 [MERGING]
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpsubq (%r8,%r14,4) {1to8}, %zmm3, %zmm15 {%k7}
+   RELATIVE: vpsubq (%r8,%r14,4) {1to8}, %zmm3, %zmm15 {%k7}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpsubq zmm15 {k7}, zmm3, qword ptr ds:[r8+r14*4] {1to8}
+   RELATIVE: vpsubq zmm15 {k7}, zmm3, qword ptr ds:[r8+r14*4] {1to8}
+
+== [ SEGMENTS ] ============================================================================================
+62 11 E5 5F FB 3C B0 
+:           :  :  :..SIB
+:           :  :..MODRM
+:           :..OPCODE
+:..EVEX

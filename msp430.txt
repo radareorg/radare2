@@ -1,0 +1,172 @@
+;-- entry0:
+;-- __init_stack:
+;-- pc:
+0x00004400      mov entry0, sp
+;-- __low_level_init:
+0x00004404      mov 0x015c, r5
+0x00004408      and.b -1, r5
+0x0000440a      bis 0x5a08, r5
+;-- __do_copy_data:
+0x0000440e      clr r15
+0x00004410      nop
+0x00004412      tst r15
+0x00004414      jeq $+0x0010
+0x00004416      mov r5, 0x015c
+0x0000441a      decd r15
+0x0000441c      mov 0x4586(r15), 0x2400(r15)
+0x00004422      jnz $-0x000c
+;-- __do_clear_bss:
+0x00004424      clr r15
+0x00004426      nop
+0x00004428      tst r15
+0x0000442a      jeq $+0x000e
+0x0000442c      mov r5, 0x015c
+0x00004430      dec r15
+0x00004432      clr.b 0x2400(r15)
+0x00004436      jnz $-0x000a
+;-- main:
+0x00004438      add 0xff9c, sp
+0x0000443c      mov loc..strings, r15
+0x00004440      call loc.puts
+0x00004444      mov sp, r15
+0x00004446      call loc.get_password
+0x0000444a      mov sp, r15
+0x0000444c      call loc.check_password
+0x00004450      tst r15
+0x00004452      jnz $+0x000c
+0x00004454      mov 0x44c7, r15
+0x00004458      call loc.puts
+0x0000445c      jmp $+0x000e
+0x0000445e      mov 0x44e4, r15
+0x00004462      call loc.puts
+0x00004466      call loc.unlock_door
+0x0000446a      clr r15
+0x0000446c      add 0x0064, sp
+;-- __stop_progExec__:
+0x00004470      bis 0x00f0, sr
+0x00004474      jmp $-0x0004
+;-- __ctors_end:
+0x00004476      br loc._unexpected_
+;-- get_password:
+0x0000447a      mov 0x0064, r14
+0x0000447e      call loc.getsn
+0x00004482      ret
+;-- check_password:
+0x00004484      mov.b @r15, r14
+0x00004486      inc r15
+0x00004488      inc r12
+0x0000448a      tst r14
+0x0000448c      jnz $-0x0008
+0x0000448e      cmp 0x0009, r12
+0x00004492      jeq $+0x0006
+0x00004494      clr r15
+0x00004496      ret
+0x00004498      mov 1, r15
+0x0000449a      ret
+;-- unlock_door:
+0x0000449c      push 0x007f
+0x000044a0      call loc.INT
+0x000044a4      incd sp
+0x000044a6      ret
+;-- .strings:
+0x000044a8      addc.b r14, r5
+0x000044aa      addc.b @r5+, r4
+0x000044ac      jnz $+0x00e6
+0x000044ae      addc.b @r8+, r4
+0x000044b0      jnz $+0x00cc
+0x000044b2      addc.b @sp+, pc
+0x000044b4      subc.b -1, cg
+0x000044b6      addc.b @r15+, r7
+0x000044b8      addc.b @r4+, sr
+0x000044ba      subc @r4, pc
+0x000044bc      jnz $+0x00e0
+0x000044be      addc.b @r15, cg
+0x000044c0      subc.b @r4, r14
+0x000044c2      addc.b @r14, r9
+0x000044c4      rlc.b @r5+
+0x000044c6      br r9
+0x000044c8      subc.b @r6, r14
+0x000044ca      addc.b @r12, sp
+0x000044cc      addc.b @r4, r9
+0x000044ce      subc @pc, pc
+0x000044d0      subc.b 2, sp
+0x000044d2      subc.b @r7+, cg
+0x000044d4      subc.b 4, r15
+0x000044d6      jl $-0x0136
+0x000044d8      subc @r4, pc
+0x000044da      subc.b @r9+, sr
+0x000044dc      addc @sp, pc
+0x000044de      addc.b @sp, r7
+0x000044e0      addc.b @r14, r9
+0x000044e2      invalid
+0x000044e4      adc.b sp
+0x000044e6      addc.b @r5, cg
+0x000044e8      subc.b -1, cg
+0x000044ea      br @r7
+0x000044ec      addc.b @sp+, sr
+0x000044ee      subc.b @r4, r14
+0x000044f0      addc.b @r4, r5
+0x000044f2      invalid
+;-- INT:
+0x000044f4      mov 0x2(sp), r14
+0x000044f8      push sr
+0x000044fa      mov r14, r15
+0x000044fc      swpb r15
+0x000044fe      mov r15, sr
+0x00004500      bis 0x8000, sr
+0x00004504      call loc.__trap_interrupt
+0x00004508      pop sr
+0x0000450a      ret
+;-- putchar:
+0x0000450c      decd sp
+0x0000450e      push r15
+0x00004510      push 0
+0x00004512      mov r15, 0x4(sp)
+0x00004516      call loc.INT
+0x0000451a      mov 0x4(sp), r15
+0x0000451e      add 0x0006, sp
+0x00004522      ret
+;-- getchar:
+0x00004524      push r4
+0x00004526      mov sp, r4
+0x00004528      incd r4
+0x0000452a      decd sp
+0x0000452c      mov 0xfffc, r15
+0x00004530      add r4, r15
+0x00004532      push r15
+0x00004534      push 1
+0x00004536      call loc.INT
+0x0000453a      mov.b 0xfffc(r4), r15
+0x0000453e      sxt r15
+0x00004540      add 0x0006, sp
+0x00004544      pop r4
+0x00004546      ret
+;-- getsn:
+0x00004548      push r14
+0x0000454a      push r15
+0x0000454c      push 2
+0x0000454e      call loc.INT
+0x00004552      add 0x0006, sp
+0x00004556      ret
+;-- puts:
+0x00004558      push r11
+0x0000455a      mov r15, r11
+0x0000455c      jmp $+0x0010
+0x0000455e      inc r11
+0x00004560      sxt r15
+0x00004562      push r15
+0x00004564      push 0
+0x00004566      call loc.INT
+0x0000456a      add 4, sp
+0x0000456c      mov.b @r11, r15
+0x0000456e      tst.b r15
+0x00004570      jnz $-0x0012
+0x00004572      push 0x000a
+0x00004576      push 0
+0x00004578      call loc.INT
+0x0000457c      add 4, sp
+0x0000457e      clr r15
+0x00004580      pop r11
+0x00004582      ret
+;-- _unexpected_:
+0x00004584      reti

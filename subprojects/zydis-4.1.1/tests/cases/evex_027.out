@@ -1,0 +1,48 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vfmaddcph [ENC: EVEX, MAP: MAP6, OPC: 0x56]
+     LENGTH: 10
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: FP16
+    ISA-SET: AVX512_FP16_512
+    ISA-EXT: AVX512EVEX
+ EXCEPTIONS: E4
+ ATTRIBUTES: HAS_MODRM HAS_EVEX ACCEPTS_SEGMENT 
+  OPTIMIZED: 62 56 56 56 56 7F 67 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT     RCW     MODRM_REG    512     16      32   FLOAT16                        zmm15
+ 1   REGISTER    EXPLICIT       R          MASK     64     64       1       INT                           k6
+ 2   REGISTER    EXPLICIT       R        NDSNDD    512     16      32   FLOAT16                        zmm21
+ 3     MEMORY    EXPLICIT       R      MODRM_RM     32      1      32   FLOAT16  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 r15
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x000000000000019C
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 512
+  BROADCAST: 1_TO_16
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k6 [MERGING]
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vfmaddcph 0x19C(%r15) {1to16}, %zmm21, %zmm15 {%k6}
+   RELATIVE: vfmaddcph 0x19C(%r15) {1to16}, %zmm21, %zmm15 {%k6}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vfmaddcph zmm15 {k6}, zmm21, dword ptr ds:[r15+0x19C] {1to16}
+   RELATIVE: vfmaddcph zmm15 {k6}, zmm21, dword ptr ds:[r15+0x19C] {1to16}
+
+== [ SEGMENTS ] ============================================================================================
+62 56 56 56 56 BF 9C 01 00 00 
+:           :  :  :..DISP
+:           :  :..MODRM
+:           :..OPCODE
+:..EVEX

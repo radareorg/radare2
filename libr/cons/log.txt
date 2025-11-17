@@ -1,0 +1,116 @@
+[35mWARN:[0m Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
+[?1000;1006;1015l[?1000;1006;1015lINFO: Second cons!
+[?1000;1006;1015lINFO: Analyze all flags starting with sym. and entry0 (aa)
+INFO: Analyze imports (af@@@i)
+INFO: Analyze entrypoint (af@ entry0)
+WARN: Cannot find basic block for switch case at 0x100000b24 bbdelta = 16
+INFO: Analyze symbols (af@@@s)
+[?1000;1006;1015l[?1000;1006;1015hINFO: Analyze all functions arguments/locals (afva@@@F)
+INFO: Analyze function calls (aac)
+INFO: Analyze len bytes of instructions for references (aar)
+INFO: Check for objc references (aao)
+INFO: Finding and parsing C++ vtables (avrr)
+INFO: Analyzing methods (af @@ method.*)
+INFO: Finding function preludes (aap)
+INFO: Emulate functions to find computed references (aaef)
+ > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0% > aae: 0%INFO: Recovering local variables (afva@@@F)
+INFO: Type matching analysis for all functions (aaft)
+INFO: Propagate noreturn information (aanr)
+INFO: Scanning for strings constructed in code (/azs)
+INFO: Enable anal.types.constraint for experimental type propagation
+INFO: Finding xrefs in noncode sections (e anal.in=io.maps.x; aav)
+WARN: task 1 result:  (len=0)
+=================================================================
+==37130==ERROR: AddressSanitizer: heap-use-after-free on address 0x61e00004e080 at pc 0x00010b0c24d0 bp 0x00016b95df10 sp 0x00016b95df08
+READ of size 8 at 0x61e00004e080 thread T1
+    #0 0x10b0c24cc in task_run task.c:551
+    #1 0x10b0c0084 in task_run_thread task.c:613
+    #2 0x107587f48 in _r_th_launcher thread.c:53
+    #3 0x10d829858 in asan_thread_start(void*)+0x40 (libclang_rt.asan_osx_dynamic.dylib:arm64e+0x51858)
+    #4 0x18cd37c08 in _pthread_start+0x84 (libsystem_pthread.dylib:arm64e+0x6c08)
+    #5 0x18cd32b7c in thread_start+0x4 (libsystem_pthread.dylib:arm64e+0x1b7c)
+
+0x61e00004e080 is located 0 bytes inside of 2776-byte region [0x61e00004e080,0x61e00004eb58)
+freed by thread T1 here:
+    #0 0x10d82cd40 in free+0x98 (libclang_rt.asan_osx_dynamic.dylib:arm64e+0x54d40)
+    #1 0x104fec8a8 in r_cons_context_free cons.c:1579
+    #2 0x104ff1948 in r_cons_pop cons.c:1748
+    #3 0x10a5400d8 in r_core_cmd_str cmd.c:6770
+    #4 0x10b0c195c in task_run task.c:528
+    #5 0x10b0c0084 in task_run_thread task.c:613
+    #6 0x107587f48 in _r_th_launcher thread.c:53
+    #7 0x10d829858 in asan_thread_start(void*)+0x40 (libclang_rt.asan_osx_dynamic.dylib:arm64e+0x51858)
+    #8 0x18cd37c08 in _pthread_start+0x84 (libsystem_pthread.dylib:arm64e+0x6c08)
+    #9 0x18cd32b7c in thread_start+0x4 (libsystem_pthread.dylib:arm64e+0x1b7c)
+
+previously allocated by thread T0 here:
+    #0 0x10d82cc04 in malloc+0x94 (libclang_rt.asan_osx_dynamic.dylib:arm64e+0x54c04)
+    #1 0x10735f828 in r_mem_dup mem.c:308
+    #2 0x10500defc in r_cons_context_clone cons.c:1584
+    #3 0x10b0b7834 in r_core_task_new task.c:376
+    #4 0x10b0c6c84 in r_core_task_submit task.c:876
+    #5 0x10a4a07f4 in _cmd_tasks_impl cmd_task.inc.c:71
+    #6 0x10a49f874 in cmd_tasks cmd_task.inc.c:84
+    #7 0x10adfd1dc in r_cmd_call cmd_api.c:414
+    #8 0x10a734e1c in r_core_cmd_subst_i cmd.c:5371
+    #9 0x10a714608 in r_core_cmd_subst cmd.c:4058
+    #10 0x10a558ca4 in run_cmd_depth cmd.c:6352
+    #11 0x10a52cf60 in r_core_cmd cmd.c:6455
+    #12 0x10a46b6c0 in r_core_prompt_exec core.c:3128
+    #13 0x10a46a75c in r_core_prompt_loop core.c:2925
+    #14 0x106a3caac in r_main_radare2 radare2.c:1896
+    #15 0x104caaf70 in main radare2.c:119
+    #16 0x18c996b94 in start+0x17b8 (dyld:arm64e+0xfffffffffff3ab94)
+
+Thread T1 created by T0 here:
+    #0 0x10d8241c8 in pthread_create+0x5c (libclang_rt.asan_osx_dynamic.dylib:arm64e+0x4c1c8)
+    #1 0x107586f88 in r_th_new thread.c:197
+    #2 0x10b0bfcd4 in r_core_task_enqueue task.c:635
+    #3 0x10b0c6370 in _task_run_threaded task.c:801
+    #4 0x10b0c6d98 in r_core_task_submit task.c:884
+    #5 0x10a4a07f4 in _cmd_tasks_impl cmd_task.inc.c:71
+    #6 0x10a49f874 in cmd_tasks cmd_task.inc.c:84
+    #7 0x10adfd1dc in r_cmd_call cmd_api.c:414
+    #8 0x10a734e1c in r_core_cmd_subst_i cmd.c:5371
+    #9 0x10a714608 in r_core_cmd_subst cmd.c:4058
+    #10 0x10a558ca4 in run_cmd_depth cmd.c:6352
+    #11 0x10a52cf60 in r_core_cmd cmd.c:6455
+    #12 0x10a46b6c0 in r_core_prompt_exec core.c:3128
+    #13 0x10a46a75c in r_core_prompt_loop core.c:2925
+    #14 0x106a3caac in r_main_radare2 radare2.c:1896
+    #15 0x104caaf70 in main radare2.c:119
+    #16 0x18c996b94 in start+0x17b8 (dyld:arm64e+0xfffffffffff3ab94)
+
+SUMMARY: AddressSanitizer: heap-use-after-free task.c:551 in task_run
+Shadow bytes around the buggy address:
+  0x61e00004de00: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x61e00004de80: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x61e00004df00: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x61e00004df80: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x61e00004e000: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+=>0x61e00004e080:[fd]fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x61e00004e100: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x61e00004e180: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x61e00004e200: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x61e00004e280: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x61e00004e300: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+Shadow byte legend (one shadow byte represents 8 application bytes):
+  Addressable:           00
+  Partially addressable: 01 02 03 04 05 06 07 
+  Heap left redzone:       fa
+  Freed heap region:       fd
+  Stack left redzone:      f1
+  Stack mid redzone:       f2
+  Stack right redzone:     f3
+  Stack after return:      f5
+  Stack use after scope:   f8
+  Global redzone:          f9
+  Global init order:       f6
+  Poisoned by user:        f7
+  Container overflow:      fc
+  Array cookie:            ac
+  Intra object redzone:    bb
+  ASan internal:           fe
+  Left alloca redzone:     ca
+  Right alloca redzone:    cb
+==37130==ABORTING

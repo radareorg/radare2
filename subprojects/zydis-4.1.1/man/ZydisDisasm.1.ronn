@@ -1,0 +1,51 @@
+ZydisDisasm(1) -- disassemble files
+===================================
+
+## SYNOPSIS
+
+`ZydisDisasm` <machine_mode> [<input_file>]
+
+## DESCRIPTION
+
+`ZydisDisasm` allows you to decode X86 & X86-64 assembly files, dumping the disassembled instructions to stdout. With no <input_file> argument, `ZydisDisasm` will read input from stdin.
+
+## OPTIONS
+
+`ZydisDisasm` supports four different machine modes
+
+  * `-real`:
+    real machine mode
+
+  * `-16`:
+    16 bits machine mode
+
+  * `-32`:
+    32 bits machine mode
+
+  * `-64`:
+    64 bits machine mode
+
+## EXAMPLES
+
+    $ ZydisDisasm -64 input.hex
+    and byte ptr ds:[rbx], dh
+    and byte ptr ds:[r14], r14b
+    xor eax, 0x20453220
+    xor byte ptr ds:[rax], r12b
+    xor r12b, byte ptr ds:[rax]
+    xor r12d, dword ptr ds:[rax]
+    xor al, 0x38
+    and byte ptr ds:[rax], dh
+    xor dword ptr ds:[rax], esp
+    xor al, 0x20
+    cmp dword ptr ds:[rax], edi
+    and byte ptr ds:[rdx], dh
+    and byte ptr ds:[r8], sil
+    xor dword ptr ds:[rax], esp
+    xor byte ptr ds:[rax], dh
+    and byte ptr ds:[rax], dh
+    xor byte ptr ds:[rdx], cl
+
+## SEE ALSO
+
+ZydisInfo(1)

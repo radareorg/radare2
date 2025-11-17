@@ -1,0 +1,89 @@
+@@ -219,13 +219,13 @@
+ }
+ #endif
+ 
+-#define diffHit() { \
++#define diffHit() \
++	{ \
+ 		const size_t i_hit = i - hit; \
+ 		int ra = la - i_hit; \
+ 		int rb = lb - i_hit; \
+ 		struct r_diff_op_t o = { \
+-		.a_off = d->off_a+i-hit, .a_buf = a+i-hit, .a_len = R_MIN (hit, ra), \
+-		.b_off = d->off_b+i-hit, .b_buf = b+i-hit, .b_len = R_MIN (hit, rb) \
++			.a_off = d->off_a + i - hit, .a_buf = a + i - hit, .a_len = R_MIN(hit, ra), .b_off = d->off_b + i - hit, .b_buf = b + i - hit, .b_len = R_MIN(hit, rb) \
+ 		}; \
+ 		d->callback(d, d->user, &o); \
+ 	}
+@@ -439,16 +442,37 @@
+ 		return NULL;
+ 	}
+ 
++	/* Helper to clamp calculated scores into st16 range, reserving ST16_MIN
++	 * as a sentinel value. We avoid returning ST16_MIN itself to prevent
++	 * confusion with our out-of-bounds sentinel in backtrace logic. */
++	static inline st16 clamp_st16(st32 v) {
++		if (v <= (st32)ST16_MIN + 1) {
++			return (st16)((st32)ST16_MIN + 1);
++		}
++		if (v >= (st32)ST16_MAX) {
++			return (st16)ST16_MAX;
++		}
++		return (st16)v;
++	}
++
+ 	const size_t len_a = strlen((const char *)a);
+ 	const size_t len_b = strlen((const char *)b);
+ 	const size_t len_long = len_a > len_b ? len_a : len_b;
+ 	const size_t dim = len_long + 1;
+-	char *dup_a = malloc (len_long);
+-	char *dup_b = malloc (len_long);
+-	st16 *align_table = malloc (dim * dim * sizeof (st16));
+-	ut8 *align_a = malloc (2 * len_long);
+-	ut8 *align_b = malloc (2 * len_long);
+-	if (!(dup_a && dup_b && align_table && align_a && align_b)) {
++	/* Duplicate and pad the input buffers to the same length (len_long).
++	 * Padding with NUL (0) bytes ensures safe indexing and deterministic
++	 * behavior when one string is shorter than the other. */
++	char *dup_a = calloc(len_long + 1, 1);
++	char *dup_b = calloc(len_long + 1, 1);
++	/* Check multiplication overflow for allocation of align_table. */
++	st16 *align_table = NULL;
++	if (dim > 0 && dim <= SIZE_MAX / dim && (dim * dim) <= SIZE_MAX / sizeof(st16)) {
++		align_table = malloc(dim * dim * sizeof(st16));
++	}
++	/* allocate alignment buffers (size 2*len_long is sufficient) */
++	ut8 *align_a = malloc((2 * len_long) + 1);
++	ut8 *align_b = malloc((2 * len_long) + 1);
++	if (!dup_a || !dup_b || !align_table || !align_a || !align_b) {
+ 		free(dup_a);
+ 		free(dup_b);
+ 		free(align_table);
+@@ -457,18 +481,22 @@
+ 		free(diffchar);
+ 		return NULL;
+ 	}
+-
+-	snprintf (dup_a, len_long, "%s", a);
++	/* copy originals and leave the rest zero-padded */
++	memcpy(dup_a, a, len_a);
++	memcpy(dup_b, b, len_b);
++	/* Cast back to ut8 pointers we will use in the algorithm */
+ 	a = (const ut8 *)dup_a;
+-	snprintf (dup_b, len_long, "%s", b);
+ 	b = (const ut8 *)dup_b;
+ 
+ 	// Fill table
+ 	size_t row, col;
+ 	*align_table = 0;
+ 	for (row = 1; row < dim; row++) {
+-		// TODO Clamping [ST16_MIN + 1, .]
+-		*(align_table + row) = *(align_table + row * dim) = -(st16)row;
++		/* Clamp the initial row/column values to avoid underflow below
++		 * ST16_MIN when negating the row index. Reserve ST16_MIN as a
++		 * sentinel and use ST16_MIN + 1 as the smallest valid stored value. */
++		st32 init = -(st32)row;
++		*(align_table + row) = *(align_table + row * dim) = clamp_st16(init);
+ 	}
+ 	const st16 match = 1;
+ 	const st16 match_nl = 2;

@@ -1,0 +1,10 @@
+NAME=/re multi addresses
+FILE=bins/pe/x.dll
+CMDS=/re 0x69682004 0x69682004
+EXPECT=<<EOF
+(nofunc) 0x69681006 [DATA] push 0x69682004
+(nofunc) 0x6968100b [DATA] mov eax, dword [0x69682004]
+(nofunc) 0x69681010 [DATA] mov eax, 0x69682004
+EOF
+RUN
+

@@ -1,0 +1,44 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vroundpd [ENC: VEX, MAP: 0F3A, OPC: 0x09]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 64
+       EASZ: 64
+   CATEGORY: AVX
+    ISA-SET: AVX
+    ISA-EXT: AVX
+ EXCEPTIONS: AVX2
+ ATTRIBUTES: HAS_MODRM HAS_VEX ACCEPTS_SEGMENT 
+  OPTIMIZED: C4 43 7D 09 26 3E 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    256      4      64   FLOAT64                        ymm12
+ 1     MEMORY    EXPLICIT       R      MODRM_RM    256      4      64   FLOAT64  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 r14
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000000000000
+ 2  IMMEDIATE    EXPLICIT       R         UIMM8      8      1       8      UINT  [U A  8] 0x000000000000003E
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 256
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vroundpd $0x3E, (%r14), %ymm12
+   RELATIVE: vroundpd $0x3E, (%r14), %ymm12
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vroundpd ymm12, ymmword ptr ds:[r14], 0x3E
+   RELATIVE: vroundpd ymm12, ymmword ptr ds:[r14], 0x3E
+
+== [ SEGMENTS ] ============================================================================================
+C4 43 FD 09 26 3E 
+:        :  :  :..IMM
+:        :  :..MODRM
+:        :..OPCODE
+:..VEX

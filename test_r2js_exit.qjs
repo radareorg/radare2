@@ -1,0 +1,9 @@
+#!/usr/bin/env ./binr/radare2/radare2 -c "#!pipe qjs" -
+
+// Test script to verify q and ^D exit functionality
+console.log("Testing q command exit");
+setTimeout(() => {
+  console.log("Should exit with q command");
+  // This should trigger the q command
+  globalThis.testInput = "q\n";
+}, 100);

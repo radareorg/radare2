@@ -1,0 +1,49 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpsraw [ENC: EVEX, MAP: 0F, OPC: 0xE1]
+     LENGTH:  8
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AVX512
+    ISA-SET: AVX512BW_512
+    ISA-EXT: AVX512EVEX
+ EXCEPTIONS: E4NF
+ ATTRIBUTES: HAS_MODRM HAS_SIB HAS_EVEX ACCEPTS_SEGMENT 
+  OPTIMIZED: 62 01 6D C2 E1 5C D5 5E 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    512     32      16       INT                        zmm27
+ 1   REGISTER    EXPLICIT       R          MASK     64     64       1       INT                           k2
+ 2   REGISTER    EXPLICIT       R        NDSNDD    512     32      16       INT                        zmm18
+ 3     MEMORY    EXPLICIT       R      MODRM_RM    128      8      16      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 r13
+                                                                                 INDEX =                 r10
+                                                                                 SCALE =                   8
+                                                                                 DISP  =  0x00000000000005E0
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 512
+  BROADCAST: NONE
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k2 [ZEROING]
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpsraw 0x5E0(%r13,%r10,8), %zmm18, %zmm27 {%k2} {z}
+   RELATIVE: vpsraw 0x5E0(%r13,%r10,8), %zmm18, %zmm27 {%k2} {z}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpsraw zmm27 {k2} {z}, zmm18, xmmword ptr ds:[r13+r10*8+0x5E0]
+   RELATIVE: vpsraw zmm27 {k2} {z}, zmm18, xmmword ptr ds:[r13+r10*8+0x5E0]
+
+== [ SEGMENTS ] ============================================================================================
+62 01 6D C2 E1 5C D5 5E 
+:           :  :  :  :..DISP
+:           :  :  :..SIB
+:           :  :..MODRM
+:           :..OPCODE
+:..EVEX

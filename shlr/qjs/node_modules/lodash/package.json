@@ -1,0 +1,58 @@
+{
+  "name": "lodash",
+  "version": "0.9.2",
+  "description": "A utility library delivering consistency, customization, performance, and extras.",
+  "homepage": "http://lodash.com",
+  "license": "MIT",
+  "main": "./lodash.js",
+  "keywords": [
+    "browser",
+    "client",
+    "functional",
+    "performance",
+    "server",
+    "speed",
+    "util"
+  ],
+  "author": {
+    "name": "John-David Dalton",
+    "email": "john.david.dalton@gmail.com",
+    "web": "http://allyoucanleet.com/"
+  },
+  "contributors": [
+    {
+      "name": "John-David Dalton",
+      "email": "john.david.dalton@gmail.com",
+      "url": "http://allyoucanleet.com/"
+    },
+    {
+      "name": "Blaine Bublitz",
+      "email": "blaine@iceddev.com",
+      "url": "http://iceddev.com/"
+    },
+    {
+      "name": "Kit Cambridge",
+      "email": "github@kitcambridge.be",
+      "url": "http://kitcambridge.be/"
+    },
+    {
+      "name": "Mathias Bynens",
+      "email": "mathias@qiwi.be",
+      "url": "http://mathiasbynens.be/"
+    }
+  ],
+  "bugs": {
+    "url": "https://github.com/lodash/lodash/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lodash/lodash.git"
+  },
+  "engines": [
+    "node",
+    "rhino"
+  ],
+  "jam": {
+    "main": "./lodash.js"
+  }
+}

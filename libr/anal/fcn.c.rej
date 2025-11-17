@@ -1,0 +1,17 @@
+@@ -1409,7 +1409,7 @@
+ 			fcn->stack = saved_stack;
+ 			ret = r_anal_function_bb (anal, fcn, op->fail, depth);
+ 			fcn->stack = saved_stack;
+-			if (is_x86) {
++			if (!is_arm) {
+ 				// XXX breaks mips analysis too !op->delay
+ 				// this will be all x86, arm (at least)
+ 				// without which the analysis is really slow,
+@@ -1418,6 +1418,7 @@
+ 				goto beach;
+ 			}
+ 			// Delayed branches in MIPS needs to continue
++				goto beach;
+ 			break;
+ 		case R_ANAL_OP_TYPE_UCALL:
+ 		case R_ANAL_OP_TYPE_RCALL:

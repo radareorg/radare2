@@ -1,0 +1,50 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpmadd231d [ENC: MVEX, MAP: 0F38, OPC: 0xB5]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: KNC
+    ISA-SET: KNCE
+    ISA-EXT: KNCE
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_MVEX ACCEPTS_SEGMENT 
+  OPTIMIZED: 62 62 19 1E B5 30 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT     RCW     MODRM_REG    512     16      32   FLOAT32                        zmm30
+ 1   REGISTER    EXPLICIT       R          MASK     16     16       1       INT                           k6
+ 2   REGISTER    EXPLICIT       R        NDSNDD    512     16      32   FLOAT32                        zmm12
+ 3     MEMORY    EXPLICIT       R      MODRM_RM     32      1      32       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rax
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000000000000
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 512
+  BROADCAST: 1_TO_16
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k6 [MERGING]
+         EH: N
+    SWIZZLE: NONE
+    CONVERT: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpmadd231d (%rax) {1to16}, %zmm12, %zmm30 {%k6}
+   RELATIVE: vpmadd231d (%rax) {1to16}, %zmm12, %zmm30 {%k6}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpmadd231d zmm30 {k6}, zmm12, dword ptr ds:[rax] {1to16}
+   RELATIVE: vpmadd231d zmm30 {k6}, zmm12, dword ptr ds:[rax] {1to16}
+
+== [ SEGMENTS ] ============================================================================================
+62 62 19 1E B5 30 
+:           :  :..MODRM
+:           :..OPCODE
+:..MVEX

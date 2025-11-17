@@ -1,0 +1,45 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vfmsub132ps [ENC: MVEX, MAP: 0F38, OPC: 0x9A]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: UFMA
+    ISA-SET: KNCE
+    ISA-EXT: KNCE
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_MVEX 
+  OPTIMIZED: 62 52 01 71 9A E0 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT     RCW     MODRM_REG    512     16      32   FLOAT32                        zmm12
+ 1   REGISTER    EXPLICIT       R          MASK     16     16       1       INT                           k1
+ 2   REGISTER    EXPLICIT       R        NDSNDD    512     16      32   FLOAT32                        zmm31
+ 3   REGISTER    EXPLICIT       R      MODRM_RM    512     16      32   FLOAT32                         zmm8
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 512
+  BROADCAST: NONE
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k1 [MERGING]
+         EH: N
+    SWIZZLE: DDDD
+    CONVERT: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vfmsub132ps %zmm8 {dddd}, %zmm31, %zmm12 {%k1}
+   RELATIVE: vfmsub132ps %zmm8 {dddd}, %zmm31, %zmm12 {%k1}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vfmsub132ps zmm12 {k1}, zmm31, zmm8 {dddd}
+   RELATIVE: vfmsub132ps zmm12 {k1}, zmm31, zmm8 {dddd}
+
+== [ SEGMENTS ] ============================================================================================
+62 52 01 71 9A E0 
+:           :  :..MODRM
+:           :..OPCODE
+:..MVEX

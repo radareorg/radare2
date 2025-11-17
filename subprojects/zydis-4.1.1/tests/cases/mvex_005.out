@@ -1,0 +1,52 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpandd [ENC: MVEX, MAP: 0F, OPC: 0xDB]
+     LENGTH: 11
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: KNC
+    ISA-SET: KNCE
+    ISA-EXT: KNCE
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_SIB HAS_MVEX ACCEPTS_SEGMENT 
+  OPTIMIZED: 62 A1 49 FA DB 8C E9 32 28 08 91 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT     RCW     MODRM_REG    512     16      32   FLOAT32                        zmm17
+ 1   REGISTER    EXPLICIT       R          MASK     16     16       1       INT                           k2
+ 2   REGISTER    EXPLICIT       R        NDSNDD    512     16      32   FLOAT32                         zmm6
+ 3     MEMORY    EXPLICIT       R      MODRM_RM    256     16      16       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rcx
+                                                                                 INDEX =                 r13
+                                                                                 SCALE =                   8
+                                                                                 DISP  =  0xFFFFFFFF91082832
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 512
+  BROADCAST: NONE
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k2 [MERGING]
+         EH: Y
+    SWIZZLE: NONE
+    CONVERT: SINT16
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpandd -0x6EF7D7CE(%rcx,%r13,8) {sint16} {eh}, %zmm6, %zmm17 {%k2}
+   RELATIVE: vpandd -0x6EF7D7CE(%rcx,%r13,8) {sint16} {eh}, %zmm6, %zmm17 {%k2}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpandd zmm17 {k2}, zmm6, ymmword ptr ds:[rcx+r13*8-0x6EF7D7CE] {sint16} {eh}
+   RELATIVE: vpandd zmm17 {k2}, zmm6, ymmword ptr ds:[rcx+r13*8-0x6EF7D7CE] {sint16} {eh}
+
+== [ SEGMENTS ] ============================================================================================
+62 A1 49 FA DB 8C E9 32 28 08 91 
+:           :  :  :  :..DISP
+:           :  :  :..SIB
+:           :  :..MODRM
+:           :..OPCODE
+:..MVEX

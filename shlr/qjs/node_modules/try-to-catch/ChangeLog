@@ -1,0 +1,64 @@
+2022.03.09, v3.0.1
+
+feature:
+- (package) supertape v7.2.0
+- (package) eslint v8.10.0
+- (package) madrun v9.0.0
+- (package) eslint-plugin-putout v14.4.0
+- (package) putout v25.4.1
+
+2020.02.24, v3.0.0
+
+feature:
+- (try-to-catch) promise -> async
+
+
+2019.12.30, v2.0.1
+
+fix:
+- (try-to-catch) minimal node: v4 -> v6
+
+feature:
+- (package) putout v7.3.4
+- (package) nyc v15.0.0
+- (package) nodemon v2.0.2
+
+
+2019.10.16, v2.0.0
+
+feature:
+- (package) putout v6.15.1
+- (package) madrun v3.0.6
+- (try-to-catch) drop support of node < 4
+- (package) nyc v14.1.1
+- (package) eslint v6.1.0
+
+
+2018.11.08, v1.1.1
+
+fix:
+- (try-to-catch) wraptile -> noArg
+
+
+2018.11.08, v1.1.0
+
+feature:
+- (try-to-catch) add support of a functions
+- (package) redrun v7.0.2
+- (package) nyc v13.0.1
+- (package) eslint v5.6.0
+- (package) babel v7.0.0
+- (package) redrun v6.0.0
+
+
+2018.02.13, v1.0.2
+
+fix:
+- (package) legacy
+
+
+2018.02.12, v1.0.1
+
+feature:
+- (package) keywords: then
+

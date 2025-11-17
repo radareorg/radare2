@@ -1,0 +1,45 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vaddnps [ENC: MVEX, MAP: 0F38, OPC: 0x50]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: KNC
+    ISA-SET: KNCE
+    ISA-EXT: KNCE
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_MVEX 
+  OPTIMIZED: 62 F2 71 E9 50 C2 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT     RCW     MODRM_REG    512     16      32   FLOAT32                         zmm0
+ 1   REGISTER    EXPLICIT       R          MASK     16     16       1       INT                           k1
+ 2   REGISTER    EXPLICIT       R        NDSNDD    512     16      32   FLOAT32                         zmm1
+ 3   REGISTER    EXPLICIT       R      MODRM_RM    512     16      32   FLOAT32                         zmm2
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 512
+  BROADCAST: NONE
+   ROUNDING: RU
+        SAE: Y
+       MASK: k1 [MERGING]
+         EH: N
+    SWIZZLE: NONE
+    CONVERT: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vaddnps %zmm2 {ru-sae}, %zmm1, %zmm0 {%k1}
+   RELATIVE: vaddnps %zmm2 {ru-sae}, %zmm1, %zmm0 {%k1}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vaddnps zmm0 {k1}, zmm1, zmm2 {ru-sae}
+   RELATIVE: vaddnps zmm0 {k1}, zmm1, zmm2 {ru-sae}
+
+== [ SEGMENTS ] ============================================================================================
+62 F2 71 E9 50 C2 
+:           :  :..MODRM
+:           :..OPCODE
+:..MVEX

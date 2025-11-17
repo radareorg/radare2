@@ -1,0 +1,87 @@
+# ESIL Traps in radare2
+
+## What are ESIL Traps?
+
+ESIL (Evaluable Strings Intermediate Language) traps in radare2 are mechanisms to handle exceptional conditions during symbolic execution and emulation. They simulate hardware exceptions, software interrupts, and error conditions that occur when evaluating ESIL expressions.
+
+## How ESIL Traps Work
+
+### Trap Structure
+ESIL maintains trap state through:
+- `esil->trap`: Integer representing the trap type
+- `esil->trap_code`: Additional code or address related to the trap
+- `esil->cmd_trap`: Command string executed when a trap occurs
+- Configuration variables:
+  - `esil.iotrap`: Enable traps for invalid I/O operations
+  - `esil.exectrap`: Enable traps for execution in non-executable memory
+  - `esil.traprevert`: Revert entire expression on trap instead of just PC
+  - `cmd.esil.trap`: Command to run on trap (e.g., `?e hello world`)
+
+### Trap Types
+- `R_ANAL_TRAP_NONE` (0): No trap
+- `R_ANAL_TRAP_UNHANDLED` (1): Unhandled interrupt
+- `R_ANAL_TRAP_BREAKPOINT` (2): Simulated breakpoint (via `$$` with code 3)
+- `R_ANAL_TRAP_DIVBYZERO` (3): Division by zero
+- `R_ANAL_TRAP_WRITE_ERR` (4): Invalid memory write
+- `R_ANAL_TRAP_READ_ERR` (5): Invalid memory read or alignment error
+- `R_ANAL_TRAP_EXEC_ERR` (6): Execution in non-executable memory
+- `R_ANAL_TRAP_INVALID` (7): Invalid instruction or operation
+- `R_ANAL_TRAP_UNALIGNED` (8): Unaligned memory access
+- `R_ANAL_TRAP_TODO` (9): Unimplemented operation
+- `R_ANAL_TRAP_HALT` (10): Execution halt
+
+### Trigger Mechanisms
+Traps are triggered by:
+1. **Explicit TRAP operation**: `TRAP` pops trap type and code from stack, sets trap state, and fires handler
+2. **Hardware simulation**: `$$` operation simulates interrupts (code 3 = breakpoint)
+3. **Automatic detection**:
+   - Invalid memory reads/writes (when `iotrap` enabled)
+   - Execution in non-executable regions (when `exectrap` enabled)
+   - Division by zero in math operations
+   - Unaligned memory accesses
+   - Invalid or malformed instructions
+
+### Handler Execution
+When a trap occurs:
+1. Trap type and code are set in ESIL state
+2. If `cmd.esil.trap` is configured, the command is executed with arguments: `cmd(esil, cmd_trap, trap_type, trap_code)`
+3. Emulation may stop or continue based on configuration and trap type
+4. Logs are generated for debugging
+
+## Usage in radare2
+
+### Debugging and Analysis
+- **Detect invalid accesses**: Set `esil.iotrap=true` and `cmd.esil.trap=?e trap detected` to log memory violations
+- **Breakpoint simulation**: Use `$$` in ESIL expressions to simulate hardware breakpoints
+- **Alignment checking**: Traps catch unaligned accesses in architectures requiring alignment
+- **Execution path validation**: `exectrap` prevents emulation in data-only regions
+
+### Automation and Scripting
+- **Custom handlers**: Configure `cmd.esil.trap` to run radare2 commands on traps (e.g., save state, modify registers)
+- **Fuzzing support**: Traps help identify crashes or invalid states during automated testing
+- **Symbolic execution**: Traps provide feedback for constraint solving and path exploration
+
+### Security Analysis
+- **Exploit detection**: Identify attempts to execute shellcode in non-executable memory
+- **ROP chain validation**: Catch invalid instruction sequences or memory accesses
+- **Vulnerability hunting**: Automated scanning for division by zero or other exploitable conditions
+
+### Examples
+```
+# Set trap command to print trap info
+e cmd.esil.trap=?e trap type %d code %d
+
+# Enable I/O traps
+e esil.iotrap=true
+
+# Enable execution traps
+e esil.exectrap=true
+
+# Simulate breakpoint in ESIL
+ae 3,$$,TRAP
+
+# Run emulation with trap detection
+aes
+```
+
+Traps enhance radare2's ESIL emulation by providing robust error handling and debugging capabilities across various analysis scenarios.

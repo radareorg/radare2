@@ -1,0 +1,43 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vfmsub213pd [ENC: VEX, MAP: 0F38, OPC: 0xAA]
+     LENGTH:  5
+        SSZ: 64
+       EOSZ: 64
+       EASZ: 64
+   CATEGORY: VFMA
+    ISA-SET: FMA
+    ISA-EXT: FMA
+ EXCEPTIONS: AVX2
+ ATTRIBUTES: HAS_MODRM HAS_VEX ACCEPTS_SEGMENT 
+  OPTIMIZED: C4 E2 C9 AA 38 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT      RW     MODRM_REG    128      2      64   FLOAT64                         xmm7
+ 1   REGISTER    EXPLICIT       R        NDSNDD    128      2      64   FLOAT64                         xmm6
+ 2     MEMORY    EXPLICIT       R      MODRM_RM    128      2      64   FLOAT64  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rax
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000000000000
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vfmsub213pd (%rax), %xmm6, %xmm7
+   RELATIVE: vfmsub213pd (%rax), %xmm6, %xmm7
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vfmsub213pd xmm7, xmm6, xmmword ptr ds:[rax]
+   RELATIVE: vfmsub213pd xmm7, xmm6, xmmword ptr ds:[rax]
+
+== [ SEGMENTS ] ============================================================================================
+C4 E2 C9 AA 38 
+:        :  :..MODRM
+:        :..OPCODE
+:..VEX

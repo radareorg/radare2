@@ -1,0 +1,42 @@
+{
+  "name": "grunt-legacy-log-utils",
+  "description": "Static methods for the Grunt 0.4.x logger.",
+  "version": "0.1.1",
+  "author": "\"Cowboy\" Ben Alman (http://benalman.com/)",
+  "homepage": "http://gruntjs.com/",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/gruntjs/grunt-legacy-log-utils.git"
+  },
+  "bugs": {
+    "url": "http://github.com/gruntjs/grunt-legacy-log-utils/issues"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "http://github.com/gruntjs/grunt-legacy-log-utils/blob/master/LICENSE-MIT"
+    }
+  ],
+  "main": "index.js",
+  "scripts": {
+    "test": "grunt test"
+  },
+  "engines": {
+    "node": ">= 0.8.0"
+  },
+  "keywords": [
+    "grunt",
+    "legacy"
+  ],
+  "dependencies": {
+    "lodash": "~2.4.1",
+    "underscore.string": "~2.3.3",
+    "colors": "~0.6.2"
+  },
+  "devDependencies": {
+    "grunt": "0.4.4",
+    "grunt-contrib-jshint": "~0.10.0",
+    "grunt-contrib-nodeunit": "~0.3.3",
+    "grunt-contrib-watch": "~0.6.1"
+  }
+}

@@ -1,0 +1,50 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vrndscaless [ENC: EVEX, MAP: 0F3A, OPC: 0x0A]
+     LENGTH:  8
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AVX512
+    ISA-SET: AVX512F_SCALAR
+    ISA-EXT: AVX512EVEX
+ EXCEPTIONS: E3
+ ATTRIBUTES: HAS_MODRM HAS_EVEX ACCEPTS_SEGMENT 
+  OPTIMIZED: 62 73 55 8A 0A 61 47 88 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128      4      32   FLOAT32                        xmm12
+ 1   REGISTER    EXPLICIT       R          MASK     64     64       1       INT                           k2
+ 2   REGISTER    EXPLICIT       R        NDSNDD    128      4      32   FLOAT32                         xmm5
+ 3     MEMORY    EXPLICIT       R      MODRM_RM     32      1      32   FLOAT32  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rcx
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x000000000000011C
+ 4  IMMEDIATE    EXPLICIT       R         UIMM8      8      1       8      UINT  [U A  8] 0x0000000000000088
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k2 [ZEROING]
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vrndscaless $0x88, 0x11C(%rcx), %xmm5, %xmm12 {%k2} {z}
+   RELATIVE: vrndscaless $0x88, 0x11C(%rcx), %xmm5, %xmm12 {%k2} {z}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vrndscaless xmm12 {k2} {z}, xmm5, dword ptr ds:[rcx+0x11C], 0x88
+   RELATIVE: vrndscaless xmm12 {k2} {z}, xmm5, dword ptr ds:[rcx+0x11C], 0x88
+
+== [ SEGMENTS ] ============================================================================================
+62 33 55 8A 0A 61 47 88 
+:           :  :  :  :..IMM
+:           :  :  :..DISP
+:           :  :..MODRM
+:           :..OPCODE
+:..EVEX

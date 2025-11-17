@@ -1,0 +1,38 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: tdpbsud [ENC: VEX, MAP: 0F38, OPC: 0x5E]
+     LENGTH:  5
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AMX_TILE
+    ISA-SET: AMX_INT8
+    ISA-EXT: AMX_INT8
+ EXCEPTIONS: AMXE4
+ ATTRIBUTES: HAS_MODRM HAS_VEX 
+  OPTIMIZED: C4 E2 5A 5E DE 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT      RW     MODRM_REG   8192    256      32       INT                         tmm3
+ 1   REGISTER    EXPLICIT       R      MODRM_RM   8192    256      32      UINT                         tmm6
+ 2   REGISTER    EXPLICIT       R        NDSNDD   8192    256      32      UINT                         tmm4
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: tdpbsud %tmm4, %tmm6, %tmm3
+   RELATIVE: tdpbsud %tmm4, %tmm6, %tmm3
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: tdpbsud tmm3, tmm6, tmm4
+   RELATIVE: tdpbsud tmm3, tmm6, tmm4
+
+== [ SEGMENTS ] ============================================================================================
+C4 E2 5A 5E DE 
+:        :  :..MODRM
+:        :..OPCODE
+:..VEX

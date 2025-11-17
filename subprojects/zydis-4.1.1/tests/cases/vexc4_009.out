@@ -1,0 +1,44 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpunpckldq [ENC: VEX, MAP: 0F, OPC: 0x62]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AVX2
+    ISA-SET: AVX2
+    ISA-EXT: AVX2
+ EXCEPTIONS: AVX4
+ ATTRIBUTES: HAS_MODRM HAS_VEX ACCEPTS_SEGMENT 
+  OPTIMIZED: C5 4D 62 45 62 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    256      8      32      UINT                         ymm8
+ 1   REGISTER    EXPLICIT       R        NDSNDD    256      8      32      UINT                         ymm6
+ 2     MEMORY    EXPLICIT       R      MODRM_RM    256      8      32      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  ss
+                                                                                 BASE  =                 rbp
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000000000062
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 256
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpunpckldq 0x62(%rbp), %ymm6, %ymm8
+   RELATIVE: vpunpckldq 0x62(%rbp), %ymm6, %ymm8
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpunpckldq ymm8, ymm6, ymmword ptr ss:[rbp+0x62]
+   RELATIVE: vpunpckldq ymm8, ymm6, ymmword ptr ss:[rbp+0x62]
+
+== [ SEGMENTS ] ============================================================================================
+C4 21 4D 62 45 62 
+:        :  :  :..DISP
+:        :  :..MODRM
+:        :..OPCODE
+:..VEX

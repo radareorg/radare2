@@ -1,0 +1,44 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vaddsd [ENC: VEX, MAP: 0F, OPC: 0x58]
+     LENGTH:  8
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AVX
+    ISA-SET: AVX
+    ISA-EXT: AVX
+ EXCEPTIONS: AVX3
+ ATTRIBUTES: HAS_MODRM HAS_VEX ACCEPTS_SEGMENT 
+  OPTIMIZED: C5 13 58 9B 8D B5 B5 FD 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128      2      64   FLOAT64                        xmm11
+ 1   REGISTER    EXPLICIT       R        NDSNDD    128      2      64   FLOAT64                        xmm13
+ 2     MEMORY    EXPLICIT       R      MODRM_RM     64      1      64   FLOAT64  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rbx
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0xFFFFFFFFFDB5B58D
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vaddsdq -0x24A4A73(%rbx), %xmm13, %xmm11
+   RELATIVE: vaddsdq -0x24A4A73(%rbx), %xmm13, %xmm11
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vaddsd xmm11, xmm13, qword ptr ds:[rbx-0x24A4A73]
+   RELATIVE: vaddsd xmm11, xmm13, qword ptr ds:[rbx-0x24A4A73]
+
+== [ SEGMENTS ] ============================================================================================
+C5 13 58 9B 8D B5 B5 FD 
+:     :  :  :..DISP
+:     :  :..MODRM
+:     :..OPCODE
+:..VEX

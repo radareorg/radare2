@@ -1,0 +1,45 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpmaxub [ENC: VEX, MAP: 0F, OPC: 0xDE]
+     LENGTH:  9
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AVX
+    ISA-SET: AVX
+    ISA-EXT: AVX
+ EXCEPTIONS: AVX4
+ ATTRIBUTES: HAS_MODRM HAS_SIB HAS_VEX ACCEPTS_SEGMENT 
+  OPTIMIZED: C5 61 DE BC 13 66 D6 00 00 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128     16       8      UINT                        xmm15
+ 1   REGISTER    EXPLICIT       R        NDSNDD    128     16       8      UINT                         xmm3
+ 2     MEMORY    EXPLICIT       R      MODRM_RM    128     16       8      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rbx
+                                                                                 INDEX =                 rdx
+                                                                                 SCALE =                   1
+                                                                                 DISP  =  0x000000000000D666
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpmaxub 0xD666(%rbx,%rdx,1), %xmm3, %xmm15
+   RELATIVE: vpmaxub 0xD666(%rbx,%rdx,1), %xmm3, %xmm15
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpmaxub xmm15, xmm3, xmmword ptr ds:[rbx+rdx*1+0xD666]
+   RELATIVE: vpmaxub xmm15, xmm3, xmmword ptr ds:[rbx+rdx*1+0xD666]
+
+== [ SEGMENTS ] ============================================================================================
+C5 61 DE BC 13 66 D6 00 00 
+:     :  :  :  :..DISP
+:     :  :  :..SIB
+:     :  :..MODRM
+:     :..OPCODE
+:..VEX

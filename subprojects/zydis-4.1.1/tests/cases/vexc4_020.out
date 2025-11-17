@@ -1,0 +1,39 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: mulx [ENC: VEX, MAP: 0F38, OPC: 0xF6]
+     LENGTH:  5
+        SSZ: 64
+       EOSZ: 64
+       EASZ: 64
+   CATEGORY: BMI2
+    ISA-SET: BMI2
+    ISA-EXT: BMI2
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_VEX 
+  OPTIMIZED: C4 E2 F3 F6 F8 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG     64      1      64       INT                          rdi
+ 1   REGISTER    EXPLICIT       W        NDSNDD     64      1      64       INT                          rcx
+ 2   REGISTER    EXPLICIT       R      MODRM_RM     64      1      64       INT                          rax
+ 3   REGISTER      HIDDEN       R          NONE     64      1      64       INT                          rdx
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: mulx %rax, %rcx, %rdi
+   RELATIVE: mulx %rax, %rcx, %rdi
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: mulx rdi, rcx, rax
+   RELATIVE: mulx rdi, rcx, rax
+
+== [ SEGMENTS ] ============================================================================================
+C4 A2 F3 F6 F8 
+:        :  :..MODRM
+:        :..OPCODE
+:..VEX

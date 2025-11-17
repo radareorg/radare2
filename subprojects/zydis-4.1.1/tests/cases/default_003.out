@@ -1,0 +1,31 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: mov [ENC: DEFAULT, MAP: DEFAULT, OPC: 0xB7]
+     LENGTH:  2
+        SSZ: 64
+       EOSZ:  8
+       EASZ: 64
+   CATEGORY: DATAXFER
+    ISA-SET: I86
+    ISA-EXT: BASE
+ EXCEPTIONS: NONE
+  OPTIMIZED: B7 A7 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W        OPCODE      8      1       8       INT                           bh
+ 1  IMMEDIATE    EXPLICIT       R         SIMM8      8      1       8       INT  [S A  8] 0xFFFFFFFFFFFFFFA7
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: mov $-0x59, %bh
+   RELATIVE: mov $-0x59, %bh
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: mov bh, 0xA7
+   RELATIVE: mov bh, 0xA7
+
+== [ SEGMENTS ] ============================================================================================
+B7 A7 
+:  :..IMM
+:..OPCODE
