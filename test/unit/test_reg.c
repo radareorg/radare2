@@ -295,7 +295,7 @@ bool test_r_reg_cfloat_x87(void) {
 	long double test_val = 1.234567890123456789L;
 	r_reg_set_longdouble (reg, st0, test_val);
 	long double val_ld = r_reg_get_longdouble (reg, st0);
-	
+
 	// x87 has more precision than double, but cfloat uses double internally
 	mu_assert ("x87 80-bit round-trip", fabsl (val_ld - test_val) < 0.00001L);
 
@@ -519,16 +519,16 @@ bool test_r_cfloat_multiword_io(void) {
 			const size_t bytes = (bits + 7) / 8;
 			size_t j;
 			for (j = 0; j < bytes; j++) {
-				pattern[j] = (ut8)((i * 37) ^ (be * 0x55) ^ (j * 13) ^ 0xA5);
+				pattern[j] = (ut8) ((i * 37) ^ (be * 0x55) ^ (j * 13) ^ 0xA5);
 			}
 			RCFloatValue value;
 			char message[MU_BUF_SIZE];
-			snprintf (message, sizeof (message), "%s %s parse_ex", cases[i].name, be ? "BE" : "LE");
+			snprintf (message, sizeof (message), "%s %s parse_ex", cases[i].name, be? "BE": "LE");
 			mu_assert (message, r_cfloat_parse_ex (pattern, bytes, &profile, &value));
-			snprintf (message, sizeof (message), "%s %s write_ex", cases[i].name, be ? "BE" : "LE");
+			snprintf (message, sizeof (message), "%s %s write_ex", cases[i].name, be? "BE": "LE");
 			memset (roundtrip, 0, sizeof (roundtrip));
 			mu_assert (message, r_cfloat_write_ex (&value, &profile, roundtrip, bytes));
-			snprintf (message, sizeof (message), "%s %s round-trip", cases[i].name, be ? "BE" : "LE");
+			snprintf (message, sizeof (message), "%s %s round-trip", cases[i].name, be? "BE": "LE");
 			mu_assert (message, !memcmp (pattern, roundtrip, bytes));
 		}
 	}
