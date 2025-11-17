@@ -3070,22 +3070,19 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			if (item) {
 				if (eq) {
 					long double val = 0.0f;
-#if __windows__
-					double dval = 0.0f;
-					sscanf (eq, "%lf", (double*)&dval);
-					val = dval;
-#else
-#if R2_NO_LONG_DOUBLE
 					double dval = 0.0;
-					sscanf (eq, "%lf", &dval);
-					val = (long double)dval;
-#else
-					sscanf (eq, "%Lf", &val);
-#endif
-#endif
-					r_reg_set_double (core->dbg->reg, item, val);
-					r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, true);
-					r_debug_reg_sync (core->dbg, R_REG_TYPE_FPU, true);
+					if (r_str_scanf (eq, "%lf", &dval) == 1) {
+						val = (long double)dval;
+						if (item->size >= 80) {
+							r_reg_set_longdouble (core->dbg->reg, item, val);
+						} else {
+							r_reg_set_double (core->dbg->reg, item, (double)val);
+						}
+						r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, true);
+						r_debug_reg_sync (core->dbg, R_REG_TYPE_FPU, true);
+					} else {
+						R_LOG_WARN ("Cannot parse floating value '%s'", eq);
+					}
 				} else {
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_FPU, false);
