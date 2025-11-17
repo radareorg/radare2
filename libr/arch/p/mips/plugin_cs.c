@@ -896,6 +896,9 @@ static csh cs_handle_for_session(RArchSession *as) {
 
 static bool plugin_changed(RArchSession *as) {
 	PluginData *cpd = as->data;
+	if (!cpd) {
+		return true;
+	}
 	if (R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config) != cpd->bigendian) {
 		return true;
 	}
