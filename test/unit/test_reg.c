@@ -13,7 +13,7 @@ static int mu_assert_double_close(double actual, double expected, double eps, co
 	return MU_PASSED;
 }
 
-#if !R2_NO_LONG_DOUBLE
+#if 0
 static int mu_assert_longdouble_close(long double actual, long double expected, long double eps, const char *message) {
 	long double diff = fabsl (actual - expected);
 	char buf[MU_BUF_SIZE];
