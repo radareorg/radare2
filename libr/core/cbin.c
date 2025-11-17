@@ -2962,6 +2962,7 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 			const char *bind = r_str_get_fail (symbol->bind, "NONE");
 			const char *type = r_str_get_fail (symbol->type, "NONE");
 			const char *n = r_str_getf (sn.demname? sn.demname: sn.name);
+			const char *nn = (sn.name && strcmp (n, sn.name))? n: "";
 			// const char *fwd = r_str_getf (symbol->forwarder);
 			r_table_add_rowf (table, "dXXssdsss",
 					symbol->ordinal,
@@ -2971,8 +2972,7 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 					type,
 					symbol->size,
 					r_str_get (symbol->libname),
-					sn.name,
-					strcmp (n, sn.name)? n: "");
+					sn.name, nn);
 		}
 next:
 		snFini (&sn);
@@ -5372,12 +5372,12 @@ R_API char *r_core_bin_attr_tostring(RCore *core, ut64 flags, int mode) {
 			char *flag_string = r_bin_attr_tostring (flags, true);
 			if (flag_string) {
 				r_strbuf_append (buf, flag_string);
+				len -= strlen (flag_string);
+				if (len < 1) {
+					len = 1;
+				}
+				free (flag_string);
 			}
-			len -= strlen (flag_string);
-			if (len < 1) {
-				len = 1;
-			}
-			free (flag_string);
 		}
 		for ( ; len > 0; len--) {
 			r_strbuf_append (buf, " ");

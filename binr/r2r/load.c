@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020-2024 - pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2020-2025 - pancake, thestr4ng3r */
 
 #undef R_LOG_ORIGIN
 #define R_LOG_ORIGIN "r2r.load"
@@ -22,18 +22,20 @@ R_API void r2r_cmd_test_free(R2RCmdTest *test) {
 }
 
 static char *readline(char *buf, size_t *linesz) {
-	char *end = strchr (buf, '\n');
-	if (end) {
-		size_t len = end - buf;
-		*end = '\0';
-		if (len > 0 && buf[len - 1] == '\r') {
-			buf[len - 1] = '\0';
-			len--;
+	if (buf && linesz) {
+		char *end = strchr (buf, '\n');
+		if (end) {
+			size_t len = end - buf;
+			*end = '\0';
+			if (len > 0 && buf[len - 1] == '\r') {
+				buf[len - 1] = '\0';
+				len--;
+			}
+			*linesz = len;
+			return end + 1;
 		}
-		*linesz = len;
-		return end + 1;
+		*linesz = strlen (buf);
 	}
-	*linesz = strlen (buf);
 	return NULL;
 }
 
@@ -73,7 +75,7 @@ static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
 		RStrBuf *buf = r_strbuf_new ("");
 		char *line = *nextline;
 		size_t linesz = 0;
-		do {
+		while (line) {
 			*nextline = readline (line, &linesz);
 			(*linenum)++;
 			char *end = strstr (line, endtoken);
@@ -91,7 +93,8 @@ static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
 				return r_strbuf_drain (buf);
 			}
 			r_strbuf_append (buf, "\n");
-		} while ((line = *nextline));
+			line = *nextline;
+		}
 		R_LOG_ERROR ("Missing closing end token %s", endtoken);
 		r_strbuf_free (buf);
 		return NULL;
@@ -189,6 +192,10 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 				R_LOG_WARN (LINEFMT ": Duplicate key \"%s\"", file, linenum, key); \
 			} \
 			test->field.set = true; \
+			if (!val) { \
+				R_LOG_ERROR (LINEFMT ": No value for key \"%s\"", file, linenum, key); \
+				goto fail; \
+			} \
 			/* Strip comment */ \
 			char *cmt = strchr (val, '#'); \
 			if (cmt) { \
@@ -216,6 +223,10 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 				R_LOG_WARN (LINEFMT ": Duplicate key \"%s\"", file, linenum, key); \
 			} \
 			test->field.set = true; \
+			if (!val) { \
+				R_LOG_ERROR (LINEFMT ": No value for key \"%s\"", file, linenum, key); \
+				goto fail; \
+			} \
 			/* Strip comment */ \
 			char *cmt = strchr (val, '#'); \
 			if (cmt) { \

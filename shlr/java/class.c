@@ -8394,7 +8394,7 @@ R_API ConstJavaValue *U(r_bin_java_resolve_to_const_value)(RBinJavaObj * BIN_OBJ
 	} else if (!strcmp (cp_name, "String")) {
 		ut32 length = r_bin_java_get_utf8_len_from_bin_cp_list (BIN_OBJ, item->info.cp_string.string_idx);
 		string_str = r_bin_java_get_utf8_from_bin_cp_list (BIN_OBJ, item->info.cp_string.string_idx);
-		IFDBG eprintf ("java_resolve String got: (%d) %s\n", item->info.cp_string.string_idx, string_str);
+		R_LOG_DEBUG ("java_resolve String got: (%d) %s", item->info.cp_string.string_idx, string_str);
 		if (!string_str) {
 			string_str = empty;
 			length = strlen (empty);
@@ -8411,11 +8411,15 @@ R_API ConstJavaValue *U(r_bin_java_resolve_to_const_value)(RBinJavaObj * BIN_OBJ
 			free (string_str);
 		}
 	} else if (!strcmp (cp_name, "Utf8")) {
-		result->type = "str";
-		result->value._str = R_NEW0 (struct java_const_value_str_t);
-		result->value._str->str = malloc (item->info.cp_utf8.length);
-		result->value._str->len = item->info.cp_utf8.length;
-		memcpy (result->value._str->str, item->info.cp_utf8.bytes, item->info.cp_utf8.length);
+		if (item->info.cp_utf8.bytes && item->info.cp_utf8.length > 0) {
+			result->type = "str";
+			result->value._str = R_NEW0 (struct java_const_value_str_t);
+			result->value._str->str = malloc (item->info.cp_utf8.length);
+			result->value._str->len = item->info.cp_utf8.length;
+			memcpy (result->value._str->str, item->info.cp_utf8.bytes, item->info.cp_utf8.length);
+		} else {
+			R_LOG_WARN ("Empty Utf8 string in constant pool");
+		}
 	} else if (!strcmp (cp_name, "Long")) {
 		result->type = "long";
 		result->value._long = r_bin_java_raw_to_long (item->info.cp_long.bytes.raw, 0);

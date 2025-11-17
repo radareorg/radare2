@@ -451,7 +451,7 @@ extern "C" {
 		return pos; \
 	} \
 	static inline R_MAYBE_UNUSED type *R_VEC_FUNC(vec_type, partition)(vec_type *vec, void *user, R_VEC_FIND_CMP(vec_type) cmp_fn) { \
-		R_RETURN_VAL_IF_FAIL (vec && cmp_fn, vec->_start); \
+		R_RETURN_VAL_IF_FAIL (vec && cmp_fn, vec ? vec->_start : NULL); \
 		type *first = R_VEC_FUNC(vec_type, find) (vec, user, cmp_fn); \
 		if (first == NULL) { \
 			return vec->_start; \
