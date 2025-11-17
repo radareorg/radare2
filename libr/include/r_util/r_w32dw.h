@@ -47,7 +47,7 @@ typedef struct r_w32dw_t {
 } RW32Dw;
 
 #define r_w32dw_ret(inst) inst->params.ret
-#define r_w32dw_err(inst) (SetLastError (inst->params.err), inst->params.err)
+#define r_w32dw_err(inst) SetLastError (inst->params.err)
 
 R_API RW32Dw *r_w32dw_new(void);
 R_API int r_w32dw_waitret(RW32Dw *inst);

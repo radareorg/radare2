@@ -1065,7 +1065,7 @@ R_API void r_bin_list_archs(RBin *bin, PJ *pj, RTable *t, int mode) {
 	}
 	RBinObject *obj = nbinfile->bo;
 	RBinInfo *info = obj->info;
-	char bits = info? info->bits: 0;
+	int bits = info? info->bits: 0;
 	ut64 boffset = obj->boffset;
 	ut64 obj_size = obj->obj_size;
 	const char *arch = info? info->arch: NULL;
