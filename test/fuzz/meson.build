@@ -5,7 +5,6 @@ if get_option('enable_libfuzzer')
     'bin2',
     'fs',
     'dwarf',
-    'dalvik_ns',
     'bin_demangle',
     'ia',
     'cmd',
@@ -14,6 +13,7 @@ if get_option('enable_libfuzzer')
     'protobuf_decode',
     'punycode_decode',
     'run_parseline',
+    'types_parser',
     'x509_parse',
   ]
 
