@@ -1550,14 +1550,13 @@ bx = jmptbl_base + (byte[x9]<<2)
 						kase->value = i;
 						r_list_append (kases, kase);
 					}
-					r_anal_jmptbl_list (anal, fcn, bb, op->addr, tblptr, kases, loadsize);
+					r_anal_jmptbl_list (anal, fcn, bb, x10->op_addr, tblptr, kases, loadsize);
 					anal->cmpval = 0;
 					loadsize = 0;
 					free (table);
 				} else {
 					R_LOG_DEBUG ("arm64 SwitchTable dont have enough leas to work at 0x%08"PFMT64x, op->addr);
 				}
-				gotoBeach (R_ANAL_RET_NOP);
 		//		gotoBeach (R_ANAL_RET_END);
 				break;
 			} else if (is_mips && anal->opt.jmptbl) {
