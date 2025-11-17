@@ -602,3 +602,22 @@ R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnal
 	// 		*table_size);
 	return isValid;
 }
+
+R_API void r_anal_jmptbl_list(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, ut64 saddr, ut64 jaddr, RList *cases, int loadsz) {
+	RAnalCaseOp *kase;
+	RListIter *iter;
+	apply_switch (anal, saddr, jaddr, r_list_length (cases), -1);
+	SetU *s = set_u_new ();
+	r_list_foreach (cases, iter, kase) {
+		if (set_u_contains (s, kase->jump)) {
+			continue;
+		}
+		apply_case (anal, bb, saddr,
+				loadsz, kase->jump, kase->value,
+				kase->jump, true);
+		set_u_add (s, kase->jump);
+	// 	eprintf ("%d %llx -> 0x%llx\n", i, saddr, kase->jump);
+		analyze_new_case (anal, fcn, bb, saddr, kase->jump, 999);
+	}
+	set_u_free (s);
+}

@@ -703,6 +703,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		R_LOG_DEBUG ("anal.limit");
 		gotoBeach (R_ANAL_RET_END);
 	}
+	int loadsize = 0;
 
 	bool varset = has_vars (anal, addr); // Checks if var is already analyzed at given addr
 
@@ -1144,6 +1145,7 @@ noskip:
 				// eprintf ("JMPTBL %d\n", );
 			}
 #endif
+			loadsize = op->ptrsize;
 			if (want_icods && anal->iob.is_valid_offset (anal->iob.io, op->ptr, 0)) {
 				// TODO: what about the qword loads!??!?
 				ut8 dd[4] = {0};
@@ -1402,18 +1404,18 @@ noskip:
 			}
 			int saved_stack = fcn->stack;
 			// TODO: depth -1 in here
+			// depth = 999;
 			r_anal_function_bb (anal, fcn, op->jump, depth);
 			fcn->stack = saved_stack;
 			ret = r_anal_function_bb (anal, fcn, op->fail, depth);
 			fcn->stack = saved_stack;
-
 			// XXX breaks mips analysis too !op->delay
 			// this will be all x86, arm (at least)
 			// without which the analysis is really slow,
 			// presumably because each opcode would get revisited
 			// (and already covered by a bb) many times
+			// Delayed branches in MIPS needs to continue
 			goto beach;
-			// For some reason, branch delayed code (MIPS) needs to continue
 			break;
 		case R_ANAL_OP_TYPE_UCALL:
 		case R_ANAL_OP_TYPE_RCALL:
@@ -1455,6 +1457,108 @@ noskip:
 					op->fail = op->addr + 4;
 					break;
 				}
+			} else if (is_arm && anal->config->bits == 64 && anal->opt.jmptbl) {
+#if 0
+0x183997020      cmp x20, 6           ; x20 is the index
+0x183997024      b.hi 0x183997054
+0x183997028      adrp x8, 0x1da2f6000
+0x18399702c      add x8, x8, 0x370    ; unrelated
+0x183997030      adrp x9, 0xbaseaddr  ; tableptr
+0x183997034      add x9, x9, 0x8ef    ; tableptr += delta
+0x183997038      adr x10, 0x183997048 ; basedest_addr
+0x18399703c      ldrb w11, [x9, x20]
+0x183997040      add x10, x10, x11, lsl 2 ; TODO: the code assumes <<2 right now
+0x183997044      br x10
+
+x9 = lea + add
+jmptbl_base = x10 = lea
+bx = jmptbl_base + (byte[x9]<<2)
+
+--- example for ldrsw in macs /bin/ls
+
+0x100000b08      sub w16, w0, 0x25
+0x100000b0c      cmp w16, 0x5b
+0x100000b10      b.hi 0x100000fd8
+0x100000b14      cmp x16, 0x5b
+0x100000b18      csel x16, x16, xzr, ls
+0x100000b1c      adrp x17, 0x100001000
+0x100000b20      add x17, x17, 0x558
+0x100000b24      ldrsw x16, [x17, x16, lsl 2]
+0x100000b28      adr x17, 0x100000b28
+0x100000b2c      add x16, x17, x16
+0x100000b30      br x16
+#endif
+				if (anal->leaddrs && r_list_length (anal->leaddrs) >= 2) {
+					leaddr_pair *x10 = r_list_pop (anal->leaddrs);
+					leaddr_pair *x9 = r_list_pop (anal->leaddrs);
+					ut64 opaddr = x10->op_addr;
+					ut64 basptr = x10->leaddr;
+					ut64 tblptr = x9->leaddr;
+					free (x9);
+					free (x10);
+
+					if (loadsize == 0) {
+						R_LOG_DEBUG ("Probably not not a SwitchTable, just indirect branch at 0x%08"PFMT64x, op->addr);
+						anal->cmpval = 0;
+						loadsize = 0;
+						break;
+					}
+					if (loadsize == 8) {
+						R_LOG_DEBUG ("Not a SwitchTable so maybe just indirect branch at 0x%08"PFMT64x, op->addr);
+						anal->cmpval = 0;
+						loadsize = 0;
+						break;
+					}
+					if (loadsize != 1 && loadsize != 2 && loadsize != 4) {
+						R_LOG_WARN ("SwitchTable of %d not properly supported at 0x%08"PFMT64x, loadsize, op->addr);
+						anal->cmpval = 0;
+						loadsize = 0;
+						break;
+					}
+					// TODO: move this code into jmptbl.c
+					lea_cnt -= 2; // XXX eliminate this thing . we have r_list_length
+					int i, delta;
+					const size_t sizeof_table = 4096;
+					ut8 *table = calloc (sizeof_table, 1);
+					st16 *table2 = (st16*)table;
+					st32 *table4 = (st32*)table;
+					// TODO: eliminate hard limit
+					int max = R_MIN (anal->cmpval, sizeof_table / loadsize);
+					R_LOG_DEBUG ("JumpTable for 0x%08"PFMT64x" is at 0x%"PFMT64x, op->addr, tblptr);
+					(void)anal->iob.read_at (anal->iob.io, tblptr, (ut8 *) table, sizeof_table);
+					ut64 caseaddr;
+					RList *kases = r_list_newf (free);
+					for (i = 0; i < max; i++) {
+						if (loadsize == 1) {
+							delta = table[i];
+							caseaddr = basptr + (delta << 2);
+						} else if (loadsize == 2) {
+							delta = table2[i];
+							caseaddr = basptr + (delta << 1);
+						} else if (loadsize == 4) {
+							delta = table4[i];
+							delta = r_read_le32 (&table4[i]);
+							caseaddr = basptr + delta;
+						}
+						if (!anal->iob.is_valid_offset (anal->iob.io, caseaddr, 0)) {
+							R_LOG_DEBUG ("Invalid case %d offset 0x%08"PFMT64x" for switch at 0x%08"PFMT64x, i, caseaddr, op->addr);
+							continue;
+						}
+						RAnalCaseOp *kase = R_NEW0 (RAnalCaseOp);
+						kase->addr = caseaddr; // wtf? <- is this jaddr too?
+						kase->jump = caseaddr;
+						kase->value = i;
+						r_list_append (kases, kase);
+					}
+					r_anal_jmptbl_list (anal, fcn, bb, opaddr, tblptr, kases, loadsize);
+					anal->cmpval = 0;
+					loadsize = 0;
+					free (table);
+				} else {
+					R_LOG_DEBUG ("arm64 SwitchTable dont have enough leas to work at 0x%08"PFMT64x, op->addr);
+				}
+		//		gotoBeach (R_ANAL_RET_END);
+				break;
 			} else if (is_mips && anal->opt.jmptbl) {
 				// lw v1, -0x7fc4(gp) ; gp = 0x684c00 - 0x7fc4 // read 4 bytes at gp-0x7fc4
 				// sll v0, s0, 2   // select the case from the pointer table * 4
@@ -1783,7 +1887,13 @@ beach:
 	free (bp_reg);
 	free (sp_reg);
 	while (lea_cnt > 0) {
-		r_list_delete (anal->leaddrs, r_list_tail (anal->leaddrs));
+		leaddr_pair *lea = r_list_pop (anal->leaddrs);
+		if (!lea) {
+			lea_cnt = 0;
+			break;
+		}
+		free (lea);
+		// r_list_delete (anal->leaddrs, r_list_tail (anal->leaddrs));
 		lea_cnt--;
 	}
 	r_anal_op_free (op);
