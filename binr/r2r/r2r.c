@@ -353,6 +353,8 @@ int main(int argc, char **argv) {
 		switch (c) {
 		case 'g':
 			r2r_git ();
+			free (json_test_file);
+			free (fuzz_dir);
 			return 0;
 		case 'h':
 			ret = help (true, workers_count);
@@ -520,6 +522,7 @@ int main(int argc, char **argv) {
 	state.quiet = quiet;
 	state.db = r2r_test_database_new ();
 	if (!state.db) {
+		free (json_test_file);
 		return -1;
 	}
 	r_pvector_init (&state.queue, NULL);

@@ -1038,64 +1038,97 @@ static void autocomplete_sdb(RCore *core, RLineCompletion *completion, const cha
 	R_RETURN_IF_FAIL (core && completion && str);
 	char *pipe = strchr (str, '>');
 	Sdb *sdb = core->sdb;
-	char *lpath = NULL, *p1 = NULL, *out = NULL, *p2 = NULL;
-	char *cur_pos = NULL, *cur_cmd = NULL, *next_cmd = NULL;
-	char *temp_cmd = NULL, *temp_pos = NULL, *key = NULL;
 	if (pipe) {
 		str = r_str_trim_head_ro (pipe + 1);
 	}
-	lpath = strdup (str);
-	p1 = strchr (lpath, '/');
+	char *lpath = strdup (str);
+	if (!lpath) {
+		return;
+	}
+	char *p1 = strchr (lpath, '/');
 	if (p1) {
 		*p1 = 0;
 		char *ns = p1 + 1;
-		p2 = strchr (ns, '/');
-		if (!p2) { // anal/m
+		char *p2 = strchr (ns, '/');
+		if (!p2) {
 			char *tmp = p1 + 1;
 			int n = strlen (tmp);
-			out = sdb_querys (sdb, NULL, 0, "anal/**");
-			if (!out) {
-				return;
-			}
-			while (*out) {
-				cur_pos = strchr (out, '\n');
-				if (!cur_pos) {
-					break;
-				}
-				cur_cmd = r_str_ndup (out, cur_pos - out);
-				if (!strncmp (tmp, cur_cmd, n)) {
-					char *cmplt = r_str_newf ("anal/%s/", cur_cmd);
-					r_line_completion_push (completion, cmplt);
-					free (cmplt);
-				}
-				out += cur_pos - out + 1;
-			}
-
-		} else { // anal/meta/*
-			char *tmp = p2 + 1;
-			int n = strlen (tmp);
-			char *spltr = strchr (ns, '/');
-			*spltr = 0;
-			next_cmd = r_str_newf ("anal/%s/*", ns);
-			out = sdb_querys (sdb, NULL, 0, next_cmd);
-			if (!out) {
+			char *out_buf = sdb_querys (sdb, NULL, 0, "anal/**");
+			if (!out_buf) {
 				free (lpath);
 				return;
 			}
-			while (*out) {
-				temp_pos = strchr (out, '\n');
-				if (!temp_pos) {
+			char *iter = out_buf;
+			while (*iter) {
+				char *line_end = strchr (iter, '\n');
+				if (!line_end) {
 					break;
 				}
-				temp_cmd = r_str_ndup (out, temp_pos - out); // contains the key=value pair
-				key = strchr (temp_cmd, '=');
-				*key = 0;
-				if (!strncmp (tmp, temp_cmd, n)) {
-					char *cmplt = r_str_newf ("anal/%s/%s", ns, temp_cmd);
-					r_line_completion_push (completion, cmplt);
-					free (cmplt);
+				char *cur_cmd = r_str_ndup (iter, line_end - iter);
+				if (cur_cmd) {
+					if (!strncmp (tmp, cur_cmd, n)) {
+						char *cmplt = r_str_newf ("anal/%s/", cur_cmd);
+						if (cmplt) {
+							r_line_completion_push (completion, cmplt);
+							free (cmplt);
+						}
+					}
+					free (cur_cmd);
 				}
-				out += temp_pos - out + 1;
+				iter = line_end + 1;
+			}
+			free (out_buf);
+		} else {
+			char *tmp = p2 + 1;
+			int n = strlen (tmp);
+			char *spltr = strchr (ns, '/');
+			if (spltr) {
+				*spltr = 0;
+			}
+			char *next_cmd = r_str_newf ("anal/%s/*", ns);
+			if (!next_cmd) {
+				if (spltr) {
+					*spltr = '/';
+				}
+				free (lpath);
+				return;
+			}
+			char *out_buf = sdb_querys (sdb, NULL, 0, next_cmd);
+			if (!out_buf) {
+				free (next_cmd);
+				if (spltr) {
+					*spltr = '/';
+				}
+				free (lpath);
+				return;
+			}
+			char *iter = out_buf;
+			while (*iter) {
+				char *line_end = strchr (iter, '\n');
+				if (!line_end) {
+					break;
+				}
+				char *temp_cmd = r_str_ndup (iter, line_end - iter);
+				if (temp_cmd) {
+					char *key = strchr (temp_cmd, '=');
+					if (key) {
+						*key = 0;
+						if (!strncmp (tmp, temp_cmd, n)) {
+							char *cmplt = r_str_newf ("anal/%s/%s", ns, temp_cmd);
+							if (cmplt) {
+								r_line_completion_push (completion, cmplt);
+								free (cmplt);
+							}
+						}
+					}
+					free (temp_cmd);
+				}
+				iter = line_end + 1;
+			}
+			free (out_buf);
+			free (next_cmd);
+			if (spltr) {
+				*spltr = '/';
 			}
 		}
 	} else {
@@ -1104,6 +1137,7 @@ static void autocomplete_sdb(RCore *core, RLineCompletion *completion, const cha
 			r_line_completion_push (completion, "anal/");
 		}
 	}
+	free (lpath);
 }
 
 static void autocomplete_zignatures(RCore *core, RLineCompletion *completion, const char* msg) {
@@ -1392,6 +1426,9 @@ static bool check_tabhelp_exceptions(const char *s) {
 }
 
 R_API void r_core_autocomplete(RCore * R_NULLABLE core, RLineCompletion *completion, RLineBuffer *buf, RLinePromptType prompt_type) {
+	R_RETURN_IF_FAIL (completion);
+	R_RETURN_IF_FAIL (buf);
+	R_RETURN_IF_FAIL (buf->data);
 	if (!core) {
 		autocomplete_default (core, completion, buf);
 		return;
@@ -3176,10 +3213,12 @@ R_API int r_core_prompt_exec(RCore *r) {
 			}
 			r->cons->context->use_tts = false;
 		}
-		r_cons_echo (r->cons, NULL);
-		r_cons_flush (r->cons); // double free
-		if (r->cons && r->cons->line && r->cons->line->zerosep) {
-			r_cons_zero (r->cons);
+		if (r->cons) {
+			r_cons_echo (r->cons, NULL);
+			r_cons_flush (r->cons);
+			if (r->cons->line && r->cons->line->zerosep) {
+				r_cons_zero (r->cons);
+			}
 		}
 	}
 	return ret;
@@ -3336,19 +3375,19 @@ reaccept:
 				}
 				goto out_of_function;
 			}
-			switch (cmd) {
-			case RAP_PACKET_OPEN:
-				r_socket_read_block (c, &flg, 1); // flags
-				R_LOG_DEBUG ("open (%d)", cmd);
-				r_socket_read_block (c, &cmd, 1); // len
-				pipefd = -1;
-				if (UT8_ADD_OVFCHK (cmd, 1)) {
-					goto out_of_function;
-				}
-				ptr = malloc ((size_t)cmd + 1);
-				if (!ptr) {
-					R_LOG_ERROR ("Cannot malloc in rmt-open len = %d", cmd);
-				} else {
+		switch (cmd) {
+		case RAP_PACKET_OPEN:
+			r_socket_read_block (c, &flg, 1); // flags
+			R_LOG_DEBUG ("open (%d)", cmd);
+			r_socket_read_block (c, &cmd, 1); // len
+			if (UT8_ADD_OVFCHK (cmd, 1)) {
+				goto out_of_function;
+			}
+			ptr = malloc ((size_t)cmd + 1);
+			pipefd = -1;
+			if (!ptr) {
+				R_LOG_ERROR ("Cannot malloc in rmt-open len = %d", cmd);
+			} else {
 					ut64 baddr = r_config_get_i (core->config, "bin.laddr");
 					r_socket_read_block (c, ptr, cmd);
 					ptr[cmd] = 0;

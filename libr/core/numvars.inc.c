@@ -40,7 +40,7 @@ static ut64 numvar_instruction_prev(RCore *core, int n, bool *ok) {
 		*ok = true;
 	}
 	// N forward instructions
-	int i, ret;
+	int i;
 	if (n < 1) {
 		R_LOG_ERROR ("Invalid negative value");
 		n = 1;
@@ -64,11 +64,8 @@ static ut64 numvar_instruction_prev(RCore *core, int n, bool *ok) {
 				break;
 			}
 			RAnalOp op = {0};
-			ret = r_anal_op (core->anal, &op, prev_addr, data,
+			r_anal_op (core->anal, &op, prev_addr, data,
 				sizeof (data), R_ARCH_OP_MASK_BASIC);
-			if (ret < 1) {
-				ret = 1;
-			}
 			if (op.size < mininstrsize) {
 				op.size = mininstrsize;
 			}
