@@ -29,34 +29,34 @@ EXPECT=<<EOF
 0x10000403c      mov x25, 0
 0x100004040      adrp x9, sym.func.100004000                           ; 0x100004000
 0x100004044      add x9, x9, 0x114
-;-- switch:
-0x100004048      adr x10, switch.0x100004048                           ; switch table (4 cases) at 0x100004114
+0x100004048      adr x10, 0x100004048
 0x10000404c      ldrsw x11, [x9, x8, lsl 2]
 0x100004050      add x10, x10, x11
-0x100004054      br x10
+;-- switch:
+0x100004054      br x10                                                ; switch table (4 cases) at 0x100004114
 
-;-- case 0:                                                            ; from 0x100004048
-; CODE XREF from sym.func.100004000 @ 0x100004048(x)
+;-- case 0:                                                            ; from 0x100004054
+; CODE XREF from sym.func.100004000 @ 0x100004054(x)
 0x100004058      ubfx x25, x4, 0x30, 8                                 ; arg5
-0x10000405c      b case.0x100004048.3
+0x10000405c      b case.0x100004054.3
 | // true: 0x100004080
-;-- case 1:                                                            ; from 0x100004048
-; CODE XREF from sym.func.100004000 @ 0x100004048(x)
+;-- case 1:                                                            ; from 0x100004054
+; CODE XREF from sym.func.100004000 @ 0x100004054(x)
 0x100004060      lsr x8, x3, 0x20                                      ; arg4
 0x100004064      subs w8, w8, w3
 0x100004068      b.vs 0x10000410c
 | // true: 0x10000410c  false: 0x10000406c
 0x10000406c      sxtw x25, w8
-0x100004070      b case.0x100004048.3
+0x100004070      b case.0x100004054.3
 | // true: 0x100004080
-;-- case 2:                                                            ; from 0x100004048
-; CODE XREF from sym.func.100004000 @ 0x100004048(x)
+;-- case 2:                                                            ; from 0x100004054
+; CODE XREF from sym.func.100004000 @ 0x100004054(x)
 0x100004074      ldp x9, x8, [x3, 0x10]                                ; arg4
 0x100004078      subs x25, x8, x9
 0x10000407c      b.vs 0x100004110
 | // true: 0x100004110  false: 0x100004080
-;-- case 3:                                                            ; from 0x100004048
-; CODE XREFS from sym.func.100004000 @ 0x100004048(x), 0x10000405c(x), 0x100004070(x)
+;-- case 3:                                                            ; from 0x100004054
+; CODE XREFS from sym.func.100004000 @ 0x100004054(x), 0x10000405c(x), 0x100004070(x)
 0x100004080      ldr x28, [x26]
 0x100004084      ldr x27, [x28, 0x10]
 0x100004088      mov x0, x28

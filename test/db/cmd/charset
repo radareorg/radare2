@@ -248,20 +248,19 @@ EXPECT=<<EOF
 0x0000181c      add x0, x0, 8
 0x00001820      str x0, [var_78h]
 0x00001824      adrp x0, 0x1000
-0x00001828      add x0, x0, 0x9f0                 ; 0x19f0
-                                                  ; str. ; const char *s ; "基址搜索完成"
+0x00001828      add x0, x0, 0x9f0                 ; const char *s ; "基址搜索完成" str.
 0x0000182c      bl sym.imp.puts                   ; int puts(const char *s)
                                                   ; int puts("基址搜索完成")
 0x00001830      ldr x1, [var_78h]
 0x00001834      adrp x0, 0x1000
-0x00001838      add x0, x0, 0xa08                 ; 0x1a08 ; "步数地址=%lx" ; const char *format ; str._n_lx_n
+0x00001838      add x0, x0, 0xa08                 ; const char *format ; "步数地址=%lx" str._n_lx_n
 0x0000183c      bl sym.imp.printf                 ; int printf(const char *format)
                                                   ; int printf("步数地址=%lx")
 0x00001840      mov w1, 0x63                      ; 'c'
 0x00001844      ldr x0, [var_78h]                 ; int64_t arg1
 0x00001848      bl sym.WriteAddress_DWORD_long__int_ ; WriteAddress_DWORD(long, int) ; sym.WriteAddress_DWORD_long__int_(0x0, 0x63)
 0x0000184c      adrp x0, 0x1000
-0x00001850      add x0, x0, 0xa20                 ; 0x1a20 ; "修改成功" ; const char *s ; str._n_n
+0x00001850      add x0, x0, 0xa20                 ; const char *s ; "修改成功" str._n_n
 0x00001854      bl sym.imp.puts                   ; int puts(const char *s)
                                                   ; int puts("修改成功")
 0x00001858      mov w0, 0
@@ -296,20 +295,19 @@ EXPECT=<<EOF
 0x0000181c      add x0, x0, 8
 0x00001820      str x0, [var_78h]
 0x00001824      adrp x0, 0x1000
-0x00001828      add x0, x0, 0x9f0                 ; 0x19f0
-                                                  ; str. ; const char *s ; "\u57fa\u5740\u641c\u7d22\u5b8c\u6210"
+0x00001828      add x0, x0, 0x9f0                 ; const char *s ; "\u57fa\u5740\u641c\u7d22\u5b8c\u6210" str.
 0x0000182c      bl sym.imp.puts                   ; int puts(const char *s)
                                                   ; int puts("\xe5\x9f\xba\xe5\x9d\x80\xe6\x90\x9c\xe7\xb4\xa2\xe5\xae\x8c\xe6\x88\x90")
 0x00001830      ldr x1, [var_78h]
 0x00001834      adrp x0, 0x1000
-0x00001838      add x0, x0, 0xa08                 ; 0x1a08 ; "\n\u6b65\u6570\u5730\u5740=%lx\n" ; const char *format ; str._n_lx_n
+0x00001838      add x0, x0, 0xa08                 ; const char *format ; "\n\u6b65\u6570\u5730\u5740=%lx\n" str._n_lx_n
 0x0000183c      bl sym.imp.printf                 ; int printf(const char *format)
                                                   ; int printf("\n\xe6\xad\xa5\xe6\x95\xb0\xe5\x9c\xb0\xe5\x9d\x80=%lx\n")
 0x00001840      mov w1, 0x63                      ; 'c'
 0x00001844      ldr x0, [var_78h]                 ; int64_t arg1
 0x00001848      bl sym.WriteAddress_DWORD_long__int_ ; WriteAddress_DWORD(long, int) ; sym.WriteAddress_DWORD_long__int_(0x0, 0x63)
 0x0000184c      adrp x0, 0x1000
-0x00001850      add x0, x0, 0xa20                 ; 0x1a20 ; "\n\u4fee\u6539\u6210\u529f\n" ; const char *s ; str._n_n
+0x00001850      add x0, x0, 0xa20                 ; const char *s ; "\n\u4fee\u6539\u6210\u529f\n" str._n_n
 0x00001854      bl sym.imp.puts                   ; int puts(const char *s)
                                                   ; int puts("\n\xe4\xbf\xae\xe6\x94\xb9\xe6\x88\x90\xe5\x8a\x9f\n")
 0x00001858      mov w0, 0
