@@ -342,7 +342,6 @@ err:
 
 static int rafind_open_dir(RafindOptions *ro, const char *dir) {
 	RListIter *iter;
-	char *fullpath;
 	char *fname = NULL;
 
 	RList *files = r_sys_dir (dir);
@@ -353,7 +352,7 @@ static int rafind_open_dir(RafindOptions *ro, const char *dir) {
 			if (*fname == '.') {
 				continue;
 			}
-			fullpath = r_str_newf ("%s" R_SYS_DIR "%s", dir, fname);
+			char *fullpath = r_str_newf ("%s" R_SYS_DIR "%s", dir, fname);
 			(void)rafind_open (ro, fullpath);
 			free (fullpath);
 		}
@@ -605,11 +604,13 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 	}
 	for (; opt.ind < argc; opt.ind++) {
 		file = argv[opt.ind];
-		if (file && !*file) {
-			R_LOG_ERROR ("Cannot open empty path");
-			return 1;
+		if (file) {
+			if (!*file) {
+				R_LOG_ERROR ("Cannot open empty path");
+				return 1;
+			}
+			rafind_open (&ro, file);
 		}
-		rafind_open (&ro, file);
 	}
 	r_list_free (ro.keywords);
 	if (ro.pj) {

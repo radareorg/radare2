@@ -29,7 +29,7 @@ static const MutaPokemonMap pokemon_table[] = {
 	{ "(", 0x9a }, { ")", 0x9b }, { ":", 0x9c }, { ";", 0x9d }, { "[", 0x9e }, { "]", 0x9f },
 	{ "0", 0xf6 }, { "1", 0xf7 }, { "2", 0xf8 }, { "3", 0xf9 }, { "4", 0xfa }, { "5", 0xfb }, { "6", 0xfc },
 	{ "7", 0xfd }, { "8", 0xfe }, { "9", 0xff },
-	{NULL, 0}
+	{ NULL, 0 }
 };
 
 static const char *decode_byte(ut8 b) {
@@ -73,14 +73,14 @@ static ut8 *pokemon_decode(const ut8 *in, int in_len, int *out_len) {
 			static char tmp[6];
 			snprintf (tmp, sizeof (tmp), "\\x%02x", b);
 			text = tmp;
-			len = strlen(tmp);
+			len = strlen (tmp);
 		}
 
 		if (outpos + len > outcap) {
 			while (outpos + len > outcap) {
-				outcap = outcap ? outcap * 2 : 64;
+				outcap = outcap? outcap * 2: 64;
 			}
-			ut8 *tmpbuf = realloc(out, outcap);
+			ut8 *tmpbuf = realloc (out, outcap);
 			if (!tmpbuf) {
 				free (out);
 				*out_len = 0;
@@ -88,8 +88,11 @@ static ut8 *pokemon_decode(const ut8 *in, int in_len, int *out_len) {
 			}
 			out = tmpbuf;
 		}
-
-		memcpy (out + outpos, text, len);
+		if (out) {
+			memcpy (out + outpos, text, len);
+		} else {
+			out = r_mem_dup (text, len);
+		}
 		outpos += len;
 	}
 
@@ -108,11 +111,11 @@ static ut8 *pokemon_encode(const ut8 *in, int in_len, int *out_len) {
 	int outpos = 0;
 
 	while (str < (const char *)end && *str) {
-		char tok[16] = {0};
+		char tok[16] = { 0 };
 		int len = 1;
 
 		if (*str == '<') {
-			const char *tend = strchr(str, '>');
+			const char *tend = strchr (str, '>');
 			if (tend && (tend - str) < sizeof (tok)) {
 				len = tend - str + 1;
 				memcpy (tok, str, len);
@@ -125,7 +128,7 @@ static ut8 *pokemon_encode(const ut8 *in, int in_len, int *out_len) {
 		}
 
 		ut8 b;
-		if (encode_utf8(tok, &b)) {
+		if (encode_utf8 (tok, &b)) {
 			out[outpos++] = b;
 		} else {
 			out[outpos++] = '?';

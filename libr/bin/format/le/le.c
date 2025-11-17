@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019-2024 - GustavoLCR, mrmacete */
+/* radare - LGPL - Copyright 2019-2025 - GustavoLCR, mrmacete */
 
 #include "le.h"
 #include <r_bin.h>
@@ -770,12 +770,11 @@ beach:
 
 R_IPI RBinLEObj *r_bin_le_new_buf(RBuffer *buf) {
 	RBinLEObj *bin = R_NEW0 (RBinLEObj);
-	if (!bin) {
+	if (!__init_header (bin, buf)) {
 		return NULL;
 	}
-	__init_header (bin, buf);
 	LE_image_header *h = bin->header;
-	if (!memcmp ("LE", h->magic, 2)) {
+	if (!memcmp (h->magic, "LE", 2)) {
 		bin->is_le = true;
 	}
 	bin->type = __get_module_type (bin);

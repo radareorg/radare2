@@ -636,8 +636,9 @@ get_template_err:
 	r_list_free (new_abbr_names);
 	sd->abbr_names = saved_abbr_names; // restore global list with name abbr.
 
-	if (memorize) {
-		r_list_append (sd->abbr_names, strdup (type_code_str.type_str));
+	if (memorize && type_code_str.type_str) {
+		char *s = strdup (type_code_str.type_str);
+		r_list_append (sd->abbr_names, s);
 	}
 	// XXX LEAK OR DOUBLE FREE free_type_code_str_struct (&type_code_str);
 	return len;

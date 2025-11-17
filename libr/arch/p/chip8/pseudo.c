@@ -56,13 +56,14 @@ static int replace(int argc, char *argv[], char *newstr, size_t len) {
 		{ NULL }
 	};
 
-	for (i = 0; ops[i].op; i++) {
-		if (!strcmp (ops[i].op, argv[0]) && newstr) {
-			concat (newstr, len, ops[i].res);
-			return true;
+	if (argc > 0 && argv[0]) {
+		for (i = 0; ops[i].op; i++) {
+			if (!strcmp (ops[i].op, argv[0]) && newstr) {
+				concat (newstr, len, ops[i].res);
+				return true;
+			}
 		}
 	}
-
 	return false;
 }
 
