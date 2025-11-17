@@ -613,17 +613,11 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 		case R_ARM_CALL:             // ADD(24, got_addr -P);
 					     r->type = R_BIN_RELOC_24;
 					     if (G == UT64_MAX) {
-						     r->addend = B-P; // 171295;
-						     eprintf( "jeje 0x%x 0x%x\n", P, got_addr);
+						     r->addend = B-P;
 					     } else {
-						     eprintf( "joje 0x%x 0x%x\n", P, got_addr);
 						     r->addend = got_addr -P;
 					     }
-					     // r->addend = 0x08004dad;
-					     r->addend = 0x00004dad;
-					     // rel->laddr += 685182;
 					     rel->addend = r->addend + rel->laddr;
-					     // rel->addend = 685182 /4; // 171295
 					     r->additive = DT_RELA;
 					     return r;
 					     break;
