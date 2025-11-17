@@ -5,19 +5,21 @@
 #include <string.h>
 #include "minunit.h"
 
-static void mu_assert_double_close(double actual, double expected, double eps, const char *message) {
+static int mu_assert_double_close(double actual, double expected, double eps, const char *message) {
 	double diff = fabs (actual - expected);
 	char buf[MU_BUF_SIZE];
 	snprintf (buf, sizeof (buf), "%s: expected %.16f, got %.16f (diff %.16f)", message, expected, actual, diff);
 	mu_assert (buf, diff <= eps);
+	return MU_PASSED;
 }
 
 #if !R2_NO_LONG_DOUBLE
-static void mu_assert_longdouble_close(long double actual, long double expected, long double eps, const char *message) {
+static int mu_assert_longdouble_close(long double actual, long double expected, long double eps, const char *message) {
 	long double diff = fabsl (actual - expected);
 	char buf[MU_BUF_SIZE];
 	snprintf (buf, sizeof (buf), "%s: expected %.19Lf, got %.19Lf (diff %.19Lf)", message, expected, actual, diff);
 	mu_assert (buf, diff <= eps);
+	return MU_PASSED;
 }
 #endif
 
