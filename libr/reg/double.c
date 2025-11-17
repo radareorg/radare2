@@ -8,49 +8,16 @@ static RCFloatProfile get_float_profile(RReg *reg, RRegItem *item, bool *success
 	const bool be = (reg->endian & R_SYS_ENDIAN_BIG) == R_SYS_ENDIAN_BIG;
 	RCFloatProfile profile;
 
-	if (success) {
+	bool ok = r_cfloat_profile_from_bits (item->size, &profile);
+	if (!ok && success) {
+		*success = false;
+	} else if (success) {
 		*success = true;
 	}
-
-	switch (item->size) {
-	case 16:
-		profile = R_CFLOAT_PROFILE_BINARY16;
-		profile.big_endian = be;
-		break;
-	case 32:
-		profile = R_CFLOAT_PROFILE_BINARY32;
-		profile.big_endian = be;
-		break;
-	case 64:
+	if (!ok) {
 		profile = R_CFLOAT_PROFILE_BINARY64;
-		profile.big_endian = be;
-		break;
-	case 80:
-		profile = R_CFLOAT_PROFILE_X87_80;
-		profile.big_endian = be;
-		break;
-	case 96:
-		profile = R_CFLOAT_PROFILE_BINARY96;
-		profile.big_endian = be;
-		break;
-	case 128:
-		profile = R_CFLOAT_PROFILE_BINARY128;
-		profile.big_endian = be;
-		break;
-	case 256:
-		profile = R_CFLOAT_PROFILE_BINARY256;
-		profile.big_endian = be;
-		break;
-	default:
-		if (success) {
-			*success = false;
-		}
-		// Return a default profile even on failure
-		profile = R_CFLOAT_PROFILE_BINARY64;
-		profile.big_endian = be;
-		break;
 	}
-
+	profile.big_endian = be;
 	return profile;
 }
 
@@ -70,11 +37,13 @@ static double parse_profile_value(const ut8 *src, int size_bytes, const RCFloatP
 
 	// For <=64-bit formats, use regular API
 	ut8 tmp[8] = { 0 };
-	if (size_bytes > (int)sizeof (tmp)) {
-		size_bytes = sizeof (tmp);
+	int copy_bytes = R_MIN (size_bytes, (int)sizeof (tmp));
+	if (copy_bytes < size_bytes) {
+		R_LOG_WARN ("Float register size %d bits exceeds supported scalar width", size_bytes * 8);
+		return 0.0;
 	}
-	memcpy (tmp, src, size_bytes);
-	return r_cfloat_parse (tmp, size_bytes, profile);
+	memcpy (tmp, src, copy_bytes);
+	return r_cfloat_parse (tmp, copy_bytes, profile);
 }
 
 // long double = 128 bit

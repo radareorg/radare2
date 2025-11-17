@@ -58,6 +58,7 @@ R_API void r_cfloat_value_from_double(RCFloatValue *value, double d, const RCFlo
 R_API void r_cfloat_value_from_longdouble(RCFloatValue *value, long double ld, const RCFloatProfile *profile);
 
 R_API const RCFloatProfile *r_cfloat_profile_from_name(const char *name);
+R_API bool r_cfloat_profile_from_bits(int bits, RCFloatProfile *profile);
 
 #ifdef __cplusplus
 }

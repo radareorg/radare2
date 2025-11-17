@@ -3070,19 +3070,13 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			if (item) {
 				if (eq) {
 					long double val = 0.0f;
-#if __windows__
-					double dval = 0.0f;
-					sscanf (eq, "%lf", (double*)&dval);
-					val = dval;
-#else
-#if R2_NO_LONG_DOUBLE
 					double dval = 0.0;
-					sscanf (eq, "%lf", &dval);
+					if (r_str_scanf (eq, "%lf", &dval) != 1) {
+						R_LOG_WARN ("Cannot parse floating value '%s'", eq);
+						free (name);
+						continue;
+					}
 					val = (long double)dval;
-#else
-					sscanf (eq, "%Lf", &val);
-#endif
-#endif
 					if (item->size >= 80) {
 						r_reg_set_longdouble (core->dbg->reg, item, val);
 					} else {

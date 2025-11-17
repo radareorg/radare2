@@ -90,6 +90,35 @@ R_API const RCFloatProfile *r_cfloat_profile_from_name(const char *name) {
 	return NULL;
 }
 
+R_API bool r_cfloat_profile_from_bits(int bits, RCFloatProfile *profile) {
+	R_RETURN_VAL_IF_FAIL (profile, false);
+	switch (bits) {
+	case 16:
+		*profile = R_CFLOAT_PROFILE_BINARY16;
+		return true;
+	case 32:
+		*profile = R_CFLOAT_PROFILE_BINARY32;
+		return true;
+	case 64:
+		*profile = R_CFLOAT_PROFILE_BINARY64;
+		return true;
+	case 80:
+		*profile = R_CFLOAT_PROFILE_X87_80;
+		return true;
+	case 96:
+		*profile = R_CFLOAT_PROFILE_BINARY96;
+		return true;
+	case 128:
+		*profile = R_CFLOAT_PROFILE_BINARY128;
+		return true;
+	case 256:
+		*profile = R_CFLOAT_PROFILE_BINARY256;
+		return true;
+	default:
+		return false;
+	}
+}
+
 // Helper: read multi-word value from buffer
 static void read_multiword(const ut8 *buf, size_t buf_size, bool big_endian, RCFloatValue *out) {
 	memset (out->words, 0, sizeof (out->words));
@@ -229,7 +258,18 @@ R_API double r_cfloat_value_to_double(const RCFloatValue *value, const RCFloatPr
 		long double frac = fraction_from_bits (value, mant_pos, profile->mant_bits);
 		mant_val = 1.0L + frac;
 	}
-	long double result = mant_val * ldexpl (1.0L, (int)exp - profile->bias);
+	long double factor = 1.0L;
+	int shift = (int)exp - profile->bias;
+	if (shift >= 0) {
+		while (shift-- > 0) {
+			factor *= 2.0L;
+		}
+	} else {
+		while (shift++ < 0) {
+			factor /= 2.0L;
+		}
+	}
+	long double result = mant_val * factor;
 	return sign? - (double)result: (double)result;
 }
 

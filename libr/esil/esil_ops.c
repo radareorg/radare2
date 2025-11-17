@@ -2597,23 +2597,15 @@ static bool esil_double_to_float(REsil *esil) {
 		} else if (s == 64) {
 			ret = r_esil_pushnum (esil, d.u64);
 		} else if (s == 80 || s == 96 || s == 128 || s == 256) {
-			// Handle >64-bit floats using cfloat API
 			RCFloatProfile profile;
-			if (s == 80) {
-				profile = R_CFLOAT_PROFILE_X87_80;
-			} else if (s == 96) {
-				profile = R_CFLOAT_PROFILE_BINARY96;
-			} else if (s == 128) {
-				profile = R_CFLOAT_PROFILE_BINARY128;
+			if (r_cfloat_profile_from_bits (s, &profile)) {
+				profile.big_endian = false;
+				RCFloatValue fval;
+				r_cfloat_value_from_double (&fval, d.f64, &profile);
+				ret = r_esil_pushnum (esil, fval.words[0]);
 			} else {
-				profile = R_CFLOAT_PROFILE_BINARY256;
-		}
-		profile.big_endian = false;
-
-		RCFloatValue fval;
-		r_cfloat_value_from_double (&fval, d.f64, &profile);
-
-		ret = r_esil_pushnum (esil, fval.words[0]);
+				ret = r_esil_pushnum (esil, d.u64);
+			}
 		} else {
 			ret = r_esil_pushnum (esil, d.u64);
 		}
@@ -2641,24 +2633,16 @@ static bool esil_float_to_double(REsil *esil) {
 		} else if (s == 64) {
 			ret = esil_pushnum_float (esil, d.f64);
 		} else if (s == 80 || s == 96 || s == 128 || s == 256) {
-			// Handle >64-bit floats using cfloat API
 			RCFloatProfile profile;
-			if (s == 80) {
-				profile = R_CFLOAT_PROFILE_X87_80;
-			} else if (s == 96) {
-				profile = R_CFLOAT_PROFILE_BINARY96;
-			} else if (s == 128) {
-				profile = R_CFLOAT_PROFILE_BINARY128;
+			if (r_cfloat_profile_from_bits (s, &profile)) {
+				profile.big_endian = false;
+				RCFloatValue fval = {{0}};
+				fval.words[0] = d.u64;
+				double result = r_cfloat_value_to_double (&fval, &profile);
+				ret = esil_pushnum_float (esil, result);
 			} else {
-				profile = R_CFLOAT_PROFILE_BINARY256;
-		}
-		profile.big_endian = false;
-
-		RCFloatValue fval = {{0}};
-		fval.words[0] = d.u64;
-
-		double result = r_cfloat_value_to_double (&fval, &profile);
-			ret = esil_pushnum_float (esil, result);
+				ret = esil_pushnum_float (esil, d.f64);
+			}
 		} else {
 			ret = esil_pushnum_float (esil, d.f64);
 		}
