@@ -4926,8 +4926,17 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 		}
 		break;
 	case ' ':
+		const char *pidstr = r_str_trim_head_ro (input + 2);
+		if (!pidstr || !*pidstr) {
+			R_LOG_ERROR ("Missing pid argument");
+			break;
+		}
+		if (!r_num_is_valid_input (core->num, pidstr)) {
+			R_LOG_ERROR ("Invalid pid argument: %s", pidstr);
+			break;
+		}
 		old_pid = core->dbg->pid;
-		pid = atoi (input + 2);
+		pid = (int)r_num_math (core->num, pidstr);
 		r_reg_arena_swap (core->dbg->reg, true);
 		r_debug_select (core->dbg, pid, core->dbg->tid);
 		r_debug_continue (core->dbg);
