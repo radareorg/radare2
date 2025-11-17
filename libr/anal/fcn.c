@@ -1491,6 +1491,7 @@ bx = jmptbl_base + (byte[x9]<<2)
 				if (anal->leaddrs && r_list_length (anal->leaddrs) >= 2) {
 					leaddr_pair *x10 = r_list_pop (anal->leaddrs);
 					leaddr_pair *x9 = r_list_pop (anal->leaddrs);
+					ut64 opaddr = x10->op_addr;
 					ut64 basptr = x10->leaddr;
 					ut64 tblptr = x9->leaddr;
 					free (x9);
@@ -1539,7 +1540,6 @@ bx = jmptbl_base + (byte[x9]<<2)
 							delta = r_read_le32 (&table4[i]);
 							caseaddr = basptr + delta;
 						}
-					//	eprintf ("case %d 0x%llx\n", i, caseaddr);
 						if (!anal->iob.is_valid_offset (anal->iob.io, caseaddr, 0)) {
 							R_LOG_DEBUG ("Invalid case %d offset 0x%08"PFMT64x" for switch at 0x%08"PFMT64x, i, caseaddr, op->addr);
 							continue;
@@ -1550,7 +1550,7 @@ bx = jmptbl_base + (byte[x9]<<2)
 						kase->value = i;
 						r_list_append (kases, kase);
 					}
-					r_anal_jmptbl_list (anal, fcn, bb, x10->op_addr, tblptr, kases, loadsize);
+					r_anal_jmptbl_list (anal, fcn, bb, opaddr, tblptr, kases, loadsize);
 					anal->cmpval = 0;
 					loadsize = 0;
 					free (table);

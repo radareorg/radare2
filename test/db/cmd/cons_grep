@@ -696,9 +696,9 @@ pdsfq~$$?
 pdsfq~?$$
 EOF
 EXPECT=<<EOF
-150
-97
-97
+152
+98
+98
 EOF
 RUN
 
