@@ -750,7 +750,6 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 			ssize_t sz = read (proc->stderr_fd, buf, sizeof (buf));
 			if (sz < 0) {
 				r_sys_perror ("sp-wait read 2");
-				stderr_eof = true;
 				child_dead = true;
 				break;
 			}
@@ -1139,15 +1138,14 @@ R_API bool r2r_check_jq_available(void) {
 	proc = NULL;
 
 	const char *valid_json = "{\"this is\":\"valid json\",\"lol\":true}";
+	bool valid_detected = false;
 	proc = r2r_subprocess_start (JQ_CMD, args, 1, NULL, NULL, 0);
 	if (proc) {
 		r2r_subprocess_stdin_write (proc, (const ut8 *)valid_json, strlen (valid_json));
 		r2r_subprocess_wait (proc, UT64_MAX);
 		r_th_lock_enter (proc->lock);
-		bool valid_detected = proc->ret == 0;
+		valid_detected = proc->ret == 0;
 		r_th_lock_leave (proc->lock);
-	} else {
-		bool valid_detected = false;
 	}
 	r2r_subprocess_free (proc);
 
