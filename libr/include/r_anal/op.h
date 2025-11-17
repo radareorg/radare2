@@ -196,7 +196,7 @@ typedef struct r_anal_case_op_t {
 	ut64 addr;
 	ut64 jump;
 	ut64 value;
-} RAnalCaseOp;
+} RAnalCaseOp; // TODO: rename to RAnalSwitchCase
 
 typedef struct r_anal_switch_op_t {
 	ut64 addr; // address of the RJMP
@@ -208,7 +208,7 @@ typedef struct r_anal_switch_op_t {
 	ut64 def_val;
 	ut64 max_val;
 	RList/*<RAnalCaseOp>*/ *cases;
-} RAnalSwitchOp;
+} RAnalSwitchOp; // TODO: Rename to RAnalSwitch
 
 typedef enum r_anal_data_type_t {
 	R_ANAL_DATATYPE_NULL = 0,

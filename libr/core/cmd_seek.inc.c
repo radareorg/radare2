@@ -659,7 +659,9 @@ static int cmd_seek(void *data, const char *input) {
 		}
 		break;
 	case '+': // "s+"
-		if (input[1] != '\0') {
+		if (input[1] == '?') {
+			r_core_cmd_help_contains (core, help_msg_s, "s+");
+		} else if (input[1] != '\0') {
 			st64 delta = off;
 			if (input[1] == '+') {
 				delta = core->blocksize;
@@ -685,6 +687,9 @@ static int cmd_seek(void *data, const char *input) {
 		break;
 	case '-': // "s-"
 		switch (input[1]) {
+		case '?': // "s-?"
+			r_core_cmd_help_contains (core, help_msg_s, "s-");
+			break;
 		case '*': // "s-*"
 			r_io_sundo_reset (core->io);
 			break;
@@ -715,7 +720,7 @@ static int cmd_seek(void *data, const char *input) {
 				r_core_seek_delta (core, delta);
 				r_core_block_read (core);
 			}
-		break;
+			break;
 		}
 		break;
 	case 'n': // "sn"

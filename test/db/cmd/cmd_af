@@ -454,7 +454,7 @@ EOF
 EXPECT=<<EOF
 0x1000047a8
             ;-- func.1000047a8:
-/ 688: sym.il.piltrafilla (int64_t arg1, int64_t arg2, int64_t arg3);
+/ 728: sym.il.piltrafilla (int64_t arg1, int64_t arg2, int64_t arg3);
 | `- args(x0, x1, x2) vars(5:sp[0x10..0x50])
 |           0x1000047a8      7f2303d5       pacibsp
 |           0x1000047ac      fc6fbaa9       stp x28, x27, [sp, -0x60]!

@@ -23,7 +23,7 @@ static void apply_case(RAnal *anal, RAnalBlock *block, ut64 switch_addr, ut64 of
 	}
 	if (anal->flb.set) {
 		char flagname[64];
-		int iid = R_ABS ((int)id);
+		const int iid = R_ABS ((int)id);
 		snprintf (flagname, sizeof (flagname), "case.0x%"PFMT64x ".%d", (ut64)switch_addr, iid);
 		anal->flb.set (anal->flb.f, flagname, case_addr, 1);
 	}
@@ -264,8 +264,6 @@ R_API bool r_anal_jmptbl_walk(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block
 				break;
 			}
 		}
-		//apply_case (anal, block, ip, sz, jmpptr, offs / sz, jmptbl_loc + offs, false);
-		//(void)r_anal_function_bb (anal, fcn, jmpptr, depth - 1);
 		int case_idx = offs / sz;
 		int casenum = case_idx + start_casenum_shift;
 		apply_case (anal, block, ip, sz, jmpptr, casenum, jmptbl_loc + offs, false);
@@ -603,4 +601,23 @@ R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnal
 	// 		*default_case,
 	// 		*table_size);
 	return isValid;
+}
+
+R_API void r_anal_jmptbl_list(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, ut64 saddr, ut64 jaddr, RList *cases, int loadsz) {
+	RAnalCaseOp *kase;
+	RListIter *iter;
+	apply_switch (anal, saddr, jaddr, r_list_length (cases), -1);
+	SetU *s = set_u_new ();
+	r_list_foreach (cases, iter, kase) {
+		if (set_u_contains (s, kase->jump)) {
+			continue;
+		}
+		apply_case (anal, bb, saddr,
+				loadsz, kase->jump, kase->value,
+				kase->jump, true);
+		set_u_add (s, kase->jump);
+	// 	eprintf ("%d %llx -> 0x%llx\n", i, saddr, kase->jump);
+		analyze_new_case (anal, fcn, bb, saddr, kase->jump, 999);
+	}
+	set_u_free (s);
 }

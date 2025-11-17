@@ -34,7 +34,7 @@ EXPECT=<<EOF
 0x10000404c      ldrsw x11, [x9, x8, lsl 2]
 0x100004050      add x10, x10, x11
 0x100004054      br x10
-
+| // true: 0x100004058
 ;-- case 0:                                                            ; from 0x100004048
 ; CODE XREF from sym.func.100004000 @ 0x100004048(x)
 0x100004058      ubfx x25, x4, 0x30, 8                                 ; arg5
@@ -165,7 +165,7 @@ EXPECT=<<EOF
 0x100004174      ldrsw x10, [x8, x25, lsl 2]
 0x100004178      add x9, x9, x10
 0x10000417c      br x9
-
+| // true: 0x100004180
 ;-- case 0:                                                            ; from 0x100004170
 ; CODE XREF from sym.func.100004124 @ 0x100004170(x)
 0x100004180      ldr x8, [var_80h]
