@@ -75,7 +75,7 @@ int LLVMFuzzerTestOneInput(const ut8 *data, size_t len) {
 			exit (1);
                         return false;
                 }
-                RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (da, bin, mode);
+                RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bin, da, mode);
                 HtUP /*<offset, List *<LocListEntry>*/ *loc_table = r_bin_dwarf_parse_loc (bin, 8);
                 // I suppose there is no reason the parse it for a printing purposes
 #if 0
@@ -89,7 +89,7 @@ int LLVMFuzzerTestOneInput(const ut8 *data, size_t len) {
                 }
 #endif
                 if (loc_table) {
-			r_bin_dwarf_print_loc (loc_table, 8, r_cons_printf);
+			r_bin_dwarf_print_loc (loc_table, 8);
                         r_bin_dwarf_free_loc (loc_table);
                 }
                 r_bin_dwarf_free_debug_info (info);

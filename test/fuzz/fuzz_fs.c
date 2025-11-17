@@ -56,6 +56,9 @@ int LLVMFuzzerInitialize(int *lf_argc, char ***lf_argv) {
 }
 
 int LLVMFuzzerTestOneInput(const ut8 *data, size_t len) {
+	if (len == 0) {
+		return 1;
+	}
 	RCore *core = r_core_new ();
 	r_core_cmdf (core, "o malloc://%"PFMT64d, (ut64)len);
 	r_io_write_at (core->io, 0, data, len);

@@ -14,7 +14,7 @@ R_API RX509Certificate *wtf_r_x509_parse_certificate2(const ut8 *buffer, ut32 le
 		return NULL;
 	}
 	RASN1Object *object = r_asn1_object_parse (buffer, buffer, length, 0);
-	RX509Certificate *certificate = r_x509_parse_certificate (object);
+	RX509Certificate *certificate = r_x509_certificate_parse (object);
 	// object freed by r_x509_parse_certificate
 	return certificate;
 }
