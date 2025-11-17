@@ -4735,7 +4735,7 @@ static int analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int 
 		cs_free (insn, n);
 		op->size = 4;
 		op->type = R_ANAL_OP_TYPE_ILL;
-		if (len < 4) {
+		if (!buf || len < 4) {
 			if (mask & R_ARCH_OP_MASK_DISASM) {
 				free (op->mnemonic);
 				op->mnemonic = strdup ("invalid");

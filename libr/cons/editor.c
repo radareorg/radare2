@@ -47,17 +47,18 @@ static void emptyline(RCons *cons, const char *str) {
 }
 
 static void saveline(RCons *cons, const char *str) {
+	char *s = strdup (str? str: "");
 	if (G.n == r_list_length (G.lines)) {
-		r_list_append (G.lines, strdup (str));
+		r_list_append (G.lines, s);
 	} else {
 		if (str) {
 			RListIter *iter = r_list_get_nth (G.lines, G.n);
 			if (iter) {
 				r_list_delete (G.lines, iter);
 			}
-			r_list_insert (G.lines, G.n, strdup (str));
+			r_list_insert (G.lines, G.n, s);
 		} else {
-			r_list_insert (G.lines, G.n, strdup (""));
+			r_list_insert (G.lines, G.n, s);
 		}
 	}
 	setprompt (cons);
