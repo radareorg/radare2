@@ -767,16 +767,32 @@ static int cmd_undo(void *data, const char *input) {
 			r_core_undo_down (core);
 			r_config_set_b (core->config, "cmd.undo", true);
 			break;
-		default:
+		case 0:
 			r_core_undo_print (core, 0, NULL);
+			break;
+		default:
+			r_core_return_invalid_command (core, "uc", input[1]);
 			break;
 		}
 		return 1;
 	case 'i': // "ui"
-		r_cons_printf (core->cons, "%d\n", r_sys_uid ());
+		if (input[1] == 'd') {
+			r_cons_printf (core->cons, "%d\n", r_sys_uid ());
+		} else {
+			r_core_return_invalid_command (core, "ui", input[1]);
+		}
 		return 1;
 	case 's': // "us"
-		r_core_cmdf (data, "s-%s", input + 1);
+		if (input[1] == ' ') {
+			int n = r_num_math (core->num, input + 2);
+			r_core_cmdf (data, "s-%d", n);
+		} else if (input[1] == '?') {
+			r_core_cmd_help_contains (core, help_msg_u, "us");
+		} else if (!input[1]) {
+			r_core_cmd0 (data, "s-");
+		} else {
+			r_core_return_invalid_command (core, "us", input[1]);
+		}
 		return 1;
 	case 'w': // "uw"
 		if (input[1] == 'u') {
