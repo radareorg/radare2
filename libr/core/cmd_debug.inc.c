@@ -3083,7 +3083,11 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					sscanf (eq, "%Lf", &val);
 #endif
 #endif
-					r_reg_set_double (core->dbg->reg, item, val);
+					if (item->size >= 80) {
+						r_reg_set_longdouble (core->dbg->reg, item, val);
+					} else {
+						r_reg_set_double (core->dbg->reg, item, (double)val);
+					}
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, true);
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_FPU, true);
 				} else {
