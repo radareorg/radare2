@@ -4989,7 +4989,7 @@ repeat_arroba:
 						}
 					}
 				} else {
-					R_LOG_ERROR ("cannot open '%s'", ptr + 3);
+					R_LOG_ERROR ("Cannot open at-f '%s'", ptr + 3);
 				}
 				break;
 			case 'r': // "@r:" "@r{}" // regname
@@ -6288,7 +6288,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				r_list_free (rows);
 				free (data);
 			} else {
-				R_LOG_ERROR ("cannot open file '%s' to read offsets", arg);
+				R_LOG_ERROR ("Cannot open file '%s' to read offsets", arg);
 			}
 		}
 		break;
