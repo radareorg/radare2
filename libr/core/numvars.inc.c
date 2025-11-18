@@ -973,8 +973,14 @@ static ut64 num_callback(RNum *userptr, const char *str, bool *ok) {
 			return numvar_dollar (core, str, ok);
 		case 'o': // $o
 			{
-				RBinSection *s = r_bin_get_section_at (r_bin_cur_object (core->bin), core->addr, true);
-				return s ? core->addr - s->vaddr + s->paddr : core->addr;
+				RBinObject *bo = r_bin_cur_object (core->bin);
+				if (bo) {
+					RBinSection *s = r_bin_get_section_at (bo, core->addr, true);
+					if (s) {
+						return core->addr - s->vaddr + s->paddr;
+					}
+				}
+				return core->addr;
 			}
 		case 'F': // $F function
 			return numvar_function (core, str + 2, ok);
