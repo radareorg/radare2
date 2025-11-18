@@ -2030,12 +2030,10 @@ static bool cb_dbgbackend(void *user, void *data) {
 static bool cb_gotolimit(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
-	if (r_sandbox_enable (0)) {
-		R_LOG_ERROR ("Cannot change gotolimit");
-		return false;
-	}
-	if (core->anal->esil) {
-		core->anal->esil_goto_limit = node->i_value;
+	if (!r_sandbox_enable (0)) {
+		if (core->anal->esil) {
+			core->anal->esil_goto_limit = node->i_value;
+		}
 	}
 	return true;
 }
