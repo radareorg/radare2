@@ -330,7 +330,7 @@ grub_minix_find_file (struct grub_minix_data *data, const char *path)
   char *name = fpath;
   char *next;
   unsigned int pos = 0;
-  int dirino;
+  int dirino = 0;
 
   grub_strcpy (fpath, path);
 
