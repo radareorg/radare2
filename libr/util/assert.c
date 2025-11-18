@@ -27,12 +27,12 @@ R_API void r_assert_log(RLogLevel level, const char *origin, const char *fmt, ..
 	va_start (args, fmt);
 	print_message (level, origin, fmt, args);
 	va_end (args);
-	char *env = r_sys_getenv ("R2_DEBUG_ASSERT");
-	if (env) {
+	if (r_sys_getenv_asbool ("R2_DEBUG_ASSERT")) {
 		r_sys_backtrace ();
-		if (*env && atoi (env)) {
-			r_sys_breakpoint ();
+		if (r_sys_getenv_asbool ("R2_DEBUG_FUZZ")) {
+			int *a = NULL;
+			*a = 0;
 		}
-		free (env);
+		r_sys_breakpoint ();
 	}
 }
