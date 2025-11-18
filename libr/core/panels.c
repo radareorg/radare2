@@ -7662,7 +7662,7 @@ R_API bool r_core_panels_root(RCore *core, RPanelsRoot *panels_root) {
 		}
 		const char *pdc_now = r_config_get (core->config, "cmd.pdc");
 		if (sdb_exists (panels_root->pdc_caches, pdc_now)) {
-			panels_root->cur_pdc_cache = sdb_ptr_get (panels_root->pdc_caches, strdup (pdc_now), 0);
+			panels_root->cur_pdc_cache = sdb_ptr_get (panels_root->pdc_caches, pdc_now, 0);
 		} else {
 			Sdb *sdb = sdb_new0();
 			sdb_ptr_set (panels_root->pdc_caches, strdup (pdc_now), sdb, 0);

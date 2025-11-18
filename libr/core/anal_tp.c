@@ -648,7 +648,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	int retries = 2;
 repeat:
 	if (retries < 0) {
-		free (next_op);
+		R_FREE (next_op);
 		tps_fini (tps);
 		return;
 	}
@@ -977,7 +977,6 @@ repeat:
 			r_anal_op_fini (&aop);
 		}
 	}
-	R_FREE (next_op);
 	r_config_set_b (core->config, "dbg.trace.eval", true);
 	RVecBuf_fini (&buf);
 	RVecUT64_fini (&bblist);
@@ -998,6 +997,7 @@ repeat:
 	}
 	r_list_free (list);
 out_function:
+	R_FREE (next_op);
 	R_FREE (ret_reg);
 	R_FREE (ret_type);
 	r_anal_op_fini (&aop);

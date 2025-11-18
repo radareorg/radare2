@@ -86,21 +86,15 @@ static RBinInfo* info(RBinFile *bf) {
 
 static RList* sections(RBinFile *bf) {
 	ut64 textsize = UT64_MAX;
-	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	PebbleAppInfo pai = {{0}};
 	if (!r_buf_read_at (bf->buf, 0, (ut8*)&pai, sizeof (pai))) {
 		R_LOG_ERROR ("Truncated Header");
 		return NULL;
 	}
-	if (!(ret = r_list_new ())) {
-		return NULL;
-	}
-	ret->free = free;
+	RList *ret = r_list_newf (free);
 	// TODO: load all relocs
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("relocs");
 	ut64 sz = pai.num_reloc_entries * sizeof (ut32);
 	ut64 ss = pai.reloc_list_start;
@@ -120,9 +114,7 @@ static RList* sections(RBinFile *bf) {
 	}
 
 	// imho this must be a symbol
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("symtab");
 	ptr->vsize = ptr->size = 0;
 	ptr->vaddr = ptr->paddr = pai.sym_table_addr;
@@ -133,9 +125,7 @@ static RList* sections(RBinFile *bf) {
 		textsize = ptr->vaddr;
 	}
 
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("text");
 	ptr->vaddr = ptr->paddr = 0x80;
 	ptr->vsize = ptr->size = textsize - ptr->paddr;
@@ -143,9 +133,7 @@ static RList* sections(RBinFile *bf) {
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("header");
 	ptr->vsize = ptr->size = sizeof (PebbleAppInfo);
 	ptr->vaddr = ptr->paddr = 0;

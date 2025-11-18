@@ -2009,6 +2009,7 @@ static void visual_comma(RCore *core) {
 		if (fn && *fn) {
 			cmtfile = strdup (fn);
 			if (R_STR_ISEMPTY (comment)) {
+				free (comment);
 				comment = r_str_newf (",(%s)", fn);
 				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, comment);
 				R_FREE (comment);
