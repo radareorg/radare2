@@ -257,12 +257,12 @@ mrproper distclean: clean
 
 test:
 	@echo "Running quick test with fuzz_anal..."
-	$(MAKE) run-fuzzer TARGET=fuzz_anal FUZZER_OPTS="-runs=1000 -timeout=1"
+	$(MAKE) run-fuzzer T=fuzz_anal FUZZER_OPTS="-runs=1000 -timeout=1"
 
 # Continuous fuzzing
 fuzz-continuous:
 	@if [ -z "$(T)" ]; then \
-		echo "Usage: make fuzz-continuous TARGET=<fuzzer_name>"; \
+		echo "Usage: make fuzz-continuous T=<fuzzer_name>"; \
 		exit 1; \
 	fi
 	@echo "Starting continuous fuzzing for $(T)..."
@@ -305,23 +305,23 @@ usage:
 	@echo "  make build           - Build with meson (recommended)"
 	@echo "  make build-simple    - Build radare2 normally, then fuzzing targets"
 	@echo "  make build-configure - Build with configure+make"
-	@echo "  make run-fuzzer TARGET=<name> - Run specific fuzzer"
-	@echo "  make run-corpus TARGET=<name> - Run corpus only (no mutations)"
-	@echo "  make generate-mutations TARGET=<name> COUNT=<n> - Generate C-aware mutations"
-	@echo "  make generate-new TARGET=<name> COUNT=<n> - Generate new C constructions"
+	@echo "  make run-fuzzer T=<name> - Run specific fuzzer (same as make 'run')"
+	@echo "  make run-corpus T=<name> - Run corpus only (no mutations)"
+	@echo "  make generate-mutations T=<name> COUNT=<n> - Generate C-aware mutations"
+	@echo "  make generate-new T=<name> COUNT=<n> - Generate new C constructions"
 	@echo "  make list            - List available fuzzers"
 	@echo "  make clean           - Clean build artifacts"
 	@echo "  make test            - Quick test build and run"
 	@echo ""
 	@echo "Examples:"
 	@echo "  make setup && make build"
-	@echo "  make run-fuzzer TARGET=fuzz_run_parseline"
-	@echo "  make run-fuzzer TARGET=fuzz_run_parseline EXTRA_FUZZER_OPTS=\"-runs=10000\""
-	@echo "  make run-corpus TARGET=fuzz_types_parser"
-	@echo "  make generate-mutations TARGET=fuzz_types_parser COUNT=50"
-	@echo "  make generate-new TARGET=fuzz_types_parser COUNT=100"
-	@echo "  make replay TARGET=fuzz_run_parseline CRASH_FILES=\"crash-*\""
-	@echo "  make fuzz-continuous TARGET=fuzz_run_parseline"
+	@echo "  make run-fuzzer T=fuzz_run_parseline"
+	@echo "  make run-fuzzer T=fuzz_run_parseline EXTRA_FUZZER_OPTS=\"-runs=10000\""
+	@echo "  make run-corpus T=fuzz_types_parser"
+	@echo "  make generate-mutations T=fuzz_types_parser COUNT=50"
+	@echo "  make generate-new T=fuzz_types_parser COUNT=100"
+	@echo "  make replay T=fuzz_run_parseline CRASH_FILES=\"crash-*\""
+	@echo "  make fuzz-continuous T=fuzz_run_parseline"
 	@echo ""
 	@echo "Configuration:"
 	@echo "  make config          - Show current configuration"
