@@ -25,6 +25,7 @@ static const RFSPlugin* fs_static_plugins[] = {
 static const RFSType fstypes[] = {
 	{ "hfs", 0x400, "BD", 2, 0, 0, 0x400 },
 	{ "hfsplus", 0x400, "H+", 2, 0, 0, 0x400 },
+	{ "ubifs", 0x0, "\x31\x18", 2, 0, 0, 0 },
 	{ "fat", 0x36, "FAT12", 5, 0, 0, 0 },
 	{ "fat", 0x52, "FAT32", 5, 0, 0, 0 },
 	{ "ext2", 0x438, "\x53\xef", 2, 0, 0, 0 },
