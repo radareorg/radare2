@@ -847,7 +847,14 @@ static RList *symbols(RBinFile *bf) {
 	ut32 exportHashOffset = r_buf_read_be32_at (bf->buf, pef->ldrsec + 44);
 	ut32 exportHashTablePower = r_buf_read_be32_at (bf->buf, pef->ldrsec + 48);
 	ut32 exportedSymbolCount = r_buf_read_be32_at (bf->buf, pef->ldrsec + 52);
-	ut32 stringLenTable = pef->ldrsec + exportHashOffset + (4 << exportHashTablePower);
+	if (exportHashTablePower >= 30) {
+		return ret;
+	}
+	ut64 hashTableSize = 4ULL << exportHashTablePower;
+	if (hashTableSize > 0xffffffffULL) {
+		return ret;
+	}
+	ut32 stringLenTable = pef->ldrsec + exportHashOffset + (ut32)hashTableSize;
 	ut32 exportTable = stringLenTable + 4 * exportedSymbolCount;
 	int i;
 

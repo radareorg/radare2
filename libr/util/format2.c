@@ -1459,10 +1459,15 @@ static void r_print_format_nulltermwidestring(RPrintFormat *pf, const int len, c
 static void r_print_format_bitfield(RPrintFormat *pf, ut64 seeki, char *fmtname, char *fieldname, ut64 addr, int size) {
 	const RPrint *p = pf->p;
 	const int mode = pf->mode;
-	if (size >= 8) {
+	const ut32 max_shift = (sizeof (ut64) * 8U) - 1;
+	if (size <= 0 || size >= 8) {
 		addr = 0;
 	} else {
-		addr &= (1ULL << (size * 8)) - 1;
+		ut32 shift = (ut32)size * 8U;
+		if (shift > max_shift) {
+			shift = max_shift;
+		}
+		addr &= (1ULL << shift) - 1;
 	}
 	if (MUSTSEE && !SEEVALUE) {
 		r_print_printf (p, "0x%08" PFMT64x " = ", seeki);

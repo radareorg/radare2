@@ -1380,6 +1380,9 @@ R_API char *r_sys_pid_to_path(int pid) {
 	if (ret < 1) {
 		return NULL;
 	}
+	if ((size_t)ret >= sizeof (pathbuf)) {
+		ret = sizeof (pathbuf) - 1;
+	}
 	pathbuf[ret] = 0;
 #endif
 	return strdup (pathbuf);

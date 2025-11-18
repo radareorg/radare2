@@ -250,12 +250,17 @@ static bool __ne_get_resources(r_bin_ne_obj_t *bin) {
 			res->name = __read_nonnull_str_at (bin->buf, (ut64)resoff + ti.rtTypeID);
 		}
 		off += sizeof (NE_image_typeinfo_entry);
+		const ut32 max_shift = (sizeof (ut32) * 8U) - 1;
 		int i;
 		for (i = 0; i < ti.rtResourceCount; i++) {
 			NE_image_nameinfo_entry ni;
 			r_ne_resource_entry *ren = R_NEW0 (r_ne_resource_entry);
 			r_buf_fread_at (bin->buf, off, (ut8 *)&ni, "6s", 1);
-			ren->offset = ni.rnOffset << alignment;
+			ut32 shift = alignment;
+			if (shift > max_shift) {
+				shift = max_shift;
+			}
+			ren->offset = (ut32)((ut64)ni.rnOffset << shift);
 			ren->size = ni.rnLength;
 			if (ni.rnID & 0x8000) {
 				ren->name = r_str_newf ("%d", ni.rnID & ~0x8000);

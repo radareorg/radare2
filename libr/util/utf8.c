@@ -568,15 +568,12 @@ R_API int r_utf8_encode(ut8 *ptr, const RRune ch) {
 /* Convert a unicode RRune string into an utf-8 one */
 R_API int r_utf8_encode_str(const RRune *str, ut8 *dst, const int dst_length) {
 	int i, pos = 0;
-
 	if (!str || !dst) {
 		return -1;
 	}
-
-	for (i = 0; i < sizeof (str) - 1 && str[i] && pos < dst_length - 1; i++) {
+	for (i = 0; str[i] && pos < dst_length - 1; i++) {
 		pos += r_utf8_encode (&dst[pos], str[i]);
 	}
-
 	dst[pos++] = '\0';
 	return pos;
 }

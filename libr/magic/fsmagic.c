@@ -221,7 +221,7 @@ int __magic_file_fsmagic(RMagic *ms, const char *fn, struct stat *sb) {
 #endif
 #ifdef	S_IFLNK
 	case S_IFLNK:
-		if ((nch = readlink (fn, buf, BUFSIZ-1)) <= 0) {
+		if ((nch = readlink (fn, buf, sizeof (buf) - 1)) <= 0) {
 			if (ms->flags & R_MAGIC_ERROR) {
 			    __magic_file_error (ms, errno, "unreadable symlink `%s'", fn);
 			    return -1;
@@ -231,6 +231,9 @@ int __magic_file_fsmagic(RMagic *ms, const char *fn, struct stat *sb) {
 			    strerror(errno)) == -1)
 				return -1;
 			return 1;
+		}
+		if ((size_t) nch >= sizeof (buf)) {
+			nch = sizeof (buf) - 1;
 		}
 		buf[nch] = '\0';	/* readlink(2) does not do this */
 
