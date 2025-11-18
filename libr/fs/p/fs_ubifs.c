@@ -405,7 +405,7 @@ static bool ubifs_walk_index(ubifs_ctx_t *ctx, ut32 lnum, ut32 offs) {
 			ht_up_insert (ctx->inodes, key.ino_num, inode);
 		}
 
-		if (inode && !inode->ino) {
+		if (!inode->ino) {
 			inode->ino = R_NEW0 (ubifs_ino_node_t);
 			memcpy (inode->ino, ino, sizeof (ubifs_ino_node_t));
 		}
@@ -425,13 +425,9 @@ static bool ubifs_walk_index(ubifs_ctx_t *ctx, ut32 lnum, ut32 offs) {
 			ht_up_insert (ctx->inodes, key.ino_num, inode);
 		}
 
-		if (inode) {
-			ut64 *dent_off = R_NEW (ut64);
-			if (dent_off) {
-				*dent_off = offset;
-				r_list_append (inode->dent_nodes, dent_off);
-			}
-		}
+		ut64 *dent_off = R_NEW (ut64);
+		*dent_off = offset;
+		r_list_append (inode->dent_nodes, dent_off);
 		break;
 	}
 
@@ -447,14 +443,9 @@ static bool ubifs_walk_index(ubifs_ctx_t *ctx, ut32 lnum, ut32 offs) {
 			inode->dent_nodes = r_list_new ();
 			ht_up_insert (ctx->inodes, key.ino_num, inode);
 		}
-
-		if (inode) {
-			ut64 *data_off = R_NEW (ut64);
-			if (data_off) {
-				*data_off = offset;
-				r_list_append (inode->data_nodes, data_off);
-			}
-		}
+		ut64 *data_off = R_NEW (ut64);
+		*data_off = offset;
+		r_list_append (inode->data_nodes, data_off);
 		break;
 	}
 	}

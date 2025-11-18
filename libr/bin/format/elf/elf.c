@@ -5031,6 +5031,7 @@ static RVecRBinElfSymbol *_load_additional_imported_symbols(ELFOBJ *eo, ImportIn
 	if (!imports || !RVecRBinElfSymbol_reserve (imports, import_ret_ctr)) {
 		R_LOG_DEBUG ("Cannot allocate %d symbols", nsym);
 		_symbol_memory_free (&ii->memory);
+		RVecRBinElfSymbol_free (imports);
 		return NULL;
 	}
 

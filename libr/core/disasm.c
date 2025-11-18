@@ -7770,15 +7770,17 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 		end_nbopcodes = dis_opcodes == 1 && nb_opcodes > 0 && line>=nb_opcodes;
 		end_nbbytes = dis_opcodes == 0 && nb_bytes > 0 && i>=nb_bytes;
 		end_pdu_condition = (!strncmp (pdu_condition_opcode, opstr, opcode_len)
-								&& (opstr[opcode_len] == ' '
-									|| !opstr[opcode_len]));
+					&& (opstr[opcode_len] == ' '
+						|| !opstr[opcode_len]));
 		result = true;
 		r_anal_op_fini (&asmop);
 		if (end_nbopcodes || end_nbbytes || end_pdu_condition) {
+			free (opstr);
 			break;
 		}
 		free (opstr);
 	}
+
 	r_cons_break_pop (core->cons);
 	r_anal_op_fini (&ds->analop);
 	core->addr = old_offset;
@@ -8170,6 +8172,7 @@ toro:
 					free (asm_str);
 				} else {
 					r_cons_println (core->cons, asm_str);
+					free (asm_str);
 				}
 			}
 		}

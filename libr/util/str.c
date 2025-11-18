@@ -1006,16 +1006,19 @@ R_API R_MUSTUSE char *r_str_replace_icase(char *str, const char *key, const char
 		if (keep_case) {
 			char *tmp_val = strdup (val);
 			char *str_case = r_str_ndup (p, klen);
+			char *tmp_val_replaced;
 			if (!tmp_val || !str_case) {
 				free (tmp_val);
 				free (str_case);
 				return NULL;
 			}
-			tmp_val = r_str_replace_icase (tmp_val, key, str_case, 0, 0);
+			tmp_val_replaced = r_str_replace_icase (tmp_val, key, str_case, 0, 0);
 			free (str_case);
-			if (!tmp_val) {
+			if (!tmp_val_replaced) {
+				free (tmp_val);
 				return NULL;
 			}
+			tmp_val = tmp_val_replaced;
 			memcpy (p, tmp_val, vlen);
 			free (tmp_val);
 		} else {

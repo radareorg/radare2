@@ -2266,8 +2266,7 @@ static int cmd_table(void *data, const char *input) {
 				RCmdAliasVal *file_data = r_cmd_alias_get (core->rcmd, file + 1);
 				if (file_data) {
 					char *file_data_str = r_cmd_alias_val_strdup (file_data);
-					load_table (core, core->table, strdup (file_data_str));
-					free (file_data_str);
+					load_table (core, core->table, file_data_str);
 				} else {
 					R_LOG_ERROR ("No such alias '$%s'", file+1);
 				}

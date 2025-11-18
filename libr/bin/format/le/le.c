@@ -180,10 +180,10 @@ static void __get_symbols_at(RBinLEObj *bin, RList *syml, RList *entl, ut64 offs
 				sym->bind = R_BIN_BIND_GLOBAL_STR;
 				sym->type = R_BIN_TYPE_FUNC_STR;
 				r_list_append (syml, sym);
+				continue;
 			}
-		} else {
-			r_bin_symbol_free (sym);
 		}
+		r_bin_symbol_free (sym);
 	}
 }
 
@@ -396,13 +396,6 @@ R_IPI RList *r_bin_le_get_sections(RBinLEObj *bin) {
 		ut64 objpageentrysz =  bin->is_le ? sizeof (ut32) : sizeof (LE_object_page_entry);
 		for (j = 0; j < entry->page_tbl_entries; j++) {
 			LE_object_page_entry page = {0};
-			RBinSection *s = R_NEW0 (RBinSection);
-			if (!s) {
-				r_bin_section_free (sec);
-				return l;
-			}
-			s->name = r_str_newf ("%s.page.%d", sec->name, j);
-			s->is_data = sec->is_data;
 
 			int cur_idx = entry->page_tbl_idx + j - 1;
 			ut64 page_entry_off = objpageentrysz * cur_idx + objmaptbloff;
@@ -413,11 +406,14 @@ R_IPI RList *r_bin_le_get_sections(RBinLEObj *bin) {
 #endif
 			if (r < (int)sizeof (page)) {
 				R_LOG_WARN ("Cannot read out of bounds page table entry");
-				r_bin_section_free (s);
 				r_bin_section_free (sec);
 				return l;
 			}
+			RBinSection *s = R_NEW0 (RBinSection);
+			s->name = r_str_newf ("%s.page.%d", sec->name, j);
+			s->is_data = sec->is_data;
 			if (cur_idx < next_idx) { // If not true rest of pages will be zeroes
+
 				if (bin->is_le) {
 					// Why is it big endian???
 					ut64 offset = r_buf_read_be32_at (bin->buf, page_entry_off) >> 8;

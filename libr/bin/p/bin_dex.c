@@ -1434,6 +1434,7 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 	cls->lang = R_BIN_LANG_JAVA;
 	char *cls_name = dex_class_name (dex, c);
 	if (!cls_name) {
+		free (cls);
 		goto beach;
 	}
 	r_str_replace_char (cls_name, ';', 0);

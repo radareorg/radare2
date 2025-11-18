@@ -1152,17 +1152,17 @@ static void process_constructors_vec(RVecRBinSymbol *symbols, RBinFile *bf, RKer
 				// r_list_append (ret, ba);
 				// XXX RVecRBinSymbol_push_back (&(bf->bo->symbols_vec), ba);
 			} else if (mode == R_K_CONSTRUCTOR_TO_SYMBOL) {
-				RBinSymbol *sym = R_NEW0 (RBinSymbol);
-				sym->name = r_bin_name_new_from (
+				RBinSymbol sym = {0};
+				sym.name = r_bin_name_new_from (
 							r_str_newf ("%s.%s.%d", prefix, (type == R_BIN_ENTRY_TYPE_INIT) ? "init" : "fini", count++)
-						);
-				sym->vaddr = addr64;
-				sym->paddr = paddr64;
-				sym->size = 0;
-				sym->forwarder = "NONE";
-				sym->bind = "GLOBAL";
-				sym->type = "FUNC";
-				RVecRBinSymbol_push_back (symbols, sym);
+					);
+				sym.vaddr = addr64;
+				sym.paddr = paddr64;
+				sym.size = 0;
+				sym.forwarder = "NONE";
+				sym.bind = "GLOBAL";
+				sym.type = "FUNC";
+				RVecRBinSymbol_push_back (symbols, &sym);
 			}
 		}
 		free (buf);

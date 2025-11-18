@@ -912,7 +912,7 @@ static void print_diff(const char *actual, const char *expected, bool diffchar, 
 			output = strdup ("");
 		}
 	} else {
-		output = strdup (actual ? actual : "");
+		output = strdup (actual);
 	}
 	if (diffchar) {
 		RDiffChar *diff = r_diffchar_new ((const ut8 *)expected, (const ut8 *)actual);

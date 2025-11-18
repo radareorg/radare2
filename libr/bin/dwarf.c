@@ -2703,6 +2703,7 @@ static RBinDwarfDebugAbbrev *parse_abbrev_raw(const ut8 *obuf, size_t len) {
 	}
 	RBinDwarfDebugAbbrev *da = R_NEW0 (RBinDwarfDebugAbbrev);
 	if (!init_debug_abbrev (da)) {
+		R_FREE (da);
 		return NULL;
 	}
 
