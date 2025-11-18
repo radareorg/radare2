@@ -12,6 +12,7 @@ typedef struct r_getopt_t {
 	int ind;
 	int opt;
 	const char *arg;
+	const char *place;
 	// ...
 	int argc;
 	const char **argv;
