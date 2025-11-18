@@ -5,10 +5,9 @@ static const char *opt_forcebin = NULL;
 
 static void usage() {
 	printf (
-	"Usage: fuzz_bin <libFuzzer flags> <corpora> -- <flags>\n"
-	"\n"
-	"libFuzzer flags: show with -help=1\n"
-	);
+		"Usage: fuzz_bin <libFuzzer flags> <corpora> -- <flags>\n"
+		"\n"
+		"libFuzzer flags: show with -help=1\n");
 	exit (1);
 }
 
@@ -19,7 +18,7 @@ int LLVMFuzzerInitialize(int *lf_argc, char ***lf_argv) {
 	r_log_set_quiet (true);
 
 	int argc = *lf_argc;
-	const char **argv = (const char **)(*lf_argv);
+	const char **argv = (const char **) (*lf_argv);
 	bool has_args = false;
 	int i, c;
 	for (i = 1; i < argc; i++) {
@@ -42,13 +41,13 @@ int LLVMFuzzerInitialize(int *lf_argc, char ***lf_argv) {
 				opt_forcebin = opt.arg;
 				break;
 			default:
-				usage();
+				usage ();
 				break;
 			}
 		}
 
 		if (opt.ind < argc) {
-			usage();
+			usage ();
 		}
 	}
 
@@ -60,7 +59,7 @@ int LLVMFuzzerTestOneInput(const ut8 *data, size_t len) {
 		return 1;
 	}
 	RCore *core = r_core_new ();
-	r_core_cmdf (core, "o malloc://%"PFMT64d, (ut64)len);
+	r_core_cmdf (core, "o malloc://%" PFMT64d, (ut64)len);
 	r_io_write_at (core->io, 0, data, len);
 	r_core_cmd0 (core, "m /");
 	r_core_cmd0 (core, "md /");
