@@ -26,6 +26,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
 		r_core_cmd_lines (r, cmd);
 		free (cmd);
 	}
+	r_sandbox_disable (true);
 
 	r_core_free (r);
 	return 0;

@@ -15,7 +15,7 @@ Running with the provided Makefile
 cd test/fuzz
 make setup
 make build
-make run-fuzzer TARGET=fuzz_types_parser
+make run-fuzzer T=fuzz_types_parser
 ```
 
 ## Help
@@ -25,12 +25,12 @@ make usage
 ```
 
 ```shell
-make help TARGET=fuzz_r_run_parseline
+make help T=fuzz_r_run_parseline
 ```
 
 ## Corpus
 
-Corpus files are taken from `./test/fuzz/corpus/${TARGET}`.
+Corpus files are taken from `./test/fuzz/corpus/${T}`.
 
 * Copy the files you like in there before the `run-fuzzer`
 
@@ -44,7 +44,7 @@ Refer to https://llvm.org/docs/LibFuzzer.html
 **Run fuzzer**
 
 ```shell
-make run-fuzzer TARGET=fuzz_r_run_parseline
+make run-fuzzer T=fuzz_r_run_parseline
 ```
 
 **Run with custom options**
@@ -52,13 +52,13 @@ make run-fuzzer TARGET=fuzz_r_run_parseline
 Note that `-detect_leaks=0` is always necessary in `FUZZER_OPTS`
 
 ```shell
-make run-fuzzer TARGET=fuzz_r_run_parseline FUZZER_OPTS="-workers=1 -runs=50000 -timeout=3"
+make run-fuzzer T=fuzz_r_run_parseline FUZZER_OPTS="-workers=1 -runs=50000 -timeout=3"
 ```
 
 **Replay crashes**
 
 ```shell
-make replay TARGET=fuzz_r_run_parseline CRASH_FILES="crash-*"
+make replay T=fuzz_r_run_parseline CRASH_FILES="crash-*"
 ```
 
 ### Manual execution

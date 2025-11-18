@@ -7,14 +7,14 @@ CORPUS_DIR = corpus
 
 FUZZER_OPTS=-detect_leaks=0
 # Useful for scripts or types parser
-# FUZZER_OPTS+=-only_ascii=1
+FUZZER_OPTS+=-only_ascii=1
 FUZZER_OPTS+=-timeout=10
 FUZZER_OPTS+=--mutate_depth=1 -len_control=50 -reduce_inputs=0 -keep_seed=1 -prefer_small=0
 
-# Fuzzing targets
 FUZZ_TARGETS = fuzz_anal fuzz_bin fuzz_bin2 fuzz_fs fuzz_dwarf fuzz_bin_demangle \
                fuzz_ia fuzz_cmd fuzz_pdb_parse fuzz_pkcs7_parse fuzz_protobuf_decode \
                fuzz_punycode_decode fuzz_run_parseline fuzz_types_parser fuzz_x509_parse
+
 
 all: usage
 
@@ -23,58 +23,52 @@ do: setup build
 setup:
 	$(MAKE) config
 	@echo "Checking compiler availability..."
-	@which $(CC) || (echo "Error: $(CC) not found in PATH" && exit 1)
-	@which $(CXX) || (echo "Error: $(CXX) not found in PATH" && exit 1)
+	@eval $$(make -s env) ; which $(CC) || (echo "Error: $(CC) not found in PATH" && exit 1)
+	@eval $$(make -s env) ; which $(CXX) || (echo "Error: $(CXX) not found in PATH" && exit 1)
 	@echo ""
 	@echo "Testing compiler version..."
-	@$(CC) --version | head -1
+	@eval $$(make -s env) ; $(CC) --version | head -1
 	@echo ""
 	@echo "Testing fuzzer support..."
-	@echo '#include <stddef.h>\nint LLVMFuzzerTestOneInput(const unsigned char *Data, size_t Size){return 0;}' | $(CC) -fsanitize=fuzzer -x c - -o /tmp/test_fuzzer && echo "✓ Fuzzer support detected" && rm -f /tmp/test_fuzzer || (echo "✗ No fuzzer support" && exit 1)
+	@eval $$(make -s env) ; echo '#include <stddef.h>\nint LLVMFuzzerTestOneInput(const unsigned char *Data, size_t Size){return 0;}' | $(CC) -fsanitize=fuzzer -x c - -o /tmp/test_fuzzer && echo "✓ Fuzzer support detected" && rm -f /tmp/test_fuzzer || (echo "✗ No fuzzer support" && exit 1)
 	@echo ""
 	@echo "Testing coverage support..."
-	@echo 'int main(){return 0;}' | $(CC) -fsanitize-coverage=trace-pc -c -x c - -o /tmp/test_cov.o && echo "✓ Coverage support detected" && rm -f /tmp/test_cov.o || (echo "✗ No coverage support" && exit 1)
+	@eval $$(make -s env) ; echo 'int main(){return 0;}' | $(CC) -fsanitize-coverage=trace-pc -c -x c - -o /tmp/test_cov.o && echo "✓ Coverage support detected" && rm -f /tmp/test_cov.o || (echo "✗ No coverage support" && exit 1)
 	@echo ""
 	@echo "All checks passed!"
 
-# Build with meson (recommended method)
-build:
-	@echo "Building radare2 with fuzzing support..."
-	@echo "Using compiler: $(CC)"
+b build:
+	@echo "Building radare2 using meson with libFuzzer support..."
+	$(MAKE) env
+	#
 	@echo "Checking compiler availability..."
-	@which $(CC) > /dev/null || (echo "Error: $(CC) not found. Please install clang-18 or set CC variable." && exit 1)
+	@eval $$(make -s env) ; which $(CC) > /dev/null || (echo "Error: $(CC) not found. Please install clang-18 or set CC variable." && exit 1)
+	#
 	@echo "Testing compiler supports fuzzer..."
-	@echo '#include <stddef.h>\nint LLVMFuzzerTestOneInput(const unsigned char *Data, size_t Size){return 0;}' | $(CC) -fsanitize=fuzzer -x c - -o /dev/null || (echo "Error: $(CC) doesn't support fuzzer. Please install clang-18 or newer." && exit 1)
-	@echo "Building radare2 with libFuzzer support (via meson option)..."
-	cd $(R2_ROOT) && \
-		unset CFLAGS && \
-		unset CXXFLAGS && \
-		unset LDFLAGS && \
-		export CC=$(CC) && \
-		export CXX=$(CXX) && \
-		python3 ./sys/meson.py --fuzz
+	@eval $$(make -s env) ; echo '#include <stddef.h>\nint LLVMFuzzerTestOneInput(const unsigned char *Data, size_t Size){return 0;}' | $(CC) -fsanitize=fuzzer -x c - -o /dev/null || (echo "Error: $(CC) doesn't support fuzzer. Please install clang-18 or newer." && exit 1)
+	cd $(R2_ROOT) && eval $$(make -s env) && python3 ./sys/meson.py --fuzz
 	@echo "Build completed. Fuzzing binaries are in $(FUZZ_DIR)/"
 
 run-fuzzer run:
-	@if [ -z "$(TARGET)" ]; then \
-		echo "Usage: make run-fuzzer TARGET=<fuzzer_name>"; \
+	@if [ -z "$(T)" ]; then \
+		echo "Usage: make run-fuzzer T=<fuzzer_name>"; \
 		echo "Available targets:"; \
 		$(MAKE) list ; \
 		exit 1; \
 	fi
-	@echo "Running $(TARGET)..."
-	@mkdir -p $(CORPUS_DIR)/$(TARGET)
-	@ASAN_OPTIONS=detect_leaks=0 R2_DEBUG_ASSERT=1 $(FUZZ_DIR)/$(TARGET) $(FUZZER_OPTS) $(EXTRA_FUZZER_OPTS) $(CORPUS_DIR)/$(TARGET)
+	@echo "Running $(T)..."
+	@mkdir -p $(CORPUS_DIR)/$(T)
+	@ASAN_OPTIONS=detect_leaks=0 R2_DEBUG_ASSERT=1 $(FUZZ_DIR)/$(T) $(FUZZER_OPTS) $(EXTRA_FUZZER_OPTS) $(CORPUS_DIR)/$(T)
 
 # Build custom mutator version
 build-custom:
-	@echo "Building custom mutator for $(TARGET)..."
-	@if [ -z "$(TARGET)" ]; then \
-		echo "Usage: make build-custom TARGET=<fuzzer_name>"; \
+	@echo "Building custom mutator for $(T)..."
+	@if [ -z "$(T)" ]; then \
+		echo "Usage: make build-custom T=<fuzzer_name>"; \
 		exit 1; \
 	fi
 	@mkdir -p $(FUZZ_DIR)
-	@fuzz_name=$$(echo "$(TARGET)" | sed 's/^fuzz_//'); \
+	@fuzz_name=$$(echo "$(T)" | sed 's/^fuzz_//'); \
 	if [ -f "fuzz_$${fuzz_name}_custom.c" ]; then \
 		echo "Building custom mutator for $$fuzz_name..."; \
 		$(CC) $(CFLAGS) \
@@ -115,80 +109,80 @@ build-custom:
 			$(BUILD_DIR)/shlr/capstone/libcapstone-static.a \
 			$(BUILD_DIR)/subprojects/qjs/libquickjs.a \
 			-lm -lpthread -ldl \
-			$(LDFLAGS) -o $(FUZZ_DIR)/$(TARGET)_custom || echo "Failed to build $(TARGET)_custom"; \
+			$(LDFLAGS) -o $(FUZZ_DIR)/$(T)_custom || echo "Failed to build $(T)_custom"; \
 	else \
-		echo "No custom mutator found for $(TARGET)"; \
+		echo "No custom mutator found for $(T)"; \
 	fi
 
 # Run with custom mutator
 run-custom:
-	@if [ -z "$(TARGET)" ]; then \
-		echo "Usage: make run-custom TARGET=<fuzzer_name>"; \
+	@if [ -z "$(T)" ]; then \
+		echo "Usage: make run-custom T=<fuzzer_name>"; \
 		exit 1; \
 	fi
-	@if [ ! -f "$(FUZZ_DIR)/$(TARGET)_custom" ]; then \
-		echo "Custom mutator not built. Run 'make build-custom TARGET=$(TARGET)' first."; \
+	@if [ ! -f "$(FUZZ_DIR)/$(T)_custom" ]; then \
+		echo "Custom mutator not built. Run 'make build-custom T=$(T)' first."; \
 		exit 1; \
 	fi
-	@echo "Running $(TARGET) with custom mutator..."
-	@mkdir -p $(CORPUS_DIR)/$(TARGET)
+	@echo "Running $(T) with custom mutator..."
+	@mkdir -p $(CORPUS_DIR)/$(T)
 	@corpus_source=""; \
-	if [ "$(TARGET)" = "fuzz_types_parser" ] && [ -d "types_parser_corpus" ]; then \
+	if [ "$(T)" = "fuzz_types_parser" ] && [ -d "types_parser_corpus" ]; then \
 		corpus_source="types_parser_corpus"; \
-	elif [ -d "$(TARGET)_corpus" ]; then \
-		corpus_source="$(TARGET)_corpus"; \
+	elif [ -d "$(T)_corpus" ]; then \
+		corpus_source="$(T)_corpus"; \
 	fi; \
 	if [ -n "$$corpus_source" ]; then \
 		echo "Corpus source directory: $$corpus_source"; \
-		echo "Copying corpus files from $$corpus_source to $(CORPUS_DIR)/$(TARGET)..."; \
-		cp $$corpus_source/* $(CORPUS_DIR)/$(TARGET)/ 2>/dev/null || true; \
+		echo "Copying corpus files from $$corpus_source to $(CORPUS_DIR)/$(T)..."; \
+		cp $$corpus_source/* $(CORPUS_DIR)/$(T)/ 2>/dev/null || true; \
 	else \
 		echo "No corpus source directory found, starting with empty corpus"; \
 	fi
-	@ASAN_OPTIONS=detect_leaks=0 $(FUZZ_DIR)/$(TARGET)_custom $(FUZZER_OPTS) $(EXTRA_FUZZER_OPTS) $(CORPUS_DIR)/$(TARGET)
+	@ASAN_OPTIONS=detect_leaks=0 $(FUZZ_DIR)/$(T)_custom $(FUZZER_OPTS) $(EXTRA_FUZZER_OPTS) $(CORPUS_DIR)/$(T)
 
 # Generate completely new C constructions
 generate-new:
-	@if [ -z "$(TARGET)" ]; then \
-		echo "Usage: make generate-new TARGET=<fuzzer_name> COUNT=<number>"; \
+	@if [ -z "$(T)" ]; then \
+		echo "Usage: make generate-new T=<fuzzer_name> COUNT=<number>"; \
 		exit 1; \
 	fi
-	@echo "Generating new C constructions for $(TARGET)..."
-	@mkdir -p $(CORPUS_DIR)/$(TARGET)
+	@echo "Generating new C constructions for $(T)..."
+	@mkdir -p $(CORPUS_DIR)/$(T)
 	@corpus_source=""; \
-	if [ "$(TARGET)" = "fuzz_types_parser" ] && [ -d "types_parser_corpus" ]; then \
+	if [ "$(T)" = "fuzz_types_parser" ] && [ -d "types_parser_corpus" ]; then \
 		corpus_source="types_parser_corpus"; \
-	elif [ -d "$(TARGET)_corpus" ]; then \
-		corpus_source="$(TARGET)_corpus"; \
+	elif [ -d "$(T)_corpus" ]; then \
+		corpus_source="$(T)_corpus"; \
 	fi; \
 	if [ -n "$$corpus_source" ]; then \
 		echo "Copying original corpus from $$corpus_source..."; \
-		cp $$corpus_source/* $(CORPUS_DIR)/$(TARGET)/ 2>/dev/null || true; \
+		cp $$corpus_source/* $(CORPUS_DIR)/$(T)/ 2>/dev/null || true; \
 	fi; \
 	count=$${COUNT:-100}; \
 	echo "Generating $$count new C constructions..."; \
 	for i in $$(seq 1 $$count); do \
-		python3 scripts/mutate_c.py /dev/null "$(CORPUS_DIR)/$(TARGET)/new_construction_$$i.h" --generate-new; \
+		python3 scripts/mutate_c.py /dev/null "$(CORPUS_DIR)/$(T)/new_construction_$$i.h" --generate-new; \
 	done; \
 	echo "New construction generation complete."
 
 # Generate C-aware mutations
 generate-mutations:
-	@if [ -z "$(TARGET)" ]; then \
-		echo "Usage: make generate-mutations TARGET=<fuzzer_name> COUNT=<number>"; \
+	@if [ -z "$(T)" ]; then \
+		echo "Usage: make generate-mutations T=<fuzzer_name> COUNT=<number>"; \
 		exit 1; \
 	fi
-	@echo "Generating C-aware mutations for $(TARGET)..."
-	@mkdir -p $(CORPUS_DIR)/$(TARGET)
+	@echo "Generating C-aware mutations for $(T)..."
+	@mkdir -p $(CORPUS_DIR)/$(T)
 	@corpus_source=""; \
-	if [ "$(TARGET)" = "fuzz_types_parser" ] && [ -d "types_parser_corpus" ]; then \
+	if [ "$(T)" = "fuzz_types_parser" ] && [ -d "types_parser_corpus" ]; then \
 		corpus_source="types_parser_corpus"; \
-	elif [ -d "$(TARGET)_corpus" ]; then \
-		corpus_source="$(TARGET)_corpus"; \
+	elif [ -d "$(T)_corpus" ]; then \
+		corpus_source="$(T)_corpus"; \
 	fi; \
 	if [ -n "$$corpus_source" ]; then \
 		echo "Copying original corpus from $$corpus_source..."; \
-		cp $$corpus_source/* $(CORPUS_DIR)/$(TARGET)/ 2>/dev/null || true; \
+		cp $$corpus_source/* $(CORPUS_DIR)/$(T)/ 2>/dev/null || true; \
 		count=$${COUNT:-50}; \
 		echo "Generating $$count C-aware mutations..."; \
 		for file in $$corpus_source/*.h; do \
@@ -196,9 +190,9 @@ generate-mutations:
 				basename=$$(basename "$$file"); \
 				for i in $$(seq 1 $$count); do \
 					if [ $$((i % 3)) -eq 0 ]; then \
-						python3 scripts/mutate_c.py "$$file" "$(CORPUS_DIR)/$(TARGET)/mut_$${basename}_$$i" --generate-new; \
+						python3 scripts/mutate_c.py "$$file" "$(CORPUS_DIR)/$(T)/mut_$${basename}_$$i" --generate-new; \
 					else \
-						python3 scripts/mutate_c.py "$$file" "$(CORPUS_DIR)/$(TARGET)/mut_$${basename}_$$i"; \
+						python3 scripts/mutate_c.py "$$file" "$(CORPUS_DIR)/$(T)/mut_$${basename}_$$i"; \
 					fi; \
 				done; \
 			fi; \
@@ -211,44 +205,44 @@ generate-mutations:
 
 # Run corpus only (no mutations)
 run-corpus:
-	@if [ -z "$(TARGET)" ]; then \
-		echo "Usage: make run-corpus TARGET=<fuzzer_name>"; \
+	@if [ -z "$(T)" ]; then \
+		echo "Usage: make run-corpus T=<fuzzer_name>"; \
 		exit 1; \
 	fi
-	@echo "Running $(TARGET) with corpus only (no mutations)..."
-	@mkdir -p $(CORPUS_DIR)/$(TARGET)
+	@echo "Running $(T) with corpus only (no mutations)..."
+	@mkdir -p $(CORPUS_DIR)/$(T)
 	@corpus_source=""; \
-	if [ "$(TARGET)" = "fuzz_types_parser" ] && [ -d "types_parser_corpus" ]; then \
+	if [ "$(T)" = "fuzz_types_parser" ] && [ -d "types_parser_corpus" ]; then \
 		corpus_source="types_parser_corpus"; \
-	elif [ -d "$(TARGET)_corpus" ]; then \
-		corpus_source="$(TARGET)_corpus"; \
+	elif [ -d "$(T)_corpus" ]; then \
+		corpus_source="$(T)_corpus"; \
 	fi; \
 	if [ -n "$$corpus_source" ]; then \
 		echo "Corpus source directory: $$corpus_source"; \
-		echo "Copying corpus files from $$corpus_source to $(CORPUS_DIR)/$(TARGET)..."; \
-		cp $$corpus_source/* $(CORPUS_DIR)/$(TARGET)/ 2>/dev/null || true; \
+		echo "Copying corpus files from $$corpus_source to $(CORPUS_DIR)/$(T)..."; \
+		cp $$corpus_source/* $(CORPUS_DIR)/$(T)/ 2>/dev/null || true; \
 	else \
 		echo "No corpus source directory found"; \
 		exit 1; \
 	fi
-	@ASAN_OPTIONS=detect_leaks=0 $(FUZZ_DIR)/$(TARGET) $(FUZZER_OPTS) -runs=0 $(CORPUS_DIR)/$(TARGET)
+	@ASAN_OPTIONS=detect_leaks=0 $(FUZZ_DIR)/$(T) $(FUZZER_OPTS) -runs=0 $(CORPUS_DIR)/$(T)
 
 help:
 	$(MAKE) list
-	@$(FUZZ_DIR)/$(TARGET) -help=1
+	@$(FUZZ_DIR)/$(T) -help=1
 
 # Replay crashes
 replay:
-	@if [ -z "$(TARGET)" ]; then \
-		echo "Usage: make replay TARGET=<fuzzer_name> CRASH_FILES=\"crash-*\""; \
+	@if [ -z "$(T)" ]; then \
+		echo "Usage: make replay T=<fuzzer_name> CRASH_FILES=\"crash-*\""; \
 		exit 1; \
 	fi
 	@if [ -z "$(CRASH_FILES)" ]; then \
-		echo "Usage: make replay TARGET=<fuzzer_name> CRASH_FILES=\"crash-*\""; \
+		echo "Usage: make replay T=<fuzzer_name> CRASH_FILES=\"crash-*\""; \
 		exit 1; \
 	fi
-	@echo "Replaying crashes for $(TARGET)..."
-	@$(FUZZ_DIR)/$(TARGET) $(CRASH_FILES)
+	@echo "Replaying crashes for $(T)..."
+	@$(FUZZ_DIR)/$(T) $(CRASH_FILES)
 
 list:
 	@cd $(FUZZ_DIR) && ls fuzz_* | grep fuzz | grep -v '\.' 2>/dev/null
@@ -267,28 +261,28 @@ test:
 
 # Continuous fuzzing
 fuzz-continuous:
-	@if [ -z "$(TARGET)" ]; then \
+	@if [ -z "$(T)" ]; then \
 		echo "Usage: make fuzz-continuous TARGET=<fuzzer_name>"; \
 		exit 1; \
 	fi
-	@echo "Starting continuous fuzzing for $(TARGET)..."
-	@mkdir -p $(CORPUS_DIR)/$(TARGET)
+	@echo "Starting continuous fuzzing for $(T)..."
+	@mkdir -p $(CORPUS_DIR)/$(T)
 	@corpus_source=""; \
-	if [ "$(TARGET)" = "fuzz_types_parser" ] && [ -d "types_parser_corpus" ]; then \
+	if [ "$(T)" = "fuzz_types_parser" ] && [ -d "types_parser_corpus" ]; then \
 		corpus_source="types_parser_corpus"; \
-	elif [ -d "$(TARGET)_corpus" ]; then \
-		corpus_source="$(TARGET)_corpus"; \
+	elif [ -d "$(T)_corpus" ]; then \
+		corpus_source="$(T)_corpus"; \
 	fi; \
 	if [ -n "$$corpus_source" ]; then \
 		echo "Corpus source directory: $$corpus_source"; \
-		echo "Copying corpus files from $$corpus_source to $(CORPUS_DIR)/$(TARGET)..."; \
-		cp $$corpus_source/* $(CORPUS_DIR)/$(TARGET)/ 2>/dev/null || true; \
+		echo "Copying corpus files from $$corpus_source to $(CORPUS_DIR)/$(T)..."; \
+		cp $$corpus_source/* $(CORPUS_DIR)/$(T)/ 2>/dev/null || true; \
 	else \
 		echo "No corpus source directory found, starting with empty corpus"; \
 	fi
 	@while true; do \
 		echo "Running fuzzing session..."; \
-		$(FUZZ_DIR)/$(TARGET) -max_total_time=300 -jobs=4 $(CORPUS_DIR)/$(TARGET); \
+		$(FUZZ_DIR)/$(T) -max_total_time=300 -jobs=4 $(CORPUS_DIR)/$(T); \
 		echo "Session completed. Restarting in 10 seconds..."; \
 		sleep 10; \
 	done

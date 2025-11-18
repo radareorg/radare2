@@ -278,7 +278,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 					r_io_desc_close (desc);
 					r_io_use_fd (core->io, saved_fd);
 				} else {
-					R_LOG_ERROR ("Cannot open '%s'", r_str_trim_head_ro (filename + 1));
+					R_LOG_ERROR ("Cannot oba open '%s'", r_str_trim_head_ro (filename + 1));
 				}
 			} else if (R_STR_ISNOTEMPTY (filename)) {
 				ut64 baddr = r_num_math (core->num, filename);
@@ -1769,7 +1769,7 @@ R_API void r_core_file_reopen_remote_debug(RCore *core, char *uri, ut64 addr) {
 		}
 		r_core_bin_load (core, uri, addr);
 	} else {
-		R_LOG_ERROR ("cannot open file %s", uri);
+		R_LOG_ERROR ("Cannot open remote %s", uri);
 		r_list_free (old_sections);
 		return;
 	}
@@ -2091,7 +2091,7 @@ static bool cmd_onn(RCore *core, const char* input) {
 
 	RIODesc *desc = r_io_open_at (core->io, ptr, perms, 0644, addr);
 	if (!desc || desc->fd == -1) {
-		R_LOG_ERROR ("Cannot open file '%s'", ptr);
+		R_LOG_ERROR ("Cannot onn open file '%s'", ptr);
 		free (ptr);
 		return false;
 	}
@@ -2279,7 +2279,7 @@ static int cmd_open(void *data, const char *input) {
 			return 0;
 		}
 		if (cmd_on (core, argc, argv) < 0) {
-			R_LOG_ERROR ("Cannot open file '%s'", argv[0]);
+			R_LOG_ERROR ("Cannot open file on '%s'", argv[0]);
 		}
 		r_str_argv_free (argv);
 		r_core_return_value (core, fd);
@@ -2467,7 +2467,7 @@ static int cmd_open(void *data, const char *input) {
 				if (perms & R_PERM_W) {
 					// create file!
 				}
-				R_LOG_ERROR ("cannot open file %s", argv0);
+				R_LOG_ERROR ("Cannot open file %s", argv0);
 			}
 		}
 		r_core_block_read (core);
