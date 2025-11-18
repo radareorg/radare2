@@ -58,7 +58,7 @@ run-fuzzer run:
 	fi
 	@echo "Running $(T)..."
 	@mkdir -p $(CORPUS_DIR)/$(T)
-	@ASAN_OPTIONS=detect_leaks=0 R2_DEBUG_ASSERT=1 $(FUZZ_DIR)/$(T) $(FUZZER_OPTS) $(EXTRA_FUZZER_OPTS) $(CORPUS_DIR)/$(T)
+	@ASAN_OPTIONS=detect_leaks=0 R2_DEBUG_ASSERT=1 R2_DEBUG_FUZZ=1 $(FUZZ_DIR)/$(T) $(FUZZER_OPTS) $(EXTRA_FUZZER_OPTS) $(CORPUS_DIR)/$(T)
 
 # Build custom mutator version
 build-custom:
