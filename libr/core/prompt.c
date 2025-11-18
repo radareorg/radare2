@@ -137,6 +137,12 @@ static char *r_core_prompt_substitute(RCore *core, char *key) {
 			return r_str_newf (fmt_addr, val);
 		}
 		return strdup ("");
+	} else if (r_str_startswith (key, "e:")) {
+		char *name = r_str_trim_dup (key + 2);
+		const char *val = (core->config && name && *name)? r_config_get (core->config, name): NULL;
+		char *res = strdup (val? val: "");
+		free (name);
+		return res;
 	} else if (!strcmp (key, "cwd")) {
 		return r_sys_getdir ();
 	} else if (!strcmp (key, "cwdn")) {
@@ -227,6 +233,7 @@ R_API void r_core_prompt_format_help(RCore *core) {
 		"$", "{prj}", "project name",
 		"$", "{rc}", "return code from last command",
 		"$", "{value}", "number from last math operation",
+		"$", "{e:var}", "value of an eval/config variable",
 		"$", "{sect}", "current section name (alias ${section})",
 		"$", "{flag}", "current flag name",
 		"$", "{fcn}", "current function name (alias ${function})",
