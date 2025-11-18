@@ -140,6 +140,12 @@ a "ldr x5, [x1, -0x32]" 25e05cf8
 a "ldr x8, [x3, 0x10]" 680840f9
 ad "ldr x0, [x27, 0x108]" 608740f9
 ad "ldr x0, [x27, 0x110]" 608b40f9
+a "ldr x2, [x7, -10]" e2605ff8
+a "ldr x2, [x7, 113]" e21047f8
+a "ldr x2, [x7, 472]" e2ec40f9
+a "ldr x2, [x8, 472]" 02ed40f9
+a "ldr x3, [x7, 472]" e3ec40f9
+a "ldr x3, [x8, 472]" 03ed40f9
 a "ldr x8, [x3, x1]" 686861f8
 ad "ldrb w2, [x7, -0xa]!" e26c5f38
 ad "ldrb w2, [x7, -0x85]!" e2bc5738
@@ -293,6 +299,12 @@ a "str w3, [x8, -133]" 03b117b8
 a "str w3, [x8, -256]" 030110b8
 a "str w3, [x8, 113]" 031107b8
 a "str w3, [x8, 236]" 03ed00b9
+a "str x2, [x7, -10]" e2601ff8
+a "str x2, [x7, 113]" e21007f8
+a "str x2, [x7, 236]" e2c00ef8
+a "str x2, [x8, 472]" 02ed00f9
+a "str x3, [x7, 472]" e3ec00f9
+a "str x3, [x8, 472]" 03ed00f9
 ad "strb w2, [x7, -0xa]!" e26c1f38
 ad "strb w2, [x7, -0x85]!" e2bc1738
 ad "strb w2, [x7, -0x100]!" e20c1038

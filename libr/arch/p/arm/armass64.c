@@ -899,6 +899,38 @@ static ut32 math(ArmOp *op, ut32 data, bool is64) {
 	return data | encode3regs (op);
 }
 
+static ut32 math3src(ArmOp *op, ut32 base) {
+	ut32 data = UT32_MAX;
+	const bool is64 = op->operands[0].reg_type & ARM_REG64;
+	const bool is32 = op->operands[0].reg_type & ARM_REG32;
+	check_cond (op->operands_count >= 4);
+	check_cond (op->operands[0].type == ARM_GPR);
+	check_cond (op->operands[1].type == ARM_GPR);
+	check_cond (op->operands[2].type == ARM_GPR);
+	check_cond (op->operands[3].type == ARM_GPR);
+	if (is64) {
+		check_cond (op->operands[1].reg_type & ARM_REG64);
+		check_cond (op->operands[2].reg_type & ARM_REG64);
+		check_cond (op->operands[3].reg_type & ARM_REG64);
+	} else if (is32) {
+		check_cond (op->operands[1].reg_type & ARM_REG32);
+		check_cond (op->operands[2].reg_type & ARM_REG32);
+		check_cond (op->operands[3].reg_type & ARM_REG32);
+	} else {
+		return data;
+	}
+	data = base;
+	if (is64) {
+		data |= 0x80000000;  // sf=1 for 64-bit (bit 31)
+	}
+	data |= (op->operands[2].reg & 0x1f) << 16;  // Rm at bits 20-16
+	data |= (op->operands[3].reg & 0x1f) << 10;  // Ra at bits 14-10
+	data |= (op->operands[1].reg & 0x1f) << 5;   // Rn at bits 9-5
+	data |= op->operands[0].reg & 0x1f;          // Rd at bits 4-0
+	// Output needs to be swapped to Little Endian for correct byte stream
+	return r_swap_ut32 (data);
+}
+
 static ut32 cmp(ArmOp *op) {
 	ut32 data = UT32_MAX;
 	int k = 0;
@@ -1057,6 +1089,10 @@ static ut32 lsop(ArmOp *op, int k, ut64 addr) {
 	} else if (!strcmp (op->mnemonic, "ldrsw")) {
 		check_cond (op->operands[0].reg_type & ARM_REG64);
 		uwu = true;
+	} else if (!strcmp (op->mnemonic, "str") || !strcmp (op->mnemonic, "ldr")) {
+		if (op->operands[0].reg_type & ARM_REG32) {
+			k = (k & 0xffffff00) | ((k & 0xff) & ~0x40);
+		}
 	} else { // ldrsh, ldrsb
 		if (op->operands[0].reg_type & ARM_REG32) {
 			k |= 0x00004000;
@@ -1127,8 +1163,8 @@ static ut32 lsop(ArmOp *op, int k, ut64 addr) {
 		if (width == 'b') {
 			check_cond (n <= 0xfff);
 		} else if (width == 'h') {
-			check_cond (n <= 0x1ffe && !(n & 1))
-				n >>= 1;
+			check_cond (n <= 0x1ffe && !(n & 1));
+			n >>= 1;
 		} else { // w
 			int scale = (op->operands[0].reg_type & ARM_REG64) ? 3 : 2;
 			if (uwu || scale == 2) {
@@ -2194,8 +2230,28 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 		*op = stp (&ops, 0x000040a9);
 	} else if (r_str_startswith (str, "sub") && !r_str_startswith (str, "subg") && !r_str_startswith (str, "subp")) { // w, skip this for mte versions of sub, e.g. subg, subp ins
 		*op = arithmetic (&ops, 0xd1);
-	} else if (r_str_startswith (str, "madd x")) {
-		*op = math (&ops, 0x9b, true);
+	} else if (r_str_startswith (str, "madd ")) {
+		*op = math3src (&ops, 0x1b000000);
+	} else if (r_str_startswith (str, "msub ")) {
+		*op = math3src (&ops, 0x1b008000);
+	} else if (r_str_startswith (str, "mneg ")) {
+		*op = math3src (&ops, 0x1b008000); // alias of msub with Ra=xzr
+	} else if (r_str_startswith (str, "smaddl ")) {
+		*op = math3src (&ops, 0x1b200000);
+	} else if (r_str_startswith (str, "smsubl ")) {
+		*op = math3src (&ops, 0x1b208000);
+	} else if (r_str_startswith (str, "smnegl ")) {
+		*op = math3src (&ops, 0x1b208000); // alias of smsubl with Ra=xzr
+	} else if (r_str_startswith (str, "smull ")) {
+		*op = math3src (&ops, 0x1b200000); // alias of smaddl with Ra=xzr
+	} else if (r_str_startswith (str, "umaddl ")) {
+		*op = math3src (&ops, 0x1ba00000);
+	} else if (r_str_startswith (str, "umsubl ")) {
+		*op = math3src (&ops, 0x1ba08000);
+	} else if (r_str_startswith (str, "umnegl ")) {
+		*op = math3src (&ops, 0x1ba08000); // alias of umsubl with Ra=xzr
+	} else if (r_str_startswith (str, "umull ")) {
+		*op = math3src (&ops, 0x1ba00000); // alias of umaddl with Ra=xzr
 	} else if (r_str_startswith (str, "add x")) {
 		// } else if (r_str_startswith (str, "add")) {
 		// *op = math (&ops, 0x8b, has64reg (str));
