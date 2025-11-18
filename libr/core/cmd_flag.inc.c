@@ -1617,7 +1617,7 @@ static int cmd_flag(void *data, const char *input) {
 						R_LOG_ERROR ("No alias set for this flag");
 					}
 				} else {
-					R_LOG_ERROR ("Cannot find flag '%s'", name);
+					R_LOG_ERROR ("Cannot find flag at 0x%08"PFMT64x, core->addr);
 				}
 			}
 			break;
