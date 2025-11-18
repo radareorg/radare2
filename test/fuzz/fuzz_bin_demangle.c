@@ -13,13 +13,12 @@ static int demangle_type = R_BIN_LANG_SWIFT;
 
 static void usage() {
 	printf (
-	"Usage: fuzz_bin_demangle <libFuzzer flags> <corpora> -- <flags>\n"
-	"\n"
-	"libFuzzer flags: show with -help=1\n"
-	"\n"
-	"Target Flags\n"
-	" -l [lang]     set demangle lang\n"
-	);
+		"Usage: fuzz_bin_demangle <libFuzzer flags> <corpora> -- <flags>\n"
+		"\n"
+		"libFuzzer flags: show with -help=1\n"
+		"\n"
+		"Target Flags\n"
+		" -l [lang]     set demangle lang\n");
 	exit (1);
 }
 
@@ -30,7 +29,7 @@ int LLVMFuzzerInitialize(int *lf_argc, char ***lf_argv) {
 	r_log_set_quiet (true);
 
 	int argc = *lf_argc;
-	const char **argv = (const char **)(*lf_argv);
+	const char **argv = (const char **) (*lf_argv);
 	bool has_args = false;
 	int i, c;
 	for (i = 1; i < argc; i++) {
@@ -48,18 +47,18 @@ int LLVMFuzzerInitialize(int *lf_argc, char ***lf_argv) {
 		RGetopt opt;
 		r_getopt_init (&opt, argc, argv, "l:");
 		while ((c = r_getopt_next (&opt)) != -1) {
-		switch (c) {
-		case 'l':
-			demangle_type = r_bin_demangle_type (opt.arg);
-			break;
-		default:
-			usage();
-			break;
-		}
+			switch (c) {
+			case 'l':
+				demangle_type = r_bin_demangle_type (opt.arg);
+				break;
+			default:
+				usage ();
+				break;
+			}
 		}
 
 		if (opt.ind < argc) {
-			usage();
+			usage ();
 		}
 	}
 

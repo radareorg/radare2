@@ -56,7 +56,7 @@ R_API char *r_anal_cparse_file(RAnal *anal, const char *path, const char *dir, c
 }
 
 R_API char *r_anal_cparse(RAnal *anal, const char *code, char **error_msg) {
-	if (anal->opt.tparser) {
+	if (anal && anal->opt.tparser) {
 		RAnalPlugin *p = resolve_plugin (anal, 0);
 		if (p) {
 			return p->tparse_text(anal, code);

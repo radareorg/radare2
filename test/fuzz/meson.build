@@ -14,6 +14,7 @@ if get_option('enable_libfuzzer')
     'punycode_decode',
     'run_parseline',
     'types_parser',
+    'types_parser_custom',
     'x509_parse',
   ]
 

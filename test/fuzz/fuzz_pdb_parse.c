@@ -10,7 +10,7 @@ int LLVMFuzzerInitialize(int *lf_argc, char ***lf_argv) {
 int LLVMFuzzerTestOneInput(const ut8 *data, size_t len) {
 	RBuffer *buf = r_buf_new_with_bytes (data, len);
 
-	RPdb pdb = {0};
+	RPdb pdb = { 0 };
 	if (init_pdb_parser_with_buf (&pdb, buf)) {
 		pdb.pdb_parse (&pdb);
 		pdb.finish_pdb_parse (&pdb);

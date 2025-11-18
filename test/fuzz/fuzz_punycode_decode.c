@@ -9,7 +9,7 @@ int LLVMFuzzerInitialize(int *lf_argc, char ***lf_argv) {
 
 int LLVMFuzzerTestOneInput(const ut8 *data, size_t len) {
 	int dstlen;
-	char *out = r_punycode_decode ((const char*)data, (int)len, &dstlen);
+	char *out = r_punycode_decode ((const char *)data, (int)len, &dstlen);
 	free (out);
 	return 0;
 }

@@ -19,7 +19,7 @@ int LLVMFuzzerTestOneInput(const ut8 *data, size_t len) {
 	}
 
 	char *errmsg = NULL;
-	char *result = r_anal_cparse2 (NULL, (const char *)input, &errmsg);
+	char *result = r_anal_cparse (NULL, (const char *)input, &errmsg);
 
 	// Clean up
 	free (input);

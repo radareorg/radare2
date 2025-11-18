@@ -17,7 +17,7 @@ clang-log/
 *.dSYM
 *.wasm
 supported.*
-config.mk
+./config.mk
 plugins.cfg
 langs.cfg
 .test.c
