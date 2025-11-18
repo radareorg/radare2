@@ -17,32 +17,35 @@ R_API void r_getopt_init(RGetopt *opt, int argc, const char **argv, const char *
 	opt->ind = 1;
 	opt->opt = 0;
 	opt->arg = NULL;
+	opt->place = EMSG;
 	opt->argc = argc;
 	opt->argv = argv;
 	opt->ostr = ostr;
 }
 
 R_API int r_getopt_next(RGetopt *opt) {
-	static const char *place = EMSG;
 	const char *oli;
 
-	if (!*place) {
-		if (opt->ind >= opt->argc || *(place = opt->argv[opt->ind]) != '-') {
-			place = EMSG;
+	if (!opt->place) {
+		opt->place = EMSG;
+	}
+	if (!*opt->place) {
+		if (opt->ind >= opt->argc || *(opt->place = opt->argv[opt->ind]) != '-') {
+			opt->place = EMSG;
 			return -1;
 		}
-		if (place[1] && *++place == '-') { // found "--"
+		if (opt->place[1] && *++opt->place == '-') { // found "--"
 			opt->ind++;
-			if (place[1]) {
+			if (opt->place[1]) {
 				// any --WHATEVER will be an alias to -h
 				return 0;
 			}
-			place = EMSG;
+			opt->place = EMSG;
 			return -1;
 		}
 	}
 	/* option letter okay? */
-	if ((opt->opt = (int)*place++) == (int)':' || !(oli = strchr (opt->ostr, opt->opt))) {
+	if ((opt->opt = (int)*opt->place++) == (int)':' || !(oli = strchr (opt->ostr, opt->opt))) {
 		/*
 		 * if the user didn't specify '-' as an option,
 		 * assume it means -1.
@@ -50,7 +53,7 @@ R_API int r_getopt_next(RGetopt *opt) {
 		if (opt->opt == '-') {
 			return -1;
 		}
-		if (!*place) {
+		if (!*opt->place) {
 			opt->ind++;
 		}
 		if (opt->err && *opt->ostr != ':') {
@@ -59,24 +62,28 @@ R_API int r_getopt_next(RGetopt *opt) {
 		return BADCH;
 	}
 	if (*++oli == ':') {
-		if (*place) {
-			opt->arg = place;
-		} else if (opt->argc <= ++opt->ind) {  /* no arg */
-			place = EMSG;
-			if (*opt->ostr == ':') {
-				return BADARG;
+		if (*opt->place) {
+			opt->arg = opt->place;
+			opt->place = EMSG;
+			opt->ind++;
+		} else {
+			if (opt->argc <= ++opt->ind) {  /* no arg */
+				opt->place = EMSG;
+				if (*opt->ostr == ':') {
+					return BADARG;
+				}
+				if (opt->err) {
+					(void)eprintf ("%s: option requires an argument -- %c\n", opt->argv[0], opt->opt);
+				}
+				return BADCH;
 			}
-			if (opt->err) {
-				(void)eprintf ("%s: option requires an argument -- %c\n", opt->argv[0], opt->opt);
-			}
-			return BADCH;
+			opt->arg = opt->argv[opt->ind];
+			opt->place = EMSG;
+			opt->ind++;
 		}
-		opt->arg = opt->argv[opt->ind];
-		place = EMSG;
-		opt->ind++;
 	} else {
 		opt->arg = NULL;
-		if (!*place) {
+		if (!*opt->place) {
 			opt->ind++;
 		}
 	}
