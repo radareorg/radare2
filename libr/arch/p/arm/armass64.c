@@ -896,7 +896,7 @@ static ut32 tb(ArmOp *op) {
 	data |= rt;
 
 	ut32 data2;
-	r_mem_swapendian (&data2, &data, sizeof (data));
+	r_mem_swapendian ((ut8 *)&data2, (const ut8 *)&data, sizeof (data));
 	return data2;
 }
 
