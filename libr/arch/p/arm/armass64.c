@@ -837,31 +837,19 @@ static ut32 sxt(ArmOp *op) {
 
 static ut32 tb(ArmOp *op) {
 	ut32 data = UT32_MAX;
-	int k = 0;
 	const bool reg64_imm = op->operands[0].reg_type & ARM_REG64 && op->operands[1].type & ARM_CONSTANT && op->operands[2].type & ARM_CONSTANT;
 	const bool reg32_imm = op->operands[0].reg_type & ARM_REG32 && op->operands[1].type & ARM_CONSTANT && op->operands[2].type & ARM_CONSTANT;
 
 	check_cond (op->operands[0].type == ARM_GPR);
 
-	if (r_str_startswith (op->mnemonic, "tbz")) {
-		if (reg64_imm) {
-			k = 0x000000b6;
-		} else if (reg32_imm) {
-			k = 0x00000036;
-		} else {
-			return UT32_MAX;
-		}
-	} else if (r_str_startswith (op->mnemonic, "tbnz")) {
-		if (reg64_imm) {
-			k = 0x000000b7;
-		} else if (reg32_imm) {
-			k = 0x00000037;
-		} else {
-			return UT32_MAX;
-		}
-	} else {
+	if (!r_str_startswith (op->mnemonic, "tbz") && !r_str_startswith (op->mnemonic, "tbnz")) {
 		return UT32_MAX;
 	}
+
+	if (!reg64_imm && !reg32_imm) {
+		return UT32_MAX;
+	}
+
 	if (reg64_imm) {
 		if (op->operands[1].immediate > 0x3f) {
 			R_LOG_ERROR ("Bit to be tested must be in range 0-63 for %s", op->mnemonic);
@@ -873,20 +861,43 @@ static ut32 tb(ArmOp *op) {
 			return UT32_MAX;
 		}
 	}
-	ut64 dst = op->operands[2].immediate;
-	st64 delta = dst - op->addr;
+
+	// Calculate PC-relative offset
+	st64 delta;
+	st64 imm = (st64) op->operands[2].immediate;
+
+	// Determine if this is an absolute address or a relative offset
+	// If op->addr is available and the value looks like an address, compute delta
+	// Otherwise treat as relative byte offset
+	if (op->addr != UT64_MAX && (imm > 0x10000 || imm < -0x10000)) {
+		delta = imm - (st64)op->addr;
+	} else {
+		delta = imm;
+	}
+
 	ut64 maxis = R_ABS (delta);
-	if ((delta & 3) || maxis > 0xfffc) {
-		R_LOG_ERROR ("invalid destination for %s", op->mnemonic);
+	if ((delta & 3) || maxis > 0x7fff) {
+		R_LOG_ERROR ("invalid destination for %s (delta=%lld)", op->mnemonic, delta);
 		return UT32_MAX;
 	}
-	data = k;
-	data |= (op->operands[0].reg & 0x1f) << 24;
-	data |= (op->operands[1].immediate & 0x1f) << 11;
-	data |= (delta & 0x1c) << 27;
-	data |= (delta & 0x1fe0) << 11;
-	data |= ((delta >> 13) & 7) << 8;
-	return data;
+
+	// Build instruction using architectural bit positions
+	// Format: b5:1 | 011011 | op:1 | b40:5 | imm14:14 | Rt:5
+	ut32 base = r_str_startswith (op->mnemonic, "tbnz") ? 0x37000000 : 0x36000000;
+	ut32 bitnum = (ut32) op->operands[1].immediate;
+	ut32 rt = (ut32) (op->operands[0].reg & 0x1f);
+	st64 v = delta / 4;  // Convert byte offset to instruction offset (imm14)
+	ut32 imm14 = (ut32) (v & 0x3fff);
+
+	data = base;
+	data |= ((bitnum >> 5) & 1) << 31;
+	data |= (bitnum & 0x1f) << 19;
+	data |= (imm14 & 0x3fff) << 5;
+	data |= rt;
+
+	ut32 data2;
+	r_mem_swapendian (&data2, &data, sizeof (data));
+	return data2;
 }
 
 static ut32 math(ArmOp *op, ut32 data, bool is64) {
