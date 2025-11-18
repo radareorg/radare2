@@ -543,7 +543,7 @@ R_API void r_core_seek_previous(RCore *core, const char *type);
 R_API void r_core_seek_next(RCore *core, const char *type);
 R_API int r_core_seek_align(RCore *core, ut64 align, int count);
 R_API void r_core_arch_bits_at(RCore *core, ut64 addr, R_OUT int * R_NULLABLE bits, R_OUT R_BORROW const char ** R_NULLABLE arch);
-R_API const char *r_core_prompt_format_help(void);
+R_API void r_core_prompt_format_help(RCore *core);
 R_API char *r_core_prompt_format(RCore *core, const char *fmt);
 R_API void r_core_seek_arch_bits(RCore *core, ut64 addr);
 R_API ut8 *r_core_readblock(RCore *core, ut64 size);
