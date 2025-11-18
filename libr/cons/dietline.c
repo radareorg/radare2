@@ -994,7 +994,6 @@ R_API void r_line_autocomplete(RCons *cons) {
 		selection_widget_update (line);
 		return;
 	}
-
 	if (opt) {
 		p = (char *)r_sub_str_lchr (line->buffer.data, 0, line->buffer.index, '=');
 	} else {
@@ -1089,7 +1088,7 @@ R_API void r_line_autocomplete(RCons *cons) {
 #ifdef R2__WINDOWS__
 		r_cons_win_printf (false, "%s%s\n", line->prompt, line->buffer.data);
 #else
-		printf ("%s%s\n", line->prompt, line->buffer.data);
+		printf ("\r%s%s\n", line->prompt, line->buffer.data);
 #endif
 		for (i = 0; i < argc && argv[i]; i++) {
 			int l = strlen (argv[i]);
