@@ -1380,7 +1380,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 				if (!dex->mdb) {
 					dex->mdb = sdb_new0 ();
 				}
-				r_strf_var (methvar, 64, "method.%"PFMT64d, MI);
+				r_strf_var (methvar, 64, "method.%"PFMT64u, MI);
 				sdb_num_set (dex->mdb, methvar, sym->paddr, 0);
 				// -----------------
 				// WORK IN PROGRESS
@@ -1714,7 +1714,7 @@ static bool dex_loadcode(RBinFile *bf) {
 				sym->ordinal = sym_count++;
 				sym->lang = R_BIN_LANG_JAVA;
 				r_list_append (dex->methods_list, sym);
-				r_strf_var (mname, 64, "method.%"PFMT64d, (ut64)i);
+				r_strf_var (mname, 64, "method.%"PFMT64u, (ut64)i);
 				sdb_num_set (dex->mdb, mname, sym->paddr, 0);
 			}
 			free ((void *)signature);

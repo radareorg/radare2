@@ -31,7 +31,7 @@ static HANDLE hproc = NULL;
 
 static void lang_pipe_run_win(RLangSession *s) {
 	CHAR buf[PIPE_BUF_SIZE];
-	int i, res = 0;
+	int i;
 	DWORD dwRead = 0, dwWritten = 0, dwEvent;
 	HANDLE hRead = CreateEvent (NULL, TRUE, FALSE, NULL);
 	if (!hRead) {
