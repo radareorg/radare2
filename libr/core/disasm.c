@@ -3334,6 +3334,9 @@ R_API char *r_core_get_reloff(RCore *core, int type, ut64 at, st64 *delta) {
 	char *label = NULL;
 	if (!label && type & RELOFF_TO_FUNC) {
 		RAnalFunction *f = r_anal_get_function_at (core->anal, at);
+		if (!f) {
+			f = r_anal_get_fcn_in (core->anal, at, R_ANAL_FCN_TYPE_NULL);
+		}
 		if (f) {
 			*delta = at - f->addr;
 			label = strdup (f->name);

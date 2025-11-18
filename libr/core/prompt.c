@@ -25,6 +25,24 @@ static const ColorSubst color_substs[] = {
 	{ NULL, NULL }
 };
 
+static int prompt_reloff_mask(RCore *core) {
+	const char *relto = r_config_get (core->config, "asm.addr.relto");
+	int mask = 0;
+	if (!relto) {
+		return 0;
+	}
+	mask |= strstr (relto, "fu")? RELOFF_TO_FUNC: 0;
+	mask |= strstr (relto, "fl")? RELOFF_TO_FLAG: 0;
+	mask |= strstr (relto, "ma")? RELOFF_TO_MAPS: 0;
+	mask |= strstr (relto, "dm")? RELOFF_TO_DMAP: 0;
+	mask |= strstr (relto, "se")? RELOFF_TO_SECT: 0;
+	mask |= strstr (relto, "sy")? RELOFF_TO_SYMB: 0;
+	mask |= strstr (relto, "fi")? RELOFF_TO_FILE: 0;
+	mask |= strstr (relto, "fm")? RELOFF_TO_FMAP: 0;
+	mask |= strstr (relto, "li")? RELOFF_TO_LIBS: 0;
+	return mask;
+}
+
 static char *r_core_prompt_substitute(RCore *core, char *key) {
 	size_t i;
 	if (!strcmp (key, "RGB") || r_str_startswith (key, "RGB:")) {
@@ -137,14 +155,18 @@ static char *r_core_prompt_substitute(RCore *core, char *key) {
 			return r_str_newf (fmt_addr, val);
 		}
 		return strdup ("");
-	} else if (r_str_startswith (key, "e:")) {
-		char *name = r_str_trim_dup (key + 2);
-		const char *val = (core->config && name && *name)? r_config_get (core->config, name): NULL;
-		char *res = strdup (val? val: "");
-		free (name);
-		return res;
-	} else if (!strcmp (key, "cwd")) {
-		return r_sys_getdir ();
+	} else if (!strcmp (key, "relto")) {
+		int mask = prompt_reloff_mask (core);
+		if (mask) {
+			st64 delta = 0;
+			char *label = r_core_get_reloff (core, mask, core->addr, &delta);
+			if (label) {
+				char *res = r_str_newf ("%s+0x%" PFMT64x, label, (ut64)delta);
+				free (label);
+				return res;
+			}
+		}
+		return strdup ("");
 	} else if (!strcmp (key, "cwdn")) {
 		char *cwd = r_sys_getdir ();
 		if (cwd) {
@@ -227,6 +249,7 @@ R_API void r_core_prompt_format_help(RCore *core) {
 		"$", "(...)", "inline r2 command output",
 		"$", "{COLOR}", "ANSI colors (e.g. ${RED})",
 		"$", "{BGCOLOR}", "background ANSI colors (e.g. ${BGRED})",
+		"", "\\s", "literal space (use to keep trailing spaces)",
 		"$", "{RGB:r,g,b}", "RGB foreground color (0-255)",
 		"$", "{BGRGB:r,g,b}", "RGB background color (0-255)",
 		"$", "{file}", "current file name (alias ${filename})",
@@ -239,6 +262,7 @@ R_API void r_core_prompt_format_help(RCore *core) {
 		"$", "{fcn}", "current function name (alias ${function})",
 		"$", "{addr}", "current virtual address (alias ${address}/${vaddr})",
 		"$", "{paddr}", "current physical address",
+		"$", "{relto}", "relative address using asm.addr.relto",
 		"$", "{r:REGNAME}", "value of the given register",
 		"$", "{remote}", "remote indicator",
 		"$", "{cwd}", "current working directory",
@@ -267,6 +291,14 @@ R_API char *r_core_prompt_format(RCore *core, const char *fmt) {
 				r_strbuf_append_n (sb, p, 1);
 				p++;
 			}
+		} else if (*p == '\\') {
+			if (p[1] == 's') {
+				r_strbuf_append_n (sb, " ", 1);
+				p += 2;
+				continue;
+			}
+			r_strbuf_append_n (sb, p, 1);
+			p++;
 		} else {
 			r_strbuf_append_n (sb, p, 1);
 			p++;
