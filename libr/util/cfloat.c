@@ -352,7 +352,7 @@ R_API void r_cfloat_value_from_double(RCFloatValue *value, double d, const RCFlo
 	} else if (d == 0.0) {
 		set_bits (value, sign_pos, profile->sign_bits, sign);
 	} else {
-		long double val = fabs ((long double)d);
+		long double val = fabsl ((long double)d);
 		int exp_max = (1 << profile->exp_bits) - 1;
 		int frexp_exp;
 		long double mant = frexpl (val, &frexp_exp);
