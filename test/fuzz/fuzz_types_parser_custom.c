@@ -69,7 +69,8 @@ static void mutate_numbers(char *data, size_t size) {
 		return;
 	}
 
-	for (size_t i = 0; i < size - 1; i++) {
+	size_t i;
+	for (i = 0; i < size - 1; i++) {
 		if (data[i] >= '0' && data[i] <= '9') {
 			// Replace digit with random digit
 			data[i] = '0' + (rand () % 10);
@@ -83,7 +84,8 @@ static void mutate_brackets(char *data, size_t size) {
 		return;
 	}
 
-	for (size_t i = 0; i < size; i++) {
+	size_t i;
+	for (i = 0; i < size; i++) {
 		if (data[i] == '{' || data[i] == '}' || data[i] == '(' || data[i] == ')' ||
 			data[i] == '[' || data[i] == ']') {
 			// Randomly change bracket type
@@ -99,7 +101,8 @@ static void mutate_semicolons(char *data, size_t size) {
 		return;
 	}
 
-	for (size_t i = 0; i < size - 1; i++) {
+	size_t i;
+	for (i = 0; i < size - 1; i++) {
 		if (data[i] == ';' && (rand () % 3) == 0) {
 			// Remove semicolon
 			memmove (data + i, data + i + 1, size - i - 1);
