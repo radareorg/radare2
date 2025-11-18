@@ -18,6 +18,7 @@ clang-log/
 *.wasm
 supported.*
 ./config.mk
+./libr/config.mk
 plugins.cfg
 langs.cfg
 .test.c

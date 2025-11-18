@@ -293,15 +293,14 @@ fuzz-continuous:
 		sleep 10; \
 	done
 
-config:
-	@echo "Fuzzing Configuration:"
-	@echo "  CC: $(CC)"
-	@echo "  CXX: $(CXX)"
-	@echo "  CFLAGS: $(CFLAGS)"
-	@echo "  CXXFLAGS: $(CXXFLAGS)"
-	@echo "  LDFLAGS: $(LDFLAGS)"
-	@echo "  Build Directory: $(BUILD_DIR)"
-	@echo "  Fuzz Directory: $(FUZZ_DIR)"
+env config:
+	@echo "export CC='$(CC)'"
+	@echo "export CXX='$(CXX)'"
+	@echo "export CFLAGS='$(CFLAGS)'"
+	@echo "export CXXFLAGS='$(CXXFLAGS)'"
+	@echo "export LDFLAGS='$(LDFLAGS)'"
+	@echo "# Build Directory: $(BUILD_DIR)"
+	@echo "# Fuzz Directory: $(FUZZ_DIR)"
 
 # Help target
 usage:
