@@ -8,11 +8,11 @@ extern "C" {
 #include <r_util.h>
 
 typedef struct r_getopt_t {
-	int err;
+	bool err;
 	int ind;
 	int opt;
-	int reset;
 	const char *arg;
+	const char *place;
 	// ...
 	int argc;
 	const char **argv;

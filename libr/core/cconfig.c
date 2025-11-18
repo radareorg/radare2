@@ -1319,7 +1319,7 @@ static bool cb_cfg_prompt_format(void *user, void *data) {
 	}
 	if (!strcmp (value, "?")) {
 		RCore *core = (RCore *)user;
-		r_cons_print (core->cons, r_core_prompt_format_help ());
+		r_core_prompt_format_help (core);
 		return false;
 	}
 	return true;

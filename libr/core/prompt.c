@@ -25,6 +25,24 @@ static const ColorSubst color_substs[] = {
 	{ NULL, NULL }
 };
 
+static int prompt_reloff_mask(RCore *core) {
+	const char *relto = r_config_get (core->config, "asm.addr.relto");
+	int mask = 0;
+	if (!relto) {
+		return 0;
+	}
+	mask |= strstr (relto, "fu")? RELOFF_TO_FUNC: 0;
+	mask |= strstr (relto, "fl")? RELOFF_TO_FLAG: 0;
+	mask |= strstr (relto, "ma")? RELOFF_TO_MAPS: 0;
+	mask |= strstr (relto, "dm")? RELOFF_TO_DMAP: 0;
+	mask |= strstr (relto, "se")? RELOFF_TO_SECT: 0;
+	mask |= strstr (relto, "sy")? RELOFF_TO_SYMB: 0;
+	mask |= strstr (relto, "fi")? RELOFF_TO_FILE: 0;
+	mask |= strstr (relto, "fm")? RELOFF_TO_FMAP: 0;
+	mask |= strstr (relto, "li")? RELOFF_TO_LIBS: 0;
+	return mask;
+}
+
 static char *r_core_prompt_substitute(RCore *core, char *key) {
 	size_t i;
 	if (!strcmp (key, "RGB") || r_str_startswith (key, "RGB:")) {
@@ -95,20 +113,60 @@ static char *r_core_prompt_substitute(RCore *core, char *key) {
 		} else {
 			return strdup ("");
 		}
-	} else if (!strcmp (key, "function") || !strcmp (key, "fcn")) {
+	} else if (!strcmp (key, "fcn")) {
 		const char *fcnName = "";
 		RAnalFunction *fcn = r_anal_get_function_at (core->anal, core->addr);
 		if (fcn) {
 			fcnName = fcn->name;
 		}
 		return strdup (fcnName);
+	} else if (!strcmp (key, "vaddr")) {
+		ut64 vaddr = core->addr;
+		if (!r_config_get_b (core->config, "io.va") && core->io) {
+			ut64 tmp = core->addr;
+			if (r_io_p2v (core->io, core->addr, &tmp)) {
+				vaddr = tmp;
+			}
+		}
+		const char *fmt_addr = (core->print->wide_offsets && R_SYS_BITS_CHECK (core->dbg->bits, 64))
+			? "0x%016" PFMT64x
+			: "0x%08" PFMT64x;
+		return r_str_newf (fmt_addr, vaddr);
 	} else if (!strcmp (key, "addr") || !strcmp (key, "address")) {
 		const char *fmt_addr = (core->print->wide_offsets && R_SYS_BITS_CHECK (core->dbg->bits, 64))
 			? "0x%016" PFMT64x
 			: "0x%08" PFMT64x;
 		return r_str_newf (fmt_addr, core->addr);
-	} else if (!strcmp (key, "cwd")) {
-		return r_sys_getdir ();
+	} else if (!strcmp (key, "paddr")) {
+
+		ut64 paddr = r_io_v2p (core->io, core->addr);
+		const char *fmt_addr = (core->print->wide_offsets && R_SYS_BITS_CHECK (core->dbg->bits, 64))
+			? "0x%016" PFMT64x
+			: "0x%08" PFMT64x;
+		return r_str_newf (fmt_addr, paddr);
+	} else if (r_str_startswith (key, "r:")) {
+		const char *regname = key + 2;
+		RRegItem *reg = r_reg_get (core->dbg->reg, regname, -1);
+		if (reg) {
+			ut64 val = r_reg_get_value (core->dbg->reg, reg);
+			const char *fmt_addr = (core->print->wide_offsets && R_SYS_BITS_CHECK (core->dbg->bits, 64))
+				? "0x%016" PFMT64x
+				: "0x%08" PFMT64x;
+			return r_str_newf (fmt_addr, val);
+		}
+		return strdup ("");
+	} else if (!strcmp (key, "relto")) {
+		int mask = prompt_reloff_mask (core);
+		if (mask) {
+			st64 delta = 0;
+			char *label = r_core_get_reloff (core, mask, core->addr, &delta);
+			if (label) {
+				char *res = r_str_newf ("%s+0x%" PFMT64x, label, (ut64)delta);
+				free (label);
+				return res;
+			}
+		}
+		return strdup ("");
 	} else if (!strcmp (key, "cwdn")) {
 		char *cwd = r_sys_getdir ();
 		if (cwd) {
@@ -185,30 +243,38 @@ static char *handle_dollar_case(RCore *core, RStrBuf *sb, const char **p_ptr) {
 	return NULL;
 }
 
-R_API const char *r_core_prompt_format_help(void) {
-	return
-		"scr.prompt.format supports:\n"
-		"  $(...) - inline r2 command output\n"
-		"  ${RED/GREEN/BLUE/YELLOW/CYAN/MAGENTA/RESET} - ANSI colors\n"
-		"  ${BGRED/BGGREEN/BGBLUE/BGYELLOW/BGCYAN/BGMAGENTA/BGRESET} - background colors\n"
-		"  ${RGB:r,g,b} - RGB foreground color (0-255)\n"
-		"  ${BGRGB:r,g,b} - RGB background color (0-255)\n"
-		"  ${filename/file} - current file name\n"
-		"  ${prj} - project name\n"
-		"  ${rc} - return code from last command executed\n"
-		"  ${value} - number value computed from last math operation\n"
-		"  ${section/sect} - current section name\n"
-		"  ${flag} - current flag name\n"
-		"  ${function/fcn} - current function name\n"
-		"  ${addr/address} - current address\n"
-		"  ${remote} - remote indicator\n"
-		"  ${cwd} - current working directory\n"
-		"  ${cwdn} - current working directory basename\n"
-		"  ${user/username} - username\n"
-		"  ${host/hostname} - hostname\n"
-		"  ${time} - current time\n"
-		"  ${date} - current date\n"
-		"Example: scr.prompt.format = \"${GREEN}${filename}${RESET} [${addr}]> \"\n";
+R_API void r_core_prompt_format_help(RCore *core) {
+	static RCoreHelpMessage help_msg = {
+		"Usage: -e", "scr.prompt.format", "",
+		"$", "(...)", "inline r2 command output",
+		"$", "{COLOR}", "ANSI colors (e.g. ${RED})",
+		"$", "{BGCOLOR}", "background ANSI colors (e.g. ${BGRED})",
+		"", "\\s", "literal space (use to keep trailing spaces)",
+		"$", "{RGB:r,g,b}", "RGB foreground color (0-255)",
+		"$", "{BGRGB:r,g,b}", "RGB background color (0-255)",
+		"$", "{file}", "current file name (alias ${filename})",
+		"$", "{prj}", "project name",
+		"$", "{rc}", "return code from last command",
+		"$", "{value}", "number from last math operation",
+		"$", "{e:var}", "value of an eval/config variable",
+		"$", "{sect}", "current section name (alias ${section})",
+		"$", "{flag}", "current flag name",
+		"$", "{fcn}", "current function name (alias ${function})",
+		"$", "{addr}", "current virtual address (alias ${address}/${vaddr})",
+		"$", "{paddr}", "current physical address",
+		"$", "{relto}", "relative address using asm.addr.relto",
+		"$", "{r:REGNAME}", "value of the given register",
+		"$", "{remote}", "remote indicator",
+		"$", "{cwd}", "current working directory",
+		"$", "{cwdn}", "basename of the working directory",
+		"$", "{user}", "username (alias $(whoami))",
+		"$", "{host}", "hostname (alias ${hostname})",
+		"$", "{time}", "current time",
+		"$", "{date}", "current date",
+// 		"Example:", "scr.prompt.format = \"${GREEN}${filename}${RESET} [${addr}]> \"",
+		NULL
+	};
+	r_core_cmd_help (core, help_msg);
 }
 
 R_API char *r_core_prompt_format(RCore *core, const char *fmt) {
@@ -225,6 +291,14 @@ R_API char *r_core_prompt_format(RCore *core, const char *fmt) {
 				r_strbuf_append_n (sb, p, 1);
 				p++;
 			}
+		} else if (*p == '\\') {
+			if (p[1] == 's') {
+				r_strbuf_append_n (sb, " ", 1);
+				p += 2;
+				continue;
+			}
+			r_strbuf_append_n (sb, p, 1);
+			p++;
 		} else {
 			r_strbuf_append_n (sb, p, 1);
 			p++;
