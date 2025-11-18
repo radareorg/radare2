@@ -1004,6 +1004,18 @@ static ut64 num_callback(RNum *userptr, const char *str, bool *ok) {
 				...
 			}
 #endif
+
+			if (((RCorePriv*)core->priv)->regnums) {
+				// check for reg alias
+				RRegItem *r = r_reg_get (core->dbg->reg, str, -1);
+				if (r) {
+					if (ok) {
+						*ok = true;
+					}
+					ret = r_reg_get_value (core->dbg->reg, r);
+					return ret;
+				}
+			}
 			if ((flag = r_flag_get (core->flags, str))) {
 				ret = flag->addr;
 				if (ok) {

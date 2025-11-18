@@ -1290,6 +1290,13 @@ static bool cb_dirzigns(void *user, void *data) {
 	return true;
 }
 
+static bool cb_cfg_regnums(void *user, void *data) {
+	RCore *core = (RCore *)user;
+	RConfigNode *node = (RConfigNode *)data;
+	((RCorePriv *)core->priv)->regnums = node->i_value;
+	return true;
+}
+
 static bool cb_bigendian(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
@@ -1299,7 +1306,6 @@ static bool cb_bigendian(void *user, void *data) {
 	if (core->dbg && core->dbg->bp) {
 		core->dbg->bp->endian = isbig;
 	}
-
 	core->rasm->config->endian = endianType;
 	r_arch_set_endian (core->anal->arch, endianType);
 	return true;
@@ -4222,6 +4228,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("cfg.bigendian", "false", &cb_bigendian, "use little (false) or big (true) endianness");
 	SETCB ("cfg.float", "ieee754", &cb_cfg_float, "FPU profile for floating point operations (use -e cfg.float=? for list)");
 	SETI ("cfg.cpuaffinity", 0, "run on cpuid");
+	// TODO: This is an experimental feature because it conflicts with the way RFlags are handled, that would work for 'get' but not for 'set' and may confuse some logic out there.. also slow downs some codepaths
+	SETCB ("cfg.regnums", "false", &cb_cfg_regnums, "Query register values before flags in RNum calls (EXPERIMENTAL)");
 	if (r_sys_getenv_asbool ("R2_NEWPF")) {
 		SETB ("cfg.newpf", "true", "use pf2 when calling pf");
 	} else {
