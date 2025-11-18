@@ -1305,7 +1305,11 @@ static int cmd_rap(void *data, const char *input) {
 static int cmd_iosys(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	if (input[0] == ':') {
-		char *s = r_core_cmd_str_r (core, r_str_trim_head_ro (input + 1));
+		const char *cmd = r_str_trim_head_ro (input + 1);
+		if (R_STR_ISEMPTY (cmd) || *cmd == ':') {
+			return 0;
+		}
+		char *s = r_core_cmd_str_r (core, cmd);
 		if (s) {
 			r_str_trim_tail (s);
 			r_cons_printf (core->cons, "%s\n", s);
