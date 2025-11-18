@@ -389,7 +389,6 @@ static const char *str_callback(RNum *user, ut64 off, bool *ok) {
 }
 
 #include "numvars.inc.c"
-#include "prompt.inc.c"
 
 R_API RCore *r_core_new(void) {
 	RCore *c = R_NEW0 (RCore);
@@ -3048,8 +3047,7 @@ static void set_prompt(RCore *core) {
 	}
 	const char *fmt = r_config_get (core->config, "scr.prompt.format");
 	if (R_STR_ISNOTEMPTY (fmt)) {
-		// Use custom format
-		char *prompt = r_core_prompt_format_apply (core, fmt);
+		char *prompt = r_core_prompt_format (core, fmt);
 		if (prompt) {
 			r_line_set_prompt (core->cons->line, prompt);
 			free (prompt);

@@ -1312,34 +1312,15 @@ static bool cb_bigendian(void *user, void *data) {
 }
 
 static bool cb_cfg_prompt_format(void *user, void *data) {
-	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
 	const char *value = node->value;
 	if (!value) {
 		return false;
 	}
 	if (!strcmp (value, "?")) {
-		r_cons_printf (core->cons, "scr.prompt.format supports:\n");
-		r_cons_printf (core->cons, "  $(...) - inline r2 command output\n");
-		r_cons_printf (core->cons, "  ${RED/GREEN/BLUE/YELLOW/CYAN/MAGENTA/RESET} - ANSI colors\n");
-		r_cons_printf (core->cons, "  ${BGRED/BGGREEN/BGBLUE/BGYELLOW/BGCYAN/BGMAGENTA/BGRESET} - background colors\n");
-		r_cons_printf (core->cons, "  ${RGB:r,g,b} - RGB foreground color (0-255)\n");
-		r_cons_printf (core->cons, "  ${BGRGB:r,g,b} - RGB background color (0-255)\n");
-		r_cons_printf (core->cons, "  ${filename/file} - current file name\n");
-		r_cons_printf (core->cons, "  ${prj} - project name\n");
-		r_cons_printf (core->cons, "  ${section/sect} - current section name\n");
-		r_cons_printf (core->cons, "  ${flag} - current flag name\n");
-		r_cons_printf (core->cons, "  ${function/fcn} - current function name\n");
-		r_cons_printf (core->cons, "  ${addr/address} - current address\n");
-		r_cons_printf (core->cons, "  ${remote} - remote indicator\n");
-		r_cons_printf (core->cons, "  ${cwd} - current working directory\n");
-		r_cons_printf (core->cons, "  ${cwdn} - current working directory basename\n");
-		r_cons_printf (core->cons, "  ${user/username} - username\n");
-		r_cons_printf (core->cons, "  ${host/hostname} - hostname\n");
-		r_cons_printf (core->cons, "  ${time} - current time\n");
-		r_cons_printf (core->cons, "  ${date} - current date\n");
-		r_cons_printf (core->cons, "Example: scr.prompt.format = \"${GREEN}${filename}${RESET} [${addr}]> \"\n");
-		return false; // don't set the value
+		RCore *core = (RCore *)user;
+		r_cons_print (core->cons, r_core_prompt_format_help ());
+		return false;
 	}
 	return true;
 }

@@ -69,6 +69,10 @@ static char *r_core_prompt_substitute(RCore *core, char *key) {
 		} else {
 			return strdup ("");
 		}
+	} else if (!strcmp (key, "rc")) {
+		return r_str_newf ("%d", (int)(core->rc & UT32_MAX));
+	} else if (!strcmp (key, "value")) {
+		return r_str_newf ("%"PFMT64d, (st64)core->num->value);
 	} else if (!strcmp (key, "remote")) {
 		return core->cmdremote? strdup ("=!"): strdup ("");
 	} else if (!strcmp (key, "section") || !strcmp (key, "sect")) {
@@ -181,7 +185,33 @@ static char *handle_dollar_case(RCore *core, RStrBuf *sb, const char **p_ptr) {
 	return NULL;
 }
 
-static char *r_core_prompt_format_apply(RCore *core, const char *fmt) {
+R_API const char *r_core_prompt_format_help(void) {
+	return
+		"scr.prompt.format supports:\n"
+		"  $(...) - inline r2 command output\n"
+		"  ${RED/GREEN/BLUE/YELLOW/CYAN/MAGENTA/RESET} - ANSI colors\n"
+		"  ${BGRED/BGGREEN/BGBLUE/BGYELLOW/BGCYAN/BGMAGENTA/BGRESET} - background colors\n"
+		"  ${RGB:r,g,b} - RGB foreground color (0-255)\n"
+		"  ${BGRGB:r,g,b} - RGB background color (0-255)\n"
+		"  ${filename/file} - current file name\n"
+		"  ${prj} - project name\n"
+		"  ${rc} - return code from last command executed\n"
+		"  ${value} - number value computed from last math operation\n"
+		"  ${section/sect} - current section name\n"
+		"  ${flag} - current flag name\n"
+		"  ${function/fcn} - current function name\n"
+		"  ${addr/address} - current address\n"
+		"  ${remote} - remote indicator\n"
+		"  ${cwd} - current working directory\n"
+		"  ${cwdn} - current working directory basename\n"
+		"  ${user/username} - username\n"
+		"  ${host/hostname} - hostname\n"
+		"  ${time} - current time\n"
+		"  ${date} - current date\n"
+		"Example: scr.prompt.format = \"${GREEN}${filename}${RESET} [${addr}]> \"\n";
+}
+
+R_API char *r_core_prompt_format(RCore *core, const char *fmt) {
 	RStrBuf *sb = r_strbuf_new ("");
 	const char *p = fmt;
 	while (*p) {
