@@ -1,4 +1,4 @@
-/* radare - LGPL3 - 2021 - Jose_Ant_Romero */
+/* radare - LGPL3 - 2021-2025 - Jose_Ant_Romero */
 
 #include <r_bin.h>
 
@@ -154,11 +154,11 @@ static RList *sections(RBinFile *bf) {
 	if (!memcmp (gbuf, "AB", 2)) {
 		MSX_Header_ROM *hdr = (MSX_Header_ROM*)gbuf;
 		baddr = r_read_le16 (&hdr->InitAddress) & 0xff00;
-		hdrsize = ptr->vsize = sizeof (hdr);
+		hdrsize = ptr->vsize = sizeof (*hdr);
 	} else if (gbuf[0] == 0xFE) {
 		MSX_Header_BIN *hdr = (MSX_Header_BIN*)gbuf;
 		baddr = r_read_le16 (&hdr->StartAddress) & 0xff00;
-		hdrsize = ptr->vsize = sizeof (hdr);
+		hdrsize = ptr->vsize = sizeof (*hdr);
 	}
 
 	ptr->size = hdrsize;
@@ -166,9 +166,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("text");
 	ptr->paddr = 0;
 	ptr->vaddr = baddr;
@@ -182,11 +180,6 @@ static RList *sections(RBinFile *bf) {
 static RList *entries(RBinFile *bf) {
 	RList *ret = r_list_new ();
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
-	if (!ret || !ptr) {
-		free (ret);
-		free (ptr);
-		return NULL;
-	}
 	ut8 gbuf[32];
 	int left = r_buf_read_at (bf->buf, 0, (ut8*)&gbuf, sizeof (gbuf));
 	if (left < sizeof (gbuf)) {

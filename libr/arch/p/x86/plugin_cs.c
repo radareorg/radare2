@@ -2035,6 +2035,7 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		break;
 	case X86_INS_MULX:
 		{
+			bool free_src = true;
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			dst = getarg (&gop, 0, 1, "*", NULL);
 			if (!src && dst) {
@@ -2049,9 +2050,12 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 					src = "al";
 					break;
 				}
+				free_src = false;
 			}
 			esilprintf (op, "%s,%s", src, dst);
-			free (src);
+			if (free_src) {
+				free (src);
+			}
 			free (dst);
 		}
 		break;

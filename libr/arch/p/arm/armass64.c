@@ -1180,11 +1180,7 @@ static ut32 lsop(ArmOp *op, int k, ut64 addr) {
 			int scale = (op->operands[0].reg_type & ARM_REG64) ? 3 : 2;
 			if (uwu || scale == 2) {
 				check_cond (n <= 0x3ffc && !(n & 3));
-				if (uwu) {
-					n >>= 2;
-				} else {
-					n >>= 2;
-				}
+				n >>= 2;
 			} else {
 				check_cond (n <= 0x7ff8 && !(n & 7));
 				n >>= 3;

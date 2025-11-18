@@ -974,9 +974,13 @@ R_API char *r_file_readlink(const char *path) {
 			if (ret == -1) {
 				break;
 			}
+			if (ret >= (int)sizeof (pathbuf)) {
+				ret = sizeof (pathbuf) - 1;
+			}
 			pathbuf[ret] = 0;
 			path = pathbuf;
 		}
+
 		return strdup (pathbuf);
 #endif
 	}

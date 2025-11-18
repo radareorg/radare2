@@ -2635,8 +2635,6 @@ static void __handle_tab_key(RCore *core, bool shift) {
 		if (panels->mode == PANEL_MODE_MENU) {
 			__set_curnode (core, 0);
 			__set_mode (core, PANEL_MODE_DEFAULT);
-		} else if (panels->mode == PANEL_MODE_ZOOM) {
-			__set_curnode (core, ++panels->curnode);
 		} else {
 			__set_curnode (core, ++panels->curnode);
 		}
@@ -2644,8 +2642,6 @@ static void __handle_tab_key(RCore *core, bool shift) {
 		if (panels->mode == PANEL_MODE_MENU) {
 			__set_curnode (core, panels->n_panels - 1);
 			__set_mode (core, PANEL_MODE_DEFAULT);
-		} else if (panels->mode == PANEL_MODE_ZOOM) {
-			__set_curnode (core, --panels->curnode);
 		} else {
 			__set_curnode (core, --panels->curnode);
 		}

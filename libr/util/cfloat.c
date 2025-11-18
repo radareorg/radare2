@@ -1,7 +1,18 @@
 /* radare - LGPL - Copyright 2025 - pancake */
 
+#include <limits.h>
 #include <r_util.h>
 #include <math.h>
+
+static ut64 cfloat_bit_mask(int bits) {
+	if (bits <= 0) {
+		return 0;
+	}
+	if (bits >= 64) {
+		return ~0ULL;
+	}
+	return (1ULL << bits) - 1;
+}
 
 R_API double r_cfloat_parse(const ut8 *buf, size_t buf_size, const RCFloatProfile *profile) {
 	R_RETURN_VAL_IF_FAIL (buf && profile, NAN);
@@ -338,22 +349,20 @@ R_API void r_cfloat_value_from_double(RCFloatValue *value, double d, const RCFlo
 
 	int sign = signbit (d)? 1: 0;
 	d = fabs (d);
+	ut64 exp_mask = cfloat_bit_mask (profile->exp_bits);
+	int exp_max = exp_mask > INT_MAX? INT_MAX: (int)exp_mask;
 
 	if (isnan (d)) {
-		ut64 exp_max = (1ULL << profile->exp_bits) - 1;
 		set_bits (value, sign_pos, profile->sign_bits, sign);
-		set_bits (value, exp_pos, profile->exp_bits, exp_max);
+		set_bits (value, exp_pos, profile->exp_bits, exp_mask);
 		set_bits (value, mant_pos, R_MIN (profile->mant_bits, 64), 1); // NaN payload
 	} else if (isinf (d)) {
-		ut64 exp_max = (1ULL << profile->exp_bits) - 1;
 		set_bits (value, sign_pos, profile->sign_bits, sign);
-		set_bits (value, exp_pos, profile->exp_bits, exp_max);
+		set_bits (value, exp_pos, profile->exp_bits, exp_mask);
 		set_bits (value, mant_pos, profile->mant_bits, 0);
-	} else if (d == 0.0) {
-		set_bits (value, sign_pos, profile->sign_bits, sign);
 	} else {
 		long double val = fabsl ((long double)d);
-		int exp_max = (1 << profile->exp_bits) - 1;
+
 		int frexp_exp;
 		long double mant = frexpl (val, &frexp_exp);
 		int stored_exp = frexp_exp + profile->bias - 1;

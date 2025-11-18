@@ -3295,8 +3295,8 @@ arm_decode_bitfield (const char *ptr,
       }
       bits = end - start;
       if (bits < 0) {
-return NULL;
-}
+        return NULL;
+      }
       value |= ((insn >> start) & ((2ul << bits) - 1)) << width;
       width += bits + 1;
     }

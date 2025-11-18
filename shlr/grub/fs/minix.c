@@ -330,7 +330,6 @@ grub_minix_find_file (struct grub_minix_data *data, const char *path)
   char *name = fpath;
   char *next;
   unsigned int pos = 0;
-  int dirino;
 
   grub_strcpy (fpath, path);
 
@@ -355,7 +354,7 @@ grub_minix_find_file (struct grub_minix_data *data, const char *path)
 
   do
     {
-      grub_uint16_t ino;
+      grub_uint16_t ino = 0;
       char * filename = grub_malloc(data->filename_size + 1);
       if (grub_strlen (name) == 0)
         {
@@ -385,7 +384,7 @@ grub_minix_find_file (struct grub_minix_data *data, const char *path)
 	 pathname.  */
       if (!grub_strcmp (name, filename))
 	{
-	  dirino = data->ino;
+	  int dirino = data->ino;
 	  grub_minix_read_inode (data, grub_le_to_cpu16 (ino));
 
 	  /* Follow the symlink.  */

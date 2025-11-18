@@ -354,7 +354,7 @@ static bool riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	if (len >= sizeof (ut64)) {
 		word = r_read_ble64 (buf, be);
 	} else if (len >= sizeof (ut32)) {
-		word = r_read_ble16 (buf, be);
+		word = r_read_ble32 (buf, be);
 	} else {
 		word = r_read_ble16 (buf, be);
 #if 0
