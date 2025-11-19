@@ -29,6 +29,71 @@ bar2:
 EOF
 RUN
 
+NAME=zj c++
+FILE=bins/mach0/hellocxx-osx-i386
+CMDS=<<EOF
+0x00001d9a
+af;zg
+zj~{}
+EOF
+EXPECT=<<EOF
+[
+  {
+    "name": "unsigned_long_const_std::min_unsigned_long__unsigned_long_const__unsigned_long_const_",
+    "bytes": "5589e583ec188b450c8b108b45088b0039c273088b450c8945f4eb068b45088945f48b45f4c9c3",
+    "mask": "ffffffffffffffffffffffffffffffffffffff00ffffffffffffff00ffffffffffffffffffffff",
+    "graph": {
+      "cc": 2,
+      "nbbs": 4,
+      "edges": 4,
+      "ebbs": 1,
+      "bbsum": 39
+    },
+    "addr": 7578,
+    "realname": "unsigned long const& std::min<unsigned long>(unsigned long const&, unsigned long const&)",
+    "rawname": "__ZSt3minImERKT_S2_S2_",
+    "demangled": "unsigned long const& std::min<unsigned long>(unsigned long const&, unsigned long const&)",
+    "types": "void method.unsigned_long_const_std.min_unsigned_long__unsigned_long_const__unsigned_long_const_ (int32_t arg_8h, int32_t arg_ch)",
+    "refs": [
+      
+    ],
+    "xrefs": [
+      
+    ],
+    "collisions": [
+      
+    ],
+    "vars": [
+      {
+        "name": "arg_ch",
+        "type": "int32_t",
+        "kind": "b",
+        "delta": 8,
+        "isarg": true
+      },
+      {
+        "name": "arg_8h",
+        "type": "int32_t",
+        "kind": "b",
+        "delta": 4,
+        "isarg": true
+      },
+      {
+        "name": "var_ch",
+        "type": "int32_t",
+        "kind": "b",
+        "delta": -16,
+        "isarg": false
+      }
+    ],
+    "hash": {
+      "bbhash": "b2aa8e43143b1cb0e59c3ddd1b098c6e3143cde2204e32a83b3a92a61d16faf9"
+    }
+  }
+]
+EOF
+RUN
+
 NAME=zsr newname
 FILE=-
 CMDS=<<EOF
