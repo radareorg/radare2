@@ -367,7 +367,7 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	RAnalRefline *ref;
 	int l;
 	bool wide = opts & R_ANAL_REFLINE_TYPE_WIDE;
-	int dir = 0, pos = -1, max_level = -1;
+	int dir = 0, pos = -1;
 	bool middle_before = opts & R_ANAL_REFLINE_TYPE_MIDDLE_BEFORE;
 	bool middle_after = opts & R_ANAL_REFLINE_TYPE_MIDDLE_AFTER;
 	bool split_mode = opts & R_ANAL_REFLINE_TYPE_SPLIT;
@@ -392,6 +392,10 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 		if (in_refline (addr, ref) && refline_kept (ref, middle_after, addr)) {
 			r_list_add_sorted (lvls, (void *)ref, (RListComparator)cmp_by_ref_lvl);
 		}
+	}
+	int max_level = -1;
+	if (!r_list_empty (lvls)) {
+		max_level = ((RAnalRefline *)r_list_last (lvls))->level;
 	}
 	RBuffer *b = r_buf_new ();
 	RBuffer *c = r_buf_new ();
@@ -446,9 +450,6 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 				r_buf_append_string (c, "d");
 			}
 			pos = ref->level;
-		}
-		if (max_level == -1) {
-			max_level = ref->level;
 		}
 	}
 	add_spaces (c, 0, pos, wide);
