@@ -122,6 +122,7 @@ static inline void r_fs_shell_free(RFSShell *s) {
 #define R_FS_FILE_TYPE_BLOCK 'b'
 #define R_FS_FILE_TYPE_CHAR 'c'
 #define R_FS_FILE_TYPE_MOUNT 'm'
+#define R_FS_FILE_TYPE_SYMLINK 'l'
 
 // symlinked types
 #define R_FS_FILE_TYPE_S_MOUNTPOINT 'M'

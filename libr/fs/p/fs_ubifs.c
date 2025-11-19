@@ -4,6 +4,11 @@
 #include <r_lib.h>
 #include <r_util.h>
 
+#if __has_include(<lzo/lzo1x.h>)
+#include <lzo/lzo1x.h>
+#define HAVE_LZO 1
+#endif
+
 // UBI Magic numbers
 #define UBI_EC_HDR_MAGIC       0x55424923 // "UBI#"
 #define UBI_VID_HDR_MAGIC      0x55424921 // "UBI!"
@@ -281,6 +286,15 @@ typedef struct {
 	RList *dent_nodes;
 } ubifs_inode_t;
 
+// UBI volume mapping (for UBI containers)
+typedef struct {
+	ut32 peb_size;
+	ut32 vid_hdr_offset;
+	ut32 data_offset;
+	ut64 ubi_base;  // Base offset of UBI container in file
+	HtUP *leb_map;  // Hash table: lnum -> PEB number
+} ubi_vol_t;
+
 // Filesystem context
 typedef struct {
 	RIOBind *iob;
@@ -294,6 +308,7 @@ typedef struct {
 	ut32 root_offs;
 	HtUP *inodes; // Hash table: ino_num -> ubifs_inode_t
 	bool mounted;
+	ubi_vol_t *ubi_vol; // NULL for raw UBIFS, filled for UBI containers
 } ubifs_ctx_t;
 
 static ubifs_key_t ubifs_parse_key(const ut8 *key_buf) {
@@ -312,6 +327,151 @@ static bool ubifs_walk_index(ubifs_ctx_t *ctx, ut32 lnum, ut32 offs);
 static ubifs_inode_t *ubifs_get_inode(ubifs_ctx_t *ctx, ut64 ino_num);
 static ut64 ubifs_lookup_path(ubifs_ctx_t *ctx, const char *path);
 
+// Build UBI volume LEB-to-PEB mapping
+static ubi_vol_t *ubi_build_volume_map(RIOBind *iob, ut64 base_offset, ut32 target_vol_id) {
+	ut8 ec_hdr_buf[UBI_EC_HDR_SZ];
+
+	if (!iob->read_at (iob->io, base_offset, ec_hdr_buf, UBI_EC_HDR_SZ)) {
+		return NULL;
+	}
+
+	ut32 magic = r_read_be32 (ec_hdr_buf);
+	if (magic != UBI_EC_HDR_MAGIC) {
+		return NULL;
+	}
+
+	ut32 vid_hdr_offset = r_read_be32 (ec_hdr_buf + 16);
+	ut32 data_offset = r_read_be32 (ec_hdr_buf + 20);
+
+	// Determine PEB size
+	ut32 peb_size = 0;
+	for (ut32 try_peb = 0x20000; try_peb <= 0x80000; try_peb += 0x20000) {
+		ut8 next_magic[4];
+		if (iob->read_at (iob->io, base_offset + try_peb, next_magic, 4)) {
+			if (r_read_be32 (next_magic) == UBI_EC_HDR_MAGIC) {
+				peb_size = try_peb;
+				break;
+			}
+		}
+	}
+
+	if (peb_size == 0) {
+		return NULL;
+	}
+
+	ubi_vol_t *vol = R_NEW0 (ubi_vol_t);
+	if (!vol) {
+		return NULL;
+	}
+
+	vol->peb_size = peb_size;
+	vol->vid_hdr_offset = vid_hdr_offset;
+	vol->data_offset = data_offset;
+	vol->ubi_base = base_offset;
+	vol->leb_map = ht_up_new0 ();
+
+	// Scan all PEBs to build LEB mapping for target volume
+	ut32 max_pebs = 1000;  // Safety limit
+	for (ut32 peb_num = 0; peb_num < max_pebs; peb_num++) {
+		ut64 peb_offset = base_offset + (ut64)peb_num * peb_size;
+
+		ut8 vid_hdr_buf[UBI_VID_HDR_SZ];
+		if (!iob->read_at (iob->io, peb_offset + vid_hdr_offset, vid_hdr_buf, UBI_VID_HDR_SZ)) {
+			break;
+		}
+
+		ut32 vid_magic = r_read_be32 (vid_hdr_buf);
+		if (vid_magic != UBI_VID_HDR_MAGIC) {
+			continue;  // Skip non-data PEBs
+		}
+
+		ut32 vol_id = r_read_be32 (vid_hdr_buf + 8);
+		ut32 lnum = r_read_be32 (vid_hdr_buf + 12);
+
+		if (vol_id == target_vol_id) {
+			ut32 *peb_ptr = R_NEW (ut32);
+			if (peb_ptr) {
+				*peb_ptr = peb_num;
+				ht_up_insert (vol->leb_map, lnum, peb_ptr);
+			}
+		}
+	}
+
+	return vol;
+}
+
+static ut64 ubi_find_ubifs_offset(RIOBind *iob, ut64 base_offset) {
+	ut8 ec_hdr_buf[UBI_EC_HDR_SZ];
+
+	if (!iob->read_at (iob->io, base_offset, ec_hdr_buf, UBI_EC_HDR_SZ)) {
+		return 0;
+	}
+
+	ut32 magic = r_read_be32 (ec_hdr_buf);
+	if (magic != UBI_EC_HDR_MAGIC) {
+		// Not a UBI container, assume raw UBIFS
+		return 0;
+	}
+
+	// Parse EC header to get offsets
+	// EC header: magic(4) + version(1) + padding1(3) + ec(8) + vid_hdr_offset(4) + data_offset(4)
+	ut32 vid_hdr_offset = r_read_be32 (ec_hdr_buf + 16);
+	ut32 data_offset = r_read_be32 (ec_hdr_buf + 20);
+
+	ut32 peb_size = 0;
+
+	for (ut32 try_peb = 0x20000; try_peb <= 0x80000; try_peb += 0x20000) {
+		ut8 next_magic[4];
+		if (iob->read_at (iob->io, base_offset + try_peb, next_magic, 4)) {
+			if (r_read_be32 (next_magic) == UBI_EC_HDR_MAGIC) {
+				peb_size = try_peb;
+				break;
+			}
+		}
+	}
+
+	if (peb_size == 0) {
+		R_LOG_ERROR ("Could not determine UBI PEB size");
+		return 0;
+	}
+
+	for (ut32 peb_num = 2; peb_num < 10; peb_num++) {
+		ut64 peb_offset = base_offset + (ut64)peb_num * peb_size;
+
+		ut8 vid_hdr_buf[UBI_VID_HDR_SZ];
+		if (!iob->read_at (iob->io, peb_offset + vid_hdr_offset, vid_hdr_buf, UBI_VID_HDR_SZ)) {
+			continue;
+		}
+
+		ut32 vid_magic = r_read_be32 (vid_hdr_buf);
+		if (vid_magic != UBI_VID_HDR_MAGIC) {
+			continue;
+		}
+
+		ut32 vol_id = r_read_be32 (vid_hdr_buf + 8);
+		ut32 lnum = r_read_be32 (vid_hdr_buf + 12);
+
+		if (vol_id >= UBI_INTERNAL_VOL_START) {
+			continue;
+		}
+
+		if (lnum == 0) {
+			ut64 ubifs_offset = peb_offset + data_offset;
+
+			ut8 ubifs_magic[4];
+			if (iob->read_at (iob->io, ubifs_offset, ubifs_magic, 4)) {
+				ut32 magic = r_read_le32 (ubifs_magic);
+				if (magic == UBIFS_NODE_MAGIC) {
+					return ubifs_offset;
+				}
+			}
+		}
+	}
+
+	R_LOG_ERROR ("Could not find UBIFS volume in UBI container");
+	return 0;
+}
+
 static void ubifs_free_inode(ubifs_inode_t *inode) {
 	if (!inode) {
 		return;
@@ -326,6 +486,42 @@ static bool ubifs_read_at(ubifs_ctx_t *ctx, ut64 offset, ut8 *buf, int len) {
 	if (!ctx || !ctx->iob || !ctx->iob->read_at) {
 		return false;
 	}
+
+	// If we have UBI volume mapping, translate LEB offset to PEB offset
+	if (ctx->ubi_vol) {
+		// Handle reads that may span multiple LEBs
+		int bytes_read = 0;
+		while (bytes_read < len) {
+			ut32 lnum = (offset + bytes_read) / ctx->leb_size;
+			ut32 leb_offs = (offset + bytes_read) % ctx->leb_size;
+
+			bool found;
+			ut32 *peb_ptr = ht_up_find (ctx->ubi_vol->leb_map, lnum, &found);
+			if (!found || !peb_ptr) {
+				R_LOG_ERROR ("LEB %u not found in UBI volume mapping", lnum);
+				return false;
+			}
+
+			ut32 peb_num = *peb_ptr;
+			ut64 peb_offset = ctx->ubi_vol->ubi_base + (ut64)peb_num * ctx->ubi_vol->peb_size;
+			ut64 read_offset = peb_offset + ctx->ubi_vol->data_offset + leb_offs;
+
+			// Calculate how much we can read from this LEB
+			ut32 available_in_leb = ctx->leb_size - leb_offs;
+			ut32 to_read = R_MIN(available_in_leb, len - bytes_read);
+
+			if (!ctx->iob->read_at (ctx->iob->io, read_offset, buf + bytes_read, to_read)) {
+				R_LOG_ERROR ("Failed to read %u bytes from PEB %u at offset 0x%"PFMT64x,
+					to_read, peb_num, read_offset);
+				return false;
+			}
+
+			bytes_read += to_read;
+		}
+		return true;
+	}
+
+	// Raw UBIFS (no UBI container)
 	return ctx->iob->read_at (ctx->iob->io, ctx->delta + offset, buf, len);
 }
 
@@ -339,7 +535,16 @@ static bool ubifs_read_ch(ubifs_ctx_t *ctx, ut64 offset, ubifs_ch_t *ch) {
 	return true;
 }
 
+static bool ubifs_walk_index_depth(ubifs_ctx_t *ctx, ut32 lnum, ut32 offs, int depth);
+
 static bool ubifs_walk_index(ubifs_ctx_t *ctx, ut32 lnum, ut32 offs) {
+	return ubifs_walk_index_depth(ctx, lnum, offs, 0);
+}
+
+static bool ubifs_walk_index_depth(ubifs_ctx_t *ctx, ut32 lnum, ut32 offs, int depth) {
+	if (depth > 20) {
+		return false;
+	}
 	ut64 offset = (ut64)lnum * ctx->leb_size + offs;
 
 	ubifs_ch_t ch;
@@ -386,7 +591,7 @@ static bool ubifs_walk_index(ubifs_ctx_t *ctx, ut32 lnum, ut32 offs) {
 			ut32 br_lnum = r_read_le32 ((ut8 *)&br->lnum);
 			ut32 br_offs = r_read_le32 ((ut8 *)&br->offs);
 
-			ret = ubifs_walk_index (ctx, br_lnum, br_offs);
+			ret = ubifs_walk_index_depth (ctx, br_lnum, br_offs, depth + 1);
 			branch_ptr += branch_size;
 		}
 		break;
@@ -486,11 +691,22 @@ static bool fs_ubifs_mount(RFSRoot *root) {
 	ctx->iob = &root->iob;
 	ctx->delta = root->delta;
 	ctx->inodes = ht_up_new0 ();
+	ctx->ubi_vol = NULL;
+
+	ut64 ubi_offset = ubi_find_ubifs_offset (ctx->iob, ctx->delta);
+	bool is_ubi = (ubi_offset > 0);
 
 	ubifs_ch_t ch;
-	if (!ubifs_read_ch (ctx, 0, &ch)) {
-		R_LOG_ERROR ("Failed to read UBIFS superblock");
-		goto fail;
+	if (is_ubi) {
+		if (!ctx->iob->read_at (ctx->iob->io, ubi_offset, (ut8 *)&ch, UBIFS_COMMON_HDR_SZ)) {
+			R_LOG_ERROR ("Failed to read UBIFS superblock from UBI");
+			goto fail;
+		}
+	} else {
+		if (!ubifs_read_ch (ctx, 0, &ch)) {
+			R_LOG_ERROR ("Failed to read UBIFS superblock");
+			goto fail;
+		}
 	}
 
 	if (ch.node_type != UBIFS_SB_NODE) {
@@ -499,7 +715,6 @@ static bool fs_ubifs_mount(RFSRoot *root) {
 	}
 
 	ut32 sb_len = r_read_le32 ((ut8 *)&ch.len);
-	// UBIFS spec sets superblock structure is ~4KB, use 64KB as reasonable maximum
 	if (sb_len == 0 || sb_len > 65536) {
 		R_LOG_ERROR ("Invalid superblock length: %u", sb_len);
 		goto fail;
@@ -510,9 +725,17 @@ static bool fs_ubifs_mount(RFSRoot *root) {
 		goto fail;
 	}
 
-	if (!ubifs_read_at (ctx, 0, sb_buf, sb_len)) {
-		free (sb_buf);
-		goto fail;
+	if (is_ubi) {
+		if (!ctx->iob->read_at (ctx->iob->io, ubi_offset, sb_buf, sb_len)) {
+			free (sb_buf);
+			R_LOG_ERROR ("Failed to read UBIFS superblock data from UBI");
+			goto fail;
+		}
+	} else {
+		if (!ubifs_read_at (ctx, 0, sb_buf, sb_len)) {
+			free (sb_buf);
+			goto fail;
+		}
 	}
 
 	// Read fields directly from the buffer at correct offsets to avoid structure packing issues
@@ -524,6 +747,15 @@ static bool fs_ubifs_mount(RFSRoot *root) {
 	ctx->default_compr = r_read_le16 (sb_buf + 0x54);
 
 	free (sb_buf);
+
+	if (is_ubi) {
+		ctx->ubi_vol = ubi_build_volume_map (ctx->iob, ctx->delta, 0);
+		if (!ctx->ubi_vol) {
+			R_LOG_ERROR ("Failed to build UBI volume mapping");
+			goto fail;
+		}
+		ctx->delta = 0;  // Use UBI mapping for all subsequent reads
+	}
 
 	ut64 mst_offset = ctx->leb_size;
 	if (!ubifs_read_ch (ctx, mst_offset, &ch)) {
@@ -584,6 +816,13 @@ static void fs_ubifs_umount(RFSRoot *root) {
 	if (ctx->inodes) {
 		ht_up_foreach (ctx->inodes, ubifs_free_inode_cb, NULL);
 		ht_up_free (ctx->inodes);
+	}
+
+	if (ctx->ubi_vol) {
+		if (ctx->ubi_vol->leb_map) {
+			ht_up_free (ctx->ubi_vol->leb_map);
+		}
+		free (ctx->ubi_vol);
 	}
 
 	free (ctx);
@@ -657,7 +896,7 @@ static RList *fs_ubifs_dir(RFSRoot *root, const char *path, int view) {
 			fsf->size = r_read_le64 ((ut8 *)&target_inode->ino->size);
 			break;
 		case 10: // Symlink
-			fsf->type = 'l';
+			fsf->type = R_FS_FILE_TYPE_SYMLINK;
 			break;
 		default:
 			R_LOG_DEBUG ("Unknown itype %u for %s (mode=0x%x)", itype, name, mode);
@@ -791,7 +1030,6 @@ static RFSFile *fs_ubifs_open(RFSRoot *root, const char *path, bool create) {
 	file->size = r_read_le64 ((ut8 *)&inode->ino->size);
 	file->type = R_FS_FILE_TYPE_REGULAR;
 
-	// Set file offset to first data node's data (skip header)
 	if (inode->data_nodes && r_list_length (inode->data_nodes) > 0) {
 		ut64 *first_data_off = (ut64 *)r_list_get_n (inode->data_nodes, 0);
 		if (first_data_off) {
@@ -857,10 +1095,14 @@ static int fs_ubifs_read(RFSFile *file, ut64 addr, int len) {
 		}
 
 		ubifs_data_node_t *data_node = (ubifs_data_node_t *)hdr_buf;
-		ut32 data_size = r_read_le32 ((ut8 *)&data_node->size);
+		ut32 node_len = r_read_le32 ((ut8 *)&data_node->ch.len);
+		ut32 uncomp_size = r_read_le32 ((ut8 *)&data_node->size);
 		ut16 compr_type = r_read_le16 ((ut8 *)&data_node->compr_type);
 
-		if (data_size == 0 || data_size > UBIFS_BLOCK_SIZE * 2) {
+		// Compressed data length is the node length minus the header size
+		ut32 comp_len = node_len - sizeof (ubifs_data_node_t);
+
+		if (uncomp_size == 0 || uncomp_size > UBIFS_BLOCK_SIZE * 2 || comp_len == 0 || comp_len > UBIFS_BLOCK_SIZE * 2) {
 			continue;
 		}
 
@@ -869,49 +1111,68 @@ static int fs_ubifs_read(RFSFile *file, ut64 addr, int len) {
 		ut64 file_offset = (ut64)block_num * UBIFS_BLOCK_SIZE;
 
 		if (file_offset >= file_size) {
+			R_LOG_ERROR ("File offset 0x%"PFMT64x" >= file_size %"PFMT64u", skipping", file_offset, file_size);
 			continue;
 		}
 
-		ut8 *comp_buf = calloc (1, data_size);
+		ut8 *comp_buf = calloc (1, comp_len);
 		if (!comp_buf) {
 			continue;
 		}
 
-		if (!ubifs_read_at (ctx, *data_off + sizeof (ubifs_data_node_t), comp_buf, data_size)) {
+		if (!ubifs_read_at (ctx, *data_off + sizeof (ubifs_data_node_t), comp_buf, comp_len)) {
 			free (comp_buf);
 			continue;
 		}
 
 		ut8 *uncomp_buf = NULL;
-		ut32 uncomp_size = 0;
+		ut32 actual_uncomp_size = 0;
 		bool need_free = false;
 
+		// Decompress data based on compression type
 		if (compr_type == UBIFS_COMPR_NONE) {
 			uncomp_buf = comp_buf;
-			uncomp_size = data_size;
+			actual_uncomp_size = comp_len;
 		} else if (compr_type == UBIFS_COMPR_ZLIB) {
 			// Decompress ZLIB (raw deflate format)
 			int src_consumed = 0;
 			int dst_len = 0;
-			uncomp_buf = r_inflate_raw (comp_buf, data_size, &src_consumed, &dst_len);
+			uncomp_buf = r_inflate_raw (comp_buf, comp_len, &src_consumed, &dst_len);
 			if (uncomp_buf && dst_len > 0) {
-				uncomp_size = dst_len;
+				actual_uncomp_size = dst_len;
 				need_free = true;
 			} else {
 				R_LOG_ERROR ("ZLIB decompression failed");
 			}
 		} else if (compr_type == UBIFS_COMPR_LZO) {
-			// LZO decompression not implemented
-			// radare2 core does not provide LZO decompression API
-			// Files using LZO compression cannot be read
+#ifdef HAVE_LZO
+			// UBIFS uses raw LZO without prefix
+			// Use the uncompressed size from the data node as the output buffer size
+			lzo_uint out_len = (lzo_uint)uncomp_size;
+
+			uncomp_buf = malloc (out_len);
+			if (uncomp_buf) {
+				int ret = lzo1x_decompress_safe (comp_buf, comp_len, uncomp_buf, &out_len, NULL);
+				if (ret == LZO_E_OK) {
+					actual_uncomp_size = out_len;
+					need_free = true;
+				} else {
+					R_LOG_ERROR ("LZO decompression failed: %d (in=%u, out_len=%u)",
+						ret, comp_len, (ut32)out_len);
+					free (uncomp_buf);
+					uncomp_buf = NULL;
+				}
+			}
+#else
+			R_LOG_ERROR ("LZO compression detected but liblzo2 not available");
+#endif
 		} else if (compr_type == UBIFS_COMPR_ZSTD) {
 			// ZSTD decompression not implemented
-			// radare2 core does not provide ZSTD decompression API
-			// Files using ZSTD compression cannot be read
+			// Files using ZSTD compression cannot be read yet
 		}
 
-		if (uncomp_buf && uncomp_size > 0) {
-			ut32 copy_size = R_MIN (uncomp_size, file_size - file_offset);
+		if (uncomp_buf && actual_uncomp_size > 0) {
+			ut32 copy_size = R_MIN (actual_uncomp_size, file_size - file_offset);
 			memcpy (file->data + file_offset, uncomp_buf, copy_size);
 		}
 
