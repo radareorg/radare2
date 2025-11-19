@@ -458,31 +458,38 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 		r_buf_free (c);
 		return NULL;
 	}
-	if (core->anal->lineswidth > 0) {
-		int lw = core->anal->lineswidth;
-		l = strlen (str);
-		if (l > lw) {
-			r_str_cpy (str, str + l - lw);
-			r_str_cpy (col_str, col_str + l - lw);
-		} else {
-			char pfx[128];
-			lw -= l;
-			memset (pfx, ' ', sizeof (pfx));
-			if (lw >= sizeof (pfx)) {
-				lw = sizeof (pfx)-1;
-			}
-			if (lw > 0) {
-				pfx[lw] = 0;
-				str = r_str_prepend (str, pfx);
-				col_str = r_str_prepend (col_str, pfx);
+  {
+		RStrBuf *sb = r_strbuf_new (str);
+		RStrBuf *sc = r_strbuf_new (col_str);
+		if (core->anal->lineswidth > 0) {
+			int lw = core->anal->lineswidth;
+			l = strlen (str);
+			if (l > lw) {
+				r_strbuf_slice (sb, l - lw, lw);
+				r_strbuf_slice (sc, l - lw, lw);
+			} else {
+				int pad = lw - l;
+				if (pad > 0) {
+					char pfx[128];
+					if (pad > (int)sizeof (pfx) - 1) pad = sizeof (pfx) - 1;
+					memset (pfx, ' ', pad);
+					pfx[pad] = 0;
+					r_strbuf_prepend (sb, pfx);
+					r_strbuf_prepend (sc, pfx);
+				}
 			}
 		}
+		const char *tmpc = r_strbuf_tostring (sc);
+		char prev_col2 = tmpc[strlen (tmpc) - 1];
+		const char *arr_col = (prev_col2 == 't') ? "tt " : "dd ";
+		r_strbuf_append (sb, (dir == 1) ? "-> " : (dir == 2) ? "=< " : "   ");
+		r_strbuf_append (sc, arr_col);
+		str = r_strbuf_drain_nofree (sb);
+		col_str = r_strbuf_drain_nofree (sc);
+		r_strbuf_free (sb);
+		r_strbuf_free (sc);
 	}
-	const char prev_col = col_str[strlen (col_str) - 1];
-	const char *arr_col = prev_col == 't' ? "tt ": "dd ";
-	str = r_str_append (str, (dir == 1) ? "-> "
-		: (dir == 2) ? "=< " : "   ");
-	col_str = r_str_append (col_str, arr_col);
+
 
 	r_list_free (lvls);
 	RAnalRefStr *out = R_NEW0 (RAnalRefStr);
