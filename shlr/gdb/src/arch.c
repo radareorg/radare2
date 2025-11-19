@@ -17,6 +17,9 @@ static ut64 parse_size(char *s, char **end) {
 
 gdb_reg_t *parse_def(char **tok) {
 	char *end = NULL;
+	if (!tok || !tok[1] || !tok[2] || !tok[3]) {
+		return NULL;
+	}
 	gdb_reg_t *r = R_NEW0 (gdb_reg_t);
 	r_str_ncpy (r->name, tok[1], sizeof (r->name));
 	r->size = parse_size (tok[2], &end);
@@ -24,13 +27,12 @@ gdb_reg_t *parse_def(char **tok) {
 		free (r);
 		return NULL;
 	}
+	r->offset = parse_size (tok[3], &end);
 	if (!strcmp (tok[3], "?")) {
 		free (r);
 		return NULL;
 	}
-	r->offset = parse_size (tok[3], &end);
 	return r;
-}
 
 #define PARSER_MAX_TOKENS 8
 gdb_reg_t *arch_parse_reg_profile(const char * reg_profile) {
