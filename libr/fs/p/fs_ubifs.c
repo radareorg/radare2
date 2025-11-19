@@ -345,7 +345,8 @@ static ubi_vol_t *ubi_build_volume_map(RIOBind *iob, ut64 base_offset, ut32 targ
 
 	// Determine PEB size
 	ut32 peb_size = 0;
-	for (ut32 try_peb = 0x20000; try_peb <= 0x80000; try_peb += 0x20000) {
+	ut32 try_peb;
+	for (try_peb = 0x20000; try_peb <= 0x80000; try_peb += 0x20000) {
 		ut8 next_magic[4];
 		if (iob->read_at (iob->io, base_offset + try_peb, next_magic, 4)) {
 			if (r_read_be32 (next_magic) == UBI_EC_HDR_MAGIC) {
@@ -372,7 +373,8 @@ static ubi_vol_t *ubi_build_volume_map(RIOBind *iob, ut64 base_offset, ut32 targ
 
 	// Scan all PEBs to build LEB mapping for target volume
 	ut32 max_pebs = 1000;  // Safety limit
-	for (ut32 peb_num = 0; peb_num < max_pebs; peb_num++) {
+	ut32 peb_num;
+	for (peb_num = 0; peb_num < max_pebs; peb_num++) {
 		ut64 peb_offset = base_offset + (ut64)peb_num * peb_size;
 
 		ut8 vid_hdr_buf[UBI_VID_HDR_SZ];
@@ -419,8 +421,9 @@ static ut64 ubi_find_ubifs_offset(RIOBind *iob, ut64 base_offset) {
 	ut32 data_offset = r_read_be32 (ec_hdr_buf + 20);
 
 	ut32 peb_size = 0;
+	ut32 try_peb;
 
-	for (ut32 try_peb = 0x20000; try_peb <= 0x80000; try_peb += 0x20000) {
+	for (try_peb = 0x20000; try_peb <= 0x80000; try_peb += 0x20000) {
 		ut8 next_magic[4];
 		if (iob->read_at (iob->io, base_offset + try_peb, next_magic, 4)) {
 			if (r_read_be32 (next_magic) == UBI_EC_HDR_MAGIC) {
@@ -435,7 +438,8 @@ static ut64 ubi_find_ubifs_offset(RIOBind *iob, ut64 base_offset) {
 		return 0;
 	}
 
-	for (ut32 peb_num = 2; peb_num < 10; peb_num++) {
+	ut32 peb_num;
+	for (peb_num = 2; peb_num < 10; peb_num++) {
 		ut64 peb_offset = base_offset + (ut64)peb_num * peb_size;
 
 		ut8 vid_hdr_buf[UBI_VID_HDR_SZ];
@@ -508,7 +512,7 @@ static bool ubifs_read_at(ubifs_ctx_t *ctx, ut64 offset, ut8 *buf, int len) {
 
 			// Calculate how much we can read from this LEB
 			ut32 available_in_leb = ctx->leb_size - leb_offs;
-			ut32 to_read = R_MIN(available_in_leb, len - bytes_read);
+			ut32 to_read = R_MIN (available_in_leb, len - bytes_read);
 
 			if (!ctx->iob->read_at (ctx->iob->io, read_offset, buf + bytes_read, to_read)) {
 				R_LOG_ERROR ("Failed to read %u bytes from PEB %u at offset 0x%"PFMT64x,
