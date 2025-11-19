@@ -389,6 +389,27 @@ R_API bool r_strbuf_prepend_n(RStrBuf *sb, const char *s, size_t l) {
 	return true;
 }
 
+
+R_API bool r_strbuf_pad(RStrBuf *sb, char ch, int sz) {
+	R_RETURN_VAL_IF_FAIL (sb, false);
+	if (sz < 0) {
+		sz = 0;
+	}
+	int need = sz - sb->len;
+	if (need <= 0) {
+		return true;
+	}
+	if (!r_strbuf_reserve (sb, sb->len + need)) {
+		return false;
+	}
+	char *buf = sb->ptr ? sb->ptr : sb->buf;
+	memset (buf + sb->len, ch, need);
+	buf[sb->len + need] = 0;
+	sb->len = sz;
+	return true;
+}
+
+
 R_API bool r_strbuf_vprependf(RStrBuf *sb, const char *fmt, va_list ap) {
 	va_list ap2;
 	char string[1024];
