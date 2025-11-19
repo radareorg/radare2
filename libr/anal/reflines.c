@@ -21,7 +21,7 @@ static int cmp_by_ref_lvl(const RAnalRefline *a, const RAnalRefline *b) {
 	return (a->level < b->level) - (a->level > b->level);
 }
 
-static ReflineEnd * R_NONNULL refline_end_new(ut64 val, bool is_from, RAnalRefline *ref) {
+static ReflineEnd *R_NONNULL refline_end_new(ut64 val, bool is_from, RAnalRefline *ref) {
 	ReflineEnd *re = R_NEW0 (struct refline_end);
 	re->val = val;
 	re->is_from = is_from;
@@ -74,7 +74,7 @@ R_API void r_anal_reflines_free(RAnalRefline *rl) {
  * splitmode - 0, -1, 1 */
 R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 len, int nlines, int linesout, int linescall, int splitmode) {
 	RListIter *iter;
-	RAnalOp op = {0};
+	RAnalOp op = { 0 };
 	struct refline_end *el;
 	const ut8 *ptr = buf;
 	const ut8 *end = buf + len;
@@ -138,7 +138,7 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 						break;
 					}
 				}
-// doskip:
+				// doskip:
 				r_pvector_free (metas);
 				if (skip) {
 					ptr += skip;
@@ -160,7 +160,7 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 
 		// This can segfault if opcode length and buffer check fails
 		r_anal_op_fini (&op);
-		int rc = r_anal_op (anal, &op, addr, ptr, (int)(end - ptr), R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
+		int rc = r_anal_op (anal, &op, addr, ptr, (int) (end - ptr), R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
 		if (rc <= 0) {
 			sz = 1;
 			goto __next;
@@ -198,25 +198,25 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 			}
 			break;
 		case R_ANAL_OP_TYPE_SWITCH:
-		{
-			RAnalCaseOp *caseop;
-			RListIter *iter;
+			{
+				RAnalCaseOp *caseop;
+				RListIter *iter;
 
-			// add caseops
-			if (!op.switch_op) {
+				// add caseops
+				if (!op.switch_op) {
+					break;
+				}
+				r_list_foreach (op.switch_op->cases, iter, caseop) {
+				if (!linesout && (op.jump > opc + len || op.jump < opc)) {
+						goto __next;
+					}
+					if (!add_refline (list, sten, op.switch_op->addr, caseop->jump, &count, 'j', splitmode)) {
+						r_anal_op_fini (&op);
+						goto sten_err;
+					}
+				}
 				break;
 			}
-			r_list_foreach (op.switch_op->cases, iter, caseop) {
-				if (!linesout && (op.jump > opc + len || op.jump < opc)) {
-					goto __next;
-				}
-				if (!add_refline (list, sten, op.switch_op->addr, caseop->jump, &count, 'j', splitmode)) {
-					r_anal_op_fini (&op);
-					goto sten_err;
-				}
-			}
-			break;
-		}
 		}
 	__next:
 		ptr += sz;
@@ -266,7 +266,7 @@ sten_err:
 	return NULL;
 }
 
-R_API int r_anal_reflines_middle(RAnal *a, RList* /*<RAnalRefline>*/ list, ut64 addr, int len) {
+R_API int r_anal_reflines_middle(RAnal *a, RList * /*<RAnalRefline>*/ list, ut64 addr, int len) {
 	if (a && list) {
 		RAnalRefline *ref;
 		RListIter *iter;
@@ -279,25 +279,25 @@ R_API int r_anal_reflines_middle(RAnal *a, RList* /*<RAnalRefline>*/ list, ut64 
 	return false;
 }
 
-static inline const char* colchar(RAnalRefline *ref) {
-	return (ref->type == 'b') ? "!" : "|";
+static inline const char *colchar(RAnalRefline *ref) {
+	return (ref->type == 'b')? "!": "|";
 }
 
-static const char* get_corner_char(RAnalRefline *ref, ut64 addr, bool is_middle_before) {
+static const char *get_corner_char(RAnalRefline *ref, ut64 addr, bool is_middle_before) {
 	if (ref->from == ref->to) {
 		return "@";
 	}
 	if (addr == ref->to) {
 		if (is_middle_before) {
-			return (ref->from > ref->to) ? " " : colchar (ref);
+			return (ref->from > ref->to)? " ": colchar (ref);
 		}
-		return (ref->from > ref->to) ? "." : "`";
+		return (ref->from > ref->to)? ".": "`";
 	}
 	if (addr == ref->from) {
 		if (is_middle_before) {
-			return (ref->from > ref->to) ? colchar (ref) : " ";
+			return (ref->from > ref->to)? colchar (ref): " ";
 		}
-		return (ref->from > ref->to) ? "`" : ",";
+		return (ref->from > ref->to)? "`": ",";
 	}
 	return "";
 }
@@ -351,7 +351,7 @@ static inline bool refline_kept(RAnalRefline *ref, bool middle_after, ut64 addr)
 R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	RCore *core = _core;
 	R_RETURN_VAL_IF_FAIL (core && core->anal, NULL);
-	RConsContext *ctx= core->cons->context;
+	RConsContext *ctx = core->cons->context;
 	RAnal *anal = core->anal;
 	RListIter *iter;
 	RAnalRefline *ref;
@@ -368,7 +368,7 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 		return NULL;
 	}
 #endif
-	RList *reflines = split_mode ? anal->reflines2: anal->reflines;
+	RList *reflines = split_mode? anal->reflines2: anal->reflines;
 
 	RList *lvls = r_list_new ();
 	if (!lvls) {
@@ -396,9 +396,9 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 		}
 		if ((ref->from == addr || ref->to == addr) && !middle_after) {
 			const char *corner = get_corner_char (ref, addr, middle_before);
-			const char ch = ref->from == addr ? '=' : '-';
-			const char ch_col = ref->from >= ref->to ? 't': 'd';
-			const char *col = (ref->from >= ref->to) ? "t" : "d";
+			const char ch = ref->from == addr? '=': '-';
+			const char ch_col = ref->from >= ref->to? 't': 'd';
+			const char *col = (ref->from >= ref->to)? "t": "d";
 			if (!pos) {
 				int ch_pos = max_level + 1 - ref->level;
 				if (wide) {
@@ -419,9 +419,9 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 				}
 			}
 			if (!middle_before) {
-				dir = ref->to == addr ? 1 : 2;
+				dir = ref->to == addr? 1: 2;
 			}
-			pos = middle_before ? ref->level : 0;
+			pos = middle_before? ref->level: 0;
 		} else {
 			if (!pos) {
 				continue;
@@ -451,14 +451,14 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	c = NULL;
 	if (!str || !col_str) {
 		r_list_free (lvls);
-		//r_buf_free_tostring already free b and if that is the case
-		//b will be NULL and r_buf_free will return but if there was
-		//an error we free b here so in other words is safe
+		// r_buf_free_tostring already free b and if that is the case
+		// b will be NULL and r_buf_free will return but if there was
+		// an error we free b here so in other words is safe
 		r_buf_free (b);
 		r_buf_free (c);
 		return NULL;
 	}
-  {
+	{
 		RStrBuf *sb = r_strbuf_new (str);
 		RStrBuf *sc = r_strbuf_new (col_str);
 		if (core->anal->lineswidth > 0) {
@@ -471,7 +471,9 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 				int pad = lw - l;
 				if (pad > 0) {
 					char pfx[128];
-					if (pad > (int)sizeof (pfx) - 1) pad = sizeof (pfx) - 1;
+					if (pad > (int)sizeof (pfx) - 1) {
+						pad = sizeof (pfx) - 1;
+					}
 					memset (pfx, ' ', pad);
 					pfx[pad] = 0;
 					r_strbuf_prepend (sb, pfx);
@@ -481,15 +483,15 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 		}
 		const char *tmpc = r_strbuf_tostring (sc);
 		char prev_col2 = tmpc[strlen (tmpc) - 1];
-		const char *arr_col = (prev_col2 == 't') ? "tt " : "dd ";
-		r_strbuf_append (sb, (dir == 1) ? "-> " : (dir == 2) ? "=< " : "   ");
+		const char *arr_col = (prev_col2 == 't')? "tt ": "dd ";
+		r_strbuf_append (sb, (dir == 1)? "-> ": (dir == 2)? "=< "
+								: "   ");
 		r_strbuf_append (sc, arr_col);
 		str = r_strbuf_drain_nofree (sb);
 		col_str = r_strbuf_drain_nofree (sc);
 		r_strbuf_free (sb);
 		r_strbuf_free (sc);
 	}
-
 
 	r_list_free (lvls);
 	RAnalRefStr *out = R_NEW0 (RAnalRefStr);
