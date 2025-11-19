@@ -389,6 +389,30 @@ R_API bool r_strbuf_prepend_n(RStrBuf *sb, const char *s, size_t l) {
 	return true;
 }
 
+
+R_API bool r_strbuf_pad(RStrBuf *sb, int sz, char ch) {
+	if (!sb) {
+		return false;
+	}
+	if (sz < 0) {
+		sz = 0;
+	}
+	int need = sz - sb->len;
+	if (need <= 0) {
+		return true;
+	}
+	char padbuf[256];
+	memset (padbuf, ch, sizeof (padbuf));
+	while (need > 0) {
+		int chunk = (need > (int)sizeof (padbuf)) ? (int)sizeof (padbuf) : need;
+		if (!r_strbuf_append_n (sb, padbuf, chunk)) {
+			return false;
+		}
+		need -= chunk;
+	}
+	return true;
+}
+
 R_API bool r_strbuf_vprependf(RStrBuf *sb, const char *fmt, va_list ap) {
 	va_list ap2;
 	char string[1024];
