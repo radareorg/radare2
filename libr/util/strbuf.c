@@ -390,10 +390,8 @@ R_API bool r_strbuf_prepend_n(RStrBuf *sb, const char *s, size_t l) {
 }
 
 
-R_API bool r_strbuf_pad(RStrBuf *sb, int sz, char ch) {
-	if (!sb) {
-		return false;
-	}
+R_API bool r_strbuf_pad(RStrBuf *sb, char ch, int sz) {
+	R_RETURN_VAL_IF_FAIL (sb, false);
 	if (sz < 0) {
 		sz = 0;
 	}
