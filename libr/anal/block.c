@@ -793,7 +793,7 @@ R_API RList/*<RAnalBlock *>*/ * R_NULLABLE r_anal_block_shortest_path(RAnalBlock
 	}
 
 done_bfs:
-
+	{
 	// reconstruct the path
 	bool found = false;
 	RAnalBlock *prev = ht_up_find (ctx.visited, dstbb_addr, &found);
@@ -807,6 +807,7 @@ done_bfs:
 			r_list_prepend (ret, prev);
 			prev = ht_up_find (ctx.visited, prev->addr, NULL);
 		}
+	}
 	}
 
 beach:
