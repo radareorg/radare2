@@ -48,29 +48,13 @@ typedef enum {
 } EsilValType;
 
 typedef struct esil_value_t {
-	ut64 val; //should be a union, but for goto-analysis ut64 is fine
+	ut64 val; // should be a union, but for goto-analysis ut64 is fine
 	EsilValType type;
 } EsilVal;
 
 /* HELPERS */
 
-// r_str_tok () ?
-static char *condrets_strtok(char *str, const char tok) {
-	if (!str) {
-		return NULL;
-	}
-	ut32 i = 0;
-	while (str[i]) {
-		if (str[i] == tok) {
-			str[i] = '\0';
-			return &str[i + 1];
-		}
-		i++;
-	}
-	return NULL;
-}
-
-REsilOp *esil_get_op (REsil *esil, const char *op) {
+REsilOp *esil_get_op(REsil *esil, const char *op) {
 	R_RETURN_VAL_IF_FAIL (R_STR_ISNOTEMPTY (op) && esil && esil->ops, NULL);
 	return ht_pp_find (esil->ops, op, NULL);
 }
@@ -78,9 +62,11 @@ REsilOp *esil_get_op (REsil *esil, const char *op) {
 // this little thot atomizes an esil expressions by splitting it on ','
 static void esil_expr_atomize(RIDStorage *atoms, char *expr) {
 	ut32 forget_me;
-	for (
-		; !!expr && r_id_storage_add (atoms, expr, &forget_me);
-		expr = condrets_strtok (expr, ',')) {
+	char *save_ptr = NULL;
+	char *token = r_str_tok_r (expr, ",", &save_ptr);
+	while (token) {
+		r_id_storage_add (atoms, token, &forget_me);
+		token = r_str_tok_r (NULL, ",", &save_ptr);
 	}
 }
 
@@ -234,7 +220,7 @@ static void _handle_fi_leave(EsilCfgGen *gen, ut32 id, const bool has_next) {
 		r_crbtree_insert (gen->blocks, leaving_node, _graphnode_esilbb_insert_cmp, NULL);
 		gen->cur = leaving_node;
 	}
-	r_graph_add_edge (gen->cfg->g, cookie->is_else ? cookie->if_block : cookie->else_block, gen->cur);
+	r_graph_add_edge (gen->cfg->g, cookie->is_else? cookie->if_block: cookie->else_block, gen->cur);
 	free (cookie);
 }
 
@@ -242,7 +228,7 @@ static void _handle_fi_leave(EsilCfgGen *gen, ut32 id, const bool has_next) {
 // return type should probably be a bool, but idk
 static void _handle_control_flow_ifelsefi(EsilCfgGen *gen, char *atom, ut32 id) {
 	// we're probably going to see more ?{ and }, than }{
-	// so checking against ?{ and } befor }{ is therefor better for perf (lololol)
+	// so checking against? { and } befor }{ is therefor better for perf (lololol)
 	if (!strcmp (atom, "?{")) {
 		_handle_if_enter (gen, id, !!r_id_storage_get (gen->atoms, id + 1));
 		return;
@@ -258,7 +244,7 @@ static void _handle_control_flow_ifelsefi(EsilCfgGen *gen, char *atom, ut32 id) 
 
 // this little function is expected to generate a subgraph with most nodes in it
 // but not all edges. It's expected to handle if, else and fi
-static bool _round_0_cb (void *user, void *data, ut32 id) {
+static bool _round_0_cb(void *user, void *data, ut32 id) {
 	EsilCfgGen *gen = (EsilCfgGen *)user;
 	char *atom = (char *)data;
 	RAnalEsilBB *bb = (RAnalEsilBB *)gen->cur->data;
@@ -293,7 +279,7 @@ static RGraphNode *_common_break_goto(EsilCfgGen *gen, ut32 id) {
 		}
 	}
 	return gnode;
-	// r_graph_add_edge(gen->cfg->g, gnode, gen->cfg->end);
+	// r_graph_add_edge (gen->cfg->g, gnode, gen->cfg->end);
 }
 
 static void _handle_break(EsilCfgGen *gen, ut32 id) {
@@ -392,7 +378,7 @@ static bool _round_1_cb(void *user, void *data, ut32 id) {
 static void _round_2_cb(RGraphNode *n, RGraphVisitor *vi) {
 	RAnalEsilBB *bb = (RAnalEsilBB *)n->data;
 	EsilCfgGen *gen = (EsilCfgGen *)vi->data;
-	RStrBuf *buf = r_strbuf_new (n == gen->cfg->end ? NULL: (char *)r_id_storage_get (gen->atoms, bb->first.idx));
+	RStrBuf *buf = r_strbuf_new (n == gen->cfg->end? NULL: (char *)r_id_storage_get (gen->atoms, bb->first.idx));
 	r_strbuf_append (buf, ",");
 	ut32 id;
 	for (id = bb->first.idx + 1; id <= bb->last.idx; id++) {
@@ -415,7 +401,7 @@ static RAnalEsilCFG *esil_cfg_gen(RAnalEsilCFG *cfg, RAnal *anal, RIDStorage *at
 	// allocate some stuff
 	char *_expr = strdup (expr);
 	if (!_expr) {
-		return cfg; //NULL?
+		return cfg; // NULL?
 	}
 	RAnalEsilBB *end_bb = R_NEW0 (RAnalEsilBB);
 	if (!end_bb) {
@@ -473,7 +459,7 @@ static RAnalEsilCFG *esil_cfg_gen(RAnalEsilCFG *cfg, RAnal *anal, RIDStorage *at
 		EsilCfgScopeCookie *cookie;
 		while ((cookie = r_stack_pop (stack))) {
 			r_graph_add_edge (cfg->g,
-				cookie->is_else ? cookie->if_block : cookie->else_block, cfg->end);
+				cookie->is_else? cookie->if_block: cookie->else_block, cfg->end);
 			free (cookie);
 		}
 	}
@@ -557,7 +543,7 @@ R_API RAnalEsilCFG *r_anal_esil_cfg_expr(RAnalEsilCFG *cfg, RAnal *anal, const u
 		r_crbtree_free (blocks);
 		return NULL;
 	}
-	RAnalEsilCFG *cf = cfg ? cfg : r_anal_esil_cfg_new ();
+	RAnalEsilCFG *cf = cfg? cfg: r_anal_esil_cfg_new ();
 	if (!cf) {
 		r_stack_free (stack);
 		r_id_storage_free (atoms);
@@ -571,7 +557,7 @@ R_API RAnalEsilCFG *r_anal_esil_cfg_expr(RAnalEsilCFG *cfg, RAnal *anal, const u
 	return ret;
 }
 
-R_API RAnalEsilCFG *r_anal_esil_cfg_op(RAnalEsilCFG * R_NULLABLE cfg, RAnal *anal, RAnalOp *op) {
+R_API RAnalEsilCFG *r_anal_esil_cfg_op(RAnalEsilCFG *R_NULLABLE cfg, RAnal *anal, RAnalOp *op) {
 	R_RETURN_VAL_IF_FAIL (anal && op, NULL);
 	if (!anal->reg || !anal->esil) {
 		return NULL;
@@ -660,8 +646,8 @@ R_API void r_anal_esil_cfg_merge_blocks(RAnalEsilCFG *cfg) {
 		if (r_list_length (node->in_nodes) == 1) {
 			RAnalEsilBB *bb = (RAnalEsilBB *)node->data;
 			RGraphNode *top = (RGraphNode *)r_list_last (node->out_nodes);
-			// segfaults here ?
-			if (!(top && bb->enter == R_ANAL_ESIL_BLOCK_ENTER_GLUE &&
+			// segfaults here?
+			if (! (top && bb->enter == R_ANAL_ESIL_BLOCK_ENTER_GLUE &&
 				(r_list_length (top->in_nodes) > 1))) {
 				RGraphNode *block = (RGraphNode *)r_list_last (node->in_nodes);
 				if (r_list_length (block->out_nodes) == 1) {

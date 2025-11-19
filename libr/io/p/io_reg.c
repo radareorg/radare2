@@ -88,7 +88,7 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 
 static bool __close(RIODesc *fd) {
 	R_FREE (fd->data);
-	return 0 == 0;
+	return true;
 }
 
 static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
