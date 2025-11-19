@@ -1330,7 +1330,6 @@ static double matchBytes(RSignItem *a, RSignItem *b) {
 		if (!combined_mask) {
 			return result;
 		}
-		// AITODO: not clear how this chk must work because i want either amask or bmask to be in
 		if (a->bytes->mask) {
 			memcpy (combined_mask, a->bytes->mask, min_size);
 		}
