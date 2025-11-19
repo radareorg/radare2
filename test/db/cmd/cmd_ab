@@ -260,3 +260,53 @@ addr        xrefs
 EOF
 RUN
 
+NAME=abp basic path
+FILE=bins/mach0/mac-ls2
+CMDS=<<EOF
+aa
+s 0x1000011e8
+abp 0x100001216~?
+abp 0x100001216
+EOF
+EXPECT=<<EOF
+2
+0x1000011e8
+0x100001216
+EOF
+RUN
+
+NAME=abp json output
+FILE=bins/mach0/mac-ls2
+CMDS=<<EOF
+aa
+s 0x1000011e8
+abpj 0x100001216
+EOF
+EXPECT=<<EOF
+[4294971880,4294971926]
+EOF
+RUN
+
+NAME=abp unreachable address
+FILE=bins/mach0/mac-ls2
+CMDS=<<EOF
+aa
+s 0x1000011e8
+abp 0x999999
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=abp same block
+FILE=bins/mach0/mac-ls2
+CMDS=<<EOF
+aa
+s 0x1000011e8
+abp 0x1000011e8
+EOF
+EXPECT=<<EOF
+0x1000011e8
+EOF
+RUN
+
