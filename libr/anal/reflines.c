@@ -346,6 +346,16 @@ static inline bool refline_kept(RAnalRefline *ref, bool middle_after, ut64 addr)
 	return true;
 }
 
+static const char *get_arrow_str(int dir) {
+	if (dir == 1) {
+		return "-> ";
+	} else if (dir == 2) {
+		return "=< ";
+	} else {
+		return "   ";
+	}
+}
+
 // TODO: move into another file
 // TODO: this is TOO SLOW. do not iterate over all reflines or gtfo
 R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
@@ -484,7 +494,7 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 		const char *tmpc = r_strbuf_tostring (sc);
 		char prev_col2 = tmpc[strlen (tmpc) - 1];
 		const char *arr_col = (prev_col2 == 't')? "tt ": "dd ";
-		const char *arrow = (dir == 1)? "-> ": (dir == 2)? "=< ": "   ");
+		const char *arrow = get_arrow_str (dir);
 		r_strbuf_append (sb, arrow);
 		r_strbuf_append (sc, arr_col);
 		str = r_strbuf_drain_nofree (sb);
