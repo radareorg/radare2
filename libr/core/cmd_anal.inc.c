@@ -1500,7 +1500,6 @@ static void find_refs(RCore *core, const char *glob) {
 		r_core_cmd_help_match (core, help_msg_ax, "axF");
 		return;
 	}
-	R_LOG_WARN ("Finding references of flags matching '%s'", glob);
 	char *cmd = r_str_newf (".(findstref) @@=`f~%s[0]`", glob);
 	r_core_cmd0 (core, "(findstref;f here=$$;s entry0;/r here;f-here)");
 	r_core_cmd0 (core, cmd);
