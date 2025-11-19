@@ -4,6 +4,8 @@
 #include <r_hash.h>
 #include <r_core.h>
 
+R_VEC_TYPE(RVecAnalRef, RAnalRef);
+
 #define unwrap(rbnode) container_of (rbnode, RAnalBlock, _rb)
 
 // rename to instr_at
@@ -693,6 +695,45 @@ static bool shortest_path_successor_cb(ut64 addr, void *user) {
 	return addr != ctx->dst; // break if we found our destination
 }
 
+// Add code/call/data ref destinations from block to the visit list
+static bool add_refs(RAnalBlock *block, PathContext *ctx) {
+	RAnalFunction *f = r_anal_get_fcn_in (ctx->anal, block->addr, 0);
+	if (!f) {
+		return true;
+	}
+
+	RVecAnalRef *refs = r_anal_function_get_refs (f);
+	if (!refs) {
+		return true;
+	}
+
+	RAnalRef *ref;
+	R_VEC_FOREACH (refs, ref) {
+		int rt = R_ANAL_REF_TYPE_MASK (ref->type);
+		// Follow CODE, CALL, and DATA refs
+		if (rt == R_ANAL_REF_TYPE_CODE || rt == R_ANAL_REF_TYPE_CALL || rt == R_ANAL_REF_TYPE_DATA) {
+			if (r_anal_block_contains (block, ref->at)) {
+				ut64 target = ref->addr;
+				if (ht_up_find_kv (ctx->visited, target, NULL)) {
+					continue;
+				}
+				ht_up_insert (ctx->visited, target, block);
+				RAnalBlock *target_block = r_anal_get_block_at (ctx->anal, target);
+				if (target_block) {
+					r_pvector_push (ctx->next_visit, target_block);
+				}
+				if (target == ctx->dst) {
+					RVecAnalRef_free (refs);
+					return false;
+				}
+			}
+		}
+	}
+
+	RVecAnalRef_free (refs);
+	return true;
+}
+
 static ut64 bb_addr_for(RAnal *a, ut64 n) {
 	RListIter *iter;
 	RAnalBlock *bb;
@@ -727,19 +768,31 @@ R_API RList/*<RAnalBlock *>*/ * R_NULLABLE r_anal_block_shortest_path(RAnalBlock
 	ht_up_insert (ctx.visited, block->addr, NULL);
 	r_pvector_push (cur_visit, block);
 
+	RCore *core = ctx.anal->coreb.core;
+	RCons *cons = core? core->cons: NULL;
+
 	// BFS
 	while (!r_pvector_empty (cur_visit)) {
+		if (cons && r_cons_is_breaked (cons)) {
+			goto beach;
+		}
 		void **it;
 		r_pvector_foreach (cur_visit, it) {
 			RAnalBlock *cur = *it;
 			ctx.cur_parent = cur;
+			// Add block successors (jump/fail/switch edges)
 			r_anal_block_successor_addrs_foreach (cur, shortest_path_successor_cb, &ctx);
+			if (!add_refs (cur, &ctx)) {
+				goto done_bfs;
+			}
 		}
 		RPVector *tmp = cur_visit;
 		cur_visit = ctx.next_visit;
 		ctx.next_visit = tmp;
 		r_pvector_clear (ctx.next_visit);
 	}
+
+done_bfs:
 
 	// reconstruct the path
 	bool found = false;
