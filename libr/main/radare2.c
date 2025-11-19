@@ -287,6 +287,7 @@ static int main_help(int line) {
 		r_strbuf_appendf (sb, " R2_DATA_HOME    %s\n"
 				" R2_VERSION      contains the current version of r2\n"
 				" R2_ABIVERSION   contains the ABI version of r2\n"
+				" R2_VERSION_ABI  alias for R2_ABIVERSION\n"
 				" R2_LOG_LEVEL    numeric value of the max level of messages to show\n"
 				" R2_LOG_FILE     dump all logs to a file\n"
 				"Paths:\n"
@@ -341,6 +342,7 @@ static int main_print_var(const char *var_name) {
 	} r2_vars[] = {
 		{ "R2_VERSION", R2_VERSION },
 		{ "R2_ABIVERSION", R2_ABIVERSION_STR },
+		{ "R2_VERSION_ABI", R2_ABIVERSION_STR },
 		{ "R2_PREFIX", r2prefix },
 		{ "R2_MAGICPATH", magicpath },
 		{ "R2_INCDIR", incdir },
