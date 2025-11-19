@@ -14164,6 +14164,7 @@ static bool cmd_aa(RCore *core, bool aaa) {
 	r_core_task_yield (&core->tasks);
 
 	r_cons_break_push (core->cons, NULL, NULL);
+	r_cons_break_timeout (core->cons, r_config_get_i (core->config, "anal.timeout"));
 
 	logline (core, 18, "Analyze symbols (af@@@s)");
 	RVecRBinSymbol *v = r_bin_get_symbols_vec (core->bin);
@@ -14178,14 +14179,21 @@ static bool cmd_aa(RCore *core, bool aaa) {
 			}
 			RSkipListNode *it;
 			r_skiplist_foreach (symbols, it, symbol) {
+				if (r_cons_is_breaked (core->cons)) {
+					break;
+				}
 				ut64 addr = r_bin_get_vaddr (core->bin, symbol->paddr, symbol->vaddr);
 				// TODO: uncomment to: fcn.name = symbol.name, problematic for imports
 				// r_core_af (core, addr, symbol->name, anal_calls);
 				r_core_af (core, addr, NULL, anal_calls);
+				r_core_task_yield (&core->tasks);
 			}
 			r_skiplist_free (symbols);
 		} else {
 			R_VEC_FOREACH (v, symbol) {
+				if (r_cons_is_breaked (core->cons)) {
+					break;
+				}
 				if (isSkippable (symbol) || !isValidSymbol (symbol)) {
 					continue;
 				}
@@ -14193,6 +14201,7 @@ static bool cmd_aa(RCore *core, bool aaa) {
 				// TODO: uncomment to: fcn.name = symbol.name, problematic for imports
 				// r_core_af (core, addr, symbol->name, anal_calls);
 				r_core_af (core, addr, NULL, anal_calls);
+				r_core_task_yield (&core->tasks);
 			}
 		}
 	}
@@ -14756,6 +14765,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 
 				char *of;
 				r_list_foreach (list, it, of) {
+					if (r_cons_is_breaked (core->cons)) {
+						break;
+					}
 					ut64 addr = r_num_get (NULL, of);
 					r_core_seek (core, addr, true);
 					r_core_anal_esil (core, "f", NULL);

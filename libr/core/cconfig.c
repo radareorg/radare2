@@ -3808,7 +3808,7 @@ R_API int r_core_config_init(RCore *core) {
 		"dbg.map", "dbg.maps", "dbg.maps.rwx", "dbg.maps.r", "dbg.maps.rw", "dbg.maps.rx", "dbg.maps.wx", "dbg.maps.x",
 		"anal.fcn", "anal.bb",
 		NULL);
-	SETI ("anal.timeout", 0, "stop analyzing after a couple of seconds");
+	SETI ("anal.timeout", 0, "stop analyzing after N seconds (0 = no timeout)");
 	SETCB ("anal.flagends", "true", &cb_anal_flagends, "end function when a flag is found");
 	SETCB ("anal.icods", "true", &cb_anal_icods, "analyze indirect code references");
 	SETCB ("anal.jmp.retpoline", "true", &cb_anal_jmpretpoline, "analyze retpolines, may be slower if not needed");
