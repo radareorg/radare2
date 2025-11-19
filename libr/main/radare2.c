@@ -719,7 +719,7 @@ static void dp_write(RCore *core, const char *s) {
 	}
 }
 
-#define OPTARGS "=012AjMCwxfF:hm:e:Enk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSzuXt"
+#define OPTARGS "=012AjMCwxfF:Hhm:e:Enk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSzuXt"
 
 R_API int r_main_radare2(int argc, const char **argv) {
 	int c, ret;
@@ -774,8 +774,10 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			mr.show_version = true;
 			break;
 		case 'H':
-			if (opt.ind < argc) {
+			// Check if next arg is a variable name (not starting with -)
+			if (opt.ind < argc && argv[opt.ind][0] != '-') {
 				main_print_var (argv[opt.ind]);
+				opt.ind++;
 			} else {
 				main_print_var (NULL);
 			}
