@@ -4,9 +4,8 @@
 #include <r_lib.h>
 #include <r_util.h>
 
-#if __has_include(<lzo/lzo1x.h>)
+#ifdef HAVE_LZO
 #include <lzo/lzo1x.h>
-#define HAVE_LZO 1
 #endif
 
 // UBI Magic numbers
