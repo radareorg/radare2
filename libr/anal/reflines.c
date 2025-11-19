@@ -401,6 +401,8 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	RBuffer *c = r_buf_new ();
 	r_buf_append_string (c, " ");
 	r_buf_append_string (b, " ");
+	int wide_mul = wide ? 2 : 1;
+	int wide_offset = wide ? -1 : 0;
 	r_list_foreach (lvls, iter, ref) {
 		if (ctx->breaked) {
 			r_list_free (lvls);
@@ -408,16 +410,18 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 			r_buf_free (c);
 			return NULL;
 		}
-		if ((ref->from == addr || ref->to == addr) && !middle_after) {
+		bool is_endpoint = (ref->from == addr || ref->to == addr) && !middle_after;
+		bool is_up = ref->from >= ref->to;
+		char ch_col_val = is_up ? 't' : 'd';
+		const char *col_val = is_up ? "t" : "d";
+		const char *mid_str = (ref->type == 'b') ? "!" : "|";
+		if (is_endpoint) {
 			const char *corner = get_corner_char (ref, addr, middle_before);
 			const char ch = ref->from == addr? '=': '-';
-			const char ch_col = ref->from >= ref->to? 't': 'd';
-			const char *col = (ref->from >= ref->to)? "t": "d";
+			const char ch_col = ch_col_val;
+			const char *col = col_val;
 			if (!pos) {
-				int ch_pos = max_level + 1 - ref->level;
-				if (wide) {
-					ch_pos = ch_pos * 2 - 1;
-				}
+				int ch_pos = (max_level + 1 - ref->level) * wide_mul + wide_offset;
 				r_buf_write_at (b, ch_pos, (ut8 *)corner, 1);
 				r_buf_write_at (c, ch_pos, (ut8 *)col, 1);
 				fill_level (b, ch_pos + 1, ch, ref, wide);
@@ -442,11 +446,11 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 			}
 			add_spaces (b, ref->level, pos, wide);
 			add_spaces (c, ref->level, pos, wide);
-			if (ref->from >= ref->to) {
+			if (is_up) {
 				r_buf_append_string (b, ":");
 				r_buf_append_string (c, "t");
 			} else {
-				r_buf_append_string (b, colchar (ref));
+				r_buf_append_string (b, mid_str);
 				r_buf_append_string (c, "d");
 			}
 			pos = ref->level;
