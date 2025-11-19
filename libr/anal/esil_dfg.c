@@ -1917,12 +1917,18 @@ static RStrBuf *get_resolved_expr(RAnalEsilDFGFilter *filter, RAnalEsilDFGNode *
 						}
 					} else {
 						gn = (RGraphNode *)r_list_first (gn->in_nodes);
+						if (!gn) {
+							break;
+						}
 						c = r_strbuf_get (((RAnalEsilDFGNode *)gn->data)->content);
 						gn = (RGraphNode *)r_list_first (gn->in_nodes);
+						if (!gn) {
+							break;
+						}
 					}
 				}
 			}
-			if (cont) {
+			if (cont || !gn) {
 				continue;
 			}
 			RStrBuf *r = get_resolved_expr (filter, (RAnalEsilDFGNode *)gn->data);
