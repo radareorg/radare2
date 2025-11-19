@@ -484,8 +484,8 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 		const char *tmpc = r_strbuf_tostring (sc);
 		char prev_col2 = tmpc[strlen (tmpc) - 1];
 		const char *arr_col = (prev_col2 == 't')? "tt ": "dd ";
-		r_strbuf_append (sb, (dir == 1)? "-> ": (dir == 2)? "=< "
-								: "   ");
+		const char *arrow = (dir == 1)? "-> ": (dir == 2)? "=< ": "   ");
+		r_strbuf_append (sb, arrow);
 		r_strbuf_append (sc, arr_col);
 		str = r_strbuf_drain_nofree (sb);
 		col_str = r_strbuf_drain_nofree (sc);
