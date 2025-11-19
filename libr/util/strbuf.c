@@ -399,17 +399,16 @@ R_API bool r_strbuf_pad(RStrBuf *sb, char ch, int sz) {
 	if (need <= 0) {
 		return true;
 	}
-	char padbuf[256];
-	memset (padbuf, ch, sizeof (padbuf));
-	while (need > 0) {
-		int chunk = (need > (int)sizeof (padbuf)) ? (int)sizeof (padbuf) : need;
-		if (!r_strbuf_append_n (sb, padbuf, chunk)) {
-			return false;
-		}
-		need -= chunk;
+	if (!r_strbuf_reserve (sb, sb->len + need)) {
+		return false;
 	}
+	char *buf = sb->ptr ? sb->ptr : sb->buf;
+	memset (buf + sb->len, ch, need);
+	buf[sb->len + need] = 0;
+	sb->len = sz;
 	return true;
 }
+
 
 R_API bool r_strbuf_vprependf(RStrBuf *sb, const char *fmt, va_list ap) {
 	va_list ap2;
