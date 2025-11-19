@@ -37,7 +37,7 @@ typedef struct {
 
 static void rafind_options_fini(RafindOptions *ro) {
 	if (ro) {
-	// 	r_io_free (ro->io);
+		// 	r_io_free (ro->io);
 		ro->io = NULL;
 		free (ro->buf);
 		ro->cur = 0;
@@ -61,7 +61,7 @@ static void rafind_options_init(RafindOptions *ro) {
 static int rafind_open(RafindOptions *ro, const char *file);
 
 static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
-	RafindOptions *ro = (RafindOptions*)user;
+	RafindOptions *ro = (RafindOptions *)user;
 	ut8 *buf = ro->buf;
 	int delta = addr - ro->cur;
 	if (ro->cur > addr && (ro->cur - addr == kw->keyword_length - 1)) {
@@ -69,7 +69,7 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		delta = ro->cur - addr;
 	}
 	if (delta > 0 && delta >= ro->bsize) {
-		R_LOG_ERROR ("Invalid delta %d from 0x%08"PFMT64x, delta, addr);
+		R_LOG_ERROR ("Invalid delta %d from 0x%08" PFMT64x, delta, addr);
 		return 0;
 	}
 	if (delta != 0) {
@@ -145,18 +145,18 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		pj_ks (ro->pj, "data", str);
 		pj_end (ro->pj);
 	} else if (ro->rad) {
-		printf ("f hit%d_%d = 0x%08"PFMT64x" # %s\n", 0, kw->count, addr, ro->curfile);
+		printf ("f hit%d_%d = 0x%08" PFMT64x " # %s\n", 0, kw->count, addr, ro->curfile);
 	} else {
 		if (!ro->quiet) {
 			printf ("%s: ", ro->curfile);
 		}
 		if (ro->showstr) {
-			printf ("0x%"PFMT64x" %s\n", addr, str);
+			printf ("0x%" PFMT64x " %s\n", addr, str);
 		} else {
-			printf ("0x%"PFMT64x"\n", addr);
+			printf ("0x%" PFMT64x "\n", addr);
 			if (ro->pr) {
 				int bs = R_MIN (ro->bsize, 64);
-				r_print_hexdump (ro->pr, addr, (ut8*)buf + delta, bs, 16, 1, 1);
+				r_print_hexdump (ro->pr, addr, (ut8 *)buf + delta, bs, 16, 1, 1);
 				r_cons_flush (ro->cons);
 			}
 		}
@@ -173,34 +173,33 @@ static int show_help(const char *argv0, int line) {
 		return 0;
 	}
 	printf (
-	" -a [align] only accept aligned hits\n"
-	" -b [size]  set block size\n"
-	" -B         use big endian instead of the little one (See -V)\n"
-	" -c         disable colourful output (mainly for for -X)\n"
-	" -e [regex] search for regex matches (can be used multiple times)\n"
-	" -E         perform a search using an esil expression\n"
-	" -f [from]  start searching from address 'from'\n"
-	" -F [file]  read the contents of the file and use it as keyword\n"
-	" -h         show this help\n"
-	" -i         identify filetype (r2 -nqcpm file)\n"
-	" -j         output in JSON\n"
-	" -L         list all io plugins (same as r2 for now)\n"
-	" -m         magic search, file-type carver\n"
-	" -M [str]   set a binary mask to be applied on keywords\n"
-	" -n         do not stop on read errors\n"
-	" -r         print using radare commands\n"
-	// " -R         replace in place every search hit with the given argument\n"
-	" -s [str]   search for a string (more than one string can be passed)\n"
-	" -S [str]   search for a wide string (more than one string can be passed).\n"
-	" -t [to]    stop search at address 'to'\n"
-	" -q         quiet: fewer output do not show headings or filenames.\n"
-	" -v         print version and exit\n"
-	" -V [s:num | s:num1,num2] search for a value or range in the specified endian (-V 4:123 or -V 4:100,200)\n"
-	" -x [hex]   search for hexpair string (909090) (can be used multiple times)\n"
-	" -X         show hexdump of search results\n"
-	" -z         search for zero-terminated strings\n"
-	" -Z         show string found on each search hit\n"
-	);
+		" -a [align] only accept aligned hits\n"
+		" -b [size]  set block size\n"
+		" -B         use big endian instead of the little one (See -V)\n"
+		" -c         disable colourful output (mainly for for -X)\n"
+		" -e [regex] search for regex matches (can be used multiple times)\n"
+		" -E         perform a search using an esil expression\n"
+		" -f [from]  start searching from address 'from'\n"
+		" -F [file]  read the contents of the file and use it as keyword\n"
+		" -h         show this help\n"
+		" -i         identify filetype (r2 -nqcpm file)\n"
+		" -j         output in JSON\n"
+		" -L         list all io plugins (same as r2 for now)\n"
+		" -m         magic search, file-type carver\n"
+		" -M [str]   set a binary mask to be applied on keywords\n"
+		" -n         do not stop on read errors\n"
+		" -r         print using radare commands\n"
+		// " -R         replace in place every search hit with the given argument\n"
+		" -s [str]   search for a string (more than one string can be passed)\n"
+		" -S [str]   search for a wide string (more than one string can be passed).\n"
+		" -t [to]    stop search at address 'to'\n"
+		" -q         quiet: fewer output do not show headings or filenames.\n"
+		" -v         print version and exit\n"
+		" -V [s:num | s:num1,num2] search for a value or range in the specified endian (-V 4:123 or -V 4:100,200)\n"
+		" -x [hex]   search for hexpair string (909090) (can be used multiple times)\n"
+		" -X         show hexdump of search results\n"
+		" -z         search for zero-terminated strings\n"
+		" -Z         show string found on each search hit\n");
 	return 0;
 }
 
@@ -242,7 +241,7 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 
 	ro->buf = calloc (1, ro->bsize);
 	if (!ro->buf) {
-		R_LOG_ERROR ("Cannot allocate %"PFMT64d" bytes", ro->bsize);
+		R_LOG_ERROR ("Cannot allocate %" PFMT64d " bytes", ro->bsize);
 		result = 1;
 		goto err;
 	}
@@ -260,15 +259,15 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 	}
 	if (ro->mode == R_SEARCH_MAGIC) {
 		/* TODO: implement using api */
-		char *tostr = (to && to != UT64_MAX)?  r_str_newf ("-e search.to=%"PFMT64d, to): strdup ("");
+		char *tostr = (to && to != UT64_MAX)? r_str_newf ("-e search.to=%" PFMT64d, to): strdup ("");
 		r_sys_cmdf ("r2"
-			    " -e scr.color=%s"
-			    " -e search.in=range"
-			    " -e search.align=%d"
-			    " -e search.from=%" PFMT64d
-			    " %s -qnc/m%s \"%s\"",
-			    r_str_bool (ro->color),
-			    ro->align, ro->from, tostr, ro->json? "j": "", efile);
+			" -e scr.color=%s"
+			" -e search.in=range"
+			" -e search.align=%d"
+			" -e search.from=%" PFMT64d
+			" %s -qnc/m%s \"%s\"",
+			r_str_bool (ro->color),
+			ro->align, ro->from, tostr, ro->json? "j": "", efile);
 		free (tostr);
 		goto done;
 	}
@@ -328,7 +327,7 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 			bsize = ret;
 		}
 		if (r_search_update (rs, ro->cur, ro->buf, ret) == -1) {
-			R_LOG_ERROR ("search.update read error at 0x%08"PFMT64x, ro->cur);
+			R_LOG_ERROR ("search.update read error at 0x%08" PFMT64x, ro->cur);
 			break;
 		}
 	}
@@ -343,7 +342,6 @@ err:
 
 static int rafind_open_dir(RafindOptions *ro, const char *dir) {
 	RListIter *iter;
-	char *fullpath;
 	char *fname = NULL;
 
 	RList *files = r_sys_dir (dir);
@@ -354,7 +352,7 @@ static int rafind_open_dir(RafindOptions *ro, const char *dir) {
 			if (*fname == '.') {
 				continue;
 			}
-			fullpath = r_str_newf ("%s"R_SYS_DIR"%s", dir, fname);
+			char *fullpath = r_str_newf ("%s" R_SYS_DIR "%s", dir, fname);
 			(void)rafind_open (ro, fullpath);
 			free (fullpath);
 		}
@@ -401,13 +399,13 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 			break;
 		case 'b':
 			{
-			int bs = (int)r_num_math (NULL, opt.arg);
-			if (bs < 2) {
-				rafind_options_fini (&ro);
-				R_LOG_ERROR ("Invalid blocksize <= 1");
-				return 1;
-			}
-			ro.bsize = bs;
+				int bs = (int)r_num_math (NULL, opt.arg);
+				if (bs < 2) {
+					rafind_options_fini (&ro);
+					R_LOG_ERROR ("Invalid blocksize <= 1");
+					return 1;
+				}
+				ro.bsize = bs;
 			}
 			break;
 		case 'B':
@@ -437,23 +435,23 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 		case 'e':
 			ro.mode = R_SEARCH_REGEXP;
 			ro.hexstr = 0;
-			r_list_append (ro.keywords, (void*)opt.arg);
+			r_list_append (ro.keywords, (void *)opt.arg);
 			break;
 		case 'E':
 			ro.mode = R_SEARCH_ESIL;
-			r_list_append (ro.keywords, (void*)opt.arg);
+			r_list_append (ro.keywords, (void *)opt.arg);
 			break;
 		case 's':
 			ro.mode = R_SEARCH_KEYWORD;
 			ro.hexstr = false;
 			ro.widestr = false;
-			r_list_append (ro.keywords, (void*)opt.arg);
+			r_list_append (ro.keywords, (void *)opt.arg);
 			break;
 		case 'S':
 			ro.mode = R_SEARCH_KEYWORD;
 			ro.hexstr = false;
 			ro.widestr = true;
-			r_list_append (ro.keywords, (void*)opt.arg);
+			r_list_append (ro.keywords, (void *)opt.arg);
 			break;
 		case 'M':
 			// XXX should be from hexbin
@@ -470,12 +468,12 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 					R_LOG_ERROR ("Cannot slurp '%s'", opt.arg);
 					return 1;
 				}
-				char *hexdata = r_hex_bin2strdup ((ut8*)data, data_size);
+				char *hexdata = r_hex_bin2strdup ((ut8 *)data, data_size);
 				if (hexdata) {
 					ro.mode = R_SEARCH_KEYWORD;
 					ro.hexstr = true;
 					ro.widestr = false;
-					r_list_append (ro.keywords, (void*)hexdata);
+					r_list_append (ro.keywords, (void *)hexdata);
 				}
 				free (data);
 			}
@@ -487,7 +485,7 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 			ro.mode = R_SEARCH_KEYWORD;
 			ro.hexstr = true;
 			ro.widestr = false;
-			r_list_append (ro.keywords, (void*)opt.arg);
+			r_list_append (ro.keywords, (void *)opt.arg);
 			break;
 		case 'X':
 			ro.pr = r_print_new ();
@@ -500,7 +498,7 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 				char *arg = strdup (opt.arg);
 				char *colon = strchr (arg, ':');
 				char *comma = NULL;
-				ut8 buf[8] = {0};
+				ut8 buf[8] = { 0 };
 				int size = R_SYS_BITS_CHECK (R_SYS_BITS, 64)? 8: 4;
 				ut64 value, min_value = 0, max_value = 0;
 
@@ -525,16 +523,16 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 				}
 				for (value = min_value; value <= max_value; value++) {
 					switch (size) {
-					case 1:
+				case 1:
 						buf[0] = value;
 						break;
-					case 2:
+				case 2:
 						r_write_ble16 (buf, value, ro.bigendian);
 						break;
-					case 4:
+				case 4:
 						r_write_ble32 (buf, value, ro.bigendian);
 						break;
-					case 8:
+				case 8:
 						r_write_ble64 (buf, value, ro.bigendian);
 						break;
 					default:
@@ -543,13 +541,13 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 						free (arg);
 						return 1;
 					}
-					char *hexdata = r_hex_bin2strdup ((ut8*)buf, size);
+					char *hexdata = r_hex_bin2strdup ((ut8 *)buf, size);
 					if (hexdata) {
 						ro.align = size;
 						ro.mode = R_SEARCH_KEYWORD;
 						ro.hexstr = true;
 						ro.widestr = false;
-						r_list_append (ro.keywords, (void*)hexdata);
+						r_list_append (ro.keywords, (void *)hexdata);
 					}
 				}
 				free (arg);
@@ -557,7 +555,8 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 			break;
 		case 'v':
 			rafind_options_fini (&ro);
-			int mode = ro.json? 'j': ro.quiet? 'q': 0;
+			int mode = ro.json? 'j': ro.quiet? 'q'
+							: 0;
 			return r_main_version_print ("rafind2", mode);
 		case 'h':
 			rafind_options_fini (&ro);
@@ -605,11 +604,13 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 	}
 	for (; opt.ind < argc; opt.ind++) {
 		file = argv[opt.ind];
-		if (file && !*file) {
-			R_LOG_ERROR ("Cannot open empty path");
-			return 1;
+		if (file) {
+			if (!*file) {
+				R_LOG_ERROR ("Cannot open empty path");
+				return 1;
+			}
+			rafind_open (&ro, file);
 		}
-		rafind_open (&ro, file);
 	}
 	r_list_free (ro.keywords);
 	if (ro.pj) {

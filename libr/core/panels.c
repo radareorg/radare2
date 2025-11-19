@@ -782,7 +782,7 @@ static void __update_help_title(RCore *core, RPanel *panel) {
 		}
 	}
 	if (r_cons_canvas_gotoxy (can, panel->view->pos.x + 1, panel->view->pos.y + 1)) {
-		char *s = r_str_ndup (r_strbuf_get (title), panel->view->pos.w - 1);
+		char *s = r_str_ansi_crop (r_strbuf_get (title), 0, 0, panel->view->pos.w - 1, 1);
 		r_cons_canvas_write (can, s);
 		free (s);
 	}
@@ -854,7 +854,7 @@ static void __update_panel_title(RCore *core, RPanel *panel) {
 	char *cmd_title  = __apply_filter_cmd (core, panel);
 	if (cmd_title) {
 #if 1
-		char *tit = r_str_ndup (panel->model->title, panel->view->pos.w - 6);
+		char *tit = r_str_ansi_crop (panel->model->title, 0, 0, panel->view->pos.w - 6, 1);
 		if (!tit) {
 			tit = strdup ("");
 		}
@@ -1637,7 +1637,7 @@ static void __fix_cursor_down(RCore *core) {
 			if (sz < 1) {
 				sz = 1;
 			}
-			r_asm_op_fini (&op);
+			r_anal_op_fini (&op);
 			r_core_seek_delta (core, sz);
 			print->cur = R_MAX (print->cur - sz, 0);
 			if (print->ocur != -1) {
@@ -2635,8 +2635,6 @@ static void __handle_tab_key(RCore *core, bool shift) {
 		if (panels->mode == PANEL_MODE_MENU) {
 			__set_curnode (core, 0);
 			__set_mode (core, PANEL_MODE_DEFAULT);
-		} else if (panels->mode == PANEL_MODE_ZOOM) {
-			__set_curnode (core, ++panels->curnode);
 		} else {
 			__set_curnode (core, ++panels->curnode);
 		}
@@ -2644,8 +2642,6 @@ static void __handle_tab_key(RCore *core, bool shift) {
 		if (panels->mode == PANEL_MODE_MENU) {
 			__set_curnode (core, panels->n_panels - 1);
 			__set_mode (core, PANEL_MODE_DEFAULT);
-		} else if (panels->mode == PANEL_MODE_ZOOM) {
-			__set_curnode (core, --panels->curnode);
 		} else {
 			__set_curnode (core, --panels->curnode);
 		}
@@ -2940,7 +2936,7 @@ static void __direction_disassembly_cb(void *user, int direction) {
 			r_core_visual_disasm_down (core, &op, &cols);
 			r_core_seek (core, core->addr + cols, true);
 			__set_panel_addr (core, cur, core->addr);
-			r_asm_op_fini (&op);
+			r_anal_op_fini (&op);
 		}
 		break;
 	}
@@ -7666,7 +7662,7 @@ R_API bool r_core_panels_root(RCore *core, RPanelsRoot *panels_root) {
 		}
 		const char *pdc_now = r_config_get (core->config, "cmd.pdc");
 		if (sdb_exists (panels_root->pdc_caches, pdc_now)) {
-			panels_root->cur_pdc_cache = sdb_ptr_get (panels_root->pdc_caches, strdup (pdc_now), 0);
+			panels_root->cur_pdc_cache = sdb_ptr_get (panels_root->pdc_caches, pdc_now, 0);
 		} else {
 			Sdb *sdb = sdb_new0();
 			sdb_ptr_set (panels_root->pdc_caches, strdup (pdc_now), sdb, 0);

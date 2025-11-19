@@ -256,20 +256,21 @@ static bool r_coff_get_entry_helper(RBinCoffObj *obj, RBinAddr *address) {
 		return false;
 	}
 #endif
-	for (i = 0; i < symbol_count; i++) {
-		const char *name = (const char *)symbols + (i * symbol_size);
-		// can be non null terminated
-		if ((!strncmp (name, "_start", symbol_size) || !strncmp (name, "start", symbol_size)) &&
-			r_coff_rebase_sym (obj, address, i)) {
-			return true;
+	if (symbols) {
+		for (i = 0; i < symbol_count; i++) {
+			const char *name = (const char *)symbols + (i * symbol_size);
+			// can be non null terminated
+			if ((!strncmp (name, "_start", symbol_size) || !strncmp (name, "start", symbol_size)) &&
+					r_coff_rebase_sym (obj, address, i)) {
+				return true;
+			}
 		}
-	}
-
-	for (i = 0; i < symbol_count; i++) {
-		const char *name = (const char *)symbols + (i * symbol_size);
-		if ((!strncmp (name, "_main", symbol_size) || !strncmp (name, "main", symbol_size)) &&
-			r_coff_rebase_sym (obj, address, i)) {
-			return true;
+		for (i = 0; i < symbol_count; i++) {
+			const char *name = (const char *)symbols + (i * symbol_size);
+			if ((!strncmp (name, "_main", symbol_size) || !strncmp (name, "main", symbol_size)) &&
+					r_coff_rebase_sym (obj, address, i)) {
+				return true;
+			}
 		}
 	}
 	return false;

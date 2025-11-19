@@ -102,7 +102,7 @@ uint32_t max_rows(int count, ...) {
 
 	for (i = 1; i < count; i++) {
 		x = va_arg(ap, uint32_t);
-		biggest = (x > biggest) ? x : biggest;
+		if (x > biggest) biggest = x;
 	}
 
 	va_end(ap);

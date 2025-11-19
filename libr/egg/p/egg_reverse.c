@@ -5,11 +5,11 @@
 
 static const ut8 armle_osx_reverse[] =
 #include "sc/out/armle-osx-reverse.c"
-;
+	;
 
 static const ut8 x86_freebsd_reverse[] =
 #include "sc/out/x86-freebsd-reverse.c"
-;
+	;
 
 static RBuffer *build(REgg *egg) {
 	RBuffer *buf = r_buf_new ();
@@ -17,15 +17,15 @@ static RBuffer *build(REgg *egg) {
 	const ut8 *sc = NULL;
 	int cd = 0;
 	char *port = r_egg_option_get (egg, "port");
-	//TODO: char *udp = r_egg_option_get (egg, "udp");
+	// TODO: char *udp = r_egg_option_get (egg, "udp");
 	switch (egg->os) {
 	case R_EGG_OS_OSX:
 	case R_EGG_OS_DARWIN:
 		switch (egg->arch) {
 		case R_SYS_ARCH_ARM:
-			sc = (const ut8*)armle_osx_reverse;
+			sc = (const ut8 *)armle_osx_reverse;
 			sc_len = sizeof (armle_osx_reverse) - 1;
-			cd = 7+36;
+			cd = 7 + 36;
 			break;
 		}
 		break;
@@ -47,14 +47,14 @@ static RBuffer *build(REgg *egg) {
 		break;
 	}
 	if (sc) {
-		ut8 *dec = sc_decrypt (sc, sc_len ? sc_len: strlen ((const char *)sc));
+		ut8 *dec = sc_decrypt (sc, sc_len? sc_len: strlen ((const char *)sc));
 		if (dec) {
-			r_buf_set_bytes (buf, dec, sc_len ? sc_len: strlen ((const char *)sc));
+			r_buf_set_bytes (buf, dec, sc_len? sc_len: strlen ((const char *)sc));
 			free (dec);
 			if (R_STR_ISNOTEMPTY (port)) {
 				if (cd) {
 					ut8 nport = atoi (port);
-					r_buf_write_at (buf, cd, (const ut8*)&nport, 1);
+					r_buf_write_at (buf, cd, (const ut8 *)&nport, 1);
 				} else {
 					R_LOG_WARN ("Cannot set port");
 				}
@@ -69,7 +69,7 @@ static RBuffer *build(REgg *egg) {
 	return buf;
 }
 
-//TODO: rename plugin to run
+// TODO: rename plugin to run
 REggPlugin r_egg_plugin_reverse = {
 	.meta = {
 		.name = "reverse",

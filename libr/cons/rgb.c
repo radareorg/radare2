@@ -60,6 +60,24 @@ R_API char *r_cons_rgb_str_off(RCons *cons, char *outstr, size_t sz, ut64 off) {
 	return r_cons_rgb_str (cons, outstr, sz, &rc);
 }
 
+#if 0
+R_API void r_cons_color(RCons *cons, int fg, int r, int g, int b) {
+	int k;
+	r = R_DIM (r, 0, 255);
+	g = R_DIM (g, 0, 255);
+	b = R_DIM (b, 0, 255);
+	if (r == g && g == b) { // b&w
+		k = 232 + (int)(((r+g+b)/3)/10.3);
+	} else {
+		r = (int)(r / 42.6);
+		g = (int)(g / 42.6);
+		b = (int)(b / 42.6);
+		k = 16 + (r * 36) + (g * 6) + b;
+	}
+	r_cons_printf (cons, "\x1b[%d;5;%dm", fg? 48: 38, k);
+}
+#endif
+
 /* Compute color string depending on cons->color */
 static void rgb_gen(RCons *cons, RConsColorMode mode, char *outstr, size_t sz, ut8 attr, ut8 a, ut8 r, ut8 g, ut8 b, st8 id16) {
 	ut8 fgbg = (a == ALPHA_BG)? 48: 38; // ANSI codes for Background/Foreground

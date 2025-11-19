@@ -78,15 +78,15 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 		char *f_name = strdup (string->string);
 		r_name_filter (f_name, -1);
 		if (bin->prefix) {
-			io->cb_printf ("f %s.str.%s %u @ 0x%08"PFMT64x"\n"
-					"Cs %u @ 0x%08"PFMT64x"\n",
-					bin->prefix, f_name, string->size, addr,
-					string->size, addr);
+			io->cb_printf ("'0x%08"PFMT64x"'f %s.str.%s %u\n"
+					"'0x%08"PFMT64x"'Cs %u\n",
+					addr, bin->prefix, f_name, string->size,
+					addr, string->size);
 		} else {
-			io->cb_printf ("f str.%s %u @ 0x%08"PFMT64x"\n"
-					"Cs %u @ 0x%08"PFMT64x"\n",
-					f_name, string->size, addr,
-					string->size, addr);
+			io->cb_printf ("'0x%08"PFMT64x"'f str.%s %u\n"
+					"'0x%08"PFMT64x"'Cs %u\n",
+					addr, f_name, string->size,
+					addr, string->size);
 		}
 		free (f_name);
 		break;
@@ -106,7 +106,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 	RBin *bin = bf->rbin;
 	const bool strings_nofp = bin->strings_nofp;
 	ut8 tmp[64]; // temporal buffer to encode characters in utf8 form
-	RStrBuf *sb = r_strbuf_new ("");
+	RStrBuf *sb = NULL;
 	ut64 str_start, needle = from;
 	int i, rc, runes;
 	int str_type = R_STRING_TYPE_DETECT;
@@ -140,6 +140,11 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 	}
 	ut8 *buf = calloc (len, 1);
 	if (!buf || !min) {
+		free (buf);
+		return -1;
+	}
+	sb = r_strbuf_new ("");
+	if (!sb) {
 		free (buf);
 		return -1;
 	}
@@ -455,7 +460,7 @@ static bool is_data_section(RBinFile *a, RBinSection *s) {
 		return true;
 	}
  	// Rust
-	return strstr (s->name, "_const");
+	return s->name && strstr (s->name, "_const");
 }
 
 static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, bool nofp, ut64 from, ut64 to, RBinSection *section) {
@@ -718,6 +723,7 @@ static void addrline_store_fini(RBinAddrLineStore *als) {
 		r_bloom_free (store->bloomGet);
 #endif
 		r_list_free (store->list);
+		r_strpool_free (store->pool);
 	}
 	free (als->storage);
 }
@@ -751,18 +757,16 @@ R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, ut64 file_sz, RBinFi
 
 static RBinPlugin *get_plugin_from_buffer(RBin *bin, RBinFile *bf, const char *pluginname, RBuffer *buf) {
 	RBinPlugin *plugin = bin->force? r_bin_get_binplugin_by_name (bin, bin->force): NULL;
-	if (plugin) {
-		return plugin;
+	if (!plugin) {
+		plugin = pluginname? r_bin_get_binplugin_by_name (bin, pluginname): NULL;
+		if (!plugin) {
+			plugin = r_bin_get_binplugin_by_buffer (bin, bf, buf);
+			if (!plugin) {
+				return r_bin_get_binplugin_by_name (bin, "any");
+			}
+		}
 	}
-	plugin = pluginname? r_bin_get_binplugin_by_name (bin, pluginname): NULL;
-	if (plugin) {
-		return plugin;
-	}
-	plugin = r_bin_get_binplugin_by_buffer (bin, bf, buf);
-	if (plugin) {
-		return plugin;
-	}
-	return r_bin_get_binplugin_by_name (bin, "any");
+	return plugin;
 }
 
 R_API bool r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf, ut64 baseaddr, ut64 loadaddr, RBinXtrData *data) {
@@ -1113,6 +1117,9 @@ R_IPI RList *r_bin_file_get_strings(RBinFile *bf, int min, int dump, int raw) {
 			}
 		}
 		r_list_foreach (o->sections, iter, section) {
+			if (!section->name) {
+				continue;
+			}
 			/* load objc/swift strings */
 			const int bits = (bf->bo && bf->bo->info) ? bf->bo->info->bits : 32;
 			const int cfstr_size = (bits == 64) ? 32 : 16;

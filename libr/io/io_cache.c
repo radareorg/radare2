@@ -343,14 +343,18 @@ R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to, bool many) {
 			if (r_itv_begin (ci->itv) < r_itv_begin (itv)) {
 				ci->itv.size = itv.addr - ci->itv.addr;
 				ut8 *cidata = realloc (ci->data, (size_t)r_itv_size (ci->itv));
-				ut8 *ciodata = realloc (ci->odata, (size_t)r_itv_size (ci->itv));
-				if (cidata && ciodata) {
-					ci->data = cidata;
-					ci->odata = ciodata;
-				} else {
+				if (!cidata) {
 					R_LOG_ERROR ("Invalid size");
 					continue;
 				}
+				ut8 *ciodata = realloc (ci->odata, (size_t)r_itv_size (ci->itv));
+				if (!ciodata) {
+					R_LOG_ERROR ("Invalid size");
+					R_FREE (cidata);
+					continue;
+				}
+				ci->data = cidata;
+				ci->odata = ciodata;
 				if (ci->tree_itv) {
 					if (!r_itv_overlap (ci->itv, ci->tree_itv[0])) {
 						invalidated_cache_bytes += r_itv_size (ci->tree_itv[0]);

@@ -1040,66 +1040,63 @@ static void __table_column_free(void *_col) {
 }
 
 R_API void r_table_columns(RTable *t, RList *col_names) {
-	// 1 bool per OLD column to indicate whether it should be freed (masked out)
-	bool *free_cols = malloc (sizeof (bool) * r_list_length (t->cols));
-	if (!free_cols) {
+	size_t old_col_count = r_list_length (t->cols);
+	bool *used_cols = calloc (old_col_count, sizeof (bool));
+	if (!used_cols) {
 		return;
 	}
-	size_t i;
-	for (i = 0; i < r_list_length (t->cols); i++) {
-		free_cols[i] = true;
-	}
 
-	// 1 value per NEW column to indicate from which OLD column to take the info from and whether to dup it
+	size_t max_new = r_list_length (col_names);
 	struct col_source {
 		int oldcol;
 		bool dup;
-	} *col_sources = calloc (r_list_length (col_names), sizeof (struct col_source));
-	if (!col_sources) {
-		free (free_cols);
+	} *plan = calloc (max_new, sizeof (struct col_source));
+	if (!plan) {
+		free (used_cols);
 		return;
 	}
 
-	// First create the plan which new columns to take from which old, which ones to dup or free.
-	RListIter *it;
+	RListIter *iter;
 	const char *col_name;
-	size_t new_count = 0;
-	r_list_foreach (col_names, it, col_name) {
-		int fc = r_table_column_nth (t, col_name);
-		if (fc < 0) {
+	size_t plan_size = 0;
+	size_t plan_idx;
+	size_t idx;
+	size_t col_idx;
+	r_list_foreach (col_names, iter, col_name) {
+		int oldcol = r_table_column_nth (t, col_name);
+		if (oldcol < 0) {
 			continue;
 		}
-		col_sources[new_count].oldcol = fc;
-		col_sources[new_count].dup = !free_cols[fc]; // if we already used the same old column for another new column before, we must dup it for all following!
-		free_cols[fc] = false;
-		new_count++;
+		plan[plan_size].oldcol = oldcol;
+		plan[plan_size].dup = used_cols[oldcol];
+		used_cols[oldcol] = true;
+		plan_size++;
 	}
 
 	RTableRow *row;
-	r_list_foreach (t->rows, it, row) {
+	r_list_foreach (t->rows, iter, row) {
 		RList *old_items = row->items;
 		RList *new_items = r_list_newf (free);
-		for (i = 0; i < new_count; i++) {
-			char *item = r_list_get_n (old_items, col_sources[i].oldcol);
+		for (plan_idx = 0; plan_idx < plan_size; plan_idx++) {
+			char *item = r_list_get_n (old_items, plan[plan_idx].oldcol);
 			if (!item) {
 				continue;
 			}
-			if (col_sources[i].dup) {
+			if (plan[plan_idx].dup) {
 				item = strdup (item);
 			}
 			r_list_append (new_items, item);
 		}
 		row->items = new_items;
 
-		// Free dropped items
 		char *item;
-		i = 0;
+		idx = 0;
 		RListIter *fit;
 		r_list_foreach (old_items, fit, item) {
-			if (free_cols[i]) {
+			if (!used_cols[idx]) {
 				free (item);
 			}
-			i++;
+			idx++;
 		}
 		old_items->free = NULL;
 		r_list_free (old_items);
@@ -1107,32 +1104,31 @@ R_API void r_table_columns(RTable *t, RList *col_names) {
 
 	RList *old_cols = t->cols;
 	RList *new_cols = r_list_newf (r_table_column_free);
-	for (i = 0; i < new_count; i++) {
-		RTableColumn *col = r_list_get_n (old_cols, col_sources[i].oldcol);
+	for (plan_idx = 0; plan_idx < plan_size; plan_idx++) {
+		RTableColumn *col = r_list_get_n (old_cols, plan[plan_idx].oldcol);
 		if (!col) {
 			continue;
 		}
-		if (col_sources[i].dup) {
+		if (plan[plan_idx].dup) {
 			col = r_table_column_clone (col);
 		}
 		r_list_append (new_cols, col);
 	}
 	t->cols = new_cols;
 
-	// Free dropped columns
 	RTableColumn *col;
-	i = 0;
-	r_list_foreach (old_cols, it, col) {
-		if (free_cols[i]) {
+	col_idx = 0;
+	r_list_foreach (old_cols, iter, col) {
+		if (!used_cols[col_idx]) {
 			r_table_column_free (col);
 		}
-		i++;
+		col_idx++;
 	}
 	old_cols->free = NULL;
 	r_list_free (old_cols);
 
-	free (col_sources);
-	free (free_cols);
+	free (plan);
+	free (used_cols);
 }
 
 R_API void r_table_filter_columns(RTable *t, RList *list) {

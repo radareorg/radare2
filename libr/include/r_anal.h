@@ -493,6 +493,7 @@ typedef struct r_anal_t {
 	RAnalBacktraces btstore;
 	/* private */
 	RThreadLock *lock;
+	RList *eligible;
 	ut64 cmpval;
 	ut64 lea_jmptbl_ip;
 	int cs_obits;
@@ -786,7 +787,12 @@ typedef struct r_anal_esil_dfg_node_t {
 
 typedef bool (*RAnalCmdCallback)(/* Rcore */RAnal *anal, const char* input);
 
+typedef struct {
+	bool jmptbl_found;
+} RAnalOpFlow;
+
 typedef int (*RAnalOpCallback)(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask);
+typedef RAnalOpFlow (*RAnalOpFlowCallback)(RAnal *a, RAnalOp *op);
 typedef int (*RAnalOpAsmCallback)(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int outlen);
 
 typedef bool (*RAnalPluginEligible)(RAnal *a);
@@ -819,6 +825,7 @@ typedef struct r_anal_plugin_t {
 	// legacy r_anal_functions
 	RAnalOpCallback op;
 	RAnalCmdCallback cmd;
+	RAnalOpFlowCallback opflow;
 
 	// implement custom types parser and dumper
 	RAnalTypesParserText tparse_text;
@@ -1007,7 +1014,7 @@ R_API ut64 r_anal_function_max_addr(RAnalFunction *fcn);
 R_API ut64 r_anal_function_size_from_entry(RAnalFunction *fcn);
 
 // the "real" size of the function, that is the sum of the size of the
-// basicblocks this function is composed of
+// basicblocks this function is composed of -- i think it should be just _size()
 R_API ut64 r_anal_function_realsize(const RAnalFunction *fcn);
 
 // returns whether the function contains a basic block that contains addr
@@ -1238,6 +1245,7 @@ R_API const char *r_anal_cond_typeexpr_tostring(int cc);
 
 /* jmptbl */
 R_API bool r_anal_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut64 jmpaddr, ut64 table, ut64 tablesize, ut64 default_addr);
+R_API void r_anal_jmptbl_list(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, ut64 saddr, ut64 jaddr, RList *cases, int loadsz);
 
 // TODO: should be renamed
 R_API bool try_get_delta_jmptbl_info(RAnal *a, RAnalFunction *fcn, ut64 jmp_addr, ut64 lea_addr, ut64 *table_size, ut64 *default_case, st64 *start_casenum_shift);

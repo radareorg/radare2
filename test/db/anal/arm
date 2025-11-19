@@ -420,7 +420,7 @@ af
 afl~[2]
 EOF
 EXPECT=<<EOF
-12
+20
 EOF
 RUN
 
@@ -435,7 +435,7 @@ af
 afl~[2]
 EOF
 EXPECT=<<EOF
-8
+16
 EOF
 RUN
 
@@ -924,7 +924,7 @@ wx+ d90d9828440d90139d109c
 s 0
 af
 pds 1@0x2e~:1
-(foo;?== `Cd.` 2;?? echo fail;s+2)
+(foo;?== `Cd.` 2;?ne echo fail;s+2)
 92.(foo) @ switch.0x0000002e + 4
 EOF
 EXPECT=<<EOF

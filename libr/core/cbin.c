@@ -327,10 +327,8 @@ R_API bool r_core_bin_set_cur(RCore *core, RBinFile *binfile) {
 	if (!core->bin) {
 		return false;
 	}
-	if (!binfile) {
-		if (core && core->io->desc) {
-			fd = core->io->desc->fd;
-		}
+	if (!binfile && core->io->desc) {
+		fd = core->io->desc->fd;
 	}
 	// Find first available binfile
 	if (fd == UT32_MAX) {
@@ -2002,14 +2000,16 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 				}
 				int reloc_size = 4;
 				// char *n = r_name_filter_quoted_shell (name);
-				char *n = strdup (name);
-				r_name_filter (n, -1);
-				r_cons_printf (core->cons, "'f %s%s%s %d 0x%08"PFMT64x"\n",
-					r_str_get_fail (core->bin->prefix, "reloc."),
-					core->bin->prefix ? "." : "", n, reloc_size, addr);
-				add_metadata (core, reloc, addr, mode);
-				free (n);
-				free (name);
+				{
+					char *n = strdup (name);
+					r_name_filter (n, -1);
+					r_cons_printf (core->cons, "'f %s%s%s %d 0x%08"PFMT64x"\n",
+							r_str_get_fail (core->bin->prefix, "reloc."),
+							core->bin->prefix ? "." : "", n, reloc_size, addr);
+					add_metadata (core, reloc, addr, mode);
+					free (n);
+					free (name);
+				}
 #if 0
 				if (reloc->symbol && reloc->symbol->vaddr != addr) {
 					// ut64 saddr = reloc->symbol->vaddr;
@@ -2040,7 +2040,7 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 			}
 
 			// check if name is available
-			if (relname && *relname) {
+			if (R_STR_ISNOTEMPTY (relname)) {
 				pj_ks (pj, "name", relname);
 			}
 			if (R_STR_ISNOTEMPTY (mn)) {
@@ -2058,9 +2058,7 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 			pj_end (pj);
 
 			free (mn);
-			if (relname) {
-				free (relname);
-			}
+			free (relname);
 		} else if (IS_MODE_NORMAL (mode)) {
 			if (addr == UT64_MAX) {
 				R_LOG_DEBUG ("Cannot resolve address for %s", bin_reloc_type_name (reloc));
@@ -2964,6 +2962,7 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 			const char *bind = r_str_get_fail (symbol->bind, "NONE");
 			const char *type = r_str_get_fail (symbol->type, "NONE");
 			const char *n = r_str_getf (sn.demname? sn.demname: sn.name);
+			const char *nn = (sn.name && strcmp (n, sn.name))? n: "";
 			// const char *fwd = r_str_getf (symbol->forwarder);
 			r_table_add_rowf (table, "dXXssdsss",
 					symbol->ordinal,
@@ -2973,8 +2972,7 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 					type,
 					symbol->size,
 					r_str_get (symbol->libname),
-					sn.name,
-					strcmp (n, sn.name)? n: "");
+					sn.name, nn);
 		}
 next:
 		snFini (&sn);
@@ -5374,12 +5372,12 @@ R_API char *r_core_bin_attr_tostring(RCore *core, ut64 flags, int mode) {
 			char *flag_string = r_bin_attr_tostring (flags, true);
 			if (flag_string) {
 				r_strbuf_append (buf, flag_string);
+				len -= strlen (flag_string);
+				if (len < 1) {
+					len = 1;
+				}
+				free (flag_string);
 			}
-			len -= strlen (flag_string);
-			if (len < 1) {
-				len = 1;
-			}
-			free (flag_string);
 		}
 		for ( ; len > 0; len--) {
 			r_strbuf_append (buf, " ");

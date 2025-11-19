@@ -187,7 +187,7 @@ static bool pcap_obj_init_recs(pcap_obj_t *obj) {
 		rec_hdr->ts_usec = r_buf_read_ble32_at (obj->b, off + 4, obj->bigendian);
 		rec_hdr->incl_len = r_buf_read_ble32_at (obj->b, off + 8, obj->bigendian);
 		rec_hdr->orig_len = r_buf_read_ble32_at (obj->b, off + 12, obj->bigendian);
-		if (off + sizeof (rec_hdr) + rec_hdr->incl_len > size) {
+		if (off + sizeof (pcaprec_hdr_t) + rec_hdr->incl_len > size) {
 			free (rec_hdr);
 			goto error;
 		}

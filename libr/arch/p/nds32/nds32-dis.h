@@ -164,10 +164,10 @@ static const char *mnemonic_fd2_cmp[] =
 
 static const char *gpr_map[] =
 {
-  "$r0", "$r1", "$r2", "$r3", "$r4", "$r5", "$r6", "$r7",
-  "$r8", "$r9", "$r10", "$r11", "$r12", "$r13", "$r14", "$r15",
-  "$r16", "$r17", "$r18", "$r19", "$r20", "$r21", "$r22", "$r23",
-  "$r24", "$r25", "$r26", "$r27", "$fp", "$gp", "$lp", "$sp"
+  "$a0", "$a1", "$a2", "$a3", "$a4", "$a5", "$s0", "$s1",
+  "$s2", "$s3", "$s4", "$s5", "$s6", "$s7", "$s8", "$ta",
+  "$t0", "$t1", "$t2", "$t3", "$t4", "$t5", "$t6", "$t7",
+  "$t8", "$t9", "$p0", "$p1", "$fp", "$gp", "$lp", "$sp"
 };
 
 /* User special register.  */
@@ -429,7 +429,7 @@ print_insn16 (bfd_vma pc, disassemble_info *info, uint32_t insn)
       return;
     case 0x3c:			/* ifcall9 */
       func (stream, "%s\t", mnemonic_96[__GF (insn, 9, 6)]);
-      info->print_address_func ((IMMU (insn, 9) << 1) + pc, info);
+      info->print_address_func ((IMMS (insn, 9) << 1) + pc, info);
       return;
     case 0x3d:			/* movpi45 */
       func (stream, "%s\t%s, %d", mnemonic_96[__GF (insn, 9, 6)],

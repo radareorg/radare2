@@ -1,0 +1,362 @@
+NAME=SOM: info
+FILE=bins/som/bigram
+CMDS=i;il
+EXPECT=<<EOF
+fd       3
+file     som
+size     0x7019
+humansz  28.0K
+mode     r-x
+format   som
+iorw     false
+block    0x100
+type     DYN
+arch     hppa
+baddr    0xc0000000
+binsz    28697
+bits     32
+canary   false
+injprot  false
+retguard false
+crypto   false
+endian   big
+havecode true
+intrp    /usr/lib/dld.sl
+laddr    0x0
+linenum  false
+lsyms    false
+nx       false
+os       hpux
+pic      false
+relocs   false
+sanitize false
+static   false
+stripped false
+va       true
+/usr/lib/libc.2
+EOF
+RUN
+
+NAME=SOM: sections
+FILE=bins/som/bigram
+CMDS=iS
+EXPECT=<<EOF
+nth paddr         size vaddr         vsize perm flags type name
+---------------------------------------------------------------
+0   0x00001000   0x94b 0xc0001000    0x94b -rwx 0x0   ---- $SHLIB_INFO$
+1   0x0000194c   0x5c4 0xc000194c    0x5c4 -rwx 0x0   ---- $MILLICODE$
+2   0x00001f10  0x3390 0xc0001f10   0x3390 -rwx 0x0   ---- $CODE$
+3   0x000052a0   0x160 0xc00052a0    0x160 -rwx 0x0   ---- $LIT$
+4   0x00005400   0x580 0xc0005400    0x580 -rwx 0x0   ---- $UNWIND_START$
+5   0x00005980    0x98 0xc0005980     0x98 -rwx 0x0   ---- $UNWIND_END$
+6   0x00005a18     0x0 0xc0005a18      0x0 -rwx 0x0   ---- $RECOVER_START$
+7   0x00005a18     0x4 0xc0005a18      0x4 -rwx 0x0   ---- $RECOVER_END$
+8   0x00006000     0x0 0x100001000     0x0 -r-x 0x0   ---- $DATA_START$
+9   0x00006000     0x8 0x100001000     0x8 -r-x 0x0   ---- $PFA_COUNTER$
+10  0x00006008     0x0 0x100001008     0x0 -r-x 0x0   ---- $PFA_COUNTER_END$
+11  0x00006008   0x140 0x100001008   0x140 -r-x 0x0   ---- $DATA$
+12  0x00006148    0x10 0x100001148    0x10 -r-x 0x0   ---- $SHORTDATA$
+13  0x00006158    0xd0 0x100001158    0xd0 -r-x 0x0   ---- $PLT$
+14  0x00006228    0x84 0x100001228    0x84 -r-x 0x0   ---- $DLT$
+15  0x000062b0    0x10 0x1000012b0    0x10 -r-x 0x0   ---- $GLOBAL$
+16  0x00000000   0x1a0 0x1000012c0   0x1a0 -r-x 0x0   ---- $BSS$
+EOF
+RUN
+
+NAME=SOM: entrypoint
+FILE=bins/som/bigram
+CMDS=ieq
+EXPECT=<<EOF
+0xc0001000
+EOF
+RUN
+
+NAME=SOM: libdb symbols
+FILE=bins/som/find
+CMDS=il;i;ih;ii
+EXPECT=<<EOF
+/usr/lib/libc.2
+fd       3
+file     som
+size     0x2801a
+humansz  160.0K
+mode     r-x
+format   som
+iorw     false
+block    0x100
+type     DYN
+arch     hppa
+baddr    0xc0000000
+binsz    163866
+bits     32
+canary   false
+injprot  false
+retguard false
+crypto   false
+endian   big
+havecode true
+intrp    /usr/lib/dld.sl
+laddr    0x0
+linenum  false
+lsyms    false
+nx       false
+os       hpux
+pic      false
+relocs   false
+sanitize false
+static   false
+stripped false
+va       true
+0x00000002 0x00000002 0x00000108 SOM MAGIC; Magic number
+0x00000004 0x00000004 0x05124000 Version ID; Version identifier
+0x00000010 0x00000010 0x00000000 Entry Space; Entry point space
+0x00000014 0x00000014 0x00000000 Entry Subspace; Entry point subspace
+0x00000018 0x00000018 0x00000000 Entry Offset; Entry point offset
+0x00000024 0x00000024 0x0002801a SOM Length; Total file length
+nth vaddr      bind   type   lib name
+-------------------------------------
+0   0x00000000 GLOBAL NOTYPE     _ktepv
+0   0x00000000 GLOBAL NOTYPE     __SB_masks
+0   0x00000000 GLOBAL NOTYPE     errno
+0   0x00000000 GLOBAL NOTYPE     _tepv
+0   0x00000000 GLOBAL NOTYPE     __iob
+0   0x00000000 GLOBAL NOTYPE     __ismt
+0   0x00000000 GLOBAL NOTYPE     signal
+0   0x00000000 GLOBAL NOTYPE     chdir
+0   0x00000000 GLOBAL NOTYPE     puts
+0   0x00000000 GLOBAL NOTYPE     setmntent
+0   0x00000000 GLOBAL NOTYPE     __sys_atexit
+0   0x00000000 GLOBAL NOTYPE     memcmp
+0   0x00000000 GLOBAL NOTYPE     endgrent
+0   0x00000000 GLOBAL NOTYPE     getpwuid
+0   0x00000000 GLOBAL NOTYPE     _U_Qfcnvfxt_quad_to_dbl
+0   0x00000000 GLOBAL NOTYPE     malloc
+0   0x00000000 GLOBAL NOTYPE     _isupper
+0   0x00000000 GLOBAL NOTYPE     memchr
+0   0x00000000 GLOBAL NOTYPE     _U_Qfdiv
+0   0x00000000 GLOBAL NOTYPE     _U_Qfcnvfxt_quad_to_quad
+0   0x00000000 GLOBAL NOTYPE     ctime
+0   0x00000000 GLOBAL NOTYPE     strrchr
+0   0x00000000 GLOBAL NOTYPE     getgrnam
+0   0x00000000 GLOBAL NOTYPE     sprintf
+0   0x00000000 GLOBAL NOTYPE     strcpy
+0   0x00000000 GLOBAL NOTYPE     endmntent
+0   0x00000000 GLOBAL NOTYPE     strcmp
+0   0x00000000 GLOBAL NOTYPE     _U_Qfcnvxf_dbl_to_quad
+0   0x00000000 GLOBAL NOTYPE     fork
+0   0x00000000 GLOBAL NOTYPE     memmove
+0   0x00000000 GLOBAL NOTYPE     strchr
+0   0x00000000 GLOBAL NOTYPE     _start
+0   0x00000000 GLOBAL NOTYPE     calloc
+0   0x00000000 GLOBAL NOTYPE     sysconf
+0   0x00000000 GLOBAL NOTYPE     tolower
+0   0x00000000 GLOBAL NOTYPE     _isdigit
+0   0x00000000 GLOBAL NOTYPE     fclose
+0   0x00000000 GLOBAL NOTYPE     fprintf
+0   0x00000000 GLOBAL NOTYPE     _U_Qfcnvxf_sgl_to_quad
+0   0x00000000 GLOBAL NOTYPE     localeconv
+0   0x00000000 GLOBAL NOTYPE     umask
+0   0x00000000 GLOBAL NOTYPE     exit
+0   0x00000000 GLOBAL NOTYPE     realloc
+0   0x00000000 GLOBAL NOTYPE     readdir
+0   0x00000000 GLOBAL NOTYPE     putchar
+0   0x00000000 GLOBAL NOTYPE     fchdir
+0   0x00000000 GLOBAL NOTYPE     closedir
+0   0x00000000 GLOBAL NOTYPE     endpwent
+0   0x00000000 GLOBAL NOTYPE     strcat
+0   0x00000000 GLOBAL NOTYPE     strncpy
+0   0x00000000 GLOBAL NOTYPE     __lstat64
+0   0x00000000 GLOBAL NOTYPE     fwrite
+0   0x00000000 GLOBAL NOTYPE     getmntent
+0   0x00000000 GLOBAL NOTYPE     btowc
+0   0x00000000 GLOBAL NOTYPE     strncmp
+0   0x00000000 GLOBAL NOTYPE     getpwnam
+0   0x00000000 GLOBAL NOTYPE     iswctype
+0   0x00000000 GLOBAL NOTYPE     strdup
+0   0x00000000 GLOBAL NOTYPE     remove
+0   0x00000000 GLOBAL NOTYPE     __open64
+0   0x00000000 GLOBAL NOTYPE     __stat64
+0   0x00000000 GLOBAL NOTYPE     vfprintf
+0   0x00000000 GLOBAL NOTYPE     getcwd
+0   0x00000000 GLOBAL NOTYPE     __filbuf
+0   0x00000000 GLOBAL NOTYPE     _islower
+0   0x00000000 GLOBAL NOTYPE     _exit
+0   0x00000000 GLOBAL NOTYPE     getenv
+0   0x00000000 GLOBAL NOTYPE     waitpid
+0   0x00000000 GLOBAL NOTYPE     setlocale
+0   0x00000000 GLOBAL NOTYPE     strtoul
+0   0x00000000 GLOBAL NOTYPE     __errno
+0   0x00000000 GLOBAL NOTYPE     atexit
+0   0x00000000 GLOBAL NOTYPE     _isspace
+0   0x00000000 GLOBAL NOTYPE     fflush
+0   0x00000000 GLOBAL NOTYPE     strlen
+0   0x00000000 GLOBAL NOTYPE     __flsbuf
+0   0x00000000 GLOBAL NOTYPE     printf
+0   0x00000000 GLOBAL NOTYPE     _U_Qfcmp
+0   0x00000000 GLOBAL NOTYPE     __fopen64
+0   0x00000000 GLOBAL NOTYPE     fputs
+0   0x00000000 GLOBAL NOTYPE     _isprint
+0   0x00000000 GLOBAL NOTYPE     isatty
+0   0x00000000 GLOBAL NOTYPE     atoi
+0   0x00000000 GLOBAL NOTYPE     __strtoull
+0   0x00000000 GLOBAL NOTYPE     __assert
+0   0x00000000 GLOBAL NOTYPE     getgrgid
+0   0x00000000 GLOBAL NOTYPE     time
+0   0x00000000 GLOBAL NOTYPE     _U_Qfadd
+0   0x00000000 GLOBAL NOTYPE     strftime
+0   0x00000000 GLOBAL NOTYPE     opendir
+0   0x00000000 GLOBAL NOTYPE     _isalnum
+0   0x00000000 GLOBAL NOTYPE     readlink
+0   0x00000000 GLOBAL NOTYPE     free
+0   0x00000000 GLOBAL NOTYPE     strstr
+0   0x00000000 GLOBAL NOTYPE     _U_Qfmpy
+0   0x00000000 GLOBAL NOTYPE     wctype
+0   0x00000000 GLOBAL NOTYPE     close
+0   0x00000000 GLOBAL NOTYPE     abort
+0   0x00000000 GLOBAL NOTYPE     execvp
+0   0x00000000 GLOBAL NOTYPE     __tolower
+0   0x00000000 GLOBAL NOTYPE     _U_Qfsub
+0   0x00000000 GLOBAL NOTYPE     memcpy
+0   0x00000000 GLOBAL NOTYPE     strerror
+0   0x00000000 GLOBAL NOTYPE     localtime
+0   0x00000000 GLOBAL NOTYPE     strspn
+0   0x00000000 GLOBAL NOTYPE     memset
+0   0x00000000 GLOBAL NOTYPE     __d_trap
+0   0x00000000 GLOBAL NOTYPE     invoke_fini
+0   0x00000000 GLOBAL NOTYPE     optionl_stat
+0   0x00000000 GLOBAL NOTYPE     optionp_stat
+0   0x00000000 GLOBAL NOTYPE     optionh_stat
+0   0x00000000 GLOBAL NOTYPE     pred_execdir
+0   0x00000000 GLOBAL NOTYPE     pred_okdir
+0   0x00000000 GLOBAL NOTYPE     pred_exec
+0   0x00000000 GLOBAL NOTYPE     close_stdout
+0   0x00000000 GLOBAL NOTYPE     parse_negate
+0   0x00000000 GLOBAL NOTYPE     parse_open
+0   0x00000000 GLOBAL NOTYPE     parse_close
+0   0x00000000 GLOBAL NOTYPE     parse_comma
+0   0x00000000 GLOBAL NOTYPE     parse_and
+0   0x00000000 GLOBAL NOTYPE     parse_amin
+0   0x00000000 GLOBAL NOTYPE     parse_anewer
+0   0x00000000 GLOBAL NOTYPE     parse_atime
+0   0x00000000 GLOBAL NOTYPE     parse_cmin
+0   0x00000000 GLOBAL NOTYPE     parse_cnewer
+0   0x00000000 GLOBAL NOTYPE     parse_ctime
+0   0x00000000 GLOBAL NOTYPE     parse_daystart
+0   0x00000000 GLOBAL NOTYPE     parse_delete
+0   0x00000000 GLOBAL NOTYPE     parse_d
+0   0x00000000 GLOBAL NOTYPE     parse_depth
+0   0x00000000 GLOBAL NOTYPE     parse_empty
+0   0x00000000 GLOBAL NOTYPE     parse_exec
+0   0x00000000 GLOBAL NOTYPE     parse_execdir
+0   0x00000000 GLOBAL NOTYPE     parse_false
+0   0x00000000 GLOBAL NOTYPE     parse_fls
+0   0x00000000 GLOBAL NOTYPE     parse_follow
+0   0x00000000 GLOBAL NOTYPE     parse_fprint
+0   0x00000000 GLOBAL NOTYPE     parse_fprint0
+0   0x00000000 GLOBAL NOTYPE     parse_fprintf
+0   0x00000000 GLOBAL NOTYPE     parse_fstype
+0   0x00000000 GLOBAL NOTYPE     parse_gid
+0   0x00000000 GLOBAL NOTYPE     parse_group
+0   0x00000000 GLOBAL NOTYPE     parse_help
+0   0x00000000 GLOBAL NOTYPE     parse_ignore_race
+0   0x00000000 GLOBAL NOTYPE     parse_ilname
+0   0x00000000 GLOBAL NOTYPE     parse_iname
+0   0x00000000 GLOBAL NOTYPE     parse_inum
+0   0x00000000 GLOBAL NOTYPE     parse_ipath
+0   0x00000000 GLOBAL NOTYPE     parse_iregex
+0   0x00000000 GLOBAL NOTYPE     parse_iwholename
+0   0x00000000 GLOBAL NOTYPE     parse_links
+0   0x00000000 GLOBAL NOTYPE     parse_lname
+0   0x00000000 GLOBAL NOTYPE     parse_ls
+0   0x00000000 GLOBAL NOTYPE     parse_maxdepth
+0   0x00000000 GLOBAL NOTYPE     parse_mindepth
+0   0x00000000 GLOBAL NOTYPE     parse_mmin
+0   0x00000000 GLOBAL NOTYPE     parse_xdev
+0   0x00000000 GLOBAL NOTYPE     parse_mtime
+0   0x00000000 GLOBAL NOTYPE     parse_name
+0   0x00000000 GLOBAL NOTYPE     parse_newer
+0   0x00000000 GLOBAL NOTYPE     parse_noleaf
+0   0x00000000 GLOBAL NOTYPE     parse_nogroup
+0   0x00000000 GLOBAL NOTYPE     parse_nouser
+0   0x00000000 GLOBAL NOTYPE     parse_noignore_race
+0   0x00000000 GLOBAL NOTYPE     parse_nowarn
+0   0x00000000 GLOBAL NOTYPE     parse_or
+0   0x00000000 GLOBAL NOTYPE     parse_ok
+0   0x00000000 GLOBAL NOTYPE     parse_okdir
+0   0x00000000 GLOBAL NOTYPE     parse_path
+0   0x00000000 GLOBAL NOTYPE     parse_perm
+0   0x00000000 GLOBAL NOTYPE     parse_print
+0   0x00000000 GLOBAL NOTYPE     parse_print0
+0   0x00000000 GLOBAL NOTYPE     parse_printf
+0   0x00000000 GLOBAL NOTYPE     parse_prune
+0   0x00000000 GLOBAL NOTYPE     parse_quit
+0   0x00000000 GLOBAL NOTYPE     parse_regex
+0   0x00000000 GLOBAL NOTYPE     parse_samefile
+0   0x00000000 GLOBAL NOTYPE     parse_size
+0   0x00000000 GLOBAL NOTYPE     parse_true
+0   0x00000000 GLOBAL NOTYPE     parse_type
+0   0x00000000 GLOBAL NOTYPE     parse_uid
+0   0x00000000 GLOBAL NOTYPE     parse_used
+0   0x00000000 GLOBAL NOTYPE     parse_user
+0   0x00000000 GLOBAL NOTYPE     parse_version
+0   0x00000000 GLOBAL NOTYPE     parse_warn
+0   0x00000000 GLOBAL NOTYPE     parse_wholename
+0   0x00000000 GLOBAL NOTYPE     parse_xtype
+0   0x00000000 GLOBAL NOTYPE     pred_and
+0   0x00000000 GLOBAL NOTYPE     pred_anewer
+0   0x00000000 GLOBAL NOTYPE     pred_close
+0   0x00000000 GLOBAL NOTYPE     pred_cnewer
+0   0x00000000 GLOBAL NOTYPE     pred_comma
+0   0x00000000 GLOBAL NOTYPE     pred_delete
+0   0x00000000 GLOBAL NOTYPE     pred_empty
+0   0x00000000 GLOBAL NOTYPE     pred_false
+0   0x00000000 GLOBAL NOTYPE     pred_fls
+0   0x00000000 GLOBAL NOTYPE     pred_fprint
+0   0x00000000 GLOBAL NOTYPE     pred_fprint0
+0   0x00000000 GLOBAL NOTYPE     pred_fstype
+0   0x00000000 GLOBAL NOTYPE     pred_group
+0   0x00000000 GLOBAL NOTYPE     pred_ilname
+0   0x00000000 GLOBAL NOTYPE     pred_iname
+0   0x00000000 GLOBAL NOTYPE     pred_ipath
+0   0x00000000 GLOBAL NOTYPE     pred_lname
+0   0x00000000 GLOBAL NOTYPE     pred_ls
+0   0x00000000 GLOBAL NOTYPE     pred_name
+0   0x00000000 GLOBAL NOTYPE     pred_negate
+0   0x00000000 GLOBAL NOTYPE     pred_newer
+0   0x00000000 GLOBAL NOTYPE     pred_nogroup
+0   0x00000000 GLOBAL NOTYPE     pred_nouser
+0   0x00000000 GLOBAL NOTYPE     pred_open
+0   0x00000000 GLOBAL NOTYPE     pred_or
+0   0x00000000 GLOBAL NOTYPE     pred_path
+0   0x00000000 GLOBAL NOTYPE     pred_perm
+0   0x00000000 GLOBAL NOTYPE     pred_print
+0   0x00000000 GLOBAL NOTYPE     pred_print0
+0   0x00000000 GLOBAL NOTYPE     pred_prune
+0   0x00000000 GLOBAL NOTYPE     pred_quit
+0   0x00000000 GLOBAL NOTYPE     pred_regex
+0   0x00000000 GLOBAL NOTYPE     pred_samefile
+0   0x00000000 GLOBAL NOTYPE     pred_true
+0   0x00000000 GLOBAL NOTYPE     pred_xtype
+0   0x00000000 GLOBAL NOTYPE     pred_type
+0   0x00000000 GLOBAL NOTYPE     pred_user
+0   0x00000000 GLOBAL NOTYPE     pred_fprintf
+0   0x00000000 GLOBAL NOTYPE     pred_ok
+0   0x00000000 GLOBAL NOTYPE     launch
+0   0x00000000 GLOBAL NOTYPE     pred_used
+0   0x00000000 GLOBAL NOTYPE     pred_uid
+0   0x00000000 GLOBAL NOTYPE     pred_links
+0   0x00000000 GLOBAL NOTYPE     pred_inum
+0   0x00000000 GLOBAL NOTYPE     pred_gid
+0   0x00000000 GLOBAL NOTYPE     pred_size
+0   0x00000000 GLOBAL NOTYPE     pred_mtime
+0   0x00000000 GLOBAL NOTYPE     pred_ctime
+0   0x00000000 GLOBAL NOTYPE     pred_atime
+0   0x00000000 GLOBAL NOTYPE     pred_mmin
+0   0x00000000 GLOBAL NOTYPE     pred_cmin
+0   0x00000000 GLOBAL NOTYPE     pred_amin
+0   0x00000000 GLOBAL NOTYPE     lstat
+0   0x00000000 GLOBAL NOTYPE     stat
+0   0x00000000 GLOBAL NOTYPE     cb_exec_noop
+0   0x00000000 GLOBAL NOTYPE     __argmatch_die
+EOF
+RUN

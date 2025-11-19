@@ -1,0 +1,9 @@
+NAME=ELF: elf-emachine6 - e_machine == 6 is another valid e_machine type on x86 Linux
+FILE=bins/elf/elf-emachine6
+
+ARGS=-A
+CMDS=iI~^machine
+EXPECT=<<EOF
+machine  Intel 80486
+EOF
+RUN

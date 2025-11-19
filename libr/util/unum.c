@@ -500,6 +500,30 @@ R_API double r_num_get_double(RNum *num, const char *str) {
 	return d;
 }
 
+R_API ut16 r_num_float_to_bf16(float f) {
+	ut32 u;
+	memcpy (&u, &f, sizeof u);
+	// handle inf/nan
+	if ((u & 0x7F800000u) == 0x7F800000u) {
+		if (u & 0x007FFFFFu) { // NaN
+				       // translate to qNaN
+			return (ut16)((u >> 16) | 0x0040u);
+		}
+		return (ut16)(u >> 16); // Inf
+	}
+	// Round-to-nearest-even sobre els 16 bits baixos
+	ut32 lsb = (u >> 16) & 1u;
+	ut32 rounding_bias = 0x7FFFu + lsb;
+	return (ut16)((u + rounding_bias) >> 16);
+}
+
+R_API float r_num_bf16_to_float(ut16 b) {
+	ut32 u = ((ut32)b) << 16;
+	float f;
+	memcpy (&f, &u, sizeof f);
+	return f;
+}
+
 R_API int r_num_to_bits(char *out, ut64 num) {
 	int size = 64, i;
 

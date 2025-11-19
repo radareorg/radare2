@@ -6,7 +6,6 @@
 #include <r_main.h>
 #define USE_THREADS 1
 #define ALLOW_THREADED 1
-#define UNCOLORIZE_NONTTY 0
 #ifdef _MSC_VER
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -15,7 +14,7 @@
 
 #include <r_core.h>
 
-static char* get_file_in_cur_dir(const char *filepath) {
+static char *get_file_in_cur_dir(const char *filepath) {
 	filepath = r_file_basename (filepath);
 	if (r_file_exists (filepath) && !r_file_is_directory (filepath)) {
 		return r_file_abspath (filepath);
@@ -47,7 +46,7 @@ static void json_plugins(RCore *core, PJ *pj, const char *name, const char *cmd)
 
 static int r_main_version_verify(RCore *core, bool show, bool json) {
 	int i, ret;
-	typedef const char* (*vc)();
+	typedef const char *(*vc) ();
 	const char *base = R2_GITTAP;
 	struct vcs_t {
 		const char *name;
@@ -84,17 +83,17 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 		pj_o (pj);
 #if 1
 		pj_ko (pj, "radare2");
-			pj_ks (pj, "version", R2_VERSION);
-			pj_ks (pj, "birth", R2_BIRTH);
-			pj_ks (pj, "commit", R2_GITTIP);
-			pj_ki (pj, "commits", R2_VERSION_COMMIT);
-			pj_ks (pj, "license", "LGPL-3.0-only");
-			pj_ks (pj, "tap", R2_GITTAP);
-			pj_ko (pj, "semver");
-			pj_ki (pj, "major", R2_VERSION_MAJOR);
-			pj_ki (pj, "minor", R2_VERSION_MINOR);
-			pj_ki (pj, "patch", R2_VERSION_MINOR);
-			pj_end (pj);
+		pj_ks (pj, "version", R2_VERSION);
+		pj_ks (pj, "birth", R2_BIRTH);
+		pj_ks (pj, "commit", R2_GITTIP);
+		pj_ki (pj, "commits", R2_VERSION_COMMIT);
+		pj_ks (pj, "license", "LGPL-3.0-only");
+		pj_ks (pj, "tap", R2_GITTAP);
+		pj_ko (pj, "semver");
+		pj_ki (pj, "major", R2_VERSION_MAJOR);
+		pj_ki (pj, "minor", R2_VERSION_MINOR);
+		pj_ki (pj, "patch", R2_VERSION_MINOR);
+		pj_end (pj);
 		pj_end (pj);
 #endif
 		pj_ko (pj, "libraries");
@@ -169,7 +168,7 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 			json_plugins (core, pj, "lang", "Llj");
 			// json_plugins (core, pj, "parse", "Lpj");
 			// json_plugins (core, pj, "anal", "LAj");
-		//	json_plugins (core, pj, "asm", "LAj"); // should be psuedo but its not listed
+			//	json_plugins (core, pj, "asm", "LAj"); // should be psuedo but its not listed
 		}
 		pj_end (pj);
 		pj_end (pj);
@@ -200,58 +199,58 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 static int main_help(int line) {
 	if (line < 2) {
 		printf ("Usage: r2 [-ACdfjLMnNqStuvwzX] [-P patch] [-p prj] [-a arch] [-b bits] [-c cmd]\n"
-			"          [-s addr] [-B baddr] [-m maddr] [-i script] [-e k=v] file|pid|-|--|=\n");
+		"          [-s addr] [-B baddr] [-m maddr] [-i script] [-e k=v] file|pid|-|--|=\n");
 	}
 	if (line != 1) {
 		printf (
-		" --           run radare2 without opening any file\n"
-		" -            same as 'r2 malloc://512'\n"
-		" =            read file from stdin (use -i and -c to run cmds)\n"
-		" -=           perform !=! command to run all commands remotely\n"
-		" -0           print \\x00 after init and every command\n"
-		" -1           redirect stderr to stdout\n"
-		" -2           close stderr file descriptor (silent warning messages)\n"
-		" -a [arch]    set asm.arch\n"
-		" -A           run 'aaa' command to analyze all referenced code\n"
-		" -b [bits]    set asm.bits\n"
-		" -B [baddr]   set base address for PIE binaries\n"
-		" -c 'cmd..'   execute radare command\n"
-		" -C           file is host:port (alias for -c+=http://%%s/cmd/)\n"
-		" -d           debug the executable 'file' or running process 'pid'\n"
-		" -D [backend] enable debug mode (e cfg.debug=true)\n"
-		" -e k=v       evaluate config var\n"
-		" -f           block size = file size\n"
-		" -F [binplug] force to use that rbin plugin\n"
-		" -h, -hh      show help message, -hh for long\n"
-		" -H ([var])   display variable\n"
-		" -i [file]    run rlang program, r2script file or load plugin\n"
-		" -I [file]    run script file before the file is opened\n"
-		" -j           use json for -v, -L and maybe others\n"
-		" -k [OS/kern] set asm.os (linux, macos, w32, netbsd, ...)\n"
-		" -L, -LL      list supported IO plugins (-LL list core plugins)\n"
-		" -m [addr]    map file at given address (loadaddr)\n"
-		" -M           do not demangle symbol names\n"
-		" -n, -nn      do not load RBin info (-nn only load bin structures)\n"
-		" -N           do not load user settings and scripts\n"
-		" -NN          do not load any script or plugin\n"
-		" -q           quiet mode (no prompt) and quit after -i\n"
-		" -qq          quit after running all -c and -i\n"
-		" -Q           quiet mode (no prompt) and quit faster (quickLeak=true)\n"
-		" -p [prj]     use project, list if no arg, load if no file\n"
-		" -P [file]    apply rapatch file and quit\n"
-		" -r [rarun2]  specify rarun2 profile to load (same as -e dbg.profile=X)\n"
-		" -R [rr2rule] specify custom rarun2 directive (uses base64 dbg.profile)\n"
-		" -s [addr]    initial seek\n"
-		" -S           start r2 in sandbox mode\n"
+			" --           run radare2 without opening any file\n"
+			" -            same as 'r2 malloc://512'\n"
+			" =            read file from stdin (use -i and -c to run cmds)\n"
+			" -=           perform !=! command to run all commands remotely\n"
+			" -0           print \\x00 after init and every command\n"
+			" -1           redirect stderr to stdout\n"
+			" -2           close stderr file descriptor (silent warning messages)\n"
+			" -a [arch]    set asm.arch\n"
+			" -A           run 'aaa' command to analyze all referenced code\n"
+			" -b [bits]    set asm.bits\n"
+			" -B [baddr]   set base address for PIE binaries\n"
+			" -c 'cmd..'   execute radare command\n"
+			" -C           file is host:port (alias for -c+=http://%%s/cmd/)\n"
+			" -d           debug the executable 'file' or running process 'pid'\n"
+			" -D [backend] enable debug mode (e cfg.debug=true)\n"
+			" -e k=v       evaluate config var\n"
+			" -f           block size = file size\n"
+			" -F [binplug] force to use that rbin plugin\n"
+			" -h, -hh      show help message, -hh for long\n"
+			" -H ([var])   display variable\n"
+			" -i [file]    run rlang program, r2script file or load plugin\n"
+			" -I [file]    run script file before the file is opened\n"
+			" -j           use json for -v, -L and maybe others\n"
+			" -k [OS/kern] set asm.os (linux, macos, w32, netbsd, ...)\n"
+			" -L, -LL      list supported IO plugins (-LL list core plugins)\n"
+			" -m [addr]    map file at given address (loadaddr)\n"
+			" -M           do not demangle symbol names\n"
+			" -n, -nn      do not load RBin info (-nn only load bin structures)\n"
+			" -N           do not load user settings and scripts\n"
+			" -NN          do not load any script or plugin\n"
+			" -q           quiet mode (no prompt) and quit after -i\n"
+			" -qq          quit after running all -c and -i\n"
+			" -Q           quiet mode (no prompt) and quit faster (quickLeak=true)\n"
+			" -p [prj]     use project, list if no arg, load if no file\n"
+			" -P [file]    apply rapatch file and quit\n"
+			" -r [rarun2]  specify rarun2 profile to load (same as -e dbg.profile=X)\n"
+			" -R [rr2rule] specify custom rarun2 directive (uses base64 dbg.profile)\n"
+			" -s [addr]    initial seek\n"
+			" -S           start r2 in sandbox mode\n"
 #if USE_THREADS && ALLOW_THREADED
-		" -t           load rabin2 info in thread\n"
+			" -t           load rabin2 info in thread\n"
 #endif
-		" -u           set bin.filter=false to get raw sym/sec/cls names\n"
-		" -v, -V       show radare2 version (-V show lib versions)\n"
-		" -w           open file in write mode\n"
-		" -x           open without exec-flag (asm.emu will not work), See io.exec\n"
-		" -X           same as -e bin.usextr=false (useful for dyldcache)\n"
-		" -z, -zz      do not load strings or load them even in raw\n");
+			" -u           set bin.filter=false to get raw sym/sec/cls names\n"
+			" -v, -V       show radare2 version (-V show lib versions)\n"
+			" -w           open file in write mode\n"
+			" -x           open without exec-flag (asm.emu will not work), See io.exec\n"
+			" -X           same as -e bin.usextr=false (useful for dyldcache)\n"
+			" -z, -zz      do not load strings or load them even in raw\n");
 	}
 	if (line == 2) {
 		char *datahome = r_xdg_datadir (NULL);
@@ -264,39 +263,39 @@ static int main_help(int line) {
 		r_strbuf_append (sb, " file            ${filename}.r2\n");
 		r_strbuf_append (sb, "Plugins:\n");
 		r_strbuf_appendf (sb, " R2_LIBR_PLUGINS " R_JOIN_2_PATHS ("%s", R2_PLUGINS) "\n"
-		" R2_USER_PLUGINS ${XDG_DATA_DIR:=~/.local/share/radare2}/plugins\n"
-		" R2_USER_ZIGNS   ${XDG_DATA_DIR:=~/.local/share/radare2}/zigns\n"
-		"Environment:\n"
-		" R2_COLOR        sets the initial value for 'scr.color'. set to 0 for no color\n"
-		" R2_ARGS         ignore cli arguments and use these ones instead\n"
-		" R2_DEBUG        if defined, show error messages and crash signal\n"
-		" R2_CFLAGS       compiler flags to build against libr\n"
-		" R2_LDFLAGS      linker flags to build against libr\n"
-		" R2_PAPI_SCRIPT  path to the custom r2papi csript\n"
-		" R2_DEBUG_NOPAPI do not load r2papi in the -j qjs shell\n"
-		" R2_DEBUG_NOLANG do not load rlang plugins (except qjs)\n"
-		" R2_DEBUG_ASSERT set a breakpoint when hitting an assert\n"
-		" R2_IGNVER       load plugins ignoring the specified version (be careful)\n"
-		" R2_IGNABI       ignore abiversion field from the radare (be even more careful)\n"
-		" R2_MAGICPATH    %s/"R2_SDB_MAGIC"\n"
-		" R2_NOPLUGINS    do not load r2 shared plugins\n", dirPrefix, dirPrefix);
+											" R2_USER_PLUGINS ${XDG_DATA_DIR:=~/.local/share/radare2}/plugins\n"
+											" R2_USER_ZIGNS   ${XDG_DATA_DIR:=~/.local/share/radare2}/zigns\n"
+											"Environment:\n"
+											" R2_COLOR        sets the initial value for 'scr.color'. set to 0 for no color\n"
+											" R2_ARGS         ignore cli arguments and use these ones instead\n"
+											" R2_DEBUG        if defined, show error messages and crash signal\n"
+											" R2_CFLAGS       compiler flags to build against libr\n"
+											" R2_LDFLAGS      linker flags to build against libr\n"
+											" R2_PAPI_SCRIPT  path to the custom r2papi csript\n"
+											" R2_DEBUG_NOPAPI do not load r2papi in the -j qjs shell\n"
+											" R2_DEBUG_NOLANG do not load rlang plugins (except qjs)\n"
+											" R2_DEBUG_ASSERT set a breakpoint when hitting an assert\n"
+											" R2_IGNVER       load plugins ignoring the specified version (be careful)\n"
+											" R2_IGNABI       ignore abiversion field from the radare (be even more careful)\n"
+											" R2_MAGICPATH    %s/" R2_SDB_MAGIC "\n"
+											" R2_NOPLUGINS    do not load r2 shared plugins\n",
+			dirPrefix, dirPrefix);
 		r_strbuf_append (sb, " R2_HISTORY      ${XDG_CACHE_DIR:=~/.cache/radare2}/history\n");
 		r_strbuf_append (sb, " R2_RCFILE       ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
-		" R2_CURL         set to '1' to use system curl program instead of r2 apis\n"
-		);
+				" R2_CURL         set to '1' to use system curl program instead of r2 apis\n");
 		r_strbuf_appendf (sb, " R2_DATA_HOME    %s\n"
-		" R2_VERSION      contains the current version of r2\n"
-		" R2_LOG_LEVEL    numeric value of the max level of messages to show\n"
-		" R2_LOG_FILE     dump all logs to a file\n"
-		"Paths:\n"
-		" R2_RCFILE    ~/.radare2rc\n"
-		" R2_INCDIR    "R2_INCDIR"\n"
-		" R2_BINDIR    "R2_BINDIR"\n"
-		" R2_MANDIR    "R2_MANDIR"\n"
-		" R2_LIBDIR    "R2_LIBDIR"\n"
-		" R2_LIBEXT    "R_LIB_EXT"\n"
-		" R2_PREFIX    "R2_PREFIX"\n"
-		, datahome);
+				" R2_VERSION      contains the current version of r2\n"
+				" R2_LOG_LEVEL    numeric value of the max level of messages to show\n"
+				" R2_LOG_FILE     dump all logs to a file\n"
+				"Paths:\n"
+				" R2_RCFILE    ~/.radare2rc\n"
+				" R2_INCDIR    " R2_INCDIR "\n"
+				" R2_BINDIR    " R2_BINDIR "\n"
+				" R2_MANDIR    " R2_MANDIR "\n"
+				" R2_LIBDIR    " R2_LIBDIR "\n"
+				" R2_LIBEXT    " R_LIB_EXT "\n"
+				" R2_PREFIX    " R2_PREFIX "\n",
+			datahome);
 		free (datahome);
 
 		char *helpmsg = r_strbuf_drain (sb);
@@ -550,7 +549,7 @@ static void perform_analysis(RCore *r, int do_analysis) {
 }
 
 static RThreadFunctionRet th_analysis(RThread *th) {
-	ThreadData *td = (ThreadData*)th->user;
+	ThreadData *td = (ThreadData *)th->user;
 	if (td->th_bin) {
 		R_LOG_INFO ("Waiting for rbin parsing");
 		r_th_wait (td->th_bin);
@@ -571,7 +570,7 @@ static RThreadFunctionRet th_binload(RThread *th) {
 	R_LOG_INFO ("Loading binary information in background");
 	r_cons_thready ();
 	r_cons_new ();
-	ThreadData *td = (ThreadData*)th->user;
+	ThreadData *td = (ThreadData *)th->user;
 	RCore *r = td->core;
 	const char *filepath = td->filepath;
 	const ut64 baddr = UT64_MAX;
@@ -712,13 +711,15 @@ static void dp_write(RCore *core, const char *s) {
 	if (R_STR_ISEMPTY (s)) {
 		r_config_set (core->config, "dbg.profile", "");
 	} else {
-		char *v = r_base64_encode_dyn ((const ut8*)s, -1);
+		char *v = r_base64_encode_dyn ((const ut8 *)s, -1);
 		char *rs = r_str_newf ("base64:%s", v);
 		r_config_set (core->config, "dbg.profile", rs);
 		free (rs);
 		free (v);
 	}
 }
+
+#define OPTARGS "=012AjMCwxfF:Hhm:e:Enk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSzuXt"
 
 R_API int r_main_radare2(int argc, const char **argv) {
 	int c, ret;
@@ -732,13 +733,6 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	r_signal_sigmask (SIG_BLOCK, &sigBlockMask, NULL);
 #endif
 	r_sys_env_init ();
-	char *r2_bin = r_sys_getenv ("R2_BIN");
-	if (r2_bin) {
-		free (r2_bin);
-	} else {
-		r_sys_setenv ("R2_BIN", R2_BINDIR);
-		r_sys_setenv_sep ("PATH", R2_BINDIR, false);
-	}
 	// Create rarun2 profile with startup environ
 	char **env = r_sys_get_environ ();
 	mr.envprofile = r_run_get_environ_profile (env);
@@ -760,6 +754,52 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	if (argc < 2) {
 		mainr2_fini (&mr);
 		return main_help (1);
+	}
+	// Pre-RCore commandline flags
+	RGetopt opt = {0};
+	r_getopt_init (&opt, argc, argv, OPTARGS);
+	while ((c = r_getopt_next (&opt)) != -1) {
+		switch (c) {
+		case 'q':
+		case 'Q':
+			mr.quiet = true;
+			break;
+		case 'h':
+			mr.help++;
+			break;
+		case 'j':
+			mr.json = true;
+			break;
+		case 'v':
+			mr.show_version = true;
+			break;
+		case 'H':
+			// Check if next arg is a variable name (not starting with -)
+			if (opt.ind < argc && argv[opt.ind][0] != '-') {
+				main_print_var (argv[opt.ind]);
+				opt.ind++;
+			} else {
+				main_print_var (NULL);
+			}
+			mainr2_fini (&mr);
+			return 0;
+		}
+	}
+	if (mr.help > 0) {
+		int ret = main_help (mr.help > 1? 2: 0);
+		mainr2_fini (&mr);
+		return ret;
+	}
+	if (mr.show_version) {
+		int mode = 0;
+		if (mr.json) {
+			mode = 'j';
+		} else if (mr.quiet) {
+			mode = 'q';
+		}
+		int res = r_main_version_print ("radare2", mode);
+		mainr2_fini (&mr);
+		return res;
 	}
 	RCore *r = r_core_new ();
 	if (!r) {
@@ -795,21 +835,15 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		argv++;
 	}
 
-	// -H option without argument
-	if (argc == 2 && !strcmp (argv[1], "-H")) {
-		main_print_var (NULL);
-		mainr2_fini (&mr);
-		return 0;
-	}
-
+	mr.json = false;
+	mr.quiet = false;
 	set_color_default (r);
 
-	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "=012AjMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSzuXt");
+	r_getopt_init (&opt, argc, argv, OPTARGS);
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'j':
-			mr.json = true;
+			// already parsed
 			break;
 		case '=':
 			R_FREE (r->cmdremote);
@@ -840,7 +874,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			mr.zflag++;
 			break;
 		case 'A':
-			mr.do_analysis += mr.do_analysis ? 1: 2;
+			mr.do_analysis += mr.do_analysis? 1: 2;
 			break;
 		case 'b':
 			free (mr.asmbits);
@@ -853,8 +887,12 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		case 'X':
 			r_config_set_b (r->config, "bin.usextr", false);
 			break;
+		case 'E':
+			r_core_cmd0 (r, "ed!");
+			mainr2_fini (&mr);
+			return 0;
 		case 'c':
-			r_list_append (mr.cmds, (void*)strdup (opt.arg));
+			r_list_append (mr.cmds, (void *)strdup (opt.arg));
 			break;
 		case 'C':
 			mr.do_connect = true;
@@ -864,6 +902,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			mr.debug = 1;
 #else
 			R_LOG_ERROR ("Sorry. I'm built without debugger support");
+			mainr2_fini (&mr);
 			return 1;
 #endif
 			break;
@@ -887,10 +926,15 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				if (!strcmp (opt.arg, "q")) {
 					r_core_cmd0 (r, "eq");
 				} else {
-					char *res = r_config_eval (r->config, opt.arg, false, NULL);
-					r_cons_print (r->cons, res);
-					free (res);
-					r_list_append (mr.evals, (void*)strdup (opt.arg));
+					if (strchr (opt.arg, '=')) {
+						// TODO: i think r_config_eval must disapear
+						char *res = r_config_eval (r->config, opt.arg, false, NULL);
+						r_cons_print (r->cons, res);
+						free (res);
+						r_list_append (mr.evals, (void *)strdup (opt.arg));
+					} else {
+						R_LOG_ERROR ("Needed -e key=value");
+					}
 				}
 			}
 			break;
@@ -901,13 +945,6 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			free (mr.forcebin);
 			mr.forcebin = strdup (opt.arg);
 			break;
-		case 'h':
-			mr.help++;
-			break;
-		case 'H':
-			main_print_var (opt.arg);
-			mainr2_fini (&mr);
-			return 0;
 		case 'i':
 			if (R_STR_ISEMPTY (opt.arg)) {
 				R_LOG_ERROR ("Cannot open empty script path");
@@ -922,7 +959,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				ret = 1;
 				goto beach;
 			}
-			r_list_append (mr.prefiles, (void*)strdup (opt.arg));
+			r_list_append (mr.prefiles, (void *)strdup (opt.arg));
 			break;
 		case 'k':
 			free (mr.asmos);
@@ -1022,11 +1059,14 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			break;
 #endif
 		case 'v':
-			mr.show_version = true;
+			// already parsed
 			break;
 		case 'V':
-			mr.show_versions = true;
-			break;
+			{
+			int rc = r_main_version_verify (r, 1, mr.json);
+			mainr2_fini (&mr);
+			return rc;
+			}
 		case 'w':
 			mr.perms |= R_PERM_W;
 			break;
@@ -1035,27 +1075,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			r_config_set_b (r->config, "io.exec", false);
 			break;
 		default:
-			mr.help++;
+			break;
 		}
-	}
-	if (mr.show_versions) {
-		int rc = r_main_version_verify (r, 1, mr.json);
-		mainr2_fini (&mr);
-		return rc;
-	}
-	if (mr.show_versions) {
-		return r_main_version_verify (r, 0, mr.json);
-	}
-	if (mr.show_version) {
-		int mode = 0;
-		if (mr.json) {
-			mode = 'j';
-		} else if (mr.quiet) {
-			mode = 'q';
-		}
-		int res = r_main_version_print ("radare2", mode);
-		mainr2_fini (&mr);
-		return res;
 	}
 	if (mr.stderrToStdout) {
 #if __wasi__
@@ -1112,7 +1133,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		}
 		free (msg);
 		if (!mr.pfile) {
-			mr.pfile = argv[opt.ind] ? strdup (argv[opt.ind]) : NULL;
+			mr.pfile = argv[opt.ind]? strdup (argv[opt.ind]): NULL;
 		}
 	}
 
@@ -1155,14 +1176,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		} else {
 			r_core_cmd_call (r, "js:");
 		}
-		r_core_free (r);
-		return 0;
-	}
-
-	if (mr.help > 0) {
-		int ret = main_help (mr.help > 1? 2: 0);
 		mainr2_fini (&mr);
-		return ret;
+		return 0;
 	}
 #if R2__WINDOWS__
 	{
@@ -1372,7 +1387,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 					}
 #endif
 					mr.fh = r_core_file_open (r, mr.pfile, mr.perms, mr.mapaddr);
-					mr.iod = (r->io && mr.fh) ? r_io_desc_get (r->io, mr.fh->fd) : NULL;
+					mr.iod = (r->io && mr.fh)? r_io_desc_get (r->io, mr.fh->fd): NULL;
 					if (!strcmp (mr.debugbackend, "gdb")) {
 						const char *filepath = r_config_get (r->config, "dbg.exe.path");
 						if (R_STR_ISNOTEMPTY (filepath)) {
@@ -1403,7 +1418,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 									// Present in local directory
 									if (mr.iod) {
 										free (mr.iod->name);
-										mr.iod->name = (char*) filepath;
+										mr.iod->name = (char *)filepath;
 									}
 									if (addr == UT64_MAX) {
 										addr = r_debug_get_baddr (r->dbg, filepath);
@@ -1518,7 +1533,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 						if (mr.fh) {
 							r_config_set_i (r->config, "io.va", false);
 						} else {
-							 R_LOG_ERROR ("Permission denied");
+							R_LOG_ERROR ("Permission denied");
 						}
 					}
 					if (mr.baddr == UT64_MAX) {
@@ -1528,7 +1543,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 						}
 					}
 					if (mr.fh) {
-						mr.iod = r->io ? r_io_desc_get (r->io, mr.fh->fd) : NULL;
+						mr.iod = r->io? r_io_desc_get (r->io, mr.fh->fd): NULL;
 						if (mr.iod && mr.perms & R_PERM_X) {
 							mr.iod->perm |= R_PERM_X;
 						}
@@ -1543,7 +1558,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 							if (mr.debug) {
 								// XXX: incorrect for PIE binaries
 								filepath = mr.file? strstr (mr.file, "://"): NULL;
-								filepath = filepath ? filepath + 3 : mr.pfile;
+								filepath = filepath? filepath + 3: mr.pfile;
 							}
 							if (r->io->desc && mr.iod && (mr.iod->fd == r->io->desc->fd) && mr.iod->name) {
 								filepath = mr.iod->name;
@@ -1585,7 +1600,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 					}
 				} else {
 					if (mr.fh) {
-						mr.iod = r->io ? r_io_desc_get (r->io, mr.fh->fd) : NULL;
+						mr.iod = r->io? r_io_desc_get (r->io, mr.fh->fd): NULL;
 						if (mr.iod) {
 							mr.perms = mr.iod->perm;
 							r_io_map_add (r->io, mr.iod->fd, mr.perms, 0LL, 0LL, r_io_desc_size (mr.iod));
@@ -1597,7 +1612,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			if (mr.mapaddr && r_config_get_b (r->config, "file.info")) {
 				R_LOG_WARN ("using oba to load the syminfo from different mapaddress");
 				// load symbols when using r2 -m 0x1000 /bin/ls
-				r_core_cmdf (r, "oba 0 0x%"PFMT64x, mr.mapaddr);
+				r_core_cmdf (r, "oba 0 0x%" PFMT64x, mr.mapaddr);
 				r_core_cmd0 (r, ".ie*");
 			}
 		} else if (mr.pfile) {
@@ -1606,7 +1621,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				mr.fh = f;
 			}
 			if (mr.fh) {
-				r_debug_use (r->dbg, mr.is_gdb ? "gdb" : mr.debugbackend);
+				r_debug_use (r->dbg, mr.is_gdb? "gdb": mr.debugbackend);
 			}
 			/* load symbols when doing r2 -d ls */
 			// NOTE: the baddr is redefined to support PIE/ASLR
@@ -1662,7 +1677,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			}
 		}
 		r_core_cmd0 (r, "=!"); // initalize io subsystem
-		mr.iod = r->io ? r_io_desc_get (r->io, mr.fh->fd) : NULL;
+		mr.iod = r->io? r_io_desc_get (r->io, mr.fh->fd): NULL;
 		if (mr.mapaddr) {
 			r_core_seek (r, mr.mapaddr, true);
 		}
@@ -1716,13 +1731,13 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		}
 #if 0
 		if (o && o->info && compute_hashes) {
-			// TODO: recall with !limit ?
+			// TODO: recall with !limit?
 			ut64 limit = r_config_get_i (r->config, "bin.hashlimit");
 			r_bin_file_set_hashes (r->bin, r_bin_file_compute_hashes (r->bin, limit));
 		}
 #endif
 		if (!mr.s_seek && mr.mapaddr && mr.mapaddr != r->addr) {
-			mr.s_seek = r_str_newf ("0x%08"PFMT64x, mr.mapaddr);
+			mr.s_seek = r_str_newf ("0x%08" PFMT64x, mr.mapaddr);
 		}
 		if (mr.s_seek) {
 			mr.seek = r_num_math (r->num, mr.s_seek);
@@ -1748,7 +1763,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		r_flag_space_set (r->flags, NULL);
 		/* load <file>.r2 */
 		{
-			char* f = r_str_newf ("%s.r2", mr.pfile);
+			char *f = r_str_newf ("%s.r2", mr.pfile);
 			const char *uri_splitter = strstr (f, "://");
 			const char *path = uri_splitter? uri_splitter + 3: f;
 			if (r_file_exists (path)) {
@@ -1805,7 +1820,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				msg = "Deltifying monads...";
 			}
 			r_print_spinbar (r->print, msg);
-			count ++;
+			count++;
 			r_sys_usleep (100000);
 		}
 		eprintf ("\r");
@@ -1824,13 +1839,6 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			perform_analysis (r, mr.do_analysis);
 		}
 	}
-#if UNCOLORIZE_NONTTY
-#if R2__UNIX__
-	if (!r_cons_is_tty ()) {
-		r_config_set_i (r->config, "scr.color", COLOR_MODE_DISABLED);
-	}
-#endif
-#endif
 	if (mr.fullfile) {
 		r_core_block_size (r, r_io_desc_size (mr.iod));
 	}
@@ -1923,7 +1931,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 					} else {
 						if (r_cons_yesno (r->cons, 'y', "Do you want to quit? (Y/n)")) {
 							if (r_config_get_b (r->config, "dbg.exitkills") &&
-									r_cons_yesno (r->cons, 'y', "Do you want to kill the process? (Y/n)")) {
+								r_cons_yesno (r->cons, 'y', "Do you want to kill the process? (Y/n)")) {
 								r_debug_kill (r->dbg, r->dbg->pid, r->dbg->tid, 9); // KILL
 							} else {
 								r_debug_detach (r->dbg, r->dbg->pid);
@@ -1965,7 +1973,6 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				if (mr.debug && r_config_get_b (r->config, "dbg.exitkills")) {
 					r_debug_kill (r->dbg, 0, false, 9); // KILL
 				}
-
 			}
 			break;
 		}
@@ -1994,12 +2001,7 @@ beach:
 		r_th_wait (mr.th_ana);
 		r_th_free (mr.th_ana);
 	}
-
 	r_core_task_sync_end (&r->tasks);
-
-	// not really needed, cause r_core_fini will close the file
-	// and this fh may be come stale during the command execution.
-	// r_core_file_close (r, fh);
 	mainr2_fini (&mr);
-	return (ret < 0 ? 0 : ret);
+	return (ret < 0? 0: ret);
 }

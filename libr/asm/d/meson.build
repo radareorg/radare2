@@ -7,6 +7,7 @@ sdb_files = [
   'bf',
   'bpf',
   'chip8',
+  'cosmac',
   'dalvik',
   'evm',
   'gb',

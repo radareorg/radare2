@@ -6,6 +6,10 @@ on:
       - master
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # WASI
   linux-wasi:
@@ -15,7 +19,7 @@ jobs:
       uses: actions/checkout@v5
     - name: Installing with symlinks
       run: sys/wasi.sh
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v5
       with:
         name: linux-wasi
         path: radare2-*-wasi.zip
@@ -28,7 +32,7 @@ jobs:
       uses: actions/checkout@v5
     - name: Installing with symlinks
       run: sys/wasi-api.sh
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v5
       with:
         name: linux-wasi-api
         path: radare2-*-wasi-api.zip
@@ -51,7 +55,7 @@ jobs:
       uses: actions/checkout@v5
     - name: Creating zip and tarball
       run: sys/tarball.sh
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v5
       with:
         name: tarball
         path: radare2-?.?.?.*
@@ -63,14 +67,12 @@ jobs:
       matrix:
         arch:
           - amd64
-          - arm64
-          - i386
-        include:
-          - arch: arm64
-            gcc: aarch64-linux-gnu
-          - arch: i386
-            gcc: multilib
-    runs-on: ubuntu-22.04
+#         - i386
+        runner: [ubuntu-22.04]
+#       include:
+#         - arch: arm64
+#           runner: ubuntu-22.04-arm
+    runs-on: ${{ matrix.runner }}
     steps:
     - name: Checkout
       uses: actions/checkout@v5
@@ -78,11 +80,13 @@ jobs:
       shell: bash
       run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
       id: r2v
-    - name: Installing the musl runtime and crosscompiler
+    - name: Installing the musl runtime
       run: |
-        sudo apt update --assume-yes
-        sudo apt install --assume-yes musl-tools
-        if [ -n "${{ matrix.gcc }}" ]; then sudo apt install --assume-yes gcc-${{ matrix.gcc }}; fi
+        sudo apt-get update 
+        sudo apt-get install -y musl-tools
+    - name: Installing the i386 crosscompiler
+      if: matrix.arch == 'i386'
+      run: sudo apt-get install -y gcc-multilib
     - name: Building static r2 with acr
       run: |
         cp -f dist/plugins-cfg/plugins.static.nogpl.cfg plugins.cfg
@@ -90,7 +94,7 @@ jobs:
         make -C binr/blob
         tar cJvf radare2-${{ steps.r2v.outputs.branch }}-static-${{ matrix.arch }}.tar.xz r2-static
     - name: Pub
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: linux-static-${{ matrix.arch }}
         path: radare2-*-static-${{ matrix.arch }}.tar.xz
@@ -104,7 +108,7 @@ jobs:
     - name: Packaging for RPM
       run: make -C dist/rpm
     - name: Pub
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: linux-acr-rpm-64
         path: dist/rpm/*.rpm
@@ -116,30 +120,28 @@ jobs:
       matrix:
         arch:
           - amd64
-          - arm64
           - i386
+        runner: [ubuntu-22.04]
         include:
           - arch: arm64
-            gcc: aarch64-linux-gnu
-          - arch: i386
-            gcc: multilib
+            runner: ubuntu-22.04-arm
     # TODO: Update to 22.04 when xpatch.c warnings have been fixed
-    runs-on: ubuntu-22.04
+    runs-on: ${{ matrix.runner }}
     steps:
     - name: Checkout
       uses: actions/checkout@v5
-    - if: ${{ matrix.gcc }}
-      name: Installing crosscompiler
+    - name: Installing the i386 crosscompiler
+      if: matrix.arch == 'i386'
       run: |
-        sudo apt update --assume-yes
-        sudo apt install --assume-yes gcc-${{ matrix.gcc }} gperf
+        sudo apt-get update
+        sudo apt-get install -y gcc-multilib gperf
     - name: Packaging for Debian
       run: |
         gcc -v
         sys/debian.sh ${{ matrix.arch }}
         mv -v dist/debian/*/radare2*.deb .
     - name: Pub
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: linux-acr-deb-${{ matrix.arch }}
         path: radare2*.deb
@@ -161,7 +163,7 @@ jobs:
 #    - name: Organize artifacts
 #      run: mv -v RPMS/*/*.rpm dist/rpm/*.rpm .
 #    - name: Pub
-#      uses: actions/upload-artifact@v4
+#      uses: actions/upload-artifact@v5
 #      with:
 #        name: linux-meson-rpm
 #        path: *.rpm
@@ -192,7 +194,7 @@ jobs:
 #        rpmbuild -ba radare2.spec
 #        mv -v rpmbuild/RPMS/*/*.rpm .
 #    - name: Pub
-#      uses: actions/upload-artifact@v4
+#      uses: actions/upload-artifact@v5
 #      with:
 #        name: centos-meson-rpm
 #        path: *.rpm
@@ -218,7 +220,7 @@ jobs:
         LDFLAGS: '-headerpad_max_install_names' # Allow to relocate its dependencies using install_name_tool
       run: make -C dist/macos
     - name: Pub
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         path: dist/macos/*.pkg
         name: macos-acr-${{ matrix.arch }}
@@ -253,7 +255,7 @@ jobs:
         zip -r /tmp/r2ios-sdk.zip *
         popd
         mv /tmp/r2ios-sdk.zip dist/cydia/radare2/r2ios-sdk-${{ steps.r2v.outputs.branch }}.zip
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v5
       with:
         name: ios-${{ matrix.type }}
         path: |
@@ -285,7 +287,7 @@ jobs:
         sys/android-ndk-install.sh "${{ matrix.api }}" "${{ matrix.arch }}"
         sys/android-build.sh "${{ matrix.arch }}"
         ls -l
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v5
       with:
         name: android-acr-${{ matrix.arch }}
         path: radare2*android*${{ matrix.arch }}.tar.gz
@@ -322,7 +324,7 @@ jobs:
         cd /tmp
         rm -rf android-dir/include android-dir/lib
         tar --transform 's/android-dir/data\/data\/org.radareorg.radare2installer/g' -czvf radare2-${{ steps.r2v.outputs.branch }}-android-${{ matrix.arch }}.tar.gz android-dir/
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v5
       with:
         name: android-meson-${{ matrix.arch }}
         path: /tmp/radare2-${{ steps.r2v.outputs.branch }}-android-${{ matrix.arch }}.tar.gz
@@ -333,7 +335,7 @@ jobs:
     runs-on: windows-2022
     steps:
     - name: Win configure Pagefile
-      uses: al-cheb/configure-pagefile-action@v1.4
+      uses: al-cheb/configure-pagefile-action@v1.5
       with:
           minimum-size: 16GB
           maximum-size: 16GB
@@ -365,7 +367,7 @@ jobs:
 #    - name: Create installer
 #      shell: pwsh
 #      run: iscc radare2-win-installer\radare2.iss /DRadare2Location=..\radare2-install\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=${{ steps.r2v.outputs.branch }}
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v5
       with:
         name: w32-meson
         path: |
@@ -375,7 +377,7 @@ jobs:
     runs-on: windows-2022
     steps:
     - name: Win configure Pagefile
-      uses: al-cheb/configure-pagefile-action@v1.4
+      uses: al-cheb/configure-pagefile-action@v1.5
       with:
           minimum-size: 16GB
           maximum-size: 16GB
@@ -417,7 +419,7 @@ jobs:
         cd prefix\bin
         dir
         7z a r2blob-${{ steps.r2v.outputs.branch }}-w64.zip r2blob.static.exe
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v5
       continue-on-error: true
       with:
         name: w64-static
@@ -427,7 +429,7 @@ jobs:
     runs-on: windows-2022
     steps:
     - name: Win configure Pagefile
-      uses: al-cheb/configure-pagefile-action@v1.4
+      uses: al-cheb/configure-pagefile-action@v1.5
       with:
           minimum-size: 16GB
           maximum-size: 16GB
@@ -466,7 +468,7 @@ jobs:
 #    - name: Create installer
 #      shell: pwsh
 #      run: iscc radare2-win-installer\radare2.iss /DRadare2Location=..\radare2-install\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=${{ steps.r2v.outputs.branch }}
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v5
       with:
         name: w64-meson
         path: |
@@ -530,7 +532,7 @@ jobs:
         ninja -C build install
     - name: Create zip artifact
       run: 7z a radare2-${{ steps.r2v.outputs.branch }}-w64-arm64.zip $PWD\radare2-${{ steps.r2v.outputs.branch }}-w64-arm64
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v5
       with:
         name: msys2-w64-arm-meson
         path: radare2-${{ steps.r2v.outputs.branch }}-w64-arm64.zip
@@ -539,7 +541,7 @@ jobs:
     runs-on: windows-11-arm
     steps:
     - name: Win configure Pagefile
-      uses: al-cheb/configure-pagefile-action@v1.4
+      uses: al-cheb/configure-pagefile-action@v1.5
       with:
           minimum-size: 16GB
           maximum-size: 16GB
@@ -569,7 +571,7 @@ jobs:
         ninja -C build install
     - name: Create zip artifact
       run: 7z a radare2-${{ steps.r2v.outputs.branch }}-w64-arm64.zip $PWD\radare2-${{ steps.r2v.outputs.branch }}-w64-arm64
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v5
       with:
         name: w64-arm-meson
         path: radare2-${{ steps.r2v.outputs.branch }}-w64-arm64.zip
@@ -605,7 +607,7 @@ jobs:
 #          rm -rf * .git*
 #          cp /tmp/radare2-freebsd.tgz radare2-${{ steps.r2v.outputs.branch }}-freebsd.tgz
 #          echo DATE: ; date
-#    - uses: actions/upload-artifact@v4
+#    - uses: actions/upload-artifact@v5
 #      with:
 #        name: freebsd
 #        path: radare2-*-freebsd.tgz
@@ -632,7 +634,7 @@ jobs:
         wget https://ftp.fau.de/debian/pool/main/liba/libabigail/abigail-tools_2.2-2_amd64.deb
         sudo dpkg -i abigail-tools_2.2-2_amd64.deb
     - name: Download Build
-      uses: actions/download-artifact@v5
+      uses: actions/download-artifact@v6
       with:
         name: linux-static-amd64
         path: /tmp
@@ -674,7 +676,7 @@ jobs:
     needs:
       - linux-wasi
       - tarball
-      - linux-static
+#      - linux-static
 #      - linux-acr-rpm-64
       - linux-acr-deb
       - macos-acr
@@ -720,12 +722,12 @@ jobs:
         dist/artifacts/ios-cydia32/*.deb
         dist/artifacts/ios-cydia/r2ios-sdk-*.zip
         dist/artifacts/android-acr-*/*.tar.gz
-        dist/artifacts/linux-static-*/*.tar.xz
         dist/artifacts/linux-acr-deb-*/radare2-dev_*.deb
         dist/artifacts/linux-wasi/*.zip
         dist/artifacts/linux-wasi-api/*.zip
         dist/artifacts/w64-static/*.zip
         dist/artifacts/w64-arm-meson/*.zip
+#       dist/artifacts/linux-static-*/*.tar.xz
 #       dist/artifacts/msys2-w64-arm-meson/*.zip
     steps:
       - name: Checkout code
@@ -739,14 +741,14 @@ jobs:
       - name: Prepare release notes
         run: ./sys/release-notes.sh | tee ./RELEASE_NOTES.md
       - name: Download artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           path: dist/artifacts
       - name: Generate checksums
         run: sha256sum $ASSET_FILES | awk '{sub(".*/", "", $2); print $1"  "$2}' > checksums.txt
       - name: Create GitHub release
         id: create_release
-        uses: softprops/action-gh-release@6da8fa9354ddfdc4aeace5fc48d7f679b5214090 # v2.4.1
+        uses: softprops/action-gh-release@5be0e66d93ac7ed76da52eca8bb058f665c3a5fe # v2.4.2
         with:
           name: ${{ steps.r2v.outputs.branch }}
           tag_name: ${{ needs.check_release.outputs.tag_name }}

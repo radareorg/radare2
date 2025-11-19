@@ -439,7 +439,7 @@ static RBinSection *getsection(RBin *bin, int sn) {
 			}
 		}
 		r_list_foreach (o->sections, iter, section) {
-			if (strstr (section->name, name_str)) {
+			if (section->name && strstr (section->name, name_str)) {
 				/* accept matching section, including compressed or zdebug variants */
 				lastSection[sn] = section;
 				return section;
@@ -958,14 +958,10 @@ static const ut8 *str_form_value(entry_descriptor desc, RBin *bin, const ut8 *bu
 };
 
 static const ut8 *data16_form_value(entry_descriptor desc, const ut8 *buf, const ut8 *buf_end, ut8 val[16]) {
-	if (desc.form != DW_FORM_data16) {
+	if (desc.form != DW_FORM_data16 || buf + 16 >= buf_end) {
 		R_LOG_DEBUG ("Expected form type data16 but got: %#x", desc.form);
 		return NULL;
 	}
-	if (buf + 16 >= buf_end) {
-		return NULL;
-	}
-
 	memcpy (val, buf, 16);
 	buf += 16;
 	return buf;
@@ -2230,6 +2226,7 @@ static const ut8 *parse_attr_value(RBin *bin, const ut8 *obuf, int obuf_len, RBi
 		value->kind = DW_AT_KIND_STRING;
 		if (*buf) {
 			char *name = r_str_ndup ((const char *)buf, buf_end - buf);
+			// go programs contain multibyte chars in the symbol names and strings we dont want to strip them here
 			r_str_ansi_strip (name);
 			r_str_replace_ch (name, '\n', 0, true);
 			r_str_replace_ch (name, '\t', 0, true);
@@ -2706,6 +2703,7 @@ static RBinDwarfDebugAbbrev *parse_abbrev_raw(const ut8 *obuf, size_t len) {
 	}
 	RBinDwarfDebugAbbrev *da = R_NEW0 (RBinDwarfDebugAbbrev);
 	if (!init_debug_abbrev (da)) {
+		R_FREE (da);
 		return NULL;
 	}
 

@@ -2471,8 +2471,10 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 				// COLOR FOR REGISTER
 				/* if (reg_len+j+10 >= opcode_sz) o = realloc_color_buffer (o, &opcode_sz, reg_len+100); */
 				if (is_flag (p + i)) {
-					strcpy (o + j, color_flag);
-					j += strlen (o + j);
+					if (color_flag) {
+						strcpy (o + j, color_flag);
+						j += strlen (o + j);
+					}
 				} else {
 					if (expect_reg) {
 						strcpy (o + j, reg);

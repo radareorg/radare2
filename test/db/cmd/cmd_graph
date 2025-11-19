@@ -396,9 +396,9 @@ agraph.edge.0x123_0x456.highlight=true
 --
 agraph.edge.0x123_0x456.highlight=true
 --
-agraph.edge.0x123_0x123.highlight=true
 agraph.edge.0x123_0x456.highlight=true
 agraph.edge.0x456_0x123.highlight=true
+agraph.edge.0x123_0x123.highlight=true
 EOF
 RUN
 

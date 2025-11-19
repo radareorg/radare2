@@ -532,11 +532,8 @@ static ut32 ror(ArmOp *op) {
 		data = k | op->operands[0].reg << 24;
 		data |= (op->operands[1].reg & 0x7) << 29;
 		data |= (op->operands[1].reg & 0x18) << 13;
-		data |= (op->operands[1].reg & 0x1f) << 10;
-		{
-			ut32 imm7 = (ut32)(op->operands[3].immediate >> 4) & 0x7f;
-			data |= imm7 << 16;
-		}
+		data |= (op->operands[1].reg & 0x1f) << 8;
+		data |= op->operands[2].immediate << 18;
 		return data;
 	}
 	return data;
@@ -840,31 +837,19 @@ static ut32 sxt(ArmOp *op) {
 
 static ut32 tb(ArmOp *op) {
 	ut32 data = UT32_MAX;
-	int k = 0;
 	const bool reg64_imm = op->operands[0].reg_type & ARM_REG64 && op->operands[1].type & ARM_CONSTANT && op->operands[2].type & ARM_CONSTANT;
 	const bool reg32_imm = op->operands[0].reg_type & ARM_REG32 && op->operands[1].type & ARM_CONSTANT && op->operands[2].type & ARM_CONSTANT;
 
 	check_cond (op->operands[0].type == ARM_GPR);
 
-	if (r_str_startswith (op->mnemonic, "tbz")) {
-		if (reg64_imm) {
-			k = 0x000000b6;
-		} else if (reg32_imm) {
-			k = 0x00000036;
-		} else {
-			return UT32_MAX;
-		}
-	} else if (r_str_startswith (op->mnemonic, "tbnz")) {
-		if (reg64_imm) {
-			k = 0x000000b7;
-		} else if (reg32_imm) {
-			k = 0x00000037;
-		} else {
-			return UT32_MAX;
-		}
-	} else {
+	if (!r_str_startswith (op->mnemonic, "tbz") && !r_str_startswith (op->mnemonic, "tbnz")) {
 		return UT32_MAX;
 	}
+
+	if (!reg64_imm && !reg32_imm) {
+		return UT32_MAX;
+	}
+
 	if (reg64_imm) {
 		if (op->operands[1].immediate > 0x3f) {
 			R_LOG_ERROR ("Bit to be tested must be in range 0-63 for %s", op->mnemonic);
@@ -876,20 +861,43 @@ static ut32 tb(ArmOp *op) {
 			return UT32_MAX;
 		}
 	}
-	ut64 dst = op->operands[2].immediate;
-	st64 delta = dst - op->addr;
+
+	// Calculate PC-relative offset
+	st64 delta;
+	st64 imm = (st64) op->operands[2].immediate;
+
+	// Determine if this is an absolute address or a relative offset
+	// If op->addr is available and the value looks like an address, compute delta
+	// Otherwise treat as relative byte offset
+	if (op->addr != UT64_MAX && (imm > 0x10000 || imm < -0x10000)) {
+		delta = imm - (st64)op->addr;
+	} else {
+		delta = imm;
+	}
+
 	ut64 maxis = R_ABS (delta);
-	if ((delta & 3) || maxis > 0xfffc) {
-		R_LOG_ERROR ("invalid destination for %s", op->mnemonic);
+	if ((delta & 3) || maxis > 0x7fff) {
+		R_LOG_ERROR ("invalid destination for %s (delta=%lld)", op->mnemonic, delta);
 		return UT32_MAX;
 	}
-	data = k;
-	data |= (op->operands[0].reg & 0x1f) << 24;
-	data |= (op->operands[1].immediate & 0x1f) << 11;
-	data |= (delta & 0x1c) << 27;
-	data |= (delta & 0x1fe0) << 11;
-	data |= ((delta >> 13) & 7) << 8;
-	return data;
+
+	// Build instruction using architectural bit positions
+	// Format: b5:1 | 011011 | op:1 | b40:5 | imm14:14 | Rt:5
+	ut32 base = r_str_startswith (op->mnemonic, "tbnz") ? 0x37000000 : 0x36000000;
+	ut32 bitnum = (ut32) op->operands[1].immediate;
+	ut32 rt = (ut32) (op->operands[0].reg & 0x1f);
+	st64 v = delta / 4;  // Convert byte offset to instruction offset (imm14)
+	ut32 imm14 = (ut32) (v & 0x3fff);
+
+	data = base;
+	data |= ((bitnum >> 5) & 1) << 31;
+	data |= (bitnum & 0x1f) << 19;
+	data |= (imm14 & 0x3fff) << 5;
+	data |= rt;
+
+	ut32 data2;
+	r_mem_swapendian ((ut8 *)&data2, (const ut8 *)&data, sizeof (data));
+	return data2;
 }
 
 static ut32 math(ArmOp *op, ut32 data, bool is64) {
@@ -900,6 +908,38 @@ static ut32 math(ArmOp *op, ut32 data, bool is64) {
 	check_cond (op->operands[1].type == ARM_GPR);
 	check_cond (op->operands[2].type == ARM_GPR);
 	return data | encode3regs (op);
+}
+
+static ut32 math3src(ArmOp *op, ut32 base) {
+	ut32 data = UT32_MAX;
+	const bool is64 = op->operands[0].reg_type & ARM_REG64;
+	const bool is32 = op->operands[0].reg_type & ARM_REG32;
+	check_cond (op->operands_count >= 4);
+	check_cond (op->operands[0].type == ARM_GPR);
+	check_cond (op->operands[1].type == ARM_GPR);
+	check_cond (op->operands[2].type == ARM_GPR);
+	check_cond (op->operands[3].type == ARM_GPR);
+	if (is64) {
+		check_cond (op->operands[1].reg_type & ARM_REG64);
+		check_cond (op->operands[2].reg_type & ARM_REG64);
+		check_cond (op->operands[3].reg_type & ARM_REG64);
+	} else if (is32) {
+		check_cond (op->operands[1].reg_type & ARM_REG32);
+		check_cond (op->operands[2].reg_type & ARM_REG32);
+		check_cond (op->operands[3].reg_type & ARM_REG32);
+	} else {
+		return data;
+	}
+	data = base;
+	if (is64) {
+		data |= 0x80000000;  // sf=1 for 64-bit (bit 31)
+	}
+	data |= (op->operands[2].reg & 0x1f) << 16;  // Rm at bits 20-16
+	data |= (op->operands[3].reg & 0x1f) << 10;  // Ra at bits 14-10
+	data |= (op->operands[1].reg & 0x1f) << 5;   // Rn at bits 9-5
+	data |= op->operands[0].reg & 0x1f;          // Rd at bits 4-0
+	// Output needs to be swapped to Little Endian for correct byte stream
+	return r_swap_ut32 (data);
 }
 
 static ut32 cmp(ArmOp *op) {
@@ -1060,6 +1100,10 @@ static ut32 lsop(ArmOp *op, int k, ut64 addr) {
 	} else if (!strcmp (op->mnemonic, "ldrsw")) {
 		check_cond (op->operands[0].reg_type & ARM_REG64);
 		uwu = true;
+	} else if (!strcmp (op->mnemonic, "str") || !strcmp (op->mnemonic, "ldr")) {
+		if (op->operands[0].reg_type & ARM_REG32) {
+			k = (k & 0xffffff00) | ((k & 0xff) & ~0x40);
+		}
 	} else { // ldrsh, ldrsb
 		if (op->operands[0].reg_type & ARM_REG32) {
 			k |= 0x00004000;
@@ -1130,17 +1174,13 @@ static ut32 lsop(ArmOp *op, int k, ut64 addr) {
 		if (width == 'b') {
 			check_cond (n <= 0xfff);
 		} else if (width == 'h') {
-			check_cond (n <= 0x1ffe && !(n & 1))
-				n >>= 1;
+			check_cond (n <= 0x1ffe && !(n & 1));
+			n >>= 1;
 		} else { // w
 			int scale = (op->operands[0].reg_type & ARM_REG64) ? 3 : 2;
 			if (uwu || scale == 2) {
 				check_cond (n <= 0x3ffc && !(n & 3));
-				if (uwu) {
-					n>>= 2;
-				} else {
-					n >>= 3;
-				}
+				n >>= 2;
 			} else {
 				check_cond (n <= 0x7ff8 && !(n & 7));
 				n >>= 3;
@@ -1149,7 +1189,8 @@ static ut32 lsop(ArmOp *op, int k, ut64 addr) {
 		data = k | (n & 0x3f) << 18 | (n & 0xfc0) << 2 | 1;
 		return data;
 	}
-	check_cond (-0x100 <= n && n < 0x100) if (op->operands[2].preindex) {
+	check_cond (-0x100 <= n && n < 0x100);
+	if (op->operands[2].preindex) {
 		k |= 0x00080000;
 	}
 	data = k | encodeImm9 (n) | 0x00040000;
@@ -1461,18 +1502,10 @@ static ut32 stp(ArmOp *op, int k) {
 	}
 
 	data = k;
-	{
-		ut32 rt = (ut32)(op->operands[0].reg & 0x1f);
-		ut32 rn = (ut32)(op->operands[2].reg & 0x1f);
-		ut32 rt2 = (ut32)(op->operands[1].reg & 0x1f);
-		ut32 imm7 = (ut32)((op->operands[3].immediate >> 4) & 0x7f);
-		ut32 b0 = rt | ((rn & 0x7) << 5);
-		ut32 b1 = ((rn >> 3) & 0x3) | (rt2 << 2);
-		ut32 b2 = imm7;
-		ut32 b3 = (ut32)(k & 0xff);
-		data = (b3 << 24) | (b2 << 16) | (b1 << 8) | b0;
-	}
-	return r_swap_ut32(data);
+	data |= encode2regs (op);
+	data += (op->operands[3].immediate & 0x8) << 20;
+	data += (op->operands[3].immediate >> 4) << 8;
+	return data;
 }
 
 static ut32 exception(ArmOp *op, ut32 k) {
@@ -2193,15 +2226,39 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 	} else if (r_str_startswith (str, "ldur")) {
 		*op = regsluop (&ops, 0x000040f8);
 	} else if (r_str_startswith (str, "str")) {
-		*op = reglsop (&ops, 0x000000f8);
+		*op = UT32_MAX;
+		*op = lsop (&ops, 0x000000f8, -1);
+		if (*op == UT32_MAX) {
+			*op = reglsop (&ops, 0x000000f8);
+		}
 	} else if (r_str_startswith (str, "stp")) {
 		*op = stp (&ops, 0x000000a9);
 	} else if (r_str_startswith (str, "ldp")) {
 		*op = stp (&ops, 0x000040a9);
 	} else if (r_str_startswith (str, "sub") && !r_str_startswith (str, "subg") && !r_str_startswith (str, "subp")) { // w, skip this for mte versions of sub, e.g. subg, subp ins
 		*op = arithmetic (&ops, 0xd1);
-	} else if (r_str_startswith (str, "madd x")) {
-		*op = math (&ops, 0x9b, true);
+	} else if (r_str_startswith (str, "madd ")) {
+		*op = math3src (&ops, 0x1b000000);
+	} else if (r_str_startswith (str, "msub ")) {
+		*op = math3src (&ops, 0x1b008000);
+	} else if (r_str_startswith (str, "mneg ")) {
+		*op = math3src (&ops, 0x1b008000); // alias of msub with Ra=xzr
+	} else if (r_str_startswith (str, "smaddl ")) {
+		*op = math3src (&ops, 0x1b200000);
+	} else if (r_str_startswith (str, "smsubl ")) {
+		*op = math3src (&ops, 0x1b208000);
+	} else if (r_str_startswith (str, "smnegl ")) {
+		*op = math3src (&ops, 0x1b208000); // alias of smsubl with Ra=xzr
+	} else if (r_str_startswith (str, "smull ")) {
+		*op = math3src (&ops, 0x1b200000); // alias of smaddl with Ra=xzr
+	} else if (r_str_startswith (str, "umaddl ")) {
+		*op = math3src (&ops, 0x1ba00000);
+	} else if (r_str_startswith (str, "umsubl ")) {
+		*op = math3src (&ops, 0x1ba08000);
+	} else if (r_str_startswith (str, "umnegl ")) {
+		*op = math3src (&ops, 0x1ba08000); // alias of umsubl with Ra=xzr
+	} else if (r_str_startswith (str, "umull ")) {
+		*op = math3src (&ops, 0x1ba00000); // alias of umaddl with Ra=xzr
 	} else if (r_str_startswith (str, "add x")) {
 		// } else if (r_str_startswith (str, "add")) {
 		// *op = math (&ops, 0x8b, has64reg (str));

@@ -12,12 +12,45 @@
 
 #include "../../../shlr/qjs/js_require.c"
 #include "../../../shlr/qjs/js_r2papi.c"
-#define QJS_STRING(x) JS_NewString (ctx, x)
+#define QJS_STRING(x) JS_NewString(ctx, x)
 
 typedef struct {
 	R_BORROW JSContext *ctx;
 	JSValue call_func;
 } QjsContext;
+
+// Global variable to store current context for break handler
+static R_TH_LOCAL JSContext *current_ctx = NULL;
+
+static int qjs_interrupt_handler(JSRuntime *rt, void *opaque) {
+	RCons *cons = (RCons *)opaque;
+	if (cons && cons->context && cons->context->breaked) {
+		return 1;
+	}
+	return 0;
+}
+
+static void qjs_break_handler(void *user) {
+	R_LOG_ERROR ("JavaScript execution interrupted");
+
+	if (!current_ctx) {
+		return;
+	}
+	JSValue error_obj = JS_NewError (current_ctx);
+	if (!JS_IsException (error_obj)) {
+		JSValue stack_val = JS_GetPropertyStr (current_ctx, error_obj, "stack");
+		if (!JS_IsException (stack_val) && !JS_IsUndefined (stack_val)) {
+			const char *stack_str = JS_ToCString (current_ctx, stack_val);
+			if (stack_str) {
+				R_LOG_ERROR ("StackTrace: %s", stack_str);
+				JS_FreeCString (current_ctx, stack_str);
+			}
+			JS_FreeValue (current_ctx, stack_val);
+		}
+		JS_FreeValue (current_ctx, error_obj);
+	}
+}
+
 #define QJS_CORE_MAGIC 0x07534617
 
 // TODO: deprecate
@@ -85,7 +118,6 @@ typedef struct qjs_plugin_manager_t {
 	RVecAsmPlugin asm_plugins;
 } QjsPluginManager;
 
-// static QjsPluginManager *Gpm = NULL; // XXX globals
 static bool plugin_manager_init(QjsPluginManager *pm, RCore *core, JSRuntime *rt) {
 	pm->core = core;
 	pm->rt = rt;
@@ -100,7 +132,7 @@ static void plugin_manager_add_core_plugin(QjsPluginManager *pm, const char *nam
 	R_RETURN_IF_FAIL (pm);
 	QjsCorePlugin *cp = RVecCorePlugin_emplace_back (&pm->core_plugins);
 	if (cp) {
-		cp->name = name ? strdup (name) : NULL;
+		cp->name = name? strdup (name): NULL;
 		cp->qctx.ctx = ctx;
 		cp->qctx.call_func = func;
 	}
@@ -111,7 +143,7 @@ static QjsIoPlugin *plugin_manager_add_io_plugin(QjsPluginManager *pm, const cha
 
 	QjsIoPlugin *cp = RVecIoPlugin_emplace_back (&pm->io_plugins);
 	if (cp) {
-		cp->name = name ? strdup (name) : NULL;
+		cp->name = name? strdup (name): NULL;
 		cp->ctx = ctx;
 		cp->iop = iop;
 		cp->fn_check_js = func;
@@ -126,7 +158,7 @@ static QjsAsmPlugin *plugin_manager_add_parse_plugin(QjsPluginManager *pm, const
 
 	QjsAsmPlugin *cp = RVecAsmPlugin_emplace_back (&pm->asm_plugins);
 	if (cp) {
-		cp->name = name ? strdup (name) : NULL;
+		cp->name = name? strdup (name): NULL;
 		cp->ctx = ctx;
 		cp->iop = iop;
 		cp->fn_parse_js = func;
@@ -295,13 +327,10 @@ static void r2qjs_dump_obj(JSContext *ctx, JSValueConst val) {
 }
 
 static void js_std_dump_error1(JSContext *ctx, JSValueConst exception_val) {
-	JSValue val;
-	bool is_error;
-
-	is_error = JS_IsError (ctx, exception_val);
+	bool is_error = JS_IsError (exception_val);
 	r2qjs_dump_obj (ctx, exception_val);
 	if (is_error) {
-		val = JS_GetPropertyStr (ctx, exception_val, "stack");
+		JSValue val = JS_GetPropertyStr (ctx, exception_val, "stack");
 		if (!JS_IsUndefined (val)) {
 			r2qjs_dump_obj (ctx, val);
 		}
@@ -310,8 +339,7 @@ static void js_std_dump_error1(JSContext *ctx, JSValueConst exception_val) {
 }
 
 static void js_std_dump_error(JSContext *ctx) {
-	JSValue exception_val;
-	exception_val = JS_GetException (ctx);
+	JSValue exception_val = JS_GetException (ctx);
 	js_std_dump_error1 (ctx, exception_val);
 	JS_FreeValue (ctx, exception_val);
 }
@@ -463,9 +491,9 @@ static JSValue r2cmd0(JSContext *ctx, JSValueConst this_val, int argc, JSValueCo
 	const char *n = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
 	int ret = 0;
 	if (R_STR_ISNOTEMPTY (n)) {
-		pm->core->lang->cmdf (pm->core, "e scr.null=true");
+		pm->core->lang->cmdf (pm->core, "'e scr.null=true");
 		ret = pm->core->lang->cmdf (pm->core, "%s", n);
-		pm->core->lang->cmdf (pm->core, "e scr.null=false");
+		pm->core->lang->cmdf (pm->core, "'e scr.null=false");
 	}
 	// JS_FreeValue (ctx, argv[0]);
 	return JS_NewInt32 (ctx, ret);
@@ -783,10 +811,10 @@ static void register_helpers(JSContext *ctx) {
 	JS_SetPropertyStr (ctx, global_obj, "print", JS_NewCFunction (ctx, js_print, "print", 1));
 	eval (ctx, "setTimeout = (x,y) => x ();");
 	eval (ctx, "function dump (x) {"
-		  "if (typeof x==='object' && Object.keys (x)[0] != '0') { for (let k of Object.keys (x)) { console.log (k);}} else "
-		  "if (typeof x==='number'&& x > 0x1000){console.log (R.hex (x));}else"
-		  "{console.log ((typeof x==='string')?x:JSON.stringify (x, null, 2));}"
-		  "}");
+		"if (typeof x==='object' && Object.keys (x)[0] != '0') { for (let k of Object.keys (x)) { console.log (k);}} else "
+		"if (typeof x==='number'&& x > 0x1000){console.log (R.hex (x));}else"
+		"{console.log ((typeof x==='string')?x:JSON.stringify (x, null, 2));}"
+		"}");
 	eval (ctx, "var console = { log:print, error:print, debug:print };");
 	eval (ctx, "r2.cmd2 = (x) => JSON.parse (r2.cmd (`'{\"cmd\":\"${x}\"}`));");
 	eval (ctx, "r2.cmd2j = (x) => JSON.parse (r2.cmd (`'{\"cmd\":\"${x}\",\"json\":true}`));");
@@ -840,9 +868,18 @@ static bool eval(JSContext *ctx, const char *code) {
 	if (R_STR_ISEMPTY (code)) {
 		return false;
 	}
+
+	current_ctx = ctx;
+
 	JSRuntime *rt = JS_GetRuntime (ctx);
 	QjsPluginManager *pm = JS_GetRuntimeOpaque (rt);
 	RCons *cons = pm->core->cons;
+
+	// Register break handler for JS execution
+	r_cons_context_break_push (pm->core->cons, cons->context, qjs_break_handler, NULL, false);
+
+	// Set interrupt handler for JS runtime
+	JS_SetInterruptHandler (rt, qjs_interrupt_handler, cons);
 
 	bool wantRaw = strstr (code, "termInit (");
 	if (wantRaw) {
@@ -865,6 +902,12 @@ static bool eval(JSContext *ctx, const char *code) {
 	}
 	// restore raw console
 	JS_FreeValue (ctx, v);
+
+	// Unregister break handler
+	r_cons_context_break_pop (pm->core->cons, cons->context, false);
+	JS_SetInterruptHandler (rt, NULL, NULL);
+	current_ctx = NULL;
+
 	return true;
 }
 
@@ -939,6 +982,7 @@ static bool init(RLangSession *ls) {
 
 	// requires pm to be set in the plugin_data
 	register_helpers (ctx);
+
 	return true;
 }
 

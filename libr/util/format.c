@@ -963,7 +963,7 @@ static int r_print_format_10bytes(const RPrint* p, int mode, const char *setval,
 
 static int r_print_format_hexpairs(const RPrint* p, int endian, int mode, const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	int j;
-	size = (size == -1) ? 1 : size;
+	if (size == -1) size = 1;
 	if (MUSTSET) {
 		r_print_printf (p, "?e pf X not yet implemented\n");
 	} else if (mode & R_PRINT_DOT) {
@@ -971,7 +971,7 @@ static int r_print_format_hexpairs(const RPrint* p, int endian, int mode, const 
 			r_print_printf (p, "%02x", buf[i + j]);
 		}
 	} else if (MUSTSEE) {
-		size = (size < 1) ? 1 : size;
+		if (size < 1) size = 1;
 		if (!SEEVALUE && !ISQUIET) {
 			r_print_printf (p, "0x%08" PFMT64x " = ", seeki);
 		}
@@ -992,7 +992,7 @@ static int r_print_format_hexpairs(const RPrint* p, int endian, int mode, const 
 		}
 		r_print_printf (p, ")");
 	} else if (MUSTSEEJSON || MUSTSEESTRUCT) {
-		size = (size < 1) ? 1 : size;
+		if (size < 1) size = 1;
 		r_print_printf (p, "[ %d", buf[0]);
 		j = 1;
 		for (; j < 10; j++) {
@@ -1759,13 +1759,13 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 				size += 4; // Assuming by default enum as int
 			}
 			break;
-		case '?':
-			{
+		case '?': {
 			const char *wordAtIndex = NULL;
 			const char *format = NULL;
 			bool format_owned = false; /* We may or may not free format */
 			char *endname = NULL, *structname = NULL;
 			char tmp = 0;
+			int ret = 0;
 			if (words < idx) {
 				R_LOG_ERROR ("Index out of bounds");
 			} else {
@@ -1775,6 +1775,9 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 				break;
 			}
 			structname = strdup (wordAtIndex);
+			if (!structname) {
+				break;
+			}
 			if (*structname == '(') {
 				endname = (char*)r_str_rchr (structname, NULL, ')');
 			} else {
@@ -1795,9 +1798,8 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 				format = p? sdb_get (p->formats, structname + 1, NULL): NULL;
 				if (format && !strncmp (format, f, strlen (format) - 1)) { // Avoid recursion here
 					R_FREE (format);
-					free (o);
-					free (structname);
-					return -1;
+					ret = -1;
+					goto cleanup_struct;
 				}
 				if (!format) { // Fetch format from types db
 					format = r_type_format (p->sdb_types, structname + 1);
@@ -1806,31 +1808,35 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 			}
 			if (!format) {
 				R_LOG_ERROR ("Cannot find format for struct `%s'", structname + 1);
-				free (structname);
-				free (o);
-				return 0;
+				ret = 0;
+				goto cleanup_struct;
 			}
 			int newsize = r_print_format_struct_size (p, format, mode, n + 1);
 			if (newsize < 1) {
 				R_LOG_ERROR ("Cannot find size for `%s'", format);
-				free (structname);
-				free (o);
-				return 0;
+				ret = 0;
+				goto cleanup_struct;
 			}
-			if (format) {
-				if (!ST32_MUL_OVFCHK (tabsize, newsize)) {
-					size = size + (tabsize * newsize);
-				} else {
-					R_LOG_ERROR ("Prevented multiply integer overflow in format.c");
-					return 0;
-				}
+			if (!ST32_MUL_OVFCHK (tabsize, newsize)) {
+				size = size + (tabsize * newsize);
+			} else {
+				R_LOG_ERROR ("Prevented multiply integer overflow in format.c");
+				ret = 0;
+				goto cleanup_struct;
 			}
+			cleanup_struct:
 			free (structname);
 			if (format_owned) {
 				R_FREE (format);
 			}
+			if (ret != 0) {
+				free (o);
+				free (args);
+				return ret;
+			}
 			}
 			break;
+
 		case '{':
 			while (fmt[i] != '}') {
 				if (!fmt[i]) {

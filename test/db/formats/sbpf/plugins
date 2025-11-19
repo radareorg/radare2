@@ -1,0 +1,71 @@
+NAME=sBPF: Correct sBPFv3 identification and disassembly
+FILE=bins/elf/sbpf_example_v3.so
+ARGS=-B 0x100000000
+CMDS=<<EOF
+s 0x100007528; pd 1
+EOF
+EXPECT=<<EOF
+            0x100007528      9d00000000..   return
+EOF
+RUN
+
+NAME=sBPF: Correct sBPFv2 identification and disassembly
+FILE=bins/elf/sbpf_example_v2.so
+ARGS=-B 0x100000000 
+CMDS=<<EOF
+s 0x100007498; pd 2 
+EOF
+EXPECT=<<EOF
+            0x100007498      b40100001a..   mov r1, 0x1a
+            0x1000074a0      f701000000..   hor64 r1, 0x80000000
+EOF
+RUN
+
+NAME=sBPF: Correct sBPFv1 identification and disassembly
+FILE=bins/elf/sbpf_example_v1.so
+ARGS=-B 0x100000000
+CMDS=<<EOF
+pd 1
+EOF
+EXPECT=<<EOF
+            ;-- entry0:
+            ;-- entrypoint:
+            0x100007408      070a000080..   add64 r10, 0xffffff80
+EOF
+RUN
+
+NAME=sBPF: Analysis plugin string detection for v3
+FILE=bins/elf/sbpf_example_v3.so
+ARGS=-B 0x000000000 -e log.level=0
+CMDS=<<EOF
+a:sbpf.analyze
+a:sbpf.strings~?
+EOF
+EXPECT=<<EOF
+481
+EOF
+RUN
+
+NAME=sBPF: Analysis plugin string detection for v2
+FILE=bins/elf/sbpf_example_v2.so
+ARGS=-B 0x100000000 -e bin.relocs.apply=true -e log.level=0
+CMDS=<<EOF
+a:sbpf.analyze
+a:sbpf.strings~?
+EOF
+EXPECT=<<EOF
+482
+EOF
+RUN
+
+NAME=sBPF: Analysis plugin string detection for v1
+FILE=bins/elf/sbpf_example_v1.so
+ARGS=-B 0x100000000 -e bin.relocs.apply=true -e log.level=0
+CMDS=<<EOF
+a:sbpf.analyze
+a:sbpf.strings~?
+EOF
+EXPECT=<<EOF
+497
+EOF
+RUN

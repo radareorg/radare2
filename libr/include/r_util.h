@@ -87,6 +87,7 @@ int gettimeofday(struct timeval *p, void *tz);
 #include "r_util/r_w32.h"
 #include "r_util/r_token.h"
 #include "r_util/r_axml.h"
+#include "r_util/r_cfloat.h"
 #include "r_util/libc.h"
 // requires io, core, ... #include "r_util/r_print.h"
 

@@ -66,6 +66,7 @@ static bool is_intel(const ELFOBJ *eo) {
 	switch (eo->ehdr.e_machine) {
 	case EM_386:
 	case EM_X86_64:
+	case EM_IAMCU:
 		return true;
 	}
 	return false;
@@ -227,7 +228,7 @@ static bool read_phdr(ELFOBJ *eo) {
 	const size_t _128K = 1024 * 128;
 	// Enable this hack only for the X86 64bit ELFs
 	const bool linux_kern_hack = r_buf_size (eo->b) > _128K &&
-		(eo->ehdr.e_machine == EM_X86_64 || eo->ehdr.e_machine == EM_386);
+		(eo->ehdr.e_machine == EM_X86_64 || eo->ehdr.e_machine == EM_386 || eo->ehdr.e_machine == EM_IAMCU);
 	if (linux_kern_hack) {
 		bool load_header_found = false;
 
@@ -1973,6 +1974,7 @@ static ut64 get_import_addr(ELFOBJ *eo, int sym) {
 		return get_import_addr_ppc (eo, rel);
 	case EM_386:
 	case EM_X86_64:
+	case EM_IAMCU:
 		return get_import_addr_x86 (eo, rel);
 	case EM_LOONGARCH:
 		return get_import_addr_loongarch (eo, rel);
@@ -2500,6 +2502,7 @@ char* Elf_(get_arch)(ELFOBJ *eo) {
 		return strdup ("nds32");
 	case EM_386:
 	case EM_X86_64:
+	case EM_IAMCU:
 		return strdup ("x86");
 	case EM_NONE:
 		return strdup ("null");
@@ -2561,6 +2564,8 @@ char* Elf_(get_abi)(ELFOBJ *eo) {
 	case EM_V800:
 	case EM_V850:
 		break;
+	case EM_SBPF:
+		return r_str_newf ("sbpfv%d", eflags);
 	}
 	return NULL;
 }
@@ -2610,23 +2615,35 @@ static const char *v850_flags_to_cpu(ut32 type) {
 }
 
 char* Elf_(get_cpu)(ELFOBJ *eo) {
-	const char *cpu = NULL;
+	char *cpu = NULL;
+
 	switch (eo->ehdr.e_machine) {
 	case EM_MIPS:
 		if (is_mips_micro (&eo->ehdr)) {
-			cpu = "micro";
-		} else {
-			cpu = eo->phdr ? mips_flags_to_cpu (eo->ehdr.e_flags & EF_MIPS_ARCH): NULL;
+			cpu = strdup ("micro");
+		} else if (eo->phdr) {
+			const char *mips_cpu = mips_flags_to_cpu (eo->ehdr.e_flags & EF_MIPS_ARCH);
+			if (mips_cpu) {
+				cpu = strdup (mips_cpu);
+			}
 		}
 		break;
 	case EM_V800:
 	case EM_V850:
-		cpu = v850_flags_to_cpu (eo->ehdr.e_flags & EF_V850_ARCH);
+	{
+		const char *v850_cpu = v850_flags_to_cpu (eo->ehdr.e_flags & EF_V850_ARCH);
+		if (v850_cpu) {
+			cpu = strdup (v850_cpu);
+		}
+	}
+		break;
+	case EM_SBPF:
+		cpu = r_str_newf ("sbpfv%d", eo->ehdr.e_flags);
 		break;
 	default:
 		break;
 	}
-	return cpu? strdup (cpu): NULL;
+	return cpu;
 }
 
 // https://www.sco.com/developers/gabi/latest/ch4.eheader.html
@@ -2639,6 +2656,7 @@ char* Elf_(get_machine_name)(ELFOBJ *eo) {
 	case EM_386:           return strdup ("Intel 80386");
 	case EM_68K:           return strdup ("Motorola m68k family");
 	case EM_88K:           return strdup ("Motorola m88k family");
+	case EM_IAMCU:         return strdup ("Intel 80486");
 	case EM_860:           return strdup ("Intel 80860");
 	case EM_MIPS:          return strdup ("MIPS R3000");
 	case EM_S370:          return strdup ("IBM System/370");
@@ -3048,6 +3066,7 @@ ut8 *Elf_(grab_regstate)(ELFOBJ *eo, int *len) {
 			regdelta = reginf[ARM].regdelta;
 			break;
 		case EM_386:
+		case EM_IAMCU:
 			regsize = reginf[X86].regsize;
 			regdelta = reginf[X86].regdelta;
 			break;
@@ -4262,6 +4281,7 @@ static bool _add_sections_from_phdr(RBinFile *bf, ELFOBJ *eo, bool *found_load) 
 	}
 
 	int i = 0, n = 0;
+
 	for (i = 0; i < num; i++) {
 		RBinSection *ptr = r_vector_end (&eo->cached_sections);
 		if (!ptr) {
@@ -4272,6 +4292,7 @@ static bool _add_sections_from_phdr(RBinFile *bf, ELFOBJ *eo, bool *found_load) 
 		ptr->vsize = phdr[i].p_memsz;
 		ptr->paddr = phdr[i].p_offset;
 		ptr->vaddr = phdr[i].p_vaddr;
+
 		ptr->perm = phdr[i].p_flags; // perm  are rwx like x=1, w=2, r=4, aka no need to convert from r2's R_PERM
 		ptr->is_segment = true;
 		switch (phdr[i].p_type) {
@@ -5010,6 +5031,7 @@ static RVecRBinElfSymbol *_load_additional_imported_symbols(ELFOBJ *eo, ImportIn
 	if (!imports || !RVecRBinElfSymbol_reserve (imports, import_ret_ctr)) {
 		R_LOG_DEBUG ("Cannot allocate %d symbols", nsym);
 		_symbol_memory_free (&ii->memory);
+		RVecRBinElfSymbol_free (imports);
 		return NULL;
 	}
 
@@ -5513,7 +5535,8 @@ ut64 Elf_(p2v) (ELFOBJ *eo, ut64 paddr) {
 			if (!p->p_vaddr && !p->p_offset) {
 				continue;
 			}
-			return p->p_vaddr + paddr - p->p_offset;
+			ut64 vaddr = p->p_vaddr + paddr - p->p_offset;
+			return vaddr;
 		}
 	}
 

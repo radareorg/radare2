@@ -54,8 +54,8 @@
 #endif
 #endif
 #ifdef _MSC_VER
-#include <direct.h>   // to compile chdir in msvc windows
-#include <process.h>  // to compile execv in msvc windows
+#include <direct.h>
+#include <process.h>
 #define pid_t int
 #endif
 
@@ -75,9 +75,9 @@ static void dyn_init(void) {
 	}
 #if R2__UNIX__
 	// attempt to fall back on libutil if we failed to load anything
-	if (!(dyn_openpty && dyn_login_tty && dyn_forkpty)) {
+	if (! (dyn_openpty && dyn_login_tty && dyn_forkpty)) {
 		void *libutil;
-		if (!(libutil = r_lib_dl_open ("libutil." R_LIB_EXT, false))) {
+		if (! (libutil = r_lib_dl_open ("libutil." R_LIB_EXT, false))) {
 			R_LOG_ERROR ("rarun2: Could not find PTY utils, failed to load libutil" R_LIB_EXT);
 			return;
 		}
@@ -97,16 +97,16 @@ static void dyn_init(void) {
 
 #endif
 
-R_API RRunProfile *r_run_new(const char * R_NULLABLE str) {
+R_API RRunProfile *r_run_new(const char *R_NULLABLE str) {
 	RRunProfile *p = R_NEW0 (RRunProfile);
-	r_run_reset (p); // TODO: rename to r_run_init
+	r_run_reset (p);
 	if (str) {
 		r_run_parsefile (p, str);
 	}
 	return p;
 }
 
-R_API void r_run_reset(RRunProfile *p) {
+R_API void r_run_fini(RRunProfile *p) {
 	R_RETURN_IF_FAIL (p);
 	int i;
 	for (i = 0; i < R_RUN_PROFILE_NARGS; i++) {
@@ -132,6 +132,11 @@ R_API void r_run_reset(RRunProfile *p) {
 	R_FREE (p->_seteuid);
 	R_FREE (p->_setgid);
 	R_FREE (p->_setegid);
+}
+
+R_API void r_run_reset(RRunProfile *p) {
+	R_RETURN_IF_FAIL (p);
+	r_run_fini (p);
 	memset (p, 0, sizeof (RRunProfile));
 	p->_aslr = -1;
 }
@@ -142,7 +147,7 @@ R_API bool r_run_parse(RRunProfile *pf, const char *profile) {
 	if (!str) {
 		return false;
 	}
-	r_str_replace_char (str, '\r',0);
+	r_str_replace_char (str, '\r', 0);
 	p = str;
 	while (p) {
 		if ((o = strchr (p, '\n'))) {
@@ -156,48 +161,24 @@ R_API bool r_run_parse(RRunProfile *pf, const char *profile) {
 }
 
 R_API void r_run_free(RRunProfile *r) {
-	int i;
 	if (r) {
-		free (r->_system);
-		free (r->_program);
-		free (r->_runlib);
-		free (r->_runlib_fcn);
-		free (r->_stdio);
-		free (r->_stdin);
-		free (r->_stdout);
-		free (r->_stderr);
-		free (r->_chgdir);
-		free (r->_chroot);
-		free (r->_libpath);
-		r_list_free (r->_preload);
-		free (r->_pidfile);
-		free (r->_connect);
-		free (r->_listen);
-		free (r->_input);
-		free (r->_setuid);
-		free (r->_seteuid);
-		free (r->_setgid);
-		free (r->_setegid);
-		for (i = 0; i < R_RUN_PROFILE_NARGS; i++) {
-			free (r->_args[i]);
-		}
-		free (r);
+		r_run_fini (r);
 	}
 }
 
 #if R2__UNIX__ && !__wasi__ && !defined(__serenity__)
 static void set_limit(int n, int a, ut64 b) {
 	if (n) {
-		struct rlimit cl = {b, b};
+		struct rlimit cl = { b, b };
 		setrlimit (RLIMIT_CORE, &cl);
 	} else {
-		struct rlimit cl = {0, 0};
+		struct rlimit cl = { 0, 0 };
 		setrlimit (a, &cl);
 	}
 }
 #endif
 
-static char *getstr(const char *src, size_t * R_NULLABLE out_len) {
+static char *getstr(const char *src, size_t *R_NULLABLE out_len, bool escape) {
 	size_t len = 0;
 	char *ret = NULL;
 
@@ -244,7 +225,7 @@ static char *getstr(const char *src, size_t * R_NULLABLE out_len) {
 					R_LOG_ERROR ("Invalid num in @<num>@<pattern> expr");
 					return NULL;
 				}
-				if (errno == EINVAL || errno == ERANGE || len > 64000000) {
+			if (errno == EINVAL || errno == ERANGE || len > 64000000) {
 					R_LOG_ERROR ("Out-of-bounds num in @<num>@<pattern> expr");
 					return NULL;
 				}
@@ -270,60 +251,65 @@ static char *getstr(const char *src, size_t * R_NULLABLE out_len) {
 		}
 	case '`':
 		{
-		size_t msg_len = strlen (src);
-		if (msg_len == 0) {
-			R_LOG_ERROR ("Invalid backtick expression in input");
-			return NULL;
-		}
-		if (src [msg_len - 1] != '`') {
-			R_LOG_ERROR ("Unterminated backtick expr in input");
-			return NULL;
-		}
-		char *msg = strdup (src);
-		if (!msg) {
-			return NULL;
-		}
-		msg [msg_len - 1] = 0;
-		int cmd_len = 0;
-		ret = r_sys_cmd_str (msg, NULL, &cmd_len);
-		len = (size_t)cmd_len;
-		r_str_trim_tail (ret);
-		free (msg);
-		break;
+			size_t msg_len = strlen (src);
+			if (msg_len == 0) {
+				R_LOG_ERROR ("Invalid backtick expression in input");
+				return NULL;
+			}
+			if (src[msg_len - 1] != '`') {
+				R_LOG_ERROR ("Unterminated backtick expr in input");
+				return NULL;
+			}
+			char *msg = strdup (src);
+			if (!msg) {
+				return NULL;
+			}
+			msg[msg_len - 1] = 0;
+			int cmd_len = 0;
+			ret = r_sys_cmd_str (msg, NULL, &cmd_len);
+			len = (size_t)cmd_len;
+			r_str_trim_tail (ret);
+			free (msg);
+			break;
 		}
 	case '!':
 		{
-		ret = r_sys_cmd_str (src, NULL, NULL);
-		if (!ret) {
-			return NULL;
-		}
-		r_str_trim_tail (ret);
-		len = strlen (ret);
-		break;
+			ret = r_sys_cmd_str (src, NULL, NULL);
+			if (!ret) {
+				return NULL;
+			}
+			r_str_trim_tail (ret);
+			len = strlen (ret);
+			break;
 		}
 	case ':':
 		{
-		char *hex = getstr (src, NULL);
-		if (!hex) {
-			return NULL;
-		}
-		int hexlen = r_hex_str2bin (hex, NULL);
-		if (hexlen <= 0) {
-			R_LOG_ERROR ("Invalid hexpair string");
+			char *hex = getstr (src, NULL, true);
+			if (!hex) {
+				return NULL;
+			}
+			int hexlen = r_hex_str2bin (hex, NULL);
+			if (hexlen <= 0) {
+				R_LOG_ERROR ("Invalid hexpair string");
+				free (hex);
+				return NULL;
+			}
+			len = (size_t)hexlen;
+			ret = malloc (len + 1);
+			if (ret) {
+				ret[len] = 0;
+				r_hex_str2bin (hex, (ut8 *)ret);
+			}
 			free (hex);
-			return NULL;
-		}
-		len = (size_t)hexlen;
-		ret = malloc (len + 1);
-		if (ret) {
-			ret[len] = 0;
-			r_hex_str2bin (hex, (ut8*)ret);
-		}
-		free (hex);
 		}
 		break;
 	default:
-		len = r_str_unescape ((ret = strdup (src - 1)));
+		if (escape) {
+			len = r_str_unescape ((ret = strdup (src - 1)));
+		} else {
+			len = strlen (src - 1);
+			ret = strdup (src - 1);
+		}
 		break;
 	}
 beach:
@@ -333,7 +319,7 @@ beach:
 	return ret;
 }
 
-// TODO: move into r_util? r_run_... ? with the rest of funcs?
+// TODO: move into r_util? r_run_...? with the rest of funcs?
 static void setASLR(RRunProfile *r, int enabled) {
 #if __linux__
 	r_sys_aslr (enabled);
@@ -347,10 +333,10 @@ static void setASLR(RRunProfile *r, int enabled) {
 #elif __APPLE__
 	// TOO OLD setenv ("DYLD_NO_PIE", "1", 1);
 	// disable this because its
-	const char *argv0 = r->_system ? r->_system
-		: r->_program ? r->_program
-		: r->_args[0] ? r->_args[0]
-		: "/path/to/exec";
+	const char *argv0 = r->_system? r->_system
+		: r->_program? r->_program
+		: r->_args[0]? r->_args[0]
+				: "/path/to/exec";
 	R_LOG_INFO ("To disable aslr patch mach0.hdr.flags with: r2 -qwnc 'wx 000000 @ 0x18' %s", argv0);
 	// f MH_PIE=0x00200000; wB-MH_PIE @ 24\n");
 	// for osxver>=10.7
@@ -453,7 +439,7 @@ static int handle_redirection_proc(const char *cmd, bool in, bool out, bool err)
 	return 0;
 #else
 #ifdef _MSC_VER
-#pragma message ("TODO: handle_redirection_proc: Not implemented for this platform")
+#pragma message("TODO: handle_redirection_proc: Not implemented for this platform")
 #else
 #warning handle_redirection_proc : unimplemented for this platform
 #endif
@@ -464,8 +450,8 @@ static int handle_redirection_proc(const char *cmd, bool in, bool out, bool err)
 
 static bool handle_redirection(const char *cmd, bool in, bool out, bool err) {
 #if __APPLE__ && !__POWERPC__
-	//XXX handle this in other layer since things changes a little bit
-	//this seems like a really good place to refactor stuff
+	// XXX handle this in other layer since things changes a little bit
+	// this seems like a really good place to refactor stuff
 	return true;
 #else
 	if (R_STR_ISEMPTY (cmd)) {
@@ -478,7 +464,7 @@ static bool handle_redirection(const char *cmd, bool in, bool out, bool err) {
 		if (in) {
 			int pipes[2] = { -1, -1 };
 			if (pipe (pipes) != -1) {
-				size_t cmdl = strlen (cmd)-2;
+				size_t cmdl = strlen (cmd) - 2;
 				if (write (pipes[1], cmd + 1, cmdl) != cmdl) {
 					R_LOG_ERROR ("Cannot write to the pipe");
 					close (0);
@@ -497,7 +483,7 @@ static bool handle_redirection(const char *cmd, bool in, bool out, bool err) {
 		}
 #else
 #ifdef _MSC_VER
-#pragma message ("string redirection handle not yet done")
+#pragma message("string redirection handle not yet done")
 #else
 #warning quoted string redirection handle not yet done
 #endif
@@ -508,9 +494,9 @@ static bool handle_redirection(const char *cmd, bool in, bool out, bool err) {
 	} else {
 		// redirection to a file
 		int f, flag = 0, mode = 0;
-		flag |= in ? O_RDONLY : 0;
-		flag |= out ? O_WRONLY | O_CREAT : 0;
-		flag |= err ? O_WRONLY | O_CREAT : 0;
+		flag |= in? O_RDONLY: 0;
+		flag |= out? O_WRONLY | O_CREAT: 0;
+		flag |= err? O_WRONLY | O_CREAT: 0;
 #ifdef R2__WINDOWS__
 		mode = _S_IREAD | _S_IWRITE;
 #else
@@ -522,7 +508,11 @@ static bool handle_redirection(const char *cmd, bool in, bool out, bool err) {
 			return false;
 		}
 #ifndef __wasi__
-#define DUP(x) { close(x); dup2(f,x); }
+#define DUP(x) \
+	{ \
+		close (x); \
+		dup2 (f, x); \
+	}
 		if (in) {
 			DUP (0);
 		}
@@ -610,12 +600,13 @@ R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 			p->_stdin = strdup (e);
 		}
 	} else if (!strcmp (b, "stdout")) {
-		p->_stdout = strdup (e);
+		p->_stdout = getstr (e, NULL, false);
 	} else if (!strcmp (b, "stdin")) {
-		p->_stdin = strdup (e);
+		p->_stdin = getstr (e, NULL, false);
 	} else if (!strcmp (b, "stderr")) {
 		p->_stderr = strdup (e);
 	} else if (!strcmp (b, "input")) {
+		// p->_input = getstr (e, NULL, false);
 		p->_input = strdup (e);
 	} else if (!strcmp (b, "chdir")) {
 		p->_chgdir = strdup (e);
@@ -668,7 +659,7 @@ R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 		int n = atoi (b + 3);
 		if (n >= 0 && n < R_RUN_PROFILE_NARGS) {
 			free (p->_args[n]);
-			p->_args[n] = getstr (e, NULL);
+			p->_args[n] = getstr (e, NULL, true);
 			p->_argc++;
 		} else {
 			R_LOG_ERROR ("Out of bounds args index: %d", n);
@@ -716,7 +707,7 @@ R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 			r_sys_setenv (e, V);
 #else
 			size_t len;
-			ut8 *V = (ut8*)getstr (v, &len);
+			ut8 *V = (ut8 *)getstr (v, &len, true);
 			r_sys_setenv2 (e, V, len);
 #endif
 			free (V);
@@ -733,8 +724,7 @@ R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 }
 
 R_API const char *r_run_help(void) {
-	return
-	"program=/bin/ls\n"
+	return "program=/bin/ls\n"
 	"arg1=/bin\n"
 	"# arg2=hello\n"
 	"# arg3=\"hello\\nworld\"\n"
@@ -833,7 +823,7 @@ static RThreadFunctionRet exit_process(RThread *th) {
 
 static bool redirect_socket_to_pty(RSocket *sock) {
 #if HAVE_PTY
-	// directly duplicating the fds using dup2() creates problems
+	// directly duplicating the fds using dup2 () creates problems
 	// in case of interactive applications
 	int fdm = -1, fds = -1;
 
@@ -861,7 +851,7 @@ static bool redirect_socket_to_pty(RSocket *sock) {
 
 		char *buff = NULL;
 		int sockfd = sock->fd;
-		int max_fd = fdm > sockfd ? fdm : sockfd;
+		int max_fd = fdm > sockfd? fdm: sockfd;
 
 		while (true) {
 			fd_set readfds;
@@ -962,19 +952,22 @@ R_API bool r_run_config_env(RRunProfile *p) {
 		set_limit (p->_maxstack, RLIMIT_STACK, p->_maxstack);
 	}
 #else
-	if (p->_docore || p->_maxfd || p->_maxproc || p->_maxstack)
+	if (p->_docore || p->_maxfd || p->_maxproc || p->_maxstack) {
 		R_LOG_WARN ("setrlimits not supported for this platform");
+	}
 #endif
 	if (p->_connect) {
 		char *q = strchr (p->_connect, ':');
 		if (q) {
 			RSocket *fd = r_socket_new (0);
 			*q = 0;
-			if (!r_socket_connect_tcp (fd, p->_connect, q+1, 30)) {
+			if (!r_socket_connect_tcp (fd, p->_connect, q + 1, 30)) {
 				R_LOG_ERROR ("Cannot connect");
 				r_socket_free (fd);
 				return false;
 			}
+			r_socket_block_time (fd, true, 0, 0);
+
 			if (p->_pty) {
 				if (!redirect_socket_to_pty (fd)) {
 					R_LOG_ERROR ("socket redirection failed");
@@ -1134,9 +1127,9 @@ R_API bool r_run_config_env(RRunProfile *p) {
 			return false;
 		}
 		size_t inpl;
-		inp = getstr (p->_input, &inpl);
+		inp = getstr (p->_input, &inpl, true);
 		if (inp) {
-			if  (write (f2[1], inp, inpl) != inpl) {
+			if (write (f2[1], inp, inpl) != inpl) {
 				R_LOG_ERROR ("Cannot write to the pipe");
 			}
 			free (inp);
@@ -1153,7 +1146,7 @@ R_API bool r_run_config_env(RRunProfile *p) {
 		if (!p->_preload) {
 			p->_preload = r_list_newf (free);
 		}
-		r_list_append (p->_preload, strdup (R2_LIBDIR"/libr2."R_LIB_EXT));
+		r_list_append (p->_preload, strdup (R2_LIBDIR "/libr2." R_LIB_EXT));
 #endif
 	}
 	if (p->_libpath) {
@@ -1219,7 +1212,7 @@ R_API bool r_run_config_env(RRunProfile *p) {
 static void time_end(bool chk, ut64 time_begin) {
 	if (chk) {
 		ut64 now = r_time_now ();
-		R_LOG_INFO ("%"PFMT64d, now - time_begin);
+		R_LOG_INFO ("%" PFMT64d, now - time_begin);
 	}
 }
 
@@ -1241,7 +1234,7 @@ R_API bool r_run_start(RRunProfile *p) {
 	}
 #if LIBC_HAVE_FORK
 	if (p->_execve) {
-		exit (execv (p->_program, (char* const*)p->_args));
+		exit (execv (p->_program, (char *const *)p->_args));
 	}
 #endif
 	ut64 time_begin = 0;
@@ -1249,13 +1242,13 @@ R_API bool r_run_start(RRunProfile *p) {
 		time_begin = r_time_now ();
 	}
 #if __APPLE__ && !__POWERPC__ && LIBC_HAVE_FORK
-	posix_spawnattr_t attr = {0};
+	posix_spawnattr_t attr = { 0 };
 	pid_t pid = -1;
 	int ret;
 	posix_spawnattr_init (&attr);
 	if (p->_args[0]) {
 		char **envp = r_sys_get_environ ();
-		ut32 spflags = 0; //POSIX_SPAWN_START_SUSPENDED;
+		ut32 spflags = 0; // POSIX_SPAWN_START_SUSPENDED;
 		spflags |= POSIX_SPAWN_SETEXEC;
 		if (p->_aslr == 0) {
 #define _POSIX_SPAWN_DISABLE_ASLR 0x0100
@@ -1274,7 +1267,7 @@ R_API bool r_run_start(RRunProfile *p) {
 			cpu = CPU_TYPE_ANY;
 #endif
 			posix_spawnattr_setbinpref_np (
-					&attr, 1, &cpu, &copied);
+				&attr, 1, &cpu, &copied);
 		}
 		if (p->_pid) {
 			R_LOG_INFO ("pid = %d", r_sys_getpid ());
@@ -1307,7 +1300,7 @@ R_API bool r_run_start(RRunProfile *p) {
 		}
 		if (p->_daemon) {
 #if R2__WINDOWS__
-	//		eprintf ("PID: Cannot determine pid with 'system' directive. Use 'program'.\n");
+			//		eprintf ("PID: Cannot determine pid with 'system' directive. Use 'program'.\n");
 #else
 			pid_t child = r_sys_fork ();
 			if (child == -1) {
@@ -1320,7 +1313,7 @@ R_API bool r_run_start(RRunProfile *p) {
 				}
 				if (p->_pidfile) {
 					r_strf_var (pidstr, 32, "%d\n", (int)child);
-					r_file_dump (p->_pidfile, (const ut8*)pidstr,
+					r_file_dump (p->_pidfile, (const ut8 *)pidstr,
 						strlen (pidstr), 0);
 				}
 				exit (0);
@@ -1391,7 +1384,8 @@ R_API bool r_run_start(RRunProfile *p) {
 		}
 #if R2__UNIX__
 		// XXX HACK close all non-tty fds
-		{ int i;
+		{
+			int i;
 			for (i = 3; i < 1024; i++) {
 				close (i);
 			}
@@ -1414,7 +1408,7 @@ R_API bool r_run_start(RRunProfile *p) {
 			char pidstr[32];
 			snprintf (pidstr, sizeof (pidstr), "%d\n", r_sys_getpid ());
 			r_file_dump (p->_pidfile,
-				(const ut8*)pidstr,
+				(const ut8 *)pidstr,
 				strlen (pidstr), 0);
 		}
 #endif
@@ -1442,15 +1436,15 @@ R_API bool r_run_start(RRunProfile *p) {
 					char pidstr[32];
 					snprintf (pidstr, sizeof (pidstr), "%d\n", (int)child);
 					r_file_dump (p->_pidfile,
-							(const ut8*)pidstr,
-							strlen (pidstr), 0);
+						(const ut8 *)pidstr,
+						strlen (pidstr), 0);
 					exit (0);
 				}
 			}
 #if !__wasi__
 			setsid ();
 #if !LIBC_HAVE_FORK
-			exit (execv (p->_program, (char* const*)p->_args));
+			exit (execv (p->_program, (char *const *)p->_args));
 #endif
 #endif
 #endif
@@ -1458,7 +1452,7 @@ R_API bool r_run_start(RRunProfile *p) {
 // TODO: must be HAVE_EXECVE
 #if LIBC_HAVE_FORK
 		time_end (p->_time, time_begin);
-		exit (execv (p->_program, (char* const*)p->_args));
+		exit (execv (p->_program, (char *const *)p->_args));
 #endif
 	}
 	if (p->_runlib) {
@@ -1471,7 +1465,7 @@ R_API bool r_run_start(RRunProfile *p) {
 			R_LOG_ERROR ("Could not load the library '%s'", p->_runlib);
 			return false;
 		}
-		void (*fcn)(void) = r_lib_dl_sym (addr, p->_runlib_fcn);
+		void (*fcn) (void) = r_lib_dl_sym (addr, p->_runlib_fcn);
 		if (!fcn) {
 			R_LOG_ERROR ("Could not find the function '%s'", p->_runlib_fcn);
 			return false;

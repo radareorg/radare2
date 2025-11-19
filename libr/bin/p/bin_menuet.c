@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2016-2024 - pancake */
+/* radare2 - LGPL - Copyright 2016-2025 - pancake */
 
 #include <r_bin.h>
 
@@ -58,7 +58,7 @@ static bool check(RBinFile *bf, RBuffer *b) {
 		case '2':
 			return true;
 		}
-		eprintf ("Unsupported MENUET version header\n");
+		R_LOG_WARN ("Unsupported MENUET version header");
 	}
 	return false;
 }
@@ -72,7 +72,7 @@ static ut64 baddr(RBinFile *bf) {
 }
 
 static ut64 menuetEntry(const ut8 *buf, int buf_size) {
-	switch (MENUET_VERSION(buf)) {
+	switch (MENUET_VERSION (buf)) {
 	case '0': return r_read_ble32 (buf + 12, false);
 	case '1': return r_read_ble32 (buf + 12, false);
 	case '2': return r_read_ble32 (buf + 44, false);
@@ -80,9 +80,9 @@ static ut64 menuetEntry(const ut8 *buf, int buf_size) {
 	return UT64_MAX;
 }
 
-static RList* entries(RBinFile *bf) {
-	RList* ret;
-	ut8 buf[64] = {0};
+static RList *entries(RBinFile *bf) {
+	RList *ret;
+	ut8 buf[64] = { 0 };
 	RBinAddr *ptr = NULL;
 	const int buf_size = R_MIN (sizeof (buf), r_buf_size (bf->buf));
 
@@ -91,7 +91,7 @@ static RList* entries(RBinFile *bf) {
 	if (entry == UT64_MAX) {
 		return NULL;
 	}
-	if (!(ret = r_list_new ())) {
+	if (! (ret = r_list_new ())) {
 		return NULL;
 	}
 	ret->free = free;
@@ -103,10 +103,10 @@ static RList* entries(RBinFile *bf) {
 	return ret;
 }
 
-static RList* sections(RBinFile *bf) {
+static RList *sections(RBinFile *bf) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
-	ut8 buf[64] = {0};
+	ut8 buf[64] = { 0 };
 	const int buf_size = R_MIN (sizeof (buf), r_buf_size (bf->buf));
 
 	r_buf_read_at (bf->buf, 0, buf, buf_size);
@@ -114,11 +114,11 @@ static RList* sections(RBinFile *bf) {
 		return NULL;
 	}
 
-	if (!(ret = r_list_newf (free))) {
+	if (! (ret = r_list_newf (free))) {
 		return NULL;
 	}
 	// add text segment
-	if (!(ptr = R_NEW0 (RBinSection))) {
+	if (! (ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("text");
@@ -130,9 +130,9 @@ static RList* sections(RBinFile *bf) {
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
-	if (MENUET_VERSION(buf)) {
+	if (MENUET_VERSION (buf)) {
 		/* add data section */
-		if (!(ptr = R_NEW0 (RBinSection))) {
+		if (! (ptr = R_NEW0 (RBinSection))) {
 			return ret;
 		}
 		ptr->name = strdup ("idata");
@@ -150,7 +150,7 @@ static RList* sections(RBinFile *bf) {
 	return ret;
 }
 
-static RBinInfo* info(RBinFile *bf) {
+static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (ret) {
 		ret->file = strdup (bf->file);
@@ -171,7 +171,7 @@ static RBinInfo* info(RBinFile *bf) {
 }
 
 static ut64 size(RBinFile *bf) {
-	ut8 buf[4] = {0};
+	ut8 buf[4] = { 0 };
 	if (!bf->bo->info) {
 		bf->bo->info = info (bf);
 	}
@@ -185,10 +185,10 @@ static ut64 size(RBinFile *bf) {
 #if !R_BIN_P9
 
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
-static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
+static RBuffer *create(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
 	RBuffer *buf = r_buf_new ();
-#define B(x,y) r_buf_append_bytes(buf,(const ut8*)(x),y)
-#define D(x) r_buf_append_ut32(buf,x)
+#define B(x, y) r_buf_append_bytes(buf,(const ut8 *)(x), y)
+#define D(x) r_buf_append_ut32(buf, x)
 	B ("MENUET01", 8);
 	D (1); // header version
 	D (32); // program start

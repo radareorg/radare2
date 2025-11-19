@@ -106,8 +106,8 @@ static RCore *opencore(RadiffOptions *ro, const char *f) {
 			r_core_free (c);
 			return NULL;
 		}
-		(void) r_core_bin_load (c, NULL, baddr);
-		(void) r_core_bin_update_arch_bits (c);
+		(void)r_core_bin_load (c, NULL, baddr);
+		(void)r_core_bin_update_arch_bits (c);
 
 		// force PA mode when working with raw bins
 		if (r_list_empty (r_bin_get_sections (c->bin))) {
@@ -148,16 +148,16 @@ static void readstr(char *s, int sz, const ut8 *buf, int len) {
 		while (*s == '\n') {
 			s++;
 		}
-		r_str_ncpy (s, (char *) buf, last);
+		r_str_ncpy (s, (char *)buf, last);
 	}
 }
 
 static int cb_xpatch(RDiff *d, void *user, RDiffOp *op) {
 	int i;
-	RadiffOptions *ro = (RadiffOptions*)user;
-	r_cons_printf (ro->cons, "@@ u8,u8,%%2x -0x%08"PFMT64x",%d, +0x%08"PFMT64x",%d @@\n",
-			op->a_off + ro->baddr, op->a_len,
-			op->b_off + ro->baddr, op->b_len);
+	RadiffOptions *ro = (RadiffOptions *)user;
+	r_cons_printf (ro->cons, "@@ u8,u8,%%2x -0x%08" PFMT64x ",%d, +0x%08" PFMT64x ",%d @@\n",
+		op->a_off + ro->baddr, op->a_len,
+		op->b_off + ro->baddr, op->b_len);
 	r_cons_printf (ro->cons, "- ");
 	for (i = 0; i < op->a_len; i++) {
 		r_cons_printf (ro->cons, "%02x", op->a_buf[i]);
@@ -172,8 +172,8 @@ static int cb_xpatch(RDiff *d, void *user, RDiffOp *op) {
 
 static int cb(RDiff *d, void *user, RDiffOp *op) {
 	int i;
-	RadiffOptions *ro = (RadiffOptions*)user;
-	char s[256] = {0};
+	RadiffOptions *ro = (RadiffOptions *)user;
+	char s[256] = { 0 };
 	if (ro->showcount) {
 		ro->count++;
 		return 1;
@@ -187,13 +187,13 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 				if (!ro->quiet) {
 					printf (Color_RED);
 				}
-				printf ("-0x%08"PFMT64x":", op->a_off + ro->baddr);
+				printf ("-0x%08" PFMT64x ":", op->a_off + ro->baddr);
 				int len = op->a_len; // R_MIN (op->a_len, strlen (op->a_buf));
 				for (i = 0; i < len; i++) {
 					printf ("%02x ", op->a_buf[i]);
 				}
 				if (!ro->quiet) {
-					char *p = r_str_escape ((const char*)op->a_buf);
+					char *p = r_str_escape ((const char *)op->a_buf);
 					printf (" \"%s\"", p);
 					free (p);
 					printf (Color_RESET);
@@ -207,12 +207,12 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 				if (!ro->quiet) {
 					printf (Color_GREEN);
 				}
-				printf ("+0x%08"PFMT64x":", op->b_off + ro->baddr);
+				printf ("+0x%08" PFMT64x ":", op->b_off + ro->baddr);
 				for (i = 0; i < op->b_len; i++) {
 					printf ("%02x ", op->b_buf[i]);
 				}
 				if (!ro->quiet) {
-					char *p = r_str_escape ((const char*)op->b_buf);
+					char *p = r_str_escape ((const char *)op->b_buf);
 					printf (" \"%s\"", p);
 					free (p);
 					printf (Color_RESET);
@@ -230,20 +230,20 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 			for (i = 0; i < op->b_len; i++) {
 				printf ("%02x", op->b_buf[i]);
 			}
-			printf (" @ 0x%08"PFMT64x "\n", op->b_off + ro->baddr);
+			printf (" @ 0x%08" PFMT64x "\n", op->b_off + ro->baddr);
 		} else {
 			if (op->a_len > 0) {
-				printf ("r-%d @ 0x%08"PFMT64x "\n",
+				printf ("r-%d @ 0x%08" PFMT64x "\n",
 					op->a_len, op->a_off + ro->delta + ro->baddr);
 			}
 			if (op->b_len > 0) {
-				printf ("r+%d @ 0x%08"PFMT64x "\n",
+				printf ("r+%d @ 0x%08" PFMT64x "\n",
 					op->b_len, op->b_off + ro->delta + ro->baddr);
 				printf ("wx ");
 				for (i = 0; i < op->b_len; i++) {
 					printf ("%02x", op->b_buf[i]);
 				}
-				printf (" @ 0x%08"PFMT64x "\n", op->b_off + ro->delta + ro->baddr);
+				printf (" @ 0x%08" PFMT64x "\n", op->b_off + ro->delta + ro->baddr);
 			}
 			ro->delta += (op->b_off - op->a_off);
 		}
@@ -268,7 +268,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 	default:
 		if (ro->disasm) {
 			int i;
-			printf ("--- 0x%08"PFMT64x "  ", op->a_off + ro->baddr);
+			printf ("--- 0x%08" PFMT64x "  ", op->a_off + ro->baddr);
 			if (!ro->core) {
 				ro->core = opencore (ro, ro->file);
 				if (ro->arch) {
@@ -291,22 +291,22 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 					printf ("%s\n", bufasm);
 					free (bufasm);
 				} else {
-					char *bufasm = r_str_prefix_all (acbufasm, Color_RED"- ");
-					printf ("%s"Color_RESET, bufasm);
+					char *bufasm = r_str_prefix_all (acbufasm, Color_RED "- ");
+					printf ("%s" Color_RESET, bufasm);
 					free (bufasm);
 				}
 				free (acbufasm);
 				r_asm_code_free (ac);
 			}
 		} else {
-			printf ("0x%08"PFMT64x " ", op->a_off + ro->baddr);
+			printf ("0x%08" PFMT64x " ", op->a_off + ro->baddr);
 			for (i = 0; i < op->a_len; i++) {
 				printf ("%02x", op->a_buf[i]);
 			}
 		}
 		if (ro->disasm) {
 			int i;
-			printf ("+++ 0x%08"PFMT64x "  ", op->b_off + ro->baddr);
+			printf ("+++ 0x%08" PFMT64x "  ", op->b_off + ro->baddr);
 			if (!ro->core) {
 				ro->core = opencore (ro, NULL);
 			}
@@ -324,7 +324,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 					free (bufasm);
 					free (acbufasm);
 				} else {
-					char *bufasm = r_str_prefix_all (acbufasm, Color_GREEN"+ ");
+					char *bufasm = r_str_prefix_all (acbufasm, Color_GREEN "+ ");
 					printf ("%s\n" Color_RESET, bufasm);
 					free (bufasm);
 					free (acbufasm);
@@ -336,7 +336,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 			for (i = 0; i < op->b_len; i++) {
 				printf ("%02x", op->b_buf[i]);
 			}
-			printf (" 0x%08"PFMT64x "\n", op->b_off + ro->baddr);
+			printf (" 0x%08" PFMT64x "\n", op->b_off + ro->baddr);
 		}
 		return 1;
 	}
@@ -346,7 +346,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 void print_bytes(const void *p, size_t len, bool big_endian) {
 	size_t i;
 	for (i = 0; i < len; i++) {
-		ut8 ch = ((ut8*) p)[big_endian ? (len - i - 1) : i];
+		ut8 ch = ((ut8 *)p)[big_endian? (len - i - 1): i];
 		if (write (1, &ch, 1) != 1) {
 			break;
 		}
@@ -369,22 +369,22 @@ static int bcb(RDiff *d, void *user, RDiffOp *op) {
 		// size for the position
 		if (ro->gdiff_start <= USHRT_MAX) {
 			opcode = 249;
-			USAddr = (unsigned short) ro->gdiff_start;
+			USAddr = (unsigned short)ro->gdiff_start;
 		} else if (ro->gdiff_start <= INT_MAX) {
 			opcode = 252;
-			IAddr = (int) ro->gdiff_start;
+			IAddr = (int)ro->gdiff_start;
 		} else {
 			opcode = 255;
 		}
 
 		// size for the length
 		if (opcode != 255 && offset_diff <= UCHAR_MAX) {
-			UCLen = (unsigned char) offset_diff;
+			UCLen = (unsigned char)offset_diff;
 		} else if (opcode != 255 && offset_diff <= USHRT_MAX) {
-			USLen = (unsigned short) offset_diff;
+			USLen = (unsigned short)offset_diff;
 			opcode += 1;
 		} else if (opcode != 255 && offset_diff <= INT_MAX) {
-			ILen = (int) offset_diff;
+			ILen = (int)offset_diff;
 			opcode += 2;
 		} else if (offset_diff > INT_MAX) {
 			int times = offset_diff / INT_MAX;
@@ -433,14 +433,14 @@ static int bcb(RDiff *d, void *user, RDiffOp *op) {
 		ut8 data = op->b_len;
 		R_UNUSED_RESULT (write (1, &data, 1));
 	} else if (op->b_len <= USHRT_MAX) {
-		USLen = (ut16) op->b_len;
+		USLen = (ut16)op->b_len;
 		ut8 data = 247;
 		R_UNUSED_RESULT (write (1, &data, 1));
 		print_bytes (&USLen, sizeof (USLen), true);
 	} else if (op->b_len <= INT_MAX) {
 		ut8 data = 248;
 		R_UNUSED_RESULT (write (1, &data, 1));
-		ILen = (int) op->b_len;
+		ILen = (int)op->b_len;
 		print_bytes (&ILen, sizeof (ILen), true);
 	} else {
 		// split into multiple DATA, because op->b_len is greater than INT_MAX
@@ -502,8 +502,7 @@ static int show_help(int v) {
 			"  -u         unified output (---+++)\n"
 			"  -U         unified output using system 'diff'\n"
 			"  -v         show version information\n"
-			"  -V         be verbose (current only for -s)\n"
-			);
+			"  -V         be verbose (current only for -s)\n");
 	}
 	return 1;
 }
@@ -523,8 +522,8 @@ static void dump_cols(RadiffOptions *ro, ut8 *a, int as, ut8 *b, int bs, int w) 
 		break;
 	case 16:
 		r_cons_printf (ro->cons, "  offset     "
-			"0 1 2 3 4 5 6 7 8 9 A B C D E F 0123456789ABCDEF    "
-			"0 1 2 3 4 5 6 7 8 9 A B C D E F 0123456789ABCDEF\n");
+					"0 1 2 3 4 5 6 7 8 9 A B C D E F 0123456789ABCDEF    "
+					"0 1 2 3 4 5 6 7 8 9 A B C D E F 0123456789ABCDEF\n");
 		break;
 	default:
 		R_LOG_ERROR ("Invalid column width");
@@ -612,7 +611,7 @@ static void dump_cols(RadiffOptions *ro, ut8 *a, int as, ut8 *b, int bs, int w) 
 		r_cons_flush (ro->cons);
 	}
 	r_cons_break_end (ro->cons);
-	r_cons_printf (ro->cons, "\n"Color_RESET);
+	r_cons_printf (ro->cons, "\n" Color_RESET);
 	r_cons_flush (ro->cons);
 	if (as != bs) {
 		r_cons_printf (ro->cons, "...\n");
@@ -712,7 +711,7 @@ static void dump_cols_hexii(RadiffOptions *ro, ut8 *a, int as, ut8 *b, int bs, i
 		r_cons_flush (ro->cons);
 	}
 	r_cons_break_end (ro->cons);
-	r_cons_printf (ro->cons, "\n"Color_RESET);
+	r_cons_printf (ro->cons, "\n" Color_RESET);
 	r_cons_flush (ro->cons);
 	if (as != bs) {
 		r_cons_printf (ro->cons, "...\n");
@@ -772,7 +771,7 @@ static ut8 *slurp(RadiffOptions *ro, RCore **c, const char *file, size_t *sz) {
 		r_io_fd_close (io, fd);
 		return data;
 	}
-	return (ut8 *) r_file_slurp (file, sz);
+	return (ut8 *)r_file_slurp (file, sz);
 }
 
 static int import_cmp(const RBinImport *a, const RBinImport *b) {
@@ -798,7 +797,7 @@ static ut8 *get_sections(RCore *c, int *len) {
 	char *buf = r_str_list_join (reslist, "\n");
 	*len = strlen (buf);
 	r_list_free (reslist);
-	return (ut8*)buf;
+	return (ut8 *)buf;
 }
 
 static ut8 *get_classes(RCore *c, int *len) {
@@ -819,7 +818,7 @@ static ut8 *get_classes(RCore *c, int *len) {
 	char *buf = r_str_list_join (reslist, "\n");
 	*len = strlen (buf);
 	r_list_free (reslist);
-	return (ut8*)buf;
+	return (ut8 *)buf;
 }
 
 static ut8 *get_fields(RCore *c, int *len) {
@@ -847,7 +846,7 @@ static ut8 *get_fields(RCore *c, int *len) {
 	char *buf = r_str_list_join (reslist, "\n");
 	*len = strlen (buf);
 	r_list_free (reslist);
-	return (ut8*)buf;
+	return (ut8 *)buf;
 }
 
 static ut8 *get_methods(RCore *c, int *len) {
@@ -872,7 +871,7 @@ static ut8 *get_methods(RCore *c, int *len) {
 	char *buf = r_str_list_join (reslist, "\n");
 	*len = strlen (buf);
 	r_list_free (reslist);
-	return (ut8*)buf;
+	return (ut8 *)buf;
 }
 
 static ut8 *get_symbols(RCore *c, int *len) {
@@ -892,7 +891,7 @@ static ut8 *get_symbols(RCore *c, int *len) {
 	char *buf = r_str_list_join (reslist, "\n");
 	*len = strlen (buf);
 	r_list_free (reslist);
-	return (ut8*)buf;
+	return (ut8 *)buf;
 }
 
 static ut8 *get_imports(RCore *c, int *len) {
@@ -905,7 +904,7 @@ static ut8 *get_imports(RCore *c, int *len) {
 
 	const RList *list = r_bin_get_imports (c->bin);
 	// XXX we probably dont want to sort an unowned list
-	r_list_sort ((RList *)list, (RListComparator) import_cmp);
+	r_list_sort ((RList *)list, (RListComparator)import_cmp);
 
 	*len = 0;
 
@@ -920,7 +919,7 @@ static ut8 *get_imports(RCore *c, int *len) {
 	}
 
 	*len = r_strbuf_length (sb);
-	return (ut8*)r_strbuf_drain (sb);
+	return (ut8 *)r_strbuf_drain (sb);
 }
 
 static int bs_cmp(const RBinString *a, const RBinString *b) {
@@ -934,7 +933,7 @@ static ut8 *get_strings(RCore *c, int *len) {
 	RBinString *str, *old = NULL;
 	ut8 *buf, *ptr;
 
-	r_list_sort (list, (RListComparator) bs_cmp);
+	r_list_sort (list, (RListComparator)bs_cmp);
 
 	*len = 0;
 
@@ -963,7 +962,7 @@ static ut8 *get_strings(RCore *c, int *len) {
 	}
 	*ptr = 0;
 
-	*len = strlen ((const char *) buf);
+	*len = strlen ((const char *)buf);
 	return buf;
 }
 
@@ -972,7 +971,7 @@ static char *get_graph_commands(RCore *c, ut64 off) {
 	bool tmp_html = ctx->is_html;
 	ctx->is_html = false;
 	r_cons_push (c->cons);
-	r_core_anal_graph (c, off, R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF |  R_CORE_ANAL_STAR);
+	r_core_anal_graph (c, off, R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF | R_CORE_ANAL_STAR);
 	const char *static_str = r_cons_get_buffer (c->cons, NULL);
 	char *retstr = strdup (r_str_get (static_str));
 	r_cons_pop (c->cons);
@@ -1099,7 +1098,7 @@ static inline bool singlechar(const char *arg) {
 	return (arg[0] && !arg[1]);
 }
 
-static const char idhelp[] = \
+static const char idhelp[] =
 	"Usage: radiff2 -i [what]\n"
 	"Available whats:\n"
 	" c code\n"
@@ -1112,8 +1111,7 @@ static const char idhelp[] = \
 	" s symbols\n"
 	" S sections\n"
 	" z strings\n"
-	" Z zignatures\n"
-;
+	" Z zignatures\n";
 
 static bool select_input_data(RadiffOptions *ro, const char *arg) {
 	char ch0 = *arg;
@@ -1154,8 +1152,8 @@ static bool select_input_data(RadiffOptions *ro, const char *arg) {
 		break;
 	case 'd':
 		// diff code instead of bin
-	//	ro->mode = MODE_CODE;
-	//	ro->diffmode = 'U';
+		//	ro->mode = MODE_CODE;
+		//	ro->diffmode = 'U';
 		break;
 	case 'f':
 		ro->mode = MODE_DIFF_FIELDS;
@@ -1189,7 +1187,7 @@ static bool select_input_data(RadiffOptions *ro, const char *arg) {
 	return true;
 }
 
-static const char gfhelp[] = \
+static const char gfhelp[] =
 	"Usage: radiff2 -m [graphtype]\n"
 	"Available types:\n"
 	"  <blank/a>  ascii art\n"
@@ -1200,8 +1198,7 @@ static const char gfhelp[] = \
 	"  J          json with disasm\n"
 	"  k          sdb key-value\n"
 	"  t          tiny ascii art\n"
-	"  i          interactive ascii art\n"
-;
+	"  i          interactive ascii art\n";
 
 static bool select_graph_type(RadiffOptions *ro, const char *arg) {
 	char ch0 = *arg;
@@ -1244,13 +1241,13 @@ static bool select_graph_type(RadiffOptions *ro, const char *arg) {
 	case 'r': ro->gmode = GRAPH_STAR_MODE; break;
 	case 'm': ro->gmode = GRAPH_MERMAID_MODE; break;
 	case 'g': ro->gmode = GRAPH_GML_MODE; break;
-	case 'a':ro->gmode = GRAPH_DEFAULT_MODE; break;
+	case 'a': ro->gmode = GRAPH_DEFAULT_MODE; break;
 	default:
-		 return false;
+		return false;
 	}
 	return true;
 }
-static const char ofhelp[] = \
+static const char ofhelp[] =
 	"Usage: radiff2 -f [format]\n"
 	"Available formats:\n"
 	" 1 bdiff        generic binary diff format\n"
@@ -1259,8 +1256,7 @@ static const char ofhelp[] = \
 	" u unified      unified diffing format\n"
 	" U gdiff        use system's diff program instead\n"
 	" x hex          two column hexdump-style\n"
-	" X hexii        simplified hexdump (hexII format)\n"
-;
+	" X hexii        simplified hexdump (hexII format)\n";
 
 static bool select_output_format(RadiffOptions *ro, const char *arg) {
 	char ch0 = *arg;
@@ -1325,7 +1321,7 @@ typedef struct {
 } ThreadData;
 
 static RThreadFunctionRet thready_core(RThread *th) {
-	ThreadData *td = (ThreadData*)th->user;
+	ThreadData *td = (ThreadData *)th->user;
 	*td->core = NULL;
 	*td->core = opencore (td->ro, td->file);
 	return false;
@@ -1364,7 +1360,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			if (!ro.runcmd) {
 				ro.runcmd = r_list_newf (NULL);
 			}
-			r_list_append (ro.runcmd, (void*)opt.arg);
+			r_list_append (ro.runcmd, (void *)opt.arg);
 			break;
 		case 'C':
 			ro.mode = MODE_CODE;
@@ -1383,7 +1379,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			}
 			break;
 		case 'e':
-			r_list_append (ro.evals, (void*)opt.arg);
+			r_list_append (ro.evals, (void *)opt.arg);
 			break;
 		case 'f':
 			if (!select_output_format (&ro, opt.arg)) {
@@ -1588,12 +1584,12 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			r_config_set_i (c2->config, "scr.color", 0);
 
 			ut64 addra = r_num_math (c->num, addr);
-			bufa_orig = bufa = (ut8 *) r_core_cmd_strf (c, "af;%s @ 0x%08"PFMT64x, r2cmd, addra);
-			sza = (ut64)strlen ((const char *) bufa);
+			bufa_orig = bufa = (ut8 *)r_core_cmd_strf (c, "af;%s @ 0x%08" PFMT64x, r2cmd, addra);
+			sza = (ut64)strlen ((const char *)bufa);
 
 			ut64 addrb = r_num_math (c2->num, addr);
-			bufb_orig = bufb = (ut8 *) r_core_cmd_strf (c2, "af;%s @ 0x%08"PFMT64x, r2cmd, addrb);
-			szb = (ut64)strlen ((const char *) bufb);
+			bufb_orig = bufb = (ut8 *)r_core_cmd_strf (c2, "af;%s @ 0x%08" PFMT64x, r2cmd, addrb);
+			szb = (ut64)strlen ((const char *)bufb);
 			ro.mode = MODE_DIFF;
 		} else if (ro.mode == MODE_GRAPH) {
 			int depth = r_config_get_i (c->config, "anal.depth");
@@ -1676,7 +1672,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			bufb_orig = bufb = get_strings (c2, &sz);
 			szb = sz;
 		}
-// r_cons_printf (c2->cons, "PENE\n");
+		// r_cons_printf (c2->cons, "PENE\n");
 		if (ro.mode == MODE_CODE || ro.mode == MODE_GRAPH) {
 			r_cons_flush (c->cons);
 			r_cons_flush (c2->cons);
@@ -1688,53 +1684,54 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			return 0;
 		}
 		break;
-	default: {
-		size_t fsz = 0;
-		bufa_orig = bufa = slurp (&ro, &c, ro.file, &fsz);
-		sza = fsz;
-		if (!bufa) {
-			R_LOG_ERROR ("Cannot open %s", r_str_getf (ro.file));
-			return 1;
-		}
-		bufb_orig = bufb = slurp (&ro, &c, ro.file2, &fsz);
-		szb = fsz;
-		if (!bufb) {
-			R_LOG_ERROR ("Cannot open: %s", r_str_getf (ro.file2));
-			free (bufa);
-			return 1;
-		}
-		// Apply offsets and lengths
-		if (ro.offset_a > 0) {
-			if (ro.offset_a >= sza) {
-				R_LOG_ERROR ("First file offset out of bounds");
+	default:
+		{
+			size_t fsz = 0;
+			bufa_orig = bufa = slurp (&ro, &c, ro.file, &fsz);
+			sza = fsz;
+			if (!bufa) {
+				R_LOG_ERROR ("Cannot open %s", r_str_getf (ro.file));
+				return 1;
+			}
+			bufb_orig = bufb = slurp (&ro, &c, ro.file2, &fsz);
+			szb = fsz;
+			if (!bufb) {
+				R_LOG_ERROR ("Cannot open: %s", r_str_getf (ro.file2));
 				free (bufa);
-				free (bufb);
 				return 1;
 			}
-			bufa += ro.offset_a;
-			sza -= ro.offset_a;
-		}
-		if (ro.offset_b > 0) {
-			if (ro.offset_b >= szb) {
-				R_LOG_ERROR ("Second file offset out of bounds");
-				free (bufa_orig);
-				free (bufb_orig);
-				return 1;
+			// Apply offsets and lengths
+			if (ro.offset_a > 0) {
+				if (ro.offset_a >= sza) {
+					R_LOG_ERROR ("First file offset out of bounds");
+					free (bufa);
+					free (bufb);
+					return 1;
+				}
+				bufa += ro.offset_a;
+				sza -= ro.offset_a;
 			}
-			bufb += ro.offset_b;
-			szb -= ro.offset_b;
-		}
+			if (ro.offset_b > 0) {
+				if (ro.offset_b >= szb) {
+					R_LOG_ERROR ("Second file offset out of bounds");
+					free (bufa_orig);
+					free (bufb_orig);
+					return 1;
+				}
+				bufb += ro.offset_b;
+				szb -= ro.offset_b;
+			}
 		if (ro.length_a != UT64_MAX && ro.length_a < sza) {
-			sza = ro.length_a;
-		}
+				sza = ro.length_a;
+			}
 		if (ro.length_b != UT64_MAX && ro.length_b < szb) {
-			szb = ro.length_b;
+				szb = ro.length_b;
+			}
+			if (sza != szb) {
+				R_LOG_INFO ("File size differs %" PFMT64u " vs %" PFMT64u, (ut64)sza, (ut64)szb);
+			}
+			break;
 		}
-		if (sza != szb) {
-			R_LOG_INFO ("File size differs %"PFMT64u" vs %"PFMT64u, (ut64)sza, (ut64)szb);
-		}
-		break;
-	}
 	}
 
 	switch (ro.mode) {

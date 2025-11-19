@@ -3,111 +3,248 @@
 #include <r_reg.h>
 #include <r_util.h>
 
-// TODO: add support for 80bit floating point value
+// Helper to select appropriate float profile based on register size and endianness
+static RCFloatProfile get_float_profile(RReg *reg, RRegItem *item, bool *success) {
+	const bool be = (reg->endian & R_SYS_ENDIAN_BIG) == R_SYS_ENDIAN_BIG;
+	RCFloatProfile profile;
+
+	bool ok = r_cfloat_profile_from_bits (item->size, &profile);
+	if (!ok && success) {
+		*success = false;
+	} else if (success) {
+		*success = true;
+	}
+	if (!ok) {
+		profile = R_CFLOAT_PROFILE_BINARY64;
+	}
+	profile.big_endian = be;
+	return profile;
+}
+
+static double parse_profile_value(const ut8 *src, int size_bytes, const RCFloatProfile *profile) {
+	if (size_bytes <= 0) {
+		return 0.0;
+	}
+
+	// For >64-bit formats, use extended API
+	if (size_bytes > 8) {
+		RCFloatValue value;
+		if (r_cfloat_parse_ex (src, size_bytes, profile, &value)) {
+			return r_cfloat_value_to_double (&value, profile);
+		}
+		return 0.0;
+	}
+
+	// For <=64-bit formats, use regular API
+	ut8 tmp[8] = { 0 };
+	int copy_bytes = R_MIN (size_bytes, (int)sizeof (tmp));
+	if (copy_bytes < size_bytes) {
+		R_LOG_WARN ("Float register size %d bits exceeds supported scalar width", size_bytes * 8);
+		return 0.0;
+	}
+	memcpy (tmp, src, copy_bytes);
+	return r_cfloat_parse (tmp, copy_bytes, profile);
+}
 
 // long double = 128 bit
 R_API double r_reg_get_double(RReg *reg, RRegItem *item) {
-	R_RETURN_VAL_IF_FAIL (reg && item, 0.0f);
-	double vld = 0.0f;
-	double ret = 0.0f;
+	R_RETURN_VAL_IF_FAIL (reg && item, 0.0);
+
 	int off = BITS2BYTES (item->offset);
+	int size_bytes = BITS2BYTES (item->size);
 	RRegSet *regset = &reg->regset[item->arena];
-	switch (item->size) {
-	case 64:
-		if (regset->arena->size - off - 1 >= 0) {
-			memcpy (&vld, regset->arena->bytes + off, sizeof (double));
-			ret = vld;
-		}
-		break;
-	default:
-		R_LOG_WARN ("Bit size %d not supported", item->size);
-		return 0.0f;
+
+	if (!regset->arena || off + size_bytes > regset->arena->size) {
+		R_LOG_WARN ("Register %s out of bounds", item->name);
+		return 0.0;
 	}
-	return ret;
+
+	bool success;
+	RCFloatProfile profile = get_float_profile (reg, item, &success);
+	if (!success) {
+		R_LOG_WARN ("Bit size %d not supported for float", item->size);
+		return 0.0;
+	}
+
+	return parse_profile_value (regset->arena->bytes + off, size_bytes, &profile);
 }
 
 R_API bool r_reg_set_double(RReg *reg, RRegItem *item, double value) {
 	R_RETURN_VAL_IF_FAIL (reg && item, false);
-	ut8 *src;
-	switch (item->size) {
-	case 64:
-		// FIXME: endian
-		src = (ut8 *)&value;
-		break;
-	default:
-		R_LOG_WARN ("r_reg_set_double: Bit size %d not supported", item->size);
+
+	int off = BITS2BYTES (item->offset);
+	int size_bytes = BITS2BYTES (item->size);
+	RRegArena *arena = reg->regset[item->arena].arena;
+
+	if (!arena || off + size_bytes > arena->size) {
+		R_LOG_WARN ("Register %s out of bounds", item->name);
 		return false;
 	}
-	if (reg->regset[item->arena].arena->size - BITS2BYTES (item->offset) - BITS2BYTES (item->size) >= 0) {
-		r_mem_copybits (reg->regset[item->arena].arena->bytes +
-				BITS2BYTES (item->offset),
-			src, item->size);
-		return true;
+
+	bool success;
+	RCFloatProfile profile = get_float_profile (reg, item, &success);
+	if (!success) {
+		R_LOG_WARN ("Bit size %d not supported for float", item->size);
+		return false;
 	}
-	R_LOG_WARN ("r_reg_set_value: Cannot set %s to %lf", item->name, value);
-	return false;
+
+	ut8 tmp[32];
+	if (size_bytes > sizeof (tmp)) {
+		R_LOG_WARN ("Register size %d too large", item->size);
+		return false;
+	}
+
+	// For >64-bit formats, use extended API
+	if (size_bytes > 8) {
+		RCFloatValue fval;
+		r_cfloat_value_from_double (&fval, value, &profile);
+		if (!r_cfloat_write_ex (&fval, &profile, tmp, size_bytes)) {
+			R_LOG_WARN ("Cannot write float value to %s", item->name);
+			return false;
+		}
+	} else {
+		// For <=64-bit formats, use regular API
+		if (!r_cfloat_write (value, &profile, tmp, size_bytes)) {
+			R_LOG_WARN ("Cannot write float value to %s", item->name);
+			return false;
+		}
+	}
+
+	r_mem_copybits (arena->bytes + off, tmp, item->size);
+	return true;
 }
 
 // long double = 80 bit
 R_API long double r_reg_get_longdouble(RReg *reg, RRegItem *item) {
-	R_RETURN_VAL_IF_FAIL (reg && item, 0.0f);
-	RRegSet *regset;
-	long double vld = 0.0f;
-	int off;
-	long double ret = 0.0f;
-	if (!reg || !item) {
-		return 0LL;
+	R_RETURN_VAL_IF_FAIL (reg && item, 0.0);
+
+	int off = BITS2BYTES (item->offset);
+	int size_bytes = BITS2BYTES (item->size);
+	RRegSet *regset = &reg->regset[item->arena];
+
+	if (!regset->arena || off + size_bytes > regset->arena->size) {
+		R_LOG_WARN ("Register %s out of bounds", item->name);
+		return 0.0;
 	}
-	off = BITS2BYTES (item->offset);
-	regset = &reg->regset[item->arena];
-	switch (item->size) {
-	case 80:
-	case 96:
-	case 128:
-	case 256:
-		if (regset->arena->size - off - 1 >= 0) {
-			memcpy (&vld, regset->arena->bytes + off, sizeof (long double));
-			ret = vld;
+
+	bool success;
+	RCFloatProfile profile = get_float_profile (reg, item, &success);
+	if (!success) {
+		R_LOG_WARN ("Bit size %d not supported for float", item->size);
+		return 0.0;
+	}
+
+	// Use extended API for all sizes
+	if (size_bytes > 8) {
+		RCFloatValue value;
+		if (r_cfloat_parse_ex (regset->arena->bytes + off, size_bytes, &profile, &value)) {
+			return r_cfloat_value_to_longdouble (&value, &profile);
 		}
-		break;
-	default:
-		R_LOG_WARN ("Bit size %d not supported", item->size);
-		return 0.0f;
+		return 0.0;
+	} else {
+		double parsed = parse_profile_value (regset->arena->bytes + off, size_bytes, &profile);
+		return (long double)parsed;
 	}
-	return ret;
 }
 
 R_API bool r_reg_set_longdouble(RReg *reg, RRegItem *item, long double value) {
 	R_RETURN_VAL_IF_FAIL (reg && item, false);
-	ut8 *src = NULL;
 
-	switch (item->size) {
-	case 80:
-	case 96:
-	case 128:
-		// FIXME: endian
-		src = (ut8 *)&value;
-		break;
-	default:
-		R_LOG_WARN ("Bit size %d not supported", item->size);
+	int off = BITS2BYTES (item->offset);
+	int size_bytes = BITS2BYTES (item->size);
+	RRegArena *arena = reg->regset[item->arena].arena;
+
+	if (!arena || off + size_bytes > arena->size) {
+		R_LOG_WARN ("Register %s out of bounds", item->name);
 		return false;
 	}
-	if (reg->regset[item->arena].arena->size - BITS2BYTES (item->offset) - BITS2BYTES (item->size) >= 0) {
-		r_mem_copybits (reg->regset[item->arena].arena->bytes +
-				BITS2BYTES (item->offset),
-			src, item->size);
-		return true;
+
+	bool success;
+	RCFloatProfile profile = get_float_profile (reg, item, &success);
+	if (!success) {
+		R_LOG_WARN ("Bit size %d not supported for float", item->size);
+		return false;
 	}
-	R_LOG_WARN ("Cannot set %s to %lf", item->name, (double)value);
-	return false;
+
+	ut8 tmp[32];
+	if (size_bytes > sizeof (tmp)) {
+		R_LOG_WARN ("Register size %d too large", item->size);
+		return false;
+	}
+
+	// Use extended API for all sizes
+	if (size_bytes > 8) {
+		RCFloatValue fval;
+		r_cfloat_value_from_longdouble (&fval, value, &profile);
+		if (!r_cfloat_write_ex (&fval, &profile, tmp, size_bytes)) {
+			R_LOG_WARN ("Cannot write long double value to %s", item->name);
+			return false;
+		}
+	} else {
+		if (!r_cfloat_write ((double)value, &profile, tmp, size_bytes)) {
+			R_LOG_WARN ("Cannot write long double value to %s", item->name);
+			return false;
+		}
+	}
+
+	r_mem_copybits (arena->bytes + off, tmp, item->size);
+	return true;
 }
 
 /* floating point . deprecate maybe? */
 R_API float r_reg_get_float(RReg *reg, RRegItem *item) {
-	// TODO
-	return 0.0f;
+	R_RETURN_VAL_IF_FAIL (reg && item, 0.0f);
+
+	int off = BITS2BYTES (item->offset);
+	int size_bytes = BITS2BYTES (item->size);
+	RRegSet *regset = &reg->regset[item->arena];
+
+	if (!regset->arena || off + size_bytes > regset->arena->size) {
+		R_LOG_WARN ("Register %s out of bounds", item->name);
+		return 0.0f;
+	}
+
+	bool success;
+	RCFloatProfile profile = get_float_profile (reg, item, &success);
+	if (!success) {
+		R_LOG_WARN ("Bit size %d not supported for float", item->size);
+		return 0.0f;
+	}
+
+	double parsed = parse_profile_value (regset->arena->bytes + off, size_bytes, &profile);
+	return (float)parsed;
 }
 
 R_API bool r_reg_set_float(RReg *reg, RRegItem *item, float value) {
-	return false;
+	R_RETURN_VAL_IF_FAIL (reg && item, false);
+
+	int off = BITS2BYTES (item->offset);
+	int size_bytes = BITS2BYTES (item->size);
+	RRegArena *arena = reg->regset[item->arena].arena;
+
+	if (!arena || off + size_bytes > arena->size) {
+		R_LOG_WARN ("Register %s out of bounds", item->name);
+		return false;
+	}
+
+	bool success;
+	RCFloatProfile profile = get_float_profile (reg, item, &success);
+	if (!success) {
+		R_LOG_WARN ("Bit size %d not supported for float", item->size);
+		return false;
+	}
+
+	ut8 tmp[32];
+	if (size_bytes > sizeof (tmp)) {
+		R_LOG_WARN ("Register size %d too large", item->size);
+		return false;
+	}
+
+	if (!r_cfloat_write ((double)value, &profile, tmp, size_bytes)) {
+		R_LOG_WARN ("Cannot write float value to %s", item->name);
+		return false;
+	}
+
+	r_mem_copybits (arena->bytes + off, tmp, item->size);
+	return true;
 }

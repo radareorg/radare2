@@ -79,13 +79,13 @@ static Avatar avatar_clippy_utf8 = {
 		" ││ ││ ",
 		" │└─┘│ ",
 		" ╰───╯ ",
-		" ╭──╮   ",
-		" │ ╶│╶  ",
-		" │ O o  ",
-		" │  │  ╱",
-		" │ ╭┘ ╱ ",
-		" │ ╰ ╱  ",
-		" ╰──'   ",
+		" ╭──╮  ",
+		" │ ╶│╶ ",
+		" │ O o ",
+		" │  │  ",
+		" │ ╭┘ ╱",
+		" │ ╰ ╱ ",
+		" ╰──'  ",
 		" ╭──╮  ",
 		" │ _│_ ",
 		" │ O O ",
@@ -132,30 +132,44 @@ enum {
 };
 
 R_API void r_core_clippy(RCore *core, const char *msg) {
+	// Get default type from config
+	const char *clippy_type = r_config_get (core->config, "scr.clippy");
 	int type = R_AVATAR_CLIPPY;
-	switch (*msg) {
-	case '+':
-	case '3':
-	case 'C':
-		{
-			const char *space = strchr (msg, ' ');
-			if (!space) {
-				space = msg;
-			}
+	if (!strcmp (clippy_type, "orangg")) {
+		type = R_AVATAR_ORANGG;
+	} else if (!strcmp (clippy_type, "croco")) {
+		type = R_AVATAR_CROCO;
+	} else if (!strcmp (clippy_type, "cybercat")) {
+		type = R_AVATAR_CYBCAT;
+	}
+
+	int frame = -1; // -1 means random
+	while (*msg && *msg != ' ') {
+		if (isdigit (*msg)) {
+			frame = *msg - '0';
+			msg++;
+		} else if (isalpha (*msg)) {
 			switch (*msg) {
-			case '+':
+			case 'O':
 				type = R_AVATAR_ORANGG;
 				break;
 			case 'C':
 				type = R_AVATAR_CROCO;
 				break;
-			case '3':
+			case 'K':
 				type = R_AVATAR_CYBCAT;
 				break;
+			default:
+				type = R_AVATAR_CLIPPY;
+				break;
 			}
-			msg = space + 1;
+			msg++;
+		} else {
+			break;
 		}
-		break;
+	}
+	if (*msg == ' ') {
+		msg++;
 	}
 
 	int w = r_cons_get_size (core->cons, NULL);
@@ -179,27 +193,51 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 		break;
 	}
 	int baseline = 0;
-	if (avatar->count > 1) {
+	if (frame != -1) {
+		if (frame < avatar->count) {
+			baseline = frame * avatar->h;
+		}
+	} else if (avatar->count > 1) {
 		baseline += r_num_rand (avatar->count) * avatar->h;
 	}
+	msg = r_str_trim_head_ro (msg);
 	int margin_right = avatar->w * 4;
 	char *m = r_str_wrap (msg, w - margin_right - 1);
 	RList *lines = r_str_split_list (m, "\n", 0);
 	const int lines_length = r_list_length (lines);
 	int bubble_w;
 	if (lines_length == 1) {
-		bubble_w = strlen (m);
+		bubble_w = r_str_display_width (m);
 	} else {
 		bubble_w = (w < margin_right)? 10: w - margin_right;
 	}
 	int rows = R_MAX (lines_length + 4, avatar->h);
 	for (i = 0; i < rows; i++) {
+		const bool bubble_active = (i <= lines_length + 3);
 		// draw clippy
 		if (i < avatar->h) {
 			const char *avatar_line = avatar->lines[baseline + i];
-			r_cons_printf (core->cons, "%s ", avatar_line);
+			if (bubble_active) {
+				r_cons_printf (core->cons, "%s ", avatar_line);
+			} else {
+				size_t avatar_len = strlen (avatar_line);
+				while (avatar_len && avatar_line[avatar_len - 1] == ' ') {
+					avatar_len--;
+				}
+				if (avatar_len) {
+					r_cons_printf (core->cons, "%.*s\n", (int)avatar_len, avatar_line);
+				} else {
+					r_cons_println (core->cons, "");
+				}
+				continue;
+			}
 		} else {
-			r_cons_printf (core->cons, r_str_pad (' ', avatar->w + 1));
+			if (bubble_active) {
+				r_cons_printf (core->cons, r_str_pad (' ', avatar->w + 1));
+			} else {
+				r_cons_println (core->cons, "");
+				continue;
+			}
 		}
 		// draw bubble
 		const char *bubble_begin = "";
@@ -210,14 +248,14 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 				bubble_end = "─╮";
 			} else {
 				bubble_begin = " .-";
-				bubble_end = "-. ";
+				bubble_end = "-.";
 			}
 		} else if (i == 2) {
 			bubble_begin = "<  ";
 			if (utf8) {
-				bubble_end = " │ ";
+				bubble_end = " │";
 			} else {
-				bubble_end = " | ";
+				bubble_end = " |";
 			}
 		} else if (i == lines_length + 3) {
 			if (utf8) {
@@ -225,15 +263,15 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 				bubble_end = "─╯";
 			} else {
 				bubble_begin = " `-";
-				bubble_end = "-' ";
+				bubble_end = "-'";
 			}
 		} else if (i < lines_length + 3) {
 			if (utf8) {
 				bubble_begin = " │ ";
-				bubble_end = " │ ";
+				bubble_end = " │";
 			} else {
 				bubble_begin = " | ";
-				bubble_end = " | ";
+				bubble_end = " |";
 			}
 		}
 		r_cons_print (core->cons, bubble_begin);
@@ -242,7 +280,7 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 			RListIter *line = r_list_get_nth (lines, i - 2);
 			if (line) {
 				r_cons_printf (core->cons, "%s", line->data);
-				const int tw = strlen (line->data);
+				const int tw = r_str_display_width (line->data);
 				r_cons_printf (core->cons, r_str_pad (' ', bubble_w - tw));
 			}
 		} else {

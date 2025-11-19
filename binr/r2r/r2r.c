@@ -353,6 +353,8 @@ int main(int argc, char **argv) {
 		switch (c) {
 		case 'g':
 			r2r_git ();
+			free (json_test_file);
+			free (fuzz_dir);
 			return 0;
 		case 'h':
 			ret = help (true, workers_count);
@@ -371,6 +373,8 @@ int main(int argc, char **argv) {
 					free (s);
 				}
 			}
+			free (json_test_file);
+			free (fuzz_dir);
 			return 0;
 		case 'V':
 			verbose = true;
@@ -457,6 +461,8 @@ int main(int argc, char **argv) {
 		if (!dir_found) {
 			free (cwd);
 			R_LOG_ERROR ("Cannot find db/ directory related to the given test");
+			free (json_test_file);
+			free (fuzz_dir);
 			return -1;
 		}
 	}
@@ -478,6 +484,8 @@ int main(int argc, char **argv) {
 	if (!r2r_subprocess_init ()) {
 		free (cwd);
 		R_LOG_ERROR ("Subprocess init failed");
+		free (json_test_file);
+		free (fuzz_dir);
 		return -1;
 	}
 	atexit (r2r_subprocess_fini);
@@ -501,7 +509,14 @@ int main(int argc, char **argv) {
 		r_num_irand ();
 		state.run_config.shallow = shallow;
 	}
-	state.run_config.r2_cmd = "radare2";
+
+	char *r2_binary = r_sys_getenv("R2R_RADARE2");
+	if (R_STR_ISNOTEMPTY (r2_binary)) {
+			R_LOG_INFO("Using custom r2 binary: %s", r2_binary);
+			state.run_config.r2_cmd = r2_binary;
+	} else {
+			state.run_config.r2_cmd = "radare2";
+	}
 	state.run_config.skip_cmd = r_sys_getenv_asbool ("R2R_SKIP_CMD");
 	state.run_config.skip_asm = r_sys_getenv_asbool ("R2R_SKIP_ASM");
 	state.run_config.skip_json = r_sys_getenv_asbool ("R2R_SKIP_JSON");
@@ -513,6 +528,7 @@ int main(int argc, char **argv) {
 	state.quiet = quiet;
 	state.db = r2r_test_database_new ();
 	if (!state.db) {
+		free (json_test_file);
 		return -1;
 	}
 	r_pvector_init (&state.queue, NULL);
@@ -885,16 +901,18 @@ static void print_diff(const char *actual, const char *expected, bool diffchar, 
 	if (!expected) {
 		expected = "";
 	}
-	char *output = (char *)actual;
+	char *output = NULL;
 	if (regexp) {
 		RRegex *rx = r_regex_new (regexp, "en");
 		RList *matches = r_regex_match_list (rx, actual);
 		output = r_list_to_str (matches, '\0');
 		r_list_free (matches);
 		r_regex_free (rx);
-	}
-	if (!output) {
-		output = "";
+		if (!output) {
+			output = strdup ("");
+		}
+	} else {
+		output = strdup (actual);
 	}
 	if (diffchar) {
 		RDiffChar *diff = r_diffchar_new ((const ut8 *)expected, (const ut8 *)actual);
@@ -953,9 +971,7 @@ static void print_diff(const char *actual, const char *expected, bool diffchar, 
 	free (uni);
 	printf ("\n");
 cleanup:
-	if (regexp) {
-		free (output);
-	}
+	free (output);
 }
 
 static R2RProcessOutput *print_runner(const char *file, const char *args[], size_t args_size,

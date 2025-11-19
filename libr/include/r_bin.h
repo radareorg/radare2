@@ -381,6 +381,7 @@ typedef struct r_bin_object_t {
 	int lang;
 	Sdb *kv;
 	HtUP *addr2klassmethod;
+	void *filters; // symbol/section filter tables (HtPP/HtSU) owned by object
 	void *bin_obj; // internal pointer used by formats... TODO: RENAME TO internal object or sthg
 	bool is_reloc_patched; // used to indicate whether relocations were patched or not
 } RBinObject;
@@ -1022,6 +1023,7 @@ extern RBinPlugin r_bin_plugin_s390;
 extern RBinPlugin r_bin_plugin_sfc;
 extern RBinPlugin r_bin_plugin_smd;
 extern RBinPlugin r_bin_plugin_sms;
+extern RBinPlugin r_bin_plugin_som;
 extern RBinPlugin r_bin_plugin_symbols;
 extern RBinPlugin r_bin_plugin_te;
 extern RBinPlugin r_bin_plugin_tic;

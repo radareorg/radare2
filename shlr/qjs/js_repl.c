@@ -28,7 +28,7 @@ static const char *const js_repl_qjs = "" \
   "int8Array(64),cmd_start(),running=!0;running;)try{term_read_h"\
   "andler(),flush()}catch(e){console.error(e)}}function term_rea"\
   "d_handler(){var e=os.read(term_fd,term_read_buf.buffer,0,term"\
-  "_read_buf.length);for(let r=0;r<e;r++)handle_byte(term_read_b"\
+  "_read_buf.length);if(e<1){running=0;}else for(let r=0;r<e;r++)handle_byte(term_read_b"\
   "uf[r])}function handle_byte(e){utf8?0!==utf8_state&&128<=e&&e"\
   "<192?(utf8_val=utf8_val<<6|63&e,0==--utf8_state&&handle_char("\
   "utf8_val)):192<=e&&e<248?(utf8_state=1+(224<=e)+(240<=e),utf8"\

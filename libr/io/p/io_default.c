@@ -103,7 +103,9 @@ static void mmap_free(RIOMMapFileObj * R_NULLABLE mmo) {
 	if (mmo) {
 		free (mmo->filename);
 		r_buf_free (mmo->buf);
-		close (mmo->fd);
+		if (mmo->fd >= 0) {
+			close (mmo->fd);
+		}
 		free (mmo);
 	}
 }

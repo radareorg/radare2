@@ -50,6 +50,11 @@ static void *_r_th_launcher(void *_th) {
 			r_sys_sleep (th->delay);
 			th->delay = 0;
 		}
+		if (th->breaked) {
+			th->running = false;
+			r_th_lock_leave (th->lock);
+			return 0;
+		}
 		ret = th->fun (th);
 		switch (ret) {
 		case R_TH_STOP:

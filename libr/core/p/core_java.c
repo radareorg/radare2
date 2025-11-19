@@ -1883,7 +1883,7 @@ static bool r_cmd_java_handle_print_exceptions(RCore *core, const char *input) {
 		ut64 end = r_bin_java_get_method_end (bin, method);
 		ut8 do_this_one = start <= func_addr && func_addr <= end;
 		RList *exc_table = NULL;
-		do_this_one = (func_addr == UT64_MAX)? 1: do_this_one;
+		if (func_addr == UT64_MAX) do_this_one = 1;
 		if (!do_this_one) {
 			continue;
 		}

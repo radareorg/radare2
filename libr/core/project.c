@@ -1,6 +1,4 @@
-/* radare - LGPL - Copyright 2010-2024 - pancake, rhl */
-
-#define PROJECT_EXPERIMENTAL 0
+/* radare - LGPL - Copyright 2010-2025 - pancake, rhl */
 
 // R2R db/cmd/projects
 
@@ -17,8 +15,8 @@ static bool is_valid_project_name(const char *name) {
 	if (r_str_len_utf8 (name) >= 64) {
 		return false;
 	}
-	const char * const extention = r_str_endswith (name, ".zip")? r_str_last (name, ".zip"): NULL;
-	for (; *name && name != extention; name++) {
+	const char *const extension = r_str_endswith (name, ".zip")? r_str_last (name, ".zip"): NULL;
+	for (; *name && name != extension; name++) {
 		if (isdigit (*name) || islower (*name) || *name == '_') {
 			continue;
 		}
@@ -49,7 +47,7 @@ static char *get_project_script_path(RCore *core, const char *file) {
 	}
 	data = r_file_slurp (prjfile, NULL);
 	if (data) {
-		if (strncmp (data, magic, strlen (magic))) {
+		if (!r_str_startswith (data, magic)) {
 			R_FREE (prjfile);
 		}
 	}
@@ -482,33 +480,6 @@ R_API char *r_core_project_name(RCore *core, const char *prjfile) {
 	return file;
 }
 
-#if PROJECT_EXPERIMENTAL
-static R_TH_LOCAL int fdc; // TODO: move into a struct passed to the foreach instead of global
-
-static bool store_files_and_maps(RCore *core, RIODesc *desc, ut32 id) {
-	RList *maps = NULL;
-	RListIter *iter;
-	RIOMap *map;
-	if (desc) {
-		// reload bin info
-		RCons *cons = core->cons;
-		r_cons_printf (cons, "'obf %s\n", desc->uri);
-		r_cons_printf (cons, "'of \\\"%s\\\" %s\n", desc->uri, r_str_rwx_i (desc->perm));
-		if ((maps = r_io_map_get_by_fd (core->io, id))) { //wtf
-			r_list_foreach (maps, iter, map) {
-				r_cons_printf (cons,
-					"om %d 0x%" PFMT64x " 0x%" PFMT64x " 0x%" PFMT64x " %s%s%s\n", fdc,
-					r_io_map_begin (map), r_io_map_size (map), map->delta, r_str_rwx_i (map->perm),
-					map->name? " " : "", r_str_get (map->name));
-			}
-			r_list_free (maps);
-		}
-		fdc++;
-	}
-	return true;
-}
-#endif
-
 static void flush(RCore *core, RStrBuf *sb) {
 	char * s = r_cons_drain (core->cons);
 	if (s) {
@@ -518,15 +489,14 @@ static void flush(RCore *core, RStrBuf *sb) {
 }
 
 R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
-	char *hl, *ohl = NULL;
-
+	R_RETURN_VAL_IF_FAIL (core && file, false);
 	if (R_STR_ISEMPTY (file)) {
 		return false;
 	}
 
 	char *filename = r_str_word_get_first (file);
-
-	hl = core->cons->highlight;
+	char *ohl = NULL;
+	char *hl = core->cons->highlight;
 	if (hl) {
 		ohl = strdup (hl);
 		r_cons_highlight (core->cons, NULL);
@@ -543,9 +513,12 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 		free (res);
 		flush (core, sb);
 	}
-	r_core_cmd (core, "o*", 0);
-	r_core_cmd (core, "om*", 0);
-	r_cons_printf (cons, "o=%d\n", core->io->desc->fd);
+	if (opts & R_CORE_PRJ_IO_MAPS) {
+		r_core_cmd (core, "o*", 0);
+		r_core_cmd (core, "om*", 0);
+		r_cons_printf (cons, "o=%d\n", core->io->desc->fd);
+		flush (core, sb);
+	}
 	r_core_cmd0 (core, "tcc*");
 	if (opts & R_CORE_PRJ_FCNS) {
 		r_cons_printf (cons, "# functions\n");
@@ -568,15 +541,6 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 		free (s);
 		r_flag_space_pop (core->flags);
 		flush (core, sb);
-	}
-#if PROJECT_EXPERIMENTAL
-	if (opts & R_CORE_PRJ_IO_MAPS && core->io) {
-		fdc = 3;
-		r_id_storage_foreach (&core->io->files, (RIDStorageForeachCb)store_files_and_maps, core);
-		flush (core, sb);
-	}
-#endif
-	{
 		r_core_cmd (core, "fz*", 0);
 		flush (core, sb);
 	}

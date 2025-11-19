@@ -448,7 +448,7 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int r
 				if (rad) {
 					a->cb_printf ("Cb 0x%08" PFMT64x " %s\n", start, pstr);
 				} else {
-					a->cb_printf ("Cb 0x%08" PFMT64x " %s\n", start, pstr);
+					a->cb_printf ("BIND 0x%08" PFMT64x " %s\n", start, pstr);
 				}
 				break;
 			case R_META_TYPE_VARTYPE:
@@ -484,9 +484,7 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int r
 			}
 			break;
 		}
-		if (str) {
-			free (str);
-		}
+		free (str);
 	}
 }
 
@@ -587,7 +585,7 @@ R_API void r_meta_print_list_in_function(RAnal *a, int type, int rad, ut64 addr,
 
 R_API void r_meta_rebase(RAnal *anal, ut64 diff) {
 	R_RETURN_IF_FAIL (anal);
-	if (!diff) {
+	if (!diff || diff == UT64_MAX) {
 		return;
 	}
 	RIntervalTree old = anal->meta;

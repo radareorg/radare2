@@ -1250,29 +1250,119 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 
 	switch (insn_id) {
 	case LA_INS_BEQ:
+		op->jump = addr + I16s2_SX(opcode);
+		op->fail = addr + INSNLEN;
+		op->val = I16s2_SX(opcode);
+		op->cond = R_ANAL_CONDTYPE_EQ;
+		break;
 	case LA_INS_BNE:
+		op->jump = addr + I16s2_SX(opcode);
+		op->fail = addr + INSNLEN;
+		op->val = I16s2_SX(opcode);
+		op->cond = R_ANAL_CONDTYPE_NE;
+		break;
 	case LA_INS_BLT:
+		op->jump = addr + I16s2_SX(opcode);
+		op->fail = addr + INSNLEN;
+		op->val = I16s2_SX(opcode);
+		op->cond = R_ANAL_CONDTYPE_LT;
+		break;
 	case LA_INS_BGE:
-	case LA_INS_BLTU:
+		op->jump = addr + I16s2_SX(opcode);
+		op->fail = addr + INSNLEN;
+		op->val = I16s2_SX(opcode);
+		op->cond = R_ANAL_CONDTYPE_GE;
+		break;
 	case LA_INS_BGEU:
 		op->jump = addr + I16s2_SX(opcode);
 		op->fail = addr + INSNLEN;
+		op->val = I16s2_SX(opcode);
+		op->cond = R_ANAL_CONDTYPE_GE;
+		break;
+	case LA_INS_BGT:
+		op->jump = addr + I16s2_SX(opcode);
+		op->fail = addr + INSNLEN;
+		op->val = I16s2_SX(opcode);
+		op->cond = R_ANAL_CONDTYPE_GT;
+		break;
+	case LA_INS_BGTU:
+		op->jump = addr + I16s2_SX(opcode);
+		op->fail = addr + INSNLEN;
+		op->val = I16s2_SX(opcode);
+		op->cond = R_ANAL_CONDTYPE_GT;
+		break;
+	case LA_INS_BGEZ:
+		op->jump = addr + I16s2_SX(opcode);
+		op->fail = addr + INSNLEN;
+		op->val = I16s2_SX(opcode);
+		op->cond = R_ANAL_CONDTYPE_GE;
+		break;
+	case LA_INS_BLTU:
+		op->jump = addr + I16s2_SX(opcode);
+		op->fail = addr + INSNLEN;
+		op->val = I16s2_SX(opcode);
+		op->cond = R_ANAL_CONDTYPE_LT;
+		break;
+	case LA_INS_BLTZ:
+		op->jump = addr + I16s2_SX(opcode);
+		op->fail = addr + INSNLEN;
+		op->val = I16s2_SX(opcode);
+		op->cond = R_ANAL_CONDTYPE_LT;
+		break;
+	case LA_INS_BLE:
+		op->jump = addr + I16s2_SX(opcode);
+		op->fail = addr + INSNLEN;
+		op->val = I16s2_SX(opcode);
+		op->cond = R_ANAL_CONDTYPE_LE;
+		break;
+	case LA_INS_BLEZ:
+		op->jump = addr + I16s2_SX(opcode);
+		op->fail = addr + INSNLEN;
+		op->val = I16s2_SX(opcode);
+		op->cond = R_ANAL_CONDTYPE_LE;
+		break;
+	case LA_INS_BLEU:
+		op->jump = addr + I16s2_SX(opcode);
+		op->fail = addr + INSNLEN;
+		op->val = I16s2_SX(opcode);
+		op->cond = R_ANAL_CONDTYPE_LE;
 		break;
 	case LA_INS_BEQZ:
+		op->jump = addr + I21s2_SX(opcode);
+		op->fail = addr + INSNLEN;
+		op->val = I21s2_SX(opcode);
+		op->cond = R_ANAL_CONDTYPE_EQ;
+		break;
 	case LA_INS_BNEZ:
 		op->jump = addr + I21s2_SX(opcode);
 		op->fail = addr + INSNLEN;
+		op->val = I21s2_SX(opcode);
+		op->cond = R_ANAL_CONDTYPE_NE;
+		break;
+	case LA_INS_BCEQZ:
+		op->jump = addr + I21s2_SX(opcode);
+		op->fail = addr + INSNLEN;
+		op->val = I21s2_SX(opcode);
+		op->cond = R_ANAL_CONDTYPE_EQ;
+		break;
+	case LA_INS_BCNEZ:
+		op->jump = addr + I21s2_SX(opcode);
+		op->fail = addr + INSNLEN;
+		op->val = I21s2_SX(opcode);
+		op->cond = R_ANAL_CONDTYPE_NE;
 		break;
 	case LA_INS_B:
 		op->jump = addr + I26s2_SX(opcode);
+		op->val = I26s2_SX(opcode);
 		break;
 	case LA_INS_BL:
 		op->jump = addr + I26s2_SX(opcode);
 		op->fail = addr + INSNLEN;
+		op->val = I26s2_SX(opcode);
 		break;
 	case LA_INS_JIRL:
-		//TODO
-		/* op->jump = addr + I_I16s2(opcode) + rj; */
+		op->reg = LA_RJ();
+		op->val = I16s2_SX(opcode);
 		break;
 	case LA_INS_LD_B:
 		break;

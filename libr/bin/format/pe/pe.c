@@ -1745,12 +1745,20 @@ static int read_tls_directory(RBuffer *b, ut64 addr, PE_(image_tls_directory) *t
 	if (r_buf_seek (b, addr, R_BUF_SET) == -1) {
 		return -1;
 	}
+#if R_BIN_PE64
+	tls_directory->StartAddressOfRawData = r_buf_read_le64 (b);
+	tls_directory->EndAddressOfRawData = r_buf_read_le64 (b);
+	tls_directory->AddressOfIndex = r_buf_read_le64 (b);
+	tls_directory->AddressOfCallBacks = r_buf_read_le64 (b);
+#else
 	tls_directory->StartAddressOfRawData = r_buf_read_le32 (b);
 	tls_directory->EndAddressOfRawData = r_buf_read_le32 (b);
 	tls_directory->AddressOfIndex = r_buf_read_le32 (b);
 	tls_directory->AddressOfCallBacks = r_buf_read_le32 (b);
+#endif
 	tls_directory->SizeOfZeroFill = r_buf_read_le32 (b);
 	tls_directory->Characteristics = r_buf_read_le32 (b);
+
 	r_buf_seek (b, o_addr, R_BUF_SET);
 	return sizeof (PE_(image_tls_directory));
 }

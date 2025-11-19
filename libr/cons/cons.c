@@ -3,8 +3,6 @@
 #include <r_cons.h>
 #include <r_util/r_print.h>
 
-#define COUNT_LINES 1
-
 static R_TH_LOCAL RCons *I = NULL;
 
 R_LIB_VERSION (r_cons);
@@ -12,6 +10,36 @@ R_LIB_VERSION (r_cons);
 static RCons s_cons_global = {0};
 
 static void __break_signal(int sig);
+#define MAX_PAGES 100
+
+static unsigned int count_display_lines(RCons *cons, const char *buffer, size_t len) {
+	int columns, rows;
+	columns = r_cons_get_size (cons, &rows);
+	if (columns < 1) {
+		columns = 80;
+	}
+	if (rows < 1) {
+		rows = 24;
+	}
+	unsigned int max_lines = MAX_PAGES * rows;
+	unsigned int lines = 0;
+	const char *ptr = buffer;
+	const char *end = buffer + len;
+
+	while (ptr < end && lines < max_lines) {
+		const char *nl = strchr (ptr, '\n');
+		if (!nl || nl >= end) {
+			nl = end;
+		}
+		size_t line_len = nl - ptr;
+		lines += line_len ? ((line_len + columns - 1) / columns) : 1;
+		ptr = nl + 1;
+		if (nl == end) {
+			break;
+		}
+	}
+	return lines;
+}
 
 #define MOAR (4096 * 8)
 
@@ -86,85 +114,11 @@ static void cons_grep_reset(RConsGrep *grep) {
 	}
 }
 
-#if 0
-typedef struct {
-	char *buf;
-	int buf_len;
-	int buf_size;
-	RConsGrep *grep;
-} RConsStack;
-
-static void cons_stack_free(void *ptr) {
-	RConsStack *s = (RConsStack *)ptr;
-	R_FREE (s->buf);
-	cons_grep_reset (s->grep);
-	R_FREE (s->grep);
-	free (s);
-#if 0
-	// XXX
-	C->grep.str = NULL;
-	cons_grep_reset (&C->grep);
-#endif
-}
-static RConsStack *cons_stack_dump(RCons *cons, bool recreate) {
-	RConsContext *ctx = cons->context;
-	RConsStack *data = R_NEW0 (RConsStack);
-	if (ctx->buffer) {
-		data->buf = ctx->buffer;
-		data->buf_len = ctx->buffer_len;
-		data->buf_size = ctx->buffer_sz;
-	}
-	data->grep = r_mem_dup (&ctx->grep, sizeof (RConsGrep));
-	if (ctx->grep.str) {
-		data->grep->str = strdup (ctx->grep.str);
-	}
-	if (recreate && ctx->buffer_sz > 0) {
-		ctx->buffer = malloc (ctx->buffer_sz);
-		if (R_UNLIKELY (!ctx->buffer)) {
-			ctx->buffer = data->buf;
-			free (data);
-			return NULL;
-		}
-	} else {
-		ctx->buffer = NULL;
-	}
-	return data;
-}
-
-static void cons_stack_load(RConsContext *C, RConsStack *data, bool free_current) {
-	return;
-	R_RETURN_IF_FAIL (data);
-	if (free_current) {
-		// double free
-		free (C->buffer);
-	}
-	C->buffer = data->buf;
-	data->buf = NULL;
-	C->buffer_len = data->buf_len;
-	C->buffer_sz = data->buf_size;
-	if (data->grep) {
-		free (C->grep.str);
-		memcpy (&C->grep, data->grep, sizeof (RConsGrep));
-	}
-}
-
-static void cons_context_deinit(RConsContext *ctx) {
-	if (!ctx) {
-		return;
-	}
-	// r_stack_free (ctx->cons_stack);
-	r_list_free (ctx->marks);
-	ctx->marks = NULL;
-	ctx->cons_stack = NULL;
-	r_stack_free (ctx->break_stack);
-	ctx->break_stack = NULL;
-	r_cons_pal_free (ctx);
-}
-#endif
-
 static void mark_free(RConsMark *m) {
-	free (m->name);
-	free (m);
+	if (m) {
+		free (m->name);
+		free (m);
+	}
 }
 
 static void init_cons_context(RCons *cons, RConsContext * R_NULLABLE parent) {
@@ -219,18 +173,6 @@ static inline void init_cons_input(InputState *state) {
 
 R_API RCons *r_cons_new2(void) {
 	RCons *cons = R_NEW0 (RCons);
-#if 0
-	if (cons->refcnt != 1) {
-		return cons;
-	}
-	if (cons->lock) {
-		r_th_lock_wait (cons->lock);
-	} else {
-		cons->lock = r_th_lock_new (false);
-	}
-	R_CRITICAL_ENTER (I);
-#endif
-	// r_cons_context_reset (cons->context);
 	cons->context = R_NEW0 (RConsContext);
 	cons->ctx_stack = r_list_newf ((RListFree)r_cons_context_free);
 	init_cons_context (cons, NULL);
@@ -248,7 +190,7 @@ R_API RCons *r_cons_new2(void) {
 	cons->fix_columns = 0;
 	cons->fix_rows = 0;
 	RVecFdPairs_init (&cons->fds);
-	cons->mouse_event = 0;
+	cons->mouse_event = false;
 	cons->force_rows = 0;
 	cons->force_columns = 0;
 	cons->event_resize = NULL;
@@ -314,14 +256,6 @@ R_API void r_cons_free2(RCons * R_NULLABLE cons) {
 	}
 	r_cons_context_free (cons->context);
 	r_list_free (cons->ctx_stack);
-#if 0
-	RConsContext *ctx = cons->context;
-	R_FREE (ctx->buffer);
-	R_FREE (cons->break_word);
-	cons_context_deinit (ctx);
-	R_FREE (ctx->lastOutput);
-	ctx->lastLength = 0;
-#endif
 	R_FREE (cons->pager);
 	RVecFdPairs_fini (&cons->fds);
 }
@@ -329,21 +263,6 @@ R_API void r_cons_free2(RCons * R_NULLABLE cons) {
 static void __break_signal(int sig) {
 	r_cons_context_break (I->context); // &r_cons_context_default);
 }
-
-#if 0
-static inline void init_cons_instance(void) {
-	return;
-	if (R_LIKELY (I)) {
-		if (!I->context) {
-			I->context = &r_cons_context_default;
-		}
-	} else {
-		I = &s_cons_global;
-		I->context = &r_cons_context_default;
-		init_cons_input (&I->input_state);
-	}
-}
-#endif
 
 R_API bool r_cons_is_initialized(void) {
 	return I != NULL;
@@ -439,12 +358,6 @@ R_API void r_cons_print_at(RCons *cons, const char *_str, int x, char y, int w, 
 	free (str);
 }
 
-#if 0
-R_API RConsContext *r_cons_context(void) {
-	return C;
-}
-#endif
-
 R_API RCons *r_cons_global(RCons *c) {
 	if (c) {
 		I = c;
@@ -526,13 +439,6 @@ R_API bool r_cons_is_interactive(RCons *cons) {
 	return cons->context->is_interactive;
 }
 
-#if 0
-R_API bool r_cons_default_context_is_interactive(void) {
-	// XXX this is pure evil
-	return I->context->is_interactive;
-}
-#endif
-
 R_API bool r_cons_was_breaked(RCons *cons) {
 #if WANT_DEBUGSTUFF
 	const bool res = r_cons_is_breaked (cons) || cons->context->was_breaked;
@@ -579,25 +485,6 @@ R_API void r_cons_line(RCons *cons, int x, int y, int x2, int y2, int ch) {
 		}
 	}
 }
-
-#if 0
-R_API void r_cons_color(RCons *cons, int fg, int r, int g, int b) {
-	int k;
-	r = R_DIM (r, 0, 255);
-	g = R_DIM (g, 0, 255);
-	b = R_DIM (b, 0, 255);
-	if (r == g && g == b) { // b&w
-		k = 232 + (int)(((r+g+b)/3)/10.3);
-	} else {
-		r = (int)(r / 42.6);
-		g = (int)(g / 42.6);
-		b = (int)(b / 42.6);
-		k = 16 + (r * 36) + (g * 6) + b;
-	}
-	r_cons_printf (cons, "\x1b[%d;5;%dm", fg? 48: 38, k);
-}
-
-#endif
 
 R_API int r_cons_get_cur_line(void) {
 	int curline = 0;
@@ -662,7 +549,7 @@ R_API void r_cons_set_click(RCons * R_NONNULL cons, int x, int y) {
 	cons->click_x = x;
 	cons->click_y = y;
 	cons->click_set = true;
-	cons->mouse_event = 1;
+	cons->mouse_event = true;
 }
 
 R_API bool r_cons_get_click(RCons * R_NONNULL cons, int *x, int *y) {
@@ -715,10 +602,8 @@ R_API RCons *r_cons_new(void) {
 	RCons *cons = r_cons_new2 ();
 	if (I) {
 		R_LOG_INFO ("Second cons!");
-		I = cons;
-	} else {
-		I = cons;
 	}
+	I = cons;
 	return cons;
 }
 
@@ -781,15 +666,6 @@ R_API void r_cons_context_load(RConsContext *context) {
 		I = &s_cons_global;
 	}
 	I->context = context;
-}
-
-R_API void r_cons_context_reset(RConsContext *context) {
-	// XXX does nothing
-#if 0
-	while (r_cons_pop (I)) {
-		// you cant stop
-	}
-#endif
 }
 
 R_API void r_cons_context_break(RConsContext *context) {
@@ -859,26 +735,11 @@ R_API void r_cons_flush(RCons *cons) {
 			r_sys_cmd_str_full (cons->pager, ctx->buffer, -1, NULL, NULL, NULL);
 			r_cons_reset (cons);
 		} else if (cons->maxpage > 0 && ctx->buffer_len > cons->maxpage) {
-#if COUNT_LINES
-			char *buffer = ctx->buffer;
-			int i, lines = 0;
-			for (i = 0; buffer[i]; i++) {
-				if (buffer[i] == '\n') {
-					lines ++;
-				}
-			}
-			if (lines > 0 && !r_cons_yesno (cons, 'n',"Do you want to print %d lines? (y/N)", lines)) {
+			unsigned int lines = count_display_lines (cons, ctx->buffer, ctx->buffer_len);
+			if (lines > 0 && !r_cons_yesno (cons, 'n',"Do you want to print %u lines? (y/N)", lines)) {
 				r_cons_reset (cons);
 				return;
 			}
-#else
-			char buf[8];
-			r_num_units (buf, sizeof (buf), ctx->buffer_len);
-			if (!r_cons_yesno (cons, 'n', "Do you want to print %s chars? (y/N)", buf)) {
-				r_cons_reset (cons);
-				return;
-			}
-#endif
 			// fix | more | less problem
 			r_cons_set_raw (cons, true);
 		}
@@ -1701,7 +1562,6 @@ R_API void r_cons_push(RCons *cons) {
 		Gcons->context = nc;
 	}
 	r_cons_reset (cons);
-	// r_cons_context_reset (cons->context);
 #if 0
 	// memcpy (&tc, cons->context, sizeof (tc));
 	if (!ctx->cons_stack) {
@@ -1932,26 +1792,28 @@ R_API void r_cons_last(RCons *cons) {
 	}
 }
 
-R_API void r_cons_clear_line(RCons *cons, int std_err) {
+R_API void r_cons_clear_line(RCons *cons, bool std_err, bool flush) {
 #if R2__WINDOWS__
 	if (cons->vtmode) {
 		fprintf (std_err? stderr: stdout,"%s", R_CONS_CLEAR_LINE);
 	} else {
-		char white[1024];
-		memset (&white, ' ', sizeof (white));
-		if (cons->columns > 0 && cons->columns < sizeof (white)) {
-			white[cons->columns - 1] = 0;
-		} else if (cons->columns == 0) {
-			white[0] = 0;
-		} else {
-			white[sizeof (white) - 1] = 0; // HACK
+		int len = cons->columns;
+		if (len > 0) {
+			char *white = malloc (len + 1);
+			if (white) {
+				memset (white, ' ', len);
+				white[len] = 0;
+				fprintf (std_err? stderr: stdout, "\r%s\r", white);
+				free (white);
+			}
 		}
-		fprintf (std_err? stderr: stdout, "\r%s\r", white);
 	}
 #else
 	fprintf (std_err? stderr: stdout,"%s", R_CONS_CLEAR_LINE);
 #endif
-	fflush (std_err? stderr: stdout);
+	if (flush) {
+		fflush (std_err? stderr: stdout);
+	}
 }
 
 R_API void r_cons_clear(RCons *cons) {
@@ -2135,7 +1997,6 @@ R_API int r_cons_printf(RCons *cons, const char *format, ...) {
 	return 0;
 }
 
-#if R2_USE_NEW_ABI
 R_API void r_cons_break(RCons *cons) {
 	if (!cons) {
 		if (!I) {
@@ -2149,4 +2010,3 @@ R_API void r_cons_break(RCons *cons) {
 	raise (SIGINT);
 #endif
 }
-#endif

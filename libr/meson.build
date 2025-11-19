@@ -9,14 +9,14 @@ bin_plugins = [ 'any' ]
 bin_ldr_plugins = [ 'ldr_linux' ]
 bin_xtr_plugins = [ 'xtr_sep64' ]
 io_plugins = [ 'malloc', 'cyclic', 'xattr', 'fd', 'default', 'null', 'rbuf', 'r2pipe' ]
-fs_plugins = [ 'r2', 'posix', 'io' ]
+fs_plugins = [ 'r2', 'posix', 'io', 'ubifs' ]
 
 if get_option('use_zip')
   io_plugins += [ 'zip' ]
   fs_plugins += [ 'zip' ]
 endif
 bp_plugins = [ 'null' ]
-muta_plugins = [ ]
+muta_plugins = [ 'null' ]
 core_plugins = [ 'a2f', 'agD' ]
 egg_plugins = [ 'xor' ]
 debug_plugins = [ 'null', 'io', 'esil', 'rap' ]

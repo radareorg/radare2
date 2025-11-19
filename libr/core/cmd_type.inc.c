@@ -135,7 +135,7 @@ static RCoreHelpMessage help_msg_tl = {
 
 static RCoreHelpMessage help_msg_tn = {
 	"Usage:", "tn [-][0xaddr|symname]", " manage no-return marks",
-	"tn[a]", " 0x3000", "stop function analysis if call/jmp to this address",
+	"tn[a]", " [addr]", "stop function analysis if call/jmp to 'addr'",
 	"tn[n]", " sym.imp.exit", "same as above but for flag/fcn names",
 	"tnf", "", "same as `afl,noret/eq/1`",
 	"tn-", " 0x3000 sym.imp.exit ...", "remove some no-return references",
@@ -671,11 +671,19 @@ static void printFunctionTypeC(RCore *core, const char *input) {
 	r_cons_printf (core->cons, "%s %s (", ret, name);
 	for (i = 0; i < args; i++) {
 		char *type = sdb_get (TDB, r_strf ("func.%s.arg.%d", name, i), 0);
-		char *name = strchr (type, ',');
-		if (name) {
-			*name++ = 0;
+		if (!type) {
+			continue;
 		}
-		r_cons_printf (core->cons, "%s%s %s", (i == 0)? "": ", ", type, name);
+		char *argname = strchr (type, ',');
+		if (argname) {
+			*argname++ = 0;
+		}
+		if (!strcmp (type, "...")) {
+			r_cons_printf (core->cons, "%s%s", (i == 0)? "": ", ", type);
+		} else {
+			r_cons_printf (core->cons, "%s%s %s", (i == 0)? "": ", ", type, argname);
+		}
+		free (type);
 	}
 	r_cons_printf (core->cons, ");\n");
 	free (res);
@@ -708,7 +716,9 @@ static void printFunctionType(RCore *core, const char *input) {
 		}
 		pj_o (pj);
 		pj_ks (pj, "type", type);
-		if (name) {
+		if (!strcmp (type, "...")) {
+			// variadic arguments don't have names
+		} else if (name) {
 			pj_ks (pj, "name", name);
 		} else {
 			pj_ks (pj, "name", "(null)");

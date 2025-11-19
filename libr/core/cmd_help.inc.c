@@ -86,7 +86,7 @@ static RCoreHelpMessage help_msg_at_at = {
 	"x", " @@f", "run 'x' on all functions (see aflq)",
 	"x", " @@f:write", "run 'x' on all functions matching write in the name",
 	"x", " @@F", "alias for @@c:afla - inverse recursive function list",
-	"x", " @@i", "run 'x' on all instructions of the current function (see pdr)",
+	"x", " @@i", "run 'x' on all instructions of current function (see pdr)",
 	"x", " @@iS", "run 'x' on all sections adjusting blocksize",
 	"x", " @@k sdbquery", "run 'x' on all offsets returned by that sdbquery",
 	"x", " @@s:from to step", "run 'x' on all offsets from, to incrementing by step",
@@ -206,7 +206,7 @@ static RCoreHelpMessage help_msg_root = {
 	".", "[?] [-|(m)|f|!sh|cmd]", "Define macro or load r2, cparse or rlang file",
 	",", "[?] [/jhr]", "create and query or filter a table with data from file",
 	":", "cmd", "run an io command (same as =!)",
-	"-", "[?]", "open editor and run the r2 commands in the saved document",
+	"-", "[?]", "open editor and run the r2 commands saved in the file",
 	"_", "[?]", "Print last output",
 	"=", "[?] [cmd]", "submit or listen to remote commands",
 	"<", "[str]", "feed stdin with given escaped string",
@@ -264,6 +264,17 @@ static RCoreHelpMessage help_msg_question_i = {
 	NULL
 };
 
+static RCoreHelpMessage help_msg_clippy = {
+	"Usage: ?E[0-9KOC] msg", "print a message with clippy avatar", "",
+	"?E", " msg", "print message with default avatar (see scr.clippy)",
+	"?E0", " msg", "print message with first frame of avatar",
+	"?E1", " msg", "print message with second frame of avatar",
+	"?EK", " msg", "print message with cybercat avatar",
+	"?EO", " msg", "print message with orangg avatar",
+	"?EC", " msg", "print message with croco avatar",
+	NULL
+};
+
 static RCoreHelpMessage help_msg_question_e = {
 	"Usage: ?e[=bdgnpst] arg", "print/echo things", "",
 	"?e", "", "echo message with newline",
@@ -312,7 +323,7 @@ static RCoreHelpMessage help_msg_question = {
 	"?ne", " [cmd]", "run cmd if $? != 0",
 	"?o", " num", "get octal value",
 	"?P", " paddr", "get virtual address for given physical one",
-	"?p", " vaddr", "get physical address for given virtual address",
+	"?p", " vaddr", "get physical address for given virtual one",
 	"?q", " num|expr", "compute expression like ? or ?v but in quiet mode",
 	"?r", " [from] [to]", "generate random number between from-to",
 	"?s", " from to step", "sequence of numbers from to by steps",
@@ -406,7 +417,7 @@ static RCoreHelpMessage help_msg_question_v = {
 	"$p", "", "getpid()",
 	"$P", "", "pid of children (only in debug)",
 	"$r", "", "get console height (in rows, see $c for columns)",
-	"$r", "{reg}", "get value of named register ($r{PC} and $r:PC syntax is supported)",
+	"$r", "{reg}", "get value of register <reg> ($r{PC} and $r:PC are supported)",
 	"$s", "", "file size",
 	"$w", "", "get word size, 4 if asm.bits=32, 8 if 64, ...",
 	"RNum", "", "$variables usable in math expressions",
@@ -1060,9 +1071,9 @@ static int cmd_help(void *data, const char *input) {
 			while (vars[i]) {
 				const char *pad = r_str_pad (' ', 6 - strlen (vars[i]));
 				if (wideOffsets) {
-					eprintf ("%s %s 0x%016"PFMT64x"\n", vars[i], pad, r_num_math (core->num, vars[i]));
+					r_cons_printf (core->cons, "%s %s 0x%016"PFMT64x"\n", vars[i], pad, r_num_math (core->num, vars[i]));
 				} else {
-					eprintf ("%s %s 0x%08"PFMT64x"\n", vars[i], pad, r_num_math (core->num, vars[i]));
+					r_cons_printf (core->cons, "%s %s 0x%08"PFMT64x"\n", vars[i], pad, r_num_math (core->num, vars[i]));
 				}
 				i++;
 			}
@@ -1197,7 +1208,11 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'E': // "?E" clippy echo
-		r_core_clippy (core, input + 1);
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_clippy);
+		} else {
+			r_core_clippy (core, input + 1);
+		}
 		break;
 	case 'e': // "?e" echo
 		if (input[1] == 'q') { // "?eq"
@@ -1323,11 +1338,11 @@ static int cmd_help(void *data, const char *input) {
 						  char *d = r_str_donut (i);
 						  r_cons_gotoxy (core->cons, 0, 0);
 						  r_str_trim_tail (d);
-						  r_cons_clear_line (core->cons, 0);
+						  r_cons_clear_line (core->cons, false, true);
 						  r_cons_printf (core->cons, "Downloading the Gibson...\n\n");
 						  r_core_cmdf (core, "?e=%d", i);
 						  r_cons_print (core->cons, d);
-						  r_cons_clear_line (core->cons, 0);
+						  r_cons_clear_line (core->cons, false, true);
 						  r_cons_newline (core->cons);
 						  free (d);
 						  r_cons_flush (core->cons);
@@ -1663,15 +1678,25 @@ static void cmd_head(void *data, const char *_input) { // "head"
 
 static int cmd_h(void *data, const char *_input) { // "head"
 	RCore *core = (RCore *)data;
-	if (r_str_startswith (_input, "ead")) {
-		cmd_head (data, _input);
-		return 0;
+	if (_input[0] == 'e') {
+		if (r_str_startswith (_input, "ead")) {
+			cmd_head (data, _input);
+			return 0;
+		}
+		if (r_str_startswith (_input, "elp")) {
+			r_cons_printf (core->cons, "%s\n", help_message);
+			return 0;
+		}
+		if (_input[1] == '?') {
+			r_core_cmd_help ((RCore*)data, help_msg_h);
+		} else {
+			r_core_return_invalid_command (core, "he", _input[1]);
+		}
+	} else if (_input[0] == '?') {
+		r_core_cmd_help ((RCore*)data, help_msg_h);
+	} else {
+		r_core_return_invalid_command (core, "h", _input[0]);
 	}
-	if (r_str_startswith (_input, "elp")) {
-		r_cons_printf (core->cons, "%s\n", help_message);
-		return 0;
-	}
-	r_core_cmd_help ((RCore*)data, help_msg_h);
 	return 0; // invalid command
 }
 #endif

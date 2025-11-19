@@ -128,7 +128,7 @@ int w32_attach_new_process(RDebug* dbg, int pid);
 bool w32_select(RDebug *dbg, int pid, int tid);
 int w32_kill(RDebug *dbg, int pid, int tid, int sig);
 void w32_break_process(void *user);
-int w32_dbg_wait(RDebug *dbg, int pid);
+RDebugReasonType w32_dbg_wait(RDebug *dbg, int pid);
 
 bool w32_step(RDebug *dbg);
 bool w32_continue(RDebug *dbg, int pid, int tid, int sig);

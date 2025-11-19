@@ -436,7 +436,6 @@ static const char *rotateAsmemu(RCore *core) {
 		return "afsQ;pdcl";
 	}
 	return "afsQ;pd $r";  // ASSEMBLY
-	// return "pd";
 }
 
 R_API void r_core_visual_showcursor(RCore *core, int x) {
@@ -1195,9 +1194,9 @@ static void setprintmode(RCore *core, int n) {
 	switch (v->printidx) {
 	case R_CORE_VISUAL_MODE_PD:
 	case R_CORE_VISUAL_MODE_DB:
-		r_asm_op_init (&op);
+		r_anal_op_init (&op);
 		r_asm_disassemble (core->rasm, &op, core->block, R_MIN (32, core->blocksize));
-		r_asm_op_fini (&op);
+		r_anal_op_fini (&op);
 		break;
 	default:
 		break;
@@ -2010,6 +2009,7 @@ static void visual_comma(RCore *core) {
 		if (fn && *fn) {
 			cmtfile = strdup (fn);
 			if (R_STR_ISEMPTY (comment)) {
+				free (comment);
 				comment = r_str_newf (",(%s)", fn);
 				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, comment);
 				R_FREE (comment);
@@ -2260,12 +2260,12 @@ static void cursor_prevrow(RCore *core, bool use_ocur) {
 			} else {
 				RAnalOp op;
 				prev_roff = 0;
-				r_asm_op_init (&op);
+				r_anal_op_init (&op);
 				r_core_seek (core, prev_addr, true);
 				r_asm_set_pc (core->rasm, prev_addr);
 				prev_sz = r_asm_disassemble (core->rasm, &op,
 					core->block, 32);
-				r_asm_op_fini (&op);
+				r_anal_op_fini (&op);
 			}
 		} else {
 			prev_sz = roff - prev_roff;
@@ -2340,7 +2340,7 @@ static bool fix_cursor(RCore *core) {
 				p->ocur = R_MAX (p->ocur - sz, 0);
 			}
 			res |= off_is_visible;
-			r_asm_op_fini (&op);
+			r_anal_op_fini (&op);
 		}
 	} else if (core->print->cur >= offscreen) {
 		r_core_seek (core, core->addr + p->cols, true);
@@ -2883,7 +2883,6 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	char buf[4096]; // TODO: remove this var, use local ones for each specific case
 	const char *key_s;
 	int i, cols = core->print->cols;
-	int wheelspeed;
 	int ch = och;
 	r_cons_set_raw (core->cons, true);
 	if ((ut8)ch == KEY_ALTQ) {
@@ -2891,6 +2890,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		ch = 'q';
 	}
 	ch = r_cons_arrow_to_hjkl (core->cons, ch);
+	int wheelspeed = (core->cons->mouse_event)
+		? r_config_get_i (core->config, "scr.wheel.speed"): 1;
 	ch = visual_nkey (core, ch);
 	if (ch < 2) {
 		ch = process_get_click (core, ch);
@@ -2917,11 +2918,6 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		och = 0;
 		ch = 0;
 		return 1;
-	}
-	if (core->cons->mouse_event) {
-		wheelspeed = r_config_get_i (core->config, "scr.wheel.speed");
-	} else {
-		wheelspeed = 1;
 	}
 	RCoreVisual *v = &core->visual;
 	if (ch == 'l' && och == 6) {
@@ -3587,7 +3583,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 							RAnalOp op;
 							if (isDisasmPrint (v->printidx)) {
 								r_core_visual_disasm_down (core, &op, &cols);
-								r_asm_op_fini (&op);
+								r_anal_op_fini (&op);
 							} else if (!strcmp (__core_visual_print_command (core),
 									"prc")) {
 								cols = r_config_get_i (core->config, "hex.cols");
@@ -3628,7 +3624,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					if (isDisasmPrint (v->printidx)) {
 						if (core->print->screen_bounds == core->addr) {
 							r_asm_disassemble (core->rasm, &op, core->block, 32);
-							r_asm_op_fini (&op);
+							r_anal_op_fini (&op);
 						}
 						if (addr == core->addr || addr == UT64_MAX) {
 							addr = core->addr + 48;
@@ -4255,7 +4251,6 @@ static void visual_title(RCore *core, int color) {
 	if (core->print->cur < 0) {
 		core->print->cur = 0;
 	}
-
 	if (color) {
 		r_cons_print (core->cons, BEGIN);
 	}
@@ -4575,25 +4570,21 @@ R_IPI void visual_refresh(RCore *core) {
 	if (vsplit) {
 		// XXX: slow
 		cons->blankline = false;
-		{
-			int hex_cols = r_config_get_i (core->config, "hex.cols");
-			int split_w = 12 + 4 + hex_cols + (hex_cols * 3);
-			if (split_w > w) {
-				// do not show column contents
+		int hex_cols = r_config_get_i (core->config, "hex.cols");
+		int split_w = 12 + 4 + hex_cols + (hex_cols * 3);
+		if (split_w <= w) {
+			r_cons_printf (cons, "[cmd.cprompt=%s]\n", vi);
+			if (core->visual.oseek != UT64_MAX) {
+				r_core_seek (core, core->visual.oseek, true);
+			}
+			r_core_cmd0 (core, vi);
+			r_cons_column (cons, split_w);
+			if (r_str_startswith (vi, "p=") && core->print->cur_enabled) {
+				core->visual.oseek = core->addr;
+				core->print->cur_enabled = false;
+				r_core_seek (core, core->num->value, true);
 			} else {
-				r_cons_printf (cons, "[cmd.cprompt=%s]\n", vi);
-				if (core->visual.oseek != UT64_MAX) {
-					r_core_seek (core, core->visual.oseek, true);
-				}
-				r_core_cmd0 (core, vi);
-				r_cons_column (cons, split_w);
-				if (r_str_startswith (vi, "p=") && core->print->cur_enabled) {
-					core->visual.oseek = core->addr;
-					core->print->cur_enabled = false;
-					r_core_seek (core, core->num->value, true);
-				} else {
-					core->visual.oseek = UT64_MAX;
-				}
+				core->visual.oseek = UT64_MAX;
 			}
 		}
 		r_cons_gotoxy (cons, 0, 0);
@@ -4689,10 +4680,6 @@ R_IPI void visual_refresh(RCore *core) {
 	show_cursor (core);
 }
 
-static void visual_refresh_queued(RCore *core) {
-	visual_refresh (core);
-}
-
 static int varcount(RCore *core, RAnalFunction *f) {
 	int mode = r_config_get_i (core->config, "asm.var.summary");
 	if (mode != 0) {
@@ -4721,30 +4708,24 @@ R_API void r_core_visual_disasm_up(RCore *core, int *cols) {
 			*cols = 4;
 		}
 	} else {
+		int delta = r_core_visual_prevopsz (core, core->addr);
 		if (f && core->addr == f->addr) {
 			if (core->skiplines > 0) {
 				core->skiplines--;
-				*cols = 0;
-			} else {
-				int delta = r_core_visual_prevopsz (core, core->addr);
-				*cols = delta;
+				delta = 0;
 			}
-			return;
-		}
-		int delta = r_core_visual_prevopsz (core, core->addr);
-		if (f && core->addr - delta == f->addr) {
-			int nvars = varcount (core, f);
-			if (nvars < 20) {
-				core->skiplines = nvars;
-				if (core->skiplines > 0) {
-					core->skiplines--;
-				}
-			}
-			*cols = delta;
 		} else {
-			*cols = delta;
-			// *cols = 0;
+			if (f && core->addr - delta == f->addr) {
+				int nvars = varcount (core, f);
+				if (nvars < 20) {
+					core->skiplines = nvars;
+					if (core->skiplines > 0) {
+						core->skiplines--;
+					}
+				} /* else { delta = 0; } */
+			}
 		}
+		*cols = delta;
 	}
 }
 
@@ -4812,8 +4793,7 @@ R_API void r_core_visual_disasm_down(RCore *core, RAnalOp *op, int *cols) {
 	}
 }
 
-
-static bool is_mintty(RCons *cons) {
+static inline bool is_mintty(RCons *cons) {
 #ifdef R2__WINDOWS__
 	return cons->term_xterm;
 #else
@@ -4931,7 +4911,7 @@ dodo:
 		r_cons_enable_mouse (core->cons, r_config_get_b (core->config, "scr.wheel"));
 		core->cons->event_resize = NULL; // avoid running old event with new data
 		core->cons->event_data = core;
-		core->cons->event_resize = (RConsEvent) visual_refresh_queued;
+		core->cons->event_resize = (RConsEvent) visual_refresh;
 		flags = core->print->flags;
 		core->visual.color = r_config_get_i (core->config, "scr.color");
 		if (core->visual.color) {

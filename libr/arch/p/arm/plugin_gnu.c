@@ -507,6 +507,9 @@ static ut64 getaddr(ut64 addr, const ut8 *d) {
 }
 
 static int arm_op64(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *d, int len) {
+	if (!d) {
+		return -1;
+	}
 	if (d[3] == 0) {
 		return -1; // invalid
 	}

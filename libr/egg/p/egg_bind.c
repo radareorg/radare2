@@ -7,47 +7,45 @@
 
 static ut8 x86_osx_bind4444[] =
 #include "sc/out/x86-osx-bind4444.c"
-;
+	;
 
 static ut8 x86_solaris_bind4444[] =
 #include "sc/out/x86-solaris-bind4444.c"
-;
+	;
 
 static ut8 x86_openbsd_bind6969[] =
 #include "sc/out/x86-openbsd-bind6969.c"
-;
+	;
 
 static ut8 x86_linux_bind4444[] =
 #include "sc/out/x86-linux-bind4444.c"
-;
+	;
 
 #if SUPPORT_UDP
 static ut8 x86_linux_udp4444[] =
 #include "sc/out/x86-linux-udp4444.c"
 #endif
 
-
-static ut8 arm_linux_bind[] =
+	static ut8 arm_linux_bind[] =
 #include "sc/out/arm-linux-bind.c"
-;
+	;
 
 static ut8 sparc_linux_bind4444[] =
 #include "sc/out/sparc-linux-bind4444.c"
-;
+	;
 
 static ut8 x86_w32_tcp4444[] =
 #include "sc/out/x86-w32-tcp4444.c"
-;
-
+	;
 
 static RBuffer *build(REgg *egg) {
-	char *shell= NULL;
+	char *shell = NULL;
 	RBuffer *buf = r_buf_new ();
 	const ut8 *sc = NULL;
 	size_t sc_len = 0;
 	int cd = 0;
 	char *port = r_egg_option_get (egg, "port");
-	//TODO: char *udp = r_egg_option_get (egg, "udp");
+	// TODO: char *udp = r_egg_option_get (egg, "udp");
 	switch (egg->os) {
 	case R_EGG_OS_OSX:
 	case R_EGG_OS_DARWIN:
@@ -69,7 +67,7 @@ static RBuffer *build(REgg *egg) {
 	case R_EGG_OS_OPENBSD:
 		switch (egg->arch) {
 		case R_SYS_ARCH_X86:
-			sc = (const ut8*)x86_openbsd_bind6969;
+			sc = (const ut8 *)x86_openbsd_bind6969;
 			sc_len = sizeof (x86_openbsd_bind6969) - 1;
 			break;
 		}
@@ -118,7 +116,7 @@ static RBuffer *build(REgg *egg) {
 			if (cd) {
 				// TODO: support 16bit values
 				ut8 nport = atoi (port);
-				r_buf_write_at (buf, cd, (const ut8*)&nport, 1);
+				r_buf_write_at (buf, cd, (const ut8 *)&nport, 1);
 			} else {
 				R_LOG_WARN ("Cannot set port");
 			}

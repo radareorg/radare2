@@ -3070,22 +3070,19 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			if (item) {
 				if (eq) {
 					long double val = 0.0f;
-#if __windows__
-					double dval = 0.0f;
-					sscanf (eq, "%lf", (double*)&dval);
-					val = dval;
-#else
-#if R2_NO_LONG_DOUBLE
 					double dval = 0.0;
-					sscanf (eq, "%lf", &dval);
-					val = (long double)dval;
-#else
-					sscanf (eq, "%Lf", &val);
-#endif
-#endif
-					r_reg_set_double (core->dbg->reg, item, val);
-					r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, true);
-					r_debug_reg_sync (core->dbg, R_REG_TYPE_FPU, true);
+					if (r_str_scanf (eq, "%lf", &dval) == 1) {
+						val = (long double)dval;
+						if (item->size >= 80) {
+							r_reg_set_longdouble (core->dbg->reg, item, val);
+						} else {
+							r_reg_set_double (core->dbg->reg, item, (double)val);
+						}
+						r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, true);
+						r_debug_reg_sync (core->dbg, R_REG_TYPE_FPU, true);
+					} else {
+						R_LOG_WARN ("Cannot parse floating value '%s'", eq);
+					}
 				} else {
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_FPU, false);
@@ -4929,13 +4926,26 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 		}
 		break;
 	case ' ':
+	{
+		const char *pidstr = r_str_trim_head_ro (input + 2);
+		if (R_STR_ISEMPTY (pidstr)) {
+			R_LOG_ERROR ("Missing pid argument");
+			break;
+		}
+		const char *err = NULL;
+		ut64 pidn = r_num_math_err (core->num, pidstr, &err);
+		if (err || r_num_failed (core->num)) {
+			R_LOG_ERROR ("Invalid pid argument: %s", pidstr);
+			break;
+		}
 		old_pid = core->dbg->pid;
-		pid = atoi (input + 2);
+		pid = (int)pidn;
 		r_reg_arena_swap (core->dbg->reg, true);
 		r_debug_select (core->dbg, pid, core->dbg->tid);
 		r_debug_continue (core->dbg);
 		r_debug_select (core->dbg, old_pid, core->dbg->tid);
 		break;
+	}
 	case 't':
 		if (input[2] == '?') {
 			r_core_cmd_help_match (core, help_msg_dc, "dct");
@@ -6242,7 +6252,7 @@ static int cmd_debug(void *data, const char *input) {
 				break;
 			}
 			r_asm_set_pc (core->rasm, core->addr);
-			acode = r_asm_massemble (core->rasm, input + 2);
+			acode = r_asm_assemble (core->rasm, input + 2);
 			if (acode) {
 				r_reg_arena_push (core->dbg->reg);
 				if (!r_debug_execute (core->dbg, acode->bytes, acode->len, NULL, false, false)) {

@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2024 - pancake */
+/* radare2 - LGPL - Copyright 2013-2025 - pancake */
 
 #include <r_arch.h>
 #include <sdb/ht_uu.h>
@@ -1865,6 +1865,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		default:
 			break;
 		}
+		op->ptrsize = size;
 		if (ISMEM64 (1)) {
 			if (HASMEMINDEX64 (1)) {
 				if (LSHIFT2_64 (1) || EXT64 (1)) {
@@ -1957,6 +1958,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 			size = REGSIZE64 (0);
 			break;
 		}
+		op->ptrsize = size;
 		if (ISMEM64 (1)) {
 			if (HASMEMINDEX64 (1)) {
 				if (LSHIFT2_64 (1) || EXT64 (1)) {
@@ -3574,12 +3576,16 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 				//add sp, sp, 0x10
 				op->stackptr = -(st64)IMM64 (2);
 			}
-			op->val = op->stackptr;
+			// op->val = op->stackptr;
 		} else if ((arm64_reg) REGID64 (0) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_RESET;
 			op->stackptr = 0;
 		} else {
-			op->val = IMM64 (2);
+			if (ISIMM64 (2)) {
+				op->val = IMM64 (2);
+			} else {
+				op->val = 0;
+			}
 		}
 		op->cycles = 1;
 		op->type = R_ANAL_OP_TYPE_ADD;
@@ -3703,10 +3709,15 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 #endif
 		op->type = R_ANAL_OP_TYPE_NOT;
 		break;
+	case ARM64_INS_CMP:
+		op->type = R_ANAL_OP_TYPE_CMP;
+		if (ISIMM64 (1)) {
+			op->val = IMM64 (1);
+		}
+		break;
 	case ARM64_INS_FCMP:
 	case ARM64_INS_CCMP:
 	case ARM64_INS_CCMN:
-	case ARM64_INS_CMP:
 	case ARM64_INS_CMN:
 	case ARM64_INS_TST:
 		op->type = R_ANAL_OP_TYPE_CMP;
@@ -4196,7 +4207,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_CMN:
 	case ARM_INS_TST:
 		if (ISIMM(1)) {
-			op->ptr = IMM(1);
+			op->val = IMM(1);
 		}
 		op->reg = r_str_getf (cs_reg_name (handle, INSOP (0).reg));
 		/* fall-thru */
@@ -4615,7 +4626,6 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn,
 	case R_ANAL_OP_TYPE_ROL:
 	case R_ANAL_OP_TYPE_CAST:
 		for (i = 1; i < count; i++) {
-#if CS_API_MAJOR > 3
 			if (bits == 64) {
 				cs_arm64_op arm64op = INSOP64 (i);
 				if (arm64op.access == CS_AC_WRITE) {
@@ -4627,10 +4637,8 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn,
 					continue;
 				}
 			}
-#endif
 			break;
 		}
-#if 1
 		// TODO arch plugins should NOT set register values
 		{
 			int j;
@@ -4639,7 +4647,6 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn,
 			}
 			set_src_dst (r_vector_at (&op->dsts, 0), &handle, insn, 0, bits);
 		}
-#endif
 		break;
 	case R_ANAL_OP_TYPE_STORE:
 		if (count > 2) {
@@ -4655,7 +4662,6 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn,
 				}
 			}
 		}
-#if 1
 		// TODO arch plugins should NOT set register values
 		{
 			set_src_dst (r_vector_at (&op->dsts, 0), &handle, insn, --count, bits);
@@ -4664,7 +4670,6 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn,
 				set_src_dst (r_vector_at (&op->srcs, j), &handle, insn, j, bits);
 			}
 		}
-#endif
 		break;
 	default:
 		break;
@@ -4730,7 +4735,7 @@ static int analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int 
 		cs_free (insn, n);
 		op->size = 4;
 		op->type = R_ANAL_OP_TYPE_ILL;
-		if (len < 4) {
+		if (!buf || len < 4) {
 			if (mask & R_ARCH_OP_MASK_DISASM) {
 				free (op->mnemonic);
 				op->mnemonic = strdup ("invalid");
@@ -4796,135 +4801,6 @@ static int archinfo(RArchSession *as, ut32 q) {
 	}
 	return 4; // XXX
 }
-
-#if 0
-// made obsolete by "e anal.mask = true"
-static ut8 *anal_mask(RArchSession *as, int size, const ut8 *data, ut64 at) {
-	RAnalOp *op = NULL;
-	ut8 *ret = NULL;
-	int oplen, idx = 0, oldbits = as->config->bits;
-
-	if (!data) {
-		return NULL;
-	}
-
-	op = r_anal_op_new ();
-	ret = malloc (size);
-	memset (ret, 0xff, size);
-
-	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
-	while (idx < size) {
-#if 0
-		// TODO redundant / anti-pattern?
-		hint = r_anal_hint_get (anal, at + idx);
-		if (hint) {
-			if (hint->bits != 0) {
-				as->config->bits = hint->bits;
-			}
-			free (hint);
-		}
-#endif
-
-		if ((oplen = analop (as, op, at + idx, data + idx, size - idx, R_ARCH_OP_MASK_BASIC)) < 1) {
-			break;
-		}
-		if (op->ptr != UT64_MAX || op->jump != UT64_MAX) {
-			if ((oplen * 8) > size - idx) {
-				break;
-			}
-			ut32 opcode = r_read_ble (data + idx, be, oplen * 8);
-			switch (oplen) {
-			case 2:
-				memcpy (ret + idx, "\xf0\x00", 2);
-				break;
-			case 4:
-				if (as->config->bits == 64) {
-					switch (op->id) {
-					case ARM64_INS_LDP:
-					case ARM64_INS_LDXP:
-					case ARM64_INS_LDXR:
-					case ARM64_INS_LDXRB:
-					case ARM64_INS_LDXRH:
-					case ARM64_INS_LDPSW:
-					case ARM64_INS_LDNP:
-					case ARM64_INS_LDTR:
-					case ARM64_INS_LDTRB:
-					case ARM64_INS_LDTRH:
-					case ARM64_INS_LDTRSB:
-					case ARM64_INS_LDTRSH:
-					case ARM64_INS_LDTRSW:
-					case ARM64_INS_LDUR:
-					case ARM64_INS_LDURB:
-					case ARM64_INS_LDURH:
-					case ARM64_INS_LDURSB:
-					case ARM64_INS_LDURSH:
-					case ARM64_INS_LDURSW:
-					case ARM64_INS_STP:
-					case ARM64_INS_STNP:
-					case ARM64_INS_STXR:
-					case ARM64_INS_STXRB:
-					case ARM64_INS_STXRH:
-						r_write_ble (ret + idx, 0xffffffff, be, 32);
-						break;
-					case ARM64_INS_STRB:
-					case ARM64_INS_STURB:
-					case ARM64_INS_STURH:
-					case ARM64_INS_STUR:
-					case ARM64_INS_STR:
-					case ARM64_INS_STTR:
-					case ARM64_INS_STTRB:
-					case ARM64_INS_STRH:
-					case ARM64_INS_STTRH:
-					case ARM64_INS_LDR:
-					case ARM64_INS_LDRB:
-					case ARM64_INS_LDRH:
-					case ARM64_INS_LDRSB:
-					case ARM64_INS_LDRSW:
-					case ARM64_INS_LDRSH: {
-						bool is_literal = (opcode & 0x38000000) == 0x18000000;
-						if (is_literal) {
-							r_write_ble (ret + idx, 0xff000000, be, 32);
-						} else {
-							r_write_ble (ret + idx, 0xffffffff, be, 32);
-						}
-						break;
-					}
-					case ARM64_INS_B:
-					case ARM64_INS_BL:
-					case ARM64_INS_CBZ:
-					case ARM64_INS_CBNZ:
-						if (op->type == R_ANAL_OP_TYPE_CJMP) {
-							r_write_ble (ret + idx, 0xff00001f, be, 32);
-						} else {
-							r_write_ble (ret + idx, 0xfc000000, be, 32);
-						}
-						break;
-					case ARM64_INS_TBZ:
-					case ARM64_INS_TBNZ:
-						r_write_ble (ret + idx, 0xfff8001f, be, 32);
-						break;
-					case ARM64_INS_ADR:
-					case ARM64_INS_ADRP:
-						r_write_ble (ret + idx, 0xff00001f, be, 32);
-						break;
-					default:
-						r_write_ble (ret + idx, 0xfff00000, be, 32);
-					}
-				} else {
-					r_write_ble (ret + idx, 0xfff00000, be, 32);
-				}
-				break;
-			}
-		}
-		idx += oplen;
-	}
-
-	// as->config->bits = oldbits;
-	r_anal_op_free (op);
-
-	return ret;
-}
-#endif
 
 #include "preludes.inc.c"
 

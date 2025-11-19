@@ -203,6 +203,22 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rax2 1.5g
+FILE=-
+CMDS=!rax2 1.5g
+EXPECT=<<EOF
+Gx3fc0
+EOF
+RUN
+
+NAME=rax2 Gx3fc0
+FILE=-
+CMDS=!rax2 Gx3fc0
+EXPECT=<<EOF
+1.5
+EOF
+RUN
+
 NAME=rax2 35o
 FILE=-
 CMDS=!rax2 35o
@@ -597,7 +613,7 @@ NAME=rax2 -j 0x1234
 FILE=-
 CMDS=!rax2 -j 0x1234
 EXPECT=<<EOF
-{"int32":"4660","uint32":"4660","int64":"4660","uint64":"4660","hex":"0x00001234","octal":"011064","unit":"4.6K","segment":"0000:0234","fvalue":"4660.0","float":"0.000000f","double":"0.000000","binary":"0b0001001000110100","base36":"0_3lg","ternary":"0t20101121"}
+{"int32":"4660","uint32":"4660","int64":"4660","uint64":"4660","hex":"0x00001234","octal":"011064","unit":"4.6K","segment":"0000:0234","fvalue":"4660.0","float":"0.000000f","bf16":"Gx0000","double":"0.000000","binary":"0b0001001000110100","base36":"0_3lg","ternary":"0t20101121"}
 EOF
 RUN
 

@@ -49,7 +49,7 @@ R_API void r_core_asm_hit_free(void *_hit) {
 R_API char* r_core_asm_search(RCore *core, const char *input) {
 	RAsmCode *acode;
 	char *ret;
-	if (!(acode = r_asm_massemble (core->rasm, input))) {
+	if (!(acode = r_asm_assemble (core->rasm, input))) {
 		return NULL;
 	}
 	ret = r_asm_code_get_hex (acode);
@@ -62,7 +62,8 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	ut64 at, toff = core->addr;
 	const int align = core->search->align;
 	RRegex* rx = NULL;
-	char *tok, *tokens[1024], *code = NULL, *ptr;
+	char *tokens[1024] = {0};
+	char *tok, *code = NULL, *ptr;
 	char *save_ptr = NULL;
 	int idx, tidx = 0, len = 0;
 	int tokcount, matchcount, count = 0;
@@ -180,7 +181,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					r_asm_disassemble (core->rasm, &op, buf + addrbytes * idx,
 					      bs - addrbytes * idx);
 					hit->code = strdup (op.mnemonic);
-					r_asm_op_fini (&op);
+					r_anal_op_fini (&op);
 					idx = (matchcount)? tidx + 1: idx + 1;
 					matchcount = 0;
 					r_list_append (hits, hit);
@@ -207,7 +208,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					idx = (matchcount)? tidx + 1: idx + 1;
 					R_LOG_ERROR ("Failed to disassemble instruction at 0x%08"PFMT64x, op.addr);
 					matchcount = 0;
-					r_asm_op_fini (&op);
+					r_anal_op_fini (&op);
 					continue;
 				}
 				if (op.mnemonic) {
@@ -217,7 +218,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					eprintf ("FAIL TO ANALOP2\n");
 					R_LOG_DEBUG ("Cannot disassemble at 0x%08"PFMT64x, addr);
 				}
-				r_asm_op_fini (&op);
+				r_anal_op_fini (&op);
 			}
 			if (opst) {
 				matches = strcmp (opst, "invalid") && strcmp (opst, "unaligned");
@@ -428,7 +429,7 @@ static int handle_forward_disassemble(RCore* core, RList *hits, ut8* buf, ut64 l
 
 		temp_instr_addr += temp_instr_len;
 		tmp_current_buf_pos += temp_instr_len;
-		r_asm_op_fini (&op);
+		r_anal_op_fini (&op);
 	}
 	return temp_instr_addr;
 }
@@ -568,7 +569,7 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 			buf + len - addrbytes * (addr - at), addrbytes * (addr - at));
 		add_hit_to_hits (hits, at, instrlen, true);
 		at += instrlen;
-		r_asm_op_fini (&op);
+		r_anal_op_fini (&op);
 	}
 	free (buf);
 	return hits;
@@ -625,7 +626,7 @@ static RList *r_core_asm_back_disassemble_all(RCore *core, ut64 addr, ut64 len, 
 		current_buf_pos--;
 		current_instr_addr--;
 		hit_count++;
-		r_asm_op_fini (&op);
+		r_anal_op_fini (&op);
 	} while ( ((int) current_buf_pos  >= 0) && (int)(len - current_buf_pos) >= 0 && hit_count <= max_hit_count);
 
 	free (buf);
@@ -769,7 +770,7 @@ static RList *r_core_asm_back_disassemble(RCore *core, ut64 addr, int len, ut64 
 		current_instr_addr -= 1;
 		current_buf_pos -= 1;
 
-		r_asm_op_fini (&op);
+		r_anal_op_fini (&op);
 		if (hit_count >= max_hit_count &&
 			(last_num_invalid >= max_invalid_b4_exit || last_num_invalid == 0)) {
 			break;

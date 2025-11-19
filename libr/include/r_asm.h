@@ -7,6 +7,7 @@
 #include <r_anal.h>
 #include <r_bin.h> // only for binding, no hard dep required
 #include <r_bind.h>
+#include <r_util/r_cfloat.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,6 +34,7 @@ typedef struct r_asm_code_t {
 	ut64 code_offset;
 	ut64 data_offset;
 	int code_align;
+	RCFloatProfile cfloat_profile;
 } RAsmCode;
 
 typedef RList* (*RAnalVarList)(RAnalFunction *fcn, int kind);
@@ -76,6 +78,7 @@ typedef struct r_asm_t {
 	int codealign;
 	HtPP *flags;
 	bool pseudo; // should be implicit by RParse
+	bool use_spp;
 	RParse *parse;
 } RAsm;
 
@@ -112,6 +115,7 @@ R_API char *r_asm_parse_pseudo(RAsm *a, const char *data);
 R_API char *r_asm_parse_filter(RAsm *a, ut64 addr, RFlag *f, RAnalHint *hint, const char *data);
 R_API char *r_asm_parse_subvar(RAsm *a, RAnalFunction *f, ut64 addr, int oplen, const char *data);
 R_API char *r_asm_parse_immtrim(RAsm *a, const char *opstr);
+R_API char *r_asm_parse_immbase(RAsm *a, const char *opstr, int base);
 R_API char *r_asm_parse_patch(RAsm *a, RAnalOp *aop, const char *newop);
 
 
@@ -137,8 +141,8 @@ R_API int r_asm_set_pc(RAsm *a, ut64 pc);
 R_API int r_asm_disassemble(RAsm *a, RAnalOp *op, const ut8 *buf, int len);
 R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len);
 R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, RParse *p, const char *hexstr);
-R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf);
-R_API RAsmCode* r_asm_rasm_assemble(RAsm *a, const char *buf, bool use_spp);
+R_API RAsmCode* r_asm_assemble(RAsm *a, const char *buf);
+
 R_API char *r_asm_tostring(RAsm *a, ut64 addr, const ut8 *b, int l);
 /* to ease the use of the native bindings (not used in r2) */
 R_API ut8 *r_asm_from_string(RAsm *a, ut64 addr, const char *b, int *l);
@@ -155,17 +159,7 @@ R_API R_MUSTUSE char *r_asm_code_equ_replace(RAsmCode *code, const char *str);
 R_API char* r_asm_code_get_hex(RAsmCode *acode);
 R_API char *r_asm_code_equ_get(RAsmCode *code, const char *key);
 
-/* op.c XXX Deprecate the use of all those apis and just use RArchOp */
-R_API RAnalOp *r_asm_op_new(void);
-R_API void r_asm_op_init(RAnalOp *op);
-R_API void r_asm_op_free(RAnalOp *op);
-R_API void r_asm_op_fini(RAnalOp *op);
-R_API char *r_asm_op_get_hex(RAnalOp *op);
-R_API int r_asm_op_get_size(RAnalOp *op);
-R_API void r_asm_op_set_asm(RAnalOp *op, const char *str);
-R_API int r_asm_op_set_hex(RAnalOp *op, const char *str);
-R_API int r_asm_op_set_hexbuf(RAnalOp *op, const ut8 *buf, int len);
-R_API void r_asm_op_set_buf(RAnalOp *op, const ut8 *str, int len);
+
 
 /* plugins */
 R_API bool r_asm_plugin_add(RAsm *a, RAsmPlugin *plugin);
@@ -183,6 +177,7 @@ extern RAsmPlugin r_asm_plugin_dalvik;
 extern RAsmPlugin r_asm_plugin_dummy;
 extern RAsmPlugin r_asm_plugin_evm;
 extern RAsmPlugin r_asm_plugin_gb;
+extern RAsmPlugin r_asm_plugin_hppa;
 extern RAsmPlugin r_asm_plugin_java;
 extern RAsmPlugin r_asm_plugin_m68k;
 extern RAsmPlugin r_asm_plugin_mips;

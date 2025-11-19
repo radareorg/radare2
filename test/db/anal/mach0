@@ -58,7 +58,7 @@ EOF
 EXPECT=<<EOF
             ;-- entry0:
             ;-- func.100003a90:
-/ 2656: int main (int argc, char **argv); // noreturn
+/ 2972: int main (int argc, char **argv); // noreturn
 |           ; arg int argc @ x0
 |           ; arg char **argv @ x1
 |           ; var int64_t var_8h @ sp+0x8

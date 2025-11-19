@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2024 - nibble, pancake, maijin */
+/* radare2 - LGPL - Copyright 2009-2025 - pancake */
 
 #include <r_asm.h>
 
@@ -424,7 +424,7 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 			if (bits == 16 && x86 && *pnum == ':') {
 				pnum++;
 				is_hex = false;
-				if (!strncmp (pnum, "0x", 2)) {
+				if (r_str_startswith (pnum, "0x")) {
 					is_hex = true;
 					pnum += 2;
 				}
@@ -593,6 +593,17 @@ R_API char *r_asm_parse_filter(RAsm *a, ut64 addr, RFlag *f, RAnalHint *hint, co
 	char *str = filter (aps, addr, f, hint, data);
 	if (!str) {
 		str = strdup (data);
+	}
+	// Handle immediate base conversion
+	if (hint && hint->immbase && a->config) {
+		// Use r_asm_parse_immbase for standard bases (8, 10, 16)
+		if (hint->immbase == 8 || hint->immbase == 10 || hint->immbase == 16) {
+			char *res = r_asm_parse_immbase (a, str, hint->immbase);
+			if (res) {
+				free (str);
+				str = res;
+			}
+		}
 	}
 	RAsmPlugin *ap = R_UNWRAP3 (a, cur, plugin);
 	if (ap && ap->filter) {

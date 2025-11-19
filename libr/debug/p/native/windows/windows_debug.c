@@ -1377,7 +1377,7 @@ RList *w32_desc_list(int pid) {
 		if (handle.ProcessId != pid) {
 			continue;
 		}
-		if (r_w32_NtDuplicateObject (ph, (HANDLE)handle.Handle, GetCurrentProcess (), &dupHandle, 0, 0, 0)) {
+		if (r_w32_NtDuplicateObject (ph, (HANDLE)(ULONG_PTR)handle.Handle, GetCurrentProcess (), &dupHandle, 0, 0, 0)) {
 			continue;
 		}
 		if (r_w32_NtQueryObject (dupHandle, 2, objectTypeInfo, 0x1000, NULL)) {

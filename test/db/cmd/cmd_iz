@@ -160,8 +160,8 @@ izzz*~:0
 izzz*~:1
 EOF
 EXPECT=<<EOF
-f str._8_b_ 10 @ 0x00000034
-Cs 10 @ 0x00000034
+'0x00000034'f str._8_b_ 10
+'0x00000034'Cs 10
 EOF
 RUN
 
@@ -544,10 +544,10 @@ NAME=izzz*
 FILE=bins/mach0/fatmach0-3true
 CMDS=izzz*~appleca
 EXPECT=<<EOF
-f str._http:__www.apple.com_appleca_root.crl0_r 41 @ 0x00002562
-f str.https:__www.apple.com_appleca_0 32 @ 0x00002963
-f str.http:__www.apple.com_appleca_0 31 @ 0x00002e47
-f str._http:__www.apple.com_appleca_codesigning.crl0_r 48 @ 0x00002f3c
+'0x00002562'f str._http:__www.apple.com_appleca_root.crl0_r 41
+'0x00002963'f str.https:__www.apple.com_appleca_0 32
+'0x00002e47'f str.http:__www.apple.com_appleca_0 31
+'0x00002f3c'f str._http:__www.apple.com_appleca_codesigning.crl0_r 48
 EOF
 RUN
 

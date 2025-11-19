@@ -1,0 +1,17 @@
+foo=func
+func.foo.arg.0=int,arg0
+func.foo.arg.1=int,arg1
+func.foo.arg.2=const char *,arg2
+func.foo.cc=cdecl
+func.foo=arg0,arg1,arg2
+func.foo.ret=void
+func.foo.args=3
+bar=func
+func.bar.arg.0=int,a
+func.bar.arg.1=int,b
+func.bar.arg.2=const char *,c
+func.bar.cc=cdecl
+func.bar=a,b,c
+func.bar.ret=void
+func.bar.args=3
+

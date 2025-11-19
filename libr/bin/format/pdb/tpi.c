@@ -2928,8 +2928,10 @@ static int parse_tpi_stypes(R_STREAM_FILE *stream, SType *type) {
 		PARSE_LF(SLF_VTSHAPE, lf_vtshape);
 		break;
 	default:
-		eprintf ("parse_tpi_streams(): unsupported leaf type: 0x%"PFMT32x"\n", type->type_data.leaf_type);
-		read_bytes = 0;
+		R_LOG_DEBUG ("parse_tpi_streams(): skipping unsupported leaf type 0x%"PFMT32x,
+			type->type_data.leaf_type);
+		read_bytes = type->length;
+		type->type_data.type_info = NULL;
 		break;
 	}
 

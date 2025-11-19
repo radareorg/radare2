@@ -1,0 +1,75 @@
+NAME=clippy
+FILE=-
+CMDS=<<EOF
+-e scr.utf8=0
+-e scr.utf8.curvy=0
+?E0 Hello World
+EOF
+EXPECT=<<EOF
+ .--.     .-------------.
+ | _|     |             |
+ | O O   <  Hello World |
+ |  |  |  |             |
+ || | /   `-------------'
+ |`-'|
+ `---'
+EOF
+RUN
+
+NAME=clippy utf8
+FILE=-
+CMDS=<<EOF
+-e scr.utf8=0
+-e scr.utf8.curvy=0
+?E0 Hello ÇÑ World
+EOF
+EXPECT=<<EOF
+ .--.     .----------------.
+ | _|     |                |
+ | O O   <  Hello ÇÑ World |
+ |  |  |  |                |
+ || | /   `----------------'
+ |`-'|
+ `---'
+EOF
+RUN
+
+
+
+NAME=clippy emoji
+FILE=-
+CMDS=<<EOF
+-e scr.utf8=0
+-e scr.utf8.curvy=0
+?E0 Hello 🚀 World 📎 Yeah
+EOF
+EXPECT=<<EOF
+ .--.     .------------------------.
+ | _|     |                        |
+ | O O   <  Hello 🚀 World 📎 Yeah |
+ |  |  |  |                        |
+ || | /   `------------------------'
+ |`-'|
+ `---'
+EOF
+RUN
+
+
+NAME=clippy emoji
+FILE=-
+CMDS=<<EOF
+-e scr.utf8=0
+-e scr.utf8.curvy=0
+?E0 Hello 🚀 World 📎 Yeah 😎 More
+EOF
+EXPECT=<<EOF
+ .--.     .--------------------------------.
+ | _|     |                                |
+ | O O   <  Hello 🚀 World 📎 Yeah 😎 More |
+ |  |  |  |                                |
+ || | /   `--------------------------------'
+ |`-'|
+ `---'
+EOF
+RUN
+

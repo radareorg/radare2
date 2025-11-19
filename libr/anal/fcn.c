@@ -6,18 +6,15 @@
 #include <r_core.h>
 #include <r_vec.h>
 
+#define JTDBG 0
 #define READ_AHEAD 1
 #define SDB_KEY_BB "bb.0x%"PFMT64x ".0x%"PFMT64x
 // XXX must be configurable by the user
-#define JMPTBLSZ 512
 #define JMPTBL_LEA_SEARCH_SZ 64
 #define JMPTBL_MAXFCNSIZE 4096
 #define R_ANAL_MAX_INCSTACK 8096
 #define BB_ALIGN 0x10
 #define MAX_SCAN_SIZE 0x7ffffff
-
-/* speedup analysis by removing some function overlapping checks */
-#define JAYRO_04 1
 
 #define FIX_JMP_FWD 0
 #define D if (a->verbose)
@@ -134,13 +131,13 @@ static RAnalBlock *fcn_append_basic_block(RAnal *anal, RAnalFunction *fcn, ut64 
 
 static bool is_invalid_memory(RAnal *anal, const ut8 *buf, int len) {
 	if (len > 8) {
-		if (!memcmp (buf, "\x00\x00\x00\x00\x00\x00\x00\x00", R_MIN (len, 8))) {
+		if (!memcmp (buf, "\x00\x00\x00\x00\x00\x00\x00\x00", 8)) {
 			const char *arch = R_UNWRAP3 (anal, config, arch);
 			if (arch) {
-				if (anal->config->bits == 16 && !strcmp (arch, "x86")) {
+				if (anal->config->bits == 16 && r_str_startswith (arch, "x86")) {
 					return true;
 				}
-				if (!strcmp (arch, "java") || !strcmp (arch, "riscv")) {
+				if (!strcmp (arch, "java") || r_str_startswith (arch, "riscv")) {
 					return true;
 				}
 			}
@@ -608,7 +605,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	int ret = R_ANAL_RET_END;
 	bool overlapped = false;
 	int oplen, idx = 0;
-	size_t lea_cnt = 0;
+	int lea_cnt = 0;
 	size_t nop_prefix_cnt = 0;
 	struct {
 		int cnt;
@@ -631,6 +628,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	const bool is_x86 = is_arm ? false: arch && !strncmp (arch, "x86", 3);
 	const bool is_amd64 = is_x86 ? fcn->callconv && !strcmp (fcn->callconv, "amd64") : false;
 	const bool is_dalvik = is_x86 ? false : arch && !strncmp (arch, "dalvik", 6);
+	const bool is_stm8 = (is_x86 || is_arm || is_dalvik || is_mips) ? false : arch && r_str_startswith (arch, "stm8");
 	const bool propagate_noreturn = anal->opt.propagate_noreturn;
 	ut64 v1 = UT64_MAX;
 
@@ -705,6 +703,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		R_LOG_DEBUG ("anal.limit");
 		gotoBeach (R_ANAL_RET_END);
 	}
+	int loadsize = 0;
 
 	bool varset = has_vars (anal, addr); // Checks if var is already analyzed at given addr
 
@@ -913,7 +912,6 @@ noskip:
 			r_anal_op_fini (op);
 			continue;
 		}
-
 		if (delay.cnt > 0) {
 			// if we had passed a branch delay instruction, keep
 			// track of how many still to process.
@@ -965,7 +963,7 @@ noskip:
 		if (op->ptr && op->ptr != UT64_MAX && op->ptr != UT32_MAX) {
 			// swapped parameters wtf
 			// its read or wr
-			int dir = 0;
+			RAnalRefType dir = 0;
 			if (op->direction & R_ANAL_OP_DIR_READ) {
 				dir |= R_ANAL_REF_TYPE_READ;
 			}
@@ -987,6 +985,19 @@ noskip:
 		}
 		// this call may cause regprofile changes which cause ranalop.regitem references to be invalid
 		analyze_retpoline (anal, op);
+#if 0
+		RListIter *eiter;
+		RAnalPlugin *p;
+		r_list_foreach (anal->eligible, eiter, p) {
+			RAnalOpFlow res = {0};
+			if (p->opflow) {
+				res = p->opflow (anal, op);
+				if (res.jmptbl_found) {
+					eprintf ("JUMP TABLE FOUND\n");
+				}
+			}
+		}
+#endif
 		switch (op->type & R_ANAL_OP_TYPE_MASK) {
 		case R_ANAL_OP_TYPE_CMOV:
 		case R_ANAL_OP_TYPE_MOV:
@@ -1054,10 +1065,6 @@ noskip:
 #else
 			if (op->ptr != UT64_MAX) {
 				leaddr_pair *pair = R_NEW0 (leaddr_pair);
-				if (!pair) {
-					R_LOG_ERROR ("Cannot create leaddr_pair");
-					gotoBeach (R_ANAL_RET_ERROR);
-				}
 				pair->op_addr = op->addr;
 				pair->leaddr = op->ptr; // XXX movdisp is dupped but seems to be trashed sometimes(?), better track leaddr separately
 				pair->reg = op->reg
@@ -1076,6 +1083,12 @@ noskip:
 				last_reg_mov_lea_val = op->ptr;
 				last_is_reg_mov_lea = true;
 			}
+			if (op->type == R_ANAL_OP_TYPE_ADD && dst && dst->reg && last_reg_mov_lea_name && !strcmp (dst->reg, last_reg_mov_lea_name) && op->val != UT64_MAX) {
+				last_reg_mov_lea_val += op->val;
+			}
+#endif
+#if JTDBG
+			eprintf ("0x%08llx - LEA 0x%llx\n", op->addr, op->ptr);
 #endif
 			// skip lea reg,[reg]
 			if (anal->opt.hpskip && regs_exist (src0, dst) && !strcmp (src0->reg, dst->reg)) {
@@ -1125,13 +1138,14 @@ noskip:
 			// R2R db/anal/arm db/esil/apple
 			//v1 = UT64_MAX; // reset v1 jmptable pointer value for mips only
 			// on stm8 this must be disabled.. but maybe we need a global option to disable icod refs
-			bool want_icods = anal->opt.icods;
-			{
-				const char *arch = R_UNWRAP3 (anal, config, arch);
-				if (r_str_startswith (arch, "stm8")) {
-					want_icods = false;
-				}
+			const bool want_icods = anal->opt.icods && !is_stm8;
+#if JTDBG
+			if (anal->opt.jmptbl) {
+				eprintf ("0x%08llx - LDRB %d\n", op->addr, op->ptrsize);
+				// eprintf ("JMPTBL %d\n", );
 			}
+#endif
+			loadsize = op->ptrsize;
 			if (want_icods && anal->iob.is_valid_offset (anal->iob.io, op->ptr, 0)) {
 				// TODO: what about the qword loads!??!?
 				ut8 dd[4] = {0};
@@ -1143,8 +1157,7 @@ noskip:
 					if (is_mips && anal->opt.jmptbl) {
 						const char *esil = r_strbuf_get (&op->esil);
 						if (strstr (esil, "v1,=")) {
-							// eprintf("iftarget is v1 (%s)\n", esil);
-							// eprintf ("LOAD FROM %llx -> %llx\n", op->ptr, da);
+							// eprintf("iftarget is v1 (%s) %llx %llx\n", esil, op->ptr, da);
 							v1 = da;
 						}
 					}
@@ -1179,6 +1192,11 @@ noskip:
 			} else if (is_arm) {
 				const int bits = anal->config->bits;
 				if (bits == 64) {
+#if JTDBG
+					eprintf ("0x%08llx - ADD %lld\n", op->addr, op->val);
+#endif
+					// ut64 jmpptr_table = UT64_MAX;
+					// ut64 jmptbl_addr = UT64_MAX;
 					if (last_is_reg_mov_lea) {
 						// incremement the leaddr
 						leaddr_pair *la;
@@ -1186,9 +1204,20 @@ noskip:
 						RListIter *iter;
 						r_list_foreach_prev (anal->leaddrs, iter, la) {
 							la->leaddr += op->val;
+							// jmptbl_addr = la->leaddr;
 							break;
 						}
 					}
+#if 0
+					ut64 casetbl_addr = jmptbl_addr;
+					RAnalOp jmp_aop ;
+					if (jmptbl_addr != UT64_MAX) {
+						eprintf ("CHKLS PTR TABLE AT %llx\n", jmptbl_addr);
+						if (is_delta_pointer_table (&ra, anal, fcn, op->addr, op->ptr, &jmptbl_addr, &casetbl_addr, &jmp_aop)) {
+							eprintf("ISDELTA\n");
+						}
+					}
+#endif
 				} else if (bits == 32) {
 					if (len >= 4 && !memcmp (buf, "\x00\xe0\x8f\xe2", 4)) {
 						// add lr, pc, 0 //
@@ -1303,7 +1332,7 @@ noskip:
 			break;
 		case R_ANAL_OP_TYPE_CMP:
 			{
-				ut64 val = (is_x86 || is_v850)? op->val : op->ptr;
+				ut64 val = (is_x86 || is_arm || is_v850)? op->val : op->ptr;
 				if (val) {
 					anal->cmpval = val;
 					bb->cmpval = anal->cmpval;
@@ -1334,7 +1363,24 @@ noskip:
 				bb->cond->type = op->cond;
 			}
 			if (anal->opt.jmptbl && !is_mips) {
+				if (is_arm) {
+					switch (op->cond) {
+					case R_ANAL_CONDTYPE_HI:
+						R_LOG_DEBUG ("maxcase %d", anal->cmpval);
+						break;
+					case R_ANAL_CONDTYPE_LO:
+						R_LOG_DEBUG ("lowcase %d", anal->cmpval);
+						break;
+					default:
+						R_LOG_DEBUG ("unkcase %d", anal->cmpval);
+						break;
+					}
+#if JTDBG
+					eprintf ("0x%08llx - CJMP %lld\n", op->addr, anal->cmpval);
+#endif
+				}
 				if (op->ptr != UT64_MAX) {
+					// TODO : i assume this is for x86 only
 					ut64 table_size, default_case;
 					table_size = anal->cmpval + 1;
 					default_case = op->fail; // is this really default case?
@@ -1358,18 +1404,18 @@ noskip:
 			}
 			int saved_stack = fcn->stack;
 			// TODO: depth -1 in here
+			// depth = 999;
 			r_anal_function_bb (anal, fcn, op->jump, depth);
 			fcn->stack = saved_stack;
 			ret = r_anal_function_bb (anal, fcn, op->fail, depth);
 			fcn->stack = saved_stack;
-
 			// XXX breaks mips analysis too !op->delay
 			// this will be all x86, arm (at least)
 			// without which the analysis is really slow,
 			// presumably because each opcode would get revisited
 			// (and already covered by a bb) many times
+			// Delayed branches in MIPS needs to continue
 			goto beach;
-			// For some reason, branch delayed code (MIPS) needs to continue
 			break;
 		case R_ANAL_OP_TYPE_UCALL:
 		case R_ANAL_OP_TYPE_RCALL:
@@ -1411,6 +1457,108 @@ noskip:
 					op->fail = op->addr + 4;
 					break;
 				}
+			} else if (is_arm && anal->config->bits == 64 && anal->opt.jmptbl) {
+#if 0
+0x183997020      cmp x20, 6           ; x20 is the index
+0x183997024      b.hi 0x183997054
+0x183997028      adrp x8, 0x1da2f6000
+0x18399702c      add x8, x8, 0x370    ; unrelated
+0x183997030      adrp x9, 0xbaseaddr  ; tableptr
+0x183997034      add x9, x9, 0x8ef    ; tableptr += delta
+0x183997038      adr x10, 0x183997048 ; basedest_addr
+0x18399703c      ldrb w11, [x9, x20]
+0x183997040      add x10, x10, x11, lsl 2 ; TODO: the code assumes <<2 right now
+0x183997044      br x10
+
+x9 = lea + add
+jmptbl_base = x10 = lea
+bx = jmptbl_base + (byte[x9]<<2)
+
+--- example for ldrsw in macs /bin/ls
+
+0x100000b08      sub w16, w0, 0x25
+0x100000b0c      cmp w16, 0x5b
+0x100000b10      b.hi 0x100000fd8
+0x100000b14      cmp x16, 0x5b
+0x100000b18      csel x16, x16, xzr, ls
+0x100000b1c      adrp x17, 0x100001000
+0x100000b20      add x17, x17, 0x558
+0x100000b24      ldrsw x16, [x17, x16, lsl 2]
+0x100000b28      adr x17, 0x100000b28
+0x100000b2c      add x16, x17, x16
+0x100000b30      br x16
+#endif
+				if (anal->leaddrs && r_list_length (anal->leaddrs) >= 2) {
+					leaddr_pair *x10 = r_list_pop (anal->leaddrs);
+					leaddr_pair *x9 = r_list_pop (anal->leaddrs);
+					ut64 opaddr = x10->op_addr;
+					ut64 basptr = x10->leaddr;
+					ut64 tblptr = x9->leaddr;
+					free (x9);
+					free (x10);
+
+					if (loadsize == 0) {
+						R_LOG_DEBUG ("Probably not not a SwitchTable, just indirect branch at 0x%08"PFMT64x, op->addr);
+						anal->cmpval = 0;
+						loadsize = 0;
+						break;
+					}
+					if (loadsize == 8) {
+						R_LOG_DEBUG ("Not a SwitchTable so maybe just indirect branch at 0x%08"PFMT64x, op->addr);
+						anal->cmpval = 0;
+						loadsize = 0;
+						break;
+					}
+					if (loadsize != 1 && loadsize != 2 && loadsize != 4) {
+						R_LOG_WARN ("SwitchTable of %d not properly supported at 0x%08"PFMT64x, loadsize, op->addr);
+						anal->cmpval = 0;
+						loadsize = 0;
+						break;
+					}
+					// TODO: move this code into jmptbl.c
+					lea_cnt -= 2; // XXX eliminate this thing . we have r_list_length
+					int i, delta;
+					const size_t sizeof_table = 4096;
+					ut8 *table = calloc (sizeof_table, 1);
+					st16 *table2 = (st16*)table;
+					st32 *table4 = (st32*)table;
+					// TODO: eliminate hard limit
+					int max = R_MIN (anal->cmpval, sizeof_table / loadsize);
+					R_LOG_DEBUG ("JumpTable for 0x%08"PFMT64x" is at 0x%"PFMT64x, op->addr, tblptr);
+					(void)anal->iob.read_at (anal->iob.io, tblptr, (ut8 *) table, sizeof_table);
+					ut64 caseaddr;
+					RList *kases = r_list_newf (free);
+					for (i = 0; i < max; i++) {
+						if (loadsize == 1) {
+							delta = table[i];
+							caseaddr = basptr + (delta << 2);
+						} else if (loadsize == 2) {
+							delta = table2[i];
+							caseaddr = basptr + (delta << 1);
+						} else if (loadsize == 4) {
+							delta = table4[i];
+							delta = r_read_le32 (&table4[i]);
+							caseaddr = basptr + delta;
+						}
+						if (!anal->iob.is_valid_offset (anal->iob.io, caseaddr, 0)) {
+							R_LOG_DEBUG ("Invalid case %d offset 0x%08"PFMT64x" for switch at 0x%08"PFMT64x, i, caseaddr, op->addr);
+							continue;
+						}
+						RAnalCaseOp *kase = R_NEW0 (RAnalCaseOp);
+						kase->addr = caseaddr; // wtf? <- is this jaddr too?
+						kase->jump = caseaddr;
+						kase->value = i;
+						r_list_append (kases, kase);
+					}
+					r_anal_jmptbl_list (anal, fcn, bb, opaddr, tblptr, kases, loadsize);
+					anal->cmpval = 0;
+					loadsize = 0;
+					free (table);
+				} else {
+					R_LOG_DEBUG ("arm64 SwitchTable dont have enough leas to work at 0x%08"PFMT64x, op->addr);
+				}
+		//		gotoBeach (R_ANAL_RET_END);
+				break;
 			} else if (is_mips && anal->opt.jmptbl) {
 				// lw v1, -0x7fc4(gp) ; gp = 0x684c00 - 0x7fc4 // read 4 bytes at gp-0x7fc4
 				// sll v0, s0, 2   // select the case from the pointer table * 4
@@ -1527,6 +1675,9 @@ noskip:
 					movdisp = UT64_MAX;
 #endif
 				} else if (is_arm) {
+#if JTDBG
+					eprintf ("0x%08llx - BX %d\n", op->addr, op->ptrsize);
+#endif
 					if (op->ptrsize == 0 && anal->config->bits == 64) {
 						if (op->reg && op->ireg) {
 							// braa x16, x17 (when bra takes 2 args we skip jump tables dont do that
@@ -1568,6 +1719,18 @@ noskip:
 							count++;
 						}
 						// table_addr = 0x100004114;
+#if 0
+						table_addr = 0x183997048;
+						eprintf ("IFSIH 0x%llx\n", table_addr);
+						// try_walkthrough_casetbl (anal, fcn, bb, depth - 1, op->addr, case_shift, op->ptr, prev_op->disp, op->ptr, anal->config->bits >> 3, table_size, default_case, ret);
+						ret = r_anal_jmptbl_walk (anal,
+								fcn, bb, depth - 1,
+								op->addr + 8, 0,
+								table_addr,
+								op->addr + 4, 1,
+								6, // table size is autodetected
+								UT64_MAX, ret);
+#else
 						ret = r_anal_jmptbl_walk (anal,
 								fcn, bb, depth - 1,
 								op->addr - 12, 0,
@@ -1575,6 +1738,7 @@ noskip:
 								op->addr + 4, 4,
 								0, // table size is autodetected
 								UT64_MAX, ret);
+#endif
 						// skip inlined jumptable
 						// idx += table_size;
 					} else if (op->ptrsize == 1) { // TBB
@@ -1723,7 +1887,13 @@ beach:
 	free (bp_reg);
 	free (sp_reg);
 	while (lea_cnt > 0) {
-		r_list_delete (anal->leaddrs, r_list_tail (anal->leaddrs));
+		leaddr_pair *lea = r_list_pop (anal->leaddrs);
+		if (!lea) {
+			lea_cnt = 0;
+			break;
+		}
+		free (lea);
+		// r_list_delete (anal->leaddrs, r_list_tail (anal->leaddrs));
 		lea_cnt--;
 	}
 	r_anal_op_free (op);
@@ -2128,6 +2298,13 @@ R_API char *r_anal_function_get_signature(RAnalFunction *function) {
 					// untyped arg. fex: `printf(...)`
 					memmove (arg_i, arg_i + 1, strlen (arg_i));
 				}
+			}
+		}
+		// for variadic arguments, don't include the name
+		if (r_str_startswith (arg_i, "...")) {
+			char *comma = strchr (arg_i, ' ');
+			if (comma) {
+				*comma = 0;
 			}
 		}
 		char *new_args = (i + 1 == argc)

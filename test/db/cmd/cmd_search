@@ -106,6 +106,7 @@ EXPECT=<<EOF
 0x100013704             02208072  movk w2, 0x100
 0x100013998             21000491  add x1, x1, 0x100
 0x100013c7c             e8031832  mov w8, 0x100
+0x100013ccc             1f010471  cmp w8, 0x100
 0x100013d28             e10378b2  mov x1, 0x100
 0x100013db0             e8031832  mov w8, 0x100
 0x100013fe0             e80378b2  mov x8, 0x100
@@ -299,6 +300,8 @@ EXPECT=<<EOF
 0x1000607b8             080041b9  ldr w8, [x0, 0x100]
 0x1000623a0             090041b9  ldr w9, [x0, 0x100]
 0x100062524             080041b9  ldr w8, [x0, 0x100]
+0x1000679b0             1f010471  cmp w8, 0x100
+0x1000679f4             1f010471  cmp w8, 0x100
 0x1000695e0             29010491  add x9, x9, 0x100
 0x10006966c             29010491  add x9, x9, 0x100
 0x1000696f4             29010491  add x9, x9, 0x100
@@ -1312,6 +1315,17 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=/kj at start
+FILE=-
+CMDS=<<EOF
+w AAABAAABAAA
+/kj AAABAAA
+EOF
+EXPECT=<<EOF
+[{"addr":0,"type":"string","data":"AAABAAABAAA"}]
+EOF
+RUN
+
 NAME=/k with overlap, middle
 FILE=-
 CMDS=<<EOF
@@ -1320,6 +1334,17 @@ w ZAAABAAABAAA
 EOF
 EXPECT=<<EOF
 0x00000001 hit0_0 "ZAAABAAABAAA"
+EOF
+RUN
+
+NAME=/kj with overlap, middle
+FILE=-
+CMDS=<<EOF
+w ZAAABAAABAAA
+/kj AAABAAA
+EOF
+EXPECT=<<EOF
+[{"addr":1,"type":"string","data":"ZAAABAAABAAA"}]
 EOF
 RUN
 
@@ -1333,6 +1358,18 @@ EXPECT=<<EOF
 0x00000004 hit0_0 "ZZZZAAABAAA"
 EOF
 RUN
+
+NAME=/kj at end
+FILE=-
+CMDS=<<EOF
+w ZZZZAAABAAA
+/kj AAABAAA
+EOF
+EXPECT=<<EOF
+[{"addr":4,"type":"string","data":"ZZZZAAABAAA"}]
+EOF
+RUN
+
 NAME=pm lzma
 FILE=bins/other/hello-world.lzma
 CMDS=<<EOF
@@ -1869,5 +1906,41 @@ aa
 EOF
 EXPECT=<<EOF
 pdb @@= 0x0000142e 0x000014c7 0x0000161a 0x00001655
+EOF
+RUN
+
+NAME=search entropy
+FILE=bins/elf/ioli/crackme0x00
+CMDS=<<EOF
+/s
+EOF
+EXPECT=<<EOF
+0x08049f0c - 0x0804a00c ~ 2.876932
+0x0804a00c - 0x0804a10c ~ 0.549518
+0x08048000 - 0x08048100 ~ 3.073115
+0x08048100 - 0x08048300 ~ 4.166293
+EOF
+RUN
+
+NAME=search entropy r2mode
+FILE=bins/elf/ioli/crackme0x00
+CMDS=<<EOF
+/s*
+EOF
+EXPECT=<<EOF
+f entropy_section_0 0x00000100 0x08049f0c
+f entropy_section_1 0x00000100 0x0804a00c
+f entropy_section_2 0x00000100 0x08048000
+f entropy_section_3 0x00000200 0x08048100
+EOF
+RUN
+
+NAME=search entropy json
+FILE=bins/elf/ioli/crackme0x00
+CMDS=<<EOF
+/sj
+EOF
+EXPECT=<<EOF
+[{"start":134520588,"end":134520844,"entropy":2.877},{"start":134520844,"end":134521100,"entropy":0.550},{"start":134512640,"end":134512896,"entropy":3.073},{"start":134512896,"end":134513408,"entropy":4.166}]
 EOF
 RUN

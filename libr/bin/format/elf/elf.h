@@ -238,5 +238,4 @@ ut8 *Elf_(grab_regstate)(struct Elf_(obj_t) *bin, int *len);
 RList *Elf_(get_maps)(ELFOBJ *bin);
 RBinSymbol *Elf_(convert_symbol)(struct Elf_(obj_t) *bin, RBinElfSymbol *symbol);
 R_API RBinSection *r_bin_section_clone(RBinSection *s);
-bool Elf_(is_sbpf_binary)(ELFOBJ *eo);
 #endif

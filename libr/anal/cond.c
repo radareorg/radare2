@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2024 - pancake */
+/* radare - LGPL - Copyright 2010-2025 - pancake */
 
 #include <r_anal.h>
 
@@ -153,7 +153,7 @@ R_API RAnalCond *r_anal_cond_new_from_string(const char *str) {
 	if (type < 0) {
 		return NULL;
 	}
-	RAnalCond *cond = R_NEW0 (RAnalCond);
+	RAnalCond *cond = r_anal_cond_new ();
 	cond->type = r_anal_cond_type_fromstring (condtypestr_expr[i]);
 	char *left = r_str_ndup (substr, substr - str);
 	char *right = strdup (substr + strlen (condtypestr_expr[i]));

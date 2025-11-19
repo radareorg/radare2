@@ -195,7 +195,6 @@ static char *find_newline(char *s) {
 		return (r < n)? r: n;
 	}
 	return r? r: n;
-
 }
 static char *r2pm_get(const char *file, const char *token, R2pmTokenType type) {
 	char *res = NULL;
@@ -249,18 +248,20 @@ static char *r2pm_get(const char *file, const char *token, R2pmTokenType type) {
 				return NULL;
 			}
 			break;
-		case TT_CODEBLOCK: {
-			char *begin = descptr + strlen (token);
-			char *eoc = strstr (begin, "\n}\n");
-			if (eoc) {
-				char *res = r_str_ndup (begin, eoc - begin);
+		case TT_CODEBLOCK:
+			{
+				char *begin = descptr + strlen (token);
+				char *eoc = strstr (begin, "\n}\n");
+				if (eoc) {
+					char *res = r_str_ndup (begin, eoc - begin);
+					free (data);
+					return res;
+				}
+				R_LOG_ERROR ("Cannot find end of thing");
 				free (data);
-				return res;
+				return NULL;
 			}
-			R_LOG_ERROR ("Cannot find end of thing");
-			free (data);
-			return NULL;
-		} break;
+			break;
 		}
 	}
 	free (data);
@@ -479,14 +480,14 @@ static void r2pm_setenv(R2Pm *r2pm) {
 	char *pkgcfg = r_sys_getenv ("PKG_CONFIG_PATH");
 	char *r2pm_pkgcfg = r_xdg_datadir ("prefix/lib/pkgconfig");
 	if (R_STR_ISNOTEMPTY (pkgcfg)) {
-		char *pcp = r_str_newf ("%s%s%s%s%s",r2pm_pkgcfg,
-				R_SYS_ENVSEP, R2_PREFIX "/lib/pkgconfig",
-				R_SYS_ENVSEP, pkgcfg);
+		char *pcp = r_str_newf ("%s%s%s%s%s", r2pm_pkgcfg,
+			R_SYS_ENVSEP, R2_PREFIX "/lib/pkgconfig",
+			R_SYS_ENVSEP, pkgcfg);
 		r_sys_setenv ("PKG_CONFIG_PATH", pcp);
 		free (pcp);
 	} else {
 		char *pcp = r_str_newf ("%s%s%s", r2pm_pkgcfg,
-				R_SYS_ENVSEP, R2_PREFIX "/lib/pkgconfig");
+			R_SYS_ENVSEP, R2_PREFIX "/lib/pkgconfig");
 		r_sys_setenv ("PKG_CONFIG_PATH", pcp);
 		free (pcp);
 	}
@@ -501,7 +502,7 @@ static void r2pm_setenv(R2Pm *r2pm) {
 	free (r2pm_bindir);
 
 	char *mandir = r_str_newf ("%s/man", r2_prefix);
-	r_sys_setenv("R2PM_MANDIR", mandir);
+	r_sys_setenv ("R2PM_MANDIR", mandir);
 	free (mandir);
 
 	char *r2pm_libdir = r_str_newf ("%s/lib", r2_prefix);
@@ -619,7 +620,7 @@ static bool r2pm_have_builddir(const char *pkg) {
 	return false;
 }
 
-// looks copypaste with r2pm_install_pkg()
+// looks copypaste with r2pm_install_pkg ()
 static int r2pm_uninstall_pkg(const char *pkg, bool global) {
 	R_LOG_INFO ("Uninstalling %s", pkg);
 	char *srcdir = r2pm_gitdir ();
@@ -899,8 +900,8 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 		R_LOG_ERROR ("This package does not have R2PM_INSTALL_WINDOWS instructions");
 		return 1;
 	}
-	script = r_str_replace_all(script, "\r\n", " & ");
-	script = r_str_replace_all(script, "\n", " & ");
+	script = r_str_replace_all (script, "\r\n", " & ");
+	script = r_str_replace_all (script, "\n", " & ");
 
 	char *dirname = r2pm_get (pkg, "\nR2PM_DIR ", TT_TEXTLINE);
 	char *s = r_str_newf ("cd /d %s && cd %s && %s", srcdir, pkg, script);
@@ -1186,21 +1187,21 @@ static void r2pm_envhelp(void) {
 	bool r2pm_offline = r_sys_getenv_asbool ("R2PM_OFFLINE");
 	char *r2pm_plugdir2 = r_str_newf (R2_LIBDIR "/radare2/" R2_VERSION);
 	printf ("R2_LOG_LEVEL=%d         # define log.level for r2pm\n"
-		"SUDO=sudo              # path to the SUDO executable\n"
-		"MAKE=make              # path to the GNU MAKE executable\n"
-		"R2PM_OFFLINE=%d         # don't git pull\n"
-		"R2PM_TIME=YYYY-MM-DD\n"
-		"R2PM_PLUGDIR=%s\n"
-		"R2PM_PLUGDIR=%s (global)\n"
-		"R2PM_PREFIX=%s\n"
-		"R2PM_BINDIR=%s\n"
-		"R2PM_MANDIR=%s\n"
-		"R2PM_LIBDIR=%s\n"
-		"R2PM_DBDIR=%s\n"
-		"R2PM_GITDIR=%s\n"
-		"R2PM_GITURL=%s\n"
-		"R2_CFLAGS=%s\n"
-		"R2_LDFLAGS=%s\n",
+	"SUDO=sudo              # path to the SUDO executable\n"
+	"MAKE=make              # path to the GNU MAKE executable\n"
+	"R2PM_OFFLINE=%d         # don't git pull\n"
+	"R2PM_TIME=YYYY-MM-DD\n"
+	"R2PM_PLUGDIR=%s\n"
+	"R2PM_PLUGDIR=%s (global)\n"
+	"R2PM_PREFIX=%s\n"
+	"R2PM_BINDIR=%s\n"
+	"R2PM_MANDIR=%s\n"
+	"R2PM_LIBDIR=%s\n"
+	"R2PM_DBDIR=%s\n"
+	"R2PM_GITDIR=%s\n"
+	"R2PM_GITURL=%s\n"
+	"R2_CFLAGS=%s\n"
+	"R2_LDFLAGS=%s\n",
 		r2pm_log_level,
 		r2pm_offline,
 		r2pm_plugdir,

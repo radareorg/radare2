@@ -189,14 +189,12 @@ grub_iso9660_susp_iterate (struct grub_iso9660_data *data,
 			    void *closure),
 			   void *closure)
 {
-  char *sua;
-  struct grub_iso9660_susp_entry *entry;
-
   /* Load a part of the System Usage Area.  */
-  sua = load_sua (data, sua_block, sua_pos, sua_size);
-  if (!sua)
+  char *sua = load_sua (data, sua_block, sua_pos, sua_size);
+  if (!sua) {
     return grub_errno;
-  entry = (struct grub_iso9660_susp_entry *) sua;
+  }
+  struct grub_iso9660_susp_entry *entry = (struct grub_iso9660_susp_entry *) sua;
 
   if (hook)
   for (; (char *) entry < (char *) sua + sua_size - 1;
@@ -229,6 +227,9 @@ grub_iso9660_susp_iterate (struct grub_iso9660_data *data,
 	  grub_free (sua);
 	  return 0;
 	}
+      if (entry->len == 0) {
+        break;
+      }
     }
 
   grub_free (sua);
@@ -578,6 +579,10 @@ grub_iso9660_iterate_dir (grub_fshelp_node_t dir,
   struct grub_iso9660_dir dirent;
   unsigned int offset = 0;
   char *filename;
+  if (dir->size > 0xffff) {
+    eprintf ("Invalid dir.size\n");
+    return 1;
+  }
 
   while (offset < dir->size)
     {

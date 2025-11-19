@@ -586,7 +586,7 @@ static RCoreHelpMessage help_msg_af = {
 	"afb", "[?] [addr]", "List basic blocks of given function",
 	"afc", "[?] type @[addr]", "set calling convention for function",
 	"afC", "[?] ([addr])@[addr]", "calculate the Cycles (afC) or Cyclomatic Complexity (afCc)",
-	"afd", "[addr]", "show function + delta for given offset",
+	"afd", " [addr]", "show function name + delta for 'addr'",
 	"afe", "", "analyze where the function entrypoints are",
 	"afF", "[1|0|]", "fold/unfold/toggle",
 	"afi", "[?] [addr|fcn.name]", "show function(s) information (verbose afl)",
@@ -788,7 +788,8 @@ static RCoreHelpMessage help_msg_afn = {
 static RCoreHelpMessage help_msg_afs = {
 	"Usage:", "afs[r]", " Analyze function signatures",
 	"afs", " ([fcnsign])", "get/set function signature at current address (afs! uses cfg.editor)",
-	"afsq", "", "same as afs without the error message (See afsQ for non-current offset)",
+	"afsq", "", "same as afs without the error message",
+	"afsQ", "", "same as afsq, silent at function entry",
 	"afs!", "", "edit current function signature with cfg.editor",
 	"afs*", " ([signame])", "get function signature in flags",
 	"afsj", " ([signame])", "get function signature in JSON",
@@ -918,7 +919,7 @@ static RCoreHelpMessage help_msg_agn = {
 	"Usage:", "agn [title] [body]", "",
 	"Examples:", "", "",
 	"agn", " title1 body1", "add a node with title \"title1\" and body \"body1\"",
-	"agn", " \"title with space\" \"body with space\"", "add a node with spaces in the title and in the body",
+	"agn", " \"the title\" \"the body\"", "add a node with spaces in both title and body",
 	"agn", " title1 base64:Ym9keTE=", "add a node with the body specified as base64",
 	"agn-", " title1", "remove a node with title \"title1\"",
 	"agn?", "", "show this help",
@@ -936,7 +937,7 @@ static RCoreHelpMessage help_msg_ah = {
 	"ah*", " offset", "list hints in radare commands format",
 	"aha", " ppc @ 0x42", "force arch ppc for all addrs >= 0x42 or until the next hint",
 	"aha", " 0 @ 0x84", "disable the effect of arch hints for all addrs >= 0x84 or until the next hint",
-	"ahb", "[-*] [8,16,32,64] @ 0x42", "get/set asm.bits for given address and beyond",
+	"ahb", "[-*] [8,16,32,64] @ addr", "get/set asm.bits for 'addr' and beyond",
 	"ahc", " 0x804804", "override call/jump address",
 	"ahd", " foo a0,33", "replace opcode string",
 	"ahe", " 3,eax,+=", "set vm analysis string",
@@ -1182,7 +1183,7 @@ static RCoreHelpMessage help_msg_axv = {
 
 static RCoreHelpMessage help_msg_axt = {
 	"Usage:", "axt[?gq*]", "find data/code references to this address",
-	"axtj", " ([addr])", "find data/code references to this address and print in json format",
+	"axtj", " ([addr])", "find data/code references to 'addr' and print in json format",
 	"axtg", " ([addr])", "display commands to generate graphs according to the xrefs",
 	"axtq", " ([addr])", "find and list the data/code references in quiet mode",
 	"axtm", " ([addr])", "show xrefs to in 'make' syntax (see aflm and axfm)",
@@ -1192,7 +1193,7 @@ static RCoreHelpMessage help_msg_axt = {
 
 static RCoreHelpMessage help_msg_axf = {
 	"Usage:", "axf[?gq*]", "find data/code references from this address",
-	"axfj", " [addr]", "find data/code references to this address and print in json format",
+	"axfj", " [addr]", "find data/code references from 'addr' and print in json format",
 	"axfg", " [addr]", "display commands to generate graphs according to the xrefs",
 	"axfq", " [addr]", "find and list the data/code references in quiet mode",
 	"axfm", " [addr]", "show refs to in 'make' syntax (see aflm and axtm)",
@@ -2027,10 +2028,9 @@ static int cmd_afv(RCore *core, const char *str) {
 			free (type);
 			free (p);
 			return true;
-		} else {
-			R_LOG_ERROR ("Cannot find function in 0x%08"PFMT64x, core->addr);
-			return false;
 		}
+		R_LOG_ERROR ("Cannot find function in 0x%08"PFMT64x, core->addr);
+		return false;
 	case 'n': // "afvn"
 		if (str[1]) {
 			RAnalOp *op = r_core_anal_op (core, core->addr, R_ARCH_OP_MASK_BASIC);
@@ -2306,9 +2306,9 @@ static void print_trampolines(RCore *core, ut64 a, ut64 b, size_t element_size) 
 		memcpy (&n, core->block + i, sizeof (ut32));
 		if (n >= a && n <= b) {
 			if (element_size == 4) {
-				r_cons_printf (core->cons, "f trampoline.%x @ 0x%" PFMT64x "\n", n, core->addr + i);
+				r_cons_printf (core->cons, "'0x%"PFMT64x"'f trampoline.%x\n", core->addr + i, n);
 			} else {
-				r_cons_printf (core->cons, "f trampoline.%" PFMT32x " @ 0x%" PFMT64x "\n", n, core->addr + i);
+				r_cons_printf (core->cons, "'0x%"PFMT64x"'f trampoline.%" PFMT32x "\n", core->addr + i, n);
 			}
 			r_cons_printf (core->cons, "Cd %u @ 0x%" PFMT64x ":%u\n", (unsigned int)element_size, core->addr + i, (unsigned int)element_size);
 			// TODO: add data xrefs
@@ -2318,8 +2318,8 @@ static void print_trampolines(RCore *core, ut64 a, ut64 b, size_t element_size) 
 
 static void cmd_anal_trampoline(RCore *core, const char *input) {
 	int bits = r_config_get_i (core->config, "asm.bits");
-	char *p, *inp = strdup (input);
-	p = strchr (inp, ' ');
+	char *inp = strdup (input);
+	char *p = strchr (inp, ' ');
 	if (p) {
 		*p = 0;
 	}
@@ -2543,32 +2543,18 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	ut64 addr;
 	PJ *pj = NULL;
 	int totalsize = 0;
-#if 1
 	REsil *esil = r_esil_new (256, 0, 0);
 	r_esil_setup (esil, core->anal, false, false, false);
 	esil->user = &core;
 	esil->cb.mem_read = mr;
 	esil->cb.mem_write = mw;
-#else
-	REsil *esil = core->anal->esil;
-	//esil->user = &ec;
-	esil->cb.mem_read = mr;
-	esil->cb.mem_write = mw;
-#endif
-
 	// Variables required for setting up ESIL to REIL conversion
 	if (use_color) {
 		color = core->cons->context->pal.label;
 	}
-	switch (fmt) {
-	case 'j': {
+	if (fmt == 'j') {
 		pj = r_core_pj_new (core);
-		if (!pj) {
-			break;
-		}
 		pj_a (pj);
-		break;
-	}
 	}
 	const bool smart_mask = r_config_get_b (core->config, "anal.mask");
 	for (i = idx = ret = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
@@ -2805,6 +2791,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			if (strcmp (p1, "null")) {
 				pj_ks (pj, "stack", p1);
 			}
+			if (op.ptrsize) {
+				pj_kn (pj, "ptrsize", op.ptrsize);
+			}
 			pj_kn (pj, "stackptr", op.stackptr);
 			if (op.direction != 0) {
 				pj_ks (pj, "direction", r_anal_op_direction_tostring (&op));
@@ -2890,6 +2879,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 					printline ("pseudo", "%s\n", pseudo);
 				}
 				free (pseudo);
+			}
+			if (op.ptrsize) {
+				printline ("ptrsize", "%d\n", op.ptrsize);
 			}
 			printline ("mnemonic", "%s\n", mnem);
 			{
@@ -3031,7 +3023,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		free (mnem);
 		r_anal_hint_free (hint);
 		r_anal_op_fini (&op);
-		r_asm_op_fini (&asmop);
+		r_anal_op_fini (&asmop);
 	}
 	r_anal_op_fini (&op);
 	if (fmt == 's') {
@@ -3646,17 +3638,17 @@ static bool anal_fcn_del_bb(RCore *core, const char *input) {
 			while (!r_list_empty (fcn->bbs)) {
 				r_anal_function_remove_block (fcn, r_list_first (fcn->bbs));
 			}
-		} else {
-			RAnalBlock *b;
-			RListIter *iter;
-			r_list_foreach (fcn->bbs, iter, b) {
-				if (b->addr == addr) {
-					r_anal_function_remove_block (fcn, b);
-					return true;
-				}
-			}
-			R_LOG_ERROR ("Cannot find basic block");
+			return true;
 		}
+		RAnalBlock *b;
+		RListIter *iter;
+		r_list_foreach (fcn->bbs, iter, b) {
+			if (b->addr == addr) {
+				r_anal_function_remove_block (fcn, b);
+				return true;
+			}
+		}
+		R_LOG_ERROR ("Cannot find basic block");
 	}
 	return false;
 }
@@ -3801,14 +3793,11 @@ static void r_core_anal_fmap(RCore *core, const char *input) {
 		return;
 	}
 
-	// for each function
 	r_list_foreach (core->anal->fcns, iter, fcn) {
-		// for each basic block in the function
 		r_list_foreach (fcn->bbs, iter2, b) {
-			// if it is not within range, continue
-			if ((fcn->addr < base_addr) || (fcn->addr >= base_addr+code_size))
+			if ((fcn->addr < base_addr) || (fcn->addr >= base_addr+code_size)) {
 				continue;
-			// otherwise mark each byte in the BB in the bitmap
+			}
 			int counter = 1;
 			for (counter = 0; counter < b->size; counter++) {
 				bitmap[b->addr+counter-base_addr] = '=';
@@ -4192,7 +4181,9 @@ static void __core_cmd_anal_fcn_allstats(RCore *core, const char *input) {
 	r_table_add_column (t, typeNumber, "addr", 0);
 	ls_foreach (ls, it, kv) {
 		const char *key = sdbkv_key (kv);
-		if (*key == '.') continue;
+		if (*key == '.') {
+			continue;
+		}
 		r_table_add_column (t, typeNumber, key, 0);
 	}
 	sdb_free (d);
@@ -5134,6 +5125,15 @@ static void cmd_afsv(RCore *core, ut64 pcv, int mode) {
 	RListIter *nextele;
 	const char *fcn_name = NULL;
 	RAnalOp *aop = r_core_anal_op (core, pcv, 0);
+	if (R_UNLIKELY (!aop)) {
+		if (pj) {
+			pj_end (pj);
+			char *s = pj_drain (pj);
+			r_cons_println (core->cons, s);
+			free (s);
+		}
+		return;
+	}
 	switch (aop->type) {
 	case R_ANAL_OP_TYPE_JMP:
 	case R_ANAL_OP_TYPE_CALL:
@@ -7230,6 +7230,9 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			esil->trap = R_ANAL_TRAP_EXEC_ERR;
 			esil->trap_code = addr;
 			R_LOG_INFO ("[ESIL] Trap, trying to execute on non-executable memory");
+			if (esil->cmd_trap) {
+				esil->cmd (esil, esil->cmd_trap, esil->addr, R_ANAL_TRAP_INVALID);
+			}
 			return_tail (1);
 		}
 		// eprintf ("addr %"PFMT64x"\n", addr);
@@ -8468,7 +8471,7 @@ static bool regwrite_hook(REsil *esil, const char *name, ut64 *val) {
 	return false;
 }
 
-static void __anal_esil_function(RCore *core, ut64 addr) {
+R_API void r_core_anal_esil_function(RCore *core, ut64 addr) {
 	RListIter *iter;
 	RAnalBlock *bb;
 #if 0
@@ -9380,9 +9383,8 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 	case 'f': // "aef"
 		if (input[1] == 'a') { // "aefa"
 			r_anal_aefa (core, r_str_trim_head_ro (input + 2));
-		} else { // This should be aefb -> because its emulating all the bbs
-			// anal ESIL to REIL.
-			__anal_esil_function (core, core->addr);
+		} else {
+			r_core_anal_esil_function (core, core->addr);
 		} break;
 	case 't': // "aet"
 		cmd_aet (core, input);
@@ -9561,7 +9563,10 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 	r_anal_op_init (&analop);
 	r_anal_op_set_bytes (&analop, core->addr, buf, sizeof (ut64));
 	(void)r_anal_op (core->anal, &analop, core->addr, buf, sizeof (buf), R_ARCH_OP_MASK_DISASM);
-	int last = R_MIN (8, analop.size);
+	int last = R_MIN (sizeof (buf), analop.size);
+	if (analop.size > sizeof (buf)) {
+		R_LOG_WARN ("Instruction size (%d bytes) exceeds buffer limit (%zu bytes), truncating", analop.size, sizeof (buf));
+	}
 	PJ *pj = (mode == 'j')? r_core_pj_new (core): NULL;
 	if (last < 1) {
 		return;
@@ -9668,7 +9673,7 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 			int pi = 0;
 			char *s = r_strbuf_drain (sb);
 			char *p = s;
-			ut8 finalmask[8] = {0};
+			ut8 finalmask[32] = {0};
 			for (; *p; p++) {
 				int byte_index = (pi / 8);
 				int bit_index = (pi % 8);
@@ -9685,7 +9690,7 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 				}
 			}
 			free (s);
-			for (i = 0; i < 8 && i < last; i++) {
+			for (i = 0; i < last; i++) {
 				r_cons_printf (core->cons, "%02x", finalmask[i]);
 			}
 			r_cons_newline (core->cons);
@@ -9943,9 +9948,11 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		hooks = r_core_anal_cycles (core, ccl); // analyse
 		r_list_foreach (hooks, iter, hook) {
 			instr_tmp = r_core_disassemble_instr (core, hook->addr, 1);
-			r_cons_printf (core->cons, "After %4i cycles:\t%s", (ccl - hook->cycles), instr_tmp);
-			r_cons_flush (core->cons);
-			free (instr_tmp);
+			if (instr_tmp) {
+				r_cons_printf (core->cons, "After %4i cycles:\t%s", (ccl - hook->cycles), instr_tmp);
+				r_cons_flush (core->cons);
+				free (instr_tmp);
+			}
 		}
 		r_list_free (hooks);
 
@@ -10716,7 +10723,7 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 	} else {
 		buf_asm = strdup (asmop.mnemonic);
 	}
-	r_asm_op_fini (&asmop);
+	r_anal_op_fini (&asmop);
 	if (osubreladdr != UT64_MAX) {
 		core->rasm->parse->subrel_addr = osubreladdr;
 	}
@@ -14216,7 +14223,7 @@ static bool cmd_aa(RCore *core, bool aaa) {
 	if (!aaa) {
 		// R2_600 - drop this code? we already recover vars later in aaa. should be fine to if 0
 		if (anal_vars) {
-			logline (core, 22, "Recovering variables (afva@@@F)");
+			logline (core, 22, "Recovering variables (afva@@F)");
 			/* Set fcn type to R_ANAL_FCN_TYPE_SYM for symbols */
 			r_list_foreach_prev (core->anal->fcns, iter, fcni) {
 				if (r_cons_is_breaked (core->cons)) {
@@ -14296,9 +14303,9 @@ static void cmd_aaa(RCore *core, const char *input) {
 	// TODO: should not be run sometimes
 	// Run afvn in all fcns
 	if (r_config_get_b (core->config, "anal.vars")) {
-		logline (core, 15, "Analyze all functions arguments/locals (afva@@@F)");
+		logline (core, 15, "Analyze all functions arguments/locals (afva@@F)");
 		// r_core_cmd0 (core, "afva@@f");
-		r_core_cmd0 (core, "afva@@@F");
+		r_core_cmd0 (core, "afva@@F");
 	}
 #endif
 	// Run pending analysis immediately after analysis
@@ -16128,12 +16135,14 @@ static int cmd_anal(void *data, const char *input) {
 	case 'F': // "aF"
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_aF);
-			break;
+		} else if (input[1] == 0) {
+			r_core_anal_fcn (core, core->addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, 1);
+		} else {
+			r_core_return_invalid_command (core, "aF", input[1]);
 		}
-		r_core_anal_fcn (core, core->addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, 1);
 		break;
 	case 'l':
-		{
+		if (input[1] == 0) {
 			RList *l = r_asm_cpus (core->rasm);
 			RListIter *iter;
 			char *c;
@@ -16141,6 +16150,10 @@ static int cmd_anal(void *data, const char *input) {
 				r_cons_printf (core->cons, "- %s\n", c);
 			}
 			r_list_free (l);
+		} else if (input[1] == '?') {
+			R_LOG_INFO ("al is an alias for e asm.cpu=?");
+		} else {
+			r_core_return_invalid_command (core, "al", input[1]);
 		}
 		break;
 	case 'f': // "af"
@@ -16262,7 +16275,7 @@ static int cmd_anal(void *data, const char *input) {
 		r_core_block_size (core, tbs);
 	}
 	if (r_cons_is_breaked (core->cons)) {
-		r_cons_clear_line (core->cons, 1);
+		r_cons_clear_line (core->cons, true, true);
 	}
 	return 0;
 }

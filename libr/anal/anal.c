@@ -355,7 +355,6 @@ R_API bool r_anal_set_bits(RAnal *anal, int bits) {
 // see 'aobm' command
 R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 	R_RETURN_VAL_IF_FAIL (anal && data && size > 0, NULL);
-	int oplen, idx = 0;
 
 	RAnalOp *op = r_anal_op_new ();
 	if (!op) {
@@ -368,8 +367,10 @@ R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 	}
 
 	// TODO: use the bitfliping thing to guess the mask in here
+	int idx = 0;
 	while (idx < size) {
-		if ((oplen = r_anal_op (anal, op, at, data + idx, size - idx, R_ARCH_OP_MASK_BASIC)) < 1) {
+		int oplen = r_anal_op (anal, op, at, data + idx, size - idx, R_ARCH_OP_MASK_BASIC);
+		if (oplen < 1) {
 			break;
 		}
 		if ((op->ptr != UT64_MAX || op->jump != UT64_MAX) && op->nopcode != 0) {

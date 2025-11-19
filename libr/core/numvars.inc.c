@@ -40,7 +40,7 @@ static ut64 numvar_instruction_prev(RCore *core, int n, bool *ok) {
 		*ok = true;
 	}
 	// N forward instructions
-	int i, ret;
+	int i;
 	if (n < 1) {
 		R_LOG_ERROR ("Invalid negative value");
 		n = 1;
@@ -64,11 +64,8 @@ static ut64 numvar_instruction_prev(RCore *core, int n, bool *ok) {
 				break;
 			}
 			RAnalOp op = {0};
-			ret = r_anal_op (core->anal, &op, prev_addr, data,
+			r_anal_op (core->anal, &op, prev_addr, data,
 				sizeof (data), R_ARCH_OP_MASK_BASIC);
-			if (ret < 1) {
-				ret = 1;
-			}
 			if (op.size < mininstrsize) {
 				op.size = mininstrsize;
 			}
@@ -976,8 +973,14 @@ static ut64 num_callback(RNum *userptr, const char *str, bool *ok) {
 			return numvar_dollar (core, str, ok);
 		case 'o': // $o
 			{
-				RBinSection *s = r_bin_get_section_at (r_bin_cur_object (core->bin), core->addr, true);
-				return s ? core->addr - s->vaddr + s->paddr : core->addr;
+				RBinObject *bo = r_bin_cur_object (core->bin);
+				if (bo) {
+					RBinSection *s = r_bin_get_section_at (bo, core->addr, true);
+					if (s) {
+						return core->addr - s->vaddr + s->paddr;
+					}
+				}
+				return core->addr;
 			}
 		case 'F': // $F function
 			return numvar_function (core, str + 2, ok);
@@ -1007,6 +1010,18 @@ static ut64 num_callback(RNum *userptr, const char *str, bool *ok) {
 				...
 			}
 #endif
+
+			if (((RCorePriv*)core->priv)->regnums) {
+				// check for reg alias
+				RRegItem *r = r_reg_get (core->dbg->reg, str, -1);
+				if (r) {
+					if (ok) {
+						*ok = true;
+					}
+					ret = r_reg_get_value (core->dbg->reg, r);
+					return ret;
+				}
+			}
 			if ((flag = r_flag_get (core->flags, str))) {
 				ret = flag->addr;
 				if (ok) {

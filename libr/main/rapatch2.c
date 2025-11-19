@@ -13,8 +13,7 @@ static int show_help(int v) {
 			"  -R         reverse patch\n"
 			"  -s         sandbox mode, disable scripts and r2 command execution\n"
 			"  -q         be quiet\n"
-			"  -v         show version\n"
-		       );
+			"  -v         show version\n");
 	}
 	return 1;
 }
@@ -79,7 +78,7 @@ static int rapatch_file(RapatchOptions *ro, const char *patch, const char *file)
 R_API int r_main_rapatch2(int argc, const char **argv) {
 	RGetopt opt;
 	int o;
-	RapatchOptions ro = {0};
+	RapatchOptions ro = { 0 };
 
 	r_getopt_init (&opt, argc, argv, "hRvsp:");
 	while ((o = r_getopt_next (&opt)) != -1) {

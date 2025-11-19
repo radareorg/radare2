@@ -579,6 +579,7 @@ static pyc_object *get_dict_object(RBuffer *buffer) {
 			break;
 		}
 		if (!r_list_append (ret->data, key)) {
+			((RList *)ret->data)->free = NULL;
 			r_list_free (ret->data);
 			R_FREE (ret);
 			free_object (key);
@@ -590,6 +591,7 @@ static pyc_object *get_dict_object(RBuffer *buffer) {
 		}
 		if (!r_list_append (ret->data, val)) {
 			free_object (val);
+			((RList *)ret->data)->free = NULL;
 			r_list_free (ret->data);
 			R_FREE (ret);
 			return NULL;

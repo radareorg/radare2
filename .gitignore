@@ -17,7 +17,8 @@ clang-log/
 *.dSYM
 *.wasm
 supported.*
-config.mk
+./config.mk
+libr/config.mk
 plugins.cfg
 langs.cfg
 .test.c
@@ -158,3 +159,7 @@ crash-*
 corpus*
 libr/anal/d/types-windows.sdb.txt
 libr/bin/d/dll/*.c
+.personal_files/
+a
+poc
+poc.zip

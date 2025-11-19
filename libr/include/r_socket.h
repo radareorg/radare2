@@ -276,6 +276,7 @@ R_API const char *r_run_help(void);
 R_API bool r_run_config_env(RRunProfile *p);
 R_API bool r_run_start(RRunProfile *p);
 R_API void r_run_reset(RRunProfile *p);
+R_API void r_run_fini(RRunProfile *p);
 R_API bool r_run_parsefile(RRunProfile *p, const char *b);
 R_API char *r_run_get_environ_profile(char **env);
 

@@ -3295,8 +3295,8 @@ arm_decode_bitfield (const char *ptr,
       }
       bits = end - start;
       if (bits < 0) {
-return NULL;
-}
+        return NULL;
+      }
       value |= ((insn >> start) & ((2ul << bits) - 1)) << width;
       width += bits + 1;
     }
@@ -4355,7 +4355,7 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
 			  {
                             align = (8 * (type + 1)) << size;
 			    if (type == 3) {
-				    align = (size > 1) ? align >> 1 : align;
+				    if (size > 1) align >>= 1;
 			    }
 			    if (type == 2 || (type == 0 && !size)) {
 				    func (stream, " :<bad align %d>", align);
@@ -6391,7 +6391,7 @@ mapping_symbol_for_insn (bfd_vma pc, struct disassemble_info *info,
 	  start = private_data->last_mapping_sym;
   }
 
-  start = (start == -1)? 0 : start;
+  if (start == -1) start = 0;
   addr = bfd_asymbol_value (info->symtab[start]);
 
   if (pc >= addr)

@@ -18,20 +18,20 @@ static RCoreHelpMessage help_msg_o = {
 	"o:", " [len]", "open a malloc://[len] copying the bytes from current offset", // XXX R2_590 - should be an alias for ':' no need for a malloc:// wrapper imho
 	"o=", "(#fd)", "select fd or list opened files in ascii-art",
 	"oL", "", "list all IO plugins registered",
-	"oa", "[-] [A] [B] [filename]", "specify arch and bits for given file",
+	"oa", "[-] [A] [B] [file]", "specify arch and bits for given 'file'",
 	"ob", "[?] [lbdos] [...]", "list opened binary files backed by fd",
 	"oc", " [file]", "open core file, like relaunching r2",
 	"of", "[?] [file]", "open file without creating any map",
-	"oe", " [filename]", "open cfg.editor with given file",
+	"oe", " [file]", "open cfg.editor with given 'file'",
 	"oj", "", "list opened files in JSON format",
 	"om", "[?]", "create, list, remove IO maps",
-	"on", "[?][n] [file] 0x4000", "map raw file at 0x4000 (no r_bin involved)",
+	"on", "[?][n] [file] 0x4000", "map raw 'file' at 0x4000 (no r_bin involved)",
 	"oo", "[?][+bcdnm]", "reopen current file (see oo?) (reload in rw or debugger)",
 	"op", "[npr] [fd]", "select priorized file by fd (see ob), opn/opp/opr = next/previous/rotate",
 	"ot", " [file]", "same as `touch [file]`",
 	"oq", "[q]", "list all open files or show current fd 'oqq'",
 	"ox", " fd fdx", "exchange the descs of fd and fdx and keep the mapping",
-	"open", " [file]", "use system xdg-open/open on a file",
+	"open", " [file]", "use system xdg-open/open on 'file'",
 	NULL
 };
 
@@ -278,7 +278,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 					r_io_desc_close (desc);
 					r_io_use_fd (core->io, saved_fd);
 				} else {
-					R_LOG_ERROR ("Cannot open '%s'", r_str_trim_head_ro (filename + 1));
+					R_LOG_ERROR ("Cannot oba open '%s'", r_str_trim_head_ro (filename + 1));
 				}
 			} else if (R_STR_ISNOTEMPTY (filename)) {
 				ut64 baddr = r_num_math (core->num, filename);
@@ -1769,7 +1769,7 @@ R_API void r_core_file_reopen_remote_debug(RCore *core, char *uri, ut64 addr) {
 		}
 		r_core_bin_load (core, uri, addr);
 	} else {
-		R_LOG_ERROR ("cannot open file %s", uri);
+		R_LOG_ERROR ("Cannot open remote %s", uri);
 		r_list_free (old_sections);
 		return;
 	}
@@ -2091,7 +2091,7 @@ static bool cmd_onn(RCore *core, const char* input) {
 
 	RIODesc *desc = r_io_open_at (core->io, ptr, perms, 0644, addr);
 	if (!desc || desc->fd == -1) {
-		R_LOG_ERROR ("Cannot open file '%s'", ptr);
+		R_LOG_ERROR ("Cannot onn open file '%s'", ptr);
 		free (ptr);
 		return false;
 	}
@@ -2279,7 +2279,7 @@ static int cmd_open(void *data, const char *input) {
 			return 0;
 		}
 		if (cmd_on (core, argc, argv) < 0) {
-			R_LOG_ERROR ("Cannot open file '%s'", argv[0]);
+			R_LOG_ERROR ("Cannot open file on '%s'", argv[0]);
 		}
 		r_str_argv_free (argv);
 		r_core_return_value (core, fd);
@@ -2467,7 +2467,7 @@ static int cmd_open(void *data, const char *input) {
 				if (perms & R_PERM_W) {
 					// create file!
 				}
-				R_LOG_ERROR ("cannot open file %s", argv0);
+				R_LOG_ERROR ("Cannot open file %s", argv0);
 			}
 		}
 		r_core_block_read (core);

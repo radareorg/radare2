@@ -46,7 +46,10 @@ static RCoreHelpMessage help_msg_slash_forward = {
 };
 
 static RCoreHelpMessage help_msg_slash_sections = {
-	"Usage: /s[*]", "[threshold]", "finds sections by grouping blocks with similar entropy.",
+	"Usage: /s[*]", "[threshold]", "Find sections by grouping blocks with similar entropy.",
+	"/s", "[threshold]", "find sections using human friendly output",
+	"/sj", "[threshold]", "use json output",
+	"/s*", "[threshold]", "use r2 flavor output",
 	NULL
 };
 
@@ -102,7 +105,7 @@ static RCoreHelpMessage help_msg_slash = {
 	"/F", " file [off] [sz]", "search contents of file with offset and size",
 	// TODO: add subcommands to find paths between functions and filter only function names instead of offsets, etc
 	"/g", "[g] [from]", "find all graph paths A to B (/gg follow jumps, see search.count and anal.depth)",
-	"/h", "[?*] [algorithm] [digest] [size]", "find block of size bytes having this digest. See ph",
+	"/h", "[?*] [algo] [digest] [size]", "find block of size bytes having this digest (see ph)",
 	"/i", " foo", "search for string 'foo' ignoring case",
 	"/k", " foo", "search for string 'foo' using Rabin Karp alg",
 	"/m", "[?][ebm] magicfile", "search for magic, filesystems or binary headers",
@@ -185,6 +188,13 @@ static RCoreHelpMessage help_msg_slash_cc = {
 	"/ccd", " [algo] [digest]", "digits (only numbers)",
 	"/ccp", " [algo] [digest]", "printable (alpha + digit)",
 	"/ccb", " [algo] [digest]", "binary (any number is valid)",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_slash_k = {
+	"Usage:", "/k[j] [foo]", "search for string using Rabin Karp algorithm",
+	"/k", " foo", "search for string 'foo'",
+	"/kj", " foo", "same as above but using json as output",
 	NULL
 };
 
@@ -1508,7 +1518,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 				char *opstr_n = r_str_newf (" %s", R_STRBUF_SAFEGET (&analop.esil));
 				r_list_append (ropList, (void *) opstr_n);
 			}
-			char *asm_op_hex = r_asm_op_get_hex (&asmop);
+			char *asm_op_hex = r_hex_bin2strdup(asmop.bytes, asmop.size);
 			if (colorize) {
 				char *buf_asm = r_print_colorize_opcode (core->print, asmop.mnemonic,
 					core->cons->context->pal.reg, core->cons->context->pal.num, false, 0);
@@ -1974,7 +1984,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 		r_config_set_i (core->config, "search.kwidx", search->n_kws); // TODO remove
 		r_cons_break_pop (core->cons);
 	}
-	r_cons_clear_line (core->cons, 1);
+	r_cons_clear_line (core->cons, true, true);
 	if (param->outmode == R_MODE_JSON) {
 		pj_end (param->pj);
 	}
@@ -3109,6 +3119,11 @@ static void do_section_search(RCore *core, struct search_parameters *param, cons
 	if (!buf) {
 		return;
 	}
+	PJ *pj = NULL;
+	if (param->outmode == R_MODE_JSON) {
+		pj = r_core_pj_new (core);
+		pj_a (pj);
+	}
 	double oe = 0;
 	RListIter *iter;
 	RIOMap *map;
@@ -3135,6 +3150,12 @@ static void do_section_search(RCore *core, struct search_parameters *param, cons
 			if (diff > threshold) {
 				if (r2mode) {
 					r_cons_printf (core->cons, "f entropy_section_%d 0x%08"PFMT64x" 0x%08"PFMT64x"\n", index, end - begin, begin);
+				} else if (pj) {
+					pj_o (pj);
+					pj_kn (pj, "start", begin);
+					pj_kn (pj, "end", end);
+					pj_kd (pj, "entropy", e);
+					pj_end (pj);
 				} else {
 					r_cons_printf (core->cons, "0x%08"PFMT64x" - 0x%08"PFMT64x" ~ %lf\n", begin, end, e);
 				}
@@ -3158,6 +3179,13 @@ static void do_section_search(RCore *core, struct search_parameters *param, cons
 	}
 	r_cons_break_pop(core->cons);
 	free (buf);
+
+	if (pj) {
+		pj_end (pj);
+		RCons *cons = r_cons_singleton ();
+		r_cons_print (cons, pj_string (pj));
+		pj_free (pj);
+	}
 }
 
 static void do_asm_search(RCore *core, struct search_parameters *param, const char *input, int mode, RInterval search_itv) {
@@ -3332,7 +3360,7 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 			}
 			if (param->progressbar) {
 				print_search_progress (at, to1, search->nhits, param);
-				r_cons_clear_line (core->cons, 1);
+				r_cons_clear_line (core->cons, true, true);
 			}
 			r_core_return_value (core, search->nhits);
 			if (search_verbose && param->outmode != R_MODE_JSON) {
@@ -5029,7 +5057,7 @@ reread:
 					}
 					free (mp);
 				}
-				r_cons_clear_line (core->cons, 1);
+				r_cons_clear_line (core->cons, true, true);
 				r_cons_break_pop (core->cons);
 			}
 			eprintf ("\n");
@@ -5082,7 +5110,7 @@ reread:
 					}
 					addr += ret - 1;
 				}
-				r_cons_clear_line (core->cons, 1);
+				r_cons_clear_line (core->cons, true, true);
 				r_cons_break_pop (core->cons);
 			}
 			free (mc.ofile);
@@ -5092,7 +5120,7 @@ reread:
 		} else {
 			r_core_cmd_help (core, help_msg_slash_magic);
 		}
-		r_cons_clear_line (core->cons, 1);
+		r_cons_clear_line (core->cons, true, true);
 		break;
 	case 'p': // "/p"
 		if (input[1] == '?') { // "/p" -- find next pattern
@@ -5291,7 +5319,11 @@ reread:
 		break;
 	case 'k': // "/k" Rabin Karp String search
 		{
-			inp = r_str_trim_dup (input + 1);
+			if (input[1] == '?') {
+				r_core_cmd_help (core, help_msg_slash_k);
+				break;
+			}
+			inp = r_str_trim_dup (input + 1 + ignorecase + (param.outmode == R_MODE_JSON ? 1 : 0));
 			len = r_str_unescape (inp);
 			r_search_reset (core->search, R_SEARCH_RABIN_KARP);
 			r_search_set_distance (core->search, (int)r_config_get_i (core->config, "search.distance"));
@@ -5513,6 +5545,10 @@ reread:
 			r_core_cmd_help (core, help_msg_slash_sections);
 			break;
 		}
+		if (input[1] == 'j') { // "/sj"
+			param.outmode = R_MODE_JSON;
+			input++;
+		}
 		do_section_search (core, &param, input + 1);
 		break;
 	case '+': // "/+"
@@ -5604,10 +5640,16 @@ again:
 		do_string_search (core, search_itv, &param);
 	} else if (dosearch_read) {
 		// TODO: update pattern search to work with this
+		if (param.outmode == R_MODE_JSON) {
+			pj_a (param.pj);
+		}
 		if (search->mode != R_SEARCH_PATTERN) {
 			r_search_set_read_cb (search, &_cb_hit_sz, &param);
 		}
 		r_search_maps (search, param.boundaries);
+		if (param.outmode == R_MODE_JSON) {
+			pj_end (param.pj);
+		}
 	}
 beach:
 	if (errcode != -1) {

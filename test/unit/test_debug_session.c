@@ -96,6 +96,24 @@ static bool test_session_save(void) {
 	RDebugSession *s = ref_session ();
 	r_debug_session_serialize (s, actual);
 
+	Sdb *actual_registers = sdb_ns (actual, "registers", false);
+	if (actual_registers) {
+		const char *regv = sdb_const_get (actual_registers, "0x100", NULL);
+		printf ("actual registers 0x100: %s\n", regv);
+	}
+	Sdb *actual_memory = sdb_ns (actual, "memory", false);
+	if (actual_memory) {
+		const char *mem0 = sdb_const_get (actual_memory, "0x7ffffffff000", NULL);
+		printf ("actual memory 0x7ffffffff000: %s\n", mem0);
+		const char *mem1 = sdb_const_get (actual_memory, "0x7ffffffff001", NULL);
+		printf ("actual memory 0x7ffffffff001: %s\n", mem1);
+	}
+	Sdb *actual_checkpoints = sdb_ns (actual, "checkpoints", false);
+	if (actual_checkpoints) {
+		const char *chk = sdb_const_get (actual_checkpoints, "0x0", NULL);
+		printf ("actual checkpoint 0x0: %s\n", chk);
+	}
+
 	mu_assert ("save", sdb_diff (expected, actual, diff_cb, NULL));
 
 	sdb_free (actual);

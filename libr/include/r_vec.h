@@ -222,11 +222,11 @@ extern "C" {
 	} \
 	static inline R_MAYBE_UNUSED R_MUSTUSE ut64 R_VEC_FUNC(vec_type, length)(const vec_type *vec) { \
 		R_RETURN_VAL_IF_FAIL (vec, 0); \
-		return vec->_end - vec->_start; \
+		return vec->_start ? (ut64)(vec->_end - vec->_start) : 0; \
 	} \
 	static inline R_MAYBE_UNUSED R_MUSTUSE bool R_VEC_FUNC(vec_type, empty)(const vec_type *vec) { \
 		R_RETURN_VAL_IF_FAIL (vec, false); \
-		return vec->_start == vec->_end; \
+		return !vec->_start || vec->_start == vec->_end; \
 	} \
 	static inline R_MAYBE_UNUSED R_MUSTUSE type *R_VEC_FUNC(vec_type, at)(const vec_type *vec, ut64 index) { \
 		R_RETURN_VAL_IF_FAIL (vec, NULL); \
@@ -393,7 +393,7 @@ extern "C" {
 		} \
 	} \
 	static inline R_MAYBE_UNUSED void R_VEC_FUNC(vec_type, remove)(vec_type *vec, ut64 index) { \
-		R_RETURN_IF_FAIL (vec && vec->_start != vec->_end && index < (ut64)(size_t)(vec->_start - vec->_end)); \
+		R_RETURN_IF_FAIL (vec && vec->_start != vec->_end && index < (ut64)(size_t)(vec->_end - vec->_start)); \
 		type *ptr = R_VEC_FUNC(vec_type, at) (vec, index); \
 		const ut64 num_elems_after = vec->_end - ptr; \
 		R_MAYBE_GENERATE(has_fini, fini_fn (ptr)); \
@@ -451,7 +451,7 @@ extern "C" {
 		return pos; \
 	} \
 	static inline R_MAYBE_UNUSED type *R_VEC_FUNC(vec_type, partition)(vec_type *vec, void *user, R_VEC_FIND_CMP(vec_type) cmp_fn) { \
-		R_RETURN_VAL_IF_FAIL (vec && cmp_fn, vec->_start); \
+		R_RETURN_VAL_IF_FAIL (vec && cmp_fn, vec ? vec->_start : NULL); \
 		type *first = R_VEC_FUNC(vec_type, find) (vec, user, cmp_fn); \
 		if (first == NULL) { \
 			return vec->_start; \
@@ -469,11 +469,10 @@ extern "C" {
 	} \
 	static inline R_MAYBE_UNUSED void R_VEC_FUNC(vec_type, sort)(vec_type *vec, R_VEC_CMP(vec_type) cmp_fn) { \
 		R_RETURN_IF_FAIL (vec && cmp_fn); \
-		if (R_VEC_FUNC(vec_type, empty) (vec)) { \
-			return; \
+		if (!R_VEC_FUNC(vec_type, empty) (vec)) { \
+			qsort (vec->_start, R_VEC_FUNC(vec_type, length) (vec), sizeof (type), \
+				(int (*)(const void *, const void *)) cmp_fn); \
 		} \
-		qsort (vec->_start, R_VEC_FUNC(vec_type, length) (vec), sizeof (type), \
-			(int (*)(const void *, const void *)) cmp_fn); \
 	} \
 	static inline R_MAYBE_UNUSED void R_VEC_FUNC(vec_type, uniq)(vec_type *vec, R_VEC_CMP(vec_type) cmp_fn) { \
 		R_RETURN_IF_FAIL (vec && cmp_fn); \

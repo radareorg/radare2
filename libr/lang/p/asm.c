@@ -6,7 +6,7 @@
 static bool lang_asm_run(RLangSession *s, const char *code, int len) {
 	RCore *core = (RCore *)s->lang->user;
 	RAsm *a = core->rasm; // r_asm_new ();
-	RAsmCode *kode = r_asm_massemble (a, code);
+	RAsmCode *kode = r_asm_assemble (a, code);
 	if (kode) {
 		int i;
 		eprintf ("CODE: %d\nBYTES: ", kode->len);

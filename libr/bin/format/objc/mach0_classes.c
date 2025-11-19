@@ -441,7 +441,7 @@ static void get_ivar_list(RBinFile *bf, RBinClass *klass, mach0_ut p) {
 			}
 			if (type) {
 				field->type = r_bin_name_new (type);
-				type = NULL;
+				R_FREE (type);
 			} else {
 				r_bin_name_free (field->type);
 				field->type = NULL;

@@ -138,12 +138,12 @@ static void parse_enum(const RAnal *anal, SType *type, RList *types) {
 			goto cleanup;
 		}
 	}
-	char *sname = r_str_sanitize_sdb_key (name);
-	base_type->name = sname;
-	base_type->size = size;
-	base_type->type = strdup (type_name); // we assume it's sanitized
-
-	r_anal_save_base_type (anal, base_type);
+	if (type_name) {
+		base_type->name = r_str_sanitize_sdb_key (name);
+		base_type->size = size;
+		base_type->type = strdup (type_name); // we assume it's sanitized
+		r_anal_save_base_type (anal, base_type);
+	}
 cleanup:
 	if (to_free_name) {
 		R_FREE (name);

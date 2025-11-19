@@ -489,6 +489,12 @@ R_API const char *r_utf_block_name(int idx) {
 
 /* Convert an UTF-8 buf into a unicode RRune */
 R_API int r_utf8_decode(const ut8 *ptr, int ptrlen, RRune *ch) {
+	if (ptrlen < 0) {
+		ptrlen = r_utf8_size (ptr);
+		if (ptrlen < 1) {
+			ptrlen = 1;
+		}
+	}
 	if (ptrlen < 1) {
 		return 0;
 	}
@@ -562,15 +568,12 @@ R_API int r_utf8_encode(ut8 *ptr, const RRune ch) {
 /* Convert a unicode RRune string into an utf-8 one */
 R_API int r_utf8_encode_str(const RRune *str, ut8 *dst, const int dst_length) {
 	int i, pos = 0;
-
 	if (!str || !dst) {
 		return -1;
 	}
-
-	for (i = 0; i < sizeof (str) - 1 && str[i] && pos < dst_length - 1; i++) {
+	for (i = 0; str[i] && pos < dst_length - 1; i++) {
 		pos += r_utf8_encode (&dst[pos], str[i]);
 	}
-
 	dst[pos++] = '\0';
 	return pos;
 }
@@ -600,6 +603,41 @@ R_API int r_utf8_strlen(const ut8 *str) {
 	}
 
 	return len;
+}
+
+static int rune_display_width(RRune ch) {
+	if (ch < 0x80) {
+		return 1;
+	}
+	// CJK and wide characters
+	if ((ch >= 0x1100 && ch <= 0x115F) ||  // Hangul Jamo
+	    (ch >= 0x2E80 && ch <= 0x9FFF) ||  // CJK
+	    (ch >= 0xAC00 && ch <= 0xD7AF) ||  // Hangul Syllables
+	    (ch >= 0xF900 && ch <= 0xFAFF) ||  // CJK Compatibility Ideographs
+	    (ch >= 0xFE10 && ch <= 0xFE1F) ||  // Vertical Forms
+	    (ch >= 0xFE30 && ch <= 0xFE4F) ||  // CJK Compatibility Forms
+	    (ch >= 0x1F000 && ch <= 0x1FFFF) || // Emojis and symbols
+	    (ch >= 0x20000 && ch <= 0x2FFFF)) { // CJK Extension B, C, D, E, F
+		return 2;
+	}
+	return 1;
+}
+
+R_API int r_utf8_display_width(const ut8 *str) {
+	int width = 0;
+	const ut8 *p = str;
+	while (*p) {
+		RRune ch;
+		int len = r_utf8_decode (p, -1, &ch);
+		if (len == 0) {
+			width += 1; // invalid byte, assume 1
+			p++;
+		} else {
+			width += rune_display_width (ch);
+			p += len;
+		}
+	}
+	return width;
 }
 
 // XXX this function name is really bad, rename to r_utf8_is_printable()

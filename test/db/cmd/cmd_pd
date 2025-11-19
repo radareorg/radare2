@@ -2278,3 +2278,29 @@ cmp edx, 101b
 je 110110011001010b
 EOF
 RUN
+
+NAME=pd imm.base large value
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.syntax=att
+e asm.imm.base=16
+wx 48b80000000000000080
+pd 1
+e asm.imm.base=10
+pd 1
+e asm.syntax=intel
+e asm.imm.base=16
+wx 48b80000000000000080
+pd 1
+e asm.imm.base=10
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000      48b8000000..   movabsq $0x8000000000000000, %rax
+            0x00000000      48b8000000..   movabsq $9223372036854775808, %rax
+            0x00000000      48b8000000..   movabs rax, 0x8000000000000000
+            0x00000000      48b8000000..   movabs rax, -9223372036854775808
+EOF
+RUN

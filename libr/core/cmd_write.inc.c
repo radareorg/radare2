@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -17,19 +17,19 @@ static RCoreHelpMessage help_msg_w = {
 	"wb", " 011001", "write bits in bit big endian (see pb)",
 	"wB", "[-]0xVALUE", "set or unset bits with given value (also wB-0x2000)",
 	"wc", "[?][jir+-*?]", "write cache list/undo/commit/reset (io.cache)",
-	"wd", " [off] [n]", "copy N bytes from OFF to $$ (memcpy) (see y?)",
+	"wd", " [off] [n]", "copy 'n' bytes from 'off' to $$ (memcpy) (see y?)",
 	"we", "[?] [nNsxX] [arg]", "extend write operations (insert instead of replace)",
 	"wf", "[fs] -|file", "write contents of file at current offset",
 	"wg", "[et] [http://host/file]", "download file from http server and save it to disk (wget)",
 	"wh", " r2", "whereis/which shell command",
 	"wi", "[1248][+-][n]", "increment/decrement byte,word..",
 	"wm", " f0ff", "set binary mask hexpair to be used as cyclic write mask",
-	"wo", "[?] hex", "write in block with operation. 'wo?' fmi",
-	"wp", "[?] -|file", "apply radare patch file. See wp? fmi",
+	"wo", "[?] hex", "write in block with operation. (see wo?)",
+	"wp", "[?] -|file", "apply radare patch file. (see wp?)",
 	"wr", " 10", "write 10 random bytes",
 	"ws", "[?] pstring", "write pascal string: 1 byte for length + N for the string",
 	"wt", "[?][afs] [filename] [size]", "write to file (from current seek, blocksize or sz bytes)",
-	"ww", " foobar", "write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'",
+	"ww", " foo", "write wide string 'f\\x00o\\x00o\\x00'",
 	"wx", "[?][fs] 9090", "write two intel nops (from wxfile or wxseek)",
 	"wX", " 1b2c3d", "fill current block with cyclic hexpairs",
 	"wv", "[?] [expr]", "write [1,2,4,8]-byte size using cfg.bigendian",
@@ -108,11 +108,11 @@ static RCoreHelpMessage help_msg_wc = {
 
 static RCoreHelpMessage help_msg_we = {
 	"Usage", "", "write extend # resize the file",
-	"wen", " <num>", "extend the underlying file inserting NUM null bytes at current offset",
-	"weN", " <addr> <len>", "extend current file and insert bytes at address",
-	"wes", " <addr>  <dist> <block_size>", "shift a blocksize left or write in the editor",
+	"wen", " <num>", "extend the underlying file inserting 'num' null bytes at current offset",
+	"weN", " <addr> <len>", "extend current file and insert bytes at 'addr'",
+	"wes", " <addr> <dist> <block_size>", "shift a blocksize left or write in the editor",
 	"wex", " <hex_bytes>", "insert bytes at current offset by extending the file",
-	"weX", " <addr> <hex_bytes>", "insert bytes at address by extending the file",
+	"weX", " <addr> <hex_bytes>", "insert bytes at 'addr' by extending the file",
 	NULL
 };
 
@@ -124,8 +124,8 @@ static RCoreHelpMessage help_msg_wo = {
 	"woa", " [hexpair]", "+= addition (f.ex: woa 0102)",
 	"woA", " [hexpair]", "&= and",
 	"wod", " [hexpair]", "/= divide",
-	"woD", " [algo] [key] [IV]", "decrypt current block with given algo and key",
-	"woE", " [algo] [key] [IV]", "encrypt current block with given algo and key",
+	"woD", " [algo] [key] [IV]", "decrypt current block with 'algo' and 'key'",
+	"woE", " [algo] [key] [IV]", "encrypt current block with 'algo' and 'key'",
 	"woe", " [from] ([to] [step] [wsz=1])", "write enumeration sequence i0 01 02 ..",
 	"woi", "", "inverse bytes in current block",
 	"wol", " [val]", "<<= shift left",
@@ -135,7 +135,7 @@ static RCoreHelpMessage help_msg_wo = {
 	"wor", " [val]", ">>= shift right",
 	"woR", "", "random bytes (alias for 'wr $b')",
 	"wos", " [val]", "-= substraction",
-	"woS", " [algo] [key]", "sign the current block with given algo and key",
+	"woS", " [algo] [key]", "sign the current block with 'algo' and 'key'",
 	"wow", " [val]", "== write looped value (alias for 'wb')",
 	"wox", " [val]", "^= xor (f.ex: wox 0x90)",
 	NULL
@@ -184,17 +184,18 @@ static RCoreHelpMessage help_msg_wf = {
 };
 
 static RCoreHelpMessage help_msg_wv = {
-	"Usage:", "wv[size] [value]", " Write value of given size",
-	"wv", " 0x834002", "write dword with this value",
-	"wv1", " 234", "write one byte with this value",
-	"wv2", " 234", "write unsigned short (2 bytes) with this number",
+	"Usage:", "wv[size] [value]", " Write 'value' of given 'size'",
+	"wv", " 0x834002", "write dword",
+	"wv1", " 234", "write one byte",
+	"wv2", " 234", "write unsigned short (2 bytes)",
 	"wv4", " 1 2 3", "write N space-separated dword (4 bytes)",
-	"wv8", " 234", "write qword (8 bytes) with this number",
+	"wv8", " 234", "write qword (8 bytes)",
 	"wvF", " 3.14", "write double value (8 bytes)",
 	"wvf", " 3.14", "write float value (4 bytes)",
+	"wvg", " 3.14", "write custom float (see cfg.float)",
 	"wvG", " 3.14", "write long double value (10/16 bytes)",
 	"wvp", " 934", "write 4 or 8 byte pointer, depending on asm.bits",
-	"Supported sizes are:", "1, 2, 4, 8", "",
+	"Supported sizes: ", "1, 2, 4, 8", "",
 	NULL
 };
 
@@ -545,6 +546,14 @@ static void cmd_write_value_double(RCore *core, const char *input) {
 	r_io_write_at (core->io, core->addr, (const ut8*)&v, sizeof (double));
 }
 
+static const char *fpuhelp = \
+	"Available FPU profiles:\n"
+	"  ieee754 - IEEE 754 standard (binary64)\n"
+	"  binary16, binary32, binary64, binary128, bfloat16, x87_80, etc.\n"
+	"  custom:sign,exp,mant,bias,endian,explicit - specify custom parameters\n"
+	"Use: wvg [value] to write with current profile\n"
+	"Use: -e cfg.float=profile to set profile\n";
+
 static void cmd_write_value(RCore *core, const char *input) {
 	int type = 0;
 	ut64 off = 0LL;
@@ -570,11 +579,35 @@ static void cmd_write_value(RCore *core, const char *input) {
 	case 'G': // "wvG"
 		cmd_write_value_long_double (core, r_str_trim_head_ro (input + 1));
 		return;
+	case 'd': // "wvd"
+		cmd_write_value_double (core, r_str_trim_head_ro (input + 1));
+		return;
+	case 'g': // "wvg"
+		{
+			if (input[1] == '?') {
+				r_cons_printf (core->cons, fpuhelp);
+			} else {
+				const RCFloatProfile *profile = &core->rasm->config->cfloat_profile;
+				double value = strtod (r_str_trim_head_ro (input + 1), NULL);
+				ut8 buf[16];
+				size_t buf_size = (profile->sign_bits + profile->exp_bits + profile->mant_bits + 7) / 8;
+				if (buf_size > sizeof (buf)) {
+					R_LOG_ERROR ("Float size too large");
+				} else if (!r_cfloat_write (value, profile, buf, buf_size)) {
+					R_LOG_ERROR ("Failed to write float");
+				} else {
+					r_io_write_at (core->io, core->addr, buf, buf_size);
+				}
+			}
+		}
+		return;
 	case '1': type = 1; break;
 	case '2': type = 2; break;
 	case '4': type = 4; break;
 	case '8': type = 8; break;
 	}
+
+	// second step to write
 	ut64 addr = core->addr;
 	char *inp = r_str_trim_dup (input[0] ? input + 1: input);
 	RList *list = r_str_split_list (inp, " ", 0); // or maybe comma :?
@@ -2142,7 +2175,7 @@ static int cmd_wa(void *data, const char *input) {
 	case '*': {
 		const char *file = r_str_trim_head_ro (input + 1);
 		r_asm_set_pc (core->rasm, core->addr);
-		RAsmCode *acode = r_asm_massemble (core->rasm, file);
+		RAsmCode *acode = r_asm_assemble (core->rasm, file);
 		if (acode) {
 			if (input[0] == 'n') { // "wan"
 				int delta = 0;
@@ -2233,7 +2266,7 @@ repeat:
 						}
 					}
 					if (*b) {
-						RAsmCode *ac = r_asm_massemble (core->rasm, b);
+						RAsmCode *ac = r_asm_assemble (core->rasm, b);
 						if (ac) {
 							r_io_write_at (core->io, addr, ac->bytes, ac->len);
 							r_asm_code_free (ac);
@@ -2256,7 +2289,7 @@ repeat:
 			r_asm_set_pc (core->rasm, core->addr);
 			char *f = r_file_slurp (file, NULL);
 			if (f) {
-				RAsmCode *acode = r_asm_massemble (core->rasm, f);
+				RAsmCode *acode = r_asm_assemble (core->rasm, f);
 				if (acode) {
 					char* hex = r_asm_code_get_hex (acode);
 					if (input[1] == '*') {

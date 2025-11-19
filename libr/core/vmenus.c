@@ -268,7 +268,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 			r_cons_printf (cons, "addr: 0x%08"PFMT64x"\n", core->addr);
 			r_cons_printf (cons, "pos: %d\n", x);
 			{
-				char *op_hex = r_asm_op_get_hex (&asmop);
+				char *op_hex = r_hex_bin2strdup(asmop.bytes, asmop.size);
 				char *res = r_print_hexpair (core->print, op_hex, -1);
 				r_cons_printf (cons, "hex: %s\n"Color_RESET, res);
 				free (res);
@@ -278,7 +278,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 			r_cons_printf (cons, Color_RESET"asm: %s\n"Color_RESET, op);
 			free (op);
 			expr = strdup (r_strbuf_get (&analop.esil));
-			r_asm_op_fini (&asmop);
+			r_anal_op_fini (&asmop);
 		}
 		{
 			r_cons_printf (cons, Color_RESET"esil: %s\n"Color_RESET, expr);

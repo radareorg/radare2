@@ -129,7 +129,7 @@ static int init_pdb7_root_stream(RPdb *pdb, int *root_page_list, int pages_amoun
 	pdb_stream = &(root_stream7->pdb_stream);
 
 	stream_file_get_size (&pdb_stream->stream_file, &data_size);
-	if (data_size > UT16_MAX || data_size < 1) {
+	if (data_size < 1) {
 		return 0;
 	}
 	char *data = (char *) calloc (1, R_MAX (data_size, 8));

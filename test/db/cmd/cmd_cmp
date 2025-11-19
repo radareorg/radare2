@@ -457,7 +457,6 @@ match 1.000000 sym.imp.uuid_unparse_upper
 match 1.000000 sym.imp.warn
 match 1.000000 sym.imp.warnx
 match 1.000000 sym.imp.wcwidth
-match 1.000000 sym.imp.write
 --
 sym.func.100003a1c
 match 0.866667 sym.func.100003a54

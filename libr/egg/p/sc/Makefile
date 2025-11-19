@@ -20,4 +20,11 @@ clean:
 	rm -rf out
 	rm -f *.c
 
-.PHONY: all clean
+# Test target: verify rasm2 output matches original shellcodes
+test: test-shellcodes
+
+test-shellcodes:
+	@echo "Testing shellcode assembly..."
+	@$(SHELL) ../../../../sys/test-egg-shellcodes.sh .
+
+.PHONY: all clean test test-shellcodes

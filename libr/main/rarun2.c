@@ -50,7 +50,7 @@ R_API int r_main_rarun2(int argc, const char **argv) {
 		bool noMoreDirectives = false;
 		int directiveIndex = 0;
 		p = r_run_new (NULL);
-		for (i = *file ? 1 : 2; i < argc; i++) {
+		for (i = *file? 1: 2; i < argc; i++) {
 			if (!strcmp (argv[i], "--")) {
 				noMoreDirectives = true;
 				continue;
@@ -61,7 +61,7 @@ R_API int r_main_rarun2(int argc, const char **argv) {
 					? r_str_newf ("arg%d=%s", directiveIndex, word)
 					: r_str_newf ("program=%s", word);
 				r_run_parseline (p, line);
-				directiveIndex ++;
+				directiveIndex++;
 				free (line);
 			} else {
 				r_run_parseline (p, argv[i]);

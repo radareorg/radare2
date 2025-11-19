@@ -45,7 +45,11 @@ static bool scanset_check(const char *scanset, char ch) {
 }
 
 static const char *scanset_parse(const char *fmt_ptr, char *scanset, size_t scanset_size) {
-	char *scanset_last = scanset + sizeof (scanset);
+	if (scanset_size == 0) {
+		R_LOG_ERROR ("Invalid scanset buffer size");
+		return NULL;
+	}
+	char *scanset_last = scanset + scanset_size - 1;
 	char *scanset_cur = scanset;
 	*scanset_cur = 0;
 	fmt_ptr++;

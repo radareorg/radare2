@@ -63,6 +63,13 @@ def parse_args():
 		description="Format files using clang-format followed by radare2 indentation rules."
 	)
 	parser.add_argument(
+		"-i",
+		"--in-place",
+		dest="in_place",
+		action="store_true",
+		help="Do nothing, because that's the default behaviour, for muscle memory compatibility reasons with clang-format",
+	)
+	parser.add_argument(
 		"-n",
 		"--no-update",
 		dest="no_update",
@@ -349,7 +356,50 @@ def fix_ternary_spacing(line):
 
 
 def fix_hash_spacing(line):
-	return re.sub(r'\s*##\s*', ' ## ', line)
+	in_single = False
+	in_double = False
+	escape = False
+	result = []
+	length = len(line)
+	i = 0
+	while i < length:
+		ch = line[i]
+		if escape:
+			result.append(ch)
+			escape = False
+			i += 1
+			continue
+		if ch == "\\" and (in_single or in_double):
+			result.append(ch)
+			escape = True
+			i += 1
+			continue
+		if ch == "'" and not in_double:
+			in_single = not in_single
+			result.append(ch)
+			i += 1
+			continue
+		if ch == '"' and not in_single:
+			in_double = not in_double
+			result.append(ch)
+			i += 1
+			continue
+		if not in_single and not in_double and ch == '#' and i + 1 < length and line[i+1] == '#':
+			# Found ##, replace surrounding spaces
+			# Remove trailing spaces before ##
+			while result and result[-1] == ' ':
+				result.pop()
+			result.append(' ')
+			result.append('##')
+			result.append(' ')
+			i += 2
+			# Skip leading spaces after ##
+			while i < length and line[i] == ' ':
+				i += 1
+			continue
+		result.append(ch)
+		i += 1
+	return "".join(result)
 
 
 def fix_logical_spacing(line):
@@ -468,6 +518,31 @@ def fix_preprocessor_line(line):
 	return adjusted + ending
 
 
+def fix_multiline_comments(lines):
+	result = []
+	in_comment = False
+	for line in lines:
+		content, ending = split_line_ending(line)
+		stripped = content.strip()
+		if '/*' in stripped and not in_comment:
+			in_comment = True
+		if in_comment and re.match(r'^\s*\*', content):
+			# Ensure exactly one space before *
+			match = re.match(r'^(\s*)\*(.*)$', content)
+			if match:
+				indent = match.group(1)
+				rest = match.group(2)
+				if indent and indent[-1] != ' ':
+					indent += ' '
+				elif not indent:
+					indent = ' '
+				content = indent + '*' + rest
+		if '*/' in stripped and in_comment:
+			in_comment = False
+		result.append(content + ending)
+	return result
+
+
 def fix_ternary_lines(lines):
 	fixed = []
 	i = 0
@@ -518,6 +593,7 @@ def apply_indent_rules(text):
 		lines.append(line)
 	lines = fix_case_blocks(lines)
 	lines = fix_ternary_lines(lines)
+	lines = fix_multiline_comments(lines)
 	return "".join(lines)
 
 

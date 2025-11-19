@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2007-2025 - pancake */
 
+#include <limits.h>
 #include <r_bin.h>
 #include <r_userconf.h>
 
@@ -1005,16 +1006,19 @@ R_API R_MUSTUSE char *r_str_replace_icase(char *str, const char *key, const char
 		if (keep_case) {
 			char *tmp_val = strdup (val);
 			char *str_case = r_str_ndup (p, klen);
+			char *tmp_val_replaced;
 			if (!tmp_val || !str_case) {
 				free (tmp_val);
 				free (str_case);
 				return NULL;
 			}
-			tmp_val = r_str_replace_icase (tmp_val, key, str_case, 0, 0);
+			tmp_val_replaced = r_str_replace_icase (tmp_val, key, str_case, 0, 0);
 			free (str_case);
-			if (!tmp_val) {
+			if (!tmp_val_replaced) {
+				free (tmp_val);
 				return NULL;
 			}
+			tmp_val = tmp_val_replaced;
 			memcpy (p, tmp_val, vlen);
 			free (tmp_val);
 		} else {
@@ -1559,7 +1563,7 @@ R_API char *r_str_escape_utf32be(const char *buf, int buf_size, bool show_asciid
 	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF32BE, show_asciidot, esc_bslash, false);
 }
 
-static char *escape_and_strip(const char *buf, int buf_size) {
+static char *escape_utf8(const char *buf, int buf_size, bool escape_non_printable) {
 	char *new_buf, *q;
 	const char *p, *end;
 	RRune ch;
@@ -1612,7 +1616,15 @@ static char *escape_and_strip(const char *buf, int buf_size) {
 			default:
 				if (IS_PRINTABLE (*p)) {
 					*q++ = *p;
+				} else if (escape_non_printable) {
+					*q++ = '\\';
+					*q++ = 'u';
+					*q++ = '0';
+					*q++ = '0';
+					*q++ = "0123456789abcdef"[*p >> 4 & 0xf];
+					*q++ = "0123456789abcdef"[*p & 0xf];
 				}
+				// else skip non-printable
 			}
 		} else if (ch_bytes == 4) {
 			if (r_isprint (ch)) {
@@ -1652,13 +1664,27 @@ static char *escape_and_strip(const char *buf, int buf_size) {
 					*q++ = "0123456789abcdef"[ch >> 4 * i & 0xf];
 				}
 			}
-		} else {
+		} else { // ch_bytes == 0
+			if (escape_non_printable) {
+				// Outside JSON spec, but apparently no better
+				// alternative if need to reconstruct the original string
+				*q++ = '\\';
+				*q++ = 'u';
+				*q++ = '0';
+				*q++ = '0';
+				*q++ = "0123456789abcdef"[*p >> 4 & 0xf];
+				*q++ = "0123456789abcdef"[*p & 0xf];
+			}
 			ch_bytes = 1;
 		}
 		p += ch_bytes;
 	}
 	*q = '\0';
 	return new_buf;
+}
+
+static char *escape_and_strip(const char *buf, int buf_size) {
+	return escape_utf8 (buf, buf_size, false);
 }
 
 R_API char *r_str_encoded_json(const char *buf, int buf_size, int encoding) {
@@ -1706,127 +1732,7 @@ R_API char *r_str_encoded_json(const char *buf, int buf_size, int encoding) {
 
 // TODO: very long and bad name here
 R_API char *r_str_escape_json(const char *buf, int buf_size) {
-	char *new_buf, *q;
-	const char *p, *end;
-	RRune ch;
-	int i, len, ch_bytes;
-
-	if (!buf) {
-		return NULL;
-	}
-	len = buf_size < 0 ? strlen (buf) : buf_size;
-	end = buf + len;
-	/* Worst case scenario, we convert every byte to \u00hh */
-	new_buf = malloc (1 + (len * 6));
-	if (!new_buf) {
-		return NULL;
-	}
-	p = buf;
-	q = new_buf;
-	while (p < end) {
-		ch_bytes = r_utf8_decode ((ut8 *)p, end - p, &ch);
-		if (ch_bytes == 1) {
-			switch (*p) {
-			case '\n':
-				*q++ = '\\';
-				*q++ = 'n';
-				break;
-			case '\r':
-				*q++ = '\\';
-				*q++ = 'r';
-				break;
-			case '\\':
-				*q++ = '\\';
-				*q++ = '\\';
-				break;
-			case '\t':
-				*q++ = '\\';
-				*q++ = 't';
-				break;
-			case '"' :
-				*q++ = '\\';
-				*q++ = '"';
-				break;
-			case '\f':
-				*q++ = '\\';
-				*q++ = 'f';
-				break;
-			case '\b':
-				*q++ = '\\';
-				*q++ = 'b';
-				break;
-			default:
-				if (!IS_PRINTABLE (*p)) {
-					*q++ = '\\';
-					*q++ = 'u';
-					*q++ = '0';
-					*q++ = '0';
-					*q++ = "0123456789abcdef"[*p >> 4 & 0xf];
-					*q++ = "0123456789abcdef"[*p & 0xf];
-				} else {
-					*q++ = *p;
-				}
-			}
-		} else if (ch_bytes == 4) {
-			if (r_isprint (ch)) {
-				// Assumes buf is UTF8-encoded
-				for (i = 0; i < ch_bytes; i++) {
-					*q++ = *(p + i);
-				}
-			} else {
-				RRune high, low;
-				ch -= 0x10000;
-				high = 0xd800 + (ch >> 10 & 0x3ff);
-				low = 0xdc00 + (ch & 0x3ff);
-				*q++ = '\\';
-				*q++ = 'u';
-				for (i = 2; i >= 0; i -= 2) {
-					*q++ = "0123456789abcdef"[high >> 4 * (i + 1) & 0xf];
-					*q++ = "0123456789abcdef"[high >> 4 * i & 0xf];
-				}
-				*q++ = '\\';
-				*q++ = 'u';
-				for (i = 2; i >= 0; i -= 2) {
-					*q++ = "0123456789abcdef"[low >> 4 * (i + 1) & 0xf];
-					*q++ = "0123456789abcdef"[low >> 4 * i & 0xf];
-				}
-			}
-		} else if (ch_bytes > 1) {
-			if (r_isprint (ch)) {
-				// Assumes buf is UTF8-encoded
-				for (i = 0; i < ch_bytes; i++) {
-					*q++ = *(p + i);
-				}
-			} else {
-				*q++ = '\\';
-				*q++ = 'u';
-				for (i = 2; i >= 0; i -= 2) {
-					*q++ = "0123456789abcdef"[ch >> 4 * (i + 1) & 0xf];
-					*q++ = "0123456789abcdef"[ch >> 4 * i & 0xf];
-				}
-			}
-		} else { // ch_bytes == 0
-			// Outside JSON spec, but apparently no better
-			// alternative if need to reconstruct the original string
-#if 1
-			*q++ = '\\';
-			*q++ = 'u';
-			*q++ = '0';
-			*q++ = '0';
-			*q++ = "0123456789abcdef"[*p >> 4 & 0xf];
-			*q++ = "0123456789abcdef"[*p & 0xf];
-#else
-			*q++ = '\\';
-			*q++ = 'x';
-			*q++ = "0123456789abcdef"[*p >> 4 & 0xf];
-			*q++ = "0123456789abcdef"[*p & 0xf];
-#endif
-			ch_bytes = 1;
-		}
-		p += ch_bytes;
-	}
-	*q = '\0';
-	return new_buf;
+	return escape_utf8 (buf, buf_size, true);
 }
 
 // https://daviddeley.com/autohotkey/parameters/parameters.htm#WINCRULES
@@ -1889,6 +1795,24 @@ R_API char *r_str_format_msvc_argv(size_t argc, const char **argv) {
 	return r_strbuf_drain_nofree (&sb);
 }
 
+static int rune_display_width(RRune ch) {
+	if (ch < 0x80) {
+		return 1;
+	}
+	// CJK and wide characters
+	if ((ch >= 0x1100 && ch <= 0x115F) ||  // Hangul Jamo
+	    (ch >= 0x2E80 && ch <= 0x9FFF) ||  // CJK
+	    (ch >= 0xAC00 && ch <= 0xD7AF) ||  // Hangul Syllables
+	    (ch >= 0xF900 && ch <= 0xFAFF) ||  // CJK Compatibility Ideographs
+	    (ch >= 0xFE10 && ch <= 0xFE1F) ||  // Vertical Forms
+	    (ch >= 0xFE30 && ch <= 0xFE4F) ||  // CJK Compatibility Forms
+	    (ch >= 0x1F000 && ch <= 0x1FFFF) || // Emojis and symbols
+	    (ch >= 0x20000 && ch <= 0x2FFFF)) { // CJK Extension B, C, D, E, F
+		return 2;
+	}
+	return 1;
+}
+
 static size_t __str_ansi_length(char const *str) {
 	size_t i = 1;
 	if (str[0] == 0x1b) {
@@ -1905,6 +1829,11 @@ static size_t __str_ansi_length(char const *str) {
 		if (str[i]) {
 			i++;
 		}
+	} else {
+		// not ANSI, get UTF-8 length
+		RRune ch;
+		int len = r_utf8_decode ((const ut8*)str, -1, &ch);
+		i = len > 0 ? len : 1;
 	}
 	return i;
 }
@@ -1915,8 +1844,15 @@ R_API size_t r_str_ansi_nlen(const char *str, size_t slen) {
 	if (slen > 0) {
 		while (str[i] && i < slen) {
 			size_t chlen = __str_ansi_length (str + i);
-			if (chlen == 1) {
-				len ++;
+			if (str[i] != 0x1b) {
+				// UTF-8 character
+				RRune ch;
+				int ulen = r_utf8_decode ((const ut8*)str + i, chlen, &ch);
+				if (ulen > 0) {
+					len += rune_display_width (ch);
+				} else {
+					len += 1; // invalid byte
+				}
 			}
 			i += chlen;
 		}
@@ -1924,8 +1860,15 @@ R_API size_t r_str_ansi_nlen(const char *str, size_t slen) {
 	}
 	while (str[i]) {
 		size_t chlen = __str_ansi_length (str + i);
-		if (chlen == 1) {
-			len ++;
+		if (str[i] != 0x1b) {
+			// UTF-8 character
+			RRune ch;
+			int ulen = r_utf8_decode ((const ut8*)str + i, chlen, &ch);
+			if (ulen > 0) {
+				len += rune_display_width (ch);
+			} else {
+				len += 1; // invalid byte
+			}
 		}
 		i += chlen;
 	}
@@ -1951,12 +1894,12 @@ R_API size_t r_str_ansi_strip(char *str) {
 	while (str[i]) {
 		size_t chlen = __str_ansi_length (str + i);
 		size_t sanitize_len = __str_ansi_sanitize_length (str + i);
-		if (chlen > 1) {
+		if (str[i] == 0x1b && chlen > 1) {
 			r_str_cpy (str + i, str + i + chlen);
 		} else if (sanitize_len > 0) {
 			r_str_cpy (str + i, str + i + sanitize_len);
 		} else {
-			i++;
+			i += chlen;
 		}
 	}
 	return i;
@@ -1978,6 +1921,11 @@ R_API char *r_str_insert(R_OWN char *src, int pos, const char *str) {
 R_API size_t r_str_ansi_len(const char *str) {
 	R_RETURN_VAL_IF_FAIL (str, 0);
 	return r_str_ansi_nlen (str, 0);
+}
+
+R_API int r_str_display_width(const char *str) {
+	size_t len = r_str_ansi_len (str);
+	return (len > INT_MAX)? INT_MAX: (int)len;
 }
 
 R_API size_t r_str_nlen(const char *str, int n) {
@@ -2091,15 +2039,25 @@ R_API size_t r_wstr_clen(const char *s) {
 
 // TODO: rename to r_str_ansi_at() ? or find better name?
 R_API const char *r_str_ansi_chrn(const char *str, size_t n) {
-#if 0
-	size_t pos = r_str_ansi_nlen (str, at);
-	return str + pos;
-#endif
 	int len, i, li;
 	for (li = i = len = 0; str[i] && (n != len); i++) {
 		size_t chlen = __str_ansi_length (str + i);
 		if (chlen > 1) {
-			i += chlen - 1;
+			if (str[i] == 0x1b) {
+				// ANSI escape sequence, skip without incrementing len
+				i += chlen - 1;
+			} else {
+				// UTF-8 multibyte character
+				RRune ch;
+				int ulen = r_utf8_decode ((const ut8*)str + i, chlen, &ch);
+				if (ulen > 0) {
+					len += rune_display_width (ch);
+				} else {
+					len += 1; // invalid, assume 1
+				}
+				i += chlen - 1;
+				li = i;
+			}
 		} else {
 			if ((str[i] & 0xc0) != 0x80) {
 				len++;
@@ -2826,6 +2784,14 @@ R_API size_t r_str_len_utf8_ansi(const char *str) {
 		char ch = str[i];
 		size_t chlen = __str_ansi_length (str + i);
 		if (chlen > 1) {
+			if (str[i] != 0x1b) {
+				len++; // multi-byte UTF-8
+				if (str_len - i >= 4) {
+					if (r_str_char_fullwidth (str + i, 4)) {
+						fullwidths++;
+					}
+				}
+			}
 			i += chlen - 1;
 		} else if ((ch & 0xc0) != 0x80) { // utf8
 			len++;
@@ -3308,12 +3274,12 @@ R_API char *r_str_crop(const char *str, unsigned int x, unsigned int y,
 	return ret;
 }
 
-// TODO: improve loop to wrap by words
+// TODO: improve loop to wrap by words. add a boolean to wrap by words
 R_API char *r_str_wrap(const char *str, int w) {
 	if (w < 1 || !str) {
 		return strdup ("");
 	}
-	size_t r_size = 8 * strlen (str);
+	size_t r_size = 8 * r_utf8_strlen ((const ut8 *)str);
 	char *r = malloc (r_size);
 	if (!r) {
 		return NULL;
@@ -3324,28 +3290,66 @@ R_API char *r_str_wrap(const char *str, int w) {
 	while (*str && r + 1 < end) {
 		size_t ansilen = __str_ansi_length (str);
 		if (ansilen > 1) {
-			memcpy (r, str, ansilen);
-			str += ansilen;
-			r += ansilen;
-			continue;
+			if (*str == 0x1b) {
+				// ANSI
+				memcpy (r, str, ansilen);
+				str += ansilen;
+				r += ansilen;
+				continue;
+			} else {
+				// UTF-8 multi-byte
+				RRune ch;
+				int ulen = r_utf8_decode((const ut8*)str, ansilen, &ch);
+				if (ulen > 0) {
+					int dw = rune_display_width(ch);
+					if (cw + dw > w) {
+						*r++ = '\n';
+						cw = dw;
+					} else {
+						cw += dw;
+					}
+					memcpy (r, str, ansilen);
+					str += ansilen;
+					r += ansilen;
+				} else {
+					// invalid
+					if (cw >= w) {
+						*r++ = '\n';
+						cw = 1;
+					} else {
+						cw++;
+					}
+					*r++ = *str++;
+				}
+				continue;
+			}
 		}
 		if (*str == '\t') {
-			// skip
+			str++;
 		} else if (*str == '\r') {
-			// skip
+			str++;
 		} else if (*str == '\n') {
 			*r++ = *str++;
 			cw = 0;
-		} else {
-			if (cw > w) {
+		} else if (*str == ' ') {
+			if (cw >= w) {
 				*r++ = '\n';
-				*r++ = *str++;
 				cw = 1;
 			} else {
-				*r++ = *str++;
 				cw++;
 			}
+			*r++ = *str++;
+			continue;
+		} else {
+		if (cw > w) {
+			*r++ = '\n';
+			*r++ = *str++;
+			cw = 1;
+		} else {
+			*r++ = *str++;
+			cw++;
 		}
+	}
 	}
 	*r = 0;
 	return ret;
@@ -3383,20 +3387,26 @@ R_API const char *r_str_pad(const char ch, int sz) {
 }
 
 R_API char *r_str_pad2(char *pad, size_t padsz, const char ch, int sz) {
-	if (pad == NULL) {
-		pad = malloc (sz + 1);
+	if (sz < 0) {
+		sz = 0;
+	}
+	if (!pad) {
+		padsz = sz + 1;
+		pad = malloc (padsz);
 		if (!pad) {
 			return NULL;
 		}
 	}
-	if (sz < 0) {
-		sz = 0;
+	if (!padsz) {
+		return pad;
 	}
-	memset (pad, ch, R_MIN (sz, sizeof (pad)));
-	if (sz < sizeof (pad)) {
-		pad[sz] = 0;
+	if (padsz == 1) {
+		pad[0] = 0;
+		return pad;
 	}
-	pad[sizeof (pad) - 1] = 0;
+	size_t fill = R_MIN ((size_t)sz, padsz - 1);
+	memset (pad, ch, fill);
+	pad[fill] = 0;
 	return pad;
 }
 
@@ -3795,6 +3805,7 @@ err_r_str_mb_to_wc:
 	return res_buf;
 }
 
+// XXX: this function name is awful
 R_API char* r_str_wc_to_mb_l(const wchar_t *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (buf, NULL);
 	char *res_buf = NULL;

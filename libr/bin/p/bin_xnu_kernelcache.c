@@ -1,11 +1,6 @@
-/* radare2 - LGPL - Copyright 2019-2023 - mrmacete */
+/* radare2 - LGPL - Copyright 2019-2025 - mrmacete */
 
-#include <r_types.h>
-#include <r_util.h>
-#include <r_lib.h>
-#include <r_bin.h>
 #include <r_core.h>
-#include <r_syscall.h>
 
 #define R_BIN_MACH064 1
 #include "../format/mach0/mach0.h"
@@ -1157,17 +1152,17 @@ static void process_constructors_vec(RVecRBinSymbol *symbols, RBinFile *bf, RKer
 				// r_list_append (ret, ba);
 				// XXX RVecRBinSymbol_push_back (&(bf->bo->symbols_vec), ba);
 			} else if (mode == R_K_CONSTRUCTOR_TO_SYMBOL) {
-				RBinSymbol *sym = R_NEW0 (RBinSymbol);
-				sym->name = r_bin_name_new_from (
+				RBinSymbol sym = {0};
+				sym.name = r_bin_name_new_from (
 							r_str_newf ("%s.%s.%d", prefix, (type == R_BIN_ENTRY_TYPE_INIT) ? "init" : "fini", count++)
-						);
-				sym->vaddr = addr64;
-				sym->paddr = paddr64;
-				sym->size = 0;
-				sym->forwarder = "NONE";
-				sym->bind = "GLOBAL";
-				sym->type = "FUNC";
-				RVecRBinSymbol_push_back (symbols, sym);
+					);
+				sym.vaddr = addr64;
+				sym.paddr = paddr64;
+				sym.size = 0;
+				sym.forwarder = "NONE";
+				sym.bind = "GLOBAL";
+				sym.type = "FUNC";
+				RVecRBinSymbol_push_back (symbols, &sym);
 			}
 		}
 		free (buf);
@@ -3018,6 +3013,9 @@ static void rebase_buffer_fixup(RKernelCacheObj *kobj, ut64 off, RIODesc *fd, ut
 				if (page_idx >= obj->chained_starts[i]->page_count) {
 					break;
 				}
+				if (!obj->chained_starts[i]->page_start) {
+					break;
+				}
 				ut16 page_start = obj->chained_starts[i]->page_start[page_idx];
 				if (page_start == DYLD_CHAINED_PTR_START_NONE) {
 					continue;
@@ -3100,7 +3098,6 @@ RBinPlugin r_bin_plugin_xnu_kernelcache = {
 	.load = &load,
 	.entries = &entries,
 	.baddr = &baddr,
-	// .symbols = &symbols,
 	.symbols_vec = &symbols_vec,
 	.sections = &sections,
 	.classes = &classes,
