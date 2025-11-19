@@ -4,6 +4,7 @@
 #include "r_util/r_str.h"
 #include "r_util/r_sys.h"
 #include <r_main.h>
+#include <r_lib.h>
 #define USE_THREADS 1
 #define ALLOW_THREADED 1
 #ifdef _MSC_VER
@@ -285,6 +286,7 @@ static int main_help(int line) {
 				" R2_CURL         set to '1' to use system curl program instead of r2 apis\n");
 		r_strbuf_appendf (sb, " R2_DATA_HOME    %s\n"
 				" R2_VERSION      contains the current version of r2\n"
+				" R2_ABIVERSION   contains the ABI version of r2\n"
 				" R2_LOG_LEVEL    numeric value of the max level of messages to show\n"
 				" R2_LOG_FILE     dump all logs to a file\n"
 				"Paths:\n"
@@ -338,6 +340,7 @@ static int main_print_var(const char *var_name) {
 		const char *value;
 	} r2_vars[] = {
 		{ "R2_VERSION", R2_VERSION },
+		{ "R2_ABIVERSION", R2_ABIVERSION_STR },
 		{ "R2_PREFIX", r2prefix },
 		{ "R2_MAGICPATH", magicpath },
 		{ "R2_INCDIR", incdir },
@@ -756,7 +759,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		return main_help (1);
 	}
 	// Pre-RCore commandline flags
-	RGetopt opt = {0};
+	RGetopt opt = { 0 };
 	r_getopt_init (&opt, argc, argv, OPTARGS);
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
@@ -1063,9 +1066,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			break;
 		case 'V':
 			{
-			int rc = r_main_version_verify (r, 1, mr.json);
-			mainr2_fini (&mr);
-			return rc;
+				int rc = r_main_version_verify (r, 1, mr.json);
+				mainr2_fini (&mr);
+				return rc;
 			}
 		case 'w':
 			mr.perms |= R_PERM_W;
