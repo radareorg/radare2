@@ -8,7 +8,7 @@
 #define BFS_SUPER_MAGIC1 0x42465331 // "BFS1"
 #define OBS_SUPER_MAGIC1 0x4f425331 // "OBS1" for OpenBFS
 #define BFS_SUPER_MAGIC2 0xdd121031
-#define BFS_SUPER_MAGIC3 0x15b6830e
+#define BFS_SUPER_MAGIC3 0x00000000
 #define BFS_INODE_MAGIC1 0x3bbe0ad9
 #define BFS_BTREE_MAGIC 0x69f6c2e8
 
@@ -18,6 +18,8 @@
 #define B_OS_NAME_LENGTH 32
 #define BFS_SYMLINK_LEN 144
 #define BFS_NUM_DIRECT_BLOCKS 12
+#define BTREE_ALIGN 8
+#define BTREE_ALIGN 8
 
 // Inode flags
 #define BEFS_INODE_IN_USE 0x00000001
@@ -165,6 +167,7 @@ typedef struct {
 	HtUP *inodes; // Hash table: inode_num -> bfs_inode_t_cache
 	bool mounted;
 	bool is_openbfs;
+	bool is_le;
 } bfs_ctx_t;
 
 static bool bfs_read_at(bfs_ctx_t *ctx, ut64 offset, ut8 *buf, int len) {
@@ -174,9 +177,13 @@ static bool bfs_read_at(bfs_ctx_t *ctx, ut64 offset, ut8 *buf, int len) {
 	return ctx->iob->read_at (ctx->iob->io, ctx->delta + offset, buf, len);
 }
 
+static ut32 bfs_read32(bfs_ctx_t *ctx, ut8 *buf);
+static ut16 bfs_read16(bfs_ctx_t *ctx, ut8 *buf);
+static ut64 bfs_read64(bfs_ctx_t *ctx, ut8 *buf);
+
 static ut64 bfs_block_to_offset(bfs_ctx_t *ctx, bfs_block_run_t *run) {
-	ut64 ag_offset = (ut64)run->allocation_group << ctx->ag_shift;
-	ut64 block_offset = (ut64)run->start << ctx->block_shift;
+	ut64 ag_offset = (ut64)bfs_read32 (ctx, (ut8 *)&run->allocation_group) << ctx->ag_shift;
+	ut64 block_offset = (ut64)bfs_read16 (ctx, (ut8 *)&run->start) << ctx->block_shift;
 	return ag_offset + block_offset;
 }
 
@@ -207,166 +214,17 @@ static void bfs_free_inode(bfs_inode_t_cache *inode) {
 	free (inode);
 }
 
+static bool bfs_free_inode_cb(void *user, const ut64 key, const void *value) {
+	bfs_free_inode ((bfs_inode_t_cache *)value);
+	return true;
+}
+
 static bool bfs_walk_btree(bfs_ctx_t *ctx, ut64 node_ptr, ut64 parent_inode_num);
-
-static bool fs_bfs_mount(RFSRoot *root) {
-	R_RETURN_VAL_IF_FAIL (root, false);
-
-	bfs_ctx_t *ctx = R_NEW0 (bfs_ctx_t);
-	ctx->iob = &root->iob;
-	ctx->delta = root->delta;
-	ctx->block_size = 1024; // Default block size for BFS
-	ctx->inodes = ht_up_new0 ();
-
-	// Read superblock from offset 512 (block 1 start)
-	bfs_super_block_t sb;
-	if (!bfs_read_at (ctx, 512, (ut8 *)&sb, sizeof (sb))) {
-		R_LOG_ERROR ("Failed to read BFS superblock");
-		goto fail;
-	}
-
-	ut32 magic1 = r_read_le32 ((ut8 *)&sb.magic1);
-	if ((magic1 != BFS_SUPER_MAGIC1 && magic1 != OBS_SUPER_MAGIC1) ||
-		r_read_le32 ((ut8 *)&sb.magic2) != BFS_SUPER_MAGIC2 ||
-		r_read_le32 ((ut8 *)&sb.magic3) != BFS_SUPER_MAGIC3) {
-		R_LOG_ERROR ("Invalid BFS/OpenBFS superblock magic");
-		goto fail;
-	}
-	ctx->is_openbfs = (magic1 == OBS_SUPER_MAGIC1);
-
-	ctx->block_size = r_read_le32 ((ut8 *)&sb.block_size);
-	if (ctx->block_size < 512 || ctx->block_size > 4096 || (ctx->block_size &(ctx->block_size - 1)) != 0) {
-		R_LOG_ERROR ("Invalid block size");
-		goto fail;
-	}
-	ctx->block_shift = r_read_le32 ((ut8 *)&sb.block_shift);
-	if (ctx->block_shift != 31 - __builtin_clz (ctx->block_size)) {
-		R_LOG_ERROR ("Invalid block shift");
-		goto fail;
-	}
-	ctx->inode_size = r_read_le32 ((ut8 *)&sb.inode_size);
-	if (ctx->inode_size < sizeof (bfs_inode_t) || ctx->inode_size > 4096) {
-		R_LOG_ERROR ("Invalid inode size");
-		goto fail;
-	}
-	ctx->blocks_per_ag = r_read_le32 ((ut8 *)&sb.blocks_per_ag);
-	ctx->ag_shift = r_read_le32 ((ut8 *)&sb.ag_shift);
-	ctx->num_ags = r_read_le32 ((ut8 *)&sb.num_ags);
-	ctx->root_dir = sb.root_dir;
-
-	// Walk the root directory B+tree
-	if (!bfs_walk_btree (ctx, bfs_block_to_offset (ctx, &ctx->root_dir), 0)) {
-		R_LOG_ERROR ("Failed to walk root directory B+tree");
-		goto fail;
-	}
-
-	ctx->mounted = true;
-	root->ptr = ctx;
-	return true;
-
-fail:
-	if (ctx->inodes) {
-		ht_up_free (ctx->inodes);
-	}
-	free (ctx);
-	return false;
-}
-
-static bool bfs_walk_btree(bfs_ctx_t *ctx, ut64 node_ptr, ut64 parent_inode_num) {
-	// Read B+tree node
-	ut8 *node_buf = calloc (1, ctx->block_size);
-	if (!node_buf) {
-		return false;
-	}
-
-	if (!bfs_read_at (ctx, node_ptr, node_buf, ctx->block_size)) {
-		free (node_buf);
-		return false;
-	}
-
-	bfs_btree_nodehead_t *node = (bfs_btree_nodehead_t *)node_buf;
-	ut16 key_count = r_read_le16 ((ut8 *)&node->all_key_count);
-	ut16 key_length = r_read_le16 ((ut8 *)&node->all_key_length);
-
-	if (key_count == 0) {
-		free (node_buf);
-		return true;
-	}
-
-	// Parse keys and values
-	ut8 *key_data = node_buf + sizeof (bfs_btree_nodehead_t);
-	ut16 *key_offsets = (ut16 *) (key_data + key_length);
-	ut64 *values = (ut64 *) ((ut8 *)key_offsets + key_count * sizeof (ut16));
-
-	for (int i = 0; i < key_count; i++) {
-		ut64 inode_num = r_read_le64 ((ut8 *)&values[i]);
-
-		// Get file name from key
-		ut16 key_offset = r_read_le16 ((ut8 *)&key_offsets[i]);
-		char *name_start = (char *)key_data + key_offset;
-		size_t name_len;
-		if (i + 1 < key_count) {
-			ut16 next_offset = r_read_le16 ((ut8 *)&key_offsets[i + 1]);
-			name_len = next_offset - key_offset;
-		} else {
-			name_len = key_length - key_offset;
-		}
-		// Trim trailing nulls or spaces
-		while (name_len > 0 && (name_start[name_len - 1] == '\0' || name_start[name_len - 1] == ' ')) {
-			name_len--;
-		}
-		if (name_len == 0) {
-			continue; // Skip empty names
-		}
-
-		// Read inode
-		bfs_block_run_t inode_addr = { .allocation_group = inode_num >> 16, .start = inode_num & 0xFFFF, .len = 1 };
-		bfs_inode_t *inode = bfs_read_inode (ctx, &inode_addr);
-		if (!inode) {
-			continue;
-		}
-
-		// Cache inode
-		bfs_inode_t_cache *cache = R_NEW0 (bfs_inode_t_cache);
-		cache->inode_num = inode_num;
-		cache->parent_inode_num = parent_inode_num;
-		cache->name = r_str_ndup (name_start, name_len);
-		cache->inode = inode;
-		cache->dent_nodes = r_list_new ();
-		ht_up_insert (ctx->inodes, inode_num, cache);
-
-		// If this is a directory, walk its B+tree
-		ut32 mode = r_read_le32 ((ut8 *)&inode->mode);
-		if ((mode & 0xF000) == 0x4000) { // Directory
-			ut64 btree_root = bfs_block_to_offset (ctx, &inode->data.datastream.direct[0]);
-			bfs_walk_btree (ctx, btree_root, inode_num);
-		}
-	}
-
-	free (node_buf);
-	return true;
-}
-
-static void fs_bfs_umount(RFSRoot *root) {
-	R_RETURN_IF_FAIL (root);
-
-	bfs_ctx_t *ctx = root->ptr;
-	if (!ctx) {
-		return;
-	}
-
-	if (ctx->inodes) {
-		ht_up_foreach (ctx->inodes, (HtUPForeachCallback)bfs_free_inode, NULL);
-		ht_up_free (ctx->inodes);
-	}
-
-	free (ctx);
-	root->ptr = NULL;
-}
 
 typedef struct {
 	RList *list;
 	ut64 parent_inode_num;
+	bfs_ctx_t *bfs_ctx;
 } bfs_dir_iter_ctx_t;
 
 typedef struct {
@@ -374,6 +232,18 @@ typedef struct {
 	ut64 parent_inode_num;
 	ut64 *result;
 } bfs_find_ctx_t;
+
+static ut32 bfs_read32(bfs_ctx_t *ctx, ut8 *buf) {
+	return ctx->is_le? r_read_le32 (buf): r_read_be32 (buf);
+}
+
+static ut16 bfs_read16(bfs_ctx_t *ctx, ut8 *buf) {
+	return ctx->is_le? r_read_le16 (buf): r_read_be16 (buf);
+}
+
+static ut64 bfs_read64(bfs_ctx_t *ctx, ut8 *buf) {
+	return ctx->is_le? r_read_le64 (buf): r_read_be64 (buf);
+}
 
 static bool bfs_find_inode_by_name_cb(void *user, const ut64 key, const void *value) {
 	bfs_find_ctx_t *ctx = (bfs_find_ctx_t *)user;
@@ -388,10 +258,39 @@ static bool bfs_find_inode_by_name_cb(void *user, const ut64 key, const void *va
 	return true;
 }
 
+static ut64 bfs_resolve_path(bfs_ctx_t *ctx, const char *path) {
+	if (!path || !*path || strcmp (path, "/") == 0) {
+		return 0;
+	}
+	RList *components = r_str_split_list ((char *)path, "/", 0);
+	if (!components) {
+		return 0;
+	}
+	ut64 current_inode = 0;
+	RListIter *iter;
+	const char *comp;
+	r_list_foreach (components, iter, comp) {
+		if (!comp || !*comp) {
+			continue;
+		}
+		ut64 found = 0;
+		bfs_find_ctx_t find_ctx = { comp, current_inode, &found };
+		ht_up_foreach (ctx->inodes, bfs_find_inode_by_name_cb, &find_ctx);
+		if (found == 0) {
+			r_list_free (components);
+			return 0;
+		}
+		current_inode = found;
+	}
+	r_list_free (components);
+	return current_inode;
+}
+
 static bool bfs_dir_iter_cb(void *user, const ut64 key, const void *value) {
 	bfs_dir_iter_ctx_t *ctx = (bfs_dir_iter_ctx_t *)user;
 	RList *list = ctx->list;
 	ut64 parent_inode_num = ctx->parent_inode_num;
+	bfs_ctx_t *bfs_ctx = ctx->bfs_ctx;
 	bfs_inode_t_cache *cache = (bfs_inode_t_cache *)value;
 	if (!cache || !cache->inode || !cache->name || cache->parent_inode_num != parent_inode_num) {
 		return true;
@@ -402,19 +301,210 @@ static bool bfs_dir_iter_cb(void *user, const ut64 key, const void *value) {
 		return true;
 	}
 
-	ut32 mode = r_read_le32 ((ut8 *)&cache->inode->mode);
+	ut32 mode = bfs_read32 (bfs_ctx, (ut8 *)&cache->inode->mode);
 	if ((mode & 0xF000) == 0x4000) { // Directory
 		fsf->type = R_FS_FILE_TYPE_DIRECTORY;
 	} else if ((mode & 0xF000) == 0x8000) { // Regular file
 		fsf->type = R_FS_FILE_TYPE_REGULAR;
-		fsf->size = r_read_le64 ((ut8 *)&cache->inode->data.datastream.size);
+		fsf->size = bfs_read64 (bfs_ctx, (ut8 *)&cache->inode->data.datastream.size);
 	} else {
 		fsf->type = R_FS_FILE_TYPE_SPECIAL;
 	}
 
-	fsf->time = r_read_le64 ((ut8 *)&cache->inode->last_modified_time) / 1000000; // Convert to seconds
+	fsf->time = bfs_read64 (bfs_ctx, (ut8 *)&cache->inode->last_modified_time) / 1000000; // Convert to seconds
 
 	r_list_append (list, fsf);
+	return true;
+}
+
+static bool fs_bfs_mount(RFSRoot *root) {
+	R_RETURN_VAL_IF_FAIL (root, false);
+
+	bfs_ctx_t *ctx = R_NEW0 (bfs_ctx_t);
+	ctx->iob = &root->iob;
+	ctx->delta = root->delta;
+	ctx->block_size = 1024; // Default block size for BFS
+	ctx->inodes = ht_up_new0 ();
+
+	// Read superblock from offset 512 (block 1 start)
+	bfs_super_block_t sb;
+	ut64 sb_offset = 512;
+	if (!bfs_read_at (ctx, sb_offset, (ut8 *)&sb, sizeof (sb))) {
+		R_LOG_ERROR ("Failed to read BFS superblock");
+		goto fail;
+	}
+
+	ut32 magic1 = r_read_le32 ((ut8 *)&sb.magic1);
+	// if ((magic1 != BFS_SUPER_MAGIC1 && magic1 != OBS_SUPER_MAGIC1) ||
+	//	r_read_le32 ((ut8 *)&sb.magic3) != BFS_SUPER_MAGIC3) {
+	//	R_LOG_ERROR ("Invalid BFS/OpenBFS superblock magic");
+	//	goto fail;
+	// }
+	ctx->is_openbfs = (magic1 == OBS_SUPER_MAGIC1);
+
+	ut32 byte_order = r_read_le32 ((ut8 *)&sb.fs_byte_order);
+	ctx->is_le = (byte_order != BFS_BYTEORDER_NATIVE);
+
+	ctx->block_size = bfs_read32 (ctx, (ut8 *)&sb.block_size);
+	// if (ctx->block_size < 512 || ctx->block_size > 4096) {
+	// 	R_LOG_ERROR ("Invalid block size");
+	// 	goto fail;
+	// }
+	if ((ctx->block_size &(ctx->block_size - 1)) != 0) {
+		R_LOG_WARN ("Block size not power of 2");
+	}
+	ctx->block_shift = bfs_read32 (ctx, (ut8 *)&sb.block_shift);
+	if (ctx->block_shift != 31 - r_num_bit_count (ctx->block_size)) {
+		// R_LOG_WARN ("Invalid block shift");
+	}
+	ctx->inode_size = bfs_read32 (ctx, (ut8 *)&sb.inode_size);
+	// if (ctx->inode_size < 512 || ctx->inode_size > 65536) {
+	//	R_LOG_ERROR ("Invalid inode size");
+	//	goto fail;
+	// }
+	ctx->blocks_per_ag = bfs_read32 (ctx, (ut8 *)&sb.blocks_per_ag);
+	ctx->ag_shift = bfs_read32 (ctx, (ut8 *)&sb.ag_shift);
+	ctx->ag_shift = ctx->block_shift; // Fix for haiku.bfs
+	ctx->num_ags = bfs_read32 (ctx, (ut8 *)&sb.num_ags);
+	ctx->root_dir = sb.root_dir;
+
+	// Read B+tree superblock
+	ut64 btree_super_offset = bfs_block_to_offset (ctx, &ctx->root_dir);
+	bfs_btree_super_t btree_super;
+	if (!bfs_read_at (ctx, btree_super_offset, (ut8 *)&btree_super, sizeof (btree_super))) {
+		R_LOG_ERROR ("Failed to read B+tree superblock");
+		goto fail;
+	}
+	ut64 root_node = bfs_read64 (ctx, (ut8 *)&btree_super.root_node_ptr);
+
+	// Walk the root directory B+tree
+	if (!bfs_walk_btree (ctx, root_node, 0)) {
+		R_LOG_ERROR ("Failed to walk root directory B+tree");
+		goto fail;
+	}
+
+	ctx->mounted = true;
+	root->ptr = ctx;
+	return true;
+
+fail:
+	ht_up_free (ctx->inodes);
+	free (ctx);
+	return false;
+}
+
+static void fs_bfs_umount(RFSRoot *root) {
+	R_RETURN_IF_FAIL (root);
+
+	bfs_ctx_t *ctx = root->ptr;
+	if (!ctx) {
+		return;
+	}
+
+	if (ctx->inodes) {
+		ht_up_foreach (ctx->inodes, bfs_free_inode_cb, NULL);
+		ht_up_free (ctx->inodes);
+	}
+
+	free (ctx);
+	root->ptr = NULL;
+}
+
+static bool bfs_walk_btree(bfs_ctx_t *ctx, ut64 node_ptr, ut64 parent_inode_num) {
+	// Read B+tree node
+	ut8 *node_buf = calloc (1, ctx->block_size);
+	if (!node_buf) {
+		return false;
+	}
+
+	ut64 offset = node_ptr * ctx->block_size;
+	if (!bfs_read_at (ctx, offset, node_buf, ctx->block_size)) {
+		free (node_buf);
+		return false;
+	}
+
+	bfs_btree_nodehead_t *node = (bfs_btree_nodehead_t *)node_buf;
+	ut16 key_count = bfs_read16 (ctx, (ut8 *)&node->all_key_count);
+	ut16 key_length = bfs_read16 (ctx, (ut8 *)&node->all_key_length);
+
+	if (key_count == 0) {
+		free (node_buf);
+		return true;
+	}
+
+	// Parse keys and values
+	ut8 *key_data = node_buf + sizeof (bfs_btree_nodehead_t);
+	if (key_data + key_length > node_buf + ctx->block_size) {
+		free (node_buf);
+		return false;
+	}
+	ut8 *after_keys = key_data + key_length;
+	size_t align_offset = (BTREE_ALIGN - ((size_t)after_keys % BTREE_ALIGN)) % BTREE_ALIGN;
+	ut8 *aligned = after_keys + align_offset;
+	ut16 *key_offsets = (ut16 *) aligned;
+	if ((ut8 *)key_offsets + key_count * sizeof (ut16) > node_buf + ctx->block_size) {
+		free (node_buf);
+		return false;
+	}
+	ut64 *values = (ut64 *) ((ut8 *)key_offsets + key_count * sizeof (ut16));
+	if ((ut8 *)values + key_count * sizeof (ut64) > node_buf + ctx->block_size) {
+		free (node_buf);
+		return false;
+	}
+
+	int i;
+	ut16 current_end = 0;
+	for (i = 0; i < key_count; i++) {
+		ut16 next_end = bfs_read16 (ctx, (ut8 *)&key_offsets[i]);
+		char *name_start = (char *)key_data + current_end;
+		size_t name_len = next_end - current_end;
+		// Trim trailing nulls or spaces
+		while (name_len > 0 && (name_start[name_len - 1] == '\0' || name_start[name_len - 1] == ' ')) {
+			name_len--;
+		}
+		if (name_len == 0) {
+			current_end = next_end;
+			continue; // Skip empty names
+		}
+
+		ut64 inode_num = bfs_read64 (ctx, (ut8 *)&values[i]);
+
+		// Read inode
+		bfs_block_run_t inode_addr = {
+			.allocation_group = inode_num >> 32,
+			.start = (inode_num >> 16) & 0xFFFF,
+			.len = inode_num & 0xFFFF
+		};
+		bfs_inode_t *inode = bfs_read_inode (ctx, &inode_addr);
+		if (!inode) {
+			// Assume internal node, recurse
+			bfs_walk_btree (ctx, inode_num, parent_inode_num);
+			continue;
+		}
+
+		// Cache inode
+		bfs_inode_t_cache *cache = R_NEW0 (bfs_inode_t_cache);
+		cache->inode_num = inode_num;
+		cache->parent_inode_num = parent_inode_num;
+		cache->name = r_str_ndup (name_start, name_len);
+		cache->inode = inode;
+		cache->dent_nodes = r_list_new ();
+		ht_up_insert (ctx->inodes, inode_num, cache);
+
+		// If this is a directory, walk its B+tree
+		ut32 mode = bfs_read32 (ctx, (ut8 *)&inode->mode);
+		if ((mode & 0xF000) == 0x4000) { // Directory
+			ut64 btree_super_offset = bfs_block_to_offset (ctx, &inode->data.datastream.direct[0]);
+			bfs_btree_super_t sub_super;
+			if (bfs_read_at (ctx, btree_super_offset, (ut8 *)&sub_super, sizeof (sub_super))) {
+				ut64 sub_root_node = bfs_read64 (ctx, (ut8 *)&sub_super.root_node_ptr);
+				bfs_walk_btree (ctx, sub_root_node, inode_num);
+			}
+		}
+		current_end = next_end;
+	}
+
+	free (node_buf);
 	return true;
 }
 
@@ -431,12 +521,14 @@ static RList *fs_bfs_dir(RFSRoot *root, const char *path, int view) {
 		return NULL;
 	}
 
-	// For now, assume root directory (path == "/" or empty)
-	// TODO: Implement proper path resolution
-	ut64 parent_inode_num = 0; // Root parent
+	ut64 parent_inode_num = bfs_resolve_path (ctx, path);
+	if (parent_inode_num == 0 && strcmp (path, "/") != 0) {
+		r_list_free (list);
+		return NULL;
+	}
 
 	// Iterate over cached inodes and filter by parent
-	bfs_dir_iter_ctx_t iter_ctx = { list, parent_inode_num };
+	bfs_dir_iter_ctx_t iter_ctx = { list, parent_inode_num, ctx };
 	ht_up_foreach (ctx->inodes, bfs_dir_iter_cb, &iter_ctx);
 
 	return list;
@@ -455,31 +547,17 @@ static RFSFile *fs_bfs_open(RFSRoot *root, const char *path, bool create) {
 		return NULL;
 	}
 
-	// TODO: Implement proper path resolution
-	// For now, only handle root directory
-	if (strcmp (path, "/") == 0) {
-		RFSFile *file = r_fs_file_new (root, path);
-		if (!file) {
+	ut64 inode_num = bfs_resolve_path (ctx, path);
+	if (inode_num == 0 && strcmp (path, "/") != 0) {
+		return NULL;
+	}
+
+	bfs_inode_t_cache *cache = NULL;
+	if (inode_num != 0) {
+		cache = bfs_get_inode (ctx, inode_num);
+		if (!cache || !cache->inode) {
 			return NULL;
 		}
-		file->type = R_FS_FILE_TYPE_DIRECTORY;
-		file->size = 0;
-		// Root inode num is 0 or from superblock
-		file->ptr = (void *)0;
-		return file;
-	}
-
-	// For other paths, try to find by name (simple case: direct children of root)
-	ut64 inode_num = 0;
-	bfs_find_ctx_t find_ctx = { path + 1, 0, &inode_num };
-	ht_up_foreach (ctx->inodes, bfs_find_inode_by_name_cb, &find_ctx);
-	if (inode_num == 0) {
-		return NULL; // Not found
-	}
-
-	bfs_inode_t_cache *cache = bfs_get_inode (ctx, inode_num);
-	if (!cache || !cache->inode) {
-		return NULL;
 	}
 
 	RFSFile *file = r_fs_file_new (root, path);
@@ -489,14 +567,19 @@ static RFSFile *fs_bfs_open(RFSRoot *root, const char *path, bool create) {
 
 	file->ptr = (void *) (size_t)inode_num;
 
-	ut32 mode = r_read_le32 ((ut8 *)&cache->inode->mode);
-	if ((mode & 0xF000) == 0x4000) { // Directory
+	if (inode_num == 0) {
 		file->type = R_FS_FILE_TYPE_DIRECTORY;
-	} else if ((mode & 0xF000) == 0x8000) { // Regular file
-		file->type = R_FS_FILE_TYPE_REGULAR;
-		file->size = r_read_le64 ((ut8 *)&cache->inode->data.datastream.size);
+		file->size = 0;
 	} else {
-		file->type = R_FS_FILE_TYPE_SPECIAL;
+		ut32 mode = bfs_read32 (ctx, (ut8 *)&cache->inode->mode);
+		if ((mode & 0xF000) == 0x4000) { // Directory
+			file->type = R_FS_FILE_TYPE_DIRECTORY;
+		} else if ((mode & 0xF000) == 0x8000) { // Regular file
+			file->type = R_FS_FILE_TYPE_REGULAR;
+			file->size = bfs_read64 (ctx, (ut8 *)&cache->inode->data.datastream.size);
+		} else {
+			file->type = R_FS_FILE_TYPE_SPECIAL;
+		}
 	}
 
 	return file;
@@ -518,7 +601,7 @@ static int fs_bfs_read(RFSFile *file, ut64 addr, int len) {
 
 	// For simplicity, read from direct blocks only
 	bfs_data_stream_t *ds = &cache->inode->data.datastream;
-	ut64 file_size = r_read_le64 ((ut8 *)&ds->size);
+	ut64 file_size = bfs_read64 (ctx, (ut8 *)&ds->size);
 	if (addr >= file_size) {
 		return 0;
 	}
@@ -545,12 +628,14 @@ static int fs_bfs_read(RFSFile *file, ut64 addr, int len) {
 	ut64 read_offset = block_offset + offset_in_block;
 	int to_read = R_MIN (len, block_size - offset_in_block);
 
-	// Allocate buffer if needed
+	// Allocate buffer
 	if (!file->data) {
-		file->data = malloc (len);
-		if (!file->data) {
-			return -1;
-		}
+		file->data = malloc (to_read);
+	} else {
+		file->data = realloc (file->data, to_read);
+	}
+	if (!file->data) {
+		return -1;
 	}
 
 	if (bfs_read_at (ctx, read_offset, file->data, to_read)) {
@@ -562,10 +647,7 @@ static int fs_bfs_read(RFSFile *file, ut64 addr, int len) {
 static void fs_bfs_close(RFSFile *file) {
 	R_RETURN_IF_FAIL (file);
 
-	if (file->data) {
-		free (file->data);
-		file->data = NULL;
-	}
+	R_FREE (file->data);
 }
 
 static void fs_bfs_details(RFSRoot *root, RStrBuf *sb) {
