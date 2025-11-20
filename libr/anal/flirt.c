@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2024 - jfrankowski, pancake */
+/* radare - LGPL - Copyright 2014-2025 - jfrankowski, pancake */
 /* credits to IDA for the flirt tech */
 /* original cpp code from Rheax <rheaxmascot@gmail.com> */
 /* thanks LemonBoy for the improved research on rheax original work */
@@ -6,7 +6,6 @@
 
 #define R_LOG_ORIGIN "anal.flirt"
 
-#include <r_lib.h>
 #include <r_sign.h>
 
 #define DEBUG 0
@@ -30,57 +29,57 @@ Parsing:
 - described headers
 - library name, not null terminated, length of library_name_len.
 
-parse_tree (cf. parse_tree):
+parse_tree(cf. parse_tree):
 - read number of initial root nodes: 1 byte if strictly inferior to 127 otherwise 2 bytes,
 stored in big endian mode, and the most significant bit isnt used. cf. read_multiple_bytes().
-if 0, this is a leaf, goto leaf (cf. parse_leaf). else continue parsing (cf. parse_tree).
+if 0, this is a leaf, goto leaf(cf. parse_leaf). else continue parsing(cf. parse_tree).
 
 	- for number of root node do:
-	 - read node length, one unsigned byte (the pattern size in this node) (cf. read_node_length)
-	 - read node variant mask (bit array) (cf. read_node_variant_mask):
-	  - if node length < 0x10 read up to two bytes. cf. read_max_2_bytes
-	  - if node length < 0x20 read up to five bytes. cf. read_multiple_bytes
-	 - read non-variant bytes (cf. read_node_bytes)
-	 - goto parse_tree
+	- read node length, one unsigned byte (the pattern size in this node) (cf. read_node_length)
+	- read node variant mask (bit array) (cf. read_node_variant_mask):
+	- if node length < 0x10 read up to two bytes. cf. read_max_2_bytes
+	- if node length < 0x20 read up to five bytes. cf. read_multiple_bytes
+	- read non-variant bytes (cf. read_node_bytes)
+	- goto parse_tree
 
 	leaf (cf. parse_leaf):
 	- read crc length, 1 byte
 	- read crc value, 2 bytes
 	module:
-	 - read total module length:
-	  - if version >= 9 read up to five bytes, cf. read_multiple_bytes
-	  - else read up to two bytes, cf. read_max_2_bytes
-	 - read module public functions (cf. read_module_public_functions):
-	 same crc:
-	  - public function name:
-	     - read function offset:
-	       if version >= 9 read up to five bytes, cf. read_multiple_bytes
-	       else read up to two bytes, cf. read_max_2_bytes
-	     - if current byte < 0x20, read it : this is a function flag, see IDASIG_FUNCTION* defines
-	     - read function name until current byte < 0x20
-	     - read parsing flag, 1 byte
-	     - if flag & IDASIG__PARSE__MORE_PUBLIC_NAMES: goto public function name
-	     - if flag & IDASIG__PARSE__READ_TAIL_BYTES, read tail bytes, cf. read_module_tail_bytes:
-	       - if version >= 8: read number of tail bytes, else suppose one
-	       - for number of tail bytes do:
-		 - read tail byte offset:
-		   if version >= 9 read up to five bytes, cf. read_multiple_bytes
-		   else read up to two bytes, cf. read_max_2_bytes
-		 - read tail byte value, one byte
+	- read total module length:
+	- if version >= 9 read up to five bytes, cf. read_multiple_bytes
+	- else read up to two bytes, cf. read_max_2_bytes
+	- read module public functions (cf. read_module_public_functions):
+	same crc:
+	- public function name:
+	- read function offset:
+	if version >= 9 read up to five bytes, cf. read_multiple_bytes
+	else read up to two bytes, cf. read_max_2_bytes
+	- if current byte < 0x20, read it : this is a function flag, see IDASIG_FUNCTION* defines
+	- read function name until current byte < 0x20
+	- read parsing flag, 1 byte
+	- if flag & IDASIG__PARSE__MORE_PUBLIC_NAMES: goto public function name
+	- if flag & IDASIG__PARSE__READ_TAIL_BYTES, read tail bytes, cf. read_module_tail_bytes:
+	- if version >= 8: read number of tail bytes, else suppose one
+	- for number of tail bytes do:
+		- read tail byte offset:
+		if version >= 9 read up to five bytes, cf. read_multiple_bytes
+		else read up to two bytes, cf. read_max_2_bytes
+		- read tail byte value, one byte
 
-	     - if flag & IDASIG__PARSE__READ_REFERENCED_FUNCTIONS, read referenced functions, cf. read_module_referenced_functions:
-	       - if version >= 8: read number of referenced functions, else suppose one
-	       - for number of referenced functions do:
-		 - read referenced function offset:
-		   if version >= 9 read up to five bytes, cf. read_multiple_bytes
-		   else read up to two bytes, cf. read_max_2_bytes
-		 - read referenced function name length, one byte:
-		   - if name length == 0, read length up to five bytes, cf. read_multiple_bytes
-		 - for name length, read name chars:
-		   - if name is null terminated, it means the offset is negative
+	- if flag & IDASIG__PARSE__READ_REFERENCED_FUNCTIONS, read referenced functions, cf. read_module_referenced_functions:
+	- if version >= 8: read number of referenced functions, else suppose one
+	- for number of referenced functions do:
+		- read referenced function offset:
+		if version >= 9 read up to five bytes, cf. read_multiple_bytes
+		else read up to two bytes, cf. read_max_2_bytes
+		- read referenced function name length, one byte:
+		- if name length == 0, read length up to five bytes, cf. read_multiple_bytes
+		- for name length, read name chars:
+		- if name is null terminated, it means the offset is negative
 
-	     - if flag & IDASIG__PARSE__MORE_MODULES_WITH_SAME_CRC, goto same crc, read function with same crc
-	     - if flag & IDASIG__PARSE__MORE_MODULES, goto module, to read another module
+	- if flag & IDASIG__PARSE__MORE_MODULES_WITH_SAME_CRC, goto same crc, read function with same crc
+	- if flag & IDASIG__PARSE__MORE_MODULES, goto module, to read another module
 
 More Information
 -----------------
@@ -101,172 +100,176 @@ non-variant bytes, they only differ by the functions they call. These functions 
 identified.
 The offset is from the start of the function to the referenced function name.
 They appear as "(REF XXXX: NAME)" in dumpsig output
-*/
+ */
 
 /* arch flags */
-#define IDASIG__ARCH__386        0       // Intel 80x86
-#define IDASIG__ARCH__Z80        1       // 8085, Z80
-#define IDASIG__ARCH__I860       2       // Intel 860
-#define IDASIG__ARCH__8051       3       // 8051
-#define IDASIG__ARCH__TMS        4       // Texas Instruments TMS320C5x
-#define IDASIG__ARCH__6502       5       // 6502
-#define IDASIG__ARCH__PDP        6       // PDP11
-#define IDASIG__ARCH__68K        7       // Motoroal 680x0
-#define IDASIG__ARCH__JAVA       8       // Java
-#define IDASIG__ARCH__6800       9       // Motorola 68xx
-#define IDASIG__ARCH__ST7        10      // SGS-Thomson ST7
-#define IDASIG__ARCH__MC6812     11      // Motorola 68HC12
-#define IDASIG__ARCH__MIPS       12      // MIPS
-#define IDASIG__ARCH__ARM        13      // Advanced RISC Machines
-#define IDASIG__ARCH__TMSC6      14      // Texas Instruments TMS320C6x
-#define IDASIG__ARCH__PPC        15      // PowerPC
-#define IDASIG__ARCH__80196      16      // Intel 80196
-#define IDASIG__ARCH__Z8         17      // Z8
-#define IDASIG__ARCH__SH         18      // Renesas (formerly Hitachi) SuperH
-#define IDASIG__ARCH__NET        19      // Microsoft Visual Studio.Net
-#define IDASIG__ARCH__AVR        20      // Atmel 8-bit RISC processor(s)
-#define IDASIG__ARCH__H8         21      // Hitachi H8/300, H8/2000
-#define IDASIG__ARCH__PIC        22      // Microchip's PIC
-#define IDASIG__ARCH__SPARC      23      // SPARC
-#define IDASIG__ARCH__ALPHA      24      // DEC Alpha
-#define IDASIG__ARCH__HPPA       25      // Hewlett-Packard PA-RISC
-#define IDASIG__ARCH__H8500      26      // Hitachi H8/500
-#define IDASIG__ARCH__TRICORE    27      // Tasking Tricore
-#define IDASIG__ARCH__DSP56K     28      // Motorola DSP5600x
-#define IDASIG__ARCH__C166       29      // Siemens C166 family
-#define IDASIG__ARCH__ST20       30      // SGS-Thomson ST20
-#define IDASIG__ARCH__IA64       31      // Intel Itanium IA64
-#define IDASIG__ARCH__I960       32      // Intel 960
-#define IDASIG__ARCH__F2MC       33      // Fujistu F2MC-16
-#define IDASIG__ARCH__TMS320C54  34      // Texas Instruments TMS320C54xx
-#define IDASIG__ARCH__TMS320C55  35      // Texas Instruments TMS320C55xx
-#define IDASIG__ARCH__TRIMEDIA   36      // Trimedia
-#define IDASIG__ARCH__M32R       37      // Mitsubishi 32bit RISC
-#define IDASIG__ARCH__NEC_78K0   38      // NEC 78K0
-#define IDASIG__ARCH__NEC_78K0S  39      // NEC 78K0S
-#define IDASIG__ARCH__M740       40      // Mitsubishi 8bit
-#define IDASIG__ARCH__M7700      41      // Mitsubishi 16bit
-#define IDASIG__ARCH__ST9        42      // ST9+
-#define IDASIG__ARCH__FR         43      // Fujitsu FR Family
-#define IDASIG__ARCH__MC6816     44      // Motorola 68HC16
-#define IDASIG__ARCH__M7900      45      // Mitsubishi 7900
-#define IDASIG__ARCH__TMS320C3   46      // Texas Instruments TMS320C3
-#define IDASIG__ARCH__KR1878     47      // Angstrem KR1878
-#define IDASIG__ARCH__AD218X     48      // Analog Devices ADSP 218X
-#define IDASIG__ARCH__OAKDSP     49      // Atmel OAK DSP
-#define IDASIG__ARCH__TLCS900    50      // Toshiba TLCS-900
-#define IDASIG__ARCH__C39        51      // Rockwell C39
-#define IDASIG__ARCH__CR16       52      // NSC CR16
-#define IDASIG__ARCH__MN102L00   53      // Panasonic MN10200
-#define IDASIG__ARCH__TMS320C1X  54      // Texas Instruments TMS320C1x
-#define IDASIG__ARCH__NEC_V850X  55      // NEC V850 and V850ES/E1/E2
-#define IDASIG__ARCH__SCR_ADPT   56      // Processor module adapter for processor modules written in scripting languages
-#define IDASIG__ARCH__EBC        57      // EFI Bytecode
-#define IDASIG__ARCH__MSP430     58      // Texas Instruments MSP430
-#define IDASIG__ARCH__SPU        59      // Cell Broadband Engine Synergistic Processor Unit
-#define IDASIG__ARCH__DALVIK     60      // Android Dalvik Virtual Machine
+#define IDASIG__ARCH__386 0 // Intel 80x86
+#define IDASIG__ARCH__Z80 1 // 8085, Z80
+#define IDASIG__ARCH__I860 2 // Intel 860
+#define IDASIG__ARCH__8051 3 // 8051
+#define IDASIG__ARCH__TMS 4 // Texas Instruments TMS320C5x
+#define IDASIG__ARCH__6502 5 // 6502
+#define IDASIG__ARCH__PDP 6 // PDP11
+#define IDASIG__ARCH__68K 7 // Motoroal 680x0
+#define IDASIG__ARCH__JAVA 8 // Java
+#define IDASIG__ARCH__6800 9 // Motorola 68xx
+#define IDASIG__ARCH__ST7 10 // SGS-Thomson ST7
+#define IDASIG__ARCH__MC6812 11 // Motorola 68HC12
+#define IDASIG__ARCH__MIPS 12 // MIPS
+#define IDASIG__ARCH__ARM 13 // Advanced RISC Machines
+#define IDASIG__ARCH__TMSC6 14 // Texas Instruments TMS320C6x
+#define IDASIG__ARCH__PPC 15 // PowerPC
+#define IDASIG__ARCH__80196 16 // Intel 80196
+#define IDASIG__ARCH__Z8 17 // Z8
+#define IDASIG__ARCH__SH 18 // Renesas(formerly Hitachi) SuperH
+#define IDASIG__ARCH__NET 19 // Microsoft Visual Studio.Net
+#define IDASIG__ARCH__AVR 20 // Atmel 8-bit RISC processor(s)
+#define IDASIG__ARCH__H8 21 // Hitachi H8/300, H8/2000
+#define IDASIG__ARCH__PIC 22 // Microchip's PIC
+#define IDASIG__ARCH__SPARC 23 // SPARC
+#define IDASIG__ARCH__ALPHA 24 // DEC Alpha
+#define IDASIG__ARCH__HPPA 25 // Hewlett-Packard PA-RISC
+#define IDASIG__ARCH__H8500 26 // Hitachi H8/500
+#define IDASIG__ARCH__TRICORE 27 // Tasking Tricore
+#define IDASIG__ARCH__DSP56K 28 // Motorola DSP5600x
+#define IDASIG__ARCH__C166 29 // Siemens C166 family
+#define IDASIG__ARCH__ST20 30 // SGS-Thomson ST20
+#define IDASIG__ARCH__IA64 31 // Intel Itanium IA64
+#define IDASIG__ARCH__I960 32 // Intel 960
+#define IDASIG__ARCH__F2MC 33 // Fujistu F2MC-16
+#define IDASIG__ARCH__TMS320C54 34 // Texas Instruments TMS320C54xx
+#define IDASIG__ARCH__TMS320C55 35 // Texas Instruments TMS320C55xx
+#define IDASIG__ARCH__TRIMEDIA 36 // Trimedia
+#define IDASIG__ARCH__M32R 37 // Mitsubishi 32bit RISC
+#define IDASIG__ARCH__NEC_78K0 38 // NEC 78K0
+#define IDASIG__ARCH__NEC_78K0S 39 // NEC 78K0S
+#define IDASIG__ARCH__M740 40 // Mitsubishi 8bit
+#define IDASIG__ARCH__M7700 41 // Mitsubishi 16bit
+#define IDASIG__ARCH__ST9 42 // ST9+
+#define IDASIG__ARCH__FR 43 // Fujitsu FR Family
+#define IDASIG__ARCH__MC6816 44 // Motorola 68HC16
+#define IDASIG__ARCH__M7900 45 // Mitsubishi 7900
+#define IDASIG__ARCH__TMS320C3 46 // Texas Instruments TMS320C3
+#define IDASIG__ARCH__KR1878 47 // Angstrem KR1878
+#define IDASIG__ARCH__AD218X 48 // Analog Devices ADSP 218X
+#define IDASIG__ARCH__OAKDSP 49 // Atmel OAK DSP
+#define IDASIG__ARCH__TLCS900 50 // Toshiba TLCS-900
+#define IDASIG__ARCH__C39 51 // Rockwell C39
+#define IDASIG__ARCH__CR16 52 // NSC CR16
+#define IDASIG__ARCH__MN102L00 53 // Panasonic MN10200
+#define IDASIG__ARCH__TMS320C1X 54 // Texas Instruments TMS320C1x
+#define IDASIG__ARCH__NEC_V850X 55 // NEC V850 and V850ES/E1/E2
+#define IDASIG__ARCH__SCR_ADPT 56 // Processor module adapter for processor modules written in scripting languages
+#define IDASIG__ARCH__EBC 57 // EFI Bytecode
+#define IDASIG__ARCH__MSP430 58 // Texas Instruments MSP430
+#define IDASIG__ARCH__SPU 59 // Cell Broadband Engine Synergistic Processor Unit
+#define IDASIG__ARCH__DALVIK 60 // Android Dalvik Virtual Machine
 
 /*file_types flags*/
-#define IDASIG__FILE__DOS_EXE_OLD    0x00000001
-#define IDASIG__FILE__DOS_COM_OLD    0x00000002
-#define IDASIG__FILE__BIN            0x00000004
-#define IDASIG__FILE__DOSDRV         0x00000008
-#define IDASIG__FILE__NE             0x00000010
-#define IDASIG__FILE__INTELHEX       0x00000020
-#define IDASIG__FILE__MOSHEX         0x00000040
-#define IDASIG__FILE__LX             0x00000080
-#define IDASIG__FILE__LE             0x00000100
-#define IDASIG__FILE__NLM            0x00000200
-#define IDASIG__FILE__COFF           0x00000400
-#define IDASIG__FILE__PE             0x00000800
-#define IDASIG__FILE__OMF            0x00001000
-#define IDASIG__FILE__SREC           0x00002000
-#define IDASIG__FILE__ZIP            0x00004000
-#define IDASIG__FILE__OMFLIB         0x00008000
-#define IDASIG__FILE__AR             0x00010000
-#define IDASIG__FILE__LOADER         0x00020000
-#define IDASIG__FILE__ELF            0x00040000
-#define IDASIG__FILE__W32RUN         0x00080000
-#define IDASIG__FILE__AOUT           0x00100000
-#define IDASIG__FILE__PILOT          0x00200000
-#define IDASIG__FILE__DOS_EXE        0x00400000
-#define IDASIG__FILE__DOS_COM        0x00800000
-#define IDASIG__FILE__AIXAR          0x01000000
+#define IDASIG__FILE__DOS_EXE_OLD 0x00000001
+#define IDASIG__FILE__DOS_COM_OLD 0x00000002
+#define IDASIG__FILE__BIN 0x00000004
+#define IDASIG__FILE__DOSDRV 0x00000008
+#define IDASIG__FILE__NE 0x00000010
+#define IDASIG__FILE__INTELHEX 0x00000020
+#define IDASIG__FILE__MOSHEX 0x00000040
+#define IDASIG__FILE__LX 0x00000080
+#define IDASIG__FILE__LE 0x00000100
+#define IDASIG__FILE__NLM 0x00000200
+#define IDASIG__FILE__COFF 0x00000400
+#define IDASIG__FILE__PE 0x00000800
+#define IDASIG__FILE__OMF 0x00001000
+#define IDASIG__FILE__SREC 0x00002000
+#define IDASIG__FILE__ZIP 0x00004000
+#define IDASIG__FILE__OMFLIB 0x00008000
+#define IDASIG__FILE__AR 0x00010000
+#define IDASIG__FILE__LOADER 0x00020000
+#define IDASIG__FILE__ELF 0x00040000
+#define IDASIG__FILE__W32RUN 0x00080000
+#define IDASIG__FILE__AOUT 0x00100000
+#define IDASIG__FILE__PILOT 0x00200000
+#define IDASIG__FILE__DOS_EXE 0x00400000
+#define IDASIG__FILE__DOS_COM 0x00800000
+#define IDASIG__FILE__AIXAR 0x01000000
 
 /*os_types flags*/
-#define IDASIG__OS__MSDOS      0x01
-#define IDASIG__OS__WIN        0x02
-#define IDASIG__OS__OS2        0x04
-#define IDASIG__OS__NETWARE    0x08
-#define IDASIG__OS__UNIX       0x10
-#define IDASIG__OS__OTHER      0x20
+#define IDASIG__OS__MSDOS 0x01
+#define IDASIG__OS__WIN 0x02
+#define IDASIG__OS__OS2 0x04
+#define IDASIG__OS__NETWARE 0x08
+#define IDASIG__OS__UNIX 0x10
+#define IDASIG__OS__OTHER 0x20
 
 /*app types flags*/
-#define IDASIG__APP__CONSOLE            0x0001
-#define IDASIG__APP__GRAPHICS           0x0002
-#define IDASIG__APP__EXE                0x0004
-#define IDASIG__APP__DLL                0x0008
-#define IDASIG__APP__DRV                0x0010
-#define IDASIG__APP__SINGLE_THREADED    0x0020
-#define IDASIG__APP__MULTI_THREADED     0x0040
-#define IDASIG__APP__16_BIT             0x0080
-#define IDASIG__APP__32_BIT             0x0100
-#define IDASIG__APP__64_BIT             0x0200
+#define IDASIG__APP__CONSOLE 0x0001
+#define IDASIG__APP__GRAPHICS 0x0002
+#define IDASIG__APP__EXE 0x0004
+#define IDASIG__APP__DLL 0x0008
+#define IDASIG__APP__DRV 0x0010
+#define IDASIG__APP__SINGLE_THREADED 0x0020
+#define IDASIG__APP__MULTI_THREADED 0x0040
+#define IDASIG__APP__16_BIT 0x0080
+#define IDASIG__APP__32_BIT 0x0100
+#define IDASIG__APP__64_BIT 0x0200
 
 /*feature flags*/
-#define IDASIG__FEATURE__STARTUP          0x01
-#define IDASIG__FEATURE__CTYPE_CRC        0x02
-#define IDASIG__FEATURE__2BYTE_CTYPE      0x04
-#define IDASIG__FEATURE__ALT_CTYPE_CRC    0x08
-#define IDASIG__FEATURE__COMPRESSED       0x10
+#define IDASIG__FEATURE__STARTUP 0x01
+#define IDASIG__FEATURE__CTYPE_CRC 0x02
+#define IDASIG__FEATURE__2BYTE_CTYPE 0x04
+#define IDASIG__FEATURE__ALT_CTYPE_CRC 0x08
+#define IDASIG__FEATURE__COMPRESSED 0x10
 
 /*parsing flags*/
-#define IDASIG__PARSE__MORE_PUBLIC_NAMES            0x01
-#define IDASIG__PARSE__READ_TAIL_BYTES              0x02
-#define IDASIG__PARSE__READ_REFERENCED_FUNCTIONS    0x04
-#define IDASIG__PARSE__MORE_MODULES_WITH_SAME_CRC   0x08
-#define IDASIG__PARSE__MORE_MODULES                 0x10
+#define IDASIG__PARSE__MORE_PUBLIC_NAMES 0x01
+#define IDASIG__PARSE__READ_TAIL_BYTES 0x02
+#define IDASIG__PARSE__READ_REFERENCED_FUNCTIONS 0x04
+#define IDASIG__PARSE__MORE_MODULES_WITH_SAME_CRC 0x08
+#define IDASIG__PARSE__MORE_MODULES 0x10
 
 /*functions flags*/
-#define IDASIG__FUNCTION__LOCAL                     0x02 // describes a static function
-#define IDASIG__FUNCTION__UNRESOLVED_COLLISION      0x08 // describes a collision that wasn't resolved
+#define IDASIG__FUNCTION__LOCAL 0x02 // describes a static function
+#define IDASIG__FUNCTION__UNRESOLVED_COLLISION 0x08 // describes a collision that wasn't resolved
 
 R_PACKED(
-typedef struct idasig_v5_t {
-/* newer header only add fields, that's why we'll always read a v5 header first */
-	ut8 magic[6];  /* should be set to IDASGN */
-	ut8 version;   /*from 5 to 9*/
-	ut8 arch;
-	ut32 file_types;
-	ut16 os_types;
-	ut16 app_types;
-	ut16 features;
-	ut16 old_n_functions;
-	ut16 crc16;
-	ut8 ctype[12];  // XXX: how to use it
-	ut8 library_name_len;
-	ut16 ctypes_crc16;
-}) idasig_v5_t;
+	typedef struct idasig_v5_t {
+		/* newer header only add fields, that's why we'll always read a v5 header first */
+		ut8 magic[6]; /* should be set to IDASGN */
+		ut8 version; /*from 5 to 9*/
+		ut8 arch;
+		ut32 file_types;
+		ut16 os_types;
+		ut16 app_types;
+		ut16 features;
+		ut16 old_n_functions;
+		ut16 crc16;
+		ut8 ctype[12]; // XXX: how to use it
+		ut8 library_name_len;
+		ut16 ctypes_crc16;
+	})
+idasig_v5_t;
 
 R_PACKED(
-typedef struct idasig_v6_v7_t {
-	ut32 n_functions;
-}) idasig_v6_v7_t;
+	typedef struct idasig_v6_v7_t {
+		ut32 n_functions;
+	})
+idasig_v6_v7_t;
 
 R_PACKED(
-typedef struct idasig_v8_v9_t {
-	ut16 pattern_size;
-}) idasig_v8_v9_t;
+	typedef struct idasig_v8_v9_t {
+		ut16 pattern_size;
+	})
+idasig_v8_v9_t;
 
 R_PACKED(
-typedef struct idasig_v10_t {
-	ut16 unknown;
-}) idasig_v10_t;
+	typedef struct idasig_v10_t {
+		ut16 unknown;
+	})
+idasig_v10_t;
 
 /* newer header only add fields, that's why we'll always read a v5 header first */
 #if 0
 arch             : target architecture
-file_types       : files where we expect to find the functions (exe, coff, ...)
+file_types       : files where we expect to find the functions(exe, coff, ...)
 os_types         : os where we expect to find the functions
 app_types        : applications in which we expect to find the functions
 features         : signature file features
@@ -385,7 +388,7 @@ static ut32 read_word(RFlirt *f) {
 
 static ut16 read_max_2_bytes(RFlirt *f) {
 	const ut16 r = read_byte (f);
-	return (r & 0x80) ? ((r & 0x7f) << 8) + read_byte (f) : r;
+	return (r & 0x80)? ((r & 0x7f) << 8) + read_byte (f): r;
 }
 
 static ut32 read_multiple_bytes(RFlirt *f) {
@@ -409,15 +412,15 @@ static void module_free(RFlirtModule *module) {
 		return;
 	}
 	if (module->public_functions) {
-		module->public_functions->free = (RListFree) free;
+		module->public_functions->free = (RListFree)free;
 		r_list_free (module->public_functions);
 	}
 	if (module->tail_bytes) {
-		module->tail_bytes->free = (RListFree) free;
+		module->tail_bytes->free = (RListFree)free;
 		r_list_free (module->tail_bytes);
 	}
 	if (module->referenced_functions) {
-		module->referenced_functions->free = (RListFree) free;
+		module->referenced_functions->free = (RListFree)free;
 		r_list_free (module->referenced_functions);
 	}
 	free (module);
@@ -434,90 +437,87 @@ static void node_free(RFlirtNode *node) {
 		r_list_free (node->module_list);
 	}
 	if (node->child_list) {
-		node->child_list->free = (RListFree) node_free;
+		node->child_list->free = (RListFree)node_free;
 		r_list_free (node->child_list);
 	}
 	free (node);
 }
 
-static void print_module(const RAnal *anal, const RFlirtModule *module) {
+static void print_module(RStrBuf *sb, const RFlirtModule *module) {
 	RListIter *pub_func_it, *ref_func_it, *tail_byte_it;
 	RFlirtFunction *func, *ref_func;
 	RFlirtTailByte *tail_byte;
 
-	anal->cb_printf ("%02X %04X %04X ", module->crc_length, module->crc16, module->length);
+	r_strbuf_appendf (sb, "%02X %04X %04X ", module->crc_length, module->crc16, module->length);
 	r_list_foreach (module->public_functions, pub_func_it, func) {
 		if (func->is_local || func->is_collision) {
-			anal->cb_printf ("(");
+			r_strbuf_append (sb, "(");
 			if (func->is_local) {
-				anal->cb_printf ("l");
+				r_strbuf_append (sb, "l");
 			}
 			if (func->is_collision) {
-				anal->cb_printf ("!");
+				r_strbuf_append (sb, "!");
 			}
-			anal->cb_printf (")");
+			r_strbuf_append (sb, ")");
 		}
-		anal->cb_printf ("%04X:%s", func->offset, func->name);
+		r_strbuf_appendf (sb, "%04X:%s", func->offset, func->name);
 		if (pub_func_it->n) {
-			anal->cb_printf (" ");
+			r_strbuf_append (sb, " ");
 		}
 	}
 	if (module->tail_bytes) {
 		r_list_foreach (module->tail_bytes, tail_byte_it, tail_byte) {
-			anal->cb_printf (" (%04X: %02X)", tail_byte->offset, tail_byte->value);
+			r_strbuf_appendf (sb, " (%04X: %02X)", tail_byte->offset, tail_byte->value);
 		}
 	}
 	if (module->referenced_functions) {
-		anal->cb_printf (" (REF ");
+		r_strbuf_append (sb, " (REF ");
 		r_list_foreach (module->referenced_functions, ref_func_it, ref_func) {
-			anal->cb_printf ("%04X: %s", ref_func->offset, ref_func->name);
+			r_strbuf_appendf (sb, "%04X: %s", ref_func->offset, ref_func->name);
 			if (ref_func_it->n) {
-				anal->cb_printf (" ");
+				r_strbuf_append (sb, " ");
 			}
 		}
-		anal->cb_printf (")");
+		r_strbuf_append (sb, ")");
 	}
-	anal->cb_printf ("\n");
+	r_strbuf_append (sb, "\n");
 }
 
-
-static void print_node_pattern(const RAnal *anal, const RFlirtNode *node) {
+static void print_node_pattern(RStrBuf *sb, const RFlirtNode *node) {
 	int i;
 	for (i = 0; i < node->length; i++) {
 		if (node->variant_bool_array[i]) {
-			anal->cb_printf ("..");
+			r_strbuf_append (sb, "..");
 		} else {
-			anal->cb_printf ("%02X", node->pattern_bytes[i]);
+			r_strbuf_appendf (sb, "%02X", node->pattern_bytes[i]);
 		}
 	}
-	anal->cb_printf (":\n");
+	r_strbuf_append (sb, ":\n");
 }
 
-static void print_indentation(const RAnal *anal, int indent) {
-	anal->cb_printf ("%s", r_str_pad (' ', indent));
+static void print_indentation(RStrBuf *sb, int indent) {
+	r_strbuf_pad (sb, ' ', indent);
 }
 
-static void print_node(const RAnal *anal, const RFlirtNode *node, int indent) {
-	/*Prints a signature node. The output is similar to dumpsig*/
-	int i;
-	RListIter *child_it, *module_it;
-	RFlirtNode *child;
-	RFlirtModule *module;
-
-	if (node->pattern_bytes) { // avoid printing the root node
-		print_indentation (anal, indent);
-		print_node_pattern (anal, node);
+/* Prints a signature node. The output is similar to dumpsig*/
+static void print_node(RStrBuf *sb, const RFlirtNode *node, int indent) {
+	RListIter *iter;
+	if (node->pattern_bytes) { // do not print the root node
+		print_indentation (sb, indent);
+		print_node_pattern (sb, node);
 	}
 	if (node->child_list) {
-		r_list_foreach (node->child_list, child_it, child) {
-			print_node (anal, child, indent + 1);
+		RFlirtNode *child;
+		r_list_foreach (node->child_list, iter, child) {
+			print_node (sb, child, indent + 1);
 		}
 	} else if (node->module_list) {
-		i = 0;
-		r_list_foreach (node->module_list, module_it, module) {
-			print_indentation (anal, indent + 1);
-			anal->cb_printf ("%d. ", i);
-			print_module (anal, module);
+		int i = 0;
+		RFlirtModule *module;
+		r_list_foreach (node->module_list, iter, module) {
+			print_indentation (sb, indent + 1);
+			r_strbuf_appendf (sb, "%d. ", i);
+			print_module (sb, module);
 			i++;
 		}
 	}
@@ -525,8 +525,8 @@ static void print_node(const RAnal *anal, const RFlirtNode *node, int indent) {
 
 static bool module_match_buffer(RAnal *anal, const RFlirtModule *module, ut8 *b, ut64 address, ut32 buf_size) {
 	/* Returns true if module matches b, according to the signatures infos.
-	* Return false otherwise.
-	* The buffer starts from the first byte after the pattern */
+	 * Return false otherwise.
+	 * The buffer starts from the first byte after the pattern */
 	RFlirtFunction *flirt_func;
 	RAnalFunction *next_module_function;
 	RListIter *tail_byte_it, *flirt_func_it;
@@ -548,7 +548,7 @@ static bool module_match_buffer(RAnal *anal, const RFlirtModule *module, ut8 *b,
 		// Once the first module function is found, we need to go through the module->public_functions
 		// list to identify the others. See flirt doc for more information
 
-		next_module_function = r_anal_get_function_at ((RAnal *) anal, address + flirt_func->offset);
+		next_module_function = r_anal_get_function_at ((RAnal *)anal, address + flirt_func->offset);
 		if (next_module_function) {
 			char *name;
 			int name_offs = 0;
@@ -574,8 +574,8 @@ static bool module_match_buffer(RAnal *anal, const RFlirtModule *module, ut8 *b,
 				RAnalFunction *fcn;
 				r_list_foreach_safe (anal->fcns, iter, iter_tmp, fcn) {
 					if (fcn != next_module_function &&
-							fcn->addr >= next_module_function->addr + next_module_function_size &&
-							fcn->addr < next_module_function->addr + flirt_fcn_size) {
+						fcn->addr >= next_module_function->addr + next_module_function_size &&
+						fcn->addr < next_module_function->addr + flirt_fcn_size) {
 						RListIter *iter_bb;
 						RAnalBlock *block;
 						r_list_foreach (fcn->bbs, iter_bb, block) {
@@ -650,8 +650,8 @@ static bool node_match_buffer(RAnal *anal, const RFlirtNode *node, ut8 *b, ut64 
 
 static bool node_match_functions(RAnal *anal, const RFlirtNode *root_node) {
 	/* Tries to find matching functions between the signature infos in root_node
-	* and the analyzed functions in anal
-	* Returns false on error. */
+	 * and the analyzed functions in anal
+	 * Returns false on error. */
 
 	if (r_list_length (anal->fcns) == 0) {
 		R_LOG_INFO ("Nothing to do when no functions have been analyzed. Try running `aa`");
@@ -668,7 +668,7 @@ static bool node_match_functions(RAnal *anal, const RFlirtNode *root_node) {
 			continue;
 		}
 		if (!anal->iob.read_at (anal->iob.io, func->addr, func_buf, (int)func_size)) {
-			R_LOG_WARN ("Couldn't read function %s at 0x%"PFMT64x, func->name, func->addr);
+			R_LOG_WARN ("Couldn't read function %s at 0x%" PFMT64x, func->name, func->addr);
 			free (func_buf);
 			continue;
 		}
@@ -691,7 +691,7 @@ static ut8 read_module_tail_bytes(RFlirt *f, RFlirtModule *module) {
 	int i;
 	ut8 number_of_tail_bytes = 1;
 	RFlirtTailByte *tail_byte = NULL;
-	if (!(module->tail_bytes = r_list_newf ((RListFree) free))) {
+	if (! (module->tail_bytes = r_list_newf ((RListFree)free))) {
 		goto beach;
 	}
 
@@ -703,9 +703,6 @@ static ut8 read_module_tail_bytes(RFlirt *f, RFlirtModule *module) {
 	}
 	for (i = 0; i < number_of_tail_bytes; i++) {
 		tail_byte = R_NEW0 (RFlirtTailByte);
-		if (!tail_byte) {
-			return false;
-		}
 		if (f->version >= 9) {
 			// /!\ XXX don't trust ./zipsig output because it will write a version 9 header, but keep the old version offsets
 			tail_byte->offset = read_multiple_bytes (f);
@@ -755,9 +752,6 @@ static ut8 read_module_referenced_functions(RFlirt *f, RFlirtModule *module) {
 
 	for (i = 0; i < number_of_referenced_functions; i++) {
 		ref_function = R_NEW0 (RFlirtFunction);
-		if (!ref_function) {
-			goto beach;
-		}
 		if (f->version >= 9) {
 			ref_function->offset = read_multiple_bytes (f);
 			if (f->buf_eof || f->buf_err) {
@@ -780,7 +774,7 @@ static ut8 read_module_referenced_functions(RFlirt *f, RFlirtModule *module) {
 				goto beach;
 			}
 		}
-		if ((int) ref_function_name_length < 0 || ref_function_name_length >= R_FLIRT_NAME_MAX) {
+		if ((int)ref_function_name_length < 0 || ref_function_name_length >= R_FLIRT_NAME_MAX) {
 			goto beach;
 		}
 		for (j = 0; j < ref_function_name_length; j++) {
@@ -817,7 +811,7 @@ static ut8 read_module_public_functions(RFlirt *f, RFlirtModule *module, ut8 *fl
 	RFlirtFunction *function = NULL;
 
 	do {
-		if (f->version >= 9) {   // seems like version 9 introduced some larger offsets
+		if (f->version >= 9) { // seems like version 9 introduced some larger offsets
 			offset += read_multiple_bytes (f); // offsets are dependent of the previous ones
 			if (f->buf_eof || f->buf_err) {
 				goto beach;
@@ -899,9 +893,6 @@ static bool parse_leaf(RFlirt *f, RFlirtNode *node) {
 		}
 		do { // loop for all modules having the same crc
 			module = R_NEW0 (RFlirtModule);
-			if (!module) {
-				goto beach;
-			}
 			module->crc_length = crc_length;
 			module->crc16 = crc16;
 			if (f->version >= 9) { // seems like version 9 introduced some larger length
@@ -968,7 +959,7 @@ static bool read_node_variant_mask(RFlirt *f, RFlirtNode *node) {
 // Reads the node bytes, and also sets the variant bytes in variant_bool_array, returns false on parsing error
 static bool read_node_bytes(RFlirt *f, RFlirtNode *node) {
 	int i;
-	if ((int) node->length < 0) {
+	if ((int)node->length < 0) {
 		return false;
 	}
 	if (node->length > 63) {
@@ -976,14 +967,14 @@ static bool read_node_bytes(RFlirt *f, RFlirtNode *node) {
 		return false;
 	}
 	ut64 current_mask_bit = 1ULL << (node->length - 1);
-	if (!(node->pattern_bytes = malloc (node->length))) {
+	if (! (node->pattern_bytes = malloc (node->length))) {
 		return false;
 	}
-	if (!(node->variant_bool_array = malloc (node->length))) {
+	if (! (node->variant_bool_array = malloc (node->length))) {
 		return false;
 	}
 	for (i = 0; i < node->length; i++, current_mask_bit >>= 1) {
-		node->variant_bool_array[i] = (bool)(node->variant_mask & current_mask_bit);
+		node->variant_bool_array[i] = (bool) (node->variant_mask & current_mask_bit);
 		if (node->variant_mask & current_mask_bit) {
 			node->pattern_bytes[i] = 0;
 		} else {
@@ -1011,9 +1002,6 @@ static bool parse_tree(RFlirt *f, RFlirtNode *root_node) {
 	root_node->child_list = r_list_new ();
 	for (i = 0; i < tree_nodes; i++) {
 		node = R_NEW0 (RFlirtNode);
-		if (!node) {
-			goto beach;
-		}
 		if (!read_node_length (f, node)) {
 			goto beach;
 		}
@@ -1039,7 +1027,11 @@ beach:
 
 #if DEBUG
 
-#define PRINT_ARCH(define, str) if (arch == define) { eprintf (" %s", str); return; }
+#define PRINT_ARCH(define, str) \
+	if (arch == define) { \
+		eprintf (" %s", str); \
+		return; \
+	}
 static void print_arch(ut8 arch) {
 	PRINT_ARCH (IDASIG__ARCH__386, "386");
 	PRINT_ARCH (IDASIG__ARCH__Z80, "Z80");
@@ -1104,7 +1096,10 @@ static void print_arch(ut8 arch) {
 	PRINT_ARCH (IDASIG__ARCH__DALVIK, "DALVIK");
 }
 
-#define PRINT_FLAG(define, str) if (flags & define) { eprintf (" %s", str); }
+#define PRINT_FLAG(define, str) \
+	if (flags & define) { \
+		eprintf (" %s", str); \
+	}
 static void print_file_types(ut32 flags) {
 	PRINT_FLAG (IDASIG__FILE__DOS_EXE_OLD, "DOS_EXE_OLD");
 	PRINT_FLAG (IDASIG__FILE__DOS_COM_OLD, "DOS_COM_OLD");
@@ -1162,14 +1157,19 @@ static void print_features(ut16 flags) {
 }
 
 static void print_header(idasig_v5_t *header) {
-	// eprintf("magic: %s\n", header->magic);
+	// eprintf ("magic: %s\n", header->magic);
 	eprintf ("version: %d\n", header->version);
-	eprintf ("arch:"); print_arch (header->arch); eprintf ("\n");
-	eprintf ("file_types:"); print_file_types (header->file_types); eprintf ("\n");
-	eprintf ("os_types:"); print_os_types (header->os_types); eprintf ("\n");
-	eprintf ("app_types:"); print_app_types (header->app_types); eprintf ("\n");
-	eprintf ("features:"); print_features (header->features); eprintf ("\n");
-	eprintf ("old_n_functions: %04x\n", header->old_n_functions);
+	eprintf ("arch:");
+	print_arch (header->arch);
+	eprintf ("\nfile_types:");
+	print_file_types (header->file_types);
+	eprintf ("\nos_types:");
+	print_os_types (header->os_types);
+	eprintf ("\napp_types:");
+	print_app_types (header->app_types);
+	eprintf ("\nfeatures:");
+	print_features (header->features);
+	eprintf ("\nold_n_functions: %04x\n", header->old_n_functions);
 	eprintf ("crc16: %04x\n", header->crc16);
 	eprintf ("ctype: %s\n", header->ctype);
 	eprintf ("library_name_len: %d\n", header->library_name_len);
@@ -1179,9 +1179,6 @@ static void print_header(idasig_v5_t *header) {
 
 static idasig_v5_t *parse_header(RFlirt *f) {
 	idasig_v5_t *header = R_NEW0 (idasig_v5_t);
-	if (!header) {
-		return NULL;
-	}
 	RBuffer *buf = f->b;
 	if (r_buf_fread (buf, (ut8 *)header, "8ci5s13cs", 1) != sizeof (idasig_v5_t)) {
 		free (header);
@@ -1192,9 +1189,6 @@ static idasig_v5_t *parse_header(RFlirt *f) {
 
 static idasig_v6_v7_t *parse_v6_v7_header(RFlirt *f) {
 	idasig_v6_v7_t *header = R_NEW0 (idasig_v6_v7_t);
-	if (!header) {
-		return NULL;
-	}
 	RBuffer *buf = f->b;
 	if (r_buf_fread (buf, (ut8 *)header, "i", 1) != sizeof (idasig_v6_v7_t)) {
 		free (header);
@@ -1205,9 +1199,6 @@ static idasig_v6_v7_t *parse_v6_v7_header(RFlirt *f) {
 
 static idasig_v8_v9_t *parse_v8_v9_header(RFlirt *f) {
 	idasig_v8_v9_t *header = R_NEW0 (idasig_v8_v9_t);
-	if (!header) {
-		return NULL;
-	}
 	RBuffer *buf = f->b;
 	if (r_buf_fread (buf, (ut8 *)header, "s", 1) != sizeof (idasig_v8_v9_t)) {
 		free (header);
@@ -1218,9 +1209,6 @@ static idasig_v8_v9_t *parse_v8_v9_header(RFlirt *f) {
 
 static idasig_v10_t *parse_v10_header(RFlirt *f) {
 	idasig_v10_t *header = R_NEW0 (idasig_v10_t);
-	if (!header) {
-		return NULL;
-	}
 	RBuffer *buf = f->b;
 	if (r_buf_fread (buf, (ut8 *)header, "s", 1) != sizeof (idasig_v10_t)) {
 		free (header);
@@ -1288,7 +1276,7 @@ static RFlirtNode *flirt_parse(RFlirt *f) {
 		goto beach;
 	}
 
-	if (r_buf_read (f->b, (ut8*)name, header->library_name_len) != header->library_name_len) {
+	if (r_buf_read (f->b, (ut8 *)name, header->library_name_len) != header->library_name_len) {
 		goto beach;
 	}
 
@@ -1301,7 +1289,7 @@ static RFlirtNode *flirt_parse(RFlirt *f) {
 	f->header_size = r_buf_tell (f->b);
 
 	int size = r_buf_size (f->b) - r_buf_tell (f->b);
-	if (size < 1 || !(buf = malloc (size))) {
+	if (size < 1 || ! (buf = malloc (size))) {
 		R_LOG_ERROR ("Invalid remaining size");
 		goto beach;
 	}
@@ -1328,9 +1316,7 @@ static RFlirtNode *flirt_parse(RFlirt *f) {
 		size = decompressed_size;
 	}
 
-	if (!(node = R_NEW0 (RFlirtNode))) {
-		goto beach;
-	}
+	node = R_NEW0 (RFlirtNode);
 	f->buf_eof = false;
 	f->buf_err = false;
 	r_buf_free (f->b);
@@ -1351,35 +1337,27 @@ beach:
 	return ret;
 }
 
-// if buf is a flirt signature, returns signature version, or zero
+// if buf is a flirt signature, returns signature version, or zero if not a flirt
 R_API int r_sign_is_flirt(RBuffer *buf) {
 	R_RETURN_VAL_IF_FAIL (buf, 0);
-	int ret = 0;
-	idasig_v5_t *header = R_NEW0 (idasig_v5_t);
-	if (!header) {
-		goto beach;
+	char magic[6];
+	if (r_buf_read (buf, (ut8 *)magic, sizeof (magic)) != sizeof (magic)) {
+		return 0;
 	}
-	if (r_buf_read (buf, header->magic, sizeof (header->magic)) != sizeof (header->magic)) {
-		goto beach;
+	if (!r_str_startswith (magic, "IDASGN")) {
+		return 0;
 	}
-	if (strncmp ((const char *) header->magic, "IDASGN", 6)) {
-		goto beach;
+	ut8 version;
+	if (r_buf_read (buf, &version, sizeof (version)) != sizeof (version)) {
+		return 0;
 	}
-	if (r_buf_read (buf, (ut8*)&header->version, sizeof (header->version)) != sizeof (header->version)) {
-		goto beach;
-	}
-	ret = header->version;
-beach:
-	free (header);
-	return ret;
+	return version;
 }
 
 static inline RFlirt *flirt_new(const RAnal *anal, RBuffer *flirt_buf) {
 	RFlirt *f = R_NEW0 (RFlirt);
-	if (f) {
-		f->anal = anal;
-		f->b = flirt_buf;
-	}
+	f->anal = anal;
+	f->b = flirt_buf;
 	return f;
 }
 
@@ -1400,7 +1378,10 @@ R_API void r_sign_flirt_dump(const RAnal *anal, const char *flirt_file) {
 	RFlirt *f = flirt_new (anal, flirt_buf);
 	RFlirtNode *node = flirt_parse (f);
 	if (node) {
-		print_node (anal, node, -1);
+		RStrBuf *sb = r_strbuf_new ("");
+		print_node (sb, node, -1);
+		anal->cb_printf ("%s", r_strbuf_get (sb));
+		r_strbuf_free (sb);
 		node_free (node);
 	} else {
 		R_LOG_ERROR ("We encountered a problem while parsing the file");

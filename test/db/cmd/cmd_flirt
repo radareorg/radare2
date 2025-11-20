@@ -11,7 +11,7 @@ FILE=bins/elf/analysis/pid_stripped
 CMDS=zfd bins/other/sigs/libc-v7.sig
 EXPECT=<<EOF
 41564155B8........4154554D89C4534889CD4D89CD4881EC900000004885C0:
- 0. 16 D2A2 0298 0000:__libc_start_main
+0. 16 D2A2 0298 0000:__libc_start_main
 EOF
 RUN
 
@@ -53,7 +53,7 @@ FILE=bins/elf/analysis/pid_stripped
 CMDS=zfd bins/other/sigs/libc-v10.sig
 EXPECT=<<EOF
 41564155B8........4154554D89C4534889CD4D89CD4881EC900000004885C0:
- 0. 16 D2A2 0298 0000:__libc_start_main
+0. 16 D2A2 0298 0000:__libc_start_main
 EOF
 RUN
 
