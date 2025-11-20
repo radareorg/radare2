@@ -62,9 +62,12 @@ int LLVMFuzzerTestOneInput(const ut8 *data, size_t len) {
 	r_core_cmdf (core, "o malloc://%" PFMT64d, (ut64)len);
 	r_io_write_at (core->io, 0, data, len);
 	r_core_cmd0 (core, "m /");
+	r_core_cmd0 (core, "mn");
 	r_core_cmd0 (core, "md /");
 	r_core_cmd0 (core, "md /bin");
+	r_core_cmd0 (core, "mdd /root/radare2_test");
 	r_core_cmd0 (core, "mc /README.md");
+	r_cons_flush (core->cons);
 	r_core_free (core);
 	return 0;
 }
