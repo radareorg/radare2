@@ -11,14 +11,14 @@ static ut32 asn1_ber_indefinite(const ut8 *buffer, ut32 length) {
 	if (!buffer || length < 3) {
 		return 0;
 	}
-	const ut8* next = buffer + 2;
-	const ut8* end = buffer + length - 3;
+	const ut8 *next = buffer + 2;
+	const ut8 *end = buffer + length - 3;
 	while (next + 1 < end) {
 		if (!next[0] && !next[1]) {
 			break;
 		}
 		if (next[0] == 0x80 && (next[-1] & ASN1_FORM) == FORM_CONSTRUCTED) {
-			next --;
+			next--;
 			int sz = asn1_ber_indefinite (next, end - next);
 			if (sz < 1) {
 				break;
@@ -74,9 +74,9 @@ static RASN1Object *asn1_parse_header(const ut8 *buffer_base, const ut8 *buffer,
 			}
 			length64 = asn1_ber_indefinite (obj->sector, length - 2);
 		}
-		obj->length = (ut32) length64;
+		obj->length = (ut32)length64;
 	} else {
-		obj->length = (ut32) length8;
+		obj->length = (ut32)length8;
 		obj->sector = buffer + 2;
 	}
 	obj->bitlength = 8 * obj->length;
@@ -114,7 +114,7 @@ static ut32 asn1_count_objects(const ut8 *buffer, ut32 length) {
 	const ut8 *end = buffer + length;
 	while (next >= buffer && next < end) {
 		// i do not care about the offset now.
-		RASN1Object *obj = asn1_parse_header (buffer, next, (size_t)(end - next));
+		RASN1Object *obj = asn1_parse_header (buffer, next, (size_t) (end - next));
 		if (!obj || next == obj->sector) {
 			R_FREE (obj);
 			break;
@@ -147,7 +147,7 @@ R_API RASN1Object *r_asn1_object_parse(const ut8 *buffer_base, const ut8 *buffer
 		}
 		if (count > 0) {
 			object->list.length = count;
-			object->list.objects = R_NEWS0 (RASN1Object*, count);
+			object->list.objects = R_NEWS0 (RASN1Object *, count);
 			if (!object->list.objects) {
 				r_asn1_object_free (object);
 				return NULL;
@@ -227,44 +227,42 @@ R_API RASN1Binary *r_asn1_binary_new(const ut8 *buffer, ut32 length) {
 	if (!buffer || !length) {
 		return NULL;
 	}
-	ut8* buf = (ut8*) calloc (1, length);
+	ut8 *buf = (ut8 *)calloc (1, length);
 	if (!buf) {
 		return NULL;
 	}
-	RASN1Binary* bin = R_NEW0 (RASN1Binary);
+	RASN1Binary *bin = R_NEW0 (RASN1Binary);
 	memcpy (buf, buffer, length);
 	bin->binary = buf;
 	bin->length = length;
 	return bin;
 }
 
-static void asn1_hexstring(RASN1Object *obj, char* buffer, ut32 size, ut32 depth, int fmtmode) {
+static char *asn1_hexstring(RASN1Object *obj, RStrBuf *sb, ut32 depth, int fmtmode) {
 	ut32 i;
 	if (!obj || !obj->sector) {
-		return;
+		return NULL;
 	}
-	char* p = buffer;
-	char* end = buffer + size;
+	if (!sb) {
+		sb = r_strbuf_new ("");
+	} else {
+		r_strbuf_free (sb);
+		sb = r_strbuf_new ("");
+	}
 	if (depth > 0 && fmtmode == 'q') {
-		const char *pad = r_str_pad (' ', (depth * 2) - 2);
-		snprintf (p, end - p, "%s", pad);
-		p += strlen (pad);
+		r_strbuf_pad (sb, ' ', (depth * 2) - 2);
 	}
-	for (i = 0; i < obj->length && p < end; i++) {
-		snprintf (p, end - p, "%02x", obj->sector[i]);
-		p += 2;
+	for (i = 0; i < obj->length; i++) {
+		r_strbuf_appendf (sb, "%02x", obj->sector[i]);
 	}
-	if (p >= end) {
-		p -= 4;
-		snprintf (p, end - p, "...");
-	}
+	return sb? r_strbuf_drain (sb): NULL;
 }
 
 static void asn1_printkv(RStrBuf *sb, RASN1Object *obj, int depth, const char *k, const char *v) {
-	const char *pad = r_str_pad (' ', (depth * 2) - 2);
 	if (obj->form && !*v) {
 		return;
 	}
+	int pad_len = (depth > 1)? (depth * 2) - 2: 0;
 	switch (obj->tag) {
 	case TAG_NULL:
 	case TAG_EOC:
@@ -272,33 +270,41 @@ static void asn1_printkv(RStrBuf *sb, RASN1Object *obj, int depth, const char *k
 	case TAG_INTEGER:
 	case TAG_REAL:
 		if (*r_str_trim_head_ro (v)) {
-			r_strbuf_appendf (sb, "%s%s\n%s%s\n", pad, k, pad, v);
+			if (pad_len > 0) {
+				r_strbuf_pad (sb, ' ', pad_len);
+			}
+			r_strbuf_appendf (sb, "%s\n", k);
+			if (pad_len > 0) {
+				r_strbuf_pad (sb, ' ', pad_len);
+			}
+			r_strbuf_appendf (sb, "%s\n", v);
 		}
 		break;
 	case TAG_BITSTRING:
 	default:
 		if (*r_str_trim_head_ro (v)) {
-			r_strbuf_appendf (sb, "%s%s\n", pad, v);
+			if (pad_len > 0) {
+				r_strbuf_pad (sb, ' ', pad_len);
+			}
+			r_strbuf_appendf (sb, "%s\n", v);
 		}
 		break;
 	}
 }
 
-static RASN1String* asn1_hexdump(RASN1Object *obj, ut32 depth, int fmtmode) {
-	const char *pad;
+static RASN1String *asn1_hexdump(RASN1Object *obj, ut32 depth, int fmtmode) {
 	ut32 i, j;
-	char readable[20] = {0};
+	char readable[20] = { 0 };
 	if (!obj || !obj->sector || obj->length < 1) {
 		return NULL;
 	}
 	RStrBuf *sb = r_strbuf_new ("");
-	if (fmtmode == 'j') {
-		pad = "";
-	} else if (fmtmode != 'q') {
-		pad = "                                        : ";
-	} else {
-		pad = r_str_pad (' ', depth * 2);
+	const char *pad = "                                        : ";
+	if (fmtmode != 'j' && fmtmode != 'q') {
+		r_strbuf_append (sb, pad);
+	} else if (fmtmode == 'q') {
 		r_strbuf_append (sb, "  ");
+		r_strbuf_pad (sb, ' ', depth * 2);
 	}
 
 	const int length = obj->length;
@@ -311,12 +317,17 @@ static RASN1String* asn1_hexdump(RASN1Object *obj, ut32 depth, int fmtmode) {
 		for (i = 0, j = 0; i < length; i++, j++) {
 			ut8 c = obj->sector[i];
 			if (i > 0 && (i % 16) == 0) {
-				r_strbuf_appendf (sb, "|%-16s|\n%s", readable, pad);
+				r_strbuf_appendf (sb, "|%-16s|\n", readable);
+				if (fmtmode == 'q') {
+					r_strbuf_pad (sb, ' ', depth * 2);
+				} else {
+					r_strbuf_append (sb, pad);
+				}
 				memset (readable, 0, sizeof (readable));
 				j = 0;
 			}
 			r_strbuf_appendf (sb, "%02x ", c);
-			readable[j] = IS_PRINTABLE (c) ? c : '.';
+			readable[j] = IS_PRINTABLE (c)? c: '.';
 		}
 
 		while ((i % 16) != 0) {
@@ -325,8 +336,8 @@ static RASN1String* asn1_hexdump(RASN1Object *obj, ut32 depth, int fmtmode) {
 		}
 		r_strbuf_appendf (sb, "|%-16s|", readable);
 	}
-	char* text = r_strbuf_drain (sb);
-	RASN1String* as = r_asn1_string_new (text, true, strlen (text) + 1);
+	char *text = r_strbuf_drain (sb);
+	RASN1String *as = r_asn1_string_new (text, true, strlen (text) + 1);
 	if (!as) {
 		/* no memory left.. */
 		free (text);
@@ -344,14 +355,14 @@ R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ
 		sb = r_strbuf_new ("");
 		root = true;
 	}
-	char temp_name[4096] = {0};
 	ut32 i;
 	// Use the pre-calculated headerlength from the object
 	ut8 hlen = obj->headerlength;
 	// this shall not be freed. it's a pointer into the buffer.
-	RASN1String* asn1str = NULL;
-	const char* name = "";
-	const char* string = "";
+	RASN1String *asn1str = NULL;
+	char *dyn_name = NULL;
+	const char *name = "";
+	const char *string = "";
 
 	switch (obj->klass) {
 	case CLASS_UNIVERSAL: // universal
@@ -368,8 +379,10 @@ R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ
 		case TAG_INTEGER:
 			name = "INTEGER";
 			if (obj->length < 16) {
-				asn1_hexstring (obj, temp_name, sizeof (temp_name), depth, fmtmode);
-				string = temp_name;
+				char *hexstr = asn1_hexstring (obj, NULL, depth, fmtmode);
+				if (hexstr) {
+					asn1str = r_asn1_string_new (hexstr, true, strlen (hexstr) + 1);
+				}
 			} else {
 				asn1str = asn1_hexdump (obj, depth, fmtmode);
 			}
@@ -378,8 +391,10 @@ R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ
 			name = "BIT_STRING";
 			if (!obj->list.objects) {
 				if (obj->length < 16) {
-					asn1_hexstring (obj, temp_name, sizeof (temp_name), depth, fmtmode);
-					string = temp_name;
+					char *hexstr = asn1_hexstring (obj, NULL, depth, fmtmode);
+					if (hexstr) {
+						asn1str = r_asn1_string_new (hexstr, true, strlen (hexstr) + 1);
+					}
 				} else {
 					asn1str = asn1_hexdump (obj, depth, fmtmode);
 				}
@@ -391,8 +406,10 @@ R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ
 				asn1str = r_asn1_stringify_string (obj->sector, obj->length);
 			} else if (!obj->list.objects) {
 				if (obj->length < 16) {
-					asn1_hexstring (obj, temp_name, sizeof (temp_name), depth, fmtmode);
-					string = temp_name;
+					char *hexstr = asn1_hexstring (obj, NULL, depth, fmtmode);
+					if (hexstr) {
+						asn1str = r_asn1_string_new (hexstr, true, strlen (hexstr) + 1);
+					}
 				} else {
 					asn1str = asn1_hexdump (obj, depth, fmtmode);
 				}
@@ -479,23 +496,29 @@ R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ
 			asn1str = r_asn1_stringify_string (obj->sector, obj->length);
 			break;
 		default:
-			snprintf (temp_name, sizeof (temp_name), "Universal_%u", obj->tag);
-			name = temp_name;
+			dyn_name = r_str_newf ("Universal_%u", obj->tag);
+			name = dyn_name;
 			break;
 		}
 		break;
 	case CLASS_APPLICATION:
-		snprintf (temp_name, sizeof (temp_name), "Application_%u", obj->tag);
-		name = temp_name;
-		break;
+		{
+			dyn_name = r_str_newf ("Application_%u", obj->tag);
+			name = dyn_name;
+			break;
+		}
 	case CLASS_CONTEXT:
-		snprintf (temp_name, sizeof (temp_name), "Context [%u]", obj->tag); // Context
-		name = temp_name;
-		break;
+		{
+			dyn_name = r_str_newf ("Context [%u]", obj->tag); // Context
+			name = dyn_name;
+			break;
+		}
 	case CLASS_PRIVATE:
-		snprintf (temp_name, sizeof (temp_name), "Private_%u", obj->tag);
-		name = temp_name;
-		break;
+		{
+			dyn_name = r_str_newf ("Private_%u", obj->tag);
+			name = dyn_name;
+			break;
+		}
 	}
 	if (asn1str) {
 		string = asn1str->string;
@@ -561,13 +584,16 @@ R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ
 		}
 		r_strbuf_appendf (sb, " [@ 0x%" PFMT64x "](0x%x + 0x%x)", obj->offset, hlen, obj->length);
 		if (obj->tag == TAG_BITSTRING || obj->tag == TAG_INTEGER || obj->tag == TAG_GENERALSTRING) {
-			asn1_hexstring (obj, temp_name, sizeof (temp_name), depth, fmtmode);
-			if (strlen (temp_name) > 100) {
-				r_strbuf_append (sb, " - ");
-				r_strbuf_append_n (sb, temp_name, 100);
-				r_strbuf_append (sb, "...");
-			} else {
-				r_strbuf_appendf (sb, " - %s", temp_name);
+			char *hexstr = asn1_hexstring (obj, NULL, depth, fmtmode);
+			if (hexstr) {
+				if (strlen (hexstr) > 100) {
+					r_strbuf_append (sb, " - ");
+					r_strbuf_append_n (sb, hexstr, 100);
+					r_strbuf_append (sb, "...");
+				} else {
+					r_strbuf_appendf (sb, " - %s", hexstr);
+				}
+				free (hexstr);
 			}
 		} else if (obj->tag == TAG_SEQUENCE || obj->tag == TAG_SET) {
 			r_strbuf_appendf (sb, " - %02x", obj->tag | 0x20);
@@ -596,12 +622,15 @@ R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ
 		r_strbuf_appendf (sb, "%#8" PFMT64x, obj->offset);
 		r_strbuf_appendf (sb, " %#4x + %#6x %5d %4s %-20s: ", hlen, obj->length, depth, obj->form? "cons": "prim", name);
 		if (obj->tag == TAG_BITSTRING || obj->tag == TAG_INTEGER || obj->tag == TAG_GENERALSTRING) {
-			asn1_hexstring (obj, temp_name, sizeof (temp_name), depth, fmtmode);
-			if (strlen (temp_name) > 100) {
-				r_strbuf_append_n (sb, temp_name, 100);
-				r_strbuf_append (sb, "...");
-			} else {
-				r_strbuf_appendf (sb, "%s", temp_name);
+			char *hexstr = asn1_hexstring (obj, NULL, depth, fmtmode);
+			if (hexstr) {
+				if (strlen (hexstr) > 100) {
+					r_strbuf_append_n (sb, hexstr, 100);
+					r_strbuf_append (sb, "...");
+				} else {
+					r_strbuf_appendf (sb, "%s", hexstr);
+				}
+				free (hexstr);
 			}
 		} else if (obj->tag == TAG_SEQUENCE || obj->tag == TAG_SET) {
 			r_strbuf_appendf (sb, "%02x", obj->tag | 0x20);
@@ -627,6 +656,7 @@ R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ
 		break;
 	}
 	r_asn1_string_free (asn1str);
+	free (dyn_name);
 	return root? r_strbuf_drain (sb): NULL;
 }
 
@@ -648,7 +678,7 @@ R_API void r_asn1_object_free(RASN1Object *obj) {
 	free (obj);
 }
 
-R_API void r_asn1_binary_free(RASN1Binary* bin) {
+R_API void r_asn1_binary_free(RASN1Binary *bin) {
 	if (bin) {
 		free (bin->binary);
 		free (bin);
