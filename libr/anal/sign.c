@@ -421,7 +421,7 @@ static bool serialize_str_list(RList *l, RStrBuf *sb, RSignType t) {
 		if (strchr (e, ',')) {
 			return false;
 		}
-		if (strchr (e, ',') || !r_strbuf_appendf (sb, "%s%s", c, e)) {
+		if (!r_strbuf_appendf (sb, "%s%s", c, e)) {
 			return false;
 		}
 		if (!*c) {
@@ -925,7 +925,7 @@ static char *real_function_name(RAnal *a, RAnalFunction *fcn);
 static RSignItem *item_from_func(RAnal *a, RAnalFunction *fcn, const char *name) {
 	if (r_list_empty (fcn->bbs)) {
 		R_LOG_WARN ("Function with no basic blocks at 0x%08"PFMT64x, fcn->addr);
-		return false;
+		return NULL;
 	}
 	RSignItem *it = item_new_named (a, name? name: fcn->name);
 	if (it) {
@@ -1655,7 +1655,7 @@ static void list_sanitise_warn(char *s, const char *name, const char *field) {
 	if (s) { // NULL value accepted and sane
 		bool sanitized = false;
 		for (; *s; s++) {
-			switch (*name) {
+			switch (*s) {
 			case '\t':
 			case ' ':
 			case '`':
@@ -1937,6 +1937,7 @@ static bool listCB(RSignItem *it, void *user) {
 		pj_o (ctx->pj);
 	}
 
+	char padstr[32];
 	// Zignspace and name (except for radare format)
 	switch (ctx->format) {
 	case '*':
@@ -1948,7 +1949,7 @@ static bool listCB(RSignItem *it, void *user) {
 		break;
 	case 'q':
 		a->cb_printf ("0x%08" PFMT64x " ", it->addr);
-		const char *pad = r_str_pad (' ', 30 - strlen (it->name));
+		const char *pad = r_str_pad2 (padstr, sizeof (padstr), ' ', 30 - strlen (it->name));
 		a->cb_printf ("%s:%s", it->name, pad);
 		break;
 	case 'j':
