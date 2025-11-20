@@ -424,8 +424,9 @@ static bool fs_bfs_mount(RFSRoot *root) {
 	ctx->is_openbfs = (magic1 == OBS_SUPER_MAGIC1);
 
 	ctx->block_size = bfs_read32 (ctx, (ut8 *)&sb.block_size);
-	if (!ctx->block_size || (ctx->block_size &(ctx->block_size - 1))) {
-		R_LOG_WARN ("Unexpected BFS block size");
+	if (!ctx->block_size || (ctx->block_size & (ctx->block_size - 1))) {
+		R_LOG_ERROR ("Invalid BFS block size: must be power of 2");
+		goto fail;
 	}
 	ctx->block_shift = bfs_read32 (ctx, (ut8 *)&sb.block_shift);
 	ctx->inode_size = bfs_read32 (ctx, (ut8 *)&sb.inode_size);
