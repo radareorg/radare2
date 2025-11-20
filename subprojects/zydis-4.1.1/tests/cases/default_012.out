@@ -1,0 +1,39 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: ret [ENC: DEFAULT, MAP: DEFAULT, OPC: 0xC2]
+     LENGTH:  3
+        SSZ: 64
+       EOSZ: 64
+       EASZ: 64
+   CATEGORY: RET
+    ISA-SET: I86
+    ISA-EXT: BASE
+ EXCEPTIONS: NONE
+ ATTRIBUTES: ACCEPTS_BND 
+  OPTIMIZED: C2 E9 5D 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0  IMMEDIATE    EXPLICIT       R        UIMM16     16      1      16      UINT  [U A 16] 0x0000000000005DE9
+ 1   REGISTER      HIDDEN       W          NONE     64      1      64       INT                          rip
+ 2   REGISTER      HIDDEN      RW          NONE     64      1      64       INT                          rsp
+ 3     MEMORY      HIDDEN       R          NONE     64      1      64       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ss
+                                                                                 BASE  =                 rsp
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000000000000
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: ret $0x5DE9
+   RELATIVE: ret $0x5DE9
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: ret 0x5DE9
+   RELATIVE: ret 0x5DE9
+
+== [ SEGMENTS ] ============================================================================================
+C2 E9 5D 
+:  :..IMM
+:..OPCODE

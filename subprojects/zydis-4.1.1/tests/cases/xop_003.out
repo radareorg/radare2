@@ -1,0 +1,40 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpmadcsswd [ENC: XOP, MAP: XOP8, OPC: 0xA6]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: XOP
+    ISA-SET: XOP
+    ISA-EXT: XOP
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_XOP 
+  OPTIMIZED: 8F 48 68 A6 C0 20 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128      4      32       INT                         xmm8
+ 1   REGISTER    EXPLICIT       R        NDSNDD    128      8      16       INT                         xmm2
+ 2   REGISTER    EXPLICIT       R      MODRM_RM    128      8      16       INT                         xmm8
+ 3   REGISTER    EXPLICIT       R           IS4    128      4      32       INT                         xmm2
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpmadcsswd %xmm2, %xmm8, %xmm2, %xmm8
+   RELATIVE: vpmadcsswd %xmm2, %xmm8, %xmm2, %xmm8
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpmadcsswd xmm8, xmm2, xmm8, xmm2
+   RELATIVE: vpmadcsswd xmm8, xmm2, xmm8, xmm2
+
+== [ SEGMENTS ] ============================================================================================
+8F 08 68 A6 C0 23 
+:        :  :  :..IMM
+:        :  :..MODRM
+:        :..OPCODE
+:..XOP

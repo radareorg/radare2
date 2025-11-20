@@ -1,0 +1,39 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: pfmin [ENC: 3DNOW, MAP: 0F0F, OPC: 0x94]
+     LENGTH:  8
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AMD3DNOW
+    ISA-SET: AMD3DNOW
+    ISA-EXT: AMD3DNOW
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM ACCEPTS_SEGMENT 
+  OPTIMIZED: 0F 0F BB DF 7C B7 43 94 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT      RW     MODRM_REG     64      1      64       INT                          mm7
+ 1     MEMORY    EXPLICIT       R      MODRM_RM     64      1      64       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rbx
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000043B77CDF
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: pfmin 0x43B77CDF(%rbx), %mm7
+   RELATIVE: pfmin 0x43B77CDF(%rbx), %mm7
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: pfmin mm7, qword ptr ds:[rbx+0x43B77CDF]
+   RELATIVE: pfmin mm7, qword ptr ds:[rbx+0x43B77CDF]
+
+== [ SEGMENTS ] ============================================================================================
+0F 0F BB DF 7C B7 43 94 
+:     :  :           :..OPCODE
+:     :  :..DISP
+:     :..MODRM
+:..OPCODE

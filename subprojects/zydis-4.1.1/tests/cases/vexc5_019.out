@@ -1,0 +1,44 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpand [ENC: VEX, MAP: 0F, OPC: 0xDB]
+     LENGTH:  5
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: LOGICAL
+    ISA-SET: AVX2
+    ISA-EXT: AVX2
+ EXCEPTIONS: AVX4
+ ATTRIBUTES: HAS_MODRM HAS_VEX ACCEPTS_SEGMENT 
+  OPTIMIZED: C5 C5 DB 6D 07 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    256      1     256      UINT                         ymm5
+ 1   REGISTER    EXPLICIT       R        NDSNDD    256      1     256      UINT                         ymm7
+ 2     MEMORY    EXPLICIT       R      MODRM_RM    256      1     256      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  ss
+                                                                                 BASE  =                 rbp
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000000000007
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 256
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpand 0x07(%rbp), %ymm7, %ymm5
+   RELATIVE: vpand 0x07(%rbp), %ymm7, %ymm5
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpand ymm5, ymm7, ymmword ptr ss:[rbp+0x07]
+   RELATIVE: vpand ymm5, ymm7, ymmword ptr ss:[rbp+0x07]
+
+== [ SEGMENTS ] ============================================================================================
+C5 C5 DB 6D 07 
+:     :  :  :..DISP
+:     :  :..MODRM
+:     :..OPCODE
+:..VEX

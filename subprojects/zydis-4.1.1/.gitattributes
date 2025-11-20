@@ -1,0 +1,6 @@
+*.inc  eol=lf encoding=utf-8 linguist-language=C
+*.h    eof=lf encoding=utf-8
+*.c    eof=lf encoding=utf-8
+*.py   eof=lf encoding=utf-8
+*.md   eof=lf encoding=utf-8
+

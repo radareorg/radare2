@@ -1,0 +1,16 @@
+// Test script to verify break handler with stack trace functionality
+console.log("Starting test script...");
+
+// Create a function that will hang
+function hangingFunction() {
+    console.log("In hanging function...");
+    // Infinite loop to simulate hanging
+    while (true) {
+        // Do nothing, just wait
+    }
+}
+
+// Call the hanging function
+console.log("About to call hanging function...");
+hangingFunction();
+console.log("This should never be reached");

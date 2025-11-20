@@ -1,0 +1,51 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpmaxsd [ENC: MVEX, MAP: 0F38, OPC: 0x3D]
+     LENGTH: 10
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: KNC
+    ISA-SET: KNCE
+    ISA-EXT: KNCE
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_MVEX ACCEPTS_SEGMENT 
+  OPTIMIZED: 62 C2 69 0F 3D 81 BB AD E3 4D 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT     RCW     MODRM_REG    512     16      32   FLOAT32                        zmm16
+ 1   REGISTER    EXPLICIT       R          MASK     16     16       1       INT                           k7
+ 2   REGISTER    EXPLICIT       R        NDSNDD    512     16      32   FLOAT32                         zmm2
+ 3     MEMORY    EXPLICIT       R      MODRM_RM    512     16      32       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                  r9
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x000000004DE3ADBB
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 512
+  BROADCAST: NONE
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k7 [MERGING]
+         EH: N
+    SWIZZLE: NONE
+    CONVERT: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpmaxsd 0x4DE3ADBB(%r9), %zmm2, %zmm16 {%k7}
+   RELATIVE: vpmaxsd 0x4DE3ADBB(%r9), %zmm2, %zmm16 {%k7}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpmaxsd zmm16 {k7}, zmm2, zmmword ptr ds:[r9+0x4DE3ADBB]
+   RELATIVE: vpmaxsd zmm16 {k7}, zmm2, zmmword ptr ds:[r9+0x4DE3ADBB]
+
+== [ SEGMENTS ] ============================================================================================
+62 C2 69 0F 3D 81 BB AD E3 4D 
+:           :  :  :..DISP
+:           :  :..MODRM
+:           :..OPCODE
+:..MVEX

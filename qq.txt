@@ -1,0 +1,96 @@
+## Title
+Fix r2r parallel output mixing on failures (portable, incl. Windows)
+
+## Repository / Scope
+- Repo: radareorg/radare2
+- Work only under: binr/r2r/
+
+## Problem Summary (for Codex)
+When tests run in parallel (e.g., -j > 1) and at least one test fails or times out, r2r sometimes mixes stdout/stderr from unrelated tests. This only happens on error paths; a fully green run is stable. The issue stems from fragile process handling and output capture: shared/leaked pipe handles/FDs, incomplete kill on timeout, non-atomic printing, and reuse of global/shared buffers. A previous patch attempt introduced non-portable UNIX-only APIs (pipe2/O_CLOEXEC/killpg/poll) and dead code on Windows.
+
+## Goal
+Refactor r2r’s child-process execution and output capture to be **robust and cross-platform** (Linux/macOS/Windows MSVC+MinGW), ensuring:
+1) No FD/handle leakage to grandchildren.
+2) Reliable cancellation/timeout that terminates the entire subprocess tree per test.
+3) Correct draining of stdout/stderr after termination so residual bytes don’t bleed into other tests.
+4) Atomic printing of failure diagnostics to avoid interleaving lines across threads.
+5) No nonportable calls in the Windows code path.
+
+## Constraints & Design Rules
+- Do **not** change the external CLI/UX of r2r.
+- Keep changes localized to binr/r2r/ (new helper source files allowed here).
+- Avoid UNIX-only APIs in shared code. Use #ifdef _WIN32 for Windows branches and POSIX otherwise.
+- No global shared FILE*/buffers for concurrent tests. Allocate per-test structures.
+- Ensure large-output tests never deadlock (reader threads on Windows; nonblocking + poll/select on POSIX are OK, but keep Windows path free of poll/select).
+
+## Deliverables (exact edits/files)
+1) **Create** binr/r2r/r2r_proc.h and binr/r2r/r2r_proc.c implementing a portable runner API:
+   - Types:
+     - struct R2RProc;  // opaque per-test process handle
+   - API:
+     - R2RProc *r2r_proc_spawn(const char **argv, bool merge_err, char **err_msg);
+       // Spawns the test in its own process group / job, with dedicated pipes for stdout and (optionally) stderr.
+     - bool r2r_proc_wait(R2RProc *p, int timeout_ms, int *exit_code, char **err_msg);
+       // Waits with timeout. On timeout, ensures full tree termination.
+     - bool r2r_proc_read_all(R2RProc *p, RStrBuf *out, RStrBuf *err);
+       // Drains both streams fully (until EOF). Safe to call after timeout/kill.
+     - void r2r_proc_free(R2RProc *p);
+       // Closes handles/FDs and frees.
+
+2) **Implement POSIX branch** (in r2r_proc.c under #ifndef _WIN32):
+   - Use pipe() + fcntl(FD_CLOEXEC) for both ends (avoid pipe2).
+   - After fork(): in child, setpgid(0,0) before exec; dup2 write ends; close all FDs.
+   - In parent, setpgid(child, child) (best-effort).
+   - For timeout, kill the *process group* via kill(-pgid, SIGKILL) or killpg(child, SIGKILL).
+   - Drain pipes using nonblocking reads with poll/select until EOF after the child exits/is killed.
+
+3) **Implement Windows branch** (in r2r_proc.c under #ifdef _WIN32):
+   - Use CreatePipe with SECURITY_ATTRIBUTES { bInheritHandle = TRUE } then call SetHandleInformation(..., HANDLE_FLAG_INHERIT, 0) on the **read ends** to keep them non-inheritable by the child.
+   - CreateProcessW with CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP.
+   - Create a Job Object; set JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE; AssignProcessToJobObject so all grandchildren die when the job is closed.
+   - For timeout, call TerminateJobObject (or close job handle) to kill the tree.
+   - Start **two reader threads** (one per pipe) using ReadFile in blocking mode and append to RStrBuf. Join them after process exit/kill to guarantee full drain and avoid pipe-buffer deadlocks.
+   - Avoid poll/select/killpg/Unix signals entirely in this branch.
+
+4) **Introduce atomic print** in binr/r2r/r2r.c (or a small helper):
+   - Add a cross-platform mutex wrapper:
+     - POSIX: pthread_mutex_t
+     - Windows: CRITICAL_SECTION
+   - Implement: void r2r_print_block_atomic(const char *s, size_t len);
+     - Locks, writes the entire failure block (expected/got/diff), unlocks.
+
+5) **Replace current per-test execution path** in r2r.c:
+   - Where a test command is spawned/executed with timeout and captured, replace with r2r_proc_* API.
+   - Ensure no shared/global capture buffers. Keep capture variables in a per-test struct that lives only on that worker thread.
+   - On any failure/timeout, always call r2r_proc_read_all() **after** termination to flush residual data, then print via r2r_print_block_atomic().
+
+6) **Build system updates** (binr/r2r/meson.build or Makefile):
+   - Add r2r_proc.c to the r2r target.
+   - Link against r_util as before. No new external dependencies.
+
+## Acceptance Criteria
+- Linux/macOS/Windows builds succeed (MSVC and MinGW). No UNIX-only calls in Windows path.
+- Running with parallelism (e.g., r2r -j 8) and introducing a forced failing test does **not** interleave outputs; failure blocks print atomically.
+- No orphan/lingering child processes remain after timeouts (verify via process list on all platforms).
+- No deadlocks with large outputs (e.g., tests that write > 1MB to stdout/stderr).
+
+## Test Hints (manual)
+- Intentionally add one failing test that writes many lines to stderr while others pass; run with -j 8 and a short -t timeout to stress the error path.
+- Repeat multiple times; output must stay stable and non-interleaved.
+
+## Notes for Codex
+- Do not use pipe2 or killpg in shared headers; keep them inside POSIX #ifdefs.
+- On Windows, prefer Job Objects over ad-hoc tree killing logic.
+- Ensure all handles/FDs are closed in both success and error paths.
+- Keep code clear and documented; remove any now-dead code from the previous attempt.
+
+## Commit Message (suggested)
+binr/r2r: robust, portable child-process runner + atomic fail printing (fixes mixed output on failure)
+
+- Introduce r2r_proc.* with POSIX and Windows implementations
+- Use process-group / job-object tree termination on timeout
+- Drain stdout/stderr reliably; no FD/handle leakage
+- Atomic printing of failure blocks to avoid interleaving
+- Remove nonportable/dead code from previous attempt
+"
+```

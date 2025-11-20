@@ -1,0 +1,20 @@
+# This file is also parsed by CMakelists.txt, please only add one option value
+# per line (i.e. do not split long lines with '\'), and only use '=' to set values
+
+PROJECT_NAME = Zydis
+PROJECT_NUMBER = v4.1.1
+OUTPUT_DIRECTORY = ./doc
+INPUT = ./include ./README.md ./files.dox
+JAVADOC_AUTOBRIEF = YES
+QT_AUTOBRIEF = YES
+OPTIMIZE_OUTPUT_FOR_C = YES
+TOC_INCLUDE_HEADINGS = 0
+EXTRACT_LOCAL_CLASSES = NO
+HIDE_SCOPE_NAMES = YES
+RECURSIVE = YES
+USE_MDFILE_AS_MAINPAGE = README.md
+GENERATE_LATEX = NO
+GENERATE_TREEVIEW = YES
+DISABLE_INDEX = NO
+FULL_SIDEBAR = NO
+EXTRACT_ALL = YES

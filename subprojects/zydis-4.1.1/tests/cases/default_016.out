@@ -1,0 +1,36 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: xlat [ENC: DEFAULT, MAP: DEFAULT, OPC: 0xD7]
+     LENGTH:  1
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: MISC
+    ISA-SET: I86
+    ISA-EXT: BASE
+ EXCEPTIONS: NONE
+ ATTRIBUTES: ACCEPTS_SEGMENT 
+  OPTIMIZED: D7 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0     MEMORY      HIDDEN       R          NONE      8      1       8      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rbx
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000000000000
+ 1   REGISTER      HIDDEN       W          NONE      8      1       8       INT                           al
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: xlat
+   RELATIVE: xlat
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: xlat
+   RELATIVE: xlat
+
+== [ SEGMENTS ] ============================================================================================
+D7 
+:..OPCODE

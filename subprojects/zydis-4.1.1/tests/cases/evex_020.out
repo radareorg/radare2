@@ -1,0 +1,48 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpandd [ENC: EVEX, MAP: 0F, OPC: 0xDB]
+     LENGTH: 10
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: LOGICAL
+    ISA-SET: AVX512F_256
+    ISA-EXT: AVX512EVEX
+ EXCEPTIONS: E4
+ ATTRIBUTES: HAS_MODRM HAS_EVEX ACCEPTS_SEGMENT 
+  OPTIMIZED: 62 51 55 BD DB B1 12 F8 15 7B 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    256      8      32      UINT                        ymm14
+ 1   REGISTER    EXPLICIT       R          MASK     64     64       1       INT                           k5
+ 2   REGISTER    EXPLICIT       R        NDSNDD    256      8      32      UINT                         ymm5
+ 3     MEMORY    EXPLICIT       R      MODRM_RM     32      1      32      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                  r9
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x000000007B15F812
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 256
+  BROADCAST: 1_TO_8
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k5 [ZEROING]
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpandd 0x7B15F812(%r9) {1to8}, %ymm5, %ymm14 {%k5} {z}
+   RELATIVE: vpandd 0x7B15F812(%r9) {1to8}, %ymm5, %ymm14 {%k5} {z}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpandd ymm14 {k5} {z}, ymm5, dword ptr ds:[r9+0x7B15F812] {1to8}
+   RELATIVE: vpandd ymm14 {k5} {z}, ymm5, dword ptr ds:[r9+0x7B15F812] {1to8}
+
+== [ SEGMENTS ] ============================================================================================
+62 11 55 BD DB B1 12 F8 15 7B 
+:           :  :  :..DISP
+:           :  :..MODRM
+:           :..OPCODE
+:..EVEX

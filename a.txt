@@ -1,0 +1,120 @@
+# pf
+
+The `pf` command permits to print memory using a format string. It's main principles are simplicity, those are the main features:
+
+* json output (`pfj`)
+* C output (`pfc`)
+* Struct types must be serializable into pf strings
+* Format fields have optional name
+* Support basic types as well as enums, structs, casts
+* Endian Swaps
+* Support arrays
+* Skipping bytes and define field alignment
+* Inline strings with multiple charsets
+
+## Current Limitations
+
+* json support not done properly and recursive types fail to render a valid representation
+* pointers to types are usually not well handled
+
+## Links
+
+* https://book.rada.re/commandline/print_modes.html
+
+## Current Types and Help
+
+Examples
+
+```
+[0x00000000]> pf???
+Usage: pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]
+Examples:
+| pf 3xi foo bar                               3-array of struct, each with named fields: 'foo' as hex, and 'bar' as int
+| pf B (BitFldType)arg_name`                   bitfield type
+| pf E (EnumType)arg_name`                     enum type
+| pf *z*i*w nb name blob                       print the pointers with given labels
+| pf iwq foo bar troll                         print the iwq format with foo, bar, troll as the respective names for the fields
+| pf 0iwq foo bar troll                        same as above, but considered as a union (all fields at offset 0)
+| pf.obj xxdz prev next size name              define the obj format as xxdz
+| pf obj=xxdz prev next size name              same as above
+| pf.plop ? (troll)mystruct                    use structure troll previously defined
+| pfj.plop @ 0x14                              apply format object at the given offset
+| pf 10xiz pointer length string               print a size 10 array of the xiz struct with its field names
+| pf 5sqw string quad word                     print an array with sqw struct along with its field names
+| pf 3? (bifc)                                 print 3 times the following format (bifc)
+| pf [4]w[7]i                                  print an array of 4 words and then an array of 7 integers
+| pf ic...?i foo bar "(pf xw yo foo)troll" yo  print nested anonymous structures
+| pf :..x                                      print value located 6 bytes from current offset
+| pf ";x"                                      print value located 4 bytes before current offset
+| pf [10]z[3]i[10]Zb                           print an fixed size str, widechar, and var
+| pfj +F @ 0x14                                print the content at given offset with flag
+| pf n2                                        print signed short (2 bytes) value. Use N instead of n for printing unsigned values
+| pf [2]? (plop)structname @ 0                 prints an array of structs
+| pf eqew bigWord beef                         swap endianness and print with given labels
+| pf.foo rr (eax)reg1 (eip)reg2                create object referencing to register values
+| pf tt troll plop                             print time stamps with labels troll and plop
+[0x00000000]>
+```
+Types: 
+```
+[0x00000000]> pf??
+Usage: pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]
+Format:
+|  b       byte (unsigned)
+|  B       resolve enum bitfield (see t?)
+|  c       char (signed byte)
+|  C       byte in decimal
+|  d       dword (4 bytes in hex) (see 'i' and 'x')
+|  D       disassemble one opcode
+|  e       temporally swap endian
+|  E       resolve enum name (see t?)
+|  f       float value (4 bytes)
+|  g       BF16 value (2 bytes)
+|  F       double value (8 bytes)
+|  G       long double value (16 bytes (10 with padding))
+|  i       signed integer value (4 bytes) (see 'd' and 'x')
+|  n       next char specifies size of signed value (1, 2, 4 or 8 byte(s))
+|  N       next char specifies size of unsigned value (1, 2, 4 or 8 byte(s))
+|  o       octal value (4 byte)
+|  p       pointer reference (2, 4 or 8 bytes)
+|  q       quadword (8 bytes)
+|  Q       uint128_t (16 bytes)
+|  r       CPU register `pf r (eax)plop`
+|  s       32bit pointer to string (4 bytes)
+|  S       64bit pointer to string (8 bytes)
+|  t       UNIX timestamp (4 bytes)
+|  T       show Ten first bytes of buffer
+|  u       uleb128 (variable length)
+|  w       word (2 bytes unsigned short in hex)
+|  x       0xHEX value and flag (fd @ addr) (see 'd' and 'i')
+|  X       show formatted hexpairs
+|  z       null terminated string
+|  Z       null terminated wide string
+|  ?       data structure `pf ? (struct_name)example_name`
+|  *       next char is a pointer (honors asm.bits)
+|  +       toggle show flags for each offset
+|  :       skip 4 bytes
+|  .       skip 1 byte
+|  ;       rewind 4 bytes
+|  ,       rewind 1 byte
+[0x00000000]>
+```
+
+## pf2, the return
+
+As an attempt to fix the current `pf` implementation which turned to be impossible because the way that it's implemented exposes some design limitations, but still even if the design is cleaner the implementation is not 100% compatible with pf1, and can't make tests pass
+
+## New proposal
+
+This redesign breaks current syntax and it's up for RFC
+
+```
+spaced by default -> w w b
+name:type -> x:w y:w
+structs use {} -> point:{x:w y:w}
+arrays use [] but after type ->  b[20] ... point:{x:w y:w}[5]
+unions can use <>  ->  <a:d b:w[2] c:b[4]>
+< and > for endianness port:>w ip:>d
+```
+
+

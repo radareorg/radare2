@@ -1,0 +1,40 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: pi2fd [ENC: 3DNOW, MAP: 0F0F, OPC: 0x0D]
+     LENGTH:  9
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AMD3DNOW
+    ISA-SET: AMD3DNOW
+    ISA-EXT: AMD3DNOW
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM ACCEPTS_SEGMENT HAS_SEGMENT HAS_SEGMENT_GS 
+  OPTIMIZED: 65 0F 0F A8 4C C3 AB BF 0D 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT      RW     MODRM_REG     64      1      64       INT                          mm5
+ 1     MEMORY    EXPLICIT       R      MODRM_RM     64      1      64       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  gs
+                                                                                 BASE  =                 rax
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0xFFFFFFFFBFABC34C
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: pi2fd %gs:-0x40543CB4(%rax), %mm5
+   RELATIVE: pi2fd %gs:-0x40543CB4(%rax), %mm5
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: pi2fd mm5, qword ptr gs:[rax-0x40543CB4]
+   RELATIVE: pi2fd mm5, qword ptr gs:[rax-0x40543CB4]
+
+== [ SEGMENTS ] ============================================================================================
+65 0F 0F A8 4C C3 AB BF 0D 
+:  :     :  :           :..OPCODE
+:  :     :  :..DISP
+:  :     :..MODRM
+:  :..OPCODE
+:..PREFIXES

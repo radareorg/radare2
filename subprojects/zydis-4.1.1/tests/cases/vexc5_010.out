@@ -1,0 +1,44 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vcvtsi2ss [ENC: VEX, MAP: 0F, OPC: 0x2A]
+     LENGTH:  8
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: CONVERT
+    ISA-SET: AVX
+    ISA-EXT: AVX
+ EXCEPTIONS: AVX3
+ ATTRIBUTES: HAS_MODRM HAS_VEX ACCEPTS_SEGMENT 
+  OPTIMIZED: C5 12 2A 98 3C B6 83 1E 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128      4      32   FLOAT32                        xmm11
+ 1   REGISTER    EXPLICIT       R        NDSNDD    128      4      32   FLOAT32                        xmm13
+ 2     MEMORY    EXPLICIT       R      MODRM_RM     32      1      32       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rax
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x000000001E83B63C
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 256
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vcvtsi2ssl 0x1E83B63C(%rax), %xmm13, %xmm11
+   RELATIVE: vcvtsi2ssl 0x1E83B63C(%rax), %xmm13, %xmm11
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vcvtsi2ss xmm11, xmm13, dword ptr ds:[rax+0x1E83B63C]
+   RELATIVE: vcvtsi2ss xmm11, xmm13, dword ptr ds:[rax+0x1E83B63C]
+
+== [ SEGMENTS ] ============================================================================================
+C5 16 2A 98 3C B6 83 1E 
+:     :  :  :..DISP
+:     :  :..MODRM
+:     :..OPCODE
+:..VEX

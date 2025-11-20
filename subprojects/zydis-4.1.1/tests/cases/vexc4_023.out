@@ -1,0 +1,38 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vminpd [ENC: VEX, MAP: 0F, OPC: 0x5D]
+     LENGTH:  5
+        SSZ: 64
+       EOSZ: 64
+       EASZ: 64
+   CATEGORY: AVX
+    ISA-SET: AVX
+    ISA-EXT: AVX
+ EXCEPTIONS: AVX2
+ ATTRIBUTES: HAS_MODRM HAS_VEX 
+  OPTIMIZED: C5 6D 5D C3 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    256      4      64   FLOAT64                         ymm8
+ 1   REGISTER    EXPLICIT       R        NDSNDD    256      4      64   FLOAT64                         ymm2
+ 2   REGISTER    EXPLICIT       R      MODRM_RM    256      4      64   FLOAT64                         ymm3
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 256
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vminpd %ymm3, %ymm2, %ymm8
+   RELATIVE: vminpd %ymm3, %ymm2, %ymm8
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vminpd ymm8, ymm2, ymm3
+   RELATIVE: vminpd ymm8, ymm2, ymm3
+
+== [ SEGMENTS ] ============================================================================================
+C4 61 ED 5D C3 
+:        :  :..MODRM
+:        :..OPCODE
+:..VEX

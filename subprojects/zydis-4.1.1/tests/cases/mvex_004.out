@@ -1,0 +1,51 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vfmsub132ps [ENC: MVEX, MAP: 0F38, OPC: 0x9A]
+     LENGTH:  7
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: UFMA
+    ISA-SET: KNCE
+    ISA-EXT: KNCE
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_MVEX ACCEPTS_SEGMENT 
+  OPTIMIZED: 62 42 71 9D 9A 52 8F 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT     RCW     MODRM_REG    512     16      32   FLOAT32                        zmm26
+ 1   REGISTER    EXPLICIT       R          MASK     16     16       1       INT                           k5
+ 2   REGISTER    EXPLICIT       R        NDSNDD    512     16      32   FLOAT32                         zmm1
+ 3     MEMORY    EXPLICIT       R      MODRM_RM     32      1      32   FLOAT32  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 r10
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0xFFFFFFFFFFFFFE3C
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 512
+  BROADCAST: 1_TO_16
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k5 [MERGING]
+         EH: Y
+    SWIZZLE: NONE
+    CONVERT: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vfmsub132ps -0x1C4(%r10) {1to16} {eh}, %zmm1, %zmm26 {%k5}
+   RELATIVE: vfmsub132ps -0x1C4(%r10) {1to16} {eh}, %zmm1, %zmm26 {%k5}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vfmsub132ps zmm26 {k5}, zmm1, dword ptr ds:[r10-0x1C4] {1to16} {eh}
+   RELATIVE: vfmsub132ps zmm26 {k5}, zmm1, dword ptr ds:[r10-0x1C4] {1to16} {eh}
+
+== [ SEGMENTS ] ============================================================================================
+62 02 71 9D 9A 52 8F 
+:           :  :  :..DISP
+:           :  :..MODRM
+:           :..OPCODE
+:..MVEX

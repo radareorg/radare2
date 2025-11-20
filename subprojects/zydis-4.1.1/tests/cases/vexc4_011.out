@@ -1,0 +1,45 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vmaskmovps [ENC: VEX, MAP: 0F38, OPC: 0x2E]
+     LENGTH:  7
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AVX
+    ISA-SET: AVX
+    ISA-EXT: AVX
+ EXCEPTIONS: AVX6
+ ATTRIBUTES: HAS_MODRM HAS_SIB HAS_VEX ACCEPTS_SEGMENT 
+  OPTIMIZED: C4 82 19 2E 54 E0 B7 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0     MEMORY    EXPLICIT       W      MODRM_RM    128      4      32   FLOAT32  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                  r8
+                                                                                 INDEX =                 r12
+                                                                                 SCALE =                   8
+                                                                                 DISP  =  0xFFFFFFFFFFFFFFB7
+ 1   REGISTER    EXPLICIT       R        NDSNDD    128      4      32       INT                        xmm12
+ 2   REGISTER    EXPLICIT       R     MODRM_REG    128      4      32   FLOAT32                         xmm2
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vmaskmovps %xmm2, %xmm12, -0x49(%r8,%r12,8)
+   RELATIVE: vmaskmovps %xmm2, %xmm12, -0x49(%r8,%r12,8)
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vmaskmovps xmmword ptr ds:[r8+r12*8-0x49], xmm12, xmm2
+   RELATIVE: vmaskmovps xmmword ptr ds:[r8+r12*8-0x49], xmm12, xmm2
+
+== [ SEGMENTS ] ============================================================================================
+C4 82 19 2E 54 E0 B7 
+:        :  :  :  :..DISP
+:        :  :  :..SIB
+:        :  :..MODRM
+:        :..OPCODE
+:..VEX

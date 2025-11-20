@@ -1,0 +1,39 @@
+{
+  "name"            : "js-yaml",
+  "version"         : "2.0.5",
+  "description"     : "YAML 1.2 parser and serializer",
+  "keywords"        : ["yaml", "parser", "serializer", "pyyaml"],
+  "homepage"        : "https://github.com/nodeca/js-yaml",
+
+  "author"          : {
+                        "name"  : "Dervus Grim",
+                        "email" : "dervus@lavabit.com"
+                      },
+
+  "contributors"    : [
+                        {
+                          "name"  : "Aleksey V Zapparov",
+                          "email" : "ixti@member.fsf.org",
+                          "url"   : "http://www.ixti.net/"
+                        },
+                        {
+                          "name"  : "Martin Grenfell",
+                          "email" : "martin.grenfell@gmail.com>",
+                          "url"   : "http://got-ravings.blogspot.com"
+                        }
+                      ],
+
+  "bugs"            : { "url": "https://github.com/nodeca/js-yaml/issues" },
+  "license"         : { "type": "MIT", "url": "https://github.com/nodeca/js-yaml/blob/master/LICENSE" },
+  "repository"      : { "type": "git", "url": "git://github.com/nodeca/js-yaml.git" },
+
+  "main"            : "./index.js",
+
+  "bin"             : { "js-yaml": "bin/js-yaml.js" },
+  "scripts"         : { "test": "make test" },
+
+  "dependencies"    : { "argparse": "~ 0.1.11",
+                        "esprima":  "~ 1.0.2" },
+  "devDependencies" : { "mocha": "*" },
+  "engines"         : { "node": ">= 0.6.0" }
+}

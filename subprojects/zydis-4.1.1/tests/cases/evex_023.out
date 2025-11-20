@@ -1,0 +1,42 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vaddsd [ENC: EVEX, MAP: 0F, OPC: 0x58]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 64
+       EASZ: 64
+   CATEGORY: AVX512
+    ISA-SET: AVX512F_SCALAR
+    ISA-EXT: AVX512EVEX
+ EXCEPTIONS: E3
+ ATTRIBUTES: HAS_MODRM HAS_EVEX 
+  OPTIMIZED: 62 B1 CF 07 58 EB 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT     RCW     MODRM_REG    128      2      64   FLOAT64                         xmm5
+ 1   REGISTER    EXPLICIT       R          MASK     64     64       1       INT                           k7
+ 2   REGISTER    EXPLICIT       R        NDSNDD    128      2      64   FLOAT64                        xmm22
+ 3   REGISTER    EXPLICIT       R      MODRM_RM    128      2      64   FLOAT64                        xmm19
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k7 [MERGING]
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vaddsd %xmm19, %xmm22, %xmm5 {%k7}
+   RELATIVE: vaddsd %xmm19, %xmm22, %xmm5 {%k7}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vaddsd xmm5 {k7}, xmm22, xmm19
+   RELATIVE: vaddsd xmm5 {k7}, xmm22, xmm19
+
+== [ SEGMENTS ] ============================================================================================
+62 B1 CF 47 58 EB 
+:           :  :..MODRM
+:           :..OPCODE
+:..EVEX

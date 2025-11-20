@@ -1,0 +1,48 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vprorvq [ENC: EVEX, MAP: 0F38, OPC: 0x14]
+     LENGTH:  7
+        SSZ: 64
+       EOSZ: 64
+       EASZ: 64
+   CATEGORY: AVX512
+    ISA-SET: AVX512F_256
+    ISA-EXT: AVX512EVEX
+ EXCEPTIONS: E4
+ ATTRIBUTES: HAS_MODRM HAS_EVEX ACCEPTS_SEGMENT 
+  OPTIMIZED: 62 D2 CD 2B 14 7B 4F 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT     RCW     MODRM_REG    256      4      64      UINT                         ymm7
+ 1   REGISTER    EXPLICIT       R          MASK     64     64       1       INT                           k3
+ 2   REGISTER    EXPLICIT       R        NDSNDD    256      4      64      UINT                         ymm6
+ 3     MEMORY    EXPLICIT       R      MODRM_RM    256      4      64      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 r11
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x00000000000009E0
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 256
+  BROADCAST: NONE
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k3 [MERGING]
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vprorvq 0x9E0(%r11), %ymm6, %ymm7 {%k3}
+   RELATIVE: vprorvq 0x9E0(%r11), %ymm6, %ymm7 {%k3}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vprorvq ymm7 {k3}, ymm6, ymmword ptr ds:[r11+0x9E0]
+   RELATIVE: vprorvq ymm7 {k3}, ymm6, ymmword ptr ds:[r11+0x9E0]
+
+== [ SEGMENTS ] ============================================================================================
+62 D2 CD 2B 14 7B 4F 
+:           :  :  :..DISP
+:           :  :..MODRM
+:           :..OPCODE
+:..EVEX

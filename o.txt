@@ -1,0 +1,63 @@
+## Design Limitations in Current pf Implementation
+
+### 1. Monolithic Architecture
+- Single massive function (~2000+ lines)
+- Complex state management with cryptic macros
+- Tight coupling between format parsing and output generation
+- Impossible to test individual components
+
+### 2. Inconsistent JSON Output
+- JSON and text output mixed in same code paths
+- Recursive types produce invalid JSON
+- No consistent schema across different format types
+- Fragmented JSON building logic scattered throughout
+
+### 3. Cryptic State Management
+- Magic numbers: `ARRAYINDEX_COEF 10000`, `STRUCTPTR 100`, `NESTDEPTH 14`
+- Obscure macros: `MUSTSEE`, `MUSTSEEJSON`, `MUSTSEESTRUCT`
+- Global state hidden in function parameters
+- No clear separation of concerns
+
+### 4. Complex Syntax Parsing
+- Array notation `[4]w[7]i` is ambiguous
+- Format chars mixed with modifiers without clear boundaries
+- No proper grammar or parsing rules
+- Difficult to extend with new features
+
+### 5. Poor Error Handling
+- Limited input validation
+- Generic error messages
+- Silent failures in some cases
+- No recovery mechanisms
+
+### 6. Code Duplication
+- Similar logic repeated across format handlers
+- Inconsistent parameter passing patterns
+- Redundant bounds checking
+- Multiple ways to do the same thing
+
+### 7. Memory Management Issues
+- Inconsistent allocation patterns
+- Potential memory leaks in error paths
+- Buffer size assumptions (magic number 999)
+- No clear ownership semantics
+
+### 8. Testing and Maintainability
+- Nearly impossible to unit test
+- Changes risk breaking unrelated functionality
+- No clear API boundaries
+- Documentation doesn't match implementation complexity
+
+### 9. Performance Issues
+- Repeated string allocations
+- Inefficient buffer management
+- Redundant calculations
+- No caching of parsed formats
+
+### 10. Extensibility Problems
+- Adding new format types requires touching core logic
+- No plugin architecture
+- Hard-coded format character mappings
+- Limited composability of format types
+
+These limitations make the current pf implementation fragile, hard to maintain, and difficult to extend. The pf2 redesign addresses these issues with a cleaner, more modular architecture.

@@ -1,0 +1,13 @@
+#!/usr/bin/env node
+
+var b64img = require('..'),
+  root = process.cwd(),
+  cssFile = process.argv[2];
+
+if(!cssFile) handleError(new Error('Usage: css-b64-images file.css'));
+
+b64img.fromFile(cssFile, root, function(err, css){
+  if(err) console.error('Error:', err);
+  console.log(css);
+});
+

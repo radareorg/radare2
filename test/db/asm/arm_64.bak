@@ -1,0 +1,669 @@
+ad "b.hs 0x10" 82000054
+ad "b.lo 0x10" 83000054
+ad "b.mi 0x10" 84000054
+ad "b.pl 0x10" 85000054
+ad "b.vs 0x10" 86000054
+ad "b.vc 0x10" 87000054
+ad "b.hi 0x10" 88000054
+ad "b.ls 0x10" 89000054
+ad "b.ge 0x10" 8a000054
+ad "b.lt 0x10" 8b000054
+ad "udiv x1, x2, x3" 4108c39a
+ad "udiv x3, x4, x1" 8308c19a
+ad "mul x1, x2, x3" 417c039b
+ad "mul x3, x4, x1" 837c019b
+ad "and x1, x2, 3" 41044092
+ad "and x1, x2, x3" 4100038a
+ad "and x1, x2, x3, lsl 8" 4120038a
+ad "and x1, x2, x3, lsr 8" 4120438a
+ad "and x1, x2, x3, asr 16" 4140838a
+ad "and x1, x2, x3, ror 3" 410cc38a
+ad "and w1, w2, 3" 41040012
+ad "and w1, w2, w3" 4100030a
+ad "and w1, w2, w3, lsl 8" 4120030a
+ad "and w1, w2, w3, lsr 8" 4120430a
+ad "and w1, w2, w3, asr 16" 4140830a
+ad "and w1, w2, w3, ror 3" 410cc30a
+ad "ands w1, w2, 3" 41040072
+ad "ands x1, x2, 3" 410440f2
+ad "ands w1, w2, w3, ror 3" 410cc36a
+ad "ands x1, x2, x3, ror 3" 410cc3ea
+ad "bic x1, x2, x3" 4100238a
+ad "bic x1, x2, x3, lsl 8" 4120238a
+ad "bic x1, x2, x3, lsr 8" 4120638a
+ad "bic x1, x2, x3, asr 16" 4140a38a
+a "bic x1, x2, x3, ror 3" 410ce38a
+a "bics x1, x2, x3, ror 3" 410ce3ea
+a "bic w1, w2, w3" 4100230a
+a "bic w1, w2, w3, ror 3" 410ce30a
+a "bics w1, w2, w3, ror 3" 410ce36a
+a "orr w0, w13, w20" a001142a
+a "orr w22, w3, 0x2" 76001f32
+a "orr x0, x13, x20" a00114aa
+a "orr x1, x23, x0" e10200aa
+a "orr x2, x3, 0x3" 620440b2
+a "orr x2, x3, 0x7" 620840b2
+a "orr x2, x3, x20" 620014aa
+a "orr x22, x3, 0x2" 76007fb2
+a "orn w0, w13, w20" a001342a
+a "orn x0, x13, x20" a00134aa
+a "orn x0, x13, x20, ror 15" a03df4aa
+a "eor w22, w3, 0x2" 76001f52
+a "eor w0, w13, w20" a001144a
+a "eor x0, x13, x20" a00114ca
+a "eor x0, x13, x20, ror 15" a03dd4ca
+a "eon w0, w13, w20" a001344a
+a "eon x0, x13, x20" a00134ca
+a "eon x0, x13, x20, ror 15" a03df4ca
+a "adrp x5, 0x0" 05000090
+ad "adrp x16, 0x1000" 100000b0
+ad "adrp x2, 0x1000" 020000b0
+adB "adrp x2, 0x4000" 020000b0
+ad "adrp x0, 0x11341000" 009a08b0
+ad "adrp x0, 0x18343000" 001a0cf0
+a "add x0, x1, x2" 2000028b
+a "add x0, xzr, x30" e0031e8b
+a "b 0x0" 00000014
+a "b ." 00000014
+a "b $$" 00000014
+a "b 0x7efd4" f5fb0114
+a "b 0x7fffff8" feffff15
+a "b 0x8" 02000014
+a "b 0xff4" fd030014
+a "b 0x100005fcc" f9010014 0x1000057e8
+a "b 0x100005004" 07feff17 0x1000057e8
+a "b.eq -0x100024" e0fe7f54
+a "b.eq -0x24" e0feff54
+a "b.eq 0x1000378d4" a0c61b54 0x100000000
+a "b.eq 0x324" 20190054
+a "b.hs -0x100024" e2fe7f54
+a "b.hs -0x24" e2feff54
+a "b.hs 0x1000378d4" a2c61b54 0x100000000
+a "b.hs 0x324" 22190054
+a "bl 0x8" 02000094
+a "bl 0xfd4" f5030094
+ad "blr x7" e0003fd6
+ad "blr x12" 80013fd6
+ad "blr x30" c0033fd6
+a "br x0" 00001fd6
+ad "br x4" 80001fd6
+ad "br x9" 20011fd6
+ad "br x30" c0031fd6
+ad "dmb ish" bf3b03d5
+a "dmb ishld" bf3903d5
+a "dmb ishst" bf3a03d5
+a "dmb ld" bf3d03d5
+a "dmb nsh" bf3703d5
+a "dmb nshld" bf3503d5
+a "dmb nshst" bf3603d5
+a "dmb osh" bf3303d5
+a "dmb oshld" bf3103d5
+a "dmb oshst" bf3203d5
+a "dmb st" bf3e03d5
+a "dmb sy" bf3f03d5
+a "dsb ish" 9f3b03d5
+a "dsb ishld" 9f3903d5
+a "dsb ishst" 9f3a03d5
+a "dsb ld" 9f3d03d5
+a "dsb nsh" 9f3703d5
+a "dsb nshld" 9f3503d5
+a "dsb nshst" 9f3603d5
+a "dsb osh" 9f3303d5
+a "dsb oshld" 9f3103d5
+a "dsb oshst" 9f3203d5
+a "dsb st" 9f3e03d5
+a "dsb sy" 9f3f03d5
+a "isb sy" df3f03d5
+a "ldr w2, [x7, -10]" e2605fb8
+a "ldr w2, [x7, -133]" e2b057b8
+a "ldr w2, [x7, -256]" e20050b8
+a "ldr w2, [x7, 113]" e21047b8
+a "ldr w2, [x7, 236]" e2ec40b9
+a "ldr w2, [x8, -10]" 02615fb8
+a "ldr w2, [x8, -133]" 02b157b8
+a "ldr w2, [x8, -256]" 020150b8
+a "ldr w2, [x8, 113]" 021147b8
+a "ldr w2, [x8, 236]" 02ed40b9
+a "ldr w3, [x7, -10]" e3605fb8
+a "ldr w3, [x7, -133]" e3b057b8
+a "ldr w3, [x7, -256]" e30050b8
+a "ldr w3, [x7, 113]" e31047b8
+a "ldr w3, [x7, 236]" e3ec40b9
+a "ldr w3, [x8, -10]" 03615fb8
+a "ldr w3, [x8, -133]" 03b157b8
+a "ldr w3, [x8, -256]" 030150b8
+a "ldr w3, [x8, 113]" 031147b8
+a "ldr w3, [x8, 236]" 03ed40b9
+a "ldr x4, [x6, 0x14]" c44041f8
+a "ldr x5, [x1, -0x20]" 25005ef8
+a "ldr x5, [x1, -0x32]" 25e05cf8
+a "ldr x8, [x3, 0x10]" 680840f9
+a "ldr x0, [x27, 0x108]" 608740f9
+a "ldr x0, [x27, 0x110]" 608b40f9
+a "ldr x8, [x3, x1]" 686861f8
+ad "ldrb w2, [x7, -0xa]!" e26c5f38
+ad "ldrb w2, [x7, -0x85]!" e2bc5738
+ad "ldrb w2, [x7, -0x100]!" e20c5038
+ad "ldrb w2, [x7, 0x71]!" e21c4738
+ad "ldrb w2, [x7, 0xec]!" e2cc4e38
+ad "ldrb w2, [x8, -0xa]!" 026d5f38
+ad "ldrb w2, [x8, -0x85]!" 02bd5738
+ad "ldrb w2, [x8, -0x100]!" 020d5038
+ad "ldrb w2, [x8], 0x70" 02054738
+ad "ldrb w2, [x8], 0xec" 02c54e38
+ad "ldrb w3, [x7, -0xa]!" e36c5f38
+ad "ldrb w4, [x7, -0x85]!" e4bc5738
+ad "ldrb w5, [x7, -0x100]!" e50c5038
+ad "ldrb w6, [x7], 0x71" e6144738
+ad "ldrb w7, [x7]" e7004039
+ad "ldrb w7, [x7, 0xfff]" e7fc7f39
+ad "ldrb w8, [x30, -0xa]!" c86f5f38
+ad "ldrb w9, [x29, -0x85]!" a9bf5738
+ad "ldrb w10, [x28, -0x100]!" 8a0f5038
+ad "ldrb w11, [x27, 0x71]" 6bc74139
+ad "ldrb w12, [x26], 0xec" 4cc74e38
+ad "ldrb w13, [x25, x2]" 2d6b6238
+ad "ldrb w5, [x24, x0, lsl 0]" 057b6038
+ad "ldrh w2, [x23, -0xa]!" e26e5f78
+ad "ldrh w2, [x22, -0x85]!" c2be5778
+ad "ldrh w2, [x21, -0x100]!" a20e5078
+ad "ldrh w18, [x26]" 52034079
+ad "ldrh w2, [x20, 0x71]!" 821e4778
+ad "ldrh w2, [x19], 0xec" 62c64e78
+ad "ldrh w2, [x18, -0xa]!" 426e5f78
+ad "ldrh w2, [x17, -0x85]!" 22be5778
+ad "ldrh w2, [x16, -0x100]!" 020e5078
+ad "ldrh w2, [x15, 0x71]!" e21d4778
+ad "ldrh w2, [x14, 0xf08]" c2115e79
+ad "ldrh w3, [x13, -0xa]!" a36d5f78
+ad "ldrh w3, [x12, -0x85]!" 83bd5778
+ad "ldrh w3, [x8, x6]" 03696678
+ad "ldrh w3, [x8, x6, lsl 1]" 03796678
+ad "ldrsb w2, [x7, -0xa]!" e26cdf38
+ad "ldrsb x2, [x0, -0x85]!" 02bc9738
+ad "ldrsb w2, [x1, -0x100]!" 220cd038
+ad "ldrsb x2, [sp, 0x71]!" e21f8738
+ad "ldrsb w2, [x3, 0xec]!" 62ccce38
+ad "ldrsb x2, [x4, -0xa]!" 826c9f38
+ad "ldrsb w2, [x5, -0x85]!" a2bcd738
+ad "ldrsb x2, [x6, -0x100]!" c20c9038
+ad "ldrsb w11, [x12]" 8b01c039
+ad "ldrsb w2, [x7, 0xfff]" e2fcff39
+ad "ldrsb x2, [x8], 0xf0" 02058f38
+ad "ldrsb w3, [x9, -0xa]!" 236ddf38
+ad "ldrsb x3, [x10, -0x85]!" 43bd9738
+ad "ldrsb w3, [x11, -0x100]!" 630dd038
+ad "ldrsb x3, [x12], 0x70" 83058738
+ad "ldrsb w0, [x13, w14, uxtw 0]" a059ee38
+ad "ldrsb w0, [x15, x16, lsl 0]" e079f038
+ad "ldrsb w0, [x17, w18, sxtw]" 20caf238
+ad "ldrsb w0, [x19, x20, sxtx 0]" 60faf438
+ad "ldrsb w0, [x21, x22]" a06af638
+ad "ldrsh w2, [x7, -0xa]!" e26cdf78
+ad "ldrsh x2, [x7, -0x85]!" e2bc9778
+ad "ldrsh w2, [x7, -0x100]!" e20cd078
+ad "ldrsh w2, [x7, 0x71]!" e21cc778
+ad "ldrsh x2, [x7, 0xec]!" e2cc8e78
+ad "ldrsh x2, [x8, -0xa]!" 026d9f78
+ad "ldrsh w2, [x8], 0x71" 0215c778
+ad "ldrsh x2, [x8], 0xec" 02c58e78
+ad "ldrsh x0, [x1]" 20008079
+ad "ldrsh w3, [x7, 0x72]" e3e4c079
+ad "ldrsh x3, [x7, 0x1ffe]" e3fcbf79
+ad "ldrsh w3, [x8, x3]" 0369e378
+ad "ldrsh w1, [x2, w3, uxtw 1]" 4158e378
+ad "ldrsw x15, [sp, -0xc]!" ef4f9fb8
+ad "ldrsw x15, [sp, 0xc]!" efcf80b8
+ad "ldrsw x0, [x1]" 200080b9
+ad "ldrsw x15, [sp, 0xc]" ef0f80b9
+ad "ldrsw x15, [sp], 0xc" efc780b8
+ad "ldrsw x15, [sp, 0x3ffc]" efffbfb9
+ad "ldrsw x8, [x12, x9]" 8869a9b8
+ad "ldrsw x8, [x12, w9, uxtw]" 8849a9b8
+ad "ldrsw x8, [x12, x9, lsl 2]" 8879a9b8
+ad "ldrsw x8, [x12, x9, sxtx 2]" 88f9a9b8
+ad "ldrsw x5, 0xffffc" e5ff7f98
+ad "ldrsw x5, 0xfffffffffff00000" 05008098
+ad "mov x20, x0" f40300aa
+ad "mov w2, wsp" e2030011
+ad "mov sp, x20" 9f020091
+ad "mov w5, w18" e503122a
+ad "mov x23, x4" f70304aa
+a "mov x9, 0x5" a90080d2
+dB "mov x9, 0x5" a90080d2
+a "mov w7, 0xffff" e7ff9f52
+dB "mov w12, 0xffff" e7ff9fd2
+a "mov w15, 0xacdb0000" 6f9bb552
+dB "mov w15, 0xacdb0000" 6f9bb552
+a "mov w15, 0xffff0000" efffbf52
+dB "mov w15, 0xffff0000" efffbf52
+ad "mov x30, 0x884800000000" 1e09d1d2
+ad "mov x29, 0xffff00000000" fdffdfd2
+ad "mov x27, 0x3721000000000000" 3be4e6d2
+a "mov x26, 0xffff000000000000" faffffd2
+dB "mov x26, 0xffff000000000000" faffffd2
+a "mov w25, 0xffffcfc7" 19078612
+dB "mov w25, 0xffffcfc7" 19078612
+a "mov w24, 0xffffffff" 18008012
+dB "mov w24, 0xffffffff" 18008012
+a "mov w23, 0xdeadffff" 572aa412
+dB "mov w23, 0xdeadffff" 572aa412
+a "mov x22, 0xffffffffffff1024" 76fb9d92
+dB "mov x22, 0xffffffffffff1024" 76fb9d92
+a "mov x21, 0xffffffff2048ffff" f5f6bb92
+dB "mov x21, 0xffffffff2048ffff" f5f6bb92
+a "mov x20, 0xffff4096ffffffff" 34edd792
+dB "mov x20, 0xffff4096ffffffff" 34edd792
+a "mov x19, 0x8192ffffffffffff" b3cdef92
+dB "mov x19, 0x8192ffffffffffff" b3cdef92
+a "mov x18, 0xffffffffffffffff" 12008092
+dB "mov x18, 0xffffffffffffffff" 12008092
+a "mov w17, 0x00fc00fc" f1970e32
+dB "mov w17, 0x00fc00fc" f1970e32
+a "mov x16, 0xaaaaaaaaaaaaaaaa" f0f301b2
+dB "mov x16, 0xaaaaaaaaaaaaaaaa" f0f301b2
+ad "movk x16, 0xf" f00180f2
+ad "movk w13, 0xffff, lsl 16" edffbf72
+a "movn x6, 0x2" 46008092 # alias
+ad "movn x7, 0, lsl 16" 0700a092
+a "movn x22, 0xabcd, lsl 48" b679f592 # alias
+ad "movn w9, 0, lsl 16" 0900a012
+a "movz x1, 0x5" a10080d2 # alias
+ad "movz w10, 0, lsl 16" 0a00a052
+a "movz x17, 0x5fff, lsl 32" f1ffcbd2 # alias
+ad "movz x11, 0, lsl 32" 0b00c0d2
+ad "nop" 1f2003d5
+a "str w2, [x7, -10]" e2601fb8
+a "str w2, [x7, -133]" e2b017b8
+a "str w2, [x7, -256]" e20010b8
+a "str w2, [x7, 113]" e21007b8
+a "str w2, [x7, 236]" e2ec00b9
+a "str w2, [x8, -10]" 02611fb8
+a "str w2, [x8, -133]" 02b117b8
+a "str w2, [x8, -256]" 020110b8
+a "str w2, [x8, 113]" 021107b8
+a "str w2, [x8, 236]" 02ed00b9
+a "str w3, [x7, -10]" e3601fb8
+a "str w3, [x7, -133]" e3b017b8
+a "str w3, [x7, -256]" e30010b8
+a "str w3, [x7, 113]" e31007b8
+a "str w3, [x7, 236]" e3ec00b9
+a "str w3, [x8, -10]" 03611fb8
+a "str w3, [x8, -133]" 03b117b8
+a "str w3, [x8, -256]" 030110b8
+a "str w3, [x8, 113]" 031107b8
+a "str w3, [x8, 236]" 03ed00b9
+ad "strb w2, [x7, -0xa]!" e26c1f38
+ad "strb w2, [x7, -0x85]!" e2bc1738
+ad "strb w2, [x7, -0x100]!" e20c1038
+ad "strb w2, [x7, 0x71]!" e21c0738
+ad "strb w24, [x23]" f8020039
+ad "strb w2, [x7, 0xfff]" e2fc3f39
+ad "strb w2, [x8], 0xff" 02f50f38
+ad "strb w3, [x8, x4]" 03692438
+ad "strb w10, [sp, w15, uxtw]" ea4b2f38
+ad "strb w23, [x28, x17, lsl 0]" 977b3138
+ad "strb w2, [x3, w1, sxtw 0]" 62d82138
+ad "strb w4, [x5, x6, sxtx]" a4e82638
+ad "strh w2, [x7, -0xa]!" e26c1f78
+ad "strh w2, [x7, -0x100]!" e20c1078
+ad "strh w2, [x7, 0xff]!" e2fc0f78
+ad "strh w5, [x14]" c5010079
+ad "strh w2, [x7, 0x1ffe]" e2fc3f79
+ad "strh w3, [x8, x2]" 03692278
+ad "strh w20, [sp, w19, uxtw]" f44b3378
+ad "strh w28, [sp, x26, lsl 1]" fc7b3a78
+ad "strh w18, [x30, w0, sxtw]" d2cb2078
+ad "strh w16, [x25, x5, sxtx 1]" 30fb2578
+a "stur w2, [x7, -10]" e2601fb8
+a "stur w2, [x7, -133]" e2b017b8
+a "stur w2, [x7, -256]" e20010b8
+a "stur w2, [x7, 113]" e21007b8
+a "stur w2, [x7, 236]" e2c00eb8
+a "stur w2, [x8, -10]" 02611fb8
+a "stur w2, [x8, -133]" 02b117b8
+a "stur w2, [x8, -256]" 020110b8
+a "stur w2, [x8, 113]" 021107b8
+a "stur w2, [x8, 236]" 02c10eb8
+a "stur w3, [x7, -10]" e3601fb8
+a "stur w3, [x7, -133]" e3b017b8
+a "stur w3, [x7, -256]" e30010b8
+a "stur w3, [x7, 113]" e31007b8
+a "stur w3, [x7, 236]" e3c00eb8
+a "stur w3, [x8, -10]" 03611fb8
+a "stur w3, [x8, -133]" 03b117b8
+a "stur w3, [x8, -256]" 030110b8
+a "stur w3, [x8, 113]" 031107b8
+a "stur w3, [x8, 236]" 03c10eb8
+a "sub x0, xzr, x2" e00302cb
+ad "svc 6" c10000d4
+a "mrs x3, SP_EL0" 034138d5
+a "msr 0xc208, x3" 034118d5
+a "msr SP_EL0, x3" 034118d5
+a "msr sp_el0, x3" 034118d5
+a "cbnz w3, 0x1fffd4" a3feff35
+a "cbz x3, 0x1fffe8" 43ffffb4
+ad "addg x0, sp, 0x80, 4" e0138891
+ad "addg x8, x9, 0x20, 0" 28018291
+ad "addg x9, x9, 0, 2" 29098091
+adE "addg x12, x8, 0x200, 2" 91a0090c
+ad "subg x0, sp, 0x20, 0xf" e03f82d1
+ad "irg sp, x0" 1f10df9a
+ad "irg x13, x3, x7" 6d10c79a
+ad "irg x9, sp, x8" e913c89a
+d "subp x13, x7, sp" ed00df9a
+ad "gmi x13, x3, x7" 6d14c79a
+ad "subps x13, x3, x7" 6d00c7ba
+adB "cmpp sp, x13" ff03cdba
+ad "stg x13, [x3], 0" 6d0420d9
+ad "stg x13, [x3, 0x10]" 6d1820d9
+ad "stg x13, [x3, 0x10]!" 6d1c20d9
+ad "stg sp, [sp, 0x20]" ff2b20d9
+ad "stg x9, [x9]" 290920d9
+d "stzgm x12, [x0]" 0c0020d9
+ad "ldg x13, [x3, 0x10]" 6d1060d9
+ad "ldg x13, [x3]" 6d0060d9
+d "stzg x13, [x3], 0x10" 6d1460d9
+d "stzg x13, [x3]" 6d0860d9
+d "stzg x13, [x3, 0]!" 6d0c60d9
+d "st2g sp, [sp], 0x20" ff27a0d9
+ad "stgm x0, [x1]" 2000a0d9
+d "stz2g sp, [sp], 0x50" ff57e0d9
+ad "ldgm x10, [x0]" 0a00e0d9
+d "stgp x1, x3, [x3], 0x70" 618c8368
+d "bti" 1f2403d5
+d "bti c" 5f2403d5
+d "bti j" 9f2403d5
+d "bti jc" df2403d5
+a "sbfm w0, w1, 31, 5" 20141f13 # alias
+a "sbfm x3, x2, 8, 63" 43fc4893
+a "ubfm w0, w1, 2, 31" 207c0253 # alias
+a "ubfm x2, x3, 63, 7" 621c7fd3
+a "sbfiz w4, w5, 0x1f, 1" a4000113
+a "sbfiz x6, x7, 1, 0x3f" e6f87f93
+ad "ubfiz w8, w9, 1, 0xf" 28391f53
+ad "ubfiz x10, x11, 6, 0x13" 6a497ad3
+ad "sbfx w12, w13, 0xf, 0x10" ac790f13
+ad "sbfx x14, x15, 0x21, 0x1b" eeed6193
+ad "ubfx w16, w17, 0x1d, 2" 307a1d53
+ad "ubfx x18, x19, 2, 0x39" 72ea42d3
+ad "add x0, x0, 1" 00040091
+ad "add x0, x0, 1, lsl 12" 00044091
+ad "add x0, x0, 2, lsl 12" 00084091
+ad "add x0, x0, x1, lsl 1" 0004018b
+ad "add x0, x0, x1, lsl 2" 0008018b
+ad "add x0, x0, x1, lsl 12" 0030018b
+ad "add x0, x0, x1, lsr 1" 0004418b
+ad "add x0, x0, x1, lsr 2" 0008418b
+ad "add x0, x0, x1, lsr 12" 0030418b
+ad "add x0, x0, x1, asr 1" 0004818b
+ad "add x0, x0, x1, asr 2" 0008818b
+ad "add x0, x0, x1, asr 12" 0030818b
+ad "cmp w26, w26" 5f031a6b
+ad "cmp x26, x26" 5f031aeb
+ad "cmp w26, 0" 5f030071
+ad "cmp w26, 1" 5f070071
+ad "cmp x26, 0" 5f0300f1
+ad "cmp x26, 1" 5f0700f1
+ad "cls x15, x30" CF17C0DA
+ad "cls x25, x10" 5915C0DA
+ad "cls x5, x9" 2515C0DA
+ad "cls x30, x30" DE17C0DA
+ad "cls x11, x3" 6B14C0DA
+ad "clz x15, x30" CF13C0DA
+ad "clz x25, x10" 5911C0DA
+ad "clz x5, x9" 2511C0DA
+ad "clz x30, x30" DE13C0DA
+ad "clz x11, x3" 6B10C0DA
+ad "cls w15, w30" CF17C05A
+ad "cls w25, w10" 5915C05A
+ad "cls w5, w9" 2515C05A
+ad "cls w30, w30" DE17C05A
+ad "cls w11, w3" 6B14C05A
+ad "clz w15, w30" CF13C05A
+ad "clz w25, w10" 5911C05A
+ad "clz w5, w9" 2511C05A
+ad "clz w30, w30" DE13C05A
+ad "clz w11, w3" 6B10C05A
+ad "adds x30, x30, x30" DE031EAB
+ad "adds x15, x25, x19" 2F0313AB
+ad "adds x5, x11, x22" 650116AB
+ad "adds x1, x2, x3" 410003AB
+ad "adds x10, x16, x13" 0A020DAB
+ad "adds w30, w30, w30" DE031E2B
+ad "adds w15, w25, w19" 2F03132B
+ad "adds w5, w11, w22" 6501162B
+ad "adds w1, w2, w3" 4100032B
+ad "adds w10, w16, w13" 0A020D2B
+ad "asr x30, x30, x30" DE2BDE9A
+ad "asr x15, x25, x19" 2F2BD39A
+ad "asr x5, x11, x22" 6529D69A
+ad "asr x1, x2, x3" 4128C39A
+ad "asr x10, x16, x13" 0A2ACD9A
+ad "asr w30, w30, w30" DE2BDE1A
+ad "asr w15, w25, w19" 2F2BD31A
+ad "asr w5, w11, w22" 6529D61A
+ad "asr w1, w2, w3" 4128C31A
+ad "asr w10, w16, w13" 0A2ACD1A
+ad "adc x30, x30, x30" DE031E9A
+ad "adc x15, x25, x19" 2F03139A
+ad "adc x5, x11, x22" 6501169A
+ad "adc x1, x2, x3" 4100039A
+ad "adc x10, x16, x13" 0A020D9A
+ad "adc w30, w30, w30" DE031E1A
+ad "adc w15, w25, w19" 2F03131A
+ad "adc w5, w11, w22" 6501161A
+ad "adc w1, w2, w3" 4100031A
+ad "adc w10, w16, w13" 0A020D1A
+ad "adcs x30, x30, x30" DE031EBA
+ad "adcs x15, x25, x19" 2F0313BA
+ad "adcs x5, x11, x22" 650116BA
+ad "adcs x1, x2, x3" 410003BA
+ad "adcs x10, x16, x13" 0A020DBA
+ad "adcs w30, w30, w30" DE031E3A
+ad "adcs w15, w25, w19" 2F03133A
+ad "adcs w5, w11, w22" 6501163A
+ad "adcs w1, w2, w3" 4100033A
+ad "adcs w10, w16, w13" 0A020D3A
+ad "sbc x30, x30, x30" DE031EDA
+ad "sbc x15, x25, x19" 2F0313DA
+ad "sbc x5, x11, x22" 650116DA
+ad "sbc x1, x2, x3" 410003DA
+ad "sbc x10, x16, x13" 0A020DDA
+ad "sbc w30, w30, w30" DE031E5A
+ad "sbc w15, w25, w19" 2F03135A
+ad "sbc w5, w11, w22" 6501165A
+ad "sbc w1, w2, w3" 4100035A
+ad "sbc w10, w16, w13" 0A020D5A
+ad "mul x30, x30, x30" DE7F1E9B
+ad "mul x15, x25, x19" 2F7F139B
+ad "mul x5, x11, x22" 657D169B
+ad "mul x1, x2, x3" 417C039B
+ad "mul x10, x16, x13" 0A7E0D9B
+ad "mul w30, w30, w30" DE7F1E1B
+ad "mul w15, w25, w19" 2F7F131B
+ad "mul w5, w11, w22" 657D161B
+ad "mul w1, w2, w3" 417C031B
+ad "mul w10, w16, w13" 0A7E0D1B
+ad "udiv x30, x30, x30" DE0BDE9A
+ad "udiv x15, x25, x19" 2F0BD39A
+ad "udiv x5, x11, x22" 6509D69A
+ad "udiv x1, x2, x3" 4108C39A
+ad "udiv x10, x16, x13" 0A0ACD9A
+ad "udiv w30, w30, w30" DE0BDE1A
+ad "udiv w15, w25, w19" 2F0BD31A
+ad "udiv w5, w11, w22" 6509D61A
+ad "udiv w1, w2, w3" 4108C31A
+ad "udiv w10, w16, w13" 0A0ACD1A
+ad "sdiv x30, x30, x30" DE0FDE9A
+ad "sdiv x15, x25, x19" 2F0FD39A
+ad "sdiv x5, x11, x22" 650DD69A
+ad "sdiv x1, x2, x3" 410CC39A
+ad "sdiv x10, x16, x13" 0A0ECD9A
+ad "sdiv w30, w30, w30" DE0FDE1A
+ad "sdiv w15, w25, w19" 2F0FD31A
+ad "sdiv w5, w11, w22" 650DD61A
+ad "sdiv w1, w2, w3" 410CC31A
+ad "sdiv w10, w16, w13" 0A0ECD1A
+ad "lsl x30, x30, x30" DE23DE9A
+ad "lsl x15, x25, x19" 2F23D39A
+ad "lsl x5, x11, x22" 6521D69A
+ad "lsl x1, x2, x3" 4120C39A
+ad "lsl x10, x16, x13" 0A22CD9A
+ad "lsl w30, w30, w30" DE23DE1A
+ad "lsl w15, w25, w19" 2F23D31A
+ad "lsl w5, w11, w22" 6521D61A
+ad "lsl w1, w2, w3" 4120C31A
+ad "lsl w10, w16, w13" 0A22CD1A
+ad "lsr x30, x30, x30" DE27DE9A
+ad "lsr x15, x25, x19" 2F27D39A
+ad "lsr x5, x11, x22" 6525D69A
+ad "lsr x1, x2, x3" 4124C39A
+ad "lsr x10, x16, x13" 0A26CD9A
+ad "lsr w30, w30, w30" DE27DE1A
+ad "lsr w15, w25, w19" 2F27D31A
+ad "lsr w5, w11, w22" 6525D61A
+ad "lsr w1, w2, w3" 4124C31A
+ad "lsr w10, w16, w13" 0A26CD1A
+ad "ror x30, x30, x30" DE2FDE9A
+ad "ror x15, x25, x19" 2F2FD39A
+ad "ror x5, x11, x22" 652DD69A
+ad "ror x1, x2, x3" 412CC39A
+ad "ror x10, x16, x13" 0A2ECD9A
+ad "ror w30, w30, w30" DE2FDE1A
+ad "ror w15, w25, w19" 2F2FD31A
+ad "ror w5, w11, w22" 652DD61A
+ad "ror w1, w2, w3" 412CC31A
+ad "ror w10, w16, w13" 0A2ECD1A
+ad "ngc x15, x30" EF031EDA
+ad "ngc x11, x22" EB0316DA
+ad "ngc x30, x30" FE031EDA
+ad "ngc x3, x5" E30305DA
+ad "ngc x29, x14" FD030EDA
+ad "ngc w15, w30" EF031E5A
+ad "ngc w11, w22" EB03165A
+ad "ngc w30, w30" FE031E5A
+ad "ngc w3, w5" E303055A
+ad "ngc w29, w14" FD030E5A
+ad "rev x30, x30" DE0FC0DA
+ad "rev x15, x25" 2F0FC0DA
+ad "rev x5, x11" 650DC0DA
+ad "rev x1, x2" 410CC0DA
+ad "rev x10, x16" 0A0EC0DA
+ad "rev w30, w30" DE0BC05A
+ad "rev w15, w25" 2F0BC05A
+ad "rev w5, w11" 6509C05A
+ad "rev w1, w2" 4108C05A
+ad "rev w10, w16" 0A0AC05A
+ad "rbit x30, x30" DE03C0DA
+ad "rbit x15, x25" 2F03C0DA
+ad "rbit x5, x11" 6501C0DA
+ad "rbit x1, x2" 4100C0DA
+ad "rbit x10, x16" 0A02C0DA
+ad "rbit w30, w30" DE03C05A
+ad "rbit w15, w25" 2F03C05A
+ad "rbit w5, w11" 6501C05A
+ad "rbit w1, w2" 4100C05A
+ad "rbit w10, w16" 0A02C05A
+ad "tst x30, x30" DF031EEA
+ad "tst x15, x25" FF0119EA
+ad "tst x5, x11" BF000BEA
+ad "tst x1, x2" 3F0002EA
+ad "tst x10, x16" 5F0110EA
+ad "tst w30, w30" DF031E6A
+ad "tst w15, w25" FF01196A
+ad "tst w5, w11" BF000B6A
+ad "tst w1, w2" 3F00026A
+ad "tst w10, w16" 5F01106A
+ad "mvn x30, x30" FE033EAA
+ad "mvn x15, x25" EF0339AA
+ad "mvn x5, x11" E5032BAA
+ad "mvn x1, x2" E10322AA
+ad "mvn x10, x16" EA0330AA
+ad "mvn w30, w30" FE033E2A
+ad "mvn w15, w25" EF03392A
+ad "mvn w5, w11" E5032B2A
+ad "mvn w1, w2" E103222A
+ad "mvn w10, w16" EA03302A
+ad "ccmn x30, x30, 0xf, eq" cf035eba
+ad "ccmn x30, x30, 0xf, ne" cf135eba
+ad "ccmn w30, w30, 0xf, eq" cf035e3a
+ad "ccmn w30, w30, 0xf, ne" cf135e3a
+ad "ccmn x30, 0x1f, 0xf, eq" cf0b5fba
+ad "ccmn x30, 0x1f, 0xf, ne" cf1b5fba
+ad "ccmn w30, 0x1f, 0xf, eq" cf0b5f3a
+ad "ccmn w30, 0x1f, 0xf, ne" cf1b5f3a
+ad "csel x30, x30, x30, eq" DE039E9A
+ad "csel x15, x25, x19, ne" 2F13939A
+ad "csel x5, x11, x22, eq" 6501969A
+ad "csel x1, x2, x3, ne" 4110839A
+ad "csel x10, x16, x13, eq" 0A028D9A
+ad "csel w30, w30, w30, ne" DE139E1A
+ad "csel w15, w25, w19, eq" 2F03931A
+ad "csel w5, w11, w22, ne" 6511961A
+ad "csel w1, w2, w3, eq" 4100831A
+ad "csel w10, w16, w13, ne" 0A128D1A
+ad "cset x0, eq" E0179F9A
+ad "cset x11, eq" EB179F9A
+ad "cset x30, ne" FE079F9A
+ad "cset x22, eq" F6179F9A
+ad "cset x7, ne" E7079F9A
+ad "cset x9, eq" E9179F9A
+ad "cset x17, ne" F1079F9A
+ad "cset w0, eq" E0179F1A
+ad "cset w11, eq" EB179F1A
+ad "cset w30, ne" FE079F1A
+ad "cset w22, eq" F6179F1A
+ad "cset w7, ne" E7079F1A
+ad "cset w9, eq" E9179F1A
+ad "cset w17, ne" F1079F1A
+ad "sxtb x30, w30" DE1F4093
+ad "sxtb x1, w12" 811D4093
+ad "sxtb x22, w3" 761C4093
+ad "sxtb w30, w30" DE1F0013
+ad "sxtb w5, w7" E51C0013
+ad "sxtb w9, w8" 091D0013
+ad "sxth x30, w30" DE3F4093 
+ad "sxth x1, w12" 813D4093
+ad "sxth x22, w3" 763C4093
+ad "sxth w30, w30" DE3F0013
+ad "sxth w5, w7" E53C0013
+ad "sxth w9, w8" 093D0013
+ad "sxtw x30, w30" DE7F4093
+ad "sxtw x25, w15" F97D4093
+ad "sxtw x5, w11" 657D4093
+ad "rev16 x30, x30" DE07C0DA
+ad "rev16 x15, x25" 2F07C0DA
+ad "rev16 x5, x11" 6505C0DA
+ad "rev16 x1, x2" 4104C0DA
+ad "rev16 x10, x16" 0A06C0DA
+ad "rev16 w30, w30" DE07C05A
+ad "rev16 w15, w25" 2F07C05A
+ad "rev16 w5, w11" 6505C05A
+ad "rev16 w1, w2" 4104C05A
+ad "rev16 w10, w16" 0A06C05A
+ad "rev32 x30, x30" DE0BC0DA
+ad "rev32 x15, x25" 2F0BC0DA
+ad "rev32 x5, x11" 6509C0DA
+ad "rev32 x1, x2" 4108C0DA
+ad "rev32 x10, x16" 0A0AC0DA
+adB "tbz x1, 0x1f, 0x3" e1ffffb6
+adB "tbnz x1, 0x1f, 0x3" e1ffffb7
+adB "tbz w1, 0x1f, 0x3" e1ffff36
+adB "tbnz w1, 0x1f, 0x3" e1ffff37
+adB "tbz w0, 0x20, 0xc" 60000036
+adB "tbnz w0, 0x20, 0xc" 60000037
+adB "tbz x0, 0x40, 0xc" 600000b6
+adB "tbnz x0, 0x40, 0xc" 600000b7
+ad "tbz x30, 0x3f, 0x1c" FE00F8B6
+ad "tbz x5, 0x27, 0x14" A50038B6
+ad "tbz x29, 0x30, 0x1fe0" 1DFF80B6
+ad "tbz w25, 0x16, 8" 5900B036
+ad "tbz w30, 0xf, 0x1c" FE007836
+ad "tbz w11, 0x1d, 0x18" CB00E836
+ad "tbnz x30, 0x3f, 0x14" be00f8b7
+ad "tbnz x5, 0x25, 8" 450028b7
+ad "tbnz x29, 0x30, 0x1fd0" 9DFE80B7
+ad "tbnz w25, 0x16, 0x14" B900B037
+ad "tbnz w30, 0xf, 4" 3E007837
+ad "tbnz w11, 0x1d, 0x18" CB00E837

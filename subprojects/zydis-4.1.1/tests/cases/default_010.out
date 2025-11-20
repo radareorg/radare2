@@ -1,0 +1,32 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: xchg [ENC: DEFAULT, MAP: DEFAULT, OPC: 0x92]
+     LENGTH:  2
+        SSZ: 64
+       EOSZ: 64
+       EASZ: 64
+   CATEGORY: DATAXFER
+    ISA-SET: I86
+    ISA-EXT: BASE
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_REX 
+  OPTIMIZED: 49 92 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT      RW        OPCODE     64      1      64       INT                          r10
+ 1   REGISTER    IMPLICIT      RW          NONE     64      1      64       INT                          rax
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: xchg %rax, %r10
+   RELATIVE: xchg %rax, %r10
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: xchg r10, rax
+   RELATIVE: xchg r10, rax
+
+== [ SEGMENTS ] ============================================================================================
+4F 92 
+:  :..OPCODE
+:..REX

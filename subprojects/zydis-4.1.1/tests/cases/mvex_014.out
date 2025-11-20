@@ -1,0 +1,45 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpmadd231d [ENC: MVEX, MAP: 0F38, OPC: 0xB5]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: KNC
+    ISA-SET: KNCE
+    ISA-EXT: KNCE
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_MVEX 
+  OPTIMIZED: 62 D2 61 02 B5 FE 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT     RCW     MODRM_REG    512     16      32   FLOAT32                         zmm7
+ 1   REGISTER    EXPLICIT       R          MASK     16     16       1       INT                           k2
+ 2   REGISTER    EXPLICIT       R        NDSNDD    512     16      32   FLOAT32                        zmm19
+ 3   REGISTER    EXPLICIT       R      MODRM_RM    512     16      32   FLOAT32                        zmm14
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 512
+  BROADCAST: NONE
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k2 [MERGING]
+         EH: N
+    SWIZZLE: NONE
+    CONVERT: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpmadd231d %zmm14, %zmm19, %zmm7 {%k2}
+   RELATIVE: vpmadd231d %zmm14, %zmm19, %zmm7 {%k2}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpmadd231d zmm7 {k2}, zmm19, zmm14
+   RELATIVE: vpmadd231d zmm7 {k2}, zmm19, zmm14
+
+== [ SEGMENTS ] ============================================================================================
+62 D2 61 B2 B5 FE 
+:           :  :..MODRM
+:           :..OPCODE
+:..MVEX

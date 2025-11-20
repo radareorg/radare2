@@ -1,0 +1,45 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpunpckhqdq [ENC: VEX, MAP: 0F, OPC: 0x6D]
+     LENGTH: 10
+        SSZ: 64
+       EOSZ: 64
+       EASZ: 64
+   CATEGORY: AVX2
+    ISA-SET: AVX2
+    ISA-EXT: AVX2
+ EXCEPTIONS: AVX4
+ ATTRIBUTES: HAS_MODRM HAS_SIB HAS_VEX ACCEPTS_SEGMENT 
+  OPTIMIZED: C4 21 75 6D 1C FD FD C6 FC D7 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    256      4      64      UINT                        ymm11
+ 1   REGISTER    EXPLICIT       R        NDSNDD    256      4      64      UINT                         ymm1
+ 2     MEMORY    EXPLICIT       R      MODRM_RM    256      4      64      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                none
+                                                                                 INDEX =                 r15
+                                                                                 SCALE =                   8
+                                                                                 DISP  =  0xFFFFFFFFD7FCC6FD
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 256
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpunpckhqdq -0x28033903(,%r15,8), %ymm1, %ymm11
+   RELATIVE: vpunpckhqdq -0x28033903(,%r15,8), %ymm1, %ymm11
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpunpckhqdq ymm11, ymm1, ymmword ptr ds:[r15*8-0x28033903]
+   RELATIVE: vpunpckhqdq ymm11, ymm1, ymmword ptr ds:[r15*8-0x28033903]
+
+== [ SEGMENTS ] ============================================================================================
+C4 21 F5 6D 1C FD FD C6 FC D7 
+:        :  :  :  :..DISP
+:        :  :  :..SIB
+:        :  :..MODRM
+:        :..OPCODE
+:..VEX

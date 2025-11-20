@@ -1,0 +1,13 @@
+set(zydis_VERSION @PROJECT_VERSION@)
+
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+find_dependency(Zycore)
+
+include("${CMAKE_CURRENT_LIST_DIR}/zydis-targets.cmake")
+
+set_and_check(zydis_INCLUDE_DIR "${PACKAGE_PREFIX_DIR}/@CMAKE_INSTALL_INCLUDEDIR@")
+set_and_check(zydis_LIB_DIR "${PACKAGE_PREFIX_DIR}/@CMAKE_INSTALL_LIBDIR@")
+
+check_required_components(zydis)

@@ -1,0 +1,44 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vrcpss [ENC: VEX, MAP: 0F, OPC: 0x53]
+     LENGTH:  5
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AVX
+    ISA-SET: AVX
+    ISA-EXT: AVX
+ EXCEPTIONS: AVX5
+ ATTRIBUTES: HAS_MODRM HAS_VEX ACCEPTS_SEGMENT 
+  OPTIMIZED: C5 FA 53 75 9E 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128      4      32   FLOAT32                         xmm6
+ 1   REGISTER    EXPLICIT       R        NDSNDD    128      4      32   FLOAT32                         xmm0
+ 2     MEMORY    EXPLICIT       R      MODRM_RM     32      1      32   FLOAT32  TYPE  =                 MEM
+                                                                                 SEG   =                  ss
+                                                                                 BASE  =                 rbp
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0xFFFFFFFFFFFFFF9E
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 256
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vrcpssl -0x62(%rbp), %xmm0, %xmm6
+   RELATIVE: vrcpssl -0x62(%rbp), %xmm0, %xmm6
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vrcpss xmm6, xmm0, dword ptr ss:[rbp-0x62]
+   RELATIVE: vrcpss xmm6, xmm0, dword ptr ss:[rbp-0x62]
+
+== [ SEGMENTS ] ============================================================================================
+C5 FE 53 75 9E 
+:     :  :  :..DISP
+:     :  :..MODRM
+:     :..OPCODE
+:..VEX

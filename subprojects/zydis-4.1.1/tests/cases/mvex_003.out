@@ -1,0 +1,45 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vmulps [ENC: MVEX, MAP: 0F, OPC: 0x59]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: KNC
+    ISA-SET: KNCE
+    ISA-EXT: KNCE
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_MVEX 
+  OPTIMIZED: 62 51 68 0C 59 F4 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT     RCW     MODRM_REG    512     16      32   FLOAT32                        zmm14
+ 1   REGISTER    EXPLICIT       R          MASK     16     16       1       INT                           k4
+ 2   REGISTER    EXPLICIT       R        NDSNDD    512     16      32   FLOAT32                         zmm2
+ 3   REGISTER    EXPLICIT       R      MODRM_RM    512     16      32   FLOAT32                        zmm12
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 512
+  BROADCAST: NONE
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k4 [MERGING]
+         EH: N
+    SWIZZLE: DCBA
+    CONVERT: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vmulps %zmm12, %zmm2, %zmm14 {%k4}
+   RELATIVE: vmulps %zmm12, %zmm2, %zmm14 {%k4}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vmulps zmm14 {k4}, zmm2, zmm12
+   RELATIVE: vmulps zmm14 {k4}, zmm2, zmm12
+
+== [ SEGMENTS ] ============================================================================================
+62 51 68 0C 59 F4 
+:           :  :..MODRM
+:           :..OPCODE
+:..MVEX

@@ -1,0 +1,48 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpunpckhbw [ENC: EVEX, MAP: 0F, OPC: 0x68]
+     LENGTH:  7
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AVX512
+    ISA-SET: AVX512BW_128
+    ISA-EXT: AVX512EVEX
+ EXCEPTIONS: E4NF
+ ATTRIBUTES: HAS_MODRM HAS_EVEX ACCEPTS_SEGMENT 
+  OPTIMIZED: 62 41 6D 82 68 72 91 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128     16       8      UINT                        xmm30
+ 1   REGISTER    EXPLICIT       R          MASK     64     64       1       INT                           k2
+ 2   REGISTER    EXPLICIT       R        NDSNDD    128     16       8      UINT                        xmm18
+ 3     MEMORY    EXPLICIT       R      MODRM_RM    128     16       8      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 r10
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0xFFFFFFFFFFFFF910
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k2 [ZEROING]
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpunpckhbw -0x6F0(%r10), %xmm18, %xmm30 {%k2} {z}
+   RELATIVE: vpunpckhbw -0x6F0(%r10), %xmm18, %xmm30 {%k2} {z}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpunpckhbw xmm30 {k2} {z}, xmm18, xmmword ptr ds:[r10-0x6F0]
+   RELATIVE: vpunpckhbw xmm30 {k2} {z}, xmm18, xmmword ptr ds:[r10-0x6F0]
+
+== [ SEGMENTS ] ============================================================================================
+62 41 6D 82 68 72 91 
+:           :  :  :..DISP
+:           :  :..MODRM
+:           :..OPCODE
+:..EVEX

@@ -1,0 +1,48 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpcmpeqd [ENC: EVEX, MAP: 0F, OPC: 0x76]
+     LENGTH: 10
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AVX512
+    ISA-SET: AVX512F_128
+    ISA-EXT: AVX512EVEX
+ EXCEPTIONS: E4
+ ATTRIBUTES: HAS_MODRM HAS_EVEX ACCEPTS_SEGMENT 
+  OPTIMIZED: 62 F1 75 1E 76 A5 DF 8F 5C 88 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG     64     64       1       INT                           k4
+ 1   REGISTER    EXPLICIT       R          MASK     64     64       1       INT                           k6
+ 2   REGISTER    EXPLICIT       R        NDSNDD    128      4      32       INT                         xmm1
+ 3     MEMORY    EXPLICIT       R      MODRM_RM     32      1      32       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ss
+                                                                                 BASE  =                 rbp
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0xFFFFFFFF885C8FDF
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: 1_TO_4
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k6 [ZEROING]
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpcmpeqd -0x77A37021(%rbp) {1to4}, %xmm1, %k4 {%k6}
+   RELATIVE: vpcmpeqd -0x77A37021(%rbp) {1to4}, %xmm1, %k4 {%k6}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpcmpeqd k4 {k6}, xmm1, dword ptr ss:[rbp-0x77A37021] {1to4}
+   RELATIVE: vpcmpeqd k4 {k6}, xmm1, dword ptr ss:[rbp-0x77A37021] {1to4}
+
+== [ SEGMENTS ] ============================================================================================
+62 F1 75 1E 76 A5 DF 8F 5C 88 
+:           :  :  :..DISP
+:           :  :..MODRM
+:           :..OPCODE
+:..EVEX

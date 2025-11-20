@@ -1,0 +1,33 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: pmulhrw [ENC: 3DNOW, MAP: 0F0F, OPC: 0xB7]
+     LENGTH:  4
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AMD3DNOW
+    ISA-SET: AMD3DNOW
+    ISA-EXT: AMD3DNOW
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM 
+  OPTIMIZED: 0F 0F CD B7 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT      RW     MODRM_REG     64      1      64       INT                          mm1
+ 1   REGISTER    EXPLICIT       R      MODRM_RM     64      1      64       INT                          mm5
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: pmulhrw %mm5, %mm1
+   RELATIVE: pmulhrw %mm5, %mm1
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: pmulhrw mm1, mm5
+   RELATIVE: pmulhrw mm1, mm5
+
+== [ SEGMENTS ] ============================================================================================
+0F 0F CD B7 
+:     :  :..OPCODE
+:     :..MODRM
+:..OPCODE

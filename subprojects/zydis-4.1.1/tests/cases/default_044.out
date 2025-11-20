@@ -1,0 +1,45 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: call [ENC: DEFAULT, MAP: DEFAULT, OPC: 0xFF]
+     LENGTH:  5
+        SSZ: 32
+       EOSZ: 32
+       EASZ: 32
+   CATEGORY: CALL
+    ISA-SET: I86
+    ISA-EXT: BASE
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM ACCEPTS_BND ACCEPTS_SEGMENT ACCEPTS_NOTRACK HAS_NOTRACK 
+  OPTIMIZED: 3E FF 10 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0     MEMORY    EXPLICIT       R      MODRM_RM     32      1      32       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 eax
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000000000000
+ 1   REGISTER      HIDDEN      RW          NONE     32      1      32       INT                          eip
+ 2   REGISTER      HIDDEN      RW          NONE     32      1      32       INT                          esp
+ 3     MEMORY      HIDDEN       W          NONE     32      1      32       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ss
+                                                                                 BASE  =                 esp
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000000000000
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: notrack call (%eax)
+   RELATIVE: notrack call (%eax)
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: notrack call dword ptr ds:[eax]
+   RELATIVE: notrack call dword ptr ds:[eax]
+
+== [ SEGMENTS ] ============================================================================================
+64 26 3E FF 10 
+:        :  :..MODRM
+:        :..OPCODE
+:..PREFIXES

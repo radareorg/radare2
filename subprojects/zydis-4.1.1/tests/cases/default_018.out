@@ -1,0 +1,44 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: or [ENC: DEFAULT, MAP: DEFAULT, OPC: 0x09]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: LOGICAL
+    ISA-SET: I86
+    ISA-EXT: BASE
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM CPUFLAG_ACCESS ACCEPTS_LOCK ACCEPTS_XACQUIRE ACCEPTS_XRELEASE ACCEPTS_SEGMENT 
+  OPTIMIZED: 09 A7 6F E3 10 1B 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0     MEMORY    EXPLICIT      RW      MODRM_RM     32      1      32       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rdi
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x000000001B10E36F
+ 1   REGISTER    EXPLICIT       R     MODRM_REG     32      1      32       INT                          esp
+ 2   REGISTER      HIDDEN       W          NONE     64     64       1       INT                       rflags
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [    FLAGS ] ============================================================================================
+    ACTIONS: [CF  : 0  ] [PF  : M  ] [AF  : U  ] [ZF  : M  ] [SF  : M  ] [OF  : 0  ] 
+       READ: 0x00000000
+    WRITTEN: 0x000008D5
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: or %esp, 0x1B10E36F(%rdi)
+   RELATIVE: or %esp, 0x1B10E36F(%rdi)
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: or dword ptr ds:[rdi+0x1B10E36F], esp
+   RELATIVE: or dword ptr ds:[rdi+0x1B10E36F], esp
+
+== [ SEGMENTS ] ============================================================================================
+09 A7 6F E3 10 1B 
+:  :  :..DISP
+:  :..MODRM
+:..OPCODE

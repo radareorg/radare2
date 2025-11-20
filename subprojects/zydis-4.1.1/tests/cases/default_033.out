@@ -1,0 +1,38 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: mov [ENC: DEFAULT, MAP: DEFAULT, OPC: 0x8B]
+     LENGTH:  6
+        SSZ: 32
+       EOSZ: 32
+       EASZ: 32
+   CATEGORY: DATAXFER
+    ISA-SET: I86
+    ISA-EXT: BASE
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM ACCEPTS_SEGMENT 
+  OPTIMIZED: 8B 88 77 77 77 77 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG     32      1      32       INT                          ecx
+ 1     MEMORY    EXPLICIT       R      MODRM_RM     32      1      32       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 eax
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000077777777
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: mov 0x77777777(%eax), %ecx
+   RELATIVE: mov 0x77777777(%eax), %ecx
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: mov ecx, dword ptr ds:[eax+0x77777777]
+   RELATIVE: mov ecx, dword ptr ds:[eax+0x77777777]
+
+== [ SEGMENTS ] ============================================================================================
+8B 88 77 77 77 77 
+:  :  :..DISP
+:  :..MODRM
+:..OPCODE

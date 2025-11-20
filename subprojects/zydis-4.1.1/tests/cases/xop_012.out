@@ -1,0 +1,46 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpcomd [ENC: XOP, MAP: XOP8, OPC: 0xCE]
+     LENGTH: 10
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: XOP
+    ISA-SET: XOP
+    ISA-EXT: XOP
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_XOP ACCEPTS_SEGMENT 
+  OPTIMIZED: 8F E8 70 CE 82 2F 3A 96 FB 93 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128      4      32       INT                         xmm0
+ 1   REGISTER    EXPLICIT       R        NDSNDD    128      4      32       INT                         xmm1
+ 2     MEMORY    EXPLICIT       R      MODRM_RM    128      4      32       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rdx
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0xFFFFFFFFFB963A2F
+ 3  IMMEDIATE    EXPLICIT       R         UIMM8      8      1       8      UINT  [U A  8] 0x0000000000000093
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpcomd $0x93, -0x469C5D1(%rdx), %xmm1, %xmm0
+   RELATIVE: vpcomd $0x93, -0x469C5D1(%rdx), %xmm1, %xmm0
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpcomd xmm0, xmm1, xmmword ptr ds:[rdx-0x469C5D1], 0x93
+   RELATIVE: vpcomd xmm0, xmm1, xmmword ptr ds:[rdx-0x469C5D1], 0x93
+
+== [ SEGMENTS ] ============================================================================================
+8F A8 70 CE 82 2F 3A 96 FB 93 
+:        :  :  :           :..IMM
+:        :  :  :..DISP
+:        :  :..MODRM
+:        :..OPCODE
+:..XOP

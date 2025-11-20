@@ -1,0 +1,51 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpminud [ENC: MVEX, MAP: 0F38, OPC: 0x3B]
+     LENGTH: 10
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: KNC
+    ISA-SET: KNCE
+    ISA-EXT: KNCE
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_MVEX ACCEPTS_SEGMENT 
+  OPTIMIZED: 62 C2 39 2D 3B 83 C1 76 FC AB 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT     RCW     MODRM_REG    512     16      32   FLOAT32                        zmm16
+ 1   REGISTER    EXPLICIT       R          MASK     16     16       1       INT                           k5
+ 2   REGISTER    EXPLICIT       R        NDSNDD    512     16      32   FLOAT32                         zmm8
+ 3     MEMORY    EXPLICIT       R      MODRM_RM    128      4      32       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 r11
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0xFFFFFFFFABFC76C1
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 512
+  BROADCAST: 4_TO_16
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k5 [MERGING]
+         EH: N
+    SWIZZLE: NONE
+    CONVERT: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpminud -0x5403893F(%r11) {4to16}, %zmm8, %zmm16 {%k5}
+   RELATIVE: vpminud -0x5403893F(%r11) {4to16}, %zmm8, %zmm16 {%k5}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpminud zmm16 {k5}, zmm8, xmmword ptr ds:[r11-0x5403893F] {4to16}
+   RELATIVE: vpminud zmm16 {k5}, zmm8, xmmword ptr ds:[r11-0x5403893F] {4to16}
+
+== [ SEGMENTS ] ============================================================================================
+62 C2 39 2D 3B 83 C1 76 FC AB 
+:           :  :  :..DISP
+:           :  :..MODRM
+:           :..OPCODE
+:..MVEX

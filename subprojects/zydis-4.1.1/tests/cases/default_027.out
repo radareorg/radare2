@@ -1,0 +1,37 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: mov [ENC: DEFAULT, MAP: DEFAULT, OPC: 0xA0]
+     LENGTH:  9
+        SSZ: 64
+       EOSZ:  8
+       EASZ: 64
+   CATEGORY: DATAXFER
+    ISA-SET: I86
+    ISA-EXT: BASE
+ EXCEPTIONS: NONE
+ ATTRIBUTES: ACCEPTS_SEGMENT 
+  OPTIMIZED: A0 77 77 77 77 77 77 77 77 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    IMPLICIT       W          NONE      8      1       8       INT                           al
+ 1     MEMORY    EXPLICIT       R  DISP16_32_64      8      1       8       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                none
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x7777777777777777
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: mov 0x7777777777777777, %al
+   RELATIVE: mov 0x7777777777777777, %al
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: mov al, byte ptr ds:[0x7777777777777777]
+   RELATIVE: mov al, byte ptr ds:[0x7777777777777777]
+
+== [ SEGMENTS ] ============================================================================================
+A0 77 77 77 77 77 77 77 77 
+:  :..DISP
+:..OPCODE

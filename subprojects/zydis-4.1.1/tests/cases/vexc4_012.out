@@ -1,0 +1,44 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vxorpd [ENC: VEX, MAP: 0F, OPC: 0x57]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: LOGICAL_FP
+    ISA-SET: AVX
+    ISA-EXT: AVX
+ EXCEPTIONS: AVX4
+ ATTRIBUTES: HAS_MODRM HAS_SIB HAS_VEX ACCEPTS_SEGMENT 
+  OPTIMIZED: C4 41 75 57 24 90 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    256      4      64      UINT                        ymm12
+ 1   REGISTER    EXPLICIT       R        NDSNDD    256      4      64      UINT                         ymm1
+ 2     MEMORY    EXPLICIT       R      MODRM_RM    256      4      64      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                  r8
+                                                                                 INDEX =                 rdx
+                                                                                 SCALE =                   4
+                                                                                 DISP  =  0x0000000000000000
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 256
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vxorpd (%r8,%rdx,4), %ymm1, %ymm12
+   RELATIVE: vxorpd (%r8,%rdx,4), %ymm1, %ymm12
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vxorpd ymm12, ymm1, ymmword ptr ds:[r8+rdx*4]
+   RELATIVE: vxorpd ymm12, ymm1, ymmword ptr ds:[r8+rdx*4]
+
+== [ SEGMENTS ] ============================================================================================
+C4 41 75 57 24 90 
+:        :  :  :..SIB
+:        :  :..MODRM
+:        :..OPCODE
+:..VEX

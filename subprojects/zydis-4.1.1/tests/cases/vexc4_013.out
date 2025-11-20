@@ -1,0 +1,44 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vmovlps [ENC: VEX, MAP: 0F, OPC: 0x12]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 64
+       EASZ: 64
+   CATEGORY: DATAXFER
+    ISA-SET: AVX
+    ISA-EXT: AVX
+ EXCEPTIONS: AVX5
+ ATTRIBUTES: HAS_MODRM HAS_VEX ACCEPTS_SEGMENT 
+  OPTIMIZED: C4 C1 20 12 40 58 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128      4      32   FLOAT32                         xmm0
+ 1   REGISTER    EXPLICIT       R        NDSNDD    128      4      32   FLOAT32                        xmm11
+ 2     MEMORY    EXPLICIT       R      MODRM_RM     64      2      32   FLOAT32  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                  r8
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000000000058
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vmovlpsq 0x58(%r8), %xmm11, %xmm0
+   RELATIVE: vmovlpsq 0x58(%r8), %xmm11, %xmm0
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vmovlps xmm0, xmm11, qword ptr ds:[r8+0x58]
+   RELATIVE: vmovlps xmm0, xmm11, qword ptr ds:[r8+0x58]
+
+== [ SEGMENTS ] ============================================================================================
+C4 81 A0 12 40 58 
+:        :  :  :..DISP
+:        :  :..MODRM
+:        :..OPCODE
+:..VEX

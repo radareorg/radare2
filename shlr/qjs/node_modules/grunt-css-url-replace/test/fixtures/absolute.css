@@ -1,0 +1,3 @@
+.http_urls { background-image: url('http://somehost.com/image.png') }
+.https_urls { background-image: url('https://somehost.com/image.png') }
+.data_urls { background-image: url('data:image/png:base64,0') }

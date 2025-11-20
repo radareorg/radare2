@@ -1,0 +1,44 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpshlw [ENC: XOP, MAP: XOP9, OPC: 0x95]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 64
+       EASZ: 64
+   CATEGORY: XOP
+    ISA-SET: XOP
+    ISA-EXT: XOP
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_SIB HAS_XOP ACCEPTS_SEGMENT 
+  OPTIMIZED: 8F 69 D8 95 2C 30 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128      8      16      UINT                        xmm13
+ 1   REGISTER    EXPLICIT       R        NDSNDD    128      8      16      UINT                         xmm4
+ 2     MEMORY    EXPLICIT       R      MODRM_RM    128      8      16      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rax
+                                                                                 INDEX =                 rsi
+                                                                                 SCALE =                   1
+                                                                                 DISP  =  0x0000000000000000
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpshlw (%rax,%rsi,1), %xmm4, %xmm13
+   RELATIVE: vpshlw (%rax,%rsi,1), %xmm4, %xmm13
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpshlw xmm13, xmm4, xmmword ptr ds:[rax+rsi*1]
+   RELATIVE: vpshlw xmm13, xmm4, xmmword ptr ds:[rax+rsi*1]
+
+== [ SEGMENTS ] ============================================================================================
+8F 69 D8 95 2C 30 
+:        :  :  :..SIB
+:        :  :..MODRM
+:        :..OPCODE
+:..XOP

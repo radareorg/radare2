@@ -1,0 +1,858 @@
+24453	OPEN	names from flagspaces get truncated		2025-08-24T23:11:42Z
+24442	OPEN	Ctrl-Delete Crashes Radare		2025-08-24T08:25:52Z
+24439	OPEN	macOS 15.5 with Avast installed detected infection of libegg during update to redare2 to 6.0.0		2025-07-31T16:07:01Z
+24423	OPEN	rename mach0 to macho		2025-07-10T16:41:58Z
+24414	OPEN	Add SEEK_HOLE		2025-07-10T05:41:47Z
+24325	OPEN	Out of memory when using r- command with seeking		2025-07-30T07:12:32Z
+24274	OPEN	Shows the wrong variable access for the DATA XREF		2025-06-10T16:44:05Z
+24192	OPEN	Comments and color problems in AT&T mode		2025-07-30T00:31:58Z
+24186	OPEN	Cannot print the values in the floating-point registers while debugging AARCH64	good first issue	2025-06-10T14:11:49Z
+24179	OPEN	more default panels		2025-07-30T00:32:05Z
+24122	OPEN	Termux arm64 memory leak or too high memory usage		2025-04-08T17:08:00Z
+24090	OPEN	how to get arm-v7 & v8 static lib ?		2025-04-02T11:45:59Z
+24074	OPEN	Installing and using plugins under Windows does not work		2025-03-26T19:55:30Z
+24054	OPEN	Issues when building under Windows		2025-08-15T11:22:36Z
+24044	OPEN	tcp-server in background mode		2025-03-04T19:53:09Z
+24043	OPEN	multiple commands via tcp/http-server		2025-03-04T19:47:57Z
+23986	OPEN	Invalid JSON values in pfj (show data using named format in JSON)		2025-02-27T11:08:41Z
+23864	OPEN	ASCII character space (0x20) is displayed in different ways		2025-01-10T13:19:56Z
+23857	OPEN	zignature includes bytes which are a pointer to data		2025-01-10T23:40:38Z
+23827	OPEN	oba $$ not working with fat machos		2024-12-21T13:17:47Z
+23813	OPEN	Access to the Windows PEB structure.	Windows, RDebug	2025-07-30T00:33:00Z
+23731	OPEN	Improve hash search with ideas from delsum		2024-12-10T00:31:52Z
+23724	OPEN	Append Lc root commands help in ? help message		2025-07-30T00:33:54Z
+23697	OPEN	Find path between functions does not work		2025-07-30T00:34:41Z
+23653	OPEN	Support elbrus/e2k cpu		2024-11-18T10:40:17Z
+23629	OPEN	print/printf/println/	good first issue	2025-04-02T07:36:02Z
+23598	OPEN	Import thunk alignment size		2024-11-04T13:06:31Z
+23554	OPEN	agD doesnt accept subcommand for output format	good first issue	2025-07-30T00:34:31Z
+23536	OPEN	arch endian ties with cfg.bigendian		2025-07-30T00:30:52Z
+23490	OPEN	Ensure nullable for all the apis		2024-10-17T15:29:59Z
+23475	OPEN	r2: expanding a file size not working as expected		2024-12-02T01:58:14Z
+23463	OPEN	Support UBIFS in rfs	good first issue	2024-10-11T10:17:19Z
+23454	OPEN	pahole all the structs		2025-07-30T00:30:44Z
+23406	OPEN	sdb/kv database with missing commands and suggestions	good first issue	2024-09-29T18:03:47Z
+23392	OPEN	help messages shouldnt exceed 80 columns	good first issue	2024-10-17T15:18:10Z
+23379	OPEN	Reversible binary patch format		2025-07-30T00:32:12Z
+23372	OPEN	Add iz+/iz- like we have for classes (ic+/ic-)		2024-09-22T16:32:55Z
+23362	OPEN	Every call to RNum.math or .get should check be checking for errors	good first issue	2024-10-18T11:42:10Z
+23349	OPEN	Max column size in rtable		2024-09-19T06:37:13Z
+23269	OPEN	[winkd] Windows kernel debug, r2 can not debug with winkd plugin		2024-09-02T11:18:01Z
+23267	OPEN	Multiple tabs in visual panel mode get overwritten by loaded layout when switching		2025-07-30T00:31:32Z
+23236	OPEN	Add option to show comments at right or top depending on length		2024-08-28T18:32:50Z
+23096	OPEN	`axff` didnt work as expected		2025-07-30T00:35:28Z
+23092	OPEN	Confusing dupped commands		2024-11-21T00:06:08Z
+23061	OPEN	Add support for demangling plugins		2025-07-30T00:32:49Z
+23034	OPEN	Add a command to check timestamp of plugins to reload them		2025-07-30T00:34:52Z
+22956	OPEN	Wrong value of triple on PowerPC: `PowerMacintosh-unknown-darwin` instead of `powerpc-apple-darwin`		2024-12-02T16:58:55Z
+22955	OPEN	Build system picks an arbitrary `cc` for `arch-arm64` which breaks compilation		2024-12-02T15:34:42Z
+22910	OPEN	afvs does not indicate non-initial struct members when the stack is adjusted		2024-05-09T19:39:12Z
+22902	OPEN	axF is very slow		2024-05-07T21:31:28Z
+22892	OPEN	Debugger Stalls W/ Connect In Profile		2024-05-01T19:47:54Z
+22891	OPEN	dbt never shows anything but current function		2024-05-09T00:40:20Z
+22890	OPEN	visual-r2rop does not work		2024-05-01T18:27:43Z
+22857	OPEN	Separate blocks dor ascii art branch lines		2024-04-19T04:22:14Z
+22853	OPEN	Support nested memory references in the RNum operations		2024-04-18T17:01:24Z
+22839	OPEN	Implement CDPATH env var the same way we handle PATH for executables		2024-04-16T10:35:47Z
+22822	OPEN	Instructions with relocated addresses are replaced with stmdaeq	relocs	2025-07-30T00:35:15Z
+22801	OPEN	R2DIR error in configuration on PowerPC Mac		2024-12-02T11:13:22Z
+22752	OPEN	ADB shell showing weird chars		2024-03-30T10:44:05Z
+22717	OPEN	RFC: Type Signatures		2025-07-03T16:31:39Z
+22715	OPEN	Move esil{cfg|dfg} from anal to esil		2024-03-18T10:29:53Z
+22704	OPEN	Implement value-range search in rafind2	good first issue, RSearch	2024-04-16T06:18:53Z
+22676	OPEN	Arm64 adrp instruction disassembly incorrect	relocs	2024-04-11T15:14:10Z
+22650	OPEN	stderr not captured into internal files		2024-02-27T09:46:56Z
+22592	OPEN	Colorize bytes in hexdump/disasm that has been modified or patched in the cache		2024-02-13T10:14:25Z
+22574	OPEN	radare2 fails to build on PowerPC Macintosh		2024-12-02T11:13:36Z
+22569	OPEN	SIGSEGV when debugging large binary with DWARF data		2025-07-30T02:38:16Z
+22551	OPEN	evaluation of ESIL expression gives wrong result		2024-11-14T21:57:43Z
+22533	OPEN	pdb not working on windows with `-e "pdb.autoload=true"`		2024-01-15T08:58:15Z
+22524	OPEN	help~ : the usage of the dts...		2024-01-05T01:38:22Z
+22514	OPEN	add ltrace like utility on r2		2023-12-23T23:22:11Z
+22508	OPEN	debug an executable with dive into its libraries		2023-12-23T23:20:33Z
+22485	OPEN	[AIX] r2r silently fails when jq not available		2023-12-13T04:59:39Z
+22484	OPEN	[AIX] Huge symbol table		2023-12-07T06:33:41Z
+22477	OPEN	[AIX] debugging support		2023-12-07T06:27:26Z
+22442	OPEN	Add R2PM_SIZE		2023-11-24T11:40:45Z
+22400	OPEN	mach-o plugin doesn't create null fds		2023-11-17T00:26:46Z
+22360	OPEN	Radiff2 default use only one core cpu for compare two files		2023-11-25T17:10:02Z
+22327	OPEN	analyze function not finished on IAR generated elf for ARM Cortex-M device.		2024-03-18T03:57:13Z
+22325	OPEN	error while installing radare2 on windows using cygwin		2023-11-16T20:20:45Z
+22322	OPEN	Error when load zignature		2023-10-13T07:05:43Z
+22321	OPEN	Patching while debugging leads to weird behaviour		2023-10-13T15:59:34Z
+22310	OPEN	Radare2 does not follow forked child / also ignores breakpoint		2023-12-23T23:19:34Z
+22299	OPEN	Add search-and-replace in rafind2	good first issue, new-feature	2024-10-02T21:27:58Z
+22281	OPEN	Trim esotheric whitespaces		2023-10-05T14:56:16Z
+22275	OPEN	Group/Link methods of properties		2023-09-19T10:19:29Z
+22149	OPEN	Projects and files		2024-07-13T12:19:17Z
+22143	OPEN	R2 fails to find some xrefs in APK		2023-08-09T19:40:11Z
+22032	OPEN	Evaluate Profile-Guided Optimization (PGO) profits on Radare2		2023-07-13T09:55:23Z
+21975	OPEN	Improve c++ vtable parsing support		2023-11-16T20:22:12Z
+21927	OPEN	Move shlr/java into libr/bin and libr/arch and reduce visibility of symbols		2023-09-12T23:10:14Z
+21864	OPEN	R2 fails to find the functions at some addresses		2025-07-30T00:31:10Z
+21782	OPEN	PowerPC plugin error during building		2023-12-07T06:11:43Z
+21762	OPEN	Display map of heap is not showing		2024-03-23T19:57:30Z
+21718	OPEN	cannot deserialize zign		2025-07-30T00:33:10Z
+21660	OPEN	UUID APIs and commands		2023-06-26T12:19:34Z
+21585	OPEN	can't record the `syscall` and seems not to use `-i` to load script		2023-12-20T17:40:49Z
+21546	OPEN	Use mangled symbol names for zignatures	zignatures	2025-07-30T00:35:06Z
+21516	OPEN	aab causes some functions to have 0 bbs, or not, but its not correct		2023-03-23T17:42:51Z
+21496	OPEN	File descriptors management broken		2023-06-02T12:30:34Z
+21494	OPEN	Weird issue with reverse debugging		2023-03-18T16:48:32Z
+21492	OPEN	`movdqa xmm12, oword [inputA]` unexpectedly assembled as `movdqa xmm12, xmmword [obj.inputA]` in x86_64		2023-03-17T10:03:19Z
+21484	OPEN	Support runtime configurable paths		2024-09-03T10:49:10Z
+21339	OPEN	The output of the command '/as' changes firing it several time.		2023-02-16T11:17:03Z
+21318	OPEN	wa tbz w0, 0, ... is broken		2023-12-13T07:46:12Z
+21294	OPEN	String detection via aae on ARM Thumb binary fails		2024-09-28T16:25:36Z
+21266	OPEN	[Packaging] Fix Debian packages		2023-11-26T17:43:45Z
+21251	OPEN	Bad assembly generated on arm 32bits		2023-01-17T09:33:07Z
+21246	OPEN	disassemble mips m4k architechture instructions confusion, and `Cannot find function at`		2023-06-02T12:30:16Z
+21211	OPEN	Implement assembler for m68k	rasm2	2023-05-03T22:36:26Z
+21195	OPEN	pd gets off track on large instructions crossing 0x100 offset		2023-04-09T22:07:08Z
+21190	OPEN	rax2 may support more types of input and be more solid		2022-12-22T11:07:05Z
+21156	OPEN	dmhb and dmhf show corrupted bins in heap		2024-04-15T22:01:33Z
+21144	OPEN	verbose / debug - can be replaced with R_LOG imho		2023-03-29T10:27:27Z
+21036	OPEN	Command /ad/ is broken		2022-11-21T15:20:31Z
+20961	OPEN	Aggressive noreturn analysis results in incomplete CFG		2022-11-04T19:39:59Z
+20923	OPEN	ROP regex is not as expected for excluding characters		2022-11-07T00:06:32Z
+20922	OPEN	Add support for rosetta AOT caches		2023-04-09T22:04:03Z
+20911	OPEN	radare basic blocks in CFG		2022-10-19T19:26:47Z
+20863	OPEN	pipe not working on windows 7	Windows	2023-04-09T22:09:16Z
+20859	OPEN	macOS: Debugging x86 under ARM crashes when breakpoint is hit.		2022-10-06T21:24:56Z
+20845	OPEN	Report instruction-level UB details		2022-10-04T16:36:13Z
+20829	OPEN	Improve XDG Support		2023-04-09T22:11:25Z
+20820	OPEN	Merge asm.abi and anal.cxxabi somehow		2022-09-26T16:10:24Z
+20773	OPEN	inline functions		2023-10-28T06:32:23Z
+20767	OPEN	heap inspection in r2 5.7.4 disfunctional - no dmh* command works as intended		2022-11-19T22:44:28Z
+20754	OPEN	void init		2025-07-30T00:29:39Z
+20743	OPEN	Cannot assemble bsr eax, dword [4]		2022-09-14T22:05:30Z
+20736	OPEN	Race condition in r2r		2022-12-22T12:53:33Z
+20632	OPEN	make mcall and rcall be a subsets of ucall		2022-09-02T19:50:54Z
+20614	OPEN	Solana (SBFv2) CPU support		2025-08-23T21:11:24Z
+20601	OPEN	Add support for XCOFF binaries		2023-11-26T17:23:28Z
+20568	OPEN	Code guidelines suggestions		2022-09-06T05:07:38Z
+20559	OPEN	Syscalls are not detected correctly		2023-10-25T09:09:29Z
+20499	OPEN	Radare2 cannot detect datarefs correctly like IDA on arm32		2023-03-30T10:51:17Z
+20377	OPEN	rabin2 -V corrupt		2022-10-11T20:15:21Z
+20350	OPEN	Windows：The mouse cannot click the menu bar.		2022-06-23T15:50:49Z
+20293	OPEN	generate coverage file from tracing information		2022-06-14T21:11:40Z
+20284	OPEN	Add cycle info for m68k		2022-07-09T19:00:05Z
+20240	OPEN	Follow child doest not work		2022-06-07T11:43:46Z
+20193	OPEN	Support for x86 AVX* in ESIL		2022-06-02T04:24:20Z
+20179	OPEN	EPIC: Packaging objectives for 5.x.x		2022-08-23T19:58:24Z
+20099	OPEN	Make anal.jmp.cref true as default		2022-05-19T03:48:01Z
+20092	OPEN	Cmpne cmpeq thumb assembler hut		2022-05-12T14:33:29Z
+20062	OPEN	Rename >>>><<<>> operators in ESIL with LSL, ASR, ..		2025-07-30T00:30:20Z
+20034	OPEN	Strange behavior in cmd.esil.mdev I think		2022-05-31T00:10:24Z
+20032	OPEN	Typedefs only work if used in a single line		2025-07-30T00:34:15Z
+20014	OPEN	Compile in CI with -Wshadow -Werror		2024-12-03T10:01:21Z
+19887	OPEN	EPIC: Refactoring project - `c` command	refactor, shell, epic	2023-02-02T17:30:41Z
+19878	OPEN	Attachement with QEMU gives wrong values for control registers		2023-01-18T09:12:36Z
+19873	OPEN	rabin2 -H does not show header of exe build with WatcomV2 wlink		2022-04-11T15:54:47Z
+19821	OPEN	Fix all the bugs found by codeql	good first issue	2022-05-30T19:00:41Z
+19796	OPEN	in debug and non debug mode r2 interpret the same part of binary differently		2022-03-07T05:27:50Z
+19651	OPEN	Jump table with negative cases imporoperly handled		2022-02-16T11:47:06Z
+19599	OPEN	x86-16bit asm.segoff config is not preserved in some cases		2023-04-09T22:21:01Z
+19595	OPEN	x86-16bit function analysis false positive argument		2022-01-17T22:43:20Z
+19528	OPEN	disassembly for mips mtc/mfc: incorrect coprocessor registry		2021-12-23T19:35:25Z
+19517	OPEN	One sandbox per child		2023-04-22T18:47:56Z
+19481	OPEN	add a new test to disassemble+reassemble a full file and check the checksum of these files for each architectures		2022-03-09T17:04:47Z
+19437	OPEN	All commands should support ? postfix for help		2023-04-10T06:24:20Z
+19422	OPEN	String emptiness check macros are underutilized		2023-10-28T06:00:56Z
+19411	OPEN	Allow r2 commands inside mounted filesystems	good first issue, forensics, shell	2022-04-18T22:11:29Z
+19320	OPEN	Consider dropping esil.romem		2022-03-09T17:08:11Z
+19247	OPEN	Function name from Ordinal number in Radare2		2021-10-17T14:32:30Z
+19209	OPEN	Add more crcs		2021-10-12T13:22:14Z
+19196	OPEN	Piping external commands to rarun2 stdin/arg1 fails		2021-10-09T07:09:07Z
+19190	OPEN	Create a new function after "int 0x80" (used instead of "ret")		2021-10-09T10:08:32Z
+19171	OPEN	Cannot assemble 'movaps xmmword [rax], xmm1'	good first issue	2022-10-12T23:10:55Z
+19143	OPEN	Adding a large string constant in binary		2021-09-28T04:06:50Z
+19139	OPEN	charsets: add more from hyperion	charsets	2022-03-09T17:49:31Z
+19138	OPEN	charsets: add xnu virtual keycode to ascii/ansi	charsets	2021-09-26T16:28:11Z
+19124	OPEN	Examining memory at a register does not work correctly when chaining commands.		2025-07-30T00:34:23Z
+19114	OPEN	Windows Defender issues	Windows	2021-12-22T09:48:28Z
+19086	OPEN	Segment registers not honored on ESIL		2025-07-30T00:30:36Z
+19003	OPEN	Unique coloring for similar immediates	consoleui, good first issue	2022-12-23T22:52:30Z
+18975	OPEN	Cannot set X0 register while debugging AARCH64	RDebug, gdb, ARM	2023-11-10T17:55:41Z
+18962	OPEN	Variables use wrong address offsets in Microsoft x64 executable.	vars	2022-01-21T16:27:17Z
+18930	OPEN	write a script to automatically localize and flag any virus code analysis protection		2021-07-23T18:50:31Z
+18910	OPEN	Debugger - Invalid Watchpoint for memory locations with valid data		2021-07-17T10:21:18Z
+18821	OPEN	Add arguments for iz and izz to show only ascii unicode or wide strings	good first issue, RBin, charsets	2022-07-01T23:53:22Z
+18816	OPEN	Error: Cannot find basic block for switch case at 0x00437033 bbdelta = 30		2022-03-09T17:18:24Z
+18815	OPEN	Invalid Address when analyzing executable		2023-04-09T22:29:49Z
+18788	OPEN	ARM64 var analysis issue		2021-06-01T11:17:42Z
+18777	OPEN	License - LGPL-3.0-only or LGPL-3.0-or-later?		2022-01-21T22:35:01Z
+18693	OPEN	Magic Breakpoint		2021-05-22T21:42:24Z
+18691	OPEN	syscall resolving doesnt work in debug mode		2023-06-02T12:31:31Z
+18661	OPEN	unsupported leaf type: 0x1609	RBin	2021-10-07T01:40:12Z
+18631	OPEN	Add "Graph with Offsets" to Visual/Panel mode		2021-06-21T07:21:52Z
+18597	OPEN	Add FreeBSD CI		2021-06-10T11:48:49Z
+18491	OPEN	Implement r_rbtree_node_delete and r_rbtree_cont_node_delete	RUtil	2021-03-17T22:24:38Z
+18445	OPEN	rarun2 should interact with more filedescriptors than stdin, stdout and stderr		2021-03-16T22:59:13Z
+18400	OPEN	Cannot get symbols from libsystem_c.dylib on macOS	RDebug	2022-05-08T02:16:30Z
+18374	OPEN	Marking edges on disassembly graph view		2021-03-18T16:05:33Z
+18353	OPEN	winkd net/pipe supporting		2021-07-19T09:25:15Z
+18329	OPEN	radare2 does not show console on remote debugging the gameboy		2021-04-25T19:25:42Z
+18314	OPEN	Consider dropping bfdbg		2023-04-09T22:34:29Z
+18228	OPEN	Different overflow behavior with winedbg / gdb		2021-01-14T03:38:30Z
+18219	OPEN	Set io.unalloc=true and optimize it	refactor, RIO	2025-07-30T00:33:20Z
+18194	OPEN	r_core_file_open_many is broken		2023-10-28T06:08:05Z
+18174	OPEN	AVR: Byte/Word addressing in disassembly		2021-01-05T10:55:44Z
+18142	OPEN	ubuntu uses gdbserver to remotely debug vbox win10 program issues	gdb	2022-04-18T21:50:12Z
+18140	OPEN	When shortening stuff, make sure it actually saves space		2021-01-25T00:01:04Z
+18098	OPEN	manual immediate structure offset		2020-12-23T22:07:07Z
+18094	OPEN	Two implementations of aeab command handler		2020-12-22T18:33:30Z
+18093	OPEN	Wishlist for documentation / help subsystem		2020-12-23T23:39:40Z
+18073	OPEN	Clarify/Unify cursor/pointer		2021-01-25T00:01:36Z
+18034	OPEN	Add avx support in /af		2021-11-22T11:43:03Z
+18015	OPEN	radiff2 graph view broken		2020-12-13T05:11:12Z
+18014	OPEN	Incorrect function argument emulation for a 32bit binary		2024-04-16T00:56:21Z
+18003	OPEN	Can not find some class which exist when using r2 to analyze apk.		2020-12-08T05:02:54Z
+17984	OPEN	I can not confirm address related JNIEnv	RAnal, ARM, question	2020-12-03T04:48:32Z
+17962	OPEN	Slow disassembly with many flags and empty flag space selected	optimization, RAsm-Disassembler, Rflags	2020-11-23T08:15:03Z
+17953	OPEN	r2 is unable to identify functions within stripped assembled binaries (no C)	RAnal, test-required, x86, RSyscall	2023-10-28T06:11:40Z
+17949	OPEN	how to use/load debug symbol files from ubuntu -dbgsym packages	debug-info, RDebug, RBin, DWARF	2020-11-23T10:37:21Z
+17941	OPEN	Add Windows and Jemalloc heap parsing tests	Windows, test-required, heap	2020-11-24T05:08:07Z
+17933	OPEN	When start debug android process, the app is frozen and app process will quit	gdb	2020-11-18T07:16:14Z
+17917	OPEN	Implement a objdump -S <debug-binary> output equivalent in r2	RAsm-Disassembler, PDB, DWARF, rasm2	2023-05-30T23:00:06Z
+17907	OPEN	Feature Request: Performance (Speedup of e.g. Scrolling) by Caching Results (e.g. Disassembly)		2020-11-09T21:13:14Z
+17849	OPEN	Error parsing non main arena heap with dmh	test-required, heap	2020-10-29T07:45:19Z
+17772	OPEN	R2 don't show labels on conditional and unconditional jumps	test-required, RAsm-Disassembler	2020-10-09T16:07:44Z
+17768	OPEN	Slow autocompletion init	optimization	2021-02-24T08:47:06Z
+17753	OPEN	XNU kernelcache plugin slows down /x by orders of magnitude	optimization	2020-10-10T09:20:38Z
+17752	OPEN	Wrong x86-64 disassembly	test-required, RAsm-Disassembler, x86	2020-10-28T04:08:52Z
+17739	OPEN	Open a new file (descriptor) with 'dd' is broken.		2020-09-30T09:59:02Z
+17674	OPEN	Question about CFG extraction.	enhancement, RAnal, RGraph, documentation	2022-03-17T02:15:29Z
+17671	OPEN	Support for ADSP-21XX / 2181 disassembler	New Architecture	2020-09-19T17:33:18Z
+17655	OPEN	Finding cross-reference_from based on Android native API	RAnal, test-required, Android	2020-11-02T10:29:19Z
+17649	OPEN	Re-do semantic information of atomic types in the database	RAnal, test-required, types	2022-06-05T11:43:13Z
+17647	OPEN	Xrefs not found for armcompiler6 (armclang)	RAnal, test-required, ARM, high-priority	2020-10-19T06:17:48Z
+17637	OPEN	Wrong variables name substitution?	ARM, high-priority	2022-09-07T14:38:27Z
+17626	OPEN	radare2 with winedbg	RIO, RDebug, WineDbg	2021-03-04T11:41:23Z
+17606	OPEN	Enum base type is ignored	RAnal, test-required, types	2022-06-05T11:40:42Z
+17589	OPEN	Inform within disassembler on the performed direct relocations with addend	test-required, ELF	2022-06-05T12:07:25Z
+17577	OPEN	Properly handle .text section relocations	ELF	2020-09-15T00:42:35Z
+17541	OPEN	Float arithmetic support in ESIL	enhancement, RAnal, ESIL	2020-08-28T12:41:55Z
+17493	OPEN	Piped process does not get waited after terminal resizing		2022-06-05T12:07:25Z
+17475	OPEN	PE Loader Does Not Enforce FileAlignment on Section Starts	PE, waiting-for-author	2020-10-19T06:18:51Z
+17448	OPEN	Separation of the binary loading and some analysis	refactor, RBin	2020-08-31T17:46:51Z
+17447	OPEN	Import testsuite from SoK	good first issue, RAnal, test-required, r2r, high-priority	2020-10-28T07:30:37Z
+17437	OPEN	OpenBSD - "db/esil/arm_16 arm s110 syscalls /ad svc“ test failing	regression, ARM, BSD	2020-08-10T06:07:18Z
+17435	OPEN	add debug infos to RBinPlugin for gameboy		2021-10-14T00:01:53Z
+17432	OPEN	`afs` won't allow any custom type in the signature	RAnal, types, high-priority	2020-08-10T11:13:13Z
+17393	OPEN	error and missing infos on gameboy analysis. A full plugin Ranal for gameboy is needed.	RAnal	2020-08-10T21:13:10Z
+17391	OPEN	Some Unicode characters appear funny on graph output	consoleui, good first issue, RGraph	2022-06-05T12:07:25Z
+17381	OPEN	SH-4 instruction set: undocumented FSCA / FSRRA instruction being incorrectly read as FTRV	test-required, RAsm-Disassembler	2022-06-05T12:07:24Z
+17363	OPEN	Prevent axg* from erasing important function offset information that is retained in axg and axgj	json, RGraph, test-required	2020-07-29T05:08:32Z
+17261	OPEN	linux_debug: /proc/<pid>/stack cannot be read	RDebug, Linux OS	2020-07-22T05:03:58Z
+17247	OPEN	Debian on Alpha architecture - fails to build	RDebug	2020-07-10T06:57:30Z
+17242	OPEN	Debian Jessie - "db/archos/linux-x64/dbg_dmi dmi ld" failed test	RDebug	2020-07-08T11:09:37Z
+17237	OPEN	Fix MODE_LEVENSTEIN diffing algorithm	test-required, radiff2	2020-07-08T03:42:42Z
+17230	OPEN	Better representation of the long function names (e.g. from C++)	RAsm-Disassembler, visual, panel	2020-07-07T09:19:27Z
+17096	OPEN	Manipulated IAT detection/correction.		2020-06-17T14:38:36Z
+17084	OPEN	Invalid register reference on ios_aarch64	ARM, iOS	2020-09-10T10:21:03Z
+17079	OPEN	Bring back gameboy autocomments		2020-06-15T22:22:12Z
+17074	OPEN	Allow to run `r2r` with the specified binaries directory	enhancement, r2r	2020-06-15T16:59:02Z
+17036	OPEN	Incorrect detection of jump table's ending causing incorrect disassemblies in middle of opcodes (x86/64)		2020-06-16T09:49:17Z
+17029	OPEN	Consider removing esil_inc and esil_dec	FEEDBACK WANTED, ESIL	2020-06-10T18:45:33Z
+17019	OPEN	META - Handle antidisassembly tricks	good first issue, test-required, RAsm-Disassembler, hackaton, antidisasm, META	2020-09-02T09:20:53Z
+17013	OPEN	bunch of errors when open project	projects	2021-05-24T10:09:42Z
+17003	OPEN	command agC didn't get work on all function	RAnal, test-required	2021-07-25T21:39:01Z
+17002	OPEN	Elbrus (E2k) architecture support	New Architecture	2020-11-19T07:16:24Z
+17000	OPEN	Incorrect assembly generated for push/pop 16-bit GPR (x86.nz)		2020-06-02T14:27:55Z
+16994	OPEN	radare2 does not assemble right opcodes for instructuction "ld a, 0x63" for gameboy		2020-10-03T03:01:46Z
+16987	OPEN	Fix functions detection for CYW20735 firmware.	RAnal, test-required	2020-06-01T05:46:03Z
+16979	OPEN	af should create function at offset with zignature	RAnal, zignatures	2020-12-11T21:53:26Z
+16938	OPEN	ARMv7a 'unaligned' instructions in visual mode after aav analysis	ARM, visual	2020-07-15T03:08:46Z
+16930	OPEN	Expose FLIRT in rasign2	zignatures, FLIRT	2021-07-06T12:59:33Z
+16846	OPEN	Better test coverage of DWARF	DWARF	2020-06-03T09:53:18Z
+16842	OPEN	`af` doesn't create a new function at the address which is reached by jump from two or more functions		2020-05-26T06:04:48Z
+16810	OPEN	Missing symbols when debugging a remote gdb on Windows	Windows, RDebug	2020-05-11T10:46:54Z
+16806	OPEN	Support loading coredumps from the standard locations	good first issue, Windows, RDebug, MacOS, Linux OS, BSD	2020-11-24T04:39:59Z
+16790	OPEN	With `~...` selection you can't select with a mouse	consoleui	2020-06-01T15:20:08Z
+16785	OPEN	GML graph export from ESIL dataflow graphs (aeg) is broken	ESIL, RGraph, hackaton	2021-02-03T13:37:37Z
+16757	OPEN	radare2 leaks when using tabs in visual panels mode	panel	2020-05-11T04:38:20Z
+16744	OPEN	extend "?*" for plugin documenation		2020-04-29T15:01:31Z
+16729	OPEN	Improve r2r speed on Windows	Windows, infrastructure, optimization, r2r	2020-06-17T04:51:01Z
+16708	OPEN	Unable to use winedbg://	WineDbg	2020-07-29T05:30:48Z
+16707	OPEN	Optimize RAnalMeta and fix its naming	RAnal, optimization	2020-04-26T04:12:25Z
+16697	OPEN	DRCOV file format support (popular coverage format)	enhancement, good first issue, RAnal, RDebug, tracing	2021-08-18T08:23:19Z
+16686	OPEN	Getting `error: too many basic types` when trying to import efi.h	test-required, types	2022-06-05T11:59:20Z
+16680	OPEN	Error while debugging a MIPS binary remotely	gdb, MIPS	2020-04-23T04:53:23Z
+16671	OPEN	Split r2r.c into libr/main and make it available from inside r2	r2r	2020-04-22T04:41:34Z
+16667	OPEN	Add a linter/GitHub Action to validate commit messages and headers	infrastructure	2020-04-22T13:03:42Z
+16620	OPEN	Use RRef		2021-05-11T11:22:54Z
+16584	OPEN	izzq~MSCF yields fake hits?	PE	2020-04-14T22:58:05Z
+16578	OPEN	Bugs in function run_commands in radare2.c		2020-04-13T20:09:59Z
+16555	OPEN	Function save in configure-plugins does nothing		2020-04-12T22:20:09Z
+16549	OPEN	RRegex.comp() leaks if called after .new()	refactor, good first issue, leak	2022-01-21T22:14:00Z
+16533	OPEN	rasm2 tricore ld.bu disassembly error	RAsm-Disassembler	2022-06-05T12:07:24Z
+16525	OPEN	Debug on OpenBSD: Could not get memory map: Operation not permitted	RDebug, BSD	2020-11-13T04:46:20Z
+16517	OPEN	Wrongly detected additional x-ref in ELF 64bit	RAnal, test-required	2020-07-29T05:20:58Z
+16514	OPEN	Auto analysis does not recognize hot patched functions	RAnal	2020-04-13T04:36:56Z
+16827	OPEN	Support CALL_* python bytecodes analysis	pyc	2020-05-15T11:41:13Z
+16488	OPEN	r_bin_demangle() incorrectly detects name mangling scheme	test-required, demangling	2020-04-09T10:44:35Z
+16449	OPEN	The 'wa' command doesn't assemble 'xor ax, ax' correctly		2020-04-07T01:02:45Z
+16400	OPEN	ESIL suggestions for improvement	FEEDBACK WANTED, refactor, ESIL	2020-12-19T02:39:40Z
+16396	OPEN	Forensics: Deleted files	good first issue, forensics	2020-04-07T08:32:09Z
+16377	OPEN	Fails to search a binary for some regex	RSearch	2020-04-01T07:38:02Z
+16366	OPEN	Add stackframesize information in aoj	good first issue, RAnal, RAsm-Disassembler	2022-01-21T22:13:40Z
+16362	OPEN	Struct pointers pf-ied as just pointers	test-required, types	2021-05-11T11:03:49Z
+16344	OPEN	Improve the output of radiff2 -U flag by having file names instead of hardcoded string	enhancement, hackaton, radiff2	2021-05-12T04:11:34Z
+16327	OPEN	Searching in kernel raw memory	RIO, gdb, RSearch, high-priority	2020-07-09T08:18:19Z
+16326	OPEN	Simplify the way pe resources are extracted	PE	2022-02-26T00:57:17Z
+16302	OPEN	Issue Breaking on Win32 DLL Functions	Windows, RDebug, high-priority	2022-06-05T12:12:37Z
+16296	OPEN	Cursor doesn't become visible after existing graph view of a function		2020-03-24T16:59:33Z
+16291	OPEN	set configuration option to change ascii to custom chart encoding		2020-03-23T20:52:26Z
+16256	OPEN	Visual `p==` mode	enhancement, good first issue, hackaton, visual	2020-09-02T09:32:24Z
+16250	OPEN	Set `dbg.glibc` profiles in runtime	enhancement, refactor, heap	2020-03-18T12:33:53Z
+16248	OPEN	Optimize `dmh` speed - it's very slow right now.	RDebug, optimization, heap	2023-06-01T15:36:07Z
+16226	OPEN	LoadLibrary engine support for debugging	enhancement, Windows, RIO, RDebug, hackaton, PDB	2020-09-02T09:33:42Z
+16193	OPEN	Colorize the `pf` output (especially in `r2 -nn binary` case)	enhancement, good first issue, pf, hackaton, visual	2020-09-02T09:22:11Z
+16191	OPEN	Nested blocks hexdump color highlighting	enhancement, radiff2, visual	2020-03-12T10:41:06Z
+16184	OPEN	Sparse binaries format for tests - *.SBIN format	New File-Format, RIO, concept, command, r2r	2020-03-11T08:15:23Z
+16168	OPEN	SystemZ (S390) assert warnings and endianess bugs	good first issue, high-priority	2024-04-15T22:04:11Z
+16147	OPEN	To think about error codes for the r2 commands	FEEDBACK WANTED, concept, command, input	2020-03-05T09:54:24Z
+16146	OPEN	Add simple if/else or ternary operator for r2 shell (oneline)	FEEDBACK WANTED, command, input, shell	2021-02-03T13:37:42Z
+16126	OPEN	Setup a GitHub Action for release multiple repositories	infrastructure	2021-02-03T13:37:44Z
+16110	OPEN	Add more tests for ROP search	good first issue, ROP, test-required, r2r, high-priority, help-wanted	2021-09-02T10:44:35Z
+16084	OPEN	Automatic loading decision of Zignature Databases	FEEDBACK WANTED, zignatures	2020-03-02T12:16:30Z
+16048	OPEN	Windows kernel dumps loading support	New File-Format, Windows, RDebug, hackaton, PE	2020-09-02T09:33:15Z
+16000	OPEN	Out of the box support for VDEX and CDEX formats	New File-Format, good first issue, hackaton, Android	2020-09-02T09:22:18Z
+15967	OPEN	Highlight instruction address	RAsm-Disassembler, visual	2020-03-04T01:55:35Z
+15962	OPEN	dro/drd does not show old/difference register values	RDebug, high-priority	2020-04-15T04:27:16Z
+15947	OPEN	pseudo for arm64 can be improved (+= vs +)	enhancement, ARM, pseudo, high-priority	2020-11-04T09:32:52Z
+15912	OPEN	rasm2 jeq tricore diassembly error	good first issue, test-required, RAsm-Disassembler	2022-06-05T12:07:25Z
+16947	OPEN	Significant time difference in executing `aaa` with r2pipe vs. Cutter	RAnal, waiting-for-author	2020-06-01T19:17:33Z
+15853	OPEN	Support interfacing with debuginfod from binutils	debug-info, good first issue, RBin, hackaton, DWARF	2020-09-02T09:22:25Z
+15831	OPEN	Reindent whole code (except imported one)	infrastructure, buildsystem	2020-01-17T12:07:27Z
+15810	OPEN	Stabs format parser	debug-info, good first issue, hackaton	2020-09-02T09:22:31Z
+15766	OPEN	Support force demangle symbol name with unknown patterns	debug-info, demangling	2021-05-11T11:04:05Z
+15747	OPEN	Smart correction of flags usage	enhancement, Rflags, command	2021-05-18T09:04:56Z
+15713	OPEN	Add column for sanitize strings in `izj/izzj` outputs	enhancement, json	2020-03-25T10:18:40Z
+15699	OPEN	SREC format support	New File-Format, good first issue, RIO, hackaton, high-priority	2020-10-19T05:27:04Z
+15622	OPEN	No functions are detected on ARM code due to weak Thumb code recognition	RAnal, ARM	2022-06-05T11:42:24Z
+15533	OPEN	Arrows are broken in pd--	RAsm-Disassembler	2022-06-05T12:07:25Z
+15510	OPEN	Add entropy edges printing mode	good first issue, print, hackaton	2020-09-02T09:23:12Z
+15506	OPEN	Automated architecture detection for raw binaries	RAnal, concept	2020-03-16T11:55:01Z
+15479	OPEN	r_uleb128: undefined behaviour in 70 shift on ut32		2022-06-05T12:07:26Z
+15477	OPEN	on Windows rabin2 wont extend the sections	Windows, test-required, rabin2	2020-07-17T10:07:06Z
+15468	OPEN	PowerPC64 ragg2 unimplemented	ragg2, good first issue, r2r, high-priority	2022-06-05T12:07:26Z
+15458	OPEN	xmm register output is broken after project load.		2021-07-05T14:35:27Z
+15449	OPEN	Rabin2 resize section / change section permissions not working	test-required, rabin2	2022-06-05T12:07:27Z
+15435	OPEN	Rethink r2 pipes	enhancement, consoleui, concept, shell	2020-04-22T13:05:12Z
+15373	OPEN	Add support for Xrefs to struct fields (low level type xrefs)	RAnal, types	2020-07-27T13:31:59Z
+15341	OPEN	Autoname functions from strings/assert/debug messages..	RAnal	2019-10-23T15:20:19Z
+15328	OPEN	Funky function names		2019-10-23T16:55:18Z
+15286	OPEN	Add support JSON output to iC command on Mac OS		2019-10-25T16:18:40Z
+15285	OPEN	RISCV registers + ideas to improve regprofiles	RAnal, high-priority	2020-07-17T10:07:17Z
+15278	OPEN	Sync zoom.byte p= and pz commands		2019-10-14T23:33:00Z
+15261	OPEN	ps vs dp :D	FEEDBACK WANTED	2019-10-16T20:49:29Z
+15258	OPEN	oodr stdin=file doesn't seem to work		2019-10-12T16:05:12Z
+15255	OPEN	Cannot set hardware breakpoint on 64-bit Kali Linux 2019 when debugging a 32-bit program	RDebug	2022-06-05T12:07:27Z
+15242	OPEN	Probabilistic disassembly mode support	hardcore, RAsm-Disassembler, concept	2019-10-10T07:45:33Z
+15219	OPEN	Add jemalloc 5.x heap parsing	enhancement, hackaton, heap, high-priority	2020-09-02T09:35:38Z
+15204	OPEN	Unable to identify Xrefs in non-stripped x86 Binary		2019-10-06T15:36:44Z
+15200	OPEN	Failing to load custom variable names via project		2019-10-07T19:07:58Z
+15197	OPEN	$HOST_CC required to build with clang	buildsystem, r2pm	2022-02-16T11:47:44Z
+15193	OPEN	[META] - Collect IO subsystem feature-requests here	RIO	2019-10-05T04:00:02Z
+15183	OPEN	Aarch64: r2/rasm2 incorrectly assembles 64 bits post-index variant of STP (confusion with pre-index variant)	RAsm-Assembler, ARM, r2wars	2022-06-05T12:07:27Z
+15173	OPEN	No default thread selected when starting a debugging session on GDB protocol	gdb	2019-10-15T19:41:43Z
+15164	OPEN	Integration with `GNU poke`	pf, concept, types	2019-10-25T21:49:12Z
+15145	OPEN	Feature Request: Expose a function's true referenced ascii/wide strings	RAnal	2019-09-30T13:56:51Z
+15121	OPEN	Prettier interface for the tabline (`t` commands)	enhancement, consoleui, good first issue, visual	2020-11-19T07:46:55Z
+15110	OPEN	Embedded help floating window	consoleui, concept, visual	2019-09-24T08:42:26Z
+15109	OPEN	Integrate `join`, `sort`, `uniq` commands with the RTable API	refactor, consoleui, command, high-priority	2020-09-24T10:43:24Z
+15215	OPEN	Load tricore .hex files.		2019-10-07T07:56:37Z
+15088	OPEN	Isolate types handling into the separate module - RTypes	FEEDBACK WANTED, refactor	2019-09-20T07:38:03Z
+15042	OPEN	Visual Panel Decomp Highlight		2020-02-18T15:08:15Z
+15035	OPEN	Android/ARM debugger broken	RDebug, ARM, Android, high-priority	2020-04-15T04:43:15Z
+15007	OPEN	Implement yank-last-arg in r2 cli	FEEDBACK WANTED, consoleui	2020-07-17T10:21:50Z
+14992	OPEN	afu makes function shorter but not longer	RAnal	2020-01-21T06:30:46Z
+14986	OPEN	Wrong backtrace using dbt	RDebug	2020-05-09T01:01:17Z
+14965	OPEN	autocompletion/improved Vvv type setting	types, visual, vars	2019-10-23T14:42:30Z
+14946	OPEN	Pseudo code view / AT&T syntax	enhancement, hackaton, pseudo	2020-09-02T09:36:41Z
+14933	OPEN	Basic Blocks issue disassembling Java class file	RAnal, test-required, java, high-priority	2020-07-17T10:21:27Z
+14922	OPEN	Support multicore targets in GDB remote debugger	gdb	2020-05-09T03:58:06Z
+14879	OPEN	Support for MobiCore Loadable Format (MCLF)	New File-Format, good first issue, hackaton	2020-09-02T09:23:00Z
+14866	OPEN	Import Lua disassembler into the main repository	enhancement, FEEDBACK WANTED	2020-05-16T08:36:32Z
+14860	OPEN	"pxa" improvement	visual, command	2019-08-27T04:14:27Z
+14847	OPEN	Alias || to ;??	command	2019-08-27T04:16:08Z
+14843	OPEN	Question about imports	good first issue	2020-03-06T07:43:53Z
+14828	OPEN	Failing type imports when using -e dir.types=/path/to/headers/	types	2019-08-27T04:15:40Z
+14812	OPEN	Make analysis and disassembly incremental	refactor, RAnal, RAsm-Disassembler, concept	2019-10-01T10:25:16Z
+14794	OPEN	Make C++ STL library function more simplicity	RAnal, C++	2019-08-16T12:06:36Z
+14785	OPEN	Implement |@ suffix	FEEDBACK WANTED, command, input, shell	2020-04-22T12:56:38Z
+14769	OPEN	Update shellforge	ragg2, good first issue, hackaton	2022-08-01T11:32:05Z
+14765	OPEN	Convert hardcoded shellcodes in libr/egg into assembly sources	ragg2, good first issue, RAsm-Assembler, Hacktoberfest	2019-10-01T10:25:54Z
+14748	OPEN	Add visual `p=` scrolling mode	enhancement, visual, panel	2020-01-15T09:34:06Z
+14742	OPEN	REvent further steps	refactor	2019-08-03T05:47:47Z
+14737	OPEN	PE/x64 strange determine call convention	RAnal, high-priority	2022-06-05T11:35:18Z
+14715	OPEN	Invalid dc parameter hangs r2		2019-07-31T16:00:48Z
+14714	OPEN	pseudo api disasm proposal	FEEDBACK WANTED	2019-07-31T14:26:08Z
+14702	OPEN	radiff2 doesn't show changes in strong difference basic block	radiff2	2020-07-07T04:32:49Z
+14697	OPEN	Add a ruler to horizontal histogram output (e.g. `p==`)	enhancement, consoleui, good first issue	2020-07-17T10:00:39Z
+14686	OPEN	add icg arg to graph only classes mathching strstr	good first issue, RAnal, RGraph	2022-06-05T11:50:31Z
+14685	OPEN	Tree hud thing	consoleui, good first issue	2019-10-23T12:25:10Z
+14684	OPEN	"afvt" doesn't propagate pointer types	RAnal, types	2020-09-03T16:31:28Z
+14683	OPEN	Dietline - convert between numbers	enhancement, FEEDBACK WANTED, consoleui	2019-10-23T12:15:14Z
+14673	OPEN	"@@=" improvement	command, input	2019-07-31T02:43:23Z
+14632	OPEN	(custom) function type not propagating to callers	enhancement, RAnal, test-required	2021-05-11T10:48:59Z
+14618	OPEN	Make icc work with ac info	RAnal, RBin, C++	2022-06-05T11:31:12Z
+14612	OPEN	/R is slow	RAnal, ROP	2019-10-23T12:11:23Z
+14594	OPEN	Add a confidence levels for the analysis results	RAnal, concept, vars	2019-07-20T19:48:39Z
+14557	OPEN	Graph in panels	consoleui, RGraph, panel	2021-05-11T10:33:58Z
+14549	OPEN	Improve visual browse classes	good first issue, types, visual, classes	2021-12-21T01:03:51Z
+14546	OPEN	Improve scr.demo (demoscene mode)	enhancement, consoleui, visual	2019-07-15T05:09:58Z
+14526	OPEN	Toggle mouse somehow	enhancement, consoleui, visual	2019-07-22T10:36:52Z
+15600	OPEN	Add tests for dietline	r2r, high-priority	2020-04-15T04:30:08Z
+14517	OPEN	Find symbol collisions when multiple bins are loaded	RBin	2020-02-28T14:30:30Z
+14513	OPEN	scr.color reset	enhancement, FEEDBACK WANTED, consoleui	2019-07-30T02:08:08Z
+14505	OPEN	Invalid jmptbl size on x86-64	RAnal, x86, high-priority, jmptbl	2021-07-19T09:25:31Z
+14455	OPEN	Implement asm.tabs2	FEEDBACK WANTED, consoleui, good first issue, RAsm-Disassembler	2019-07-05T10:15:38Z
+14444	OPEN	Add commands to manipulate a canvas	refactor, visual	2019-07-02T12:46:35Z
+14443	OPEN	Setting bg color in nodes glitches	consoleui, RGraph	2022-06-05T12:07:28Z
+14442	OPEN	Exceptions support in Analysis	enhancement, RAnal, java, C++	2019-12-30T04:10:41Z
+14440	OPEN	Move all @@* into @@@	FEEDBACK WANTED	2021-02-03T13:37:53Z
+14439	OPEN	functions broken when analyzing file opened with ihex://	RIO, has-test, RBin, test-required	2022-06-05T12:07:28Z
+14418	OPEN	wrong printing in "Vp" with "cmd.cprompt="	consoleui, visual	2022-06-05T12:07:28Z
+14410	OPEN	"iO" creating/changing section	test-required, rabin2	2022-06-05T12:07:29Z
+14406	OPEN	Overlapping Functions	RAnal	2019-07-02T13:04:38Z
+14338	OPEN	Improve source level debugging features	FEEDBACK WANTED, RDebug, DWARF	2019-10-25T18:21:08Z
+14330	OPEN	Implement visualization for aai (dashboard style)	enhancement, consoleui, visual	2019-07-05T15:02:13Z
+14324	OPEN	Support base64: on more commands	FEEDBACK WANTED, refactor, good first issue, Hacktoberfest, shell	2021-02-03T13:37:55Z
+15599	OPEN	Add ragg2 crash test	r2r	2020-02-05T05:04:29Z
+14300	OPEN	oob 0xADDR		2019-06-14T12:42:50Z
+14293	OPEN	db entry0 doesn't break	RDebug, test-required, high-priority	2021-02-03T13:37:57Z
+14275	OPEN	Search mask should use : instead of space and update help msg		2019-06-10T13:36:32Z
+14246	OPEN	Add acl.h type definitions and function signatures in r2		2019-06-07T17:12:11Z
+14245	OPEN	Get a list of all the imports of a program that have no signatures defined for them	enhancement, RAnal, test-required	2021-02-24T08:47:10Z
+14243	OPEN	"aesb" will change "dte" trace log	ESIL, RDebug	2020-07-21T06:00:29Z
+14242	OPEN	"aesb" on first instruction in trace	ESIL, RDebug	2020-07-21T06:00:23Z
+14235	OPEN	R2_HOME_DATADIR not created when trying to save panel view layout	panel	2022-06-05T12:07:29Z
+14230	OPEN	Add repeated value pattern visualizations		2019-06-05T23:34:28Z
+14223	OPEN	Mode Detection is not right for ARM architectures	test-required, ARM	2022-06-05T12:07:30Z
+14219	OPEN	ie shows 0 entrypoints when radare2 opens a saved project	RBin, projects	2022-06-05T12:07:30Z
+14200	OPEN	Display anal hint in the disasm	enhancement, consoleui, good first issue, RAsm-Disassembler, Hacktoberfest	2019-10-01T10:28:44Z
+14195	OPEN	aeim improvement	FEEDBACK WANTED, RAnal, ESIL	2020-08-03T04:43:10Z
+14161	OPEN	Automatically rename function when renaming an anal class method	RAnal, classes	2022-06-05T11:54:54Z
+14153	OPEN	"afbc" improvement		2019-05-25T12:18:05Z
+14149	OPEN	Tools seem happy to consume textual assembly files, yet doesn't work on them		2019-05-24T18:56:47Z
+14128	OPEN	Render class/method/fields graph	RAnal, RGraph, types	2019-05-22T08:28:06Z
+14125	OPEN	Autodetect argument types in THUMB programs by taking the POP	ARM, types, vars	2019-08-18T22:30:37Z
+14124	OPEN	Support argument variable direction attributes	types, high-priority	2020-04-15T04:54:12Z
+14078	OPEN	Wrong rjmp interpretation in AVR on ATmega644/640	AVR, high-priority	2022-06-05T12:07:30Z
+14065	OPEN	Last NDK deprecated the need for the python wrapper script	buildsystem, Android	2021-05-11T11:42:40Z
+14054	OPEN	Proposal for crazy changes in the commands	FEEDBACK WANTED, command, input	2019-08-06T05:14:33Z
+14030	OPEN	RRegItems should be allocated dynamically	refactor	2020-07-17T10:02:15Z
+14018	OPEN	Update/autogenerate windows syscalls for r2	good first issue, Windows, buildsystem, Hacktoberfest	2019-10-28T10:11:47Z
+13996	OPEN	Add anal.with	FEEDBACK WANTED, RAnal	2019-07-31T17:19:41Z
+13984	OPEN	Consider to use more formal and modern intermediate representation	ESIL, concept	2019-05-13T08:55:11Z
+13973	OPEN	Honor scr.utf8 in diagonal lines of the graph	visual, high-priority	2020-04-15T04:55:59Z
+13969	OPEN	Add * and j in all the missing commands	FEEDBACK WANTED, good first issue, json, Hacktoberfest, IMPORTANT	2020-10-14T01:26:39Z
+13966	OPEN	Make a terminal logging command to save command+output in a log		2019-05-05T10:21:56Z
+13943	OPEN	Pointers inside structs do not take asm.bits into account when calculating offsets	RAnal, types	2019-05-05T04:12:48Z
+13937	OPEN	rahash2 -r is not very useful/working as we would want	FEEDBACK WANTED, good first issue, rahash2, documentation, Hacktoberfest, high-priority	2020-04-15T04:56:24Z
+13930	OPEN	The result of function argument identification is poor	RAnal, test-required	2020-02-18T10:05:54Z
+13923	OPEN	break on each function call and return	FEEDBACK WANTED, RDebug	2019-04-28T20:05:22Z
+13894	OPEN	ARM thumb autoswitch detection on rom dump.	RAnal, ARM	2022-06-05T12:07:31Z
+13853	OPEN	Simulating Windows API calls while emulating in Linux with ESIL	ESIL	2023-12-20T03:36:50Z
+13850	OPEN	x86-64 analysis var size issue	RAnal, types	2022-06-05T11:58:47Z
+13848	OPEN	Unable to CL show the source code for a specific binary.		2022-06-05T12:07:31Z
+13822	OPEN	RFE: improve ascii-art stackframe printer	enhancement, RDebug, print	2020-07-17T10:11:47Z
+13821	OPEN	Add code hotkey hints in visual pxr	consoleui, good first issue, print, visual	2021-05-11T10:36:22Z
+13818	OPEN	Do not show "CODE XREF ..." if reflines are shown (by default)	consoleui, good first issue, hackaton, visual, Hacktoberfest	2019-10-01T10:30:56Z
+13805	OPEN	Implement rbin.io plugin	enhancement, RIO, RBin, high-priority	2020-04-15T04:57:19Z
+13802	OPEN	pf variable size arrays support	pf, types, high-priority	2020-04-15T04:57:39Z
+13796	OPEN	Visual graph is confusing with e and E keys, should merge	RGraph	2019-04-17T12:48:57Z
+13784	OPEN	Improve dbt with stackframe contents	enhancement, RDebug	2019-04-28T20:04:40Z
+13782	OPEN	Review/update flagtags	enhancement, Rflags	2019-07-30T16:36:53Z
+13781	OPEN	Unify all zoom commands	FEEDBACK WANTED, refactor, print	2022-01-21T16:20:58Z
+13757	OPEN	Add @@@* to print as offset+size all the results instead of running the commands	FEEDBACK WANTED	2019-04-15T09:46:09Z
+13754	OPEN	Not implemented: afca Analyse function for finding the current calling convention	types	2019-04-17T10:54:09Z
+13753	OPEN	Add command to rebase analysis information	RAnal, types, IMPORTANT	2020-07-17T10:18:39Z
+13720	OPEN	Extract menmonics in sequence as they should execute and not just linearly	ESIL	2020-04-02T08:29:34Z
+13710	OPEN	Poor function detection case	has-test	2019-04-15T13:22:18Z
+13702	OPEN	Review anal.data	RAnal	2019-04-11T11:04:49Z
+13700	OPEN	Call instruction parameters	RSoC, RAnal, test-required, types, vars	2020-07-29T07:13:30Z
+13699	OPEN	RFE: regdiff of function emulation in zignatures	FEEDBACK WANTED, zignatures, ESIL	2019-04-15T01:32:03Z
+13690	OPEN	How to avoid disassembling filler data (repeated zero bytes) using radare2	FEEDBACK WANTED	2019-04-15T11:35:34Z
+13644	OPEN	Add FAMILY_REP	enhancement, FEEDBACK WANTED	2019-04-15T01:33:37Z
+13642	OPEN	Inverse register usage in function	enhancement, FEEDBACK WANTED, good first issue, zignatures	2021-05-12T04:19:02Z
+13641	OPEN	Save aeaf in zignatures	enhancement, zignatures	2019-04-08T09:32:12Z
+13638	OPEN	Visual scrolling and blocksize	enhancement, RSoC, visual	2019-07-30T16:36:53Z
+13631	OPEN	Implement: drpc - print the register profile in C syntax	enhancement, RDebug	2019-04-17T10:59:08Z
+13625	OPEN	Honor ^C in agf	enhancement, good first issue, high-priority	2020-04-15T04:58:29Z
+13619	OPEN	Add scrollbar in panels	enhancement, good first issue, visual, panel	2021-01-11T05:09:10Z
+13618	OPEN	improved pds with function call args	enhancement, types	2019-07-30T16:36:52Z
+13613	OPEN	Better search on top of recorded traces	enhancement, FEEDBACK WANTED, RSearch, concept, tracing	2019-04-23T18:13:55Z
+13612	OPEN	Enable graph.cmtright=true by default	enhancement, RGraph	2019-04-08T09:32:11Z
+15593	OPEN	Add tests for wai	r2r	2019-12-09T13:39:33Z
+13582	OPEN	Add the ability to fold and scroll over structs	enhancement, consoleui, RAsm-Disassembler, types	2021-07-19T09:24:47Z
+13581	OPEN	Visual define structs	enhancement, consoleui, types	2021-05-11T10:37:06Z
+13576	OPEN	Use mixed edge layout to improve visibility	enhancement, consoleui, RGraph	2019-04-02T05:41:12Z
+13554	OPEN	Add an option to make io circular	consoleui, good first issue, visual	2022-06-05T12:07:31Z
+13523	OPEN	asm.bits sometimes wrongly overridden for ARMv7 binaries	ARM	2022-06-05T12:07:32Z
+13505	OPEN	Implement reverse print format	pf, test-required, print, RSearch, hackaton	2022-01-23T22:37:16Z
+13499	OPEN	Remove unnecessary calls to RConfig.get	good first issue, optimization, Hacktoberfest	2019-10-14T15:36:39Z
+13498	OPEN	Remove unnecessary calls to RCore.cmd	refactor, optimization	2019-04-14T22:22:35Z
+13462	OPEN	Decompilers should be under pdd	enhancement, FEEDBACK WANTED	2020-06-10T17:50:52Z
+13458	OPEN	Relative addresses in disassembly views	enhancement, consoleui, RAsm-Disassembler, panel	2019-03-22T09:21:14Z
+13439	OPEN	aslr=no makes ood stop working	RDebug	2022-06-05T12:07:32Z
+13435	OPEN	OOD: Argument Disappears	RDebug	2022-06-05T12:07:32Z
+13420	OPEN	Implement ragg2 -X to execute a ropchain	ragg2, good first issue, ROP, hackaton	2020-09-02T09:24:09Z
+13415	OPEN	Improve stackptr	refactor, RAnal	2019-04-17T11:03:52Z
+13411	OPEN	Implement mX/'X in graph (like it's done in visual already	enhancement, FEEDBACK WANTED, good first issue	2019-06-17T01:20:54Z
+13403	OPEN	RFE: Graph navigation keys	enhancement, FEEDBACK WANTED, good first issue, RGraph, visual	2019-07-30T16:36:52Z
+13390	OPEN	Flags are not remapped on PIE binaries when debugging	RAnal, RDebug, cutter	2022-06-05T12:07:33Z
+13389	OPEN	Cannot add breakpoint when debugger is not started	RDebug, cutter	2019-03-17T14:26:31Z
+13376	OPEN	Better PowerShell integration on Windows targets	enhancement, consoleui, Windows, json	2019-03-14T12:26:59Z
+13358	OPEN	Multi-arch CI: MIPS, SH, RISCV, etc	infrastructure, buildsystem, PPC	2020-08-14T09:09:06Z
+13356	OPEN	Resolve data relocations in 32bit position-independent binaries	RAnal, x86	2020-10-23T15:27:35Z
+13355	OPEN	Add colors in r2 -h commandline help messages	FEEDBACK WANTED, consoleui, good first issue	2019-03-12T00:33:31Z
+13344	OPEN	Implement "graph.cmt.col" to align comments on graph	enhancement, RGraph, cutter	2019-03-16T09:35:41Z
+13320	OPEN	Automatic vulnerability detection		2019-03-08T14:28:03Z
+13318	OPEN	Publish radare2 in Vcpkg	Windows, infrastructure, buildsystem, Hacktoberfest	2019-10-01T10:24:00Z
+13296	OPEN	pds graph should contain the branch instruction (and maybe conditional) of each bb	FEEDBACK WANTED, RGraph, visual	2019-07-31T17:23:48Z
+13295	OPEN	Enumerate/Group function list by offset with counter/...	visual, panel	2019-06-17T11:26:39Z
+13275	OPEN	ELF format issues on ARM packed binaries	RBin, ELF	2019-03-07T05:09:57Z
+13257	OPEN	Implement pdc*	enhancement, RAnal	2019-04-17T11:06:07Z
+13241	OPEN	More granular heap information	enhancement, good first issue, Windows, heap	2020-05-06T06:19:41Z
+13229	OPEN	av changes	enhancement, FEEDBACK WANTED, RAnal, C++	2022-06-05T11:21:21Z
+13218	OPEN	Improvements in aesou	enhancement, RAnal	2019-07-30T16:36:52Z
+13212	OPEN	ESIL follow constants	enhancement, ESIL	2020-12-13T03:33:42Z
+13191	OPEN	Add command to print function passed arguments	RAnal, RDebug, types, vars	2020-07-17T10:18:22Z
+13181	OPEN	Thread lock exception in my attempted core plugin		2020-02-18T09:56:32Z
+13143	OPEN	Process r2 was stopped if machine hasn't enough memory	optimization	2020-04-22T14:56:31Z
+13130	OPEN	break point is not working	RDebug	2019-02-21T09:53:02Z
+13123	OPEN	r2pipe hangs indefinitely on hardware watchpoint hit	RDebug, Linux OS, x86	2019-02-21T09:53:26Z
+13116	OPEN	Proposing r_anal lazy Analysis pipeline	enhancement, RAnal	2019-02-21T09:55:03Z
+13110	OPEN	Radare2 doesn't recognize short string literals	RAnal	2019-02-15T07:04:45Z
+13097	OPEN	Optimize typing and retyping code	RAnal, optimization, types	2019-07-30T02:18:40Z
+13092	OPEN	RFE: Implement IO window	RIO	2020-03-31T13:09:34Z
+13060	OPEN	Visual browse calling conventions	enhancement, good first issue, types, visual, Hacktoberfest	2019-10-01T10:41:54Z
+13059	OPEN	vJKJKJKJK should keep the same seek position	regression, consoleui	2019-07-11T13:38:51Z
+13057	OPEN	RFE: support static/shared plugin selection in meson build system	buildsystem, meson	2020-04-22T14:57:01Z
+13010	OPEN	Intel i960 architecture support	New Architecture	2019-08-16T10:12:28Z
+13004	OPEN	Improve appcall aeC	RAnal, ESIL, RDebug	2019-10-23T14:37:27Z
+12996	OPEN	Bring back r2 -t		2022-06-05T11:21:06Z
+12975	OPEN	More configurable default visual mode	FEEDBACK WANTED, RAsm-Disassembler, concept, visual	2019-02-03T14:59:26Z
+12959	OPEN	automatically load .symtab from PE go binaries	enhancement, RBin, PE	2020-07-13T11:35:56Z
+12955	OPEN	dcp not working	RDebug, Linux OS	2019-02-22T18:04:26Z
+12954	OPEN	R_API char *r_file_slurp(const char *str, int *usz)	good first issue	2019-02-15T07:55:39Z
+12949	OPEN	Flag registers not being mapped correctly	RDebug, MacOS	2020-01-28T08:27:08Z
+12924	OPEN	Segmentation fault while listing symbols in PDB	demangling	2022-06-05T12:07:33Z
+12914	OPEN	Radare2 prints invalid when disassembling instructions after running ood		2019-10-15T23:26:58Z
+12910	OPEN	Remap "hjkl" keys to something else to move around	enhancement, refactor, consoleui	2019-01-25T10:30:54Z
+12902	OPEN	zzz dump raw strings to stdout (for huge files) has limited output.		2019-02-04T13:54:57Z
+12898	OPEN	implement context dump in more p commands like px--5		2019-01-24T09:36:33Z
+12896	OPEN	amd64 calling conventions doesn't support xmm1 arguments	RAnal, test-required, types, x86	2020-07-13T11:36:40Z
+12893	OPEN	Add TriMedia architecture support	enhancement, New Architecture	2019-02-13T07:46:20Z
+12888	OPEN	Analyze reloc functions	enhancement, RAnal, types	2019-07-30T16:36:51Z
+12878	OPEN	"e dbg.follow.child = true" setting does not work	RDebug	2022-06-05T12:07:34Z
+12872	OPEN	Use FOSSA for licenses analysis and visualisation	enhancement, buildsystem	2019-03-31T08:19:33Z
+12871	OPEN	META - C++/etc exceptions parsing and handling	enhancement, RAnal, C++	2019-08-15T04:06:46Z
+12870	OPEN	Merge/Kill quintuplicate JSON implementations	enhancement, refactor, good first issue, json, Hacktoberfest	2019-10-05T07:29:15Z
+12847	OPEN	Implement metanodes	enhancement, RGraph, visual	2019-01-20T13:03:42Z
+12843	OPEN	Register based arguments not loading from project on non-native binary	projects	2020-02-02T12:26:18Z
+12831	OPEN	Task-Local temporary eval vars	RCore	2022-06-05T11:27:02Z
+12826	OPEN	Add function neighbourhood support signatures	zignatures	2019-01-17T18:24:40Z
+12784	OPEN	Text of errors deteles info text of radare2		2019-01-17T10:30:27Z
+12780	OPEN	The entropy section search command should support all p= subcommands	RSearch	2019-01-14T10:08:28Z
+12776	OPEN	Implement vbP	enhancement, visual	2019-01-14T05:23:00Z
+12775	OPEN	Implement pdu command	good first issue, Hacktoberfest	2021-01-03T07:24:40Z
+12771	OPEN	Add obfuscation info to anal classes	RAnal, classes	2019-01-13T17:02:22Z
+12766	OPEN	recursive callgraphs (agx, agc ...)	enhancement, RGraph	2019-07-12T10:49:43Z
+12752	OPEN	unexpected int3 in debugging	RDebug	2020-05-09T03:58:57Z
+12748	OPEN	Improve ? with more type views	enhancement	2019-03-31T12:09:34Z
+12747	OPEN	type propagation: char* not propagate to called function in x86-64	has-test, test-required, types	2020-08-20T04:28:35Z
+12745	OPEN	Generic "tree" command/API	enhancement, consoleui	2019-01-22T11:01:19Z
+12741	OPEN	r_name_filter filters too much	Rflags	2022-06-05T12:07:34Z
+12732	OPEN	do not rely on section info when DT_DYNAMIC is available	ELF, high-priority	2022-06-05T12:07:34Z
+12726	OPEN	pf output is confusing	FEEDBACK WANTED, good first issue, pf	2020-07-17T12:47:11Z
+12724	OPEN	RFE: add support for pf.elf_dyn_entry	pf, ELF	2019-04-17T11:20:52Z
+12707	OPEN	Proper background support for remote commands '='	enhancement	2019-07-30T16:36:51Z
+12697	OPEN	Add support for RiscOS binaries	New File-Format	2020-01-16T05:23:37Z
+12660	OPEN	Use KLEE for testing and tests generation	infrastructure, concept	2020-06-22T05:28:49Z
+12650	OPEN	Types Struct offset 0 / first member	enhancement, RAnal, types, vars	2019-04-09T13:07:23Z
+12635	OPEN	Thumb and ARM mode flags	enhancement, RAnal, ARM	2019-01-04T12:21:33Z
+12633	OPEN	Add missing PTRACE_EVENT_VFORK in native debugger	enhancement, RDebug	2021-05-31T16:01:09Z
+12632	OPEN	ar:// is broken	regression, RIO	2022-06-05T12:07:35Z
+12629	OPEN	Getopt issues with multi-byte chars		2019-02-07T15:04:42Z
+12626	OPEN	Support cert pining in the http webserver	enhancement, webui	2019-03-31T08:22:03Z
+12604	OPEN	Add anal classes to Vb	RAnal, visual, classes	2020-07-17T10:17:44Z
+12603	OPEN	Devirtualize method calls using anal class vtables	RAnal, RAsm-Disassembler, classes	2019-02-06T15:32:27Z
+12588	OPEN	Add command to manage visual tabs	enhancement, good first issue, visual, Hacktoberfest	2019-10-01T10:48:56Z
+12566	OPEN	Add command to split a function	RAnal, stale	2020-11-26T12:00:52Z
+12555	OPEN	Support bitfields in `pf` and `t` commands	enhancement, good first issue, pf, types, command, input	2022-06-05T12:04:51Z
+12530	OPEN	Implement SimHash	enhancement, radiff2	2021-03-17T22:57:51Z
+12529	OPEN	Enhance wasm binary loading	RAnal, RBin, stale	2021-02-24T08:47:13Z
+12510	OPEN	Performance issue when analyzing inputs with arch specified with evm	RAnal, ESIL, stale	2022-06-05T12:07:35Z
+12504	OPEN	Switch to SPDX for copyright and licenses	refactor, good first issue, documentation	2020-10-12T06:10:00Z
+12489	OPEN	For shared libraries with PIC handle xrefs differently	enhancement, RAnal, x86	2018-12-17T06:12:58Z
+12475	OPEN	Strings and segment recognition on ELF Aarch64 TrustZone analysis	FEEDBACK WANTED, ARM	2020-07-17T12:46:08Z
+12440	OPEN	"Cannot allocate -xxx bytes" when analyzing big binary (with debug info)	RAnal, DWARF	2022-06-05T12:07:36Z
+12426	OPEN	[WASM] calls enrichment produces an unexpected function name	RAnal, RAsm-Disassembler	2022-06-05T12:07:36Z
+12358	OPEN	Rewrite MRC/MCR commands of ARM	enhancement, RAnal, RAsm-Disassembler, ARM	2018-11-29T13:37:20Z
+12344	OPEN	Improve graph lines height	consoleui, RGraph, visual	2019-07-28T01:22:08Z
+12311	OPEN	Add VB helpers in core	enhancement, good first issue, RAnal, PE, Hacktoberfest	2019-10-01T10:49:27Z
+12276	OPEN	Disassembly and Metadata cursor mode in Vp	enhancement, consoleui, visual	2018-11-22T15:08:12Z
+12271	OPEN	Error in updating thumb functions	RAnal, ARM	2019-02-17T14:51:36Z
+12261	OPEN	Revise ps and kill r_str_utf16_encode()	refactor, print, RCore, stale	2020-10-21T23:54:15Z
+12260	OPEN	Revise ps commands and kill r_str_utf16_encode()	refactor	2022-06-05T12:07:36Z
+12223	OPEN	Fantasy words instead of offsets	concept, stale	2020-10-20T06:04:20Z
+12208	OPEN	Failing to to CFG recovery	enhancement, RAnal	2018-11-20T05:29:27Z
+12206	OPEN	ARM/ELF issues	RBin, ELF, relocs	2024-04-16T00:55:27Z
+12179	OPEN	Problems to remote debugging arm binaries	RDebug, gdb	2020-05-10T05:05:50Z
+12168	OPEN	Support for 16bit RISC R8822 architecture	New Architecture	2018-11-15T04:52:51Z
+12164	OPEN	Align nodes vertically in horizontal layout	enhancement, RGraph	2019-09-18T09:01:16Z
+12161	OPEN	Add support for GPUs	New Architecture	2019-02-22T15:01:59Z
+12146	OPEN	-m option in r2 does not detect the right bin plugin and hence things are missed	stale	2020-10-14T10:50:11Z
+12142	OPEN	Update shlr/grub	refactor, buildsystem, stale	2020-10-13T19:19:14Z
+15585	OPEN	Generate more tests using GodBolt	r2r	2019-12-10T10:23:11Z
+12128	OPEN	Support DAP - Debug Adapter Protocol	enhancement, RDebug, concept	2021-06-15T01:18:34Z
+12084	OPEN	R_IPI bool r_bin_file_set_cur_binfile_obj(RBin *bin, RBinFile *bf, RBinObject *obj) {	enhancement, RBin	2021-02-03T13:39:34Z
+12081	OPEN	axt missing xrefs in remote debug	RAnal, RDebug, WineDbg	2022-06-05T12:07:36Z
+12070	OPEN	Better ways to handle sp-based vars	RAnal, vars	2022-06-05T11:14:20Z
+12017	OPEN	LL Lock screen improvements	enhancement, consoleui	2018-10-31T04:58:06Z
+12007	OPEN	Improvements to the RLog API	refactor, good first issue	2019-04-17T11:28:49Z
+11992	OPEN	Enable R_FLAG_ZONE_USE_SDB (and fix whatever its broken)	Rflags	2021-02-03T13:39:31Z
+11988	OPEN	ob inconsistencies	FEEDBACK WANTED, refactor, good first issue, RBin, Hacktoberfest	2025-07-30T00:33:32Z
+11979	OPEN	Visual SDB browser	enhancement, consoleui, sdb, visual	2020-09-23T07:42:26Z
+11957	OPEN	Improve hexdump coloring taking ideas from here	enhancement, consoleui, visual	2018-10-29T05:33:17Z
+11934	OPEN	xAnalyzer api definitions.	enhancement, RAnal	2018-10-25T08:24:50Z
+11886	OPEN	Refactor Jemalloc heap parsing code for dynamic configuration and independce from system types.	buildsystem, Hacktoberfest, heap	2022-06-05T12:07:37Z
+11878	OPEN	Avoid C files with the same name to simplify libr.a	refactor	2020-07-10T17:04:55Z
+11877	OPEN	Build SDK with meson	buildsystem	2021-02-03T13:39:25Z
+11850	OPEN	Rust language reversing helpers	enhancement, RAnal	2018-10-19T13:39:54Z
+11828	OPEN	Constrained types enhancements	RAnal, test-required, types, vars	2022-06-05T11:53:18Z
+11793	OPEN	Analysis of references to strings only	enhancement, RAnal, optimization	2019-02-28T17:34:16Z
+11784	OPEN	Using multiple FLIRT signature files	enhancement, good first issue, zignatures, FLIRT, Hacktoberfest	2019-10-01T10:52:29Z
+11763	OPEN	r2pipe2 protocol	enhancement, r2pipe	2018-10-09T13:06:03Z
+11724	OPEN	Wrong assembler output for x86	test-required, RAsm-Assembler, stale	2022-06-05T12:07:37Z
+11720	OPEN	Support for BGZF (gzip blocked format) via the gzip plugin	RIO	2020-02-25T10:32:45Z
+11705	OPEN	Analysis preset	enhancement, RAnal	2018-11-01T10:03:58Z
+11655	OPEN	Improve loading of recursive types from C header file	types, stale	2022-06-05T12:05:37Z
+11639	OPEN	File isn't recognized by ood command when opening a project	projects	2018-09-25T04:39:44Z
+11623	OPEN	Breaking #!pipe does not stop the child process		2022-06-05T12:07:38Z
+11611	OPEN	asm.nz/x86: cannot assemble `call dword [mem32]`	good first issue, RAsm-Assembler, x86	2024-09-17T10:08:46Z
+11584	OPEN	No reference constant string in format string of scanf family function	RAsm-Disassembler, types	2022-06-05T12:07:39Z
+11564	OPEN	Vertical split with ipython	consoleui, concept, panel	2019-03-05T09:18:25Z
+11562	OPEN	Embedded markdown viewer	consoleui, concept, panel	2019-05-07T13:12:10Z
+11493	OPEN	Memory leaks in the metainformation handling (comments/reflines) upon exit.	consoleui, optimization, leak	2020-04-13T04:24:56Z
+11472	OPEN	Automated ESIL tests	enhancement, ESIL	2018-10-07T11:57:40Z
+11391	OPEN	question/bug in afi stack frame	FEEDBACK WANTED, RDebug	2022-06-05T12:07:39Z
+11365	OPEN	`pf n2` starts at wrong address when `cfg.bigendian=true`	pf	2022-06-05T12:07:39Z
+11353	OPEN	Fix R2pm for release builds	r2pm	2020-03-23T15:24:17Z
+11193	OPEN	Make RAsmCode use RStrBuf like RAsmOp	refactor	2020-09-21T06:15:42Z
+11167	OPEN	FR/maybe bug? Exposing cprompt width for big screen resolution compatibility.	enhancement, visual	2018-10-11T09:32:44Z
+11163	OPEN	Create rafind2 equivalent to binwalk -Me	enhancement, rafind2, forensics	2019-02-19T19:59:59Z
+11119	OPEN	Writting a bigger type doesn't overlap following frame fields.		2020-07-19T18:15:31Z
+11089	OPEN	Problems with call-refs in MIPS32	enhancement, RAnal, test-required, MIPS	2018-08-15T09:44:35Z
+11085	OPEN	Decode additional strings.	enhancement, RAnal, concept	2019-10-13T09:37:47Z
+11001	OPEN	Visual Mode debugging is yielding different results than expected	RDebug, visual	2022-06-05T12:07:40Z
+10996	OPEN	ARM void* type size is incorrect	hardcore, ARM, types	2019-04-15T15:02:01Z
+10891	OPEN	Special characters in demangled names replaced with underscores	FEEDBACK WANTED, demangling	2020-09-07T08:14:48Z
+10875	OPEN	Rafind2 to use rbin to identify and filter by filetype/arch/type/bits/...	enhancement, good first issue, rafind2	2018-10-11T09:31:22Z
+10783	OPEN	[Feature request] Getting the function's argument values for each xrefs-to it	enhancement, RAnal, types	2020-08-27T04:44:08Z
+10779	OPEN	Sparse mode for `p=`	enhancement, rahash2	2018-07-19T12:34:06Z
+10778	OPEN	Reimplement loading vmlinux images in radare2	enhancement, RAnal	2018-07-19T04:40:02Z
+10751	OPEN	Show prompt/visual/graph/disasm/hexdump with 0xff..%x instead	enhancement, good first issue, Hacktoberfest	2018-10-11T09:30:38Z
+10739	OPEN	FreeRTOS port	refactor, buildsystem	2020-06-16T08:35:04Z
+10725	OPEN	[request] Implement basefind	enhancement, RAnal, concept, Hacktoberfest	2020-10-23T07:00:12Z
+10722	OPEN	-m not applied to raw binaries with izz	RIO, RBin, cutter	2022-06-05T12:07:41Z
+10720	OPEN	Change behaviour for search instruction with '/c' command	RSearch	2020-06-16T08:35:04Z
+10713	OPEN	Replace addresses with map+offset	enhancement, RAsm-Disassembler, concept	2018-07-13T04:07:47Z
+10695	OPEN	Undefined value in ESIL	ESIL, concept	2020-06-16T08:35:04Z
+10689	OPEN	libr/r_asm x86.nz breaks when using certain registers with memory accesses	test-required, RAsm-Assembler, x86, r2wars	2022-06-05T12:07:41Z
+10685	OPEN	R2 Project File Support for Radiff2 Analysis	enhancement, radiff2, projects	2018-10-26T13:19:20Z
+10638	OPEN	Binary structures not mapped by default	refactor, RIO, RBin, PE	2020-09-23T07:26:22Z
+10571	OPEN	Refresh screen via http server	refactor, consoleui, RCore	2020-06-16T08:35:04Z
+10564	OPEN	Sandbox doesn't honor `http.root` and `http.homeroot`	sandbox	2022-06-05T12:07:41Z
+10557	OPEN	ARC processor support for r2 (on native ARC cpu, not for analyzing ARC binary)	enhancement, architectures-enhancements	2020-06-17T12:02:05Z
+10546	OPEN	Make prints to stderr redirectable	cutter	2019-03-16T09:38:51Z
+10541	OPEN	Unable to store binaries with non-simple project save	projects	2020-06-16T08:35:04Z
+10520	OPEN	The PAVA mode should allow to reload bininfo if headers are modified	RIO, RBin, Hacktoberfest	2019-10-28T09:54:48Z
+10515	OPEN	Background Webserver doesnt plays well with tasks	enhancement, webui, sandbox	2022-06-05T12:07:42Z
+10457	OPEN	Make types editable in their C format.	RAnal, hardcore, types	2020-06-16T08:35:04Z
+10439	OPEN	FreeBSD support for ARM, MIPS, PowerPC, SPARC	buildsystem, ARM, MIPS, BSD, SPARC, PPC	2020-10-28T05:28:08Z
+10426	OPEN	JARL is not UJMP :D	V850	2020-06-27T17:15:14Z
+10424	OPEN	wrong v850 jarl disasm	test-required, V850, architectures-enhancements	2018-08-04T16:19:20Z
+10423	OPEN	wrong v850 disasm	test-required, V850	2020-11-09T12:14:13Z
+10398	OPEN	dmh not shows correctly freed chunk	RDebug, heap	2019-03-08T05:12:36Z
+10382	OPEN	r2 http random port bind	enhancement	2019-03-31T08:15:56Z
+10345	OPEN	CODE XREF from ADDRESS, where address is data, not code		2020-06-16T08:35:04Z
+10328	OPEN	Support utf8 dots for better "ascii" art	enhancement, consoleui, concept	2020-02-22T00:16:04Z
+10283	OPEN	cmd.vprompt setting in visual mode does not work properly when debug program	consoleui, visual	2019-08-06T06:03:15Z
+10211	OPEN	Remote rap debug: ptrace PEEKTEXT doesn't have the right address		2020-06-16T08:35:04Z
+10183	OPEN	Unable to find filedescriptor	RIO, RDebug	2020-05-13T18:05:48Z
+10137	OPEN	[META] Packaging	infrastructure, buildsystem, META	2021-05-31T06:51:37Z
+10115	OPEN	Meson + clang-cl with ASAN, UBSAN, etc build for Windows	Windows, buildsystem	2024-04-16T08:54:47Z
+10114	OPEN	cmd.vprompt setting in visual mode does not work when entering "libc" library	consoleui, visual	2022-06-05T12:07:42Z
+10107	OPEN	avr binary content sometimes displayed as ff... when re-opening project	RIO, projects	2022-06-05T12:07:42Z
+10106	OPEN	Virtual addressing failure after fallback to rawio		2020-06-16T08:35:03Z
+10058	OPEN	p8s should do the same as pcs	enhancement, good first issue	2019-03-31T12:10:21Z
+10053	OPEN	x86.nz does not assemble "inc/dec size ptr [reg]" instructions	refactor, test-required, RAsm-Assembler, r2wars	2020-06-27T17:10:14Z
+10038	OPEN	rasm2 assembles differently in presence of a space	test-required, RAsm-Assembler	2022-06-05T12:07:43Z
+10032	OPEN	C types - unions support interface	enhancement, RAnal, test-required, types	2022-06-05T11:13:50Z
+10031	OPEN	C types - structures alignment	RAnal, types	2020-05-06T11:43:32Z
+9999	OPEN	Cs help info is misleading or it does not work as stated in help	consoleui, good first issue	2020-06-16T08:35:03Z
+9995	OPEN	Hardware breakpoint won't be hit for 32 bit binary on a 64 bits system unless asm.bits = 64	RDebug	2022-06-05T12:07:43Z
+9979	OPEN	Implement graph.bytes	good first issue, RGraph	2020-06-16T12:10:08Z
+9975	OPEN	Call xrefs from relocation section	RAnal	2019-06-21T11:25:02Z
+9919	OPEN	Debugging Windows binary from Linux	RDebug, WinDbg, WineDbg	2022-06-05T12:07:44Z
+9907	OPEN	BUG: Invalid disasembly after reloading binary.	debug-info, RAnal, RDebug	2022-06-05T12:07:44Z
+9885	OPEN	Missing esil for rev16 (thumb)	ESIL, architectures-enhancements	2018-10-11T09:26:17Z
+9881	OPEN	ahi f and ahi F	enhancement, good first issue, RAnal	2020-07-13T11:49:21Z
+9880	OPEN	ESIL asm.shortcuts	good first issue, RAnal, ESIL, Hacktoberfest	2019-09-18T09:01:16Z
+9813	OPEN	Show word offset and octal words in bytes		2020-06-16T08:35:03Z
+9772	OPEN	Inconsistent display after file resize	RIO	2022-06-05T12:07:45Z
+9756	OPEN	Mismatch between disassembling on JSON and non-JSON exported results for DATA	json, test-required, RAsm-Disassembler	2022-06-05T12:07:45Z
+9749	OPEN	ahb side effects	good first issue, RAnal	2022-06-05T12:07:45Z
+9719	OPEN	Visual preview for the `graph.*` variables changes in `Ve` mode	enhancement, consoleui, good first issue, RGraph, hackaton	2020-09-02T09:25:37Z
+9713	OPEN	ROP classification not working if setup is not done properly	ROP, ESIL	2019-08-07T05:55:15Z
+9687	OPEN	Can't open rarun2 file	rarun2	2022-06-05T12:07:46Z
+9653	OPEN	/c and /cj should search also .sub disable/enable	enhancement, RSearch	2020-06-25T21:57:03Z
+9649	OPEN	pdf does not print instructions after int3	RAsm-Disassembler	2022-06-05T12:07:46Z
+9613	OPEN	nopskip ignored by aab	RAnal	2020-06-24T12:13:22Z
+9606	OPEN	Better handling when loading coredump	enhancement, refactor, debug-info, RDebug	2020-11-24T04:39:36Z
+9600	OPEN	Define a constant via "types" command	enhancement, good first issue, RAnal, types	2021-05-11T10:36:49Z
+9557	OPEN	Not only list the used library names, but also their version	enhancement, refactor, RBin	2018-03-06T02:50:29Z
+9479	OPEN	Pressing enter doesn't continue assembly correctly		2022-06-05T12:07:46Z
+9437	OPEN	Communication problem between arm-none-eabi-gdb and r2	RDebug, gdb	2022-06-05T12:07:47Z
+9433	OPEN	Make arch enum a iota instead bit mask	refactor, good first issue	2020-06-16T08:35:03Z
+9419	OPEN	Phrase out `core->block` (cache) and prefer read before use	refactor, RIO, optimization, RCore	2020-06-16T08:35:03Z
+9384	OPEN	Radare2 do not properly detect branches with IT on Arm Thumb 2	RAnal, test-required, ARM	2020-08-23T19:56:38Z
+9378	OPEN	Question - Workflow for saving / loading state (analysis, comments, breakpoints, etc...) of debugger session?	FEEDBACK WANTED, RDebug, projects	2019-01-28T08:39:26Z
+9332	OPEN	rabin2: different information printed when using -H and -Hj	RBin	2020-09-21T12:58:14Z
+9320	OPEN	Multidiff mode	consoleui, concept, radiff2	2020-06-16T08:35:03Z
+9286	OPEN	RAP Protocol Question	FEEDBACK WANTED, RDebug	2020-11-13T05:57:34Z
+9273	OPEN	Defining a block with a pre-existing format (via dF) is broken when using visual mode	pf, test-required	2022-06-05T12:07:48Z
+9242	OPEN	Hooks for arch specific implementation of reg read/write	refactor, RAnal, ESIL, concept	2020-06-16T08:35:03Z
+9169	OPEN	[feature request] r2 doesn't allow to change segment perms	refactor, RBin	2020-06-16T08:35:03Z
+9166	OPEN	r2 / rasm2 valid AVR opcodes are disassembled and shown as "invalid"	RAsm-Disassembler, AVR, architectures-enhancements	2022-06-05T12:07:48Z
+9082	OPEN	ARM rpi32 debugging - child stopped with signal 11	RDebug, ARM	2022-06-05T12:07:48Z
+9080	OPEN	PDC misses chunks of assembler code	enhancement, test-required, pseudo	2020-01-15T09:39:56Z
+9051	OPEN	Base addresses not setting properly on PIE enabled binaries	good first issue, RBin	2020-07-02T06:50:38Z
+8978	OPEN	Can't reload a project for ARM binary	projects	2022-06-05T12:07:49Z
+8976	OPEN	ragg2 - link with SSP for hardened systems	ragg2	2020-07-01T19:01:15Z
+8966	OPEN	gdbserver reverse continue/step support	enhancement, RDebug, gdb	2021-05-11T10:17:03Z
+8931	OPEN	gdbserver symbols?	enhancement, RDebug, gdb	2020-05-11T10:58:45Z
+15580	OPEN	[DEX] Add test for non-ASCII characters on obfuscated APKs	r2r	2020-07-01T22:24:00Z
+8697	OPEN	Renaming flags after re-opening a project does not work in visual mode, works with "afvn"	projects	2022-06-05T12:07:49Z
+8666	OPEN	Symbols in /usr/lib/debug aren't automatically loaded	debug-info, good first issue, RBin, high-priority	2023-10-11T02:44:58Z
+8639	OPEN	Profile overwrites ood argument	rarun2, RDebug	2022-06-05T12:07:49Z
+8633	OPEN	Incorrect virtual addresses from ARM binaries in Radare2 v1.7.0 on OSX	test-required, MacOS	2022-06-05T12:07:50Z
+8600	OPEN	Wrong 'aeip' result on 16bit x86	RAnal, ESIL, x86, architectures-enhancements	2022-06-05T12:07:50Z
+8582	OPEN	Error messages when opening project (after using aaa)	projects	2022-06-05T12:07:51Z
+8576	OPEN	Working with bitstreams - API, commands	RIO, hardcore, concept	2020-06-16T08:35:03Z
+8565	OPEN	Better variables support	enhancement, RAnal, vars	2021-03-15T01:26:36Z
+8563	OPEN	Analyzing mapped PE files in a process memory image	PE, rabin2	2022-06-05T11:14:04Z
+8535	OPEN	Project Management questions	projects	2020-06-16T08:35:03Z
+8389	OPEN	mips|mips.gnu plugin assembler error in branch labels?	RAsm-Assembler, MIPS, r2wars	2019-01-12T20:32:11Z
+8291	OPEN	rasm2 - (att syntax mode) opcode is parsed by intel format.	enhancement, RAsm-Assembler	2022-12-19T05:51:49Z
+8245	OPEN	Analysis: missing xrefs on MIPS binaries	RAnal, RIO, ESIL, test-required, MIPS, architectures-enhancements, invalid	2020-08-12T12:19:09Z
+17133	OPEN	Split-view visual hex diff mode for radiff2.	radiff2, visual	2020-07-07T04:32:09Z
+8087	OPEN	ARM64 instructions for rasm2	good first issue, hackaton, ARM, r2wars	2021-01-06T06:09:41Z
+8085	OPEN	Integrate debugger with rarun2 preload	enhancement, rarun2, RDebug	2019-12-04T09:55:01Z
+7960	OPEN	Add new instructions for dalvik	RAsm-Disassembler, Android	2020-06-27T16:53:49Z
+7944	OPEN	ar != dr	refactor, RAnal, ESIL, RDebug	2020-06-22T11:00:06Z
+7867	OPEN	dmsdj and dmsdj all?	enhancement, good first issue, RDebug	2017-07-08T14:46:52Z
+7863	OPEN	Loading variable names from DWARF and PDB	enhancement, debug-info, RAnal, vars, Hacktoberfest, PDB, DWARF	2020-08-20T16:49:04Z
+7831	OPEN	Misalignment when using `pd` command from ipython cmd in r2lang python.	consoleui	2020-06-16T08:35:02Z
+7750	OPEN	R2 - define the debugger state from RBin when openening a coredump/minidump	enhancement, debug-info, Windows, RDebug, RBin, Linux OS, inactive	2020-07-01T21:29:51Z
+7710	OPEN	C types - SDB properties	enhancement, RAnal, types	2022-06-05T11:50:17Z
+7594	OPEN	issues with bicon console	enhancement, consoleui	2020-06-22T20:08:49Z
+7567	OPEN	rabin2: wrong information for OAT ELF binaries	Android, ELF	2020-06-09T08:12:09Z
+7519	OPEN	Add commands to create, display and process an RTable	enhancement, FEEDBACK WANTED, consoleui, good first issue	2020-07-17T10:16:44Z
+7466	OPEN	Code being interpreted as data in MIPS(el) after 'aav'	RAnal, MIPS	2020-06-16T08:35:02Z
+7451	OPEN	Evaluate the use of miniz instead of zlib/libz	refactor	2020-06-16T08:35:02Z
+7443	OPEN	functions missed in splwow64.exe	RAnal, PE	2022-06-05T12:07:51Z
+7435	OPEN	Jumptables detected as functions in twain_32.dll	RAnal, PE	2022-06-05T12:07:51Z
+7431	OPEN	widestring and e scr.color		2022-06-05T12:07:52Z
+7420	OPEN	Show timestamp of opened file in `i` #opsiol	RIO	2019-03-22T21:51:38Z
+7418	OPEN	MZ aaaa bug (some memory error)		2022-06-05T12:07:52Z
+7415	OPEN	The pointer to an object is not reference.	enhancement, RAnal, test-required	2017-07-19T04:26:56Z
+7395	OPEN	aetr extra lines	RAnal, ESIL	2020-06-16T08:35:02Z
+7390	OPEN	META - New File-Formats	New File-Format, META	2019-12-28T19:20:04Z
+7366	OPEN	Support assembling -X extensions of SAR/SHL/...	RAsm-Assembler, x86	2019-01-12T20:31:31Z
+15577	OPEN	Merge ESIL testing scripts	r2r	2019-12-09T13:40:18Z
+7310	OPEN	Create zignatures pack for windows	good first issue, zignatures, Windows	2020-12-04T03:45:28Z
+7250	OPEN	rasm2/armass missing many opcodes (some of v4, most of v5+)	good first issue, RAsm-Assembler, ARM	2019-01-15T09:27:03Z
+7199	OPEN	Cannot open files for UI	webui, sandbox	2022-06-05T12:07:52Z
+7179	OPEN	Warning/error message if there is no such asm.cpu	consoleui	2022-06-05T12:07:53Z
+7170	OPEN	Basic blocks not solved correctly	enhancement, RAnal	2020-05-21T17:00:52Z
+7126	OPEN	replace search.from and search.to with search.range?	FEEDBACK WANTED	2021-02-03T13:38:33Z
+7122	OPEN	When disassembling linker from android "unaligned" is shown	RAnal, test-required, RAsm-Disassembler, ARM, Android	2020-06-16T08:35:02Z
+6996	OPEN	META - New Architectures	New Architecture, META	2020-11-21T15:23:27Z
+6971	OPEN	META - RADIFF2	radiff2, META	2024-12-11T05:13:39Z
+6967	OPEN	META - GRAPH	RGraph, META	2020-06-16T05:35:23Z
+6953	OPEN	META - ARM	ARM, META	2020-06-16T08:35:02Z
+6947	OPEN	META - Signatures	zignatures, META	2020-04-29T06:07:17Z
+6945	OPEN	META - Project files	parity, projects, META	2020-08-03T04:40:18Z
+6867	OPEN	cfg.bigendian not honored if set before asm.arch	test-required	2022-06-05T12:07:53Z
+17134	OPEN	META - vtable detection for C++, ObjectiveC, Dlang and Swift binaries	types, PDB, DWARF, C++	2020-09-29T06:20:57Z
+6838	OPEN	Adapt Arena for Dalvik	ESIL, Android	2019-09-18T09:01:11Z
+6468	OPEN	Analysis info not tied to any specific file	RIO	2020-07-16T15:37:36Z
+6431	OPEN	Implement dh io for gdb://	RDebug, gdb	2020-05-09T04:02:05Z
+6429	OPEN	r2 -nnn fatmach0 loads flags of subbin, not the ones of the fatmach0	RBin, fat bin	2020-06-16T08:35:02Z
+6417	OPEN	shared library and debugging questions	FEEDBACK WANTED, types	2020-06-16T08:35:02Z
+6346	OPEN	Cross-comparison functions with different names in Radiff2	radiff2	2020-07-07T04:32:25Z
+6340	OPEN	Backticks and grep expansion before evaluating iterations	enhancement, consoleui	2020-04-22T13:14:24Z
+6283	OPEN	Unable to find string xrefs for shared libraries	RAnal, test-required, MIPS, ELF	2024-04-12T09:39:49Z
+6248	OPEN	Metadata Format not correctly loaded from project with field names	projects	2019-09-18T09:01:07Z
+6195	OPEN	Functions analysis errors (some end too early, some data recognized as function)	RAnal, test-required, jmptbl	2022-06-05T12:07:54Z
+6037	OPEN	Multiple files loaded via `o [file] [offset]` are not restored properly from project	RIO, parity, projects, RCore	2019-06-17T00:34:40Z
+5993	OPEN	radiff2 "No functions found, try running with -A or load a project" for ihex inputs.	radiff2, MIPS	2020-08-12T12:20:32Z
+5905	OPEN	Cross references are broken in rebased binaries	regression, RAnal, RBin	2022-06-05T12:07:54Z
+5890	OPEN	function detection doesn't find callbacks f. eg. CreateThread, SetWindowsHookEx, etc.	RAnal, Windows	2020-07-01T03:13:07Z
+5836	OPEN	radare2 misinterpreting instructions as a string for a DOS binary		2022-06-05T12:07:55Z
+5641	OPEN	pf truncates the output	pf, ELF	2022-06-05T12:07:55Z
+5490	OPEN	Visual Debug view w/registers - Color change of modified registers sometimes stops updating	consoleui, RDebug	2022-06-05T12:07:55Z
+5445	OPEN	Deleted comments reappear on project open and automatic comments not deleted by CC- and	test-required, MIPS, projects	2020-08-12T12:20:16Z
+15575	OPEN	Convert all unit legacy tests in the new minunit format	good first issue, r2r	2020-07-27T13:54:22Z
+5390	OPEN	META - Heap explorer/analysis	RAnal, Windows, MacOS, Linux OS, META, BSD, heap	2020-02-14T02:57:29Z
+5362	OPEN	radiff2 malware diffing bad results	radiff2	2020-07-07T04:32:32Z
+5136	OPEN	Antidisasm tricks: dead code	test-required, antidisasm	2020-06-08T13:00:24Z
+4974	OPEN	eval command ignoring endianess when converting from binary	test-required	2022-06-05T12:07:56Z
+4887	OPEN	Implement frame navigation in the debugger	good first issue, RDebug, gdb	2020-06-27T16:37:07Z
+4768	OPEN	^C in dtc stops the program instead of the tracing	tracing	2022-06-05T12:07:56Z
+4721	OPEN	Ability to pass arguments to r2pipe script	enhancement, good first issue, r2pipe	2021-01-10T21:08:59Z
+4681	OPEN	rarun2 support for qemu	rarun2, PPC	2020-02-17T06:08:40Z
+4508	OPEN	Identify if argument/variable is constant or variable	RAnal, types	2022-01-21T22:35:31Z
+4459	OPEN	Improve command self-documentation	FEEDBACK WANTED, documentation, shell	2020-06-17T09:16:26Z
+4369	OPEN	to b.h error not explicit	types	2020-07-03T06:58:02Z
+4258	OPEN	Handle tail call optimization	RAnal, test-required	2022-06-05T12:07:56Z
+4174	OPEN	C64 (6502) jump destinations are wrong	RAnal	2020-05-22T14:55:54Z
+4124	OPEN	Add command to generate coredump in MACH0 or ELF	debug-info, good first issue, RDebug, MACH0, ELF, BSD	2020-06-16T08:35:01Z
+3956	OPEN	Reopening binary using "do" via HTTP makes binary stdout lost.	webui	2022-06-05T12:07:57Z
+3942	OPEN	anal.nopskip should also skip nops in basic blocks	RAnal	2019-09-18T09:01:16Z
+3940	OPEN	HTTP command output in terminal.	webui	2022-06-05T12:07:58Z
+3896	OPEN	Add support for LLVM bitcode (stored in Mach-O files along with native binary)	New File-Format, MACH0	2017-03-11T20:54:03Z
+3873	OPEN	Output for BinNavi	radiff2	2020-03-12T04:09:07Z
+3635	OPEN	Fix build on non-exec environments	enhancement, good first issue, buildsystem, Android	2020-06-24T16:34:50Z
+3607	OPEN	Issues with ESIL flag computation	blocker, ESIL	2022-06-05T12:07:58Z
+3345	OPEN	Move the debug/signals.c (name to number / number to name) into util	good first issue, RDebug	2020-06-16T08:35:01Z
+3222	OPEN	Structured document helpers	good first issue, json, RBin, test-required, XML, r2r, high-priority	2020-09-24T05:26:58Z
+3159	OPEN	radare2 + windbg + windows xp 64bit	Windows, RDebug, WinDbg	2020-07-17T10:17:15Z
+2953	OPEN	pxa doesn't honors functions	enhancement	2020-06-24T16:12:20Z
+2903	OPEN	Add support for future breakpoints	RDebug	2022-02-16T11:39:51Z
+2758	OPEN	Add RBinSymbol.lang	refactor, RBin	2020-06-16T08:35:01Z
+2685	OPEN	backtrace output seems to be wrong		2022-06-05T12:07:58Z
+15568	OPEN	Java tests	java, r2r	2019-12-30T04:09:30Z
+15566	OPEN	Add testsuite for flags	r2r	2019-12-09T13:40:15Z
+2338	OPEN	radiff2: support comparing files larger than available memory	enhancement, radiff2	2020-07-07T04:32:45Z
+2079	OPEN	Add more options for DWARF	enhancement, debug-info, good first issue, DWARF	2020-05-08T05:15:15Z
+1973	OPEN	Define number of lines when output is large	FEEDBACK WANTED, consoleui, good first issue	2021-03-02T17:05:47Z
+17130	OPEN	WinDbg/KD protocol support	WinDbg	2020-07-23T04:22:24Z
+1225	OPEN	Better breakpoints	enhancement, debug-info, parity, RDebug	2019-09-18T09:01:12Z
+1143	OPEN	Implement support for chained/fallback RAsm plugins	enhancement, refactor	2020-06-13T16:49:37Z
+955	OPEN	r2 gdb:// doesn't work with winedbg --gdb --no-start	debug-info, gdb, WineDbg	2022-06-05T12:07:59Z
+946	OPEN	Add C callback in r_bp	RDebug	2019-09-18T09:01:11Z
+921	OPEN	META - Portable Executable	enhancement, debug-info, Windows, pf, json, RBin, PE, META	2020-03-15T11:36:53Z
+812	OPEN	Merge RBin info from a different file	enhancement, refactor, debug-info, DWARF	2020-06-22T20:52:42Z
+774	OPEN	DWARF types information	refactor, debug-info, RBin, hackaton, types, DWARF	2020-05-08T05:15:04Z
+680	OPEN	Substitute symbol addrs more correctly	good first issue, RAnal, inactive	2022-06-05T12:07:59Z
+662	OPEN	PE binaries should be handled as 'fat' binaries	enhancement, refactor, PE, fat bin	2022-06-05T12:07:59Z
+437	OPEN	Fix disassembly highlighting for complex DSP instructions	enhancement, blocker, consoleui	2020-06-22T14:27:47Z
+426	OPEN	RBin symbol names must be unique	enhancement, blocker, sdb, RBin, Hacktoberfest	2020-09-23T07:21:22Z

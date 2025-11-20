@@ -1,0 +1,43 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpcmpeqb [ENC: VEX, MAP: 0F, OPC: 0x74]
+     LENGTH:  4
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AVX2
+    ISA-SET: AVX2
+    ISA-EXT: AVX2
+ EXCEPTIONS: AVX4
+ ATTRIBUTES: HAS_MODRM HAS_VEX ACCEPTS_SEGMENT 
+  OPTIMIZED: C5 45 74 36 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    256     32       8      UINT                        ymm14
+ 1   REGISTER    EXPLICIT       R        NDSNDD    256     32       8      UINT                         ymm7
+ 2     MEMORY    EXPLICIT       R      MODRM_RM    256     32       8      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rsi
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000000000000
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 256
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpcmpeqb (%rsi), %ymm7, %ymm14
+   RELATIVE: vpcmpeqb (%rsi), %ymm7, %ymm14
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpcmpeqb ymm14, ymm7, ymmword ptr ds:[rsi]
+   RELATIVE: vpcmpeqb ymm14, ymm7, ymmword ptr ds:[rsi]
+
+== [ SEGMENTS ] ============================================================================================
+C5 45 74 36 
+:     :  :..MODRM
+:     :..OPCODE
+:..VEX

@@ -1,0 +1,50 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vfmsub132pd [ENC: MVEX, MAP: 0F38, OPC: 0x9A]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 64
+       EASZ: 64
+   CATEGORY: UFMA
+    ISA-SET: KNCE
+    ISA-EXT: KNCE
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_MVEX ACCEPTS_SEGMENT 
+  OPTIMIZED: 62 C2 E9 15 9A 19 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT     RCW     MODRM_REG    512      8      64   FLOAT64                        zmm19
+ 1   REGISTER    EXPLICIT       R          MASK     16     16       1       INT                           k5
+ 2   REGISTER    EXPLICIT       R        NDSNDD    512      8      64   FLOAT64                        zmm18
+ 3     MEMORY    EXPLICIT       R      MODRM_RM     64      1      64   FLOAT64  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                  r9
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000000000000
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 512
+  BROADCAST: 1_TO_8
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k5 [MERGING]
+         EH: N
+    SWIZZLE: NONE
+    CONVERT: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vfmsub132pd (%r9) {1to8}, %zmm18, %zmm19 {%k5}
+   RELATIVE: vfmsub132pd (%r9) {1to8}, %zmm18, %zmm19 {%k5}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vfmsub132pd zmm19 {k5}, zmm18, qword ptr ds:[r9] {1to8}
+   RELATIVE: vfmsub132pd zmm19 {k5}, zmm18, qword ptr ds:[r9] {1to8}
+
+== [ SEGMENTS ] ============================================================================================
+62 C2 E9 15 9A 19 
+:           :  :..MODRM
+:           :..OPCODE
+:..MVEX

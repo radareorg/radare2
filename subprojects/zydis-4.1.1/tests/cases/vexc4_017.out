@@ -1,0 +1,44 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpcmpgtd [ENC: VEX, MAP: 0F, OPC: 0x66]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AVX
+    ISA-SET: AVX
+    ISA-EXT: AVX
+ EXCEPTIONS: AVX4
+ ATTRIBUTES: HAS_MODRM HAS_VEX ACCEPTS_SEGMENT 
+  OPTIMIZED: C5 E1 66 79 10 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128      4      32       INT                         xmm7
+ 1   REGISTER    EXPLICIT       R        NDSNDD    128      4      32       INT                         xmm3
+ 2     MEMORY    EXPLICIT       R      MODRM_RM    128      4      32       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rcx
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000000000010
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpcmpgtd 0x10(%rcx), %xmm3, %xmm7
+   RELATIVE: vpcmpgtd 0x10(%rcx), %xmm3, %xmm7
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpcmpgtd xmm7, xmm3, xmmword ptr ds:[rcx+0x10]
+   RELATIVE: vpcmpgtd xmm7, xmm3, xmmword ptr ds:[rcx+0x10]
+
+== [ SEGMENTS ] ============================================================================================
+C4 A1 61 66 79 10 
+:        :  :  :..DISP
+:        :  :..MODRM
+:        :..OPCODE
+:..VEX

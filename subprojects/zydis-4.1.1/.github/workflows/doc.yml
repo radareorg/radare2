@@ -1,0 +1,57 @@
+name: Doc
+
+on:
+  push:
+    branches:
+      - master
+  release:
+    types: [published]
+
+jobs:
+  build-and-publish-doc:
+    name: Build and publish documentation
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          fetch-depth: 0  # fetch all branches and tags
+      - name: Install doxygen
+        run: |
+          sudo apt-get install -y doxygen
+      - name: Download & install zydoc
+        run: |
+          wget -O zydoc.tar.gz https://github.com/zyantific/zydoc/releases/download/v0.3.2/zydoc_v0.3.2_x86_64-unknown-linux-musl.tar.gz
+          tar xfv zydoc.tar.gz
+          mv zydoc /usr/local/bin
+      - name: Clone Doxygen theme
+        run: >-
+          git clone 
+          --depth=1 --branch=v2.3.1
+          https://github.com/jothepro/doxygen-awesome-css.git 
+          /tmp/doxy-theme
+      - name: Generate documentation
+        run: >-
+          zydoc
+          --repo .
+          --output-dir doc.zydis.re
+          --config-ref master
+          --doxyfile ./Doxyfile
+          --refs 'refs/heads/master'
+          --refs 'refs/tags/.*'
+          --exclude-refs 'refs/tags/v1.*'
+          --extra-css /tmp/doxy-theme/doxygen-awesome.css
+          --extra-css /tmp/doxy-theme/doxygen-awesome-sidebar-only.css
+      - name: Publish documentation
+        uses: cpina/github-action-push-to-another-repository@v1.5
+        env:
+          SSH_DEPLOY_KEY: ${{ secrets.DOCS_ZYDIS_RE_SSH_DEPLOY_KEY }}
+        with:
+          source-directory: 'doc.zydis.re'
+          destination-github-username: 'zyantific'
+          destination-repository-name: 'doc.zydis.re'
+          user-name: zydis-doc-bot
+          user-email: doc-bot@zydis.re
+          target-branch: main

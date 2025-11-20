@@ -1,0 +1,43 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpaddusw [ENC: VEX, MAP: 0F, OPC: 0xDD]
+     LENGTH:  4
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AVX
+    ISA-SET: AVX
+    ISA-EXT: AVX
+ EXCEPTIONS: AVX4
+ ATTRIBUTES: HAS_MODRM HAS_VEX ACCEPTS_SEGMENT 
+  OPTIMIZED: C5 A9 DD 3A 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128      8      16      UINT                         xmm7
+ 1   REGISTER    EXPLICIT       R        NDSNDD    128      8      16      UINT                        xmm10
+ 2     MEMORY    EXPLICIT       R      MODRM_RM    128      8      16      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rdx
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000000000000
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpaddusw (%rdx), %xmm10, %xmm7
+   RELATIVE: vpaddusw (%rdx), %xmm10, %xmm7
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpaddusw xmm7, xmm10, xmmword ptr ds:[rdx]
+   RELATIVE: vpaddusw xmm7, xmm10, xmmword ptr ds:[rdx]
+
+== [ SEGMENTS ] ============================================================================================
+C5 A9 DD 3A 
+:     :  :..MODRM
+:     :..OPCODE
+:..VEX

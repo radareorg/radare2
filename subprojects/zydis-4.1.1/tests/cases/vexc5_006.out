@@ -1,0 +1,43 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vmovss [ENC: VEX, MAP: 0F, OPC: 0x10]
+     LENGTH:  8
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: DATAXFER
+    ISA-SET: AVX
+    ISA-EXT: AVX
+ EXCEPTIONS: AVX5
+ ATTRIBUTES: HAS_MODRM HAS_VEX ACCEPTS_SEGMENT 
+  OPTIMIZED: C5 7A 10 87 8F 5D AD 3F 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128      4      32   FLOAT32                         xmm8
+ 1     MEMORY    EXPLICIT       R      MODRM_RM     32      1      32   FLOAT32  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rdi
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x000000003FAD5D8F
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 256
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vmovssl 0x3FAD5D8F(%rdi), %xmm8
+   RELATIVE: vmovssl 0x3FAD5D8F(%rdi), %xmm8
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vmovss xmm8, dword ptr ds:[rdi+0x3FAD5D8F]
+   RELATIVE: vmovss xmm8, dword ptr ds:[rdi+0x3FAD5D8F]
+
+== [ SEGMENTS ] ============================================================================================
+C5 7E 10 87 8F 5D AD 3F 
+:     :  :  :..DISP
+:     :  :..MODRM
+:     :..OPCODE
+:..VEX

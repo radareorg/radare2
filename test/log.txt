@@ -1,0 +1,151 @@
+[35mWARN:[0m Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
+[?1000;1006;1015l[?1000;1006;1015lINFO: Analyze all flags starting with sym. and entry0 (aa)
+INFO: Analyze imports (af@@@i)
+[?1000;1006;1015lINFO: Analyze entrypoint (af@ entry0)
+WARN: Cannot find basic block for switch case at 0x100000b24 bbdelta = 16
+INFO: Analyze symbols (af@@@s)
+[?1000;1006;1015l[?1000;1006;1015h=================================================================
+==45020==ERROR: AddressSanitizer: heap-use-after-free on address 0x6310000dc9b1 at pc 0x00010ce5edd4 bp 0x00016ba21880 sp 0x00016ba21030
+WRITE of size 5 at 0x6310000dc9b1 thread T0
+INFO: Analyze all functions arguments/locals (afva@@@F)
+    #0 0x10ce5edd0 in memcpy+0x428 (libclang_rt.asan_osx_dynamic.dylib:arm64e+0x52dd0)
+    #1 0x18cbccac8 in __sfvwrite+0x14c (libsystem_c.dylib:arm64e+0x4ac8)
+    #2 0x18cbcc5f8 in __vfprintf+0x2b90 (libsystem_c.dylib:arm64e+0x45f8)
+    #3 0x18cbf5380 in _vsnprintf+0xd0 (libsystem_c.dylib:arm64e+0x2d380)
+    #4 0x10ce2f8f0 in vsnprintf+0xc0 (libclang_rt.asan_osx_dynamic.dylib:arm64e+0x238f0)
+    #5 0x10463d618 in r_cons_printf_list cons.c:1491
+    #6 0x10463c74c in r_cons_printf cons.c:2154
+    #7 0x106c0a45c in r_print_printf print.c:800
+    #8 0x106c1f150 in r_print_byte print.c:589
+    #9 0x106c2dbb4 in r_print_hexdump print.c:1393
+    #10 0x109ca8ba4 in cmd_print cmd_print.inc.c:8540
+    #11 0x109cf66bc in cmd_hexdump cmd_print.inc.c:9441
+    #12 0x10a432a58 in r_cmd_call cmd_api.c:414
+    #13 0x109d6a698 in r_core_cmd_subst_i cmd.c:5371
+    #14 0x109d49e84 in r_core_cmd_subst cmd.c:4058
+    #15 0x109b8e8b8 in run_cmd_depth cmd.c:6352
+    #16 0x109b62b74 in r_core_cmd cmd.c:6455
+    #17 0x109b74878 in r_core_cmd_str cmd.c:6752
+    #18 0x10a22464c in visual_refresh visual.c:4646
+    #19 0x10a2532ec in r_core_visual visual.c:4957
+    #20 0x109cf1f40 in cmd_visual cmd.c:3125
+    #21 0x10a432a58 in r_cmd_call cmd_api.c:414
+    #22 0x109d6a698 in r_core_cmd_subst_i cmd.c:5371
+    #23 0x109d49e84 in r_core_cmd_subst cmd.c:4058
+    #24 0x109b8e8b8 in run_cmd_depth cmd.c:6352
+    #25 0x109b62b74 in r_core_cmd cmd.c:6455
+    #26 0x109aa12d4 in r_core_prompt_exec core.c:3128
+    #27 0x109aa0370 in r_core_prompt_loop core.c:2925
+    #28 0x105e8caac in r_main_radare2 radare2.c:1896
+    #29 0x1043b6f70 in main radare2.c:119
+    #30 0x18c996b94 in start+0x17b8 (dyld:arm64e+0xfffffffffff3ab94)
+
+0x6310000dc9b1 is located 433 bytes inside of 65576-byte region [0x6310000dc800,0x6310000ec828)
+freed by thread T1 here:
+    #0 0x10ce60d40 in free+0x98 (libclang_rt.asan_osx_dynamic.dylib:arm64e+0x54d40)
+    #1 0x1046207d0 in r_cons_context_free cons.c:1577
+    #2 0x104625948 in r_cons_pop cons.c:1748
+    #3 0x109b75cec in r_core_cmd_str cmd.c:6770
+    #4 0x109b20cd8 in r_core_cmd_strf cmd.c:6698
+    #5 0x10a4ce54c in set_fcn_name_from_flag canal.c:922
+    #6 0x10a46050c in __core_anal_fcn canal.c:1029
+    #7 0x10a45d658 in r_core_anal_fcn canal.c:2219
+    #8 0x109af2cd4 in r_core_af cmd_anal.inc.c:4825
+    #9 0x109ed49a0 in cmd_aa cmd_anal.inc.c:14188
+    #10 0x109ec27c4 in cmd_aaa cmd_anal.inc.c:14289
+    #11 0x109e5e054 in cmd_anal_all cmd_anal.inc.c:14697
+    #12 0x109be7990 in cmd_anal cmd_anal.inc.c:16174
+    #13 0x10a432a58 in r_cmd_call cmd_api.c:414
+    #14 0x109d6a698 in r_core_cmd_subst_i cmd.c:5371
+    #15 0x109d49e84 in r_core_cmd_subst cmd.c:4058
+    #16 0x109b8e8b8 in run_cmd_depth cmd.c:6352
+    #17 0x109b62b74 in r_core_cmd cmd.c:6455
+    #18 0x109b74878 in r_core_cmd_str cmd.c:6752
+    #19 0x10a6f6c64 in task_run task.c:516
+    #20 0x10a6f5900 in task_run_thread task.c:580
+    #21 0x106bbbf48 in _r_th_launcher thread.c:53
+    #22 0x10ce5d858 in asan_thread_start(void*)+0x40 (libclang_rt.asan_osx_dynamic.dylib:arm64e+0x51858)
+    #23 0x18cd37c08 in _pthread_start+0x84 (libsystem_pthread.dylib:arm64e+0x6c08)
+    #24 0x18cd32b7c in thread_start+0x4 (libsystem_pthread.dylib:arm64e+0x1b7c)
+
+previously allocated by thread T0 here:
+    #0 0x10ce60fd0 in calloc+0x9c (libclang_rt.asan_osx_dynamic.dylib:arm64e+0x54fd0)
+    #1 0x10463ea20 in cons_palloc cons.c:28
+    #2 0x10463ce58 in r_cons_printf_list cons.c:1486
+    #3 0x10463c74c in r_cons_printf cons.c:2154
+    #4 0x106c0a45c in r_print_printf print.c:800
+    #5 0x106c2fb88 in r_print_hexdump print.c:1505
+    #6 0x109ca8ba4 in cmd_print cmd_print.inc.c:8540
+    #7 0x109cf66bc in cmd_hexdump cmd_print.inc.c:9441
+    #8 0x10a432a58 in r_cmd_call cmd_api.c:414
+    #9 0x109d6a698 in r_core_cmd_subst_i cmd.c:5371
+    #10 0x109d49e84 in r_core_cmd_subst cmd.c:4058
+    #11 0x109b8e8b8 in run_cmd_depth cmd.c:6352
+    #12 0x109b62b74 in r_core_cmd cmd.c:6455
+    #13 0x109b74878 in r_core_cmd_str cmd.c:6752
+    #14 0x10a22464c in visual_refresh visual.c:4646
+    #15 0x10a2532ec in r_core_visual visual.c:4957
+    #16 0x109cf1f40 in cmd_visual cmd.c:3125
+    #17 0x10a432a58 in r_cmd_call cmd_api.c:414
+    #18 0x109d6a698 in r_core_cmd_subst_i cmd.c:5371
+    #19 0x109d49e84 in r_core_cmd_subst cmd.c:4058
+    #20 0x109b8e8b8 in run_cmd_depth cmd.c:6352
+    #21 0x109b62b74 in r_core_cmd cmd.c:6455
+    #22 0x109aa12d4 in r_core_prompt_exec core.c:3128
+    #23 0x109aa0370 in r_core_prompt_loop core.c:2925
+    #24 0x105e8caac in r_main_radare2 radare2.c:1896
+    #25 0x1043b6f70 in main radare2.c:119
+    #26 0x18c996b94 in start+0x17b8 (dyld:arm64e+0xfffffffffff3ab94)
+
+Thread T1 created by T0 here:
+    #0 0x10ce581c8 in pthread_create+0x5c (libclang_rt.asan_osx_dynamic.dylib:arm64e+0x4c1c8)
+    #1 0x106bbaf88 in r_th_new thread.c:197
+    #2 0x10a6f5550 in r_core_task_enqueue task.c:602
+    #3 0x10a6fa974 in _task_run_threaded task.c:768
+    #4 0x10a6fb39c in r_core_task_submit task.c:851
+    #5 0x109ad6408 in _cmd_tasks_impl cmd_task.inc.c:71
+    #6 0x109ad5488 in cmd_tasks cmd_task.inc.c:84
+    #7 0x10a432a58 in r_cmd_call cmd_api.c:414
+    #8 0x109d6a698 in r_core_cmd_subst_i cmd.c:5371
+    #9 0x109d49e84 in r_core_cmd_subst cmd.c:4058
+    #10 0x109b8e8b8 in run_cmd_depth cmd.c:6352
+    #11 0x109b62b74 in r_core_cmd cmd.c:6455
+    #12 0x109aa12d4 in r_core_prompt_exec core.c:3128
+    #13 0x109aa0370 in r_core_prompt_loop core.c:2925
+    #14 0x105e8caac in r_main_radare2 radare2.c:1896
+    #15 0x1043b6f70 in main radare2.c:119
+    #16 0x18c996b94 in start+0x17b8 (dyld:arm64e+0xfffffffffff3ab94)
+
+SUMMARY: AddressSanitizer: heap-use-after-free (libclang_rt.asan_osx_dynamic.dylib:arm64e+0x52dd0) in memcpy+0x428
+Shadow bytes around the buggy address:
+  0x6310000dc700: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x6310000dc780: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x6310000dc800: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x6310000dc880: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x6310000dc900: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+=>0x6310000dc980: fd fd fd fd fd fd[fd]fd fd fd fd fd fd fd fd fd
+  0x6310000dca00: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x6310000dca80: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x6310000dcb00: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x6310000dcb80: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x6310000dcc00: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+Shadow byte legend (one shadow byte represents 8 application bytes):
+  Addressable:           00
+  Partially addressable: 01 02 03 04 05 06 07 
+  Heap left redzone:       fa
+  Freed heap region:       fd
+  Stack left redzone:      f1
+  Stack mid redzone:       f2
+  Stack right redzone:     f3
+  Stack after return:      f5
+  Stack use after scope:   f8
+  Global redzone:          f9
+  Global init order:       f6
+  Poisoned by user:        f7
+  Container overflow:      fc
+  Array cookie:            ac
+  Intra object redzone:    bb
+  ASan internal:           fe
+  Left alloca redzone:     ca
+  Right alloca redzone:    cb
+==45020==ABORTING

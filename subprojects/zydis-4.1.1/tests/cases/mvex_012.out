@@ -1,0 +1,51 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vaddsetsps [ENC: MVEX, MAP: 0F38, OPC: 0xCC]
+     LENGTH:  7
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: KNC
+    ISA-SET: KNCE
+    ISA-EXT: KNCE
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_MVEX ACCEPTS_SEGMENT 
+  OPTIMIZED: 62 42 01 3E CC 7E C5 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT     RCW     MODRM_REG    512     16      32   FLOAT32                        zmm31
+ 1   REGISTER    EXPLICIT      RW          MASK     16     16       1       INT                           k6
+ 2   REGISTER    EXPLICIT       R        NDSNDD    512     16      32   FLOAT32                        zmm15
+ 3     MEMORY    EXPLICIT       R      MODRM_RM    256     16      16   FLOAT16  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 r14
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0xFFFFFFFFFFFFF8A0
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 512
+  BROADCAST: NONE
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k6 [MERGING]
+         EH: N
+    SWIZZLE: NONE
+    CONVERT: FLOAT16
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vaddsetsps -0x760(%r14) {float16}, %zmm15, %zmm31 {%k6}
+   RELATIVE: vaddsetsps -0x760(%r14) {float16}, %zmm15, %zmm31 {%k6}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vaddsetsps zmm31 {k6}, zmm15, ymmword ptr ds:[r14-0x760] {float16}
+   RELATIVE: vaddsetsps zmm31 {k6}, zmm15, ymmword ptr ds:[r14-0x760] {float16}
+
+== [ SEGMENTS ] ============================================================================================
+62 02 01 3E CC 7E C5 
+:           :  :  :..DISP
+:           :  :..MODRM
+:           :..OPCODE
+:..MVEX

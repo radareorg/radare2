@@ -1,0 +1,33 @@
+@@ -323,6 +327,7 @@
+ 	size_t plen;
+ 	const char *n = JS_ToCStringLen2(ctx, &plen, argv[0], false);
+ 	r_cons_printf(pm->core->cons, "%s\n", n);
++	JS_FreeCString(ctx, n);
+ 	return JS_NewBool(ctx, true);
+ }
+ 
+@@ -401,6 +406,8 @@
+ 	if (argc == 2) {
+ 		const char *a0 = JS_ToCStringLen2(ctx, &plen, argv[0], false);
+ 		const char *a1 = JS_ToCStringLen2(ctx, &plen, argv[1], false);
++		JS_FreeCString(ctx, a0);
++		JS_FreeCString(ctx, a1);
+ 		if (r_file_dump(a1, (const ut8 *)a0, strlen(a0), false)) {
+ 			return JS_NewBool(ctx, true);
+ 		}
+@@ -477,6 +484,7 @@
+ 	const char *n = JS_ToCStringLen2(ctx, &plen, argv[0], false);
+ 	int ret = 0;
+ 	if (R_STR_ISNOTEMPTY(n)) {
++		JS_FreeCString(ctx, n);
+ 		pm->core->lang->cmdf(pm->core, "'e scr.null=true");
+ 		ret = pm->core->lang->cmdf(pm->core, "'%s", n);
+ 		pm->core->lang->cmdf(pm->core, "'e scr.null=false");
+@@ -555,6 +562,7 @@
+ }
+ 
+ static JSValue js_os_pending(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv, int magic) {
++	gc, JSValueConst *argv, int magic) {
+ 		eval_jobs(ctx);
+ 		return JS_UNDEFINED;
+ 	}

@@ -1,0 +1,44 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpaddusb [ENC: VEX, MAP: 0F, OPC: 0xDC]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 64
+       EASZ: 64
+   CATEGORY: AVX
+    ISA-SET: AVX
+    ISA-EXT: AVX
+ EXCEPTIONS: AVX4
+ ATTRIBUTES: HAS_MODRM HAS_VEX ACCEPTS_SEGMENT 
+  OPTIMIZED: C4 41 09 DC 4E E8 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128     16       8      UINT                         xmm9
+ 1   REGISTER    EXPLICIT       R        NDSNDD    128     16       8      UINT                        xmm14
+ 2     MEMORY    EXPLICIT       R      MODRM_RM    128     16       8      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 r14
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0xFFFFFFFFFFFFFFE8
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpaddusb -0x18(%r14), %xmm14, %xmm9
+   RELATIVE: vpaddusb -0x18(%r14), %xmm14, %xmm9
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpaddusb xmm9, xmm14, xmmword ptr ds:[r14-0x18]
+   RELATIVE: vpaddusb xmm9, xmm14, xmmword ptr ds:[r14-0x18]
+
+== [ SEGMENTS ] ============================================================================================
+C4 41 89 DC 4E E8 
+:        :  :  :..DISP
+:        :  :..MODRM
+:        :..OPCODE
+:..VEX

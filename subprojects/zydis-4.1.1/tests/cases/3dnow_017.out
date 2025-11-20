@@ -1,0 +1,38 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: pfcmpge [ENC: 3DNOW, MAP: 0F0F, OPC: 0x90]
+     LENGTH:  4
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AMD3DNOW
+    ISA-SET: AMD3DNOW
+    ISA-EXT: AMD3DNOW
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM ACCEPTS_SEGMENT 
+  OPTIMIZED: 0F 0F 13 90 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT      RW     MODRM_REG     64      1      64       INT                          mm2
+ 1     MEMORY    EXPLICIT       R      MODRM_RM     64      1      64       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rbx
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000000000000
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: pfcmpge (%rbx), %mm2
+   RELATIVE: pfcmpge (%rbx), %mm2
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: pfcmpge mm2, qword ptr ds:[rbx]
+   RELATIVE: pfcmpge mm2, qword ptr ds:[rbx]
+
+== [ SEGMENTS ] ============================================================================================
+0F 0F 13 90 
+:     :  :..OPCODE
+:     :..MODRM
+:..OPCODE

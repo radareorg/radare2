@@ -1,0 +1,39 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: mov [ENC: DEFAULT, MAP: DEFAULT, OPC: 0x8B]
+     LENGTH:  7
+        SSZ: 64
+       EOSZ: 64
+       EASZ: 64
+   CATEGORY: DATAXFER
+    ISA-SET: I86
+    ISA-EXT: BASE
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_REX IS_RELATIVE ACCEPTS_SEGMENT 
+  OPTIMIZED: 48 8B 0D 88 88 88 88 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG     64      1      64       INT                          rcx
+ 1     MEMORY    EXPLICIT       R      MODRM_RM     64      1      64       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rip
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0xFFFFFFFF88888888
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: mov 0xFFFFFFFF8888888F, %rcx
+   RELATIVE: mov -0x77777778(%rip), %rcx
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: mov rcx, qword ptr ds:[0xFFFFFFFF8888888F]
+   RELATIVE: mov rcx, qword ptr ds:[rip-0x77777778]
+
+== [ SEGMENTS ] ============================================================================================
+48 8B 0D 88 88 88 88 
+:  :  :  :..DISP
+:  :  :..MODRM
+:  :..OPCODE
+:..REX

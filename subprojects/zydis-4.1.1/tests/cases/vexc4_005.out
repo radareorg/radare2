@@ -1,0 +1,44 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpminud [ENC: VEX, MAP: 0F38, OPC: 0x3B]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AVX2
+    ISA-SET: AVX2
+    ISA-EXT: AVX2
+ EXCEPTIONS: AVX4
+ ATTRIBUTES: HAS_MODRM HAS_VEX ACCEPTS_SEGMENT 
+  OPTIMIZED: C4 42 2D 3B 55 6A 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    256      8      32      UINT                        ymm10
+ 1   REGISTER    EXPLICIT       R        NDSNDD    256      8      32      UINT                        ymm10
+ 2     MEMORY    EXPLICIT       R      MODRM_RM    256      8      32      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 r13
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x000000000000006A
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 256
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpminud 0x6A(%r13), %ymm10, %ymm10
+   RELATIVE: vpminud 0x6A(%r13), %ymm10, %ymm10
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpminud ymm10, ymm10, ymmword ptr ds:[r13+0x6A]
+   RELATIVE: vpminud ymm10, ymm10, ymmword ptr ds:[r13+0x6A]
+
+== [ SEGMENTS ] ============================================================================================
+C4 02 2D 3B 55 6A 
+:        :  :  :..DISP
+:        :  :..MODRM
+:        :..OPCODE
+:..VEX

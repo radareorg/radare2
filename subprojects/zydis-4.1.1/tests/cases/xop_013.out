@@ -1,0 +1,44 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpshad [ENC: XOP, MAP: XOP9, OPC: 0x9A]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: XOP
+    ISA-SET: XOP
+    ISA-EXT: XOP
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_XOP ACCEPTS_SEGMENT 
+  OPTIMIZED: 8F E9 78 9A 76 4C 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128      4      32       INT                         xmm6
+ 1     MEMORY    EXPLICIT       R      MODRM_RM    128      4      32       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rsi
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x000000000000004C
+ 2   REGISTER    EXPLICIT       R        NDSNDD    128      4      32       INT                         xmm0
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpshad %xmm0, 0x4C(%rsi), %xmm6
+   RELATIVE: vpshad %xmm0, 0x4C(%rsi), %xmm6
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpshad xmm6, xmmword ptr ds:[rsi+0x4C], xmm0
+   RELATIVE: vpshad xmm6, xmmword ptr ds:[rsi+0x4C], xmm0
+
+== [ SEGMENTS ] ============================================================================================
+8F A9 78 9A 76 4C 
+:        :  :  :..DISP
+:        :  :..MODRM
+:        :..OPCODE
+:..XOP

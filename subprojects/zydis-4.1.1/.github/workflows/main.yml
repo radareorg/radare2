@@ -1,0 +1,167 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  cmake-build-and-tests:
+    name: >-
+      CMake build + tests (${{ matrix.image_name }} ${{ matrix.cmake_flags }})
+    runs-on: ${{ matrix.image_name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Do a regular and a no-libc build for each platform.
+          - image_name: macos-latest
+          - image_name: macos-latest
+            cmake_flags: -DZYAN_NO_LIBC=ON
+            skip_tests: yes
+          - image_name: windows-2022
+          - image_name: windows-2022
+            cmake_flags: -DZYAN_NO_LIBC=ON
+            skip_tests: yes
+          - image_name: ubuntu-22.04
+          - image_name: ubuntu-22.04
+            cmake_flags: -DZYAN_NO_LIBC=ON
+            skip_tests: yes
+
+          # Do a few more specialized configurations.
+          - image_name: ubuntu-22.04
+            cmake_flags: -DZYDIS_MINIMAL_MODE=ON -DZYDIS_FEATURE_ENCODER=OFF
+            skip_tests: yes
+          - image_name: windows-2022
+            cmake_flags: -TClangCL
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with: { submodules: recursive }
+      - name: Configuring
+        run: |
+          cmake -B build -DZYDIS_BUILD_TESTS=ON -DZYAN_DEV_MODE=ON ${{ matrix.cmake_flags }} .
+      - name: Building
+        run: |
+          cmake --build build --config Release -j2
+      - name: Running tests
+        if: "!matrix.skip_tests"
+        run: |
+          cd build
+          ctest -C Release --output-on-failure
+
+  meson-build-and-tests:
+    name: >-
+      Meson build + tests (${{ matrix.platform }}, ${{ matrix.flavor }} ${{ matrix.mode.name }})
+    runs-on: ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        flavor:
+          - debug
+          - release
+        mode:
+          - { name: default, args: -Dtests=enabled }
+          - { name: NO_LIBC, args: -Dnolibc=true }
+        platform:
+          - macos-latest
+          - windows-2022
+          - ubuntu-22.04
+        extra_envs:
+          - {}
+        include:
+          # Do a few more specialized configurations.
+          - platform: ubuntu-22.04
+            mode:
+              name: minimal
+              args: -Dminimal=enabled -Ddecoder=enabled -Davx512=enabled -Dknc=enabled -Dsegment=enabled -Dtests=enabled
+            extra_envs: {}
+            flavor: minsize
+        exclude:
+          - platform: macos-latest
+            mode: { name: NO_LIBC, args: -Dnolibc=true }
+
+    steps:
+      - name: Setup meson
+        run: |
+          pipx install meson ninja
+      - name: Checkout
+        uses: actions/checkout@v4
+        with: { submodules: recursive }
+      - name: Activate MSVC and Configure
+        if: ${{ matrix.platform == 'windows-2022' }}
+        env: ${{ matrix.extra_envs }}
+        run: |
+          meson setup build-${{ matrix.flavor }} --buildtype=${{ matrix.flavor }} ${{ matrix.mode.args }} --vsenv
+      - name: Configuring
+        if: ${{ matrix.platform != 'windows-2022' }}
+        run: |
+          meson setup build-${{ matrix.flavor }} --buildtype=${{ matrix.flavor }} ${{ matrix.mode.args }}
+      - name: Building
+        run: |
+          meson compile -C build-${{ matrix.flavor }}
+      - name: Running tests
+        run: |
+          meson test -C build-${{ matrix.flavor }}
+
+  msbuild-build:
+    name: MSBuild build (windows-2022)
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with: { submodules: recursive }
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.1.3
+        with: { vs-version: "[17,]" }
+      - name: Build user-mode
+        run: |
+          cd msvc
+          msbuild.exe Zydis.sln /m /t:Rebuild /p:Configuration="Release MD" /p:Platform=X64
+      - name: Build kernel-mode
+        run: |
+          cd msvc
+          msbuild.exe Zydis.sln /m /t:Rebuild /p:Configuration="Release Kernel" /p:Platform=X64
+
+  amalgamated:
+    name: Amalgamated build (Ubuntu 22.04)
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with: { submodules: recursive }
+      - name: Amalgamating sources
+        run: |
+          ./assets/amalgamate.py
+      - name: Compiling library
+        run: |
+          cd amalgamated-dist
+          gcc -shared -I. -fPIC -olibzydis.so Zydis.c
+
+  fuzzing:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        sanitizer: [address, undefined, memory]
+    steps:
+      - name: Build Fuzzers (${{ matrix.sanitizer }})
+        id: build
+        uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@master
+        with:
+          oss-fuzz-project-name: zydis
+          dry-run: false
+          sanitizer: ${{ matrix.sanitizer }}
+      - name: Run Fuzzers (${{ matrix.sanitizer }})
+        uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@master
+        with:
+          oss-fuzz-project-name: zydis
+          fuzz-seconds: 600
+          dry-run: false
+          sanitizer: ${{ matrix.sanitizer }}
+      - name: Upload Crash
+        uses: actions/upload-artifact@v4
+        if: failure() && steps.build.outcome == 'success'
+        with:
+          name: ${{ matrix.sanitizer }}-artifacts
+          path: ./out/artifacts

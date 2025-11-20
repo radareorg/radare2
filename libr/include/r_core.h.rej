@@ -1,0 +1,15 @@
+@@ -1070,6 +1087,14 @@
+ R_API void r_core_task_del_all_done(RCoreTaskScheduler *scheduler);
+ R_API RCoreTask *r_core_task_self(RCoreTaskScheduler *scheduler);
+ R_API void r_core_task_join(RCoreTaskScheduler *scheduler, RCoreTask *current, int id);
++// New APIs for threaded task execution
++R_API void r_core_task_set_foreground(RCoreTaskScheduler *scheduler, int task_id);
++R_API RCoreTask *r_core_task_get_foreground(RCoreTaskScheduler *scheduler);
++R_API int r_core_task_run_threaded(RCoreTaskScheduler *scheduler, RCoreTask *task);
++R_API int r_core_task_run_forked(RCoreTaskScheduler *scheduler, RCoreTask *task);
++R_API RCore *r_core_clone_for_task(RCore *core);
++R_API void r_core_task_scheduler_set_default_mode(RCoreTaskScheduler *scheduler, RCoreTaskMode mode);
++R_API RCoreTaskMode r_core_task_scheduler_get_default_mode(RCoreTaskScheduler *scheduler);
+ typedef void (*inRangeCb)(RCore *core, ut64 from, ut64 to, int vsize, void *cb_user);
+ R_IPI int r_core_search_value_in_range(RCore *core, bool relative, RInterval search_itv, ut64 vmin, ut64 vmax, int vsize, inRangeCb cb, void *cb_user);
+ 

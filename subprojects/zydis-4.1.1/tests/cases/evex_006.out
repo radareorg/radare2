@@ -1,0 +1,48 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpcmpeqb [ENC: EVEX, MAP: 0F, OPC: 0x74]
+     LENGTH:  7
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AVX512
+    ISA-SET: AVX512BW_512
+    ISA-EXT: AVX512EVEX
+ EXCEPTIONS: E4
+ ATTRIBUTES: HAS_MODRM HAS_EVEX ACCEPTS_SEGMENT 
+  OPTIMIZED: 62 F1 25 41 74 78 06 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG     64     64       1       INT                           k7
+ 1   REGISTER    EXPLICIT       R          MASK     64     64       1       INT                           k1
+ 2   REGISTER    EXPLICIT       R        NDSNDD    512     64       8      UINT                        zmm27
+ 3     MEMORY    EXPLICIT       R      MODRM_RM    512     64       8      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rax
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000000000180
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 512
+  BROADCAST: NONE
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k1 [ZEROING]
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpcmpeqb 0x180(%rax), %zmm27, %k7 {%k1}
+   RELATIVE: vpcmpeqb 0x180(%rax), %zmm27, %k7 {%k1}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpcmpeqb k7 {k1}, zmm27, zmmword ptr ds:[rax+0x180]
+   RELATIVE: vpcmpeqb k7 {k1}, zmm27, zmmword ptr ds:[rax+0x180]
+
+== [ SEGMENTS ] ============================================================================================
+62 B1 25 41 74 78 06 
+:           :  :  :..DISP
+:           :  :..MODRM
+:           :..OPCODE
+:..EVEX

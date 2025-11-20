@@ -1,0 +1,45 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpaddsetsd [ENC: MVEX, MAP: 0F38, OPC: 0xCD]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: KNC
+    ISA-SET: KNCE
+    ISA-EXT: KNCE
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_MVEX 
+  OPTIMIZED: 62 E2 39 15 CD F2 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT     RCW     MODRM_REG    512     16      32   FLOAT32                        zmm22
+ 1   REGISTER    EXPLICIT      RW          MASK     16     16       1       INT                           k5
+ 2   REGISTER    EXPLICIT       R        NDSNDD    512     16      32   FLOAT32                        zmm24
+ 3   REGISTER    EXPLICIT       R      MODRM_RM    512     16      32   FLOAT32                         zmm2
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 512
+  BROADCAST: NONE
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k5 [MERGING]
+         EH: N
+    SWIZZLE: CDAB
+    CONVERT: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpaddsetsd %zmm2 {cdab}, %zmm24, %zmm22 {%k5}
+   RELATIVE: vpaddsetsd %zmm2 {cdab}, %zmm24, %zmm22 {%k5}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpaddsetsd zmm22 {k5}, zmm24, zmm2 {cdab}
+   RELATIVE: vpaddsetsd zmm22 {k5}, zmm24, zmm2 {cdab}
+
+== [ SEGMENTS ] ============================================================================================
+62 E2 39 15 CD F2 
+:           :  :..MODRM
+:           :..OPCODE
+:..MVEX

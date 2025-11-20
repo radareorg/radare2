@@ -1,0 +1,2107 @@
+[
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_64",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_TILESTORED",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_8",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_MEMORY",
+                "mem": {
+                    "base": "ZYDIS_REGISTER_RIP",
+                    "index": "ZYDIS_REGISTER_NONE",
+                    "scale": 0,
+                    "displacement": "0",
+                    "size": 2
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_MEMORY",
+                "mem": {
+                    "base": "ZYDIS_REGISTER_NONE",
+                    "index": "ZYDIS_REGISTER_R9W",
+                    "scale": 0,
+                    "displacement": "1953184550209191936",
+                    "size": 6939
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_SINT16",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": true,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_64",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_VPMOVZXBW",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_64",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_16",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_ZMM12",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_K0",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_MEMORY",
+                "mem": {
+                    "base": "ZYDIS_REGISTER_NONE",
+                    "index": "ZYDIS_REGISTER_NONE",
+                    "scale": 0,
+                    "displacement": "0",
+                    "size": 32
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": true
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_1_TO_2",
+            "conversion": "ZYDIS_CONVERSION_MODE_UINT16",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_64",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_SYSRET",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_8",
+        "operands": [],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_REAL_16",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_NOP",
+        "prefixes": "ZYDIS_ATTRIB_HAS_SEGMENT_ES",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_NONE",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_EAX",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_MEMORY",
+                "mem": {
+                    "base": "ZYDIS_REGISTER_NONE",
+                    "index": "ZYDIS_REGISTER_NONE",
+                    "scale": 0,
+                    "displacement": "0",
+                    "size": 4
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_1_TO_4",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_DDDD",
+            "sae": true,
+            "eviction_hint": true
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LEGACY_32",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_MOV",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_NONE",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_MEMORY",
+                "mem": {
+                    "base": "ZYDIS_REGISTER_NONE",
+                    "index": "ZYDIS_REGISTER_NONE",
+                    "scale": 0,
+                    "displacement": "512",
+                    "size": 2
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_AL",
+                    "is4": false
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_1_TO_32",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": true
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_1_TO_2",
+            "conversion": "ZYDIS_CONVERSION_MODE_UINT8",
+            "rounding": "ZYDIS_ROUNDING_MODE_RD",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_REAL_16",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_SHL",
+        "prefixes": "ZYDIS_ATTRIB_HAS_SEGMENT_SS",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_NONE",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_MEMORY",
+                "mem": {
+                    "base": "ZYDIS_REGISTER_NONE",
+                    "index": "ZYDIS_REGISTER_NONE",
+                    "scale": 0,
+                    "displacement": "-67108864",
+                    "size": 1
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_CL",
+                    "is4": false
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_64",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_3DNOW|ZYDIS_ENCODABLE_ENCODING_XOP|ZYDIS_ENCODABLE_ENCODING_EVEX|ZYDIS_ENCODABLE_ENCODING_MVEX",
+        "mnemonic": "ZYDIS_MNEMONIC_VGETEXPSS",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_NONE",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_MEMORY",
+                "mem": {
+                    "base": "ZYDIS_REGISTER_NONE",
+                    "index": "ZYDIS_REGISTER_R8D",
+                    "scale": 4,
+                    "displacement": "256",
+                    "size": 1
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": true
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_64",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_3DNOW|ZYDIS_ENCODABLE_ENCODING_XOP",
+        "mnemonic": "ZYDIS_MNEMONIC_INVALID",
+        "prefixes": "ZYDIS_ATTRIB_HAS_BRANCH_TAKEN|ZYDIS_ATTRIB_HAS_NOTRACK",
+        "branch_type": "ZYDIS_BRANCH_TYPE_FAR",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_16",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_NONE",
+        "operands": [],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_1_TO_32",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_CDAB",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_COMPAT_16",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_SUBSD",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_16",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_16",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_ZMM2",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_K6",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_ZMM2",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_MEMORY",
+                "mem": {
+                    "base": "ZYDIS_REGISTER_NONE",
+                    "index": "ZYDIS_REGISTER_NONE",
+                    "scale": 0,
+                    "displacement": "68719542272",
+                    "size": 64
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": true
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_64",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_XSHA256",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_NONE",
+        "operands": [],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": true
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LEGACY_32",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_SUB",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_NONE",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_MEMORY",
+                "mem": {
+                    "base": "ZYDIS_REGISTER_NONE",
+                    "index": "ZYDIS_REGISTER_NONE",
+                    "scale": 0,
+                    "displacement": "0",
+                    "size": 0
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_64",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_LEGACY",
+        "mnemonic": "ZYDIS_MNEMONIC_MOV",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_NONE",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_EAX",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_MEMORY",
+                "mem": {
+                    "base": "ZYDIS_REGISTER_NONE",
+                    "index": "ZYDIS_REGISTER_NONE",
+                    "scale": 0,
+                    "displacement": "2214723592",
+                    "size": 4
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_8_TO_16",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_2_TO_8",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_RD",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_COMPAT_32",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_SUB",
+        "prefixes": "ZYDIS_ATTRIB_HAS_LOCK",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_8",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_MEMORY",
+                "mem": {
+                    "base": "ZYDIS_REGISTER_BNDSTATUS",
+                    "index": "ZYDIS_REGISTER_NONE",
+                    "scale": 0,
+                    "displacement": "0",
+                    "size": 2
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_IMMEDIATE",
+                "imm": {
+                    "value": "16384"
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_RZ",
+            "sae": false,
+            "zeroing_mask": true
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_2_TO_16",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_BADC",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_REAL_16",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_BNDMOV",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_NONE",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_BND0",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_MEMORY",
+                "mem": {
+                    "base": "ZYDIS_REGISTER_BX",
+                    "index": "ZYDIS_REGISTER_NONE",
+                    "scale": 0,
+                    "displacement": "0",
+                    "size": 8
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_1_TO_16",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_64",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_BLSIC",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_32",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_EAX",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_CX",
+                    "is4": false
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_RD",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_SINT8",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": true
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_64",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_VFCMADDCPH",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_64",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_16",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_ZMM2",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_K6",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_ZMM2",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_MEMORY",
+                "mem": {
+                    "base": "ZYDIS_REGISTER_NONE",
+                    "index": "ZYDIS_REGISTER_NONE",
+                    "scale": 0,
+                    "displacement": "0",
+                    "size": 64
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LEGACY_32",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_MOV",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_NONE",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_MEMORY",
+                "mem": {
+                    "base": "ZYDIS_REGISTER_BP",
+                    "index": "ZYDIS_REGISTER_NONE",
+                    "scale": 0,
+                    "displacement": "-522",
+                    "size": 8
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_IMMEDIATE",
+                "imm": {
+                    "value": "0"
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_SINT16",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LEGACY_16",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_T1MSKC",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_32",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_EAX",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_ECX",
+                    "is4": false
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_RD",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_1_TO_4",
+            "conversion": "ZYDIS_CONVERSION_MODE_FLOAT16",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": true
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_64",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_VPSHLB",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_NONE",
+        "operands": [],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_1_TO_4",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_UINT16",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LEGACY_16",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_VPCMPGTQ",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_64",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_16",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_K6",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_K6",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_ZMM2",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_MEMORY",
+                "mem": {
+                    "base": "ZYDIS_REGISTER_NONE",
+                    "index": "ZYDIS_REGISTER_NONE",
+                    "scale": 0,
+                    "displacement": "0",
+                    "size": 64
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": true
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_REAL_16",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_VPSRLD",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_64",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_16",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_ZMM2",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_K6",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_ZMM2",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_IMMEDIATE",
+                "imm": {
+                    "value": "0"
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_1_TO_2",
+            "rounding": "ZYDIS_ROUNDING_MODE_RN",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_64",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_BNDMK",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_NONE",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_BND0",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_MEMORY",
+                "mem": {
+                    "base": "ZYDIS_REGISTER_EIP",
+                    "index": "ZYDIS_REGISTER_NONE",
+                    "scale": 0,
+                    "displacement": "0",
+                    "size": 4
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": true,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_64",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_TILESTORED",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_NONE",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_MEMORY",
+                "mem": {
+                    "base": "ZYDIS_REGISTER_EIP",
+                    "index": "ZYDIS_REGISTER_NONE",
+                    "scale": 0,
+                    "displacement": "0",
+                    "size": 0
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_TMM4",
+                    "is4": false
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_RD",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_64",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_3DNOW|ZYDIS_ENCODABLE_ENCODING_XOP|ZYDIS_ENCODABLE_ENCODING_EVEX|ZYDIS_ENCODABLE_ENCODING_MVEX",
+        "mnemonic": "ZYDIS_MNEMONIC_VGETEXPSS",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_NONE",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_MEMORY",
+                "mem": {
+                    "base": "ZYDIS_REGISTER_R13D",
+                    "index": "ZYDIS_REGISTER_R8D",
+                    "scale": 4,
+                    "displacement": "258",
+                    "size": 1
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": true
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LEGACY_32",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_NOT",
+        "prefixes": "ZYDIS_ATTRIB_HAS_LOCK",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_NONE",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_POINTER",
+                "ptr": {
+                    "segment": 0,
+                    "offset": 0
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": true
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_64",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_LEGACY",
+        "mnemonic": "ZYDIS_MNEMONIC_BNDCL",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_NONE",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_BND0",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_MEMORY",
+                "mem": {
+                    "base": "ZYDIS_REGISTER_EIP",
+                    "index": "ZYDIS_REGISTER_NONE",
+                    "scale": 0,
+                    "displacement": "0",
+                    "size": 4
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": true,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_64",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_LEGACY|ZYDIS_ENCODABLE_ENCODING_XOP",
+        "mnemonic": "ZYDIS_MNEMONIC_UMONITOR",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_NONE",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_BX",
+                    "is4": false
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_64",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_BNDMK",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_NONE",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_BND0",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_MEMORY",
+                "mem": {
+                    "base": "ZYDIS_REGISTER_R13D",
+                    "index": "ZYDIS_REGISTER_NONE",
+                    "scale": 0,
+                    "displacement": "0",
+                    "size": 4
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": true,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LEGACY_32",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_PUSH",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_64",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_IMMEDIATE",
+                "imm": {
+                    "value": "134217728"
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_BADC",
+            "sae": true,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_64",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_CRC32",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_8",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_R11D",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_BH",
+                    "is4": false
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": true,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LEGACY_32",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_MOV",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_NONE",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_MEMORY",
+                "mem": {
+                    "base": "ZYDIS_REGISTER_NONE",
+                    "index": "ZYDIS_REGISTER_NONE",
+                    "scale": 0,
+                    "displacement": "-522",
+                    "size": 8
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_IMMEDIATE",
+                "imm": {
+                    "value": "18446744073675341824"
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_SINT16",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LEGACY_16",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_JMP",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NEAR",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_16",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_NONE",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_IMMEDIATE",
+                "imm": {
+                    "value": "1948399592023988992"
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": true,
+            "eviction_hint": true
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_64",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_SUB",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_32",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_BL",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_IMMEDIATE",
+                "imm": {
+                    "value": "0"
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": true,
+            "eviction_hint": true
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_64",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_PUSH",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_NONE",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_IMMEDIATE",
+                "imm": {
+                    "value": "0"
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": true
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_4_TO_8",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_RN",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": true,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_64",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_LEGACY",
+        "mnemonic": "ZYDIS_MNEMONIC_MOV",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_NONE",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_AH",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_MEMORY",
+                "mem": {
+                    "base": "ZYDIS_REGISTER_R11",
+                    "index": "ZYDIS_REGISTER_NONE",
+                    "scale": 0,
+                    "displacement": "2",
+                    "size": 1
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_1_TO_64",
+            "conversion": "ZYDIS_CONVERSION_MODE_UINT16",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_REAL_16",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_IMUL",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_NONE",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_MEMORY",
+                "mem": {
+                    "base": "ZYDIS_REGISTER_BP",
+                    "index": "ZYDIS_REGISTER_DI",
+                    "scale": 8,
+                    "displacement": "0",
+                    "size": 2
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_1_TO_16",
+            "conversion": "ZYDIS_CONVERSION_MODE_SINT16",
+            "rounding": "ZYDIS_ROUNDING_MODE_RN",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_64",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_CRC32",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_8",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_RBX",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_BH",
+                    "is4": false
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": true,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_COMPAT_16",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_LEGACY|ZYDIS_ENCODABLE_ENCODING_3DNOW|ZYDIS_ENCODABLE_ENCODING_XOP|ZYDIS_ENCODABLE_ENCODING_VEX|ZYDIS_ENCODABLE_ENCODING_EVEX|ZYDIS_ENCODABLE_ENCODING_MVEX",
+        "mnemonic": "ZYDIS_MNEMONIC_VSCATTERPF1QPD",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_16",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_MEMORY",
+                "mem": {
+                    "base": "ZYDIS_REGISTER_R8D",
+                    "index": "ZYDIS_REGISTER_ZMM4",
+                    "scale": 1,
+                    "displacement": "524288",
+                    "size": 8
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_K5",
+                    "is4": false
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_FLOAT16",
+            "rounding": "ZYDIS_ROUNDING_MODE_RD",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_CCCC",
+            "sae": true,
+            "eviction_hint": true
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_64",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_MOVZX",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_NONE",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_RBX",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_AH",
+                    "is4": false
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": true,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_2_TO_8",
+            "conversion": "ZYDIS_CONVERSION_MODE_SINT16",
+            "rounding": "ZYDIS_ROUNDING_MODE_RU",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_64",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_LEGACY|ZYDIS_ENCODABLE_ENCODING_3DNOW|ZYDIS_ENCODABLE_ENCODING_XOP|ZYDIS_ENCODABLE_ENCODING_VEX|ZYDIS_ENCODABLE_ENCODING_EVEX|ZYDIS_ENCODABLE_ENCODING_MVEX",
+        "mnemonic": "ZYDIS_MNEMONIC_VGATHERDPS",
+        "prefixes": "ZYDIS_ATTRIB_HAS_SEGMENT_CS",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_32",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_ZMM16",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_K6",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_MEMORY",
+                "mem": {
+                    "base": "ZYDIS_REGISTER_NONE",
+                    "index": "ZYDIS_REGISTER_ZMM16",
+                    "scale": 1,
+                    "displacement": "538976288",
+                    "size": 4
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_1_TO_64",
+            "conversion": "ZYDIS_CONVERSION_MODE_SINT8",
+            "rounding": "ZYDIS_ROUNDING_MODE_RU",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_CDAB",
+            "sae": true,
+            "eviction_hint": true
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_64",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_VGATHERQPS",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_64",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_32",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_XMM12",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_K6",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_MEMORY",
+                "mem": {
+                    "base": "ZYDIS_REGISTER_NONE",
+                    "index": "ZYDIS_REGISTER_YMM12",
+                    "scale": 1,
+                    "displacement": "538976288",
+                    "size": 4
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_64",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_LEGACY|ZYDIS_ENCODABLE_ENCODING_3DNOW|ZYDIS_ENCODABLE_ENCODING_XOP|ZYDIS_ENCODABLE_ENCODING_VEX|ZYDIS_ENCODABLE_ENCODING_EVEX|ZYDIS_ENCODABLE_ENCODING_MVEX",
+        "mnemonic": "ZYDIS_MNEMONIC_TDPBSUD",
+        "prefixes": "ZYDIS_ATTRIB_HAS_SEGMENT_CS",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_32",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_TMM3",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_TMM6",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_TMM4",
+                    "is4": false
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_1_TO_64",
+            "rounding": "ZYDIS_ROUNDING_MODE_RU",
+            "sae": true,
+            "zeroing_mask": true
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_1_TO_64",
+            "conversion": "ZYDIS_CONVERSION_MODE_SINT8",
+            "rounding": "ZYDIS_ROUNDING_MODE_RU",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_DCBA",
+            "sae": true,
+            "eviction_hint": true
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_64",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_VEX",
+        "mnemonic": "ZYDIS_MNEMONIC_TDPBSUD",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_64",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_32",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_TMM3",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_TMM6",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_TMM6",
+                    "is4": false
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_64",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_VEX",
+        "mnemonic": "ZYDIS_MNEMONIC_TDPBSUD",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_64",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_32",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_TMM6",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_TMM6",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_TMM4",
+                    "is4": false
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_64",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_JKZD",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_16",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_32",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_K1",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_IMMEDIATE",
+                "imm": {
+                    "value": "0"
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_64",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_VMOVNRAPD",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_NONE",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_MEMORY",
+                "mem": {
+                    "base": "ZYDIS_REGISTER_R12D",
+                    "index": "ZYDIS_REGISTER_NONE",
+                    "scale": 0,
+                    "displacement": "268435968",
+                    "size": 64
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_K3",
+                    "is4": false
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_ZMM5",
+                    "is4": false
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": true
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_64",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_MOVSQ",
+        "prefixes": "ZYDIS_ATTRIB_HAS_REP|ZYDIS_ATTRIB_HAS_REPNE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_32",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_NONE",
+        "operands": [],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_64",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_JNL",
+        "prefixes": "ZYDIS_ATTRIB_HAS_BRANCH_NOT_TAKEN",
+        "branch_type": "ZYDIS_BRANCH_TYPE_SHORT",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_8",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_32",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_IMMEDIATE",
+                "imm": {
+                    "value": "0"
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_RZ",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": true,
+            "eviction_hint": true
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_64",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_XCHG",
+        "prefixes": "ZYDIS_ATTRIB_HAS_XACQUIRE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_NONE",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_MEMORY",
+                "mem": {
+                    "base": "ZYDIS_REGISTER_EIP",
+                    "index": "ZYDIS_REGISTER_NONE",
+                    "scale": 0,
+                    "displacement": "-67108864",
+                    "size": 1
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_CL",
+                    "is4": false
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_RU",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_64",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_MOV",
+        "prefixes": "ZYDIS_ATTRIB_HAS_XRELEASE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_NONE",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_MEMORY",
+                "mem": {
+                    "base": "ZYDIS_REGISTER_NONE",
+                    "index": "ZYDIS_REGISTER_NONE",
+                    "scale": 0,
+                    "displacement": "654344",
+                    "size": 1
+                }
+            },
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_REGISTER",
+                "reg": {
+                    "value": "ZYDIS_REGISTER_AL",
+                    "is4": false
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": true
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_1_TO_2",
+            "conversion": "ZYDIS_CONVERSION_MODE_UINT8",
+            "rounding": "ZYDIS_ROUNDING_MODE_RD",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": false,
+            "eviction_hint": false
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_COMPAT_32",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_CALL",
+        "prefixes": "ZYDIS_ATTRIB_HAS_SEGMENT_DS",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NEAR",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_16",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_NONE",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_MEMORY",
+                "mem": {
+                    "base": "ZYDIS_REGISTER_ESP",
+                    "index": "ZYDIS_REGISTER_NONE",
+                    "scale": 0,
+                    "displacement": "0",
+                    "size": 2
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_INVALID",
+            "sae": true,
+            "eviction_hint": true
+        }
+    },
+    {
+        "machine_mode": "ZYDIS_MACHINE_MODE_LONG_64",
+        "allowed_encodings": "ZYDIS_ENCODABLE_ENCODING_DEFAULT",
+        "mnemonic": "ZYDIS_MNEMONIC_PUSH",
+        "prefixes": "ZYDIS_ATTRIB_NONE",
+        "branch_type": "ZYDIS_BRANCH_TYPE_NONE",
+        "branch_width": "ZYDIS_BRANCH_WIDTH_NONE",
+        "address_size_hint": "ZYDIS_ADDRESS_SIZE_HINT_NONE",
+        "operand_size_hint": "ZYDIS_OPERAND_SIZE_HINT_NONE",
+        "operands": [
+            {
+                "operand_type": "ZYDIS_OPERAND_TYPE_IMMEDIATE",
+                "imm": {
+                    "value": "1953184666629517322"
+                }
+            }
+        ],
+        "evex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "sae": false,
+            "zeroing_mask": false
+        },
+        "mvex": {
+            "broadcast": "ZYDIS_BROADCAST_MODE_INVALID",
+            "conversion": "ZYDIS_CONVERSION_MODE_INVALID",
+            "rounding": "ZYDIS_ROUNDING_MODE_INVALID",
+            "swizzle": "ZYDIS_SWIZZLE_MODE_DCBA",
+            "sae": false,
+            "eviction_hint": false
+        }
+    }
+]

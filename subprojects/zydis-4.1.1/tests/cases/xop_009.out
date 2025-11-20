@@ -1,0 +1,44 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpshaq [ENC: XOP, MAP: XOP9, OPC: 0x9B]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: XOP
+    ISA-SET: XOP
+    ISA-EXT: XOP
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_XOP ACCEPTS_SEGMENT 
+  OPTIMIZED: 8F 49 08 9B 5D D5 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128      2      64       INT                        xmm11
+ 1     MEMORY    EXPLICIT       R      MODRM_RM    128      2      64       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 r13
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0xFFFFFFFFFFFFFFD5
+ 2   REGISTER    EXPLICIT       R        NDSNDD    128      2      64       INT                        xmm14
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpshaq %xmm14, -0x2B(%r13), %xmm11
+   RELATIVE: vpshaq %xmm14, -0x2B(%r13), %xmm11
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpshaq xmm11, xmmword ptr ds:[r13-0x2B], xmm14
+   RELATIVE: vpshaq xmm11, xmmword ptr ds:[r13-0x2B], xmm14
+
+== [ SEGMENTS ] ============================================================================================
+8F 49 08 9B 5D D5 
+:        :  :  :..DISP
+:        :  :..MODRM
+:        :..OPCODE
+:..XOP

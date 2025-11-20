@@ -1,0 +1,12 @@
+.head .link1{background-image:url("/images/a.png")} .head .link2{background-image:url("/images/b.png");}
+.head .link3{background-image:url("/images/c.png");}
+.head .link4{background-image:url("/images/d.png");}
+.head .link5{background-image:url("/images/e.png");}
+.head .link6{background-image:url("/images/f.png");}
+.head .link7{background-image:url("/images/g.png#dingo");}
+.head .link8{background-image:url("/images/h.png?name=tapir");}
+
+.http_urls { background-image: url("http://somehost.com/image.png") }
+.https_urls { background-image: url("https://somehost.com/image.png") }
+.data_urls { background-image: url("data:image/png:base64,0") }
+.backslashes_urls { background-image: url("/images/e.png") }

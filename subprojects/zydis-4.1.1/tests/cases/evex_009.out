@@ -1,0 +1,42 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vgetexpsd [ENC: EVEX, MAP: 0F38, OPC: 0x43]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 64
+       EASZ: 64
+   CATEGORY: AVX512
+    ISA-SET: AVX512F_SCALAR
+    ISA-EXT: AVX512EVEX
+ EXCEPTIONS: E3
+ ATTRIBUTES: HAS_MODRM HAS_EVEX 
+  OPTIMIZED: 62 A2 C5 03 43 C7 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT     RCW     MODRM_REG    128      2      64   FLOAT64                        xmm16
+ 1   REGISTER    EXPLICIT       R          MASK     64     64       1       INT                           k3
+ 2   REGISTER    EXPLICIT       R        NDSNDD    128      2      64   FLOAT64                        xmm23
+ 3   REGISTER    EXPLICIT       R      MODRM_RM    128      2      64   FLOAT64                        xmm23
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k3 [MERGING]
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vgetexpsd %xmm23, %xmm23, %xmm16 {%k3}
+   RELATIVE: vgetexpsd %xmm23, %xmm23, %xmm16 {%k3}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vgetexpsd xmm16 {k3}, xmm23, xmm23
+   RELATIVE: vgetexpsd xmm16 {k3}, xmm23, xmm23
+
+== [ SEGMENTS ] ============================================================================================
+62 A2 C5 03 43 C7 
+:           :  :..MODRM
+:           :..OPCODE
+:..EVEX

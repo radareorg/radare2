@@ -1,0 +1,38 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vprotd [ENC: XOP, MAP: XOP9, OPC: 0x92]
+     LENGTH:  5
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: XOP
+    ISA-SET: XOP
+    ISA-EXT: XOP
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_XOP 
+  OPTIMIZED: 8F 69 38 92 E1 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128      4      32      UINT                        xmm12
+ 1   REGISTER    EXPLICIT       R      MODRM_RM    128      4      32      UINT                         xmm1
+ 2   REGISTER    EXPLICIT       R        NDSNDD    128      4      32      UINT                         xmm8
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vprotd %xmm8, %xmm1, %xmm12
+   RELATIVE: vprotd %xmm8, %xmm1, %xmm12
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vprotd xmm12, xmm1, xmm8
+   RELATIVE: vprotd xmm12, xmm1, xmm8
+
+== [ SEGMENTS ] ============================================================================================
+8F 29 38 92 E1 
+:        :  :..MODRM
+:        :..OPCODE
+:..XOP

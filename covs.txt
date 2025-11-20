@@ -1,0 +1,403 @@
+** CID 1620484:       Resource leaks  (RESOURCE_LEAK)
+/libr/bin/p/bin_xnu_kernelcache.c: 2013           in resolve_iokit_classes()
+
+
+_____________________________________________________________________________________________
+*** CID 1620484:         Resource leaks  (RESOURCE_LEAK)
+/libr/bin/p/bin_xnu_kernelcache.c: 2013             in resolve_iokit_classes()
+2007     			vsym->size = (ut64) ((c->vt.instance.slots_total ? c->vt.instance.slots_total : 1) * 8);
+2008     			vsym->forwarder = "NONE";
+2009     			vsym->bind = "GLOBAL";
+2010     			vsym->type = "OBJECT";
+2011     			vsym->ordinal = RVecRBinSymbol_length (symbols);
+2012     			RVecRBinSymbol_push_back (symbols, vsym);
+>>>     CID 1620484:         Resource leaks  (RESOURCE_LEAK)
+>>>     Variable "vsym" going out of scope leaks the storage it points to.
+2013     		}
+2014     
+2015     		if (c->vt.metaclass.va) {
+2016     			RBinSymbol *msym = R_NEW0 (RBinSymbol);
+2017     			msym->name = r_bin_name_new_from (r_str_newf ("%s::MetaClass::vtable", c->name));
+2018     			msym->vaddr = c->vt.metaclass.va;
+
+** CID 1620483:       Resource leaks  (RESOURCE_LEAK)
+/libr/anal/c2/kv.c: 724           in parse_typedef()
+
+
+_____________________________________________________________________________________________
+*** CID 1620483:         Resource leaks  (RESOURCE_LEAK)
+/libr/anal/c2/kv.c: 724             in parse_typedef()
+718     				free (mn);
+719     				free (md);
+720     				// continue with next field
+721     				continue;
+722     			}
+723     			// else: it is a function-pointer field; fall through to specialized handling below
+>>>     CID 1620483:         Resource leaks  (RESOURCE_LEAK)
+>>>     Variable "mn" going out of scope leaks the storage it points to.
+724     		}
+725     		// After the closing '}', we expect the typedef alias:
+726     		skip_spaces (kvc);
+727     		KVCToken alias = { .a = consume_word (kvc) };
+728     		if (!alias.a) {
+729     			kvc_error (kvc, "Missing alias in typedef struct");
+
+** CID 1620482:       Resource leaks  (RESOURCE_LEAK)
+/libr/anal/c2/kv.c: 1172           in parse_struct()
+
+
+_____________________________________________________________________________________________
+*** CID 1620482:         Resource leaks  (RESOURCE_LEAK)
+/libr/anal/c2/kv.c: 1172             in parse_struct()
+1166     				free (rtype);
+1167     				if (args) {
+1168     					free (args);
+1169     				}
+1170     				free (mname);
+1171     				/* mt_check is not defined in this scope */
+>>>     CID 1620482:         Resource leaks  (RESOURCE_LEAK)
+>>>     Variable "fulltype" going out of scope leaks the storage it points to.
+1172     				continue;
+1173     			}
+1174     		}
+1175     		// Check for typedef aliases that represent function pointers
+1176     		{
+1177     			char *mt_check = kvctoken_tostring (member_type);
+
+** CID 1620481:       Resource leaks  (RESOURCE_LEAK)
+/libr/anal/c2/kv.c: 724           in parse_typedef()
+
+
+_____________________________________________________________________________________________
+*** CID 1620481:         Resource leaks  (RESOURCE_LEAK)
+/libr/anal/c2/kv.c: 724             in parse_typedef()
+718     				free (mn);
+719     				free (md);
+720     				// continue with next field
+721     				continue;
+722     			}
+723     			// else: it is a function-pointer field; fall through to specialized handling below
+>>>     CID 1620481:         Resource leaks  (RESOURCE_LEAK)
+>>>     Variable "mt" going out of scope leaks the storage it points to.
+724     		}
+725     		// After the closing '}', we expect the typedef alias:
+726     		skip_spaces (kvc);
+727     		KVCToken alias = { .a = consume_word (kvc) };
+728     		if (!alias.a) {
+729     			kvc_error (kvc, "Missing alias in typedef struct");
+
+** CID 1620480:       Resource leaks  (RESOURCE_LEAK)
+/libr/anal/c2/kv.c: 1262           in parse_struct()
+
+
+_____________________________________________________________________________________________
+*** CID 1620480:         Resource leaks  (RESOURCE_LEAK)
+/libr/anal/c2/kv.c: 1262             in parse_struct()
+1256     							r_strbuf_appendf (kvc->sb, "func.%s.cc=%s\n", mt_check, "cdecl");
+1257     							r_strbuf_appendf (kvc->sb, "func.%s.args=%d\n", mt_check, 0);
+1258     						}
+1259     						r_strbuf_appendf (kvc->sb, "func.%s.ret=%s\n", mt_check, rtype);
+1260     						free (mname);
+1261     						free (mt_check);
+>>>     CID 1620480:         Resource leaks  (RESOURCE_LEAK)
+>>>     Variable "args_str" going out of scope leaks the storage it points to.
+1262     						continue;
+1263     					}
+1264     				}
+1265     			}
+1266     			free (mt_check);
+1267     		}
+
+** CID 1620479:       Integer handling issues  (OVERFLOW_BEFORE_WIDEN)
+/libr/bin/p/bin_xnu_kernelcache.c: 2020           in resolve_iokit_classes()
+
+
+_____________________________________________________________________________________________
+*** CID 1620479:         Integer handling issues  (OVERFLOW_BEFORE_WIDEN)
+/libr/bin/p/bin_xnu_kernelcache.c: 2020             in resolve_iokit_classes()
+2014     
+2015     		if (c->vt.metaclass.va) {
+2016     			RBinSymbol *msym = R_NEW0 (RBinSymbol);
+2017     			msym->name = r_bin_name_new_from (r_str_newf ("%s::MetaClass::vtable", c->name));
+2018     			msym->vaddr = c->vt.metaclass.va;
+2019     			msym->paddr = c->vt.metaclass.va - kext->pa2va_exec;
+>>>     CID 1620479:         Integer handling issues  (OVERFLOW_BEFORE_WIDEN)
+>>>     Potentially overflowing expression "(c->vt.metaclass.slots_total ? c->vt.metaclass.slots_total : 1U) * 8U" with type "unsigned int" (32 bits, unsigned) is evaluated using 32-bit arithmetic, and then used in a context that expects an expression of type "uint64_t" (64 bits, unsigned).
+2020     			msym->size = (ut64) ((c->vt.metaclass.slots_total ? c->vt.metaclass.slots_total : 1) * 8);
+2021     			msym->forwarder = "NONE";
+2022     			msym->bind = "GLOBAL";
+2023     			msym->type = "OBJECT";
+2024     			msym->ordinal = RVecRBinSymbol_length (symbols);
+2025     			RVecRBinSymbol_push_back (symbols, msym);
+
+** CID 1620478:       Resource leaks  (RESOURCE_LEAK)
+/libr/anal/c2/kv.c: 1262           in parse_struct()
+
+
+_____________________________________________________________________________________________
+*** CID 1620478:         Resource leaks  (RESOURCE_LEAK)
+/libr/anal/c2/kv.c: 1262             in parse_struct()
+1256     							r_strbuf_appendf (kvc->sb, "func.%s.cc=%s\n", mt_check, "cdecl");
+1257     							r_strbuf_appendf (kvc->sb, "func.%s.args=%d\n", mt_check, 0);
+1258     						}
+1259     						r_strbuf_appendf (kvc->sb, "func.%s.ret=%s\n", mt_check, rtype);
+1260     						free (mname);
+1261     						free (mt_check);
+>>>     CID 1620478:         Resource leaks  (RESOURCE_LEAK)
+>>>     Variable "rtype" going out of scope leaks the storage it points to.
+1262     						continue;
+1263     					}
+1264     				}
+1265     			}
+1266     			free (mt_check);
+1267     		}
+
+** CID 1620477:       Resource leaks  (RESOURCE_LEAK)
+/libr/bin/p/bin_xnu_kernelcache.c: 2026           in resolve_iokit_classes()
+
+
+_____________________________________________________________________________________________
+*** CID 1620477:         Resource leaks  (RESOURCE_LEAK)
+/libr/bin/p/bin_xnu_kernelcache.c: 2026             in resolve_iokit_classes()
+2020     			msym->size = (ut64) ((c->vt.metaclass.slots_total ? c->vt.metaclass.slots_total : 1) * 8);
+2021     			msym->forwarder = "NONE";
+2022     			msym->bind = "GLOBAL";
+2023     			msym->type = "OBJECT";
+2024     			msym->ordinal = RVecRBinSymbol_length (symbols);
+2025     			RVecRBinSymbol_push_back (symbols, msym);
+>>>     CID 1620477:         Resource leaks  (RESOURCE_LEAK)
+>>>     Variable "msym" going out of scope leaks the storage it points to.
+2026     		}
+2027     	}
+2028     
+2029     	return classes;
+2030     }
+2031     
+
+** CID 1620476:       Resource leaks  (RESOURCE_LEAK)
+/libr/anal/c2/kv.c: 724           in parse_typedef()
+
+
+_____________________________________________________________________________________________
+*** CID 1620476:         Resource leaks  (RESOURCE_LEAK)
+/libr/anal/c2/kv.c: 724             in parse_typedef()
+718     				free (mn);
+719     				free (md);
+720     				// continue with next field
+721     				continue;
+722     			}
+723     			// else: it is a function-pointer field; fall through to specialized handling below
+>>>     CID 1620476:         Resource leaks  (RESOURCE_LEAK)
+>>>     Variable "md" going out of scope leaks the storage it points to.
+724     		}
+725     		// After the closing '}', we expect the typedef alias:
+726     		skip_spaces (kvc);
+727     		KVCToken alias = { .a = consume_word (kvc) };
+728     		if (!alias.a) {
+729     			kvc_error (kvc, "Missing alias in typedef struct");
+
+** CID 1620475:         (UNINIT)
+/libr/bin/p/bin_mbn.c: 140           in sections()
+/libr/bin/p/bin_mbn.c: 149           in sections()
+/libr/bin/p/bin_mbn.c: 151           in sections()
+/libr/bin/p/bin_mbn.c: 138           in sections()
+/libr/bin/p/bin_mbn.c: 158           in sections()
+/libr/bin/p/bin_mbn.c: 158           in sections()
+/libr/bin/p/bin_mbn.c: 141           in sections()
+
+
+_____________________________________________________________________________________________
+*** CID 1620475:           (UNINIT)
+/libr/bin/p/bin_mbn.c: 140             in sections()
+134     
+135     	// add text segment
+136     	RBinSection *ptr = R_NEW0 (RBinSection);
+137     	ptr->name = strdup("text");
+138     	ptr->size = h->psize;
+139     	ptr->vsize = h->psize;
+>>>     CID 1620475:           (UNINIT)
+>>>     Using uninitialized value "h->paddr".
+140     	ptr->paddr = h->paddr + 40;
+141     	ptr->vaddr = h->vaddr;
+142     	ptr->perm = R_PERM_RX; // r-x
+143     	ptr->add = true;
+144     	ptr->has_strings = true;
+145     	r_list_append (ret, ptr);
+/libr/bin/p/bin_mbn.c: 149             in sections()
+143     	ptr->add = true;
+144     	ptr->has_strings = true;
+145     	r_list_append (ret, ptr);
+146     
+147     	ptr = R_NEW0 (RBinSection);
+148     	ptr->name = strdup("sign");
+>>>     CID 1620475:           (UNINIT)
+>>>     Using uninitialized value "h->sign_sz".
+149     	ptr->size = h->sign_sz;
+150     	ptr->vsize = h->sign_sz;
+151     	ptr->paddr = h->sign_va - h->vaddr;
+152     	ptr->vaddr = h->sign_va;
+153     	ptr->perm = R_PERM_R; // r--
+154     	ptr->has_strings = true;
+/libr/bin/p/bin_mbn.c: 151             in sections()
+145     	r_list_append (ret, ptr);
+146     
+147     	ptr = R_NEW0 (RBinSection);
+148     	ptr->name = strdup("sign");
+149     	ptr->size = h->sign_sz;
+150     	ptr->vsize = h->sign_sz;
+>>>     CID 1620475:           (UNINIT)
+>>>     Using uninitialized value "h->sign_va".
+151     	ptr->paddr = h->sign_va - h->vaddr;
+152     	ptr->vaddr = h->sign_va;
+153     	ptr->perm = R_PERM_R; // r--
+154     	ptr->has_strings = true;
+155     	ptr->add = true;
+156     	r_list_append (ret, ptr);
+/libr/bin/p/bin_mbn.c: 138             in sections()
+132     		h = &h_local;
+133     	}
+134     
+135     	// add text segment
+136     	RBinSection *ptr = R_NEW0 (RBinSection);
+137     	ptr->name = strdup("text");
+>>>     CID 1620475:           (UNINIT)
+>>>     Using uninitialized value "h->psize".
+138     	ptr->size = h->psize;
+139     	ptr->vsize = h->psize;
+140     	ptr->paddr = h->paddr + 40;
+141     	ptr->vaddr = h->vaddr;
+142     	ptr->perm = R_PERM_RX; // r-x
+143     	ptr->add = true;
+/libr/bin/p/bin_mbn.c: 158             in sections()
+152     	ptr->vaddr = h->sign_va;
+153     	ptr->perm = R_PERM_R; // r--
+154     	ptr->has_strings = true;
+155     	ptr->add = true;
+156     	r_list_append (ret, ptr);
+157     
+>>>     CID 1620475:           (UNINIT)
+>>>     Using uninitialized value "h->cert_va".
+158     	if (h->cert_sz && h->cert_va > h->vaddr) {
+159     		ptr = R_NEW0 (RBinSection);
+160     		ptr->name = strdup ("cert");
+161     		ptr->size = h->cert_sz;
+162     		ptr->vsize = h->cert_sz;
+163     		ptr->paddr = h->cert_va - h->vaddr;
+/libr/bin/p/bin_mbn.c: 158             in sections()
+152     	ptr->vaddr = h->sign_va;
+153     	ptr->perm = R_PERM_R; // r--
+154     	ptr->has_strings = true;
+155     	ptr->add = true;
+156     	r_list_append (ret, ptr);
+157     
+>>>     CID 1620475:           (UNINIT)
+>>>     Using uninitialized value "h->cert_sz".
+158     	if (h->cert_sz && h->cert_va > h->vaddr) {
+159     		ptr = R_NEW0 (RBinSection);
+160     		ptr->name = strdup ("cert");
+161     		ptr->size = h->cert_sz;
+162     		ptr->vsize = h->cert_sz;
+163     		ptr->paddr = h->cert_va - h->vaddr;
+/libr/bin/p/bin_mbn.c: 141             in sections()
+135     	// add text segment
+136     	RBinSection *ptr = R_NEW0 (RBinSection);
+137     	ptr->name = strdup("text");
+138     	ptr->size = h->psize;
+139     	ptr->vsize = h->psize;
+140     	ptr->paddr = h->paddr + 40;
+>>>     CID 1620475:           (UNINIT)
+>>>     Using uninitialized value "h->vaddr".
+141     	ptr->vaddr = h->vaddr;
+142     	ptr->perm = R_PERM_RX; // r-x
+143     	ptr->add = true;
+144     	ptr->has_strings = true;
+145     	r_list_append (ret, ptr);
+146     
+
+** CID 1620474:       Integer handling issues  (INTEGER_OVERFLOW)
+/libr/bin/p/bin_xnu_kernelcache.c: 1831           in extract_addr_from_code()
+
+
+_____________________________________________________________________________________________
+*** CID 1620474:         Integer handling issues  (INTEGER_OVERFLOW)
+/libr/bin/p/bin_xnu_kernelcache.c: 1831             in extract_addr_from_code()
+1825     
+1826     	const ut32 adrp = r_read_le32 (arm64_code);
+1827     	const ut64 immlo = (adrp >> 29) & 0x3;
+1828     	const ut64 immhi = (adrp >> 5) & 0x7ffffULL;
+1829     	ut64 imm21 = (immhi << 2) | immlo;
+1830     	int64_t simm21 = (int64_t) ((imm21 ^ 0x100000) - 0x100000);
+>>>     CID 1620474:         Integer handling issues  (INTEGER_OVERFLOW)
+>>>     Expression "(uint64_t)simm21 << 12", where "(uint64_t)simm21" is known to be equal to -1, overflows the type of "(uint64_t)simm21 << 12", which is type "uint64_t".
+1831     	const ut64 adrp_base = page + ((ut64) simm21 << 12);
+1832     
+1833     	const ut32 addi = r_read_le32 (arm64_code + 4);
+1834     	const ut64 imm12 = (addi >> 10) & 0xFFFULL;
+1835     	const ut64 sh = (addi >> 22) & 0x1ULL;
+1836     	const ut64 add_imm = imm12 << (sh ? 12 : 0);
+
+** CID 1620473:       Resource leaks  (RESOURCE_LEAK)
+/libr/bin/p/bin_xnu_kernelcache.c: 2027           in resolve_iokit_classes()
+
+
+_____________________________________________________________________________________________
+*** CID 1620473:         Resource leaks  (RESOURCE_LEAK)
+/libr/bin/p/bin_xnu_kernelcache.c: 2027             in resolve_iokit_classes()
+2021     			msym->forwarder = "NONE";
+2022     			msym->bind = "GLOBAL";
+2023     			msym->type = "OBJECT";
+2024     			msym->ordinal = RVecRBinSymbol_length (symbols);
+2025     			RVecRBinSymbol_push_back (symbols, msym);
+2026     		}
+>>>     CID 1620473:         Resource leaks  (RESOURCE_LEAK)
+>>>     Variable "sym" going out of scope leaks the storage it points to.
+2027     	}
+2028     
+2029     	return classes;
+2030     }
+2031     
+2032     static RList *find_class_registrations(RVecRBinSymbol *symbols, ut64 start_offset, RBinFile *bf, RKext *kext) {
+
+** CID 1620472:       Integer handling issues  (OVERFLOW_BEFORE_WIDEN)
+/libr/bin/p/bin_xnu_kernelcache.c: 2007           in resolve_iokit_classes()
+
+
+_____________________________________________________________________________________________
+*** CID 1620472:         Integer handling issues  (OVERFLOW_BEFORE_WIDEN)
+/libr/bin/p/bin_xnu_kernelcache.c: 2007             in resolve_iokit_classes()
+2001     
+2002     		if (c->vt.instance.va) {
+2003     			RBinSymbol *vsym = R_NEW0 (RBinSymbol);
+2004     			vsym->name = r_bin_name_new_from (r_str_newf ("%s::vtable", c->name));
+2005     			vsym->vaddr = c->vt.instance.va;
+2006     			vsym->paddr = c->vt.instance.va - kext->pa2va_exec;
+>>>     CID 1620472:         Integer handling issues  (OVERFLOW_BEFORE_WIDEN)
+>>>     Potentially overflowing expression "(c->vt.instance.slots_total ? c->vt.instance.slots_total : 1U) * 8U" with type "unsigned int" (32 bits, unsigned) is evaluated using 32-bit arithmetic, and then used in a context that expects an expression of type "uint64_t" (64 bits, unsigned).
+2007     			vsym->size = (ut64) ((c->vt.instance.slots_total ? c->vt.instance.slots_total : 1) * 8);
+2008     			vsym->forwarder = "NONE";
+2009     			vsym->bind = "GLOBAL";
+2010     			vsym->type = "OBJECT";
+2011     			vsym->ordinal = RVecRBinSymbol_length (symbols);
+2012     			RVecRBinSymbol_push_back (symbols, vsym);
+
+** CID 1620471:       Resource leaks  (RESOURCE_LEAK)
+/libr/anal/c2/kv.c: 1264           in parse_struct()
+
+
+_____________________________________________________________________________________________
+*** CID 1620471:         Resource leaks  (RESOURCE_LEAK)
+/libr/anal/c2/kv.c: 1264             in parse_struct()
+1258     						}
+1259     						r_strbuf_appendf (kvc->sb, "func.%s.ret=%s\n", mt_check, rtype);
+1260     						free (mname);
+1261     						free (mt_check);
+1262     						continue;
+1263     					}
+>>>     CID 1620471:         Resource leaks  (RESOURCE_LEAK)
+>>>     Variable "mname" going out of scope leaks the storage it points to.
+1264     				}
+1265     			}
+1266     			free (mt_check);
+1267     		}
+1268     #if 0
+1269     			member_type.b = kvctoken_lastspace (member_type);

@@ -1,0 +1,4 @@
+.arch x86
+.bits 64
+.int32 -1
+nop

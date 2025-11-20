@@ -1,0 +1,40 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpmacssdd [ENC: XOP, MAP: XOP8, OPC: 0x8E]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: XOP
+    ISA-SET: XOP
+    ISA-EXT: XOP
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_XOP 
+  OPTIMIZED: 8F C8 00 8E F1 D0 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128      4      32       INT                         xmm6
+ 1   REGISTER    EXPLICIT       R        NDSNDD    128      4      32       INT                        xmm15
+ 2   REGISTER    EXPLICIT       R      MODRM_RM    128      4      32       INT                         xmm9
+ 3   REGISTER    EXPLICIT       R           IS4    128      4      32       INT                        xmm13
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpmacssdd %xmm13, %xmm9, %xmm15, %xmm6
+   RELATIVE: vpmacssdd %xmm13, %xmm9, %xmm15, %xmm6
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpmacssdd xmm6, xmm15, xmm9, xmm13
+   RELATIVE: vpmacssdd xmm6, xmm15, xmm9, xmm13
+
+== [ SEGMENTS ] ============================================================================================
+8F 88 00 8E F1 D3 
+:        :  :  :..IMM
+:        :  :..MODRM
+:        :..OPCODE
+:..XOP

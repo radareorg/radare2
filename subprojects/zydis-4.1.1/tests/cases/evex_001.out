@@ -1,0 +1,50 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vinserti64x4 [ENC: EVEX, MAP: 0F3A, OPC: 0x3A]
+     LENGTH:  8
+        SSZ: 64
+       EOSZ: 64
+       EASZ: 64
+   CATEGORY: AVX512
+    ISA-SET: AVX512F_512
+    ISA-EXT: AVX512EVEX
+ EXCEPTIONS: E6NF
+ ATTRIBUTES: HAS_MODRM HAS_EVEX ACCEPTS_SEGMENT 
+  OPTIMIZED: 62 63 CD 4F 3A 55 E3 4F 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT     RCW     MODRM_REG    512      8      64      UINT                        zmm26
+ 1   REGISTER    EXPLICIT       R          MASK     64     64       1       INT                           k7
+ 2   REGISTER    EXPLICIT       R        NDSNDD    512      8      64      UINT                         zmm6
+ 3     MEMORY    EXPLICIT       R      MODRM_RM    256      4      64      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  ss
+                                                                                 BASE  =                 rbp
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0xFFFFFFFFFFFFFC60
+ 4  IMMEDIATE    EXPLICIT       R         UIMM8      8      1       8      UINT  [U A  8] 0x000000000000004F
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 512
+  BROADCAST: NONE
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k7 [MERGING]
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vinserti64x4 $0x4F, -0x3A0(%rbp), %zmm6, %zmm26 {%k7}
+   RELATIVE: vinserti64x4 $0x4F, -0x3A0(%rbp), %zmm6, %zmm26 {%k7}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vinserti64x4 zmm26 {k7}, zmm6, ymmword ptr ss:[rbp-0x3A0], 0x4F
+   RELATIVE: vinserti64x4 zmm26 {k7}, zmm6, ymmword ptr ss:[rbp-0x3A0], 0x4F
+
+== [ SEGMENTS ] ============================================================================================
+62 23 CD 4F 3A 55 E3 4F 
+:           :  :  :  :..IMM
+:           :  :  :..DISP
+:           :  :..MODRM
+:           :..OPCODE
+:..EVEX

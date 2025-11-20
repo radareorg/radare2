@@ -1,0 +1,44 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vunpcklps [ENC: VEX, MAP: 0F, OPC: 0x14]
+     LENGTH:  8
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AVX
+    ISA-SET: AVX
+    ISA-EXT: AVX
+ EXCEPTIONS: AVX4
+ ATTRIBUTES: HAS_MODRM HAS_VEX ACCEPTS_SEGMENT 
+  OPTIMIZED: C5 EC 14 91 30 42 AE 34 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    256      8      32   FLOAT32                         ymm2
+ 1   REGISTER    EXPLICIT       R        NDSNDD    256      8      32   FLOAT32                         ymm2
+ 2     MEMORY    EXPLICIT       R      MODRM_RM    256      8      32   FLOAT32  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rcx
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000034AE4230
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 256
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vunpcklps 0x34AE4230(%rcx), %ymm2, %ymm2
+   RELATIVE: vunpcklps 0x34AE4230(%rcx), %ymm2, %ymm2
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vunpcklps ymm2, ymm2, ymmword ptr ds:[rcx+0x34AE4230]
+   RELATIVE: vunpcklps ymm2, ymm2, ymmword ptr ds:[rcx+0x34AE4230]
+
+== [ SEGMENTS ] ============================================================================================
+C5 EC 14 91 30 42 AE 34 
+:     :  :  :..DISP
+:     :  :..MODRM
+:     :..OPCODE
+:..VEX

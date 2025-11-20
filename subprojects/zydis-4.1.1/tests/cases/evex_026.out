@@ -1,0 +1,44 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vrndscaless [ENC: EVEX, MAP: 0F3A, OPC: 0x0A]
+     LENGTH:  7
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AVX512
+    ISA-SET: AVX512F_SCALAR
+    ISA-EXT: AVX512EVEX
+ EXCEPTIONS: E3
+ ATTRIBUTES: HAS_MODRM HAS_EVEX 
+  OPTIMIZED: 62 E3 0D 1B 0A D3 A5 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT     RCW     MODRM_REG    128      4      32   FLOAT32                        xmm18
+ 1   REGISTER    EXPLICIT       R          MASK     64     64       1       INT                           k3
+ 2   REGISTER    EXPLICIT       R        NDSNDD    128      4      32   FLOAT32                        xmm14
+ 3   REGISTER    EXPLICIT       R      MODRM_RM    128      4      32   FLOAT32                         xmm3
+ 4  IMMEDIATE    EXPLICIT       R         UIMM8      8      1       8      UINT  [U A  8] 0x00000000000000A5
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+   ROUNDING: DEFAULT
+        SAE: Y
+       MASK: k3 [MERGING]
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vrndscaless $0xA5, %xmm3 {sae}, %xmm14, %xmm18 {%k3}
+   RELATIVE: vrndscaless $0xA5, %xmm3 {sae}, %xmm14, %xmm18 {%k3}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vrndscaless xmm18 {k3}, xmm14, xmm3 {sae}, 0xA5
+   RELATIVE: vrndscaless xmm18 {k3}, xmm14, xmm3 {sae}, 0xA5
+
+== [ SEGMENTS ] ============================================================================================
+62 E3 0D 1B 0A D3 A5 
+:           :  :  :..IMM
+:           :  :..MODRM
+:           :..OPCODE
+:..EVEX

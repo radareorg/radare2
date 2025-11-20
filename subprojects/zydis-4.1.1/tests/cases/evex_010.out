@@ -1,0 +1,48 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vfnmsub132pd [ENC: EVEX, MAP: 0F38, OPC: 0x9E]
+     LENGTH: 10
+        SSZ: 64
+       EOSZ: 64
+       EASZ: 64
+   CATEGORY: VFMA
+    ISA-SET: AVX512F_512
+    ISA-EXT: AVX512EVEX
+ EXCEPTIONS: E2
+ ATTRIBUTES: HAS_MODRM HAS_EVEX ACCEPTS_SEGMENT 
+  OPTIMIZED: 62 F2 8D C9 9E AF 3D 07 3E 05 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT      RW     MODRM_REG    512      8      64   FLOAT64                         zmm5
+ 1   REGISTER    EXPLICIT       R          MASK     64     64       1       INT                           k1
+ 2   REGISTER    EXPLICIT       R        NDSNDD    512      8      64   FLOAT64                        zmm14
+ 3     MEMORY    EXPLICIT       R      MODRM_RM    512      8      64   FLOAT64  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rdi
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x00000000053E073D
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 512
+  BROADCAST: NONE
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k1 [ZEROING]
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vfnmsub132pd 0x53E073D(%rdi), %zmm14, %zmm5 {%k1} {z}
+   RELATIVE: vfnmsub132pd 0x53E073D(%rdi), %zmm14, %zmm5 {%k1} {z}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vfnmsub132pd zmm5 {k1} {z}, zmm14, zmmword ptr ds:[rdi+0x53E073D]
+   RELATIVE: vfnmsub132pd zmm5 {k1} {z}, zmm14, zmmword ptr ds:[rdi+0x53E073D]
+
+== [ SEGMENTS ] ============================================================================================
+62 B2 8D C9 9E AF 3D 07 3E 05 
+:           :  :  :..DISP
+:           :  :..MODRM
+:           :..OPCODE
+:..EVEX

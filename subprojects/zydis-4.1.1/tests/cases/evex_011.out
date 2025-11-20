@@ -1,0 +1,47 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpsrlvd [ENC: EVEX, MAP: 0F38, OPC: 0x45]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AVX512
+    ISA-SET: AVX512F_128
+    ISA-EXT: AVX512EVEX
+ EXCEPTIONS: E4
+ ATTRIBUTES: HAS_MODRM HAS_EVEX ACCEPTS_SEGMENT 
+  OPTIMIZED: 62 52 65 13 45 2B 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT     RCW     MODRM_REG    128      4      32      UINT                        xmm13
+ 1   REGISTER    EXPLICIT       R          MASK     64     64       1       INT                           k3
+ 2   REGISTER    EXPLICIT       R        NDSNDD    128      4      32      UINT                        xmm19
+ 3     MEMORY    EXPLICIT       R      MODRM_RM     32      1      32      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 r11
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000000000000
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: 1_TO_4
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k3 [MERGING]
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpsrlvd (%r11) {1to4}, %xmm19, %xmm13 {%k3}
+   RELATIVE: vpsrlvd (%r11) {1to4}, %xmm19, %xmm13 {%k3}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpsrlvd xmm13 {k3}, xmm19, dword ptr ds:[r11] {1to4}
+   RELATIVE: vpsrlvd xmm13 {k3}, xmm19, dword ptr ds:[r11] {1to4}
+
+== [ SEGMENTS ] ============================================================================================
+62 52 65 13 45 2B 
+:           :  :..MODRM
+:           :..OPCODE
+:..EVEX

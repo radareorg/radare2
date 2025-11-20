@@ -1,0 +1,44 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vgf2p8mulb [ENC: VEX, MAP: 0F38, OPC: 0xCF]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: GFNI
+    ISA-SET: AVX_GFNI
+    ISA-EXT: GFNI
+ EXCEPTIONS: AVX4
+ ATTRIBUTES: HAS_MODRM HAS_VEX ACCEPTS_SEGMENT 
+  OPTIMIZED: C4 62 59 CF 4F 5D 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128     16       8      UINT                         xmm9
+ 1   REGISTER    EXPLICIT       R        NDSNDD    128     16       8      UINT                         xmm4
+ 2     MEMORY    EXPLICIT       R      MODRM_RM    128     16       8      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rdi
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x000000000000005D
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vgf2p8mulb 0x5D(%rdi), %xmm4, %xmm9
+   RELATIVE: vgf2p8mulb 0x5D(%rdi), %xmm4, %xmm9
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vgf2p8mulb xmm9, xmm4, xmmword ptr ds:[rdi+0x5D]
+   RELATIVE: vgf2p8mulb xmm9, xmm4, xmmword ptr ds:[rdi+0x5D]
+
+== [ SEGMENTS ] ============================================================================================
+C4 62 59 CF 4F 5D 
+:        :  :  :..DISP
+:        :  :..MODRM
+:        :..OPCODE
+:..VEX

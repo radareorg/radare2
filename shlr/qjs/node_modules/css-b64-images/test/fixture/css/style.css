@@ -1,0 +1,52 @@
+/* ---- Fonts ---- */
+
+@font-face {
+  font-family: 'MavenProMedium';
+  src: url('../fonts/maven_pro_medium-webfont.eot');
+  src: url('../fonts/maven_pro_medium-webfont.eot?iefix') format('eot'),
+       url('../fonts/maven_pro_medium-webfont.woff') format('woff'),
+       url('../fonts/maven_pro_medium-webfont.ttf') format('truetype'),
+       url('../fonts/maven_pro_medium-webfont.svg#webfontyQA0TEWF') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'CallunaSansRegular';
+  src: url('../fonts/callunasansregular-webfont.eot');
+  src: url('../fonts/callunasansregular-webfont.eot?#iefix') format('eot'),
+       url('../fonts/callunasansregular-webfont.woff') format('woff'),
+       url('../fonts/callunasansregular-webfont.ttf') format('truetype'),
+       url('../fonts/callunasansregular-webfont.svg#webfontW850hM1B') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+
+
+.single-quote {
+  background: url('../img/background-pattern.gif');
+}
+
+.double-quote {
+  background: url("../img/background-pattern.gif");
+}
+
+.absolute {
+  background: url('/img/background-pattern.gif');
+}
+
+.external {
+  background: url('http://pullrequest.org/img/background-pattern.gif');
+}
+
+.tooBig {
+  background: url('../img/mixit-banner.png');
+}
+
+.not-found {
+  background: url('../img/nlabal.png');
+}
+
+.mediatype {
+  background: url('../img/dots.svg');
+}

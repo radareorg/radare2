@@ -1,0 +1,44 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vrangepd [ENC: EVEX, MAP: 0F3A, OPC: 0x50]
+     LENGTH:  7
+        SSZ: 64
+       EOSZ: 64
+       EASZ: 64
+   CATEGORY: AVX512
+    ISA-SET: AVX512DQ_256
+    ISA-EXT: AVX512EVEX
+ EXCEPTIONS: E2
+ ATTRIBUTES: HAS_MODRM HAS_EVEX 
+  OPTIMIZED: 62 53 CD A1 50 F0 78 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    256      4      64   FLOAT64                        ymm14
+ 1   REGISTER    EXPLICIT       R          MASK     64     64       1       INT                           k1
+ 2   REGISTER    EXPLICIT       R        NDSNDD    256      4      64   FLOAT64                        ymm22
+ 3   REGISTER    EXPLICIT       R      MODRM_RM    256      4      64   FLOAT64                         ymm8
+ 4  IMMEDIATE    EXPLICIT       R         UIMM8      8      1       8      UINT  [U A  8] 0x0000000000000078
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 256
+  BROADCAST: NONE
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k1 [ZEROING]
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vrangepd $0x78, %ymm8, %ymm22, %ymm14 {%k1} {z}
+   RELATIVE: vrangepd $0x78, %ymm8, %ymm22, %ymm14 {%k1} {z}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vrangepd ymm14 {k1} {z}, ymm22, ymm8, 0x78
+   RELATIVE: vrangepd ymm14 {k1} {z}, ymm22, ymm8, 0x78
+
+== [ SEGMENTS ] ============================================================================================
+62 53 CD A1 50 F0 78 
+:           :  :  :..IMM
+:           :  :..MODRM
+:           :..OPCODE
+:..EVEX

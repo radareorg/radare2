@@ -1,0 +1,43 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vmaxps [ENC: VEX, MAP: 0F, OPC: 0x5F]
+     LENGTH:  4
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AVX
+    ISA-SET: AVX
+    ISA-EXT: AVX
+ EXCEPTIONS: AVX2
+ ATTRIBUTES: HAS_MODRM HAS_VEX ACCEPTS_SEGMENT 
+  OPTIMIZED: C5 E4 5F 18 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    256      8      32   FLOAT32                         ymm3
+ 1   REGISTER    EXPLICIT       R        NDSNDD    256      8      32   FLOAT32                         ymm3
+ 2     MEMORY    EXPLICIT       R      MODRM_RM    256      8      32   FLOAT32  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rax
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000000000000
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 256
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vmaxps (%rax), %ymm3, %ymm3
+   RELATIVE: vmaxps (%rax), %ymm3, %ymm3
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vmaxps ymm3, ymm3, ymmword ptr ds:[rax]
+   RELATIVE: vmaxps ymm3, ymm3, ymmword ptr ds:[rax]
+
+== [ SEGMENTS ] ============================================================================================
+C5 E4 5F 18 
+:     :  :..MODRM
+:     :..OPCODE
+:..VEX

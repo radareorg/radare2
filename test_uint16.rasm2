@@ -1,0 +1,3 @@
+.arch x86
+.bits 64
+.uint16 70000

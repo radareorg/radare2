@@ -1,0 +1,49 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpermilpd [ENC: EVEX, MAP: 0F38, OPC: 0x0D]
+     LENGTH:  8
+        SSZ: 64
+       EOSZ: 64
+       EASZ: 64
+   CATEGORY: AVX512
+    ISA-SET: AVX512F_128
+    ISA-EXT: AVX512EVEX
+ EXCEPTIONS: E4NF
+ ATTRIBUTES: HAS_MODRM HAS_SIB HAS_EVEX ACCEPTS_SEGMENT 
+  OPTIMIZED: 62 02 DD 14 0D 7C 8F E4 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT     RCW     MODRM_REG    128      2      64   FLOAT64                        xmm31
+ 1   REGISTER    EXPLICIT       R          MASK     64     64       1       INT                           k4
+ 2   REGISTER    EXPLICIT       R        NDSNDD    128      2      64   FLOAT64                        xmm20
+ 3     MEMORY    EXPLICIT       R      MODRM_RM     64      1      64   FLOAT64  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 r15
+                                                                                 INDEX =                  r9
+                                                                                 SCALE =                   4
+                                                                                 DISP  =  0xFFFFFFFFFFFFFF20
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: 1_TO_2
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k4 [MERGING]
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpermilpd -0xE0(%r15,%r9,4) {1to2}, %xmm20, %xmm31 {%k4}
+   RELATIVE: vpermilpd -0xE0(%r15,%r9,4) {1to2}, %xmm20, %xmm31 {%k4}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpermilpd xmm31 {k4}, xmm20, qword ptr ds:[r15+r9*4-0xE0] {1to2}
+   RELATIVE: vpermilpd xmm31 {k4}, xmm20, qword ptr ds:[r15+r9*4-0xE0] {1to2}
+
+== [ SEGMENTS ] ============================================================================================
+62 02 DD 14 0D 7C 8F E4 
+:           :  :  :  :..DISP
+:           :  :  :..SIB
+:           :  :..MODRM
+:           :..OPCODE
+:..EVEX

@@ -1,0 +1,39 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: pfnacc [ENC: 3DNOW, MAP: 0F0F, OPC: 0x8A]
+     LENGTH:  8
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AMD3DNOW
+    ISA-SET: AMD3DNOW
+    ISA-EXT: AMD3DNOW
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM ACCEPTS_SEGMENT 
+  OPTIMIZED: 0F 0F AA 0D FB 21 51 8A 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT      RW     MODRM_REG     64      1      64       INT                          mm5
+ 1     MEMORY    EXPLICIT       R      MODRM_RM     64      1      64       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rdx
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x000000005121FB0D
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: pfnacc 0x5121FB0D(%rdx), %mm5
+   RELATIVE: pfnacc 0x5121FB0D(%rdx), %mm5
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: pfnacc mm5, qword ptr ds:[rdx+0x5121FB0D]
+   RELATIVE: pfnacc mm5, qword ptr ds:[rdx+0x5121FB0D]
+
+== [ SEGMENTS ] ============================================================================================
+0F 0F AA 0D FB 21 51 8A 
+:     :  :           :..OPCODE
+:     :  :..DISP
+:     :..MODRM
+:..OPCODE

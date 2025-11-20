@@ -1,0 +1,51 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vfmadd231pd [ENC: MVEX, MAP: 0F38, OPC: 0xB8]
+     LENGTH: 10
+        SSZ: 64
+       EOSZ: 64
+       EASZ: 64
+   CATEGORY: UFMA
+    ISA-SET: KNCE
+    ISA-EXT: KNCE
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_MVEX ACCEPTS_SEGMENT 
+  OPTIMIZED: 62 62 C1 A1 B8 80 71 6F F7 09 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT     RCW     MODRM_REG    512      8      64   FLOAT64                        zmm24
+ 1   REGISTER    EXPLICIT       R          MASK     16     16       1       INT                           k1
+ 2   REGISTER    EXPLICIT       R        NDSNDD    512      8      64   FLOAT64                        zmm23
+ 3     MEMORY    EXPLICIT       R      MODRM_RM    256      4      64   FLOAT64  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rax
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000009F76F71
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 512
+  BROADCAST: 4_TO_8
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k1 [MERGING]
+         EH: Y
+    SWIZZLE: NONE
+    CONVERT: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vfmadd231pd 0x9F76F71(%rax) {4to8} {eh}, %zmm23, %zmm24 {%k1}
+   RELATIVE: vfmadd231pd 0x9F76F71(%rax) {4to8} {eh}, %zmm23, %zmm24 {%k1}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vfmadd231pd zmm24 {k1}, zmm23, ymmword ptr ds:[rax+0x9F76F71] {4to8} {eh}
+   RELATIVE: vfmadd231pd zmm24 {k1}, zmm23, ymmword ptr ds:[rax+0x9F76F71] {4to8} {eh}
+
+== [ SEGMENTS ] ============================================================================================
+62 62 C1 A1 B8 80 71 6F F7 09 
+:           :  :  :..DISP
+:           :  :..MODRM
+:           :..OPCODE
+:..MVEX

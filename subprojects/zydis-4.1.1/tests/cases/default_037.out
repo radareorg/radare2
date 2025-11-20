@@ -1,0 +1,35 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: xbegin [ENC: DEFAULT, MAP: DEFAULT, OPC: 0xC7]
+     LENGTH:  5
+        SSZ: 32
+       EOSZ: 16
+       EASZ: 32
+   CATEGORY: COND_BR
+    ISA-SET: RTM
+    ISA-EXT: RTM
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM IS_RELATIVE HAS_OPERANDSIZE 
+  OPTIMIZED: 66 C7 F8 FA FF 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0  IMMEDIATE    EXPLICIT       R  JIMM16_32_32     16      1      16       INT  [S R 16] 0xFFFFFFFFFFFFFFFA
+ 1   REGISTER      HIDDEN      RW          NONE     32      1      32       INT                          eip
+ 2   REGISTER      HIDDEN      CW          NONE     32      1      32       INT                          eax
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: xbegin 0xFFFFFFFF
+   RELATIVE: xbegin -0x01
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: xbegin 0xFFFFFFFF
+   RELATIVE: xbegin -0x01
+
+== [ SEGMENTS ] ============================================================================================
+66 C7 F8 FA FF 
+:  :  :  :..IMM
+:  :  :..MODRM
+:  :..OPCODE
+:..PREFIXES

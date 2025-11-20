@@ -1,0 +1,39 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: jz [ENC: DEFAULT, MAP: DEFAULT, OPC: 0x74]
+     LENGTH:  3
+        SSZ: 32
+       EOSZ: 16
+       EASZ: 32
+   CATEGORY: COND_BR
+    ISA-SET: I86
+    ISA-EXT: BASE
+ EXCEPTIONS: NONE
+ ATTRIBUTES: IS_RELATIVE CPUFLAG_ACCESS ACCEPTS_BND ACCEPTS_BRANCH_HINTS HAS_OPERANDSIZE 
+  OPTIMIZED: 74 FC 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0  IMMEDIATE    EXPLICIT       R         JIMM8      8      1       8       INT  [S R  8] 0xFFFFFFFFFFFFFFFC
+ 1   REGISTER      HIDDEN      RW          NONE     32      1      32       INT                          eip
+ 2   REGISTER      HIDDEN       R          NONE     32     32       1       INT                       eflags
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [    FLAGS ] ============================================================================================
+    ACTIONS: [ZF  : T  ] 
+       READ: 0x00000040
+    WRITTEN: 0x00000000
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: jz 0x0000FFFF
+   RELATIVE: jz +0xFFFF
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: jz 0x0000FFFF
+   RELATIVE: jz +0xFFFF
+
+== [ SEGMENTS ] ============================================================================================
+66 74 FC 
+:  :  :..IMM
+:  :..OPCODE
+:..PREFIXES

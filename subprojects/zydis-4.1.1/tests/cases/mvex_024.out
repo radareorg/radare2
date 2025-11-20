@@ -1,0 +1,45 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpandd [ENC: MVEX, MAP: 0F, OPC: 0xDB]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: KNC
+    ISA-SET: KNCE
+    ISA-EXT: KNCE
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_MVEX 
+  OPTIMIZED: 62 E1 61 2B DB D3 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT     RCW     MODRM_REG    512     16      32   FLOAT32                        zmm18
+ 1   REGISTER    EXPLICIT       R          MASK     16     16       1       INT                           k3
+ 2   REGISTER    EXPLICIT       R        NDSNDD    512     16      32   FLOAT32                         zmm3
+ 3   REGISTER    EXPLICIT       R      MODRM_RM    512     16      32   FLOAT32                         zmm3
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 512
+  BROADCAST: NONE
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k3 [MERGING]
+         EH: N
+    SWIZZLE: BADC
+    CONVERT: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpandd %zmm3 {badc}, %zmm3, %zmm18 {%k3}
+   RELATIVE: vpandd %zmm3 {badc}, %zmm3, %zmm18 {%k3}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpandd zmm18 {k3}, zmm3, zmm3 {badc}
+   RELATIVE: vpandd zmm18 {k3}, zmm3, zmm3 {badc}
+
+== [ SEGMENTS ] ============================================================================================
+62 E1 61 2B DB D3 
+:           :  :..MODRM
+:           :..OPCODE
+:..MVEX

@@ -1,0 +1,254 @@
+## Release Notes
+
+Version: 6.0.4
+Previous: 6.0.2
+Commits: 202
+Contributors: 18
+
+```sh
+curl -Ls https://github.com/radareorg/radare2/releases/download/6.0.4/radare2-6.0.4.tar.xz | tar xJv
+radare2-6.0.4/sys/install.sh
+```
+
+## Highlights
+<details><summary>More details</summary><p>
+
+## Authors
+
+[dependabot[bot]](mailto:49699333+dependabot[bot]@users.noreply.github.com) [Ignacio Sanmillan](mailto:ulexec@gmail.com) [Jassim Bahmida](mailto:jbahmida@e2r5p15.1337.ma) [Juho Kuisma](mailto:kuisma.juho+github@gmail.com) [ksen-lin](mailto:37420872+ksen-lin@users.noreply.github.com) [Murphy](mailto:11234807+as0ler@users.noreply.github.com) [Neil Macneale V](mailto:neil.macneale.v@gmail.com) [Ole André Vadla Ravnås](mailto:oleavr@gmail.com) [pancake](mailto:pancake@nopcode.org) [pancake](mailto:pancake@nowsecure.com) [pancake](mailto:trufae@gmail.com) [Pau RE](mailto:prodrigestivill@gmail.com) [plague-spreader](mailto:megaics@gmail.com) [qz](mailto:4quetz@gmail.com) [Sergey Fedorov](mailto:barracuda@macos-powerpc.org) [simexce](mailto:simexce@163.com) [simexce](mailto:simexce@sina.com) [Takumi Matsuura](mailto:tm99hjkl@gmail.com) 
+
+## Changes
+
+**24517**
+
+* Fix 
+
+**abi**
+
+* Remove unused field in RCoreCmd and cfg.newtab 
+
+**agent**
+
+* Register remote sessions when using the r2agent 
+* Add r2agent -L to list current sessions 
+
+**analysis**
+
+* Simplify string processing in the anal.sbpf plugin 
+* If target arch is vm-based we may disable nopskip 
+* Initial import of the a:path plugin 
+* Fix #23554 - Handle agD subcommands 
+* Implement sBPF analysis plugin for Rust string resolution 
+* Add support for dynamic function prefixes 
+* Pave the road to support dynamic function prefixes 
+* Index __objc_msgrefs xrefs and parse last ss_selrefs 
+* Fix objc parsing on 32bit binaries 
+* Masquerade class bits in objc selector refs 
+* Handle argument in afci command 
+
+**api**
+
+* Eliminate R_STR_DUP. just use strdup 
+
+**arch**
+
+* Build the analysis plugin in default plugin and other goods for sBPF 
+* Fix Capstone's SBPF relative jump disasm syntax 
+* Initial import of the snes.pseudo asm plugin 
+* Add vax, snes and sbpf instruction definitions 
+* Add pseudocode plugin for VAX 
+* Improve the 6502 pseudo disassembler 
+* Integrate the bpf assembler in the capstone plugin and add tests 
+* Add support to assemble extended bpf64 instructions 
+* Implement support to assemble ST/LD classic bpf instructions 
+* Implement support for ldm/stm for arm32 assembler 
+* Implement support for 'pld' prefetch load for arm32 
+* Support umlal and more msr constructions for arm32 asm 
+* Implement crc32, rdrand and rdseed for x86 assembler 
+* Add support for lzcnt, tzcnt and popcnt x86-64 assembler 
+* Fix #7366 - Implement support for shlr/shrx/sarx for x86-64 
+* Implement support for the 'mrs' instruction in armass 
+* Fix #10038 - arm32 assembler affected by spaces 
+* Fix #21211 - support in the assembler more m68k instructions 
+* Make the m68k assembler available from the gnu plugin too 
+* Fix #20743 - Assembler for 'bsr eax, dword [4]' on x86_32 
+* Fix #11611 - Assemble 'call dword[mem32]' for x86_32 
+* Implement support for bpf pseudocode (alias sbpf) 
+* Fix arm64 assembler for 'stp x3, x3, [x0, 0x10]' 
+* sBPF minor fixes and better handling of Solana syscalls in ESIL 
+* Fix #24520 - Fix arm64 assembler for ldr x0,[x27,0x100]' 
+* Add one arm16 prelude shared with the gnu plugin 
+* Initial implementation of the pseudo plugin for msp430 
+
+**asm**
+
+* Use bpf instructions descriptions for sbpf 
+
+**bin**
+
+* Implement reloc 21 for VAX on ELF 
+* Store rawname in RFlagItem and expose it from RBinName 
+* Fix the RTTI-specific demangler and add more tests 
+* Use the quoted r2 commands for perf and avoid command injection 
+* Fix elf parser hang on malformed PT_DYNAMIC entry 
+* Fix #24572 - Detect sBPF binaries avoiding early symbol deps 
+* Enlarge symbol name limits aligned to flag sizes 
+* sBPF: Add better ESIL modelling and fix R_BPF_64_32 reloc 
+* Fix XNU kernelcache pointer undecoration logic 
+* Implement support sBPF ELF binaries 
+* The _selrefs and _msgrefs are not mandatory to parse objc metadata 
+* Remove global variable from the ninds plugin 
+* Remove global state in the RBin.mbn plugin 
+* Fix #14879 - Initial support for MobiCore MCLF 
+* Implement XNU IOKit class carving 
+* Fix JSON encoding of class addresses 
+* Add RBinClass instance size and type name fields 
+* Use R_FLAG_NAME_SIZE for class/methods flags 
+
+**build**
+
+* Refactor meson build dependencies 
+* Initial work towards building for UEFI 
+* * Fix #22956 - Update acr to adjust the macppc triplet 
+* Fix preconfigure.bat for some setups 
+* Add brew recipe in dist/brew 
+
+**ci**
+
+* Bump softprops/action-gh-release from 2.3.2 to 2.3.3 
+
+**cons**
+
+* Respect ROWS/COLUMNS environment variables if defined 
+* Fix EOF when Control+Backspace is pressed 
+* Fix the invalid key.f15 error when pressing control+return 
+* Lookup table for the runes 
+
+**core**
+
+* Initial real thready Core tasks support 
+
+**crash**
+
+* Fix code injection bug in TAB from help 
+* Fix recent UAF when modifying rawname 
+* Fix infinite recursion in pvm:// 
+
+**debug**
+
+* Fix #24186 - Properly support Aarch64 FPU registers 
+
+**disasm**
+
+* Fix 
+* Fix #24417 - Add asm.imm.base config variable 
+
+**doc**
+
+* Third round reviewing and updating libr manpages 
+* Teach AGENTS.md about the laws in r2land 
+* Reviewing half of the libr manpages 
+* Autogenerate manpages for all the libraries 
+
+**egg**
+
+* Use the decrypted shellcode wrapper and properly compute its size 
+* Initial work towards shellcode mangling 
+* Move all shellcodes into a subdirectory for processing purposes 
+* Make openbsd shellcode endian safe 
+
+**flags**
+
+* Consider ~ a char to be replaced with "_" 
+* Initial implementation of autoflagspaces 
+* Add 'fsr' to the help message 
+* Implement the r_flag_closest_with_prefix api 
+* Add API to find the nearest flag inside a flagspace 
+
+**fs**
+
+* Use :lsj/:mdj in the fs.io to pick file size info 
+
+**http**
+
+* Add support for r2pipe client apis over http-post 
+* Support POST on /cmd 
+* Webserver config changes happen on every command 
+
+**io**
+
+* Implement the R_IO_SEEK_HOLE 
+* Fix 'wcf' command for non disk usecases 
+* One more uri handler check for the double open cfile issue 
+* Initial import of the process_vm IO plugin 
+
+**json**
+
+* Fix tfj empty object and trailing comma problems 
+
+**lang**
+
+* Disable the vlang plugin, until ready to be updated 
+
+**projects**
+
+* Use the right NUL device on Windows for rvc.git 
+* Save and restore bit and imm hints in the new projects 
+
+**r2pm**
+
+* Fixed r2pm -ci r2ghidra not running on Windows 11 
+
+**r2r**
+
+* Blind fix for the multi fail handling procedure in r2r 
+
+**shell**
+
+* Add help for the ps subcommands 
+* Fix percentage in `cf` logs always showing 0% or 100% 
+* Bring back the 'is*' command 
+* Handle '?' in many f subcommands 
+* Fix #24325 - Another proposal to address this resize loop issue 
+* Show help for the ? in /a subcommands 
+* Add r2 -H R2_MANDIR 
+* Add R2_DEBUG_NOLANG variable to avoid loading RLang plugins 
+* Autocomplete flags after "f name=" 
+* Add new math operators and sub-expression support for negation operators 
+* Fix warning in "is," 
+* Alias fg/bg/jobs to ease core task usage 
+
+**tools**
+
+* Fix `rabin2 -D help` like `iD help` works 
+* Deprecate -l and update manpage 
+* Load plugins with r2 -i too (not just scripts) 
+
+**types**
+
+* Ignore include and var args definitions from type deletion 
+* Refine the core IOKit types 
+* Add core IOKit types 
+* Improved function pointer sdb storage and kv parser 
+* Implement tfc command without arguments listing them all 
+
+**util**
+
+* Implement r_str_pad2 to avoid using the tls 
+* Clamp udiff scores, align_table allocations and remove dupped code 
+
+**visual**
+
+* More vmatrix wishes pleased 
+* Fix scrollbar boundaries in vsharp 
+* Initial import of the vmatrix mode 
+
+**wasm**
+
+* Avoid wasm builds from using long doubles 
+
+**zignatures**
+
+* Implement support for mangled/demangled names 
+
+</p></details>

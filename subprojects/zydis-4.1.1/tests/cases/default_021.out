@@ -1,0 +1,37 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: mov [ENC: DEFAULT, MAP: DEFAULT, OPC: 0xA3]
+     LENGTH:  9
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: DATAXFER
+    ISA-SET: I86
+    ISA-EXT: BASE
+ EXCEPTIONS: NONE
+ ATTRIBUTES: ACCEPTS_SEGMENT 
+  OPTIMIZED: A3 7B 10 A8 C6 E9 7A 88 0F 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0     MEMORY    EXPLICIT       W  DISP16_32_64     32      1      32       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                none
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0F887AE9C6A8107B
+ 1   REGISTER    IMPLICIT       R          NONE     32      1      32       INT                          eax
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: mov %eax, 0x0F887AE9C6A8107B
+   RELATIVE: mov %eax, 0x0F887AE9C6A8107B
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: mov dword ptr ds:[0x0F887AE9C6A8107B], eax
+   RELATIVE: mov dword ptr ds:[0x0F887AE9C6A8107B], eax
+
+== [ SEGMENTS ] ============================================================================================
+A3 7B 10 A8 C6 E9 7A 88 0F 
+:  :..DISP
+:..OPCODE

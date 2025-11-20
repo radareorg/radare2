@@ -1,0 +1,38 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpmuludq [ENC: VEX, MAP: 0F, OPC: 0xF4]
+     LENGTH:  4
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AVX2
+    ISA-SET: AVX2
+    ISA-EXT: AVX2
+ EXCEPTIONS: AVX4
+ ATTRIBUTES: HAS_MODRM HAS_VEX 
+  OPTIMIZED: C5 35 F4 C0 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    256      4      64      UINT                         ymm8
+ 1   REGISTER    EXPLICIT       R        NDSNDD    256      8      32      UINT                         ymm9
+ 2   REGISTER    EXPLICIT       R      MODRM_RM    256      8      32      UINT                         ymm0
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 256
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpmuludq %ymm0, %ymm9, %ymm8
+   RELATIVE: vpmuludq %ymm0, %ymm9, %ymm8
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpmuludq ymm8, ymm9, ymm0
+   RELATIVE: vpmuludq ymm8, ymm9, ymm0
+
+== [ SEGMENTS ] ============================================================================================
+C5 35 F4 C0 
+:     :  :..MODRM
+:     :..OPCODE
+:..VEX

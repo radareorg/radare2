@@ -1,0 +1,44 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vfmsub132ss [ENC: VEX, MAP: 0F38, OPC: 0x9B]
+     LENGTH:  9
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: VFMA
+    ISA-SET: FMA
+    ISA-EXT: FMA
+ EXCEPTIONS: AVX3
+ ATTRIBUTES: HAS_MODRM HAS_VEX ACCEPTS_SEGMENT 
+  OPTIMIZED: C4 42 39 9B 80 C4 46 BE A0 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT      RW     MODRM_REG    128      4      32   FLOAT32                         xmm8
+ 1   REGISTER    EXPLICIT       R        NDSNDD     32      1      32   FLOAT32                         xmm8
+ 2     MEMORY    EXPLICIT       R      MODRM_RM     32      1      32   FLOAT32  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                  r8
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0xFFFFFFFFA0BE46C4
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 256
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vfmsub132ss -0x5F41B93C(%r8), %xmm8, %xmm8
+   RELATIVE: vfmsub132ss -0x5F41B93C(%r8), %xmm8, %xmm8
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vfmsub132ss xmm8, xmm8, dword ptr ds:[r8-0x5F41B93C]
+   RELATIVE: vfmsub132ss xmm8, xmm8, dword ptr ds:[r8-0x5F41B93C]
+
+== [ SEGMENTS ] ============================================================================================
+C4 42 3D 9B 80 C4 46 BE A0 
+:        :  :  :..DISP
+:        :  :..MODRM
+:        :..OPCODE
+:..VEX

@@ -1,0 +1,42 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: call [ENC: DEFAULT, MAP: DEFAULT, OPC: 0x9A]
+     LENGTH:  6
+        SSZ: 32
+       EOSZ: 16
+       EASZ: 32
+   CATEGORY: CALL
+    ISA-SET: I86
+    ISA-EXT: BASE
+ EXCEPTIONS: NONE
+ ATTRIBUTES: ACCEPTS_SEGMENT HAS_OPERANDSIZE ACCEPTS_NOTRACK 
+  OPTIMIZED: 66 9A AD E4 4E 6D 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0    POINTER    EXPLICIT       R          NONE     32      1      32    STRUCT  SEG   =              0x6D4E
+                                                                                 OFF   =          0x0000E4AD
+ 1   REGISTER      HIDDEN       W          NONE     32      1      32       INT                          eip
+ 2   REGISTER      HIDDEN      RW          NONE     32      1      32       INT                          esp
+ 3     MEMORY      HIDDEN       W          NONE     32      1      32       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ss
+                                                                                 BASE  =                 esp
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000000000000
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: lcall 0x6D4E:0xE4AD
+   RELATIVE: lcall 0x6D4E:0xE4AD
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: call far 0x6D4E:0xE4AD
+   RELATIVE: call far 0x6D4E:0xE4AD
+
+== [ SEGMENTS ] ============================================================================================
+66 9A AD E4 4E 6D 
+:  :  :     :..IMM
+:  :  :..IMM
+:  :..OPCODE
+:..PREFIXES

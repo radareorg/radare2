@@ -1,0 +1,42 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpackuswb [ENC: EVEX, MAP: 0F, OPC: 0x67]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 64
+       EASZ: 64
+   CATEGORY: AVX512
+    ISA-SET: AVX512BW_512
+    ISA-EXT: AVX512EVEX
+ EXCEPTIONS: E4NF
+ ATTRIBUTES: HAS_MODRM HAS_EVEX 
+  OPTIMIZED: 62 51 35 41 67 C7 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT     RCW     MODRM_REG    512     64       8      UINT                         zmm8
+ 1   REGISTER    EXPLICIT       R          MASK     64     64       1       INT                           k1
+ 2   REGISTER    EXPLICIT       R        NDSNDD    512     32      16       INT                        zmm25
+ 3   REGISTER    EXPLICIT       R      MODRM_RM    512     32      16       INT                        zmm15
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 512
+  BROADCAST: NONE
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k1 [MERGING]
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpackuswb %zmm15, %zmm25, %zmm8 {%k1}
+   RELATIVE: vpackuswb %zmm15, %zmm25, %zmm8 {%k1}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpackuswb zmm8 {k1}, zmm25, zmm15
+   RELATIVE: vpackuswb zmm8 {k1}, zmm25, zmm15
+
+== [ SEGMENTS ] ============================================================================================
+62 51 B5 41 67 C7 
+:           :  :..MODRM
+:           :..OPCODE
+:..EVEX

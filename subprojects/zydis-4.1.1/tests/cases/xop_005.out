@@ -1,0 +1,45 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpcmov [ENC: XOP, MAP: XOP8, OPC: 0xA2]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: XOP
+    ISA-SET: XOP
+    ISA-EXT: XOP
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_XOP ACCEPTS_SEGMENT 
+  OPTIMIZED: 8F C8 28 A2 12 50 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128    128       1       INT                         xmm2
+ 1   REGISTER    EXPLICIT       R        NDSNDD    128    128       1       INT                        xmm10
+ 2     MEMORY    EXPLICIT       R      MODRM_RM    128    128       1       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 r10
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000000000000
+ 3   REGISTER    EXPLICIT       R           IS4    128    128       1       INT                         xmm5
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpcmov %xmm5, (%r10), %xmm10, %xmm2
+   RELATIVE: vpcmov %xmm5, (%r10), %xmm10, %xmm2
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpcmov xmm2, xmm10, xmmword ptr ds:[r10], xmm5
+   RELATIVE: vpcmov xmm2, xmm10, xmmword ptr ds:[r10], xmm5
+
+== [ SEGMENTS ] ============================================================================================
+8F 88 28 A2 12 5A 
+:        :  :  :..IMM
+:        :  :..MODRM
+:        :..OPCODE
+:..XOP

@@ -1,0 +1,44 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpsubusw [ENC: VEX, MAP: 0F, OPC: 0xD9]
+     LENGTH:  8
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AVX2
+    ISA-SET: AVX2
+    ISA-EXT: AVX2
+ EXCEPTIONS: AVX4
+ ATTRIBUTES: HAS_MODRM HAS_VEX ACCEPTS_SEGMENT 
+  OPTIMIZED: C5 65 D9 B1 7C 54 92 35 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    256     16      16      UINT                        ymm14
+ 1   REGISTER    EXPLICIT       R        NDSNDD    256     16      16      UINT                         ymm3
+ 2     MEMORY    EXPLICIT       R      MODRM_RM    256     16      16      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rcx
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x000000003592547C
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 256
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpsubusw 0x3592547C(%rcx), %ymm3, %ymm14
+   RELATIVE: vpsubusw 0x3592547C(%rcx), %ymm3, %ymm14
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpsubusw ymm14, ymm3, ymmword ptr ds:[rcx+0x3592547C]
+   RELATIVE: vpsubusw ymm14, ymm3, ymmword ptr ds:[rcx+0x3592547C]
+
+== [ SEGMENTS ] ============================================================================================
+C5 65 D9 B1 7C 54 92 35 
+:     :  :  :..DISP
+:     :  :..MODRM
+:     :..OPCODE
+:..VEX

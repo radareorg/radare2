@@ -1,0 +1,44 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vrsqrtss [ENC: VEX, MAP: 0F, OPC: 0x52]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 64
+       EASZ: 64
+   CATEGORY: AVX
+    ISA-SET: AVX
+    ISA-EXT: AVX
+ EXCEPTIONS: AVX5
+ ATTRIBUTES: HAS_MODRM HAS_VEX ACCEPTS_SEGMENT 
+  OPTIMIZED: C4 C1 0A 52 7E A2 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128      4      32   FLOAT32                         xmm7
+ 1   REGISTER    EXPLICIT       R        NDSNDD    128      4      32   FLOAT32                        xmm14
+ 2     MEMORY    EXPLICIT       R      MODRM_RM     32      1      32   FLOAT32  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 r14
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0xFFFFFFFFFFFFFFA2
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vrsqrtssl -0x5E(%r14), %xmm14, %xmm7
+   RELATIVE: vrsqrtssl -0x5E(%r14), %xmm14, %xmm7
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vrsqrtss xmm7, xmm14, dword ptr ds:[r14-0x5E]
+   RELATIVE: vrsqrtss xmm7, xmm14, dword ptr ds:[r14-0x5E]
+
+== [ SEGMENTS ] ============================================================================================
+C4 C1 8A 52 7E A2 
+:        :  :  :..DISP
+:        :  :..MODRM
+:        :..OPCODE
+:..VEX

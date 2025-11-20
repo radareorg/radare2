@@ -1,0 +1,52 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vaddsetsps [ENC: MVEX, MAP: 0F38, OPC: 0xCC]
+     LENGTH:  9
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: KNC
+    ISA-SET: KNCE
+    ISA-EXT: KNCE
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_SIB HAS_MVEX ACCEPTS_SEGMENT HAS_SEGMENT HAS_SEGMENT_GS 
+  OPTIMIZED: 65 62 12 41 4D CC 14 E0 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT     RCW     MODRM_REG    512     16      32   FLOAT32                        zmm10
+ 1   REGISTER    EXPLICIT      RW          MASK     16     16       1       INT                           k5
+ 2   REGISTER    EXPLICIT       R        NDSNDD    512     16      32   FLOAT32                         zmm7
+ 3     MEMORY    EXPLICIT       R      MODRM_RM    128     16       8      UINT  TYPE  =                 MEM
+                                                                                 SEG   =                  gs
+                                                                                 BASE  =                  r8
+                                                                                 INDEX =                 r12
+                                                                                 SCALE =                   8
+                                                                                 DISP  =  0x0000000000000000
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 512
+  BROADCAST: NONE
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k5 [MERGING]
+         EH: N
+    SWIZZLE: NONE
+    CONVERT: UINT8
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vaddsetsps %gs:(%r8,%r12,8) {uint8}, %zmm7, %zmm10 {%k5}
+   RELATIVE: vaddsetsps %gs:(%r8,%r12,8) {uint8}, %zmm7, %zmm10 {%k5}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vaddsetsps zmm10 {k5}, zmm7, xmmword ptr gs:[r8+r12*8] {uint8}
+   RELATIVE: vaddsetsps zmm10 {k5}, zmm7, xmmword ptr gs:[r8+r12*8] {uint8}
+
+== [ SEGMENTS ] ============================================================================================
+43 65 62 12 41 4D CC 14 E0 
+:     :           :  :  :..SIB
+:     :           :  :..MODRM
+:     :           :..OPCODE
+:     :..MVEX
+:..PREFIXES

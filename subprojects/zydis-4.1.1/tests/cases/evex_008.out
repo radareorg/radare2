@@ -1,0 +1,48 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpmullw [ENC: EVEX, MAP: 0F, OPC: 0xD5]
+     LENGTH:  7
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AVX512
+    ISA-SET: AVX512BW_128
+    ISA-EXT: AVX512EVEX
+ EXCEPTIONS: E4
+ ATTRIBUTES: HAS_MODRM HAS_EVEX ACCEPTS_SEGMENT 
+  OPTIMIZED: 62 41 75 8E D5 79 93 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       W     MODRM_REG    128      8      16       INT                        xmm31
+ 1   REGISTER    EXPLICIT       R          MASK     64     64       1       INT                           k6
+ 2   REGISTER    EXPLICIT       R        NDSNDD    128      8      16       INT                         xmm1
+ 3     MEMORY    EXPLICIT       R      MODRM_RM    128      8      16       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                  r9
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0xFFFFFFFFFFFFF930
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 128
+  BROADCAST: NONE
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k6 [ZEROING]
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpmullw -0x6D0(%r9), %xmm1, %xmm31 {%k6} {z}
+   RELATIVE: vpmullw -0x6D0(%r9), %xmm1, %xmm31 {%k6} {z}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpmullw xmm31 {k6} {z}, xmm1, xmmword ptr ds:[r9-0x6D0]
+   RELATIVE: vpmullw xmm31 {k6} {z}, xmm1, xmmword ptr ds:[r9-0x6D0]
+
+== [ SEGMENTS ] ============================================================================================
+62 01 75 8E D5 79 93 
+:           :  :  :..DISP
+:           :  :..MODRM
+:           :..OPCODE
+:..EVEX

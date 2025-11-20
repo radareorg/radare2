@@ -1,0 +1,47 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vcvtph2dq [ENC: EVEX, MAP: MAP5, OPC: 0x5B]
+     LENGTH:  7
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: CONVERT
+    ISA-SET: AVX512_FP16_256
+    ISA-EXT: AVX512EVEX
+ EXCEPTIONS: E2
+ ATTRIBUTES: HAS_MODRM HAS_EVEX ACCEPTS_SEGMENT 
+  OPTIMIZED: 62 65 7D 3E 5B 73 73 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT     RCW     MODRM_REG    256      8      32       INT                        ymm30
+ 1   REGISTER    EXPLICIT       R          MASK     64     64       1       INT                           k6
+ 2     MEMORY    EXPLICIT       R      MODRM_RM     16      1      16   FLOAT16  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rbx
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x00000000000000E6
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 256
+  BROADCAST: 1_TO_8
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k6 [MERGING]
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vcvtph2dqw 0xE6(%rbx) {1to8}, %ymm30 {%k6}
+   RELATIVE: vcvtph2dqw 0xE6(%rbx) {1to8}, %ymm30 {%k6}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vcvtph2dq ymm30 {k6}, word ptr ds:[rbx+0xE6] {1to8}
+   RELATIVE: vcvtph2dq ymm30 {k6}, word ptr ds:[rbx+0xE6] {1to8}
+
+== [ SEGMENTS ] ============================================================================================
+62 25 7D 3E 5B 73 73 
+:           :  :  :..DISP
+:           :  :..MODRM
+:           :..OPCODE
+:..EVEX

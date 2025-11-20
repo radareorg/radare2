@@ -1,0 +1,8 @@
+[wrap-file]
+directory = zycore-c-1.5.2
+source_url = https://github.com/zyantific/zycore-c/archive/refs/tags/v1.5.2.tar.gz
+source_filename = zycore-c-1.5.2.tar.gz
+source_hash = 943f91eb9ab2a8cc01ab9f8b785e769a273502071e0ee8011cdfcaad93947cec
+
+[provide]
+dependency_names = zycore

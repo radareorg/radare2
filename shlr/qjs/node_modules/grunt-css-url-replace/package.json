@@ -1,0 +1,53 @@
+{
+  "name": "grunt-css-url-replace",
+  "description": "Grunt task to replace css urls with absolute path",
+  "version": "0.2.7",
+  "homepage": "https://github.com/nanjingboy/grunt-css-url-replace",
+  "author": {
+    "name": "Tom.Huang",
+    "email": "hzlhu.dargon@gmail.com",
+    "url": "https://github.com/nanjingboy"
+  },
+  "contributors": [
+    {
+      "name": "superbug",
+      "email": "sunweijun1989@gmail.com"
+    },
+    {
+      "name": "andersjanmyr",
+      "email": "https://github.com/andersjanmyr"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/nanjingboy/grunt-css-url-replace.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nanjingboy/grunt-css-url-replace/issues"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://github.com/nanjingboy/grunt-css-url-replace/blob/master/LICENSE-MIT"
+    }
+  ],
+  "main": "Gruntfile.js",
+  "engines": {
+    "node": ">= 0.8.0"
+  },
+  "scripts": {
+    "test": "grunt test"
+  },
+  "devDependencies": {
+    "grunt-contrib-jshint": "^0.9.2",
+    "grunt-contrib-clean": "^0.5.0",
+    "grunt-contrib-nodeunit": "^0.3.3",
+    "grunt": "~0.4.5"
+  },
+  "peerDependencies": {
+    "grunt": ">=0.4.0"
+  },
+  "keywords": [
+    "gruntplugin"
+  ]
+}

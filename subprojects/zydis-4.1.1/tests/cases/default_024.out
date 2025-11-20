@@ -1,0 +1,36 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: push [ENC: DEFAULT, MAP: DEFAULT, OPC: 0x51]
+     LENGTH:  1
+        SSZ: 64
+       EOSZ: 64
+       EASZ: 64
+   CATEGORY: PUSH
+    ISA-SET: I86
+    ISA-EXT: BASE
+ EXCEPTIONS: NONE
+  OPTIMIZED: 51 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT       R        OPCODE     64      1      64       INT                          rcx
+ 1   REGISTER      HIDDEN      RW          NONE     64      1      64       INT                          rsp
+ 2     MEMORY      HIDDEN       W          NONE     64      1      64       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ss
+                                                                                 BASE  =                 rsp
+                                                                                 INDEX =                none
+                                                                                 SCALE =                   0
+                                                                                 DISP  =  0x0000000000000000
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: push %rcx
+   RELATIVE: push %rcx
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: push rcx
+   RELATIVE: push rcx
+
+== [ SEGMENTS ] ============================================================================================
+51 
+:..OPCODE

@@ -1,0 +1,40 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: pfsubr [ENC: 3DNOW, MAP: 0F0F, OPC: 0xAA]
+     LENGTH:  9
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: AMD3DNOW
+    ISA-SET: AMD3DNOW
+    ISA-EXT: AMD3DNOW
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_SIB ACCEPTS_SEGMENT 
+  OPTIMIZED: 0F 0F AC 4A 7F E3 1A FE AA 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT      RW     MODRM_REG     64      1      64       INT                          mm5
+ 1     MEMORY    EXPLICIT       R      MODRM_RM     64      1      64       INT  TYPE  =                 MEM
+                                                                                 SEG   =                  ds
+                                                                                 BASE  =                 rdx
+                                                                                 INDEX =                 rcx
+                                                                                 SCALE =                   2
+                                                                                 DISP  =  0xFFFFFFFFFE1AE37F
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: pfsubr -0x1E51C81(%rdx,%rcx,2), %mm5
+   RELATIVE: pfsubr -0x1E51C81(%rdx,%rcx,2), %mm5
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: pfsubr mm5, qword ptr ds:[rdx+rcx*2-0x1E51C81]
+   RELATIVE: pfsubr mm5, qword ptr ds:[rdx+rcx*2-0x1E51C81]
+
+== [ SEGMENTS ] ============================================================================================
+0F 0F AC 4A 7F E3 1A FE AA 
+:     :  :  :           :..OPCODE
+:     :  :  :..DISP
+:     :  :..SIB
+:     :..MODRM
+:..OPCODE

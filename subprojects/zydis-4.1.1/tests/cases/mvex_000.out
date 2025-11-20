@@ -1,0 +1,45 @@
+== [    BASIC ] ============================================================================================
+   MNEMONIC: vpsrlvd [ENC: MVEX, MAP: 0F38, OPC: 0x45]
+     LENGTH:  6
+        SSZ: 64
+       EOSZ: 32
+       EASZ: 64
+   CATEGORY: KNC
+    ISA-SET: KNCE
+    ISA-EXT: KNCE
+ EXCEPTIONS: NONE
+ ATTRIBUTES: HAS_MODRM HAS_MVEX 
+  OPTIMIZED: 62 72 71 0C 45 CF 
+
+== [ OPERANDS ] ============================================================================================
+##       TYPE  VISIBILITY  ACTION      ENCODING   SIZE  NELEM  ELEMSZ  ELEMTYPE                        VALUE
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+ 0   REGISTER    EXPLICIT     RCW     MODRM_REG    512     16      32      UINT                         zmm9
+ 1   REGISTER    EXPLICIT       R          MASK     16     16       1       INT                           k4
+ 2   REGISTER    EXPLICIT       R        NDSNDD    512     16      32      UINT                         zmm1
+ 3   REGISTER    EXPLICIT       R      MODRM_RM    512     16      32      UINT                         zmm7
+--  ---------  ----------  ------  ------------   ----  -----  ------  --------  ---------------------------
+
+== [      AVX ] ============================================================================================
+  VECTORLEN: 512
+  BROADCAST: NONE
+   ROUNDING: DEFAULT
+        SAE: N
+       MASK: k4 [MERGING]
+         EH: N
+    SWIZZLE: NONE
+    CONVERT: NONE
+
+== [      ATT ] ============================================================================================
+   ABSOLUTE: vpsrlvd %zmm7, %zmm1, %zmm9 {%k4}
+   RELATIVE: vpsrlvd %zmm7, %zmm1, %zmm9 {%k4}
+
+== [    INTEL ] ============================================================================================
+   ABSOLUTE: vpsrlvd zmm9 {k4}, zmm1, zmm7
+   RELATIVE: vpsrlvd zmm9 {k4}, zmm1, zmm7
+
+== [ SEGMENTS ] ============================================================================================
+62 72 71 AC 45 CF 
+:           :  :..MODRM
+:           :..OPCODE
+:..MVEX

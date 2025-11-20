@@ -1,0 +1,22 @@
+In computing, the System Object Model (SOM) is a proprietary executable file format developed by Hewlett-Packard for its HP-UX and MPE/ix operating systems. In particular, SOM is the native format used for 32-bit application executables, object code, and shared libraries running under the PA-RISC family of processors.
+
+With the introduction of 64-bit processors, Hewlett Packard adopted the Executable and Linkable Format (ELF) format to represent the wider 64-bit program code, while still using SOM for applications running in 32-bit mode. Later, with the introduction of the Itanium processor family, HP-UX has abandoned the SOM format in favor of ELF for both 32-bit and 64-bit application code.
+
+In HP-UX the SOM file format is sometimes called the a.out format and is described by C programming language structures in the header file "/usr/include/a.out.h". However the SOM format is technically not the same as the standard a.out format used by many other Unix operating systems.
+
+Overview of the SOM file format
+A SOM file consists of a fixed-size header record followed by a number of sections, some of which are optional. The header always appears at the beginning of the file and contains the byte offsets and sizes of where the other sections are located within the file. Except for the header the other sections may appear anywhere in the file, although the typical layout of a SOM file (assuming all sections are present) is as follows:
+
+Header Record
+Auxiliary Header Record
+Space Records
+Subspace Records
+Loader Fixup Records
+Space Strings
+Symbol Records
+Fixup Records
+Symbol Strings
+Compiler Records
+Data for Loadable Spaces
+Data for Unloadable Spaces
+Numeric fields are stored in big endian byte order, the native byte order of the PA-RISC, with most being 32-bit wide. Character strings are generally encoded in 8-bit ASCII and both prefixed with a 32-bit length indicator as well as being null-terminated, like C strings. Most records are word-aligned (start at even-byte offsets) with padding introduced as necessary.

@@ -1,0 +1,4 @@
+.arch x86
+.bits 64
+.uint32 0x12345678
+nop
