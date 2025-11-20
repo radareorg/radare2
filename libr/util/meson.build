@@ -2,6 +2,7 @@ subdir('d')
 
 r_util_sources = [
   'alloc.c',
+  'arena.c',
   'asn1_str.c',
   'asn1.c',
   'assert.c',

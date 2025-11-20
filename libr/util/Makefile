@@ -3,7 +3,7 @@ include ../config.mk
 NAME=r_util
 CFLAGS+=-DR2_PLUGIN_INCORE -I$(TOP)/shlr
 PCLIBS=@LIBZIP@ @DL_LIBS@
-OBJS=mem.o unum.o str.o hex.o file.o range.o charset.o xdg.o rxml.o rlz4.o
+OBJS=mem.o arena.o unum.o str.o hex.o file.o range.o charset.o xdg.o rxml.o rlz4.o
 OBJS+=prof.o sys.o buf.o sys_w32.o ubase64.o base85.o base91.o base36.o str_pseudo.o
 OBJS+=list.o chmod.o graph.o event.o alloc.o donut.o print_code.o format2.o
 OBJS+=regex/regcomp.o regex/regerror.o regex/regexec.o uleb128.o rstr.o str_strip.o
