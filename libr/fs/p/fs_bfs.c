@@ -198,7 +198,7 @@ static ut64 bfs_block_to_offset(BeosFS *ctx, BeosBlockRun *run) {
 	return ag_offset + block_offset;
 }
 
-static ut64 BeosBlockRuno_block_index(BeosFS *ctx, const BeosBlockRun *run) {
+static ut64 bfs_block_index(BeosFS *ctx, const BeosBlockRun *run) {
 	ut64 ag = bfs_read32 (ctx, (ut8 *)&run->allocation_group);
 	ut64 start = bfs_read16 (ctx, (ut8 *)&run->start);
 	if (!ctx->blocks_per_ag) {
@@ -305,9 +305,6 @@ static bool bfs_free_inode_cb(void *user, const ut64 key, const void *value) {
 	return true;
 }
 
-static ut64 BeosBlockRuno_block_index(BeosFS *ctx, const BeosBlockRun *run);
-static BeosInode *bfs_read_inode_block(BeosFS *ctx, ut64 block_index);
-static bool bfs_read_stream(BeosFS *ctx, BeosInode *inode, ut64 offset, ut8 *buf, ut32 len);
 static bool bfs_walk_directory(BeosFS *ctx, BeosInode *dir_inode, ut64 parent_inode_num);
 
 // AITODO . merge BeosDirIterContext and BeosFindContext
@@ -449,7 +446,7 @@ static bool fs_bfs_mount(RFSRoot *root) {
 
 	// Walk the root directory tree
 	{
-		ut64 root_block = BeosBlockRuno_block_index (ctx, &ctx->root_dir);
+		ut64 root_block = bfs_block_index (ctx, &ctx->root_dir);
 		BeosInode *root_inode = bfs_read_inode_block (ctx, root_block);
 		if (!root_inode) {
 			R_LOG_ERROR ("Failed to read root directory inode");
