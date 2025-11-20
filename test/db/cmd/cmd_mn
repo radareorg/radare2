@@ -227,7 +227,7 @@ Block Size: 2048 bytes
 Inode Size: 2048 bytes
 Blocks per AG: 8
 AG Shift: 14
-Number of AGs: 0
+Number of AGs: 1
 Purpose: BeOS/Haiku filesystem
 EOF
 RUN
