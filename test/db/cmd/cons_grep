@@ -85,7 +85,6 @@ RUN
 
 NAME=quote grep
 FILE=malloc://1024
-BROKEN=1
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -95,6 +94,31 @@ EOF
 EXPECT=<<EOF
             0x00000000      90             nop
             0x00000002      90             nop
+EOF
+RUN
+
+NAME=quote grep chain
+FILE=malloc://4
+CMDS=<<EOF
+wx 90cc90
+"pd 3"~nop;pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000      90             nop
+            0x00000002      90             nop
+            0x00000000      90             nop
+EOF
+RUN
+
+NAME=quote grep tmpseek
+FILE=malloc://4
+CMDS=<<EOF
+wx 9090cc90
+s 2
+"pd 1"~nop@0
+EOF
+EXPECT=<<EOF
+            0x00000000      90             nop
 EOF
 RUN
 

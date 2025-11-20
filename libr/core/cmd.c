@@ -4295,6 +4295,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 			int pipefd = -1;
 			ut64 oseek = UT64_MAX;
 			char *line, *p;
+			char *quoted_grep = NULL;
 			haveQuote = *cmd == '"';
 			if (haveQuote) {
 				cmd++;
@@ -4309,6 +4310,51 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 					return false;
 				}
 				*p++ = 0;
+				while (IS_WHITESPACE (*p)) {
+					p++;
+				}
+				if (r_str_startswith (p, "~?")) {
+					if (!strcmp (p, "~?") || !strcmp (p, "~??")) {
+						r_cons_grep_help (core->cons);
+						r_list_free (tmpenvs);
+						return true;
+					}
+				}
+				if (*p == '~') {
+					char *grep_start = p;
+					char *grep_end = grep_start;
+					while (*grep_end) {
+						if (IS_WHITESPACE (*grep_end)) {
+							break;
+						}
+						if (*grep_end == ';' || *grep_end == '@' || *grep_end == '|') {
+							break;
+						}
+						if (*grep_end == '>') {
+							if (!(grep_end > grep_start && grep_end[-1] == '<')) {
+								break;
+							}
+							grep_end++;
+							continue;
+						}
+						grep_end++;
+					}
+					size_t grep_len = grep_end - grep_start;
+					if (grep_len > 0) {
+						char *grep_cmd = r_str_ndup (grep_start, grep_len);
+						if (grep_cmd) {
+							char *parsed = r_cons_grep_strip (grep_cmd, quotestr);
+							if (parsed) {
+								char *old = parsed;
+								parsed = unescape_special_chars (old, SPECIAL_CHARS);
+								free (old);
+								quoted_grep = parsed;
+							}
+						}
+						free (grep_cmd);
+						p = grep_end;
+					}
+				}
 				if (!*p) {
 					eos = true;
 				}
@@ -4362,11 +4408,20 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 			}
 			line = strdup (cmd);
 			line = r_str_replace (line, "\\\"", "\"", true);
+			// Apply grep if found after closing quote
+			if (quoted_grep) {
+				r_cons_grep_expression (core->cons, quoted_grep);
+			}
 			if (p && *p && p[1] == '|') {
 				str = (char *)r_str_trim_head_ro (p + 2);
 				r_core_cmd_pipe (core, cmd, str);
 			} else {
 				r_cmd_call (core->rcmd, line);
+			}
+			if (quoted_grep) {
+				r_cons_filter (core->cons);
+				free (quoted_grep);
+				quoted_grep = NULL;
 			}
 			free (line);
 			if (oseek != UT64_MAX) {
