@@ -150,7 +150,6 @@ typedef struct {
 	ut64 parent_inode_num;
 	char *name;
 	BeosInode *inode;
-	bool is_directory;
 	bool parsed;
 } BeosInodeCache;
 
@@ -188,6 +187,10 @@ static ut16 bfs_read16(BeosFS *ctx, ut8 *buf) {
 
 static ut64 bfs_read64(BeosFS *ctx, ut8 *buf) {
 	return ctx->is_le? r_read_le64 (buf): r_read_be64 (buf);
+}
+
+static inline bool bfs_is_directory(ut32 mode) {
+	return (mode & 0xF000) == 0x4000;
 }
 
 static ut64 bfs_block_to_offset(BeosFS *ctx, BeosBlockRun *run) {
@@ -373,7 +376,7 @@ static bool bfs_dir_iter_cb(void *user, const ut64 key, const void *value) {
 	}
 
 	ut32 mode = bfs_read32 (bfs_ctx, (ut8 *)&cache->inode->mode);
-	if ((mode & 0xF000) == 0x4000) { // Directory
+	if (bfs_is_directory (mode)) {
 		fsf->type = R_FS_FILE_TYPE_DIRECTORY;
 	} else if ((mode & 0xF000) == 0x8000) { // Regular file
 		fsf->type = R_FS_FILE_TYPE_REGULAR;
@@ -614,8 +617,7 @@ static bool bfs_walk_directory(BeosFS *ctx, BeosInode *dir_inode, ut64 parent_in
 				}
 			}
 			mode = bfs_read32 (ctx, (ut8 *)&cache->inode->mode);
-			cache->is_directory = (mode & 0xF000) == 0x4000;
-			if (cache->is_directory && !cache->parsed) {
+			if (bfs_is_directory (mode) && !cache->parsed) {
 				cache->parsed = true;
 				bfs_walk_directory (ctx, cache->inode, cache->inode_num);
 			}
@@ -689,7 +691,7 @@ static RFSFile *fs_bfs_open(RFSRoot *root, const char *path, bool create) {
 		file->size = 0;
 	} else {
 		ut32 mode = bfs_read32 (ctx, (ut8 *)&cache->inode->mode);
-		if ((mode & 0xF000) == 0x4000) { // Directory
+		if (bfs_is_directory (mode)) {
 			file->type = R_FS_FILE_TYPE_DIRECTORY;
 		} else if ((mode & 0xF000) == 0x8000) { // Regular file
 			file->type = R_FS_FILE_TYPE_REGULAR;
