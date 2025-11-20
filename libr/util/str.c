@@ -3397,16 +3397,11 @@ R_API char *r_str_pad2(char *pad, size_t padsz, const char ch, int sz) {
 			return NULL;
 		}
 	}
-	if (!padsz) {
-		return pad;
+	if (padsz > 0) {
+		size_t fill = R_MIN ((size_t)sz, padsz - 1);
+		memset (pad, ch, fill);
+		pad[fill] = 0;
 	}
-	if (padsz == 1) {
-		pad[0] = 0;
-		return pad;
-	}
-	size_t fill = R_MIN ((size_t)sz, padsz - 1);
-	memset (pad, ch, fill);
-	pad[fill] = 0;
 	return pad;
 }
 
