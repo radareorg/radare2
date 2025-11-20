@@ -4371,15 +4371,11 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 				continue;
 			}
 			char op0 = 0;
-			if (*p) {
-				// workaround :D
-				if (p[0] == '@') {
-					p--;
-				}
-				while (p[1] == ';' || IS_WHITESPACE (p[1])) {
+			if (p && *p) {
+				while (IS_WHITESPACE (*p)) {
 					p++;
 				}
-				if (p[1] == '@' || (p[1] && p[2] == '@')) {
+				if (*p == '@') {
 					char *q = strchr (p + 1, '"');
 					if (q) {
 						op0 = *q;
@@ -4387,7 +4383,11 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 					}
 					haveQuote = q;
 					oseek = core->addr;
-					r_core_seek (core, r_num_math (core->num, p + 2), true);
+					char *addr = (char *)r_str_trim_head_ro (p + 1);
+					if (*addr == '@') {
+						addr = (char *)r_str_trim_head_ro (addr + 1);
+					}
+					r_core_seek (core, r_num_math (core->num, addr), true);
 					if (q) {
 						*p = '"';
 						p = q;
@@ -4395,14 +4395,14 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 						p = strchr (p + 1, ';');
 					}
 				}
-				if (R_STR_ISNOTEMPTY (p) && p[0] != '<' && p[1] == '>') {
-					str = p + 2;
-					while (*str == '>') {
+				if (p && *p == '>' && p[0] != '<') {
+					str = p + 1;
+					const bool append = *str == '>';
+					if (append) {
 						str++;
 					}
 					str = (char *)r_str_trim_head_ro (str);
 					r_cons_flush (core->cons);
-					const bool append = p[2] == '>';
 					pipefd = r_cons_pipe_open (core->cons, str, 1, append);
 				}
 			}
@@ -4412,8 +4412,8 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 			if (quoted_grep) {
 				r_cons_grep_expression (core->cons, quoted_grep);
 			}
-			if (p && *p && p[1] == '|') {
-				str = (char *)r_str_trim_head_ro (p + 2);
+			if (p && *p == '|') {
+				str = (char *)r_str_trim_head_ro (p + 1);
 				r_core_cmd_pipe (core, cmd, str);
 			} else {
 				r_cmd_call (core->rcmd, line);
