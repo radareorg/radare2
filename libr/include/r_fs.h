@@ -200,6 +200,7 @@ R_API const char *r_fs_partition_type_get(int n);
 /* plugins */
 extern RFSPlugin r_fs_plugin_affs;
 extern RFSPlugin r_fs_plugin_afs;
+extern RFSPlugin r_fs_plugin_bfs;
 extern RFSPlugin r_fs_plugin_btrfs;
 extern RFSPlugin r_fs_plugin_cpio;
 extern RFSPlugin r_fs_plugin_ext2;

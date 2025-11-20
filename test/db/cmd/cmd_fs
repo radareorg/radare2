@@ -1043,3 +1043,39 @@ EXPECT=<<EOF
  -----------------------------------------------------
 EOF
 RUN
+
+NAME=haikufs
+FILE=bins/fs/haiku.bfs
+ARGS=-n
+CMDS=<<EOF
+m /mnt bfs 0
+mdd /mnt
+?e --
+mdd /mnt/radare2_test
+mc /mnt/radare2_test/bfs image disk.md
+EOF
+EXPECT=<<EOF
+d          0 trash
+d          0 radare2_test
+--
+r        647 bfs image disk.md
+r       5736 gvpr
+# bfs image disk
+
+If you don’t have a separate partition to mount/unmount when needed, you can
+also create an image file that you can mount with a double-click and unmount as
+usual.
+
+- Create the image: dd if=/dev/zero of=./testimage bs=1M count=100 (“count” is
+  the size in MiB as the blocksize (“bs”) is 1 MiB)
+- Do: diskimage register testimage
+- Open DriveSetup, and you’ll see your “testimage” at the bottom.
+- Format it to “BFS” and mount it.
+
+From now on you can mount it with a double-click and unmount when not needed
+and its apps won’t appear in Tracker’s “Open with…” or any file of it in
+queries etc.
+
+
+EOF
+RUN

@@ -214,3 +214,20 @@ Index Block Size: 4096 bytes
 Media Descriptor: 0xf8
 EOF
 RUN
+
+NAME=mn beos fs details
+FILE=bins/fs/haiku.bfs
+CMDS=<<EOF
+m /mnt bfs @ 0
+mn
+EOF
+EXPECT=<<EOF
+Type: BFS (Be File System)
+Block Size: 2048 bytes
+Inode Size: 2048 bytes
+Blocks per AG: 8
+AG Shift: 14
+Number of AGs: 1
+Purpose: BeOS/Haiku filesystem
+EOF
+RUN

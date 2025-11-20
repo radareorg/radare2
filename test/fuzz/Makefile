@@ -9,7 +9,7 @@ FUZZER_OPTS=-detect_leaks=0
 # Useful for scripts or types parser
 # FUZZER_OPTS+=-only_ascii=1
 FUZZER_OPTS+=-timeout=10
-# FUZZER_OPTS+=--mutate_depth=1 -len_control=50 -reduce_inputs=0 -keep_seed=1 -prefer_small=0
+ FUZZER_OPTS+=--mutate_depth=1 -len_control=50 -reduce_inputs=0 -keep_seed=1 -prefer_small=0
 
 FUZZ_TARGETS = fuzz_anal fuzz_bin fuzz_bin2 fuzz_fs fuzz_dwarf fuzz_bin_demangle \
                fuzz_ia fuzz_cmd fuzz_pdb_parse fuzz_pkcs7_parse fuzz_protobuf_decode \

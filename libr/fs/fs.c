@@ -39,6 +39,8 @@ static const RFSType fstypes[] = {
 	{ "xfs", 0, "XFSB", 4, 0, 0, 0 },
 	{ "udf", 0x8000, "BEA01", 5, 0, 0, 0 },
 	{ "affs", 0, "DOS", 3, 0, 0, 0 },
+	{ "bfs", 544, "\x31\x53\x46\x42", 4, 0, 0, 0 },
+	{ "bfs", 544, "\x31\x53\x42\x4f", 4, 0, 0, 0 }, // openbfs, handled by the same plugin
 #if AUTOZIP
 	{ "tar", 0x101, "ustar", 5, 0, 0, 0 },
 	{ "cpio", 0, "070701", 6, 0, 0, 0 },
