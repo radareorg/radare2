@@ -737,9 +737,9 @@ static void __update_help_contents(RCore *core, RPanel *panel) {
 	RConsCanvas *can = panels->can;
 	(void) r_cons_canvas_gotoxy (can, x + 2, y + 2);
 	if (sx < 0) {
-		char *white = (char*)r_str_pad (' ', 128);
-		int idx = R_MIN (-sx, strlen (white) - 1);
-		white[idx] = 0;
+		int idx = R_MIN (-sx, 128);
+		char white[129];
+		r_str_pad2 (white, sizeof (white), ' ', idx);
 		text = r_str_ansi_crop (read_only,
 				0, sy, w + sx - 3, h - 2 + sy);
 		char *newText = r_str_prefix_all (text, white);
@@ -810,9 +810,9 @@ static void __update_panel_contents(RCore *core, RPanel *panel, const char *cmds
 	RConsCanvas *can = panels->can;
 	(void) r_cons_canvas_gotoxy (can, x + 2, y + 2);
 	if (sx < 0) {
-		char *white = (char*)r_str_pad (' ', 128);
-		int idx = R_MIN (-sx, strlen (white) - 1);
-		white[idx] = 0;
+		int idx = R_MIN (-sx, 128);
+		char white[129];
+		r_str_pad2 (white, sizeof (white), ' ', idx);
 		text = r_str_ansi_crop (cmdstr,
 				0, sy + graph_pad, w + sx - 3, h - 2 + sy);
 		char *newText = r_str_prefix_all (text, white);
@@ -915,9 +915,9 @@ static void __update_pdc_contents(RCore *core, RPanel *panel, char *cmdstr) {
 	(void) r_cons_canvas_gotoxy (can, x + 2, y + 2);
 
 	if (sx < 0) {
-		char *white = (char*)r_str_pad (' ', 128);
-		int idx = R_MIN (-sx, strlen (white) - 1);
-		white[idx] = 0;
+		int idx = R_MIN (-sx, 128);
+		char white[129];
+		r_str_pad2 (white, sizeof (white), ' ', idx);
 		text = r_str_ansi_crop (cmdstr, 0, sy, w + sx - 3, h - 2 + sy);
 		char *newText = r_str_prefix_all (text, white);
 		if (newText) {
