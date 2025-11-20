@@ -1,5 +1,4 @@
 NAME=bf decode
-BROKEN=1
 FILE=bins/bf/hello-ok.bf
 CMDS=<<EOF
 e asm.arch=bf

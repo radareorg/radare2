@@ -4295,6 +4295,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 			int pipefd = -1;
 			ut64 oseek = UT64_MAX;
 			char *line, *p;
+			char *quoted_grep = NULL;
 			haveQuote = *cmd == '"';
 			if (haveQuote) {
 				cmd++;
@@ -4309,6 +4310,51 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 					return false;
 				}
 				*p++ = 0;
+				while (IS_WHITESPACE (*p)) {
+					p++;
+				}
+				if (r_str_startswith (p, "~?")) {
+					if (!strcmp (p, "~?") || !strcmp (p, "~??")) {
+						r_cons_grep_help (core->cons);
+						r_list_free (tmpenvs);
+						return true;
+					}
+				}
+				if (*p == '~') {
+					char *grep_start = p;
+					char *grep_end = grep_start;
+					while (*grep_end) {
+						if (IS_WHITESPACE (*grep_end)) {
+							break;
+						}
+						if (*grep_end == ';' || *grep_end == '@' || *grep_end == '|') {
+							break;
+						}
+						if (*grep_end == '>') {
+							if (!(grep_end > grep_start && grep_end[-1] == '<')) {
+								break;
+							}
+							grep_end++;
+							continue;
+						}
+						grep_end++;
+					}
+					size_t grep_len = grep_end - grep_start;
+					if (grep_len > 0) {
+						char *grep_cmd = r_str_ndup (grep_start, grep_len);
+						if (grep_cmd) {
+							char *parsed = r_cons_grep_strip (grep_cmd, quotestr);
+							if (parsed) {
+								char *old = parsed;
+								parsed = unescape_special_chars (old, SPECIAL_CHARS);
+								free (old);
+								quoted_grep = parsed;
+							}
+						}
+						free (grep_cmd);
+						p = grep_end;
+					}
+				}
 				if (!*p) {
 					eos = true;
 				}
@@ -4325,15 +4371,11 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 				continue;
 			}
 			char op0 = 0;
-			if (*p) {
-				// workaround :D
-				if (p[0] == '@') {
-					p--;
-				}
-				while (p[1] == ';' || IS_WHITESPACE (p[1])) {
+			if (p && *p) {
+				while (IS_WHITESPACE (*p)) {
 					p++;
 				}
-				if (p[1] == '@' || (p[1] && p[2] == '@')) {
+				if (*p == '@') {
 					char *q = strchr (p + 1, '"');
 					if (q) {
 						op0 = *q;
@@ -4341,7 +4383,11 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 					}
 					haveQuote = q;
 					oseek = core->addr;
-					r_core_seek (core, r_num_math (core->num, p + 2), true);
+					char *addr = (char *)r_str_trim_head_ro (p + 1);
+					if (*addr == '@') {
+						addr = (char *)r_str_trim_head_ro (addr + 1);
+					}
+					r_core_seek (core, r_num_math (core->num, addr), true);
 					if (q) {
 						*p = '"';
 						p = q;
@@ -4349,24 +4395,33 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 						p = strchr (p + 1, ';');
 					}
 				}
-				if (R_STR_ISNOTEMPTY (p) && p[0] != '<' && p[1] == '>') {
-					str = p + 2;
-					while (*str == '>') {
+				if (p && *p == '>' && p[0] != '<') {
+					str = p + 1;
+					const bool append = *str == '>';
+					if (append) {
 						str++;
 					}
 					str = (char *)r_str_trim_head_ro (str);
 					r_cons_flush (core->cons);
-					const bool append = p[2] == '>';
 					pipefd = r_cons_pipe_open (core->cons, str, 1, append);
 				}
 			}
 			line = strdup (cmd);
 			line = r_str_replace (line, "\\\"", "\"", true);
-			if (p && *p && p[1] == '|') {
-				str = (char *)r_str_trim_head_ro (p + 2);
+			// Apply grep if found after closing quote
+			if (quoted_grep) {
+				r_cons_grep_expression (core->cons, quoted_grep);
+			}
+			if (p && *p == '|') {
+				str = (char *)r_str_trim_head_ro (p + 1);
 				r_core_cmd_pipe (core, cmd, str);
 			} else {
 				r_cmd_call (core->rcmd, line);
+			}
+			if (quoted_grep) {
+				r_cons_filter (core->cons);
+				free (quoted_grep);
+				quoted_grep = NULL;
 			}
 			free (line);
 			if (oseek != UT64_MAX) {

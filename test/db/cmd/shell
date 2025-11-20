@@ -99,7 +99,6 @@ EOF
 RUN
 
 NAME=nested dolarpar
-BROKEN=1
 FILE=-
 CMDS=<<EOF
 ?e $(?v 4 \| $(?v 1 \| 2))
