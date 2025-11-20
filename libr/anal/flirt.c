@@ -499,24 +499,22 @@ static void print_indentation(RStrBuf *sb, int indent) {
 	r_strbuf_pad (sb, ' ', indent);
 }
 
+/* Prints a signature node. The output is similar to dumpsig*/
 static void print_node(RStrBuf *sb, const RFlirtNode *node, int indent) {
-	/*Prints a signature node. The output is similar to dumpsig*/
-	int i;
-	RListIter *child_it, *module_it;
-	RFlirtNode *child;
-	RFlirtModule *module;
-
-	if (node->pattern_bytes) { // avoid printing the root node
+	RListIter *iter;
+	if (node->pattern_bytes) { // do not print the root node
 		print_indentation (sb, indent);
 		print_node_pattern (sb, node);
 	}
 	if (node->child_list) {
-		r_list_foreach (node->child_list, child_it, child) {
+		RFlirtNode *child;
+		r_list_foreach (node->child_list, iter, child) {
 			print_node (sb, child, indent + 1);
 		}
 	} else if (node->module_list) {
-		i = 0;
-		r_list_foreach (node->module_list, module_it, module) {
+		int i = 0;
+		RFlirtModule *module;
+		r_list_foreach (node->module_list, iter, module) {
 			print_indentation (sb, indent + 1);
 			r_strbuf_appendf (sb, "%d. ", i);
 			print_module (sb, module);
@@ -1163,20 +1161,15 @@ static void print_header(idasig_v5_t *header) {
 	eprintf ("version: %d\n", header->version);
 	eprintf ("arch:");
 	print_arch (header->arch);
-	eprintf ("\n");
-	eprintf ("file_types:");
+	eprintf ("\nfile_types:");
 	print_file_types (header->file_types);
-	eprintf ("\n");
-	eprintf ("os_types:");
+	eprintf ("\nos_types:");
 	print_os_types (header->os_types);
-	eprintf ("\n");
-	eprintf ("app_types:");
+	eprintf ("\napp_types:");
 	print_app_types (header->app_types);
-	eprintf ("\n");
-	eprintf ("features:");
+	eprintf ("\nfeatures:");
 	print_features (header->features);
-	eprintf ("\n");
-	eprintf ("old_n_functions: %04x\n", header->old_n_functions);
+	eprintf ("\nold_n_functions: %04x\n", header->old_n_functions);
 	eprintf ("crc16: %04x\n", header->crc16);
 	eprintf ("ctype: %s\n", header->ctype);
 	eprintf ("library_name_len: %d\n", header->library_name_len);
@@ -1344,24 +1337,21 @@ beach:
 	return ret;
 }
 
-// if buf is a flirt signature, returns signature version, or zero
+// if buf is a flirt signature, returns signature version, or zero if not a flirt
 R_API int r_sign_is_flirt(RBuffer *buf) {
 	R_RETURN_VAL_IF_FAIL (buf, 0);
-	int ret = 0;
-	idasig_v5_t *header = R_NEW0 (idasig_v5_t);
-	if (r_buf_read (buf, header->magic, sizeof (header->magic)) != sizeof (header->magic)) {
-		goto beach;
+	char magic[6];
+	if (r_buf_read (buf, (ut8 *)magic, sizeof (magic)) != sizeof (magic)) {
+		return 0;
 	}
-	if (!r_str_startswith ((const char *)header->magic, "IDASGN")) {
-		goto beach;
+	if (!r_str_startswith (magic, "IDASGN")) {
+		return 0;
 	}
-	if (r_buf_read (buf, (ut8 *)&header->version, sizeof (header->version)) != sizeof (header->version)) {
-		goto beach;
+	ut8 version;
+	if (r_buf_read (buf, &version, sizeof (version)) != sizeof (version)) {
+		return 0;
 	}
-	ret = header->version;
-beach:
-	free (header);
-	return ret;
+	return version;
 }
 
 static inline RFlirt *flirt_new(const RAnal *anal, RBuffer *flirt_buf) {
