@@ -258,7 +258,7 @@ static bool bfs_read_stream(bfs_ctx_t *ctx, bfs_inode_t *inode, ut64 offset, ut8
 			if (pos < consumed + run_size) {
 				ut64 offset_in_run = pos - consumed;
 				ut64 disk_offset = bfs_block_to_offset (ctx, run) + offset_in_run;
-				ut32 chunk = R_MIN ((ut32)(run_size - offset_in_run), remaining);
+				ut32 chunk = R_MIN ((ut32) (run_size - offset_in_run), remaining);
 				if (!bfs_read_at (ctx, disk_offset, buf, chunk)) {
 					return false;
 				}
@@ -554,8 +554,8 @@ static bool bfs_walk_directory(bfs_ctx_t *ctx, bfs_inode_t *dir_inode, ut64 pare
 				return false;
 			}
 			align_pad = (BTREE_ALIGN - (key_section % BTREE_ALIGN)) % BTREE_ALIGN;
-			key_offsets = (ut16 *)(node_buf + sizeof (bfs_btree_nodehead_t) + key_length + align_pad);
-			values = (ut64 *)((ut8 *)key_offsets + key_count * sizeof (ut16));
+			key_offsets = (ut16 *) (node_buf + sizeof (bfs_btree_nodehead_t) + key_length + align_pad);
+			values = (ut64 *) ((ut8 *)key_offsets + key_count * sizeof (ut16));
 			node_off = bfs_read64 (ctx, (ut8 *)&values[0]);
 		}
 	}
@@ -586,8 +586,8 @@ static bool bfs_walk_directory(bfs_ctx_t *ctx, bfs_inode_t *dir_inode, ut64 pare
 		}
 		align_pad = (BTREE_ALIGN - (key_section % BTREE_ALIGN)) % BTREE_ALIGN;
 		key_data = node_buf + sizeof (bfs_btree_nodehead_t);
-		key_offsets = (ut16 *)(key_data + key_length + align_pad);
-		values = (ut64 *)((ut8 *)key_offsets + key_count * sizeof (ut16));
+		key_offsets = (ut16 *) (key_data + key_length + align_pad);
+		values = (ut64 *) ((ut8 *)key_offsets + key_count * sizeof (ut16));
 
 		for (i = 0; i < key_count; i++) {
 			ut16 end = bfs_read16 (ctx, (ut8 *)&key_offsets[i]);
@@ -609,7 +609,7 @@ static bool bfs_walk_directory(bfs_ctx_t *ctx, bfs_inode_t *dir_inode, ut64 pare
 				prev_end = end;
 				continue;
 			}
-			name_ptr = (const char *)(key_data + prev_end);
+			name_ptr = (const char *) (key_data + prev_end);
 			prev_end = end;
 			if ((name_len == 1 && name_ptr[0] == '.') ||
 				(name_len == 2 && name_ptr[0] == '.' && name_ptr[1] == '.')) {
@@ -748,24 +748,24 @@ static bool bfs_get_block_run(bfs_ctx_t *ctx, bfs_data_stream_t *ds, ut64 block_
 		return true;
 	}
 	ut64 indirect_index = block_index - BFS_NUM_DIRECT_BLOCKS;
-	ut64 num_per_block = ctx->block_size / sizeof(bfs_block_run_t);
+	ut64 num_per_block = ctx->block_size / sizeof (bfs_block_run_t);
 	if (indirect_index < num_per_block) {
-		ut64 indirect_offset = bfs_block_to_offset(ctx, &ds->indirect);
-		ut64 entry_offset = indirect_offset + indirect_index * sizeof(bfs_block_run_t);
-		return bfs_read_at(ctx, entry_offset, (ut8*)run, sizeof(*run));
+		ut64 indirect_offset = bfs_block_to_offset (ctx, &ds->indirect);
+		ut64 entry_offset = indirect_offset + indirect_index * sizeof (bfs_block_run_t);
+		return bfs_read_at (ctx, entry_offset, (ut8 *)run, sizeof (*run));
 	} else {
 		indirect_index -= num_per_block;
 		ut64 double_indirect_index = indirect_index / num_per_block;
 		ut64 sub_index = indirect_index % num_per_block;
-		ut64 double_offset = bfs_block_to_offset(ctx, &ds->double_indirect);
-		ut64 double_entry_offset = double_offset + double_indirect_index * sizeof(bfs_block_run_t);
+		ut64 double_offset = bfs_block_to_offset (ctx, &ds->double_indirect);
+		ut64 double_entry_offset = double_offset + double_indirect_index * sizeof (bfs_block_run_t);
 		bfs_block_run_t indirect_run;
-		if (!bfs_read_at(ctx, double_entry_offset, (ut8*)&indirect_run, sizeof(indirect_run))) {
+		if (!bfs_read_at (ctx, double_entry_offset, (ut8 *)&indirect_run, sizeof (indirect_run))) {
 			return false;
 		}
-		ut64 indirect_offset = bfs_block_to_offset(ctx, &indirect_run);
-		ut64 entry_offset = indirect_offset + sub_index * sizeof(bfs_block_run_t);
-		return bfs_read_at(ctx, entry_offset, (ut8*)run, sizeof(*run));
+		ut64 indirect_offset = bfs_block_to_offset (ctx, &indirect_run);
+		ut64 entry_offset = indirect_offset + sub_index * sizeof (bfs_block_run_t);
+		return bfs_read_at (ctx, entry_offset, (ut8 *)run, sizeof (*run));
 	}
 }
 
@@ -799,7 +799,7 @@ static int fs_bfs_read(RFSFile *file, ut64 addr, int len) {
 	ut64 offset_in_block = addr % block_size;
 
 	bfs_block_run_t run;
-	if (!bfs_get_block_run(ctx, ds, block_index, &run)) {
+	if (!bfs_get_block_run (ctx, ds, block_index, &run)) {
 		return 0;
 	}
 	if (run.len == 0) {
@@ -843,7 +843,7 @@ static void fs_bfs_details(RFSRoot *root, RStrBuf *sb) {
 	r_strbuf_appendf (sb, "Type: %s\n", ctx->is_openbfs? "OpenBFS": "BFS (Be File System)");
 	r_strbuf_appendf (sb, "Block Size: %u bytes\n", ctx->block_size);
 	r_strbuf_appendf (sb, "Inode Size: %u bytes\n", ctx->inode_size);
-	r_strbuf_appendf (sb, "Blocks per AG: %"PFMT64u"\n", (ut64)ctx->blocks_per_ag);
+	r_strbuf_appendf (sb, "Blocks per AG: %" PFMT64u "\n", (ut64)ctx->blocks_per_ag);
 	r_strbuf_appendf (sb, "AG Shift: %u\n", ctx->ag_shift);
 	r_strbuf_appendf (sb, "Number of AGs: %u\n", ctx->num_ags);
 	r_strbuf_append (sb, "Purpose: BeOS/Haiku filesystem\n");
