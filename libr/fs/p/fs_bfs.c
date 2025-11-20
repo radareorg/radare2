@@ -442,6 +442,7 @@ static bool fs_bfs_mount(RFSRoot *root) {
 	if (ctx->ag_shift < ctx->block_shift) {
 		ctx->ag_shift = ctx->block_shift;
 	}
+	ctx->num_ags = bfs_read32 (ctx, (ut8 *)&sb.num_ags);
 	{
 		ut32 diff = ctx->ag_shift - ctx->block_shift;
 		ctx->blocks_per_ag = diff >= 63? (1ULL << 63): (1ULL << diff);
@@ -817,7 +818,7 @@ static void fs_bfs_details(RFSRoot *root, RStrBuf *sb) {
 	r_strbuf_appendf (sb, "Type: %s\n", ctx->is_openbfs? "OpenBFS": "BFS (Be File System)");
 	r_strbuf_appendf (sb, "Block Size: %u bytes\n", ctx->block_size);
 	r_strbuf_appendf (sb, "Inode Size: %u bytes\n", ctx->inode_size);
-	r_strbuf_appendf (sb, "Blocks per AG: %llu\n", (unsigned long long)ctx->blocks_per_ag);
+	r_strbuf_appendf (sb, "Blocks per AG: %"PFMT64u"\n", (ut64)ctx->blocks_per_ag);
 	r_strbuf_appendf (sb, "AG Shift: %u\n", ctx->ag_shift);
 	r_strbuf_appendf (sb, "Number of AGs: %u\n", ctx->num_ags);
 	r_strbuf_append (sb, "Purpose: BeOS/Haiku filesystem\n");
