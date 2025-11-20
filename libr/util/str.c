@@ -1815,6 +1815,21 @@ static int rune_display_width(RRune ch) {
 	return 1;
 }
 
+/* Skip past a CSI sequence (escape [ ... terminator) and return new position */
+static const char *__ansi_skip_csi(const char *str) {
+	if (str[0] == 0x1b && str[1] == '[') {
+		const char *ptr = str + 2;
+		while (*ptr && *ptr != 'J' && *ptr != 'm' && *ptr != 'H' && *ptr != 'K') {
+			ptr++;
+		}
+		if (*ptr) {
+			ptr++;
+		}
+		return ptr;
+	}
+	return str;
+}
+
 static size_t __str_ansi_length(char const *str) {
 	size_t i = 1;
 	if (str[0] == 0x1b) {
@@ -2221,33 +2236,16 @@ R_API char *r_str_ansi_crop(const char *str, ut32 x, ut32 y, ut32 x2, ut32 y2) {
 					}
 				}
 				if (*str == 0x1b && *(str + 1) == '[') {
-					const char *ptr = str;
-					/* Need at least 4 bytes for escape sequence (e.g., \x1b[0m) */
-					if ((r_end - r) > 4) {
-						/* copy 0x1b and [ */
-						*r++ = *str++;
-						*r++ = *str++;
-						for (ptr = str; *ptr && *ptr != 'J' && *ptr != 'm' && *ptr != 'H'; ptr++) {
-							if ((r_end - r) <= 1) {
-								break;
-							}
-							*r++ = *ptr;
-						}
-						if ((r_end - r) > 0 && *ptr) {
-							*r++ = *ptr++;
-						} else if (*ptr) {
-							ptr++;
+					const char *end = __ansi_skip_csi (str);
+					if ((r_end - r) > (end - str)) {
+						/* Enough space, copy the entire sequence */
+						while (str < end && (r_end - r) > 0) {
+							*r++ = *str++;
 						}
 					} else {
-						/* Buffer too small to copy full sequence, just skip it */
-						ptr = str + 2;
-						for (; *ptr && *ptr != 'J' && *ptr != 'm' && *ptr != 'H'; ptr++) {
-						}
-						if (*ptr) {
-							ptr++;
-						}
+						/* Buffer full, just skip the sequence */
+						str = end;
 					}
-					str = ptr;
 					continue;
 				} else if (cw >= x && cw < x2) {
 					*r++ = *str;
