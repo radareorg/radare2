@@ -24,6 +24,8 @@
 - The `R_NEW`/`R_NEW0` macros never return NULL
 - Keep changes minimal and take smart decisions
 - When implementing commands, handle the `?` subcommand to show its help
+- Define and assign the variables in the same line if possible
+- Struct typedefs must use CamelCase names
 - Do not use `r_str_append`, better use an `r_strbuf_new` and concatenate for loops
 - Use `r_str_newf` instead of manual malloc+snprintf
 - Use `r_str_pad2` to create a string containing a character repeated many times

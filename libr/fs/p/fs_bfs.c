@@ -1,4 +1,4 @@
-/* radare2: Be File System - LGPL - Copyright 2025 - pancake */
+/* radare2: Be File System - MIT - Copyright 2025 - pancake */
 
 #include <r_fs.h>
 #include <r_lib.h>
@@ -12,6 +12,7 @@
 #define BFS_INODE_MAGIC1 0x3bbe0ad9
 #define BFS_BTREE_MAGIC 0x69f6c2e8
 
+#define BFS_BLOCK_SIZE 1024
 #define BFS_BYTEORDER_NATIVE 0x42494745
 #define BFS_CLEAN 0x434C454E
 
@@ -45,20 +46,20 @@ R_PACKED(
 		ut16 start;
 		ut16 len;
 	})
-bfs_block_run_t;
+BeosBlockRun;
 
 // Data stream
 R_PACKED(
 	typedef struct {
-		bfs_block_run_t direct[BFS_NUM_DIRECT_BLOCKS];
+		BeosBlockRun direct[BFS_NUM_DIRECT_BLOCKS];
 		ut64 max_direct_range;
-		bfs_block_run_t indirect;
+		BeosBlockRun indirect;
 		ut64 max_indirect_range;
-		bfs_block_run_t double_indirect;
+		BeosBlockRun double_indirect;
 		ut64 max_double_indirect_range;
 		ut64 size;
 	})
-bfs_data_stream_t;
+BeosDataStream;
 
 // Small data entry
 R_PACKED(
@@ -68,32 +69,32 @@ R_PACKED(
 		ut16 data_size;
 		char name[1];
 	})
-bfs_small_data_t;
+BeosSmallData;
 
 // BFS Inode
 R_PACKED(
 	typedef struct {
 		ut32 magic1;
-		bfs_block_run_t inode_num;
+		BeosBlockRun inode_num;
 		ut32 uid;
 		ut32 gid;
 		ut32 mode;
 		ut32 flags;
 		ut64 create_time;
 		ut64 last_modified_time;
-		bfs_block_run_t parent;
-		bfs_block_run_t attributes;
+		BeosBlockRun parent;
+		BeosBlockRun attributes;
 		ut32 type;
 		ut32 inode_size;
 		ut32 etc;
 		union {
-			bfs_data_stream_t datastream;
+			BeosDataStream datastream;
 			char symlink[BFS_SYMLINK_LEN];
 		} data;
 		ut32 pad[4];
-		bfs_small_data_t small_data[1];
+		BeosSmallData small_data[1];
 	})
-bfs_inode_t;
+BeosInode;
 
 // BFS Superblock
 R_PACKED(
@@ -111,14 +112,14 @@ R_PACKED(
 		ut32 ag_shift;
 		ut32 num_ags;
 		ut32 flags;
-		bfs_block_run_t log_blocks;
+		BeosBlockRun log_blocks;
 		ut64 log_start;
 		ut64 log_end;
 		ut32 magic3;
-		bfs_block_run_t root_dir;
-		bfs_block_run_t indices;
+		BeosBlockRun root_dir;
+		BeosBlockRun indices;
 	})
-bfs_super_block_t;
+BeosSuperBlock;
 
 // B+tree superblock
 R_PACKED(
@@ -131,7 +132,7 @@ R_PACKED(
 		ut64 free_node_ptr;
 		ut64 max_size;
 	})
-bfs_btree_super_t;
+BeosTreeSuper;
 
 // B+tree node header
 R_PACKED(
@@ -142,18 +143,18 @@ R_PACKED(
 		ut16 all_key_count;
 		ut16 all_key_length;
 	})
-bfs_btree_nodehead_t;
+BeosTreeNodeHead;
 
 // Parsed inode cache entry
 typedef struct {
 	ut64 inode_num;
 	ut64 parent_inode_num;
 	char *name;
-	bfs_inode_t *inode;
+	BeosInode *inode;
 	RList *dent_nodes; // Directory entries
 	bool is_directory;
 	bool parsed;
-} bfs_inode_t_cache;
+} BeosInodeCache;
 
 // Filesystem context
 typedef struct {
@@ -165,31 +166,39 @@ typedef struct {
 	ut64 blocks_per_ag;
 	ut32 ag_shift;
 	ut32 num_ags;
-	bfs_block_run_t root_dir;
-	HtUP *inodes; // Hash table: inode_num -> bfs_inode_t_cache
+	BeosBlockRun root_dir;
+	HtUP *inodes; // Hash table: inode_num -> BeosInodeCache
 	bool mounted;
 	bool is_openbfs;
 	bool is_le;
-} bfs_ctx_t;
+} BeosFS;
 
-static bool bfs_read_at(bfs_ctx_t *ctx, ut64 offset, ut8 *buf, int len) {
+static bool bfs_read_at(BeosFS *ctx, ut64 offset, ut8 *buf, int len) {
 	if (!ctx || !ctx->iob || !ctx->iob->read_at) {
 		return false;
 	}
 	return ctx->iob->read_at (ctx->iob->io, ctx->delta + offset, buf, len);
 }
 
-static ut32 bfs_read32(bfs_ctx_t *ctx, ut8 *buf);
-static ut16 bfs_read16(bfs_ctx_t *ctx, ut8 *buf);
-static ut64 bfs_read64(bfs_ctx_t *ctx, ut8 *buf);
+static ut32 bfs_read32(BeosFS *ctx, ut8 *buf) {
+	return ctx->is_le? r_read_le32 (buf): r_read_be32 (buf);
+}
 
-static ut64 bfs_block_to_offset(bfs_ctx_t *ctx, bfs_block_run_t *run) {
+static ut16 bfs_read16(BeosFS *ctx, ut8 *buf) {
+	return ctx->is_le? r_read_le16 (buf): r_read_be16 (buf);
+}
+
+static ut64 bfs_read64(BeosFS *ctx, ut8 *buf) {
+	return ctx->is_le? r_read_le64 (buf): r_read_be64 (buf);
+}
+
+static ut64 bfs_block_to_offset(BeosFS *ctx, BeosBlockRun *run) {
 	ut64 ag_offset = (ut64)bfs_read32 (ctx, (ut8 *)&run->allocation_group) << ctx->ag_shift;
 	ut64 block_offset = (ut64)bfs_read16 (ctx, (ut8 *)&run->start) << ctx->block_shift;
 	return ag_offset + block_offset;
 }
 
-static ut64 bfs_block_run_to_block_index(bfs_ctx_t *ctx, const bfs_block_run_t *run) {
+static ut64 BeosBlockRuno_block_index(BeosFS *ctx, const BeosBlockRun *run) {
 	ut64 ag = bfs_read32 (ctx, (ut8 *)&run->allocation_group);
 	ut64 start = bfs_read16 (ctx, (ut8 *)&run->start);
 	if (!ctx->blocks_per_ag) {
@@ -203,9 +212,9 @@ static ut64 bfs_block_run_to_block_index(bfs_ctx_t *ctx, const bfs_block_run_t *
 	return ag * ctx->blocks_per_ag + start;
 }
 
-static bfs_inode_t *bfs_read_inode_block(bfs_ctx_t *ctx, ut64 block_index) {
+static BeosInode *bfs_read_inode_block(BeosFS *ctx, ut64 block_index) {
 	ut64 offset = block_index << ctx->block_shift;
-	bfs_inode_t *inode = malloc (ctx->inode_size);
+	BeosInode *inode = malloc (ctx->inode_size);
 	if (!inode) {
 		return NULL;
 	}
@@ -216,8 +225,8 @@ static bfs_inode_t *bfs_read_inode_block(bfs_ctx_t *ctx, ut64 block_index) {
 	return inode;
 }
 
-static bool bfs_read_stream(bfs_ctx_t *ctx, bfs_inode_t *inode, ut64 offset, ut8 *buf, ut32 len) {
-	bfs_data_stream_t *ds;
+static bool bfs_read_stream(BeosFS *ctx, BeosInode *inode, ut64 offset, ut8 *buf, ut32 len) {
+	BeosDataStream *ds;
 	ut64 total = 0;
 	ut64 pos;
 	ut32 remaining;
@@ -248,7 +257,7 @@ static bool bfs_read_stream(bfs_ctx_t *ctx, bfs_inode_t *inode, ut64 offset, ut8
 		ut64 consumed = 0;
 		bool found = false;
 		for (i = 0; i < BFS_NUM_DIRECT_BLOCKS; i++) {
-			bfs_block_run_t *run = &ds->direct[i];
+			BeosBlockRun *run = &ds->direct[i];
 			ut16 run_len = bfs_read16 (ctx, (ut8 *)&run->len);
 			ut64 run_size;
 			if (!run_len) {
@@ -277,11 +286,11 @@ static bool bfs_read_stream(bfs_ctx_t *ctx, bfs_inode_t *inode, ut64 offset, ut8
 	return true;
 }
 
-static bfs_inode_t_cache *bfs_get_inode(bfs_ctx_t *ctx, ut64 inode_num) {
+static BeosInodeCache *bfs_get_inode(BeosFS *ctx, ut64 inode_num) {
 	return ht_up_find (ctx->inodes, inode_num, NULL);
 }
 
-static void bfs_free_inode(bfs_inode_t_cache *inode) {
+static void bfs_free_inode(BeosInodeCache *inode) {
 	if (!inode) {
 		return;
 	}
@@ -292,42 +301,31 @@ static void bfs_free_inode(bfs_inode_t_cache *inode) {
 }
 
 static bool bfs_free_inode_cb(void *user, const ut64 key, const void *value) {
-	bfs_free_inode ((bfs_inode_t_cache *)value);
+	bfs_free_inode ((BeosInodeCache *)value);
 	return true;
 }
 
-static ut64 bfs_block_run_to_block_index(bfs_ctx_t *ctx, const bfs_block_run_t *run);
-static bfs_inode_t *bfs_read_inode_block(bfs_ctx_t *ctx, ut64 block_index);
-static bool bfs_read_stream(bfs_ctx_t *ctx, bfs_inode_t *inode, ut64 offset, ut8 *buf, ut32 len);
-static bool bfs_walk_directory(bfs_ctx_t *ctx, bfs_inode_t *dir_inode, ut64 parent_inode_num);
+static ut64 BeosBlockRuno_block_index(BeosFS *ctx, const BeosBlockRun *run);
+static BeosInode *bfs_read_inode_block(BeosFS *ctx, ut64 block_index);
+static bool bfs_read_stream(BeosFS *ctx, BeosInode *inode, ut64 offset, ut8 *buf, ut32 len);
+static bool bfs_walk_directory(BeosFS *ctx, BeosInode *dir_inode, ut64 parent_inode_num);
 
+// AITODO . merge BeosDirIterContext and BeosFindContext
 typedef struct {
 	RList *list;
 	ut64 parent_inode_num;
-	bfs_ctx_t *bfs_ctx;
-} bfs_dir_iter_ctx_t;
+	BeosFS *bfs_ctx;
+} BeosDirIterContext;
 
 typedef struct {
 	const char *name;
 	ut64 parent_inode_num;
 	ut64 *result;
-} bfs_find_ctx_t;
-
-static ut32 bfs_read32(bfs_ctx_t *ctx, ut8 *buf) {
-	return ctx->is_le? r_read_le32 (buf): r_read_be32 (buf);
-}
-
-static ut16 bfs_read16(bfs_ctx_t *ctx, ut8 *buf) {
-	return ctx->is_le? r_read_le16 (buf): r_read_be16 (buf);
-}
-
-static ut64 bfs_read64(bfs_ctx_t *ctx, ut8 *buf) {
-	return ctx->is_le? r_read_le64 (buf): r_read_be64 (buf);
-}
+} BeosFindContext;
 
 static bool bfs_find_inode_by_name_cb(void *user, const ut64 key, const void *value) {
-	bfs_find_ctx_t *ctx = (bfs_find_ctx_t *)user;
-	bfs_inode_t_cache *cache = (bfs_inode_t_cache *)value;
+	BeosFindContext *ctx = (BeosFindContext *)user;
+	BeosInodeCache *cache = (BeosInodeCache *)value;
 	if (!cache || !cache->name || cache->parent_inode_num != ctx->parent_inode_num) {
 		return true;
 	}
@@ -338,7 +336,7 @@ static bool bfs_find_inode_by_name_cb(void *user, const ut64 key, const void *va
 	return true;
 }
 
-static ut64 bfs_resolve_path(bfs_ctx_t *ctx, const char *path) {
+static ut64 bfs_resolve_path(BeosFS *ctx, const char *path) {
 	if (!path || !*path || strcmp (path, "/") == 0) {
 		return 0;
 	}
@@ -354,7 +352,7 @@ static ut64 bfs_resolve_path(bfs_ctx_t *ctx, const char *path) {
 			continue;
 		}
 		ut64 found = 0;
-		bfs_find_ctx_t find_ctx = { comp, current_inode, &found };
+		BeosFindContext find_ctx = { comp, current_inode, &found };
 		ht_up_foreach (ctx->inodes, bfs_find_inode_by_name_cb, &find_ctx);
 		if (found == 0) {
 			r_list_free (components);
@@ -367,11 +365,11 @@ static ut64 bfs_resolve_path(bfs_ctx_t *ctx, const char *path) {
 }
 
 static bool bfs_dir_iter_cb(void *user, const ut64 key, const void *value) {
-	bfs_dir_iter_ctx_t *ctx = (bfs_dir_iter_ctx_t *)user;
+	BeosDirIterContext *ctx = (BeosDirIterContext *)user;
 	RList *list = ctx->list;
 	ut64 parent_inode_num = ctx->parent_inode_num;
-	bfs_ctx_t *bfs_ctx = ctx->bfs_ctx;
-	bfs_inode_t_cache *cache = (bfs_inode_t_cache *)value;
+	BeosFS *bfs_ctx = ctx->bfs_ctx;
+	BeosInodeCache *cache = (BeosInodeCache *)value;
 	if (!cache || !cache->inode || !cache->name || cache->parent_inode_num != parent_inode_num) {
 		return true;
 	}
@@ -400,14 +398,14 @@ static bool bfs_dir_iter_cb(void *user, const ut64 key, const void *value) {
 static bool fs_bfs_mount(RFSRoot *root) {
 	R_RETURN_VAL_IF_FAIL (root, false);
 
-	bfs_ctx_t *ctx = R_NEW0 (bfs_ctx_t);
+	BeosFS *ctx = R_NEW0 (BeosFS);
 	ctx->iob = &root->iob;
 	ctx->delta = root->delta;
-	ctx->block_size = 1024; // Default block size for BFS
+	ctx->block_size = BFS_BLOCK_SIZE;
 	ctx->inodes = ht_up_new0 ();
 
 	// Read superblock from offset 512 (block 1 start)
-	bfs_super_block_t sb;
+	BeosSuperBlock sb;
 	ut64 sb_offset = 512;
 	if (!bfs_read_at (ctx, sb_offset, (ut8 *)&sb, sizeof (sb))) {
 		R_LOG_ERROR ("Failed to read BFS superblock");
@@ -451,8 +449,8 @@ static bool fs_bfs_mount(RFSRoot *root) {
 
 	// Walk the root directory tree
 	{
-		ut64 root_block = bfs_block_run_to_block_index (ctx, &ctx->root_dir);
-		bfs_inode_t *root_inode = bfs_read_inode_block (ctx, root_block);
+		ut64 root_block = BeosBlockRuno_block_index (ctx, &ctx->root_dir);
+		BeosInode *root_inode = bfs_read_inode_block (ctx, root_block);
 		if (!root_inode) {
 			R_LOG_ERROR ("Failed to read root directory inode");
 			goto fail;
@@ -478,7 +476,7 @@ fail:
 static void fs_bfs_umount(RFSRoot *root) {
 	R_RETURN_IF_FAIL (root);
 
-	bfs_ctx_t *ctx = root->ptr;
+	BeosFS *ctx = root->ptr;
 	if (!ctx) {
 		return;
 	}
@@ -492,15 +490,10 @@ static void fs_bfs_umount(RFSRoot *root) {
 	root->ptr = NULL;
 }
 
-static bool bfs_walk_directory(bfs_ctx_t *ctx, bfs_inode_t *dir_inode, ut64 parent_inode_num) {
-	bfs_btree_super_t super;
-	ut32 node_size;
-	ut32 level;
-	ut64 node_off;
-	ut8 *node_buf = NULL;
-
+static bool bfs_walk_directory(BeosFS *ctx, BeosInode *dir_inode, ut64 parent_inode_num) {
 	R_RETURN_VAL_IF_FAIL (ctx && dir_inode, false);
 
+	BeosTreeSuper super;
 	if (!bfs_read_stream (ctx, dir_inode, 0, (ut8 *)&super, sizeof (super))) {
 		return false;
 	}
@@ -508,20 +501,20 @@ static bool bfs_walk_directory(bfs_ctx_t *ctx, bfs_inode_t *dir_inode, ut64 pare
 		return false;
 	}
 
-	node_size = bfs_read32 (ctx, (ut8 *)&super.node_size);
+	ut32 node_size = bfs_read32 (ctx, (ut8 *)&super.node_size);
 	if (!node_size) {
 		node_size = ctx->block_size;
 	}
-	level = bfs_read32 (ctx, (ut8 *)&super.max_depth);
+	ut32 level = bfs_read32 (ctx, (ut8 *)&super.max_depth);
 	if (!level) {
 		level = 1;
 	}
-	node_off = bfs_read64 (ctx, (ut8 *)&super.root_node_ptr);
+	ut64 node_off = bfs_read64 (ctx, (ut8 *)&super.root_node_ptr);
 	if (node_off == UT64_MAX) {
 		return true;
 	}
 
-	node_buf = calloc (1, node_size);
+	ut8 *node_buf = calloc (1, node_size);
 	if (!node_buf) {
 		return false;
 	}
@@ -529,7 +522,7 @@ static bool bfs_walk_directory(bfs_ctx_t *ctx, bfs_inode_t *dir_inode, ut64 pare
 	if (level > 0) {
 		ut32 depth = level - 1;
 		while (depth--) {
-			bfs_btree_nodehead_t *node_head;
+			BeosTreeNodeHead *node_head;
 			ut16 key_count;
 			ut16 key_length;
 			ut16 *key_offsets;
@@ -541,34 +534,26 @@ static bool bfs_walk_directory(bfs_ctx_t *ctx, bfs_inode_t *dir_inode, ut64 pare
 				free (node_buf);
 				return false;
 			}
-			node_head = (bfs_btree_nodehead_t *)node_buf;
+			node_head = (BeosTreeNodeHead *)node_buf;
 			key_count = bfs_read16 (ctx, (ut8 *)&node_head->all_key_count);
 			key_length = bfs_read16 (ctx, (ut8 *)&node_head->all_key_length);
 			if (!key_count) {
 				free (node_buf);
 				return false;
 			}
-			key_section = sizeof (bfs_btree_nodehead_t) + key_length;
+			key_section = sizeof (BeosTreeNodeHead) + key_length;
 			if (key_section > node_size) {
 				free (node_buf);
 				return false;
 			}
 			align_pad = (BTREE_ALIGN - (key_section % BTREE_ALIGN)) % BTREE_ALIGN;
-			key_offsets = (ut16 *) (node_buf + sizeof (bfs_btree_nodehead_t) + key_length + align_pad);
+			key_offsets = (ut16 *) (node_buf + sizeof (BeosTreeNodeHead) + key_length + align_pad);
 			values = (ut64 *) ((ut8 *)key_offsets + key_count * sizeof (ut16));
 			node_off = bfs_read64 (ctx, (ut8 *)&values[0]);
 		}
 	}
 
 	while (1) {
-		bfs_btree_nodehead_t *node_head;
-		ut16 key_count;
-		ut16 key_length;
-		ut8 *key_data;
-		ut16 *key_offsets;
-		ut64 *values;
-		size_t key_section;
-		size_t align_pad;
 		ut16 prev_end = 0;
 		ut16 i;
 
@@ -576,26 +561,21 @@ static bool bfs_walk_directory(bfs_ctx_t *ctx, bfs_inode_t *dir_inode, ut64 pare
 			free (node_buf);
 			return false;
 		}
-		node_head = (bfs_btree_nodehead_t *)node_buf;
-		key_count = bfs_read16 (ctx, (ut8 *)&node_head->all_key_count);
-		key_length = bfs_read16 (ctx, (ut8 *)&node_head->all_key_length);
-		key_section = sizeof (bfs_btree_nodehead_t) + key_length;
+		BeosTreeNodeHead *node_head = (BeosTreeNodeHead *)node_buf;
+		ut16 key_count = bfs_read16 (ctx, (ut8 *)&node_head->all_key_count);
+		ut16 key_length = bfs_read16 (ctx, (ut8 *)&node_head->all_key_length);
+		size_t key_section = sizeof (BeosTreeNodeHead) + key_length;
 		if (key_section > node_size) {
 			free (node_buf);
 			return false;
 		}
-		align_pad = (BTREE_ALIGN - (key_section % BTREE_ALIGN)) % BTREE_ALIGN;
-		key_data = node_buf + sizeof (bfs_btree_nodehead_t);
-		key_offsets = (ut16 *) (key_data + key_length + align_pad);
-		values = (ut64 *) ((ut8 *)key_offsets + key_count * sizeof (ut16));
+		size_t align_pad = (BTREE_ALIGN - (key_section % BTREE_ALIGN)) % BTREE_ALIGN;
+		ut8 *key_data = node_buf + sizeof (BeosTreeNodeHead);
+		ut16 *key_offsets = (ut16 *) (key_data + key_length + align_pad);
+		ut64 *values = (ut64 *) ((ut8 *)key_offsets + key_count * sizeof (ut16));
 
 		for (i = 0; i < key_count; i++) {
 			ut16 end = bfs_read16 (ctx, (ut8 *)&key_offsets[i]);
-			ut16 name_len;
-			const char *name_ptr;
-			ut64 inode_block;
-			bfs_inode_t *child_inode;
-			bfs_inode_t_cache *cache;
 			ut32 mode;
 
 			if (end > key_length) {
@@ -604,31 +584,26 @@ static bool bfs_walk_directory(bfs_ctx_t *ctx, bfs_inode_t *dir_inode, ut64 pare
 			if (end < prev_end) {
 				continue;
 			}
-			name_len = end - prev_end;
+			ut16 name_len = end - prev_end;
 			if (!name_len) {
 				prev_end = end;
 				continue;
 			}
-			name_ptr = (const char *) (key_data + prev_end);
+			const char *name_ptr = (const char *) (key_data + prev_end);
 			prev_end = end;
 			if ((name_len == 1 && name_ptr[0] == '.') ||
 				(name_len == 2 && name_ptr[0] == '.' && name_ptr[1] == '.')) {
 				continue;
 			}
 
-			inode_block = bfs_read64 (ctx, (ut8 *)&values[i]);
-			child_inode = bfs_read_inode_block (ctx, inode_block);
+			ut64 inode_block = bfs_read64 (ctx, (ut8 *)&values[i]);
+			BeosInode *child_inode = bfs_read_inode_block (ctx, inode_block);
 			if (!child_inode) {
 				continue;
 			}
-			cache = bfs_get_inode (ctx, inode_block);
+			BeosInodeCache *cache = bfs_get_inode (ctx, inode_block);
 			if (!cache) {
-				cache = R_NEW0 (bfs_inode_t_cache);
-				if (!cache) {
-					free (child_inode);
-					free (node_buf);
-					return false;
-				}
+				cache = R_NEW0 (BeosInodeCache);
 				cache->inode_num = inode_block;
 				cache->parent_inode_num = parent_inode_num;
 				cache->name = r_str_ndup (name_ptr, name_len);
@@ -646,7 +621,6 @@ static bool bfs_walk_directory(bfs_ctx_t *ctx, bfs_inode_t *dir_inode, ut64 pare
 					free (child_inode);
 				}
 			}
-
 			mode = bfs_read32 (ctx, (ut8 *)&cache->inode->mode);
 			cache->is_directory = (mode & 0xF000) == 0x4000;
 			if (cache->is_directory && !cache->parsed) {
@@ -654,7 +628,6 @@ static bool bfs_walk_directory(bfs_ctx_t *ctx, bfs_inode_t *dir_inode, ut64 pare
 				bfs_walk_directory (ctx, cache->inode, cache->inode_num);
 			}
 		}
-
 		node_off = bfs_read64 (ctx, (ut8 *)&node_head->right);
 		if (node_off == UT64_MAX) {
 			break;
@@ -668,33 +641,28 @@ static bool bfs_walk_directory(bfs_ctx_t *ctx, bfs_inode_t *dir_inode, ut64 pare
 static RList *fs_bfs_dir(RFSRoot *root, const char *path, int view) {
 	R_RETURN_VAL_IF_FAIL (root, NULL);
 
-	bfs_ctx_t *ctx = root->ptr;
+	BeosFS *ctx = root->ptr;
 	if (!ctx || !ctx->mounted) {
 		return NULL;
 	}
-
 	RList *list = r_list_new ();
 	if (!list) {
 		return NULL;
 	}
-
 	ut64 parent_inode_num = bfs_resolve_path (ctx, path);
 	if (parent_inode_num == 0 && strcmp (path, "/") != 0) {
 		r_list_free (list);
 		return NULL;
 	}
-
-	// Iterate over cached inodes and filter by parent
-	bfs_dir_iter_ctx_t iter_ctx = { list, parent_inode_num, ctx };
+	BeosDirIterContext iter_ctx = { list, parent_inode_num, ctx };
 	ht_up_foreach (ctx->inodes, bfs_dir_iter_cb, &iter_ctx);
-
 	return list;
 }
 
 static RFSFile *fs_bfs_open(RFSRoot *root, const char *path, bool create) {
 	R_RETURN_VAL_IF_FAIL (root && path, NULL);
 
-	bfs_ctx_t *ctx = root->ptr;
+	BeosFS *ctx = root->ptr;
 	if (!ctx || !ctx->mounted) {
 		R_LOG_ERROR ("Open: filesystem not mounted");
 		return NULL;
@@ -709,7 +677,7 @@ static RFSFile *fs_bfs_open(RFSRoot *root, const char *path, bool create) {
 		return NULL;
 	}
 
-	bfs_inode_t_cache *cache = NULL;
+	BeosInodeCache *cache = NULL;
 	if (inode_num != 0) {
 		cache = bfs_get_inode (ctx, inode_num);
 		if (!cache || !cache->inode) {
@@ -742,49 +710,51 @@ static RFSFile *fs_bfs_open(RFSRoot *root, const char *path, bool create) {
 	return file;
 }
 
-static bool bfs_get_block_run(bfs_ctx_t *ctx, bfs_data_stream_t *ds, ut64 block_index, bfs_block_run_t *run) {
+static bool bfs_get_block_run(BeosFS *ctx, BeosDataStream *ds, ut64 block_index, BeosBlockRun *run) {
 	if (block_index < BFS_NUM_DIRECT_BLOCKS) {
 		*run = ds->direct[block_index];
 		return true;
 	}
 	ut64 indirect_index = block_index - BFS_NUM_DIRECT_BLOCKS;
-	ut64 num_per_block = ctx->block_size / sizeof (bfs_block_run_t);
+	ut64 num_per_block = ctx->block_size / sizeof (BeosBlockRun);
 	if (indirect_index < num_per_block) {
 		ut64 indirect_offset = bfs_block_to_offset (ctx, &ds->indirect);
-		ut64 entry_offset = indirect_offset + indirect_index * sizeof (bfs_block_run_t);
-		return bfs_read_at (ctx, entry_offset, (ut8 *)run, sizeof (*run));
-	} else {
-		indirect_index -= num_per_block;
-		ut64 double_indirect_index = indirect_index / num_per_block;
-		ut64 sub_index = indirect_index % num_per_block;
-		ut64 double_offset = bfs_block_to_offset (ctx, &ds->double_indirect);
-		ut64 double_entry_offset = double_offset + double_indirect_index * sizeof (bfs_block_run_t);
-		bfs_block_run_t indirect_run;
-		if (!bfs_read_at (ctx, double_entry_offset, (ut8 *)&indirect_run, sizeof (indirect_run))) {
-			return false;
-		}
-		ut64 indirect_offset = bfs_block_to_offset (ctx, &indirect_run);
-		ut64 entry_offset = indirect_offset + sub_index * sizeof (bfs_block_run_t);
+		ut64 entry_offset = indirect_offset + indirect_index * sizeof (BeosBlockRun);
 		return bfs_read_at (ctx, entry_offset, (ut8 *)run, sizeof (*run));
 	}
+	if (num_per_block == 0) {
+		return false;
+	}
+	indirect_index -= num_per_block;
+	ut64 double_indirect_index = indirect_index / num_per_block;
+	ut64 sub_index = indirect_index % num_per_block;
+	ut64 double_offset = bfs_block_to_offset (ctx, &ds->double_indirect);
+	ut64 double_entry_offset = double_offset + double_indirect_index * sizeof (BeosBlockRun);
+	BeosBlockRun indirect_run;
+	if (!bfs_read_at (ctx, double_entry_offset, (ut8 *)&indirect_run, sizeof (indirect_run))) {
+		return false;
+	}
+	ut64 indirect_offset = bfs_block_to_offset (ctx, &indirect_run);
+	ut64 entry_offset = indirect_offset + sub_index * sizeof (BeosBlockRun);
+	return bfs_read_at (ctx, entry_offset, (ut8 *)run, sizeof (*run));
 }
 
 static int fs_bfs_read(RFSFile *file, ut64 addr, int len) {
 	R_RETURN_VAL_IF_FAIL (file, -1);
 
-	bfs_ctx_t *ctx = file->root->ptr;
+	BeosFS *ctx = file->root->ptr;
 	if (!ctx || !ctx->mounted) {
 		return -1;
 	}
 
 	ut64 inode_num = (ut64) (size_t)file->ptr;
-	bfs_inode_t_cache *cache = bfs_get_inode (ctx, inode_num);
+	BeosInodeCache *cache = bfs_get_inode (ctx, inode_num);
 	if (!cache || !cache->inode) {
 		return -1;
 	}
 
 	// For simplicity, read from direct blocks only
-	bfs_data_stream_t *ds = &cache->inode->data.datastream;
+	BeosDataStream *ds = &cache->inode->data.datastream;
 	ut64 file_size = bfs_read64 (ctx, (ut8 *)&ds->size);
 	if (addr >= file_size) {
 		return 0;
@@ -801,7 +771,7 @@ static int fs_bfs_read(RFSFile *file, ut64 addr, int len) {
 	ut64 block_index = addr / block_size;
 	ut64 offset_in_block = addr % block_size;
 
-	bfs_block_run_t run;
+	BeosBlockRun run;
 	if (!bfs_get_block_run (ctx, ds, block_index, &run)) {
 		return 0;
 	}
@@ -812,8 +782,9 @@ static int fs_bfs_read(RFSFile *file, ut64 addr, int len) {
 	ut64 block_offset = bfs_block_to_offset (ctx, &run);
 	ut64 read_offset = block_offset + offset_in_block;
 	int to_read = R_MIN (len, block_size - offset_in_block);
-
-	// Allocate buffer
+	if (to_read < 1) {
+		return -1;
+	}
 	if (!file->data) {
 		file->data = malloc (to_read);
 	} else {
@@ -838,7 +809,7 @@ static void fs_bfs_close(RFSFile *file) {
 static void fs_bfs_details(RFSRoot *root, RStrBuf *sb) {
 	R_RETURN_IF_FAIL (root && sb);
 
-	bfs_ctx_t *ctx = (bfs_ctx_t *)root->ptr;
+	BeosFS *ctx = (BeosFS *)root->ptr;
 	if (!ctx) {
 		return;
 	}
@@ -846,7 +817,7 @@ static void fs_bfs_details(RFSRoot *root, RStrBuf *sb) {
 	r_strbuf_appendf (sb, "Type: %s\n", ctx->is_openbfs? "OpenBFS": "BFS (Be File System)");
 	r_strbuf_appendf (sb, "Block Size: %u bytes\n", ctx->block_size);
 	r_strbuf_appendf (sb, "Inode Size: %u bytes\n", ctx->inode_size);
-	r_strbuf_appendf (sb, "Blocks per AG: %" PFMT64u "\n", (ut64)ctx->blocks_per_ag);
+	r_strbuf_appendf (sb, "Blocks per AG: %" PFMT64u "\n", ctx->blocks_per_ag);
 	r_strbuf_appendf (sb, "AG Shift: %u\n", ctx->ag_shift);
 	r_strbuf_appendf (sb, "Number of AGs: %u\n", ctx->num_ags);
 	r_strbuf_append (sb, "Purpose: BeOS/Haiku filesystem\n");
