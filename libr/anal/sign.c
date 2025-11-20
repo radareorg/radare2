@@ -1657,7 +1657,6 @@ static void list_sanitise_warn(char *s, const char *name, const char *field) {
 		for (; *s; s++) {
 			switch (*s) {
 			case '\t':
-			case ' ':
 			case '`':
 			case '$':
 			case '{':
@@ -1669,15 +1668,15 @@ static void list_sanitise_warn(char *s, const char *name, const char *field) {
 			case '&':
 			case '<':
 			case '>':
-			case ',':
 				*s = '_';
 				sanitized = true;
+				continue;
+			case ' ':
 				continue;
 			}
 		}
 		if (sanitized) {
 			R_LOG_INFO ("%s->%s needs to be sanitized", name, field);
-			R_WARN_IF_REACHED ();
 		}
 	}
 }
@@ -1757,23 +1756,27 @@ static void liststring(RAnal *a, RSignType t, char *value, PJ *pj, int format, c
 		pj_ks (pj, r_sign_type_to_name (t), value);
 	} else {
 		const char *type = r_sign_type_to_name (t);
-		list_sanitise_warn (value, name, type);
+		char *print_value = strdup (value);
+		if (format != 'j' && format != '*' && t != R_SIGN_TYPES) {
+			list_sanitise_warn (print_value, name, type);
+		}
 		if (format == 'q') {
-			a->cb_printf ("\n ; %s\n", value);
+			a->cb_printf ("\n ; %s\n", print_value);
 		} else if (format == '*') {
 			// comment injection via CCu..
-			if (t == R_SIGN_RAWNAME || t == R_SIGN_DEMANGLED) {
-				char *b64 = r_base64_encode_dyn ((const ut8 *)value, -1);
+			if (t == R_SIGN_RAWNAME || t == R_SIGN_DEMANGLED || t == R_SIGN_NAME) {
+				char *b64 = r_base64_encode_dyn ((const ut8 *)print_value, -1);
 				if (b64) {
 					a->cb_printf ("za %s %c %s\n", name, t, b64);
 					free (b64);
 				}
 			} else {
-				a->cb_printf ("za %s %c %s\n", name, t, value);
+				a->cb_printf ("za %s %c %s\n", name, t, print_value);
 			}
 		} else {
-			a->cb_printf ("  %s: %s\n", type, value);
+			a->cb_printf ("  %s: %s\n", type, print_value);
 		}
+		free (print_value);
 	}
 }
 
@@ -1793,8 +1796,9 @@ static void inline list_vars_abs(RAnal *a, RSignItem *it, bool rad) {
 	if (it->vars && !r_list_empty (it->vars)) {
 		char *ser = r_anal_var_prot_serialize (it->vars, true);
 		if (ser) {
-			// sholdn't do anyting, but just in case
-			list_sanitise_warn (ser, it->name, "var");
+			if (!rad) {
+				list_sanitise_warn (ser, it->name, "var");
+			}
 			if (rad) {
 				a->cb_printf ("za %s %c %s\n", it->name, R_SIGN_VARS, ser);
 			} else {
