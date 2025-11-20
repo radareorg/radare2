@@ -346,14 +346,14 @@ static inline bool refline_kept(RAnalRefline *ref, bool middle_after, ut64 addr)
 	return true;
 }
 
-static const char *get_arrow_str(int dir) {
+static inline const char *get_arrow_str(int dir) {
 	if (dir == 1) {
 		return "-> ";
-	} else if (dir == 2) {
-		return "=< ";
-	} else {
-		return "   ";
 	}
+	if (dir == 2) {
+		return "=< ";
+	}
+	return "   ";
 }
 
 // TODO: move into another file
@@ -373,11 +373,6 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	bool split_mode = opts & R_ANAL_REFLINE_TYPE_SPLIT;
 	char *str = NULL;
 	char *col_str = NULL;
-#if 0
-	if (!anal->reflines) {
-		return NULL;
-	}
-#endif
 	RList *reflines = split_mode? anal->reflines2: anal->reflines;
 
 	RList *lvls = r_list_new ();
