@@ -521,6 +521,7 @@ r_util_files = [
   'include/r_util/pj.h',
   'include/r_util/libc.h',
   'include/r_util/r_alloc.h',
+  'include/r_util/r_arena.h',
   'include/r_util/r_asn1.h',
   'include/r_util/r_assert.h',
   'include/r_util/r_axml.h',
