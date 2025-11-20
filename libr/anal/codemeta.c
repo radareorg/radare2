@@ -270,7 +270,7 @@ static void print_disasm_in_binary_line_bar(RStrBuf *sb, RCodeMeta *code, ut64 o
 	}
 	r_strbuf_append (sb, "    ");
 	if (offset == UT64_MAX) {
-		r_strbuf_append (sb, r_str_pad (' ', width));
+		r_strbuf_pad (sb, ' ', width);
 	} else {
 		if (core) {
 			char *c = r_str_newf ("pid 1 @ 0x%" PFMT64x " @e:asm.flags=0@e:asm.lines=0@e:asm.bytes=0", offset);
@@ -280,7 +280,7 @@ static void print_disasm_in_binary_line_bar(RStrBuf *sb, RCodeMeta *code, ut64 o
 			int w = r_str_ansi_len (res);
 			r_strbuf_append (sb, res);
 			if (w < width) {
-				r_strbuf_append (sb, r_str_pad (' ', width - w));
+				r_strbuf_pad (sb, ' ', width - w);
 			} else {
 				char *p = (char *)r_str_ansi_chrn (res, width);
 				if (p) {
@@ -292,8 +292,7 @@ static void print_disasm_in_binary_line_bar(RStrBuf *sb, RCodeMeta *code, ut64 o
 			PRINT_COLOR (PALETTE (addr) : Color_GREEN);
 			r_strbuf_appendf (sb, "0x%08" PFMT64x, offset);
 			PRINT_COLOR (Color_RESET);
-			const char *pad = r_str_pad (' ', width - 11);
-			r_strbuf_appendf (sb, "%s", pad);
+			r_strbuf_pad (sb, ' ', width - 11);
 		}
 	}
 	r_strbuf_append (sb, "    |");
