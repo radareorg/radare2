@@ -170,7 +170,7 @@ typedef struct {
 	bool is_le;
 } BeosFS;
 
-static bool bfs_read_at(BeosFS *ctx, ut64 offset, ut8 *buf, int len) {
+static inline bool bfs_read_at(BeosFS *ctx, ut64 offset, ut8 *buf, int len) {
 	if (!ctx || !ctx->iob || !ctx->iob->read_at) {
 		return false;
 	}
