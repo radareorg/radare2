@@ -1850,12 +1850,16 @@ za main N sym.imp.atoi
 za sym.foo_int_ R ZnVuYy4xMDAwMDNlZGM=
 za sym.foo_int_ N sym.foo_int__int_
 --
+za func.100003f2c n ZnVuYy4xMDAwMDNmMmM=
 za func.100003f2c R ZnVuYy4xMDAwMDNmMmM=
 za func.100003f2c N atoi
+za func.100003ed4 n ZnVuYy4xMDAwMDNlZDQ=
 za func.100003ed4 R ZnVuYy4xMDAwMDNlZDQ=
 za func.100003ed4 N func.100003edc
+za func.100003edc n ZnVuYy4xMDAwMDNlZGM=
 za func.100003edc R ZnVuYy4xMDAwMDNlZGM=
 za func.100003edc N func.100003ef4
+za func.100003ef4 n ZnVuYy4xMDAwMDNlZjQ=
 za func.100003ef4 R ZnVuYy4xMDAwMDNlZjQ=
 za func.100003ef4 N func.100003f2c
 EOF
