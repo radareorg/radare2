@@ -177,16 +177,16 @@ static bool bfs_read_at(BeosFS *ctx, ut64 offset, ut8 *buf, int len) {
 	return ctx->iob->read_at (ctx->iob->io, ctx->delta + offset, buf, len);
 }
 
-static ut32 bfs_read32(BeosFS *ctx, ut8 *buf) {
-	return ctx->is_le? r_read_le32 (buf): r_read_be32 (buf);
+static inline ut32 bfs_read32(BeosFS *ctx, ut8 *buf) {
+	return r_read_ble32 (buf, !ctx->is_le);
 }
 
-static ut16 bfs_read16(BeosFS *ctx, ut8 *buf) {
-	return ctx->is_le? r_read_le16 (buf): r_read_be16 (buf);
+static inline ut16 bfs_read16(BeosFS *ctx, ut8 *buf) {
+	return r_read_ble16 (buf, !ctx->is_le);
 }
 
-static ut64 bfs_read64(BeosFS *ctx, ut8 *buf) {
-	return ctx->is_le? r_read_le64 (buf): r_read_be64 (buf);
+static inline ut64 bfs_read64(BeosFS *ctx, ut8 *buf) {
+	return r_read_ble64 (buf, !ctx->is_le);
 }
 
 static inline bool bfs_is_directory(ut32 mode) {
@@ -431,7 +431,7 @@ static bool fs_bfs_mount(RFSRoot *root) {
 	ctx->is_openbfs = (magic1 == OBS_SUPER_MAGIC1);
 
 	ctx->block_size = bfs_read32 (ctx, (ut8 *)&sb.block_size);
-	if (!ctx->block_size || (ctx->block_size & (ctx->block_size - 1))) {
+	if (!ctx->block_size || (ctx->block_size &(ctx->block_size - 1))) {
 		R_LOG_ERROR ("Invalid BFS block size: must be power of 2");
 		goto fail;
 	}
