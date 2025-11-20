@@ -795,6 +795,9 @@ static int fs_bfs_read(RFSFile *file, ut64 addr, int len) {
 
 	// Find which block contains addr
 	ut64 block_size = ctx->block_size;
+	if (!block_size) {
+		return -1;
+	}
 	ut64 block_index = addr / block_size;
 	ut64 offset_in_block = addr % block_size;
 
