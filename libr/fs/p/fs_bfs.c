@@ -544,6 +544,12 @@ static bool bfs_walk_directory(BeosFS *ctx, BeosInode *dir_inode, ut64 parent_in
 				return false;
 			}
 			align_pad = (BTREE_ALIGN - (key_section % BTREE_ALIGN)) % BTREE_ALIGN;
+			// Bounds check: ensure key_offsets and values fit in node_buf
+			size_t required_size = sizeof (bfs_btree_nodehead_t) + key_length + align_pad + key_count * sizeof (ut16) + key_count * sizeof (ut64);
+			if (required_size > node_size) {
+				free (node_buf);
+				return false;
+			}
 			key_offsets = (ut16 *) (node_buf + sizeof (BeosTreeNodeHead) + key_length + align_pad);
 			values = (ut64 *) ((ut8 *)key_offsets + key_count * sizeof (ut16));
 			node_off = bfs_read64 (ctx, (ut8 *)&values[0]);
