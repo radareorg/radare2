@@ -742,6 +742,33 @@ static RFSFile *fs_bfs_open(RFSRoot *root, const char *path, bool create) {
 	return file;
 }
 
+static bool bfs_get_block_run(bfs_ctx_t *ctx, bfs_data_stream_t *ds, ut64 block_index, bfs_block_run_t *run) {
+	if (block_index < BFS_NUM_DIRECT_BLOCKS) {
+		*run = ds->direct[block_index];
+		return true;
+	}
+	ut64 indirect_index = block_index - BFS_NUM_DIRECT_BLOCKS;
+	ut64 num_per_block = ctx->block_size / sizeof(bfs_block_run_t);
+	if (indirect_index < num_per_block) {
+		ut64 indirect_offset = bfs_block_to_offset(ctx, &ds->indirect);
+		ut64 entry_offset = indirect_offset + indirect_index * sizeof(bfs_block_run_t);
+		return bfs_read_at(ctx, entry_offset, (ut8*)run, sizeof(*run));
+	} else {
+		indirect_index -= num_per_block;
+		ut64 double_indirect_index = indirect_index / num_per_block;
+		ut64 sub_index = indirect_index % num_per_block;
+		ut64 double_offset = bfs_block_to_offset(ctx, &ds->double_indirect);
+		ut64 double_entry_offset = double_offset + double_indirect_index * sizeof(bfs_block_run_t);
+		bfs_block_run_t indirect_run;
+		if (!bfs_read_at(ctx, double_entry_offset, (ut8*)&indirect_run, sizeof(indirect_run))) {
+			return false;
+		}
+		ut64 indirect_offset = bfs_block_to_offset(ctx, &indirect_run);
+		ut64 entry_offset = indirect_offset + sub_index * sizeof(bfs_block_run_t);
+		return bfs_read_at(ctx, entry_offset, (ut8*)run, sizeof(*run));
+	}
+}
+
 static int fs_bfs_read(RFSFile *file, ut64 addr, int len) {
 	R_RETURN_VAL_IF_FAIL (file, -1);
 
@@ -771,17 +798,15 @@ static int fs_bfs_read(RFSFile *file, ut64 addr, int len) {
 	ut64 block_index = addr / block_size;
 	ut64 offset_in_block = addr % block_size;
 
-	if (block_index >= BFS_NUM_DIRECT_BLOCKS) {
-		// TODO: Handle indirect blocks
+	bfs_block_run_t run;
+	if (!bfs_get_block_run(ctx, ds, block_index, &run)) {
+		return 0;
+	}
+	if (run.len == 0) {
 		return 0;
 	}
 
-	bfs_block_run_t *run = &ds->direct[block_index];
-	if (run->len == 0) {
-		return 0;
-	}
-
-	ut64 block_offset = bfs_block_to_offset (ctx, run);
+	ut64 block_offset = bfs_block_to_offset (ctx, &run);
 	ut64 read_offset = block_offset + offset_in_block;
 	int to_read = R_MIN (len, block_size - offset_in_block);
 
