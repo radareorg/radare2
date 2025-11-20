@@ -586,6 +586,11 @@ static bool bfs_walk_directory(BeosFS *ctx, BeosInode *dir_inode, ut64 parent_in
 				prev_end = end;
 				continue;
 			}
+			// Ensure name_len does not exceed buffer bounds
+			if ((ut64)prev_end + (ut64)name_len > (ut64)key_length) {
+				prev_end = end;
+				continue;
+			}
 			const char *name_ptr = (const char *) (key_data + prev_end);
 			prev_end = end;
 			if ((name_len == 1 && name_ptr[0] == '.') ||
