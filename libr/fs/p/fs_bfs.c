@@ -193,6 +193,10 @@ static inline bool bfs_is_directory(ut32 mode) {
 	return (mode & 0xF000) == 0x4000;
 }
 
+static inline bool bfs_is_regular_file(ut32 mode) {
+	return (mode & 0xF000) == 0x8000;
+}
+
 static ut64 bfs_block_to_offset(BeosFS *ctx, BeosBlockRun *run) {
 	ut64 ag_offset = (ut64)bfs_read32 (ctx, (ut8 *)&run->allocation_group) << ctx->ag_shift;
 	ut64 block_offset = (ut64)bfs_read16 (ctx, (ut8 *)&run->start) << ctx->block_shift;
@@ -333,14 +337,17 @@ static bool bfs_find_inode_by_name_cb(void *user, const ut64 key, const void *va
 }
 
 static ut64 bfs_resolve_path(BeosFS *ctx, const char *path) {
-	if (!path || !*path || strcmp (path, "/") == 0) {
+	if (!path || !*path) {
 		return 0;
+	}
+	if (strcmp (path, "/") == 0) {
+		return bfs_block_index (ctx, &ctx->root_dir);
 	}
 	RList *components = r_str_split_list ((char *)path, "/", 0);
 	if (!components) {
 		return 0;
 	}
-	ut64 current_inode = 0;
+	ut64 current_inode = bfs_block_index (ctx, &ctx->root_dir);
 	RListIter *iter;
 	const char *comp;
 	r_list_foreach (components, iter, comp) {
@@ -378,7 +385,7 @@ static bool bfs_dir_iter_cb(void *user, const ut64 key, const void *value) {
 	ut32 mode = bfs_read32 (bfs_ctx, (ut8 *)&cache->inode->mode);
 	if (bfs_is_directory (mode)) {
 		fsf->type = R_FS_FILE_TYPE_DIRECTORY;
-	} else if ((mode & 0xF000) == 0x8000) { // Regular file
+	} else if (bfs_is_regular_file (mode)) {
 		fsf->type = R_FS_FILE_TYPE_REGULAR;
 		fsf->size = bfs_read64 (bfs_ctx, (ut8 *)&cache->inode->data.datastream.size);
 	} else {
@@ -452,12 +459,21 @@ static bool fs_bfs_mount(RFSRoot *root) {
 			R_LOG_ERROR ("Failed to read root directory inode");
 			goto fail;
 		}
-		if (!bfs_walk_directory (ctx, root_inode, 0)) {
+		BeosInodeCache *root_cache = R_NEW0 (BeosInodeCache);
+		if (!root_cache) {
 			free (root_inode);
+			goto fail;
+		}
+		root_cache->inode_num = root_block;
+		root_cache->parent_inode_num = 0; // root has no parent
+		root_cache->name = NULL;
+		root_cache->inode = root_inode;
+		ht_up_insert (ctx->inodes, root_block, root_cache);
+		if (!bfs_walk_directory (ctx, root_inode, root_block)) {
 			R_LOG_ERROR ("Failed to walk root directory B+tree");
 			goto fail;
 		}
-		free (root_inode);
+		// root_inode is now in cache, don't free
 	}
 
 	ctx->mounted = true;
@@ -545,7 +561,7 @@ static bool bfs_walk_directory(BeosFS *ctx, BeosInode *dir_inode, ut64 parent_in
 			}
 			align_pad = (BTREE_ALIGN - (key_section % BTREE_ALIGN)) % BTREE_ALIGN;
 			// Bounds check: ensure key_offsets and values fit in node_buf
-			size_t required_size = sizeof (bfs_btree_nodehead_t) + key_length + align_pad + key_count * sizeof (ut16) + key_count * sizeof (ut64);
+			size_t required_size = sizeof (BeosTreeNodeHead) + key_length + align_pad + key_count * sizeof (ut16) + key_count * sizeof (ut64);
 			if (required_size > node_size) {
 				free (node_buf);
 				return false;
@@ -656,7 +672,7 @@ static RList *fs_bfs_dir(RFSRoot *root, const char *path, int view) {
 		return NULL;
 	}
 	ut64 parent_inode_num = bfs_resolve_path (ctx, path);
-	if (parent_inode_num == 0 && strcmp (path, "/") != 0) {
+	if (parent_inode_num == 0) {
 		r_list_free (list);
 		return NULL;
 	}
@@ -679,16 +695,13 @@ static RFSFile *fs_bfs_open(RFSRoot *root, const char *path, bool create) {
 	}
 
 	ut64 inode_num = bfs_resolve_path (ctx, path);
-	if (inode_num == 0 && strcmp (path, "/") != 0) {
+	if (inode_num == 0) {
 		return NULL;
 	}
 
-	BeosInodeCache *cache = NULL;
-	if (inode_num != 0) {
-		cache = bfs_get_inode (ctx, inode_num);
-		if (!cache || !cache->inode) {
-			return NULL;
-		}
+	BeosInodeCache *cache = bfs_get_inode (ctx, inode_num);
+	if (!cache || !cache->inode) {
+		return NULL;
 	}
 
 	RFSFile *file = r_fs_file_new (root, path);
@@ -698,19 +711,14 @@ static RFSFile *fs_bfs_open(RFSRoot *root, const char *path, bool create) {
 
 	file->ptr = (void *) (size_t)inode_num;
 
-	if (inode_num == 0) {
+	ut32 mode = bfs_read32 (ctx, (ut8 *)&cache->inode->mode);
+	if (bfs_is_directory (mode)) {
 		file->type = R_FS_FILE_TYPE_DIRECTORY;
-		file->size = 0;
+	} else if (bfs_is_regular_file (mode)) {
+		file->type = R_FS_FILE_TYPE_REGULAR;
+		file->size = bfs_read64 (ctx, (ut8 *)&cache->inode->data.datastream.size);
 	} else {
-		ut32 mode = bfs_read32 (ctx, (ut8 *)&cache->inode->mode);
-		if (bfs_is_directory (mode)) {
-			file->type = R_FS_FILE_TYPE_DIRECTORY;
-		} else if ((mode & 0xF000) == 0x8000) { // Regular file
-			file->type = R_FS_FILE_TYPE_REGULAR;
-			file->size = bfs_read64 (ctx, (ut8 *)&cache->inode->data.datastream.size);
-		} else {
-			file->type = R_FS_FILE_TYPE_SPECIAL;
-		}
+		file->type = R_FS_FILE_TYPE_SPECIAL;
 	}
 
 	return file;
