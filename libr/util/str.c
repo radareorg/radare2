@@ -2223,7 +2223,7 @@ R_API char *r_str_ansi_crop(const char *str, ut32 x, ut32 y, ut32 x2, ut32 y2) {
 				if (*str == 0x1b && *(str + 1) == '[') {
 					const char *ptr = str;
 					/* Need at least 4 bytes for escape sequence (e.g., \x1b[0m) */
-					if ((r_end - r) > 4 && *(str + 1)) {
+					if ((r_end - r) > 4) {
 						/* copy 0x1b and [ */
 						*r++ = *str++;
 						*r++ = *str++;
@@ -2236,6 +2236,14 @@ R_API char *r_str_ansi_crop(const char *str, ut32 x, ut32 y, ut32 x2, ut32 y2) {
 						if ((r_end - r) > 0 && *ptr) {
 							*r++ = *ptr++;
 						} else if (*ptr) {
+							ptr++;
+						}
+					} else {
+						/* Buffer too small to copy full sequence, just skip it */
+						ptr = str + 2;
+						for (; *ptr && *ptr != 'J' && *ptr != 'm' && *ptr != 'H'; ptr++) {
+						}
+						if (*ptr) {
 							ptr++;
 						}
 					}
