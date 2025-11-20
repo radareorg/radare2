@@ -20,7 +20,6 @@
 #define BFS_SYMLINK_LEN 144
 #define BFS_NUM_DIRECT_BLOCKS 12
 #define BTREE_ALIGN 8
-#define BTREE_ALIGN 8
 
 // Inode flags
 #define BEFS_INODE_IN_USE 0x00000001
@@ -151,7 +150,6 @@ typedef struct {
 	ut64 parent_inode_num;
 	char *name;
 	BeosInode *inode;
-	RList *dent_nodes; // Directory entries
 	bool is_directory;
 	bool parsed;
 } BeosInodeCache;
@@ -294,7 +292,6 @@ static void bfs_free_inode(BeosInodeCache *inode) {
 	if (!inode) {
 		return;
 	}
-	r_list_free (inode->dent_nodes);
 	free (inode->name);
 	free (inode->inode);
 	free (inode);
@@ -307,7 +304,6 @@ static bool bfs_free_inode_cb(void *user, const ut64 key, const void *value) {
 
 static bool bfs_walk_directory(BeosFS *ctx, BeosInode *dir_inode, ut64 parent_inode_num);
 
-// AITODO . merge BeosDirIterContext and BeosFindContext
 typedef struct {
 	RList *list;
 	ut64 parent_inode_num;
@@ -605,7 +601,6 @@ static bool bfs_walk_directory(BeosFS *ctx, BeosInode *dir_inode, ut64 parent_in
 				cache->parent_inode_num = parent_inode_num;
 				cache->name = r_str_ndup (name_ptr, name_len);
 				cache->inode = child_inode;
-				cache->dent_nodes = NULL;
 				ht_up_insert (ctx->inodes, inode_block, cache);
 			} else {
 				if (!cache->name) {
