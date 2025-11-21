@@ -44,7 +44,7 @@ R_API void r_cons_visual_write(RCons *cons, char *buffer) {
 		return;
 	}
 	if (cols > 0) {
-		white = r_str_pad2 (NULL, 0, ' ', cols);
+		white = r_str_pad (NULL, 0, ' ', cols);
 		if (white) {
 			white_len = cols;
 		}

@@ -120,7 +120,7 @@ static void draw_highlighted_box(RConsCanvas *can, int xpos, int ypos, int boxwi
 
 	// Fill top line with #### for selected boxes (between the borders)
 	if (is_selected && boxwidth > 2) {
-		char *top_line = r_str_pad2 (NULL, 0, '#', boxwidth - 2);
+		char *top_line = r_str_pad (NULL, 0, '#', boxwidth - 2);
 		r_cons_canvas_write_at (can, top_line, xpos + 1, ypos);
 		free (top_line);
 	}
@@ -454,7 +454,7 @@ static void draw_level2_disassembly(RVMatrix *rvm) {
 		}
 		char title[256];
 		int header_len = disasm_w - 4;
-		char *header_line = r_str_pad2 (NULL, 0, '-', header_len);
+		char *header_line = r_str_pad (NULL, 0, '-', header_len);
 		r_cons_canvas_write_at (can, header_line, disasm_x + 2, disasm_y);
 		free (header_line);
 

@@ -287,7 +287,7 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 						r_cons_printf (core->cons, "agn %s %s\n", name, name + parent_len);
 						r_cons_printf (core->cons, "age %s %s\n", *parent_prefix ? parent_prefix : "root", name);
 					} else {
-						r_str_pad2 (padstr, sizeof (padstr), ' ', parent_len);
+						r_str_pad (padstr, sizeof (padstr), ' ', parent_len);
 						r_cons_printf (core->cons, "%s %s\n", padstr, name + parent_len);
 					}
 				}
@@ -303,7 +303,7 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 						r_cons_printf (core->cons, "agn %s %s\n", name, name + parent_len);
 						r_cons_printf (core->cons, "age %s %s\n", *parent_prefix ? parent_prefix : "root", name);
 					} else {
-						r_str_pad2 (padstr, sizeof (padstr), ' ', parent_len);
+						r_str_pad (padstr, sizeof (padstr), ' ', parent_len);
 						r_cons_printf (core->cons, "%s %s\n", padstr, name + parent_len);
 					}
 				}
@@ -321,7 +321,7 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 						r_cons_printf (core->cons, "agn %s %s\n", name, name + parent_len);
 						r_cons_printf (core->cons, "age %s %s\n", *parent_prefix ? parent_prefix : "root", name);
 					} else {
-						char *pad = r_str_pad2 (NULL, 0, ' ', parent_len);
+						char *pad = r_str_pad (NULL, 0, ' ', parent_len);
 						r_cons_printf (core->cons, "%s %s\n", pad, name + parent_len);
 						free (pad);
 					}
@@ -357,7 +357,7 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 						r_cons_printf (core->cons, "agn %s %s\n", group, group + parent_len);
 						r_cons_printf (core->cons, "age %s %s\n", *parent_prefix ? parent_prefix : "root", group);
 					} else {
-						r_str_pad2 (padstr, sizeof (padstr), ' ', parent_len);
+						r_str_pad (padstr, sizeof (padstr), ' ', parent_len);
 						r_cons_printf (core->cons, "%s %s\n", padstr, group + parent_len);
 					}
 					/* Prepare new context for this group */
@@ -399,7 +399,7 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 							r_cons_printf (core->cons, "agn %s %s\n", fname, fname + parent_len);
 							r_cons_printf (core->cons, "age %s %s\n", *parent_prefix ? parent_prefix : "root", fname);
 						} else {
-							r_str_pad2 (padstr, sizeof (padstr), ' ', parent_len);
+							r_str_pad (padstr, sizeof (padstr), ' ', parent_len);
 							r_cons_printf (core->cons, "%s %s\n", padstr, fname + parent_len);
 						}
 					}
@@ -539,14 +539,14 @@ static void cmd_fz(RCore *core, const char *input) {
 				char *title = r_str_newf ("[ 0x%08"PFMT64x" ]", core->addr);
 				title_size = strlen (title);
 				padsize -= strlen (title) / 2;
-				char *halfpad = r_str_pad2 (NULL, 0, ' ', padsize);
+				char *halfpad = r_str_pad (NULL, 0, ' ', padsize);
 				r_cons_printf (core->cons, "%s%s", halfpad, title);
 				free (halfpad);
 				free (title);
 			}
 			if (b) {
 				padsize = (w / 2) - title_size - strlen (b) - 4;
-				char *halfpad = r_str_pad2 (NULL, 0, ' ', padsize);
+				char *halfpad = r_str_pad (NULL, 0, ' ', padsize);
 				r_cons_printf (core->cons, "%s[%s >>]", halfpad, b);
 				free (halfpad);
 			}
@@ -1991,7 +1991,7 @@ static int cmd_flag(void *data, const char *input) {
 						r_cons_printf (core->cons, "fc %s=%s\n", fi->name, fim->color);
 					} else {
 						char padstr[16];
-						r_str_pad2 (padstr, sizeof (padstr), ' ', 10 - strlen (fi->name));
+						r_str_pad (padstr, sizeof (padstr), ' ', 10 - strlen (fi->name));
 						r_cons_printf (core->cons, "0x%08"PFMT64x"  %s%s%s\n", fi->addr, fi->name, padstr, fim->color);
 					}
 				}

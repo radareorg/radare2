@@ -724,7 +724,7 @@ R_API int r_line_hist_list(RLine *line, bool full) {
 	if (line->history.data) {
 		i = full? 0: line->history.load_index;
 		for (; i < line->history.size && line->history.data[i]; i++) {
-			char *pad = r_str_pad2 (NULL, 0, ' ', 32 - strlen (line->history.data[i]));
+			char *pad = r_str_pad (NULL, 0, ' ', 32 - strlen (line->history.data[i]));
 			r_cons_printf (line->cons, "%s %s # !%d\n", line->history.data[i], pad, i);
 			free (pad);
 		}
@@ -820,7 +820,7 @@ static void selection_widget_draw(RCons *cons) {
 	} else {
 		pos_y = r_cons_get_cur_line ();
 		if (pos_y + sel_widget->h > cons->rows) {
-			char *padstr = r_str_pad2 (NULL, 0, '\n', sel_widget->h);
+			char *padstr = r_str_pad (NULL, 0, '\n', sel_widget->h);
 			printf ("%s\n", padstr);
 			free (padstr);
 			pos_y = cons->rows - sel_widget->h - 1;

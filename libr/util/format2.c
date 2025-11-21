@@ -1963,7 +1963,7 @@ static int r_print_format_struct(RPrintFormat *pf, ut64 seek, const ut8 *b, int 
 	r_print_format_internal (p, pf, seek, b, len, fmt, mode, setval, field);
 	int ret = r_print_format_struct_size (p, fmt, mode, 0);
 	if (!MUSTSEESTRUCT && MUSTSEE) {
-		char *pad = r_str_pad2 (NULL, 0, ' ', R_MAX (0, pf->ident));
+		char *pad = r_str_pad (NULL, 0, ' ', R_MAX (0, pf->ident));
 		r_print_printf (p, "%s%s}\n", pad, name);
 		free (pad);
 	}
@@ -2936,7 +2936,7 @@ beach:
 		pj_end (pf->pj);
 	}
 	if (MUSTSEESTRUCT) {
-		char *pad = r_str_pad2 (NULL, 0, ' ', R_MAX (0, pf->ident - 4));
+		char *pad = r_str_pad (NULL, 0, ' ', R_MAX (0, pf->ident - 4));
 		r_print_printf (p, "%s}\n", pad);
 		free (pad);
 		// r_print_printf (p, "%*c}\n", pf->ident - 4, ' ');

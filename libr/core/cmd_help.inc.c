@@ -479,7 +479,7 @@ static void colormessage(RCore *core, const char *msg) {
 	char padstr[128];
 	size_t msglen = strlen (msg);
 	RCons *cons = core->cons;
-	const char *pad = r_str_pad2 (padstr, sizeof (padstr), ' ', msglen + 5);
+	const char *pad = r_str_pad (padstr, sizeof (padstr), ' ', msglen + 5);
 	r_cons_gotoxy (cons, 10, 10); r_cons_printf (cons, Color_BGBLUE"%s", pad);
 	r_cons_gotoxy (cons, 10, 11); r_cons_printf (cons, Color_BGBLUE"%s", pad);
 	r_cons_gotoxy (cons, 10, 12); r_cons_printf (cons, Color_BGBLUE"%s", pad);
@@ -1071,7 +1071,7 @@ static int cmd_help(void *data, const char *input) {
 			};
 			const bool wideOffsets = r_config_get_i (core->config, "scr.wideoff");
 			while (vars[i]) {
-				const char *pad = r_str_pad2 (padstr, sizeof (padstr), ' ', 6 - strlen (vars[i]));
+				const char *pad = r_str_pad (padstr, sizeof (padstr), ' ', 6 - strlen (vars[i]));
 				if (wideOffsets) {
 					r_cons_printf (core->cons, "%s %s 0x%016"PFMT64x"\n", vars[i], pad, r_num_math (core->num, vars[i]));
 				} else {

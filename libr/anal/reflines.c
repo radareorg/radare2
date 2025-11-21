@@ -311,7 +311,7 @@ static void add_spaces(RBuffer *b, int level, int pos, bool wide) {
 		if (pos > level + 1) {
 			int count = R_MIN (pos - level - 1, 255);
 			char padbuf[256];
-			r_str_pad2 (padbuf, sizeof (padbuf), ' ', count);
+			r_str_pad (padbuf, sizeof (padbuf), ' ', count);
 			r_buf_append_bytes (b, (ut8 *)padbuf, count);
 		}
 	}
@@ -325,7 +325,7 @@ static void fill_level(RBuffer *b, int pos, char ch, RAnalRefline *r, bool wide)
 	int count = R_MAX (0, R_MIN (sz - 1, 255));
 	if (count > 0) {
 		char padbuf[256];
-		r_str_pad2 (padbuf, sizeof (padbuf), ch, count);
+		r_str_pad (padbuf, sizeof (padbuf), ch, count);
 		if (pos == -1) {
 			r_buf_append_bytes (b, (ut8 *)padbuf, count);
 		} else {

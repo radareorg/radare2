@@ -1953,7 +1953,7 @@ static bool listCB(RSignItem *it, void *user) {
 		break;
 	case 'q':
 		a->cb_printf ("0x%08" PFMT64x " ", it->addr);
-		const char *pad = r_str_pad2 (padstr, sizeof (padstr), ' ', 30 - strlen (it->name));
+		const char *pad = r_str_pad (padstr, sizeof (padstr), ' ', 30 - strlen (it->name));
 		a->cb_printf ("%s:%s", it->name, pad);
 		break;
 	case 'j':
