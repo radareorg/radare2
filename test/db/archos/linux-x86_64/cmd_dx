@@ -21,16 +21,15 @@ NAME=dx always restores bytes at pc
 FILE=bins/elf/ls-focal
 ARGS=-d
 CMDS=<<EOF
-p8 8 @rip
+wtf .tmp_dx_pre 8 @rip
 dx 9090909090909090
-?e ---
-p8 8 @rip
+wtf .tmp_dx_post 8 @rip
+!sh -c "cmp .tmp_dx_pre .tmp_dx_post >/dev/null; echo $?"
+!rm .tmp_dx_pre .tmp_dx_post
 doc
 EOF
 EXPECT=<<EOF
-4889e7e8980d0000
----
-4889e7e8980d0000
+0
 EOF
 RUN
 

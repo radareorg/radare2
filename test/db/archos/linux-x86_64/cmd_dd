@@ -1,5 +1,4 @@
 NAME=basic dd usage
-BROKEN=1
 FILE=bins/elf/ls-focal
 ARGS=-d
 CMDS=<<EOF
@@ -38,7 +37,6 @@ EOF
 RUN
 
 NAME=dd open, close, duplicate
-BROKEN=1
 FILE=bins/elf/ls-focal
 ARGS=-d
 CMDS=<<EOF
@@ -74,7 +72,6 @@ EOF
 RUN
 
 NAME=dd read, write, seek
-BROKEN=1
 FILE=bins/elf/ls-focal
 ARGS=-d
 CMDS=<<EOF
@@ -128,7 +125,6 @@ EOF
 RUN
 
 NAME=ddf
-BROKEN=1
 FILE=bins/elf/ls-focal
 ARGS=-d
 CMDS=<<EOF
@@ -199,7 +195,6 @@ orax = 0x0000003b
 EOF
 RUN
 
-# TODO
 NAME=only run dd commands if given fd exists
 FILE=bins/elf/ls-focal
 ARGS=-d
@@ -207,6 +202,25 @@ CMDS=<<EOF
 doc
 EOF
 EXPECT=<<EOF
+EOF
+RUN
+
+NAME=dds defaults to offset 0
+FILE=bins/elf/ls-focal
+ARGS=-d
+CMDS=<<EOF
+dd bins/elf/ls-focal
+dds 3 4
+dd~^3[1]
+?e ---
+dds 3
+dd~^3[1]
+doc
+EOF
+EXPECT=<<EOF
+0x4
+---
+0x0
 EOF
 RUN
 

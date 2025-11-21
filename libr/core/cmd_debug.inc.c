@@ -5194,13 +5194,13 @@ static int run_buffer_dxr(RCore *core, RBuffer *buf, bool print, bool ignore_sta
 	return ret;
 }
 
-// TODO: dd commands need tests in archos/linux-x64/cmd_dd
 // TODO: update the book page at src/debugger/files.html
 static int cmd_debug_desc(RCore *core, const char *input) {
 	int argc;
 	char **argv;
 	bool needs_live_process = false;
 	bool print = false; // enabled with *, print the command instead of running it
+	bool cfg_debug = r_config_get_b (core->config, "cfg.debug");
 	int ret = 0;
 
 	if (input[1] == '?') { // "dd?"
@@ -5247,13 +5247,15 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 	// See the comment above
 	input = R_BORROW argv[0] + 1;
 
-	// "dd" and "dd*" always need a live process
-	if (!print || !input[0] || (input[0] == '*' && !input[1])) {
+	// "dd" and "dd*" always need a live process unless we're only printing
+	if (!print) {
+		needs_live_process = true;
+	} else if (!input[0] || (input[0] == '*' && argc < 2)) {
 		needs_live_process = true;
 	}
 
 	// Error out if we need a live process and there isn't one
-	if (needs_live_process && !r_config_get_b (core->config, "cfg.debug")) {
+	if (needs_live_process && !cfg_debug) {
 		R_LOG_ERROR ("No child process to manage files for");
 		ret = 1;
 		goto out_free_argv;
@@ -5265,9 +5267,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 	case '*': // "dd*"
 	case '+': // "dd+"
 	case ' ': // "dd"
-		if (r_config_get_b (core->config, "cfg.debug")) {
-			R_LOG_WARN ("Child file descriptors require the debugger. No alternative for static yet");
-		} else {
+		{
 			RBuffer *buf;
 			char *filename;
 			ut64 addr;
@@ -5292,9 +5292,33 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 			// Filename can be a given string or char* address in memory
 			addr = r_num_math (core->num, argv[1]);
 			if (addr) {
+				if (!cfg_debug || !core->dbg) {
+					R_LOG_ERROR ("No child process to read filename pointer");
+					ret = 1;
+					break;
+				}
 				filename = r_core_cmd_strf (core, "ps @%" PFMT64x, addr);
+				if (filename && !*filename) {
+					R_FREE (filename);
+				}
+				if (!filename) {
+					char pathbuf[1024] = {0};
+					core->dbg->iob.read_at (core->dbg->iob.io, addr, (ut8*)pathbuf, sizeof (pathbuf) - 1);
+					if (*pathbuf) {
+						filename = strdup (pathbuf);
+					}
+				}
 			} else {
 				filename = r_str_escape (argv[1]);
+			}
+			if (filename) {
+				r_str_trim (filename);
+			}
+			if (R_STR_ISEMPTY (filename)) {
+				R_LOG_ERROR ("File path is empty");
+				free (filename);
+				ret = 1;
+				break;
 			}
 
 			if (!(flags & O_CREAT) && !r_file_exists (filename)) {
@@ -6220,7 +6244,6 @@ static int cmd_debug(void *data, const char *input) {
 			}
 			/* fall through */
 		case ' ': { // "dx "
-			ut8 bytes[4096];
 			const bool is_dxr = input[1] == 'r';
 			const bool is_dxrs = is_dxr && input[2] == 's';
 			const char *hexpairs = input + 2;
@@ -6231,18 +6254,31 @@ static int cmd_debug(void *data, const char *input) {
 				}
 			}
 
-			if (strlen (hexpairs) < 8192) {
-				int bytes_len = r_hex_str2bin (hexpairs, bytes);
-				if (bytes_len > 0) {
-					if (!r_debug_execute (core->dbg, bytes, bytes_len, NULL, is_dxr, is_dxrs)) {
-						R_LOG_ERROR ("Failed to execute code");
-					}
-				} else {
-					R_LOG_ERROR ("Failed to parse hex pairs");
+			// mirror previous guard: refuse injections >4KB to avoid huge buffers
+			int hex_len = strlen (hexpairs);
+			if (hex_len >= 8192) {
+				R_LOG_ERROR ("Cannot inject more than 4096 bytes at once");
+				break;
+			}
+			int exec_buf_len = hex_len / 2 + 2;
+			ut8 *exec_buf = malloc (exec_buf_len);
+			if (!exec_buf) {
+				R_LOG_ERROR ("Cannot allocate dx buffer");
+				break;
+			}
+			int bytes_len = r_hex_str2bin (hexpairs, exec_buf);
+			if (bytes_len > 0) {
+				bool restore = true;
+				bool ignore_stack = is_dxrs;
+				const int exec_len = bytes_len + 1;
+				exec_buf[exec_len - 1] = 0xcc;
+				if (!r_debug_execute (core->dbg, exec_buf, exec_len, NULL, restore, ignore_stack)) {
+					R_LOG_ERROR ("Failed to execute code");
 				}
 			} else {
-				R_LOG_ERROR ("Cannot inject more than 4096 bytes at once");
+				R_LOG_ERROR ("Failed to parse hex pairs");
 			}
+			free (exec_buf);
 			break;
 		}
 		case 'a': { // "dxa"
