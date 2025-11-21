@@ -275,16 +275,20 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop, ut32 *bitsi
 	cs_insn *insn = gop->insn;
 	csh handle = gop->handle;
 
-	cs_x86_op op = INSOP (n);
 	if (bitsize) {
-		size_t bs = op.size * 8;
-		*bitsize = bs? bs: 8;
+		// default blind bitsize which may be wrong
+		*bitsize = 8;
 	}
+	cs_x86_op op = INSOP (n);
 	if (!insn->detail) {
 		return NULL;
 	}
 	if (n < 0 || n >= INSOPS) {
 		return NULL;
+	}
+	if (bitsize) {
+		size_t bs = op.size * 8;
+		*bitsize = bs? bs: 8;
 	}
 	switch (op.type) {
 #if CS_API_MAJOR == 3
