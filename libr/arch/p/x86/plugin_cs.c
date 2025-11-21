@@ -275,15 +275,16 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop, ut32 *bitsi
 	cs_insn *insn = gop->insn;
 	csh handle = gop->handle;
 
+	cs_x86_op op = INSOP (n);
+	if (bitsize) {
+		size_t bs = op.size * 8;
+		*bitsize = bs? bs: 8;
+	}
 	if (!insn->detail) {
 		return NULL;
 	}
 	if (n < 0 || n >= INSOPS) {
 		return NULL;
-	}
-	cs_x86_op op = INSOP (n);
-	if (bitsize) {
-		*bitsize = op.size * 8;
 	}
 	switch (op.type) {
 #if CS_API_MAJOR == 3
@@ -948,7 +949,7 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	case X86_INS_SHLX:
 		// TODO: SHLD is not implemented yet.
 		{
-			ut32 bitsize = 0;
+			ut32 bitsize;
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			dst = getarg (&gop, 0, 1, "<<", &bitsize);
 			esilprintf (op, "%s,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=", src, dst, bitsize - 1);
@@ -1006,8 +1007,8 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	case X86_INS_SHL:
 	case X86_INS_SAL:
 		{
-		ut32 bitsize = 0;
-		src = getarg (&gop, 1, 0, NULL, NULL);
+		ut32 bitsize;
+		src = getarg (&gop, 1, 0, NULL, &bitsize);
 		dst = getarg (&gop, 0, 0, NULL, NULL);
 		// dst2 = getarg (&gop, 0, 1, "<<", &bitsize);
 #if 0
@@ -1039,15 +1040,14 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		}
 		// OLD: esilprintf (op, "0,%s,!,!,?{,1,%s,-,%s,<<,0x%"PFMT64x",&,!,!,^,},%s,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=,cf,=", src, src, dst, val, src, dst2, bitsize - 1);
 		esilprintf (op,
-		"%s,0x%"PFMT64x",&,POP,$z,cf,:=,"
-		"%s,%s,<<=,"
-		"$z,zf,:=,"
-		"$p,pf,:=,"
-		"%d,$s,sf,:="
-		,
-		dst, val,
-		src, dst,
-		bitsize - 1);
+			"%s,0x%"PFMT64x",&,POP,$z,cf,:=,"
+			"%s,%s,<<=,"
+			"$z,zf,:=,"
+			"$p,pf,:=,"
+			"%d,$s,sf,:=",
+			dst, val,
+			src, dst,
+			bitsize - 1);
 		free (src);
 		free (dst);
 	   	}
@@ -1063,8 +1063,10 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			dst_r = getarg (&gop, 0, 0, NULL, NULL);
 			dst_w = getarg (&gop, 0, 1, NULL, &bitsize);
-			esilprintf (op, "0,cf,:=,1,%s,-,1,<<,%s,&,?{,1,cf,:=,},%s,%s,>>,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=",
+			if (src && dst_r && dst_w) {
+				esilprintf (op, "0,cf,:=,1,%s,-,1,<<,%s,&,?{,1,cf,:=,},%s,%s,>>,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=",
 					src, dst_r, src, dst_r, dst_w, bitsize - 1);
+			}
 			free (src);
 			free (dst_r);
 			free (dst_w);
@@ -2181,8 +2183,10 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			ut32 bitsize;
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			dst = getarg (&gop, 0, 0, NULL, &bitsize);
-			esilprintf (op, "%u,%u,%s,F2D,%u,%s,F2D,F+,D2F,%s,=",
-				bitsize, bitsize, src, bitsize, dst, dst);
+			if (src && dst) {
+				esilprintf (op, "%u,%u,%s,F2D,%u,%s,F2D,F+,D2F,%s,=",
+					bitsize, bitsize, src, bitsize, dst, dst);
+			}
 			free (src);
 			free (dst);
 			break;
@@ -2200,29 +2204,31 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		{
 			char operator = '+';
 			switch (insn->id) {
-				case X86_INS_SUBSS:
-				case X86_INS_SUBPS:
-					operator = '-';
-					break;
-				case X86_INS_MULSS:
-				case X86_INS_MULPS:
-					operator = '*';
-					break;
-				case X86_INS_DIVSS:
-				case X86_INS_DIVPS:
-					operator = '/';
-					break;
-				case X86_INS_ADDSUBPS:
-				case X86_INS_ADDSS:
-				case X86_INS_ADDPS:
-				default:
-					operator = '+';
-					break;
+			case X86_INS_SUBSS:
+			case X86_INS_SUBPS:
+				operator = '-';
+				break;
+			case X86_INS_MULSS:
+			case X86_INS_MULPS:
+				operator = '*';
+				break;
+			case X86_INS_DIVSS:
+			case X86_INS_DIVPS:
+				operator = '/';
+				break;
+			case X86_INS_ADDSUBPS:
+			case X86_INS_ADDSS:
+			case X86_INS_ADDPS:
+			default:
+				operator = '+';
+				break;
 			}
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			dst = getarg (&gop, 0, 0, NULL, NULL);
-			esilprintf (op, "32,32,%s,F2D,32,%s,F2D,F%c,D2F,%s,=",
-				src, dst, operator, dst);
+			if (src && dst) {
+				esilprintf (op, "32,32,%s,F2D,32,%s,F2D,F%c,D2F,%s,=",
+					src, dst, operator, dst);
+			}
 			free (src);
 			free (dst);
 		}
@@ -2260,7 +2266,9 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			}
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			dst = getarg (&gop, 0, 0, NULL, NULL);
-			esilprintf (op, "%s,%s,F%c,%s,=", src, dst, operator, dst);
+			if (src && dst) {
+				esilprintf (op, "%s,%s,F%c,%s,=", src, dst, operator, dst);
+			}
 			free (src);
 			free (dst);
 		}
@@ -2270,7 +2278,9 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		{
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			dst = getarg (&gop, 0, 1, NULL, NULL);
-			esilprintf (op, "32,32,%s,F2D,1,I2D,F/,D2F,%s", src, dst);
+			if (src && dst) {
+				esilprintf (op, "32,32,%s,F2D,1,I2D,F/,D2F,%s", src, dst);
+			}
 			free (src);
 			free (dst);
 		}
@@ -2280,7 +2290,9 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		{
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			dst = getarg (&gop, 0, 1, NULL, NULL);
-			esilprintf (op, "32,32,%s,F2D,SQRT,D2F,%s", src, dst);
+			if (src && dst) {
+				esilprintf (op, "32,32,%s,F2D,SQRT,D2F,%s", src, dst);
+			}
 			free (src);
 			free (dst);
 		}
@@ -2290,7 +2302,9 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		{
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			dst = getarg (&gop, 0, 1, NULL, NULL);
-			esilprintf (op, "32,32,%s,F2D,SQRT,1,I2D,F/,D2F,%s", src, dst);
+			if (src && dst) {
+				esilprintf (op, "32,32,%s,F2D,SQRT,1,I2D,F/,D2F,%s", src, dst);
+			}
 			free (src);
 			free (dst);
 		}
@@ -2300,7 +2314,9 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		{
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			dst = getarg (&gop, 0, 1, NULL, NULL);
-			esilprintf (op, "%s,SQRT,%s", src, dst);
+			if (src && dst) {
+				esilprintf (op, "%s,SQRT,%s", src, dst);
+			}
 			free (src);
 			free (dst);
 		}
@@ -2312,8 +2328,10 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			ut32 bitsize;
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			dst = getarg (&gop, 0, 1, "+", &bitsize);
-			esilprintf (op, "%s,%s,%d,$o,of,:=,%d,$s,sf,:=,$z,zf,:=,%d,$c,cf,:=,$p,pf,:=,3,$c,af,:=",
-				src, dst, bitsize - 1, bitsize - 1, bitsize - 1);
+			if (src && dst) {
+				esilprintf (op, "%s,%s,%d,$o,of,:=,%d,$s,sf,:=,$z,zf,:=,%d,$c,cf,:=,$p,pf,:=,3,$c,af,:=",
+					src, dst, bitsize - 1, bitsize - 1, bitsize - 1);
+			}
 			free (src);
 			free (dst);
 		}
@@ -2329,8 +2347,10 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			// to the operation of adding dst += src rather than the one
 			// that adds carry (as esil only keeps track of the last
 			// addition to set the flags).
-			esilprintf (op, "cf,%s,+,%s,%d,$o,of,:=,%d,$s,sf,:=,$z,zf,:=,%d,$c,cf,:=,$p,pf,:=,3,$c,af,:=",
+			if (src && dst) {
+				esilprintf (op, "cf,%s,+,%s,%d,$o,of,:=,%d,$s,sf,:=,$z,zf,:=,%d,$c,cf,:=,$p,pf,:=,3,$c,af,:=",
 					src, dst, bitsize - 1, bitsize - 1, bitsize - 1);
+			}
 			free (src);
 			free (dst);
 		}
