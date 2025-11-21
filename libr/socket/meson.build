@@ -19,7 +19,7 @@ if get_option('blob')
 endif
 
 if host_machine.system() == 'haiku'
-  r_util_deps += [
+  r_socket_deps += [
     cc.find_library('network')
   ]
 endif
