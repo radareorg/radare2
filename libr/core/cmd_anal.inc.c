@@ -9767,6 +9767,7 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 				idx++;
 			}
 			r_cons_printf (core->cons, "\n ");
+			char padstr[128];
 			int i;
 			for (i = 0; i < rows; i++) {
 				int iref = row[i].idx - 1;
@@ -9792,7 +9793,7 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 					}
 				}
 				const char guess = guess_arg (iref, word);
-				const char *indent = r_str_pad (' ', 12 - strlen (word));
+				const char *indent = r_str_pad2 (padstr, sizeof (padstr), ' ', 12 - strlen (word));
 				r_cons_printf (core->cons, "%s__%s %d%c %s%s%s %s= 0%o\n ",
 					color, Color_RESET, iref, guess, color, word, Color_RESET, indent, numbers[i]);
 			}

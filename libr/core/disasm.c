@@ -1778,8 +1778,7 @@ static void ds_atabs_option(RDisasmState *ds) {
 		if (n < 1) {
 			n = 1;
 		}
-		const char *tab = r_str_pad (' ', n);
-		r_strbuf_append_n (sb, tab, n);
+		r_strbuf_pad (sb, ' ', n);
 		i = 0;
 		word++;
 		if (ds->atabsonce) {
@@ -4254,7 +4253,8 @@ static void ds_print_optype(RDisasmState *ds) {
 	if (ds->show_optype) {
 		const char *optype = r_anal_optype_tostring (ds->analop.type);
 		ds_print_color_reset (ds);
-		const char *pad = r_str_pad (' ', 8 - strlen (optype));
+		char padstr[32];
+		const char *pad = r_str_pad2 (padstr, sizeof (padstr), ' ', 8 - strlen (optype));
 		r_cons_printf (ds->core->cons, "[%s]%s", optype, pad);
 	}
 }
