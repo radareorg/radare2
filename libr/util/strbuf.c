@@ -111,9 +111,7 @@ R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, size_t l) {
 		ptr[l] = 0;
 	} else {
 		R_FREE (sb->ptr);
-		if (l > 0) {
-			memcpy (sb->buf, s, l);
-		}
+		memcpy (sb->buf, s, l);
 		sb->buf[l] = 0;
 	}
 	sb->len = l;
@@ -240,13 +238,8 @@ R_API bool r_strbuf_append_n(RStrBuf *sb, const char *s, size_t l) {
 		return false;
 	}
 
-	if (sb->weakref) {
-		return false;
-	}
-
-	// fast path if no chars to append
-	if (l == 0) {
-		return true;
+	if (sb->weakref || l == 0) {
+		return !sb->weakref;
 	}
 
 	if ((sb->len + l + 1) <= sizeof (sb->buf)) {
@@ -260,25 +253,26 @@ R_API bool r_strbuf_append_n(RStrBuf *sb, const char *s, size_t l) {
 		bool allocated = true;
 		if (!sb->ptr) {
 			p = malloc (newlen);
-			if (p && sb->len > 0) {
+			if (!p) {
+				return false;
+			}
+			if (sb->len > 0) {
 				memcpy (p, sb->buf, sb->len);
 			}
 		} else if (sb->len + l + 1 > sb->ptrlen) {
 			p = realloc (sb->ptr, newlen);
+			if (!p) {
+				return false;
+			}
 		} else {
 			allocated = false;
 		}
 		if (allocated) {
-			if (!p) {
-				return false;
-			}
 			sb->ptr = p;
 			sb->ptrlen = newlen;
 		}
-		if (p) {
-			memcpy (p + sb->len, s, l);
-			*(p + sb->len + l) = 0;
-		}
+		memcpy (p + sb->len, s, l);
+		p[sb->len + l] = 0;
 	}
 	sb->len += l;
 	return true;
@@ -343,13 +337,8 @@ R_API bool r_strbuf_prepend_n(RStrBuf *sb, const char *s, size_t l) {
 		return false;
 	}
 
-	if (sb->weakref) {
-		return false;
-	}
-
-	// fast path if no chars to prepend
-	if (l == 0) {
-		return true;
+	if (sb->weakref || l == 0) {
+		return !sb->weakref;
 	}
 
 	if ((sb->len + l + 1) <= sizeof (sb->buf)) {
@@ -376,14 +365,14 @@ R_API bool r_strbuf_prepend_n(RStrBuf *sb, const char *s, size_t l) {
 			if (!p) {
 				return false;
 			}
-			memmove (&p[l], p, sb->len);
+			memmove (p + l, p, sb->len);
 			sb->ptr = p;
 			sb->ptrlen = newlen;
+		} else {
+			memmove (p + l, p, sb->len);
 		}
-		if (p) {
-			memcpy (p, s, l);
-			p[sb->len + l] = 0;
-		}
+		memcpy (p, s, l);
+		p[sb->len + l] = 0;
 	}
 	sb->len += l;
 	return true;
@@ -392,20 +381,16 @@ R_API bool r_strbuf_prepend_n(RStrBuf *sb, const char *s, size_t l) {
 
 R_API bool r_strbuf_pad(RStrBuf *sb, char ch, int sz) {
 	R_RETURN_VAL_IF_FAIL (sb, false);
-	if (sz < 0) {
-		sz = 0;
-	}
-	int need = sz - sb->len;
-	if (need <= 0) {
+	if (sz < 1) {
 		return true;
 	}
-	if (!r_strbuf_reserve (sb, sb->len + need)) {
+	if (!r_strbuf_reserve (sb, sb->len + sz)) {
 		return false;
 	}
 	char *buf = sb->ptr ? sb->ptr : sb->buf;
-	memset (buf + sb->len, ch, need);
-	buf[sb->len + need] = 0;
-	sb->len = sz;
+	memset (buf + sb->len, ch, sz);
+	buf[sb->len + sz] = 0;
+	sb->len += sz;
 	return true;
 }
 

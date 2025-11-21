@@ -31,11 +31,12 @@ static bool end_token(RTokenizer *tok) {
 	const char* tt = tokentypes[tok->type];
 	const int tok_len = (size_t)(tok->end - tok->begin);
 	const char* tok_buf = tok->buf + tok->begin;
-	const char *r = r_str_pad (' ', tok->indent * 4);
 	if (tok->cb) {
 		return tok->cb (tok);
 	}
+	char *r = r_str_pad2 (NULL, 0, ' ', tok->indent * 4);
 	eprintf ("[%s]%s%.*s%c", tt, r, tok_len, tok_buf, 10);
+	free (r);
 	return true;
 }
 
@@ -218,15 +219,6 @@ typedef struct {
 	PJ *pj;
 } Data;
 
-static void indent(RTokenizer *tok) {
-	Data *data = tok->user;
-	int n = 2 * ((tok->type == R_TOKEN_GROUP)? (tok->indent-1): tok->indent);
-	if (data->incase) {
-		n++;
-	}
-	R_LOG_DEBUG ("%s", r_str_pad (' ', n));
-}
-
 bool callback(RTokenizer *tok) {
 	Data *data = tok->user;
 	switch (tok->type) {
@@ -266,7 +258,6 @@ bool callback(RTokenizer *tok) {
 				pj_o (data->pj);
 				pj_ks (data->pj, "node", "return");
 			} else {
-				indent (tok);
 				R_LOG_DEBUG ("RETURN%c",10);
 			}
 			R_FREE (data->s);
@@ -313,7 +304,6 @@ bool callback(RTokenizer *tok) {
 				RListIter *iter;
 				r_list_foreach (data->args, iter, arg) {
 					if (arg) {
-						R_LOG_DEBUG ("%s", r_str_pad (' ', (tok->indent + 1) * 2));
 						R_LOG_DEBUG (" - %s%c", arg, 10);
 						if (data->pj) {
 							char *lz = (char *)r_str_rchr (arg, NULL, ' ');
@@ -343,7 +333,6 @@ bool callback(RTokenizer *tok) {
 		} else if (tok->ch == '{') {
 			if (data->word) {
 				if (!strcmp (data->word, "else")) {
-					indent (tok);
 					R_LOG_DEBUG ("ELSE %d%c", tok->indent, 10);
 					r_list_free (data->args);
 					data->args = NULL;
@@ -353,16 +342,14 @@ bool callback(RTokenizer *tok) {
 				R_FREE (data->s);
 			}
 			// pj_ka (data->pj, "body");
-			//pj_a (data->pj);
+			// pj_a (data->pj);
 		} else if (tok->ch == '(') {
 			data->parlevel++;
 			if (data->word) {
 				if (!strcmp (data->word, "if")) {
-					indent (tok);
 					R_LOG_DEBUG ("IF %d%c", tok->indent, 10);
 				} else if (!strcmp (data->word, "switch")) {
 					data->inswitch = true;
-					indent (tok);
 					R_LOG_DEBUG ("SWITCH%c", 10);
 					R_FREE (data->word);
 				} else {
@@ -382,7 +369,6 @@ bool callback(RTokenizer *tok) {
 							pj_ks (data->pj, "name", data->word);
 							pj_ka (data->pj, "args");
 						} else {
-							indent (tok);
 							R_LOG_DEBUG ("CALL (%s)%c", data->word, 10);
 						}
 					}
@@ -411,7 +397,6 @@ bool callback(RTokenizer *tok) {
 		if (data->incase) {
 			char *s = r_str_ndup (tok->buf + tok->begin, tok->end - tok->begin);
 			// data->s = r_str_appendlen (data->s, tok->buf + tok->begin, tok->end - tok->begin);
-			indent (tok);
 			R_LOG_DEBUG ("CASE (%s)%c", s, 10);
 			data->incase = false;
 			R_FREE (data->word);
@@ -427,7 +412,6 @@ break;
 		case '=':
 			R_LOG_DEBUG ("PAR %d %c", data->parlevel, 10);
 			if (data->parlevel == 0) {
-				indent (tok);
 				data->inassign = true;
 				if (data->word && data->pj) {
 					pj_o (data->pj);
@@ -451,7 +435,6 @@ break;
 		case '\n':
 		case ';':
 			if (data->inreturn) {
-				indent (tok);
 				// eprintf ("-- ARG (%s)%c", data->s, 10);
 				if (data->pj) {
 					pj_ks (data->pj, "value", data->s? data->s: "");
@@ -459,7 +442,6 @@ break;
 				}
 			}
 			if (data->inassign) {
-				indent (tok);
 				// eprintf ("-- ARG (%s)%c", data->s, 10);
 				data->inassign = false;
 				if (data->pj) {

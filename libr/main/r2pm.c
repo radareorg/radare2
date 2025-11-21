@@ -1156,8 +1156,9 @@ static char *r2pm_search(const char *grep, int mode) {
 						pj_ks (pj, "desc", desc);
 						pj_end (pj);
 					} else {
-						r_strbuf_appendf (sb, "%s%s%s\n",
-							file, r_str_pad (' ', 20 - strlen (file)), desc);
+						r_strbuf_appendf (sb, "%s", file);
+						r_strbuf_pad (sb, ' ', 20 - strlen (file));
+						r_strbuf_appendf (sb, "%s\n", desc);
 					}
 				}
 				free (desc);
