@@ -50,7 +50,7 @@ R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadb
 	const bool isdebug = r_config_get_b (core->config, "cfg.debug");
 	char *path;
 	ut64 laddr = r_config_get_i (core->config, "bin.laddr");
-	RIODesc *odesc = core->io ? core->io->desc : NULL;
+	RIODesc *odesc = core->io->desc;
 	RBinFile *bf = odesc ? r_bin_file_find_by_fd (core->bin, odesc->fd) : NULL;
 	char *ofilepath = NULL, *obinfilepath = (bf && bf->file)? strdup (bf->file): NULL;
 	bool ret = false;
