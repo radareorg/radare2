@@ -368,6 +368,9 @@ R_API bool r_strbuf_prepend_n(RStrBuf *sb, const char *s, size_t l) {
 			memmove (&p[l], p, sb->len);
 			sb->ptr = p;
 			sb->ptrlen = newlen;
+		} else {
+			// Enough space in existing heap buffer, need to move data forward
+			memmove (&p[l], p, sb->len);
 		}
 		memcpy (p, s, l);
 		p[sb->len + l] = 0;
