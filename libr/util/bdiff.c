@@ -27,7 +27,7 @@ struct hunk {
 };
 
 struct hunklist {
-	struct hunk *base, *head;
+	struct hunk *base, *head, *end;
 };
 
 static int splitlines(const char *a, int len, struct line **lr) {
@@ -219,11 +219,13 @@ static void recurse(struct line *a, struct line *b, struct pos *pos,
 
 	/* and recurse on the remaining chunks on either side */
 	recurse(a, b, pos, a1, i, b1, j, l);
-	l->head->a1 = i;
-	l->head->a2 = i + k;
-	l->head->b1 = j;
-	l->head->b2 = j + k;
-	l->head++;
+	if (l->head < l->end) {
+		l->head->a1 = i;
+		l->head->a2 = i + k;
+		l->head->b1 = j;
+		l->head->b2 = j + k;
+		l->head++;
+	}
 	recurse(a, b, pos, i + k, a2, j + k, b2, l);
 }
 
@@ -239,13 +241,16 @@ static struct hunklist diff(struct line *a, int an, struct line *b, int bn) {
 	/* we can't have more matches than lines in the shorter file */
 	l.head = l.base = (struct hunk *)malloc (sizeof (struct hunk)
 		* ((an<bn ? an:bn) + 1));
+	l.end = l.base + ((an<bn ? an:bn) + 1);
 
 	if (pos && l.base && t) {
 		/* generate the matching block list */
 		recurse(a, b, pos, 0, an, 0, bn, &l);
-		l.head->a1 = l.head->a2 = an;
-		l.head->b1 = l.head->b2 = bn;
-		l.head++;
+		if (l.head < l.end) {
+			l.head->a1 = l.head->a2 = an;
+			l.head->b1 = l.head->b2 = bn;
+			l.head++;
+		}
 	}
 
 	free (pos);
@@ -308,7 +313,7 @@ R_API int r_diff_buffers_delta(RDiff *d, const ut8 *sa, int la, const ut8 *sb, i
 	}
 
 	l = diff (al, an, bl, bn);
-	if (!l.head) {
+	if (!l.head || !l.base) {
 		eprintf ("bindiff_buffers: Out of memory.\n");
 		goto beach;
 	}
