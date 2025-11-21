@@ -34,7 +34,7 @@ static bool end_token(RTokenizer *tok) {
 	if (tok->cb) {
 		return tok->cb (tok);
 	}
-	char *r = r_str_pad2 (NULL, 0, ' ', tok->indent * 4);
+	char *r = r_str_pad (NULL, 0, ' ', tok->indent * 4);
 	eprintf ("[%s]%s%.*s%c", tt, r, tok_len, tok_buf, 10);
 	free (r);
 	return true;

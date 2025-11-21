@@ -848,7 +848,7 @@ static int cmp_bits(RCore *core, ut64 addr) {
 		const char *color = use_color? pal->addr: "";
 		char *n = r_str_newf ("0x%08" PFMT64x, core->addr);
 		char padstr[16];
-		const char *padding = r_str_pad2 (padstr, sizeof (padstr), ' ', strlen (n) - 10);
+		const char *padding = r_str_pad (padstr, sizeof (padstr), ' ', strlen (n) - 10);
 		free (n);
 		r_cons_printf (core->cons, "%s- offset -%s  7 6 5 4 3 2 1 0%s\n", color, padding, color_end);
 	}

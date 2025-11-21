@@ -401,7 +401,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 		ut32 s = (addr - a) >> ((p && p->config)? p->config->seggrn: 4);
 		if (dec) {
 			snprintf (space, sizeof (space), "%d:%d", s & 0xffff, a & 0xffff);
-			white = r_str_pad2 (padstr, sizeof (padstr), ' ', 9 - strlen (space));
+			white = r_str_pad (padstr, sizeof (padstr), ' ', 9 - strlen (space));
 		}
 		if (use_color) {
 			const char *pre = PREOFF (addr): Color_GREEN;
@@ -422,7 +422,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 		if (dec) {
 			snprintf (space, sizeof (space), "%" PFMT64d, addr);
 			int w = R_MAX (10 - strlen (space), 0);
-			white = r_str_pad2 (padstr, sizeof (padstr), ' ', w);
+			white = r_str_pad (padstr, sizeof (padstr), ' ', w);
 		}
 		if (use_color) {
 			const char *pre = PREOFF (addr): Color_GREEN;
@@ -1476,7 +1476,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 									r_print_printf (p, "%s 2; %s", a, q);
 									first = false;
 								} else {
-									char *a = r_str_pad2 (NULL, 0, ' ', 8 + (p->cols * 4));
+									char *a = r_str_pad (NULL, 0, ' ', 8 + (p->cols * 4));
 									r_print_printf (p, "%s; %s", a, q);
 									free (a);
 								}

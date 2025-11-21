@@ -4254,7 +4254,7 @@ static void ds_print_optype(RDisasmState *ds) {
 		const char *optype = r_anal_optype_tostring (ds->analop.type);
 		ds_print_color_reset (ds);
 		char padstr[32];
-		const char *pad = r_str_pad2 (padstr, sizeof (padstr), ' ', 8 - strlen (optype));
+		const char *pad = r_str_pad (padstr, sizeof (padstr), ' ', 8 - strlen (optype));
 		r_cons_printf (ds->core->cons, "[%s]%s", optype, pad);
 	}
 }
@@ -5638,7 +5638,7 @@ static void ds_print_bbline(RDisasmState *ds) {
 			const char *sn = get_section_name (ds);
 			char padstr[16];
 			size_t snl = sn? strlen (sn) + 4: 4;
-			r_cons_printf (ds->core->cons, "%s", r_str_pad2 (padstr, sizeof (padstr), ' ', R_MAX (10, snl - 1)));
+			r_cons_printf (ds->core->cons, "%s", r_str_pad (padstr, sizeof (padstr), ' ', R_MAX (10, snl - 1)));
 		}
 		if (!ds->linesright && ds->show_lines_jmp && ds->line) {
 			ds_update_ref_lines (ds);

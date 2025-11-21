@@ -3396,21 +3396,7 @@ R_API int r_str_do_until_token(str_operation op, char *str, const char tok) {
 	return ret;
 }
 
-// XXX deprecate this function because its abusing the thread local storage and have globals. Use r_str_pad2 instead
-R_API const char *r_str_pad(const char ch, int sz) {
-	static R_TH_LOCAL char pad[1024];
-	if (sz < 0) {
-		sz = 0;
-	}
-	memset (pad, ch, R_MIN (sz, sizeof (pad)));
-	if (sz < sizeof (pad)) {
-		pad[sz] = 0;
-	}
-	pad[sizeof (pad) - 1] = 0;
-	return pad;
-}
-
-R_API char *r_str_pad2(char *pad, size_t padsz, const char ch, int sz) {
+R_API char *r_str_pad(char *pad, size_t padsz, const char ch, int sz) {
 	if (sz < 0) {
 		sz = 0;
 	}
@@ -4028,7 +4014,7 @@ R_API char *r_str_scale(const char *s, int w, int h) {
 	RList *out = r_list_newf (free);
 
 	int curline = -1;
-	char *linetext = (char *)r_str_pad2 (NULL, 0, ' ', w);
+	char *linetext = (char *)r_str_pad (NULL, 0, ' ', w);
 	for (i = 0; i < h; i++) {
 		int zoomedline = (int) (i *((double)rows / h));
 		const char *srcline = r_list_get_n (lines, zoomedline);

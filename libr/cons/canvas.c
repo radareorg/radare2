@@ -712,7 +712,7 @@ R_API void r_cons_canvas_bgfill(RConsCanvas *c, int x, int y, int w, int h, cons
 		free (bgcolor);
 		bgcolor = strdup (Color_BGBLUE);
 	}
-	char *pad = r_str_pad2 (NULL, 0, ' ', w + 2);
+	char *pad = r_str_pad (NULL, 0, ' ', w + 2);
 	char *row = r_str_newf ("%s%s" Color_RESET, bgcolor, pad);
 	free (pad);
 	for (i = 0; i < h; i++) {

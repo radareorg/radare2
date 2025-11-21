@@ -121,7 +121,7 @@ static void render(SlidesState *state, RCore *core, RList *list, int mode, int p
 	if (mode == 2) {
 		w /= 2;
 		char *o2 = r_str_ansi_crop (o, sx, sy, w, h);
-		char *prefix = r_str_pad2 (NULL, 0, ' ', w);
+		char *prefix = r_str_pad (NULL, 0, ' ', w);
 		char *no = r_str_prefix_all (o2, prefix);
 		free (prefix);
 		free (o);
