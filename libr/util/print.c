@@ -1475,8 +1475,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 									r_print_printf (p, "%s 2; %s", a, q);
 									first = false;
 								} else {
-									const char *a = r_str_pad (' ', 8 + (p->cols * 4));
+									char *a = r_str_pad2 (NULL, 0, ' ', 8 + (p->cols * 4));
 									r_print_printf (p, "%s; %s", a, q);
+									free (a);
 								}
 						// 		r_print_printf (p, "\n");
 

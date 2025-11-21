@@ -272,7 +272,7 @@ R_API bool r_strbuf_append_n(RStrBuf *sb, const char *s, size_t l) {
 			sb->ptrlen = newlen;
 		}
 		memcpy (p + sb->len, s, l);
-		p + sb->len + l[0] = 0;
+		p[sb->len + l] = 0;
 	}
 	sb->len += l;
 	return true;
