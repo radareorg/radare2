@@ -211,6 +211,7 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 	} else {
 		bubble_w = (w < margin_right)? 10: w - margin_right;
 	}
+	RStrBuf *buf = r_strbuf_new ("");
 	int rows = R_MAX (lines_length + 4, avatar->h);
 	for (i = 0; i < rows; i++) {
 		const bool bubble_active = (i <= lines_length + 3);
@@ -218,24 +219,24 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 		if (i < avatar->h) {
 			const char *avatar_line = avatar->lines[baseline + i];
 			if (bubble_active) {
-				r_cons_printf (core->cons, "%s ", avatar_line);
+				r_strbuf_appendf (buf, "%s ", avatar_line);
 			} else {
 				size_t avatar_len = strlen (avatar_line);
 				while (avatar_len && avatar_line[avatar_len - 1] == ' ') {
 					avatar_len--;
 				}
 				if (avatar_len) {
-					r_cons_printf (core->cons, "%.*s\n", (int)avatar_len, avatar_line);
+					r_strbuf_appendf (buf, "%.*s\n", (int)avatar_len, avatar_line);
 				} else {
-					r_cons_println (core->cons, "");
+					r_strbuf_append (buf, "\n");
 				}
 				continue;
 			}
 		} else {
 			if (bubble_active) {
-				r_cons_printf (core->cons, r_str_pad (' ', avatar->w + 1));
+				r_strbuf_pad (buf, ' ', avatar->w + 1);
 			} else {
-				r_cons_println (core->cons, "");
+				r_strbuf_append (buf, "\n");
 				continue;
 			}
 		}
@@ -274,14 +275,14 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 				bubble_end = " |";
 			}
 		}
-		r_cons_print (core->cons, bubble_begin);
+		r_strbuf_append (buf, bubble_begin);
 		// print text
 		if (i > 1 && i < lines_length + 2) {
 			RListIter *line = r_list_get_nth (lines, i - 2);
 			if (line) {
-				r_cons_printf (core->cons, "%s", line->data);
+				r_strbuf_append (buf, line->data);
 				const int tw = r_str_display_width (line->data);
-				r_cons_printf (core->cons, r_str_pad (' ', bubble_w - tw));
+				r_strbuf_pad (buf, ' ', bubble_w - tw);
 			}
 		} else {
 			if (i == 0 || i == lines_length + 3) {
@@ -289,16 +290,18 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 				if (utf8) {
 					int j;
 					for (j = 0; j < bubble_w; j++) {
-						r_cons_printf (core->cons, "─");
+						r_strbuf_append (buf, "─");
 					}
 				} else {
-					r_cons_printf (core->cons, r_str_pad ('-', bubble_w));
+					r_strbuf_pad (buf, '-', bubble_w);
 				}
 			} else {
-				r_cons_printf (core->cons, r_str_pad (' ', bubble_w));
+				r_strbuf_pad (buf, ' ', bubble_w);
 			}
 		}
 		// print bubble_end
-		r_cons_println (core->cons, bubble_end);
+		r_strbuf_appendf (buf, "%s\n", bubble_end);
 	}
+	r_cons_print (core->cons, r_strbuf_get (buf));
+	r_strbuf_free (buf);
 }
