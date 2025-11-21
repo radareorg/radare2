@@ -6266,9 +6266,18 @@ static int cmd_debug(void *data, const char *input) {
 				if (bytes_len > 0) {
 					bool restore = true;
 					bool ignore_stack = is_dxrs;
-					if (!r_debug_execute (core->dbg, bytes, bytes_len, NULL, restore, ignore_stack)) {
+					const int exec_len = is_dxr? bytes_len + 1: bytes_len + 1;
+					ut8 *exec_buf = malloc (exec_len);
+					if (!exec_buf) {
+						R_LOG_ERROR ("Cannot allocate dx buffer");
+						break;
+					}
+					memcpy (exec_buf, bytes, bytes_len);
+					exec_buf[exec_len - 1] = 0xcc;
+					if (!r_debug_execute (core->dbg, exec_buf, exec_len, NULL, restore, ignore_stack)) {
 						R_LOG_ERROR ("Failed to execute code");
 					}
+					free (exec_buf);
 				} else {
 					R_LOG_ERROR ("Failed to parse hex pairs");
 				}
