@@ -76,23 +76,32 @@ static bool mmap_refresh(RIOMMapFileObj *mmo) {
 		mmo->rawio = true;
 	}
 	if (mmo->rawio) {
-		mmo->fd = open_file (mmo->filename, mmo->perm, mmo->mode);
+		if (mmo->fd == -1) {
+			mmo->fd = open_file (mmo->filename, mmo->perm, mmo->mode);
+		}
+		if (mmo->fd != -1 && cur) {
+			mmap_seek (io, mmo, cur, SEEK_SET);
+		}
 		goto done;
 	}
-	const int fd = open_file (mmo->filename, mmo->perm, mmo->mode);
-	if (fd == -1) {
-		return false;
+	if (mmo->fd == -1) {
+		mmo->fd = open_file (mmo->filename, mmo->perm, mmo->mode);
+		if (mmo->fd == -1) {
+			return false;
+		}
 	}
 	mmo->buf = r_buf_new_mmap (mmo->filename, mmo->perm);
 	if (mmo->buf) {
+		if (io) {
+			mmo->buf->Oxff_priv = io->Oxff;
+		}
 		mmap_seek (io, mmo, cur, SEEK_SET);
 		return true;
 	}
 	mmo->rawio = true;
-	mmo->fd = fd;
 done:
 #ifdef F_NOCACHE
-	if (mmo->nocache) {
+	if (mmo->nocache && mmo->fd != -1) {
 		fcntl (mmo->fd, F_NOCACHE, 1);
 	}
 #endif
@@ -113,44 +122,26 @@ static void mmap_free(RIOMMapFileObj * R_NULLABLE mmo) {
 static RIOMMapFileObj *mmap_create(RIO  *io, const char *filename, int perm, int mode) {
 	R_RETURN_VAL_IF_FAIL (io && filename, NULL);
 	RIOMMapFileObj *mmo = R_NEW0 (RIOMMapFileObj);
+	mmo->fd = -1;
+	mmo->rawio = false;
 	if (r_str_startswith (filename, "file://")) {
 		filename += strlen ("file://");
+		mmo->rawio = false;
 	} else if (r_str_startswith (filename, "stdio://")) {
 		filename += strlen ("stdio://");
 		mmo->rawio = true;
 	} else if (r_str_startswith (filename, "nocache://")) {
-		mmo->rawio = true;
-		mmo->nocache = true;
-	} else {
-		// TODO later: mmo->rawio = true;
-	}
-	if (mmo->nocache) {
 		filename += strlen ("nocache://");
+		mmo->nocache = true;
+		mmo->rawio = true;
 	}
 	mmo->filename = strdup (filename);
 	mmo->perm = perm;
 	mmo->mode = mode;
 	mmo->io_backref = io;
-	const int posixFlags = (perm & R_PERM_W)
-			?(
-				(perm & R_PERM_CREAT)
-					? (O_RDWR | O_CREAT)
-					: O_RDWR
-			): O_RDONLY;
-	bool toctou = (perm & R_PERM_CREAT) && r_file_exists (filename);
-	mmo->fd = r_sandbox_open (filename, posixFlags, mode);
-	if (mmo->fd == -1) {
+	if (!mmap_refresh (mmo)) {
 		mmap_free (mmo);
 		mmo = NULL;
-	} else if (!mmap_refresh (mmo)) {
-		mmo->rawio = true;
-		if (!mmap_refresh (mmo)) {
-			mmap_free (mmo);
-			mmo = NULL;
-		}
-	}
-	if ((perm & R_PERM_CREAT) && !toctou && (!mmo || mmo->fd != -1)) {
-		R_LOG_INFO ("New file created: %s", filename);
 	}
 	return mmo;
 }

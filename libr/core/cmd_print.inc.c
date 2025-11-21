@@ -5993,10 +5993,21 @@ static ut8 * R_NULLABLE decode_text(RCore *core, ut64 offset, size_t len, bool z
 	}
 #else
 	RIOMap *map = r_io_map_get_at (core->io, core->addr);
+	ut64 maxlen = len;
 	if (map) {
 		ut64 mapend = map->itv.addr + map->itv.size + map->delta;
 		ut64 left = mapend - core->addr;
-		len = R_MIN (len, left);
+		maxlen = R_MIN (maxlen, left);
+	}
+	if (core->io && core->io->desc) {
+		ut64 fsz = r_io_desc_size (core->io->desc);
+		if (fsz != UT64_MAX && offset < fsz) {
+			maxlen = R_MIN (maxlen, fsz - offset);
+		}
+	}
+	len = maxlen;
+	if (!len) {
+		len = 1;
 	}
 	bool ret = r_io_read_at (core->io, core->addr, out, len);
 	if (zeroend) {
@@ -8016,7 +8027,8 @@ static int cmd_print(void *data, const char *input) {
 				} else if (input[2] == 'c' || input[2] == 'l') {
 					r_cons_printf (core->cons, "%d\n", (int)r_str_nlen ((const char*)s, l));
 				} else {
-					r_print_string (core->print, core->addr, s, l, R_PRINT_STRING_ZEROEND);
+					int slen = (int)r_str_nlen ((const char*)s, l);
+					r_print_string (core->print, core->addr, s, slen, R_PRINT_STRING_ZEROEND);
 				}
 				free (s);
 			}
