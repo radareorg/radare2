@@ -258,7 +258,7 @@ static bool rax(RNum *num, char *str, int len, int last, RaxActions *flags, RaxM
 		while (str[1] && str[1] != ' ') {
 			switch (str[1]) {
 			case 'n': flags->newline = true; break;
-			case 'a': printf ("%s", r_str_asciitable ()); return 0;
+			case 'a': printf ("%s", r_str_asciitable ()); return true;
 			case 's': flags->hexstr2raw = !flags->hexstr2raw; break;
 			case 'e': flags->swapendian = !flags->swapendian; break;
 			case 'S': flags->raw2hexstr = !flags->raw2hexstr; break;
