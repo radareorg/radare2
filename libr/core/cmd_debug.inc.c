@@ -5200,7 +5200,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 	char **argv;
 	bool needs_live_process = false;
 	bool print = false; // enabled with *, print the command instead of running it
-	bool has_debugger = r_config_get_b (core->config, "cfg.debug");
+	bool cfg_debug = r_config_get_b (core->config, "cfg.debug");
 	int ret = 0;
 
 	if (input[1] == '?') { // "dd?"
@@ -5255,7 +5255,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 	}
 
 	// Error out if we need a live process and there isn't one
-	if (needs_live_process && !has_debugger) {
+	if (needs_live_process && !cfg_debug) {
 		R_LOG_ERROR ("No child process to manage files for");
 		ret = 1;
 		goto out_free_argv;
@@ -5292,26 +5292,21 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 			// Filename can be a given string or char* address in memory
 			addr = r_num_math (core->num, argv[1]);
 			if (addr) {
+				if (!cfg_debug || !core->dbg) {
+					R_LOG_ERROR ("No child process to read filename pointer");
+					ret = 1;
+					break;
+				}
 				filename = r_core_cmd_strf (core, "ps @%" PFMT64x, addr);
 				if (filename && !*filename) {
-					free (filename);
-					filename = NULL;
+					R_FREE (filename);
 				}
 				if (!filename) {
-					ut8 ch;
-					int i;
-					char pathbuf[1024] = {0};
-					for (i = 0; i < (int)sizeof (pathbuf) - 1; i++) {
-						if (core->dbg->iob.read_at (core->dbg->iob.io, addr + i, &ch, 1) != 1) {
-							break;
-						}
-						if (!ch) {
-							break;
-						}
-						pathbuf[i] = (char) ch;
-					}
-					if (i > 0) {
-						filename = r_str_ndup (pathbuf, i);
+					char pathbuf[MAXPATHLEN] = {0};
+					core->dbg->iob.read_at (core->dbg->iob.io, addr, (ut8*)pathbuf, sizeof (pathbuf) - 1);
+					pathbuf[MAXPATHLEN - 1] = 0;
+					if (*pathbuf) {
+						filename = strdup (pathbuf);
 					}
 				}
 			} else {
@@ -6250,7 +6245,6 @@ static int cmd_debug(void *data, const char *input) {
 			}
 			/* fall through */
 		case ' ': { // "dx "
-			ut8 bytes[4096];
 			const bool is_dxr = input[1] == 'r';
 			const bool is_dxrs = is_dxr && input[2] == 's';
 			const char *hexpairs = input + 2;
@@ -6261,29 +6255,31 @@ static int cmd_debug(void *data, const char *input) {
 				}
 			}
 
-			if (strlen (hexpairs) < 8192) {
-				int bytes_len = r_hex_str2bin (hexpairs, bytes);
-				if (bytes_len > 0) {
-					bool restore = true;
-					bool ignore_stack = is_dxrs;
-					const int exec_len = is_dxr? bytes_len + 1: bytes_len + 1;
-					ut8 *exec_buf = malloc (exec_len);
-					if (!exec_buf) {
-						R_LOG_ERROR ("Cannot allocate dx buffer");
-						break;
-					}
-					memcpy (exec_buf, bytes, bytes_len);
-					exec_buf[exec_len - 1] = 0xcc;
-					if (!r_debug_execute (core->dbg, exec_buf, exec_len, NULL, restore, ignore_stack)) {
-						R_LOG_ERROR ("Failed to execute code");
-					}
-					free (exec_buf);
-				} else {
-					R_LOG_ERROR ("Failed to parse hex pairs");
+			// mirror previous guard: refuse injections >4KB to avoid huge buffers
+			int hex_len = strlen (hexpairs);
+			if (hex_len >= 8192) {
+				R_LOG_ERROR ("Cannot inject more than 4096 bytes at once");
+				break;
+			}
+			int exec_buf_len = hex_len / 2 + 2;
+			ut8 *exec_buf = malloc (exec_buf_len);
+			if (!exec_buf) {
+				R_LOG_ERROR ("Cannot allocate dx buffer");
+				break;
+			}
+			int bytes_len = r_hex_str2bin (hexpairs, exec_buf);
+			if (bytes_len > 0) {
+				bool restore = true;
+				bool ignore_stack = is_dxrs;
+				const int exec_len = bytes_len + 1;
+				exec_buf[exec_len - 1] = 0xcc;
+				if (!r_debug_execute (core->dbg, exec_buf, exec_len, NULL, restore, ignore_stack)) {
+					R_LOG_ERROR ("Failed to execute code");
 				}
 			} else {
-				R_LOG_ERROR ("Cannot inject more than 4096 bytes at once");
+				R_LOG_ERROR ("Failed to parse hex pairs");
 			}
+			free (exec_buf);
 			break;
 		}
 		case 'a': { // "dxa"
