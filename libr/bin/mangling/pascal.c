@@ -17,7 +17,7 @@ static char *demangle_freepascal_function(RStrBuf *ds, char *mangled, size_t man
 	next = tmp + strlen ("$");
 	size_t n_arg = 0;
 
-	while (next < end && *next != '$' && (tmp = strchr(next, '$')) && tmp > next && IS_NAME(tmp[-1])) {
+	while (next < end && *next != '$' && (tmp = strchr(next, '$')) && tmp > next && tmp > mangled && IS_NAME(tmp[-1])) {
 		// <type0$type1>$$<ret_type>
 		if (n_arg > 0) {
 			r_strbuf_append (ds, ",");

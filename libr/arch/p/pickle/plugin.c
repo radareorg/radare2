@@ -560,7 +560,7 @@ static inline int assemble_n_str(char *str, ut32 cnt, ut8 *outbuf, int outsz, bo
 	if (len < 0) {
 		return len;
 	}
-	if (outsz > 0 && len > outsz - 1) { // str must be be \n terminated in outbuf
+	if (len >= outsz) { // str must be be \n terminated in outbuf
 		R_LOG_ERROR ("String to large for assembler to handle");
 		return -2;
 	}

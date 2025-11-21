@@ -137,7 +137,7 @@ static char *skip_block_comment(char *ps) {
 		R_LOG_ERROR ("endless comment (%s)", ps);
 		return NULL;
 	}
-	if (p[-1] != '*') {
+	if (p <= ps || p[-1] != '*') {
 		goto REPEAT;
 	}
 	return p + 1;

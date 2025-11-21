@@ -54,7 +54,7 @@ static inline void lev_row_adjust(Levrow *row, ut32 maxdst, ut32 rownum, ut32 bu
 	delta += rownum;
 	ut64 end = (ut64)delta + maxdst;
 	row->end = R_MIN (end, buflen);
-	row->start = delta <= maxdst ? 0 : delta - maxdst;
+	row->start = delta <= maxdst? 0: delta - maxdst;
 }
 
 static inline Levrow *lev_row_init(Levrow *matrix, ut32 maxdst, ut32 rownum, ut32 buflen, ut32 delta) {
@@ -230,20 +230,21 @@ R_API char *r_diff_buffers_tostring(RDiff *d, const ut8 *a, int la, const ut8 *b
 }
 #endif
 
-#define diffHit() { \
-	const size_t i_hit = i - hit; \
-	int ra = la - i_hit; \
-	int rb = lb - i_hit; \
-	struct r_diff_op_t o = { \
-		.a_off = d->off_a + i - hit,\
-		.a_buf = a + i - hit, \
-		.a_len = R_MIN (hit, ra), \
-		.b_off = d->off_b + i - hit, \
-		.b_buf = b + i - hit, \
-		.b_len = R_MIN (hit, rb) \
-	}; \
-	d->callback (d, d->user, &o); \
-}
+#define diffHit() \
+	{ \
+		const size_t i_hit = i - hit; \
+		int ra = la - i_hit; \
+		int rb = lb - i_hit; \
+		struct r_diff_op_t o = { \
+			.a_off = d->off_a + i - hit, \
+			.a_buf = a + i - hit, \
+			.a_len = R_MIN (hit, ra), \
+			.b_off = d->off_b + i - hit, \
+			.b_buf = b + i - hit, \
+			.b_len = R_MIN (hit, rb) \
+		}; \
+		d->callback (d, d->user, &o); \
+	}
 
 R_API int r_diff_buffers_static(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
 	int i, len;
@@ -328,7 +329,7 @@ R_API int r_diff_buffers(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb)
 // Returns edit distance with costs: insertion=1, deletion=1, no substitution
 R_API bool r_diff_buffers_distance_myers(RDiff *diff, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
 	R_RETURN_VAL_IF_FAIL (a && b, false);
-	const bool verbose = diff ? diff->verbose : false;
+	const bool verbose = diff? diff->verbose: false;
 	const ut32 length = la + lb;
 	const ut8 *ea = a + la, *eb = b + lb;
 	// Strip prefix
@@ -350,7 +351,7 @@ R_API bool r_diff_buffers_distance_myers(RDiff *diff, const ut8 *a, ut32 la, con
 		low = -di + 2 * R_MAX (0, di - (st64)lb);
 		high = di - 2 * R_MAX (0, di - (st64)la);
 		for (i = low; i <= high; i += 2) {
-			x = i == -di || (i != di && v[i - 1] < v[i + 1]) ? v[i + 1] : v[i - 1] + 1;
+			x = i == -di || (i != di && v[i - 1] < v[i + 1])? v[i + 1]: v[i - 1] + 1;
 			y = x - i;
 			while (x < la && y < lb && a[x] == b[y]) {
 				x++;
@@ -376,14 +377,14 @@ out:
 		*distance = di;
 	}
 	if (similarity) {
-		*similarity = length ? 1.0 - (double)di / length : 1.0;
+		*similarity = length? 1.0 - (double)di / length: 1.0;
 	}
 	return true;
 }
 
 R_API bool r_diff_buffers_distance_levenshtein(RDiff *diff, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
 	R_RETURN_VAL_IF_FAIL (a && b, false);
-	const bool verbose = diff ? diff->verbose : false;
+	const bool verbose = diff? diff->verbose: false;
 	const ut32 length = R_MAX (la, lb);
 	const ut8 *ea = a + la, *eb = b + lb, *t;
 	ut32 *d, i, j;
@@ -415,7 +416,7 @@ R_API bool r_diff_buffers_distance_levenshtein(RDiff *diff, const ut8 *a, ut32 l
 		d[0] = i + 1;
 		for (j = 0; j < lb; j++) {
 			ut32 u = d[j + 1];
-			d[j + 1] = a[i] == b[j] ? ul : R_MIN (ul, R_MIN (d[j], u)) + 1;
+			d[j + 1] = a[i] == b[j]? ul: R_MIN (ul, R_MIN (d[j], u)) + 1;
 			ul = u;
 		}
 		if (verbose && i % 10000 == 0) {
@@ -430,7 +431,7 @@ R_API bool r_diff_buffers_distance_levenshtein(RDiff *diff, const ut8 *a, ut32 l
 		*distance = d[lb];
 	}
 	if (similarity) {
-		*similarity = length ? 1.0 - (double)d[lb] / length : 1.0;
+		*similarity = length? 1.0 - (double)d[lb] / length: 1.0;
 	}
 	free (d);
 	return true;
@@ -461,7 +462,7 @@ R_API RDiffChar *r_diffchar_new(const ut8 *a, const ut8 *b) {
 
 	const size_t len_a = strlen ((const char *)a);
 	const size_t len_b = strlen ((const char *)b);
-	const size_t len_long = len_a > len_b ? len_a : len_b;
+	const size_t len_long = len_a > len_b? len_a: len_b;
 	const size_t dim = len_long + 1;
 	/* Duplicate and pad the input buffers to the same length (len_long).
 	 * Padding with NUL (0) bytes ensures safe indexing and deterministic
@@ -501,7 +502,7 @@ R_API RDiffChar *r_diffchar_new(const ut8 *a, const ut8 *b) {
 		 * ST16_MIN when negating the row index. Reserve ST16_MIN as a
 		 * sentinel and use ST16_MIN + 1 as the smallest valid stored value. */
 		st32 init = - (st32)row;
-		* (align_table + row) = * (align_table + row * dim) = clamp_st16 (init);
+		*(align_table + row) = *(align_table + row * dim) = clamp_st16 (init);
 	}
 	const st16 match = 1;
 	const st16 match_nl = 2;
@@ -514,9 +515,9 @@ R_API RDiffChar *r_diffchar_new(const ut8 *a, const ut8 *b) {
 			 * intermediate calculations. */
 			const ut8 a_ch = a[col - 1];
 			const ut8 b_ch = b[row - 1];
-			st32 tl_score32 = (st32) * (align_table + (row - 1) * dim + col - 1) + (a_ch == b_ch ? (a_ch == '\n' ? match_nl : match) : mismatch);
-			st32 t_score32 = (st32) * (align_table + (row - 1) * dim + col) + gap;
-			st32 l_score32 = (st32) * (align_table + row * dim + col - 1) + gap;
+			st32 tl_score32 = (st32) *(align_table + (row - 1) * dim + col - 1) + (a_ch == b_ch? (a_ch == '\n'? match_nl: match): mismatch);
+			st32 t_score32 = (st32) *(align_table + (row - 1) * dim + col) + gap;
+			st32 l_score32 = (st32) *(align_table + row * dim + col - 1) + gap;
 			st32 score32;
 			if (tl_score32 >= t_score32 && tl_score32 >= l_score32) {
 				score32 = tl_score32;
@@ -525,7 +526,7 @@ R_API RDiffChar *r_diffchar_new(const ut8 *a, const ut8 *b) {
 			} else {
 				score32 = l_score32;
 			}
-			* (align_table + row * dim + col) = clamp_st16 (score32);
+			*(align_table + row * dim + col) = clamp_st16 (score32);
 		}
 	}
 
@@ -538,7 +539,7 @@ R_API RDiffChar *r_diffchar_new(const ut8 *a, const ut8 *b) {
 			char_str[0] = '\\';
 			char_str[1] = 'n';
 		} else {
-			char_str[0] = col ? a[col - 1] : ' ';
+			char_str[0] = col? a[col - 1]: ' ';
 			char_str[1] = 0;
 		}
 		printf ("%4s ", char_str);
@@ -549,27 +550,27 @@ R_API RDiffChar *r_diffchar_new(const ut8 *a, const ut8 *b) {
 			char_str[0] = '\\';
 			char_str[1] = 'n';
 		} else {
-			char_str[0] = row ? b[row - 1] : ' ';
+			char_str[0] = row? b[row - 1]: ' ';
 			char_str[1] = 0;
 		}
 		printf ("%4s ", char_str);
 		for (col = 0; col < dim; col++) {
-			printf ("%4d ", * (align_table + row * dim + col));
+			printf ("%4d ", *(align_table + row * dim + col));
 		}
 		printf ("\n");
 	}
 #endif
 
 	// Do alignment
-	size_t idx_a = len_long - 1;
-	size_t idx_b = len_long - 1;
+	st64 idx_a = len_long - 1;
+	st64 idx_b = len_long - 1;
 	size_t idx_align = 2 * len_long - 1;
 	size_t pos_row = dim - 1;
 	size_t pos_col = dim - 1;
-	while (pos_row || pos_col) {
-		const st16 tl_score = (pos_row > 0 && pos_col > 0) ? * (align_table + (pos_row - 1) * dim + pos_col - 1) : ST16_MIN;
-		const st16 t_score = pos_row > 0 ? * (align_table + (pos_row - 1) * dim + pos_col) : ST16_MIN;
-		const st16 l_score = pos_col > 0 ? * (align_table + pos_row * dim + pos_col - 1) : ST16_MIN;
+	while ((pos_row || pos_col) && idx_a >= 0 && idx_b >= 0) {
+		const st16 tl_score = (pos_row > 0 && pos_col > 0)? *(align_table + (pos_row - 1) * dim + pos_col - 1): ST16_MIN;
+		const st16 t_score = pos_row > 0? *(align_table + (pos_row - 1) * dim + pos_col): ST16_MIN;
+		const st16 l_score = pos_col > 0? *(align_table + pos_row * dim + pos_col - 1): ST16_MIN;
 		const bool match = a[idx_a] == b[idx_b];
 		if (t_score >= l_score && (!match || t_score >= tl_score)) {
 			align_a[idx_align] = 0;
@@ -597,7 +598,7 @@ R_API RDiffChar *r_diffchar_new(const ut8 *a, const ut8 *b) {
 	for (; idx_align < 2 * len_long; idx_align++) {
 		const ut8 ch = align_a[idx_align];
 		if (align_b[idx_align] == '\n' && ch != '\n') {
-			printf (ch ? " " : "-");
+			printf (ch? " ": "-");
 		}
 		if (ch == 0) {
 			printf ("-");
@@ -611,7 +612,7 @@ R_API RDiffChar *r_diffchar_new(const ut8 *a, const ut8 *b) {
 	for (idx_align = start_align; idx_align < 2 * len_long; idx_align++) {
 		const ut8 ch = align_b[idx_align];
 		if (align_a[idx_align] == '\n' && ch != '\n') {
-			printf (ch ? " " : "-");
+			printf (ch? " ": "-");
 		}
 		if (ch == 0) {
 			printf ("-");
@@ -674,13 +675,13 @@ R_API void r_diffchar_print(RDiffChar *diffchar) {
 				printf (a_ch == '\n'
 						? "%c" Color_HLDELETE
 						: Color_HLDELETE "%c",
-						a_ch);
+					a_ch);
 				cur_mode = R2R_DIFF_DELETE;
 			} else if (cur_align == R2R_ALIGN_TOP_GAP) {
 				printf (b_ch == '\n'
 						? "%c" Color_HLINSERT
 						: Color_HLINSERT "%c",
-						b_ch);
+					b_ch);
 				cur_mode = R2R_DIFF_INSERT;
 			}
 		} else if (cur_mode == R2R_DIFF_DELETE) {
@@ -694,12 +695,12 @@ R_API void r_diffchar_print(RDiffChar *diffchar) {
 				printf (a_ch == '\n'
 						? Color_RESET "%c" Color_HLDELETE
 						: "%c",
-						a_ch);
+					a_ch);
 			} else if (cur_align == R2R_ALIGN_TOP_GAP) {
 				printf (b_ch == '\n'
 						? Color_RESET "%c" Color_HLINSERT
 						: Color_HLINSERT "%c",
-						b_ch);
+					b_ch);
 				cur_mode = R2R_DIFF_INSERT;
 			}
 		} else if (cur_mode == R2R_DIFF_INSERT) {
@@ -713,13 +714,13 @@ R_API void r_diffchar_print(RDiffChar *diffchar) {
 				printf (a_ch == '\n'
 						? Color_RESET "%c" Color_HLDELETE
 						: Color_HLDELETE "%c",
-						a_ch);
+					a_ch);
 				cur_mode = R2R_DIFF_DELETE;
 			} else if (cur_align == R2R_ALIGN_TOP_GAP) {
 				printf (b_ch == '\n'
 						? Color_RESET "%c" Color_HLINSERT
 						: "%c",
-						b_ch);
+					b_ch);
 			}
 		}
 		idx_align++;
@@ -774,7 +775,7 @@ static st32 r_diff_levenshtein_nopath(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst,
 	// do the rest of the rows
 	ut32 oldmin = 0; // minimum cell in row 0
 	for (i = 1; i <= alen; i++) { // loop through all rows
-				      // switch rows
+				// switch rows
 		if (row == matrix) {
 			row = prev_row;
 			prev_row = matrix;
@@ -799,7 +800,7 @@ static st32 r_diff_levenshtein_nopath(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst,
 			if (ans >= sub) {
 				// on rare occassions, when add/del is obviously better then
 				// sub, we can skip levdiff call
-				int d = levdiff (bufa, bufb, i + skip - 1, j + skip - 1) ? 1 : 0;
+				int d = levdiff (bufa, bufb, i + skip - 1, j + skip - 1)? 1: 0;
 				ans = R_MIN (ans, sub + d);
 			}
 			sub = add;
@@ -889,7 +890,7 @@ R_API st32 r_diff_levenshtein_path(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RL
 
 			lev_fill_changes (c, LEVNOP, skip);
 			c += skip;
-			lev_fill_changes (c, invert ? LEVDEL : LEVADD, blen);
+			lev_fill_changes (c, invert? LEVDEL: LEVADD, blen);
 			c += blen;
 			lev_fill_changes (c, LEVNOP, i);
 			c += i;
@@ -946,7 +947,7 @@ R_API st32 r_diff_levenshtein_path(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RL
 			if (ans >= sub) {
 				// on rare occassions, when add/del is obviously better then
 				// sub, we can skip levdiff call
-				int d = levdiff (bufa, bufb, i + skip - 1, j + skip - 1) ? 1 : 0;
+				int d = levdiff (bufa, bufb, i + skip - 1, j + skip - 1)? 1: 0;
 				ans = R_MIN (ans, sub + d);
 			}
 			sub = add;

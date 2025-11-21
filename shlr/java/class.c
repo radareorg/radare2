@@ -8816,37 +8816,37 @@ R_API ut8 *U(r_bin_java_cp_append_ref_cname_fname_ftype)(RBinJavaObj * bin, ut32
 			if (*out_sz + cn_len >= total_len) {
 				goto beach;
 			}
-			memcpy (bytes, cn_bytes + *out_sz, cn_len);
+			memcpy (bytes + *out_sz, cn_bytes, cn_len);
 			*out_sz += cn_len;
 			// field name bytes
 			if (*out_sz + fn_len >= total_len) {
 				goto beach;
 			}
-			memcpy (bytes, fn_bytes + *out_sz, fn_len);
+			memcpy (bytes + *out_sz, fn_bytes, fn_len);
 			*out_sz += fn_len;
 			// field type bytes
 			if (*out_sz + ft_len >= total_len) {
 				goto beach;
 			}
-			memcpy (bytes, ft_bytes + *out_sz, ft_len);
+			memcpy (bytes + *out_sz, ft_bytes, ft_len);
 			*out_sz += ft_len;
 			// class ref bytes
 			if (*out_sz + cref_len >= total_len) {
 				goto beach;
 			}
-			memcpy (bytes, cref_bytes + *out_sz, cref_len);
-			*out_sz += fn_len;
+			memcpy (bytes + *out_sz, cref_bytes, cref_len);
+			*out_sz += cref_len;
 			// field name and type bytes
 			if (*out_sz + fnt_len >= total_len) {
 				goto beach;
 			}
-			memcpy (bytes, fnt_bytes + *out_sz, fnt_len);
+			memcpy (bytes + *out_sz, fnt_bytes, fnt_len);
 			*out_sz += fnt_len;
 			// field ref bytes
 			if (*out_sz + fref_len >= total_len) {
 				goto beach;
 			}
-			memcpy (bytes, fref_bytes + *out_sz, fref_len);
+			memcpy (bytes + *out_sz, fref_bytes, fref_len);
 			*out_sz += fref_len;
 		}
 	}

@@ -430,9 +430,9 @@ static grub_err_t
 grub_ufs_lookup_symlink (struct grub_ufs_data *data, int ino)
 {
 #ifndef _MSC_VER
-  char symlink[INODE_SIZE (data)];
+  char symlink[INODE_SIZE (data) + 1];
 #else
-  char * symlink = grub_malloc(INODE_SIZE (data));
+  char * symlink = grub_malloc(INODE_SIZE (data) + 1);
 #endif
   if (++data->linknest > GRUB_UFS_MAX_SYMLNK_CNT)
     return grub_error (GRUB_ERR_SYMLINK_LOOP, "too deep nesting of symlinks");

@@ -41,7 +41,7 @@ R_API char *r_bin_demangle_cxx(RBinFile *bf, const char *str, ut64 vaddr) {
 	if (cxxabi) {
 		*cxxabi = '\0';
 	} else if (glibcxx) {
-		if (p < glibcxx && glibcxx[-1] == '@') {
+		if (glibcxx > p && glibcxx[-1] == '@') {
 			glibcxx[-1] = '\0';
 		} else {
 			*glibcxx = '\0';

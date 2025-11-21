@@ -185,12 +185,13 @@ static void pal_refresh(RCons *cons, bool rain) {
 		SdbListIter *iter;
 		SdbKv *kv;
 		r_cons_context_rainbow_free (cons->context);
-		cons->context->pal.rainbow = calloc (sizeof (char *), list->length);
-		r_cons_rainbow_new (cons, list->length); // alocated here
+		r_cons_rainbow_new (cons, list->length); // allocate here
 		int n = 0;
 		if (ctx->pal.rainbow) {
 			ls_foreach (list, iter, kv) {
-				ctx->pal.rainbow[n++] = strdup (sdbkv_key (kv));
+				if (n < (int)list->length) {
+					ctx->pal.rainbow[n++] = strdup (sdbkv_key (kv));
+				}
 			}
 		}
 		ctx->pal.rainbow_sz = n;

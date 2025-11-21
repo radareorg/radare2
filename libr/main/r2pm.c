@@ -216,9 +216,11 @@ static char *r2pm_get(const char *file, const char *token, R2pmTokenType type) {
 			nl = find_newline (descptr);
 			if (nl) {
 				*nl = 0;
-				nl--;
-				if (*nl == '"') {
-					*nl = 0;
+				if (nl > descptr) {
+					nl--;
+					if (*nl == '"') {
+						*nl = 0;
+					}
 				}
 			}
 			descptr = (char *)r_str_trim_head_ro (descptr);

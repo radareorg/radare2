@@ -222,6 +222,8 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 			}
 			if (opst) {
 				matches = strcmp (opst, "invalid") && strcmp (opst, "unaligned");
+			} else {
+				matches = 0;
 			}
 			if (matches && tokens[matchcount]) {
 				if (mode == 'a') { // check for case sensitive

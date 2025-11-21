@@ -459,11 +459,11 @@ R_API char *r_str_word_get0set(char *stra, int stralen, int idx, const char *new
 	}
 	memcpy (out + alen, newstr, strlen (newstr) + 1);
 	if (blen > 0) {
-		memcpy (out + alen + strlen (newstr) + 1, p + strlen (p) + 1, blen + 1);
+		memcpy (out + alen + strlen (newstr) + 1, p + strlen (p) + 1, blen);
 	}
 	out[nlen + 1] = 0;
 	if (newlen) {
-		*newlen = nlen + ((blen == 0)? 1: 0);
+		*newlen = nlen + 1;
 	}
 	return out;
 }
@@ -4036,6 +4036,7 @@ R_API char *r_str_scale(const char *s, int w, int h) {
 
 // returns value between 0 and 100 about how much different the strings are
 R_API int r_str_distance(const char *a, const char *b) {
+	R_RETURN_VAL_IF_FAIL (a && b, 0);
 	ut32 distance = 0;
 	double similarity = 0;
 	r_diff_buffers_distance_levenshtein (NULL, (const ut8 *)a, strlen (a), (const ut8 *)b, strlen (b), &distance, &similarity);
