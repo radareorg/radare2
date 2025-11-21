@@ -5302,9 +5302,8 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 					R_FREE (filename);
 				}
 				if (!filename) {
-					char pathbuf[MAXPATHLEN] = {0};
+					char pathbuf[1024] = {0};
 					core->dbg->iob.read_at (core->dbg->iob.io, addr, (ut8*)pathbuf, sizeof (pathbuf) - 1);
-					pathbuf[MAXPATHLEN - 1] = 0;
 					if (*pathbuf) {
 						filename = strdup (pathbuf);
 					}
