@@ -435,13 +435,6 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	const bool showBody = g->show_node_body;
 	RCons *cons = g->can->cons;
 	if (n->color) {
-#if 0
-		const char *pad = r_str_pad ('#', n->w);
-		char *f = r_str_newf ("%s%s%s%s", n->color, pad, Color_RESET, nc);
-		G (n->x, n->y);
-		W (f);
-		free (f);
-#endif
 		// r_cons_canvas_bgfill (g->can, n->x-1, n->y-1, n->w+2, n->h+2, n->color);
 		r_cons_canvas_box (g->can, n->x-1, n->y, n->w+2, n->h, n->color);
 	}
@@ -539,13 +532,6 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 		r_cons_canvas_box (g->can, n->x, n->y, n->w, n->h, nc);
 	}
 	if (n->color) {
-#if 0
-		const char *pad = r_str_pad ('#', n->w);
-		char *f = r_str_newf ("%s%s%s%s", n->color, pad, Color_RESET, nc);
-		G (n->x, n->y);
-		W (f);
-		free (f);
-#endif
 		r_cons_canvas_box (g->can, n->x - 1, n->y, n->w + 2, n->h, n->color);
 	}
 #endif

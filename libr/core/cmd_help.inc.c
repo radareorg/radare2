@@ -476,9 +476,10 @@ static const char* findBreakChar(const char *s) {
 
 // XXX This is an experimental test and must be implemented in RCons directly
 static void colormessage(RCore *core, const char *msg) {
+	char padstr[128];
 	size_t msglen = strlen (msg);
 	RCons *cons = core->cons;
-	const char *pad = r_str_pad (' ', msglen + 5);
+	const char *pad = r_str_pad2 (padstr, sizeof (padstr), ' ', msglen + 5);
 	r_cons_gotoxy (cons, 10, 10); r_cons_printf (cons, Color_BGBLUE"%s", pad);
 	r_cons_gotoxy (cons, 10, 11); r_cons_printf (cons, Color_BGBLUE"%s", pad);
 	r_cons_gotoxy (cons, 10, 12); r_cons_printf (cons, Color_BGBLUE"%s", pad);
@@ -1055,6 +1056,7 @@ static int cmd_help(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg_question_v);
 		} else {
 			int i = 0;
+			char padstr[128];
 			const char *vars[] = {
 				"$$", "$$c", "$$$", "$$$c", "$?", "$b", "$c", "$Cn", "$D", "$DB", "$DD", "$Dn",
 				"$is", "$ij", "$if", "$ir", "$iv", "$in", "$ip",
@@ -1069,7 +1071,7 @@ static int cmd_help(void *data, const char *input) {
 			};
 			const bool wideOffsets = r_config_get_i (core->config, "scr.wideoff");
 			while (vars[i]) {
-				const char *pad = r_str_pad (' ', 6 - strlen (vars[i]));
+				const char *pad = r_str_pad2 (padstr, sizeof (padstr), ' ', 6 - strlen (vars[i]));
 				if (wideOffsets) {
 					r_cons_printf (core->cons, "%s %s 0x%016"PFMT64x"\n", vars[i], pad, r_num_math (core->num, vars[i]));
 				} else {
@@ -1306,13 +1308,13 @@ static int cmd_help(void *data, const char *input) {
 				int len = strlen (text) + 2;
 				RStrBuf *b = r_strbuf_new ("");
 				r_strbuf_append (b, ".");
-				r_strbuf_append (b, r_str_pad ('-', len));
+				r_strbuf_pad (b, '-', len);
 				r_strbuf_append (b, ".\n");
 				r_strbuf_append (b, "| ");
 				r_strbuf_append (b, text);
 				r_strbuf_append (b, " |\n");
 				r_strbuf_append (b, "'");
-				r_strbuf_append (b, r_str_pad ('-', len));
+				r_strbuf_pad (b, '-', len);
 				r_strbuf_append (b, "'\n");
 				char * s = r_strbuf_drain (b);
 				r_cons_print (core->cons, s);

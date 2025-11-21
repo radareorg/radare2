@@ -120,8 +120,9 @@ static void draw_highlighted_box(RConsCanvas *can, int xpos, int ypos, int boxwi
 
 	// Fill top line with #### for selected boxes (between the borders)
 	if (is_selected && boxwidth > 2) {
-		const char *top_line = r_str_pad ('#', boxwidth - 2);
+		char *top_line = r_str_pad2 (NULL, 0, '#', boxwidth - 2);
 		r_cons_canvas_write_at (can, top_line, xpos + 1, ypos);
+		free (top_line);
 	}
 }
 
