@@ -4,23 +4,24 @@
 
 #define MAX_JSON_INDENT 128
 
-static void doIndent(int idt, char** o, const char *tab) {
+static void doIndent(int idt, char **o, const char *tab) {
 	int i;
 	char *x;
 	for (i = 0; i < idt; i++) {
-		for (x = (char*) tab; *x; x++) {
+		for (x = (char *)tab; *x; x++) {
 			*(*o)++ = *x;
 		}
 	}
 }
 
-#define EMIT_ESC(s, code) do { \
-	if (color) { \
-		size_t codelen = strlen (code); \
-		memcpy (s, code, codelen); \
-		s += codelen; \
-	} \
-} while (0);
+#define EMIT_ESC(s, code) \
+	do { \
+		if (color) { \
+			size_t codelen = strlen (code); \
+			memcpy (s, code, codelen); \
+			s += codelen; \
+		} \
+	} while (0);
 
 enum {
 	JC_FALSE,
@@ -31,20 +32,20 @@ enum {
 };
 
 static const char *origColors[] = {
-	Color_RED,    // JC_FALSE
-	Color_GREEN,  // JC_TRUE
-	Color_CYAN,   // JC_KEY
+	Color_RED, // JC_FALSE
+	Color_GREEN, // JC_TRUE
+	Color_CYAN, // JC_KEY
 	Color_YELLOW, // JC_VAL
-	Color_RESET,  // JC_RESET
+	Color_RESET, // JC_RESET
 };
 // static const char colors
 
-R_API char* r_print_json_path(const char* s, int pos) {
+R_API char *r_print_json_path(const char *s, int pos) {
 	R_RETURN_VAL_IF_FAIL (s, NULL);
 	int indent = 0;
 	const char *words[MAX_JSON_INDENT] = { NULL };
-	int lengths[MAX_JSON_INDENT] = {0};
-	int indexs[MAX_JSON_INDENT] = {0};
+	int lengths[MAX_JSON_INDENT] = { 0 };
+	int indexs[MAX_JSON_INDENT] = { 0 };
 	int instr = 0;
 	bool isarr = false;
 	int arrpos = 0;
@@ -63,7 +64,7 @@ R_API char* r_print_json_path(const char* s, int pos) {
 				if (cur > pos) {
 					break;
 				}
-				if (indent < MAX_JSON_INDENT) {
+				if (indent > 0 && indent < MAX_JSON_INDENT) {
 					words[indent - 1] = str_a;
 					lengths[indent - 1] = s - str_a;
 					indexs[indent - 1] = 0;
@@ -84,8 +85,8 @@ R_API char* r_print_json_path(const char* s, int pos) {
 			break;
 		case ',':
 			if (isarr) {
-				arrpos ++;
-				if (indent < MAX_JSON_INDENT) {
+				arrpos++;
+				if (indent > 0 && indent < MAX_JSON_INDENT) {
 					indexs[indent - 1] = arrpos;
 					lengths[indent - 1] = (s - os);
 				}
@@ -115,7 +116,7 @@ R_API char* r_print_json_path(const char* s, int pos) {
 	ut64 opos = 0;
 	RStrBuf *sb = r_strbuf_new ("");
 	for (i = 0; i < MAX_JSON_INDENT && i < indent; i++) {
-		if ((int)(size_t)words[i] < MAX_JSON_INDENT) {
+		if ((int) (size_t)words[i] < MAX_JSON_INDENT) {
 			ut64 cur = lengths[i];
 			if (cur < opos) {
 				continue;
@@ -124,7 +125,7 @@ R_API char* r_print_json_path(const char* s, int pos) {
 			if (cur > pos) {
 				break;
 			}
-			r_strbuf_appendf (sb, "0x%08"PFMT64x"  %d  [%d]\n", cur, i, indexs[i]);
+			r_strbuf_appendf (sb, "0x%08" PFMT64x "  %d  [%d]\n", cur, i, indexs[i]);
 		} else {
 			char *a = r_str_ndup (words[i], lengths[i]);
 			ut64 cur = words[i] - os - 1;
@@ -139,7 +140,7 @@ R_API char* r_print_json_path(const char* s, int pos) {
 			if (q) {
 				*q = 0;
 			}
-			r_strbuf_appendf (sb, "0x%08"PFMT64x"  %d  %s\n", cur, i, a);
+			r_strbuf_appendf (sb, "0x%08" PFMT64x "  %d  %s\n", cur, i, a);
 			free (a);
 		}
 	}
@@ -150,7 +151,7 @@ R_API char* r_print_json_path(const char* s, int pos) {
 	return res;
 }
 
-R_API char* r_print_json_human(const char* s) {
+R_API char *r_print_json_human(const char *s) {
 	R_RETURN_VAL_IF_FAIL (s, NULL);
 	int indent = 0;
 	const char *tab = "  ";
@@ -247,14 +248,14 @@ R_API char* r_print_json_human(const char* s) {
 	return O;
 }
 
-R_API char* r_print_json_indent(const char* s, bool color, const char* tab, const char **palette) {
+R_API char *r_print_json_indent(const char *s, bool color, const char *tab, const char **palette) {
 	R_RETURN_VAL_IF_FAIL (s, NULL);
 	int indent = 0;
 	const int indentSize = strlen (tab);
 	int instr = 0;
 	bool isValue = false;
 	char *o, *tmp;
-	const char **colors = palette ? palette: origColors;
+	const char **colors = palette? palette: origColors;
 	size_t osz = (1 + strlen (s)) * 20;
 	if (osz < 1) {
 		return NULL;
