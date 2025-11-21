@@ -28,72 +28,79 @@ enum {
 };
 
 // Beginning of every header
-R_PACKED (
-typedef struct {
-	ut16 type;
-	ut16 header_size;
-	ut32 size;
-}) chunk_header_t;
+R_PACKED(
+	typedef struct {
+		ut16 type;
+		ut16 header_size;
+		ut32 size;
+	})
+chunk_header_t;
 
 // String pool referenced throughout the Binary XML, there must only be ONE
-R_PACKED (
-typedef struct {
-	ut32 string_count;
-	ut32 style_count;
-	ut32 flags;
-	ut32 strings_offset;
-	ut32 styles_offset;
-	ut32 offsets[];
-}) string_pool_t;
+R_PACKED(
+	typedef struct {
+		ut32 string_count;
+		ut32 style_count;
+		ut32 flags;
+		ut32 strings_offset;
+		ut32 styles_offset;
+		ut32 offsets[];
+	})
+string_pool_t;
 
-R_PACKED (
-typedef struct {
-	ut16 size;
-	ut8 unused;
-	ut8 type;
-	union {
-		ut32 d;
-		float f;
-	} data;
-}) resource_value_t;
+R_PACKED(
+	typedef struct {
+		ut16 size;
+		ut8 unused;
+		ut8 type;
+		union {
+			ut32 d;
+			float f;
+		} data;
+	})
+resource_value_t;
 
-R_PACKED (
-typedef struct {
-	ut32 namespace;
-	ut32 name;
-	ut32 unused;
-	resource_value_t value;
-}) attribute_t;
+R_PACKED(
+	typedef struct {
+		ut32 namespace;
+		ut32 name;
+		ut32 unused;
+		resource_value_t value;
+	})
+attribute_t;
 
-R_PACKED (
-typedef struct {
-	ut32 line;
-	ut32 comment;
-	ut32 namespace;
-	ut32 name;
-	ut32 flags;
-	ut16 attribute_count;
-	ut16 unused0;
-	ut16 unused1;
-	ut16 unused2;
-	attribute_t attributes[];
-}) start_element_t;
+R_PACKED(
+	typedef struct {
+		ut32 line;
+		ut32 comment;
+		ut32 namespace;
+		ut32 name;
+		ut32 flags;
+		ut16 attribute_count;
+		ut16 unused0;
+		ut16 unused1;
+		ut16 unused2;
+		attribute_t attributes[];
+	})
+start_element_t;
 
-R_PACKED (
-typedef struct {
-	ut32 line;
-	ut32 comment;
-	ut32 namespace;
-	ut32 name;
-}) end_element_t;
+R_PACKED(
+	typedef struct {
+		ut32 line;
+		ut32 comment;
+		ut32 namespace;
+		ut32 name;
+	})
+end_element_t;
 
-R_PACKED (
-typedef struct {
-	ut32 line;
-	ut32 comment;
-	ut32 prefix;
-	ut32 uri;
-}) namespace_t;
+R_PACKED(
+	typedef struct {
+		ut32 line;
+		ut32 comment;
+		ut32 prefix;
+		ut32 uri;
+	})
+namespace_t;
 
 static char *string_lookup(string_pool_t *pool, const ut8 *data, ut64 data_size, ut32 i, size_t *length) {
 	if (i > r_read_le32 (&pool->string_count)) {
@@ -101,7 +108,7 @@ static char *string_lookup(string_pool_t *pool, const ut8 *data, ut64 data_size,
 	}
 
 	ut32 offset = r_read_le32 (&pool->offsets[i]);
-	ut8 *start = (ut8 *)((uintptr_t)data + r_read_le32 (&pool->strings_offset) + 8 + offset);
+	ut8 *start = (ut8 *) ((uintptr_t)data + r_read_le32 (&pool->strings_offset) + 8 + offset);
 
 	char *name = NULL;
 	if (pool->flags & FLAG_UTF8) {
@@ -172,7 +179,7 @@ static char *string_lookup(string_pool_t *pool, const ut8 *data, ut64 data_size,
 
 		name = calloc (n + 1, 2);
 
-		if ((const ut8*)start16 > data + data_size - sizeof (ut32) - n - 1) {
+		if ((const ut8 *)start16 > data + data_size - sizeof (ut32) - n - 1) {
 			free (name);
 			return NULL;
 		}
@@ -193,7 +200,7 @@ static char *string_lookup(string_pool_t *pool, const ut8 *data, ut64 data_size,
 }
 
 static char *resource_value(string_pool_t *pool, const ut8 *data, ut64 data_size,
-		resource_value_t *value) {
+	resource_value_t *value) {
 	switch (value->type) {
 	case RESOURCE_NULL:
 		return strdup ("");
@@ -208,7 +215,7 @@ static char *resource_value(string_pool_t *pool, const ut8 *data, ut64 data_size
 	case RESOURCE_INT_HEX:
 		return r_str_newf ("0x%x", value->data.d);
 	case RESOURCE_BOOL:
-		return r_str_newf (value->data.d ? "true" : "false");
+		return r_str_newf (value->data.d? "true": "false");
 	default:
 		R_LOG_WARN ("Resource type is not recognized: %#x", value->type);
 		break;
@@ -217,16 +224,18 @@ static char *resource_value(string_pool_t *pool, const ut8 *data, ut64 data_size
 }
 
 static bool dump_element(PJ *pj, RStrBuf *sb, string_pool_t *pool, namespace_t *namespace,
-		const ut8 *data, ut64 data_size, start_element_t *element, size_t element_size,
-		const ut32 *resource_map, ut32 resource_map_length, st32 *depth, bool start) {
+	const ut8 *data, ut64 data_size, void *element, size_t element_size,
+	const ut32 *resource_map, ut32 resource_map_length, st32 *depth, bool start) {
 	ut32 i;
 
-	char *name = string_lookup (pool, data, data_size, r_read_le32 (&element->name), NULL);
+	end_element_t *common = element;
+	char *name = string_lookup (pool, data, data_size, r_read_le32 (&common->name), NULL);
 	for (i = 0; i < *depth; i++) {
 		r_strbuf_append (sb, "\t");
 	}
 
 	if (start) {
+		start_element_t *e = element;
 		if (pj) {
 			pj_o (pj);
 		}
@@ -234,7 +243,7 @@ static bool dump_element(PJ *pj, RStrBuf *sb, string_pool_t *pool, namespace_t *
 		if (pj) {
 			pj_ko (pj, name);
 		}
-		ut16 count = r_read_le16 (&element->attribute_count);
+		ut16 count = r_read_le16 (&e->attribute_count);
 		if (*depth == 0 && namespace) {
 			char *key = string_lookup (pool, data, data_size, namespace->prefix, NULL);
 			char *value = string_lookup (pool, data, data_size, namespace->uri, NULL);
@@ -262,7 +271,7 @@ static bool dump_element(PJ *pj, RStrBuf *sb, string_pool_t *pool, namespace_t *
 			r_strbuf_append (sb, " ");
 		}
 		for (i = 0; i < count; i++) {
-			attribute_t a = element->attributes[i];
+			attribute_t a = e->attributes[i];
 			ut32 key_index = r_read_le32 (&a.name);
 			char *key = string_lookup (pool, data, data_size, key_index, NULL);
 			// If the key is empty, it is a cached resource name
@@ -337,7 +346,7 @@ R_API char *r_axml_decode(const ut8 *data, const ut64 data_size, PJ *pj) {
 
 	ut64 offset = 0;
 
-	chunk_header_t header = {0};
+	chunk_header_t header = { 0 };
 	if (r_buf_fread_at (buffer, offset, (ut8 *)&header, "ssi", 1) != sizeof (header)) {
 		goto bad;
 	}
@@ -364,82 +373,88 @@ R_API char *r_axml_decode(const ut8 *data, const ut64 data_size, PJ *pj) {
 		offset += sizeof (header);
 
 		switch (type) {
-		case TYPE_STRING_POOL: {
-			ut16 header_size = header.size;
+		case TYPE_STRING_POOL:
+			{
+				ut16 header_size = header.size;
 			if (header_size == 0 || header_size > data_size) {
-				goto bad;
-			}
-			pool = malloc (header_size);
-			if (!pool) {
-				goto bad;
-			}
+					goto bad;
+				}
+				pool = malloc (header_size);
+				if (!pool) {
+					goto bad;
+				}
 
-			if (r_buf_read_at (buffer, offset, (void *)pool, header_size) != header_size) {
-				goto bad;
+				if (r_buf_read_at (buffer, offset, (void *)pool, header_size) != header_size) {
+					goto bad;
+				}
 			}
-		} break;
-		case TYPE_START_ELEMENT: {
-			// The string pool must be the first header
-			if (!pool) {
-				goto bad;
-			}
-			ut16 header_size = header.size;
+			break;
+		case TYPE_START_ELEMENT:
+			{
+				// The string pool must be the first header
+				if (!pool) {
+					goto bad;
+				}
+				ut16 header_size = header.size;
 			if (header_size == 0 || header_size > data_size) {
-				goto bad;
-			}
-			start_element_t *element = malloc (header_size);
-			if (!element) {
-				goto bad;
-			}
-			if (r_buf_read_at (buffer, offset, (void *)element, header_size) != header_size) {
-				free (element);
-				goto bad;
-			}
-			if (!dump_element (pj, sb, pool, namespace, data, data_size, element, header_size,
+					goto bad;
+				}
+				start_element_t *element = malloc (header_size);
+				if (!element) {
+					goto bad;
+				}
+				if (r_buf_read_at (buffer, offset, (void *)element, header_size) != header_size) {
+					free (element);
+					goto bad;
+				}
+				if (!dump_element (pj, sb, pool, namespace, data, data_size, element, header_size,
 					resource_map, resource_map_length, &depth, true)) {
+					free (element);
+					goto bad;
+				}
+				if (pj) {
+					pj_ka (pj, "child");
+				}
+				depth++;
 				free (element);
-				goto bad;
 			}
-			if (pj) {
-				pj_ka (pj, "child");
-			}
-			depth++;
-			free (element);
-		} break;
-		case TYPE_END_ELEMENT: {
-			depth--;
-			if (depth < 0) {
-				goto bad;
-			}
-			end_element_t end;
-			if (r_buf_read_at (buffer, offset, (void *)&end, sizeof (end)) != sizeof (end)) {
-				goto bad;
-			}
-			// The beginning of the start and end element structs
-			// are the same, so we can use this interchangably
-			if (!dump_element (pj, sb, pool, namespace, data, data_size, (start_element_t *)&end, 0,
+			break;
+		case TYPE_END_ELEMENT:
+			{
+				depth--;
+				if (depth < 0) {
+					goto bad;
+				}
+				end_element_t end;
+				if (r_buf_read_at (buffer, offset, (void *)&end, sizeof (end)) != sizeof (end)) {
+					goto bad;
+				}
+				if (!dump_element (pj, sb, pool, namespace, data, data_size, &end, sizeof (end),
 					resource_map, resource_map_length, &depth, false)) {
-				goto bad;
+					goto bad;
+				}
+				if (pj) {
+					pj_end (pj);
+				}
 			}
-			if (pj) {
-				pj_end (pj);
+			break;
+		case TYPE_START_NAMESPACE:
+			{
+				// If there is already a start namespace, override it
+				free (namespace);
+				namespace = malloc (sizeof (*namespace));
+				if (!namespace) {
+					goto bad;
+				}
+				if (r_buf_fread_at (buffer, offset, (ut8 *)namespace, "iiii", 1) != sizeof (*namespace)) {
+					goto bad;
+				}
 			}
-		} break;
-		case TYPE_START_NAMESPACE: {
-			// If there is already a start namespace, override it
-			free (namespace);
-			namespace = malloc (sizeof (*namespace));
-			if (!namespace) {
-				goto bad;
-			}
-			if (r_buf_fread_at (buffer, offset, (ut8 *)namespace, "iiii", 1) != sizeof (*namespace)) {
-				goto bad;
-			}
-		} break;
+			break;
 		case TYPE_END_NAMESPACE:
 			break;
 		case TYPE_RESOURCE_MAP:
-			resource_map = (ut32 *)(data + offset);
+			resource_map = (ut32 *) (data + offset);
 			resource_map_length = header.size;
 			if (resource_map_length > data_size - offset) {
 				goto bad;
