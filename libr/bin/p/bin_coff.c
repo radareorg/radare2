@@ -166,7 +166,7 @@ static RBinImport *_fill_bin_import(struct r_bin_coff_obj *bin, int idx) {
 	void *s = NULL;
 	ut16 n_type = 0;
 	ut32 f_nsyms = bin->type == COFF_TYPE_BIGOBJ? bin->bigobj_hdr.f_nsyms: bin->hdr.f_nsyms;
-	if (!ptr || idx < 0 || idx > f_nsyms) {
+	if (idx < 0 || idx > f_nsyms) {
 		free (ptr);
 		return NULL;
 	}
@@ -438,9 +438,7 @@ static RList *symbols(RBinFile *bf) {
 
 		if (symbols) {
 			for (i = 0; i < f_nsyms; i++) {
-				if (!(ptr = R_NEW0 (RBinSymbol))) {
-					break;
-				}
+				ptr = R_NEW0 (RBinSymbol);
 				if (_fill_bin_symbol (bf->rbin, obj, i, &ptr)) {
 					r_list_append (ret, ptr);
 					ht_up_insert (obj->sym_ht, (ut64)i, ptr);
