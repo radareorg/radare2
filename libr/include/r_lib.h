@@ -21,7 +21,7 @@ R_LIB_VERSION_HEADER (r_lib);
 #define R_LIB_SYMFUNC "radare_plugin_function"
 
 #define STRINGIFY(x) #x
-#define R2_ABIVERSION 38
+#define R2_ABIVERSION 39
 #define R2_VERSION_ABI R2_ABIVERSION
 #define R2_ABIVERSION_STR STRINGIFY(R2_ABIVERSION)
 
