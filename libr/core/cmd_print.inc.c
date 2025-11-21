@@ -6006,10 +6006,7 @@ static ut8 * R_NULLABLE decode_text(RCore *core, ut64 offset, size_t len, bool z
 		}
 	}
 	len = maxlen;
-	if (!len) {
-		len = 1;
-	}
-	bool ret = r_io_read_at (core->io, core->addr, out, len);
+	bool ret = len > 0 ? r_io_read_at (core->io, core->addr, out, len) : false;
 	if (zeroend) {
 		if (ret) {
 			len = (size_t)r_str_nlen ((const char*)out, len);
