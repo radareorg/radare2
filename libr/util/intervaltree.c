@@ -21,7 +21,7 @@ static void node_max(RBNode *node) {
 
 static int cmp(const void *incoming, const RBNode *in_tree, void *user) {
 	ut64 incoming_start = *(ut64 *)incoming;
-	RIntervalNode *first_node = container_of (in_tree, const RIntervalNode, node);
+	const RIntervalNode *first_node = unwrap (in_tree);
 	if (first_node) {
 		ut64 other_start = first_node->start;
 		if (incoming_start < other_start) {

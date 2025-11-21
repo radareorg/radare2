@@ -5636,8 +5636,9 @@ static void ds_print_bbline(RDisasmState *ds) {
 		ds_print_pre (ds, true);
 		if (ds->show_section && ds->line_col) {
 			const char *sn = get_section_name (ds);
+			char padstr[16];
 			size_t snl = sn? strlen (sn) + 4: 4;
-			r_cons_printf (ds->core->cons, "%s", r_str_pad (' ', R_MAX (10, snl - 1)));
+			r_cons_printf (ds->core->cons, "%s", r_str_pad2 (padstr, sizeof (padstr), ' ', R_MAX (10, snl - 1)));
 		}
 		if (!ds->linesright && ds->show_lines_jmp && ds->line) {
 			ds_update_ref_lines (ds);

@@ -1868,6 +1868,7 @@ static int delta_cmp2(const void *a, const void *b) {
 }
 
 static void __cmd_afvf(RCore *core, const char *input) {
+	char padstr[12];
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, -1);
 	RListIter *iter;
 	RAnalVar *p;
@@ -1877,7 +1878,7 @@ static void __cmd_afvf(RCore *core, const char *input) {
 		if (p->isarg || p->delta > 0) {
 			continue;
 		}
-		const char *pad = r_str_pad (' ', 10 - strlen (p->name));
+		const char *pad = r_str_pad2 (padstr, sizeof (padstr), ' ', 10 - strlen (p->name));
 		r_cons_printf (core->cons, "0x%08"PFMT64x"  %s:%s%s\n", (ut64)-p->delta, p->name, pad, p->type);
 	}
 	r_list_sort (list, delta_cmp);
@@ -1886,7 +1887,7 @@ static void __cmd_afvf(RCore *core, const char *input) {
 			continue;
 		}
 		// TODO: only stack vars if (p->kind == 's') { }
-		const char *pad = r_str_pad (' ', 10 - strlen (p->name));
+		const char *pad = r_str_pad2 (padstr, sizeof (padstr), ' ', 10 - strlen (p->name));
 		// XXX this 0x6a is a hack
 		r_cons_printf (core->cons, "0x%08"PFMT64x"  %s:%s%s\n", ((ut64)p->delta) - 0x6a, p->name, pad, p->type);
 	}
@@ -9880,7 +9881,8 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 					*nl = 0;
 					char *desc = r_asm_describe (core->rasm, ptr);
 					if (desc) {
-						const char *pad = r_str_pad (' ', 16 - strlen (ptr));
+						char padstr[20];
+						const char *pad = r_str_pad2 (padstr, sizeof (padstr), ' ', 16 - strlen (ptr));
 						r_cons_printf (core->cons, "%s%s%s\n", ptr, pad, desc);
 						free (desc);
 					} else {
