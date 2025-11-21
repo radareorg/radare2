@@ -435,10 +435,18 @@ static bool fs_bfs_mount(RFSRoot *root) {
 		R_LOG_ERROR ("Invalid BFS block size: must be power of 2");
 		goto fail;
 	}
+	if (ctx->block_size > 65536) {
+		R_LOG_ERROR ("Invalid BFS block size: too large");
+		goto fail;
+	}
 	ctx->block_shift = bfs_read32 (ctx, (ut8 *)&sb.block_shift);
 	ctx->inode_size = bfs_read32 (ctx, (ut8 *)&sb.inode_size);
 	if (!ctx->inode_size) {
 		ctx->inode_size = ctx->block_size;
+	}
+	if (ctx->inode_size > ctx->block_size) {
+		R_LOG_ERROR ("Invalid BFS inode size: larger than block size");
+		goto fail;
 	}
 	ctx->ag_shift = bfs_read32 (ctx, (ut8 *)&sb.ag_shift);
 	if (ctx->ag_shift < ctx->block_shift) {
@@ -518,6 +526,9 @@ static bool bfs_walk_directory(BeosFS *ctx, BeosInode *dir_inode, ut64 parent_in
 	if (!node_size) {
 		node_size = ctx->block_size;
 	}
+	if (node_size > ctx->block_size) {
+		return false;
+	}
 	ut32 level = bfs_read32 (ctx, (ut8 *)&super.max_depth);
 	if (!level) {
 		level = 1;
@@ -533,8 +544,8 @@ static bool bfs_walk_directory(BeosFS *ctx, BeosInode *dir_inode, ut64 parent_in
 	}
 
 	if (level > 0) {
-		ut32 depth = level - 1;
-		while (depth--) {
+		ut32 i;
+		for (i = 0; i < level - 1; i++) {
 			BeosTreeNodeHead *node_head;
 			ut16 key_count;
 			ut16 key_length;
@@ -589,6 +600,11 @@ static bool bfs_walk_directory(BeosFS *ctx, BeosInode *dir_inode, ut64 parent_in
 			return false;
 		}
 		size_t align_pad = (BTREE_ALIGN - (key_section % BTREE_ALIGN)) % BTREE_ALIGN;
+		size_t required_size = sizeof (BeosTreeNodeHead) + key_length + align_pad + key_count * sizeof (ut16) + key_count * sizeof (ut64);
+		if (required_size > node_size) {
+			free (node_buf);
+			return false;
+		}
 		ut8 *key_data = node_buf + sizeof (BeosTreeNodeHead);
 		ut16 *key_offsets = (ut16 *) (key_data + key_length + align_pad);
 		ut64 *values = (ut64 *) ((ut8 *)key_offsets + key_count * sizeof (ut16));
