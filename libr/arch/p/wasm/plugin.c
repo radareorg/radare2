@@ -5,6 +5,7 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
+#include <r_bin.h>
 #include "wasm.h"
 #include "wasm.c"
 
@@ -357,14 +358,36 @@ static bool wasm_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	R_RETURN_VAL_IF_FAIL (s && op, false);
 	WasmOp wop = {{0}};
 	const bool txt = mask & R_ARCH_OP_MASK_DISASM;
-	int ret = wasm_dis (&wop, op->bytes, op->size, txt);
+	int maxlen = op->size ? op->size : 1;
+	bool zero_pad = false;
+	RBin *bin = s->arch ? s->arch->binb.bin : NULL;
+	RBinFile *bf = bin ? bin->cur : NULL;
+	ut64 fsz = bf ? bf->size : UT64_MAX;
+	if (fsz != UT64_MAX && op->addr >= fsz) {
+		maxlen = 1;
+		zero_pad = true;
+	} else if (fsz != UT64_MAX) {
+		ut64 left = fsz - op->addr;
+		if (left && left < (ut64)maxlen) {
+			maxlen = (int)left;
+		}
+	}
+	if (zero_pad) {
+		memset (op->bytes_buf, 0, sizeof (op->bytes_buf));
+		op->bytes = op->bytes_buf;
+		op->weakbytes = true;
+	}
+	int ret = wasm_dis (&wop, op->bytes, maxlen, txt);
+	if (ret > 0) {
+		op->size = ret;
+	}
 
 	op->mnemonic = wop.txt;
 	wop.txt = NULL;
 
 	if (txt && (!op->mnemonic || !strcmp (op->mnemonic, "invalid"))) {
 		op->type = R_ANAL_OP_TYPE_ILL;
-		return -1;
+		return ret > 0;
 	}
 
 	op->nopcode = 1;
@@ -600,7 +623,6 @@ static bool wasm_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	default:
 		break;
 	}
-	op->size = ret;
 	return ret > 0;
 }
 
