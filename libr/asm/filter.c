@@ -218,9 +218,11 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 			if (fcn && fcn->addr == off) {
 				*ptr = 0;
 				// hack to realign pointer for colours
-				ptr2--;
-				if (*ptr2 != 0x1b) {
-					ptr2++;
+				if (ptr2 > ptr) {
+					ptr2--;
+					if (*ptr2 != 0x1b) {
+						ptr2++;
+					}
 				}
 				const char *name = fcn->name;
 				// TODO: implement realname with flags, because functions dont hold this yet
@@ -263,9 +265,11 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 						}
 					}
 					// hack to realign pointer for colours
-					ptr2--;
-					if (*ptr2 != 0x1b) {
-						ptr2++;
+					if (ptr2 > ptr) {
+						ptr2--;
+						if (*ptr2 != 0x1b) {
+							ptr2++;
+						}
 					}
 					ptr_backup = ptr;
 					if (remove_brackets && ptr != ptr2 && *ptr) {
