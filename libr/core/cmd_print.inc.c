@@ -2067,7 +2067,7 @@ static void pfb(RCore *core, const char *arg, int mode) {
 			int padsz = la->pos - 1 + (la->sz / 2);
 			char *v = r_str_newf ("%s= %"PFMT64d" (0x%"PFMT64x")",
 					la->name? la->name: "", la->value, la->value);
-			char *pad2 = strdup (r_str_pad ('-', totalpad - padsz));
+			char *pad2 = r_str_pad2 (NULL, 0, '-', totalpad - padsz);
 			char *pad = r_str_ndup (firstline, padsz + 1);
 			if (la->skip) {
 				// do nothing here
@@ -9549,23 +9549,26 @@ R_API void r_print_offset(RPrint *p, ut64 off, int invert, int delta, const char
 				if (label) {
 					const int label_padding = 10;
 					if (delta > 0) {
-						const char *pad = r_str_pad (' ', sz - sz2 + label_padding);
+						char *pad = r_str_pad2 (NULL, 0, ' ', sz - sz2 + label_padding);
 						if (offdec) {
 							r_cons_printf (core->cons, "%s%s%s%s+%d%s", k, inv, label, reset, delta, pad);
 						} else {
 							r_cons_printf (core->cons, "%s%s%s%s+0x%x%s", k, inv, label, reset, delta, pad);
 						}
+						free (pad);
 					} else {
-						const char *pad = r_str_pad (' ', sz + label_padding);
+						char *pad = r_str_pad2 (NULL, 0, ' ', sz + label_padding);
 						r_cons_printf (core->cons, "%s%s%s%s%s", k, inv, label, reset, pad);
+						free (pad);
 					}
 				} else {
-					const char *pad = r_str_pad (' ', sz - sz2);
+					char *pad = r_str_pad2 (NULL, 0, ' ', sz - sz2);
 					if (offdec) {
 						r_cons_printf (core->cons, "%s+%d%s", pad, delta, reset);
 					} else {
 						r_cons_printf (core->cons, "%s+0x%x%s", pad, delta, reset);
 					}
+					free (pad);
 				}
 			} else {
 				if (offdec) {
@@ -9594,27 +9597,30 @@ R_API void r_print_offset(RPrint *p, ut64 off, int invert, int delta, const char
 		} else {
 			int sz = lenof (off, 0);
 			int sz2 = lenof (delta, 1);
-			const char *pad = r_str_pad (' ', sz - 5 - sz2 - 3);
 			if (delta > 0 || label) {
 				if (label) {
 					const int label_padding = 10;
 					if (delta > 0) {
-						const char *pad = r_str_pad (' ', sz - sz2 + label_padding);
+						char *pad = r_str_pad2 (NULL, 0, ' ', sz - sz2 + label_padding);
 						if (offdec) {
 							r_cons_printf (core->cons, "%s+%d%s", label, delta, pad);
 						} else {
 							r_cons_printf (core->cons, "%s+0x%x%s", label, delta, pad);
 						}
+						free (pad);
 					} else {
-						const char *pad = r_str_pad (' ', sz + label_padding);
+						char *pad = r_str_pad2 (NULL, 0, ' ', sz + label_padding);
 						r_cons_printf (core->cons, "%s%s", label, pad);
+						free (pad);
 					}
 				} else {
+					char *pad = r_str_pad2 (NULL, 0, ' ', sz - 5 - sz2 - 3);
 					if (offdec) {
 						r_cons_printf (core->cons, "%s+%d%s", pad, delta, reset);
 					} else {
 						r_cons_printf (core->cons, "%s+0x%x%s", pad, delta, reset);
 					}
+					free (pad);
 				}
 			} else {
 				if (offdec) {

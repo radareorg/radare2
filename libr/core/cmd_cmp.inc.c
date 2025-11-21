@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -847,7 +847,8 @@ static int cmp_bits(RCore *core, ut64 addr) {
 	if (r_config_get_i (core->config, "hex.header")) {
 		const char *color = use_color? pal->addr: "";
 		char *n = r_str_newf ("0x%08" PFMT64x, core->addr);
-		const char *padding = r_str_pad (' ', strlen (n) - 10);
+		char padstr[16];
+		const char *padding = r_str_pad2 (padstr, sizeof (padstr), ' ', strlen (n) - 10);
 		free (n);
 		r_cons_printf (core->cons, "%s- offset -%s  7 6 5 4 3 2 1 0%s\n", color, padding, color_end);
 	}
