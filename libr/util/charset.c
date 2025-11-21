@@ -308,7 +308,7 @@ R_API size_t r_charset_decode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 
 					// concatenate
 					const size_t ll = R_MIN (left, strlen (ret) + 1);
-					if (ll > 0 && o + ll <= o_end) {
+					if (ll > 0 && o + ll + 1 <= o_end) {
 						memcpy (o, ret, ll);
 						o[ll] = 0;
 						o += ll - 1;

@@ -285,22 +285,30 @@ static ut64 getFunctionSize(Sdb *db) {
 	ut64 min = UT64_MAX, max = 0;
 	char *c, *bbs = sdb_get (db, "bbs", NULL);
 	bool first = true;
-	sdb_aforeach (c, bbs) {
-		ut64 addr = sdb_atoi (c);
-		ut64 addr_end = sdb_num_get (db, Fbb (addr), NULL);
-		if (first) {
-			min = addr;
-			max = addr_end;
-			first = false;
-		} else {
-			if (addr < min) {
+	if (bbs) {
+		for (c = bbs;;) {
+			char *next = NULL;
+			c = sdb_anext (c, &next);
+			ut64 addr = sdb_atoi (c);
+			ut64 addr_end = sdb_num_get (db, Fbb (addr), NULL);
+			if (first) {
 				min = addr;
-			}
-			if (addr_end > max) {
 				max = addr_end;
+				first = false;
+			} else {
+				if (addr < min) {
+					min = addr;
+				}
+				if (addr_end > max) {
+					max = addr_end;
+				}
 			}
+			if (!next) {
+				break;
+			}
+			*(next-1) = ',';
+			c = next;
 		}
-		sdb_aforeach_next (c);
 	}
 	free (bbs);
 	return max - min;
@@ -376,25 +384,33 @@ static bool analyzeFunction(RCore *core, ut64 addr) {
 	// r_core_cmdf (core, "af+ 0x%08"PFMT64x" %s", loc_addr, function_label);
 	{
 		char *c, *bbs = sdb_get (db, "bbs", NULL);
-		sdb_aforeach (c, bbs) {
-			ut64 addr = sdb_atoi (c);
-			ut64 addr_end = sdb_num_get (db, Fbb (addr), NULL);
-			// check if call destination is inside the function boundaries
-			ut64 jump = sdb_array_get_num (db, FbbTo (addr), 0, NULL);
-			ut64 fail = sdb_array_get_num (db, FbbTo (addr), 1, NULL);
+		if (bbs) {
+			for (c = bbs;;) {
+				char *next = NULL;
+				c = sdb_anext (c, &next);
+				ut64 addr = sdb_atoi (c);
+				ut64 addr_end = sdb_num_get (db, Fbb (addr), NULL);
+				// check if call destination is inside the function boundaries
+				ut64 jump = sdb_array_get_num (db, FbbTo (addr), 0, NULL);
+				ut64 fail = sdb_array_get_num (db, FbbTo (addr), 1, NULL);
 
-			// r_cons_printf (cons, "afb+ 0x%"PFMT64x" 0x%"PFMT64x" %d 0x%"PFMT64x" 0x%"PFMT64x"\n",
-			// 	loc_addr, addr, (int)(addr_end - addr), jump, fail);
-			coreb.cmdf (coreb.core, "afb+ 0x%"PFMT64x" 0x%"PFMT64x" %d 0x%"PFMT64x" 0x%"PFMT64x,
-			  	loc_addr, addr, (int)(addr_end - addr), jump, fail);
-			sdb_aforeach_next (c);
-		}
-		if (vars) {
-			// handling arguments
-			RAnalFunction *fcn = r_anal_get_function_at (core->anal, addr);
-			if (fcn && !r_list_empty (fcn->bbs)) {
-				coreb.cmdf (coreb.core, "afva @ 0x%"PFMT64x, addr);
-				// r_core_cmdf (core, "afva @ 0x%"PFMT64x, addr);
+				// r_cons_printf (cons, "afb+ 0x%"PFMT64x" 0x%"PFMT64x" %d 0x%"PFMT64x" 0x%"PFMT64x"\n",
+				// 	loc_addr, addr, (int)(addr_end - addr), jump, fail);
+				coreb.cmdf (coreb.core, "afb+ 0x%"PFMT64x" 0x%"PFMT64x" %d 0x%"PFMT64x" 0x%"PFMT64x,
+				  	loc_addr, addr, (int)(addr_end - addr), jump, fail);
+				if (!next) {
+					break;
+				}
+				*(next-1) = ',';
+				c = next;
+			}
+			if (vars) {
+				// handling arguments
+				RAnalFunction *fcn = r_anal_get_function_at (core->anal, addr);
+				if (fcn && !r_list_empty (fcn->bbs)) {
+					coreb.cmdf (coreb.core, "afva @ 0x%"PFMT64x, addr);
+					// r_core_cmdf (core, "afva @ 0x%"PFMT64x, addr);
+				}
 			}
 		}
 		free (bbs);

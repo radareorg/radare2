@@ -350,7 +350,8 @@ grub_ext4_find_leaf (struct grub_ext2_data *data, char *buf,
       if (ext_block->depth == 0)
         return ext_block;
 
-      for (i = 0; i < grub_le_to_cpu16 (ext_block->entries); i++)
+      for (i = 0; i < grub_le_to_cpu16 (ext_block->entries)
+	   && i < grub_le_to_cpu16 (ext_block->max); i++)
         {
           if (fileblock < grub_le_to_cpu32(index[i].block))
             break;

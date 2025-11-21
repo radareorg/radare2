@@ -401,7 +401,7 @@ static void kvctoken_typename(KVCToken *fun_rtyp, KVCToken *fun_name) {
 	// eprintf ("i TYPENAME n (%s)\n", kvctoken_tostring (*fun_name));
 	const bool accept_dots_in_function_names = true;
 	const char *p = fun_rtyp->b - 1;
-	while (p > fun_rtyp->a) {
+	while (p >= fun_rtyp->a) {
 		bool pass = false;
 		if (accept_dots_in_function_names) {
 			pass = (!isalnum (*p) && *p != '.' && *p != '_') || isspace (*p);
@@ -410,6 +410,9 @@ static void kvctoken_typename(KVCToken *fun_rtyp, KVCToken *fun_name) {
 		}
 		if (pass && *p != '[' && *p != ']') {
 			p++;
+			break;
+		}
+		if (p <= fun_rtyp->a) {
 			break;
 		}
 		p--;

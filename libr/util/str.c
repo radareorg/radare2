@@ -4036,6 +4036,7 @@ R_API char *r_str_scale(const char *s, int w, int h) {
 
 // returns value between 0 and 100 about how much different the strings are
 R_API int r_str_distance(const char *a, const char *b) {
+	R_RETURN_VAL_IF_FAIL (a && b, 0);
 	ut32 distance = 0;
 	double similarity = 0;
 	r_diff_buffers_distance_levenshtein (NULL, (const ut8 *)a, strlen (a), (const ut8 *)b, strlen (b), &distance, &similarity);
