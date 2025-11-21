@@ -2,6 +2,8 @@
 
 #if R_INCLUDE_BEGIN
 
+// R2R  db/cmd/cmd_flags_graph
+
 static RCoreHelpMessage help_msg_fR = {
 	"Usage: fR", " [from] [to] ([mask])", " # Relocate flags matching a mask asuming old and new base addresses",
 	"fR", " entry0 `dm~:1[1]`", "rebase entrypoint",
@@ -355,6 +357,7 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 						r_cons_printf (core->cons, "agn %s %s\n", group, group + parent_len);
 						r_cons_printf (core->cons, "age %s %s\n", *parent_prefix ? parent_prefix : "root", group);
 					} else {
+						r_str_pad2 (padstr, sizeof (padstr), ' ', parent_len);
 						r_cons_printf (core->cons, "%s %s\n", padstr, group + parent_len);
 					}
 					/* Prepare new context for this group */
