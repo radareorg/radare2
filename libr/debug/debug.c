@@ -589,10 +589,10 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 	r_bp_del (dbg->bp, bp_addr);
 #endif
 	/* Propagate return value */
-	if (!ignore_stack && reg_sp) {
+	if (restore && !ignore_stack && reg_sp) {
 		/* Restore stack */
 		// eprintf ("WRITE STEACK 0x%llx\n", reg_sp);
-		dbg->iob.write_at (dbg->iob.io, reg_sp, stack_backup, 4096);
+		dbg->iob.write_at (dbg->iob.io, reg_sp, stack_backup, sizeof (stack_backup));
 	}
 	if (ret) {
 		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false)) {
@@ -606,6 +606,10 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 		r_reg_arena_pop (dbg->reg);
 		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, true)) {
 			R_LOG_ERROR ("Cannot restore registers");
+		}
+		if (dbg->coreb.core) {
+			RCore *core = (RCore *) dbg->coreb.core;
+			core->addr = reg_pc;
 		}
 	}
 
