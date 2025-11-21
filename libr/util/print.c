@@ -382,6 +382,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 	char space[32] = {
 		0
 	};
+	char padstr[32];
 	const char *white = "";
 #define PREOFF(x) (p && p->consb.cons && p->consb.cons->context && p->consb.cons->context->pal.x)? p->consb.cons->context->pal.x
 	bool use_segoff = p? (p->flags & R_PRINT_FLAGS_SEGOFF): false;
@@ -400,7 +401,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 		ut32 s = (addr - a) >> ((p && p->config)? p->config->seggrn: 4);
 		if (dec) {
 			snprintf (space, sizeof (space), "%d:%d", s & 0xffff, a & 0xffff);
-			white = r_str_pad (' ', 9 - strlen (space));
+			white = r_str_pad2 (padstr, sizeof (padstr), ' ', 9 - strlen (space));
 		}
 		if (use_color) {
 			const char *pre = PREOFF (addr): Color_GREEN;
@@ -421,7 +422,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 		if (dec) {
 			snprintf (space, sizeof (space), "%" PFMT64d, addr);
 			int w = R_MAX (10 - strlen (space), 0);
-			white = r_str_pad (' ', w);
+			white = r_str_pad2 (padstr, sizeof (padstr), ' ', w);
 		}
 		if (use_color) {
 			const char *pre = PREOFF (addr): Color_GREEN;

@@ -702,8 +702,8 @@ R_API void r_cons_canvas_fill(RConsCanvas *c, int x, int y, int w, int h, char c
 }
 
 R_API void r_cons_canvas_bgfill(RConsCanvas *c, int x, int y, int w, int h, const char *color) {
+	// TODO: this is quite innefficient
 	int i;
-	const char *pad = r_str_pad (' ', w + 2);
 	char *bgcolor = strdup (color);
 	char *col = strstr (bgcolor, "\x1b[3");
 	if (col) {
@@ -712,7 +712,9 @@ R_API void r_cons_canvas_bgfill(RConsCanvas *c, int x, int y, int w, int h, cons
 		free (bgcolor);
 		bgcolor = strdup (Color_BGBLUE);
 	}
+	char *pad = r_str_pad2 (NULL, 0, ' ', w + 2);
 	char *row = r_str_newf ("%s%s" Color_RESET, bgcolor, pad);
+	free (pad);
 	for (i = 0; i < h; i++) {
 		if (G (x, y + i)) {
 			W (row);

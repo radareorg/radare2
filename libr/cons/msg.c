@@ -16,8 +16,9 @@ static char *r_cons_message_multiline(RCons *cons, const char *msg) {
 		}
 	}
 	int rows, cols = r_cons_get_size (cons, &rows);
-	const char *pad = r_str_pad (' ', (cols-longest) / 2);
+	char *pad = r_str_pad2 (NULL, 0, ' ', (cols-longest) / 2);
 	char *newmsg = r_str_prefix_all (msg, pad);
+	free (pad);
 	r_cons_clear (cons);
 	r_cons_gotoxy (cons, 0, (rows / 2) - (r_list_length (lines) / 2));
 	r_cons_println (cons, newmsg);
