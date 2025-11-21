@@ -392,20 +392,16 @@ R_API bool r_strbuf_prepend_n(RStrBuf *sb, const char *s, size_t l) {
 
 R_API bool r_strbuf_pad(RStrBuf *sb, char ch, int sz) {
 	R_RETURN_VAL_IF_FAIL (sb, false);
-	if (sz < 0) {
-		sz = 0;
-	}
-	int need = sz - sb->len;
-	if (need <= 0) {
+	if (sz < 1) {
 		return true;
 	}
-	if (!r_strbuf_reserve (sb, sb->len + need)) {
+	if (!r_strbuf_reserve (sb, sb->len + sz)) {
 		return false;
 	}
 	char *buf = sb->ptr ? sb->ptr : sb->buf;
-	memset (buf + sb->len, ch, need);
-	buf[sb->len + need] = 0;
-	sb->len = sz;
+	memset (buf + sb->len, ch, sz);
+	buf[sb->len + sz] = 0;
+	sb->len += sz;
 	return true;
 }
 
