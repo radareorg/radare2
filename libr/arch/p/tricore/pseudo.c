@@ -278,7 +278,7 @@ static char *subvar(RAsmPluginSession *aps, RAnalFunction *f, ut64 addr, int opl
 				char *pre = tstr;
 				char *pos = rip + 6;
 				char *word = rip;
-				while (word > tstr && *word != ' ') {
+				while (word > tstr && *(word - 1) != ' ') {
 					word--;
 				}
 

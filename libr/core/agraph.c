@@ -2914,7 +2914,7 @@ struct tmpbackedgeinfo {
 	RCanvasLineStyle style;
 };
 
-int tmplayercmp(const void *a, const void *b) {
+static int tmplayercmp(const void *a, const void *b) {
 	return ((struct tmplayer *)a)->layer > ((struct tmplayer *)b)->layer;
 }
 
