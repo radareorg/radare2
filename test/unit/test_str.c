@@ -698,6 +698,19 @@ bool test_r_str_ndup_zero_len (void) {
 	mu_end;
 }
 
+bool test_r_str_word_get0set(void) {
+	char stra[32];
+	memcpy (stra, "one\0two\0", 8);
+	stra[8] = '\0';
+	int newlen = 0;
+	char *res = r_str_word_get0set (stra, 9, 0, "three", &newlen);
+	mu_assert_streq (res, "three", "first word matches");
+	mu_assert_streq (res + 6, "two", "second word matches");
+	mu_assert_eq (newlen, 11, "new length matches");
+	free (res);
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_file);
 	mu_run_test (test_r_str_wrap);
@@ -736,6 +749,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_mem_from_binstring);
 	mu_run_test (test_r_mem_to_binstring);
 	mu_run_test (test_r_str_ndup_zero_len);
+	mu_run_test (test_r_str_word_get0set);
 	return tests_passed != tests_run;
 }
 

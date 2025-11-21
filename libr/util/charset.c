@@ -239,6 +239,7 @@ R_API size_t r_charset_decode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 		return in_len;
 	}
 	char *o = (char*)out;
+	char *o_end = o + out_len;
 
 	size_t maxkeylen = rc->encode_maxkeylen;
 	size_t cur, j;
@@ -264,6 +265,9 @@ R_API size_t r_charset_decode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 					// write 0x00 N times (
 					for (i = 0; i < repeat; i++) {
 						// write null byte
+						if (o + 2 > o_end) {
+							break;
+						}
 						memcpy (o, "\x00", 2);
 						o++;
 					}
@@ -304,7 +308,7 @@ R_API size_t r_charset_decode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 
 					// concatenate
 					const size_t ll = R_MIN (left, strlen (ret) + 1);
-					if (ll > 0) {
+					if (ll > 0 && o + ll <= o_end) {
 						memcpy (o, ret, ll);
 						o[ll] = 0;
 						o += ll - 1;
@@ -319,8 +323,10 @@ R_API size_t r_charset_decode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 			}
 		}
 		if (!found) {
-			o[0] = '?';
-			o[1] = 0;
+			if (o + 2 <= o_end) {
+				o[0] = '?';
+				o[1] = 0;
+			}
 			o++;
 		}
 		free (str);

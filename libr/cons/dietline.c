@@ -226,9 +226,8 @@ static inline void shift_buffer(RLine *line, int start, int end) {
 	free (line->clipboard);
 	line->clipboard = r_str_ndup (line->buffer.data + start, len);
 	r_line_clipboard_push (line, line->clipboard);
-	memmove (line->buffer.data + start, line->buffer.data + end, line->buffer.length - end);
+	memmove (line->buffer.data + start, line->buffer.data + end, line->buffer.length - end + 1);
 	/* resize buffer to take into account the word we deleted */
-	line->buffer.data[line->buffer.length - len + 1] = '\0';
 	line->buffer.length = strlen (line->buffer.data);
 }
 

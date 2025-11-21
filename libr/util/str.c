@@ -459,11 +459,11 @@ R_API char *r_str_word_get0set(char *stra, int stralen, int idx, const char *new
 	}
 	memcpy (out + alen, newstr, strlen (newstr) + 1);
 	if (blen > 0) {
-		memcpy (out + alen + strlen (newstr) + 1, p + strlen (p) + 1, blen + 1);
+		memcpy (out + alen + strlen (newstr) + 1, p + strlen (p) + 1, blen);
 	}
 	out[nlen + 1] = 0;
 	if (newlen) {
-		*newlen = nlen + ((blen == 0)? 1: 0);
+		*newlen = nlen + 1;
 	}
 	return out;
 }

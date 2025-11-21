@@ -7293,7 +7293,7 @@ toro:
 
 			} else if (ds->immtrim) {
 				free (ds->opstr);
-				ds->opstr = strdup (ds->analop.mnemonic);
+				ds->opstr = strdup (ds->analop.mnemonic ? ds->analop.mnemonic : "");
 				char *res = r_asm_parse_immtrim (core->rasm, ds->opstr);
 				if (res) {
 					free (ds->opstr);
@@ -7332,7 +7332,7 @@ toro:
 					ds->opstr = asm_str;
 				}
 			} else {
-				ds->opstr = strdup (ds->analop.mnemonic);
+				ds->opstr = strdup (ds->analop.mnemonic ? ds->analop.mnemonic : "");
 			}
 			if (ds->immtrim) {
 				free (ds->opstr);
