@@ -575,11 +575,10 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 		}
 		*ret = r_reg_getv (dbg->reg, "PC");
 	}
-#if 1
-	r_debug_step (dbg, 1);
-#else
-	r_debug_continue (dbg);
-#endif
+	if (r_debug_continue (dbg) < 1) {
+		free (pc_backup);
+		return false;
+	}
 	if (dbg->coreb.core) {
 		ut64 v = r_reg_getv (dbg->reg, "rax");
 		dbg->coreb.cmdf (dbg->coreb.core, "'f dx.value=0x%08"PFMT64x, v);

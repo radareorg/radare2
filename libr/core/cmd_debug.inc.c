@@ -5194,13 +5194,13 @@ static int run_buffer_dxr(RCore *core, RBuffer *buf, bool print, bool ignore_sta
 	return ret;
 }
 
-// TODO: dd commands need tests in archos/linux-x64/cmd_dd
 // TODO: update the book page at src/debugger/files.html
 static int cmd_debug_desc(RCore *core, const char *input) {
 	int argc;
 	char **argv;
 	bool needs_live_process = false;
 	bool print = false; // enabled with *, print the command instead of running it
+	bool has_debugger = r_config_get_b (core->config, "cfg.debug");
 	int ret = 0;
 
 	if (input[1] == '?') { // "dd?"
@@ -5247,13 +5247,15 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 	// See the comment above
 	input = R_BORROW argv[0] + 1;
 
-	// "dd" and "dd*" always need a live process
-	if (!print || !input[0] || (input[0] == '*' && !input[1])) {
+	// "dd" and "dd*" always need a live process unless we're only printing
+	if (!print) {
+		needs_live_process = true;
+	} else if (!input[0] || (input[0] == '*' && argc < 2)) {
 		needs_live_process = true;
 	}
 
 	// Error out if we need a live process and there isn't one
-	if (needs_live_process && !r_config_get_b (core->config, "cfg.debug")) {
+	if (needs_live_process && !has_debugger) {
 		R_LOG_ERROR ("No child process to manage files for");
 		ret = 1;
 		goto out_free_argv;
@@ -5265,9 +5267,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 	case '*': // "dd*"
 	case '+': // "dd+"
 	case ' ': // "dd"
-		if (r_config_get_b (core->config, "cfg.debug")) {
-			R_LOG_WARN ("Child file descriptors require the debugger. No alternative for static yet");
-		} else {
+		{
 			RBuffer *buf;
 			char *filename;
 			ut64 addr;
@@ -5293,8 +5293,38 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 			addr = r_num_math (core->num, argv[1]);
 			if (addr) {
 				filename = r_core_cmd_strf (core, "ps @%" PFMT64x, addr);
+				if (filename && !*filename) {
+					free (filename);
+					filename = NULL;
+				}
+				if (!filename) {
+					ut8 ch;
+					int i;
+					char pathbuf[1024] = {0};
+					for (i = 0; i < (int)sizeof (pathbuf) - 1; i++) {
+						if (core->dbg->iob.read_at (core->dbg->iob.io, addr + i, &ch, 1) != 1) {
+							break;
+						}
+						if (!ch) {
+							break;
+						}
+						pathbuf[i] = (char) ch;
+					}
+					if (i > 0) {
+						filename = r_str_ndup (pathbuf, i);
+					}
+				}
 			} else {
 				filename = r_str_escape (argv[1]);
+			}
+			if (filename) {
+				r_str_trim (filename);
+			}
+			if (R_STR_ISEMPTY (filename)) {
+				R_LOG_ERROR ("File path is empty");
+				free (filename);
+				ret = 1;
+				break;
 			}
 
 			if (!(flags & O_CREAT) && !r_file_exists (filename)) {
