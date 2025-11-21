@@ -204,6 +204,9 @@ static void run_state(SDemangler *sd, SStateInfo *state_info, STypeCodeStr *type
 static int copy_string(STypeCodeStr *type_code_str, const char *str_for_copy, size_t copy_len) {
 	int res = 1; // all is OK
 	size_t str_for_copy_len = (copy_len == 0 && str_for_copy) ? strlen (str_for_copy) : copy_len;
+	if (type_code_str->curr_pos >= type_code_str->type_str_len) {
+		return 0;
+	}
 	size_t free_space = type_code_str->type_str_len - type_code_str->curr_pos - 1;
 
 	if (free_space < str_for_copy_len) {
