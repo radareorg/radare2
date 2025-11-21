@@ -15,47 +15,45 @@ static char *__core_visual_tab_string(RCore *core, const char *kolor) {
 		return strdup ("");
 	}
 	int i = 0;
-	char *str = NULL;
 	int tabs = r_list_length (core->visual.tabs);
+	RStrBuf *sb = r_strbuf_new (NULL);
 	if (scr_color > 0) {
 		// TODO: use theme
 		if (tabs > 0) {
-			str = r_str_appendf (str, "%s-+__", kolor);
+			r_strbuf_appendf (sb, "%s-+__", kolor);
 		}
-		for (i = 0; i < tabs;i++) {
+		for (i = 0; i < tabs; i++) {
 			RCoreVisualTab *tab = r_list_get_n (core->visual.tabs, i);
 			const char *name = (tab && *tab->name)? tab->name: NULL;
 			if (i == core->visual.tab) {
-				str = r_str_appendf (str, Color_WHITE"_/ %s \\_%s", r_str_get_fail (name, "t="), kolor);
+				r_strbuf_appendf (sb, Color_WHITE "_/ %s \\_%s", r_str_get_fail (name, "t="), kolor);
 			} else {
-				str = r_str_appendf (str, "_%s(%d)_", r_str_get (name), i + 1);
+				r_strbuf_appendf (sb, "_%s(%d)_", r_str_get (name), i + 1);
 			}
 		}
 	} else {
 		if (tabs > 0) {
-			str = r_str_append (str, "___");
+			r_strbuf_append (sb, "___");
 		}
-		for (i = 0;i < tabs; i++) {
+		for (i = 0; i < tabs; i++) {
 			const char *name = NULL;
 			RCoreVisualTab *tab = r_list_get_n (core->visual.tabs, i);
 			if (tab && *tab->name) {
 				name = tab->name;
 			}
-			if (i==core->visual.tab) {
-				str = r_str_appendf (str, "_/ %d:%s \\_", i + 1, r_str_get_fail (name, "'="));
+			if (i == core->visual.tab) {
+				r_strbuf_appendf (sb, "_/ %d:%s \\_", i + 1, r_str_get_fail (name, "'="));
 			} else {
-				str = r_str_appendf (str, "_(t%d%s%s)__", i + 1, name ? ":" : "", r_str_get (name));
+				r_strbuf_appendf (sb, "_(t%d%s%s)__", i + 1, name? ":": "", r_str_get (name));
 			}
 		}
 	}
-	if (str) {
-		int n = 79 - r_str_ansi_len (str);
-		if (n > 0) {
-			str = r_str_append (str, r_str_pad ('_', n));
-		}
-		str = r_str_append (str, "\n"Color_RESET);
+	int n = 79 - r_str_ansi_len (r_strbuf_get (sb));
+	if (n > 0) {
+		r_strbuf_pad (sb, '_', n);
 	}
-	return str;
+	r_strbuf_append (sb, "\n" Color_RESET);
+	return r_strbuf_drain (sb);
 }
 
 static void visual_tabset(RCore *core, RCoreVisualTab *tab) {
@@ -81,10 +79,10 @@ static void visual_tabset(RCore *core, RCoreVisualTab *tab) {
 	r_config_set_i (core->config, "asm.cmt.col", tab->asm_cmt_col);
 	r_config_set_i (core->config, "hex.cols", tab->cols);
 	r_config_set_b (core->config, "scr.dumpcols", tab->dumpCols);
-	printfmtSingle[0] = printHexFormats[R_ABS(core->visual.hexMode) % PRINT_HEX_FORMATS];
-	printfmtSingle[2] = print3Formats[R_ABS(core->visual.current3format) % PRINT_3_FORMATS];
-	printfmtSingle[3] = print4Formats[R_ABS(core->visual.current4format) % PRINT_4_FORMATS];
-	printfmtSingle[4] = print5Formats[R_ABS(core->visual.current5format) % PRINT_5_FORMATS];
+	printfmtSingle[0] = printHexFormats[R_ABS (core->visual.hexMode) % PRINT_HEX_FORMATS];
+	printfmtSingle[2] = print3Formats[R_ABS (core->visual.current3format) % PRINT_3_FORMATS];
+	printfmtSingle[3] = print4Formats[R_ABS (core->visual.current4format) % PRINT_4_FORMATS];
+	printfmtSingle[4] = print5Formats[R_ABS (core->visual.current5format) % PRINT_5_FORMATS];
 }
 
 static void visual_tabget(RCore *core, RCoreVisualTab *tab) {
@@ -162,7 +160,7 @@ static void visual_tabname(RCore *core) {
 	if (!core->visual.tabs) {
 		return;
 	}
-	char name[32]={0};
+	char name[32] = { 0 };
 	prompt_read (core, "tab name: ", name, sizeof (name));
 	RCoreVisualTab *tab = r_list_get_n (core->visual.tabs, core->visual.tab);
 	if (tab) {
@@ -213,7 +211,7 @@ static void visual_closetab(RCore *core) {
 			}
 			RCoreVisualTab *tab = r_list_get_n (core->visual.tabs, core->visual.tab);
 			if (tab) {
-				visual_tabset(core, tab);
+				visual_tabset (core, tab);
 			}
 		} else {
 			r_list_free (core->visual.tabs);

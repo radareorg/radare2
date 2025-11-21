@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2019 - thestr4ng3r */
+/* radare2 - LGPL - Copyright 2019-2025 - thestr4ng3r */
 
 #include <r_util/r_intervaltree.h>
 #include <r_util/r_assert.h>
@@ -21,12 +21,15 @@ static void node_max(RBNode *node) {
 
 static int cmp(const void *incoming, const RBNode *in_tree, void *user) {
 	ut64 incoming_start = *(ut64 *)incoming;
-	ut64 other_start = container_of (in_tree, const RIntervalNode, node)->start;
-	if (incoming_start < other_start) {
-		return -1;
-	}
-	if (incoming_start > other_start) {
-		return 1;
+	const RIntervalNode *first_node = unwrap (in_tree);
+	if (first_node) {
+		ut64 other_start = first_node->start;
+		if (incoming_start < other_start) {
+			return -1;
+		}
+		if (incoming_start > other_start) {
+			return 1;
+		}
 	}
 	return 0;
 }

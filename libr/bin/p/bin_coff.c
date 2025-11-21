@@ -141,9 +141,24 @@ static bool _fill_bin_symbol(RBin *rbin, struct r_bin_coff_obj *bin, int idx, RB
 }
 
 static bool is_imported_symbol(struct r_bin_coff_obj *bin, int idx) {
-	ut32 n_scnum = bin->type == COFF_TYPE_BIGOBJ? bin->bigobj_symbols[idx].n_scnum: bin->symbols[idx].n_scnum;
-	ut32 n_sclass = bin->type == COFF_TYPE_BIGOBJ? bin->bigobj_symbols[idx].n_sclass: bin->symbols[idx].n_sclass;
-	return n_scnum == COFF_SYM_SCNUM_UNDEF && n_sclass == COFF_SYM_CLASS_EXTERNAL;
+	if (!bin) {
+		return false;
+	}
+	if (bin->type == COFF_TYPE_BIGOBJ) {
+		if (!bin->bigobj_symbols) {
+			return false;
+		}
+		ut32 n_scnum = bin->bigobj_symbols[idx].n_scnum;
+		ut32 n_sclass = bin->bigobj_symbols[idx].n_sclass;
+		return n_scnum == COFF_SYM_SCNUM_UNDEF && n_sclass == COFF_SYM_CLASS_EXTERNAL;
+	} else {
+		if (!bin->symbols) {
+			return false;
+		}
+		ut32 n_scnum = bin->symbols[idx].n_scnum;
+		ut32 n_sclass = bin->symbols[idx].n_sclass;
+		return n_scnum == COFF_SYM_SCNUM_UNDEF && n_sclass == COFF_SYM_CLASS_EXTERNAL;
+	}
 }
 
 static RBinImport *_fill_bin_import(struct r_bin_coff_obj *bin, int idx) {
@@ -151,14 +166,22 @@ static RBinImport *_fill_bin_import(struct r_bin_coff_obj *bin, int idx) {
 	void *s = NULL;
 	ut16 n_type = 0;
 	ut32 f_nsyms = bin->type == COFF_TYPE_BIGOBJ? bin->bigobj_hdr.f_nsyms: bin->hdr.f_nsyms;
-	if (!ptr || idx < 0 || idx > f_nsyms) {
+	if (idx < 0 || idx > f_nsyms) {
 		free (ptr);
 		return NULL;
 	}
 	if (bin->type == COFF_TYPE_BIGOBJ) {
+		if (!bin->bigobj_symbols) {
+			free (ptr);
+			return NULL;
+		}
 		s = &bin->bigobj_symbols[idx];
 		n_type = bin->bigobj_symbols[idx].n_type;
 	} else {
+		if (!bin->symbols) {
+			free (ptr);
+			return NULL;
+		}
 		s = &bin->symbols[idx];
 		n_type = bin->symbols[idx].n_type;
 	}
@@ -398,7 +421,7 @@ static RList *symbols(RBinFile *bf) {
 	if ((obj->type == COFF_TYPE_BIGOBJ && obj->bigobj_symbols) || obj->symbols) {
 		ut32 f_nsyms = 0;
 		ut32 symbol_size = 0;
-		void *symbols;
+		void *symbols = NULL;
 		size_t numaux_offset = 0;
 
 		if (obj->type == COFF_TYPE_BIGOBJ) {
@@ -413,19 +436,19 @@ static RList *symbols(RBinFile *bf) {
 			numaux_offset = offsetof (struct coff_symbol, n_numaux);
 		}
 
-		for (i = 0; i < f_nsyms; i++) {
-			if (!(ptr = R_NEW0 (RBinSymbol))) {
-				break;
-			}
-			if (_fill_bin_symbol (bf->rbin, obj, i, &ptr)) {
-				r_list_append (ret, ptr);
-				ht_up_insert (obj->sym_ht, (ut64)i, ptr);
-			} else {
-				free (ptr);
-			}
+		if (symbols) {
+			for (i = 0; i < f_nsyms; i++) {
+				ptr = R_NEW0 (RBinSymbol);
+				if (_fill_bin_symbol (bf->rbin, obj, i, &ptr)) {
+					r_list_append (ret, ptr);
+					ht_up_insert (obj->sym_ht, (ut64)i, ptr);
+				} else {
+					free (ptr);
+				}
 
-			ut8 n_numaux = *((ut8 *)symbols + i * symbol_size + numaux_offset);
-			i += n_numaux;
+				ut8 n_numaux = *((ut8 *)symbols + i * symbol_size + numaux_offset);
+				i += n_numaux;
+			}
 		}
 	}
 	return ret;
@@ -451,7 +474,7 @@ static RList *imports(RBinFile *bf) {
 	} else if ((obj->type == COFF_TYPE_BIGOBJ && obj->bigobj_symbols) || obj->symbols) {
 		ut32 f_nsyms = 0;
 		ut32 symbol_size = 0;
-		void *symbols;
+		void *symbols = NULL;
 		size_t numaux_offset = 0;
 
 		if (obj->type == COFF_TYPE_BIGOBJ) {
@@ -465,15 +488,17 @@ static RList *imports(RBinFile *bf) {
 			symbols = obj->symbols;
 			numaux_offset = offsetof (struct coff_symbol, n_numaux);
 		}
-		for (i = 0; i < f_nsyms; i++) {
-			RBinImport *ptr = _fill_bin_import (obj, i);
-			if (ptr) {
-				ptr->ordinal = ord++;
-				r_list_append (ret, ptr);
-				ht_up_insert (obj->imp_ht, (ut64)i, ptr);
+		if (symbols) {
+			for (i = 0; i < f_nsyms; i++) {
+				RBinImport *ptr = _fill_bin_import (obj, i);
+				if (ptr) {
+					ptr->ordinal = ord++;
+					r_list_append (ret, ptr);
+					ht_up_insert (obj->imp_ht, (ut64)i, ptr);
+				}
+				ut8 n_numaux = *((ut8 *)symbols + i * symbol_size + numaux_offset);
+				i += n_numaux;
 			}
-			ut8 n_numaux = *((ut8 *)symbols + i * symbol_size + numaux_offset);
-			i += n_numaux;
 		}
 	}
 	return ret;

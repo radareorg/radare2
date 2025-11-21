@@ -252,13 +252,15 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 				}
 				const char *label = fcn? p->label_get (fcn, off): NULL;
 				if (label || isvalidflag (flag)) {
-					if (p->notin_flagspace) {
-						if (p->flagspace == flag->space) {
+					if (flag) {
+						if (p->notin_flagspace) {
+							if (p->flagspace == flag->space) {
+								continue;
+							}
+						} else if (p->flagspace && (p->flagspace != flag->space)) {
+							ptr = ptr2;
 							continue;
 						}
-					} else if (p->flagspace && flag && (p->flagspace != flag->space)) {
-						ptr = ptr2;
-						continue;
 					}
 					// hack to realign pointer for colours
 					ptr2--;

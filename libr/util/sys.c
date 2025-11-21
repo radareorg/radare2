@@ -526,9 +526,11 @@ R_API int r_sys_setenv2(const char *key, const ut8 *value, size_t len) {
 		R_LOG_WARN ("Environment corrupted after null bytes injected via r_sys_setenv2");
 	}
 	char *p = getenv (key);
-	for (i = 0; i < len; i++) {
-		if (zeroes[i]) {
-			p[i] = 0;
+	if (p) {
+		for (i = 0; i < len; i++) {
+			if (zeroes[i]) {
+				p[i] = 0;
+			}
 		}
 	}
 	free (zeroes);

@@ -2,6 +2,8 @@
 
 #if R_INCLUDE_BEGIN
 
+// R2R  db/cmd/cmd_flags_graph
+
 static RCoreHelpMessage help_msg_fR = {
 	"Usage: fR", " [from] [to] ([mask])", " # Relocate flags matching a mask asuming old and new base addresses",
 	"fR", " entry0 `dm~:1[1]`", "rebase entrypoint",
@@ -242,11 +244,6 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 	}
 	/* Initialize root context */
 	FlagContext *root_ctx = R_NEW0 (FlagContext);
-	if (!root_ctx) {
-		r_list_free (stack);
-		free (flag_array);
-		return;
-	}
 	root_ctx->prefix = strdup (prefix);
 	root_ctx->prefix_len = prefix_len;
 	root_ctx->start = 0;
@@ -273,6 +270,7 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 		const char *parent_prefix = ctx->prefix;
 		size_t parent_len = ctx->prefix_len;
 		bool resume = false;
+		char padstr[128];
 		/* Iterate over children in this context */
 		while (i < ctx->end && !r_cons_is_breaked (core->cons)) {
 			const char *name = flag_array[i]->name;
@@ -289,7 +287,8 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 						r_cons_printf (core->cons, "agn %s %s\n", name, name + parent_len);
 						r_cons_printf (core->cons, "age %s %s\n", *parent_prefix ? parent_prefix : "root", name);
 					} else {
-						r_cons_printf (core->cons, "%s %s\n", r_str_pad(' ', parent_len), name + parent_len);
+						r_str_pad2 (padstr, sizeof (padstr), ' ', parent_len);
+						r_cons_printf (core->cons, "%s %s\n", padstr, name + parent_len);
 					}
 				}
 				/* No recursive push for actual flag (leaf) */
@@ -304,7 +303,8 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 						r_cons_printf (core->cons, "agn %s %s\n", name, name + parent_len);
 						r_cons_printf (core->cons, "age %s %s\n", *parent_prefix ? parent_prefix : "root", name);
 					} else {
-						r_cons_printf (core->cons, "%s %s\n", r_str_pad(' ', parent_len), name + parent_len);
+						r_str_pad2 (padstr, sizeof (padstr), ' ', parent_len);
+						r_cons_printf (core->cons, "%s %s\n", padstr, name + parent_len);
 					}
 				}
 				i++;
@@ -321,7 +321,9 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 						r_cons_printf (core->cons, "agn %s %s\n", name, name + parent_len);
 						r_cons_printf (core->cons, "age %s %s\n", *parent_prefix ? parent_prefix : "root", name);
 					} else {
-						r_cons_printf (core->cons, "%s %s\n", r_str_pad (' ', parent_len), name + parent_len);
+						char *pad = r_str_pad2 (NULL, 0, ' ', parent_len);
+						r_cons_printf (core->cons, "%s %s\n", pad, name + parent_len);
+						free (pad);
 					}
 				}
 				i++;
@@ -355,15 +357,11 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 						r_cons_printf (core->cons, "agn %s %s\n", group, group + parent_len);
 						r_cons_printf (core->cons, "age %s %s\n", *parent_prefix ? parent_prefix : "root", group);
 					} else {
-						r_cons_printf (core->cons, "%s %s\n", r_str_pad (' ', parent_len), group + parent_len);
+						r_str_pad2 (padstr, sizeof (padstr), ' ', parent_len);
+						r_cons_printf (core->cons, "%s %s\n", padstr, group + parent_len);
 					}
 					/* Prepare new context for this group */
 					FlagContext *child_ctx = R_NEW0 (FlagContext);
-					if (!child_ctx) {
-						free (group);
-						aborted = true;
-						break;
-					}
 					child_ctx->prefix = group;
 					child_ctx->prefix_len = cluster_prefix_len;
 					child_ctx->start = i;
@@ -401,7 +399,8 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 							r_cons_printf (core->cons, "agn %s %s\n", fname, fname + parent_len);
 							r_cons_printf (core->cons, "age %s %s\n", *parent_prefix ? parent_prefix : "root", fname);
 						} else {
-							r_cons_printf (core->cons, "%s %s\n", r_str_pad(' ', parent_len), fname + parent_len);
+							r_str_pad2 (padstr, sizeof (padstr), ' ', parent_len);
+							r_cons_printf (core->cons, "%s %s\n", padstr, fname + parent_len);
 						}
 					}
 				}
@@ -540,14 +539,16 @@ static void cmd_fz(RCore *core, const char *input) {
 				char *title = r_str_newf ("[ 0x%08"PFMT64x" ]", core->addr);
 				title_size = strlen (title);
 				padsize -= strlen (title) / 2;
-				const char *halfpad = r_str_pad (' ', padsize);
+				char *halfpad = r_str_pad2 (NULL, 0, ' ', padsize);
 				r_cons_printf (core->cons, "%s%s", halfpad, title);
+				free (halfpad);
 				free (title);
 			}
 			if (b) {
 				padsize = (w / 2) - title_size - strlen (b) - 4;
-				const char *halfpad = padsize > 1? r_str_pad (' ', padsize): "";
+				char *halfpad = r_str_pad2 (NULL, 0, ' ', padsize);
 				r_cons_printf (core->cons, "%s[%s >>]", halfpad, b);
+				free (halfpad);
 			}
 			if (a || b) {
 				r_cons_newline (core->cons);
@@ -1989,8 +1990,9 @@ static int cmd_flag(void *data, const char *input) {
 					if (input[1] && input[2] == '*') {
 						r_cons_printf (core->cons, "fc %s=%s\n", fi->name, fim->color);
 					} else {
-						const char *pad = r_str_pad (' ', 10- strlen (fi->name));
-						r_cons_printf (core->cons, "0x%08"PFMT64x"  %s%s%s\n", fi->addr, fi->name, pad, fim->color);
+						char padstr[16];
+						r_str_pad2 (padstr, sizeof (padstr), ' ', 10 - strlen (fi->name));
+						r_cons_printf (core->cons, "0x%08"PFMT64x"  %s%s%s\n", fi->addr, fi->name, padstr, fim->color);
 					}
 				}
 			}

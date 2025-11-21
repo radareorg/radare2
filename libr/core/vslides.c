@@ -72,6 +72,7 @@ static void render(SlidesState *state, RCore *core, RList *list, int mode, int p
 	}
 	RListIter *iter;
 	RStrBuf *sb = r_strbuf_new (NULL);
+	r_strbuf_pad (sb, '\n', notch);
 	r_list_foreach (list, iter, s) {
 		if (r_str_startswith (s, "# ")) {
 			count++;
@@ -116,15 +117,13 @@ static void render(SlidesState *state, RCore *core, RList *list, int mode, int p
 		}
 	}
 	char *o = r_strbuf_drain (sb);
-	char *oo = r_str_newf ("%s%s", r_str_pad ('\n', notch), o);
-	free (o);
-	o = oo;
 	int h, w = r_cons_get_size (core->cons, &h);
 	if (mode == 2) {
 		w /= 2;
 		char *o2 = r_str_ansi_crop (o, sx, sy, w, h);
-		const char *prefix = r_str_pad (' ', w);
+		char *prefix = r_str_pad2 (NULL, 0, ' ', w);
 		char *no = r_str_prefix_all (o2, prefix);
+		free (prefix);
 		free (o);
 		free (o2);
 		o = no;

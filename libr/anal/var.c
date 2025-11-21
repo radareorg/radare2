@@ -31,7 +31,7 @@ R_API bool r_anal_var_display(RAnal *anal, RAnalVar *var) {
 				anal->cb_printf ("pf r (%s)\n", ri->name);
 			}
 		} else {
-			R_LOG_ERROR ("register '%s' not found", ri->name);
+			R_LOG_ERROR ("register '%s' not found", var->type);
 		}
 		break;
 	case R_ANAL_VAR_KIND_BPV:

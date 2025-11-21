@@ -283,17 +283,17 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 		{
 			r_cons_printf (cons, Color_RESET"esil: %s\n"Color_RESET, expr);
 			int wp = wordpos (expr, x);
-			char *pas = strdup (r_str_pad (' ', wp ? wp + 1: 0));
+			char *pas = r_str_pad2 (NULL, 0, ' ', wp ? wp + 1: 0);
 			int wp2 = wordpos (expr, x + 1);
 			free (word);
 			word = r_str_ndup (expr + (wp?(wp+1):0), (wp2 - wp) - (wp?1:0));
 			if (wp == wp2) {
 				refresh = true;
 			}
-			const char *pad = r_str_pad ('-', wp2 - ((wp > 0)? wp + 1: 0));
+			char *pad = r_str_pad2 (NULL, 0, '-', wp2 - ((wp > 0)? wp + 1: 0));
 			r_cons_printf (cons, Color_RESET"      %s%s\n"Color_RESET, pas, pad);
 			free (pas);
-			// free (pad);
+			free (pad);
 		}
 		r_cons_printf (cons, "esil stack: ");
 		if (!r_esil_dumpstack (esil)) {

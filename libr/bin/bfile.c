@@ -483,7 +483,7 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, bool 
 	{
 		RIO *io = bf->rbin->iob.io;
 		RCoreBind *cb = &io->coreb;
-		if (cb && cb->cfgGet) {
+		if (cb && cb->cfgGet && cb->cfgGetI) {
 			const bool cfg_debug = cb->cfgGet (cb->core, "cfg.debug");
 			if (!cfg_debug) {
 				if (!to || to > r_buf_size (bf->buf)) {
@@ -493,11 +493,11 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, bool 
 					return;
 				}
 			}
-		}
-		if (!bf->bo) {
-			// use laddr instead of baddr if no bin object is loaded
-			const ut64 binLaddr = cb->cfgGetI (cb->core, "bin.laddr");
-			bf->loadaddr = binLaddr;
+			if (!bf->bo) {
+				// use laddr instead of baddr if no bin object is loaded
+				const ut64 binLaddr = cb->cfgGetI (cb->core, "bin.laddr");
+				bf->loadaddr = binLaddr;
+			}
 		}
 	}
 	if (raw != 2) {

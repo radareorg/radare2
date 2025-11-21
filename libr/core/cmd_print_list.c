@@ -69,27 +69,35 @@ static void tree_files(struct treestate *ts, int indent) {
 	}
 	r_list_sort (files, (RListComparator)strcmp);
 	r_list_uniq_inplace (files, (RListComparatorItem)itemcmp);
+	RStrBuf *sb = r_strbuf_new ("");
 	r_list_foreach (files, iter, file) {
-		const char *pad = r_str_pad (' ', indent);
-		r_cons_printf (ts->core->cons, "%s%c %s\n", pad, '+', file);
+		r_strbuf_pad (sb, ' ', indent);
+		r_strbuf_appendf (sb, "%c %s\n", '+', file);
 		RList *children = functions_for_file (ts, file);
 		char *fcnstr;
 		r_list_foreach (children, iter2, fcnstr) {
-			const char *pad = r_str_pad (' ', indent + 2);
-			r_cons_printf (ts->core->cons, "%s%c %s\n", pad, '-', fcnstr);
+			r_strbuf_pad (sb, ' ', indent + 2);
+			r_strbuf_appendf (sb, "%c %s\n", '-', fcnstr);
 		}
 		r_list_free (children);
 	}
+	char *s = r_strbuf_drain (sb);
+	r_cons_print (ts->core->cons, s);
+	free (s);
 	r_list_free (files);
 }
 
 static void tree_functions(struct treestate *ts, int indent) {
 	RListIter *iter;
 	RAnalFunction *fcn;
+	RStrBuf *sb = r_strbuf_new ("");
 	r_list_foreach (ts->core->anal->fcns, iter, fcn) {
-		const char *pad = r_str_pad (' ', indent);
-		r_cons_printf (ts->core->cons, "%s%c 0x%08"PFMT64x" %s\n", pad, '-', fcn->addr, fcn->name);
+		r_strbuf_pad (sb, ' ', indent);
+		r_strbuf_appendf (sb, "%c 0x%08"PFMT64x" %s\n", '-', fcn->addr, fcn->name);
 	}
+	char *s = r_strbuf_drain (sb);
+	r_cons_print (ts->core->cons, s);
+	free (s);
 }
 
 R_API void r_print_list(RCore *core, const char *input) {

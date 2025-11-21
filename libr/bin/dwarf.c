@@ -760,7 +760,7 @@ beach:
 static char *get_section_string(RBin *bin, RBinSection * section, size_t offset) {
 	ut8 str[32], str2[128], str3[2048];
 	RBinFile *bf = bin ? bin->cur: NULL;
-	if (!section || (section->paddr + offset + 2) > bf->size) {
+	if (!bf || !section || (section->paddr + offset + 2) > bf->size) {
 		return NULL;
 	}
 	/* Handle compressed DWARF string sections (.zdebug_str or SHF_COMPRESSED) */
