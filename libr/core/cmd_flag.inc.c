@@ -242,11 +242,6 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 	}
 	/* Initialize root context */
 	FlagContext *root_ctx = R_NEW0 (FlagContext);
-	if (!root_ctx) {
-		r_list_free (stack);
-		free (flag_array);
-		return;
-	}
 	root_ctx->prefix = strdup (prefix);
 	root_ctx->prefix_len = prefix_len;
 	root_ctx->start = 0;
@@ -273,7 +268,7 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 		const char *parent_prefix = ctx->prefix;
 		size_t parent_len = ctx->prefix_len;
 		bool resume = false;
-		char padstr[32];
+		char padstr[128];
 		/* Iterate over children in this context */
 		while (i < ctx->end && !r_cons_is_breaked (core->cons)) {
 			const char *name = flag_array[i]->name;
