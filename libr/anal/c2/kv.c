@@ -54,7 +54,7 @@ static bool kvctoken_equals(KVCToken a, KVCToken b) {
 
 static void kvctoken_trim(KVCToken *t) {
 	// Skip leading whitespace and semicolons
-	while (isspace (*t->a) || *t->a == ';') {
+	while (t->a < t->b && (isspace (*t->a) || *t->a == ';')) {
 		t->a++;
 	}
 	// Skip trailing whitespace and semicolons
@@ -97,6 +97,9 @@ static void kvc_error(KVCParser *kvc, const char *msg) {
 static void massage_type(char **s) {
 	// Skip leading semicolons
 	char *str = *s;
+	if (!str) {
+		return;
+	}
 	while (*str == ';') {
 		str++;
 	}
@@ -300,9 +303,8 @@ static bool parse_attributes(KVCParser *kvc) {
 	kvc_skipn (kvc, 3);
 
 	// kvc->attrs.count = 0;
-	int line = kvc->line;
 	while (true) {
-		line = kvc->line;
+		int line = kvc->line;
 		skip_spaces (kvc);
 		if (line != kvc->line) {
 			// newline found
@@ -320,7 +322,6 @@ static bool parse_attributes(KVCParser *kvc) {
 			return false;
 		}
 		attr_name.b = kvc->s.a;
-		line = kvc->line;
 #if 0
 		skip_spaces (kvc);
 		if (line != kvc->line) {
@@ -765,12 +766,10 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 		/* Handle a “simple” typedef such as:
 		typedef int myint;
 		In this case we assume that everything from the current pointer until
-		the semicolon is the declaration, and the last word is the alias.
-		*/
+		the semicolon is the declaration, and the last word is the alias. */
 		const char *start = kvc->s.a;
 		/* First check if this is a function-pointer typedef of the form:
-		typedef RETTYPE (*alias) (ARGS);
-		*/
+		typedef RETTYPE (*alias) (ARGS); */
 		KVCToken decl = { .a = start };
 		/* find semicolon for decl end */
 		const char *semicolon = kvc_find_semicolon2 (kvc);
@@ -805,7 +804,7 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 				char *args_str = NULL;
 				if (args_open < semicolon) {
 					const char *args_end = semicolon - 1;
-					while (args_end > args_open && *args_end != ')') {
+					while (args_end >= args_open && *args_end != ')') {
 						args_end--;
 					}
 					if (args_end > args_open) {
@@ -836,17 +835,17 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 		}
 		const char *p = semicolon - 1;
 		// Skip trailing spaces before alias
-		while (p > start && isspace ((unsigned char)*p)) {
+		while (p >= start && isspace (*p)) {
 			p--;
 		}
 		// Mark end of alias
 		const char *alias_end = p + 1;
 		// Scan backwards over alias characters (alphanumeric and underscore)
-		while (p > start && (isalnum ((unsigned char)*p) || *p == '_')) {
+		while (p >= start && (isalnum (*p) || *p == '_')) {
 			p--;
 		}
 		// If stopped on non-identifier, advance to start of alias
-		if (! (isalnum ((unsigned char)*p) || *p == '_')) {
+		if (p < start || (!isalnum (*p) && *p != '_')) {
 			p++;
 		}
 		// Alias token
