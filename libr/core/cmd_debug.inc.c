@@ -6264,7 +6264,9 @@ static int cmd_debug(void *data, const char *input) {
 			if (strlen (hexpairs) < 8192) {
 				int bytes_len = r_hex_str2bin (hexpairs, bytes);
 				if (bytes_len > 0) {
-					if (!r_debug_execute (core->dbg, bytes, bytes_len, NULL, is_dxr, is_dxrs)) {
+					bool restore = true;
+					bool ignore_stack = is_dxrs;
+					if (!r_debug_execute (core->dbg, bytes, bytes_len, NULL, restore, ignore_stack)) {
 						R_LOG_ERROR ("Failed to execute code");
 					}
 				} else {
