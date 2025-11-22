@@ -147,7 +147,7 @@ EOF
 EXPECT=<<EOF
 pdb @@= 0x000067d0 0x00004df0 0x000132d0 0x000132de 0x00004960
             ;-- rip:
-/ 46: entry0 (int64_t arg3);
+/ 46: entry0 (int64_t arg1);
 | `- args(rdx)
 |           0x000067d0      f30f1efa       endbr64
 |           0x000067d4      31ed           xor ebp, ebp

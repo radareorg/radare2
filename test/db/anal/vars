@@ -240,10 +240,10 @@ afv=
 EOF
 EXPECT=<<EOF
 afvR
-      arg3  0x5312
+      arg1  0x5312
 afvW
-      arg3
-* arg3
+      arg1
+* arg1
 R 0x5312  mov r9, rdx
 EOF
 RUN

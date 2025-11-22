@@ -623,7 +623,7 @@ EXPECT=<<EOF
 |           0x00401991      66897df8       mov word [mag], di
 |           0x00401995      668975f0       mov word [szel], si
 |           0x00401999      b801000000     mov eax, 1
-|           0x0040199e      bf01000000     mov edi, 1                  ; int64_t arg2
+|           0x0040199e      bf01000000     mov edi, 1                  ; int64_t arg1
 |           0x004019a3      89c6           mov esi, eax                ; int64_t arg_8h
 |           0x004019a5      e8b6a10200     call sym.CRT____GOTOXY_TCRTCOORD_TCRTCOORD ; unit crt gotoxy(tcrtcoord,tcrtcoord)
 |           0x004019aa      66448b65f0     mov r12w, word [szel]

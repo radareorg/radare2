@@ -1291,8 +1291,8 @@ za sym.strnlen b c1ffffb4ecc300b202ec7c92080c40f2610300542e0400d1cefd44d34310c1a
 za sym.strnlen g cc=7 nbbs=11 edges=14 ebbs=2 bbsum=196
 za sym.strnlen o 0x000131a4
 za sym.strnlen R c3Rybmxlbg==
-za sym.strnlen t void sym.strnlen (int64_t arg1, int64_t arg2, int64_t arg5)
-za sym.strnlen v tr10:arg2:int64_t, tr6:arg1:int64_t, tr22:arg5:int64_t
+za sym.strnlen t void sym.strnlen (int64_t arg1, int64_t arg2, int64_t arg3)
+za sym.strnlen v tr10:arg2:int64_t, tr6:arg1:int64_t, tr22:arg3:int64_t
 za sym.strnlen h c573e9053dfa735f51cca8aea51eda71ca46fd402d11feb4d7f8ccf1b3b46d72
 EOF
 RUN
@@ -1936,7 +1936,7 @@ _start:
   realname: _start
   rawname: _start
   next: deregister_tm_clones
-  types: void entry0 (int64_t arg3)
+  types: void entry0 (int64_t arg1)
   refs: sym.__libc_csu_fini, sym.__libc_csu_init, sym.main
   vars: tr73:arg3:int64_t
   bbhash: 77ece050bbc234ae3b587a8ef8da536b640f0b000414d63490214c47b18021d2

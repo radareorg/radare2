@@ -574,6 +574,7 @@ static ut64 numvar_function(RCore *core, const char *str, bool *ok) {
 	char ch0 = *str;
 	char *name = NULL;
 	int nth = -1;
+	ut64 addr = core->addr;
 	if (ch0) {
 		const char ch1 = str[1];
 		if (ch0 == ':') {
@@ -608,10 +609,12 @@ static ut64 numvar_function(RCore *core, const char *str, bool *ok) {
 		}
 	}
 	RAnalFunction *fcn = NULL;
+	r_io_p2v (core->io, addr, &addr);
 	if (name) {
 		ut64 at = r_num_get (NULL, name);
 		// TODO check numerrors
 		if (at && at != UT64_MAX) {
+			r_io_p2v (core->io, at, &at);
 			RList *fcns = r_anal_get_functions_in (core->anal, at);
 			if (fcns && r_list_length (fcns) > 0) {
 				fcn = r_list_get_n (fcns, 0);
@@ -624,11 +627,14 @@ static ut64 numvar_function(RCore *core, const char *str, bool *ok) {
 		}
 		R_FREE (name);
 	} else {
-		RList *fcns = r_anal_get_functions_in (core->anal, core->addr);
+		RList *fcns = r_anal_get_functions_in (core->anal, addr);
 		if (fcns && r_list_length (fcns) > 0) {
 			fcn = r_list_get_n (fcns, 0);
 		}
 		r_list_free (fcns);
+	}
+	if (!fcn) {
+		fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 	}
 	if (!fcn) {
 		return invalid_numvar (core, "cant find function");
