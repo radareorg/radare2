@@ -549,8 +549,35 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		// Clean up
 		vm_deallocate (mach_task_self (), (vm_address_t)threads, thread_count * sizeof (thread_t));
 #elif defined(__arm64__) || defined(__aarch64__)
-		RCore *core = io->coreb.core;
-		io->coreb.cmd (core, "dxr 60d03bd5c0035fd6");
+		task_t task = pid_to_task (fd, iodd->tid);
+		if (!task) {
+			R_LOG_ERROR ("Cannot get task");
+			return NULL;
+		}
+		thread_array_t threads = NULL;
+		mach_msg_type_number_t thread_count = 0;
+		kern_return_t kr = task_threads (task, &threads, &thread_count);
+		if (kr != KERN_SUCCESS) {
+			R_LOG_ERROR ("Cannot get threads: %s", MACH_ERROR_STRING (kr));
+			return NULL;
+		}
+		if (thread_count == 0) {
+			R_LOG_ERROR ("No threads found");
+			return NULL;
+		}
+		// Use the first thread (assuming single-threaded or main thread)
+		thread_t thread = threads[0];
+		struct thread_identifier_info info;
+		mach_msg_type_number_t count = THREAD_IDENTIFIER_INFO_COUNT;
+		kr = thread_info (thread, THREAD_IDENTIFIER_INFO, (thread_info_t)&info, &count);
+		if (kr == KERN_SUCCESS) {
+			ut64 tls_addr = info.thread_handle;
+			io->cb_printf ("0x%" PFMT64x "\n", tls_addr);
+		} else {
+			R_LOG_ERROR ("Cannot get thread info: %s", MACH_ERROR_STRING (kr));
+		}
+		// Clean up
+		vm_deallocate (mach_task_self (), (vm_address_t)threads, thread_count * sizeof (thread_t));
 #else
 		R_LOG_ERROR ("TLS retrieval not implemented for this architecture");
 #endif
