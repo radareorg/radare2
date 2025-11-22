@@ -155,5 +155,6 @@ if %ERRORLEVEL% == 0 (
     echo FAILED TO SETUP VISUAL STUDIO
     exit /b 1
 )
+set PATH=%PATH%;"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64"
 echo Now you can run 'configure'
 cmd
