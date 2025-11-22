@@ -3,11 +3,9 @@
 #include <r_cons.h>
 #include <r_util/r_print.h>
 
-static R_TH_LOCAL RCons *I = NULL;
-
 R_LIB_VERSION (r_cons);
 
-static RCons s_cons_global = {0};
+static RCons *I = NULL;
 
 static void __break_signal(int sig);
 #define MAX_PAGES 100
@@ -678,13 +676,6 @@ R_API void r_cons_filter(RCons *cons) {
 		ctx->tmp_html = false;
 		ctx->was_html = false;
 	}
-}
-
-R_API void r_cons_context_load(RConsContext *context) {
-	if (!I) {
-		I = &s_cons_global;
-	}
-	I->context = context;
 }
 
 R_API void r_cons_context_break(RConsContext *context) {

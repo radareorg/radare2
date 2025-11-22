@@ -907,7 +907,6 @@ R_API RConsCodeColors r_cons_codecolors(RCons *cons);
 R_API void r_cons_context_pal_free(RConsContext *ctx);
 R_DEPRECATE R_API RConsContext *r_cons_context_new(RConsContext * R_NULLABLE parent);
 R_API void r_cons_context_free(RConsContext *context);
-R_API void r_cons_context_load(RConsContext *context);
 R_API bool r_cons_context_is_main(RCons *cons, RConsContext *context);
 R_API void r_cons_context_break(RConsContext *context);
 R_API void r_cons_context_break_push(RCons *cons, RConsContext *context, RConsBreak cb, void *user, bool sig);

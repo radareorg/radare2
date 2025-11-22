@@ -428,9 +428,6 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 
 	if (!stop) {
 		scheduler->current_task = current;
-		if (current->cons_context) {
-			r_cons_context_load (current->cons_context);
-		}
 		// else: no context to load/reset; keep current
 	}
 	R_CRITICAL_LEAVE (core);
@@ -607,9 +604,6 @@ R_API void r_core_task_sync_begin(RCoreTaskScheduler *scheduler) {
 	tasks_lock_enter (scheduler, &old_sigset);
 	task->state = R_CORE_TASK_STATE_RUNNING;
 	tasks_lock_leave (scheduler, &old_sigset);
-	if (task->cons_context) {
-		r_cons_context_load (task->cons_context);
-	}
 }
 
 /* end running stuff synchronously, initially started with r_core_task_sync_begin () */
