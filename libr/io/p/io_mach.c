@@ -509,6 +509,7 @@ static char *mach_get_tls(RIO *io, RIODesc *fd, int tid) {
 	// Use the first thread (assuming single-threaded or main thread)
 	thread_t thread = threads[0];
 	ut64 tls_addr = 0;
+	ut64 tlb_addr = 0;
 
 #if defined(__x86_64__)
 	x86_thread_state64_t state;
@@ -524,9 +525,18 @@ static char *mach_get_tls(RIO *io, RIODesc *fd, int tid) {
 	mach_msg_type_number_t count = THREAD_IDENTIFIER_INFO_COUNT;
 	kr = thread_info (thread, THREAD_IDENTIFIER_INFO, (thread_info_t)&info, &count);
 	if (kr == KERN_SUCCESS) {
-		tls_addr = info.thread_handle;
+		tlb_addr = info.thread_handle;
 	} else {
-		R_LOG_ERROR ("Cannot get thread info: %s", MACH_ERROR_STRING (kr));
+		R_LOG_ERROR ("Cannot get thread state: %s", MACH_ERROR_STRING (kr));
+	}
+
+	arm_thread_state64_t state;
+	count = ARM_THREAD_STATE64_COUNT;
+	kr = thread_get_state (thread, ARM_THREAD_STATE64, (thread_state_t)&state, &count);
+	if (kr == KERN_SUCCESS) {
+		tls_addr = state.__tpidr_el0;
+	} else {
+		R_LOG_ERROR ("Cannot get thread state: %s", MACH_ERROR_STRING (kr));
 	}
 #else
 	R_LOG_ERROR ("TLS retrieval not implemented for this architecture");
@@ -535,8 +545,8 @@ static char *mach_get_tls(RIO *io, RIODesc *fd, int tid) {
 	// Clean up
 	vm_deallocate (mach_task_self (), (vm_address_t)threads, thread_count * sizeof (thread_t));
 
-	if (tls_addr) {
-		return r_str_newf ("0x%" PFMT64x "\n", tls_addr);
+	if (tls_addr || tlb_addr) {
+		return r_str_newf ("f tls=0x%" PFMT64x "\nf tlb=0x%"PFMT64x"\n", tls_addr, tlb_addr);
 	}
 	return NULL;
 }
