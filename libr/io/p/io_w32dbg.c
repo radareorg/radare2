@@ -232,6 +232,10 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (!strcmp (cmd, "")) {
 		// do nothing
 	} else if (!strcmp (cmd, "tls")) {
+		typedef struct _CLIENT_ID {
+			PVOID UniqueProcess;
+			PVOID UniqueThread;
+		} CLIENT_ID;
 		typedef struct {
 			NTSTATUS ExitStatus;
 			PVOID TebBaseAddress;
