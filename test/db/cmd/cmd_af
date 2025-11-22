@@ -83,7 +83,6 @@ CMDS=<<EOF
 s sym.imp.write
 af
 afi~realsz
-?v $FS
 EOF
 EXPECT=<<EOF
 realsz: 6
@@ -194,7 +193,6 @@ EOF
 RUN
 
 NAME=Adding basic blocks with with wrong size (afb+)
-BROKEN=1
 FILE=bins/pe/a.exe
 CMDS=<<EOF
 s 0x004017c0
@@ -223,6 +221,7 @@ size: 9
 |           0x004017c0      51             push ecx
 |           0x004017c1      89e1           mov ecx, esp
 |           0x004017c3      83c108         add ecx, 8
+|           0x004017c6      3d             invalid
 ..
 
 / 9: fcn2.0x004017c0 ();
@@ -241,7 +240,7 @@ size: 12
 |           0x004017c1      89e1           mov ecx, esp
 |           0x004017c3      83c108         add ecx, 8
 |           0x004017c6      3d00100000     cmp eax, 0x1000
-..
+\           0x004017cb      72             invalid
 
 / 12: fcn2.0x004017c0 ();
 | 0x004017c0      51             push ecx
@@ -323,39 +322,53 @@ RUN
 
 NAME=double args afli
 FILE=bins/elf/float_point
-BROKEN=1
 CMDS=<<EOF
 aa
 afi sym.sum_double
+afcf sym.sum_double
 EOF
 EXPECT=<<EOF
 #
-offset: 0x00001133
+addr: 0x00001133
 name: sym.sum_double
 size: 26
+is-pure: true
 realsz: 26
 stackframe: 8
-call-convention: amd64
-cyclomatic-cost: 11
+callconv: amd64
+cyclic-cost: 10
 cyclomatic-complexity: 1
 bits: 64
 type: sym [NEW]
 num-bbs: 1
+num-instrs: 8
 edges: 0
+minaddr: 0x00001133
+maxaddr: 0x0000114d
+is-lineal: true
 end-bbs: 1
-call-refs:
-data-refs:
-code-xrefs: 0x00001181 C
+maxbbins: 8
+midbbins: 8.00
+ratbbins: 1.00
+noreturn: false
+recursive: false
 in-degree: 1
 out-degree: 0
-data-xrefs:
 locals: 2
 args: 2
-var int local_10h @ rbp-0x10
-var int local_8h @ rbp-0x8
-arg int arg1 @ xmm0
-arg int arg2 @ xmm1
-diff: type: new
+
+sym.sum_double (int64_t arg1, int64_t arg2);
+EOF
+RUN
+
+NAME=entry0 arg order
+FILE=bins/elf/ls
+CMDS=<<EOF
+aa
+afcf entry0
+EOF
+EXPECT=<<EOF
+entry0 (int64_t arg1);
 EOF
 RUN
 

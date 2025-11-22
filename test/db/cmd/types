@@ -1560,7 +1560,7 @@ afs
 afs
 EOF
 EXPECT=<<EOF
-void entry0 (int64_t arg3);
+void entry0 (int64_t arg1);
 void foo.bar ();
 char foo.bar (int a, ...);
 EOF

@@ -59,4 +59,4 @@ Starting http server...
 open http://localhost:9292/
 r2 -C http://localhost:9292/cmd/
 EOF
-NORUN
+RUN
