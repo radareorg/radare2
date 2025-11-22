@@ -8,8 +8,10 @@
 #if R2__WINDOWS__
 
 #include <windows.h>
+#include <winternl.h>
 #include <tlhelp32.h>
 #include <r_util/r_w32dw.h>
+#include <r_util/r_w32.h>
 
 #define RW32Dw_PID(x) (((RW32Dw*)x->data)->pi.dwProcessId)
 
@@ -230,6 +232,26 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	/* XXX ugly hack for testing purposes */
 	if (!strcmp (cmd, "")) {
 		// do nothing
+	} else if (!strcmp (cmd, "tls")) {
+		typedef struct _CLIENT_ID {
+			PVOID UniqueProcess;
+			PVOID UniqueThread;
+		} CLIENT_ID;
+		typedef struct {
+			NTSTATUS ExitStatus;
+			PVOID TebBaseAddress;
+			CLIENT_ID ClientId;
+			KAFFINITY AffinityMask;
+			KPRIORITY Priority;
+			KPRIORITY BasePriority;
+		} THREAD_BASIC_INFORMATION;
+		THREAD_BASIC_INFORMATION tbi = {0};
+		NTSTATUS status = r_w32_NtQueryInformationThread (wrap->pi.hThread, 0, &tbi, sizeof (tbi), NULL);
+		if (status == 0) {
+			io->cb_printf ("0x%"PFMT64x"\n", (ut64)tbi.TebBaseAddress);
+		} else {
+			R_LOG_ERROR ("NtQueryInformationThread failed");
+		}
 	} else if (r_str_startswith (cmd, "pid")) {
 		if (cmd[3] == ' ') {
 			int pid = atoi (cmd + 3);
@@ -244,7 +266,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		}
 		return r_str_newf ("%lu", wrap->pi.dwProcessId);
 	} else {
-		eprintf ("Try: ':pid'\n");
+		eprintf ("Try: ':pid' or ':tls'\n");
 	}
 	return NULL;
 }
