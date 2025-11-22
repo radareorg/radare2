@@ -79,14 +79,15 @@ RUN
 
 NAME=af import
 FILE=bins/mach0/ls-osx-x86_64
-BROKEN=1
 CMDS=<<EOF
 s sym.imp.write
 af
+afi~realsz
 ?v $FS
 EOF
 EXPECT=<<EOF
-before:
+realsz: 6
+0x6
 EOF
 RUN
 
