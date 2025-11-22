@@ -3,11 +3,9 @@
 #include <r_cons.h>
 #include <r_util/r_print.h>
 
-static R_TH_LOCAL RCons *I = NULL;
-
 R_LIB_VERSION (r_cons);
 
-static RCons s_cons_global = {0};
+static RCons *I = NULL;
 
 static void __break_signal(int sig);
 #define MAX_PAGES 100
@@ -153,7 +151,7 @@ static HANDLE h;
 static BOOL __w32_control(DWORD type) {
 	if (type == CTRL_C_EVENT) {
 		__break_signal (2); // SIGINT
-		eprintf ("{ctrl+c} pressed.\n");
+		eprintf ("^C pressed\n");
 		return true;
 	}
 	return false;
@@ -228,6 +226,7 @@ R_API RCons *r_cons_new2(void) {
 	h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &cons->term_buf);
 	cons->term_raw = 0;
+	I = cons;
 	if (!SetConsoleCtrlHandler ((PHANDLER_ROUTINE)__w32_control, TRUE)) {
 		R_LOG_ERROR ("Cannot set control console handler");
 	}
@@ -263,7 +262,11 @@ R_API void r_cons_free2(RCons * R_NULLABLE cons) {
 }
 
 static void __break_signal(int sig) {
-	r_cons_context_break (I->context); // &r_cons_context_default);
+	if (I) {
+		r_cons_context_break (I->context);
+	} else {
+		R_LOG_WARN ("Global cons is null");
+	}
 }
 
 R_API bool r_cons_is_initialized(void) {
@@ -410,14 +413,12 @@ R_API void r_cons_context_break_push(RCons* cons, RConsContext *context, RConsBr
 }
 
 R_API void r_cons_context_break_pop(RCons *cons, RConsContext *context, bool sig) {
-	// eprintf ("Brk.pop\n");
 #if WANT_DEBUGSTUFF
 	if (!context || !context->break_stack) {
 		return;
 	}
-	//restore old state
-	RConsBreakStack *b = NULL;
-	b = r_stack_pop (context->break_stack);
+	// restore old state
+	RConsBreakStack *b = r_stack_pop (context->break_stack);
 	if (b) {
 		context->event_interrupt = b->event_interrupt;
 		context->event_interrupt_data = b->event_interrupt_data;
@@ -677,17 +678,11 @@ R_API void r_cons_filter(RCons *cons) {
 	}
 }
 
-R_API void r_cons_context_load(RConsContext *context) {
-	if (!I) {
-		I = &s_cons_global;
-	}
-	I->context = context;
-}
-
 R_API void r_cons_context_break(RConsContext *context) {
 	// eprintf ("ctx.brk\n");
 	if (R_LIKELY (context)) {
 		context->breaked = true;
+		context->was_breaked = true;
 		if (context->event_interrupt) {
 			context->event_interrupt (context->event_interrupt_data);
 		}
