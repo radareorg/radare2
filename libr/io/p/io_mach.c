@@ -39,6 +39,11 @@ static int __get_pid(RIODesc *desc);
 #endif
 #include <mach/task.h>
 #include <mach/task_info.h>
+#if defined(__x86_64__)
+#include <mach/i386/thread_status.h>
+#elif defined(__arm64__) || defined(__aarch64__)
+#include <mach/arm/thread_status.h>
+#endif
 
 #define MACH_ERROR_STRING(ret) \
 	(mach_error_string (ret) ? mach_error_string (ret) : "(unknown)")
@@ -513,11 +518,41 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		return NULL;
 	}
 	if (r_str_startswith (cmd, "tls")) {
-#if __arm64__
+#if defined(__x86_64__)
+		task_t task = pid_to_task (fd, iodd->tid);
+		if (!task) {
+			R_LOG_ERROR ("Cannot get task");
+			return NULL;
+		}
+		thread_array_t threads = NULL;
+		mach_msg_type_number_t thread_count = 0;
+		kern_return_t kr = task_threads (task, &threads, &thread_count);
+		if (kr != KERN_SUCCESS) {
+			R_LOG_ERROR ("Cannot get threads: %s", MACH_ERROR_STRING (kr));
+			return NULL;
+		}
+		if (thread_count == 0) {
+			R_LOG_ERROR ("No threads found");
+			return NULL;
+		}
+		// Use the first thread (assuming single-threaded or main thread)
+		thread_t thread = threads[0];
+		x86_thread_state64_t state;
+		mach_msg_type_number_t count = x86_THREAD_STATE64_COUNT;
+		kr = thread_get_state (thread, x86_THREAD_STATE64, (thread_state_t)&state, &count);
+		if (kr == KERN_SUCCESS) {
+			ut64 tls_addr = state.__fs;
+			io->cb_printf ("0x%" PFMT64x "\n", tls_addr);
+		} else {
+			R_LOG_ERROR ("Cannot get thread state: %s", MACH_ERROR_STRING (kr));
+		}
+		// Clean up
+		vm_deallocate (mach_task_self (), (vm_address_t)threads, thread_count * sizeof (thread_t));
+#elif defined(__arm64__) || defined(__aarch64__)
 		RCore *core = io->coreb.core;
-		io->coreb.cmd (core, "dxr 60d03bd5");
+		io->coreb.cmd (core, "dxr 60d03bd5c0035fd6");
 #else
-		R_LOG_TODO ("Not implemented for this architecture");
+		R_LOG_ERROR ("TLS retrieval not implemented for this architecture");
 #endif
 	}
 	if (r_str_startswith (cmd, "pid")) {
