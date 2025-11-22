@@ -8,6 +8,7 @@
 #if R2__WINDOWS__
 
 #include <windows.h>
+#include <winternl.h>
 #include <tlhelp32.h>
 #include <r_util/r_w32dw.h>
 #include <r_util/r_w32.h>
