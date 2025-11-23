@@ -714,7 +714,6 @@ static RList *patch_relocs(RBinFile *bf) {
 	size_t symbol_size = 0;
 	size_t numaux_offset = 0;
 	if ((bin->type == COFF_TYPE_BIGOBJ && bin->bigobj_symbols) || bin->symbols) {
-
 		if (bin->type == COFF_TYPE_BIGOBJ) {
 			symbols = bin->bigobj_symbols;
 			f_nsyms = bin->bigobj_hdr.f_nsyms;
@@ -724,13 +723,14 @@ static RList *patch_relocs(RBinFile *bf) {
 			f_nsyms = bin->hdr.f_nsyms;
 			symbol_size = sizeof (struct coff_symbol);
 		}
-
-		for (i = 0; i < f_nsyms; i++) {
-			if (is_imported_symbol (bin, i)) {
-				nimports++;
+		if (symbols) {
+			for (i = 0; i < f_nsyms; i++) {
+				if (is_imported_symbol (bin, i)) {
+					nimports++;
+				}
+				ut8 n_numaux = *((ut8 *)symbols + i * symbol_size + numaux_offset);
+				i += n_numaux;
 			}
-			ut8 n_numaux = *((ut8 *)symbols + i * symbol_size + numaux_offset);
-			i += n_numaux;
 		}
 	}
 	ut64 m_vaddr = UT64_MAX;
