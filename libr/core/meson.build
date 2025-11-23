@@ -53,7 +53,9 @@ r_core_sources = [
   'p/core_java.c'
 ]
 
-r_core_inc = []
+r_core_inc = [
+  'p/jemalloc/include',
+]
 r_core_inc = [platform_inc, include_directories(r_core_inc)]
 
 r_core_deps = [
@@ -99,6 +101,8 @@ r_core = library('r_core', r_core_sources,
 )
 
 r_core_dep = declare_dependency(link_with: r_core, include_directories: r_core_inc)
+
+subdir('p/jemalloc')
 
 if get_option('blob')
 
