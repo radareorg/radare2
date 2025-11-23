@@ -2,7 +2,6 @@
 
 [ -z "${CPU}" ] && CPU="arm64"
 CWD="$(dirname "$0")"
-[ -z "${IOSINC}" ] && IOSINC="${CWD}/ios-include"
 CPUS=""
 CPU=`echo $CPU | sed -e 's,+, ,g'`
 for a in `IFS=+ echo ${CPU}` ; do
@@ -15,7 +14,7 @@ BITCODE_FLAG=""
 if [ "${EMBED_BITCODE}" = "1" ]; then
     BITCODE_FLAG="-fembed-bitcode"
 fi
-CC="xcrun --sdk ${SDK} clang ${CPUS} ${BITCODE_FLAG} -DAPPLE_SDK_${APPLE_SDK}=1 -I${IOSINC} -miphoneos-version-min=10.0"
+CC="xcrun --sdk ${SDK} clang ${CPUS} ${BITCODE_FLAG} -DAPPLE_SDK_${APPLE_SDK}=1 -miphoneos-version-min=10.0"
 echo $CC $*
 ${CC} $*
 r=$?

@@ -2,7 +2,6 @@
 
 [ -z "${CPU}" ] && CPU="arm64"
 CWD="$(dirname "$0")"
-[ -z "${IOSINC}" ] && IOSINC="${CWD}/ios-include"
 CPUS=""
 CPU=`echo $CPU | sed -e 's,+, ,g'`
 for a in `IFS=+ echo ${CPU}` ; do
