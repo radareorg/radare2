@@ -21,14 +21,6 @@ fi
 
 export BUILD=1
 
-if [ ! -d sys/ios-include/mach/vm_behavior.h  ]; then
-#(
-#	cd sys && \
-#	wget -c https://lolcathost.org/b/ios-include.tar.gz && \
-#	tar xzvf ios-include.tar.gz
-#)
-echo je
-fi
 
 . sys/ios-env.sh
 if [ "${STOW}" = 1 ]; then
