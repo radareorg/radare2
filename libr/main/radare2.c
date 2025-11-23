@@ -861,7 +861,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'j':
-			// already parsed
+			mr.json = true;
 			break;
 		case '=':
 			R_FREE (r->cmdremote);
