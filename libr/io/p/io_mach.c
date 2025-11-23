@@ -337,28 +337,23 @@ static bool tsk_write(task_t task, vm_address_t addr, const ut8 *buf, int len) {
 
 static int mach_write_at(RIO *io, RIODesc *desc, const void *buf, int len, ut64 addr) {
 	vm_address_t vaddr = addr;
-	vm_address_t pageaddr;
-	vm_size_t pagesize;
-	vm_size_t total_size;
-	int operms = 0;
 	int pid = __get_pid (desc);
 	if (!desc || pid < 0) {
 		return 0;
 	}
 	task_t task = pid_to_task (desc, pid);
-
 	if (len < 1 || task_is_dead (desc, task)) {
 		return 0;
 	}
-	pageaddr = tsk_getpagebase (desc, addr);
-	pagesize = tsk_pagesize (desc);
-	total_size = (len > pagesize)
+	vm_address_t pageaddr = tsk_getpagebase (desc, addr);
+	vm_size_t pagesize = tsk_pagesize (desc);
+	vm_size_t total_size = (len > pagesize)
 		? pagesize *(1 + (len / pagesize))
 		: pagesize;
 	if (tsk_write (task, vaddr, buf, len)) {
 		return len;
 	}
-	operms = tsk_getperm (io, task, pageaddr);
+	int operms = tsk_getperm (io, task, pageaddr);
 	if (!tsk_setperm (io, task, pageaddr, total_size, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_COPY)) {
 		R_LOG_ERROR ("io.mach: Cannot set page perms for %d byte(s) at 0x%08" PFMT64x, (int)pagesize, (ut64)pageaddr);
 		return -1;
@@ -367,11 +362,9 @@ static int mach_write_at(RIO *io, RIODesc *desc, const void *buf, int len, ut64 
 		R_LOG_ERROR ("io.mach: Cannot write on memory");
 		len = -1;
 	}
-	if (operms) {
-		if (!tsk_setperm (io, task, pageaddr, total_size, operms)) {
-			R_LOG_ERROR ("io.mach: Cannot restore page perms");
-			return -1;
-		}
+	if (operms && !tsk_setperm (io, task, pageaddr, total_size, operms)) {
+		R_LOG_ERROR ("io.mach: Cannot restore page perms");
+		return -1;
 	}
 	return len;
 }
@@ -387,22 +380,19 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	RIODesc *ret = NULL;
 	RIOMach *riom = NULL;
-	const char *pidfile;
-	char *pidpath, *endptr;
-	int pid;
-	task_t task;
+	char *endptr;
 	if (!__plugin_open (io, file, false) && !__plugin_open (io, (const char *)&file[1], false)) {
 		return NULL;
 	}
 	if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
 		return NULL;
 	}
-	pidfile = file + (file[0] == 'a'? 9: (file[0] == 's'? 8: 7));
-	pid = (int)strtol (pidfile, &endptr, 10);
+	const char *pidfile = file + (file[0] == 'a'? 9: (file[0] == 's'? 8: 7));
+	int pid = (int)strtol (pidfile, &endptr, 10);
 	if (endptr == pidfile || pid < 0) {
 		return NULL;
 	}
-	task = pid_to_task (NULL, pid);
+	task_t task = pid_to_task (NULL, pid);
 	if (task == -1) {
 		return NULL;
 	}
@@ -414,7 +404,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		/* this is broken, referer gets set in the riodesc after this function returns the riodesc
 		 * the pid > 0 check  doesn't seem to be reasonable to me too
 		 * what was this intended to check anyway? */
-		if (pid > 0 && io->referer && !strncmp (io->referer, "dbg://", 6)) {
+		if (pid > 0 && io->referer && r_str_startswith (io->referer, "dbg://")) {
 			R_LOG_INFO ("Child killed");
 			kill (pid, SIGKILL);
 		}
@@ -442,7 +432,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	iodd->magic = R_MACH_MAGIC;
 	iodd->data = riom;
 	// sleep 1s to get proper path (program name instead of ls) (racy)
-	pidpath = pid? r_sys_pid_to_path (pid): strdup ("kernel");
+	char *pidpath = pid? r_sys_pid_to_path (pid): strdup ("kernel");
 	if (r_str_startswith (file, "smach://")) {
 		ret = r_io_desc_new (io, &r_io_plugin_mach, &file[1],
 			rw | R_PERM_X, mode, iodd);
@@ -509,7 +499,6 @@ static char *mach_get_tls(RIO *io, RIODesc *fd, int tid) {
 	// Use the first thread (assuming single-threaded or main thread)
 	thread_t thread = threads[0];
 	ut64 tls_addr = 0;
-	ut64 tlb_addr = 0;
 
 #if defined(__x86_64__)
 	x86_thread_state64_t state;
@@ -525,19 +514,14 @@ static char *mach_get_tls(RIO *io, RIODesc *fd, int tid) {
 	mach_msg_type_number_t count = THREAD_IDENTIFIER_INFO_COUNT;
 	kr = thread_info (thread, THREAD_IDENTIFIER_INFO, (thread_info_t)&info, &count);
 	if (kr == KERN_SUCCESS) {
-		tlb_addr = info.thread_handle;
+		tls_addr = info.thread_handle;
 	} else {
 		R_LOG_ERROR ("Cannot get thread state: %s", MACH_ERROR_STRING (kr));
 	}
-
-	arm_thread_state64_t state;
-	count = ARM_THREAD_STATE64_COUNT;
-	kr = thread_get_state (thread, ARM_THREAD_STATE64, (thread_state_t)&state, &count);
-	if (kr == KERN_SUCCESS) {
-		tls_addr = state.__tpidr_el0;
-	} else {
-		R_LOG_ERROR ("Cannot get thread state: %s", MACH_ERROR_STRING (kr));
-	}
+	// XXX there's no way to get EL0 register from userland except for injecting code into the thread
+	// right now we return the struct of the thread_handle that is not really the tls
+	// 'dxr 60d03bd5' => 'mrs x0, tpidrro_el0' so we can get the 'el0' value in the x0 register
+	// io->coreb.cmd (core, "dxr 60d03bd5"); // crashes the process because breakpoints are broken
 #else
 	R_LOG_ERROR ("TLS retrieval not implemented for this architecture");
 #endif
@@ -545,8 +529,8 @@ static char *mach_get_tls(RIO *io, RIODesc *fd, int tid) {
 	// Clean up
 	vm_deallocate (mach_task_self (), (vm_address_t)threads, thread_count * sizeof (thread_t));
 
-	if (tls_addr || tlb_addr) {
-		return r_str_newf ("f tls=0x%" PFMT64x "\nf tlb=0x%"PFMT64x"\n", tls_addr, tlb_addr);
+	if (tls_addr) {
+		return r_str_newf ("0x%" PFMT64x "\n", tls_addr);
 	}
 	return NULL;
 }
