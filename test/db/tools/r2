@@ -9,32 +9,32 @@ RUN
 NAME=r2 minushache
 FILE=-
 CMDS=<<EOF
-!!r2 -HR2_PREFIX
+!!r2 -HR2_VERSION_MAJOR
 EOF
 EXPECT=<<EOF
-/usr/local
+6
 EOF
 RUN
 
 NAME=r2 minushache (dos)
 FILE=-
 CMDS=<<EOF
-!!r2 -HR2_PREFIX -H R2_PREFIX
+!!r2 -HR2_VERSION_MAJOR -H R2_VERSION_MAJOR
 EOF
 EXPECT=<<EOF
-/usr/local
-/usr/local
+6
+6
 EOF
 RUN
 
 NAME=r2 minushache (dos)
 FILE=-
 CMDS=<<EOF
-!!r2 -H R2_PREFIX -HR2_PREFIX
+!!r2 -H R2_VERSION_MAJOR -HR2_VERSION_MAJOR
 EOF
 EXPECT=<<EOF
-/usr/local
-/usr/local
+6
+6
 EOF
 RUN
 

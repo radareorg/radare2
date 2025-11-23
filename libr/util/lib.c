@@ -8,7 +8,7 @@ R_LIB_VERSION (r_lib);
 /* XXX : this must be registered at runtime instead of hardcoded */
 static const char *const r_lib_types[] = {
 	"io", "dbg", "lang", "asm", "anal", "parse", "bin", "bin_xtr", "bin_ldr",
-	"bp", "syscall", "fastcall", "crypto", "core", "egg", "fs", "arch", NULL
+	"bp", "syscall", "fastcall", "muta", "core", "egg", "fs", "arch", NULL
 };
 
 R_API void *r_lib_dl_open(const char *libname, bool safe_mode) {
@@ -58,7 +58,7 @@ R_API void *r_lib_dl_open(const char *libname, bool safe_mode) {
 	}
 #elif R2__WINDOWS__
 	LPTSTR libname_;
-	if (libname && *libname) {
+	if (R_STR_ISNOTEMPTY (libname)) {
 		libname_ = r_sys_conv_utf8_to_win (libname);
 	} else {
 		libname_ = calloc (MAX_PATH, sizeof (TCHAR));
