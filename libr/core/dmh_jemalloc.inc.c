@@ -2,7 +2,7 @@
 
 #if R_INCLUDE_BEGIN
 
-#include "./p/heap/jemalloc/internal/jemalloc_internal.h"
+#include "./p/heap/jemalloc/jemalloc.h"
 
 #ifndef INCLUDE_HEAP_JEMALLOC_STD_C
 #define INCLUDE_HEAP_JEMALLOC_STD_C
