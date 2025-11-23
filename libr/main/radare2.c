@@ -854,7 +854,6 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		argv++;
 	}
 
-	mr.json = false;
 	mr.quiet = false;
 	set_color_default (r);
 
