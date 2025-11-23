@@ -54,7 +54,8 @@ r_core_sources = [
 ]
 
 r_core_inc = [
-  'p/jemalloc/include',
+  'p/heap/jemalloc/include',
+  'p/heap/windows',
 ]
 r_core_inc = [platform_inc, include_directories(r_core_inc)]
 
@@ -102,7 +103,7 @@ r_core = library('r_core', r_core_sources,
 
 r_core_dep = declare_dependency(link_with: r_core, include_directories: r_core_inc)
 
-subdir('p/jemalloc')
+subdir('p/heap')
 
 if get_option('blob')
 

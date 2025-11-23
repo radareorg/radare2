@@ -596,7 +596,6 @@ r_util_files = [
   'include/r_util/r_w32dw.h',
   'include/r_util/r_x509.h',
   'include/r_util/r_xml.h',
-  'include/heap/r_windows.h',
 ]
 
 
