@@ -35,21 +35,12 @@ export BUILD=1
 PREFIX="/usr"
 # PREFIX=/var/mobile
 
-if [ ! -f sys/ios-include/mach/mach_vm.h ]; then
-(
-	cd sys && \
-	wget -c https://lolcathost.org/b/ios-include.tar.gz && \
-	tar xzvf ios-include.tar.gz
-)
-fi
-
 export PATH=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin:$PATH
 export PATH=$(pwd)/sys:${PATH}
 export CC=$(pwd)/sys/ios-sdk-gcc
 # set only for arm64, otherwise it is armv7
 # select ios sdk version
 export IOSVER=9.3
-export IOSINC=$(pwd)/sys/ios-include
 #export CFLAGS=-O2
 export CFLAGS="-Os -flto"
 export LDFLAGS="-flto"

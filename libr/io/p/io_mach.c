@@ -20,23 +20,23 @@
 #include <mach/mach_init.h>
 #include <mach/mach_port.h>
 #include <mach/vm_map.h>
+#include <mach/mach_error.h>
+#include <mach/thread_info.h>
+#include <mach/thread_act.h>
 
-static int __get_pid(RIODesc *desc);
 #if APPLE_SDK_IPHONEOS
-// missing includes
+// iPhoneOS have some missing includes
+
 #else
 
 #define EXCEPTION_PORT 0
-
-// NOTE: mach/mach_vm is not available for iOS
 #include <mach/mach_traps.h>
-#include <mach/mach_error.h>
-#include <mach/thread_act.h>
-#include <mach/thread_info.h>
 #include <mach-o/loader.h>
 #include <mach-o/nlist.h>
 #include <sys/ptrace.h>
+
 #endif
+
 #include <mach/task.h>
 #include <mach/task_info.h>
 #if defined(__x86_64__)
@@ -60,19 +60,9 @@ typedef struct r_io_mach_data_t {
 typedef struct {
 	task_t task;
 } RIOMach;
-/*
-#define RIOMACH_PID(x) (x? ((RIOMach*) (x))->pid: -1)
-#define RIOMACH_TASK(x) (x? ((RIOMach*) (x))->task: -1)
- */
-
-int RIOMACH_TASK(RIOMachData *x) {
-	// TODO
-	return -1;
-}
 
 #undef R_IO_NFDS
 #define R_IO_NFDS 2
-extern int errno;
 
 static task_t task_for_pid_workaround(int pid) {
 	host_t myhost = mach_host_self ();
@@ -174,6 +164,19 @@ static bool task_is_dead(RIODesc *fd, int pid) {
 	return (kr != KERN_SUCCESS || !count);
 }
 
+static int __get_pid(RIODesc *desc) {
+	// dupe for? r_io_desc_get_pid (desc);
+	if (desc) {
+		RIOMachData *iodd = desc->data;
+		if (iodd) {
+			if (iodd->magic == R_MACH_MAGIC) {
+				return iodd->pid;
+			}
+		}
+	}
+	return -1;
+}
+
 static R_TH_LOCAL ut64 the_lower = UT64_MAX;
 
 static ut64 getNextValid(RIO *io, RIODesc *fd, ut64 addr) {
@@ -244,10 +247,8 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 	if (task_is_dead (desc, pid)) {
 		return -1;
 	}
-	if (pid == 0) {
-		if (io->off < 4096) {
-			return len;
-		}
+	if (pid == 0 && io->off < 4096) {
+		return len;
 	}
 	copied = getNextValid (io, desc, io->off) - io->off;
 	if (copied < 0) {
@@ -613,20 +614,6 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		eprintf ("Try: ':pid', ':tls' or ':perm'\n");
 	}
 	return NULL;
-}
-
-static int __get_pid(RIODesc *desc) {
-	// dupe for? r_io_desc_get_pid (desc);
-	if (desc) {
-		RIOMachData *iodd = desc->data;
-		if (iodd) {
-			if (iodd->magic != R_MACH_MAGIC) {
-				return -1;
-			}
-			return iodd->pid;
-		}
-	}
-	return -1;
 }
 
 RIOPlugin r_io_plugin_mach = {
