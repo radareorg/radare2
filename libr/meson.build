@@ -495,6 +495,7 @@ include_files = [
   'include/r_list.h',
   'include/r_magic.h',
   'include/r_main.h',
+  'include/ptrace_wrap.h',
   'include/r_pdb.h',
   'include/r_qrcode.h',
   'include/r_reg.h',
@@ -514,6 +515,67 @@ include_files = [
   'include/r_event.h',
   'include/r_vec.h',
 ]
+include_files += [
+  'include/heap/r_jemalloc/internal/arena.h',
+  'include/heap/r_jemalloc/internal/assert.h',
+  'include/heap/r_jemalloc/internal/atomic.h',
+  'include/heap/r_jemalloc/internal/base.h',
+  'include/heap/r_jemalloc/internal/bitmap.h',
+  'include/heap/r_jemalloc/internal/chunk.h',
+  'include/heap/r_jemalloc/internal/chunk_dss.h',
+  'include/heap/r_jemalloc/internal/chunk_mmap.h',
+  'include/heap/r_jemalloc/internal/ckh.h',
+  'include/heap/r_jemalloc/internal/ctl.h',
+  'include/heap/r_jemalloc/internal/extent.h',
+  'include/heap/r_jemalloc/internal/hash.h',
+  'include/heap/r_jemalloc/internal/huge.h',
+  'include/heap/r_jemalloc/internal/jemalloc_internal.h',
+  'include/heap/r_jemalloc/internal/jemalloc_internal_decls.h',
+  'include/heap/r_jemalloc/internal/jemalloc_internal_defs.h',
+  'include/heap/r_jemalloc/internal/jemalloc_internal_macros.h',
+  'include/heap/r_jemalloc/internal/mb.h',
+  'include/heap/r_jemalloc/internal/mutex.h',
+  'include/heap/r_jemalloc/internal/nstime.h',
+  'include/heap/r_jemalloc/internal/pages.h',
+  'include/heap/r_jemalloc/internal/ph.h',
+  'include/heap/r_jemalloc/internal/prng.h',
+  'include/heap/r_jemalloc/internal/prof.h',
+  'include/heap/r_jemalloc/internal/public_namespace.h',
+  'include/heap/r_jemalloc/internal/public_unnamespace.h',
+  'include/heap/r_jemalloc/internal/ql.h',
+  'include/heap/r_jemalloc/internal/qr.h',
+  'include/heap/r_jemalloc/internal/rb.h',
+  'include/heap/r_jemalloc/internal/rtree.h',
+  'include/heap/r_jemalloc/internal/size_classes.h',
+  'include/heap/r_jemalloc/internal/smoothstep.h',
+  'include/heap/r_jemalloc/internal/spin.h',
+  'include/heap/r_jemalloc/internal/stats.h',
+  'include/heap/r_jemalloc/internal/tcache.h',
+  'include/heap/r_jemalloc/internal/ticker.h',
+  'include/heap/r_jemalloc/internal/tsd.h',
+  'include/heap/r_jemalloc/internal/util.h',
+  'include/heap/r_jemalloc/internal/witness.h',
+  'include/heap/r_jemalloc/jemalloc.h',
+  'include/heap/r_jemalloc/jemalloc_defs.h',
+  'include/heap/r_jemalloc/jemalloc_macros.h',
+  'include/heap/r_jemalloc/jemalloc_mangle.h',
+  'include/heap/r_jemalloc/jemalloc_mangle_jet.h',
+  'include/heap/r_jemalloc/jemalloc_protos.h',
+  'include/heap/r_jemalloc/jemalloc_protos_jet.h',
+  'include/heap/r_jemalloc/jemalloc_rename.h',
+  'include/heap/r_jemalloc/jemalloc_typedefs.h',
+]
+include_files += [
+  #sflib
+  'include/sflib/darwin-arm-64/sfsysnr.h',
+  'include/sflib/darwin-x86-32/sfsysnr.h',
+  'include/sflib/darwin-x86-64/sfsysnr.h',
+  'include/sflib/freebsd-x86-32/sfsysnr.h',
+  'include/sflib/linux-arm-32/sfsysnr.h',
+  'include/sflib/linux-arm-64/sfsysnr.h',
+  'include/sflib/linux-x86-32/sfsysnr.h',
+  'include/sflib/linux-x86-64/sfsysnr.h'
+]
 install_headers(include_files, install_dir: r2_incdir)
 
 r_util_files = [
@@ -526,6 +588,7 @@ r_util_files = [
   'include/r_util/r_assert.h',
   'include/r_util/r_axml.h',
   'include/r_util/r_base32.h',
+  'include/r_util/r_xml.h',
   'include/r_util/r_base36.h',
   'include/r_util/r_base64.h',
   'include/r_util/r_base91.h',
@@ -568,6 +631,7 @@ r_util_files = [
   'include/r_util/r_str_util.h',
   'include/r_util/r_strbuf.h',
   'include/r_util/r_strpool.h',
+  'include/r_util/r_cfloat.h',
   'include/r_util/r_sys.h',
   'include/r_util/r_table.h',
   'include/r_util/r_time.h',
@@ -580,8 +644,11 @@ r_util_files = [
   'include/r_util/r_w32.h',
   'include/r_util/r_w32dw.h',
   'include/r_util/r_x509.h',
-  'include/r_util/r_xml.h'
+  'include/r_util/r_xml.h',
+  'include/heap/r_windows.h',
 ]
+
+
 install_headers(r_util_files, install_dir: join_paths(r2_incdir, 'r_util'))
 
 r_muta_files = [
