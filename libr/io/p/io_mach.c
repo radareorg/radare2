@@ -479,8 +479,23 @@ static bool __close(RIODesc *fd) {
 	return kr == KERN_SUCCESS;
 }
 
+static thread_t find_thread_by_tid(thread_array_t threads, mach_msg_type_number_t thread_count, int tid) {
+	int i;
+	for (i = 0; i < thread_count; i++) {
+		struct thread_identifier_info info;
+		mach_msg_type_number_t count = THREAD_IDENTIFIER_INFO_COUNT;
+		kern_return_t kr = thread_info (threads[i], THREAD_IDENTIFIER_INFO, (thread_info_t)&info, &count);
+		if (kr == KERN_SUCCESS && (int)info.thread_handle == tid) {
+			return threads[i];
+		}
+	}
+	return thread_count > 0? threads[0]: MACH_PORT_NULL;
+}
+
 static char *mach_get_tls(RIO *io, RIODesc *fd, int tid) {
-	task_t task = pid_to_task (fd, tid);
+	RIOMachData *iodd = fd->data;
+	int pid = iodd? iodd->pid: tid;
+	task_t task = pid_to_task (fd, pid);
 	if (!task) {
 		R_LOG_ERROR ("Cannot get task");
 		return NULL;
@@ -496,8 +511,7 @@ static char *mach_get_tls(RIO *io, RIODesc *fd, int tid) {
 		R_LOG_ERROR ("No threads found");
 		return NULL;
 	}
-	// Use the first thread (assuming single-threaded or main thread)
-	thread_t thread = threads[0];
+	thread_t thread = find_thread_by_tid (threads, thread_count, tid);
 	ut64 tls_addr = 0;
 
 #if defined(__x86_64__)
@@ -525,8 +539,6 @@ static char *mach_get_tls(RIO *io, RIODesc *fd, int tid) {
 #else
 	R_LOG_ERROR ("TLS retrieval not implemented for this architecture");
 #endif
-
-	// Clean up
 	vm_deallocate (mach_task_self (), (vm_address_t)threads, thread_count * sizeof (thread_t));
 
 	if (tls_addr) {
