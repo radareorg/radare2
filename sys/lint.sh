@@ -113,4 +113,6 @@ cd "$(dirname $0)"/..
 (git grep 'eprintf' libr | grep 'Warning:') # && exit 1
 # (git grep 'eprintf' | grep 'Usage:' | grep -v sys/) # && exit 1
 
+python3 sys/check_includes.py || exit 1
+
 exit 0
