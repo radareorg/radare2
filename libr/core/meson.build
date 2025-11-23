@@ -54,7 +54,7 @@ r_core_sources = [
 ]
 
 r_core_inc = [
-  'p/heap/jemalloc/include',
+  'p/heap/jemalloc',
   'p/heap/windows',
 ]
 r_core_inc = [platform_inc, include_directories(r_core_inc)]

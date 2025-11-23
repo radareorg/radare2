@@ -14,6 +14,7 @@ OBJS+=task.o panels.o pseudo.o vmarks.o anal_tp.o anal_objc.o blaze.o core_esil.
 OBJS+=vmatrix.o prompt.o
 
 CFLAGS+=-DR2_PLUGIN_INCORE -I../../shlr
+CFLAGS+=-I./p/heap
 LDFLAGS+=${DL_LIBS}
 LDFLAGS+=${CLOCK_LDFLAGS}
 
