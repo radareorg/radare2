@@ -6,6 +6,38 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=r2 minushache
+FILE=-
+CMDS=<<EOF
+!!r2 -HR2_PREFIX
+EOF
+EXPECT=<<EOF
+/usr/local
+EOF
+RUN
+
+NAME=r2 minushache (dos)
+FILE=-
+CMDS=<<EOF
+!!r2 -HR2_PREFIX -H R2_PREFIX
+EOF
+EXPECT=<<EOF
+/usr/local
+/usr/local
+EOF
+RUN
+
+NAME=r2 minushache (dos)
+FILE=-
+CMDS=<<EOF
+!!r2 -H R2_PREFIX -HR2_PREFIX
+EOF
+EXPECT=<<EOF
+/usr/local
+/usr/local
+EOF
+RUN
+
 NAME=seek undo/redo
 FILE=-
 CMDS=<<EOF

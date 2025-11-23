@@ -653,6 +653,7 @@ typedef struct {
 	bool json;
 	bool threaded;
 	bool load_l;
+	bool leave;
 	char *envprofile;
 	char *debugbackend;
 	char *project_name;
@@ -779,16 +780,23 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			mr.show_version = true;
 			break;
 		case 'H':
-			// Check if next arg is a variable name (not starting with -)
-			if (opt.ind < argc && argv[opt.ind][0] != '-') {
+			if (R_STR_ISNOTEMPTY (opt.place)) {
+				main_print_var (opt.place);
+				opt.place = "";
+				opt.ind++;
+			} else if (opt.ind < argc && argv[opt.ind][0] != '-') {
 				main_print_var (argv[opt.ind]);
 				opt.ind++;
 			} else {
 				main_print_var (NULL);
 			}
-			mainr2_fini (&mr);
-			return 0;
+			mr.leave = true;
+			break;
 		}
+	}
+	if (mr.leave) {
+		mainr2_fini (&mr);
+		return 0;
 	}
 	if (mr.help > 0) {
 		int ret = main_help (mr.help > 1? 2: 0);
