@@ -20,10 +20,11 @@ R_LIB_VERSION_HEADER (r_lib);
 #define R_LIB_SYMNAME "radare_plugin"
 #define R_LIB_SYMFUNC "radare_plugin_function"
 
-#define STRINGIFY(x) #x
+// double-indirection required because cpp is crap
+#define STRINGIFY2(x) #x
+#define STRINGIFY(x) STRINGIFY2(x)
 #define R2_ABIVERSION 39
-#define R2_VERSION_ABI R2_ABIVERSION
-#define R2_ABIVERSION_STR STRINGIFY(R2_ABIVERSION)
+#define R2_ABIVERSION_STRING STRINGIFY(R2_ABIVERSION)
 
 #define R_LIB_ENV "R2_LIBR_PLUGINS"
 

@@ -5,6 +5,9 @@
 #include "r_util/r_sys.h"
 #include <r_main.h>
 #include <r_lib.h>
+
+// R2R db/tools/r2
+
 #define USE_THREADS 1
 #define ALLOW_THREADED 1
 #ifdef _MSC_VER
@@ -341,8 +344,11 @@ static int main_print_var(const char *var_name) {
 		const char *value;
 	} r2_vars[] = {
 		{ "R2_VERSION", R2_VERSION },
-		{ "R2_ABIVERSION", R2_ABIVERSION_STR },
-		{ "R2_VERSION_ABI", R2_ABIVERSION_STR },
+		{ "R2_VERSION_ABI", R2_ABIVERSION_STRING },
+		{ "R2_VERSION_MAJOR", STRINGIFY(R2_VERSION_MAJOR) },
+		{ "R2_VERSION_MINOR", STRINGIFY(R2_VERSION_MINOR) },
+		{ "R2_VERSION_PATCH", STRINGIFY(R2_VERSION_PATH) },
+		{ "R2_ABIVERSION", R2_ABIVERSION_STRING },
 		{ "R2_PREFIX", r2prefix },
 		{ "R2_MAGICPATH", magicpath },
 		{ "R2_INCDIR", incdir },
@@ -354,7 +360,7 @@ static int main_print_var(const char *var_name) {
 		{ "R2_RDATAHOME", datahome },
 		{ "R2_HISTORY", historyhome },
 		{ "R2_CONFIG_HOME", confighome }, // from xdg
-		{ "R2_CACHE_HOME", cachehome }, //  fro xdg
+		{ "R2_CACHE_HOME", cachehome }, //  from xdg
 		{ "R2_LIBR_PLUGINS", plugins },
 		{ "R2_USER_PLUGINS", homeplugins },
 		{ "R2_ZIGNS_HOME", homezigns },
@@ -363,7 +369,7 @@ static int main_print_var(const char *var_name) {
 		{ NULL, NULL }
 	};
 	int delta = 0;
-	if (var_name && strncmp (var_name, "R2_", 3)) {
+	if (var_name && !r_str_startswith (var_name, "R2_")) {
 		delta = 3;
 	}
 	while (r2_vars[i].name) {
@@ -653,6 +659,7 @@ typedef struct {
 	bool json;
 	bool threaded;
 	bool load_l;
+	bool leave;
 	char *envprofile;
 	char *debugbackend;
 	char *project_name;
@@ -779,16 +786,23 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			mr.show_version = true;
 			break;
 		case 'H':
-			// Check if next arg is a variable name (not starting with -)
-			if (opt.ind < argc && argv[opt.ind][0] != '-') {
+			if (R_STR_ISNOTEMPTY (opt.place)) {
+				main_print_var (opt.place);
+				opt.place = "";
+				opt.ind++;
+			} else if (opt.ind < argc && argv[opt.ind][0] != '-') {
 				main_print_var (argv[opt.ind]);
 				opt.ind++;
 			} else {
 				main_print_var (NULL);
 			}
-			mainr2_fini (&mr);
-			return 0;
+			mr.leave = true;
+			break;
 		}
+	}
+	if (mr.leave) {
+		mainr2_fini (&mr);
+		return 0;
 	}
 	if (mr.help > 0) {
 		int ret = main_help (mr.help > 1? 2: 0);
@@ -840,7 +854,6 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		argv++;
 	}
 
-	mr.json = false;
 	mr.quiet = false;
 	set_color_default (r);
 
@@ -848,7 +861,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'j':
-			// already parsed
+			mr.json = true;
 			break;
 		case '=':
 			R_FREE (r->cmdremote);
