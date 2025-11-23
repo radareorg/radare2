@@ -70,8 +70,13 @@ static int open_file(const char *file, int perm, int mode) {
 
 static ut64 mmap_seek(RIO *io, RIOMMapFileObj *mmo, ut64 offset, int whence) {
 	if (mmo->rawio) {
-		if (whence == 2 && mmo->isblk) {
-			return UT64_MAX - 1;
+		if (whence == 2) {
+			if (mmo->isblk == -1) {
+				check_for_blockdevice (mmo);
+			}
+			if (mmo->isblk) {
+				return UT64_MAX - 1;
+			}
 		}
 		mmo->addr = lseek (mmo->fd, offset, whence);
 	} else if (mmo->buf) {
@@ -102,6 +107,7 @@ static bool mmap_refresh(RIOMMapFileObj *mmo) {
 		if (mmo->fd != -1 && cur) {
 			mmap_seek (io, mmo, cur, SEEK_SET);
 		}
+		check_for_blockdevice (mmo);
 		goto done;
 	}
 	if (mmo->fd == -1) {
@@ -109,8 +115,8 @@ static bool mmap_refresh(RIOMMapFileObj *mmo) {
 		if (mmo->fd == -1) {
 			return false;
 		}
+		check_for_blockdevice (mmo);
 	}
-	check_for_blockdevice (mmo);
 	mmo->buf = r_buf_new_mmap (mmo->filename, mmo->perm);
 	if (mmo->buf) {
 		if (io) {
