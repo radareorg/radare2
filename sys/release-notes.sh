@@ -41,12 +41,15 @@ fi
 grep ^Author .l | cut -d : -f 2- | sed -e 's,radare,pancake,' | sort -u > .A
 ABI0="`git show ${PREV}:libr/include/r_lib.h | grep 'R2_ABIVERSION ' | cut -d ' ' -f 3`"
 ABI1="`git grep 'R2_ABIVERSION ' libr/include/r_lib.h|cut -d ' ' -f 3`"
+CODENAME="`git log | grep -i 'Release' | head -n 1 | cut -d - -f 2- | cut -d ' ' -f 3-`"
+ABIDIFF=$(($ABI1-$ABI0))
 
 echo "## Release Notes"
 echo
+echo "Codename: ${CODENAME}"
 echo "Version: ${VERS}"
 echo "Previous: ${PREV}"
-echo "AbiDiff: ${ABI0}-${ABI1}"
+echo "AbiDiff: ${ABI0}-${ABI1} (${ABIDIFF})"
 printf "Commits: "
 grep ^commit .l | wc -l | xargs echo
 echo "Contributors: `wc -l .A | awk '{print $1}'`"
