@@ -4895,10 +4895,12 @@ R_API int r_core_anal_data(RCore *core, ut64 addr, int count, int depth, int wor
 		/* but it should not.. so this must be fixed in anal/data.c instead of */
 		/* null terminating here */
 		d = r_anal_data (core->anal, addr + i, buf + i, len - i, wordsize);
-		str = r_anal_data_tostring (d, pal);
-		r_cons_println (core->cons, str);
-
 		if (d) {
+			str = r_anal_data_tostring (d, pal);
+			if (str) {
+				r_cons_println (core->cons, str);
+				free (str);
+			}
 			switch (d->type) {
 			case R_ANAL_DATA_TYPE_POINTER:
 				r_cons_printf (core->cons, "`- ");
@@ -4919,7 +4921,6 @@ R_API int r_core_anal_data(RCore *core, ut64 addr, int count, int depth, int wor
 		} else {
 			i += word;
 		}
-		free (str);
 		r_anal_data_free (d);
 	}
 	free (buf);
