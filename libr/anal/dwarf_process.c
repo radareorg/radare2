@@ -487,6 +487,7 @@ static RAnalEnumCase *parse_enumerator(Context *ctx, ut64 idx, RAnalEnumCase *re
 		RBinDwarfAttrValue *value = &die->attr_values[i];
 		switch (die->attr_values[i].attr_name) {
 		case DW_AT_name:
+			free (name);
 			name = get_die_name (die);
 			if (!name) {
 				goto cleanup;
@@ -623,7 +624,7 @@ static void parse_enum_type(Context *ctx, ut64 idx) {
 		base_type->type = r_strbuf_drain_nofree (&strbuf);
 	}
 
-	RAnalEnumCase cas;
+	RAnalEnumCase cas = {0};
 	if (die->has_children) {
 		int child_depth = 1; // Direct children of the node
 		size_t j;
@@ -641,6 +642,7 @@ static void parse_enum_type(Context *ctx, ut64 idx) {
 					enum_type_case_free (result, NULL);
 					goto cleanup;
 				}
+				cas.name = NULL;
 			}
 			if (child_die->has_children) {
 				child_depth++;
