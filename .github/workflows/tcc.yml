@@ -27,9 +27,9 @@ jobs:
           sh ./configure --prefix=/usr
           make -j
           sudo make install
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Checkout our Testsuite Binaries
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
           repository: radareorg/radare2-testbins
           path: test/bins
@@ -70,9 +70,9 @@ jobs:
           sh ./configure --prefix=/usr
           make -j
           sudo make install
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Checkout our Testsuite Binaries
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
           repository: radareorg/radare2-testbins
           path: test/bins
@@ -114,9 +114,9 @@ jobs:
       run: |
           sh ./configure --prefix=/usr --without-debugger
           make -j && sudo make install
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Checkout our Testsuite Binaries
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
           repository: radareorg/radare2-testbins
           path: test/bins
@@ -153,7 +153,7 @@ jobs:
           sh ./configure --prefix=/usr
           make -j
           sudo make install
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Configure, build and install
       env:
           CC: tcc
@@ -196,9 +196,9 @@ jobs:
       run: |
           sh ./configure --prefix=/usr --without-debugger
           make -j && sudo make install
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Checkout our Testsuite Binaries
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
           repository: radareorg/radare2-testbins
           path: test/bins
