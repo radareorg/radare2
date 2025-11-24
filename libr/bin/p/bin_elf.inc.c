@@ -1561,8 +1561,8 @@ static RBinInfo* info(RBinFile *bf) {
 		}
 		if (have_syms) {
 			ret->dbg_info |= R_BIN_DBG_SYMS;
+			ret->dbg_info |= R_BIN_DBG_RELOCS; // maybe not
 		}
-		// | R_BIN_DBG_RELOCS;
 	}
 	if (Elf_(is_static) (obj)) {
 		ret->dbg_info |= R_BIN_DBG_STATIC;

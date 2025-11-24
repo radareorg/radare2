@@ -192,7 +192,7 @@ havecode true
 intrp    /lib/ld-linux.so.2
 laddr    0x0
 lang     c
-linenum  true
+linenum  false
 lsyms    true
 machine  Intel 80386
 nx       true
@@ -1248,7 +1248,7 @@ havecode true
 intrp    /lib/ld-linux.so.2
 laddr    0x0
 lang     c
-linenum  true
+linenum  false
 lsyms    true
 machine  Intel 80386
 nx       true
@@ -1288,7 +1288,7 @@ EXPECT=<<EOF
   "intrp": "/lib/ld-linux.so.2",
   "laddr": 0,
   "lang": "c",
-  "linenum": true,
+  "linenum": false,
   "lsyms": true,
   "machine": "Intel 80386",
   "nx": true,
@@ -2703,7 +2703,7 @@ havecode true
 intrp    /lib/ld-linux-x86-64.so.2
 laddr    0x0
 lang     c
-linenum  true
+linenum  false
 lsyms    true
 machine  AMD x86-64 architecture
 nx       true
@@ -2790,7 +2790,7 @@ havecode true
 intrp    /lib/ld-linux-x86-64.so.2
 laddr    0x0
 lang     c
-linenum  true
+linenum  false
 lsyms    true
 machine  AMD x86-64 architecture
 nx       true

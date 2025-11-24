@@ -99,6 +99,7 @@ RUN
 
 NAME=quote grep chain
 FILE=malloc://4
+ARGS=-a x86 -b32
 CMDS=<<EOF
 wx 90cc90
 "pd 3"~nop;pd 1
@@ -112,6 +113,7 @@ RUN
 
 NAME=quote grep tmpseek
 FILE=malloc://4
+ARGS=-a x86 -b32
 CMDS=<<EOF
 wx 9090cc90
 s 2
@@ -124,6 +126,7 @@ RUN
 
 NAME=grep and/or
 FILE=malloc://1024
+ARGS=-a x86 -b32
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -591,7 +594,7 @@ json.bin.guid = "";
 json.bin.intrp = "/lib64/ld-linux-x86-64.so.2";
 json.bin.laddr = 0;
 json.bin.lang = "c";
-json.bin.linenum = true;
+json.bin.linenum = false;
 json.bin.lsyms = true;
 json.bin.machine = "AMD x86-64 architecture";
 json.bin.nx = true;
