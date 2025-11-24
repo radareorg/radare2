@@ -1375,6 +1375,7 @@ R_API RBinJavaField *r_bin_java_read_next_method(RBinJavaObj *bin, const ut64 of
 			RBinJavaAttrInfo *attr = r_bin_java_read_next_attr (bin, adv + offset, buf, len);
 			if (!attr) {
 				R_LOG_ERROR ("unable to parse remainder of classfile after Method Attribute: %d", i);
+				r_bin_java_fmtype_free (method);
 				return NULL;
 			}
 			if ((r_bin_java_get_attr_type_by_name (attr->name))->type == R_BIN_JAVA_ATTR_TYPE_CODE_ATTR) {

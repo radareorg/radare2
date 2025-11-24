@@ -143,6 +143,7 @@ R_API RASN1Object *r_asn1_object_parse(const ut8 *buffer_base, const ut8 *buffer
 		}
 		ut32 count = asn1_count_objects (object->sector, object->length);
 		if (count == -1) {
+			free (object);
 			return NULL;
 		}
 		if (count > 0) {
@@ -181,6 +182,7 @@ R_API RAsn1 *r_asn1_new(const ut8 *buffer, int length, int fmtmode) {
 	}
 	a->root = r_asn1_object_parse (buffer, buffer, length, fmtmode);
 	if (a->root == NULL) {
+		r_asn1_free (a);
 		return NULL;
 	}
 	if (fmtmode == 'j') {

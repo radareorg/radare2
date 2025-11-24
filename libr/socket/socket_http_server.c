@@ -104,6 +104,7 @@ R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *s
 		if (content_length >= ST32_MAX) {
 			r_socket_http_close (hr);
 			r_socket_free (hr->s);
+			free (hr);
 			R_LOG_ERROR ("Could not allocate hr data");
 			return NULL;
 		}

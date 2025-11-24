@@ -1332,6 +1332,8 @@ static double matchBytes(RSignItem *a, RSignItem *b) {
 		}
 		if (a->bytes->mask) {
 			memcpy (combined_mask, a->bytes->mask, min_size);
+		} else {
+			memset (combined_mask, 0xff, min_size);
 		}
 		if (b->bytes->mask) {
 			int i;

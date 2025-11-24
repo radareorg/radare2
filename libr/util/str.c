@@ -997,6 +997,7 @@ R_API R_MUSTUSE char *r_str_replace_icase(char *str, const char *key, const char
 			if (vlen > klen) {
 				newstr = realloc (str, slen + 1);
 				if (!newstr) {
+					free (str);
 					return NULL;
 				}
 				str = newstr;

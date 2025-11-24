@@ -598,6 +598,7 @@ static void create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 	if (cache->images_are_global) {
 		img = read_cache_images (cache->buf, cache->hdr, 0);
 		if (!img) {
+			free (deps);
 			return;
 		}
 	}

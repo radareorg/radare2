@@ -101,7 +101,9 @@ R_API char *r_asm_parse_immbase(RAsm *a, const char *_opstr, int base) {
 		}
 	}
 	r_strbuf_append (sb, last);
-	return r_strbuf_drain (sb);
+	char *result = r_strbuf_drain (sb);
+	free (opstr);
+	return result;
 }
 
 // TODO : make them internal?

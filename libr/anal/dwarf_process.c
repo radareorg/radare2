@@ -272,6 +272,10 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
 	}
 	if (visited && set_u_contains (*visited, offset)) {
 		R_LOG_WARN ("anal.dwarf.parse_type: infinite recursion detected");
+		if (root) {
+			set_u_free (*visited);
+			free (visited);
+		}
 		return -1;
 	}
 	set_u_add (*visited, offset);
@@ -483,6 +487,7 @@ static RAnalEnumCase *parse_enumerator(Context *ctx, ut64 idx, RAnalEnumCase *re
 		RBinDwarfAttrValue *value = &die->attr_values[i];
 		switch (die->attr_values[i].attr_name) {
 		case DW_AT_name:
+			free (name);
 			name = get_die_name (die);
 			if (!name) {
 				goto cleanup;
@@ -497,7 +502,10 @@ static RAnalEnumCase *parse_enumerator(Context *ctx, ut64 idx, RAnalEnumCase *re
 		}
 	}
 
-	result->name = name;
+	if (result->name != name) {
+		free (result->name);
+		result->name = name;
+	}
 	result->val = (int)val;
 	return result;
 cleanup:
@@ -616,7 +624,7 @@ static void parse_enum_type(Context *ctx, ut64 idx) {
 		base_type->type = r_strbuf_drain_nofree (&strbuf);
 	}
 
-	RAnalEnumCase cas;
+	RAnalEnumCase cas = {0};
 	if (die->has_children) {
 		int child_depth = 1; // Direct children of the node
 		size_t j;
@@ -634,6 +642,7 @@ static void parse_enum_type(Context *ctx, ut64 idx) {
 					enum_type_case_free (result, NULL);
 					goto cleanup;
 				}
+				cas.name = NULL;
 			}
 			if (child_die->has_children) {
 				child_depth++;

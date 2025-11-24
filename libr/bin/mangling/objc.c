@@ -79,17 +79,14 @@ R_API char *r_bin_demangle_objc(RBinFile *bf, const char *sym) {
 	}
 	if (sym[0] == '_' && sym[1] && sym[2] == '_') { // gnu style
 		free (clas);
+		free (name);
 		clas = strdup (sym + 3);
 		args = strstr (clas, "__");
 		if (!args) {
 			free (clas);
-			if (name != clas) {
-				free (name);
-			}
 			return NULL;
 		}
 		*args = 0;
-		free (name);
 		name = strdup (args + 2);
 		if (!name) {
 			free (clas);

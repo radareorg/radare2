@@ -522,14 +522,19 @@ RList *winkd_list_modules(WindCtx *ctx) {
 		winkd_read_at_uva (ctx, (uint8_t *) &mod->addr, ptr + baseoff, 4 << ctx->is_x64);
 		winkd_read_at_uva (ctx, (uint8_t *) &mod->size, ptr + sizeoff, 4 << ctx->is_x64);
 
-		ut16 length;
+		ut16 length = 0;
 		winkd_read_at_uva (ctx, (uint8_t *) &length, ptr + nameoff, sizeof (ut16));
+		if (!length) {
+			free (mod);
+			break;
+		}
 
 		ut64 bufferaddr = 0;
 		winkd_read_at_uva (ctx, (uint8_t *) &bufferaddr, ptr + nameoff + sizeof (ut32), 4 << ctx->is_x64);
 
 		wchar_t *unname = calloc ((ut64)length + 2, 1);
 		if (!unname) {
+			free (mod);
 			break;
 		}
 
@@ -538,6 +543,7 @@ RList *winkd_list_modules(WindCtx *ctx) {
 		mod->name = calloc ((ut64)length + 1, 1);
 		if (!mod->name) {
 			free (unname);
+			free (mod);
 			break;
 		}
 		wcstombs (mod->name, unname, length);

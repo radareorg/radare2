@@ -215,6 +215,7 @@ R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 		if (res) {
 			size_t reslen = strlen (res);
 			if (reslen >= o_end - o) {
+				free (res);
 				break;
 			}
 			fine = true;

@@ -854,6 +854,8 @@ RList *linux_pid_list(int pid, RList *list) {
 		// Unless pid 0 is requested, only add the requested pid and it's child processes
 		if (0 == pid || i == pid || pid_info->ppid == pid) {
 			r_list_append (list, pid_info);
+		} else {
+			r_debug_pid_free (pid_info);
 		}
 	}
 	closedir (dh);

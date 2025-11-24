@@ -4,9 +4,10 @@
 
 static int _ci_start_cmp_cb(void *incoming, void *in, void *user) {
 	RIOCacheItem *incoming_ci = (RIOCacheItem *)incoming, *in_ci = (RIOCacheItem *)in;
-	if (R_UNLIKELY (!in_ci->tree_itv)) {
+	if (R_UNLIKELY (!in_ci->tree_itv || !incoming_ci->tree_itv)) {
 		R_LOG_ERROR ("io cache tree corrupted");
 		r_sys_backtrace ();
+		return 0;
 	}
 	if (incoming_ci->tree_itv->addr < in_ci->tree_itv->addr) {
 		return -1;
@@ -309,6 +310,7 @@ R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to, bool many) {
 					ci->data = cidata;
 				} else {
 					R_LOG_WARN ("first realloc failed");
+					_io_cache_item_free (_ci);
 					continue;
 				}
 				ut8 *ciodata = realloc (ci->odata, (size_t)r_itv_size (ci->itv));
@@ -316,6 +318,7 @@ R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to, bool many) {
 					ci->odata = ciodata;
 				} else {
 					R_LOG_WARN ("second realloc failed");
+					_io_cache_item_free (_ci);
 					continue;
 				}
 				if (ci->tree_itv) {

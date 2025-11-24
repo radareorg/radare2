@@ -1618,7 +1618,7 @@ static bool parseOperands(char *str, ArmOp *op) {
 	int mem_opt = 0;
 	int msr_op_index = 0;
 	size_t index_bound = strcspn (t, "]");
-	if (!token) {
+	if (!t) {
 		return false;
 	}
 
@@ -1634,6 +1634,7 @@ static bool parseOperands(char *str, ArmOp *op) {
 		}
 		if (operand >= MAX_OPERANDS) {
 			R_LOG_ERROR ("Too many operands");
+			free (t);
 			return false;
 		}
 		op->operands[operand].type = ARM_NOTYPE;
@@ -1723,6 +1724,7 @@ static bool parseOperands(char *str, ArmOp *op) {
 				token++;
 			}
 			if (!*token || !isdigit ((unsigned char)*token)) {
+				free (t);
 				return false;
 			}
 			op->operands[operand].shift_amount = r_num_math (NULL, token);
@@ -1748,6 +1750,7 @@ static bool parseOperands(char *str, ArmOp *op) {
 			}
 			if (!*token || !isdigit ((unsigned char)*token)) {
 				if (present) {
+					free (t);
 					return false;
 				}
 				op->operands[operand].shift_amount = 0;

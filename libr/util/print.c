@@ -8,6 +8,7 @@
 static const char hex[16] = "0123456789ABCDEF";
 
 R_API void r_print_portionbar(RPrint *p, const ut64 *portions, int n_portions) {
+	R_RETURN_IF_FAIL (p);
 	const int use_color = p->flags & R_PRINT_FLAGS_COLOR;
 	int i, j;
 	ut64 total = 0LL;
@@ -44,7 +45,7 @@ R_API void r_print_portionbar(RPrint *p, const ut64 *portions, int n_portions) {
 }
 
 R_API char *r_print_columns(RPrint *p, const ut8 *buf, int len, int height) {
-#define cb_print(x) r_print_printf (p, "%s", x)
+	R_RETURN_VAL_IF_FAIL (p, NULL);
 	RStrBuf *sb = r_strbuf_new ("");
 	size_t i, j;
 	int cols = 78; // TODO: do not hardcode this value, columns should be defined by the user
@@ -246,6 +247,7 @@ R_API char *r_print_stereogram_render(RPrint * R_NONNULL p, const char *ret) {
 }
 
 R_API void r_print_init(RPrint *p) {
+	R_RETURN_IF_FAIL (p);
 	r_str_ncpy (p->datefmt, "%Y-%m-%d %H:%M:%S %u", sizeof (p->datefmt));
 	p->pairs = true;
 	p->resetbg = true;
@@ -373,6 +375,7 @@ R_API bool r_print_cursor_pointer(RPrint *p, int cur, int len) {
 }
 
 R_API void r_print_cursor(RPrint *p, int cur, int len, int set) {
+	R_RETURN_IF_FAIL (p);
 	if (r_print_have_cursor (p, cur, len)) {
 		r_print_printf (p, "%s", R_CONS_INVERT (set, 1));
 	}
