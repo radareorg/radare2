@@ -2348,20 +2348,27 @@ ut64 Elf_(get_main_offset)(ELFOBJ *eo) {
 	return lookup_main_symbol_offset (eo);
 }
 
-bool Elf_(get_stripped)(ELFOBJ *eo) {
+bool Elf_(get_stripped)(ELFOBJ *eo, bool *have_lines, bool *have_syms) {
+	*have_lines = false;
+	*have_syms = false;
 	if (!eo->shdr) {
 		return true;
 	}
-	if (get_section_by_name (eo, ".gnu_debugdata")) {
-		return false;
-	}
+	RBinElfSection *sec = get_section_by_name (eo, ".gnu_debugdata");
+	// R_BIN_DBG_LINENUMS
+	*have_lines = (sec && sec->size > 16);
 	size_t i;
 	for (i = 0; i < eo->ehdr.e_shnum; i++) {
 		if (eo->shdr[i].sh_type == SHT_SYMTAB || eo->shdr[i].sh_type == SHT_DYNSYM) {
-			return false;
+			// R_BIN_DBG_SYMS
+			*have_syms = true;
+			break;
 		}
 	}
-
+	// TODO: check for named relocs and return R_BIN_DBG_RELOCS
+	if (*have_lines || *have_syms) {
+		return false;
+	}
 	return true;
 }
 

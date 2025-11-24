@@ -1419,12 +1419,13 @@ static void lookup_sections(RBinFile *bf, RBinInfo *ret) {
 		return;
 	}
 	RVecRBinSection *sections = &(bf->bo->sections_vec);
-	R_VEC_FOREACH (sections, section) {
+	R_VEC_FOREACH (sections, section)
 #else
 	RList *secs = sections (bf);
 	RListIter *iter;
-	r_list_foreach (secs, iter, section) {
+	r_list_foreach (secs, iter, section)
 #endif
+	{
 		if (is_go && ret->has_retguard != -1) {
 			break;
 		}
@@ -1550,10 +1551,18 @@ static RBinInfo* info(RBinFile *bf) {
 	ret->intrp = Elf_(intrp) (obj);
 	ret->compiler = Elf_(compiler) (obj);
 	ret->dbg_info = 0;
-	if (!Elf_(get_stripped) (obj)) {
-		ret->dbg_info |= R_BIN_DBG_LINENUMS | R_BIN_DBG_SYMS | R_BIN_DBG_RELOCS;
-	} else {
+	bool have_lines = false;
+	bool have_syms = false;
+	if (Elf_(get_stripped) (obj, &have_lines, &have_syms)) {
 		ret->dbg_info |= R_BIN_DBG_STRIPPED;
+	} else {
+		if (have_lines) {
+			ret->dbg_info |= R_BIN_DBG_LINENUMS;
+		}
+		if (have_syms) {
+			ret->dbg_info |= R_BIN_DBG_SYMS;
+			ret->dbg_info |= R_BIN_DBG_RELOCS; // maybe not
+		}
 	}
 	if (Elf_(is_static) (obj)) {
 		ret->dbg_info |= R_BIN_DBG_STATIC;

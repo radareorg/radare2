@@ -39,7 +39,7 @@ endian   little
 havecode true
 laddr    0x0
 lang     c
-linenum  true
+linenum  false
 lsyms    true
 machine  NEC V800 series
 nx       false
