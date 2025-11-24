@@ -272,6 +272,10 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
 	}
 	if (visited && set_u_contains (*visited, offset)) {
 		R_LOG_WARN ("anal.dwarf.parse_type: infinite recursion detected");
+		if (root) {
+			set_u_free (*visited);
+			free (visited);
+		}
 		return -1;
 	}
 	set_u_add (*visited, offset);
@@ -497,6 +501,7 @@ static RAnalEnumCase *parse_enumerator(Context *ctx, ut64 idx, RAnalEnumCase *re
 		}
 	}
 
+	free (result->name);
 	result->name = name;
 	result->val = (int)val;
 	return result;

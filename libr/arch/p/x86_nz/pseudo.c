@@ -192,6 +192,7 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 	*w0 = *w1 = *w2 = *w3 = '\0';
 	if (strchr (data, '(')) {
 		// avoid double-pseudo calls
+		free (buf);
 		return NULL;
 	}
 	char *str = NULL;
@@ -378,7 +379,7 @@ static char *patch(RAsmPluginSession *aps, RAnalOp *aop, const char *op) {
 			R_LOG_ERROR ("Cant fit a nop in here");
 			return false;
 		}
-		char *hcmd = malloc ((size * 2) + 5);
+		hcmd = malloc ((size * 2) + 5);
 		if (!hcmd) {
 			return false;
 		}

@@ -309,6 +309,7 @@ R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to, bool many) {
 					ci->data = cidata;
 				} else {
 					R_LOG_WARN ("first realloc failed");
+					_io_cache_item_free (_ci);
 					continue;
 				}
 				ut8 *ciodata = realloc (ci->odata, (size_t)r_itv_size (ci->itv));
@@ -316,6 +317,7 @@ R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to, bool many) {
 					ci->odata = ciodata;
 				} else {
 					R_LOG_WARN ("second realloc failed");
+					_io_cache_item_free (_ci);
 					continue;
 				}
 				if (ci->tree_itv) {

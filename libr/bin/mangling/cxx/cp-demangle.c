@@ -4674,6 +4674,7 @@ d_print_comp_inner (struct d_print_info *dpi, int options,
 	struct d_print_mod adpm[4];
 	unsigned int i;
 	struct d_print_template dpt;
+	int is_template;
 
 	/* Pass the name down to the type so that it can be printed in
 	   the right place for the type.  We also have to pass down
@@ -4747,7 +4748,8 @@ d_print_comp_inner (struct d_print_info *dpi, int options,
 
 	/* If typed_name is a template, then it applies to the
 	   function type as well.  */
-	if (typed_name->type == DEMANGLE_COMPONENT_TEMPLATE)
+	is_template = typed_name->type == DEMANGLE_COMPONENT_TEMPLATE;
+	if (is_template)
 	  {
 	    dpt.next = dpi->templates;
 	    dpi->templates = &dpt;
@@ -4756,7 +4758,7 @@ d_print_comp_inner (struct d_print_info *dpi, int options,
 
 	d_print_comp (dpi, options, d_right (dc));
 
-	if (typed_name->type == DEMANGLE_COMPONENT_TEMPLATE)
+	if (is_template)
 	  dpi->templates = dpt.next;
 
 	/* If the modifiers didn't get printed by the type, print them

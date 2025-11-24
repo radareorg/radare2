@@ -124,14 +124,15 @@ static void render(SlidesState *state, RCore *core, RList *list, int mode, int p
 		char *prefix = r_str_pad (NULL, 0, ' ', w);
 		char *no = r_str_prefix_all (o2, prefix);
 		free (prefix);
-		free (o);
 		free (o2);
+		free (o);
 		o = no;
 		r_cons_print (cons, o);
 	} else {
 		char *no = r_str_ansi_crop (o, sx, sy, w, h);
 		r_cons_print (cons, no);
 		free (no);
+		o = NULL;
 	}
 	free (o);
 }

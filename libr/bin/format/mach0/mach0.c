@@ -3099,13 +3099,14 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcache
 				sym->name = r_bin_name_new (symbol.name);
 			} else {
 				char *name = r_str_newf ("entry%u", (ut32)i);
-				sym->name = r_bin_name_new (symbol.name);
+				sym->name = r_bin_name_new (name);
 				free (name);
 			}
 			sym->type = symbol.type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL? "LOCAL": "EXT";
 			sym->is_imported = symbol.is_imported;
 			sym->ordinal = ordinal++;
 			_enrich_symbol (bf, mo, symcache, sym);
+			free (symbol.name);
 		}
 	}
 

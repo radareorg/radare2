@@ -94,6 +94,7 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 #endif
 	const char *op0 = buf;
 	if (!strcmp (op0, "ret") || !strcmp (op0, "sret")) {
+		free (buf);
 		return strdup ("return r0");
 	}
 	char *str = malloc (strlen (data) + 128);

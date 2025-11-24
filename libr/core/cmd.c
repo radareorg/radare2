@@ -1034,6 +1034,7 @@ repeat:
 		const size_t buf_size = 1024;
 		char *buf = calloc (buf_size, 1);
 		if (!buf) {
+			free (host);
 			return;
 		}
 		void *bed = r_cons_sleep_begin (core->cons);
@@ -4970,6 +4971,7 @@ repeat_arroba:
 				if (R_STR_ISNOTEMPTY (n)) {
 					ut64 v = r_num_math (core->num, n);
 					if (core->num->nc.errors == 0) {
+						free (k);
 						r_core_seek (core, v, true);
 						cmd_tmpseek = core->tmpseek = true;
 						goto fuji;

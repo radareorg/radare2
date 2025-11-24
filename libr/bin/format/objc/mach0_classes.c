@@ -331,9 +331,6 @@ static void get_ivar_list(RBinFile *bf, RBinClass *klass, mach0_ut p) {
 			return;
 		}
 		field = R_NEW0 (RBinField);
-		if (!field) {
-			break;
-		}
 		memset (&i, '\0', sizeof (struct MACH0_(SIVar)));
 		if (r + left < r || r + sizeof (struct MACH0_(SIVar)) < r) {
 			goto error;
@@ -452,6 +449,8 @@ static void get_ivar_list(RBinFile *bf, RBinClass *klass, mach0_ut p) {
 				field = NULL;
 			} else {
 				R_LOG_WARN ("field name is empty");
+				r_bin_field_free (field);
+				field = NULL;
 			}
 		} else {
 			R_LOG_DEBUG ("va2pa error");
@@ -462,16 +461,14 @@ static void get_ivar_list(RBinFile *bf, RBinClass *klass, mach0_ut p) {
 	}
 	r_list_sort (klass->fields, sort_by_offset);
 	RBinField *isa = R_NEW0 (RBinField);
-	if (isa) {
-		isa->name = r_bin_name_new ("isa");
-		isa->size = sizeof (mach0_ut);
-		isa->type = r_bin_name_new ("struct objc_class *");
-		// TODO r_bin_name_demangled (isa->type, "ObjC.Class*");
-		isa->kind = R_BIN_FIELD_KIND_VARIABLE;
-		isa->vaddr = 0;
-		isa->offset = 0;
-		r_list_prepend (klass->fields, isa);
-	}
+	isa->name = r_bin_name_new ("isa");
+	isa->size = sizeof (mach0_ut);
+	isa->type = r_bin_name_new ("struct objc_class *");
+	// TODO r_bin_name_demangled (isa->type, "ObjC.Class*");
+	isa->kind = R_BIN_FIELD_KIND_VARIABLE;
+	isa->vaddr = 0;
+	isa->offset = 0;
+	r_list_prepend (klass->fields, isa);
 	return;
 error:
 	r_bin_field_free (field);
@@ -530,10 +527,7 @@ static void get_objc_property_list(RBinFile *bf, RBinClass *klass, mach0_ut p) {
 			return;
 		}
 
-		if (!(property = R_NEW0 (RBinField))) {
-			// retain just for debug
-			return;
-		}
+		property = R_NEW0 (RBinField);
 
 		memset (&op, '\0', sizeof (struct MACH0_(SObjcProperty)));
 
@@ -767,10 +761,6 @@ static void get_method_list(RBinFile *bf, RBinClass *klass, const char *class_na
 		}
 
 		method = R_NEW0 (RBinSymbol);
-		if (!method) {
-			// retain just for debug
-			return;
-		}
 		struct MACH0_(SMethod) m = {0};
 		if (r + left < r || r + read_size < r) {
 			goto error;
@@ -1659,9 +1649,6 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 				break;
 			}
 			RBinField *field = R_NEW0 (RBinField);
-			if (!field) {
-				break;
-			}
 			ut64 field_name_addr = st.fieldmd.addr + (d * 4) + st.fieldmd_data[d];
 			ut64 field_type_addr = st.fieldmd.addr + (d * 4) + st.fieldmd_data[d - 1] - 4;
 			ut64 field_method_addr = field_name_addr;
