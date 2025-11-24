@@ -53,7 +53,10 @@ r_core_sources = [
   'p/core_java.c'
 ]
 
-r_core_inc = []
+r_core_inc = [
+  'i/heap/jemalloc',
+  'i/heap/windows',
+]
 r_core_inc = [platform_inc, include_directories(r_core_inc)]
 
 r_core_deps = [

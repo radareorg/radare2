@@ -14,11 +14,11 @@
 #  define JEMALLOC_N(n) jet_##n
 #  include "public_namespace.h"
 #  define JEMALLOC_NO_RENAME
-#  include "../jemalloc.h"
+#  include "./jemalloc_public.h"
 #  undef JEMALLOC_NO_RENAME
 #else
 #  define JEMALLOC_N(n) je_##n
-#  include "../jemalloc.h"
+#  include "./jemalloc_public.h"
 #endif
 
 static const bool config_debug =

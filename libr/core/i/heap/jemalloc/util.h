@@ -86,14 +86,6 @@
 
 #define unreachable() JEMALLOC_INTERNAL_UNREACHABLE()
 
-#include "assert.h"
-
-/* Use to assert a particular configuration, e.g., cassert(config_debug). */
-#define	cassert(c) do {							\
-	if (unlikely(!(c)))						\
-		not_reached();						\
-} while (0)
-
 #endif /* JEMALLOC_H_TYPES */
 /******************************************************************************/
 #ifdef JEMALLOC_H_STRUCTS
