@@ -174,6 +174,7 @@ R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind
 		var->fcn = fcn;
 		r_vector_init (&var->accesses, sizeof (RAnalVarAccess), NULL, NULL);
 		r_vector_init (&var->constraints, sizeof (RAnalVarConstraint), NULL, NULL);
+		var->argnum = -1;
 	} else {
 		free (var->name);
 		free (var->regname);
@@ -585,8 +586,26 @@ R_API bool r_anal_var_rename(RAnal *anal, RAnalVar *var, const char *new_name) {
 	return true;
 }
 
+static int cc_reg_index(RAnal *anal, const char *callconv, const char *regname) {
+	if (!callconv || !regname) {
+		return -1;
+	}
+	const int arg_max = r_anal_cc_max_arg (anal, callconv);
+	int i;
+	for (i = 0; i < arg_max; i++) {
+		const char *reg_arg = r_anal_cc_arg (anal, callconv, i, 0);
+		if (reg_arg && !strcmp (regname, reg_arg)) {
+			return i;
+		}
+	}
+	return -1;
+}
+
 R_API int r_anal_var_get_argnum(RAnalVar *var) {
 	R_RETURN_VAL_IF_FAIL (var, -1);
+	if (var->argnum >= 0) {
+		return var->argnum;
+	}
 	RAnal *anal = var->fcn->anal;
 	if (!var->isarg || var->kind != R_ANAL_VAR_KIND_REG) { // TODO: support bp and sp too
 		return -1;
@@ -600,21 +619,11 @@ R_API int r_anal_var_get_argnum(RAnalVar *var) {
 	}
 	char *ri_name = strdup (ri->name);
 	r_unref (ri);
-	int i;
 	char *callconv = var->fcn->callconv ? strdup (var->fcn->callconv): NULL;
-	const int arg_max = callconv ? r_anal_cc_max_arg (anal, callconv) : 0;
-	int total = 0;
-	for (i = 0; i < arg_max; i++) {
-		const char *reg_arg = r_anal_cc_arg (anal, callconv, i, total);
-		if (reg_arg && !strcmp (ri_name, reg_arg)) {
-			free (callconv);
-			free (ri_name);
-			return i;
-		}
-	}
-	free (ri_name);
+	const int idx = cc_reg_index (anal, callconv, ri_name);
 	free (callconv);
-	return -1;
+	free (ri_name);
+	return idx;
 }
 
 R_API R_BORROW RPVector *r_anal_function_get_vars_used_at(RAnalFunction *fcn, ut64 op_addr) {
@@ -1309,7 +1318,10 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 				name = r_str_newf ("arg%u", (int)i + 1);
 				vname = name;
 			}
-			r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, type, size, true, vname);
+			RAnalVar *var = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, type, size, true, vname);
+			if (var && var->argnum < 0) {
+				var->argnum = *count;
+			}
 			(*count)++;
 			free (name);
 			free (type);
@@ -1352,6 +1364,9 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 					vname = name;
 				}
 				var = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, type, size, true, vname);
+				if (var && var->argnum < 0) {
+					var->argnum = *count;
+				}
 				free (name);
 				free (type);
 				(*count)++;
@@ -1515,25 +1530,6 @@ R_API RList *r_anal_function_get_var_fields(RAnalFunction *fcn, int kind) {
 	return list;
 }
 
-static int regvar_comparator(const RAnalVar *a, const RAnalVar *b) {
-	if (a && b) {
-		if (a->argnum > b->argnum) {
-			return 1;
-		}
-		if (a->argnum < b->argnum) {
-			return -1;
-		}
-		return 0;
-	} else if (a) {
-		return -1;
-	} else if (b) {
-		return 1;
-	}
-	return 0;
-	// avoid NULL dereference
-	// return (a && b)? (a->argnum > b->argnum) - (a->argnum < b->argnum): 0;
-}
-
 static int var_comparator(const RAnalVar *a, const RAnalVar *b) {
 	if (a && b) {
 		if (a->isarg && !b->isarg) {
@@ -1543,7 +1539,13 @@ static int var_comparator(const RAnalVar *a, const RAnalVar *b) {
 			return 1;
 		}
 		if (a->kind == R_ANAL_VAR_KIND_REG && a->kind == b->kind) {
-			return regvar_comparator (a, b);
+			if (a->argnum > b->argnum) {
+				return 1;
+			}
+			if (a->argnum < b->argnum) {
+				return -1;
+			}
+			return 0;
 		}
 		if (a->kind == b->kind && a->fcn) { // && a->fcn->bits == 32) {
 			if (a->kind == R_ANAL_VAR_KIND_BPV) {
@@ -1740,17 +1742,48 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 	r_list_free (list);
 }
 
+static bool is_default_argname(const char *name) {
+	return r_str_startswith (name, "arg") && IS_DIGIT (name[3]);
+}
+
+static void assign_reg_argnums(RAnal *anal, RAnalFunction *fcn, RList *rvars) {
+	RListIter *it;
+	RAnalVar *var;
+	r_list_foreach (rvars, it, var) {
+		if (!var->isarg) {
+			var->argnum = -1;
+			continue;
+		}
+		const char *regname = var->regname;
+		RRegItem *ri = NULL;
+		if (!regname) {
+			ri = r_reg_index_get (anal->reg, var->delta);
+			regname = ri? ri->name: NULL;
+		}
+		var->argnum = cc_reg_index (anal, fcn->callconv, regname);
+		r_unref (ri);
+	}
+	r_list_sort (rvars, (RListComparator)var_comparator);
+	int dense = 0;
+	r_list_foreach (rvars, it, var) {
+		if (var->argnum < 0) {
+			continue;
+		}
+		var->argnum = dense++;
+		if (is_default_argname (var->name)) {
+			char *newname = r_str_newf ("arg%d", var->argnum + 1);
+			r_anal_var_rename (anal, var, newname);
+			free (newname);
+		}
+	}
+}
+
 R_API void r_anal_function_vars_cache_init(RAnal *anal, RAnalFcnVarsCache *cache, RAnalFunction *fcn) {
 	cache->bvars = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_BPV);
 	cache->rvars = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_REG);
 	cache->svars = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_SPV);
 	r_list_sort (cache->bvars, (RListComparator)var_comparator);
-	RListIter *it;
-	RAnalVar *var;
-	r_list_foreach (cache->rvars, it, var) {
-		var->argnum = r_anal_var_get_argnum (var);
-	}
-	r_list_sort (cache->rvars, (RListComparator)regvar_comparator);
+	assign_reg_argnums (anal, fcn, cache->rvars);
 	r_list_sort (cache->svars, (RListComparator)var_comparator);
 }
 

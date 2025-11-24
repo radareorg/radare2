@@ -2098,7 +2098,7 @@ e asm.var.summary=0
 pd 2
 EOF
 EXPECT=<<EOF
-/ 46: entry0 (int64_t arg3);
+/ 46: entry0 (int64_t arg1);
 | `- args(rdx)
 |           0x00005ae0      f30f1efa       endbr64
 |           0x00005ae4      31ed           xor ebp, ebp
@@ -2112,8 +2112,8 @@ EXPECT=<<EOF
 |           0x00005afa      488d0def0b..   lea rcx, [0x000166f0]
 |           0x00005b01      488d3d68e5..   lea rdi, [main]             ; 0x4070 ; "AWAVAUATU\x89\xfdSH\x89\xf3H\x83\xecXH\x8b>dH\x8b\x04%("
 \           0x00005b08      ff150ac30100   call qword [reloc.__libc_start_main] ; [0x21e18:8]=0
-/ 46: entry0 (int64_t arg3);
-|           ; arg int64_t arg3 @ rdx
+/ 46: entry0 (int64_t arg1);
+|           ; arg int64_t arg1 @ rdx
 |           0x00005ae0      f30f1efa       endbr64
 |           0x00005ae4      31ed           xor ebp, ebp
 EOF

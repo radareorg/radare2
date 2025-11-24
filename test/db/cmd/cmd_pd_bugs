@@ -41,8 +41,8 @@ e scr.color=1
 pd 10
 EOF
 EXPECT=<<EOF
-/ 41: entry0 (int64_t arg3, void *stack_end);
-|           ; arg int64_t arg3 @ rdx
+/ 41: entry0 (int64_t arg1, void *stack_end);
+|           ; arg int64_t arg1 @ rdx
 |           ; arg void *stack_end @ xmm0
 |           entry0                         31ed           xor ebp, ebp
 |           entry0+0x2                     4989d1         mov r9, rdx  ; arg3
@@ -54,8 +54,8 @@ EXPECT=<<EOF
 |           entry0+0xf                     4c8b05e693..   mov r8, qword [reloc.fixup.UHH_] ; [0x1f220:8]=0x16ee0
 |           entry0+0x16                    488b0de793..   mov rcx, qword [reloc.fixup.UHAWAVAUATSH8] ; [0x1f228:8]=0x16e60 ; "`n\x01"
 |           entry0+0x1d                    488b3de893..   mov rdi, qword [reloc.fixup.UHAWAVAUATSHH] ; [0x1f230:8]=0x3bd0 main
-[36m/[0m 41: [33mentry0[0m (int64_t arg3, void *stack_end);
-[36m|[0m           [37m; [37marg [36mint64_t [33marg3 [32m@ rdx[0m
+[36m/[0m 41: [33mentry0[0m (int64_t arg1, void *stack_end);
+[36m|[0m           [37m; [37marg [36mint64_t [33marg1 [32m@ rdx[0m
 [36m|[0m           [37m; [37marg [36mvoid *[33mstack_end [32m@ xmm0[0m
 [36m|[0m           [32mentry0[0m                          [33m31[36med[0m           [33mxor[37m ebp[0m,[37m ebp[0m[0m[0m
 [36m|[0m           [32mentry0[0m+0x2                      [33m49[36m89[36md1[0m         [36mmov[37m r9[0m,[37m rdx[0m[0m[0m [37m; arg3[0m

@@ -221,6 +221,7 @@ static const char* GH(get_libc_filename_from_maps)(RCore *core) {
 
 // TODO: more options to get libc filename
 static const char* GH(get_libc_filename)(RCore *core) {
+	R_RETURN_VAL_IF_FAIL (core && core->dbg && core->dbg->maps, NULL);
 	const char *dbg_glibc_path = r_config_get (core->config, "dbg.glibc.path");
 	if (!R_STR_ISEMPTY (dbg_glibc_path)) {
 		return dbg_glibc_path;
