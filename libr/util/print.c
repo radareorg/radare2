@@ -45,7 +45,7 @@ R_API void r_print_portionbar(RPrint *p, const ut64 *portions, int n_portions) {
 }
 
 R_API char *r_print_columns(RPrint *p, const ut8 *buf, int len, int height) {
-	R_RETURN_IF_FAIL (p);
+	R_RETURN_VAL_IF_FAIL (p, NULL);
 	RStrBuf *sb = r_strbuf_new ("");
 	size_t i, j;
 	int cols = 78; // TODO: do not hardcode this value, columns should be defined by the user

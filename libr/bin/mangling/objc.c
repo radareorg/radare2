@@ -84,11 +84,9 @@ R_API char *r_bin_demangle_objc(RBinFile *bf, const char *sym) {
 		args = strstr (clas, "__");
 		if (!args) {
 			free (clas);
-			free (name);
 			return NULL;
 		}
 		*args = 0;
-		free (name);
 		name = strdup (args + 2);
 		if (!name) {
 			free (clas);
