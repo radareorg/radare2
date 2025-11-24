@@ -612,14 +612,6 @@ install_headers(r_esil_files, install_dir: join_paths(r2_incdir, 'r_esil'))
 sflib_common_files = [
   'include/sflib/common/sftypes.h',
   'include/sflib/common/sfsocketcall.h',
-  'include/sflib/darwin-arm-64/sfsysnr.h',
-  'include/sflib/darwin-x86-32/sfsysnr.h',
-  'include/sflib/darwin-x86-64/sfsysnr.h',
-  'include/sflib/freebsd-x86-32/sfsysnr.h',
-  'include/sflib/linux-arm-32/sfsysnr.h',
-  'include/sflib/linux-arm-64/sfsysnr.h',
-  'include/sflib/linux-x86-32/sfsysnr.h',
-  'include/sflib/linux-x86-64/sfsysnr.h'
 ]
 
 sflib_arch = [

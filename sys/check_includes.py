@@ -90,7 +90,7 @@ def main():
     actual = set()
     for h in all_headers:
         rel_path = h[len('libr/'):]
-        if not rel_path.startswith('include/sdb/') and rel_path not in ('include/r_userconf.h', 'include/r_version.h'):
+        if not rel_path.startswith('include/sdb/') and not rel_path.startswith('include/sflib/') and rel_path not in ('include/r_userconf.h', 'include/r_version.h'):
             actual.add(rel_path)
 
     listed = set(all_files)
