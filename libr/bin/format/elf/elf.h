@@ -199,7 +199,7 @@ ut64 Elf_(get_init_offset)(struct Elf_(obj_t) *bin);
 ut64 Elf_(get_fini_offset)(struct Elf_(obj_t) *bin);
 char *Elf_(intrp)(struct Elf_(obj_t) *bin);
 char *Elf_(compiler)(ELFOBJ *bin);
-bool Elf_(get_stripped)(struct Elf_(obj_t) *bin);
+bool Elf_(get_stripped)(struct Elf_(obj_t) *bin, bool *have_lines, bool *have_syms);
 bool Elf_(is_static)(struct Elf_(obj_t) *bin);
 char* Elf_(get_data_encoding)(struct Elf_(obj_t) *bin);
 char* Elf_(get_arch)(struct Elf_(obj_t) *bin);
