@@ -331,7 +331,9 @@ extern "C" {
 		const ut64 capacity = R_VEC_CAPACITY (vec); \
 		if (R_UNLIKELY (num_elems == capacity)) { \
 			const ut64 new_capacity = capacity == 0 ? 8 : capacity * 2; \
-			R_VEC_FUNC(vec_type, reserve) (vec, new_capacity); \
+			if (!R_VEC_FUNC(vec_type, reserve) (vec, new_capacity)) { \
+				return; \
+			} \
 		} \
 		*vec->_end = *value; \
 		vec->_end++; \
@@ -342,7 +344,9 @@ extern "C" {
 		const ut64 capacity = R_VEC_CAPACITY (vec); \
 		if (R_UNLIKELY (num_elems == capacity)) { \
 			const ut64 new_capacity = capacity == 0 ? 8 : capacity * 2; \
-			R_VEC_FUNC(vec_type, reserve) (vec, new_capacity); \
+			if (!R_VEC_FUNC(vec_type, reserve) (vec, new_capacity)) { \
+				return NULL; \
+			} \
 		} \
 		type *ptr = vec->_end; \
 		vec->_end++; \
@@ -354,7 +358,9 @@ extern "C" {
 		const ut64 capacity = R_VEC_CAPACITY (vec); \
 		if (R_UNLIKELY (num_elems == capacity)) { \
 			const ut64 new_capacity = capacity == 0 ? 8 : capacity * 2; \
-			R_VEC_FUNC(vec_type, reserve) (vec, new_capacity); \
+			if (!R_VEC_FUNC(vec_type, reserve) (vec, new_capacity)) { \
+				return; \
+			} \
 		} \
 		memmove (vec->_start + 1, vec->_start, num_elems * sizeof (type)); \
 		*vec->_start = *value; \
@@ -366,7 +372,9 @@ extern "C" {
 		const ut64 capacity = R_VEC_CAPACITY (vec); \
 		if (R_UNLIKELY (num_elems == capacity)) { \
 			const ut64 new_capacity = capacity == 0 ? 8 : capacity * 2; \
-			R_VEC_FUNC(vec_type, reserve) (vec, new_capacity); \
+			if (!R_VEC_FUNC(vec_type, reserve) (vec, new_capacity)) { \
+				return NULL; \
+			} \
 		} \
 		memmove (vec->_start + 1, vec->_start, num_elems * sizeof (type)); \
 		vec->_end++; \
@@ -379,13 +387,17 @@ extern "C" {
 		const ut64 num_values = R_VEC_FUNC(vec_type, length) (values); \
 		const ut64 total_count = num_elems + num_values; \
 		if (total_count > capacity) { \
-			R_VEC_FUNC(vec_type, reserve) (vec, total_count); \
+			if (!R_VEC_FUNC(vec_type, reserve) (vec, total_count)) { \
+				return; \
+			} \
 		} \
 		if (copy_fn) { \
 			type const *src; \
 			R_VEC_FOREACH (values, src) { \
 				type *dst = R_VEC_FUNC(vec_type, emplace_back) (vec); \
-				copy_fn (dst, src); \
+				if (dst) { \
+					copy_fn (dst, src); \
+				} \
 			} \
 		} else { \
 			memcpy (vec->_end, values->_start, num_values * sizeof (type)); \
