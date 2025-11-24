@@ -501,8 +501,10 @@ static RAnalEnumCase *parse_enumerator(Context *ctx, ut64 idx, RAnalEnumCase *re
 		}
 	}
 
-	free (result->name);
-	result->name = name;
+	if (result->name != name) {
+		free (result->name);
+		result->name = name;
+	}
 	result->val = (int)val;
 	return result;
 cleanup:
