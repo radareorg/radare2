@@ -544,7 +544,7 @@ R_API void r_config_node_value_format_i(char *buf, size_t buf_size, const ut64 i
 		r_str_ncpy (buf, r_str_bool ((int) i), buf_size);
 	} else {
 		if (i < 1024) {
-			snprintf (buf, buf_size, "%" PFMT64d, i);
+			snprintf (buf, buf_size, "%" PFMT64d, (st64)i);
 		} else {
 			snprintf (buf, buf_size, "0x%08" PFMT64x, i);
 		}
