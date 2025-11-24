@@ -53,44 +53,18 @@ def main():
         'r_muta_files',
         'r_anal_files',
         'r_esil_files',
-        'sflib_common_files'
     ]
 
     all_files = []
     for lst in lists:
         all_files.extend(extract_list(content, lst))
 
-    # Now, handle sflib_arch_files
-    # First, get sflib_arch
-    arch_match = re.search(r'sflib_arch = \[(.*?)\]', content, re.DOTALL)
-    if arch_match:
-        arch_items = arch_match.group(1)
-        archs = []
-        for line in arch_items.split('\n'):
-            line = line.strip()
-            if line.startswith("'") and line.endswith("',"):
-                archs.append(line[1:-2])
-
-        # sflib_arch_files
-        arch_files_match = re.search(r'sflib_arch_files = \[(.*?)\]', content, re.DOTALL)
-        if arch_files_match:
-            arch_files_items = arch_files_match.group(1)
-            arch_files = []
-            for line in arch_files_items.split('\n'):
-                line = line.strip()
-                if line.startswith("'") and line.endswith("',"):
-                    arch_files.append(line[1:-2])
-
-            for arch in archs:
-                for file in arch_files:
-                    all_files.append(f'include/sflib/{arch}/{file}')
-
     # Get all actual header files
     all_headers = glob.glob('libr/include/**/*.h', recursive=True)
     actual = set()
     for h in all_headers:
         rel_path = h[len('libr/'):]
-        if not rel_path.startswith('include/sdb/') and rel_path not in ('include/r_userconf.h', 'include/r_version.h'):
+        if not rel_path.startswith('include/sdb/') and not rel_path.startswith('include/sflib/') and rel_path not in ('include/r_userconf.h', 'include/r_version.h'):
             actual.add(rel_path)
 
     listed = set(all_files)
