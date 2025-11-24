@@ -516,6 +516,8 @@ include_files = [
   'include/r_vec.h',
 ]
 
+install_headers(include_files, install_dir: r2_incdir)
+
 r_util_files = [
   'include/r_util/bplist.h',
   'include/r_util/pj.h',
