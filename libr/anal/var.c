@@ -1530,25 +1530,6 @@ R_API RList *r_anal_function_get_var_fields(RAnalFunction *fcn, int kind) {
 	return list;
 }
 
-static int regvar_comparator(const RAnalVar *a, const RAnalVar *b) {
-	if (a && b) {
-		if (a->argnum > b->argnum) {
-			return 1;
-		}
-		if (a->argnum < b->argnum) {
-			return -1;
-		}
-		return 0;
-	} else if (a) {
-		return -1;
-	} else if (b) {
-		return 1;
-	}
-	return 0;
-	// avoid NULL dereference
-	// return (a && b)? (a->argnum > b->argnum) - (a->argnum < b->argnum): 0;
-}
-
 static int var_comparator(const RAnalVar *a, const RAnalVar *b) {
 	if (a && b) {
 		if (a->isarg && !b->isarg) {
@@ -1558,7 +1539,13 @@ static int var_comparator(const RAnalVar *a, const RAnalVar *b) {
 			return 1;
 		}
 		if (a->kind == R_ANAL_VAR_KIND_REG && a->kind == b->kind) {
-			return regvar_comparator (a, b);
+			if (a->argnum > b->argnum) {
+				return 1;
+			}
+			if (a->argnum < b->argnum) {
+				return -1;
+			}
+			return 0;
 		}
 		if (a->kind == b->kind && a->fcn) { // && a->fcn->bits == 32) {
 			if (a->kind == R_ANAL_VAR_KIND_BPV) {
@@ -1776,7 +1763,7 @@ static void assign_reg_argnums(RAnal *anal, RAnalFunction *fcn, RList *rvars) {
 		var->argnum = cc_reg_index (anal, fcn->callconv, regname);
 		r_unref (ri);
 	}
-	r_list_sort (rvars, (RListComparator)regvar_comparator);
+	r_list_sort (rvars, (RListComparator)var_comparator);
 	int dense = 0;
 	r_list_foreach (rvars, it, var) {
 		if (var->argnum < 0) {
@@ -1797,7 +1784,6 @@ R_API void r_anal_function_vars_cache_init(RAnal *anal, RAnalFcnVarsCache *cache
 	cache->svars = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_SPV);
 	r_list_sort (cache->bvars, (RListComparator)var_comparator);
 	assign_reg_argnums (anal, fcn, cache->rvars);
-	r_list_sort (cache->rvars, (RListComparator)regvar_comparator);
 	r_list_sort (cache->svars, (RListComparator)var_comparator);
 }
 
