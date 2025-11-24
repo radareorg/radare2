@@ -46,3 +46,79 @@ EXPECT=<<EOF
 0x10000049c             00021fd6  br x16
 EOF
 RUN
+
+NAME=axff missing mipsrefs
+FILE=bins/elf/mips-ncc
+CMDS=<<EOF
+aae @ sym.doEventInternal ;axl~sym.readInfo_log~sym.doEventInternal~CALL
+EOF
+EXPECT=<<EOF
+                 sym.doEventInternal+140 0x4978bc > CALL:--x > 0x523760 sym.readInfo_log
+                 sym.doEventInternal+240 0x497920 > CALL:--x > 0x523760 sym.readInfo_log
+                 sym.doEventInternal+456 0x4979f8 > CALL:--x > 0x523760 sym.readInfo_log
+                 sym.doEventInternal+604 0x497a8c > CALL:--x > 0x523760 sym.readInfo_log
+                sym.doEventInternal+3228 0x4984cc > CALL:--x > 0x523760 sym.readInfo_log
+                sym.doEventInternal+3260 0x4984ec > CALL:--x > 0x523760 sym.readInfo_log
+                sym.doEventInternal+3484 0x4985cc > CALL:--x > 0x523760 sym.readInfo_log
+                sym.doEventInternal+3516 0x4985ec > CALL:--x > 0x523760 sym.readInfo_log
+                sym.doEventInternal+3552 0x498610 > CALL:--x > 0x523760 sym.readInfo_log
+                sym.doEventInternal+3604 0x498644 > CALL:--x > 0x523760 sym.readInfo_log
+                sym.doEventInternal+4944 0x498b80 > CALL:--x > 0x523760 sym.readInfo_log
+                sym.doEventInternal+5000 0x498bb8 > CALL:--x > 0x523760 sym.readInfo_log
+                sym.doEventInternal+5388 0x498d3c > CALL:--x > 0x523760 sym.readInfo_log
+                sym.doEventInternal+5420 0x498d5c > CALL:--x > 0x523760 sym.readInfo_log
+                sym.doEventInternal+5456 0x498d80 > CALL:--x > 0x523760 sym.readInfo_log
+                sym.doEventInternal+5508 0x498db4 > CALL:--x > 0x523760 sym.readInfo_log
+                sym.doEventInternal+5984 0x498f90 > CALL:--x > 0x523760 sym.readInfo_log
+                sym.doEventInternal+6040 0x498fc8 > CALL:--x > 0x523760 sym.readInfo_log
+                sym.doEventInternal+6404 0x499134 > CALL:--x > 0x523760 sym.readInfo_log
+                sym.doEventInternal+7016 0x499398 > CALL:--x > 0x523760 sym.readInfo_log
+                sym.doEventInternal+7880 0x4996f8 > CALL:--x > 0x523760 sym.readInfo_log
+                sym.doEventInternal+7912 0x499718 > CALL:--x > 0x523760 sym.readInfo_log
+                sym.doEventInternal+8856 0x499ac8 > CALL:--x > 0x523760 sym.readInfo_log
+                sym.doEventInternal+8888 0x499ae8 > CALL:--x > 0x523760 sym.readInfo_log
+                sym.doEventInternal+9832 0x499e98 > CALL:--x > 0x523760 sym.readInfo_log
+                sym.doEventInternal+9864 0x499eb8 > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+10132 0x499fc4 > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+10176 0x499ff0 > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+10208 0x49a010 > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+11196 0x49a3ec > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+11676 0x49a5cc > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+12320 0x49a850 > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+14164 0x49af84 > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+16368 0x49b820 > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+16568 0x49b8e8 > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+16652 0x49b93c > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+16684 0x49b95c > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+16716 0x49b97c > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+16744 0x49b998 > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+16776 0x49b9b8 > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+17860 0x49bdf4 > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+18064 0x49bec0 > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+18152 0x49bf18 > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+18208 0x49bf50 > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+18244 0x49bf74 > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+18288 0x49bfa0 > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+18324 0x49bfc4 > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+18432 0x49c030 > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+18908 0x49c20c > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+20808 0x49c978 > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+23360 0x49d370 > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+23484 0x49d3ec > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+28912 0x49e920 > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+29004 0x49e97c > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+29924 0x49ed14 > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+29952 0x49ed30 > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+29984 0x49ed50 > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+33400 0x49faa8 > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+36248 0x4a05c8 > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+36344 0x4a0628 > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+36376 0x4a0648 > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+36408 0x4a0668 > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+36440 0x4a0688 > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+36736 0x4a07b0 > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+37216 0x4a0990 > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+37576 0x4a0af8 > CALL:--x > 0x523760 sym.readInfo_log
+               sym.doEventInternal+38908 0x4a102c > CALL:--x > 0x523760 sym.readInfo_log
+EOF
+RUN

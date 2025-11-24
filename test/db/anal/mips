@@ -87,6 +87,33 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=mips gp jmptbl uses gp base
+FILE=malloc://0x2000
+ARGS=-m 0x10000000
+CMDS=<<EOF
+e scr.interactive=false
+e io.va=true
+e anal.gp=0x10001000
+e asm.arch=mips
+e asm.bits=32
+s 0x10000000
+wx e0ff838f80101000211043000000428c08004000000000000800e00300000000
+wx 00ffffff80ffffffc0ffffffffffffffff @ 0x10000060
+wx 60000010 @ 0x10000fe0
+wx 0800e00300000000 @ 0x10000f00
+wx 0800e00300000000 @ 0x10000f80
+wx 0800e00300000000 @ 0x10000fc0
+aae
+af @ 0x10000000
+pd 1 @ 0x10000010~switch table
+axt 0x10000f00~switch table
+EOF
+EXPECT=<<EOF
+|           0x10000010      08004000       jr v0                       ; switch table (3 cases) at 0x10000060
+fcn.10000000; switch table (3 cases) at 0x10000060 0x10000010 [CODE:--x] jr v0
+EOF
+RUN
+
 NAME=assembler
 FILE=-
 CMDS=<<EOF
@@ -783,7 +810,6 @@ abj~{[0].switch_op.cases}
 EOF
 EXPECT=<<EOF
 0x004ee230 switch table (5 cases) at 0x5a74b4
-[{"addr":5238184,"jump":5238184,"value":0},{"addr":5238044,"jump":5238044,"value":1},{"addr":5238184,"jump":5238184,"value":2},{"addr":5239196,"jump":5239196,"value":3},{"addr":5239252,"jump":5239252,"value":4},{"addr":5169720,"jump":5169720,"value":18446744073709551615}]
+[{"addr":5169860,"jump":5169860,"value":0},{"addr":5169720,"jump":5169720,"value":1},{"addr":5169860,"jump":5169860,"value":2},{"addr":5170872,"jump":5170872,"value":3},{"addr":5170928,"jump":5170928,"value":4},{"addr":5169720,"jump":5169720,"value":18446744073709551615}]
 EOF
 RUN
-

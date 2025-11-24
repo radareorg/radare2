@@ -4,6 +4,20 @@
 
 #define JMPTBL_MAXSZ 512
 
+static inline ut64 get_mips_gp_base(RAnal *anal, ut64 ip) {
+	ut64 gp = anal ? anal->gp : 0;
+	if (!gp && anal && anal->reg) {
+		gp = r_reg_getv (anal->reg, "gp");
+	}
+	if (!gp && anal && anal->config) {
+		gp = anal->config->gp;
+	}
+	if (!gp || gp == UT64_MAX) {
+		return ip & 0xfffff;
+	}
+	return gp;
+}
+
 // R2R db/anal/x86_64 db/anal/x86_32
 
 static void apply_case(RAnal *anal, RAnalBlock *block, ut64 switch_addr, ut64 offset_sz, ut64 case_addr, ut64 id, ut64 case_addr_loc, bool case_is_insn) {
@@ -108,6 +122,17 @@ R_API bool try_walkthrough_casetbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *
 		free (casetbl);
 		return false;
 	}
+	const char *sarch = R_UNWRAP3 (anal, config, arch);
+	if (!sarch) {
+		R_LOG_DEBUG ("Cannot find any valid arch");
+		free (jmptbl);
+		free (casetbl);
+		return false;
+	}
+	bool is_arm = r_str_startswith (sarch, "arm");
+	bool is_x86 = !is_arm && r_str_startswith (sarch, "x86");
+	bool is_mips = !is_arm && !is_x86 && r_str_startswith (sarch, "mips");
+	const bool is_v850 = !is_arm && !is_x86 && (r_str_startswith (sarch, "v850") || r_str_startswith (anal->coreb.cfgGet (anal->coreb.core, "asm.cpu"), "v850"));
 	for (case_idx = 0; case_idx < jmptbl_size; case_idx++) {
 		jmpptr_idx = casetbl[case_idx];
 		if (jmpptr_idx >= jmptbl_size) {
@@ -136,12 +161,41 @@ R_API bool try_walkthrough_casetbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *
 		if (jmpptr == 0 || jmpptr == UT32_MAX || jmpptr == UT64_MAX) {
 			break;
 		}
-		if (!anal->iob.is_valid_offset (anal->iob.io, jmpptr, 0)) {
-			st32 jmpdelta = (st32)jmpptr;
-			// jump tables where sign extended movs are used
-			jmpptr = jmptbl_off + jmpdelta;
-			if (!anal->iob.is_valid_offset (anal->iob.io, jmpptr, 0)) {
-				break;
+		if (sz == 2 && (is_arm || is_v850)) {
+			jmpptr = ip + 4 + (jmpptr * 2); // tbh [pc, r2, lsl 1]  // assume lsl 1
+		} else if (sz == 1 && is_arm) {
+			jmpptr = ip + 4 + (jmpptr * 2); // lbb [pc, r2]  // assume lsl 1
+		} else {
+			bool jmpptr_valid = anal->iob.is_valid_offset (anal->iob.io, jmpptr, 0);
+			if (!jmpptr_valid && is_mips) {
+				ut64 base = get_mips_gp_base (anal, ip);
+				st64 rel;
+				switch (sz) {
+				case 2:
+					rel = (st16)jmpptr;
+					break;
+				case 8:
+					rel = (st64)jmpptr;
+					break;
+				default:
+					rel = (st32)jmpptr;
+					break;
+				}
+				jmpptr = base + rel;
+				jmpptr_valid = anal->iob.is_valid_offset (anal->iob.io, jmpptr, 0);
+			}
+			if (!jmpptr_valid) {
+				st32 jmpdelta = (st32)jmpptr;
+				// jump tables where sign extended movs are used
+				jmpptr = jmptbl_off + jmpdelta;
+				jmpptr_valid = anal->iob.is_valid_offset (anal->iob.io, jmpptr, 0);
+				if (!jmpptr_valid) {
+					break;
+				}
+			} else if (sz == 2 && is_x86) {
+				st32 jmpdelta = (st32)jmpptr;
+				// jump tables where sign extended movs are used
+				jmpptr = jmptbl_off + jmpdelta;
 			}
 		}
 		if (anal->limit) {
@@ -173,6 +227,7 @@ R_API bool try_walkthrough_casetbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *
 
 R_API bool r_anal_jmptbl_walk(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, int depth, ut64 ip, st64 start_casenum_shift, ut64 jmptbl_loc, ut64 jmptbl_off, ut64 sz, ut64 jmptbl_size, ut64 default_case, bool ret0) {
 	bool ret = ret0;
+	ut64 default_target = default_case;
 	// jmptbl_size can not always be determined
 	if (jmptbl_size == 0) {
 		jmptbl_size = JMPTBL_MAXSZ;
@@ -236,28 +291,41 @@ R_API bool r_anal_jmptbl_walk(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block
 			break;
 		}
 		if (sz == 2 && (is_arm || is_v850)) {
-			jmpptr = ip +  4 + (jmpptr * 2); // tbh [pc, r2, lsl 1]  // assume lsl 1
+			jmpptr = ip + 4 + (jmpptr * 2); // tbh [pc, r2, lsl 1]  // assume lsl 1
 		} else if (sz == 1 && is_arm) {
-			jmpptr = ip +  4 + (jmpptr * 2); // lbb [pc, r2]  // assume lsl 1
-		} else if (!anal->iob.is_valid_offset (anal->iob.io, jmpptr, 0)) {
-			st32 jmpdelta = (st32)jmpptr;
-			// jump tables where sign extended movs are used
-			jmpptr = jmptbl_off + jmpdelta;
-			if (!anal->iob.is_valid_offset (anal->iob.io, jmpptr, 0)) {
-				break;
+			jmpptr = ip + 4 + (jmpptr * 2); // lbb [pc, r2]  // assume lsl 1
+		} else {
+			bool jmpptr_valid = anal->iob.is_valid_offset (anal->iob.io, jmpptr, 0);
+			if (!jmpptr_valid && is_mips) {
+				ut64 base = get_mips_gp_base (anal, ip);
+				st64 rel;
+				switch (sz) {
+				case 2:
+					rel = (st16)jmpptr;
+					break;
+				case 8:
+					rel = (st64)jmpptr;
+					break;
+				default:
+					rel = (st32)jmpptr;
+					break;
+				}
+				jmpptr = base + rel;
+				jmpptr_valid = anal->iob.is_valid_offset (anal->iob.io, jmpptr, 0);
 			}
-		} else if (sz == 2 && is_x86) {
-			st32 jmpdelta = (st32)jmpptr;
-			// jump tables where sign extended movs are used
-			jmpptr = jmptbl_off + jmpdelta;
-		}
-		if (is_mips) {
-			jmpptr += (ip & 0xfffff);
-			// R2_600 - get the baddr from binbind
-			// ut64 baddr = r_anal_get_bbaddr (anal, ip);
-			// eprintf ("base address = %llx %llx\n", ip, baddr);
-			// const ut64 baddr = 0x400000; // hardcoded baddr
-			// jmpptr -= baddr;
+			if (!jmpptr_valid) {
+				st32 jmpdelta = (st32)jmpptr;
+				// jump tables where sign extended movs are used
+				jmpptr = jmptbl_off + jmpdelta;
+				jmpptr_valid = anal->iob.is_valid_offset (anal->iob.io, jmpptr, 0);
+				if (!jmpptr_valid) {
+					break;
+				}
+			} else if (sz == 2 && is_x86) {
+				st32 jmpdelta = (st32)jmpptr;
+				// jump tables where sign extended movs are used
+				jmpptr = jmptbl_off + jmpdelta;
+			}
 		}
 		if (anal->limit) {
 			if (jmpptr < anal->limit->from || jmpptr > anal->limit->to) {
@@ -270,16 +338,18 @@ R_API bool r_anal_jmptbl_walk(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block
 		analyze_new_case (anal, fcn, block, ip, jmpptr, depth);
 	}
 	if (is_mips) {
-		// default case for mips is right after the 'jr v0' instruction
-		apply_case (anal, block, ip, sz, ip + 8, -1, jmptbl_loc + offs, false);
-		analyze_new_case (anal, fcn, block, ip, ip + 8, depth);
+		// default case for mips is right after the 'jr v0' instruction unless specified otherwise
+		ut64 mips_default = default_target != UT64_MAX ? default_target : ip + 8;
+		apply_case (anal, block, ip, sz, mips_default, -1, jmptbl_loc + offs, false);
+		analyze_new_case (anal, fcn, block, ip, mips_default, depth);
+		default_target = mips_default;
 	}
 
 	if (offs > 0) {
-		if (default_case == 0) {
-			default_case = UT64_MAX;
+		if (default_target == 0) {
+			default_target = UT64_MAX;
 		}
-		apply_switch (anal, ip, jmptbl_loc, offs / sz, default_case);
+		apply_switch (anal, ip, jmptbl_loc, offs / sz, default_target);
 	}
 
 	free (jmptbl);
