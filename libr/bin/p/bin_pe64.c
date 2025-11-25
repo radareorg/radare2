@@ -467,6 +467,7 @@ RBinPlugin r_bin_plugin_pe64 = {
 	.info = &info,
 	.header = &header,
 	.fields = &fields,
+	.classes = &classes,
 	.libs = &libs,
 	.relocs = &relocs,
 	.get_vaddr = &get_vaddr,

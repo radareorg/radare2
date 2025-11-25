@@ -2,7 +2,7 @@
 #define YR_DOTNET_H
 
 #include <r_types.h>
-#include "pe_specs.h"
+#include <r_list.h>
 
 #pragma pack(push, 1)
 
@@ -15,6 +15,12 @@
 #define struct_fits_in_pe(pe, pointer, struct_type) \
     fits_in_pe(pe, pointer, sizeof (struct_type))
 
+// Simple data directory structure
+typedef struct {
+	ut32 VirtualAddress;
+	ut32 Size;
+} DATA_DIRECTORY;
+
 //
 // CLI header.
 // ECMA-335 Section II.25.3.3
@@ -23,13 +29,13 @@ typedef struct _CLI_HEADER {
     ut32 Size; // Called "Cb" in documentation.
     ut16 MajorRuntimeVersion;
     ut16 MinorRuntimeVersion;
-    R_IMAGE_DATA_DIRECTORY MetaData;
+    DATA_DIRECTORY MetaData;
     ut32 Flags;
     ut32 EntryPointToken;
-    R_IMAGE_DATA_DIRECTORY Resources;
-    R_IMAGE_DATA_DIRECTORY StrongNameSignature;
+    DATA_DIRECTORY Resources;
+    DATA_DIRECTORY StrongNameSignature;
     ut64 CodeManagerTable;
-    R_IMAGE_DATA_DIRECTORY VTableFixups;
+    DATA_DIRECTORY VTableFixups;
     ut64 ExportAddressTableJumps;
     ut64 ManagedNativeHeader;
 } CLI_HEADER, *PCLI_HEADER;
@@ -345,5 +351,67 @@ typedef struct _INDEX_SIZES {
     uint8_t genericparam;
 } INDEX_SIZES, *PINDEX_SIZES;
 
+typedef struct {
+	char *name;
+	ut64 vaddr;
+	ut32 size;
+	char *namespace;  // For types
+	char *type;       // "typedef", "methoddef", "memberref", "typeref", etc.
+	ut32 flags;       // access flags, etc.
+	RList *methods;   // List of DotNetMethod pointers
+	RList *fields;    // List of DotNetField pointers
+} DotNetSymbol;
+
+typedef struct {
+	char *name;
+	ut64 vaddr;
+	ut32 flags;
+} DotNetMethod;
+
+typedef struct {
+	char *name;
+	ut32 flags;
+	ut32 offset;
+} DotNetField;
+
+typedef struct {
+	char *name;
+	char *version;
+	ut16 major_version;
+	ut16 minor_version;
+	ut16 build_number;
+	ut16 revision_number;
+} DotNetLibrary;
+
+typedef struct {
+	char *name;
+	char *library;  // Native library name for P/Invoke
+	int ordinal;
+} DotNetImport;
+
+typedef struct {
+	ut16 cli_major;
+	ut16 cli_minor;
+	ut16 asm_major;
+	ut16 asm_minor;
+	ut16 asm_build;
+	ut16 asm_revision;
+	char *asm_name;
+} DotNetVersionInfo;
+
 #pragma pack(pop)
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+RList* dotnet_parse(const ut8 *buf, int size, ut64 baddr);
+RList* dotnet_parse_libs(const ut8 *buf, int size);
+RList* dotnet_parse_imports(const ut8 *buf, int size);
+DotNetVersionInfo* dotnet_parse_version_info(const ut8 *buf, int size);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif
