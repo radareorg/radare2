@@ -5046,20 +5046,19 @@ static RVecRBinElfSymbol *_load_additional_imported_symbols(ELFOBJ *eo, ImportIn
 	const int limit = eo->limit;
 	int count = 0;
 	R_VEC_FOREACH (ii->memory.symbols_vec, symbol) {
+		if (symbol->is_imported) {
+			if (limit > 0 && count++ >= limit) {
+				R_LOG_WARN ("eo.limit reached for imports");
+				break;
+			}
+		}
 		RBinSymbol *isym = Elf_(convert_symbol) (eo, symbol);
 		if (!isym) {
 			continue;
 		}
 		setsymord (eo, isym->ordinal, isym);
 		if (symbol->is_imported) {
-			if (limit > 0 && count++ > limit) {
-				R_LOG_WARN ("eo.limit reached for imports");
-				free (isym);
-				break;
-			}
 			RVecRBinElfSymbol_push_back (imports, symbol);
-		} else {
-			free (isym);
 		}
 	}
 
