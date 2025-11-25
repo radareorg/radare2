@@ -945,13 +945,94 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 		}
 		break;
 	case EM_ARM:
-		if (!rel->sym && rel->mode == DT_REL) {
-			iob->read_at (iob->io, rel->rva, buf, 4);
-		} else {
-			V = S + A;
+	{
+		ut32 insn = 0;
+		st64 addend = rel->addend;
+		iob->read_at (iob->io, rel->rva, buf, 4);
+		insn = r_read_ble32 (buf, bo->endian);
+		if (rel->mode == DT_REL) {
+			switch (rel->type) {
+			case R_ARM_CALL:
+			case R_ARM_JUMP24:
+			case R_ARM_PC24: {
+				st32 imm = (st32)((insn & 0x00ffffff) << 2);
+				if (imm & 0x02000000) {
+					imm |= ~0x03ffffff;
+				}
+				addend = imm;
+				break;
+			}
+			case R_ARM_MOVW_ABS_NC:
+			case R_ARM_MOVW_PREL_NC:
+				addend = ((insn >> 4) & 0xf000) | (insn & 0x0fff);
+				break;
+			case R_ARM_MOVT_ABS:
+			case R_ARM_MOVT_PREL:
+				addend = (((insn >> 4) & 0xf000) | (insn & 0x0fff)) << 16;
+				break;
+			default:
+				addend = (st32)r_read_ble32 (buf, bo->endian);
+				break;
+			}
+		}
+		switch (rel->type) {
+		case R_ARM_RELATIVE:
+			V = B + addend;
 			r_write_ble32 (buf, V, bo->endian);
+			break;
+		case R_ARM_ABS32:
+			V = S + addend;
+			r_write_ble32 (buf, V, bo->endian);
+			break;
+		case R_ARM_REL32:
+			V = S + addend - P;
+			r_write_ble32 (buf, V, bo->endian);
+			break;
+		case R_ARM_CALL:
+		case R_ARM_JUMP24:
+		case R_ARM_PC24: {
+			st64 target = S + addend - P;
+			ut32 imm24 = (ut32)((st64)target >> 2);
+			insn &= 0xff000000;
+			insn |= imm24 & 0x00ffffff;
+			r_write_ble32 (buf, insn, bo->endian);
+			break;
+		}
+		case R_ARM_MOVW_ABS_NC:
+		case R_ARM_MOVW_PREL_NC: {
+			ut64 val = S + addend;
+			if (rel->type == R_ARM_MOVW_PREL_NC) {
+				val -= P;
+			}
+			ut32 imm16 = val & 0xffff;
+			insn &= 0xfff0f000;
+			insn |= ((imm16 & 0xf000) << 4) | (imm16 & 0x0fff);
+			r_write_ble32 (buf, insn, bo->endian);
+			break;
+		}
+		case R_ARM_MOVT_ABS:
+		case R_ARM_MOVT_PREL: {
+			ut64 val = S + addend;
+			if (rel->type == R_ARM_MOVT_PREL) {
+				val -= P;
+			}
+			ut32 imm16 = (val >> 16) & 0xffff;
+			insn &= 0xfff0f000;
+			insn |= ((imm16 & 0xf000) << 4) | (imm16 & 0x0fff);
+			r_write_ble32 (buf, insn, bo->endian);
+			break;
+		}
+		default:
+			if (!rel->sym && rel->mode == DT_REL) {
+				r_write_ble32 (buf, insn, bo->endian);
+			} else {
+				V = S + addend;
+				r_write_ble32 (buf, V, bo->endian);
+			}
+			break;
 		}
 		iob->overlay_write_at (iob->io, rel->rva, buf, 4);
+		}
 		break;
 	case EM_AARCH64:
 		V = S + A;
