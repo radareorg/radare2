@@ -19,6 +19,21 @@ fs relocs
 EOF
 RUN
 
+NAME=ELF: arm relocs bin.cache patching
+ARGS=-e bin.cache=true
+FILE=bins/elf/analysis/arm-relocs
+CMDS=<<EOF
+s 0x0800004c
+pd 4
+EOF
+EXPECT=<<EOF
+            0x0800004c      c10000eb       bl reloc.r0
+            0x08000050      c00000eb       bl reloc.r0
+            0x08000054      c00000eb       bl reloc.r2
+            0x08000058      bf0000eb       bl reloc.r2
+EOF
+RUN
+
 NAME=ELF: ppc relocs
 FILE=bins/elf/hello.ppc
 CMDS=<<EOF
