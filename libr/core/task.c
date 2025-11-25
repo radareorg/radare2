@@ -33,7 +33,7 @@ static void mycore_free(RCore *a) {
 
 R_API void r_core_task_scheduler_init(RCoreTaskScheduler *tasks, RCore *core) {
 	tasks->task_id_next = 0;
-	tasks->tasks = r_list_newf (free);
+	tasks->tasks = r_list_newf ((RListFree)r_core_task_free);
 	tasks->tasks_queue = r_list_new ();
 	tasks->lock = r_th_lock_new (true);
 	tasks->tasks_running = 0;

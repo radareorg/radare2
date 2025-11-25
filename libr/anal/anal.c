@@ -206,6 +206,7 @@ R_API void r_anal_free(RAnal *a) {
 	r_arch_free (a->arch);
 	a->arch = NULL;
 	free (a->zign_path);
+	free (a->opt.tparser);
 	r_list_free (a->plugins);
 	r_rbtree_free (a->bb_tree, __block_free_rb, NULL);
 	r_spaces_fini (&a->meta_spaces);
