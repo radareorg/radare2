@@ -2737,7 +2737,6 @@ R_API bool r_core_init(RCore *core) {
 	r_unref (core->anal->config);
 	core->anal->config = core->rasm->config;
 
-	r_ref (core->rasm->config);
 	core->anal->reg->endian = core->rasm->config->endian;
 #else
 	r_ref_set (core->print->config, core->rasm->config);
@@ -2931,7 +2930,9 @@ R_API void r_core_fini(RCore *c) {
 		c->anal->esil->anal = NULL;
 	}
 	r_anal_free (c->anal);
-	r_asm_free (c->rasm);
+	if (c->rasm != c->egg->rasm) {
+		r_asm_free (c->rasm);
+	}
 	c->rasm = NULL;
 	r_print_free (c->print);
 	c->print = NULL;
@@ -2951,7 +2952,6 @@ R_API void r_core_fini(RCore *c) {
 	r_search_free (c->search);
 	r_flag_free (c->flags);
 	r_fs_free (c->fs);
-	c->egg->rasm = NULL;
 	r_egg_free (c->egg);
 	r_buf_free (c->yank_buf);
 	r_agraph_free (c->graph);

@@ -104,8 +104,8 @@ static void cons_grep_reset(RConsGrep *grep) {
 	if (grep) {
 		R_FREE (grep->str);
 		r_list_free (grep->strings);
-		grep->strings = r_list_newf ((RListFree)grep_word_free);
 		ZERO_FILL (*grep);
+		grep->strings = r_list_newf ((RListFree)grep_word_free);
 		grep->line = -1;
 		grep->sort = -1;
 		grep->sort_invert = false;
@@ -258,6 +258,7 @@ R_API void r_cons_free2(RCons * R_NULLABLE cons) {
 	r_cons_context_free (cons->context);
 	r_list_free (cons->ctx_stack);
 	R_FREE (cons->pager);
+	r_th_lock_free (cons->lock);
 	RVecFdPairs_fini (&cons->fds);
 }
 
