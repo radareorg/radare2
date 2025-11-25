@@ -888,4 +888,5 @@ R_API void r_core_task_free(RCoreTask *t) {
 	if (t && t->thread) {
 		r_th_wait (t->thread);
 	}
+	task_free (t);
 }
