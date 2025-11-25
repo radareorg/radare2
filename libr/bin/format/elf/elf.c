@@ -5464,10 +5464,10 @@ void Elf_(free)(ELFOBJ* eo) {
 	eo->phdr_symbols_vec = NULL;
 	RVecRBinElfSymbol_free (eo->phdr_imports_vec);
 	eo->phdr_imports_vec = NULL;
-#if INVALID_FREE_OR_LEAK
 	RVecRBinElfSymbol_free (eo->g_symbols_vec);
+	eo->g_symbols_vec = NULL;
 	RVecRBinElfSymbol_free (eo->g_imports_vec);
-#endif
+	eo->g_imports_vec = NULL;
 #if 0
 	// R2_590
 	r_vector_free (eo->g_symbols);

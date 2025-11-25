@@ -38,8 +38,7 @@ static void setimpord(ELFOBJ* eo, ut32 ord, RBinImport *ptr) {
 	if (!eo->imports_by_ord || ord >= eo->imports_by_ord_size) {
 		return;
 	}
-	// leak or uaf wtf
-	// r_bin_import_free (eo->imports_by_ord[ord]);
+	r_bin_import_free (eo->imports_by_ord[ord]);
 	eo->imports_by_ord[ord] = r_bin_import_clone (ptr);
 }
 
