@@ -134,8 +134,7 @@ EXPECT=<<EOF
 0x00080510      lw t9, -sym.do_mips_start(gp)
 0x00080514      jalr t9
 0x00080518      nop
-;-- do_mips_start:
-0x0008053c      lui gp, 2
+0x0008051c      lui gp, 2
 EOF
 RUN
 

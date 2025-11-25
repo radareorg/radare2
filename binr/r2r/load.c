@@ -600,14 +600,14 @@ static R2RTestType test_type_for_path(const char *path, bool *load_plugins) {
 }
 
 static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
-#if WANT_V35 == 0
 	R2RTestToSkip v35_tests_to_skip[] = {
 		{"asm", "arm.v35_64"},
 		{"esil", "arm_64"},
 		{"cmd", "cmd_open"},
 		{"tools", "rasm2"},
 	};
-#endif
+	// arm.v35 plugin is optional and not available with R2_NOPLUGINS, so skip those tests by default.
+	const bool skip_v35 = true;
 
 	if (depth <= 0) {
 		R_LOG_ERROR ("Directories for loading tests too deep: %s", path);
@@ -635,24 +635,21 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 				R_LOG_WARN ("Skipping %s"R_SYS_DIR"%s because it requires additional dependencies", path, subname);
 				continue;
 			}
-#if WANT_V35 == 0
-			bool skip = false;
-			size_t i = 0;
-			for (; i < sizeof (v35_tests_to_skip) / sizeof (R2RTestToSkip); i++) {
-				R2RTestToSkip test = v35_tests_to_skip[i];
-				bool is_dir = r_str_endswith (path, r_str_newf(R_SYS_DIR"%s", test.dir));
-				if (is_dir) {
-					if (!strcmp (subname, test.name)) {
-						R_LOG_WARN ("Skipping test %s"R_SYS_DIR"%s because it requires binary ninja", path, subname);
+			if (skip_v35) {
+				bool skip = false;
+				size_t i = 0;
+				for (; i < sizeof (v35_tests_to_skip) / sizeof (R2RTestToSkip); i++) {
+					R2RTestToSkip test = v35_tests_to_skip[i];
+					if (strstr (path, R_SYS_DIR) && strstr (path, test.dir) && !strcmp (subname, test.name)) {
+						R_LOG_WARN ("Skipping test %s"R_SYS_DIR"%s because it requires arm.v35 plugin", path, subname);
 						skip = true;
 						break;
 					}
 				}
+				if (skip) {
+					continue;
+				}
 			}
-			if (skip) {
-				continue;
-			}
-#endif
 			if (skip_asm && strstr (path, R_SYS_DIR"asm"R_SYS_DIR)) {
 				R_LOG_INFO ("R2R_SKIP_ASM: Skipping %s", path);
 				continue;
@@ -690,13 +687,29 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 		}
 		void **it;
 		r_pvector_foreach (cmd_tests, it) {
+			R2RCmdTest *cmd = *it;
+			if (skip_v35 && cmd) {
+				bool uses_v35 = false;
+				if (cmd->cmds.value && strstr (cmd->cmds.value, "arm.v35")) {
+					uses_v35 = true;
+				}
+				if (!uses_v35 && cmd->args.value && strstr (cmd->args.value, "arm.v35")) {
+					uses_v35 = true;
+				}
+				if (uses_v35) {
+					const char *name = cmd->name.value ? cmd->name.value : path;
+					R_LOG_WARN ("Skipping test \"%s\" because it requires arm.v35 plugin", name);
+					r2r_cmd_test_free (cmd);
+					continue;
+				}
+			}
 			R2RTest *test = R_NEW (R2RTest);
 			if (!test) {
 				continue;
 			}
 			test->type = R2R_TEST_TYPE_CMD;
 			test->path = pooled_path;
-			test->cmd_test = *it;
+			test->cmd_test = cmd;
 			test->cmd_test->load_plugins = load_plugins;
 			r_pvector_push (&db->tests, test);
 		}
@@ -710,13 +723,19 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 		}
 		void **it;
 		r_pvector_foreach (asm_tests, it) {
+			R2RAsmTest *asm_test = *it;
+			if (skip_v35 && asm_test && asm_test->arch && !strcmp (asm_test->arch, "arm.v35")) {
+				R_LOG_WARN ("Skipping asm test in %s because it requires arm.v35 plugin", path);
+				r2r_asm_test_free (asm_test);
+				continue;
+			}
 			R2RTest *test = R_NEW (R2RTest);
 			if (!test) {
 				continue;
 			}
 			test->type = R2R_TEST_TYPE_ASM;
 			test->path = pooled_path;
-			test->asm_test = *it;
+			test->asm_test = asm_test;
 			r_pvector_push (&db->tests, test);
 		}
 		r_pvector_free (asm_tests);

@@ -1,6 +1,7 @@
 /* radare2 - LGPL - Copyright 2013-2024 - pancake */
 
 #include <r_asm.h>
+#include <r_endian.h>
 #include <capstone/capstone.h>
 #include <capstone/mips.h>
 
@@ -70,13 +71,14 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out);
 #define ES_CALL_NDR(ra, addr) "pc,"ra",=,"ES_J_ND(addr)
 #define ES_CALL_ND(addr) ES_CALL_NDR("ra", addr)
 
+// Delay-slot helper macros.
 // Trap if executed in a delay slot.
 #define ES_TRAP_DS(addr) "$ds,!,!,?{," addr ",1,TRAP,BREAK,},"
-// Record address in $jt and set $ds.
+// Jump with delay slot: record target and mark delay.
 #define ES_J_D(addr) addr",SETJT,1,SETD"
-// Jump to address.
+// Jump without delay slot: update PC immediately.
 #define ES_J_ND(addr) addr",pc,:="
-// Skips the next instruction.
+// For likely branches: skip delay slot by advancing PC over it.
 #define ES_SKIP_NXT() "pc,4,+,pc,:="
 
 #define ES_B(x) "0xff,"x",&"
@@ -238,12 +240,13 @@ static const char *arg(csh *handle, cs_insn *insn, char *buf, size_t buf_sz, int
 static int analop_esil(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn) {
 	char str[8][32] = {{0}};
 	int i;
-	ut64 addr = insn->address;
+	ut64 addr = op->addr;
 
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "");
 
 	if (insn) {
+		addr = insn->address;
 		// caching operands
 		for (i = 0; i < insn->detail->mips.op_count && i < 8; i++) {
 			*str[i] = 0;
@@ -359,142 +362,142 @@ static int analop_esil(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 			// jump to address with conditional
 			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "" ES_J_D ("%s"), addr, ARG (0));
 			break;
-		case MIPS_INS_BNEC:
+	case MIPS_INS_BNEC:
 			// BNEC rs, rt, address
 			// Branch Not Equal, Compact. PC relative branch to address if register $rs is not equal to
 			// register $rt.
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "%s,%s,==,$z,!,?{," ES_J_ND ("%s") ",}",
+			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "%s,%s,^,?{," ES_J_ND ("%s") ",}",
 				addr, ARG (0), ARG (1), ARG (2));
 			break;
-		case MIPS_INS_BNE: // bne $s, $t, offset
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "%s,%s,==,$z,!,?{," ES_J_D ("%s") ",}",
+	case MIPS_INS_BNE: // bne $s, $t, offset
+			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "%s,%s,^,?{," ES_J_D ("%s") ",}",
 				addr, ARG (0), ARG (1), ARG (2));
 			break;
-		case MIPS_INS_BNEL:
+	case MIPS_INS_BNEL:
 			// BNEL rs, rt, offset
 			// To compare GPRs then do a PC-relative conditional branch; execute the delay slot only if
 			// the branch is taken.
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "%s,%s,==,$z,!,?{," ES_J_D ("%s") ",}{," ES_SKIP_NXT () ",}",
+			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "%s,%s,^,?{," ES_J_D ("%s") ",}{," ES_SKIP_NXT () ",}",
 				addr, ARG (0), ARG (1), ARG (2));
 			break;
-		case MIPS_INS_BEQC:
+	case MIPS_INS_BEQC:
 			// BEQC rs, rt, address
 			// Branch if Equal, Compact. PC relative branch to address if registers $rs and $rt are are equal.
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "%s,%s,==,$z,?{," ES_J_ND ("%s") ",}",
+			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "%s,%s,^,!,?{," ES_J_ND ("%s") ",}",
 				addr, ARG (0), ARG (1), ARG (2));
 			break;
-		case MIPS_INS_BEQ:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "%s,%s,==,$z,?{," ES_J_D ("%s") ",}",
+	case MIPS_INS_BEQ:
+			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "%s,%s,^,!,?{," ES_J_D ("%s") ",}",
 				addr, ARG (0), ARG (1), ARG (2));
 			break;
-		case MIPS_INS_BEQL:
+	case MIPS_INS_BEQL:
 			// BEQL rs, rt, offset
 			// To compare GPRs then do a PC-relative conditional branch; execute the delay slot only if
 			// the branch is taken.
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "%s,%s,==,$z,?{," ES_J_D ("%s") ",}{," ES_SKIP_NXT () ",}",
+			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "%s,%s,^,!,?{," ES_J_D ("%s") ",}{," ES_SKIP_NXT () ",}",
 				addr, ARG (0), ARG (1), ARG (2));
 			break;
-		case MIPS_INS_BEQZC:
+	case MIPS_INS_BEQZC:
 			// BEQZC rt, address # when rt and address are in range
 			// Branch if Equal to Zero, Compact. PC relative branch to address if register $rt equals zero.
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "%s,0,==,$z,?{," ES_J_ND ("%s") ",}",
+			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "%s,!,?{," ES_J_ND ("%s") ",}",
 				addr, ARG (0), ARG (1));
 			break;
-		case MIPS_INS_BZ:
-		case MIPS_INS_BEQZ:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "%s,0,==,$z,?{," ES_J_D ("%s") ",}",
+	case MIPS_INS_BZ:
+	case MIPS_INS_BEQZ:
+			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "%s,!,?{," ES_J_D ("%s") ",}",
 				addr, ARG (0), ARG (1));
 			break;
-		case MIPS_INS_BNEZC:
+	case MIPS_INS_BNEZC:
 			// BNEZC rt, address
 			// Branch if Not Equal to Zero, Compact. PC relative branch to address if register $rt is not equal to zero.
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "%s,0,==,$z,!,?{," ES_J_ND ("%s") ",}",
+			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "%s,?{," ES_J_ND ("%s") ",}",
 				addr, ARG (0), ARG (1));
 			break;
-		case MIPS_INS_BNEZ:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "%s,0,==,$z,!,?{," ES_J_D ("%s") ",}",
+	case MIPS_INS_BNEZ:
+			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "%s,?{," ES_J_D ("%s") ",}",
 				addr, ARG (0), ARG (1));
 			break;
-		case MIPS_INS_BEQZALC:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "%s,0,==,$z,?{," ES_CALL_ND ("%s") ",}",
+	case MIPS_INS_BEQZALC:
+			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "%s,!,?{," ES_CALL_ND ("%s") ",}",
 				addr, ARG (0), ARG (1));
 			break;
-		case MIPS_INS_BLEZC:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "0,%s,<=,?{," ES_J_ND ("%s") ",},",
-				addr, ARG (0), ARG (1));
-			break;
-		case MIPS_INS_BLEZ:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "0,%s,<=,?{," ES_J_D ("%s") ",},",
-				addr, ARG (0), ARG (1));
-			break;
-		case MIPS_INS_BLEZL:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "0,%s,<=,?{," ES_J_D ("%s") ",}{," ES_SKIP_NXT () ",}",
-				addr, ARG (0), ARG (1));
-			break;
-		case MIPS_INS_BGEC:
+	case MIPS_INS_BLEZC:
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "0,%s,<=,?{," ES_J_ND ("%s") ",},",
+			addr, ARG (0), ARG (1));
+		break;
+	case MIPS_INS_BLEZ:
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "0,%s,<=,?{," ES_J_D ("%s") ",},",
+			addr, ARG (0), ARG (1));
+		break;
+	case MIPS_INS_BLEZL:
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "0,%s,<=,?{," ES_J_D ("%s") ",}{," ES_SKIP_NXT () ",}",
+			addr, ARG (0), ARG (1));
+		break;
+	case MIPS_INS_BGEC:
 			// BGEC rs, rt, address
 			// Branch if Greater than or Equal, Compact. PC relative branch to address if register $rs
 			// is greater than or equal to register $rt.
 			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "%s,%s,>=,?{," ES_J_ND ("%s") ",}",
 				addr, ARG (1), ARG (0), ARG (2));
 			break;
-		case MIPS_INS_BGEZC:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "0," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_J_ND ("%s") ",}",
+	case MIPS_INS_BGEZC:
+			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) ES_IS_NEGATIVE ("%s") ",!,?{," ES_J_ND ("%s") ",}",
 				addr, ARG (0), ARG (1));
 			break;
-		case MIPS_INS_BGEZ:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "0," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_J_D ("%s") ",}",
+	case MIPS_INS_BGEZ:
+			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) ES_IS_NEGATIVE ("%s") ",!,?{," ES_J_D ("%s") ",}",
 				addr, ARG (0), ARG (1));
 			break;
-		case MIPS_INS_BGEZL:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "0," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_J_D ("%s") ",}{," ES_SKIP_NXT () ",}",
+	case MIPS_INS_BGEZL:
+			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) ES_IS_NEGATIVE ("%s") ",!,?{," ES_J_D ("%s") ",}{," ES_SKIP_NXT () ",}",
 				addr, ARG (0), ARG (1));
 			break;
-		case MIPS_INS_BGEZAL:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "0," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_CALL_D ("%s") ",}",
+	case MIPS_INS_BGEZAL:
+			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) ES_IS_NEGATIVE ("%s") ",!,?{," ES_CALL_D ("%s") ",}",
 				addr, ARG (0), ARG (1));
 			break;
-		case MIPS_INS_BGEZALC:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "0," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_CALL_ND ("%s") ",}",
+	case MIPS_INS_BGEZALC:
+			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) ES_IS_NEGATIVE ("%s") ",!,?{," ES_CALL_ND ("%s") ",}",
 				addr, ARG (0), ARG (1));
 			break;
-		case MIPS_INS_BGTZALC:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "0,%s,>,?{," ES_CALL_ND ("%s") ",}",
+	case MIPS_INS_BGTZALC:
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "0,%s,>,?{," ES_CALL_ND ("%s") ",}",
+		        addr, ARG (0), ARG (1));
+		break;
+	case MIPS_INS_BLTZAL:
+			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) ES_IS_NEGATIVE ("%s") ",?{," ES_CALL_D ("%s") ",}",
 			        addr, ARG (0), ARG (1));
 			break;
-		case MIPS_INS_BLTZAL:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "1," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_CALL_D ("%s") ",}",
-			        addr, ARG (0), ARG (1));
-			break;
-		case MIPS_INS_BLTZC:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "1," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_J_ND ("%s") ",}",
+	case MIPS_INS_BLTZC:
+			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) ES_IS_NEGATIVE ("%s") ",?{," ES_J_ND ("%s") ",}",
 				addr, ARG (0), ARG (1));
 			break;
-		case MIPS_INS_BLTZ:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "1," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_J_D ("%s") ",}",
+	case MIPS_INS_BLTZ:
+			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) ES_IS_NEGATIVE ("%s") ",?{," ES_J_D ("%s") ",}",
 				addr, ARG (0), ARG (1));
 			break;
-		case MIPS_INS_BLTZL:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "1," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_J_D ("%s") ",}{," ES_SKIP_NXT () ",}",
+	case MIPS_INS_BLTZL:
+			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) ES_IS_NEGATIVE ("%s") ",?{," ES_J_D ("%s") ",}{," ES_SKIP_NXT () ",}",
 				addr, ARG (0), ARG (1));
 			break;
-		case MIPS_INS_BGTZC:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "0,%s,>,?{," ES_J_ND ("%s") ",},",
-			        addr, ARG (0), ARG (1));
+	case MIPS_INS_BGTZC:
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "0,%s,>,?{," ES_J_ND ("%s") ",},",
+		        addr, ARG (0), ARG (1));
+		break;
+	case MIPS_INS_BGTZ:
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "0,%s,>,?{," ES_J_D ("%s") ",},",
+		        addr, ARG (0), ARG (1));
+		break;
+	case MIPS_INS_BGTZL:
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "0,%s,>,?{," ES_J_D ("%s") ",}{," ES_SKIP_NXT () ",}",
+		        addr, ARG (0), ARG (1));
+		break;
+	case MIPS_INS_BTEQZ:
+			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "t,!,?{," ES_J_D ("%s") ",}", addr, ARG (0));
 			break;
-		case MIPS_INS_BGTZ:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "0,%s,>,?{," ES_J_D ("%s") ",},",
-			        addr, ARG (0), ARG (1));
-			break;
-		case MIPS_INS_BGTZL:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "0,%s,>,?{," ES_J_D ("%s") ",}{," ES_SKIP_NXT () ",}",
-			        addr, ARG (0), ARG (1));
-			break;
-		case MIPS_INS_BTEQZ:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "0,t,==,$z,?{," ES_J_D ("%s") ",}", addr, ARG (0));
-			break;
-		case MIPS_INS_BTNEZ:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "0,t,==,$z,!,?{," ES_J_D ("%s") ",}", addr, ARG (0));
+	case MIPS_INS_BTNEZ:
+			r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "t,?{," ES_J_D ("%s") ",}", addr, ARG (0));
 			break;
 		case MIPS_INS_MOV:
 		case MIPS_INS_MOVE:
@@ -877,6 +880,11 @@ static bool init(RArchSession *as) {
 		return false;
 	}
 
+	// Ensure GP is at least 16-byte aligned when provided by the binary loader.
+	if (as->config->gp != UT64_MAX && (as->config->gp & 0xf)) {
+		as->config->gp = (as->config->gp + 0xf) & ~(ut64)0xf;
+	}
+
 	PluginData *pd = R_NEW0 (PluginData);
 	if (!pd) {
 		return false;
@@ -1004,31 +1012,30 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	case MIPS_INS_LDL:
 	case MIPS_INS_LDR:
 	case MIPS_INS_LDXC1:
-		op->type = R_ANAL_OP_TYPE_LOAD;
-		if (!op->refptr) {
-			op->refptr = 8;
-		}
-		switch (OPERAND(1).type) {
-		case MIPS_OP_MEM:
-			if (OPERAND(1).mem.base == MIPS_REG_GP) {
-				op->ptr = as->config->gp + OPERAND(1).mem.disp;
-#if 0
-				if (REGID (0) == MIPS_REG_T9) {
-					pd->t9_pre = op->ptr;
-					// read pointer again
-					ut32 na = 0;
-					RBin *bin = as->arch->binb.bin;
-					if (bin && bin->iob.read_at (bin->iob.io, op->ptr, &na, sizeof (na))) {
-						pd->t9_pre = na; // UT64_MAX;
-					}
-
-					// eprintf ("SET PRE9 0x%llx\n", op->ptr);
-				}
-#endif
-			} else if (REGID (0) == MIPS_REG_T9) {
-				pd->t9_pre = UT64_MAX;
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			if (!op->refptr) {
+				op->refptr = 8;
 			}
-			break;
+			switch (OPERAND(1).type) {
+			case MIPS_OP_MEM:
+				if (OPERAND(1).mem.base == MIPS_REG_GP) {
+					op->ptr = as->config->gp + OPERAND(1).mem.disp;
+					if (REGID (0) == MIPS_REG_T9) {
+						pd->t9_pre = op->ptr;
+						RBin *bin = as->arch->binb.bin;
+						if (bin) {
+							const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
+							const int ptrsz = as->config->bits == 64? 8: 4;
+							ut8 v[8] = {0};
+							if (bin->iob.read_at (bin->iob.io, op->ptr, v, ptrsz)) {
+								pd->t9_pre = ptrsz == 8? r_read_ble64 (v, be): r_read_ble32 (v, be);
+							}
+						}
+					}
+				} else if (REGID (0) == MIPS_REG_T9) {
+					pd->t9_pre = UT64_MAX;
+				}
+				break;
 		case MIPS_OP_IMM:
 			op->ptr = OPERAND(1).imm;
 			break;
@@ -1196,14 +1203,18 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	case MIPS_INS_B:
 	case MIPS_INS_BZ:
 	case MIPS_INS_BEQ:
+	case MIPS_INS_BEQC:
+	case MIPS_INS_BEQZ:
+	case MIPS_INS_BEQZC:
 	case MIPS_INS_BNZ:
 	case MIPS_INS_BNE:
+	case MIPS_INS_BNEC:
 	case MIPS_INS_BNEL:
 	case MIPS_INS_BEQL:
-	case MIPS_INS_BEQZ:
+	case MIPS_INS_BNEZ:
+	case MIPS_INS_BNEZC:
 	case MIPS_INS_BNEG:
 	case MIPS_INS_BNEGI:
-	case MIPS_INS_BNEZ:
 	case MIPS_INS_BTEQZ:
 	case MIPS_INS_BTNEZ:
 	case MIPS_INS_BLTZ:
@@ -1233,6 +1244,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		}
 
 		switch (insn->id) {
+		case MIPS_INS_BEQC:
+		case MIPS_INS_BEQZC:
+		case MIPS_INS_BNEC:
+		case MIPS_INS_BNEZC:
 		case MIPS_INS_BLEZC:
 		case MIPS_INS_BGEZC:
 		case MIPS_INS_BLTZC:

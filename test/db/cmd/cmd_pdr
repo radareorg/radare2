@@ -28,8 +28,8 @@ e anal.gp=0xabc
 pdr~addu t0[7]
 EOF
 EXPECT=<<EOF
-0x17b8
-0x17c8
+0x17bc
+0x17cc
 EOF
 RUN
 

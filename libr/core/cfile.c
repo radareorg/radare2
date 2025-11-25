@@ -41,6 +41,9 @@ static void load_gp(RCore *core) {
 			r_reg_setv (core->anal->reg, "gp", gp);
 			r_config_set (core->config, "anal.roregs", "zero,gp");
 		}
+		if (gp != UT64_MAX) {
+			gp = (gp + 0xf) & ~(ut64)0xf;
+		}
 		R_LOG_DEBUG ("[mips] gp: 0x%08"PFMT64x, gp);
 		r_config_set_i (core->config, "anal.gp", gp);
 	}
