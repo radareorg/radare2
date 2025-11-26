@@ -206,12 +206,24 @@ static char *socket_http_get_recursive(const char *url, const char **headers, in
 			return NULL;
 		}
 		char *escaped_url = r_str_escape_sh (url);
+		if (!escaped_url) {
+			free (header_file);
+			free (body_file);
+			return NULL;
+		}
 		RStrBuf *sb = r_strbuf_new ("curl -s -D ");
 		r_strbuf_appendf (sb, "'%s' -o '%s' -L", header_file, body_file);
 		if (headers) {
 			const char **header = headers;
 			while (*header) {
 				char *escaped_header = r_str_escape_sh (*header);
+				if (!escaped_header) {
+					r_strbuf_free (sb);
+					free (escaped_url);
+					free (header_file);
+					free (body_file);
+					return NULL;
+				}
 				r_strbuf_appendf (sb, " -H '%s'", escaped_header);
 				free (escaped_header);
 				header++;
@@ -225,8 +237,8 @@ static char *socket_http_get_recursive(const char *url, const char **headers, in
 		free (command);
 
 		if (cmd_result != 0) {
-			r_file_unlink (header_file);
-			r_file_unlink (body_file);
+			r_file_rm (header_file);
+			r_file_rm (body_file);
 			free (header_file);
 			free (body_file);
 			if (code) {
@@ -237,7 +249,7 @@ static char *socket_http_get_recursive(const char *url, const char **headers, in
 
 		// Parse status code from header file
 		size_t hdr_len;
-		char *hdr_content = r_file_read (header_file, &hdr_len);
+		char *hdr_content = r_file_slurp (header_file, &hdr_len);
 		if (hdr_content) {
 			if (code) {
 				char *status_line = strstr (hdr_content, "HTTP/");
@@ -261,13 +273,13 @@ static char *socket_http_get_recursive(const char *url, const char **headers, in
 
 		// Read body
 		size_t body_len;
-		char *res = r_file_read (body_file, &body_len);
+		char *res = r_file_slurp (body_file, &body_len);
 		if (rlen) {
 			*rlen = body_len;
 		}
 
-		r_file_unlink (header_file);
-		r_file_unlink (body_file);
+		r_file_rm (header_file);
+		r_file_rm (body_file);
 		free (header_file);
 		free (body_file);
 		return res;
@@ -357,6 +369,9 @@ R_API char *r_socket_http_post(const char *url, const char *headers[], const cha
 	if (r_sys_getenv_asbool ("R2_CURL")) {
 		int len;
 		char *escaped_url = r_str_escape_sh (url);
+		if (!escaped_url) {
+			return NULL;
+		}
 		RStrBuf *sb = r_strbuf_new ("curl -s -D - -L");
 		if (headers) {
 			const char **header = headers;
