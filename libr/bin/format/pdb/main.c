@@ -20,7 +20,7 @@ static const struct option long_options[] = {
 };
 
 int main(int argc, char **argv) {
-	RPdb pdb;
+	RBinPdb pdb;
 
 	int option_index = 0;
 	char *pdb_file = 0;
