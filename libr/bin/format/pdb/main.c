@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
 		case 'f':
 			pdb_file = optarg;
 			strcpy (&pdb.file_name, optarg);
-			if (!init_pdb_parser (&pdb)) {
+			if (!r_bin_pdb_parser (&pdb)) {
 				R_LOG_ERROR ("Cannot initialize the pdb parser");
 				return 0;
 			}
