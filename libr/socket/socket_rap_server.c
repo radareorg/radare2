@@ -62,12 +62,19 @@ R_API bool r_socket_rap_server_continue(RSocketRapServer *s) {
 	switch (s->buf[0]) {
 	case RAP_PACKET_OPEN:
 		r_socket_read_block (s->fd, &s->buf[1], 2);
-		r_socket_read_block (s->fd, &s->buf[3], (int)s->buf[2]);
 		{
-			int fd = s->open (s->user, (const char *)&s->buf[3], (int)s->buf[1], 0);
-			s->buf[0] = RAP_PACKET_OPEN | RAP_PACKET_REPLY;
-			eprintf ("REPLY BACK %d\n", fd);
-			r_write_be32 (s->buf + 1, fd);
+		int len = (int)(ut8)s->buf[2];
+		if (len > sizeof (s->buf) - 3) {
+			R_LOG_ERROR ("rap: filename too long %d", len);
+			r_socket_close (s->fd);
+			return false;
+		}
+		r_socket_read_block (s->fd, &s->buf[3], len);
+		s->buf[3 + len] = 0;
+		int fd = s->open (s->user, (const char *)&s->buf[3], (int)s->buf[1], 0);
+		s->buf[0] = RAP_PACKET_OPEN | RAP_PACKET_REPLY;
+		eprintf ("REPLY BACK %d\n", fd);
+		r_write_be32 (s->buf + 1, fd);
 		}
 		r_socket_write (s->fd, s->buf, 5);
 		r_socket_flush (s->fd);
@@ -98,8 +105,8 @@ R_API bool r_socket_rap_server_continue(RSocketRapServer *s) {
 	case RAP_PACKET_SEEK:
 		{
 		r_socket_read_block (s->fd, &s->buf[1], 9);
-		int whence = s->buf[0];
-		ut64 offset = r_read_be64 (s->buf + 1);
+		int whence = s->buf[1];
+		ut64 offset = r_read_be64 (s->buf + 2);
 		offset = s->seek (s->user, offset, whence);
 		/* prepare reply */
 		s->buf[0] = RAP_PACKET_SEEK | RAP_PACKET_REPLY;
