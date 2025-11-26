@@ -4299,31 +4299,44 @@ static void visual_title(RCore *core, int color) {
 			title = r_str_newf ("[%s + %d> * %s * (press ESC to leave, TAB to toggle mode)\n",
 				address, core->print->cur, text);
 		} else {
-			char pm[32] = "[XADVC]";
-			int i;
-			for (i = 0; i < 6; i++) {
-				if (core->visual.printidx == i) {
-					pm[i + 1] = toupper ((unsigned char)pm[i + 1]);
+			const char *fmt = r_config_get (core->config, "scr.vprompt.format");
+			if (R_STR_ISNOTEMPTY (fmt)) {
+				char *formatted = r_core_prompt_format (core, fmt);
+				if (formatted) {
+					title = formatted;
+					if (!r_str_endswith (title, "\n")) {
+						title = r_str_append (title, "\n");
+					}
 				} else {
-					pm[i + 1] = tolower ((unsigned char)pm[i + 1]);
-				}
-			}
-			if (core->print->cur_enabled) {
-				if (core->print->ocur == -1) {
-					title = r_str_newf ("[%s *0x%08"PFMT64x" %s%d ($$+0x%x)]> %s %s\n",
-						address, core->addr + core->print->cur,
-						pm, core->visual.currentFormat, core->print->cur,
-						bar, pos);
-				} else {
-					title = r_str_newf ("[%s 0x%08"PFMT64x" %s%d [0x%x..0x%x] %d]> %s %s\n",
-						address, core->addr + core->print->cur,
-						pm, core->visual.currentFormat, core->print->ocur, core->print->cur,
-						R_ABS (core->print->cur - core->print->ocur) + 1,
-						bar, pos);
+					title = strdup ("\n");
 				}
 			} else {
-				title = r_str_newf ("[%s %s%d %s%d %s]> %s %s\n",
-					address, pm, core->visual.currentFormat, pcs, core->blocksize, filename, bar, pos);
+				char pm[32] = "[XADVC]";
+				int i;
+				for (i = 0; i < 6; i++) {
+					if (core->visual.printidx == i) {
+						pm[i + 1] = toupper ((unsigned char)pm[i + 1]);
+					} else {
+						pm[i + 1] = tolower ((unsigned char)pm[i + 1]);
+					}
+				}
+				if (core->print->cur_enabled) {
+					if (core->print->ocur == -1) {
+						title = r_str_newf ("[%s *0x%08"PFMT64x" %s%d ($$+0x%x)]> %s %s\n",
+							address, core->addr + core->print->cur,
+							pm, core->visual.currentFormat, core->print->cur,
+							bar, pos);
+					} else {
+						title = r_str_newf ("[%s 0x%08"PFMT64x" %s%d [0x%x..0x%x] %d]> %s %s\n",
+							address, core->addr + core->print->cur,
+							pm, core->visual.currentFormat, core->print->ocur, core->print->cur,
+							R_ABS (core->print->cur - core->print->ocur) + 1,
+							bar, pos);
+					}
+				} else {
+					title = r_str_newf ("[%s %s%d %s%d %s]> %s %s\n",
+						address, pm, core->visual.currentFormat, pcs, core->blocksize, filename, bar, pos);
+				}
 			}
 		}
 		const int tabsCount = __core_visual_tab_count (core);
