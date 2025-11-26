@@ -40,7 +40,7 @@ w int function(int argc, char **argv) { puts("Hello World"); return 32; }
 prz~:)
 EOF
 EXPECT=<<EOF
-c(K[0m[J[?25h{
+c(B[0m[J[?25h{
   "function": {
     "type": "symbol",
     "name": "function",
