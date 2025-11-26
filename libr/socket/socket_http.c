@@ -198,9 +198,16 @@ static char *socket_http_get_recursive(const char *url, const char **headers, in
 		*rlen = 0;
 	}
 	if (r_sys_getenv_asbool ("R2_CURL")) {
-		int len;
+		char *header_file = r_file_temp ("r2_http_hdr");
+		char *body_file = r_file_temp ("r2_http_body");
+		if (!header_file || !body_file) {
+			free (header_file);
+			free (body_file);
+			return NULL;
+		}
 		char *escaped_url = r_str_escape_sh (url);
-		RStrBuf *sb = r_strbuf_new ("curl -s -D - -L");
+		RStrBuf *sb = r_strbuf_new ("curl -s -D ");
+		r_strbuf_appendf (sb, "'%s' -o '%s' -L", header_file, body_file);
 		if (headers) {
 			const char **header = headers;
 			while (*header) {
@@ -210,69 +217,59 @@ static char *socket_http_get_recursive(const char *url, const char **headers, in
 				header++;
 			}
 		}
-		r_strbuf_appendf (sb, " \"%s\"", escaped_url);
+		r_strbuf_appendf (sb, " '%s'", escaped_url);
 		char *command = r_strbuf_drain (sb);
-
-		char *error = NULL;
-		char *res = NULL;
-
-		// Execute curl command
-		int cmd_result = r_sys_cmd_str_full (command, NULL, 0, &res, &len, &error);
-
 		free (escaped_url);
+
+		int cmd_result = r_sys_cmd (command);
 		free (command);
 
-		if (cmd_result <= 0 || !res) {
-			// Command failed to execute
+		if (cmd_result != 0) {
+			r_file_unlink (header_file);
+			r_file_unlink (body_file);
+			free (header_file);
+			free (body_file);
 			if (code) {
-				*code = 500; // Internal error
+				*code = 500;
 			}
-			if (error && *error) {
-				R_LOG_ERROR ("curl failed: %s", error);
-				char *err_msg = strdup (error);
-				free (error);
-				free (res);
-				return err_msg;
-			} else {
-				R_LOG_ERROR ("curl failed to execute");
-				free (error);
-				free (res);
-				return NULL;
-			}
+			return NULL;
 		}
 
-		// Parse the response
-		if (res) {
-			// Parse HTTP status code from header
+		// Parse status code from header file
+		size_t hdr_len;
+		char *hdr_content = r_file_read (header_file, &hdr_len);
+		if (hdr_content) {
 			if (code) {
-				char *status_line = strstr (res, "HTTP/");
+				char *status_line = strstr (hdr_content, "HTTP/");
 				if (status_line) {
 					char *space = strchr (status_line, ' ');
 					if (space) {
 						*code = atoi (space + 1);
 					} else {
-						*code = 200; // Default success
+						*code = 200;
 					}
 				} else {
-					*code = 200; // Default success
+					*code = 200;
 				}
 			}
-
-			// Separate headers from body
-			char *body = strstr (res, "\r\n\r\n");
-			if (body) {
-				body += 4;
-				// Move the body to the beginning of the string
-				char *new_res = strdup (body);
-				free (res);
-				res = new_res;
-			}
-
-			free (error);
-			if (rlen) {
-				*rlen = strlen (res);
+			free (hdr_content);
+		} else {
+			if (code) {
+				*code = 200;
 			}
 		}
+
+		// Read body
+		size_t body_len;
+		char *res = r_file_read (body_file, &body_len);
+		if (rlen) {
+			*rlen = body_len;
+		}
+
+		r_file_unlink (header_file);
+		r_file_unlink (body_file);
+		free (header_file);
+		free (body_file);
 		return res;
 	}
 #if R2__WINDOWS__
