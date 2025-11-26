@@ -94,9 +94,9 @@ pi 2
 EOF
 EXPECT=<<EOF
 0x0000000a
-0x00007a62
-lw a0, -segment.LOAD0(gp)
+0x00007a68
 lw t9, -sym.imp.printf(gp)
+jr t9
 EOF
 RUN
 
@@ -113,7 +113,7 @@ pi 2
 EOF
 EXPECT=<<EOF
 0x0000000a
-0x00007a62
+0x00007a68
 lw a0, -segment.LOAD0(gp)
 lw t9, -sym.imp.printf(gp)
 EOF

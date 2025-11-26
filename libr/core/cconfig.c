@@ -3307,6 +3307,8 @@ static bool cb_anal_roregs(RCore *core, RConfigNode *node) {
 
 static bool cb_anal_gp(RCore *core, RConfigNode *node) {
 	ut64 gpv = node->i_value;
+	gpv = (gpv == UT64_MAX)? gpv: (gpv + 0xf) & ~(ut64)0xf;
+	node->i_value = gpv;
 	core->anal->gp = gpv;
 	r_reg_setv (core->anal->reg, "gp", gpv);
 	core->anal->config->gp = gpv;

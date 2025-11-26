@@ -242,7 +242,11 @@ R_API void r_esil_del_op(REsil *esil, const char *op) {
 
 R_API void r_esil_set_pc(REsil *esil, ut64 addr) {
 	R_RETURN_IF_FAIL (esil);
-	// r_reg_set_value_by_role (esil->anal->reg, R_REG_ALIAS_PC, addr);
+	if (esil->reg_if.reg_write) {
+		r_esil_reg_write_silent (esil, "PC", addr);
+	} else if (esil->anal && esil->anal->reg) {
+		r_reg_setv (esil->anal->reg, "pc", addr);
+	}
 	esil->addr = addr;
 }
 
@@ -889,6 +893,7 @@ R_API bool r_esil_parse(REsil *esil, const char *str) {
 	}
 #endif
 	int rc = 0;
+	bool in_delay = esil->delay > 0;
 	int wordi = 0;
 	int dorunword;
 	char word[64];
@@ -970,6 +975,14 @@ repeat:
 	}
 	rc = 1;
 step_out:
+	// Handle delayed jumps after executing the delay slot
+	if (in_delay && esil->delay > 0) {
+		esil->delay--;
+		if (!esil->delay && esil->jump_target_set) {
+			r_esil_set_pc (esil, esil->jump_target);
+			esil->jump_target_set = 0;
+		}
+	}
 	step_out (esil, esil->cmd_step_out);
 	return rc;
 }

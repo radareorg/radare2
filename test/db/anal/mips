@@ -17,7 +17,7 @@ aae
 aflc
 EOF
 EXPECT=<<EOF
-427
+429
 EOF
 RUN
 
@@ -197,6 +197,58 @@ ao 1~type:[1]
 EOF
 EXPECT=<<EOF
 call
+EOF
+RUN
+
+NAME=mips bne no likely skip
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=mips
+e asm.bits=32
+wx 01000915
+aoe 1~?pc,4,+,pc,:=
+EOF
+EXPECT=<<EOF
+0
+EOF
+RUN
+
+NAME=mips bnel likely skips next
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=mips
+e asm.bits=32
+wx 01000955
+aoe 1~?pc,4,+,pc,:=
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=mips bgtz no likely skip
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=mips
+e asm.bits=32
+wx 0100001d
+aoe 1~?pc,4,+,pc,:=
+EOF
+EXPECT=<<EOF
+0
+EOF
+RUN
+
+NAME=mips bgtzl likely skips next
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=mips
+e asm.bits=32
+wx 0100005d
+aoe 1~?pc,4,+,pc,:=
+EOF
+EXPECT=<<EOF
+1
 EOF
 RUN
 
@@ -530,7 +582,6 @@ RUN
 NAME=GNU mips branch delay function detection #1.
 FILE=malloc://160
 ARGS=-m 0x8060b4f8
-BROKEN=1
 CMDS=<<EOF
 e io.va=true
 e asm.bits=32
@@ -550,7 +601,7 @@ EOF
 EXPECT=<<EOF
 0x8060b4f8      00000000   nop
 0x8060b4fc      00000000   nop
-(fcn) fcn.8060b500 80
+80: fcn.8060b500 ();
 0x8060b500      002e0500   sll a1, a1, 0x18
 0x8060b504      032e0500   sra a1, a1, 0x18
 0x8060b508      0f008010   beqz a0, 0x8060b548
@@ -571,7 +622,7 @@ EXPECT=<<EOF
 0x8060b544      21100000   move v0, zero
 0x8060b548      0800e003   jr ra
 0x8060b54c      00000000   nop
-(fcn) fcn.8060b550 36
+36: fcn.8060b550 ();
 0x8060b550      0000a290   lbu v0, 0(a1)
 0x8060b554      05004010   beqz v0, 0x8060b56c
 0x8060b558      0100a524   addiu a1, a1, 1
@@ -580,9 +631,10 @@ EXPECT=<<EOF
 0x8060b564      552d1808   j 0x8060b554
 0x8060b568      01008424   addiu a0, a0, 1
 0x8060b56c      0800e003   jr ra
-0x8060b570      000080a0   sb zero, (a0)
+0x8060b570      000080a0   sb zero, 0(a0)
 0x8060b574      00000000   nop
-(fcn) fcn.8060b578 20
+20: fcn.8060b578 (int32_t arg_20h);
+`- args(sp[0x20..0x20]) vars(1:sp[0x20..0x20])
 0x8060b578      e0ffbd27   addiu sp, sp, -32
 0x8060b57c      542d180c   jal fcn.8060b550
 0x8060b580      00000000   nop

@@ -8293,21 +8293,6 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 			block_instr++;
 		}
 		if (end_of_block) {
-			if (op.delay) {
-				const ut64 ops_to_read = R_MIN (op.delay, nb_opcodes - (i + 1));
-				const ut64 bytes_to_read = ops_to_read * read_len;
-				ut64 next_addr = op_addr;
-				// Prevent overflow when adding op.size
-				if (UT64_MAX - op.size >= op_addr) {
-					next_addr += op.size;
-				}
-				if (!read_ahead (core->io, &buf, &buf_sz, next_addr, block_sz, bytes_to_read)) {
-					break;
-				}
-				block_instr += ops_to_read;
-				block_sz += bytes_to_read;
-				i += ops_to_read;
-			}
 			if (block_instr) {
 				switch (mode) {
 				case R_MODE_JSON:
