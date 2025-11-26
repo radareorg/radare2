@@ -495,6 +495,7 @@ include_files = [
   'include/r_list.h',
   'include/r_magic.h',
   'include/r_main.h',
+  'include/r_mips.h',
   'include/ptrace_wrap.h',
   'include/r_pdb.h',
   'include/r_qrcode.h',
