@@ -75,12 +75,9 @@ R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *s
 				content_length = atoi (buf + 16);
 			} else if (so->httpauth && r_str_startswith (buf, "Authorization: Basic ")) {
 				char *authtoken = buf + 21;
-				size_t authlen = strlen (authtoken);
-				char *decauthtoken = calloc (4, authlen + 1);
+				int declen;
+				char *decauthtoken = (char *)r_base64_decode_dyn (authtoken, -1, &declen);
 				if (!decauthtoken) {
-					return hr;
-				}
-				if (r_base64_decode ( (ut8 *)decauthtoken, authtoken, authlen) == -1) {
 					R_LOG_ERROR ("Could not decode authorization token");
 				} else {
 					RListIter *iter;
@@ -91,8 +88,8 @@ R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *s
 							break;
 						}
 					}
+					free (decauthtoken);
 				}
-				free (decauthtoken);
 				if (!hr->auth) {
 					R_LOG_ERROR ("Failed attempt login from '%s'", hr->host);
 				}
@@ -127,20 +124,27 @@ R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *s
 	return hr;
 }
 
+static const char *httpcodestr(int code) {
+	// TODO: better and more http error messages
+	switch (code) {
+	case 200: return "ok";
+	case 301: return "Moved Permanently";
+	case 302: return "Found";
+	case 401: return "Unauthorized";
+	case 403: return "Permission Denied";
+	case 404: return "Not Found";
+	}
+	return "Unknown";
+}
+
 R_API void r_socket_http_response(RSocketHTTPRequest *rs, int code, const char *out, int len, const char *headers) {
 	R_RETURN_IF_FAIL (rs);
-	const char *strcode =
-		code == 200 ? "ok" : code == 301 ? "Moved permanently" :
-		code == 302 ? "Found" :
-		code == 401 ? "Unauthorized" :
-		code == 403 ? "Permission denied" :
-		code == 404 ? "not found" :
-		"UNKNOWN";
+	const char *strcode = httpcodestr (code);
 	if (len < 1) {
-		len = out ? strlen (out) : 0;
+		len = out? strlen (out): 0;
 	}
 	if (!headers) {
-		headers = code == 401 ? "WWW-Authenticate: Basic realm=\"R2 Web UI Access\"\n" : "";
+		headers = code == 401? "WWW-Authenticate: Basic realm=\"R2 Web UI Access\"\n": "";
 	}
 	r_socket_printf (rs->s, "HTTP/1.0 %d %s\r\n%s"
 			"Connection: close\r\nContent-Length: %d\r\n\r\n",
@@ -216,7 +220,7 @@ R_API void r_socket_http_free(RSocketHTTPRequest *rs) {
 }
 
 #if MAIN
-int main () {
+int main() {
 	RSocket *s = r_socket_new (false);
 	if (!r_socket_listen (s, "8080", NULL)) {
 		R_LOG_ERROR ("Cannot listen here");
