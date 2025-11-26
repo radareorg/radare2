@@ -4673,6 +4673,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("scr.prompt.flag", "false", "show flag name in the prompt");
 	SETB ("scr.prompt.sect", "false", "show section name in the prompt");
 	SETCB ("scr.prompt.format", "", &cb_cfg_prompt_format, "format string for r2 prompt (supports $(...) command substitution and ${COLOR} placeholders)");
+	SETCB ("scr.vprompt.format", "", &cb_cfg_prompt_format, "format string for visual prompt (supports $(...) command substitution and ${COLOR} placeholders)");
 	SETB ("scr.tts", "false", "use tts if available by a command (see ic)");
 	SETCB ("scr.prompt", "true", &cb_scrprompt, "show user prompt (used by r2 -q)");
 	SETICB ("scr.limit", 0, &cb_scr_limit, "stop printing after N bytes");

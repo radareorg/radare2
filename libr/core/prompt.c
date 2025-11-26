@@ -209,6 +209,86 @@ static char *r_core_prompt_substitute(RCore *core, char *key) {
 			strftime (date_str, sizeof (date_str), "%Y-%m-%d", tm);
 		}
 		return strdup (date_str);
+	} else if (!strcmp (key, "vpm")) {
+		char pm[32] = "[XADVC]";
+		int i;
+		for (i = 0; i < 6; i++) {
+			if (core->visual.printidx == i) {
+				pm[i + 1] = toupper ((unsigned char)pm[i + 1]);
+			} else {
+				pm[i + 1] = tolower ((unsigned char)pm[i + 1]);
+			}
+		}
+		return strdup (pm);
+	} else if (!strcmp (key, "vfmt")) {
+		return r_str_newf ("%d", core->visual.currentFormat);
+	} else if (!strcmp (key, "vpcs")) {
+		ut64 sz = r_io_size (core->io);
+		ut64 pa = core->addr;
+		RIOMap *map = r_io_map_get_at (core->io, core->addr);
+		if (map) {
+			pa = map->delta;
+		}
+		if (sz == UT64_MAX) {
+			return strdup ("");
+		} else {
+			int pc = (!sz || pa > sz)? 0: (pa * 100) / sz;
+			return r_str_newf ("%d%% ", pc);
+		}
+	} else if (!strcmp (key, "vbs")) {
+		return r_str_newf ("%d", core->blocksize);
+	} else if (!strcmp (key, "vbar")) {
+		char bar[512];
+		const char *cmd_visual = r_config_get (core->config, "cmd.visual");
+		if (R_STR_ISNOTEMPTY (cmd_visual)) {
+			r_str_ncpy (bar, cmd_visual, sizeof (bar) - 1);
+			bar[10] = '.';
+			bar[11] = '.';
+			bar[12] = 0;
+		} else {
+			const char *cmds[] = { "xc", "afsQ;pd $r", "pxw 64@r:SP;dr=;drcq;afsQ;pd $r", "prc", "psb" };
+			const char *cmd = cmds[core->visual.printidx % 5];
+			r_str_ncpy (bar, cmd, sizeof (bar) - 1);
+			bar[10] = '.';
+			bar[11] = '.';
+			bar[12] = 0;
+		}
+		return strdup (bar);
+	} else if (!strcmp (key, "vpos")) {
+		char pos[512];
+		ut64 addr = core->addr + (core->print->cur_enabled? core->print->cur: 0);
+		bool showDelta = r_config_get_b (core->config, "asm.slow");
+		RFlagItem *f = NULL;
+		if (r_flag_space_push (core->flags, R_FLAGS_FS_SYMBOLS)) {
+			f = r_flag_get_at (core->flags, addr, showDelta);
+			r_flag_space_pop (core->flags);
+		}
+		if (!f) {
+			f = r_flag_get_at (core->flags, addr, showDelta);
+		}
+		if (f) {
+			if (f->addr == addr || !f->addr) {
+				snprintf (pos, sizeof (pos), "@ %s", f->name);
+			} else {
+				snprintf (pos, sizeof (pos), "@ %s+%d # 0x%"PFMT64x,
+					f->name, (int) (addr - f->addr), addr);
+			}
+		} else {
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
+			if (fcn) {
+				int delta = addr - fcn->addr;
+				if (delta > 0) {
+					snprintf (pos, sizeof (pos), "@ %s+%d", fcn->name, delta);
+				} else if (delta < 0) {
+					snprintf (pos, sizeof (pos), "@ %s%d", fcn->name, delta);
+				} else {
+					snprintf (pos, sizeof (pos), "@ %s", fcn->name);
+				}
+			} else {
+				pos[0] = 0;
+			}
+		}
+		return strdup (pos);
 	}
 	return NULL;
 }
@@ -259,6 +339,7 @@ R_API void r_core_prompt_format_help(RCore *core) {
 		"$", "{BGCOLOR}", "background ANSI colors (e.g. ${BGRED})",
 		"$", "{pal:NAME}", "color from palette theme (see 'ec' command)",
 		"", "\\s", "literal space (use to keep trailing spaces)",
+		"", "\\n", "literal newline",
 		"$", "{RGB:r,g,b}", "RGB foreground color (0-255)",
 		"$", "{BGRGB:r,g,b}", "RGB background color (0-255)",
 		"$", "{addr}", "current virtual address (alias ${address}/${vaddr})",
@@ -281,6 +362,12 @@ R_API void r_core_prompt_format_help(RCore *core) {
 		"$", "{user}", "username (alias $(whoami))",
 		"$", "{vaddr}", "current virtual address (converted when io.va is disabled)",
 		"$", "{value}", "number from last math operation",
+		"$", "{vpm}", "visual mode string (XADVC)",
+		"$", "{vfmt}", "visual format number",
+		"$", "{vpcs}", "visual percentage",
+		"$", "{vbs}", "visual block size",
+		"$", "{vbar}", "visual command bar",
+		"$", "{vpos}", "visual position string",
 // 		"Example:", "scr.prompt.format = \"${GREEN}${filename}${RESET} [${addr}]> \"",
 		NULL
 	};
@@ -304,6 +391,10 @@ R_API char *r_core_prompt_format(RCore *core, const char *fmt) {
 		} else if (*p == '\\') {
 			if (p[1] == 's') {
 				r_strbuf_append_n (sb, " ", 1);
+				p += 2;
+				continue;
+			} else if (p[1] == 'n') {
+				r_strbuf_append_n (sb, "\n", 1);
 				p += 2;
 				continue;
 			}
