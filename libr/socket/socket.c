@@ -318,7 +318,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 		if (ioctl (fd, SIOCGIFINDEX, &ifr) == -1) {
 			r_sys_perror ("ioctl");
 			close (fd);
-			return -1;
+			return false;
 		}
 
 		struct sockaddr_can addr = {0};
