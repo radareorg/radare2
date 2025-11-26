@@ -205,14 +205,25 @@ static char *socket_http_get_recursive(const char *url, const char **headers, in
 			free (body_file);
 			return NULL;
 		}
+		char *escaped_header_file = r_str_escape_sh (header_file);
+		char *escaped_body_file = r_str_escape_sh (body_file);
+		if (!escaped_header_file || !escaped_body_file) {
+			free (header_file);
+			free (body_file);
+			free (escaped_header_file);
+			free (escaped_body_file);
+			return NULL;
+		}
 		char *escaped_url = r_str_escape_sh (url);
 		if (!escaped_url) {
 			free (header_file);
 			free (body_file);
+			free (escaped_header_file);
+			free (escaped_body_file);
 			return NULL;
 		}
 		RStrBuf *sb = r_strbuf_new ("curl -s -D ");
-		r_strbuf_appendf (sb, "'%s' -o '%s' -L", header_file, body_file);
+		r_strbuf_appendf (sb, "'%s' -o '%s' -L", escaped_header_file, escaped_body_file);
 		if (headers) {
 			const char **header = headers;
 			while (*header) {
@@ -220,6 +231,8 @@ static char *socket_http_get_recursive(const char *url, const char **headers, in
 				if (!escaped_header) {
 					r_strbuf_free (sb);
 					free (escaped_url);
+					free (escaped_header_file);
+					free (escaped_body_file);
 					free (header_file);
 					free (body_file);
 					return NULL;
@@ -232,6 +245,8 @@ static char *socket_http_get_recursive(const char *url, const char **headers, in
 		r_strbuf_appendf (sb, " '%s'", escaped_url);
 		char *command = r_strbuf_drain (sb);
 		free (escaped_url);
+		free (escaped_header_file);
+		free (escaped_body_file);
 
 		int cmd_result = r_sys_cmd (command);
 		free (command);
