@@ -255,7 +255,7 @@ static void parse_type(const RAnal *anal, SType *type, RList *types) {
  * @param anal
  * @param pdb PDB information
  */
-R_API void r_parse_pdb_types(const RAnal *anal, const RPdb *pdb) {
+R_API void r_parse_pdb_types(const RAnal *anal, const RBinPdb *pdb) {
 	R_RETURN_IF_FAIL (anal && pdb);
 	RList *plist = pdb->pdb_streams;
 	// getting the TPI stream from the streams list

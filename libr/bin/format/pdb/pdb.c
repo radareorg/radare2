@@ -1,6 +1,5 @@
 /* radare - LGPL - Copyright 2014-2025 - inisider */
 
-#include <r_pdb.h>
 #include <r_bin.h>
 
 #include "types.h"
@@ -81,7 +80,7 @@ static int init_r_pdb_stream(R_PDB_STREAM *pdb_stream, RBuffer *buf /*FILE *fp*/
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static int read_int_var(char *var_name, int *var, RPdb *pdb) {
+static int read_int_var(char *var_name, int *var, RBinPdb *pdb) {
 	if (var) {
 		*var = 0;
 	}
@@ -106,7 +105,7 @@ static int count_pages(int length, int page_size) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static int init_pdb7_root_stream(RPdb *pdb, int *root_page_list, int pages_amount,
+static int init_pdb7_root_stream(RBinPdb *pdb, int *root_page_list, int pages_amount,
 				 EStream indx, int root_size, int page_size) {
 	R_PDB_STREAM *pdb_stream = 0;
 	int tmp_data_max_size = 0;
@@ -342,7 +341,7 @@ static void find_indx_in_list(RList *l, int index, SStreamParseFunc **res) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static int pdb_read_root(RPdb *pdb) {
+static int pdb_read_root(RBinPdb *pdb) {
 	int i = 0;
 	RList *pList = pdb->pdb_streams;
 	R_PDB7_ROOT_STREAM *root_stream = pdb->root_stream;
@@ -429,7 +428,7 @@ static int pdb_read_root(RPdb *pdb) {
 	return 1;
 }
 
-static bool pdb7_parse(RPdb *pdb) {
+static bool pdb7_parse(RBinPdb *pdb) {
 	char signature[PDB7_SIGNATURE_LEN + 1];
 	int num_root_index_pages = 0;
 	int *root_index_pages = 0;
@@ -554,7 +553,7 @@ error:
 	return false;
 }
 
-static void finish_pdb_parse(RPdb *pdb) {
+static void finish_pdb_parse(RBinPdb *pdb) {
 	R_PDB7_ROOT_STREAM *p = pdb->root_stream;
 	RListIter *it;
 	SPage *page = 0;
@@ -1079,7 +1078,7 @@ static void print_enum(const char *name, const char *type, const RList *members,
  * @param pdb pdb structure for printing function
  * @param types List of types
  */
-static void print_types_regular(const RPdb *pdb, const RList *types) {
+static void print_types_regular(const RBinPdb *pdb, const RList *types) {
 	R_RETURN_IF_FAIL (pdb && types);
 	RListIter *it = r_list_iterator (types);
 
@@ -1136,7 +1135,7 @@ static void print_types_regular(const RPdb *pdb, const RList *types) {
  * @param pdb pdb structure for printing function
  * @param types List of types
  */
-static void print_types_json(const RPdb *pdb, PJ *pj, const RList *types) {
+static void print_types_json(const RBinPdb *pdb, PJ *pj, const RList *types) {
 	R_RETURN_IF_FAIL (pdb && types && pj);
 
 	RListIter *it = r_list_iterator (types);
@@ -1260,7 +1259,7 @@ static void print_types_json(const RPdb *pdb, PJ *pj, const RList *types) {
  * @param pdb pdb structure for printing function
  * @param types List of types
  */
-static void print_types_format(const RPdb *pdb, const RList *types) {
+static void print_types_format(const RBinPdb *pdb, const RList *types) {
 	R_RETURN_IF_FAIL (pdb && types);
 	RListIter *it = r_list_iterator (types);
 	bool to_free_name = false;
@@ -1349,7 +1348,7 @@ static void print_types_format(const RPdb *pdb, const RList *types) {
  * @param pdb PDB information
  * @param mode printing mode
  */
-static void print_types(const RPdb *pdb, PJ *pj, const int mode) {
+static void print_types(const RBinPdb *pdb, PJ *pj, const int mode) {
 	RList *plist = pdb->pdb_streams;
 	STpiStream *tpi_stream = r_list_get_n (plist, ePDB_STREAM_TPI);
 
@@ -1365,7 +1364,7 @@ static void print_types(const RPdb *pdb, PJ *pj, const int mode) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void print_gvars(RPdb *pdb, ut64 img_base, PJ *pj, int format) {
+static void print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 	SStreamParseFunc *omap = 0, *sctns = 0, *sctns_orig = 0, *gsym = 0, *tmp = 0;
 	SIMAGE_SECTION_HEADER *sctn_header = 0;
 	SGDATAStream *gsym_data_stream = 0;
@@ -1462,7 +1461,7 @@ static void print_gvars(RPdb *pdb, ut64 img_base, PJ *pj, int format) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-R_API bool init_pdb_parser_with_buf(RPdb *pdb, RBuffer* buf) {
+R_API bool r_bin_pdb_parser_with_buf(RBinPdb *pdb, RBuffer* buf) {
 	char *signature = NULL;
 	int bytes_read = 0;
 
@@ -1505,18 +1504,17 @@ R_API bool init_pdb_parser_with_buf(RPdb *pdb, RBuffer* buf) {
 	pdb->finish_pdb_parse = finish_pdb_parse;
 	pdb->print_types = print_types;
 	pdb->print_gvars = print_gvars;
-// printf("init_pdb_parser() finish with success\n");
 	return true;
 error:
 	R_FREE (signature);
 	return false;
 }
 
-R_API bool init_pdb_parser(RPdb *pdb, const char *filename) {
+R_API bool r_bin_pdb_parser(RBinPdb *pdb, const char *filename) {
 	RBuffer *buf = r_buf_new_from_file (filename);
 	if (!buf) {
 		R_LOG_ERROR ("%s: Error reading file \"%s\"", __func__, filename);
 		return false;
 	}
-	return init_pdb_parser_with_buf (pdb, buf);
+	return r_bin_pdb_parser_with_buf (pdb, buf);
 }
