@@ -1868,11 +1868,17 @@ static void cmd_idl(RCore *core, const char *input) {
 				if (colon) {
 					*colon = 0;
 				}
-				// AITODO: check if file exists before downloading
-				// AITODO: use seprate path instead of the first one from the list?
-				// AITODO: use generic api from rsocket_http to download files
-				R_LOG_WARN ("This curl oneliner is subject to command injection. Use it at your own risk");
-				r_sys_cmdf ("curl -o \"%s/%s\" \"%s\"", dir_debuglink, info->dbglink, url);
+				char *fullpath = r_str_newf ("%s/%s", dir_debuglink, info->dbglink);
+				if (r_file_exists (fullpath)) {
+					R_LOG_INFO ("Debuglink file already exists: %s", fullpath);
+				} else {
+					if (r_socket_http_download (url, NULL, fullpath)) {
+						R_LOG_INFO ("Downloaded debuglink file to %s", fullpath);
+					} else {
+						R_LOG_ERROR ("Failed to download debuglink file");
+					}
+				}
+				free (fullpath);
 				free (dir_debuglink);
 			}
 			free (url);
