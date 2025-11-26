@@ -1,0 +1,14 @@
+PackageIdentifier: RadareOrg.Radare2
+PackageVersion: 6.0.7
+PackageLocale: en-US
+Publisher: RadareOrg
+PackageName: Radare2
+License: LGPL-3.0
+ShortDescription: Free and open-source reverse engineering framework
+Installers:
+- Architecture: x64
+  InstallerType: zip
+  InstallerUrl: https://github.com/radareorg/radare2/releases/download/6.0.7/radare2-6.0.7-w64.zip
+  InstallerSha256: PLACEHOLDER_SHA256
+ManifestType: singleton
+ManifestVersion: 1.6.0
