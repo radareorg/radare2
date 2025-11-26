@@ -342,6 +342,18 @@ R_API char *r_socket_http_get(const char *url, const char **headers, int *code, 
 	return socket_http_get_recursive (url, headers, code, rlen, SOCKET_HTTP_MAX_REDIRECTS);
 }
 
+R_API bool r_socket_http_download(const char *url, const char **headers, const char *filepath) {
+	int code, rlen;
+	char *data = r_socket_http_get (url, headers, &code, &rlen);
+	if (!data || code != 200) {
+		free (data);
+		return false;
+	}
+	bool ret = r_file_dump (filepath, (const ut8 *)data, rlen, false);
+	free (data);
+	return ret;
+}
+
 R_API char *r_socket_http_post(const char *url, const char *headers[], const char *data, int *code, int *rlen) {
 	if (r_sys_getenv_asbool ("R2_CURL")) {
 		int len;
