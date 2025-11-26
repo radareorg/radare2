@@ -7169,6 +7169,12 @@ void cmd_anal_reg(RCore *core, const char *str) {
 }
 
 R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver) {
+#define SET_PC_BOTH(core, val) do { \
+	r_reg_setv ((core)->anal->reg, "PC", (val)); \
+	if ((core)->anal->reg != (core)->dbg->reg) { \
+		r_reg_setv ((core)->dbg->reg, "PC", (val)); \
+	} \
+} while (0)
 #define return_tail(x) { tail_return_value = x; goto tail_return; }
 	int tail_return_value = 0;
 	int ret;
@@ -7176,7 +7182,10 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 	int maxopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
 	RAnalOp op = {0};
 	REsil *esil = core->anal->esil;
-	const bool is_x86 = r_str_startswith (r_config_get (core->config, "asm.arch"), "x86");
+	const char *arch = r_config_get (core->config, "asm.arch");
+	const bool is_x86 = r_str_startswith (arch, "x86");
+	const bool is_mips_arch = r_str_startswith (arch, "mips");
+	const bool is_sh_arch = r_str_startswith (arch, "sh");
 	const bool r2wars = is_x86 && r_config_get_b (core->config, "cfg.r2wars");
 	const bool breakoninvalid = r_config_get_b (core->config, "esil.breakoninvalid");
 	const int esiltimeout = r_config_get_i (core->config, "esil.timeout");
@@ -7320,8 +7329,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 				if (addr == until_addr) {
 					return_tail (0);
 				}
-				r_reg_setv (core->anal->reg, "PC", op.addr + op.size);
-				r_reg_setv (core->dbg->reg, "PC", op.addr + op.size);
+				SET_PC_BOTH (core, op.addr + op.size);
 				ret = 0;
 			}
 		}
@@ -7342,10 +7350,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			}
 		} else {
 			ut64 pcdst = addr + op.size;
-			r_reg_setv (core->anal->reg, "PC", pcdst);
-			if (core->anal->reg != core->dbg->reg) {
-				r_reg_setv (core->dbg->reg, "PC", pcdst);
-			}
+			SET_PC_BOTH (core, pcdst);
 		}
 		if (ret) {
 			esil->addr = addr;
@@ -7384,11 +7389,8 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 				const ut64 ds_addr = naddr;
 				const ut64 pc_after_op = r_reg_getv (core->anal->reg, "PC");
 				const ut64 skipped_ds_pc = ds_addr + op.size;
-				const char *arch = r_config_get (core->config, "asm.arch");
-				const bool is_mips = r_str_startswith (arch, "mips");
-				const bool is_sh = r_str_startswith (arch, "sh");
-				const bool skip_delay_slot = (is_mips && pc_after_op == skipped_ds_pc)
-					|| (is_sh && pc_after_op == ds_addr);
+				const bool skip_delay_slot = (is_mips_arch && pc_after_op == skipped_ds_pc)
+					|| (is_sh_arch && pc_after_op == ds_addr);
 				ut64 saved_pc = UT64_MAX;
 
 				// MIPS likely branches annul the delay slot by jumping over it.
@@ -7403,10 +7405,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 					ut8 code2[32];
 					RAnalOp op2 = {0};
 
-					r_reg_setv (core->anal->reg, "PC", ds_addr);
-					if (core->anal->reg != core->dbg->reg) {
-						r_reg_setv (core->dbg->reg, "PC", ds_addr);
-					}
+					SET_PC_BOTH (core, ds_addr);
 					(void)r_io_read_at (core->io, ds_addr, code2, sizeof (code2));
 					ret = r_anal_op (core->anal, &op2, ds_addr, code2, sizeof (code2), R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT);
 					if (ret > 0) {
@@ -7419,10 +7418,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 						ut64 pc_ds = r_reg_getv (core->anal->reg, "PC");
 						if (pc_ds == ds_addr) {
 							pc_ds = ds_addr + op2.size;
-							r_reg_setv (core->anal->reg, "PC", pc_ds);
-							if (core->anal->reg != core->dbg->reg) {
-								r_reg_setv (core->dbg->reg, "PC", pc_ds);
-							}
+							SET_PC_BOTH (core, pc_ds);
 						}
 						// Restore immediate jump targets after running the delay slot.
 						if (saved_pc != UT64_MAX && !esil->jump_target_set) {
@@ -7458,10 +7454,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 		// If the ESIL expression did not change PC, advance to the next instruction.
 		if (pc == addr) {
 			pc = naddr;
-			r_reg_setv (core->anal->reg, "PC", pc);
-			if (core->anal->reg != core->dbg->reg) {
-				r_reg_setv (core->dbg->reg, "PC", pc);
-			}
+			SET_PC_BOTH (core, pc);
 		}
 		if (pc == UT64_MAX || pc == UT32_MAX) {
 			R_LOG_ERROR ("Invalid program counter PC=-1 coming from 0x%08"PFMT64x, addr);
@@ -7469,10 +7462,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 		}
 		if (core->anal->config->codealign > 0) {
 			pc -= (pc % core->anal->config->codealign);
-			r_reg_setv (core->anal->reg, "PC", pc);
-			if (core->anal->reg != core->dbg->reg) {
-				r_reg_setv (core->dbg->reg, "PC", pc);
-			}
+			SET_PC_BOTH (core, pc);
 		}
 		st64 follow = (st64)r_config_get_i (core->config, "dbg.follow");
 		if (follow > 0) {

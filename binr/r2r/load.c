@@ -640,7 +640,11 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 				size_t i = 0;
 				for (; i < sizeof (v35_tests_to_skip) / sizeof (R2RTestToSkip); i++) {
 					R2RTestToSkip test = v35_tests_to_skip[i];
-					if (strstr (path, R_SYS_DIR) && strstr (path, test.dir) && !strcmp (subname, test.name)) {
+					size_t pathlen = strlen (path);
+					size_t dirlen = strlen (test.dir);
+					const char *tail = pathlen >= dirlen ? path + pathlen - dirlen : NULL;
+					bool in_dir = tail && !strcmp (tail, test.dir) && (tail == path || tail[-1] == R_SYS_DIR[0]);
+					if (in_dir && !strcmp (subname, test.name)) {
 						R_LOG_WARN ("Skipping test %s"R_SYS_DIR"%s because it requires arm.v35 plugin", path, subname);
 						skip = true;
 						break;

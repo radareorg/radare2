@@ -3,6 +3,8 @@
 #include <r_arch.h>
 #include "../../include/disas-asm.h"
 #include <r_endian.h>
+#include <r_mips.h>
+#include "../mips/mips_utils.h"
 #include "../../include/opcode/mips.h"
 
 typedef struct plugin_data_t {
@@ -1741,23 +1743,18 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 					insn.id = MIPS_INS_LD;
 				}
 
-				if (rs == 28) {
-					op->ptr = as->config->gp + imm;
-				} else {
-					op->ptr = imm;
-				}
-				if (rt == 25) {
-					pd->t9_pre = op->ptr;
-					RBin *bin = as->arch->binb.bin;
-					if (bin) {
-						const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
-						const int ptrsz = as->config->bits == 64? 8: 4;
-						ut8 v[8] = {0};
-						if (bin->iob.read_at (bin->iob.io, op->ptr, v, ptrsz)) {
-							pd->t9_pre = ptrsz == 8? r_read_ble64 (v, be): r_read_ble32 (v, be);
-						}
-					}
-				}
+		if (rs == 28) {
+			op->ptr = as->config->gp + imm;
+		} else {
+			op->ptr = imm;
+		}
+		if (rt == 25) {
+			pd->t9_pre = op->ptr;
+			const ut64 ptrv = mips_read_ptr_at (as->arch->binb.bin, op->ptr, R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config), as->config->bits);
+			if (ptrv != UT64_MAX) {
+				pd->t9_pre = ptrv;
+			}
+		}
 				op->type = R_ANAL_OP_TYPE_LOAD;
 				break;
 		case 36: // lbu
@@ -1992,9 +1989,7 @@ static bool init(RArchSession *as) {
 		R_LOG_WARN ("Already initialized");
 		return false;
 	}
-	if (as->config->gp != UT64_MAX && (as->config->gp & 0xf)) {
-		as->config->gp = (as->config->gp + 0xf) & ~(ut64)0xf;
-	}
+	as->config->gp = r_mips_align_gp (as->config->gp);
 	as->data = R_NEW0 (PluginData);
 	PluginData *pd = as->data;
 	if (!pd) {

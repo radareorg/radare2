@@ -3,6 +3,7 @@
 #define R_LOG_ORIGIN "cfile"
 
 #include <r_core.h>
+#include <r_mips.h>
 
 static bool close_but_cb(void *user, void *data, ut32 id) {
 	RCore *core = (RCore *)user;
@@ -30,20 +31,23 @@ static inline bool its_a_mips(RCore *core) {
 static void load_gp(RCore *core) {
 	// R2R db/cmd/cmd_eval
 	if (its_a_mips (core)) {
-		ut64 e0 = r_num_math (core->num, "entry0");
-		ut64 gp = r_num_math (core->num, "loc._gp");
-		if ((!gp || gp == UT64_MAX) && (e0 && e0 != UT64_MAX)) {
-			r_core_cmd0 (core, "aeim;s entry0;dr PC=entry0");
-			r_config_set (core->config, "anal.roregs", "zero"); // gp is writable here
-			r_core_cmd0 (core, "10aes");
-			gp = r_reg_getv (core->anal->reg, "gp");
-			r_core_cmd0 (core, "dr0;aeim");
-			r_reg_setv (core->anal->reg, "gp", gp);
-			r_config_set (core->config, "anal.roregs", "zero,gp");
-		}
+	ut64 e0 = r_num_math (core->num, "entry0");
+	ut64 gp = r_num_math (core->num, "loc._gp");
+	if ((!gp || gp == UT64_MAX) && (e0 && e0 != UT64_MAX)) {
+		r_core_cmd0 (core, "aeim;s entry0;dr PC=entry0");
+		r_config_set (core->config, "anal.roregs", "zero"); // gp is writable here
+		r_core_cmd0 (core, "10aes");
+		gp = r_reg_getv (core->anal->reg, "gp");
+		r_core_cmd0 (core, "dr0;aeim");
+		gp = r_mips_align_gp (gp);
 		if (gp != UT64_MAX) {
-			gp = (gp + 0xf) & ~(ut64)0xf;
+			r_reg_setv (core->anal->reg, "gp", gp);
 		}
+		r_config_set (core->config, "anal.roregs", "zero,gp");
+	}
+	if (gp != UT64_MAX) {
+		gp = r_mips_align_gp (gp);
+	}
 		R_LOG_DEBUG ("[mips] gp: 0x%08"PFMT64x, gp);
 		r_config_set_i (core->config, "anal.gp", gp);
 	}
