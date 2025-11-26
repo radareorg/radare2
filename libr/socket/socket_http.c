@@ -204,7 +204,9 @@ static char *socket_http_get_recursive(const char *url, const char **headers, in
 		if (headers) {
 			const char **header = headers;
 			while (*header) {
-				r_strbuf_appendf (sb, " -H '%s'", *header);
+				char *escaped_header = r_str_escape_sh (*header);
+				r_strbuf_appendf (sb, " -H '%s'", escaped_header);
+				free (escaped_header);
 				header++;
 			}
 		}
@@ -362,7 +364,9 @@ R_API char *r_socket_http_post(const char *url, const char *headers[], const cha
 		if (headers) {
 			const char **header = headers;
 			while (*header) {
-				r_strbuf_appendf (sb, " -H '%s'", *header);
+				char *escaped_header = r_str_escape_sh (*header);
+				r_strbuf_appendf (sb, " -H '%s'", escaped_header);
+				free (escaped_header);
 				header++;
 			}
 		}
