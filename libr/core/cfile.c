@@ -3,7 +3,6 @@
 #define R_LOG_ORIGIN "cfile"
 
 #include <r_core.h>
-#include <r_mips.h>
 
 static bool close_but_cb(void *user, void *data, ut32 id) {
 	RCore *core = (RCore *)user;
@@ -39,14 +38,16 @@ static void load_gp(RCore *core) {
 		r_core_cmd0 (core, "10aes");
 		gp = r_reg_getv (core->anal->reg, "gp");
 		r_core_cmd0 (core, "dr0;aeim");
-		gp = r_mips_align_gp (gp);
+		// Align MIPS GP to 16-byte boundary
+		gp = (gp == UT64_MAX)? gp: (gp + 0xf) & ~(ut64)0xf;
 		if (gp != UT64_MAX) {
 			r_reg_setv (core->anal->reg, "gp", gp);
 		}
 		r_config_set (core->config, "anal.roregs", "zero,gp");
 	}
 	if (gp != UT64_MAX) {
-		gp = r_mips_align_gp (gp);
+		// Align MIPS GP to 16-byte boundary
+		gp = (gp == UT64_MAX)? gp: (gp + 0xf) & ~(ut64)0xf;
 	}
 		R_LOG_DEBUG ("[mips] gp: 0x%08"PFMT64x, gp);
 		r_config_set_i (core->config, "anal.gp", gp);

@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #include <r_core.h>
-#include <r_mips.h>
 #include <r_types_base.h>
 #include <r_util/r_cfloat.h>
 
@@ -3308,7 +3307,7 @@ static bool cb_anal_roregs(RCore *core, RConfigNode *node) {
 
 static bool cb_anal_gp(RCore *core, RConfigNode *node) {
 	ut64 gpv = node->i_value;
-	gpv = r_mips_align_gp (gpv);
+	gpv = (gpv == UT64_MAX)? gpv: (gpv + 0xf) & ~(ut64)0xf;
 	node->i_value = gpv;
 	core->anal->gp = gpv;
 	r_reg_setv (core->anal->reg, "gp", gpv);

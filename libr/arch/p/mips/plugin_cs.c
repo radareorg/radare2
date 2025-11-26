@@ -2,7 +2,6 @@
 
 #include <r_asm.h>
 #include <r_endian.h>
-#include <r_mips.h>
 #include "mips_utils.h"
 #include <capstone/capstone.h>
 #include <capstone/mips.h>
@@ -881,9 +880,6 @@ static bool init(RArchSession *as) {
 		R_LOG_WARN ("Already initialized");
 		return false;
 	}
-
-	// Ensure GP is at least 16-byte aligned when provided by the binary loader.
-	as->config->gp = r_mips_align_gp (as->config->gp);
 
 	PluginData *pd = R_NEW0 (PluginData);
 	if (!pd) {

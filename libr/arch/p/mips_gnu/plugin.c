@@ -3,7 +3,6 @@
 #include <r_arch.h>
 #include "../../include/disas-asm.h"
 #include <r_endian.h>
-#include <r_mips.h>
 #include "../mips/mips_utils.h"
 #include "../../include/opcode/mips.h"
 
@@ -1797,18 +1796,14 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		// family = 'I';
 	}
 
-	if (op->type == R_ANAL_OP_TYPE_CJMP) {
-		switch (insn.id) {
-		case MIPS_INS_BEQC:
-		case MIPS_INS_BEQZC:
-		case MIPS_INS_BNEC:
-		case MIPS_INS_BNEZC:
-			op->delay = 0;
-			op->fail = addr + 4;
-			break;
-		default:
-			break;
-		}
+	switch (insn.id) {
+	case MIPS_INS_BEQC:
+	case MIPS_INS_BEQZC:
+	case MIPS_INS_BNEC:
+	case MIPS_INS_BNEZC:
+		op->delay = 0;
+		op->fail = addr + 4;
+		break;
 	}
 
 	if (mask & R_ARCH_OP_MASK_ESIL) {
@@ -1989,7 +1984,6 @@ static bool init(RArchSession *as) {
 		R_LOG_WARN ("Already initialized");
 		return false;
 	}
-	as->config->gp = r_mips_align_gp (as->config->gp);
 	as->data = R_NEW0 (PluginData);
 	PluginData *pd = as->data;
 	if (!pd) {

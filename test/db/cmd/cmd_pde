@@ -138,6 +138,23 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pde mips beql delay-slot layout
+FILE=malloc://12
+CMDS=<<EOF
+e asm.arch=mips
+e asm.bits=32
+e cfg.bigendian=true
+e asm.bytes=false
+wx 5000000127bdfff000000000
+pde 3
+EOF
+EXPECT=<<EOF
+0x00000000      beql zero, zero, 8
+0x00000004      addiu sp, sp, -0x10
+0x00000008      nop
+EOF
+RUN
+
 NAME=pde ppc
 FILE=bins/elf/hello.ppc
 CMDS=<<EOF
@@ -210,5 +227,23 @@ invalid
 0x0
 xor eax, eax
 ff
+EOF
+RUN
+
+NAME=pde with invalid instruction
+ARGS=-a x86 -b 32
+FILE=-
+CMDS=<<EOF
+wx 31c0ffc00000ffff90
+aei
+aeim
+aeip
+pdeqq
+EOF
+EXPECT=<<EOF
+xor eax, eax
+inc eax
+add byte [eax], al
+invalid
 EOF
 RUN
