@@ -4,6 +4,7 @@
 #include <r_util.h>
 #include <sdb/ht_uu.h>
 #include "pe.h"
+#include "dotnet.h"
 #include "r_util/r_str.h"
 
 #define PE_IMAGE_FILE_MACHINE_RPI2 452
@@ -1433,6 +1434,35 @@ static int read_image_clr_header(RBuffer *b, ut64 addr, PE_(image_clr_header) *h
 	return sizeof (PE_(image_clr_header));
 }
 
+static int bin_pe_init_dotnet_version(RBinPEObj* pe) {
+	if (!pe) {
+		return 0;
+	}
+
+	const ut8 *data = r_buf_data (pe->b, NULL);
+	size_t size = r_buf_size (pe->b);
+	if (!data || size == 0) {
+		return 0;
+	}
+
+	DotNetVersionInfo *version_info = dotnet_parse_version_info (data, (int)size);
+	if (!version_info) {
+		return 0;
+	}
+
+	// Store .NET version information in sdb
+	sdb_num_set (pe->kv, "dotnet.clr_major", version_info->cli_major, 0);
+	sdb_num_set (pe->kv, "dotnet.clr_minor", version_info->cli_minor, 0);
+	sdb_num_set (pe->kv, "dotnet.assembly_major", version_info->asm_major, 0);
+	sdb_num_set (pe->kv, "dotnet.assembly_minor", version_info->asm_minor, 0);
+	sdb_num_set (pe->kv, "dotnet.assembly_build", version_info->asm_build, 0);
+	sdb_num_set (pe->kv, "dotnet.assembly_revision", version_info->asm_revision, 0);
+
+	free (version_info->asm_name);
+	free (version_info);
+	return 1;
+}
+
 static int bin_pe_init_clr_hdr(RBinPEObj* pe) {
 	PE_(image_data_directory) * clr_dir = &pe->data_directory[PE_IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR];
 	PE_DWord image_clr_hdr_paddr = PE_(va2pa) (pe, clr_dir->VirtualAddress);
@@ -1459,6 +1489,10 @@ static int bin_pe_init_clr_hdr(RBinPEObj* pe) {
 	}
 
 	pe->clr_hdr = clr_hdr;
+
+	// Extract .NET version information from MSIL headers
+	bin_pe_init_dotnet_version (pe);
+
 	return 1;
 }
 

@@ -1,0 +1,138 @@
+NAME=.NET HelloWorld.dll info
+FILE=bins/dotnet/HelloWorld.dll
+CMDS=<<EOF
+echo headers
+i
+echo versions
+iV
+echo libraries
+il
+EOF
+EXPECT=<<EOF
+headers
+fd       3
+file     bins/dotnet/HelloWorld.dll
+size     0x1800
+humansz  6K
+mode     r-x
+format   pe
+iorw     false
+block    0x100
+type     DLL (Dynamic Link Library)
+arch     x86
+baddr    0x10000000
+binsz    6144
+bintype  pe
+bits     32
+canary   true
+injprot  false
+retguard false
+class    PE32
+cmp.csum 0x000106a2
+compiled Thu Mar 22 18:46:23 2046
+crypto   false
+dbg_file /Users/pancake/prg/radare2/csharp/obj/Debug/net6.0/HelloWorld.pdb
+endian   little
+havecode true
+hdr.csum 0x00000000
+guid     48778A3B5ABE4E35A087B05A6A190FDA1
+laddr    0x0
+lang     cil
+linenum  false
+lsyms    false
+machine  i386
+nx       true
+os       windows
+overlay  false
+cc       cdecl
+pic      true
+relocs   false
+signed   false
+sanitize false
+static   false
+stripped false
+subsys   Windows CUI
+va       true
+versions
+=== VS_VERSIONINFO ===
+
+# VS_FIXEDFILEINFO
+
+  Signature: 0xfeef04bd
+  StrucVersion: 0x10000
+  FileVersion: 1.0.0.0
+  ProductVersion: 1.0.0.0
+  FileFlagsMask: 0x3f
+  FileFlags: 0x0
+  FileOS: 0x4
+  FileType: 0x2
+  FileSubType: 0x0
+
+# StringTable
+
+  CompanyName: HelloWorld
+  FileDescription: HelloWorld
+  FileVersion: 1.0.0.0
+  InternalName: HelloWorld.dll
+  LegalCopyright:  
+  OriginalFilename: HelloWorld.dll
+  ProductName: HelloWorld
+  ProductVersion: 1.0.0+86ae458b7bc26b754891429eb3dc3fa8b8c0b39e
+  Assembly Version: 1.0.0.0
+libraries
+mscoree.dll
+EOF
+RUN
+
+NAME=.NET HelloWorld.dll symbols
+FILE=bins/dotnet/HelloWorld.dll
+CMDS=<<EOF
+echo imports
+ii
+echo symbols
+is
+EOF
+EXPECT=<<EOF
+imports
+nth vaddr      bind type lib         name
+-----------------------------------------
+1   0x10002000 NONE FUNC mscoree.dll _CorDllMain
+symbols
+nth paddr      vaddr      bind   type size lib         name                                               demangled
+-------------------------------------------------------------------------------------------------------------------
+1   0x00000200 0x10002000 NONE   FUNC 0    mscoree.dll imp._CorDllMain
+0   0x00002050 0x10002050 GLOBAL FUNC 0                BinaryParserLibrary.BinaryParser..ctor
+0   0x00002073 0x10002073 GLOBAL FUNC 0                BinaryParserLibrary.BinaryParser.LoadData
+0   0x00002084 0x10002084 GLOBAL FUNC 0                BinaryParserLibrary.BinaryParser.ValidateArgs
+0   0x000020bc 0x100020bc GLOBAL FUNC 0                BinaryParserLibrary.BinaryParser.ParseHeader
+0   0x00002124 0x10002124 GLOBAL FUNC 0                BinaryParserLibrary.BinaryParser.ProcessSections
+0   0x000021b4 0x100021b4 GLOBAL FUNC 0                BinaryParserLibrary.BinaryParser.CalculateChecksum
+0   0x00002218 0x10002218 GLOBAL FUNC 0                BinaryParserLibrary.BinaryParser.AnalyzeMetadata
+0   0x000022f4 0x100022f4 GLOBAL FUNC 0                BinaryParserLibrary.BinaryParser.RunAnalysis
+EOF
+RUN
+
+NAME=.NET HelloWorld.dll classes
+FILE=bins/dotnet/HelloWorld.dll
+CMDS=<<EOF
+ic
+EOF
+EXPECT=<<EOF
+0x00000000 [0x00000000 - 0x00000000]      0 msvc class 0 <Module>
+0x00000000 [0x10002073 - 0x100022f4]    641 msvc class 0 BinaryParserLibrary.BinaryParser
+0x10002073 ?   method   0      LoadData
+0x10002084 ?   method   1      ValidateArgs
+0x100020bc ?   method   2      ParseHeader
+0x10002124 ?   method   3      ProcessSections
+0x100021b4 ?   method   4      CalculateChecksum
+0x10002218 ?   method   5      AnalyzeMetadata
+0x100022f4 ?   method   6      RunAnalysis
+0x00000000 msvc    field   0      filePath
+0x00000000 msvc    field   1      data
+0x00000000 msvc    field   2      offset
+0x00000000 [0x00000000 - 0x00000000]      0 msvc class 0 <PrivateImplementationDetails>
+0x00000000 msvc    field   0      2E383FDDF78D1ACC795830F56B4EC6464E408C418E67ADD6FA4C017AFA618963
+0x00000000 [0x10002050 - 0x10002050]      0 msvc class 0 BinaryParserLibrary.BinaryParser.
+0x10002050 ?   method   0      ctor
+EOF
+RUN

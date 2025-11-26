@@ -118,6 +118,7 @@ r_bin_sources = [
   'format/pe/pe64_write.c',
   'format/pe/pe_write.c',
   'format/pe/pemixed.c',
+  'format/pe/dotnet.c',
   'format/te/te.c',
   'format/wasm/wasm.c',
   'format/zimg/zimg.c',

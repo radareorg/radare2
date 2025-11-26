@@ -454,6 +454,7 @@ RBinPlugin r_bin_plugin_pe = {
 	.info = &info,
 	.header = &header,
 	.fields = &fields,
+	.classes = &classes,
 	.libs = &libs,
 	.relocs = relocs,
 	.minstrlen = 4,

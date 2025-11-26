@@ -4608,6 +4608,47 @@ static void bin_pe_versioninfo(RCore *core, PJ *pj, int mode) {
 	} else {
 		pj_o (pj);
 	}
+
+	// Display .NET version information if available
+	ut64 dotnet_clr_major = sdb_num_get (core->sdb, "bin/cur/info/dotnet.clr_major", 0);
+	ut64 dotnet_clr_minor = sdb_num_get (core->sdb, "bin/cur/info/dotnet.clr_minor", 0);
+	if (dotnet_clr_major > 0 || dotnet_clr_minor > 0) {
+		if (IS_MODE_JSON (mode)) {
+			pj_ko (pj, "DotNetVersion");
+		} else {
+			r_cons_printf (core->cons, "# .NET Runtime Version\n\n");
+		}
+
+		if (IS_MODE_JSON (mode)) {
+			char *clr_version = r_str_newf ("%"PFMT64u".%"PFMT64u, dotnet_clr_major, dotnet_clr_minor);
+			pj_ks (pj, "CLRVersion", clr_version);
+			free (clr_version);
+		} else {
+			r_cons_printf (core->cons, "  CLRVersion: %"PFMT64u".%"PFMT64u"\n", dotnet_clr_major, dotnet_clr_minor);
+		}
+
+		ut64 dotnet_asm_major = sdb_num_get (core->sdb, "bin/cur/info/dotnet.assembly_major", 0);
+		ut64 dotnet_asm_minor = sdb_num_get (core->sdb, "bin/cur/info/dotnet.assembly_minor", 0);
+		ut64 dotnet_asm_build = sdb_num_get (core->sdb, "bin/cur/info/dotnet.assembly_build", 0);
+		ut64 dotnet_asm_revision = sdb_num_get (core->sdb, "bin/cur/info/dotnet.assembly_revision", 0);
+
+		if (dotnet_asm_major > 0 || dotnet_asm_minor > 0 || dotnet_asm_build > 0 || dotnet_asm_revision > 0) {
+			char *version_str = r_str_newf ("%"PFMT64u".%"PFMT64u".%"PFMT64u".%"PFMT64u,
+				dotnet_asm_major, dotnet_asm_minor, dotnet_asm_build, dotnet_asm_revision);
+			if (IS_MODE_JSON (mode)) {
+				pj_ks (pj, "AssemblyVersion", version_str);
+			} else {
+				r_cons_printf (core->cons, "  AssemblyVersion: %s\n", version_str);
+			}
+			free (version_str);
+		}
+
+		if (IS_MODE_JSON (mode)) {
+			pj_end (pj);
+		} else {
+			r_cons_newline (core->cons);
+		}
+	}
 	do {
 		char *path_version = r_str_newf (format_version, num_version);
 		sdb = sdb_ns_path (core->sdb, path_version, 0);

@@ -1,0 +1,28 @@
+NAME=.NET HelloWorld.exe info
+FILE=bins/dotnet/HelloWorld.exe
+CMDS=<<EOF
+i | head -20
+EOF
+EXPECT=<<EOF
+fd       3
+file     bins/dotnet/HelloWorld.exe
+size     0x24e00
+humansz  147.5K
+mode     r-x
+format   pe64
+iorw     false
+block    0x100
+type     EXEC (Executable file)
+arch     x86
+baddr    0x140000000
+binsz    151040
+bintype  pe
+bits     64
+canary   true
+injprot  false
+retguard false
+class    PE32+
+cmp.csum 0x0002ca10
+compiled Mon Oct 14 11:26:56 2024
+EOF
+RUN

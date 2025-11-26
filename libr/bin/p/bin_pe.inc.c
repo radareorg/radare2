@@ -3,6 +3,7 @@
 #include <r_bin.h>
 #include "../i/private.h"
 #include "pe/pe.h"
+#include "../format/pe/dotnet.h"
 
 static Sdb* get_sdb(RBinFile *bf) {
 	RBinPEObj *pe = PE_(get) (bf);
@@ -190,6 +191,173 @@ static void find_pe_overlay(RBinFile *bf) {
 	}
 }
 
+static RList* classes(RBinFile *bf) {
+	RList *ret = NULL;
+
+	if (!(ret = r_list_newf ((RListFree)r_bin_class_free))) {
+		return NULL;
+	}
+
+	RBinPEObj *pe = PE_(get) (bf);
+	if (!pe || !pe->dos_header || !pe->nt_headers) {
+		return ret;
+	}
+
+	RBuffer *buf = bf->buf;
+	const ut8 *data = r_buf_data (buf, NULL);
+	size_t size = r_buf_size (buf);
+	ut64 image_base = PE_(r_bin_pe_get_image_base)(pe);
+	RList *dotnet_symbols = dotnet_parse (data, size, image_base);
+	if (!dotnet_symbols || r_list_length (dotnet_symbols) == 0) {
+		if (dotnet_symbols) {
+			r_list_free (dotnet_symbols);
+		}
+		return ret;
+	}
+
+	// Process symbols - first create classes from typedefs, then add methods
+	RListIter *iter_sym;
+	DotNetSymbol *dsym;
+	// First pass: create class entries from typedef symbols
+	r_list_foreach (dotnet_symbols, iter_sym, dsym) {
+		if (!dsym->name || !dsym->type || strcmp (dsym->type, "typedef")) {
+			continue;
+		}
+		// Create full class name with namespace
+		char *class_name_full;
+		if (dsym->namespace && dsym->namespace[0] != '\0') {
+			class_name_full = r_str_newf ("%s.%s", dsym->namespace, dsym->name);
+		} else {
+			class_name_full = dsym->name;
+		}
+		// Check if class already exists
+		RBinClass *existing = NULL;
+		RListIter *iter_cls;
+		RBinClass *cls_iter;
+		r_list_foreach (ret, iter_cls, cls_iter) {
+			const char *cls_name = r_bin_name_tostring (cls_iter->name);
+			if (cls_name && !strcmp (cls_name, class_name_full)) {
+				existing = cls_iter;
+				break;
+			}
+		}
+		// Create new class if it doesn't exist
+		RBinClass *cls = NULL;
+		if (!existing) {
+			cls = r_bin_class_new (class_name_full, NULL, 0);
+			if (cls) {
+				cls->lang = R_BIN_LANG_MSVC;
+				r_list_append (ret, cls);
+			}
+		}
+		RBinClass *target_cls = existing ? existing : cls;
+		if (target_cls && dsym->fields) {
+			RListIter *iter_field;
+			DotNetField *dfield;
+			r_list_foreach (dsym->fields, iter_field, dfield) {
+				RBinField *field = R_NEW0 (RBinField);
+				if (field) {
+					field->name = r_bin_name_new (dfield->name);
+					field->kind = R_BIN_FIELD_KIND_FIELD;
+					field->vaddr = 0;
+					field->paddr = 0;
+					field->size = 0;
+					field->offset = dfield->offset;
+					r_list_append (target_cls->fields, field);
+				}
+			}
+		}
+		if (dsym->namespace && dsym->namespace[0] != '\0') {
+			free (class_name_full);
+		}
+	}
+	// Second pass: add methods to their corresponding classes
+	r_list_foreach (dotnet_symbols, iter_sym, dsym) {
+		if (!dsym->name || !dsym->type || strcmp (dsym->type, "methoddef")) {
+			continue;
+		}
+
+		// Method names in .NET are formatted as: Namespace.ClassName.MethodName
+		// or Namespace.ClassName+InnerClass.MethodName
+		// Try to find the dot that separates the class from the method by looking for the
+		// last dot where what follows it is a plausible method name (contains no further dots, + or `)
+		char *tmp = r_str_newf ("%s", dsym->name);
+		char *split_point = NULL;
+
+		// Start with the last dot and work backwards
+		char *current_search_start = tmp;
+		while ((split_point = strrchr (current_search_start, '.'))) {
+			*split_point = '\0'; // Temporarily null terminate to isolate method name
+			char *potential_method = split_point + 1;
+
+			// Check if this looks like a method name (no dots after this point)
+			if (strchr (potential_method, '.') == NULL) {
+				// This looks good, use this split point
+				*split_point = '\0'; // Keep it null terminated
+				break;
+			}
+
+			// Restore the dot and try the previous one
+			*split_point = '.';
+			current_search_start = split_point - 1;
+			if (current_search_start <= tmp) {
+				split_point = NULL;
+				break;
+			}
+		}
+
+		if (!split_point) {
+			// Fallback: use first dot if available
+			split_point = strchr (tmp, '.');
+		}
+
+		if (!split_point || split_point == tmp) {
+			free (tmp);
+			continue;
+		}
+
+		*split_point = '\0';
+		char *class_name_full = tmp;
+		char *method_name = split_point + 1;
+		// Look for existing class in result list or create new one
+		RBinClass *cls = NULL;
+		RListIter *iter_cls;
+		RBinClass *existing_cls;
+		r_list_foreach (ret, iter_cls, existing_cls) {
+			const char *cls_name = r_bin_name_tostring (existing_cls->name);
+			if (cls_name && !strcmp (cls_name, class_name_full)) {
+				cls = existing_cls;
+				break;
+			}
+		}
+		if (!cls) {
+			// Create new class if it doesn't exist
+			cls = r_bin_class_new (class_name_full, NULL, 0);
+			if (cls) {
+				cls->lang = R_BIN_LANG_MSVC;
+				r_list_append (ret, cls);
+			}
+		}
+		if (cls && method_name && *method_name) {
+			// Add this method to the class
+			RBinSymbol *method_sym = R_NEW0 (RBinSymbol);
+			if (method_sym) {
+				method_sym->name = r_bin_name_new (method_name);
+				method_sym->vaddr = dsym->vaddr + image_base;
+				method_sym->paddr = dsym->vaddr;
+				method_sym->bind = R_BIN_BIND_GLOBAL_STR;
+				method_sym->type = R_BIN_TYPE_FUNC_STR;
+				method_sym->size = dsym->size;
+				r_list_append (cls->methods, method_sym);
+			}
+		}
+		free (tmp);
+	}
+
+	r_list_free (dotnet_symbols);
+	return ret;
+}
+
 static RList* symbols(RBinFile *bf) {
 	RList *ret = NULL;
 	RBinSymbol *ptr = NULL;
@@ -240,6 +408,41 @@ static RList* symbols(RBinFile *bf) {
 		}
 		free (imports);
 	}
+
+	// Add .NET symbols if this is a .NET assembly
+	if (pe && pe->dos_header && pe->nt_headers) {
+		RBuffer *buf = bf->buf;
+		const ut8 *data = r_buf_data (buf, NULL);
+		size_t size = r_buf_size (buf);
+		ut64 image_base = PE_(r_bin_pe_get_image_base)(pe);
+		RList *dotnet_symbols = dotnet_parse (data, size, image_base);
+		if (dotnet_symbols && r_list_length (dotnet_symbols) > 0) {
+			RListIter *iter;
+			DotNetSymbol *dsym;
+			r_list_foreach (dotnet_symbols, iter, dsym) {
+				// Only add methoddef symbols, not typedefs (typedefs are used for classes)
+				if (!dsym->type || strcmp (dsym->type, "methoddef")) {
+					continue;
+				}
+				ptr = R_NEW0 (RBinSymbol);
+				if (dsym->namespace && dsym->namespace[0]) {
+					ptr->name = r_bin_name_new (r_str_newf ("%s.%s", dsym->namespace, dsym->name));
+				} else {
+					ptr->name = r_bin_name_new (dsym->name);
+				}
+				ptr->type = R_BIN_TYPE_FUNC_STR;
+				ptr->bind = R_BIN_BIND_GLOBAL_STR;
+				if (dsym->vaddr > 0) {
+					ptr->vaddr = dsym->vaddr + image_base;
+					ptr->paddr = dsym->vaddr;
+				}
+				ptr->size = dsym->size;
+				r_list_append (ret, ptr);
+			}
+			r_list_free (dotnet_symbols);
+		}
+	}
+
 	find_pe_overlay (bf);
 	return ret;
 }

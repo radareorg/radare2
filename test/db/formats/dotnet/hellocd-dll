@@ -1,0 +1,130 @@
+NAME=.NET hellocd.dll info
+FILE=bins/dotnet/hellocd.dll
+CMDS=<<EOF
+echo headers
+i
+echo versions
+iV
+echo libraries
+il
+EOF
+EXPECT=<<EOF
+headers
+fd       3
+file     bins/dotnet/hellocd.dll
+size     0x1200
+humansz  4.5K
+mode     r-x
+format   pe
+iorw     false
+block    0x100
+type     EXEC (Executable file)
+arch     x86
+baddr    0x400000
+binsz    4608
+bintype  pe
+bits     32
+canary   true
+injprot  false
+retguard false
+class    PE32
+cmp.csum 0x0000d487
+compiled Sat Jul 27 15:07:22 2097
+crypto   false
+dbg_file /Users/pancake/prg/dotnet/hellocd/obj/Release/net7.0/hellocd.pdb
+endian   little
+havecode true
+hdr.csum 0x00000000
+guid     75C14D5D8C5A454A9C32A5E0FAE6B1EC1
+laddr    0x0
+lang     cil
+linenum  false
+lsyms    false
+machine  i386
+nx       true
+os       windows
+overlay  false
+cc       cdecl
+pic      true
+relocs   false
+signed   false
+sanitize false
+static   false
+stripped false
+subsys   Windows CUI
+va       true
+versions
+=== VS_VERSIONINFO ===
+
+# VS_FIXEDFILEINFO
+
+  Signature: 0xfeef04bd
+  StrucVersion: 0x10000
+  FileVersion: 1.0.0.0
+  ProductVersion: 1.0.0.0
+  FileFlagsMask: 0x3f
+  FileFlags: 0x0
+  FileOS: 0x4
+  FileType: 0x1
+  FileSubType: 0x0
+
+# StringTable
+
+  CompanyName: hellocd
+  FileDescription: hellocd
+  FileVersion: 1.0.0.0
+  InternalName: hellocd.dll
+  LegalCopyright:  
+  OriginalFilename: hellocd.dll
+  ProductName: hellocd
+  ProductVersion: 1.0.0
+  Assembly Version: 1.0.0.0
+libraries
+mscoree.dll
+EOF
+RUN
+
+NAME=.NET hellocd dll symbols
+FILE=bins/dotnet/hellocd.dll
+CMDS=<<EOF
+echo imports
+ii
+echo symbols
+is
+EOF
+EXPECT=<<EOF
+imports
+nth vaddr      bind type lib         name
+-----------------------------------------
+1   0x00402000 NONE FUNC mscoree.dll _CorExeMain
+symbols
+nth paddr      vaddr      bind   type size lib         name                                                          demangled
+------------------------------------------------------------------------------------------------------------------------------
+1   0x00000200 0x00402000 NONE   FUNC 0    mscoree.dll imp._CorExeMain
+0   0x00002050 0x00402050 GLOBAL FUNC 0                Microsoft.CodeAnalysis.EmbeddedAttribute..ctor
+0   0x00002058 0x00402058 GLOBAL FUNC 0                System.Runtime.CompilerServices.RefSafetyRulesAttribute..ctor
+0   0x00002067 0x00402067 GLOBAL FUNC 0                Program.<Main>$
+0   0x00002073 0x00402073 GLOBAL FUNC 0                Program..ctor
+EOF
+RUN
+
+NAME=.NET hellocd dll classes
+FILE=bins/dotnet/hellocd.dll
+CMDS=<<EOF
+ic
+EOF
+EXPECT=<<EOF
+0x00000000 [0x00000000 - 0x00000000]      0 msvc class 0 <Module>
+0x00000000 [0x00000000 - 0x00000000]      0 msvc class 0 Microsoft.CodeAnalysis.EmbeddedAttribute
+0x00000000 [0x00000000 - 0x00000000]      0 msvc class 0 System.Runtime.CompilerServices.RefSafetyRulesAttribute
+0x00000000 msvc    field   0      Version
+0x00000000 [0x00402067 - 0x00402067]      0 msvc class 0 Program
+0x00402067 ?   method   0      <Main>$
+0x00000000 [0x00402050 - 0x00402050]      0 msvc class 0 Microsoft.CodeAnalysis.EmbeddedAttribute.
+0x00402050 ?   method   0      ctor
+0x00000000 [0x00402058 - 0x00402058]      0 msvc class 0 System.Runtime.CompilerServices.RefSafetyRulesAttribute.
+0x00402058 ?   method   0      ctor
+0x00000000 [0x00402073 - 0x00402073]      0 msvc class 0 Program.
+0x00402073 ?   method   0      ctor
+EOF
+RUN

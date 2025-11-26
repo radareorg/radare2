@@ -1,0 +1,25 @@
+NAME=dotnet hello world program
+FILE=bins/dotnet/HelloWorld.dll
+CMDS=<<EOF
+?e -- symbols
+is
+?e -- libraries
+il
+EOF
+EXPECT=<<EOF
+-- symbols
+nth paddr      vaddr      bind   type size lib         name                                               demangled
+-------------------------------------------------------------------------------------------------------------------
+1   0x00000200 0x10002000 NONE   FUNC 0    mscoree.dll imp._CorDllMain
+0   0x00002050 0x10002050 GLOBAL FUNC 0                BinaryParserLibrary.BinaryParser..ctor
+0   0x00002073 0x10002073 GLOBAL FUNC 0                BinaryParserLibrary.BinaryParser.LoadData
+0   0x00002084 0x10002084 GLOBAL FUNC 0                BinaryParserLibrary.BinaryParser.ValidateArgs
+0   0x000020bc 0x100020bc GLOBAL FUNC 0                BinaryParserLibrary.BinaryParser.ParseHeader
+0   0x00002124 0x10002124 GLOBAL FUNC 0                BinaryParserLibrary.BinaryParser.ProcessSections
+0   0x000021b4 0x100021b4 GLOBAL FUNC 0                BinaryParserLibrary.BinaryParser.CalculateChecksum
+0   0x00002218 0x10002218 GLOBAL FUNC 0                BinaryParserLibrary.BinaryParser.AnalyzeMetadata
+0   0x000022f4 0x100022f4 GLOBAL FUNC 0                BinaryParserLibrary.BinaryParser.RunAnalysis
+-- libraries
+mscoree.dll
+EOF
+RUN
