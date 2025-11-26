@@ -73,6 +73,14 @@ static char *r_core_prompt_substitute(RCore *core, char *key) {
 			return strdup (color_substs[i].color);
 		}
 	}
+	if (r_str_startswith (key, "pal:")) {
+		const char *pal_name = key + 4;
+		RColor rcolor = r_cons_pal_get (core->cons, pal_name);
+		if (rcolor.id16 != -1) {
+			return r_cons_rgb_str (core->cons, NULL, 0, &rcolor);
+		}
+		return NULL;
+	}
 	if (!strcmp (key, "filename") || !strcmp (key, "file")) {
 		if (r_config_get_b (core->config, "scr.prompt.file")) {
 			const char *fn = core->io->desc? r_file_basename (core->io->desc->name): "";
@@ -249,6 +257,7 @@ R_API void r_core_prompt_format_help(RCore *core) {
 		"$", "(...)", "inline r2 command output",
 		"$", "{COLOR}", "ANSI colors (e.g. ${RED})",
 		"$", "{BGCOLOR}", "background ANSI colors (e.g. ${BGRED})",
+		"$", "{pal:NAME}", "color from palette theme (see 'ec' command)",
 		"", "\\s", "literal space (use to keep trailing spaces)",
 		"$", "{RGB:r,g,b}", "RGB foreground color (0-255)",
 		"$", "{BGRGB:r,g,b}", "RGB background color (0-255)",
