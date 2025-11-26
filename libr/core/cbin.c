@@ -1300,10 +1300,10 @@ R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode) {
 		R_LOG_WARN ("Cannot find base address, flags will probably be misplaced");
 		baddr = 0;
 	}
-	RPdb pdb = {0};
+	RBinPdb pdb = {0};
 
 	pdb.cb_printf = r_cons_gprintf;
-	if (!init_pdb_parser (&pdb, file)) {
+	if (!r_bin_pdb_parser (&pdb, file)) {
 		if (pj || mode == 'j') {
 			pj_o (pj);
 			pj_end (pj);

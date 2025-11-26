@@ -1601,7 +1601,7 @@ R_API bool r_anal_esil_dfg_reg_is_const(RAnalEsilDFG *dfg, const char *reg);
 R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn);
 
 R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name);
-R_API void r_parse_pdb_types(const RAnal *anal, const RPdb *pdb);
+R_API void r_parse_pdb_types(const RAnal *anal, const RBinPdb *pdb);
 R_API void r_anal_save_base_type(const RAnal *anal, const RAnalBaseType *type);
 R_API void r_anal_base_type_free(RAnalBaseType *type);
 R_API RAnalBaseType *r_anal_base_type_new(RAnalBaseTypeKind kind);

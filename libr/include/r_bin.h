@@ -12,7 +12,6 @@
 typedef struct r_bin_t RBin;
 
 #include <r_bin_dwarf.h>
-#include <r_pdb.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -137,6 +136,27 @@ typedef enum {
 	R_STRING_TYPE_WIDE32 = 'W', // utf32
 	R_STRING_TYPE_BASE64 = 'b',
 } RStringType;
+
+// PDB BEGIN
+struct R_PDB7_ROOT_STREAM;
+
+typedef struct r_pdb_t {
+	bool (*pdb_parse)(struct r_pdb_t *pdb);
+	void (*finish_pdb_parse)(struct r_pdb_t *pdb);
+	void (*print_types)(const struct r_pdb_t *pdb, PJ *pj, int mode);
+	PrintfCallback cb_printf;
+	struct R_PDB7_ROOT_STREAM *root_stream;
+	void *stream_map;
+	RList *pdb_streams;
+	RList *pdb_streams2;
+	RBuffer *buf; // mmap of file
+	void (*print_gvars)(struct r_pdb_t *pdb, ut64 img_base, PJ *pj, int format);
+} RBinPdb;
+
+// TODO: use better api names
+R_API bool r_bin_pdb_parser(RBinPdb *pdb, const char *filename);
+R_API bool r_bin_pdb_parser_with_buf(RBinPdb *pdb, RBuffer *buf);
+// PDB END
 
 // used for symbols, classes, methods... generic for elf, dex, pe, swift, ...
 // unifies symbol flags, visibility, bind, type into a single generic field
@@ -1030,6 +1050,7 @@ extern RBinPlugin r_bin_plugin_tic;
 extern RBinPlugin r_bin_plugin_uf2;
 extern RBinPlugin r_bin_plugin_vsf;
 extern RBinPlugin r_bin_plugin_wad;
+extern RBinPlugin r_bin_plugin_pdb;
 extern RBinPlugin r_bin_plugin_wasm;
 extern RBinPlugin r_bin_plugin_xalz;
 extern RBinPlugin r_bin_plugin_xbe;

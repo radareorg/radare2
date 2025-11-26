@@ -1,4 +1,4 @@
-#include <r_pdb.h>
+#include <r_bin.h>
 #include <getopt.h>
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -20,7 +20,7 @@ static const struct option long_options[] = {
 };
 
 int main(int argc, char **argv) {
-	RPdb pdb;
+	RBinPdb pdb;
 
 	int option_index = 0;
 	char *pdb_file = 0;
@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
 		case 'f':
 			pdb_file = optarg;
 			strcpy (&pdb.file_name, optarg);
-			if (!init_pdb_parser (&pdb)) {
+			if (!r_bin_pdb_parser (&pdb)) {
 				R_LOG_ERROR ("Cannot initialize the pdb parser");
 				return 0;
 			}
