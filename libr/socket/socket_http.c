@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2024 - pancake */
+/* radare - LGPL - Copyright 2011-2025 - pancake */
 
 #include <r_socket.h>
 #include <r_util.h>
@@ -107,7 +107,7 @@ static char *socket_http_answer(RSocket *s, const char *headers[], int *code, in
 			olen -= (dn - buf);
 			memcpy (res, dn + delta, olen);
 			do {
-				ret = r_socket_read_block (s, (ut8*) res + olen, len - olen);
+				ret = r_socket_read_block (s, (ut8 *)res + olen, len - olen);
 				if (ret < 1) {
 					break;
 				}
@@ -136,7 +136,7 @@ exit:
 
 #if R2__WINDOWS__
 static char *http_get_w32(const char *url, int *code, int *rlen) {
-	HINTERNET hInternet = InternetOpenA ("radare2 "R2_VERSION, INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
+	HINTERNET hInternet = InternetOpenA ("radare2 " R2_VERSION, INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
 	if (!hInternet) {
 		r_sys_perror ("InternetOpenA");
 		return NULL;
@@ -163,7 +163,7 @@ static char *http_get_w32(const char *url, int *code, int *rlen) {
 			goto exit;
 		}
 		ret = tmp;
-	} while (!(res = InternetReadFile (hOpenUrl, ret + w, read_sz, &r)) || r);
+	} while (! (res = InternetReadFile (hOpenUrl, ret + w, read_sz, &r)) || r);
 
 	if (res) {
 		char *tmp = realloc (ret, (size_t)w + 1);
@@ -223,7 +223,7 @@ static char *socket_http_get_recursive(const char *url, const char **headers, in
 			return NULL;
 		}
 		RStrBuf *sb = r_strbuf_new ("curl -s -D ");
-		r_strbuf_appendf (sb, "'%s' -o '%s' -L", escaped_header_file, escaped_body_file);
+		r_strbuf_appendf (sb, "'%s' -o '%s' -L --max-redirs %u", escaped_header_file, escaped_body_file, redirections);
 		if (headers) {
 			const char **header = headers;
 			while (*header) {
@@ -348,11 +348,12 @@ static char *socket_http_get_recursive(const char *url, const char **headers, in
 	}
 	if (r_socket_connect_tcp (s, host, port, 0)) {
 		r_socket_printf (s,
-				"GET /%s HTTP/1.1\r\n"
-				"User-Agent: radare2 "R2_VERSION"\r\n"
-				"Accept: */*\r\n"
-				"Host: %s:%s\r\n"
-				"\r\n", path, host, port);
+			"GET /%s HTTP/1.1\r\n"
+			"User-Agent: radare2 " R2_VERSION "\r\n"
+			"Accept: */*\r\n"
+			"Host: %s:%s\r\n"
+			"\r\n",
+			path, host, port);
 		response = socket_http_answer (s, NULL, code, rlen, redirections);
 	} else {
 		R_LOG_ERROR ("Cannot connect to %s:%s", host, port);
@@ -372,6 +373,9 @@ R_API bool r_socket_http_download(const char *url, const char **headers, const c
 	int code, rlen;
 	char *data = r_socket_http_get (url, headers, &code, &rlen);
 	if (!data || code != 200) {
+		if (code != 200) {
+			R_LOG_ERROR ("HTTP download failed with status code %d", code);
+		}
 		free (data);
 		return false;
 	}
@@ -507,20 +511,21 @@ R_API char *r_socket_http_post(const char *url, const char *headers[], const cha
 	// RStrBuf *sb = r_strbuf_new ("POST /%s HTTP/1.0\r\n");
 	// char *data = r_strbuf_drain (sb);
 	r_socket_printf (s,
-			"POST /%s HTTP/1.0\r\n"
-			"User-Agent: radare2 "R2_VERSION"\r\n"
-			"Accept: */*\r\n"
-			"Host: %s:%d\r\n"
-			"Content-Length: %i\r\n"
-			"Content-Type: application/x-www-form-urlencoded\r\n"
-			"\r\n", path, host, atoi (port), (int)strlen (data));
+		"POST /%s HTTP/1.0\r\n"
+		"User-Agent: radare2 " R2_VERSION "\r\n"
+		"Accept: */*\r\n"
+		"Host: %s:%d\r\n"
+		"Content-Length: %i\r\n"
+		"Content-Type: application/x-www-form-urlencoded\r\n"
+		"\r\n",
+		path, host, atoi (port), (int)strlen (data));
 	free (uri);
 	r_socket_write (s, (void *)data, strlen (data));
 	return socket_http_answer (s, NULL, code, rlen, 0);
 }
 
 #if TEST
-void main () {
+void main() {
 	int ret;
 	char *p = r_socket_http_post ("https://www.radare.org/y/index.php", "a=b", &ret);
 	printf ("%s\n", p);
