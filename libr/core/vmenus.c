@@ -1720,15 +1720,15 @@ R_API int r_core_visual_classes(RCore *core) {
 
 static void anal_class_print(RCore *core, const char *class_name) {
 	RAnal *anal = core->anal;
-	RVector *bases = r_anal_class_base_get_all (anal, class_name);
-	RVector *vtables = r_anal_class_vtable_get_all (anal, class_name);
-	RVector *methods = r_anal_class_method_get_all (anal, class_name);
+	RVecAnalBaseClass *bases = r_anal_class_base_get_all (anal, class_name);
+	RVecAnalVTable *vtables = r_anal_class_vtable_get_all (anal, class_name);
+	RVecAnalMethod *methods = r_anal_class_method_get_all (anal, class_name);
 
 	r_cons_print (core->cons, class_name);
 	if (bases) {
 		RAnalBaseClass *base;
 		bool first = true;
-		r_vector_foreach (bases, base) {
+		R_VEC_FOREACH (bases, base) {
 			if (first) {
 				r_cons_print (core->cons, ": ");
 				first = false;
@@ -1737,23 +1737,23 @@ static void anal_class_print(RCore *core, const char *class_name) {
 			}
 			r_cons_print (core->cons, base->class_name);
 		}
-		r_vector_free (bases);
+		RVecAnalBaseClass_free (bases);
 	}
 	r_cons_print (core->cons, "\n");
 
 	if (vtables) {
 		RAnalVTable *vtable;
-		r_vector_foreach (vtables, vtable) {
+		R_VEC_FOREACH (vtables, vtable) {
 			r_cons_printf (core->cons, "  %2s vtable 0x%"PFMT64x" @ +0x%"PFMT64x" size:+0x%"PFMT64x"\n", vtable->id, vtable->addr, vtable->offset, vtable->size);
 		}
-		r_vector_free (vtables);
+		RVecAnalVTable_free (vtables);
 	}
 
 	r_cons_print (core->cons, "\n");
 
 	if (methods) {
 		RAnalMethod *meth;
-		r_vector_foreach (methods, meth) {
+		R_VEC_FOREACH (methods, meth) {
 			r_cons_printf (core->cons, "  %s @ 0x%"PFMT64x, meth->name, meth->addr);
 			if (meth->vtable_offset >= 0) {
 				r_cons_printf (core->cons, " (vtable + 0x%"PFMT64x")\n", (ut64)meth->vtable_offset);
@@ -1761,7 +1761,7 @@ static void anal_class_print(RCore *core, const char *class_name) {
 				r_cons_print (core->cons, "\n");
 			}
 		}
-		r_vector_free (methods);
+		RVecAnalMethod_free (methods);
 	}
 }
 
