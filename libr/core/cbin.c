@@ -2692,7 +2692,7 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 	bool firstexp = true;
 	bool printHere = (args && *args == '.');
 	bool none = true;
-	bool is_dotnet = info && !strcmp (info->lang, "cil");
+	bool is_dotnet = info && info->lang && !strcmp (info->lang, "cil");
 
 	int lastfs = 's';
 	RTable *table = r_core_table_new (core, "symbols");
