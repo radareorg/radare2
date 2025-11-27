@@ -184,6 +184,7 @@ static LPWCH override_env(const char *envvars[], const char *envvals[], size_t e
 		goto error;
 	}
 	ret = buf;
+	return ret;
 
 error:
 	if (parent_env) {
@@ -202,7 +203,17 @@ error:
 	free (buf);
 	return NULL;
 }
-argv[0] =(char *)file;
+
+R_API R2RSubprocess *r2r_subprocess_start(
+	const char *file, const char *args[], size_t args_size,
+	const char *envvars[], const char *envvals[], size_t env_size) {
+	char **argv = calloc (args_size + 1, sizeof (char *));
+	R2RSubprocess *proc = NULL;
+	HANDLE stdin_read = NULL, stdout_write = NULL, stderr_write = NULL;
+	if (!argv) {
+		return NULL;
+	}
+	argv[0] =(char *)file;
 if(args_size) {
 	memcpy (argv + 1, args, sizeof (char *) * args_size);
 }
