@@ -15,6 +15,7 @@
 #include <r_flag.h>
 #include <r_bin.h>
 #include <r_codemeta.h>
+#include <r_vec.h>
 #include <sdb/set.h>
 
 #ifdef __cplusplus
@@ -1544,6 +1545,15 @@ typedef enum {
 	R_ANAL_CLASS_ERR_OTHER
 } RAnalClassErr;
 
+// Forward declarations for fini functions
+R_API void r_anal_class_method_fini(RAnalMethod *meth);
+R_API void r_anal_class_base_fini(RAnalBaseClass *base);
+R_API void r_anal_class_vtable_fini(RAnalVTable *vtable);
+
+R_VEC_TYPE_WITH_FINI (RVecAnalMethod, RAnalMethod, r_anal_class_method_fini);
+R_VEC_TYPE_WITH_FINI (RVecAnalBaseClass, RAnalBaseClass, r_anal_class_base_fini);
+R_VEC_TYPE_WITH_FINI (RVecAnalVTable, RAnalVTable, r_anal_class_vtable_fini);
+
 /* c */
 R_API char *r_anal_cparse(RAnal *anal, const char *code, char **error_msg);
 R_API char *r_anal_cparse_file(RAnal *anal, const char *path, const char *dir, char **error_msg);
@@ -1555,22 +1565,19 @@ R_API SdbList *r_anal_class_get_all(RAnal *anal, bool sorted);
 R_API void r_anal_class_foreach(RAnal *anal, SdbForeachCallback cb, void *user);
 R_API RAnalClassErr r_anal_class_rename(RAnal *anal, const char *old_name, const char *new_name);
 
-R_API void r_anal_class_method_fini(RAnalMethod *meth);
 R_API RAnalClassErr r_anal_class_method_get(RAnal *anal, const char *class_name, const char *meth_name, RAnalMethod *meth);
-R_API RVector/*<RAnalMethod>*/ *r_anal_class_method_get_all(RAnal *anal, const char *class_name);
+R_API RVecAnalMethod *r_anal_class_method_get_all(RAnal *anal, const char *class_name);
 R_API RAnalClassErr r_anal_class_method_set(RAnal *anal, const char *class_name, RAnalMethod *meth);
 R_API RAnalClassErr r_anal_class_method_rename(RAnal *anal, const char *class_name, const char *old_meth_name, const char *new_meth_name);
 R_API RAnalClassErr r_anal_class_method_delete(RAnal *anal, const char *class_name, const char *meth_name);
 
-R_API void r_anal_class_base_fini(RAnalBaseClass *base);
 R_API RAnalClassErr r_anal_class_base_get(RAnal *anal, const char *class_name, const char *base_id, RAnalBaseClass *base);
-R_API RVector/*<RAnalBaseClass>*/ *r_anal_class_base_get_all(RAnal *anal, const char *class_name);
+R_API RVecAnalBaseClass *r_anal_class_base_get_all(RAnal *anal, const char *class_name);
 R_API RAnalClassErr r_anal_class_base_set(RAnal *anal, const char *class_name, RAnalBaseClass *base);
 R_API RAnalClassErr r_anal_class_base_delete(RAnal *anal, const char *class_name, const char *base_id);
 
-R_API void r_anal_class_vtable_fini(RAnalVTable *vtable);
 R_API RAnalClassErr r_anal_class_vtable_get(RAnal *anal, const char *class_name, const char *vtable_id, RAnalVTable *vtable);
-R_API RVector/*<RAnalVTable>*/ *r_anal_class_vtable_get_all(RAnal *anal, const char *class_name);
+R_API RVecAnalVTable *r_anal_class_vtable_get_all(RAnal *anal, const char *class_name);
 R_API RAnalClassErr r_anal_class_vtable_set(RAnal *anal, const char *class_name, RAnalVTable *vtable);
 R_API RAnalClassErr r_anal_class_vtable_delete(RAnal *anal, const char *class_name, const char *vtable_id);
 

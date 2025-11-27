@@ -540,22 +540,18 @@ R_API RAnalClassErr r_anal_class_method_get(RAnal *anal, const char *class_name,
 	return R_ANAL_CLASS_ERR_SUCCESS;
 }
 
-static void r_anal_class_method_fini_proxy(void *e, void *user) {
-	(void)user;
-	RAnalMethod *meth = e;
-	r_anal_class_method_fini (meth);
-}
 
-R_API RVector/*<RAnalMethod>*/ *r_anal_class_method_get_all(RAnal *anal, const char *class_name) {
+
+R_API RVecAnalMethod *r_anal_class_method_get_all(RAnal *anal, const char *class_name) {
 	R_RETURN_VAL_IF_FAIL (anal && class_name, NULL);
-	RVector *vec = r_vector_new (sizeof (RAnalMethod), r_anal_class_method_fini_proxy, NULL);
+	RVecAnalMethod *vec = RVecAnalMethod_new ();
 	if (!vec) {
 		return NULL;
 	}
 
 	char *class_name_sanitized = r_str_sanitize_sdb_key (class_name);
 	if (!class_name_sanitized) {
-		r_vector_free (vec);
+		RVecAnalMethod_free (vec);
 		return NULL;
 	}
 	char *attr_type_attrs_key = key_attr_type_attrs (class_name_sanitized,
@@ -565,15 +561,15 @@ R_API RVector/*<RAnalMethod>*/ *r_anal_class_method_get_all(RAnal *anal, const c
 	free (attr_type_attrs_key);
 
 	int amount = sdb_alen (array);
-	if (!r_vector_reserve (vec, (size_t) amount?amount:1)) {
-		r_vector_free (vec);
+	if (!RVecAnalMethod_reserve (vec, (size_t) amount?amount:1)) {
+		RVecAnalMethod_free (vec);
 		return NULL;
 	}
 	char *cur;
 	sdb_aforeach (cur, array) {
 		RAnalMethod meth;
 		if (r_anal_class_method_get (anal, class_name, cur, &meth) == R_ANAL_CLASS_ERR_SUCCESS) {
-			r_vector_push (vec, &meth);
+			RVecAnalMethod_push_back (vec, &meth);
 		}
 		sdb_aforeach_next (cur);
 	}
@@ -716,22 +712,18 @@ R_API RAnalClassErr r_anal_class_base_get(RAnal *anal, const char *class_name, c
 	return R_ANAL_CLASS_ERR_SUCCESS;
 }
 
-static void r_anal_class_base_fini_proxy(void *e, void *user) {
-	(void)user;
-	RAnalBaseClass *base = e;
-	r_anal_class_base_fini (base);
-}
 
-R_API RVector/*<RAnalBaseClass>*/ *r_anal_class_base_get_all(RAnal *anal, const char *class_name) {
+
+R_API RVecAnalBaseClass *r_anal_class_base_get_all(RAnal *anal, const char *class_name) {
 	R_RETURN_VAL_IF_FAIL (anal && class_name, NULL);
-	RVector *vec = r_vector_new (sizeof (RAnalBaseClass), r_anal_class_base_fini_proxy, NULL);
+	RVecAnalBaseClass *vec = RVecAnalBaseClass_new ();
 	if (!vec) {
 		return NULL;
 	}
 
 	char *class_name_sanitized = r_str_sanitize_sdb_key (class_name);
 	if (!class_name_sanitized) {
-		r_vector_free (vec);
+		RVecAnalBaseClass_free (vec);
 		return NULL;
 	}
 
@@ -742,15 +734,15 @@ R_API RVector/*<RAnalBaseClass>*/ *r_anal_class_base_get_all(RAnal *anal, const 
 	free (attr_type_attrs);
 
 	int amount = sdb_alen (array);
-	if (!r_vector_reserve (vec, (size_t)(amount > 0)? amount: 1)) {
-		r_vector_free (vec);
+	if (!RVecAnalBaseClass_reserve (vec, (size_t)(amount > 0)? amount: 1)) {
+		RVecAnalBaseClass_free (vec);
 		return NULL;
 	}
 	char *cur;
 	sdb_aforeach (cur, array) {
 		RAnalBaseClass base;
 		if (r_anal_class_base_get (anal, class_name, cur, &base) == R_ANAL_CLASS_ERR_SUCCESS) {
-			r_vector_push (vec, &base);
+			RVecAnalBaseClass_push_back (vec, &base);
 		}
 		sdb_aforeach_next (cur);
 	}
@@ -789,20 +781,20 @@ R_API RAnalClassErr r_anal_class_base_set(RAnal *anal, const char *class_name, R
 		free (base_class_name_sanitized);
 		return R_ANAL_CLASS_ERR_NONEXISTENT_CLASS;
 	}
-	RVector /*<RAnalBaseClass>*/ *bases = r_anal_class_base_get_all (anal, class_name);
+	RVecAnalBaseClass *bases = r_anal_class_base_get_all (anal, class_name);
 	if (bases) {
 		RAnalBaseClass *existing_base;
-		r_vector_foreach (bases, existing_base) {
+		R_VEC_FOREACH (bases, existing_base) {
 			if (!strcmp (existing_base->class_name, base->class_name)) {
 				free (base_class_name_sanitized);
-				r_vector_free (bases);
+				RVecAnalBaseClass_free (bases);
 				return R_ANAL_CLASS_ERR_OTHER;
 			}
 		}
 	}
 	RAnalClassErr err = r_anal_class_base_set_raw (anal, class_name, base, base_class_name_sanitized);
 	free (base_class_name_sanitized);
-	r_vector_free (bases);
+	RVecAnalBaseClass_free (bases);
 	return err;
 }
 
@@ -819,14 +811,14 @@ typedef struct {
 static bool r_anal_class_base_delete_class_cb(void *user, const char *k, const char *v) {
 	(void)v;
 	DeleteClassCtx *ctx = user;
-	RVector *bases = r_anal_class_base_get_all (ctx->anal, k);
+	RVecAnalBaseClass *bases = r_anal_class_base_get_all (ctx->anal, k);
 	RAnalBaseClass *base;
-	r_vector_foreach (bases, base) {
+	R_VEC_FOREACH (bases, base) {
 		if (base->class_name && strcmp (base->class_name, ctx->class_name) == 0) {
 			r_anal_class_base_delete (ctx->anal, k, base->id);
 		}
 	}
-	r_vector_free (bases);
+	RVecAnalBaseClass_free (bases);
 	return true;
 }
 
@@ -844,14 +836,14 @@ typedef struct {
 static bool r_anal_class_base_rename_class_cb(void *user, const char *k, const char *v) {
 	(void)v;
 	RenameClassCtx *ctx = user;
-	RVector *bases = r_anal_class_base_get_all (ctx->anal, k);
+	RVecAnalBaseClass *bases = r_anal_class_base_get_all (ctx->anal, k);
 	RAnalBaseClass *base;
-	r_vector_foreach (bases, base) {
+	R_VEC_FOREACH (bases, base) {
 		if (base->class_name && strcmp (base->class_name, ctx->class_name_old) == 0) {
 			r_anal_class_base_set_raw (ctx->anal, k, base, ctx->class_name_new);
 		}
 	}
-	r_vector_free (bases);
+	RVecAnalBaseClass_free (bases);
 	return 1;
 }
 
@@ -910,22 +902,18 @@ R_API RAnalClassErr r_anal_class_vtable_get(RAnal *anal, const char *class_name,
 	return R_ANAL_CLASS_ERR_SUCCESS;
 }
 
-static void r_anal_class_vtable_fini_proxy(void *e, void *user) {
-	(void)user;
-	RAnalVTable *vtable = e;
-	r_anal_class_vtable_fini (vtable);
-}
 
-R_API RVector/*<RAnalVTable>*/ *r_anal_class_vtable_get_all(RAnal *anal, const char *class_name) {
+
+R_API RVecAnalVTable *r_anal_class_vtable_get_all(RAnal *anal, const char *class_name) {
 	R_RETURN_VAL_IF_FAIL (anal && class_name, NULL);
-	RVector *vec = r_vector_new (sizeof (RAnalVTable), r_anal_class_vtable_fini_proxy, NULL);
+	RVecAnalVTable *vec = RVecAnalVTable_new ();
 	if (!vec) {
 		return NULL;
 	}
 
 	char *class_name_sanitized = r_str_sanitize_sdb_key (class_name);
 	if (!class_name_sanitized) {
-		r_vector_free (vec);
+		RVecAnalVTable_free (vec);
 		return NULL;
 	}
 
@@ -935,15 +923,15 @@ R_API RVector/*<RAnalVTable>*/ *r_anal_class_vtable_get_all(RAnal *anal, const c
 	free (class_name_sanitized);
 	free (attr_type_attrs);
 
-	if (!r_vector_reserve (vec, (size_t) sdb_alen (array))) {
-		r_vector_free (vec);
+	if (!RVecAnalVTable_reserve (vec, (size_t) sdb_alen (array))) {
+		RVecAnalVTable_free (vec);
 		return NULL;
 	}
 	char *cur;
 	sdb_aforeach (cur, array) {
 		RAnalVTable vtable;
 		if (r_anal_class_vtable_get (anal, class_name, cur, &vtable) == R_ANAL_CLASS_ERR_SUCCESS) {
-			r_vector_push (vec, &vtable);
+			RVecAnalVTable_push_back (vec, &vtable);
 		}
 		sdb_aforeach_next (cur);
 	}
@@ -953,17 +941,17 @@ R_API RVector/*<RAnalVTable>*/ *r_anal_class_vtable_get_all(RAnal *anal, const c
 }
 
 static bool vtable_exists_at(RAnal *anal, const char *class_name, ut64 addr) {
-	RVector *vtables = r_anal_class_vtable_get_all (anal, class_name);
+	RVecAnalVTable *vtables = r_anal_class_vtable_get_all (anal, class_name);
 	if (vtables) {
 		RAnalVTable *existing_vtable;
-		r_vector_foreach (vtables, existing_vtable) {
+		R_VEC_FOREACH (vtables, existing_vtable) {
 			if (addr == existing_vtable->addr) {
-				r_vector_free (vtables);
+				RVecAnalVTable_free (vtables);
 				return true;
 			}
 		}
 	}
-	r_vector_free (vtables);
+	RVecAnalVTable_free (vtables);
 	return false;
 }
 
@@ -1061,11 +1049,11 @@ R_API RAnalClassErr r_anal_class_vtable_delete(RAnal *anal, const char *class_na
 
 R_API char *r_anal_class_print(RAnal *anal, const char *class_name, bool detailed) {
 	RStrBuf *sb = r_strbuf_new (class_name);
-	RVector *bases = r_anal_class_base_get_all (anal, class_name);
+	RVecAnalBaseClass *bases = r_anal_class_base_get_all (anal, class_name);
 	if (bases) {
 		RAnalBaseClass *base;
 		bool first = true;
-		r_vector_foreach (bases, base) {
+		R_VEC_FOREACH (bases, base) {
 			if (first) {
 				r_strbuf_append (sb, ": ");
 				first = false;
@@ -1074,17 +1062,17 @@ R_API char *r_anal_class_print(RAnal *anal, const char *class_name, bool detaile
 			}
 			r_strbuf_append (sb, base->class_name);
 		}
-		r_vector_free (bases);
+		RVecAnalBaseClass_free (bases);
 	}
 
 	r_strbuf_append (sb, "\n");
 
 
 	if (detailed) {
-		RVector *vtables = r_anal_class_vtable_get_all (anal, class_name);
+		RVecAnalVTable *vtables = r_anal_class_vtable_get_all (anal, class_name);
 		if (vtables) {
 			RAnalVTable *vtable;
-			r_vector_foreach (vtables, vtable) {
+			R_VEC_FOREACH (vtables, vtable) {
 				r_strbuf_appendf (sb, "  (vtable at 0x%"PFMT64x, vtable->addr);
 				if (vtable->offset > 0) {
 					r_strbuf_appendf (sb, " in class at +0x%"PFMT64x")\n", vtable->offset);
@@ -1092,13 +1080,13 @@ R_API char *r_anal_class_print(RAnal *anal, const char *class_name, bool detaile
 					r_strbuf_append (sb, ")\n");
 				}
 			}
-			r_vector_free (vtables);
+			RVecAnalVTable_free (vtables);
 		}
 
-		RVector *methods = r_anal_class_method_get_all (anal, class_name);
+		RVecAnalMethod *methods = r_anal_class_method_get_all (anal, class_name);
 		if (methods) {
 			RAnalMethod *meth;
-			r_vector_foreach (methods, meth) {
+			R_VEC_FOREACH (methods, meth) {
 				r_strbuf_appendf (sb, "  %s @ 0x%"PFMT64x, meth->name, meth->addr);
 				if (meth->vtable_offset >= 0) {
 					r_strbuf_appendf (sb, " (vtable + 0x%"PFMT64x")\n", (ut64)meth->vtable_offset);
@@ -1106,38 +1094,38 @@ R_API char *r_anal_class_print(RAnal *anal, const char *class_name, bool detaile
 					r_strbuf_append (sb, "\n");
 				}
 			}
-			r_vector_free (methods);
+			RVecAnalMethod_free (methods);
 		}
 	}
 	return r_strbuf_drain (sb);
 }
 
 static void print_class(RAnal *anal, RStrBuf *sb, const char *class_name) {
-	RVector *bases = r_anal_class_base_get_all (anal, class_name);
+	RVecAnalBaseClass *bases = r_anal_class_base_get_all (anal, class_name);
 	if (bases) {
 		RAnalBaseClass *base;
-		r_vector_foreach (bases, base) {
+		R_VEC_FOREACH (bases, base) {
 			r_strbuf_appendf (sb, "'acb %s %s %"PFMT64u"\n", class_name, base->class_name, base->offset);
 		}
-		r_vector_free (bases);
+		RVecAnalBaseClass_free (bases);
 	}
 
-	RVector *vtables = r_anal_class_vtable_get_all (anal, class_name);
+	RVecAnalVTable *vtables = r_anal_class_vtable_get_all (anal, class_name);
 	if (vtables) {
 		RAnalVTable *vtable;
-		r_vector_foreach (vtables, vtable) {
+		R_VEC_FOREACH (vtables, vtable) {
 			r_strbuf_appendf (sb, "'acv %s 0x%"PFMT64x" %"PFMT64u"\n", class_name, vtable->addr, vtable->offset);
 		}
-		r_vector_free (vtables);
+		RVecAnalVTable_free (vtables);
 	}
 
-	RVector *methods = r_anal_class_method_get_all (anal, class_name);
+	RVecAnalMethod *methods = r_anal_class_method_get_all (anal, class_name);
 	if (methods) {
 		RAnalMethod *meth;
-		r_vector_foreach (methods, meth) {
+		R_VEC_FOREACH (methods, meth) {
 			r_strbuf_appendf (sb, "'acm %s %s 0x%"PFMT64x" %"PFMT64d"\n", class_name, meth->name, meth->addr, meth->vtable_offset);
 		}
-		r_vector_free (methods);
+		RVecAnalMethod_free (methods);
 	}
 }
 
@@ -1147,41 +1135,42 @@ R_API void r_anal_class_json(RAnal *anal, PJ *j, const char *class_name) {
 
 	pj_k (j, "bases");
 	pj_a (j);
-	RVector *bases = r_anal_class_base_get_all (anal, class_name);
+	RVecAnalBaseClass *bases = r_anal_class_base_get_all (anal, class_name);
 	if (bases) {
 		RAnalBaseClass *base;
-		r_vector_foreach (bases, base) {
+		R_VEC_FOREACH (bases, base) {
 			pj_o (j);
 			pj_ks (j, "id", base->id);
 			pj_ks (j, "name", base->class_name);
 			pj_kn (j, "offset", base->offset);
 			pj_end (j);
 		}
-		r_vector_free (bases);
+		RVecAnalBaseClass_free (bases);
 	}
 	pj_end (j);
 
 	pj_k (j, "vtables");
 	pj_a (j);
-	RVector *vtables = r_anal_class_vtable_get_all (anal, class_name);
+	RVecAnalVTable *vtables = r_anal_class_vtable_get_all (anal, class_name);
 	if (vtables) {
 		RAnalVTable *vtable;
-		r_vector_foreach (vtables, vtable) {
+		R_VEC_FOREACH (vtables, vtable) {
 			pj_o (j);
 			pj_ks (j, "id", vtable->id);
 			pj_kn (j, "addr", vtable->addr);
 			pj_kn (j, "offset", vtable->offset);
 			pj_end (j);
 		}
+		RVecAnalVTable_free (vtables);
 	}
 	pj_end (j);
 
 	pj_k (j, "methods");
 	pj_a (j);
-	RVector *methods = r_anal_class_method_get_all (anal, class_name);
+	RVecAnalMethod *methods = r_anal_class_method_get_all (anal, class_name);
 	if (methods) {
 		RAnalMethod *meth;
-		r_vector_foreach (methods, meth) {
+		R_VEC_FOREACH (methods, meth) {
 			pj_o (j);
 			pj_ks (j, "name", meth->name);
 			pj_kn (j, "addr", meth->addr);
@@ -1190,7 +1179,7 @@ R_API void r_anal_class_json(RAnal *anal, PJ *j, const char *class_name) {
 			}
 			pj_end (j);
 		}
-		r_vector_free (methods);
+		RVecAnalMethod_free (methods);
 	}
 	pj_end (j);
 
@@ -1264,13 +1253,13 @@ R_API char *r_anal_class_list_bases(RAnal *anal, const char *class_name) {
 	RStrBuf *sb = r_strbuf_newf ("%s:\n", class_name_sanitized);
 	free (class_name_sanitized);
 
-	RVector *bases = r_anal_class_base_get_all (anal, class_name);
+	RVecAnalBaseClass *bases = r_anal_class_base_get_all (anal, class_name);
 	if (bases) {
 		RAnalBaseClass *base;
-		r_vector_foreach (bases, base) {
+		R_VEC_FOREACH (bases, base) {
 			r_strbuf_appendf (sb, "  %4s %s @ +0x%"PFMT64x"\n", base->id, base->class_name, base->offset);
 		}
-		r_vector_free (bases);
+		RVecAnalBaseClass_free (bases);
 	}
 	return r_strbuf_drain (sb);
 }
@@ -1287,14 +1276,14 @@ R_API char *r_anal_class_list_vtables(RAnal *anal, const char *class_name) {
 	RStrBuf *sb = r_strbuf_newf ("%s:\n", class_name_sanitized);
 	free (class_name_sanitized);
 
-	RVector *vtables = r_anal_class_vtable_get_all (anal, class_name);
+	RVecAnalVTable *vtables = r_anal_class_vtable_get_all (anal, class_name);
 	if (vtables) {
 		RAnalVTable *vtable;
-		r_vector_foreach (vtables, vtable) {
+		R_VEC_FOREACH (vtables, vtable) {
 			r_strbuf_appendf (sb, "  %4s vtable 0x%"PFMT64x" @ +0x%"PFMT64x" size:+0x%"PFMT64x"\n",
 					vtable->id, vtable->addr, vtable->offset, vtable->size);
 		}
-		r_vector_free (vtables);
+		RVecAnalVTable_free (vtables);
 	}
 	return r_strbuf_drain (sb);
 }
@@ -1303,14 +1292,14 @@ static void list_all_functions_at_vtable_offset(RAnal *anal, const char *class_n
 	RVTableContext vtableContext;
 	r_anal_vtable_begin (anal, &vtableContext);
 	ut8 function_ptr_size = vtableContext.word_size;
-	RVector *vtables = r_anal_class_vtable_get_all (anal, class_name);
+	RVecAnalVTable *vtables = r_anal_class_vtable_get_all (anal, class_name);
 	if (!vtables) {
 		return;
 	}
 
 	ut64 func_address;
 	RAnalVTable *vtable;
-	r_vector_foreach (vtables, vtable) {
+	R_VEC_FOREACH (vtables, vtable) {
 		if (vtable->size < offset + function_ptr_size) {
 			continue;
 		}
@@ -1318,7 +1307,7 @@ static void list_all_functions_at_vtable_offset(RAnal *anal, const char *class_n
 			r_strbuf_appendf (sb, "Function address: 0x%08"PFMT64x", in %s vtable %s\n",
 					func_address, class_name, vtable->id);
 	}
-	r_vector_free (vtables);
+	RVecAnalVTable_free (vtables);
 }
 
 R_API char *r_anal_class_list_vtable_offset_functions(RAnal *anal, const char *class_name, ut64 offset) {
@@ -1388,12 +1377,12 @@ R_API RGraph *r_anal_class_get_inheritance_graph(RAnal *anal) {
 			ht_pp_insert (hashmap, name, curr_node);
 		}
 		// create edges between node and it's parents
-		RVector *bases = r_anal_class_base_get_all (anal, name);
+		RVecAnalBaseClass *bases = r_anal_class_base_get_all (anal, name);
 		if (!bases) {
 			goto failure;
 		}
 		RAnalBaseClass *base;
-		r_vector_foreach (bases, base) {
+		R_VEC_FOREACH (bases, base) {
 			bool base_found = false;
 			RGraphNode *base_node = ht_pp_find (hashmap, base->class_name, &base_found);
 			// If base isn't processed, do it now
@@ -1406,7 +1395,7 @@ R_API RGraph *r_anal_class_get_inheritance_graph(RAnal *anal) {
 			}
 			r_graph_add_edge (class_graph, base_node, curr_node);
 		}
-		r_vector_free (bases);
+		RVecAnalBaseClass_free (bases);
 	}
 	ls_free (classes);
 	ht_pp_free (hashmap);
