@@ -420,24 +420,41 @@ static RList* symbols(RBinFile *bf) {
 			RListIter *iter;
 			DotNetSymbol *dsym;
 			r_list_foreach (dotnet_symbols, iter, dsym) {
-				// Only add methoddef symbols, not typedefs (typedefs are used for classes)
-				if (!dsym->type || strcmp (dsym->type, "methoddef")) {
+				if (!dsym->type) {
 					continue;
 				}
-				ptr = R_NEW0 (RBinSymbol);
-				if (dsym->namespace && dsym->namespace[0]) {
-					ptr->name = r_bin_name_new (r_str_newf ("%s.%s", dsym->namespace, dsym->name));
-				} else {
-					ptr->name = r_bin_name_new (dsym->name);
+				if (!strcmp (dsym->type, "methoddef")) {
+					// Add methoddef at its RVA
+					ptr = R_NEW0 (RBinSymbol);
+					if (dsym->namespace && dsym->namespace[0]) {
+						ptr->name = r_bin_name_new (r_str_newf ("%s.%s", dsym->namespace, dsym->name));
+					} else {
+						ptr->name = r_bin_name_new (dsym->name);
+					}
+					ptr->type = R_BIN_TYPE_FUNC_STR;
+					ptr->bind = R_BIN_BIND_GLOBAL_STR;
+					if (dsym->vaddr > 0) {
+						ptr->vaddr = dsym->vaddr + image_base;
+						ptr->paddr = dsym->vaddr;
+					}
+					ptr->size = dsym->size;
+					r_list_append (ret, ptr);
 				}
-				ptr->type = R_BIN_TYPE_FUNC_STR;
-				ptr->bind = R_BIN_BIND_GLOBAL_STR;
-				if (dsym->vaddr > 0) {
-					ptr->vaddr = dsym->vaddr + image_base;
-					ptr->paddr = dsym->vaddr;
+				if (dsym->token && (!strcmp (dsym->type, "methoddef") || !strcmp (dsym->type, "memberref"))) {
+					// Add symbol at token address for disassembly resolution
+					ptr = R_NEW0 (RBinSymbol);
+					if (dsym->namespace && dsym->namespace[0]) {
+						ptr->name = r_bin_name_new (r_str_newf ("%s.%s", dsym->namespace, dsym->name));
+					} else {
+						ptr->name = r_bin_name_new (dsym->name);
+					}
+					ptr->type = R_BIN_TYPE_FUNC_STR;
+					ptr->bind = R_BIN_BIND_GLOBAL_STR;
+					ptr->vaddr = dsym->token;
+					ptr->paddr = 0;
+					ptr->size = 0;
+					r_list_append (ret, ptr);
 				}
-				ptr->size = dsym->size;
-				r_list_append (ret, ptr);
 			}
 			r_list_free (dotnet_symbols);
 		}

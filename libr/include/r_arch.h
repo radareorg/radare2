@@ -334,6 +334,7 @@ extern const RArchPlugin r_arch_plugin_uxn;
 extern const RArchPlugin r_arch_plugin_v810;
 extern const RArchPlugin r_arch_plugin_v850;
 extern const RArchPlugin r_arch_plugin_vax;
+extern const RArchPlugin r_arch_plugin_cil;
 extern const RArchPlugin r_arch_plugin_wasm;
 extern const RArchPlugin r_arch_plugin_ws;
 extern const RArchPlugin r_arch_plugin_x86_cs;
