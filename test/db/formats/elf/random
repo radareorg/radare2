@@ -1,6 +1,8 @@
 NAME=random39855 relocs
 FILE=bins/elf/random_39855/random_39855.oo
+ARGS=-e bin.relocs.apply=true
 CMDS=<<EOF
+e bin.relocs.apply=true
 s sym.func_9
 e asm.var.summary=0
 e emu.str=true
@@ -41,40 +43,15 @@ EXPECT=<<EOF
 |           0x08000828      011d00f9       str x1, [x8, 0x38]          ; arg2
 |           0x0800082c      031900f9       str x3, [x8, 0x30]          ; arg4
 |           0x08000830      041500f9       str x4, [x8, 0x28]          ; arg5
-|           0x08000834      08000090       adrp x8, segment.ehdr       ; 0x8000000; RELOC 32 .rodata @ 0x080057f8 + 0x18
-|           0x08000838      08010091       add x8, x8, 0               ; RELOC 32 .rodata @ 0x080057f8 + 0x18 ; segment.ehdr
-|           0x0800083c      0001c03d       ldr q0, [x8]                ; segment.ehdr
+|           0x08000834      280000b0       adrp x8, 0x8005000
+|           0x08000838      08412091       add x8, x8, 0x810           ; str.O_n_
+|           0x0800083c      0001c03d       ldr q0, [x8]                ; str.O_n_
 |           0x08000840      2001803d       str q0, [x9]
 |           0x08000844      080940f9       ldr x8, [x8, 0x10]
 |           0x08000848      280900f9       str x8, [x9, 0x10]
 |           0x0800084c      5f0000b9       str wzr, [x2]               ; arg3
 EOF
 EXPECT_ERR=<<EOF
-WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08000074
-WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x080000a0
-WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08000168
-WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08000200
-WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08000750
-WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08000834
-WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08000874
-WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08000ae4
-WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08000b00
-WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08001568
-WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08001574
-WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08001bec
-WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08001c0c
-WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08002254
-WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08002274
-WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08002298
-WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x080022bc
-WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08002830
-WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x0800283c
-WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08003444
-WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x080037dc
-WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08003974
-WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x080039a4
-WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x080039d8
-WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
 EOF
 RUN
 

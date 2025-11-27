@@ -660,13 +660,16 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 		case R_AARCH64_ABS16: ADD (16, 0); break;
 		// instructions
 		case R_AARCH64_ADR_PREL_PG_HI21:
-			R_LOG_WARN ("Poorly supported AARCH64 instruction reloc type %d at 0x%08"PFMT64x, rel->type, rel->rva);
-			ADD (32, 0);
-			break;
+		case R_AARCH64_ADR_PREL_PG_HI21_NC:
 		case R_AARCH64_ADD_ABS_LO12_NC:
-		case R_AARCH64_CALL26:
+		case R_AARCH64_LDST8_ABS_LO12_NC:
+		case R_AARCH64_LDST16_ABS_LO12_NC:
 		case R_AARCH64_LDST32_ABS_LO12_NC:
 		case R_AARCH64_LDST64_ABS_LO12_NC:
+		case R_AARCH64_LDST128_ABS_LO12_NC:
+			ADD (32, 0);
+			break;
+		case R_AARCH64_CALL26:
 			ADD (32, 0);
 			break;
 		case R_AARCH64_MOVW_UABS_G0:
@@ -1034,19 +1037,67 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 		iob->overlay_write_at (iob->io, rel->rva, buf, 4);
 		}
 		break;
-	case EM_AARCH64:
-		V = S + A;
-#if 0
-		r_write_le64 (buf, V);
-		iob->overlay_write_at (iob->io, rel->rva, buf, 8);
-#else
-		iob->read_at (iob->io, rel->rva, buf, 8);
-		// only patch the relocs that are initialized with zeroes
-		// if the destination contains a different value it's a constant useful for static analysis
-		ut64 addr = r_read_le64 (buf);
-		r_write_le64 (buf, addr? A: S);
-		iob->overlay_write_at (iob->io, rel->rva, buf, 8);
-#endif
+	case EM_AARCH64: {
+		ut32 insn = 0;
+		switch (rel->type) {
+		case R_AARCH64_ADR_PREL_PG_HI21:
+		case R_AARCH64_ADR_PREL_PG_HI21_NC: {
+			iob->read_at (iob->io, rel->rva, buf, 4);
+			insn = r_read_ble32 (buf, bo->endian);
+			st64 page_delta = ((S + A) & ~(st64)0xfff) - (P & ~(st64)0xfff);
+			st64 imm = page_delta >> 12;
+			ut32 immlo = (ut32)(imm & 3);
+			ut32 immhi = (ut32)((imm >> 2) & 0x7ffff);
+			insn &= ~((0x3 << 29) | (0x7ffff << 5));
+			insn |= (immlo << 29) | (immhi << 5);
+			r_write_ble32 (buf, insn, bo->endian);
+			iob->overlay_write_at (iob->io, rel->rva, buf, 4);
+			break;
+		}
+		case R_AARCH64_ADD_ABS_LO12_NC:
+		case R_AARCH64_LDST8_ABS_LO12_NC:
+		case R_AARCH64_LDST16_ABS_LO12_NC:
+		case R_AARCH64_LDST32_ABS_LO12_NC:
+		case R_AARCH64_LDST64_ABS_LO12_NC:
+		case R_AARCH64_LDST128_ABS_LO12_NC: {
+			iob->read_at (iob->io, rel->rva, buf, 4);
+			insn = r_read_ble32 (buf, bo->endian);
+			int shift = 0;
+			switch (rel->type) {
+			case R_AARCH64_LDST16_ABS_LO12_NC:
+				shift = 1;
+				break;
+			case R_AARCH64_LDST32_ABS_LO12_NC:
+				shift = 2;
+				break;
+			case R_AARCH64_LDST64_ABS_LO12_NC:
+				shift = 3;
+				break;
+			case R_AARCH64_LDST128_ABS_LO12_NC:
+				shift = 4;
+				break;
+			default:
+				shift = 0;
+				break;
+			}
+			ut32 imm12 = (ut32)(((S + A) >> shift) & 0xfff);
+			insn &= ~(0xfff << 10);
+			insn |= imm12 << 10;
+			r_write_ble32 (buf, insn, bo->endian);
+			iob->overlay_write_at (iob->io, rel->rva, buf, 4);
+			break;
+		}
+		default:
+			V = S + A;
+			iob->read_at (iob->io, rel->rva, buf, 8);
+			// only patch the relocs that are initialized with zeroes
+			// if the destination contains a different value it's a constant useful for static analysis
+			ut64 addr = r_read_ble64 (buf, bo->endian);
+			r_write_ble64 (buf, addr? A: S, bo->endian);
+			iob->overlay_write_at (iob->io, rel->rva, buf, 8);
+			break;
+		}
+		}
 		break;
 	case EM_PPC64: {
 		int low = 0, word = 0;
