@@ -50,6 +50,13 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			return true;
 		}
 		op->size = ci->size;
+		if (opcode == 0x45) { // switch
+			if (len < 5) {
+				return false;
+			}
+			ut32 count = r_read_le32 (buf + 1);
+			op->size = 5 + 4 * count;
+		}
 		if (len < op->size) {
 			return false;
 		}
@@ -107,6 +114,14 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case CIL_OP_NONE:
 		default:
 			break;
+		}
+		if (opcode == 0x45) { // switch
+			ut32 count = r_read_le32 (buf + 1);
+			for (ut32 i = 0; i < count; i++) {
+				st32 offset = r_read_le32 (buf + 5 + i * 4);
+				ut64 target = addr + op->size + offset;
+				mnemonic = r_str_appendf (mnemonic, i ? ", 0x%08" PFMT64x : " 0x%08" PFMT64x, target);
+			}
 		}
 		op->mnemonic = mnemonic;
 	}
