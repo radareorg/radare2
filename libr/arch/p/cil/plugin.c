@@ -115,12 +115,13 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		default:
 			break;
 		}
+		ut32 i;
 		if (opcode == 0x45) { // switch
 			ut32 count = r_read_le32 (buf + 1);
-			for (ut32 i = 0; i < count; i++) {
+			for (i = 0; i < count; i++) {
 				st32 offset = r_read_le32 (buf + 5 + i * 4);
 				ut64 target = addr + op->size + offset;
-				mnemonic = r_str_appendf (mnemonic, i ? ", 0x%08" PFMT64x : " 0x%08" PFMT64x, target);
+				mnemonic = r_str_appendf (mnemonic, i? ", 0x%08" PFMT64x: " 0x%08" PFMT64x, target);
 			}
 		}
 		op->mnemonic = mnemonic;
@@ -165,7 +166,8 @@ static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 		return false;
 	}
 	// Simple assembler for basic instructions
-	for (int i = 0; i < 256; i++) {
+	int i;
+	for (i = 0; i < 256; i++) {
 		if (cil_instructions[i].mnemonic && !strcmp (cil_instructions[i].mnemonic, op->mnemonic)) {
 			op->size = cil_instructions[i].size;
 			free (op->bytes);
@@ -177,7 +179,7 @@ static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 			return true;
 		}
 	}
-	for (int i = 0; i < 256; i++) {
+	for (i = 0; i < 256; i++) {
 		if (cil_fe_instructions[i].mnemonic && !strcmp (cil_fe_instructions[i].mnemonic, op->mnemonic)) {
 			op->size = cil_fe_instructions[i].size;
 			free (op->bytes);
