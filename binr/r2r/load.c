@@ -5,7 +5,7 @@
 
 #include "r2r.h"
 
-#define LINEFMT "%s, line %"PFMT64u": "
+#define LINEFMT "%s, line %" PFMT64u ": "
 
 R_API R2RCmdTest *r2r_cmd_test_new(void) {
 	return R_NEW0 (R2RCmdTest);
@@ -15,8 +15,8 @@ R_API void r2r_cmd_test_free(R2RCmdTest *test) {
 	if (!test) {
 		return;
 	}
-#define DO_KEY_STR(key, field) free (test->field.value);
-	R2R_CMD_TEST_FOREACH_RECORD(DO_KEY_STR, R2R_CMD_TEST_FOREACH_RECORD_NOP, R2R_CMD_TEST_FOREACH_RECORD_NOP)
+#define DO_KEY_STR(key, field) free(test->field.value);
+	R2R_CMD_TEST_FOREACH_RECORD (DO_KEY_STR, R2R_CMD_TEST_FOREACH_RECORD_NOP, R2R_CMD_TEST_FOREACH_RECORD_NOP)
 #undef DO_KEY_STR
 	free (test);
 }
@@ -49,7 +49,7 @@ static char *readline(char *buf, size_t *linesz) {
 // 4    ...
 //
 // if nextline is at the beginning of line 1,
-// read_string_val(&nextline, "<<EOF\0")
+// read_string_val (&nextline, "<<EOF\0")
 // will return "Hello\nWorld\n" with nextline being at the beginning of line 4 afterwards.
 static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
 	if (val[0] == '\'') {
@@ -152,8 +152,8 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 				R_LOG_ERROR (LINEFMT ": Test without CMDS key", file, linenum);
 				goto fail;
 			}
-			if (!(test->expect.value || test->expect_err.value)) {
-				if (!(test->regexp_out.value || test->regexp_err.value)) {
+			if (! (test->expect.value || test->expect_err.value)) {
+				if (! (test->regexp_out.value || test->regexp_err.value)) {
 					R_LOG_ERROR (LINEFMT ": Test without EXPECT or EXPECT_ERR key, missing EOF?", file, linenum);
 					goto fail;
 				}
@@ -167,86 +167,86 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 		}
 
 #define DO_KEY_STR(key, field) \
-		if (!strcmp (line, key)) { \
-			if (test->field.value) { \
-				free (test->field.value); \
-				R_LOG_WARN (LINEFMT ": Duplicate key \"%s\"", file, linenum, key); \
-			} \
-			if (!val) { \
-				R_LOG_ERROR (LINEFMT ": No value for key \"%s\"", file, linenum, key); \
-				goto fail; \
-			} \
-			test->field.line_begin = linenum; \
-			test->field.value = read_string_val (&nextline, val, &linenum); \
-			test->field.line_end = linenum + 1; \
-			if (!test->field.value) { \
-				R_LOG_ERROR (LINEFMT ": Failed to read value for key \"%s\"", file, linenum, key); \
-				goto fail; \
-			} \
-			continue; \
-		}
+	if (!strcmp (line, key)) { \
+		if (test->field.value) { \
+			free (test->field.value); \
+			R_LOG_WARN (LINEFMT ": Duplicate key \"%s\"", file, linenum, key); \
+		} \
+		if (!val) { \
+			R_LOG_ERROR (LINEFMT ": No value for key \"%s\"", file, linenum, key); \
+			goto fail; \
+		} \
+		test->field.line_begin = linenum; \
+		test->field.value = read_string_val (&nextline, val, &linenum); \
+		test->field.line_end = linenum + 1; \
+		if (!test->field.value) { \
+			R_LOG_ERROR (LINEFMT ": Failed to read value for key \"%s\"", file, linenum, key); \
+			goto fail; \
+		} \
+		continue; \
+	}
 
 #define DO_KEY_BOOL(key, field) \
-		if (!strcmp (line, key)) { \
-			if (test->field.value) { \
-				R_LOG_WARN (LINEFMT ": Duplicate key \"%s\"", file, linenum, key); \
-			} \
-			test->field.set = true; \
-			if (!val) { \
-				R_LOG_ERROR (LINEFMT ": No value for key \"%s\"", file, linenum, key); \
-				goto fail; \
-			} \
-			/* Strip comment */ \
-			char *cmt = strchr (val, '#'); \
-			if (cmt) { \
+	if (!strcmp (line, key)) { \
+		if (test->field.value) { \
+			R_LOG_WARN (LINEFMT ": Duplicate key \"%s\"", file, linenum, key); \
+		} \
+		test->field.set = true; \
+		if (!val) { \
+			R_LOG_ERROR (LINEFMT ": No value for key \"%s\"", file, linenum, key); \
+			goto fail; \
+		} \
+		/* Strip comment */ \
+		char *cmt = strchr (val, '#'); \
+		if (cmt) { \
+			*cmt = '\0'; \
+			cmt--; \
+			while (cmt > val && *cmt == ' ') { \
 				*cmt = '\0'; \
 				cmt--; \
-				while (cmt > val && *cmt == ' ') { \
-					*cmt = '\0'; \
-					cmt--; \
-				} \
 			} \
-			if (!strcmp (val, "1")) { \
-				test->field.value = true; \
-			} else if (!strcmp (val, "0")) { \
-				test->field.value = false; \
-			} else { \
-				R_LOG_ERROR (LINEFMT ": Invalid value \"%s\" for boolean key \"%s\", only \"1\" or \"0\" allowed", file, linenum, val, key); \
-				goto fail; \
-			} \
-			continue; \
-		}
+		} \
+		if (!strcmp (val, "1")) { \
+			test->field.value = true; \
+		} else if (!strcmp (val, "0")) { \
+			test->field.value = false; \
+		} else { \
+			R_LOG_ERROR (LINEFMT ": Invalid value \"%s\" for boolean key \"%s\", only \"1\" or \"0\" allowed", file, linenum, val, key); \
+			goto fail; \
+		} \
+		continue; \
+	}
 
 #define DO_KEY_NUM(key, field) \
-		if (!strcmp (line, key)) { \
-			if (test->field.value) { \
-				R_LOG_WARN (LINEFMT ": Duplicate key \"%s\"", file, linenum, key); \
-			} \
-			test->field.set = true; \
-			if (!val) { \
-				R_LOG_ERROR (LINEFMT ": No value for key \"%s\"", file, linenum, key); \
-				goto fail; \
-			} \
-			/* Strip comment */ \
-			char *cmt = strchr (val, '#'); \
-			if (cmt) { \
+	if (!strcmp (line, key)) { \
+		if (test->field.value) { \
+			R_LOG_WARN (LINEFMT ": Duplicate key \"%s\"", file, linenum, key); \
+		} \
+		test->field.set = true; \
+		if (!val) { \
+			R_LOG_ERROR (LINEFMT ": No value for key \"%s\"", file, linenum, key); \
+			goto fail; \
+		} \
+		/* Strip comment */ \
+		char *cmt = strchr (val, '#'); \
+		if (cmt) { \
+			*cmt = '\0'; \
+			cmt--; \
+			while (cmt > val && *cmt == ' ') { \
 				*cmt = '\0'; \
 				cmt--; \
-				while (cmt > val && *cmt == ' ') { \
-					*cmt = '\0'; \
-					cmt--; \
-				} \
 			} \
-			char *endval; \
-			test->field.value = strtol (val, &endval, 0); \
-			if (!endval || *endval) { \
-				R_LOG_ERROR (LINEFMT ": Invalid value \"%s\" for numeric key \"%s\", only numbers allowed", file, linenum, val, key); \
-				goto fail; \
-			} \
-			continue; \
-		}
+		} \
+		char *endval; \
+		test->field.value = strtol (val, &endval, 0); \
+		if (!endval || *endval) { \
+			R_LOG_ERROR (LINEFMT ": Invalid value \"%s\" for numeric key \"%s\", only numbers allowed", file, linenum, val, key); \
+			goto fail; \
+		} \
+		continue; \
+	}
 
-		R2R_CMD_TEST_FOREACH_RECORD(DO_KEY_STR, DO_KEY_BOOL, DO_KEY_NUM)
+		R2R_CMD_TEST_FOREACH_RECORD (DO_KEY_STR, DO_KEY_BOOL, DO_KEY_NUM)
 #undef DO_KEY_STR
 #undef DO_KEY_BOOL
 #undef DO_KEY_NUM
@@ -377,7 +377,7 @@ R_API RPVector *r2r_load_asm_test_file(RStrConstPool *strpool, const char *file)
 			}
 			line++;
 		}
-		if (!(mode & R2R_ASM_TEST_MODE_ASSEMBLE) && !(mode & R2R_ASM_TEST_MODE_DISASSEMBLE)) {
+		if (! (mode & R2R_ASM_TEST_MODE_ASSEMBLE) && ! (mode & R2R_ASM_TEST_MODE_DISASSEMBLE)) {
 			R_LOG_WARN (LINEFMT "Mode specifies neither assemble nor disassemble", file, linenum);
 			continue;
 		}
@@ -436,7 +436,7 @@ R_API RPVector *r2r_load_asm_test_file(RStrConstPool *strpool, const char *file)
 		test->arch = arch;
 		test->cpu = cpu;
 		test->mode = mode;
-		test->offset = offset ? (ut64)strtoull (offset, NULL, 0) : 0;
+		test->offset = offset? (ut64)strtoull (offset, NULL, 0): 0;
 		test->disasm = strdup (disasm);
 		test->bytes = bytes;
 		test->bytes_size = (size_t)bytesz;
@@ -512,7 +512,7 @@ R_API RPVector *r2r_load_json_test_file(const char *file) {
 			r2r_json_test_free (test);
 			break;
 		}
-		test->broken = broken_token ? true : false;
+		test->broken = broken_token? true: false;
 		r_pvector_push (ret, test);
 	} while ((line = nextline));
 
@@ -602,10 +602,10 @@ static R2RTestType test_type_for_path(const char *path, bool *load_plugins) {
 static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 #if WANT_V35 == 0
 	R2RTestToSkip v35_tests_to_skip[] = {
-		{"asm", "arm.v35_64"},
-		{"esil", "arm_64"},
-		{"cmd", "cmd_open"},
-		{"tools", "rasm2"},
+		{ "asm", "arm.v35_64" },
+		{ "esil", "arm_64" },
+		{ "cmd", "cmd_open" },
+		{ "tools", "rasm2" },
 	};
 #endif
 
@@ -632,7 +632,7 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 			}
 			if (!strcmp (subname, "extras")) {
 				// Only load "extras" dirs if explicitly specified
-				R_LOG_WARN ("Skipping %s"R_SYS_DIR"%s because it requires additional dependencies", path, subname);
+				R_LOG_WARN ("Skipping %s" R_SYS_DIR "%s because it requires additional dependencies", path, subname);
 				continue;
 			}
 #if WANT_V35 == 0
@@ -640,10 +640,10 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 			size_t i = 0;
 			for (; i < sizeof (v35_tests_to_skip) / sizeof (R2RTestToSkip); i++) {
 				R2RTestToSkip test = v35_tests_to_skip[i];
-				bool is_dir = r_str_endswith (path, r_str_newf(R_SYS_DIR"%s", test.dir));
+				bool is_dir = r_str_endswith (path, r_str_newf (R_SYS_DIR "%s", test.dir));
 				if (is_dir) {
 					if (!strcmp (subname, test.name)) {
-						R_LOG_WARN ("Skipping test %s"R_SYS_DIR"%s because it requires binary ninja", path, subname);
+						R_LOG_WARN ("Skipping test %s" R_SYS_DIR "%s because it requires binary ninja", path, subname);
 						skip = true;
 						break;
 					}
@@ -653,13 +653,13 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 				continue;
 			}
 #endif
-			if (skip_asm && strstr (path, R_SYS_DIR"asm"R_SYS_DIR)) {
+			if (skip_asm && strstr (path, R_SYS_DIR "asm" R_SYS_DIR)) {
 				R_LOG_INFO ("R2R_SKIP_ASM: Skipping %s", path);
 				continue;
 			}
-			bool is_archos_folder = !strcmp (path, "archos") || r_str_endswith (path, R_SYS_DIR"archos");
+			bool is_archos_folder = !strcmp (path, "archos") || r_str_endswith (path, R_SYS_DIR "archos");
 			if (is_archos_folder && (skip_archos || strcmp (subname, archos))) {
-				R_LOG_INFO ("Skipping %s"R_SYS_DIR"%s because it does not match the current platform \"%s\"", path, subname, archos);
+				R_LOG_INFO ("Skipping %s" R_SYS_DIR "%s because it does not match the current platform \"%s\"", path, subname, archos);
 				continue;
 			}
 			r_strbuf_setf (&subpath, "%s%s%s", path, R_SYS_DIR, subname);
@@ -683,65 +683,68 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 	bool load_plugins = false;
 	R2RTestType test_type = test_type_for_path (path, &load_plugins);
 	switch (test_type) {
-	case R2R_TEST_TYPE_CMD: {
-		RPVector *cmd_tests = r2r_load_cmd_test_file (path);
-		if (!cmd_tests) {
-			return false;
-		}
-		void **it;
-		r_pvector_foreach (cmd_tests, it) {
-			R2RTest *test = R_NEW (R2RTest);
-			if (!test) {
-				continue;
+	case R2R_TEST_TYPE_CMD:
+		{
+			RPVector *cmd_tests = r2r_load_cmd_test_file (path);
+			if (!cmd_tests) {
+				return false;
 			}
-			test->type = R2R_TEST_TYPE_CMD;
-			test->path = pooled_path;
-			test->cmd_test = *it;
-			test->cmd_test->load_plugins = load_plugins;
-			r_pvector_push (&db->tests, test);
-		}
-		r_pvector_free (cmd_tests);
-		break;
-	}
-	case R2R_TEST_TYPE_ASM: {
-		RPVector *asm_tests = r2r_load_asm_test_file (&db->strpool, path);
-		if (!asm_tests) {
-			return false;
-		}
-		void **it;
-		r_pvector_foreach (asm_tests, it) {
-			R2RTest *test = R_NEW (R2RTest);
-			if (!test) {
-				continue;
+			void **it;
+			r_pvector_foreach (cmd_tests, it) {
+				R2RTest *test = R_NEW (R2RTest);
+				if (!test) {
+					continue;
+				}
+				test->type = R2R_TEST_TYPE_CMD;
+				test->path = pooled_path;
+				test->cmd_test = *it;
+				test->cmd_test->load_plugins = load_plugins;
+				r_pvector_push (&db->tests, test);
 			}
-			test->type = R2R_TEST_TYPE_ASM;
-			test->path = pooled_path;
-			test->asm_test = *it;
-			r_pvector_push (&db->tests, test);
+			r_pvector_free (cmd_tests);
+			break;
 		}
-		r_pvector_free (asm_tests);
-		break;
-	}
-	case R2R_TEST_TYPE_JSON: {
-		RPVector *json_tests = r2r_load_json_test_file (path);
-		if (!json_tests) {
-			return false;
-		}
-		void **it;
-		r_pvector_foreach (json_tests, it) {
-			R2RTest *test = R_NEW (R2RTest);
-			if (!test) {
-				continue;
+	case R2R_TEST_TYPE_ASM:
+		{
+			RPVector *asm_tests = r2r_load_asm_test_file (&db->strpool, path);
+			if (!asm_tests) {
+				return false;
 			}
-			test->type = R2R_TEST_TYPE_JSON;
-			test->path = pooled_path;
-			test->json_test = *it;
-			test->json_test->load_plugins = load_plugins;
-			r_pvector_push (&db->tests, test);
+			void **it;
+			r_pvector_foreach (asm_tests, it) {
+				R2RTest *test = R_NEW (R2RTest);
+				if (!test) {
+					continue;
+				}
+				test->type = R2R_TEST_TYPE_ASM;
+				test->path = pooled_path;
+				test->asm_test = *it;
+				r_pvector_push (&db->tests, test);
+			}
+			r_pvector_free (asm_tests);
+			break;
 		}
-		r_pvector_free (json_tests);
-		break;
-	}
+	case R2R_TEST_TYPE_JSON:
+		{
+			RPVector *json_tests = r2r_load_json_test_file (path);
+			if (!json_tests) {
+				return false;
+			}
+			void **it;
+			r_pvector_foreach (json_tests, it) {
+				R2RTest *test = R_NEW (R2RTest);
+				if (!test) {
+					continue;
+				}
+				test->type = R2R_TEST_TYPE_JSON;
+				test->path = pooled_path;
+				test->json_test = *it;
+				test->json_test->load_plugins = load_plugins;
+				r_pvector_push (&db->tests, test);
+			}
+			r_pvector_free (json_tests);
+			break;
+		}
 	case R2R_TEST_TYPE_FUZZ:
 		// shouldn't come here, fuzz tests are loaded differently
 		break;
