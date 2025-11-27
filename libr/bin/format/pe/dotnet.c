@@ -634,6 +634,7 @@ static void dotnet_parse_tilde_methoddef(
 					sym->vaddr = rva; // RVA from the method table
 					sym->size = 0;
 					sym->type = strdup ("methoddef");
+					sym->token = 0x06000000 | method_idx;
 					r_list_append (symbols, sym);
 				}
 
@@ -641,6 +642,43 @@ static void dotnet_parse_tilde_methoddef(
 			}
 			// Successfully parsed MethodDef, continue to process other tables
 			table_offset += (4 + 2 + 2 + index_sizes.string + index_sizes.blob + param_index_size) * num_rows;
+			matched_bits++;
+			continue;
+		} else if (bit_check == BIT_MEMBERREF) {
+			// Parse MemberRef table
+			// Structure: Class (coded_idx) Name (string) Signature (blob)
+			row_count = max_rows (4, rows.methoddef, rows.memberref, rows.typeref, rows.typespec);
+			uint8_t class_index_size = (row_count > (0xFFFF >> 0x03))? 4: 2;
+
+			row_ptr = table_offset;
+			for (i = 0; i < num_rows; i++) {
+				uint32_t row_size = class_index_size + index_sizes.string + index_sizes.blob;
+
+				if (!fits_in_pe (pe, row_ptr, row_size)) {
+					break;
+				}
+
+				// Name
+				if (index_sizes.string == 4) {
+					name = pe_get_dotnet_string (pe, string_offset, *(ut32 *) (row_ptr + class_index_size));
+				} else {
+					name = pe_get_dotnet_string (pe, string_offset, *(ut16 *) (row_ptr + class_index_size));
+				}
+
+				if (name && name[0] != '\0') {
+					DotNetSymbol *sym = R_NEW0 (DotNetSymbol);
+					sym->name = strdup (name);
+					sym->vaddr = 0; // MemberRef don't have RVA
+					sym->size = 0;
+					sym->type = strdup ("memberref");
+					sym->token = 0x0A000000 | (i + 1);
+					r_list_append (symbols, sym);
+				}
+
+				row_ptr += row_size;
+			}
+			// Successfully parsed MemberRef
+			table_offset += (class_index_size + index_sizes.string + index_sizes.blob) * num_rows;
 			matched_bits++;
 			continue;
 		} else if (bit_check == BIT_TYPEDEF) {

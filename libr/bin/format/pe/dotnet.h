@@ -358,6 +358,7 @@ typedef struct {
 	char *namespace;  // For types
 	char *type;       // "typedef", "methoddef", "memberref", "typeref", etc.
 	ut32 flags;       // access flags, etc.
+	ut32 token;       // Token value for symbolication
 	RList *methods;   // List of DotNetMethod pointers
 	RList *fields;    // List of DotNetField pointers
 } DotNetSymbol;
