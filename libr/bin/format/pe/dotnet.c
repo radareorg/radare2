@@ -295,6 +295,8 @@ static void dotnet_parse_tilde_field(
 	uint8_t *table_offset = (uint8_t *)row_offset;
 	table_offset += sizeof (uint32_t) * matched_bits;
 
+	matched_bits = 0;
+
 	string_offset = pe->data + metadata_root + streams->string->Offset;
 
 	// Iterate through tables, looking for Field
