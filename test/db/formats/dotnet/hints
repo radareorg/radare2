@@ -1,0 +1,41 @@
+NAME=dotnet hello world program
+FILE=bins/dotnet/HelloWorld.dll
+CMDS=<<EOF
+ah*
+echo ---
+s entry0
+pd 2
+echo ---
+s 0x10002094
+pd 10
+il
+EOF
+EXPECT=<<EOF
+aha x86 @ 0x10002000
+aha cil @ 0x10002050
+aha cil @ 0x10002073
+aha cil @ 0x10002084
+aha cil @ 0x100020bc
+aha cil @ 0x10002124
+aha cil @ 0x100021b4
+aha cil @ 0x10002218
+aha cil @ 0x100022f4
+aha x86 @ 0x10002fba
+---
+            ;-- entry0:
+            0x10002fba      ff2500200010   jmp dword [sym.imp.mscoree.dll__CorDllMain] ; 0x10002000
+            0x10002fc0      4d             dec ebp
+---
+            0x10002094      17             ldc.i4.1
+            0x10002095      fe04           clt
+            0x10002097      0a             stloc.0
+            0x10002098      06             ldloc.0
+        ,=< 0x10002099      2c10           brfalse.s 0x100020ab
+        |   0x1000209b      00             nop
+        |   0x1000209c      7201000070     ldstr 0x70000001
+        |   0x100020a1      280f00000a     call sym.WriteLine
+        |   0x100020a6      00             nop
+        |   0x100020a7      16             ldc.i4.0
+mscoree.dll
+EOF
+RUN

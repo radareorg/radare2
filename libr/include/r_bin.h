@@ -124,6 +124,7 @@ typedef enum {
 	R_BIN_LANG_DART = 1<<11,
 	R_BIN_LANG_GROOVY = 1<<12,
 	R_BIN_LANG_JNI = 1U<<13,
+	R_BIN_LANG_CIL = 1<<14,
 	R_BIN_LANG_BLOCKS = 1U<<31,
 	R_BIN_LANG_ANY = -1,
 } RBinLanguage;

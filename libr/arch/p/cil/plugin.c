@@ -118,6 +118,9 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		ut32 i;
 		if (opcode == 0x45) { // switch
 			ut32 count = r_read_le32 (buf + 1);
+			if (count > 4) {
+				count = 4; // DIM to reasonable value
+			}
 			for (i = 0; i < count; i++) {
 				st32 offset = r_read_le32 (buf + 5 + i * 4);
 				ut64 target = addr + op->size + offset;

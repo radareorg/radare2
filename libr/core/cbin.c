@@ -1482,7 +1482,6 @@ static bool bin_entry(RCore *core, PJ *pj, int mode, ut64 laddr, int va, bool in
 		pj_a (pj);
 	}
 	RTable *table = NULL;
-
 	r_list_foreach (entries, iter, entry) {
 		ut64 paddr = entry->paddr;
 		ut64 hpaddr = UT64_MAX;
@@ -1511,6 +1510,7 @@ static bool bin_entry(RCore *core, PJ *pj, int mode, ut64 laddr, int va, bool in
 		}
 		const char *hpaddr_key = (entry->type == R_BIN_ENTRY_TYPE_PROGRAM)
 			? "haddr": "hpaddr";
+
 		if (IS_MODE_SET (mode)) {
 			r_flag_space_set (core->flags, R_FLAGS_FS_SYMBOLS);
 			if (entry->type == R_BIN_ENTRY_TYPE_INIT) {
@@ -2674,6 +2674,16 @@ static void select_flag_space(RCore *core, RBinSymbol *symbol) {
 	}
 }
 
+static void set_symbol_arch(RCore *core, RBinInfo *info, RBinSymbol *symbol) {
+	ut64 addr = symbol->vaddr;
+	// Only set hints for mapped addresses
+	// if (r_io_map_get_at (core->io, addr)) {
+	const char *arch = (symbol->lang == R_BIN_LANG_CIL)? "cil": info->arch;
+	if (arch) {
+		r_anal_hint_set_arch (core->anal, addr, arch);
+	}
+}
+
 static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, bool exponly, const char *args) {
 	RBinInfo *info = r_bin_get_info (core->bin);
 	const RList *entries = r_bin_get_entries (core->bin);
@@ -2682,6 +2692,7 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 	bool firstexp = true;
 	bool printHere = (args && *args == '.');
 	bool none = true;
+	bool is_dotnet = info && !strcmp (info->lang, "cil");
 
 	int lastfs = 's';
 	RTable *table = r_core_table_new (core, "symbols");
@@ -2860,6 +2871,9 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 			}
 			if (allow_mutation) {
 				set_symbol_flag (core, symbol, &sn, addr, sn.demname ? sn.demname : name, mode);
+				if (is_dotnet) {
+					set_symbol_arch (core, info, symbol);
+				}
 			}
 			if (sn.demname) {
 				ut64 size = symbol->size > 0? symbol->size: 1;
@@ -3003,6 +3017,10 @@ next:
 			if (IS_MODE_SET (mode)) {
 				handle_arm_entry (core, entry, info, va);
 			}
+		}
+	} else if (is_dotnet) {
+		r_list_foreach (entries, iter, entry) {
+			r_anal_hint_set_arch (core->anal, entry->vaddr, info->arch);
 		}
 	}
 	if (IS_MODE_JSON (mode)) {
