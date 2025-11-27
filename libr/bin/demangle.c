@@ -82,6 +82,9 @@ R_API int r_bin_demangle_type(const char *str) {
 		if (!strcmp (str, "rust")) {
 			return R_BIN_LANG_RUST;
 		}
+		if (!strcmp (str, "cil")) {
+			return R_BIN_LANG_CIL;
+		}
 	}
 	return R_BIN_LANG_NONE;
 }

@@ -193,14 +193,9 @@ static void find_pe_overlay(RBinFile *bf) {
 
 static RList* classes(RBinFile *bf) {
 	RList *ret = NULL;
-
-	if (!(ret = r_list_newf ((RListFree)r_bin_class_free))) {
-		return NULL;
-	}
-
 	RBinPEObj *pe = PE_(get) (bf);
 	if (!pe || !pe->dos_header || !pe->nt_headers) {
-		return ret;
+		return NULL;
 	}
 
 	RBuffer *buf = bf->buf;
@@ -208,11 +203,13 @@ static RList* classes(RBinFile *bf) {
 	size_t size = r_buf_size (buf);
 	ut64 image_base = PE_(r_bin_pe_get_image_base)(pe);
 	RList *dotnet_symbols = dotnet_parse (data, size, image_base);
-	if (!dotnet_symbols || r_list_length (dotnet_symbols) == 0) {
-		if (dotnet_symbols) {
-			r_list_free (dotnet_symbols);
-		}
-		return ret;
+	if (r_list_empty (dotnet_symbols)) {
+		r_list_free (dotnet_symbols);
+		return NULL;
+	}
+	ret = r_list_newf ((RListFree)r_bin_class_free);
+	if (!ret) {
+		return NULL;
 	}
 
 	// Process symbols - first create classes from typedefs, then add methods
@@ -225,10 +222,11 @@ static RList* classes(RBinFile *bf) {
 		}
 		// Create full class name with namespace
 		char *class_name_full;
-		if (dsym->namespace && dsym->namespace[0] != '\0') {
-			class_name_full = r_str_newf ("%s.%s", dsym->namespace, dsym->name);
+		const char *ns = dsym->namespace;
+		if (R_STR_ISNOTEMPTY (ns)) {
+			class_name_full = r_str_newf ("%s.%s", ns, dsym->name);
 		} else {
-			class_name_full = dsym->name;
+			class_name_full = strdup (dsym->name);
 		}
 		// Check if class already exists
 		RBinClass *existing = NULL;
@@ -245,10 +243,8 @@ static RList* classes(RBinFile *bf) {
 		RBinClass *cls = NULL;
 		if (!existing) {
 			cls = r_bin_class_new (class_name_full, NULL, 0);
-			if (cls) {
-				cls->lang = R_BIN_LANG_MSVC;
-				r_list_append (ret, cls);
-			}
+			cls->lang = R_BIN_LANG_MSVC;
+			r_list_append (ret, cls);
 		}
 		RBinClass *target_cls = existing ? existing : cls;
 		if (target_cls && dsym->fields) {
@@ -256,20 +252,16 @@ static RList* classes(RBinFile *bf) {
 			DotNetField *dfield;
 			r_list_foreach (dsym->fields, iter_field, dfield) {
 				RBinField *field = R_NEW0 (RBinField);
-				if (field) {
-					field->name = r_bin_name_new (dfield->name);
-					field->kind = R_BIN_FIELD_KIND_FIELD;
-					field->vaddr = 0;
-					field->paddr = 0;
-					field->size = 0;
-					field->offset = dfield->offset;
-					r_list_append (target_cls->fields, field);
-				}
+				field->name = r_bin_name_new (dfield->name);
+				field->kind = R_BIN_FIELD_KIND_FIELD;
+				field->vaddr = 0;
+				field->paddr = 0;
+				field->size = 0;
+				field->offset = dfield->offset;
+				r_list_append (target_cls->fields, field);
 			}
 		}
-		if (dsym->namespace && dsym->namespace[0] != '\0') {
-			free (class_name_full);
-		}
+		free (class_name_full);
 	}
 	// Second pass: add methods to their corresponding classes
 	r_list_foreach (dotnet_symbols, iter_sym, dsym) {
@@ -433,6 +425,11 @@ static RList* symbols(RBinFile *bf) {
 					}
 					ptr->type = R_BIN_TYPE_FUNC_STR;
 					ptr->bind = R_BIN_BIND_GLOBAL_STR;
+					if (dsym->is_native) {
+						ptr->lang = R_BIN_LANG_C;
+					} else {
+						ptr->lang = R_BIN_LANG_CIL;
+					}
 					if (dsym->vaddr > 0) {
 						ptr->vaddr = dsym->vaddr + image_base;
 						ptr->paddr = dsym->vaddr;
@@ -440,6 +437,8 @@ static RList* symbols(RBinFile *bf) {
 					ptr->size = dsym->size;
 					r_list_append (ret, ptr);
 				}
+#if 0
+				// duplicated symbols for ref data. not necessasry
 				if (dsym->token && (!strcmp (dsym->type, "methoddef") || !strcmp (dsym->type, "memberref"))) {
 					// Add symbol at token address for disassembly resolution
 					ptr = R_NEW0 (RBinSymbol);
@@ -450,11 +449,15 @@ static RList* symbols(RBinFile *bf) {
 					}
 					ptr->type = R_BIN_TYPE_FUNC_STR;
 					ptr->bind = R_BIN_BIND_GLOBAL_STR;
+					if (!strcmp (dsym->type, "methoddef") && !dsym->is_native) {
+						ptr->lang = R_BIN_LANG_CIL;
+					}
 					ptr->vaddr = dsym->token;
 					ptr->paddr = 0;
 					ptr->size = 0;
 					r_list_append (ret, ptr);
 				}
+#endif
 			}
 			r_list_free (dotnet_symbols);
 		}

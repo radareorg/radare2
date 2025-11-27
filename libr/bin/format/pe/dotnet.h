@@ -359,6 +359,7 @@ typedef struct {
 	char *type;       // "typedef", "methoddef", "memberref", "typeref", etc.
 	ut32 flags;       // access flags, etc.
 	ut32 token;       // Token value for symbolication
+	bool is_native;   // true if method is native code, false if IL
 	RList *methods;   // List of DotNetMethod pointers
 	RList *fields;    // List of DotNetField pointers
 } DotNetSymbol;

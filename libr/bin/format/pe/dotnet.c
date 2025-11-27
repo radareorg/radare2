@@ -273,9 +273,7 @@ static void dotnet_parse_tilde_field(
 	RList *typedef_info,
 	RList *symbols) {
 
-	uint8_t *table_offset = NULL;
-	uint32_t *row_offset = NULL;
-	int bit_check, matched_bits = 0;
+	int bit_check;
 	uint32_t num_rows = 0;
 	const uint8_t *string_offset = NULL;
 	uint8_t *row_ptr = NULL;
@@ -286,19 +284,20 @@ static void dotnet_parse_tilde_field(
 	if (!streams->tilde || !streams->string) {
 		return;
 	}
+	int matched_bits = 0;
 
 	// Number of rows is the number of bits set to 1 in Valid
 	for (i = 0; i < 64; i++) {
 		matched_bits += ((tilde_header->Valid >> i) & 0x01);
 	}
 
-	row_offset = (uint32_t *) (tilde_header + 1);
-	table_offset = (uint8_t *)row_offset;
+	uint32_t *row_offset = (uint32_t *) (tilde_header + 1);
+	uint8_t *table_offset = (uint8_t *)row_offset;
 	table_offset += sizeof (uint32_t) * matched_bits;
 
-	string_offset = pe->data + metadata_root + streams->string->Offset;
-
 	matched_bits = 0;
+
+	string_offset = pe->data + metadata_root + streams->string->Offset;
 
 	// Iterate through tables, looking for Field
 	for (bit_check = 0; bit_check < 64; bit_check++) {
@@ -319,13 +318,10 @@ static void dotnet_parse_tilde_field(
 			uint32_t field_idx = 1; // Field indices are 1-based
 			for (i = 0; i < num_rows; i++) {
 				uint32_t row_size = 2 + index_sizes.string + index_sizes.blob;
-
 				if (!fits_in_pe (pe, row_ptr, row_size)) {
 					break;
 				}
-
 				ut16 flags = *(ut16 *)row_ptr;
-
 				// Get field name from string stream
 				if (index_sizes.string == 4) {
 					name = pe_get_dotnet_string (pe, string_offset, *(ut32 *) (row_ptr + 2));
@@ -351,8 +347,9 @@ static void dotnet_parse_tilde_field(
 							r_list_foreach (symbols, sym_iter, sym) {
 								if (sym->type && !strcmp (sym->type, "typedef")) {
 									char *sym_full_name;
-									if (sym->namespace && sym->namespace[0] != '\0') {
-										sym_full_name = r_str_newf ("%s.%s", sym->namespace, sym->name);
+									const char *ns = sym->namespace;
+									if (R_STR_ISNOTEMPTY (ns)) {
+										sym_full_name = r_str_newf ("%s.%s", ns, sym->name);
 									} else {
 										sym_full_name = strdup (sym->name);
 									}
@@ -587,7 +584,6 @@ static void dotnet_parse_tilde_methoddef(
 		}
 
 		num_rows = *(row_offset + matched_bits);
-
 		if (bit_check == BIT_METHODDEF) {
 			// Parse MethodDef table
 			// Structure: RVA (4) ImplFlags (2) Flags (2) Name (string) Signature (blob) ParamList (param)
@@ -597,12 +593,11 @@ static void dotnet_parse_tilde_methoddef(
 			row_ptr = table_offset;
 			for (i = 0; i < num_rows; i++) {
 				uint32_t row_size = 4 + 2 + 2 + index_sizes.string + index_sizes.blob + param_index_size;
-
 				if (!fits_in_pe (pe, row_ptr, row_size)) {
 					break;
 				}
-
 				rva = *(ut32 *)row_ptr;
+				ut16 impl_flags = *(ut16 *)(row_ptr + 4);
 
 				// Get method name from string stream
 				// Offset: RVA (4) + ImplFlags (2) + Flags (2) = 8
@@ -611,30 +606,30 @@ static void dotnet_parse_tilde_methoddef(
 				} else {
 					name = pe_get_dotnet_string (pe, string_offset, *(ut16 *) (row_ptr + 8));
 				}
-
-				if (name && name[0] != '\0') {
+				if (R_STR_ISNOTEMPTY (name)) {
 					DotNetSymbol *sym = R_NEW0 (DotNetSymbol);
 					// Methods are 1-based, the method index is relative to MethodDef table start
 					// So method 1 is the first row (i = 0), method 2 is the second row (i = 1), etc.
 					uint32_t method_idx = i + 1;
 					DotNetTypeDefInfo *parent_typedef = dotnet_find_typedef_for_method_index (typedef_info, method_idx);
-
-					// Create fully qualified name: namespace.classname.methodname
 					if (parent_typedef) {
-						if (parent_typedef->namespace && parent_typedef->namespace[0] != '\0') {
-							sym->name = r_str_newf ("%s.%s.%s", parent_typedef->namespace, parent_typedef->class_name, name);
+						// Create fully qualified name: namespace.classname.methodname
+						const char *ns = parent_typedef->namespace;
+						if (R_STR_ISNOTEMPTY (ns)) {
+							sym->name = r_str_newf ("%s.%s.%s", ns, parent_typedef->class_name, name);
 						} else {
 							sym->name = r_str_newf ("%s.%s", parent_typedef->class_name, name);
 						}
 					} else {
-						// Fallback: just use the method name
 						sym->name = strdup (name);
 					}
-
 					sym->vaddr = rva; // RVA from the method table
 					sym->size = 0;
 					sym->type = strdup ("methoddef");
 					sym->token = 0x06000000 | method_idx;
+					// Set is_native based on ImplFlags
+					// IL = 0x0000, Native = 0x0001, OPTIL = 0x0002, Runtime = 0x0003
+					sym->is_native = (impl_flags & 0x0003) == 0x0001;
 					r_list_append (symbols, sym);
 				}
 
@@ -944,14 +939,12 @@ static RList *dotnet_collect_typedefs(PE *pe, ut64 metadata_root, PSTREAMS strea
 				if (index_sizes.string == 4) {
 					name_idx = *(ut32 *) (row_ptr + 4);
 					ns_idx = *(ut32 *) (row_ptr + 8);
-					type_name = pe_get_dotnet_string (pe, string_offset, name_idx);
-					namespace = pe_get_dotnet_string (pe, string_offset, ns_idx);
 				} else {
 					name_idx = *(ut16 *) (row_ptr + 4);
 					ns_idx = *(ut16 *) (row_ptr + 6);
-					type_name = pe_get_dotnet_string (pe, string_offset, name_idx);
-					namespace = pe_get_dotnet_string (pe, string_offset, ns_idx);
 				}
+				type_name = pe_get_dotnet_string (pe, string_offset, name_idx);
+				namespace = pe_get_dotnet_string (pe, string_offset, ns_idx);
 
 				// Extract FieldList and MethodList indices
 				// Layout: Flags (4) + Name (string) + Namespace (string) + Extends (coded_idx) + FieldList (field) + MethodList (methoddef)
