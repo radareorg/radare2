@@ -6030,7 +6030,8 @@ static ut8 * R_NULLABLE decode_text(RCore *core, ut64 offset, size_t len, bool z
         if (out) {
             r_io_read_at (core->io, core->addr, data, len);
             ut8 *tmp = NULL;
-            int olen = core->print->charset_decode (core->print->charset_ctx, data, len, &tmp);
+            int consumed;
+            int olen = core->print->charset_decode (core->print->charset_ctx, data, len, &tmp, &consumed);
             if (olen > 0 && tmp) {
                 int cpy = R_MIN ((int)(len*10), olen);
                 memcpy (out, tmp, cpy);
@@ -8183,7 +8184,8 @@ static int cmd_print(void *data, const char *input) {
                             if (data) {
                                 r_io_read_at (core->io, core->addr, data, len);
                                 ut8 *tmp = NULL;
-                                int olen = core->print->charset_decode (core->print->charset_ctx, data, len, &tmp);
+            int consumed;
+            int olen = core->print->charset_decode (core->print->charset_ctx, data, len, &tmp, &consumed);
                                 if (olen > 0 && tmp) {
                                     int cpy = R_MIN ((int)out_len, olen);
                                     memcpy (out, tmp, cpy);
@@ -8299,7 +8301,8 @@ case 'r': // "pr"
     /* If charset decoding is enabled, decode the current block and print only decoded output. */
     if (l > 0 && core->print->charset_decode) {
         ut8 *tmp = NULL;
-        int olen = core->print->charset_decode (core->print->charset_ctx, core->block, len, &tmp);
+        int consumed;
+        int olen = core->print->charset_decode (core->print->charset_ctx, core->block, len, &tmp, &consumed);
         if (olen > 0 && tmp) {
             r_cons_write (core->cons, (const char *)tmp, olen);
             free (tmp);
@@ -8442,7 +8445,8 @@ case 'r': // "pr"
             if (l != 0) {
                 if (core->print->charset_decode) {
                     ut8 *tmp = NULL;
-                    int olen = core->print->charset_decode (core->print->charset_ctx, core->block, len, &tmp);
+                    int consumed;
+        int olen = core->print->charset_decode (core->print->charset_ctx, core->block, len, &tmp, &consumed);
                     if (olen > 0 && tmp) {
                         r_cons_write (core->cons, (const char *)tmp, olen);
                         free (tmp);

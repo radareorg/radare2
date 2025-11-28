@@ -1260,15 +1260,21 @@ static void autocomplete_charsets(RCore *core, RLineCompletion *completion, cons
     free (lst);
 }
 
-int r_core_charset_decode_cb(void *ctx, const ut8 *in, int len, ut8 **out) {
-    RCore *c = (RCore*)ctx;
-    if (!c || !c->charset_session || !out) {
+int r_core_charset_decode_cb(void *ctx, const ut8 *in, int len, ut8 **out, int *consumed) {
+    RCore *core = (RCore*)ctx;
+    if (!core || !core->charset_session || !out || !consumed) {
         return 0;
     }
-    c->charset_session->dir = R_CRYPTO_DIR_DECRYPT;
-    r_muta_session_update (c->charset_session, in, len);
+    RMutaPlugin *h = core->charset_session->h;
+    if (h && h->decode) {
+        return h->decode (core->charset_session, in, len, out, consumed);
+    }
+    // fallback to old way
+    *consumed = len;
+    core->charset_session->dir = R_CRYPTO_DIR_DECRYPT;
+    r_muta_session_update (core->charset_session, in, len);
     int olen = 0;
-    ut8 *obuf = r_muta_session_get_output (c->charset_session, &olen);
+    ut8 *obuf = r_muta_session_get_output (core->charset_session, &olen);
     if (olen < 1) {
         *out = NULL;
         return 0;
@@ -1280,7 +1286,7 @@ int r_core_charset_decode_cb(void *ctx, const ut8 *in, int len, ut8 **out) {
     }
     memcpy (cpy, obuf, olen);
     *out = cpy;
-    c->charset_session->output_len = 0;
+    core->charset_session->output_len = 0;
     return olen;
 }
 

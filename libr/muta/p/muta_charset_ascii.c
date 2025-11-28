@@ -243,6 +243,22 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	return true;
 }
 
+static int decode(RMutaSession *cj, const ut8 *in, int len, ut8 **out, int *consumed) {
+	if (!in || len < 1 || !out || !consumed) {
+		return 0;
+	}
+	ut8 b = *in;
+	const char *decoded = decode_byte (b);
+	if (decoded) {
+		*out = (ut8*)strdup (decoded);
+		*consumed = 1;
+		return strlen (decoded);
+	}
+	*consumed = 1;
+	*out = NULL;
+	return 0;
+}
+
 static bool end(RMutaSession *cj, const ut8 *buf, int len) {
 	return update (cj, buf, len);
 }
@@ -256,7 +272,8 @@ RMutaPlugin r_muta_plugin_charset_ascii = {
 	.type = R_MUTA_TYPE_CHARSET,
 	.check = check,
 	.update = update,
-	.end = end
+	.end = end,
+	.decode = decode
 };
 
 #ifndef R2_PLUGIN_INCORE

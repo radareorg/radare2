@@ -1059,6 +1059,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	int rowbytes;
 	int rows = 0;
 	int bytes = 0;
+	int char_pos = 0;
 	bool printValue = true;
 	bool oPrintValue = true;
 	bool isPxr = (p && p->flags & R_PRINT_FLAGS_REFS);
@@ -1380,20 +1381,17 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					}
 					ut8 ch = (use_unalloc && p && !p->iob.is_valid_offset (p->iob.io, addr + j, false))
 						? ' ' : buf[j];
-                        if (p && p->charset_decode) {
-                            ut8 input[2] = { ch, 0 };
+                        if (p && p->charset_decode && char_pos <= j) {
                             ut8 *out = NULL;
-                            int olen = p->charset_decode (p->charset_ctx, input, 1, &out);
-                            if (!out || olen < 1 || (invalidchar (out[0]) && (olen < 2 || invalidchar (out[1])))) {
-                                r_print_printf (p, "%s", ".");
+                            int consumed = 0;
+                            int olen = p->charset_decode (p->charset_ctx, buf + j, len - j, &out, &consumed);
+                            if (olen > 0 && out) {
+                                r_print_printf (p, "%.*s", 1, out);
+                                free (out);
+                                char_pos = j + consumed;
                             } else {
-                                r_print_printf (p, "%.*s", olen, out);
+                                r_print_byte (p, addr + j, "%c", j, ch);
                             }
-                            ch = (olen > 0)? *out: '.';
-                            if (olen > 1) {
-                                j++;
-                            }
-                            free (out);
                         } else {
 						r_print_byte (p, addr + j, "%c", j, ch);
 					}

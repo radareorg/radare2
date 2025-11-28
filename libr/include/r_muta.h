@@ -84,6 +84,7 @@ typedef struct r_muta_plugin_t {
 #if 0
 	bool (*init)(RMuta *cry, struct r_muta_plugin_t *cp);
 #endif
+	int (*decode)(RMutaSession *cj, const ut8 *in, int len, ut8 **out, int *consumed);
 	bool (*fini)(RMutaSession *cj);
 } RMutaPlugin;
 
