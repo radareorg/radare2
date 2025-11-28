@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2024 - pancake, alvarofe */
+/* radare - LGPL - Copyright 2007-2025 - pancake, alvarofe */
 
 #define _R_LIST_C_
 #include "r_util.h"

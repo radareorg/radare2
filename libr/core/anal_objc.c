@@ -75,7 +75,7 @@ static inline ut32 readDword(RCoreObjc *objc, ut64 addr, bool *success) {
 }
 
 static inline ut64 readQword(RCoreObjc *objc, ut64 addr, bool *success) {
-	ut8 buf[8] = {0};
+	ut8 buf[8] = { 0 };
 	*success = r_io_read_at (objc->core->io, addr, buf, sizeof (buf));
 	return r_read_le64 (buf);
 }
@@ -129,80 +129,62 @@ static ut64 getRefPtr(RCoreObjc *o, ut64 classMethodsVA, bool *rfound) {
 	return isMsgRef? ref - o->word_size: ref;
 }
 
+typedef void(*SectionCallback)(RCoreObjc *objc, ut64 va, ut64 xrefs_to);
+
+static void iterate_section(RCoreObjc *objc, ut64 va_start, size_t size, size_t word_size, SectionCallback cb) {
+	if (!size || size > objc->file_size) {
+		return;
+	}
+	ut8 *buf = malloc (size);
+	if (!buf) {
+		return;
+	}
+	if (!r_io_read_at (objc->core->io, va_start, buf, size)) {
+		free (buf);
+		return;
+	}
+	size_t off;
+	for (off = 0; off + word_size <= size; off += word_size) {
+		ut64 va = va_start + off;
+		ut64 xrefs_to = (word_size == 8)? r_read_le64 (buf + off): r_read_le32 (buf + off);
+		if (isValid (xrefs_to)) {
+			cb (objc, va, xrefs_to);
+		}
+	}
+	free (buf);
+}
+
+static inline void cb_const(RCoreObjc *objc, ut64 va, ut64 xrefs_to) {
+	array_add (objc, va, xrefs_to);
+}
+
+static inline void cb_selrefs(RCoreObjc *objc, ut64 va, ut64 xrefs_to) {
+	array_add (objc, xrefs_to, va);
+}
+
+static inline void cb_msgrefs(RCoreObjc *objc, ut64 va, ut64 xrefs_to) {
+	array_add (objc, xrefs_to, va);
+}
+
 static bool objc_build_refs(RCoreObjc *objc) {
-	ut64 off;
 	if (!objc->_const || !objc->_selrefs) {
 		return false;
 	}
 
 	const ut64 va_const = objc->_const->vaddr;
-	size_t ss_const = objc->_const->vsize;
+	size_t ss_const = R_MIN (objc->_const->vsize, objc->file_size);
 	const ut64 va_selrefs = objc->_selrefs->vaddr;
-	size_t ss_selrefs = objc->_selrefs->vsize;
-	// TODO: check if ss_const or ss_selrefs are too big before going further
-	size_t maxsize = R_MAX (ss_const, ss_selrefs);
-	maxsize = R_MIN (maxsize, objc->file_size);
-	if (ss_const > maxsize) {
-		if (objc->core->bin->options.verbose) {
-			R_LOG_WARN ("aao: Truncating ss_const from %u to %u", (int)ss_const, (int)maxsize);
-		}
-		ss_const = maxsize;
-	}
-	if (ss_selrefs > maxsize) {
-		if (objc->core->bin->options.verbose) {
-			R_LOG_WARN ("aao: Truncating ss_selrefs from %u to %u", (int)ss_selrefs, (int)maxsize);
-		}
-		ss_selrefs = maxsize;
-	}
-	ut8 *buf = calloc (1, maxsize);
-	if (!buf) {
-		return false;
-	}
-	const size_t word_size = objc->word_size; // assuming 8 because of the read_le64
-	if (!r_io_read_at (objc->core->io, objc->_const->vaddr, buf, ss_const)) {
-		R_LOG_WARN ("aao: Cannot read the whole const section %u", (unsigned int)ss_const);
-		goto beach;
-	}
-	for (off = 0; off + word_size <= ss_const && off + word_size < maxsize; off += word_size) {
-		ut64 va = va_const + off;
-		ut64 xrefs_to = (word_size == 8)? r_read_le64 (buf + off): r_read_le32 (buf + off);
-		if (isValid (xrefs_to)) {
-#if 1
-			array_add (objc, va, xrefs_to);
-#else
-			// array_add (objc, xrefs_to, va);
-#endif
+	size_t ss_selrefs = R_MIN (objc->_selrefs->vsize, objc->file_size);
+	const size_t word_size = objc->word_size;
 
-		}
-	}
-	if (!r_io_read_at (objc->core->io, va_selrefs, buf, ss_selrefs)) {
-		R_LOG_WARN ("aao: Cannot read the whole selrefs section");
-		goto beach;
-	}
-	for (off = 0; off + word_size < ss_selrefs && off + word_size < maxsize; off += word_size) {
-		ut64 va = va_selrefs + off;
-		ut64 xrefs_to = (word_size == 8)? r_read_le64 (buf + off): r_read_le32 (buf + off);
-		if (isValid (xrefs_to)) {
-			array_add (objc, xrefs_to, va);
-		}
-	}
+	iterate_section (objc, va_const, ss_const, word_size, cb_const);
+	iterate_section (objc, va_selrefs, ss_selrefs, word_size, cb_selrefs);
+
 	if (objc->_msgrefs) {
 		const ut64 va_msgrefs = objc->_msgrefs->vaddr;
-		size_t ss_msgrefs = R_MIN (objc->_msgrefs->vsize, maxsize);
-		if (!r_io_read_at (objc->core->io, va_msgrefs, buf, ss_msgrefs)) {
-			R_LOG_WARN ("aao: Cannot read the whole msgrefs section");
-			goto beach;
-		}
-		for (off = 0; off + word_size <= ss_msgrefs && off + word_size <= maxsize; off += (word_size * 2)) {
-			ut64 va = va_msgrefs + off;
-			ut64 xrefs_to = (word_size == 8)? r_read_le64 (buf + off): r_read_le32 (buf + off);
-			if (isValid (xrefs_to)) {
-				array_add (objc, xrefs_to, va);
-			}
-		}
+		size_t ss_msgrefs = R_MIN (objc->_msgrefs->vsize, objc->file_size);
+		iterate_section (objc, va_msgrefs, ss_msgrefs, word_size, cb_msgrefs);
 	}
-beach:
-	free (buf);
 	return true;
 }
 
@@ -215,7 +197,7 @@ static RCoreObjc *core_objc_new(RCore *core) {
 	o->core = core;
 	o->file_size = r_bin_get_size (core->bin);
 	if (!o->file_size) {
-		o->file_size = 512*1024*1024;
+		o->file_size = 512 * 1024 * 1024;
 	}
 	o->word_size = (core->rasm->config->bits == 64)? 8: 4;
 	if (o->word_size != 8) {
@@ -236,7 +218,7 @@ static RCoreObjc *core_objc_new(RCore *core) {
 			o->_const = s;
 		}
 	}
-	// if (!o->_const || ((o->_selrefs || o->_msgrefs) && !(o->_data && o->_const))) {
+	// if (!o->_const || ((o->_selrefs || o->_msgrefs) && ! (o->_data && o->_const))) {
 	// reduce expectations, we dont need that much from objc
 	if (!o->_const || !o->_data) {
 		free (o);
@@ -277,15 +259,15 @@ static bool objc_find_refs(RCore *core) {
 		}
 
 		ut64 va = objc->_data->vaddr + off;
-		// XXX do a single r_io_read_at() and just r_read_le64() here
+		// XXX do a single r_io_read_at () and just r_read_le64 () here
 		ut64 classRoVA = readQword (objc, va + objc2ClassInfoOffs, &readSuccess);
 		if (!readSuccess || isInvalid (classRoVA)) {
 			continue;
 		}
 		if (objc->word_size == 8) {
-			classRoVA &= ~(ut64)0x7;
+			classRoVA &= ~ (ut64)0x7;
 		} else {
-			classRoVA &= ~(ut64)0x3;
+			classRoVA &= ~ (ut64)0x3;
 		}
 		ut64 classMethodsVA = readQword (objc, classRoVA + objc2ClassBaseMethsOffs, &readSuccess);
 		if (!readSuccess || isInvalid (classMethodsVA)) {
@@ -293,23 +275,22 @@ static bool objc_find_refs(RCore *core) {
 		}
 
 		ut32 count = readDword (objc, classMethodsVA + 4, &readSuccess);
-		if (!readSuccess || ((ut32)count == UT32_MAX)) {
+		if (!readSuccess || count == UT32_MAX) {
 			continue;
 		}
 
 		classMethodsVA += 8; // advance to start of class methods array
-		ut64 delta = (objc2ClassMethSize * count);
-		ut64 to = classMethodsVA + delta - 8;
-		if (delta > objc->file_size) {
-			R_LOG_WARN ("Workarounding malformed objc data. checking next %"PFMT64x" !< %"PFMT64x, classMethodsVA, to);
-			count = (objc->_data->vsize / objc2ClassMethSize) - 1;
-			delta = objc2ClassMethSize * count;
-			to = classMethodsVA + delta;
-
+		ut64 max_delta = (classMethodsVA > objc->file_size)? 0: objc->file_size - classMethodsVA;
+		ut64 max_count = max_delta / objc2ClassMethSize;
+		if (count > max_count) {
+			R_LOG_WARN ("Clamping objc method count from %u to %u", (unsigned int)count, (unsigned int)max_count);
+			count = max_count;
 		}
+		ut64 delta = objc2ClassMethSize * count;
+		ut64 to = classMethodsVA + delta - objc2ClassMethSize;
 		if (classMethodsVA > to) {
-			R_LOG_WARN ("Fuzzed binary or bug in here, checking next %"PFMT64x" !< %"PFMT64x, classMethodsVA, to);
-			break;
+			R_LOG_WARN ("Invalid objc method range %" PFMT64x " > %" PFMT64x, classMethodsVA, to);
+			continue;
 		}
 		for (va = classMethodsVA; va < to; va += objc2ClassMethSize) {
 			if (r_cons_is_breaked (core->cons)) {
