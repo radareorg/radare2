@@ -949,7 +949,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 	if (arch) {
 		if (!r_asm_use (as->a, arch)) {
 			R_LOG_ERROR ("Unknown asm plugin '%s'", arch);
-			ret = 0;
+			ret = 1;
 			goto beach;
 		}
 		r_anal_use (as->anal, arch);
@@ -963,7 +963,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 	} else if (r_asm_use (as->a, R_SYS_ARCH)) {
 		r_anal_use (as->anal, R_SYS_ARCH);
 	} else {
-		R_LOG_ERROR ("Cannot find " R_SYS_ARCH " plugin");
+		R_LOG_ERROR ("Cannot find " R_SYS_ARCH " plugin. Run `rasm2 -L` to find them out");
 		ret = 0;
 		goto beach;
 	}
