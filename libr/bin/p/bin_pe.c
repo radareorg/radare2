@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2024 - nibble, pancake, alvarofe */
 
 #include "bin_pe.inc.c"
+#include "../format/pe/dotnet.h"
 
 extern struct r_bin_write_t r_bin_write_pe;
 
@@ -441,6 +442,7 @@ RBinPlugin r_bin_plugin_pe = {
 		.license = "LGPL-3.0-only",
 	},
 	.get_sdb = &get_sdb,
+	.get_name = &getname,
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,

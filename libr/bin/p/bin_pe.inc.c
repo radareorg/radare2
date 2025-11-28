@@ -413,10 +413,8 @@ static RList* symbols(RBinFile *bf) {
 			if (r_list_length (dotnet_symbols) > 0) {
 				RListIter *iter;
 				DotNetSymbol *dsym;
+				RBinSymbol *sym;
 				r_list_foreach (dotnet_symbols, iter, dsym) {
-					if (!dsym->type) {
-						continue;
-					}
 					if (!strcmp (dsym->type, "methoddef")) {
 						// Add methoddef at its RVA
 						ptr = R_NEW0 (RBinSymbol);
@@ -884,4 +882,78 @@ static RList *compute_hashes(RBinFile *bf) {
 		}
 	}
 	return file_hashes;
+}
+
+static const char *getname(RBinFile *bf, int type, int idx, bool sd) {
+	RBinPEObj *pe = PE_(get) (bf);
+	if (!pe || !pe->clr_hdr) {
+		return NULL;
+	}
+	if (!pe->dotnet_symbols) {
+		RBuffer *buf = bf->buf;
+		const ut8 *data = r_buf_data (buf, NULL);
+		size_t size = r_buf_size (buf);
+		ut64 image_base = PE_(r_bin_pe_get_image_base)(pe);
+		pe->dotnet_symbols = dotnet_parse (data, size, image_base);
+	}
+	if (!pe->dotnet_symbols) {
+		return NULL;
+	}
+	RListIter *iter;
+	DotNetSymbol *dsym;
+	ut32 token = 0;
+	switch (type) {
+	case 'm': // methoddef or memberref
+		token = (0x06 << 24) | idx; // try methoddef first
+		r_list_foreach (pe->dotnet_symbols, iter, dsym) {
+			if (dsym->token == token) {
+				return dsym->name;
+			}
+		}
+		token = (0x0A << 24) | idx; // try memberref
+		r_list_foreach (pe->dotnet_symbols, iter, dsym) {
+			if (dsym->token == token) {
+				return dsym->name;
+			}
+		}
+		break;
+	case 't': // typedef
+		token = (0x02 << 24) | idx;
+		r_list_foreach (pe->dotnet_symbols, iter, dsym) {
+			if (dsym->token == token) {
+				return dsym->name;
+			}
+		}
+		break;
+	case 'r': // typeref
+		token = (0x01 << 24) | idx;
+		r_list_foreach (pe->dotnet_symbols, iter, dsym) {
+			if (dsym->token == token) {
+				return dsym->name;
+			}
+		}
+		break;
+	case 'f': // field
+		token = (0x04 << 24) | idx;
+		r_list_foreach (pe->dotnet_symbols, iter, dsym) {
+			if (dsym->token == token) {
+				return dsym->name;
+			}
+		}
+		break;
+	case 's': // strings
+		if (pe->streams) {
+			int i;
+			for (i = 0; pe->streams[i]; i++) {
+				if (pe->streams[i]->Name && !strcmp (pe->streams[i]->Name, "#Strings")) {
+					DATA_DIRECTORY *metadata_dir = (DATA_DIRECTORY *)((ut8*)pe->clr_hdr + 8);
+					ut64 rva = metadata_dir->VirtualAddress + pe->streams[i]->Offset + idx;
+					ut64 offset = PE_(va2pa) (pe, rva);
+					return r_buf_get_string (pe->b, offset);
+				}
+			}
+		}
+		break;
+	}
+	return NULL;
 }
