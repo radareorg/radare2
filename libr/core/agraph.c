@@ -2294,7 +2294,13 @@ static char *get_bb_body(RCore *core, RAnalBlock *b, int opts, RAnalFunction *fc
 }
 
 static int bbcmp(RAnalBlock *a, RAnalBlock *b) {
-	return a->addr - b->addr;
+	if (a->addr < b->addr) {
+		return -1;
+	}
+	if (a->addr > b->addr) {
+		return 1;
+	}
+	return 0;
 }
 
 static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
