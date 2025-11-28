@@ -70,7 +70,7 @@ static int sortNumber(const void *a, const void *b) {
 static int sortFloat(const void *a, const void *b) {
 	double fa = strtod ((const char *) a, NULL);
 	double fb = strtod ((const char *) b, NULL);
-	return (int)((fa * 100) - (fb * 100));
+	return (fa > fb) - (fa < fb);
 }
 
 // maybe just index by name instead of exposing those symbols as global
@@ -702,8 +702,8 @@ static char *tocsv(RTable *t, const char *sep) {
 		r_list_foreach (row->items, iter2, item) {
 			RTableColumn *col = r_list_get_n (t->cols, c);
 			if (col) {
-				if (strchr (col->name, *sep)) {
-					r_strbuf_appendf (sb, "%s\"%s\"", comma, col->name);
+				if (strchr (item, *sep)) {
+					r_strbuf_appendf (sb, "%s\"%s\"", comma, item);
 				} else {
 					r_strbuf_appendf (sb, "%s%s", comma, item);
 				}
@@ -725,10 +725,8 @@ R_API char *r_table_tocsv(RTable *t) {
 }
 
 R_API char *r_table_tohtml(RTable *t) {
-	PJ *pj = pj_new ();
 	RTableRow *row;
 	RListIter *iter, *iter2;
-	pj_a (pj);
 	RStrBuf *sb = r_strbuf_new ("");
 	r_strbuf_append (sb, "<table>\n");
 	// TODO: add th
@@ -792,7 +790,7 @@ R_API void r_table_filter(RTable *t, int nth, int op, const char *un) {
 		}
 	}
 	if (op == 'p') {
-		sscanf (un, "%d/%d", &page, &page_items);
+		sscanf ((char *)un, "%d/%d", &page, &page_items);
 		if (page < 1) {
 			page = 1;
 		}
@@ -1534,7 +1532,7 @@ R_API RTable *r_table_clone(const RTable *t) {
 	RTableRow *row;
 	RListIter *iter;
 	r_list_foreach (t->cols, iter, col) {
-		r_list_append (o->rows, r_table_column_clone (col));
+		r_list_append (o->cols, r_table_column_clone (col));
 	}
 	r_list_foreach (t->rows, iter, row) {
 		r_list_append (o->rows, r_table_row_clone (row));
