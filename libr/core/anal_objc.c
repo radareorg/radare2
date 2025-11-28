@@ -131,8 +131,8 @@ static ut64 getRefPtr(RCoreObjc *o, ut64 classMethodsVA, bool *rfound) {
 
 typedef void(*SectionCallback)(RCoreObjc *objc, ut64 va, ut64 xrefs_to);
 
-static void iterate_section(RCoreObjc *objc, ut64 va_start, size_t size, size_t word_size, SectionCallback cb) {
-	if (!size || size > objc->file_size) {
+static void iterate_section(RCoreObjc *objc, ut64 va_start, size_t size, size_t word_size, size_t stride, SectionCallback cb) {
+	if (!word_size || !size || size > objc->file_size) {
 		return;
 	}
 	ut8 *buf = malloc (size);
@@ -144,7 +144,7 @@ static void iterate_section(RCoreObjc *objc, ut64 va_start, size_t size, size_t 
 		return;
 	}
 	size_t off;
-	for (off = 0; off + word_size <= size; off += word_size) {
+	for (off = 0; off + word_size <= size; off += stride) {
 		ut64 va = va_start + off;
 		ut64 xrefs_to = (word_size == 8)? r_read_le64 (buf + off): r_read_le32 (buf + off);
 		if (isValid (xrefs_to)) {
@@ -177,13 +177,13 @@ static bool objc_build_refs(RCoreObjc *objc) {
 	size_t ss_selrefs = R_MIN (objc->_selrefs->vsize, objc->file_size);
 	const size_t word_size = objc->word_size;
 
-	iterate_section (objc, va_const, ss_const, word_size, cb_const);
-	iterate_section (objc, va_selrefs, ss_selrefs, word_size, cb_selrefs);
+	iterate_section (objc, va_const, ss_const, word_size, word_size, cb_const);
+	iterate_section (objc, va_selrefs, ss_selrefs, word_size, word_size, cb_selrefs);
 
 	if (objc->_msgrefs) {
 		const ut64 va_msgrefs = objc->_msgrefs->vaddr;
 		size_t ss_msgrefs = R_MIN (objc->_msgrefs->vsize, objc->file_size);
-		iterate_section (objc, va_msgrefs, ss_msgrefs, word_size, cb_msgrefs);
+		iterate_section (objc, va_msgrefs, ss_msgrefs, word_size, word_size * 2, cb_msgrefs);
 	}
 	return true;
 }
@@ -287,7 +287,7 @@ static bool objc_find_refs(RCore *core) {
 			count = max_count;
 		}
 		ut64 delta = objc2ClassMethSize * count;
-		ut64 to = classMethodsVA + delta - objc2ClassMethSize;
+		ut64 to = classMethodsVA + delta;
 		if (classMethodsVA > to) {
 			R_LOG_WARN ("Invalid objc method range %" PFMT64x " > %" PFMT64x, classMethodsVA, to);
 			continue;
