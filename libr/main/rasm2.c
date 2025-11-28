@@ -292,6 +292,50 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 	pj_free (pj);
 }
 
+static void rasm2_list_parse_plugins(RAsmState *as, const char *arch) {
+	RListIter *iter;
+	RAsmPluginSession *aps;
+	PJ *pj = NULL;
+	if (as->opt.json) {
+		pj = pj_new ();
+		pj_a (pj);
+	}
+	r_list_foreach (as->a->sessions, iter, aps) {
+		if (arch && strcmp (arch, aps->plugin->meta.name)) {
+			continue;
+		}
+		if (as->opt.quiet) {
+			printf ("%s\n", aps->plugin->meta.name);
+		} else if (as->opt.json) {
+			pj_o (pj);
+			r_lib_meta_pj (pj, &aps->plugin->meta);
+			pj_end (pj);
+		} else if (arch) {
+			printf ("name: %s\n", aps->plugin->meta.name);
+			printf ("desc: %s\n", aps->plugin->meta.desc);
+			if (aps->plugin->meta.author) {
+				printf ("auth: %s\n", aps->plugin->meta.author);
+			}
+			if (aps->plugin->meta.license) {
+				printf ("lice: %s\n", aps->plugin->meta.license);
+			}
+			if (aps->plugin->meta.version) {
+				printf ("vers: %s\n", aps->plugin->meta.version);
+			}
+		} else {
+			printf ("%-20s %s\n", aps->plugin->meta.name, aps->plugin->meta.desc);
+		}
+		if (arch) {
+			break;
+		}
+	}
+	if (as->opt.json) {
+		pj_end (pj);
+		printf ("%s\n", pj_string (pj));
+	}
+	pj_free (pj);
+}
+
 static int rasm_show_help(int v) {
 	if (v < 2) {
 		printf ("Usage: rasm2 [-ACdDehHLBvw] [-a arch] [-b bits] [-s addr] [-S syntax]\n"
@@ -315,7 +359,7 @@ static int rasm_show_help(int v) {
 		" -j           output in json format\n"
 		" -k [kernel]  select operating system (linux, windows, darwin, android, ios, ..)\n"
 		" -l [len]     input/Output length\n"
-		" -L ([name])  list RArch plugins: (a=asm, d=disasm, e=esil)\n"
+		" -L ([name])  list RArch plugins: (a=asm, d=disasm, e=esil, p=parse)\n"
 		" -LL ([name]) list RAsm parse plugins\n"
 		" -N           same as r2 -N (or R2_NOPLUGINS) (not load any plugin)\n" // -n?
 		" -o [file]    output file name (rasm2 -Bf a.asm -o a)\n"
@@ -931,7 +975,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 	}
 	if (list_plugins) {
 		if (list_asm_plugins) {
-			R_LOG_TODO ("asm-parse-plugins-list");
+			rasm2_list_parse_plugins (as, opt.argv[opt.ind]);
 		} else {
 			rarch2_list (as, opt.argv[opt.ind]);
 		}

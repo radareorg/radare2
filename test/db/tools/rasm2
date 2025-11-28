@@ -517,7 +517,7 @@ CMDS=<<EOF
 !rasm2 -LL | grep -c null
 EOF
 EXPECT=<<EOF
-0
+1
 EOF
 RUN
 
