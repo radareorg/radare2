@@ -58,8 +58,9 @@ R_API void r_muta_free(RMuta *cry) {
 				p->fini (cry, p);
 			}
 		}
-#endif
+		// XXX leaks
 		r_list_free (cry->plugins);
+#endif
 		free (cry);
 	}
 }
