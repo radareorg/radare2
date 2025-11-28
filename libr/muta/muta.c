@@ -11,21 +11,6 @@ static RMutaPlugin *muta_static_plugins[] = {
 	R_MUTA_STATIC_PLUGINS
 };
 
-extern RMutaPlugin r_muta_plugin_charset_ascii;
-extern RMutaPlugin r_muta_plugin_charset_ebcdic37;
-extern RMutaPlugin r_muta_plugin_charset_iso8859_1;
-extern RMutaPlugin r_muta_plugin_charset_jis7;
-
-extern RMutaPlugin r_muta_plugin_charset_ascii;
-extern RMutaPlugin r_muta_plugin_charset_ebcdic37;
-extern RMutaPlugin r_muta_plugin_charset_iso8859_1;
-extern RMutaPlugin r_muta_plugin_charset_jis7;
-
-extern RMutaPlugin r_muta_plugin_charset_ascii;
-extern RMutaPlugin r_muta_plugin_charset_ebcdic37;
-extern RMutaPlugin r_muta_plugin_charset_iso8859_1;
-extern RMutaPlugin r_muta_plugin_charset_jis7;
-
 R_API void r_muta_init(RMuta *cry) {
 	R_RETURN_IF_FAIL (cry);
 	int i;
