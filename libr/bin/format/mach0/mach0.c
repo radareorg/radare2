@@ -3463,6 +3463,16 @@ const RPVector *MACH0_(load_imports)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 	return &bin->imports_cache;
 }
 
+static bool check_bind_count(ut64 count, ut64 addr, ut64 segment_end_addr, ut64 skip, ut64 wordsize) {
+	ut64 increment = skip + wordsize;
+	if (!increment) {
+		return count == 0;
+	}
+	ut64 remaining = (addr < segment_end_addr) ? segment_end_addr - addr : 0;
+	ut64 max_count = remaining / increment;
+	return count <= max_count;
+}
+
 static int reloc_comparator(struct reloc_t *a, struct reloc_t *b) {
 	if (a->addr < b->addr) {
 		return -1;
@@ -3999,6 +4009,10 @@ static bool _load_relocations(struct MACH0_(obj_t) *mo) {
 				case BIND_OPCODE_DO_BIND_ULEB_TIMES_SKIPPING_ULEB:
 					count = read_uleb128 (&p, end);
 					skip = read_uleb128 (&p, end);
+					if (!check_bind_count (count, addr, segment_end_addr, skip, wordsize)) {
+						R_LOG_DEBUG ("Count exceeds segment bounds");
+						goto beach;
+					}
 					for (j = 0; j < count; j++) {
 						if (addr >= segment_end_addr) {
 							R_LOG_DEBUG ("Malformed ULEB TIMES bind opcode");
