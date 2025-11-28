@@ -20,3 +20,40 @@ EXPECT=<<EOF
 0x100001058
 EOF
 RUN
+
+NAME=sf function name
+FILE=bins/mach0/mac-ls
+ARGS=-a x86 -A
+CMDS=<<EOF
+sf main
+s
+EOF
+EXPECT=<<EOF
+0x100001058
+EOF
+RUN
+
+NAME=sf alias
+FILE=bins/mach0/mac-ls
+ARGS=-a x86 -A
+CMDS=<<EOF
+s 0x100001058
+sf.
+s
+EOF
+EXPECT=<<EOF
+0x100001058
+EOF
+RUN
+
+NAME=sf partial address
+FILE=bins/mach0/mac-ls
+ARGS=-a x86 -A
+CMDS=<<EOF
+sf..1058
+s
+EOF
+EXPECT=<<EOF
+0x100001058
+EOF
+RUN
