@@ -364,7 +364,6 @@ static void cmd_sf(RCore *core, const char *input) {
 		// TODO: check for rnum errors and break early
 		fcn = r_anal_get_fcn_in (core->anal, naddr, 0);
 		// TODO: check if function doesnt exist maybe?
-		
 	}
 	switch (input[1]) {
 	case '\0': // "sf"
@@ -487,7 +486,7 @@ static void cmd_sf(RCore *core, const char *input) {
 				R_LOG_ERROR ("No function at 0x%08"PFMT64x, core->addr);
 			}
 		} else {
-			R_LOG_ERROR ("Usage: sf..");
+			r_cons_println (core->cons, "Usage: sf..");
 		}
 		break;
 	case '?':

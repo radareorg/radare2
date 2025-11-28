@@ -753,7 +753,12 @@ repeat:
 			if (i + aop.size < bb_size) {
 				r_anal_op_fini (next_op);
 				// int ret2 = r_anal_op (anal, next_op, addr + ret, buf_ptr + i + ret, bb_left - ret, op_tions);
-				int ret2 = r_anal_op (anal, next_op, addr + ret, buf_ptr + i + ret, bb_left - ret, R_ARCH_OP_MASK_BASIC);
+				int left = bb_left - ret;
+				if (left < 1) {
+					r_anal_op_fini (&aop);
+					break;
+				}
+				int ret2 = r_anal_op (anal, next_op, addr + ret, buf_ptr + i + ret, left, R_ARCH_OP_MASK_BASIC);
 				if (ret2 < 1) {
 					r_anal_op_fini (&aop);
 					break;
