@@ -949,7 +949,14 @@ static const char *getname(RBinFile *bf, int type, int idx, bool sd) {
 					DATA_DIRECTORY *metadata_dir = (DATA_DIRECTORY *)((ut8*)pe->clr_hdr + 8);
 					ut64 rva = metadata_dir->VirtualAddress + pe->streams[i]->Offset + idx;
 					ut64 offset = PE_(va2pa) (pe, rva);
-					return r_buf_get_string (pe->b, offset);
+					const char *str = r_buf_get_string (pe->b, offset);
+					if (str) {
+						char *escaped = r_str_escape (str);
+						char *quoted = r_str_newf ("\"%s\"", escaped);
+						free (escaped);
+						return quoted;
+					}
+					return NULL;
 				}
 			}
 		}
