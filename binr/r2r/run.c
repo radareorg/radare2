@@ -556,6 +556,10 @@ R_API bool r2r_subprocess_init(void) {
 		r_th_lock_free (subprocs_mutex);
 		return false;
 	}
+	if (fcntl (sigchld_pipe[1], F_SETFL, O_NONBLOCK) < 0) {
+		r_sys_perror ("fcntl sigchld_pipe");
+		goto error;
+	}
 	sigchld_thread = r_th_new (sigchld_th, NULL, 0);
 	if (!r_th_start (sigchld_thread)) {
 		goto error;
