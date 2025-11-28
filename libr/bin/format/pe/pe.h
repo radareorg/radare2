@@ -2,6 +2,7 @@
 #include <r_bin.h>
 
 #include "pe_specs.h"
+#include "dotnet.h"
 
 #ifndef _INCLUDE_R_BIN_PE_H_
 #define _INCLUDE_R_BIN_PE_H_
@@ -115,6 +116,7 @@ struct PE_(r_bin_pe_obj_t) {
 	PE_(image_clr_header) * clr_hdr;
 	PE_(image_metadata_header) * metadata_header;
 	PE_(image_metadata_stream) * *streams;
+	RList *dotnet_symbols;
 
 	/* store the section information for future use */
 	struct r_bin_pe_section_t *sections;

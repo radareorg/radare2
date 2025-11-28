@@ -7,6 +7,18 @@
 
 #include "cil.inc.c"
 
+static char table_to_type(int table) {
+	switch (table) {
+	case 0x70: return 's'; // string
+	case 0x02: return 't'; // typedef
+	case 0x01: return 'r'; // typeref
+	case 0x04: return 'f'; // field
+	case 0x06: return 'm'; // methoddef
+	case 0x0A: return 'm'; // memberref
+	default: return 0;
+	}
+}
+
 static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const ut8 *buf = op->bytes;
 	int len = op->size;
@@ -102,9 +114,24 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				mnemonic = r_str_appendf (mnemonic, " 0x%08" PFMT64x, target);
 			}
 			break;
-		case CIL_OP_TOKEN:
-			mnemonic = r_str_appendf (mnemonic, " 0x%08x", r_read_le32 (buf + 1));
-			break;
+ 		case CIL_OP_TOKEN:
+ 			{
+ 				ut32 token = r_read_le32 (buf + 1);
+ 				int table = token >> 24;
+ 				int rid = token & 0xffffff;
+ 				char type = table_to_type(table);
+				if (type && as->arch->binb.bin && as->arch->binb.get_name) {
+					const char *name = as->arch->binb.get_name (as->arch->binb.bin, type, rid, false);
+ 					if (name) {
+ 						mnemonic = r_str_appendf (mnemonic, " %s", name);
+ 					} else {
+ 						mnemonic = r_str_appendf (mnemonic, " 0x%08x", token);
+ 					}
+ 				} else {
+ 					mnemonic = r_str_appendf (mnemonic, " 0x%08x", token);
+ 				}
+ 			}
+ 			break;
 		case CIL_OP_VAR_S:
 			mnemonic = r_str_appendf (mnemonic, " %u", buf[op->size - 1]);
 			break;

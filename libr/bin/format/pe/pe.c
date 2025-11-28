@@ -3400,6 +3400,7 @@ static int bin_pe_init(RBinPEObj* pe) {
 	pe->big_endian = 0;
 	pe->cms = NULL;
 	pe->spcinfo = NULL;
+	pe->dotnet_symbols = NULL;
 	if (!bin_pe_init_hdr (pe)) {
 		R_LOG_WARN ("File is not PE");
 		return false;
@@ -4544,6 +4545,7 @@ void* PE_(r_bin_pe_free)(RBinPEObj* pe) {
 	free (pe->authentihash);
 	r_list_free (pe->rich_entries);
 	r_list_free (pe->resources);
+	r_list_free (pe->dotnet_symbols);
 	r_pkcs7_cms_free (pe->cms);
 	r_pkcs7_spcinfo_free (pe->spcinfo);
 	r_buf_free (pe->b);
