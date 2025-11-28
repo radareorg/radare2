@@ -744,12 +744,14 @@ static void dotnet_parse_tilde_methoddef(
 				row_count = max_rows (3, rows.module, rows.moduleref, rows.assemblyref);
 				table_size = ((row_count > (0xFFFF >> 0x02)? 4: 2) + (index_sizes.string * 2)) * num_rows;
 				break;
+#if 0
 			case BIT_TYPEDEF:
 				row_count = max_rows (3, rows.typedef_, rows.typeref, rows.typespec);
 				table_size = (4 + (index_sizes.string * 2) + (row_count > (0xFFFF >> 0x02)? 4: 2) +
 						index_sizes.field + index_sizes.methoddef) *
 					num_rows;
 				break;
+#endif
 			case BIT_FIELDPTR:
 				table_size = (index_sizes.field) * num_rows;
 				break;
@@ -766,10 +768,12 @@ static void dotnet_parse_tilde_methoddef(
 				row_count = max_rows (3, rows.typedef_, rows.typeref, rows.typespec);
 				table_size = (index_sizes.typedef_ + (row_count > (0xFFFF >> 0x02)? 4: 2)) * num_rows;
 				break;
+#if 0
 			case BIT_MEMBERREF:
 				row_count = max_rows (4, rows.methoddef, rows.memberref, rows.typeref, rows.typespec);
 				table_size = ((row_count > (0xFFFF >> 0x03)? 4: 2) + index_sizes.string + index_sizes.blob) * num_rows;
 				break;
+#endif
 			case BIT_CONSTANT:
 				row_count = max_rows (3, rows.field, rows.param, rows.property);
 				table_size = (2 + (row_count > (0xFFFF >> 0x02)? 4: 2) + index_sizes.blob) * num_rows;
@@ -1011,15 +1015,21 @@ static RList *dotnet_collect_typedefs(PE *pe, ut64 metadata_root, PSTREAMS strea
 					table_offset += (resolution_scope_size + (index_sizes.string * 2)) * num_rows;
 				}
 				break;
+#if 0
 			case BIT_FIELDPTR:
 				table_offset += index_sizes.field * num_rows;
 				break;
+#endif
+#if 0
 			case BIT_FIELD:
 				table_offset += (2 + index_sizes.string + index_sizes.blob) * num_rows;
 				break;
+#endif
+#if 0
 			case BIT_METHODDEFPTR:
 				table_offset += index_sizes.methoddef * num_rows;
 				break;
+#endif
 			default:
 				// Other tables shouldn't appear before TypeDef in standard order
 				break;
@@ -1202,9 +1212,11 @@ static RList *dotnet_parse_com(PE *pe, ut64 baddr) {
 				// Search range: go back up to 0x400 bytes or to start of file
 				int search_start = (i > 0x400)? (i - 0x400): 0;
 				for (j = i - 1; j >= search_start; j--) {
+#if 0
 					if (j < 0) {
 						continue;
 					}
+#endif
 					PCLI_HEADER cli = (PCLI_HEADER) (pe->data + j);
 					if (cli->Size == 0x48 || cli->Size == 0x44) {
 						// Verify the version looks reasonable
@@ -1307,9 +1319,11 @@ RList *dotnet_parse_libs(const ut8 *buf, int size) {
 				metadata_offset = i;
 				int search_start = (i > 0x400)? (i - 0x400): 0;
 				for (j = i - 1; j >= search_start; j--) {
+#if 0
 					if (j < 0) {
 						continue;
 					}
+#endif
 					PCLI_HEADER cli = (PCLI_HEADER) (pe->data + j);
 					if (cli->Size == 0x48 || cli->Size == 0x44) {
 						if (cli->MajorRuntimeVersion >= 1 && cli->MajorRuntimeVersion <= 5) {
@@ -1434,9 +1448,11 @@ DotNetVersionInfo *dotnet_parse_version_info(const ut8 *buf, int size) {
 				// Search backwards for CLI header
 				int search_start = (i > 0x400)? (i - 0x400): 0;
 				for (j = i - 1; j >= search_start; j--) {
+#if 0
 					if (j < 0) {
 						continue;
 					}
+#endif
 					PCLI_HEADER cli = (PCLI_HEADER) (pe->data + j);
 					if (cli->Size == 0x48 || cli->Size == 0x44) {
 						if (cli->MajorRuntimeVersion >= 1 && cli->MajorRuntimeVersion <= 5) {

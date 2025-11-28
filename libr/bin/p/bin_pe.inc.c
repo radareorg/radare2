@@ -408,56 +408,58 @@ static RList* symbols(RBinFile *bf) {
 		size_t size = r_buf_size (buf);
 		ut64 image_base = PE_(r_bin_pe_get_image_base)(pe);
 		RList *dotnet_symbols = dotnet_parse (data, size, image_base);
-		if (dotnet_symbols && r_list_length (dotnet_symbols) > 0) {
-			RListIter *iter;
-			DotNetSymbol *dsym;
-			r_list_foreach (dotnet_symbols, iter, dsym) {
-				if (!dsym->type) {
-					continue;
-				}
-				if (!strcmp (dsym->type, "methoddef")) {
-					// Add methoddef at its RVA
-					ptr = R_NEW0 (RBinSymbol);
-					if (dsym->namespace && dsym->namespace[0]) {
-						ptr->name = r_bin_name_new (r_str_newf ("%s.%s", dsym->namespace, dsym->name));
-					} else {
-						ptr->name = r_bin_name_new (dsym->name);
+		if (dotnet_symbols) {
+			if (r_list_length (dotnet_symbols) > 0) {
+				RListIter *iter;
+				DotNetSymbol *dsym;
+				r_list_foreach (dotnet_symbols, iter, dsym) {
+					if (!dsym->type) {
+						continue;
 					}
-					ptr->type = R_BIN_TYPE_FUNC_STR;
-					ptr->bind = R_BIN_BIND_GLOBAL_STR;
-					if (dsym->is_native) {
-						ptr->lang = R_BIN_LANG_C;
-					} else {
-						ptr->lang = R_BIN_LANG_CIL;
+					if (!strcmp (dsym->type, "methoddef")) {
+						// Add methoddef at its RVA
+						ptr = R_NEW0 (RBinSymbol);
+						if (dsym->namespace && dsym->namespace[0]) {
+							ptr->name = r_bin_name_new (r_str_newf ("%s.%s", dsym->namespace, dsym->name));
+						} else {
+							ptr->name = r_bin_name_new (dsym->name);
+						}
+						ptr->type = R_BIN_TYPE_FUNC_STR;
+						ptr->bind = R_BIN_BIND_GLOBAL_STR;
+						if (dsym->is_native) {
+							ptr->lang = R_BIN_LANG_C;
+						} else {
+							ptr->lang = R_BIN_LANG_CIL;
+						}
+						if (dsym->vaddr > 0) {
+							ptr->vaddr = dsym->vaddr + image_base;
+							ptr->paddr = dsym->vaddr;
+						}
+						ptr->size = dsym->size;
+						r_list_append (ret, ptr);
 					}
-					if (dsym->vaddr > 0) {
-						ptr->vaddr = dsym->vaddr + image_base;
-						ptr->paddr = dsym->vaddr;
-					}
-					ptr->size = dsym->size;
-					r_list_append (ret, ptr);
-				}
 #if 0
-				// duplicated symbols for ref data. not necessasry
-				if (dsym->token && (!strcmp (dsym->type, "methoddef") || !strcmp (dsym->type, "memberref"))) {
-					// Add symbol at token address for disassembly resolution
-					ptr = R_NEW0 (RBinSymbol);
-					if (dsym->namespace && dsym->namespace[0]) {
-						ptr->name = r_bin_name_new (r_str_newf ("%s.%s", dsym->namespace, dsym->name));
-					} else {
-						ptr->name = r_bin_name_new (dsym->name);
+					// duplicated symbols for ref data. not necessasry
+					if (dsym->token && (!strcmp (dsym->type, "methoddef") || !strcmp (dsym->type, "memberref"))) {
+						// Add symbol at token address for disassembly resolution
+						ptr = R_NEW0 (RBinSymbol);
+						if (dsym->namespace && dsym->namespace[0]) {
+							ptr->name = r_bin_name_new (r_str_newf ("%s.%s", dsym->namespace, dsym->name));
+						} else {
+							ptr->name = r_bin_name_new (dsym->name);
+						}
+						ptr->type = R_BIN_TYPE_FUNC_STR;
+						ptr->bind = R_BIN_BIND_GLOBAL_STR;
+						if (!strcmp (dsym->type, "methoddef") && !dsym->is_native) {
+							ptr->lang = R_BIN_LANG_CIL;
+						}
+						ptr->vaddr = dsym->token;
+						ptr->paddr = 0;
+						ptr->size = 0;
+						r_list_append (ret, ptr);
 					}
-					ptr->type = R_BIN_TYPE_FUNC_STR;
-					ptr->bind = R_BIN_BIND_GLOBAL_STR;
-					if (!strcmp (dsym->type, "methoddef") && !dsym->is_native) {
-						ptr->lang = R_BIN_LANG_CIL;
-					}
-					ptr->vaddr = dsym->token;
-					ptr->paddr = 0;
-					ptr->size = 0;
-					r_list_append (ret, ptr);
-				}
 #endif
+				}
 			}
 			r_list_free (dotnet_symbols);
 		}
