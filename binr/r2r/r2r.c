@@ -650,6 +650,7 @@ int main(int argc, char **argv) {
 			i++;
 		}
 	}
+	loaded_tests = r_pvector_length (&state.db->tests);
 
 	r_pvector_insert_range (&state.queue, 0, state.db->tests.v.a, r_pvector_length (&state.db->tests));
 
@@ -861,19 +862,21 @@ static RThreadFunctionRet worker_th(RThread *th) {
 		r_th_lock_enter (state->lock);
 		r_pvector_push (&state->results, result);
 
-		switch (result->result) {
-		case R2R_TEST_RESULT_OK:
-			state->ok_count++;
-			break;
-		case R2R_TEST_RESULT_FAILED:
-			state->xx_count++;
-			break;
-		case R2R_TEST_RESULT_BROKEN:
-			state->br_count++;
-			break;
-		case R2R_TEST_RESULT_FIXED:
-			state->fx_count++;
-			break;
+		if (!result->run_skipped) {
+			switch (result->result) {
+			case R2R_TEST_RESULT_OK:
+				state->ok_count++;
+				break;
+			case R2R_TEST_RESULT_FAILED:
+				state->xx_count++;
+				break;
+			case R2R_TEST_RESULT_BROKEN:
+				state->br_count++;
+				break;
+			case R2R_TEST_RESULT_FIXED:
+				state->fx_count++;
+				break;
+			}
 		}
 		if (state->path_left) {
 			ut64 *count = ht_pp_find (state->path_left, test->path, NULL);
@@ -1065,7 +1068,10 @@ static void print_new_results(R2RState *state, ut64 prev_completed) {
 	ut64 i;
 	for (i = prev_completed; i < completed; i++) {
 		R2RTestResultInfo *result = r_pvector_at (&state->results, (size_t)i);
-		if (state->test_results && !result->run_skipped) {
+		if (result->run_skipped) {
+			continue;
+		}
+		if (state->test_results) {
 			test_result_to_json (state->test_results, result);
 		}
 		/* In quiet mode only print failing tests; otherwise follow verbose flag rules */
