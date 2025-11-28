@@ -413,7 +413,6 @@ static RList* symbols(RBinFile *bf) {
 			if (r_list_length (dotnet_symbols) > 0) {
 				RListIter *iter;
 				DotNetSymbol *dsym;
-				RBinSymbol *sym;
 				r_list_foreach (dotnet_symbols, iter, dsym) {
 					if (!strcmp (dsym->type, "methoddef")) {
 						// Add methoddef at its RVA
@@ -884,6 +883,7 @@ static RList *compute_hashes(RBinFile *bf) {
 	return file_hashes;
 }
 
+#ifndef R_BIN_PE64
 static const char *getname(RBinFile *bf, int type, int idx, bool sd) {
 	RBinPEObj *pe = PE_(get) (bf);
 	if (!pe || !pe->clr_hdr) {
@@ -964,3 +964,4 @@ static const char *getname(RBinFile *bf, int type, int idx, bool sd) {
 	}
 	return NULL;
 }
+#endif

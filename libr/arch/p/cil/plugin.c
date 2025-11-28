@@ -120,8 +120,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
  				int table = token >> 24;
  				int rid = token & 0xffffff;
  				char type = table_to_type(table);
- 				if (type && as->arch->binb.bin && as->arch->binb.get_name) {
- 					char *name = as->arch->binb.get_name (as->arch->binb.bin, type, rid, false);
+				if (type && as->arch->binb.bin && as->arch->binb.get_name) {
+					const char *name = as->arch->binb.get_name (as->arch->binb.bin, type, rid, false);
  					if (name) {
  						mnemonic = r_str_appendf (mnemonic, " %s", name);
  					} else {
