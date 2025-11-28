@@ -530,15 +530,14 @@ static RVecAnalRef *fcn_get_all_refs(RAnalFunction *fcn, RefManager *rm, Collect
 #if 1
 			// iterate over instructions
 			int i;
-			for (i = 0; i < bb->ninstr; i++)
+			for (i = 0; i < bb->ninstr; i++) {
 				ut64 addr = bb->addr + r_anal_bb_offset_inst (bb, i);
 #else
 			// iterate on every byte -- slower but more "precise somehow?"
 			ut64 addr;
 			ut64 end = bb->addr + bb->size;
-			for (addr = bb->addr; addr < end; addr++)
+			for (addr = bb->addr; addr < end; addr++) {
 #endif
-			{
 				RVecAnalRef *refs = collect_refs (rm, addr);
 				if (refs) {
 					RVecAnalRef_append (anal_refs, refs, NULL);

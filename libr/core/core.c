@@ -5,14 +5,8 @@
 #include <r_core.h>
 #include <r_vec.h>
 
-#define DB core->sdb
-
 R_LIB_VERSION (r_core);
 R_VEC_TYPE (RVecAnalRef, RAnalRef);
-// R2_600
-#if !R2_USE_NEW_ABI
-R_IPI int Gload_index = 0;
-#endif
 
 static ut64 letter_divs[R_CORE_ASMQJMPS_LEN_LETTERS - 1] = {
 	R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS,
@@ -1788,27 +1782,27 @@ static void update_sdb(RCore *core) {
 	if (!core) {
 		return;
 	}
-	//SDB// anal/
+	//Score->sdb// anal/
 	if (core->anal && core->anal->sdb) {
-		sdb_ns_set (DB, "anal", core->anal->sdb);
+		sdb_ns_set (core->sdb, "anal", core->anal->sdb);
 	}
-	//SDB// bin/
+	//Score->sdb// bin/
 	if (core->bin && core->bin->sdb) {
-		sdb_ns_set (DB, "bin", core->bin->sdb);
+		sdb_ns_set (core->sdb, "bin", core->bin->sdb);
 	}
-	//SDB// bin/info
+	//Score->sdb// bin/info
 	o = r_bin_cur_object (core->bin);
 	if (o) {
-		sdb_ns_set (sdb_ns (DB, "bin", 1), "info", o->kv);
+		sdb_ns_set (sdb_ns (core->sdb, "bin", 1), "info", o->kv);
 	}
 	//sdb_ns_set (core->sdb, "flags", core->flags->sdb);
 	//sdb_ns_set (core->sdb, "bin", core->bin->sdb);
-	//SDB// syscall/
+	//Score->sdb// syscall/
 	if (core->rasm && core->rasm->syscall && core->rasm->syscall->db) {
 		core->rasm->syscall->db->refs++;
-		sdb_ns_set (DB, "syscall", core->rasm->syscall->db);
+		sdb_ns_set (core->sdb, "syscall", core->rasm->syscall->db);
 	}
-	d = sdb_ns (DB, "debug", 1);
+	d = sdb_ns (core->sdb, "debug", 1);
 	if (core->dbg->sgnls) {
 		core->dbg->sgnls->refs++;
 		sdb_ns_set (d, "signals", core->dbg->sgnls);
@@ -1820,7 +1814,7 @@ static void init_cmd_suggestions(RCore *core) {
 		return;
 	}
 	// Fallback commands with ?e (safe echo) for missing plugin commands
-	// Using fallbackcmd.* prefix to distinguish from regular SDB entries
+	// Using fallbackcmd.* prefix to distinguish from regular Score->sdb entries
 	sdb_set (core->sdb, "fallbackcmd.pdd", "?e You need to install the plugin with r2pm -ci r2dec", 0);
 	sdb_set (core->sdb, "fallbackcmd.pdg", "?e You need to install the plugin with r2pm -ci r2ghidra", 0);
 	sdb_set (core->sdb, "fallbackcmd.pd:g", "?e You need to install the plugin with r2pm -ci r2ghidra", 0);
@@ -2688,7 +2682,7 @@ R_API bool r_core_init(RCore *core) {
 		core->print->charset->db->refs++; // increase reference counter to avoid double-free
 	}
 	// ideally sdb_ns_set should be used here, but it doesnt seems to work well. must fix
-	// sdb_ns_set (DB, "charset", core->print->charset->db);
+	// sdb_ns_set (core->sdb, "charset", core->print->charset->db);
 	core->stkcmd = NULL;
 	core->cmdqueue = r_list_newf (free);
 	core->cmdrepeat = true;
@@ -2971,9 +2965,6 @@ R_API void r_core_free(RCore * R_NULLABLE c) {
 }
 
 R_API bool r_core_prompt_loop(RCore *r) {
-#if !R2_USE_NEW_ABI
-	Gload_index = r->cons->line->history.index;
-#endif
 	int ret = 0;
 	do {
 		int err = r_core_prompt (r, false);
