@@ -64,6 +64,7 @@ typedef struct {
 	bool adjustedCols;
 	int maxColumnWidth;
 	bool wrapColumns;
+	bool widthsDirty;
 } RTable;
 
 typedef void (*RTableSelector)(RTableRow *acc, RTableRow *new_row, int nth);

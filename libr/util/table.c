@@ -32,10 +32,10 @@
 #define SET_SHOW_R2(t, condition) WRITE_SHOW_FLAG(t, SHOW_R2, condition)
 #define SET_SHOW_SUM(t, condition) WRITE_SHOW_FLAG(t, SHOW_SUM, condition)
 
-// cant do that without globals because RList doesnt have void *user :(
-// R2_590 wrap RList in a struct that also has a void* user field
-static R_TH_LOCAL int Gnth = 0;
-static R_TH_LOCAL RListComparator Gcmp = NULL;
+typedef struct {
+	int nth;
+	RListComparator cmp;
+} RTableSortCtx;
 
 
 R_API RListInfo *r_listinfo_new(const char *name, RInterval pitv, RInterval vitv, int perm, const char *extra) {
@@ -96,6 +96,9 @@ R_API RTableColumnType *r_table_type(const char *name) {
 }
 
 static void __table_adjust(RTable *t) {
+	if (!t->widthsDirty) {
+		return;
+	}
 	RListIter *iter, *iter2;
 	RTableColumn *col;
 	RTableRow  *row;
@@ -118,6 +121,7 @@ static void __table_adjust(RTable *t) {
 			ncol ++;
 		}
 	}
+	t->widthsDirty = false;
 }
 
 R_API void r_table_row_free(void *_row) {
@@ -159,6 +163,7 @@ R_API RTable *r_table_new(const char *name) {
 	t->rows = r_list_newf (r_table_row_free);
 	t->maxColumnWidth = 32;
 	t->wrapColumns = false;
+	t->widthsDirty = true;
 	SET_SHOW_HEADER (t, true);
 	SET_SHOW_SUM (t, false);
 	return t;
@@ -188,6 +193,7 @@ R_API void r_table_add_column(RTable *t, RTableColumnType *type, const char *nam
 	c->width = itemLength;
 	r_list_append (t->cols, c);
 	c->total = -1;
+	t->widthsDirty = true;
 }
 
 R_API RTableRow *r_table_row_new(RList *items) {
@@ -229,6 +235,7 @@ R_API void r_table_add_row_list(RTable *t, RList *items) {
 	r_list_append (t->rows, row);
 	// throw warning if not enough columns defined in header
 	t->totalCols = R_MAX (t->totalCols, r_list_length (items));
+	t->widthsDirty = true;
 }
 
 R_API void r_table_set_columnsf(RTable *t, const char *fmt, ...) {
@@ -350,6 +357,7 @@ R_API void r_table_add_row(RTable *t, const char *name, ...) {
 	r_list_append (t->rows, row);
 	// throw warning if not enough columns defined in header
 	t->totalCols = R_MAX (t->totalCols, r_list_length (items));
+	t->widthsDirty = true;
 }
 
 // import / export
@@ -881,6 +889,7 @@ R_API void r_table_filter(RTable *t, int nth, int op, const char *un) {
 		}
 		if (!match) {
 			r_list_delete (t->rows, iter);
+			t->widthsDirty = true;
 		}
 	}
 	if (op == '+') {
@@ -888,37 +897,36 @@ R_API void r_table_filter(RTable *t, int nth, int op, const char *un) {
 	}
 }
 
-static int cmp(const void *_a, const void *_b) {
+static int cmp_with_user(const void *_a, const void *_b, void *user) {
 	RTableRow *a = (RTableRow*)_a;
 	RTableRow *b = (RTableRow*)_b;
-	const char *wa = r_list_get_n (a->items, Gnth);
-	const char *wb = r_list_get_n (b->items, Gnth);
-	int res = Gcmp (wa, wb);
+	RTableSortCtx *ctx = (RTableSortCtx *)user;
+	const char *wa = r_list_get_n (a->items, ctx->nth);
+	const char *wb = r_list_get_n (b->items, ctx->nth);
+	int res = ctx->cmp (wa, wb);
 	return res;
 }
 
 R_API void r_table_sort(RTable *t, int nth, bool dec) {
 	RTableColumn *col = r_list_get_n (t->cols, nth);
 	if (col) {
-		Gnth = nth;
 		if (col->type && col->type->cmp) {
-			Gcmp = col->type->cmp;
+			RTableSortCtx ctx = { nth, col->type->cmp };
 			t->rows->sorted = false; // force sorting
-			r_list_sort (t->rows, cmp);
+			r_list_sort_with_user (t->rows, cmp_with_user, &ctx);
 			if (dec) {
 				r_list_reverse (t->rows);
 			}
 		}
-		Gnth = 0;
-		Gcmp = NULL;
 	}
 }
 
-static int cmplen(const void *_a, const void *_b) {
+static int cmplen_with_user(const void *_a, const void *_b, void *user) {
 	RTableRow *a = (RTableRow*)_a;
 	RTableRow *b = (RTableRow*)_b;
-	const char *wa = r_list_get_n (a->items, Gnth);
-	const char *wb = r_list_get_n (b->items, Gnth);
+	RTableSortCtx *ctx = (RTableSortCtx *)user;
+	const char *wa = r_list_get_n (a->items, ctx->nth);
+	const char *wb = r_list_get_n (b->items, ctx->nth);
 	int res = strlen (wa) - strlen (wb);
 	return res;
 }
@@ -926,13 +934,12 @@ static int cmplen(const void *_a, const void *_b) {
 R_API void r_table_sortlen(RTable *t, int nth, bool dec) {
 	RTableColumn *col = r_list_get_n (t->cols, nth);
 	if (col) {
-		Gnth = nth;
+		RTableSortCtx ctx = { nth, NULL };
 		t->rows->sorted = false; //force sorting
-		r_list_sort (t->rows, cmplen);
+		r_list_sort_with_user (t->rows, cmplen_with_user, &ctx);
 		if (dec) {
 			r_list_reverse (t->rows);
 		}
-		Gnth = 0;
 	}
 }
 
@@ -1003,6 +1010,7 @@ R_API void r_table_group(RTable *t, int nth, RTableSelector fcn) {
 					fcn (uniq_row, row, nth);
 				}
 				r_list_delete (rows, iter);
+				t->widthsDirty = true;
 				break;
 			}
 		}
@@ -1133,6 +1141,7 @@ R_API void r_table_columns(RTable *t, RList *col_names) {
 
 	free (plan);
 	free (used_cols);
+	t->widthsDirty = true;
 }
 
 R_API void r_table_filter_columns(RTable *t, RList *list) {

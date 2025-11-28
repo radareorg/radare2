@@ -516,6 +516,41 @@ static RListIter *_merge(RListIter *first, RListIter *second, RListComparator cm
 	return head;
 }
 
+static RListIter *_merge_with_user(RListIter *first, RListIter *second, RListComparatorWithUser cmp, void *user) {
+	RListIter *next = NULL, *result = NULL, *head = NULL;
+	while (first || second) {
+		if (!second) {
+			next = first;
+			first = first->n;
+		} else if (!first) {
+			next = second;
+			second = second->n;
+		} else if (cmp (first->data, second->data, user) <= 0) {
+			next = first;
+			first = first->n;
+		} else {
+			next = second;
+			second = second->n;
+		}
+		if (!head) {
+			result = next;
+			head = result;
+			head->p = NULL;
+		} else {
+			result->n = next;
+			next->p = result;
+			result = result->n;
+		}
+	}
+	if (head) {
+		head->p = NULL;
+	}
+	if (next) {
+		next->n = NULL;
+	}
+	return head;
+}
+
 static RListIter *_r_list_half_split(RListIter *head) {
 	RListIter *tmp;
 	RListIter *fast;
@@ -552,6 +587,19 @@ static void list_insertion_sort_iter(RListIter *iter, RListComparator cmp) {
 	}
 }
 
+static void list_insertion_sort_iter_with_user(RListIter *iter, RListComparatorWithUser cmp, void *user) {
+	RListIter *it, *it2;
+	for (it = iter; it && it->data; it = it->n) {
+		for (it2 = it->n; it2 && it2->data; it2 = it2->n) {
+			if (cmp (it->data, it2->data, user) > 0) {
+				void *t = it->data;
+				it->data = it2->data;
+				it2->data = t;
+			}
+		}
+	}
+}
+
 static RListIter *_merge_sort(RListIter *head, RListComparator cmp) {
 	RListIter *second;
 	if (!head || !head->n) {
@@ -564,6 +612,21 @@ static RListIter *_merge_sort(RListIter *head, RListComparator cmp) {
 		return _merge (head, second, cmp);
 	}
 	list_insertion_sort_iter (head, cmp);
+	return head;
+}
+
+static RListIter *_merge_sort_with_user(RListIter *head, RListComparatorWithUser cmp, void *user) {
+	RListIter *second;
+	if (!head || !head->n) {
+		return head;
+	}
+	second = _r_list_half_split (head);
+	if (second) {
+		head = _merge_sort_with_user (head, cmp, user);
+		second = _merge_sort_with_user (second, cmp, user);
+		return _merge_with_user (head, second, cmp, user);
+	}
+	list_insertion_sort_iter_with_user (head, cmp, user);
 	return head;
 }
 
@@ -583,7 +646,42 @@ R_API void r_list_merge_sort(RList *list, RListComparator cmp) {
 	list->sorted = true;
 }
 
+R_API void r_list_merge_sort_with_user(RList *list, RListComparatorWithUser cmp, void *user) {
+	R_RETURN_IF_FAIL (list);
+
+	if (!list->sorted && list->head && cmp) {
+		RListIter *iter;
+		list->head = _merge_sort_with_user (list->head, cmp, user);
+		//update tail reference
+		iter = list->head;
+		while (iter && iter->n) {
+			iter = iter->n;
+		}
+		list->tail = iter;
+	}
+	list->sorted = true;
+}
+
 R_API void r_list_insertion_sort(RList *list, RListComparator cmp) {
+	R_RETURN_IF_FAIL (list);
+
+	if (!list->sorted) {
+		RListIter *it;
+		for (it = list->head; it && it->data; it = it->n) {
+			RListIter *it2;
+			for (it2 = it->n; it2 && it2->data; it2 = it2->n) {
+				if (cmp (it->data, it2->data) > 0) {
+					void *t = it->data;
+					it->data = it2->data;
+					it2->data = t;
+				}
+			}
+		}
+		list->sorted = true;
+	}
+}
+
+R_API void r_list_insertion_sort_with_user(RList *list, RListComparatorWithUser cmp, void *user) {
 	R_RETURN_IF_FAIL (list);
 
 	if (!list->sorted) {
@@ -592,7 +690,7 @@ R_API void r_list_insertion_sort(RList *list, RListComparator cmp) {
 		if (cmp) {
 			for (it = list->head; it && it->data; it = it->n) {
 				for (it2 = it->n; it2 && it2->data; it2 = it2->n) {
-					if (cmp (it->data, it2->data) > 0) {
+					if (cmp (it->data, it2->data, user) > 0) {
 						void *t = it->data;
 						it->data = it2->data;
 						it2->data = t;
@@ -611,6 +709,15 @@ R_API void r_list_sort(RList *list, RListComparator cmp) {
 		r_list_merge_sort (list, cmp);
 	} else {
 		r_list_insertion_sort (list, cmp);
+	}
+}
+
+R_API void r_list_sort_with_user(RList *list, RListComparatorWithUser cmp, void *user) {
+	R_RETURN_IF_FAIL (list);
+	if (list->length > MERGE_LIMIT) {
+		r_list_merge_sort_with_user (list, cmp, user);
+	} else {
+		r_list_insertion_sort_with_user (list, cmp, user);
 	}
 }
 
