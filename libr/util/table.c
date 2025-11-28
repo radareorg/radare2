@@ -790,13 +790,19 @@ R_API void r_table_filter(RTable *t, int nth, int op, const char *un) {
 		}
 	}
 	if (op == 'p') {
-		sscanf ((char *)un, "%d/%d", &page, &page_items);
-		if (page < 1) {
-			page = 1;
-		}
-		if (!ST32_MUL_OVFCHK (page, page_items)) {
-			lrow = page_items * (page - 1);
-			uv = ((ut64)page_items) * page;
+		if (sscanf ((char *)un, "%d/%d", &page, &page_items) == 2) {
+			if (page < 1) {
+				page = 1;
+			}
+			if (!ST32_MUL_OVFCHK (page, page_items)) {
+				lrow = page_items * (page - 1);
+				uv = ((ut64)page_items) * page;
+			} else {
+				uv = 0;
+			}
+		} else {
+			uv = 0;
+			R_LOG_ERROR ("Invalid page format for table filter");
 		}
 	}
 	size_t nrow = 0;
