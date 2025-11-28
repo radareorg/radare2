@@ -1540,11 +1540,11 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 			bool mustrun = !needsabi || (needsabi < 0);
 #endif
 			if (mustrun) {
-				R2RProcessOutput *out = r2r_run_cmd_test (config, cmd_test, subprocess_runner, NULL);
-				success = r2r_check_cmd_test (out, cmd_test);
-				ret->proc_out = out;
-				ret->timeout = out && out->timeout;
-				ret->run_failed = !out;
+			R2RProcessOutput *out = r2r_run_cmd_test (config, cmd_test, subprocess_runner, NULL);
+			success = r2r_check_cmd_test (out, cmd_test);
+			ret->proc_out = out;
+			ret->timeout = out ? out->timeout : false;
+			ret->run_failed = !out;
 			} else {
 				success = true;
 				ret->proc_out = NULL;
