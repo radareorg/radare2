@@ -1,0 +1,22 @@
+NAME=seek next / previous functions
+FILE=bins/mach0/mac-ls
+ARGS=-a x86 -A
+CMDS=<<EOF
+s
+sn
+s
+sn
+s
+sp
+s
+sp
+s
+EOF
+EXPECT=<<EOF
+0x100001058
+0x10000116e
+0x100001176
+0x10000116e
+0x100001058
+EOF
+RUN
