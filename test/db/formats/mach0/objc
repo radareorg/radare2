@@ -98,8 +98,8 @@ FILE=bins/mach0/hello-objc
 CMDS=aao;ax~method
 EXPECT=<<EOF
               section.0.__TEXT.__text+20 0x100000db4 > CODE:--x > 0x100000df0 method.Person.name
-                                 main+45 0x100000e7d > CODE:--x > 0x100000e20 method.Person.setName:
-                                main+116 0x100000ec4 > CODE:--x > 0x100000e20 method.Person.setName:
+                                 main+64 0x100000e90 > CODE:--x > 0x100000da0 method.Person.sayHello
+                                main+135 0x100000ed7 > CODE:--x > 0x100000da0 method.Person.sayHello
 EOF
 RUN
 

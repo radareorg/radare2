@@ -280,7 +280,7 @@ static bool objc_find_refs(RCore *core) {
 		}
 
 		classMethodsVA += 8; // advance to start of class methods array
-		ut64 max_delta = (classMethodsVA > objc->file_size)? 0: objc->file_size - classMethodsVA;
+		ut64 max_delta = objc->_const->vaddr + objc->_const->vsize - classMethodsVA;
 		ut64 max_count = max_delta / objc2ClassMethSize;
 		if (count > max_count) {
 			R_LOG_WARN ("Clamping objc method count from %u to %u", (unsigned int)count, (unsigned int)max_count);
