@@ -5218,7 +5218,13 @@ beach:
 }
 
 static int bbcmp(RAnalBlock *a, RAnalBlock *b) {
-	return a->addr - b->addr;
+	if (a->addr < b->addr) {
+		return -1;
+	}
+	if (a->addr > b->addr) {
+		return 1;
+	}
+	return 0;
 }
 
 /* TODO: integrate this into r_anal */

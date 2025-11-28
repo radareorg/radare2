@@ -3464,7 +3464,13 @@ const RPVector *MACH0_(load_imports)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 }
 
 static int reloc_comparator(struct reloc_t *a, struct reloc_t *b) {
-	return a->addr - b->addr;
+	if (a->addr < b->addr) {
+		return -1;
+	}
+	if (a->addr > b->addr) {
+		return 1;
+	}
+	return 0;
 }
 
 static void parse_relocation_info(struct MACH0_(obj_t) *mo, RSkipList *relocs, ut32 offset, ut32 num) {

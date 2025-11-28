@@ -168,7 +168,13 @@ static void __seek_cursor(RCoreVisualViewGraph *status) {
 
 static int cmpaddr(const void *_a, const void *_b) {
 	const RCoreVisualViewGraphItem *a = _a, *b = _b;
-	return a->addr - b->addr;
+	if (a->addr < b->addr) {
+		return -1;
+	}
+	if (a->addr > b->addr) {
+		return 1;
+	}
+	return 0;
 }
 
 static int cmpname(const void *_a, const void *_b) {

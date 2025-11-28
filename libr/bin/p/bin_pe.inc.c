@@ -209,6 +209,7 @@ static RList* classes(RBinFile *bf) {
 	}
 	ret = r_list_newf ((RListFree)r_bin_class_free);
 	if (!ret) {
+		r_list_free (dotnet_symbols);
 		return NULL;
 	}
 
