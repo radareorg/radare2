@@ -341,7 +341,15 @@ static bool objc_find_refs(RCore *core) {
 	// R_LOG_INFO ("Found %u objc xrefs", (unsigned int)total_xrefs);
 
 	const ut64 va_selrefs = objc->_selrefs->vaddr;
-	const ut64 ss_selrefs = va_selrefs + objc->_selrefs->vsize;
+	size_t clamped_selrefs_size = objc->_selrefs->vsize;
+	size_t maxsize = R_MIN (clamped_selrefs_size, objc->file_size);
+	if (clamped_selrefs_size > maxsize) {
+		if (objc->core->bin->options.verbose) {
+			R_LOG_WARN ("aao: Truncating selrefs size from %u to %u", (int)clamped_selrefs_size, (int)maxsize);
+		}
+		clamped_selrefs_size = maxsize;
+	}
+	const ut64 ss_selrefs = va_selrefs + clamped_selrefs_size;
 
 	size_t total_words = 0;
 	ut64 a;
