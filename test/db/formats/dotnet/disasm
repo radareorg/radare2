@@ -1,0 +1,184 @@
+NAME=.NET HelloWorld.dll disasm
+FILE=bins/dotnet/HelloWorld.dll
+CMDS=<<EOF
+0x1000212f
+af
+pdf 
+EOF
+EXPECT=<<EOF
+/ 132: fcn.1000212f ();
+|           0x1000212f      1100           ldloc.s 0
+|           0x10002131      16             ldc.i4.0
+|           0x10002132      0a             stloc.0
+|       ,=< 0x10002133      2b6b           br.s 0x100021a0
+|      .--> 0x10002135      00             nop
+|      :|   0x10002136      02             ldarg.0
+|      :|   0x10002137      7b02000004     ldfld 0x04000002
+|      :|   0x1000213c      06             ldloc.0
+|      :|   0x1000213d      280500002b     call 0x2b000005
+|      :|   0x10002142      1f10           ldc.i4.s 0x10
+|      :|   0x10002144      280200002b     call 0x2b000002
+|      :|   0x10002149      280300002b     call 0x2b000003
+|      :|   0x1000214e      0b             stloc.1
+|      :|   0x1000214f      1202           ldloca.s 2
+|      :|   0x10002151      1f0a           ldc.i4.s 0x0a
+|      :|   0x10002153      18             ldc.i4.2
+|      :|   0x10002154      281400000a     call .ctor
+|      :|   0x10002159      1202           ldloca.s 2
+|      :|   0x1000215b      725b000070     ldstr "E408C418E67ADD6FA4C017AFA618963"
+|      :|   0x10002160      281500000a     call AppendLiteral
+|      :|   0x10002165      00             nop
+|      :|   0x10002166      1202           ldloca.s 2
+|      :|   0x10002168      06             ldloc.0
+|      :|   0x10002169      1f10           ldc.i4.s 0x10
+|      :|   0x1000216b      5b             div
+|      :|   0x1000216c      280400002b     call 0x2b000004
+|      :|   0x10002171      00             nop
+|      :|   0x10002172      1202           ldloca.s 2
+|      :|   0x10002174      726d000070     ldstr "C017AFA618963"
+|      :|   0x10002179      281500000a     call AppendLiteral
+|      :|   0x1000217e      00             nop
+|      :|   0x1000217f      1202           ldloca.s 2
+|      :|   0x10002181      07             ldloc.1
+|      :|   0x10002182      281900000a     call ToString
+|      :|   0x10002187      281a00000a     call AppendFormatted
+|      :|   0x1000218c      00             nop
+|      :|   0x1000218d      1202           ldloca.s 2
+|      :|   0x1000218f      281700000a     call ToStringAndClear
+|      :|   0x10002194      280f00000a     call WriteLine
+|      :|   0x10002199      00             nop
+|      :|   0x1000219a      00             nop
+|      :|   0x1000219b      06             ldloc.0
+|      :|   0x1000219c      1f10           ldc.i4.s 0x10
+|      :|   0x1000219e      58             add
+|      :|   0x1000219f      0a             stloc.0
+|      :|   ; CODE XREF from fcn.1000212f @ 0x10002133(x)
+|      :`-> 0x100021a0      06             ldloc.0
+|      :    0x100021a1      02             ldarg.0
+|      :    0x100021a2      7b02000004     ldfld 0x04000002
+|      :    0x100021a7      6f1000000a     callvirt get_Count
+|      :    0x100021ac      fe04           clt
+|      :    0x100021ae      0d             stloc.3
+|      :    0x100021af      09             ldloc.3
+|      `==< 0x100021b0      2d83           brtrue.s 0x10002135
+\           0x100021b2      2a             ret
+EOF
+RUN
+
+NAME=.NET HelloWorld.dll disasm AnalyzeMetadata
+FILE=bins/dotnet/HelloWorld.dll
+CMDS=<<EOF
+0x100022ff
+af
+pdf
+EOF
+EXPECT=<<EOF
+/ 64: fcn.100022ff ();
+|           0x100022ff      1100           ldloc.s 0
+|           0x10002301      02             ldarg.0
+|           0x10002302      03             ldarg.1
+|           0x10002303      2803000006     call BinaryParserLibrary.BinaryParser.ValidateArgs
+|           0x10002308      16             ldc.i4.0
+|           0x10002309      fe01           ceq
+|           0x1000230b      0a             stloc.0
+|           0x1000230c      06             ldloc.0
+|       ,=< 0x1000230d      2c02           brfalse.s 0x10002311
+|      ,==< 0x1000230f      2b2d           br.s 0x1000233e
+|      |`-> 0x10002311      02             ldarg.0
+|      |    0x10002312      1e             ldc.i4.8
+|      |    0x10002313      8d1a000001     newarr 0x0100001a
+|      |    0x10002318      25             dup
+|      |    0x10002319      d004000004     ldtoken 0x04000004
+|      |    0x1000231e      282600000a     call InitializeArray
+|      |    0x10002323      2802000006     call BinaryParserLibrary.BinaryParser.LoadData
+|      |    0x10002328      00             nop
+|      |    0x10002329      02             ldarg.0
+|      |    0x1000232a      2804000006     call BinaryParserLibrary.BinaryParser.ParseHeader
+|      |    0x1000232f      00             nop
+|      |    0x10002330      02             ldarg.0
+|      |    0x10002331      2805000006     call BinaryParserLibrary.BinaryParser.ProcessSections
+|      |    0x10002336      00             nop
+|      |    0x10002337      02             ldarg.0
+|      |    0x10002338      2807000006     call BinaryParserLibrary.BinaryParser.AnalyzeMetadata
+|      |    0x1000233d      00             nop
+|      |    ; CODE XREF from fcn.100022ff @ 0x1000230f(x)
+\      `--> 0x1000233e      2a             ret
+EOF
+RUN
+
+NAME=.NET HelloWorld.dll disasm RunAnalysis
+FILE=bins/dotnet/HelloWorld.dll
+CMDS=<<EOF
+0x10002223
+af
+pdf
+EOF
+EXPECT=<<EOF
+/ 178: fcn.10002223 ();
+|           0x10002223      1100           ldloc.s 0
+|           0x10002225      731f00000a     newobj .ctor
+|           0x1000222a      0a             stloc.0
+|           0x1000222b      06             ldloc.0
+|           0x1000222c      7273000070     ldstr "A618963"
+|           0x10002231      02             ldarg.0
+|           0x10002232      7b02000004     ldfld 0x04000002
+|           0x10002237      6f1000000a     callvirt get_Count
+|           0x1000223c      8c19000001     box 0x01000019
+|           0x10002241      6f2000000a     callvirt set_Item
+|           0x10002246      00             nop
+|           0x10002247      06             ldloc.0
+|           0x10002248      727d000070     ldstr "odule>"
+|           0x1000224d      02             ldarg.0
+|           0x1000224e      7b03000004     ldfld 0x04000003
+|           0x10002253      8c19000001     box 0x01000019
+|           0x10002258      6f2000000a     callvirt set_Item
+|           0x1000225d      00             nop
+|           0x1000225e      06             ldloc.0
+|           0x1000225f      728b000070     ldstr "eImplementationDetails>"
+|           0x10002264      02             ldarg.0
+|           0x10002265      2806000006     call BinaryParserLibrary.BinaryParser.CalculateChecksum
+|           0x1000226a      8c19000001     box 0x01000019
+|           0x1000226f      6f2000000a     callvirt set_Item
+|           0x10002274      00             nop
+|           0x10002275      00             nop
+|           0x10002276      06             ldloc.0
+|           0x10002277      6f2100000a     callvirt GetEnumerator
+|           0x1000227c      0b             stloc.1
+|       ,=< 0x1000227d      2b4a           br.s 0x100022c9
+|      .--> 0x1000227f      1201           ldloca.s 1
+|      :|   0x10002281      282200000a     call get_Current
+|      :|   0x10002286      0c             stloc.2
+|      :|   0x10002287      00             nop
+|      :|   0x10002288      18             ldc.i4.2
+|      :|   0x10002289      18             ldc.i4.2
+|      :|   0x1000228a      731400000a     newobj .ctor
+|      :|   0x1000228f      0d             stloc.3
+|      :|   0x10002290      1203           ldloca.s 3
+|      :|   0x10002292      1202           ldloca.s 2
+|      :|   0x10002294      282300000a     call get_Key
+|      :|   0x10002299      281a00000a     call AppendFormatted
+|      :|   0x1000229e      00             nop
+|      :|   0x1000229f      1203           ldloca.s 3
+|      :|   0x100022a1      726d000070     ldstr "C017AFA618963"
+|      :|   0x100022a6      281500000a     call AppendLiteral
+|      :|   0x100022ab      00             nop
+|      :|   0x100022ac      1203           ldloca.s 3
+|      :|   0x100022ae      1202           ldloca.s 2
+|      :|   0x100022b0      282400000a     call get_Value
+|      :|   0x100022b5      280600002b     call 0x2b000006
+|      :|   0x100022ba      00             nop
+|      :|   0x100022bb      1203           ldloca.s 3
+|      :|   0x100022bd      281700000a     call ToStringAndClear
+|      :|   0x100022c2      280f00000a     call WriteLine
+|      :|   0x100022c7      00             nop
+|      :|   0x100022c8      00             nop
+|      :|   ; CODE XREF from fcn.10002223 @ 0x1000227d(x)
+|      :`-> 0x100022c9      1201           ldloca.s 1
+|      :    0x100022cb      282500000a     call MoveNext
+|      `==< 0x100022d0      2dad           brtrue.s 0x1000227f
+|       ,=< 0x100022d2      de0f           leave.s
+..
+|       |   ; CODE XREF from fcn.10002223 @ 0x100022d2(x)
+\       `-> 0x100022e3      2a             ret
+EOF
+RUN

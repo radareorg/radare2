@@ -32,8 +32,8 @@ aha x86 @ 0x10002fba
             0x10002098      06             ldloc.0
         ,=< 0x10002099      2c10           brfalse.s 0x100020ab
         |   0x1000209b      00             nop
-        |   0x1000209c      7201000070     ldstr 0x70000001
-        |   0x100020a1      280f00000a     call 0x0a00000f
+        |   0x1000209c      7201000070     ldstr "IEnumerable`1"
+        |   0x100020a1      280f00000a     call WriteLine
         |   0x100020a6      00             nop
         |   0x100020a7      16             ldc.i4.0
 mscoree.dll
