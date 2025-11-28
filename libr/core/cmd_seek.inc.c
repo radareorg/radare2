@@ -24,8 +24,7 @@ static RCoreHelpMessage help_msg_s = {
 	"sb", " ([addr])", "seek to the beginning of the basic block",
 	"sC", "[?] string", "seek to comment matching given string",
 	"sd", " ([addr])", "show delta seek compared to all possible reference bases",
-	"sf", "", "seek to next function (f->addr+f->size)",
-	"sf", " function", "seek to address of specified function",
+	"sf", "[?] [addr]", "seek to function (f->addr+f->size)",
 	"sf.", "", "seek to the beginning of current function",
 	"sfp", "", "seek to the function prelude checking back blocksize bytes",
 	"sff", "", "seek to the nearest flag backwards (uses fd and ignored the delta)",
@@ -40,6 +39,18 @@ static RCoreHelpMessage help_msg_s = {
 	"ss", "[?]", "seek silently (without adding an entry to the seek history)",
 	// "sp [page]  seek page N (page = block)",
 	"sort", " [file]", "sort the contents of the file",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_sf = {
+	"Usage: sf", " [addr|name]", " # Seek for flags and functions using $$ as ref. See also: '?$?~F'",
+	"sf", "", "seek to the begining of the current function (same as 'sf.' or 's $FB'",
+	"sf", " [addr|name]", "seek to function by name or address",
+	"sf.", "", "alias for 'sf' or 'sf $$'",
+	"sf..", "1234", "seek to the entrypoint of a function in partial address",
+	"sfe", " ([addr])", "seek to the last/max address of a function",
+	"sfp", "[pf] ([addr])", "seek to previous function (sfpp:prelude, sfpf:flag)",
+	"sfn", "[pf] ([addr])", "seek to next function (sfnp:prelude, sfnf:flag)",
 	NULL
 };
 
@@ -305,10 +316,10 @@ static int cmd_seek_opcode_backward(RCore *core, int numinstr) {
 
 static int cmd_seek_opcode_forward(RCore *core, int n) {
 	// N forward instructions
-	int i, ret, val = 0;
+	int i, val = 0;
 	for (val = i = 0; i < n; i++) {
 		RAnalOp op;
-		ret = r_anal_op (core->anal, &op, core->addr, core->block,
+		int ret = r_anal_op (core->anal, &op, core->addr, core->block,
 			core->blocksize, R_ARCH_OP_MASK_BASIC);
 		if (ret < 1) {
 			ret = 1;
@@ -318,6 +329,174 @@ static int cmd_seek_opcode_forward(RCore *core, int n) {
 		val += ret;
 	}
 	return val;
+}
+
+static RFlagItem *find_adjacent_function_flag(RCore *core, bool next) {
+	RFlagItem *target = NULL;
+	RList *flags = r_flag_all_list (core->flags, false);
+	if (flags) {
+		RListIter *iter;
+		RFlagItem *flag;
+		r_list_foreach (flags, iter, flag) {
+			if (r_str_startswith (flag->name, "fcn.")) {
+				if (next) {
+					if (flag->addr > core->addr && (!target || flag->addr < target->addr)) {
+						target = flag;
+					}
+				} else {
+					if (flag->addr < core->addr && (!target || flag->addr > target->addr)) {
+						target = flag;
+					}
+				}
+			}
+		}
+		r_list_free (flags);
+	}
+	return target;
+}
+
+static void cmd_sf(RCore *core, const char *input) {
+	const ut64 addr = core->addr;
+	const char *sp = strchr (input, ' ');
+	RAnalFunction *fcn = NULL;
+	if (sp) {
+		ut64 naddr = r_num_math (core->num, sp + 1);
+		// TODO: check for rnum errors and break early
+		fcn = r_anal_get_fcn_in (core->anal, naddr, 0);
+		// TODO: check if function doesnt exist maybe?
+		
+	}
+	switch (input[1]) {
+	case '\0': // "sf"
+		if (fcn) {
+			r_core_seek (core, fcn->addr, true);
+		} else {
+			R_LOG_ERROR ("Cannot find function here");
+		}
+		break;
+	case 'x': // "sf0"
+		if (input[2] == 'x') {
+			ut64 naddr = r_num_math (core->num, input + 1);
+			// TODO: check for rnum errors and break early
+			fcn = r_anal_get_fcn_in (core->anal, naddr, 0);
+			if (fcn) {
+				r_core_seek (core, fcn->addr, true);
+			} else {
+				R_LOG_ERROR ("Cannot find function here");
+			}
+		} else {
+			R_LOG_ERROR ("Expected an 'x' after the sf0x... for a number");
+		}
+		break;
+	case ' ': // "sf "
+		if (input[2] == '0') {
+			ut64 naddr = r_num_math (core->num, input + 2);
+			// TODO: check for rnum errors and break early
+			fcn = r_anal_get_fcn_in (core->anal, naddr, 0);
+		} else {
+			fcn = r_anal_get_function_byname (core->anal, input + 2);
+		}
+		if (fcn) {
+			r_core_seek (core, fcn->addr, true);
+		} else {
+			R_LOG_ERROR ("Cannot find function here");
+		}
+		break;
+	case 'n': // "sfn"
+		switch (input[2]) {
+		case '?':
+			r_core_cmd_help_contains (core, help_msg_sf, "sfn");
+			break;
+		case 'p': // next prelude
+			r_core_cmd0 (core, "/pp;s hit.prelude;f-hit.prelude");
+			break;
+		case 'f': // next flag
+			{
+				RFlagItem *flag = find_adjacent_function_flag (core, true);
+				if (flag) {
+					r_core_seek (core, flag->addr, true);
+				} else {
+					R_LOG_ERROR ("No next function flag found");
+				}
+			}
+			break;
+		default: // next function
+			{
+				RFlagItem *flag = find_adjacent_function_flag (core, true);
+				if (flag) {
+					r_core_seek (core, flag->addr, true);
+				} else {
+					R_LOG_ERROR ("No next function found");
+				}
+			}
+			break;
+		}
+		break;
+	case 'p': // "sfp" - find function prelude backwards
+		switch (input[2]) {
+		case '?':
+			r_core_cmd_help_contains (core, help_msg_sf, "sfp");
+			break;
+		case 'p': // previous prelude
+			r_core_cmd0 (core, "s `ap`");
+			break;
+		case 'f': // previous flag
+			{
+				RFlagItem *flag = find_adjacent_function_flag (core, false);
+				if (flag) {
+					r_core_seek (core, flag->addr, true);
+				} else {
+					R_LOG_ERROR ("No previous function flag found");
+				}
+			}
+			break;
+		default: // previous function
+			{
+				RFlagItem *flag = find_adjacent_function_flag (core, false);
+				if (flag) {
+					r_core_seek (core, flag->addr, true);
+				} else {
+					R_LOG_ERROR ("No previous function found");
+				}
+			}
+			break;
+		}
+		break;
+	case 'e':
+		if (fcn) {
+			r_core_seek (core, r_anal_function_max_addr (fcn), true);
+		} else {
+			R_LOG_ERROR ("No function at 0x%08"PFMT64x, core->addr);
+		}
+		break;
+	case '.': // "sf."
+		if (input[2] == '.') {
+			r_core_seek_base (core, input + 2);
+			fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
+			if (fcn) {
+				r_core_seek (core, fcn->addr, true);
+			} else {
+				R_LOG_ERROR ("No function at 0x%08"PFMT64x, core->addr);
+				r_core_seek (core, addr, true);
+			}
+		} else if (!input[2]) { // "sf." (same as "sf");
+			fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
+			if (fcn) {
+				r_core_seek (core, fcn->addr, true);
+			} else {
+				R_LOG_ERROR ("No function at 0x%08"PFMT64x, core->addr);
+			}
+		} else {
+			R_LOG_ERROR ("Usage: sf..");
+		}
+		break;
+	case '?':
+		r_core_cmd_help (core, help_msg_sf);
+		break;
+	default:
+		r_core_return_invalid_command (core, "sf", input[1]);
+		break;
+	}
 }
 
 static void cmd_seek_opcode(RCore *core, const char *input) {
@@ -789,41 +968,9 @@ static int cmd_seek(void *data, const char *input) {
 			r_core_cmd_help_contains (core, help_msg_s, "sb");
 		}
 		break;
-	case 'f': { // "sf"
-		RAnalFunction *fcn;
-		switch (input[1]) {
-		case '\0': // "sf"
-			fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
-			if (fcn) {
-				r_core_seek (core, r_anal_function_max_addr (fcn), true);
-			}
-			break;
-		case ' ': // "sf "
-			fcn = r_anal_get_function_byname (core->anal, input + 2);
-			if (fcn) {
-				r_core_seek (core, fcn->addr, true);
-			}
-			break;
-		case '.': // "sf."
-			fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
-			if (fcn) {
-				r_core_seek (core, fcn->addr, true);
-			}
-			break;
-		case 'p': // "sfp"
-			// find function prelude backwards
-			r_core_cmd0 (core, "s `ap`");
-			break;
-		case 'f': // "sff"
-			// find function prelude backwards
-			r_core_cmd0 (core, "s `fd~[0]`");
-			break;
-		default:
-			r_core_cmd_help_contains (core, help_msg_s, "sf");
-			break;
-		}
+	case 'f': // "sf"
+		cmd_sf (core, input);
 		break;
-	}
 	case 'o': // "so"
 		switch (input[1]) {
 		case 'r':
