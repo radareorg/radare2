@@ -175,11 +175,6 @@ static RVecAnalRef *_collect_all_refs(RefManager *rm, const AdjacencyList *adj_l
 
 static RVecAnalRef *_collect_refs_from(const AdjacencyList *adj_list, ut64 from) {
 	// only finds entries with matching "from"
-	RVecAnalRef *result = RVecAnalRef_new ();
-	if (R_UNLIKELY (!result)) {
-		return NULL;
-	}
-
 	const Edges *edges = NULL;
 	{
 		AdjacencyList_CIter iter = AdjacencyList_cfind (adj_list, &from);
@@ -187,7 +182,11 @@ static RVecAnalRef *_collect_refs_from(const AdjacencyList *adj_list, ut64 from)
 		edges = entry ? entry->val : NULL;
 	}
 	if (!edges) {
-		RVecAnalRef_free (result);
+		return NULL;
+	}
+
+	RVecAnalRef *result = RVecAnalRef_new ();
+	if (R_UNLIKELY (!result)) {
 		return NULL;
 	}
 
@@ -527,19 +526,26 @@ static RVecAnalRef *fcn_get_all_refs(RAnalFunction *fcn, RefManager *rm, Collect
 		RListIter *iter;
 		RAnalBlock *bb;
 		r_list_foreach (fcn->bbs, iter, bb) {
+			// TODO : add an option to choose to iterate over bytes or ops
+#if 1
+			// iterate over instructions
 			int i;
-			for (i = 0; i < bb->ninstr; i++) {
-				ut64 instr_addr = bb->addr + r_anal_bb_offset_inst (bb, i);
-				RVecAnalRef *refs = collect_refs (rm, instr_addr);
-				if (!refs) {
-					continue;
+			for (i = 0; i < bb->ninstr; i++)
+				ut64 addr = bb->addr + r_anal_bb_offset_inst (bb, i);
+#else
+			// iterate on every byte -- slower but more "precise somehow?"
+			ut64 addr;
+			ut64 end = bb->addr + bb->size;
+			for (addr = bb->addr; addr < end; addr++)
+#endif
+			{
+				RVecAnalRef *refs = collect_refs (rm, addr);
+				if (refs) {
+					RVecAnalRef_append (anal_refs, refs, NULL);
+					RVecAnalRef_free (refs);
 				}
-
-				RVecAnalRef_append (anal_refs, refs, NULL);
-				RVecAnalRef_free (refs);
 			}
 		}
-
 		RVecAnalRef_sort (anal_refs, compare_ref);
 
 		// Remove duplicates after sorting
