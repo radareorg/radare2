@@ -11,6 +11,21 @@ static RMutaPlugin *muta_static_plugins[] = {
 	R_MUTA_STATIC_PLUGINS
 };
 
+extern RMutaPlugin r_muta_plugin_charset_ascii;
+extern RMutaPlugin r_muta_plugin_charset_ebcdic37;
+extern RMutaPlugin r_muta_plugin_charset_iso8859_1;
+extern RMutaPlugin r_muta_plugin_charset_jis7;
+
+extern RMutaPlugin r_muta_plugin_charset_ascii;
+extern RMutaPlugin r_muta_plugin_charset_ebcdic37;
+extern RMutaPlugin r_muta_plugin_charset_iso8859_1;
+extern RMutaPlugin r_muta_plugin_charset_jis7;
+
+extern RMutaPlugin r_muta_plugin_charset_ascii;
+extern RMutaPlugin r_muta_plugin_charset_ebcdic37;
+extern RMutaPlugin r_muta_plugin_charset_iso8859_1;
+extern RMutaPlugin r_muta_plugin_charset_jis7;
+
 R_API void r_muta_init(RMuta *cry) {
 	R_RETURN_IF_FAIL (cry);
 	int i;
@@ -22,6 +37,18 @@ R_API void r_muta_init(RMuta *cry) {
 			r_muta_add (cry, p);
 		}
 	}
+	// add charset plugins
+	r_muta_add (cry, &r_muta_plugin_charset_ascii);
+	r_muta_add (cry, &r_muta_plugin_charset_ebcdic37);
+	r_muta_add (cry, &r_muta_plugin_charset_iso8859_1);
+	r_muta_add (cry, &r_muta_plugin_charset_jis7);
+}
+	}
+	// add charset plugins
+	r_muta_add (cry, &r_muta_plugin_charset_ascii);
+	r_muta_add (cry, &r_muta_plugin_charset_ebcdic37);
+	r_muta_add (cry, &r_muta_plugin_charset_iso8859_1);
+	r_muta_add (cry, &r_muta_plugin_charset_jis7);
 }
 
 R_API bool r_muta_add(RMuta *cry, RMutaPlugin *h) {
