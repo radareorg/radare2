@@ -22,8 +22,8 @@ static bool perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const c
 	// grab the current file descriptor, so we can reset core and io state
 	// after our io op is done
 	RIODesc *yankdesc = NULL;
-	ut64 fd = core->io->desc ? core->io->desc->fd: -1, yank_file_sz = 0,
-	     loadaddr = 0, addr = offset;
+	ut64 fd = core->io->desc? core->io->desc->fd: -1, yank_file_sz = 0,
+	loadaddr = 0, addr = offset;
 	bool res = false;
 
 	if (filename && *filename) {
@@ -70,9 +70,9 @@ static bool perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const c
 			r_core_yank_set (core, R_CORE_FOREIGN_ADDR, buf, len);
 			res = true;
 		} else if (nres != addr) {
-			R_LOG_ERROR ("Unable to yank data from file: (loadaddr (0x%" PFMT64x ") (addr (0x%" PFMT64x ") > file_sz (0x%"PFMT64x ")", nres, addr, yank_file_sz);
+			R_LOG_ERROR ("Unable to yank data from file: (loadaddr (0x%" PFMT64x ") (addr (0x%" PFMT64x ") > file_sz (0x%" PFMT64x ")", nres, addr, yank_file_sz);
 		} else if (actual_len == 0) {
-			R_LOG_ERROR ("Unable to yank from file: addr+len (0x%" PFMT64x ") > file_sz (0x%"PFMT64x ")", addr + len, yank_file_sz);
+			R_LOG_ERROR ("Unable to yank from file: addr+len (0x%" PFMT64x ") > file_sz (0x%" PFMT64x ")", addr + len, yank_file_sz);
 		}
 		r_io_desc_close (yankdesc);
 		free (buf);
@@ -150,7 +150,7 @@ R_API bool r_core_yank_string(RCore *core, ut64 addr, int maxlen) {
 	r_io_read_at (core->io, addr, buf, core->blocksize);
 	if (maxlen == 0) {
 		// Don't use strnlen, see: https://sourceforge.net/p/mingw/bugs/1912/
-		maxlen = r_str_nlen ((const char *) buf, core->blocksize);
+		maxlen = r_str_nlen ((const char *)buf, core->blocksize);
 	} else if (maxlen > core->blocksize) {
 		maxlen = core->blocksize;
 	}
@@ -203,7 +203,7 @@ R_API bool r_core_yank_to(RCore *core, const char *_arg) {
 
 R_API bool r_core_yank_dump(RCore *core, ut64 pos, int format) {
 	int i = 0;
-	int ybl = core->yank_buf ? r_buf_size (core->yank_buf): 0;
+	int ybl = core->yank_buf? r_buf_size (core->yank_buf): 0;
 	if (ybl < 1) {
 		if (format == 'j') {
 			r_cons_println (core->cons, "{}");
@@ -223,24 +223,25 @@ R_API bool r_core_yank_dump(RCore *core, ut64 pos, int format) {
 		}
 		r_cons_newline (core->cons);
 		break;
-	case 'j': {
-		PJ *pj = r_core_pj_new (core);
-		if (!pj) {
+	case 'j':
+		{
+			PJ *pj = r_core_pj_new (core);
+			if (!pj) {
+				break;
+			}
+			pj_o (pj);
+			pj_kn (pj, "addr", core->yank_addr);
+			RStrBuf *buf = r_strbuf_new ("");
+			for (i = pos; i < r_buf_size (core->yank_buf); i++) {
+				r_strbuf_appendf (buf, "%02x", r_buf_read8_at (core->yank_buf, i));
+			}
+			pj_ks (pj, "bytes", r_strbuf_get (buf));
+			r_strbuf_free (buf);
+			pj_end (pj);
+			r_cons_println (core->cons, pj_string (pj));
+			pj_free (pj);
 			break;
 		}
-		pj_o (pj);
-		pj_kn (pj, "addr", core->yank_addr);
-		RStrBuf *buf = r_strbuf_new ("");
-		for (i = pos; i < r_buf_size (core->yank_buf); i++) {
-			r_strbuf_appendf (buf, "%02x", r_buf_read8_at (core->yank_buf, i));
-		}
-		pj_ks (pj, "bytes", r_strbuf_get (buf));
-		r_strbuf_free (buf);
-		pj_end (pj);
-		r_cons_println (core->cons, pj_string (pj));
-		pj_free (pj);
-		break;
-	}
 	case '*':
 		r_cons_print (core->cons, "'wx ");
 		for (i = pos; i < r_buf_size (core->yank_buf); i++) {
@@ -250,8 +251,8 @@ R_API bool r_core_yank_dump(RCore *core, ut64 pos, int format) {
 		break;
 	default:
 		r_cons_printf (core->cons, "0x%08" PFMT64x " %" PFMT64d " ",
-				core->yank_addr + pos,
-				r_buf_size (core->yank_buf) - pos);
+			core->yank_addr + pos,
+			r_buf_size (core->yank_buf) - pos);
 		for (i = pos; i < r_buf_size (core->yank_buf); i++) {
 			r_cons_printf (core->cons, "%02x", r_buf_read8_at (core->yank_buf, i));
 		}
@@ -320,7 +321,7 @@ R_API bool r_core_yank_cat_string(RCore *core, ut64 pos) {
 			free (buf);
 			return true;
 		}
-	//	R_LOG_ERROR ("Position exceeds buffer length");
+		//	R_LOG_ERROR ("Position exceeds buffer length");
 	} else {
 		r_cons_newline (core->cons);
 	}
@@ -333,7 +334,7 @@ R_API bool r_core_yank_hud_file(RCore *core, const char *input) {
 		return false;
 	}
 	char *buf = r_cons_hud_file (core->cons, r_str_trim_head_ro (input + 1));
-	ut32 len = buf? strlen ((const char *) buf) + 1: 0;
+	ut32 len = buf? strlen ((const char *)buf) + 1: 0;
 	bool res = r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, buf, len);
 	free (buf);
 	return res;
@@ -342,7 +343,7 @@ R_API bool r_core_yank_hud_file(RCore *core, const char *input) {
 R_API bool r_core_yank_hud_path(RCore *core, const char *input, int dir) {
 	R_RETURN_VAL_IF_FAIL (core, false);
 	char *buf = r_cons_hud_path (core->cons, r_str_trim_head_ro (input), dir);
-	ut32 len = buf? strlen ((const char *) buf) + 1: 0;
+	ut32 len = buf? strlen ((const char *)buf) + 1: 0;
 	int res = r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, buf, len);
 	free (buf);
 	return res;

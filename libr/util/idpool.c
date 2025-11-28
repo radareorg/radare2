@@ -8,15 +8,15 @@
 static inline ut32 get_msb(ut32 v) {
 	int i;
 	for (i = 31; i > (-1); i--) {
-		if (v & (0x1U << i)) {
-			return (v & (0x1U << i));
+		if (v &(0x1U << i)) {
+			return (v &(0x1U << i));
 		}
 	}
 	return 0;
 }
 
-R_API RIDPool* r_id_pool_new(ut32 start_id, ut32 last_id) {
-	RIDPool* pool = NULL;
+R_API RIDPool *r_id_pool_new(ut32 start_id, ut32 last_id) {
+	RIDPool *pool = NULL;
 	if (start_id < last_id) {
 		pool = R_NEW0 (RIDPool);
 		if (pool) {
@@ -27,13 +27,13 @@ R_API RIDPool* r_id_pool_new(ut32 start_id, ut32 last_id) {
 	return pool;
 }
 
-R_API bool r_id_pool_grab_id(RIDPool* pool, ut32* grabber) {
+R_API bool r_id_pool_grab_id(RIDPool *pool, ut32 *grabber) {
 	R_RETURN_VAL_IF_FAIL (pool && grabber, false);
 
 	*grabber = UT32_MAX;
 	if (pool->freed_ids) {
 		ut32 grab = (ut32) (size_t)r_queue_dequeue (pool->freed_ids);
-		*grabber = (ut32) grab;
+		*grabber = (ut32)grab;
 		if (r_queue_is_empty (pool->freed_ids)) {
 			r_queue_free (pool->freed_ids);
 			pool->freed_ids = NULL;
@@ -48,7 +48,7 @@ R_API bool r_id_pool_grab_id(RIDPool* pool, ut32* grabber) {
 	return false;
 }
 
-R_API bool r_id_pool_kick_id(RIDPool* pool, ut32 kick) {
+R_API bool r_id_pool_kick_id(RIDPool *pool, ut32 kick) {
 	R_RETURN_VAL_IF_FAIL (pool, false);
 	if ((kick < pool->start_id) || (pool->start_id == pool->next_id)) {
 		return false;
@@ -60,7 +60,7 @@ R_API bool r_id_pool_kick_id(RIDPool* pool, ut32 kick) {
 	if (!pool->freed_ids) {
 		pool->freed_ids = r_queue_new (2);
 	}
-	r_queue_enqueue (pool->freed_ids, (void*) (size_t) kick);
+	r_queue_enqueue (pool->freed_ids, (void *) (size_t)kick);
 	return true;
 }
 
@@ -90,12 +90,12 @@ static bool id_storage_reallocate(RIDStorage *storage, ut32 size) {
 	if (!storage) {
 		return false;
 	}
-	void **data = realloc (storage->data, size * sizeof (void*));
+	void **data = realloc (storage->data, size * sizeof (void *));
 	if (!data) {
 		return false;
 	}
 	if (size > storage->size) {
-		memset (data + storage->size, 0, (size - storage->size) * sizeof (void*));
+		memset (data + storage->size, 0, (size - storage->size) * sizeof (void *));
 	}
 	storage->data = data;
 	storage->size = size;
@@ -120,7 +120,7 @@ static bool oid_storage_preallocate(ROIDStorage *st, ut32 size) {
 	return true;
 }
 
-R_API bool r_id_storage_set(RIDStorage* storage, void* data, ut32 id) {
+R_API bool r_id_storage_set(RIDStorage *storage, void *data, ut32 id) {
 	R_RETURN_VAL_IF_FAIL (storage && storage->pool, false);
 	if (id >= storage->pool->next_id) {
 		return false;
@@ -144,7 +144,7 @@ R_API bool r_id_storage_set(RIDStorage* storage, void* data, ut32 id) {
 	return true;
 }
 
-R_API bool r_id_storage_add(RIDStorage* storage, void* data, ut32* id) {
+R_API bool r_id_storage_add(RIDStorage *storage, void *data, ut32 *id) {
 	R_RETURN_VAL_IF_FAIL (storage, false);
 	if (!r_id_pool_grab_id (storage->pool, id)) {
 		return false;
@@ -152,7 +152,7 @@ R_API bool r_id_storage_add(RIDStorage* storage, void* data, ut32* id) {
 	return r_id_storage_set (storage, data, *id);
 }
 
-R_API void* r_id_storage_get(RIDStorage* storage, ut32 id) {
+R_API void *r_id_storage_get(RIDStorage *storage, ut32 id) {
 	R_RETURN_VAL_IF_FAIL (storage, false);
 	if (id < storage->size) {
 		return storage->data[id];
@@ -163,7 +163,8 @@ R_API void* r_id_storage_get(RIDStorage* storage, ut32 id) {
 R_API bool r_id_storage_get_lowest(RIDStorage *storage, ut32 *id) {
 	R_RETURN_VAL_IF_FAIL (storage, false);
 	ut32 i;
-	for (i = 0; i < storage->size && !storage->data[i]; i++);
+	for (i = 0; i < storage->size && !storage->data[i]; i++)
+		;
 	*id = i;
 	return i < storage->size;
 }
@@ -172,7 +173,8 @@ R_API bool r_id_storage_get_highest(RIDStorage *storage, ut32 *id) {
 	R_RETURN_VAL_IF_FAIL (storage, false);
 	size_t i = 0;
 	if (storage->size > 0) {
-		for (i = storage->size - 1; !storage->data[i] && i > 0; i--);
+		for (i = storage->size - 1; !storage->data[i] && i > 0; i--)
+			;
 		*id = i;
 		return storage->data[i];
 	}
@@ -186,7 +188,8 @@ R_API bool r_id_storage_get_next(RIDStorage *storage, ut32 *idref) {
 	if (storage->size < 1 || id >= storage->size || !storage->data) {
 		return false;
 	}
-	for (id = *idref + 1; id < storage->size && !storage->data[id]; id++);
+	for (id = *idref + 1; id < storage->size && !storage->data[id]; id++)
+		;
 	if (id < storage->size) {
 		*idref = id;
 		return true;
@@ -200,7 +203,8 @@ R_API bool r_id_storage_get_prev(RIDStorage *storage, ut32 *idref) {
 	if (id == 0 || id >= storage->size || storage->size < 1 || !storage->data) {
 		return false;
 	}
-	for (id = *idref - 1; id > 0 && !storage->data[id]; id--);
+	for (id = *idref - 1; id > 0 && !storage->data[id]; id--)
+		;
 	if (storage->data[id]) {
 		*idref = id;
 		return true;
@@ -208,7 +212,7 @@ R_API bool r_id_storage_get_prev(RIDStorage *storage, ut32 *idref) {
 	return false;
 }
 
-R_API void r_id_storage_delete(RIDStorage* storage, ut32 id) {
+R_API void r_id_storage_delete(RIDStorage *storage, ut32 id) {
 	R_RETURN_IF_FAIL (storage);
 	if (storage->size <= id) {
 		return;
@@ -222,7 +226,7 @@ R_API void r_id_storage_delete(RIDStorage* storage, ut32 id) {
 			if (storage->data[storage->top_id]) {
 				id_storage_reallocate (storage, 2);
 			} else {
-				RIDPool* pool = r_id_pool_new (storage->pool->start_id, storage->pool->last_id);
+				RIDPool *pool = r_id_pool_new (storage->pool->start_id, storage->pool->last_id);
 				R_FREE (storage->data);
 				storage->size = 0;
 				r_id_pool_free (storage->pool);
@@ -236,13 +240,13 @@ R_API void r_id_storage_delete(RIDStorage* storage, ut32 id) {
 	r_id_pool_kick_id (storage->pool, id);
 }
 
-R_API void* r_id_storage_take(RIDStorage* storage, ut32 id) {
-	void* ret = r_id_storage_get (storage, id);
+R_API void *r_id_storage_take(RIDStorage *storage, ut32 id) {
+	void *ret = r_id_storage_get (storage, id);
 	r_id_storage_delete (storage, id);
 	return ret;
 }
 
-R_API bool r_id_storage_foreach(RIDStorage* storage, RIDStorageForeachCb cb, void* user) {
+R_API bool r_id_storage_foreach(RIDStorage *storage, RIDStorageForeachCb cb, void *user) {
 	R_RETURN_VAL_IF_FAIL (storage && cb, false);
 	if (!storage->data) {
 		return false;
@@ -259,7 +263,7 @@ R_API bool r_id_storage_foreach(RIDStorage* storage, RIDStorageForeachCb cb, voi
 	return true;
 }
 
-R_API void r_id_storage_fini(RIDStorage *storage){
+R_API void r_id_storage_fini(RIDStorage *storage) {
 	R_RETURN_IF_FAIL (storage);
 	r_id_pool_free (storage->pool);
 	free (storage->data);
@@ -369,7 +373,7 @@ R_API bool r_oids_to_front(ROIDStorage *storage, const ut32 id) {
 	}
 	memmove (&storage->permutation[od], &storage->permutation[od + 1],
 		(storage->ptop - od - 1) * sizeof (ut32));
-	storage->permutation[storage->ptop - 1]= id;
+	storage->permutation[storage->ptop - 1] = id;
 	return true;
 }
 
@@ -449,19 +453,17 @@ R_API void r_oids_free(ROIDStorage *storage) {
 	free (storage);
 }
 
-//returns the element with lowest order
+// returns the element with lowest order
 R_API void *r_oids_last(ROIDStorage *storage) {
-	if (storage && storage->data && storage->data->data
-		&& storage->permutation) {
+	if (storage && storage->data && storage->data->data && storage->permutation) {
 		return storage->data->data[storage->permutation[0]];
 	}
 	return NULL;
 }
 
-//return the element with highest order
+// return the element with highest order
 R_API void *r_oids_first(ROIDStorage *storage) {
-	if (storage && storage->data && storage->data->data
-		&& storage->permutation) {
+	if (storage && storage->data && storage->data->data && storage->permutation) {
 		return storage->data->data[storage->permutation[storage->ptop - 1]];
 	}
 	return NULL;
@@ -470,8 +472,7 @@ R_API void *r_oids_first(ROIDStorage *storage) {
 R_API bool r_oids_foreach(ROIDStorage *storage, RIDStorageForeachCb cb, void *user) {
 	ut32 i;
 	ut32 id;
-	if (!cb || !storage || !storage->data || !storage->data->data
-		|| !storage->permutation) {
+	if (!cb || !storage || !storage->data || !storage->data->data || !storage->permutation) {
 		return false;
 	}
 	for (i = storage->ptop - 1; i != 0; i--) {
@@ -484,11 +485,10 @@ R_API bool r_oids_foreach(ROIDStorage *storage, RIDStorageForeachCb cb, void *us
 	return cb (user, storage->data->data[id], id);
 }
 
-R_API bool r_oids_foreach_prev(ROIDStorage* storage, RIDStorageForeachCb cb, void* user) {
+R_API bool r_oids_foreach_prev(ROIDStorage *storage, RIDStorageForeachCb cb, void *user) {
 	ut32 i;
 	ut32 id;
-	if (!cb || !storage || !storage->data || !storage->data->data
-		|| !storage->permutation) {
+	if (!cb || !storage || !storage->data || !storage->data->data || !storage->permutation) {
 		return false;
 	}
 	for (i = 0; i < storage->ptop; i++) {
@@ -514,8 +514,8 @@ static bool oids_od_bfind(ROIDStorage *st, ut32 *od, void *incoming, void *user)
 	while (1) {
 		if (high <= low) {
 			od[0] = (ut32)low;
-			in = r_oids_oget(st, od[0]);
-			//in - incoming
+			in = r_oids_oget (st, od[0]);
+			// in - incoming
 			if (!st->cmp (in, incoming, user, &cmp_res)) {
 				return false;
 			}
@@ -525,7 +525,7 @@ static bool oids_od_bfind(ROIDStorage *st, ut32 *od, void *incoming, void *user)
 			return true;
 		}
 
-		od[0] = (ut32)((low + high) / 2);
+		od[0] = (ut32) ((low + high) / 2);
 		in = r_oids_oget (st, od[0]);
 		if (!st->cmp (in, incoming, user, &cmp_res)) {
 			return false;
@@ -561,7 +561,7 @@ R_API bool r_oids_insert(ROIDStorage *storage, void *data, ut32 *id, ut32 *od, v
 	if (!storage || !storage->cmp || !id || !od) {
 		return false;
 	}
-	if (!storage->ptop) { //empty storage
+	if (!storage->ptop) { // empty storage
 		return r_oids_add (storage, data, id, od);
 	}
 	if (!r_id_storage_add (storage->data, data, id)) {
@@ -610,5 +610,5 @@ beach:
 
 R_API ut32 r_oids_find(ROIDStorage *storage, void *incoming, void *user) {
 	ut32 ret;
-	return oids_od_bfind (storage, &ret, incoming, user) ? ret : storage->ptop;
+	return oids_od_bfind (storage, &ret, incoming, user)? ret: storage->ptop;
 }

@@ -16,7 +16,7 @@ static char *r_cons_message_multiline(RCons *cons, const char *msg) {
 		}
 	}
 	int rows, cols = r_cons_get_size (cons, &rows);
-	char *pad = r_str_pad (NULL, 0, ' ', (cols-longest) / 2);
+	char *pad = r_str_pad (NULL, 0, ' ', (cols - longest) / 2);
 	char *newmsg = r_str_prefix_all (msg, pad);
 	free (pad);
 	r_cons_clear (cons);
@@ -46,4 +46,3 @@ R_API char *r_cons_message(RCons *cons, const char *msg) {
 	r_cons_any_key (cons, NULL);
 	return NULL;
 }
-

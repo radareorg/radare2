@@ -1152,7 +1152,7 @@ static bool bin_addrline(RCore *core, PJ *pj, int mode) {
 		list = plugin->lines (binfile);
 	} else if (core->bin) {
 		// TODO: complete and speed-up support for dwarf
-		RBinDwarfDebugAbbrev *da = r_bin_dwarf_parse_abbrev (core->bin, mode);
+		RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (core->bin, mode);
 		if (!da) {
 			if (IS_MODE_JSON (mode)) {
 				pj_end (pj);

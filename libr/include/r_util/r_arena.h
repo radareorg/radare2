@@ -31,6 +31,10 @@ typedef struct r_arena_block_t {
 typedef struct r_arena_t {
 	RArenaBlock *current; // Current block we're allocating from
 	RArenaBlock *first; // First block (kept for reset)
+                      
+  void **huge_block;
+  size_t huge_count;
+
 	size_t block_size; // Fixed size for all blocks
 	size_t total_allocated; // Total bytes allocated across all blocks
 	size_t default_alignment; // Default alignment (usually 8)
@@ -50,6 +54,7 @@ R_API void r_arena_reset(RArena *arena);
 R_API void r_arena_destroy(RArena *arena);
 
 R_API char *r_arena_push_str(RArena *arena, const char *str);
+R_API char *r_arena_push_strf(RArena *arena, const char *fmt, ...);
 R_API char *r_arena_push_strn(RArena *arena, const char *str, size_t n);
 R_API void *r_arena_push(RArena *arena, const void *mem, size_t n);
 

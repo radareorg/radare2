@@ -9,14 +9,14 @@ R_API int r_anal_data_type(RAnal *anal, ut64 da) {
 	if (!anal->iob.is_valid_offset (io, da, R_PERM_R)) {
 		return R_ANAL_REF_TYPE_ERROR;
 	}
-	ut8 buf[64] = {0};
+	ut8 buf[64] = { 0 };
 	// check if valid address
 	if (!anal->iob.read_at (io, da, buf, sizeof (buf))) {
 		// R_LOG_ERROR ("RAnal.dataType(): Cannot read at 0x%08"PFMT64x, da);
 		return R_ANAL_REF_TYPE_ERROR;
 	}
 	int k = R_ANAL_REF_TYPE_NULL;
-	RAnalOp op = {0};
+	RAnalOp op = { 0 };
 	int oplen = r_anal_op (anal, &op, da, buf, sizeof (buf), -1);
 	if (oplen > 2) {
 		if (op.type == R_ANAL_OP_TYPE_PUSH) {
@@ -170,7 +170,7 @@ static ut64 is_pointer(RAnal *anal, const ut8 *buf, int size) {
 	// we should compare with current offset, to avoid
 	// short/long references. and discard invalid ones
 	if (n < 0x1000) {
-		return 0;	// probably wrong
+		return 0; // probably wrong
 	}
 	if (n > UT48_MAX) {
 		return 0; // probably wrong
@@ -199,7 +199,7 @@ static bool is_bin(const ut8 *buf, int size) {
 }
 
 // TODO: add is_flag, is comment?
-R_API char *r_anal_data_tostring(RAnalData *d, RConsPrintablePalette * R_NULLABLE pal) {
+R_API char *r_anal_data_tostring(RAnalData *d, RConsPrintablePalette *R_NULLABLE pal) {
 	R_RETURN_VAL_IF_FAIL (d, NULL);
 	int i, len, mallocsz = 1024;
 	ut32 n32;
@@ -210,7 +210,7 @@ R_API char *r_anal_data_tostring(RAnalData *d, RConsPrintablePalette * R_NULLABL
 		return NULL;
 	}
 	if (pal) {
-		r_strbuf_appendf (sb, "%s0x%08" PFMT64x Color_RESET"  ", pal->addr, d->addr);
+		r_strbuf_appendf (sb, "%s0x%08" PFMT64x Color_RESET "  ", pal->addr, d->addr);
 	} else {
 		r_strbuf_appendf (sb, "0x%08" PFMT64x "  ", d->addr);
 	}
@@ -226,7 +226,7 @@ R_API char *r_anal_data_tostring(RAnalData *d, RConsPrintablePalette * R_NULLABL
 	switch (d->type) {
 	case R_ANAL_DATA_TYPE_STRING:
 		if (pal) {
-			r_strbuf_appendf (sb, "%sstring \"%s\""Color_RESET, pal->comment, d->str);
+			r_strbuf_appendf (sb, "%sstring \"%s\"" Color_RESET, pal->comment, d->str);
 		} else {
 			r_strbuf_appendf (sb, "string \"%s\"", d->str);
 		}
@@ -238,17 +238,17 @@ R_API char *r_anal_data_tostring(RAnalData *d, RConsPrintablePalette * R_NULLABL
 		if (pal) {
 			const char *k = pal->num;
 			if (n32 == d->ptr) {
-				r_strbuf_appendf (sb, "%snumber %d (0x%x)"Color_RESET, k, n32, n32);
+				r_strbuf_appendf (sb, "%snumber %d (0x%x)" Color_RESET, k, n32, n32);
 			} else {
-				r_strbuf_appendf (sb, "%snumber %" PFMT64d " (0x%" PFMT64x ")"Color_RESET,
-						k, d->ptr, d->ptr);
+				r_strbuf_appendf (sb, "%snumber %" PFMT64d " (0x%" PFMT64x ")" Color_RESET,
+					k, d->ptr, d->ptr);
 			}
 		} else {
 			if (n32 == d->ptr) {
 				r_strbuf_appendf (sb, "number %d 0x%x", n32, n32);
 			} else {
 				r_strbuf_appendf (sb, "number %" PFMT64d " 0x%" PFMT64x,
-						d->ptr, d->ptr);
+					d->ptr, d->ptr);
 			}
 		}
 		break;
@@ -262,7 +262,7 @@ R_API char *r_anal_data_tostring(RAnalData *d, RConsPrintablePalette * R_NULLABL
 		break;
 	case R_ANAL_DATA_TYPE_INVALID:
 		if (pal) {
-			r_strbuf_appendf (sb, "%sinvalid"Color_RESET, pal->invalid);
+			r_strbuf_appendf (sb, "%sinvalid" Color_RESET, pal->invalid);
 		} else {
 			r_strbuf_append (sb, "invalid");
 		}
@@ -278,14 +278,14 @@ R_API char *r_anal_data_tostring(RAnalData *d, RConsPrintablePalette * R_NULLABL
 		break;
 	case R_ANAL_DATA_TYPE_UNKNOWN:
 		if (pal) {
-			r_strbuf_appendf (sb, "%sunknown"Color_RESET, pal->invalid);
+			r_strbuf_appendf (sb, "%sunknown" Color_RESET, pal->invalid);
 		} else {
 			r_strbuf_append (sb, "unknown");
 		}
 		break;
 	default:
 		if (pal) {
-			r_strbuf_appendf (sb, "%s(null)"Color_RESET, pal->b0x00);
+			r_strbuf_appendf (sb, "%s(null)" Color_RESET, pal->b0x00);
 		} else {
 			r_strbuf_append (sb, "(null)");
 		}
@@ -533,7 +533,7 @@ R_API const char *r_anal_data_kind(RAnal *a, ut64 addr, const ut8 *buf, int len)
 	return "data";
 }
 
-R_API const char * R_NULLABLE r_anal_datatype_tostring(RAnalDataType t) {
+R_API const char *R_NULLABLE r_anal_datatype_tostring(RAnalDataType t) {
 	switch (t) {
 	case R_ANAL_DATATYPE_NULL:
 		return NULL;

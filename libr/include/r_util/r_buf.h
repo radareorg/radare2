@@ -1,6 +1,7 @@
 #ifndef R_BUF_H
 #define R_BUF_H
 #include <r_util/r_mem.h>
+#include <r_list.h>
 //#include <r_io.h>
 
 #ifdef __cplusplus

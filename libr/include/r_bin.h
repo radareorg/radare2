@@ -340,6 +340,9 @@ typedef struct r_bin_section_t {
 	bool is_data;
 	bool is_segment;
 	int backing_fd;
+
+  ut8 *bytes;
+  ut64 bytes_size;
 } RBinSection;
 
 typedef struct r_bin_import_t {
@@ -532,6 +535,8 @@ struct r_bin_t {
 	ut64 filter_rules;
 	RStrConstPool constpool;
 	RBinOptions options;
+
+  RArena *arena;
 };
 
 typedef struct r_bin_xtr_metadata_t {
