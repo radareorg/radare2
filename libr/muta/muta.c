@@ -21,14 +21,7 @@ R_API void r_muta_init(RMuta *cry) {
 		if (p) {
 			r_muta_add (cry, p);
 		}
-	}
-	// add charset plugins
-	r_muta_add (cry, &r_muta_plugin_charset_ascii);
-	r_muta_add (cry, &r_muta_plugin_charset_ebcdic37);
-	r_muta_add (cry, &r_muta_plugin_charset_iso8859_1);
-	r_muta_add (cry, &r_muta_plugin_charset_jis7);
 }
-	}
 	// add charset plugins
 	r_muta_add (cry, &r_muta_plugin_charset_ascii);
 	r_muta_add (cry, &r_muta_plugin_charset_ebcdic37);
