@@ -3550,9 +3550,9 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 	// parse pltrel
 	for (offset = 0; offset < offset_end && pos < num_relocs; offset += size, pos++) {
 		RBinElfReloc *reloc = r_vector_end (&eo->g_relocs);
-        if (!reloc) {
-            break;
-        }
+		if (!reloc) {
+			break;
+		}
 		if (!read_reloc (eo, reloc, eo->dyn_info.dt_pltrel, eo->dyn_info.dt_jmprel + offset)) {
 			r_vector_pop (&eo->g_relocs, NULL);
 			break;
