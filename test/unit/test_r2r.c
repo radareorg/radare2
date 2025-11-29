@@ -102,25 +102,25 @@ bool test_r2r_fix(void) {
 	mu_assert ("test file", content);
 
 	char *newc = replace_cmd_kv (result0->test->path, content, result0->test->cmd_test->expect.line_begin,
-			result0->test->cmd_test->expect.line_end, "EXPECT", result0->proc_out->out, results);
+			result0->test->cmd_test->expect.line_end, "EXPECT", result0->proc_out->out, &results);
 	mu_assert ("fixed", newc);
 	free (content);
 	content = newc;
 
 	newc = replace_cmd_kv (result1->test->path, content, result1->test->cmd_test->expect.line_begin,
-			result1->test->cmd_test->expect.line_end, "EXPECT", result1->proc_out->out, results);
+			result1->test->cmd_test->expect.line_end, "EXPECT", result1->proc_out->out, &results);
 	mu_assert ("fixed", newc);
 	free (content);
 	content = newc;
 
 	newc = replace_cmd_kv (result2->test->path, content, result2->test->cmd_test->expect.line_begin,
-			result2->test->cmd_test->expect.line_end, "EXPECT", result2->proc_out->out, results);
+			result2->test->cmd_test->expect.line_end, "EXPECT", result2->proc_out->out, &results);
 	mu_assert ("fixed", newc);
 	free (content);
 	content = newc;
 
 	newc = replace_cmd_kv (result3->test->path, content, result3->test->cmd_test->expect.line_begin,
-			result3->test->cmd_test->expect.line_end, "EXPECT", result3->proc_out->out, results);
+			result3->test->cmd_test->expect.line_end, "EXPECT", result3->proc_out->out, &results);
 	mu_assert ("fixed", newc);
 	free (content);
 	content = newc;

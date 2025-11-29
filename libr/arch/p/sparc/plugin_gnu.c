@@ -343,7 +343,7 @@ static st64 get_immed_sgnext(const ut64 insn, const ut8 nbit) {
 }
 
 static RAnalValue *value_fill_addr_pc_disp(const ut64 addr, const st64 disp) {
-	RAnalValue *val = r_anal_value_new();
+	RAnalValue *val = r_arch_value_new();
 	val->base = addr + disp;
 	return val;
 }
