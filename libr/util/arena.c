@@ -5,6 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+// how many huge allocations per arena we support
+#define HUGE_BLOCK_CAPACITY 4096
+
 _Static_assert (sizeof (size_t) >= sizeof (void *), "size_t must fit pointer");
 _Static_assert (sizeof (uintptr_t) >= sizeof (void *),
 	"uintptr_t must fit pointer");
@@ -59,6 +62,10 @@ R_API RArena *r_arena_create_with(size_t block_size) {
 	arena->total_allocated = 0;
 	arena->default_alignment = ARENA_DEFAULT_ALIGNMENT;
 
+  // allocate huge block for ourselves.
+  arena->huge_block = r_arena_alloc (arena, sizeof(void *) * HUGE_BLOCK_CAPACITY);
+  arena->huge_count = 0;
+
 	return arena;
 }
 
@@ -89,8 +96,13 @@ R_API void *r_arena_alloc_aligned(RArena *arena, size_t size, size_t alignment) 
 
 	// Check if allocation fits in current block
 	if (required > block->capacity) {
-		// Don't support allocations larger than block_size
 		if (size > arena->block_size) {
+      // Try to satisfy this allocation with huge-block
+      if (arena->huge_block && arena->huge_count < HUGE_BLOCK_CAPACITY) {
+        void *ptr = r_malloc (size);
+        arena->huge_block[arena->huge_count++] = ptr;
+        return ptr;
+      }
 			return NULL;
 		}
 
@@ -151,7 +163,14 @@ R_API void r_arena_destroy(RArena *arena) {
 		return;
 	}
 
+  if (arena->huge_block) {
+    for (size_t i = 0; i < arena->huge_count; i++) {
+      r_free(arena->huge_block[i]);
+    }
+  }
+
 	arena_block_free_chain (arena->first);
+
 	r_free (arena);
 }
 
@@ -226,6 +245,28 @@ R_API char *r_arena_push_str(RArena *arena, const char *str) {
 		memcpy (copy, str, len + 1); // Include null terminator
 	}
 	return copy;
+}
+
+// Allocates buffer on arena and formats string into it
+R_API char *r_arena_push_strf(RArena *arena, const char *fmt, ...) {
+	va_list ap, ap2;
+
+	va_start (ap, fmt);
+	if (!strchr (fmt, '%')) {
+		char *p = r_arena_push_str (arena, fmt);
+		va_end (ap);
+		return p;
+	}
+	va_copy (ap2, ap);
+	int ret = vsnprintf (NULL, 0, fmt, ap2);
+	ret++;
+	char *p = r_arena_alloc (arena, ret);
+	if (p) {
+		(void)vsnprintf (p, ret, fmt, ap);
+	}
+	va_end (ap2);
+	va_end (ap);
+	return p;
 }
 
 // Copy at most n characters of string into arena

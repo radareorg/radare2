@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-R_LIB_VERSION_HEADER (r_reg);
+R_LIB_VERSION_HEADER(r_reg);
 
 /*
  * various CPUs have registers within various types/classes
@@ -102,7 +102,7 @@ typedef enum r_reg_alias_t {
 typedef struct r_reg_item_t {
 	char *name;
 	int /*RRegType*/ type;
-	int size; /* 8,16,32,64 ... 128/256 ??? rename to bitsize */
+	int size; /* 8,16,32,64 ... 128/256??? rename to bitsize */
 	int offset; /* offset in data structure */
 	int packed_size; /* 0 means no packed register, 1byte pack, 2b pack... */
 	bool is_float;
@@ -121,10 +121,10 @@ typedef struct r_reg_arena_t {
 
 typedef struct r_reg_set_t {
 	RRegArena *arena;
-	RList *pool;      /* RRegArena */
-	RList *regs;      /* RRegItem */
-	HtPP *ht_regs;    /* name:RRegItem */
-	RListIter *cur;   /* RRegArenaIter */
+	RList *pool; /* RRegArena */
+	RList *regs; /* RRegItem */
+	HtPP *ht_regs; /* name:RRegItem */
+	RListIter *cur; /* RRegArenaIter */
 	int maskregstype; /* which type of regs have this reg set (logic mask with RRegType  R_REG_TYPE_XXX) */
 } RRegSet; // Rename to RegGroup, because Set can be confusing with the 'set' keyword
 
@@ -178,7 +178,7 @@ R_API int r_reg_alias_fromstring(const char *type);
 
 // profile // R2_600 - refactor this api
 R_API bool r_reg_set_profile_string(RReg *reg, const char *profile);
-R_API char* r_reg_profile_to_cc(RReg *reg);
+R_API char *r_reg_profile_to_cc(RReg *reg);
 R_API bool r_reg_set_profile(RReg *reg, const char *profile);
 R_API char *r_reg_parse_gdb_profile(const char *profile);
 
@@ -195,7 +195,7 @@ R_API RList *r_reg_get_list(RReg *reg, int type);
 R_API RRegItem *r_reg_get_at(RReg *reg, int type, int regsize, int delta);
 R_API RRegItem *r_reg_next_diff(RReg *reg, int type, const ut8 *buf, int buflen, RRegItem *prev_ri, int regsize);
 
-// TODO: rename to RReg.getAt ?
+// TODO: rename to RReg.getAt?
 R_API RRegItem *r_reg_index_get(RReg *reg, int idx);
 
 R_API int r_reg_type_by_name(const char *str); // rename to rreg_type_fromstring

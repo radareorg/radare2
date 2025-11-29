@@ -825,6 +825,15 @@ static bool test_vec_shrink_to_fit(void) {
 	mu_end;
 }
 
+static bool test_vec_null_foreach(void) {
+  ut32 *x;
+  RVecUT32 *v = NULL;
+  R_VEC_FOREACH(v, x);
+  R_VEC_FOREACH_I(v, i);
+  R_VEC_FOREACH_PREV(v, x);
+  return true;
+}
+
 static bool test_vec_foreach(void) {
 	RVecUT32 v;
 	RVecUT32_init (&v);
@@ -1222,6 +1231,7 @@ static int all_tests(void) {
 	mu_run_test (test_vec_shrink_to_fit);
 	mu_run_test (test_vec_foreach);
 	mu_run_test (test_vec_foreach_prev);
+  mu_run_test (test_vec_null_foreach);
 	mu_run_test (test_vec_lower_bound);
 	mu_run_test (test_vec_upper_bound);
 	mu_run_test (test_vec_partition);

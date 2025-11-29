@@ -7,9 +7,9 @@
 #include "../../include/mybfd.h"
 
 /* extern */
-extern int decodeInstr(bfd_vma address, disassemble_info * info);
-extern int ARCTangent_decodeInstr(bfd_vma address, disassemble_info * info);
-extern int ARCompact_decodeInstr(bfd_vma address, disassemble_info * info);
+extern int decodeInstr(bfd_vma address, disassemble_info *info);
+extern int ARCTangent_decodeInstr(bfd_vma address, disassemble_info *info);
+extern int ARCompact_decodeInstr(bfd_vma address, disassemble_info *info);
 
 #define BUFSZ 32
 
@@ -41,8 +41,8 @@ DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
 DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
 static int disassemble(RArchSession *as, RAnalOp *op, const ut8 *buf, int len) {
-	ut8 bytes[BUFSZ] = {0};
-	struct disassemble_info disasm_obj = {0};
+	ut8 bytes[BUFSZ] = { 0 };
+	struct disassemble_info disasm_obj = { 0 };
 	if (len < 2) {
 		return -1;
 	}
@@ -67,7 +67,7 @@ static int disassemble(RArchSession *as, RAnalOp *op, const ut8 *buf, int len) {
 		op->size = ARCompact_decodeInstr ((bfd_vma)op->addr, &disasm_obj);
 	} else {
 		ARCTangent_decodeInstr ((bfd_vma)op->addr, &disasm_obj);
-		//op->size = ARCTangent_decodeInstr ((bfd_vma)op->addr, &disasm_obj);
+		// op->size = ARCTangent_decodeInstr ((bfd_vma)op->addr, &disasm_obj);
 	}
 	if (op->size == -1) {
 		r_strbuf_set (sb, "(data)");
@@ -85,9 +85,9 @@ static int disassemble(RArchSession *as, RAnalOp *op, const ut8 *buf, int len) {
 
 /* the CPU fields that we decode get stored in this struct */
 typedef struct arc_fields_t {
-	ut8 opcode;    /* major opcode */
+	ut8 opcode; /* major opcode */
 	ut8 subopcode; /* sub opcode */
-	ut8 format;    /* operand format */
+	ut8 format; /* operand format */
 	ut8 format2;
 	ut8 cond;
 	ut16 a; /* destination register */
@@ -97,8 +97,8 @@ typedef struct arc_fields_t {
 	ut8 mode_zz;
 	ut8 mode_m;
 	ut8 mode_n; /* Delay slot flag */
-	st64 imm;   /* data stored in the opcode */
-	st64 limm;  /* data stored immediately following the opcode */
+	st64 imm; /* data stored in the opcode */
+	st64 limm; /* data stored immediately following the opcode */
 } arc_fields;
 
 static void arccompact_dump_fields(ut64 addr, ut32 words[2], arc_fields *f) {
@@ -128,14 +128,14 @@ static int sex(int bits, int imm) {
 	return imm;
 }
 
-#define SEX_S7(imm) sex (7, imm);
-#define SEX_S8(imm) sex (8, imm);
-#define SEX_S9(imm) sex (9, imm);
-#define SEX_S10(imm) sex (10, imm);
-#define SEX_S12(imm) sex (12, imm);
-#define SEX_S13(imm) sex (13, imm);
-#define SEX_S21(imm) sex (21, imm);
-#define SEX_S25(imm) sex (25, imm);
+#define SEX_S7(imm) sex(7, imm);
+#define SEX_S8(imm) sex(8, imm);
+#define SEX_S9(imm) sex(9, imm);
+#define SEX_S10(imm) sex(10, imm);
+#define SEX_S12(imm) sex(12, imm);
+#define SEX_S13(imm) sex(13, imm);
+#define SEX_S21(imm) sex(21, imm);
+#define SEX_S25(imm) sex(25, imm);
 
 static int map_cond2radare(ut8 cond) {
 	switch (cond) {
@@ -272,7 +272,7 @@ static int arcompact_genops_jmp(RAnalOp *op, ut64 addr, arc_fields *f, ut64 basi
 }
 
 static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
-	arc_fields fields = {0};
+	arc_fields fields = { 0 };
 
 	fields.format = (words[0] & 0x00c00000) >> 22;
 	fields.subopcode = (words[0] & 0x003f0000) >> 16;
@@ -531,7 +531,7 @@ static int arcompact_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *dat
 		return 0;
 	}
 	if (len < 8) {
-		//when r_read_me32_arc/be32 oob read
+		// when r_read_me32_arc/be32 oob read
 		return 0;
 	}
 
@@ -555,7 +555,7 @@ static int arcompact_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *dat
 
 	op->size = (fields.opcode >= 0x0c)? 2: 4;
 	op->nopcode = op->size;
-// eprintf ("%x\n", fields.opcode);
+	// eprintf ("%x\n", fields.opcode);
 
 	switch (fields.opcode) {
 	case 0:
@@ -872,9 +872,9 @@ static int arcompact_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *dat
 		case 0xc:
 			op->type = R_ANAL_OP_TYPE_MUL;
 			break;
-		case 0xd:  /* Sign extend byte */
-		case 0xe:  /* Sign extend word */
-		case 0xf:  /* Zero extend byte */
+		case 0xd: /* Sign extend byte */
+		case 0xe: /* Sign extend word */
+		case 0xf: /* Zero extend byte */
 		case 0x10: /* Zero extend word */
 		case 0x13: /* Negate */
 			op->type = R_ANAL_OP_TYPE_CPL;
@@ -990,7 +990,7 @@ static int arcompact_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *dat
 		case 6: /* POP Register from Stack, 0x18, [0x06, 0x00-0x1F] */
 			fields.c = (words[0] & 0x001f0000) >> 16;
 			switch (fields.c) {
-			case 1:    /* Pop register from stack */
+			case 1: /* Pop register from stack */
 			case 0x11: /* Pop blink from stack */
 				op->type = R_ANAL_OP_TYPE_POP;
 				break;
@@ -1002,7 +1002,7 @@ static int arcompact_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *dat
 		case 7: /* PUSH Register to Stack, 0x18, [0x07, 0x00-0x1F] */
 			fields.c = (words[0] & 0x001f0000) >> 16;
 			switch (fields.c) {
-			case 1:    /* Push register to stack */
+			case 1: /* Push register to stack */
 			case 0x11: /* Push blink to stack */
 				op->type = R_ANAL_OP_TYPE_PUSH;
 				break;
@@ -1100,7 +1100,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	op->size = len;
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		disassemble (as, op, data, len);
-		//op->size = disassemble (anal, op, data, len);
+		// op->size = disassemble (anal, op, data, len);
 	}
 	if (as->config->bits == 16) {
 		(void)arcompact_op (as, op, addr, data, len);
@@ -1172,7 +1172,7 @@ static int archinfo(RArchSession *as, ut32 query) {
 	}
 }
 
-static char* regs(RArchSession *as) {
+static char *regs(RArchSession *as) {
 	if (as->config->bits != 16) {
 		return NULL;
 	}
@@ -1180,7 +1180,7 @@ static char* regs(RArchSession *as) {
 		"=PC	pcl\n"
 		"=SP	sp\n"
 		"=LR	blink\n"
-		// "=BP	r27\n" // ??
+		// "=BP	r27\n" //??
 		"=A0	r0\n"
 		"=A1	r1\n"
 		"=A2	r2\n"

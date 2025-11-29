@@ -11,12 +11,13 @@ typedef struct r_log_cbuser_t {
 	RLogCallback cb;
 } RLogCallbackUser;
 
-static const char *level_tags[] = { // Log level to tag string lookup array
+static const char *level_tags[] = {
+	// Log level to tag string lookup array
 	[R_LOG_LEVEL_FATAL] = "FATAL",
 	[R_LOG_LEVEL_ERROR] = "ERROR",
-	[R_LOG_LEVEL_INFO]  = "INFO",
-	[R_LOG_LEVEL_WARN]  = "WARN",
-	[R_LOG_LEVEL_TODO]  = "TODO",
+	[R_LOG_LEVEL_INFO] = "INFO",
+	[R_LOG_LEVEL_WARN] = "WARN",
+	[R_LOG_LEVEL_TODO] = "TODO",
 	[R_LOG_LEVEL_DEBUG] = "DEBUG",
 	[R_LOG_LEVEL_TRACE] = "TRACE",
 };
@@ -198,7 +199,7 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func,
 		const char *k = r_log_level_tocolor (level);
 		r_strbuf_appendf (sb, "%s%s:", k, r_log_level_tostring (level));
 		if (rlog->show_origin) {
-			r_strbuf_appendf (sb, " "Color_YELLOW "[%s]" Color_RESET, origin);
+			r_strbuf_appendf (sb, " " Color_YELLOW "[%s]" Color_RESET, origin);
 		} else {
 			r_strbuf_appendf (sb, Color_RESET);
 		}
@@ -214,7 +215,7 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func,
 			r_strbuf_appendf (sb, " [%s:%d]", func, line);
 		}
 	}
-	char ts[32] = {0};
+	char ts[32] = { 0 };
 	if (rlog->show_ts) {
 		ut64 now = r_time_now ();
 		if (rlog->color) {
@@ -233,7 +234,7 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func,
 		rlog->cb_printf ("%s", s);
 	}
 	if (R_STR_ISNOTEMPTY (rlog->file)) {
-		r_file_dump (rlog->file, (const ut8*)s, strlen (s), true);
+		r_file_dump (rlog->file, (const ut8 *)s, strlen (s), true);
 	}
 	free (s);
 	if (rlog->traplevel && (level >= rlog->traplevel || level == R_LOG_LEVEL_FATAL)) {
