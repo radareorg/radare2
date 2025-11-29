@@ -310,10 +310,10 @@ static void r_anal_var_proto_free(RAnalVarProt *vp) {
 R_API bool r_anal_var_delete(RAnal *anal, RAnalVar *var) {
 	R_RETURN_VAL_IF_FAIL (var, false);
 	RAnalFunction *fcn = var->fcn;
-	ssize_t i;
+	int i;
 	bool found = false;
 	const ut64 vlen = RVecAnalVarPtr_length (&fcn->vars);
-	for (i = (ssize_t)vlen - 1; i >= 0; i--) {
+	for (i = (int)vlen - 1; i >= 0; i--) {
 		RAnalVar **vptr = ANAL_VAR_PTR_AT (&fcn->vars, i);
 		RAnalVar *v = vptr? *vptr: NULL;
 		if (v == var) {
@@ -374,10 +374,10 @@ R_API void r_anal_function_delete_unused_vars(RAnalFunction *fcn) {
 
 R_API void r_anal_function_delete_var(RAnalFunction *fcn, RAnalVar *var) {
 	R_RETURN_IF_FAIL (fcn && var);
-	ssize_t i;
+	int i;
 	bool found = false;
 	const ut64 vlen = RVecAnalVarPtr_length (&fcn->vars);
-	for (i = (ssize_t)vlen - 1; i >= 0; i--) {
+	for (i = (int)vlen - 1; i >= 0; i--) {
 		RAnalVar **vptr = ANAL_VAR_PTR_AT (&fcn->vars, i);
 		if (vptr && *vptr == var) {
 			anal_var_ptr_remove_at (&fcn->vars, i);
