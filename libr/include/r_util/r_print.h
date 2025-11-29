@@ -110,6 +110,7 @@ typedef struct r_print_t {
 	int cols;
 	int flags;
 	bool use_comments;
+	bool unique_colors;
 	int addrmod;
 	int col;
 	int stride;
