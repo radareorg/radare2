@@ -2,6 +2,12 @@
 
 #include "tcc.h"
 
+static void free_charptr(char **ptr) {
+	free (*ptr);
+}
+
+R_VEC_TYPE_WITH_FINI (RVecCharPtr, char *, free_charptr);
+
 #ifdef R2__WINDOWS__
 // GCC appears to use '/' for relative paths and '\\' for absolute paths on Windows
 static char *normalize_slashes(char *path) {
@@ -565,24 +571,27 @@ R_API void tcc_appendf(TCCState *s, const char *fmt, ...) {
 
 R_API void tcc_typedef_appendf(TCCState *s, const char *fmt, ...) {
 	if (!s->typedefs) {
-		s->typedefs = r_pvector_new ((RPVectorFree) free);
+		s->typedefs = RVecCharPtr_new ();
 	}
 	char typedefs_tail[1024];
 	va_list ap;
 	va_start (ap, fmt);
 	if (vsnprintf (typedefs_tail, sizeof (typedefs_tail), fmt, ap) > 0) {
-		r_pvector_push (s->typedefs, strdup (typedefs_tail));
+		char *value = strdup (typedefs_tail);
+		if (value) {
+			RVecCharPtr_push_back (s->typedefs, &value);
+		}
 	} // XXX else? how this should behave if sizeof (typedefs_tail) is not enough?
 	va_end (ap);
 }
 
 R_API void tcc_typedef_alias_fields(TCCState *s, const char *alias) {
 	if (s->typedefs) {
-		void **it;
-		r_pvector_foreach (s->typedefs, it) {
+		char **it;
+		R_VEC_FOREACH (s->typedefs, it) {
 			tcc_appendf (s, *it, alias);
 		}
-		r_pvector_free (s->typedefs);
+		RVecCharPtr_free (s->typedefs);
 		s->typedefs = NULL;
 	}
 }

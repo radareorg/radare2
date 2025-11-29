@@ -5,8 +5,77 @@
 #include <r_core.h>
 
 #define ACCESS_CMP(x, y) ((st64)((ut64)(x) - ((RAnalVarAccess *)y)->offset))
+
+static int anal_var_access_compare(const RAnalVarAccess *a, const RAnalVarAccess *b) {
+	const st64 diff = a->offset - b->offset;
+	if (diff < 0) {
+		return -1;
+	}
+	if (diff > 0) {
+		return 1;
+	}
+	return 0;
+}
 // XXX this helper function is crap and shouldnt be used
 #define STR_EQUAL(s1, s2) (s1 && s2 && !strcmp (s1, s2))
+
+#define ANAL_VAR_PTR_AT(vec, idx) RVecAnalVarPtr_at ((vec), (idx))
+
+static inline void anal_var_ptr_remove_at(RVecAnalVarPtr *vec, ut64 idx) {
+	R_RETURN_IF_FAIL (vec);
+	ut64 len = RVecAnalVarPtr_length (vec);
+	if (idx >= len) {
+		return;
+	}
+	RAnalVar **start = R_VEC_START_ITER (vec);
+	RAnalVar **pos = start + idx;
+	RAnalVar **end = R_VEC_END_ITER (vec);
+	if (pos + 1 < end) {
+		memmove (pos, pos + 1, (size_t)(end - pos - 1) * sizeof (*pos));
+	}
+	vec->_end--;
+}
+
+static inline void anal_var_ptr_remove(RVecAnalVarPtr *vec, RAnalVar *var) {
+	RAnalVar **it;
+	ut64 idx = 0;
+	R_VEC_FOREACH (vec, it) {
+		if (*it == var) {
+			anal_var_ptr_remove_at (vec, idx);
+			return;
+		}
+		idx++;
+	}
+}
+
+static inline bool anal_var_ptr_contains(RVecAnalVarPtr *vec, RAnalVar *var) {
+	RAnalVar **it;
+	R_VEC_FOREACH (vec, it) {
+		if (*it == var) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static RVecAnalVarPtr *anal_var_ptr_clone(RVecAnalVarPtr *src) {
+	RVecAnalVarPtr *dst = RVecAnalVarPtr_new ();
+	if (!dst) {
+		return NULL;
+	}
+	const ut64 len = RVecAnalVarPtr_length (src);
+	if (!RVecAnalVarPtr_reserve (dst, len)) {
+		RVecAnalVarPtr_free (dst);
+		return NULL;
+	}
+	RAnalVar **it;
+	R_VEC_FOREACH (src, it) {
+		RAnalVar *v = *it;
+		RVecAnalVarPtr_push_back (dst, &v);
+	}
+	return dst;
+}
+
 
 R_API bool r_anal_var_display(RAnal *anal, RAnalVar *var) {
 	R_RETURN_VAL_IF_FAIL (anal && var, false);
@@ -170,10 +239,10 @@ R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind
 	RAnalVar *var = r_anal_function_get_var (fcn, kind, delta);
 	if (!var) {
 		var = R_NEW0 (RAnalVar);
-		r_pvector_push (&fcn->vars, var);
+		RVecAnalVarPtr_push_back (&fcn->vars, &var);
 		var->fcn = fcn;
-		r_vector_init (&var->accesses, sizeof (RAnalVarAccess), NULL, NULL);
-		r_vector_init (&var->constraints, sizeof (RAnalVarConstraint), NULL, NULL);
+		RVecAnalVarAccess_init (&var->accesses);
+		RVecAnalVarConstraint_init (&var->constraints);
 		var->argnum = -1;
 	} else {
 		free (var->name);
@@ -221,7 +290,7 @@ R_API void r_anal_var_set_type(RAnal *anal, RAnalVar *var, const char * const ty
 static void var_free(RAnalVar *var) {
 	if (R_LIKELY (var)) {
 		r_anal_var_clear_accesses (var);
-		r_vector_fini (&var->constraints);
+		RVecAnalVarConstraint_fini (&var->constraints);
 		free (var->name);
 		free (var->regname);
 		free (var->type);
@@ -241,18 +310,22 @@ static void r_anal_var_proto_free(RAnalVarProt *vp) {
 R_API bool r_anal_var_delete(RAnal *anal, RAnalVar *var) {
 	R_RETURN_VAL_IF_FAIL (var, false);
 	RAnalFunction *fcn = var->fcn;
-	size_t i;
-	for (i = 0; i < r_pvector_length (&fcn->vars); i++) {
-		RAnalVar *v = r_pvector_at (&fcn->vars, i);
+	int i;
+	bool found = false;
+	const ut64 vlen = RVecAnalVarPtr_length (&fcn->vars);
+	for (i = (int)vlen - 1; i >= 0; i--) {
+		RAnalVar **vptr = ANAL_VAR_PTR_AT (&fcn->vars, i);
+		RAnalVar *v = vptr? *vptr: NULL;
 		if (v == var) {
-			r_pvector_remove_at (&fcn->vars, i);
-			{
-				REventVariable event = { .fcn = fcn, .var = var };
-				r_event_send (anal->ev, R_EVENT_VARIABLE_DELETED, &event);
-			}
-			var_free (var);
-			return true;
+			anal_var_ptr_remove_at (&fcn->vars, i);
+			found = true;
 		}
+	}
+	if (found) {
+		REventVariable event = { .fcn = fcn, .var = var };
+		r_event_send (anal->ev, R_EVENT_VARIABLE_DELETED, &event);
+		var_free (var);
+		return true;
 	}
 	return false;
 }
@@ -260,10 +333,11 @@ R_API bool r_anal_var_delete(RAnal *anal, RAnalVar *var) {
 R_API void r_anal_function_delete_vars_by_kind(RAnalFunction *fcn, RAnalVarKind kind) {
 	R_RETURN_IF_FAIL (fcn);
 	size_t i;
-	for (i = 0; i < r_pvector_length (&fcn->vars);) {
-		RAnalVar *var = r_pvector_at (&fcn->vars, i);
-		if (var->kind == kind) {
-			r_pvector_remove_at (&fcn->vars, i);
+	for (i = 0; i < RVecAnalVarPtr_length (&fcn->vars);) {
+		RAnalVar **varptr = ANAL_VAR_PTR_AT (&fcn->vars, i);
+		RAnalVar *var = varptr? *varptr: NULL;
+		if (var && var->kind == kind) {
+			anal_var_ptr_remove_at (&fcn->vars, i);
 			var_free (var);
 			continue;
 		}
@@ -273,32 +347,46 @@ R_API void r_anal_function_delete_vars_by_kind(RAnalFunction *fcn, RAnalVarKind 
 
 R_API void r_anal_function_delete_all_vars(RAnalFunction *fcn) {
 	R_RETURN_IF_FAIL (fcn);
-	if (fcn->vars.v.len > 0) {
-		void **it;
-		r_pvector_foreach (&fcn->vars, it) {
+	if (RVecAnalVarPtr_length (&fcn->vars) > 0) {
+		RAnalVar **it;
+		R_VEC_FOREACH (&fcn->vars, it) {
 			var_free (*it);
 		}
 	}
-	r_pvector_clear (&fcn->vars);
+	RVecAnalVarPtr_clear (&fcn->vars);
 }
 
 R_API void r_anal_function_delete_unused_vars(RAnalFunction *fcn) {
 	R_RETURN_IF_FAIL (fcn);
-	void **v;
-	RPVector *vars_clone = (RPVector *)r_vector_clone ((RVector *)&fcn->vars);
-	r_pvector_foreach (vars_clone, v) {
+	RAnalVar **v;
+	RVecAnalVarPtr *vars_clone = anal_var_ptr_clone (&fcn->vars);
+	if (!vars_clone) {
+		return;
+	}
+	R_VEC_FOREACH (vars_clone, v) {
 		RAnalVar *var = *v;
-		if (r_vector_empty (&var->accesses)) {
+		if (var && RVecAnalVarAccess_empty (&var->accesses)) {
 			r_anal_function_delete_var (fcn, var);
 		}
 	}
-	r_pvector_free (vars_clone);
+	RVecAnalVarPtr_free (vars_clone);
 }
 
 R_API void r_anal_function_delete_var(RAnalFunction *fcn, RAnalVar *var) {
 	R_RETURN_IF_FAIL (fcn && var);
-	r_pvector_remove_data (&fcn->vars, var);
-	var_free (var);
+	int i;
+	bool found = false;
+	const ut64 vlen = RVecAnalVarPtr_length (&fcn->vars);
+	for (i = (int)vlen - 1; i >= 0; i--) {
+		RAnalVar **vptr = ANAL_VAR_PTR_AT (&fcn->vars, i);
+		if (vptr && *vptr == var) {
+			anal_var_ptr_remove_at (&fcn->vars, i);
+			found = true;
+		}
+	}
+	if (found) {
+		var_free (var);
+	}
 }
 
 R_API RList *r_anal_var_deserialize(const char *ser) {
@@ -444,8 +532,8 @@ R_API RList *r_anal_var_get_prots(RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (fcn, NULL);
 	RList *ret = r_list_newf ((RListFree)r_anal_var_proto_free);
 	if (ret) {
-		void **p;
-		r_pvector_foreach (&fcn->vars, p) {
+		RAnalVar **p;
+		R_VEC_FOREACH (&fcn->vars, p) {
 			RAnalVar *var = *p;
 			RAnalVarProt *vp = R_NEW0 (RAnalVarProt);
 			vp->isarg = var->isarg;
@@ -461,8 +549,8 @@ R_API RList *r_anal_var_get_prots(RAnalFunction *fcn) {
 
 R_API R_BORROW RAnalVar *r_anal_function_get_var_byname(RAnalFunction *fcn, const char *name) {
 	R_RETURN_VAL_IF_FAIL (fcn && name, NULL);
-	void **it;
-	r_pvector_foreach (&fcn->vars, it) {
+	RAnalVar **it;
+	R_VEC_FOREACH (&fcn->vars, it) {
 		RAnalVar *var = *it;
 		if (!strcmp (var->name, name)) {
 			return var;
@@ -473,8 +561,8 @@ R_API R_BORROW RAnalVar *r_anal_function_get_var_byname(RAnalFunction *fcn, cons
 
 R_API RAnalVar *r_anal_function_get_var(RAnalFunction *fcn, char kind, int delta) {
 	R_RETURN_VAL_IF_FAIL (fcn, NULL);
-	void **it;
-	r_pvector_foreach (&fcn->vars, it) {
+	RAnalVar **it;
+	R_VEC_FOREACH (&fcn->vars, it) {
 		RAnalVar *var = *it;
 		if (var->kind == kind && var->delta == delta) {
 			return var;
@@ -500,13 +588,13 @@ R_API ut64 r_anal_var_addr(RAnalVar *var) {
 
 R_API st64 r_anal_function_get_var_stackptr_at(RAnalFunction *fcn, st64 delta, ut64 addr) {
 	st64 offset = addr - fcn->addr;
-	RPVector *inst_accesses = ht_up_find (fcn->inst_vars, offset, NULL);
+	RVecAnalVarPtr *inst_accesses = ht_up_find (fcn->inst_vars, offset, NULL);
 	if (!inst_accesses) {
 		return ST64_MAX;
 	}
 	RAnalVar *var = NULL;
-	void **it;
-	r_pvector_foreach (inst_accesses, it) {
+	RAnalVar **it;
+	R_VEC_FOREACH (inst_accesses, it) {
 		RAnalVar *v = *it;
 		if (v->delta == delta) {
 			var = v;
@@ -517,10 +605,11 @@ R_API st64 r_anal_function_get_var_stackptr_at(RAnalFunction *fcn, st64 delta, u
 		return ST64_MAX;
 	}
 	size_t index;
-	r_vector_lower_bound (&var->accesses, offset, index, ACCESS_CMP);
+	RAnalVarAccess needle = { .offset = offset };
+	index = RVecAnalVarAccess_lower_bound (&var->accesses, &needle, anal_var_access_compare);
 	RAnalVarAccess *acc = NULL;
-	if (index < var->accesses.len) {
-		acc = r_vector_at (&var->accesses, index);
+	if (index < RVecAnalVarAccess_length (&var->accesses)) {
+		acc = RVecAnalVarAccess_at (&var->accesses, index);
 	}
 	if (!acc || acc->offset != offset) {
 		return ST64_MAX;
@@ -531,13 +620,13 @@ R_API st64 r_anal_function_get_var_stackptr_at(RAnalFunction *fcn, st64 delta, u
 R_API const char *r_anal_function_get_var_reg_at(RAnalFunction *fcn, st64 delta, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (fcn, NULL);
 	st64 offset = addr - fcn->addr;
-	RPVector *inst_accesses = ht_up_find (fcn->inst_vars, offset, NULL);
+	RVecAnalVarPtr *inst_accesses = ht_up_find (fcn->inst_vars, offset, NULL);
 	if (!inst_accesses) {
 		return NULL;
 	}
 	RAnalVar *var = NULL;
-	void **it;
-	r_pvector_foreach (inst_accesses, it) {
+	RAnalVar **it;
+	R_VEC_FOREACH (inst_accesses, it) {
 		RAnalVar *v = *it;
 		if (v->delta == delta) {
 			var = v;
@@ -548,10 +637,11 @@ R_API const char *r_anal_function_get_var_reg_at(RAnalFunction *fcn, st64 delta,
 		return NULL;
 	}
 	size_t index;
-	r_vector_lower_bound (&var->accesses, offset, index, ACCESS_CMP);
+	RAnalVarAccess needle = { .offset = offset };
+	index = RVecAnalVarAccess_lower_bound (&var->accesses, &needle, anal_var_access_compare);
 	RAnalVarAccess *acc = NULL;
-	if (index < var->accesses.len) {
-		acc = r_vector_at (&var->accesses, index);
+	if (index < RVecAnalVarAccess_length (&var->accesses)) {
+		acc = RVecAnalVarAccess_at (&var->accesses, index);
 	}
 	if (!acc || acc->offset != offset) {
 		return NULL;
@@ -626,7 +716,7 @@ R_API int r_anal_var_get_argnum(RAnalVar *var) {
 	return idx;
 }
 
-R_API R_BORROW RPVector *r_anal_function_get_vars_used_at(RAnalFunction *fcn, ut64 op_addr) {
+R_API R_BORROW RVecAnalVarPtr *r_anal_function_get_vars_used_at(RAnalFunction *fcn, ut64 op_addr) {
 	R_RETURN_VAL_IF_FAIL (fcn, NULL);
 	return ht_up_find (fcn->inst_vars, op_addr - fcn->addr, NULL);
 }
@@ -640,9 +730,10 @@ R_API R_DEPRECATE RAnalVar *r_anal_get_used_function_var(RAnal *anal, ut64 addr)
 	RListIter *it;
 	RAnalFunction *fcn;
 	r_list_foreach (fcns, it, fcn) {
-		RPVector *used_vars = r_anal_function_get_vars_used_at (fcn, addr);
-		if (used_vars && !r_pvector_empty (used_vars)) {
-			var = r_pvector_at (used_vars, 0);
+		RVecAnalVarPtr *used_vars = r_anal_function_get_vars_used_at (fcn, addr);
+		if (used_vars && !RVecAnalVarPtr_empty (used_vars)) {
+			RAnalVar **first = RVecAnalVarPtr_at (used_vars, 0);
+			var = first? *first: NULL;
 			if (R_STR_ISEMPTY (var->name)) {
 				var = NULL;
 			}
@@ -656,14 +747,14 @@ R_API R_DEPRECATE RAnalVar *r_anal_get_used_function_var(RAnal *anal, ut64 addr)
 R_API RAnalVar *r_anal_var_get_dst_var(RAnalVar *var) {
 	R_RETURN_VAL_IF_FAIL (var, NULL);
 	RAnalVarAccess *acc;
-	r_vector_foreach (&var->accesses, acc) {
+	R_VEC_FOREACH (&var->accesses, acc) {
 		if (!(acc->type & R_PERM_R)) {
 			continue;
 		}
 		ut64 addr = var->fcn->addr + acc->offset;
-		RPVector *used_vars = r_anal_function_get_vars_used_at (var->fcn, addr);
-		void **it;
-		r_pvector_foreach (used_vars, it) {
+		RVecAnalVarPtr *used_vars = r_anal_function_get_vars_used_at (var->fcn, addr);
+		RAnalVar **it;
+		R_VEC_FOREACH (used_vars, it) {
 			RAnalVar *used_var = *it;
 			if (used_var == var) {
 				continue;
@@ -683,13 +774,28 @@ R_API bool r_anal_var_set_access(RAnal *anal, RAnalVar *var, const char *reg, ut
 
 	// accesses are stored ordered by offset, use binary search to get the matching existing or the index to insert a new one
 	size_t index;
-	r_vector_lower_bound (&var->accesses, offset, index, ACCESS_CMP);
+	RAnalVarAccess needle = { .offset = offset };
+	index = RVecAnalVarAccess_lower_bound (&var->accesses, &needle, anal_var_access_compare);
 	RAnalVarAccess *acc = NULL;
-	if (index < var->accesses.len) {
-		acc = r_vector_at (&var->accesses, index);
+	const ut64 acc_len = RVecAnalVarAccess_length (&var->accesses);
+	if (index < acc_len) {
+		acc = RVecAnalVarAccess_at (&var->accesses, index);
 	}
 	if (!acc || acc->offset != offset) {
-		acc = r_vector_insert (&var->accesses, index, NULL);
+		RAnalVarAccess *new_slot = RVecAnalVarAccess_emplace_back (&var->accesses);
+		if (!new_slot) {
+			return false;
+		}
+		if (index < acc_len) {
+			RAnalVarAccess *dst = RVecAnalVarAccess_at (&var->accesses, index);
+			if (!dst) {
+				return false;
+			}
+			memmove (dst + 1, dst, (acc_len - index) * sizeof (RAnalVarAccess));
+			acc = dst;
+		} else {
+			acc = new_slot;
+		}
 		acc->offset = offset;
 		acc->type = 0;
 	}
@@ -699,16 +805,16 @@ R_API bool r_anal_var_set_access(RAnal *anal, RAnalVar *var, const char *reg, ut
 	acc->reg = r_str_constpool_get (&var->fcn->anal->constpool, reg);
 
 	// add the inverse reference from the instruction to the var
-	RPVector *inst_accesses = ht_up_find (var->fcn->inst_vars, (ut64)offset, NULL);
+	RVecAnalVarPtr *inst_accesses = ht_up_find (var->fcn->inst_vars, (ut64)offset, NULL);
 	if (!inst_accesses) {
-		inst_accesses = r_pvector_new (NULL);
+		inst_accesses = RVecAnalVarPtr_new ();
 		if (!inst_accesses) {
 			return false;
 		}
 		ht_up_insert (var->fcn->inst_vars, (ut64)offset, inst_accesses);
 	}
-	if (!r_pvector_contains (inst_accesses, var)) {
-		r_pvector_push (inst_accesses, var);
+	if (!anal_var_ptr_contains (inst_accesses, var)) {
+		RVecAnalVarPtr_push_back (inst_accesses, &var);
 	}
 	return true;
 }
@@ -717,15 +823,16 @@ R_API void r_anal_var_remove_access_at(RAnalVar *var, ut64 address) {
 	R_RETURN_IF_FAIL (var);
 	st64 offset = address - var->fcn->addr;
 	size_t index;
-	r_vector_lower_bound (&var->accesses, offset, index, ACCESS_CMP);
-	if (index >= var->accesses.len) {
+	RAnalVarAccess needle = { .offset = offset };
+	index = RVecAnalVarAccess_lower_bound (&var->accesses, &needle, anal_var_access_compare);
+	if (index >= RVecAnalVarAccess_length (&var->accesses)) {
 		return;
 	}
-	RAnalVarAccess *acc = r_vector_at (&var->accesses, index);
+	RAnalVarAccess *acc = RVecAnalVarAccess_at (&var->accesses, index);
 	if (acc->offset == offset) {
-		r_vector_remove_at (&var->accesses, index, NULL);
-		RPVector *inst_accesses = ht_up_find (var->fcn->inst_vars, (ut64)offset, NULL);
-		r_pvector_remove_data (inst_accesses, var);
+		RVecAnalVarAccess_remove (&var->accesses, index);
+		RVecAnalVarPtr *inst_accesses = ht_up_find (var->fcn->inst_vars, (ut64)offset, NULL);
+		anal_var_ptr_remove (inst_accesses, var);
 	}
 	R_DIRTY_SET (var->fcn->anal);
 }
@@ -736,15 +843,15 @@ R_API void r_anal_var_clear_accesses(RAnalVar *var) {
 	if (fcn->inst_vars) {
 		// remove all inverse references to the var's accesses
 		RAnalVarAccess *acc;
-		r_vector_foreach (&var->accesses, acc) {
-			RPVector *inst_accesses = ht_up_find (fcn->inst_vars, (ut64)acc->offset, NULL);
+		R_VEC_FOREACH (&var->accesses, acc) {
+			RVecAnalVarPtr *inst_accesses = ht_up_find (fcn->inst_vars, (ut64)acc->offset, NULL);
 			if (!inst_accesses) {
 				continue;
 			}
-			r_pvector_remove_data (inst_accesses, var);
+			anal_var_ptr_remove (inst_accesses, var);
 		}
 	}
-	r_vector_clear (&var->accesses);
+	RVecAnalVarAccess_clear (&var->accesses);
 	R_DIRTY_SET (var->fcn->anal);
 }
 
@@ -752,11 +859,12 @@ R_API RAnalVarAccess *r_anal_var_get_access_at(RAnalVar *var, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (var, NULL);
 	st64 offset = addr - var->fcn->addr;
 	size_t index;
-	r_vector_lower_bound (&var->accesses, offset, index, ACCESS_CMP);
-	if (index >= var->accesses.len) {
+	RAnalVarAccess needle = { .offset = offset };
+	index = RVecAnalVarAccess_lower_bound (&var->accesses, &needle, anal_var_access_compare);
+	if (index >= RVecAnalVarAccess_length (&var->accesses)) {
 		return NULL;
 	}
-	RAnalVarAccess *acc = r_vector_at (&var->accesses, index);
+	RAnalVarAccess *acc = RVecAnalVarAccess_at (&var->accesses, index);
 	if (acc->offset == offset) {
 		return acc;
 	}
@@ -764,11 +872,11 @@ R_API RAnalVarAccess *r_anal_var_get_access_at(RAnalVar *var, ut64 addr) {
 }
 
 R_API void r_anal_var_add_constraint(RAnalVar *var, R_BORROW RAnalVarConstraint *constraint) {
-	r_vector_push (&var->constraints, constraint);
+	RVecAnalVarConstraint_push_back (&var->constraints, constraint);
 }
 
 R_API char *r_anal_var_get_constraints_readable(RAnalVar *var) {
-	size_t n = var->constraints.len;
+	size_t n = (size_t)RVecAnalVarConstraint_length (&var->constraints);
 	if (!n) {
 		return NULL;
 	}
@@ -777,7 +885,7 @@ R_API char *r_anal_var_get_constraints_readable(RAnalVar *var) {
 	r_strbuf_init (&sb);
 	size_t i;
 	for (i = 0; i < n; i += 1) {
-		RAnalVarConstraint *constr = r_vector_at (&var->constraints, i);
+		RAnalVarConstraint *constr = RVecAnalVarConstraint_at (&var->constraints, i);
 		switch (constr->cond) {
 		case R_ANAL_CONDTYPE_LE:
 			if (high) {
@@ -835,14 +943,14 @@ R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind, int type) {
 
 R_API int r_anal_var_count_all(RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (fcn, 0);
-	return r_pvector_length (&fcn->vars);
+	return (int)RVecAnalVarPtr_length (&fcn->vars);
 }
 
 R_API int r_anal_var_count_args(RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (fcn, 0); // No function implies no variables, but probably mistake
 	int args = 0;
-	void **it;
-	r_pvector_foreach (&fcn->vars, it) {
+	RAnalVar **it;
+	R_VEC_FOREACH (&fcn->vars, it) {
 		RAnalVar *var = *it;
 		if (var->isarg) {
 			args++;
@@ -910,10 +1018,10 @@ static const char *get_regname(RAnal *anal, RAnalValue *value) {
 #endif
 
 R_API R_OWN char *r_anal_function_autoname_var(RAnalFunction *fcn, char kind, const char *pfx, int ptr) {
-	void **it;
 	const ut32 uptr = R_ABS (ptr);
 	char *varname = r_str_newf ("%s_%xh", pfx, uptr);
-	r_pvector_foreach (&fcn->vars, it) {
+	RAnalVar **it;
+	R_VEC_FOREACH (&fcn->vars, it) {
 		RAnalVar *var = *it;
 		if (!strcmp (varname, var->name)) {
 			if (var->kind != kind) {
@@ -934,8 +1042,8 @@ R_API R_OWN char *r_anal_function_autoname_var(RAnalFunction *fcn, char kind, co
 }
 
 static RAnalVar *get_stack_var(RAnalFunction *fcn, int delta) {
-	void **it;
-	r_pvector_foreach (&fcn->vars, it) {
+	RAnalVar **it;
+	R_VEC_FOREACH (&fcn->vars, it) {
 		RAnalVar *var = *it;
 		bool is_stack = var->kind == R_ANAL_VAR_KIND_SPV || var->kind == R_ANAL_VAR_KIND_BPV;
 		if (is_stack && var->delta == delta) {
@@ -952,7 +1060,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 
 	R_RETURN_IF_FAIL (anal && fcn && op && reg);
 
-	r_vector_foreach (&op->srcs, val) {
+	R_VEC_FOREACH (&op->srcs, val) {
 		if (val && val->reg && !strcmp (reg, val->reg)) {
 			st64 delta = val->delta;
 			if ((delta > 0 && *sign == '+') || (delta < 0 && *sign == '-')) {
@@ -986,7 +1094,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 			ptr = (st64)r_num_get (NULL, addr);
 		} else {
 			//XXX: This is a workaround for inconsistent esil
-			val = r_vector_at (&op->dsts, 0);
+			val = RVecRArchValue_at (&op->dsts, 0);
 			if (!op->stackop && val) {
 				const char *sp = r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP);
 				const char *bp = r_reg_alias_getname (anal->reg, R_REG_ALIAS_BP);
@@ -1005,7 +1113,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 			if (!op->stackop && op->type != R_ANAL_OP_TYPE_PUSH && op->type != R_ANAL_OP_TYPE_POP
 				&& op->type != R_ANAL_OP_TYPE_RET && r_str_isnumber (addr)) {
 				ptr = (st64)r_num_get (NULL, addr);
-				val = r_vector_at (&op->srcs, 0);
+				val = RVecRArchValue_at (&op->srcs, 0);
 				if (ptr && val && ptr == val->imm) {
 					free (esil_buf);
 					goto beach;
@@ -1024,7 +1132,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		free (esil_buf);
 	}
 
-	if (anal->verbose && (!r_vector_at (&op->srcs, 0) || !r_vector_at (&op->dsts, 0))) {
+	if (anal->verbose && (!RVecRArchValue_at (&op->srcs, 0) || !RVecRArchValue_at (&op->dsts, 0))) {
 		R_LOG_WARN ("Analysis didn't fill op->src/dst at 0x%" PFMT64x, op->addr);
 	}
 
@@ -1124,9 +1232,9 @@ beach:
 
 #if 0
 static bool is_reg_in_src(const char *regname, RAnal *anal, RAnalOp *op) {
-	RAnalValue *src0 = r_vector_at (&op->srcs, 0);
-	RAnalValue *src1 = r_vector_at (&op->srcs, 1);
-	RAnalValue *src2 = r_vector_at (&op->srcs, 2);
+	RAnalValue *src0 = RVecRArchValue_at (&op->srcs, 0);
+	RAnalValue *src1 = RVecRArchValue_at (&op->srcs, 1);
+	RAnalValue *src2 = RVecRArchValue_at (&op->srcs, 2);
 	const char* opsreg0 = src0 ? get_regname (anal, src0) : NULL;
 	const char* opsreg1 = src1 ? get_regname (anal, src1) : NULL;
 	const char* opsreg2 = src2 ? get_regname (anal, src2) : NULL;
@@ -1137,7 +1245,7 @@ static bool is_reg_in_src(const char *regname, RAnal *anal, RAnalOp *op) {
 	R_RETURN_VAL_IF_FAIL (regname && anal && op, false);
 	int i;
 	for (i = 0; i < 3; i++) {
-		RAnalValue *src = r_vector_at (&op->srcs, i);
+		RAnalValue *src = RVecRArchValue_at (&op->srcs, i);
 		if (!src) {
 			return false;
 		}
@@ -1180,8 +1288,8 @@ static inline bool arch_destroys_dst(const char *arch) {
 }
 
 static bool is_used_like_arg(const char *regname, const char *opsreg, const char *opdreg, RAnalOp *op, RAnal *anal) {
-	RAnalValue *dst = r_vector_at (&op->dsts, 0);
-	RAnalValue *src = r_vector_at (&op->srcs, 0);
+	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
+	RAnalValue *src = RVecRArchValue_at (&op->srcs, 0);
 	switch (op->type) {
 	case R_ANAL_OP_TYPE_POP:
 		return false;
@@ -1223,8 +1331,8 @@ static bool is_used_like_arg(const char *regname, const char *opsreg, const char
 R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_set, int *count) {
 	int i, argc = 0;
 	R_RETURN_IF_FAIL (anal && op && fcn);
-	RAnalValue *src = r_vector_at (&op->srcs, 0);
-	RAnalValue *dst = r_vector_at (&op->dsts, 0);
+	RAnalValue *src = RVecRArchValue_at (&op->srcs, 0);
+	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
 	const char *opsreg = src ? get_regname (anal, src) : NULL;
 	const char *opdreg = dst ? get_regname (anal, dst) : NULL;
 	const int size = (fcn->bits ? fcn->bits : anal->config->bits) / 8;
@@ -1455,9 +1563,9 @@ static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind) {
 	if (kind < 1) {
 		kind = R_ANAL_VAR_KIND_BPV; // by default show vars
 	}
-	if (fcn->vars.v.len > 0) {
-		void **it;
-		r_pvector_foreach (&fcn->vars, it) {
+	if (RVecAnalVarPtr_length (&fcn->vars) > 0) {
+		RAnalVar **it;
+		R_VEC_FOREACH (&fcn->vars, it) {
 			RAnalVar *var = *it;
 			if (var->kind == kind) {
 				r_list_push (list, var);
@@ -1504,8 +1612,8 @@ R_API RList *r_anal_function_get_var_fields(RAnalFunction *fcn, int kind) {
 		kind = R_ANAL_VAR_KIND_BPV; // by default show vars
 	}
 	R_CRITICAL_ENTER (fcn->anal);
-	void **it;
-	r_pvector_foreach (&fcn->vars, it) {
+	RAnalVar **it;
+	R_VEC_FOREACH (&fcn->vars, it) {
 		RAnalVar *var = *it;
 		if (!var) {
 			break;
@@ -1910,10 +2018,10 @@ R_API char *r_anal_function_format_sig(RAnal * R_NONNULL anal, RAnalFunction * R
 beach:
 	r_strbuf_append (buf, ");");
 	R_FREE (type_fcn_name);
-	if (!reuse_cache) {
-		// !reuse_cache => we created our own cache
-		r_anal_function_vars_cache_fini (cache);
-		free (cache);
+		if (!reuse_cache) {
+			// !reuse_cache => we created our own cache
+			r_anal_function_vars_cache_fini (cache);
+			free (cache);
+		}
+		return r_strbuf_drain (buf);
 	}
-	return r_strbuf_drain (buf);
-}

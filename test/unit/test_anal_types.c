@@ -71,12 +71,12 @@ static bool test_anal_get_base_type_struct(void) {
 
 	RAnalStructMember *member;
 
-	member = r_vector_index_ptr (&base->struct_data.members, 0);
+	member = RVecAnalStructMember_at (&base->struct_data.members, 0);
 	mu_assert_eq (member->offset, 0, "Incorrect offset for struct member");
 	mu_assert_streq (member->type, "int32_t", "Incorrect type for struct member");
 	mu_assert_streq (member->name, "bar", "Incorrect name for struct member");
 
-	member = r_vector_index_ptr (&base->struct_data.members, 1);
+	member = RVecAnalStructMember_at (&base->struct_data.members, 1);
 	mu_assert_eq (member->offset, 4, "Incorrect offset for struct member");
 	mu_assert_streq (member->type, "int32_t", "Incorrect type for struct member");
 	mu_assert_streq (member->name, "cow", "Incorrect name for struct member");
@@ -99,12 +99,12 @@ static bool test_anal_save_base_type_struct(void) {
 		.type = strdup ("int32_t"),
 		.name = strdup ("bar")
 	};
-	r_vector_push (&base->struct_data.members, &member);
+	RVecAnalStructMember_push_back (&base->struct_data.members, &member);
 
 	member.offset = 4;
 	member.type = strdup ("int32_t");
 	member.name = strdup ("cow");
-	r_vector_push (&base->struct_data.members, &member);
+	RVecAnalStructMember_push_back (&base->struct_data.members, &member);
 
 	r_anal_save_base_type (anal, base);
 	r_anal_base_type_free (base);
@@ -133,11 +133,11 @@ static bool test_anal_get_base_type_union(void) {
 
 	RAnalUnionMember *member;
 
-	member = r_vector_index_ptr (&base->union_data.members, 0);
+	member = RVecAnalUnionMember_at (&base->union_data.members, 0);
 	mu_assert_streq (member->type, "int32_t", "Incorrect type for union member");
 	mu_assert_streq (member->name, "bar", "Incorrect name for union member");
 
-	member = r_vector_index_ptr (&base->union_data.members, 1);
+	member = RVecAnalUnionMember_at (&base->union_data.members, 1);
 	mu_assert_streq (member->type, "int32_t", "Incorrect type for union member");
 	mu_assert_streq (member->name, "cow", "Incorrect name for union member");
 
@@ -159,12 +159,12 @@ static bool test_anal_save_base_type_union(void) {
 		.type = strdup ("int32_t"),
 		.name = strdup ("bar")
 	};
-	r_vector_push (&base->union_data.members, &member);
+	RVecAnalUnionMember_push_back (&base->union_data.members, &member);
 
 	member.offset = 0;
 	member.type = strdup ("int32_t");
 	member.name = strdup ("cow");
-	r_vector_push (&base->union_data.members, &member);
+	RVecAnalUnionMember_push_back (&base->union_data.members, &member);
 
 	r_anal_save_base_type (anal, base);
 	r_anal_base_type_free (base);
@@ -191,11 +191,11 @@ static bool test_anal_get_base_type_enum(void) {
 	mu_assert_eq (R_ANAL_BASE_TYPE_KIND_ENUM, base->kind, "Wrong base type");
 	mu_assert_streq (base->name, "foo", "type name");
 
-	RAnalEnumCase *cas = r_vector_index_ptr (&base->enum_data.cases, 0);
+	RAnalEnumCase *cas = RVecAnalEnumCase_at (&base->enum_data.cases, 0);
 	mu_assert_eq (cas->val, 1, "Incorrect value for enum case");
 	mu_assert_streq (cas->name, "firstCase", "Incorrect name for enum case");
 
-	cas = r_vector_index_ptr (&base->enum_data.cases, 1);
+	cas = RVecAnalEnumCase_at (&base->enum_data.cases, 1);
 	mu_assert_eq (cas->val, 2, "Incorrect value for enum case");
 	mu_assert_streq (cas->name, "secondCase", "Incorrect name for enum case");
 
@@ -216,11 +216,11 @@ static bool test_anal_save_base_type_enum(void) {
 		.name = strdup ("firstCase"),
 		.val = 1
 	};
-	r_vector_push (&base->enum_data.cases, &cas);
+	RVecAnalEnumCase_push_back (&base->enum_data.cases, &cas);
 
 	cas.name = strdup ("secondCase");
 	cas.val = 2;
-	r_vector_push (&base->enum_data.cases, &cas);
+	RVecAnalEnumCase_push_back (&base->enum_data.cases, &cas);
 
 	r_anal_save_base_type (anal, base);
 	r_anal_base_type_free (base);

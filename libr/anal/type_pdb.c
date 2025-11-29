@@ -133,10 +133,12 @@ static void parse_enum(const RAnal *anal, SType *type, RList *types) {
 		if (!enum_case) {
 			continue; // skip it, move forward
 		}
-		void *element = r_vector_push (&base_type->struct_data.members, enum_case);
-		if (!element) {
+		RAnalEnumCase *slot = RVecAnalEnumCase_emplace_back (&base_type->enum_data.cases);
+		if (!slot) {
 			goto cleanup;
 		}
+		*slot = *enum_case;
+		free (enum_case);
 	}
 	if (type_name) {
 		base_type->name = r_str_sanitize_sdb_key (name);
@@ -193,10 +195,12 @@ static void parse_structure(const RAnal *anal, SType *type, RList *types) {
 		if (!struct_member) {
 			continue; // skip the failure
 		}
-		void *element = r_vector_push (&base_type->struct_data.members, struct_member);
-		if (!element) {
+		RAnalStructMember *slot = RVecAnalStructMember_emplace_back (&base_type->struct_data.members);
+		if (!slot) {
 			goto cleanup;
 		}
+		*slot = *struct_member;
+		free (struct_member);
 	}
 	if (type_info->leaf_type == eLF_STRUCTURE || type_info->leaf_type == eLF_CLASS) {
 		base_type->kind = R_ANAL_BASE_TYPE_KIND_STRUCT;

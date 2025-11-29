@@ -18,16 +18,6 @@ static int _ci_start_cmp_cb(void *incoming, void *in, void *user) {
 	return 0;
 }
 
-static void iocache_layer_free(void *arg) {
-	RIOCacheLayer *cl = arg;
-	if (cl) {
-		r_crbtree_free (cl->tree);
-		r_pvector_free (cl->vec);
-		// cl->cache.mode = 0;
-		free (cl);
-	}
-}
-
 static RIOCacheItem *iocache_item_new(RIO *io, RInterval *itv) {
 	RIOCacheItem *ci = R_NEW0 (RIOCacheItem);
 	if (R_LIKELY (ci)) {
@@ -45,13 +35,43 @@ static RIOCacheItem *iocache_item_new(RIO *io, RInterval *itv) {
 	return NULL;
 }
 
-static void _io_cache_item_free(void *data) {
-	RIOCacheItem *ci = (RIOCacheItem *)data;
+static void _io_cache_item_free(RIOCacheItem *ci) {
 	if (ci) {
 		free (ci->tree_itv);
 		free (ci->data);
 		free (ci->odata);
 		free (ci);
+	}
+}
+
+static bool iocache_layer_remove_item(RVecRIOCacheItemPtr *vec, RIOCacheItem *ci) {
+	RIOCacheItem **iter;
+	for (iter = R_VEC_START_ITER (vec); iter != R_VEC_END_ITER (vec); iter++) {
+		if (*iter == ci) {
+			RIOCacheItem **next = iter + 1;
+			if (next != R_VEC_END_ITER (vec)) {
+				memmove (iter, next, (size_t)(R_VEC_END_ITER (vec) - next) * sizeof (*iter));
+			}
+			vec->_end--;
+			return true;
+		}
+	}
+	return false;
+}
+
+static void iocache_layer_free(void *arg) {
+	RIOCacheLayer *cl = arg;
+	if (cl) {
+		r_crbtree_free (cl->tree);
+		if (cl->vec) {
+			RIOCacheItem **iter;
+			R_VEC_FOREACH (cl->vec, iter) {
+				_io_cache_item_free (*iter);
+			}
+			RVecRIOCacheItemPtr_free (cl->vec);
+		}
+		// cl->cache.mode = 0;
+		free (cl);
 	}
 }
 
@@ -74,7 +94,7 @@ R_API bool r_io_cache_empty(RIO *io) {
 		return true;
 	}
 	r_list_foreach (io->cache.layers, liter, layer) {
-		if (r_pvector_length (layer->vec) > 0) {
+		if (RVecRIOCacheItemPtr_length (layer->vec) > 0) {
 			return true;
 		}
 	}
@@ -156,7 +176,7 @@ R_API bool r_io_cache_write_at(RIO *io, ut64 addr, const ut8 *buf, int len) {
 
 					// Insert the tail after we finish processing
 					r_crbtree_insert (layer->tree, tail_ci, _ci_start_cmp_cb, NULL);
-					r_pvector_push (layer->vec, tail_ci);
+					RVecRIOCacheItemPtr_push_back (layer->vec, &tail_ci);
 				}
 			}
 
@@ -184,7 +204,7 @@ R_API bool r_io_cache_write_at(RIO *io, ut64 addr, const ut8 *buf, int len) {
 		}
 	}
 	r_crbtree_insert (layer->tree, ci, _ci_start_cmp_cb, NULL);
-	r_pvector_push (layer->vec, ci);
+	RVecRIOCacheItemPtr_push_back (layer->vec, &ci);
 	return true;
 }
 
@@ -276,13 +296,13 @@ R_API bool r_io_cache_at(RIO *io, ut64 addr) {
 R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to, bool many) {
 	R_RETURN_VAL_IF_FAIL (io && from <= to, 0);
 	RInterval itv = (RInterval){from, (to + 1) - from};
-	void **iter;
+	RIOCacheItem **iter;
 	ut32 invalidated_cache_bytes = 0;
 	RIOCacheLayer *layer;
 	RListIter *liter;
 	r_list_foreach (io->cache.layers, liter, layer) {
-		r_pvector_foreach_prev (layer->vec, iter) {
-			RIOCacheItem *ci = (RIOCacheItem *)*iter;
+		R_VEC_FOREACH_PREV (layer->vec, iter) {
+			RIOCacheItem *ci = *iter;
 			if (!r_itv_overlap (itv, ci->itv)) {
 				continue;
 			}
@@ -293,7 +313,7 @@ R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to, bool many) {
 					r_crbtree_delete (layer->tree, ci, _ci_start_cmp_cb, NULL);
 					R_FREE (ci->tree_itv);
 				}
-				r_pvector_remove_data (layer->vec, ci);
+				iocache_layer_remove_item (layer->vec, ci);
 				continue;
 			}
 			if (r_itv_include (ci->itv, itv)) {
@@ -340,7 +360,7 @@ R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to, bool many) {
 				} else {
 					R_FREE (_ci->tree_itv);
 				}
-				r_pvector_push (layer->vec, _ci);
+				RVecRIOCacheItemPtr_push_back (layer->vec, &_ci);
 				continue;
 			}
 			if (r_itv_begin (ci->itv) < r_itv_begin (itv)) {
@@ -436,10 +456,10 @@ R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to, bool many) {
 }
 
 static char *list(RIO *io, RIOCacheLayer *layer, PJ *pj, int rad) {
-	void **iter;
+	RIOCacheItem **iter;
 	size_t i, j = 0;
 	RStrBuf *sb = pj? NULL: r_strbuf_new ("");
-	r_pvector_foreach (layer->vec, iter) {
+	R_VEC_FOREACH (layer->vec, iter) {
 		RIOCacheItem *ci = *iter;
 		const ut64 dataSize = r_itv_size (ci->itv);
 		if (pj) {
@@ -532,7 +552,7 @@ R_API char *r_io_cache_list(RIO *io, int rad, bool many) {
 static RIOCacheLayer *iocache_layer_new(void) {
 	RIOCacheLayer *cl = R_NEW (RIOCacheLayer);
 	cl->tree = r_crbtree_new (NULL);
-	cl->vec = r_pvector_new ((RPVectorFree)_io_cache_item_free);
+	cl->vec = RVecRIOCacheItemPtr_new ();
 	// cl->ci_cmp_cb = _ci_start_cmp_cb; // move into the tree
 	return cl;
 }
@@ -556,8 +576,8 @@ R_API bool r_io_cache_undo(RIO *io) { // "wcu"
 		return false;
 	}
 	RIOCacheLayer *layer = r_list_last (io->cache.layers);
-	void **iter;
-	r_pvector_foreach_prev (layer->vec, iter) {
+	RIOCacheItem **iter;
+	R_VEC_FOREACH_PREV (layer->vec, iter) {
 		RIOCacheItem *c = *iter;
 		ut32 mode = io->cache.mode;
 		io->cache.mode = 0;
@@ -565,13 +585,12 @@ R_API bool r_io_cache_undo(RIO *io) { // "wcu"
 		c->written = false;
 		io->cache.mode = mode;
 		// tf is all this shit
-		r_pvector_remove_data (layer->vec, c);
-		RPVectorFree free_elem = layer->vec->v.free_user;
+		iocache_layer_remove_item (layer->vec, c);
 		if (c->tree_itv) {
 			r_crbtree_delete (layer->tree, c, _ci_start_cmp_cb, NULL);
 			R_FREE (c->tree_itv);
 		}
-		free_elem (c);
+		_io_cache_item_free (c);
 		break;
 	}
 	return true;

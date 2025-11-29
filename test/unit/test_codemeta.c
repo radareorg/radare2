@@ -1,5 +1,5 @@
 #include <r_util.h>
-#include <r_vector.h>
+#include <r_vec.h>
 #include <r_core.h>
 #include <r_cons.h>
 
@@ -45,63 +45,61 @@ static RCodeMetaItem make_reference_annotation(int st, int en, RCodeMetaItemType
 	return annotation;
 }
 
-static RVector *get_some_code_annotation_for_add(void) {
-	RVector *test_annotations = r_vector_new (sizeof (RCodeMetaItem), NULL, NULL);
+static RVecCodeMetaItem *get_some_code_annotation_for_add(void) {
+	RVecCodeMetaItem *test_annotations = RVecCodeMetaItem_new ();
 	RCodeMetaItem annotation;
-	r_vector_init (test_annotations, sizeof (RCodeMetaItem), NULL, NULL);
 	annotation = make_code_annotation (1, 2, R_CODEMETA_TYPE_OFFSET, 123, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
-	r_vector_push (test_annotations, &annotation);
+	RVecCodeMetaItem_push_back (test_annotations, &annotation);
 	annotation = make_code_annotation (1, 5, R_CODEMETA_TYPE_SYNTAX_HIGHLIGHT, 123, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
-	r_vector_push (test_annotations, &annotation);
+	RVecCodeMetaItem_push_back (test_annotations, &annotation);
 	return test_annotations;
 }
 
-static RVector *get_some_annotations_for_in(void) {
-	RVector *test_annotations = r_vector_new (sizeof (RCodeMetaItem), NULL, NULL);
+static RVecCodeMetaItem *get_some_annotations_for_in(void) {
+	RVecCodeMetaItem *test_annotations = RVecCodeMetaItem_new ();
 	RCodeMetaItem annotation;
 	annotation = make_code_annotation (1, 2, R_CODEMETA_TYPE_OFFSET, 123, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
-	r_vector_push (test_annotations, &annotation);
+	RVecCodeMetaItem_push_back (test_annotations, &annotation);
 	annotation = make_code_annotation (1, 7, R_CODEMETA_TYPE_SYNTAX_HIGHLIGHT, 123, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
-	r_vector_push (test_annotations, &annotation);
+	RVecCodeMetaItem_push_back (test_annotations, &annotation);
 	annotation = make_code_annotation (9, 11, R_CODEMETA_TYPE_OFFSET, 123, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
-	r_vector_push (test_annotations, &annotation);
+	RVecCodeMetaItem_push_back (test_annotations, &annotation);
 
 	// For offset = 11, indices expected = 3, 4, 5
 	annotation = make_code_annotation (7, 13, R_CODEMETA_TYPE_OFFSET, 123, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
-	r_vector_push (test_annotations, &annotation);
+	RVecCodeMetaItem_push_back (test_annotations, &annotation);
 	annotation = make_code_annotation (11, 15, R_CODEMETA_TYPE_OFFSET, 123, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
-	r_vector_push (test_annotations, &annotation);
+	RVecCodeMetaItem_push_back (test_annotations, &annotation);
 	annotation = make_code_annotation (10, 16, R_CODEMETA_TYPE_OFFSET, 123, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
-	r_vector_push (test_annotations, &annotation);
+	RVecCodeMetaItem_push_back (test_annotations, &annotation);
 	annotation = make_code_annotation (17, 20, R_CODEMETA_TYPE_OFFSET, 32, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
-	r_vector_push (test_annotations, &annotation);
+	RVecCodeMetaItem_push_back (test_annotations, &annotation);
 
 	return test_annotations;
 }
 
-static RVector *get_annotations_for_hello_world(void) {
-	RVector *test_annotations = r_vector_new (sizeof (RCodeMetaItem), NULL, NULL);
+static RVecCodeMetaItem *get_annotations_for_hello_world(void) {
+	RVecCodeMetaItem *test_annotations = RVecCodeMetaItem_new ();
 	RCodeMetaItem annotation;
-	// r_vector_init (&test_annotations, sizeof (RCodeMetaItem), NULL, NULL);
 	//Code Annotations for a hello world program
 	annotation = make_code_annotation (1, 5, R_CODEMETA_TYPE_SYNTAX_HIGHLIGHT, 123, R_SYNTAX_HIGHLIGHT_TYPE_DATATYPE);
-	r_vector_push (test_annotations, &annotation); //1
+	RVecCodeMetaItem_push_back (test_annotations, &annotation); //1
 	annotation = make_code_annotation (6, 10, R_CODEMETA_TYPE_SYNTAX_HIGHLIGHT, 123, R_SYNTAX_HIGHLIGHT_TYPE_FUNCTION_NAME);
-	r_vector_push (test_annotations, &annotation); //2
+	RVecCodeMetaItem_push_back (test_annotations, &annotation); //2
 	annotation = make_code_annotation (11, 15, R_CODEMETA_TYPE_SYNTAX_HIGHLIGHT, 123, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
-	r_vector_push (test_annotations, &annotation); //3
+	RVecCodeMetaItem_push_back (test_annotations, &annotation); //3
 	annotation = make_code_annotation (23, 35, R_CODEMETA_TYPE_SYNTAX_HIGHLIGHT, 123, R_SYNTAX_HIGHLIGHT_TYPE_FUNCTION_NAME);
-	r_vector_push (test_annotations, &annotation); //4
+	RVecCodeMetaItem_push_back (test_annotations, &annotation); //4
 	annotation = make_code_annotation (36, 51, R_CODEMETA_TYPE_SYNTAX_HIGHLIGHT, 123, R_SYNTAX_HIGHLIGHT_TYPE_CONSTANT_VARIABLE);
-	r_vector_push (test_annotations, &annotation); //5
+	RVecCodeMetaItem_push_back (test_annotations, &annotation); //5
 	annotation = make_code_annotation (23, 52, R_CODEMETA_TYPE_OFFSET, 4440, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
-	r_vector_push (test_annotations, &annotation); //6
+	RVecCodeMetaItem_push_back (test_annotations, &annotation); //6
 	annotation = make_code_annotation (58, 64, R_CODEMETA_TYPE_OFFSET, 4447, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
-	r_vector_push (test_annotations, &annotation); //7
+	RVecCodeMetaItem_push_back (test_annotations, &annotation); //7
 	annotation = make_code_annotation (58, 64, R_CODEMETA_TYPE_SYNTAX_HIGHLIGHT, 123, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
-	r_vector_push (test_annotations, &annotation); //8
+	RVecCodeMetaItem_push_back (test_annotations, &annotation); //8
 	annotation = make_code_annotation (58, 64, R_CODEMETA_TYPE_OFFSET, 4447, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
-	r_vector_push (test_annotations, &annotation); //9
+	RVecCodeMetaItem_push_back (test_annotations, &annotation); //9
 
 	return test_annotations;
 }
@@ -110,13 +108,13 @@ static RCodeMeta *get_hello_world(void) {
 	char *test_string = strdup ("\nvoid main(void)\n{\n    sym.imp.puts(\"Hello, World!\");\n    return;\n}\n");
 	RCodeMeta *code = r_codemeta_new (test_string);
 
-	RVector /*<RCodeMetaItem>*/ *test_annotations = get_annotations_for_hello_world ();
+	RVecCodeMetaItem /*<RCodeMetaItem>*/ *test_annotations = get_annotations_for_hello_world ();
 	RCodeMetaItem *annotation;
-	r_vector_foreach (test_annotations, annotation) {
+	R_VEC_FOREACH (test_annotations, annotation) {
 		r_codemeta_add_item (code, r_codemeta_item_clone (annotation));
 	}
 
-	r_vector_free (test_annotations);
+	RVecCodeMetaItem_free (test_annotations);
 	return code;
 }
 
@@ -143,7 +141,7 @@ static bool test_r_codemeta_new(void) {
 	mu_assert_streq (code->code, test_string, "Code in RCodeMeta is not set as expected");
 
 	// Testing RAnnoatedCode->annotations
-	mu_assert_eq (code->annotations.elem_size, sizeof (RCodeMetaItem), "Code Annotations are initialized is not properly");
+	mu_assert_eq (RVecCodeMetaItem_length (&code->annotations), 0U, "Code Annotations not initialized properly");
 
 	r_codemeta_free (code);
 	mu_end;
@@ -155,9 +153,9 @@ static bool test_r_codemeta_free(void) {
 
 	RCodeMetaItem test_annotation1, test_annotation2;
 	test_annotation1 = make_code_annotation (1, 2, R_CODEMETA_TYPE_OFFSET, 123, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
-	r_vector_push (&code->annotations, &test_annotation1);
+	RVecCodeMetaItem_push_back (&code->annotations, &test_annotation1);
 	test_annotation2 = make_code_annotation (1, 5, R_CODEMETA_TYPE_SYNTAX_HIGHLIGHT, 123, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
-	r_vector_push (&code->annotations, &test_annotation2);
+	RVecCodeMetaItem_push_back (&code->annotations, &test_annotation2);
 
 	// This test is only for run errors
 
@@ -183,22 +181,22 @@ static bool test_equal(RCodeMetaItem *first, RCodeMetaItem *second) { // First -
 static bool test_r_codemeta_add_item(void) {
 	char *test_string = strdup ("abcdefghijklmnopqrtstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 	RCodeMeta *code = r_codemeta_new (test_string);
-	RVector /*<RCodeMetaItem>*/ *test_annotations;
+	RVecCodeMetaItem /*<RCodeMetaItem>*/ *test_annotations;
 	test_annotations = get_some_code_annotation_for_add ();
 	RCodeMetaItem *annotation;
-	r_vector_foreach (test_annotations, annotation) {
+	R_VEC_FOREACH (test_annotations, annotation) {
 		r_codemeta_add_item (code, annotation);
 	}
 
 	//Comparing
-	if (!test_equal (r_vector_index_ptr (&code->annotations, 0), r_vector_index_ptr (test_annotations, 0))) {
+	if (!test_equal (RVecCodeMetaItem_at (&code->annotations, 0), RVecCodeMetaItem_at (test_annotations, 0))) {
 		return false;
 	}
-	if (!test_equal (r_vector_index_ptr (&code->annotations, 1), r_vector_index_ptr (test_annotations, 1))) {
+	if (!test_equal (RVecCodeMetaItem_at (&code->annotations, 1), RVecCodeMetaItem_at (test_annotations, 1))) {
 		return false;
 	}
 
-	r_vector_free (test_annotations);
+	RVecCodeMetaItem_free (test_annotations);
 	r_codemeta_free (code);
 	mu_end;
 }
@@ -206,29 +204,29 @@ static bool test_r_codemeta_add_item(void) {
 static bool test_r_codemeta_at(void) {
 	char *test_string = strdup ("abcdefghijklmnopqrtstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 	RCodeMeta *code = r_codemeta_new (test_string);
-	RVector /*<RCodeMetaItem>*/ *test_annotations;
+	RVecCodeMetaItem /*<RCodeMetaItem>*/ *test_annotations;
 	test_annotations = get_some_annotations_for_in ();
 
 	RCodeMetaItem *annotation;
-	r_vector_foreach (test_annotations, annotation) {
+	R_VEC_FOREACH (test_annotations, annotation) {
 		r_codemeta_add_item (code, annotation);
 	}
 
-	RPVector *out = r_codemeta_at (code, 11);
+	RVecCodeMetaItemPtr *out = r_codemeta_at (code, 11);
 	//Expecting indices = 3, 4, 5
-	mu_assert_eq (out->v.len, 3, "Additional annotations found. Bad output.");
-	if (!test_equal (*r_pvector_index_ptr (out, 0), r_vector_index_ptr (test_annotations, 3))) {
+	mu_assert_eq (RVecCodeMetaItemPtr_length (out), 3U, "Additional annotations found. Bad output.");
+	if (!test_equal (*RVecCodeMetaItemPtr_at (out, 0), RVecCodeMetaItem_at (test_annotations, 3))) {
 		return false;
 	}
-	if (!test_equal (*r_pvector_index_ptr (out, 1), r_vector_index_ptr (test_annotations, 4))) {
+	if (!test_equal (*RVecCodeMetaItemPtr_at (out, 1), RVecCodeMetaItem_at (test_annotations, 4))) {
 		return false;
 	}
-	if (!test_equal (*r_pvector_index_ptr (out, 2), r_vector_index_ptr (test_annotations, 5))) {
+	if (!test_equal (*RVecCodeMetaItemPtr_at (out, 2), RVecCodeMetaItem_at (test_annotations, 5))) {
 		return false;
 	}
 
-	r_vector_free (test_annotations);
-	r_pvector_free (out);
+	RVecCodeMetaItem_free (test_annotations);
+	RVecCodeMetaItemPtr_free (out);
 	r_codemeta_free (code);
 	mu_end;
 }
@@ -236,31 +234,31 @@ static bool test_r_codemeta_at(void) {
 static bool test_r_codemeta_in(void) {
 	char *test_string = strdup ("abcdefghijklmnopqrtstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 	RCodeMeta *code = r_codemeta_new (test_string);
-	RVector /*<RCodeMetaItem>*/ *test_annotations;
+	RVecCodeMetaItem /*<RCodeMetaItem>*/ *test_annotations;
 	test_annotations = get_some_annotations_for_in ();
 	RCodeMetaItem *annotation;
-	r_vector_foreach (test_annotations, annotation) {
+	R_VEC_FOREACH (test_annotations, annotation) {
 		r_codemeta_add_item (code, annotation);
 	}
 
-	RPVector *out = r_codemeta_in (code, 7, 16);
+	RVecCodeMetaItemPtr *out = r_codemeta_in (code, 7, 16);
 	// Expecting indices = 2, 3, 4, 5
-	mu_assert_eq (out->v.len, 4, "Additional annotations found. Bad output.");
-	if (!test_equal (*r_pvector_index_ptr (out, 0), r_vector_index_ptr (test_annotations, 2))) {
+	mu_assert_eq (RVecCodeMetaItemPtr_length (out), 4U, "Additional annotations found. Bad output.");
+	if (!test_equal (*RVecCodeMetaItemPtr_at (out, 0), RVecCodeMetaItem_at (test_annotations, 2))) {
 		return false;
 	}
-	if (!test_equal (*r_pvector_index_ptr (out, 1), r_vector_index_ptr (test_annotations, 3))) {
+	if (!test_equal (*RVecCodeMetaItemPtr_at (out, 1), RVecCodeMetaItem_at (test_annotations, 3))) {
 		return false;
 	}
-	if (!test_equal (*r_pvector_index_ptr (out, 2), r_vector_index_ptr (test_annotations, 4))) {
+	if (!test_equal (*RVecCodeMetaItemPtr_at (out, 2), RVecCodeMetaItem_at (test_annotations, 4))) {
 		return false;
 	}
-	if (!test_equal (*r_pvector_index_ptr (out, 3), r_vector_index_ptr (test_annotations, 5))) {
+	if (!test_equal (*RVecCodeMetaItemPtr_at (out, 3), RVecCodeMetaItem_at (test_annotations, 5))) {
 		return false;
 	}
 
-	r_vector_free (test_annotations);
-	r_pvector_free (out);
+	RVecCodeMetaItem_free (test_annotations);
+	RVecCodeMetaItemPtr_free (out);
 	r_codemeta_free (code);
 	mu_end;
 }
@@ -268,23 +266,23 @@ static bool test_r_codemeta_in(void) {
 static bool test_r_codemeta_line_offsets(void) {
 
 	RCodeMeta *code = get_hello_world ();
-	RVector *offsets = r_codemeta_line_offsets (code);
-	mu_assert_eq (offsets->len, 6, "Number of offsets not expected");
+	RVecCodeMetaOffset *offsets = r_codemeta_line_offsets (code);
+	mu_assert_eq (RVecCodeMetaOffset_length (offsets), 6U, "Number of offsets not expected");
 
-	ut64 *off = r_vector_index_ptr (offsets, 0);
+	ut64 *off = RVecCodeMetaOffset_at (offsets, 0);
 	mu_assert_eq_fmt (*off, UT64_MAX, "Unexpected offset", "%"PFMT64u);
-	off = r_vector_index_ptr (offsets, 1);
+	off = RVecCodeMetaOffset_at (offsets, 1);
 	mu_assert_eq_fmt (*off, UT64_MAX, "Unexpected offset", "%"PFMT64u);
-	off = r_vector_index_ptr (offsets, 2);
+	off = RVecCodeMetaOffset_at (offsets, 2);
 	mu_assert_eq_fmt (*off, UT64_MAX, "Unexpected offset", "%"PFMT64u);
-	off = r_vector_index_ptr (offsets, 3);
+	off = RVecCodeMetaOffset_at (offsets, 3);
 	mu_assert_eq_fmt (*off, (ut64)4440, "Unexpected offset", "%"PFMT64u);
-	off = r_vector_index_ptr (offsets, 4);
+	off = RVecCodeMetaOffset_at (offsets, 4);
 	mu_assert_eq_fmt (*off, (ut64)4447, "Unexpected offset", "%"PFMT64u);
-	off = r_vector_index_ptr (offsets, 5);
+	off = RVecCodeMetaOffset_at (offsets, 5);
 	mu_assert_eq_fmt (*off, UT64_MAX, "Unexpected offset", "%"PFMT64u);
 
-	r_vector_free (offsets);
+	RVecCodeMetaOffset_free (offsets);
 	r_codemeta_free (code);
 	mu_end;
 }
@@ -329,7 +327,7 @@ static bool test_r_codemeta_print(void) {
 	free (actual);
 
 	//Checking with offset - pdgo
-	RVector *offsets = r_codemeta_line_offsets (code);
+	RVecCodeMetaOffset *offsets = r_codemeta_line_offsets (code);
 	char *expected_second = "                  |\n"
 				"                  |void main(void)\n"
 				"                  |{\n"
@@ -340,7 +338,7 @@ static bool test_r_codemeta_print(void) {
 	mu_assert_streq (actual, expected_second, "pdgo OUTPUT DOES NOT MATCH");
 	free (actual);
 
-	r_vector_free (offsets);
+	RVecCodeMetaOffset_free (offsets);
 	r_codemeta_free (code);
 	mu_end;
 }

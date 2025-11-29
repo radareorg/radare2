@@ -767,7 +767,7 @@ static void recovery_apply_vtable(RVTableContext *context, const char *class_nam
 	r_anal_class_vtable_fini (&vtable);
 
 	RVTableMethodInfo *vmeth;
-	r_vector_foreach (&vtable_info->methods, vmeth) {
+	R_VEC_FOREACH (&vtable_info->methods, vmeth) {
 		RAnalMethod meth;
 		meth.addr = vmeth->addr;
 		meth.vtable_offset = vmeth->vtable_offset;

@@ -4519,7 +4519,10 @@ static int parse_reg64_name(const char** reg_base, const char **reg_delta, csh h
 		break;
 	}
 	if (*reg_base && **reg_base == 'w') {
-		*reg_base = reg_list [atoi ((*reg_base) + 1)]; // XXX dont use atoi
+		int reg_idx = atoi ((*reg_base) + 1); // XXX dont use atoi
+		if (reg_idx >= 0 && reg_idx < R_ARRAY_SIZE (reg_list)) {
+			*reg_base = reg_list [reg_idx];
+		}
 	}
 	return 0;
 }
@@ -4594,10 +4597,10 @@ static void set_src_dst(RAnalValue *val, csh *handle, cs_insn *insn, int x, int 
 #endif
 
 static void create_src_dst(RAnalOp *op) {
-	r_vector_push (&op->srcs, NULL);
-	r_vector_push (&op->srcs, NULL);
-	r_vector_push (&op->srcs, NULL);
-	r_vector_push (&op->dsts, NULL);
+	(void)RVecRArchValue_emplace_back (&op->srcs);
+	(void)RVecRArchValue_emplace_back (&op->srcs);
+	(void)RVecRArchValue_emplace_back (&op->srcs);
+	(void)RVecRArchValue_emplace_back (&op->dsts);
 }
 
 static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn, int bits) {
@@ -4643,9 +4646,9 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn,
 		{
 			int j;
 			for (j = 0; j < 3; j++, i++) {
-				set_src_dst (r_vector_at (&op->srcs, j), &handle, insn, i, bits);
+				set_src_dst (RVecRArchValue_at (&op->srcs, j), &handle, insn, i, bits);
 			}
-			set_src_dst (r_vector_at (&op->dsts, 0), &handle, insn, 0, bits);
+			set_src_dst (RVecRArchValue_at (&op->dsts, 0), &handle, insn, 0, bits);
 		}
 		break;
 	case R_ANAL_OP_TYPE_STORE:
@@ -4664,10 +4667,10 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn,
 		}
 		// TODO arch plugins should NOT set register values
 		{
-			set_src_dst (r_vector_at (&op->dsts, 0), &handle, insn, --count, bits);
+			set_src_dst (RVecRArchValue_at (&op->dsts, 0), &handle, insn, --count, bits);
 			int j;
 			for (j = 0; j < 3 && j < count; j++) {
-				set_src_dst (r_vector_at (&op->srcs, j), &handle, insn, j, bits);
+				set_src_dst (RVecRArchValue_at (&op->srcs, j), &handle, insn, j, bits);
 			}
 		}
 		break;

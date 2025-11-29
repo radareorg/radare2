@@ -950,8 +950,8 @@ static void selection_widget_select(RLine *line) {
 }
 
 static void selection_widget_update(RLine *line) {
-	int argc = r_pvector_length (&line->completion.args);
-	const char **argv = (const char **)r_pvector_data (&line->completion.args);
+	int argc = (int)RVecCString_length (&line->completion.args);
+	const char **argv = (const char **)R_VEC_START_ITER (&line->completion.args);
 	if (argc == 0 || (argc == 1 && line->buffer.length >= strlen (argv[0]))) {
 		selection_widget_erase (line);
 		return;
@@ -988,8 +988,8 @@ R_API void r_line_autocomplete(RCons *cons) {
 	if (line->completion.run) {
 		line->completion.opt = false;
 		line->completion.run (&line->completion, &line->buffer, line->prompt_type, line->completion.run_user);
-		argc = r_pvector_length (&line->completion.args);
-		argv = (const char **)r_pvector_data (&line->completion.args);
+		argc = (int)RVecCString_length (&line->completion.args);
+		argv = (const char **)R_VEC_START_ITER (&line->completion.args);
 		opt = line->completion.opt;
 	}
 	if (line->sel_widget && !line->sel_widget->complete_common) {

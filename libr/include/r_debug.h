@@ -195,13 +195,30 @@ typedef struct r_debug_checkpoint_t {
 	RList *snaps; // <RDebugSnap>
 } RDebugCheckpoint;
 
+static inline void r_debug_checkpoint_fini_vec(RDebugCheckpoint *chkpt) {
+	if (!chkpt) {
+		return;
+	}
+	size_t i;
+	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		r_reg_arena_free (chkpt->arena[i]);
+		chkpt->arena[i] = NULL;
+	}
+	r_list_free (chkpt->snaps);
+	chkpt->snaps = NULL;
+}
+
+R_VEC_TYPE_WITH_FINI (RVecDebugCheckpoint, RDebugCheckpoint, r_debug_checkpoint_fini_vec);
+R_VEC_TYPE (RVecDebugChangeMem, RDebugChangeMem);
+R_VEC_TYPE (RVecDebugChangeReg, RDebugChangeReg);
+
 typedef struct r_debug_session_t {
 	ut32 cnum;
 	ut32 maxcnum;
 	RDebugCheckpoint *cur_chkpt;
-	RVector *checkpoints; /* RVector<RDebugCheckpoint> */
-	HtUP *memory; /* RVector<RDebugChangeMem> */
-	HtUP *registers; /* RVector<RDebugChangeReg> */
+	RVecDebugCheckpoint *checkpoints;
+	HtUP *memory; /* RVecDebugChangeMem */
+	HtUP *registers; /* RVecDebugChangeReg */
 	int reasontype /*RDebugReasonType*/;
 	RBreakpointItem *bp;
 } RDebugSession;

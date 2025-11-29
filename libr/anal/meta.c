@@ -45,22 +45,22 @@ typedef struct {
 	RAnalMetaType type;
 	const RSpace *space;
 
-	RPVector /*RIntervalNode*/ *result;
+	RVecIntervalNodePtr *result;
 } CollectCtx;
 
 static bool collect_nodes_cb(RIntervalNode *node, void *user) {
 	CollectCtx *ctx = user;
 	if (item_matches_filter (node->data, ctx->type, ctx->space)) {
-		r_pvector_push (ctx->result, node);
+		RVecIntervalNodePtr_push_back (ctx->result, &node);
 	}
 	return true;
 }
 
-static RPVector *collect_nodes_at(RAnal *anal, RAnalMetaType type, const RSpace *R_NULLABLE space, ut64 addr) {
+static RVecIntervalNodePtr *collect_nodes_at(RAnal *anal, RAnalMetaType type, const RSpace *R_NULLABLE space, ut64 addr) {
 	CollectCtx ctx = {
 		.type = type,
 		.space = space,
-		.result = r_pvector_new (NULL)
+		.result = RVecIntervalNodePtr_new ()
 	};
 	if (!ctx.result) {
 		return NULL;
@@ -69,11 +69,11 @@ static RPVector *collect_nodes_at(RAnal *anal, RAnalMetaType type, const RSpace 
 	return ctx.result;
 }
 
-static RPVector *collect_nodes_in(RAnal *anal, RAnalMetaType type, const RSpace *R_NULLABLE space, ut64 addr) {
+static RVecIntervalNodePtr *collect_nodes_in(RAnal *anal, RAnalMetaType type, const RSpace *R_NULLABLE space, ut64 addr) {
 	CollectCtx ctx = {
 		.type = type,
 		.space = space,
-		.result = r_pvector_new (NULL)
+		.result = RVecIntervalNodePtr_new ()
 	};
 	if (!ctx.result) {
 		return NULL;
@@ -82,11 +82,11 @@ static RPVector *collect_nodes_in(RAnal *anal, RAnalMetaType type, const RSpace 
 	return ctx.result;
 }
 
-static RPVector *collect_nodes_intersect(RAnal *anal, RAnalMetaType type, const RSpace *R_NULLABLE space, ut64 start, ut64 end) {
+static RVecIntervalNodePtr *collect_nodes_intersect(RAnal *anal, RAnalMetaType type, const RSpace *R_NULLABLE space, ut64 start, ut64 end) {
 	CollectCtx ctx = {
 		.type = type,
 		.space = space,
-		.result = r_pvector_new (NULL)
+		.result = RVecIntervalNodePtr_new ()
 	};
 	if (!ctx.result) {
 		return NULL;
@@ -139,10 +139,10 @@ R_API const char *r_meta_get_string(RAnal *a, RAnalMetaType type, ut64 addr) {
 }
 
 static void del(RAnal *a, RAnalMetaType type, const RSpace *space, ut64 addr, ut64 size) {
-	RPVector *victims = NULL;
+	RVecIntervalNodePtr *victims = NULL;
 	if (size == UT64_MAX) {
 		// delete everything
-		victims = r_pvector_new (NULL);
+		victims = RVecIntervalNodePtr_new ();
 		if (!victims) {
 			return;
 		}
@@ -150,7 +150,8 @@ static void del(RAnal *a, RAnalMetaType type, const RSpace *space, ut64 addr, ut
 		RAnalMetaItem *item;
 		r_interval_tree_foreach (&a->meta, it, item) {
 			if (item_matches_filter (item, type, space)) {
-				r_pvector_push (victims, r_interval_tree_iter_get (&it));
+				RIntervalNode *node = r_interval_tree_iter_get (&it);
+				RVecIntervalNodePtr_push_back (victims, &node);
 			}
 		}
 	} else {
@@ -163,11 +164,11 @@ static void del(RAnal *a, RAnalMetaType type, const RSpace *space, ut64 addr, ut
 			return;
 		}
 	}
-	void **it;
-	r_pvector_foreach (victims, it) {
+	RIntervalNode **it;
+	R_VEC_FOREACH (victims, it) {
 		r_interval_tree_delete (&a->meta, *it, true);
 	}
-	r_pvector_free (victims);
+	RVecIntervalNodePtr_free (victims);
 }
 
 R_API void r_meta_del(RAnal *a, RAnalMetaType type, ut64 addr, ut64 size) {
@@ -203,17 +204,17 @@ R_API RIntervalNode *r_meta_get_in(RAnal *a, ut64 addr, RAnalMetaType type) {
 	return find_node_in (a, type, r_spaces_current (&a->meta_spaces), addr);
 }
 
-R_API RPVector /*<RIntervalNode<RMetaItem> *>*/ *r_meta_get_all_at(RAnal *a, ut64 at) {
+R_API RVecIntervalNodePtr *r_meta_get_all_at(RAnal *a, ut64 at) {
 	R_RETURN_VAL_IF_FAIL (a, NULL);
 	return collect_nodes_at (a, R_META_TYPE_ANY, r_spaces_current (&a->meta_spaces), at);
 }
 
-R_API RPVector *r_meta_get_all_in(RAnal *a, ut64 at, RAnalMetaType type) {
+R_API RVecIntervalNodePtr *r_meta_get_all_in(RAnal *a, ut64 at, RAnalMetaType type) {
 	R_RETURN_VAL_IF_FAIL (a, NULL);
 	return collect_nodes_in (a, type, r_spaces_current (&a->meta_spaces), at);
 }
 
-R_API RPVector *r_meta_get_all_intersect(RAnal *a, ut64 start, ut64 size, RAnalMetaType type) {
+R_API RVecIntervalNodePtr *r_meta_get_all_intersect(RAnal *a, ut64 start, ut64 size, RAnalMetaType type) {
 	R_RETURN_VAL_IF_FAIL (size, NULL);
 	ut64 end = start + size - 1;
 	if (end < start) {
@@ -480,15 +481,15 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int r
 
 R_API void r_meta_print_list_at(RAnal *a, ut64 addr, int rad, const char *tq, RTable *t) {
 	R_RETURN_IF_FAIL (a);
-	RPVector *nodes = collect_nodes_at (a, R_META_TYPE_ANY, r_spaces_current (&a->meta_spaces), addr);
+	RVecIntervalNodePtr *nodes = collect_nodes_at (a, R_META_TYPE_ANY, r_spaces_current (&a->meta_spaces), addr);
 	if (nodes) {
-		void **it;
-		r_pvector_foreach (nodes, it) {
+		RIntervalNode **it;
+		R_VEC_FOREACH (nodes, it) {
 			RIntervalNode *node = *it;
 			size_t ns = r_meta_node_size (node);
 			r_meta_print (a, node->data, node->start, ns, rad, NULL, t, true);
 		}
-		r_pvector_free (nodes);
+		RVecIntervalNodePtr_free (nodes);
 	}
 }
 

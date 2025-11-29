@@ -4,9 +4,11 @@
 #include "r_socket.h"
 #include "gdb/include/libgdbr.h"
 #include "gdb/include/gdbserver/core.h"
+#include <r_vec.h>
 
 #if HAVE_LIBUV
 #include <uv.h>
+R_VEC_TYPE(RVecUVTcpPtr, uv_tcp_t *);
 #endif
 
 #if 0
@@ -1158,7 +1160,7 @@ R_API char *r_core_rtr_cmds_query(RCore *core, const char *host, const char *por
 
 typedef struct rtr_cmds_context_t {
 	uv_tcp_t server;
-	RPVector clients;
+	RVecUVTcpPtr clients;
 	void *bed;
 } rtr_cmds_context;
 
@@ -1175,9 +1177,10 @@ static void rtr_cmds_client_close(uv_tcp_t *client, bool remove) {
 	rtr_cmds_context *context = loop->data;
 	if (remove) {
 		size_t i;
-		for (i = 0; i < r_pvector_length (&context->clients); i++) {
-			if (r_pvector_at (&context->clients, i) == client) {
-				r_pvector_remove_at (&context->clients, i);
+		for (i = 0; i < RVecUVTcpPtr_length (&context->clients); i++) {
+			uv_tcp_t **slot = RVecUVTcpPtr_at (&context->clients, i);
+			if (slot && *slot == client) {
+				RVecUVTcpPtr_remove (&context->clients, i);
 				break;
 			}
 		}
@@ -1271,7 +1274,7 @@ static void rtr_cmds_new_connection(uv_stream_t *server, int status) {
 		client_context->client = client;
 		client->data = client_context;
 		uv_read_start ((uv_stream_t *)client, rtr_cmds_alloc_buffer, rtr_cmds_read);
-		r_pvector_push (&context->clients, client);
+		RVecUVTcpPtr_push_back (&context->clients, &client);
 	} else {
 		uv_close ((uv_handle_t *)client, NULL);
 	}
@@ -1284,8 +1287,8 @@ static void rtr_cmds_stop(uv_async_t *handle) {
 
 	uv_close ((uv_handle_t *) &context->server, NULL);
 
-	void **it;
-	r_pvector_foreach (&context->clients, it) {
+	uv_tcp_t **it;
+	R_VEC_FOREACH (&context->clients, it) {
 		uv_tcp_t *client = *it;
 		rtr_cmds_client_close (client, false);
 	}
@@ -1305,7 +1308,7 @@ R_API bool r_core_rtr_cmds(RCore *core, const char *port) {
 	uv_loop_init (loop);
 
 	rtr_cmds_context context;
-	r_pvector_init (&context.clients, NULL);
+	RVecUVTcpPtr_init (&context.clients);
 	loop->data = &context;
 
 	context.server.data = core;
@@ -1333,7 +1336,7 @@ R_API bool r_core_rtr_cmds(RCore *core, const char *port) {
 	}
 	uv_loop_close (loop);
 	free (loop);
-	r_pvector_clear (&context.clients);
+	RVecUVTcpPtr_clear (&context.clients);
 	return true;
 }
 

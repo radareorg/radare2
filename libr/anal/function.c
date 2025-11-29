@@ -56,7 +56,8 @@ static bool __fcn_exists(RAnal *anal, const char *name, ut64 addr) {
 R_IPI void r_anal_var_free(RAnalVar *av);
 
 static void inst_vars_kv_free(HtUPKv *kv) {
-	r_pvector_free (kv->value);
+	RVecAnalVarPtr *vec = kv->value;
+	RVecAnalVarPtr_free (vec);
 }
 
 static void labels_kv_free(HtUPKv *kv) {
@@ -86,7 +87,7 @@ R_API RAnalFunction *r_anal_function_new(RAnal *anal) {
 	fcn->bp_frame = true;
 	fcn->is_noreturn = false;
 	fcn->meta._min = UT64_MAX;
-	r_pvector_init (&fcn->vars, NULL);
+	RVecAnalVarPtr_init (&fcn->vars);
 	fcn->inst_vars = ht_up_new (NULL, inst_vars_kv_free, NULL);
 	fcn->labels = ht_up_new (NULL, labels_kv_free, NULL);
 	fcn->label_addrs = ht_pp_new (NULL, label_addrs_kv_free, NULL);
@@ -120,6 +121,7 @@ R_API void r_anal_function_free(RAnalFunction *fcn) {
 	ht_up_free (fcn->inst_vars);
 	fcn->inst_vars = NULL;
 	r_anal_function_delete_all_vars (fcn);
+	RVecAnalVarPtr_fini (&fcn->vars);
 
 	ht_up_free (fcn->labels);
 	ht_pp_free (fcn->label_addrs);

@@ -15,7 +15,10 @@
 #include <r_flag.h>
 #include <r_bin.h>
 #include <r_codemeta.h>
+#include <r_anal/hint.h>
 #include <r_vec.h>
+#include <r_vector.h>
+#include <r_util/r_intervaltree.h>
 #include <sdb/set.h>
 
 #ifdef __cplusplus
@@ -221,16 +224,34 @@ typedef enum {
 	R_ANAL_BASE_TYPE_KIND_ATOMIC, // For real atomic base types
 } RAnalBaseTypeKind;
 
+static inline void anal_struct_member_fini(RAnalStructMember *member) {
+	free (member->name);
+	free (member->type);
+}
+
+static inline void anal_union_member_fini(RAnalUnionMember *member) {
+	free (member->name);
+	free (member->type);
+}
+
+static inline void anal_enum_case_fini(RAnalEnumCase *cas) {
+	free (cas->name);
+}
+
+R_VEC_TYPE_WITH_FINI (RVecAnalStructMember, RAnalStructMember, anal_struct_member_fini);
+R_VEC_TYPE_WITH_FINI (RVecAnalUnionMember, RAnalUnionMember, anal_union_member_fini);
+R_VEC_TYPE_WITH_FINI (RVecAnalEnumCase, RAnalEnumCase, anal_enum_case_fini);
+
 typedef struct r_anal_base_type_struct_t {
-	RVector/*<RAnalStructMember>*/ members;
+	RVecAnalStructMember members;
 } RAnalBaseTypeStruct;
 
 typedef struct r_anal_base_type_union_t {
-	RVector/*<RAnalUnionMember>*/ members;
+	RVecAnalUnionMember members;
 } RAnalBaseTypeUnion;
 
 typedef struct r_anal_base_type_enum_t {
-	RVector/*<RAnalEnumCase*/ cases; // list of all the enum casessssss
+	RVecAnalEnumCase cases; // list of all the enum casessssss
 } RAnalBaseTypeEnum;
 
 typedef struct r_anal_base_type_t {
@@ -259,6 +280,8 @@ struct r_anal_attr_t {
 	RAnalAttr *next;
 };
 
+typedef struct r_anal_var_t RAnalVar;
+
 /* Stores useful function metadata */
 typedef struct r_anal_function_meta_t {
 	// _min and _max are calculated lazily when queried.
@@ -271,6 +294,8 @@ typedef struct r_anal_function_meta_t {
 	int numcallrefs;    // number of calls
 } RAnalFcnMeta;
 
+R_VEC_TYPE (RVecAnalVarPtr, RAnalVar *);
+
 typedef struct r_anal_function_t {
 	// TODO R2_600 Use RBinName here
 	char *name;
@@ -281,8 +306,8 @@ typedef struct r_anal_function_t {
 	ut64 addr;
 	HtUP/*<ut64, char *>*/ *labels;
 	HtPP/*<char *, ut64 *>*/ *label_addrs;
-	RPVector vars;
-	HtUP/*<st64, RPVector<RAnalVar *>>*/ *inst_vars; // offset of instructions => the variables they access
+	RVecAnalVarPtr vars;
+	HtUP/*<st64, RVecAnalVarPtr *>*/ *inst_vars; // offset of instructions => the variables they access
 	ut64 reg_save_area; // size of stack area pre-reserved for saving registers
 	st64 bp_off; // offset of bp inside owned stack frame
 	st64 stack;  // stack frame size
@@ -410,6 +435,8 @@ typedef struct r_anal_hint_cb_t {
 	void (*on_bits) (struct r_anal_t *a, ut64 addr, int bits, bool set);
 } RHintCb;
 
+R_VEC_TYPE (RVecAnalAddrHintRecord, RAnalAddrHintRecord);
+
 typedef struct r_anal_thread_t {
 	int id;
 	int map; // tls map id
@@ -466,7 +493,7 @@ typedef struct r_anal_t {
 	//moved from RAnalFcn
 	Sdb *sdb; // root
 	Sdb *sdb_pins;
-	HtUP/*<RVector<RAnalAddrHintRecord>>*/ *addr_hints; // all hints that correspond to a single address
+	HtUP/*<RVecAnalAddrHintRecord>*/ *addr_hints; // all hints that correspond to a single address
 	RBTree/*<RAnalArchHintRecord>*/ arch_hints;
 	RBTree/*<RAnalArchBitsRecord>*/ bits_hints;
 	RHintCb hint_cbs;
@@ -538,8 +565,11 @@ typedef struct r_anal_var_constraint_t {
 	ut64 val;
 } RAnalVarConstraint;
 
+R_VEC_TYPE (RVecAnalVarAccess, RAnalVarAccess);
+R_VEC_TYPE (RVecAnalVarConstraint, RAnalVarConstraint);
+
 // generic for args and locals
-typedef struct r_anal_var_t {
+struct r_anal_var_t {
 	RAnalFunction *fcn;
 	char *name; // name of the variable
 	char *type; // cparse type of the variable
@@ -547,13 +577,13 @@ typedef struct r_anal_var_t {
 	bool isarg;
 	int delta;   /* delta offset inside stack frame */
 	char *regname; // name of the register
-	RVector/*<RAnalVarAccess>*/ accesses; // ordered by offset, touch this only through API or expect uaf
+	RVecAnalVarAccess accesses; // ordered by offset, touch this only through API or expect uaf
 	char *comment;
-	RVector/*<RAnalVarConstraint>*/ constraints;
+	RVecAnalVarConstraint constraints;
 
 	// below members are just for caching, TODO: remove them and do it better
 	int argnum;
-} RAnalVar;
+};
 
 // RAnalVar "prototype", RAnalVar w/o function used for serialization
 typedef struct r_anal_var_proto_t {
@@ -563,6 +593,8 @@ typedef struct r_anal_var_proto_t {
 	bool isarg;
 	int delta;
 } RAnalVarProt;
+
+R_VEC_TYPE (RVecIntervalNodePtr, RIntervalNode *);
 
 // Refers to a variable or a struct field inside a variable, only for varsub
 R_DEPRECATE typedef struct r_anal_var_field_t {
@@ -1183,7 +1215,7 @@ R_API void r_anal_function_delete_var(RAnalFunction *fcn, RAnalVar *var);
 R_API bool r_anal_function_rebase_vars(RAnal *a, RAnalFunction *fcn);
 R_API st64 r_anal_function_get_var_stackptr_at(RAnalFunction *fcn, st64 delta, ut64 addr);
 R_API const char *r_anal_function_get_var_reg_at(RAnalFunction *fcn, st64 delta, ut64 addr);
-R_API R_BORROW RPVector *r_anal_function_get_vars_used_at(RAnalFunction *fcn, ut64 op_addr);
+R_API R_BORROW RVecAnalVarPtr *r_anal_function_get_vars_used_at(RAnalFunction *fcn, ut64 op_addr);
 
 R_API bool r_anal_var_rename(RAnal *anal, RAnalVar *var, const char *new_name);
 R_API void r_anal_var_set_type(RAnal *anal, RAnalVar *var, const char *type);
@@ -1351,13 +1383,13 @@ R_API RAnalMetaItem *r_meta_get_at(RAnal *a, ut64 addr, RAnalMetaType type, R_OU
 R_API RIntervalNode *r_meta_get_in(RAnal *a, ut64 addr, RAnalMetaType type);
 
 // Returns all nodes for items starting at the given address in the current space.
-R_API RPVector/*<RIntervalNode<RMetaItem> *>*/ *r_meta_get_all_at(RAnal *a, ut64 at);
+R_API RVecIntervalNodePtr *r_meta_get_all_at(RAnal *a, ut64 at);
 
 // Returns all nodes for items with the given type containing the given address in the current space.
-R_API RPVector/*<RIntervalNode<RMetaItem> *>*/ *r_meta_get_all_in(RAnal *a, ut64 at, RAnalMetaType type);
+R_API RVecIntervalNodePtr *r_meta_get_all_in(RAnal *a, ut64 at, RAnalMetaType type);
 
 // Returns all nodes for items with the given type intersecting the given interval in the current space.
-R_API RPVector/*<RIntervalNode<RMetaItem> *>*/ *r_meta_get_all_intersect(RAnal *a, ut64 start, ut64 size, RAnalMetaType type);
+R_API RVecIntervalNodePtr *r_meta_get_all_intersect(RAnal *a, ut64 start, ut64 size, RAnalMetaType type);
 
 // Delete all meta items in the given space
 R_API void r_meta_space_unset_for(RAnal *a, const RSpace *space);
@@ -1418,8 +1450,8 @@ R_API void r_anal_hint_unset_newbits(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_stackframe(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_arch(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_bits(RAnal *a, ut64 addr);
-R_API const RVector/*<const RAnalAddrHintRecord>*/ * R_NULLABLE r_anal_addr_hints_at(RAnal * R_NONNULL anal, ut64 addr);
-typedef bool (*RAnalAddrHintRecordsCb)(ut64 addr, const RVector/*<const RAnalAddrHintRecord>*/ *records, void *user);
+R_API const RVecAnalAddrHintRecord * R_NULLABLE r_anal_addr_hints_at(RAnal * R_NONNULL anal, ut64 addr);
+typedef bool (*RAnalAddrHintRecordsCb)(ut64 addr, const RVecAnalAddrHintRecord *records, void *user);
 R_API void r_anal_addr_hints_foreach(RAnal *anal, RAnalAddrHintRecordsCb cb, void *user);
 typedef bool (*RAnalArchHintCb)(ut64 addr, const char * R_NULLABLE arch, void *user);
 R_API void r_anal_arch_hints_foreach(RAnal *anal, RAnalArchHintCb cb, void *user);
@@ -1469,6 +1501,11 @@ R_API void r_sign_space_unset_for(RAnal *a, const RSpace *space);
 R_API void r_sign_space_rename_for(RAnal *a, const RSpace *space, const char *oname, const char *nname);
 
 /* vtables */
+typedef struct vtable_method_info_t {
+	ut64 addr;           // addr of the function
+	ut64 vtable_offset;  // offset inside the vtable
+} RVTableMethodInfo;
+
 typedef struct {
 	RAnal *anal;
 	RAnalCPPABI abi;
@@ -1476,15 +1513,12 @@ typedef struct {
 	bool (*read_addr) (RAnal *anal, ut64 addr, ut64 *buf);
 } RVTableContext;
 
+R_VEC_TYPE (RVecRVTableMethodInfo, RVTableMethodInfo);
+
 typedef struct vtable_info_t {
 	ut64 saddr; //starting address
-	RVector methods;
+	RVecRVTableMethodInfo methods;
 } RVTableInfo;
-
-typedef struct vtable_method_info_t {
-	ut64 addr;           // addr of the function
-	ut64 vtable_offset;  // offset inside the vtable
-} RVTableMethodInfo;
 
 R_API void r_anal_vtable_info_free(RVTableInfo *vtable);
 R_API ut64 r_anal_vtable_info_get_size(RVTableContext *context, RVTableInfo *vtable);

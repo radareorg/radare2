@@ -26,13 +26,13 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out);
 	}
 
 #define CREATE_SRC_DST_3(op) \
-	src0 = r_vector_push (&(op)->srcs, NULL);\
-	src1 = r_vector_push (&(op)->srcs, NULL);\
-	dst = r_vector_push (&(op)->dsts, NULL);
+	src0 = RVecRArchValue_emplace_back (&(op)->srcs);\
+	src1 = RVecRArchValue_emplace_back (&(op)->srcs);\
+	dst = RVecRArchValue_emplace_back (&(op)->dsts);
 
 #define CREATE_SRC_DST_2(op) \
-	src0 = r_vector_push (&(op)->srcs, NULL);\
-	dst = r_vector_push (&(op)->dsts, NULL);
+	src0 = RVecRArchValue_emplace_back (&(op)->srcs);\
+	dst = RVecRArchValue_emplace_back (&(op)->dsts);
 
 #define SET_SRC_DST_3_REGS(op) \
 	CREATE_SRC_DST_3 (op); \
@@ -751,14 +751,14 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_LOAD:
 		if (OPERAND(1).type == MIPS_OP_MEM) {
-			src0 = r_vector_push (&op->srcs, NULL);
+			src0 = RVecRArchValue_emplace_back (&op->srcs);
 			src0->reg = parse_reg_name (*handle, insn, 1);
 			src0->delta = OPERAND(1).mem.disp;
 		}
 		break;
 	case R_ANAL_OP_TYPE_STORE:
 		if (OPERAND(1).type == MIPS_OP_MEM) {
-			dst = r_vector_push (&op->dsts, NULL);
+			dst = RVecRArchValue_emplace_back (&op->dsts);
 			dst->reg = parse_reg_name (*handle, insn, 1);
 			dst->delta = OPERAND(1).mem.disp;
 		}

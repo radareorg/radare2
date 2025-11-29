@@ -12,6 +12,7 @@
 #include <r_vec.h>
 
 R_VEC_TYPE(RVecAnalRef, RAnalRef);
+R_VEC_TYPE(RVecUT64, ut64);
 
 typedef struct {
 	RCore *core;
@@ -32,23 +33,23 @@ const size_t objc2ClassMethImpOffs = 0x10;
 
 static void array_add(RCoreObjc *o, ut64 va, ut64 xrefs_to) {
 	bool found = false;
-	RVector *vec = ht_up_find (o->up, va, &found);
+	RVecUT64 *vec = ht_up_find (o->up, va, &found);
 	if (!found || !vec) {
-		vec = r_vector_new (sizeof (ut64), NULL, NULL);
+		vec = RVecUT64_new ();
 		ht_up_insert (o->up, va, vec);
 	}
 	ut64 *addr;
-	r_vector_foreach (vec, addr) {
+	R_VEC_FOREACH (vec, addr) {
 		if (xrefs_to == *addr) {
 			return;
 		}
 	}
 	// extend vector and insert new element
-	r_vector_push (vec, &xrefs_to);
+	RVecUT64_push_back (vec, &xrefs_to);
 }
 
 static void kv_array_free(HtUPKv *kv) {
-	r_vector_free (kv->value);
+	RVecUT64_free (kv->value);
 }
 
 static inline bool isValid(ut64 addr) {
@@ -104,13 +105,13 @@ static ut64 getRefPtr(RCoreObjc *o, ut64 classMethodsVA, bool *rfound) {
 	ut64 ref = UT64_MAX;
 	bool isMsgRef = false;
 
-	RVector *vec = ht_up_find (o->up, namePtr, rfound);
+	RVecUT64 *vec = ht_up_find (o->up, namePtr, rfound);
 	if (!*rfound || !vec) {
 		*rfound = false;
 		return UT64_MAX;
 	}
 	ut64 *addr;
-	r_vector_foreach (vec, addr) {
+	R_VEC_FOREACH (vec, addr) {
 		const ut64 at = *addr;
 		if (inBetween (o->_selrefs, at)) {
 			isMsgRef = false;

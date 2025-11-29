@@ -1,5 +1,6 @@
 #include <r_bin.h>
 #include <r_types.h>
+#include <r_vector.h>
 #include "mach0_specs.h"
 
 #ifndef _INCLUDE_R_BIN_MACH0_H_

@@ -576,10 +576,11 @@ static void parse_structure_type(Context *ctx, ut64 idx) {
 				if (!result) {
 					goto cleanup;
 				} else {
-					void *element = r_vector_push (&base_type->struct_data.members, &member);
-					if (!element) {
+					RAnalStructMember *slot = RVecAnalStructMember_emplace_back (&base_type->struct_data.members);
+					if (!slot) {
 						goto cleanup;
 					}
+					*slot = member;
 				}
 			}
 			if (child_die->has_children) {
@@ -637,11 +638,12 @@ static void parse_enum_type(Context *ctx, ut64 idx) {
 				if (!result) {
 					goto cleanup;
 				}
-				void *element = r_vector_push (&base_type->enum_data.cases, &cas);
-				if (!element) {
+				RAnalEnumCase *slot = RVecAnalEnumCase_emplace_back (&base_type->enum_data.cases);
+				if (!slot) {
 					enum_type_case_free (result, NULL);
 					goto cleanup;
 				}
+				*slot = cas;
 				cas.name = NULL;
 			}
 			if (child_die->has_children) {

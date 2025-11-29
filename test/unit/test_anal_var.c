@@ -1,14 +1,27 @@
 #include <r_anal.h>
 #include "minunit.h"
 
+static bool vec_contains(RVecAnalVarPtr *vec, RAnalVar *var) {
+	if (!vec) {
+		return false;
+	}
+	RAnalVar **it;
+	R_VEC_FOREACH (vec, it) {
+		if (*it == var) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static bool sanitize_instr_acc(void *user, const ut64 k, const void *v) {
-	RPVector *vec = (RPVector *)v;
-	void **it;
-	r_pvector_foreach (vec, it) {
+	RVecAnalVarPtr *vec = (RVecAnalVarPtr *)v;
+	RAnalVar **it;
+	R_VEC_FOREACH (vec, it) {
 		RAnalVar *var = *it;
 		RAnalVarAccess *acc;
 		bool found = false;
-		r_vector_foreach (&var->accesses, acc) {
+		R_VEC_FOREACH (&var->accesses, acc) {
 			if (acc->offset == (st64)k) {
 				found = true;
 				break;
@@ -22,13 +35,13 @@ static bool sanitize_instr_acc(void *user, const ut64 k, const void *v) {
 static bool sanitize(RAnalFunction *fcn) {
 	ht_up_foreach (fcn->inst_vars, sanitize_instr_acc, NULL);
 
-	void **it;
-	r_pvector_foreach (&fcn->vars, it) {
+	RAnalVar **it;
+	R_VEC_FOREACH (&fcn->vars, it) {
 		RAnalVar *var = *it;
 		RAnalVarAccess *acc;
-		r_vector_foreach (&var->accesses, acc) {
-			RPVector *iaccs = ht_up_find (fcn->inst_vars, acc->offset, NULL);
-			mu_assert ("var refs instr but instr does not ref var", r_pvector_contains (iaccs, var));
+		R_VEC_FOREACH (&var->accesses, acc) {
+			RVecAnalVarPtr *iaccs = ht_up_find (fcn->inst_vars, acc->offset, NULL);
+			mu_assert ("var refs instr but instr does not ref var", vec_contains (iaccs, var));
 		}
 	}
 	return true;
@@ -103,26 +116,26 @@ bool test_r_anal_var(void) {
 	st64 stackptr = r_anal_function_get_var_stackptr_at (fcn, -0x10, 0x12345);
 	mu_assert_eq (stackptr, ST64_MAX, "unset stackptr");
 
-	RPVector *used_vars = r_anal_function_get_vars_used_at (fcn, 0x123);
-	mu_assert ("no used vars", !used_vars || r_pvector_length (used_vars));
+	RVecAnalVarPtr *used_vars = r_anal_function_get_vars_used_at (fcn, 0x123);
+	mu_assert ("no used vars", !used_vars || RVecAnalVarPtr_length (used_vars));
 	used_vars = r_anal_function_get_vars_used_at (fcn, 0x130);
-	mu_assert_eq (r_pvector_length (used_vars), 1, "used vars count");
-	mu_assert ("used vars", r_pvector_contains (used_vars, a));
+	mu_assert_eq (RVecAnalVarPtr_length (used_vars), 1, "used vars count");
+	mu_assert ("used vars", vec_contains (used_vars, a));
 	stackptr = r_anal_function_get_var_stackptr_at (fcn, -8, 0x130);
 	mu_assert_eq (stackptr, 13, "stackptr");
 	stackptr = r_anal_function_get_var_stackptr_at (fcn, 123123, 0x130);
 	mu_assert_eq (stackptr, ST64_MAX, "stackptr");
 	used_vars = r_anal_function_get_vars_used_at (fcn, 0x120);
-	mu_assert_eq (r_pvector_length (used_vars), 2, "used vars count");
-	mu_assert ("used vars", r_pvector_contains (used_vars, a));
-	mu_assert ("used vars", r_pvector_contains (used_vars, b));
+	mu_assert_eq (RVecAnalVarPtr_length (used_vars), 2, "used vars count");
+	mu_assert ("used vars", vec_contains (used_vars, a));
+	mu_assert ("used vars", vec_contains (used_vars, b));
 	stackptr = r_anal_function_get_var_stackptr_at (fcn, -0x10, 0x120);
 	mu_assert_eq (stackptr, 123, "stackptr");
 	stackptr = r_anal_function_get_var_stackptr_at (fcn, -8, 0x120);
 	mu_assert_eq (stackptr, 42, "stackptr");
 	used_vars = r_anal_function_get_vars_used_at (fcn, 0x10);
-	mu_assert_eq (r_pvector_length (used_vars), 1, "used vars count");
-	mu_assert ("used vars", r_pvector_contains (used_vars, b));
+	mu_assert_eq (RVecAnalVarPtr_length (used_vars), 1, "used vars count");
+	mu_assert ("used vars", vec_contains (used_vars, b));
 	stackptr = r_anal_function_get_var_stackptr_at (fcn, -0x10, 0x10);
 	mu_assert_eq (stackptr, -100, "stackptr");
 
@@ -134,68 +147,68 @@ bool test_r_anal_var(void) {
 	assert_sane (anal);
 
 	used_vars = r_anal_function_get_vars_used_at (fcn, 0xffffffffffff0130UL); // addresses should stay the same
-	mu_assert ("no used vars", !used_vars || r_pvector_length (used_vars));
+	mu_assert ("no used vars", !used_vars || RVecAnalVarPtr_length (used_vars));
 	r_anal_var_set_access (anal, a, "rbp", 0xffffffffffff0130UL, R_PERM_R, 42);
 	used_vars = r_anal_function_get_vars_used_at (fcn, 0xffffffffffff0130UL);
-	mu_assert_eq (r_pvector_length (used_vars), 1, "used vars count");
-	mu_assert ("used vars", r_pvector_contains (used_vars, a));
+	mu_assert_eq (RVecAnalVarPtr_length (used_vars), 1, "used vars count");
+	mu_assert ("used vars", vec_contains (used_vars, a));
 
 	used_vars = r_anal_function_get_vars_used_at (fcn, 0x123);
-	mu_assert ("no used vars", !used_vars || r_pvector_length (used_vars));
+	mu_assert ("no used vars", !used_vars || RVecAnalVarPtr_length (used_vars));
 	r_anal_var_set_access (anal, a, "rbp" , 0x123, R_PERM_R, 42);
 	used_vars = r_anal_function_get_vars_used_at (fcn, 0x123);
-	mu_assert_eq (r_pvector_length (used_vars), 1, "used vars count");
-	mu_assert ("used vars", r_pvector_contains (used_vars, a));
+	mu_assert_eq (RVecAnalVarPtr_length (used_vars), 1, "used vars count");
+	mu_assert ("used vars", vec_contains (used_vars, a));
 
 	used_vars = r_anal_function_get_vars_used_at (fcn, 0xffffffffffff0130);
-	mu_assert_eq (r_pvector_length (used_vars), 1, "used vars count");
-	mu_assert ("used vars", r_pvector_contains (used_vars, a));
+	mu_assert_eq (RVecAnalVarPtr_length (used_vars), 1, "used vars count");
+	mu_assert ("used vars", vec_contains (used_vars, a));
 	used_vars = r_anal_function_get_vars_used_at (fcn, 0xffffffffffff0120);
-	mu_assert_eq (r_pvector_length (used_vars), 2, "used vars count");
-	mu_assert ("used vars", r_pvector_contains (used_vars, a));
-	mu_assert ("used vars", r_pvector_contains (used_vars, b));
+	mu_assert_eq (RVecAnalVarPtr_length (used_vars), 2, "used vars count");
+	mu_assert ("used vars", vec_contains (used_vars, a));
+	mu_assert ("used vars", vec_contains (used_vars, b));
 	stackptr = r_anal_function_get_var_stackptr_at (fcn, -0x10, 0xffffffffffff0120);
 	mu_assert_eq (stackptr, 123, "stackptr");
 	stackptr = r_anal_function_get_var_stackptr_at (fcn, -8, 0xffffffffffff0120);
 	mu_assert_eq (stackptr, 42, "stackptr");
 	used_vars = r_anal_function_get_vars_used_at (fcn, 0xffffffffffff0010);
-	mu_assert_eq (r_pvector_length (used_vars), 1, "used vars count");
-	mu_assert ("used vars", r_pvector_contains (used_vars, b));
+	mu_assert_eq (RVecAnalVarPtr_length (used_vars), 1, "used vars count");
+	mu_assert ("used vars", vec_contains (used_vars, b));
 
 	r_anal_function_relocate (fcn, 0x8000000000000010);
 	assert_sane (anal);
 
 	used_vars = r_anal_function_get_vars_used_at (fcn, 0x8000000000000100);
-	mu_assert ("no used vars", !used_vars || r_pvector_length (used_vars));
+	mu_assert ("no used vars", !used_vars || RVecAnalVarPtr_length (used_vars));
 	r_anal_var_set_access (anal, a, "rbp", 0x8000000000000100, R_PERM_R, 987321);
 	used_vars = r_anal_function_get_vars_used_at (fcn, 0x8000000000000100);
-	mu_assert_eq (r_pvector_length (used_vars), 1, "used vars count");
-	mu_assert ("used vars", r_pvector_contains (used_vars, a));
+	mu_assert_eq (RVecAnalVarPtr_length (used_vars), 1, "used vars count");
+	mu_assert ("used vars", vec_contains (used_vars, a));
 	stackptr = r_anal_function_get_var_stackptr_at (fcn, -8, 0x8000000000000100);
 	mu_assert_eq (stackptr, 987321, "stackptr");
 
 	used_vars = r_anal_function_get_vars_used_at (fcn, 0x7ffffffffffffe00);
-	mu_assert ("no used vars", !used_vars || r_pvector_length (used_vars));
+	mu_assert ("no used vars", !used_vars || RVecAnalVarPtr_length (used_vars));
 	r_anal_var_set_access (anal, a, "rbp", 0x7ffffffffffffe00, R_PERM_R, 777);
 	used_vars = r_anal_function_get_vars_used_at (fcn, 0x7ffffffffffffe00);
-	mu_assert_eq (r_pvector_length (used_vars), 1, "used vars count");
-	mu_assert ("used vars", r_pvector_contains (used_vars, a));
+	mu_assert_eq (RVecAnalVarPtr_length (used_vars), 1, "used vars count");
+	mu_assert ("used vars", vec_contains (used_vars, a));
 	stackptr = r_anal_function_get_var_stackptr_at (fcn, -8, 0x7ffffffffffffe00);
 	mu_assert_eq (stackptr, 777, "stackptr");
 
 	used_vars = r_anal_function_get_vars_used_at (fcn, 0x8000000000000040UL);
-	mu_assert_eq (r_pvector_length (used_vars), 1, "used vars count");
-	mu_assert ("used vars", r_pvector_contains (used_vars, a));
+	mu_assert_eq (RVecAnalVarPtr_length (used_vars), 1, "used vars count");
+	mu_assert ("used vars", vec_contains (used_vars, a));
 	used_vars = r_anal_function_get_vars_used_at (fcn, 0x8000000000010033);
-	mu_assert_eq (r_pvector_length (used_vars), 1, "used vars count");
-	mu_assert ("used vars", r_pvector_contains (used_vars, a));
+	mu_assert_eq (RVecAnalVarPtr_length (used_vars), 1, "used vars count");
+	mu_assert ("used vars", vec_contains (used_vars, a));
 	used_vars = r_anal_function_get_vars_used_at (fcn, 0x8000000000000040);
-	mu_assert_eq (r_pvector_length (used_vars), 1, "used vars count");
-	mu_assert ("used vars", r_pvector_contains (used_vars, a));
+	mu_assert_eq (RVecAnalVarPtr_length (used_vars), 1, "used vars count");
+	mu_assert ("used vars", vec_contains (used_vars, a));
 	used_vars = r_anal_function_get_vars_used_at (fcn, 0x8000000000000030);
-	mu_assert_eq (r_pvector_length (used_vars), 2, "used vars count");
-	mu_assert ("used vars", r_pvector_contains (used_vars, a));
-	mu_assert ("used vars", r_pvector_contains (used_vars, b));
+	mu_assert_eq (RVecAnalVarPtr_length (used_vars), 2, "used vars count");
+	mu_assert ("used vars", vec_contains (used_vars, a));
+	mu_assert ("used vars", vec_contains (used_vars, b));
 	stackptr = r_anal_function_get_var_stackptr_at (fcn, -0x10, 0x8000000000000030);
 	mu_assert_eq (stackptr, 123, "stackptr");
 	stackptr = r_anal_function_get_var_stackptr_at (fcn, -8, 0x8000000000000030);
@@ -207,14 +220,14 @@ bool test_r_anal_var(void) {
 	assert_sane (anal);
 
 	used_vars = r_anal_function_get_vars_used_at (fcn, 0xffffffffffff0130UL);
-	mu_assert ("used vars count", !used_vars || !r_pvector_length (used_vars));
+	mu_assert ("used vars count", !used_vars || !RVecAnalVarPtr_length (used_vars));
 	used_vars = r_anal_function_get_vars_used_at (fcn, 0x123);
-	mu_assert ("used vars count", !used_vars || !r_pvector_length (used_vars));
+	mu_assert ("used vars count", !used_vars || !RVecAnalVarPtr_length (used_vars));
 	used_vars = r_anal_function_get_vars_used_at (fcn, 0x130);
-	mu_assert ("used vars count", !used_vars || !r_pvector_length (used_vars));
+	mu_assert ("used vars count", !used_vars || !RVecAnalVarPtr_length (used_vars));
 	used_vars = r_anal_function_get_vars_used_at (fcn, 0x8000000000000030);
-	mu_assert_eq (r_pvector_length (used_vars), 1, "used vars count");
-	mu_assert ("used vars", r_pvector_contains (used_vars, b));
+	mu_assert_eq (RVecAnalVarPtr_length (used_vars), 1, "used vars count");
+	mu_assert ("used vars", vec_contains (used_vars, b));
 
 	// serialization / RAnalVarProt
 	RList *vps = r_anal_var_get_prots (fcn);

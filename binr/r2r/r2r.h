@@ -4,6 +4,31 @@
 #define RADARE2_R2R_H
 
 #include <r_util.h>
+#include <r_vec.h>
+
+typedef struct r2r_cmd_test_t R2RCmdTest;
+typedef struct r2r_asm_test_t R2RAsmTest;
+typedef struct r2r_test_to_skip_t R2RTestToSkip;
+typedef struct r2r_json_test_t R2RJsonTest;
+typedef struct r2r_fuzz_test_t R2RFuzzTest;
+typedef struct r2r_test_t R2RTest;
+typedef struct r2r_test_database_t R2RTestDatabase;
+typedef struct r2r_run_config_t R2RRunConfig;
+typedef struct r2r_process_output_t R2RProcessOutput;
+typedef struct r2r_asm_test_output_t R2RAsmTestOutput;
+typedef struct r2r_test_result_info_t R2RTestResultInfo;
+typedef struct r2r_subprocess_t R2RSubprocess;
+typedef struct r2r_state_t R2RState;
+
+R_VEC_TYPE(RVecR2RCmdTestPtr, R2RCmdTest *);
+R_VEC_TYPE(RVecR2RAsmTestPtr, R2RAsmTest *);
+R_VEC_TYPE(RVecR2RJsonTestPtr, R2RJsonTest *);
+R_VEC_TYPE(RVecR2RFuzzTestPtr, R2RFuzzTest *);
+R_VEC_TYPE(RVecR2RTestPtr, R2RTest *);
+R_VEC_TYPE(RVecR2RTestResultInfoPtr, R2RTestResultInfo *);
+R_VEC_TYPE(RVecR2RSubprocessPtr, R2RSubprocess *);
+R_VEC_TYPE(RVecRThreadPtr, RThread *);
+R_VEC_TYPE(RVecConstCharPtr, const char *);
 
 typedef struct r2r_cmd_test_string_record {
 	char *value;
@@ -117,7 +142,7 @@ typedef struct r2r_test_t {
 } R2RTest;
 
 typedef struct r2r_test_database_t {
-	RPVector tests;
+	RVecR2RTestPtr tests;
 	RStrConstPool strpool;
 } R2RTestDatabase;
 
@@ -170,15 +195,15 @@ typedef struct r2r_test_result_info_t {
 
 R_API R2RCmdTest *r2r_cmd_test_new(void);
 R_API void r2r_cmd_test_free(R2RCmdTest *test);
-R_API RPVector *r2r_load_cmd_test_file(const char *file);
+R_API RVecR2RCmdTestPtr *r2r_load_cmd_test_file(const char *file);
 
 R_API R2RAsmTest *r2r_asm_test_new(void);
 R_API void r2r_asm_test_free(R2RAsmTest *test);
-R_API RPVector *r2r_load_asm_test_file(RStrConstPool *strpool, const char *file);
+R_API RVecR2RAsmTestPtr *r2r_load_asm_test_file(RStrConstPool *strpool, const char *file);
 
 R_API R2RJsonTest *r2r_json_test_new(void);
 R_API void r2r_json_test_free(R2RJsonTest *test);
-R_API RPVector *r2r_load_json_test_file(const char *file);
+R_API RVecR2RJsonTestPtr *r2r_load_json_test_file(const char *file);
 
 R_API R2RTestDatabase *r2r_test_database_new(void);
 R_API void r2r_test_database_free(R2RTestDatabase *db);

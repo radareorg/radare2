@@ -420,11 +420,11 @@ typedef struct {
 	Cursor *cur;
 } HintsCtx;
 
-static bool rprj_hints_collect_cb(ut64 addr, const RVector/*<const RAnalAddrHintRecord>*/ *records, void *user) {
+static bool rprj_hints_collect_cb(ut64 addr, const RVecAnalAddrHintRecord *records, void *user) {
 	HintsCtx *ctx = (HintsCtx*)user;
 	Cursor *cur = ctx->cur;
 	const RAnalAddrHintRecord *record;
-	r_vector_foreach (records, record) {
+	R_VEC_FOREACH (records, record) {
 		ut32 kind = 0;
 		ut64 val = 0;
 		switch (record->type) {

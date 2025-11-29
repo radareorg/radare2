@@ -7,6 +7,7 @@
 #include <sdb/ht_uu.h>
 
 HEAPTYPE (ut64);
+R_VEC_TYPE(RVecIntPtr, int *);
 
 R_VEC_TYPE (RVecAnalRef, RAnalRef);
 
@@ -1241,7 +1242,7 @@ typedef struct {
 		HINT_NODE_BITS
 	} type;
 	union {
-		const RVector/*<const RAnalAddrHintRecord>*/ *addr_hints;
+		const RVecAnalAddrHintRecord *addr_hints;
 		const char *arch;
 		int bits;
 	};
@@ -1251,7 +1252,7 @@ static void print_hint_h_format(RCore *core, HintNode *node) {
 	switch (node->type) {
 	case HINT_NODE_ADDR: {
 		const RAnalAddrHintRecord *record;
-		r_vector_foreach (node->addr_hints, record) {
+		R_VEC_FOREACH (node->addr_hints, record) {
 			switch (record->type) {
 			case R_ANAL_ADDR_HINT_TYPE_IMMBASE:
 				r_cons_printf (core->cons, " immbase=%d", record->immbase);
@@ -1334,7 +1335,7 @@ static void hint_node_print(RCore *core, HintNode *node, int mode, PJ *pj) {
 		switch (node->type) {
 		case HINT_NODE_ADDR: {
 			const RAnalAddrHintRecord *record;
-			r_vector_foreach (node->addr_hints, record) {
+			R_VEC_FOREACH (node->addr_hints, record) {
 				switch (record->type) {
 				case R_ANAL_ADDR_HINT_TYPE_IMMBASE:
 					HINTCMD_ADDR (node, "ahi %d", record->immbase);
@@ -1405,7 +1406,7 @@ static void hint_node_print(RCore *core, HintNode *node, int mode, PJ *pj) {
 		switch (node->type) {
 		case HINT_NODE_ADDR: {
 			const RAnalAddrHintRecord *record;
-			r_vector_foreach (node->addr_hints, record) {
+			R_VEC_FOREACH (node->addr_hints, record) {
 				switch (record->type) {
 				case R_ANAL_ADDR_HINT_TYPE_IMMBASE:
 					pj_ki (pj, "immbase", record->immbase);
@@ -1497,7 +1498,7 @@ static int hint_node_cmp(const void *incoming, const RBNode *in_tree, void *user
 	return 0;
 }
 
-static bool print_addr_hint_cb(ut64 addr, const RVector/*<const RAnalAddrHintRecord>*/ *records, void *user) {
+static bool print_addr_hint_cb(ut64 addr, const RVecAnalAddrHintRecord *records, void *user) {
 	HintNode *node = R_NEW0 (HintNode);
 	node->addr = addr;
 	node->type = HINT_NODE_ADDR;
@@ -1585,7 +1586,7 @@ R_API void r_core_anal_hint_print(RCore *core, ut64 addr, int mode) {
 	if (hint_addr != UT64_MAX) {
 		print_bits_hint_cb (hint_addr, bits, &tree);
 	}
-	const RVector *addr_hints = r_anal_addr_hints_at (a, addr);
+	const RVecAnalAddrHintRecord *addr_hints = r_anal_addr_hints_at (a, addr);
 	if (addr_hints) {
 		print_addr_hint_cb (addr, addr_hints, &tree);
 	}
@@ -3915,19 +3916,32 @@ static RList *recurse(RCore *core, RAnalBlock *from, RAnalBlock *dest) {
 
 typedef struct {
 	int count;
-	RPVector reg_set;
+	RVecIntPtr reg_set;
 	bool argonly;
 	RAnalFunction *fcn;
 	RCore *core;
 } BlockRecurseCtx;
 
+static void reg_set_clear(RVecIntPtr *vec) {
+	int **it;
+	R_VEC_FOREACH (vec, it) {
+		free (*it);
+	}
+	RVecIntPtr_clear (vec);
+}
+
 static bool anal_block_on_exit(RAnalBlock *bb, BlockRecurseCtx *ctx) {
-	int *cur_regset = r_pvector_pop (&ctx->reg_set);
-	if (r_pvector_length (&ctx->reg_set) == 0) {
+	int **cur_slot = RVecIntPtr_last (&ctx->reg_set);
+	if (!cur_slot) {
+		return false;
+	}
+	int *cur_regset = *cur_slot;
+	RVecIntPtr_pop_back (&ctx->reg_set);
+	if (RVecIntPtr_length (&ctx->reg_set) == 0) {
 		free (cur_regset);
 		return false;
 	}
-	int *prev_regset = r_pvector_at (&ctx->reg_set, r_pvector_length (&ctx->reg_set) - 1);
+	int *prev_regset = *RVecIntPtr_at (&ctx->reg_set, RVecIntPtr_length (&ctx->reg_set) - 1);
 	size_t i;
 	for (i = 0; i < REG_SET_SIZE; i++) {
 		if (!prev_regset[i] && cur_regset[i] == 1) {
@@ -3968,14 +3982,14 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 		free (buf);
 		return false;
 	}
-	if (r_pvector_length (&ctx->reg_set) == 0) {
+	if (RVecIntPtr_length (&ctx->reg_set) == 0) {
 		free (buf);
 		return false;
 	}
-	int *parent_reg_set = r_pvector_at (&ctx->reg_set, r_pvector_length (&ctx->reg_set) - 1);
+	int *parent_reg_set = *RVecIntPtr_at (&ctx->reg_set, RVecIntPtr_length (&ctx->reg_set) - 1);
 	int *reg_set = R_NEWS (int, REG_SET_SIZE);
 	memcpy (reg_set, parent_reg_set, REG_SET_SIZE * sizeof (int));
-	r_pvector_push (&ctx->reg_set, reg_set);
+	RVecIntPtr_push_back (&ctx->reg_set, &reg_set);
 	RCore *core = ctx->core;
 	RAnalFunction *fcn = ctx->fcn;
 	fcn->stack = bb->parent_stackptr;
@@ -4053,15 +4067,18 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 		}
 	}
 #endif
-	BlockRecurseCtx ctx = { 0, {{0}}, argonly, fcn, core };
-	r_pvector_init (&ctx.reg_set, free);
+	BlockRecurseCtx ctx = { 0 };
+	ctx.argonly = argonly;
+	ctx.fcn = fcn;
+	ctx.core = core;
+	RVecIntPtr_init (&ctx.reg_set);
 	int *reg_set = R_NEWS0 (int, REG_SET_SIZE);
-	r_pvector_push (&ctx.reg_set, reg_set);
+	RVecIntPtr_push_back (&ctx.reg_set, &reg_set);
 	int saved_stack = fcn->stack;
 	RAnalBlock *first_bb = r_anal_get_block_at (fcn->anal, fcn->addr);
 	r_anal_block_recurse_depth_first (first_bb, (RAnalBlockCb)anal_block_cb,
 		(RAnalBlockCb)anal_block_on_exit, &ctx);
-	r_pvector_fini (&ctx.reg_set);
+	reg_set_clear (&ctx.reg_set);
 	fcn->stack = saved_stack;
 }
 
@@ -5002,10 +5019,10 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 		piece = (S->vaddr - from) / step;
 		as->block[piece].symbols++;
 	}
-	RPVector *metas = to > from ? r_meta_get_all_intersect (core->anal, from, to - from, R_META_TYPE_ANY) : NULL;
+	RVecIntervalNodePtr *metas = to > from ? r_meta_get_all_intersect (core->anal, from, to - from, R_META_TYPE_ANY) : NULL;
 	if (metas) {
-		void **it;
-		r_pvector_foreach (metas, it) {
+		RIntervalNode **it;
+		R_VEC_FOREACH (metas, it) {
 			RIntervalNode *node = *it;
 			RAnalMetaItem *mi = node->data;
 			if (node->start < from || node->end > to) {
@@ -5023,7 +5040,7 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 				break;
 			}
 		}
-		r_pvector_free (metas);
+		RVecIntervalNodePtr_free (metas);
 	}
 	return as;
 }
@@ -5381,8 +5398,8 @@ typedef struct {
 typedef int RPerm;
 
 static const char *reg_name_for_access(RAnalOp* op, RPerm type) {
-	RAnalValue *dst = r_vector_at (&op->dsts, 0);
-	RAnalValue *src = r_vector_at (&op->srcs, 0);
+	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
+	RAnalValue *src = RVecRArchValue_at (&op->srcs, 0);
 	if (type == R_PERM_W) {
 		if (dst) {
 			return dst->reg;
@@ -5394,9 +5411,9 @@ static const char *reg_name_for_access(RAnalOp* op, RPerm type) {
 }
 
 static ut64 delta_for_access(RAnalOp *op, RPerm type) {
-	RAnalValue *dst = r_vector_at (&op->dsts, 0);
-	RAnalValue *src0 = r_vector_at (&op->srcs, 0);
-	RAnalValue *src1 = r_vector_at (&op->srcs, 1);
+	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
+	RAnalValue *src0 = RVecRArchValue_at (&op->srcs, 0);
+	RAnalValue *src1 = RVecRArchValue_at (&op->srcs, 1);
 	if (type == R_PERM_W) {
 		if (dst) {
 			return dst->imm + dst->delta;
@@ -6004,9 +6021,9 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 #if 0
 		// disabled because it causes some tests to fail
 		{
-			RPVector *list = r_meta_get_all_in (core->anal, cur, R_META_TYPE_ANY);
-			void **it;
-			r_pvector_foreach (list, it) {
+			RVecIntervalNodePtr *list = r_meta_get_all_in (core->anal, cur, R_META_TYPE_ANY);
+			RIntervalNode **it;
+			R_VEC_FOREACH (list, it) {
 				RIntervalNode *node = *it;
 				RAnalMetaItem *meta = node->data;
 				switch (meta->type) {
@@ -6018,7 +6035,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 						int msz = r_meta_get_size (core->anal, meta->type);
 						i += (msz > 0)? msz: minopsize;
 					}
-					r_pvector_free (list);
+					RVecIntervalNodePtr_free (list);
 					goto loopback;
 #elif 0
 					{
@@ -6034,7 +6051,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 					break;
 				}
 			}
-			r_pvector_free (list);
+			RVecIntervalNodePtr_free (list);
 		}
 #endif
 		/* realign address if needed */
@@ -6239,8 +6256,8 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 					break;
 				}
 				ut64 dst = ESIL->cur;
-				RAnalValue *opsrc0 = r_vector_at (&op.srcs, 0);
-				RAnalValue *opsrc1 = r_vector_at (&op.srcs, 1);
+				RAnalValue *opsrc0 = RVecRArchValue_at (&op.srcs, 0);
+				RAnalValue *opsrc1 = RVecRArchValue_at (&op.srcs, 1);
 				if (!opsrc0 || !opsrc0->reg) {
 					break;
 				}

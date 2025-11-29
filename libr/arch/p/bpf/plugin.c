@@ -852,8 +852,8 @@ static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 	(op)->ptrsize = (size);
 
 #define NEW_SRC_DST(op) \
-	src = r_vector_push (&(op)->srcs, NULL); \
-	dst = r_vector_push (&(op)->dsts, NULL);
+	src = RVecRArchValue_emplace_back (&(op)->srcs); \
+	dst = RVecRArchValue_emplace_back (&(op)->dsts);
 
 #if 0
 #define SET_REG_SRC_DST(op, _src, _dst) \
@@ -867,11 +867,11 @@ static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 	src->imm = (_imm);
 
 #define SET_A_SRC(op) \
-	src = r_vector_push (&(op)->srcs, NULL); \
+	src = RVecRArchValue_emplace_back (&(op)->srcs); \
 	src->reg = r_reg_get (anal->reg, "A", R_REG_TYPE_GPR);
 
 #define SET_A_DST(op) \
-	dst = r_vector_push (&(op)->dsts, NULL); \
+	dst = RVecRArchValue_emplace_back (&(op)->dsts); \
 	dst->reg = r_reg_get (anal->reg, "A", R_REG_TYPE_GPR);
 #else
 // R2_590 - port to the new RArchValue thing

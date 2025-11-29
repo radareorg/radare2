@@ -134,8 +134,8 @@ static RAnalBaseType *get_enum_type(RAnal *anal, const char *sname) {
 		goto error;
 	}
 
-	RVector *cases = &base_type->enum_data.cases;
-	if (!r_vector_reserve (cases, (size_t)sdb_alen (members))) {
+	RVecAnalEnumCase *cases = &base_type->enum_data.cases;
+	if (!RVecAnalEnumCase_reserve (cases, (size_t)sdb_alen (members))) {
 		goto error;
 	}
 
@@ -154,10 +154,11 @@ static RAnalBaseType *get_enum_type(RAnal *anal, const char *sname) {
 
 		RAnalEnumCase cas = { .name = strdup (cur), .val = strtol (value, NULL, 16) };
 
-		void *element = r_vector_push (cases, &cas); // returns null if no space available
+		RAnalEnumCase *element = RVecAnalEnumCase_emplace_back (cases);
 		if (!element) {
 			goto error;
 		}
+		*element = cas;
 
 		sdb_aforeach_next (cur);
 	}
@@ -184,8 +185,8 @@ static RAnalBaseType *get_struct_type(RAnal *anal, const char *sname) {
 		goto error;
 	}
 
-	RVector *members = &base_type->struct_data.members;
-	if (!r_vector_reserve (members, (size_t)sdb_alen (sdb_members))) {
+	RVecAnalStructMember *members = &base_type->struct_data.members;
+	if (!RVecAnalStructMember_reserve (members, (size_t)sdb_alen (sdb_members))) {
 		goto error;
 	}
 
@@ -216,10 +217,11 @@ static RAnalBaseType *get_struct_type(RAnal *anal, const char *sname) {
 
 		free (values);
 
-		void *element = r_vector_push (members, &cas); // returns null if no space available
+		RAnalStructMember *element = RVecAnalStructMember_emplace_back (members);
 		if (!element) {
 			goto error;
 		}
+		*element = cas;
 
 		sdb_aforeach_next (cur);
 	}
@@ -246,8 +248,8 @@ static RAnalBaseType *get_union_type(RAnal *anal, const char *sname) {
 		goto error;
 	}
 
-	RVector *members = &base_type->union_data.members;
-	if (!r_vector_reserve (members, (size_t)sdb_alen (sdb_members))) {
+	RVecAnalUnionMember *members = &base_type->union_data.members;
+	if (!RVecAnalUnionMember_reserve (members, (size_t)sdb_alen (sdb_members))) {
 		goto error;
 	}
 
@@ -267,10 +269,11 @@ static RAnalBaseType *get_union_type(RAnal *anal, const char *sname) {
 		RAnalUnionMember cas = { .name = strdup (cur), .type = strdup (value) };
 		free (values);
 
-		void *element = r_vector_push (members, &cas); // returns null if no space available
+		RAnalUnionMember *element = RVecAnalUnionMember_emplace_back (members);
 		if (!element) {
 			goto error;
 		}
+		*element = cas;
 
 		sdb_aforeach_next (cur);
 	}
@@ -373,7 +376,7 @@ static void save_struct(const RAnal *anal, const RAnalBaseType *type) {
 
 	int i = 0;
 	RAnalStructMember *member;
-	r_vector_foreach (&type->struct_data.members, member) {
+	R_VEC_FOREACH (&type->struct_data.members, member) {
 		// struct.name.param=type,offset,argsize
 		char *member_sname = r_str_sanitize_sdb_key (member->name);
 		r_strf_var (k, KSZ, "%s.%s.%s", kind, sname, member_sname);
@@ -418,7 +421,7 @@ static void save_union(const RAnal *anal, const RAnalBaseType *type) {
 
 	int i = 0;
 	RAnalUnionMember *member;
-	r_vector_foreach (&type->union_data.members, member) {
+	R_VEC_FOREACH (&type->union_data.members, member) {
 		// union.name.arg1=type,offset,argsize
 		char *member_sname = r_str_sanitize_sdb_key (member->name);
 		r_strf_var (k, KSZ, "%s.%s.%s", kind, sname, member_sname);
@@ -454,7 +457,7 @@ static void save_enum(const RAnal *anal, const RAnalBaseType *type) {
 	RStrBuf *arglist = r_strbuf_new ("");
 	int i = 0;
 	RAnalEnumCase *cas;
-	r_vector_foreach (&type->enum_data.cases, cas) {
+	R_VEC_FOREACH (&type->enum_data.cases, cas) {
 		// enum.name.arg1=type,offset,???
 		char *case_sname = r_str_sanitize_sdb_key (cas->name);
 		r_strf_var (param_key, KSZ, "enum.%s.%s", sname, case_sname);
@@ -523,13 +526,13 @@ R_API void r_anal_base_type_free(RAnalBaseType *type) {
 
 	switch (type->kind) {
 	case R_ANAL_BASE_TYPE_KIND_STRUCT:
-		r_vector_fini (&type->struct_data.members);
+		RVecAnalStructMember_fini (&type->struct_data.members);
 		break;
 	case R_ANAL_BASE_TYPE_KIND_UNION:
-		r_vector_fini (&type->union_data.members);
+		RVecAnalUnionMember_fini (&type->union_data.members);
 		break;
 	case R_ANAL_BASE_TYPE_KIND_ENUM:
-		r_vector_fini (&type->enum_data.cases);
+		RVecAnalEnumCase_fini (&type->enum_data.cases);
 		break;
 	case R_ANAL_BASE_TYPE_KIND_TYPEDEF:
 	case R_ANAL_BASE_TYPE_KIND_ATOMIC:
@@ -546,13 +549,13 @@ R_API RAnalBaseType *r_anal_base_type_new(RAnalBaseTypeKind kind) {
 		type->kind = kind;
 		switch (type->kind) {
 		case R_ANAL_BASE_TYPE_KIND_STRUCT:
-			r_vector_init (&type->struct_data.members, sizeof (RAnalStructMember), struct_type_member_free, NULL);
+			RVecAnalStructMember_init (&type->struct_data.members);
 			break;
 		case R_ANAL_BASE_TYPE_KIND_ENUM:
-			r_vector_init (&type->enum_data.cases, sizeof (RAnalEnumCase), enum_type_case_free, NULL);
+			RVecAnalEnumCase_init (&type->enum_data.cases);
 			break;
 		case R_ANAL_BASE_TYPE_KIND_UNION:
-			r_vector_init (&type->union_data.members, sizeof (RAnalUnionMember), union_type_member_free, NULL);
+			RVecAnalUnionMember_init (&type->union_data.members);
 			break;
 		default:
 			break;

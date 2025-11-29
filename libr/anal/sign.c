@@ -10,6 +10,7 @@ R_LIB_VERSION (r_sign);
 #define SIGN_DIFF_MATCH_GRAPH_THRESHOLD 1.0
 
 R_VEC_TYPE (RVecAnalRef, RAnalRef);
+R_VEC_TYPE (RVecRSignItemPtr, RSignItem *);
 
 static inline const char *get_xrefname(RCore *core, ut64 addr) {
 	RAnalFunction *f = r_anal_get_fcn_in (core->anal, addr, 0);
@@ -2390,7 +2391,7 @@ static int sig_graph_diff(RSignItem *ia, RSignItem *ib) {
 
 #define SORT_EMPY_LAST(x, y) \
 	if (!x) { \
-		return !y? 1: 0; \
+		return !y? 0: 1; \
 	} \
 	if (!y) { \
 		return -1; \
@@ -2750,7 +2751,12 @@ static bool _sig_to_vec_cb(RSignItem *it, void *user) {
 		r_list_free (it->collisions);
 		it->collisions = NULL;
 	}
-	return r_pvector_push ((RPVector *)user, it)? true: false;
+	RSignItem **slot = RVecRSignItemPtr_emplace_back ((RVecRSignItemPtr *)user);
+	if (!slot) {
+		return false;
+	}
+	*slot = it;
+	return true;
 }
 
 static bool item_addto_collisions(RSignItem *it, const char *add) {
@@ -2772,11 +2778,11 @@ static bool item_addto_collisions(RSignItem *it, const char *add) {
 	return r_list_append (l, dup)? true: false;
 }
 
-static bool update_collide(RPVector *sigs, int start, int end, int type) {
+static bool update_collide(RVecRSignItemPtr *sigs, int start, int end, int type) {
 	R_RETURN_VAL_IF_FAIL (start >= 0 && end > 0 && sigs, false);
 	int i, ii;
 	for (i = start; i <= end; i++) {
-		RSignItem *it = (RSignItem *)r_pvector_at (sigs, i);
+		RSignItem *it = *RVecRSignItemPtr_at (sigs, i);
 		if (!it) {
 			return false;
 		}
@@ -2786,7 +2792,7 @@ static bool update_collide(RPVector *sigs, int start, int end, int type) {
 		}
 		for (ii = start; ii <= end; ii++) {
 			if (i != ii) {
-				RSignItem *itt = (RSignItem *)r_pvector_at (sigs, ii);
+				RSignItem *itt = *RVecRSignItemPtr_at (sigs, ii);
 				if (!item_addto_collisions (itt, fmt)) {
 					free (fmt);
 					return false;
@@ -2827,44 +2833,56 @@ static bool item_has_type(RSignItem *it, RSignType t) {
 	}
 }
 
-typedef int (*RSignSorter) (RSignItem *, RSignItem *);
+typedef int (*RSignVecCmp) (RSignItem *const *, RSignItem *const *);
 
-static RSignSorter type_to_cmp(int type, bool exact) {
+static int sign_graph_cmp_wrap(RSignItem *const *a, RSignItem *const *b) {
+	return sig_graph_cmp (*a, *b);
+}
+
+static int sign_graph_diff_wrap(RSignItem *const *a, RSignItem *const *b) {
+	return sig_graph_diff (*a, *b);
+}
+
+static int sign_bytes_cmp_wrap(RSignItem *const *a, RSignItem *const *b) {
+	return sig_bytes_cmp (*a, *b);
+}
+
+static RSignVecCmp type_to_cmp(int type, bool exact) {
 	switch (type) {
 	case R_SIGN_GRAPH:
 		if (exact) {
-			return sig_graph_diff;
+			return sign_graph_diff_wrap;
 		}
-		return sig_graph_cmp;
+		return sign_graph_cmp_wrap;
 	case R_SIGN_BYTES:
-		return sig_bytes_cmp;
+		return sign_bytes_cmp_wrap;
 	default:
 		return NULL;
 	}
 }
 
-static inline bool sign_collide_by(RPVector *sigs, RSignType type) {
-	RSignSorter cmp = type_to_cmp (type, false);
+static inline bool sign_collide_by(RVecRSignItemPtr *sigs, RSignType type) {
+	RSignVecCmp cmp = type_to_cmp (type, false);
 	if (!cmp) {
 		return false;
 	}
-	r_pvector_sort (sigs, (RPVectorComparator)cmp);
+	RVecRSignItemPtr_sort (sigs, cmp);
 	// sorting and matching can be slightly different
 	cmp = type_to_cmp (type, true);
 
-	void **p;
 	int i, start, end;
 	RSignItem *old = NULL;
 	i = 0;
 	start = end = -1;
-	r_pvector_foreach (sigs, p) {
+	RSignItem **p;
+	R_VEC_FOREACH (sigs, p) {
 		RSignItem *it = *p;
 		if (!item_has_type (it, type)) {
 			// sort algs should put NULL at bottom
 			break;
 		}
 		if (old) {
-			if (!cmp (old, it)) {
+			if (!cmp (&old, &it)) {
 				// signature collisions
 				if (start < 0) {
 					start = i - 1;
@@ -2913,13 +2931,13 @@ static inline RSignItem *metric_build_item(RSignSearchMetrics *sm, RAnalFunction
 
 R_API bool r_sign_resolve_collisions(RAnal *a) {
 	R_RETURN_VAL_IF_FAIL (a, false);
-	RPVector *sigs = r_pvector_new ((RPVectorFree)r_sign_item_free);
+	RVecRSignItemPtr *sigs = RVecRSignItemPtr_new ();
 	if (!sigs) {
 		return false;
 	}
 
 	if (!r_sign_foreach_nofree (a, _sig_to_vec_cb, (void *)sigs)) {
-		r_pvector_free (sigs);
+		RVecRSignItemPtr_free (sigs);
 		return false;
 	}
 	int i = 0;
@@ -2929,8 +2947,8 @@ R_API bool r_sign_resolve_collisions(RAnal *a) {
 	}
 
 	// save updated signatures
-	void **p;
-	r_pvector_foreach (sigs, p) {
+	RSignItem **p;
+	R_VEC_FOREACH (sigs, p) {
 		RSignItem *it = *p;
 		if (it->collisions) {
 			r_list_sort (it->collisions, list_str_cmp);
@@ -2938,7 +2956,7 @@ R_API bool r_sign_resolve_collisions(RAnal *a) {
 		}
 	}
 
-	r_pvector_free (sigs);
+	RVecRSignItemPtr_free (sigs);
 	return true;
 }
 

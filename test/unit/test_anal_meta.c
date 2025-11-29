@@ -217,12 +217,12 @@ bool test_meta_get_all_at(void) {
 	r_meta_set_string (anal, R_META_TYPE_COMMENT, 0x100, "vera gemini");
 	r_meta_set_with_subtype (anal, R_META_TYPE_STRING, R_STRING_ENC_UTF8, 0x200, 0x30, "true confessions");
 
-	RPVector *items = r_meta_get_all_at (anal, 0x100);
-	mu_assert_eq (r_pvector_length (items), 2, "all count");
-	void **it;
+	RVecIntervalNodePtr *items = r_meta_get_all_at (anal, 0x100);
+	mu_assert_eq (RVecIntervalNodePtr_length (items), 2, "all count");
+	RIntervalNode **it;
 	bool found[2] = {0};
-	r_pvector_foreach (items, it) {
-		RAnalMetaItem *item = ((RIntervalNode *)*it)->data;
+	R_VEC_FOREACH (items, it) {
+		RAnalMetaItem *item = (*it)->data;
 		switch (item->type) {
 		case R_META_TYPE_DATA:
 			found[0] = true;
@@ -236,15 +236,15 @@ bool test_meta_get_all_at(void) {
 	}
 	mu_assert ("meta 0", found[0]);
 	mu_assert ("meta 1", found[1]);
-	r_pvector_free (items);
+	RVecIntervalNodePtr_free (items);
 
 	items = r_meta_get_all_at (anal, 0xff);
-	mu_assert_eq (r_pvector_length (items), 0, "all count");
-	r_pvector_free (items);
+	mu_assert_eq (RVecIntervalNodePtr_length (items), 0, "all count");
+	RVecIntervalNodePtr_free (items);
 
 	items = r_meta_get_all_at (anal, 0x101);
-	mu_assert_eq (r_pvector_length (items), 0, "all count");
-	r_pvector_free (items);
+	mu_assert_eq (RVecIntervalNodePtr_length (items), 0, "all count");
+	RVecIntervalNodePtr_free (items);
 
 	r_anal_free (anal);
 	mu_end;
@@ -257,12 +257,12 @@ bool test_meta_get_all_in(void) {
 	r_meta_set_string (anal, R_META_TYPE_COMMENT, 0x100, "vera gemini");
 	r_meta_set_with_subtype (anal, R_META_TYPE_STRING, R_STRING_ENC_UTF8, 0x200, 0x30, "true confessions");
 
-	RPVector *items = r_meta_get_all_in (anal, 0x100, R_META_TYPE_ANY);
-	mu_assert_eq (r_pvector_length (items), 2, "all count");
-	void **it;
+	RVecIntervalNodePtr *items = r_meta_get_all_in (anal, 0x100, R_META_TYPE_ANY);
+	mu_assert_eq (RVecIntervalNodePtr_length (items), 2, "all count");
+	RIntervalNode **it;
 	bool found[2] = {0};
-	r_pvector_foreach (items, it) {
-		RAnalMetaItem *item = ((RIntervalNode *)*it)->data;
+	R_VEC_FOREACH (items, it) {
+		RAnalMetaItem *item = (*it)->data;
 		switch (item->type) {
 		case R_META_TYPE_DATA:
 			found[0] = true;
@@ -276,37 +276,37 @@ bool test_meta_get_all_in(void) {
 	}
 	mu_assert ("meta 0", found[0]);
 	mu_assert ("meta 1", found[1]);
-	r_pvector_free (items);
+	RVecIntervalNodePtr_free (items);
 
 	items = r_meta_get_all_in (anal, 0x100, R_META_TYPE_COMMENT);
-	mu_assert_eq (r_pvector_length (items), 1, "all count");
-	RAnalMetaItem *item = ((RIntervalNode *)r_pvector_at (items, 0))->data;
+	mu_assert_eq (RVecIntervalNodePtr_length (items), 1, "all count");
+	RAnalMetaItem *item = (*RVecIntervalNodePtr_at (items, 0))->data;
 	mu_assert_streq (item->str, "vera gemini", "contents");
-	r_pvector_free (items);
+	RVecIntervalNodePtr_free (items);
 
 	items = r_meta_get_all_in (anal, 0x100, R_META_TYPE_DATA);
-	mu_assert_eq (r_pvector_length (items), 1, "all count");
-	item = ((RIntervalNode *)r_pvector_at (items, 0))->data;
+	mu_assert_eq (RVecIntervalNodePtr_length (items), 1, "all count");
+	item = (*RVecIntervalNodePtr_at (items, 0))->data;
 	mu_assert_eq (item->type, R_META_TYPE_DATA, "contents");
-	r_pvector_free (items);
+	RVecIntervalNodePtr_free (items);
 
 	items = r_meta_get_all_in (anal, 0xff, R_META_TYPE_ANY);
-	mu_assert_eq (r_pvector_length (items), 0, "all count");
-	r_pvector_free (items);
+	mu_assert_eq (RVecIntervalNodePtr_length (items), 0, "all count");
+	RVecIntervalNodePtr_free (items);
 
 	items = r_meta_get_all_in (anal, 0x101, R_META_TYPE_COMMENT);
-	mu_assert_eq (r_pvector_length (items), 0, "all count");
-	r_pvector_free (items);
+	mu_assert_eq (RVecIntervalNodePtr_length (items), 0, "all count");
+	RVecIntervalNodePtr_free (items);
 
 	items = r_meta_get_all_in (anal, 0x103, R_META_TYPE_DATA);
-	mu_assert_eq (r_pvector_length (items), 1, "all count");
-	item = ((RIntervalNode *)r_pvector_at (items, 0))->data;
+	mu_assert_eq (RVecIntervalNodePtr_length (items), 1, "all count");
+	item = (*RVecIntervalNodePtr_at (items, 0))->data;
 	mu_assert_eq (item->type, R_META_TYPE_DATA, "contents");
-	r_pvector_free (items);
+	RVecIntervalNodePtr_free (items);
 
 	items = r_meta_get_all_in (anal, 0x104, R_META_TYPE_DATA);
-	mu_assert_eq (r_pvector_length (items), 0, "all count");
-	r_pvector_free (items);
+	mu_assert_eq (RVecIntervalNodePtr_length (items), 0, "all count");
+	RVecIntervalNodePtr_free (items);
 
 	r_anal_free (anal);
 	mu_end;
@@ -319,12 +319,12 @@ bool test_meta_get_all_intersect(void) {
 	r_meta_set_string (anal, R_META_TYPE_COMMENT, 0x100, "vera gemini");
 	r_meta_set_with_subtype (anal, R_META_TYPE_STRING, R_STRING_ENC_UTF8, 0x200, 0x30, "true confessions");
 
-	RPVector *items = r_meta_get_all_intersect (anal, 0x100, 1, R_META_TYPE_ANY);
-	mu_assert_eq (r_pvector_length (items), 2, "all count");
-	void **it;
+	RVecIntervalNodePtr *items = r_meta_get_all_intersect (anal, 0x100, 1, R_META_TYPE_ANY);
+	mu_assert_eq (RVecIntervalNodePtr_length (items), 2, "all count");
+	RIntervalNode **it;
 	bool found[2] = {0};
-	r_pvector_foreach (items, it) {
-		RAnalMetaItem *item = ((RIntervalNode *)*it)->data;
+	R_VEC_FOREACH (items, it) {
+		RAnalMetaItem *item = (*it)->data;
 		switch (item->type) {
 		case R_META_TYPE_DATA:
 			found[0] = true;
@@ -338,39 +338,39 @@ bool test_meta_get_all_intersect(void) {
 	}
 	mu_assert ("meta 0", found[0]);
 	mu_assert ("meta 1", found[1]);
-	r_pvector_free (items);
+	RVecIntervalNodePtr_free (items);
 
 	items = r_meta_get_all_intersect (anal, 0x100, 1, R_META_TYPE_DATA);
-	mu_assert_eq (r_pvector_length (items), 1, "all count");
-	RAnalMetaItem *item = ((RIntervalNode *)r_pvector_at (items, 0))->data;
+	mu_assert_eq (RVecIntervalNodePtr_length (items), 1, "all count");
+	RAnalMetaItem *item = (*RVecIntervalNodePtr_at (items, 0))->data;
 	mu_assert_eq (item->type, R_META_TYPE_DATA, "contents");
-	r_pvector_free (items);
+	RVecIntervalNodePtr_free (items);
 
 	items = r_meta_get_all_intersect (anal, 0x100, 0x300, R_META_TYPE_DATA);
-	mu_assert_eq (r_pvector_length (items), 1, "all count");
-	item = ((RIntervalNode *)r_pvector_at (items, 0))->data;
+	mu_assert_eq (RVecIntervalNodePtr_length (items), 1, "all count");
+	item = (*RVecIntervalNodePtr_at (items, 0))->data;
 	mu_assert_eq (item->type, R_META_TYPE_DATA, "contents");
-	r_pvector_free (items);
+	RVecIntervalNodePtr_free (items);
 
 	items = r_meta_get_all_intersect (anal, 0x0, 0x300, R_META_TYPE_DATA);
-	mu_assert_eq (r_pvector_length (items), 1, "all count");
-	item = ((RIntervalNode *)r_pvector_at (items, 0))->data;
+	mu_assert_eq (RVecIntervalNodePtr_length (items), 1, "all count");
+	item = (*RVecIntervalNodePtr_at (items, 0))->data;
 	mu_assert_eq (item->type, R_META_TYPE_DATA, "contents");
-	r_pvector_free (items);
+	RVecIntervalNodePtr_free (items);
 
 	items = r_meta_get_all_intersect (anal, 0x0, 0x100, R_META_TYPE_DATA);
-	mu_assert_eq (r_pvector_length (items), 0, "all count");
-	r_pvector_free (items);
+	mu_assert_eq (RVecIntervalNodePtr_length (items), 0, "all count");
+	RVecIntervalNodePtr_free (items);
 
 	items = r_meta_get_all_intersect (anal, 0x103, 0x300, R_META_TYPE_DATA);
-	mu_assert_eq (r_pvector_length (items), 1, "all count");
-	item = ((RIntervalNode *)r_pvector_at (items, 0))->data;
+	mu_assert_eq (RVecIntervalNodePtr_length (items), 1, "all count");
+	item = (*RVecIntervalNodePtr_at (items, 0))->data;
 	mu_assert_eq (item->type, R_META_TYPE_DATA, "contents");
-	r_pvector_free (items);
+	RVecIntervalNodePtr_free (items);
 
 	items = r_meta_get_all_intersect (anal, 0x104, 0x300, R_META_TYPE_DATA);
-	mu_assert_eq (r_pvector_length (items), 0, "all count");
-	r_pvector_free (items);
+	mu_assert_eq (RVecIntervalNodePtr_length (items), 0, "all count");
+	RVecIntervalNodePtr_free (items);
 
 	r_anal_free (anal);
 	mu_end;
@@ -550,20 +550,20 @@ bool test_meta_spaces(void) {
 	node = r_meta_get_in (anal, 0x100, R_META_TYPE_DATA);
 	mu_assert_null (node, "masked by space");
 
-	RPVector *nodes = r_meta_get_all_at (anal, 0x100);
-	mu_assert_eq (r_pvector_length (nodes), 1, "all count");
-	mu_assert_ptreq (((RIntervalNode *)r_pvector_at (nodes, 0))->data, reaper_item, "all masked");
-	r_pvector_free (nodes);
+	RVecIntervalNodePtr *nodes = r_meta_get_all_at (anal, 0x100);
+	mu_assert_eq (RVecIntervalNodePtr_length (nodes), 1, "all count");
+	mu_assert_ptreq ((*RVecIntervalNodePtr_at (nodes, 0))->data, reaper_item, "all masked");
+	RVecIntervalNodePtr_free (nodes);
 
 	nodes = r_meta_get_all_in (anal, 0x100, R_META_TYPE_ANY);
-	mu_assert_eq (r_pvector_length (nodes), 1, "all count");
-	mu_assert_ptreq (((RIntervalNode *)r_pvector_at (nodes, 0))->data, reaper_item, "all masked");
-	r_pvector_free (nodes);
+	mu_assert_eq (RVecIntervalNodePtr_length (nodes), 1, "all count");
+	mu_assert_ptreq ((*RVecIntervalNodePtr_at (nodes, 0))->data, reaper_item, "all masked");
+	RVecIntervalNodePtr_free (nodes);
 
 	nodes = r_meta_get_all_intersect (anal, 0x0, 0x500, R_META_TYPE_ANY);
-	mu_assert_eq (r_pvector_length (nodes), 1, "all count");
-	mu_assert_ptreq (((RIntervalNode *)r_pvector_at (nodes, 0))->data, reaper_item, "all masked");
-	r_pvector_free (nodes);
+	mu_assert_eq (RVecIntervalNodePtr_length (nodes), 1, "all count");
+	mu_assert_ptreq ((*RVecIntervalNodePtr_at (nodes, 0))->data, reaper_item, "all masked");
+	RVecIntervalNodePtr_free (nodes);
 
 	// delete
 	r_meta_del (anal, R_META_TYPE_ANY, 0, 0x500);

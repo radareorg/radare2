@@ -3,8 +3,7 @@
 #include <r_util.h>
 #include <r_io.h>
 
-static void iocache_item_free(void *data) {
-	RIOCacheItem *ci = data;
+static void iocache_item_free(RIOCacheItem *ci) {
 	if (ci) {
 		free (ci->tree_itv);
 		free (ci->data);
@@ -16,7 +15,7 @@ static void iocache_item_free(void *data) {
 static RIOCacheLayer *iocache_layer_new(void) {
 	RIOCacheLayer *cl = R_NEW (RIOCacheLayer);
 	cl->tree = r_crbtree_new (NULL);
-	cl->vec = r_pvector_new ((RPVectorFree)iocache_item_free);
+	cl->vec = RVecRIOCacheItemPtr_new ();
 	return cl;
 }
 
@@ -24,7 +23,13 @@ static void iocache_layer_free(void *arg) {
 	RIOCacheLayer *cl = arg;
 	if (cl) {
 		r_crbtree_free (cl->tree);
-		r_pvector_free (cl->vec);
+		if (cl->vec) {
+			RIOCacheItem **iter;
+			R_VEC_FOREACH (cl->vec, iter) {
+				iocache_item_free (*iter);
+			}
+			RVecRIOCacheItemPtr_free (cl->vec);
+		}
 		// cl->cache.mode = 0;
 		free (cl);
 	}
@@ -170,7 +175,7 @@ static st64 buf_cache_write(RBuffer *b, const ut8 *buf, ut64 len) {
 		}
 	}
 	r_crbtree_insert (layer->tree, ci, _ci_start_cmp_cb, NULL);
-	r_pvector_push (layer->vec, ci);
+	RVecRIOCacheItemPtr_push_back (layer->vec, &ci);
 	return true;
 }
 

@@ -1615,12 +1615,12 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 #if 0
 			{
 				src = getarg (&gop, 0, 0, NULL, NULL);
-				val = r_vector_push (&op->srcs, NULL);
+				val = RVecRArchValue_emplace_back (&op->srcs);
 				val->reg = r_reg_get (a->reg, src, R_REG_TYPE_GPR);
 				free (src);
 			}
 #else
-			val = r_vector_push (&op->srcs, NULL);
+			val = RVecRArchValue_emplace_back (&op->srcs);
 			val->reg = cs_reg_name (handle, INSOP (0).reg);
 #endif
 			break;
@@ -2697,10 +2697,10 @@ static void set_access_info(RArchSession *as, RAnalOp *op, csh handle, cs_insn *
 }
 
 #define CREATE_SRC_DST(op) \
-	src0 = r_vector_push (&(op)->srcs, NULL); \
-	src1 = r_vector_push (&(op)->srcs, NULL); \
-	src2 = r_vector_push (&(op)->srcs, NULL); \
-	dst = r_vector_push (&(op)->dsts, NULL);
+	src0 = RVecRArchValue_emplace_back (&(op)->srcs); \
+	src1 = RVecRArchValue_emplace_back (&(op)->srcs); \
+	src2 = RVecRArchValue_emplace_back (&(op)->srcs); \
+	dst = RVecRArchValue_emplace_back (&(op)->dsts);
 
 static void set_src_dst(RArchSession *as, RAnalValue *val, csh handle, cs_insn *insn, int x) {
 	if (!val) {

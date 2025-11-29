@@ -349,6 +349,7 @@ extern "C" {
 			} \
 		} \
 		type *ptr = vec->_end; \
+		memset (ptr, 0, sizeof (type)); \
 		vec->_end++; \
 		return ptr; \
 	} \
@@ -378,6 +379,7 @@ extern "C" {
 		} \
 		memmove (vec->_start + 1, vec->_start, num_elems * sizeof (type)); \
 		vec->_end++; \
+		memset (vec->_start, 0, sizeof (type)); \
 		return vec->_start; \
 	} \
 	static inline R_MAYBE_UNUSED void R_VEC_FUNC(vec_type, append)(vec_type *vec, const vec_type *values, R_VEC_COPY(vec_type) copy_fn) { \

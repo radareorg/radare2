@@ -54,6 +54,9 @@ R_API RAnalOp *r_anal_op_new(void) {
 
 R_API RAnalOp *r_anal_op_clone(RAnalOp *op) {
 	RAnalOp *nop = R_NEW0 (RAnalOp);
+	if (!nop) {
+		return NULL;
+	}
 	*nop = *op;
 	if (op->mnemonic) {
 		nop->mnemonic = strdup (op->mnemonic);
@@ -64,12 +67,10 @@ R_API RAnalOp *r_anal_op_clone(RAnalOp *op) {
 	} else {
 		nop->mnemonic = NULL;
 	}
-#if 0
-	nop->srcs = r_vector_clone (&op->srcs);
-	nop->dsts = r_vector_clone (&op->dsts);
-#else
-	r_vector_copy (&nop->srcs, &op->srcs);
-#endif
+	RVecRArchValue_init (&nop->srcs);
+	RVecRArchValue_init (&nop->dsts);
+	RVecRArchValue_append (&nop->srcs, &op->srcs, NULL);
+	RVecRArchValue_append (&nop->dsts, &op->dsts, NULL);
 	if (op->access) {
 		RListIter *it;
 		RArchValue *val;
@@ -81,6 +82,8 @@ R_API RAnalOp *r_anal_op_clone(RAnalOp *op) {
 	}
 	r_strbuf_init (&nop->esil);
 	r_strbuf_copy (&nop->esil, &op->esil);
+	r_strbuf_init (&nop->opex);
+	r_strbuf_copy (&nop->opex, &op->opex);
 	return nop;
 }
 
@@ -101,11 +104,11 @@ R_API void r_anal_op_init(RAnalOp *op) {
 		op->val = UT64_MAX;
 		op->disp = UT64_MAX;
 
-		r_vector_init (&op->srcs, sizeof (RArchValue), NULL, NULL);
-		r_vector_init (&op->dsts, sizeof (RArchValue), NULL, NULL);
+		RVecRArchValue_init (&op->srcs);
+		RVecRArchValue_init (&op->dsts);
 #if 0
-		r_vector_reserve (&op->srcs, 3);
-		r_vector_reserve (&op->dsts, 1);
+		RVecRArchValue_reserve (&op->srcs, 3);
+		RVecRArchValue_reserve (&op->dsts, 1);
 #endif
 	}
 }
@@ -115,8 +118,8 @@ R_API void r_anal_op_fini(RAnalOp *op) {
 		return;
 	}
 	// should be a static vector not a pointer
-	r_vector_fini (&op->srcs);
-	r_vector_fini (&op->dsts);
+	RVecRArchValue_fini (&op->srcs);
+	RVecRArchValue_fini (&op->dsts);
 	r_list_free (op->access);
 	op->access = NULL;
 	if (!op->weakbytes) {
@@ -137,56 +140,9 @@ R_API void r_anal_op_free(void *_op) {
 	memset (_op, 0, sizeof (RAnalOp));
 	free (_op);
 }
-#if 0
-R_API RAnalOp *r_arch_op_new(void) {
-	RAnalOp *op = R_NEW (RAnalOp);
-	r_arch_op_init (op);
-	return op;
-}
 
-R_API void r_arch_op_init(RAnalOp *op) {
-	if (op) {
-		memset (op, 0, sizeof (*op));
-		op->addr = UT64_MAX;
-		op->jump = UT64_MAX;
-		op->fail = UT64_MAX;
-		op->ptr = UT64_MAX;
-		op->refptr = 0;
-		op->val = UT64_MAX;
-		op->disp = UT64_MAX;
-
-		op->srcs = r_vector_new (sizeof (RArchValue), NULL, NULL);
-		op->dsts = r_vector_new (sizeof (RArchValue), NULL, NULL);
-	}
-}
-
-R_API void r_arch_op_fini(RAnalOp *op) {
-	if (!op) {
-		return;
-	}
-	r_vector_free (op->srcs);
-	r_vector_free (op->dsts);
-	op->srcs = NULL;
-	op->dsts = NULL;
-	r_list_free (op->access);
-	op->access = NULL;
-	r_strbuf_fini (&op->opex);
-	r_strbuf_fini (&op->esil);
-	r_arch_switch_op_free (op->switch_op);
-	op->switch_op = NULL;
-	R_FREE (op->mnemonic);
-}
-
-R_API void r_arch_op_free(void *_op) {
-	if (!_op) {
-		return;
-	}
-	r_arch_op_fini (_op);
-	free (_op);
-}
-
-static struct optype {
-	const int type;
+static const struct {
+	int type;
 	const char *name;
 } optypes[] = {
 	{ R_ANAL_OP_TYPE_IO, "io" },
@@ -344,17 +300,17 @@ repeat:
 
 R_API const char *r_arch_stackop_tostring(int s) {
 	switch (s) {
-	case R_ARCH_STACK_NULL:
+	case R_ANAL_STACK_NULL:
 		return "null";
-	case R_ARCH_STACK_NOP:
+	case R_ANAL_STACK_NOP:
 		return "nop";
-	case R_ARCH_STACK_INC:
+	case R_ANAL_STACK_INC:
 		return "inc";
-	case R_ARCH_STACK_GET:
+	case R_ANAL_STACK_GET:
 		return "get";
-	case R_ARCH_STACK_SET:
+	case R_ANAL_STACK_SET:
 		return "set";
-	case R_ARCH_STACK_RESET:
+	case R_ANAL_STACK_RESET:
 		return "reset";
 	}
 	return "unk";
@@ -362,17 +318,17 @@ R_API const char *r_arch_stackop_tostring(int s) {
 
 R_API const char *r_arch_op_family_tostring(int n) {
 	switch (n) {
-	case R_ARCH_OP_FAMILY_UNKNOWN: return "unk";
-	case R_ARCH_OP_FAMILY_CPU: return "cpu";
-	case R_ARCH_OP_FAMILY_SECURITY: return "sec";
-	case R_ARCH_OP_FAMILY_FPU: return "fpu";
-	case R_ARCH_OP_FAMILY_MMX: return "mmx";
-	case R_ARCH_OP_FAMILY_SSE: return "sse";
-	case R_ARCH_OP_FAMILY_PRIV: return "priv";
-	case R_ARCH_OP_FAMILY_THREAD: return "thrd";
-	case R_ARCH_OP_FAMILY_CRYPTO: return "crpt";
-	case R_ARCH_OP_FAMILY_IO: return "io";
-	case R_ARCH_OP_FAMILY_VIRT: return "virt";
+	case R_ANAL_OP_FAMILY_UNKNOWN: return "unk";
+	case R_ANAL_OP_FAMILY_CPU: return "cpu";
+	case R_ANAL_OP_FAMILY_SECURITY: return "sec";
+	case R_ANAL_OP_FAMILY_FPU: return "fpu";
+	case R_ANAL_OP_FAMILY_VEC: return "vec";
+	case R_ANAL_OP_FAMILY_PRIV: return "priv";
+	case R_ANAL_OP_FAMILY_THREAD: return "thrd";
+	case R_ANAL_OP_FAMILY_CRYPTO: return "crpt";
+	case R_ANAL_OP_FAMILY_IO: return "io";
+	case R_ANAL_OP_FAMILY_VIRT: return "virt";
+	case R_ANAL_OP_FAMILY_SIMD: return "simd";
 	}
 	return NULL;
 }
@@ -382,16 +338,18 @@ struct op_family {
 	int id;
 };
 static const struct op_family of[] = {
-	{ "cpu", R_ARCH_OP_FAMILY_CPU},
-	{ "fpu", R_ARCH_OP_FAMILY_FPU},
-	{ "mmx", R_ARCH_OP_FAMILY_MMX},
-	{ "sse", R_ARCH_OP_FAMILY_SSE},
-	{ "priv", R_ARCH_OP_FAMILY_PRIV},
-	{ "virt", R_ARCH_OP_FAMILY_VIRT},
-	{ "crpt", R_ARCH_OP_FAMILY_CRYPTO},
-	{ "io", R_ARCH_OP_FAMILY_IO},
-	{ "sec", R_ARCH_OP_FAMILY_SECURITY},
-	{ "thread", R_ARCH_OP_FAMILY_THREAD},
+	{ "cpu", R_ANAL_OP_FAMILY_CPU},
+	{ "fpu", R_ANAL_OP_FAMILY_FPU},
+	{ "mmx", R_ANAL_OP_FAMILY_SIMD},
+	{ "sse", R_ANAL_OP_FAMILY_SIMD},
+	{ "priv", R_ANAL_OP_FAMILY_PRIV},
+	{ "virt", R_ANAL_OP_FAMILY_VIRT},
+	{ "crpt", R_ANAL_OP_FAMILY_CRYPTO},
+	{ "io", R_ANAL_OP_FAMILY_IO},
+	{ "sec", R_ANAL_OP_FAMILY_SECURITY},
+	{ "thread", R_ANAL_OP_FAMILY_THREAD},
+	{ "simd", R_ANAL_OP_FAMILY_SIMD},
+	{ "vec", R_ANAL_OP_FAMILY_VEC},
 };
 
 R_API int r_arch_op_family_from_string(const char *f) {
@@ -401,7 +359,7 @@ R_API int r_arch_op_family_from_string(const char *f) {
 			return of[i].id;
 		}
 	}
-	return R_ARCH_OP_FAMILY_UNKNOWN;
+	return R_ANAL_OP_FAMILY_UNKNOWN;
 }
 
 R_API const char *r_arch_op_direction_tostring(RAnalOp *op) {
@@ -414,5 +372,3 @@ R_API const char *r_arch_op_direction_tostring(RAnalOp *op) {
 		: d == 4 ? "exec"
 		: d == 8 ? "ref": "none";
 }
-
-#endif

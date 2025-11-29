@@ -1597,7 +1597,7 @@ static void var_help(RCore *core, char ch) {
 static void var_accesses_list(RCore *core, RAnalFunction *fcn, RAnalVar *var, PJ *pj, int access_type, const char *name) {
 	RAnalVarAccess *acc;
 	bool first = true;
-	if (r_vector_empty (&var->accesses)) {
+	if (RVecAnalVarAccess_empty (&var->accesses)) {
 		R_LOG_WARN ("Variable '%s' have no references?", name);
 	}
 	if (pj) {
@@ -1607,7 +1607,7 @@ static void var_accesses_list(RCore *core, RAnalFunction *fcn, RAnalVar *var, PJ
 	} else {
 		r_cons_printf (core->cons, "%10s", name);
 	}
-	r_vector_foreach (&var->accesses, acc) {
+	R_VEC_FOREACH (&var->accesses, acc) {
 		if (!(acc->type & access_type)) {
 			continue;
 		}
@@ -1636,7 +1636,7 @@ static void list_vars(RCore *core, RAnalFunction *fcn, PJ *pj, int type, const c
 		r_list_foreach (list, iter, var) {
 			r_cons_printf (core->cons, "* %s\n", var->name);
 			RAnalVarAccess *acc;
-			r_vector_foreach (&var->accesses, acc) {
+			R_VEC_FOREACH (&var->accesses, acc) {
 				if (!(acc->type & R_PERM_R)) {
 					continue;
 				}
@@ -1644,7 +1644,7 @@ static void list_vars(RCore *core, RAnalFunction *fcn, PJ *pj, int type, const c
 				r_core_seek (core, fcn->addr + acc->offset, 1);
 				r_core_print_disasm_instructions (core, 0, 1);
 			}
-			r_vector_foreach (&var->accesses, acc) {
+			R_VEC_FOREACH (&var->accesses, acc) {
 				if (!(acc->type & R_PERM_W)) {
 					continue;
 				}
@@ -2680,19 +2680,19 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				free (opname);
 			}
 
-			if (r_vector_length (&op.srcs) > 0) {
+			if (RVecRArchValue_length (&op.srcs) > 0) {
 				pj_ka (pj, "srcs");
 				RAnalValue *val;
-				r_vector_foreach (&op.srcs, val) {
+				R_VEC_FOREACH (&op.srcs, val) {
 					val_tojson (pj, val);
 				}
 				pj_end (pj);
 			}
 
-			if (r_vector_length (&op.dsts) > 0) {
+			if (RVecRArchValue_length (&op.dsts) > 0) {
 				pj_ka (pj, "dsts");
 				RAnalValue *val;
-				r_vector_foreach (&op.dsts, val) {
+				R_VEC_FOREACH (&op.dsts, val) {
 					val_tojson (pj, val);
 				}
 				pj_end (pj);
@@ -11782,7 +11782,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			if (ret >= 0) {
 				// HACK: Just convert only the first imm seen
 				RAnalValue *src = NULL;
-				r_vector_foreach (&op.srcs, src) {
+				R_VEC_FOREACH (&op.srcs, src) {
 					if (src) {
 						if (src->imm) {
 							offimm = src->imm;
@@ -11792,7 +11792,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 					}
 				}
 				if (!offimm) {
-					RAnalValue *dst = r_vector_at (&op.dsts, 0);
+					RAnalValue *dst = RVecRArchValue_at (&op.dsts, 0);
 					if (dst) {
 						if (dst->imm) {
 							offimm = dst->imm;

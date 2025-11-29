@@ -9,9 +9,26 @@
 
 #define D if (false)
 
-static void htup_vector_free(HtUPKv *kv) {
+R_VEC_TYPE (RVecEsilRegChange, REsilRegChange);
+R_VEC_TYPE (RVecEsilMemChange, REsilMemChange);
+
+static int reg_change_compare(const REsilRegChange *a, const REsilRegChange *b) {
+	return a->idx - b->idx;
+}
+
+static int mem_change_compare(const REsilMemChange *a, const REsilMemChange *b) {
+	return a->idx - b->idx;
+}
+
+static void htup_reg_vector_free(HtUPKv *kv) {
 	if (kv) {
-		r_vector_free (kv->value);
+		RVecEsilRegChange_free (kv->value);
+	}
+}
+
+static void htup_mem_vector_free(HtUPKv *kv) {
+	if (kv) {
+		RVecEsilMemChange_free (kv->value);
 	}
 }
 
@@ -30,11 +47,11 @@ R_API REsilTrace *r_esil_trace_new(REsil *esil) {
 	size_t i;
 	REsilTrace *trace = R_NEW0 (REsilTrace);
 	trace_db_init (&trace->db);
-	trace->registers = ht_up_new (NULL, htup_vector_free, NULL);
+	trace->registers = ht_up_new (NULL, htup_reg_vector_free, NULL);
 	if (!trace->registers) {
 		goto error;
 	}
-	trace->memory = ht_up_new (NULL, htup_vector_free, NULL);
+	trace->memory = ht_up_new (NULL, htup_mem_vector_free, NULL);
 	if (!trace->memory) {
 		goto error;
 	}
@@ -106,9 +123,9 @@ R_API void r_esil_trace_free(REsilTrace *trace) {
 static void add_reg_change(REsilTrace *trace, RRegItem *ri, ut64 data) {
 	R_RETURN_IF_FAIL (trace && ri);
 	ut64 addr = ri->offset | (ri->arena << 16);
-	RVector *vreg = ht_up_find (trace->registers, addr, NULL);
+	RVecEsilRegChange *vreg = ht_up_find (trace->registers, addr, NULL);
 	if (!vreg) {
-		vreg = r_vector_new (sizeof (REsilRegChange), NULL, NULL);
+		vreg = RVecEsilRegChange_new ();
 		if (!vreg) {
 			R_LOG_ERROR ("creating a register vector");
 			return;
@@ -116,14 +133,14 @@ static void add_reg_change(REsilTrace *trace, RRegItem *ri, ut64 data) {
 		ht_up_insert (trace->registers, addr, vreg);
 	}
 	REsilRegChange reg = { trace->cur_idx, data }; // imho cur_idx is not necessary, we keep track of this in the other vector
-	r_vector_push (vreg, &reg);
+	RVecEsilRegChange_push_back (vreg, &reg);
 }
 
 static void add_mem_change(REsilTrace *trace, ut64 addr, ut8 data) {
 	R_RETURN_IF_FAIL (trace);
-	RVector *vmem = ht_up_find (trace->memory, addr, NULL);
+	RVecEsilMemChange *vmem = ht_up_find (trace->memory, addr, NULL);
 	if (!vmem) {
-		vmem = r_vector_new (sizeof (REsilMemChange), NULL, NULL);
+		vmem = RVecEsilMemChange_new ();
 		if (!vmem) {
 			R_LOG_ERROR ("creating a memory vector");
 			return;
@@ -131,7 +148,7 @@ static void add_mem_change(REsilTrace *trace, ut64 addr, ut8 data) {
 		ht_up_insert (trace->memory, addr, vmem);
 	}
 	REsilMemChange mem = { trace->cur_idx, data };
-	r_vector_push (vmem, &mem);
+	RVecEsilMemChange_push_back (vmem, &mem);
 }
 
 // TODO find a better name
@@ -356,11 +373,12 @@ R_API void r_esil_trace_op(REsil *esil, struct r_anal_op_t *op) {
 static bool restore_memory_cb(void *user, const ut64 key, const void *value) {
 	size_t index;
 	REsil *esil = user;
-	RVector *vmem = (RVector *)value;
+	RVecEsilMemChange *vmem = (RVecEsilMemChange *)value;
 
-	r_vector_upper_bound (vmem, esil->trace->idx, index, CMP_MEM_CHANGE);
-	if (index > 0 && index <= vmem->len) {
-		REsilMemChange *c = r_vector_index_ptr (vmem, index - 1);
+	REsilMemChange needle = { .idx = esil->trace->idx };
+	index = RVecEsilMemChange_upper_bound (vmem, &needle, mem_change_compare);
+	if (index > 0 && index <= RVecEsilMemChange_length (vmem)) {
+		REsilMemChange *c = RVecEsilMemChange_at (vmem, index - 1);
 		esil->anal->iob.write_at (esil->anal->iob.io, key, &c->data, 1);
 	}
 	return true;
@@ -368,11 +386,12 @@ static bool restore_memory_cb(void *user, const ut64 key, const void *value) {
 
 static bool restore_register(REsil *esil, RRegItem *ri, int idx) {
 	size_t index;
-	RVector *vreg = ht_up_find (esil->trace->registers, ri->offset | (ri->arena << 16), NULL);
+	RVecEsilRegChange *vreg = ht_up_find (esil->trace->registers, ri->offset | (ri->arena << 16), NULL);
 	if (vreg) {
-		r_vector_upper_bound (vreg, idx, index, CMP_REG_CHANGE);
-		if (index > 0 && index <= vreg->len) {
-			REsilRegChange *c = r_vector_index_ptr (vreg, index - 2);
+		REsilRegChange needle = { .idx = idx };
+		index = RVecEsilRegChange_upper_bound (vreg, &needle, reg_change_compare);
+		if (index > 0 && index <= RVecEsilRegChange_length (vreg)) {
+			REsilRegChange *c = RVecEsilRegChange_at (vreg, index - 2);
 			if (c) {
 				// printf ("set value %s 0x%"PFMT64x"\n", ri->name, c->data);
 				r_reg_set_value (esil->anal->reg, ri, c->data);

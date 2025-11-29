@@ -463,7 +463,7 @@ struct r2r_subprocess_t {
 	RThreadLock *lock;
 };
 
-static RPVector subprocs;
+static RVecR2RSubprocessPtr subprocs;
 static RThreadLock *subprocs_mutex = NULL;
 static int sigchld_pipe[2];
 static RThread *sigchld_thread;
@@ -476,14 +476,26 @@ static void handle_sigchld(int sig) {
 }
 
 static R2RSubprocess *pid_to_proc(int pid) {
-	void **it;
-	r_pvector_foreach (&subprocs, it) {
+	R2RSubprocess **it;
+	R_VEC_FOREACH (&subprocs, it) {
 		R2RSubprocess *p = *it;
 		if (p->pid == pid) {
 			return p;
 		}
 	}
 	return NULL;
+}
+
+static void subprocs_remove(R2RSubprocess *proc) {
+	R2RSubprocess **it;
+	ut64 idx = 0;
+	R_VEC_FOREACH (&subprocs, it) {
+		if (*it == proc) {
+			RVecR2RSubprocessPtr_remove (&subprocs, idx);
+			return;
+		}
+		idx++;
+	}
 }
 
 static RThreadFunctionRet sigchld_th(RThread *th) {
@@ -546,7 +558,7 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 }
 
 R_API bool r2r_subprocess_init(void) {
-	r_pvector_init (&subprocs, NULL);
+	RVecR2RSubprocessPtr_init (&subprocs);
 	subprocs_mutex = r_th_lock_new (false);
 	if (!subprocs_mutex) {
 		return false;
@@ -590,7 +602,11 @@ R_API void r2r_subprocess_fini(void) {
 	r_th_wait (sigchld_thread);
 	close (sigchld_pipe[0]);
 	r_th_free (sigchld_thread);
-	r_pvector_clear (&subprocs);
+	R2RSubprocess **it;
+	R_VEC_FOREACH (&subprocs, it) {
+		r2r_subprocess_free (*it);
+	}
+	RVecR2RSubprocessPtr_clear (&subprocs);
 	r_th_lock_free (subprocs_mutex);
 }
 
@@ -702,7 +718,7 @@ R_API R2RSubprocess *r2r_subprocess_start(
 	close (stdout_pipe[1]);
 	close (stderr_pipe[1]);
 
-	r_pvector_push (&subprocs, proc);
+	RVecR2RSubprocessPtr_push_back (&subprocs, &proc);
 
 	r_th_lock_leave (subprocs_mutex);
 
@@ -885,7 +901,7 @@ R_API void r2r_subprocess_free(R2RSubprocess *proc) {
 		goto cleanup_without_vector;
 	}
 	// Remove from global vector of subprocesses
-	r_pvector_remove_data (&subprocs, proc);
+	subprocs_remove (proc);
 	r_th_lock_leave (subprocs_mutex);
 	// Now safely clean up process resources
 cleanup_without_vector:
@@ -1027,46 +1043,59 @@ static char *convert_win_cmds(const char *cmds) {
 #endif
 
 static R2RProcessOutput *run_r2_test(R2RRunConfig *config, ut64 timeout_ms, int repeat, const char *cmds, RList *files, RList *extra_args, RList *extra_env, bool load_plugins, R2RCmdRunner runner, void *user) {
-	RPVector args;
-	RPVector envvars;
-	RPVector envvals;
-	r_pvector_init (&envvars, NULL);
-	r_pvector_init (&envvals, NULL);
-	r_pvector_init (&args, NULL);
+	RVecConstCharPtr args;
+	RVecConstCharPtr envvars;
+	RVecConstCharPtr envvals;
+	RVecConstCharPtr_init (&envvars);
+	RVecConstCharPtr_init (&envvals);
+	RVecConstCharPtr_init (&args);
 
-	r_pvector_push (&args, "-escr.utf8=0");
-	// r_pvector_push (&args, "-ebin.types=false");
-	r_pvector_push (&args, "-escr.color=0");
-	r_pvector_push (&args, "-escr.interactive=0");
+	const char *arg_val = "-escr.utf8=0";
+	RVecConstCharPtr_push_back (&args, &arg_val);
+	// add "-ebin.types=false" here if needed
+	arg_val = "-escr.color=0";
+	RVecConstCharPtr_push_back (&args, &arg_val);
+	arg_val = "-escr.interactive=0";
+	RVecConstCharPtr_push_back (&args, &arg_val);
 
 	if (!load_plugins) {
-		r_pvector_push (&args, "-NN");
+		arg_val = "-NN";
+		RVecConstCharPtr_push_back (&args, &arg_val);
 	}
 	RListIter *it;
 	void *extra_arg, *file_arg;
 	if (extra_args) {
 		r_list_foreach (extra_args, it, extra_arg) {
-			r_pvector_push (&args, extra_arg);
+			const char *extra = extra_arg;
+			RVecConstCharPtr_push_back (&args, &extra);
 		}
 	}
-	r_pvector_push (&args, "-Qc");
+	arg_val = "-Qc";
+	RVecConstCharPtr_push_back (&args, &arg_val);
 #if R2__WINDOWS__
 	char *wcmds = convert_win_cmds (cmds);
-	r_pvector_push (&args, wcmds);
+	arg_val = wcmds;
+	RVecConstCharPtr_push_back (&args, &arg_val);
 #else
-	r_pvector_push (&args, (void *)cmds);
+	arg_val = cmds;
+	RVecConstCharPtr_push_back (&args, &arg_val);
 #endif
 	r_list_foreach (files, it, file_arg) {
-		r_pvector_push (&args, file_arg);
+		const char *file = file_arg;
+		RVecConstCharPtr_push_back (&args, &file);
 	}
 
 #if R2__WINDOWS__
-	r_pvector_push (&envvars, "ANSICON");
-	r_pvector_push (&envvals, "1");
+	arg_val = "ANSICON";
+	RVecConstCharPtr_push_back (&envvars, &arg_val);
+	arg_val = "1";
+	RVecConstCharPtr_push_back (&envvals, &arg_val);
 #endif
 	if (!load_plugins) {
-		r_pvector_push (&envvars, "R2_NOPLUGINS");
-		r_pvector_push (&envvals, "1");
+		arg_val = "R2_NOPLUGINS";
+		RVecConstCharPtr_push_back (&envvars, &arg_val);
+		arg_val = "1";
+		RVecConstCharPtr_push_back (&envvals, &arg_val);
 	}
 	if (extra_env) {
 		RListIter *eit;
@@ -1077,36 +1106,38 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, ut64 timeout_ms, int 
 				continue;
 			}
 			*equal = 0;
-			r_pvector_push (&envvars, kv);
-			r_pvector_push (&envvals, equal + 1);
+			const char *varkey = kv;
+			const char *varval = equal + 1;
+			RVecConstCharPtr_push_back (&envvars, &varkey);
+			RVecConstCharPtr_push_back (&envvals, &varval);
 		}
 	}
 #if 0
-	void **at;
+	const char **at;
 	eprintf ("->{\n");
-	r_pvector_foreach (&args, at) {
+	R_VEC_FOREACH (&args, at) {
 		eprintf ("--> %s\n", *at);
 	}
 	eprintf ("->}\n");
 #endif
 
-	size_t env_size = r_pvector_length (&envvars);
+	size_t env_size = (size_t)RVecConstCharPtr_length (&envvars);
 
 	R2RProcessOutput *out;
 	if (repeat > 1) {
 		int rep = repeat;
 		while (rep-- > 0) {
-			out = runner (config->r2_cmd, args.v.a,
-				r_pvector_length (&args), envvars.v.a, envvals.v.a, env_size, timeout_ms, user);
+			out = runner (config->r2_cmd, R_VEC_START_ITER (&args),
+				(size_t)RVecConstCharPtr_length (&args), R_VEC_START_ITER (&envvars), R_VEC_START_ITER (&envvals), env_size, timeout_ms, user);
 		}
 	} else {
-		out = runner (config->r2_cmd, args.v.a,
-			r_pvector_length (&args), envvars.v.a, envvals.v.a, env_size, timeout_ms, user);
+		out = runner (config->r2_cmd, R_VEC_START_ITER (&args),
+			(size_t)RVecConstCharPtr_length (&args), R_VEC_START_ITER (&envvars), R_VEC_START_ITER (&envvals), env_size, timeout_ms, user);
 	}
 
-	r_pvector_clear (&args);
-	r_pvector_clear (&envvars);
-	r_pvector_clear (&envvals);
+	RVecConstCharPtr_clear (&args);
+	RVecConstCharPtr_clear (&envvars);
+	RVecConstCharPtr_clear (&envvals);
 #if R2__WINDOWS__
 	free (wcmds);
 #endif
@@ -1263,42 +1294,52 @@ R_API R2RAsmTestOutput *r2r_run_asm_test(R2RRunConfig *config, R2RAsmTest *test)
 		return NULL;
 	}
 
-	RPVector args;
-	r_pvector_init (&args, NULL);
+	RVecConstCharPtr args;
+	RVecConstCharPtr_init (&args);
 
 	if (test->arch) {
-		r_pvector_push (&args, "-a");
-		r_pvector_push (&args, (void *)test->arch);
+		const char *arg_val = "-a";
+		RVecConstCharPtr_push_back (&args, &arg_val);
+		arg_val = test->arch;
+		RVecConstCharPtr_push_back (&args, &arg_val);
 	}
 
 	if (test->cpu) {
-		r_pvector_push (&args, "-c");
-		r_pvector_push (&args, (void *)test->cpu);
+		const char *arg_val = "-c";
+		RVecConstCharPtr_push_back (&args, &arg_val);
+		arg_val = test->cpu;
+		RVecConstCharPtr_push_back (&args, &arg_val);
 	}
 
 	char bits[0x20];
 	if (test->bits) {
 		snprintf (bits, sizeof (bits), "%d", test->bits);
-		r_pvector_push (&args, "-b");
-		r_pvector_push (&args, bits);
+		const char *arg_val = "-b";
+		RVecConstCharPtr_push_back (&args, &arg_val);
+		arg_val = bits;
+		RVecConstCharPtr_push_back (&args, &arg_val);
 	}
 
 	if (test->mode & R2R_ASM_TEST_MODE_BIG_ENDIAN) {
-		r_pvector_push (&args, "-e");
+		const char *arg_val = "-e";
+		RVecConstCharPtr_push_back (&args, &arg_val);
 	}
 
 	char offset[0x20];
 	if (test->offset) {
 		r_snprintf (offset, sizeof (offset), "0x%" PFMT64x, test->offset);
-		r_pvector_push (&args, "-s");
-		r_pvector_push (&args, offset);
+		const char *arg_val = "-s";
+		RVecConstCharPtr_push_back (&args, &arg_val);
+		arg_val = offset;
+		RVecConstCharPtr_push_back (&args, &arg_val);
 	}
 
 	RStrBuf cmd_buf;
 	r_strbuf_init (&cmd_buf);
 	if (test->mode & R2R_ASM_TEST_MODE_ASSEMBLE) {
-		r_pvector_push (&args, test->disasm);
-		R2RSubprocess *proc = r2r_subprocess_start (config->rasm2_cmd, args.v.a, r_pvector_length (&args), NULL, NULL, 0);
+		const char *arg_val = test->disasm;
+		RVecConstCharPtr_push_back (&args, &arg_val);
+		R2RSubprocess *proc = r2r_subprocess_start (config->rasm2_cmd, R_VEC_START_ITER (&args), (size_t)RVecConstCharPtr_length (&args), NULL, NULL, 0);
 		if (!r2r_subprocess_wait (proc, config->timeout_ms)) {
 			r2r_subprocess_kill (proc);
 			out->as_timeout = true;
@@ -1323,8 +1364,8 @@ R_API R2RAsmTestOutput *r2r_run_asm_test(R2RRunConfig *config, R2RAsmTest *test)
 		}
 		out->bytes = bytes;
 		out->bytes_size = (size_t)byteslen;
-	rip:
-		r_pvector_pop (&args);
+rip:
+		RVecConstCharPtr_pop_back (&args);
 		r2r_subprocess_free (proc);
 	}
 	if (test->mode & R2R_ASM_TEST_MODE_DISASSEMBLE) {
@@ -1335,9 +1376,11 @@ R_API R2RAsmTestOutput *r2r_run_asm_test(R2RRunConfig *config, R2RAsmTest *test)
 		if (!hex) {
 			goto beach;
 		}
-		r_pvector_push (&args, "-d");
-		r_pvector_push (&args, hex);
-		R2RSubprocess *proc = r2r_subprocess_start (config->rasm2_cmd, args.v.a, r_pvector_length (&args), NULL, NULL, 0);
+		const char *arg_val = "-d";
+		RVecConstCharPtr_push_back (&args, &arg_val);
+		arg_val = hex;
+		RVecConstCharPtr_push_back (&args, &arg_val);
+		R2RSubprocess *proc = r2r_subprocess_start (config->rasm2_cmd, R_VEC_START_ITER (&args), (size_t)RVecConstCharPtr_length (&args), NULL, NULL, 0);
 		if (!r2r_subprocess_wait (proc, config->timeout_ms)) {
 			r2r_subprocess_kill (proc);
 			out->disas_timeout = true;
@@ -1349,15 +1392,15 @@ R_API R2RAsmTestOutput *r2r_run_asm_test(R2RRunConfig *config, R2RAsmTest *test)
 		char *disasm = r_strbuf_drain_nofree (&proc->out);
 		r_str_trim (disasm);
 		out->disasm = disasm;
-	ship:
+ship:
 		free (hex);
-		r_pvector_pop (&args);
-		r_pvector_pop (&args);
+		RVecConstCharPtr_pop_back (&args);
+		RVecConstCharPtr_pop_back (&args);
 		r2r_subprocess_free (proc);
 	}
 
 beach:
-	r_pvector_clear (&args);
+	RVecConstCharPtr_clear (&args);
 	r_strbuf_fini (&cmd_buf);
 	return out;
 }

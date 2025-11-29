@@ -77,7 +77,7 @@ static RDebugSession *ref_session(void) {
 		memset (snap->data, 0xf0, snap->size);
 		r_list_append (checkpoint.snaps, snap);
 	}
-	r_vector_push (s->checkpoints, &checkpoint);
+	RVecDebugCheckpoint_push_back (s->checkpoints, &checkpoint);
 
 	return s;
 }
@@ -125,15 +125,15 @@ static bool test_session_save(void) {
 static bool compare_registers_cb(void *user, const ut64 key, const void *value) {
 	RDebugChangeReg *actual_reg, *expected_reg;
 	HtUP *ref = user;
-	RVector *actual_vreg = (RVector *)value;
+	RVecDebugChangeReg *actual_vreg = (RVecDebugChangeReg *)value;
 
-	RVector *expected_vreg = ht_up_find (ref, key, NULL);
+	RVecDebugChangeReg *expected_vreg = ht_up_find (ref, key, NULL);
 	mu_assert ("vreg not found", expected_vreg);
-	mu_assert_eq (actual_vreg->len, expected_vreg->len, "vreg length");
+	mu_assert_eq (RVecDebugChangeReg_length (actual_vreg), RVecDebugChangeReg_length (expected_vreg), "vreg length");
 
-	size_t i;
-	r_vector_enumerate (actual_vreg, actual_reg, i) {
-		expected_reg = r_vector_index_ptr (expected_vreg, i);
+	ut64 i = 0;
+	for (actual_reg = R_VEC_START_ITER (actual_vreg); actual_reg != R_VEC_END_ITER (actual_vreg); actual_reg++, i++) {
+		expected_reg = RVecDebugChangeReg_at (expected_vreg, i);
 		mu_assert_eq (actual_reg->cnum, expected_reg->cnum, "cnum");
 		mu_assert_eq (actual_reg->data, expected_reg->data, "data");
 	}
@@ -143,15 +143,15 @@ static bool compare_registers_cb(void *user, const ut64 key, const void *value) 
 static bool compare_memory_cb(void *user, const ut64 key, const void *value) {
 	RDebugChangeMem *actual_mem, *expected_mem;
 	HtUP *ref = user;
-	RVector *actual_vmem = (RVector *)value;
+	RVecDebugChangeMem *actual_vmem = (RVecDebugChangeMem *)value;
 
-	RVector *expected_vmem = ht_up_find (ref, key, NULL);
+	RVecDebugChangeMem *expected_vmem = ht_up_find (ref, key, NULL);
 	mu_assert ("vmem not found", expected_vmem);
-	mu_assert_eq (actual_vmem->len, expected_vmem->len, "vmem length");
+	mu_assert_eq (RVecDebugChangeMem_length (actual_vmem), RVecDebugChangeMem_length (expected_vmem), "vmem length");
 
-	size_t i;
-	r_vector_enumerate (actual_vmem, actual_mem, i) {
-		expected_mem = r_vector_index_ptr (expected_vmem, i);
+	ut64 i = 0;
+	for (actual_mem = R_VEC_START_ITER (actual_vmem); actual_mem != R_VEC_END_ITER (actual_vmem); actual_mem++, i++) {
+		expected_mem = RVecDebugChangeMem_at (expected_vmem, i);
 		mu_assert_eq (actual_mem->cnum, expected_mem->cnum, "cnum");
 		mu_assert_eq (actual_mem->data, expected_mem->data, "data");
 	}
@@ -192,9 +192,10 @@ static bool test_session_load(void) {
 	// Checkpoints
 	size_t i, chkpt_idx;
 	RDebugCheckpoint *chkpt, *ref_chkpt;
-	mu_assert_eq (s->checkpoints->len, ref->checkpoints->len, "checkpoints length");
-	r_vector_enumerate (s->checkpoints, chkpt, chkpt_idx) {
-		ref_chkpt = r_vector_index_ptr (ref->checkpoints, chkpt_idx);
+	mu_assert_eq (RVecDebugCheckpoint_length (s->checkpoints), RVecDebugCheckpoint_length (ref->checkpoints), "checkpoints length");
+	chkpt_idx = 0;
+	R_VEC_FOREACH (s->checkpoints, chkpt) {
+		ref_chkpt = RVecDebugCheckpoint_at (ref->checkpoints, chkpt_idx++);
 		// Registers
 		for (i = 0; i < R_REG_TYPE_LAST; i++) {
 			arena_eq (chkpt->arena[i], ref_chkpt->arena[i]);

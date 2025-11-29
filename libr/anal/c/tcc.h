@@ -6,7 +6,7 @@
 #include <r_types.h>
 #include <r_util/r_str.h>
 #include <r_th.h>
-#include <r_vector.h>
+#include <r_vec.h>
 #include "tcc_config.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -99,6 +99,8 @@ typedef struct CString {
 	int size_allocated;
 	char *data_allocated; /* if non NULL, data has been malloced */
 } CString;
+
+R_VEC_FORWARD_DECLARE (RVecCharPtr);
 
 /* type definition */
 typedef struct CType {
@@ -367,7 +369,7 @@ struct TCCState {
 	const char *global_type;
 	const char *global_symname;
 
-	RPVector *typedefs;
+	RVecCharPtr *typedefs;
 
 	// callback for appendf
 	void (*cb)(const char *, char **);
