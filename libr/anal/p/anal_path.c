@@ -5,12 +5,13 @@
 #include <r_vec.h>
 
 R_VEC_TYPE(RVecAnalRef, RAnalRef);
+R_VEC_TYPE(RVecAnalBlockPtr, RAnalBlock *);
 
 typedef struct {
 	RAnal *anal;
 	RAnalBlock *cur_parent;
 	ut64 dstbb_addr;
-	RPVector/*<RAnalBlock>*/ *next_visit; // blocks for next BFS level
+	RVecAnalBlockPtr/*<RAnalBlock>*/ *next_visit; // blocks for next BFS level
 	HtUP/*<RAnalBlock>*/ *visited; // maps bb addr -> previous block (or NULL for entry)
 } PathCtx;
 
@@ -35,7 +36,7 @@ static bool succ_add_addr_cb (ut64 addr, void *user) {
 	ht_up_insert (ctx->visited, addr, ctx->cur_parent);
 	RAnalBlock *nb = r_anal_get_block_at (ctx->anal, addr);
 	if (nb) {
-		r_pvector_push (ctx->next_visit, nb);
+		RVecAnalBlockPtr_push_back (ctx->next_visit, &nb);
 	}
 	return addr != ctx->dstbb_addr;
 }
@@ -60,7 +61,7 @@ static bool succ_add_calls (RAnalBlock *block, void *user) {
 					ht_up_insert (ctx->visited, addr, block);
 					RAnalBlock *nb = r_anal_get_block_at (ctx->anal, addr);
 					if (nb) {
-						r_pvector_push (ctx->next_visit, nb);
+						RVecAnalBlockPtr_push_back (ctx->next_visit, &nb);
 					}
 					if (addr == ctx->dstbb_addr) {
 						RVecAnalRef_free (refs);
@@ -86,10 +87,10 @@ static RList /*<RAnalBlock*>*/ * shortest_path_blocks (RAnal *anal, ut64 src, ut
 	ctx.anal = anal;
 	ctx.dstbb_addr = dstbb;
 
-	RPVector visit_a; r_pvector_init (&visit_a, NULL);
-	RPVector visit_b; r_pvector_init (&visit_b, NULL);
+	RVecAnalBlockPtr visit_a; RVecAnalBlockPtr_init (&visit_a);
+	RVecAnalBlockPtr visit_b; RVecAnalBlockPtr_init (&visit_b);
 	ctx.next_visit = &visit_a;
-	RPVector *cur_visit = &visit_b;
+	RVecAnalBlockPtr *cur_visit = &visit_b;
 
 	ctx.visited = ht_up_new0 ();
 	if (!ctx.visited) {
@@ -97,13 +98,13 @@ static RList /*<RAnalBlock*>*/ * shortest_path_blocks (RAnal *anal, ut64 src, ut
 	}
 
 	ht_up_insert (ctx.visited, start->addr, NULL);
-	r_pvector_push (cur_visit, start);
+	RVecAnalBlockPtr_push_back (cur_visit, &start);
 
 	// BFS across BB edges, switch cases and calls
-	while (!r_pvector_empty (cur_visit)) {
-		void **it;
-		r_pvector_foreach (cur_visit, it) {
-			RAnalBlock *cur = (RAnalBlock *)*it;
+	while (!RVecAnalBlockPtr_empty (cur_visit)) {
+		RAnalBlock **it;
+		R_VEC_FOREACH (cur_visit, it) {
+			RAnalBlock *cur = *it;
 			ctx.cur_parent = cur;
 			// add jump/fail/switch successors
 			if (!r_anal_block_successor_addrs_foreach (cur, succ_add_addr_cb, &ctx)) {
@@ -114,10 +115,10 @@ static RList /*<RAnalBlock*>*/ * shortest_path_blocks (RAnal *anal, ut64 src, ut
 				goto done_bfs;
 			}
 		}
-		RPVector *tmp = cur_visit;
+		RVecAnalBlockPtr *tmp = cur_visit;
 		cur_visit = ctx.next_visit;
 		ctx.next_visit = tmp;
-		r_pvector_clear (ctx.next_visit);
+		RVecAnalBlockPtr_clear (ctx.next_visit);
 	}
 
 done_bfs:;
@@ -137,8 +138,8 @@ done_bfs:;
 
 beach:
 	 ht_up_free (ctx.visited);
-	 r_pvector_clear (&visit_a);
-	 r_pvector_clear (&visit_b);
+	 RVecAnalBlockPtr_clear (&visit_a);
+	 RVecAnalBlockPtr_clear (&visit_b);
 	 return ret;
 }
 

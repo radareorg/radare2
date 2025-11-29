@@ -60,7 +60,7 @@ R_API void r_line_completion_init(RLineCompletion *completion, size_t args_limit
 	completion->run = NULL;
 	completion->run_user = NULL;
 	completion->args_limit = args_limit;
-	r_pvector_init (&completion->args, free);
+	RVecCString_init (&completion->args);
 }
 
 R_API void r_line_completion_push(RLineCompletion *completion, const char *str) {
@@ -68,10 +68,10 @@ R_API void r_line_completion_push(RLineCompletion *completion, const char *str) 
 	if (completion->quit) {
 		return;
 	}
-	if (r_pvector_length (&completion->args) < completion->args_limit) {
+	if (RVecCString_length (&completion->args) < completion->args_limit) {
 		char *s = strdup (str);
 		if (s) {
-			r_pvector_push (&completion->args, (void *)s);
+			RVecCString_push_back (&completion->args, &s);
 		}
 	} else {
 		completion->quit = true;
@@ -88,7 +88,7 @@ R_API void r_line_completion_set(RLineCompletion *completion, int argc, const ch
 				argc, completion->args_limit);
 	}
 	size_t count = R_MIN (argc, completion->args_limit);
-	if (r_pvector_reserve (&completion->args, count)) {
+	if (RVecCString_reserve (&completion->args, count)) {
 		int i;
 		for (i = 0; i < count; i++) {
 			r_line_completion_push (completion, argv[i]);
@@ -99,5 +99,6 @@ R_API void r_line_completion_set(RLineCompletion *completion, int argc, const ch
 R_API void r_line_completion_clear(RLineCompletion *completion) {
 	R_RETURN_IF_FAIL (completion);
 	completion->quit = false;
-	r_pvector_clear (&completion->args);
+	RVecCString_clear (&completion->args);
+	RVecCString_shrink_to_fit (&completion->args);
 }

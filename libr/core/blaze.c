@@ -51,10 +51,10 @@ static int __isdata(RCore *core, ut64 addr) {
 		return 1;
 	}
 
-	RPVector *list = r_meta_get_all_in (core->anal, addr, R_META_TYPE_ANY);
-	void **it;
+	RVecIntervalNodePtr *list = r_meta_get_all_in (core->anal, addr, R_META_TYPE_ANY);
+	RIntervalNode **it;
 	int result = 0;
-	r_pvector_foreach (list, it) {
+	R_VEC_FOREACH (list, it) {
 		RIntervalNode *node = *it;
 		RAnalMetaItem *meta = node->data;
 		switch (meta->type) {
@@ -68,7 +68,7 @@ static int __isdata(RCore *core, ut64 addr) {
 		}
 	}
 exit:
-	r_pvector_free (list);
+	RVecIntervalNodePtr_free (list);
 	return result;
 }
 

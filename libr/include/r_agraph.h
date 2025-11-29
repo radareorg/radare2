@@ -8,6 +8,14 @@ extern "C" {
 #include <r_types.h>
 #include <r_cons.h>
 #include <r_util/r_graph.h>
+#include <r_vec.h>
+
+typedef struct r_agraph_location {
+	int x;
+	int y;
+} RAGraphLocation;
+
+R_VEC_TYPE (RVecAGraphLocation, RAGraphLocation);
 
 typedef struct r_ascii_node_t {
 	RGraphNode *gnode;
@@ -33,7 +41,7 @@ typedef struct r_ascii_node_t {
 
 typedef struct r_core_graph_hits_t {
 	char *old_word ;
-	RVector word_list;
+	RVecAGraphLocation word_list;
 	int word_nth;
 } RAGraphHits;
 

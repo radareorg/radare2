@@ -2964,12 +2964,12 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	int ret;
 
 	// find the meta item at this offset if any
-	RPVector *metas = r_meta_get_all_at (ds->core->anal, ds->at); // TODO: do in range
+	RVecIntervalNodePtr *metas = r_meta_get_all_at (ds->core->anal, ds->at); // TODO: do in range
 	RAnalMetaItem *meta = NULL;
 	ut64 meta_size = UT64_MAX;
 	if (metas) {
-		void **it;
-		r_pvector_foreach (metas, it) {
+		RIntervalNode **it;
+		R_VEC_FOREACH (metas, it) {
 			RIntervalNode *node = *it;
 			RAnalMetaItem *mi = node->data;
 			switch (mi->type) {
@@ -2986,7 +2986,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 				break;
 			}
 		}
-		r_pvector_free (metas);
+		RVecIntervalNodePtr_free (metas);
 	}
 	if (ds->hint) {
 		if (ds->hint->bits) {
@@ -3683,14 +3683,14 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 	if (!ds->asm_meta) {
 		return false;
 	}
-	RPVector *metas = r_meta_get_all_in (core->anal, ds->at, R_META_TYPE_ANY);
+	RVecIntervalNodePtr *metas = r_meta_get_all_in (core->anal, ds->at, R_META_TYPE_ANY);
 	if (!metas) {
 		return false;
 	}
 	bool once = true;
 	fmi = NULL;
-	void **it;
-	r_pvector_foreach (metas, it) {
+	RIntervalNode **it;
+	R_VEC_FOREACH (metas, it) {
 		RIntervalNode *node = *it;
 		RAnalMetaItem *mi = node->data;
 		switch (mi->type) {
@@ -3722,7 +3722,7 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 			break;
 		}
 	}
-	r_pvector_foreach (metas, it) {
+	R_VEC_FOREACH (metas, it) {
 		RIntervalNode *node = *it;
 		RAnalMetaItem *mi = node->data;
 		ut64 mi_size = r_meta_node_size (node);
@@ -3890,7 +3890,7 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 			break;
 		}
 	}
-	r_pvector_free (metas);
+	RVecIntervalNodePtr_free (metas);
 	return ret;
 }
 
@@ -5758,16 +5758,16 @@ static bool can_emulate_metadata(RCore *core, ut64 at) {
 	// check if there is a meta at the addr that is unemulateable
 	const char *emuskipmeta = r_config_get (core->config, "emu.skip");
 	bool ret = true;
-	RPVector *metas = r_meta_get_all_at (core->anal, at);
-	void **it;
-	r_pvector_foreach (metas, it) {
-		RAnalMetaItem *item = ((RIntervalNode *)*it)->data;
+	RVecIntervalNodePtr *metas = r_meta_get_all_at (core->anal, at);
+	RIntervalNode **it;
+	R_VEC_FOREACH (metas, it) {
+		RAnalMetaItem *item = (*it)->data;
 		if (strchr (emuskipmeta, (char)item->type)) {
 			ret = false;
 			break;
 		}
 	}
-	r_pvector_free (metas);
+	RVecIntervalNodePtr_free (metas);
 	return ret;
 }
 

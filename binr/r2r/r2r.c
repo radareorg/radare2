@@ -26,14 +26,14 @@ typedef struct r2r_state_t {
 	RThreadCond *cond; // signaled from workers to main thread to update status
 	RThreadLock *lock; // protects everything below
 	HtPP *path_left; // char *(path to test file) => ut64 *(count of remaining tests)
-	RPVector completed_paths;
+	RVecConstCharPtr completed_paths;
 	ut64 ok_count;
 	ut64 sk_count;
 	ut64 xx_count;
 	ut64 br_count;
 	ut64 fx_count;
-	RPVector queue;
-	RPVector results;
+	RVecR2RTestPtr queue;
+	RVecR2RTestResultInfoPtr results;
 } R2RState;
 
 static RThreadFunctionRet worker_th(RThread *th);
@@ -42,10 +42,11 @@ static RThreadLock *r2r_print_lock = NULL;
 static void print_state(R2RState *state, ut64 prev_completed);
 static void print_log(R2RState *state, ut64 prev_completed, ut64 prev_paths_completed);
 static void interact(R2RState *state);
-static void interact_fix(R2RTestResultInfo *result, RPVector *fixup_results);
-static void interact_break(R2RTestResultInfo *result, RPVector *fixup_results);
-static void interact_commands(R2RTestResultInfo *result, RPVector *fixup_results);
+static void interact_fix(R2RTestResultInfo *result, RVecR2RTestResultInfoPtr *fixup_results);
+static void interact_break(R2RTestResultInfo *result, RVecR2RTestResultInfoPtr *fixup_results);
+static void interact_commands(R2RTestResultInfo *result, RVecR2RTestResultInfoPtr *fixup_results);
 static void interact_diffchar(R2RTestResultInfo *result);
+static void results_clear(RVecR2RTestResultInfoPtr *vec);
 
 R_IPI const char *getarchos(void) {
 	if (R_SYS_BITS_CHECK (R_SYS_BITS, 64)) {
@@ -55,6 +56,14 @@ R_IPI const char *getarchos(void) {
 		return R_SYS_OS "-" R_SYS_ARCH "_32";
 	}
 	return R_SYS_OS "-" R_SYS_ARCH;
+}
+
+static void results_clear(RVecR2RTestResultInfoPtr *vec) {
+	R2RTestResultInfo **it;
+	R_VEC_FOREACH (vec, it) {
+		r2r_test_result_info_free (*it);
+	}
+	RVecR2RTestResultInfoPtr_clear (vec);
 }
 
 static void parse_skip(const char *arg) {
@@ -531,9 +540,9 @@ int main(int argc, char **argv) {
 		free (json_test_file);
 		return -1;
 	}
-	r_pvector_init (&state.queue, NULL);
-	r_pvector_init (&state.results, (RPVectorFree)r2r_test_result_info_free);
-	r_pvector_init (&state.completed_paths, NULL);
+	RVecR2RTestPtr_init (&state.queue);
+	RVecR2RTestResultInfoPtr_init (&state.results);
+	RVecConstCharPtr_init (&state.completed_paths);
 	if (output_file) {
 		state.test_results = pj_new ();
 		pj_a (state.test_results);
@@ -628,9 +637,9 @@ int main(int argc, char **argv) {
 	}
 
 	R_FREE (cwd);
-	uint32_t loaded_tests = r_pvector_length (&state.db->tests);
+	ut64 loaded_tests = RVecR2RTestPtr_length (&state.db->tests);
 	if (!state.quiet) {
-		printf ("Loaded %u tests.\n", loaded_tests);
+		printf ("Loaded %" PFMT64u " tests.\n", loaded_tests);
 	}
 	if (nothing) {
 		goto coast;
@@ -640,27 +649,26 @@ int main(int argc, char **argv) {
 	if (!jq_available) {
 		R_LOG_INFO ("Skipping json tests because jq is not available");
 		size_t i;
-		for (i = 0; i < r_pvector_length (&state.db->tests);) {
-			R2RTest *test = r_pvector_at (&state.db->tests, i);
+		for (i = 0; i < RVecR2RTestPtr_length (&state.db->tests);) {
+			R2RTest *test = *RVecR2RTestPtr_at (&state.db->tests, i);
 			if (test->type == R2R_TEST_TYPE_JSON) {
 				r2r_test_free (test);
-				r_pvector_remove_at (&state.db->tests, i);
+				RVecR2RTestPtr_remove (&state.db->tests, i);
 				continue;
 			}
 			i++;
 		}
 	}
-	loaded_tests = r_pvector_length (&state.db->tests);
-
-	r_pvector_insert_range (&state.queue, 0, state.db->tests.v.a, r_pvector_length (&state.db->tests));
+	loaded_tests = RVecR2RTestPtr_length (&state.db->tests);
+	RVecR2RTestPtr_append (&state.queue, &state.db->tests, NULL);
 
 	if (log_mode) {
 		// Log mode prints the state after every completed file.
 		// The count of tests left per file is stored in a ht.
 		state.path_left = ht_pp_new (NULL, path_left_free_kv, NULL);
 		if (state.path_left) {
-			void **it;
-			r_pvector_foreach (&state.queue, it) {
+			R2RTest **it;
+			R_VEC_FOREACH (&state.queue, it) {
 				R2RTest *test = *it;
 				ut64 *count = ht_pp_find (state.path_left, test->path, NULL);
 				if (!count) {
@@ -675,8 +683,8 @@ int main(int argc, char **argv) {
 
 	r_th_lock_enter (state.lock);
 
-	RPVector workers;
-	r_pvector_init (&workers, NULL);
+	RVecRThreadPtr workers;
+	RVecRThreadPtr_init (&workers);
 
 	int i;
 	for (i = 0; i < workers_count; i++) {
@@ -692,21 +700,21 @@ int main(int argc, char **argv) {
 			r_th_free (th);
 			exit (-1);
 		}
-		r_pvector_push (&workers, th);
+		RVecRThreadPtr_push_back (&workers, &th);
 	}
 
 	ut64 prev_completed = UT64_MAX;
 	ut64 prev_paths_completed = 0;
 	while (true) {
-		ut64 completed = (ut64)r_pvector_length (&state.results);
+		ut64 completed = RVecR2RTestResultInfoPtr_length (&state.results);
 		if (log_mode) {
 			print_log (&state, prev_completed, prev_paths_completed);
 		} else if (completed != prev_completed) {
 			print_state (&state, prev_completed);
 		}
 		prev_completed = completed;
-		prev_paths_completed = (ut64)r_pvector_length (&state.completed_paths);
-		if (completed == r_pvector_length (&state.db->tests)) {
+		prev_paths_completed = RVecConstCharPtr_length (&state.completed_paths);
+		if (completed == RVecR2RTestPtr_length (&state.db->tests)) {
 			break;
 		}
 		r_th_cond_wait (state.cond, state.lock);
@@ -714,13 +722,13 @@ int main(int argc, char **argv) {
 
 	r_th_lock_leave (state.lock);
 
-	void **it;
-	r_pvector_foreach (&workers, it) {
+	RThread **it;
+	R_VEC_FOREACH (&workers, it) {
 		RThread *th = *it;
 		r_th_wait (th);
 		r_th_free (th);
 	}
-	r_pvector_clear (&workers);
+	RVecRThreadPtr_clear (&workers);
 
 	if (!state.quiet) {
 		printf ("\n");
@@ -757,9 +765,9 @@ int main(int argc, char **argv) {
 	}
 
 coast:
-	r_pvector_clear (&state.queue);
-	r_pvector_clear (&state.results);
-	r_pvector_clear (&state.completed_paths);
+	RVecR2RTestPtr_clear (&state.queue);
+	results_clear (&state.results);
+	RVecConstCharPtr_clear (&state.completed_paths);
 	r2r_test_database_free (state.db);
 	ht_pp_free (state.path_left);
 	r_th_lock_free (state.lock);
@@ -835,10 +843,12 @@ static RThreadFunctionRet worker_th(RThread *th) {
 	R2RState *state = th->user;
 	r_th_lock_enter (state->lock);
 	while (true) {
-		if (r_pvector_empty (&state->queue)) {
+		if (RVecR2RTestPtr_empty (&state->queue)) {
 			break;
 		}
-		R2RTest *test = r_pvector_pop (&state->queue);
+		R2RTest **test_it = RVecR2RTestPtr_last (&state->queue);
+		R2RTest *test = test_it? *test_it: NULL;
+		RVecR2RTestPtr_pop_back (&state->queue);
 		r_th_lock_leave (state->lock);
 		R2RRunConfig *cfg = &state->run_config;
 
@@ -860,7 +870,7 @@ static RThreadFunctionRet worker_th(RThread *th) {
 			result->run_skipped = true;
 		}
 		r_th_lock_enter (state->lock);
-		r_pvector_push (&state->results, result);
+		RVecR2RTestResultInfoPtr_push_back (&state->results, &result);
 
 		if (!result->run_skipped) {
 			switch (result->result) {
@@ -883,7 +893,8 @@ static RThreadFunctionRet worker_th(RThread *th) {
 			if (count) {
 				(*count)--;
 				if (!*count) {
-					r_pvector_push (&state->completed_paths, (void *)test->path);
+					const char *path = test->path;
+					RVecConstCharPtr_push_back (&state->completed_paths, &path);
 				}
 			}
 		}
@@ -1064,14 +1075,11 @@ static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
 
 static void print_new_results(R2RState *state, ut64 prev_completed) {
 	// Detailed test result (with diff if necessary)
-	ut64 completed = (ut64)r_pvector_length (&state->results);
+	ut64 completed = RVecR2RTestResultInfoPtr_length (&state->results);
 	ut64 i;
 	for (i = prev_completed; i < completed; i++) {
-		R2RTestResultInfo *result = r_pvector_at (&state->results, (size_t)i);
-		if (result->run_skipped) {
-			continue;
-		}
-		if (state->test_results) {
+		R2RTestResultInfo *result = *RVecR2RTestResultInfoPtr_at (&state->results, i);
+		if (state->test_results && !result->run_skipped) {
 			test_result_to_json (state->test_results, result);
 		}
 		/* In quiet mode only print failing tests; otherwise follow verbose flag rules */
@@ -1130,8 +1138,8 @@ static void print_state(R2RState *state, ut64 prev_completed) {
 
 	/* [x/x] OK  42 BR  0 ... */
 	printf (R_CONS_CLEAR_LINE);
-	ut64 a = (ut64)r_pvector_length (&state->results);
-	ut64 b = (ut64)r_pvector_length (&state->db->tests);
+	ut64 a = RVecR2RTestResultInfoPtr_length (&state->results);
+	ut64 b = RVecR2RTestPtr_length (&state->db->tests);
 	int w = printf ("[%" PFMT64u "/%" PFMT64u "]", a, b);
 	while (w >= 0 && w < 20) {
 		printf (" ");
@@ -1151,29 +1159,29 @@ static void print_log(R2RState *state, ut64 prev_completed, ut64 prev_paths_comp
 	if (state->quiet) {
 		return;
 	}
-	ut64 paths_completed = r_pvector_length (&state->completed_paths);
-	int a = r_pvector_length (&state->queue);
+	ut64 paths_completed = RVecConstCharPtr_length (&state->completed_paths);
+	int a = (int)RVecR2RTestPtr_length (&state->queue);
 	for (; prev_paths_completed < paths_completed; prev_paths_completed++) {
 		printf ("[%d/%d] %40s ",
 			(int)paths_completed,
 			(int) (a + prev_paths_completed),
-			(const char *)r_pvector_at (&state->completed_paths, prev_paths_completed));
+			*RVecConstCharPtr_at (&state->completed_paths, prev_paths_completed));
 		print_state_counts (state);
 		printf ("\n");
 	}
 }
 
 static void interact(R2RState *state) {
-	void **it;
-	RPVector failed_results;
-	r_pvector_init (&failed_results, NULL);
-	r_pvector_foreach (&state->results, it) {
+	R2RTestResultInfo **it;
+	RVecR2RTestResultInfoPtr failed_results;
+	RVecR2RTestResultInfoPtr_init (&failed_results);
+	R_VEC_FOREACH (&state->results, it) {
 		R2RTestResultInfo *result = *it;
 		if (result->result == R2R_TEST_RESULT_FAILED) {
-			r_pvector_push (&failed_results, result);
+			RVecR2RTestResultInfoPtr_push_back (&failed_results, &result);
 		}
 	}
-	if (r_pvector_empty (&failed_results)) {
+	if (RVecR2RTestResultInfoPtr_empty (&failed_results)) {
 		goto beach;
 	}
 
@@ -1186,13 +1194,13 @@ static void interact(R2RState *state) {
 	printf ("#####################\n");
 	if (use_fancy_stuff) {
 		printf (" %" PFMT64u " failed test(s)" R_UTF8_POLICE_CARS_REVOLVING_LIGHT "\n",
-			(ut64)r_pvector_length (&failed_results));
+			RVecR2RTestResultInfoPtr_length (&failed_results));
 	} else {
-		printf (" %" PFMT64u " failed test(s)\n", (ut64)r_pvector_length (&failed_results));
+		printf (" %" PFMT64u " failed test(s)\n", RVecR2RTestResultInfoPtr_length (&failed_results));
 	}
 	bool always_fix = false;
 
-	r_pvector_foreach (&failed_results, it) {
+	R_VEC_FOREACH (&failed_results, it) {
 		R2RTestResultInfo *result = *it;
 		if (result->test->type != R2R_TEST_TYPE_CMD) {
 			// TODO: other types of tests
@@ -1263,7 +1271,7 @@ static void interact(R2RState *state) {
 	}
 
 beach:
-	r_pvector_clear (&failed_results);
+	RVecR2RTestResultInfoPtr_clear (&failed_results);
 }
 
 static char *format_cmd_kv(const char *key, const char *val) {
@@ -1315,9 +1323,9 @@ static char *replace_lines(const char *src, size_t from, size_t to, const char *
 }
 
 // After editing a test, fix the line numbers previously saved for all the other tests
-static void fixup_tests(RPVector *results, const char *edited_file, ut64 start_line, st64 delta) {
-	void **it;
-	r_pvector_foreach (results, it) {
+static void fixup_tests(RVecR2RTestResultInfoPtr *results, const char *edited_file, ut64 start_line, st64 delta) {
+	R2RTestResultInfo **it;
+	R_VEC_FOREACH (results, it) {
 		R2RTestResultInfo *result = *it;
 		if (result->test->type != R2R_TEST_TYPE_CMD) {
 			continue;
@@ -1355,7 +1363,7 @@ static void fixup_tests(RPVector *results, const char *edited_file, ut64 start_l
 	}
 }
 
-static char *replace_cmd_kv(const char *path, const char *content, size_t line_begin, size_t line_end, const char *key, const char *value, RPVector *fixup_results) {
+static char *replace_cmd_kv(const char *path, const char *content, size_t line_begin, size_t line_end, const char *key, const char *value, RVecR2RTestResultInfoPtr *fixup_results) {
 	char *kv = format_cmd_kv (key, value);
 	if (!kv) {
 		return NULL;
@@ -1375,7 +1383,7 @@ static char *replace_cmd_kv(const char *path, const char *content, size_t line_b
 	return newc;
 }
 
-static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end, const char *key, const char *value, RPVector *fixup_results) {
+static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end, const char *key, const char *value, RVecR2RTestResultInfoPtr *fixup_results) {
 	char *content = r_file_slurp (path, NULL);
 	if (!content) {
 		R_LOG_ERROR ("Failed to read file \"%s\"", path);
@@ -1396,7 +1404,7 @@ static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end
 	free (newc);
 }
 
-static void interact_fix(R2RTestResultInfo *result, RPVector *fixup_results) {
+static void interact_fix(R2RTestResultInfo *result, RVecR2RTestResultInfoPtr *fixup_results) {
 	R_RETURN_IF_FAIL (result->test->type == R2R_TEST_TYPE_CMD);
 	R2RCmdTest *test = result->test->cmd_test;
 	R2RProcessOutput *out = result->proc_out;
@@ -1412,7 +1420,7 @@ static void interact_fix(R2RTestResultInfo *result, RPVector *fixup_results) {
 	}
 }
 
-static void interact_break(R2RTestResultInfo *result, RPVector *fixup_results) {
+static void interact_break(R2RTestResultInfo *result, RVecR2RTestResultInfoPtr *fixup_results) {
 	R_RETURN_IF_FAIL (result->test->type == R2R_TEST_TYPE_CMD);
 	R2RCmdTest *test = result->test->cmd_test;
 	ut64 line_begin, line_end;
@@ -1425,7 +1433,7 @@ static void interact_break(R2RTestResultInfo *result, RPVector *fixup_results) {
 	replace_cmd_kv_file (result->test->path, line_begin, line_end, "BROKEN", "1", fixup_results);
 }
 
-static void interact_commands(R2RTestResultInfo *result, RPVector *fixup_results) {
+static void interact_commands(R2RTestResultInfo *result, RVecR2RTestResultInfoPtr *fixup_results) {
 	R_RETURN_IF_FAIL (result->test->type == R2R_TEST_TYPE_CMD);
 	R2RCmdTest *test = result->test->cmd_test;
 	if (!test->cmds.value) {

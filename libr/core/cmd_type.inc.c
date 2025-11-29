@@ -1048,13 +1048,13 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 			ut64 src_addr = UT64_MAX;
 			ut64 dst_addr = UT64_MAX;
 			RAnalValue *src = NULL;
-			r_vector_foreach (&aop.srcs, src) {
+			R_VEC_FOREACH (&aop.srcs, src) {
 				if (src && src->reg) {
 					src_addr = r_reg_getv (esil->anal->reg, src->reg) + index;
 					src_imm = src->delta;
 				}
 			}
-			RAnalValue *dst = r_vector_at (&aop.dsts, 0);
+			RAnalValue *dst = RVecRArchValue_at (&aop.dsts, 0);
 			if (dst && dst->reg) {
 				dst_addr = r_reg_getv (esil->anal->reg, dst->reg) + index;
 				dst_imm = dst->delta;

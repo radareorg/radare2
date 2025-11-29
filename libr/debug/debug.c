@@ -1199,9 +1199,9 @@ R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 	if (dbg->session && dbg->session->cnum != dbg->session->maxcnum) {
 		bool has_bp = false;
 		RRegItem *ripc = r_reg_get (dbg->reg, "PC", R_REG_TYPE_GPR);
-		RVector *vreg = ht_up_find (dbg->session->registers, ripc->offset | (ripc->arena << 16), NULL);
+		RVecDebugChangeReg *vreg = ht_up_find (dbg->session->registers, ripc->offset | (ripc->arena << 16), NULL);
 		RDebugChangeReg *reg;
-		r_vector_foreach_prev (vreg, reg) {
+		R_VEC_FOREACH_PREV (vreg, reg) {
 			if (reg->cnum <= dbg->session->cnum) {
 				continue;
 			}
@@ -1510,13 +1510,13 @@ R_API bool r_debug_continue_back(RDebug *dbg) {
 	bool has_bp = false;
 
 	RRegItem *ripc = r_reg_get (dbg->reg, "PC", R_REG_TYPE_GPR);
-	RVector *vreg = ht_up_find (dbg->session->registers, ripc->offset | (ripc->arena << 16), NULL);
+	RVecDebugChangeReg *vreg = ht_up_find (dbg->session->registers, ripc->offset | (ripc->arena << 16), NULL);
 	if (!vreg) {
 		R_LOG_ERROR ("cannot find PC change vector");
 		return false;
 	}
 	RDebugChangeReg *reg;
-	r_vector_foreach_prev (vreg, reg) {
+	R_VEC_FOREACH_PREV (vreg, reg) {
 		if (reg->cnum >= dbg->session->cnum) {
 			continue;
 		}

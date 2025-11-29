@@ -550,10 +550,10 @@ static const char *parse_reg_name(csh handle, cs_insn *insn, int reg_num) {
 }
 
 static void create_src_dst(RAnalOp *op) {
-	r_vector_push (&op->srcs, NULL);
-	r_vector_push (&op->srcs, NULL);
-	r_vector_push (&op->srcs, NULL);
-	r_vector_push (&op->dsts, NULL);
+	RVecRArchValue_emplace_back (&op->srcs);
+	RVecRArchValue_emplace_back (&op->srcs);
+	RVecRArchValue_emplace_back (&op->srcs);
+	RVecRArchValue_emplace_back (&op->dsts);
 }
 
 static void set_src_dst(RAnalValue *val, csh *handle, cs_insn *insn, int x) {
@@ -575,10 +575,10 @@ static void set_src_dst(RAnalValue *val, csh *handle, cs_insn *insn, int x) {
 
 static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
 	create_src_dst (op);
-	RAnalValue *src0 = r_vector_index_ptr (&op->srcs, 0);
-	RAnalValue *src1 = r_vector_index_ptr (&op->srcs, 1);
-	RAnalValue *src2 = r_vector_index_ptr (&op->srcs, 2);
-	RAnalValue *dst = r_vector_index_ptr (&op->dsts, 0);
+	RAnalValue *src0 = RVecRArchValue_at (&op->srcs, 0);
+	RAnalValue *src1 = RVecRArchValue_at (&op->srcs, 1);
+	RAnalValue *src2 = RVecRArchValue_at (&op->srcs, 2);
+	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_MOV:
 	case R_ANAL_OP_TYPE_CMP:

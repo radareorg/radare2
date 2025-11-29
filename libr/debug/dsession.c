@@ -3,33 +3,33 @@
 #include <r_debug.h>
 #include <r_util/r_json.h>
 
-#define CMP_CNUM_REG(x, y) ((x) >= ((RDebugChangeReg *)y)->cnum ? 1 : -1)
-#define CMP_CNUM_MEM(x, y) ((x) >= ((RDebugChangeMem *)y)->cnum ? 1 : -1)
-#define CMP_CNUM_CHKPT(x, y) ((x) >= ((RDebugCheckpoint *)y)->cnum ? 1 : -1)
+static int cmp_cnum_reg(const RDebugChangeReg *a, const RDebugChangeReg *b) {
+	return (a->cnum > b->cnum) - (a->cnum < b->cnum);
+}
+
+static int cmp_cnum_mem(const RDebugChangeMem *a, const RDebugChangeMem *b) {
+	return (a->cnum > b->cnum) - (a->cnum < b->cnum);
+}
+
+static int cmp_cnum_chkpt(const RDebugCheckpoint *a, const RDebugCheckpoint *b) {
+	return (a->cnum > b->cnum) - (a->cnum < b->cnum);
+}
 
 R_API void r_debug_session_free(RDebugSession *session) {
 	if (session) {
-		r_vector_free (session->checkpoints);
+		RVecDebugCheckpoint_free (session->checkpoints);
 		ht_up_free (session->registers);
 		ht_up_free (session->memory);
 		free (session);
 	}
 }
 
-static void r_debug_checkpoint_fini(void *element, void *user) {
-	RDebugCheckpoint *checkpoint = element;
-	size_t i;
-	for (i = 0; i < R_REG_TYPE_LAST; i++) {
-		r_reg_arena_free (checkpoint->arena[i]);
-	}
-	// causes double free in RDebug.free with this reproducer:
-	// lldb -- r2 -NAdq -c 'db main;dts+;db;dc;pd-- 2' /bin/ls
-	// r_list_free (checkpoint->snaps);
-	checkpoint->snaps = NULL;
+static void htup_vec_reg_free(HtUPKv *kv) {
+	RVecDebugChangeReg_free ((RVecDebugChangeReg *)kv->value);
 }
 
-static void htup_vector_free(HtUPKv *kv) {
-	r_vector_free (kv->value);
+static void htup_vec_mem_free(HtUPKv *kv) {
+	RVecDebugChangeMem_free ((RVecDebugChangeMem *)kv->value);
 }
 
 R_API RDebugSession *r_debug_session_new(void) {
@@ -38,17 +38,17 @@ R_API RDebugSession *r_debug_session_new(void) {
 		return NULL;
 	}
 
-	session->checkpoints = r_vector_new (sizeof (RDebugCheckpoint), r_debug_checkpoint_fini, NULL);
+	session->checkpoints = RVecDebugCheckpoint_new ();
 	if (!session->checkpoints) {
 		r_debug_session_free (session);
 		return NULL;
 	}
-	session->registers = ht_up_new (NULL, htup_vector_free, NULL);
+	session->registers = ht_up_new (NULL, htup_vec_reg_free, NULL);
 	if (!session->registers) {
 		r_debug_session_free (session);
 		return NULL;
 	}
-	session->memory = ht_up_new (NULL, htup_vector_free, NULL);
+	session->memory = ht_up_new (NULL, htup_vec_mem_free, NULL);
 	if (!session->memory) {
 		r_debug_session_free (session);
 		return NULL;
@@ -91,7 +91,7 @@ R_API bool r_debug_add_checkpoint(RDebug *dbg) {
 	}
 
 	checkpoint.cnum = dbg->session->cnum;
-	r_vector_push (dbg->session->checkpoints, &checkpoint);
+	RVecDebugCheckpoint_push_back (dbg->session->checkpoints, &checkpoint);
 
 	// Add PC register change so we can check for breakpoints when continue [back]
 	RRegItem *ripc = r_reg_get (dbg->reg, "PC", R_REG_TYPE_GPR);
@@ -115,14 +115,13 @@ static void _set_initial_registers(RDebug *dbg) {
 }
 
 static void _set_register(RDebug *dbg, RRegItem *ri, ut32 cnum) {
-	RVector *vreg = ht_up_find (dbg->session->registers, ri->offset | (ri->arena << 16), NULL);
+	RVecDebugChangeReg *vreg = ht_up_find (dbg->session->registers, ri->offset | (ri->arena << 16), NULL);
 	if (!vreg) {
 		return;
 	}
-	size_t index;
-	r_vector_upper_bound (vreg, cnum, index, CMP_CNUM_REG);
-	if (index > 0 && index <= vreg->len) {
-		RDebugChangeReg *reg = r_vector_index_ptr (vreg, index - 1);
+	ut64 index = RVecDebugChangeReg_upper_bound (vreg, &(RDebugChangeReg){ (int)cnum, 0 }, cmp_cnum_reg);
+	if (index > 0 && index <= RVecDebugChangeReg_length (vreg)) {
+		RDebugChangeReg *reg = RVecDebugChangeReg_at (vreg, index - 1);
 		if (reg->cnum > dbg->session->cur_chkpt->cnum) {
 			r_reg_set_value (dbg->reg, ri, reg->data);
 		}
@@ -147,13 +146,12 @@ static void _set_initial_memory(RDebug *dbg) {
 }
 
 static bool _restore_memory_cb(void *user, const ut64 key, const void *value) {
-	size_t index;
 	RDebug *dbg = user;
-	RVector *vmem = (RVector *)value;
+	RVecDebugChangeMem *vmem = (RVecDebugChangeMem *)value;
 
-	r_vector_upper_bound (vmem, dbg->session->cnum, index, CMP_CNUM_MEM);
-	if (index > 0 && index <= vmem->len) {
-		RDebugChangeMem *mem = r_vector_index_ptr (vmem, index - 1);
+	ut64 index = RVecDebugChangeMem_upper_bound (vmem, &(RDebugChangeMem){ (int)dbg->session->cnum, 0 }, cmp_cnum_mem);
+	if (index > 0 && index <= RVecDebugChangeMem_length (vmem)) {
+		RDebugChangeMem *mem = RVecDebugChangeMem_at (vmem, index - 1);
 		if (mem->cnum > dbg->session->cur_chkpt->cnum) {
 			dbg->iob.write_at (dbg->iob.io, key, &mem->data, 1);
 		}
@@ -168,10 +166,9 @@ static void _restore_memory(RDebug *dbg, ut32 cnum) {
 
 static RDebugCheckpoint *_get_checkpoint_before(RDebugSession *session, ut32 cnum) {
 	RDebugCheckpoint *checkpoint = NULL;
-	size_t index;
-	r_vector_upper_bound (session->checkpoints, cnum, index, CMP_CNUM_CHKPT);
-	if (index > 0 && index <= session->checkpoints->len) {
-		checkpoint = r_vector_index_ptr (session->checkpoints, index - 1);
+	ut64 index = RVecDebugCheckpoint_upper_bound (session->checkpoints, &(RDebugCheckpoint){ (int)cnum, {0}, NULL }, cmp_cnum_chkpt);
+	if (index > 0 && index <= RVecDebugCheckpoint_length (session->checkpoints)) {
+		checkpoint = RVecDebugCheckpoint_at (session->checkpoints, index - 1);
 	}
 	return checkpoint;
 }
@@ -213,9 +210,9 @@ R_API void r_debug_session_list_memory(RDebug *dbg) {
 }
 
 R_API bool r_debug_session_add_reg_change(RDebugSession *session, int arena, ut64 offset, ut64 data) {
-	RVector *vreg = ht_up_find (session->registers, offset | (arena << 16), NULL);
+	RVecDebugChangeReg *vreg = ht_up_find (session->registers, offset | (arena << 16), NULL);
 	if (!vreg) {
-		vreg = r_vector_new (sizeof (RDebugChangeReg), NULL, NULL);
+		vreg = RVecDebugChangeReg_new ();
 		if (!vreg) {
 			R_LOG_ERROR ("creating a register vector");
 			return false;
@@ -223,14 +220,14 @@ R_API bool r_debug_session_add_reg_change(RDebugSession *session, int arena, ut6
 		ht_up_insert (session->registers, offset | (arena << 16), vreg);
 	}
 	RDebugChangeReg reg = { session->cnum, data };
-	r_vector_push (vreg, &reg);
+	RVecDebugChangeReg_push_back (vreg, &reg);
 	return true;
 }
 
 R_API bool r_debug_session_add_mem_change(RDebugSession *session, ut64 addr, ut8 data) {
-	RVector *vmem = ht_up_find (session->memory, addr, NULL);
+	RVecDebugChangeMem *vmem = ht_up_find (session->memory, addr, NULL);
 	if (!vmem) {
-		vmem = r_vector_new (sizeof (RDebugChangeMem), NULL, NULL);
+		vmem = RVecDebugChangeMem_new ();
 		if (!vmem) {
 			R_LOG_ERROR ("creating a memory vector");
 			return false;
@@ -238,7 +235,7 @@ R_API bool r_debug_session_add_mem_change(RDebugSession *session, ut64 addr, ut8
 		ht_up_insert (session->memory, addr, vmem);
 	}
 	RDebugChangeMem mem = { session->cnum, data };
-	r_vector_push (vmem, &mem);
+	RVecDebugChangeMem_push_back (vmem, &mem);
 	return true;
 }
 
@@ -247,14 +244,14 @@ R_API bool r_debug_session_add_mem_change(RDebugSession *session, ut64 addr, ut8
 // 0x<addr>=[<RDebugChangeReg>]
 static bool serialize_register_cb(void *db, const ut64 k, const void *v) {
 	RDebugChangeReg *reg;
-	RVector *vreg = (RVector *)v;
+	RVecDebugChangeReg *vreg = (RVecDebugChangeReg *)v;
 	PJ *j = pj_new ();
 	if (!j) {
 		return false;
 	}
 	pj_a (j);
 
-	r_vector_foreach (vreg, reg) {
+	R_VEC_FOREACH (vreg, reg) {
 		pj_o (j);
 		pj_kN (j, "cnum", reg->cnum);
 		pj_kn (j, "data", reg->data);
@@ -275,14 +272,14 @@ static void serialize_registers(Sdb *db, HtUP *registers) {
 // 0x<addr>={ "size":<size_t>, "a":[<RDebugChangeMem>]}},
 static bool serialize_memory_cb(void *db, const ut64 k, const void *v) {
 	RDebugChangeMem *mem;
-	RVector *vmem = (RVector *)v;
+	RVecDebugChangeMem *vmem = (RVecDebugChangeMem *)v;
 	PJ *j = pj_new ();
 	if (!j) {
 		return false;
 	}
 	pj_a (j);
 
-	r_vector_foreach (vmem, mem) {
+	R_VEC_FOREACH (vmem, mem) {
 		pj_o (j);
 		pj_kN (j, "cnum", mem->cnum);
 		pj_kn (j, "data", mem->data);
@@ -300,13 +297,13 @@ static void serialize_memory(Sdb *db, HtUP *memory) {
 	ht_up_foreach (memory, serialize_memory_cb, db);
 }
 
-static void serialize_checkpoints(Sdb *db, RVector *checkpoints) {
+static void serialize_checkpoints(Sdb *db, RVecDebugCheckpoint *checkpoints) {
 	size_t i;
 	RDebugCheckpoint *chkpt;
 	RDebugSnap *snap;
 	RListIter *iter;
 
-	r_vector_foreach (checkpoints, chkpt) {
+	R_VEC_FOREACH (checkpoints, chkpt) {
 		// 0x<cnum>={
 		//   registers:{ "<RRegisterType>":<RRegArena>, ...},
 		//   snaps:{ "size":<size_t>, "a":[<RDebugSnap>]}
@@ -476,9 +473,9 @@ static bool deserialize_memory_cb(void *user, const char *addr, const char *v) {
 
 	HtUP *memory = user;
 	// Insert a new vector into `memory` HtUP at `addr`
-	RVector *vmem = r_vector_new (sizeof (RDebugChangeMem), NULL, NULL);
+	RVecDebugChangeMem *vmem = RVecDebugChangeMem_new ();
 	if (!vmem) {
-		R_LOG_ERROR ("failed to allocate RVector vmem");
+		R_LOG_ERROR ("failed to allocate RVecDebugChangeMem vmem");
 		free (json_str);
 		r_json_free (reg_json);
 		return false;
@@ -494,13 +491,13 @@ static bool deserialize_memory_cb(void *user, const char *addr, const char *v) {
 		CHECK_TYPE (baby, R_JSON_INTEGER);
 		int cnum = baby->num.s_value;
 
-		baby = r_json_get (child, "data");
-		CHECK_TYPE (baby, R_JSON_INTEGER);
-		ut64 data = baby->num.u_value;
+	baby = r_json_get (child, "data");
+	CHECK_TYPE (baby, R_JSON_INTEGER);
+	ut64 data = baby->num.u_value;
 
-		RDebugChangeMem mem = { cnum, data };
-		r_vector_push (vmem, &mem);
-	}
+	RDebugChangeMem mem = { cnum, data };
+	RVecDebugChangeMem_push_back (vmem, &mem);
+}
 
 	free (json_str);
 	r_json_free (reg_json);
@@ -525,9 +522,9 @@ static bool deserialize_registers_cb(void *user, const char *addr, const char *v
 
 	// Insert a new vector into `registers` HtUP at `addr`
 	HtUP *registers = user;
-	RVector *vreg = r_vector_new (sizeof (RDebugChangeReg), NULL, NULL);
+	RVecDebugChangeReg *vreg = RVecDebugChangeReg_new ();
 	if (!vreg) {
-		R_LOG_ERROR ("failed to allocate RVector vreg");
+		R_LOG_ERROR ("failed to allocate RVecDebugChangeReg vreg");
 		r_json_free (reg_json);
 		free (json_str);
 		return true;
@@ -543,13 +540,13 @@ static bool deserialize_registers_cb(void *user, const char *addr, const char *v
 		CHECK_TYPE (baby, R_JSON_INTEGER);
 		int cnum = baby->num.s_value;
 
-		baby = r_json_get (child, "data");
-		CHECK_TYPE (baby, R_JSON_INTEGER);
-		ut64 data = baby->num.u_value;
+	baby = r_json_get (child, "data");
+	CHECK_TYPE (baby, R_JSON_INTEGER);
+	ut64 data = baby->num.u_value;
 
-		RDebugChangeReg reg = { cnum, data };
-		r_vector_push (vreg, &reg);
-	}
+	RDebugChangeReg reg = { cnum, data };
+	RVecDebugChangeReg_push_back (vreg, &reg);
+}
 
 	r_json_free (reg_json);
 	free (json_str);
@@ -572,7 +569,7 @@ static bool deserialize_checkpoints_cb(void *user, const char *cnum, const char 
 		return true;
 	}
 
-	RVector *checkpoints = user;
+	RVecDebugCheckpoint *checkpoints = user;
 	RDebugCheckpoint checkpoint = {0};
 	checkpoint.cnum = (int)sdb_atoi (cnum);
 
@@ -653,11 +650,11 @@ static bool deserialize_checkpoints_cb(void *user, const char *cnum, const char 
 end:
 	free (json_str);
 	r_json_free (chkpt_json);
-	r_vector_push (checkpoints, &checkpoint);
+	RVecDebugCheckpoint_push_back (checkpoints, &checkpoint);
 	return true;
 }
 
-static void deserialize_checkpoints(Sdb *db, RVector *checkpoints) {
+static void deserialize_checkpoints(Sdb *db, RVecDebugCheckpoint *checkpoints) {
 	sdb_foreach (db, deserialize_checkpoints_cb, checkpoints);
 }
 

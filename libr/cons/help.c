@@ -1,6 +1,9 @@
 /* radare2 - LGPL - Copyright 2008-2025 - pancake */
 
 #include <r_cons.h>
+#include <r_vec.h>
+
+R_VEC_TYPE (RVecInt, int);
 
 // TODO: deprecate
 R_API void r_cons_cmd_help_json(RCons *cons, RCoreHelpMessage help) {
@@ -127,7 +130,7 @@ R_API void r_cons_cmd_help(RCons *cons, RCoreHelpMessage help, bool use_color) {
  * For example, ("pd", 'r', false) matches both `pdr` and `pdr.`.
  */
 R_API int r_cons_cmd_help_match(RCons *cons, RCoreHelpMessage help, bool use_color, const char * R_NONNULL cmd, char spec, bool exact) {
-	RVector/*<int>*/ *match_indices = r_vector_new (sizeof (int), NULL, NULL);
+	RVecInt *match_indices = RVecInt_new ();
 	int *current_index_ptr;
 	size_t matches_copied;
 	size_t i;
@@ -136,17 +139,18 @@ R_API int r_cons_cmd_help_match(RCons *cons, RCoreHelpMessage help, bool use_col
 	/* Collect matching indices */
 	for (i = 0; help[i]; i += 3) {
 		if (exact? (bool)!strcmp (help[i], search_cmd): (bool)strstr (help[i], search_cmd)) {
-			r_vector_push (match_indices, &i);
+			int index = (int)i;
+			RVecInt_push_back (match_indices, &index);
 		}
 	}
 
 	/* Leave if no matches */
-	size_t num_matches = r_vector_length (match_indices);
+	size_t num_matches = RVecInt_length (match_indices);
 	char **matches = NULL;
 	if (num_matches > 0) {
 		matches = R_NEWS (char *, (3 * num_matches) + 1);
 		matches_copied = 0;
-		r_vector_foreach (match_indices, current_index_ptr) {
+		R_VEC_FOREACH (match_indices, current_index_ptr) {
 			int current_index = *current_index_ptr;
 			for (i = 0; i < 3; i++) {
 				matches[matches_copied++] = (char *)help[current_index++];
@@ -156,7 +160,7 @@ R_API int r_cons_cmd_help_match(RCons *cons, RCoreHelpMessage help, bool use_col
 		r_cons_cmd_help (cons, (const char * const *)matches, use_color);
 	}
 	free (matches);
-	r_vector_free (match_indices);
+	RVecInt_free (match_indices);
 	free (search_cmd);
 	return num_matches;
 }

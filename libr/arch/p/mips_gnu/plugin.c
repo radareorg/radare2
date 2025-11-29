@@ -1653,7 +1653,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			insn.id = MIPS_INS_LUI;
 			snprintf ((char *)insn.i_reg.imm, REG_BUF_MAX, "0x%" PFMT32x, imm);
-			dst = r_vector_push (&op->dsts, NULL);
+			dst = RVecRArchValue_emplace_back (&op->dsts);
 #if 0
 			dst->reg = r_reg_get (as->reg, mips_reg_decode (rt), R_REG_TYPE_GPR);
 #else
@@ -1665,14 +1665,14 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case 9: // addiu
 			insn.id = MIPS_INS_ADDIU;
 			op->type = R_ANAL_OP_TYPE_ADD;
-			dst = r_vector_push (&op->dsts, NULL);
+			dst = RVecRArchValue_emplace_back (&op->dsts);
 #if 0
 			dst->reg = r_reg_get (as->reg, mips_reg_decode (rt), R_REG_TYPE_GPR);
 #else
 			dst->reg = NULL;
 #endif
 			// TODO: currently there is no way for the macro to get access to this register
-			src = r_vector_push (&op->srcs, NULL);
+			src = RVecRArchValue_emplace_back (&op->srcs);
 #if 0
 			src->reg = r_reg_get (as->reg, mips_reg_decode (rs), R_REG_TYPE_GPR);
 #else

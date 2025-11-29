@@ -410,10 +410,10 @@ R_API char *r_anal_op_tostring(RAnal *anal, RAnalOp *op) {
 	RAnalFunction *f;
 	char *cstr, ret[128];
 	char *r0, *a0, *a1;
-	if (op->dsts.len || op->srcs.len) {
-		RAnalValue *dst = r_vector_at (&op->dsts, 0);
-		RAnalValue *src0 = r_vector_at (&op->srcs, 0);
-		RAnalValue *src1 = r_vector_at (&op->srcs, 1);
+	if (!RVecRArchValue_empty (&op->dsts) || !RVecRArchValue_empty (&op->srcs)) {
+		RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
+		RAnalValue *src0 = RVecRArchValue_at (&op->srcs, 0);
+		RAnalValue *src1 = RVecRArchValue_at (&op->srcs, 1);
 		r0 = r_anal_value_tostring (dst);
 		a0 = r_anal_value_tostring (src0);
 		a1 = r_anal_value_tostring (src1);
@@ -715,11 +715,11 @@ R_API int r_anal_op_reg_delta(RAnal *anal, ut64 addr, const char *name) {
 	RAnalOp op = {0};
 	RAnalValue *dst = NULL;
 	if (r_anal_op (anal, &op, addr, buf, sizeof (buf), R_ARCH_OP_MASK_ALL) > 0) {
-		dst = r_vector_at (&op.dsts, 0);
+		dst = RVecRArchValue_at (&op.dsts, 0);
 		if (dst && dst->reg && (!name || !strcmp (dst->reg, name))) {
-			if (r_vector_length (&op.srcs) > 0) {
+			if (RVecRArchValue_length (&op.srcs) > 0) {
 				r_anal_op_fini (&op);
-				return ((RAnalValue*)r_vector_at (&op.srcs, 0))->delta;
+				return ((RAnalValue*)RVecRArchValue_at (&op.srcs, 0))->delta;
 			}
 		}
 	}

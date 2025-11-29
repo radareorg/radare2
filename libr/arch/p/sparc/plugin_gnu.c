@@ -343,39 +343,36 @@ static st64 get_immed_sgnext(const ut64 insn, const ut8 nbit) {
 }
 
 static RAnalValue *value_fill_addr_pc_disp(const ut64 addr, const st64 disp) {
-	return NULL;
-#if 0
 	RAnalValue *val = r_anal_value_new();
 	val->base = addr + disp;
 	return val;
-#endif
 }
 
 static RAnalValue * value_fill_addr_reg_regdelta(RArchSession *as, const int ireg, const int iregdelta) {
 	return NULL;
-#if 0
+/*
 	RAnalValue *val = r_anal_value_new ();
 	val->reg = r_reg_get (anal->reg, gpr_regs[ireg], R_REG_TYPE_GPR);
 	val->reg = r_reg_get (anal->reg, gpr_regs[iregdelta], R_REG_TYPE_GPR);
 	return val;
-#endif
+*/
 }
 
 static RAnalValue * value_fill_addr_reg_disp(RArchSession *as, const int ireg, const st64 disp) {
 	return NULL;
-#if 0
+/*
 	RAnalValue *val = r_anal_value_new();
 	val->reg = r_reg_get(anal->reg, gpr_regs[ireg], R_REG_TYPE_GPR);
 	val->delta = disp;
 	return val;
-#endif
+*/
 }
 
 static void anal_call(RAnalOp *op, const ut32 insn, const ut64 addr) {
 	const st64 disp = (get_immed_sgnext(insn, 29) * 4);
 	op->type = R_ANAL_OP_TYPE_CALL;
 	RAnalValue *val = value_fill_addr_pc_disp (addr, disp);
-	r_vector_push (&op->dsts, val);
+	RVecRArchValue_push_back (&op->dsts, val);
 	r_anal_value_free (val);
 	op->jump = addr + disp;
 	op->fail = addr + 4;
@@ -403,7 +400,7 @@ static void anal_jmpl(RArchSession *as, RAnalOp *op, const ut32 insn, const ut64
 	} else {
 		val = value_fill_addr_reg_regdelta (as, X_RS1 (insn), X_RS2 (insn));
 	}
-	r_vector_push (&op->dsts, val);
+	RVecRArchValue_push_back (&op->dsts, val);
 	r_anal_value_free (val);
 }
 
@@ -439,7 +436,7 @@ static void anal_branch(RAnalOp *op, const ut32 insn, const ut64 addr) {
 		disp = get_immed_sgnext (X_DISP16 (insn), 15) * 4;
 	}
 	RAnalValue *val = value_fill_addr_pc_disp (addr, disp);
-	r_vector_push (&op->dsts, val);
+	RVecRArchValue_push_back (&op->dsts, val);
 	r_anal_value_free (val);
 	op->jump = addr + disp;
 }

@@ -5,6 +5,7 @@
 #include <r_core.h>
 
 R_VEC_TYPE(RVecAnalRef, RAnalRef);
+R_VEC_TYPE(RVecAnalBlockPtr, RAnalBlock *);
 
 typedef struct recurse_depth_first_ctx_t {
 	RAnalBlock *bb;
@@ -477,7 +478,7 @@ R_API bool r_anal_block_successor_addrs_foreach(RAnalBlock *block, RAnalAddrCb c
 
 typedef struct r_anal_block_recurse_context_t {
 	RAnal *anal;
-	RPVector /*<RAnalBlock>*/ to_visit;
+	RVecAnalBlockPtr /*<RAnalBlock>*/ to_visit;
 	HtUP *visited;
 } RAnalBlockRecurseContext;
 
@@ -492,7 +493,7 @@ static bool block_recurse_successor_cb(ut64 addr, void *user) {
 	if (!block) {
 		return true;
 	}
-	r_pvector_push (&ctx->to_visit, block);
+	RVecAnalBlockPtr_push_back (&ctx->to_visit, &block);
 	return true;
 }
 
@@ -500,17 +501,19 @@ R_API bool r_anal_block_recurse(RAnalBlock *block, RAnalBlockCb cb, void *user) 
 	bool breaked = false;
 	RAnalBlockRecurseContext ctx;
 	ctx.anal = block->anal;
-	r_pvector_init (&ctx.to_visit, NULL);
+	RVecAnalBlockPtr_init (&ctx.to_visit);
 	ctx.visited = ht_up_new0 ();
 	if (!ctx.visited) {
 		goto beach;
 	}
 
 	ht_up_insert (ctx.visited, block->addr, NULL);
-	r_pvector_push (&ctx.to_visit, block);
+	RVecAnalBlockPtr_push_back (&ctx.to_visit, &block);
 
-	while (!r_pvector_empty (&ctx.to_visit)) {
-		RAnalBlock *cur = r_pvector_pop (&ctx.to_visit);
+	while (!RVecAnalBlockPtr_empty (&ctx.to_visit)) {
+		RAnalBlock **cur_slot = RVecAnalBlockPtr_last (&ctx.to_visit);
+		RAnalBlock *cur = cur_slot? *cur_slot: NULL;
+		RVecAnalBlockPtr_pop_back (&ctx.to_visit);
 		breaked = !cb (cur, user);
 		if (breaked) {
 			break;
@@ -520,7 +523,7 @@ R_API bool r_anal_block_recurse(RAnalBlock *block, RAnalBlockCb cb, void *user) 
 
 beach:
 	ht_up_free (ctx.visited);
-	r_pvector_clear (&ctx.to_visit);
+	RVecAnalBlockPtr_clear (&ctx.to_visit);
 	return !breaked;
 }
 
@@ -528,19 +531,21 @@ R_API bool r_anal_block_recurse_followthrough(RAnalBlock *block, RAnalBlockCb cb
 	bool breaked = false;
 	RAnalBlockRecurseContext ctx;
 	ctx.anal = block->anal;
-	r_pvector_init (&ctx.to_visit, NULL);
+	RVecAnalBlockPtr_init (&ctx.to_visit);
 	ctx.visited = ht_up_new0 ();
 	if (!ctx.visited) {
 		goto beach;
 	}
 
 	ht_up_insert (ctx.visited, block->addr, NULL);
-	r_pvector_push (&ctx.to_visit, block);
+	RVecAnalBlockPtr_push_back (&ctx.to_visit, &block);
 
 	RCore *core = ctx.anal->coreb.core;
 	RCons *cons = core->cons;
-	while (!r_pvector_empty (&ctx.to_visit) && !r_cons_is_breaked (cons)) {
-		RAnalBlock *cur = r_pvector_pop (&ctx.to_visit);
+	while (!RVecAnalBlockPtr_empty (&ctx.to_visit) && !r_cons_is_breaked (cons)) {
+		RAnalBlock **cur_slot = RVecAnalBlockPtr_last (&ctx.to_visit);
+		RAnalBlock *cur = cur_slot? *cur_slot: NULL;
+		RVecAnalBlockPtr_pop_back (&ctx.to_visit);
 		if (cb (cur, user)) {
 			r_anal_block_successor_addrs_foreach (cur, block_recurse_successor_cb, &ctx);
 		} else {
@@ -550,7 +555,7 @@ R_API bool r_anal_block_recurse_followthrough(RAnalBlock *block, RAnalBlockCb cb
 
 beach:
 	ht_up_free (ctx.visited);
-	r_pvector_clear (&ctx.to_visit);
+	RVecAnalBlockPtr_clear (&ctx.to_visit);
 	return !breaked;
 }
 
@@ -679,7 +684,7 @@ typedef struct {
 	RAnal *anal;
 	RAnalBlock *cur_parent;
 	ut64 dst;
-	RPVector /*<RAnalBlock>*/ *next_visit; // accumulate block of the next level in the tree
+	RVecAnalBlockPtr /*<RAnalBlock>*/ *next_visit; // accumulate block of the next level in the tree
 	HtUP /*<RAnalBlock>*/ *visited; // maps addrs to their previous block (or NULL for entry)
 } PathContext;
 
@@ -692,7 +697,7 @@ static bool shortest_path_successor_cb(ut64 addr, void *user) {
 	ht_up_insert (ctx->visited, addr, ctx->cur_parent);
 	RAnalBlock *block = r_anal_get_block_at (ctx->anal, addr);
 	if (block) {
-		r_pvector_push (ctx->next_visit, block);
+		RVecAnalBlockPtr_push_back (ctx->next_visit, &block);
 	}
 	return addr != ctx->dst; // break if we found our destination
 }
@@ -722,7 +727,7 @@ static bool add_refs(RAnalBlock *block, PathContext *ctx) {
 				ht_up_insert (ctx->visited, target, block);
 				RAnalBlock *target_block = r_anal_get_block_at (ctx->anal, target);
 				if (target_block) {
-					r_pvector_push (ctx->next_visit, target_block);
+					RVecAnalBlockPtr_push_back (ctx->next_visit, &target_block);
 				}
 				if (target == ctx->dst) {
 					RVecAnalRef_free (refs);
@@ -755,12 +760,12 @@ R_API RList /*<RAnalBlock *>*/ *R_NULLABLE r_anal_block_shortest_path(RAnalBlock
 	ctx.dst = dstbb_addr;
 
 	// two vectors to swap cur_visit/next_visit
-	RPVector visit_a;
-	r_pvector_init (&visit_a, NULL);
-	RPVector visit_b;
-	r_pvector_init (&visit_b, NULL);
+	RVecAnalBlockPtr visit_a;
+	RVecAnalBlockPtr_init (&visit_a);
+	RVecAnalBlockPtr visit_b;
+	RVecAnalBlockPtr_init (&visit_b);
 	ctx.next_visit = &visit_a;
-	RPVector *cur_visit = &visit_b; // cur visit is the current level in the tree
+	RVecAnalBlockPtr *cur_visit = &visit_b; // cur visit is the current level in the tree
 
 	ctx.visited = ht_up_new0 ();
 	if (!ctx.visited) {
@@ -768,18 +773,18 @@ R_API RList /*<RAnalBlock *>*/ *R_NULLABLE r_anal_block_shortest_path(RAnalBlock
 	}
 
 	ht_up_insert (ctx.visited, block->addr, NULL);
-	r_pvector_push (cur_visit, block);
+	RVecAnalBlockPtr_push_back (cur_visit, &block);
 
 	RCore *core = ctx.anal->coreb.core;
 	RCons *cons = core? core->cons: NULL;
 
 	// BFS
-	while (!r_pvector_empty (cur_visit)) {
+	while (!RVecAnalBlockPtr_empty (cur_visit)) {
 		if (cons && r_cons_is_breaked (cons)) {
 			goto beach;
 		}
-		void **it;
-		r_pvector_foreach (cur_visit, it) {
+		RAnalBlock **it;
+		R_VEC_FOREACH (cur_visit, it) {
 			RAnalBlock *cur = *it;
 			ctx.cur_parent = cur;
 			// Add block successors (jump/fail/switch edges)
@@ -788,10 +793,10 @@ R_API RList /*<RAnalBlock *>*/ *R_NULLABLE r_anal_block_shortest_path(RAnalBlock
 				goto done_bfs;
 			}
 		}
-		RPVector *tmp = cur_visit;
+		RVecAnalBlockPtr *tmp = cur_visit;
 		cur_visit = ctx.next_visit;
 		ctx.next_visit = tmp;
-		r_pvector_clear (ctx.next_visit);
+		RVecAnalBlockPtr_clear (ctx.next_visit);
 	}
 
 done_bfs: {
@@ -813,8 +818,8 @@ done_bfs: {
 
 beach:
 	ht_up_free (ctx.visited);
-	r_pvector_clear (&visit_a);
-	r_pvector_clear (&visit_b);
+	RVecAnalBlockPtr_clear (&visit_a);
+	RVecAnalBlockPtr_clear (&visit_b);
 	return ret;
 }
 

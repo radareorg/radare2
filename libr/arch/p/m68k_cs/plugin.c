@@ -225,11 +225,11 @@ static void op_fillval(PluginData *pd, RAnalOp *op, csh handle, cs_insn *insn) {
 	case R_ANAL_OP_TYPE_MOV:
 		ZERO_FILL (pd->reg);
 		if (OPERAND(1).type == M68K_OP_MEM) {
-			src = r_vector_push (&op->srcs, NULL);
+			src = RVecRArchValue_emplace_back (&op->srcs);
 			src->reg = parse_reg_name (handle, insn, 1);
 			src->delta = OPERAND(0).mem.disp;
 		} else if (OPERAND(0).type == M68K_OP_MEM) {
-			dst = r_vector_push (&op->dsts, NULL);
+			dst = RVecRArchValue_emplace_back (&op->dsts);
 			dst->reg = parse_reg_name (handle, insn, 0);
 			dst->delta = OPERAND(1).mem.disp;
 		}
@@ -237,7 +237,7 @@ static void op_fillval(PluginData *pd, RAnalOp *op, csh handle, cs_insn *insn) {
 	case R_ANAL_OP_TYPE_LEA:
 		ZERO_FILL (pd->reg);
 		if (OPERAND(1).type == M68K_OP_MEM) {
-			dst = r_vector_push (&op->dsts, NULL);
+			dst = RVecRArchValue_emplace_back (&op->dsts);
 			dst->reg = parse_reg_name (handle, insn, 1);
 			dst->delta = OPERAND(1).mem.disp;
 		}
