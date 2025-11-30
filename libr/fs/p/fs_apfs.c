@@ -63,6 +63,9 @@
 // Block and container sizes
 #define APFS_NX_DEFAULT_BLOCK_SIZE 4096
 
+// Maximum number of B-tree keys to prevent DoS
+#define APFS_MAX_BTREE_KEYS 4096
+
 // Volume flags
 #define APFS_FS_UNENCRYPTED 0x00000001LL
 
@@ -429,7 +432,21 @@ static inline bool apfs_is_regular_file(ut16 mode) {
 }
 
 static ut64 apfs_block_to_offset(ApfsFS *ctx, ut64 block_num) {
-	return block_num << ctx->block_shift;
+	ut64 off = block_num << ctx->block_shift;
+
+	// Check for overflow
+	if ((off >> ctx->block_shift) != block_num) {
+		R_LOG_DEBUG ("apfs: overflow computing offset for block_num=%" PFMT64u, block_num);
+		return UT64_MAX;
+	}
+
+	// Check if offset is within reasonable bounds (if IO size is available)
+	if (ctx->iob && ctx->iob->size && off >= ctx->iob->size) {
+		R_LOG_DEBUG ("apfs: block offset beyond IO size (off=%" PFMT64u ", size=%" PFMT64u ")", off, ctx->iob->size);
+		return UT64_MAX;
+	}
+
+	return off;
 }
 
 static void apfs_free_inode(ApfsInodeCache *inode) {
@@ -560,7 +577,7 @@ static bool fs_apfs_mount(RFSRoot *root) {
 	}
 
 	ut64 vol_sb_offset = apfs_block_to_offset (ctx, ctx->vol_sb_block);
-	if (!apfs_read_at (ctx, vol_sb_offset, (ut8 *)vol_sb, sizeof (ApfsSuperblock))) {
+	if (vol_sb_offset == UT64_MAX || !apfs_read_at (ctx, vol_sb_offset, (ut8 *)vol_sb, sizeof (ApfsSuperblock))) {
 		R_LOG_ERROR ("Failed to read APFS volume superblock");
 		free (vol_sb);
 		free (nx_sb);
@@ -834,7 +851,7 @@ static bool apfs_parse_omap_btree(ApfsFS *ctx, ut64 omap_oid) {
 	}
 
 	ut64 offset = apfs_block_to_offset (ctx, omap_paddr);
-	if (!apfs_read_at (ctx, offset, (ut8 *)omap, ctx->block_size)) {
+	if (offset == UT64_MAX || !apfs_read_at (ctx, offset, (ut8 *)omap, ctx->block_size)) {
 		free (omap);
 		return false;
 	}
@@ -875,6 +892,10 @@ static bool apfs_walk_catalog_btree(ApfsFS *ctx, ut64 root_oid, ut64 parent_inod
 
 static bool apfs_parse_btree_node(ApfsFS *ctx, ut64 block_num, ut64 parent_inode_num) {
 	ut64 offset = apfs_block_to_offset (ctx, block_num);
+	if (offset == UT64_MAX) {
+		return false;
+	}
+
 	ApfsBtreeNodePhys *node = malloc (ctx->block_size);
 	if (!node) {
 		return false;
@@ -900,11 +921,34 @@ static bool apfs_parse_btree_node(ApfsFS *ctx, ut64 block_num, ut64 parent_inode
 
 	R_LOG_DEBUG ("B-tree node: flags=0x%x, nkeys=%d", flags, nkeys);
 
+	// Validate nkeys to prevent out-of-bounds reads
+	if (nkeys > APFS_MAX_BTREE_KEYS) {
+		R_LOG_DEBUG ("apfs: nkeys=%u exceeds APFS_MAX_BTREE_KEYS=%u, rejecting node", nkeys, APFS_MAX_BTREE_KEYS);
+		free (node);
+		return false;
+	}
+
 	if (flags & APFS_BTNODE_LEAF) {
 		// Parse key-value pairs in the leaf node
 		// The kvloc table starts immediately after the fixed header (at offset 0x38)
-		ut8 *kvloc_base = (ut8 *)node + 0x38;
+		size_t kvloc_offset = 0x38;
+		if (kvloc_offset >= ctx->block_size) {
+			R_LOG_DEBUG ("apfs: invalid kvloc_offset=%zu >= block_size=%u", kvloc_offset, ctx->block_size);
+			free (node);
+			return false;
+		}
+
+		ut8 *kvloc_base = (ut8 *)node + kvloc_offset;
 		ApfsKvloc *kvloc_table = (ApfsKvloc *)kvloc_base;
+
+		// Calculate maximum number of kvloc entries that can fit
+		size_t max_kvloc_bytes = ctx->block_size - kvloc_offset;
+		size_t max_kvloc_entries = max_kvloc_bytes / sizeof (ApfsKvloc);
+
+		if (nkeys > max_kvloc_entries) {
+			R_LOG_DEBUG ("apfs: nkeys=%u exceeds max_kvloc_entries=%zu, clamping", nkeys, max_kvloc_entries);
+			nkeys = (ut16)max_kvloc_entries;
+		}
 
 		ut16 i;
 		for (i = 0; i < nkeys; i++) {
@@ -938,7 +982,23 @@ static bool apfs_parse_btree_node(ApfsFS *ctx, ut64 block_num, ut64 parent_inode
 	} else {
 		// Non-leaf node: recursively process child nodes
 		ut16 table_space_off = apfs_read16 (ctx, (ut8 *)&node->btn_table_space.off);
+
+		if (table_space_off >= ctx->block_size) {
+			R_LOG_DEBUG ("apfs: invalid table_space_off=%u >= block_size=%u", table_space_off, ctx->block_size);
+			free (node);
+			return false;
+		}
+
 		ApfsKvloc *kvloc_table = (ApfsKvloc *) ((ut8 *)node + table_space_off);
+
+		// Calculate maximum number of kvloc entries that can fit
+		size_t max_kvloc_bytes = ctx->block_size - table_space_off;
+		size_t max_kvloc_entries = max_kvloc_bytes / sizeof (ApfsKvloc);
+
+		if (nkeys > max_kvloc_entries) {
+			R_LOG_DEBUG ("apfs: nkeys=%u exceeds max_kvloc_entries=%zu, clamping", nkeys, max_kvloc_entries);
+			nkeys = (ut16)max_kvloc_entries;
+		}
 
 		ut16 i;
 		for (i = 0; i < nkeys; i++) {
@@ -988,6 +1048,13 @@ static bool apfs_parse_btree_node_from_data(ApfsFS *ctx, ut8 *header_data, ut64 
 
 	R_LOG_DEBUG ("B-tree node at 0x%" PFMT64x ": flags=0x%x, nkeys=%d", absolute_offset, flags, nkeys);
 
+	// Validate nkeys to prevent out-of-bounds reads
+	if (nkeys > APFS_MAX_BTREE_KEYS) {
+		R_LOG_DEBUG ("apfs: nkeys=%u exceeds APFS_MAX_BTREE_KEYS=%u, rejecting node", nkeys, APFS_MAX_BTREE_KEYS);
+		free (full_node);
+		return false;
+	}
+
 	bool found_records = false;
 
 	if (flags & APFS_BTNODE_LEAF && nkeys > 0) {
@@ -1002,6 +1069,22 @@ static bool apfs_parse_btree_node_from_data(ApfsFS *ctx, ut8 *header_data, ut64 
 
 		// The kvloc table starts right after the header at btn_data
 		ApfsKvloc *kvloc_table = (ApfsKvloc *)node->btn_data;
+
+		// Validate kvloc table location and calculate max entries
+		size_t kvloc_offset = (ut8 *)kvloc_table - (ut8 *)node;
+		if (kvloc_offset >= ctx->block_size) {
+			R_LOG_DEBUG ("apfs: invalid kvloc_offset=%zu >= block_size=%u", kvloc_offset, ctx->block_size);
+			free (full_node);
+			return false;
+		}
+
+		size_t max_kvloc_bytes = ctx->block_size - kvloc_offset;
+		size_t max_kvloc_entries = max_kvloc_bytes / sizeof (ApfsKvloc);
+
+		if (nkeys > max_kvloc_entries) {
+			R_LOG_DEBUG ("apfs: nkeys=%u exceeds max_kvloc_entries=%zu, clamping", nkeys, max_kvloc_entries);
+			nkeys = (ut16)max_kvloc_entries;
+		}
 
 		R_LOG_DEBUG ("Table space: off=0x%x, len=0x%x, key_area_start=0x%x",
 			table_space_off, table_space_len, key_area_start);
@@ -1130,6 +1213,13 @@ static bool apfs_parse_catalog_record(ApfsFS *ctx, ut8 *key_data, ut16 key_len, 
 				// Calculate name length from key size
 				name_len = key_len - 10; // Assume unhashed for now
 				name_data = unhashed_name;
+
+				// Add upper bound to prevent DoS
+				if (name_len > 255) {
+					R_LOG_DEBUG ("DIR_REC: calculated name_len too large (%u), rejecting", name_len);
+					free (name);
+					return false;
+				}
 			}
 
 			R_LOG_DEBUG ("DIR_REC using %s format: name_len=%d", use_hashed? "hashed": "unhashed", name_len);
@@ -1217,6 +1307,12 @@ static bool apfs_scan_for_btree_nodes(ApfsFS *ctx) {
 	bool found_any = false;
 	int nodes_checked = 0;
 	int valid_nodes_found = 0;
+
+	// Validate block_size to prevent division by zero
+	if (!ctx->block_size) {
+		R_LOG_ERROR ("apfs: block_size is zero in scan_for_btree_nodes");
+		return false;
+	}
 
 	R_LOG_DEBUG ("Scanning for B-tree nodes in APFS image (block size: %u)", ctx->block_size);
 
