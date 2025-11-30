@@ -154,19 +154,17 @@ r_util_dep = declare_dependency(link_with: r_util,
   include_directories: platform_inc,
   dependencies: r_util_deps)
 
-if get_option('blob')
-  r_util_static = static_library('r_util_static', r_util_sources,
-    include_directories: platform_inc,
-    c_args: library_cflags,
-    dependencies: r_util_deps,
-    install: true,
-    implicit_include_directories: false,
-    install_rpath: rpath_lib,
-  )
-  r_util_static_dep = declare_dependency(link_with: r_util_static,
-    include_directories: platform_inc,
-    dependencies: r_util_deps)
-endif
+r_util_static = static_library('r_util_static', r_util_sources,
+  include_directories: platform_inc,
+  c_args: library_cflags,
+  dependencies: r_util_deps,
+  install: true,
+  implicit_include_directories: false,
+  install_rpath: rpath_lib,
+)
+r_util_static_dep = declare_dependency(link_with: r_util_static,
+  include_directories: platform_inc,
+  dependencies: r_util_deps)
 
 pkgconfig_mod.generate(r_util,
   subdirs: ['libr', 'libr/sdb'],
