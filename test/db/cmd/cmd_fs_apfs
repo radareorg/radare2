@@ -1,0 +1,23 @@
+NAME=md mounts
+FILE=bins/fs/apfs.img
+CMDS=<<EOF
+mn
+echo ---
+md /root
+echo ---
+md /root/bin
+EOF
+EXPECT=<<EOF
+Type: APFS (Apple File System)
+Block Size: 4096 bytes
+Volume Name: 
+Purpose: Apple's modern filesystem for macOS, iOS, etc.
+---
+d .fseventsd
+r README
+d bin
+r hello.txt
+---
+r ls
+EOF
+RUN
