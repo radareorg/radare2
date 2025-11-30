@@ -11781,7 +11781,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			int ret = r_anal_op (core->anal, &op, core->addr, code, sizeof (code), R_ARCH_OP_MASK_VAL);
 			if (ret >= 0) {
 				// HACK: Just convert only the first imm seen
-				RAnalValue *src = NULL;
+				RAnalValue *src;
 				R_VEC_FOREACH (&op.srcs, src) {
 					if (src) {
 						if (src->imm) {

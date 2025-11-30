@@ -894,7 +894,9 @@ static const char *getname(RBinFile *bf, int type, int idx, bool sd) {
 		const ut8 *data = r_buf_data (buf, NULL);
 		size_t size = r_buf_size (buf);
 		ut64 image_base = PE_(r_bin_pe_get_image_base)(pe);
-		pe->dotnet_symbols = dotnet_parse (data, size, image_base);
+		if (size > 0) {
+			pe->dotnet_symbols = dotnet_parse (data, size, image_base);
+		}
 	}
 	if (!pe->dotnet_symbols) {
 		return NULL;

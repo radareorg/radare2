@@ -514,11 +514,13 @@ R_API bool r_anal_block_recurse(RAnalBlock *block, RAnalBlockCb cb, void *user) 
 		RAnalBlock **cur_slot = RVecAnalBlockPtr_last (&ctx.to_visit);
 		RAnalBlock *cur = cur_slot? *cur_slot: NULL;
 		RVecAnalBlockPtr_pop_back (&ctx.to_visit);
-		breaked = !cb (cur, user);
-		if (breaked) {
-			break;
+		if (cur) {
+			breaked = !cb (cur, user);
+			if (breaked) {
+				break;
+			}
+			r_anal_block_successor_addrs_foreach (cur, block_recurse_successor_cb, &ctx);
 		}
-		r_anal_block_successor_addrs_foreach (cur, block_recurse_successor_cb, &ctx);
 	}
 
 beach:
@@ -546,7 +548,7 @@ R_API bool r_anal_block_recurse_followthrough(RAnalBlock *block, RAnalBlockCb cb
 		RAnalBlock **cur_slot = RVecAnalBlockPtr_last (&ctx.to_visit);
 		RAnalBlock *cur = cur_slot? *cur_slot: NULL;
 		RVecAnalBlockPtr_pop_back (&ctx.to_visit);
-		if (cb (cur, user)) {
+		if (cur && cb (cur, user)) {
 			r_anal_block_successor_addrs_foreach (cur, block_recurse_successor_cb, &ctx);
 		} else {
 			breaked = true;

@@ -888,7 +888,7 @@ static RThreadFunctionRet worker_th(RThread *th) {
 				break;
 			}
 		}
-		if (state->path_left) {
+		if (test && state->path_left) {
 			ut64 *count = ht_pp_find (state->path_left, test->path, NULL);
 			if (count) {
 				(*count)--;
