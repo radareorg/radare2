@@ -431,21 +431,13 @@ static inline bool apfs_is_regular_file(ut16 mode) {
 	return (mode & 0xF000) == 0x8000;
 }
 
-static ut64 apfs_block_to_offset(ApfsFS *ctx, ut64 block_num) {
+static inline ut64 apfs_block_to_offset(ApfsFS *ctx, ut64 block_num) {
 	ut64 off = block_num << ctx->block_shift;
-
 	// Check for overflow
 	if ((off >> ctx->block_shift) != block_num) {
 		R_LOG_DEBUG ("apfs: overflow computing offset for block_num=%" PFMT64u, block_num);
 		return UT64_MAX;
 	}
-
-	// Check if offset is within reasonable bounds (if IO size is available)
-	if (ctx->iob && ctx->iob->size && off >= ctx->iob->size) {
-		R_LOG_DEBUG ("apfs: block offset beyond IO size (off=%" PFMT64u ", size=%" PFMT64u ")", off, ctx->iob->size);
-		return UT64_MAX;
-	}
-
 	return off;
 }
 
@@ -1217,7 +1209,6 @@ static bool apfs_parse_catalog_record(ApfsFS *ctx, ut8 *key_data, ut16 key_len, 
 				// Add upper bound to prevent DoS
 				if (name_len > 255) {
 					R_LOG_DEBUG ("DIR_REC: calculated name_len too large (%u), rejecting", name_len);
-					free (name);
 					return false;
 				}
 			}
@@ -1228,14 +1219,7 @@ static bool apfs_parse_catalog_record(ApfsFS *ctx, ut8 *key_data, ut16 key_len, 
 				return false;
 			}
 
-			char *name = malloc (name_len + 1);
-			if (!name) {
-				return false;
-			}
-
-			memcpy (name, name_data, name_len);
-			name[name_len] = '\0';
-
+			char *name = r_str_ndup ((const char *)name_data, name_len);
 			R_LOG_DEBUG ("DIR_REC: parent_id=%" PFMT64u ", name='%s'", obj_id, name);
 
 			if (val_len >= sizeof (ApfsDrecVal)) {
