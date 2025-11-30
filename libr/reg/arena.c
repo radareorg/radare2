@@ -178,7 +178,7 @@ R_API RRegArena *r_reg_arena_new(int size) {
 	if (size < 1) {
 		size = 1;
 	}
-	if (!(arena->bytes = calloc (1, size + 8))) {
+	if (! (arena->bytes = calloc (1, size + 8))) {
 		R_FREE (arena);
 	} else {
 		arena->size = size;
@@ -195,7 +195,7 @@ R_API void r_reg_arena_free(RRegArena *ra) {
 
 R_API void r_reg_arena_swap(RReg *reg, int copy) {
 	R_RETURN_IF_FAIL (reg);
-	/* XXX: swap current arena to head(previous arena) */
+	/* XXX: swap current arena to head (previous arena) */
 	int i;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		if (!reg->regset[i].pool) {
@@ -247,7 +247,7 @@ R_API int r_reg_arena_push(RReg *reg) {
 		if (!b) {
 			continue;
 		}
-		//b->size == a->size always because of how r_reg_arena_new behave
+		// b->size == a->size always because of how r_reg_arena_new behave
 		if (a->bytes) {
 			memcpy (b->bytes, a->bytes, b->size);
 		}
@@ -324,7 +324,7 @@ R_API int r_reg_arena_set_bytes(RReg *reg, const char *str) {
 		R_LOG_WARN ("Invalid input");
 		return -1;
 	}
-	int bin_str_len = (len + 1) / 2; //2 hex chrs for 1 byte
+	int bin_str_len = (len + 1) / 2; // 2 hex chrs for 1 byte
 	ut8 *bin_str = malloc (bin_str_len);
 	if (!bin_str) {
 		R_LOG_WARN ("Failed to decode hex str");
@@ -332,10 +332,10 @@ R_API int r_reg_arena_set_bytes(RReg *reg, const char *str) {
 	}
 	r_hex_str2bin (str, bin_str);
 
-	int i, n = 0; //n - cumulative sum of arena's sizes
+	int i, n = 0; // n - cumulative sum of arena's sizes
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		int sz = reg->regset[i].arena->size;
-		int bl = bin_str_len - n; //bytes left
+		int bl = bin_str_len - n; // bytes left
 		int bln = bl - n;
 		if (bln > 0 && bln < sz) {
 			r_reg_set_bytes (reg, i, bin_str + n, bln);
@@ -361,7 +361,7 @@ R_API void r_reg_arena_shrink(RReg *reg) {
 			a->bytes = calloc (bytes_size, 1);
 			a->size = a->bytes? bytes_size: 0;
 			/* looks like sizing down the arena breaks the regsync */
-			/* and sizing it up fixes reallocation when fit() is called */
+			/* and sizing it up fixes reallocation when fit () is called */
 		}
 	}
 }

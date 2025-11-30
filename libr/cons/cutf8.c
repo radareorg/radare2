@@ -14,8 +14,8 @@
 #include <locale.h>
 #endif
 
-#define RD_EOF   (-1)
-#define RD_EIO   (-2)
+#define RD_EOF (-1)
+#define RD_EIO (-2)
 
 /* select utf8 terminal detection method */
 #define R_UTF8_DETECT_R2ENV 1
@@ -29,7 +29,7 @@ static inline int rd(const int fd) {
 	ssize_t n;
 
 	for (;;) {
-		n = read(fd, buffer, 1);
+		n = read (fd, buffer, 1);
 		if (n > (ssize_t)0) {
 			return buffer[0];
 		}
@@ -86,8 +86,9 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 	int ret, res, rows, cols, saved_errno;
 
 	/* Bad tty? */
-	if (tty == -1)
+	if (tty == -1) {
 		return ENOTTY;
+	}
 
 	saved_errno = errno;
 
@@ -118,7 +119,7 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 	 */
 	do {
 		/* Set modified settings. */
-		res = tcsetattr(tty, TCSANOW, &temporary);
+		res = tcsetattr (tty, TCSANOW, &temporary);
 		if (res == -1) {
 			ret = errno;
 			break;
@@ -126,8 +127,9 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 
 		/* Request cursor coordinates from the terminal. */
 		ret = write (tty, "\033[6n", 4);
-		if (ret)
+		if (ret) {
 			break;
+		}
 
 		/* Assume coordinate response parsing fails. */
 		ret = EIO;
@@ -139,23 +141,25 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 
 		/* Expect an ESC. */
 		for (;;) {
-			res = rd(tty);
-			if (res == 27 || res < 1)
+			res = rd (tty);
+			if (res == 27 || res < 1) {
 				break;
+			}
 			// else store_skipped_data_from_stdin_here
 		}
 
 		/* Expect [ after the ESC. */
-		res = rd(tty);
-		if (res != '[')
+		res = rd (tty);
+		if (res != '[') {
 			break;
+		}
 
 		/* Parse rows. */
 		rows = 0;
 		res = rd (tty);
 		while (isdigit (res)) {
 			rows = 10 * rows + res - '0';
-			res = rd(tty);
+			res = rd (tty);
 		}
 
 		if (res != ';') {
@@ -168,13 +172,14 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 		if (res == -1) {
 			break;
 		}
-		while (isdigit(res)) {
+		while (isdigit (res)) {
 			cols = 10 * cols + res - '0';
-			res = rd(tty);
+			res = rd (tty);
 		}
 
-		if (res != 'R')
+		if (res != 'R') {
 			break;
+		}
 
 		/* Success! */
 		if (rowptr) {

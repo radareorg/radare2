@@ -8,7 +8,7 @@
 
 // R2R db/cmd/cons_grep
 
-#define I(x) r_cons_singleton ()->x
+#define I(x) r_cons_singleton()->x
 
 static char *strchr_ns(char *s, const char ch) {
 	if (!s) {
@@ -35,51 +35,52 @@ static void r_cons_grep_word_free(RConsGrepWord *gw) {
 
 static RCoreHelpMessage help_detail_tilde = {
 	"Usage: [command]~[modifier][word,word][endmodifier][[column]][:line]\n"
-	"modifier:", "", "",
-	" &",        "", "all words must match to grep the line",
-	" $[n]",     "", "sort numerically / alphabetically the Nth column",
-	" $",        "", "sort in alphabetic order",
-	" $$",       "", "sort + uniq",
-	" $!",       "", "inverse alphabetical sort",
-	" $!!",      "", "reverse the lines (like the `tac` tool)",
-	" ,",        "", "token to define another keyword",
-	" +",        "", "case insensitive grep (grep -i)",
-	" *",        "", "zoom level",
-	" ^",        "", "words must be placed at the beginning of line",
-	" !",        "", "negate grep",
-	" ?",        "", "count number of matching lines",
-	" ?.",       "", "count number chars",
-	" ??",       "", "show this help message",
-	" ?ea",      "", "convert text into seven segment style ascii art",
-	" :s..e",    "", "show lines s-e",
-	" ..",       "", "internal 'less'",
-	" ...",      "", "internal 'hud' (like V_)",
-	" ....",     "", "internal 'hud' in one line",
-	" :)",       "", "parse C-like output from decompiler",
-	" :))",      "", "code syntax highlight",
-	" <50",      "", "perform zoom to the given text width on the buffer",
-	" <>",       "", "xml indentation",
-	" {:",       "", "human friendly indentation (yes, it's a smiley)",
-	" {:..",     "", "less the output of {:",
-	" {:...",    "", "hud the output of {:",
-	" {}",       "", "json indentation",
-	" {}..",     "", "less json indentation",
-	" {}...",    "", "hud json indentation",
-	" {=}",       "", "gron-like output (key=value)",
-	" {path}",   "", "json path grep",
+	"modifier:",
+	"", "",
+	" &", "", "all words must match to grep the line",
+	" $[n]", "", "sort numerically / alphabetically the Nth column",
+	" $", "", "sort in alphabetic order",
+	" $$", "", "sort + uniq",
+	" $!", "", "inverse alphabetical sort",
+	" $!!", "", "reverse the lines (like the `tac` tool)",
+	" ,", "", "token to define another keyword",
+	" +", "", "case insensitive grep (grep -i)",
+	" *", "", "zoom level",
+	" ^", "", "words must be placed at the beginning of line",
+	" !", "", "negate grep",
+	" ?", "", "count number of matching lines",
+	" ?.", "", "count number chars",
+	" ??", "", "show this help message",
+	" ?ea", "", "convert text into seven segment style ascii art",
+	" :s..e", "", "show lines s-e",
+	" ..", "", "internal 'less'",
+	" ...", "", "internal 'hud' (like V_)",
+	" ....", "", "internal 'hud' in one line",
+	" :)", "", "parse C-like output from decompiler",
+	" :))", "", "code syntax highlight",
+	" <50", "", "perform zoom to the given text width on the buffer",
+	" <>", "", "xml indentation",
+	" {:", "", "human friendly indentation (yes, it's a smiley)",
+	" {:..", "", "less the output of {:",
+	" {:...", "", "hud the output of {:",
+	" {}", "", "json indentation",
+	" {}..", "", "less json indentation",
+	" {}...", "", "hud json indentation",
+	" {=}", "", "gron-like output (key=value)",
+	" {path}", "", "json path grep",
 	"endmodifier:", "", "",
-	" $",        "", "words must be placed at the end of line",
+	" $", "", "words must be placed at the end of line",
 	"column:", "", "",
-	" [n]",      "", "show only column n",
-	" [n-m]",    "", "show column n to m",
-	" [n-]",     "", "show all columns starting from column n",
-	" [i,j,k]",  "", "show the columns i, j and k",
+	" [n]", "", "show only column n",
+	" [n-m]", "", "show column n to m",
+	" [n-]", "", "show all columns starting from column n",
+	" [i,j,k]", "", "show the columns i, j and k",
 	"Examples:", "", "",
-	" i~:0",     "", "show first line of 'i' output",
-	" i~:-2",    "", "show the second to last line of 'i' output",
-	" i~:0..3",  "", "show first three lines of 'i' output",
-	" pd~mov",   "", "disasm and grep for mov",
-	" pi~[0]",   "", "show only opcode",
+	" i~:0", "", "show first line of 'i' output",
+	" i~:-2", "", "show the second to last line of 'i' output",
+	" i~:0..3", "", "show first three lines of 'i' output",
+	" pd~mov", "", "disasm and grep for mov",
+	" pi~[0]", "", "show only opcode",
 	" i~0x400$", "", "show lines ending with 0x400",
 	NULL
 };
@@ -96,7 +97,7 @@ R_API void r_cons_grep_help(RCons *cons) {
 }
 
 R_API void r_cons_grep_expression(RCons *cons, const char *str) {
-	if (R_STR_ISEMPTY(str)) {
+	if (R_STR_ISEMPTY (str)) {
 		return;
 	}
 	RConsContext *ctx = cons->context;
@@ -282,7 +283,7 @@ R_API void r_cons_grep_expression(RCons *cons, const char *str) {
 			}
 			first = false;
 		}
-while_end:
+	while_end:
 		ptr2 = strchr (ptr, '[');
 		ptr3 = strchr (ptr, ']');
 		int is_range = 0, num_is_parsed = 0;
@@ -296,7 +297,7 @@ while_end:
 			ptr2++;
 			for (; ptr2 <= ptr3; ptr2++) {
 				if (fail) {
-					ZERO_FILL(grep->tokens);
+					ZERO_FILL (grep->tokens);
 					grep->tokens_used = 0;
 					break;
 				}
@@ -344,17 +345,17 @@ while_end:
 		ptr2 = strchr_ns (ptr, ':'); // line number
 		grep->range_line = 2; // there is no :
 		if (ptr2 && ptr2[1] != ':' && ptr2[1] && (isdigit (ptr2[1]) || ptr2[1] == '-' || ptr2[1] == '.')) {
-			end_ptr = end_ptr ? R_MIN (end_ptr, ptr2) : ptr2;
+			end_ptr = end_ptr? R_MIN (end_ptr, ptr2): ptr2;
 			char *p, *token = ptr2 + 1;
-			p = strstr(token, "..");
+			p = strstr (token, "..");
 			if (!p) {
 				grep->line = r_num_get (cons->num, ptr2 + 1);
 				grep->range_line = 0;
 			} else {
 				*p = '\0';
 				grep->range_line = 1;
-				grep->f_line = *token ? r_num_get (cons->num, token) : 0;
-				grep->l_line = p[2] ? r_num_get (cons->num, p + 2) : 0;
+				grep->f_line = *token? r_num_get (cons->num, token): 0;
+				grep->l_line = p[2]? r_num_get (cons->num, p + 2): 0;
 			}
 		}
 		if (end_ptr) {
@@ -427,7 +428,7 @@ static char *find_next_intgrep(char *cmd, const char *quotes) {
 /*
  * Removes grep part from *cmd* and returns newly allocated string
  * with reshaped grep expression.
-*/
+ */
 static char *preprocess_filter_expr(char *cmd, const char *quotes) {
 	char *p2, *ns = NULL;
 	const char *strsep = "&";
@@ -450,7 +451,7 @@ static char *preprocess_filter_expr(char *cmd, const char *quotes) {
 	// parse words between '~'
 	while ((p2 = find_next_intgrep (p1 + 1, quotes))) {
 		ns = r_str_append (ns, strsep);
-		ns = r_str_appendlen (ns, p1 + 1, (int)(p2 - p1 - 1));
+		ns = r_str_appendlen (ns, p1 + 1, (int) (p2 - p1 - 1));
 		p1 = p2;
 		strsep = "~";
 		i++;
@@ -488,7 +489,7 @@ static int cmp(const void *a, const void *b) {
 	const char *ca = r_str_trim_head_ro (a);
 	const char *cb = r_str_trim_head_ro (b);
 	if (!a || !b) {
-		ptrdiff_t diff = (char*)a - (char*)b;
+		ptrdiff_t diff = (char *)a - (char *)b;
 		if (diff > INT_MAX) {
 			return INT_MAX;
 		}
@@ -565,7 +566,7 @@ static bool gron(RStrBuf *sb, RJson *node, const char *root) {
 		r_strbuf_appendf (sb, "%s = %s;\n", root, r_str_bool (node->num.u_value));
 		break;
 	case R_JSON_INTEGER:
-		r_strbuf_appendf (sb, "%s = %"PFMT64d";\n", root, node->num.u_value);
+		r_strbuf_appendf (sb, "%s = %" PFMT64d ";\n", root, node->num.u_value);
 		break;
 	case R_JSON_NULL:
 		r_strbuf_appendf (sb, "%s = null;\n", root);
@@ -585,7 +586,6 @@ static inline ut64 cmpstrings(const void *a) {
 }
 
 #include <r_core.h>
-
 
 static void colorcode(RCons *cons) {
 	char *res = r_str_ndup (cons->context->buffer, cons->context->buffer_len);
@@ -622,7 +622,7 @@ R_API void r_cons_grepbuf(RCons *cons) {
 			if (!res) {
 				return;
 			}
-			char *nres = r_print_json_indent (res, I(context->color_mode), "  ", NULL);
+			char *nres = r_print_json_indent (res, I (context->color_mode), "  ", NULL);
 			free (res);
 			res = r_str_newf ("%s\n", nres);
 			free (nres);
@@ -766,7 +766,7 @@ R_API void r_cons_grepbuf(RCons *cons) {
 		len = cons->context->buffer_len;
 		grep->range_line = 1;
 		goto continuation;
-		// cons->lines = ?? return 3;
+		// cons->lines =?? return 3;
 	}
 	if (grep->less) {
 		int less = grep->less;
@@ -869,7 +869,7 @@ continuation:
 						RListIter *iter;
 						RConsGrepWord *gw;
 						r_list_foreach (grep->strings, iter, gw) {
-							char *newstr = r_str_newf (Color_INVERT"%s"Color_RESET, gw->str);
+							char *newstr = r_str_newf (Color_INVERT "%s" Color_RESET, gw->str);
 							if (str && newstr) {
 								if (grep->icase) {
 									str = r_str_replace_icase (str, gw->str, newstr, 1, 1);
@@ -932,17 +932,17 @@ continuation:
 	ob = NULL;
 	if (grep->sort != -1 || grep->sort_invert) {
 #define INSERT_LINES(list) \
-		if (list) { \
-			*ptr = 0; \
-			r_list_foreach (list, iter, str) { \
-				int slen = strlen (str); \
-				if (slen > 0) { \
-					memcpy (ptr, str, slen); \
-					memcpy (ptr + slen, "\n", 2); \
-					ptr += slen + 1; \
-				} \
+	if (list) { \
+		*ptr = 0; \
+		r_list_foreach (list, iter, str) { \
+			int slen = strlen (str); \
+			if (slen > 0) { \
+				memcpy (ptr, str, slen); \
+				memcpy (ptr + slen, "\n", 2); \
+				ptr += slen + 1; \
 			} \
-		}
+		} \
+	}
 		RListIter *iter;
 		char *ptr = cons->context->buffer;
 		char *str;
@@ -1120,8 +1120,7 @@ R_API int r_cons_grep_line(RCons *cons, char *buf, int len) {
 		if (!ctx->unsorted_lines) {
 			ctx->unsorted_lines = r_list_newf (free);
 		}
-		RList *target = (cons->lines >= grep->sort_row)?
-			ctx->sorted_lines: ctx->unsorted_lines;
+		RList *target = (cons->lines >= grep->sort_row)? ctx->sorted_lines: ctx->unsorted_lines;
 		r_list_append (target, strdup (buf));
 		buf[len] = ch;
 	}

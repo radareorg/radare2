@@ -10,7 +10,7 @@ typedef struct {
 } RConsEditor;
 
 /* TODO: remove global vars */
-static R_TH_LOCAL RConsEditor G = {0};
+static R_TH_LOCAL RConsEditor G = { 0 };
 
 static void r_cons_editor_init(void) {
 	memset (&G, 0, sizeof (G));
@@ -30,7 +30,7 @@ static void setcurline(RCons *cons) {
 	r_str_ncpy (line->buffer.data, curline, sizeof (line->buffer.data) - 1);
 	line->buffer.data[sizeof (line->buffer.data) - 1] = '\0';
 	line->buffer.index = line->buffer.length = strlen (line->buffer.data);
-	line->contents = (char*)curline;
+	line->contents = (char *)curline;
 }
 
 static void emptyline(RCons *cons, const char *str) {
@@ -156,7 +156,7 @@ R_API char *r_cons_editor(RCons *cons, const char *file, const char *str) {
 	line->contents = NULL;
 	r_list_free (G.lines);
 	if (file) {
-		r_file_dump (file, (const ut8*)s, -1, 0);
+		r_file_dump (file, (const ut8 *)s, -1, 0);
 	}
 	return s;
 }

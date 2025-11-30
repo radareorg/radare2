@@ -8,7 +8,7 @@ static const char *parse_alias(RReg *reg, char **tok, const int n) {
 	if (n == 2) {
 		const int type = r_reg_alias_fromstring (tok[0] + 1);
 		const bool works = r_reg_alias_setname (reg, type, tok[1]);
-		return works? NULL : "Invalid alias";
+		return works? NULL: "Invalid alias";
 	}
 	return "Invalid syntax";
 }
@@ -30,7 +30,7 @@ static ut64 parse_size(char *s, char **end) {
 	return strtoul (s, end, 0) << 3;
 }
 
-//TODO: implement bool r_reg_set_def_string()
+// TODO: implement bool r_reg_set_def_string ()
 static const char *parse_def(RReg *reg, char **tok, const int n) {
 	char *end = "";
 	int type, type2;
@@ -125,7 +125,7 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 
 	item->arena = type2;
 	if (!reg->regset[type2].regs || reg->regset[type2].regs->length == 0) {
-		r_list_free(reg->regset[type2].regs);
+		r_list_free (reg->regset[type2].regs);
 		reg->regset[type2].regs = r_list_newf ((RListFree)r_reg_item_free);
 	}
 	r_ref (item);
@@ -160,8 +160,8 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 	// Same profile, no need to change
 	if (reg->reg_profile_str && !strcmp (reg->reg_profile_str, str)) {
 		// R_LOG_WARN ("is the same do nothing");
-	//	r_reg_free_internal (reg, false);
-	//	r_reg_init (reg);
+		//	r_reg_free_internal (reg, false);
+		//	r_reg_init (reg);
 		return true;
 	}
 	// reset all the arenas before setting the new reg profile
@@ -194,7 +194,7 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 				q++;
 			}
 			reg->reg_profile_cmt = r_str_appendlen (
-				reg->reg_profile_cmt, p, (int)(q - p) + 1);
+				reg->reg_profile_cmt, p, (int) (q - p) + 1);
 			p = q;
 			continue;
 		}
@@ -205,7 +205,7 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 			while (*p == ' ' || *p == '\t') {
 				p++;
 			}
-			// EOL ?
+			// EOL?
 			if (*p == '\n') {
 				break;
 			}
@@ -298,7 +298,7 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 	// if (reg->size & 7) {
 	//	reg->size += 8 - (reg->size & 7);
 	// }
-	//reg->size >>= 3; // bits to bytes (divide by 8)
+	// reg->size >>= 3; // bits to bytes (divide by 8)
 	r_reg_fit_arena (reg);
 	// dup the last arena to allow regdiffing
 	r_reg_arena_push (reg);
@@ -338,7 +338,7 @@ static char *gdb_to_r2_profile(const char *gdb) {
 	char *ptr1, *gptr, *gptr1;
 	char name[16], groups[128], type[16];
 	const int all = 1, gpr = 2, save = 4, restore = 8, float_ = 16,
-		  sse = 32, vector = 64, system = 128, mmx = 256;
+		sse = 32, vector = 64, system = 128, mmx = 256;
 	int number, rel, offset, size, type_bits, ret;
 	// Every line is -
 	// Name Number Rel Offset Size Type Groups
@@ -346,7 +346,7 @@ static char *gdb_to_r2_profile(const char *gdb) {
 
 	// It's possible someone includes the heading line too. Skip it
 	if (r_str_startswith (ptr, "Name")) {
-		if (!(ptr = strchr (ptr, '\n'))) {
+		if (! (ptr = strchr (ptr, '\n'))) {
 			return NULL;
 		}
 		ptr++;
@@ -433,10 +433,10 @@ static char *gdb_to_r2_profile(const char *gdb) {
 			continue;
 		}
 		// TODO: More mappings between gdb and r2 reg groups. For now, either fpu or gpr
-		if (!(type_bits & sse) && !(type_bits & float_)) {
+		if (! (type_bits & sse) && ! (type_bits & float_)) {
 			type_bits |= gpr;
 		}
-		const char *type = ((type_bits & mmx) || (type_bits & float_) || (type_bits & sse)) ? "fpu" : "gpr";
+		const char *type = ((type_bits & mmx) || (type_bits & float_) || (type_bits & sse))? "fpu": "gpr";
 		if (isupper (*name)) {
 			// assume uppercase register names are only used for privileged registers
 			type = "pri"; // family=priv

@@ -193,7 +193,7 @@ static RList *hud_filter(RHudData *data, bool simple, int selected_index) {
 				*x = 0;
 			}
 			p = strdup (current_entry);
-			char marker = (visible_index == selected_index) ? '>' : (first_line ? '-' : ' ');
+			char marker = (visible_index == selected_index)? '>': (first_line? '-': ' ');
 			// if the filter is empty, print the entry and move on
 			if (simple) {
 				for (j = 0; p[j] && data->user_input[0]; j++) {

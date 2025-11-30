@@ -80,7 +80,7 @@ R_API bool r_stack_is_empty(RStack *s) {
 
 R_API size_t r_stack_size(RStack *s) {
 	R_RETURN_VAL_IF_FAIL (s && s->top >= -1, 0);
-	return (size_t)(s->top + 1);
+	return (size_t) (s->top + 1);
 }
 
 R_API void *r_stack_peek(RStack *s) {
