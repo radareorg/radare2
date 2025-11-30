@@ -104,7 +104,7 @@ static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
         // (it's okay to skip _fini here though)
         if (!buf._start) return strdup ("");
 
-				char *res = strndup (buf._start, RVecChar_length(&buf));
+				char *res = r_str_ndup (buf._start, RVecChar_length(&buf));
         RVecChar_fini (&buf);
         return res;
 			}
