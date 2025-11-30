@@ -1,0 +1,14 @@
+Diagnostics:
+  Suppress: "pp_including_mainfile_in_preamble"
+
+If:
+  PathMatch: '.*\.inc\.c'
+CompileFlags:
+  Add: [-D, R_INCLUDE_BEGIN=1, -include, clangd_preamble.h]
+
+---
+
+If:
+  PathMatch: '.*libtcc.h'
+CompileFlags:
+  Add: [-D, R_API=, -include, clangd_preamble.h]
