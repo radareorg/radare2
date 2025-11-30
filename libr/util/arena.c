@@ -9,6 +9,46 @@ _Static_assert (sizeof (size_t) >= sizeof (void *), "size_t must fit pointer");
 _Static_assert (sizeof (uintptr_t) >= sizeof (void *),
 	"uintptr_t must fit pointer");
 
+R_API RSlice r_slice(const void *ptr, size_t len) {
+  return (RSlice) { .ptr = ptr, .len = len, .cap = len };
+}
+
+R_API bool r_slice_is_empty(RSlice slice) {
+  return slice.ptr == NULL || slice.len == 0;
+}
+
+R_API size_t r_slice_len(RSlice slice) {
+  return slice.len;
+}
+
+R_API const uint8_t *r_slice_ptr(RSlice slice) {
+  return slice.ptr;
+}
+
+R_API RSlice r_empty_slice() {
+  return (RSlice) { 0 };
+}
+
+R_API RSlice r_slice_to(RSlice slice, size_t to) {
+  if (to >= slice.len) to = slice.len;
+  return (RSlice) { .ptr = slice.ptr, .len = to, .cap = slice.cap };
+}
+
+R_API RSlice r_slice_from(RSlice slice, size_t from) {
+  if (from >= slice.len) return r_empty_slice();
+  return (RSlice) { .ptr = slice.ptr + from, .len = slice.len - from, .cap = slice.cap };
+}
+
+R_API RSlice r_slice_from_to(RSlice slice, size_t from, size_t to) {
+  if (from >= slice.len || from > to) return r_empty_slice();
+  if (to >= slice.len) to = slice.len;
+
+  return (RSlice) { .ptr = slice.ptr + from, .len = to - from, .cap = slice.cap };
+}
+
+R_API RSlice r_slice_from(RSlice slice, size_t from);
+R_API RSlice r_slice_from_to(RSlice slice, size_t from, size_t to);
+
 static inline uintptr_t align_address(uintptr_t address, size_t alignment) {
 	assert (alignment > 0 && (alignment &(alignment - 1)) == 0);
 	return (address + alignment - 1) & ~ (alignment - 1);
@@ -42,6 +82,10 @@ R_API RArena *r_arena_create_with(size_t block_size) {
 		block_size = ARENA_DEFAULT_BLOCK_SIZE;
 	}
 
+  if (block_size < ARENA_MIN_BLOCK_SIZE) {
+    block_size = ARENA_MIN_BLOCK_SIZE;
+  }
+
 	RArena *arena = (RArena *)r_malloc (sizeof (RArena));
 	if (!arena) {
 		return NULL;
@@ -58,6 +102,7 @@ R_API RArena *r_arena_create_with(size_t block_size) {
 	arena->block_size = block_size;
 	arena->total_allocated = 0;
 	arena->default_alignment = ARENA_DEFAULT_ALIGNMENT;
+  arena->huge = NULL;
 
 	return arena;
 }
@@ -89,9 +134,15 @@ R_API void *r_arena_alloc_aligned(RArena *arena, size_t size, size_t alignment) 
 
 	// Check if allocation fits in current block
 	if (required > block->capacity) {
-		// Don't support allocations larger than block_size
 		if (size > arena->block_size) {
-			return NULL;
+      // Try to satisfy this allocation with huge-block
+      RArenaBlock *blk = arena_block_create (size);
+      if (!blk) return NULL;
+
+      blk->next = arena->huge;
+      arena->huge = blk;
+
+      return blk->data;
 		}
 
 		RArenaBlock *new_block = arena_block_create (arena->block_size);
@@ -152,6 +203,8 @@ R_API void r_arena_destroy(RArena *arena) {
 	}
 
 	arena_block_free_chain (arena->first);
+  arena_block_free_chain (arena->huge);
+
 	r_free (arena);
 }
 
@@ -195,6 +248,18 @@ R_API size_t r_arena_block_count(const RArena *arena) {
 	return count;
 }
 
+// Allocate a slice
+R_API RSlice r_arena_salloc(RArena *arena, size_t size) {
+  void *ptr = r_arena_alloc (arena, size);
+  return (RSlice) { .ptr = ptr, .len = size, .cap = size };
+}
+
+// Allocate a slice and zero-initialize memory
+R_API RSlice r_arena_scalloc(RArena *arena, size_t size) {
+  void *ptr = r_arena_calloc (arena, size);
+  return (RSlice) { .ptr = ptr, .len = size, .cap = size };
+}
+
 // Allocate and zero-initialize memory
 R_API void *r_arena_calloc(RArena *arena, size_t size) {
 	void *ptr = r_arena_alloc (arena, size);
@@ -206,6 +271,8 @@ R_API void *r_arena_calloc(RArena *arena, size_t size) {
 
 // Allocate and zero-initialize memory from arena with specified alignment
 R_API void *r_arena_calloc_aligned(RArena *arena, size_t size, size_t alignment) {
+  if (!arena) return NULL;
+
 	void *ptr = r_arena_alloc_aligned (arena, size, alignment);
 	if (ptr) {
 		memset (ptr, 0, size);
@@ -216,9 +283,7 @@ R_API void *r_arena_calloc_aligned(RArena *arena, size_t size, size_t alignment)
 
 // Copy null-terminated string into arena
 R_API char *r_arena_push_str(RArena *arena, const char *str) {
-	if (!arena || !str) {
-		return NULL;
-	}
+	if (!arena || !str) return NULL; 
 
 	size_t len = strlen (str);
 	char *copy = (char *)r_arena_alloc (arena, len + 1);
@@ -228,17 +293,58 @@ R_API char *r_arena_push_str(RArena *arena, const char *str) {
 	return copy;
 }
 
+// Copy null-terminated string into arena and free it
+R_API char *r_arena_move_str(RArena *arena, char *str) {
+	if (!arena || !str) return NULL; 
+
+	size_t len = strlen (str);
+	char *copy = (char *)r_arena_alloc (arena, len + 1);
+	if (copy) {
+		memcpy (copy, str, len + 1); // Include null terminator
+	}
+
+  r_free (str);
+
+	return copy;
+}
+
+static char *r_arena_push_vstrf(RArena *arena, const char *fmt, va_list ap) {
+  if (!arena || !fmt) return NULL;
+
+	if (!strchr (fmt, '%')) {
+		char *p = r_arena_push_str (arena, fmt);
+		return p;
+	}
+  va_list ap2;
+	va_copy (ap2, ap);
+	int ret = vsnprintf (NULL, 0, fmt, ap2);
+	ret++;
+	char *p = r_arena_alloc (arena, ret);
+	if (p) {
+		(void)vsnprintf (p, ret, fmt, ap);
+	}
+	va_end (ap2);
+	return p;
+}
+
+// Allocates buffer on arena and formats string into it
+R_API char *r_arena_push_strf(RArena *arena, const char *fmt, ...) {
+  if (!arena || !fmt) return NULL;
+
+  va_list args;
+  va_start (args, fmt);
+  char *s = r_arena_push_vstrf (arena, fmt, args);
+  va_end (args);
+  return s;
+}
+
 // Copy at most n characters of string into arena
 R_API char *r_arena_push_strn(RArena *arena, const char *str, size_t n) {
 	if (!arena || !str) {
 		return NULL;
 	}
 
-	size_t len = 0;
-	while (len < n && str[len] != '\0') {
-		len++;
-	}
-
+	size_t len = strnlen (str, n);
 	char *copy = (char *)r_arena_alloc (arena, len + 1);
 	if (copy) {
 		memcpy (copy, str, len);
@@ -258,4 +364,59 @@ R_API void *r_arena_push(RArena *arena, const void *mem, size_t n) {
 		memcpy (copy, mem, n);
 	}
 	return copy;
+}
+
+// Copy arbitrary memory into arena and free it
+R_API void *r_arena_move(RArena *arena, void *mem, size_t n) {
+	if (!arena || !mem || n == 0) {
+		return NULL;
+	}
+
+	void *copy = r_arena_alloc (arena, n);
+	if (copy) {
+		memcpy (copy, mem, n);
+	}
+
+  r_free (mem);
+
+	return copy;
+}
+
+// Here go slice versions of push_* funcs
+R_API RSlice r_arena_spush_str(RArena *arena, const char *str) {
+  void *s = r_arena_push_str (arena, str);
+  if (!s) return r_empty_slice ();
+
+  size_t len = strlen (str);
+
+  return (RSlice){ .ptr = s, .len = len, .cap = len };
+}
+
+R_API RSlice r_arena_spush_strf(RArena *arena, const char *fmt, ...) {
+  va_list args;
+  va_start (args, fmt);
+  char *s = r_arena_push_vstrf (arena, fmt, args);
+  va_end (args);
+
+  if (!s) return r_empty_slice ();
+
+  size_t len = strlen (s);
+
+  return (RSlice) { .ptr = (uint8_t *)s, .len = len, .cap = len };
+}
+
+R_API RSlice r_arena_spush_strn(RArena *arena, const char *str, size_t n) {
+  char *s = r_arena_push_strn (arena, str, n);
+  if (!s) return r_empty_slice ();
+
+  size_t len = strlen (s);
+
+  return (RSlice) { .ptr = (uint8_t *)s, .len = len, .cap = len };
+}
+
+R_API RSlice r_arena_spush(RArena *arena, RSlice other) {
+  void *p = r_arena_push (arena, other.ptr, other.len);
+  if (!p) return r_empty_slice ();
+
+  return (RSlice) { .ptr = p, .len = other.len, .cap = other.len };
 }
