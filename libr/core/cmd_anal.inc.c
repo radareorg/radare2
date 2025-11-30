@@ -15630,7 +15630,7 @@ static bool core_anal_abf(RCore *core, const char* input) {
 	return true;
 }
 
-static bool match_prelude_internal(RCore *core, const char *input, ut64 *fcnaddr) {
+static bool match_prelude_internal(RCore *core, const char *input, ut64 *fcnaddr, const ut8 *mask, int masklen) {
 	ut8 *prelude = (ut8 *)strdup (input);
 	int prelude_sz = r_hex_str2bin (input, prelude);
 	const int bufsz = core->blocksize;
@@ -15640,6 +15640,7 @@ static bool match_prelude_internal(RCore *core, const char *input, ut64 *fcnaddr
 	}
 	ut8 *buf = calloc (1, bufsz);
 	if (!buf) {
+		free (prelude);
 		return false;
 	}
 	ut64 off = core->addr;
@@ -15653,10 +15654,26 @@ static bool match_prelude_internal(RCore *core, const char *input, ut64 *fcnaddr
 	r_io_read_at (core->io, off - bufsz + prelude_sz, buf, bufsz);
 	r_mem_reverse (buf, bufsz);
 	//r_print_hexdump (NULL, off, buf, bufsz, 16, -16);
-	const ut8 *pos = r_mem_mem (buf, bufsz, prelude, prelude_sz);
+	const ut8 *pos = NULL;
+	if (!mask || masklen <= 0) {
+		pos = r_mem_mem (buf, bufsz, prelude, prelude_sz);
+	} else {
+		int i, j;
+		for (i = 0; i <= bufsz - prelude_sz; i++) {
+			bool ok = true;
+			for (j = 0; j < prelude_sz; j++) {
+				ut8 a = buf[i + j];
+				ut8 b = prelude[j];
+				int k = j % masklen;
+				if ((a & mask[k]) != (b & mask[k])) { ok = false; break; }
+			}
+			if (ok) { pos = buf + i; break; }
+		}
+	}
 	if (pos) {
 		const int delta = (size_t)(pos - buf);
 		free (buf);
+		free (prelude);
 		*fcnaddr = off - delta;
 		if (*fcnaddr % fcnalign) {
 			// ignore unaligned hits
@@ -15665,6 +15682,7 @@ static bool match_prelude_internal(RCore *core, const char *input, ut64 *fcnaddr
 		return true;
 	}
 	free (buf);
+	free (prelude);
 	return false;
 }
 
@@ -15673,14 +15691,19 @@ static void match_prelude(RCore *core, const char *input) {
 	RListIter *iter;
 	RList *list = r_anal_preludes (core->anal);
 	r_list_foreach (list, iter, k) {
-		char *hex0 = r_hex_bin2strdup (k->bin_keyword, k->keyword_length);
-		char *hex1 = r_hex_bin2strdup (k->bin_binmask, k->binmask_length);
 		ut64 addr = 0;
-		// TODO: mask is ignored!
-		bool found = match_prelude_internal (core, hex0, &addr);
-		// r_cons_printf (core->cons, "ap+ %s %s\n", hex0, hex1);
+		char *hex0 = r_hex_bin2strdup (k->bin_keyword, k->keyword_length);
+		bool found = false;
+		if (k->bin_binmask) {
+			char *hex1 = r_hex_bin2strdup (k->bin_binmask, k->binmask_length);
+			found = match_prelude_internal (core, hex0, &addr, k->bin_binmask, k->binmask_length);
+			// r_cons_printf (core->cons, "ap+ %s %s\n", hex0, hex1);
+			free (hex1);
+		} else {
+			ut64 addr = 0;
+			found = match_prelude_internal (core, hex0, &addr, NULL, 0);
+		}
 		free (hex0);
-		free (hex1);
 		if (found) {
 			r_cons_printf (core->cons, "0x%08"PFMT64x"\n", addr);
 			return;
@@ -16036,11 +16059,15 @@ static void cmd_ap(RCore *core, const char *input) {
 		list = r_anal_preludes (core->anal);
 		r_list_foreach (list, iter, k) {
 			char *hex0 = r_hex_bin2strdup (k->bin_keyword, k->keyword_length);
-			char *hex1 = r_hex_bin2strdup (k->bin_binmask, k->binmask_length);
-			// XXX must add an align field
-			r_cons_printf (core->cons, "'ap+ %s %s\n", hex0, hex1);
+			if (k->bin_binmask) {
+				char *hex1 = r_hex_bin2strdup (k->bin_binmask, k->binmask_length);
+				// XXX must add an align field
+				r_cons_printf (core->cons, "'ap+ %s %s\n", hex0, hex1);
+				free (hex1);
+			} else {
+				r_cons_printf (core->cons, "'ap+ %s\n", hex0);
+			}
 			free (hex0);
-			free (hex1);
 		}
 		r_list_free (list);
 		break;
