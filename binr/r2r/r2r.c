@@ -95,8 +95,7 @@ static void helpvars(int workers_count) {
 		"R2R_JOBS=%d         # maximum parallel jobs\n"
 		"R2R_TIMEOUT=%d   # timeout after 1 minute (60 * 60)\n"
 		"R2R_OFFLINE=0      # same as passing -u\n"
-		"R2R_SHALLOW=0      # skip 0-100%% random tests\n"
-		"R2R_RADARE2=radare2 # radare2 binary to launch\n",
+		"R2R_SHALLOW=0      # skip 0-100%% random tests\n",
 		workers_count, TIMEOUT_DEFAULT);
 }
 
@@ -310,7 +309,7 @@ static void r2r_git(void) {
 	free (changes);
 }
 
-int main(int argc, char **argv) {
+int r2r_main(RArena *arena, int argc, char **argv) {
 	int workers_count = WORKERS_DEFAULT;
 	bool verbose = false;
 	bool nothing = false;
@@ -331,9 +330,11 @@ int main(int argc, char **argv) {
 	bool get_bins = !r_sys_getenv_asbool ("R2R_OFFLINE");
 	int ret = 0;
 
+  const char *bindir = r_arena_move_str (arena, r_file_dirname (argv[0]));
+
 	if (!r_sys_getenv ("R2_BIN")) {
-		r_sys_setenv ("R2_BIN", R2_BINDIR);
-		r_sys_setenv_sep ("PATH", R2_BINDIR, false);
+		r_sys_setenv ("R2_BIN", bindir);
+		r_sys_setenv_sep ("PATH", bindir, false);
 	}
 
 #if R2__WINDOWS__
@@ -362,8 +363,6 @@ int main(int argc, char **argv) {
 		switch (c) {
 		case 'g':
 			r2r_git ();
-			free (json_test_file);
-			free (fuzz_dir);
 			return 0;
 		case 'h':
 			ret = help (true, workers_count);
@@ -382,8 +381,6 @@ int main(int argc, char **argv) {
 					free (s);
 				}
 			}
-			free (json_test_file);
-			free (fuzz_dir);
 			return 0;
 		case 'V':
 			verbose = true;
@@ -404,8 +401,7 @@ int main(int argc, char **argv) {
 			}
 			break;
 		case 'F':
-			free (fuzz_dir);
-			fuzz_dir = strdup (opt.arg);
+			fuzz_dir = r_arena_push_str (arena, opt.arg);
 			break;
 		case 'j':
 			workers_count = atoi (opt.arg);
@@ -422,8 +418,7 @@ int main(int argc, char **argv) {
 			nothing = true;
 			break;
 		case 'f':
-			free (json_test_file);
-			json_test_file = strdup (opt.arg);
+			json_test_file = r_arena_push_str (arena, opt.arg);
 			break;
 		case 'H':
 			helpvars (workers_count);
@@ -447,7 +442,8 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	char *cwd = r_sys_getdir ();
+	char *cwd = r_arena_move_str (arena, r_sys_getdir ());
+
 	if (r2r_dir) {
 		if (chdir (r2r_dir) == -1) {
 			R_LOG_ERROR ("Cannot find %s directory", r2r_dir);
@@ -468,18 +464,13 @@ int main(int argc, char **argv) {
 			dir_found = r2r_chdir (argv[0]);
 		}
 		if (!dir_found) {
-			free (cwd);
 			R_LOG_ERROR ("Cannot find db/ directory related to the given test");
-			free (json_test_file);
-			free (fuzz_dir);
 			return -1;
 		}
 	}
 
 	if (fuzz_dir) {
-		char *tmp = fuzz_dir;
 		fuzz_dir = r_file_abspath_rel (cwd, fuzz_dir);
-		free (tmp);
 	}
 
 	if (get_bins) {
@@ -491,10 +482,7 @@ int main(int argc, char **argv) {
 	}
 
 	if (!r2r_subprocess_init ()) {
-		free (cwd);
 		R_LOG_ERROR ("Subprocess init failed");
-		free (json_test_file);
-		free (fuzz_dir);
 		return -1;
 	}
 	atexit (r2r_subprocess_fini);
@@ -502,12 +490,11 @@ int main(int argc, char **argv) {
 	/* print lock for atomic multi-line output */
 	r2r_print_lock = r_th_lock_new (false);
 
-	char *have_options = r_sys_getenv ("ASAN_OPTIONS");
-	if (have_options) {
-		free (have_options);
-	} else {
+	char *have_options = r_arena_move_str (arena, r_sys_getenv ("ASAN_OPTIONS"));
+	if (!have_options) {
 		r_sys_setenv ("ASAN_OPTIONS", "detect_leaks=false detect_odr_violation=0");
 	}
+
 	r_sys_setenv ("RABIN2_TRYLIB", "0");
 	r_sys_setenv ("R2_DEBUG_ASSERT", "1");
 	r_sys_setenv ("R2_DEBUG_EPRINT", "0");
@@ -519,17 +506,11 @@ int main(int argc, char **argv) {
 		state.run_config.shallow = shallow;
 	}
 
-	char *r2_binary = r_sys_getenv ("R2R_RADARE2");
-	if (R_STR_ISNOTEMPTY (r2_binary)) {
-		R_LOG_INFO ("Using custom r2 binary: %s", r2_binary);
-		state.run_config.r2_cmd = r2_binary;
-	} else {
-		state.run_config.r2_cmd = "radare2";
-	}
 	state.run_config.skip_cmd = r_sys_getenv_asbool ("R2R_SKIP_CMD");
 	state.run_config.skip_asm = r_sys_getenv_asbool ("R2R_SKIP_ASM");
 	state.run_config.skip_json = r_sys_getenv_asbool ("R2R_SKIP_JSON");
 	state.run_config.skip_fuzz = r_sys_getenv_asbool ("R2R_SKIP_FUZZ");
+	state.run_config.r2_cmd = "r2";
 	state.run_config.rasm2_cmd = "rasm2";
 	state.run_config.json_test_file = json_test_file? json_test_file: JSON_TEST_FILE_DEFAULT;
 	state.run_config.timeout_ms = (timeout_sec > UT64_MAX / 1000)? UT64_MAX: timeout_sec * 1000;
@@ -537,23 +518,20 @@ int main(int argc, char **argv) {
 	state.quiet = quiet;
 	state.db = r2r_test_database_new ();
 	if (!state.db) {
-		free (json_test_file);
 		return -1;
 	}
 	RVecR2RTestPtr_init (&state.queue);
 	RVecR2RTestResultInfoPtr_init (&state.results);
 	RVecConstCharPtr_init (&state.completed_paths);
+
+  printf("Using this R2_BIN (adding to path): %s\n", bindir);
+  printf("Looking up executables:\n");
+  printf("  r2     %s\n", r_arena_move_str (arena, r_file_path (state.run_config.r2_cmd)));
+  printf("  rasm2  %s\n", r_arena_move_str (arena, r_file_path (state.run_config.rasm2_cmd)));
+
 	if (output_file) {
 		state.test_results = pj_new ();
 		pj_a (state.test_results);
-	}
-	state.lock = r_th_lock_new (false);
-	if (!state.lock) {
-		return -1;
-	}
-	state.cond = r_th_cond_new ();
-	if (!state.cond) {
-		return -1;
 	}
 
 	if (opt.ind < argc) {
@@ -566,7 +544,6 @@ int main(int argc, char **argv) {
 				eprintf ("Category: %s\n", arg);
 				if (!strcmp (arg, "unit")) {
 					if (!r2r_test_run_unit ()) {
-						free (cwd);
 						return -1;
 					}
 					continue;
@@ -590,15 +567,13 @@ int main(int argc, char **argv) {
 				}
 			}
 			if (r_str_endswith (arg, ".c")) {
-				char *abspath = strdup (arg);
+				char *abspath = r_arena_push_str (arena, arg);
 				if (*arg != '/') {
-					free (abspath);
-					abspath = r_str_newf ("%s/%s", cwd, arg);
+					abspath = r_arena_push_strf (arena, "%s/%s", cwd, arg);
 				}
 				// load tests
 				RList *tests = r_list_newf (free);
 				r2r_from_sourcecomments (tests, abspath);
-				free (abspath);
 				RListIter *iter;
 				char *test;
 				int grc = 0;
@@ -610,19 +585,15 @@ int main(int argc, char **argv) {
 					}
 				}
 				r_list_free (tests);
-				free (cwd);
 				return grc;
 				// continue;
 			}
-			char *tf = r_file_abspath_rel (cwd, arg);
+			char *tf = r_arena_move_str (arena, r_file_abspath_rel (cwd, arg));
 			if (!tf || !r2r_test_database_load (state.db, tf)) {
 				R_LOG_ERROR ("Failed to load tests from \"%s\"", tf);
 				r2r_test_database_free (state.db);
-				free (tf);
-				free (cwd);
 				return -1;
 			}
-			free (tf);
 		}
 	} else {
 		// Default db path
@@ -679,6 +650,15 @@ int main(int argc, char **argv) {
 				(*count)++;
 			}
 		}
+	}
+
+	state.lock = r_th_lock_new (false);
+	if (!state.lock) {
+		return -1;
+	}
+	state.cond = r_th_cond_new ();
+	if (!state.cond) {
+		return -1;
 	}
 
 	r_th_lock_enter (state.lock);
@@ -748,7 +728,7 @@ int main(int argc, char **argv) {
 			R_LOG_WARN ("Overwrite output file '%s'", output_file);
 		}
 		char *results = pj_drain (state.test_results);
-		char *output = r_str_newf ("%s\n", results);
+		char *output = r_arena_push_strf (arena, "%s\n", results);
 		free (results);
 		if (!r_file_dump (output_file, (ut8 *)output, strlen (output), false)) {
 			R_LOG_ERROR ("Cannot write to %s", output_file);
@@ -773,8 +753,6 @@ coast:
 	r_th_lock_free (state.lock);
 	r_th_cond_free (state.cond);
 beach:
-	free (json_test_file);
-	free (fuzz_dir);
 #if R2__WINDOWS__
 	if (old_cp) {
 		(void)SetConsoleOutputCP (old_cp);
@@ -1497,4 +1475,11 @@ static void interact_diffchar(R2RTestResultInfo *result) {
 	const char *regexp_out = result->test->cmd_test->regexp_out.value;
 	printf ("-- stdout\n");
 	print_diff (actual, expected, true, regexp_out);
+}
+
+int main(int argc, char **argv) {
+  RArena *arena = r_arena_create();
+  int rc = r2r_main(arena, argc, argv);
+  r_arena_destroy(arena);
+  return rc;
 }
