@@ -198,13 +198,13 @@ enum {
 };
 
 typedef struct r_anal_enum_case_t {
-	const char *name;
+	char *name;
 	int val;
 } RAnalEnumCase;
 
 typedef struct r_anal_struct_member_t {
-	const char *name;
-	const char *type;
+	char *name;
+	char *type;
 	size_t offset; // in bytes
 	size_t size; // in bits? rename to 'bitsize'
 } RAnalStructMember;
@@ -255,8 +255,8 @@ typedef struct r_anal_base_type_enum_t {
 } RAnalBaseTypeEnum;
 
 typedef struct r_anal_base_type_t {
-	const char *name;
-	const char *type; // Used by typedef, atomic type, enum
+	char *name;
+	char *type; // Used by typedef, atomic type, enum
 	ut64 size; // size of the whole type in bits
 	RAnalBaseTypeKind kind;
 	union {
