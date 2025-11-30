@@ -1142,11 +1142,20 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				}
 				if (p && (base == 32 || base == 64)) {
 					int left = len - i;
-					// TODO: check step. it should be 2/4 for base(32) and 8 for base64
+					// sz_n is 8 for base=64
+					// OR 2 for step == 2
+					// OR 4 otherwise
 					ut64 n = 0;
-					size_t sz_n = (base == 64)
-						? (base == 24) ? 3 : sizeof (ut64) : (step == 2)
-						? sizeof (ut16) : sizeof (ut32);
+					size_t sz_n = 0;
+					if (base == 64) {
+						sz_n = sizeof (ut64);
+					} else {
+						if (step == 2) {
+							sz_n = sizeof (ut16);
+						} else {
+							sz_n = sizeof (ut32);
+						}
+					}
 					sz_n = R_MIN (left, sz_n);
 					if (j + sz_n > len) {
 						// oob
