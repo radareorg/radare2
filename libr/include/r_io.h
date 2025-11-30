@@ -7,7 +7,7 @@
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_socket.h>
-#include <r_vector.h>
+#include <r_vec.h>
 #include <r_util/r_w32dw.h>
 
 #define R_IO_SEEK_SET 0
@@ -103,7 +103,6 @@ typedef struct r_io_undo_w_t {
 	size_t len; /* length */
 } RIOUndoWrite;
 
-// io cache
 typedef struct io_cache_item_t {
 	RInterval *tree_itv;
 	RInterval itv;
@@ -112,12 +111,15 @@ typedef struct io_cache_item_t {
 	bool written;
 } RIOCacheItem;
 
+R_VEC_TYPE (RVecRIOCacheItemPtr, RIOCacheItem *);
+
+// io cache
 typedef struct r_io_cache_layer_t {
 #if 0
 	char *name;
 	int fd, bd, ... :?
 #endif
-	RPVector *vec; // a vector of items
+	RVecRIOCacheItemPtr *vec; // a vector of items
 	RRBTree *tree; // faster access to the items
 	// RRBComparator ci_cmp_cb; // this comparator can be inside the rbtree impl
 } RIOCacheLayer;

@@ -31,12 +31,12 @@ R_API void r_anal_vtable_info_free(RVTableInfo *vtable) {
 	if (!vtable) {
 		return;
 	}
-	r_vector_clear (&vtable->methods);
+	RVecRVTableMethodInfo_clear (&vtable->methods);
 	free (vtable);
 }
 
 R_API ut64 r_anal_vtable_info_get_size(RVTableContext *context, RVTableInfo *vtable) {
-	return (ut64)vtable->methods.len * context->word_size;
+	return RVecRVTableMethodInfo_length (&vtable->methods) * context->word_size;
 }
 
 R_API bool r_anal_vtable_begin(RAnal *anal, RVTableContext *context) {
@@ -197,14 +197,16 @@ R_API RVTableInfo *r_anal_vtable_parse_at(RVTableContext *context, ut64 addr) {
 
 	vtable->saddr = addr;
 
-	r_vector_init (&vtable->methods, sizeof (RVTableMethodInfo), NULL, NULL);
+	RVecRVTableMethodInfo_init (&vtable->methods);
 
 	RVTableMethodInfo meth;
 	while (vtable_is_value_in_text_section (context, addr, &meth.addr)) {
 		meth.vtable_offset = addr - vtable->saddr;
-		if (!r_vector_push (&vtable->methods, &meth)) {
+		RVTableMethodInfo *slot = RVecRVTableMethodInfo_emplace_back (&vtable->methods);
+		if (!slot) {
 			break;
 		}
+		*slot = meth;
 
 		addr += context->word_size;
 
@@ -307,7 +309,7 @@ R_API char *r_anal_vtables_list(RAnal *anal, int rad) {
 			pj_o (pj);
 			pj_kN (pj, "offset", table->saddr);
 			pj_ka (pj, "methods");
-			r_vector_foreach (&table->methods, curMethod) {
+			R_VEC_FOREACH (&table->methods, curMethod) {
 				RAnalFunction *fcn = r_anal_get_fcn_in (anal, curMethod->addr, 0);
 				const char *const name = fcn ? fcn->name : NULL;
 				pj_o (pj);
@@ -328,7 +330,7 @@ R_API char *r_anal_vtables_list(RAnal *anal, int rad) {
 						   table->saddr,
 						   r_anal_vtable_info_get_size (&context, table),
 						   table->saddr);
-			r_vector_foreach (&table->methods, curMethod) {
+			R_VEC_FOREACH (&table->methods, curMethod) {
 				r_strbuf_appendf (sb, "Cd %d @ 0x%08"PFMT64x"\n", context.word_size, table->saddr + curMethod->vtable_offset);
 				RAnalFunction *fcn = r_anal_get_fcn_in (anal, curMethod->addr, 0);
 				const char *const name = fcn ? fcn->name : NULL;
@@ -343,7 +345,7 @@ R_API char *r_anal_vtables_list(RAnal *anal, int rad) {
 		r_list_foreach (vtables, vtableIter, table) {
 			ut64 vtableStartAddress = table->saddr;
 			r_strbuf_appendf (sb, "\nVtable Found at 0x%08"PFMT64x"\n", vtableStartAddress);
-			r_vector_foreach (&table->methods, curMethod) {
+			R_VEC_FOREACH (&table->methods, curMethod) {
 				RAnalFunction *fcn = r_anal_get_fcn_in (anal, curMethod->addr, 0);
 				const char *const name = fcn ? fcn->name : NULL;
 				r_strbuf_appendf (sb, "0x%08"PFMT64x" : %s\n", vtableStartAddress, r_str_get_fail (name, noMethodName));

@@ -27,7 +27,7 @@ R_API RCodeMeta *r_codemeta_clone(RCodeMeta *code) {
 	R_RETURN_VAL_IF_FAIL (code, NULL);
 	RCodeMeta *r = r_codemeta_new (code->code);
 	RCodeMetaItem *mi;
-	r_vector_foreach (&code->annotations, mi) {
+	R_VEC_FOREACH (&code->annotations, mi) {
 		r_codemeta_add_item (r, r_codemeta_item_clone (mi));
 	}
 	return r;
@@ -38,8 +38,7 @@ R_API RCodeMeta * R_NONNULL r_codemeta_new(const char *code) {
 	RCodeMeta *r = R_NEW0 (RCodeMeta);
 	r->tree = r_crbtree_new (NULL);
 	r->code = strdup (code);
-	r_vector_init (&r->annotations, sizeof (RCodeMetaItem),
-			(RVectorFree)r_codemeta_item_fini, NULL);
+	RVecCodeMetaItem_init (&r->annotations);
 	return r;
 }
 
@@ -84,7 +83,7 @@ R_API bool r_codemeta_item_is_variable(RCodeMetaItem *mi) {
 
 R_API void r_codemeta_free(RCodeMeta *code) {
 	if (R_LIKELY (code)) {
-		r_vector_clear (&code->annotations);
+		RVecCodeMetaItem_fini (&code->annotations);
 		r_crbtree_free (code->tree);
 		r_free (code->code);
 		r_free (code);
@@ -146,18 +145,18 @@ static int cmp_find_min_mid(void *incoming, void *in, void *user) {
 
 R_API void r_codemeta_add_item(RCodeMeta *code, RCodeMetaItem *mi) {
 	R_RETURN_IF_FAIL (code && mi);
-	r_vector_push (&code->annotations, mi);
+	RVecCodeMetaItem_push_back (&code->annotations, mi);
 	r_crbtree_insert (code->tree, mi, cmp_ins, NULL);
 }
 
-R_API RPVector *r_codemeta_at(RCodeMeta *code, size_t offset) {
+R_API RVecCodeMetaItemPtr *r_codemeta_at(RCodeMeta *code, size_t offset) {
 	R_RETURN_VAL_IF_FAIL (code, NULL);
 	return r_codemeta_in (code, offset, offset + 1);
 }
 
-R_API RPVector *r_codemeta_in(RCodeMeta *code, size_t start, size_t end) {
+R_API RVecCodeMetaItemPtr *r_codemeta_in(RCodeMeta *code, size_t start, size_t end) {
 	R_RETURN_VAL_IF_FAIL (code, NULL);
-	RPVector *r = r_pvector_new (NULL);
+	RVecCodeMetaItemPtr *r = RVecCodeMetaItemPtr_new ();
 	if (!r) {
 		return NULL;
 	}
@@ -179,7 +178,7 @@ R_API RPVector *r_codemeta_in(RCodeMeta *code, size_t start, size_t end) {
 		while (node) {
 			RCodeMetaItem *mi = (RCodeMetaItem *)node->data;
 			if (!(start >= mi->end || end < mi->start)) {
-				r_pvector_push (r, mi);
+				RVecCodeMetaItemPtr_push_back (r, &mi);
 			}
 			node = r_rbnode_next (node);
 			if (node) {
@@ -194,9 +193,9 @@ R_API RPVector *r_codemeta_in(RCodeMeta *code, size_t start, size_t end) {
 	return r;
 }
 
-R_API RVector *r_codemeta_line_offsets(RCodeMeta *code) {
+R_API RVecCodeMetaOffset *r_codemeta_line_offsets(RCodeMeta *code) {
 	R_RETURN_VAL_IF_FAIL (code, NULL);
-	RVector *r = r_vector_new (sizeof (ut64), NULL, NULL);
+	RVecCodeMetaOffset *r = RVecCodeMetaOffset_new ();
 	if (!r) {
 		return NULL;
 	}
@@ -205,10 +204,10 @@ R_API RVector *r_codemeta_line_offsets(RCodeMeta *code) {
 	do {
 		char *next = strchr (code->code + cur, '\n');
 		size_t next_i = next? (next - code->code) + 1: len;
-		RPVector *annotations = r_codemeta_in (code, cur, next_i);
+		RVecCodeMetaItemPtr *annotations = r_codemeta_in (code, cur, next_i);
 		ut64 offset = UT64_MAX;
-		void **it;
-		r_pvector_foreach (annotations, it) {
+		RCodeMetaItem **it;
+		R_VEC_FOREACH (annotations, it) {
 			RCodeMetaItem *mi = *it;
 			if (mi->type != R_CODEMETA_TYPE_OFFSET) {
 				continue;
@@ -216,9 +215,9 @@ R_API RVector *r_codemeta_line_offsets(RCodeMeta *code) {
 			offset = mi->offset.offset;
 			break;
 		}
-		r_vector_push (r, &offset);
+		RVecCodeMetaOffset_push_back (r, &offset);
 		cur = next_i;
-		r_pvector_free (annotations);
+		RVecCodeMetaItemPtr_free (annotations);
 	} while (cur < len);
 	return r;
 }
@@ -298,8 +297,8 @@ static void print_disasm_in_binary_line_bar(RStrBuf *sb, RCodeMeta *code, ut64 o
 	r_strbuf_append (sb, "    |");
 }
 
-static char *r_codemeta_print_internal(RCodeMeta *code, RVector *line_offsets, RAnal *anal, bool doprint) {
-	if (code->annotations.len == 0) {
+static char *r_codemeta_print_internal(RCodeMeta *code, RVecCodeMetaOffset *line_offsets, RAnal *anal, bool doprint) {
+	if (RVecCodeMetaItem_empty (&code->annotations)) {
 		return r_str_newf ("%s\n", code->code);
 	}
 
@@ -313,7 +312,7 @@ static char *r_codemeta_print_internal(RCodeMeta *code, RVector *line_offsets, R
 	if (line_offsets) {
 		ut64 *offset;
 		ut64 offset_max = 0;
-		r_vector_foreach (line_offsets, offset) {
+		R_VEC_FOREACH (line_offsets, offset) {
 			if (*offset != UT64_MAX && *offset > offset_max) {
 				offset_max = *offset;
 			}
@@ -336,7 +335,7 @@ static char *r_codemeta_print_internal(RCodeMeta *code, RVector *line_offsets, R
 		R_LOG_WARN ("No core for codemeta");
 	}
 	RCodeMetaItem *annotation;
-	r_vector_foreach (&code->annotations, annotation) {
+	R_VEC_FOREACH (&code->annotations, annotation) {
 		if (annotation->type != R_CODEMETA_TYPE_SYNTAX_HIGHLIGHT) {
 			continue;
 		}
@@ -377,8 +376,8 @@ static char *r_codemeta_print_internal(RCodeMeta *code, RVector *line_offsets, R
 			// we need to prepare the bar with offsets on the left handside before that
 			if (line_offsets && (cur == 0 || code->code[cur - 1] == '\n')) {
 				ut64 offset = 0;
-				if (line_idx < line_offsets->len) {
-					offset = *(ut64 *)r_vector_index_ptr (line_offsets, line_idx);
+				if (line_idx < RVecCodeMetaOffset_length (line_offsets)) {
+					offset = *RVecCodeMetaOffset_at (line_offsets, line_idx);
 				}
 				if (doprint) {
 					print_disasm_in_binary_line_bar (sb, code, offset, offset_width, anal);
@@ -398,8 +397,8 @@ static char *r_codemeta_print_internal(RCodeMeta *code, RVector *line_offsets, R
 			// we need to prepare the bar with offsets on the left handside before that
 			if (line_offsets && (cur == 0 || code->code[cur - 1] == '\n')) {
 				ut64 offset = 0;
-				if (line_idx < line_offsets->len) {
-					offset = *(ut64 *)r_vector_index_ptr (line_offsets, line_idx);
+				if (line_idx < RVecCodeMetaOffset_length (line_offsets)) {
+					offset = *RVecCodeMetaOffset_at (line_offsets, line_idx);
 				}
 				PRINT_COLOR (Color_RESET);
 				if (doprint) {
@@ -421,8 +420,8 @@ static char *r_codemeta_print_internal(RCodeMeta *code, RVector *line_offsets, R
 		// we need to prepare the bar with offsets on the left handside before that
 		if (line_offsets && (cur == 0 || code->code[cur - 1] == '\n')) {
 			ut64 offset = 0;
-			if (line_idx < line_offsets->len) {
-				offset = *(ut64 *)r_vector_index_ptr (line_offsets, line_idx);
+			if (line_idx < RVecCodeMetaOffset_length (line_offsets)) {
+				offset = *RVecCodeMetaOffset_at (line_offsets, line_idx);
 			}
 			if (doprint) {
 				print_disasm_in_binary_line_bar (sb, code, offset, offset_width, anal);
@@ -436,16 +435,16 @@ static char *r_codemeta_print_internal(RCodeMeta *code, RVector *line_offsets, R
 	return r_strbuf_drain (sb);
 }
 
-R_API char *r_codemeta_print_disasm(RCodeMeta *code, RVector *line_offsets, void *anal) {
+R_API char *r_codemeta_print_disasm(RCodeMeta *code, RVecCodeMetaOffset *line_offsets, void *anal) {
 	return r_codemeta_print_internal (code, line_offsets, anal, true);
 }
 
-R_API char *r_codemeta_print2(RCodeMeta *code, RVector *line_offsets, void *anal) {
+R_API char *r_codemeta_print2(RCodeMeta *code, RVecCodeMetaOffset *line_offsets, void *anal) {
 	return r_codemeta_print_internal (code, line_offsets, anal, false);
 }
 
 // TODO rename R_API char *r_codemeta_print_offsets(RCodeMeta *code, RVector *line_offsets, bool d) {
-R_API char *r_codemeta_print(RCodeMeta *code, RVector *line_offsets) {
+R_API char *r_codemeta_print(RCodeMeta *code, RVecCodeMetaOffset *line_offsets) {
 	R_LOG_DEBUG ("RCodeMetaPrint is deprecated: use RCodeMetaPrint2 instead");
 	return r_codemeta_print_internal (code, line_offsets, NULL, false);
 }
@@ -462,7 +461,7 @@ static bool foreach_offset_annotation(void *user, const ut64 offset, const void 
 R_API char *r_codemeta_print_comment_cmds(RCodeMeta *code) {
 	RCodeMetaItem *annotation;
 	HtUP *ht = ht_up_new0 ();
-	r_vector_foreach (&code->annotations, annotation) {
+	R_VEC_FOREACH (&code->annotations, annotation) {
 		if (annotation->type != R_CODEMETA_TYPE_OFFSET) {
 			continue;
 		}
@@ -497,7 +496,7 @@ R_API char *r_codemeta_print_json(RCodeMeta *code) {
 
 	char *type_str;
 	RCodeMetaItem *annotation;
-	r_vector_foreach (&code->annotations, annotation) {
+	R_VEC_FOREACH (&code->annotations, annotation) {
 		pj_o (pj);
 		pj_kn (pj, "start", (ut64)annotation->start);
 		pj_kn (pj, "end", (ut64)annotation->end);

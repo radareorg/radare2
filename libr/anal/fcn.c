@@ -209,11 +209,11 @@ static bool is_delta_pointer_table(ReadAhead *ra, RAnal *anal, RAnalFunction *fc
 			mov_aop = *aop;
 			o_reg_dst = cur_dst.reg;
 			RAnalValue *rval = NULL;
-			rval = r_vector_at (&mov_aop.dsts, 0);
+			rval = RVecRArchValue_at (&mov_aop.dsts, 0);
 			if (rval) {
 				cur_dst = *rval;
 			}
-			rval = r_vector_at (&mov_aop.srcs, 0);
+			rval = RVecRArchValue_at (&mov_aop.srcs, 0);
 			if (rval) {
 				cur_scr = *rval;
 				reg_src = cur_scr.regdelta;
@@ -465,14 +465,21 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RAnalBlock *block, voi
 		size_t i;
 		for (i = 0; i < block->ninstr; i++) {
 			const ut64 addr = r_anal_bb_opaddr_i (block, i);
-			RPVector *vars_used = r_anal_function_get_vars_used_at (other_fcn, addr);
+			RVecAnalVarPtr *vars_used = r_anal_function_get_vars_used_at (other_fcn, addr);
 			if (!vars_used) {
 				continue;
 			}
 			// vars_used will get modified if r_anal_var_remove_access_at gets called
-			RPVector *cloned_vars_used = (RPVector *)r_vector_clone ((RVector *)vars_used);
-			void **it;
-			r_pvector_foreach (cloned_vars_used, it) {
+			RVecAnalVarPtr *cloned_vars_used = RVecAnalVarPtr_new ();
+			if (!cloned_vars_used) {
+				break;
+			}
+			RAnalVar **it;
+			R_VEC_FOREACH (vars_used, it) {
+				RAnalVar *other_var = *it;
+				RVecAnalVarPtr_push_back (cloned_vars_used, &other_var);
+			}
+			R_VEC_FOREACH (cloned_vars_used, it) {
 				RAnalVar *other_var = *it;
 				const int actual_delta = other_var->kind == R_ANAL_VAR_KIND_SPV
 					? other_var->delta + ctx->stack_diff
@@ -486,11 +493,11 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RAnalBlock *block, voi
 					r_anal_var_set_access (anal, our_var, acc->reg, addr, acc->type, acc->stackptr);
 				}
 				r_anal_var_remove_access_at (other_var, addr);
-				if (r_vector_empty (&other_var->accesses)) {
+				if (RVecAnalVarAccess_empty (&other_var->accesses)) {
 					r_anal_function_delete_var (other_fcn, other_var);
 				}
 			}
-			r_pvector_free (cloned_vars_used);
+			RVecAnalVarPtr_free (cloned_vars_used);
 		}
 
 		// TODO: remove block->ninstr from other_fcn considering delay slots
@@ -789,13 +796,13 @@ repeat:
 			gotoBeach (R_ANAL_RET_END);
 		}
 		R_LOG_DEBUG ("op 0x%08"PFMT64x" %d %s", at, op->size, r_anal_optype_tostring (op->type));
-		dst = r_vector_at (&op->dsts, 0);
+		dst = RVecRArchValue_at (&op->dsts, 0);
 		free (op_dst);
 		op_dst = (dst && dst->reg)? strdup (dst->reg): NULL;
-		src0 = r_vector_at (&op->srcs, 0);
+		src0 = RVecRArchValue_at (&op->srcs, 0);
 		free (op_src);
 		op_src = (src0 && src0->reg)? strdup (src0->reg): NULL;
-		src1 = r_vector_at (&op->srcs, 1);
+		src1 = RVecRArchValue_at (&op->srcs, 1);
 
 		if (nopskip && fcn->addr == at) {
 			const int codealign = r_anal_archinfo (anal, R_ARCH_INFO_CODE_ALIGN);
@@ -1615,7 +1622,7 @@ bx = jmptbl_base + (byte[x9]<<2)
 						RAnalOp *prev_op = r_anal_op_new ();
 						anal->iob.read_at (anal->iob.io, op->addr - op->size, buf, sizeof (buf));
 						if (r_anal_op (anal, prev_op, op->addr - op->size, buf, sizeof (buf), R_ARCH_OP_MASK_VAL) > 0) {
-							RAnalValue *prev_dst = r_vector_at (&prev_op->dsts, 0);
+							RAnalValue *prev_dst = RVecRArchValue_at (&prev_op->dsts, 0);
 							bool prev_op_has_dst_name = prev_dst && prev_dst->reg;
 							bool op_has_src_name = src0 && src0->reg;
 							bool same_reg = (op->ireg && prev_op_has_dst_name && !strcmp (op->ireg, prev_dst->reg))
@@ -2001,22 +2008,22 @@ R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 /* Does NOT invalidate read-ahead cache. */
 R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, int reftype) {
 	R_RETURN_VAL_IF_FAIL (anal && fcn, 0);
-	RPVector *metas = r_meta_get_all_in (anal, addr, R_META_TYPE_ANY);
+	RVecIntervalNodePtr *metas = r_meta_get_all_in (anal, addr, R_META_TYPE_ANY);
 	if (metas) {
-		void **it;
-		r_pvector_foreach (metas, it) {
-			RAnalMetaItem *meta = ((RIntervalNode *)*it)->data;
+		RIntervalNode **it;
+		R_VEC_FOREACH (metas, it) {
+			RAnalMetaItem *meta = (*it)->data;
 			switch (meta->type) {
 			case R_META_TYPE_DATA:
 			case R_META_TYPE_STRING:
 			case R_META_TYPE_FORMAT:
-				r_pvector_free (metas);
+				RVecIntervalNodePtr_free (metas);
 				return 0;
 			default:
 				break;
 			}
 		}
-		r_pvector_free (metas);
+		RVecIntervalNodePtr_free (metas);
 	}
 	if (anal->opt.norevisit) {
 		if (!anal->visited) {
@@ -2479,8 +2486,8 @@ R_API bool r_anal_function_purity(RAnalFunction *fcn) {
 }
 
 static bool can_affect_bp(RAnal *anal, RAnalOp* op) {
-	RAnalValue *dst = r_vector_at (&op->dsts, 0);
-	RAnalValue *src = r_vector_at (&op->srcs, 0);
+	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
+	RAnalValue *src = RVecRArchValue_at (&op->srcs, 0);
 	const char *opdreg = dst? dst->reg: NULL;
 	const char *opsreg = src? src->reg: NULL;
 	const char *bpreg = r_reg_alias_getname (anal->reg, R_REG_ALIAS_BP);
@@ -2527,7 +2534,7 @@ R_API void r_anal_function_check_bp_use(RAnalFunction *fcn) {
 			if (op.size < 1) {
 				op.size = 1;
 			}
-			src = r_vector_at (&op.srcs, 0);
+			src = RVecRArchValue_at (&op.srcs, 0);
 			switch (op.type) {
 			case R_ANAL_OP_TYPE_MOV:
 			case R_ANAL_OP_TYPE_LEA:
@@ -2664,7 +2671,7 @@ static void update_var_analysis(RAnalFunction *fcn, int align, ut64 from, ut64 t
 // Clear function variable acesses inside in a block
 static void clear_bb_vars(RAnalFunction *fcn, RAnalBlock *bb, ut64 from, ut64 to) {
 	int i;
-	if (r_pvector_empty (&fcn->vars)) {
+	if (RVecAnalVarPtr_empty (&fcn->vars)) {
 		return;
 	}
 	for (i = 0; i < bb->ninstr; i++) {
@@ -2675,14 +2682,21 @@ static void clear_bb_vars(RAnalFunction *fcn, RAnalBlock *bb, ut64 from, ut64 to
 		if (addr >= to || addr == UT64_MAX) {
 			break;
 		}
-		RPVector *vars = r_anal_function_get_vars_used_at (fcn, addr);
+		RVecAnalVarPtr *vars = r_anal_function_get_vars_used_at (fcn, addr);
 		if (vars) {
-			RPVector *vars_clone = (RPVector *)r_vector_clone ((RVector *)vars);
-			void **v;
-			r_pvector_foreach (vars_clone, v) {
-				r_anal_var_remove_access_at ((RAnalVar *)*v, addr);
+			RVecAnalVarPtr *vars_clone = RVecAnalVarPtr_new ();
+			if (vars_clone) {
+				RAnalVar **v;
+				R_VEC_FOREACH (vars, v) {
+					RAnalVar *vv = *v;
+					RVecAnalVarPtr_push_back (vars_clone, &vv);
+				}
+				R_VEC_FOREACH (vars_clone, v) {
+					r_anal_var_remove_access_at ((RAnalVar *)*v, addr);
+				}
+				RVecAnalVarPtr_clear (vars_clone);
+				RVecAnalVarPtr_free (vars_clone);
 			}
-			r_pvector_clear (vars_clone);
 		}
 	}
 }

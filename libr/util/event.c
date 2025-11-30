@@ -1,7 +1,6 @@
 /* radare2 - MIT - Copyright 2018-2024 - pancake */
 
 #include <r_util.h>
-#include <r_vector.h>
 
 static void ht_callback_free(HtUPKv *kv) {
 	RVecREventHook_fini (kv->value);

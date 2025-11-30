@@ -168,11 +168,6 @@ struct agraph_refresh_data {
 	int fs;
 };
 
-struct r_agraph_location {
-	int x;
-	int y;
-};
-
 #define G(x, y) r_cons_canvas_gotoxy(g->can, x, y)
 #define W(x) r_cons_canvas_write(g->can, x)
 #define F(x, y, x2, y2, c) r_cons_canvas_fill(g->can, x, y, x2, y2, c)
@@ -3774,7 +3769,7 @@ static void agraph_init(RAGraph *g) {
 	g->hints = 1;
 	g->movspeed = DEFAULT_SPEED;
 	g->db = sdb_new0 ();
-	r_vector_init (&g->ghits.word_list, sizeof (struct r_agraph_location), NULL, NULL);
+	RVecAGraphLocation_init (&g->ghits.word_list);
 }
 
 static void graphNodeMove(RAGraph *g, int dir, int speed) {
@@ -4390,12 +4385,12 @@ static void nextword(RCore *core, RAGraph *g, const char *word) {
 	}
 	RAGraphHits *gh = &g->ghits;
 	RConsCanvas *can = g->can;
-	if (gh->word_list.len && gh->old_word && !strcmp (word, gh->old_word)) {
-		if (gh->word_nth >= gh->word_list.len) {
+	if (RVecAGraphLocation_length (&gh->word_list) && gh->old_word && !strcmp (word, gh->old_word)) {
+		if (gh->word_nth >= RVecAGraphLocation_length (&gh->word_list)) {
 			gh->word_nth = 0;
 		}
 
-		struct r_agraph_location *pos = r_vector_at (&gh->word_list, gh->word_nth);
+		RAGraphLocation *pos = RVecAGraphLocation_at (&gh->word_list, gh->word_nth);
 		gh->word_nth++;
 		if (pos) {
 			can->sx = -pos->x + can->w / 2;
@@ -4403,7 +4398,7 @@ static void nextword(RCore *core, RAGraph *g, const char *word) {
 		}
 		return;
 	} else {
-		r_vector_clear (&gh->word_list);
+		RVecAGraphLocation_clear (&gh->word_list);
 	}
 	char *s = get_graph_string (core, g);
 	r_cons_clear00 (core->cons);
@@ -4417,7 +4412,7 @@ static void nextword(RCore *core, RAGraph *g, const char *word) {
 		if (!a) {
 			break;
 		}
-		struct r_agraph_location *pos = r_vector_push (&gh->word_list, NULL);
+		RAGraphLocation *pos = RVecAGraphLocation_emplace_back (&gh->word_list);
 		if (pos) {
 			pos->x = x + g->x;
 			pos->y = y + g->y;
@@ -5314,7 +5309,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 			break;
 		}
 	}
-	r_vector_fini (&g->ghits.word_list);
+	RVecAGraphLocation_fini (&g->ghits.word_list);
 	r_cons_break_pop (core->cons);
 	r_config_set_b (core->config, "asm.comments", asm_comments);
 	core->cons->event_resize = NULL;

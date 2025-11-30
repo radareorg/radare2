@@ -105,7 +105,7 @@ static void op_fillval(PluginData *pd, RAnalOp *op, csh handle, cs_insn *insn) {
 	case R_ANAL_OP_TYPE_LOAD:
 		if (INSOP (0).type == SPARC_OP_MEM) {
 			memset (reg, 0, sizeof (RRegItem));
-			val = r_vector_push (&op->srcs, NULL);
+			val = RVecRArchValue_emplace_back (&op->srcs);
 			val->reg = parse_reg_name (handle, insn, 0);
 			val->delta = INSOP(0).mem.disp;
 		}
@@ -113,7 +113,7 @@ static void op_fillval(PluginData *pd, RAnalOp *op, csh handle, cs_insn *insn) {
 	case R_ANAL_OP_TYPE_STORE:
 		if (INSOP (1).type == SPARC_OP_MEM) {
 			memset (reg, 0, sizeof (RRegItem));
-			val = r_vector_push (&op->dsts, NULL);
+			val = RVecRArchValue_emplace_back (&op->dsts);
 			val->reg = parse_reg_name (handle, insn, 1);
 			val->delta = INSOP(1).mem.disp;
 		}

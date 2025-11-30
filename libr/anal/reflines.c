@@ -116,10 +116,10 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 		ut64 bind_addr = 0;
 		addr += sz;
 		{
-			RPVector *metas = r_meta_get_all_at (anal, addr);
+			RVecIntervalNodePtr *metas = r_meta_get_all_at (anal, addr);
 			if (metas) {
-				void **it;
-				r_pvector_foreach (metas, it) {
+				RIntervalNode **it;
+				R_VEC_FOREACH (metas, it) {
 					RIntervalNode *node = *it;
 					RAnalMetaItem *meta = node->data;
 					switch (meta->type) {
@@ -139,7 +139,7 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 					}
 				}
 				// doskip:
-				r_pvector_free (metas);
+				RVecIntervalNodePtr_free (metas);
 				if (skip) {
 					ptr += skip;
 					addr += skip;

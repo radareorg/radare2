@@ -3,6 +3,7 @@
 
 #include <r_reg.h>
 #include <r_arch.h>
+#include <r_vec.h>
 #include <r_anal/hint.h>
 
 #ifdef __cplusplus
@@ -50,6 +51,8 @@ typedef enum {
 	R_ANAL_OP_FAMILY_SIMD,   	/* SIMD instructions */
 	R_ANAL_OP_FAMILY_LAST
 } RAnalOpFamily;
+
+R_VEC_TYPE (RVecRArchValue, RArchValue);
 
 #if 0
 On x86 according to Wikipedia
@@ -253,8 +256,8 @@ typedef struct r_anal_op_t {
 	int ptrsize;    /* f.ex: zero extends for 8, 16 or 32 bits only */
 	st64 stackptr;  /* stack pointer */
 	int refptr;     /* if (0) ptr = "reference" else ptr = "load memory of refptr bytes" */
-	RVector/*RArchValue*/ srcs;
-	RVector/*RArchValue*/ dsts;
+	RVecRArchValue srcs;
+	RVecRArchValue dsts;
 	RList *access; /* RArchValue access information */
 	RStrBuf esil;
 	RStrBuf opex;
@@ -304,4 +307,3 @@ R_API void r_anal_value_free(RArchValue *value);
 #endif
 
 #endif
-

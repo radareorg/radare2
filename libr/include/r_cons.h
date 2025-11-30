@@ -20,7 +20,7 @@ extern "C" {
 #include <r_util/r_str_constpool.h>
 #include <r_util/r_sys.h>
 #include <r_util/r_file.h>
-#include <r_vector.h>
+#include <r_vec.h>
 #include <sdb/sdb.h>
 #include <sdb/ht_up.h>
 
@@ -1077,11 +1077,18 @@ typedef enum { R_LINE_PROMPT_DEFAULT, R_LINE_PROMPT_OFFSET, R_LINE_PROMPT_FILE }
 
 typedef int (*RLineCompletionCb)(RLineCompletion *completion, RLineBuffer *buf, RLinePromptType prompt_type, void *user);
 
+static inline void r_line_completion_arg_fini(char **s) {
+	free (*s);
+	*s = NULL;
+}
+
+R_VEC_TYPE_WITH_FINI (RVecCString, char *, r_line_completion_arg_fini);
+
 struct r_line_comp_t {
 	bool opt;
 	size_t args_limit;
 	bool quit;
-	RPVector args; /* <char *> */
+	RVecCString args;
 	RLineCompletionCb run;
 	void *run_user; // RCore *
 };

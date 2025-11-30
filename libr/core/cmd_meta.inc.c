@@ -1339,9 +1339,9 @@ static void cmd_Cv(RCore *core, const char *input) {
 	switch (input[1]) {
 	case '*': // "Cv*"
 	case '\0': { // "Cv"
-		void **it;
+		RAnalVar **it;
 		char kind = input[0];
-		r_pvector_foreach (&fcn->vars, it) {
+		R_VEC_FOREACH (&fcn->vars, it) {
 			RAnalVar *var = *it;
 			if (var->kind != kind || !var->comment) {
 				continue;

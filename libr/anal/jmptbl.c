@@ -2,7 +2,11 @@
 
 #include <r_anal.h>
 
+#include <r_vec.h>
+
 #define JMPTBL_MAXSZ 512
+
+R_VEC_TYPE (RVecUT64, ut64);
 
 static inline ut64 get_mips_gp_base(RAnal *anal, ut64 ip) {
 	ut64 gp = anal ? anal->gp : 0;
@@ -360,8 +364,8 @@ static bool detect_casenum_shift(RAnalOp *op, const char **cmp_reg, st64 *start_
 	if (!*cmp_reg) {
 		return true;
 	}
-	RAnalValue *dst = r_vector_at (&op->dsts, 0);
-	RAnalValue *src = r_vector_at (&op->srcs, 0);
+	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
+	RAnalValue *src = RVecRArchValue_at (&op->srcs, 0);
 	if (dst && dst->reg && !strcmp (dst->reg, *cmp_reg)) {
 		if (op->type == R_ANAL_OP_TYPE_LEA && op->ptr == UT64_MAX) {
 			*start_casenum_shift = -(st64)op->disp;
@@ -400,8 +404,8 @@ R_API bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_a
 		return false;
 	}
 
-	RVector v;
-	r_vector_init (&v, sizeof (ut64), NULL, NULL);
+	RVecUT64 v;
+	RVecUT64_init (&v);
 	int len = 0;
 	const char *cmp_reg = NULL;
 	ut64 cmp_val = 0;
@@ -448,10 +452,10 @@ R_API bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_a
 			*table_size = tmp_aop.refptr + 1;
 			cmp_val = tmp_aop.refptr;
 		}
-		r_vector_push (&v, &i);
+		RVecUT64_push_back (&v, &i);
 		r_anal_op (anal, &tmp_aop, lea_addr + i, buf + i, search_sz - i, R_ARCH_OP_MASK_VAL);
-		RAnalValue *tmp_src = r_vector_at (&tmp_aop.srcs, 0);
-		RAnalValue *tmp_dst = r_vector_at (&tmp_aop.dsts, 0);
+		RAnalValue *tmp_src = RVecRArchValue_at (&tmp_aop.srcs, 0);
+		RAnalValue *tmp_dst = RVecRArchValue_at (&tmp_aop.dsts, 0);
 		if (tmp_dst && tmp_dst->reg) {
 			cmp_reg = tmp_dst->reg;
 		} else if (tmp_aop.reg) {
@@ -465,9 +469,9 @@ R_API bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_a
 	}
 	if (isValid) {
 		*start_casenum_shift = 0;
-		void **it;
-		r_vector_foreach_prev (&v, it) {
-			const ut64 op_off = *(ut64 *)it;
+		ut64 *it;
+		R_VEC_FOREACH_PREV (&v, it) {
+			const ut64 op_off = *it;
 			ut64 op_addr = lea_addr + op_off;
 			r_anal_op (anal, &tmp_aop, op_addr,
 					buf + op_off, search_sz - op_off,
@@ -479,7 +483,7 @@ R_API bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_a
 			r_anal_op_fini (&tmp_aop);
 		}
 	}
-	r_vector_fini (&v);
+	RVecUT64_fini (&v);
 	free (buf);
 	return isValid;
 }
@@ -631,8 +635,8 @@ R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnal
 			r_anal_op (anal, &tmp_aop, op_addr,
 					bb_buf + prev_pos, buflen,
 					R_ARCH_OP_MASK_VAL);
-			RAnalValue *tmp_dst = r_vector_at (&tmp_aop.dsts, 0);
-			RAnalValue *tmp_src = r_vector_at (&tmp_aop.srcs, 0);
+			RAnalValue *tmp_dst = RVecRArchValue_at (&tmp_aop.dsts, 0);
+			RAnalValue *tmp_src = RVecRArchValue_at (&tmp_aop.srcs, 0);
 			if (tmp_dst && tmp_dst->reg) {
 				cmp_reg = tmp_dst->reg;
 			} else if (tmp_aop.reg) {

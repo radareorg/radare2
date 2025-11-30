@@ -103,14 +103,14 @@ static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
 	return strdup (val);
 }
 
-R_API RPVector *r2r_load_cmd_test_file(const char *file) {
+R_API RVecR2RCmdTestPtr *r2r_load_cmd_test_file(const char *file) {
 	char *contents = r_file_slurp (file, NULL);
 	if (!contents) {
 		R_LOG_ERROR ("Failed to open %s", file);
 		return NULL;
 	}
 
-	RPVector *ret = r_pvector_new (NULL);
+	RVecR2RCmdTestPtr *ret = RVecR2RCmdTestPtr_new ();
 	if (!ret) {
 		free (contents);
 		return NULL;
@@ -118,7 +118,7 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 	R2RCmdTest *test = r2r_cmd_test_new ();
 	if (!test) {
 		free (contents);
-		r_pvector_free (ret);
+		RVecR2RCmdTestPtr_free (ret);
 		return NULL;
 	}
 
@@ -152,13 +152,13 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 				R_LOG_ERROR (LINEFMT ": Test without CMDS key", file, linenum);
 				goto fail;
 			}
-			if (! (test->expect.value || test->expect_err.value)) {
-				if (! (test->regexp_out.value || test->regexp_err.value)) {
+			if (!(test->expect.value || test->expect_err.value)) {
+				if (!(test->regexp_out.value || test->regexp_err.value)) {
 					R_LOG_ERROR (LINEFMT ": Test without EXPECT or EXPECT_ERR key, missing EOF?", file, linenum);
 					goto fail;
 				}
 			}
-			r_pvector_push (ret, test);
+			RVecR2RCmdTestPtr_push_back (ret, &test);
 			test = r2r_cmd_test_new ();
 			if (!test) {
 				goto beach;
@@ -265,7 +265,7 @@ beach:
 fail:
 	r2r_cmd_test_free (test);
 	test = NULL;
-	r_pvector_free (ret);
+	RVecR2RCmdTestPtr_free (ret);
 	ret = NULL;
 	goto beach;
 }
@@ -322,7 +322,7 @@ static bool parse_asm_path(const char *path, RStrConstPool *strpool, const char 
 	return true;
 }
 
-R_API RPVector *r2r_load_asm_test_file(RStrConstPool *strpool, const char *file) {
+R_API RVecR2RAsmTestPtr *r2r_load_asm_test_file(RStrConstPool *strpool, const char *file) {
 	const char *arch;
 	const char *cpu;
 	int bits;
@@ -337,7 +337,7 @@ R_API RPVector *r2r_load_asm_test_file(RStrConstPool *strpool, const char *file)
 		return NULL;
 	}
 
-	RPVector *ret = r_pvector_new (NULL);
+	RVecR2RAsmTestPtr *ret = RVecR2RAsmTestPtr_new ();
 	if (!ret) {
 		return NULL;
 	}
@@ -440,14 +440,14 @@ R_API RPVector *r2r_load_asm_test_file(RStrConstPool *strpool, const char *file)
 		test->disasm = strdup (disasm);
 		test->bytes = bytes;
 		test->bytes_size = (size_t)bytesz;
-		r_pvector_push (ret, test);
+		RVecR2RAsmTestPtr_push_back (ret, &test);
 	} while ((line = nextline));
 
 beach:
 	free (contents);
 	return ret;
 fail:
-	r_pvector_free (ret);
+	RVecR2RAsmTestPtr_free (ret);
 	ret = NULL;
 	goto beach;
 }
@@ -464,14 +464,14 @@ R_API void r2r_json_test_free(R2RJsonTest *test) {
 	free (test);
 }
 
-R_API RPVector *r2r_load_json_test_file(const char *file) {
+R_API RVecR2RJsonTestPtr *r2r_load_json_test_file(const char *file) {
 	char *contents = r_file_slurp (file, NULL);
 	if (!contents) {
 		R_LOG_ERROR ("Failed to open %s", file);
 		return NULL;
 	}
 
-	RPVector *ret = r_pvector_new (NULL);
+	RVecR2RJsonTestPtr *ret = RVecR2RJsonTestPtr_new ();
 	if (!ret) {
 		free (contents);
 		return NULL;
@@ -513,7 +513,7 @@ R_API RPVector *r2r_load_json_test_file(const char *file) {
 			break;
 		}
 		test->broken = broken_token? true: false;
-		r_pvector_push (ret, test);
+		RVecR2RJsonTestPtr_push_back (ret, &test);
 	} while ((line = nextline));
 
 	free (contents);
@@ -554,7 +554,7 @@ R_API R2RTestDatabase *r2r_test_database_new(void) {
 	if (!db) {
 		return NULL;
 	}
-	r_pvector_init (&db->tests, (RPVectorFree)r2r_test_free);
+	RVecR2RTestPtr_init (&db->tests);
 	r_str_constpool_init (&db->strpool);
 	return db;
 }
@@ -563,7 +563,11 @@ R_API void r2r_test_database_free(R2RTestDatabase *db) {
 	if (!db) {
 		return;
 	}
-	r_pvector_clear (&db->tests);
+	R2RTest **it;
+	R_VEC_FOREACH (&db->tests, it) {
+		r2r_test_free (*it);
+	}
+	RVecR2RTestPtr_clear (&db->tests);
 	r_str_constpool_fini (&db->strpool);
 	free (db);
 }
@@ -685,12 +689,12 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 	switch (test_type) {
 	case R2R_TEST_TYPE_CMD:
 		{
-			RPVector *cmd_tests = r2r_load_cmd_test_file (path);
+			RVecR2RCmdTestPtr *cmd_tests = r2r_load_cmd_test_file (path);
 			if (!cmd_tests) {
 				return false;
 			}
-			void **it;
-			r_pvector_foreach (cmd_tests, it) {
+			R2RCmdTest **it;
+			R_VEC_FOREACH (cmd_tests, it) {
 				R2RTest *test = R_NEW (R2RTest);
 				if (!test) {
 					continue;
@@ -699,19 +703,19 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 				test->path = pooled_path;
 				test->cmd_test = *it;
 				test->cmd_test->load_plugins = load_plugins;
-				r_pvector_push (&db->tests, test);
+				RVecR2RTestPtr_push_back (&db->tests, &test);
 			}
-			r_pvector_free (cmd_tests);
+			RVecR2RCmdTestPtr_free (cmd_tests);
 			break;
 		}
 	case R2R_TEST_TYPE_ASM:
 		{
-			RPVector *asm_tests = r2r_load_asm_test_file (&db->strpool, path);
+			RVecR2RAsmTestPtr *asm_tests = r2r_load_asm_test_file (&db->strpool, path);
 			if (!asm_tests) {
 				return false;
 			}
-			void **it;
-			r_pvector_foreach (asm_tests, it) {
+			R2RAsmTest **it;
+			R_VEC_FOREACH (asm_tests, it) {
 				R2RTest *test = R_NEW (R2RTest);
 				if (!test) {
 					continue;
@@ -719,19 +723,19 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 				test->type = R2R_TEST_TYPE_ASM;
 				test->path = pooled_path;
 				test->asm_test = *it;
-				r_pvector_push (&db->tests, test);
+				RVecR2RTestPtr_push_back (&db->tests, &test);
 			}
-			r_pvector_free (asm_tests);
+			RVecR2RAsmTestPtr_free (asm_tests);
 			break;
 		}
 	case R2R_TEST_TYPE_JSON:
 		{
-			RPVector *json_tests = r2r_load_json_test_file (path);
+			RVecR2RJsonTestPtr *json_tests = r2r_load_json_test_file (path);
 			if (!json_tests) {
 				return false;
 			}
-			void **it;
-			r_pvector_foreach (json_tests, it) {
+			R2RJsonTest **it;
+			R_VEC_FOREACH (json_tests, it) {
 				R2RTest *test = R_NEW (R2RTest);
 				if (!test) {
 					continue;
@@ -740,9 +744,9 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 				test->path = pooled_path;
 				test->json_test = *it;
 				test->json_test->load_plugins = load_plugins;
-				r_pvector_push (&db->tests, test);
+				RVecR2RTestPtr_push_back (&db->tests, &test);
 			}
-			r_pvector_free (json_tests);
+			RVecR2RJsonTestPtr_free (json_tests);
 			break;
 		}
 	case R2R_TEST_TYPE_FUZZ:
@@ -776,7 +780,7 @@ static void database_load_fuzz_file(R2RTestDatabase *db, const char *path, const
 	test->type = R2R_TEST_TYPE_FUZZ;
 	test->fuzz_test = fuzz_test;
 	test->path = r_str_constpool_get (&db->strpool, path);
-	r_pvector_push (&db->tests, test);
+	RVecR2RTestPtr_push_back (&db->tests, &test);
 }
 
 R_API bool r2r_test_database_load_fuzz(R2RTestDatabase *db, const char *path) {

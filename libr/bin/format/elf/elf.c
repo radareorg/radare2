@@ -2359,7 +2359,7 @@ bool Elf_(get_stripped)(ELFOBJ *eo, bool *have_lines, bool *have_syms) {
 	*have_lines = (sec && sec->size > 16);
 	size_t i;
 	for (i = 0; i < eo->ehdr.e_shnum; i++) {
-		if (eo->shdr[i].sh_type == SHT_SYMTAB || eo->shdr[i].sh_type == SHT_DYNSYM) {
+		if (eo->shdr[i].sh_type == SHT_SYMTAB) {
 			// R_BIN_DBG_SYMS
 			*have_syms = true;
 			break;
@@ -3550,7 +3550,11 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 	// parse pltrel
 	for (offset = 0; offset < offset_end && pos < num_relocs; offset += size, pos++) {
 		RBinElfReloc *reloc = r_vector_end (&eo->g_relocs);
+		if (!reloc) {
+			break;
+		}
 		if (!read_reloc (eo, reloc, eo->dyn_info.dt_pltrel, eo->dyn_info.dt_jmprel + offset)) {
+			r_vector_pop (&eo->g_relocs, NULL);
 			break;
 		}
 
@@ -3567,6 +3571,7 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 			if (!read_reloc (eo, reloc, DT_RELR, eo->dyn_info.dt_relr + offset)) {
 				// If read_reloc fails for RELR, it might be processing a bitmap entry
 				// Try the next entry
+				r_vector_pop (&eo->g_relocs, NULL);
 				offset += sizeof (Elf_(Addr));
 				continue;
 			}
@@ -3581,6 +3586,7 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 	for (offset = 0; offset < eo->dyn_info.dt_relasz && pos < num_relocs; offset += eo->dyn_info.dt_relaent, pos++) {
 		RBinElfReloc *reloc = r_vector_end (&eo->g_relocs);
 		if (!read_reloc (eo, reloc, DT_RELA, eo->dyn_info.dt_rela + offset)) {
+			r_vector_pop (&eo->g_relocs, NULL);
 			break;
 		}
 		int index = r_vector_index (&eo->g_relocs);
@@ -3591,6 +3597,7 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 	for (offset = 0; offset < eo->dyn_info.dt_relsz && pos < num_relocs; offset += eo->dyn_info.dt_relent, pos++) {
 		RBinElfReloc *reloc = r_vector_end (&eo->g_relocs);
 		if (!read_reloc (eo, reloc, DT_REL, eo->dyn_info.dt_rel + offset)) {
+			r_vector_pop (&eo->g_relocs, NULL);
 			break;
 		}
 		int index = r_vector_index (&eo->g_relocs);
@@ -3604,6 +3611,7 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 		while (pos < num_relocs) {
 			RBinElfReloc *reloc = r_vector_end (&eo->g_relocs);
 			if (!read_crel_reloc (eo, reloc, eo->dyn_info.dt_crel + next_offset, &next_offset)) {
+				r_vector_pop (&eo->g_relocs, NULL);
 				break;
 			}
 			int index = r_vector_index (&eo->g_relocs);
@@ -3703,6 +3711,7 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, size_t pos, size_t
 				if (!read_crel_reloc (eo, reloc, section->rva + j, &next_offset)) {
 					// If read_crel_reloc returns false, either we're done or encountered an error
 					// In either case, break the loop
+					r_vector_pop (&eo->g_relocs, NULL);
 					break;
 				}
 
@@ -3744,6 +3753,7 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, size_t pos, size_t
 
 				RBinElfReloc *reloc = r_vector_end (&eo->g_relocs);
 				if (!read_reloc (eo, reloc, rel_mode, section->rva + j)) {
+					r_vector_pop (&eo->g_relocs, NULL);
 					break;
 				}
 

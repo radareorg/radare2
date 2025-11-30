@@ -742,7 +742,7 @@ static bool riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	if (mask & R_ARCH_OP_MASK_VAL && args.num) {
 		int i = 1;
 		RAnalValue *dst, *src;
-		dst = r_vector_push (&op->dsts, NULL);
+		dst = RVecRArchValue_emplace_back (&op->dsts);
 		char *argf = strdup (o->args);
 		r_str_split (argf, ',');
 		char *comma = argf;
@@ -759,7 +759,7 @@ static bool riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 		}
 		comma = r_str_tok_next (comma);
 		for (; i < args.num; i++) {
-			src = r_vector_push (&op->srcs, NULL);
+			src = RVecRArchValue_emplace_back (&op->srcs);
 			if (comma && strchr (comma, '(')) {
 				src->delta = (st64)r_num_get (NULL, args.arg[i]);
 				// src->reg = args.arg[1];
