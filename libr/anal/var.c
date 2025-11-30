@@ -1056,7 +1056,7 @@ static RAnalVar *get_stack_var(RAnalFunction *fcn, int delta) {
 static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, char type) {
 	st64 ptr = 0;
 	const st64 maxstackframe = 1024 * 8;
-	RAnalValue *val = NULL;
+	RAnalValue *val;
 
 	R_RETURN_IF_FAIL (anal && fcn && op && reg);
 
