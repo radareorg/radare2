@@ -39,6 +39,8 @@ static char *readline(char *buf, size_t *linesz) {
 	return NULL;
 }
 
+R_VEC_TYPE(RVecChar, char);
+
 // read the (possibly multiline) string value of some key in the file
 // e.g. for
 //
@@ -72,9 +74,13 @@ static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
 			R_LOG_ERROR ("End token must be \"EOF\", got \"%s\" instead", endtoken);
 			return NULL;
 		}
-		RStrBuf *buf = r_strbuf_new ("");
+
+    RVecChar buf;
+    RVecChar_init(&buf);
+
 		char *line = *nextline;
 		size_t linesz = 0;
+
 		while (line) {
 			*nextline = readline (line, &linesz);
 			(*linenum)++;
@@ -88,15 +94,27 @@ static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
 			if (end) {
 				*end = '\0';
 			}
-			r_strbuf_append (buf, line);
+
+      for (char *c = line; *c; c++) {
+        RVecChar_push_back (&buf, c);
+      }
+
 			if (end) {
-				return r_strbuf_drain (buf);
+        // If we haven't allocated anything yet - still return empty string
+        // (it's okay to skip _fini here though)
+        if (!buf._start) return strdup ("");
+
+				char *res = strndup (buf._start, RVecChar_length(&buf));
+        RVecChar_fini (&buf);
+        return res;
 			}
-			r_strbuf_append (buf, "\n");
+
+      const char eol = '\n';
+      RVecChar_push_back (&buf, &eol);
 			line = *nextline;
 		}
 		R_LOG_ERROR ("Missing closing end token %s", endtoken);
-		r_strbuf_free (buf);
+    RVecChar_fini (&buf);
 		return NULL;
 	}
 
