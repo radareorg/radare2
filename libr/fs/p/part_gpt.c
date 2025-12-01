@@ -79,6 +79,7 @@ static int fs_part_gpt(void *disk, void *ptr, void *closure) {
 	}
 	ut8 *entries = malloc (alloc_size);
 	if (!entries) {
+		R_LOG_ERROR ("Failed to allocate memory for GPT partition entries");
 		return 0;
 	}
 	fs->iob.read_at (fs->iob.io, entries_lba, entries, num_entries * entry_size);
