@@ -274,6 +274,17 @@ R_API bool r_anal_xrefs_set(RAnal *anal, ut64 from, ut64 to, const RAnalRefType 
 
 	ref_manager_add_entry (anal->rm, from, to, type);
 	R_DIRTY_SET (anal);
+
+	// Invalidate function ref counts
+	RAnalFunction *fcn_from = r_anal_get_function_at (anal, from);
+	if (fcn_from) {
+		fcn_from->meta.numcallrefs = -1;
+	}
+	RAnalFunction *fcn_to = r_anal_get_function_at (anal, to);
+	if (fcn_to) {
+		fcn_to->meta.numrefs = -1;
+	}
+
 	return true;
 }
 
@@ -281,6 +292,17 @@ R_API bool r_anal_xref_del(RAnal *anal, ut64 from, ut64 to) {
 	R_RETURN_VAL_IF_FAIL (anal, false);
 	ref_manager_remove_entry (anal->rm, from, to);
 	R_DIRTY_SET (anal);
+
+	// Invalidate function ref counts
+	RAnalFunction *fcn_from = r_anal_get_function_at (anal, from);
+	if (fcn_from) {
+		fcn_from->meta.numcallrefs = -1;
+	}
+	RAnalFunction *fcn_to = r_anal_get_function_at (anal, to);
+	if (fcn_to) {
+		fcn_to->meta.numrefs = -1;
+	}
+
 	return true;
 }
 
@@ -581,6 +603,86 @@ R_API RVecAnalRef *r_anal_function_get_refs(RAnalFunction *fcn) {
 R_API RVecAnalRef *r_anal_function_get_all_xrefs(RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (fcn, NULL);
 	return fcn_get_all_refs (fcn, fcn->anal->rm, ref_manager_get_xrefs);
+}
+
+// Helper function to count refs without allocating
+typedef ut64 (*CountFn)(RefManager *rm, ut64 addr, RAnalRefType type_filter);
+
+static inline bool ref_matches_type(const RAnalRef *ref, RAnalRefType type_filter) {
+	return type_filter == R_ANAL_REF_TYPE_ANY || R_ANAL_REF_TYPE_MASK (ref->type) == type_filter;
+}
+
+static ut64 ref_manager_count_refs_filtered(RefManager *rm, ut64 addr, RAnalRefType type_filter) {
+	RVecAnalRef *refs = ref_manager_get_refs (rm, addr);
+	if (!refs) {
+		return 0;
+	}
+	ut64 count = 0;
+	RAnalRef *ref;
+	R_VEC_FOREACH (refs, ref) {
+		if (ref_matches_type (ref, type_filter)) {
+			count++;
+		}
+	}
+	RVecAnalRef_free (refs);
+	return count;
+}
+
+static ut64 ref_manager_count_xrefs_filtered(RefManager *rm, ut64 addr, RAnalRefType type_filter) {
+	RVecAnalRef *refs = ref_manager_get_xrefs (rm, addr);
+	if (!refs) {
+		return 0;
+	}
+	ut64 count = 0;
+	RAnalRef *ref;
+	R_VEC_FOREACH (refs, ref) {
+		if (ref_matches_type (ref, type_filter)) {
+			count++;
+		}
+	}
+	RVecAnalRef_free (refs);
+	return count;
+}
+
+static ut64 fcn_count_refs(RAnalFunction *fcn, RefManager *rm, CountFn count_refs, RAnalRefType type_filter) {
+	ut64 total = 0;
+	RListIter *iter;
+	RAnalBlock *bb;
+	r_list_foreach (fcn->bbs, iter, bb) {
+		int i;
+		for (i = 0; i < bb->ninstr; i++) {
+			ut64 addr = bb->addr + r_anal_bb_offset_inst (bb, i);
+			total += count_refs (rm, addr, type_filter);
+		}
+	}
+	return total;
+}
+
+// Count refs of a specific type from a function (use R_ANAL_REF_TYPE_ANY to count all)
+R_API ut64 r_anal_function_count_refs(RAnalFunction *fcn, RAnalRefType type) {
+	R_RETURN_VAL_IF_FAIL (fcn, 0);
+	if (type == R_ANAL_REF_TYPE_CALL && fcn->meta.numcallrefs != -1) {
+		return fcn->meta.numcallrefs;
+	}
+	ut64 count = fcn_count_refs (fcn, fcn->anal->rm, ref_manager_count_refs_filtered, type);
+	if (type == R_ANAL_REF_TYPE_CALL) {
+		fcn->meta.numcallrefs = count;
+	}
+	return count;
+}
+
+// Count xrefs to a function (optionally filtered by type)
+R_API ut64 r_anal_function_count_xrefs(RAnalFunction *fcn, RAnalRefType type) {
+	R_RETURN_VAL_IF_FAIL (fcn, 0);
+	if (type == R_ANAL_REF_TYPE_ANY && fcn->meta.numrefs != -1) {
+		return fcn->meta.numrefs;
+	}
+	// For xrefs, we only need to check the function entry point
+	ut64 count = ref_manager_count_xrefs_filtered (fcn->anal->rm, fcn->addr, type);
+	if (type == R_ANAL_REF_TYPE_ANY) {
+		fcn->meta.numrefs = count;
+	}
+	return count;
 }
 
 R_API char r_anal_ref_perm_tochar(RAnalRef *ref) {

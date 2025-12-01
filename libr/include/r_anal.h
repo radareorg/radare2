@@ -680,6 +680,7 @@ typedef struct r_anal_bb_t {
 } RAnalBlock;
 
 typedef enum {
+	R_ANAL_REF_TYPE_ANY = -1,   // match any type
 	R_ANAL_REF_TYPE_NULL = 0,   // unknown/undefined
 	R_ANAL_REF_TYPE_ERROR = 1,  // unreadable/invalid
 	R_ANAL_REF_TYPE_CODE = 'c', // code ref
@@ -1043,6 +1044,8 @@ R_API ut64 r_anal_function_min_addr(RAnalFunction *fcn);
 // first address directly after the function
 R_API ut64 r_anal_function_max_addr(RAnalFunction *fcn);
 
+
+
 // size from the function entrypoint (fcn->addr) to the end of the function (r_anal_function_max_addr)
 R_API ut64 r_anal_function_size_from_entry(RAnalFunction *fcn);
 
@@ -1190,6 +1193,8 @@ R_API ut64 r_anal_xrefs_count_at(RAnal *anal, ut64 to);
 R_API RVecAnalRef *r_anal_function_get_refs(RAnalFunction *fcn);
 R_API RVecAnalRef *r_anal_function_get_all_xrefs(RAnalFunction *fcn);
 R_API RVecAnalRef *r_anal_function_get_xrefs(RAnalFunction *fcn);
+R_API ut64 r_anal_function_count_refs(RAnalFunction *fcn, RAnalRefType type);
+R_API ut64 r_anal_function_count_xrefs(RAnalFunction *fcn, RAnalRefType type);
 R_API bool r_anal_xrefs_set(RAnal *anal, ut64 from, ut64 to, const RAnalRefType type);
 R_API bool r_anal_xref_del(RAnal *anal, ut64 from, ut64 to);
 
