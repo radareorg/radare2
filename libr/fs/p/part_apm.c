@@ -85,6 +85,10 @@ static int fs_part_apm(void *disk, void *ptr, void *closure) {
 			continue;
 		}
 
+		// Check for overflow before multiplying by 512
+		if (e->partition_start > UT64_MAX / 512 || e->partition_size > UT64_MAX / 512) {
+			continue; // Skip partitions that would overflow
+		}
 		ut64 start = (ut64)e->partition_start * 512;
 		ut64 size = (ut64)e->partition_size * 512;
 
