@@ -35,8 +35,8 @@ jobs:
     - uses: actions/upload-artifact@v5
       with:
         name: linux-wasi-api
-        path: radare2-*-wasi-api.zip
-        path: radare2-*-wasi-browser.zip
+        path: |
+          radare2-*-wasi-api.zip
 
   # WASI Browser
   linux-wasi-browser:
