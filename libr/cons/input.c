@@ -631,24 +631,21 @@ R_API int r_cons_readchar(RCons *cons) {
 	r_cons_set_raw (cons, true);
 #if R2__WINDOWS__
 	return readchar_w32 (cons, 0);
-#elif __wasi__
-	return getchar ();
-#if 0
-	void *bed = r_cons_sleep_begin (cons);
-	int ret = read (STDIN_FILENO, buf, 1);
-	r_cons_sleep_end (cons, bed);
-	if (ret < 1) {
-	///	eprintf ("read minus wan\n");
-		return -1;
+#elif R2_WASM_BROWSER
+	/* Check if WASM import is available - FIXED */
+	extern int r2_js_key_next(void) __attribute__((import_module("r2"), import_name("key_next")));
+	if ((void*)r2_js_key_next != NULL) {
+		return r2_js_key_next();
 	}
-	// eprintf ("READ %d = %d\n", ret, buf[0]);
-	return buf[0];
-#endif
+	/* Fallback to getchar() if import not available */
+	return getchar ();
 #else
+	ssize_t ret;
+#if !defined(__wasi__)
 	void *bed = r_cons_sleep_begin (cons);
 
 	// Blocks until either stdin has something to read or a signal happens.
-	// This serves to check if the terminal window was resized. It avoids the race
+	// This serves to check if the terminal window was resized. It avoids race
 	// condition that could happen if we did not use pselect or select in case SIGWINCH
 	// was handled immediately before the blocking call (select or read). The race is
 	// prevented from happening by having SIGWINCH blocked process-wide except for in
@@ -671,8 +668,12 @@ R_API int r_cons_readchar(RCons *cons) {
 		}
 	}
 
-	ssize_t ret = read (STDIN_FILENO, buf, 1);
+	ret = read (STDIN_FILENO, buf, 1);
 	r_cons_sleep_end (cons, bed);
+#else
+	// WASI fallback
+	ret = read (STDIN_FILENO, buf, 1);
+#endif
 	if (ret != 1) {
 		return -1;
 	}

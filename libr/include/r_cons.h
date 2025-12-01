@@ -32,9 +32,9 @@ extern "C" {
 #ifndef __wasi__
 #include <termios.h>
 #include <sys/wait.h>
-#endif
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+#endif
 #endif
 #if R2__WINDOWS__
 #include <windows.h>
@@ -516,7 +516,7 @@ typedef struct r_cons_t {
 	RConsFunctionKey cb_fkey;
 
 	void *user; // Used by <RCore*>
-#if R2__UNIX__ && !__wasi__
+#if R2__UNIX__ && !defined(__wasi__)
 	struct termios term_raw, term_buf;
 #elif R2__WINDOWS__
 	DWORD term_raw, term_buf, term_xterm;

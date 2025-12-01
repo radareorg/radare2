@@ -344,7 +344,7 @@ if get_option('plugins') == ''
     'gdb',
     'native',
     'qnx',
-    'winkd'
+    'winkd',
   ]
 
   egg_plugins += [

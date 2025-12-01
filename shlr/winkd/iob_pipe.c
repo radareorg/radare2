@@ -63,6 +63,7 @@ static void *iob_pipe_open(const char *path) {
 	int sock;
 	struct sockaddr_un sa;
 
+#ifndef __wasi__
 	sock = socket (AF_UNIX, SOCK_STREAM, 0);
 	if (sock == -1) {
 		perror ("socket");
@@ -70,16 +71,17 @@ static void *iob_pipe_open(const char *path) {
 	}
 
 	memset (&sa, 0, sizeof (struct sockaddr_un));
-#ifndef __wasi__
 	sa.sun_family = AF_UNIX;
 	r_str_ncpy (sa.sun_path, path, sizeof (sa.sun_path) - 1);
-#endif
 	if (connect (sock, (struct sockaddr *) &sa, sizeof (struct sockaddr_un)) == -1) {
 		perror ("connect");
 		close (sock);
 		return 0;
 	}
 	return (void *) (size_t) sock;
+#else
+	return NULL;
+#endif
 }
 
 static bool iob_pipe_close(void *p) {

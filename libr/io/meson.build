@@ -48,9 +48,12 @@ r_io_sources = [
   'p/io_sparse.c',
   'p/io_tcpslurp.c',
   'p/io_uf2.c',
-  'p/io_winkd.c',
   'p/io_winedbg.c',
 ]
+
+if cc.get_define('__wasi__') == ''
+  r_io_sources += 'p/io_winkd.c'
+endif
 
 if get_option('use_zip')
   r_io_sources += [ 'p/io_zip.c' ]
