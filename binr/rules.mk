@@ -5,25 +5,7 @@ include ../../shlr/sdb.mk
 
 # despite libs are pic, some systems/compilers dont
 # like relocatable executables, so here we do the magic
-USE_PIE=0
-ifeq (,$(findstring emcc,${CC}))
-USE_PIE=1
-else
-ifeq (,$(findstring tcc,${CC}))
-USE_PIE=1
-else
-ifeq (,$(findstring vinix,${CC}))
-USE_PIE=1
-else
-ifeq (,$(findstring wasm,${CC}))
-USE_PIE=1
-else
-USE_PIE=0
-endif
-endif
-endif
-endif
-endif
+USE_PIE=$(shell echo "$(CC)" | grep -E "emcc|tcc|vinix|wasm" >/dev/null && echo 0 || echo 1)
 endif
 
 ifeq ($(USE_PIE),1)
