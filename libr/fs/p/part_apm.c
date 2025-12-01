@@ -38,7 +38,10 @@ static int fs_part_apm(void *disk, void *ptr, void *closure) {
 
 	// Read first APM entry at sector 1 to get number of partitions
 	APMEntry first_entry;
-	fs->iob.read_at (fs->iob.io, 512, (ut8 *)&first_entry, sizeof (first_entry));
+	if (fs->iob.read_at (fs->iob.io, 512, (ut8 *)&first_entry, sizeof (first_entry)) != sizeof (first_entry)) {
+		R_LOG_ERROR ("Failed to read APM entry");
+		return 0;
+	}
 
 	if (memcmp (first_entry.signature, APM_SIGNATURE, APM_SIGNATURE_LEN) != 0) {
 		R_LOG_ERROR ("Invalid APM signature");
@@ -64,7 +67,12 @@ static int fs_part_apm(void *disk, void *ptr, void *closure) {
 	}
 
 	// Read all partition entries starting from sector 1
-	fs->iob.read_at (fs->iob.io, 512, (ut8 *)entries, alloc_size);
+	ssize_t bytes_read = fs->iob.read_at (fs->iob.io, 512, (ut8 *)entries, alloc_size);
+	if (bytes_read < 0 || (size_t)bytes_read != alloc_size) {
+		R_LOG_ERROR ("Failed to read APM partition entries: expected %zu bytes, got %zd", alloc_size, bytes_read);
+		free (entries);
+		return 0;
+	}
 
 	int i;
 	for (i = 0; i < num_partitions; i++) {
@@ -75,8 +83,8 @@ static int fs_part_apm(void *disk, void *ptr, void *closure) {
 			continue; // Skip invalid entries
 		}
 
-		// Check if partition is valid (status bit 0 set means valid)
-		if (! (e->partition_status & 1)) {
+		// Check if partition is valid/allocated (bit 0 of partition_status indicates allocation/validity per APM spec)
+		if (!(r_read_be32((ut8 *)&e->partition_status) & 1)) {
 			continue; // Skip invalid partitions
 		}
 
@@ -89,8 +97,8 @@ static int fs_part_apm(void *disk, void *ptr, void *closure) {
 		if (e->partition_start > UT64_MAX / 512 || e->partition_size > UT64_MAX / 512) {
 			continue; // Skip partitions that would overflow
 		}
-		ut64 start = (ut64)e->partition_start * 512;
-		ut64 size = (ut64)e->partition_size * 512;
+		ut64 start = (ut64)r_read_be32((ut8 *)&e->partition_start) * 512;
+		ut64 size = (ut64)r_read_be32((ut8 *)&e->partition_size) * 512;
 
 		par = r_fs_partition_new (i, start, size);
 		par->index = i;
