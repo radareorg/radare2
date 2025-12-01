@@ -29,7 +29,9 @@ extern "C" {
 #define HAVE_LINUX_CAN_H @HAVE_LINUX_CAN_H@
 #define R2_USE_NEW_ABI @USE_NEW_ABI@
 #define R2_USE_SQSH @USE_SQSH@
+#ifndef R2_WASM_BROWSER
 #define R2_WASM_BROWSER @R2_WASM_BROWSER@
+#endif
 
 #define R_BUILDSYSTEM "@R2_BUILDSYSTEM@"
 #if @USE_CS4@ == 1

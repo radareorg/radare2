@@ -5,6 +5,8 @@
 echo "WASI_SDK=$WASI_SDK"
 export CFLAGS="${CFLAGS} -DR2_WASM_BROWSER=1"
 
+TOOLS="rax2 radiff2 rahash2 radare2 rasm2 rabin2 rafind2"
+
 # find root
 cd `dirname $PWD/$0` ; cd ..
 #TODO: add support for ccache
