@@ -59,7 +59,25 @@ static int fs_part_gpt(void *disk, void *ptr, void *closure) {
 		return 0;
 	}
 
-	ut8 *entries = malloc (num_entries * entry_size);
+	// Bounds checking for num_entries and multiplication overflow
+	if (num_entries == 0 || num_entries > 1024) {
+		R_LOG_ERROR ("Invalid number of partition entries: %u", num_entries);
+		return 0;
+	}
+	if (entry_size == 0 || entry_size > 4096) {
+		R_LOG_ERROR ("Invalid partition entry size: %u", entry_size);
+		return 0;
+	}
+	if ((size_t)entry_size > SIZE_MAX / (size_t)num_entries) {
+		R_LOG_ERROR ("Partition entries allocation size overflow");
+		return 0;
+	}
+	size_t alloc_size = (size_t)num_entries * (size_t)entry_size;
+	if (alloc_size > (4 * 1024 * 1024)) { // 4MB sanity check
+		R_LOG_ERROR ("Partition entries allocation size too large: %zu", alloc_size);
+		return 0;
+	}
+	ut8 *entries = malloc (alloc_size);
 	if (!entries) {
 		return 0;
 	}
