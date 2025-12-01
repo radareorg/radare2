@@ -52,7 +52,7 @@ static int fs_part_apm(void *disk, void *ptr, void *closure) {
 	}
 
 	// Allocate memory for all partition entries
-	size_t alloc_size = (size_t)num_partitions * sizeof (APMEntry);
+	size_t alloc_size = (size_t)num_partitions * 512;
 	if (alloc_size > (4 * 1024 * 1024)) { // 4MB sanity check
 		R_LOG_ERROR ("APM partition entries allocation size too large: %zu", alloc_size);
 		return 0;
