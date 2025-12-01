@@ -7,6 +7,11 @@
 #include <wininet.h>
 #endif
 
+#if EMSCRIPTEN || __wasi__
+extern char* r2_js_http_get(const char *url, const char *headers_str, int *code, int *rlen) __attribute__((import_module("r2"), import_name("http_get")));
+extern char* r2_js_http_post(const char *url, const char *headers_str, const char *data, int *code, int *rlen) __attribute__((import_module("r2"), import_name("http_post")));
+#endif
+
 #define SOCKET_HTTP_MAX_HEADER_LENGTH 0x2000
 #define SOCKET_HTTP_MAX_REDIRECTS 5
 
@@ -197,6 +202,24 @@ static char *socket_http_get_recursive(const char *url, const char **headers, in
 	if (rlen) {
 		*rlen = 0;
 	}
+#if EMSCRIPTEN || __wasi__
+	if ((void*)r2_js_http_get != NULL) {
+		char *headers_str = NULL;
+		if (headers) {
+			RStrBuf *sb = r_strbuf_new ("");
+			const char **h = headers;
+			while (*h) {
+				r_strbuf_append (sb, *h);
+				r_strbuf_append (sb, "\n");
+				h++;
+			}
+			headers_str = r_strbuf_drain (sb);
+		}
+		char *res = r2_js_http_get (url, headers_str, code, rlen);
+		free (headers_str);
+		return res;
+	}
+#endif
 	if (r_sys_getenv_asbool ("R2_CURL")) {
 		char *header_file = r_file_temp ("r2_http_hdr");
 		char *body_file = r_file_temp ("r2_http_body");
@@ -385,6 +408,24 @@ R_API bool r_socket_http_download(const char *url, const char **headers, const c
 }
 
 R_API char *r_socket_http_post(const char *url, const char *headers[], const char *data, int *code, int *rlen) {
+#if EMSCRIPTEN || __wasi__
+	if ((void*)r2_js_http_post != NULL) {
+		char *headers_str = NULL;
+		if (headers) {
+			RStrBuf *sb = r_strbuf_new ("");
+			const char **h = headers;
+			while (*h) {
+				r_strbuf_append (sb, *h);
+				r_strbuf_append (sb, "\n");
+				h++;
+			}
+			headers_str = r_strbuf_drain (sb);
+		}
+		char *res = r2_js_http_post (url, headers_str, data, code, rlen);
+		free (headers_str);
+		return res;
+	}
+#endif
 	if (r_sys_getenv_asbool ("R2_CURL")) {
 		int len;
 		char *escaped_url = r_str_escape_sh (url);

@@ -212,7 +212,6 @@ R_API RCons *r_cons_new2(void) {
 	cons->vtmode = 2;
 #endif
 #if EMSCRIPTEN || __wasi__
-	/* do nothing here :? */
 #elif R2__UNIX__
 	tcgetattr (0, &cons->term_buf);
 	memcpy (&cons->term_raw, &cons->term_buf, sizeof (cons->term_raw));
@@ -831,6 +830,12 @@ R_API bool r_cons_is_windows(void) {
 
 R_API bool r_cons_is_tty(void) {
 #if EMSCRIPTEN || __wasi__
+	/* Check if WASM import is available */
+	extern int r2_js_is_tty(void) __attribute__((import_module("r2"), import_name("is_tty")));
+	if ((void*)r2_js_is_tty != NULL) {
+		return r2_js_is_tty() != 0;
+	}
+	/* Fallback to false if import not available */
 	return false;
 #elif R2__UNIX__
 	struct winsize win = {0};
@@ -1290,7 +1295,11 @@ R_API void r_cons_set_raw(RCons *cons, bool is_raw) {
 		}
 	}
 #if EMSCRIPTEN || __wasi__
-	/* do nothing here */
+	/* Notify JS side about terminal mode change */
+	extern void r2_js_set_raw_mode(int raw) __attribute__((import_module("r2"), import_name("set_raw_mode")));
+	if ((void*)r2_js_set_raw_mode != NULL) {
+		r2_js_set_raw_mode(is_raw ? 1 : 0);
+	}
 #elif R2__UNIX__
 	struct termios *term_mode;
 	if (is_raw) {
