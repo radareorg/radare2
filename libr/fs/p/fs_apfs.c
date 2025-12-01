@@ -57,6 +57,10 @@
 #define APFS_INODE_MODE_DIR 0040000
 #define APFS_INODE_MODE_FILE 0100000
 
+// File mode bitmasks
+#define APFS_S_IFMT 0xF000
+#define APFS_S_IFREG 0x8000
+
 // Fletcher checksum size
 #define APFS_MAX_CKSUM_SIZE 8
 
@@ -424,11 +428,11 @@ static inline ut64 apfs_read64(ApfsFS *ctx, ut8 *buf) {
 }
 
 static inline bool apfs_is_directory(ut16 mode) {
-	return (mode & 0xF000) == 0x4000;
+	return (mode & APFS_S_IFMT) == APFS_INODE_MODE_DIR;
 }
 
 static inline bool apfs_is_regular_file(ut16 mode) {
-	return (mode & 0xF000) == 0x8000;
+	return (mode & APFS_S_IFMT) == APFS_S_IFREG;
 }
 
 static inline ut64 apfs_block_to_offset(ApfsFS *ctx, ut64 block_num) {
