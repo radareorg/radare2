@@ -707,6 +707,15 @@ static bool apfs_walk_catalog_btree(ApfsFS *ctx, ut64 root_oid, ut64 parent_inod
 	return apfs_parse_btree_node (ctx, root_paddr, parent_inode_num);
 }
 
+static bool apfs_validate_kvloc_bounds(ApfsFS *ctx, ut16 nkeys, size_t kvloc_offset) {
+	if (nkeys > APFS_MAX_BTREE_KEYS || kvloc_offset >= ctx->block_size) {
+		return false;
+	}
+	size_t max_kvloc_bytes = ctx->block_size - kvloc_offset;
+	size_t max_kvloc_entries = max_kvloc_bytes / sizeof (ApfsKvloc);
+	return nkeys <= max_kvloc_entries;
+}
+
 static bool apfs_parse_btree_node(ApfsFS *ctx, ut64 block_num, ut64 parent_inode_num) {
 	ut64 offset = apfs_block_to_offset (ctx, block_num);
 	if (offset == UT64_MAX) {
@@ -738,34 +747,17 @@ static bool apfs_parse_btree_node(ApfsFS *ctx, ut64 block_num, ut64 parent_inode
 
 	R_LOG_DEBUG ("B-tree node: flags=0x%x, nkeys=%d", flags, nkeys);
 
-	// Validate nkeys to prevent out-of-bounds reads
-	if (nkeys > APFS_MAX_BTREE_KEYS) {
-		R_LOG_DEBUG ("apfs: nkeys=%u exceeds APFS_MAX_BTREE_KEYS=%u, rejecting node", nkeys, APFS_MAX_BTREE_KEYS);
-		free (node);
-		return false;
-	}
-
 	if (flags & APFS_BTNODE_LEAF) {
 		// Parse key-value pairs in the leaf node
 		// The kvloc table starts immediately after the fixed header (at offset 0x38)
 		size_t kvloc_offset = 0x38;
-		if (kvloc_offset >= ctx->block_size) {
-			R_LOG_DEBUG ("apfs: invalid kvloc_offset=%zu >= block_size=%u", kvloc_offset, ctx->block_size);
+		if (!apfs_validate_kvloc_bounds (ctx, nkeys, kvloc_offset)) {
+			R_LOG_DEBUG ("apfs: invalid kvloc bounds, nkeys=%u", nkeys);
 			free (node);
 			return false;
 		}
 
-		ut8 *kvloc_base = (ut8 *)node + kvloc_offset;
-		ApfsKvloc *kvloc_table = (ApfsKvloc *)kvloc_base;
-
-		// Calculate maximum number of kvloc entries that can fit
-		size_t max_kvloc_bytes = ctx->block_size - kvloc_offset;
-		size_t max_kvloc_entries = max_kvloc_bytes / sizeof (ApfsKvloc);
-
-		if (nkeys > max_kvloc_entries) {
-			R_LOG_DEBUG ("apfs: nkeys=%u exceeds max_kvloc_entries=%zu, clamping", nkeys, max_kvloc_entries);
-			nkeys = (ut16)max_kvloc_entries;
-		}
+		ApfsKvloc *kvloc_table = (ApfsKvloc *)((ut8 *)node + kvloc_offset);
 
 		ut16 i;
 		for (i = 0; i < nkeys; i++) {
@@ -808,13 +800,10 @@ static bool apfs_parse_btree_node(ApfsFS *ctx, ut64 block_num, ut64 parent_inode
 
 		ApfsKvloc *kvloc_table = (ApfsKvloc *) ((ut8 *)node + table_space_off);
 
-		// Calculate maximum number of kvloc entries that can fit
-		size_t max_kvloc_bytes = ctx->block_size - table_space_off;
-		size_t max_kvloc_entries = max_kvloc_bytes / sizeof (ApfsKvloc);
-
-		if (nkeys > max_kvloc_entries) {
-			R_LOG_DEBUG ("apfs: nkeys=%u exceeds max_kvloc_entries=%zu, clamping", nkeys, max_kvloc_entries);
-			nkeys = (ut16)max_kvloc_entries;
+		if (!apfs_validate_kvloc_bounds (ctx, nkeys, table_space_off)) {
+			R_LOG_DEBUG ("apfs: invalid kvloc bounds for internal node, nkeys=%u", nkeys);
+			free (node);
+			return false;
 		}
 
 		ut16 i;
@@ -865,13 +854,6 @@ static bool apfs_parse_btree_node_from_data(ApfsFS *ctx, ut8 *header_data, ut64 
 
 	R_LOG_DEBUG ("B-tree node at 0x%" PFMT64x ": flags=0x%x, nkeys=%d", absolute_offset, flags, nkeys);
 
-	// Validate nkeys to prevent out-of-bounds reads
-	if (nkeys > APFS_MAX_BTREE_KEYS) {
-		R_LOG_DEBUG ("apfs: nkeys=%u exceeds APFS_MAX_BTREE_KEYS=%u, rejecting node", nkeys, APFS_MAX_BTREE_KEYS);
-		free (full_node);
-		return false;
-	}
-
 	bool found_records = false;
 
 	if (flags & APFS_BTNODE_LEAF && nkeys > 0) {
@@ -887,20 +869,11 @@ static bool apfs_parse_btree_node_from_data(ApfsFS *ctx, ut8 *header_data, ut64 
 		// The kvloc table starts right after the header at btn_data
 		ApfsKvloc *kvloc_table = (ApfsKvloc *)node->btn_data;
 
-		// Validate kvloc table location and calculate max entries
 		size_t kvloc_offset = (ut8 *)kvloc_table - (ut8 *)node;
-		if (kvloc_offset >= ctx->block_size) {
-			R_LOG_DEBUG ("apfs: invalid kvloc_offset=%zu >= block_size=%u", kvloc_offset, ctx->block_size);
+		if (!apfs_validate_kvloc_bounds (ctx, nkeys, kvloc_offset)) {
+			R_LOG_DEBUG ("apfs: invalid kvloc bounds in scan, nkeys=%u", nkeys);
 			free (full_node);
 			return false;
-		}
-
-		size_t max_kvloc_bytes = ctx->block_size - kvloc_offset;
-		size_t max_kvloc_entries = max_kvloc_bytes / sizeof (ApfsKvloc);
-
-		if (nkeys > max_kvloc_entries) {
-			R_LOG_DEBUG ("apfs: nkeys=%u exceeds max_kvloc_entries=%zu, clamping", nkeys, max_kvloc_entries);
-			nkeys = (ut16)max_kvloc_entries;
 		}
 
 		R_LOG_DEBUG ("Table space: off=0x%x, len=0x%x, key_area_start=0x%x",
