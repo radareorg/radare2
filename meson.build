@@ -463,7 +463,6 @@ r_userconf_h = configure_file(
   install_dir: r2_incdir
 )
 
-# TODO: add R2_ABIVERSION
 versionconf = configuration_data()
 versionconf.set('MESON_VERSION', meson.version())
 versionconf.set('VERSIONCOMMIT', version_commit)
