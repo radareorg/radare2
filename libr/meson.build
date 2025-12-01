@@ -344,9 +344,7 @@ if get_option('plugins') == ''
     'gdb',
     'native',
     'qnx',
-if cc.get_define('__wasi__') == ''
     'winkd',
-endif
   ]
 
   egg_plugins += [
@@ -391,9 +389,7 @@ io_plugins += [
     'socket',
     'tcpslurp',
     'uf2',
-if cc.get_define('__wasi__') == ''
     'winkd',
-endif
     'winedbg',
   ]
   if get_option('use_zip')
