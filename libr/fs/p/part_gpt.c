@@ -72,7 +72,7 @@ static int fs_part_gpt(void *disk, void *ptr, void *closure) {
 		R_LOG_ERROR ("Partition entries allocation size overflow");
 		return 0;
 	}
-	size_t alloc_size = (size_t)num_entries * (size_t)entry_size;
+	size_t alloc_size = (size_t)num_entries *(size_t)entry_size;
 	if (alloc_size > (4 * 1024 * 1024)) { // 4MB sanity check
 		R_LOG_ERROR ("Partition entries allocation size too large: %zu", alloc_size);
 		return 0;
