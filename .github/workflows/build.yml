@@ -36,6 +36,7 @@ jobs:
       with:
         name: linux-wasi-api
         path: radare2-*-wasi-api.zip
+        path: radare2-*-wasi-browser.zip
 
   # WASI Browser
   linux-wasi-browser:

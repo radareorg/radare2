@@ -23,9 +23,7 @@ r_debug_sources = [
   'p/debug_null.c',
   'p/debug_qnx.c',
   'p/debug_rap.c',
-if cc.get_define('__wasi__') == ''
   'p/debug_winkd.c',
-endif
   #'p/native/arm.c',
   #'p/native/bt/fuzzy-all.c',
   #'p/native/bt/generic-x64.c',

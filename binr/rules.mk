@@ -7,9 +7,21 @@ include ../../shlr/sdb.mk
 # like relocatable executables, so here we do the magic
 USE_PIE=0
 ifeq (,$(findstring emcc,${CC}))
+USE_PIE=1
+else
 ifeq (,$(findstring tcc,${CC}))
+USE_PIE=1
+else
 ifeq (,$(findstring vinix,${CC}))
 USE_PIE=1
+else
+ifeq (,$(findstring wasm,${CC}))
+USE_PIE=1
+else
+USE_PIE=0
+endif
+endif
+endif
 endif
 endif
 endif
