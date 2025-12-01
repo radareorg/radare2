@@ -119,8 +119,9 @@ extern "C" {
 #define R_VEC_CAPACITY(vec) (vec)->_capacity
 
 // Helper macros for doing a foreach-style loop over the elements of a vector.
-#define R_VEC_FOREACH(vec, iter) for (iter = (vec)->_start; iter != (vec)->_end; iter++)
-#define R_VEC_FOREACH_PREV(vec, iter) if ((vec)->_start != (vec)->_end) for (iter = (vec)->_end - 1; iter >= (vec)->_start; iter--)
+#define R_VEC_FOREACH(vec, iter) for (iter = (uintptr_t)(vec) ? (vec)->_start : NULL; iter && (iter != (vec)->_end); iter++)
+#define R_VEC_FOREACH_I(vec, idx) for (size_t idx = 0; (uintptr_t)(vec) && idx < (vec)->_end - (vec)->_start; idx++)
+#define R_VEC_FOREACH_PREV(vec, iter) if ((uintptr_t)(vec) && (vec)->_start != (vec)->_end) for (iter = (vec)->_end - 1; iter >= (vec)->_start; iter--)
 
 #define R_CONCAT_INNER(a, b) a ## b
 #define R_CONCAT(a, b) R_CONCAT_INNER(a, b)
@@ -147,12 +148,10 @@ extern "C" {
 #else
 #define R_MAYBE_UNUSED __attribute__((unused))
 #endif
-
 // Hack / Helper macro for conditional code generation.
 #define R_MAYBE_GENERATE(condition, code) R_MAYBE_GENERATE##condition(code)
 #define R_MAYBE_GENERATE1(code) code
 #define R_MAYBE_GENERATE0(code)
-
 // The main macros that generate the implementation for a vector.
 // This should only be used once per type in a single compilation unit,
 // otherwise you will end up with duplicate symbols.

@@ -1152,7 +1152,7 @@ static bool bin_addrline(RCore *core, PJ *pj, int mode) {
 		list = plugin->lines (binfile);
 	} else if (core->bin) {
 		// TODO: complete and speed-up support for dwarf
-		RBinDwarfDebugAbbrev *da = r_bin_dwarf_parse_abbrev (core->bin, mode);
+		RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (core->bin, mode);
 		if (!da) {
 			if (IS_MODE_JSON (mode)) {
 				pj_end (pj);
@@ -5103,6 +5103,11 @@ static bool bin_signature(RCore *core, PJ *pj, int mode) {
 
 R_API bool r_core_bin_info(RCore *core, int action, PJ *pj, int mode, int va, RCoreBinFilter *filter, const char *chksum) {
 	R_RETURN_VAL_IF_FAIL (core, false);
+
+  RArena *arena = r_arena_create ();
+  // TODO: pass it explicitly to all funcs that need it
+  core->bin->arena = arena;
+
 	const char *name = (filter && filter->name)? filter->name : NULL;
 	bool ret = true;
 	ut64 at = UT64_MAX, loadaddr = r_bin_get_laddr (core->bin);
@@ -5198,6 +5203,10 @@ R_API bool r_core_bin_info(RCore *core, int action, PJ *pj, int mode, int va, RC
 			}
 		}
 	}
+
+  r_arena_destroy (arena);
+  core->bin->arena = NULL;
+
 	return ret;
 }
 

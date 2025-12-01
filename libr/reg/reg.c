@@ -3,11 +3,11 @@
 #include <r_reg.h>
 #include <r_util.h>
 
-R_LIB_VERSION (r_reg);
+R_LIB_VERSION(r_reg);
 
-static const char * const types[R_REG_TYPE_LAST + 1] = {
+static const char *const types[R_REG_TYPE_LAST + 1] = {
 	"gpr", "drx", "fpu", "vec64", "vec128", "vec256", "vec512", "flg", "seg", "pri", NULL
-	// FUTURE?  vec* -> vec
+	// FUTURE? vec* -> vec
 };
 
 R_API bool r_reg_hasbits_check(RReg *reg, int size) {
@@ -21,16 +21,20 @@ R_API void r_reg_hasbits_clear(RReg *reg) {
 /// XXX use R_SYS_PACK_BITS instead
 R_API bool r_reg_hasbits_use(RReg *reg, int size) {
 	bool done = false;
-#define HB(x) if (size&(x)) { reg->hasbits |= (x); done = true; }
-	HB(1);
-	HB(2);
-	HB(4);
-	HB(8);
-	HB(16);
-	HB(32);
-	HB(64);
-	HB(128);
-	HB(256);
+#define HB(x) \
+	if (size &(x)) { \
+		reg->hasbits |= (x); \
+		done = true; \
+	}
+	HB (1);
+	HB (2);
+	HB (4);
+	HB (8);
+	HB (16);
+	HB (32);
+	HB (64);
+	HB (128);
+	HB (256);
 #undef HB
 	return done;
 }
@@ -84,7 +88,7 @@ R_API const char *r_reg_64_to_32(RReg *reg, const char *rreg64) {
 }
 
 R_API const char *r_reg_type_tostring(int idx) {
-	return (idx >= 0 && idx < R_REG_TYPE_LAST) ? types[idx] : NULL;
+	return (idx >= 0 && idx < R_REG_TYPE_LAST)? types[idx]: NULL;
 }
 
 #if 0
@@ -135,44 +139,45 @@ R_API int r_reg_alias_fromstring(const char *type) {
 	if (!type0 || !type[1] || !isupper (type0)) {
 		return -1;
 	}
-	if (!type[2])
-	switch (type0 | (type[1] << 8)) {
-	// flags
-	case 'Z' + ('F' << 8): return R_REG_ALIAS_ZF;
-	case 'S' + ('F' << 8): return R_REG_ALIAS_SF;
-	case 'C' + ('F' << 8): return R_REG_ALIAS_CF;
-	case 'O' + ('F' << 8): return R_REG_ALIAS_OF;
-	// gpr
-	case 'P' + ('C' << 8): return R_REG_ALIAS_PC;
-	case 'S' + ('R' << 8): return R_REG_ALIAS_SR;
-	case 'L' + ('R' << 8): return R_REG_ALIAS_LR;
-	case 'S' + ('P' << 8): return R_REG_ALIAS_SP;
-	case 'G' + ('P' << 8): return R_REG_ALIAS_GP;
-	case 'R' + ('A' << 8): return R_REG_ALIAS_RA;
-	case 'B' + ('P' << 8): return R_REG_ALIAS_BP;
-	case 'S' + ('N' << 8): return R_REG_ALIAS_SN;
-	// args
-	case 'A' + ('0' << 8): return R_REG_ALIAS_A0;
-	case 'A' + ('1' << 8): return R_REG_ALIAS_A1;
-	case 'A' + ('2' << 8): return R_REG_ALIAS_A2;
-	case 'A' + ('3' << 8): return R_REG_ALIAS_A3;
-	case 'A' + ('4' << 8): return R_REG_ALIAS_A4;
-	case 'A' + ('5' << 8): return R_REG_ALIAS_A5;
-	case 'A' + ('6' << 8): return R_REG_ALIAS_A6;
-	case 'A' + ('7' << 8): return R_REG_ALIAS_A7;
-	case 'A' + ('8' << 8): return R_REG_ALIAS_A8;
-	case 'A' + ('9' << 8): return R_REG_ALIAS_A9;
-	// return values
-	case 'R' + ('0' << 8): return R_REG_ALIAS_R0;
-	case 'R' + ('1' << 8): return R_REG_ALIAS_R1;
-	case 'R' + ('2' << 8): return R_REG_ALIAS_R2;
-	case 'R' + ('3' << 8): return R_REG_ALIAS_R3;
-	case 'F' + ('0' << 8): return R_REG_ALIAS_F0;
-	case 'F' + ('1' << 8): return R_REG_ALIAS_F1;
-	case 'F' + ('2' << 8): return R_REG_ALIAS_F2;
-	case 'F' + ('3' << 8): return R_REG_ALIAS_F3;
-	// thread register
-	case 'T' + ('R' << 8): return R_REG_ALIAS_TR;
+	if (!type[2]) {
+		switch (type0 | (type[1] << 8)) {
+		// flags
+		case 'Z' + ('F' << 8): return R_REG_ALIAS_ZF;
+		case 'S' + ('F' << 8): return R_REG_ALIAS_SF;
+		case 'C' + ('F' << 8): return R_REG_ALIAS_CF;
+		case 'O' + ('F' << 8): return R_REG_ALIAS_OF;
+		// gpr
+		case 'P' + ('C' << 8): return R_REG_ALIAS_PC;
+		case 'S' + ('R' << 8): return R_REG_ALIAS_SR;
+		case 'L' + ('R' << 8): return R_REG_ALIAS_LR;
+		case 'S' + ('P' << 8): return R_REG_ALIAS_SP;
+		case 'G' + ('P' << 8): return R_REG_ALIAS_GP;
+		case 'R' + ('A' << 8): return R_REG_ALIAS_RA;
+		case 'B' + ('P' << 8): return R_REG_ALIAS_BP;
+		case 'S' + ('N' << 8): return R_REG_ALIAS_SN;
+		// args
+		case 'A' + ('0' << 8): return R_REG_ALIAS_A0;
+		case 'A' + ('1' << 8): return R_REG_ALIAS_A1;
+		case 'A' + ('2' << 8): return R_REG_ALIAS_A2;
+		case 'A' + ('3' << 8): return R_REG_ALIAS_A3;
+		case 'A' + ('4' << 8): return R_REG_ALIAS_A4;
+		case 'A' + ('5' << 8): return R_REG_ALIAS_A5;
+		case 'A' + ('6' << 8): return R_REG_ALIAS_A6;
+		case 'A' + ('7' << 8): return R_REG_ALIAS_A7;
+		case 'A' + ('8' << 8): return R_REG_ALIAS_A8;
+		case 'A' + ('9' << 8): return R_REG_ALIAS_A9;
+		// return values
+		case 'R' + ('0' << 8): return R_REG_ALIAS_R0;
+		case 'R' + ('1' << 8): return R_REG_ALIAS_R1;
+		case 'R' + ('2' << 8): return R_REG_ALIAS_R2;
+		case 'R' + ('3' << 8): return R_REG_ALIAS_R3;
+		case 'F' + ('0' << 8): return R_REG_ALIAS_F0;
+		case 'F' + ('1' << 8): return R_REG_ALIAS_F1;
+		case 'F' + ('2' << 8): return R_REG_ALIAS_F2;
+		case 'F' + ('3' << 8): return R_REG_ALIAS_F3;
+		// thread register
+		case 'T' + ('R' << 8): return R_REG_ALIAS_TR;
+		}
 	}
 	return -1;
 }
@@ -195,7 +200,7 @@ R_API const char *r_reg_alias_getname(RReg *reg, RRegAlias alias) {
 	return NULL;
 }
 
-static const char * const alias_names[R_REG_ALIAS_LAST + 1] = {
+static const char *const alias_names[R_REG_ALIAS_LAST + 1] = {
 	"PC", "SP", "GP", "RA", "SR", "BP", "LR", "RS",
 	"A0", "A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9",
 	"R0", "R1", "R2", "R3", "F0", "F1", "F2", "F3",
@@ -353,7 +358,7 @@ R_API RRegItem *r_reg_item_clone(RRegItem *r) {
 	return ri;
 }
 
-// TODO rename regset to reggroup . R_API void r_reg_group_copy(RRegGroup *d, RRegGroup *s) ..
+// TODO rename regset to reggroup . R_API void r_reg_group_copy (RRegGroup *d, RRegGroup *s) ..
 R_API void r_reg_set_copy(RRegSet *d, RRegSet *s) {
 	R_RETURN_IF_FAIL (d && s);
 	d->cur = NULL; // TODO. not yet implemented
@@ -539,7 +544,7 @@ R_API RRegItem *r_reg_next_diff(RReg *reg, int type, const ut8 *buf, int buflen,
 		return NULL;
 	}
 	RRegArena *arena = reg->regset[type].arena;
-	int prev_offset = prev_ri ? (prev_ri->offset / 8) + (prev_ri->size / 8) : 0;
+	int prev_offset = prev_ri? (prev_ri->offset / 8) + (prev_ri->size / 8): 0;
 	RList *list = reg->regset[type].regs;
 	RRegItem *ri;
 	RListIter *iter;
@@ -562,5 +567,5 @@ R_API RRegSet *r_reg_regset_get(RReg *r, int type) {
 		return NULL;
 	}
 	RRegSet *rs = &r->regset[type];
-	return rs->arena ? rs : NULL;
+	return rs->arena? rs: NULL;
 }

@@ -5,10 +5,10 @@
 #include <sys/mman.h>
 #endif
 
-#define SET_BIT(p,n) ((p) |= (1 << (n)))
-#define CLR_BIT(p,n) ((p) &= (~(1) << (n)))
+#define SET_BIT(p, n) ((p) |= (1 << (n)))
+#define CLR_BIT(p, n) ((p) &= (~ (1) << (n)))
 
-// TODO: find better name (r_mem_length()); is this used somewhere?
+// TODO: find better name (r_mem_length ()); is this used somewhere?
 R_API int r_mem_count(const ut8 **addr) {
 	int i = 0;
 	while (*addr++) {
@@ -59,8 +59,8 @@ R_API int r_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int 
 }
 
 R_API void r_mem_copybits(ut8 *dst, const ut8 *src, int bits) {
-	const ut8 srcmask[8] = {0x00, 0x80, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC, 0xFE};
-	const ut8 dstmask[8] = {0x00, 0x7F, 0x3F, 0x1F, 0x0F, 0x07, 0x03, 0x01};
+	const ut8 srcmask[8] = { 0x00, 0x80, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC, 0xFE };
+	const ut8 dstmask[8] = { 0x00, 0x7F, 0x3F, 0x1F, 0x0F, 0x07, 0x03, 0x01 };
 	const int bytes = bits / 8;
 	const int modbits = bits % 8;
 	memcpy (dst, src, bytes);
@@ -73,7 +73,7 @@ static inline char readbit(const ut8 *src, int bitoffset) {
 	const int wholeBytes = bitoffset / 8;
 	const int remainingBits = bitoffset % 8;
 	// return (src[wholeBytes] >> remainingBits) & 1;
-	return (src[wholeBytes] & 1<< remainingBits);
+	return (src[wholeBytes] & 1 << remainingBits);
 }
 
 static inline void writebit(ut8 *dst, int i, bool c) {
@@ -82,11 +82,11 @@ static inline void writebit(ut8 *dst, int i, bool c) {
 	// eprintf ("Write %d %d = %d\n", byte, bit, c);
 	dst += byte;
 	if (c) {
-		//dst[byte] |= (1 << bit);
-		R_BIT_SET (dst , bit);
+		// dst[byte] |= (1 << bit);
+		R_BIT_SET (dst, bit);
 	} else {
-		//dst[byte] &= (1 << bit);
-		R_BIT_UNSET (dst , bit);
+		// dst[byte] &= (1 << bit);
+		R_BIT_UNSET (dst, bit);
 	}
 }
 
@@ -116,7 +116,7 @@ R_API ut64 r_mem_get_num(const ut8 *b, int size) {
 	return 0LL;
 }
 
-// TODO: SEE: R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) { .. dupped code?
+// TODO: SEE: R_API ut64 r_reg_get_value (RReg *reg, RRegItem *item) { .. dupped code?
 R_API bool r_mem_set_num(ut8 *dest, int dest_size, ut64 num) {
 	// LITTLE ENDIAN is the default for streams
 	switch (dest_size) {
@@ -216,7 +216,7 @@ R_API void r_mem_swap(ut8 *buf, size_t buf_len) {
 }
 
 // R_DOC r_mem_mem: Finds the needle of nlen size into the haystack of hlen size
-// R_UNIT printf("%s\n", r_mem_mem("food is pure lame", 20, "is", 2));
+// R_UNIT printf ("%s\n", r_mem_mem ("food is pure lame", 20, "is", 2));
 R_API const ut8 *r_mem_mem(const ut8 *haystack, int hlen, const ut8 *needle, int nlen) {
 	int i, until = hlen - nlen + 1;
 	if (hlen < 1 || nlen < 1) {
@@ -312,7 +312,6 @@ R_API void *r_mem_set(ut8 ch, int l) {
 	return d;
 }
 
-
 R_API void r_mem_reverse(ut8 *b, int l) {
 	R_RETURN_IF_FAIL (b);
 	ut8 tmp;
@@ -363,11 +362,11 @@ R_API void r_mem_zero(void *dst, size_t l) {
 	(void)explicit_memset (dst, 0, l);
 #else
 	memset (dst, 0, l);
-	__asm__ volatile ("" :: "r"(dst) : "memory");
+	__asm__ volatile ("" ::"r" (dst) : "memory");
 #endif
 }
 
-R_API int r_mem_from_binstring(const char* str, ut8 *buf, size_t len) {
+R_API int r_mem_from_binstring(const char *str, ut8 *buf, size_t len) {
 	int i, j, k, ret;
 	str = r_str_trim_head_ro (str);
 
@@ -399,7 +398,7 @@ R_API int r_mem_from_binstring(const char* str, ut8 *buf, size_t len) {
 	return b - buf;
 }
 
-R_API char *r_mem_to_binstring(const ut8* str, int len) {
+R_API char *r_mem_to_binstring(const ut8 *str, int len) {
 	if (len < 0) {
 		len = strlen ((const char *)str);
 	}

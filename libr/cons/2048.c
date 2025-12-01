@@ -8,7 +8,6 @@ typedef struct game_state_t {
 	int moves;
 } GameState;
 
-
 static void twok_init(GameState *state) {
 	memset (state, 0, sizeof (GameState));
 }
@@ -57,14 +56,19 @@ static void twok_move(GameState *state, int u, int v) {
 	int moved = 0;
 	for (k = 0; k < 4; k++) {
 		for (i = 0; i < 4; i++) {
-			for (j = i + 1; j < 4 && !state->twok_buf[nKJ = u ? k : v ? j : 3 - j][nJK = !u ? k : v ? j : 3 - j]; j++) {
+			for (j = i + 1; j < 4 && !state->twok_buf[nKJ = u? k: v? j
+										: 3 - j][nJK = !u? k: v? j
+													: 3 - j];
+				j++) {
 				;
 			}
 			if (j == 4) {
 				continue;
 			}
-			nKI = u? k: v? i: 3 - i;
-			nIK = !u? k: v? i: 3 - i;
+			nKI = u? k: v? i
+					: 3 - i;
+			nIK = !u? k: v? i
+					: 3 - i;
 			if (!state->twok_buf[nKI][nIK]) {
 				state->twok_buf[nKI][nIK] = state->twok_buf[nKJ][nJK];
 				state->twok_buf[nKJ][nJK] = 0;
@@ -84,7 +88,7 @@ static void twok_move(GameState *state, int u, int v) {
 }
 
 static void getval(GameState *state, bool color, char *val0, int i, int x) {
-	const char * colorarray[] = {
+	const char *colorarray[] = {
 		Color_WHITE,
 		Color_RED,
 		Color_GREEN,
@@ -96,7 +100,7 @@ static void getval(GameState *state, bool color, char *val0, int i, int x) {
 	};
 	if (state->twok_buf[i][x]) {
 		if (color) {
-			snprintf (val0, 31, "%s%4d"Color_RESET, colorarray [state->twok_buf [i][x] % 8 ], 1 << state->twok_buf[i][x]);
+			snprintf (val0, 31, "%s%4d" Color_RESET, colorarray[state->twok_buf[i][x] % 8], 1 << state->twok_buf[i][x]);
 		} else {
 			snprintf (val0, 31, "%4d", 1 << state->twok_buf[i][x]);
 		}
@@ -112,7 +116,7 @@ static void twok_print(GameState *state, bool color) {
 	char val3[32];
 	int i;
 	if (color) {
-		printf (Color_BBLUE"  +------+------+------+------+\n");
+		printf (Color_BBLUE "  +------+------+------+------+\n");
 	} else {
 		printf ("  +------+------+------+------+\n");
 	}
@@ -122,12 +126,11 @@ static void twok_print(GameState *state, bool color) {
 		getval (state, color, val2, i, 2);
 		getval (state, color, val3, i, 3);
 		if (color) {
-			printf (Color_BBLUE"  |      |      |      |      |\n");
-			printf ("  |"Color_RESET" %s "Color_BBLUE"|"Color_RESET" %s "
-				Color_BBLUE"|"Color_RESET" %s "Color_BBLUE"|"Color_RESET" %s "Color_BBLUE"|\n",
+			printf (Color_BBLUE "  |      |      |      |      |\n");
+			printf ("  |" Color_RESET " %s " Color_BBLUE "|" Color_RESET " %s " Color_BBLUE "|" Color_RESET " %s " Color_BBLUE "|" Color_RESET " %s " Color_BBLUE "|\n",
 				val0, val1, val2, val3);
 			printf ("  |      |      |      |      |\n");
-			printf ("  +------+------+------+------+\n"Color_RESET);
+			printf ("  +------+------+------+------+\n" Color_RESET);
 		} else {
 			printf ("  |      |      |      |      |\n");
 			printf ("  | %s | %s | %s | %s |\n",
@@ -154,7 +157,7 @@ R_API void r_cons_2048(RCons *cons, bool color) {
 	while (twok_fin (&state)) {
 		r_cons_clear00 (cons);
 		if (color) {
-			r_cons_printf (cons, Color_GREEN"[r2048]"Color_BYELLOW" score: %d   moves: %d\n"Color_RESET, state.score, state.moves);
+			r_cons_printf (cons, Color_GREEN "[r2048]" Color_BYELLOW " score: %d   moves: %d\n" Color_RESET, state.score, state.moves);
 		} else {
 			r_cons_printf (cons, "[r2048] score: %d   moves: %d\n", state.score, state.moves);
 		}

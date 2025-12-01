@@ -1,6 +1,8 @@
 #ifndef R_MEM_H
 #define R_MEM_H
 
+#include <r_types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

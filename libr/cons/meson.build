@@ -39,7 +39,6 @@ r_cons_dep = declare_dependency(link_with: r_cons,
                                 dependencies: r_cons_deps,
                                 include_directories: [platform_inc])
 
-if get_option('blob')
 r_cons_static = static_library('r_cons_static', r_cons_sources,
   include_directories: [platform_inc],
   c_args: library_cflags,
@@ -51,7 +50,6 @@ r_cons_static = static_library('r_cons_static', r_cons_sources,
 
 r_cons_static_dep = declare_dependency(link_with: r_cons_static,
                                 include_directories: [platform_inc])
-endif
 
 pkgconfig_mod.generate(r_cons,
   subdirs: 'libr',

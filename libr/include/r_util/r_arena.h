@@ -9,12 +9,27 @@
 extern "C" {
 #endif
 
+// Helper type to pass ptr+len around by value
+typedef struct r_slice_t {
+  const uint8_t *ptr;
+  size_t len;
+  size_t cap;
+} RSlice;
+
+R_API RSlice r_slice(const void *ptr, size_t len);
+R_API RSlice r_empty_slice(); // or just RSlice x = { 0 };
+R_API bool r_slice_is_empty(RSlice slice);
+R_API RSlice r_slice_to(RSlice slice, size_t to);
+R_API RSlice r_slice_from(RSlice slice, size_t from);
+R_API RSlice r_slice_from_to(RSlice slice, size_t from, size_t to);
+
 // Arena Allocator - Linked list of fixed-size blocks, backed with malloc/free
 //
 // Facts:
 // - Each arena has a list of blocks (allocated on demand)
 // - Block size is fixed at arena creation
 // - Fast bump allocation within current block
+// - Separate list for "huge" blocks (1 alloc per block)
 // - When block is full, allocate new block and link it
 // - Reset frees all blocks except first (reuse)
 // - Destroy frees everything
@@ -31,27 +46,42 @@ typedef struct r_arena_block_t {
 typedef struct r_arena_t {
 	RArenaBlock *current; // Current block we're allocating from
 	RArenaBlock *first; // First block (kept for reset)
+                      
+  RArenaBlock *huge; // Requests larger than block size go here (1 block = 1 alloc)
+
 	size_t block_size; // Fixed size for all blocks
 	size_t total_allocated; // Total bytes allocated across all blocks
 	size_t default_alignment; // Default alignment (usually 8)
 } RArena;
 
-// 64kb ought to be enough for anybody. Or just use `arena_create_with`
-#define ARENA_DEFAULT_BLOCK_SIZE (64 * 1024)
+#define ARENA_DEFAULT_BLOCK_SIZE (256 * 1024)
+#define ARENA_MIN_BLOCK_SIZE 4096
 #define ARENA_DEFAULT_ALIGNMENT 8
 
 R_API RArena *r_arena_create(void);
 R_API RArena *r_arena_create_with(size_t block_size);
 R_API void *r_arena_alloc(RArena *arena, size_t size);
 R_API void *r_arena_calloc(RArena *arena, size_t size);
+R_API RSlice r_arena_salloc(RArena *arena, size_t size);
+R_API RSlice r_arena_scalloc(RArena *arena, size_t size);
 R_API void *r_arena_alloc_aligned(RArena *arena, size_t size, size_t alignment);
 R_API void *r_arena_calloc_aligned(RArena *arena, size_t size, size_t alignment);
 R_API void r_arena_reset(RArena *arena);
 R_API void r_arena_destroy(RArena *arena);
 
+// move functions call r_free() on its arguments if successfully allocated and copied to arena
+// spush_ funcs return slices
 R_API char *r_arena_push_str(RArena *arena, const char *str);
+R_API char *r_arena_move_str(RArena *arena, char *str);
+R_API char *r_arena_push_strf(RArena *arena, const char *fmt, ...);
 R_API char *r_arena_push_strn(RArena *arena, const char *str, size_t n);
 R_API void *r_arena_push(RArena *arena, const void *mem, size_t n);
+R_API void *r_arena_move(RArena *arena, void *mem, size_t n);
+
+R_API RSlice r_arena_spush_str(RArena *arena, const char *str);
+R_API RSlice r_arena_spush_strf(RArena *arena, const char *fmt, ...);
+R_API RSlice r_arena_spush_strn(RArena *arena, const char *str, size_t n);
+R_API RSlice r_arena_spush(RArena *arena, const RSlice other);
 
 R_API size_t r_arena_used(const RArena *arena);
 R_API size_t r_arena_capacity(const RArena *arena);

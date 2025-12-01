@@ -2,7 +2,7 @@
 
 #include <r_util.h>
 
-/* Validate if char is printable , why not use ISPRINTABLE() ?? */
+/* Validate if char is printable , why not use ISPRINTABLE ()?? */
 R_API bool r_name_validate_print(const char ch) {
 	// TODO: support utf8
 	if (isalpha (ch & 0xff) || isdigit (ch & 0xff)) {
@@ -15,7 +15,7 @@ R_API bool r_name_validate_print(const char ch) {
 	return false;
 }
 
-// used to determine if we want to replace those chars with '_' in r_name_filter()
+// used to determine if we want to replace those chars with '_' in r_name_filter ()
 R_API bool r_name_validate_dash(const char ch) {
 	const char chars[] = " -_/\\()~[]<>!?$;%@`,\"";
 	return strchr (chars, ch);
@@ -60,7 +60,8 @@ static inline bool is_special_char(char n) {
 
 R_API const char *r_name_filter_ro(const char *a) {
 	R_RETURN_VAL_IF_FAIL (a, NULL);
-	while (*a++ == '_');
+	while (*a++ == '_')
+		;
 	return a - 1;
 }
 
@@ -70,7 +71,7 @@ R_API bool r_name_filter_print(char *s) {
 	char *es = s + strlen (s);
 	bool valid = true;
 	while (*s && s < es) {
-		int us = r_utf8_size ((const ut8*)s);
+		int us = r_utf8_size ((const ut8 *)s);
 		if (us > 1) {
 			s += us;
 			continue;
