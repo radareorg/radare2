@@ -68,7 +68,7 @@ static int fs_part_apm(void *disk, void *ptr, void *closure) {
 
 	// Read all partition entries starting from sector 1
 	bool success = fs->iob.read_at (fs->iob.io, 512, (ut8 *)entries, alloc_size);
-	ssize_t bytes_read = success ? alloc_size : -1;
+	int bytes_read = (int) (success ? alloc_size : -1);
 	if (bytes_read < 0 || (size_t)bytes_read != alloc_size) {
 		R_LOG_ERROR ("Failed to read APM partition entries: expected %zu bytes, got %zd", alloc_size, bytes_read);
 		free (entries);
