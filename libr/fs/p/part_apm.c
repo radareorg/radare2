@@ -38,7 +38,7 @@ static int fs_part_apm(void *disk, void *ptr, void *closure) {
 
 	// Read first APM entry at sector 1 to get number of partitions
 	APMEntry first_entry;
-	if (fs->iob.read_at (fs->iob.io, 512, (ut8 *)&first_entry, sizeof (first_entry)) != sizeof (first_entry)) {
+	if (!fs->iob.read_at (fs->iob.io, 512, (ut8 *)&first_entry, sizeof (first_entry))) {
 		R_LOG_ERROR ("Failed to read APM entry");
 		return 0;
 	}
@@ -67,7 +67,8 @@ static int fs_part_apm(void *disk, void *ptr, void *closure) {
 	}
 
 	// Read all partition entries starting from sector 1
-	ssize_t bytes_read = fs->iob.read_at (fs->iob.io, 512, (ut8 *)entries, alloc_size);
+	bool success = fs->iob.read_at (fs->iob.io, 512, (ut8 *)entries, alloc_size);
+	ssize_t bytes_read = success ? alloc_size : -1;
 	if (bytes_read < 0 || (size_t)bytes_read != alloc_size) {
 		R_LOG_ERROR ("Failed to read APM partition entries: expected %zu bytes, got %zd", alloc_size, bytes_read);
 		free (entries);
@@ -93,12 +94,8 @@ static int fs_part_apm(void *disk, void *ptr, void *closure) {
 			continue;
 		}
 
-		// Check for overflow before multiplying by 512
 		ut32 partition_start = r_read_be32 ((ut8 *)&e->partition_start);
 		ut32 partition_size = r_read_be32 ((ut8 *)&e->partition_size);
-		if (partition_start > UT64_MAX / 512 || partition_size > UT64_MAX / 512) {
-			continue; // Skip partitions that would overflow
-		}
 		ut64 start = (ut64)partition_start * 512;
 		ut64 size = (ut64)partition_size * 512;
 
