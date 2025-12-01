@@ -226,6 +226,7 @@ extern RFSPlugin r_fs_plugin_ufs2;
 extern RFSPlugin r_fs_plugin_ufs;
 extern RFSPlugin r_fs_plugin_xfs;
 extern RFSPlugin r_fs_plugin_zip;
+extern RFSPlugin r_fs_plugin_apfs;
 extern RFSPlugin r_fs_plugin_ubifs;
 #endif
 

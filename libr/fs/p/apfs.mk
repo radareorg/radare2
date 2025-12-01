@@ -1,0 +1,8 @@
+OBJ_APFS=fs_apfs.o
+STATIC_OBJ+=${OBJ_APFS}
+TARGET_APFS=fs_apfs.${EXT_SO}
+
+ALL_TARGETS+=${TARGET_APFS}
+
+${TARGET_APFS}: ${OBJ_APFS}
+	${CC} $(call libname,fs_apfs) ${OBJ_APFS} ${CFLAGS} ${LDFLAGS} -o ${TARGET_APFS}
