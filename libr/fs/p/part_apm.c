@@ -77,7 +77,7 @@ static int fs_part_apm(void *disk, void *ptr, void *closure) {
 
 	int i;
 	for (i = 0; i < num_partitions; i++) {
-		APMEntry *e = &entries[i];
+		APMEntry *e = (APMEntry *)((ut8 *)entries + i * 512);
 
 		// Check signature
 		if (memcmp (e->signature, APM_SIGNATURE, APM_SIGNATURE_LEN) != 0) {
