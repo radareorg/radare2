@@ -7,8 +7,9 @@
 #include <r_util.h>
 
 // APFS Magic numbers
-#define APFS_NX_MAGIC 0x4e585342 // "NXSB"
 #define APFS_MAGIC 0x42535041 // "APSB"
+#define APFS_NX_MAGIC 0x4e585342 // "NXSB"
+#define APFS_NX_SEARCH_RANGE 0x200000 /* arbitrary 2MB */
 
 // Object type masks
 #define APFS_OBJECT_TYPE_MASK 0x0000ffff
@@ -69,6 +70,7 @@
 
 // Maximum number of B-tree keys to prevent DoS
 #define APFS_MAX_BTREE_KEYS 4096
+#define APFS_BTREE_FOOTER_SIZE 40
 
 // Volume flags
 #define APFS_FS_UNENCRYPTED 0x00000001LL
@@ -483,11 +485,10 @@ static bool fs_apfs_mount(RFSRoot *root) {
 		free (ctx);
 		return false;
 	}
-
 	// Scan for container superblock
 	ut64 nx_off = 0;
 	ut64 off;
-	for (off = 0; off < 0x200000; off += 0x20) {
+	for (off = 0; off < APFS_NX_SEARCH_RANGE; off += 0x20) {
 		ut8 buf[4];
 		if (apfs_read_at (ctx, off, buf, 4)) {
 			ut32 magic = r_read_be32 (buf);
@@ -1099,7 +1100,7 @@ static bool apfs_parse_btree_node_from_data(ApfsFS *ctx, ut8 *header_data, ut64 
 			if (flags & APFS_BTNODE_ROOT) {
 				// Root nodes have a footer, so subtract footer size
 				// Footer is struct apfs_btree_info which we don't have defined, assume 40 bytes
-				actual_val_off = ctx->block_size - 40 - val_off;
+				actual_val_off = ctx->block_size - APFS_BTREE_FOOTER_SIZE - val_off;
 			} else {
 				actual_val_off = ctx->block_size - val_off;
 			}
@@ -1324,10 +1325,7 @@ static bool apfs_scan_for_btree_nodes(ApfsFS *ctx) {
 		ut32 o_type = apfs_read32 (ctx, header + APFS_OBJ_PHYS_TYPE_OFFSET); // o_type offset in ApfsObjPhys after cksum (8) + oid (8) + xid (8)
 		ut32 obj_type = o_type & APFS_OBJECT_TYPE_MASK;
 
-		// Only log when we find relevant B-tree types
-		if (obj_type == 0x02 || obj_type == 0x03 || obj_type == 0x0e) {
-			R_LOG_DEBUG ("Found B-tree block %" PFMT64u " (0x%" PFMT64x "): type=0x%x", block, offset, obj_type);
-		}
+		R_LOG_DEBUG ("Found B-tree block %" PFMT64u " (0x%" PFMT64x "): type=0x%x", block, offset, obj_type);
 
 		if (obj_type == APFS_OBJECT_TYPE_BTREE_NODE) {
 			R_LOG_DEBUG ("Found B-tree node at block %" PFMT64u " (offset 0x%" PFMT64x ")", block, offset);
@@ -1345,12 +1343,12 @@ static bool apfs_scan_for_btree_nodes(ApfsFS *ctx) {
 				found_any = true;
 			}
 		}
-
+#if 0
 		// Look for specific patterns indicating file records
-		if (memcmp (header + 20, "APSB", 4) == 0) {
+		if (!memcmp (header + 20, "APSB", 4)) {
 			R_LOG_DEBUG ("Found APSB at block %" PFMT64u, block);
 		}
-
+#endif
 		// Also check for known B-tree patterns in the data
 		if (obj_type == 0x03 || obj_type == 0x02 || obj_type == 0x05) {
 			R_LOG_DEBUG ("Found potential node type 0x%x at block %" PFMT64u " (offset 0x%" PFMT64x ")",
@@ -1358,7 +1356,7 @@ static bool apfs_scan_for_btree_nodes(ApfsFS *ctx) {
 			valid_nodes_found++;
 			// Temporarily parse B-tree node with scan context
 			// NOTE: We'll implement this safely to avoid segfaults
-			if (obj_type == 0x02) {
+			if (obj_type == APFS_OBJECT_TYPE_BTREE) {
 				// This is a BTREE node, parse it carefully
 				R_LOG_DEBUG ("Attempting to parse BTREE node at offset 0x%" PFMT64x, offset);
 
