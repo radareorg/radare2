@@ -5,7 +5,6 @@
 #define R_RTDEBUG 1
 #define WANT_THREADS @WANT_THREADS@
 #define WANT_QJS @WANT_QJS@
-#define R2_WASM_BROWSER 0
 
 /* inlined APIs */
 #define R_INLINE 0

@@ -463,9 +463,11 @@ r_userconf_h = configure_file(
   install_dir: r2_incdir
 )
 
+# TODO: add R2_ABIVERSION
 versionconf = configuration_data()
 versionconf.set('MESON_VERSION', meson.version())
 versionconf.set('VERSIONCOMMIT', version_commit)
+versionconf.set('R2_WASM_BROWSER', 0)
 versionconf.set('R2_VERSION_MAJOR', r2_version_major)
 versionconf.set('R2_VERSION_MINOR', r2_version_minor)
 versionconf.set('R2_VERSION_PATCH', r2_version_patch)
