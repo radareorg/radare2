@@ -1044,6 +1044,8 @@ R_API ut64 r_anal_function_min_addr(RAnalFunction *fcn);
 // first address directly after the function
 R_API ut64 r_anal_function_max_addr(RAnalFunction *fcn);
 
+
+
 // size from the function entrypoint (fcn->addr) to the end of the function (r_anal_function_max_addr)
 R_API ut64 r_anal_function_size_from_entry(RAnalFunction *fcn);
 

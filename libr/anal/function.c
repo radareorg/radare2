@@ -87,6 +87,8 @@ R_API RAnalFunction *r_anal_function_new(RAnal *anal) {
 	fcn->bp_frame = true;
 	fcn->is_noreturn = false;
 	fcn->meta._min = UT64_MAX;
+	fcn->meta.numrefs = -1;
+	fcn->meta.numcallrefs = -1;
 	RVecAnalVarPtr_init (&fcn->vars);
 	fcn->inst_vars = ht_up_new (NULL, inst_vars_kv_free, NULL);
 	fcn->labels = ht_up_new (NULL, labels_kv_free, NULL);
@@ -340,6 +342,8 @@ R_API ut64 r_anal_function_max_addr(RAnalFunction *fcn) {
 	ensure_fcn_range (fcn);
 	return fcn->meta._max;
 }
+
+
 
 R_API ut64 r_anal_function_size_from_entry(RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (fcn, 0);

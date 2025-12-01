@@ -54,8 +54,15 @@ static int cmpframe(const void *_a, const void *_b) {
 
 static int cmpxrefs(const void *_a, const void *_b) {
 	const RAnalFunction *a = _a, *b = _b;
-	int as = a->meta.numrefs;
-	int bs = b->meta.numrefs;
+	int as = r_anal_function_count_xrefs ((RAnalFunction *)a, R_ANAL_REF_TYPE_ANY);
+	int bs = r_anal_function_count_xrefs ((RAnalFunction *)b, R_ANAL_REF_TYPE_ANY);
+	return (as > bs)? 1: (as < bs)? -1: 0;
+}
+
+static int cmpcalls(const void *_a, const void *_b) {
+	const RAnalFunction *a = _a, *b = _b;
+	int as = r_anal_function_count_refs ((RAnalFunction *)a, R_ANAL_REF_TYPE_CALL);
+	int bs = r_anal_function_count_refs ((RAnalFunction *)b, R_ANAL_REF_TYPE_CALL);
 	return (as > bs)? 1: (as < bs)? -1: 0;
 }
 
@@ -66,12 +73,6 @@ static int cmpname(const void *_a, const void *_b) {
 	return (as > bs)? 1: (as < bs)? -1: 0;
 }
 
-static int cmpcalls(const void *_a, const void *_b) {
-	const RAnalFunction *a = _a, *b = _b;
-	int as = a->meta.numcallrefs;
-	int bs = b->meta.numcallrefs;
-	return (as > bs)? 1: (as < bs)? -1: 0;
-}
 
 static int cmpnbbs(const void *_a, const void *_b) {
 	const RAnalFunction *a = _a, *b = _b;
@@ -2714,19 +2715,6 @@ R_API ut64 r_core_anal_fcn_list_size(RCore *core) {
 	return total;
 }
 
-/* Fill out metadata struct of functions */
-static int fcnlist_gather_metadata(RAnal *anal, RList *fcns) {
-	RListIter *iter;
-	RAnalFunction *fcn;
-	r_list_foreach (fcns, iter, fcn) {
-		// Count the number of references and number of calls
-		// AITODO: lets use this numcallrefs / numrefs a memoization of the computation and invalidate it with -1 value when no longer needed
-		fcn->meta.numcallrefs = r_anal_function_count_refs (fcn, R_ANAL_REF_TYPE_CALL);
-		fcn->meta.numrefs = r_anal_function_count_xrefs (fcn, R_ANAL_REF_TYPE_ANY);
-	}
-	// TODO: Determine sgnc, sgec
-	return 0;
-}
 
 R_API char *r_core_anal_fcn_name(RCore *core, RAnalFunction *fcn) {
 	bool demangle = r_config_get_b (core->config, "bin.demangle");
@@ -2778,10 +2766,10 @@ static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 			addrwidth, r_anal_function_min_addr (fcn),
 			r_anal_function_linear_size (fcn),
 			addrwidth, r_anal_function_max_addr (fcn),
-			fcn->meta.numcallrefs,
+			r_anal_function_count_refs (fcn, R_ANAL_REF_TYPE_CALL),
 			r_anal_var_count_locals (fcn),
 			r_anal_var_count_args (fcn),
-			fcn->meta.numrefs,
+			r_anal_function_count_xrefs (fcn, R_ANAL_REF_TYPE_ANY),
 			fcn->maxstack,
 			name,
 			color_end);
@@ -3752,9 +3740,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		return 0;
 	}
 
-	if (rad && (*rad == 'l' || *rad == 'j')) {
-		fcnlist_gather_metadata (core->anal, core->anal->fcns);
-	}
+	// metadata is now computed lazily
 
 	const char *name = input;
 	ut64 addr = core->addr;
