@@ -991,6 +991,8 @@ static bool apfs_parse_omap_btree(ApfsFS *ctx, ut64 omap_oid) {
 	return false;
 }
 
+static bool apfs_resolve_omap_btree_node(ApfsFS *ctx, ut64 node_oid, ut64 target_oid, ut64 target_xid, ut64 *paddr);
+
 static bool apfs_resolve_omap(ApfsFS *ctx, ut64 oid, ut64 *paddr) {
 	if (!ctx->omap_tree_oid) {
 		// Direct mapping for simple cases
@@ -998,10 +1000,132 @@ static bool apfs_resolve_omap(ApfsFS *ctx, ut64 oid, ut64 *paddr) {
 		return true;
 	}
 
-	// TODO: Implement proper object map B-tree traversal
-	// For now, use direct mapping
-	*paddr = oid;
-	return true;
+	// Use the current transaction ID from the volume superblock
+	ut64 target_xid = 0;
+	if (ctx->vol_sb) {
+		target_xid = apfs_read64 (ctx, (ut8 *)&ctx->vol_sb->apfs_o.o_xid);
+	}
+
+	// Start traversal from the object map tree root
+	return apfs_resolve_omap_btree_node (ctx, ctx->omap_tree_oid, oid, target_xid, paddr);
+}
+
+static bool apfs_resolve_omap_btree_node(ApfsFS *ctx, ut64 node_oid, ut64 target_oid, ut64 target_xid, ut64 *paddr) {
+	ut64 node_paddr = node_oid; // For the root node, assume direct mapping
+	ut64 offset = apfs_block_to_offset (ctx, node_paddr);
+	if (offset == UT64_MAX) {
+		return false;
+	}
+
+	ApfsBtreeNodePhys *node = malloc (ctx->block_size);
+	if (!node) {
+		return false;
+	}
+
+	if (!apfs_read_at (ctx, offset, (ut8 *)node, ctx->block_size)) {
+		free (node);
+		return false;
+	}
+
+	// Verify this is a B-tree node
+	ut32 o_type = apfs_read32 (ctx, (ut8 *)node + APFS_OBJ_PHYS_TYPE_OFFSET);
+	ut32 obj_type = o_type & APFS_OBJECT_TYPE_MASK;
+	if (obj_type != APFS_OBJECT_TYPE_BTREE_NODE && obj_type != APFS_OBJECT_TYPE_BTREE) {
+		free (node);
+		return false;
+	}
+
+	ut16 flags = apfs_read16 (ctx, (ut8 *)&node->btn_flags);
+	ut16 nkeys = apfs_read16 (ctx, (ut8 *)&node->btn_nkeys);
+
+	// Validate nkeys to prevent out-of-bounds reads
+	if (nkeys > APFS_MAX_BTREE_KEYS) {
+		free (node);
+		return false;
+	}
+
+	bool found = false;
+
+	if (flags & APFS_BTNODE_LEAF) {
+		// Leaf node: search for exact match
+		ApfsKvloc *kvloc_table = (ApfsKvloc *)node->btn_data;
+
+		ut16 i;
+		for (i = 0; i < nkeys; i++) {
+			ut16 key_off = apfs_read16 (ctx, (ut8 *)&kvloc_table[i].k.off);
+			ut16 key_len = apfs_read16 (ctx, (ut8 *)&kvloc_table[i].k.len);
+			ut16 val_off = apfs_read16 (ctx, (ut8 *)&kvloc_table[i].v.off);
+			ut16 val_len = apfs_read16 (ctx, (ut8 *)&kvloc_table[i].v.len);
+
+			// Validate offsets
+			if (key_off >= ctx->block_size || val_off >= ctx->block_size ||
+				key_off + key_len > ctx->block_size || val_off + val_len > ctx->block_size ||
+				key_len < sizeof (ApfsOmapKey) || val_len < sizeof (ApfsOmapVal)) {
+				continue;
+			}
+
+			ApfsOmapKey *omap_key = (ApfsOmapKey *) ((ut8 *)node + key_off);
+			ut64 key_oid = apfs_read64 (ctx, (ut8 *)&omap_key->ok_oid);
+			ut64 key_xid = apfs_read64 (ctx, (ut8 *)&omap_key->ok_xid);
+
+			// Look for matching OID and compatible XID
+			if (key_oid == target_oid && (target_xid == 0 || key_xid <= target_xid)) {
+				ApfsOmapVal *omap_val = (ApfsOmapVal *) ((ut8 *)node + val_off);
+				*paddr = apfs_read64 (ctx, (ut8 *)&omap_val->ov_paddr);
+				found = true;
+				break;
+			}
+		}
+	} else {
+		// Internal node: find the appropriate child to traverse
+		ut16 table_space_off = apfs_read16 (ctx, (ut8 *)&node->btn_table_space.off);
+		if (table_space_off >= ctx->block_size) {
+			free (node);
+			return false;
+		}
+
+		ApfsKvloc *kvloc_table = (ApfsKvloc *) ((ut8 *)node + table_space_off);
+
+		// Find the rightmost child whose key is <= target_oid
+		ut64 child_oid = 0;
+		ut16 i;
+		for (i = 0; i < nkeys; i++) {
+			ut16 key_off = apfs_read16 (ctx, (ut8 *)&kvloc_table[i].k.off);
+			ut16 key_len = apfs_read16 (ctx, (ut8 *)&kvloc_table[i].k.len);
+			ut16 val_off = apfs_read16 (ctx, (ut8 *)&kvloc_table[i].v.off);
+			ut16 val_len = apfs_read16 (ctx, (ut8 *)&kvloc_table[i].v.len);
+
+			// Validate offsets
+			if (key_off >= ctx->block_size || val_off >= ctx->block_size ||
+				key_off + key_len > ctx->block_size || val_off + val_len > ctx->block_size ||
+				key_len < sizeof (ApfsOmapKey) || val_len < sizeof (ut64)) {
+				continue;
+			}
+
+			ApfsOmapKey *omap_key = (ApfsOmapKey *) ((ut8 *)node + key_off);
+			ut64 key_oid = apfs_read64 (ctx, (ut8 *)&omap_key->ok_oid);
+
+			if (key_oid <= target_oid) {
+				child_oid = apfs_read64 (ctx, (ut8 *)node + val_off);
+			} else {
+				break;
+			}
+		}
+
+		if (child_oid != 0) {
+			found = apfs_resolve_omap_btree_node (ctx, child_oid, target_oid, target_xid, paddr);
+		}
+	}
+
+	free (node);
+
+	// If not found in object map, fall back to direct mapping
+	if (!found) {
+		*paddr = target_oid;
+		return true;
+	}
+
+	return found;
 }
 
 static bool apfs_walk_catalog_btree(ApfsFS *ctx, ut64 root_oid, ut64 parent_inode_num) {
@@ -1299,6 +1423,7 @@ static bool apfs_parse_catalog_record(ApfsFS *ctx, ut8 *key_data, ut16 key_len, 
 		}
 	case APFS_TYPE_DIR_REC:
 		{
+			// AITODO this block of code is too large and confuses analyzers, move it into a separate static function
 			R_LOG_DEBUG ("Processing DIR_REC: key_len=%d, val_len=%d", key_len, val_len);
 			if (key_len < sizeof (ApfsDrecKey)) {
 				R_LOG_DEBUG ("DIR_REC key too short: %d < %zu", key_len, sizeof (ApfsDrecKey));
