@@ -33,7 +33,18 @@ static bool apfs_parse_simple_image(ApfsFS *ctx);
 static bool apfs_scan_for_btree_nodes(ApfsFS *ctx);
 static bool apfs_dir_iter_cb(void *user, const ut64 key, const void *value);
 static ut64 apfs_resolve_path(ApfsFS *ctx, const char *path);
-static ut64 apfs_resolve_path(ApfsFS *ctx, const char *path);
+
+static void apfs_cleanup_ctx(ApfsFS *ctx) {
+	if (!ctx) {
+		return;
+	}
+	if (ctx->inodes) {
+		ht_up_free (ctx->inodes);
+	}
+	free (ctx->nx_sb);
+	free (ctx->vol_sb);
+	free (ctx);
+}
 
 static bool fs_apfs_mount(RFSRoot *root) {
 	R_RETURN_VAL_IF_FAIL (root, false);
@@ -61,8 +72,7 @@ static bool fs_apfs_mount(RFSRoot *root) {
 	}
 	if (!nx_off) {
 		R_LOG_ERROR ("APFS container superblock not found");
-		ht_up_free (ctx->inodes);
-		free (ctx);
+		apfs_cleanup_ctx (ctx);
 		return false;
 	}
 
@@ -71,16 +81,14 @@ static bool fs_apfs_mount(RFSRoot *root) {
 	// Read container superblock
 	ApfsNxSuperblock *nx_sb = malloc (sizeof (ApfsNxSuperblock));
 	if (!nx_sb) {
-		ht_up_free (ctx->inodes);
-		free (ctx);
+		apfs_cleanup_ctx (ctx);
 		return false;
 	}
 
 	if (!apfs_read_at (ctx, 0, (ut8 *)nx_sb, sizeof (ApfsNxSuperblock))) {
 		R_LOG_ERROR ("Failed to read APFS container superblock");
 		free (nx_sb);
-		ht_up_free (ctx->inodes);
-		free (ctx);
+		apfs_cleanup_ctx (ctx);
 		return false;
 	}
 
@@ -89,8 +97,7 @@ static bool fs_apfs_mount(RFSRoot *root) {
 	if (magic != APFS_NX_MAGIC) {
 		R_LOG_ERROR ("Invalid APFS container magic: 0x%x", magic);
 		free (nx_sb);
-		ht_up_free (ctx->inodes);
-		free (ctx);
+		apfs_cleanup_ctx (ctx);
 		return false;
 	}
 
@@ -111,26 +118,23 @@ static bool fs_apfs_mount(RFSRoot *root) {
 	ut64 first_vol_oid;
 	if (!apfs_read_at (ctx, 0x50, (ut8 *)&first_vol_oid, sizeof (ut64))) {
 		R_LOG_ERROR ("Failed to read volume OID");
-		free (nx_sb);
-		ht_up_free (ctx->inodes);
-		free (ctx);
+		ctx->nx_sb = nx_sb;
+		apfs_cleanup_ctx (ctx);
 		return false;
 	}
 	first_vol_oid = apfs_read64 (ctx, (ut8 *)&first_vol_oid);
 	if (first_vol_oid == 0) {
 		R_LOG_ERROR ("No APFS volumes found");
-		free (nx_sb);
-		ht_up_free (ctx->inodes);
-		free (ctx);
+		ctx->nx_sb = nx_sb;
+		apfs_cleanup_ctx (ctx);
 		return false;
 	}
 	ctx->vol_sb_block = first_vol_oid;
 
 	ApfsSuperblock *vol_sb = malloc (sizeof (ApfsSuperblock));
 	if (!vol_sb) {
-		free (nx_sb);
-		ht_up_free (ctx->inodes);
-		free (ctx);
+		ctx->nx_sb = nx_sb;
+		apfs_cleanup_ctx (ctx);
 		return false;
 	}
 
@@ -138,9 +142,8 @@ static bool fs_apfs_mount(RFSRoot *root) {
 	if (vol_sb_offset == UT64_MAX || !apfs_read_at (ctx, vol_sb_offset, (ut8 *)vol_sb, sizeof (ApfsSuperblock))) {
 		R_LOG_ERROR ("Failed to read APFS volume superblock");
 		free (vol_sb);
-		free (nx_sb);
-		ht_up_free (ctx->inodes);
-		free (ctx);
+		ctx->nx_sb = nx_sb;
+		apfs_cleanup_ctx (ctx);
 		return false;
 	}
 
