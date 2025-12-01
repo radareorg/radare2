@@ -829,7 +829,7 @@ R_API bool r_cons_is_windows(void) {
 }
 
 R_API bool r_cons_is_tty(void) {
-#if EMSCRIPTEN || __wasi__
+#if R2_WASM_BROWSER
 	/* Check if WASM import is available */
 	extern int r2_js_is_tty(void) __attribute__((import_module("r2"), import_name("is_tty")));
 	if ((void*)r2_js_is_tty != NULL) {
@@ -1294,7 +1294,7 @@ R_API void r_cons_set_raw(RCons *cons, bool is_raw) {
 			return;
 		}
 	}
-#if EMSCRIPTEN || __wasi__
+#if R2_WASM_BROWSER
 	/* Notify JS side about terminal mode change */
 	extern void r2_js_set_raw_mode(int raw) __attribute__((import_module("r2"), import_name("set_raw_mode")));
 	if ((void*)r2_js_set_raw_mode != NULL) {

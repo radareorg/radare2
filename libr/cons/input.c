@@ -631,7 +631,7 @@ R_API int r_cons_readchar(RCons *cons) {
 	r_cons_set_raw (cons, true);
 #if R2__WINDOWS__
 	return readchar_w32 (cons, 0);
-#elif __wasi__
+#elif R2_WASM_BROWSER
 	/* Check if WASM import is available - FIXED */
 	extern int r2_js_key_next(void) __attribute__((import_module("r2"), import_name("key_next")));
 	if ((void*)r2_js_key_next != NULL) {

@@ -220,6 +220,8 @@ IF HAVE_LIBUV_VERSION_1_0_0 {
 
 ARG_WITH WANT_V35 v35 build with v35 plugin ;
 
+ARG_WITH R2_WASM_BROWSER wasm-browser enable WASM browser imports ;
+
 ARG_WITH USE_NEW_ABI new-abi use the new ABI breaking changes scheduled for the next major release ;
 
 ARG_WITH USE_RPATH rpath use rpath to build ;

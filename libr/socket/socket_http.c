@@ -7,7 +7,7 @@
 #include <wininet.h>
 #endif
 
-#if EMSCRIPTEN || __wasi__
+#if R2_WASM_BROWSER
 extern char* r2_js_http_get(const char *url, const char *headers_str, int *code, int *rlen) __attribute__((import_module("r2"), import_name("http_get")));
 extern char* r2_js_http_post(const char *url, const char *headers_str, const char *data, int *code, int *rlen) __attribute__((import_module("r2"), import_name("http_post")));
 #endif
@@ -202,7 +202,7 @@ static char *socket_http_get_recursive(const char *url, const char **headers, in
 	if (rlen) {
 		*rlen = 0;
 	}
-#if EMSCRIPTEN || __wasi__
+#if R2_WASM_BROWSER
 	if ((void*)r2_js_http_get != NULL) {
 		char *headers_str = NULL;
 		if (headers) {
@@ -408,7 +408,7 @@ R_API bool r_socket_http_download(const char *url, const char **headers, const c
 }
 
 R_API char *r_socket_http_post(const char *url, const char *headers[], const char *data, int *code, int *rlen) {
-#if EMSCRIPTEN || __wasi__
+#if R2_WASM_BROWSER
 	if ((void*)r2_js_http_post != NULL) {
 		char *headers_str = NULL;
 		if (headers) {
