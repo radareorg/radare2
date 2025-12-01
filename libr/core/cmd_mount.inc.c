@@ -46,8 +46,8 @@ static RCoreHelpMessage help_msg_mcolon = {
 
 static RCoreHelpMessage help_msg_mf = {
 	"Usage:", "mf[no] [...]", "search files matching name or offset",
-	"mfn", " /foo *.c","search files by name in /foo path",
-	"mfo", " /foo 0x5e91","search files by offset in /foo path",
+	"mfn", " /foo *.c", "search files by name in /foo path",
+	"mfo", " /foo 0x5e91", "search files by offset in /foo path",
 	NULL
 };
 
@@ -56,7 +56,7 @@ static bool is_document(const char *name) {
 }
 
 static char *readman(RCore *core, const char *page) {
-	const char *docdir = R2_DATDIR"/doc/radare2/";
+	const char *docdir = R2_DATDIR "/doc/radare2/";
 	if (!strcmp (page, "?")) {
 		RStrBuf *sb = r_strbuf_new ("");
 		RList *files = r_sys_dir (docdir);
@@ -79,7 +79,7 @@ static char *readman(RCore *core, const char *page) {
 	if (r_file_exists (page)) {
 		return r_file_slurp (page, NULL);
 	}
-	char *n = r_str_newf (R2_DATDIR"/doc/radare2/%s", page);
+	char *n = r_str_newf (R2_DATDIR "/doc/radare2/%s", page);
 	if (r_file_exists (n)) {
 		if (r_str_endswith (page, ".r2.md")) {
 			r_core_cmdf (core, ". %s", n);
@@ -87,7 +87,7 @@ static char *readman(RCore *core, const char *page) {
 			return NULL;
 		}
 		if (r_str_endswith (page, ".md")) {
-			const bool use_color = r_config_get_i (core->config, "scr.color")  > 0;
+			const bool use_color = r_config_get_i (core->config, "scr.color") > 0;
 			char *data = r_str_md2txt (n, use_color);
 			free (n);
 			return data;
@@ -150,11 +150,11 @@ static char *readman(RCore *core, const char *page) {
 
 				if (!strcmp (macro, "Sh")) {
 					// Section header
-					r_strbuf_appendf (sb, "\n## %s\n\n", args_trimmed ? args_trimmed : "");
+					r_strbuf_appendf (sb, "\n## %s\n\n", args_trimmed? args_trimmed: "");
 					in_list = false;
 				} else if (!strcmp (macro, "Ss")) {
 					// Subsection header
-					r_strbuf_appendf (sb, "\n### %s\n\n", args_trimmed ? args_trimmed : "");
+					r_strbuf_appendf (sb, "\n### %s\n\n", args_trimmed? args_trimmed: "");
 					in_list = false;
 				} else if (!strcmp (macro, "Pp")) {
 					// Paragraph break
@@ -185,34 +185,34 @@ static char *readman(RCore *core, const char *page) {
 							r_strbuf_append (sb, "\n- ");
 						}
 					} else {
-						r_strbuf_appendf (sb, "\n   * %s", args_trimmed ? args_trimmed : "");
+						r_strbuf_appendf (sb, "\n   * %s", args_trimmed? args_trimmed: "");
 					}
 				} else if (!strcmp (macro, "Nm")) {
 					// Name
-					r_strbuf_appendf (sb, "%s", args_trimmed ? args_trimmed : "");
+					r_strbuf_appendf (sb, "%s", args_trimmed? args_trimmed: "");
 				} else if (!strcmp (macro, "Nd")) {
 					// Description
-					r_strbuf_appendf (sb, " - %s", args_trimmed ? args_trimmed : "");
+					r_strbuf_appendf (sb, " - %s", args_trimmed? args_trimmed: "");
 				} else if (!strcmp (macro, "Ft")) {
 					// Function type
-					r_strbuf_appendf (sb, "\n**%s** ", args_trimmed ? args_trimmed : "");
+					r_strbuf_appendf (sb, "\n**%s** ", args_trimmed? args_trimmed: "");
 				} else if (!strcmp (macro, "Fn")) {
 					// Function name
-					r_strbuf_appendf (sb, "`%s`", args_trimmed ? args_trimmed : "");
+					r_strbuf_appendf (sb, "`%s`", args_trimmed? args_trimmed: "");
 				} else if (!strcmp (macro, "Fl")) {
 					// Flag option
-					r_strbuf_appendf (sb, "`-%s`", args_trimmed ? args_trimmed : "");
+					r_strbuf_appendf (sb, "`-%s`", args_trimmed? args_trimmed: "");
 				} else if (!strcmp (macro, "Ar")) {
 					// Argument
-					r_strbuf_appendf (sb, "`%s`", args_trimmed ? args_trimmed : "");
+					r_strbuf_appendf (sb, "`%s`", args_trimmed? args_trimmed: "");
 				} else if (!strcmp (macro, "Op")) {
 					// Optional argument - ignore for now
 				} else if (!strcmp (macro, "In")) {
 					// Include file
-					r_strbuf_appendf (sb, "\n`%s`", args_trimmed ? args_trimmed : "");
+					r_strbuf_appendf (sb, "\n`%s`", args_trimmed? args_trimmed: "");
 				} else if (!strcmp (macro, "Dl")) {
 					// Display literal
-					r_strbuf_appendf (sb, "\n```\n%s\n```\n", args_trimmed ? args_trimmed : "");
+					r_strbuf_appendf (sb, "\n```\n%s\n```\n", args_trimmed? args_trimmed: "");
 				} else if (!strcmp (macro, "Bd")) {
 					// Begin display
 					r_strbuf_append (sb, "\n```\n");
@@ -366,7 +366,7 @@ static void cmd_mount_ls(RCore *core, const char *input) {
 			R_LOG_ERROR ("Invalid path");
 		}
 	}
-	const char *path = *input ? input : "/";
+	const char *path = *input? input: "/";
 	r_list_foreach (core->fs->roots, iter, root) {
 		// TODO: adjust contents between //
 		if (!strncmp (path, root->path, strlen (path))) {
@@ -385,7 +385,7 @@ static void cmd_mount_ls(RCore *core, const char *input) {
 					pj_ks (pj, "type", root->p->meta.name);
 					pj_end (pj);
 				} else {
-					r_cons_printf (core->cons, "m %s\n", root->path); //  (root->path && root->path[0]) ? root->path + 1: "");
+					r_cons_printf (core->cons, "m %s\n", root->path); // (root->path && root->path[0])? root->path + 1: "");
 				}
 			}
 			free (base);
@@ -443,10 +443,10 @@ static int cmd_mount(void *data, const char *_input) {
 			ptr2 = strchr (ptr, ' ');
 			if (ptr2) {
 				*ptr2 = 0;
-				off = r_num_math (core->num, ptr2+1);
+				off = r_num_math (core->num, ptr2 + 1);
 			}
 			input = (char *)r_str_trim_head_ro (input);
-			ptr = (char*)r_str_trim_head_ro (ptr);
+			ptr = (char *)r_str_trim_head_ro (ptr);
 
 			const char *mountp = input;
 			const char *fstype = ptr;
@@ -462,7 +462,7 @@ static int cmd_mount(void *data, const char *_input) {
 				R_LOG_ERROR ("Cannot mount %s", input);
 			}
 		} else {
-			if (!(ptr = r_fs_name (core->fs, core->addr))) {
+			if (! (ptr = r_fs_name (core->fs, core->addr))) {
 				R_LOG_ERROR ("Unknown filesystem type");
 			}
 			if (ptr && !r_fs_mount (core->fs, ptr, input, core->addr)) {
@@ -556,13 +556,13 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case '*': // "m*"
 		r_list_foreach (core->fs->roots, iter, root) {
-			r_cons_printf (core->cons, "m %s %s 0x%"PFMT64x"\n",
+			r_cons_printf (core->cons, "m %s %s 0x%" PFMT64x "\n",
 				root->path, root->p->meta.name, root->delta);
 		}
 		break;
 	case '\0': // "m"
 		r_list_foreach (core->fs->roots, iter, root) {
-			r_cons_printf (core->cons, "%s\t0x%"PFMT64x"\t%s\n",
+			r_cons_printf (core->cons, "%s\t0x%" PFMT64x "\t%s\n",
 				root->p->meta.name, root->delta, root->path);
 		}
 		break;
@@ -646,17 +646,28 @@ static int cmd_mount(void *data, const char *_input) {
 			r_core_cmd_help_match (core, help_msg_m, "mp");
 			break;
 		}
+		if (!*input) {
+			int i;
+			for (i = 0;; i++) {
+				const char *name = r_fs_partition_type_get (i);
+				if (!name) {
+					break;
+				}
+				r_cons_printf (core->cons, "%s\n", name);
+			}
+			break;
+		}
 		ptr = strchr (input, ' ');
 		if (ptr) {
 			*ptr = 0;
-			off = r_num_math (core->num, ptr+1);
+			off = r_num_math (core->num, ptr + 1);
 		}
 		list = r_fs_partitions (core->fs, input, off);
 		if (list) {
 			r_list_foreach (list, iter, part) {
-				r_cons_printf (core->cons, "%d %02x 0x%010"PFMT64x" 0x%010"PFMT64x"\n",
+				r_cons_printf (core->cons, "%d %02x 0x%010" PFMT64x " 0x%010" PFMT64x "\n",
 					part->number, part->type,
-					part->start, part->start+part->length);
+					part->start, part->start + part->length);
 			}
 			r_list_free (list);
 		} else {
@@ -690,7 +701,7 @@ static int cmd_mount(void *data, const char *_input) {
 			if (file) {
 				r_fs_read (core->fs, file, 0, file->size);
 				r_core_seek (core, file->off, true);
-				r_cons_printf (core->cons, "'f file %d 0x%08"PFMT64x"\n", file->size, file->off);
+				r_cons_printf (core->cons, "'f file %d 0x%08" PFMT64x "\n", file->size, file->off);
 				r_fs_close (core->fs, file);
 			} else {
 				R_LOG_ERROR ("Cannot open file");
@@ -701,7 +712,7 @@ static int cmd_mount(void *data, const char *_input) {
 			if (file) {
 				// XXX: dump to file or just pipe?
 				r_fs_read (core->fs, file, 0, file->size);
-				r_cons_printf (core->cons, "'f file %d 0x%08"PFMT64x"\n", file->size, file->off);
+				r_cons_printf (core->cons, "'f file %d 0x%08" PFMT64x "\n", file->size, file->off);
 				r_fs_close (core->fs, file);
 			} else {
 				R_LOG_ERROR ("Cannot open file");
@@ -778,8 +789,8 @@ static int cmd_mount(void *data, const char *_input) {
 			}
 			size_t ptr = offset;
 			int total_bytes_read = 0;
-			int blocksize = file->size < core->blocksize ? file->size : core->blocksize;
-			size = size > 0 ? size : file->size;
+			int blocksize = file->size < core->blocksize? file->size: core->blocksize;
+			size = size > 0? size: file->size;
 			if (r_file_exists (localFile) && !r_sys_truncate (localFile, 0)) {
 				R_LOG_ERROR ("Cannot create file %s", localFile);
 				break;
@@ -796,7 +807,7 @@ static int cmd_mount(void *data, const char *_input) {
 			r_fs_close (core->fs, file);
 			R_LOG_INFO ("File '%s' created. ", localFile);
 			if (offset) {
-				R_LOG_INFO ("(offset: 0x%"PFMT64x" size: %d bytes)", (ut64) offset, size);
+				R_LOG_INFO ("(offset: 0x%" PFMT64x " size: %d bytes)", (ut64)offset, size);
 			} else {
 				R_LOG_INFO ("(size: %d bytes)", size);
 			}
@@ -822,7 +833,7 @@ static int cmd_mount(void *data, const char *_input) {
 					r_str_trim_path (ptr);
 					printf ("%s\n", ptr);
 				}
-				//XXX: r_list_purge (list);
+				// XXX: r_list_purge (list);
 			} else {
 				R_LOG_ERROR ("Unknown store path");
 			}
