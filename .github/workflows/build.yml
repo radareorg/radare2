@@ -36,6 +36,19 @@ jobs:
       with:
         name: linux-wasi-api
         path: radare2-*-wasi-api.zip
+
+  # WASI Browser
+  linux-wasi-browser:
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+    - name: Installing with symlinks
+      run: sys/wasi-browser.sh
+    - uses: actions/upload-artifact@v5
+      with:
+        name: linux-wasi-browser
+        path: radare2-*-wasi-browser.zip
   # capstone-next
   linux-csnext:
     runs-on: ubuntu-22.04
@@ -675,6 +688,7 @@ jobs:
       tag_name: ${{ steps.release.outputs.tag }}
     needs:
       - linux-wasi
+      - linux-wasi-browser
       - tarball
 #      - linux-static
 #      - linux-acr-rpm-64
@@ -724,6 +738,7 @@ jobs:
         dist/artifacts/android-acr-*/*.tar.gz
         dist/artifacts/linux-acr-deb-*/radare2-dev_*.deb
         dist/artifacts/linux-wasi/*.zip
+        dist/artifacts/linux-wasi-browser/*.zip
         dist/artifacts/linux-wasi-api/*.zip
         dist/artifacts/w64-static/*.zip
         dist/artifacts/w64-arm-meson/*.zip
