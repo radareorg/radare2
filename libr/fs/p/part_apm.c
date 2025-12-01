@@ -48,7 +48,7 @@ static int fs_part_apm(void *disk, void *ptr, void *closure) {
 		return 0;
 	}
 
-	ut32 num_partitions = first_entry.number_of_partitions;
+	ut32 num_partitions = r_read_be32 ((ut8 *)&first_entry.number_of_partitions);
 	if (num_partitions == 0 || num_partitions > 1024) {
 		R_LOG_ERROR ("Invalid number of APM partitions: %u", num_partitions);
 		return 0;
@@ -94,11 +94,13 @@ static int fs_part_apm(void *disk, void *ptr, void *closure) {
 		}
 
 		// Check for overflow before multiplying by 512
-		if (e->partition_start > UT64_MAX / 512 || e->partition_size > UT64_MAX / 512) {
+		ut32 partition_start = r_read_be32 ((ut8 *)&e->partition_start);
+		ut32 partition_size = r_read_be32 ((ut8 *)&e->partition_size);
+		if (partition_start > UT64_MAX / 512 || partition_size > UT64_MAX / 512) {
 			continue; // Skip partitions that would overflow
 		}
-		ut64 start = (ut64)r_read_be32 ((ut8 *)&e->partition_start) * 512;
-		ut64 size = (ut64)r_read_be32 ((ut8 *)&e->partition_size) * 512;
+		ut64 start = (ut64)partition_start * 512;
+		ut64 size = (ut64)partition_size * 512;
 
 		par = r_fs_partition_new (i, start, size);
 		par->type = 0; // APM doesn't have byte type, maybe use index
