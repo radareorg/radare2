@@ -1,7 +1,9 @@
-/* radare2 - LGPL - Copyright 2015-2022 - pancake */
+/* radare2 - LGPL - Copyright 2015-2025 - pancake */
 
 #include <r_fs.h>
 #include <r_types.h>
+
+#define MAX_EBR_DEPTH 100
 
 R_PACKED(
 	typedef struct {
@@ -25,10 +27,14 @@ R_PACKED(
 	})
 MBR;
 
-static void parse_ebr(RFS *fs, RFSPartitionIterator iterate, RList *list, ut64 extended_start, ut64 ebr_sector, int *part_index) {
+static void parse_ebr(RFS *fs, RFSPartitionIterator iterate, RList *list, ut64 extended_start, ut64 ebr_sector, int *part_index, int depth) {
 	MBR ebr;
 	ut64 addr, aend;
 	DOS_ENTRY *e;
+
+	if (depth > MAX_EBR_DEPTH) {
+		return;
+	}
 
 	memset (&ebr, 0, sizeof (ebr));
 	fs->iob.read_at (fs->iob.io, ebr_sector * 512, (ut8 *)&ebr, sizeof (ebr));
@@ -53,18 +59,14 @@ static void parse_ebr(RFS *fs, RFSPartitionIterator iterate, RList *list, ut64 e
 	e = &ebr.entries[1];
 	if (e->type != 0) {
 		ut64 next_ebr_sector = extended_start + e->start;
-		parse_ebr (fs, iterate, list, extended_start, next_ebr_sector, part_index);
+		parse_ebr (fs, iterate, list, extended_start, next_ebr_sector, part_index, depth + 1);
 	}
 }
 
-static int fs_part_dos(void *disk, void *ptr, void *closure) {
+static int parse_mbr_partitions(RFS *fs, RFSPartitionIterator iterate, RList *list, bool handle_ebr, int *part_index) {
 	int i;
 	MBR mbr;
-	RFS *fs = (RFS *)disk;
 	RFSPartition *par = NULL;
-	RFSPartitionIterator iterate = (RFSPartitionIterator)ptr;
-	RList *list = (RList *)closure;
-	int part_index = 0;
 
 	memset (&mbr, 0, sizeof (mbr));
 	fs->iob.read_at (fs->iob.io, 0, (ut8 *)&mbr, sizeof (mbr));
@@ -76,10 +78,10 @@ static int fs_part_dos(void *disk, void *ptr, void *closure) {
 		ut64 addr, aend;
 		DOS_ENTRY *e = &mbr.entries[i];
 		if (e->type != 0) {
-			if (e->type == 0x05 || e->type == 0x0F) { // Extended partition
+			if (handle_ebr && (e->type == 0x05 || e->type == 0x0F)) { // Extended partition
 				// Parse EBR chain
 				ut64 extended_start = e->start;
-				parse_ebr (fs, iterate, list, extended_start, extended_start, &part_index);
+				parse_ebr (fs, iterate, list, extended_start, extended_start, part_index, 0);
 			} else {
 				// Primary partition
 				addr = e->start;
@@ -90,12 +92,28 @@ static int fs_part_dos(void *disk, void *ptr, void *closure) {
 				par = r_fs_partition_new (i, addr, aend);
 				par->index = i;
 				par->type = e->type;
-				iterate (disk, par, list);
-				part_index++;
+				iterate (fs, par, list);
+				(*part_index)++;
 			}
 		} else {
 			// TODO: make deleted entries accessible?
 		}
 	}
 	return 0;
+}
+
+static int fs_part_mbr(void *disk, void *ptr, void *closure) {
+	RFS *fs = (RFS *)disk;
+	RFSPartitionIterator iterate = (RFSPartitionIterator)ptr;
+	RList *list = (RList *)closure;
+	int part_index = 0;
+	return parse_mbr_partitions (fs, iterate, list, false, &part_index);
+}
+
+static int fs_part_ebr(void *disk, void *ptr, void *closure) {
+	RFS *fs = (RFS *)disk;
+	RFSPartitionIterator iterate = (RFSPartitionIterator)ptr;
+	RList *list = (RList *)closure;
+	int part_index = 0;
+	return parse_mbr_partitions (fs, iterate, list, true, &part_index);
 }
