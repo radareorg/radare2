@@ -81,7 +81,6 @@ static int fs_part_gpt(void *disk, void *ptr, void *closure) {
 			ut64 start = e->first_lba * 512;
 			ut64 length = (e->last_lba - e->first_lba + 1) * 512;
 			par = r_fs_partition_new (i, start, length);
-			par->index = 0;
 			par->type = 0; // GPT doesn't have byte type, maybe use index or something
 			iterate (disk, par, list);
 		}
