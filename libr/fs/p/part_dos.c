@@ -40,12 +40,10 @@ static void parse_ebr(RFS *fs, RFSPartitionIterator iterate, RList *list, ut64 e
 	// First entry: logical partition
 	e = &ebr.entries[0];
 	if (e->type != 0) {
-		addr = extended_start + e->start;
-		addr *= 512;
-		aend = e->length;
-		aend *= 512;
+		addr = (ebr_sector + e->start) * 512;
+		aend = e->length * 512;
 		RFSPartition *par = r_fs_partition_new (*part_index, addr, aend);
-		par->index = 0;
+		par->index = 4 + (*part_index);
 		par->type = e->type;
 		iterate (fs, par, list);
 		(*part_index)++;
@@ -89,7 +87,7 @@ static int fs_part_dos(void *disk, void *ptr, void *closure) {
 
 				aend = e->length;
 				aend *= 512;
-				par = r_fs_partition_new (part_index, addr, aend);
+				par = r_fs_partition_new (i, addr, aend);
 				par->index = i;
 				par->type = e->type;
 				iterate (disk, par, list);
