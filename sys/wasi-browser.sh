@@ -25,3 +25,17 @@ cp -f dist/plugins-cfg/plugins.wasi.cfg plugins.cfg
 
 ./configure ${CFGFLAGS} && \
 	make -s -j ${MAKE_JOBS} DEBUG=0
+make -j
+R2V=`./configure -qV`
+D="radare2-$R2V-wasi-browser"
+mkdir -p $D
+for a in ${TOOLS} ; do
+	make -C binr/$a
+	cp -f binr/$a/$a.wasm $D || ERR=1
+done
+# for a in $D/*.wasm ; do
+# 	echo "Optimizing $a ..."
+# 	wasm-opt -o $a.o3.wasm -O3 $a
+# done
+zip -r "$D".zip $D
+exit $ERR
