@@ -101,7 +101,6 @@ static int fs_part_apm(void *disk, void *ptr, void *closure) {
 		ut64 size = (ut64)r_read_be32((ut8 *)&e->partition_size) * 512;
 
 		par = r_fs_partition_new (i, start, size);
-		par->index = i;
 		par->type = 0; // APM doesn't have byte type, maybe use index
 
 		iterate (fs, par, list);
