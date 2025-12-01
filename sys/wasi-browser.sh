@@ -3,6 +3,7 @@
 . `dirname $0`/wasi-env.sh
 
 echo "WASI_SDK=$WASI_SDK"
+export CFLAGS="${CFLAGS} -DR2_WASM_BROWSER=1"
 
 # find root
 cd `dirname $PWD/$0` ; cd ..
@@ -25,7 +26,6 @@ cp -f dist/plugins-cfg/plugins.wasi.cfg plugins.cfg
 
 ./configure ${CFGFLAGS} && \
 	make -s -j ${MAKE_JOBS} DEBUG=0
-make -j
 R2V=`./configure -qV`
 D="radare2-$R2V-wasi-browser"
 mkdir -p $D
