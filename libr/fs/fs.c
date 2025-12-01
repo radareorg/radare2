@@ -624,6 +624,7 @@ static int fs_parhook(void *disk, void *ptr, void *closure) {
 #include "p/part_dos.c"
 #include "p/part_gpt.c"
 #include "p/part_apm.c"
+#include "p/part_bsd.c"
 
 static RFSPartitionType partitions[] = {
 	/* LGPL code */
@@ -631,6 +632,7 @@ static RFSPartitionType partitions[] = {
 	{ "ebr", &fs_part_ebr, fs_parhook },
 	{ "gpt", &fs_part_gpt, fs_parhook },
 	{ "apm", &fs_part_apm, fs_parhook },
+	{ "bsd", &fs_part_bsd, fs_parhook },
 #if USE_GRUB
 /* WARNING GPL code */
 #if !__EMSCRIPTEN__
