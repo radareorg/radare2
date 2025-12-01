@@ -8,48 +8,48 @@
 #define BSD_MAXPARTITIONS 16
 
 R_PACKED(
-typedef struct {
-	ut32 p_size;    /* number of sectors in partition */
-	ut32 p_offset;  /* starting sector */
-	ut32 p_fsize;   /* filesystem basic fragment size */
-	ut8  p_fstype;  /* filesystem type */
-	ut8  p_frag;    /* filesystem fragments per block */
-	ut16 p_cpg;     /* cylinders per group */
-})
+	typedef struct {
+		ut32 p_size; /* number of sectors in partition */
+		ut32 p_offset; /* starting sector */
+		ut32 p_fsize; /* filesystem basic fragment size */
+		ut8 p_fstype; /* filesystem type */
+		ut8 p_frag; /* filesystem fragments per block */
+		ut16 p_cpg; /* cylinders per group */
+	})
 BSDPartition;
 
 R_PACKED(
-typedef struct {
-	ut32 d_magic;           /* the magic number */
-	ut16 d_type;            /* drive type */
-	ut16 d_subtype;         /* controller/d_type specific */
-	char d_typename[16];    /* type name */
-	char d_packname[16];    /* pack identifier */
-	ut32 d_secsize;         /* # of bytes per sector */
-	ut32 d_nsectors;        /* # of data sectors per track */
-	ut32 d_ntracks;         /* # of tracks per cylinder */
-	ut32 d_ncylinders;      /* # of data cylinders per unit */
-	ut32 d_secpercyl;       /* # of data sectors per cylinder */
-	ut32 d_secperunit;      /* # of data sectors per unit */
-	ut16 d_sparespertrack;  /* # of spare sectors per track */
-	ut16 d_sparespercyl;    /* # of spare sectors per cylinder */
-	ut32 d_acylinders;      /* # of alt. cylinders per unit */
-	ut16 d_rpm;             /* rotational speed */
-	ut16 d_interleave;      /* hardware sector interleave */
-	ut16 d_trackskew;       /* sector 0 skew, per track */
-	ut16 d_cylskew;         /* sector 0 skew, per cylinder */
-	ut32 d_headswitch;      /* head switch time, usec */
-	ut32 d_trkseek;         /* track-to-track seek, usec */
-	ut32 d_flags;           /* generic flags */
-	ut32 d_drivedata[5];    /* drive-type specific information */
-	ut32 d_spare[5];        /* reserved for future use */
-	ut32 d_magic2;          /* the magic number (again) */
-	ut16 d_checksum;        /* xor of data incl. partitions */
-	ut16 d_npartitions;     /* number of partitions in following */
-	ut32 d_bbsize;          /* size of boot area at sn0, bytes */
-	ut32 d_sbsize;          /* max size of fs superblock, bytes */
-	BSDPartition d_partitions[BSD_MAXPARTITIONS]; /* the partition table */
-})
+	typedef struct {
+		ut32 d_magic; /* the magic number */
+		ut16 d_type; /* drive type */
+		ut16 d_subtype; /* controller/d_type specific */
+		char d_typename[16]; /* type name */
+		char d_packname[16]; /* pack identifier */
+		ut32 d_secsize; /* # of bytes per sector */
+		ut32 d_nsectors; /* # of data sectors per track */
+		ut32 d_ntracks; /* # of tracks per cylinder */
+		ut32 d_ncylinders; /* # of data cylinders per unit */
+		ut32 d_secpercyl; /* # of data sectors per cylinder */
+		ut32 d_secperunit; /* # of data sectors per unit */
+		ut16 d_sparespertrack; /* # of spare sectors per track */
+		ut16 d_sparespercyl; /* # of spare sectors per cylinder */
+		ut32 d_acylinders; /* # of alt. cylinders per unit */
+		ut16 d_rpm; /* rotational speed */
+		ut16 d_interleave; /* hardware sector interleave */
+		ut16 d_trackskew; /* sector 0 skew, per track */
+		ut16 d_cylskew; /* sector 0 skew, per cylinder */
+		ut32 d_headswitch; /* head switch time, usec */
+		ut32 d_trkseek; /* track-to-track seek, usec */
+		ut32 d_flags; /* generic flags */
+		ut32 d_drivedata[5]; /* drive-type specific information */
+		ut32 d_spare[5]; /* reserved for future use */
+		ut32 d_magic2; /* the magic number (again) */
+		ut16 d_checksum; /* xor of data incl. partitions */
+		ut16 d_npartitions; /* number of partitions in following */
+		ut32 d_bbsize; /* size of boot area at sn0, bytes */
+		ut32 d_sbsize; /* max size of fs superblock, bytes */
+		BSDPartition d_partitions[BSD_MAXPARTITIONS]; /* the partition table */
+	})
 BSDDiskLabel;
 
 static int fs_part_bsd(void *disk, void *ptr, void *closure) {
@@ -98,8 +98,8 @@ static int fs_part_bsd(void *disk, void *ptr, void *closure) {
 		}
 
 		// Calculate start and size in bytes, cast to ut64 to prevent overflow
-		ut64 start = (ut64)p_offset * (ut64)d_secsize;
-		ut64 size = (ut64)p_size * (ut64)d_secsize;
+		ut64 start = (ut64)p_offset *(ut64)d_secsize;
+		ut64 size = (ut64)p_size *(ut64)d_secsize;
 
 		// Check for overflow in multiplication
 		if (p_offset != 0 && start / p_offset != d_secsize) {
