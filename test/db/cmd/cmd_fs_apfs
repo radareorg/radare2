@@ -1,4 +1,4 @@
-NAME=md mounts
+NAME=md apfs mounts
 FILE=bins/fs/apfs.img
 CMDS=<<EOF
 mn
@@ -19,5 +19,16 @@ d bin
 r hello.txt
 ---
 r ls
+EOF
+RUN
+
+NAME=md apfs cat
+BROKEN=1
+FILE=bins/fs/apfs.img
+CMDS=<<EOF
+mc /root/hello.txt
+EOF
+EXPECT=<<EOF
+Hello World
 EOF
 RUN
