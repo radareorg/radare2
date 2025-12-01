@@ -88,7 +88,7 @@ static int fs_part_dos(void *disk, void *ptr, void *closure) {
 				aend = e->length;
 				aend *= 512;
 				par = r_fs_partition_new (part_index, addr, aend);
-				par->index = 0;
+				par->index = i;
 				par->type = e->type;
 				iterate (disk, par, list);
 				part_index++;
