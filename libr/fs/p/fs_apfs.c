@@ -402,10 +402,7 @@ static bool apfs_read_file_extents(ApfsFS *ctx, ApfsInodeVal *inode, ut8 **data,
 			break;
 		}
 
-		ut64 to_read = block_size;
-		if (bytes_read + to_read > *size) {
-			to_read = *size - bytes_read;
-		}
+		ut64 to_read = R_MIN (block_size, *size - bytes_read);
 
 		if (apfs_read_at (ctx, block_offset, block_buf, to_read)) {
 			memcpy (*data + bytes_read, block_buf, to_read);
@@ -1008,29 +1005,15 @@ static bool apfs_parse_dir_record(ApfsFS *ctx, ut64 obj_id, ut8 *key_data, ut16 
 			inode->parent_id = obj_id;
 			inode->private_id = file_id;
 
-			// Try to determine file type based on directory record flags and name patterns
+			// Determine file type from directory record flags
 			ut16 flags = apfs_read16 (ctx, (ut8 *)&drec_val->flags);
-			bool is_directory = false;
-
-			// Check for directory indicators in flags (DT_DIR = 4)
-			if ((flags & 0x000f) == 4) {
-				is_directory = true;
-			}
-			if (is_directory) {
-				inode->mode = APFS_INODE_MODE_DIR;
-				R_LOG_DEBUG ("Setting file_id=%" PFMT64u " '%s' as directory (flags=0x%x)", file_id, name, flags);
-			} else {
-				inode->mode = APFS_INODE_MODE_FILE;
-				R_LOG_DEBUG ("Setting file_id=%" PFMT64u " '%s' as regular file (flags=0x%x)", file_id, name, flags);
-			}
+			inode->mode = ((flags & 0x000f) == 4) ? APFS_INODE_MODE_DIR : APFS_INODE_MODE_FILE;
 			cache->inode = inode;
 			cache->parsed = true;
 			ht_up_insert (ctx->inodes, file_id, cache);
-			R_LOG_DEBUG ("Created inode cache entry for file_id=%" PFMT64u ", name='%s', mode=0x%x", file_id, name, inode->mode);
 		} else if (!cache->name) {
 			cache->name = strdup (name);
 			cache->parent_inode_num = obj_id;
-			R_LOG_DEBUG ("Updated inode cache entry for file_id=%" PFMT64u ", name='%s'", file_id, name);
 		}
 	}
 	free (name);
