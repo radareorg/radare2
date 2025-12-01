@@ -12,6 +12,7 @@
 #define APFS_NX_SEARCH_RANGE 0x200000 /* arbitrary 2MB */
 
 // Object type masks
+#define APFS_DREC_LEN_MASK 0x000003ff
 #define APFS_OBJECT_TYPE_MASK 0x0000ffff
 #define APFS_OBJECT_TYPE_FLAGS_MASK 0xffff0000
 #define APFS_OBJ_STORAGETYPE_MASK 0xc0000000
@@ -753,17 +754,15 @@ static RList *fs_apfs_dir(RFSRoot *root, const char *path, int view) {
 
 static RFSFile *fs_apfs_open(RFSRoot *root, const char *path, bool create) {
 	R_RETURN_VAL_IF_FAIL (root && path, NULL);
-
+	if (create) {
+		// TODO: create files is not yet implemented
+		return NULL;
+	}
 	ApfsFS *ctx = root->ptr;
 	if (!ctx || !ctx->mounted) {
 		R_LOG_ERROR ("Open: filesystem not mounted");
 		return NULL;
 	}
-
-	if (create) {
-		return NULL;
-	}
-
 	// Resolve the path to get the actual inode number
 	ut64 inode_num = apfs_resolve_path (ctx, path);
 	if (inode_num == 0) {
@@ -787,8 +786,7 @@ static RFSFile *fs_apfs_open(RFSRoot *root, const char *path, bool create) {
 		file->type = R_FS_FILE_TYPE_DIRECTORY;
 	} else if (apfs_is_regular_file (mode)) {
 		file->type = R_FS_FILE_TYPE_REGULAR;
-		// For now, no size info
-		file->size = 0;
+		file->size = 0; // AITODO: file size must be implemented
 	} else {
 		file->type = R_FS_FILE_TYPE_SPECIAL;
 	}
@@ -803,7 +801,7 @@ static int fs_apfs_read(RFSFile *file, ut64 addr, int len) {
 	if (!ctx || !ctx->mounted) {
 		return -1;
 	}
-
+	// AITODO: implement file contents reading
 	// Simplified: no actual file reading implemented yet
 	return 0;
 }
@@ -826,7 +824,7 @@ static void fs_apfs_details(RFSRoot *root, RStrBuf *sb) {
 	r_strbuf_appendf (sb, "Block Size: %u bytes\n", ctx->block_size);
 	if (ctx->vol_sb) {
 		char volname[257] = { 0 };
-		memcpy (volname, ctx->vol_sb->apfs_volname, 256);
+		r_str_ncpy (volname, (const char *)ctx->vol_sb->apfs_volname, sizeof (volname));
 		r_strbuf_appendf (sb, "Volume Name: %s\n", volname);
 	}
 	r_strbuf_append (sb, "Purpose: Apple's modern filesystem for macOS, iOS, etc.\n");
@@ -838,25 +836,19 @@ static bool apfs_parse_btree_node(ApfsFS *ctx, ut64 block_num, ut64 parent_inode
 static bool apfs_parse_omap_btree(ApfsFS *ctx, ut64 omap_oid) {
 	// Read object map structure
 	ut64 omap_paddr;
-	if (!apfs_resolve_omap (ctx, omap_oid, &omap_paddr)) {
-		return false;
+	if (apfs_resolve_omap (ctx, omap_oid, &omap_paddr)) {
+		ApfsOmapPhys *omap = malloc (ctx->block_size);
+		if (omap) {
+			ut64 offset = apfs_block_to_offset (ctx, omap_paddr);
+			if (offset != UT64_MAX && apfs_read_at (ctx, offset, (ut8 *)omap, ctx->block_size)) {
+				ctx->omap_tree_oid = apfs_read64 (ctx, (ut8 *)&omap->om_tree_oid);
+				ctx->omap = omap;
+				return true;
+			}
+			free (omap);
+		}
 	}
-
-	ApfsOmapPhys *omap = malloc (ctx->block_size);
-	if (!omap) {
-		return false;
-	}
-
-	ut64 offset = apfs_block_to_offset (ctx, omap_paddr);
-	if (offset == UT64_MAX || !apfs_read_at (ctx, offset, (ut8 *)omap, ctx->block_size)) {
-		free (omap);
-		return false;
-	}
-
-	ctx->omap_tree_oid = apfs_read64 (ctx, (ut8 *)&omap->om_tree_oid);
-	ctx->omap = omap;
-
-	return true;
+	return false;
 }
 
 static bool apfs_resolve_omap(ApfsFS *ctx, ut64 oid, ut64 *paddr) {
@@ -1181,7 +1173,7 @@ static bool apfs_parse_catalog_record(ApfsFS *ctx, ut8 *key_data, ut16 key_len, 
 			// Try both hashed and unhashed key formats
 			// First try hashed format (name_len_and_hash as 4 bytes)
 			ut32 name_len_and_hash = apfs_read32 (ctx, key_data + 8);
-			ut16 hashed_name_len = name_len_and_hash & 0x000003ff; // APFS_DREC_LEN_MASK
+			ut16 hashed_name_len = name_len_and_hash & APFS_DREC_LEN_MASK;
 
 			// Then try unhashed format (name_len as 2 bytes)
 			ut16 unhashed_name_len = apfs_read16 (ctx, key_data + 8);
@@ -1189,7 +1181,9 @@ static bool apfs_parse_catalog_record(ApfsFS *ctx, ut8 *key_data, ut16 key_len, 
 			R_LOG_DEBUG ("DIR_REC hashed name_len=%d, unhashed name_len=%d", hashed_name_len, unhashed_name_len);
 
 			// Calculate expected name start for each format
+			// APFS_DREC_KEY_HEADER_SIZE
 			ut8 *hashed_name = key_data + 12; // After 8-byte header + 4-byte name_len_and_hash
+			// APFS_DREC_KEY_HASHED_NAME_OFFSET
 			ut8 *unhashed_name = key_data + 10; // After 8-byte header + 2-byte name_len
 
 			// Check which format makes more sense based on available space
@@ -1197,11 +1191,11 @@ static bool apfs_parse_catalog_record(ApfsFS *ctx, ut8 *key_data, ut16 key_len, 
 			ut16 name_len;
 			ut8 *name_data;
 
-		if (key_len >= 12 + hashed_name_len && hashed_name_len > 0 && hashed_name_len < 256) {
+			if (key_len >= 12 + hashed_name_len && hashed_name_len > 0 && hashed_name_len < 256) {
 				use_hashed = true;
 				name_len = hashed_name_len;
 				name_data = hashed_name;
-		} else if (key_len >= 10 + unhashed_name_len && unhashed_name_len > 0 && unhashed_name_len < 256) {
+			} else if (key_len >= 10 + unhashed_name_len && unhashed_name_len > 0 && unhashed_name_len < 256) {
 				use_hashed = false;
 				name_len = unhashed_name_len;
 				name_data = unhashed_name;
@@ -1367,16 +1361,10 @@ static bool apfs_scan_for_btree_nodes(ApfsFS *ctx) {
 			}
 		}
 	}
-
 	// Restore original delta
 	ctx->delta = orig_delta;
-
 	R_LOG_DEBUG ("Scanned %d blocks, found %d valid nodes, parsed any: %s",
 		nodes_checked, valid_nodes_found, found_any? "yes": "no");
-
-	// Do not create a mocked root directory here; parsing should populate inodes if successful
-	(void)found_any; // keep variable referenced
-
 	return found_any;
 }
 
@@ -1392,24 +1380,22 @@ static bool apfs_dir_iter_cb(void *user, const ut64 key, const void *value) {
 	}
 
 	RFSFile *fsf = r_fs_file_new (ctx->root, cache->name? cache->name: "");
-	if (!fsf) {
-		return true;
+	if (fsf) {
+		ut16 mode = apfs_read16 (apfs_ctx, (ut8 *)&cache->inode->mode);
+		if (apfs_is_directory (mode)) {
+			fsf->type = R_FS_FILE_TYPE_DIRECTORY;
+		} else if (apfs_is_regular_file (mode)) {
+			fsf->type = R_FS_FILE_TYPE_REGULAR;
+			fsf->size = 0;
+		} else {
+			fsf->type = R_FS_FILE_TYPE_SPECIAL;
+		}
+		fsf->ptr = (void *) (size_t)cache->inode_num;
+		const ut64 useconds = apfs_read64 (apfs_ctx, (ut8 *)&cache->inode->mod_time);
+		uint64_t seconds = useconds / 1000000000; // Convert to seconds
+		fsf->time = seconds;
+		r_list_append (list, fsf);
 	}
-
-	ut16 mode = apfs_read16 (apfs_ctx, (ut8 *)&cache->inode->mode);
-	if (apfs_is_directory (mode)) {
-		fsf->type = R_FS_FILE_TYPE_DIRECTORY;
-	} else if (apfs_is_regular_file (mode)) {
-		fsf->type = R_FS_FILE_TYPE_REGULAR;
-		fsf->size = 0;
-	} else {
-		fsf->type = R_FS_FILE_TYPE_SPECIAL;
-	}
-
-	fsf->ptr = (void *) (size_t)cache->inode_num;
-	fsf->time = apfs_read64 (apfs_ctx, (ut8 *)&cache->inode->mod_time) / 1000000000; // Convert to seconds
-
-	r_list_append (list, fsf);
 	return true;
 }
 
