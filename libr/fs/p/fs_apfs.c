@@ -462,6 +462,7 @@ static bool apfs_read_file_extents(ApfsFS *ctx, ApfsInodeVal *inode, ut8 **data,
 	return true;
 }
 
+// TODO: reading file contents doesnt seems to work
 static int fs_apfs_read(RFSFile *file, ut64 addr, int len) {
 	R_RETURN_VAL_IF_FAIL (file, -1);
 

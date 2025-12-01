@@ -735,10 +735,12 @@ static int cmd_mount(void *data, const char *_input) {
 				r_cons_write (core->cons, (const char *)file->data, file->size);
 				r_fs_close (core->fs, file);
 				r_cons_write (core->cons, "\n", 1);
+#if 0
 			} else {
 				if (!r_fs_dir_dump (core->fs, input, "")) {
 					R_LOG_ERROR ("Cannot open file");
 				}
+#endif
 			}
 		}
 		break;
