@@ -639,7 +639,7 @@ R_API int r_cons_readchar(RCons *cons) {
 	}
 	/* Fallback to getchar() if import not available */
 	return getchar ();
-#else
+#elif !defined(__wasi__)
 	void *bed = r_cons_sleep_begin (cons);
 
 	// Blocks until either stdin has something to read or a signal happens.
@@ -668,11 +668,14 @@ R_API int r_cons_readchar(RCons *cons) {
 
 	ssize_t ret = read (STDIN_FILENO, buf, 1);
 	r_cons_sleep_end (cons, bed);
+#else
+	// WASI fallback
+	ssize_t ret = read (STDIN_FILENO, buf, 1);
+#endif
 	if (ret != 1) {
 		return -1;
 	}
 	return r_cons_controlz (cons, buf[0]);
-#endif
 }
 
 R_API bool r_cons_yesno(RCons *cons, int def, const char *fmt, ...) {

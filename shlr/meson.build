@@ -204,6 +204,7 @@ grub_static_dep = declare_dependency(
 endif
 
 # handle winkd dependency
+if cc.get_define('__wasi__') == ''
 winkd_files = [
   'winkd/iob_pipe.c',
   'winkd/iob_net.c',
@@ -236,6 +237,10 @@ winkd_static_dep = declare_dependency(
   link_with: libr2winkd_static,
   include_directories: winkd_inc
 )
+endif
+else
+winkd_dep = declare_dependency()
+winkd_static_dep = declare_dependency()
 endif
 
 # handle ar dependency

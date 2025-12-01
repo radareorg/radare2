@@ -48,7 +48,9 @@ r_io_sources = [
   'p/io_sparse.c',
   'p/io_tcpslurp.c',
   'p/io_uf2.c',
+if cc.get_define('__wasi__') == ''
   'p/io_winkd.c',
+endif
   'p/io_winedbg.c',
 ]
 

@@ -32,9 +32,9 @@ extern "C" {
 #ifndef __wasi__
 #include <termios.h>
 #include <sys/wait.h>
-#endif
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+#endif
 #endif
 #if R2__WINDOWS__
 #include <windows.h>

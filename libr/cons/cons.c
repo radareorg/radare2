@@ -837,7 +837,7 @@ R_API bool r_cons_is_tty(void) {
 	}
 	/* Fallback to false if import not available */
 	return false;
-#elif R2__UNIX__
+#elif R2__UNIX__ && !defined(__wasi__)
 	struct winsize win = {0};
 	struct stat sb = {0};
 
@@ -1300,7 +1300,7 @@ R_API void r_cons_set_raw(RCons *cons, bool is_raw) {
 	if ((void*)r2_js_set_raw_mode != NULL) {
 		r2_js_set_raw_mode(is_raw ? 1 : 0);
 	}
-#elif R2__UNIX__
+#elif R2__UNIX__ && !defined(__wasi__)
 	struct termios *term_mode;
 	if (is_raw) {
 		cons->term_raw.c_lflag &= ~(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
