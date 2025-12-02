@@ -30,7 +30,7 @@ static int compute_ref(PluginData *pd, struct reference *ref, int allow_invalid)
 #define Z80_SLL_HL 0x36 /* SLL [hl] opcode */
 
 /* Helper function to emit indexed bit/shift operation */
-static void emit_indexed_bitop(PluginData *pd, int base_opcode, int bit_num) {
+static inline void emit_indexed_bitop(PluginData *pd, int base_opcode, int bit_num) {
 	char n = r_num_math (NULL, pd->indexjmp);
 	wrtb (pd->indexed);
 	wrtb (Z80_INDEXED_PREFIX_CB);
@@ -40,7 +40,7 @@ static void emit_indexed_bitop(PluginData *pd, int base_opcode, int bit_num) {
 }
 
 /* Helper function to emit indexed shift operation */
-static void emit_indexed_shift(PluginData *pd, int hl_opcode) {
+static inline void emit_indexed_shift(PluginData *pd, int hl_opcode) {
 	char n = r_num_math (NULL, pd->indexjmp);
 	wrtb (pd->indexed);
 	wrtb (Z80_INDEXED_PREFIX_CB);
@@ -102,7 +102,6 @@ rd_number(PluginData *pd, const char **p, const char **endp, int base) {
 
 static int
 rd_otherbasenumber(PluginData *pd, const char **p, int *valid, bool print_errors) {
-	char c;
 	(*p)++;
 	if (!**p) {
 		if (valid) {
@@ -116,7 +115,7 @@ rd_otherbasenumber(PluginData *pd, const char **p, int *valid, bool print_errors
 		}
 		return 0;
 	}
-	c = **p;
+	char c = **p;
 	(*p)++;
 	if (isalpha ((const unsigned char)**p)) {
 		return rd_number (pd, p, NULL, tolower ((unsigned char)c) - 'a' + 1);
@@ -189,19 +188,16 @@ static int rd_character(PluginData *pd, const char **p, int *valid, bool print_e
 static int
 check_label(PluginData *pd, struct label *labels, const char **p, struct label **ret,
 	struct label **previous, int force_skip) {
-	struct label *l;
-	const char *c;
-	unsigned s2;
 	*p = delspc (*p);
+	const char *c;
 	for (c = *p; isalnum ((const unsigned char)*c) || *c == '_' || *c == '.'; c++) {
 	}
-	s2 = c - *p;
+	unsigned s2 = c - *p;
+	struct label *l;
 	for (l = labels; l; l = l->next) {
-		unsigned s1, s;
-		int cmp;
-		s1 = strlen (l->name);
-		s = s1 < s2? s1: s2;
-		cmp = strncmp (l->name, *p, s);
+		unsigned s1 = strlen (l->name);
+		unsigned s = s1 < s2? s1: s2;
+		int cmp = strncmp (l->name, *p, s);
 		if (cmp > 0 || (cmp == 0 && s1 > s)) {
 			if (force_skip) {
 				*p = c;
@@ -261,9 +257,8 @@ static int rd_label(PluginData *pd, const char **p, bool *exists, struct label *
 }
 
 static inline int rd_suffixed_number(PluginData *pd, const char **p, int base, int *valid, bool print_errors) {
-	const char *p0, *p1, *p2;
+	const char *p0 = *p, *p1, *p2;
 	int v;
-	p0 = *p;
 	rd_number (pd, p, &p1, 36); /* Advance to end of numeric string */
 	p1--; /* Last character in numeric string */
 	switch (*p1) {
@@ -325,7 +320,7 @@ static inline int rd_ampersand_number(PluginData *pd, const char **p, int *valid
 }
 
 static int rd_value(PluginData *pd, const char **p, int *valid, int level, int *check, bool print_errors) {
-	int sign = 1, not= 0, base, v;
+	int sign = 1, not= 0, v;
 	const char *p0, *p2;
 	*p = delspc (*p);
 	while (**p && strchr ("+-~", **p)) {
@@ -337,7 +332,7 @@ static int rd_value(PluginData *pd, const char **p, int *valid, int level, int *
 		(*p)++;
 		*p = delspc (*p);
 	}
-	base = 10; /* Default base for suffixless numbers */
+	int base = 10; /* Default base for suffixless numbers */
 
 	/* Check for parenthesis around full expression: not if no parenthesis */
 	if (**p != '(') {
@@ -420,8 +415,7 @@ static int rd_value(PluginData *pd, const char **p, int *valid, int level, int *
 static int
 rd_factor(PluginData *pd, const char **p, int *valid, int level, int *check, int print_errors) {
 	/* read a factor of an expression */
-	int result;
-	result = rd_value (pd, p, valid, level, check, print_errors);
+	int result = rd_value (pd, p, valid, level, check, print_errors);
 	*p = delspc (*p);
 	while (**p == '*' || **p == '/') {
 		*check = 0;
@@ -443,8 +437,7 @@ rd_factor(PluginData *pd, const char **p, int *valid, int level, int *check, int
 
 static int rd_term(PluginData *pd, const char **p, int *valid, int level, int *check, int print_errors) {
 	/* read a term of an expression */
-	int result;
-	result = rd_factor (pd, p, valid, level, check, print_errors);
+	int result = rd_factor (pd, p, valid, level, check, print_errors);
 	*p = delspc (*p);
 	while (**p == '+' || **p == '-') {
 		*check = 0;
@@ -462,8 +455,7 @@ static int rd_term(PluginData *pd, const char **p, int *valid, int level, int *c
 
 static int rd_expr_shift(PluginData *pd, const char **p, int *valid, int level, int *check,
 	bool print_errors) {
-	int result;
-	result = rd_term (pd, p, valid, level, check, print_errors);
+	int result = rd_term (pd, p, valid, level, check, print_errors);
 	*p = delspc (*p);
 	while ((**p == '<' || **p == '>') && (*p)[1] == **p) {
 		*check = 0;
@@ -481,8 +473,7 @@ static int rd_expr_shift(PluginData *pd, const char **p, int *valid, int level, 
 
 static int rd_expr_unequal(PluginData *pd, const char **p, int *valid, int level, int *check,
 	bool print_errors) {
-	int result;
-	result = rd_expr_shift (pd, p, valid, level, check, print_errors);
+	int result = rd_expr_shift (pd, p, valid, level, check, print_errors);
 	*p = delspc (*p);
 	if (**p == '<' && (*p)[1] == '=') {
 		*check = 0;
@@ -508,8 +499,7 @@ static int rd_expr_unequal(PluginData *pd, const char **p, int *valid, int level
 static int
 rd_expr_equal(PluginData *pd, const char **p, int *valid, int level, int *check,
 	bool print_errors) {
-	int result;
-	result = rd_expr_unequal (pd, p, valid, level, check, print_errors);
+	int result = rd_expr_unequal (pd, p, valid, level, check, print_errors);
 	*p = delspc (*p);
 	if (**p == '=') {
 		*check = 0;
@@ -529,8 +519,7 @@ rd_expr_equal(PluginData *pd, const char **p, int *valid, int level, int *check,
 static int
 rd_expr_and(PluginData *pd, const char **p, int *valid, int level, int *check,
 	bool print_errors) {
-	int result;
-	result = rd_expr_equal (pd, p, valid, level, check, print_errors);
+	int result = rd_expr_equal (pd, p, valid, level, check, print_errors);
 	*p = delspc (*p);
 	if (**p == '&') {
 		*check = 0;
@@ -543,8 +532,7 @@ rd_expr_and(PluginData *pd, const char **p, int *valid, int level, int *check,
 static int
 rd_expr_xor(PluginData *pd, const char **p, int *valid, int level, int *check,
 	bool print_errors) {
-	int result;
-	result = rd_expr_and (pd, p, valid, level, check, print_errors);
+	int result = rd_expr_and (pd, p, valid, level, check, print_errors);
 	*p = delspc (*p);
 	if (**p == '^') {
 		*check = 0;
@@ -557,8 +545,7 @@ rd_expr_xor(PluginData *pd, const char **p, int *valid, int level, int *check,
 static int
 rd_expr_or(PluginData *pd, const char **p, int *valid, int level, int *check,
 	bool print_errors) {
-	int result;
-	result = rd_expr_xor (pd, p, valid, level, check, print_errors);
+	int result = rd_expr_xor (pd, p, valid, level, check, print_errors);
 	*p = delspc (*p);
 	if (**p == '|') {
 		*check = 0;
@@ -621,7 +608,7 @@ rd_expr(PluginData *pd, const char **p, char delimiter, int *valid, int level,
 }
 
 /* skip over spaces in string */
-static const char *delspc(const char *ptr) {
+static inline const char *delspc(const char *ptr) {
 	ptr = r_str_trim_head_ro (ptr);
 	if (*ptr == ';') {
 		ptr = "";
@@ -630,7 +617,7 @@ static const char *delspc(const char *ptr) {
 }
 
 /* read away a comma, error if there is none */
-static void rd_comma(const char **p) {
+static inline void rd_comma(const char **p) {
 	*p = delspc (*p);
 	if (**p != ',') {
 		R_LOG_ERROR ("`,' expected. Remainder of line: %s", *p);
@@ -640,7 +627,7 @@ static void rd_comma(const char **p) {
 }
 
 /* look ahead for a comma, no error if not found */
-static int has_argument(const char **p) {
+static inline int has_argument(const char **p) {
 	const char *q = delspc (*p);
 	return *q == ',';
 }
@@ -717,7 +704,7 @@ static int indx(PluginData *pd, const char **ptr, const char **list, int error, 
 }
 
 /* read a mnemonic */
-static int readcommand(PluginData *pd, const char **p) {
+static inline int readcommand(PluginData *pd, const char **p) {
 	return indx (pd, p, mnemonics, 0, NULL);
 }
 
@@ -813,7 +800,7 @@ static int rd_byte(PluginData *pd, const char **p, char delimiter) {
 }
 
 /* read (SP), DE, or AF */
-static int rd_ex1(PluginData *pd, const char **p) {
+static inline int rd_ex1(PluginData *pd, const char **p) {
 #define DE 2
 #define AF 3
 	const char *list[] = {
@@ -823,7 +810,7 @@ static int rd_ex1(PluginData *pd, const char **p) {
 }
 
 /* read first argument of IN */
-static int rd_in(PluginData *pd, const char **p) {
+static inline int rd_in(PluginData *pd, const char **p) {
 #define A 8
 	const char *list[] = {
 		"b", "c", "d", "e", "h", "l", "f", "a", NULL
@@ -832,7 +819,7 @@ static int rd_in(PluginData *pd, const char **p) {
 }
 
 /* read second argument of out (c),x */
-static int rd_out(PluginData *pd, const char **p) {
+static inline int rd_out(PluginData *pd, const char **p) {
 	const char *list[] = {
 		"b", "c", "d", "e", "h", "l", "0", "a", NULL
 	};
@@ -854,7 +841,7 @@ static int rd_nnc(PluginData *pd, const char **p) {
 }
 
 /* read (C) */
-static int rd_c(PluginData *pd, const char **p) {
+static inline int rd_c(PluginData *pd, const char **p) {
 	const char *list[] = {
 		"( c )", "( bc )", NULL
 	};
@@ -862,7 +849,7 @@ static int rd_c(PluginData *pd, const char **p) {
 }
 
 /* read a or hl */
-static int rd_a_hl(PluginData *pd, const char **p) {
+static inline int rd_a_hl(PluginData *pd, const char **p) {
 #define HL 2
 	const char *list[] = {
 		"a", "hl", NULL
@@ -947,7 +934,7 @@ static int rd_jp(PluginData *pd, const char **p) {
 }
 
 /* read first argument of JR */
-static int rd_jr(PluginData *pd, const char **p) {
+static inline int rd_jr(PluginData *pd, const char **p) {
 	const char *list[] = {
 		"nz", "z", "nc", "c", NULL
 	};
@@ -955,7 +942,7 @@ static int rd_jr(PluginData *pd, const char **p) {
 }
 
 /* read A */
-static int rd_a(PluginData *pd, const char **p) {
+static inline int rd_a(PluginData *pd, const char **p) {
 	const char *list[] = {
 		"a", NULL
 	};
@@ -1013,7 +1000,7 @@ static int rd_r_add(PluginData *pd, const char **p) {
 }
 
 /* read bc,de,hl, or sp */
-static int rd_rr_(PluginData *pd, const char **p) {
+static inline int rd_rr_(PluginData *pd, const char **p) {
 	const char *list[] = {
 		"bc", "de", "hl", "sp", NULL
 	};
@@ -1098,7 +1085,7 @@ static int rd_0_7(PluginData *pd, const char **p) {
 }
 
 /* read long condition. do not error if not found. */
-static int rd_cc(PluginData *pd, const char **p) {
+static inline int rd_cc(PluginData *pd, const char **p) {
 	const char *list[] = {
 		"nz", "z", "nc", "c", "po", "pe", "p", "m", NULL
 	};
@@ -1128,7 +1115,7 @@ static int rd_r_rr(PluginData *pd, const char **p) {
 }
 
 /* read hl */
-static int rd_hl(PluginData *pd, const char **p) {
+static inline int rd_hl(PluginData *pd, const char **p) {
 	const char *list[] = {
 		"hl", NULL
 	};
@@ -1150,7 +1137,7 @@ static int rd_hlx(PluginData *pd, const char **p) {
 }
 
 /* read af' */
-static int rd_af_(PluginData *pd, const char **p) {
+static inline int rd_af_(PluginData *pd, const char **p) {
 	const char *list[] = {
 		"af'", NULL
 	};
@@ -1158,7 +1145,7 @@ static int rd_af_(PluginData *pd, const char **p) {
 }
 
 /* read 0 (1), 1 (3), or 2 (4) */
-static int rd_0_2(PluginData *pd, const char **p) {
+static inline int rd_0_2(PluginData *pd, const char **p) {
 	const char *list[] = {
 		"0", "", "1", "2", NULL
 	};
@@ -1271,7 +1258,7 @@ static int rd_ldbcdehla(PluginData *pd, const char **p) {
 }
 
 /* read nnnn, or (nnnn) */
-static int rd_nn_nn(PluginData *pd, const char **p) {
+static inline int rd_nn_nn(PluginData *pd, const char **p) {
 #define _NN 1
 	const char *list[] = {
 		"(*)", "*", NULL

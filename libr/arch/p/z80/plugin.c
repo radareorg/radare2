@@ -1,15 +1,10 @@
 /* radare - LGPL - Copyright 2002-2025 - pancake, condret, unlogic */
 /* Inspired in work from Bas Wijnen <wijnen@debian.org>, Jan Wilmans <jw@dds.nl> */
 
-#include <r_arch.h>
-#include "z80_tab.h"
-
 #undef R_LOG_ORIGIN
 #define R_LOG_ORIGIN "asm.z80"
 
-#ifndef R_API_I
-#define R_API_I
-#endif
+#include <r_arch.h>
 #include "z80asm.h"
 #include "z80dis.h"
 
@@ -33,6 +28,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = z80dis (data, len);
 	}
+	// AITODO: this is 
 	switch (data[0]) {
 	case 0x00:
 		op->type = R_ANAL_OP_TYPE_NOP;
