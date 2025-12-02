@@ -31,7 +31,7 @@ static int compute_ref(PluginData *pd, struct reference *ref, int allow_invalid)
 
 /* Helper function to emit indexed bit/shift operation */
 static inline void emit_indexed_bitop(PluginData *pd, int base_opcode, int bit_num) {
-	char n = r_num_math (NULL, pd->indexjmp);
+	const char n = r_num_math (NULL, pd->indexjmp);
 	wrtb (pd->indexed);
 	wrtb (Z80_INDEXED_PREFIX_CB);
 	wrtb (n);
@@ -144,8 +144,9 @@ static int do_rd_expr(PluginData *pd, const char **p, char delimiter, int *valid
 static int
 rd_number(PluginData *pd, const char **p, const char **endp, int base) {
 	int result = 0, i;
-	char *c, num[] = "0123456789abcdefghijklmnopqrstuvwxyz";
+	char num[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 	num[base] = '\0';
+	char *c;
 	*p = delspc (*p);
 	while (**p && (c = strchr (num, tolower ((const unsigned char)**p)))) {
 		i = c - num;
@@ -168,7 +169,7 @@ rd_otherbasenumber(PluginData *pd, const char **p, int *valid, bool print_errors
 	if (**p == '0' || !isalnum ((const unsigned char)**p)) {
 		return set_invalid (valid);
 	}
-	char c = **p;
+	const char c = **p;
 	(*p)++;
 	if (isalpha ((const unsigned char)**p)) {
 		return rd_number (pd, p, NULL, tolower ((unsigned char)c) - 'a' + 1);

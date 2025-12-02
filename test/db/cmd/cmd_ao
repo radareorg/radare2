@@ -374,7 +374,7 @@ EXPECT=<<EOF
   {
     "opcode": "adc a, 0xed",
     "disasm": "adc a, 0xed",
-    "pseudo": "a = a + 0xed",
+    "pseudo": "a += 0xed + c",
     "description": "add with carry register pair",
     "mnemonic": "adc",
     "mask": "ffff",
@@ -409,7 +409,7 @@ EXPECT=<<EOF
   {
     "opcode": "adc 0xed",
     "disasm": "adc 0xed",
-    "pseudo": "0xed = 0xed + ",
+    "pseudo": "adc 0xed",
     "description": "add with carry register pair",
     "srcs": [
       {
