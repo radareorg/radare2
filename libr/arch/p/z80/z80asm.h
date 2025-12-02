@@ -167,7 +167,42 @@ struct reference
   char input[1];		/* variable size buffer containing formula */
 };
 
-typedef struct plugin_data_t PluginData;
+/* PluginData structure - used by both assembler and plugin */
+typedef struct plugin_data_t {
+	ut8 *obuf;
+	int obuflen;
+	/* current line, address and file */
+	int addr;
+	int file;
+	/* use readbyte instead of (hl) if writebyte is true */
+	int writebyte;
+	const char *readbyte;
+	/* variables which are filled by rd_* functions and used later,
+	 * like readbyte */
+	const char *readword;
+	const char *indexjmp;
+	const char *bitsetres;
+	/* 0, 0xdd or 0xfd depening on which index prefix should be given */
+	int indexed;
+	/* increased for every -v option on the command line */
+	int verbose;
+	/* read commas after indx () if comma > 1. increase for every call */
+	int comma;
+	/* address at start of line (for references) */
+	int baseaddr;
+	/* set by readword and readbyte, used for new_reference */
+	char mem_delimiter;
+	/* line currently being parsed */
+	char *z80buffer;
+	/* if a macro is currently being defined */
+	int define_macro;
+	/* file (and macro) stack */
+	int sp;
+	struct stack stack[MAX_INCLUDE]; /* maximum level of includes */
+} PluginData;
+
+/* Assembler API */
+R_API_I int z80asm(PluginData *pd, unsigned char *outbuf, const char *s);
 
 /* print an error message, including current line and file */
 static void printerr(PluginData *pd, int error, const char *fmt, ...);

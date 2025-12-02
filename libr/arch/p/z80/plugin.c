@@ -12,9 +12,6 @@
 #include "z80asm.h"
 #include "z80dis.h"
 
-/* PluginData typedef is forward-declared in z80asm.h, full definition is in z80asm.c */
-typedef struct plugin_data_t PluginData;
-
 static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const ut64 addr = op->addr;
 	const int len = op->size;

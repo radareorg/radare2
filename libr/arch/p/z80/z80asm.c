@@ -11,39 +11,6 @@
 #endif
 #include "z80asm.h"
 
-typedef struct plugin_data_t {
-	ut8 *obuf;
-	int obuflen;
-	/* current line, address and file */
-	int addr;
-	int file;
-	/* use readbyte instead of (hl) if writebyte is true */
-	int writebyte;
-	const char *readbyte;
-	/* variables which are filled by rd_* functions and used later,
-	 * like readbyte */
-	const char *readword;
-	const char *indexjmp;
-	const char *bitsetres;
-	/* 0, 0xdd or 0xfd depening on which index prefix should be given */
-	int indexed;
-	/* increased for every -v option on the command line */
-	int verbose;
-	/* read commas after indx () if comma > 1. increase for every call */
-	int comma;
-	/* address at start of line (for references) */
-	int baseaddr;
-	/* set by readword and readbyte, used for new_reference */
-	char mem_delimiter;
-	/* line currently being parsed */
-	char *z80buffer;
-	/* if a macro is currently being defined */
-	int define_macro;
-	/* file (and macro) stack */
-	int sp;
-	struct stack stack[MAX_INCLUDE]; /* maximum level of includes */
-} PluginData;
-
 /* hack */
 // must remove: equ, include, incbin, macro
 // static void wrt_ref (int val, int type, int count);
