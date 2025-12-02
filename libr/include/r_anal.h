@@ -1546,12 +1546,13 @@ R_API void r_anal_rtti_itanium_print_class_type_info(RVTableContext *context, ut
 R_API void r_anal_rtti_itanium_print_si_class_type_info(RVTableContext *context, ut64 addr, int mode);
 R_API void r_anal_rtti_itanium_print_vmi_class_type_info(RVTableContext *context, ut64 addr, int mode);
 R_API bool r_anal_rtti_itanium_print_at_vtable(RVTableContext *context, ut64 addr, int mode);
-R_API void r_anal_rtti_itanium_recover_all(RVTableContext *vt_context, RList *vtables);
+R_API void r_anal_rtti_itanium_recover_all(RVTableContext *vt_context, RList *vtables, RList *symbols);
+R_API void *r_anal_rtti_itanium_raw_parse(RVTableContext *context, ut64 vtable_addr, ut64 rtti_addr);
 
 R_API char *r_anal_rtti_demangle_class_name(RAnal *anal, const char *name);
 R_API void r_anal_rtti_print_at_vtable(RAnal *anal, ut64 addr, int mode);
 R_API void r_anal_rtti_print_all(RAnal *anal, int mode);
-R_API void r_anal_rtti_recover_all(RAnal *anal);
+R_API void r_anal_rtti_recover_all(RAnal *anal, RList *symbols);
 
 R_API RList *r_anal_preludes(RAnal *anal);
 R_API bool r_anal_is_prelude(RAnal *anal, ut64 addr, const ut8 *data, int len);

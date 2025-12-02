@@ -545,7 +545,7 @@ static vmi_class_type_info *create_vmi_class_type(ut64 vtable_addr, char *name, 
  * @param rtti_addr
  * @return class_type_info* NULL if not even default class RTTI could be parsed or error
  */
-static class_type_info *raw_rtti_parse(RVTableContext *context, ut64 vtable_addr, ut64 rtti_addr) {
+R_API void *r_anal_rtti_itanium_raw_parse(RVTableContext *context, ut64 vtable_addr, ut64 rtti_addr) {
 		/*
 		rtti_ptr   ----->  |                  vptr                |
 		                   |--------------------------------------|
@@ -587,34 +587,34 @@ static class_type_info *raw_rtti_parse(RVTableContext *context, ut64 vtable_addr
 
 		ut64 base_type_rtti = 0;
 		if (!context->read_addr (context->anal, addr, &base_type_rtti)) {
-			return create_class_type (rtti_vptr, type_name, name_addr, name_unique, rtti_addr, vtable_addr);
+			return (void *)create_class_type (rtti_vptr, type_name, name_addr, name_unique, rtti_addr, vtable_addr);
 		}
 
 		RBinSection *base_type_rtti_section = context->anal->binb.get_vsect_at (context->anal->binb.bin, base_type_rtti);
 		if (can_section_contain_rtti_vpointer (base_type_rtti_section)) {
-			return (class_type_info *)create_si_class_type (rtti_vptr, type_name, name_addr, name_unique, base_type_rtti, rtti_addr, vtable_addr);
+			return (void *)create_si_class_type (rtti_vptr, type_name, name_addr, name_unique, base_type_rtti, rtti_addr, vtable_addr);
 		}
 
 		// if it's not a valid base_type_rtti ptr, it might be flags for VMI
 		// assume uint are 32bit
 		ut64 integers = 0;
 		if (!context->read_addr (context->anal, addr, &integers)) {
-			return create_class_type (rtti_vptr, type_name, name_addr, name_unique, rtti_addr, vtable_addr);
+			return (void *)create_class_type (rtti_vptr, type_name, name_addr, name_unique, rtti_addr, vtable_addr);
 		}
 		ut32 vmi_flags = integers & 0xffffffff;
 		addr += 0x4;
 		if (!context->read_addr (context->anal, addr, &integers)) {
-			return create_class_type (rtti_vptr, type_name, name_addr, name_unique, rtti_addr, vtable_addr);
+			return (void *)create_class_type (rtti_vptr, type_name, name_addr, name_unique, rtti_addr, vtable_addr);
 		}
 		integers = integers & 0xffffffff;
 		if (integers < 1 || integers > 0xfffff) {
-			return create_class_type (rtti_vptr, type_name, name_addr, name_unique, rtti_addr, vtable_addr);
+			return (void *)create_class_type (rtti_vptr, type_name, name_addr, name_unique, rtti_addr, vtable_addr);
 		}
 		ut32 vmi_base_count = integers;
 
 		base_class_type_info *vmi_bases = calloc (sizeof (base_class_type_info), vmi_base_count);
 		if (!vmi_bases) {
-			return create_class_type (rtti_vptr, type_name, name_addr, name_unique, rtti_addr, vtable_addr);
+			return (void *)create_class_type (rtti_vptr, type_name, name_addr, name_unique, rtti_addr, vtable_addr);
 		}
 		ut64 tmp_addr = addr + 0x4;
 
@@ -622,18 +622,18 @@ static class_type_info *raw_rtti_parse(RVTableContext *context, ut64 vtable_addr
 		for (i = 0; i < vmi_base_count; i++) {
 			if (!context->read_addr (context->anal, tmp_addr, &integers)) {
 				free (vmi_bases);
-				return create_class_type (rtti_vptr, type_name, name_addr, name_unique, rtti_addr, vtable_addr);
+				return (void *)create_class_type (rtti_vptr, type_name, name_addr, name_unique, rtti_addr, vtable_addr);
 			}
 			vmi_bases[i].base_class_addr = integers;
 			tmp_addr += VT_WORD_SIZE (context);
 			if (!context->read_addr (context->anal, tmp_addr, &integers)) {
 				free (vmi_bases);
-				return create_class_type (rtti_vptr, type_name, name_addr, name_unique, rtti_addr, vtable_addr);
+				return (void *)create_class_type (rtti_vptr, type_name, name_addr, name_unique, rtti_addr, vtable_addr);
 			}
 			vmi_bases[i].flags = integers;
 			tmp_addr += VT_WORD_SIZE (context);
 		}
-		return (class_type_info *)create_vmi_class_type (rtti_vptr, type_name, name_addr, name_unique, vmi_flags, vmi_base_count, vmi_bases, rtti_addr, vtable_addr);
+		return (void *)create_vmi_class_type (rtti_vptr, type_name, name_addr, name_unique, vmi_flags, vmi_base_count, vmi_bases, rtti_addr, vtable_addr);
 }
 
 static class_type_info *rtti_itanium_type_info_new(RVTableContext *context, ut64 vtable_addr) {
@@ -664,7 +664,7 @@ static class_type_info *rtti_itanium_type_info_new(RVTableContext *context, ut64
 	}
 
 	if (type == R_TYPEINFO_TYPE_UNKNOWN) {
-		return raw_rtti_parse (context, vtable_addr, rtti_addr);
+		return (class_type_info *)r_anal_rtti_itanium_raw_parse (context, vtable_addr, rtti_addr);
 	}
 	switch (type) {
 	case R_TYPEINFO_TYPE_VMI_CLASS:
@@ -739,7 +739,7 @@ R_API bool r_anal_rtti_itanium_print_at_vtable(RVTableContext *context, ut64 add
 		return true;
 	default:
 		rtti_itanium_class_type_info_free (cti);
-		R_RETURN_VAL_IF_REACHED (false);
+		break;
 	}
 	return false;
 }
@@ -819,7 +819,7 @@ static void add_class_bases(RVTableContext *context, const class_type_info *cti)
 	}
 }
 
-R_API void r_anal_rtti_itanium_recover_all(RVTableContext *context, RList *vtables) {
+R_API void r_anal_rtti_itanium_recover_all(RVTableContext *context, RList *vtables, RList *symbols) {
 	RList /*<class_type_info>*/ *rtti_list = r_list_new ();
 	rtti_list->free = rtti_itanium_type_info_free;
 	// to escape multiple same infos from multiple inheritance
@@ -827,8 +827,10 @@ R_API void r_anal_rtti_itanium_recover_all(RVTableContext *context, RList *vtabl
 
 	RListIter *iter;
 	RVTableInfo *vtable;
+		eprintf ("lalal\n");
 	r_list_foreach (vtables, iter, vtable) {
 		class_type_info *cti = rtti_itanium_type_info_new (context, vtable->saddr);
+		eprintf ("JAL\n");
 		if (!cti) {
 			continue;
 		}
@@ -853,4 +855,24 @@ R_API void r_anal_rtti_itanium_recover_all(RVTableContext *context, RList *vtabl
 
 	set_u_free (unique_rttis);
 	r_list_free (rtti_list);
+
+	eprintf ("ARM\n");
+	// For ARM32, also walk _ZTI symbols
+	if (r_str_startswith (context->anal->config->arch, "arm")) {
+		if (symbols) {
+			RListIter *it;
+			RBinSymbol *sym;
+			r_list_foreach (symbols, it, sym) {
+				if (!sym || !sym->name || !sym->name->name) continue;
+				if (r_str_startswith (sym->name->name, "_ZTI")) {
+					class_type_info *cti = (class_type_info *)r_anal_rtti_itanium_raw_parse (context, 0, sym->vaddr);
+					if (cti) {
+						r_anal_class_create (context->anal, cti->name);
+						rtti_itanium_type_info_free (cti);
+					}
+				}
+			}
+			r_list_free (symbols);
+		}
+	}
 }

@@ -14980,7 +14980,11 @@ static void cmd_anal_rtti(RCore *core, const char *input) {
 		r_anal_rtti_print_all (core->anal, input[1]);
 		break;
 	case 'r': // "avrr"
-		r_anal_rtti_recover_all (core->anal);
+		{
+			RList *symbols = r_bin_get_symbols (core->bin);
+			r_anal_rtti_recover_all (core->anal, symbols);
+			r_list_free (symbols);
+		}
 		break;
 	case 'D': // "avrD"
 		{

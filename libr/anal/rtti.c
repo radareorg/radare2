@@ -84,7 +84,7 @@ R_API void r_anal_rtti_print_all(RAnal *anal, int mode) {
 	r_cons_break_pop (cons);
 }
 
-R_API void r_anal_rtti_recover_all(RAnal *anal) {
+R_API void r_anal_rtti_recover_all(RAnal *anal, RList *symbols) {
 	RVTableContext context;
 	r_anal_vtable_begin (anal, &context);
 
@@ -96,7 +96,7 @@ R_API void r_anal_rtti_recover_all(RAnal *anal) {
 		if (context.abi == R_ANAL_CPP_ABI_MSVC) {
 			r_anal_rtti_msvc_recover_all (&context, vtables);
 		} else {
-			r_anal_rtti_itanium_recover_all (&context, vtables);
+			r_anal_rtti_itanium_recover_all (&context, vtables, symbols);
 		}
 	}
 	r_list_free (vtables);
