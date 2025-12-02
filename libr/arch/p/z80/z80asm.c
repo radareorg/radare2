@@ -9,8 +9,6 @@
 
 #include "z80asm.h"
 
-/* print an error message, including current line and file */
-static void printerr(PluginData *pd, int error, const char *fmt, ...);
 static const char *delspc(const char *ptr);
 static int rd_expr(PluginData *pd, const char **p, char delimiter, int *valid, int level, bool print_errors);
 static int rd_label(PluginData *pd, const char **p, bool *exists, struct label **previous, int level, bool print_errors);
@@ -109,16 +107,12 @@ rd_otherbasenumber(PluginData *pd, const char **p, int *valid, bool print_errors
 	if (!**p) {
 		if (valid) {
 			*valid = 0;
-		} else if (print_errors) {
-			printerr (pd, 1, "unexpected end of line after `@'\n");
 		}
 		return 0;
 	}
 	if (**p == '0' || !isalnum ((const unsigned char)**p)) {
 		if (valid) {
 			*valid = 0;
-		} else if (print_errors) {
-			printerr (pd, 1, "base must be between 1 and z\n");
 		}
 		return 0;
 	}
@@ -131,13 +125,10 @@ rd_otherbasenumber(PluginData *pd, const char **p, int *valid, bool print_errors
 }
 
 static int rd_character(PluginData *pd, const char **p, int *valid, bool print_errors) {
-	int i;
-	i = **p;
+	int i = **p;
 	if (!i) {
 		if (valid) {
 			*valid = 0;
-		} else if (print_errors) {
-			printerr (pd, 1, "unexpected end of line in string constant\n");
 		}
 		return 0;
 	}
@@ -177,16 +168,11 @@ static int rd_character(PluginData *pd, const char **p, int *valid, bool print_e
 			case '\'':
 				if (valid) {
 					*valid = 0;
-				} else if (print_errors) {
-					printerr (pd, 1, "empty literal character\n");
 				}
 				return 0;
 			case 0:
 				if (valid) {
 					*valid = 0;
-				} else if (print_errors) {
-					printerr (pd, 1, "unexpected end of line after "
-							"backslash in string constant\n");
 				}
 				return 0;
 			default:
@@ -265,14 +251,7 @@ static int rd_label(PluginData *pd, const char **p, bool *exists, struct label *
 		}
 	}
 	if (s < 0) {
-		/* not yet found */
-		const char *old_p = *p;
-		/* label does not exist, or is invalid.  This is an error if there
-		 * is no existence check.  */
-		if (!exists && print_errors) {
-			printerr (pd, 1, "using undefined label %.*s\n", *p - old_p, old_p);
-		}
-		/* Return a value to discriminate between non-existing and invalid */
+		/* label does not exist, or is invalid */
 		return (int) (bool)l;
 	}
 	if (exists) {
@@ -314,8 +293,6 @@ static inline int rd_suffixed_number(PluginData *pd, const char **p, int base, i
 	if (p1 != p2) {
 		if (valid) {
 			*valid = 0;
-		} else if (print_errors) {
-			printerr (pd, 1, "invalid character in number: \'%c\'\n", *p2);
 		}
 	}
 	return v;
@@ -340,8 +317,6 @@ static inline int rd_ampersand_number(PluginData *pd, const char **p, int *valid
 	default:
 		if (valid) {
 			*valid = 0;
-		} else if (print_errors) {
-			printerr (pd, 1, "invalid literal starting with &%c\n", **p);
 		}
 		return 0;
 	}
@@ -420,8 +395,6 @@ static int rd_value(PluginData *pd, const char **p, int *valid, int level, int *
 		if (**p != quote) {
 			if (valid) {
 				*valid = 0;
-			} else if (print_errors) {
-				printerr (pd, 1, "missing closing quote (%c)\n", quote);
 			}
 			return 0;
 		}
@@ -459,7 +432,6 @@ rd_factor(PluginData *pd, const char **p, int *valid, int level, int *check, int
 			(*p)++;
 			int value = rd_value (pd, p, valid, level, check, print_errors);
 			if (value == 0) {
-				printerr (pd, 1, "division by zero\n");
 				return -1;
 			}
 			result /= value;
@@ -600,16 +572,14 @@ static int
 do_rd_expr(PluginData *pd, const char **p, char delimiter, int *valid, int level, int *check,
 	bool print_errors) {
 	/* read an expression. delimiter can _not_ be '?' */
-	int result = 0;
 	*p = delspc (*p);
 	if (!**p || **p == delimiter) {
 		if (valid) {
 			*valid = 0;
-		} else if (print_errors) {
-			printerr (pd, 1, "expression expected (not %s)\n", *p);
 		}
 		return 0;
 	}
+	int result = 0;
 	result = rd_expr_or (pd, p, valid, level, check, print_errors);
 	*p = delspc (*p);
 	if (**p == '?') {
@@ -634,8 +604,6 @@ do_rd_expr(PluginData *pd, const char **p, char delimiter, int *valid, int level
 	if (**p && **p != delimiter) {
 		if (valid) {
 			*valid = 0;
-		} else if (print_errors) {
-			printerr (pd, 1, "junk at end of expression: %s\n", *p);
 		}
 	}
 	return result;
@@ -645,34 +613,11 @@ static int
 rd_expr(PluginData *pd, const char **p, char delimiter, int *valid, int level,
 	bool print_errors) {
 	int check = 1;
-	int result;
 	if (valid) {
 		*valid = 1;
 	}
-	result = do_rd_expr (pd, p, delimiter, valid, level, &check, print_errors);
-	if (print_errors && (!valid || *valid) && check) {
-		printerr (pd, 0, "expression fully enclosed in parenthesis\n");
-	}
+	int result = do_rd_expr (pd, p, delimiter, valid, level, &check, print_errors);
 	return result;
-}
-
-/* print an error message, including current line and file */
-static void printerr(PluginData *pd, int error, const char *fmt, ...) {
-#if 0
-	va_list l;
-	va_start (l, fmt);
-	if ((pd->sp < 0) || (pd->stack[pd->sp].name == 0)) {
-		fprintf (stderr, "internal assembler error, sp == %i\n", pd->sp);
-		vfprintf (stderr, fmt, l);
-	}
-	fprintf (stderr, "%s%s:%d: %s: ", pd->stack[pd->sp].dir? pd->stack[pd->sp].dir->name: "",
-		pd->stack[pd->sp].name, pd->stack[pd->sp].line, error? "error": "warning");
-	vfprintf (stderr, fmt, l);
-	va_end (l);
-	if (error) {
-		errors++;
-	}
-#endif
 }
 
 /* skip over spaces in string */
