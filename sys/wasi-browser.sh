@@ -20,7 +20,7 @@ unset LDFLAGS
 export CC="${WASI_SDK}/bin/clang --target=wasm32-wasi -Os"
 export AR="${WASI_SDK}/bin/llvm-ar"
 
-CFGFLAGS="./configure --prefix=/usr --disable-debugger --with-compiler=wasi --with-static-themes --with-libr --with-wasi-browser --without-fork --with-ostype=wasi --with-checks-level=0 --disable-threads --without-dylink --without-gpl"
+CFGFLAGS="--prefix=/usr --disable-debugger --with-compiler=wasi --with-static-themes --with-libr --with-wasm-browser --without-fork --with-ostype=wasi --with-checks-level=0 --disable-threads --without-dylink --without-gpl"
 
 make mrproper
 cp -f dist/plugins-cfg/plugins.wasi.cfg plugins.cfg
@@ -29,7 +29,7 @@ cp -f dist/plugins-cfg/plugins.wasi.cfg plugins.cfg
 ./configure ${CFGFLAGS} && \
 	make -s -j ${MAKE_JOBS} DEBUG=0
 R2V=`./configure -qV`
-D="radare2-$R2V-wasi-browser"
+D="radare2-$R2V-wasm-browser"
 mkdir -p $D
 for a in ${TOOLS} ; do
 	make -C binr/$a
