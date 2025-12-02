@@ -374,7 +374,7 @@ EXPECT=<<EOF
   {
     "opcode": "adc a, 0xed",
     "disasm": "adc a, 0xed",
-    "pseudo": "a += 0xed + c",
+    "pseudo": "a += 0xed + carry",
     "description": "add with carry register pair",
     "mnemonic": "adc",
     "mask": "ffff",
