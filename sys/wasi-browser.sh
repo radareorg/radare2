@@ -44,7 +44,6 @@ echo "WASI toolchain OK"
 
 cp -f dist/plugins-cfg/plugins.wasi.cfg plugins.cfg
 
-# export CC="${WASI_SDK}/bin/clang -D
 ERR=0
 # XXX gperf-builds are broken
 # ./configure --with-static-themes --with-compiler=wasi --disable-debugger --without-fork --with-ostype=wasi --with-checks-level=0 --disable-threads --without-dylink --with-libr --without-gpl
