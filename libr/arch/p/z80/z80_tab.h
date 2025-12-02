@@ -3,6 +3,8 @@
 #ifndef Z80_TAB_H
 #define Z80_TAB_H
 
+#include <stdint.h>
+
 #ifdef NULL
 #undef NULL
 #endif
@@ -25,7 +27,7 @@ typedef struct {
 	const void *op_moar;
 } z80_opcode;
 
-static ut8 z80_fddd_branch_index_res(ut8 hex) {
+static inline uint8_t z80_fddd_branch_index_res(uint8_t hex) {
 	switch (hex) {
 		case 0x9:
 			return 0x0;
@@ -144,7 +146,7 @@ static ut8 z80_fddd_branch_index_res(ut8 hex) {
 	return 0x56;
 }
 
-static ut8 z80_ed_branch_index_res(ut8 hex) {
+static inline uint8_t z80_ed_branch_index_res(uint8_t hex) {
 	if (hex > 0x3f && 0x4c > hex)
 		return hex-0x40;
 	if (hex == 0x4d)

@@ -1,4 +1,5 @@
-/* radare - GPL - Copyright 2002-2025 - pancake, condret, unlogic, Bas Wijnen <wijnen@debian.org>, Jan Wilmans <jw@dds.nl> */
+/* radare - LGPL - Copyright 2002-2025 - pancake, condret, unlogic */
+/* Based on work from Bas Wijnen <wijnen@debian.org>, Jan Wilmans <jw@dds.nl> */
 
 #include <r_arch.h>
 #include "z80_tab.h"
@@ -6,10 +7,15 @@
 #undef R_LOG_ORIGIN
 #define R_LOG_ORIGIN "asm.z80"
 
-#ifndef R_API_I
-#define R_API_I
-#endif
 #include "z80asm.h"
+
+/* print an error message, including current line and file */
+static void printerr(PluginData *pd, int error, const char *fmt, ...);
+static const char *delspc(const char *ptr);
+static int rd_expr(PluginData *pd, const char **p, char delimiter, int *valid, int level, bool print_errors);
+static int rd_label(PluginData *pd, const char **p, bool *exists, struct label **previous, int level, bool print_errors);
+static int rd_character(PluginData *pd, const char **p, int *valid, bool print_errors);
+static int compute_ref(PluginData *pd, struct reference *ref, int allow_invalid);
 
 /* hack */
 // must remove: equ, include, incbin, macro
@@ -127,8 +133,7 @@ rd_otherbasenumber(PluginData *pd, const char **p, int *valid, bool print_errors
 	return rd_number (pd, p, NULL, c - '0' + 1);
 }
 
-static int
-rd_character(PluginData *pd, const char **p, int *valid, bool print_errors) {
+static int rd_character(PluginData *pd, const char **p, int *valid, bool print_errors) {
 	int i;
 	i = **p;
 	if (!i) {
@@ -2179,7 +2184,6 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 	return pd->obuflen;
 }
 
-// XXX
-R_API_I int z80asm(PluginData *pd, unsigned char *outbuf, const char *s) {
+R_IPI int z80asm(PluginData *pd, unsigned char *outbuf, const char *s) {
 	return assemble (pd, s, outbuf);
 }

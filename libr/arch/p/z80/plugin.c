@@ -1,4 +1,5 @@
-/* radare - GPL - Copyright 2002-2025 - pancake, condret, unlogic, Bas Wijnen <wijnen@debian.org>, Jan Wilmans <jw@dds.nl> */
+/* radare - LGPL - Copyright 2002-2025 - pancake, condret, unlogic */
+/* Inspired in work from Bas Wijnen <wijnen@debian.org>, Jan Wilmans <jw@dds.nl> */
 
 #include <r_arch.h>
 #include "z80_tab.h"
@@ -427,7 +428,7 @@ const RArchPlugin r_arch_plugin_z80 = {
 		.name = "z80",
 		.author = "pancake,condret,unlogic,Bas Wijnen,Jan Wilmans",
 		.desc = "Zilog Z80 microprocessor",
-		.license = "GPL-3.0-only",
+		.license = "LGPL-3.0-only",
 	},
 	.arch = "z80",
 	.bits = R_SYS_BITS_PACK (16),
@@ -437,10 +438,6 @@ const RArchPlugin r_arch_plugin_z80 = {
 	.regs = regs,
 	.init = init,
 	.fini = fini,
-#if 0
-	.op = z80_anal_op,
-	.opasm = z80_anal_opasm,
-#endif
 };
 
 #ifndef R2_PLUGIN_INCORE

@@ -28,6 +28,8 @@
 #include <errno.h>
 #include <ctype.h>
 #include <stdarg.h>
+#include <stdint.h>
+#include <stdbool.h>
 
 /* defines which are not function-specific */
 #ifndef BUFLEN
@@ -169,7 +171,7 @@ struct reference
 
 /* PluginData structure - used by both assembler and plugin */
 typedef struct plugin_data_t {
-	ut8 *obuf;
+	uint8_t *obuf;
 	int obuflen;
 	/* current line, address and file */
 	int addr;
@@ -202,20 +204,6 @@ typedef struct plugin_data_t {
 } PluginData;
 
 /* Assembler API */
-R_API_I int z80asm(PluginData *pd, unsigned char *outbuf, const char *s);
-
-/* print an error message, including current line and file */
-static void printerr(PluginData *pd, int error, const char *fmt, ...);
-
-/* skip over spaces in string */
-static const char *delspc(const char *ptr);
-
-static int rd_expr(PluginData *pd, const char **p, char delimiter, int *valid, int level,
-	     bool print_errors);
-static int rd_label(PluginData *pd, const char **p, bool *exists, struct label **previous, int level,
-	      bool print_errors);
-static int rd_character(PluginData *pd, const char **p, int *valid, bool print_errors);
-
-static int compute_ref(PluginData *pd, struct reference *ref, int allow_invalid);
+R_IPI int z80asm(PluginData *pd, unsigned char *outbuf, const char *s);
 
 #endif
