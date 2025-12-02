@@ -7,7 +7,6 @@ core.NullDereference
 core.uninitialized.ArraySubscript
 core.uninitialized.Assign
 core.uninitialized.Branch
-core.uninitialized.CaptureBlockVariable
 alpha.core.BoolAssignment
 nullability.NullPassedToNonnull
 nullability.NullReturnedFromNonnull

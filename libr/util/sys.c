@@ -1607,6 +1607,60 @@ R_API void r_sys_info_free(RSysInfo *si) {
 
 // R2_590 r_sys_endian_tostring() // endian == R_SYS_ENDIAN_BIG "big" .. R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config)? "big": "little"
 
+R_API bool r_sys_endian_is(int endian, int test) {
+	return (endian & test) == test;
+}
+
+R_API const char *r_sys_endian_tostring(int endian) {
+	switch (endian) {
+	case R_SYS_ENDIAN_NONE:
+		return "none";
+	case R_SYS_ENDIAN_LITTLE:
+		return "little";
+	case R_SYS_ENDIAN_BIG:
+		return "big";
+	case R_SYS_ENDIAN_BI:
+		return "bi";
+	case R_SYS_ENDIAN_MIDDLE:
+		return "middle";
+	default:
+		// Handle bitmask combinations
+		if (r_sys_endian_is (endian, R_SYS_ENDIAN_LITTLE) && r_sys_endian_is (endian, R_SYS_ENDIAN_BIG)) {
+			return "bi";
+		}
+		if (r_sys_endian_is (endian, R_SYS_ENDIAN_LITTLE)) {
+			return "little";
+		}
+		if (r_sys_endian_is (endian, R_SYS_ENDIAN_BIG)) {
+			return "big";
+		}
+		if (r_sys_endian_is (endian, R_SYS_ENDIAN_MIDDLE)) {
+			return "middle";
+		}
+		return "unknown";
+	}
+}
+
+R_API int r_sys_endian_fromstring(const char *str) {
+	R_RETURN_VAL_IF_FAIL (str, R_SYS_ENDIAN_NONE);
+	if (!strcmp (str, "little") || !strcmp (str, "4321")) {
+		return R_SYS_ENDIAN_LITTLE;
+	}
+	if (!strcmp (str, "big") || !strcmp (str, "1234")) {
+		return R_SYS_ENDIAN_BIG;
+	}
+	if (!strcmp (str, "none")) {
+		return R_SYS_ENDIAN_NONE;
+	}
+	if (!strcmp (str, "bi")) {
+		return R_SYS_ENDIAN_BI;
+	}
+	if (!strcmp (str, "middle") || !strcmp (str, "2134")) {
+		return R_SYS_ENDIAN_MIDDLE;
+	}
+	return R_SYS_ENDIAN_NONE;
+}
+
 R_API R_MUSTUSE char *r_file_home(const char *str) {
 	char *dst, *home = r_sys_getenv (R_SYS_HOME);
 	size_t length;
