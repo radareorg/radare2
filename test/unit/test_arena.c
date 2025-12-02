@@ -261,7 +261,8 @@ static bool test_r_arena_salloc(void) {
 	mu_assert_eq (zslice.len, 50, "zeroed slice length should be 50");
 
 	bool all_zero = true;
-	for (size_t i = 0; i < zslice.len; i++) {
+	size_t i;
+	for (i = 0; i < zslice.len; i++) {
 		if (zslice.ptr[i] != 0) {
 			all_zero = false;
 			break;
