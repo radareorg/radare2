@@ -49,6 +49,65 @@ static inline void emit_indexed_shift(PluginData *pd, int hl_opcode) {
 	pd->indexed = 0;
 }
 
+/* Helper function to emit ED-prefixed two-byte opcode */
+static inline void emit_ed_opcode(PluginData *pd, int opcode) {
+	wrtb (Z80_INDEXED_PREFIX_ED);
+	wrtb (opcode);
+}
+
+/* Helper function to emit CB-prefixed shift/rotate operations with optional indexing */
+static inline void emit_cb_shift(PluginData *pd, int r, int indexed_opcode, int base_opcode) {
+	if (r == 7 && pd->indexed) {
+		char n = r_num_math (NULL, pd->indexjmp);
+		wrtb (pd->indexed);
+		wrtb (Z80_INDEXED_PREFIX_CB);
+		wrtb (n);
+		wrtb (indexed_opcode);
+		pd->indexed = 0;
+	} else {
+		wrtb (Z80_INDEXED_PREFIX_CB);
+		wrtb (base_opcode + (r - 1));
+	}
+}
+
+/* Helper function to set invalid flag */
+static inline int set_invalid(int *valid) {
+	if (valid) {
+		*valid = 0;
+	}
+	return 0;
+}
+
+/* Helper function to set index register (IX or IY) */
+static inline void set_index_register(PluginData *pd, bool is_ix) {
+	pd->indexed = is_ix ? 0xDD : 0xFD;
+}
+
+/* Context save/restore for expression evaluation */
+typedef struct {
+	int addr;
+	int baseaddr;
+	int comma;
+	int file;
+	int sp;
+} ParseContext;
+
+static inline void save_context(PluginData *pd, ParseContext *ctx) {
+	ctx->addr = pd->addr;
+	ctx->baseaddr = pd->baseaddr;
+	ctx->comma = pd->comma;
+	ctx->file = pd->file;
+	ctx->sp = pd->sp;
+}
+
+static inline void restore_context(PluginData *pd, const ParseContext *ctx) {
+	pd->addr = ctx->addr;
+	pd->baseaddr = ctx->baseaddr;
+	pd->comma = ctx->comma;
+	pd->file = ctx->file;
+	pd->sp = ctx->sp;
+}
+
 /* global variables */
 /* mnemonics, used as argument to indx () in assemble */
 static const char *mnemonics[] = {
@@ -104,16 +163,10 @@ static int
 rd_otherbasenumber(PluginData *pd, const char **p, int *valid, bool print_errors) {
 	(*p)++;
 	if (!**p) {
-		if (valid) {
-			*valid = 0;
-		}
-		return 0;
+		return set_invalid (valid);
 	}
 	if (**p == '0' || !isalnum ((const unsigned char)**p)) {
-		if (valid) {
-			*valid = 0;
-		}
-		return 0;
+		return set_invalid (valid);
 	}
 	char c = **p;
 	(*p)++;
@@ -126,10 +179,7 @@ rd_otherbasenumber(PluginData *pd, const char **p, int *valid, bool print_errors
 static int rd_character(PluginData *pd, const char **p, int *valid, bool print_errors) {
 	int i = **p;
 	if (!i) {
-		if (valid) {
-			*valid = 0;
-		}
-		return 0;
+		return set_invalid (valid);
 	}
 	if (i == '\\') {
 		(*p)++;
@@ -165,15 +215,9 @@ static int rd_character(PluginData *pd, const char **p, int *valid, bool print_e
 				i = 7;
 				break;
 			case '\'':
-				if (valid) {
-					*valid = 0;
-				}
-				return 0;
+				return set_invalid (valid);
 			case 0:
-				if (valid) {
-					*valid = 0;
-				}
-				return 0;
+				return set_invalid (valid);
 			default:
 				i = **p;
 			}
@@ -310,10 +354,7 @@ static inline int rd_ampersand_number(PluginData *pd, const char **p, int *valid
 		base = 2;
 		break;
 	default:
-		if (valid) {
-			*valid = 0;
-		}
-		return 0;
+		return set_invalid (valid);
 	}
 	(*p)++;
 	return rd_number (pd, p, NULL, base);
@@ -1820,18 +1861,7 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 		if (! (r = rd_r_(pd, &ptr))) {
 			break;
 		}
-		if (r == 7 && pd->indexed) {
-			char n = r_num_math (NULL, pd->indexjmp);
-			wrtb (pd->indexed);
-			wrtb (0xCB);
-			wrtb (n);
-			wrtb (0x06);
-			pd->indexed = 0;
-		} else {
-			wrtb (0xCB);
-			r--;
-			wrtb (0x00 + r);
-		}
+		emit_cb_shift (pd, r, 0x06, 0x00);
 		break;
 	case Z80_RLCA:
 		wrtb (0x07);
@@ -1844,18 +1874,7 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 		if (! (r = rd_r_(pd, &ptr))) {
 			break;
 		}
-		if (r == 7 && pd->indexed) {
-			char n = r_num_math (NULL, pd->indexjmp);
-			wrtb (pd->indexed);
-			wrtb (0xCB);
-			wrtb (n);
-			wrtb (0x1E);
-			pd->indexed = 0;
-		} else {
-			wrtb (0xCB);
-			r--;
-			wrtb (0x18 + r);
-		}
+		emit_cb_shift (pd, r, 0x1E, 0x18);
 		break;
 	case Z80_RRA:
 		wrtb (0x1F);
@@ -1864,18 +1883,7 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 		if (! (r = rd_r_(pd, &ptr))) {
 			break;
 		}
-		if (r == 7 && pd->indexed) {
-			char n = r_num_math (NULL, pd->indexjmp);
-			wrtb (pd->indexed);
-			wrtb (0xCB);
-			wrtb (n);
-			wrtb (0x0E);
-			pd->indexed = 0;
-		} else {
-			wrtb (0xCB);
-			r--;
-			wrtb (0x08 + r);
-		}
+		emit_cb_shift (pd, r, 0x0E, 0x08);
 		break;
 	case Z80_RRCA:
 		wrtb (0x0F);
@@ -1954,35 +1962,13 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 		if (! (r = rd_r_(pd, &ptr))) {
 			break;
 		}
-		if (r == 7 && pd->indexed) {
-			char n = r_num_math (NULL, pd->indexjmp);
-			wrtb (pd->indexed);
-			wrtb (0xCB);
-			wrtb (n);
-			wrtb (0x2E);
-			pd->indexed = 0;
-		} else {
-			wrtb (0xCB);
-			r--;
-			wrtb (0x28 + r);
-		}
+		emit_cb_shift (pd, r, 0x2E, 0x28);
 		break;
 	case Z80_SRL:
 		if (! (r = rd_r_(pd, &ptr))) {
 			break;
 		}
-		if (r == 7 && pd->indexed) {
-			char n = r_num_math (NULL, pd->indexjmp);
-			wrtb (pd->indexed);
-			wrtb (0xCB);
-			wrtb (n);
-			wrtb (0x3E);
-			pd->indexed = 0;
-		} else {
-			wrtb (0xCB);
-			r--;
-			wrtb (0x38 + r);
-		}
+		emit_cb_shift (pd, r, 0x3E, 0x38);
 		break;
 	case Z80_SUB:
 		if (! (r = rd_r (pd, &ptr))) {

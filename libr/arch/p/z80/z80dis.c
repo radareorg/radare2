@@ -5,7 +5,7 @@
 #include "z80_tab.h"
 #include "z80dis.h"
 
-// XXX deprecate this function
+// AITODO this function looks wrong or confusing, and i bet it can be reimplkemented in a much cleaner and simpler way
 static ut8 z80_op_24_branch_index_res(ut8 hex) {
 	if (hex < 0x40) {
 		return hex;
@@ -23,7 +23,7 @@ static ut8 z80_op_24_branch_index_res(ut8 hex) {
 	return (hex > 0x7f)? hex - 0x38: 0xc8;
 }
 
-// XXX deprecate this function
+// AITODO this function looks like dupped work from the decoder
 static int z80OpLength(const ut8 *buf, int len) {
 	const z80_opcode *op;
 	int type = 0, ret = 0;
@@ -48,7 +48,7 @@ static int z80OpLength(const ut8 *buf, int len) {
 	if (type & Z80_OP8) {
 		ret++;
 	}
-	if ((type & Z80_ARG8) && ! (type & Z80_ARG16)) { // XXX
+	if ((type & Z80_ARG8) && ! (type & Z80_ARG16)) { // XXX review this code
 		ret++;
 	}
 	if (type & Z80_OP16) {
