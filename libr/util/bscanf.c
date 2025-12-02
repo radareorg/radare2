@@ -318,36 +318,41 @@ R_API int r_str_scanf(const char *buffer, const char *format, ...) {
 					goto beach;
 				}
 				// process scanset and fill the string
-				/* String conversion requires a width. */
-				_BSCANF_CHECK_STRING ();
 				/* '[' conversion specifiers DO NOT consume whitespace. */
-				char_ptr = va_arg (args, char*);
-				_BSCANF_CHECK_NULL (char_ptr);
-				*char_ptr = 0; // null byte the first char before failing
-				if (max_width < 1) {
-					R_LOG_DEBUG ("Missing length specifier for string");
-				} else {
-					for (; *buf_ptr && max_width > 0; max_width--) {
-						if (!scanset_check (scanset, *buf_ptr)) {
-							break;
-						}
-						*char_ptr = *buf_ptr;
-						char_ptr++;
+				if (is_suppressed) {
+					/* Consume matching characters and ignore them */
+					while (*buf_ptr && scanset_check (scanset, *buf_ptr)) {
 						buf_ptr++;
 					}
-					if (max_width == 0) {
-						R_LOG_DEBUG ("Truncated string in scanf");
+				} else {
+					/* String conversion requires a width. */
+					_BSCANF_CHECK_STRING ();
+					char_ptr = va_arg (args, char*);
+					_BSCANF_CHECK_NULL (char_ptr);
+					*char_ptr = 0; // null byte the first char before failing
+					if (max_width < 1) {
+						R_LOG_DEBUG ("Missing length specifier for string");
+					} else {
+						for (; *buf_ptr && max_width > 0; max_width--) {
+							if (!scanset_check (scanset, *buf_ptr)) {
+								break;
+							}
+							*char_ptr = *buf_ptr;
+							char_ptr++;
+							buf_ptr++;
+						}
+						if (max_width == 0) {
+							R_LOG_DEBUG ("Truncated string in scanf");
+						}
+						/* Strings must be null-terminated. */
+						*char_ptr = '\0';
+						num_args_set++;
 					}
-					/* Strings must be null-terminated. */
-					*char_ptr = '\0';
-					num_args_set++;
 				}
 				// reset max width value
 				max_width = 0;
-				if (*fmt_ptr == 0) {
-					// end of string not expecting anything after that
-					break;
-				}
+				// scanset_parse already advanced fmt_ptr past ']', skip the extra fmt_ptr++ at end of loop
+				continue;
 			} else if ('i' == *fmt_ptr || 'd' == *fmt_ptr) {
 				/* 'i'/'d': match a integer/decimal integer. */
 				_BSCANF_CONSUME_WSPACE ();
@@ -468,5 +473,11 @@ R_API int r_str_scanf(const char *buffer, const char *format, ...) {
 
 beach:
 	va_end (args);
+	/* According to scanf family semantics, return EOF (-1) if no conversions were performed
+	 * and an input failure occurred (e.g., buffer ended). Otherwise return number of
+	 * successfully assigned inputs. */
+	if (num_args_set == 0 && *buf_ptr == '\0') {
+		return EOF;
+	}
 	return num_args_set;
 }
