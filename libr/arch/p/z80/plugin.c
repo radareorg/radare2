@@ -28,7 +28,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = z80dis (data, len);
 	}
-	// AITODO: this is 
+	// Decode operation type and operands based on opcode
 	switch (data[0]) {
 	case 0x00:
 		op->type = R_ANAL_OP_TYPE_NOP;

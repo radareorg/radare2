@@ -5,65 +5,25 @@
 #include "z80_tab.h"
 #include "z80dis.h"
 
-// AITODO this function looks wrong or confusing, and i bet it can be reimplkemented in a much cleaner and simpler way
+// Map Z80 CB-prefixed opcodes to their table index
+// This handles the special encoding where bit operations with [ix+d]/[iy+d]
+// have irregular opcode spacing
 static ut8 z80_op_24_branch_index_res(ut8 hex) {
+	// First 64 opcodes (0x00-0x3f): rotate/shift operations, direct mapping
 	if (hex < 0x40) {
 		return hex;
 	}
-	switch (hex) {
-	case 0x46: return 0x40;
-	case 0x4e: return 0x41;
-	case 0x56: return 0x42;
-	case 0x5e: return 0x43;
-	case 0x66: return 0x44;
-	case 0x6e: return 0x45;
-	case 0x76: return 0x46;
-	case 0x7e: return 0x47;
-	}
-	return (hex > 0x7f)? hex - 0x38: 0xc8;
-}
-
-// AITODO this function looks like dupped work from the decoder
-static int z80OpLength(const ut8 *buf, int len) {
-	const z80_opcode *op;
-	int type = 0, ret = 0;
-	if (len < 1) {
-		return 0;
-	}
-	op = z80_op;
-	if (op[buf[0]].type & Z80_OP_UNK) {
-		if (len < 2) {
-			return 0;
+	// Opcodes 0x40-0x7f: bit test operations with (HL)
+	// Only every 8th opcode (0x46, 0x4e, 0x56, 0x5e, 0x66, 0x6e, 0x76, 0x7e) is valid
+	// These map to indices 0x40-0x47
+	if (hex < 0x80) {
+		if ((hex & 0x07) == 0x06) {  // Check if lowest 3 bits are 110
+			return 0x40 + ((hex - 0x46) >> 3);
 		}
-		if (op[buf[0]].type & Z80_ENC0) {
-			op = (const z80_opcode *)op[buf[0]].op_moar;
-			type = op[z80_fddd_branch_index_res (buf[1])].type;
-		} else if (op[buf[0]].type & Z80_ENC1) {
-			op = (const z80_opcode *)op[buf[0]].op_moar;
-			type = op[z80_ed_branch_index_res (buf[1])].type;
-		}
-	} else {
-		type = op[buf[0]].type;
+		return 0xc8;  // Invalid opcode
 	}
-	if (type & Z80_OP8) {
-		ret++;
-	}
-	if ((type & Z80_ARG8) && ! (type & Z80_ARG16)) { // XXX review this code
-		ret++;
-	}
-	if (type & Z80_OP16) {
-		ret += 2;
-	}
-	if (type & Z80_ARG16) {
-		ret += 2;
-	}
-	if (type & Z80_OP24) {
-		ret += 3;
-	}
-	if (ret > len) {
-		return 0;
-	}
-	return ret;
+	// Opcodes 0x80+: res/set operations, offset by 0x38
+	return hex - 0x38;
 }
 
 void z80_op_size(const ut8 *_data, int len, int *size, int *size_prefix) {
@@ -113,8 +73,9 @@ void z80_op_size(const ut8 *_data, int len, int *size, int *size_prefix) {
 char *z80dis(const ut8 *buf, int len) {
 	const char **cb_tab;
 	ut8 res;
-	int ret = z80OpLength (buf, len);
-	if (!ret) {
+	int op_size = 0, op_size_prefix = 0;
+	z80_op_size (buf, len, &op_size, &op_size_prefix);
+	if (op_size < 1 || op_size > len) {
 		return NULL;
 	}
 	const z80_opcode *z_op = z80_op;
