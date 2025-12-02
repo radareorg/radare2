@@ -57,23 +57,11 @@ all:
 	exit 1
 endif
 
-ifeq ($(OSTYPE),wasi)
-preall: capstone-build sdbs fakeshlr
-else
-ifeq ($(R2_WASM_BROWSER),1)
-preall: capstone-build sdbs fakeshlr
-else
 preall: libwinkd bochs capstone-build sdbs
-endif
-endif
 	@for MOD in ${MODS} ; do \
 		echo $(MAKE) -C $$MOD ; \
 		$(MAKE) -C $$MOD HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
 	done
-
-fakeshlr:
-	touch bochs/lib/libbochs.a
-	touch winkd/libr_winkd.a
 
 ifeq ($(BUILD_OS),windows)
 BUILD_EXT_EXE=.exe
@@ -268,9 +256,7 @@ spp: spp-sync
 	export CFLAGS="-DUSE_R2=1 -I../../libr/include -DHAVE_FORK=${HAVE_FORK} -fPIC";  $(MAKE) -C spp r2lib
 
 SHLRS+=ar/libr_ar.a
-ifneq ($(R2_WASM_BROWSER),1)
 SHLRS+=bochs/lib/libbochs.a
-endif
 SHLRS+=$(CS_ROOT)/libcapstone.a
 SHLRS+=gdb/lib/libgdbr.a
 SHLRS+=grub/libgrubfs.a
