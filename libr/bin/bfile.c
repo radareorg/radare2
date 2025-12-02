@@ -19,9 +19,9 @@ static RBinSymbol *__getMethod(RBinFile *bf, const char *klass, const char *meth
 	return ht_pp_find (bf->bo->methods_ht, name, NULL);
 }
 
-static RBinString *__stringAt(RBinFile *bf, RList *ret, ut64 addr) {
+static RBinString *__stringAt(HtUP *strings_db, RList *ret, ut64 addr) {
 	if (R_LIKELY (addr != 0 && addr != UT64_MAX)) {
-		return ht_up_find (bf->bo->strings_db, addr, NULL);
+		return ht_up_find (strings_db, addr, NULL);
 	}
 	return NULL;
 }
@@ -1008,7 +1008,7 @@ R_API void r_bin_file_free(void /*RBinFile*/ *_bf) {
 		return;
 	}
 	RBinFile *bf = _bf;
-	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
+	RBinPlugin *plugin = R_UNWRAP3 (bf, bo, plugin);
 	// Binary format objects are connected to the
 	// RBinObject, so the plugin must destroy the
 	// format data first
@@ -1096,78 +1096,77 @@ R_IPI bool r_bin_file_set_bytes(RBinFile *bf, const ut8 *bytes, ut64 sz, bool st
 }
 
 R_API RBinPlugin *r_bin_file_cur_plugin(RBinFile *bf) {
-	return (bf && bf->bo)? bf->bo->plugin: NULL;
+	return R_UNWRAP3 (bf, bo, plugin);
 }
 
 // TODO: searchStrings() instead
 R_IPI RList *r_bin_file_get_strings(RBinFile *bf, int min, int dump, int raw) {
 	R_RETURN_VAL_IF_FAIL (bf, NULL);
-	RBinObject *o = bf->bo;
+	RBinObject *bo = bf->bo;
 	const bool nofp = bf->rbin->strings_nofp;
 	RListIter *iter;
 	RBinSection *section;
 	RList *ret = dump? NULL: r_list_newf (r_bin_string_free);
 
 	bf->string_count = 0;
-	if (!raw && o && o->sections && !r_list_empty (o->sections)) {
-		r_list_foreach (o->sections, iter, section) {
+	if (!raw && bo && bo->sections && !r_list_empty (bo->sections)) {
+		r_list_foreach (bo->sections, iter, section) {
 			if (is_data_section (bf, section)) {
 				get_strings_range (bf, ret, min, raw, nofp, section->paddr,
 						section->paddr + section->size, section);
 			}
 		}
-		r_list_foreach (o->sections, iter, section) {
-			if (!section->name) {
-				continue;
-			}
-			/* load objc/swift strings */
-			const int bits = (bf->bo && bf->bo->info) ? bf->bo->info->bits : 32;
-			const int cfstr_size = (bits == 64) ? 32 : 16;
-			const int cfstr_offs = (bits == 64) ? 16 :  8;
-			if (strstr (section->name, "__cfstring")) {
-				int i;
-				// XXX do not walk if bin.strings == 0
-				ut8 *p;
-				if (section->size > bf->size) {
-					continue;
-				}
-				if (section->size < 1) {
-					continue;
-				}
-				ut8 *sbuf = malloc (section->size);
-				if (!sbuf) {
-					continue;
-				}
-				r_buf_read_at (bf->buf, section->paddr + cfstr_offs, sbuf, section->size);
-				for (i = 0; i < section->size; i += cfstr_size) {
-					ut8 *buf = sbuf;
-					p = buf + i;
-					if ((i + ((bits == 64)? 8: 4)) >= section->size) {
-						break;
-					}
-					ut64 cfstr_vaddr = section->vaddr + i;
-					ut64 cstr_vaddr = (bits == 64) ? r_read_le64 (p) : r_read_le32 (p);
-					RBinString *s = __stringAt (bf, ret, cstr_vaddr);
-					if (s) {
-						RBinString *bs = R_NEW0 (RBinString);
-						if (bs) {
-							bs->type = s->type;
-							bs->length = s->length;
-							bs->size = s->size;
-							bs->ordinal = s->ordinal;
-							bs->vaddr = cfstr_vaddr;
-							bs->paddr = cfstr_vaddr; // XXX should be paddr instead
-							bs->string = r_str_newf ("cstr.%s", s->string);
-							r_list_append (ret, bs);
-							ht_up_insert (o->strings_db, bs->vaddr, bs);
-						}
-					}
-				}
-				free (sbuf);
-			}
-		}
 	} else {
 		get_strings_range (bf, ret, min, raw, nofp, 0, bf->size, NULL);
+		return ret;
+	}
+	r_list_foreach (bo->sections, iter, section) {
+		if (!section->name) {
+			continue;
+		}
+		/* load objc/swift strings */
+		const int bits = (bo->info) ? bo->info->bits : 32;
+		const int cfstr_size = (bits == 64) ? 32 : 16;
+		const int cfstr_offs = (bits == 64) ? 16 :  8;
+		if (strstr (section->name, "__cfstring")) {
+			int i;
+			// XXX do not walk if bin.strings == 0
+			ut8 *p;
+			if (section->size > bf->size) {
+				continue;
+			}
+			if (section->size < 1) {
+				continue;
+			}
+			ut8 *sbuf = malloc (section->size);
+			if (!sbuf) {
+				continue;
+			}
+			r_buf_read_at (bf->buf, section->paddr + cfstr_offs, sbuf, section->size);
+			for (i = 0; i < section->size; i += cfstr_size) {
+				ut8 *buf = sbuf;
+				p = buf + i;
+				if ((i + ((bits == 64)? 8: 4)) >= section->size) {
+					break;
+				}
+				ut64 cfstr_vaddr = section->vaddr + i;
+				ut64 cstr_vaddr = (bits == 64) ? r_read_le64 (p) : r_read_le32 (p);
+				RBinString *s = __stringAt (bo->strings_db, ret, cstr_vaddr);
+				if (s) {
+					RBinString *bs = R_NEW0 (RBinString);
+					bs->type = s->type;
+					bs->length = s->length;
+					bs->size = s->size;
+					bs->ordinal = s->ordinal;
+					bs->vaddr = cfstr_vaddr;
+					bs->paddr = cfstr_vaddr; // XXX should be paddr instead
+					bs->string = r_str_newf ("cstr.%s", s->string);
+					r_list_append (ret, bs);
+					ht_up_insert (bo->strings_db, bs->vaddr, bs);
+				}
+			}
+			free (sbuf);
+		}
 	}
 	return ret;
 }

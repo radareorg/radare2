@@ -29,8 +29,8 @@ static bool download_and_write(SPDBDownloaderOpt *opt, const char *file) {
 		BOOL ret = CopyFileW (origin, dest, FALSE);
 		free (dir);
 		free (path);
-		free ((void*)origin);
-		free ((void*)dest);
+		free ((void *)origin);
+		free ((void *)dest);
 		return ret;
 	}
 #endif
@@ -188,7 +188,7 @@ int r_bin_pdb_download(RCore *core, PJ *pj, SPDBOptions *options) {
 		return 1;
 	}
 
-	opt.dbg_file = (char*) r_file_basename (info->debug_file_name);
+	opt.dbg_file = (char *)r_file_basename (info->debug_file_name);
 	opt.guid = info->guid;
 	opt.symbol_server = options->symbol_server;
 	opt.user_agent = options->user_agent;
@@ -201,11 +201,11 @@ int r_bin_pdb_download(RCore *core, PJ *pj, SPDBOptions *options) {
 		// pj_ko (pj, "pdb");
 		pj_o (pj);
 		pj_ks (pj, "file", opt.dbg_file);
-		pj_kb (pj, "download", (bool) ret);
+		pj_kb (pj, "download", (bool)ret);
 		pj_end (pj);
 	} else {
 		r_cons_printf (core->cons, "PDB \"%s\" download %s\n",
-				opt.dbg_file, ret? "success": "failed");
+			opt.dbg_file, ret? "success": "failed");
 	}
 	deinit_pdb_downloader (&pdb_downloader);
 

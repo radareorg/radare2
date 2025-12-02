@@ -125,7 +125,6 @@ r_bin_sources = [
 # pdb microsoft format
   'format/pdb/dbi.c',
   'format/pdb/fpo.c',
-  'format/pdb/gdata.c',
   'format/pdb/omap.c',
   'format/pdb/pdb.c',
   'format/pdb/pdb_downloader.c',

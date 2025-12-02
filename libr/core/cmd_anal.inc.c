@@ -2305,12 +2305,9 @@ static void print_trampolines(RCore *core, ut64 a, ut64 b, size_t element_size) 
 		ut32 n;
 		memcpy (&n, core->block + i, sizeof (ut32));
 		if (n >= a && n <= b) {
-			if (element_size == 4) {
-				r_cons_printf (core->cons, "'0x%"PFMT64x"'f trampoline.%x\n", core->addr + i, n);
-			} else {
-				r_cons_printf (core->cons, "'0x%"PFMT64x"'f trampoline.%" PFMT32x "\n", core->addr + i, n);
-			}
-			r_cons_printf (core->cons, "Cd %u @ 0x%" PFMT64x ":%u\n", (unsigned int)element_size, core->addr + i, (unsigned int)element_size);
+			r_cons_printf (core->cons, "'0x%"PFMT64x"'f trampoline.%x\n", core->addr + i, n);
+			r_cons_printf (core->cons, "Cd %u @ 0x%" PFMT64x ":%u\n",
+				(ut32)element_size, core->addr + i, (ut32)element_size);
 			// TODO: add data xrefs
 		}
 	}

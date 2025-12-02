@@ -12,11 +12,11 @@ static void print_usage(void) {
 
 ///////////////////////////////////////////////////////////////////////////////
 static const struct option long_options[] = {
-	{ "pdb_file", required_argument, 0, 'f'},
-	{ "print_types", no_argument, 0, 't'},
-	{ "print_globals", required_argument, 0, 'g'},
-	{ "help", no_argument, 0, 'h'},
-	{NULL, 0, 0, 0}
+	{ "pdb_file", required_argument, 0, 'f' },
+	{ "print_types", no_argument, 0, 't' },
+	{ "print_globals", required_argument, 0, 'g' },
+	{ "help", no_argument, 0, 'h' },
+	{ NULL, 0, 0, 0 }
 };
 
 int main(int argc, char **argv) {
@@ -27,8 +27,9 @@ int main(int argc, char **argv) {
 
 	while (1) {
 		int c = getopt_long (argc, argv, ":f:tg:h", long_options, &option_index);
-		if (c == -1)
+		if (c == -1) {
 			break;
+		}
 
 		switch (c) {
 		case 'f':
