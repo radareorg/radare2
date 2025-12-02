@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2023 - Oscar Salvador */
+/* radare - LGPL - Copyright 2016-2025 - Oscar Salvador */
 
 #include <r_debug.h>
 #include <r_util.h>
@@ -892,9 +892,6 @@ static void may_clean_all(elf_proc_note_t *elf_proc_note, proc_content_t *proc_d
 
 static elf_shdr_t *get_extra_sectionhdr(elf_hdr_t *elf_hdr, st64 offset, int n_segments) {
 	elf_shdr_t *shdr = R_NEW0 (elf_shdr_t);
-	if (!shdr) {
-		return NULL;
-	}
 	elf_hdr->e_shoff = offset;
 	elf_hdr->e_shentsize = sizeof (elf_shdr_t);
 	elf_hdr->e_shnum = 1;
@@ -1483,6 +1480,7 @@ bool linux_generate_corefile (RDebug *dbg, RBuffer *dest) {
 	}
 	proc_data->per_process = get_proc_process_content (dbg);
 	if (!proc_data->per_process) {
+		R_LOG_ERROR ("linux_generate_corefile: get_proc_process_content failed");
 		free (elf_proc_note);
 		free (proc_data);
 		return false;
@@ -1493,18 +1491,21 @@ bool linux_generate_corefile (RDebug *dbg, RBuffer *dest) {
 	/* NT_PRPSINFO */
 	elf_proc_note->prpsinfo = linux_get_prpsinfo (dbg, proc_data->per_process);
 	if (!elf_proc_note->prpsinfo) {
+		R_LOG_ERROR ("linux_generate_corefile: linux_get_prpsinfo failed");
 		error = true;
 		goto cleanup;
 	}
 	/* NT_AUXV */
 	elf_proc_note->auxv = linux_get_auxv (dbg);
 	if (!elf_proc_note->auxv) {
+		R_LOG_ERROR ("linux_generate_corefile: linux_get_auxv failed");
 		error = true;
 		goto cleanup;
 	}
 	/* NT_FILE */
 	elf_proc_note->maps = linux_get_mapped_files (dbg, proc_data->per_process->coredump_filter);
 	if (!elf_proc_note->maps) {
+		R_LOG_ERROR ("linux_generate_corefile: linux_get_mapped_files failed");
 		error = true;
 		goto cleanup;
 	}
@@ -1513,12 +1514,14 @@ bool linux_generate_corefile (RDebug *dbg, RBuffer *dest) {
 	init_note_info_structure(dbg, dbg->pid, elf_proc_note->auxv->size);
 	note_data = build_note_section (dbg, elf_proc_note, proc_data, &note_section_size);
 	if (!note_data) {
+		R_LOG_ERROR ("linux_generate_corefile: build_note_section failed");
 		error = true;
 		goto cleanup;
 	}
 
 	elf_hdr = build_elf_hdr (n_segments);
 	if (!elf_hdr) {
+		R_LOG_ERROR ("linux_generate_corefile: build_elf_hdr failed");
 		error = true;
 		goto cleanup;
 	}

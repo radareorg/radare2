@@ -468,5 +468,11 @@ R_API int r_str_scanf(const char *buffer, const char *format, ...) {
 
 beach:
 	va_end (args);
+	/* According to scanf family semantics, return EOF (-1) if no conversions were performed
+	 * and an input failure occurred (e.g., buffer ended). Otherwise return number of
+	 * successfully assigned inputs. */
+	if (num_args_set == 0 && *buf_ptr == '\0') {
+		return EOF;
+	}
 	return num_args_set;
 }
