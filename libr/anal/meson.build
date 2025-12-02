@@ -44,6 +44,7 @@ r_anal_sources = [
   'p/anal_null.c',
   'p/anal_sbpf.c',
   'p/anal_tcc.c',
+  'p/anal_tp.c',
 ]
 
 r_anal_sources += r_anal_d_sources
@@ -71,6 +72,8 @@ r_anal = library('r_anal', r_anal_sources,
     r_cons_dep,
     r_syscall_dep,
     r_flag_dep,
+    r_config_dep,
+    r_io_dep,
     capstone_dep
   ],
   install: true,
@@ -99,6 +102,8 @@ r_anal_static = static_library('r_anal_static', r_anal_sources,
     r_search_static_dep,
     r_syscall_static_dep,
     r_util_static_dep,
+    r_config_static_dep,
+    r_io_static_dep,
   ],
   install: true,
   implicit_include_directories: false,

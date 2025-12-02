@@ -3837,6 +3837,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETS ("anal.types.spec", "gcc", "set profile for specifying format chars used in type analysis");
 	SETB ("anal.types.verbose", "false", "verbose output from type analysis");
 	SETB ("anal.types.constraint", "false", "enable constraint types analysis for variables");
+	SETB ("anal.types.rollback", "false", "enable state rollback for type propagation recovery");
 	SETCB ("anal.vars", "true", &cb_analvars, "analyze local variables and arguments");
 	SETCB ("anal.vars.stackname", "false", &cb_analvars_stackname, "name variables based on their offset on the stack");
 	SETCB ("anal.vars.newstack", "false", &cb_analvars_newstack, "use new sp-relative variable analysis (EXPERIMENTAL)");

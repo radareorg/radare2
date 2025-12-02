@@ -1844,3 +1844,184 @@ typedef.Number=int
 pf d
 EOF
 RUN
+
+NAME=x86-32 type propagation (no double counting)
+FILE=bins/elf/ioli/crackme0x07
+CMDS=<<EOF
+e anal.vars.stackname=true
+aaa
+s fcn.080485b9
+afv~format
+afv~var_11h
+EOF
+EXPECT=<<EOF
+var char * format @ esp+0x4
+var char * var_11h @ ebp-0xd
+EOF
+RUN
+
+NAME=Double pointer via chain dereference
+FILE=bins/elf/double_ptr
+CMDS=<<EOF
+aa
+aaft
+s main
+afv~ptr
+EOF
+EXPECT=<<EOF
+var char ** ptr @ rbp-0x18
+EOF
+RUN
+
+NAME=a:tp plugin type propagation single function
+FILE=bins/elf/double_ptr
+CMDS=<<EOF
+aa
+s main
+a:tp
+afv~ptr
+EOF
+EXPECT=<<EOF
+var char ** ptr @ rbp-0x18
+EOF
+RUN
+
+NAME=a:tp plugin help
+FILE=--
+CMDS=<<EOF
+aei
+a:tp?
+EOF
+EXPECT=<<EOF
+Usage: a:tp  propagate types for current function
+| a:tpall  propagate types for every function (aaft)
+| a:tp?    show this help
+EOF
+RUN
+
+NAME=a:tp all functions
+FILE=bins/elf/double_ptr
+CMDS=<<EOF
+aa
+a:tpall
+s main
+afv~ptr
+EOF
+EXPECT=<<EOF
+var char ** ptr @ rbp-0x18
+EOF
+RUN
+
+NAME=a:tp with rollback enabled
+FILE=bins/elf/double_ptr
+CMDS=<<EOF
+aa
+e anal.types.rollback=true
+s main
+a:tp
+afv~ptr
+EOF
+EXPECT=<<EOF
+var char ** ptr @ rbp-0x18
+EOF
+RUN
+
+NAME=a:tp config rollback default off
+FILE=bins/elf/double_ptr
+CMDS=<<EOF
+e anal.types.rollback
+EOF
+EXPECT=<<EOF
+false
+EOF
+RUN
+
+NAME=a:tp config rollback can be enabled
+FILE=bins/elf/double_ptr
+CMDS=<<EOF
+e anal.types.rollback=true
+e anal.types.rollback
+EOF
+EXPECT=<<EOF
+true
+EOF
+RUN
+
+NAME=a:tp preserves variable after rollback
+FILE=bins/elf/double_ptr
+CMDS=<<EOF
+aa
+e anal.types.rollback=true
+s main
+a:tp
+afv~ptr
+EOF
+EXPECT=<<EOF
+var char ** ptr @ rbp-0x18
+EOF
+RUN
+
+NAME=a:tp disabled in debugger mode
+FILE=bins/elf/double_ptr
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+e cfg.debug=true
+af
+a:tp
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+WARN: Type propagation is disabled in debugger mode
+EOF
+RUN
+
+NAME=a:tp no function at current offset
+FILE=bins/elf/double_ptr
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+aei
+s 0
+a:tp
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+WARN: Cannot find function at current offset
+EOF
+RUN
+
+NAME=a:tp works after manual aei
+FILE=bins/elf/double_ptr
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+s main
+aei
+af
+afva
+a:tp
+afv~var_18h
+EOF
+EXPECT=<<EOF
+var uint32_t var_18h @ rbp-0x18
+EOF
+RUN
+
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+e io.cache=true
+wx 48c745f810000000488b7df8e805000000c3
+f sym.imp.myfunc @ 0x16
+af @ 0x16
+afs void sym.imp.myfunc(size_t sz) @ 0x16
+af @ 0
+aft
+afv
+EOF
+EXPECT=<<EOF
+var size_t sz @ rbp-0x8
+EOF
+RUN
