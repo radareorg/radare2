@@ -386,7 +386,7 @@ static int tms320_c55x_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *b
 
 static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const ut64 addr = op->addr;
-	const ut8 *buf = op->bytes;
+	ut8 *buf = op->bytes;
 	const int len = op->size;
 	op->size = 2;
 	const char *cpu = as->config->cpu;
@@ -416,16 +416,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			aop = tms320_c55x_plus_op;
 		}
 	}
-	ut8 mbuf[4];
-	const ut8 *lbuf = buf;
-	if (true) { // len > 3 && R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config) && r_str_casecmp (as->config->cpu, "c64x")) {
-		mbuf[0] = buf[3];
-		mbuf[1] = buf[2];
-		mbuf[2] = buf[1];
-		mbuf[3] = buf[0];
-		lbuf = mbuf;
+	if (len > 3 && R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config) && r_str_casecmp (as->config->cpu, "c64x")) {
+		r_mem_swaporcopy (buf, buf, 4, true);
 	}
-	return aop (as, op, addr, lbuf, len, mask) > 0;
+	return aop (as, op, addr, buf, len, mask) > 0;
 }
 
 static bool tms320_init(RArchSession *as) {
