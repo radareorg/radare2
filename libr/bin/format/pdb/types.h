@@ -91,7 +91,6 @@
 }
 
 typedef struct R_STREAM_FILE_{
-//	FILE *fp;
 	RBuffer *buf;
 	int *pages;
 	int page_size;
@@ -101,13 +100,15 @@ typedef struct R_STREAM_FILE_{
 	int error;
 } R_STREAM_FILE;
 
-typedef void (*free_func)(void *);
-typedef void (*get_value_name)(void *type, char **res_name);
-typedef void (*get_value)(void *type, int *res);
-typedef void (*get_value_name_len)(void *type, int *res);
-typedef void (*get_member_list)(void *type, RList **l);
-typedef int (*get_arg_type_)(void *type, void **ret_type);
-typedef int (*get_val_type)(void *type, void **ret_type);
+struct stpi_stream_t;
+// XXX awful names
+typedef void (*free_func)(struct stpi_stream_t *, void *);
+typedef void (*get_value_name)(struct stpi_stream_t *, void *type, char **res_name);
+typedef void (*get_value)(struct stpi_stream_t *, void *type, int *res);
+typedef void (*get_value_name_len)(struct stpi_stream_t *, void *type, int *res);
+typedef void (*get_member_list)(struct stpi_stream_t *, void *type, RList **l);
+typedef int (*get_arg_type_)(struct stpi_stream_t *, void *type, void **ret_type);
+typedef int (*get_val_type)(struct stpi_stream_t *, void *type, void **ret_type);
 
 typedef get_val_type get_element_type_;
 typedef get_val_type get_index_type_;
@@ -1114,6 +1115,8 @@ typedef struct {
 	ELeafType leaf_type;
 	void *type_info;
 
+	// XXX move all those function pointers into a struct and name it 'cb'
+	// STypeInfoCallbacks cb;
 	free_func free_;
 	get_value_name get_name;
 	get_value get_val;
@@ -1135,8 +1138,32 @@ typedef struct {
 	get_modified_type_ get_modified_type;
 	get_value is_fwdref;
 	get_print_type_ get_print_type;
-
 }) STypeInfo;
+
+typedef struct {
+	// XXX move all those function pointers into a struct and name it 'cb'
+	free_func free_;
+	get_value_name get_name;
+	get_value get_val;
+	get_value_name_len get_name_len;
+	get_member_list get_members;
+	get_arg_type_ get_arg_type;
+	get_element_type_ get_element_type;
+	get_index_type_ get_index_type;
+	get_base_type_ get_base_type;
+	get_derived_ get_derived;
+	get_vshape_ get_vshape;
+	get_utype_ get_utype;
+	get_return_type_ get_return_type;
+	get_class_type_ get_class_type;
+	get_this_type_ get_this_type;
+	get_arglist_ get_arglist;
+	get_index_ get_index;
+	get_mlist_ get_mlist;
+	get_modified_type_ get_modified_type;
+	get_value is_fwdref;
+	get_print_type_ get_print_type;
+} STypeInfoCallbacks;
 
 R_PACKED(
 typedef struct {
@@ -1147,9 +1174,17 @@ typedef struct {
 //	free_func free_;
 }) SType;
 
+
+// TPI context structure
 typedef struct {
+	unsigned int base_idx;
+	RList *types_list;
+} STpiContext;
+
+typedef struct stpi_stream_t {
 	STPIHeader header;
 	RList *types;
+	STpiContext ctx;
 
 	free_func free_;
 } STpiStream;

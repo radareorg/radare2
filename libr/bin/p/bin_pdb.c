@@ -63,17 +63,14 @@ static void destroy(RBinFile *bf) {
 
 static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) {
-		return NULL;
-	}
 	ret->file = strdup (bf->file);
 	ret->type = strdup ("PDB (Program Database)");
 	ret->bclass = strdup ("PDB");
 	ret->rclass = strdup ("pdb");
-	ret->arch = strdup ("pdb");
+	ret->arch = strdup ("x86"); // maybe its arm
 	ret->machine = strdup ("Microsoft PDB");
 	ret->os = strdup ("Windows");
-	ret->bits = 0; // PDB doesn't have bits
+	ret->bits = 64;
 	ret->has_va = false;
 	return ret;
 }

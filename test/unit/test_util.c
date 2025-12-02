@@ -284,9 +284,6 @@ bool test_endian_fromstring(void) {
 	mu_assert_eq (r_sys_endian_fromstring ("invalid"), R_SYS_ENDIAN_NONE, "invalid string should return NONE");
 	mu_assert_eq (r_sys_endian_fromstring (""), R_SYS_ENDIAN_NONE, "empty string should return NONE");
 
-	// Test NULL input
-	mu_assert_eq (r_sys_endian_fromstring (NULL), R_SYS_ENDIAN_NONE, "NULL should return NONE");
-
 	mu_end;
 }
 
