@@ -424,6 +424,10 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 	}
 	if (a->analb.anal) {
 		if (a->analb.use (a->analb.anal, name)) {
+			a->dcur = a->analb.anal->arch->session;
+			if (a->dcur) {
+				a->ecur = a->dcur->encoder ? a->dcur->encoder : a->dcur;
+			}
 			load_asm_descriptions (a);
 			return true;
 		}
@@ -499,6 +503,7 @@ R_API int r_asm_disassemble(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
 
 	int ret = 0;
 	op->size = 4;
+	op->addr = a->pc;
 	r_anal_op_set_mnemonic (op, op->addr, "");
 	if (a->config->codealign) {
 		const int mod = a->pc % a->config->codealign;
@@ -508,9 +513,10 @@ R_API int r_asm_disassemble(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
 			return -1;
 		}
 	}
-	if (a->analb.anal) {
-		ret = a->analb.decode (a->analb.anal, op, a->pc, buf, len,
-			R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_DISASM);
+	if (a->dcur) {
+		if (r_arch_session_decode (a->dcur, op, R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_DISASM)) {
+			ret = op->size;
+		}
 	}
 	if (ret < 0) {
 		ret = 0;
@@ -620,16 +626,14 @@ static int r_asm_assemble_single(RAsm *a, RAnalOp *op, const char *buf) {
 		return 0;
 	}
 	r_str_case (b, false); // to-lower
-	if (a->analb.anal) {
-		ut8 buf[256] = { 0 };
-		a->analb.anal->arch->cfg->endian = a->config->endian;
-		// XXX we should use just RArch and ecur/dcur
-		ret = a->analb.encode (a->analb.anal, a->pc, b, buf, sizeof (buf));
-		if (ret > 0) {
-			r_anal_op_set_bytes (op, a->pc, buf, R_MIN (ret, sizeof (buf)));
+	if (a->ecur) {
+		op->addr = a->pc;
+		r_anal_op_set_mnemonic (op, op->addr, b);
+		if (r_arch_session_encode (a->ecur, op, 0)) {
+			ret = op->size;
 		}
 	} else {
-		R_LOG_ERROR ("Cannot assemble because there are no anal binds into the asm instance %p", a);
+		R_LOG_ERROR ("Cannot assemble because there are no arch sessions into the asm instance %p", a);
 		ret = -1;
 #if 0
 	} else if (ase) {
@@ -647,9 +651,8 @@ R_API RAsmCode *r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 	ut64 pc = a->pc;
 	ut64 idx;
 	int ret;
-	// XXX move from io to archconfig!! and remove the dependency on core!
-	const size_t addrbytes = a->user? ((RCore *)a->user)->io->addrbytes: 1;
-	int mininstrsize = 1; // TODO: use r_arch_info ();
+	const size_t addrbytes = a->config->addrbytes > 0 ? a->config->addrbytes : 1;
+	int mininstrsize = r_arch_info (a->arch, R_ARCH_INFO_MINOP_SIZE);
 
 	RAsmCode *acode = r_asm_code_new ();
 	if (!acode) {

@@ -27,6 +27,7 @@ typedef struct r_asm_code_t {
 	ut8 *bytes;
 	char *assembly;
 #else
+	// TODO: is this really necessary?
 	// imho this asmcode should contain multiple archops
 	RAnalOp op; // we have those fields already inside RAnalOp
 #endif
