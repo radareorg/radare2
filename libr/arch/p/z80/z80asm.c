@@ -17,9 +17,6 @@ static int rd_label(PluginData *pd, const char **p, bool *exists, struct label *
 static int rd_character(PluginData *pd, const char **p, int *valid, bool print_errors);
 static int compute_ref(PluginData *pd, struct reference *ref, int allow_invalid);
 
-/* hack */
-// must remove: equ, include, incbin, macro
-// static void wrt_ref (int val, int type, int count);
 #define write_one_byte(x, y) pd->obuf[pd->obuflen++] = x
 #define wrtb(x) pd->obuf[pd->obuflen++] = x
 
@@ -309,7 +306,7 @@ static inline int rd_suffixed_number(PluginData *pd, const char **p, int base, i
 	case 'D':
 		base = 10;
 		break;
-	default: /* No suffix */
+	default:
 		p1++;
 		break;
 	}
@@ -1163,7 +1160,7 @@ static int rd_cc(PluginData *pd, const char **p) {
 	return indx (pd, p, list, 0, NULL);
 }
 
-/* read long or short register,  */
+/* read long or short register */
 static int rd_r_rr(PluginData *pd, const char **p) {
 	int i;
 	const char *list[] = {
@@ -1357,7 +1354,6 @@ static int rd_sp(PluginData *pd, const char **p) {
 	return 1;
 }
 
-/* do the actual work */
 static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 	const char *ptr;
 	char *bufptr;
@@ -1371,8 +1367,6 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 		free (pd->z80buffer);
 		return pd->obuflen;
 	}
-	// if (havelist)
-	// fprintf (listfile, "%04x", pd->addr);
 	for (bufptr = pd->z80buffer; (bufptr = strchr (bufptr, '\n'));) {
 		*bufptr = ' ';
 	}
@@ -1380,7 +1374,6 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 		*bufptr = ' ';
 	}
 	ptr = pd->z80buffer;
-	// lastlabel = NULL;
 	pd->baseaddr = pd->addr;
 	++pd->stack[pd->sp].line;
 	ptr = delspc (ptr);
@@ -1447,11 +1440,11 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 				break;
 			}
 			r--;
-			wrtb (0x80 + r); /* ADD A,r  */
+			wrtb (0x80 + r);
 			break;
 		}
 		r--;
-		wrtb (0x80 + r); /* ADD r  */
+		wrtb (0x80 + r);
 		break;
 	case Z80_AND:
 		if (! (r = rd_r (pd, &ptr))) {
@@ -1535,7 +1528,6 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 		break;
 	case Z80_DJNZ:
 		wrtb (0x10);
-		// rd_wrt_jr (&ptr, '\0');
 		break;
 	case Z80_EI:
 		wrtb (0xFB);
@@ -1901,7 +1893,7 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 			wrtb (pd->indexed);
 			wrtb (0xCB);
 			wrtb (n);
-			wrtb (0x06); /* rlc [hl] */
+			wrtb (0x06);
 			pd->indexed = 0;
 		} else {
 			wrtb (0xCB);
@@ -1925,7 +1917,7 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 			wrtb (pd->indexed);
 			wrtb (0xCB);
 			wrtb (n);
-			wrtb (0x1E); /* rr [hl] */
+			wrtb (0x1E);
 			pd->indexed = 0;
 		} else {
 			wrtb (0xCB);
@@ -1945,7 +1937,7 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 			wrtb (pd->indexed);
 			wrtb (0xCB);
 			wrtb (n);
-			wrtb (0x0E); /* rrc [hl] */
+			wrtb (0x0E);
 			pd->indexed = 0;
 		} else {
 			wrtb (0xCB);
@@ -2035,7 +2027,7 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 			wrtb (pd->indexed);
 			wrtb (0xCB);
 			wrtb (n);
-			wrtb (0x2E); /* sra [hl] */
+			wrtb (0x2E);
 			pd->indexed = 0;
 		} else {
 			wrtb (0xCB);
@@ -2052,7 +2044,7 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 			wrtb (pd->indexed);
 			wrtb (0xCB);
 			wrtb (n);
-			wrtb (0x3E); /* srl [hl] */
+			wrtb (0x3E);
 			pd->indexed = 0;
 		} else {
 			wrtb (0xCB);
