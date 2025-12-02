@@ -45,7 +45,7 @@ RMutaPlugin r_muta_plugin_add = {
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CRYPTO,
 	.data = &r_muta_plugin_add,
-	.version = R2_VERSION
+	.version = R2_VERSION,
 	.abiversion = R2_ABIVERSION
 };
 #endif

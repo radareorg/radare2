@@ -2625,22 +2625,19 @@ static int cmd_write(void *data, const char *input) {
 			r_core_return_value (core, 0);
 			cmd_w (core, str + 1);
 			addr += core->num->value;
-		} else {
-			if (len > 0) {
-				size_t in_len = strlen (str + 1);
-				int max = core->print->charset->encode_maxkeylen;
-				int out_len = in_len * max;
-				int new_len = 0;
-				ut8 *out = malloc (in_len * max); //suppose in len = out len TODO: change it
-				if (out) {
-					*out = 0;
-					new_len = r_charset_decode_str (core->print->charset, out, out_len, (const ut8*) str + 1, in_len);
-					cmd_w (core, (const char *)out);
-					free (out);
-				}
-				addr += new_len;
-			}
-		}
+        } else {
+            if (len > 0 && core->print->charset_encode) {
+                size_t in_len = strlen (str + 1);
+                int new_len = 0;
+                ut8 *out = NULL;
+                new_len = core->print->charset_encode (core->print->charset_ctx, (const ut8*)str + 1, (int)in_len, &out);
+                if (new_len > 0 && out) {
+                    r_core_write_at (core, addr, out, new_len);
+                    free (out);
+                }
+                addr += new_len;
+            }
+        }
 		free (str);
 		if (*input == '+') {
 			r_core_seek (core, addr, true);
