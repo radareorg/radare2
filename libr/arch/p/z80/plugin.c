@@ -21,7 +21,7 @@ typedef struct plugin_data_t {
 	int writebyte;
 	const char *readbyte;
 	/* variables which are filled by rd_* functions and used later,
-	* like readbyte */
+	 * like readbyte */
 	const char *readword;
 	const char *indexjmp;
 	const char *bitsetres;
@@ -29,7 +29,7 @@ typedef struct plugin_data_t {
 	int indexed;
 	/* increased for every -v option on the command line */
 	int verbose;
-	/* read commas after indx() if comma > 1. increase for every call */
+	/* read commas after indx () if comma > 1. increase for every call */
 	int comma;
 	/* address at start of line (for references) */
 	int baseaddr;
@@ -50,8 +50,39 @@ typedef struct plugin_data_t {
 #define write_one_byte(x, y) pd->obuf[pd->obuflen++] = x
 #define wrtb(x) pd->obuf[pd->obuflen++] = x
 
+/* Z80 opcode encoding constants */
+#define Z80_HL_ENCODING 6 /* [hl] register encoding for bit/res/set/shift ops */
+#define Z80_BIT_BASE 0x40 /* Base opcode for BIT instruction */
+#define Z80_RES_BASE 0x80 /* Base opcode for RES instruction */
+#define Z80_SET_BASE 0xC0 /* Base opcode for SET instruction */
+#define Z80_INDEXED_PREFIX_CB 0xCB /* Indexed addressing CB prefix */
+#define Z80_INDEXED_PREFIX_ED 0xED /* Extended instructions prefix */
+#define Z80_RL_HL 0x16 /* RL [hl] opcode */
+#define Z80_SLA_HL 0x26 /* SLA [hl] opcode */
+#define Z80_SLL_HL 0x36 /* SLL [hl] opcode */
+
+/* Helper function to emit indexed bit/shift operation */
+static void emit_indexed_bitop(PluginData *pd, int base_opcode, int bit_num) {
+	char n = r_num_math (NULL, pd->indexjmp);
+	wrtb (pd->indexed);
+	wrtb (Z80_INDEXED_PREFIX_CB);
+	wrtb (n);
+	wrtb (base_opcode + (bit_num << 3) + Z80_HL_ENCODING);
+	pd->indexed = 0;
+}
+
+/* Helper function to emit indexed shift operation */
+static void emit_indexed_shift(PluginData *pd, int hl_opcode) {
+	char n = r_num_math (NULL, pd->indexjmp);
+	wrtb (pd->indexed);
+	wrtb (Z80_INDEXED_PREFIX_CB);
+	wrtb (n);
+	wrtb (hl_opcode);
+	pd->indexed = 0;
+}
+
 /* global variables */
-/* mnemonics, used as argument to indx() in assemble */
+/* mnemonics, used as argument to indx () in assemble */
 static const char *mnemonics[] = {
 	"call", "cpdr", "cpir", "djnz", "halt", "indr", "inir", "lddr", "ldir",
 	"otdr", "otir", "outd", "outi", "push", "reti", "retn", "rlca", "rrca",
@@ -68,7 +99,7 @@ static const char *mnemonics[] = {
 
 /* reading expressions. The following operators are supported
  * in order of precedence, with function name:
- * expr?expr:expr do_rd_expr
+ * expr? expr: expr do_rd_expr
  * |              rd_expr_or
  * ^              rd_expr_xor
  * &              rd_expr_and
@@ -81,726 +112,721 @@ static const char *mnemonics[] = {
  */
 
 static int do_rd_expr(PluginData *pd, const char **p, char delimiter, int *valid, int level,
-		       int *check, int print_errors);
+	int *check, int print_errors);
 
 static int
-rd_number (PluginData *pd, const char **p, const char **endp, int base)
-{
-  int result = 0, i;
-  char *c, num[] = "0123456789abcdefghijklmnopqrstuvwxyz";
-  if (pd->verbose >= 6)
-    fprintf (stderr, "%5d (0x%04x): Starting to read number of base %d"
-	     "(string=%s).\n", pd->stack[pd->sp].line, pd->addr, base, *p);
-  num[base] = '\0';
-  *p = delspc (*p);
-  while (**p && (c = strchr (num, tolower ((const unsigned char)**p))))
-    {
-      i = c - num;
-      if (pd->verbose >= 7)
-	fprintf (stderr, "%5d (0x%04x): Digit found:%1x.\n", pd->stack[pd->sp].line,
-		 pd->addr, i);
-      result = result * base + i;
-      (*p)++;
-    }
-  if (endp)
-    *endp = *p;
-  *p = delspc (*p);
-  if (pd->verbose >= 7)
-    fprintf (stderr, "%5d (0x%04x): rd_number returned %d (%04x).\n",
-	     pd->stack[pd->sp].line, pd->addr, result, result);
-  return result;
+rd_number(PluginData *pd, const char **p, const char **endp, int base) {
+	int result = 0, i;
+	char *c, num[] = "0123456789abcdefghijklmnopqrstuvwxyz";
+	if (pd->verbose >= 6) {
+		fprintf (stderr, "%5d (0x%04x): Starting to read number of base %d"
+				"(string=%s).\n",
+			pd->stack[pd->sp].line, pd->addr, base, *p);
+	}
+	num[base] = '\0';
+	*p = delspc (*p);
+	while (**p && (c = strchr (num, tolower ((const unsigned char)**p)))) {
+		i = c - num;
+		if (pd->verbose >= 7) {
+			fprintf (stderr, "%5d (0x%04x): Digit found:%1x.\n", pd->stack[pd->sp].line,
+				pd->addr, i);
+		}
+		result = result * base + i;
+		(*p)++;
+	}
+	if (endp) {
+		*endp = *p;
+	}
+	*p = delspc (*p);
+	if (pd->verbose >= 7) {
+		fprintf (stderr, "%5d (0x%04x): rd_number returned %d (%04x).\n",
+			pd->stack[pd->sp].line, pd->addr, result, result);
+	}
+	return result;
 }
 
 static int
-rd_otherbasenumber (PluginData *pd, const char **p, int *valid, int print_errors)
-{
-  char c;
-  if (pd->verbose >= 6)
-    fprintf (stderr,
-	     "%5d (0x%04x): Starting to read basenumber (string=%s).\n",
-	     pd->stack[pd->sp].line, pd->addr, *p);
-  (*p)++;
-  if (!**p)
-    {
-      if (valid)
-	*valid = 0;
-      else if (print_errors)
-	printerr (pd, 1, "unexpected end of line after `@'\n");
-      return 0;
-    }
-  if (**p == '0' || !isalnum ((const unsigned char)**p))
-    {
-      if (valid)
-	*valid = 0;
-      else if (print_errors)
-	printerr (pd, 1, "base must be between 1 and z\n");
-      return 0;
-    }
-  c = **p;
-  (*p)++;
-  if (isalpha ((const unsigned char)**p))
-    return rd_number (pd, p, NULL, tolower ((unsigned char)c) - 'a' + 1);
-  return rd_number (pd, p, NULL, c - '0' + 1);
-}
-
-static int
-rd_character (PluginData *pd, const char **p, int *valid, int print_errors)
-{
-  int i;
-  if (pd->verbose >= 6)
-    fprintf (stderr,
-	     "%5d (0x%04x): Starting to read character (string=%s).\n",
-	     pd->stack[pd->sp].line, pd->addr, *p);
-  i = **p;
-  if (!i)
-    {
-      if (valid)
-	*valid = 0;
-      else if (print_errors)
-	printerr (pd, 1, "unexpected end of line in string constant\n");
-      return 0;
-    }
-  if (i == '\\')
-    {
-      (*p)++;
-      if (**p >= '0' && **p <= '7')
-	{
-	  int b, num_digits;
-	  i = 0;
-	  if ((*p)[1] >= '0' && (*p)[1] <= '7')
-	    {
-	      if (**p <= '3' && (*p)[2] >= '0' && (*p)[2] <= '7')
-		num_digits = 3;
-	      else
-		num_digits = 2;
-	    }
-	  else
-	    num_digits = 1;
-	  for (b = 0; b < num_digits; b++)
-	    {
-	      int bit = (*p)[num_digits - 1 - b] - '0';
-	      i += (1 << (b * 3)) * bit;
-	    }
-	  *p += num_digits;
-	}
-      else
-	{
-	  switch (**p)
-	    {
-	    case 'n':
-	      i = 10;
-	      break;
-	    case 'r':
-	      i = 13;
-	      break;
-	    case 't':
-	      i = 9;
-	      break;
-	    case 'a':
-	      i = 7;
-	      break;
-	    case '\'':
-	      if (valid)
-		*valid = 0;
-	      else if (print_errors)
-		printerr (pd, 1, "empty literal character\n");
-	      return 0;
-	    case 0:
-	      if (valid)
-		*valid = 0;
-	      else if (print_errors)
-		printerr (pd, 1, "unexpected end of line after "
-			  "backslash in string constant\n");
-	      return 0;
-	    default:
-	      i = **p;
-	    }
-	  (*p)++;
-	}
-    }
-  else
-    (*p)++;
-  if (pd->verbose >= 7)
-    fprintf (stderr, "%5d (0x%04x): rd_character returned %d (%c).\n",
-	     pd->stack[pd->sp].line, pd->addr, i, i);
-  return i;
-}
-
-static int
-check_label (PluginData *pd, struct label *labels, const char **p, struct label **ret,
-	     struct label **previous, int force_skip)
-{
-  struct label *l;
-  const char *c;
-  unsigned s2;
-  *p = delspc (*p);
-  for (c = *p; isalnum ((const unsigned char)*c) || *c == '_' || *c == '.'; c++)
-    {
-    }
-  s2 = c - *p;
-  for (l = labels; l; l = l->next)
-    {
-      unsigned s1, s;
-      int cmp;
-      s1 = strlen (l->name);
-      s = s1 < s2 ? s1 : s2;
-      cmp = strncmp (l->name, *p, s);
-      if (cmp > 0 || (cmp == 0 && s1 > s))
-	{
-	  if (force_skip)
-	    *p = c;
-	  return 0;
-	}
-      if (cmp < 0 || s2 > s)
-	{
-	  if (previous)
-	    *previous = l;
-	  continue;
-	}
-      *p = c;
-      /* if label is not valid, compute it */
-      if (l->ref)
-	{
-	  compute_ref (pd, l->ref, 1);
-	  if (!l->ref->done)
-	    {
-	      /* label was not valid, and isn't computable.  tell the
-	       * caller that it doesn't exist, so it will try again later.
-	       * Set ret to show actual existence.  */
-	      if (pd->verbose >= 6)
+rd_otherbasenumber(PluginData *pd, const char **p, int *valid, int print_errors) {
+	char c;
+	if (pd->verbose >= 6) {
 		fprintf (stderr,
-			 "%5d (0x%04x): returning invalid label %s.\n",
-			 pd->stack[pd->sp].line, pd->addr, l->name);
-	      *ret = l;
-	      return 0;
-	    }
+			"%5d (0x%04x): Starting to read basenumber (string=%s).\n",
+			pd->stack[pd->sp].line, pd->addr, *p);
 	}
-      *ret = l;
-      return 1;
-    }
-  if (force_skip)
-    *p = c;
-  return 0;
+	(*p)++;
+	if (!**p) {
+		if (valid) {
+			*valid = 0;
+		} else if (print_errors) {
+			printerr (pd, 1, "unexpected end of line after `@'\n");
+		}
+		return 0;
+	}
+	if (**p == '0' || !isalnum ((const unsigned char)**p)) {
+		if (valid) {
+			*valid = 0;
+		} else if (print_errors) {
+			printerr (pd, 1, "base must be between 1 and z\n");
+		}
+		return 0;
+	}
+	c = **p;
+	(*p)++;
+	if (isalpha ((const unsigned char)**p)) {
+		return rd_number (pd, p, NULL, tolower ((unsigned char)c) - 'a' + 1);
+	}
+	return rd_number (pd, p, NULL, c - '0' + 1);
 }
 
 static int
-rd_label (PluginData *pd, const char **p, int *exists, struct label **previous, int level,
-	  int print_errors)
-{
-  struct label *l = NULL;
-  int s;
-  if (exists)
-    *exists = 0;
-  if (previous)
-    *previous = NULL;
-  if (pd->verbose >= 6)
-    fprintf (stderr, "%5d (0x%04x): Starting to read label (string=%s).\n",
-	     pd->stack[pd->sp].line, pd->addr, *p);
-  for (s = level; s >= 0; s--)
-    {
-      if (check_label (pd, pd->stack[s].labels, p, &l,
-		       (**p == '.' && s == pd->sp) ? previous : NULL, 0))
-	break;
-    }
-  if (s < 0)
-    {
-      /* not yet found */
-      const char *old_p = *p;
-	  /* label does not exist, or is invalid.  This is an error if there
-	   * is no existence check.  */
-	  if (!exists && print_errors)
-	    printerr (pd, 1, "using undefined label %.*s\n", *p - old_p, old_p);
-	  /* Return a value to discriminate between non-existing and invalid */
-	  if (pd->verbose >= 7)
-	    fprintf (stderr, "rd_label returns invalid value\n");
-	  return (int)(bool)l;
-    }
-  if (exists)
-    *exists = 1;
-  if (pd->verbose >= 7)
-    fprintf (stderr, "rd_label returns valid value 0x%x\n", l->value);
-  return l->value;
+rd_character(PluginData *pd, const char **p, int *valid, int print_errors) {
+	int i;
+	if (pd->verbose >= 6) {
+		fprintf (stderr,
+			"%5d (0x%04x): Starting to read character (string=%s).\n",
+			pd->stack[pd->sp].line, pd->addr, *p);
+	}
+	i = **p;
+	if (!i) {
+		if (valid) {
+			*valid = 0;
+		} else if (print_errors) {
+			printerr (pd, 1, "unexpected end of line in string constant\n");
+		}
+		return 0;
+	}
+	if (i == '\\') {
+		(*p)++;
+		if (**p >= '0' && **p <= '7') {
+			int b, num_digits;
+			i = 0;
+			if ((*p)[1] >= '0' && (*p)[1] <= '7') {
+				if (**p <= '3' && (*p)[2] >= '0' && (*p)[2] <= '7') {
+					num_digits = 3;
+				} else {
+					num_digits = 2;
+				}
+			} else {
+				num_digits = 1;
+			}
+			for (b = 0; b < num_digits; b++) {
+				int bit = (*p)[num_digits - 1 - b] - '0';
+				i += (1 << (b * 3)) * bit;
+			}
+			*p += num_digits;
+		} else {
+			switch (**p) {
+			case 'n':
+				i = 10;
+				break;
+			case 'r':
+				i = 13;
+				break;
+			case 't':
+				i = 9;
+				break;
+			case 'a':
+				i = 7;
+				break;
+			case '\'':
+				if (valid) {
+					*valid = 0;
+				} else if (print_errors) {
+					printerr (pd, 1, "empty literal character\n");
+				}
+				return 0;
+			case 0:
+				if (valid) {
+					*valid = 0;
+				} else if (print_errors) {
+					printerr (pd, 1, "unexpected end of line after "
+							"backslash in string constant\n");
+				}
+				return 0;
+			default:
+				i = **p;
+			}
+			(*p)++;
+		}
+	} else {
+		(*p)++;
+	}
+	if (pd->verbose >= 7) {
+		fprintf (stderr, "%5d (0x%04x): rd_character returned %d (%c).\n",
+			pd->stack[pd->sp].line, pd->addr, i, i);
+	}
+	return i;
 }
 
 static int
-rd_value (PluginData *pd, const char **p, int *valid, int level, int *check, int print_errors)
-{
-  int sign = 1, not = 0, base, v;
-  const char *p0, *p1, *p2;
-  if (pd->verbose >= 6)
-    fprintf (stderr, "%5d (0x%04x): Starting to read value (string=%s).\n",
-	     pd->stack[pd->sp].line, pd->addr, *p);
-  *p = delspc (*p);
-  while (**p && strchr ("+-~", **p))
-    {
-      if (**p == '-')
-	sign = -sign;
-      else if (**p == '~')
-	not = ~not;
-      (*p)++;
-      *p = delspc (*p);
-    }
-  base = 10;			/* Default base for suffixless numbers */
-
-  /* Check for parenthesis around full expression: not if no parenthesis */
-  if (**p != '(')
-    *check = 0;
-
-  switch (**p)
-    {
-      int exist, retval;
-      char quote;
-      int dummy_check;
-    case '(':
-      (*p)++;
-      dummy_check = 0;
-      retval = not ^ (sign * do_rd_expr (pd, p, ')', valid, level, &dummy_check,
-					 print_errors));
-      ++*p;
-      return retval;
-    case '0':
-      if ((*p)[1] == 'x')
-	{
-	  (*p) += 2;
-	  return not ^ (sign * rd_number (pd, p, NULL, 0x10));
+check_label(PluginData *pd, struct label *labels, const char **p, struct label **ret,
+	struct label **previous, int force_skip) {
+	struct label *l;
+	const char *c;
+	unsigned s2;
+	*p = delspc (*p);
+	for (c = *p; isalnum ((const unsigned char)*c) || *c == '_' || *c == '.'; c++) {
 	}
-      base = 8;		/* If first digit it 0, assume octal unless suffix */
-      /* fall through */
-    case '1':
-    case '2':
-    case '3':
-    case '4':
-    case '5':
-    case '6':
-    case '7':
-    case '8':
-    case '9':
-      p0 = *p;
-      rd_number (pd, p, &p1, 36);	/* Advance to end of numeric string */
-      p1--;			/* Last character in numeric string */
-      switch (*p1)
-	{
-	case 'h':
-	case 'H':
-	  base = 16;
-	  break;
-	case 'b':
-	case 'B':
-	  base = 2;
-	  break;
-	case 'o':
-	case 'O':
-	case 'q':
-	case 'Q':
-	  base = 8;
-	  break;
-	case 'd':
-	case 'D':
-	  base = 10;
-	  break;
-	default:		/* No suffix */
-	  p1++;
-	  break;
+	s2 = c - *p;
+	for (l = labels; l; l = l->next) {
+		unsigned s1, s;
+		int cmp;
+		s1 = strlen (l->name);
+		s = s1 < s2? s1: s2;
+		cmp = strncmp (l->name, *p, s);
+		if (cmp > 0 || (cmp == 0 && s1 > s)) {
+			if (force_skip) {
+				*p = c;
+			}
+			return 0;
+		}
+		if (cmp < 0 || s2 > s) {
+			if (previous) {
+				*previous = l;
+			}
+			continue;
+		}
+		*p = c;
+		/* if label is not valid, compute it */
+		if (l->ref) {
+			compute_ref (pd, l->ref, 1);
+			if (!l->ref->done) {
+				/* label was not valid, and isn't computable.  tell the
+				 * caller that it doesn't exist, so it will try again later.
+				 * Set ret to show actual existence.  */
+				if (pd->verbose >= 6) {
+					fprintf (stderr,
+						"%5d (0x%04x): returning invalid label %s.\n",
+						pd->stack[pd->sp].line, pd->addr, l->name);
+				}
+				*ret = l;
+				return 0;
+			}
+		}
+		*ret = l;
+		return 1;
 	}
-      v = rd_number (pd, &p0, &p2, base);
-      if (p1 != p2)
-	{
-	  if (valid)
-	    *valid = 0;
-	  else if (print_errors)
-	    printerr (pd, 1, "invalid character in number: \'%c\'\n", *p2);
+	if (force_skip) {
+		*p = c;
 	}
-      return not ^ (sign * v);
-    case '$':
-      ++*p;
-      *p = delspc (*p);
-      p0 = *p;
-      v = rd_number (pd, &p0, &p2, 0x10);
-      if (p2 == *p)
-	{
-	  v = pd->baseaddr;
-	}
-      else
-	*p = p2;
-      return not ^ (sign * v);
-    case '%':
-      (*p)++;
-      return not ^ (sign * rd_number (pd, p, NULL, 2));
-    case '\'':
-    case '"':
-      quote = **p;
-      ++*p;
-      retval = not ^ (sign * rd_character (pd, p, valid, print_errors));
-      if (**p != quote)
-	{
-	  if (valid)
-	    *valid = 0;
-	  else if (print_errors)
-	    printerr (pd, 1, "missing closing quote (%c)\n", quote);
-	  return 0;
-	}
-      ++*p;
-      return retval;
-    case '@':
-      return not ^ (sign * rd_otherbasenumber (pd, p, valid, print_errors));
-    case '?':
-      rd_label (pd, p, &exist, NULL, level, 0);
-      return not ^ (sign * exist);
-    case '&':
-      {
-	++*p;
-	switch (**p)
-	  {
-	  case 'h':
-	  case 'H':
-	    base = 0x10;
-	    break;
-	  case 'o':
-	  case 'O':
-	    base = 010;
-	    break;
-	  case 'b':
-	  case 'B':
-	    base = 2;
-	    break;
-	  default:
-	    if (valid)
-	      *valid = 0;
-	    else if (print_errors)
-	      printerr (pd, 1, "invalid literal starting with &%c\n", **p);
-	    return 0;
-	  }
-	++*p;
-	return not ^ (sign * rd_number (pd, p, NULL, base));
-      }
-    default:
-      {
-	int value;
-	exist = 1;
-	value = rd_label (pd, p, valid ? &exist : NULL, NULL, level, print_errors);
-	if (!exist)
-	  *valid = 0;
-	return not ^ (sign * value);
-      }
-    }
+	return 0;
 }
 
 static int
-rd_factor (PluginData *pd, const char **p, int *valid, int level, int *check, int print_errors)
-{
-  /* read a factor of an expression */
-  int result;
-  if (pd->verbose >= 6)
-    fprintf (stderr, "%5d (0x%04x): Starting to read factor (string=%s).\n",
-	     pd->stack[pd->sp].line, pd->addr, *p);
-  result = rd_value (pd, p, valid, level, check, print_errors);
-  *p = delspc (*p);
-  while (**p == '*' || **p == '/')
-    {
-      *check = 0;
-      if (**p == '*')
-	{
-	  (*p)++;
-	  result *= rd_value (pd, p, valid, level, check, print_errors);
+rd_label(PluginData *pd, const char **p, int *exists, struct label **previous, int level,
+	int print_errors) {
+	struct label *l = NULL;
+	int s;
+	if (exists) {
+		*exists = 0;
 	}
-      else if (**p == '/')
-	{
-	  (*p)++;
-      int value = rd_value (pd, p, valid, level, check, print_errors);
-      if (value == 0) {
-        printerr (pd, 1, "division by zero\n");
-        return -1;
-      }
-      result /= value;
+	if (previous) {
+		*previous = NULL;
 	}
-      *p = delspc (*p);
-    }
-  if (pd->verbose >= 7)
-    fprintf (stderr, "%5d (0x%04x): rd_factor returned %d (%04x).\n",
-	     pd->stack[pd->sp].line, pd->addr, result, result);
-  return result;
-}
-
-static int
-rd_term (PluginData *pd, const char **p, int *valid, int level, int *check, int print_errors)
-{
-  /* read a term of an expression */
-  int result;
-  if (pd->verbose >= 6)
-    fprintf (stderr, "%5d (0x%04x): Starting to read term (string=%s).\n",
-	     pd->stack[pd->sp].line, pd->addr, *p);
-  result = rd_factor (pd, p, valid, level, check, print_errors);
-  *p = delspc (*p);
-  while (**p == '+' || **p == '-')
-    {
-      *check = 0;
-      if (**p == '+')
-	{
-	  (*p)++;
-	  result += rd_factor (pd, p, valid, level, check, print_errors);
+	if (pd->verbose >= 6) {
+		fprintf (stderr, "%5d (0x%04x): Starting to read label (string=%s).\n",
+			pd->stack[pd->sp].line, pd->addr, *p);
 	}
-      else if (**p == '-')
-	{
-	  (*p)++;
-	  result -= rd_factor (pd, p, valid, level, check, print_errors);
+	for (s = level; s >= 0; s--) {
+		if (check_label (pd, pd->stack[s].labels, p, &l,
+			(**p == '.' && s == pd->sp)? previous: NULL, 0)) {
+			break;
+		}
 	}
-      *p = delspc (*p);
-    }
-  if (pd->verbose >= 7)
-    fprintf (stderr, "%5d (0x%04x): rd_term returned %d (%04x).\n",
-	     pd->stack[pd->sp].line, pd->addr, result, result);
-  return result;
-}
-
-static int
-rd_expr_shift (PluginData *pd, const char **p, int *valid, int level, int *check,
-	       int print_errors)
-{
-  int result;
-  if (pd->verbose >= 6)
-    fprintf (stderr, "%5d (0x%04x): Starting to read shift expression "
-	     "(string=%s).\n", pd->stack[pd->sp].line, pd->addr, *p);
-  result = rd_term (pd, p, valid, level, check, print_errors);
-  *p = delspc (*p);
-  while ((**p == '<' || **p == '>') && (*p)[1] == **p)
-    {
-      *check = 0;
-      if (**p == '<')
-	{
-	  (*p) += 2;
-	  result <<= rd_term (pd, p, valid, level, check, print_errors);
+	if (s < 0) {
+		/* not yet found */
+		const char *old_p = *p;
+		/* label does not exist, or is invalid.  This is an error if there
+		 * is no existence check.  */
+		if (!exists && print_errors) {
+			printerr (pd, 1, "using undefined label %.*s\n", *p - old_p, old_p);
+		}
+		/* Return a value to discriminate between non-existing and invalid */
+		if (pd->verbose >= 7) {
+			fprintf (stderr, "rd_label returns invalid value\n");
+		}
+		return (int) (bool)l;
 	}
-      else if (**p == '>')
-	{
-	  (*p) += 2;
-	  result >>= rd_term (pd, p, valid, level, check, print_errors);
+	if (exists) {
+		*exists = 1;
 	}
-      *p = delspc (*p);
-    }
-  if (pd->verbose >= 7)
-    fprintf (stderr, "%5d (0x%04x): rd_shift returned %d (%04x).\n",
-	     pd->stack[pd->sp].line, pd->addr, result, result);
-  return result;
-}
-
-static int
-rd_expr_unequal (PluginData *pd, const char **p, int *valid, int level, int *check,
-		 int print_errors)
-{
-  int result;
-  if (pd->verbose >= 6)
-    fprintf (stderr, "%5d (0x%04x): Starting to read "
-	     "unequality expression (string=%s).\n", pd->stack[pd->sp].line, pd->addr,
-	     *p);
-  result = rd_expr_shift (pd, p, valid, level, check, print_errors);
-  *p = delspc (*p);
-  if (**p == '<' && (*p)[1] == '=')
-    {
-      *check = 0;
-      (*p) += 2;
-      return result <= rd_expr_unequal (pd, p, valid, level, check, print_errors);
-    }
-  else if (**p == '>' && (*p)[1] == '=')
-    {
-      *check = 0;
-      (*p) += 2;
-      return result >= rd_expr_unequal (pd, p, valid, level, check, print_errors);
-    }
-  if (**p == '<' && (*p)[1] != '<')
-    {
-      *check = 0;
-      (*p)++;
-      return result < rd_expr_unequal (pd, p, valid, level, check, print_errors);
-    }
-  else if (**p == '>' && (*p)[1] != '>')
-    {
-      *check = 0;
-      (*p)++;
-      return result > rd_expr_unequal (pd, p, valid, level, check, print_errors);
-    }
-  if (pd->verbose >= 7)
-    fprintf (stderr, "%5d (0x%04x): rd_shift returned %d (%04x).\n",
-	     pd->stack[pd->sp].line, pd->addr, result, result);
-  return result;
-}
-
-static int
-rd_expr_equal (PluginData *pd, const char **p, int *valid, int level, int *check,
-	       int print_errors)
-{
-  int result;
-  if (pd->verbose >= 6)
-    fprintf (stderr, "%5d (0x%04x): Starting to read equality epression "
-	     "(string=%s).\n", pd->stack[pd->sp].line, pd->addr, *p);
-  result = rd_expr_unequal (pd, p, valid, level, check, print_errors);
-  *p = delspc (*p);
-  if (**p == '=')
-    {
-      *check = 0;
-      ++*p;
-      if (**p == '=')
-	++ * p;
-      return result == rd_expr_equal (pd, p, valid, level, check, print_errors);
-    }
-  else if (**p == '!' && (*p)[1] == '=')
-    {
-      *check = 0;
-      (*p) += 2;
-      return result != rd_expr_equal (pd, p, valid, level, check, print_errors);
-    }
-  if (pd->verbose >= 7)
-    fprintf (stderr, "%5d (0x%04x): rd_equal returned %d (%04x).\n",
-	     pd->stack[pd->sp].line, pd->addr, result, result);
-  return result;
-}
-
-static int
-rd_expr_and (PluginData *pd, const char **p, int *valid, int level, int *check,
-	     int print_errors)
-{
-  int result;
-  if (pd->verbose >= 6)
-    fprintf (stderr, "%5d (0x%04x): Starting to read and expression "
-	     "(string=%s).\n", pd->stack[pd->sp].line, pd->addr, *p);
-  result = rd_expr_equal (pd, p, valid, level, check, print_errors);
-  *p = delspc (*p);
-  if (**p == '&')
-    {
-      *check = 0;
-      (*p)++;
-      result &= rd_expr_and (pd, p, valid, level, check, print_errors);
-    }
-  if (pd->verbose >= 7)
-    fprintf (stderr, "%5d (0x%04x): rd_expr_and returned %d (%04x).\n",
-	     pd->stack[pd->sp].line, pd->addr, result, result);
-  return result;
-}
-
-static int
-rd_expr_xor (PluginData *pd, const char **p, int *valid, int level, int *check,
-	     int print_errors)
-{
-  int result;
-  if (pd->verbose >= 6)
-    fprintf (stderr, "%5d (0x%04x): Starting to read xor expression "
-	     "(string=%s).\n", pd->stack[pd->sp].line, pd->addr, *p);
-  result = rd_expr_and (pd, p, valid, level, check, print_errors);
-  if (pd->verbose >= 7)
-    fprintf (stderr, "%5d (0x%04x): rd_expr_xor: rd_expr_and returned %d "
-	     "(%04x).\n", pd->stack[pd->sp].line, pd->addr, result, result);
-  *p = delspc (*p);
-  if (**p == '^')
-    {
-      *check = 0;
-      (*p)++;
-      result ^= rd_expr_xor (pd, p, valid, level, check, print_errors);
-    }
-  if (pd->verbose >= 7)
-    fprintf (stderr, "%5d (0x%04x): rd_expr_xor returned %d (%04x).\n",
-	     pd->stack[pd->sp].line, pd->addr, result, result);
-  return result;
-}
-
-static int
-rd_expr_or (PluginData *pd, const char **p, int *valid, int level, int *check,
-	    int print_errors)
-{
-  int result;
-  if (pd->verbose >= 6)
-    fprintf (stderr, "%5d (0x%04x): Starting to read or expression "
-	     "(string=%s).\n", pd->stack[pd->sp].line, pd->addr, *p);
-  result = rd_expr_xor (pd, p, valid, level, check, print_errors);
-  if (pd->verbose >= 7)
-    fprintf (stderr, "%5d (0x%04x): rd_expr_or: rd_expr_xor returned %d "
-	     "(%04x).\n", pd->stack[pd->sp].line, pd->addr, result, result);
-  *p = delspc (*p);
-  if (**p == '|')
-    {
-      *check = 0;
-      (*p)++;
-      result |= rd_expr_or (pd, p, valid, level, check, print_errors);
-    }
-  if (pd->verbose >= 7)
-    fprintf (stderr, "%5d (0x%04x): rd_expr_or returned %d (%04x).\n",
-	     pd->stack[pd->sp].line, pd->addr, result, result);
-  return result;
-}
-
-static int
-do_rd_expr (PluginData *pd, const char **p, char delimiter, int *valid, int level, int *check,
-	    int print_errors)
-{
-  /* read an expression. delimiter can _not_ be '?' */
-  int result = 0;
-  if (pd->verbose >= 6)
-    fprintf (stderr,
-	     "%5d (0x%04x): Starting to read expression "
-	     "(string=%s, delimiter=%c).\n", pd->stack[pd->sp].line, pd->addr, *p,
-	     delimiter ? delimiter : ' ');
-  *p = delspc (*p);
-  if (!**p || **p == delimiter)
-    {
-      if (valid)
-	*valid = 0;
-      else if (print_errors)
-	printerr (pd, 1, "expression expected (not %s)\n", *p);
-      return 0;
-    }
-  result = rd_expr_or (pd, p, valid, level, check, print_errors);
-  *p = delspc (*p);
-  if (**p == '?')
-    {
-      *check = 0;
-      (*p)++;
-      if (result)
-	{
-	  result = do_rd_expr (pd, p, ':', valid, level, check, print_errors);
-	  if (**p)
-	    (*p)++;
-	  do_rd_expr (pd, p, delimiter, valid, level, check, print_errors);
+	if (pd->verbose >= 7) {
+		fprintf (stderr, "rd_label returns valid value 0x%x\n", l->value);
 	}
-      else
-	{
-	  do_rd_expr (pd, p, ':', valid, level, check, print_errors);
-	  if (**p)
-	    (*p)++;
-	  result = do_rd_expr (pd, p, delimiter, valid, level, check,
-			       print_errors);
-	}
-    }
-  *p = delspc (*p);
-  if (**p && **p != delimiter)
-    {
-      if (valid)
-	*valid = 0;
-      else if (print_errors)
-	printerr (pd, 1, "junk at end of expression: %s\n", *p);
-    }
-  if (pd->verbose >= 7)
-    {
-      fprintf (stderr, "%5d (0x%04x): rd_expr returned %d (%04x).\n",
-	       pd->stack[pd->sp].line, pd->addr, result, result);
-      if (valid && !*valid)
-	fprintf (stderr, "%5d (0x%04x): Returning invalid result.\n",
-		 pd->stack[pd->sp].line, pd->addr);
-    }
-  return result;
+	return l->value;
 }
 
 static int
-rd_expr (PluginData *pd, const char **p, char delimiter, int *valid, int level,
-	 int print_errors)
-{
-  int check = 1;
-  int result;
-  if (valid)
-    *valid = 1;
-  result = do_rd_expr (pd, p, delimiter, valid, level, &check, print_errors);
-  if (print_errors && (!valid || *valid) && check)
-    printerr (pd, 0, "expression fully enclosed in parenthesis\n");
-  return result;
+rd_value(PluginData *pd, const char **p, int *valid, int level, int *check, int print_errors) {
+	int sign = 1, not= 0, base, v;
+	const char *p0, *p1, *p2;
+	if (pd->verbose >= 6) {
+		fprintf (stderr, "%5d (0x%04x): Starting to read value (string=%s).\n",
+			pd->stack[pd->sp].line, pd->addr, *p);
+	}
+	*p = delspc (*p);
+	while (**p && strchr ("+-~", **p)) {
+		if (**p == '-') {
+			sign = -sign;
+		} else if (**p == '~') {
+			not= ~not;
+		}
+		(*p)++;
+		*p = delspc (*p);
+	}
+	base = 10; /* Default base for suffixless numbers */
+
+	/* Check for parenthesis around full expression: not if no parenthesis */
+	if (**p != '(') {
+		*check = 0;
+	}
+
+	switch (**p) {
+		int exist, retval;
+		char quote;
+		int dummy_check;
+	case '(':
+		(*p)++;
+		dummy_check = 0;
+		retval = not ^ (sign *do_rd_expr (pd, p, ')', valid, level, &dummy_check,
+			print_errors));
+		++*p;
+		return retval;
+	case '0':
+		if ((*p)[1] == 'x') {
+			(*p) += 2;
+			return not ^ (sign *rd_number (pd, p, NULL, 0x10));
+		}
+		base = 8; /* If first digit it 0, assume octal unless suffix */
+		/* fall through */
+	case '1':
+	case '2':
+	case '3':
+	case '4':
+	case '5':
+	case '6':
+	case '7':
+	case '8':
+	case '9':
+		p0 = *p;
+		rd_number (pd, p, &p1, 36); /* Advance to end of numeric string */
+		p1--; /* Last character in numeric string */
+		switch (*p1) {
+		case 'h':
+		case 'H':
+			base = 16;
+			break;
+		case 'b':
+		case 'B':
+			base = 2;
+			break;
+		case 'o':
+		case 'O':
+		case 'q':
+		case 'Q':
+			base = 8;
+			break;
+		case 'd':
+		case 'D':
+			base = 10;
+			break;
+		default: /* No suffix */
+			p1++;
+			break;
+		}
+		v = rd_number (pd, &p0, &p2, base);
+		if (p1 != p2) {
+			if (valid) {
+				*valid = 0;
+			} else if (print_errors) {
+				printerr (pd, 1, "invalid character in number: \'%c\'\n", *p2);
+			}
+		}
+		return not ^ (sign *v);
+	case '$':
+		++*p;
+		*p = delspc (*p);
+		p0 = *p;
+		v = rd_number (pd, &p0, &p2, 0x10);
+		if (p2 == *p) {
+			v = pd->baseaddr;
+		} else {
+			*p = p2;
+		}
+		return not ^ (sign *v);
+	case '%':
+		(*p)++;
+		return not ^ (sign *rd_number (pd, p, NULL, 2));
+	case '\'':
+	case '"':
+		quote = **p;
+		++*p;
+		retval = not ^ (sign *rd_character (pd, p, valid, print_errors));
+		if (**p != quote) {
+			if (valid) {
+				*valid = 0;
+			} else if (print_errors) {
+				printerr (pd, 1, "missing closing quote (%c)\n", quote);
+			}
+			return 0;
+		}
+		++*p;
+		return retval;
+	case '@':
+		return not ^ (sign *rd_otherbasenumber (pd, p, valid, print_errors));
+	case '?':
+		rd_label (pd, p, &exist, NULL, level, 0);
+		return not ^ (sign *exist);
+	case '&':
+		{
+			++*p;
+			switch (**p) {
+		case 'h':
+		case 'H':
+				base = 0x10;
+				break;
+		case 'o':
+		case 'O':
+				base = 010;
+				break;
+		case 'b':
+		case 'B':
+				base = 2;
+				break;
+			default:
+				if (valid) {
+					*valid = 0;
+				} else if (print_errors) {
+					printerr (pd, 1, "invalid literal starting with &%c\n", **p);
+				}
+				return 0;
+			}
+			++*p;
+			return not ^ (sign *rd_number (pd, p, NULL, base));
+		}
+	default:
+		{
+			int value;
+			exist = 1;
+			value = rd_label (pd, p, valid? &exist: NULL, NULL, level, print_errors);
+			if (!exist) {
+				*valid = 0;
+			}
+			return not ^ (sign *value);
+		}
+	}
 }
 
+static int
+rd_factor(PluginData *pd, const char **p, int *valid, int level, int *check, int print_errors) {
+	/* read a factor of an expression */
+	int result;
+	if (pd->verbose >= 6) {
+		fprintf (stderr, "%5d (0x%04x): Starting to read factor (string=%s).\n",
+			pd->stack[pd->sp].line, pd->addr, *p);
+	}
+	result = rd_value (pd, p, valid, level, check, print_errors);
+	*p = delspc (*p);
+	while (**p == '*' || **p == '/') {
+		*check = 0;
+		if (**p == '*') {
+			(*p)++;
+			result *= rd_value (pd, p, valid, level, check, print_errors);
+		} else if (**p == '/') {
+			(*p)++;
+			int value = rd_value (pd, p, valid, level, check, print_errors);
+			if (value == 0) {
+				printerr (pd, 1, "division by zero\n");
+				return -1;
+			}
+			result /= value;
+		}
+		*p = delspc (*p);
+	}
+	if (pd->verbose >= 7) {
+		fprintf (stderr, "%5d (0x%04x): rd_factor returned %d (%04x).\n",
+			pd->stack[pd->sp].line, pd->addr, result, result);
+	}
+	return result;
+}
+
+static int
+rd_term(PluginData *pd, const char **p, int *valid, int level, int *check, int print_errors) {
+	/* read a term of an expression */
+	int result;
+	if (pd->verbose >= 6) {
+		fprintf (stderr, "%5d (0x%04x): Starting to read term (string=%s).\n",
+			pd->stack[pd->sp].line, pd->addr, *p);
+	}
+	result = rd_factor (pd, p, valid, level, check, print_errors);
+	*p = delspc (*p);
+	while (**p == '+' || **p == '-') {
+		*check = 0;
+		if (**p == '+') {
+			(*p)++;
+			result += rd_factor (pd, p, valid, level, check, print_errors);
+		} else if (**p == '-') {
+			(*p)++;
+			result -= rd_factor (pd, p, valid, level, check, print_errors);
+		}
+		*p = delspc (*p);
+	}
+	if (pd->verbose >= 7) {
+		fprintf (stderr, "%5d (0x%04x): rd_term returned %d (%04x).\n",
+			pd->stack[pd->sp].line, pd->addr, result, result);
+	}
+	return result;
+}
+
+static int
+rd_expr_shift(PluginData *pd, const char **p, int *valid, int level, int *check,
+	int print_errors) {
+	int result;
+	if (pd->verbose >= 6) {
+		fprintf (stderr, "%5d (0x%04x): Starting to read shift expression "
+				"(string=%s).\n",
+			pd->stack[pd->sp].line, pd->addr, *p);
+	}
+	result = rd_term (pd, p, valid, level, check, print_errors);
+	*p = delspc (*p);
+	while ((**p == '<' || **p == '>') && (*p)[1] == **p) {
+		*check = 0;
+		if (**p == '<') {
+			(*p) += 2;
+			result <<= rd_term (pd, p, valid, level, check, print_errors);
+		} else if (**p == '>') {
+			(*p) += 2;
+			result >>= rd_term (pd, p, valid, level, check, print_errors);
+		}
+		*p = delspc (*p);
+	}
+	if (pd->verbose >= 7) {
+		fprintf (stderr, "%5d (0x%04x): rd_shift returned %d (%04x).\n",
+			pd->stack[pd->sp].line, pd->addr, result, result);
+	}
+	return result;
+}
+
+static int
+rd_expr_unequal(PluginData *pd, const char **p, int *valid, int level, int *check,
+	int print_errors) {
+	int result;
+	if (pd->verbose >= 6) {
+		fprintf (stderr, "%5d (0x%04x): Starting to read "
+				"unequality expression (string=%s).\n",
+			pd->stack[pd->sp].line, pd->addr,
+			*p);
+	}
+	result = rd_expr_shift (pd, p, valid, level, check, print_errors);
+	*p = delspc (*p);
+	if (**p == '<' && (*p)[1] == '=') {
+		*check = 0;
+		(*p) += 2;
+		return result <= rd_expr_unequal (pd, p, valid, level, check, print_errors);
+	} else if (**p == '>' && (*p)[1] == '=') {
+		*check = 0;
+		(*p) += 2;
+		return result >= rd_expr_unequal (pd, p, valid, level, check, print_errors);
+	}
+	if (**p == '<' && (*p)[1] != '<') {
+		*check = 0;
+		(*p)++;
+		return result < rd_expr_unequal (pd, p, valid, level, check, print_errors);
+	} else if (**p == '>' && (*p)[1] != '>') {
+		*check = 0;
+		(*p)++;
+		return result > rd_expr_unequal (pd, p, valid, level, check, print_errors);
+	}
+	if (pd->verbose >= 7) {
+		fprintf (stderr, "%5d (0x%04x): rd_shift returned %d (%04x).\n",
+			pd->stack[pd->sp].line, pd->addr, result, result);
+	}
+	return result;
+}
+
+static int
+rd_expr_equal(PluginData *pd, const char **p, int *valid, int level, int *check,
+	int print_errors) {
+	int result;
+	if (pd->verbose >= 6) {
+		fprintf (stderr, "%5d (0x%04x): Starting to read equality epression "
+				"(string=%s).\n",
+			pd->stack[pd->sp].line, pd->addr, *p);
+	}
+	result = rd_expr_unequal (pd, p, valid, level, check, print_errors);
+	*p = delspc (*p);
+	if (**p == '=') {
+		*check = 0;
+		++*p;
+		if (**p == '=') {
+			++*p;
+		}
+		return result == rd_expr_equal (pd, p, valid, level, check, print_errors);
+	} else if (**p == '!' && (*p)[1] == '=') {
+		*check = 0;
+		(*p) += 2;
+		return result != rd_expr_equal (pd, p, valid, level, check, print_errors);
+	}
+	if (pd->verbose >= 7) {
+		fprintf (stderr, "%5d (0x%04x): rd_equal returned %d (%04x).\n",
+			pd->stack[pd->sp].line, pd->addr, result, result);
+	}
+	return result;
+}
+
+static int
+rd_expr_and(PluginData *pd, const char **p, int *valid, int level, int *check,
+	int print_errors) {
+	int result;
+	if (pd->verbose >= 6) {
+		fprintf (stderr, "%5d (0x%04x): Starting to read and expression "
+				"(string=%s).\n",
+			pd->stack[pd->sp].line, pd->addr, *p);
+	}
+	result = rd_expr_equal (pd, p, valid, level, check, print_errors);
+	*p = delspc (*p);
+	if (**p == '&') {
+		*check = 0;
+		(*p)++;
+		result &= rd_expr_and (pd, p, valid, level, check, print_errors);
+	}
+	if (pd->verbose >= 7) {
+		fprintf (stderr, "%5d (0x%04x): rd_expr_and returned %d (%04x).\n",
+			pd->stack[pd->sp].line, pd->addr, result, result);
+	}
+	return result;
+}
+
+static int
+rd_expr_xor(PluginData *pd, const char **p, int *valid, int level, int *check,
+	int print_errors) {
+	int result;
+	if (pd->verbose >= 6) {
+		fprintf (stderr, "%5d (0x%04x): Starting to read xor expression "
+				"(string=%s).\n",
+			pd->stack[pd->sp].line, pd->addr, *p);
+	}
+	result = rd_expr_and (pd, p, valid, level, check, print_errors);
+	if (pd->verbose >= 7) {
+		fprintf (stderr, "%5d (0x%04x): rd_expr_xor: rd_expr_and returned %d "
+				"(%04x).\n",
+			pd->stack[pd->sp].line, pd->addr, result, result);
+	}
+	*p = delspc (*p);
+	if (**p == '^') {
+		*check = 0;
+		(*p)++;
+		result ^= rd_expr_xor (pd, p, valid, level, check, print_errors);
+	}
+	if (pd->verbose >= 7) {
+		fprintf (stderr, "%5d (0x%04x): rd_expr_xor returned %d (%04x).\n",
+			pd->stack[pd->sp].line, pd->addr, result, result);
+	}
+	return result;
+}
+
+static int
+rd_expr_or(PluginData *pd, const char **p, int *valid, int level, int *check,
+	int print_errors) {
+	int result;
+	if (pd->verbose >= 6) {
+		fprintf (stderr, "%5d (0x%04x): Starting to read or expression "
+				"(string=%s).\n",
+			pd->stack[pd->sp].line, pd->addr, *p);
+	}
+	result = rd_expr_xor (pd, p, valid, level, check, print_errors);
+	if (pd->verbose >= 7) {
+		fprintf (stderr, "%5d (0x%04x): rd_expr_or: rd_expr_xor returned %d "
+				"(%04x).\n",
+			pd->stack[pd->sp].line, pd->addr, result, result);
+	}
+	*p = delspc (*p);
+	if (**p == '|') {
+		*check = 0;
+		(*p)++;
+		result |= rd_expr_or (pd, p, valid, level, check, print_errors);
+	}
+	if (pd->verbose >= 7) {
+		fprintf (stderr, "%5d (0x%04x): rd_expr_or returned %d (%04x).\n",
+			pd->stack[pd->sp].line, pd->addr, result, result);
+	}
+	return result;
+}
+
+static int
+do_rd_expr(PluginData *pd, const char **p, char delimiter, int *valid, int level, int *check,
+	int print_errors) {
+	/* read an expression. delimiter can _not_ be '?' */
+	int result = 0;
+	if (pd->verbose >= 6) {
+		fprintf (stderr,
+			"%5d (0x%04x): Starting to read expression "
+			"(string=%s, delimiter=%c).\n",
+			pd->stack[pd->sp].line, pd->addr, *p,
+			delimiter? delimiter: ' ');
+	}
+	*p = delspc (*p);
+	if (!**p || **p == delimiter) {
+		if (valid) {
+			*valid = 0;
+		} else if (print_errors) {
+			printerr (pd, 1, "expression expected (not %s)\n", *p);
+		}
+		return 0;
+	}
+	result = rd_expr_or (pd, p, valid, level, check, print_errors);
+	*p = delspc (*p);
+	if (**p == '?') {
+		*check = 0;
+		(*p)++;
+		if (result) {
+			result = do_rd_expr (pd, p, ':', valid, level, check, print_errors);
+			if (**p) {
+				(*p)++;
+			}
+			do_rd_expr (pd, p, delimiter, valid, level, check, print_errors);
+		} else {
+			do_rd_expr (pd, p, ':', valid, level, check, print_errors);
+			if (**p) {
+				(*p)++;
+			}
+			result = do_rd_expr (pd, p, delimiter, valid, level, check,
+				print_errors);
+		}
+	}
+	*p = delspc (*p);
+	if (**p && **p != delimiter) {
+		if (valid) {
+			*valid = 0;
+		} else if (print_errors) {
+			printerr (pd, 1, "junk at end of expression: %s\n", *p);
+		}
+	}
+	if (pd->verbose >= 7) {
+		fprintf (stderr, "%5d (0x%04x): rd_expr returned %d (%04x).\n",
+			pd->stack[pd->sp].line, pd->addr, result, result);
+		if (valid && !*valid) {
+			fprintf (stderr, "%5d (0x%04x): Returning invalid result.\n",
+				pd->stack[pd->sp].line, pd->addr);
+		}
+	}
+	return result;
+}
+
+static int
+rd_expr(PluginData *pd, const char **p, char delimiter, int *valid, int level,
+	int print_errors) {
+	int check = 1;
+	int result;
+	if (valid) {
+		*valid = 1;
+	}
+	result = do_rd_expr (pd, p, delimiter, valid, level, &check, print_errors);
+	if (print_errors && (!valid || *valid) && check) {
+		printerr (pd, 0, "expression fully enclosed in parenthesis\n");
+	}
+	return result;
+}
 
 /* print an error message, including current line and file */
 static void printerr(PluginData *pd, int error, const char *fmt, ...) {
@@ -893,8 +919,7 @@ static int indx(PluginData *pd, const char **ptr, const char **list, int error, 
 					pd->mem_delimiter = check[1];
 					rd_expr (pd, &input, pd->mem_delimiter, NULL, pd->sp, 0);
 				}
-			} else if (*check == *input || (*check >= 'a' && *check <= 'z'
-							&& *check - 'a' + 'A' == *input)) {
+			} else if (*check == *input || (*check >= 'a' && *check <= 'z' && *check - 'a' + 'A' == *input)) {
 				++input;
 			} else {
 				break;
@@ -902,7 +927,7 @@ static int indx(PluginData *pd, const char **ptr, const char **list, int error, 
 
 			++check;
 		}
-		if (*check || (isalnum ((const unsigned char) check[-1]) && isalnum ((const unsigned char) input[0]))) {
+		if (*check || (isalnum ((const unsigned char)check[-1]) && isalnum ((const unsigned char)input[0]))) {
 			continue;
 		}
 		if (had_expr) {
@@ -1073,27 +1098,27 @@ static int rd_a_hl(PluginData *pd, const char **p) {
 
 /* read first argument of ld */
 static int rd_ld(PluginData *pd, const char **p) {
-#define ldBC    1
-#define ldDE    2
-#define ldHL    3
-#define ldSP    4
-#define ldIX    5
-#define ldIY    6
-#define ldB     7
-#define ldC     8
-#define ldD     9
-#define ldE     10
-#define ldH     11
-#define ldL     12
-#define ld_HL   13
-#define ldA     14
-#define ldI     15
-#define ldR     16
-#define ld_BC   17
-#define ld_DE   18
-#define ld_IX   19
-#define ld_IY   20
-#define ld_NN   21
+#define ldBC 1
+#define ldDE 2
+#define ldHL 3
+#define ldSP 4
+#define ldIX 5
+#define ldIY 6
+#define ldB 7
+#define ldC 8
+#define ldD 9
+#define ldE 10
+#define ldH 11
+#define ldL 12
+#define ld_HL 13
+#define ldA 14
+#define ldI 15
+#define ldR 16
+#define ld_BC 17
+#define ld_DE 18
+#define ld_IX 19
+#define ld_IY 20
+#define ld_NN 21
 	int i;
 	const char *list[] = {
 		"ixh", "ixl", "iyh", "iyl", "bc", "de", "hl", "sp", "ix",
@@ -1143,7 +1168,7 @@ static int rd_jp(PluginData *pd, const char **p) {
 	if (i == 11) {
 		return -1;
 	}
-	pd->indexed = 0xDD + 0x20 * (i - 9);
+	pd->indexed = 0xDD + 0x20 *(i - 9);
 	return -1;
 }
 
@@ -1173,15 +1198,15 @@ static int rd_stack(PluginData *pd, const char **p) {
 	if (i < 5) {
 		return i;
 	}
-	pd->indexed = 0xDD + 0x20 * (i - 5);
+	pd->indexed = 0xDD + 0x20 *(i - 5);
 	return 3;
 }
 
-/* read b,c,d,e,h,l,(hl),a,(ix+nn),(iy+nn),nn
- * but now with extra hl or i[xy](15) for add-instruction
+/* read b,c,d,e,h,l, (hl),a, (ix+nn), (iy+nn),nn
+ * but now with extra hl or i[xy] (15) for add-instruction
  * and set variables accordingly */
 static int rd_r_add(PluginData *pd, const char **p) {
-#define addHL   15
+#define addHL 15
 	int i;
 	const char *list[] = {
 		"ixl", "ixh", "iyl", "iyh", "b", "c", "d", "e", "h", "l",
@@ -1189,26 +1214,26 @@ static int rd_r_add(PluginData *pd, const char **p) {
 	};
 	const char *nn;
 	i = indx (pd, p, list, 0, &nn);
-	if (i == 18) {	/* expression */
+	if (i == 18) { /* expression */
 		pd->readbyte = nn;
 		pd->writebyte = 1;
 		return 7;
 	}
-	if (i > 14) {	/* hl, ix, iy */
+	if (i > 14) { /* hl, ix, iy */
 		if (i > 15) {
-			pd->indexed = 0xDD + 0x20 * (i - 16);
+			pd->indexed = 0xDD + 0x20 *(i - 16);
 		}
 		return addHL;
 	}
-	if (i <= 4) {	/* i[xy][hl]  */
-		pd->indexed = 0xdd + 0x20 * (i > 2);
+	if (i <= 4) { /* i[xy][hl]  */
+		pd->indexed = 0xdd + 0x20 *(i > 2);
 		return 6 - (i & 1);
 	}
 	i -= 4;
 	if (i < 9) {
 		return i;
 	}
-	pd->indexed = 0xDD + 0x20 * (i - 9);	/* (i[xy] +) */
+	pd->indexed = 0xDD + 0x20 *(i - 9); /*(i[xy] +) */
 	pd->indexjmp = nn;
 	return 7;
 }
@@ -1241,7 +1266,7 @@ static int rd_rrxx(PluginData *pd, const char **p) {
 	return indx (pd, p, list, 1, NULL);
 }
 
-/* read b,c,d,e,h,l,(hl),a,(ix+nn),(iy+nn),nn
+/* read b,c,d,e,h,l, (hl),a, (ix+nn), (iy+nn),nn
  * and set variables accordingly */
 static int rd_r(PluginData *pd, const char **p) {
 	int i;
@@ -1251,25 +1276,25 @@ static int rd_r(PluginData *pd, const char **p) {
 		"a", "( ix +)", "( iy +)", "*", NULL
 	};
 	i = indx (pd, p, list, 0, &nn);
-	if (i == 15) {	/* expression */
+	if (i == 15) { /* expression */
 		pd->readbyte = nn;
 		pd->writebyte = 1;
 		return 7;
 	}
 	if (i <= 4) {
-		pd->indexed = 0xdd + 0x20 * (i > 2);
+		pd->indexed = 0xdd + 0x20 *(i > 2);
 		return 6 - (i & 1);
 	}
 	i -= 4;
 	if (i < 9) {
 		return i;
 	}
-	pd->indexed = 0xDD + 0x20 * (i - 9);
+	pd->indexed = 0xDD + 0x20 *(i - 9);
 	pd->indexjmp = nn;
 	return 7;
 }
 
-/* like rd_r(), but without nn */
+/* like rd_r (), but without nn */
 static int rd_r_(PluginData *pd, const char **p) {
 	int i;
 	const char *list[] = {
@@ -1279,7 +1304,7 @@ static int rd_r_(PluginData *pd, const char **p) {
 	if (i < 9) {
 		return i;
 	}
-	pd->indexed = 0xDD + 0x20 * (i - 9);
+	pd->indexed = 0xDD + 0x20 *(i - 9);
 	return 7;
 }
 
@@ -1295,7 +1320,7 @@ static int rd_0_7(PluginData *pd, const char **p) {
 	}
 	pd->bitsetres = *p;
 	skipword (pd, p, ',');
-	return bit_num + 1;	/* return 1-8 to indicate bit 0-7 */
+	return bit_num + 1; /* return 1-8 to indicate bit 0-7 */
 }
 
 /* read long condition. do not error if not found. */
@@ -1346,7 +1371,7 @@ static int rd_hlx(PluginData *pd, const char **p) {
 	if (i < 2) {
 		return i;
 	}
-	pd->indexed = 0xDD + 0x20 * (i - 2);
+	pd->indexed = 0xDD + 0x20 *(i - 2);
 	return 1;
 }
 
@@ -1358,7 +1383,7 @@ static int rd_af_(PluginData *pd, const char **p) {
 	return indx (pd, p, list, 1, NULL);
 }
 
-/* read 0(1), 1(3), or 2(4) */
+/* read 0 (1), 1 (3), or 2 (4) */
 static int rd_0_2(PluginData *pd, const char **p) {
 	const char *list[] = {
 		"0", "", "1", "2", NULL
@@ -1392,7 +1417,7 @@ static int rd_ld_nn(PluginData *pd, const char **p) {
 	if (i < 7) {
 		return i;
 	}
-	pd->indexed = 0xdd + 0x20 * (i == 8);
+	pd->indexed = 0xdd + 0x20 *(i == 8);
 	return ld_nnHL;
 }
 
@@ -1451,7 +1476,7 @@ static int rd_ldbcdehla(PluginData *pd, const char **p) {
 	}
 	if (i > 10) {
 		int x;
-		x = 0xdd + 0x20 * (i > 12);
+		x = 0xdd + 0x20 *(i > 12);
 		if (pd->indexed && pd->indexed != x) {
 			R_LOG_ERROR ("illegal use of index registers");
 			return 0;
@@ -1464,7 +1489,7 @@ static int rd_ldbcdehla(PluginData *pd, const char **p) {
 			R_LOG_ERROR ("illegal use of index registers");
 			return 0;
 		}
-		pd->indexed = 0xDD + 0x20 * (i == 10);
+		pd->indexed = 0xDD + 0x20 *(i == 10);
 		pd->indexjmp = nn;
 		return 7;
 	}
@@ -1495,7 +1520,7 @@ static int rd_sp(PluginData *pd, const char **p) {
 		return i == 4? 2: 0;
 	}
 	if (i != 1) {
-		pd->indexed = 0xDD + 0x20 * (i - 2);
+		pd->indexed = 0xDD + 0x20 *(i - 2);
 	}
 	return 1;
 }
@@ -1504,7 +1529,7 @@ static int rd_sp(PluginData *pd, const char **p) {
 static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 	const char *ptr;
 	char *bufptr;
-	int r, s;			/* registers */
+	int r, s; /* registers */
 
 	pd->obuflen = 0;
 	pd->obuf = _obuf;
@@ -1550,807 +1575,777 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 	cmd = readcommand (pd, &ptr) - 1;
 	int i, have_quote;
 	switch (cmd) {
-		case Z80_ADC:
-			if (!(r = rd_a_hl (pd, &ptr))) {
+	case Z80_ADC:
+		if (! (r = rd_a_hl (pd, &ptr))) {
+			break;
+		}
+		if (r == HL) {
+			if (! (r = rd_rr_(pd, &ptr))) {
 				break;
 			}
-			if (r == HL) {
-				if (!(r = rd_rr_(pd, &ptr))) {
-					break;
-				}
-				wrtb (0xED);
-				r--;
-				wrtb (0x4A + 0x10 * r);
-				break;
-			}
-			if (!(r = rd_r (pd, &ptr))) {
+			wrtb (0xED);
+			r--;
+			wrtb (0x4A + 0x10 * r);
+			break;
+		}
+		if (! (r = rd_r (pd, &ptr))) {
+			break;
+		}
+		r--;
+		wrtb (0x88 + r);
+		break;
+	case Z80_ADD:
+		if (! (r = rd_r_add (pd, &ptr))) {
+			break;
+		}
+		if (r == addHL) {
+			if (! (r = rd_rrxx (pd, &ptr))) {
 				break;
 			}
 			r--;
-			wrtb (0x88 + r);
+			wrtb (0x09 + 0x10 * r); /* ADD HL/IX/IY, qq  */
 			break;
-		case Z80_ADD:
-			if (!(r = rd_r_add (pd, &ptr))) {
+		}
+		if (has_argument (&ptr)) {
+			if (r != A) {
+				R_LOG_ERROR ("parse error before: %s", ptr);
 				break;
 			}
-			if (r == addHL) {
-				if (!(r = rd_rrxx (pd, &ptr))) {
-					break;
-				}
-				r--;
-				wrtb (0x09 + 0x10 * r);		/* ADD HL/IX/IY, qq  */
-				break;
-			}
-			if (has_argument (&ptr)) {
-				if (r != A) {
-					R_LOG_ERROR ("parse error before: %s", ptr);
-					break;
-				}
-				if (!(r = rd_r (pd, &ptr))) {
-					break;
-				}
-				r--;
-				wrtb (0x80 + r);		/* ADD A,r  */
+			if (! (r = rd_r (pd, &ptr))) {
 				break;
 			}
 			r--;
-			wrtb (0x80 + r);		/* ADD r  */
+			wrtb (0x80 + r); /* ADD A,r  */
 			break;
-		case Z80_AND:
-			if (!(r = rd_r (pd, &ptr))) {
-				break;
-			}
+		}
+		r--;
+		wrtb (0x80 + r); /* ADD r  */
+		break;
+	case Z80_AND:
+		if (! (r = rd_r (pd, &ptr))) {
+			break;
+		}
+		r--;
+		wrtb (0xA0 + r);
+		break;
+	case Z80_BIT:
+		if (! (r = rd_0_7 (pd, &ptr))) {
+			break;
+		}
+		int bit_num = r - 1; /* rd_0_7 returns 1-8, convert to 0-7 */
+		rd_comma (&ptr);
+		if (! (r = rd_r_(pd, &ptr))) {
+			break;
+		}
+		/* handle indexed addressing with displacement */
+		if (r == 7 && pd->indexed) {
+			emit_indexed_bitop (pd, Z80_BIT_BASE, bit_num);
+		} else {
+			wrtb (Z80_INDEXED_PREFIX_CB);
+			wrtb (Z80_BIT_BASE + (bit_num << 3) + (r - 1));
+		}
+		break;
+	case Z80_CALL:
+		if ((r = rd_cc (pd, &ptr))) {
 			r--;
-			wrtb (0xA0 + r);
-			break;
-		case Z80_BIT:
-			if (!(r = rd_0_7 (pd, &ptr))) {
-				break;
-			}
-			int bit_num = r - 1;	/* rd_0_7 returns 1-8, convert to 0-7 */
+			wrtb (0xC4 + 8 * r);
 			rd_comma (&ptr);
-			if (!(r = rd_r_(pd, &ptr))) {
+		} else {
+			wrtb (0xCD);
+		}
+		break;
+	case Z80_CCF:
+		wrtb (0x3F);
+		break;
+	case Z80_CP:
+		if (! (r = rd_r (pd, &ptr))) {
+			break;
+		}
+		r--;
+		wrtb (0xB8 + r);
+		break;
+	case Z80_CPD:
+		wrtb (0xED);
+		wrtb (0xA9);
+		break;
+	case Z80_CPDR:
+		wrtb (0xED);
+		wrtb (0xB9);
+		break;
+	case Z80_CPI:
+		wrtb (0xED);
+		wrtb (0xA1);
+		break;
+	case Z80_CPIR:
+		wrtb (0xED);
+		wrtb (0xB1);
+		break;
+	case Z80_CPL:
+		wrtb (0x2F);
+		break;
+	case Z80_DAA:
+		wrtb (0x27);
+		break;
+	case Z80_DEC:
+		if (! (r = rd_r_rr (pd, &ptr))) {
+			break;
+		}
+		if (r < 0) {
+			r--;
+			wrtb (0x05 - 8 * r);
+			break;
+		}
+		r--;
+		wrtb (0x0B + 0x10 * r);
+		break;
+	case Z80_DI:
+		wrtb (0xF3);
+		break;
+	case Z80_DJNZ:
+		wrtb (0x10);
+		// rd_wrt_jr (&ptr, '\0');
+		break;
+	case Z80_EI:
+		wrtb (0xFB);
+		break;
+	case Z80_EX:
+		if (! (r = rd_ex1 (pd, &ptr))) {
+			break;
+		}
+		switch (r) {
+		case DE:
+			if (!rd_hl (pd, &ptr)) {
 				break;
 			}
-			/* handle indexed addressing with displacement */
+			wrtb (0xEB);
+			break;
+		case AF:
+			if (!rd_af_(pd, &ptr)) {
+				break;
+			}
+			wrtb (0x08);
+			break;
+		default:
+			if (!rd_hlx (pd, &ptr)) {
+				break;
+			}
+			wrtb (0xE3);
+		}
+		break;
+	case Z80_EXX:
+		wrtb (0xD9);
+		break;
+	case Z80_HALT:
+		wrtb (0x76);
+		break;
+	case Z80_IM:
+		if (! (r = rd_0_2 (pd, &ptr))) {
+			break;
+		}
+		wrtb (0xED);
+		r--;
+		wrtb (0x46 + 8 * r);
+		break;
+	case Z80_IN:
+		if (! (r = rd_in (pd, &ptr))) {
+			break;
+		}
+		if (r == A) {
+			if (! (r = rd_nnc (pd, &ptr))) {
+				break;
+			}
+			if (r == C) {
+				wrtb (0xED);
+				wrtb (0x40 + 8 *(A - 1));
+				break;
+			}
+			wrtb (0xDB);
+			break;
+		}
+		if (!rd_c (pd, &ptr)) {
+			break;
+		}
+		wrtb (0xED);
+		r--;
+		wrtb (0x40 + 8 * r);
+		break;
+	case Z80_INC:
+		if (! (r = rd_r_rr (pd, &ptr))) {
+			break;
+		}
+		if (r < 0) {
+			r++;
+			wrtb (0x04 - 8 * r);
+			break;
+		}
+		r--;
+		wrtb (0x03 + 0x10 * r);
+		break;
+	case Z80_IND:
+		wrtb (0xED);
+		wrtb (0xAA);
+		break;
+	case Z80_INDR:
+		wrtb (0xED);
+		wrtb (0xBA);
+		break;
+	case Z80_INI:
+		wrtb (0xED);
+		wrtb (0xA2);
+		break;
+	case Z80_INIR:
+		wrtb (0xED);
+		wrtb (0xB2);
+		break;
+	case Z80_JP:
+		r = rd_jp (pd, &ptr);
+		if (r < 0) {
+			wrtb (0xE9);
+			break;
+		}
+		if (r) {
+			r--;
+			wrtb (0xC2 + 8 * r);
+			rd_comma (&ptr);
+		} else {
+			wrtb (0xC3);
+		}
+		break;
+	case Z80_JR:
+		r = rd_jr (pd, &ptr);
+		if (r) {
+			rd_comma (&ptr);
+		}
+		wrtb (0x18 + 8 * r);
+		break;
+	case Z80_LD:
+		if (! (r = rd_ld (pd, &ptr))) {
+			break;
+		}
+		switch (r) {
+		case ld_BC:
+		case ld_DE:
+			if (!rd_a (pd, &ptr)) {
+				break;
+			}
+			wrtb (0x02 + 0x10 *(r == ld_DE? 1: 0));
+			break;
+		case ld_HL:
+			r = rd_ld_hl (pd, &ptr) - 1;
+			wrtb (0x70 + r);
+			break;
+		case ld_NN:
+			if (! (r = rd_ld_nn (pd, &ptr))) {
+				break;
+			}
+			if (r == ld_nnA || r == ld_nnHL) {
+				wrtb (0x22 + 0x10 *(r == ld_nnA? 1: 0));
+				break;
+			}
+			wrtb (0xED);
+			wrtb (0x43 + 0x10 * --r);
+			break;
+		case ldA:
+			if (! (r = rd_lda (pd, &ptr))) {
+				break;
+			}
+			if (r == A_NN) {
+				wrtb (0x3A);
+				break;
+			}
+			if (r == A_I || r == A_R) {
+				wrtb (0xED);
+				wrtb (0x57 + 8 *(r == A_R? 1: 0));
+				break;
+			}
+			if (r == A_N) {
+				char n = r_num_math (NULL, pd->readbyte);
+				wrtb (0x3E);
+				wrtb (n);
+				break;
+			}
 			if (r == 7 && pd->indexed) {
+				/* indexed addressing: ld a, [ix+n] or ld a, [iy+n] */
 				char n = r_num_math (NULL, pd->indexjmp);
 				wrtb (pd->indexed);
-				wrtb (0xCB);
+				wrtb (0x7E);
 				wrtb (n);
-				wrtb (0x40 + (bit_num << 3) + 6);	/* 6 is [hl] encoding for bit/res/set */
 				pd->indexed = 0;
-			} else {
-				wrtb (0xCB);
-				wrtb (0x40 + (bit_num << 3) + (r - 1));
-			}
-			break;
-		case Z80_CALL:
-			if ((r = rd_cc (pd, &ptr))) {
-				r--;
-				wrtb (0xC4 + 8 * r);
-				rd_comma (&ptr);
-			} else {
-				wrtb (0xCD);
-			}
-			break;
-		case Z80_CCF:
-			wrtb (0x3F);
-			break;
-		case Z80_CP:
-			if (!(r = rd_r (pd, &ptr))) {
-				break;
-			}
-			r--;
-			wrtb (0xB8 + r);
-			break;
-		case Z80_CPD:
-			wrtb (0xED);
-			wrtb (0xA9);
-			break;
-		case Z80_CPDR:
-			wrtb (0xED);
-			wrtb (0xB9);
-			break;
-		case Z80_CPI:
-			wrtb (0xED);
-			wrtb (0xA1);
-			break;
-		case Z80_CPIR:
-			wrtb (0xED);
-			wrtb (0xB1);
-			break;
-		case Z80_CPL:
-			wrtb (0x2F);
-			break;
-		case Z80_DAA:
-			wrtb (0x27);
-			break;
-		case Z80_DEC:
-			if (!(r = rd_r_rr (pd, &ptr))) {
-				break;
-			}
-			if (r < 0) {
-				r--;
-				wrtb (0x05 - 8 * r);
-				break;
-			}
-			r--;
-			wrtb (0x0B + 0x10 * r);
-			break;
-		case Z80_DI:
-			wrtb (0xF3);
-			break;
-		case Z80_DJNZ:
-			wrtb (0x10);
-			// rd_wrt_jr (&ptr, '\0');
-			break;
-		case Z80_EI:
-			wrtb (0xFB);
-			break;
-		case Z80_EX:
-			if (!(r = rd_ex1 (pd, &ptr))) {
-				break;
-			}
-			switch (r) {
-				case DE:
-					if (!rd_hl (pd, &ptr)) {
-						break;
-					}
-					wrtb (0xEB);
-					break;
-				case AF:
-					if (!rd_af_(pd, &ptr)) {
-						break;
-					}
-					wrtb (0x08);
-					break;
-				default:
-					if (!rd_hlx (pd, &ptr)) {
-						break;
-					}
-					wrtb (0xE3);
-			}
-			break;
-		case Z80_EXX:
-			wrtb (0xD9);
-			break;
-		case Z80_HALT:
-			wrtb (0x76);
-			break;
-		case Z80_IM:
-			if (!(r = rd_0_2 (pd, &ptr))) {
-				break;
-			}
-			wrtb (0xED);
-			r--;
-			wrtb (0x46 + 8 * r);
-			break;
-		case Z80_IN:
-			if (!(r = rd_in (pd, &ptr))) {
-				break;
-			}
-			if (r == A) {
-				if (!(r = rd_nnc (pd, &ptr))) {
-					break;
-				}
-				if (r == C) {
-					wrtb (0xED);
-					wrtb (0x40 + 8 * (A - 1));
-					break;
-				}
-				wrtb (0xDB);
-				break;
-			}
-			if (!rd_c (pd, &ptr)) {
-				break;
-			}
-			wrtb (0xED);
-			r--;
-			wrtb (0x40 + 8 * r);
-			break;
-		case Z80_INC:
-			if (!(r = rd_r_rr (pd, &ptr))) {
 				break;
 			}
 			if (r < 0) {
 				r++;
-				wrtb (0x04 - 8 * r);
+				wrtb (0x0A - 0x10 * r);
 				break;
 			}
-			r--;
-			wrtb (0x03 + 0x10 * r);
+			wrtb (0x78 + --r);
 			break;
-		case Z80_IND:
-			wrtb (0xED);
-			wrtb (0xAA);
-			break;
-		case Z80_INDR:
-			wrtb (0xED);
-			wrtb (0xBA);
-			break;
-		case Z80_INI:
-			wrtb (0xED);
-			wrtb (0xA2);
-			break;
-		case Z80_INIR:
-			wrtb (0xED);
-			wrtb (0xB2);
-			break;
-		case Z80_JP:
-			r = rd_jp (pd, &ptr);
-			if (r < 0) {
-				wrtb (0xE9);
+		case ldB:
+		case ldC:
+		case ldD:
+		case ldE:
+		case ldH:
+		case ldL:
+			if (! (s = rd_ldbcdehla (pd, &ptr))) {
 				break;
 			}
-			if (r) {
-				r--;
-				wrtb (0xC2 + 8 * r);
-				rd_comma (&ptr);
+			if (s == 7) {
+				char n = r_num_math (NULL, pd->readbyte);
+				wrtb (0x08 *(r - 7) + 0x6);
+				wrtb (n);
 			} else {
-				wrtb (0xC3);
+				wrtb (0x40 + 0x08 *(r - 7) + (s - 1));
 			}
 			break;
-		case Z80_JR:
-			r = rd_jr (pd, &ptr);
-			if (r) {
-				rd_comma (&ptr);
-			}
-			wrtb (0x18 + 8 * r);
-			break;
-		case Z80_LD:
-			if (!(r = rd_ld (pd, &ptr))) {
-				break;
-			}
-			switch (r) {
-				case ld_BC:
-				case ld_DE:
-					if (!rd_a (pd, &ptr)) {
-						break;
-					}
-					wrtb (0x02 + 0x10 * (r == ld_DE ? 1 : 0));
-					break;
-				case ld_HL:
-					r = rd_ld_hl (pd, &ptr) - 1;
-					wrtb (0x70 + r);
-					break;
-				case ld_NN:
-					if (!(r = rd_ld_nn (pd, &ptr))) {
-						break;
-					}
-					if (r == ld_nnA || r == ld_nnHL) {
-						wrtb (0x22 + 0x10 * (r == ld_nnA ? 1 : 0));
-						break;
-					}
-					wrtb (0xED);
-					wrtb (0x43 + 0x10 * --r);
-					break;
-				case ldA:
-					if (!(r = rd_lda (pd, &ptr))) {
-						break;
-					}
-					if (r == A_NN) {
-						wrtb (0x3A);
-						break;
-					}
-					if (r == A_I || r == A_R) {
-						wrtb (0xED);
-						wrtb (0x57 + 8 * (r == A_R ? 1 : 0));
-						break;
-					}
-					if (r == A_N) {
-						char n = r_num_math (NULL, pd->readbyte);
-						wrtb (0x3E);
-						wrtb (n);
-						break;
-					}
-					if (r == 7 && pd->indexed) {
-						/* indexed addressing: ld a, [ix+n] or ld a, [iy+n] */
-						char n = r_num_math (NULL, pd->indexjmp);
-						wrtb (pd->indexed);
-						wrtb (0x7E);
-						wrtb (n);
-						pd->indexed = 0;
-						break;
-					}
-					if (r < 0) {
-						r++;
-						wrtb (0x0A - 0x10 * r);
-						break;
-					}
-					wrtb (0x78 + --r);
-					break;
-				case ldB:
-				case ldC:
-				case ldD:
-				case ldE:
-				case ldH:
-				case ldL:
-					if (!(s = rd_ldbcdehla (pd, &ptr))) {
-						break;
-					}
-					if (s == 7) {
-						char n = r_num_math (NULL, pd->readbyte);
-						wrtb (0x08 * (r - 7) + 0x6);
-						wrtb (n);
-					} else {
-						wrtb (0x40 + 0x08 * (r -7) + (s - 1));
-					}
-					break;
-				case ldBC:
-				case ldDE:
-					s = rd_nn_nn (pd, &ptr);
-					if (s == _NN) {
-						wrtb (0xED);
-						wrtb (0x4B + 0x10 * (r == ldDE ? 1 : 0));
-						break;
-					}
-					wrtb (0x01 + (r == ldDE ? 1 : 0) * 0x10);
-					break;
-				case ldHL:
-					r = rd_nn_nn (pd, &ptr);
-					wrtb (0x21 + (r == _NN ? 1 : 0) * 9);
-					break;
-				case ldI:
-				case ldR:
-					if (!rd_a (pd, &ptr)) {
-						break;
-					}
-					wrtb (0xED);
-					wrtb (0x47 + 0x08 * (r == ldR ? 1 : 0));
-					break;
-				case ldSP:
-					r = rd_sp (pd, &ptr);
-					if (r == SPHL) {
-						wrtb (0xF9);
-						break;
-					}
-					if (r == SPNN) {
-						wrtb (0x31);
-						break;
-					}
-					wrtb (0xED);
-					wrtb (0x7B);
-					break;
-			}
-			break;
-		case Z80_LDD:
-			wrtb (0xED);
-			wrtb (0xA8);
-			break;
-		case Z80_LDDR:
-			wrtb (0xED);
-			wrtb (0xB8);
-			break;
-		case Z80_LDI:
-			wrtb (0xED);
-			wrtb (0xA0);
-			break;
-		case Z80_LDIR:
-			wrtb (0xED);
-			wrtb (0xB0);
-			break;
-		case Z80_NEG:
-			wrtb (0xED);
-			wrtb (0x44);
-			break;
-		case Z80_NOP:
-			wrtb (0x00);
-			break;
-		case Z80_OR:
-			if (!(r = rd_r (pd, &ptr))) {
-				break;
-			}
-			r--;
-			wrtb (0xB0 + r);
-			break;
-		case Z80_OTDR:
-			wrtb (0xED);
-			wrtb (0xBB);
-			break;
-		case Z80_OTIR:
-			wrtb (0xED);
-			wrtb (0xB3);
-			break;
-		case Z80_OUT:
-			if (!(r = rd_nnc (pd, &ptr))) {
-				break;
-			}
-			if (r == C) {
-				if (!(r = rd_out (pd, &ptr))) {
-					break;
-				}
+		case ldBC:
+		case ldDE:
+			s = rd_nn_nn (pd, &ptr);
+			if (s == _NN) {
 				wrtb (0xED);
-				r--;
-				wrtb (0x41 + 8 * r);
+				wrtb (0x4B + 0x10 *(r == ldDE? 1: 0));
 				break;
 			}
+			wrtb (0x01 + (r == ldDE? 1: 0) * 0x10);
+			break;
+		case ldHL:
+			r = rd_nn_nn (pd, &ptr);
+			wrtb (0x21 + (r == _NN? 1: 0) * 9);
+			break;
+		case ldI:
+		case ldR:
 			if (!rd_a (pd, &ptr)) {
 				break;
 			}
-			wrtb (0xD3);
-			break;
-		case Z80_OUTD:
 			wrtb (0xED);
-			wrtb (0xAB);
+			wrtb (0x47 + 0x08 *(r == ldR? 1: 0));
 			break;
-		case Z80_OUTI:
+		case ldSP:
+			r = rd_sp (pd, &ptr);
+			if (r == SPHL) {
+				wrtb (0xF9);
+				break;
+			}
+			if (r == SPNN) {
+				wrtb (0x31);
+				break;
+			}
 			wrtb (0xED);
-			wrtb (0xA3);
+			wrtb (0x7B);
 			break;
-		case Z80_POP:
-			if (!(r = rd_stack (pd, &ptr))) {
+		}
+		break;
+	case Z80_LDD:
+		wrtb (0xED);
+		wrtb (0xA8);
+		break;
+	case Z80_LDDR:
+		wrtb (0xED);
+		wrtb (0xB8);
+		break;
+	case Z80_LDI:
+		wrtb (0xED);
+		wrtb (0xA0);
+		break;
+	case Z80_LDIR:
+		wrtb (0xED);
+		wrtb (0xB0);
+		break;
+	case Z80_NEG:
+		wrtb (0xED);
+		wrtb (0x44);
+		break;
+	case Z80_NOP:
+		wrtb (0x00);
+		break;
+	case Z80_OR:
+		if (! (r = rd_r (pd, &ptr))) {
+			break;
+		}
+		r--;
+		wrtb (0xB0 + r);
+		break;
+	case Z80_OTDR:
+		wrtb (0xED);
+		wrtb (0xBB);
+		break;
+	case Z80_OTIR:
+		wrtb (0xED);
+		wrtb (0xB3);
+		break;
+	case Z80_OUT:
+		if (! (r = rd_nnc (pd, &ptr))) {
+			break;
+		}
+		if (r == C) {
+			if (! (r = rd_out (pd, &ptr))) {
 				break;
 			}
-			r--;
-			wrtb (0xC1 + 0x10 * r);
-			break;
-		case Z80_PUSH:
-			if (!(r = rd_stack (pd, &ptr))) {
-				break;
-			}
-			r--;
-			wrtb (0xC5 + 0x10 * r);
-			break;
-		case Z80_RES:
-			if (!(r = rd_0_7 (pd, &ptr))) {
-				break;
-			}
-			int bit_num_res = r - 1;	/* rd_0_7 returns 1-8, convert to 0-7 */
-			rd_comma (&ptr);
-			if (!(r = rd_r_(pd, &ptr))) {
-				break;
-			}
-			/* handle indexed addressing with displacement */
-			if (r == 7 && pd->indexed) {
-				char n = r_num_math (NULL, pd->indexjmp);
-				wrtb (pd->indexed);
-				wrtb (0xCB);
-				wrtb (n);
-				wrtb (0x80 + (bit_num_res << 3) + 6);	/* 6 is [hl] encoding for bit/res/set */
-				pd->indexed = 0;
-			} else {
-				wrtb (0xCB);
-				wrtb (0x80 + (bit_num_res << 3) + (r - 1));
-			}
-			break;
-		case Z80_RET:
-			if (!(r = rd_cc (pd, &ptr))) {
-				wrtb (0xC9);
-				break;
-			}
-			r--;
-			wrtb (0xC0 + 8 * r);
-			break;
-		case Z80_RETI:
 			wrtb (0xED);
-			wrtb (0x4D);
-			break;
-		case Z80_RETN:
-			wrtb (0xED);
-			wrtb (0x45);
-			break;
-		case Z80_RL:
-			if (!(r = rd_r_(pd, &ptr))) {
-				break;
-			}
-			if (r == 7 && pd->indexed) {
-				char n = r_num_math (NULL, pd->indexjmp);
-				wrtb (pd->indexed);
-				wrtb (0xCB);
-				wrtb (n);
-				wrtb (0x16);	/* rl [hl] */
-				pd->indexed = 0;
-			} else {
-				wrtb (0xCB);
-				r--;
-				wrtb (0x10 + r);
-			}
-			break;
-		case Z80_RLA:
-			wrtb (0x17);
-			break;
-		case Z80_RLC:
-			if (!(r = rd_r_(pd, &ptr))) {
-				break;
-			}
-			if (r == 7 && pd->indexed) {
-				char n = r_num_math (NULL, pd->indexjmp);
-				wrtb (pd->indexed);
-				wrtb (0xCB);
-				wrtb (n);
-				wrtb (0x06);	/* rlc [hl] */
-				pd->indexed = 0;
-			} else {
-				wrtb (0xCB);
-				r--;
-				wrtb (0x00 + r);
-			}
-			break;
-		case Z80_RLCA:
-			wrtb (0x07);
-			break;
-		case Z80_RLD:
-			wrtb (0xED);
-			wrtb (0x6F);
-			break;
-		case Z80_RR:
-			if (!(r = rd_r_(pd, &ptr))) {
-				break;
-			}
-			if (r == 7 && pd->indexed) {
-				char n = r_num_math (NULL, pd->indexjmp);
-				wrtb (pd->indexed);
-				wrtb (0xCB);
-				wrtb (n);
-				wrtb (0x1E);	/* rr [hl] */
-				pd->indexed = 0;
-			} else {
-				wrtb (0xCB);
-				r--;
-				wrtb (0x18 + r);
-			}
-			break;
-		case Z80_RRA:
-			wrtb (0x1F);
-			break;
-		case Z80_RRC:
-			if (!(r = rd_r_(pd, &ptr))) {
-				break;
-			}
-			if (r == 7 && pd->indexed) {
-				char n = r_num_math (NULL, pd->indexjmp);
-				wrtb (pd->indexed);
-				wrtb (0xCB);
-				wrtb (n);
-				wrtb (0x0E);	/* rrc [hl] */
-				pd->indexed = 0;
-			} else {
-				wrtb (0xCB);
-				r--;
-				wrtb (0x08 + r);
-			}
-			break;
-		case Z80_RRCA:
-			wrtb (0x0F);
-			break;
-		case Z80_RRD:
-			wrtb (0xED);
-			wrtb (0x67);
-			break;
-		case Z80_RST:
-			ptr = "";
-			break;
-		case Z80_SBC:
-			if (!(r = rd_a_hl (pd, &ptr))) {
-				break;
-			}
-			if (r == HL) {
-				if (!(r = rd_rr_(pd, &ptr))) {
-					break;
-				}
-				wrtb (0xED);
-				r--;
-				wrtb (0x42 + 0x10 * r);
-				break;
-			}
-			if (!(r = rd_r (pd, &ptr))) {
-				break;
-			}
 			r--;
-			wrtb (0x98 + r);
+			wrtb (0x41 + 8 * r);
 			break;
-		case Z80_SCF:
-			wrtb (0x37);
+		}
+		if (!rd_a (pd, &ptr)) {
 			break;
-		case Z80_SET:
-			if (!(r = rd_0_7 (pd, &ptr))) {
-				break;
-			}
-			int bit_num_set = r - 1;	/* rd_0_7 returns 1-8, convert to 0-7 */
-			rd_comma (&ptr);
-			if (!(r = rd_r_(pd, &ptr))) {
-				break;
-			}
-			/* handle indexed addressing with displacement */
-			if (r == 7 && pd->indexed) {
-				char n = r_num_math (NULL, pd->indexjmp);
-				wrtb (pd->indexed);
-				wrtb (0xCB);
-				wrtb (n);
-				wrtb (0xC0 + (bit_num_set << 3) + 6);	/* 6 is [hl] encoding for bit/res/set */
-				pd->indexed = 0;
-			} else {
-				wrtb (0xCB);
-				wrtb (0xC0 + (bit_num_set << 3) + (r - 1));
-			}
+		}
+		wrtb (0xD3);
+		break;
+	case Z80_OUTD:
+		wrtb (0xED);
+		wrtb (0xAB);
+		break;
+	case Z80_OUTI:
+		wrtb (0xED);
+		wrtb (0xA3);
+		break;
+	case Z80_POP:
+		if (! (r = rd_stack (pd, &ptr))) {
 			break;
-		case Z80_SLA:
-			if (!(r = rd_r_(pd, &ptr))) {
-				break;
-			}
-			if (r == 7 && pd->indexed) {
-				char n = r_num_math (NULL, pd->indexjmp);
-				wrtb (pd->indexed);
-				wrtb (0xCB);
-				wrtb (n);
-				wrtb (0x26);	/* sla [hl] */
-				pd->indexed = 0;
-			} else {
-				wrtb (0xCB);
-				r--;
-				wrtb (0x20 + r);
-			}
+		}
+		r--;
+		wrtb (0xC1 + 0x10 * r);
+		break;
+	case Z80_PUSH:
+		if (! (r = rd_stack (pd, &ptr))) {
 			break;
-		case Z80_SLI:
-			if (!(r = rd_r_(pd, &ptr))) {
-				break;
-			}
-			if (r == 7 && pd->indexed) {
-				char n = r_num_math (NULL, pd->indexjmp);
-				wrtb (pd->indexed);
-				wrtb (0xCB);
-				wrtb (n);
-				wrtb (0x36);	/* sll [hl] */
-				pd->indexed = 0;
-			} else {
-				wrtb (0xCB);
-				r--;
-				wrtb (0x30 + r);
-			}
+		}
+		r--;
+		wrtb (0xC5 + 0x10 * r);
+		break;
+	case Z80_RES:
+		if (! (r = rd_0_7 (pd, &ptr))) {
 			break;
-		case Z80_SRA:
-			if (!(r = rd_r_(pd, &ptr))) {
-				break;
-			}
-			if (r == 7 && pd->indexed) {
-				char n = r_num_math (NULL, pd->indexjmp);
-				wrtb (pd->indexed);
-				wrtb (0xCB);
-				wrtb (n);
-				wrtb (0x2E);	/* sra [hl] */
-				pd->indexed = 0;
-			} else {
-				wrtb (0xCB);
-				r--;
-				wrtb (0x28 + r);
-			}
+		}
+		int bit_num_res = r - 1; /* rd_0_7 returns 1-8, convert to 0-7 */
+		rd_comma (&ptr);
+		if (! (r = rd_r_(pd, &ptr))) {
 			break;
-		case Z80_SRL:
-			if (!(r = rd_r_(pd, &ptr))) {
-				break;
-			}
-			if (r == 7 && pd->indexed) {
-				char n = r_num_math (NULL, pd->indexjmp);
-				wrtb (pd->indexed);
-				wrtb (0xCB);
-				wrtb (n);
-				wrtb (0x3E);	/* srl [hl] */
-				pd->indexed = 0;
-			} else {
-				wrtb (0xCB);
-				r--;
-				wrtb (0x38 + r);
-			}
+		}
+		/* handle indexed addressing with displacement */
+		if (r == 7 && pd->indexed) {
+			emit_indexed_bitop (pd, Z80_RES_BASE, bit_num_res);
+		} else {
+			wrtb (Z80_INDEXED_PREFIX_CB);
+			wrtb (Z80_RES_BASE + (bit_num_res << 3) + (r - 1));
+		}
+		break;
+	case Z80_RET:
+		if (! (r = rd_cc (pd, &ptr))) {
+			wrtb (0xC9);
 			break;
-		case Z80_SUB:
-			if (!(r = rd_r (pd, &ptr))) {
-				break;
-			}
-			if (has_argument (&ptr)) {		/* SUB A,r ?  */
-				if (r != A) {
-					R_LOG_ERROR ("parse error before: %s", ptr);
-					break;
-				}
-				if (!(r = rd_r (pd, &ptr))) {
-					break;
-				}
-			}
+		}
+		r--;
+		wrtb (0xC0 + 8 * r);
+		break;
+	case Z80_RETI:
+		wrtb (0xED);
+		wrtb (0x4D);
+		break;
+	case Z80_RETN:
+		wrtb (0xED);
+		wrtb (0x45);
+		break;
+	case Z80_RL:
+		if (! (r = rd_r_(pd, &ptr))) {
+			break;
+		}
+		if (r == 7 && pd->indexed) {
+			emit_indexed_shift (pd, Z80_RL_HL);
+		} else {
+			wrtb (Z80_INDEXED_PREFIX_CB);
 			r--;
-			wrtb (0x90 + r);
+			wrtb (0x10 + r);
+		}
+		break;
+	case Z80_RLA:
+		wrtb (0x17);
+		break;
+	case Z80_RLC:
+		if (! (r = rd_r_(pd, &ptr))) {
 			break;
-		case Z80_XOR:
-			if (!(r = rd_r (pd, &ptr))) {
+		}
+		if (r == 7 && pd->indexed) {
+			char n = r_num_math (NULL, pd->indexjmp);
+			wrtb (pd->indexed);
+			wrtb (0xCB);
+			wrtb (n);
+			wrtb (0x06); /* rlc [hl] */
+			pd->indexed = 0;
+		} else {
+			wrtb (0xCB);
+			r--;
+			wrtb (0x00 + r);
+		}
+		break;
+	case Z80_RLCA:
+		wrtb (0x07);
+		break;
+	case Z80_RLD:
+		wrtb (0xED);
+		wrtb (0x6F);
+		break;
+	case Z80_RR:
+		if (! (r = rd_r_(pd, &ptr))) {
+			break;
+		}
+		if (r == 7 && pd->indexed) {
+			char n = r_num_math (NULL, pd->indexjmp);
+			wrtb (pd->indexed);
+			wrtb (0xCB);
+			wrtb (n);
+			wrtb (0x1E); /* rr [hl] */
+			pd->indexed = 0;
+		} else {
+			wrtb (0xCB);
+			r--;
+			wrtb (0x18 + r);
+		}
+		break;
+	case Z80_RRA:
+		wrtb (0x1F);
+		break;
+	case Z80_RRC:
+		if (! (r = rd_r_(pd, &ptr))) {
+			break;
+		}
+		if (r == 7 && pd->indexed) {
+			char n = r_num_math (NULL, pd->indexjmp);
+			wrtb (pd->indexed);
+			wrtb (0xCB);
+			wrtb (n);
+			wrtb (0x0E); /* rrc [hl] */
+			pd->indexed = 0;
+		} else {
+			wrtb (0xCB);
+			r--;
+			wrtb (0x08 + r);
+		}
+		break;
+	case Z80_RRCA:
+		wrtb (0x0F);
+		break;
+	case Z80_RRD:
+		wrtb (0xED);
+		wrtb (0x67);
+		break;
+	case Z80_RST:
+		ptr = "";
+		break;
+	case Z80_SBC:
+		if (! (r = rd_a_hl (pd, &ptr))) {
+			break;
+		}
+		if (r == HL) {
+			if (! (r = rd_rr_(pd, &ptr))) {
 				break;
 			}
+			wrtb (0xED);
 			r--;
-			wrtb (0xA8 + r);
+			wrtb (0x42 + 0x10 * r);
 			break;
-		case Z80_DEFB:
-		case Z80_DB:
-		case Z80_DEFM:
-		case Z80_DM:
-			ptr = delspc (ptr);
-			while (1) {
-				have_quote = (*ptr == '"' || *ptr == '\'');
-				if (have_quote) {
-					/* Read string.  */
-					int quote = *ptr;
-					++ptr;
-					while (*ptr != quote) {
-						write_one_byte (rd_character (pd, &ptr, NULL, 1), 0);
-						if (*ptr == 0) {
-							R_LOG_ERROR ("end of line in quoted string");
-							break;
-						}
+		}
+		if (! (r = rd_r (pd, &ptr))) {
+			break;
+		}
+		r--;
+		wrtb (0x98 + r);
+		break;
+	case Z80_SCF:
+		wrtb (0x37);
+		break;
+	case Z80_SET:
+		if (! (r = rd_0_7 (pd, &ptr))) {
+			break;
+		}
+		int bit_num_set = r - 1; /* rd_0_7 returns 1-8, convert to 0-7 */
+		rd_comma (&ptr);
+		if (! (r = rd_r_(pd, &ptr))) {
+			break;
+		}
+		/* handle indexed addressing with displacement */
+		if (r == 7 && pd->indexed) {
+			emit_indexed_bitop (pd, Z80_SET_BASE, bit_num_set);
+		} else {
+			wrtb (Z80_INDEXED_PREFIX_CB);
+			wrtb (Z80_SET_BASE + (bit_num_set << 3) + (r - 1));
+		}
+		break;
+	case Z80_SLA:
+		if (! (r = rd_r_(pd, &ptr))) {
+			break;
+		}
+		if (r == 7 && pd->indexed) {
+			emit_indexed_shift (pd, Z80_SLA_HL);
+		} else {
+			wrtb (Z80_INDEXED_PREFIX_CB);
+			r--;
+			wrtb (0x20 + r);
+		}
+		break;
+	case Z80_SLI:
+		if (! (r = rd_r_(pd, &ptr))) {
+			break;
+		}
+		if (r == 7 && pd->indexed) {
+			emit_indexed_shift (pd, Z80_SLL_HL);
+		} else {
+			wrtb (Z80_INDEXED_PREFIX_CB);
+			r--;
+			wrtb (0x30 + r);
+		}
+		break;
+	case Z80_SRA:
+		if (! (r = rd_r_(pd, &ptr))) {
+			break;
+		}
+		if (r == 7 && pd->indexed) {
+			char n = r_num_math (NULL, pd->indexjmp);
+			wrtb (pd->indexed);
+			wrtb (0xCB);
+			wrtb (n);
+			wrtb (0x2E); /* sra [hl] */
+			pd->indexed = 0;
+		} else {
+			wrtb (0xCB);
+			r--;
+			wrtb (0x28 + r);
+		}
+		break;
+	case Z80_SRL:
+		if (! (r = rd_r_(pd, &ptr))) {
+			break;
+		}
+		if (r == 7 && pd->indexed) {
+			char n = r_num_math (NULL, pd->indexjmp);
+			wrtb (pd->indexed);
+			wrtb (0xCB);
+			wrtb (n);
+			wrtb (0x3E); /* srl [hl] */
+			pd->indexed = 0;
+		} else {
+			wrtb (0xCB);
+			r--;
+			wrtb (0x38 + r);
+		}
+		break;
+	case Z80_SUB:
+		if (! (r = rd_r (pd, &ptr))) {
+			break;
+		}
+		if (has_argument (&ptr)) { /* SUB A,r? */
+			if (r != A) {
+				R_LOG_ERROR ("parse error before: %s", ptr);
+				break;
+			}
+			if (! (r = rd_r (pd, &ptr))) {
+				break;
+			}
+		}
+		r--;
+		wrtb (0x90 + r);
+		break;
+	case Z80_XOR:
+		if (! (r = rd_r (pd, &ptr))) {
+			break;
+		}
+		r--;
+		wrtb (0xA8 + r);
+		break;
+	case Z80_DEFB:
+	case Z80_DB:
+	case Z80_DEFM:
+	case Z80_DM:
+		ptr = delspc (ptr);
+		while (1) {
+			have_quote = (*ptr == '"' || *ptr == '\'');
+			if (have_quote) {
+				/* Read string.  */
+				int quote = *ptr;
+				++ptr;
+				while (*ptr != quote) {
+					write_one_byte (rd_character (pd, &ptr, NULL, 1), 0);
+					if (*ptr == 0) {
+						R_LOG_ERROR ("end of line in quoted string");
+						break;
 					}
-					++ptr;
-				} else {
-					/* Read expression.  */
-					skipword (pd, &ptr, ',');
-				}
-				ptr = delspc (ptr);
-				if (*ptr == ',') {
-					++ptr;
-					continue;
-				}
-				if (*ptr != 0) {
-					R_LOG_ERROR ("junk in byte definition: %s", ptr);
-				}
-				break;
-			}
-			break;
-		case Z80_DEFW:
-		case Z80_DW:
-			if (!rd_word (pd, &ptr, ',')) {
-				R_LOG_ERROR ("No data for word definition");
-				break;
-			}
-			while (1) {
-				ptr = delspc (ptr);
-				if (*ptr != ',') {
-					break;
 				}
 				++ptr;
-				if (!rd_word (pd, &ptr, ',')) {
-					R_LOG_ERROR ("Missing expression in defw");
-				}
-			}
-			break;
-		case Z80_DEFS:
-		case Z80_DS:
-			r = rd_expr (pd, &ptr, ',', NULL, pd->sp, 1);
-			if (r < 0) {
-				R_LOG_ERROR ("ds should have its first argument >=0 (not -0x%x)", -r);
-				break;
+			} else {
+				/* Read expression.  */
+				skipword (pd, &ptr, ',');
 			}
 			ptr = delspc (ptr);
-			if (*ptr) {
-				rd_comma (&ptr);
-				pd->readbyte = 0;
-				rd_byte (pd, &ptr, '\0');
-				pd->writebyte = 0;
+			if (*ptr == ',') {
+				++ptr;
+				continue;
+			}
+			if (*ptr != 0) {
+				R_LOG_ERROR ("junk in byte definition: %s", ptr);
+			}
+			break;
+		}
+		break;
+	case Z80_DEFW:
+	case Z80_DW:
+		if (!rd_word (pd, &ptr, ',')) {
+			R_LOG_ERROR ("No data for word definition");
+			break;
+		}
+		while (1) {
+			ptr = delspc (ptr);
+			if (*ptr != ',') {
 				break;
 			}
-			for (i = 0; i < r; i++) {
-				write_one_byte (0, 0);
+			++ptr;
+			if (!rd_word (pd, &ptr, ',')) {
+				R_LOG_ERROR ("Missing expression in defw");
 			}
+		}
+		break;
+	case Z80_DEFS:
+	case Z80_DS:
+		r = rd_expr (pd, &ptr, ',', NULL, pd->sp, 1);
+		if (r < 0) {
+			R_LOG_ERROR ("ds should have its first argument >=0 (not -0x%x)", -r);
 			break;
-		case Z80_END:
+		}
+		ptr = delspc (ptr);
+		if (*ptr) {
+			rd_comma (&ptr);
+			pd->readbyte = 0;
+			rd_byte (pd, &ptr, '\0');
+			pd->writebyte = 0;
 			break;
-		case Z80_ORG:
-			pd->addr = rd_expr (pd, &ptr, '\0', NULL, pd->sp, 1) & 0xffff;
-			break;
-		case Z80_IF:
-			break;
-		case Z80_ELSE:
-			R_LOG_ERROR ("else without if");
-			break;
-		case Z80_ENDIF:
-			R_LOG_ERROR ("endif without if");
-			break;
-		case Z80_ENDM:
-			if (pd->stack[pd->sp].file) {
-				R_LOG_ERROR ("endm outside macro definition");
-			}
-			break;
-		case Z80_SEEK:
-			R_LOG_ERROR ("seek error");
-			break;
-		default:
-			R_LOG_DEBUG ("command or comment expected (was %s)", ptr);
-			free (pd->z80buffer);
-			return 0;
+		}
+		for (i = 0; i < r; i++) {
+			write_one_byte (0, 0);
+		}
+		break;
+	case Z80_END:
+		break;
+	case Z80_ORG:
+		pd->addr = rd_expr (pd, &ptr, '\0', NULL, pd->sp, 1) & 0xffff;
+		break;
+	case Z80_IF:
+		break;
+	case Z80_ELSE:
+		R_LOG_ERROR ("else without if");
+		break;
+	case Z80_ENDIF:
+		R_LOG_ERROR ("endif without if");
+		break;
+	case Z80_ENDM:
+		if (pd->stack[pd->sp].file) {
+			R_LOG_ERROR ("endm outside macro definition");
+		}
+		break;
+	case Z80_SEEK:
+		R_LOG_ERROR ("seek error");
+		break;
+	default:
+		R_LOG_DEBUG ("command or comment expected (was %s)", ptr);
+		free (pd->z80buffer);
+		return 0;
 	}
 
 	free (pd->z80buffer);
@@ -2416,10 +2411,10 @@ static int z80OpLength(const ut8 *buf, int len) {
 		}
 		if (op[buf[0]].type & Z80_ENC0) {
 			op = (const z80_opcode *)op[buf[0]].op_moar;
-			type = op[z80_fddd_branch_index_res(buf[1])].type;
+			type = op[z80_fddd_branch_index_res (buf[1])].type;
 		} else if (op[buf[0]].type & Z80_ENC1) {
 			op = (const z80_opcode *)op[buf[0]].op_moar;
-			type = op[z80_ed_branch_index_res(buf[1])].type;
+			type = op[z80_ed_branch_index_res (buf[1])].type;
 		}
 	} else {
 		type = op[buf[0]].type;
@@ -2427,7 +2422,7 @@ static int z80OpLength(const ut8 *buf, int len) {
 	if (type & Z80_OP8) {
 		ret++;
 	}
-	if ((type & Z80_ARG8) && !(type & Z80_ARG16)) { //XXX
+	if ((type & Z80_ARG8) && ! (type & Z80_ARG16)) { // XXX
 		ret++;
 	}
 	if (type & Z80_OP16) {
@@ -2446,7 +2441,7 @@ static int z80OpLength(const ut8 *buf, int len) {
 }
 
 static void z80_op_size(const ut8 *_data, int len, int *size, int *size_prefix) {
-	ut8 data[4] = {0};
+	ut8 data[4] = { 0 };
 	int type = 0;
 	if (len < 1) {
 		return;
@@ -2463,10 +2458,10 @@ static void z80_op_size(const ut8 *_data, int len, int *size, int *size_prefix) 
 		type = Z80_OP16;
 		break;
 	case 0xdd:
-		type = dd[z80_fddd_branch_index_res(data[1])].type;
+		type = dd[z80_fddd_branch_index_res (data[1])].type;
 		break;
 	case 0xfd:
-		type = fd[z80_fddd_branch_index_res(data[1])].type;
+		type = fd[z80_fddd_branch_index_res (data[1])].type;
 		break;
 	default:
 		type = z80_op[data[0]].type;
@@ -2503,14 +2498,14 @@ static char *z80dis(const ut8 *buf, int len) {
 	case Z80_OP8:
 		buf_asm = r_strf ("%s", z_op[buf[0]].name);
 		break;
-	case Z80_OP8^Z80_ARG8:
+	case Z80_OP8 ^ Z80_ARG8:
 		buf_asm = r_strf (z_op[buf[0]].name, buf[1]);
 		break;
-	case Z80_OP8^Z80_ARG16:
-		buf_asm = r_strf (z_op[buf[0]].name, buf[1]+(buf[2]<<8));
+	case Z80_OP8 ^ Z80_ARG16:
+		buf_asm = r_strf (z_op[buf[0]].name, buf[1] + (buf[2] << 8));
 		break;
 	case Z80_OP16:
-		cb_tab = (const char **) z_op[buf[0]].op_moar;
+		cb_tab = (const char **)z_op[buf[0]].op_moar;
 		buf_asm = r_strf ("%s", cb_tab[buf[1]]);
 		break;
 	case Z80_OP_UNK ^ Z80_ENC1:
@@ -2519,8 +2514,8 @@ static char *z80dis(const ut8 *buf, int len) {
 		if (z_op[res].type == Z80_OP16) {
 			buf_asm = r_strf ("%s", z_op[res].name);
 		}
-		if (z_op[res].type == (Z80_OP16^Z80_ARG16)) {
-			buf_asm = r_strf (z_op[res].name, buf[2]+(buf[3]<<8));
+		if (z_op[res].type == (Z80_OP16 ^ Z80_ARG16)) {
+			buf_asm = r_strf (z_op[res].name, buf[2] + (buf[3] << 8));
 		}
 		break;
 	case Z80_OP_UNK ^ Z80_ENC0:
@@ -2529,14 +2524,14 @@ static char *z80dis(const ut8 *buf, int len) {
 		if (z_op[res].type == Z80_OP16) {
 			buf_asm = r_strf ("%s", z_op[res].name);
 		}
-		if (z_op[res].type == (Z80_OP16^Z80_ARG16)) {
-			buf_asm = r_strf (z_op[res].name, buf[2]+(buf[3]<<8));
+		if (z_op[res].type == (Z80_OP16 ^ Z80_ARG16)) {
+			buf_asm = r_strf (z_op[res].name, buf[2] + (buf[3] << 8));
 		}
-		if (z_op[res].type == (Z80_OP16^Z80_ARG8)) {
+		if (z_op[res].type == (Z80_OP16 ^ Z80_ARG8)) {
 			buf_asm = r_strf (z_op[res].name, buf[2]);
 		}
 		if (z_op[res].type == (Z80_OP24 ^ Z80_ARG8)) {
-			cb_tab = (const char **) z_op[res].op_moar;
+			cb_tab = (const char **)z_op[res].op_moar;
 			buf_asm = r_strf (cb_tab[z80_op_24_branch_index_res (buf[3])], buf[2]);
 		}
 		if (z_op[res].type == (Z80_OP16 ^ Z80_ARG8 ^ Z80_ARG16)) {
@@ -2554,7 +2549,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const ut64 addr = op->addr;
 	const int len = op->size;
 	int ilen = 0;
-	ut8 data[4] = {0};
+	ut8 data[4] = { 0 };
 	if (op->size < 1) {
 		return false;
 	}
@@ -2651,7 +2646,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		op->stackptr = -2;
 		break;
 	case 0xed:
-		switch(data[1]) {
+		switch (data[1]) {
 		case 0x43:
 		case 0x53:
 		case 0x63:
@@ -2668,8 +2663,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			op->refptr = 2;
 			op->ptr = data[2] | data[3] << 8;
 			break;
-		case 0x45:	//retn
-		case 0x4d:	//reti
+		case 0x45: // retn
+		case 0x4d: // reti
 			op->type = R_ANAL_OP_TYPE_RET;
 			op->eob = true;
 			break;
@@ -2732,7 +2727,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 
 	case 0x10: // djnz
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = addr + (st8)data[1] + ilen ;
+		op->jump = addr + (st8)data[1] + ilen;
 		op->fail = addr + ilen;
 		break;
 	case 0x18: // jr xx
@@ -2745,7 +2740,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	case 0x30:
 	case 0x38:
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = addr + ((len>1)? (st8)data[1]:0) + ilen;
+		op->jump = addr + ((len > 1)? (st8)data[1]: 0) + ilen;
 		op->fail = addr + ilen;
 		break;
 	// conditional jumps
@@ -2769,38 +2764,38 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		op->type = R_ANAL_OP_TYPE_UJMP;
 		break;
 
-	case 0xc7:				//rst 0
+	case 0xc7: // rst 0
 		op->jump = 0x00;
 		op->type = R_ANAL_OP_TYPE_SWI;
 		break;
-	case 0xcf:				//rst 8
+	case 0xcf: // rst 8
 		op->jump = 0x08;
 		op->type = R_ANAL_OP_TYPE_SWI;
 		break;
-	case 0xd7:				//rst 16
+	case 0xd7: // rst 16
 		op->jump = 0x10;
 		op->type = R_ANAL_OP_TYPE_SWI;
 		break;
-	case 0xdf:				//rst 24
+	case 0xdf: // rst 24
 		op->jump = 0x18;
 		op->type = R_ANAL_OP_TYPE_SWI;
 		break;
-	case 0xe7:				//rst 32
+	case 0xe7: // rst 32
 		op->jump = 0x20;
 		op->type = R_ANAL_OP_TYPE_SWI;
 		break;
-	case 0xef:				//rst 40
+	case 0xef: // rst 40
 		op->jump = 0x28;
 		op->type = R_ANAL_OP_TYPE_SWI;
 		break;
-	case 0xf7:				//rst 48
+	case 0xf7: // rst 48
 		op->jump = 0x30;
 		op->type = R_ANAL_OP_TYPE_SWI;
 		break;
-	case 0xff:				//rst 56
+	case 0xff: // rst 56
 		op->jump = 0x38;
 		op->type = R_ANAL_OP_TYPE_SWI;
-		break;				// condret: i think that foo resets some regs, but i'm not sure
+		break; // condret: i think that foo resets some regs, but i'm not sure
 
 	// conditional call
 	case 0xc4: // nz
@@ -2813,7 +2808,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	case 0xec: // pe
 	case 0xfc: // m
 		op->type = R_ANAL_OP_TYPE_CCALL;
-		op->jump = (len>2)? data[1] | data[2] << 8: 0;
+		op->jump = (len > 2)? data[1] | data[2] << 8: 0;
 		op->fail = addr + ilen;
 		break;
 
@@ -2824,12 +2819,12 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		op->stackptr = 2;
 		op->jump = data[1] | data[2] << 8;
 		break;
-	case 0xcb:			//the same as for gameboy
+	case 0xcb: // the same as for gameboy
 		switch (data[1] / 8) {
 		case 0:
 		case 2:
 		case 4:
-		case 6:				//swap
+		case 6: // swap
 			op->type = R_ANAL_OP_TYPE_ROL;
 			break;
 		case 1:
@@ -2847,7 +2842,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case 14:
 		case 15:
 			op->type = R_ANAL_OP_TYPE_AND;
-			break;			//bit
+			break; // bit
 		case 16:
 		case 17:
 		case 18:
@@ -2857,7 +2852,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case 22:
 		case 23:
 			op->type = R_ANAL_OP_TYPE_XOR;
-			break;			//set
+			break; // set
 		case 24:
 		case 25:
 		case 26:
@@ -2867,7 +2862,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case 30:
 		case 31:
 			op->type = R_ANAL_OP_TYPE_MOV;
-			break;			//res
+			break; // res
 		}
 		break;
 	}
@@ -2935,7 +2930,7 @@ static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 	R_RETURN_VAL_IF_FAIL (s->data, false);
 
 	PluginData *pd = s->data;
-	ut8 data[32] = {0};
+	ut8 data[32] = { 0 };
 	const int len = z80asm (pd, data, op->mnemonic);
 	if (len > 0) {
 		r_anal_op_set_bytes (op, op->addr, data, len);
