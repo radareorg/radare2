@@ -153,19 +153,27 @@ libr2.${EXT_SO}: .libr2
 ifeq (${COMPILER},emscripten)
 	echo nothing to do here
 else
+ifeq (${COMPILER},wasi)
+	echo nothing to do here
+else
 	$(CC) -fvisibility=hidden $(MLFLAGS) ${LINK} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} $(LIBR_LDFLAGS) -o libr.${EXT_SO}  \
 		.libr2/*/*.o \
 		../shlr/gdb/lib/libgdbr.${EXT_AR} ../shlr/java/libr_java.${EXT_AR} \
 		../shlr/libr_shlr.${EXT_AR} $(E) ../libr/util/libr_util.${EXT_AR}
+endif
 endif
 
 libr.${EXT_SO}: libr.${EXT_AR}
 ifeq (${COMPILER},emscripten)
 	echo nothing to do here
 else
+ifeq (${COMPILER},wasi)
+	echo nothing to do here
+else
 	$(CC) -fvisibility=hidden $(MLFLAGS) ${LINK} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} $(LIBR_LDFLAGS) -o libr.${EXT_SO}  \
 		libr.${EXT_AR} ../shlr/gdb/lib/libgdbr.${EXT_AR} ../shlr/java/libr_java.${EXT_AR} \
 		../shlr/libr_shlr.${EXT_AR} $(E) ../libr/util/libr_util.${EXT_AR}
+endif
 endif
 
 else
