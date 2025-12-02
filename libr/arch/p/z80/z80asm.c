@@ -41,7 +41,7 @@ static inline void emit_indexed_bitop(PluginData *pd, int base_opcode, int bit_n
 
 /* Helper function to emit indexed shift operation */
 static inline void emit_indexed_shift(PluginData *pd, int hl_opcode) {
-	char n = r_num_math (NULL, pd->indexjmp);
+	const char n = r_num_math (NULL, pd->indexjmp);
 	wrtb (pd->indexed);
 	wrtb (Z80_INDEXED_PREFIX_CB);
 	wrtb (n);
@@ -58,7 +58,7 @@ static inline void emit_ed_opcode(PluginData *pd, int opcode) {
 /* Helper function to emit CB-prefixed shift/rotate operations with optional indexing */
 static inline void emit_cb_shift(PluginData *pd, int r, int indexed_opcode, int base_opcode) {
 	if (r == 7 && pd->indexed) {
-		char n = r_num_math (NULL, pd->indexjmp);
+		const char n = r_num_math (NULL, pd->indexjmp);
 		wrtb (pd->indexed);
 		wrtb (Z80_INDEXED_PREFIX_CB);
 		wrtb (n);
@@ -141,8 +141,7 @@ static const char *mnemonics[] = {
 static int do_rd_expr(PluginData *pd, const char **p, char delimiter, int *valid, int level,
 	int *check, bool print_errors);
 
-static int
-rd_number(PluginData *pd, const char **p, const char **endp, int base) {
+static int rd_number(PluginData *pd, const char **p, const char **endp, int base) {
 	int result = 0, i;
 	char num[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 	num[base] = '\0';
@@ -160,8 +159,7 @@ rd_number(PluginData *pd, const char **p, const char **endp, int base) {
 	return result;
 }
 
-static int
-rd_otherbasenumber(PluginData *pd, const char **p, int *valid, bool print_errors) {
+static int rd_otherbasenumber(PluginData *pd, const char **p, int *valid, bool print_errors) {
 	(*p)++;
 	if (!**p) {
 		return set_invalid (valid);
@@ -237,12 +235,12 @@ check_label(PluginData *pd, struct label *labels, const char **p, struct label *
 	const char *c;
 	for (c = *p; isalnum ((const unsigned char)*c) || *c == '_' || *c == '.'; c++) {
 	}
-	unsigned s2 = c - *p;
+	const unsigned s2 = c - *p;
 	struct label *l;
 	for (l = labels; l; l = l->next) {
-		unsigned s1 = strlen (l->name);
-		unsigned s = s1 < s2? s1: s2;
-		int cmp = strncmp (l->name, *p, s);
+		const unsigned s1 = strlen (l->name);
+		const unsigned s = s1 < s2? s1: s2;
+		const int cmp = strncmp (l->name, *p, s);
 		if (cmp > 0 || (cmp == 0 && s1 > s)) {
 			if (force_skip) {
 				*p = c;
@@ -302,7 +300,8 @@ static int rd_label(PluginData *pd, const char **p, bool *exists, struct label *
 }
 
 static inline int rd_suffixed_number(PluginData *pd, const char **p, int base, int *valid, bool print_errors) {
-	const char *p0 = *p, *p1, *p2;
+	const char *p0 = *p, *p2;
+	const char *p1;
 	int v;
 	rd_number (pd, p, &p1, 36); /* Advance to end of numeric string */
 	p1--; /* Last character in numeric string */
@@ -362,8 +361,9 @@ static inline int rd_ampersand_number(PluginData *pd, const char **p, int *valid
 }
 
 static int rd_value(PluginData *pd, const char **p, int *valid, int level, int *check, bool print_errors) {
-	int sign = 1, not= 0, v;
+	int sign = 1, not= 0;
 	const char *p0, *p2;
+	int v;
 	*p = delspc (*p);
 	while (**p && strchr ("+-~", **p)) {
 		if (**p == '-') {
@@ -383,7 +383,6 @@ static int rd_value(PluginData *pd, const char **p, int *valid, int level, int *
 
 	bool exist;
 	int retval;
-	char quote;
 	int dummy_check;
 	switch (**p) {
 	case '(':
@@ -426,17 +425,19 @@ static int rd_value(PluginData *pd, const char **p, int *valid, int level, int *
 		return not ^ (sign *rd_number (pd, p, NULL, 2));
 	case '\'':
 	case '"':
-		quote = **p;
-		++*p;
-		retval = not ^ (sign *rd_character (pd, p, valid, print_errors));
-		if (**p != quote) {
-			if (valid) {
-				*valid = 0;
+		{
+			const char quote = **p;
+			++*p;
+			retval = not ^ (sign *rd_character (pd, p, valid, print_errors));
+			if (**p != quote) {
+				if (valid) {
+					*valid = 0;
+				}
+				return 0;
 			}
-			return 0;
+			++*p;
+			return retval;
 		}
-		++*p;
-		return retval;
 	case '@':
 		return not ^ (sign *rd_otherbasenumber (pd, p, valid, print_errors));
 	case '?':
@@ -446,11 +447,13 @@ static int rd_value(PluginData *pd, const char **p, int *valid, int level, int *
 		return not ^ (sign *rd_ampersand_number (pd, p, valid, print_errors));
 	default:
 		exist = 1;
-		int value = rd_label (pd, p, valid? &exist: NULL, NULL, level, print_errors);
-		if (!exist) {
-			*valid = 0;
+		{
+			const int value = rd_label (pd, p, valid? &exist: NULL, NULL, level, print_errors);
+			if (!exist) {
+				*valid = 0;
+			}
+			return not ^ (sign *value);
 		}
-		return not ^ (sign *value);
 	}
 }
 
@@ -466,7 +469,7 @@ rd_factor(PluginData *pd, const char **p, int *valid, int level, int *check, int
 			result *= rd_value (pd, p, valid, level, check, print_errors);
 		} else if (**p == '/') {
 			(*p)++;
-			int value = rd_value (pd, p, valid, level, check, print_errors);
+			const int value = rd_value (pd, p, valid, level, check, print_errors);
 			if (value == 0) {
 				return -1;
 			}
@@ -538,9 +541,7 @@ static int rd_expr_unequal(PluginData *pd, const char **p, int *valid, int level
 	return result;
 }
 
-static int
-rd_expr_equal(PluginData *pd, const char **p, int *valid, int level, int *check,
-	bool print_errors) {
+static int rd_expr_equal(PluginData *pd, const char **p, int *valid, int level, int *check, bool print_errors) {
 	int result = rd_expr_unequal (pd, p, valid, level, check, print_errors);
 	*p = delspc (*p);
 	if (**p == '=') {
@@ -558,9 +559,7 @@ rd_expr_equal(PluginData *pd, const char **p, int *valid, int level, int *check,
 	return result;
 }
 
-static int
-rd_expr_and(PluginData *pd, const char **p, int *valid, int level, int *check,
-	bool print_errors) {
+static int rd_expr_and(PluginData *pd, const char **p, int *valid, int level, int *check, bool print_errors) {
 	int result = rd_expr_equal (pd, p, valid, level, check, print_errors);
 	*p = delspc (*p);
 	if (**p == '&') {
@@ -571,8 +570,7 @@ rd_expr_and(PluginData *pd, const char **p, int *valid, int level, int *check,
 	return result;
 }
 
-static int
-rd_expr_xor(PluginData *pd, const char **p, int *valid, int level, int *check,
+static int rd_expr_xor(PluginData *pd, const char **p, int *valid, int level, int *check,
 	bool print_errors) {
 	int result = rd_expr_and (pd, p, valid, level, check, print_errors);
 	*p = delspc (*p);
@@ -584,8 +582,7 @@ rd_expr_xor(PluginData *pd, const char **p, int *valid, int level, int *check,
 	return result;
 }
 
-static int
-rd_expr_or(PluginData *pd, const char **p, int *valid, int level, int *check,
+static int rd_expr_or(PluginData *pd, const char **p, int *valid, int level, int *check,
 	bool print_errors) {
 	int result = rd_expr_xor (pd, p, valid, level, check, print_errors);
 	*p = delspc (*p);
@@ -597,8 +594,7 @@ rd_expr_or(PluginData *pd, const char **p, int *valid, int level, int *check,
 	return result;
 }
 
-static int
-do_rd_expr(PluginData *pd, const char **p, char delimiter, int *valid, int level, int *check,
+static int do_rd_expr(PluginData *pd, const char **p, char delimiter, int *valid, int level, int *check,
 	bool print_errors) {
 	/* read an expression. delimiter can _not_ be '?' */
 	*p = delspc (*p);
@@ -638,15 +634,13 @@ do_rd_expr(PluginData *pd, const char **p, char delimiter, int *valid, int level
 	return result;
 }
 
-static int
-rd_expr(PluginData *pd, const char **p, char delimiter, int *valid, int level,
+static int rd_expr(PluginData *pd, const char **p, char delimiter, int *valid, int level,
 	bool print_errors) {
 	int check = 1;
 	if (valid) {
 		*valid = 1;
 	}
-	int result = do_rd_expr (pd, p, delimiter, valid, level, &check, print_errors);
-	return result;
+	return do_rd_expr (pd, p, delimiter, valid, level, &check, print_errors);
 }
 
 /* skip over spaces in string */
@@ -687,19 +681,17 @@ static void skipword(PluginData *pd, const char **pos, char delimiter) {
 
 /* find any of the list[] entries as the start of ptr and return index */
 static int indx(PluginData *pd, const char **ptr, const char **list, int error, const char **expr) {
-	int i;
 	*ptr = delspc (*ptr);
 	if (!**ptr) {
 		if (error) {
 			R_LOG_ERROR ("unexpected end of line");
-			return 0;
-		} else {
-			return 0;
 		}
+		return 0;
 	}
 	if (pd->comma > 1) {
 		rd_comma (ptr);
 	}
+	int i;
 	for (i = 0; list[i]; i++) {
 		const char *input = *ptr;
 		const char *check = list[i];
@@ -726,8 +718,7 @@ static int indx(PluginData *pd, const char **ptr, const char **list, int error, 
 			} else {
 				break;
 			}
-
-			++check;
+			check++;
 		}
 		if (*check || (isalnum ((const unsigned char)check[-1]) && isalnum ((const unsigned char)input[0]))) {
 			continue;
@@ -752,8 +743,9 @@ static inline int readcommand(PluginData *pd, const char **p) {
 
 /* try to read a label and optionally store it in the list */
 static void readlabel(PluginData *pd, const char **p, int store) {
-	const char *c, *d, *pos, *dummy;
+	const char *c, *d, *pos;
 	bool i;
+	const char *dummy;
 	int j;
 	struct label *previous;
 	for (d = *p; *d && *d != ';'; d++) {
@@ -787,7 +779,6 @@ static void readlabel(PluginData *pd, const char **p, int store) {
 }
 
 static int compute_ref(PluginData *pd, struct reference *ref, int allow_invalid) {
-	const char *ptr;
 	int valid = 0;
 	ParseContext ctx;
 	save_context (pd, &ctx);
@@ -796,7 +787,7 @@ static int compute_ref(PluginData *pd, struct reference *ref, int allow_invalid)
 	pd->baseaddr = ref->baseaddr;
 	pd->comma = ref->comma;
 	pd->file = ref->infile;
-	ptr = ref->input;
+	const char *ptr = ref->input;
 	if (!ref->done) {
 		ref->computed_value = rd_expr (pd, &ptr, ref->delimiter,
 			allow_invalid? &valid: NULL,
@@ -1423,7 +1414,7 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 		if (! (r = rd_0_7 (pd, &ptr))) {
 			break;
 		}
-		int bit_num = r - 1; /* rd_0_7 returns 1-8, convert to 0-7 */
+		const int bit_num = r - 1; /* rd_0_7 returns 1-8, convert to 0-7 */
 		rd_comma (&ptr);
 		if (! (r = rd_r_(pd, &ptr))) {
 			break;
@@ -1636,14 +1627,14 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 				break;
 			}
 			if (r == A_N) {
-				char n = r_num_math (NULL, pd->readbyte);
+				const char n = r_num_math (NULL, pd->readbyte);
 				wrtb (0x3E);
 				wrtb (n);
 				break;
 			}
 			if (r == 7 && pd->indexed) {
 				/* indexed addressing: ld a, [ix+n] or ld a, [iy+n] */
-				char n = r_num_math (NULL, pd->indexjmp);
+				const char n = r_num_math (NULL, pd->indexjmp);
 				wrtb (pd->indexed);
 				wrtb (0x7E);
 				wrtb (n);
@@ -1667,7 +1658,7 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 				break;
 			}
 			if (s == 7) {
-				char n = r_num_math (NULL, pd->readbyte);
+				const char n = r_num_math (NULL, pd->readbyte);
 				wrtb (0x08 *(r - 7) + 0x6);
 				wrtb (n);
 			} else {
@@ -1780,7 +1771,7 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 		if (! (r = rd_0_7 (pd, &ptr))) {
 			break;
 		}
-		int bit_num_res = r - 1; /* rd_0_7 returns 1-8, convert to 0-7 */
+		const int bit_num_res = r - 1; /* rd_0_7 returns 1-8, convert to 0-7 */
 		rd_comma (&ptr);
 		if (! (r = rd_r_(pd, &ptr))) {
 			break;
@@ -1883,7 +1874,7 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 		if (! (r = rd_0_7 (pd, &ptr))) {
 			break;
 		}
-		int bit_num_set = r - 1; /* rd_0_7 returns 1-8, convert to 0-7 */
+		const int bit_num_set = r - 1; /* rd_0_7 returns 1-8, convert to 0-7 */
 		rd_comma (&ptr);
 		if (! (r = rd_r_(pd, &ptr))) {
 			break;
@@ -1961,10 +1952,10 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 	case Z80_DM:
 		ptr = delspc (ptr);
 		while (1) {
-			have_quote = (*ptr == '"' || *ptr == '\'');
+			const int have_quote = (*ptr == '"' || *ptr == '\'');
 			if (have_quote) {
 				/* Read string.  */
-				int quote = *ptr;
+				const int quote = *ptr;
 				++ptr;
 				while (*ptr != quote) {
 					write_one_byte (rd_character (pd, &ptr, NULL, 1), 0);

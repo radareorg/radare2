@@ -7,7 +7,7 @@
 static const char *pseudo_rules[] = {
 	/* Arithmetic operations */
 	"adc/2/$1 = $1 + $2 + c",
-	"add/2/$1 = $1 + $2", 
+	"add/2/$1 = $1 + $2",
 	"add/3/$1 = $2 + $3",
 	"and/2/$1 &= $2",
 	"and/3/$1 = $2 & $3",
