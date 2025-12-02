@@ -1109,22 +1109,23 @@ R_IPI RList *r_bin_file_get_strings(RBinFile *bf, int min, int dump, int raw) {
 	RList *ret = dump? NULL: r_list_newf (r_bin_string_free);
 
 	bf->string_count = 0;
-	if (raw || !bo || !bo->strings || r_list_empty (bo->sections)) {
+	if (!raw && bo && bo->sections && !r_list_empty (bo->sections)) {
+		r_list_foreach (bo->sections, iter, section) {
+			if (is_data_section (bf, section)) {
+				get_strings_range (bf, ret, min, raw, nofp, section->paddr,
+						section->paddr + section->size, section);
+			}
+		}
+	} else {
 		get_strings_range (bf, ret, min, raw, nofp, 0, bf->size, NULL);
 		return ret;
-	}
-	r_list_foreach (bo->sections, iter, section) {
-		if (is_data_section (bf, section)) {
-			get_strings_range (bf, ret, min, raw, nofp, section->paddr,
-					section->paddr + section->size, section);
-		}
 	}
 	r_list_foreach (bo->sections, iter, section) {
 		if (!section->name) {
 			continue;
 		}
 		/* load objc/swift strings */
-		const int bits = (bo->info) ? bf->bo->info->bits : 32;
+		const int bits = (bo->info) ? bo->info->bits : 32;
 		const int cfstr_size = (bits == 64) ? 32 : 16;
 		const int cfstr_offs = (bits == 64) ? 16 :  8;
 		if (strstr (section->name, "__cfstring")) {
