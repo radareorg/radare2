@@ -58,10 +58,10 @@ all:
 endif
 
 ifeq ($(OSTYPE),wasi)
-preall: capstone-build sdbs
+preall: capstone-build sdbs fakeshlr
 else
 ifeq ($(R2_WASM_BROWSER),1)
-preall: capstone-build sdbs
+preall: capstone-build sdbs fakeshlr
 else
 preall: libwinkd bochs capstone-build sdbs
 endif
@@ -70,6 +70,10 @@ endif
 		echo $(MAKE) -C $$MOD ; \
 		$(MAKE) -C $$MOD HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
 	done
+
+fakeshlr:
+	touch bochs/lib/libbochs.a
+	touch winkd/libr_winkd.a
 
 ifeq ($(BUILD_OS),windows)
 BUILD_EXT_EXE=.exe
