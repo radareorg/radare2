@@ -57,10 +57,14 @@ all:
 	exit 1
 endif
 
-ifneq ($(R2_WASM_BROWSER),1)
-preall: libwinkd capstone-build bochs sdbs
+ifeq ($(OSTYPE),wasi)
+preall: capstone-build sdbs
 else
-preall: libwinkd capstone-build sdbs
+ifeq ($(R2_WASM_BROWSER),1)
+preall: capstone-build sdbs
+else
+preall: libwinkd bochs capstone-build sdbs
+endif
 endif
 	@for MOD in ${MODS} ; do \
 		echo $(MAKE) -C $$MOD ; \

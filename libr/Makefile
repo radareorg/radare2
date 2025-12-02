@@ -122,9 +122,11 @@ ifeq (1,$(WITH_GPL))
 E+=../shlr/grub/libgrubfs.${EXT_AR}
 endif
 E+=../shlr/ar/libr_ar.${EXT_AR}
+ifneq ($(OSTYPE),wasi)
 E+=../shlr/winkd/libr_winkd.${EXT_AR}
 E+=../shlr/qnx/lib/libqnxr.${EXT_AR}
 E+=../shlr/bochs/lib/libbochs.${EXT_AR}
+endif
 
 # E+=../libr/arch/p/arm/v35/v35arm64.${EXT_AR}
 # E+=../libr/arch/p/arm/v35/v35armv7.${EXT_AR}
