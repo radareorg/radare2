@@ -5,9 +5,9 @@
 #define FILTER_DWORD 0
 
 #define isx86separator(x) ( \
-	(x) == ' '||(x) == '\t'||(x) == '\n'|| (x) == '\r'||(x) == ' '|| \
-	(x) == ','||(x) == ';'||(x) == '['||(x) == ']'|| \
-	(x) == '('||(x) == ')'||(x) == '{'||(x) == '}'||(x) == '\x1b')
+	(x) == ' ' || (x) == '\t' || (x) == '\n' || (x) == '\r' || (x) == ' ' || \
+	(x) == ',' || (x) == ';' || (x) == '[' || (x) == ']' || \
+	(x) == '(' || (x) == ')' || (x) == '{' || (x) == '}' || (x) == '\x1b')
 
 static bool isvalidflag(RFlagItem *flag) {
 	if (flag) {
@@ -192,7 +192,7 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 	// remove "dword" 2
 	char *nptr;
 	int count = 0;
-	for (count = 0; (nptr = findNextNumber (ptr)) ; count++) {
+	for (count = 0; (nptr = findNextNumber (ptr)); count++) {
 		ptr = nptr;
 		if (x86) {
 			for (ptr2 = ptr; *ptr2 && !isx86separator (*ptr2); ptr2++) {
@@ -203,7 +203,7 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 				;
 			}
 		}
-		char* colon = strstr (ptr, ":");
+		char *colon = strstr (ptr, ":");
 		if (x86 && bits == 16 && colon) {
 			*colon = '\0';
 			ut64 s = r_num_get (NULL, ptr);
@@ -238,8 +238,7 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 			}
 			if (f) {
 				RFlagItem *flag2;
-				bool lea = x86 && r_str_startswith (hdata, "lea")
-						&& (hdata[3] == ' ' || hdata[3] == 0x1b);
+				bool lea = x86 && r_str_startswith (hdata, "lea") && (hdata[3] == ' ' || hdata[3] == 0x1b);
 				bool remove_brackets = false;
 				flag = p->flag_get (f, false, off);
 				if ((!flag || arm) && p->subrel_addr) {
@@ -249,7 +248,7 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 						flag = flag2;
 					}
 				}
-				if (flag && !strncmp (flag->name, "section.", 8)) {
+				if (flag && r_str_startswith (flag->name, "section.")) {
 					flag = r_flag_get_in (f, off);
 				}
 				const char *label = fcn? p->label_get (fcn, off): NULL;
@@ -286,7 +285,7 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 					*ptr = 0;
 					char *flagname = label
 						? r_str_newf (".%s", label)
-						: strdup (f->realnames? flag->realname : flag->name);
+						: strdup (f->realnames? flag->realname: flag->name);
 					int maxflagname = p->maxflagnamelen;
 					if (maxflagname > 0 && strlen (flagname) > maxflagname) {
 						char *doublelower = (char *)r_str_rstr (flagname, "__");
@@ -311,7 +310,7 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 							flagname = newstr;
 						}
 					}
-					char *str = r_str_newf ("%s%s%s", hdata, flagname, (ptr != ptr2) ? ptr2 : "");
+					char *str = r_str_newf ("%s%s%s", hdata, flagname, (ptr != ptr2)? ptr2: "");
 					free (flagname);
 					bool banned = false;
 					{
@@ -322,7 +321,7 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 							banned = true;
 						}
 					}
-					if (p->subrel_addr && !banned && lea) {  // TODO: use remove_brackets
+					if (p->subrel_addr && !banned && lea) { // TODO: use remove_brackets
 						int flag_len = strlen (flag->name);
 						char *ptr_end = str + strlen (hdata) + flag_len - 1;
 						char *ptr_right = ptr_end + 1, *ptr_left, *ptr_esc;
@@ -346,7 +345,7 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 								ptr_left = ptr_esc = ptr_end - flag_len;
 								while (ptr_left >= str) {
 									if (*ptr_left == '[' &&
-									(ptr_left == str || *(ptr_left - 1) != 0x1b)) {
+										(ptr_left == str || *(ptr_left - 1) != 0x1b)) {
 										break;
 									}
 									ptr_left--;
@@ -406,7 +405,7 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 				continue;
 			}
 			int pnumleft, immbase = hint->immbase;
-			char num[256] = {0}, *pnum, *tmp;
+			char num[256] = { 0 }, *pnum, *tmp;
 			bool is_hex = false;
 			int tmp_count;
 			if (hint->offset) {
@@ -415,9 +414,9 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 				free (hdata);
 				return res;
 			}
-			strncpy (num, ptr, sizeof (num)-2);
+			r_str_ncpy (num, ptr, sizeof (num) - 1);
 			pnum = num;
-			if (!strncmp (pnum, "0x", 2)) {
+			if (r_str_startswith (pnum, "0x")) {
 				is_hex = true;
 				pnum += 2;
 			}
@@ -477,17 +476,17 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 						ch = off & 0xff;
 						off >>= 8;
 					} else {
-						ch = off >> (8 * (sizeof (off) - 1));
+						ch = off >> (8 *(sizeof (off) - 1));
 						off <<= 8;
 					}
 
-					//Skip first '\x00' bytes
+					// Skip first '\x00' bytes
 					if (num[1] == '\0' && ch == '\0') {
 						continue;
 					}
-					if (IS_PRINTABLE(ch)) {
+					if (IS_PRINTABLE (ch)) {
 						*pnum++ = ch;
-						pnumleft --;
+						pnumleft--;
 					} else {
 						int sz = snprintf (pnum, pnumleft, "\\x%2.2x", ch);
 						if (sz < 0) {
@@ -511,18 +510,18 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 						swap = off & 0xffff;
 					} else {
 						if (off >> 32) {
-							r_mem_swapendian ((ut8*)&swap, (const ut8*)&off, sizeof (off));
+							r_mem_swapendian ((ut8 *)&swap, (const ut8 *)&off, sizeof (off));
 						} else if (off >> 16) {
 							ut32 port = 0;
-							r_mem_swapendian ((ut8*)&port, (const ut8*)&off, sizeof (port));
+							r_mem_swapendian ((ut8 *)&port, (const ut8 *)&off, sizeof (port));
 							swap = port;
 						} else {
 							ut16 port = 0;
-							r_mem_swapendian ((ut8*)&port, (const ut8*)&off, sizeof (port));
+							r_mem_swapendian ((ut8 *)&port, (const ut8 *)&off, sizeof (port));
 							swap = port;
 						}
 					}
-					snprintf (num, sizeof (num), "htons (%d)", (int)(swap & 0xFFFF));
+					snprintf (num, sizeof (num), "htons (%d)", (int) (swap & 0xFFFF));
 				}
 				break;
 			case 8:
@@ -535,23 +534,23 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 					RListIter *iter;
 					bool imm32 = false;
 					r_list_foreach (regs, iter, reg) {
-						if (reg->size == 32 && r_str_casestr (hdata, reg->name)) {
+					if (reg->size == 32 && r_str_casestr (hdata, reg->name)) {
 							imm32 = true;
 							break;
 						}
 					}
 					if (imm32) {
-						snprintf (num, sizeof (num), "%"PFMT32d, (st32)off);
+						snprintf (num, sizeof (num), "%" PFMT32d, (st32)off);
 						break;
 					}
-					snprintf (num, sizeof (num), "%"PFMT64d, (st64)off);
+					snprintf (num, sizeof (num), "%" PFMT64d, (st64)off);
 				}
 				break;
 			case 11:
-				snprintf (num, sizeof (num), "%"PFMT64u, off);
+				snprintf (num, sizeof (num), "%" PFMT64u, off);
 				break;
 			case 31: // small integer
-				snprintf (num, sizeof (num), "0x%x", (ut32)(off >> 1));
+				snprintf (num, sizeof (num), "0x%x", (ut32) (off >> 1));
 				break;
 			case 32:
 				{
@@ -580,7 +579,7 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 			case 16:
 				/* do nothing */
 			default:
-				snprintf (num, sizeof (num), "0x%"PFMT64x, (ut64) off);
+				snprintf (num, sizeof (num), "0x%" PFMT64x, (ut64)off);
 				break;
 			}
 			*ptr = 0;

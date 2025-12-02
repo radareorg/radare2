@@ -77,9 +77,13 @@ static void bits_hint_record_free_rb(RBNode *node, void *user) {
 }
 
 static void arch_hint_record_free_rb(RBNode *node, void *user) {
-	RAnalArchHintRecord *record = (RAnalArchHintRecord *)container_of (node, RAnalRangedHintRecordBase, rb);
-	free (record->arch);
-	free (record);
+	if (node) {
+		RAnalArchHintRecord *record = (RAnalArchHintRecord *)container_of (node, RAnalRangedHintRecordBase, rb);
+		if (record) {
+			free (record->arch);
+			free (record);
+		}
+	}
 }
 
 // used in anal.c, but no API needed

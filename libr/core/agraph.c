@@ -646,8 +646,6 @@ err_row:
 }
 
 static int layer_sweep(RCons *cons, const RGraph *g, const struct layer_t layers[], int maxlayer, int i, int from_up) {
-	RGraphNode *u, *v;
-	const RANode *au, *av;
 	int n_rows, j, changed = false;
 	int len = layers[i].n_nodes;
 
@@ -657,14 +655,12 @@ static int layer_sweep(RCons *cons, const RGraph *g, const struct layer_t layers
 	}
 
 	for (j = 0; j < len - 1; j++) {
-		int auidx, avidx;
-
-		u = layers[i].nodes[j];
-		v = layers[i].nodes[j + 1];
-		au = get_anode (u);
-		av = get_anode (v);
-		auidx = au->pos_in_layer;
-		avidx = av->pos_in_layer;
+		RGraphNode *u = layers[i].nodes[j];
+		RGraphNode *v = layers[i].nodes[j + 1];
+		RANode *au = get_anode (u);
+		RANode *av = get_anode (v);
+		int auidx = au->pos_in_layer;
+		int avidx = av->pos_in_layer;
 
 		if (cross_matrix[auidx][avidx] > cross_matrix[avidx][auidx]) {
 			/* swap elements */
@@ -679,7 +675,9 @@ static int layer_sweep(RCons *cons, const RGraph *g, const struct layer_t layers
 	 * is indexed by it, so do it now! */
 	for (j = 0; j < layers[i].n_nodes; j++) {
 		RANode *n = get_anode (layers[i].nodes[j]);
-		n->pos_in_layer = j;
+		if (n) {
+			n->pos_in_layer = j;
+		}
 	}
 
 	for (j = 0; j < n_rows; j++) {

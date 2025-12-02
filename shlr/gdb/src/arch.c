@@ -24,7 +24,7 @@ gdb_reg_t *parse_def(char **tok) {
 		free (r);
 		return NULL;
 	}
-	if (!strcmp (tok[3], "?")) {
+	if (R_STR_ISEMPTY (tok[3]) || !strcmp (tok[3], "?")) {
 		free (r);
 		return NULL;
 	}
@@ -33,8 +33,8 @@ gdb_reg_t *parse_def(char **tok) {
 }
 
 #define PARSER_MAX_TOKENS 8
-gdb_reg_t *arch_parse_reg_profile(const char * reg_profile) {
-	char *tok[PARSER_MAX_TOKENS] = {0};
+gdb_reg_t *arch_parse_reg_profile(const char *reg_profile) {
+	char *tok[PARSER_MAX_TOKENS] = { 0 };
 	char tmp[128];
 	int i, j, l;
 	const char *p = reg_profile;
@@ -64,7 +64,7 @@ gdb_reg_t *arch_parse_reg_profile(const char * reg_profile) {
 			while (*p == ' ' || *p == '\t') {
 				p++;
 			}
-			// EOL ?
+			// EOL?
 			if (*p == '\n') {
 				break;
 			}

@@ -221,12 +221,6 @@ static char *readman(RCore *core, const char *page) {
 					// End display
 					r_strbuf_append (sb, "\n```\n");
 					in_code_block = false;
-				} else if (!strcmp (macro, "Os")) {
-					// Operating system - ignore
-				} else if (!strcmp (macro, "Dt")) {
-					// Title - ignore
-				} else {
-					// Unknown macro - remove the line
 				}
 			} else {
 				// Regular text line
