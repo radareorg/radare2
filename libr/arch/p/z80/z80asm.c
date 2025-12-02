@@ -10,9 +10,9 @@
 #include "z80asm.h"
 
 static const char *delspc(const char *ptr);
-static int rd_expr(PluginData *pd, const char **p, char delimiter, int *valid, int level, bool print_errors);
-static int rd_label(PluginData *pd, const char **p, bool *exists, struct label **previous, int level, bool print_errors);
-static int rd_character(PluginData *pd, const char **p, int *valid, bool print_errors);
+static int rd_expr(PluginData *pd, const char **p, char delimiter, int *valid, int level);
+static int rd_label(PluginData *pd, const char **p, bool *exists, struct label **previous, int level);
+static int rd_character(PluginData *pd, const char **p, int *valid);
 static int compute_ref(PluginData *pd, struct reference *ref, int allow_invalid);
 
 #define write_one_byte(x, y) pd->obuf[pd->obuflen++] = x
@@ -139,7 +139,7 @@ static const char *mnemonics[] = {
  */
 
 static int do_rd_expr(PluginData *pd, const char **p, char delimiter, int *valid, int level,
-	int *check, bool print_errors);
+	int *check);
 
 static int rd_number(PluginData *pd, const char **p, const char **endp, int base) {
 	int result = 0, i;
@@ -159,7 +159,7 @@ static int rd_number(PluginData *pd, const char **p, const char **endp, int base
 	return result;
 }
 
-static int rd_otherbasenumber(PluginData *pd, const char **p, int *valid, bool print_errors) {
+static int rd_otherbasenumber(PluginData *pd, const char **p, int *valid) {
 	(*p)++;
 	if (!**p) {
 		return set_invalid (valid);
@@ -175,7 +175,7 @@ static int rd_otherbasenumber(PluginData *pd, const char **p, int *valid, bool p
 	return rd_number (pd, p, NULL, c - '0' + 1);
 }
 
-static int rd_character(PluginData *pd, const char **p, int *valid, bool print_errors) {
+static int rd_character(PluginData *pd, const char **p, int *valid) {
 	int i = **p;
 	if (!i) {
 		return set_invalid (valid);
@@ -274,7 +274,7 @@ check_label(PluginData *pd, struct label *labels, const char **p, struct label *
 	return 0;
 }
 
-static int rd_label(PluginData *pd, const char **p, bool *exists, struct label **previous, int level, bool print_errors) {
+static int rd_label(PluginData *pd, const char **p, bool *exists, struct label **previous, int level) {
 	struct label *l = NULL;
 	int s;
 	if (exists) {
