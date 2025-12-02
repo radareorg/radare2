@@ -1,4 +1,4 @@
-/* radare - GPL - Copyright 2002-2024 - pancake, condret, unlogic, Bas Wijnen <wijnen@debian.org>, Jan Wilmans <jw@dds.nl> */
+/* radare - GPL - Copyright 2002-2025 - pancake, condret, unlogic, Bas Wijnen <wijnen@debian.org>, Jan Wilmans <jw@dds.nl> */
 
 #include <r_arch.h>
 #include "z80_tab.h"
@@ -118,19 +118,10 @@ static int
 rd_number(PluginData *pd, const char **p, const char **endp, int base) {
 	int result = 0, i;
 	char *c, num[] = "0123456789abcdefghijklmnopqrstuvwxyz";
-	if (pd->verbose >= 6) {
-		fprintf (stderr, "%5d (0x%04x): Starting to read number of base %d"
-				"(string=%s).\n",
-			pd->stack[pd->sp].line, pd->addr, base, *p);
-	}
 	num[base] = '\0';
 	*p = delspc (*p);
 	while (**p && (c = strchr (num, tolower ((const unsigned char)**p)))) {
 		i = c - num;
-		if (pd->verbose >= 7) {
-			fprintf (stderr, "%5d (0x%04x): Digit found:%1x.\n", pd->stack[pd->sp].line,
-				pd->addr, i);
-		}
 		result = result * base + i;
 		(*p)++;
 	}
@@ -138,21 +129,12 @@ rd_number(PluginData *pd, const char **p, const char **endp, int base) {
 		*endp = *p;
 	}
 	*p = delspc (*p);
-	if (pd->verbose >= 7) {
-		fprintf (stderr, "%5d (0x%04x): rd_number returned %d (%04x).\n",
-			pd->stack[pd->sp].line, pd->addr, result, result);
-	}
 	return result;
 }
 
 static int
 rd_otherbasenumber(PluginData *pd, const char **p, int *valid, int print_errors) {
 	char c;
-	if (pd->verbose >= 6) {
-		fprintf (stderr,
-			"%5d (0x%04x): Starting to read basenumber (string=%s).\n",
-			pd->stack[pd->sp].line, pd->addr, *p);
-	}
 	(*p)++;
 	if (!**p) {
 		if (valid) {
@@ -181,11 +163,6 @@ rd_otherbasenumber(PluginData *pd, const char **p, int *valid, int print_errors)
 static int
 rd_character(PluginData *pd, const char **p, int *valid, int print_errors) {
 	int i;
-	if (pd->verbose >= 6) {
-		fprintf (stderr,
-			"%5d (0x%04x): Starting to read character (string=%s).\n",
-			pd->stack[pd->sp].line, pd->addr, *p);
-	}
 	i = **p;
 	if (!i) {
 		if (valid) {
@@ -251,10 +228,6 @@ rd_character(PluginData *pd, const char **p, int *valid, int print_errors) {
 	} else {
 		(*p)++;
 	}
-	if (pd->verbose >= 7) {
-		fprintf (stderr, "%5d (0x%04x): rd_character returned %d (%c).\n",
-			pd->stack[pd->sp].line, pd->addr, i, i);
-	}
 	return i;
 }
 
@@ -294,11 +267,6 @@ check_label(PluginData *pd, struct label *labels, const char **p, struct label *
 				/* label was not valid, and isn't computable.  tell the
 				 * caller that it doesn't exist, so it will try again later.
 				 * Set ret to show actual existence.  */
-				if (pd->verbose >= 6) {
-					fprintf (stderr,
-						"%5d (0x%04x): returning invalid label %s.\n",
-						pd->stack[pd->sp].line, pd->addr, l->name);
-				}
 				*ret = l;
 				return 0;
 			}
@@ -312,20 +280,14 @@ check_label(PluginData *pd, struct label *labels, const char **p, struct label *
 	return 0;
 }
 
-static int
-rd_label(PluginData *pd, const char **p, int *exists, struct label **previous, int level,
-	int print_errors) {
+static int rd_label(PluginData *pd, const char **p, bool *exists, struct label **previous, int level, bool print_errors) {
 	struct label *l = NULL;
 	int s;
 	if (exists) {
-		*exists = 0;
+		*exists = false;
 	}
 	if (previous) {
 		*previous = NULL;
-	}
-	if (pd->verbose >= 6) {
-		fprintf (stderr, "%5d (0x%04x): Starting to read label (string=%s).\n",
-			pd->stack[pd->sp].line, pd->addr, *p);
 	}
 	for (s = level; s >= 0; s--) {
 		if (check_label (pd, pd->stack[s].labels, p, &l,
@@ -342,28 +304,17 @@ rd_label(PluginData *pd, const char **p, int *exists, struct label **previous, i
 			printerr (pd, 1, "using undefined label %.*s\n", *p - old_p, old_p);
 		}
 		/* Return a value to discriminate between non-existing and invalid */
-		if (pd->verbose >= 7) {
-			fprintf (stderr, "rd_label returns invalid value\n");
-		}
 		return (int) (bool)l;
 	}
 	if (exists) {
-		*exists = 1;
-	}
-	if (pd->verbose >= 7) {
-		fprintf (stderr, "rd_label returns valid value 0x%x\n", l->value);
+		*exists = true;
 	}
 	return l->value;
 }
 
-static int
-rd_value(PluginData *pd, const char **p, int *valid, int level, int *check, int print_errors) {
+static int rd_value(PluginData *pd, const char **p, int *valid, int level, int *check, bool print_errors) {
 	int sign = 1, not= 0, base, v;
 	const char *p0, *p1, *p2;
-	if (pd->verbose >= 6) {
-		fprintf (stderr, "%5d (0x%04x): Starting to read value (string=%s).\n",
-			pd->stack[pd->sp].line, pd->addr, *p);
-	}
 	*p = delspc (*p);
 	while (**p && strchr ("+-~", **p)) {
 		if (**p == '-') {
@@ -381,10 +332,11 @@ rd_value(PluginData *pd, const char **p, int *valid, int level, int *check, int 
 		*check = 0;
 	}
 
+	bool exist;
+	int retval;
+	char quote;
+	int dummy_check;
 	switch (**p) {
-		int exist, retval;
-		char quote;
-		int dummy_check;
 	case '(':
 		(*p)++;
 		dummy_check = 0;
@@ -408,6 +360,7 @@ rd_value(PluginData *pd, const char **p, int *valid, int level, int *check, int 
 	case '7':
 	case '8':
 	case '9':
+		// AITODO: move the code in this case into a separate static inline function for readability
 		p0 = *p;
 		rd_number (pd, p, &p1, 36); /* Advance to end of numeric string */
 		p1--; /* Last character in numeric string */
@@ -478,8 +431,9 @@ rd_value(PluginData *pd, const char **p, int *valid, int level, int *check, int 
 		rd_label (pd, p, &exist, NULL, level, 0);
 		return not ^ (sign *exist);
 	case '&':
+		// AITODO: move the code in this case into a separate static inline function for readability
 		{
-			++*p;
+			++*p; // AITODO: do not use preincrements
 			switch (**p) {
 		case 'h':
 		case 'H':
@@ -505,15 +459,12 @@ rd_value(PluginData *pd, const char **p, int *valid, int level, int *check, int 
 			return not ^ (sign *rd_number (pd, p, NULL, base));
 		}
 	default:
-		{
-			int value;
-			exist = 1;
-			value = rd_label (pd, p, valid? &exist: NULL, NULL, level, print_errors);
-			if (!exist) {
-				*valid = 0;
-			}
-			return not ^ (sign *value);
+		exist = 1;
+		int value = rd_label (pd, p, valid? &exist: NULL, NULL, level, print_errors);
+		if (!exist) {
+			*valid = 0;
 		}
+		return not ^ (sign *value);
 	}
 }
 
@@ -521,10 +472,6 @@ static int
 rd_factor(PluginData *pd, const char **p, int *valid, int level, int *check, int print_errors) {
 	/* read a factor of an expression */
 	int result;
-	if (pd->verbose >= 6) {
-		fprintf (stderr, "%5d (0x%04x): Starting to read factor (string=%s).\n",
-			pd->stack[pd->sp].line, pd->addr, *p);
-	}
 	result = rd_value (pd, p, valid, level, check, print_errors);
 	*p = delspc (*p);
 	while (**p == '*' || **p == '/') {
@@ -543,21 +490,12 @@ rd_factor(PluginData *pd, const char **p, int *valid, int level, int *check, int
 		}
 		*p = delspc (*p);
 	}
-	if (pd->verbose >= 7) {
-		fprintf (stderr, "%5d (0x%04x): rd_factor returned %d (%04x).\n",
-			pd->stack[pd->sp].line, pd->addr, result, result);
-	}
 	return result;
 }
 
-static int
-rd_term(PluginData *pd, const char **p, int *valid, int level, int *check, int print_errors) {
+static int rd_term(PluginData *pd, const char **p, int *valid, int level, int *check, int print_errors) {
 	/* read a term of an expression */
 	int result;
-	if (pd->verbose >= 6) {
-		fprintf (stderr, "%5d (0x%04x): Starting to read term (string=%s).\n",
-			pd->stack[pd->sp].line, pd->addr, *p);
-	}
 	result = rd_factor (pd, p, valid, level, check, print_errors);
 	*p = delspc (*p);
 	while (**p == '+' || **p == '-') {
@@ -571,22 +509,12 @@ rd_term(PluginData *pd, const char **p, int *valid, int level, int *check, int p
 		}
 		*p = delspc (*p);
 	}
-	if (pd->verbose >= 7) {
-		fprintf (stderr, "%5d (0x%04x): rd_term returned %d (%04x).\n",
-			pd->stack[pd->sp].line, pd->addr, result, result);
-	}
 	return result;
 }
 
-static int
-rd_expr_shift(PluginData *pd, const char **p, int *valid, int level, int *check,
+static int rd_expr_shift(PluginData *pd, const char **p, int *valid, int level, int *check,
 	int print_errors) {
 	int result;
-	if (pd->verbose >= 6) {
-		fprintf (stderr, "%5d (0x%04x): Starting to read shift expression "
-				"(string=%s).\n",
-			pd->stack[pd->sp].line, pd->addr, *p);
-	}
 	result = rd_term (pd, p, valid, level, check, print_errors);
 	*p = delspc (*p);
 	while ((**p == '<' || **p == '>') && (*p)[1] == **p) {
@@ -600,23 +528,12 @@ rd_expr_shift(PluginData *pd, const char **p, int *valid, int level, int *check,
 		}
 		*p = delspc (*p);
 	}
-	if (pd->verbose >= 7) {
-		fprintf (stderr, "%5d (0x%04x): rd_shift returned %d (%04x).\n",
-			pd->stack[pd->sp].line, pd->addr, result, result);
-	}
 	return result;
 }
 
-static int
-rd_expr_unequal(PluginData *pd, const char **p, int *valid, int level, int *check,
+static int rd_expr_unequal(PluginData *pd, const char **p, int *valid, int level, int *check,
 	int print_errors) {
 	int result;
-	if (pd->verbose >= 6) {
-		fprintf (stderr, "%5d (0x%04x): Starting to read "
-				"unequality expression (string=%s).\n",
-			pd->stack[pd->sp].line, pd->addr,
-			*p);
-	}
 	result = rd_expr_shift (pd, p, valid, level, check, print_errors);
 	*p = delspc (*p);
 	if (**p == '<' && (*p)[1] == '=') {
@@ -637,10 +554,6 @@ rd_expr_unequal(PluginData *pd, const char **p, int *valid, int level, int *chec
 		(*p)++;
 		return result > rd_expr_unequal (pd, p, valid, level, check, print_errors);
 	}
-	if (pd->verbose >= 7) {
-		fprintf (stderr, "%5d (0x%04x): rd_shift returned %d (%04x).\n",
-			pd->stack[pd->sp].line, pd->addr, result, result);
-	}
 	return result;
 }
 
@@ -648,11 +561,6 @@ static int
 rd_expr_equal(PluginData *pd, const char **p, int *valid, int level, int *check,
 	int print_errors) {
 	int result;
-	if (pd->verbose >= 6) {
-		fprintf (stderr, "%5d (0x%04x): Starting to read equality epression "
-				"(string=%s).\n",
-			pd->stack[pd->sp].line, pd->addr, *p);
-	}
 	result = rd_expr_unequal (pd, p, valid, level, check, print_errors);
 	*p = delspc (*p);
 	if (**p == '=') {
@@ -667,10 +575,6 @@ rd_expr_equal(PluginData *pd, const char **p, int *valid, int level, int *check,
 		(*p) += 2;
 		return result != rd_expr_equal (pd, p, valid, level, check, print_errors);
 	}
-	if (pd->verbose >= 7) {
-		fprintf (stderr, "%5d (0x%04x): rd_equal returned %d (%04x).\n",
-			pd->stack[pd->sp].line, pd->addr, result, result);
-	}
 	return result;
 }
 
@@ -678,21 +582,12 @@ static int
 rd_expr_and(PluginData *pd, const char **p, int *valid, int level, int *check,
 	int print_errors) {
 	int result;
-	if (pd->verbose >= 6) {
-		fprintf (stderr, "%5d (0x%04x): Starting to read and expression "
-				"(string=%s).\n",
-			pd->stack[pd->sp].line, pd->addr, *p);
-	}
 	result = rd_expr_equal (pd, p, valid, level, check, print_errors);
 	*p = delspc (*p);
 	if (**p == '&') {
 		*check = 0;
 		(*p)++;
 		result &= rd_expr_and (pd, p, valid, level, check, print_errors);
-	}
-	if (pd->verbose >= 7) {
-		fprintf (stderr, "%5d (0x%04x): rd_expr_and returned %d (%04x).\n",
-			pd->stack[pd->sp].line, pd->addr, result, result);
 	}
 	return result;
 }
@@ -701,26 +596,12 @@ static int
 rd_expr_xor(PluginData *pd, const char **p, int *valid, int level, int *check,
 	int print_errors) {
 	int result;
-	if (pd->verbose >= 6) {
-		fprintf (stderr, "%5d (0x%04x): Starting to read xor expression "
-				"(string=%s).\n",
-			pd->stack[pd->sp].line, pd->addr, *p);
-	}
 	result = rd_expr_and (pd, p, valid, level, check, print_errors);
-	if (pd->verbose >= 7) {
-		fprintf (stderr, "%5d (0x%04x): rd_expr_xor: rd_expr_and returned %d "
-				"(%04x).\n",
-			pd->stack[pd->sp].line, pd->addr, result, result);
-	}
 	*p = delspc (*p);
 	if (**p == '^') {
 		*check = 0;
 		(*p)++;
 		result ^= rd_expr_xor (pd, p, valid, level, check, print_errors);
-	}
-	if (pd->verbose >= 7) {
-		fprintf (stderr, "%5d (0x%04x): rd_expr_xor returned %d (%04x).\n",
-			pd->stack[pd->sp].line, pd->addr, result, result);
 	}
 	return result;
 }
@@ -729,26 +610,12 @@ static int
 rd_expr_or(PluginData *pd, const char **p, int *valid, int level, int *check,
 	int print_errors) {
 	int result;
-	if (pd->verbose >= 6) {
-		fprintf (stderr, "%5d (0x%04x): Starting to read or expression "
-				"(string=%s).\n",
-			pd->stack[pd->sp].line, pd->addr, *p);
-	}
 	result = rd_expr_xor (pd, p, valid, level, check, print_errors);
-	if (pd->verbose >= 7) {
-		fprintf (stderr, "%5d (0x%04x): rd_expr_or: rd_expr_xor returned %d "
-				"(%04x).\n",
-			pd->stack[pd->sp].line, pd->addr, result, result);
-	}
 	*p = delspc (*p);
 	if (**p == '|') {
 		*check = 0;
 		(*p)++;
 		result |= rd_expr_or (pd, p, valid, level, check, print_errors);
-	}
-	if (pd->verbose >= 7) {
-		fprintf (stderr, "%5d (0x%04x): rd_expr_or returned %d (%04x).\n",
-			pd->stack[pd->sp].line, pd->addr, result, result);
 	}
 	return result;
 }
@@ -758,13 +625,6 @@ do_rd_expr(PluginData *pd, const char **p, char delimiter, int *valid, int level
 	int print_errors) {
 	/* read an expression. delimiter can _not_ be '?' */
 	int result = 0;
-	if (pd->verbose >= 6) {
-		fprintf (stderr,
-			"%5d (0x%04x): Starting to read expression "
-			"(string=%s, delimiter=%c).\n",
-			pd->stack[pd->sp].line, pd->addr, *p,
-			delimiter? delimiter: ' ');
-	}
 	*p = delspc (*p);
 	if (!**p || **p == delimiter) {
 		if (valid) {
@@ -800,14 +660,6 @@ do_rd_expr(PluginData *pd, const char **p, char delimiter, int *valid, int level
 			*valid = 0;
 		} else if (print_errors) {
 			printerr (pd, 1, "junk at end of expression: %s\n", *p);
-		}
-	}
-	if (pd->verbose >= 7) {
-		fprintf (stderr, "%5d (0x%04x): rd_expr returned %d (%04x).\n",
-			pd->stack[pd->sp].line, pd->addr, result, result);
-		if (valid && !*valid) {
-			fprintf (stderr, "%5d (0x%04x): Returning invalid result.\n",
-				pd->stack[pd->sp].line, pd->addr);
 		}
 	}
 	return result;
@@ -951,7 +803,8 @@ static int readcommand(PluginData *pd, const char **p) {
 /* try to read a label and optionally store it in the list */
 static void readlabel(PluginData *pd, const char **p, int store) {
 	const char *c, *d, *pos, *dummy;
-	int i, j;
+	bool i;
+	int j;
 	struct label *previous;
 	for (d = *p; *d && *d != ';'; d++) {
 		;
