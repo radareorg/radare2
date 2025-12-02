@@ -788,11 +788,8 @@ static void readlabel(PluginData *pd, const char **p, int store) {
 static int compute_ref(PluginData *pd, struct reference *ref, int allow_invalid) {
 	const char *ptr;
 	int valid = 0;
-	int backup_addr = pd->addr;
-	int backup_baseaddr = pd->baseaddr;
-	int backup_comma = pd->comma;
-	int backup_file = pd->file;
-	int backup_sp = pd->sp;
+	ParseContext ctx;
+	save_context (pd, &ctx);
 	pd->sp = ref->level;
 	pd->addr = ref->addr;
 	pd->baseaddr = ref->baseaddr;
@@ -807,11 +804,7 @@ static int compute_ref(PluginData *pd, struct reference *ref, int allow_invalid)
 			ref->done = 1;
 		}
 	}
-	pd->sp = backup_sp;
-	pd->addr = backup_addr;
-	pd->baseaddr = backup_baseaddr;
-	pd->comma = backup_comma;
-	pd->file = backup_file;
+	restore_context (pd, &ctx);
 	return ref->computed_value;
 }
 
@@ -942,12 +935,12 @@ static int rd_ld(PluginData *pd, const char **p) {
 	}
 	i -= 4;
 	if (i == ldIX || i == ldIY) {
-		pd->indexed = i == ldIX? 0xDD: 0xFD;
+		set_index_register (pd, i == ldIX);
 		return ldHL;
 	}
 	if (i == ld_IX || i == ld_IY) {
 		pd->indexjmp = nn;
-		pd->indexed = i == ld_IX? 0xDD: 0xFD;
+		set_index_register (pd, i == ld_IX);
 		return ld_HL;
 	}
 	if (i == ld_NN) {
@@ -1219,7 +1212,7 @@ static int rd_ld_nn(PluginData *pd, const char **p) {
 	if (i < 7) {
 		return i;
 	}
-	pd->indexed = 0xdd + 0x20 *(i == 8);
+	set_index_register (pd, i == 7);
 	return ld_nnHL;
 }
 
@@ -1381,9 +1374,8 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 			if (! (r = rd_rr_(pd, &ptr))) {
 				break;
 			}
-			wrtb (0xED);
 			r--;
-			wrtb (0x4A + 0x10 * r);
+			emit_ed_opcode (pd, 0x4A + 0x10 * r);
 			break;
 		}
 		if (! (r = rd_r (pd, &ptr))) {
@@ -1463,20 +1455,16 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 		wrtb (0xB8 + r);
 		break;
 	case Z80_CPD:
-		wrtb (0xED);
-		wrtb (0xA9);
+		emit_ed_opcode (pd, 0xA9);
 		break;
 	case Z80_CPDR:
-		wrtb (0xED);
-		wrtb (0xB9);
+		emit_ed_opcode (pd, 0xB9);
 		break;
 	case Z80_CPI:
-		wrtb (0xED);
-		wrtb (0xA1);
+		emit_ed_opcode (pd, 0xA1);
 		break;
 	case Z80_CPIR:
-		wrtb (0xED);
-		wrtb (0xB1);
+		emit_ed_opcode (pd, 0xB1);
 		break;
 	case Z80_CPL:
 		wrtb (0x2F);
@@ -1539,9 +1527,8 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 		if (! (r = rd_0_2 (pd, &ptr))) {
 			break;
 		}
-		wrtb (0xED);
 		r--;
-		wrtb (0x46 + 8 * r);
+		emit_ed_opcode (pd, 0x46 + 8 * r);
 		break;
 	case Z80_IN:
 		if (! (r = rd_in (pd, &ptr))) {
@@ -1552,8 +1539,7 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 				break;
 			}
 			if (r == C) {
-				wrtb (0xED);
-				wrtb (0x40 + 8 *(A - 1));
+				emit_ed_opcode (pd, 0x40 + 8 *(A - 1));
 				break;
 			}
 			wrtb (0xDB);
@@ -1562,9 +1548,8 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 		if (!rd_c (pd, &ptr)) {
 			break;
 		}
-		wrtb (0xED);
 		r--;
-		wrtb (0x40 + 8 * r);
+		emit_ed_opcode (pd, 0x40 + 8 * r);
 		break;
 	case Z80_INC:
 		if (! (r = rd_r_rr (pd, &ptr))) {
@@ -1579,20 +1564,16 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 		wrtb (0x03 + 0x10 * r);
 		break;
 	case Z80_IND:
-		wrtb (0xED);
-		wrtb (0xAA);
+		emit_ed_opcode (pd, 0xAA);
 		break;
 	case Z80_INDR:
-		wrtb (0xED);
-		wrtb (0xBA);
+		emit_ed_opcode (pd, 0xBA);
 		break;
 	case Z80_INI:
-		wrtb (0xED);
-		wrtb (0xA2);
+		emit_ed_opcode (pd, 0xA2);
 		break;
 	case Z80_INIR:
-		wrtb (0xED);
-		wrtb (0xB2);
+		emit_ed_opcode (pd, 0xB2);
 		break;
 	case Z80_JP:
 		r = rd_jp (pd, &ptr);
@@ -1639,8 +1620,7 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 				wrtb (0x22 + 0x10 *(r == ld_nnA? 1: 0));
 				break;
 			}
-			wrtb (0xED);
-			wrtb (0x43 + 0x10 * --r);
+			emit_ed_opcode (pd, 0x43 + 0x10 * --r);
 			break;
 		case ldA:
 			if (! (r = rd_lda (pd, &ptr))) {
@@ -1651,8 +1631,7 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 				break;
 			}
 			if (r == A_I || r == A_R) {
-				wrtb (0xED);
-				wrtb (0x57 + 8 *(r == A_R? 1: 0));
+				emit_ed_opcode (pd, 0x57 + 8 *(r == A_R? 1: 0));
 				break;
 			}
 			if (r == A_N) {
@@ -1698,8 +1677,7 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 		case ldDE:
 			s = rd_nn_nn (pd, &ptr);
 			if (s == _NN) {
-				wrtb (0xED);
-				wrtb (0x4B + 0x10 *(r == ldDE? 1: 0));
+				emit_ed_opcode (pd, 0x4B + 0x10 *(r == ldDE? 1: 0));
 				break;
 			}
 			wrtb (0x01 + (r == ldDE? 1: 0) * 0x10);
@@ -1713,8 +1691,7 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 			if (!rd_a (pd, &ptr)) {
 				break;
 			}
-			wrtb (0xED);
-			wrtb (0x47 + 0x08 *(r == ldR? 1: 0));
+			emit_ed_opcode (pd, 0x47 + 0x08 *(r == ldR? 1: 0));
 			break;
 		case ldSP:
 			r = rd_sp (pd, &ptr);
@@ -1726,30 +1703,24 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 				wrtb (0x31);
 				break;
 			}
-			wrtb (0xED);
-			wrtb (0x7B);
+			emit_ed_opcode (pd, 0x7B);
 			break;
 		}
 		break;
 	case Z80_LDD:
-		wrtb (0xED);
-		wrtb (0xA8);
+		emit_ed_opcode (pd, 0xA8);
 		break;
 	case Z80_LDDR:
-		wrtb (0xED);
-		wrtb (0xB8);
+		emit_ed_opcode (pd, 0xB8);
 		break;
 	case Z80_LDI:
-		wrtb (0xED);
-		wrtb (0xA0);
+		emit_ed_opcode (pd, 0xA0);
 		break;
 	case Z80_LDIR:
-		wrtb (0xED);
-		wrtb (0xB0);
+		emit_ed_opcode (pd, 0xB0);
 		break;
 	case Z80_NEG:
-		wrtb (0xED);
-		wrtb (0x44);
+		emit_ed_opcode (pd, 0x44);
 		break;
 	case Z80_NOP:
 		wrtb (0x00);
@@ -1762,12 +1733,10 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 		wrtb (0xB0 + r);
 		break;
 	case Z80_OTDR:
-		wrtb (0xED);
-		wrtb (0xBB);
+		emit_ed_opcode (pd, 0xBB);
 		break;
 	case Z80_OTIR:
-		wrtb (0xED);
-		wrtb (0xB3);
+		emit_ed_opcode (pd, 0xB3);
 		break;
 	case Z80_OUT:
 		if (! (r = rd_nnc (pd, &ptr))) {
@@ -1777,9 +1746,8 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 			if (! (r = rd_out (pd, &ptr))) {
 				break;
 			}
-			wrtb (0xED);
 			r--;
-			wrtb (0x41 + 8 * r);
+			emit_ed_opcode (pd, 0x41 + 8 * r);
 			break;
 		}
 		if (!rd_a (pd, &ptr)) {
@@ -1788,12 +1756,10 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 		wrtb (0xD3);
 		break;
 	case Z80_OUTD:
-		wrtb (0xED);
-		wrtb (0xAB);
+		emit_ed_opcode (pd, 0xAB);
 		break;
 	case Z80_OUTI:
-		wrtb (0xED);
-		wrtb (0xA3);
+		emit_ed_opcode (pd, 0xA3);
 		break;
 	case Z80_POP:
 		if (! (r = rd_stack (pd, &ptr))) {
@@ -1835,12 +1801,10 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 		wrtb (0xC0 + 8 * r);
 		break;
 	case Z80_RETI:
-		wrtb (0xED);
-		wrtb (0x4D);
+		emit_ed_opcode (pd, 0x4D);
 		break;
 	case Z80_RETN:
-		wrtb (0xED);
-		wrtb (0x45);
+		emit_ed_opcode (pd, 0x45);
 		break;
 	case Z80_RL:
 		if (! (r = rd_r_(pd, &ptr))) {
@@ -1867,8 +1831,7 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 		wrtb (0x07);
 		break;
 	case Z80_RLD:
-		wrtb (0xED);
-		wrtb (0x6F);
+		emit_ed_opcode (pd, 0x6F);
 		break;
 	case Z80_RR:
 		if (! (r = rd_r_(pd, &ptr))) {
@@ -1889,8 +1852,7 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 		wrtb (0x0F);
 		break;
 	case Z80_RRD:
-		wrtb (0xED);
-		wrtb (0x67);
+		emit_ed_opcode (pd, 0x67);
 		break;
 	case Z80_RST:
 		ptr = "";
@@ -1903,9 +1865,8 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 			if (! (r = rd_rr_(pd, &ptr))) {
 				break;
 			}
-			wrtb (0xED);
 			r--;
-			wrtb (0x42 + 0x10 * r);
+			emit_ed_opcode (pd, 0x42 + 0x10 * r);
 			break;
 		}
 		if (! (r = rd_r (pd, &ptr))) {
