@@ -46,8 +46,8 @@ typedef struct r_arena_block_t {
 typedef struct r_arena_t {
 	RArenaBlock *current; // Current block we're allocating from
 	RArenaBlock *first; // First block (kept for reset)
-                      
-  RArenaBlock *huge; // Requests larger than block size go here (1 block = 1 alloc)
+
+	RArenaBlock *huge; // Requests larger than block size go here (1 block = 1 alloc)
 
 	size_t block_size; // Fixed size for all blocks
 	size_t total_allocated; // Total bytes allocated across all blocks
