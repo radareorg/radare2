@@ -184,7 +184,7 @@ static int tms320c64x_analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8
 	if (handle == 0) {
 		return -1;
 	}
-	int ret = cs_open (CS_ARCH_TMS320C64X, 0, &handle);
+	int ret = cs_open (CS_ARCH_TMS320C64X, CS_MODE_BIG_ENDIAN, &handle);
 	if (ret != CS_ERR_OK) {
 		return -1;
 	}
@@ -400,6 +400,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		tms320_dasm_t *engine = tms320_engine_for_session (as);
 		if (!r_str_casecmp (cpu, "c64x")) {
 #ifdef CAPSTONE_TMS320C64X_H
+			tms320_f_set_cpu (engine, TMS320_F_CPU_C64X);
 			aop = tms320c64x_analop;
 #else
 			return false;
@@ -417,7 +418,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	}
 	ut8 mbuf[4];
 	const ut8 *lbuf = buf;
-	if (len > 3 && as->config->big_endian & R_SYS_ENDIAN_BIG) {
+	if (true) { // len > 3 && R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config) && r_str_casecmp (as->config->cpu, "c64x")) {
 		mbuf[0] = buf[3];
 		mbuf[1] = buf[2];
 		mbuf[2] = buf[1];
@@ -445,6 +446,11 @@ static bool tms320_init(RArchSession *as) {
 	if (!tms320_dasm_init (&pd->engine)) {
 		R_LOG_ERROR ("Cannot initialize tms320 engine");
 		return false;
+	}
+
+	// Set endianness based on CPU type
+	if (as->config->cpu && !r_str_casecmp (as->config->cpu, "c64x")) {
+		as->config->endian = R_SYS_ENDIAN_BIG;
 	}
 
 	return true;

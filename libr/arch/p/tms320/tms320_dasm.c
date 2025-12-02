@@ -1060,7 +1060,8 @@ static void init_dasm(tms320_dasm_t * dasm, const ut8 *stream, int len) {
 	dasm->status = 0;
 	dasm->length = 0;
 	memset (&dasm->f, 0, sizeof (dasm->f));
-	dasm->opcode64 = r_read_le64 (dasm->stream);
+	dasm->opcode64 = (tms320_f_get_cpu (dasm) == TMS320_F_CPU_C64X) ? 
+		r_read_be64 (dasm->stream) : r_read_le64 (dasm->stream);
 	dasm->head = NULL;
 	dasm->insn = NULL;
 }
