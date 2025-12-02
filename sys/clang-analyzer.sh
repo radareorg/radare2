@@ -1,7 +1,22 @@
 #!/bin/sh
 
 CHECKERS="alpha.core.TestAfterDivZero
+core.DivideZero
+core.NonNullParamChecker
+core.NullDereference
+core.uninitialized.ArraySubscript
+core.uninitialized.Assign
+core.uninitialized.Branch
+core.uninitialized.CaptureBlockVariable
 alpha.core.BoolAssignment
+nullability.NullPassedToNonnull
+nullability.NullReturnedFromNonnull
+nullability.NullableDereferenced
+nullability.NullablePassedToNonnull
+nullability.NullableReturnedFromNonnull
+valist.Uninitialized
+valist.CopyToSelf
+security.insecureAPI.strcpy
 alpha.core.CastToStruct
 alpha.core.FixedAddr
 alpha.core.IdenticalExpr
