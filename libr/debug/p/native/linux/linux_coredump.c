@@ -1268,7 +1268,7 @@ static ut8 *build_note_section(RDebug *dbg, elf_proc_note_t *elf_proc_note, proc
 			write_note_hdr (type, &note_data);
 			memcpy (note_data, note_info[type].name, note_info[type].size_name);
 			note_data += note_info[type].size_name;
-			memcpy (note_data, elf_proc_note->thread_note->fp_regset, note_info[type].size);
+			memcpy (note_data, elf_proc_note->thread_note->siginfo, note_info[type].size);
 			note_data += note_info[type].size_roundedup;
 
 #if __arm__ || __arm64
