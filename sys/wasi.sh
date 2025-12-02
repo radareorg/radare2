@@ -35,11 +35,12 @@ ERR=0
 # ./configure --with-static-themes --with-compiler=wasi --disable-debugger --without-fork --with-ostype=wasi --with-checks-level=0 --disable-threads --without-dylink --with-libr --without-gpl
 ./configure --with-static-themes --without-gperf --with-compiler=wasi --disable-debugger --without-fork --with-ostype=wasi --with-checks-level=0 --disable-threads --without-dylink --with-libr --without-gpl
 make -j
+#|| ERR=1 ld: unknown option: --whole-archive
 R2V=`./configure -qV`
 D="radare2-$R2V-wasi"
 mkdir -p $D
 for a in ${TOOLS} ; do
-	make -C binr/$a
+	make -C binr/$a || ERR=1
 	cp -f binr/$a/$a.wasm $D || ERR=1
 done
 # for a in $D/*.wasm ; do

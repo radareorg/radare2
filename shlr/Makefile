@@ -57,11 +57,7 @@ all:
 	exit 1
 endif
 
-ifneq ($(R2_WASM_BROWSER),1)
-preall: libwinkd capstone-build bochs sdbs
-else
-preall: libwinkd capstone-build sdbs
-endif
+preall: libwinkd bochs capstone-build sdbs
 	@for MOD in ${MODS} ; do \
 		echo $(MAKE) -C $$MOD ; \
 		$(MAKE) -C $$MOD HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
@@ -260,9 +256,7 @@ spp: spp-sync
 	export CFLAGS="-DUSE_R2=1 -I../../libr/include -DHAVE_FORK=${HAVE_FORK} -fPIC";  $(MAKE) -C spp r2lib
 
 SHLRS+=ar/libr_ar.a
-ifneq ($(R2_WASM_BROWSER),1)
 SHLRS+=bochs/lib/libbochs.a
-endif
 SHLRS+=$(CS_ROOT)/libcapstone.a
 SHLRS+=gdb/lib/libgdbr.a
 SHLRS+=grub/libgrubfs.a
