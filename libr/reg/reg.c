@@ -384,8 +384,6 @@ static inline char *dups(const char *x) {
 
 R_API RReg *r_reg_clone(RReg *r) {
 	R_RETURN_VAL_IF_FAIL (r, NULL);
-	RListIter *iter;
-	RRegItem *reg;
 	RReg *rr = R_NEW0 (RReg);
 	if (!rr) {
 		return NULL;
