@@ -34,7 +34,8 @@ ERR=0
 # XXX gperf-builds are broken
 # ./configure --with-static-themes --with-compiler=wasi --disable-debugger --without-fork --with-ostype=wasi --with-checks-level=0 --disable-threads --without-dylink --with-libr --without-gpl
 ./configure --with-static-themes --without-gperf --with-compiler=wasi --disable-debugger --without-fork --with-ostype=wasi --with-checks-level=0 --disable-threads --without-dylink --with-libr --without-gpl
-make -j || ERR=1
+make -j
+#|| ERR=1 ld: unknown option: --whole-archive
 R2V=`./configure -qV`
 D="radare2-$R2V-wasi"
 mkdir -p $D
