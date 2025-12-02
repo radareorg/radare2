@@ -2319,6 +2319,29 @@ static bool is_flag(const char *p) {
 	return len > 3;
 }
 
+// Helper function to generate unique color for immediate values
+static const char* get_unique_imm_color(ut64 value) {
+	// Define a palette of visually distinct colors for immediates
+	static const char *color_palette[] = {
+		Color_BYELLOW,    // Bright Yellow
+		Color_BCYAN,      // Bright Cyan  
+		Color_BMAGENTA,   // Bright Magenta
+		Color_BGREEN,     // Bright Green
+		Color_BRED,       // Bright Red
+		Color_BBLUE,      // Bright Blue
+		Color_YELLOW,     // Yellow
+		Color_CYAN,       // Cyan
+		Color_MAGENTA,    // Magenta
+		Color_BLUE,       // Blue
+	};
+	
+	// Hash the value to get a consistent color index
+	const size_t palette_size = sizeof(color_palette) / sizeof(color_palette[0]);
+	size_t color_idx = value % palette_size;
+	
+	return color_palette[color_idx];
+}
+
 R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, const char *num, bool partial_reset, ut64 func_addr) {
 	bool expect_reg = true;
 	int i, j, k, is_mod, is_float = 0, is_arg = 0;
@@ -2365,6 +2388,9 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 			const char *name = print->offname (print->user, n)? color_flag: NULL;
 			if (name) {
 				num2 = name;
+			} else if (print->unique_colors) {
+				// Use unique color for each immediate value
+				num2 = get_unique_imm_color (n);
 			}
 			const size_t nlen = strlen (num2);
 			if (nlen + j >= sizeof (o)) {
