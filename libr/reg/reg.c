@@ -348,8 +348,8 @@ R_API RRegItem *r_reg_item_clone(RRegItem *r) {
 	if (r->comment) {
 		ri->comment = strdup (r->comment);
 	}
-	r->index = ri->index;
-	r->arena = ri->arena;
+	ri->index = r->index;
+	ri->arena = r->arena;
 	return ri;
 }
 
@@ -405,11 +405,6 @@ R_API RReg *r_reg_clone(RReg *r) {
 	rr->bits_default = r->bits_default;
 	rr->hasbits = r->hasbits;
 	rr->endian = r->endian;
-	r->allregs = r_list_newf (NULL);
-	r_list_foreach (r->allregs, iter, reg) {
-		RRegItem *ri = r_reg_item_clone (reg);
-		r_list_append (rr->allregs, ri);
-	}
 	// nothing to clone
 	r_reg_arena_push (rr);
 	r_reg_hasbits_clear (rr);
