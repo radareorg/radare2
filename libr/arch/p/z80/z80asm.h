@@ -176,10 +176,10 @@ static void printerr(PluginData *pd, int error, const char *fmt, ...);
 static const char *delspc(const char *ptr);
 
 static int rd_expr(PluginData *pd, const char **p, char delimiter, int *valid, int level,
-	     int print_errors);
-static int rd_label(PluginData *pd, const char **p, int *exists, struct label **previous, int level,
-	      int print_errors);
-static int rd_character(PluginData *pd, const char **p, int *valid, int print_errors);
+	     bool print_errors);
+static int rd_label(PluginData *pd, const char **p, bool *exists, struct label **previous, int level,
+	      bool print_errors);
+static int rd_character(PluginData *pd, const char **p, int *valid, bool print_errors);
 
 static int compute_ref(PluginData *pd, struct reference *ref, int allow_invalid);
 
