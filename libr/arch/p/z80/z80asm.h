@@ -28,6 +28,8 @@
 #include <errno.h>
 #include <ctype.h>
 #include <stdarg.h>
+#include <stdint.h>
+#include <stdbool.h>
 
 /* defines which are not function-specific */
 #ifndef BUFLEN
@@ -167,20 +169,41 @@ struct reference
   char input[1];		/* variable size buffer containing formula */
 };
 
-typedef struct plugin_data_t PluginData;
+/* PluginData structure - used by both assembler and plugin */
+typedef struct plugin_data_t {
+	uint8_t *obuf;
+	int obuflen;
+	/* current line, address and file */
+	int addr;
+	int file;
+	/* use readbyte instead of (hl) if writebyte is true */
+	int writebyte;
+	const char *readbyte;
+	/* variables which are filled by rd_* functions and used later,
+	 * like readbyte */
+	const char *readword;
+	const char *indexjmp;
+	const char *bitsetres;
+	/* 0, 0xdd or 0xfd depening on which index prefix should be given */
+	int indexed;
+	/* increased for every -v option on the command line */
+	int verbose;
+	/* read commas after indx () if comma > 1. increase for every call */
+	int comma;
+	/* address at start of line (for references) */
+	int baseaddr;
+	/* set by readword and readbyte, used for new_reference */
+	char mem_delimiter;
+	/* line currently being parsed */
+	char *z80buffer;
+	/* if a macro is currently being defined */
+	int define_macro;
+	/* file (and macro) stack */
+	int sp;
+	struct stack stack[MAX_INCLUDE]; /* maximum level of includes */
+} PluginData;
 
-/* print an error message, including current line and file */
-static void printerr(PluginData *pd, int error, const char *fmt, ...);
-
-/* skip over spaces in string */
-static const char *delspc(const char *ptr);
-
-static int rd_expr(PluginData *pd, const char **p, char delimiter, int *valid, int level,
-	     int print_errors);
-static int rd_label(PluginData *pd, const char **p, int *exists, struct label **previous, int level,
-	      int print_errors);
-static int rd_character(PluginData *pd, const char **p, int *valid, int print_errors);
-
-static int compute_ref(PluginData *pd, struct reference *ref, int allow_invalid);
+/* Assembler API */
+R_IPI int z80asm(PluginData *pd, unsigned char *outbuf, const char *s);
 
 #endif

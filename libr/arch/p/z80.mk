@@ -1,4 +1,6 @@
 OBJ_Z80=p/z80/plugin.o
+OBJ_Z80+=p/z80/z80asm.o
+OBJ_Z80+=p/z80/z80dis.o
 
 STATIC_OBJ+=${OBJ_Z80}
 TARGET_Z80=arch_z80.${EXT_SO}

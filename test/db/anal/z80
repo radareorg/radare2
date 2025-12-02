@@ -49,24 +49,24 @@ EXPECT=<<EOF
         :   ;-- entry0:
         :   ;-- _start:
         :   0x08048360      31ed5e         sp = 0x5eed                 ; [13] -r-x section size 484 named .text
-        :   0x08048363      89             a = a + c
-        :   0x08048364      e1             pop hl
-        :   0x08048365      83             a = a + e
-        :   0x08048366      e4f050         call po 0x50f0
+        :   0x08048363      89             a += c + carry
+        :   0x08048364      e1             hl = stack[--sp]
+        :   0x08048365      83             a += e
+        :   0x08048366      e4f050         if (po) 0x50f0()
         :   0x08048369      54             d = h
         :   0x0804836a      52             d = d
         :   0x0804836b      68             l = b
-        `=< 0x0804836c      1085           djnz 0x85
-            0x0804836e      04             inc b
-            0x0804836f      08             swap(af af)
+        `=< 0x0804836c      1085           b--; if (b != 0) goto 0x85
+            0x0804836e      04             b++
+            0x0804836f      08             swap(af, af')
             0x08048370      68             l = b
-            0x08048371      a0             b = b &
-            0x08048372      84             a = a + h
-            0x08048373      04             inc b
-            0x08048374      08             swap(af af)
+            0x08048371      a0             a &= b
+            0x08048372      84             a += h
+            0x08048373      04             b++
+            0x08048374      08             swap(af, af')
             0x08048375      51             d = c
             0x08048376      56             d = [hl]
             0x08048377      68             l = b
-            0x08048378      14             inc d
+            0x08048378      14             d++
 EOF
 RUN
