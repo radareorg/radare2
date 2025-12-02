@@ -807,11 +807,13 @@ static proc_per_process_t *get_proc_process_content(RDebug *dbg) {
 
 	/* /proc/[pid]/stat */
 	/* we only need few fields which are process-wide */
+	/* fields: pid(1) comm(2) state(3) ppid(4) pgrp(5) sid(6) tty(7) tpgid(8) flags(9) ... nice(19) num_threads(20) */
 	{
-		if (r_str_scanf (buff, "%d (%*[^)]) %c %d %d %d %d %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %ld %ld",
+		int res = r_str_scanf (buff, "%d (%*[^)]) %c %d %d %d %*d %*d %d %*d %*d %*d %*d %*d %*d %*d %*d %*d %d %d",
 			&p->pid, &p->s_name, &p->ppid, &p->pgrp,
 			&p->sid, &p->flag,
-			&p->nice, &p->num_threads) < 6) {
+			&p->nice, &p->num_threads);
+		if (res < 8) {
 			free (buff);
 			return NULL;
 		}
