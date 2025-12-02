@@ -1409,12 +1409,17 @@ static int rd_lda(PluginData *pd, const char **p) {
 	};
 	const char *nn;
 	i = indx (pd, p, list, 0, &nn);
-	if (i == 2 || i == 5 || i == 18) {
-		pd->indexed = (i == 2 || i == 18)? 0xFD: 0xDD;
+	if (i == 2 || i == 5) {
+		pd->indexed = (i == 2)? 0xFD: 0xDD;
 		pd->indexjmp = nn;
 		return 7;
 	}
 	if (i == 17) {
+		pd->indexed = 0xFD;
+		pd->indexjmp = nn;
+		return 7;
+	}
+	if (i == 18) {
 		pd->indexed = 0xDD;
 		pd->indexjmp = nn;
 		return 7;
@@ -1843,7 +1848,7 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 						/* indexed addressing: ld a, [ix+n] or ld a, [iy+n] */
 						char n = r_num_math (NULL, pd->indexjmp);
 						wrtb (pd->indexed);
-						wrtb (0x4E);
+						wrtb (0x7E);
 						wrtb (n);
 						pd->indexed = 0;
 						break;
