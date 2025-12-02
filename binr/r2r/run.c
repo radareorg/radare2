@@ -24,6 +24,9 @@ static int kill(int a, int b) {
 static int execvp(const char *a, char **b) {
 	return -1;
 }
+static int setpgid (int, int) {
+	return -1;
+}
 #define WNOHANG 0
 #define WIFEXITED(x) 0
 #define WEXITSTATUS(x) 0
