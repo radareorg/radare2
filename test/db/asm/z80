@@ -1135,3 +1135,18 @@ d "xor ixl" ddad
 d "xor iyh" fdac
 d "xor iyl" fdad
 d "xor l" ad
+d "bit 0, [ix+0x01]" ddcb0146
+d "bit 3, [ix+0x7f]" ddcb7f5e
+d "bit 7, [iy+0xff]" fdcbff7e
+d "res 2, [ix+0x10]" ddcb1096
+d "res 6, [iy+0x20]" fdcb20b6
+d "set 1, [ix+0x3f]" ddcb3fce
+d "set 6, [iy+0x81]" fdcb81f6
+d "rl [ix+0x05]" ddcb0516
+d "rlc [iy+0x0a]" fdcb0a06
+d "rr [ix+0xf0]" ddcbf01e
+d "rrc [iy+0xff]" fdcbff0e
+d "sla [ix+0x15]" ddcb1526
+d "sll [iy+0x2a]" fdcb2a36
+d "sra [ix+0x40]" ddcb402e
+d "srl [iy+0x50]" fdcb503e

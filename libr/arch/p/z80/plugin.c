@@ -1289,9 +1289,13 @@ static int rd_0_7(PluginData *pd, const char **p) {
 	if (**p == 0) {
 		return 0;
 	}
+	int bit_num = **p - '0';
+	if (bit_num < 0 || bit_num > 7) {
+		return 0;
+	}
 	pd->bitsetres = *p;
 	skipword (pd, p, ',');
-	return 1;
+	return bit_num + 1;	/* return 1-8 to indicate bit 0-7 */
 }
 
 /* read long condition. do not error if not found. */
@@ -1401,19 +1405,24 @@ static int rd_lda(PluginData *pd, const char **p) {
 	int i;
 	const char *list[] = {
 		"( sp )", "( iy +)", "( de )", "( bc )", "( ix +)", "b", "c", "d", "e", "h",
-		"l", "( hl )", "a", "i", "r", "(*)", "*", NULL
+		"l", "( hl )", "a", "i", "r", "(*)", "[iy*]", "[ix*]", "*", NULL
 	};
 	const char *nn;
 	i = indx (pd, p, list, 0, &nn);
-	if (i == 2 || i == 5) {
-		pd->indexed = (i == 2)? 0xFD: 0xDD;
+	if (i == 2 || i == 5 || i == 18) {
+		pd->indexed = (i == 2 || i == 18)? 0xFD: 0xDD;
 		pd->indexjmp = nn;
 		return 7;
 	}
 	if (i == 17) {
-		pd->readbyte = nn;
-		pd->writebyte = 1;
+		pd->indexed = 0xDD;
+		pd->indexjmp = nn;
 		return 7;
+	}
+	if (i == 19) {
+		/* wildcard: numeric constant */
+		pd->readbyte = nn;
+		return A_N;
 	}
 	if (i == 16) {
 		pd->readword = nn;
@@ -1590,15 +1599,26 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 			wrtb (0xA0 + r);
 			break;
 		case Z80_BIT:
-			if (!rd_0_7 (pd, &ptr)) {
+			if (!(r = rd_0_7 (pd, &ptr))) {
 				break;
 			}
+			int bit_num = r - 1;	/* rd_0_7 returns 1-8, convert to 0-7 */
 			rd_comma (&ptr);
 			if (!(r = rd_r_(pd, &ptr))) {
 				break;
 			}
-			wrtb (0xCB);
-			wrtb (0x40 + (r - 1));
+			/* handle indexed addressing with displacement */
+			if (r == 7 && pd->indexed) {
+				char n = r_num_math (NULL, pd->indexjmp);
+				wrtb (pd->indexed);
+				wrtb (0xCB);
+				wrtb (n);
+				wrtb (0x40 + (bit_num << 3) + 6);	/* 6 is [hl] encoding for bit/res/set */
+				pd->indexed = 0;
+			} else {
+				wrtb (0xCB);
+				wrtb (0x40 + (bit_num << 3) + (r - 1));
+			}
 			break;
 		case Z80_CALL:
 			if ((r = rd_cc (pd, &ptr))) {
@@ -1819,6 +1839,15 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 						wrtb (n);
 						break;
 					}
+					if (r == 7 && pd->indexed) {
+						/* indexed addressing: ld a, [ix+n] or ld a, [iy+n] */
+						char n = r_num_math (NULL, pd->indexjmp);
+						wrtb (pd->indexed);
+						wrtb (0x4E);
+						wrtb (n);
+						pd->indexed = 0;
+						break;
+					}
 					if (r < 0) {
 						r++;
 						wrtb (0x0A - 0x10 * r);
@@ -1959,16 +1988,26 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 			wrtb (0xC5 + 0x10 * r);
 			break;
 		case Z80_RES:
-			if (!rd_0_7 (pd, &ptr)) {
+			if (!(r = rd_0_7 (pd, &ptr))) {
 				break;
 			}
+			int bit_num_res = r - 1;	/* rd_0_7 returns 1-8, convert to 0-7 */
 			rd_comma (&ptr);
 			if (!(r = rd_r_(pd, &ptr))) {
 				break;
 			}
-			wrtb (0xCB);
-			r--;
-			wrtb (0x80 + r);
+			/* handle indexed addressing with displacement */
+			if (r == 7 && pd->indexed) {
+				char n = r_num_math (NULL, pd->indexjmp);
+				wrtb (pd->indexed);
+				wrtb (0xCB);
+				wrtb (n);
+				wrtb (0x80 + (bit_num_res << 3) + 6);	/* 6 is [hl] encoding for bit/res/set */
+				pd->indexed = 0;
+			} else {
+				wrtb (0xCB);
+				wrtb (0x80 + (bit_num_res << 3) + (r - 1));
+			}
 			break;
 		case Z80_RET:
 			if (!(r = rd_cc (pd, &ptr))) {
@@ -1990,9 +2029,18 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 			if (!(r = rd_r_(pd, &ptr))) {
 				break;
 			}
-			wrtb (0xCB);
-			r--;
-			wrtb (0x10 + r);
+			if (r == 7 && pd->indexed) {
+				char n = r_num_math (NULL, pd->indexjmp);
+				wrtb (pd->indexed);
+				wrtb (0xCB);
+				wrtb (n);
+				wrtb (0x16);	/* rl [hl] */
+				pd->indexed = 0;
+			} else {
+				wrtb (0xCB);
+				r--;
+				wrtb (0x10 + r);
+			}
 			break;
 		case Z80_RLA:
 			wrtb (0x17);
@@ -2001,9 +2049,18 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 			if (!(r = rd_r_(pd, &ptr))) {
 				break;
 			}
-			wrtb (0xCB);
-			r--;
-			wrtb (0x00 + r);
+			if (r == 7 && pd->indexed) {
+				char n = r_num_math (NULL, pd->indexjmp);
+				wrtb (pd->indexed);
+				wrtb (0xCB);
+				wrtb (n);
+				wrtb (0x06);	/* rlc [hl] */
+				pd->indexed = 0;
+			} else {
+				wrtb (0xCB);
+				r--;
+				wrtb (0x00 + r);
+			}
 			break;
 		case Z80_RLCA:
 			wrtb (0x07);
@@ -2016,9 +2073,18 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 			if (!(r = rd_r_(pd, &ptr))) {
 				break;
 			}
-			wrtb (0xCB);
-			r--;
-			wrtb (0x18 + r);
+			if (r == 7 && pd->indexed) {
+				char n = r_num_math (NULL, pd->indexjmp);
+				wrtb (pd->indexed);
+				wrtb (0xCB);
+				wrtb (n);
+				wrtb (0x1E);	/* rr [hl] */
+				pd->indexed = 0;
+			} else {
+				wrtb (0xCB);
+				r--;
+				wrtb (0x18 + r);
+			}
 			break;
 		case Z80_RRA:
 			wrtb (0x1F);
@@ -2027,9 +2093,18 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 			if (!(r = rd_r_(pd, &ptr))) {
 				break;
 			}
-			wrtb (0xCB);
-			r--;
-			wrtb (0x08 + r);
+			if (r == 7 && pd->indexed) {
+				char n = r_num_math (NULL, pd->indexjmp);
+				wrtb (pd->indexed);
+				wrtb (0xCB);
+				wrtb (n);
+				wrtb (0x0E);	/* rrc [hl] */
+				pd->indexed = 0;
+			} else {
+				wrtb (0xCB);
+				r--;
+				wrtb (0x08 + r);
+			}
 			break;
 		case Z80_RRCA:
 			wrtb (0x0F);
@@ -2064,48 +2139,94 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 			wrtb (0x37);
 			break;
 		case Z80_SET:
-			if (!rd_0_7 (pd, &ptr)) {
+			if (!(r = rd_0_7 (pd, &ptr))) {
 				break;
 			}
+			int bit_num_set = r - 1;	/* rd_0_7 returns 1-8, convert to 0-7 */
 			rd_comma (&ptr);
 			if (!(r = rd_r_(pd, &ptr))) {
 				break;
 			}
-			wrtb (0xCB);
-			r--;
-			wrtb (0xC0 + r);
+			/* handle indexed addressing with displacement */
+			if (r == 7 && pd->indexed) {
+				char n = r_num_math (NULL, pd->indexjmp);
+				wrtb (pd->indexed);
+				wrtb (0xCB);
+				wrtb (n);
+				wrtb (0xC0 + (bit_num_set << 3) + 6);	/* 6 is [hl] encoding for bit/res/set */
+				pd->indexed = 0;
+			} else {
+				wrtb (0xCB);
+				wrtb (0xC0 + (bit_num_set << 3) + (r - 1));
+			}
 			break;
 		case Z80_SLA:
 			if (!(r = rd_r_(pd, &ptr))) {
 				break;
 			}
-			wrtb (0xCB);
-			r--;
-			wrtb (0x20 + r);
+			if (r == 7 && pd->indexed) {
+				char n = r_num_math (NULL, pd->indexjmp);
+				wrtb (pd->indexed);
+				wrtb (0xCB);
+				wrtb (n);
+				wrtb (0x26);	/* sla [hl] */
+				pd->indexed = 0;
+			} else {
+				wrtb (0xCB);
+				r--;
+				wrtb (0x20 + r);
+			}
 			break;
 		case Z80_SLI:
 			if (!(r = rd_r_(pd, &ptr))) {
 				break;
 			}
-			wrtb (0xCB);
-			r--;
-			wrtb (0x30 + r);
+			if (r == 7 && pd->indexed) {
+				char n = r_num_math (NULL, pd->indexjmp);
+				wrtb (pd->indexed);
+				wrtb (0xCB);
+				wrtb (n);
+				wrtb (0x36);	/* sll [hl] */
+				pd->indexed = 0;
+			} else {
+				wrtb (0xCB);
+				r--;
+				wrtb (0x30 + r);
+			}
 			break;
 		case Z80_SRA:
 			if (!(r = rd_r_(pd, &ptr))) {
 				break;
 			}
-			wrtb (0xCB);
-			r--;
-			wrtb (0x28 + r);
+			if (r == 7 && pd->indexed) {
+				char n = r_num_math (NULL, pd->indexjmp);
+				wrtb (pd->indexed);
+				wrtb (0xCB);
+				wrtb (n);
+				wrtb (0x2E);	/* sra [hl] */
+				pd->indexed = 0;
+			} else {
+				wrtb (0xCB);
+				r--;
+				wrtb (0x28 + r);
+			}
 			break;
 		case Z80_SRL:
 			if (!(r = rd_r_(pd, &ptr))) {
 				break;
 			}
-			wrtb (0xCB);
-			r--;
-			wrtb (0x38 + r);
+			if (r == 7 && pd->indexed) {
+				char n = r_num_math (NULL, pd->indexjmp);
+				wrtb (pd->indexed);
+				wrtb (0xCB);
+				wrtb (n);
+				wrtb (0x3E);	/* srl [hl] */
+				pd->indexed = 0;
+			} else {
+				wrtb (0xCB);
+				r--;
+				wrtb (0x38 + r);
+			}
 			break;
 		case Z80_SUB:
 			if (!(r = rd_r (pd, &ptr))) {
