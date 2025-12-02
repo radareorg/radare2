@@ -142,8 +142,9 @@ static ut32 default_reg_size(void *reg, const char *name) {
 	if (!ri) {
 		return 0;
 	}
+	ut32 rsize = ri->size;
 	r_unref (ri);
-	return ri->size;
+	return rsize;
 }
 
 static REsilRegInterface simple_reg_if = {
