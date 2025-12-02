@@ -529,7 +529,30 @@ bool test_r_cfloat_multiword_io(void) {
 	mu_end;
 }
 
+bool test_r_reg_clone(void) {
+	RReg *reg = r_reg_new ();
+	mu_assert_notnull (reg, "r_reg_new () failed");
+
+	r_reg_set_profile_string (reg, "=PC eip\n"
+		"gpr eax .32 0 0\n");
+
+	RReg *clone = r_reg_clone (reg);
+	mu_assert_notnull (clone, "r_reg_clone () failed");
+
+	const char *name = r_reg_alias_getname (clone, R_REG_ALIAS_PC);
+	mu_assert_streq (name, "eip", "PC register alias is eip in clone");
+
+	RRegItem *r = r_reg_get (clone, "eax", -1);
+	mu_assert_notnull (r, "eax exists in clone");
+	mu_assert_eq (r->size, 32, "eax size is 32 in clone");
+
+	r_reg_free (reg);
+	r_reg_free (clone);
+	mu_end;
+}
+
 int all_tests(void) {
+	mu_run_test (test_r_reg_clone);
 	mu_run_test (test_r_reg_set_name);
 	mu_run_test (test_r_reg_set_profile_string);
 	mu_run_test (test_r_reg_cfloat_scalar);
