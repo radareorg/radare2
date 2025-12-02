@@ -683,7 +683,7 @@ R_API void r_io_map_drain_overlay(RIOMap *map) {
 				ut8 *buf = realloc (start->buf, new_size * sizeof (ut8));
 				if (buf) {
 					start->buf = buf;
-					memcpy (&buf[r_itv_begin (cur->itv) - r_itv_begin (start->itv)],
+					memmove (&buf[r_itv_begin (cur->itv) - r_itv_begin (start->itv)],
 						cur->buf, r_itv_size (cur->itv));
 					r_crbtree_delete (map->overlay, cur, _overlay_chunk_insert, NULL);
 					r_queue_dequeue (q);	// first elem is always start
@@ -711,7 +711,7 @@ R_API void r_io_map_drain_overlay(RIOMap *map) {
 		ut8 *buf = realloc (start->buf, new_size * sizeof (ut8));
 		if (buf) {
 			start->buf = buf;
-			memcpy (&buf[r_itv_begin (cur->itv) - r_itv_begin (start->itv)],
+			memmove (&buf[r_itv_begin (cur->itv) - r_itv_begin (start->itv)],
 				cur->buf, r_itv_size (cur->itv));
 			r_crbtree_delete (map->overlay, cur, _overlay_chunk_insert, NULL);
 			r_queue_dequeue (q);	//first elem is always start
