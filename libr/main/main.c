@@ -19,6 +19,7 @@ static const RMain foo[] = {
 	{ "rasm2", r_main_rasm2 },
 	{ "ragg2", r_main_ragg2 },
 	{ "rapatch2", r_main_rapatch2 },
+	{ "rahash2", r_main_rahash2 },
 	{ "rabin2", r_main_rabin2 },
 	{ "radare2", r_main_radare2 },
 	{ "r2", r_main_radare2 },
