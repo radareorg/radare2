@@ -196,8 +196,7 @@ R_API size_t r_arena_block_count(const RArena *arena) {
 
 // Allocate a slice
 R_API RSlice r_arena_salloc(RArena *arena, size_t size) {
-	RSlice no = {0};
-	R_RETURN_VAL_IF_FAIL (arena, no);
+	R_RETURN_VAL_IF_FAIL (arena, ((RSlice){0}));
 	void *ptr = r_arena_alloc (arena, size);
 	return (RSlice){ .ptr = ptr, .len = size, .cap = size };
 }
