@@ -45,6 +45,9 @@ R_API bool r_sys_crash_handler(const char *cmd);
 R_API const char *r_sys_arch_str(int arch);
 R_API int r_sys_arch_id(const char *arch);
 R_API bool r_sys_arch_match(const char *archstr, const char *arch);
+R_API const char *r_sys_endian_tostring(int endian);
+R_API int r_sys_endian_fromstring(const char *str);
+R_API bool r_sys_endian_is(int endian, int test);
 R_API RList *r_sys_dir(const char *path);
 R_API void r_sys_perror_str(const char *fun);
 #if R2__WINDOWS__

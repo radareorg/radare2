@@ -598,14 +598,14 @@ static inline void *r_new_copy(int size, void *data) {
 #endif
 #endif
 
-// TODO: use 1234, 4321, 1324, ...
 #define R_SYS_ENDIAN_NONE 0
-#define R_SYS_ENDIAN_LITTLE 1
-// #define R_SYS_ENDIAN_4321 1
-#define R_SYS_ENDIAN_BIG 2
-// #define R_SYS_ENDIAN_1234 2
-#define R_SYS_ENDIAN_BI 3
-#define R_SYS_ENDIAN_MIDDLE 4
+#define R_SYS_ENDIAN_LITTLE 0x4321
+#define R_SYS_ENDIAN_4321 R_SYS_ENDIAN_LITTLE
+#define R_SYS_ENDIAN_BIG 0x1234
+#define R_SYS_ENDIAN_1234 R_SYS_ENDIAN_BIG
+#define R_SYS_ENDIAN_MIDDLE 0x2134
+#define R_SYS_ENDIAN_2134 R_SYS_ENDIAN_MIDDLE
+#define R_SYS_ENDIAN_BI (R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG)
 
 typedef enum {
 	R_SYS_ARCH_NONE = 0,

@@ -240,6 +240,122 @@ bool test_log(void) {
 	mu_end;
 }
 
+bool test_endian_tostring(void) {
+	// Test basic endian values
+	mu_assert_streq (r_sys_endian_tostring (R_SYS_ENDIAN_NONE), "none", "NONE should return 'none'");
+	mu_assert_streq (r_sys_endian_tostring (R_SYS_ENDIAN_LITTLE), "little", "LITTLE should return 'little'");
+	mu_assert_streq (r_sys_endian_tostring (R_SYS_ENDIAN_BIG), "big", "BIG should return 'big'");
+	mu_assert_streq (r_sys_endian_tostring (R_SYS_ENDIAN_MIDDLE), "middle", "MIDDLE should return 'middle'");
+	mu_assert_streq (r_sys_endian_tostring (R_SYS_ENDIAN_BI), "bi", "BI should return 'bi'");
+
+	// Test aliases
+	mu_assert_streq (r_sys_endian_tostring (R_SYS_ENDIAN_4321), "little", "4321 should return 'little'");
+	mu_assert_streq (r_sys_endian_tostring (R_SYS_ENDIAN_1234), "big", "1234 should return 'big'");
+	mu_assert_streq (r_sys_endian_tostring (R_SYS_ENDIAN_2134), "middle", "2134 should return 'middle'");
+
+	// Test unknown value
+	mu_assert_streq (r_sys_endian_tostring (999), "unknown", "unknown value should return 'unknown'");
+
+	// Test bitmask combinations
+	int bi_endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG;
+	mu_assert_streq (r_sys_endian_tostring (bi_endian), "bi", "bitmask LITTLE|BIG should return 'bi'");
+
+	mu_end;
+}
+
+bool test_endian_fromstring(void) {
+	// Test basic endian strings
+	mu_assert_eq (r_sys_endian_fromstring ("none"), R_SYS_ENDIAN_NONE, "'none' should return NONE");
+	mu_assert_eq (r_sys_endian_fromstring ("little"), R_SYS_ENDIAN_LITTLE, "'little' should return LITTLE");
+	mu_assert_eq (r_sys_endian_fromstring ("big"), R_SYS_ENDIAN_BIG, "'big' should return BIG");
+	mu_assert_eq (r_sys_endian_fromstring ("middle"), R_SYS_ENDIAN_MIDDLE, "'middle' should return MIDDLE");
+	mu_assert_eq (r_sys_endian_fromstring ("bi"), R_SYS_ENDIAN_BI, "'bi' should return BI");
+
+	// Test numeric aliases
+	mu_assert_eq (r_sys_endian_fromstring ("4321"), R_SYS_ENDIAN_LITTLE, "'4321' should return LITTLE");
+	mu_assert_eq (r_sys_endian_fromstring ("1234"), R_SYS_ENDIAN_BIG, "'1234' should return BIG");
+	mu_assert_eq (r_sys_endian_fromstring ("2134"), R_SYS_ENDIAN_MIDDLE, "'2134' should return MIDDLE");
+
+	// Test case sensitivity (should be case sensitive)
+	mu_assert_eq (r_sys_endian_fromstring ("Little"), R_SYS_ENDIAN_NONE, "Case sensitive test - 'Little' should fail");
+	mu_assert_eq (r_sys_endian_fromstring ("BIG"), R_SYS_ENDIAN_NONE, "Case sensitive test - 'BIG' should fail");
+
+	// Test invalid strings
+	mu_assert_eq (r_sys_endian_fromstring ("invalid"), R_SYS_ENDIAN_NONE, "invalid string should return NONE");
+	mu_assert_eq (r_sys_endian_fromstring (""), R_SYS_ENDIAN_NONE, "empty string should return NONE");
+
+	// Test NULL input
+	mu_assert_eq (r_sys_endian_fromstring (NULL), R_SYS_ENDIAN_NONE, "NULL should return NONE");
+
+	mu_end;
+}
+
+bool test_endian_is(void) {
+	// Test basic endian checking
+	mu_assert_true (r_sys_endian_is (R_SYS_ENDIAN_LITTLE, R_SYS_ENDIAN_LITTLE), "LITTLE should match LITTLE");
+	mu_assert_true (r_sys_endian_is (R_SYS_ENDIAN_BIG, R_SYS_ENDIAN_BIG), "BIG should match BIG");
+	mu_assert_true (r_sys_endian_is (R_SYS_ENDIAN_MIDDLE, R_SYS_ENDIAN_MIDDLE), "MIDDLE should match MIDDLE");
+	mu_assert_false (r_sys_endian_is (R_SYS_ENDIAN_LITTLE, R_SYS_ENDIAN_BIG), "LITTLE should not match BIG");
+
+	// Test BI endian (bitmask)
+	int bi_endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG;
+	mu_assert_true (r_sys_endian_is (bi_endian, R_SYS_ENDIAN_LITTLE), "BI should match LITTLE");
+	mu_assert_true (r_sys_endian_is (bi_endian, R_SYS_ENDIAN_BIG), "BI should match BIG");
+	mu_assert_false (r_sys_endian_is (bi_endian, R_SYS_ENDIAN_MIDDLE), "BI should not match MIDDLE");
+
+	// Test with aliases
+	mu_assert_true (r_sys_endian_is (R_SYS_ENDIAN_4321, R_SYS_ENDIAN_LITTLE), "4321 should match LITTLE");
+	mu_assert_true (r_sys_endian_is (R_SYS_ENDIAN_1234, R_SYS_ENDIAN_BIG), "1234 should match BIG");
+	mu_assert_true (r_sys_endian_is (R_SYS_ENDIAN_2134, R_SYS_ENDIAN_MIDDLE), "2134 should match MIDDLE");
+
+	// Test exact match vs partial match
+	int complex_endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_MIDDLE;
+	mu_assert_true (r_sys_endian_is (complex_endian, R_SYS_ENDIAN_LITTLE), "complex should match LITTLE");
+	mu_assert_true (r_sys_endian_is (complex_endian, R_SYS_ENDIAN_MIDDLE), "complex should match MIDDLE");
+	mu_assert_false (r_sys_endian_is (complex_endian, R_SYS_ENDIAN_BIG), "complex should not match BIG");
+
+	mu_end;
+}
+
+bool test_endian_roundtrip(void) {
+	// Test that tostring/fromstring are consistent for all valid values
+	const char *test_strings[] = {"none", "little", "big", "middle", "bi", "4321", "1234", "2134"};
+	int expected_values[] = {
+		R_SYS_ENDIAN_NONE,
+		R_SYS_ENDIAN_LITTLE,
+		R_SYS_ENDIAN_BIG,
+		R_SYS_ENDIAN_MIDDLE,
+		R_SYS_ENDIAN_BI,
+		R_SYS_ENDIAN_LITTLE,
+		R_SYS_ENDIAN_BIG,
+		R_SYS_ENDIAN_MIDDLE
+	};
+
+	for (int i = 0; i < sizeof (test_strings) / sizeof (test_strings[0]); i++) {
+		int from_string = r_sys_endian_fromstring (test_strings[i]);
+		const char *to_string = r_sys_endian_tostring (from_string);
+		
+		// For BI, we need special handling since tostring might return "bi" for both "bi" and bitmask combinations
+		if (from_string == R_SYS_ENDIAN_BI) {
+			mu_assert_streq (to_string, "bi", "BI should roundtrip correctly");
+		} else {
+			mu_assert_eq (from_string, expected_values[i], "fromstring should return expected value");
+			// For non-BI values, tostring should return the canonical name
+			if (from_string == R_SYS_ENDIAN_LITTLE) {
+				mu_assert_streq (to_string, "little", "LITTLE should tostring to 'little'");
+			} else if (from_string == R_SYS_ENDIAN_BIG) {
+				mu_assert_streq (to_string, "big", "BIG should tostring to 'big'");
+			} else if (from_string == R_SYS_ENDIAN_MIDDLE) {
+				mu_assert_streq (to_string, "middle", "MIDDLE should tostring to 'middle'");
+			} else if (from_string == R_SYS_ENDIAN_NONE) {
+				mu_assert_streq (to_string, "none", "NONE should tostring to 'none'");
+			}
+		}
+	}
+
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_ignore_prefixes);
 	mu_run_test (test_remove_r2_prefixes);
@@ -250,6 +366,10 @@ int all_tests(void) {
 	mu_run_test (test_initial_underscore);
 	mu_run_test (test_tagged_pointers);
 	mu_run_test (test_log);
+	mu_run_test (test_endian_tostring);
+	mu_run_test (test_endian_fromstring);
+	mu_run_test (test_endian_is);
+	mu_run_test (test_endian_roundtrip);
 	return tests_passed != tests_run;
 }
 
