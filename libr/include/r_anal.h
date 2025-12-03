@@ -1546,6 +1546,8 @@ R_API void r_anal_rtti_itanium_print_class_type_info(RVTableContext *context, ut
 R_API void r_anal_rtti_itanium_print_si_class_type_info(RVTableContext *context, ut64 addr, int mode);
 R_API void r_anal_rtti_itanium_print_vmi_class_type_info(RVTableContext *context, ut64 addr, int mode);
 R_API bool r_anal_rtti_itanium_print_at_vtable(RVTableContext *context, ut64 addr, int mode);
+R_API void r_anal_rtti_itanium_print_all_zti(RVTableContext *context, int mode);
+R_API void r_anal_rtti_itanium_print_all_zti_impl(RVTableContext *context, RList *symbols, int mode);
 R_API void r_anal_rtti_itanium_recover_all(RVTableContext *vt_context, RList *vtables, RList *symbols);
 R_API void *r_anal_rtti_itanium_raw_parse(RVTableContext *context, ut64 vtable_addr, ut64 rtti_addr);
 

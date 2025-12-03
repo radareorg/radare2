@@ -14977,13 +14977,21 @@ static void cmd_anal_rtti(RCore *core, const char *input) {
 		r_anal_rtti_print_at_vtable (core->anal, core->addr, input[0]);
 		break;
 	case 'a': // "avra"
-		r_anal_rtti_print_all (core->anal, input[1]);
+		// For ARM32, try to parse _ZTI symbols directly since vtable search doesn't work well
+		if (r_str_startswith (core->anal->config->arch, "arm")) {
+			RVTableContext context;
+			r_anal_vtable_begin (core->anal, &context);
+			RList *vtables = r_anal_vtable_search (&context);
+			r_anal_rtti_itanium_recover_all (&context, vtables, r_bin_get_symbols (core->bin));
+			r_list_free (vtables);
+		} else {
+			r_anal_rtti_print_all (core->anal, input[1]);
+		}
 		break;
 	case 'r': // "avrr"
 		{
 			RList *symbols = r_bin_get_symbols (core->bin);
 			r_anal_rtti_recover_all (core->anal, symbols);
-			r_list_free (symbols);
 		}
 		break;
 	case 'D': // "avrD"
