@@ -4,7 +4,7 @@ EXTRA_TARGETS+=do
 EXTRA_CLEAN=doclean
 
 NAME=r_anal
-R2DEPS=r_util r_reg r_syscall r_search r_cons r_flag r_muta r_arch r_esil
+R2DEPS=r_util r_reg r_syscall r_search r_cons r_flag r_config r_io r_muta r_arch r_esil
 CFLAGS:=-I.. -I$(LTOP)/arch/include -DR2_PLUGIN_INCORE -Iarch -I$(TOP)/shlr $(CFLAGS)
 
 LDFLAGS+=${BN_LIBS}
