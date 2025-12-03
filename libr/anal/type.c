@@ -596,11 +596,3 @@ R_API void r_anal_save_base_type(const RAnal *anal, const RAnalBaseType *type) {
 		break;
 	}
 }
-
-#ifndef R2_PLUGIN_INCORE
-#if defined(__GNUC__) && !defined(__TINYC__)
-R_API R_WEAK void r_anal_type_match(RAnal *anal R_UNUSED, RAnalFunction *fcn R_UNUSED) {
-	R_LOG_WARN ("Type propagation plugin is unavailable (anal.tp disabled)");
-}
-#endif
-#endif
