@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2016-2025 - oddcoder, sivaramaaa, pancake */
 /* type matching - type propagation */
 
-#include <r_core.h>
+#include <r_anal.h>
 #define LOOP_MAX 10
 #define TYPE_MATCH_MAX_BACKTRACE 512
 
@@ -436,11 +436,12 @@ typedef struct tp_state_t {
 	int stack_fd;
 	ut32 stack_map;
 	RAnal *anal;
-	RConfigHold *hc;
+	// RConfigHold *hc;
 	char *cfg_spec;
 	bool cfg_breakoninvalid;
 	bool cfg_chk_constraint;
 	bool cfg_rollback;
+	bool old_follow;
 	void (*on_call)(struct tp_state_t *tps, ut64 addr, const char *name);
 	void *hook_user;
 } TPState;
@@ -981,7 +982,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 					free (ms);
 					cmt_set = true;
 					if ((op->ptr && op->ptr != UT64_MAX) && !strcmp (name, "format")) {
-						RFlagItem *f = anal->flb.f? r_flag_get_by_spaces (anal->flb.f, false, op->ptr, R_FLAGS_FS_STRINGS, NULL): NULL;
+						RFlagItem *f = anal->flb.f? r_flag_get_by_spaces (anal->flb.f, false, op->ptr, "strings", NULL): NULL;
 						if (f && f->size > 0) {
 							char formatstr[0x200];
 							int len = R_MIN (sizeof (formatstr) - 1, f->size);
@@ -1093,8 +1094,15 @@ static void tps_fini(TPState *tps) {
 		tps->anal->iob.fd_close (tps->anal->iob.io, tps->stack_fd);
 	}
 	free (tps->cfg_spec);
-	r_config_hold_restore (tps->hc);
-	r_config_hold_free (tps->hc);
+	if (tps->anal->coreb.cmd) {
+		if (tps->old_follow) {
+			tps->anal->coreb.cmd (tps->anal->coreb.core, "e dbg.follow=true");
+		} else {
+			tps->anal->coreb.cmd (tps->anal->coreb.core, "e dbg.follow=false");
+		}
+	}
+	// r_config_hold_restore (tps->hc);
+	// r_config_hold_free (tps->hc);
 	free (tps);
 }
 
@@ -1308,16 +1316,17 @@ static TPState *tps_init(RAnal *anal) {
 	}
 	tps->esil.anal = anal;
 	// Config hold requires RConfig which we get through coreb.core
-	RCore *core = anal->coreb.core;
-	if (core) {
-		RConfig *cfg = ((RCore *)core)->config;
-		tps->hc = r_config_hold_new (cfg);
-		tps->cfg_spec = strdup (r_config_get (cfg, "anal.types.spec"));
-		tps->cfg_breakoninvalid = r_config_get_b (cfg, "esil.breakoninvalid");
-		tps->cfg_chk_constraint = r_config_get_b (cfg, "anal.types.constraint");
-		tps->cfg_rollback = r_config_get_b (cfg, "anal.types.rollback");
-		r_config_hold (tps->hc, "dbg.follow", NULL);
-		r_config_set_i (cfg, "dbg.follow", 0);
+	void *core = anal->coreb.core;
+	if (core && anal->coreb.cfgGet && anal->coreb.cfgGetB) {
+		const char *spec = anal->coreb.cfgGet (core, "anal.types.spec");
+		tps->cfg_spec = strdup (spec? spec: "gcc");
+		tps->cfg_breakoninvalid = anal->coreb.cfgGetB (core, "esil.breakoninvalid");
+		tps->cfg_chk_constraint = anal->coreb.cfgGetB (core, "anal.types.constraint");
+		tps->cfg_rollback = anal->coreb.cfgGetB (core, "anal.types.rollback");
+		if (anal->coreb.cfgGetI && anal->coreb.cmd) {
+			tps->old_follow = anal->coreb.cfgGetI (core, "dbg.follow");
+			anal->coreb.cmd (core, "e dbg.follow=0");
+		}
 	} else {
 		tps->cfg_spec = strdup ("gcc");
 		tps->cfg_breakoninvalid = false;
@@ -1504,7 +1513,7 @@ repeat:
 						callee_addr = fcn_call->addr;
 					}
 				} else if (aop.ptr != UT64_MAX) {
-					RFlagItem *flag = anal->flb.f? r_flag_get_by_spaces (anal->flb.f, false, aop.ptr, R_FLAGS_FS_IMPORTS, NULL): NULL;
+					RFlagItem *flag = anal->flb.f? r_flag_get_by_spaces (anal->flb.f, false, aop.ptr, "imports", NULL): NULL;
 					if (flag && flag->realname) {
 						full_name = flag->realname;
 						callee_addr = aop.ptr;
@@ -1690,7 +1699,7 @@ repeat:
 						}
 						ut64 ptr = r_read_ble (sbuf, be, aop.refptr * 8);
 						if (ptr && ptr != UT64_MAX) {
-							RFlagItem *f = anal->flb.f? r_flag_get_by_spaces (anal->flb.f, false, ptr, R_FLAGS_FS_STRINGS, NULL): NULL;
+							RFlagItem *f = anal->flb.f? r_flag_get_by_spaces (anal->flb.f, false, ptr, "strings", NULL): NULL;
 							if (f) {
 								str_flag = true;
 							}
@@ -1826,7 +1835,7 @@ static bool tp_cmd(RAnal *anal, const char *input) {
 		return false;
 	}
 	const char *args = r_str_trim_head_ro (input + 2);
-	RCore *core = (RCore *)anal->coreb.core;
+	void *core = anal->coreb.core;
 	if (*args == '?') {
 		if (anal->coreb.help && core) {
 			anal->coreb.help (core, help_msg_tp);
