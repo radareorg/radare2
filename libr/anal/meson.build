@@ -44,6 +44,7 @@ r_anal_sources = [
   'p/anal_null.c',
   'p/anal_sbpf.c',
   'p/anal_tcc.c',
+  'p/anal_tp.c',
 ]
 
 r_anal_sources += r_anal_d_sources

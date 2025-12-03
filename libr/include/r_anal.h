@@ -1084,6 +1084,7 @@ R_API const char *r_anal_functiontype_tostring(int type);
 R_API int r_anal_function_coverage(RAnalFunction *fcn);
 R_API int r_anal_function_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, int depth);
 R_API void r_anal_bind(RAnal *b, RAnalBind *bnd);
+R_API void r_anal_type_match(RAnal *anal, RAnalFunction *fcn);
 R_API bool r_anal_set_triplet(RAnal *anal, const char *os, const char *arch, int bits);
 R_API void r_anal_add_import(RAnal *anal, const char *imp);
 R_API void r_anal_remove_import(RAnal *anal, const char *imp);
@@ -1684,6 +1685,7 @@ extern RAnalPlugin r_anal_plugin_sbpf;
 extern RAnalPlugin r_anal_plugin_tcc;
 extern RAnalPlugin r_anal_plugin_a2f;
 extern RAnalPlugin r_anal_plugin_path;
+extern RAnalPlugin r_anal_plugin_tp;
 
 #ifdef __cplusplus
 }

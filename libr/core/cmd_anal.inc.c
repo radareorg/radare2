@@ -1454,7 +1454,7 @@ static bool cmd_anal_aaft(RCore *core) {
 		}
 		r_reg_arena_poke (core->anal->reg, saved_arena, saved_arena_size);
 		r_esil_set_pc (core->anal->esil, fcn->addr);
-		r_core_anal_type_match (core, fcn);
+		r_core_cmd0 (core, "a:tp");
 		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
@@ -1480,7 +1480,7 @@ static void cmd_aft(RCore *core, const char *input) {
 	case '\0': // "aft"
 		seek = core->addr;
 		r_esil_set_pc (core->anal->esil, fcn? fcn->addr: core->addr);
-		r_core_anal_type_match (core, fcn);
+		r_core_cmd0 (core, "a:tp");
 		r_core_seek (core, seek, true);
 		break;
 	case '?':

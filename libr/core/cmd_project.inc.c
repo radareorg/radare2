@@ -144,7 +144,9 @@ static int cmd_project(void *data, const char *input) {
 		if (R_STR_ISNOTEMPTY (r_config_get (core->config, "prj.name"))) {
 			r_project_close (core->prj);
 			r_config_set (core->config, "prj.name", "");
+			core->num->value = 1;
 		} else {
+			core->num->value = 0;
 			R_LOG_WARN ("No project to close");
 		}
 		break;
