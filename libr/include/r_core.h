@@ -726,9 +726,6 @@ R_API RList* r_core_anal_cycles(RCore *core, int ccl);
 typedef struct r_vec_RVecAnalRef_t RVecAnalRef;
 R_API RVecAnalRef *r_core_anal_fcn_get_calls(RCore *core, RAnalFunction *fcn); // get all calls from a function
 
-/* tp.c */
-R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn);
-
 /* asm.c */
 #define R_MIDFLAGS_HIDE 0
 #define R_MIDFLAGS_SHOW 1
