@@ -1246,7 +1246,7 @@ static TPState *tps_init(RAnal *anal) {
 	tps->stack_base = anal->coreb.cfgGetI? anal->coreb.cfgGetI (anal->coreb.core, "esil.stack.addr"): 0x100000;
 	ut64 stack_size = anal->coreb.cfgGetI? anal->coreb.cfgGetI (anal->coreb.core, "esil.stack.size"): 0xf0000;
 	// ideally this all would happen in a dedicated temporal io bank
-	if (!r_io_map_locate (io, &tps->stack_base, stack_size, align)) {
+	if (anal->iob.map_locate && !anal->iob.map_locate (io, &tps->stack_base, stack_size, align)) {
 		free (tps);
 		return NULL;
 	}
