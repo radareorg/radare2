@@ -307,7 +307,9 @@ typedef struct r_debug_desc_plugin_t {
 } RDebugDescPlugin;
 
 typedef struct r_debug_plugin_session_t RDebugPluginSession;
+typedef bool (*RDebugGenerateCore)(RDebug *dbg, RBuffer *dest, bool fulldump);
 typedef int (*RDebugCmdCb)(RDebug *dbg, const char *cmd);
+
 typedef struct r_debug_plugin_t {
 	RPluginMeta meta;
 	RSysBits bits;
@@ -332,7 +334,7 @@ typedef struct r_debug_plugin_t {
 	bool (*step_over)(RDebug *dbg);
 	bool (*cont)(RDebug *dbg, int pid, int tid, int sig);
 	RDebugReasonType (*wait)(RDebug *dbg, int pid);
-	bool (*gcore)(RDebug *dbg, RBuffer *dest);
+	RDebugGenerateCore gcore;
 	bool (*kill)(RDebug *dbg, int pid, int tid, int sig);
 	RList* (*kill_list)(RDebug *dbg);
 	bool (*contsc)(RDebug *dbg, int pid, int sc);
@@ -396,6 +398,7 @@ typedef struct r_debug_t {
 	char *glob_unlibs; /* stop on lib unload */
 	bool consbreak; /* SIGINT handle for attached processes */
 	bool continue_all_threads;
+	int coredump_filter; /* override coredump filter, -1 to use default */
 
 	/* tracking debugger state */
 	int steps; /* counter of steps done */
