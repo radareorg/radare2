@@ -325,7 +325,10 @@ static bool has_map_anonymous_content(char *buff_smaps, unsigned long start_addr
 	return 0;
 }
 
-static bool dump_this_map(char *buff_smaps, linux_map_entry_t *entry, ut8 filter_flags) {
+static bool dump_this_map(char *buff_smaps, linux_map_entry_t *entry, int filter_flags) {
+	if (filter_flags == 0) {
+		return true;
+	}
 	char *p, *pp, *ppp, *extern_tok, *flags_str = NULL;
 	char *identity = r_str_newf (fmt_addr, entry->start_addr, entry->end_addr);
 	bool found = false;
@@ -479,7 +482,7 @@ static void clean_maps(linux_map_entry_t *h) {
 	}
 }
 
-static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg, ut8 filter_flags) {
+static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg, int filter_flags) {
 	linux_map_entry_t *me_head = NULL, *me_tail = NULL;
 	RListIter *iter;
 	RDebugMap *map;
@@ -1459,9 +1462,8 @@ static void init_note_info_structure(RDebug *dbg, int pid, size_t auxv_size) {
 #endif
 }
 
-bool linux_generate_corefile (RDebug *dbg, RBuffer *dest) {
+R_IPI bool linux_generate_corefile(RDebug *dbg, RBuffer *dest, bool fulldump) {
 	proc_content_t *proc_data = NULL;
-	elf_proc_note_t *elf_proc_note = NULL;
 	elf_shdr_t *shdr_pxnum = NULL;
 	elf_hdr_t *elf_hdr = NULL;
 	void *note_data = NULL;
@@ -1471,15 +1473,8 @@ bool linux_generate_corefile (RDebug *dbg, RBuffer *dest) {
 	ut32 hdr_size;
 	elf_offset_t offset = 0;
 
-	elf_proc_note = R_NEW0 (elf_proc_note_t);
-	if (!elf_proc_note) {
-		return false;
-	}
+	elf_proc_note_t *elf_proc_note = R_NEW0 (elf_proc_note_t);
 	proc_data = R_NEW0 (proc_content_t);
-	if (!proc_data) {
-		free (elf_proc_note);
-		return false;
-	}
 	proc_data->per_process = get_proc_process_content (dbg);
 	if (!proc_data->per_process) {
 		R_LOG_ERROR ("linux_generate_corefile: get_proc_process_content failed");
@@ -1505,7 +1500,8 @@ bool linux_generate_corefile (RDebug *dbg, RBuffer *dest) {
 		goto cleanup;
 	}
 	/* NT_FILE */
-	elf_proc_note->maps = linux_get_mapped_files (dbg, proc_data->per_process->coredump_filter);
+	ut8 filter_flags = (dbg->coredump_filter != -1) ? dbg->coredump_filter : proc_data->per_process->coredump_filter;
+	elf_proc_note->maps = linux_get_mapped_files (dbg, fulldump? 0: filter_flags);
 	if (!elf_proc_note->maps) {
 		R_LOG_ERROR ("linux_generate_corefile: linux_get_mapped_files failed");
 		error = true;

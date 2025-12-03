@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #include <r_userconf.h>
 #include <r_drx.h>
@@ -14,8 +14,8 @@
 static bool r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig);
 static bool r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size);
 static bool r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int size);
+R_IPI bool linux_generate_corefile(RDebug *dbg, RBuffer *dest, bool fulldump);
 struct r_debug_desc_plugin_t r_debug_desc_plugin_native;
-bool linux_generate_corefile(RDebug *dbg, RBuffer *dest);
 
 #include "native/bt.c"
 
@@ -1625,14 +1625,14 @@ static int r_debug_desc_native_open(const char *path) {
 	return 0;
 }
 
-static bool r_debug_gcore(RDebug *dbg, RBuffer *dest) {
+static bool r_debug_gcore(RDebug *dbg, RBuffer *dest, bool fulldump) {
 #if __APPLE__
-	return xnu_generate_corefile (dbg, dest);
+	return xnu_generate_corefile (dbg, dest, fulldump);
 #elif __linux__ && (__x86_64__ || __i386__ || __arm__ || __arm64__)
 #  if __ANDROID__
 	return false;
 #  else
-	return linux_generate_corefile (dbg, dest);
+	return linux_generate_corefile (dbg, dest, fulldump);
 #  endif
 #else
 	return false;

@@ -568,7 +568,10 @@ static RDebugInfo *windbg_info(RDebug *dbg, const char *arg) {
 	return NULL;
 }
 
-static bool windbg_gcore(RDebug *dbg, RBuffer *dest) {
+static bool windbg_gcore(RDebug *dbg, RBuffer *dest, bool fulldump) {
+	if (fulldump) {
+		R_LOG_TODO ("fulldump not implemented for this target");
+	}
 	DbgEngContext *idbg = dbg->user;
 	R_RETURN_VAL_IF_FAIL (idbg && idbg->initialized, false);
 	char *path = r_sys_getenv (R_SYS_TMP);

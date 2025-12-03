@@ -1047,7 +1047,7 @@ static uid_t ppidFromPid(pid_t pid) {
 	return ppid;
 }
 
-bool xnu_generate_corefile (RDebug *dbg, RBuffer *dest) {
+bool xnu_generate_corefile (RDebug *dbg, RBuffer *dest, bool fulldump) {
 	int error = 0, i;
 	int tstate_size;
 	int segment_count;
@@ -1057,6 +1057,9 @@ bool xnu_generate_corefile (RDebug *dbg, RBuffer *dest) {
 	size_t segment_command_sz;
 	size_t padding_sz;
 	int hoffset;
+	if (fulldump) {
+		R_LOG_TODO ("fulldump not yet implemented here");
+	}
 
 	RBuffer *mem_maps_buffer;
 	vm_offset_t header;
@@ -1127,7 +1130,7 @@ cleanup:
 	return !error;
 }
 
-RDebugPid *xnu_get_pid (int pid) {
+RDebugPid *xnu_get_pid(int pid) {
 	int psnamelen, foo, nargs, mib[3], uid;
 	size_t size, argmax = 4096;
 	char *curr_arg, *start_args, *iter_args, *end_args;

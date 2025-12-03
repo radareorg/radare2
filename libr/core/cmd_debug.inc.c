@@ -20,6 +20,13 @@
 
 void cmd_anal_reg (RCore *core, const char *str);
 
+static RCoreHelpMessage help_msg_dg = {
+	"Usage:", "dg", "[a] ([file]) # Debug Generate CoreDump",
+	"dg", " [file]", "generate a coredump file",
+	"dga", " [file]", "generate a core-file with all memory maps",
+	NULL
+};
+
 static RCoreHelpMessage help_msg_d = {
 	"Usage:", "d", " # Debug commands",
 	"d:", "[?] [cmd]", "run custom debug plugin command",
@@ -28,7 +35,7 @@ static RCoreHelpMessage help_msg_d = {
 	"dc", "[?]", "continue execution",
 	"dd", "[?][*+-tsdfrw]", "manage file descriptors for child process",
 	"de", "[-sc] [perm] [rm] [e]", "debug with ESIL (see de?)",
-	"dg", " <file>", "generate a core-file (WIP)",
+	"dg", "[?][a] <file>", "generate a core-file (WIP)",
 	"dh", " [plugin-name]", "select a new debug handler plugin (see dbh)",
 	"dH", " [handler]", "transplant process to a new handler",
 	"di", "[?]", "show debugger backend information (See dh)",
@@ -5552,6 +5559,42 @@ static ut8 *getFileData(RCore *core, const char *arg, int *sz) {
 	return out;
 }
 
+static void cmd_dg(RCore *core, const char *input) {
+	if (input[1] == '?') {
+		r_core_cmd_help (core, help_msg_dg);
+	} else if (input[1] == 'a' || input[1] == ' ' || !input[1]) {
+		RDebugGenerateCore gcore = R_UNWRAP5 (core, dbg, current, plugin, gcore);
+		if (!gcore) {
+			R_LOG_ERROR ("Cannot generate core for this target or mode");
+			return;
+		}
+		if (core->dbg->pid == -1) {
+			R_LOG_ERROR ("Not debugging, can't write core");
+			return;
+		}
+		bool fulldump = (input[1] == 'a');
+		const char *filename = strchr (input, ' ');
+		if (filename) {
+			filename = r_str_trim_head_ro (filename + 1);
+		}
+		char *corefile = get_corefile_name (filename, core->dbg->pid);
+		R_LOG_INFO ("Writing to file '%s'", corefile);
+		r_file_rm (corefile);
+		RBuffer *dst = r_buf_new_file (corefile, O_RDWR | O_CREAT, 0644);
+		if (dst) {
+			if (!gcore (core->dbg, dst, fulldump)) {
+				R_LOG_ERROR ("dg: coredump failed");
+			}
+			r_buf_free (dst);
+		} else {
+			perror ("r_buf_new_file");
+		}
+		free (corefile);
+	} else {
+		r_core_return_invalid_command (core, "dg", input[1]);
+	}
+}
+
 R_VEC_TYPE(RVecDebugTracepoint, RDebugTracepointItem);
 
 static int cmd_debug(void *data, const char *input) {
@@ -6109,25 +6152,7 @@ static int cmd_debug(void *data, const char *input) {
 		r_core_debug_esil (core, input + 1);
 		break;
 	case 'g': // "dg"
-		if (core->dbg->current && core->dbg->current->plugin && core->dbg->current->plugin->gcore) {
-			if (core->dbg->pid == -1) {
-				R_LOG_ERROR ("Not debugging, can't write core");
-				break;
-			}
-			char *corefile = get_corefile_name (input + 1, core->dbg->pid);
-			R_LOG_INFO ("Writing to file '%s'", corefile);
-			r_file_rm (corefile);
-			RBuffer *dst = r_buf_new_file (corefile, O_RDWR | O_CREAT, 0644);
-			if (dst) {
-				if (!core->dbg->current->plugin->gcore (core->dbg, dst)) {
-					R_LOG_ERROR ("dg: coredump failed");
-				}
-				r_buf_free (dst);
-			} else {
-				perror ("r_buf_new_file");
-			}
-			free (corefile);
-		}
+		cmd_dg (core, input);
 		break;
 	case 'k': // "dk"
 		r_core_debug_kill (core, input + 1);

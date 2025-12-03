@@ -191,7 +191,7 @@ typedef struct {
 task_t pid_to_task (int pid);
 int xnu_get_vmmap_entries_for_pid (pid_t pid);
 char *xnu_corefile_default_location(void);
-bool xnu_generate_corefile(RDebug *dbg, RBuffer *dest);
+bool xnu_generate_corefile(RDebug *dbg, RBuffer *dest, bool fulldump);
 bool xnu_reg_read(RDebug *dbg, int type, ut8 *buf, int size);
 bool xnu_reg_write(RDebug *dgb, int type, const ut8 *buf, int size);
 char *xnu_reg_profile (RDebug *dbg);
