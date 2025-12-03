@@ -504,7 +504,6 @@ static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg, int filter_flags) 
 	}
 	R_FREE (file);
 
-eprintf ("ff %d\n", filter_flags);
 	ret = r_debug_map_sync (dbg);
 	if (!ret) {
 		goto error;
@@ -1466,7 +1465,6 @@ static void init_note_info_structure(RDebug *dbg, int pid, size_t auxv_size) {
 R_IPI bool linux_generate_corefile(RDebug *dbg, RBuffer *dest, bool fulldump) {
 	proc_content_t *proc_data = NULL;
 	elf_shdr_t *shdr_pxnum = NULL;
-eprintf ("FU%d\n", fulldump);
 	elf_hdr_t *elf_hdr = NULL;
 	void *note_data = NULL;
 	bool error = false;
