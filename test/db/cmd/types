@@ -2007,6 +2007,7 @@ var uint32_t var_18h @ rbp-0x18
 EOF
 RUN
 
+NAME=a:tp works after manual aei
 FILE=-
 ARGS=-a x86 -b 64
 CMDS=<<EOF
