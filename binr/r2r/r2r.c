@@ -470,7 +470,7 @@ int r2r_main(RArena *arena, int argc, char **argv) {
 	}
 
 	if (fuzz_dir) {
-		fuzz_dir = r_file_abspath_rel (cwd, fuzz_dir);
+		fuzz_dir = r_arena_move_str (arena, r_file_abspath_rel (cwd, fuzz_dir));
 	}
 
 	if (get_bins) {
@@ -607,7 +607,6 @@ int r2r_main(RArena *arena, int argc, char **argv) {
 		}
 	}
 
-	R_FREE (cwd);
 	ut64 loaded_tests = RVecR2RTestPtr_length (&state.db->tests);
 	if (!state.quiet) {
 		printf ("Loaded %" PFMT64u " tests.\n", loaded_tests);
@@ -1478,8 +1477,8 @@ static void interact_diffchar(R2RTestResultInfo *result) {
 }
 
 int main(int argc, char **argv) {
-  RArena *arena = r_arena_create();
+  RArena *arena = r_arena_new();
   int rc = r2r_main(arena, argc, argv);
-  r_arena_destroy(arena);
+  r_arena_free(arena);
   return rc;
 }
