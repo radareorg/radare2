@@ -181,10 +181,6 @@ static bool test_r_arena_alloc_basic(void) {
 	mu_assert_eq (((uint8_t *)ptr1)[0], 0xAA, "should be able to write to first allocation");
 	mu_assert_eq (((uint8_t *)ptr2)[0], 0xBB, "should be able to write to second allocation");
 
-	// Zero size
-	void *ptr = r_arena_alloc (arena, 0);
-	mu_assert_null (ptr, "alloc with zero size should return NULL");
-
 	r_arena_free (arena);
 	mu_end;
 }

@@ -76,7 +76,7 @@ static size_t r_arena_aligned_offset(RArena *arena, size_t alignment) {
 R_API void *r_arena_alloc_aligned(RArena *arena, size_t size, size_t alignment) {
 	R_RETURN_VAL_IF_FAIL (arena && size > 0, NULL);
 	// Validate alignment is power of 2
-	R_RETURN_VAL_IF_FAIL (alignment > 0 && (alignment & (alignment - 1)) == 0, NULL);
+	R_RETURN_VAL_IF_FAIL (alignment > 0 && (alignment &(alignment - 1)) == 0, NULL);
 	RArenaBlock *block = arena->current;
 
 	size_t aligned_offset = r_arena_aligned_offset (arena, alignment);
@@ -196,7 +196,7 @@ R_API size_t r_arena_block_count(const RArena *arena) {
 
 // Allocate a slice
 R_API RSlice r_arena_salloc(RArena *arena, size_t size) {
-	R_RETURN_VAL_IF_FAIL (arena, ((RSlice){0}));
+	R_RETURN_VAL_IF_FAIL (arena, ((RSlice){ 0 }));
 	void *ptr = r_arena_alloc (arena, size);
 	return (RSlice){ .ptr = ptr, .len = size, .cap = size };
 }
@@ -224,7 +224,7 @@ R_API void *r_arena_calloc(RArena *arena, size_t size) {
 R_API void *r_arena_calloc_aligned(RArena *arena, size_t size, size_t alignment) {
 	R_RETURN_VAL_IF_FAIL (arena, NULL);
 	// Validate alignment is power of 2
-	R_RETURN_VAL_IF_FAIL (alignment > 0 && (alignment & (alignment - 1)) == 0, NULL);
+	R_RETURN_VAL_IF_FAIL (alignment > 0 && (alignment &(alignment - 1)) == 0, NULL);
 	void *ptr = r_arena_alloc_aligned (arena, size, alignment);
 	if (ptr) {
 		memset (ptr, 0, size);
@@ -234,7 +234,11 @@ R_API void *r_arena_calloc_aligned(RArena *arena, size_t size, size_t alignment)
 
 // Copy null-terminated string into arena
 R_API char *r_arena_push_str(RArena *arena, const char *str) {
-	R_RETURN_VAL_IF_FAIL (arena && str, NULL);
+	R_RETURN_VAL_IF_FAIL (arena, NULL);
+	if (!str) {
+		return NULL;
+	}
+
 	size_t len = strlen (str);
 	char *copy = (char *)r_arena_alloc (arena, len + 1);
 	memcpy (copy, str, len + 1); // Include null terminator
@@ -244,7 +248,10 @@ R_API char *r_arena_push_str(RArena *arena, const char *str) {
 
 // Copy null-terminated string into arena and free it
 R_API char *r_arena_move_str(RArena *arena, char *str) {
-	R_RETURN_VAL_IF_FAIL (arena && str, NULL);
+	R_RETURN_VAL_IF_FAIL (arena, NULL);
+	if (!str) {
+		return NULL;
+	}
 
 	size_t len = strlen (str);
 	char *copy = (char *)r_arena_alloc (arena, len + 1);
@@ -288,7 +295,11 @@ R_API char *r_arena_push_strf(RArena *arena, const char *fmt, ...) {
 
 // Copy at most n characters of string into arena
 R_API char *r_arena_push_strn(RArena *arena, const char *str, size_t n) {
-	R_RETURN_VAL_IF_FAIL (arena && str, NULL);
+	R_RETURN_VAL_IF_FAIL (arena, NULL);
+	if (!str) {
+		return NULL;
+	}
+
 	size_t len = strnlen (str, n);
 	char *copy = (char *)r_arena_alloc (arena, len + 1);
 	if (copy) {
@@ -300,7 +311,11 @@ R_API char *r_arena_push_strn(RArena *arena, const char *str, size_t n) {
 
 // Copy arbitrary memory into arena
 R_API void *r_arena_push(RArena *arena, const void *mem, size_t n) {
-	R_RETURN_VAL_IF_FAIL (arena && mem && n > 0, NULL);
+	R_RETURN_VAL_IF_FAIL (arena, NULL);
+	if (!mem || !n) {
+		return NULL;
+	}
+
 	void *copy = r_arena_alloc (arena, n);
 	memcpy (copy, mem, n);
 
@@ -329,7 +344,6 @@ R_API RSlice r_arena_spush_str(RArena *arena, const char *str) {
 		return (RSlice){ .ptr = s, .len = len, .cap = len };
 	}
 	return r_empty_slice ();
-
 }
 
 R_API RSlice r_arena_spush_strf(RArena *arena, const char *fmt, ...) {
@@ -359,5 +373,4 @@ R_API RSlice r_arena_spush(RArena *arena, RSlice other) {
 		return (RSlice){ .ptr = p, .len = other.len, .cap = other.len };
 	}
 	return r_empty_slice ();
-
 }

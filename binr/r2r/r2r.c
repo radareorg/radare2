@@ -330,12 +330,13 @@ int r2r_main(RArena *arena, int argc, char **argv) {
 	bool get_bins = !r_sys_getenv_asbool ("R2R_OFFLINE");
 	int ret = 0;
 
-  const char *bindir = r_arena_move_str (arena, r_file_dirname (argv[0]));
-
-	if (!r_sys_getenv ("R2_BIN")) {
+	char *bindir = r_sys_getenv ("R2_BIN");
+	if (!bindir) {
+		bindir = r_arena_move_str (arena, r_file_dirname (argv[0]));
 		r_sys_setenv ("R2_BIN", bindir);
-		r_sys_setenv_sep ("PATH", bindir, false);
 	}
+
+	r_sys_setenv_sep ("PATH", bindir, false);
 
 #if R2__WINDOWS__
 	UINT old_cp = GetConsoleOutputCP ();
@@ -470,7 +471,7 @@ int r2r_main(RArena *arena, int argc, char **argv) {
 	}
 
 	if (fuzz_dir) {
-		fuzz_dir = r_file_abspath_rel (cwd, fuzz_dir);
+		fuzz_dir = r_arena_move_str (arena, r_file_abspath_rel (cwd, fuzz_dir));
 	}
 
 	if (get_bins) {
@@ -524,10 +525,10 @@ int r2r_main(RArena *arena, int argc, char **argv) {
 	RVecR2RTestResultInfoPtr_init (&state.results);
 	RVecConstCharPtr_init (&state.completed_paths);
 
-  printf("Using this R2_BIN (adding to path): %s\n", bindir);
-  printf("Looking up executables:\n");
-  printf("  r2     %s\n", r_arena_move_str (arena, r_file_path (state.run_config.r2_cmd)));
-  printf("  rasm2  %s\n", r_arena_move_str (arena, r_file_path (state.run_config.rasm2_cmd)));
+	printf ("Using this R2_BIN (adding to path): %s\n", bindir);
+	printf ("Looking up executables:\n");
+	printf ("  r2     %s\n", r_arena_move_str (arena, r_file_path (state.run_config.r2_cmd)));
+	printf ("  rasm2  %s\n", r_arena_move_str (arena, r_file_path (state.run_config.rasm2_cmd)));
 
 	if (output_file) {
 		state.test_results = pj_new ();
@@ -607,7 +608,6 @@ int r2r_main(RArena *arena, int argc, char **argv) {
 		}
 	}
 
-	R_FREE (cwd);
 	ut64 loaded_tests = RVecR2RTestPtr_length (&state.db->tests);
 	if (!state.quiet) {
 		printf ("Loaded %" PFMT64u " tests.\n", loaded_tests);
@@ -728,7 +728,7 @@ int r2r_main(RArena *arena, int argc, char **argv) {
 			R_LOG_WARN ("Overwrite output file '%s'", output_file);
 		}
 		char *results = pj_drain (state.test_results);
-		char *output = r_arena_push_strf (arena, "%s\n", results);
+		char *output = r_str_newf ("%s\n", results);
 		free (results);
 		if (!r_file_dump (output_file, (ut8 *)output, strlen (output), false)) {
 			R_LOG_ERROR ("Cannot write to %s", output_file);
@@ -1478,8 +1478,8 @@ static void interact_diffchar(R2RTestResultInfo *result) {
 }
 
 int main(int argc, char **argv) {
-  RArena *arena = r_arena_create();
-  int rc = r2r_main(arena, argc, argv);
-  r_arena_destroy(arena);
-  return rc;
+	RArena *arena = r_arena_new ();
+	int rc = r2r_main (arena, argc, argv);
+	r_arena_free (arena);
+	return rc;
 }
