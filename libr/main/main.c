@@ -31,7 +31,7 @@ R_API RMain *r_main_new(const char *name) {
 	while (foo[i].name) {
 		if (r_str_startswith (name, foo[i].name)) {
 			RMain *m = R_NEW0 (RMain);
-			m->name = strdup (foo[i].name);
+			m->name = foo[i].name;
 			m->main = foo[i].main;
 			return m;
 		}
