@@ -128,3 +128,133 @@ EXPECT=<<EOF
 \ 0x004004cf      retq
 EOF
 RUN
+
+NAME=att mov imm val/ptr fields (issue 24192)
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.syntax=att
+wx 48c7c023010000
+ao~val,ptr
+EOF
+EXPECT=<<EOF
+val: 0x00000123
+ptr: 0x00000123
+EOF
+RUN
+
+NAME=att mov imm esil correct order (issue 24192)
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.syntax=att
+wx 48c7c023010000
+ao~^esil:
+EOF
+EXPECT=<<EOF
+esil: 291,rax,=
+EOF
+RUN
+
+NAME=att mov reg esil correct order (issue 24192)
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.syntax=att
+wx 4889c3
+ao~^esil:
+EOF
+EXPECT=<<EOF
+esil: rax,rbx,=
+EOF
+RUN
+
+NAME=att mov mem write esil and direction (issue 24192)
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.syntax=att
+wx 488903
+ao~^esil:,direction
+EOF
+EXPECT=<<EOF
+esil: rax,rbx,=[8]
+direction: write
+EOF
+RUN
+
+NAME=att mov mem read esil and direction (issue 24192)
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.syntax=att
+wx 488b03
+ao~^esil:,direction
+EOF
+EXPECT=<<EOF
+esil: rbx,[8],rax,=
+direction: read
+EOF
+RUN
+
+NAME=att decimal comment shown (issue 24192)
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.syntax=att
+wx 48c7c023010000
+pd 1~; 291
+EOF
+EXPECT=<<EOF
+            0x00000000      48c7c02301..   movq $0x123, %rax           ; 291
+EOF
+RUN
+
+NAME=intel mov imm val/ptr fields (reference)
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.syntax=intel
+wx 48c7c023010000
+ao~val,ptr
+EOF
+EXPECT=<<EOF
+val: 0x00000123
+ptr: 0x00000123
+EOF
+RUN
+
+NAME=intel mov imm esil (reference)
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.syntax=intel
+wx 48c7c023010000
+ao~^esil:
+EOF
+EXPECT=<<EOF
+esil: 291,rax,=
+EOF
+RUN
+
+NAME=att add stack val field (issue 24192)
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.syntax=att
+wx 4883c408
+ao~val
+EOF
+EXPECT=<<EOF
+val: 0x00000008
+EOF
+RUN
