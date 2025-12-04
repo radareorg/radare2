@@ -600,13 +600,15 @@ typedef struct r_cons_t {
 #define Color_BLINK        "\x1b[5m"
 #define Color_INVERT       "\x1b[7m"
 #define Color_INVERT_RESET "\x1b[27m"
-     /* See 'man 4 console_codes' for details:
-      * "ESC c"        -- Reset
-      * "ESC ( B"      -- Select ASCII mapping
-      * "ESC [ 0 m"    -- Reset all display attributes
-      * "ESC [ J"      -- Erase to the end of screen
-      * "ESC [ ? 25 h" -- Make cursor visible
-      */
+#if 0
+See 'man 4 console_codes' for details:
+* "ESC c"        -- Reset
+* "ESC ( B"      -- Select ASCII mapping
+* "ESC [ 0 m"    -- Reset all display attributes
+* "ESC [ J"      -- Erase to the end of screen
+* "ESC [ ? 25 h" -- Make cursor visible
+#endif
+#define Color_BOLD "\x1b[1m"
 #define Color_RESET_TERMINAL  "\x1b" "c\x1b(B\x1b[0m\x1b[J\x1b[?25h"
 #define Color_RESET      "\x1b[0m" /* reset all */
 #define Color_RESET_NOBG "\x1b[27;22;24;25;28;39m"  /* Reset everything except background (order is important) */
