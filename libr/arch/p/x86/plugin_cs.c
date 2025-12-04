@@ -97,6 +97,7 @@ struct Getarg {
 	csh handle;
 	cs_insn *insn;
 	int bits;
+	int syntax; // R_ARCH_SYNTAX_ATT or R_ARCH_SYNTAX_INTEL
 };
 
 // TODO: get rid of this unnecessary wrapper
@@ -260,6 +261,17 @@ static bool is_xmm_reg(cs_x86_op op) {
 }
 
 /**
+ * Get normalized operand index for AT&T syntax
+ * In AT&T, operands are source,dest so we swap for 2-operand instructions
+ */
+static inline int norm_op(int n, int syntax, int op_count) {
+	if (syntax == R_ARCH_SYNTAX_ATT && op_count == 2) {
+		return 1 - n; // swap 0<->1
+	}
+	return n;
+}
+
+/**
  * Translates operand N to esil
  *
  * @param  handle  csh
@@ -279,11 +291,17 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop, ut32 *bitsi
 		// default blind bitsize which may be wrong
 		*bitsize = 8;
 	}
-	cs_x86_op op = INSOP (n);
+	// For AT&T syntax, capstone reports operands in source,dest order
+	// We need to swap indices for 2-operand instructions to normalize
+	int actual_n = n;
+	if (gop->syntax == R_ARCH_SYNTAX_ATT && INSOPS == 2) {
+		actual_n = 1 - n; // swap 0<->1
+	}
+	cs_x86_op op = INSOP (actual_n);
 	if (!insn->detail) {
 		return NULL;
 	}
-	if (n < 0 || n >= INSOPS) {
+	if (actual_n < 0 || actual_n >= INSOPS) {
 		return NULL;
 	}
 	if (bitsize) {
@@ -458,7 +476,8 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	struct Getarg gop = {
 		.handle = handle,
 		.insn = insn,
-		.bits = bits
+		.bits = bits,
+		.syntax = as->config->syntax
 	};
 	char *src;
 	char *src2;
@@ -831,12 +850,15 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	case X86_INS_MOVDQA:
 	case X86_INS_MOVDQ2Q:
 		{
-		switch (INSOP (0).type) {
+		// Use normalized operand indices for AT&T syntax support
+		int dst_idx = norm_op (0, gop.syntax, INSOPS);
+		int src_idx = norm_op (1, gop.syntax, INSOPS);
+		switch (INSOP (dst_idx).type) {
 		case X86_OP_MEM:
 			if (op->prefix & R_ANAL_OP_PREFIX_REP) {
-				int width = INSOP (0).size;
-				const char *src = cs_reg_name (handle, INSOP (1).mem.base);
-				const char *dst = cs_reg_name (handle, INSOP (0).mem.base);
+				int width = INSOP (dst_idx).size;
+				const char *src = cs_reg_name (handle, INSOP (src_idx).mem.base);
+				const char *dst = cs_reg_name (handle, INSOP (dst_idx).mem.base);
 				const char *counter = (bits == 16)?"cx": (bits==32)?"ecx":"rcx";
 				esilprintf (op, "%s,!,?{,BREAK,},%s,NUM,%s,NUM,"\
 						"%s,[%d],%s,=[%d],df,?{,%d,%s,-=,%d,%s,-=,},"\
@@ -855,17 +877,17 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			break;
 		case X86_OP_REG:
 		default:
-			if (INSOP(0).type == X86_OP_MEM) {
+			if (INSOP (dst_idx).type == X86_OP_MEM) {
 				op->direction = R_ANAL_OP_DIR_READ;
 			}
-			if (INSOP(1).type == X86_OP_MEM) {
+			if (INSOP (src_idx).type == X86_OP_MEM) {
 				// MOV REG, [PTR + IREG*SCALE]
-				op->ireg = cs_reg_name (handle, INSOP (1).mem.index);
-				op->disp = INSOP (1).mem.disp;
-				op->scale = INSOP (1).mem.scale;
+				op->ireg = cs_reg_name (handle, INSOP (src_idx).mem.index);
+				op->disp = INSOP (src_idx).mem.disp;
+				op->scale = INSOP (src_idx).mem.scale;
 			}
 			{
-				int width = INSOP (1).size;
+				int width = INSOP (src_idx).size;
 
 				src = getarg (&gop, 1, 0, NULL, NULL);
 				// dst is name of register from instruction.
@@ -2766,6 +2788,17 @@ static void op_fillval(RArchSession *a, RAnalOp *op, csh handle, cs_insn *insn, 
 	}
 }
 
+// Helper to find immediate operand regardless of position (handles AT&T operand order)
+static int find_immop(cs_insn *insn) {
+	int i;
+	for (i = 0; i < INSOPS; i++) {
+		if (INSOP (i).type == X86_OP_IMM) {
+			return i;
+		}
+	}
+	return -1;
+}
+
 static void op0_memimmhandle(RAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
 	op->ptr = UT64_MAX;
 	switch (INSOP (0).type) {
@@ -2775,15 +2808,15 @@ static void op0_memimmhandle(RAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
 		if (!op->disp) {
 			op->disp = UT64_MAX;
 		}
-		op->refptr = INSOP(0).size;
-		if (INSOP(0).mem.base == X86_REG_RIP) {
+		op->refptr = INSOP (0).size;
+		if (INSOP (0).mem.base == X86_REG_RIP) {
 			op->ptr = addr + insn->size + op->disp;
-		} else if (INSOP(0).mem.base == X86_REG_RBP || INSOP(0).mem.base == X86_REG_EBP) {
+		} else if (INSOP (0).mem.base == X86_REG_RBP || INSOP (0).mem.base == X86_REG_EBP) {
 			op->type |= R_ANAL_OP_TYPE_REG;
 			op->stackop = R_ANAL_STACK_SET;
 			op->stackptr = regsz;
-		} else if (INSOP(0).mem.segment == X86_REG_INVALID && INSOP(0).mem.base == X86_REG_INVALID
-			   && INSOP(0).mem.index == X86_REG_INVALID && INSOP(0).mem.scale == 1) { // [<addr>]
+		} else if (INSOP (0).mem.segment == X86_REG_INVALID && INSOP (0).mem.base == X86_REG_INVALID
+			   && INSOP (0).mem.index == X86_REG_INVALID && INSOP (0).mem.scale == 1) { // [<addr>]
 			op->ptr = op->disp;
 			if (op->ptr < 0x1000) {
 				op->ptr = UT64_MAX;
@@ -2792,40 +2825,49 @@ static void op0_memimmhandle(RAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
 			op->ptr = op->disp;
 			op->disp = UT64_MAX;
 		}
-		if (INSOP(1).type == X86_OP_IMM) {
-			op->val = INSOP(1).imm;
-		}
 		break;
 	case X86_OP_REG:
-		if (INSOP(1).type == X86_OP_IMM) {
-		//	(INSOP(0).reg != X86_REG_RSP) && (INSOP(0).reg != X86_REG_ESP)) {
-			op->val = INSOP(1).imm;
-		}
 		break;
 	default:
 		break;
 	}
+	// Set val from immediate operand if present (handles AT&T operand order)
+	int immop = find_immop (insn);
+	if (immop >= 0) {
+		op->val = INSOP (immop).imm;
+	}
+}
+
+// Helper to find register operand regardless of position (handles AT&T operand order)
+static int find_regop(cs_insn *insn) {
+	int i;
+	for (i = 0; i < INSOPS; i++) {
+		if (INSOP (i).type == X86_OP_REG) {
+			return i;
+		}
+	}
+	return -1;
 }
 
 static void op1_memimmhandle(RAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
 	if (op->refptr < 1 || op->ptr == UT64_MAX) {
-		switch (INSOP(1).type) {
+		switch (INSOP (1).type) {
 		case X86_OP_MEM:
-			op->disp = INSOP(1).mem.disp;
-			op->refptr = INSOP(1).size;
-			if (INSOP(1).mem.base == X86_REG_RIP) {
+			op->disp = INSOP (1).mem.disp;
+			op->refptr = INSOP (1).size;
+			if (INSOP (1).mem.base == X86_REG_RIP) {
 				op->ptr = addr + insn->size + op->disp;
-			} else if (INSOP(1).mem.base == X86_REG_RBP || INSOP(1).mem.base == X86_REG_EBP) {
+			} else if (INSOP (1).mem.base == X86_REG_RBP || INSOP (1).mem.base == X86_REG_EBP) {
 				op->stackop = R_ANAL_STACK_GET;
 				op->stackptr = regsz;
-			} else if (INSOP(1).mem.segment == X86_REG_INVALID && INSOP(1).mem.base == X86_REG_INVALID
-					&& INSOP(1).mem.index == X86_REG_INVALID && INSOP(1).mem.scale == 1) { // [<addr>]
+			} else if (INSOP (1).mem.segment == X86_REG_INVALID && INSOP (1).mem.base == X86_REG_INVALID
+					&& INSOP (1).mem.index == X86_REG_INVALID && INSOP (1).mem.scale == 1) { // [<addr>]
 				op->ptr = op->disp;
 			}
 			break;
 		case X86_OP_IMM:
 			if ((INSOP (1).imm > 10) &&
-				(INSOP(0).reg != X86_REG_RSP) && (INSOP(0).reg != X86_REG_ESP)) {
+				(INSOP (0).reg != X86_REG_RSP) && (INSOP (0).reg != X86_REG_ESP)) {
 				op->ptr = INSOP (1).imm;
 			}
 			break;
@@ -2833,30 +2875,48 @@ static void op1_memimmhandle(RAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
 			break;
 		}
 	}
-}
-
-static void op_stackidx(RAnalOp *op, cs_insn *insn, bool minus) {
-	if (INSOP(0).type == X86_OP_REG && INSOP(1).type == X86_OP_IMM) {
-		if (INSOP(0).reg == X86_REG_RSP || INSOP(0).reg == X86_REG_ESP) {
-			op->stackop = R_ANAL_STACK_INC;
-			if (minus) {
-				op->stackptr = -INSOP(1).imm;
-			} else {
-				op->stackptr = INSOP(1).imm;
+	// Handle AT&T mode: if ptr not set and there's an immediate operand, use it
+	if (op->ptr == UT64_MAX) {
+		int immop = find_immop (insn);
+		int regop = find_regop (insn);
+		if (immop >= 0 && INSOP (immop).imm > 10) {
+			bool is_stack_reg = false;
+			if (regop >= 0) {
+				x86_reg reg = INSOP (regop).reg;
+				is_stack_reg = (reg == X86_REG_RSP || reg == X86_REG_ESP);
+			}
+			if (!is_stack_reg) {
+				op->ptr = INSOP (immop).imm;
 			}
 		}
 	}
 }
 
-static void set_opdir(RAnalOp *op, cs_insn *insn) {
+static void op_stackidx(RAnalOp *op, cs_insn *insn, bool minus) {
+	if (INSOP (0).type == X86_OP_REG && INSOP (1).type == X86_OP_IMM) {
+		if (INSOP (0).reg == X86_REG_RSP || INSOP (0).reg == X86_REG_ESP) {
+			op->stackop = R_ANAL_STACK_INC;
+			if (minus) {
+				op->stackptr = -INSOP (1).imm;
+			} else {
+				op->stackptr = INSOP (1).imm;
+			}
+		}
+	}
+}
+
+static void set_opdir(RAnalOp *op, cs_insn *insn, int syntax) {
+	// Use normalized operand indices for AT&T syntax support
+	int dst_idx = norm_op (0, syntax, INSOPS);
+	int src_idx = norm_op (1, syntax, INSOPS);
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_MOV:
-		switch (INSOP(0).type) {
+		switch (INSOP (dst_idx).type) {
 		case X86_OP_MEM:
 			op->direction = R_ANAL_OP_DIR_WRITE;
 			break;
 		case X86_OP_REG:
-			if (INSOP(1).type == X86_OP_MEM) {
+			if (INSOP (src_idx).type == X86_OP_MEM) {
 				op->direction = R_ANAL_OP_DIR_READ;
 			}
 			break;
@@ -4022,7 +4082,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			break;
 		}
 		anop (as, op, addr, buf, len, &handle, insn);
-		set_opdir (op, insn);
+		set_opdir (op, insn, as->config->syntax);
 		if (mask & R_ARCH_OP_MASK_ESIL) {
 			anop_esil (as, op, addr, buf, len, handle, insn);
 		}
