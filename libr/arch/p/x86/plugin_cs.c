@@ -2799,37 +2799,24 @@ static int find_immop(cs_insn *insn) {
 	return -1;
 }
 
-// Helper to find memory operand regardless of position (handles AT&T operand order)
-static int find_memop(cs_insn *insn) {
-	int i;
-	for (i = 0; i < INSOPS; i++) {
-		if (INSOP (i).type == X86_OP_MEM) {
-			return i;
-		}
-	}
-	return -1;
-}
-
 static void op0_memimmhandle(RAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
 	op->ptr = UT64_MAX;
-	int immop = find_immop (insn);
-	int memop = find_memop (insn);
-	// Handle memory operand if present
-	if (memop >= 0) {
+	switch (INSOP (0).type) {
+	case X86_OP_MEM:
 		op->cycles = CYCLE_MEM;
-		op->disp = INSOP (memop).mem.disp;
+		op->disp = INSOP (0).mem.disp;
 		if (!op->disp) {
 			op->disp = UT64_MAX;
 		}
-		op->refptr = INSOP (memop).size;
-		if (INSOP (memop).mem.base == X86_REG_RIP) {
+		op->refptr = INSOP (0).size;
+		if (INSOP (0).mem.base == X86_REG_RIP) {
 			op->ptr = addr + insn->size + op->disp;
-		} else if (INSOP (memop).mem.base == X86_REG_RBP || INSOP (memop).mem.base == X86_REG_EBP) {
+		} else if (INSOP (0).mem.base == X86_REG_RBP || INSOP (0).mem.base == X86_REG_EBP) {
 			op->type |= R_ANAL_OP_TYPE_REG;
 			op->stackop = R_ANAL_STACK_SET;
 			op->stackptr = regsz;
-		} else if (INSOP (memop).mem.segment == X86_REG_INVALID && INSOP (memop).mem.base == X86_REG_INVALID
-			   && INSOP (memop).mem.index == X86_REG_INVALID && INSOP (memop).mem.scale == 1) { // [<addr>]
+		} else if (INSOP (0).mem.segment == X86_REG_INVALID && INSOP (0).mem.base == X86_REG_INVALID
+			   && INSOP (0).mem.index == X86_REG_INVALID && INSOP (0).mem.scale == 1) { // [<addr>]
 			op->ptr = op->disp;
 			if (op->ptr < 0x1000) {
 				op->ptr = UT64_MAX;
@@ -2838,8 +2825,14 @@ static void op0_memimmhandle(RAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
 			op->ptr = op->disp;
 			op->disp = UT64_MAX;
 		}
+		break;
+	case X86_OP_REG:
+		break;
+	default:
+		break;
 	}
 	// Set val from immediate operand if present (handles AT&T operand order)
+	int immop = find_immop (insn);
 	if (immop >= 0) {
 		op->val = INSOP (immop).imm;
 	}
@@ -2858,31 +2851,41 @@ static int find_regop(cs_insn *insn) {
 
 static void op1_memimmhandle(RAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
 	if (op->refptr < 1 || op->ptr == UT64_MAX) {
-		int memop = find_memop (insn);
-		int immop = find_immop (insn);
-		int regop = find_regop (insn);
-		// Handle memory operand if not already handled
-		if (memop >= 0) {
-			op->disp = INSOP (memop).mem.disp;
-			op->refptr = INSOP (memop).size;
-			if (INSOP (memop).mem.base == X86_REG_RIP) {
+		switch (INSOP (1).type) {
+		case X86_OP_MEM:
+			op->disp = INSOP (1).mem.disp;
+			op->refptr = INSOP (1).size;
+			if (INSOP (1).mem.base == X86_REG_RIP) {
 				op->ptr = addr + insn->size + op->disp;
-			} else if (INSOP (memop).mem.base == X86_REG_RBP || INSOP (memop).mem.base == X86_REG_EBP) {
+			} else if (INSOP (1).mem.base == X86_REG_RBP || INSOP (1).mem.base == X86_REG_EBP) {
 				op->stackop = R_ANAL_STACK_GET;
 				op->stackptr = regsz;
-			} else if (INSOP (memop).mem.segment == X86_REG_INVALID && INSOP (memop).mem.base == X86_REG_INVALID
-					&& INSOP (memop).mem.index == X86_REG_INVALID && INSOP (memop).mem.scale == 1) { // [<addr>]
+			} else if (INSOP (1).mem.segment == X86_REG_INVALID && INSOP (1).mem.base == X86_REG_INVALID
+					&& INSOP (1).mem.index == X86_REG_INVALID && INSOP (1).mem.scale == 1) { // [<addr>]
 				op->ptr = op->disp;
 			}
+			break;
+		case X86_OP_IMM:
+			if ((INSOP (1).imm > 10) &&
+				(INSOP (0).reg != X86_REG_RSP) && (INSOP (0).reg != X86_REG_ESP)) {
+				op->ptr = INSOP (1).imm;
+			}
+			break;
+		default:
+			break;
 		}
-		// Handle immediate operand for ptr if not already set
-		if (immop >= 0 && op->ptr == UT64_MAX) {
+	}
+	// Handle AT&T mode: if ptr not set and there's an immediate operand, use it
+	if (op->ptr == UT64_MAX) {
+		int immop = find_immop (insn);
+		int regop = find_regop (insn);
+		if (immop >= 0 && INSOP (immop).imm > 10) {
 			bool is_stack_reg = false;
 			if (regop >= 0) {
 				x86_reg reg = INSOP (regop).reg;
 				is_stack_reg = (reg == X86_REG_RSP || reg == X86_REG_ESP);
 			}
-			if ((INSOP (immop).imm > 10) && !is_stack_reg) {
+			if (!is_stack_reg) {
 				op->ptr = INSOP (immop).imm;
 			}
 		}
@@ -2890,17 +2893,13 @@ static void op1_memimmhandle(RAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
 }
 
 static void op_stackidx(RAnalOp *op, cs_insn *insn, bool minus) {
-	int regop = find_regop (insn);
-	int immop = find_immop (insn);
-	// Check if there's a register operand that is stack pointer and an immediate
-	if (regop >= 0 && immop >= 0) {
-		x86_reg reg = INSOP (regop).reg;
-		if (reg == X86_REG_RSP || reg == X86_REG_ESP) {
+	if (INSOP (0).type == X86_OP_REG && INSOP (1).type == X86_OP_IMM) {
+		if (INSOP (0).reg == X86_REG_RSP || INSOP (0).reg == X86_REG_ESP) {
 			op->stackop = R_ANAL_STACK_INC;
 			if (minus) {
-				op->stackptr = -INSOP (immop).imm;
+				op->stackptr = -INSOP (1).imm;
 			} else {
-				op->stackptr = INSOP (immop).imm;
+				op->stackptr = INSOP (1).imm;
 			}
 		}
 	}
