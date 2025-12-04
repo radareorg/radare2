@@ -17,7 +17,7 @@ typedef struct r_slice_t {
 } RSlice;
 
 static inline RSlice r_slice(const void *ptr, size_t len) {
-	return (RSlice){ .ptr = ptr, .len = len, .cap = len };
+	return (RSlice){ .ptr = (const uint8_t *)ptr, .len = len, .cap = len };
 }
 
 static inline bool r_slice_is_empty(RSlice slice) {
@@ -107,7 +107,7 @@ R_API void *r_arena_calloc_aligned(RArena *arena, size_t size, size_t alignment)
 R_API void r_arena_reset(RArena *arena);
 R_API void r_arena_free(RArena *arena);
 
-// move functions call r_free() on its arguments if successfully allocated and copied to arena
+// move functions call r_free () on its arguments if successfully allocated and copied to arena
 // spush_ funcs return slices
 R_API char *r_arena_push_str(RArena *arena, const char *str);
 R_API char *r_arena_move_str(RArena *arena, char *str);
