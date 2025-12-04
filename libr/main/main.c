@@ -23,6 +23,7 @@ static const RMain foo[] = {
 	{ "rabin2", r_main_rabin2 },
 	{ "radare2", r_main_radare2 },
 	{ "r2", r_main_radare2 },
+  { "rahash2", r_main_rahash2 },
 	{ NULL, NULL }
 };
 
@@ -31,7 +32,7 @@ R_API RMain *r_main_new(const char *name) {
 	while (foo[i].name) {
 		if (r_str_startswith (name, foo[i].name)) {
 			RMain *m = R_NEW0 (RMain);
-			m->name = strdup (foo[i].name);
+			m->name = foo[i].name;
 			m->main = foo[i].main;
 			return m;
 		}
