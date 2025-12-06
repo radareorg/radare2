@@ -429,11 +429,9 @@ R_API void r2r_subprocess_stdin_write(R2RSubprocess *proc, const ut8 *buf, size_
 
 R_API R2RProcessOutput *r2r_subprocess_drain(R2RSubprocess *proc) {
 	R2RProcessOutput *out = R_NEW (R2RProcessOutput);
-	if (R_LIKELY (out)) {
-		out->out = r_strbuf_drain_nofree (&proc->out);
-		out->err = r_strbuf_drain_nofree (&proc->err);
-		out->ret = proc->ret;
-	}
+	out->out = r_strbuf_drain_nofree (&proc->out);
+	out->err = r_strbuf_drain_nofree (&proc->err);
+	out->ret = proc->ret;
 	return out;
 }
 
@@ -631,9 +629,6 @@ R_API R2RSubprocess *r2r_subprocess_start(
 
 	r_th_lock_enter (subprocs_mutex);
 	R2RSubprocess *proc = R_NEW0 (R2RSubprocess);
-	if (!proc) {
-		goto error;
-	}
 	proc->killpipe[0] = proc->killpipe[1] = -1;
 	proc->ret = -1;
 	proc->lock = r_th_lock_new (false);
@@ -1285,118 +1280,90 @@ R_API bool r2r_check_json_test(R2RProcessOutput *out, R2RJsonTest *test) {
 
 R_API R2RAsmTestOutput *r2r_run_asm_test(R2RRunConfig *config, R2RAsmTest *test) {
 	R2RAsmTestOutput *out = R_NEW0 (R2RAsmTestOutput);
-	if (!out) {
-		return NULL;
-	}
-
-	RVecConstCharPtr args;
-	RVecConstCharPtr_init (&args);
+	RList *args = r_list_new ();
 
 	if (test->arch) {
-		const char *arg_val = "-a";
-		RVecConstCharPtr_push_back (&args, &arg_val);
-		arg_val = test->arch;
-		RVecConstCharPtr_push_back (&args, &arg_val);
+		r_list_append (args, (void *)"-a");
+		r_list_append (args, (void *)test->arch);
 	}
 
 	if (test->cpu) {
-		const char *arg_val = "-c";
-		RVecConstCharPtr_push_back (&args, &arg_val);
-		arg_val = test->cpu;
-		RVecConstCharPtr_push_back (&args, &arg_val);
+		r_list_append (args, (void *)"-c");
+		r_list_append (args, (void *)test->cpu);
 	}
 
-	char bits[0x20];
+	char *bits_str = NULL;
 	if (test->bits) {
-		snprintf (bits, sizeof (bits), "%d", test->bits);
-		const char *arg_val = "-b";
-		RVecConstCharPtr_push_back (&args, &arg_val);
-		arg_val = bits;
-		RVecConstCharPtr_push_back (&args, &arg_val);
+		bits_str = r_str_newf ("%d", test->bits);
+		r_list_append (args, (void *)"-b");
+		r_list_append (args, bits_str);
 	}
 
 	if (test->mode & R2R_ASM_TEST_MODE_BIG_ENDIAN) {
-		const char *arg_val = "-e";
-		RVecConstCharPtr_push_back (&args, &arg_val);
+		r_list_append (args, (void *)"-e");
 	}
 
-	char offset[0x20];
+	char *offset_str = NULL;
 	if (test->offset) {
-		r_snprintf (offset, sizeof (offset), "0x%" PFMT64x, test->offset);
-		const char *arg_val = "-s";
-		RVecConstCharPtr_push_back (&args, &arg_val);
-		arg_val = offset;
-		RVecConstCharPtr_push_back (&args, &arg_val);
+		offset_str = r_str_newf ("0x%" PFMT64x, test->offset);
+		r_list_append (args, (void *)"-s");
+		r_list_append (args, offset_str);
 	}
 
-	RStrBuf cmd_buf;
-	r_strbuf_init (&cmd_buf);
+	size_t args_size;
 	if (test->mode & R2R_ASM_TEST_MODE_ASSEMBLE) {
-		const char *arg_val = test->disasm;
-		RVecConstCharPtr_push_back (&args, &arg_val);
-		R2RSubprocess *proc = r2r_subprocess_start (config->rasm2_cmd, R_VEC_START_ITER (&args), (size_t)RVecConstCharPtr_length (&args), NULL, NULL, 0);
+		r_list_append (args, (void *)test->disasm);
+		const char **argv = rlist_to_argv (args, &args_size);
+		R2RSubprocess *proc = r2r_subprocess_start (config->rasm2_cmd, argv, args_size, NULL, NULL, 0);
 		if (!r2r_subprocess_wait (proc, config->timeout_ms)) {
 			r2r_subprocess_kill (proc);
 			out->as_timeout = true;
-			goto rip;
+		} else if (proc->ret == 0) {
+			char *hex = r_strbuf_get (&proc->out);
+			size_t hexlen = strlen (hex);
+			if (hexlen > 0) {
+				ut8 *bytes = malloc (hexlen);
+				if (bytes) {
+					const int byteslen = r_hex_str2bin (hex, bytes);
+					if (byteslen > 0) {
+						out->bytes = bytes;
+						out->bytes_size = (size_t)byteslen;
+					} else {
+						free (bytes);
+					}
+				}
+			}
 		}
-		if (proc->ret != 0) {
-			goto rip;
-		}
-		char *hex = r_strbuf_get (&proc->out);
-		size_t hexlen = strlen (hex);
-		if (!hexlen) {
-			goto rip;
-		}
-		ut8 *bytes = malloc (hexlen);
-		if (!bytes) {
-			goto rip;
-		}
-		const int byteslen = r_hex_str2bin (hex, bytes);
-		if (byteslen <= 0) {
-			free (bytes);
-			goto rip;
-		}
-		out->bytes = bytes;
-		out->bytes_size = (size_t)byteslen;
-	rip:
-		RVecConstCharPtr_pop_back (&args);
+		free (argv);
 		r2r_subprocess_free (proc);
+		r_list_pop (args);
 	}
 	if (test->mode & R2R_ASM_TEST_MODE_DISASSEMBLE) {
-		if (test->bytes_size < 1) {
-			goto beach;
+		if (test->bytes_size > 0) {
+			char *hex = r_hex_bin2strdup (test->bytes, test->bytes_size);
+			if (hex) {
+				r_list_append (args, (void *)"-d");
+				r_list_append (args, hex);
+				const char **argv = rlist_to_argv (args, &args_size);
+				R2RSubprocess *proc = r2r_subprocess_start (config->rasm2_cmd, argv, args_size, NULL, NULL, 0);
+				if (!r2r_subprocess_wait (proc, config->timeout_ms)) {
+					r2r_subprocess_kill (proc);
+					out->disas_timeout = true;
+				} else if (proc->ret == 0) {
+					char *disasm = r_strbuf_drain_nofree (&proc->out);
+					r_str_trim (disasm);
+					out->disasm = disasm;
+				}
+				free (argv);
+				r2r_subprocess_free (proc);
+				free (hex);
+			}
 		}
-		char *hex = r_hex_bin2strdup (test->bytes, test->bytes_size);
-		if (!hex) {
-			goto beach;
-		}
-		const char *arg_val = "-d";
-		RVecConstCharPtr_push_back (&args, &arg_val);
-		arg_val = hex;
-		RVecConstCharPtr_push_back (&args, &arg_val);
-		R2RSubprocess *proc = r2r_subprocess_start (config->rasm2_cmd, R_VEC_START_ITER (&args), (size_t)RVecConstCharPtr_length (&args), NULL, NULL, 0);
-		if (!r2r_subprocess_wait (proc, config->timeout_ms)) {
-			r2r_subprocess_kill (proc);
-			out->disas_timeout = true;
-			goto ship;
-		}
-		if (proc->ret != 0) {
-			goto ship;
-		}
-		char *disasm = r_strbuf_drain_nofree (&proc->out);
-		r_str_trim (disasm);
-		out->disasm = disasm;
-	ship:
-		free (hex);
-		RVecConstCharPtr_pop_back (&args);
-		RVecConstCharPtr_pop_back (&args);
-		r2r_subprocess_free (proc);
 	}
 
-beach:
-	RVecConstCharPtr_clear (&args);
-	r_strbuf_fini (&cmd_buf);
+	r_list_free (args);
+	free (bits_str);
+	free (offset_str);
 	return out;
 }
 
@@ -1424,12 +1391,11 @@ R_API bool r2r_check_asm_test(R2RAsmTestOutput *out, R2RAsmTest *test) {
 }
 
 R_API void r2r_asm_test_output_free(R2RAsmTestOutput *out) {
-	if (!out) {
-		return;
+	if (out) {
+		free (out->disasm);
+		free (out->bytes);
+		free (out);
 	}
-	free (out->disasm);
-	free (out->bytes);
-	free (out);
 }
 
 R_API R2RProcessOutput *r2r_run_fuzz_test(R2RRunConfig *config, const char *file, R2RCmdRunner runner, void *user) {
@@ -1576,6 +1542,14 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 				ret->run_failed = false;
 				break;
 			}
+#if WANT_V35 == 0
+			if (cmd_test->args.value && strstr (cmd_test->args.value, "arm.v35")) {
+				R_LOG_WARN ("Skipping test because it requires arm.v35");
+				success = true;
+				ret->run_failed = false;
+				break;
+			}
+#endif
 #if R2_USE_NEW_ABI
 			bool mustrun = !needsabi || (needsabi > 0);
 #else
@@ -1679,10 +1653,7 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 }
 
 R_API void r2r_test_result_info_free(R2RTestResultInfo *result) {
-	if (!result) {
-		return;
-	}
-	if (result->test) {
+	if (result && result->test) {
 		switch (result->test->type) {
 		case R2R_TEST_TYPE_CMD:
 		case R2R_TEST_TYPE_JSON:

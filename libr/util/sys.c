@@ -705,8 +705,7 @@ R_API int r_sys_getenv_asint(const char *key) {
 R_API char *r_sys_getdir(void) {
 #if R2__WINDOWS__
 	return _getcwd (NULL, 0);
-#else
-#ifdef __GLIBC__
+#elif defined(__GLIBC__)
 	return getcwd (NULL, 0);
 #else
 	const size_t maxpathlen = 4096;
@@ -716,7 +715,6 @@ R_API char *r_sys_getdir(void) {
 		free (res);
 	}
 	return cwd;
-#endif
 #endif
 }
 

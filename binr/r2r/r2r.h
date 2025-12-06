@@ -150,7 +150,7 @@ typedef struct r2r_test_database_t {
 } R2RTestDatabase;
 
 typedef struct r2r_run_config_t {
-	const char *r2_cmd;
+	char *r2_cmd;
 	const char *rasm2_cmd;
 	const char *json_test_file;
 	ut64 timeout_ms;
@@ -177,10 +177,10 @@ typedef struct r2r_asm_test_output_t {
 } R2RAsmTestOutput;
 
 typedef enum r2r_test_result_t {
-	R2R_TEST_RESULT_OK,
-	R2R_TEST_RESULT_FAILED,
-	R2R_TEST_RESULT_BROKEN,
-	R2R_TEST_RESULT_FIXED
+	R2R_TEST_RESULT_OK = 0,
+	R2R_TEST_RESULT_FAILED = 1,
+	R2R_TEST_RESULT_BROKEN = 2,
+	R2R_TEST_RESULT_FIXED = 3
 } R2RTestResult;
 
 typedef struct r2r_test_result_info_t {
@@ -210,7 +210,7 @@ R_API RVecR2RJsonTestPtr *r2r_load_json_test_file(const char *file);
 
 R_API R2RTestDatabase *r2r_test_database_new(void);
 R_API void r2r_test_database_free(R2RTestDatabase *db);
-R_API bool r2r_test_database_load(R2RTestDatabase *db, const char *path);
+R_API bool r2r_test_database_load(R2RTestDatabase *db, const char *path, bool skip_json_tests);
 R_API bool r2r_test_database_load_fuzz(R2RTestDatabase *db, const char *path);
 
 typedef struct r2r_subprocess_t R2RSubprocess;
