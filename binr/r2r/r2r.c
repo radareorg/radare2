@@ -63,7 +63,7 @@ static void results_clear(RVecR2RTestResultInfoPtr *vec) {
 	R_VEC_FOREACH (vec, it) {
 		r2r_test_result_info_free (*it);
 	}
-	RVecR2RTestResultInfoPtr_clear (vec);
+	RVecR2RTestResultInfoPtr_fini (vec);
 }
 
 static void parse_skip(const char *arg) {
@@ -728,7 +728,7 @@ int main(int argc, char **argv) {
 		r_th_wait (th);
 		r_th_free (th);
 	}
-	RVecRThreadPtr_clear (&workers);
+	RVecRThreadPtr_fini (&workers);
 
 	if (!state.quiet) {
 		printf ("\n");
@@ -765,9 +765,9 @@ int main(int argc, char **argv) {
 	}
 
 coast:
-	RVecR2RTestPtr_clear (&state.queue);
+	RVecR2RTestPtr_fini (&state.queue);
 	results_clear (&state.results);
-	RVecConstCharPtr_clear (&state.completed_paths);
+	RVecConstCharPtr_fini (&state.completed_paths);
 	r2r_test_database_free (state.db);
 	ht_pp_free (state.path_left);
 	r_th_lock_free (state.lock);
@@ -1271,7 +1271,7 @@ static void interact(R2RState *state) {
 	}
 
 beach:
-	RVecR2RTestResultInfoPtr_clear (&failed_results);
+	RVecR2RTestResultInfoPtr_fini (&failed_results);
 }
 
 static char *format_cmd_kv(const char *key, const char *val) {
