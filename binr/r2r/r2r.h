@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020-2024 - pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2020-2025 - pancake, thestr4ng3r */
 
 #ifndef RADARE2_R2R_H
 #define RADARE2_R2R_H
@@ -12,9 +12,6 @@ typedef struct r2r_test_to_skip_t R2RTestToSkip;
 typedef struct r2r_json_test_t R2RJsonTest;
 typedef struct r2r_fuzz_test_t R2RFuzzTest;
 typedef struct r2r_test_t R2RTest;
-typedef struct r2r_test_database_t R2RTestDatabase;
-typedef struct r2r_run_config_t R2RRunConfig;
-typedef struct r2r_process_output_t R2RProcessOutput;
 typedef struct r2r_asm_test_output_t R2RAsmTestOutput;
 typedef struct r2r_test_result_info_t R2RTestResultInfo;
 typedef struct r2r_subprocess_t R2RSubprocess;
@@ -129,6 +126,12 @@ typedef enum r2r_test_type_t {
 	R2R_TEST_TYPE_JSON,
 	R2R_TEST_TYPE_FUZZ
 } R2RTestType;
+
+typedef struct r2r_test_from_t {
+	R2RTestType type;
+	bool load_plugins;
+	bool archos;
+} R2RTestFrom;
 
 typedef struct r2r_test_t {
 	const char *path;

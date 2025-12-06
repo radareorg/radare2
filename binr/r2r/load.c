@@ -576,18 +576,24 @@ R_API void r2r_test_database_free(R2RTestDatabase *db) {
 	free (db);
 }
 
-static R2RTestType test_type_for_path(const char *path, bool *load_plugins) {
-	*load_plugins = false;
+static R2RTestFrom test_type_for_path(const char *path) {
+	R2RTestFrom res = {0};
+	res.load_plugins = false;
 	if (strstr (path, R_SYS_DIR "asm" R_SYS_DIR)) {
-		return R2R_TEST_TYPE_ASM;
+		res.type = R2R_TEST_TYPE_ASM;
+	} else if (strstr (path, R_SYS_DIR "json" R_SYS_DIR)) {
+		res.type = R2R_TEST_TYPE_JSON;
+	} else {
+		if (strstr (path, R_SYS_DIR "extras" R_SYS_DIR)) {
+			res.load_plugins = true;
+		}
+		res.type = R2R_TEST_TYPE_CMD;
 	}
-	if (strstr (path, R_SYS_DIR "json" R_SYS_DIR)) {
-		return R2R_TEST_TYPE_JSON;
+	res.archos = false;
+	if (strstr (path, R_SYS_DIR "archos") || !strcmp (path, "archos")) {
+		res.archos = true;
 	}
-	if (strstr (path, R_SYS_DIR "extras" R_SYS_DIR)) {
-		*load_plugins = true;
-	}
-	return R2R_TEST_TYPE_CMD;
+	return res;
 }
 
 static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
@@ -603,6 +609,7 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 		R_LOG_ERROR ("Directories for loading tests too deep: %s", path);
 		return false;
 	}
+	R2RTestFrom test_from = test_type_for_path (path);
 	if (r_file_is_directory (path)) {
 		const char *archos = getarchos ();
 		RList *dir = r_sys_dir (path);
@@ -641,12 +648,11 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 				continue;
 			}
 #endif
-			if (skip_asm && strstr (path, R_SYS_DIR "asm" R_SYS_DIR)) {
+			if (skip_asm && test_from.type == R2R_TEST_TYPE_ASM) {
 				R_LOG_INFO ("R2R_SKIP_ASM: Skipping %s", path);
 				continue;
 			}
-			bool is_archos_folder = !strcmp (path, "archos") || r_str_endswith (path, R_SYS_DIR "archos");
-			if (is_archos_folder && (skip_archos || strcmp (subname, archos))) {
+			if (test_from.archos && (skip_archos || strcmp (subname, archos))) {
 				R_LOG_INFO ("Skipping %s" R_SYS_DIR "%s because it does not match the current platform \"%s\"", path, subname, archos);
 				continue;
 			}
@@ -668,9 +674,8 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 
 	// Not a directory but exists, load a file
 	const char *pooled_path = r_str_constpool_get (&db->strpool, path);
-	bool load_plugins = false;
-	R2RTestType test_type = test_type_for_path (path, &load_plugins);
-	switch (test_type) {
+	R2RTestFrom tff = test_type_for_path (path);
+	switch (tff.type) {
 	case R2R_TEST_TYPE_CMD:
 		{
 			RVecR2RCmdTestPtr *cmd_tests = r2r_load_cmd_test_file (path);
@@ -679,7 +684,7 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 			}
 			R2RCmdTest **it;
 			R_VEC_FOREACH (cmd_tests, it) {
-				R2RTest *test = r2r_test_new (R2R_TEST_TYPE_CMD, pooled_path, *it, load_plugins);
+				R2RTest *test = r2r_test_new (R2R_TEST_TYPE_CMD, pooled_path, *it, tff.load_plugins);
 				RVecR2RTestPtr_push_back (&db->tests, &test);
 			}
 			RVecR2RCmdTestPtr_free (cmd_tests);
@@ -707,7 +712,7 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 			}
 			R2RJsonTest **it;
 			R_VEC_FOREACH (json_tests, it) {
-				R2RTest *test = r2r_test_new (R2R_TEST_TYPE_JSON, pooled_path, *it, load_plugins);
+				R2RTest *test = r2r_test_new (R2R_TEST_TYPE_JSON, pooled_path, *it, tff.load_plugins);
 				RVecR2RTestPtr_push_back (&db->tests, &test);
 			}
 			RVecR2RJsonTestPtr_free (json_tests);

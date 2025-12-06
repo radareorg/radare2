@@ -1046,6 +1046,7 @@ static char *convert_win_cmds(const char *cmds) {
 #endif
 
 static R2RProcessOutput *run_r2_test(R2RRunConfig *config, ut64 timeout_ms, int repeat, const char *cmds, RList *files, RList *extra_args, RList *extra_env, bool load_plugins, R2RCmdRunner runner, void *user) {
+	// AITODO: All this rvecconstcharptr is an awful way to construct fucking strings. lets just use RStrBuf or RList of strings instead. analyze how the constructed final vector is constructed and how its used and mamke the code as simpler as possible to maintain and read. hopefiully removeing lines of code too
 	RVecConstCharPtr args;
 	RVecConstCharPtr envvars;
 	RVecConstCharPtr envvals;
