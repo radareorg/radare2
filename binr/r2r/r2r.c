@@ -189,7 +189,7 @@ static char *makepath(void) {
 }
 
 static bool r2r_test_run_unit(void) {
-	char *make = makepath ();	
+	char *make = makepath ();
 	if (!make) {
 		R_LOG_ERROR ("Cannot find `make` in PATH");
 		return false;
@@ -471,7 +471,7 @@ static bool r2r_state_init(R2RState *state, R2ROptions *opt) {
 		state->run_config.r2_cmd = r2_binary;
 	} else {
 		free (r2_binary);
-		state->run_config.r2_cmd = "radare2";
+		state->run_config.r2_cmd = strdup ("radare2");
 	}
 	state->run_config.skip_cmd = r_sys_getenv_asbool ("R2R_SKIP_CMD");
 	state->run_config.skip_asm = r_sys_getenv_asbool ("R2R_SKIP_ASM");
@@ -511,6 +511,7 @@ static void r2r_state_fini(R2RState *state) {
 	ht_pp_free (state->path_left);
 	r_th_lock_free (state->lock);
 	r_th_cond_free (state->cond);
+	free (state->run_config.r2_cmd);
 }
 
 // Returns: 0 = success, -1 = error, 1 = special exit (e.g., .c file handling)

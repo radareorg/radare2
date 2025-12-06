@@ -150,7 +150,7 @@ typedef struct r2r_test_database_t {
 } R2RTestDatabase;
 
 typedef struct r2r_run_config_t {
-	const char *r2_cmd;
+	char *r2_cmd;
 	const char *rasm2_cmd;
 	const char *json_test_file;
 	ut64 timeout_ms;
