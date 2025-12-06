@@ -24,7 +24,7 @@ static int kill(int a, int b) {
 static int execvp(const char *a, char **b) {
 	return -1;
 }
-static int setpgid (int, int) {
+static int setpgid(int, int) {
 	return -1;
 }
 #define WNOHANG 0
@@ -52,16 +52,15 @@ static bool create_pipe_overlap(HANDLE *pipe_read, HANDLE *pipe_write, LPSECURIT
 	if (!sz) {
 		sz = 4096;
 	}
-	char name[MAX_PATH];
-	snprintf (name, sizeof (name), "\\\\.\\pipe\\r2r-subproc.%d.%ld", (int)GetCurrentProcessId (), (long)InterlockedIncrement (&pipe_id));
+	r_strf_var (name, MAX_PATH, "\\\\.\\pipe\\r2r-subproc.%d.%ld", (int)GetCurrentProcessId (), (long)InterlockedIncrement (&pipe_id));
 	*pipe_read = CreateNamedPipeA (name, PIPE_ACCESS_INBOUND | read_mode, PIPE_TYPE_BYTE | PIPE_WAIT, 1, sz, sz, 120 * 1000, attrs);
 	if (!*pipe_read) {
-		return FALSE;
+		return false;
 	}
 	*pipe_write = CreateFileA (name, GENERIC_WRITE, 0, attrs, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | write_mode, NULL);
 	if (*pipe_write == INVALID_HANDLE_VALUE) {
 		CloseHandle (*pipe_read);
-		return FALSE;
+		return false;
 	}
 	return true;
 }
@@ -216,96 +215,98 @@ R_API R2RSubprocess *r2r_subprocess_start(
 	if (!argv) {
 		return NULL;
 	}
-	argv[0] =(char *)file;
-if(args_size) {
-	memcpy (argv + 1, args, sizeof (char *) * args_size);
-}
-char *cmdline = r_str_format_msvc_argv(args_size + 1,(const char **)argv);
-free(argv);
-if(!cmdline) {
-	return NULL;
-}
+	argv[0] = (char *)file;
+	if (args_size) {
+		memcpy (argv + 1, args, sizeof (char *) * args_size);
+	}
+	char *cmdline = r_str_format_msvc_argv (args_size + 1, (const char **)argv);
+	free (argv);
+	if (!cmdline) {
+		return NULL;
+	}
 
-proc = R_NEW0(R2RSubprocess);
-if(!proc) {
-	goto error;
-}
-proc->ret = -1;
-proc->lock = r_th_lock_new(false);
+	proc = R_NEW0 (R2RSubprocess);
+	if (!proc) {
+		goto error;
+	}
+	proc->ret = -1;
+	proc->lock = r_th_lock_new (false);
 
-SECURITY_ATTRIBUTES sattrs;
-sattrs.nLength = sizeof(sattrs);
-sattrs.bInheritHandle = TRUE;
-sattrs.lpSecurityDescriptor = NULL;
+	SECURITY_ATTRIBUTES sattrs;
+	sattrs.nLength = sizeof (sattrs);
+	sattrs.bInheritHandle = TRUE;
+	sattrs.lpSecurityDescriptor = NULL;
 
-if(!create_pipe_overlap(&proc->stdout_read, &stdout_write, &sattrs, 0, FILE_FLAG_OVERLAPPED, 0)) {
-	proc->stdout_read = stdout_write = NULL;
-	goto error;
-}
-if(!SetHandleInformation(proc->stdout_read, HANDLE_FLAG_INHERIT, 0)) {
-	goto error;
-}
-if(!create_pipe_overlap(&proc->stderr_read, &stderr_write, &sattrs, 0, FILE_FLAG_OVERLAPPED, 0)) {
-	proc->stdout_read = stderr_write = NULL;
-	goto error;
-}
-if(!SetHandleInformation(proc->stderr_read, HANDLE_FLAG_INHERIT, 0)) {
-	goto error;
-}
-if(!CreatePipe(&stdin_read, &proc->stdin_write, &sattrs, 0)) {
-	stdin_read = proc->stdin_write = NULL;
-	goto error;
-}
-if(!SetHandleInformation(proc->stdin_write, HANDLE_FLAG_INHERIT, 0)) {
-	goto error;
-}
+	if (!create_pipe_overlap (&proc->stdout_read, &stdout_write, &sattrs, 0, FILE_FLAG_OVERLAPPED, 0)) {
+		proc->stdout_read = stdout_write = NULL;
+		goto error;
+	}
+	if (!SetHandleInformation (proc->stdout_read, HANDLE_FLAG_INHERIT, 0)) {
+		goto error;
+	}
+	if (!create_pipe_overlap (&proc->stderr_read, &stderr_write, &sattrs, 0, FILE_FLAG_OVERLAPPED, 0)) {
+		proc->stdout_read = stderr_write = NULL;
+		goto error;
+	}
+	if (!SetHandleInformation (proc->stderr_read, HANDLE_FLAG_INHERIT, 0)) {
+		goto error;
+	}
+	if (!CreatePipe (&stdin_read, &proc->stdin_write, &sattrs, 0)) {
+		stdin_read = proc->stdin_write = NULL;
+		goto error;
+	}
+	if (!SetHandleInformation (proc->stdin_write, HANDLE_FLAG_INHERIT, 0)) {
+		goto error;
+	}
 
-PROCESS_INFORMATION proc_info = { 0 };
-STARTUPINFOA start_info = { 0 };
-start_info.cb = sizeof(start_info);
-start_info.hStdError = stderr_write;
-start_info.hStdOutput = stdout_write;
-start_info.hStdInput = stdin_read;
-start_info.dwFlags |= STARTF_USESTDHANDLES;
+	PROCESS_INFORMATION proc_info = { 0 };
+	STARTUPINFOA start_info = { 0 };
+	start_info.cb = sizeof (start_info);
+	start_info.hStdError = stderr_write;
+	start_info.hStdOutput = stdout_write;
+	start_info.hStdInput = stdin_read;
+	start_info.dwFlags |= STARTF_USESTDHANDLES;
 
-LPWSTR env = override_env(envvars, envvals, env_size);
-if(!CreateProcessA(NULL, cmdline,
-	NULL, NULL, TRUE, CREATE_UNICODE_ENVIRONMENT, env,
-	NULL, &start_info, &proc_info)) {
+	LPWSTR env = override_env (envvars, envvals, env_size);
+	if (!CreateProcessA (NULL, cmdline,
+		NULL, NULL, TRUE, CREATE_UNICODE_ENVIRONMENT, env,
+		NULL, &start_info, &proc_info)) {
+		free (env);
+		R_LOG_ERROR ("CreateProcess failed: %#x", (int)GetLastError ());
+		goto error;
+	}
 	free (env);
-	R_LOG_ERROR ("CreateProcess failed: %#x", (int)GetLastError ());
-	goto error;
-}
-free(env);
 
-CloseHandle(proc_info.hThread);
-proc->proc = proc_info.hProcess;
+	CloseHandle (proc_info.hThread);
+	proc->proc = proc_info.hProcess;
 
-beach : if(stdin_read) {
-	CloseHandle (stdin_read);
-}
-if(stdout_write) {
-	CloseHandle (stdout_write);
-}
-if(stderr_write) {
-	CloseHandle (stderr_write);
-}
-free(cmdline);
-return proc;
-error : if(proc) {
-	if (proc->stdin_write) {
-		CloseHandle (proc->stdin_write);
+beach:
+	if (stdin_read) {
+		CloseHandle (stdin_read);
 	}
-	if (proc->stdout_read) {
-		CloseHandle (proc->stdout_read);
+	if (stdout_write) {
+		CloseHandle (stdout_write);
 	}
-	if (proc->stderr_read) {
-		CloseHandle (proc->stderr_read);
+	if (stderr_write) {
+		CloseHandle (stderr_write);
 	}
-	free (proc);
-	proc = NULL;
-}
-goto beach;
+	free (cmdline);
+	return proc;
+error:
+	if (proc) {
+		if (proc->stdin_write) {
+			CloseHandle (proc->stdin_write);
+		}
+		if (proc->stdout_read) {
+			CloseHandle (proc->stdout_read);
+		}
+		if (proc->stderr_read) {
+			CloseHandle (proc->stderr_read);
+		}
+		free (proc);
+		proc = NULL;
+	}
+	goto beach;
 }
 
 R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
@@ -1045,106 +1046,96 @@ static char *convert_win_cmds(const char *cmds) {
 }
 #endif
 
-static R2RProcessOutput *run_r2_test(R2RRunConfig *config, ut64 timeout_ms, int repeat, const char *cmds, RList *files, RList *extra_args, RList *extra_env, bool load_plugins, R2RCmdRunner runner, void *user) {
-	// AITODO: All this rvecconstcharptr is an awful way to construct fucking strings. lets just use RStrBuf or RList of strings instead. analyze how the constructed final vector is constructed and how its used and mamke the code as simpler as possible to maintain and read. hopefiully removeing lines of code too
-	RVecConstCharPtr args;
-	RVecConstCharPtr envvars;
-	RVecConstCharPtr envvals;
-	RVecConstCharPtr_init (&envvars);
-	RVecConstCharPtr_init (&envvals);
-	RVecConstCharPtr_init (&args);
+static const char **rlist_to_argv(RList *list, size_t *size) {
+	size_t len = r_list_length (list);
+	*size = len;
+	const char **arr = calloc (len, sizeof (const char *));
+	if (!arr) {
+		return NULL;
+	}
+	size_t i = 0;
+	RListIter *it;
+	void *elem;
+	r_list_foreach (list, it, elem) {
+		arr[i++] = elem;
+	}
+	return arr;
+}
 
-	const char *arg_val = "-escr.utf8=0";
-	RVecConstCharPtr_push_back (&args, &arg_val);
-	// add "-ebin.types=false" here if needed
-	arg_val = "-escr.color=0";
-	RVecConstCharPtr_push_back (&args, &arg_val);
-	arg_val = "-escr.interactive=0";
-	RVecConstCharPtr_push_back (&args, &arg_val);
+static R2RProcessOutput *run_r2_test(R2RRunConfig *config, ut64 timeout_ms, int repeat, const char *cmds, RList *files, RList *extra_args, RList *extra_env, bool load_plugins, R2RCmdRunner runner, void *user) {
+	RList *args = r_list_new ();
+	RList *envvars = r_list_new ();
+	RList *envvals = r_list_new ();
+
+	r_list_append (args, (void *)"-escr.utf8=0");
+	r_list_append (args, (void *)"-escr.color=0");
+	r_list_append (args, (void *)"-escr.interactive=0");
 
 	if (!load_plugins) {
-		arg_val = "-NN";
-		RVecConstCharPtr_push_back (&args, &arg_val);
+		r_list_append (args, (void *)"-NN");
 	}
 	RListIter *it;
 	void *extra_arg, *file_arg;
 	if (extra_args) {
 		r_list_foreach (extra_args, it, extra_arg) {
-			const char *extra = extra_arg;
-			RVecConstCharPtr_push_back (&args, &extra);
+			r_list_append (args, extra_arg);
 		}
 	}
-	arg_val = "-Qc";
-	RVecConstCharPtr_push_back (&args, &arg_val);
+	r_list_append (args, (void *)"-Qc");
 #if R2__WINDOWS__
 	char *wcmds = convert_win_cmds (cmds);
-	arg_val = wcmds;
-	RVecConstCharPtr_push_back (&args, &arg_val);
+	r_list_append (args, wcmds);
 #else
-	arg_val = cmds;
-	RVecConstCharPtr_push_back (&args, &arg_val);
+	r_list_append (args, (void *)cmds);
 #endif
 	r_list_foreach (files, it, file_arg) {
-		const char *file = file_arg;
-		RVecConstCharPtr_push_back (&args, &file);
+		r_list_append (args, file_arg);
 	}
 
 #if R2__WINDOWS__
-	arg_val = "ANSICON";
-	RVecConstCharPtr_push_back (&envvars, &arg_val);
-	arg_val = "1";
-	RVecConstCharPtr_push_back (&envvals, &arg_val);
+	r_list_append (envvars, (void *)"ANSICON");
+	r_list_append (envvals, (void *)"1");
 #endif
 	if (!load_plugins) {
-		arg_val = "R2_NOPLUGINS";
-		RVecConstCharPtr_push_back (&envvars, &arg_val);
-		arg_val = "1";
-		RVecConstCharPtr_push_back (&envvals, &arg_val);
+		r_list_append (envvars, (void *)"R2_NOPLUGINS");
+		r_list_append (envvals, (void *)"1");
 	}
 	if (extra_env) {
-		RListIter *eit;
 		char *kv;
-		r_list_foreach (extra_env, eit, kv) {
+		r_list_foreach (extra_env, it, kv) {
 			char *equal = strstr (kv, "=");
-			if (!equal) {
-				continue;
+			if (equal) {
+				*equal = 0;
+				r_list_append (envvars, (void *)kv);
+				r_list_append (envvals, (void *) (equal + 1));
 			}
-			*equal = 0;
-			const char *varkey = kv;
-			const char *varval = equal + 1;
-			RVecConstCharPtr_push_back (&envvars, &varkey);
-			RVecConstCharPtr_push_back (&envvals, &varval);
 		}
 	}
-#if 0
-	const char **at;
-	eprintf ("->{\n");
-	R_VEC_FOREACH (&args, at) {
-		eprintf ("--> %s\n", *at);
-	}
-	eprintf ("->}\n");
-#endif
 
-	size_t env_size = (size_t)RVecConstCharPtr_length (&envvars);
+	size_t args_size, env_size;
+	const char **argv = rlist_to_argv (args, &args_size);
+	const char **envk = rlist_to_argv (envvars, &env_size);
+	const char **envv = rlist_to_argv (envvals, &env_size);
 
 	R2RProcessOutput *out;
 	if (repeat > 1) {
 		int rep = repeat;
 		while (rep-- > 0) {
-			out = runner (config->r2_cmd, R_VEC_START_ITER (&args),
-				(size_t)RVecConstCharPtr_length (&args), R_VEC_START_ITER (&envvars), R_VEC_START_ITER (&envvals), env_size, timeout_ms, user);
+			out = runner (config->r2_cmd, argv, args_size, envk, envv, env_size, timeout_ms, user);
 		}
 	} else {
-		out = runner (config->r2_cmd, R_VEC_START_ITER (&args),
-			(size_t)RVecConstCharPtr_length (&args), R_VEC_START_ITER (&envvars), R_VEC_START_ITER (&envvals), env_size, timeout_ms, user);
+		out = runner (config->r2_cmd, argv, args_size, envk, envv, env_size, timeout_ms, user);
 	}
 
-	RVecConstCharPtr_clear (&args);
-	RVecConstCharPtr_clear (&envvars);
-	RVecConstCharPtr_clear (&envvals);
 #if R2__WINDOWS__
 	free (wcmds);
 #endif
+	free (argv);
+	free (envk);
+	free (envv);
+	r_list_free (args);
+	r_list_free (envvars);
+	r_list_free (envvals);
 	return out;
 }
 
@@ -1368,7 +1359,7 @@ R_API R2RAsmTestOutput *r2r_run_asm_test(R2RRunConfig *config, R2RAsmTest *test)
 		}
 		out->bytes = bytes;
 		out->bytes_size = (size_t)byteslen;
-rip:
+	rip:
 		RVecConstCharPtr_pop_back (&args);
 		r2r_subprocess_free (proc);
 	}
@@ -1396,7 +1387,7 @@ rip:
 		char *disasm = r_strbuf_drain_nofree (&proc->out);
 		r_str_trim (disasm);
 		out->disasm = disasm;
-ship:
+	ship:
 		free (hex);
 		RVecConstCharPtr_pop_back (&args);
 		RVecConstCharPtr_pop_back (&args);
@@ -1444,7 +1435,7 @@ R_API void r2r_asm_test_output_free(R2RAsmTestOutput *out) {
 R_API R2RProcessOutput *r2r_run_fuzz_test(R2RRunConfig *config, const char *file, R2RCmdRunner runner, void *user) {
 	const char *cmd = "aaa";
 	RList *files = r_list_new ();
-	r_list_push (files, (void*)file);
+	r_list_push (files, (void *)file);
 	R2RProcessOutput *ret = run_r2_test (config, config->timeout_ms, 1, cmd, files, NULL, NULL, false, runner, user);
 	r_list_free (files);
 	return ret;
@@ -1591,11 +1582,11 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 			bool mustrun = !needsabi || (needsabi < 0);
 #endif
 			if (mustrun) {
-			R2RProcessOutput *out = r2r_run_cmd_test (config, cmd_test, subprocess_runner, NULL);
-			success = r2r_check_cmd_test (out, cmd_test);
-			ret->proc_out = out;
-			ret->timeout = out ? out->timeout : false;
-			ret->run_failed = !out;
+				R2RProcessOutput *out = r2r_run_cmd_test (config, cmd_test, subprocess_runner, NULL);
+				success = r2r_check_cmd_test (out, cmd_test);
+				ret->proc_out = out;
+				ret->timeout = out? out->timeout: false;
+				ret->run_failed = !out;
 			} else {
 				success = true;
 				ret->proc_out = NULL;
