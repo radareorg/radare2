@@ -48,7 +48,7 @@ static char *readline(char *buf, size_t *linesz) {
 // 3    EOF
 // 4    ...
 //
-// if nextline is at the beginning of line 1,
+// if nextline is at the beginning of line 1,"
 // read_string_val (&nextline, "<<EOF\0")
 // will return "Hello\nWorld\n" with nextline being at the beginning of line 4 afterwards.
 static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
@@ -72,7 +72,7 @@ static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
 			R_LOG_ERROR ("End token must be \"EOF\", got \"%s\" instead", endtoken);
 			return NULL;
 		}
-		RStrBuf *buf = r_strbuf_new ("");
+		RStrBuf *sb = r_strbuf_new (NULL);
 		char *line = *nextline;
 		size_t linesz = 0;
 		while (line) {
@@ -88,15 +88,15 @@ static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
 			if (end) {
 				*end = '\0';
 			}
-			r_strbuf_append (buf, line);
+			r_strbuf_append (sb, line);
 			if (end) {
-				return r_strbuf_drain (buf);
+				return r_strbuf_drain (sb);
 			}
-			r_strbuf_append (buf, "\n");
+			r_strbuf_append (sb, "\n");
 			line = *nextline;
 		}
 		R_LOG_ERROR ("Missing closing end token %s", endtoken);
-		r_strbuf_free (buf);
+		r_strbuf_free (sb);
 		return NULL;
 	}
 
@@ -452,10 +452,6 @@ fail:
 	goto beach;
 }
 
-R_API R2RJsonTest *r2r_json_test_new(void) {
-	return R_NEW0 (R2RJsonTest);
-}
-
 R_API void r2r_json_test_free(R2RJsonTest *test) {
 	if (!test) {
 		return;
@@ -502,10 +498,7 @@ R_API RVecR2RJsonTestPtr *r2r_load_json_test_file(const char *file) {
 			continue;
 		}
 
-		R2RJsonTest *test = r2r_json_test_new ();
-		if (!test) {
-			break;
-		}
+		R2RJsonTest *test = R_NEW0 (R2RJsonTest);
 		test->line = linenum;
 		test->cmd = strdup (line);
 		if (!test->cmd) {
@@ -551,9 +544,6 @@ R_API void r2r_test_free(R2RTest *test) {
 
 R_API R2RTestDatabase *r2r_test_database_new(void) {
 	R2RTestDatabase *db = R_NEW (R2RTestDatabase);
-	if (!db) {
-		return NULL;
-	}
 	RVecR2RTestPtr_init (&db->tests);
 	r_str_constpool_init (&db->strpool);
 	return db;
@@ -573,34 +563,17 @@ R_API void r2r_test_database_free(R2RTestDatabase *db) {
 }
 
 static R2RTestType test_type_for_path(const char *path, bool *load_plugins) {
-	R2RTestType ret = R2R_TEST_TYPE_CMD;
-	char *pathdup = strdup (path);
-	RList *tokens = r_str_split_list (pathdup, R_SYS_DIR, 0);
-	if (!tokens) {
-		return ret;
-	}
-	if (!r_list_empty (tokens)) {
-		r_list_pop (tokens);
-	}
-	RListIter *it;
-	char *token;
 	*load_plugins = false;
-	r_list_foreach (tokens, it, token) {
-		if (!strcmp (token, "asm")) {
-			ret = R2R_TEST_TYPE_ASM;
-			continue;
-		}
-		if (!strcmp (token, "json")) {
-			ret = R2R_TEST_TYPE_JSON;
-			continue;
-		}
-		if (!strcmp (token, "extras")) {
-			*load_plugins = true;
-		}
+	if (strstr (path, R_SYS_DIR "asm" R_SYS_DIR)) {
+		return R2R_TEST_TYPE_ASM;
 	}
-	r_list_free (tokens);
-	free (pathdup);
-	return ret;
+	if (strstr (path, R_SYS_DIR "json" R_SYS_DIR)) {
+		return R2R_TEST_TYPE_JSON;
+	}
+	if (strstr (path, R_SYS_DIR "extras" R_SYS_DIR)) {
+		*load_plugins = true;
+	}
+	return R2R_TEST_TYPE_CMD;
 }
 
 static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
@@ -612,7 +585,6 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 		{ "tools", "rasm2" },
 	};
 #endif
-
 	if (depth <= 0) {
 		R_LOG_ERROR ("Directories for loading tests too deep: %s", path);
 		return false;
@@ -625,8 +597,6 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 		}
 		RListIter *it;
 		const char *subname;
-		RStrBuf subpath;
-		r_strbuf_init (&subpath);
 		const bool skip_archos = r_sys_getenv_asbool ("R2R_SKIP_ARCHOS");
 		const bool skip_asm = r_sys_getenv_asbool ("R2R_SKIP_ASM");
 		bool ret = true;
@@ -666,13 +636,13 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 				R_LOG_INFO ("Skipping %s" R_SYS_DIR "%s because it does not match the current platform \"%s\"", path, subname, archos);
 				continue;
 			}
-			r_strbuf_setf (&subpath, "%s%s%s", path, R_SYS_DIR, subname);
-			if (!database_load (db, r_strbuf_get (&subpath), depth - 1)) {
-				ret = false;
+			char *subpath = r_file_new (path, subname, NULL);
+			ret = database_load (db, subpath, depth - 1);
+			free (subpath);
+			if (!ret) {
 				break;
 			}
 		}
-		r_strbuf_fini (&subpath);
 		r_list_free (dir);
 		return ret;
 	}
@@ -686,6 +656,7 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 	const char *pooled_path = r_str_constpool_get (&db->strpool, path);
 	bool load_plugins = false;
 	R2RTestType test_type = test_type_for_path (path, &load_plugins);
+	/// AITODO: write a helper function that avoids the repetitive boring code of all these 3 cases below
 	switch (test_type) {
 	case R2R_TEST_TYPE_CMD:
 		{
@@ -696,9 +667,6 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 			R2RCmdTest **it;
 			R_VEC_FOREACH (cmd_tests, it) {
 				R2RTest *test = R_NEW (R2RTest);
-				if (!test) {
-					continue;
-				}
 				test->type = R2R_TEST_TYPE_CMD;
 				test->path = pooled_path;
 				test->cmd_test = *it;
@@ -717,9 +685,6 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 			R2RAsmTest **it;
 			R_VEC_FOREACH (asm_tests, it) {
 				R2RTest *test = R_NEW (R2RTest);
-				if (!test) {
-					continue;
-				}
 				test->type = R2R_TEST_TYPE_ASM;
 				test->path = pooled_path;
 				test->asm_test = *it;
@@ -737,9 +702,6 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 			R2RJsonTest **it;
 			R_VEC_FOREACH (json_tests, it) {
 				R2RTest *test = R_NEW (R2RTest);
-				if (!test) {
-					continue;
-				}
 				test->type = R2R_TEST_TYPE_JSON;
 				test->path = pooled_path;
 				test->json_test = *it;
@@ -763,20 +725,8 @@ R_API bool r2r_test_database_load(R2RTestDatabase *db, const char *path) {
 
 static void database_load_fuzz_file(R2RTestDatabase *db, const char *path, const char *file) {
 	R2RFuzzTest *fuzz_test = R_NEW (R2RFuzzTest);
-	if (!fuzz_test) {
-		return;
-	}
 	fuzz_test->file = strdup (file);
-	if (!fuzz_test->file) {
-		free (fuzz_test);
-		return;
-	}
 	R2RTest *test = R_NEW (R2RTest);
-	if (!test) {
-		free (fuzz_test->file);
-		free (fuzz_test);
-		return;
-	}
 	test->type = R2R_TEST_TYPE_FUZZ;
 	test->fuzz_test = fuzz_test;
 	test->path = r_str_constpool_get (&db->strpool, path);
@@ -791,23 +741,18 @@ R_API bool r2r_test_database_load_fuzz(R2RTestDatabase *db, const char *path) {
 		}
 		RListIter *it;
 		const char *subname;
-		RStrBuf subpath;
-		r_strbuf_init (&subpath);
-		bool ret = true;
 		r_list_foreach (dir, it, subname) {
 			if (*subname == '.') {
 				continue;
 			}
-			r_strbuf_setf (&subpath, "%s%s%s", path, R_SYS_DIR, subname);
-			if (r_file_is_directory (r_strbuf_get (&subpath))) {
-				// only load 1 level deep
-				continue;
+			char *subpath = r_file_new (path, subname);
+			if (!r_file_is_directory (subpath)) {
+				database_load_fuzz_file (db, path, subpath);
 			}
-			database_load_fuzz_file (db, path, r_strbuf_get (&subpath));
+			free (subpath);
 		}
-		r_strbuf_fini (&subpath);
 		r_list_free (dir);
-		return ret;
+		return true;
 	}
 
 	if (!r_file_exists (path)) {
