@@ -297,7 +297,7 @@ static void r2r_from_sourcecomments(RList *list, const char *path) {
 }
 
 static R2ROptions r2r_options_init(void) {
-	R2ROptions opt = {0};
+	R2ROptions opt = { 0 };
 	opt.workers_count = WORKERS_DEFAULT;
 	opt.timeout_sec = TIMEOUT_DEFAULT;
 	opt.get_bins = !r_sys_getenv_asbool ("R2R_OFFLINE");
@@ -484,8 +484,8 @@ static bool r2r_state_init(R2RState *state, R2ROptions *opt) {
 	state->run_config.skip_json = r_sys_getenv_asbool ("R2R_SKIP_JSON");
 	state->run_config.skip_fuzz = r_sys_getenv_asbool ("R2R_SKIP_FUZZ");
 	state->run_config.rasm2_cmd = "rasm2";
-	state->run_config.json_test_file = opt->json_test_file ? opt->json_test_file : JSON_TEST_FILE_DEFAULT;
-	state->run_config.timeout_ms = (opt->timeout_sec > UT64_MAX / 1000) ? UT64_MAX : opt->timeout_sec * 1000;
+	state->run_config.json_test_file = opt->json_test_file? opt->json_test_file: JSON_TEST_FILE_DEFAULT;
+	state->run_config.timeout_ms = (opt->timeout_sec > UT64_MAX / 1000)? UT64_MAX: opt->timeout_sec * 1000;
 	state->verbose = opt->verbose;
 	state->quiet = opt->quiet;
 
@@ -572,13 +572,13 @@ static int r2r_load_tests(R2RState *state, R2ROptions *opt, int arg_ind, int arg
 				int grc = 0;
 				r_list_foreach (tests, iter, test) {
 					R_LOG_INFO ("Running %s", test);
-					int rc = r_sys_cmdf ("r2r %s %s", opt->interactive ? "-i" : "", test);
+					int rc = r_sys_cmdf ("r2r %s %s", opt->interactive? "-i": "", test);
 					if (rc != 0) {
 						grc = rc;
 					}
 				}
 				r_list_free (tests);
-				return grc ? grc : 1; // Signal special exit
+				return grc? grc: 1; // Signal special exit
 			}
 			char *tf = r_file_abspath_rel (cwd, arg);
 			if (!tf || !r2r_test_database_load (state->db, tf, skip_json_tests)) {
@@ -748,21 +748,20 @@ int main(int argc, char **argv) {
 #endif
 
 	R2ROptions opt = r2r_options_init ();
+	R2RState state;
+	bool state_initialized = false;
 
 	int arg_ind = r2r_parse_args (&opt, argc, argv);
 	if (arg_ind < 0) {
-		// AITODO: cant we just have only 1 call to r2r_options_fini at the end of the function because all the fail paths end go to restore_console. analyze my propose and do the fix to simplify the code
-		r2r_options_fini (&opt);
 		ret = arg_ind + 1; // when -1 return 0, when -2, return 1
-		goto restore_console;
+		goto cleanup;
 	}
 
 	char *cwd = NULL;
 	if (!r2r_setup_directory (&opt, arg_ind, argc, argv, &cwd)) {
 		free (cwd);
-		r2r_options_fini (&opt);
 		ret = -1;
-		goto restore_console;
+		goto cleanup;
 	}
 
 	if (opt.fuzz_dir) {
@@ -783,22 +782,20 @@ int main(int argc, char **argv) {
 	if (!r2r_subprocess_init ()) {
 		R_LOG_ERROR ("Subprocess init failed");
 		free (cwd);
-		r2r_options_fini (&opt);
 		ret = -1;
-		goto restore_console;
+		goto cleanup;
 	}
 	atexit (r2r_subprocess_fini);
 
 	r2r_print_lock = r_th_lock_new (false);
 	r2r_setup_environment ();
 
-	R2RState state;
 	if (!r2r_state_init (&state, &opt)) {
 		free (cwd);
-		r2r_options_fini (&opt);
 		ret = -1;
-		goto restore_console;
+		goto cleanup;
 	}
+	state_initialized = true;
 
 	bool skip_json_tests = !r2r_check_jq_available ();
 	int load_result = r2r_load_tests (&state, &opt, arg_ind, argc, argv, cwd, skip_json_tests);
@@ -806,17 +803,13 @@ int main(int argc, char **argv) {
 	cwd = NULL;
 
 	if (load_result < 0) {
-		r2r_state_fini (&state);
-		r2r_options_fini (&opt);
 		ret = -1;
-		goto restore_console;
+		goto cleanup;
 	}
 	if (load_result > 0) {
 		// Special exit (e.g., .c file handling returned a specific code)
-		r2r_state_fini (&state);
-		r2r_options_fini (&opt);
-		ret = (load_result == 1) ? 0 : load_result;
-		goto restore_console;
+		ret = (load_result == 1)? 0: load_result;
+		goto cleanup;
 	}
 
 	ut64 loaded_tests = RVecR2RTestPtr_length (&state.db->tests);
@@ -829,10 +822,8 @@ int main(int argc, char **argv) {
 	}
 
 	if (opt.nothing) {
-		r2r_state_fini (&state);
-		r2r_options_fini (&opt);
 		ret = 0;
-		goto restore_console;
+		goto cleanup;
 	}
 
 	RVecR2RTestPtr_append (&state.queue, &state.db->tests, NULL);
@@ -844,10 +835,8 @@ int main(int argc, char **argv) {
 	ut64 time_start = r_time_now_mono ();
 
 	if (!r2r_run_workers (&state, &opt)) {
-		r2r_state_fini (&state);
-		r2r_options_fini (&opt);
 		ret = -1;
-		goto restore_console;
+		goto cleanup;
 	}
 
 	r2r_print_summary (&state, time_start);
@@ -861,7 +850,10 @@ int main(int argc, char **argv) {
 		ret = 1;
 	}
 
-	r2r_state_fini (&state);
+cleanup:
+	if (state_initialized) {
+		r2r_state_fini (&state);
+	}
 	r2r_options_fini (&opt);
 
 restore_console:
