@@ -152,8 +152,8 @@ R_API RVecR2RCmdTestPtr *r2r_load_cmd_test_file(const char *file) {
 				R_LOG_ERROR (LINEFMT ": Test without CMDS key", file, linenum);
 				goto fail;
 			}
-			if (!(test->expect.value || test->expect_err.value)) {
-				if (!(test->regexp_out.value || test->regexp_err.value)) {
+			if (! (test->expect.value || test->expect_err.value)) {
+				if (! (test->regexp_out.value || test->regexp_err.value)) {
 					R_LOG_ERROR (LINEFMT ": Test without EXPECT or EXPECT_ERR key, missing EOF?", file, linenum);
 					goto fail;
 				}
@@ -521,6 +521,29 @@ R_API void r2r_fuzz_test_free(R2RFuzzTest *test) {
 	free (test);
 }
 
+static R2RTest *r2r_test_new(R2RTestType type, const char *path, void *specific_test, bool load_plugins) {
+	R2RTest *test = R_NEW (R2RTest);
+	test->type = type;
+	test->path = path;
+	switch (type) {
+	case R2R_TEST_TYPE_CMD:
+		test->cmd_test = specific_test;
+		test->cmd_test->load_plugins = load_plugins;
+		break;
+	case R2R_TEST_TYPE_ASM:
+		test->asm_test = specific_test;
+		break;
+	case R2R_TEST_TYPE_JSON:
+		test->json_test = specific_test;
+		test->json_test->load_plugins = load_plugins;
+		break;
+	case R2R_TEST_TYPE_FUZZ:
+		test->fuzz_test = specific_test;
+		break;
+	}
+	return test;
+}
+
 R_API void r2r_test_free(R2RTest *test) {
 	if (!test) {
 		return;
@@ -656,7 +679,6 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 	const char *pooled_path = r_str_constpool_get (&db->strpool, path);
 	bool load_plugins = false;
 	R2RTestType test_type = test_type_for_path (path, &load_plugins);
-	/// AITODO: write a helper function that avoids the repetitive boring code of all these 3 cases below
 	switch (test_type) {
 	case R2R_TEST_TYPE_CMD:
 		{
@@ -666,11 +688,7 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 			}
 			R2RCmdTest **it;
 			R_VEC_FOREACH (cmd_tests, it) {
-				R2RTest *test = R_NEW (R2RTest);
-				test->type = R2R_TEST_TYPE_CMD;
-				test->path = pooled_path;
-				test->cmd_test = *it;
-				test->cmd_test->load_plugins = load_plugins;
+				R2RTest *test = r2r_test_new (R2R_TEST_TYPE_CMD, pooled_path, *it, load_plugins);
 				RVecR2RTestPtr_push_back (&db->tests, &test);
 			}
 			RVecR2RCmdTestPtr_free (cmd_tests);
@@ -684,10 +702,7 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 			}
 			R2RAsmTest **it;
 			R_VEC_FOREACH (asm_tests, it) {
-				R2RTest *test = R_NEW (R2RTest);
-				test->type = R2R_TEST_TYPE_ASM;
-				test->path = pooled_path;
-				test->asm_test = *it;
+				R2RTest *test = r2r_test_new (R2R_TEST_TYPE_ASM, pooled_path, *it, false);
 				RVecR2RTestPtr_push_back (&db->tests, &test);
 			}
 			RVecR2RAsmTestPtr_free (asm_tests);
@@ -701,11 +716,7 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 			}
 			R2RJsonTest **it;
 			R_VEC_FOREACH (json_tests, it) {
-				R2RTest *test = R_NEW (R2RTest);
-				test->type = R2R_TEST_TYPE_JSON;
-				test->path = pooled_path;
-				test->json_test = *it;
-				test->json_test->load_plugins = load_plugins;
+				R2RTest *test = r2r_test_new (R2R_TEST_TYPE_JSON, pooled_path, *it, load_plugins);
 				RVecR2RTestPtr_push_back (&db->tests, &test);
 			}
 			RVecR2RJsonTestPtr_free (json_tests);
@@ -724,12 +735,10 @@ R_API bool r2r_test_database_load(R2RTestDatabase *db, const char *path) {
 }
 
 static void database_load_fuzz_file(R2RTestDatabase *db, const char *path, const char *file) {
+	// AITODO: this fuzzfile new with the test thiing below looks like a bad hack thing which can be simplified with the r2r_test_new only. find out  the thing and fix it
 	R2RFuzzTest *fuzz_test = R_NEW (R2RFuzzTest);
 	fuzz_test->file = strdup (file);
-	R2RTest *test = R_NEW (R2RTest);
-	test->type = R2R_TEST_TYPE_FUZZ;
-	test->fuzz_test = fuzz_test;
-	test->path = r_str_constpool_get (&db->strpool, path);
+	R2RTest *test = r2r_test_new (R2R_TEST_TYPE_FUZZ, r_str_constpool_get (&db->strpool, path), fuzz_test, false);
 	RVecR2RTestPtr_push_back (&db->tests, &test);
 }
 
