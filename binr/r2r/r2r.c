@@ -529,7 +529,7 @@ static void r2r_state_fini(R2RState *state) {
 }
 
 // Returns: 0 = success, -1 = error, 1 = special exit (e.g., .c file handling)
-static int r2r_load_tests(R2RState *state, R2ROptions *opt, int arg_ind, int argc, char **argv, char *cwd) {
+static int r2r_load_tests(R2RState *state, R2ROptions *opt, int arg_ind, int argc, char **argv, char *cwd, bool skip_json_tests) {
 	if (arg_ind < argc) {
 		int i;
 		for (i = arg_ind; i < argc; i++) {
@@ -584,7 +584,7 @@ static int r2r_load_tests(R2RState *state, R2ROptions *opt, int arg_ind, int arg
 				return grc ? grc : 1; // Signal special exit
 			}
 			char *tf = r_file_abspath_rel (cwd, arg);
-			if (!tf || !r2r_test_database_load (state->db, tf)) {
+			if (!tf || !r2r_test_database_load (state->db, tf, skip_json_tests)) {
 				R_LOG_ERROR ("Failed to load tests from \"%s\"", tf);
 				free (tf);
 				return -1;
@@ -592,7 +592,7 @@ static int r2r_load_tests(R2RState *state, R2ROptions *opt, int arg_ind, int arg
 			free (tf);
 		}
 	} else {
-		if (!r2r_test_database_load (state->db, "db")) {
+		if (!r2r_test_database_load (state->db, "db", skip_json_tests)) {
 			R_LOG_ERROR ("Failed to load tests from ./db");
 			return -1;
 		}
@@ -603,22 +603,7 @@ static int r2r_load_tests(R2RState *state, R2ROptions *opt, int arg_ind, int arg
 	return 0;
 }
 
-static void r2r_filter_json_tests(R2RState *state) {
-	if (!r2r_check_jq_available ()) {
-		/// AITODO: what about doing this check BEFORE loading the tests instead of removing them from the vector afterwards
-		R_LOG_INFO ("Skipping json tests because jq is not available");
-		size_t i;
-		for (i = 0; i < RVecR2RTestPtr_length (&state->db->tests);) {
-			R2RTest *test = *RVecR2RTestPtr_at (&state->db->tests, i);
-			if (test->type == R2R_TEST_TYPE_JSON) {
-				r2r_test_free (test);
-				RVecR2RTestPtr_remove (&state->db->tests, i);
-				continue;
-			}
-			i++;
-		}
-	}
-}
+
 
 static void r2r_setup_log_mode(R2RState *state) {
 	state->path_left = ht_pp_new (NULL, path_left_free_kv, NULL);
@@ -824,7 +809,8 @@ int main(int argc, char **argv) {
 		goto restore_console;
 	}
 
-	int load_result = r2r_load_tests (&state, &opt, arg_ind, argc, argv, cwd);
+	bool skip_json_tests = !r2r_check_jq_available ();
+	int load_result = r2r_load_tests (&state, &opt, arg_ind, argc, argv, cwd, skip_json_tests);
 	free (cwd);
 	cwd = NULL;
 
@@ -847,6 +833,10 @@ int main(int argc, char **argv) {
 		printf ("Loaded %" PFMT64u " tests.\n", loaded_tests);
 	}
 
+	if (skip_json_tests) {
+		R_LOG_INFO ("Skipping json tests because jq is not available");
+	}
+
 	if (opt.nothing) {
 		r2r_state_fini (&state);
 		r2r_options_fini (&opt);
@@ -854,7 +844,6 @@ int main(int argc, char **argv) {
 		goto restore_console;
 	}
 
-	r2r_filter_json_tests (&state);
 	RVecR2RTestPtr_append (&state.queue, &state.db->tests, NULL);
 
 	if (opt.log_mode) {

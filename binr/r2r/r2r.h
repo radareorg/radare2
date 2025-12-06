@@ -210,7 +210,7 @@ R_API RVecR2RJsonTestPtr *r2r_load_json_test_file(const char *file);
 
 R_API R2RTestDatabase *r2r_test_database_new(void);
 R_API void r2r_test_database_free(R2RTestDatabase *db);
-R_API bool r2r_test_database_load(R2RTestDatabase *db, const char *path);
+R_API bool r2r_test_database_load(R2RTestDatabase *db, const char *path, bool skip_json_tests);
 R_API bool r2r_test_database_load_fuzz(R2RTestDatabase *db, const char *path);
 
 typedef struct r2r_subprocess_t R2RSubprocess;

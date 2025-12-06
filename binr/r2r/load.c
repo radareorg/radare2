@@ -583,7 +583,7 @@ static R2RTestFrom test_type_for_path(const char *path) {
 	return res;
 }
 
-static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
+static bool database_load(R2RTestDatabase *db, const char *path, int depth, bool skip_json_tests) {
 #if WANT_V35 == 0
 	R2RTestToSkip v35_tests_to_skip[] = {
 		{ "asm", "arm.v35_64" },
@@ -644,7 +644,7 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 				continue;
 			}
 			char *subpath = r_file_new (path, subname, NULL);
-			ret = database_load (db, subpath, depth - 1);
+			ret = database_load (db, subpath, depth - 1, skip_json_tests);
 			free (subpath);
 			if (!ret) {
 				break;
@@ -662,6 +662,9 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 	// Not a directory but exists, load a file
 	const char *pooled_path = r_str_constpool_get (&db->strpool, path);
 	R2RTestFrom tff = test_type_for_path (path);
+	if (skip_json_tests && tff.type == R2R_TEST_TYPE_JSON) {
+		return true;
+	}
 	switch (tff.type) {
 	case R2R_TEST_TYPE_CMD:
 		{
@@ -713,8 +716,8 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 	return true;
 }
 
-R_API bool r2r_test_database_load(R2RTestDatabase *db, const char *path) {
-	return database_load (db, path, 4);
+R_API bool r2r_test_database_load(R2RTestDatabase *db, const char *path, bool skip_json_tests) {
+	return database_load (db, path, 4, skip_json_tests);
 }
 
 static void database_load_fuzz_file(R2RTestDatabase *db, const char *path, const char *file) {
