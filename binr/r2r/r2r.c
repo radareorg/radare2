@@ -36,12 +36,29 @@ typedef struct r2r_state_t {
 	RVecR2RTestResultInfoPtr results;
 } R2RState;
 
+typedef struct r2r_options_t {
+	int workers_count;
+	bool verbose;
+	bool nothing;
+	bool quiet;
+	bool log_mode;
+	bool interactive;
+	bool get_bins;
+	int shallow;
+	ut64 timeout_sec;
+	char *json_test_file;
+	char *output_file;
+	char *fuzz_dir;
+	const char *r2r_dir;
+} R2ROptions;
+
 static RThreadFunctionRet worker_th(RThread *th);
 /* Mutex to serialize multi-line failure printing across threads */
 static RThreadLock *r2r_print_lock = NULL;
 static void print_state(R2RState *state, ut64 prev_completed);
 static void print_log(R2RState *state, ut64 prev_completed, ut64 prev_paths_completed);
 static void interact(R2RState *state);
+static void r2r_git(void);
 static void interact_fix(R2RTestResultInfo *result, RVecR2RTestResultInfoPtr *fixup_results);
 static void interact_break(R2RTestResultInfo *result, RVecR2RTestResultInfoPtr *fixup_results);
 static void interact_commands(R2RTestResultInfo *result, RVecR2RTestResultInfoPtr *fixup_results);
@@ -282,6 +299,430 @@ static void r2r_from_sourcecomments(RList *list, const char *path) {
 	}
 }
 
+static void r2r_options_init(R2ROptions *opt) {
+	memset (opt, 0, sizeof (R2ROptions));
+	opt->workers_count = WORKERS_DEFAULT;
+	opt->timeout_sec = TIMEOUT_DEFAULT;
+	opt->get_bins = !r_sys_getenv_asbool ("R2R_OFFLINE");
+	opt->shallow = r_sys_getenv_asut64 ("R2R_SHALLOW");
+
+	char *r2r_timeout = r_sys_getenv ("R2R_TIMEOUT");
+	if (R_STR_ISNOTEMPTY (r2r_timeout)) {
+		opt->timeout_sec = r_num_math (NULL, r2r_timeout);
+	}
+	free (r2r_timeout);
+
+	ut64 r2r_jobs = r_sys_getenv_asut64 ("R2R_JOBS");
+	if (r2r_jobs > 0) {
+		opt->workers_count = r2r_jobs;
+	}
+}
+
+static void r2r_options_fini(R2ROptions *opt) {
+	free (opt->json_test_file);
+	free (opt->output_file);
+	free (opt->fuzz_dir);
+}
+
+// Returns: >= 0 = arg index to continue from, -1 = exit with success, -2 = exit with error
+static int r2r_parse_args(R2ROptions *opt, int argc, char **argv) {
+	RGetopt go;
+	r_getopt_init (&go, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:io:s:ugHS:");
+
+	int c;
+	while ((c = r_getopt_next (&go)) != -1) {
+		switch (c) {
+		case 'g':
+			r2r_git ();
+			return -1;
+		case 'h':
+			help (true, opt->workers_count);
+			return -1;
+		case 'q':
+			opt->quiet = true;
+			r_log_set_quiet (true);
+			break;
+		case 'v':
+			if (opt->quiet) {
+				printf (R2_VERSION "\n");
+			} else {
+				char *s = r_str_version ("r2r");
+				if (s) {
+					printf ("%s\n", s);
+					free (s);
+				}
+			}
+			return -1;
+		case 'V':
+			opt->verbose = true;
+			break;
+		case 'i':
+			opt->interactive = true;
+			break;
+		case 'L':
+			opt->log_mode = true;
+			break;
+		case 's':
+			parse_skip (go.arg);
+			break;
+		case 'S':
+			opt->shallow = atoi (go.arg);
+			r_sys_setenv_asut64 ("R2R_SHALLOW", opt->shallow);
+			break;
+		case 'F':
+			free (opt->fuzz_dir);
+			opt->fuzz_dir = strdup (go.arg);
+			break;
+		case 'j':
+			opt->workers_count = atoi (go.arg);
+			if (opt->workers_count <= 0) {
+				R_LOG_ERROR ("Invalid thread count");
+				help (false, opt->workers_count);
+				return -2;
+			}
+			break;
+		case 'C':
+			opt->r2r_dir = go.arg;
+			break;
+		case 'n':
+			opt->nothing = true;
+			break;
+		case 'f':
+			free (opt->json_test_file);
+			opt->json_test_file = strdup (go.arg);
+			break;
+		case 'H':
+			helpvars (opt->workers_count);
+			return -1;
+		case 'u':
+			opt->get_bins = false;
+			break;
+		case 't':
+			opt->timeout_sec = r_num_math (NULL, go.arg);
+			if (!opt->timeout_sec) {
+				opt->timeout_sec = UT64_MAX;
+			}
+			break;
+		case 'o':
+			free (opt->output_file);
+			opt->output_file = r_file_abspath (go.arg);
+			break;
+		default:
+			help (false, opt->workers_count);
+			return -2;
+		}
+	}
+	return go.ind;
+}
+
+static bool r2r_setup_directory(R2ROptions *opt, int arg_ind, int argc, char **argv, char **cwd_out) {
+	char *cwd = r_sys_getdir ();
+	*cwd_out = cwd;
+
+	if (opt->r2r_dir) {
+		if (chdir (opt->r2r_dir) == -1) {
+			R_LOG_ERROR ("Cannot find %s directory", opt->r2r_dir);
+			return false;
+		}
+		return true;
+	}
+
+	bool dir_found = false;
+	if (arg_ind < argc) {
+		const char *avi = argv[arg_ind];
+		if (!strcmp (avi, ".")) {
+			avi = cwd;
+			argv[arg_ind] = cwd;
+		}
+		dir_found = (avi[0] != '.' || (*avi && !avi[1]))
+			? r2r_chdir_fromtest (avi)
+			: r2r_chdir (argv[0]);
+	} else {
+		dir_found = r2r_chdir (argv[0]);
+	}
+
+	if (!dir_found) {
+		R_LOG_ERROR ("Cannot find db/ directory related to the given test");
+		return false;
+	}
+	return true;
+}
+
+static void r2r_setup_environment(void) {
+	if (!r_sys_getenv ("R2_BIN")) {
+		r_sys_setenv ("R2_BIN", R2_BINDIR);
+		r_sys_setenv_sep ("PATH", R2_BINDIR, false);
+	}
+
+	char *have_options = r_sys_getenv ("ASAN_OPTIONS");
+	if (have_options) {
+		free (have_options);
+	} else {
+		r_sys_setenv ("ASAN_OPTIONS", "detect_leaks=false detect_odr_violation=0");
+	}
+	r_sys_setenv ("RABIN2_TRYLIB", "0");
+	r_sys_setenv ("R2_DEBUG_ASSERT", "1");
+	r_sys_setenv ("R2_DEBUG_EPRINT", "0");
+	r_sys_setenv ("TZ", "UTC");
+}
+
+static bool r2r_state_init(R2RState *state, R2ROptions *opt) {
+	memset (state, 0, sizeof (R2RState));
+
+	if (opt->shallow > 0) {
+		r_num_irand ();
+		state->run_config.shallow = opt->shallow;
+	}
+
+	char *r2_binary = r_sys_getenv ("R2R_RADARE2");
+	if (R_STR_ISNOTEMPTY (r2_binary)) {
+		R_LOG_INFO ("Using custom r2 binary: %s", r2_binary);
+		state->run_config.r2_cmd = r2_binary;
+	} else {
+		free (r2_binary);
+		state->run_config.r2_cmd = "radare2";
+	}
+	state->run_config.skip_cmd = r_sys_getenv_asbool ("R2R_SKIP_CMD");
+	state->run_config.skip_asm = r_sys_getenv_asbool ("R2R_SKIP_ASM");
+	state->run_config.skip_json = r_sys_getenv_asbool ("R2R_SKIP_JSON");
+	state->run_config.skip_fuzz = r_sys_getenv_asbool ("R2R_SKIP_FUZZ");
+	state->run_config.rasm2_cmd = "rasm2";
+	state->run_config.json_test_file = opt->json_test_file ? opt->json_test_file : JSON_TEST_FILE_DEFAULT;
+	state->run_config.timeout_ms = (opt->timeout_sec > UT64_MAX / 1000) ? UT64_MAX : opt->timeout_sec * 1000;
+	state->verbose = opt->verbose;
+	state->quiet = opt->quiet;
+
+	state->db = r2r_test_database_new ();
+	if (!state->db) {
+		return false;
+	}
+
+	RVecR2RTestPtr_init (&state->queue);
+	RVecR2RTestResultInfoPtr_init (&state->results);
+	RVecConstCharPtr_init (&state->completed_paths);
+
+	if (opt->output_file) {
+		state->test_results = pj_new ();
+		pj_a (state->test_results);
+	}
+
+	state->lock = r_th_lock_new (false);
+	if (!state->lock) {
+		return false;
+	}
+	state->cond = r_th_cond_new ();
+	if (!state->cond) {
+		return false;
+	}
+
+	return true;
+}
+
+static void r2r_state_fini(R2RState *state) {
+	RVecR2RTestPtr_fini (&state->queue);
+	results_clear (&state->results);
+	RVecConstCharPtr_fini (&state->completed_paths);
+	r2r_test_database_free (state->db);
+	ht_pp_free (state->path_left);
+	r_th_lock_free (state->lock);
+	r_th_cond_free (state->cond);
+}
+
+// Returns: 0 = success, -1 = error, 1 = special exit (e.g., .c file handling)
+static int r2r_load_tests(R2RState *state, R2ROptions *opt, int arg_ind, int argc, char **argv, char *cwd) {
+	if (arg_ind < argc) {
+		int i;
+		for (i = arg_ind; i < argc; i++) {
+			const char *arg = argv[i];
+			if (*arg == '@') {
+				arg++;
+				eprintf ("Category: %s\n", arg);
+				if (!strcmp (arg, "unit")) {
+					if (!r2r_test_run_unit ()) {
+						return -1;
+					}
+					continue;
+				} else if (!strcmp (arg, "fuzz")) {
+					if (!opt->fuzz_dir) {
+						R_LOG_ERROR ("No fuzz dir given. Use -F [dir]");
+						return -1;
+					}
+					if (!r2r_test_database_load_fuzz (state->db, opt->fuzz_dir)) {
+						R_LOG_ERROR ("Failed to load fuzz tests from \"%s\"", opt->fuzz_dir);
+					}
+					continue;
+				} else if (!strcmp (arg, "json")) {
+					arg = "db/json";
+				} else if (!strcmp (arg, "dasm")) {
+					arg = "db/asm";
+				} else if (!strcmp (arg, "cmds")) {
+					arg = "db";
+				} else {
+					arg = r_str_newf ("db/%s", arg + 1);
+				}
+			}
+			if (r_str_endswith (arg, ".c")) {
+				char *abspath = strdup (arg);
+				if (*arg != '/') {
+					free (abspath);
+					abspath = r_str_newf ("%s/%s", cwd, arg);
+				}
+				RList *tests = r_list_newf (free);
+				r2r_from_sourcecomments (tests, abspath);
+				free (abspath);
+				RListIter *iter;
+				char *test;
+				int grc = 0;
+				r_list_foreach (tests, iter, test) {
+					R_LOG_INFO ("Running %s", test);
+					int rc = r_sys_cmdf ("r2r %s %s", opt->interactive ? "-i" : "", test);
+					if (rc != 0) {
+						grc = rc;
+					}
+				}
+				r_list_free (tests);
+				return grc ? grc : 1; // Signal special exit
+			}
+			char *tf = r_file_abspath_rel (cwd, arg);
+			if (!tf || !r2r_test_database_load (state->db, tf)) {
+				R_LOG_ERROR ("Failed to load tests from \"%s\"", tf);
+				free (tf);
+				return -1;
+			}
+			free (tf);
+		}
+	} else {
+		if (!r2r_test_database_load (state->db, "db")) {
+			R_LOG_ERROR ("Failed to load tests from ./db");
+			return -1;
+		}
+		if (opt->fuzz_dir && !r2r_test_database_load_fuzz (state->db, opt->fuzz_dir)) {
+			R_LOG_ERROR ("Failed to load fuzz tests from \"%s\"", opt->fuzz_dir);
+		}
+	}
+	return 0;
+}
+
+static void r2r_filter_json_tests(R2RState *state) {
+	if (!r2r_check_jq_available ()) {
+		/// AITODO: what about doing this check BEFORE loading the tests instead of removing them from the vector afterwards
+		R_LOG_INFO ("Skipping json tests because jq is not available");
+		size_t i;
+		for (i = 0; i < RVecR2RTestPtr_length (&state->db->tests);) {
+			R2RTest *test = *RVecR2RTestPtr_at (&state->db->tests, i);
+			if (test->type == R2R_TEST_TYPE_JSON) {
+				r2r_test_free (test);
+				RVecR2RTestPtr_remove (&state->db->tests, i);
+				continue;
+			}
+			i++;
+		}
+	}
+}
+
+static void r2r_setup_log_mode(R2RState *state) {
+	state->path_left = ht_pp_new (NULL, path_left_free_kv, NULL);
+	if (state->path_left) {
+		R2RTest **it;
+		R_VEC_FOREACH (&state->queue, it) {
+			R2RTest *test = *it;
+			ut64 *count = ht_pp_find (state->path_left, test->path, NULL);
+			if (!count) {
+				count = malloc (sizeof (ut64));
+				*count = 0;
+				ht_pp_insert (state->path_left, test->path, count);
+			}
+			(*count)++;
+		}
+	}
+}
+
+static bool r2r_run_workers(R2RState *state, R2ROptions *opt) {
+	r_th_lock_enter (state->lock);
+
+	RVecRThreadPtr workers;
+	RVecRThreadPtr_init (&workers);
+
+	int i;
+	for (i = 0; i < opt->workers_count; i++) {
+		RThread *th = r_th_new (worker_th, state, 0);
+		if (!th) {
+			R_LOG_ERROR ("Failed to setup thread");
+			r_th_lock_leave (state->lock);
+			RVecRThreadPtr_fini (&workers);
+			return false;
+		}
+		if (!r_th_start (th)) {
+			R_LOG_ERROR ("Failed to start thread");
+			r_th_lock_leave (state->lock);
+			r_th_free (th);
+			RVecRThreadPtr_fini (&workers);
+			return false;
+		}
+		RVecRThreadPtr_push_back (&workers, &th);
+	}
+
+	ut64 prev_completed = UT64_MAX;
+	ut64 prev_paths_completed = 0;
+	while (true) {
+		ut64 completed = RVecR2RTestResultInfoPtr_length (&state->results);
+		if (opt->log_mode) {
+			print_log (state, prev_completed, prev_paths_completed);
+		} else if (completed != prev_completed) {
+			print_state (state, prev_completed);
+		}
+		prev_completed = completed;
+		prev_paths_completed = RVecConstCharPtr_length (&state->completed_paths);
+		if (completed == RVecR2RTestPtr_length (&state->db->tests)) {
+			break;
+		}
+		r_th_cond_wait (state->cond, state->lock);
+	}
+
+	r_th_lock_leave (state->lock);
+
+	RThread **it;
+	R_VEC_FOREACH (&workers, it) {
+		RThread *th = *it;
+		r_th_wait (th);
+		r_th_free (th);
+	}
+	RVecRThreadPtr_fini (&workers);
+
+	return true;
+}
+
+static void r2r_print_summary(R2RState *state, ut64 time_start) {
+	if (!state->quiet) {
+		printf ("\n");
+		ut64 seconds = (r_time_now_mono () - time_start) / 1000000;
+		printf ("Finished in");
+		if (seconds > 60) {
+			ut64 minutes = seconds / 60;
+			printf (" %" PFMT64d " minutes and", minutes);
+			seconds -= (minutes * 60);
+		}
+		printf (" %" PFMT64d " seconds.\n", seconds % 60);
+	}
+}
+
+static void r2r_write_output(R2RState *state, const char *output_file) {
+	if (!output_file) {
+		return;
+	}
+	pj_end (state->test_results);
+	if (r_file_exists (output_file)) {
+		R_LOG_WARN ("Overwrite output file '%s'", output_file);
+	}
+	char *results = pj_drain (state->test_results);
+	char *output = r_str_newf ("%s\n", results);
+	free (results);
+	if (!r_file_dump (output_file, (ut8 *)output, strlen (output), false)) {
+		R_LOG_ERROR ("Cannot write to %s", output_file);
+	}
+	free (output);
+}
+
 static void r2r_git(void) {
 	int max = 10;
 	while (max-- > 0) {
@@ -311,32 +752,7 @@ static void r2r_git(void) {
 }
 
 int main(int argc, char **argv) {
-	// AITODO: refactor the main function make structure it into separate smaller functions with clear logic separation of the purpose, keeping it easier to read and simplifying the way the memory is allocated and liberated. use structs grouping local vars for logical purposes. hopefully removing the need of goto statements
-	int workers_count = WORKERS_DEFAULT;
-	bool verbose = false;
-	bool nothing = false;
-	bool quiet = false;
-	bool log_mode = false;
-	bool interactive = false;
-	char *json_test_file = NULL;
-	char *output_file = NULL;
-	char *fuzz_dir = NULL;
-	const char *r2r_dir = NULL;
-	int shallow = r_sys_getenv_asut64 ("R2R_SHALLOW");
-	ut64 timeout_sec = TIMEOUT_DEFAULT;
-	char *r2r_timeout = r_sys_getenv ("R2R_TIMEOUT");
-	if (R_STR_ISNOTEMPTY (r2r_timeout)) {
-		timeout_sec = r_num_math (NULL, r2r_timeout);
-	}
-	R_FREE (r2r_timeout);
-	bool get_bins = !r_sys_getenv_asbool ("R2R_OFFLINE");
 	int ret = 0;
-
-	if (!r_sys_getenv ("R2_BIN")) {
-		r_sys_setenv ("R2_BIN", R2_BINDIR);
-		r_sys_setenv_sep ("PATH", R2_BINDIR, false);
-	}
-
 #if R2__WINDOWS__
 	UINT old_cp = GetConsoleOutputCP ();
 	{
@@ -350,140 +766,37 @@ int main(int argc, char **argv) {
 		}
 	}
 #endif
-	ut64 r2r_jobs = r_sys_getenv_asut64 ("R2R_JOBS");
-	if (r2r_jobs > 0) {
-		workers_count = r2r_jobs;
+
+	R2ROptions opt;
+	r2r_options_init (&opt);
+
+	int arg_ind = r2r_parse_args (&opt, argc, argv);
+	if (arg_ind == -1) {
+		r2r_options_fini (&opt);
+		ret = 0;
+		goto restore_console;
+	}
+	if (arg_ind == -2) {
+		r2r_options_fini (&opt);
+		ret = 1;
+		goto restore_console;
 	}
 
-	RGetopt opt;
-	r_getopt_init (&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:io:s:ugHS:");
-
-	int c;
-	while ((c = r_getopt_next (&opt)) != -1) {
-		switch (c) {
-		case 'g':
-			r2r_git ();
-			free (json_test_file);
-			free (fuzz_dir);
-			return 0;
-		case 'h':
-			ret = help (true, workers_count);
-			goto beach;
-		case 'q':
-			quiet = true;
-			r_log_set_quiet (true);
-			break;
-		case 'v':
-			if (quiet) {
-				printf (R2_VERSION "\n");
-			} else {
-				char *s = r_str_version ("r2r");
-				if (s) {
-					printf ("%s\n", s);
-					free (s);
-				}
-			}
-			free (json_test_file);
-			free (fuzz_dir);
-			return 0;
-		case 'V':
-			verbose = true;
-			break;
-		case 'i':
-			interactive = true;
-			break;
-		case 'L':
-			log_mode = true;
-			break;
-		case 's':
-			parse_skip (opt.arg);
-			break;
-		case 'S':
-			{
-				shallow = atoi (opt.arg);
-				r_sys_setenv_asut64 ("R2R_SHALLOW", shallow);
-			}
-			break;
-		case 'F':
-			free (fuzz_dir);
-			fuzz_dir = strdup (opt.arg);
-			break;
-		case 'j':
-			workers_count = atoi (opt.arg);
-			if (workers_count <= 0) {
-				R_LOG_ERROR ("Invalid thread count");
-				ret = help (false, workers_count);
-				goto beach;
-			}
-			break;
-		case 'C':
-			r2r_dir = opt.arg;
-			break;
-		case 'n':
-			nothing = true;
-			break;
-		case 'f':
-			free (json_test_file);
-			json_test_file = strdup (opt.arg);
-			break;
-		case 'H':
-			helpvars (workers_count);
-			goto beach;
-		case 'u':
-			get_bins = false;
-			break;
-		case 't':
-			timeout_sec = r_num_math (NULL, opt.arg);
-			if (!timeout_sec) {
-				timeout_sec = UT64_MAX;
-			}
-			break;
-		case 'o':
-			free (output_file);
-			output_file = r_file_abspath (opt.arg);
-			break;
-		default:
-			ret = help (false, workers_count);
-			goto beach;
-		}
+	char *cwd = NULL;
+	if (!r2r_setup_directory (&opt, arg_ind, argc, argv, &cwd)) {
+		free (cwd);
+		r2r_options_fini (&opt);
+		ret = -1;
+		goto restore_console;
 	}
 
-	char *cwd = r_sys_getdir ();
-	if (r2r_dir) {
-		if (chdir (r2r_dir) == -1) {
-			R_LOG_ERROR ("Cannot find %s directory", r2r_dir);
-			return -1;
-		}
-	} else {
-		bool dir_found = false;
-		if (opt.ind < argc) {
-			const char *avi = argv[opt.ind];
-			if (!strcmp (avi, ".")) {
-				avi = cwd;
-				argv[opt.ind] = cwd;
-			}
-			dir_found = (avi[0] != '.' || (*avi && !avi[1]))
-				? r2r_chdir_fromtest (avi)
-				: r2r_chdir (argv[0]);
-		} else {
-			dir_found = r2r_chdir (argv[0]);
-		}
-		if (!dir_found) {
-			free (cwd);
-			R_LOG_ERROR ("Cannot find db/ directory related to the given test");
-			free (json_test_file);
-			free (fuzz_dir);
-			return -1;
-		}
-	}
-
-	if (fuzz_dir) {
-		char *tmp = fuzz_dir;
-		fuzz_dir = r_file_abspath_rel (cwd, fuzz_dir);
+	if (opt.fuzz_dir) {
+		char *tmp = opt.fuzz_dir;
+		opt.fuzz_dir = r_file_abspath_rel (cwd, opt.fuzz_dir);
 		free (tmp);
 	}
 
-	if (get_bins) {
+	if (opt.get_bins) {
 		if (r_file_is_directory ("bins")) {
 			r_sys_cmd ("cd bins && git pull");
 		} else {
@@ -492,272 +805,75 @@ int main(int argc, char **argv) {
 	}
 
 	if (!r2r_subprocess_init ()) {
-		free (cwd);
 		R_LOG_ERROR ("Subprocess init failed");
-		free (json_test_file);
-		free (fuzz_dir);
-		return -1;
+		free (cwd);
+		r2r_options_fini (&opt);
+		ret = -1;
+		goto restore_console;
 	}
 	atexit (r2r_subprocess_fini);
 
-	/* print lock for atomic multi-line output */
 	r2r_print_lock = r_th_lock_new (false);
+	r2r_setup_environment ();
 
-	char *have_options = r_sys_getenv ("ASAN_OPTIONS");
-	if (have_options) {
-		free (have_options);
-	} else {
-		r_sys_setenv ("ASAN_OPTIONS", "detect_leaks=false detect_odr_violation=0");
-	}
-	r_sys_setenv ("RABIN2_TRYLIB", "0");
-	r_sys_setenv ("R2_DEBUG_ASSERT", "1");
-	r_sys_setenv ("R2_DEBUG_EPRINT", "0");
-	r_sys_setenv ("TZ", "UTC");
-	ut64 time_start = r_time_now_mono ();
-	R2RState state = { { 0 } };
-	if (shallow > 0) {
-		r_num_irand ();
-		state.run_config.shallow = shallow;
+	R2RState state;
+	if (!r2r_state_init (&state, &opt)) {
+		free (cwd);
+		r2r_options_fini (&opt);
+		ret = -1;
+		goto restore_console;
 	}
 
-	char *r2_binary = r_sys_getenv ("R2R_RADARE2");
-	if (R_STR_ISNOTEMPTY (r2_binary)) {
-		R_LOG_INFO ("Using custom r2 binary: %s", r2_binary);
-		state.run_config.r2_cmd = r2_binary;
-	} else {
-		state.run_config.r2_cmd = "radare2";
+	int load_result = r2r_load_tests (&state, &opt, arg_ind, argc, argv, cwd);
+	free (cwd);
+	cwd = NULL;
+
+	if (load_result < 0) {
+		r2r_state_fini (&state);
+		r2r_options_fini (&opt);
+		ret = -1;
+		goto restore_console;
 	}
-	state.run_config.skip_cmd = r_sys_getenv_asbool ("R2R_SKIP_CMD");
-	state.run_config.skip_asm = r_sys_getenv_asbool ("R2R_SKIP_ASM");
-	state.run_config.skip_json = r_sys_getenv_asbool ("R2R_SKIP_JSON");
-	state.run_config.skip_fuzz = r_sys_getenv_asbool ("R2R_SKIP_FUZZ");
-	state.run_config.rasm2_cmd = "rasm2";
-	state.run_config.json_test_file = json_test_file? json_test_file: JSON_TEST_FILE_DEFAULT;
-	state.run_config.timeout_ms = (timeout_sec > UT64_MAX / 1000)? UT64_MAX: timeout_sec * 1000;
-	state.verbose = verbose;
-	state.quiet = quiet;
-	state.db = r2r_test_database_new ();
-	if (!state.db) {
-		free (json_test_file);
-		return -1;
-	}
-	RVecR2RTestPtr_init (&state.queue);
-	RVecR2RTestResultInfoPtr_init (&state.results);
-	RVecConstCharPtr_init (&state.completed_paths);
-	if (output_file) {
-		state.test_results = pj_new ();
-		pj_a (state.test_results);
-	}
-	state.lock = r_th_lock_new (false);
-	if (!state.lock) {
-		return -1;
-	}
-	state.cond = r_th_cond_new ();
-	if (!state.cond) {
-		return -1;
+	if (load_result > 0) {
+		// Special exit (e.g., .c file handling returned a specific code)
+		r2r_state_fini (&state);
+		r2r_options_fini (&opt);
+		ret = (load_result == 1) ? 0 : load_result;
+		goto restore_console;
 	}
 
-	if (opt.ind < argc) {
-		// Manually specified path (s)
-		int i;
-		for (i = opt.ind; i < argc; i++) {
-			const char *arg = argv[i];
-			if (*arg == '@') {
-				arg++;
-				eprintf ("Category: %s\n", arg);
-				if (!strcmp (arg, "unit")) {
-					if (!r2r_test_run_unit ()) {
-						free (cwd);
-						return -1;
-					}
-					continue;
-				} else if (!strcmp (arg, "fuzz")) {
-					if (!fuzz_dir) {
-						R_LOG_ERROR ("No fuzz dir given. Use -F [dir]");
-						return -1;
-					}
-					if (!r2r_test_database_load_fuzz (state.db, fuzz_dir)) {
-						R_LOG_ERROR ("Failed to load fuzz tests from \"%s\"", fuzz_dir);
-					}
-					continue;
-				} else if (!strcmp (arg, "json")) {
-					arg = "db/json";
-				} else if (!strcmp (arg, "dasm")) {
-					arg = "db/asm";
-				} else if (!strcmp (arg, "cmds")) {
-					arg = "db";
-				} else {
-					arg = r_str_newf ("db/%s", arg + 1);
-				}
-			}
-			if (r_str_endswith (arg, ".c")) {
-				char *abspath = strdup (arg);
-				if (*arg != '/') {
-					free (abspath);
-					abspath = r_str_newf ("%s/%s", cwd, arg);
-				}
-				// load tests
-				RList *tests = r_list_newf (free);
-				r2r_from_sourcecomments (tests, abspath);
-				free (abspath);
-				RListIter *iter;
-				char *test;
-				int grc = 0;
-				r_list_foreach (tests, iter, test) {
-					R_LOG_INFO ("Running %s", test);
-					int rc = r_sys_cmdf ("r2r %s %s", interactive? "-i": "", test);
-					if (rc != 0) {
-						grc = rc;
-					}
-				}
-				r_list_free (tests);
-				free (cwd);
-				return grc;
-				// continue;
-			}
-			char *tf = r_file_abspath_rel (cwd, arg);
-			if (!tf || !r2r_test_database_load (state.db, tf)) {
-				R_LOG_ERROR ("Failed to load tests from \"%s\"", tf);
-				r2r_test_database_free (state.db);
-				free (tf);
-				free (cwd);
-				return -1;
-			}
-			free (tf);
-		}
-	} else {
-		// Default db path
-		if (!r2r_test_database_load (state.db, "db")) {
-			R_LOG_ERROR ("Failed to load tests from ./db");
-			r2r_test_database_free (state.db);
-			return -1;
-		}
-		if (fuzz_dir && !r2r_test_database_load_fuzz (state.db, fuzz_dir)) {
-			R_LOG_ERROR ("Failed to load fuzz tests from \"%s\"", fuzz_dir);
-		}
-	}
-
-	R_FREE (cwd);
 	ut64 loaded_tests = RVecR2RTestPtr_length (&state.db->tests);
 	if (!state.quiet) {
 		printf ("Loaded %" PFMT64u " tests.\n", loaded_tests);
 	}
-	if (nothing) {
-		goto coast;
+
+	if (opt.nothing) {
+		r2r_state_fini (&state);
+		r2r_options_fini (&opt);
+		ret = 0;
+		goto restore_console;
 	}
 
-	bool jq_available = r2r_check_jq_available ();
-	if (!jq_available) {
-		R_LOG_INFO ("Skipping json tests because jq is not available");
-		size_t i;
-		for (i = 0; i < RVecR2RTestPtr_length (&state.db->tests);) {
-			R2RTest *test = *RVecR2RTestPtr_at (&state.db->tests, i);
-			if (test->type == R2R_TEST_TYPE_JSON) {
-				r2r_test_free (test);
-				RVecR2RTestPtr_remove (&state.db->tests, i);
-				continue;
-			}
-			i++;
-		}
-	}
-	loaded_tests = RVecR2RTestPtr_length (&state.db->tests);
+	r2r_filter_json_tests (&state);
 	RVecR2RTestPtr_append (&state.queue, &state.db->tests, NULL);
 
-	if (log_mode) {
-		// Log mode prints the state after every completed file.
-		// The count of tests left per file is stored in a ht.
-		state.path_left = ht_pp_new (NULL, path_left_free_kv, NULL);
-		if (state.path_left) {
-			R2RTest **it;
-			R_VEC_FOREACH (&state.queue, it) {
-				R2RTest *test = *it;
-				ut64 *count = ht_pp_find (state.path_left, test->path, NULL);
-				if (!count) {
-					count = malloc (sizeof (ut64));
-					*count = 0;
-					ht_pp_insert (state.path_left, test->path, count);
-				}
-				(*count)++;
-			}
-		}
+	if (opt.log_mode) {
+		r2r_setup_log_mode (&state);
 	}
 
-	r_th_lock_enter (state.lock);
+	ut64 time_start = r_time_now_mono ();
 
-	RVecRThreadPtr workers;
-	RVecRThreadPtr_init (&workers);
-
-	int i;
-	for (i = 0; i < workers_count; i++) {
-		RThread *th = r_th_new (worker_th, &state, 0);
-		if (!th) {
-			R_LOG_ERROR ("Failed to setup thread");
-			r_th_lock_leave (state.lock);
-			exit (-1);
-		}
-		if (!r_th_start (th)) {
-			R_LOG_ERROR ("Failed to start thread");
-			r_th_lock_leave (state.lock);
-			r_th_free (th);
-			exit (-1);
-		}
-		RVecRThreadPtr_push_back (&workers, &th);
+	if (!r2r_run_workers (&state, &opt)) {
+		r2r_state_fini (&state);
+		r2r_options_fini (&opt);
+		ret = -1;
+		goto restore_console;
 	}
 
-	ut64 prev_completed = UT64_MAX;
-	ut64 prev_paths_completed = 0;
-	while (true) {
-		ut64 completed = RVecR2RTestResultInfoPtr_length (&state.results);
-		if (log_mode) {
-			print_log (&state, prev_completed, prev_paths_completed);
-		} else if (completed != prev_completed) {
-			print_state (&state, prev_completed);
-		}
-		prev_completed = completed;
-		prev_paths_completed = RVecConstCharPtr_length (&state.completed_paths);
-		if (completed == RVecR2RTestPtr_length (&state.db->tests)) {
-			break;
-		}
-		r_th_cond_wait (state.cond, state.lock);
-	}
+	r2r_print_summary (&state, time_start);
+	r2r_write_output (&state, opt.output_file);
 
-	r_th_lock_leave (state.lock);
-
-	RThread **it;
-	R_VEC_FOREACH (&workers, it) {
-		RThread *th = *it;
-		r_th_wait (th);
-		r_th_free (th);
-	}
-	RVecRThreadPtr_fini (&workers);
-
-	if (!state.quiet) {
-		printf ("\n");
-		ut64 seconds = (r_time_now_mono () - time_start) / 1000000;
-		printf ("Finished in");
-		if (seconds > 60) {
-			ut64 minutes = seconds / 60;
-			printf (" %" PFMT64d " minutes and", seconds / 60);
-			seconds -= (minutes * 60);
-		}
-		printf (" %" PFMT64d " seconds.\n", seconds % 60);
-	}
-
-	if (output_file) {
-		pj_end (state.test_results);
-		if (r_file_exists (output_file)) {
-			R_LOG_WARN ("Overwrite output file '%s'", output_file);
-		}
-		char *results = pj_drain (state.test_results);
-		char *output = r_str_newf ("%s\n", results);
-		free (results);
-		if (!r_file_dump (output_file, (ut8 *)output, strlen (output), false)) {
-			R_LOG_ERROR ("Cannot write to %s", output_file);
-		}
-		free (output);
-	}
-
-	if (interactive) {
+	if (opt.interactive) {
 		interact (&state);
 	}
 
@@ -765,21 +881,13 @@ int main(int argc, char **argv) {
 		ret = 1;
 	}
 
-coast:
-	RVecR2RTestPtr_fini (&state.queue);
-	results_clear (&state.results);
-	RVecConstCharPtr_fini (&state.completed_paths);
-	r2r_test_database_free (state.db);
-	ht_pp_free (state.path_left);
-	r_th_lock_free (state.lock);
-	r_th_cond_free (state.cond);
-beach:
-	free (json_test_file);
-	free (fuzz_dir);
+	r2r_state_fini (&state);
+	r2r_options_fini (&opt);
+
+restore_console:
 #if R2__WINDOWS__
 	if (old_cp) {
 		(void)SetConsoleOutputCP (old_cp);
-		// chcp doesn't pick up the code page switch for some reason
 		(void)r_sys_cmdf ("chcp %u > NUL", old_cp);
 	}
 #endif
