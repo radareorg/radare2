@@ -183,7 +183,7 @@ static bool r2r_chdir(const char *argv0) {
 static char *makepath(void) {
 	char *make = r_file_path ("gmake");
 	if (!make) {
-		return r_file_path ("make");
+		make = r_file_path ("make");
 	}
 	return NULL;
 }
