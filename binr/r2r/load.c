@@ -543,7 +543,7 @@ R_API void r2r_test_free(R2RTest *test) {
 	free (test);
 }
 
-R_API R2RTestDatabase *r2r_test_database_new(void) {
+R_API R2RTestDatabase * R_NONNULL r2r_test_database_new(void) {
 	R2RTestDatabase *db = R_NEW (R2RTestDatabase);
 	RVecR2RTestPtr_init (&db->tests);
 	r_str_constpool_init (&db->strpool);

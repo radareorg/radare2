@@ -100,17 +100,17 @@ static void parse_skip(const char *arg) {
 
 static void helpvars(int workers_count) {
 	printf (
-		"R2R_SKIP_ARCHOS=0  # do not run the arch-os-specific tests\n"
-		"R2R_SKIP_JSON=0    # do not run the JSON tests\n"
-		"R2R_SKIP_FUZZ=0    # do not run the fuzz tests\n"
-		"R2R_SKIP_UNIT=0    # do not run the unit tests\n"
-		"R2R_SKIP_CMD=0     # do not run the cmds tests\n"
-		"R2R_SKIP_ASM=0     # do not run the rasm2 tests\n"
-		"R2R_JOBS=%d         # maximum parallel jobs\n"
-		"R2R_TIMEOUT=%d   # timeout after 1 minute (60 * 60)\n"
-		"R2R_OFFLINE=0      # same as passing -u\n"
-		"R2R_SHALLOW=0      # skip 0-100%% random tests\n"
-		"R2R_RADARE2=radare2 # radare2 binary to launch\n",
+		"R2R_SKIP_ARCHOS=0   # do not run the arch-os-specific tests\n"
+		"R2R_SKIP_JSON=0     # do not run the JSON tests\n"
+		"R2R_SKIP_FUZZ=0     # do not run the fuzz tests\n"
+		"R2R_SKIP_UNIT=0     # do not run the unit tests\n"
+		"R2R_SKIP_CMD=0      # do not run the cmds tests\n"
+		"R2R_SKIP_ASM=0      # do not run the rasm2 tests\n"
+		"R2R_JOBS=%d       # maximum parallel jobs\n"
+		"R2R_TIMEOUT=%d    # timeout after 1 minute (60 * 60)\n"
+		"R2R_OFFLINE=0       # same as passing -u\n"
+		"R2R_SHALLOW=0       # skip 0-100%% random tests\n"
+		"R2R_RADARE2=radare2 # path to radare2 for the cmd tests\n",
 		workers_count, TIMEOUT_DEFAULT);
 }
 
@@ -138,10 +138,7 @@ static int help(bool verbose, int workers_count) {
 			" -v           show version\n"
 			"\n");
 		helpvars (workers_count);
-		printf ("\n"
-		"Supported test types: @asm @json @unit @fuzz @arch @cmd\n"
-		"OS/Arch for archos tests: %s\n",
-			getarchos ());
+		printf ("\nSupported test types: @asm @json @unit @fuzz @arch @cmd\nOS/Arch for archos tests: %s\n", getarchos ());
 	}
 	return 1;
 }
@@ -151,52 +148,51 @@ static void path_left_free_kv(HtPPKv *kv) {
 }
 
 static bool r2r_chdir(const char *argv0) {
+	bool found = false;
 #if R2__UNIX__
 	if (r_file_is_directory ("db")) {
 		return true;
 	}
-	char *src_path = malloc (PATH_MAX);
-	if (!src_path) {
-		return false;
-	}
+	char src_path[PATH_MAX];
 	char *r2r_path = r_file_path (argv0);
 	if (!r2r_path) {
-		free (src_path);
 		return false;
 	}
-	bool found = false;
 	if (readlink (r2r_path, src_path, PATH_MAX) != -1) {
 		src_path[PATH_MAX - 1] = 0;
 		char *p = strstr (src_path, "/binr/r2r/r2r");
 		if (p) {
 			*p = 0;
-			src_path = r_str_append (src_path, "/test/");
-			if (r_file_is_directory (src_path)) {
-				if (chdir (src_path) != -1) {
-					R_LOG_INFO ("Running from %s", src_path);
+			char *test_path = r_file_new (src_path, "test", NULL);
+			if (r_file_is_directory (test_path)) {
+				if (chdir (test_path) != -1) {
+					R_LOG_INFO ("Running from %s", test_path);
 					found = true;
 				} else {
-					R_LOG_ERROR ("Cannot find '%s' directory", src_path);
+					R_LOG_ERROR ("Cannot find '%s' directory", test_path);
 				}
 			}
+			free (test_path);
 		}
 	}
-	free (src_path);
 	free (r2r_path);
-	return found;
-#else
-	return false;
 #endif
+	return found;
+}
+
+static char *makepath(void) {
+	char *make = r_file_path ("gmake");
+	if (!make) {
+		return r_file_path ("make");
+	}
+	return NULL;
 }
 
 static bool r2r_test_run_unit(void) {
-	char *make = r_file_path ("gmake");
+	char *make = makepath ();	
 	if (!make) {
-		make = r_file_path ("make");
-		if (!make) {
-			R_LOG_ERROR ("Cannot find `make` in PATH");
-			return false;
-		}
+		R_LOG_ERROR ("Cannot find `make` in PATH");
+		return false;
 	}
 	char *cmd = r_str_newf ("%s -C unit run", make);
 	int rc = r_sandbox_system (cmd, 1) == 0;
@@ -302,13 +298,11 @@ static R2ROptions r2r_options_init(void) {
 	opt.timeout_sec = TIMEOUT_DEFAULT;
 	opt.get_bins = !r_sys_getenv_asbool ("R2R_OFFLINE");
 	opt.shallow = r_sys_getenv_asut64 ("R2R_SHALLOW");
-
 	char *r2r_timeout = r_sys_getenv ("R2R_TIMEOUT");
 	if (R_STR_ISNOTEMPTY (r2r_timeout)) {
 		opt.timeout_sec = r_num_math (NULL, r2r_timeout);
 	}
 	free (r2r_timeout);
-
 	ut64 r2r_jobs = r_sys_getenv_asut64 ("R2R_JOBS");
 	if (r2r_jobs > 0) {
 		opt.workers_count = r2r_jobs;
@@ -490,10 +484,6 @@ static bool r2r_state_init(R2RState *state, R2ROptions *opt) {
 	state->quiet = opt->quiet;
 
 	state->db = r2r_test_database_new ();
-	if (!state->db) {
-		return false;
-	}
-
 	RVecR2RTestPtr_init (&state->queue);
 	RVecR2RTestResultInfoPtr_init (&state->results);
 	RVecConstCharPtr_init (&state->completed_paths);
@@ -504,15 +494,13 @@ static bool r2r_state_init(R2RState *state, R2ROptions *opt) {
 	}
 
 	state->lock = r_th_lock_new (false);
-	if (!state->lock) {
-		return false;
+	if (state->lock) {
+		state->cond = r_th_cond_new ();
+		if (state->cond) {
+			return true;
+		}
 	}
-	state->cond = r_th_cond_new ();
-	if (!state->cond) {
-		return false;
-	}
-
-	return true;
+	return false;
 }
 
 static void r2r_state_fini(R2RState *state) {
@@ -526,7 +514,11 @@ static void r2r_state_fini(R2RState *state) {
 }
 
 // Returns: 0 = success, -1 = error, 1 = special exit (e.g., .c file handling)
-static int r2r_load_tests(R2RState *state, R2ROptions *opt, int arg_ind, int argc, char **argv, char *cwd, bool skip_json_tests) {
+static int r2r_load_tests(R2RState *state, R2ROptions *opt, int arg_ind, int argc, char **argv, char *cwd) {
+	bool skip_json_tests = !r2r_check_jq_available ();
+	if (skip_json_tests) {
+		R_LOG_INFO ("Skipping json tests because jq is not available");
+	}
 	if (arg_ind < argc) {
 		int i;
 		for (i = arg_ind; i < argc; i++) {
@@ -626,20 +618,15 @@ static bool r2r_run_workers(R2RState *state, R2ROptions *opt) {
 	int i;
 	for (i = 0; i < opt->workers_count; i++) {
 		RThread *th = r_th_new (worker_th, state, 0);
-		if (!th) {
-			R_LOG_ERROR ("Failed to setup thread");
-			r_th_lock_leave (state->lock);
-			RVecRThreadPtr_fini (&workers);
-			return false;
+		if (th && r_th_start (th)) {
+			RVecRThreadPtr_push_back (&workers, &th);
+			continue;
 		}
-		if (!r_th_start (th)) {
-			R_LOG_ERROR ("Failed to start thread");
-			r_th_lock_leave (state->lock);
-			r_th_free (th);
-			RVecRThreadPtr_fini (&workers);
-			return false;
-		}
-		RVecRThreadPtr_push_back (&workers, &th);
+		r_th_free (th);
+		R_LOG_ERROR ("Failed to setup thread");
+		r_th_lock_leave (state->lock);
+		RVecRThreadPtr_fini (&workers);
+		return false;
 	}
 
 	ut64 prev_completed = UT64_MAX;
@@ -735,21 +722,17 @@ int main(int argc, char **argv) {
 	int ret = 0;
 #if R2__WINDOWS__
 	UINT old_cp = GetConsoleOutputCP ();
-	{
-		HANDLE streams[] = { GetStdHandle (STD_OUTPUT_HANDLE), GetStdHandle (STD_ERROR_HANDLE) };
-		DWORD mode;
-		DWORD mode_flags = ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-		int i;
-		for (i = 0; i < R_ARRAY_SIZE (streams); i++) {
-			GetConsoleMode (streams[i], &mode);
-			SetConsoleMode (streams[i], mode | mode_flags);
-		}
+	HANDLE streams[] = { GetStdHandle (STD_OUTPUT_HANDLE), GetStdHandle (STD_ERROR_HANDLE) };
+	DWORD mode;
+	DWORD mode_flags = ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+	int i;
+	for (i = 0; i < R_ARRAY_SIZE (streams); i++) {
+		GetConsoleMode (streams[i], &mode);
+		SetConsoleMode (streams[i], mode | mode_flags);
 	}
 #endif
-
 	R2ROptions opt = r2r_options_init ();
-	R2RState state;
-	bool state_initialized = false;
+	R2RState state = {0};
 
 	int arg_ind = r2r_parse_args (&opt, argc, argv);
 	if (arg_ind < 0) {
@@ -763,7 +746,6 @@ int main(int argc, char **argv) {
 		ret = -1;
 		goto cleanup;
 	}
-
 	if (opt.fuzz_dir) {
 		char *tmp = r_file_abspath_rel (cwd, opt.fuzz_dir);
 		if (tmp) {
@@ -771,7 +753,6 @@ int main(int argc, char **argv) {
 			opt.fuzz_dir = tmp;
 		}
 	}
-
 	if (opt.get_bins) {
 		const char *cmd = r_file_is_directory ("bins")
 			? "cd bins && git pull"
@@ -795,12 +776,9 @@ int main(int argc, char **argv) {
 		ret = -1;
 		goto cleanup;
 	}
-	state_initialized = true;
 
-	bool skip_json_tests = !r2r_check_jq_available ();
-	int load_result = r2r_load_tests (&state, &opt, arg_ind, argc, argv, cwd, skip_json_tests);
+	int load_result = r2r_load_tests (&state, &opt, arg_ind, argc, argv, cwd);
 	free (cwd);
-	cwd = NULL;
 
 	if (load_result < 0) {
 		ret = -1;
@@ -816,47 +794,31 @@ int main(int argc, char **argv) {
 	if (!state.quiet) {
 		printf ("Loaded %" PFMT64u " tests.\n", loaded_tests);
 	}
-
-	if (skip_json_tests) {
-		R_LOG_INFO ("Skipping json tests because jq is not available");
-	}
-
 	if (opt.nothing) {
 		ret = 0;
 		goto cleanup;
 	}
-
 	RVecR2RTestPtr_append (&state.queue, &state.db->tests, NULL);
-
 	if (opt.log_mode) {
 		r2r_setup_log_mode (&state);
 	}
-
 	ut64 time_start = r_time_now_mono ();
-
 	if (!r2r_run_workers (&state, &opt)) {
 		ret = -1;
 		goto cleanup;
 	}
-
 	r2r_print_summary (&state, time_start);
 	r2r_write_output (&state, opt.output_file);
-
 	if (opt.interactive) {
 		interact (&state);
 	}
-
 	if (state.counters[R2R_TEST_RESULT_FAILED]) {
 		ret = 1;
 	}
 
 cleanup:
-	if (state_initialized) {
-		r2r_state_fini (&state);
-	}
+	r2r_state_fini (&state);
 	r2r_options_fini (&opt);
-
-restore_console:
 #if R2__WINDOWS__
 	if (old_cp) {
 		(void)SetConsoleOutputCP (old_cp);
@@ -1275,7 +1237,6 @@ static void interact(R2RState *state) {
 			// TODO: other types of tests
 			continue;
 		}
-
 		printf ("#####################\n\n");
 		print_result_diff (&state->run_config, result);
 	menu:
@@ -1344,15 +1305,16 @@ beach:
 }
 
 static char *format_cmd_kv(const char *key, const char *val) {
-	RStrBuf buf;
-	r_strbuf_init (&buf);
-	r_strbuf_appendf (&buf, "%s=", key);
+	RStrBuf *sb = r_strbuf_newf ("%s=", key);
 	if (strchr (val, '\n')) {
-		r_strbuf_appendf (&buf, "<<EOF\n%sEOF", val);
+		if (strstr (val, "EOF")) {
+			R_LOG_TODO ("Value cannot contain 'EOF'");
+		}
+		r_strbuf_appendf (sb, "<<EOF\n%sEOF", val);
 	} else {
-		r_strbuf_append (&buf, val);
+		r_strbuf_append (sb, val);
 	}
-	return r_strbuf_drain_nofree (&buf);
+	return r_strbuf_drain (sb);
 }
 
 static char *replace_lines(const char *src, size_t from, size_t to, const char *news) {
