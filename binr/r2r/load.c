@@ -588,7 +588,6 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth, bool
 	R2RTestToSkip v35_tests_to_skip[] = {
 		{ "asm", "arm.v35_64" },
 		{ "esil", "arm_64" },
-		{ "cmd", "cmd_open" },
 		{ "tools", "rasm2" },
 	};
 #endif

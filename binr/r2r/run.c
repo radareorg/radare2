@@ -1542,6 +1542,14 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 				ret->run_failed = false;
 				break;
 			}
+#if WANT_V35 == 0
+			if (cmd_test->args.value && strstr (cmd_test->args.value, "arm.v35")) {
+				R_LOG_WARN ("Skipping test because it requires arm.v35");
+				success = true;
+				ret->run_failed = false;
+				break;
+			}
+#endif
 #if R2_USE_NEW_ABI
 			bool mustrun = !needsabi || (needsabi > 0);
 #else
