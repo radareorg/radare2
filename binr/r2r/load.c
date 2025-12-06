@@ -22,20 +22,19 @@ R_API void r2r_cmd_test_free(R2RCmdTest *test) {
 }
 
 static char *readline(char *buf, size_t *linesz) {
-	if (buf && linesz) {
-		char *end = strchr (buf, '\n');
-		if (end) {
-			size_t len = end - buf;
-			*end = '\0';
-			if (len > 0 && buf[len - 1] == '\r') {
-				buf[len - 1] = '\0';
-				len--;
-			}
-			*linesz = len;
-			return end + 1;
+	R_RETURN_VAL_IF_FAIL (buf && linesz, NULL);
+	char *end = strchr (buf, '\n');
+	if (end) {
+		size_t len = end - buf;
+		*end = '\0';
+		if (len > 0 && buf[len - 1] == '\r') {
+			buf[len - 1] = '\0';
+			len--;
 		}
-		*linesz = strlen (buf);
+		*linesz = len;
+		return end + 1;
 	}
+	*linesz = strlen (buf);
 	return NULL;
 }
 
@@ -66,12 +65,14 @@ static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
 			R_LOG_ERROR ("Missing opening end token after <<");
 			return NULL;
 		}
+#if 0
 		if (strcmp (endtoken, "EOF") != 0) {
 			// In case there will be strings containing "EOF" inside of them, this requirement
 			// can be weakened to only apply for strings which do not contain "EOF".
 			R_LOG_ERROR ("End token must be \"EOF\", got \"%s\" instead", endtoken);
 			return NULL;
 		}
+#endif
 		RStrBuf *sb = r_strbuf_new (NULL);
 		char *line = *nextline;
 		size_t linesz = 0;
@@ -270,10 +271,6 @@ fail:
 	goto beach;
 }
 
-R_API R2RAsmTest *r2r_asm_test_new(void) {
-	return R_NEW0 (R2RAsmTest);
-}
-
 R_API void r2r_asm_test_free(R2RAsmTest *test) {
 	if (test != NULL) {
 		free (test->disasm);
@@ -394,12 +391,8 @@ R_API RVecR2RAsmTestPtr *r2r_load_asm_test_file(RStrConstPool *strpool, const ch
 			goto fail;
 		}
 		*hex = '\0';
-		hex++;
+		hex = (char *)r_str_trim_head_ro (hex + 1);
 		r_str_trim (disasm);
-
-		while (*hex && *hex == ' ') {
-			hex++;
-		}
 
 		char *offset = strchr (hex, ' ');
 		if (offset) {
@@ -426,11 +419,7 @@ R_API RVecR2RAsmTestPtr *r2r_load_asm_test_file(RStrConstPool *strpool, const ch
 			goto fail;
 		}
 
-		R2RAsmTest *test = r2r_asm_test_new ();
-		if (!test) {
-			free (bytes);
-			goto fail;
-		}
+		R2RAsmTest *test = R_NEW0 (R2RAsmTest);
 		test->line = linenum;
 		test->bits = bits;
 		test->arch = arch;
@@ -442,7 +431,6 @@ R_API RVecR2RAsmTestPtr *r2r_load_asm_test_file(RStrConstPool *strpool, const ch
 		test->bytes_size = (size_t)bytesz;
 		RVecR2RAsmTestPtr_push_back (ret, &test);
 	} while ((line = nextline));
-
 beach:
 	free (contents);
 	return ret;
@@ -453,11 +441,10 @@ fail:
 }
 
 R_API void r2r_json_test_free(R2RJsonTest *test) {
-	if (!test) {
-		return;
+	if (R_LIKELY (test)) {
+		free (test->cmd);
+		free (test);
 	}
-	free (test->cmd);
-	free (test);
 }
 
 R_API RVecR2RJsonTestPtr *r2r_load_json_test_file(const char *file) {
@@ -556,7 +543,7 @@ R_API void r2r_test_free(R2RTest *test) {
 	free (test);
 }
 
-R_API R2RTestDatabase *r2r_test_database_new(void) {
+R_API R2RTestDatabase * R_NONNULL r2r_test_database_new(void) {
 	R2RTestDatabase *db = R_NEW (R2RTestDatabase);
 	RVecR2RTestPtr_init (&db->tests);
 	r_str_constpool_init (&db->strpool);
@@ -596,12 +583,11 @@ static R2RTestFrom test_type_for_path(const char *path) {
 	return res;
 }
 
-static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
+static bool database_load(R2RTestDatabase *db, const char *path, int depth, bool skip_json_tests) {
 #if WANT_V35 == 0
 	R2RTestToSkip v35_tests_to_skip[] = {
 		{ "asm", "arm.v35_64" },
 		{ "esil", "arm_64" },
-		{ "cmd", "cmd_open" },
 		{ "tools", "rasm2" },
 	};
 #endif
@@ -638,7 +624,7 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 				bool is_dir = r_str_endswith (path, r_str_newf (R_SYS_DIR "%s", test.dir));
 				if (is_dir) {
 					if (!strcmp (subname, test.name)) {
-						R_LOG_WARN ("Skipping test %s" R_SYS_DIR "%s because it requires binary ninja", path, subname);
+						R_LOG_WARN ("Skipping test %s" R_SYS_DIR "%s because it requires arm.v35", path, subname);
 						skip = true;
 						break;
 					}
@@ -657,7 +643,7 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 				continue;
 			}
 			char *subpath = r_file_new (path, subname, NULL);
-			ret = database_load (db, subpath, depth - 1);
+			ret = database_load (db, subpath, depth - 1, skip_json_tests);
 			free (subpath);
 			if (!ret) {
 				break;
@@ -675,6 +661,9 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 	// Not a directory but exists, load a file
 	const char *pooled_path = r_str_constpool_get (&db->strpool, path);
 	R2RTestFrom tff = test_type_for_path (path);
+	if (skip_json_tests && tff.type == R2R_TEST_TYPE_JSON) {
+		return true;
+	}
 	switch (tff.type) {
 	case R2R_TEST_TYPE_CMD:
 		{
@@ -726,8 +715,8 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 	return true;
 }
 
-R_API bool r2r_test_database_load(R2RTestDatabase *db, const char *path) {
-	return database_load (db, path, 4);
+R_API bool r2r_test_database_load(R2RTestDatabase *db, const char *path, bool skip_json_tests) {
+	return database_load (db, path, 4, skip_json_tests);
 }
 
 static void database_load_fuzz_file(R2RTestDatabase *db, const char *path, const char *file) {
@@ -747,7 +736,7 @@ R_API bool r2r_test_database_load_fuzz(R2RTestDatabase *db, const char *path) {
 			if (*subname == '.') {
 				continue;
 			}
-			char *subpath = r_file_new (path, subname);
+			char *subpath = r_file_new (path, subname, NULL);
 			if (!r_file_is_directory (subpath)) {
 				database_load_fuzz_file (db, path, subpath);
 			}
@@ -756,13 +745,10 @@ R_API bool r2r_test_database_load_fuzz(R2RTestDatabase *db, const char *path) {
 		r_list_free (dir);
 		return true;
 	}
-
 	if (!r_file_exists (path)) {
 		R_LOG_ERROR ("Path \"%s\" does not exist", path);
 		return false;
 	}
-
-	// Just a single file
 	database_load_fuzz_file (db, path, path);
 	return true;
 }
