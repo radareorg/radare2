@@ -391,7 +391,7 @@ R_API RVecR2RAsmTestPtr *r2r_load_asm_test_file(RStrConstPool *strpool, const ch
 			goto fail;
 		}
 		*hex = '\0';
-		hex = r_str_trim_head_ro (hex + 1);
+		hex = (char *)r_str_trim_head_ro (hex + 1);
 		r_str_trim (disasm);
 
 		char *offset = strchr (hex, ' ');
