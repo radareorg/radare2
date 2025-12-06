@@ -177,10 +177,10 @@ typedef struct r2r_asm_test_output_t {
 } R2RAsmTestOutput;
 
 typedef enum r2r_test_result_t {
-	R2R_TEST_RESULT_OK,
-	R2R_TEST_RESULT_FAILED,
-	R2R_TEST_RESULT_BROKEN,
-	R2R_TEST_RESULT_FIXED
+	R2R_TEST_RESULT_OK = 0,
+	R2R_TEST_RESULT_FAILED = 1,
+	R2R_TEST_RESULT_BROKEN = 2,
+	R2R_TEST_RESULT_FIXED = 3
 } R2RTestResult;
 
 typedef struct r2r_test_result_info_t {

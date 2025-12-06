@@ -27,11 +27,8 @@ typedef struct r2r_state_t {
 	RThreadLock *lock; // protects everything below
 	HtPP *path_left; // char *(path to test file) => ut64 *(count of remaining tests)
 	RVecConstCharPtr completed_paths;
-	ut64 ok_count;
+	ut64 counters[4]; // indexed by R2RTestResult: OK, FAILED, BROKEN, FIXED
 	ut64 sk_count;
-	ut64 xx_count;
-	ut64 br_count;
-	ut64 fx_count;
 	RVecR2RTestPtr queue;
 	RVecR2RTestResultInfoPtr results;
 } R2RState;
@@ -453,7 +450,6 @@ static void r2r_setup_environment(void) {
 		r_sys_setenv ("R2_BIN", R2_BINDIR);
 		r_sys_setenv_sep ("PATH", R2_BINDIR, false);
 	}
-
 	char *have_options = r_sys_getenv ("ASAN_OPTIONS");
 	if (have_options) {
 		free (have_options);
@@ -602,8 +598,6 @@ static int r2r_load_tests(R2RState *state, R2ROptions *opt, int arg_ind, int arg
 	}
 	return 0;
 }
-
-
 
 static void r2r_setup_log_mode(R2RState *state) {
 	state->path_left = ht_pp_new (NULL, path_left_free_kv, NULL);
@@ -866,7 +860,7 @@ int main(int argc, char **argv) {
 		interact (&state);
 	}
 
-	if (state.xx_count) {
+	if (state.counters[R2R_TEST_RESULT_FAILED]) {
 		ret = 1;
 	}
 
@@ -971,20 +965,7 @@ static RThreadFunctionRet worker_th(RThread *th) {
 		RVecR2RTestResultInfoPtr_push_back (&state->results, &result);
 
 		if (!result->run_skipped) {
-			switch (result->result) {
-			case R2R_TEST_RESULT_OK:
-				state->ok_count++;
-				break;
-			case R2R_TEST_RESULT_FAILED:
-				state->xx_count++;
-				break;
-			case R2R_TEST_RESULT_BROKEN:
-				state->br_count++;
-				break;
-			case R2R_TEST_RESULT_FIXED:
-				state->fx_count++;
-				break;
-			}
+			state->counters[result->result]++;
 		}
 		if (test && state->path_left) {
 			ut64 *count = ht_pp_find (state->path_left, test->path, NULL);
@@ -1220,8 +1201,9 @@ static void print_new_results(R2RState *state, ut64 prev_completed) {
 
 static void print_state_counts(R2RState *state) {
 	printf ("%8" PFMT64u " OK  %8" PFMT64u " BR %8" PFMT64u " XX %8" PFMT64u " SK %8" PFMT64u " FX",
-		state->ok_count, state->br_count, state->xx_count,
-		state->sk_count, state->fx_count);
+		state->counters[R2R_TEST_RESULT_OK], state->counters[R2R_TEST_RESULT_BROKEN],
+		state->counters[R2R_TEST_RESULT_FAILED], state->sk_count,
+		state->counters[R2R_TEST_RESULT_FIXED]);
 }
 
 static void print_state(R2RState *state, ut64 prev_completed) {
