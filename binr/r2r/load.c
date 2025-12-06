@@ -625,7 +625,7 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth, bool
 				bool is_dir = r_str_endswith (path, r_str_newf (R_SYS_DIR "%s", test.dir));
 				if (is_dir) {
 					if (!strcmp (subname, test.name)) {
-						R_LOG_WARN ("Skipping test %s" R_SYS_DIR "%s because it requires binary ninja", path, subname);
+						R_LOG_WARN ("Skipping test %s" R_SYS_DIR "%s because it requires arm.v35", path, subname);
 						skip = true;
 						break;
 					}

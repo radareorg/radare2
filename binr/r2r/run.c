@@ -1645,14 +1645,7 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 }
 
 R_API void r2r_test_result_info_free(R2RTestResultInfo *result) {
-	if (result) {
-
-		free (result);
-	}
-	if (!result) {
-		return;
-	}
-	if (result->test) {
+	if (result && result->test) {
 		switch (result->test->type) {
 		case R2R_TEST_TYPE_CMD:
 		case R2R_TEST_TYPE_JSON:
