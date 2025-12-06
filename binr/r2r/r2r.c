@@ -296,23 +296,24 @@ static void r2r_from_sourcecomments(RList *list, const char *path) {
 	}
 }
 
-static void r2r_options_init(R2ROptions *opt) {
-	memset (opt, 0, sizeof (R2ROptions));
-	opt->workers_count = WORKERS_DEFAULT;
-	opt->timeout_sec = TIMEOUT_DEFAULT;
-	opt->get_bins = !r_sys_getenv_asbool ("R2R_OFFLINE");
-	opt->shallow = r_sys_getenv_asut64 ("R2R_SHALLOW");
+static R2ROptions r2r_options_init(void) {
+	R2ROptions opt = {0};
+	opt.workers_count = WORKERS_DEFAULT;
+	opt.timeout_sec = TIMEOUT_DEFAULT;
+	opt.get_bins = !r_sys_getenv_asbool ("R2R_OFFLINE");
+	opt.shallow = r_sys_getenv_asut64 ("R2R_SHALLOW");
 
 	char *r2r_timeout = r_sys_getenv ("R2R_TIMEOUT");
 	if (R_STR_ISNOTEMPTY (r2r_timeout)) {
-		opt->timeout_sec = r_num_math (NULL, r2r_timeout);
+		opt.timeout_sec = r_num_math (NULL, r2r_timeout);
 	}
 	free (r2r_timeout);
 
 	ut64 r2r_jobs = r_sys_getenv_asut64 ("R2R_JOBS");
 	if (r2r_jobs > 0) {
-		opt->workers_count = r2r_jobs;
+		opt.workers_count = r2r_jobs;
 	}
+	return opt;
 }
 
 static void r2r_options_fini(R2ROptions *opt) {
@@ -746,18 +747,13 @@ int main(int argc, char **argv) {
 	}
 #endif
 
-	R2ROptions opt;
-	r2r_options_init (&opt);
+	R2ROptions opt = r2r_options_init ();
 
 	int arg_ind = r2r_parse_args (&opt, argc, argv);
-	if (arg_ind == -1) {
+	if (arg_ind < 0) {
+		// AITODO: cant we just have only 1 call to r2r_options_fini at the end of the function because all the fail paths end go to restore_console. analyze my propose and do the fix to simplify the code
 		r2r_options_fini (&opt);
-		ret = 0;
-		goto restore_console;
-	}
-	if (arg_ind == -2) {
-		r2r_options_fini (&opt);
-		ret = 1;
+		ret = arg_ind + 1; // when -1 return 0, when -2, return 1
 		goto restore_console;
 	}
 
@@ -770,17 +766,18 @@ int main(int argc, char **argv) {
 	}
 
 	if (opt.fuzz_dir) {
-		char *tmp = opt.fuzz_dir;
-		opt.fuzz_dir = r_file_abspath_rel (cwd, opt.fuzz_dir);
-		free (tmp);
+		char *tmp = r_file_abspath_rel (cwd, opt.fuzz_dir);
+		if (tmp) {
+			free (opt.fuzz_dir);
+			opt.fuzz_dir = tmp;
+		}
 	}
 
 	if (opt.get_bins) {
-		if (r_file_is_directory ("bins")) {
-			r_sys_cmd ("cd bins && git pull");
-		} else {
-			r_sys_cmd ("git clone --depth 1 https://github.com/radareorg/radare2-testbins bins");
-		}
+		const char *cmd = r_file_is_directory ("bins")
+			? "cd bins && git pull"
+			: "git clone --depth 1 https://github.com/radareorg/radare2-testbins bins";
+		r_sys_cmd (cmd);
 	}
 
 	if (!r2r_subprocess_init ()) {
