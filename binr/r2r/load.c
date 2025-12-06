@@ -736,7 +736,7 @@ R_API bool r2r_test_database_load_fuzz(R2RTestDatabase *db, const char *path) {
 			if (*subname == '.') {
 				continue;
 			}
-			char *subpath = r_file_new (path, subname);
+			char *subpath = r_file_new (path, subname, NULL);
 			if (!r_file_is_directory (subpath)) {
 				database_load_fuzz_file (db, path, subpath);
 			}
