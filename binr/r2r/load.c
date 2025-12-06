@@ -571,7 +571,7 @@ R_API void r2r_test_database_free(R2RTestDatabase *db) {
 	R_VEC_FOREACH (&db->tests, it) {
 		r2r_test_free (*it);
 	}
-	RVecR2RTestPtr_clear (&db->tests);
+	RVecR2RTestPtr_fini (&db->tests);
 	r_str_constpool_fini (&db->strpool);
 	free (db);
 }
