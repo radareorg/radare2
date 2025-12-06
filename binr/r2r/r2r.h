@@ -232,7 +232,7 @@ R_API bool r2r_check_json_test(R2RProcessOutput *out, R2RJsonTest *test);
 R_API R2RAsmTestOutput *r2r_run_asm_test(R2RRunConfig *config, R2RAsmTest *test);
 R_API bool r2r_check_asm_test(R2RAsmTestOutput *out, R2RAsmTest *test);
 R_API void r2r_asm_test_output_free(R2RAsmTestOutput *out);
-R_API R2RProcessOutput *r2r_run_fuzz_test(R2RRunConfig *config, R2RFuzzTest *test, R2RCmdRunner runner, void *user);
+R_API R2RProcessOutput *r2r_run_fuzz_test(R2RRunConfig *config, const char *file, R2RCmdRunner runner, void *user);
 R_API bool r2r_check_fuzz_test(R2RProcessOutput *out);
 
 R_API void r2r_test_free(R2RTest *test);

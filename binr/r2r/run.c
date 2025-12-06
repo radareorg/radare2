@@ -1440,10 +1440,10 @@ R_API void r2r_asm_test_output_free(R2RAsmTestOutput *out) {
 	free (out);
 }
 
-R_API R2RProcessOutput *r2r_run_fuzz_test(R2RRunConfig *config, R2RFuzzTest *test, R2RCmdRunner runner, void *user) {
+R_API R2RProcessOutput *r2r_run_fuzz_test(R2RRunConfig *config, const char *file, R2RCmdRunner runner, void *user) {
 	const char *cmd = "aaa";
 	RList *files = r_list_new ();
-	r_list_push (files, test->file);
+	r_list_push (files, (void*)file);
 	R2RProcessOutput *ret = run_r2_test (config, config->timeout_ms, 1, cmd, files, NULL, NULL, false, runner, user);
 	r_list_free (files);
 	return ret;
@@ -1465,7 +1465,7 @@ R_API char *r2r_test_name(R2RTest *test) {
 	case R2R_TEST_TYPE_JSON:
 		return r_str_newf ("<json> %s", r_str_get (test->json_test->cmd));
 	case R2R_TEST_TYPE_FUZZ:
-		return r_str_newf ("<fuzz> %s", test->fuzz_test->file);
+		return r_str_newf ("<fuzz> %s", test->path);
 	}
 	return NULL;
 }
@@ -1659,8 +1659,7 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 			success = true;
 			ret->run_failed = false;
 		} else {
-			R2RFuzzTest *fuzz_test = test->fuzz_test;
-			R2RProcessOutput *out = r2r_run_fuzz_test (config, fuzz_test, subprocess_runner, NULL);
+			R2RProcessOutput *out = r2r_run_fuzz_test (config, test->path, subprocess_runner, NULL);
 			success = r2r_check_fuzz_test (out);
 			ret->proc_out = out;
 			ret->timeout = out->timeout;
