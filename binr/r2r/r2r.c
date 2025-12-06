@@ -1062,7 +1062,7 @@ static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
 	case R2R_TEST_TYPE_JSON:
 		break;
 	case R2R_TEST_TYPE_FUZZ:
-		r2r_run_fuzz_test (config, result->test->fuzz_test, print_runner, NULL);
+		r2r_run_fuzz_test (config, result->test->path, print_runner, NULL);
 		printf ("-- stdout\n%s\n", result->proc_out->out);
 		printf ("-- stderr\n%s\n", result->proc_out->err);
 		printf ("-- exit status: " Color_RED "%d" Color_RESET "\n", result->proc_out->ret);

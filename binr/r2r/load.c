@@ -513,13 +513,6 @@ R_API RVecR2RJsonTestPtr *r2r_load_json_test_file(const char *file) {
 	return ret;
 }
 
-R_API void r2r_fuzz_test_free(R2RFuzzTest *test) {
-	if (!test) {
-		return;
-	}
-	free (test->file);
-	free (test);
-}
 
 static R2RTest *r2r_test_new(R2RTestType type, const char *path, void *specific_test, bool load_plugins) {
 	R2RTest *test = R_NEW (R2RTest);
@@ -538,7 +531,6 @@ static R2RTest *r2r_test_new(R2RTestType type, const char *path, void *specific_
 		test->json_test->load_plugins = load_plugins;
 		break;
 	case R2R_TEST_TYPE_FUZZ:
-		test->fuzz_test = specific_test;
 		break;
 	}
 	return test;
@@ -559,7 +551,6 @@ R_API void r2r_test_free(R2RTest *test) {
 		r2r_json_test_free (test->json_test);
 		break;
 	case R2R_TEST_TYPE_FUZZ:
-		r2r_fuzz_test_free (test->fuzz_test);
 		break;
 	}
 	free (test);
@@ -735,10 +726,7 @@ R_API bool r2r_test_database_load(R2RTestDatabase *db, const char *path) {
 }
 
 static void database_load_fuzz_file(R2RTestDatabase *db, const char *path, const char *file) {
-	// AITODO: this fuzzfile new with the test thiing below looks like a bad hack thing which can be simplified with the r2r_test_new only. find out  the thing and fix it
-	R2RFuzzTest *fuzz_test = R_NEW (R2RFuzzTest);
-	fuzz_test->file = strdup (file);
-	R2RTest *test = r2r_test_new (R2R_TEST_TYPE_FUZZ, r_str_constpool_get (&db->strpool, path), fuzz_test, false);
+	R2RTest *test = r2r_test_new (R2R_TEST_TYPE_FUZZ, r_str_constpool_get (&db->strpool, file), NULL, false);
 	RVecR2RTestPtr_push_back (&db->tests, &test);
 }
 
