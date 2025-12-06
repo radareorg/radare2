@@ -311,6 +311,7 @@ static void r2r_git(void) {
 }
 
 int main(int argc, char **argv) {
+	// AITODO: refactor the main function make structure it into separate smaller functions with clear logic separation of the purpose, keeping it easier to read and simplifying the way the memory is allocated and liberated. use structs grouping local vars for logical purposes. hopefully removing the need of goto statements
 	int workers_count = WORKERS_DEFAULT;
 	bool verbose = false;
 	bool nothing = false;
