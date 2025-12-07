@@ -102,3 +102,13 @@ R_API void r_anal_rtti_recover_all(RAnal *anal) {
 	r_list_free (vtables);
 	r_cons_break_pop (cons);
 }
+
+R_API void r_anal_rtti_create_bin_class(RAnal *anal, const char *name) {
+	RCore *core = anal->coreb.core;
+	if (core && core->bin) {
+		RBinClass *klass = r_bin_file_add_class (core->bin, name, NULL, 0);
+		if (klass) {
+			klass->origin = R_BIN_CLASS_ORIGIN_RTTI;
+		}
+	}
+}

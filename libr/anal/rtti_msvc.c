@@ -931,18 +931,7 @@ static const char *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *
 	}
 
 	r_anal_class_create (anal, name);
-	// Create bin class with RTTI origin
-	RCore *core = anal->coreb.core;
-	if (core && core->bin) {
-		RList *classes = r_bin_get_classes (core->bin);
-		if (classes) {
-			RBinClass *klass = r_bin_class_new (name, NULL, 0);
-			if (klass) {
-				klass->origin = R_BIN_CLASS_ORIGIN_RTTI;
-				r_list_append (classes, klass);
-			}
-		}
-	}
+	r_anal_rtti_create_bin_class (anal, name);
 	ht_up_insert (context->col_td_classes, col->addr, name);
 
 	recovery_apply_vtable (anal, name, col->vtable);
@@ -975,18 +964,7 @@ static const char *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context,
 	}
 
 	r_anal_class_create (anal, name);
-	// Create bin class with RTTI origin
-	RCore *core = anal->coreb.core;
-	if (core && core->bin) {
-		RList *classes = r_bin_get_classes (core->bin);
-		if (classes) {
-			RBinClass *klass = r_bin_class_new (name, NULL, 0);
-			if (klass) {
-				klass->origin = R_BIN_CLASS_ORIGIN_RTTI;
-				r_bin_file_add_class (core->bin, klass);
-			}
-		}
-	}
+	r_anal_rtti_create_bin_class (anal, name);
 	ht_up_insert (context->col_td_classes, td->addr, name);
 
 	if (!td->col || !td->col->valid) {

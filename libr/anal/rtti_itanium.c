@@ -834,20 +834,7 @@ R_API void r_anal_rtti_itanium_recover_all(RVTableContext *context, RList *vtabl
 		}
 
 		r_anal_class_create (context->anal, cti->name);
-		// Create bin class with RTTI origin
-		RCore *core = context->anal->coreb.core;
-		if (core && core->bin) {
-			RList *classes = r_bin_get_classes (core->bin);
-			if (classes) {
-				RBinClass *klass = r_bin_class_new (cti->name, NULL, 0);
-				if (klass) {
-					klass->origin = R_BIN_CLASS_ORIGIN_RTTI;
-					if (!r_bin_file_add_class(core->bin, klass)) {
-						r_bin_class_free(klass);
-					}
-				}
-			}
-		}
+		r_anal_rtti_create_bin_class (context->anal, cti->name);
 		// can't we name virtual functions virtual even without RTTI?
 		recovery_apply_vtable (context, cti->name, vtable);
 
