@@ -471,66 +471,10 @@ static int pf_string(RPrintFormat *pf, ut64 seeki, ut64 addr64, ut64 addr, int i
 		R_LOG_ERROR ("(cannot read memory)");
 		return -1;
 	}
+
 	ut64 at = (is64 == 1)? addr64: (ut64)addr;
-	if (p->iob.io && p->iob.io->va) {
-		if (p->iob.v2p) {
-			ut64 pa = p->iob.v2p (p->iob.io, at);
-			if (pa != UT64_MAX) {
-				at = pa;
-			}
-		} else if (p->iob.map_get_at) {
-			RIOMap *map = p->iob.map_get_at (p->iob.io, at);
-			if (map) {
-				ut64 vbegin = map->itv.addr;
-				if (at >= vbegin) {
-					at = at - vbegin + map->delta;
-				}
-			} else {
-				return 0;
-			}
-		}
-	}
 	int res = p->iob.read_at (p->iob.io, at, buffer, sizeof (buffer) - 8);
-	if (res > 0 && p->iob.addr_is_mapped && !p->iob.addr_is_mapped (p->iob.io, at)) {
-		res = -1;
-	}
-	if (res > 0) {
-		int limit = R_MIN (res, 8);
-		bool all_ff = true;
-		int j;
-		for (j = 0; j < limit; j++) {
-			if (buffer[j] != 0xff) {
-				all_ff = false;
-				break;
-			}
-		}
-		if (all_ff) {
-			res = -1;
-		}
-	}
-	if (res <= 0 && p->iob.v2p) {
-		ut64 pa = p->iob.v2p (p->iob.io, at);
-		if (pa != UT64_MAX) {
-			at = pa;
-			res = p->iob.read_at (p->iob.io, at, buffer, sizeof (buffer) - 8);
-		}
-	}
-	if (res <= 0) {
-		buffer[0] = 0;
-	} else {
-		int limit = R_MIN (res, 8);
-		bool all_ff = true;
-		int j;
-		for (j = 0; j < limit; j++) {
-			if (buffer[j] != 0xff) {
-				all_ff = false;
-				break;
-			}
-		}
-		if (all_ff) {
-			buffer[0] = 0;
-		}
-	}
+
 	if (MUSTSEEJSON) {
 		pj_ks (pf->pj, "string", (const char *)buffer);
 	} else if (MUSTSEESTRUCT) {
