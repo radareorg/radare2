@@ -775,14 +775,11 @@ static RBinInfo* info(RBinFile *bf) {
 		return NULL;
 	}
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) {
-		return NULL;
-	}
 	ret->file = strdup (bf->file);
 	ret->bclass = PE_(r_bin_pe_get_class) (pe);
 	ret->rclass = strdup ("pe");
 	ret->os = PE_(r_bin_pe_get_os) (pe);
-	ret->arch = PE_(r_bin_pe_get_arch) (pe);
+	ret->arch = strdup (PE_(r_bin_pe_get_arch) (pe));
 	ret->machine = PE_(r_bin_pe_get_machine) (pe);
 	ret->subsystem = PE_(r_bin_pe_get_subsystem) (pe);
 	ret->default_cc = PE_(r_bin_pe_get_cc) (pe);
