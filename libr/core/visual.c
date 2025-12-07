@@ -35,18 +35,19 @@ static const char *printfmtColumns[NPF] = {
 };
 
 // to print the stack in the debugger view
-#define PRINT_HEX_FORMATS 12
+#define PRINT_HEX_FORMATS 14
 #define PRINT_3_FORMATS 2
-#define PRINT_4_FORMATS 9
+#define PRINT_4_FORMATS 11
 #define PRINT_5_FORMATS 7
 
 // always in pairs, because thats how <space> knows how to toggle
 static const char *printHexFormats[PRINT_HEX_FORMATS] = {
 	"px", "pxa",
-	"pxr", "pxr4",
-	"prcn", "prcb",
-	"pxb", "pxh",
+	"pxh", "pxq",
 	"pxw", "pxq",
+	"pxq", "pxq",
+	"pxb", "pxh",
+	"pxr", "pxr4",
 	"pxu", "pxd",
 };
 static const char *print3Formats[PRINT_3_FORMATS] = { //  not used at all. its handled by the pd format
@@ -55,6 +56,7 @@ static const char *print3Formats[PRINT_3_FORMATS] = { //  not used at all. its h
 };
 static const char *print4Formats[PRINT_4_FORMATS] = {
 	"prc", "p2", "prc=a", "pxAv", "pxx", "p=e $r-2", "pq 64", "pk 64", "pri",
+	"prcn", "prcb",
 };
 static const char *print5Formats[PRINT_5_FORMATS] = {
 	"pca", "pcA", "p8x", "pcc", "psb", "pcp", "pcd",
