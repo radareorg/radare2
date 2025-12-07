@@ -1433,20 +1433,20 @@ static int read_image_clr_header(RBuffer *b, ut64 addr, PE_(image_clr_header) *h
 	return sizeof (PE_(image_clr_header));
 }
 
-static int bin_pe_init_dotnet_version(RBinPEObj* pe) {
+static bool bin_pe_init_dotnet_version(RBinPEObj* pe) {
 	if (!pe) {
-		return 0;
+		return false;
 	}
 
 	const ut8 *data = r_buf_data (pe->b, NULL);
 	size_t size = r_buf_size (pe->b);
 	if (!data || size == 0) {
-		return 0;
+		return false;
 	}
 
 	DotNetVersionInfo *version_info = dotnet_parse_version_info (data, (int)size);
 	if (!version_info) {
-		return 0;
+		return false;
 	}
 
 	// Store .NET version information in sdb
@@ -1459,7 +1459,7 @@ static int bin_pe_init_dotnet_version(RBinPEObj* pe) {
 
 	free (version_info->asm_name);
 	free (version_info);
-	return 1;
+	return true;
 }
 
 static int bin_pe_init_clr_hdr(RBinPEObj* pe) {
@@ -1467,12 +1467,12 @@ static int bin_pe_init_clr_hdr(RBinPEObj* pe) {
 	PE_DWord image_clr_hdr_paddr = PE_(va2pa) (pe, clr_dir->VirtualAddress);
 	// int clr_dir_size = clr_dir? clr_dir->Size: 0;
 	PE_(image_clr_header) * clr_hdr = R_NEW0 (PE_(image_clr_header));
-	int rr, len = sizeof (PE_(image_clr_header));
+	int len = sizeof (PE_(image_clr_header));
 
 	if (!clr_hdr) {
 		return 0;
 	}
-	rr = read_image_clr_header (pe->b, image_clr_hdr_paddr, clr_hdr);
+	int rr = read_image_clr_header (pe->b, image_clr_hdr_paddr, clr_hdr);
 
 //	printf("%x\n", clr_hdr->HeaderSize);
 
@@ -1486,12 +1486,9 @@ static int bin_pe_init_clr_hdr(RBinPEObj* pe) {
 		free (clr_hdr);
 		return 0;
 	}
-
 	pe->clr_hdr = clr_hdr;
-
 	// Extract .NET version information from MSIL headers
 	bin_pe_init_dotnet_version (pe);
-
 	return 1;
 }
 
@@ -3478,17 +3475,12 @@ char* PE_(r_bin_pe_get_arch)(RBinPEObj* pe) {
 }
 
 struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(RBinPEObj* pe) {
-	struct r_bin_pe_addr_t* entry = NULL;
-	static R_TH_LOCAL bool debug = false;
 	int i;
 	ut64 base_addr = PE_(r_bin_pe_get_image_base) (pe);
 	if (!pe || !pe->optional_header) {
 		return NULL;
 	}
-	if (!(entry = malloc (sizeof (struct r_bin_pe_addr_t)))) {
-		r_sys_perror ("malloc (entrypoint)");
-		return NULL;
-	}
+	struct r_bin_pe_addr_t* entry = R_NEW (struct r_bin_pe_addr_t);
 	PE_DWord pe_entry = pe->optional_header->AddressOfEntryPoint;
 	entry->vaddr = bin_pe_rva_to_va (pe, pe_entry);
 	entry->paddr = PE_(va2pa) (pe, pe_entry);
@@ -3498,10 +3490,6 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(RBinPEObj* pe) {
 	if (entry->paddr >= pe->size) {
 		struct r_bin_pe_section_t* sections = pe->sections;
 		ut64 paddr = 0;
-		if (!debug) {
-			pe_printf ("Warning: Invalid entrypoint ... "
-				"trying to fix it but i do not promise nothing\n");
-		}
 		for (i = 0; i < pe->num_sections; i++) {
 			if (sections[i].perm & PE_IMAGE_SCN_MEM_EXECUTE) {
 				entry->paddr = sections[i].paddr;
@@ -3531,9 +3519,6 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(RBinPEObj* pe) {
 		}
 	}
 	if (!entry->paddr) {
-		if (!debug) {
-			pe_printf ("Warning: NULL entrypoint\n");
-		}
 		struct r_bin_pe_section_t* sections = pe->sections;
 		for (i = 0; i < pe->num_sections; i++) {
 			//If there is a section with x without w perm is a good candidate to be the entrypoint
@@ -3545,15 +3530,11 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(RBinPEObj* pe) {
 
 		}
 	}
-
 	if (is_arm (pe) && entry->vaddr & 1) {
 		entry->vaddr--;
 		if (entry->paddr & 1) {
 			entry->paddr--;
 		}
-	}
-	if (!debug) {
-		debug = true;
 	}
 	return entry;
 }
