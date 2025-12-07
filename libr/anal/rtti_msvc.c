@@ -983,7 +983,7 @@ static const char *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context,
 			RBinClass *klass = r_bin_class_new (name, NULL, 0);
 			if (klass) {
 				klass->origin = R_BIN_CLASS_ORIGIN_RTTI;
-				r_list_append (classes, klass);
+				r_bin_file_add_class (core->bin, klass);
 			}
 		}
 	}
