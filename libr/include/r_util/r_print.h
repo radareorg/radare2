@@ -229,7 +229,8 @@ typedef struct r_print_format_t {
 	// RStrBuf *sb to hold a string for plaintext formats
 } RPrintFormat;
 
-R_API int r_print_format_struct_size(RPrint *p, const char *format, int mode, int n);
+R_API int r_print_format_sizeof(RPrint *p, const char *format, int mode, int n);
+#define r_print_format_struct_size r_print_format_sizeof // deprecated alias
 R_API int r_print_format(RPrint *p, ut64 seek, const ut8* buf, const int len, const char *fmt, int elem, const char *setval, char *field);
 R_API int r_print_format2(RPrint *p, ut64 seek, const ut8* buf, const int len, const char *fmt, int elem, const char *setval, const char *field);
 R_API int r_print_format_internal(RPrint *p, RPrintFormat *pf, ut64 seek, const ut8* b, const int len, const char *formatname, int mode, const char *setval, const char *ofield);
