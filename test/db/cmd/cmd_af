@@ -189,6 +189,7 @@ size: 11
 \           0x004017c6      3d00100000     cmp eax, 0x1000
 EOF
 EXPECT_ERR=<<EOF
+WARN: Invalid certificate table
 WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
 EOF
 RUN
