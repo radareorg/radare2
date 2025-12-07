@@ -698,7 +698,7 @@ EXPECT=<<EOF
         "name": "uuid",
         "type": "b",
         "offset": 4294968848,
-        "value": [
+        "values": [
           255,
           77,
           108,
@@ -1118,4 +1118,3 @@ EXPECT_ERR=<<EOF
 WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
 EOF
 RUN
-
