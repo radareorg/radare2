@@ -28,29 +28,35 @@ enum {
 #define MUSTSEESTRUCT (mode & R_PRINT_STRUCT)
 
 // Extract array element index from size (size encodes both array size and element index)
-#define PF_EXTRACT_ELEM(elem, size) do { \
-	elem = -1; \
-	if (size >= ARRAYINDEX_COEF) { \
-		elem = size / ARRAYINDEX_COEF - 1; \
-		size %= ARRAYINDEX_COEF; \
-	} \
-} while (0)
+#define PF_EXTRACT_ELEM(elem, size) \
+	do { \
+		elem = -1; \
+		if (size >= ARRAYINDEX_COEF) { \
+			elem = size / ARRAYINDEX_COEF - 1; \
+			size %= ARRAYINDEX_COEF; \
+		} \
+	} while (0)
 
 // Check if current element should be printed (elem=-1 means all, elem=0 means this one)
 #define PF_ELEM_SHOULD_PRINT(elem) ((elem) == -1 || (elem) == 0)
 
 // Update elem after printing: if elem was 0, mark done (-2); if positive, decrement
-#define PF_ELEM_ADVANCE(elem) do { \
-	if ((elem) == 0) { (elem) = -2; } \
-	else if ((elem) > 0) { (elem)--; } \
-} while (0)
+#define PF_ELEM_ADVANCE(elem) \
+	do { \
+		if ((elem) == 0) { \
+			(elem) = -2; \
+		} else if ((elem) > 0) { \
+			(elem)--; \
+		} \
+	} while (0)
 
 // Print array separator if needed (when printing all elements and more remain)
-#define PF_PRINT_SEPARATOR(p, size, elem) do { \
-	if ((size) != 0 && (elem) == -1) { \
-		r_print_printf ((p), ", "); \
-	} \
-} while (0)
+#define PF_PRINT_SEPARATOR(p, size, elem) \
+	do { \
+		if ((size) != 0 && (elem) == -1) { \
+			r_print_printf ((p), ", "); \
+		} \
+	} while (0)
 
 // should be private. and PrintFormat should return a string, not int
 // or maybe we want to return a struct with size too :?
@@ -1717,7 +1723,7 @@ R_API int r_print_format_sizeof(RPrint *p, const char *f, int mode, int n) {
 	}
 	end = strchr (o, ' ');
 	fmt = o;
-	if (!end && !(end = strchr (o, '\0'))) {
+	if (!end && ! (end = strchr (o, '\0'))) {
 		free (o);
 		return -1;
 	}
@@ -1807,7 +1813,7 @@ R_API int r_print_format_sizeof(RPrint *p, const char *f, int mode, int n) {
 			size += tabsize;
 			break;
 		case '*':
-			size += tabsize * (p_bits / 8);
+			size += tabsize *(p_bits / 8);
 			i++;
 			idx--; // no need to go ahead for args
 			break;
@@ -1823,81 +1829,82 @@ R_API int r_print_format_sizeof(RPrint *p, const char *f, int mode, int n) {
 				size += 4; // Assuming by default enum as int
 			}
 			break;
-		case '?': {
-			const char *wordAtIndex = NULL;
-			const char *format = NULL;
-			bool format_owned = false;
-			char *endname = NULL, *structname = NULL;
-			char tmp = 0;
-			int ret = 0;
-			if (words < idx) {
-				R_LOG_ERROR ("Index out of bounds");
-			} else {
-				wordAtIndex = r_str_word_get0 (args, idx);
-			}
-			if (!wordAtIndex) {
-				break;
-			}
-			structname = strdup (wordAtIndex);
-			if (!structname) {
-				break;
-			}
-			if (*structname == '(') {
-				endname = (char *)r_str_rchr (structname, NULL, ')');
-			} else {
-				free (structname);
-				break;
-			}
-			if (endname) {
-				*endname = '\0';
-			}
-			format = strchr (structname, ' ');
-			if (format) {
-				tmp = *format;
-				while (tmp == ' ') {
-					format++;
-					tmp = *format;
+		case '?':
+			{
+				const char *wordAtIndex = NULL;
+				const char *format = NULL;
+				bool format_owned = false;
+				char *endname = NULL, *structname = NULL;
+				char tmp = 0;
+				int ret = 0;
+				if (words < idx) {
+					R_LOG_ERROR ("Index out of bounds");
+				} else {
+					wordAtIndex = r_str_word_get0 (args, idx);
 				}
-			} else {
-				format = p? sdb_get (p->formats, structname + 1, NULL): NULL;
+				if (!wordAtIndex) {
+					break;
+				}
+				structname = strdup (wordAtIndex);
+				if (!structname) {
+					break;
+				}
+				if (*structname == '(') {
+					endname = (char *)r_str_rchr (structname, NULL, ')');
+				} else {
+					free (structname);
+					break;
+				}
+				if (endname) {
+					*endname = '\0';
+				}
+				format = strchr (structname, ' ');
+				if (format) {
+					tmp = *format;
+					while (tmp == ' ') {
+						format++;
+						tmp = *format;
+					}
+				} else {
+					format = p? sdb_get (p->formats, structname + 1, NULL): NULL;
 				if (format && !strncmp (format, f, strlen (format) - 1)) {
-					R_FREE (format);
-					ret = -1;
-					goto cleanup_struct;
+						R_FREE (format);
+						ret = -1;
+						goto cleanup_struct;
+					}
+					if (!format) {
+						format = r_type_format (p->sdb_types, structname + 1);
+					}
+					format_owned = true;
 				}
 				if (!format) {
-					format = r_type_format (p->sdb_types, structname + 1);
+					R_LOG_ERROR ("Cannot find format for struct `%s'", structname + 1);
+					ret = 0;
+					goto cleanup_struct;
 				}
-				format_owned = true;
-			}
-			if (!format) {
-				R_LOG_ERROR ("Cannot find format for struct `%s'", structname + 1);
-				ret = 0;
-				goto cleanup_struct;
-			}
-			int newsize = r_print_format_sizeof (p, format, mode, n + 1);
-			if (newsize < 1) {
-				R_LOG_ERROR ("Cannot find size for `%s'", format);
-				ret = 0;
-				goto cleanup_struct;
-			}
-			if (!ST32_MUL_OVFCHK (tabsize, newsize)) {
-				size = size + (tabsize * newsize);
-			} else {
-				R_LOG_ERROR ("Prevented multiply integer overflow in format2.c");
-				ret = 0;
-				goto cleanup_struct;
-			}
-			cleanup_struct:
-			free (structname);
-			if (format_owned) {
-				R_FREE (format);
-			}
-			if (ret != 0) {
-				free (o);
-				free (args);
-				return ret;
-			}
+				int newsize = r_print_format_sizeof (p, format, mode, n + 1);
+				if (newsize < 1) {
+					R_LOG_ERROR ("Cannot find size for `%s'", format);
+					ret = 0;
+					goto cleanup_struct;
+				}
+				if (!ST32_MUL_OVFCHK (tabsize, newsize)) {
+					size = size + (tabsize * newsize);
+				} else {
+					R_LOG_ERROR ("Prevented multiply integer overflow in format2.c");
+					ret = 0;
+					goto cleanup_struct;
+				}
+		cleanup_struct:
+				free (structname);
+				if (format_owned) {
+					R_FREE (format);
+				}
+				if (ret != 0) {
+					free (o);
+					free (args);
+					return ret;
+				}
 			}
 			break;
 		case '{':
@@ -1928,7 +1935,7 @@ R_API int r_print_format_sizeof(RPrint *p, const char *f, int mode, int n) {
 			} else if (fmt[i + 1] == '8') {
 				size += tabsize * 8;
 			} else {
-				size += tabsize * (p_bits / 8);
+				size += tabsize *(p_bits / 8);
 				break;
 			}
 			i++;
@@ -2656,7 +2663,7 @@ R_API int r_print_format_internal(RPrint *p, RPrintFormat *pf, ut64 seek, const 
 						// R_LOG_ERROR ("Set val not implemented yet for bitfields!");
 					}
 					if (pf->endian) {
-						int el_size = (size == -1) ? 1 : size;
+						int el_size = (size == -1)? 1: size;
 						int read_size = 8; // updateAddr always reads 8 bytes in format2.c
 						if (el_size < 8 && el_size < read_size) {
 							addr >>= (read_size - el_size) * 8;
@@ -2671,7 +2678,7 @@ R_API int r_print_format_internal(RPrint *p, RPrintFormat *pf, ut64 seek, const 
 						r_print_printf (p, "wv4 %s @ 0x%08" PFMT64x "\n", setval, seeki + ((elem >= 0)? elem * 4: 0));
 					}
 					if (pf->endian) {
-						int el_size = (size == -1) ? 1 : size;
+						int el_size = (size == -1)? 1: size;
 						int read_size = 8; // updateAddr always reads 8 bytes in format2.c
 						if (el_size < 8 && el_size < read_size) {
 							addr >>= (read_size - el_size) * 8;
