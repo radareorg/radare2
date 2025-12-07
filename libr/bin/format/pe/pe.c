@@ -46,14 +46,14 @@ static inline int is_thumb(RBinPEObj* pe) {
 	return pe->nt_headers->optional_header.AddressOfEntryPoint & 1;
 }
 
-static inline int is_arm(RBinPEObj* pe) {
+static inline bool is_arm(RBinPEObj* pe) {
 	switch (pe->nt_headers->file_header.Machine) {
-	case PE_IMAGE_FILE_MACHINE_RPI2: // 462
 	case PE_IMAGE_FILE_MACHINE_ARM:
 	case PE_IMAGE_FILE_MACHINE_THUMB:
-		return 1;
+	case PE_IMAGE_FILE_MACHINE_THUMB2:
+		return true;
 	}
-	return 0;
+	return false;
 }
 
 static inline bool read_and_follow_jump(struct r_bin_pe_addr_t *entry, RBuffer *buf, ut8 *b, int len, bool big_endian) {
