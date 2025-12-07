@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2024 nibble, pancake, inisider */
+/* radare - LGPL - Copyright 2008-2025 nibble, pancake, inisider */
 
 #include <r_hash.h>
 #include <r_util.h>
@@ -499,7 +499,8 @@ static int bin_pe_parse_imports(RBinPEObj* pe,
 	char name[PE_NAME_LENGTH + 1];
 	PE_Word import_hint, import_ordinal = 0;
 	PE_DWord import_table = 0, off = 0;
-	int i = 0, len;
+	int i = 0;
+	size_t len;
 	Sdb* db = NULL;
 	char* sdb_module = NULL;
 	char* symname = NULL;
@@ -539,7 +540,10 @@ static int bin_pe_parse_imports(RBinPEObj* pe,
 			if (import_table & ILT_MASK1) {
 				import_ordinal = import_table & ILT_MASK2;
 				import_hint = 0;
-				snprintf (import_name, PE_NAME_LENGTH, "Ordinal_%i", import_ordinal);
+				len = snprintf (import_name, sizeof (import_name), "Ordinal_%i", import_ordinal);
+				if (len >= sizeof (import_name)) {
+					R_LOG_WARN("Import name truncated: %s", import_name);
+				}
 				free (symdllname);
 				strncpy (name, dll_name, sizeof (name) - 1);
 				name[sizeof (name) - 1] = 0;
@@ -578,7 +582,10 @@ static int bin_pe_parse_imports(RBinPEObj* pe,
 				if (db) {
 					symname = resolveModuleOrdinal (db, symdllname, import_ordinal);
 					if (symname) {
-						snprintf (import_name, PE_NAME_LENGTH, "%s", symname);
+						len = snprintf (import_name, sizeof (import_name), "%s", symname);
+						if (len >= sizeof (import_name)) {
+							R_LOG_WARN("Import name truncated: %s", import_name);
+						}
 						R_FREE (symname);
 					}
 				} else {
@@ -608,7 +615,7 @@ static int bin_pe_parse_imports(RBinPEObj* pe,
 					break;
 				}
 				name[PE_NAME_LENGTH] = '\0';
-				int len = snprintf (import_name, sizeof (import_name), "%s" , name);
+				len = snprintf (import_name, sizeof (import_name), "%s" , name);
 				if (len >= sizeof (import_name)) {
 					R_LOG_WARN ("Import name '%s' has been truncated", import_name);
 				}
@@ -931,6 +938,7 @@ static struct r_bin_pe_export_t* parse_symbol_table(RBinPEObj* pe, struct r_bin_
 					shortname[8] = 0;
 					if (*shortname) {
 						strncpy ((char*) exp[symctr].name, shortname, PE_NAME_LENGTH - 1);
+						exp[symctr].name[PE_NAME_LENGTH - 1] = '\0';
 					} else {
 						char* longname, name[128];
 						ut32 idx = r_read_le32 (buf + i + 4);
@@ -938,11 +946,11 @@ static struct r_bin_pe_export_t* parse_symbol_table(RBinPEObj* pe, struct r_bin_
 							longname = name;
 							name[sizeof (name) - 1] = 0;
 							strncpy ((char*) exp[symctr].name, longname, PE_NAME_LENGTH - 1);
+							exp[symctr].name[PE_NAME_LENGTH - 1] = '\0';
 						} else {
-							snprintf ((char*) exp[symctr].name, PE_NAME_LENGTH, "unk_%d", symctr);
+							snprintf ((char*) exp[symctr].name, sizeof (exp[symctr].name), "unk_%d", symctr);
 						}
 					}
-					exp[symctr].name[PE_NAME_LENGTH] = '\0';
 					exp[symctr].libname[0] = '\0';
 					exp[symctr].vaddr = bin_pe_rva_to_va (pe, text_rva + sr.value);
 					exp[symctr].paddr = text_off + sr.value;
