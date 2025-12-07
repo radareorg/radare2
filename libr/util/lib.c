@@ -403,8 +403,14 @@ R_API bool r_lib_validate_plugin(RLib *lib, const char *file, RLibStruct *stru) 
 		return false;
 	}
 
-	// Check version compatibility
-	if (stru->version && !lib->ignore_version) {
+	// Check ABI compatibility
+	if (stru->abiversion && !lib->ignore_abiversion) {
+		if (stru->abiversion != lib->abiversion) {
+			R_LOG_WARN ("ABI version mismatch: (ABI %d) vs radare2 (ABI %d) for '%s'", stru->abiversion, lib->abiversion, file);
+			return false;
+		}
+	} else if (stru->version && !lib->ignore_version) {
+		// Check version compatibility
 		char *mm0 = major_minor (stru->version);
 		char *mm1 = major_minor (R2_VERSION);
 		bool mismatch = strcmp (mm0, mm1);
@@ -421,14 +427,6 @@ R_API bool r_lib_validate_plugin(RLib *lib, const char *file, RLibStruct *stru) 
 					printf ("r2pm -ci %s\n", stru->pkgname);
 				}
 			}
-			return false;
-		}
-	}
-
-	// Check ABI compatibility
-	if (stru->abiversion && !lib->ignore_abiversion) {
-		if (stru->abiversion != lib->abiversion) {
-			R_LOG_WARN ("ABI version mismatch: (ABI %d) vs radare2 (ABI %d) for '%s'", stru->abiversion, lib->abiversion, file);
 			return false;
 		}
 	}
