@@ -37,7 +37,7 @@ enum {
 		} \
 	} while (0)
 
-// Check if current element should be printed (elem=-1 means all, elem=0 means this one)
+// Check if current element should be printed (elem = -1 means all, elem = 0 means this one)
 #define PF_ELEM_SHOULD_PRINT(elem) ((elem) == -1 || (elem) == 0)
 
 // Update elem after printing: if elem was 0, mark done (-2); if positive, decrement
