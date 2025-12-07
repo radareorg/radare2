@@ -130,6 +130,16 @@ typedef enum {
 } RBinLanguage;
 
 typedef enum {
+	R_BIN_CLASS_ORIGIN_BIN,
+	R_BIN_CLASS_ORIGIN_APP,
+	R_BIN_CLASS_ORIGIN_RTTI,
+	R_BIN_CLASS_ORIGIN_MANGLING,
+	R_BIN_CLASS_ORIGIN_USER,
+	R_BIN_CLASS_ORIGIN_SCRIPT,
+	R_BIN_CLASS_ORIGIN_OTHER,
+} RBinClassOrigin;
+
+typedef enum {
 	R_STRING_TYPE_DETECT = '?',
 	R_STRING_TYPE_ASCII = 'a',
 	R_STRING_TYPE_UTF8 = 'u',
@@ -668,6 +678,7 @@ typedef struct r_bin_class_t {
 	// RList *interfaces; // <char *>
 	RBinAttribute attr;
 	ut64 lang;
+	RBinClassOrigin origin;
 } RBinClass;
 
 #define RBinSectionName r_offsetof(RBinSection, name)
@@ -815,6 +826,7 @@ R_API bool r_bin_reload(RBin *bin, ut32 bf_id, ut64 baseaddr);
 R_API bool r_bin_command(RBin *bin, const char *input);
 
 R_API RBinClass *r_bin_class_new(const char *name, const char *super, ut64 attr);
+R_API const char *r_bin_class_origin_to_string(RBinClassOrigin origin);
 R_API void r_bin_class_free(RBinClass *);
 // uhm should be tied used because we dont want bincur to change because of open
 R_API RBinFile *r_bin_file_open(RBin *bin, const char *file, RBinFileOptions *opt);

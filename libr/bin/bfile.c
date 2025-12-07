@@ -1304,8 +1304,29 @@ R_API RBinClass *r_bin_class_new(const char *name, const char *super, ut64 attr)
 		c->methods = r_list_newf (r_bin_symbol_free);
 		c->fields = r_list_newf (r_bin_field_free);
 		c->attr = attr;
+		c->origin = strstr (name, "::")? R_BIN_CLASS_ORIGIN_MANGLING: R_BIN_CLASS_ORIGIN_BIN;
 	}
 	return c;
+}
+
+R_API const char *r_bin_class_origin_to_string(RBinClassOrigin origin) {
+	switch (origin) {
+	case R_BIN_CLASS_ORIGIN_BIN:
+		return "bin";
+	case R_BIN_CLASS_ORIGIN_APP:
+		return "app";
+	case R_BIN_CLASS_ORIGIN_RTTI:
+		return "rtti";
+	case R_BIN_CLASS_ORIGIN_MANGLING:
+		return "mangling";
+	case R_BIN_CLASS_ORIGIN_USER:
+		return "user";
+	case R_BIN_CLASS_ORIGIN_SCRIPT:
+		return "script";
+	case R_BIN_CLASS_ORIGIN_OTHER:
+	default:
+		return "other";
+	}
 }
 
 R_API void r_bin_class_free(RBinClass *k) {

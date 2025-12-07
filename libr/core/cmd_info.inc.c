@@ -846,6 +846,7 @@ static void cmd_ic_comma(RCore *core, const char *input) {
 	r_table_add_column (t, typeString, "type", 0);
 	r_table_add_column (t, typeString, "klass", 0);
 	r_table_add_column (t, typeString, "name", 0);
+	r_table_add_column (t, typeString, "origin", 0);
 	const bool iova = r_config_get_b (core->config, "io.va");
 	r_list_foreach (bfiles, objs_iter, bf) {
 		RBinObject *obj = bf->bo;
@@ -857,13 +858,15 @@ static void cmd_ic_comma(RCore *core, const char *input) {
 			RBinSymbol *method;
 			r_list_foreach (klass->methods, iter2, method) {
 				char *addr = r_str_newf ("0x%08"PFMT64x, iova? method->vaddr: method->paddr);
-				r_table_add_row (t, addr, "method", kname, method->name, NULL);
+				const char *origin_str = r_bin_class_origin_to_string (klass->origin);
+				r_table_add_row (t, addr, "method", kname, method->name, origin_str, NULL);
 				free (addr);
 			}
 			RBinField *field;
 			r_list_foreach (klass->fields, iter2, field) {
 				char *addr = r_str_newf ("0x%08"PFMT64x, iova? field->vaddr: field->paddr);
-				r_table_add_row (t, addr, "field", kname, field->name, NULL);
+				const char *origin_str = r_bin_class_origin_to_string (klass->origin);
+				r_table_add_row (t, addr, "field", kname, field->name, origin_str, NULL);
 				free (addr);
 			}
 		}
@@ -946,6 +949,7 @@ void cmd_ic_add(RCore *core, const char *input) {
 	if (!klass) {
 		klass = R_NEW0 (RBinClass);
 		klass->name = r_bin_name_new (klass_name);
+		klass->origin = R_BIN_CLASS_ORIGIN_USER;
 		r_list_append (klasses, klass);
 	}
 	if (method_name == NULL) {
