@@ -303,7 +303,6 @@ error:
 		CloseHandle (proc->stderr_read);
 	}
 	R_FREE (proc);
-	proc = NULL;
 	goto beach;
 }
 
