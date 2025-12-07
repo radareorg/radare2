@@ -842,7 +842,9 @@ R_API void r_anal_rtti_itanium_recover_all(RVTableContext *context, RList *vtabl
 				RBinClass *klass = r_bin_class_new (cti->name, NULL, 0);
 				if (klass) {
 					klass->origin = R_BIN_CLASS_ORIGIN_RTTI;
-					r_list_append (classes, klass);
+					if (!r_bin_file_add_class(core->bin, klass)) {
+						r_bin_class_free(klass);
+					}
 				}
 			}
 		}
