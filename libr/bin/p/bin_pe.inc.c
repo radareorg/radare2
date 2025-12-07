@@ -351,6 +351,7 @@ static RList* classes(RBinFile *bf) {
 	return ret;
 }
 
+#ifndef R_BIN_PE64
 static char* types(RBinFile *bf) {
 	RBinPEObj *pe = PE_(get) (bf);
 	if (!pe || !pe->dos_header || !pe->nt_headers) {
@@ -402,6 +403,7 @@ static char* types(RBinFile *bf) {
 	r_list_free (dotnet_symbols);
 	return r_strbuf_drain (sb);
 }
+#endif
 
 static RList* symbols(RBinFile *bf) {
 	RList *ret = NULL;
