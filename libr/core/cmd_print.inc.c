@@ -2137,12 +2137,10 @@ static bool is_pfo_file(const char *fn) {
 }
 static void cmd_print_format(RCore *core, const char *_input, const ut8* block, int len) {
 	char *input = NULL;
-	bool v2 = r_config_get_b (core->config, "cfg.newpf");
 	int mode = R_PRINT_MUSTSEE;
 	if (_input[1] == '2') {
 		// "pf2"
 		_input++;
-		v2 = true;
 	}
 	switch (_input[1]) {
 	case '*': // "pf*"
@@ -2457,13 +2455,8 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			r_core_cmd_help_match (core, help_msg_pf, "pf");
 			goto err_arg1;
 		}
-		if (v2) {
-			r_print_format2 (core->print, core->addr,
-				buf, size, fmt, mode, NULL, NULL);
-		} else {
-			r_print_format (core->print, core->addr,
-				buf, size, fmt, mode, NULL, NULL);
-		}
+		r_print_format (core->print, core->addr,
+			buf, size, fmt, mode, NULL, NULL);
 	err_arg1:
 		free (args);
 	err_args:

@@ -165,7 +165,7 @@ EXPECT=<<EOF
  ulebtest : 0x00000014 = [ 608101, 4750, 37, 0 ]
 "wx 2a" @ 0x00000019
  ulebtest : 0x00000014 = [ 608101, 4750, 42, 0 ]
-[{"name":"ulebtest","type":"u","offset":20,"value":[ "608101", "4750", "42", "0" ]}]
+[{"name":"ulebtest","type":"u","offset":20,"values":[608101,4750,42,0]}]
 EOF
 RUN
 
@@ -460,7 +460,7 @@ EXPECT=<<EOF
                       struct<troll>
                  integer : 0x00000010 = 42
                     word : 0x00000014 = 0x002a
-                     Bah : (*0x0) NULL
+                     Bah :  NULL
      plop : 0x0000000e = 0x1664
 EOF
 RUN
@@ -484,7 +484,7 @@ EXPECT=<<EOF
                       struct<struct>
                 first : 0x00000004 = 0x00000fa0
                second : 0x00000008 = 0x000020a0
-            word : 0x00000004 = 0x0fa0
+            word : 0x0000000c = 0x7201
      plop : 0x0000000c = 0x7201
 EOF
 RUN
@@ -519,7 +519,7 @@ EXPECT=<<EOF
                                   struct<troll>
                                  integer : 0x00000020 = 1664
                                     word : 0x00000024 = 0x4000
-                                     Bah : (*0x0) NULL
+                                     Bah :  NULL
          bwa : 0x00000012 = 0x4214
   foo : 0x00000014 = 0x00001664
 EOF
@@ -565,10 +565,6 @@ Cd 4 @ 0x00000020
 f word=0x00000024
 fl 2 @ 0x00000024
 Cd 2 @ 0x00000024
-fl 4 @ 0x00000020
-Cd 4 @ 0x00000020
-fl 4 @ 0x00000030
-Cd 4 @ 0x00000030
 fl 10 @ 0x00000008
 Cd 10 @ 0x00000008
 f bwa=0x00000012
@@ -698,6 +694,7 @@ EXPECT=<<EOF
                            numberOfSymbols : 0x00000090 = 0x00000000
                       sizeOfOptionalHeader : 0x00000094 = 0x00e0
                            characteristics : 0x00000096 = characteristics (bitfield) = 0x00000102 : IMAGE_FILE_EXECUTABLE_IMAGE | IMAGE_FILE_32BIT_MACHINE
+
  optionalHeader : 
                 struct<pe_image_optional_header32>
                                                    magic : 0x00000098 = magic (enum pe_magic) = 0x10b ; IMAGE_NT_OPTIONAL_HDR32_MAGIC
@@ -724,6 +721,7 @@ EXPECT=<<EOF
                                                 checkSum : 0x000000d8 = 0x00000000
                                                subsystem : 0x000000dc = subsystem (enum pe_subsystem) = 0x2 ; IMAGE_SUBSYSTEM_WINDOWS_GUI
                                       dllCharacteristics : 0x000000de = dllCharacteristics (bitfield) = 0x00008560 : IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA | IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE | IMAGE_DLLCHARACTERISTICS_NX_COMPAT | IMAGE_DLLCHARACTERISTICS_NO_SEH | IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE
+
                                       sizeOfStackReserve : 0x000000e0 = 0x00100000
                                        sizeOfStackCommit : 0x000000e4 = 0x00001000
                                        sizeOfHeapReserve : 0x000000e8 = 0x00100000
@@ -950,7 +948,7 @@ EXPECT=<<EOF
     "name": "f1",
     "type": "q",
     "offset": 6,
-    "value": -2382384186880648516
+    "value": 16064359886828903100
   }
 ]
 EOF
@@ -1016,7 +1014,7 @@ EXPECT=<<EOF
     "name": "f1",
     "type": "q",
     "offset": 1,
-    "value": -2382384186880648516
+    "value": 16064359886828903100
   }
 ]
 

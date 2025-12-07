@@ -255,10 +255,10 @@ EOF
 EXPECT=<<EOF
 struct fmt {
     uint8_t foo; // 85
-    int8_t bar; // "H"
+    int8_t bar; // 'H'
     double baz; // 4.8537884927073429e+102
     int32_t cow; // 0x48535441
-    uleb128_t one; // "1193473"
+    uleb128_t one; // 1193473
     float two; // 131072.094
 }
 EOF

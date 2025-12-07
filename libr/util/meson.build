@@ -26,7 +26,6 @@ r_util_sources = [
   'event.c',
   'file.c',
   'format.c',
-  'format2.c',
   'getopt.c',
   'graph_drawable.c',
   'graph.c',
