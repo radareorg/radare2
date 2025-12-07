@@ -185,7 +185,7 @@ static char *makepath(void) {
 	if (!make) {
 		make = r_file_path ("make");
 	}
-	return NULL;
+	return make;
 }
 
 static bool r2r_test_run_unit(void) {
@@ -441,10 +441,12 @@ static bool r2r_setup_directory(R2ROptions *opt, int arg_ind, int argc, char **a
 }
 
 static void r2r_setup_environment(void) {
-	if (!r_sys_getenv ("R2_BIN")) {
+	char *r2_bin = r_sys_getenv ("R2_BIN");
+	if (!r2_bin) {
 		r_sys_setenv ("R2_BIN", R2_BINDIR);
 		r_sys_setenv_sep ("PATH", R2_BINDIR, false);
 	}
+	free (r2_bin);
 	char *have_options = r_sys_getenv ("ASAN_OPTIONS");
 	if (have_options) {
 		free (have_options);
@@ -524,6 +526,7 @@ static int r2r_load_tests(R2RState *state, R2ROptions *opt, int arg_ind, int arg
 		int i;
 		for (i = arg_ind; i < argc; i++) {
 			const char *arg = argv[i];
+			char *arg_str = NULL;
 			if (*arg == '@') {
 				arg++;
 				eprintf ("Category: %s\n", arg);
@@ -548,7 +551,8 @@ static int r2r_load_tests(R2RState *state, R2ROptions *opt, int arg_ind, int arg
 				} else if (!strcmp (arg, "cmds")) {
 					arg = "db";
 				} else {
-					arg = r_str_newf ("db/%s", arg + 1);
+					arg_str = r_str_newf ("db/%s", arg + 1);
+					arg = arg_str;
 				}
 			}
 			if (r_str_endswith (arg, ".c")) {
@@ -571,15 +575,18 @@ static int r2r_load_tests(R2RState *state, R2ROptions *opt, int arg_ind, int arg
 					}
 				}
 				r_list_free (tests);
+				free (arg_str);
 				return grc? grc: 1; // Signal special exit
 			}
 			char *tf = r_file_abspath_rel (cwd, arg);
 			if (!tf || !r2r_test_database_load (state->db, tf, skip_json_tests)) {
 				R_LOG_ERROR ("Failed to load tests from \"%s\"", tf);
 				free (tf);
+				free (arg_str);
 				return -1;
 			}
 			free (tf);
+			free (arg_str);
 		}
 	} else {
 		if (!r2r_test_database_load (state->db, "db", skip_json_tests)) {

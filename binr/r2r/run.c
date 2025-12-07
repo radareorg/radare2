@@ -293,19 +293,16 @@ beach:
 	free (cmdline);
 	return proc;
 error:
-	if (proc) {
-		if (proc->stdin_write) {
-			CloseHandle (proc->stdin_write);
-		}
-		if (proc->stdout_read) {
-			CloseHandle (proc->stdout_read);
-		}
-		if (proc->stderr_read) {
-			CloseHandle (proc->stderr_read);
-		}
-		free (proc);
-		proc = NULL;
+	if (proc->stdin_write) {
+		CloseHandle (proc->stdin_write);
 	}
+	if (proc->stdout_read) {
+		CloseHandle (proc->stdout_read);
+	}
+	if (proc->stderr_read) {
+		CloseHandle (proc->stderr_read);
+	}
+	R_FREE (proc);
 	goto beach;
 }
 
@@ -723,29 +720,29 @@ R_API R2RSubprocess *r2r_subprocess_start(
 
 	return proc;
 error:
-	if (proc && proc->killpipe[0] == -1) {
+	if (proc->killpipe[0] != -1) {
 		close (proc->killpipe[0]);
 	}
-	if (proc && proc->killpipe[1] == -1) {
+	if (proc->killpipe[1] != -1) {
 		close (proc->killpipe[1]);
 	}
 	free (proc);
-	if (stderr_pipe[0] == -1) {
+	if (stderr_pipe[0] != -1) {
 		close (stderr_pipe[0]);
 	}
-	if (stderr_pipe[1] == -1) {
+	if (stderr_pipe[1] != -1) {
 		close (stderr_pipe[1]);
 	}
-	if (stdout_pipe[0] == -1) {
+	if (stdout_pipe[0] != -1) {
 		close (stdout_pipe[0]);
 	}
-	if (stdout_pipe[1] == -1) {
+	if (stdout_pipe[1] != -1) {
 		close (stdout_pipe[1]);
 	}
-	if (stdin_pipe[0] == -1) {
+	if (stdin_pipe[0] != -1) {
 		close (stdin_pipe[0]);
 	}
-	if (stdin_pipe[1] == -1) {
+	if (stdin_pipe[1] != -1) {
 		close (stdin_pipe[1]);
 	}
 	r_th_lock_leave (subprocs_mutex);
