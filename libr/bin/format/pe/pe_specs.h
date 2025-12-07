@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008 nibble */
+/* radare - LGPL - Copyright 2008-2025 nibble */
 
 #undef PE_
 #undef ILT_MASK1
@@ -66,11 +66,15 @@ typedef struct {
 #define PE_IMAGE_FILE_MACHINE_AM33             0x01d3
 #define PE_IMAGE_FILE_MACHINE_AMD64            0x8664
 #define PE_IMAGE_FILE_MACHINE_ARM              0x01c0
+#define PE_IMAGE_FILE_MACHINE_THUMB            0x01c2
+#define PE_IMAGE_FILE_MACHINE_THUMB2           0x01c4 /* also known as IMAGE_FILE_MACHINE_ARMNT */
 #define PE_IMAGE_FILE_MACHINE_ARM64            0xaa64
+#define PE_IMAGE_FILE_MACHINE_ARM64EC          0xa641
+#define PE_IMAGE_FILE_MACHINE_ARM64X           0xa64e
 #define PE_IMAGE_FILE_MACHINE_AXP64            PE_IMAGE_FILE_MACHINE_ALPHA64
 #define PE_IMAGE_FILE_MACHINE_CEE              0xc0ee
 #define PE_IMAGE_FILE_MACHINE_CEF              0x0cef
-#define PE_IMAGE_FILE_MACHINE_EBC              0x0ebc
+#define PE_IMAGE_FILE_MACHINE_EBC              0x0ebc /* EFI Bytecode */
 #define PE_IMAGE_FILE_MACHINE_I386             0x014c
 #define PE_IMAGE_FILE_MACHINE_IA64             0x0200
 #define PE_IMAGE_FILE_MACHINE_M32R             0x9041
@@ -89,12 +93,13 @@ typedef struct {
 #define PE_IMAGE_FILE_MACHINE_SH3E             0x01a4
 #define PE_IMAGE_FILE_MACHINE_SH4              0x01a6
 #define PE_IMAGE_FILE_MACHINE_SH5              0x01a8
-#define PE_IMAGE_FILE_MACHINE_THUMB            0x01c2
 #define PE_IMAGE_FILE_MACHINE_TRICORE          0x0520
 #define PE_IMAGE_FILE_MACHINE_WCEMIPSV2        0x0169
 #define PE_IMAGE_FILE_MACHINE_RISCV32          0x5032
 #define PE_IMAGE_FILE_MACHINE_RISCV64          0x5064
 #define PE_IMAGE_FILE_MACHINE_RISCV128         0x5128
+#define PE_IMAGE_FILE_MACHINE_LOONGARCH32      0x6232
+#define PE_IMAGE_FILE_MACHINE_LOONGARCH64      0x6264
 
 #define PE_IMAGE_FILE_RELOCS_STRIPPED          0x0001
 #define PE_IMAGE_FILE_EXECUTABLE_IMAGE         0x0002

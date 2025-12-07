@@ -7,7 +7,6 @@
 #include "dotnet.h"
 #include "r_util/r_str.h"
 
-#define PE_IMAGE_FILE_MACHINE_RPI2 452
 #define MAX_METADATA_STRING_LENGTH 256
 #define pe_printf if (pe->verbose) eprintf
 #define COFF_SYMBOL_SIZE 18
@@ -3427,50 +3426,55 @@ static int bin_pe_init(RBinPEObj* pe) {
 	return true;
 }
 
+/// TODO: just return const char* no need for heap allocation
 char* PE_(r_bin_pe_get_arch)(RBinPEObj* pe) {
-	char* arch;
 	if (!pe || !pe->nt_headers) {
 		return strdup ("x86");
 	}
+	const char *arch = "x86";
 	switch (pe->nt_headers->file_header.Machine) {
 	case PE_IMAGE_FILE_MACHINE_ALPHA:
 	case PE_IMAGE_FILE_MACHINE_ALPHA64:
-		arch = strdup ("alpha");
+		arch = "alpha";
 		break;
-	case PE_IMAGE_FILE_MACHINE_RPI2: // 462
 	case PE_IMAGE_FILE_MACHINE_ARM:
 	case PE_IMAGE_FILE_MACHINE_THUMB:
-		arch = strdup ("arm");
+	case PE_IMAGE_FILE_MACHINE_THUMB2:
+		arch = "arm";
 		break;
 	case PE_IMAGE_FILE_MACHINE_M68K:
-		arch = strdup ("m68k");
+		arch = "m68k";
 		break;
 	case PE_IMAGE_FILE_MACHINE_MIPS16:
 	case PE_IMAGE_FILE_MACHINE_MIPSFPU:
 	case PE_IMAGE_FILE_MACHINE_MIPSFPU16:
 	case PE_IMAGE_FILE_MACHINE_WCEMIPSV2:
-		arch = strdup ("mips");
+		arch = "mips";
 		break;
 	case PE_IMAGE_FILE_MACHINE_POWERPC:
 	case PE_IMAGE_FILE_MACHINE_POWERPCFP:
 	case PE_IMAGE_FILE_MACHINE_POWERPCBE:
-		arch = strdup ("ppc");
+		arch = "ppc";
 		break;
 	case PE_IMAGE_FILE_MACHINE_EBC:
-		arch = strdup ("ebc");
+		arch = "ebc";
 		break;
 	case PE_IMAGE_FILE_MACHINE_ARM64:
-		arch = strdup ("arm");
+	case PE_IMAGE_FILE_MACHINE_ARM64X:
+	case PE_IMAGE_FILE_MACHINE_ARM64EC:
+		arch = "arm";
 		break;
 	case PE_IMAGE_FILE_MACHINE_RISCV32:
 	case PE_IMAGE_FILE_MACHINE_RISCV64:
 	case PE_IMAGE_FILE_MACHINE_RISCV128:
-		arch = strdup ("riscv");
+		arch = "riscv";
 		break;
-	default:
-		arch = strdup ("x86");
+	case PE_IMAGE_FILE_MACHINE_LOONGARCH32:
+	case PE_IMAGE_FILE_MACHINE_LOONGARCH64:
+		arch = "loongarch";
+		break;
 	}
-	return arch;
+	return strdup (arch);
 }
 
 struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(RBinPEObj* pe) {
