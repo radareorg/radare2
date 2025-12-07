@@ -302,7 +302,7 @@ error:
 	if (proc->stderr_read) {
 		CloseHandle (proc->stderr_read);
 	}
-	free (proc);
+	R_FREE (proc);
 	proc = NULL;
 	goto beach;
 }
