@@ -4214,11 +4214,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("cfg.cpuaffinity", 0, "run on cpuid");
 	// TODO: This is an experimental feature because it conflicts with the way RFlags are handled, that would work for 'get' but not for 'set' and may confuse some logic out there.. also slow downs some codepaths
 	SETCB ("cfg.regnums", "false", &cb_cfg_regnums, "Query register values before flags in RNum calls (EXPERIMENTAL)");
-	if (r_sys_getenv_asbool ("R2_NEWPF")) {
-		SETB ("cfg.newpf", "true", "use pf2 when calling pf");
-	} else {
-		SETB ("cfg.newpf", "false", "use pf2 when calling pf");
-	}
+	SETB ("cfg.newpf", "true", "use pf2 when calling pf");
 
 	/* log */
 	SETICB ("log.level", R_LOG_LEVEL_DEFAULT, cb_config_log_level, "Target log level/severity (0:FATAL 1:ERROR 2:INFO 3:WARN 4:TODO 5:DEBUG)");

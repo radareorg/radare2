@@ -1629,8 +1629,9 @@ R_API const char *r_print_format_byname(RPrint *p, const char *name) {
 	return sdb_const_get (p->formats, name, NULL);
 }
 
+#if 0 // moved to format2.c as r_print_format_sizeof
 // XXX: this is somewhat incomplete. must be updated to handle all format chars
-R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) {
+static int r_print_format_sizeof_OLD(RPrint *p, const char *f, int mode, int n) {
 	char *end, *args, *fmt;
 	int size = 0, tabsize = 0, i, idx = 0, biggest = 0, fmt_len = 0, times = 1;
 	bool tabsize_set = false;
@@ -1915,6 +1916,7 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 	free (args);
 	return (mode & R_PRINT_UNIONMODE)? biggest : size;
 }
+#endif
 
 static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len, const char *name,
 		int slide, int mode, const char *setval, char *field, int anon) {

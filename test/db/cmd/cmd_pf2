@@ -139,6 +139,35 @@ wv2 0xadde @ 0x00000024
 EOF
 RUN
 
+NAME=nested struct field selection then full print
+FILE=malloc://64
+CMDS=<<EOF
+e asm.bits=32
+wv 1
+wv 2 @ 4
+wv 3 @ 8
+wv 4 @ 12
+pf.child ii one two
+pf.parent i?i head (child)body tail
+pfj.parent
+pf.parent.body
+pf.parent
+EOF
+EXPECT=<<EOF
+[{"name":"head","type":"i","offset":0,"value":1},{"name":"body","type":"child","offset":4,"value":[{"name":"one","type":"i","offset":4,"value":2},{"name":"two","type":"i","offset":8,"value":3}]},{"name":"tail","type":"i","offset":12,"value":4}]
+ body : 
+                struct<child>
+     one : 0x00000004 = 2
+     two : 0x00000008 = 3
+ head : 0x00000000 = 1
+ body : 
+                struct<child>
+     one : 0x00000004 = 2
+     two : 0x00000008 = 3
+ tail : 0x0000000c = 4
+EOF
+RUN
+
 NAME=print anonymous nested struct
 FILE=malloc://1024
 CMDS=<<EOF
@@ -539,5 +568,91 @@ struct {
     int32_t dword; // -3
     int64_t qword; // -4
 }
+EOF
+RUN
+
+NAME=pf missing features
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.bits=32
+# ULEB128: 624485 = 0x98765 => E5 8E 26
+wx e58e26 @ 0
+pf u @ 0
+# Octal
+wx 10000000 @ 4
+pf o @ 4
+# Bfloat16
+# 1.0 is 0x3f80
+wx 803f @ 8
+pf g @ 8
+# 10 bytes
+wx 0102030405060708090a @ 12
+pf T @ 12
+# Endian swap
+# wx writes bytes 12 34 56 78
+# LE read: 0x78563412
+# BE read: 0x12345678
+wx 12345678 @ 24
+pf "x;ex" @ 24
+# Skip : (4 bytes) and . (1 byte)
+wx 112233445566778899aa @ 32
+pf x.x @ 32
+# Overlap ,
+# wx writes bytes: AA BB CC DD
+# x (LE) -> 0xDDCCBBAA
+# , rewinds 1 byte.
+# c reads at offset+3 (DD).
+wx AABBCCDD @ 48
+pf x,c @ 48
+# Pointer to string s
+w "Hello" @ 0x100
+wv4 0x100 @ 60
+pf s @ 60
+# Wide string Z
+# H e l l o
+wx 480065006c006c006f000000 @ 70
+pf Z @ 70
+# Uint128 Q
+wx 0102030405060708090a0b0c0d0e0f00 @ 80
+pf Q @ 80
+# Hex pairs X (4 bytes)
+pf [4]X @ 80
+EOF
+EXPECT=<<EOF
+0x00000000 = 624485
+0x00000004 = (octal)  000000020
+0x00000008 = 1
+0x0000000c = 01 02 03 04 05 06 07 08 09 0a  ... (..........)
+0x00000018 = 0x78563412
+0x00000018 = 0x12345678
+0x00000020 = 0x44332211
+0x00000025 = 0x99887766
+0x00000030 = 0xddccbbaa
+0x00000033 = '.'
+0x0000003c = 0x0000003c -> 0x00000100 "Hello"
+0x00000046 = Hello
+0x00000050 = (uint128_t)0x000f0e0d0c0b0a090807060504030201
+0x00000050 = 01 02 03 04  ... (....)
+EOF
+RUN
+
+NAME=format2 endian enum check
+FILE=malloc://1024
+CMDS=<<EOF
+e cfg.bigendian=true
+e cfg.newpf=true
+wX 4142434431323334
+"td enum ascii{ LETTER_A=0x41, LETTER_D=0x44, DIGIT_1=0x31, DIGIT_4=0x34}"
+pf [1]E[1]E[1]E[1]E[1]E[1]E[1]E[1]E (ascii)B1 (ascii)B2 (ascii)B3 (ascii)B4 (ascii)B5 (ascii)B6 (ascii)B7 (ascii)B8
+EOF
+EXPECT=<<EOF
+ B1 : 0x00000000 = B1 (enum ascii) = 0x41 ; LETTER_A
+ B2 : 0x00000001 = B2 (enum ascii) = 0x42
+ B3 : 0x00000002 = B3 (enum ascii) = 0x43
+ B4 : 0x00000003 = B4 (enum ascii) = 0x44 ; LETTER_D
+ B5 : 0x00000004 = B5 (enum ascii) = 0x31 ; DIGIT_1
+ B6 : 0x00000005 = B6 (enum ascii) = 0x32
+ B7 : 0x00000006 = B7 (enum ascii) = 0x33
+ B8 : 0x00000007 = B8 (enum ascii) = 0x34 ; DIGIT_4
 EOF
 RUN
