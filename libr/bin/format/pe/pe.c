@@ -503,6 +503,8 @@ static int bin_pe_parse_imports(RBinPEObj *pe,
 	char *sdb_module = NULL;
 	char *symname = NULL;
 	char *symdllname = NULL;
+	char *filename = NULL;
+	char *lower_symdllname = NULL;
 
 	if (R_STR_ISEMPTY (dll_name) || *dll_name == '0') {
 		return 0;
@@ -555,7 +557,6 @@ static int bin_pe_parse_imports(RBinPEObj *pe,
 					symdllname[len] = 0;
 				}
 
-				char *filename = NULL;
 				if (!sdb_module || strcmp (symdllname, sdb_module)) {
 					sdb_free (db);
 					db = NULL;
@@ -566,12 +567,13 @@ static int bin_pe_parse_imports(RBinPEObj *pe,
 						db = sdb_new (NULL, filename, 0);
 					} else {
 						const char *dirPrefix = r_sys_prefix (NULL);
-						char *lower_symdllname = strdup (symdllname);
+						lower_symdllname = strdup (symdllname);
 						r_str_case (lower_symdllname, false);
 						free (filename);
 						filename = r_str_newf (R_JOIN_4_PATHS ("%s", R2_SDB_FORMAT, "dll", "%s.sdb"),
 							dirPrefix, lower_symdllname);
 						free (lower_symdllname);
+						lower_symdllname = NULL;
 						if (r_file_exists (filename)) {
 							db = sdb_new (NULL, filename, 0);
 						}
@@ -589,7 +591,7 @@ static int bin_pe_parse_imports(RBinPEObj *pe,
 				} else {
 					R_LOG_ERROR ("Cannot find %s", filename);
 				}
-				free (filename);
+				R_FREE (filename);
 			} else {
 				import_ordinal++;
 				const ut64 off = PE_(va2pa) (pe, import_table);
@@ -653,8 +655,17 @@ error:
 		sdb_free (db);
 		db = NULL;
 	}
+	free (symname);
+	free (filename);
+	free (lower_symdllname);
 	free (symdllname);
 	free (sdb_module);
+	// Free any partially allocated import structures
+	if (*importp) {
+		free (*importp);
+		*importp = NULL;
+		*nimp = 0;
+	}
 	return false;
 }
 
@@ -1163,6 +1174,7 @@ static const char *PE_(bin_pe_get_claimed_authentihash)(RBinPEObj *pe) {
 }
 
 const char *PE_(bin_pe_compute_authentihash)(RBinPEObj *pe) {
+	R_RETURN_VAL_IF_FAIL (pe, NULL);
 	if (!pe->spcinfo || !pe->spcinfo->messageDigest.digestAlgorithm.algorithm) {
 		return NULL;
 	}
@@ -1400,7 +1412,10 @@ static bool bin_pe_init_metadata_hdr(RBinPEObj *pe) {
 	return true;
 fail:
 	R_LOG_DEBUG ("read (metadata header)");
-	free (metadata);
+	if (metadata) {
+		free (metadata->VersionString);
+		free (metadata);
+	}
 	return false;
 }
 
@@ -1756,7 +1771,6 @@ static void bin_pe_store_tls_callbacks(RBinPEObj *pe, PE_DWord callbacks) {
 	while (addressOfTLSCallback != 0) {
 		addressOfTLSCallback = R_BUF_READ_PE_DWORD_AT (pe->b, callbacks);
 		if (addressOfTLSCallback == PE_DWORD_MAX) {
-			R_LOG_WARN ("read (tls_callback)");
 			return;
 		}
 		if (!addressOfTLSCallback) {
@@ -3434,8 +3448,7 @@ static int bin_pe_init(RBinPEObj *pe) {
 	return true;
 }
 
-/// TODO: just return const char* no need for heap allocation
-char *PE_(r_bin_pe_get_arch)(RBinPEObj *pe) {
+const char *PE_(r_bin_pe_get_arch)(RBinPEObj *pe) {
 	if (!pe || !pe->nt_headers) {
 		return strdup ("x86");
 	}
@@ -3588,7 +3601,6 @@ struct r_bin_pe_export_t *PE_(r_bin_pe_get_exports)(RBinPEObj *pe) {
 		}
 		if (r_buf_read_at (pe->b, PE_(va2pa) (pe, pe->export_directory->Name), (ut8 *)dll_name, PE_NAME_LENGTH) < 1) {
 			// we dont stop if dll name cant be read, we set dllname to null and continue
-			R_LOG_WARN ("read (dll name)");
 			dll_name[0] = '\0';
 		}
 		functions_paddr = PE_(va2pa) (pe, pe->export_directory->AddressOfFunctions);
