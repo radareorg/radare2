@@ -1554,6 +1554,7 @@ R_API void r_anal_rtti_print_at_vtable(RAnal *anal, ut64 addr, int mode);
 R_API void r_anal_rtti_print_all(RAnal *anal, int mode);
 R_API void r_anal_rtti_recover_all(RAnal *anal);
 
+
 R_API RList *r_anal_preludes(RAnal *anal);
 R_API bool r_anal_is_prelude(RAnal *anal, ut64 addr, const ut8 *data, int len);
 
