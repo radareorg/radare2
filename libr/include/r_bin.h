@@ -54,7 +54,8 @@ R_LIB_VERSION_HEADER (r_bin);
 #define R_BIN_REQ_LISTARCHS 0x004000
 #define R_BIN_REQ_CREATE    0x008000
 #define R_BIN_REQ_CLASSES   0x010000
-#define R_BIN_REQ_ADDRLINE  0x020000
+#define R_BIN_REQ_TYPES     0x020000
+#define R_BIN_REQ_ADDRLINE  0x040000
 #define R_BIN_REQ_SIZE      0x040000
 #define R_BIN_REQ_PDB       0x080000
 #define R_BIN_REQ_PDB_DWNLD 0x100000
@@ -644,6 +645,7 @@ typedef struct r_bin_plugin_t {
 	char* (*demangle)(const char *str);
 	char* (*regstate)(RBinFile *bf);
 	bool (*cmd)(RBinFile *bf, const char *command);
+	char* (*types)(RBinFile *bf);
 	// TODO: R2_600 RBuffer* (*create)(RBin *bin, RBinCreateOptions *opt);
 	/* default value if not specified by user */
 	int minstrlen;
@@ -850,6 +852,7 @@ R_API RRBTree *r_bin_patch_relocs(RBinFile *bin);
 R_API RRBTree *r_bin_get_relocs(RBin *bin);
 R_API RList *r_bin_get_sections(RBin *bin);
 R_API RList *r_bin_get_classes(RBin *bin);
+R_API char* r_bin_get_types(RBin *bin);
 R_API RList *r_bin_get_strings(RBin *bin);
 R_API RList *r_bin_file_get_trycatch(RBinFile *bf);
 R_API RList *r_bin_get_symbols(RBin *bin);

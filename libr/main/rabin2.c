@@ -102,6 +102,7 @@ static int rabin_show_help(int v) {
 			" -w              display try/catch blocks\n"
 			" -x              extract bins contained in file\n"
 			" -X [fmt] [f] .. package in fat or zip the given files and bins contained in file\n"
+			" -y              show types (structs, enums, function signatures)\n"
 			" -z              strings (from data section)\n"
 			" -zz             strings (from raw bins [e bin.str.raw=1])\n"
 			" -zzz            dump raw strings to stdout (for huge files)\n"
@@ -445,6 +446,16 @@ static int rabin_do_operation(RCons *cons, RBin *bin, const char *op, int rad, c
 					r_cons_flush (cons);
 					free (sign);
 				}
+			}
+		}
+		break;
+	case 'y':
+		{
+			char *types = r_bin_get_types (bin);
+			if (types) {
+				r_cons_println (cons, types);
+				r_cons_flush (cons);
+				free (types);
 			}
 		}
 		break;
@@ -833,6 +844,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		case 'R': set_action (R_BIN_REQ_RELOCS); break;
 		case 'x': set_action (R_BIN_REQ_EXTRACT); break;
 		case 'X': set_action (R_BIN_REQ_PACKAGE); break;
+		case 'y': set_action (R_BIN_REQ_TYPES); break;
 		case 'O':
 			op = opt.arg;
 			set_action (R_BIN_REQ_OPERATION);
