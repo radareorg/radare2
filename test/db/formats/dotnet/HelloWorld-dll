@@ -136,3 +136,42 @@ EXPECT=<<EOF
 0x10002050 ?   method   0      ctor
 EOF
 RUN
+
+NAME=.NET HelloWorld.dll types
+FILE=bins/dotnet/HelloWorld.dll
+CMDS=<<EOF
+rabin2 -y bins/dotnet/HelloWorld.dll
+EOF
+EXPECT=<<EOF
+struct <Module> {
+};
+
+struct BinaryParserLibrary.BinaryParser {
+  filePath;
+  data;
+  offset;
+};
+
+struct <PrivateImplementationDetails> {
+  2E383FDDF78D1ACC795830F56B4EC6464E408C418E67ADD6FA4C017AFA618963;
+};
+
+struct <Module> {
+};
+
+struct BinaryParserLibrary.BinaryParser {
+};
+
+struct <PrivateImplementationDetails> {
+};
+
+void BinaryParserLibrary.BinaryParser..ctor();
+void BinaryParserLibrary.BinaryParser.LoadData();
+void BinaryParserLibrary.BinaryParser.ValidateArgs();
+void BinaryParserLibrary.BinaryParser.ParseHeader();
+void BinaryParserLibrary.BinaryParser.ProcessSections();
+void BinaryParserLibrary.BinaryParser.CalculateChecksum();
+void BinaryParserLibrary.BinaryParser.AnalyzeMetadata();
+void BinaryParserLibrary.BinaryParser.RunAnalysis();
+EOF
+RUN
