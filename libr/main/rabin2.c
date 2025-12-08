@@ -708,7 +708,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	}
 #define unset_action(x) action &= ~x
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "DjJ:gAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEUlRwO:o:pPqQrTtvLhuxXzZ");
+	r_getopt_init (&opt, argc, argv, "DjJ:gAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEUlRwO:o:pPqQrTtvLhuxXzZy");
 	if (argc == 2 && !strcmp (argv[1], "-J")) {
 		rabin_show_env (false);
 		r_core_fini (&core);
@@ -1297,6 +1297,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	run_action ("size", R_BIN_REQ_SIZE, R_CORE_BIN_ACC_SIZE);
 	run_action ("versioninfo", R_BIN_REQ_VERSIONINFO, R_CORE_BIN_ACC_VERSIONINFO);
 	run_action ("signature", R_BIN_REQ_SIGNATURE, R_CORE_BIN_ACC_SIGNATURE);
+	run_action ("types", R_BIN_REQ_TYPES, R_CORE_BIN_ACC_TYPES);
 	run_action ("hashes", R_BIN_REQ_HASHES, R_CORE_BIN_ACC_HASHES);
 	run_action ("sections mapping", R_BIN_REQ_SECTIONS_MAPPING, R_CORE_BIN_ACC_SECTIONS_MAPPING);
 	if (action & R_BIN_REQ_SRCLINE) {

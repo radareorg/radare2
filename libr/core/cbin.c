@@ -5144,6 +5144,21 @@ static bool bin_signature(RCore *core, PJ *pj, int mode) {
 	return have_signature;
 }
 
+static bool bin_types(RCore *core, PJ *pj, int mode) {
+	char *types = r_bin_get_types (core->bin);
+	if (types) {
+		if (IS_MODE_JSON (mode)) {
+			pj_k (pj, "types");
+			pj_j (pj, types);
+		} else {
+			r_cons_println (core->cons, types);
+		}
+		free (types);
+		return true;
+	}
+	return false;
+}
+
 R_API bool r_core_bin_info(RCore *core, int action, PJ *pj, int mode, int va, RCoreBinFilter *filter, const char *chksum) {
 	R_RETURN_VAL_IF_FAIL (core, false);
 	const char *name = (filter && filter->name)? filter->name: NULL;
@@ -5226,6 +5241,9 @@ R_API bool r_core_bin_info(RCore *core, int action, PJ *pj, int mode, int va, RC
 	}
 	if ((action & R_CORE_BIN_ACC_SIGNATURE)) {
 		ret &= bin_signature (core, pj, mode);
+	}
+	if ((action & R_CORE_BIN_ACC_TYPES)) {
+		ret &= bin_types (core, pj, mode);
 	}
 	if ((action & R_CORE_BIN_ACC_FIELDS)) {
 		if (IS_MODE_SIMPLE (mode)) {
