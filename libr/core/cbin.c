@@ -1261,6 +1261,7 @@ static bool bin_addrline(RCore *core, PJ *pj, int mode) {
 				pj_ks (pj, "name", "CL");
 				pj_ks (pj, "file", file);
 				pj_ki (pj, "line_num", (int) row->line);
+//AITODO if line is null or "" just dont call this this pj_ks
 				pj_ks (pj, "line", r_str_get (line));
 				pj_kn (pj, "addr", row->addr);
 				pj_end (pj);
