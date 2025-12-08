@@ -1750,9 +1750,11 @@ static bool cb_color(void *user, void *data) {
 	} else if (!strcmp (node->value, "false")) {
 		node->i_value = 0;
 	}
-	core->cons->context->color_mode = (node->i_value > COLOR_MODE_16M)
+	int requested_mode = (node->i_value > COLOR_MODE_16M)
 		? COLOR_MODE_16M
 		: node->i_value;
+	// Enforce scrcolorlimit: never exceed the terminal's capability
+	core->cons->context->color_mode = R_MIN (requested_mode, core->cons->context->scrcolorlimit);
 	r_cons_pal_reload (core->cons); // double flute
 	r_print_set_flags (core->print, core->print->flags);
 	r_log_set_colors (node->i_value);

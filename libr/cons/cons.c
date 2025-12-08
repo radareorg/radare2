@@ -119,6 +119,59 @@ static void mark_free(RConsMark *m) {
 	}
 }
 
+/*
+ * Update the scrcolorlimit based on TERM environment variable.
+ * 
+ * This function provides a basic, hard-coded mapping from TERM values to 
+ * maximum color capabilities. It is intentionally simple and does not implement
+ * full terminfo/capability detection.
+ * 
+ * LIMITATIONS NOT YET IMPLEMENTED:
+ * - No detection of truecolor/RGB support via COLORTERM environment variable
+ * - No terminfo/termcap-based capability detection
+ * - No runtime probing of terminal capabilities
+ * - No support for other terminal attributes (bold, italics, underline, etc.)
+ * - No handling of proprietary terminal sequences
+ * - No detection of terminal size or geometry constraints
+ * - No support for dynamic TERM changes after startup
+ * - No consideration of terminal multiplexers (screen/tmux) capability passthrough
+ * - No handling of terminal emulation compatibility layers
+ */
+static void rcons_update_scrcolorlimit_from_term(RCons *cons) {
+	char *term = r_sys_getenv ("TERM");
+	int limit = COLOR_MODE_16M; // Default to no limit for unknown terminals
+
+	if (!term || !*term) {
+		// No TERM variable, don't impose any limit
+		limit = COLOR_MODE_16M;
+	} else if (!strcmp (term, "dumb")) {
+		limit = COLOR_MODE_DISABLED;
+	} else if (!strcmp (term, "vt100") || !strcmp (term, "vt102") || 
+		   !strcmp (term, "vt220") || !strcmp (term, "vt200") ||
+		   !strncmp (term, "vt2", 3)) {
+		limit = COLOR_MODE_DISABLED;
+	} else if (!strcmp (term, "cons25")) {
+		limit = COLOR_MODE_DISABLED;
+	} else if (!strcmp (term, "ansi") || !strcmp (term, "xterm") ||
+		   !strcmp (term, "linux") || !strcmp (term, "screen") ||
+		   !strcmp (term, "tmux") || r_str_endswith (term, "-color")) {
+		// Exclude -256color and -16color which are handled below
+		if (!r_str_endswith (term, "-256color") && !r_str_endswith (term, "-16color")) {
+			limit = COLOR_MODE_16;
+		}
+	} else if (!strcmp (term, "xterm-color") || !strcmp (term, "xterm-16color") ||
+		   !strcmp (term, "screen-16color") || !strcmp (term, "tmux-16color")) {
+		limit = COLOR_MODE_16;
+	} else if (!strcmp (term, "xterm-256color") || !strcmp (term, "screen-256color") ||
+		   !strcmp (term, "tmux-256color") || !strcmp (term, "rxvt-256color") ||
+		   !strcmp (term, "Eterm-256color")) {
+		limit = COLOR_MODE_256;
+	}
+
+	cons->context->scrcolorlimit = limit;
+	free (term);
+}
+
 static void init_cons_context(RCons *cons, RConsContext * R_NULLABLE parent) {
 	RConsContext *ctx = cons->context;
 	ctx->marks = r_list_newf ((RListFree)mark_free);
@@ -139,10 +192,13 @@ static void init_cons_context(RCons *cons, RConsContext * R_NULLABLE parent) {
 
 	if (parent) {
 		ctx->color_mode = parent->color_mode;
+		ctx->scrcolorlimit = parent->scrcolorlimit;
 		r_cons_pal_copy (cons, parent);
 	} else {
 		ctx->color_mode = COLOR_MODE_DISABLED;
+		ctx->scrcolorlimit = COLOR_MODE_16M; // Default to no limit
 		r_cons_pal_init (cons);
+		rcons_update_scrcolorlimit_from_term (cons);
 	}
 	cons_grep_reset (&ctx->grep);
 }
