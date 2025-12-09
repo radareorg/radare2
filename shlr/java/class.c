@@ -1,4 +1,4 @@
-/* Apache 2.0 - Copyright 2007-2023 - pancake, dso */
+/* Apache 2.0 - Copyright 2007-2025 - pancake, dso */
 
 #define R_LOG_ORIGIN "java.class"
 
@@ -2803,6 +2803,7 @@ R_API RList *r_bin_java_get_classes(RBinJavaObj *bin) {
 		return NULL;
 	}
 	k->attr = bin->cf2.access_flags;
+	k->origin = R_BIN_CLASS_ORIGIN_BIN;
 #if 0
 	if (bin->cf2.flags_str) {
 		k->visibility_str = strdup (bin->cf2.flags_str);
@@ -2829,6 +2830,7 @@ R_API RList *r_bin_java_get_classes(RBinJavaObj *bin) {
 			k->methods = r_bin_java_enum_class_methods (bin, cp_obj->info.cp_class.name_idx);
 			k->fields = r_bin_java_enum_class_fields (bin, cp_obj->info.cp_class.name_idx);
 			k->index = idx;
+			k->origin = R_BIN_CLASS_ORIGIN_BIN;
 			char *name = r_bin_java_get_item_name_from_bin_cp_list (bin, cp_obj);
 			if (name == NULL) {
 				R_LOG_WARN ("Unnamed class");

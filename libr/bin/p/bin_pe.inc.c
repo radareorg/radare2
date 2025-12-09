@@ -245,6 +245,7 @@ static RList* classes(RBinFile *bf) {
 		if (!existing) {
 			cls = r_bin_class_new (class_name_full, NULL, 0);
 			cls->lang = R_BIN_LANG_MSVC;
+			cls->origin = R_BIN_CLASS_ORIGIN_BIN;
 			r_list_append (ret, cls);
 		}
 		RBinClass *target_cls = existing ? existing : cls;
@@ -328,6 +329,7 @@ static RList* classes(RBinFile *bf) {
 			cls = r_bin_class_new (class_name_full, NULL, 0);
 			if (cls) {
 				cls->lang = R_BIN_LANG_MSVC;
+				cls->origin = R_BIN_CLASS_ORIGIN_BIN;
 				r_list_append (ret, cls);
 			}
 		}

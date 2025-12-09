@@ -1304,20 +1304,21 @@ R_API RBinClass *r_bin_class_new(const char *name, const char *super, ut64 attr)
 		c->methods = r_list_newf (r_bin_symbol_free);
 		c->fields = r_list_newf (r_bin_field_free);
 		c->attr = attr;
-		c->origin = strstr (name, "::")? R_BIN_CLASS_ORIGIN_MANGLING: R_BIN_CLASS_ORIGIN_BIN;
+		c->origin = R_BIN_CLASS_ORIGIN_BIN;
 	}
 	return c;
 }
 
 R_API const char *r_bin_class_origin_tostring(RBinClassOrigin origin) {
 	static const char *originstr[] = {
-		"bin",      // R_BIN_CLASS_ORIGIN_BIN
-		"app",      // R_BIN_CLASS_ORIGIN_APP
-		"rtti",     // R_BIN_CLASS_ORIGIN_RTTI
-		"mangling", // R_BIN_CLASS_ORIGIN_MANGLING
-		"user",     // R_BIN_CLASS_ORIGIN_USER
-		"script",   // R_BIN_CLASS_ORIGIN_SCRIPT
-		"other",    // R_BIN_CLASS_ORIGIN_OTHER
+		"bin",    // R_BIN_CLASS_ORIGIN_BIN
+		"app",    // R_BIN_CLASS_ORIGIN_APP
+		"rtti",   // R_BIN_CLASS_ORIGIN_RTTI
+		"anal",   // R_BIN_CLASS_ORIGIN_ANAL
+		"name",   // R_BIN_CLASS_ORIGIN_NAME
+		"user",   // R_BIN_CLASS_ORIGIN_USER
+		"script", // R_BIN_CLASS_ORIGIN_SCRIPT
+		"other",  // R_BIN_CLASS_ORIGIN_OTHER
 	};
 	if (origin >= 0 && origin < R_BIN_CLASS_ORIGIN_LAST) {
 		return originstr[origin];

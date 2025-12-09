@@ -167,6 +167,7 @@ static void classes_from_symbols2(RBinFile *bf, RBinSymbol *sym) {
 				if (c->addr == 0) {
 					c->addr = sym->vaddr;
 				}
+				c->origin = R_BIN_CLASS_ORIGIN_NAME;
 				r_bin_name_demangled (bs->name, method);
 				r_list_append (c->methods, bs);
 			}

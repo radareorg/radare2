@@ -141,14 +141,10 @@ static RDyldLocSym *r_dyld_locsym_new(RDyldCache *cache) {
 			continue;
 		}
 
-		cache_locsym_info_t *info = NULL;
 		void *entries = NULL;
 
 		ut64 info_size = sizeof (cache_locsym_info_t);
-		info = R_NEW0 (cache_locsym_info_t);
-		if (!info) {
-			goto beach;
-		}
+		cache_locsym_info_t *info = R_NEW0 (cache_locsym_info_t);
 		if (r_buf_fread_at (cache->buf, hdr->localSymbolsOffset, (ut8*) info, "6i", 1) != info_size) {
 			R_LOG_ERROR ("incomplete local symbol info");
 			goto beach;
@@ -1570,15 +1566,10 @@ static RList *classes(RBinFile *bf) {
 			for (; cursor + 8 <= pointers_end; cursor += 8) {
 				ut64 pointer_to_class = r_read_le64 (cursor);
 
-				RBinClass *klass;
-				if (!(klass = R_NEW0 (RBinClass)) ||
-					!(klass->methods = r_list_new ()) ||
-					!(klass->fields = r_list_new ())) {
-					R_FREE (klass);
-					R_FREE (pointers);
-					MACH0_(mach0_free) (mach0);
-					goto beach;
-				}
+				RBinClass *klass = R_NEW0 (RBinClass);
+				klass->methods = r_list_new ();
+				klass->fields = r_list_new ();
+				klass->origin = R_BIN_CLASS_ORIGIN_BIN;
 
 				bf->bo->bin_obj = mach0;
 				bf->buf = cache->buf;

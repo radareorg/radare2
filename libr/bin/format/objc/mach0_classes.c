@@ -1551,6 +1551,7 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 	bool usecmd = bin? bin->options.demangle_usecmd: false;
 	char *typename = r_name_filter_dup (otypename);
 	RBinClass *klass = r_bin_class_new (typename, NULL, false);
+	klass->origin = R_BIN_CLASS_ORIGIN_BIN;
 	char *super_name = readstr (bf, st.super_addr, NULL, NULL);
 	if (super_name) {
 		if (*super_name > 5) {
@@ -1817,6 +1818,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 		RBinClass *klass = r_bin_class_new ("", "", R_BIN_ATTR_PUBLIC);
 		R_FREE (klass->name); // allow NULL name in rbinclass?
 		klass->lang = R_BIN_LANG_OBJC;
+		klass->origin = R_BIN_CLASS_ORIGIN_BIN;
 		size = sizeof (mach0_ut);
 		if (ms.clslist.addr > bf->size || ms.clslist.addr + size > bf->size) {
 			goto get_classes_error;
@@ -1879,6 +1881,7 @@ static RList *MACH0_(parse_categories)(RBinFile *bf, MetaSections *ms, const RSk
 		}
 		RBinClass *klass = r_bin_class_new ("", NULL, 0);
 		R_FREE (klass->name);
+		klass->origin = R_BIN_CLASS_ORIGIN_BIN;
 		if (!read_ptr_pa (bf, ms->catlist.addr + i, &p)) {
 			r_bin_class_free (klass);
 			goto error;
