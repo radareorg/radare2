@@ -12,27 +12,20 @@ static char *check_path(char *base_path, const char *name, bool(*check_func)(con
 }
 
 static void collect_fortune_types_from_dir(RList *types, const char *base_path) {
-	if (!base_path || !r_file_is_directory (base_path)) {
-		return;
-	}
 	RList *files = r_sys_dir (base_path);
-	if (!files) {
-		return;
-	}
-	RListIter *iter;
-	char *file;
-	r_list_foreach (files, iter, file) {
-		if (*file != '.' && r_str_startswith (file, "fortunes.") && file[9]) {
-			r_list_append (types, strdup (file + 9));
+	if (files) {
+		RListIter *iter;
+		char *file;
+		r_list_foreach (files, iter, file) {
+			if (*file != '.' && r_str_startswith (file, "fortunes.") && file[9]) {
+				r_list_append (types, strdup (file + 9));
+			}
 		}
+		r_list_free (files);
 	}
-	r_list_free (files);
 }
 
 static char *getFortuneFile(RCore *core, const char *type) {
-	if (!r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
-		return NULL;
-	}
 	char *xdg_fortunes = r_xdg_datadir ("fortunes");
 	char *sys_fortunes = r_file_new (r_sys_prefix (NULL), R2_FORTUNES, NULL);
 	char *result = check_path (xdg_fortunes, type, r_file_is_directory);
@@ -52,6 +45,9 @@ static char *getFortuneFile(RCore *core, const char *type) {
 }
 
 static char *getRandomLine(RCore *core) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
+		return NULL;
+	}
 	const char *ft = r_config_get (core->config, "cfg.fortunes.type");
 	RList *types = r_str_split_duplist (ft, ",", false);
 	if (r_list_empty (types)) {
@@ -75,6 +71,7 @@ static char *getRandomLine(RCore *core) {
 			char *f;
 			r_list_foreach (files, iter, f) {
 				if (r_str_endswith (f, ".txt")) {
+// AITODO: slurp all files into a single large string here
 					r_list_push (txt_files, strdup (f));
 				}
 			}
@@ -87,17 +84,20 @@ static char *getRandomLine(RCore *core) {
 			r_list_free (txt_files);
 		}
 	} else {
+// AITODO: slurp the selected file here
 		selected_file = strdup (file);
 	}
 	free (file);
 	if (!selected_file) {
 		return NULL;
 	}
+// AITODO: this content must be defined above so we can reuse it
 	char *content = r_file_slurp (selected_file, NULL);
 	free (selected_file);
 	if (!content) {
 		return NULL;
 	}
+// AITODO: here we reach the content which will be all the .txt files of a directory all together or the contents of one fortunes.NAME
 	RList *line_starts = r_str_split_list (content, "\n", false);
 	if (r_list_empty (line_starts)) {
 		r_list_free (line_starts);
