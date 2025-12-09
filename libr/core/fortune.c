@@ -2,15 +2,6 @@
 
 #include <r_core.h>
 
-static char *check_path(const char *base_path, const char *name, bool(*check_func)(const char *)) {
-	char *path = r_file_new (base_path, name, NULL);
-	if (path && check_func (path)) {
-		return path;
-	}
-	free (path);
-	return NULL;
-}
-
 static void collect_types(RList *types, const char *base_path) {
 	RList *files = r_sys_dir (base_path);
 	if (files) {
@@ -23,8 +14,7 @@ static void collect_types(RList *types, const char *base_path) {
 			// Check for .txt files (new format: <type>.txt)
 			if (r_str_endswith (file, ".txt")) {
 				size_t len = strlen (file) - 4;
-				char *type = r_str_ndup (file, len);
-				r_list_append (types, type);
+				r_list_append (types, r_str_ndup (file, len));
 			} else {
 				// Check for directories (directory name is the type)
 				char *full_path = r_file_new (base_path, file, NULL);
@@ -62,20 +52,22 @@ static char *slurp_directory_contents(const char *dir_path) {
 }
 
 static void collect_fortunes(RStrBuf *sb, const char *base_path, const char *type, const char *fname) {
-	char *path, *content;
-
-// AITODO IMHO check_path can be integrated within the slurp_directory_contents because the checkdir is made in there, so theres' no need for having this logic twice
-	if ((path = check_path (base_path, type, r_file_is_directory))) {
-		content = slurp_directory_contents (path);
-	} else if ((path = check_path (base_path, fname, r_file_exists))) {
-		content = r_file_slurp (path, NULL);
+	char *path = r_file_new (base_path, type, NULL);
+	if (path) {
+		char *content = slurp_directory_contents (path);
+		if (!content) {
+			free (path);
+			path = r_file_new (base_path, fname, NULL);
+			if (path && r_file_exists (path)) {
+				content = r_file_slurp (path, NULL);
+			}
+		}
+		if (content) {
+			r_strbuf_append (sb, content);
+			free (content);
+		}
+		free (path);
 	}
-	
-	if (content) {
-		r_strbuf_append (sb, content);
-		free (content);
-	}
-	free (path);
 }
 
 static char *getFortuneContent(RCore *core, const char *type) {
@@ -117,7 +109,7 @@ static char *getRandomLine(RCore *core) {
 		result = strdup (line);
 	}
 	if (R_STR_ISEMPTY (result)) {
-		free (result); // sometimes we pick empty lines
+		free (result); // hack because sometimes we pick empty lines
 		result = getRandomLine (core);
 	}
 	r_list_free (all_lines);
