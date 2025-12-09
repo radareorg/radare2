@@ -844,9 +844,9 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly);
 #define R_CORE_BIN_ACC_SOURCE 0x800000
 #define R_CORE_BIN_ACC_HASHES 0x10000000
 #define R_CORE_BIN_ACC_TRYCATCH 0x20000000
-#define R_CORE_BIN_ACC_SECTIONS_MAPPING 0x40000000
-#define R_CORE_BIN_ACC_TYPES 0x80000000
-#define R_CORE_BIN_ACC_ALL	0xD04FFF
+#define R_CORE_BIN_ACC_SECTIONS_MAPPING (ut64)0x40000000
+#define R_CORE_BIN_ACC_TYPES (ut64) 0x80000000
+#define R_CORE_BIN_ACC_ALL	(ut64) 0xD04FFF
 
 #define R_CORE_PRJ_FLAGS	0x0001
 #define R_CORE_PRJ_EVAL		0x0002
@@ -867,7 +867,7 @@ typedef struct r_core_bin_filter_t {
 	const char *name;
 } RCoreBinFilter;
 
-R_API bool r_core_bin_info(RCore *core, int action, PJ *pj, int mode, int va, RCoreBinFilter *filter, const char *chksum);
+R_API bool r_core_bin_info(RCore *core, ut64 action, PJ *pj, int mode, int va, RCoreBinFilter *filter, const char *chksum);
 R_API bool r_core_bin_set_arch_bits(RCore *r, const char *name, const char *arch, RSysBits bits);
 R_API bool r_core_bin_update_arch_bits(RCore *r);
 R_API char *r_core_bin_attr_tostring(RCore *core, ut64 flags, int mode);

@@ -3085,7 +3085,7 @@ static bool cb_rawstr(void *user, void *data) {
 static bool cb_bin_classes(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
-	const ut32 req = R_BIN_REQ_CLASSES;
+	const ut64 req = R_BIN_REQ_CLASSES;
 	if (node->i_value) {
 		core->bin->filter_rules |= req;
 	} else {
@@ -3102,7 +3102,7 @@ static bool cb_debase64(void *user, void *data) {
 }
 
 static bool cb_binstrings(void *user, void *data) {
-	const ut32 req = R_BIN_REQ_STRINGS;
+	const ut64 req = R_BIN_REQ_STRINGS;
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
 	if (node->i_value) {

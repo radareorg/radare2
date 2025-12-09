@@ -14,8 +14,8 @@ typedef struct type_trace_change_reg_t {
 } TypeTraceRegChange;
 
 static void type_trace_reg_change_fini(void *data, void *user) {
-	TypeTraceRegChange *change = data;
-	if (change) {
+	if (data) {
+		TypeTraceRegChange *change = data;
 		free (change->name);
 	}
 }
@@ -84,6 +84,7 @@ typedef struct type_trace_t {
 	ut32 voy[4];
 	RStrBuf rollback;  // ESIL string to rollback state (inspired by PR #24428)
 	bool enable_rollback;
+	// TODO: Add REsil instance here
 } TypeTrace;
 
 #define CMP_REG_CHANGE(x, y) ((x) - ((TypeTraceRegChange *)y)->idx)
@@ -132,6 +133,7 @@ static void add_reg_change(TypeTrace *trace, RRegItem *ri, ut64 data, ut64 odata
 	ut64 addr = ri->offset | (ri->arena << 16);
 	RVector *vreg = ht_up_find (trace->registers, addr, NULL);
 	if (R_UNLIKELY (!vreg)) {
+		// TODO: Do not use RVector!
 		vreg = r_vector_new (sizeof (TypeTraceRegChange), type_trace_reg_change_fini, NULL);
 		if (R_UNLIKELY (!vreg)) {
 			R_LOG_ERROR ("creating a register vector");
@@ -140,12 +142,7 @@ static void add_reg_change(TypeTrace *trace, RRegItem *ri, ut64 data, ut64 odata
 		ht_up_insert (trace->registers, addr, vreg);
 	}
 	char *name = strdup (ri->name);
-	if (!name) {
-		R_LOG_ERROR ("Failed to allocate(strdup) memory for storing register change");
-		return;
-	}
-	TypeTraceRegChange reg = { trace->cur_idx, trace->cc++,
-		name, data, odata };
+	TypeTraceRegChange reg = { trace->cur_idx, trace->cc++, name, data, odata };
 	r_vector_push (vreg, &reg);
 }
 
@@ -157,15 +154,7 @@ static void type_trace_voyeur_reg_write(void *user, const char *name, ut64 old, 
 		return;
 	}
 	char *name_dup = strdup (name);
-	if (!name_dup) {
-		R_LOG_ERROR ("Failed to allocate(strdup) memory for storing access");
-		goto fail_name_dup;
-	}
 	TypeTraceAccess *access = VecAccess_emplace_back (&trace->db.accesses);
-	if (!access) {
-		R_LOG_ERROR ("Failed to allocate memory for storing access");
-		goto fail_emplace_back;
-	}
 	access->is_reg = true;
 	access->reg.name = name_dup;
 	access->reg.value = val;
@@ -174,14 +163,8 @@ static void type_trace_voyeur_reg_write(void *user, const char *name, ut64 old, 
 	if (trace->enable_rollback) {
 		r_strbuf_prependf (&trace->rollback, "0x%" PFMT64x ",%s,:=,", old, name);
 	}
-
 	add_reg_change (trace, ri, val, old);
 	update_trace_db_op (&trace->db);
-	r_unref (ri);
-	return;
-fail_emplace_back:
-	free (name_dup);
-fail_name_dup:
 	r_unref (ri);
 }
 
@@ -1882,7 +1865,7 @@ static bool tp_plugin_eligible(RAnal *anal) {
 RAnalPlugin r_anal_plugin_tp = {
 	.meta = {
 		.name = "tp",
-		.desc = "Type propagation analysis helpers",
+		.desc = "Type propagation analysis",
 		.author = "radare2",
 		.license = "LGPL3",
 	},

@@ -1357,55 +1357,43 @@ R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode) {
 	return true;
 }
 
-#if 0
-static ut64 srclineVal(const void *a) {
-	return r_str_hash64 (a);
-}
-#endif
-
 static bool bin_source(RCore *core, PJ *pj, int mode) {
 	RList *final_list = r_list_new ();
 	RBinFile *binfile = core->bin->cur;
 
-	if (!binfile) {
-		if (IS_MODE_JSON (mode)) {
-			pj_o (pj);
-			pj_end (pj);
-		}
-		r_list_free (final_list);
-		return false;
-	}
-#if 1
-	// TODO: future optimization: dump the stringpool containing filenames
-	RList *files = r_bin_addrline_files (core->bin);
-	if (files) {
-		char *s = r_str_list_join (files, "\n");
-		r_cons_println (core->cons, s);
-		free (s);
-	}
-#else
-	SdbListIter *iter;
-	RListIter *iter2;
-	char *srcline;
-	SdbKv *kv;
-	SdbList *ls = sdb_foreach_list (binfile->sdb_addrinfo, false);
-	ls_foreach (ls, iter, kv) {
-		char *v = sdbkv_value (kv);
-		RList *list = r_str_split_list (v, "|", 0);
-		srcline = r_list_first (list);
-		if (srcline) {
-			if (!strstr (srcline, "0x")) {
-				r_list_append (final_list, srcline);
+	switch (mode) {
+	case R_MODE_JSON:
+		pj_a (pj);
+		if (binfile) {
+			const char *file;
+			RListIter *iter;
+			RList *files = r_bin_addrline_files (core->bin);
+			if (files) {
+				r_list_foreach (files, iter, file) {
+					pj_s (pj, file);
+				}
+			//	r_list_free (files);
 			}
 		}
-		r_list_free (list);
-	}
-	r_list_uniq_inplace (final_list, srclineVal);
-	r_list_foreach (final_list, iter2, srcline) {
-		r_cons_printf (core->cons, "%s\n", srcline);
+		pj_end (pj);
+		break;
+	case '*':
+	case 1:
+	case R_MODE_SET:
+		// do nothing here
+		return true;
+	default:
+		{
+			RList *files = r_bin_addrline_files (core->bin);
+			if (files) {
+				char *s = r_str_list_join (files, "\n");
+				r_cons_println (core->cons, s);
+				free (s);
+			}
+		}
+		break;
 	}
 	r_list_free (final_list);
-#endif
 	return true;
 }
 
@@ -5159,7 +5147,7 @@ static bool bin_types(RCore *core, PJ *pj, int mode) {
 	return false;
 }
 
-R_API bool r_core_bin_info(RCore *core, int action, PJ *pj, int mode, int va, RCoreBinFilter *filter, const char *chksum) {
+R_API bool r_core_bin_info(RCore *core, ut64 action, PJ *pj, int mode, int va, RCoreBinFilter *filter, const char *chksum) {
 	R_RETURN_VAL_IF_FAIL (core, false);
 	const char *name = (filter && filter->name)? filter->name: NULL;
 	bool ret = true;
