@@ -45,6 +45,7 @@ static char *getFortuneFile(RCore *core, const char *type) {
 }
 
 static char *slurp_directory_contents(const char *dir_path) {
+eprintf ("--> %s\n", dir_path);
 	RList *files = r_sys_dir (dir_path);
 	if (!files) {
 		return NULL;
@@ -57,6 +58,7 @@ static char *slurp_directory_contents(const char *dir_path) {
 	r_list_foreach (files, iter, f) {
 		if (r_str_endswith (f, ".txt")) {
 			char *file_path = r_file_new (dir_path, f, NULL);
+eprintf ("LOAD %s\n", file_path);
 			if (file_path) {
 				char *file_content = r_file_slurp (file_path, NULL);
 				if (file_content) {
