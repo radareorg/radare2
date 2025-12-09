@@ -4184,6 +4184,7 @@ R_API int r_core_config_init(RCore *core) {
 	char *whoami = r_sys_whoami ();
 	SETS ("cfg.user", whoami, "set current username/pid");
 	free (whoami);
+	SETS ("dir.fortunes", R2_DATDIR "/radare2/" R2_VERSION "/fortunes", "directory to load fortune files from");
 	SETB ("cfg.fortunes", "true", "if enabled show tips at start");
 	RList *fortune_types = r_core_fortune_types (core);
 	char *fts = r_str_list_join (fortune_types, ",");
@@ -4194,11 +4195,6 @@ R_API int r_core_config_init(RCore *core) {
 	free (fortune_desc);
 	SETB ("cfg.fortunes.clippy", "false", "use ?E instead of ?e");
 	SETB ("cfg.fortunes.tts", "false", "speak out the fortune");
-	{
-		char *default_fortunes_dir = r_file_new (r_sys_prefix (NULL), R2_FORTUNES, NULL);
-		SETS ("dir.fortunes", default_fortunes_dir, "directory to load fortune files from");
-		free (default_fortunes_dir);
-	}
 	SETS ("cfg.prefixdump", "dump", "filename prefix for automated dumps");
 	SETCB ("cfg.sandbox", "false", &cb_cfgsanbox, "sandbox mode disables systems and open on upper directories");
 	SETCB ("cfg.sandbox.grain", "all", &cb_cfgsanbox_grain, "select which sand grains must pass the filter (all, net, files, socket, exec, disk)");
