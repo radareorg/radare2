@@ -81,22 +81,7 @@ static char *getrandomline(RCore *core) {
 	if (!content) {
 		return NULL;
 	}
-	RList *line_starts = r_list_new ();
-	char *p = content;
-	char *start = content;
-	while (*p) {
-		if (*p == '\n') {
-			*p = '\0';
-			if (R_STR_ISNOTEMPTY (start)) {
-				r_list_push (line_starts, start);
-			}
-			start = p + 1;
-		}
-		p++;
-	}
-	if (R_STR_ISNOTEMPTY (start)) {
-		r_list_push (line_starts, start);
-	}
+	RList *line_starts = r_str_split_list (content, "\n", false);
 	if (r_list_empty (line_starts)) {
 		r_list_free (line_starts);
 		free (content);
