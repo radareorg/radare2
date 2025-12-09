@@ -4,3 +4,4 @@ ifeq ($(uname),Darwin)
 else
 	cd ../.. ; sys/sdk.sh
 endif
+	mv ../../*.zip .
