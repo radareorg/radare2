@@ -44,6 +44,33 @@ static char *getFortuneFile(RCore *core, const char *type) {
 	return result;
 }
 
+static char *slurp_directory_contents(const char *dir_path) {
+	RList *files = r_sys_dir (dir_path);
+	if (!files) {
+		return NULL;
+	}
+
+	RStrBuf *content_buf = r_strbuf_new (NULL);
+	RListIter *iter;
+	char *f;
+
+	r_list_foreach (files, iter, f) {
+		if (r_str_endswith (f, ".txt")) {
+			char *file_path = r_file_new (dir_path, f, NULL);
+			if (file_path) {
+				char *file_content = r_file_slurp (file_path, NULL);
+				if (file_content) {
+					r_strbuf_append (content_buf, file_content);
+					free (file_content);
+				}
+				free (file_path);
+			}
+		}
+	}
+	r_list_free (files);
+	return r_strbuf_drain (content_buf);
+}
+
 static char *getRandomLine(RCore *core) {
 	if (!r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
 		return NULL;
@@ -54,50 +81,20 @@ static char *getRandomLine(RCore *core) {
 		r_list_free (types);
 		return NULL;
 	}
-	int num_types = r_list_length (types);
-	int rand_type_idx = r_num_rand (num_types);
+	int rand_type_idx = r_num_rand (r_list_length (types));
 	char *type = r_list_get_n (types, rand_type_idx);
 	char *file = getFortuneFile (core, type);
 	r_list_free (types);
 	if (!file) {
 		return NULL;
 	}
-	char *selected_file = NULL;
-	if (r_file_is_directory (file)) {
-		RList *files = r_sys_dir (file);
-		if (files) {
-			RList *txt_files = r_list_newf (free);
-			RListIter *iter;
-			char *f;
-			r_list_foreach (files, iter, f) {
-				if (r_str_endswith (f, ".txt")) {
-// AITODO: slurp all files into a single large string here
-					r_list_push (txt_files, strdup (f));
-				}
-			}
-			r_list_free (files);
-			if (!r_list_empty (txt_files)) {
-				int rand_idx = r_num_rand (r_list_length (txt_files));
-				char *txt_file = r_list_get_n (txt_files, rand_idx);
-				selected_file = r_file_new (file, txt_file, NULL);
-			}
-			r_list_free (txt_files);
-		}
-	} else {
-// AITODO: slurp the selected file here
-		selected_file = strdup (file);
-	}
+	char *content = r_file_is_directory (file)
+		? slurp_directory_contents (file)
+		: r_file_slurp (file, NULL);
 	free (file);
-	if (!selected_file) {
-		return NULL;
-	}
-// AITODO: this content must be defined above so we can reuse it
-	char *content = r_file_slurp (selected_file, NULL);
-	free (selected_file);
 	if (!content) {
 		return NULL;
 	}
-// AITODO: here we reach the content which will be all the .txt files of a directory all together or the contents of one fortunes.NAME
 	RList *line_starts = r_str_split_list (content, "\n", false);
 	if (r_list_empty (line_starts)) {
 		r_list_free (line_starts);
@@ -113,22 +110,15 @@ static char *getRandomLine(RCore *core) {
 	return result;
 }
 
-R_IPI RList *r_core_fortune_types(void) {
+R_API RList *r_core_fortune_types(RCore *core) {
 	RList *types = r_list_newf (free);
 	if (r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
 		char *xdg_fortunes = r_xdg_datadir ("fortunes");
 		char *sys_fortunes = r_file_new (r_sys_prefix (NULL), R2_FORTUNES, NULL);
-
 		collect_fortune_types_from_dir (types, xdg_fortunes);
 		collect_fortune_types_from_dir (types, sys_fortunes);
-
 		free (xdg_fortunes);
 		free (sys_fortunes);
-	}
-	if (r_list_empty (types)) {
-		r_list_append (types, strdup ("plugins"));
-		r_list_append (types, strdup ("tips"));
-		r_list_append (types, strdup ("fun"));
 	}
 	return types;
 }
@@ -139,7 +129,7 @@ R_API void r_core_fortune_print_random(RCore *core) {
 		return;
 	}
 	char *line = getRandomLine (core);
-	if (R_STR_ISNOTEMPTY (line)) {
+	if (line) {
 		if (r_config_get_b (core->config, "cfg.fortunes.clippy")) {
 			r_core_clippy (core, line);
 		} else {
