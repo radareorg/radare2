@@ -11,7 +11,7 @@ static char *check_path(const char *base_path, const char *name, bool(*check_fun
 	return NULL;
 }
 
-static void collect_fortune_types_from_dir(RList *types, const char *base_path) {
+static void collect_types(RList *types, const char *base_path) {
 	RList *files = r_sys_dir (base_path);
 	if (files) {
 		RListIter *iter;
@@ -74,38 +74,26 @@ static char *slurp_fortune_path(const char *path) {
 		: r_file_slurp (path, NULL);
 }
 
+static void collect_fortunes(RStrBuf *sb, const char *base_path, const char *type, const char *fname) {
+	char *path = check_path (base_path, type, r_file_is_directory)
+		?: check_path (base_path, fname, r_file_exists);
+	if (path) {
+		char *content = slurp_fortune_path (path);
+		if (content) {
+			r_strbuf_append (sb, content);
+			free (content);
+		}
+		free (path);
+	}
+}
+
 static char *getFortuneContent(RCore *core, const char *type) {
 	char *xdg_fortunes = r_xdg_datadir ("fortunes");
 	const char *fortunes_dir = r_config_get (core->config, "dir.fortunes");
 	RStrBuf *sb = r_strbuf_new (NULL);
 	r_strf_var (fname, 64, "%s.txt", type);
-
-// AITODO duplicated code here
-	// Collect from xdg path (directory or .txt file)
-	char *path = check_path (xdg_fortunes, type, r_file_is_directory)
-		?: check_path (xdg_fortunes, fname, r_file_exists);
-	if (path) {
-		char *content = slurp_fortune_path (path);
-		if (content) {
-			r_strbuf_append (sb, content);
-			free (content);
-		}
-		free (path);
-	}
-
-// AITODO duplicated code here
-	// Collect from system path (directory or .txt file)
-	path = check_path (fortunes_dir, type, r_file_is_directory)
-		?: check_path (fortunes_dir, fname, r_file_exists);
-	if (path) {
-		char *content = slurp_fortune_path (path);
-		if (content) {
-			r_strbuf_append (sb, content);
-			free (content);
-		}
-		free (path);
-	}
-
+	collect_fortunes (sb, xdg_fortunes, type, fname);
+	collect_fortunes (sb, fortunes_dir, type, fname);
 	free (xdg_fortunes);
 	return r_strbuf_drain (sb);
 }
@@ -132,28 +120,13 @@ static char *getRandomLine(RCore *core) {
 	/* pick a random fortune message, filtering out empty lines */
 	RList *all_lines = r_str_split_list (content, "\n", false);
 	char *result = NULL;
-	char *line;
-	RListIter *iter;
-	
-	// Count non-empty lines first
-	int count = 0;
-	r_list_foreach (all_lines, iter, line) {
-		if (R_STR_ISNOTEMPTY (line)) {
-			count++;
-		}
-	}
-	
-	if (count > 0) {
-		int rand_idx = r_num_rand (count);
-		int current = 0;
-		r_list_foreach (all_lines, iter, line) {
-			if (R_STR_ISNOTEMPTY (line)) {
-				if (current == rand_idx) {
-					result = strdup (line);
-					break;
-				}
-				current++;
-			}
+	int rand_idx = r_num_rand (r_list_length (all_lines));
+	char *line = r_list_get_n (all_lines, rand_idx);
+	if (line) {
+		result = strdup (line);
+		if (!result) {
+			// retry just in case
+			result = getRandomLine (core);
 		}
 	}
 	r_list_free (all_lines);
@@ -166,11 +139,11 @@ R_API RList *r_core_fortune_types(RCore *core) {
 	if (r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
 		char *xdg_fortunes = r_xdg_datadir ("fortunes");
 		if (xdg_fortunes) {
-			collect_fortune_types_from_dir (types, xdg_fortunes);
+			collect_types (types, xdg_fortunes);
 			free (xdg_fortunes);
 		}
 		const char *fortunes_dir = r_config_get (core->config, "dir.fortunes");
-		collect_fortune_types_from_dir (types, fortunes_dir);
+		collect_types (types, fortunes_dir);
 	}
 	return types;
 }
@@ -182,7 +155,7 @@ R_API void r_core_fortune_print_random(RCore *core) {
 	}
 	char *line = getRandomLine (core);
 	if (R_STR_ISEMPTY (line)) {
-		R_LOG_WARN ("No fortune in this cookie");
+		R_LOG_WARN ("No fortune in this cookie. Disable cfg.fortunes or fix installation");
 	} else {
 		if (r_config_get_b (core->config, "cfg.fortunes.clippy")) {
 			r_core_clippy (core, line);
