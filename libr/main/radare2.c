@@ -1,6 +1,9 @@
 /* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #include "r_userconf.h"
+#ifndef R2_DOCDIR
+#define R2_DOCDIR "share/doc/radare2"
+#endif
 #include "r_util/r_str.h"
 #include "r_util/r_sys.h"
 #include <r_main.h>
@@ -298,6 +301,7 @@ static int main_help(int line) {
 				" R2_INCDIR    " R2_INCDIR "\n"
 				" R2_BINDIR    " R2_BINDIR "\n"
 				" R2_MANDIR    " R2_MANDIR "\n"
+				" R2_DOCDIR    " R2_DOCDIR "\n"
 				" R2_LIBDIR    " R2_LIBDIR "\n"
 				" R2_LIBEXT    " R_LIB_EXT "\n"
 				" R2_PREFIX    " R2_PREFIX "\n",
@@ -320,11 +324,13 @@ static int main_print_var(const char *var_name) {
 	char *libdir = r_str_r2_prefix (R2_LIBDIR);
 	char *bindir = r_str_r2_prefix (R2_BINDIR);
 	char *mandir = r_str_r2_prefix (R2_MANDIR);
+	char *docdir = r_str_r2_prefix (R2_DOCDIR);
 #else
 	char *incdir = strdup (R2_INCDIR);
 	char *libdir = strdup (R2_LIBDIR);
 	char *bindir = strdup (R2_BINDIR);
 	char *mandir = strdup (R2_MANDIR);
+	char *docdir = strdup (R2_DOCDIR);
 #endif
 	char *rcfile = r_file_home (".radare2rc");
 	char *confighome = r_xdg_configdir (NULL);
@@ -332,6 +338,8 @@ static int main_print_var(const char *var_name) {
 	char *cachehome = r_xdg_cachedir (NULL);
 	char *homeplugins = r_xdg_datadir ("plugins");
 	char *homezigns = r_xdg_datadir ("zigns");
+	char *homedoc = r_xdg_datadir ("doc");
+	// printf ("homedoc = %s\n", homedoc);
 	char *plugins = r_str_r2_prefix (R2_PLUGINS);
 	char *magicpath = r_str_r2_prefix (R2_SDB_MAGIC);
 	char *historyhome = r_xdg_cachedir ("history");
@@ -354,6 +362,7 @@ static int main_print_var(const char *var_name) {
 		{ "R2_INCDIR", incdir },
 		{ "R2_BINDIR", bindir },
 		{ "R2_MANDIR", mandir },
+		{ "R2_DOCDIR", docdir },
 		{ "R2_RCFILE", rcfile },
 		{ "R2_LIBDIR", libdir },
 		{ "R2_LIBEXT", R_LIB_EXT },
@@ -363,6 +372,7 @@ static int main_print_var(const char *var_name) {
 		{ "R2_CACHE_HOME", cachehome }, //  from xdg
 		{ "R2_LIBR_PLUGINS", plugins },
 		{ "R2_USER_PLUGINS", homeplugins },
+		{ "R2_USER_DOCDIR", homedoc },
 		{ "R2_ZIGNS_HOME", homezigns },
 		{ "R2_CFLAGS", r2_cflags },
 		{ "R2_LDFLAGS", r2_ldflags },
@@ -393,6 +403,7 @@ static int main_print_var(const char *var_name) {
 	free (datahome);
 	free (cachehome);
 	free (homeplugins);
+	free (homedoc);
 	free (homezigns);
 	free (plugins);
 	free (magicpath);
