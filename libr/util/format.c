@@ -1853,7 +1853,7 @@ R_API int r_print_format_sizeof(RPrint *p, const char *f, int mode, int n) {
 						ret = -1;
 						goto cleanup_struct;
 					}
-					if (!format) {
+					if (!format && p) {
 						format = r_type_format (p->sdb_types, structname + 1);
 					}
 					format_owned = true;

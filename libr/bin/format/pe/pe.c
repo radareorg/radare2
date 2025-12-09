@@ -3449,10 +3449,10 @@ static int bin_pe_init(RBinPEObj *pe) {
 }
 
 const char *PE_(r_bin_pe_get_arch)(RBinPEObj *pe) {
-	if (!pe || !pe->nt_headers) {
-		return strdup ("x86");
-	}
 	const char *arch = "x86";
+	if (!pe || !pe->nt_headers) {
+		return arch;
+	}
 	switch (pe->nt_headers->file_header.Machine) {
 	case PE_IMAGE_FILE_MACHINE_ALPHA:
 	case PE_IMAGE_FILE_MACHINE_ALPHA64:
@@ -3495,7 +3495,7 @@ const char *PE_(r_bin_pe_get_arch)(RBinPEObj *pe) {
 		arch = "loongarch";
 		break;
 	}
-	return strdup (arch);
+	return arch;
 }
 
 struct r_bin_pe_addr_t *PE_(r_bin_pe_get_entrypoint)(RBinPEObj *pe) {
