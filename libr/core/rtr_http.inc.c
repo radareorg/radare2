@@ -194,6 +194,9 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 	eprintf ("r2 r2web://%s:%s/cmd/\n", host, port);
 	core->http_up = true;
 
+	/* Register this HTTP session so r2agent -L can discover it */
+	r_core_session_register (core, "r2web", atoi (port));
+
 	ut64 newoff, origoff = core->addr;
 	int newblksz, origblksz = core->blocksize;
 	ut8 *newblk, *origblk = core->block;
@@ -594,6 +597,8 @@ the_end:
 	free (pfile);
 	r_socket_free (s);
 	r_config_free (newcfg);
+	/* Unregister this HTTP session */
+	r_core_session_unregister (core);
 	return ret;
 }
 
