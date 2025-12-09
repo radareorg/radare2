@@ -48,13 +48,13 @@ if [ "$OS" = "Darwin" ]; then
 
 	# Add module.modulemap
 	cat > "$XCF_HEADERS_IOS/module.modulemap" <<'EOF'
-module radare2 [extern_c] {
+module Radare2 [extern_c] {
   umbrella "."
   export *
 }
 EOF
 	cat > "$XCF_HEADERS_MACOS/module.modulemap" <<'EOF'
-module radare2 [extern_c] {
+module Radare2 [extern_c] {
   umbrella "."
   export *
 }
@@ -78,6 +78,11 @@ EOF
 	if [ $? -eq 0 ]; then
 		echo "XCFramework created at $XCF_DST"
 		# Zip it
+		OUTDIR=$PWD
+		(
+			cd "$(dirname "$XCF_DST")" || exit 1
+			zip -r "${OUTDIR}/Radare2.xcframework.zip" "$(basename "$XCF_DST")"
+		)
 		zip -r Radare2.xcframework.zip "$XCF_DST"
 		echo "Zipped to Radare2.xcframework.zip"
 	else
