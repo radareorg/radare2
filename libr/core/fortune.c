@@ -96,6 +96,94 @@ static char *getrandomline(RCore *core) {
 	return result;
 }
 
+R_IPI RList *r_core_fortune_types(void) {
+	RList *types = r_list_newf (free);
+	if (!types) {
+		return NULL;
+	}
+	
+	// Try to find fortune types from system directories
+	if (r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
+		char *xdg_fortunes = r_xdg_datadir ("fortunes");
+		char *sys_fortunes = r_file_new (r_sys_prefix (NULL), R2_FORTUNES, NULL);
+		
+		// Check XDG fortunes directory
+		if (xdg_fortunes && r_file_is_directory (xdg_fortunes)) {
+			RList *files = r_sys_dir (xdg_fortunes);
+			if (files) {
+				RListIter *iter;
+				char *file;
+				r_list_foreach (files, iter, file) {
+					if (strcmp (file, ".") && strcmp (file, "..")) {
+						char *path = r_file_new (xdg_fortunes, file, NULL);
+						if (path) {
+							char *type = NULL;
+							
+							// Only handle files starting with "fortunes."
+							if (r_str_startswith (file, "fortunes.") && !r_file_is_directory (path)) {
+								type = strdup (file + 9); // Skip "fortunes."
+							}
+							
+							if (type) {
+								// Avoid duplicates
+								if (!r_list_find (types, type, (RListComparator)strcmp)) {
+									r_list_append (types, type);
+								} else {
+									free (type);
+								}
+							}
+							free (path);
+						}
+					}
+				}
+				r_list_free (files);
+			}
+		}
+		
+		// Check system fortunes directory
+		if (sys_fortunes && r_file_is_directory (sys_fortunes)) {
+			RList *files = r_sys_dir (sys_fortunes);
+			if (files) {
+				RListIter *iter;
+				char *file;
+				r_list_foreach (files, iter, file) {
+					if (strcmp (file, ".") && strcmp (file, "..")) {
+						char *path = r_file_new (sys_fortunes, file, NULL);
+						if (path) {
+							char *type = NULL;
+							
+							// Only handle files starting with "fortunes."
+							if (r_str_startswith (file, "fortunes.") && !r_file_is_directory (path)) {
+								type = strdup (file + 9); // Skip "fortunes."
+							}
+							
+							if (type) {
+								// Avoid duplicates
+								if (!r_list_find (types, type, (RListComparator)strcmp)) {
+									r_list_append (types, type);
+								} else {
+									free (type);
+								}
+							}
+							free (path);
+						}
+					}
+				}
+				r_list_free (files);
+			}
+		}
+		
+		free (xdg_fortunes);
+		free (sys_fortunes);
+	}
+	if (r_list_empty (types)) {
+		r_list_append (types, strdup ("plugins"));
+		r_list_append (types, strdup ("tips"));
+		r_list_append (types, strdup ("fun"));
+	}
+	return types;
+}
+
 R_API void r_core_fortune_print_random(RCore *core) {
 	R_RETURN_IF_FAIL (core);
 	if (!r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
