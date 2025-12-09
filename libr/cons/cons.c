@@ -140,34 +140,23 @@ static void mark_free(RConsMark *m) {
 static void rcons_update_scrcolorlimit_from_term(RCons *cons) {
 	char *term = r_sys_getenv ("TERM");
 	int limit = COLOR_MODE_16M; // Default to no limit for unknown terminals
-
-	if (!term || !*term) {
-		// No TERM variable, don't impose any limit
-		limit = COLOR_MODE_16M;
-	} else if (!strcmp (term, "dumb")) {
-		limit = COLOR_MODE_DISABLED;
-	} else if (!strcmp (term, "vt100") || !strcmp (term, "vt102") || 
-		   !strcmp (term, "vt220") || !strcmp (term, "vt200") ||
-		   !strncmp (term, "vt2", 3)) {
-		limit = COLOR_MODE_DISABLED;
-	} else if (!strcmp (term, "cons25")) {
-		limit = COLOR_MODE_DISABLED;
-	} else if (!strcmp (term, "ansi") || !strcmp (term, "xterm") ||
-		   !strcmp (term, "linux") || !strcmp (term, "screen") ||
-		   !strcmp (term, "tmux") || r_str_endswith (term, "-color")) {
-		// Exclude -256color and -16color which are handled below
-		if (!r_str_endswith (term, "-256color") && !r_str_endswith (term, "-16color")) {
+	if (R_STR_ISNOTEMPTY (term)) {
+		if (!strcmp (term, "dumb")) {
+			limit = COLOR_MODE_DISABLED;
+		} else if (!strcmp (term, "vt100") || !strcmp (term, "vt102") || 
+			   !strcmp (term, "vt220") || !strcmp (term, "vt200") ||
+			   !strncmp (term, "vt2", 3)) {
+			limit = COLOR_MODE_DISABLED;
+		} else if (!strcmp (term, "cons25")) {
+			limit = COLOR_MODE_DISABLED;
+		} else if (strstr (term, "16color")) {
+			limit = COLOR_MODE_16;
+		} else if (strstr (term, "256color")) {
+			limit = COLOR_MODE_256;
+		} else if (!strcmp (term, "ansi") || !strcmp (term, "screen")) {
 			limit = COLOR_MODE_16;
 		}
-	} else if (!strcmp (term, "xterm-color") || !strcmp (term, "xterm-16color") ||
-		   !strcmp (term, "screen-16color") || !strcmp (term, "tmux-16color")) {
-		limit = COLOR_MODE_16;
-	} else if (!strcmp (term, "xterm-256color") || !strcmp (term, "screen-256color") ||
-		   !strcmp (term, "tmux-256color") || !strcmp (term, "rxvt-256color") ||
-		   !strcmp (term, "Eterm-256color")) {
-		limit = COLOR_MODE_256;
 	}
-
 	cons->context->scrcolorlimit = limit;
 	free (term);
 }
