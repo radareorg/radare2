@@ -59,7 +59,7 @@ rm -rf "$INSTALL_DST"
 if [ "${#ARCHS}" -gt 0 ]; then
 	sdkClean
 	macosConfigure
-	if [ "$?" = 0 ]; then
+	if [ $? -eq 0 ]; then
 		export CPU="$ARCHS"
 		echo "Building for $CPU"
 		sleep 1

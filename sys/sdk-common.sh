@@ -24,7 +24,7 @@ sdkBuild() {
 }
 
 sdkMergeLibs() {
-	mkdir -p $INSTALL_DST/$PREFIX/lib_merged
+	mkdir -p "$INSTALL_DST/$PREFIX/lib_merged"
 	echo "Merging static libs (libr.a)"
 	local libs=""
 	for arch in $(echo $ARCHS | tr '+' ' '); do

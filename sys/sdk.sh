@@ -32,17 +32,41 @@ if [ "$OS" = "Darwin" ]; then
 	
 	# Create xcframework
 	echo "Creating xcframework..."
-	XCF_DST="/tmp/radare2.xcframework"
+	XCF_DST="/tmp/Radare2.xcframework"
 	rm -rf "$XCF_DST"
 	mkdir -p "$XCF_DST"
-	
+
+	# Prepare headers with module maps
+	XCF_HEADERS_IOS="/tmp/xcframework_headers/ios"
+	XCF_HEADERS_MACOS="/tmp/xcframework_headers/macos"
+	rm -rf "$XCF_HEADERS_IOS" "$XCF_HEADERS_MACOS"
+	mkdir -p "$XCF_HEADERS_IOS" "$XCF_HEADERS_MACOS"
+
+	# Copy headers
+	cp -r "$INSTALL_DST_IOS/usr/local/include/"* "$XCF_HEADERS_IOS/"
+	cp -r "$INSTALL_DST_MACOS/usr/local/include/"* "$XCF_HEADERS_MACOS/"
+
+	# Add module.modulemap
+	cat > "$XCF_HEADERS_IOS/module.modulemap" <<'EOF'
+module radare2 [extern_c] {
+  umbrella "."
+  export *
+}
+EOF
+	cat > "$XCF_HEADERS_MACOS/module.modulemap" <<'EOF'
+module radare2 [extern_c] {
+  umbrella "."
+  export *
+}
+EOF
+
 	# For iOS
 	IOS_LIB="$INSTALL_DST_IOS/usr/local/lib/libr.a"
-	IOS_HEADERS="$INSTALL_DST_IOS/usr/local/include"
-	
+	IOS_HEADERS="$XCF_HEADERS_IOS"
+
 	# For macOS
 	MACOS_LIB="$INSTALL_DST_MACOS/usr/local/lib/libr.a"
-	MACOS_HEADERS="$INSTALL_DST_MACOS/usr/local/include"
+	MACOS_HEADERS="$XCF_HEADERS_MACOS"
 	
 	xcodebuild -create-xcframework \
 		-library "$IOS_LIB" \
@@ -51,11 +75,11 @@ if [ "$OS" = "Darwin" ]; then
 		-headers "$MACOS_HEADERS" \
 		-output "$XCF_DST"
 	
-	if [ $? = 0 ]; then
+	if [ $? -eq 0 ]; then
 		echo "XCFramework created at $XCF_DST"
 		# Zip it
-		zip -r radare2.xcframework.zip "$XCF_DST"
-		echo "Zipped to radare2.xcframework.zip"
+		zip -r Radare2.xcframework.zip "$XCF_DST"
+		echo "Zipped to Radare2.xcframework.zip"
 	else
 		echo "Failed to create xcframework"
 		exit 1

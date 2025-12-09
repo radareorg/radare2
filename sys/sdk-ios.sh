@@ -136,7 +136,7 @@ if [ "${USE_SIMULATOR}" = 1 ]; then
 	sdkClean
 	if [ 1 = 0 ]; then
 		iosConfigure
-		if [ $? = 0 ]; then
+		if [ $? -eq 0 ]; then
 			export CPU="$SIMULATOR_ARCHS"
 			export SDK=iphonesimulator
 			echo "Building for simulator($SIMULATOR_ARCHS)"
@@ -159,7 +159,7 @@ fi
 if [ "${#ARCHS}" -gt 0 ]; then
 	sdkClean
 	iosConfigure
-	if [ "$?" = 0 ]; then
+	if [ $? -eq 0 ]; then
 		export CPU="$ARCHS"
 		export SDK=iphoneos
 		echo "Building for $CPU"
