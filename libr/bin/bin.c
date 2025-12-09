@@ -1295,6 +1295,15 @@ R_API RList* /*<RBinClass>*/ r_bin_get_classes(RBin *bin) {
 	return bo ? bo->classes : NULL;
 }
 
+R_API char* r_bin_get_types(RBin *bin) {
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
+	RBinFile *bf = r_bin_cur (bin);
+	if (bf && bf->bo && bf->bo->plugin && bf->bo->plugin->types) {
+		return bf->bo->plugin->types (bf);
+	}
+	return NULL;
+}
+
 /* returns vaddr, rebased with the baseaddr of bin, if va is enabled for bin, * paddr otherwise */
 R_API ut64 r_bin_get_vaddr(RBin *bin, ut64 paddr, ut64 vaddr) {
 	R_RETURN_VAL_IF_FAIL (bin && paddr != UT64_MAX, UT64_MAX);

@@ -49,6 +49,12 @@ static RCoreHelpMessage help_msg_ic = {
 	NULL
 };
 
+static RCoreHelpMessage help_msg_iy = {
+	"Usage: iy", "", "Display type information",
+	"iy", "", "List types (structs, enums, function signatures)",
+	NULL
+};
+
 static RCoreHelpMessage help_msg_iz = {
 	"Usage: iz", "[][jq*]", "List strings",
 	"iz", "", "strings in data sections (in JSON/Base64)",
@@ -2322,6 +2328,9 @@ static int cmd_info(void *data, const char *input) {
 		case 'c': // "ic?"
 			r_core_cmd_help (core, help_msg_ic);
 			break;
+		case 'y': // "iy?"
+			r_core_cmd_help (core, help_msg_iy);
+			break;
 		case 'd': // "id?"
 			r_core_cmd_help (core, help_msg_id);
 			break;
@@ -2593,6 +2602,15 @@ static int cmd_info(void *data, const char *input) {
 		break;
 	case 'c': // "ic"
 		cmd_ic (core, input + 1, pj, is_array, va);
+		break;
+	case 'y': // "iy"
+		{
+			char *types = r_bin_get_types (core->bin);
+			if (types) {
+				r_cons_println (core->cons, types);
+				free (types);
+			}
+		}
 		break;
 	case 'D': // "iD"
 		cmd_info_demangle (core, input, pj, mode);

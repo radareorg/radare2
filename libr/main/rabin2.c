@@ -102,6 +102,7 @@ static int rabin_show_help(int v) {
 			" -w              display try/catch blocks\n"
 			" -x              extract bins contained in file\n"
 			" -X [fmt] [f] .. package in fat or zip the given files and bins contained in file\n"
+			" -y              show types (structs, enums, function signatures)\n"
 			" -z              strings (from data section)\n"
 			" -zz             strings (from raw bins [e bin.str.raw=1])\n"
 			" -zzz            dump raw strings to stdout (for huge files)\n"
@@ -448,6 +449,16 @@ static int rabin_do_operation(RCons *cons, RBin *bin, const char *op, int rad, c
 			}
 		}
 		break;
+	case 'y':
+		{
+			char *types = r_bin_get_types (bin);
+			if (types) {
+				r_cons_println (cons, types);
+				r_cons_flush (cons);
+				free (types);
+			}
+		}
+		break;
 	case 'r':
 		r_bin_wr_scn_resize (bin, ptr, r_num_math (NULL, ptr2));
 		rc = r_bin_wr_output (bin, output);
@@ -697,7 +708,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	}
 #define unset_action(x) action &= ~x
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "DjJ:gAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEUlRwO:o:pPqQrTtvLhuxXzZ");
+	r_getopt_init (&opt, argc, argv, "DjJ:gAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEUlRwO:o:pPqQrTtvLhuxXzZy");
 	if (argc == 2 && !strcmp (argv[1], "-J")) {
 		rabin_show_env (false);
 		r_core_fini (&core);
@@ -833,6 +844,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		case 'R': set_action (R_BIN_REQ_RELOCS); break;
 		case 'x': set_action (R_BIN_REQ_EXTRACT); break;
 		case 'X': set_action (R_BIN_REQ_PACKAGE); break;
+		case 'y': set_action (R_BIN_REQ_TYPES); break;
 		case 'O':
 			op = opt.arg;
 			set_action (R_BIN_REQ_OPERATION);
@@ -1285,6 +1297,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	run_action ("size", R_BIN_REQ_SIZE, R_CORE_BIN_ACC_SIZE);
 	run_action ("versioninfo", R_BIN_REQ_VERSIONINFO, R_CORE_BIN_ACC_VERSIONINFO);
 	run_action ("signature", R_BIN_REQ_SIGNATURE, R_CORE_BIN_ACC_SIGNATURE);
+	run_action ("types", R_BIN_REQ_TYPES, R_CORE_BIN_ACC_TYPES);
 	run_action ("hashes", R_BIN_REQ_HASHES, R_CORE_BIN_ACC_HASHES);
 	run_action ("sections mapping", R_BIN_REQ_SECTIONS_MAPPING, R_CORE_BIN_ACC_SECTIONS_MAPPING);
 	if (action & R_BIN_REQ_SRCLINE) {

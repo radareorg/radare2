@@ -54,23 +54,24 @@ R_LIB_VERSION_HEADER (r_bin);
 #define R_BIN_REQ_LISTARCHS 0x004000
 #define R_BIN_REQ_CREATE    0x008000
 #define R_BIN_REQ_CLASSES   0x010000
-#define R_BIN_REQ_ADDRLINE  0x020000
-#define R_BIN_REQ_SIZE      0x040000
-#define R_BIN_REQ_PDB       0x080000
-#define R_BIN_REQ_PDB_DWNLD 0x100000
-#define R_BIN_REQ_DLOPEN    0x200000
-#define R_BIN_REQ_EXPORTS   0x400000
-#define R_BIN_REQ_VERSIONINFO 0x800000
-#define R_BIN_REQ_PACKAGE   0x1000000
-#define R_BIN_REQ_HEADER    0x2000000
-#define R_BIN_REQ_LISTPLUGINS 0x4000000
-#define R_BIN_REQ_RESOURCES 0x8000000
-#define R_BIN_REQ_INITFINI  0x10000000
-#define R_BIN_REQ_SEGMENTS  0x20000000
-#define R_BIN_REQ_HASHES    0x40000000
-#define R_BIN_REQ_SIGNATURE 0x80000000
-#define R_BIN_REQ_TRYCATCH 0x100000000
-#define R_BIN_REQ_SECTIONS_MAPPING 0x200000000
+#define R_BIN_REQ_TYPES     0x020000
+#define R_BIN_REQ_ADDRLINE  0x040000
+#define R_BIN_REQ_SIZE      0x080000
+#define R_BIN_REQ_PDB       0x100000
+#define R_BIN_REQ_PDB_DWNLD 0x200000
+#define R_BIN_REQ_DLOPEN    0x400000
+#define R_BIN_REQ_EXPORTS   0x800000
+#define R_BIN_REQ_VERSIONINFO 0x1000000
+#define R_BIN_REQ_PACKAGE   0x2000000
+#define R_BIN_REQ_HEADER    0x4000000
+#define R_BIN_REQ_LISTPLUGINS 0x8000000
+#define R_BIN_REQ_RESOURCES 0x10000000
+#define R_BIN_REQ_INITFINI  0x20000000
+#define R_BIN_REQ_SEGMENTS  0x40000000
+#define R_BIN_REQ_HASHES    0x80000000
+#define R_BIN_REQ_SIGNATURE 0x100000000
+#define R_BIN_REQ_TRYCATCH 0x200000000
+#define R_BIN_REQ_SECTIONS_MAPPING 0x400000000
 
 // TODO integrate with R_BIN_ATTR
 #define R_BIN_BIND_LOCAL_STR "LOCAL"
@@ -656,6 +657,7 @@ typedef struct r_bin_plugin_t {
 	char* (*demangle)(const char *str);
 	char* (*regstate)(RBinFile *bf);
 	bool (*cmd)(RBinFile *bf, const char *command);
+	char* (*types)(RBinFile *bf);
 	// TODO: R2_600 RBuffer* (*create)(RBin *bin, RBinCreateOptions *opt);
 	/* default value if not specified by user */
 	int minstrlen;
@@ -864,6 +866,7 @@ R_API RRBTree *r_bin_patch_relocs(RBinFile *bin);
 R_API RRBTree *r_bin_get_relocs(RBin *bin);
 R_API RList *r_bin_get_sections(RBin *bin);
 R_API RList *r_bin_get_classes(RBin *bin);
+R_API char* r_bin_get_types(RBin *bin);
 R_API RList *r_bin_get_strings(RBin *bin);
 R_API RList *r_bin_file_get_trycatch(RBinFile *bf);
 R_API RList *r_bin_get_symbols(RBin *bin);

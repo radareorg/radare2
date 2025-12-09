@@ -353,6 +353,60 @@ static RList* classes(RBinFile *bf) {
 	return ret;
 }
 
+#ifndef R_BIN_PE64
+static char* types(RBinFile *bf) {
+	RBinPEObj *pe = PE_(get) (bf);
+	if (!pe || !pe->dos_header || !pe->nt_headers) {
+		return NULL;
+	}
+
+	RBuffer *buf = bf->buf;
+	const ut8 *data = r_buf_data (buf, NULL);
+	size_t size = r_buf_size (buf);
+	ut64 image_base = PE_(r_bin_pe_get_image_base)(pe);
+	RList *dotnet_symbols = dotnet_parse (data, size, image_base);
+	if (r_list_empty (dotnet_symbols)) {
+		r_list_free (dotnet_symbols);
+		return NULL;
+	}
+
+	RStrBuf *sb = r_strbuf_new ("");
+	if (!sb) {
+		r_list_free (dotnet_symbols);
+		return NULL;
+	}
+
+	RListIter *iter_sym;
+	DotNetSymbol *dsym;
+	r_list_foreach (dotnet_symbols, iter_sym, dsym) {
+		if (!dsym->name) {
+			continue;
+		}
+		if (dsym->type && !strcmp (dsym->type, "typedef")) {
+			// Struct/class
+			const char *ns = dsym->namespace ? dsym->namespace : "";
+			r_strbuf_appendf (sb, "struct %s%s%s {\n", ns, *ns ? "." : "", dsym->name);
+			if (dsym->fields) {
+				RListIter *iter_field;
+				DotNetField *field;
+				r_list_foreach (dsym->fields, iter_field, field) {
+					if (field->name) {
+						r_strbuf_appendf (sb, "  %s;\n", field->name);
+					}
+				}
+			}
+			r_strbuf_append (sb, "};\n\n");
+		} else if (dsym->type && !strcmp (dsym->type, "methoddef")) {
+			// Function signature
+			r_strbuf_appendf (sb, "void %s();\n", dsym->name);
+		}
+	}
+
+	r_list_free (dotnet_symbols);
+	return r_strbuf_drain (sb);
+}
+#endif
+
 static RList* symbols(RBinFile *bf) {
 	RList *ret = NULL;
 	RBinSymbol *ptr = NULL;
