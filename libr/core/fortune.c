@@ -75,6 +75,7 @@ static char *getRandomLine(RCore *core) {
 	if (!r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
 		return NULL;
 	}
+	/* pick a random fortune type */
 	const char *ft = r_config_get (core->config, "cfg.fortunes.type");
 	RList *types = r_str_split_duplist (ft, ",", false);
 	if (r_list_empty (types)) {
@@ -95,16 +96,11 @@ static char *getRandomLine(RCore *core) {
 	if (!content) {
 		return NULL;
 	}
+	/* pick a random fortune message */
 	RList *line_starts = r_str_split_list (content, "\n", false);
-	if (r_list_empty (line_starts)) {
-		r_list_free (line_starts);
-		free (content);
-		return NULL;
-	}
-	int num_lines = r_list_length (line_starts);
-	int rand_idx = r_num_rand (num_lines);
+	int rand_idx = r_num_rand (r_list_length (line_starts));
 	char *selected_line = r_list_get_n (line_starts, rand_idx);
-	char *result = strdup (selected_line);
+	char *result = selected_line? strdup (selected_line): NULL;
 	r_list_free (line_starts);
 	free (content);
 	return result;
