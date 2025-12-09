@@ -737,26 +737,38 @@ static void sbpf_print_string_xrefs(RAnal *anal) {
 	r_list_free (refs);
 }
 
+static RCoreHelpMessage help_msg_a_sbpf = {
+	"Usage:", "aex", "[a] [9090]",
+	"aex", " 90", "decode the given hexpairs and execute them",
+	"aexa", " mov rax, 33", "assemble instruction and execute it",
+	NULL
+};
+
 static bool sbpfcmd(RAnal *anal, const char *cmd) {
 	R_RETURN_VAL_IF_FAIL (anal && cmd, false);
 
-	if (r_str_startswith (cmd, "sbpf.analyze")) {
-		const char *result = sbpf_analyze_strings (anal)? "completed": "failed";
-		R_LOG_INFO ("sBPF string analysis %s", result);
-		return true;
-	}
-
-	if (r_str_startswith (cmd, "sbpf.strings")) {
-		sbpf_print_string_xrefs (anal);
-		return true;
-	}
-
 	if (r_str_startswith (cmd, "sbpf")) {
-		eprintf ("sBPF analysis plugin commands:\n");
-		eprintf ("  a:sbpf.analyze  - Analyze sBPF strings and create flags\n");
-		eprintf ("  a:sbpf.strings  - Display sBPF strings\n");
+		if (r_str_startswith (cmd, "sbpf.analyze")) {
+			const char *result = sbpf_analyze_strings (anal)? "completed": "failed";
+			R_LOG_INFO ("sBPF string analysis %s", result);
+			return true;
+		}
+		if (r_str_startswith (cmd, "sbpf.strings")) {
+			sbpf_print_string_xrefs (anal);
+			return true;
+		}
+		if (cmd[4] == '?') {
+			RCore *core = anal->coreb.core;
+			RCons *cons = core->cons;
+			// eprintf ("sBPF analysis plugin commands:\n");
+			r_cons_println (cons, "| a:sbpf.analyze  - Analyze sBPF strings and create flags\n");
+			r_cons_println (cons, "| a:sbpf.strings  - Display sBPF strings\n");
+			return true;
+		}
+		R_LOG_ERROR ("Unknown subcommand. See 'a:sbpf?' for more details");
 		return true;
 	}
+
 
 	return false;
 }

@@ -21,6 +21,11 @@ static RCoreHelpMessage help_msg_aex = {
 	NULL
 };
 
+static RCoreHelpMessage help_msg_acolon = {
+	"Usage:", "a:", "[plugin-command]  (see 'aL' for all the anal plugins)",
+	NULL
+};
+
 static RCoreHelpMessage help_msg_a = {
 	"Usage:", "a", "[abdefFghoprxstc] [...]",
 	"a", "", "alias for aai - analysis information",
@@ -334,13 +339,6 @@ static RCoreHelpMessage help_msg_ac = {
 	"acmn", " [class name] [method name] [new name]", "rename method",
 	"acg", "", "print inheritance ascii graph",
 	"ac?", "", "show this help",
-	NULL
-};
-
-static RCoreHelpMessage help_msg_acolon = {
-	"Usage:", "a:", "[plugin-command]",
-	"a:", "", "list the analysis plugins",
-	"a:", "a2f", "run the command associated with the 'a2f' analysis plugin",
 	NULL
 };
 
@@ -16314,8 +16312,30 @@ static int cmd_anal(void *data, const char *input) {
 		break;
 	case ':': // "a:"
 		if (input[1] == '?') {
+			RListIter *iter;
+			RAnalPlugin *ap;
 			r_core_cmd_help (core, help_msg_acolon);
-		} else if (input[1] == 'l' || !input[1]) {
+			r_list_foreach (core->anal->plugins, iter, ap) {
+				if (ap->cmd) {
+					char *res = r_core_cmd_strf (core, "a:%s?", ap->meta.name);
+					RList *lines = r_str_split_list (res, "\n", 0);
+					RListIter *iter;
+					const char *line;
+					bool hashelp = false;
+					r_list_foreach (lines, iter, line) {
+						if (*line == '|') {
+							hashelp = true;
+							r_cons_println (core->cons, line);
+						}
+					}
+					free (res);
+					r_list_free (lines);
+					if (!hashelp) {
+						r_cons_printf (core->cons, "a:%s    missing help\n", ap->meta.name);
+					}
+				}
+			}
+		} else if (!input[1]) {
 			RListIter *iter;
 			RAnalPlugin *ap;
 			r_list_foreach (core->anal->plugins, iter, ap) {

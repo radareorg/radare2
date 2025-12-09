@@ -1,10 +1,14 @@
-/* radare - LGPL - Copyright 2023 - pancake */
+/* radare - LGPL - Copyright 2023-2025 - pancake */
 
 #include <r_anal.h>
+#include <r_core.h>
 
 static bool nullcmd(RAnal *anal, const char *cmd) {
 	if (r_str_startswith (cmd, "null")) {
-		R_LOG_INFO ("nothing to see");
+		if (cmd[4] == '?') {
+			RCore *core = anal->coreb.core;
+			r_cons_println (core->cons, "| a:null    do nothing");
+		}
 		return true;
 	}
 	return false;

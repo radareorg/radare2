@@ -173,5 +173,6 @@ void BinaryParserLibrary.BinaryParser.ProcessSections();
 void BinaryParserLibrary.BinaryParser.CalculateChecksum();
 void BinaryParserLibrary.BinaryParser.AnalyzeMetadata();
 void BinaryParserLibrary.BinaryParser.RunAnalysis();
+
 EOF
 RUN
