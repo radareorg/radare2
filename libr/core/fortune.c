@@ -32,10 +32,8 @@ static void collect_fortune_types_from_dir(RList *types, const char *base_path) 
 			} else {
 				// Check for directories (directory name is the type)
 				char *full_path = r_file_new (base_path, file, NULL);
-				if (full_path && r_file_is_directory (full_path)) {
-					if (!r_list_find (types, file, (RListComparator)strcmp)) {
-						r_list_append (types, strdup (file));
-					}
+				if (full_path && r_file_is_directory (full_path) && !r_list_find (types, file, (RListComparator)strcmp)) {
+					r_list_append (types, strdup (file));
 				}
 				free (full_path);
 			}
@@ -57,14 +55,12 @@ static char *slurp_directory_contents(const char *dir_path) {
 	r_list_foreach (files, iter, f) {
 		if (r_str_endswith (f, ".txt")) {
 			char *file_path = r_file_new (dir_path, f, NULL);
-			if (file_path) {
-				char *file_content = r_file_slurp (file_path, NULL);
-				if (file_content) {
-					r_strbuf_append (content_buf, file_content);
-					free (file_content);
-				}
-				free (file_path);
+			char *file_content = r_file_slurp (file_path, NULL);
+			if (file_content) {
+				r_strbuf_append (content_buf, file_content);
+				free (file_content);
 			}
+			free (file_path);
 		}
 	}
 	r_list_free (files);
@@ -72,9 +68,7 @@ static char *slurp_directory_contents(const char *dir_path) {
 }
 
 static char *slurp_fortune_path(const char *path) {
-	if (!path) {
-		return NULL;
-	}
+	R_RETURN_VAL_IF_FAIL (path, NULL);
 	return r_file_is_directory (path)
 		? slurp_directory_contents (path)
 		: r_file_slurp (path, NULL);
@@ -86,11 +80,10 @@ static char *getFortuneContent(RCore *core, const char *type) {
 	RStrBuf *sb = r_strbuf_new (NULL);
 	r_strf_var (fname, 64, "%s.txt", type);
 
+// AITODO duplicated code here
 	// Collect from xdg path (directory or .txt file)
-	char *path = check_path (xdg_fortunes, type, r_file_is_directory);
-	if (!path) {
-		path = check_path (xdg_fortunes, fname, r_file_exists);
-	}
+	char *path = check_path (xdg_fortunes, type, r_file_is_directory)
+		?: check_path (xdg_fortunes, fname, r_file_exists);
 	if (path) {
 		char *content = slurp_fortune_path (path);
 		if (content) {
@@ -100,11 +93,10 @@ static char *getFortuneContent(RCore *core, const char *type) {
 		free (path);
 	}
 
+// AITODO duplicated code here
 	// Collect from system path (directory or .txt file)
-	path = check_path (fortunes_dir, type, r_file_is_directory);
-	if (!path) {
-		path = check_path (fortunes_dir, fname, r_file_exists);
-	}
+	path = check_path (fortunes_dir, type, r_file_is_directory)
+		?: check_path (fortunes_dir, fname, r_file_exists);
 	if (path) {
 		char *content = slurp_fortune_path (path);
 		if (content) {
@@ -139,21 +131,31 @@ static char *getRandomLine(RCore *core) {
 	}
 	/* pick a random fortune message, filtering out empty lines */
 	RList *all_lines = r_str_split_list (content, "\n", false);
-	RList *lines = r_list_newf (NULL);
-	RListIter *iter;
+	char *result = NULL;
 	char *line;
+	RListIter *iter;
+	
+	// Count non-empty lines first
+	int count = 0;
 	r_list_foreach (all_lines, iter, line) {
 		if (R_STR_ISNOTEMPTY (line)) {
-			r_list_append (lines, line);
+			count++;
 		}
 	}
-	char *result = NULL;
-	if (!r_list_empty (lines)) {
-		int rand_idx = r_num_rand (r_list_length (lines));
-		char *selected_line = r_list_get_n (lines, rand_idx);
-		result = strdup (selected_line);
+	
+	if (count > 0) {
+		int rand_idx = r_num_rand (count);
+		int current = 0;
+		r_list_foreach (all_lines, iter, line) {
+			if (R_STR_ISNOTEMPTY (line)) {
+				if (current == rand_idx) {
+					result = strdup (line);
+					break;
+				}
+				current++;
+			}
+		}
 	}
-	r_list_free (lines);
 	r_list_free (all_lines);
 	free (content);
 	return result;
@@ -179,19 +181,17 @@ R_API void r_core_fortune_print_random(RCore *core) {
 		return;
 	}
 	char *line = getRandomLine (core);
-	if (line) {
-		if (R_STR_ISEMPTY (line)) {
-			R_LOG_WARN ("No fortune in this cookie");
+	if (R_STR_ISEMPTY (line)) {
+		R_LOG_WARN ("No fortune in this cookie");
+	} else {
+		if (r_config_get_b (core->config, "cfg.fortunes.clippy")) {
+			r_core_clippy (core, line);
 		} else {
-			if (r_config_get_b (core->config, "cfg.fortunes.clippy")) {
-				r_core_clippy (core, line);
-			} else {
-				r_cons_printf (core->cons, " -- %s\n", line);
-			}
-			if (r_config_get_b (core->config, "cfg.fortunes.tts")) {
-				r_sys_tts (line, true);
-			}
+			r_cons_printf (core->cons, " -- %s\n", line);
 		}
-		free (line);
+		if (r_config_get_b (core->config, "cfg.fortunes.tts")) {
+			r_sys_tts (line, true);
+		}
 	}
+	free (line);
 }
