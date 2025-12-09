@@ -165,15 +165,14 @@ fi
 umask 0002
 
 
-${SHELL} --version 2> /dev/null | grep -q fish
+[ -z "${SHELL}" ] && SHELL=/bin/sh
+${SHELL} --help 2>&1 | grep -q BusyBox
 if [ $? = 0 ]; then
-	SHELL=/bin/sh
+	echo "We have ash and that's fine"
 else
-	# TCSH
-	${SHELL} --help 2>&1 | grep -q vfork
+	${SHELL} --version 2> /dev/null | grep -q fish
 	if [ $? = 0 ]; then
 		SHELL=/bin/sh
-		echo IS ASH
 	fi
 fi
 
