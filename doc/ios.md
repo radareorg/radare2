@@ -15,7 +15,7 @@ It is also possible to build r2 natively on your iDevice by following the standa
 For incremental compilations or daily development you should:
 
 ```sh
-$ sys/ios-sdk.sh -s
+$ sys/sdk-ios.sh -s
 ```
 
 To get a shell with all the environment variables set to build for iOS instead of Mac.

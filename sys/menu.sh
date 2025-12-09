@@ -202,7 +202,7 @@ BuildAndInstall() {
 			KEEP_PLUGINS_CFG=1 sys/user.sh
 			;;
 		"iOS")
-			sys/ios-sdk.sh
+			sys/sdk-ios.sh
 			;;
 		"OSX")
 			sys/osx-pkg.sh
