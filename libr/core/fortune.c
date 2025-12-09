@@ -80,8 +80,7 @@ static char *getRandomLine(RCore *core) {
 			}
 			r_list_free (files);
 			if (!r_list_empty (txt_files)) {
-				int num_txt = r_list_length (txt_files);
-				int rand_idx = r_num_rand (num_txt);
+				int rand_idx = r_num_rand (r_list_length (txt_files));
 				char *txt_file = r_list_get_n (txt_files, rand_idx);
 				selected_file = r_file_new (file, txt_file, NULL);
 			}
@@ -116,10 +115,6 @@ static char *getRandomLine(RCore *core) {
 
 R_IPI RList *r_core_fortune_types(void) {
 	RList *types = r_list_newf (free);
-	if (!types) {
-		return NULL;
-	}
-
 	if (r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
 		char *xdg_fortunes = r_xdg_datadir ("fortunes");
 		char *sys_fortunes = r_file_new (r_sys_prefix (NULL), R2_FORTUNES, NULL);
