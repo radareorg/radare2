@@ -251,6 +251,7 @@ install: install-doc install-man install-panels install-www install-pkgconfig
 	cp -rf scripts/*.js scripts/*.py "${DESTDIR}${DATADIR}/radare2/${VERSION}/scripts"
 	rm -rf "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud"
+	rm -rf "${DESTDIR}${DATADIR}/radare2/${VERSION}/fortunes"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/fortunes"
 	cp -rf doc/fortunes/*.txt "${DESTDIR}${DATADIR}/radare2/${VERSION}/fortunes"
 	mkdir -p "${DESTDIR}${BINDIR}"
