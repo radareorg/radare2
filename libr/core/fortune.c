@@ -1,42 +1,37 @@
-/* radare2 - LGPL - Copyright 2009-2024 - pancake, condret */
+/* radare2 - LGPL - Copyright 2009-2025 - pancake, condret */
 
 #include <r_core.h>
 
-static char *getFortuneFile(RCore *core, const char *type) {
-	if (!r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
-		return NULL;
-	}
-
-	char *fortunedir = r_xdg_datadir ("fortunes");
-	char *subdir = r_file_new (fortunedir, type, NULL);
-	free (fortunedir);
-	if (subdir && r_file_is_directory (subdir)) {
-		return subdir;
-	}
-	free (subdir);
-
-	subdir = r_file_new (r_sys_prefix (NULL), R2_FORTUNES, type, NULL);
-	if (subdir && r_file_is_directory (subdir)) {
-		return subdir;
-	}
-	free (subdir);
-
-	r_strf_var (fname, 64, "fortunes.%s", type);
-	fortunedir = r_xdg_datadir ("fortunes");
-	char *path = r_file_new (fortunedir, fname, NULL);
-	free (fortunedir);
-	if (path && r_file_exists (path)) {
-		return path;
-	}
-	free (path);
-	path = r_file_new (r_sys_prefix (NULL), R2_FORTUNES, fname, NULL);
-	if (path && r_file_exists (path)) {
+static char *check_path(char *base_path, const char *name, bool (*check_func)(const char *)) {
+	char *path = r_file_new (base_path, name, NULL);
+	if (path && check_func (path)) {
 		return path;
 	}
 	free (path);
 	return NULL;
 }
 
+static char *getFortuneFile(RCore *core, const char *type) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
+		return NULL;
+	}
+	char *xdg_fortunes = r_xdg_datadir ("fortunes");
+	char *sys_fortunes = r_file_new (r_sys_prefix (NULL), R2_FORTUNES, NULL);
+	char *result = check_path (xdg_fortunes, type, r_file_is_directory);
+	if (!result) {
+		result = check_path (sys_fortunes, type, r_file_is_directory);
+		if (!result) {
+			r_strf_var (fname, 64, "fortunes.%s", type);
+			result = check_path (xdg_fortunes, fname, r_file_exists);
+			if (!result) {
+				result = check_path (sys_fortunes, fname, r_file_exists);
+			}
+		}
+	}
+	free (xdg_fortunes);
+	free (sys_fortunes);
+	return result;
+}
 
 static char *getrandomline(RCore *core) {
 	const char *ft = r_config_get (core->config, "cfg.fortunes.type");
