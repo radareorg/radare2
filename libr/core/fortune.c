@@ -22,19 +22,8 @@ static void collect_fortune_types_from_dir(RList *types, const char *base_path) 
 	RListIter *iter;
 	char *file;
 	r_list_foreach (files, iter, file) {
-		if (*file != '.') {
-			char *path = r_file_new (base_path, file, NULL);
-			if (path) {
-				if (r_str_startswith (file, "fortunes.") && !r_file_is_directory (path)) {
-					char *type = strdup (file + 9);
-					if (type) {
-						r_list_append (types, type);
-					}
-				} else if (r_file_is_directory (path)) {
-					r_list_append (types, strdup (file));
-				}
-				free (path);
-			}
+		if (*file != '.' && r_str_startswith (file, "fortunes.") && file[9]) {
+			r_list_append (types, strdup (file + 9));
 		}
 	}
 	r_list_free (files);
