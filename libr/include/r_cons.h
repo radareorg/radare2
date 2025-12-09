@@ -449,6 +449,7 @@ typedef struct r_cons_context_t {
 	bool pageable;
 
 	int color_mode;
+	int scrcolorlimit; // maximum color mode allowed based on TERM detection
 	RConsPalette cpal;
 	RConsPrintablePalette pal;
 
