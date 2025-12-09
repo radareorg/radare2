@@ -183,6 +183,7 @@ if host_machine.system() == 'windows'
   r2_sdb = join_paths(r2_datdir)
   r2_zigns = join_paths(r2_datdir, 'zigns')
   r2_scripts = join_paths(r2_datdir, 'scripts')
+  r2_docdir = join_paths(r2_datdir, 'doc', 'radare2')
   r2_themes = join_paths(r2_datdir, 'cons')
   r2_panels = join_paths(r2_datdir, 'panels')
   r2_platform = join_paths(r2_datdir, 'platform')
