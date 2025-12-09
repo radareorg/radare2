@@ -11,7 +11,7 @@
 
 static R_TH_LOCAL RList *dirstack = NULL;
 
-static char *showfile(char *res, const int nth, const char *fpath, const char *name, int printfmt, bool needs_newline) {
+static char *showfile(char *res, const int nth, const char *fpath, const char *name, int printfmt, bool needs_newline, int column_width) {
 #if R2__UNIX__
 	struct stat sb;
 #endif
@@ -35,7 +35,7 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 	}
 	perm = isdir? 0755: 0644;
 	if (!printfmt) {
-		res = r_str_appendf (res, "%18s%s", nn, needs_newline? "\n": "  ");
+		res = r_str_appendf (res, "%-*s%s", column_width, nn, needs_newline? "\n": "  ");
 		free (nn);
 		return res;
 	}
@@ -249,7 +249,7 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 		pattern = strdup ("*");
 	}
 	if (r_file_is_regular (path)) {
-		res = showfile (res, 0, path, path, printfmt, false);
+		res = showfile (res, 0, path, path, printfmt, false, 18);
 		free (homepath);
 		free (pattern);
 		free (d);
@@ -264,11 +264,23 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 	}
 	r_list_sort (files, (RListComparator)strcmp);
 
+	int max_name_len = 0;
+	r_list_foreach (files, iter, name) {
+		int len = strlen (name);
+		if (len > max_name_len) max_name_len = len;
+	}
+
 	if (path[strlen (path) - 1] == '/') {
 		dir = strdup (path);
 	} else {
 		dir = r_str_append (strdup (path), "/");
 	}
+	int max_len = strlen (dir) + max_name_len + 1;
+	int column_width = max_len + 2;
+	if (column_width > cons_width / 2) {
+		column_width = cons_width / 2;
+	}
+	if (column_width < 12) column_width = 12;
 	int nth = 0;
 	if (printfmt == FMT_JSON) {
 		res = strdup ("[");
@@ -282,16 +294,19 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 		}
 		if (r_str_glob (name, pattern)) {
 			if (*n) {
-				int namelen = strlen (name);
-				linelen += (namelen > 20)? namelen*2: 32;
+				bool isdir = r_file_is_directory (n);
+				char *nn = isdir ? r_str_append (strdup (n), "/") : strdup (n);
+				int display_len = strlen (nn);
+				linelen += R_MAX (column_width, display_len) + 2;
 				if (linelen > cons_width) {
 					needs_newline = true;
 				}
-				res = showfile (res, nth, n, name, printfmt, needs_newline);
+				res = showfile (res, nth, n, name, printfmt, needs_newline, column_width);
 				if (needs_newline) {
 					needs_newline = false;
 					linelen = 0;
 				}
+				free (nn);
 			}
 			nth++;
 		}
