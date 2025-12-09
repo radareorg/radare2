@@ -396,6 +396,7 @@ struct r_core_t {
 	char *cmdremote;
 	char *lastsearch;
 	char *cmdfilter;
+	char *sessionfile;
 	bool break_loop;
 	RList *undos;
 	int undoindex;
@@ -886,6 +887,8 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input);
 R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path);
 R_API int r_core_rtr_http_stop(RCore *u);
 R_API int r_core_rtr_gdb(RCore *core, int launch, const char *path);
+R_API bool r_core_session_register(RCore *core, const char *uri, int port);
+R_API bool r_core_session_unregister(RCore *core);
 
 R_API int r_core_visual_prevopsz(RCore *core, ut64 addr);
 R_API void r_core_visual_config(RCore *core);

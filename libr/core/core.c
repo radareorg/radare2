@@ -2642,6 +2642,7 @@ R_API bool r_core_init(RCore *core) {
 	core->sdb = sdb_new (NULL, "r2kv.sdb", 0); // XXX: path must be in home?
 	core->lastsearch = NULL;
 	core->cmdfilter = NULL;
+	core->sessionfile = NULL;
 	core->switch_file_view = 0;
 	core->cmdremote = 0;
 	core->incomment = false;
@@ -2895,6 +2896,7 @@ R_API void r_core_fini(RCore *c) {
 	r_table_free (c->table);
 	R_FREE (c->cmdlog);
 	free (c->lastsearch);
+	free (c->sessionfile);
 	r_list_free (c->cmdqueue);
 	free (c->lastcmd);
 	free (c->stkcmd);

@@ -1125,21 +1125,11 @@ static void session_listen(RCore *core) {
 	r_strf_var (sport, 80, "%d", port);
 	r_config_set (core->config, "http.port", sport);
 	r_config_set_b (core->config, "http.sandbox", false);
-	int pid = r_sys_getpid ();
-	char *tmpdir = r_file_tmpdir ();
-	char *tmpdir_r2 = r_str_newf ("%s/r2", tmpdir);
-	r_sys_mkdir (tmpdir_r2);
-	char *fn = r_str_newf ("%s/%d.pid", tmpdir_r2, pid);
-	char *s = r_str_newf ("r2web://127.0.0.1:%d/cmd", port);
-	if (r_file_dump (fn, (const ut8*)s, strlen (s), false)) {
+	if (r_core_session_register (core, "r2web", port)) {
 		r_core_cmd0 (core, "=h&");
 	} else {
-		R_LOG_ERROR ("Cannot create socket file %s", s);
+		R_LOG_ERROR ("Cannot create session file");
 	}
-	free (s);
-	free (fn);
-	free (tmpdir_r2);
-	free (tmpdir);
 }
 
 static void session_list(RCore *core, int mode) {
@@ -1168,14 +1158,29 @@ static void session_list(RCore *core, int mode) {
 				}
 #endif
 				if (show) {
+					/* Parse URI and filename from data (format: uri#filename) */
+					char *uri = strdup (data);
+					char *filename = "";
+					char *hash = strchr (uri, '#');
+					if (hash) {
+						*hash = '\0';
+						filename = hash + 1;
+					}
+
 					if (pj) {
 						pj_o (pj);
-						pj_ks (pj, "uri", data);
+						pj_ks (pj, "uri", uri);
 						pj_kn (pj, "pid", fpid);
+						pj_ks (pj, "file", filename);
 						pj_end (pj);
 					} else {
-						r_cons_printf (core->cons, "r2 %s # pid %d\n", data, fpid);
+						if (*filename) {
+							r_cons_printf (core->cons, "r2 %s # pid %d (%s)\n", uri, fpid, filename);
+						} else {
+							r_cons_printf (core->cons, "r2 %s # pid %d\n", uri, fpid);
+						}
 					}
+					free (uri);
 				}
 			}
 			free (ffn);

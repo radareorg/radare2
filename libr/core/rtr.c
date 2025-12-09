@@ -1409,4 +1409,52 @@ R_API bool r_core_rtr_cmds(RCore *core, const char * R_NULLABLE port) {
 	return true;
 }
 
+/* Session registration API - used to track HTTP sessions for r2agent -L */
+R_API bool r_core_session_register(RCore *core, const char *uri, int port) {
+	if (!core || !uri) {
+		return false;
+	}
+	char *tmpdir = r_file_tmpdir ();
+	char *tmpdir_r2 = r_str_newf ("%s/r2", tmpdir);
+	r_sys_mkdir (tmpdir_r2);
+	int pid = r_sys_getpid ();
+	char *fn = r_str_newf ("%s/%d.pid", tmpdir_r2, pid);
+
+	/* Get filename or project name for context */
+	const char *filename = "";
+	if (core->io && core->io->desc && core->io->desc->name) {
+		filename = r_file_basename (core->io->desc->name);
+	} else if (core->prj && core->prj->name) {
+		filename = core->prj->name;
+	}
+
+	/* Store URI and filename separated by # for parsing */
+	char *suri = r_str_newf ("%s://%s:%d/cmd#%s", uri,
+		r_config_get (core->config, "http.bind"), port, filename);
+	bool res = r_file_dump (fn, (const ut8 *)suri, strlen (suri), false);
+	if (res) {
+		/* Store pidfile path in core for cleanup */
+		if (core->sessionfile) {
+			free (core->sessionfile);
+		}
+		core->sessionfile = fn;
+	} else {
+		free (fn);
+	}
+	free (suri);
+	free (tmpdir_r2);
+	free (tmpdir);
+	return res;
+}
+
+R_API bool r_core_session_unregister(RCore *core) {
+	if (!core || !core->sessionfile) {
+		return false;
+	}
+	r_file_rm (core->sessionfile);
+	free (core->sessionfile);
+	core->sessionfile = NULL;
+	return true;
+}
+
 #endif
