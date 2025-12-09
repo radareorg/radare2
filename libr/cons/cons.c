@@ -121,11 +121,11 @@ static void mark_free(RConsMark *m) {
 
 /*
  * Update the scrcolorlimit based on TERM environment variable.
- * 
- * This function provides a basic, hard-coded mapping from TERM values to 
+ *
+ * This function provides a basic, hard-coded mapping from TERM values to
  * maximum color capabilities. It is intentionally simple and does not implement
  * full terminfo/capability detection.
- * 
+ *
  * LIMITATIONS NOT YET IMPLEMENTED:
  * - No detection of truecolor/RGB support via COLORTERM environment variable
  * - No terminfo/termcap-based capability detection
@@ -143,7 +143,7 @@ static void rcons_update_scrcolorlimit_from_term(RCons *cons) {
 	if (R_STR_ISNOTEMPTY (term)) {
 		if (!strcmp (term, "dumb")) {
 			limit = COLOR_MODE_DISABLED;
-		} else if (!strcmp (term, "vt100") || !strcmp (term, "vt102") || 
+		} else if (!strcmp (term, "vt100") || !strcmp (term, "vt102") ||
 			   !strcmp (term, "vt220") || !strcmp (term, "vt200") ||
 			   !strncmp (term, "vt2", 3)) {
 			limit = COLOR_MODE_DISABLED;
