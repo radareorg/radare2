@@ -1452,9 +1452,7 @@ static bool symbols_vec(RBinFile *bf) {
 
 static RList *classes(RBinFile *bf) {
 	RKernelCacheObj *obj = (RKernelCacheObj*) bf->bo->bin_obj;
-
 	RList *list = r_list_newf ((RListFree) r_bin_class_free);
-
 	int i;
 	RKext *kext;
 	r_kext_index_foreach (obj->kexts, i, kext) {
@@ -1462,10 +1460,10 @@ static RList *classes(RBinFile *bf) {
 		RIOKitClass *c;
 		r_list_foreach (kext->classes, iter, c) {
 			RIOKitClass *parent = ht_up_find (obj->class_by_handle, c->supermeta_va, NULL);
-
 			RBinClass *klass = r_bin_class_new (c->name, parent ? parent->name : "", R_BIN_ATTR_PUBLIC);
 			klass->instance_size = c->size;
 			klass->addr = c->meta_va;
+			klass->origin = R_BIN_CLASS_ORIGIN_BIN;
 			r_list_append (list, klass);
 		}
 	}
