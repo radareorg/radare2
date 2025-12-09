@@ -4194,6 +4194,11 @@ R_API int r_core_config_init(RCore *core) {
 	free (fortune_desc);
 	SETB ("cfg.fortunes.clippy", "false", "use ?E instead of ?e");
 	SETB ("cfg.fortunes.tts", "false", "speak out the fortune");
+	{
+		char *default_fortunes_dir = r_file_new (r_sys_prefix (NULL), R2_FORTUNES, NULL);
+		SETS ("dir.fortunes", default_fortunes_dir, "directory to load fortune files from");
+		free (default_fortunes_dir);
+	}
 	SETS ("cfg.prefixdump", "dump", "filename prefix for automated dumps");
 	SETCB ("cfg.sandbox", "false", &cb_cfgsanbox, "sandbox mode disables systems and open on upper directories");
 	SETCB ("cfg.sandbox.grain", "all", &cb_cfgsanbox_grain, "select which sand grains must pass the filter (all, net, files, socket, exec, disk)");

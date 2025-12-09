@@ -2,7 +2,7 @@
 
 #include <r_core.h>
 
-static char *check_path(char *base_path, const char *name, bool(*check_func)(const char *)) {
+static char *check_path(const char *base_path, const char *name, bool(*check_func)(const char *)) {
 	char *path = r_file_new (base_path, name, NULL);
 	if (path && check_func (path)) {
 		return path;
@@ -27,20 +27,19 @@ static void collect_fortune_types_from_dir(RList *types, const char *base_path) 
 
 static char *getFortuneFile(RCore *core, const char *type) {
 	char *xdg_fortunes = r_xdg_datadir ("fortunes");
-	char *sys_fortunes = r_file_new (r_sys_prefix (NULL), R2_FORTUNES, NULL);
+	const char *fortunes_dir = r_config_get (core->config, "dir.fortunes");
 	char *result = check_path (xdg_fortunes, type, r_file_is_directory);
 	if (!result) {
-		result = check_path (sys_fortunes, type, r_file_is_directory);
+		result = check_path (fortunes_dir, type, r_file_is_directory);
 		if (!result) {
 			r_strf_var (fname, 64, "fortunes.%s", type);
 			result = check_path (xdg_fortunes, fname, r_file_exists);
 			if (!result) {
-				result = check_path (sys_fortunes, fname, r_file_exists);
+				result = check_path (fortunes_dir, fname, r_file_exists);
 			}
 		}
 	}
 	free (xdg_fortunes);
-	free (sys_fortunes);
 	return result;
 }
 
@@ -112,11 +111,10 @@ R_API RList *r_core_fortune_types(RCore *core) {
 	RList *types = r_list_newf (free);
 	if (r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
 		char *xdg_fortunes = r_xdg_datadir ("fortunes");
-		char *sys_fortunes = r_file_new (r_sys_prefix (NULL), R2_FORTUNES, NULL);
+		const char *fortunes_dir = r_config_get (core->config, "dir.fortunes");
 		collect_fortune_types_from_dir (types, xdg_fortunes);
-		collect_fortune_types_from_dir (types, sys_fortunes);
+		collect_fortune_types_from_dir (types, fortunes_dir);
 		free (xdg_fortunes);
-		free (sys_fortunes);
 	}
 	return types;
 }
