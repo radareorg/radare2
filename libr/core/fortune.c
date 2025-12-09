@@ -62,16 +62,20 @@ static char *slurp_directory_contents(const char *dir_path) {
 }
 
 static void collect_fortunes(RStrBuf *sb, const char *base_path, const char *type, const char *fname) {
-	char *path = check_path (base_path, type, r_file_is_directory)
-		?: check_path (base_path, fname, r_file_exists);
-	if (path) {
-		char *content = slurp_directory_contents (path) ?: r_file_slurp (path, NULL);
-		if (content) {
-			r_strbuf_append (sb, content);
-			free (content);
-		}
-		free (path);
+	char *path, *content;
+
+// AITODO IMHO check_path can be integrated within the slurp_directory_contents because the checkdir is made in there, so theres' no need for having this logic twice
+	if ((path = check_path (base_path, type, r_file_is_directory))) {
+		content = slurp_directory_contents (path);
+	} else if ((path = check_path (base_path, fname, r_file_exists))) {
+		content = r_file_slurp (path, NULL);
 	}
+	
+	if (content) {
+		r_strbuf_append (sb, content);
+		free (content);
+	}
+	free (path);
 }
 
 static char *getFortuneContent(RCore *core, const char *type) {
