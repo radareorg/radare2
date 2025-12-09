@@ -1604,7 +1604,7 @@ static bool cb_cfg_fortunes_type(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
 	if (*node->value == '?') {
-		RList *types = r_core_fortune_types ();
+		RList *types = r_core_fortune_types (core);
 		char *typ;
 		RListIter *iter;
 		r_list_foreach (types, iter, typ) {
@@ -4185,7 +4185,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETS ("cfg.user", whoami, "set current username/pid");
 	free (whoami);
 	SETB ("cfg.fortunes", "true", "if enabled show tips at start");
-	RList *fortune_types = r_core_fortune_types ();
+	RList *fortune_types = r_core_fortune_types (core);
 	char *fts = r_str_list_join (fortune_types, ",");
 	r_list_free (fortune_types);
 	char *fortune_desc = r_str_newf ("type of fortunes to show(%s)", fts);
