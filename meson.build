@@ -235,7 +235,7 @@ else
   r2_platform = join_paths(r2_datdir_r2, r2_version, 'platform')
   r2_themes = join_paths(r2_datdir_r2, r2_version, 'cons')
   r2_panels = join_paths(r2_datdir_r2, r2_version, 'panels')
-  r2_fortunes = join_paths(r2_datdir, 'doc', 'radare2')
+  r2_fortunes = join_paths(r2_datdir, r2_version, 'fortunes')
   r2_flags = join_paths(r2_datdir_r2, r2_version, 'flag')
   r2_hud = join_paths(r2_datdir_r2, r2_version, 'hud')
   r2_plugins = join_paths(r2_libdir, 'radare2', r2_version)
@@ -678,8 +678,8 @@ subdir('test/unit')
 subdir('test/fuzz')
 
 install_data(
-  'doc/fortunes.fun',
-  'doc/fortunes.tips',
+  'doc/fortunes/fun.txt',
+  'doc/fortunes/tips.txt',
   install_dir: r2_fortunes
 )
 

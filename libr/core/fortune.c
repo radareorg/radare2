@@ -1,172 +1,151 @@
-/* radare2 - LGPL - Copyright 2009-2024 - pancake, condret */
+/* radare2 - LGPL - Copyright 2009-2025 - pancake, condret */
 
 #include <r_core.h>
 
-static char *getFortuneFile(RCore *core, const char *type) {
-	if (!r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
-		return NULL;
+static void collect_types(RList *types, const char *base_path) {
+	RList *files = r_sys_dir (base_path);
+	if (files) {
+		RListIter *iter;
+		char *file;
+		r_list_foreach (files, iter, file) {
+			if (*file == '.') {
+				continue;
+			}
+			// Check for .txt files (new format: <type>.txt)
+			if (r_str_endswith (file, ".txt")) {
+				size_t len = strlen (file) - 4;
+				r_list_append (types, r_str_ndup (file, len));
+			} else {
+				// Check for directories (directory name is the type)
+				char *full_path = r_file_new (base_path, file, NULL);
+				if (r_file_is_directory (full_path)) {
+					r_list_append (types, strdup (file));
+				}
+				free (full_path);
+			}
+		}
+		r_list_free (files);
 	}
-	r_strf_var (fname, 64, "fortunes.%s", type);
-	char *fortunedir = r_xdg_datadir ("fortunes");
-	char *path = r_file_new (fortunedir, fname, NULL);
-	free (fortunedir);
-	if (path && r_file_exists (path)) {
-		return path;
-	}
-	free (path);
-	path = r_file_new (r_sys_prefix (NULL), R2_FORTUNES, fname, NULL);
-	if (path && r_file_exists (path)) {
-		return path;
-	}
-	free (path);
-	return NULL;
 }
 
-static bool _push_types(RList *type_list, char *fortune_dir) {
-	RList *files = r_sys_dir (fortune_dir);
+static char *slurp_directory_contents(const char *dir_path) {
+	RList *files = r_sys_dir (dir_path);
 	if (!files) {
-		return false;
+		return NULL;
 	}
+	RStrBuf *sb = r_strbuf_new (NULL);
+	char *f;
 	RListIter *iter;
-	char *file;
-	r_list_foreach (files, iter, file) {
-		if (r_str_startswith (file, "fortunes.") && file[9]) {
-			r_list_push (type_list, strdup (file + 9));
+	r_list_foreach (files, iter, f) {
+		if (r_str_endswith (f, ".txt")) {
+			char *file_path = r_file_new (dir_path, f, NULL);
+			char *file_content = r_file_slurp (file_path, NULL);
+			if (file_content) {
+				r_strbuf_append (sb, file_content);
+				free (file_content);
+			}
+			free (file_path);
 		}
 	}
 	r_list_free (files);
-	return true;
+	return r_strbuf_drain (sb);
 }
 
-R_IPI RList *r_core_fortune_types(void) {
-	if (!r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
-		return NULL;
-	}
-	RList *types = r_list_newf (free);
-	if (!types) {
-		return NULL;
-	}
-	char *fortune_dir = r_file_new (r_sys_prefix (NULL), R2_FORTUNES, NULL);
-	if (!fortune_dir) {
-		r_list_free (types);
-		return NULL;
-	}
-	if (!_push_types (types, fortune_dir)) {
-		free (fortune_dir);
-		r_list_free (types);
-		return NULL;
-	}
-	free (fortune_dir);
-	fortune_dir = r_xdg_datadir ("fortunes");
-	if (fortune_dir) {
-		_push_types (types, fortune_dir);
-		free (fortune_dir);
-	}
-	return types;
-}
-
-static void core_fortune_list_types(RCore *core) {
-	RList *types = r_core_fortune_types ();
-	if (types) {
-		char *fts = r_str_list_join (types, "\n");
-		if (fts) {
-			r_cons_println (core->cons, fts);
-			free (fts);
-		}
-		r_list_free (types);
-	}
-}
-
-R_API void r_core_fortune_list(RCore *core, bool list_types_instead_of_fortunes) {
-	R_RETURN_IF_FAIL (core);
-	if (list_types_instead_of_fortunes) {
-		core_fortune_list_types (core);
-		return;
-	}
-	if (!r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
-		return;
-	}
-	const char *types = (char *)r_config_get (core->config, "cfg.fortunes.type");
-
-	RList *ftypes = r_core_fortune_types ();
-	if (!ftypes) {
-		return;
-	}
-	RListIter *iter;
-	char *fortunes;
-	r_list_foreach (ftypes, iter, fortunes) {
-		if (strstr (types, fortunes)) {
-			char *file = getFortuneFile (core, fortunes);
-			char *str = r_file_slurp (file, NULL);
-			if (!str) {
-				free (file);
-				continue;
+static void collect_fortunes(RStrBuf *sb, const char *base_path, const char *type, const char *fname) {
+	char *path = r_file_new (base_path, type, NULL);
+	if (path) {
+		char *content = slurp_directory_contents (path);
+		if (!content) {
+			free (path);
+			path = r_file_new (base_path, fname, NULL);
+			if (path && r_file_exists (path)) {
+				content = r_file_slurp (path, NULL);
 			}
-			r_cons_println (core->cons, str);
-			free (str);
-			free (file);
 		}
+		if (content) {
+			r_strbuf_append (sb, content);
+			free (content);
+		}
+		free (path);
 	}
-	r_list_free (ftypes);
 }
 
-static char *getrandomline(RCore *core) {
-	RList *types = r_str_split_duplist (
-		r_config_get (core->config, "cfg.fortunes.type"), ",", false);
+static char *getFortuneContent(RCore *core, const char *type) {
+	char *xdg_fortunes = r_xdg_datadir ("fortunes");
+	const char *fortunes_dir = r_config_get (core->config, "dir.fortunes");
+	RStrBuf *sb = r_strbuf_new (NULL);
+	r_strf_var (fname, 64, "%s.txt", type);
+	collect_fortunes (sb, xdg_fortunes, type, fname);
+	collect_fortunes (sb, fortunes_dir, type, fname);
+	free (xdg_fortunes);
+	return r_strbuf_drain (sb);
+}
+
+static char *getRandomLine(RCore *core) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
+		return NULL;
+	}
+	/* pick a random fortune type */
+	const char *ft = r_config_get (core->config, "cfg.fortunes.type");
+	RList *types = r_str_split_duplist (ft, ",", false);
 	if (r_list_empty (types)) {
 		r_list_free (types);
 		return NULL;
 	}
-	const char *file = (const char *)r_list_get_n (types, r_num_rand (r_list_length (types)));
-	char *type = strdup (file);
+	int rand_type_idx = r_num_rand (r_list_length (types));
+	char *type = r_list_get_n (types, rand_type_idx);
+	char *content = getFortuneContent (core, type);
 	r_list_free (types);
-	if (!type) {
+	if (R_STR_ISEMPTY (content)) {
+		free (content);
 		return NULL;
 	}
-	char *line = NULL, *templine;
-	RList *ftypes = r_core_fortune_types ();
-	if (!ftypes) {
-		free (type);
-		return NULL;
+	/* pick a random fortune message, filtering out empty lines */
+	RList *all_lines = r_str_split_list (content, "\n", false);
+	char *result = NULL;
+	int rand_idx = r_num_rand (r_list_length (all_lines));
+	char *line = r_list_get_n (all_lines, rand_idx);
+	if (line) {
+		result = strdup (line);
 	}
-	RListIter *iter;
-	char *fortunes;
-	r_list_foreach (ftypes, iter, fortunes) {
-		if (!strcmp (type, fortunes)) {
-			int lines = 0;
-			char *file = getFortuneFile (core, fortunes);
-			if (file) {
-				templine = r_file_slurp_random_line_count (file, &lines);
-				if (templine && *templine) {
-					free (line);
-					line = templine;
-				}
-				free (file);
-			}
+	if (R_STR_ISEMPTY (result)) {
+		free (result); // hack because sometimes we pick empty lines
+		result = getRandomLine (core);
+	}
+	r_list_free (all_lines);
+	free (content);
+	return result;
+}
+
+R_API RList *r_core_fortune_types(RCore *core) {
+	RList *types = r_list_newf (free);
+	if (r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
+		char *xdg_fortunes = r_xdg_datadir ("fortunes");
+		if (xdg_fortunes) {
+			collect_types (types, xdg_fortunes);
+			free (xdg_fortunes);
 		}
+		collect_types (types, r_config_get (core->config, "dir.fortunes"));
+		r_list_uniq_inplace (types, (RListComparatorItem)r_str_hash64);
 	}
-	free (type);
-	r_list_free (ftypes);
-	return line;
+	return types;
 }
 
 R_API void r_core_fortune_print_random(RCore *core) {
 	R_RETURN_IF_FAIL (core);
-	if (!r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
-		return;
-	}
-	char *line = getrandomline (core);
-	if (!line) {
-		line = getrandomline (core);
-	}
-	if (R_STR_ISNOTEMPTY (line)) {
-		if (r_config_get_b (core->config, "cfg.fortunes.clippy")) {
-			r_core_clippy (core, line);
+	if (r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
+		char *line = getRandomLine (core);
+		if (R_STR_ISEMPTY (line)) {
+			r_cons_println (core->cons, " -- No cookie is also a cookie");
 		} else {
-			r_cons_printf (core->cons, " -- %s\n", line);
-		}
-		if (r_config_get_b (core->config, "cfg.fortunes.tts")) {
-			r_sys_tts (line, true);
+			if (r_config_get_b (core->config, "cfg.fortunes.clippy")) {
+				r_core_clippy (core, line);
+			} else {
+				r_cons_printf (core->cons, " -- %s\n", line);
+			}
+			if (r_config_get_b (core->config, "cfg.fortunes.tts")) {
+				r_sys_tts (line, true);
+			}
 		}
 		free (line);
 	}

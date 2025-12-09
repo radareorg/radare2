@@ -1600,21 +1600,17 @@ static bool cb_completion_maxtab(void *user, void *data) {
 	return true;
 }
 
-static bool cb_cfg_fortunes(void *user, void *data) {
-	RCore *core = (RCore *)user;
-	RConfigNode *node = (RConfigNode *)data;
-	if (*node->value == '?') {
-		r_core_fortune_list (core, false);
-		return false;
-	}
-	return true;
-}
-
 static bool cb_cfg_fortunes_type(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
 	if (*node->value == '?') {
-		r_core_fortune_list (core, true);
+		RList *types = r_core_fortune_types (core);
+		char *typ;
+		RListIter *iter;
+		r_list_foreach (types, iter, typ) {
+			r_cons_println (core->cons, typ);
+		}
+		r_list_free (types);
 		return false;
 	}
 	return true;
@@ -4188,15 +4184,9 @@ R_API int r_core_config_init(RCore *core) {
 	char *whoami = r_sys_whoami ();
 	SETS ("cfg.user", whoami, "set current username/pid");
 	free (whoami);
-	SETCB ("cfg.fortunes", "true", &cb_cfg_fortunes, "if enabled show tips at start");
-	RList *fortune_types = r_core_fortune_types ();
-	if (!fortune_types) {
-		fortune_types = r_list_newf (free);
-		if (fortune_types) {
-			r_list_append (fortune_types, strdup ("tips"));
-			r_list_append (fortune_types, strdup ("fun"));
-		}
-	}
+	SETS ("dir.fortunes", R2_DATDIR "/radare2/" R2_VERSION "/fortunes", "directory to load fortune files from");
+	SETB ("cfg.fortunes", "true", "if enabled show tips at start");
+	RList *fortune_types = r_core_fortune_types (core);
 	char *fts = r_str_list_join (fortune_types, ",");
 	r_list_free (fortune_types);
 	char *fortune_desc = r_str_newf ("type of fortunes to show(%s)", fts);

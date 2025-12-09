@@ -280,20 +280,18 @@ R_API RList *r_sys_dir(const char *path) {
 	WIN32_FIND_DATAW entry;
 	char *cfname;
 	HANDLE fh = r_sandbox_opendir (path, &entry);
-	if (fh == INVALID_HANDLE_VALUE) {
-		//IFDGB R_LOG_ERROR ("Cannot open directory %ls", wcpath);
-		return list;
+	if (fh != INVALID_HANDLE_VALUE) {
+		list = r_list_newf (free);
+		if (list) {
+			do {
+				if ((cfname = r_utf16_to_utf8 (entry.cFileName))) {
+					r_list_append (list, strdup (cfname));
+					free (cfname);
+				}
+			} while (FindNextFileW (fh, &entry));
+		}
+		FindClose (fh);
 	}
-	list = r_list_newf (free);
-	if (list) {
-		do {
-			if ((cfname = r_utf16_to_utf8 (entry.cFileName))) {
-				r_list_append (list, strdup (cfname));
-				free (cfname);
-			}
-		} while (FindNextFileW (fh, &entry));
-	}
-	FindClose (fh);
 #else
 	struct dirent *entry;
 	DIR *dir = r_sandbox_opendir (path);
