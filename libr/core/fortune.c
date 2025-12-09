@@ -114,7 +114,7 @@ R_IPI RList *r_core_fortune_types(void) {
 				RListIter *iter;
 				char *file;
 				r_list_foreach (files, iter, file) {
-					if (strcmp (file, ".") && strcmp (file, "..")) {
+					if (*file != '.') {
 						char *path = r_file_new (xdg_fortunes, file, NULL);
 						if (path) {
 							char *type = NULL;
@@ -122,15 +122,6 @@ R_IPI RList *r_core_fortune_types(void) {
 							// Only handle files starting with "fortunes."
 							if (r_str_startswith (file, "fortunes.") && !r_file_is_directory (path)) {
 								type = strdup (file + 9); // Skip "fortunes."
-							}
-							
-							if (type) {
-								// Avoid duplicates
-								if (!r_list_find (types, type, (RListComparator)strcmp)) {
-									r_list_append (types, type);
-								} else {
-									free (type);
-								}
 							}
 							free (path);
 						}
@@ -147,23 +138,13 @@ R_IPI RList *r_core_fortune_types(void) {
 				RListIter *iter;
 				char *file;
 				r_list_foreach (files, iter, file) {
-					if (strcmp (file, ".") && strcmp (file, "..")) {
+					if (*file != '.') {
 						char *path = r_file_new (sys_fortunes, file, NULL);
 						if (path) {
 							char *type = NULL;
-							
 							// Only handle files starting with "fortunes."
 							if (r_str_startswith (file, "fortunes.") && !r_file_is_directory (path)) {
 								type = strdup (file + 9); // Skip "fortunes."
-							}
-							
-							if (type) {
-								// Avoid duplicates
-								if (!r_list_find (types, type, (RListComparator)strcmp)) {
-									r_list_append (types, type);
-								} else {
-									free (type);
-								}
 							}
 							free (path);
 						}
