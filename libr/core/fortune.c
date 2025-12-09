@@ -33,7 +33,7 @@ static char *getFortuneFile(RCore *core, const char *type) {
 	return result;
 }
 
-static char *getrandomline(RCore *core) {
+static char *getRandomLine(RCore *core) {
 	const char *ft = r_config_get (core->config, "cfg.fortunes.type");
 	RList *types = r_str_split_duplist (ft, ",", false);
 	if (r_list_empty (types)) {
@@ -96,6 +96,7 @@ static char *getrandomline(RCore *core) {
 	return result;
 }
 
+// TODO. this function seems like it shares a lot in common with getFortuneFile. see the rest of the code in this file and reimplement it all reusing as much code as possible to reduce LOcs and make it easier to maintain
 R_IPI RList *r_core_fortune_types(void) {
 	RList *types = r_list_newf (free);
 	if (!types) {
@@ -170,7 +171,7 @@ R_API void r_core_fortune_print_random(RCore *core) {
 	if (!r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
 		return;
 	}
-	char *line = getrandomline (core);
+	char *line = getRandomLine (core);
 	if (R_STR_ISNOTEMPTY (line)) {
 		if (r_config_get_b (core->config, "cfg.fortunes.clippy")) {
 			r_core_clippy (core, line);
