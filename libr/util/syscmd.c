@@ -1,17 +1,17 @@
-/* radare - LGPL - Copyright 2013-2024 - pancake */
+/* radare - LGPL - Copyright 2013-2025 - pancake */
 
 #include <r_core.h>
 #include <errno.h>
 
 #define FMT_NONE 0
-#define FMT_RAW  1
+#define FMT_RAW 1
 #define FMT_JSON 'j'
 #define FMT_QUIET 'q'
 #define FMT_EMOJI 'e'
 
 static R_TH_LOCAL RList *dirstack = NULL;
 
-static char *showfile(char *res, const int nth, const char *fpath, const char *name, int printfmt, bool needs_newline) {
+static void showfile(RStrBuf *buf, PJ *pj, const int nth, const char *fpath, const char *name, int printfmt, bool needs_newline, int column_width) {
 #if R2__UNIX__
 	struct stat sb;
 #endif
@@ -20,24 +20,24 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 	int sz = r_file_size (n);
 	int perm, uid = 0, gid = 0;
 	int fch = '-';
-	if (!strncmp (fpath, "./", 2)) {
+	if (r_str_startswith (fpath, "./")) {
 		fpath = fpath + 2;
 	}
 	const bool isdir = r_file_is_directory (n);
 	if (isdir) {
-		nn = r_str_append (strdup (fpath), "/");
+		nn = r_str_newf ("%s/", fpath);
 	} else {
 		nn = strdup (fpath);
 	}
 	if (!*nn) {
 		free (nn);
-		return res;
+		return;
 	}
 	perm = isdir? 0755: 0644;
 	if (!printfmt) {
-		res = r_str_appendf (res, "%18s%s", nn, needs_newline? "\n": "  ");
+		r_strbuf_appendf (buf, "%-*s%s", column_width, nn, needs_newline? "\n": "  ");
 		free (nn);
-		return res;
+		return;
 	}
 	// TODO: escape non-printable chars in filenames
 	// TODO: Implement more real info in ls -l
@@ -48,12 +48,12 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 		uid = sb.st_uid;
 		gid = sb.st_gid;
 		perm = sb.st_mode & 0777;
-		if (!(u_rwx = strdup (r_str_rwx_i (perm >> 6)))) {
+		if (! (u_rwx = strdup (r_str_rwx_i (perm >> 6)))) {
 			free (nn);
-			return res;
+			return;
 		}
 		if (sb.st_mode & S_ISUID) {
-			u_rwx[2] = (sb.st_mode & S_IXUSR) ? 's' : 'S';
+			u_rwx[2] = (sb.st_mode & S_IXUSR)? 's': 'S';
 		}
 		if (isdir) {
 			fch = 'd';
@@ -76,7 +76,7 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 	fch = isdir? 'd': '-';
 #endif
 	if (printfmt == FMT_QUIET) {
-		res = r_str_appendf (res, "%s\n", nn);
+		r_strbuf_appendf (buf, "%s\n", nn);
 	} else if (printfmt == FMT_EMOJI) {
 		const char *eDIR = "📁";
 		const char *eIMG = "🌅";
@@ -124,54 +124,53 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 		} else if (*nn == '.') {
 			icon = eHID;
 		}
-		res = r_str_appendf (res, "%s %s\n", icon, nn);
+		r_strbuf_appendf (buf, "%s %s\n", icon, nn);
 	} else if (printfmt == FMT_RAW) {
-		res = r_str_appendf (res, "%c%s%s%s  1 %4d:%-4d  %-10d  %s\n",
+		r_strbuf_appendf (buf, "%c%s%s%s  1 %4d:%-4d  %-10d  %s\n",
 			isdir? 'd': fch,
 			r_str_get_fail (u_rwx, "-"),
 			r_str_rwx_i ((perm >> 3) & 7),
 			r_str_rwx_i (perm & 7),
 			uid, gid, sz, nn);
 	} else if (printfmt == FMT_JSON) {
-		if (nth > 0) {
-			res = r_str_append (res, ",");
-		}
-		PJ *pj = pj_new ();
 		pj_o (pj);
 		pj_ks (pj, "name", name);
 		pj_kn (pj, "size", sz);
 		pj_kn (pj, "uid", uid);
 		pj_kn (pj, "gid", gid);
 		pj_kn (pj, "perm", perm);
-		pj_ks (pj, "perm_root", r_str_rwx_i ((perm >> 6)&7));
-		pj_ks (pj, "perm_group", r_str_rwx_i ((perm >> 3)&7));
+		pj_ks (pj, "perm_root", r_str_rwx_i ((perm >> 6) & 7));
+		pj_ks (pj, "perm_group", r_str_rwx_i ((perm >> 3) & 7));
 		pj_ks (pj, "perm_other", r_str_rwx_i (perm & 7));
 		pj_kb (pj, "isdir", isdir);
 		pj_end (pj);
-		char *js = pj_drain (pj);
-		res = r_str_append (res, js);
-		free (js);
 	} else {
 		R_LOG_ERROR ("unknown format");
 	}
 	free (nn);
 	free (u_rwx);
-	return res;
 }
 
-// TODO: Move into r_util .. r_print maybe? r_cons dep is annoying
-R_API char *r_syscmd_ls(const char *input, int cons_width) {
-	char *res = NULL;
+
+
+typedef struct {
+	char *path;
+	char *pattern;
+	char *homepath;
+	char *d;
+	int printfmt;
+} PathInfo;
+
+static PathInfo *resolve_path_info(const char *input) {
+	PathInfo *pi = R_NEW0 (PathInfo);
+	if (!pi) {
+		return NULL;
+	}
 	const char *path = ".";
-	char *d = NULL;
-	char *p = NULL;
 	char *homepath = NULL;
+	char *d = NULL;
 	char *pattern = NULL;
 	int printfmt = 0;
-	RListIter *iter;
-	char *name;
-	char *dir;
-	int off;
 	if (!input) {
 		input = "";
 		path = ".";
@@ -190,12 +189,14 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 	}
 	if (r_sandbox_enable (0)) {
 		R_LOG_ERROR ("Sandbox forbids listing directories");
+		free (pi);
 		return NULL;
 	}
 	input = r_str_trim_head_ro (input);
 	if (*input) {
 		if (r_str_startswith (input, "-h") || *input == '?') {
 			eprintf ("Usage: ls [-e,-l,-j,-q] [path] # long, json, quiet\n");
+			free (pi);
 			return NULL;
 		}
 		if (r_str_startswith (input, "-e")) {
@@ -205,7 +206,7 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 			printfmt = FMT_QUIET;
 			path = r_str_trim_head_ro (input + 2);
 		} else if (r_str_startswith (input, "-l") || r_str_startswith (input, "-j")) {
-			printfmt = (input[1] == 'j') ? FMT_JSON : FMT_RAW;
+			printfmt = (input[1] == 'j')? FMT_JSON: FMT_RAW;
 			path = r_str_trim_head_ro (input + 2);
 			if (!*path) {
 				path = ".";
@@ -216,26 +217,29 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 	}
 	if (R_STR_ISEMPTY (path)) {
 		path = ".";
-	} else if (!strncmp (path, "~/", 2)) {
+	} else if (r_str_startswith (path, "~/")) {
 		homepath = r_file_home (path + 2);
 		if (homepath) {
 			path = (const char *)homepath;
 		}
 	} else if (*path == '$') {
-		if (!strncmp (path + 1, "home", 4) || !strncmp (path + 1, "HOME", 4)) {
+		if (r_str_startswith (path + 1, "HOME")) {
 			homepath = r_file_home ((strlen (path) > 5)? path + 6: NULL);
 			if (homepath) {
 				path = (const char *)homepath;
 			}
 		}
 	}
-	if (!r_file_is_directory (path)) {
-		p = strrchr (path, '/');
+	if (r_file_is_directory (path)) {
+		pattern = strdup ("*");
+	} else {
+		char *p = strrchr (path, '/');
 		if (p) {
-			off = p - path;
-			d = (char *) calloc (1, off + 1);
+			size_t off = p - path;
+			d = (char *)calloc (1, off + 1);
 			if (!d) {
 				free (homepath);
+				free (pi);
 				return NULL;
 			}
 			memcpy (d, path, off);
@@ -245,73 +249,121 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 			pattern = strdup (path);
 			path = ".";
 		}
-	} else {
-		pattern = strdup ("*");
 	}
-	if (r_file_is_regular (path)) {
-		res = showfile (res, 0, path, path, printfmt, false);
-		free (homepath);
-		free (pattern);
-		free (d);
+	pi->path = (char *)path;
+	pi->pattern = pattern;
+	pi->homepath = homepath;
+	pi->d = d;
+	pi->printfmt = printfmt;
+	return pi;
+}
+
+static void free_path_info(PathInfo *pi) {
+	if (pi) {
+		free (pi->homepath);
+		free (pi->pattern);
+		free (pi->d);
+		free (pi);
+	}
+}
+
+R_API char *r_syscmd_ls(const char *input, int cons_width) {
+	RStrBuf *sb = r_strbuf_new ("");
+	PJ *pj = NULL;
+	PathInfo *pi = resolve_path_info (input);
+	if (!pi) {
+		r_strbuf_free (sb);
+		return NULL;
+	}
+	if (pi->printfmt == FMT_JSON) {
+		pj = pj_new ();
+		pj_a (pj);
+	}
+	if (r_file_is_regular (pi->path)) {
+		showfile (sb, pj, 0, pi->path, pi->path, pi->printfmt, false, 18);
+		char *res;
+		if (pj) {
+			pj_end (pj);
+			res = pj_drain (pj);
+		} else {
+			res = r_strbuf_drain (sb);
+		}
+		free_path_info (pi);
 		return res;
 	}
-	RList *files = r_sys_dir (path);
+	RList *files = r_sys_dir (pi->path);
 	if (!files) {
-		free (homepath);
-		free (pattern);
-		free (d);
+		free_path_info (pi);
+		r_strbuf_free (sb);
+		if (pj) {
+			pj_free (pj);
+		}
 		return NULL;
 	}
 	r_list_sort (files, (RListComparator)strcmp);
 
-	if (path[strlen (path) - 1] == '/') {
-		dir = strdup (path);
-	} else {
-		dir = r_str_append (strdup (path), "/");
+	RListIter *iter;
+	char *name;
+	int max_name_len = 0;
+	r_list_foreach (files, iter, name) {
+		int len = strlen (name);
+		if (len > max_name_len) {
+			max_name_len = len;
+		}
+	}
+
+	char *dir = r_str_newf ("%s%s", pi->path, pi->path[strlen(pi->path) - 1] == '/' ? "" : "/");
+	const char *display_dir = (!strncmp (dir, "./", 2))? dir + 2: dir;
+	int max_len = strlen (display_dir) + max_name_len + 1;
+	int column_width = max_len + 2;
+	if (column_width > cons_width / 2) {
+		column_width = cons_width / 2;
+	}
+	if (column_width < 12) {
+		column_width = 12;
 	}
 	int nth = 0;
-	if (printfmt == FMT_JSON) {
-		res = strdup ("[");
-	}
 	bool needs_newline = false;
 	int linelen = 0;
 	r_list_foreach (files, iter, name) {
-		char *n = r_str_append (strdup (dir), name);
+		char *n = r_str_newf ("%s%s", dir, name);
 		if (!n) {
 			break;
 		}
-		if (r_str_glob (name, pattern)) {
+		if (r_str_glob (name, pi->pattern)) {
 			if (*n) {
-				int namelen = strlen (name);
-				linelen += (namelen > 20)? namelen*2: 32;
-				if (linelen > cons_width) {
-					needs_newline = true;
+				bool isdir = r_file_is_directory (n);
+				const char *display_path = r_str_startswith (n, "./")? n + 2: n;
+				int display_len = strlen (display_path) + (isdir? 1: 0);
+				int add = R_MAX (column_width, display_len) + 2;
+				if (linelen + add > cons_width) {
+					if (!pj) {
+						if (r_strbuf_length (sb) == 0 || r_strbuf_get (sb)[r_strbuf_length (sb) - 1] != '\n') {
+							r_strbuf_append (sb, "\n");
+						}
+						linelen = 0;
+					}
 				}
-				res = showfile (res, nth, n, name, printfmt, needs_newline);
-				if (needs_newline) {
-					needs_newline = false;
-					linelen = 0;
-				}
+				showfile (sb, pj, nth, n, name, pi->printfmt, false, column_width);
+				linelen += add;
 			}
 			nth++;
 		}
 		free (n);
 	}
-	if (printfmt == FMT_JSON) {
-		res = r_str_append (res, "]");
+	if (!pj && r_strbuf_length (sb) > 0 && r_strbuf_get (sb)[r_strbuf_length (sb) - 1] != '\n') {
+		r_strbuf_append (sb, "\n");
+	}
+	char *res;
+	if (pj) {
+		pj_end (pj);
+		res = pj_drain (pj);
 	} else {
-		if (res) {
-			char * last = res + strlen (res) - 1;
-			if (*last != '\n') {
-				res = r_str_append (res, "\n");
-			}
-		}
+		res = r_strbuf_drain (sb);
 	}
 	free (dir);
-	free (d);
-	free (homepath);
-	free (pattern);
 	r_list_free (files);
+	free_path_info (pi);
 	return res;
 }
 
@@ -468,7 +520,7 @@ R_API char *r_syscmd_join(const char *file1, const char *file2) {
 	if (!data1 || !data2) {
 		R_LOG_ERROR ("No such files or directory");
 	} else {
-		RList *list1 = r_str_split_list (data1, "\n",  0);
+		RList *list1 = r_str_split_list (data1, "\n", 0);
 		RList *list2 = r_str_split_list (data2, "\n", 0);
 
 		char *str1, *str2;
@@ -528,10 +580,11 @@ R_API char *r_syscmd_mktemp(const char *dir) {
 		eprintf ("Usage: mktemp [-d] [file|directory]\n");
 		return NULL;
 	}
-	bool dodir = (bool) strstr (suffix, "-d");
+	bool dodir = (bool)strstr (suffix, "-d");
 	int ret;
 	char *dirname = (!strncmp (suffix, "-d ", 3))
-		? strdup (suffix + 3): strdup (suffix);
+		? strdup (suffix + 3)
+		: strdup (suffix);
 	r_str_trim (dirname);
 	char *arg = NULL;
 	if (!*dirname || *dirname == '-') {
@@ -566,7 +619,8 @@ R_API bool r_syscmd_mkdir(const char *dir) {
 		return false;
 	}
 	char *dirname = (!strncmp (suffix, "-p ", 3))
-		? strdup (suffix + 3): strdup (suffix);
+		? strdup (suffix + 3)
+		: strdup (suffix);
 	r_str_trim (dirname);
 	if (!*dirname || *dirname == '-') {
 		eprintf ("Usage: mkdir [-p] [directory]\n");
@@ -639,7 +693,7 @@ R_API bool r_syscmd_mv(const char *input) {
 	bool rc = false;
 	if (arg) {
 		*arg++ = 0;
-		if (!(rc = r_file_move (inp, arg))) {
+		if (! (rc = r_file_move (inp, arg))) {
 			R_LOG_ERROR ("Cannot move file");
 		}
 	} else {
