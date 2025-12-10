@@ -223,7 +223,7 @@ jobs:
         arch:
           - arm64
           - x86_64
-    runs-on: macos-13
+    runs-on: macos-15-intel
     steps:
     - name: Checkout
       uses: actions/checkout@v6
@@ -250,7 +250,7 @@ jobs:
         include:
           - type: cydia
             sdk: true
-    runs-on: macos-13
+    runs-on: macos-15-intel
     steps:
     - uses: actions/checkout@v6
     - name: Install ldid2 with Homebrew
