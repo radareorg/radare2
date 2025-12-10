@@ -43,8 +43,14 @@ if [ "$OS" = "Darwin" ]; then
 	mkdir -p "$XCF_HEADERS_IOS" "$XCF_HEADERS_MACOS"
 
 	# Copy headers
-	cp -r "$INSTALL_DST_IOS/usr/local/include/"* "$XCF_HEADERS_IOS/"
-	cp -r "$INSTALL_DST_MACOS/usr/local/include/"* "$XCF_HEADERS_MACOS/"
+	cp -r "$INSTALL_DST_IOS/usr/local/include/libr/"* "$XCF_HEADERS_IOS/"
+	cp -r "$INSTALL_DST_MACOS/usr/local/include/libr/"* "$XCF_HEADERS_MACOS/"
+	for d in "$XCF_HEADERS_IOS" "$XCF_HEADERS_MACOS"; do
+		(
+		cd "$d" || exit 1
+		rm -rf r2naked.h sflib sdb/gcc_stdatomic.h sdb/msvc_stdatomic.h
+		)
+	done
 
 	# Add module.modulemap
 	cat > "$XCF_HEADERS_IOS/module.modulemap" <<'EOF'

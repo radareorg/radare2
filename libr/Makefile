@@ -64,7 +64,7 @@ localize_hidden:
 	rm -rf .libr
 	mkdir -p .libr
 	for LIB in $^ ; do \
-		${PARTIALLD} $(ALFLAGS) $(MLFLAGS) $(PLFLAGS) -o .libr/$$(basename $${LIB}.a).o $${LIB} ; \
+		${PARTIALLD} $(ALFLAGS) $(CFLAGS) $(MLFLAGS) $(PLFLAGS) -o .libr/$$(basename $${LIB}.a).o $${LIB} ; \
 	done
 ifeq ($(OSTYPE),linux)
 	$(MAKE) localize_hidden
@@ -105,7 +105,7 @@ WHOLEFLAG=-Wl,--whole-archive
 endif
 endif
 libr.o: ../shlr/libr_shlr.${EXT_AR}
-	$(CC) -r -nostdlib $(WHOLEFLAG) -o libr.o $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
+	$(CC) -r -nostdlib $(CFLAGS) $(WHOLEFLAG) -o libr.o $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
 
 libr.${EXT_AR}: libr.o
 	$(AR) -rs $@ libr.o

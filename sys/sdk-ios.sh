@@ -4,6 +4,8 @@
 
 . sys/sdk-common.sh
 
+: "${R2_IOS_MIN:=12.0}"
+
 # iOS specific variables
 USE_SIMULATOR=0
 SIMULATOR_ARCHS="x86_64"
@@ -24,6 +26,12 @@ if [ "${EMBED_BITCODE}" = 1 ]; then
 fi
 
 iosConfigure() {
+	: "${IPHONEOS_DEPLOYMENT_TARGET:=${R2_IOS_MIN}}"
+	export IPHONEOS_DEPLOYMENT_TARGET
+
+	export CFLAGS="-miphoneos-version-min=${IPHONEOS_DEPLOYMENT_TARGET} ${CFLAGS}"
+	export LDFLAGS="-miphoneos-version-min=${IPHONEOS_DEPLOYMENT_TARGET} ${LDFLAGS}"
+
 	cp -f dist/plugins-cfg/${PLUGINS_CFG} plugins.cfg
 	./configure --with-libr --prefix=${PREFIX} --with-ostype=darwin \
 		--disable-debugger --without-gpl \

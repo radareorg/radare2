@@ -27,7 +27,6 @@ SHLR:=$(LIBR)/../shlr
 include $(LIBR)/../global.mk
 include $(LIBR)/../mk/${COMPILER}.mk
 
-CFLAGS+=${CFLAGS_APPEND}
 CFLAGS+=${CPPFLAGS}
 
 ifeq (1,1)

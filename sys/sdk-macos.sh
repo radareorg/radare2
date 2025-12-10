@@ -4,10 +4,18 @@
 
 . sys/sdk-common.sh
 
+: "${R2_MACOS_MIN:=10.10}"
+
 # macOS specific
 PLUGINS_CFG=plugins.ios-store.cfg
 
 macosConfigure() {
+	: "${MACOSX_DEPLOYMENT_TARGET:=${R2_MACOS_MIN}}"
+	export MACOSX_DEPLOYMENT_TARGET
+
+	export CFLAGS="-mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET} ${CFLAGS}"
+	export LDFLAGS="-mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET} ${LDFLAGS}"
+
 	cp -f dist/plugins-cfg/${PLUGINS_CFG} plugins.cfg
 	./configure --with-libr --prefix=${PREFIX} --with-ostype=darwin \
 		--disable-debugger --without-gpl \
