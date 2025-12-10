@@ -275,11 +275,7 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 		}
 	}
 
-	if (path[strlen (path) - 1] == '/') {
-		dir = strdup (path);
-	} else {
-		dir = r_str_append (strdup (path), "/");
-	}
+	dir = r_str_newf ("%s%s", path, (path[strlen (path) - 1] == '/') ? "" : "/");
 	const char *display_dir = (!strncmp (dir, "./", 2))? dir + 2: dir;
 	int max_len = strlen (display_dir) + max_name_len + 1;
 	int column_width = max_len + 2;
