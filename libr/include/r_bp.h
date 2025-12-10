@@ -77,8 +77,6 @@ typedef struct r_bp_t {
 	RList *plugins;
 	RBreakpointCallback breakpoint;
 	/* storage of breakpoints */
-	int nbps;
-	int nhwbps;
 	RList *bps; // list of breakpoints
 	RBreakpointItem **bps_idx;
 	int bps_idx_count;

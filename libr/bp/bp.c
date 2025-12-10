@@ -30,7 +30,6 @@ R_API RBreakpoint *r_bp_new(void) {
 	bp->traces = r_bp_traptrace_new ();
 	bp->bps = r_list_newf ((RListFree)r_bp_item_free);
 	bp->plugins = r_list_newf ((RListFree)free);
-	bp->nhwbps = 0;
 	for (i = 0; bp_static_plugins[i]; i++) {
 		static_plugin = R_NEW (RBreakpointPlugin);
 		memcpy (static_plugin, bp_static_plugins[i],
@@ -204,7 +203,6 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 * R_NULLABLE obytes,
 			R_LOG_WARN ("Cannot get breakpoint bytes. No architecture selected?");
 		}
 	}
-	bp->nbps++;
 	r_list_append (bp->bps, b);
 	return b;
 }

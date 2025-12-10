@@ -9,15 +9,16 @@ static void r_bp_watch_add_hw(RBreakpoint *bp, RBreakpointItem *b) {
 }
 
 R_API RBreakpointItem* r_bp_watch_add(RBreakpoint *bp, ut64 addr, int size, int hw, int perm) {
-	RBreakpointItem *b;
+	// use R_RETURN precondition checks in all R_API functions
 	if (addr == UT64_MAX || size < 1) {
 		return NULL;
 	}
 	if (r_bp_get_in (bp, addr, perm)) {
+		// AITOD : dont use eprintf. we have R_LOG apis instead
 		eprintf ("Breakpoint already set at this address.\n");
 		return NULL;
 	}
-	b = r_bp_item_new (bp);
+	RBreakpointItem *b = r_bp_item_new (bp);
 	b->addr = addr + bp->delta;
 	b->size = size;
 	b->enabled = true;
@@ -29,10 +30,10 @@ R_API RBreakpointItem* r_bp_watch_add(RBreakpoint *bp, ut64 addr, int size, int 
 		eprintf ("[TODO]: Software watchpoint is not implemented yet (use ESIL)\n");
 		/* TODO */
 	}
-	bp->nbps++;
 	r_list_append (bp->bps, b);
 	return b;
 }
 
 R_API void r_bp_watch_del(void) {
+	// AIRODO: implement
 }

@@ -12,7 +12,6 @@ R_API bool r_bp_plugin_del(RBreakpoint *bp, const char *name) {
 				bp->cur = NULL;
 			}
 			r_list_delete (bp->plugins, iter);
-			bp->nbps--;
 			return true;
 		}
 	}
@@ -28,7 +27,6 @@ R_API bool r_bp_plugin_add(RBreakpoint *bp, RBreakpointPlugin *foo) {
 			return false;
 		}
 	}
-	bp->nbps++;
 	r_list_append (bp->plugins, foo);
 	return true;
 }
