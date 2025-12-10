@@ -335,15 +335,17 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 				bool isdir = r_file_is_directory (n);
 				const char *display_path = r_str_startswith (n, "./")? n + 2: n;
 				int display_len = strlen (display_path) + (isdir? 1: 0);
-				linelen += R_MAX (column_width, display_len) + 2;
-				if (linelen > cons_width) {
-					needs_newline = true;
+				int add = R_MAX (column_width, display_len) + 2;
+				if (linelen + add > cons_width) {
+					if (!pj) {
+						if (r_strbuf_length (sb) == 0 || r_strbuf_get (sb)[r_strbuf_length (sb) - 1] != '\n') {
+							r_strbuf_append (sb, "\n");
+						}
+						linelen = 0;
+					}
 				}
-				showfile (sb, pj, nth, n, name, pi->printfmt, needs_newline, column_width);
-				if (needs_newline) {
-					needs_newline = false;
-					linelen = 0;
-				}
+				showfile (sb, pj, nth, n, name, pi->printfmt, false, column_width);
+				linelen += add;
 			}
 			nth++;
 		}
