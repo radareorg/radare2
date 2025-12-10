@@ -18,14 +18,6 @@ typedef struct {
 	bool json;
 } Rafs2Options;
 
-static void rafs2_options_init(Rafs2Options *opt) {
-	memset (opt, 0, sizeof (Rafs2Options));
-	opt->mountpoint = "/";
-	opt->offset = 0;
-	opt->interactive = false;
-	opt->json = false;
-}
-
 static void rafs2_options_fini(Rafs2Options *opt) {
 	if (opt) {
 		r_fs_free (opt->fs);
@@ -183,7 +175,7 @@ static int rafs2_details(Rafs2Options *opt) {
 		}
 		pj_o (pj);
 		pj_ks (pj, "fstype", root->p->meta.name);
-		pj_kn (pj, "offset", root->offset);
+		pj_kn (pj, "offset", root->delta);
 		pj_ks (pj, "mountpoint", opt->mountpoint);
 		RStrBuf *sb = r_strbuf_new ("");
 		root->p->details (root, sb);
@@ -274,14 +266,13 @@ static int rafs2_shell(Rafs2Options *opt) {
 }
 
 R_API int r_main_rafs2(int argc, const char **argv) {
-	Rafs2Options opt;
+	Rafs2Options opt = {.mountpoint = "/"};
 	int c;
 	const char *list_path = NULL;
 	const char *cat_path = NULL;
 	const char *extract_path = NULL;
 	bool show_details = false;
 
-	rafs2_options_init (&opt);
 
 	RGetopt go;
 	r_getopt_init (&go, argc, argv, "t:o:m:il:c:x:nLhjv");
