@@ -1,11 +1,11 @@
-CROSS=ios-sdk-
-HOST_CC=gcc
-CC=${CROSS}gcc
-USERCC=${CROSS}gcc
-RANLIB=xcrun --sdk iphoneos ranlib
+CROSS=macos-sdk-
+HOST_CC=clang
+CC=${CROSS}clang
+USERCC=${CROSS}clang
+RANLIB=xcrun --sdk macosx ranlib
 ONELIB=0
 OSTYPE=darwin
-AR=xcrun --sdk iphoneos ar
+AR=xcrun --sdk macosx ar
 CC_AR=${AR} -r ${LIBAR}
 PARTIALLD=${CROSS}ld -r -all_load
 PICFLAGS=

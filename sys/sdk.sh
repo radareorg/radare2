@@ -16,6 +16,8 @@ fi
 
 OS=`uname`
 
+set -eo pipefail
+
 if [ "$OS" = "Darwin" ]; then
 	# On macOS, build xcframework for iOS and macOS
 	echo "Building xcframework for iOS and macOS"
@@ -23,7 +25,7 @@ if [ "$OS" = "Darwin" ]; then
 	# Build iOS SDK
 	echo "Building iOS SDK..."
 	INSTALL_DST_IOS="/tmp/r2ios"
-	sys/sdk-ios.sh -archs arm64 -d "$INSTALL_DST_IOS"
+	sys/sdk-ios.sh -archs arm64 -simulator -d "$INSTALL_DST_IOS"
 	
 	# Build macOS SDK
 	echo "Building macOS SDK..."
@@ -38,37 +40,35 @@ if [ "$OS" = "Darwin" ]; then
 
 	# Prepare headers with module maps
 	XCF_HEADERS_IOS="/tmp/xcframework_headers/ios"
+	XCF_HEADERS_SIM="/tmp/xcframework_headers/sim"
 	XCF_HEADERS_MACOS="/tmp/xcframework_headers/macos"
-	rm -rf "$XCF_HEADERS_IOS" "$XCF_HEADERS_MACOS"
-	mkdir -p "$XCF_HEADERS_IOS" "$XCF_HEADERS_MACOS"
+	rm -rf "$XCF_HEADERS_IOS" "$XCF_HEADERS_SIM" "$XCF_HEADERS_MACOS"
+	mkdir -p "${XCF_HEADERS_IOS}/Radare2" "${XCF_HEADERS_SIM}/Radare2" "${XCF_HEADERS_MACOS}/Radare2"
 
-	# Copy headers
+	# Copy headers and add modulemap
 	cp -r "$INSTALL_DST_IOS/usr/local/include/libr/"* "$XCF_HEADERS_IOS/"
+	cp -r "$INSTALL_DST_IOS/usr/local/include_simulator/libr/"* "$XCF_HEADERS_SIM/"
 	cp -r "$INSTALL_DST_MACOS/usr/local/include/libr/"* "$XCF_HEADERS_MACOS/"
-	for d in "$XCF_HEADERS_IOS" "$XCF_HEADERS_MACOS"; do
+	for d in "$XCF_HEADERS_IOS" "$XCF_HEADERS_SIM" "$XCF_HEADERS_MACOS"; do
 		(
 		cd "$d" || exit 1
-		rm -rf r2naked.h sflib sdb/gcc_stdatomic.h sdb/msvc_stdatomic.h
+		rm -rf ptrace_wrap.h r2naked.h sflib sdb/gcc_stdatomic.h sdb/msvc_stdatomic.h
 		)
+		cat > "$d/Radare2/module.modulemap" <<'EOF'
+module Radare2 [extern_c] {
+  umbrella ".."
+  export *
+}
+EOF
 	done
-
-	# Add module.modulemap
-	cat > "$XCF_HEADERS_IOS/module.modulemap" <<'EOF'
-module Radare2 [extern_c] {
-  umbrella "."
-  export *
-}
-EOF
-	cat > "$XCF_HEADERS_MACOS/module.modulemap" <<'EOF'
-module Radare2 [extern_c] {
-  umbrella "."
-  export *
-}
-EOF
 
 	# For iOS
 	IOS_LIB="$INSTALL_DST_IOS/usr/local/lib/libr.a"
 	IOS_HEADERS="$XCF_HEADERS_IOS"
+
+	# For iOS Simulator
+	SIM_LIB="$INSTALL_DST_IOS/usr/local/lib_simulator/libr.a"
+	SIM_HEADERS="$XCF_HEADERS_SIM"
 
 	# For macOS
 	MACOS_LIB="$INSTALL_DST_MACOS/usr/local/lib/libr.a"
@@ -77,6 +77,8 @@ EOF
 	xcodebuild -create-xcframework \
 		-library "$IOS_LIB" \
 		-headers "$IOS_HEADERS" \
+		-library "$SIM_LIB" \
+		-headers "$SIM_HEADERS" \
 		-library "$MACOS_LIB" \
 		-headers "$MACOS_HEADERS" \
 		-output "$XCF_DST"
@@ -89,7 +91,6 @@ EOF
 			cd "$(dirname "$XCF_DST")" || exit 1
 			zip -r "${OUTDIR}/Radare2.xcframework.zip" "$(basename "$XCF_DST")"
 		)
-		zip -r Radare2.xcframework.zip "$XCF_DST"
 		echo "Zipped to Radare2.xcframework.zip"
 	else
 		echo "Failed to create xcframework"

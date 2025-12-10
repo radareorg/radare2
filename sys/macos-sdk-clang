@@ -1,0 +1,21 @@
+#!/bin/sh
+
+[ -z "${MACOSVER}" ] && MACOSVER=10.10
+[ -z "${CPU}"      ] && CPU="$(uname -m)"
+
+CLANG=$(xcrun --sdk macosx -f clang)
+SYSROOT=$(xcrun --sdk macosx --show-sdk-path)
+CPUS=""
+IFS=+
+for a in $CPU; do
+       CPUS="-arch $a ${CPUS}"
+done
+unset IFS
+APPLE_SDK=`echo macosx | tr a-z A-Z`
+
+CC="${CLANG} -isysroot ${SYSROOT} -mmacosx-version-min=${MACOSVER} ${CPUS}"
+echo $CC $*
+${CC} $*
+r=$?
+[ "$r" != 0 ] && echo ${CC} $* >&2
+exit $r

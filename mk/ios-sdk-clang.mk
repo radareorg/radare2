@@ -1,7 +1,7 @@
 CROSS=ios-sdk-
-HOST_CC=gcc
-CC=${CROSS}gcc
-USERCC=${CROSS}gcc
+HOST_CC=clang
+CC=${CROSS}clang
+USERCC=${CROSS}clang
 RANLIB=xcrun --sdk iphoneos ranlib
 ONELIB=0
 OSTYPE=darwin

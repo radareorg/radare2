@@ -2,12 +2,12 @@
 
 ```
 export PATH=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin:$PATH
-export CC=`pwd`/sys/ios-sdk-gcc
+export CC=`pwd`/sys/ios-sdk-clang
 # set only for arm64, otherwise it is armv7
 export CPU=arm64
 # select ios sdk version
 export IOSVER=7.1
-./configure --prefix=/usr --with-ostype=darwin --with-compiler=ios-sdk --target=arm-unknown-darwin
+./configure --prefix=/usr --with-ostype=darwin --with-compiler=ios-sdk-clang --target=arm-unknown-darwin
 make -j4
 make install DESTDIR=/tmp/r2ios
 ```
