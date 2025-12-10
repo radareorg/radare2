@@ -4,14 +4,14 @@
 #include <errno.h>
 
 #define FMT_NONE 0
-#define FMT_RAW  1
+#define FMT_RAW 1
 #define FMT_JSON 'j'
 #define FMT_QUIET 'q'
 #define FMT_EMOJI 'e'
 
 static R_TH_LOCAL RList *dirstack = NULL;
 
-static char *showfile(char *res, const int nth, const char *fpath, const char *name, int printfmt, bool needs_newline, int column_width) {
+static void showfile(RStrBuf *buf, PJ *pj, const int nth, const char *fpath, const char *name, int printfmt, bool needs_newline, int column_width) {
 #if R2__UNIX__
 	struct stat sb;
 #endif
@@ -25,19 +25,19 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 	}
 	const bool isdir = r_file_is_directory (n);
 	if (isdir) {
-		nn = r_str_append (strdup (fpath), "/");
+		nn = r_str_newf ("%s/", fpath);
 	} else {
 		nn = strdup (fpath);
 	}
 	if (!*nn) {
 		free (nn);
-		return res;
+		return;
 	}
 	perm = isdir? 0755: 0644;
 	if (!printfmt) {
-		res = r_str_appendf (res, "%-*s%s", column_width, nn, needs_newline? "\n": "  ");
+		r_strbuf_appendf (buf, "%-*s%s", column_width, nn, needs_newline? "\n": "  ");
 		free (nn);
-		return res;
+		return;
 	}
 	// TODO: escape non-printable chars in filenames
 	// TODO: Implement more real info in ls -l
@@ -48,12 +48,12 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 		uid = sb.st_uid;
 		gid = sb.st_gid;
 		perm = sb.st_mode & 0777;
-		if (!(u_rwx = strdup (r_str_rwx_i (perm >> 6)))) {
+		if (! (u_rwx = strdup (r_str_rwx_i (perm >> 6)))) {
 			free (nn);
-			return res;
+			return;
 		}
 		if (sb.st_mode & S_ISUID) {
-			u_rwx[2] = (sb.st_mode & S_IXUSR) ? 's' : 'S';
+			u_rwx[2] = (sb.st_mode & S_IXUSR)? 's': 'S';
 		}
 		if (isdir) {
 			fch = 'd';
@@ -76,7 +76,7 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 	fch = isdir? 'd': '-';
 #endif
 	if (printfmt == FMT_QUIET) {
-		res = r_str_appendf (res, "%s\n", nn);
+		r_strbuf_appendf (buf, "%s\n", nn);
 	} else if (printfmt == FMT_EMOJI) {
 		const char *eDIR = "📁";
 		const char *eIMG = "🌅";
@@ -124,44 +124,37 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 		} else if (*nn == '.') {
 			icon = eHID;
 		}
-		res = r_str_appendf (res, "%s %s\n", icon, nn);
+		r_strbuf_appendf (buf, "%s %s\n", icon, nn);
 	} else if (printfmt == FMT_RAW) {
-		res = r_str_appendf (res, "%c%s%s%s  1 %4d:%-4d  %-10d  %s\n",
+		r_strbuf_appendf (buf, "%c%s%s%s  1 %4d:%-4d  %-10d  %s\n",
 			isdir? 'd': fch,
 			r_str_get_fail (u_rwx, "-"),
 			r_str_rwx_i ((perm >> 3) & 7),
 			r_str_rwx_i (perm & 7),
 			uid, gid, sz, nn);
 	} else if (printfmt == FMT_JSON) {
-		if (nth > 0) {
-			res = r_str_append (res, ",");
-		}
-		PJ *pj = pj_new ();
 		pj_o (pj);
 		pj_ks (pj, "name", name);
 		pj_kn (pj, "size", sz);
 		pj_kn (pj, "uid", uid);
 		pj_kn (pj, "gid", gid);
 		pj_kn (pj, "perm", perm);
-		pj_ks (pj, "perm_root", r_str_rwx_i ((perm >> 6)&7));
-		pj_ks (pj, "perm_group", r_str_rwx_i ((perm >> 3)&7));
+		pj_ks (pj, "perm_root", r_str_rwx_i ((perm >> 6) & 7));
+		pj_ks (pj, "perm_group", r_str_rwx_i ((perm >> 3) & 7));
 		pj_ks (pj, "perm_other", r_str_rwx_i (perm & 7));
 		pj_kb (pj, "isdir", isdir);
 		pj_end (pj);
-		char *js = pj_drain (pj);
-		res = r_str_append (res, js);
-		free (js);
 	} else {
 		R_LOG_ERROR ("unknown format");
 	}
 	free (nn);
 	free (u_rwx);
-	return res;
 }
 
 // TODO: Move into r_util .. r_print maybe? r_cons dep is annoying
 R_API char *r_syscmd_ls(const char *input, int cons_width) {
-	char *res = NULL;
+	RStrBuf *sb = r_strbuf_new ("");
+	PJ *pj = NULL;
 	const char *path = ".";
 	char *d = NULL;
 	char *p = NULL;
@@ -205,7 +198,7 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 			printfmt = FMT_QUIET;
 			path = r_str_trim_head_ro (input + 2);
 		} else if (r_str_startswith (input, "-l") || r_str_startswith (input, "-j")) {
-			printfmt = (input[1] == 'j') ? FMT_JSON : FMT_RAW;
+			printfmt = (input[1] == 'j')? FMT_JSON: FMT_RAW;
 			path = r_str_trim_head_ro (input + 2);
 			if (!*path) {
 				path = ".";
@@ -213,6 +206,10 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 		} else {
 			path = input;
 		}
+	}
+	if (printfmt == FMT_JSON) {
+		pj = pj_new ();
+		pj_a (pj);
 	}
 	if (R_STR_ISEMPTY (path)) {
 		path = ".";
@@ -233,7 +230,7 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 		p = strrchr (path, '/');
 		if (p) {
 			off = p - path;
-			d = (char *) calloc (1, off + 1);
+			d = (char *)calloc (1, off + 1);
 			if (!d) {
 				free (homepath);
 				return NULL;
@@ -249,7 +246,13 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 		pattern = strdup ("*");
 	}
 	if (r_file_is_regular (path)) {
-		res = showfile (res, 0, path, path, printfmt, false, 18);
+		showfile (sb, pj, 0, path, path, printfmt, false, 18);
+		char *res;
+		if (pj) {
+			res = pj_drain (pj);
+		} else {
+			res = r_strbuf_drain (sb);
+		}
 		free (homepath);
 		free (pattern);
 		free (d);
@@ -267,7 +270,9 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 	int max_name_len = 0;
 	r_list_foreach (files, iter, name) {
 		int len = strlen (name);
-		if (len > max_name_len) max_name_len = len;
+		if (len > max_name_len) {
+			max_name_len = len;
+		}
 	}
 
 	if (path[strlen (path) - 1] == '/') {
@@ -275,17 +280,16 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 	} else {
 		dir = r_str_append (strdup (path), "/");
 	}
-	const char *display_dir = (!strncmp(dir, "./", 2)) ? dir + 2 : dir;
+	const char *display_dir = (!strncmp (dir, "./", 2))? dir + 2: dir;
 	int max_len = strlen (display_dir) + max_name_len + 1;
 	int column_width = max_len + 2;
 	if (column_width > cons_width / 2) {
 		column_width = cons_width / 2;
 	}
-	if (column_width < 12) column_width = 12;
-	int nth = 0;
-	if (printfmt == FMT_JSON) {
-		res = strdup ("[");
+	if (column_width < 12) {
+		column_width = 12;
 	}
+	int nth = 0;
 	bool needs_newline = false;
 	int linelen = 0;
 	r_list_foreach (files, iter, name) {
@@ -296,28 +300,30 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 		if (r_str_glob (name, pattern)) {
 			if (*n) {
 				bool isdir = r_file_is_directory (n);
-				char *nn = isdir ? r_str_append (strdup (n), "/") : strdup (n);
-				int display_len = strlen (nn);
+				const char *display_path = r_str_startswith (n, "./")? n + 2: n;
+				int display_len = strlen (display_path) + (isdir? 1: 0);
 				linelen += R_MAX (column_width, display_len) + 2;
 				if (linelen > cons_width) {
 					needs_newline = true;
 				}
-				res = showfile (res, nth, n, name, printfmt, needs_newline, column_width);
+				showfile (sb, pj, nth, n, name, printfmt, needs_newline, column_width);
 				if (needs_newline) {
 					needs_newline = false;
 					linelen = 0;
 				}
-				free (nn);
 			}
 			nth++;
 		}
 		free (n);
 	}
-	if (printfmt == FMT_JSON) {
-		res = r_str_append (res, "]");
+	char *res;
+	if (pj) {
+		pj_end (pj);
+		res = pj_drain (pj);
 	} else {
+		res = r_strbuf_drain (sb);
 		if (res) {
-			char * last = res + strlen (res) - 1;
+			char *last = res + strlen (res) - 1;
 			if (*last != '\n') {
 				res = r_str_append (res, "\n");
 			}
@@ -484,7 +490,7 @@ R_API char *r_syscmd_join(const char *file1, const char *file2) {
 	if (!data1 || !data2) {
 		R_LOG_ERROR ("No such files or directory");
 	} else {
-		RList *list1 = r_str_split_list (data1, "\n",  0);
+		RList *list1 = r_str_split_list (data1, "\n", 0);
 		RList *list2 = r_str_split_list (data2, "\n", 0);
 
 		char *str1, *str2;
@@ -544,10 +550,11 @@ R_API char *r_syscmd_mktemp(const char *dir) {
 		eprintf ("Usage: mktemp [-d] [file|directory]\n");
 		return NULL;
 	}
-	bool dodir = (bool) strstr (suffix, "-d");
+	bool dodir = (bool)strstr (suffix, "-d");
 	int ret;
 	char *dirname = (!strncmp (suffix, "-d ", 3))
-		? strdup (suffix + 3): strdup (suffix);
+		? strdup (suffix + 3)
+		: strdup (suffix);
 	r_str_trim (dirname);
 	char *arg = NULL;
 	if (!*dirname || *dirname == '-') {
@@ -582,7 +589,8 @@ R_API bool r_syscmd_mkdir(const char *dir) {
 		return false;
 	}
 	char *dirname = (!strncmp (suffix, "-p ", 3))
-		? strdup (suffix + 3): strdup (suffix);
+		? strdup (suffix + 3)
+		: strdup (suffix);
 	r_str_trim (dirname);
 	if (!*dirname || *dirname == '-') {
 		eprintf ("Usage: mkdir [-p] [directory]\n");
@@ -655,7 +663,7 @@ R_API bool r_syscmd_mv(const char *input) {
 	bool rc = false;
 	if (arg) {
 		*arg++ = 0;
-		if (!(rc = r_file_move (inp, arg))) {
+		if (! (rc = r_file_move (inp, arg))) {
 			R_LOG_ERROR ("Cannot move file");
 		}
 	} else {
