@@ -289,7 +289,7 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 	bool needs_newline = false;
 	int linelen = 0;
 	r_list_foreach (files, iter, name) {
-		char *n = r_str_append (strdup (dir), name);
+		char *n = r_str_newf ("%s%s", dir, name);
 		if (!n) {
 			break;
 		}
@@ -312,18 +312,15 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 		}
 		free (n);
 	}
+	if (!pj && r_strbuf_length (sb) > 0 && r_strbuf_get (sb)[r_strbuf_length (sb) - 1] != '\n') {
+		r_strbuf_append (sb, "\n");
+	}
 	char *res;
 	if (pj) {
 		pj_end (pj);
 		res = pj_drain (pj);
 	} else {
 		res = r_strbuf_drain (sb);
-		if (res) {
-			char *last = res + strlen (res) - 1;
-			if (*last != '\n') {
-				res = r_str_append (res, "\n");
-			}
-		}
 	}
 	free (dir);
 	free (d);
