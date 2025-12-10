@@ -99,7 +99,6 @@ R_API int r_bp_traptrace_add(RBreakpoint *bp, ut64 from, ut64 to) {
 		free (trap);
 		return false;
 	}
-	// TODO: check return value
 	int rd = bp->iob.read_at (bp->iob.io, from, buf, (int)len);
 	if (rd != (int)len) {
 		free (buf);
@@ -170,7 +169,6 @@ R_API bool r_bp_traptrace_at(RBreakpoint *bp, ut64 from, int len) {
 	RListIter *iter;
 	RBreakpointTrace *trace;
 	r_list_foreach (bp->traces, iter, trace) {
-	// TODO: do we really need len?
 		if (from>=trace->addr && from+len<=trace->addr_end) {
 			delta = (int) (from-trace->addr);
 			if (R_BIT_CHK (trace->bits, delta)) {

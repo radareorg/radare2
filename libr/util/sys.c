@@ -1601,8 +1601,6 @@ R_API void r_sys_info_free(RSysInfo *si) {
 	}
 }
 
-// R2_590 r_sys_endian_tostring() // endian == R_SYS_ENDIAN_BIG "big" .. R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config)? "big": "little"
-
 R_API bool r_sys_endian_is(int endian, int test) {
 	return (endian & test) == test;
 }

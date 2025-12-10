@@ -323,7 +323,6 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 		column_width = 12;
 	}
 	int nth = 0;
-	bool needs_newline = false;
 	int linelen = 0;
 	r_list_foreach (files, iter, name) {
 		char *n = r_str_newf ("%s%s", dir, name);
