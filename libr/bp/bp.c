@@ -40,6 +40,7 @@ R_API RBreakpoint *r_bp_new(void) {
 	return bp;
 }
 
+// AIRPDO return void
 R_API RBreakpoint *r_bp_free(RBreakpoint *bp) {
 	if (bp) {
 		r_list_free (bp->bps);
@@ -208,7 +209,9 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 * R_NULLABLE obytes,
 }
 
 R_API void r_bp_add_fault(RBreakpoint *bp, ut64 addr, int size, int perm) {
-	// TODO
+	R_RETURN_IF_FAIL (bp);
+	/* Add a fault-type breakpoint (no original bytes to preserve) */
+	r_bp_add (bp, NULL, addr, size, R_BP_TYPE_FAULT, perm);
 }
 
 R_API RBreakpointItem* r_bp_add_sw(RBreakpoint *bp, ut64 addr, int size, int perm) {
@@ -399,6 +402,7 @@ R_API int r_bp_size(RBreakpoint *bp) {
 
 // Check if the breakpoint is in a valid map
 R_API bool r_bp_is_valid(RBreakpoint *bp, RBreakpointItem *b) {
+	R_RETURN_VAL_IF_FAIL (bp && b, false);
 	if (bp->bpinmaps) {
 		return bp->coreb.isMapped (bp->coreb.core, b->addr, b->perm);
 	}
