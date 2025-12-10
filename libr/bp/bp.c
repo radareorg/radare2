@@ -41,7 +41,7 @@ R_API RBreakpoint *r_bp_new(void) {
 }
 
 // AIRPDO return void
-R_API RBreakpoint *r_bp_free(RBreakpoint *bp) {
+R_API void r_bp_free(RBreakpoint *bp) {
 	if (bp) {
 		r_list_free (bp->bps);
 		r_list_free (bp->plugins);
@@ -49,7 +49,6 @@ R_API RBreakpoint *r_bp_free(RBreakpoint *bp) {
 		free (bp->bps_idx);
 		free (bp);
 	}
-	return NULL;
 }
 
 R_API int r_bp_get_bytes(RBreakpoint *bp, ut8 *buf, int len, int endian, int idx) {

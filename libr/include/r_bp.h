@@ -105,7 +105,7 @@ typedef struct r_bp_trace_t {
 
 #ifdef R_API
 R_API RBreakpoint *r_bp_new(void);
-R_API RBreakpoint *r_bp_free(RBreakpoint *bp);
+R_API void r_bp_free(RBreakpoint *bp);
 
 R_API bool r_bp_del(RBreakpoint *bp, ut64 addr);
 R_API bool r_bp_del_all(RBreakpoint *bp);
