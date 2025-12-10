@@ -22,7 +22,7 @@ R_API bool r_bp_plugin_add(RBreakpoint *bp, RBreakpointPlugin *foo) {
 	R_RETURN_VAL_IF_FAIL (bp && foo, false);
 	RListIter *iter;
 	RBreakpointPlugin *h;
-	r_list_foreach (bp->bps, iter, h) {
+	r_list_foreach (bp->plugins, iter, h) {
 		if (!strcmp (h->meta.name, foo->meta.name)) {
 			return false;
 		}
