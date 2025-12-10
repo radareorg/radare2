@@ -913,8 +913,16 @@ static bool apfs_parse_btree_node(ApfsFS *ctx, ut64 block_num, ut64 parent_inode
 			ut32 actual_key_off = key_area_start + key_off;
 			ut32 actual_val_off;
 			if (flags & APFS_BTNODE_ROOT) {
+				if (val_off > ctx->block_size - APFS_BTREE_FOOTER_SIZE) {
+					R_LOG_DEBUG ("Skipping entry %d: val_off (%u) > block_size - APFS_BTREE_FOOTER_SIZE (%u)", i, val_off, ctx->block_size - APFS_BTREE_FOOTER_SIZE);
+					continue;
+				}
 				actual_val_off = ctx->block_size - APFS_BTREE_FOOTER_SIZE - val_off;
 			} else {
+				if (val_off > ctx->block_size) {
+					R_LOG_DEBUG ("Skipping entry %d: val_off (%u) > block_size (%u)", i, val_off, ctx->block_size);
+					continue;
+				}
 				actual_val_off = ctx->block_size - val_off;
 			}
 
