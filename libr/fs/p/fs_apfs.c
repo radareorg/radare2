@@ -58,6 +58,7 @@ static bool fs_apfs_mount(RFSRoot *root) {
 		return false;
 	}
 	// Scan for container superblock
+	// The NXSB magic is at offset 0x20 within the container superblock (after ApfsObjPhys header)
 	ut64 nx_off = 0;
 	ut64 off;
 	for (off = 0; off < APFS_NX_SEARCH_RANGE; off += 0x20) {
@@ -65,12 +66,13 @@ static bool fs_apfs_mount(RFSRoot *root) {
 		if (apfs_read_at (ctx, off, buf, 4)) {
 			ut32 magic = r_read_be32 (buf);
 			if (magic == APFS_NX_MAGIC) {
-				nx_off = off;
+				// Magic found at off, but superblock starts 0x20 bytes earlier
+				nx_off = off - sizeof (ApfsObjPhys);
 				break;
 			}
 		}
 	}
-	if (!nx_off) {
+	if (!nx_off && off >= APFS_NX_SEARCH_RANGE) {
 		R_LOG_ERROR ("APFS container superblock not found");
 		apfs_cleanup_ctx (ctx);
 		return false;
@@ -93,7 +95,7 @@ static bool fs_apfs_mount(RFSRoot *root) {
 	}
 
 	// Check magic
-	ut32 magic = r_read_be32 ((ut8 *)&nx_sb->nx_magic);
+	ut32 magic = apfs_read32 (ctx, (ut8 *)&nx_sb->nx_magic);
 	if (magic != APFS_NX_MAGIC) {
 		R_LOG_ERROR ("Invalid APFS container magic: 0x%x", magic);
 		free (nx_sb);
@@ -114,22 +116,59 @@ static bool fs_apfs_mount(RFSRoot *root) {
 		ctx->block_shift++;
 	}
 
-	// Get the first volume superblock
-	ut64 first_vol_oid;
-	if (!apfs_read_at (ctx, 0x50, (ut8 *)&first_vol_oid, sizeof (ut64))) {
-		R_LOG_ERROR ("Failed to read volume OID");
-		ctx->nx_sb = nx_sb;
-		apfs_cleanup_ctx (ctx);
-		return false;
-	}
-	first_vol_oid = apfs_read64 (ctx, (ut8 *)&first_vol_oid);
+	// Get the first volume OID from the container superblock
+	ut64 first_vol_oid = apfs_read64 (ctx, (ut8 *)&nx_sb->nx_fs_oid[0]);
 	if (first_vol_oid == 0) {
 		R_LOG_ERROR ("No APFS volumes found");
 		ctx->nx_sb = nx_sb;
 		apfs_cleanup_ctx (ctx);
 		return false;
 	}
-	ctx->vol_sb_block = first_vol_oid;
+	R_LOG_INFO ("First volume OID: %" PFMT64u " (0x%" PFMT64x ")", first_vol_oid, first_vol_oid);
+
+	// Scan for the most recent volume superblock (APSB magic)
+	// The volume OID from container is virtual and needs omap resolution,
+	// but we can find the volume superblock by scanning for APSB magic
+	ut64 vol_paddr = 0;
+	ut64 vol_xid = 0;
+	ut64 block_count = apfs_read64 (ctx, (ut8 *)&nx_sb->nx_block_count);
+	R_LOG_INFO ("Container has %" PFMT64u " blocks, delta=0x%" PFMT64x ", block_size=%u", block_count, ctx->delta, ctx->block_size);
+
+	ut64 block;
+	for (block = 0; block < block_count && block < 512; block++) {
+		ut8 header[64];
+		ut64 offset = apfs_block_to_offset (ctx, block);
+		if (offset == UT64_MAX) {
+			continue;
+		}
+		if (!apfs_read_at (ctx, offset, header, sizeof (header))) {
+			continue;
+		}
+		// Check for APSB magic at offset 0x20 (after ApfsObjPhys header)
+		ut32 magic = r_read_le32 (header + 0x20);
+		if (magic == APFS_MAGIC) {
+			// Check object type
+			ut32 o_type = apfs_read32 (ctx, header + 24);
+			R_LOG_INFO ("Block %" PFMT64u ": APSB magic found, o_type=0x%x", block, o_type);
+			if ((o_type & APFS_OBJECT_TYPE_MASK) == APFS_OBJECT_TYPE_FS) {
+				ut64 xid = apfs_read64 (ctx, header + 16);
+				R_LOG_INFO ("Found volume superblock at block %" PFMT64u " with xid %" PFMT64u, block, xid);
+				if (xid > vol_xid) {
+					vol_xid = xid;
+					vol_paddr = block;
+				}
+			}
+		}
+	}
+
+	if (vol_paddr == 0) {
+		R_LOG_ERROR ("Could not find APFS volume superblock");
+		ctx->nx_sb = nx_sb;
+		apfs_cleanup_ctx (ctx);
+		return false;
+	}
+	R_LOG_DEBUG ("Using volume superblock at block %" PFMT64u " (xid %" PFMT64u ")", vol_paddr, vol_xid);
+	ctx->vol_sb_block = vol_paddr;
 
 	ApfsSuperblock *vol_sb = malloc (sizeof (ApfsSuperblock));
 	if (!vol_sb) {
@@ -148,7 +187,7 @@ static bool fs_apfs_mount(RFSRoot *root) {
 	}
 
 	// Check volume magic (skip for test images)
-	ut32 vol_magic = r_read_be32 ((ut8 *)&vol_sb->apfs_magic);
+	ut32 vol_magic = apfs_read32 (ctx, (ut8 *)&vol_sb->apfs_magic);
 	if (vol_magic != APFS_MAGIC) {
 		R_LOG_DEBUG ("Invalid APFS volume magic (0x%x), assuming test image", vol_magic);
 		// For test images, initialize a minimal volume superblock
@@ -162,30 +201,33 @@ static bool fs_apfs_mount(RFSRoot *root) {
 	// Get object map OID and parse it first
 	ut64 omap_oid = apfs_read64 (ctx, (ut8 *)&vol_sb->apfs_omap_oid);
 	ctx->omap_tree_oid = 0;
+	bool catalog_ok = true;
 
-	// Attempt to parse omap and catalog normally; do not fall back to mocked structures
-	bool skip_btree_parse = false;
+	R_LOG_INFO ("Volume omap_oid: %" PFMT64u ", root_tree_oid: %" PFMT64u,
+		omap_oid, apfs_read64 (ctx, (ut8 *)&vol_sb->apfs_root_tree_oid));
 
 	if (omap_oid != 0) {
 		if (!apfs_parse_omap_btree (ctx, omap_oid)) {
 			R_LOG_WARN ("Failed to parse object map");
-			skip_btree_parse = true;
+			catalog_ok = false;
+		} else {
+			R_LOG_INFO ("Successfully parsed volume object map");
 		}
+	} else {
+		catalog_ok = false;
 	}
 
-	if (!skip_btree_parse) {
+	if (catalog_ok) {
 		// Walk the catalog B-tree starting from root
 		ut64 root_tree_oid = apfs_read64 (ctx, (ut8 *)&vol_sb->apfs_root_tree_oid);
-		if (!apfs_walk_catalog_btree (ctx, root_tree_oid, 0)) {
-			R_LOG_WARN ("Failed to walk APFS catalog B-tree");
-			skip_btree_parse = true;
-		}
+		R_LOG_INFO ("Walking catalog B-tree from root OID %" PFMT64u, root_tree_oid);
+		catalog_ok = apfs_walk_catalog_btree (ctx, root_tree_oid, 0);
 	}
 
 	R_LOG_DEBUG ("Attempting to parse APFS structures from image");
-	if (!apfs_parse_simple_image (ctx)) {
-		R_LOG_WARN ("No file structures found via scanning");
-		// Do not create mocked root; leave inodes empty if parsing failed
+	bool scan_ok = apfs_parse_simple_image (ctx);
+	if (!catalog_ok && !scan_ok) {
+		R_LOG_WARN ("Failed to walk APFS catalog B-tree");
 	}
 
 	ctx->mounted = true;
@@ -290,6 +332,18 @@ static ut64 apfs_resolve_path(ApfsFS *ctx, const char *path) {
 	return current_inode;
 }
 
+static ut64 apfs_inode_get_size(ApfsFS *ctx, ApfsInodeCache *cache) {
+	if (!ctx || !cache || !cache->inode) {
+		return 0;
+	}
+	if (cache->inode_len >= sizeof (ApfsInodeVal) + sizeof (ApfsDstream)) {
+		ut32 len = cache->inode_len;
+		ApfsDstream *ds = (ApfsDstream *)((ut8 *)cache->inode + len - sizeof (ApfsDstream));
+		return apfs_read64 (ctx, (ut8 *)&ds->size);
+	}
+	return apfs_read64 (ctx, (ut8 *)&cache->inode->uncompressed_size);
+}
+
 static RList *fs_apfs_dir(RFSRoot *root, const char *path, int view) {
 	R_RETURN_VAL_IF_FAIL (root, NULL);
 
@@ -349,7 +403,7 @@ static RFSFile *fs_apfs_open(RFSRoot *root, const char *path, bool create) {
 		file->type = R_FS_FILE_TYPE_DIRECTORY;
 	} else if (apfs_is_regular_file (mode)) {
 		file->type = R_FS_FILE_TYPE_REGULAR;
-		file->size = apfs_read64 (ctx, (ut8 *)&cache->inode->uncompressed_size);
+		file->size = apfs_inode_get_size (ctx, cache);
 	} else {
 		file->type = R_FS_FILE_TYPE_SPECIAL;
 	}
@@ -357,13 +411,13 @@ static RFSFile *fs_apfs_open(RFSRoot *root, const char *path, bool create) {
 	return file;
 }
 
-static bool apfs_read_file_extents(ApfsFS *ctx, ApfsInodeVal *inode, ut8 **data, ut64 *size);
-static bool apfs_read_file_extents(ApfsFS *ctx, ApfsInodeVal *inode, ut8 **data, ut64 *size) {
-	if (!ctx || !inode || !data || !size) {
+static bool apfs_read_file_extents(ApfsFS *ctx, ApfsInodeCache *cache, ut8 **data, ut64 *size);
+static bool apfs_read_file_extents(ApfsFS *ctx, ApfsInodeCache *cache, ut8 **data, ut64 *size) {
+	if (!ctx || !cache || !cache->inode || !data || !size) {
 		return false;
 	}
 
-	*size = apfs_read64 (ctx, (ut8 *)&inode->uncompressed_size);
+	*size = apfs_inode_get_size (ctx, cache);
 	if (*size == 0) {
 		*data = NULL;
 		return true;
@@ -385,7 +439,7 @@ static bool apfs_read_file_extents(ApfsFS *ctx, ApfsInodeVal *inode, ut8 **data,
 
 	// For test purposes, try to read from consecutive blocks starting from inode number
 	// This is a placeholder - real APFS would parse extent information from xfields
-	ut64 start_block = inode->private_id; // Use private_id as a hint for data location
+	ut64 start_block = cache->inode->private_id; // Use private_id as a hint for data location
 	ut64 blocks_needed = (*size + block_size - 1) / block_size;
 
 	ut8 *block_buf = malloc (block_size);
@@ -481,7 +535,7 @@ static int fs_apfs_read(RFSFile *file, ut64 addr, int len) {
 	ut64 file_size = 0;
 
 	// Parse file extents to get the actual file data
-	if (!apfs_read_file_extents (ctx, cache->inode, &file_data, &file_size)) {
+	if (!apfs_read_file_extents (ctx, cache, &file_data, &file_size)) {
 		return -1;
 	}
 
@@ -556,9 +610,11 @@ static bool apfs_parse_omap_btree(ApfsFS *ctx, ut64 omap_oid) {
 static bool apfs_resolve_omap_btree_node(ApfsFS *ctx, ut64 node_oid, ut64 target_oid, ut64 target_xid, ut64 *paddr);
 
 static bool apfs_resolve_omap(ApfsFS *ctx, ut64 oid, ut64 *paddr) {
+	R_LOG_INFO ("apfs_resolve_omap: resolving OID %" PFMT64u ", omap_tree_oid=%" PFMT64u, oid, ctx->omap_tree_oid);
 	if (!ctx->omap_tree_oid) {
 		// Direct mapping for simple cases
 		*paddr = oid;
+		R_LOG_INFO ("apfs_resolve_omap: direct mapping to paddr %" PFMT64u, *paddr);
 		return true;
 	}
 
@@ -567,9 +623,12 @@ static bool apfs_resolve_omap(ApfsFS *ctx, ut64 oid, ut64 *paddr) {
 	if (ctx->vol_sb) {
 		target_xid = apfs_read64 (ctx, (ut8 *)&ctx->vol_sb->apfs_o.o_xid);
 	}
+	R_LOG_INFO ("apfs_resolve_omap: target_xid=%" PFMT64u, target_xid);
 
 	// Start traversal from the object map tree root
-	return apfs_resolve_omap_btree_node (ctx, ctx->omap_tree_oid, oid, target_xid, paddr);
+	bool result = apfs_resolve_omap_btree_node (ctx, ctx->omap_tree_oid, oid, target_xid, paddr);
+	R_LOG_INFO ("apfs_resolve_omap: result=%d, paddr=%" PFMT64u, result, *paddr);
+	return result;
 }
 
 static bool apfs_resolve_omap_btree_node(ApfsFS *ctx, ut64 node_oid, ut64 target_oid, ut64 target_xid, ut64 *paddr) {
@@ -579,98 +638,174 @@ static bool apfs_resolve_omap_btree_node(ApfsFS *ctx, ut64 node_oid, ut64 target
 		return false;
 	}
 
-	ApfsBtreeNodePhys *node = malloc (ctx->block_size);
-	if (!node) {
+	ut8 *node_data = malloc (ctx->block_size);
+	if (!node_data) {
 		return false;
 	}
 
-	if (!apfs_read_at (ctx, offset, (ut8 *)node, ctx->block_size)) {
-		free (node);
+	if (!apfs_read_at (ctx, offset, node_data, ctx->block_size)) {
+		free (node_data);
 		return false;
 	}
 
 	// Verify this is a B-tree node
-	ut32 o_type = apfs_read32 (ctx, (ut8 *)node + APFS_OBJ_PHYS_TYPE_OFFSET);
+	ut32 o_type = apfs_read32 (ctx, node_data + APFS_OBJ_PHYS_TYPE_OFFSET);
 	ut32 obj_type = o_type & APFS_OBJECT_TYPE_MASK;
 	if (obj_type != APFS_OBJECT_TYPE_BTREE_NODE && obj_type != APFS_OBJECT_TYPE_BTREE) {
-		free (node);
+		free (node_data);
 		return false;
 	}
 
+	ApfsBtreeNodePhys *node = (ApfsBtreeNodePhys *)node_data;
 	ut16 flags = apfs_read16 (ctx, (ut8 *)&node->btn_flags);
-	ut16 nkeys = apfs_read16 (ctx, (ut8 *)&node->btn_nkeys);
+	ut32 nkeys = apfs_read32 (ctx, (ut8 *)&node->btn_nkeys);
 
 	// Validate nkeys to prevent out-of-bounds reads
 	if (nkeys > APFS_MAX_BTREE_KEYS) {
-		free (node);
+		free (node_data);
 		return false;
 	}
 
 	bool found = false;
+	bool is_fixed_kv = (flags & APFS_BTNODE_FIXED_KV_SIZE) != 0;
+	bool is_leaf = (flags & APFS_BTNODE_LEAF) != 0;
+	bool is_root = (flags & APFS_BTNODE_ROOT) != 0;
 
-	if (flags & APFS_BTNODE_LEAF) {
-		// Leaf node: search for exact match
-		ApfsKvloc *kvloc_table = (ApfsKvloc *)node->btn_data;
+	R_LOG_DEBUG ("omap node oid=%" PFMT64u " flags=0x%x nkeys=%u leaf=%d fixed=%d root=%d",
+		node_oid, flags, nkeys, is_leaf, is_fixed_kv, is_root);
 
-		ut16 i;
-		for (i = 0; i < nkeys; i++) {
-			ut16 key_off = apfs_read16 (ctx, (ut8 *)&kvloc_table[i].k.off);
-			ut16 key_len = apfs_read16 (ctx, (ut8 *)&kvloc_table[i].k.len);
-			ut16 val_off = apfs_read16 (ctx, (ut8 *)&kvloc_table[i].v.off);
-			ut16 val_len = apfs_read16 (ctx, (ut8 *)&kvloc_table[i].v.len);
+	ut16 table_space_off = apfs_read16 (ctx, (ut8 *)&node->btn_table_space.off);
+	ut16 table_space_len = apfs_read16 (ctx, (ut8 *)&node->btn_table_space.len);
 
-			// Validate offsets
-			if (key_off >= ctx->block_size || val_off >= ctx->block_size ||
-				key_off + key_len > ctx->block_size || val_off + val_len > ctx->block_size ||
-				key_len < sizeof (ApfsOmapKey) || val_len < sizeof (ApfsOmapVal)) {
-				continue;
+	if (is_leaf) {
+		if (is_fixed_kv) {
+			// Fixed KV size mode for omap: keys are 16 bytes (ApfsOmapKey), values are 16 bytes (ApfsOmapVal)
+			ut32 key_size = sizeof (ApfsOmapKey);
+			ut32 val_size = sizeof (ApfsOmapVal);
+			// Key area starts after header (56 bytes) + table_space_off + table_space_len
+			ut32 key_area_start = sizeof (ApfsBtreeNodePhys) + table_space_off + table_space_len;
+			R_LOG_DEBUG ("omap leaf fixed: table_space_off=%u table_space_len=%u key_area_start=%u nkeys=%u is_root=%d",
+				table_space_off, table_space_len, key_area_start, nkeys, is_root);
+
+			ut32 i;
+			for (i = 0; i < nkeys; i++) {
+				ut32 key_offset = key_area_start + i * key_size;
+				if (key_offset + key_size > ctx->block_size) {
+					R_LOG_DEBUG ("omap leaf fixed: key_offset=%u out of bounds (block_size=%u)", key_offset, ctx->block_size);
+					continue;
+				}
+
+				ut64 key_oid = apfs_read64 (ctx, node_data + key_offset);
+				ut64 key_xid = apfs_read64 (ctx, node_data + key_offset + 8);
+
+				// Value is at the end of the block (reversed order)
+				// For root nodes, there's a 40-byte footer
+				ut32 val_offset;
+				if (is_root) {
+					val_offset = ctx->block_size - APFS_BTREE_FOOTER_SIZE - (nkeys - i) * val_size;
+				} else {
+					val_offset = ctx->block_size - (nkeys - i) * val_size;
+				}
+
+				if (val_offset + val_size > ctx->block_size) {
+					R_LOG_DEBUG ("omap leaf fixed: val_offset=%u out of bounds (block_size=%u)", val_offset, ctx->block_size);
+					continue;
+				}
+
+				R_LOG_DEBUG ("omap leaf fixed: entry=%u key_oid=%" PFMT64u " key_xid=%" PFMT64u " val_offset=%u", i, key_oid, key_xid, val_offset);
+				// Look for matching OID and compatible XID
+				if (key_oid == target_oid && (target_xid == 0 || key_xid <= target_xid)) {
+					*paddr = apfs_read64 (ctx, node_data + val_offset + 8); // paddr is at offset 8 in ApfsOmapVal
+					found = true;
+					break;
+				}
 			}
+		} else {
+			// Variable KV size mode (original code path)
+			ApfsKvloc *kvloc_table = (ApfsKvloc *)node->btn_data;
 
-			ApfsOmapKey *omap_key = (ApfsOmapKey *) ((ut8 *)node + key_off);
-			ut64 key_oid = apfs_read64 (ctx, (ut8 *)&omap_key->ok_oid);
-			ut64 key_xid = apfs_read64 (ctx, (ut8 *)&omap_key->ok_xid);
+			ut16 i;
+			for (i = 0; i < nkeys; i++) {
+				ut16 key_off = apfs_read16 (ctx, (ut8 *)&kvloc_table[i].k.off);
+				ut16 key_len = apfs_read16 (ctx, (ut8 *)&kvloc_table[i].k.len);
+				ut16 val_off = apfs_read16 (ctx, (ut8 *)&kvloc_table[i].v.off);
+				ut16 val_len = apfs_read16 (ctx, (ut8 *)&kvloc_table[i].v.len);
 
-			// Look for matching OID and compatible XID
-			if (key_oid == target_oid && (target_xid == 0 || key_xid <= target_xid)) {
-				ApfsOmapVal *omap_val = (ApfsOmapVal *) ((ut8 *)node + val_off);
-				*paddr = apfs_read64 (ctx, (ut8 *)&omap_val->ov_paddr);
-				found = true;
-				break;
+				// Validate offsets
+				if (key_off >= ctx->block_size || val_off >= ctx->block_size ||
+					key_off + key_len > ctx->block_size || val_off + val_len > ctx->block_size ||
+					key_len < sizeof (ApfsOmapKey) || val_len < sizeof (ApfsOmapVal)) {
+					continue;
+				}
+
+				ApfsOmapKey *omap_key = (ApfsOmapKey *) (node_data + key_off);
+				ut64 key_oid = apfs_read64 (ctx, (ut8 *)&omap_key->ok_oid);
+				ut64 key_xid = apfs_read64 (ctx, (ut8 *)&omap_key->ok_xid);
+
+				if (key_oid == target_oid && (target_xid == 0 || key_xid <= target_xid)) {
+					ApfsOmapVal *omap_val = (ApfsOmapVal *) (node_data + val_off);
+					*paddr = apfs_read64 (ctx, (ut8 *)&omap_val->ov_paddr);
+					found = true;
+					break;
+				}
 			}
 		}
 	} else {
 		// Internal node: find the appropriate child to traverse
-		ut16 table_space_off = apfs_read16 (ctx, (ut8 *)&node->btn_table_space.off);
-		if (table_space_off >= ctx->block_size) {
-			free (node);
-			return false;
-		}
-
-		ApfsKvloc *kvloc_table = (ApfsKvloc *) ((ut8 *)node + table_space_off);
-
-		// Find the rightmost child whose key is <= target_oid
+		// For fixed KV internal nodes, similar layout but values are child OIDs
 		ut64 child_oid = 0;
-		ut16 i;
-		for (i = 0; i < nkeys; i++) {
-			ut16 key_off = apfs_read16 (ctx, (ut8 *)&kvloc_table[i].k.off);
-			ut16 key_len = apfs_read16 (ctx, (ut8 *)&kvloc_table[i].k.len);
-			ut16 val_off = apfs_read16 (ctx, (ut8 *)&kvloc_table[i].v.off);
-			ut16 val_len = apfs_read16 (ctx, (ut8 *)&kvloc_table[i].v.len);
 
-			// Validate offsets
-			if (key_off >= ctx->block_size || val_off >= ctx->block_size ||
-				key_off + key_len > ctx->block_size || val_off + val_len > ctx->block_size ||
-				key_len < sizeof (ApfsOmapKey) || val_len < sizeof (ut64)) {
-				continue;
+		if (is_fixed_kv) {
+			ut32 key_size = sizeof (ApfsOmapKey);
+			ut32 val_size = sizeof (ut64);
+			ut32 key_area_start = sizeof (ApfsBtreeNodePhys) + table_space_off + table_space_len;
+
+			ut32 i;
+			for (i = 0; i < nkeys; i++) {
+				ut32 key_offset = key_area_start + i * key_size;
+				if (key_offset + key_size > ctx->block_size) {
+					continue;
+				}
+
+				ut64 key_oid = apfs_read64 (ctx, node_data + key_offset);
+
+				ut32 val_offset;
+				if (is_root) {
+					val_offset = ctx->block_size - APFS_BTREE_FOOTER_SIZE - (nkeys - i) * val_size;
+				} else {
+					val_offset = ctx->block_size - (nkeys - i) * val_size;
+				}
+
+				if (key_oid <= target_oid) {
+					child_oid = apfs_read64 (ctx, node_data + val_offset);
+				} else {
+					break;
+				}
 			}
+		} else {
+			ApfsKvloc *kvloc_table = (ApfsKvloc *) (node_data + sizeof (ApfsBtreeNodePhys) + table_space_off);
 
-			ApfsOmapKey *omap_key = (ApfsOmapKey *) ((ut8 *)node + key_off);
-			ut64 key_oid = apfs_read64 (ctx, (ut8 *)&omap_key->ok_oid);
+			ut16 i;
+			for (i = 0; i < nkeys; i++) {
+				ut16 key_off = apfs_read16 (ctx, (ut8 *)&kvloc_table[i].k.off);
+				ut16 key_len = apfs_read16 (ctx, (ut8 *)&kvloc_table[i].k.len);
+				ut16 val_off = apfs_read16 (ctx, (ut8 *)&kvloc_table[i].v.off);
+				ut16 val_len = apfs_read16 (ctx, (ut8 *)&kvloc_table[i].v.len);
 
-			if (key_oid <= target_oid) {
-				child_oid = apfs_read64 (ctx, (ut8 *)node + val_off);
-			} else {
-				break;
+				if (key_off >= ctx->block_size || val_off >= ctx->block_size ||
+					key_off + key_len > ctx->block_size || val_off + val_len > ctx->block_size ||
+					key_len < sizeof (ApfsOmapKey) || val_len < sizeof (ut64)) {
+					continue;
+				}
+
+				ApfsOmapKey *omap_key = (ApfsOmapKey *) (node_data + key_off);
+				ut64 key_oid = apfs_read64 (ctx, (ut8 *)&omap_key->ok_oid);
+
+				if (key_oid <= target_oid) {
+					child_oid = apfs_read64 (ctx, node_data + val_off);
+				} else {
+					break;
+				}
 			}
 		}
 
@@ -679,7 +814,7 @@ static bool apfs_resolve_omap_btree_node(ApfsFS *ctx, ut64 node_oid, ut64 target
 		}
 	}
 
-	free (node);
+	free (node_data);
 
 	// If not found in object map, fall back to direct mapping
 	if (!found) {
@@ -747,8 +882,16 @@ static bool apfs_parse_btree_node(ApfsFS *ctx, ut64 block_num, ut64 parent_inode
 
 	if (flags & APFS_BTNODE_LEAF) {
 		// Parse key-value pairs in the leaf node
-		// The kvloc table starts immediately after the fixed header (at offset 0x38)
-		size_t kvloc_offset = 0x38;
+		ut16 table_space_off = apfs_read16 (ctx, (ut8 *)&node->btn_table_space.off);
+		ut16 table_space_len = apfs_read16 (ctx, (ut8 *)&node->btn_table_space.len);
+		ut32 key_area_start = sizeof (ApfsBtreeNodePhys) + table_space_off + table_space_len;
+		if (key_area_start >= ctx->block_size) {
+			free (node);
+			return false;
+		}
+
+		// The kvloc table starts immediately after the fixed header
+		size_t kvloc_offset = (ut8 *)node->btn_data - (ut8 *)node;
 		if (!apfs_validate_kvloc_bounds (ctx, nkeys, kvloc_offset)) {
 			R_LOG_DEBUG ("apfs: invalid kvloc bounds, nkeys=%u", nkeys);
 			free (node);
@@ -767,15 +910,31 @@ static bool apfs_parse_btree_node(ApfsFS *ctx, ut64 block_num, ut64 parent_inode
 			R_LOG_DEBUG ("Entry %d: key_off=0x%x, key_len=%d, val_off=0x%x, val_len=%d",
 				i, key_off, key_len, val_off, val_len);
 
+			ut32 actual_key_off = key_area_start + key_off;
+			ut32 actual_val_off;
+			if (flags & APFS_BTNODE_ROOT) {
+				if (val_off > ctx->block_size - APFS_BTREE_FOOTER_SIZE) {
+					R_LOG_DEBUG ("Skipping entry %d: val_off (%u) > block_size - APFS_BTREE_FOOTER_SIZE (%u)", i, val_off, ctx->block_size - APFS_BTREE_FOOTER_SIZE);
+					continue;
+				}
+				actual_val_off = ctx->block_size - APFS_BTREE_FOOTER_SIZE - val_off;
+			} else {
+				if (val_off > ctx->block_size) {
+					R_LOG_DEBUG ("Skipping entry %d: val_off (%u) > block_size (%u)", i, val_off, ctx->block_size);
+					continue;
+				}
+				actual_val_off = ctx->block_size - val_off;
+			}
+
 			// Skip entries with invalid offsets
-			if (key_off >= ctx->block_size || val_off >= ctx->block_size ||
-				key_off + key_len > ctx->block_size || val_off + val_len > ctx->block_size) {
+			if (actual_key_off >= ctx->block_size || actual_val_off >= ctx->block_size ||
+				actual_key_off + key_len > ctx->block_size || actual_val_off + val_len > ctx->block_size) {
 				R_LOG_DEBUG ("Skipping entry %d: invalid offsets", i);
 				continue;
 			}
 
-			ut8 *key_data = (ut8 *)node + key_off;
-			ut8 *val_data = (ut8 *)node + val_off;
+			ut8 *key_data = (ut8 *)node + actual_key_off;
+			ut8 *val_data = (ut8 *)node + actual_val_off;
 
 			// Debug: print first few bytes of key data
 			R_LOG_DEBUG ("Key data: %02x %02x %02x %02x %02x %02x %02x %02x",
@@ -1010,6 +1169,7 @@ static bool apfs_parse_dir_record(ApfsFS *ctx, ut64 obj_id, ut8 *key_data, ut16 
 			ut16 flags = apfs_read16 (ctx, (ut8 *)&drec_val->flags);
 			inode->mode = ((flags & 0x000f) == 4) ? APFS_INODE_MODE_DIR : APFS_INODE_MODE_FILE;
 			cache->inode = inode;
+			cache->inode_len = sizeof (ApfsInodeVal);
 			cache->parsed = true;
 			ht_up_insert (ctx->inodes, file_id, cache);
 		} else if (!cache->name) {
@@ -1040,15 +1200,20 @@ static bool apfs_parse_catalog_record(ApfsFS *ctx, ut8 *key_data, ut16 key_len, 
 			return false;
 		}
 		ApfsInodeVal *inode_val = (ApfsInodeVal *)val_data;
-		ApfsInodeCache *cache = R_NEW0 (ApfsInodeCache);
-		cache->inode_num = obj_id;
+		ApfsInodeCache *cache = apfs_get_inode (ctx, obj_id);
+		if (!cache) {
+			cache = R_NEW0 (ApfsInodeCache);
+			cache->inode_num = obj_id;
+			ht_up_insert (ctx->inodes, obj_id, cache);
+		} else {
+			free (cache->inode);
+		}
 		cache->parent_inode_num = apfs_read64 (ctx, (ut8 *)&inode_val->parent_id);
-		cache->name = NULL; // Will be set when parsing directory records
 
-		ApfsInodeVal *inode = r_mem_dup (inode_val, sizeof (ApfsInodeVal));
+		ApfsInodeVal *inode = r_mem_dup (inode_val, val_len);
 		cache->inode = inode;
+		cache->inode_len = val_len;
 		cache->parsed = true;
-		ht_up_insert (ctx->inodes, obj_id, cache);
 	}
 	// Ignore other record types for now
 	return true;
@@ -1161,7 +1326,7 @@ static bool apfs_dir_iter_cb(void *user, const ut64 key, const void *value) {
 			fsf->type = R_FS_FILE_TYPE_DIRECTORY;
 		} else if (apfs_is_regular_file (mode)) {
 			fsf->type = R_FS_FILE_TYPE_REGULAR;
-			fsf->size = 0;
+			fsf->size = apfs_inode_get_size (apfs_ctx, cache);
 		} else {
 			fsf->type = R_FS_FILE_TYPE_SPECIAL;
 		}
