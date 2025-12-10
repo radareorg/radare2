@@ -737,13 +737,6 @@ static void sbpf_print_string_xrefs(RAnal *anal) {
 	r_list_free (refs);
 }
 
-static RCoreHelpMessage help_msg_a_sbpf = {
-	"Usage:", "aex", "[a] [9090]",
-	"aex", " 90", "decode the given hexpairs and execute them",
-	"aexa", " mov rax, 33", "assemble instruction and execute it",
-	NULL
-};
-
 static bool sbpfcmd(RAnal *anal, const char *cmd) {
 	R_RETURN_VAL_IF_FAIL (anal && cmd, false);
 
