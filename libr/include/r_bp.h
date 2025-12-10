@@ -82,6 +82,7 @@ typedef struct r_bp_t {
 	int bps_idx_count;
 	st64 delta;
 	ut64 baddr;
+	int nhwbps;
 } RBreakpoint;
 
 // DEPRECATED: USE R_PERM
