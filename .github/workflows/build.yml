@@ -264,7 +264,7 @@ jobs:
     - if: ${{ matrix.sdk }}
       name: Create iOS SDK
       run: |
-        ./sys/ios-sdk.sh
+        ./sys/sdk-ios.sh
         pushd /tmp/r2ios
         zip -r /tmp/r2ios-sdk.zip *
         popd

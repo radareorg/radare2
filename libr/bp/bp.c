@@ -30,7 +30,6 @@ R_API RBreakpoint *r_bp_new(void) {
 	bp->traces = r_bp_traptrace_new ();
 	bp->bps = r_list_newf ((RListFree)r_bp_item_free);
 	bp->plugins = r_list_newf ((RListFree)free);
-	bp->nhwbps = 0;
 	for (i = 0; bp_static_plugins[i]; i++) {
 		static_plugin = R_NEW (RBreakpointPlugin);
 		memcpy (static_plugin, bp_static_plugins[i],
@@ -41,7 +40,8 @@ R_API RBreakpoint *r_bp_new(void) {
 	return bp;
 }
 
-R_API RBreakpoint *r_bp_free(RBreakpoint *bp) {
+// AIRPDO return void
+R_API void r_bp_free(RBreakpoint *bp) {
 	if (bp) {
 		r_list_free (bp->bps);
 		r_list_free (bp->plugins);
@@ -49,7 +49,6 @@ R_API RBreakpoint *r_bp_free(RBreakpoint *bp) {
 		free (bp->bps_idx);
 		free (bp);
 	}
-	return NULL;
 }
 
 R_API int r_bp_get_bytes(RBreakpoint *bp, ut8 *buf, int len, int endian, int idx) {
@@ -204,13 +203,14 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 * R_NULLABLE obytes,
 			R_LOG_WARN ("Cannot get breakpoint bytes. No architecture selected?");
 		}
 	}
-	bp->nbps++;
 	r_list_append (bp->bps, b);
 	return b;
 }
 
 R_API void r_bp_add_fault(RBreakpoint *bp, ut64 addr, int size, int perm) {
-	// TODO
+	R_RETURN_IF_FAIL (bp);
+	/* Add a fault-type breakpoint (no original bytes to preserve) */
+	r_bp_add (bp, NULL, addr, size, R_BP_TYPE_FAULT, perm);
 }
 
 R_API RBreakpointItem* r_bp_add_sw(RBreakpoint *bp, ut64 addr, int size, int perm) {
@@ -401,6 +401,7 @@ R_API int r_bp_size(RBreakpoint *bp) {
 
 // Check if the breakpoint is in a valid map
 R_API bool r_bp_is_valid(RBreakpoint *bp, RBreakpointItem *b) {
+	R_RETURN_VAL_IF_FAIL (bp && b, false);
 	if (bp->bpinmaps) {
 		return bp->coreb.isMapped (bp->coreb.core, b->addr, b->perm);
 	}

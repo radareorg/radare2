@@ -9,15 +9,15 @@ static void r_bp_watch_add_hw(RBreakpoint *bp, RBreakpointItem *b) {
 }
 
 R_API RBreakpointItem* r_bp_watch_add(RBreakpoint *bp, ut64 addr, int size, int hw, int perm) {
-	RBreakpointItem *b;
+	// use R_RETURN precondition checks in all R_API functions
 	if (addr == UT64_MAX || size < 1) {
 		return NULL;
 	}
 	if (r_bp_get_in (bp, addr, perm)) {
-		eprintf ("Breakpoint already set at this address.\n");
+		R_LOG_WARN ("Breakpoint already set at this address");
 		return NULL;
 	}
-	b = r_bp_item_new (bp);
+	RBreakpointItem *b = r_bp_item_new (bp);
 	b->addr = addr + bp->delta;
 	b->size = size;
 	b->enabled = true;
@@ -26,13 +26,13 @@ R_API RBreakpointItem* r_bp_watch_add(RBreakpoint *bp, ut64 addr, int size, int 
 	if (hw) {
 		r_bp_watch_add_hw (bp, b);
 	} else {
-		eprintf ("[TODO]: Software watchpoint is not implemented yet (use ESIL)\n");
+		R_LOG_TODO ("Software watchpoint is not implemented yet (use ESIL)");
 		/* TODO */
 	}
-	bp->nbps++;
 	r_list_append (bp->bps, b);
 	return b;
 }
 
 R_API void r_bp_watch_del(void) {
+	R_LOG_TODO ("r_bp_watch_del not implemented");
 }

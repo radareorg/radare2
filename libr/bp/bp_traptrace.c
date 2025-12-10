@@ -100,9 +100,15 @@ R_API int r_bp_traptrace_add(RBreakpoint *bp, ut64 from, ut64 to) {
 		return false;
 	}
 	// TODO: check return value
-	bp->iob.read_at (bp->iob.io, from, buf, len);
+	int rd = bp->iob.read_at (bp->iob.io, from, buf, (int)len);
+	if (rd != (int)len) {
+		free (buf);
+		free (trap);
+		free (bits);
+		return false;
+	}
 	memset (bits, 0x00, bitlen);
-	r_bp_get_bytes (bp, trap, len, bp->endian, 0);
+	r_bp_get_bytes (bp, trap, (int)len, bp->endian, 0);
 
 	trace = R_NEW (RBreakpointTrace);
 	if (!trace) {

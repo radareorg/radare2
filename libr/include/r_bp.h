@@ -77,13 +77,12 @@ typedef struct r_bp_t {
 	RList *plugins;
 	RBreakpointCallback breakpoint;
 	/* storage of breakpoints */
-	int nbps;
-	int nhwbps;
 	RList *bps; // list of breakpoints
 	RBreakpointItem **bps_idx;
 	int bps_idx_count;
 	st64 delta;
 	ut64 baddr;
+	int nhwbps;
 } RBreakpoint;
 
 // DEPRECATED: USE R_PERM
@@ -106,15 +105,15 @@ typedef struct r_bp_trace_t {
 
 #ifdef R_API
 R_API RBreakpoint *r_bp_new(void);
-R_API RBreakpoint *r_bp_free(RBreakpoint *bp);
+R_API void r_bp_free(RBreakpoint *bp);
 
 R_API bool r_bp_del(RBreakpoint *bp, ut64 addr);
 R_API bool r_bp_del_all(RBreakpoint *bp);
 
-R_API int r_bp_plugin_add(RBreakpoint *bp, RBreakpointPlugin *plugin);
-R_API int r_bp_plugin_remove(RBreakpoint *bp, RBreakpointPlugin *plugin);
-R_API int r_bp_use(RBreakpoint *bp, const char *name, int bits);
-R_API int r_bp_plugin_del(RBreakpoint *bp, const char *name);
+R_API bool r_bp_plugin_add(RBreakpoint *bp, RBreakpointPlugin *plugin);
+R_API bool r_bp_use(RBreakpoint *bp, const char *name, int bits);
+R_API bool r_bp_plugin_remove(RBreakpoint *bp, RBreakpointPlugin *plugin);
+R_API bool r_bp_plugin_del(RBreakpoint *bp, const char *name);
 R_API char *r_bp_plugin_list(RBreakpoint *bp);
 
 R_API int r_bp_in(RBreakpoint *bp, ut64 addr, int perm);
@@ -127,6 +126,7 @@ R_API bool r_bp_set_trace(RBreakpoint *bp, ut64 addr, int set);
 R_API void r_bp_set_trace_all(RBreakpoint *bp, int set);
 R_API RBreakpointItem *r_bp_enable(RBreakpoint *bp, ut64 addr, int set, int count);
 R_API void r_bp_enable_all(RBreakpoint *bp, int set);
+R_API int r_bp_stepy_continuation(RBreakpoint *bp);
 
 /* index api */
 R_API RBreakpointItem *r_bp_get_index(RBreakpoint *bp, int idx);
@@ -159,7 +159,6 @@ R_API int r_bp_traptrace_free_at(RBreakpoint *bp, ut64 from);
 R_API void r_bp_traptrace_list(RBreakpoint *bp);
 R_API bool r_bp_traptrace_at(RBreakpoint *bp, ut64 from, int len);
 R_API RList *r_bp_traptrace_new(void);
-R_API void r_bp_traptrace_enable(RBreakpoint *bp, int enable);
 
 /* watchpoint */
 R_API RBreakpointItem *r_bp_watch_add(RBreakpoint *bp, ut64 addr, int size, int hw, int rw);
