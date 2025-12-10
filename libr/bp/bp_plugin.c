@@ -31,6 +31,11 @@ R_API bool r_bp_plugin_add(RBreakpoint *bp, RBreakpointPlugin *foo) {
 	return true;
 }
 
+R_API bool r_bp_plugin_remove(RBreakpoint *bp, RBreakpointPlugin *plugin) {
+	R_RETURN_VAL_IF_FAIL (bp && plugin, false);
+	return r_bp_plugin_del (bp, plugin->meta.name);
+}
+
 R_API bool r_bp_use(RBreakpoint *bp, const char *name, int bits) {
 	R_RETURN_VAL_IF_FAIL (bp && name, false);
 	RListIter *iter;
