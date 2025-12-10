@@ -83,8 +83,8 @@ ApfsObjPhys;
 // Container superblock
 R_PACKED(
 	typedef struct {
-		ut64 nx_magic;
 		ApfsObjPhys apfs_o;
+		ut32 nx_magic;
 		ut32 nx_block_size;
 		ut64 nx_block_count;
 		ut64 nx_features;
@@ -264,14 +264,15 @@ R_PACKED(
 			ut32 nlink;
 		};
 		ut32 default_protection_class;
-		ut32 write_generation_counter;
-		ut32 bsd_flags;
-		ut32 owner;
-		ut32 group;
-		ut16 mode;
-		ut16 pad1;
-		ut64 uncompressed_size;
-		ut8 xfields[0];
+	ut32 write_generation_counter;
+	ut32 bsd_flags;
+	ut32 owner;
+	ut32 group;
+	ut16 mode;
+	ut16 pad1;
+	ut32 pad2;
+	ut64 uncompressed_size;
+	ut8 xfields[0];
 	})
 ApfsInodeVal;
 
@@ -385,6 +386,7 @@ typedef struct {
 	ut64 parent_inode_num;
 	char *name;
 	ApfsInodeVal *inode;
+	ut32 inode_len;
 	bool parsed;
 } ApfsInodeCache;
 

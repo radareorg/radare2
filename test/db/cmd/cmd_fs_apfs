@@ -1,3 +1,20 @@
+NAME=rafs2 -l
+FILE=--
+CMDS=<<EOF
+!!rafs2 -t apfs -l / bins/fs/apfs.img
+echo --
+!!rafs2 -t apfs -l /bin bins/fs/apfs.img
+EOF
+EXPECT=<<EOF
+r         70  README
+d          0  bin
+r         12  hello.txt
+d          0  .fseventsd
+--
+r     154624  ls
+EOF
+RUN
+
 NAME=md apfs mounts
 FILE=bins/fs/apfs.img
 CMDS=<<EOF
