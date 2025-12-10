@@ -27,13 +27,13 @@ EOF
 EXPECT=<<EOF
 Type: APFS (Apple File System)
 Block Size: 4096 bytes
-Volume Name: 
+Volume Name: untitled
 Purpose: Apple's modern filesystem for macOS, iOS, etc.
 ---
-d .fseventsd
 r README
 d bin
 r hello.txt
+d .fseventsd
 ---
 r ls
 EOF
