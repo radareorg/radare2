@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2024 - pancake */
+/* radare - LGPL - Copyright 2013-2025 - pancake */
 
 #include <r_core.h>
 #include <errno.h>
@@ -20,7 +20,7 @@ static void showfile(RStrBuf *buf, PJ *pj, const int nth, const char *fpath, con
 	int sz = r_file_size (n);
 	int perm, uid = 0, gid = 0;
 	int fch = '-';
-	if (!strncmp (fpath, "./", 2)) {
+	if (r_str_startswith (fpath, "./")) {
 		fpath = fpath + 2;
 	}
 	const bool isdir = r_file_is_directory (n);
@@ -151,20 +151,26 @@ static void showfile(RStrBuf *buf, PJ *pj, const int nth, const char *fpath, con
 	free (u_rwx);
 }
 
-// TODO: Move into r_util .. r_print maybe? r_cons dep is annoying
-R_API char *r_syscmd_ls(const char *input, int cons_width) {
-	RStrBuf *sb = r_strbuf_new ("");
-	PJ *pj = NULL;
+
+
+typedef struct {
+	char *path;
+	char *pattern;
+	char *homepath;
+	char *d;
+	int printfmt;
+} PathInfo;
+
+static PathInfo *resolve_path_info(const char *input) {
+	PathInfo *pi = R_NEW0 (PathInfo);
+	if (!pi) {
+		return NULL;
+	}
 	const char *path = ".";
-	char *d = NULL;
-	char *p = NULL;
 	char *homepath = NULL;
+	char *d = NULL;
 	char *pattern = NULL;
 	int printfmt = 0;
-	RListIter *iter;
-	char *name;
-	char *dir;
-	int off;
 	if (!input) {
 		input = "";
 		path = ".";
@@ -183,12 +189,14 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 	}
 	if (r_sandbox_enable (0)) {
 		R_LOG_ERROR ("Sandbox forbids listing directories");
+		free (pi);
 		return NULL;
 	}
 	input = r_str_trim_head_ro (input);
 	if (*input) {
 		if (r_str_startswith (input, "-h") || *input == '?') {
 			eprintf ("Usage: ls [-e,-l,-j,-q] [path] # long, json, quiet\n");
+			free (pi);
 			return NULL;
 		}
 		if (r_str_startswith (input, "-e")) {
@@ -207,32 +215,31 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 			path = input;
 		}
 	}
-	if (printfmt == FMT_JSON) {
-		pj = pj_new ();
-		pj_a (pj);
-	}
 	if (R_STR_ISEMPTY (path)) {
 		path = ".";
-	} else if (!strncmp (path, "~/", 2)) {
+	} else if (r_str_startswith (path, "~/")) {
 		homepath = r_file_home (path + 2);
 		if (homepath) {
 			path = (const char *)homepath;
 		}
 	} else if (*path == '$') {
-		if (!strncmp (path + 1, "home", 4) || !strncmp (path + 1, "HOME", 4)) {
+		if (r_str_startswith (path + 1, "HOME")) {
 			homepath = r_file_home ((strlen (path) > 5)? path + 6: NULL);
 			if (homepath) {
 				path = (const char *)homepath;
 			}
 		}
 	}
-	if (!r_file_is_directory (path)) {
-		p = strrchr (path, '/');
+	if (r_file_is_directory (path)) {
+		pattern = strdup ("*");
+	} else {
+		char *p = strrchr (path, '/');
 		if (p) {
-			off = p - path;
+			size_t off = p - path;
 			d = (char *)calloc (1, off + 1);
 			if (!d) {
 				free (homepath);
+				free (pi);
 				return NULL;
 			}
 			memcpy (d, path, off);
@@ -242,31 +249,61 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 			pattern = strdup (path);
 			path = ".";
 		}
-	} else {
-		pattern = strdup ("*");
 	}
-	if (r_file_is_regular (path)) {
-		showfile (sb, pj, 0, path, path, printfmt, false, 18);
+	pi->path = (char *)path;
+	pi->pattern = pattern;
+	pi->homepath = homepath;
+	pi->d = d;
+	pi->printfmt = printfmt;
+	return pi;
+}
+
+static void free_path_info(PathInfo *pi) {
+	if (pi) {
+		free (pi->homepath);
+		free (pi->pattern);
+		free (pi->d);
+		free (pi);
+	}
+}
+
+R_API char *r_syscmd_ls(const char *input, int cons_width) {
+	RStrBuf *sb = r_strbuf_new ("");
+	PJ *pj = NULL;
+	PathInfo *pi = resolve_path_info (input);
+	if (!pi) {
+		r_strbuf_free (sb);
+		return NULL;
+	}
+	if (pi->printfmt == FMT_JSON) {
+		pj = pj_new ();
+		pj_a (pj);
+	}
+	if (r_file_is_regular (pi->path)) {
+		showfile (sb, pj, 0, pi->path, pi->path, pi->printfmt, false, 18);
 		char *res;
 		if (pj) {
+			pj_end (pj);
 			res = pj_drain (pj);
 		} else {
 			res = r_strbuf_drain (sb);
 		}
-		free (homepath);
-		free (pattern);
-		free (d);
+		free_path_info (pi);
 		return res;
 	}
-	RList *files = r_sys_dir (path);
+	RList *files = r_sys_dir (pi->path);
 	if (!files) {
-		free (homepath);
-		free (pattern);
-		free (d);
+		free_path_info (pi);
+		r_strbuf_free (sb);
+		if (pj) {
+			pj_free (pj);
+		}
 		return NULL;
 	}
 	r_list_sort (files, (RListComparator)strcmp);
 
+	RListIter *iter;
+	char *name;
 	int max_name_len = 0;
 	r_list_foreach (files, iter, name) {
 		int len = strlen (name);
@@ -275,7 +312,7 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 		}
 	}
 
-	dir = r_str_newf ("%s%s", path, (path[strlen (path) - 1] == '/') ? "" : "/");
+	char *dir = r_str_newf ("%s%s", pi->path, pi->path[strlen(pi->path) - 1] == '/' ? "" : "/");
 	const char *display_dir = (!strncmp (dir, "./", 2))? dir + 2: dir;
 	int max_len = strlen (display_dir) + max_name_len + 1;
 	int column_width = max_len + 2;
@@ -293,7 +330,7 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 		if (!n) {
 			break;
 		}
-		if (r_str_glob (name, pattern)) {
+		if (r_str_glob (name, pi->pattern)) {
 			if (*n) {
 				bool isdir = r_file_is_directory (n);
 				const char *display_path = r_str_startswith (n, "./")? n + 2: n;
@@ -302,7 +339,7 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 				if (linelen > cons_width) {
 					needs_newline = true;
 				}
-				showfile (sb, pj, nth, n, name, printfmt, needs_newline, column_width);
+				showfile (sb, pj, nth, n, name, pi->printfmt, needs_newline, column_width);
 				if (needs_newline) {
 					needs_newline = false;
 					linelen = 0;
@@ -323,10 +360,8 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 		res = r_strbuf_drain (sb);
 	}
 	free (dir);
-	free (d);
-	free (homepath);
-	free (pattern);
 	r_list_free (files);
+	free_path_info (pi);
 	return res;
 }
 
