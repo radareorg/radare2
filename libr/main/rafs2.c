@@ -123,7 +123,8 @@ static int rafs2_list(Rafs2Options *opt, const char *path) {
 			pj_o (pj);
 			pj_ks (pj, "name", file->name);
 			pj_kn (pj, "size", file->size);
-			pj_ki (pj, "type", file->type);
+			char type_str[2] = {file->type, '\0'};
+			pj_ks (pj, "type", type_str);
 			pj_end (pj);
 		}
 		pj_end (pj);
