@@ -15,6 +15,7 @@ typedef struct {
 	const char *mountpoint;
 	ut64 offset;
 	bool interactive;
+	bool json;
 } Rafs2Options;
 
 static void rafs2_options_init(Rafs2Options *opt) {
@@ -22,6 +23,7 @@ static void rafs2_options_init(Rafs2Options *opt) {
 	opt->mountpoint = "/";
 	opt->offset = 0;
 	opt->interactive = false;
+	opt->json = false;
 }
 
 static void rafs2_options_fini(Rafs2Options *opt) {
@@ -43,6 +45,7 @@ static void show_usage(void) {
 	"  -x <src:dst> Extract file from image to host\n"
 	"  -n           Show filesystem details (like 'mn' command)\n"
 	"  -L           List available filesystem types\n"
+	"  -j           Output in JSON format\n"
 	"  -h           Show this help\n"
 	"  -v           Show version\n"
 	"\n"
@@ -55,20 +58,44 @@ static void show_usage(void) {
 	"  rafs2 -t ext2 -x /etc/passwd:passwd.txt image.img\n");
 }
 
-static int rafs2_list_plugins(void) {
+static int rafs2_list_plugins(Rafs2Options *opt) {
 	RFS *fs = r_fs_new ();
 	if (!fs) {
 		R_LOG_ERROR ("Cannot create FS instance");
 		return 1;
 	}
 
-	printf ("Available filesystem types:\n");
-	RListIter *iter;
-	RFSPlugin *plugin;
-	r_list_foreach (fs->plugins, iter, plugin) {
-		if (plugin->meta.name) {
-			const char *desc = plugin->meta.desc? plugin->meta.desc: "";
-			printf ("  %-12s %s\n", plugin->meta.name, desc);
+	if (opt->json) {
+		PJ *pj = pj_new ();
+		if (!pj) {
+			r_fs_free (fs);
+			return 1;
+		}
+		pj_a (pj);
+		RListIter *iter;
+		RFSPlugin *plugin;
+		r_list_foreach (fs->plugins, iter, plugin) {
+			if (plugin->meta.name) {
+				pj_o (pj);
+				pj_ks (pj, "name", plugin->meta.name);
+				if (plugin->meta.desc) {
+					pj_ks (pj, "description", plugin->meta.desc);
+				}
+				pj_end (pj);
+			}
+		}
+		pj_end (pj);
+		printf ("%s\n", pj_string (pj));
+		pj_free (pj);
+	} else {
+		printf ("Available filesystem types:\n");
+		RListIter *iter;
+		RFSPlugin *plugin;
+		r_list_foreach (fs->plugins, iter, plugin) {
+			if (plugin->meta.name) {
+				const char *desc = plugin->meta.desc? plugin->meta.desc: "";
+				printf ("  %-12s %s\n", plugin->meta.name, desc);
+			}
 		}
 	}
 
@@ -83,11 +110,33 @@ static int rafs2_list(Rafs2Options *opt, const char *path) {
 		return 1;
 	}
 
-	RListIter *iter;
-	RFSFile *file;
-	r_list_foreach (list, iter, file) {
-		char type = file->type;
-		printf ("%c %10u  %s\n", type, file->size, file->name);
+	if (opt->json) {
+		PJ *pj = pj_new ();
+		if (!pj) {
+			r_list_free (list);
+			return 1;
+		}
+		pj_a (pj);
+		RListIter *iter;
+		RFSFile *file;
+		r_list_foreach (list, iter, file) {
+			pj_o (pj);
+			pj_ks (pj, "name", file->name);
+			pj_kn (pj, "size", file->size);
+			char type_str[2] = {file->type, '\0'};
+			pj_ks (pj, "type", type_str);
+			pj_end (pj);
+		}
+		pj_end (pj);
+		printf ("%s\n", pj_string (pj));
+		pj_free (pj);
+	} else {
+		RListIter *iter;
+		RFSFile *file;
+		r_list_foreach (list, iter, file) {
+			char type = file->type;
+			printf ("%c %10u  %s\n", type, file->size, file->name);
+		}
 	}
 	r_list_free (list);
 	return 0;
@@ -126,10 +175,29 @@ static int rafs2_details(Rafs2Options *opt) {
 		return 1;
 	}
 
-	RStrBuf *sb = r_strbuf_new ("");
-	root->p->details (root, sb);
-	printf ("%s", r_strbuf_get (sb));
-	r_strbuf_free (sb);
+	if (opt->json) {
+		PJ *pj = pj_new ();
+		if (!pj) {
+			r_list_free (roots);
+			return 1;
+		}
+		pj_o (pj);
+		pj_ks (pj, "fstype", root->p->meta.name);
+		pj_kn (pj, "offset", root->offset);
+		pj_ks (pj, "mountpoint", opt->mountpoint);
+		RStrBuf *sb = r_strbuf_new ("");
+		root->p->details (root, sb);
+		pj_ks (pj, "details", r_strbuf_get (sb));
+		r_strbuf_free (sb);
+		pj_end (pj);
+		printf ("%s\n", pj_string (pj));
+		pj_free (pj);
+	} else {
+		RStrBuf *sb = r_strbuf_new ("");
+		root->p->details (root, sb);
+		printf ("%s", r_strbuf_get (sb));
+		r_strbuf_free (sb);
+	}
 	r_list_free (roots);
 	return 0;
 }
@@ -216,7 +284,7 @@ R_API int r_main_rafs2(int argc, const char **argv) {
 	rafs2_options_init (&opt);
 
 	RGetopt go;
-	r_getopt_init (&go, argc, argv, "t:o:m:il:c:x:nLhv");
+	r_getopt_init (&go, argc, argv, "t:o:m:il:c:x:nLhjv");
 	while ((c = r_getopt_next (&go)) != -1) {
 		switch (c) {
 		case 't':
@@ -243,8 +311,11 @@ R_API int r_main_rafs2(int argc, const char **argv) {
 		case 'n':
 			show_details = true;
 			break;
+		case 'j':
+			opt.json = true;
+			break;
 		case 'L':
-			return rafs2_list_plugins ();
+			return rafs2_list_plugins (&opt);
 		case 'v':
 			return r_main_version_print ("rafs2", 0);
 		case 'h':
