@@ -92,7 +92,7 @@ jobs:
       uses: actions/checkout@v6
     - name: Extract r2 version
       shell: bash
-      run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
+      run: echo "branch=`./configure -qV`" >> $GITHUB_OUTPUT
       id: r2v
     - name: Installing the musl runtime
       run: |
