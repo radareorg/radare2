@@ -72,49 +72,39 @@ static void showfile(RStrBuf *sb, PJ *pj, const int nth, const char *fpath, cons
 	if (printfmt == FMT_QUIET) {
 		r_strbuf_appendf (sb, "%s\n", nn);
 	} else if (printfmt == FMT_EMOJI) {
-		const char *eDIR = "📁";
-		const char *eIMG = "🌅";
-		const char *eHID = "👀";
-		const char *eANY = "  ";
-		const char *eZIP = "🤐";
-		const char *eMOV = "📺";
-		const char *eEXE = "🏃";
-		const char *eLIB = "📚";
-		const char *eCOD = "📖";
+		// AITODO: inline in the assignments below and remove those unnecessary local variables
 		// --
-		const char *icon = eANY;
+		const char *icon = "📄";
 		if (isdir) {
-			icon = eDIR;
+			icon = "📁";
 		} else if (r_str_casestr (nn, ".mov") || r_str_casestr (nn, ".mp4") || r_str_casestr (nn, ".mpg")) {
-			icon = eMOV;
+			icon = "📺";
 		} else if (r_str_endswith (nn, ".py")) {
 			icon = "🐍";
 		} else if (r_str_endswith (nn, ".c")) {
-			icon = eCOD;
+			icon = "📖";
 		} else if (r_str_endswith (nn, ".o")) {
 			icon = "📕";
-		} else if (r_str_casestr (nn, ".exe")) {
-			icon = eEXE;
+		} else if (r_str_casestr (nn, ".exe") || perm & 1) {
+			icon = "🏃";
 		} else if (r_str_casestr (nn, ".apk") || r_str_casestr (nn, ".dmg")) {
 			icon = "📦";
 		} else if (r_str_casestr (nn, ".so") || r_str_casestr (nn, ".dll") || r_str_casestr (nn, ".dylib")) {
-			icon = eLIB;
+			icon = "📚";
 		} else if (r_str_casestr (nn, ".csv") || r_str_casestr (nn, ".txt") || r_str_casestr (nn, ".xml") || r_str_casestr (nn, ".json") || r_str_casestr (nn, ".pdf")) {
 			icon = "📄";
 		} else if (r_str_casestr (nn, ".zip") || r_str_casestr (nn, ".gz") || r_str_casestr (nn, ".xz") || r_str_casestr (nn, ".bz2") || r_str_casestr (nn, "jar")) {
-			icon = eZIP;
+			icon = "🤐";
 		} else if (r_str_casestr (nn, ".jpg") || r_str_casestr (nn, ".png") || r_str_casestr (nn, ".gif") || r_str_casestr (nn, ".jpeg") || r_str_casestr (nn, ".svg")) {
-			icon = eIMG;
+			icon = "🌅";
 #if R2__UNIX__
 		} else if ((st.st_mode & S_IFMT) == S_IFLNK) {
 			icon = "📎";
 		} else if (st.st_mode & S_ISUID) {
 			icon = "🔼";
-		} else if (perm & 1) {
-			icon = eEXE;
 #endif
 		} else if (*nn == '.') {
-			icon = eHID;
+			icon = "👀";
 		}
 		r_strbuf_appendf (sb, "%s %s\n", icon, nn);
 	} else if (printfmt == FMT_RAW) {
@@ -185,7 +175,7 @@ static PathInfo *resolve_path_info(const char *input) {
 	input = r_str_trim_head_ro (input);
 	if (*input) {
 		if (r_str_startswith (input, "-h") || *input == '?') {
-			eprintf ("Usage: ls [-e,-l,-j,-q] [path] # long, json, quiet\n");
+			R_LOG_INFO ("Usage: ls [-e,-l,-j,-q] [path] # long, json, quiet");
 			free (pi);
 			return NULL;
 		}
@@ -394,9 +384,8 @@ R_API char *r_syscmd_sort(const char *file) {
 		}
 		free (filename);
 		return data;
-	} else {
-		eprintf ("Usage: sort [file]\n");
 	}
+	R_LOG_INFO ("Usage: sort [file]");
 	return NULL;
 }
 
@@ -471,9 +460,8 @@ R_API char *r_syscmd_uniq(const char *file) {
 		}
 		free (filename);
 		return data;
-	} else {
-		eprintf ("Usage: uniq [file]\n");
 	}
+	R_LOG_INFO ("Usage: uniq [file]");
 	return NULL;
 }
 
@@ -570,7 +558,7 @@ R_API char *r_syscmd_mktemp(const char *dir) {
 	const char *space = strchr (dir, ' ');
 	const char *suffix = space? r_str_trim_head_ro (space): "";
 	if (!*suffix || (!strncmp (suffix, "-d ", 3) && strstr (suffix, " -"))) {
-		eprintf ("Usage: mktemp [-d] [file|directory]\n");
+		R_LOG_INFO ("Usage: mktemp [-d] [file|directory]");
 		return NULL;
 	}
 	bool dodir = (bool)strstr (suffix, "-d");
@@ -581,7 +569,7 @@ R_API char *r_syscmd_mktemp(const char *dir) {
 	r_str_trim (dirname);
 	char *arg = NULL;
 	if (!*dirname || *dirname == '-') {
-		eprintf ("Usage: mktemp [-d] [file|directory]\n");
+		R_LOG_INFO ("Usage: mktemp [-d] [file|directory]");
 		free (dirname);
 		return NULL;
 	}
@@ -608,7 +596,7 @@ R_API bool r_syscmd_mkdir(const char *dir) {
 	const char *space = strchr (dir, ' ');
 	const char *suffix = space? r_str_trim_head_ro (space): "";
 	if (!*suffix || (!strncmp (suffix, "-p ", 3) && strstr (suffix, " -"))) {
-		eprintf ("Usage: mkdir [-p] [directory]\n");
+		R_LOG_INFO ("Usage: mkdir [-p] [directory]");
 		return false;
 	}
 	char *dirname = (!strncmp (suffix, "-p ", 3))
@@ -616,7 +604,7 @@ R_API bool r_syscmd_mkdir(const char *dir) {
 		: strdup (suffix);
 	r_str_trim (dirname);
 	if (!*dirname || *dirname == '-') {
-		eprintf ("Usage: mkdir [-p] [directory]\n");
+		R_LOG_INFO ("Usage: mkdir [-p] [directory]");
 		free (dirname);
 		return false;
 	}
@@ -678,7 +666,7 @@ R_API bool r_syscmd_popalld(void) {
 
 R_API bool r_syscmd_mv(const char *input) {
 	if (strlen (input) < 3) {
-		eprintf ("Usage: mv src dst\n");
+		R_LOG_INFO ("Usage: mv src dst");
 		return false;
 	}
 	char *inp = r_str_trim_dup (input + 2);
@@ -690,7 +678,7 @@ R_API bool r_syscmd_mv(const char *input) {
 			R_LOG_ERROR ("Cannot move file");
 		}
 	} else {
-		eprintf ("Usage: mv src dst\n");
+		R_LOG_INFO ("Usage: mv src dst");
 	}
 	free (inp);
 	return rc;

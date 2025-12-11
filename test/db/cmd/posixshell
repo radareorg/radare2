@@ -47,7 +47,7 @@ NAME=mkdir -p (without specifying directory)
 FILE=-
 CMDS=mkdir -p
 EXPECT_ERR=<<EOF
-Usage: mkdir [-p] [directory]
+INFO: Usage: mkdir [-p] [directory]
 EOF
 RUN
 
