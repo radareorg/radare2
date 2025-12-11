@@ -4,7 +4,8 @@
 
 echo "WASI_SDK=$WASI_SDK"
 
-TOOLS="rax2 radiff2 rahash2 radare2 rasm2 rabin2 rafind2"
+TOOLS="rax2 rafs2 radiff2 rahash2 radare2 rasm2 rabin2 rafind2"
+ARCH=x86_64
 
 if [ ! -d "$WASI_SDK" ]; then
 	#OS=linux,macos,mingw
@@ -14,6 +15,7 @@ if [ ! -d "$WASI_SDK" ]; then
 	darwin|Darwin) OS=macos ; ;;
 	windows|Windows) OS=mingw ; ;;
 	esac
+	OS="$ARCH-$OS"
 	mkdir -p ~/Downloads/wasi
 	rm -f ~/Downloads/wasi/wasi-sdk.tar.gz
 	wget -c -O ~/Downloads/wasi/wasi-sdk.tar.gz https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_MAJOR}/wasi-sdk-${WASI_VERSION}-$OS.tar.gz || exit 1
