@@ -123,32 +123,22 @@ static RBinAddr *binsym(RBinFile *bf, int type) {
 }
 
 static RList *entries(RBinFile *bf) {
-	RList *ret;
-	RBinAddr *ptr = NULL;
 	RBinPlan9Obj *o = (RBinPlan9Obj *)bf->bo->bin_obj;
-
-	if (!(ret = r_list_new ())) {
-		return NULL;
+	RList *ret = r_list_newf (free);
+	RBinAddr *ptr = R_NEW0 (RBinAddr);
+	ptr->paddr = o->entry - baddr (bf);
+	// for kernels the header is not mapped
+	if (o->is_kernel) {
+		ptr->paddr += o->header_size;
 	}
-
-	ret->free = free;
-
-	if ((ptr = R_NEW0 (RBinAddr))) {
-		ptr->paddr = o->entry - baddr (bf);
-		// for kernels the header is not mapped
-		if (o->is_kernel) {
-			ptr->paddr += o->header_size;
-		}
-		ptr->vaddr = o->entry;
-		r_list_append (ret, ptr);
-	}
+	ptr->vaddr = o->entry;
+	r_list_append (ret, ptr);
 
 	return ret;
 }
 
 static RList *sections(RBinFile *bf) {
 	RList *ret = NULL;
-	RBinSection *ptr = NULL;
 	RBinPlan9Obj *o = (RBinPlan9Obj *)bf->bo->bin_obj;
 
 	if (!bf->bo->info) {
@@ -178,9 +168,7 @@ static RList *sections(RBinFile *bf) {
 	ut64 vsize = 0;
 
 	// add text segment
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	RBinSection *ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("text");
 	ptr->size = o->header.text;
 	// for regular applications: header is included in the text segment
@@ -200,9 +188,7 @@ static RList *sections(RBinFile *bf) {
 	align = 0x1000;
 
 	// add data segment
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("data");
 	ptr->size = o->header.data;
 	ptr->vsize = P9_ALIGN (o->header.data, align);
@@ -215,9 +201,7 @@ static RList *sections(RBinFile *bf) {
 	vsize += ptr->vsize;
 
 	// add bss segment
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("bss");
 	ptr->size = 0;
 	ptr->vsize = P9_ALIGN (o->header.bss, align);
@@ -230,9 +214,7 @@ static RList *sections(RBinFile *bf) {
 	vsize += ptr->vsize;
 
 	// add syms segment
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("syms");
 	ptr->size = o->header.syms;
 	ptr->vsize = P9_ALIGN (o->header.syms, align);
@@ -245,9 +227,7 @@ static RList *sections(RBinFile *bf) {
 	vsize += ptr->vsize;
 
 	// add pc/sp offsets segment
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("pcsp");
 	ptr->size = o->header.spsz;
 	ptr->vsize = P9_ALIGN (o->header.spsz, align);
@@ -260,9 +240,7 @@ static RList *sections(RBinFile *bf) {
 	vsize += ptr->vsize;
 
 	// add pc/line numbers segment
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("pcline");
 	ptr->size = o->header.pcsz;
 	ptr->vsize = P9_ALIGN (o->header.pcsz, align);
@@ -514,10 +492,6 @@ static RList *symbols(RBinFile *bf) {
 		}
 
 		RBinSymbol *bin_sym = R_NEW0 (RBinSymbol);
-		if (!bin_sym) {
-			goto error;
-		}
-
 		bin_sym->name = r_bin_name_new (sym.name);
 		bin_sym->paddr = sym.value - baddr (bf);
 		// for kernels the header is not mapped
@@ -576,7 +550,7 @@ static RList *symbols(RBinFile *bf) {
 
 		pc += o->pcq;
 
-		if (prev != line && r_vector_length (history) > 1) {
+		if (history && prev != line && r_vector_length (history) > 1) {
 			apply_history (bf, pc, line, r_vector_at (history, 0), NULL);
 		}
 	}
@@ -603,7 +577,6 @@ static RList *libs(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret = NULL;
 	const char *arch;
 	int bits, big_endian;
 	struct plan9_exec header;
@@ -616,10 +589,7 @@ static RBinInfo *info(RBinFile *bf) {
 		return NULL;
 	}
 
-	if (!(ret = R_NEW0 (RBinInfo))) {
-		return NULL;
-	}
-
+	RBinInfo *ret = R_NEW0 (RBinInfo);
 	ret->file = strdup (bf->file);
 	ret->bclass = strdup ("program");
 	ret->rclass = strdup ("p9");
