@@ -1206,6 +1206,11 @@ static bool apfs_parse_catalog_record(ApfsFS *ctx, ut8 *key_data, ut16 key_len, 
 	if (key_len < sizeof (ApfsKeyHeader)) {
 		return false;
 	}
+	// Sanity check: val_len should not exceed block size
+	if (val_len > ctx->block_size) {
+		R_LOG_DEBUG ("apfs: val_len (%u) exceeds block_size (%u), skipping", val_len, ctx->block_size);
+		return false;
+	}
 
 	ApfsKeyHeader *key_hdr = (ApfsKeyHeader *)key_data;
 	ut64 obj_id_and_type = apfs_read64 (ctx, (ut8 *)&key_hdr->obj_id_and_type);

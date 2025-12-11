@@ -363,6 +363,10 @@ static char* types(RBinFile *bf) {
 	RBuffer *buf = bf->buf;
 	const ut8 *data = r_buf_data (buf, NULL);
 	size_t size = r_buf_size (buf);
+	// Check for integer overflow: dotnet_parse expects int, not size_t
+	if (size > INT_MAX) {
+		return NULL;
+	}
 	ut64 image_base = PE_(r_bin_pe_get_image_base)(pe);
 	RList *dotnet_symbols = dotnet_parse (data, size, image_base);
 	if (r_list_empty (dotnet_symbols)) {
