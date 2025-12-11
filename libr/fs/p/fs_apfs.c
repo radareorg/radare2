@@ -125,7 +125,7 @@ static bool fs_apfs_mount(RFSRoot *root) {
 		apfs_cleanup_ctx (ctx);
 		return false;
 	}
-	R_LOG_INFO ("First volume OID: %" PFMT64u " (0x%" PFMT64x ")", first_vol_oid, first_vol_oid);
+	R_LOG_DEBUG ("First volume OID: %" PFMT64u " (0x%" PFMT64x ")", first_vol_oid, first_vol_oid);
 
 	// Scan for the most recent volume superblock (APSB magic)
 	// The volume OID from container is virtual and needs omap resolution,
@@ -133,7 +133,7 @@ static bool fs_apfs_mount(RFSRoot *root) {
 	ut64 vol_paddr = 0;
 	ut64 vol_xid = 0;
 	ut64 block_count = apfs_read64 (ctx, (ut8 *)&nx_sb->nx_block_count);
-	R_LOG_INFO ("Container has %" PFMT64u " blocks, delta=0x%" PFMT64x ", block_size=%u", block_count, ctx->delta, ctx->block_size);
+	R_LOG_DEBUG ("Container has %" PFMT64u " blocks, delta=0x%" PFMT64x ", block_size=%u", block_count, ctx->delta, ctx->block_size);
 
 	ut64 block;
 	for (block = 0; block < block_count && block < 512; block++) {
@@ -150,10 +150,10 @@ static bool fs_apfs_mount(RFSRoot *root) {
 		if (magic == APFS_MAGIC) {
 			// Check object type
 			ut32 o_type = apfs_read32 (ctx, header + 24);
-			R_LOG_INFO ("Block %" PFMT64u ": APSB magic found, o_type=0x%x", block, o_type);
+			R_LOG_DEBUG ("Block %" PFMT64u ": APSB magic found, o_type=0x%x", block, o_type);
 			if ((o_type & APFS_OBJECT_TYPE_MASK) == APFS_OBJECT_TYPE_FS) {
 				ut64 xid = apfs_read64 (ctx, header + 16);
-				R_LOG_INFO ("Found volume superblock at block %" PFMT64u " with xid %" PFMT64u, block, xid);
+				R_LOG_DEBUG ("Found volume superblock at block %" PFMT64u " with xid %" PFMT64u, block, xid);
 				if (xid > vol_xid) {
 					vol_xid = xid;
 					vol_paddr = block;
@@ -204,7 +204,7 @@ static bool fs_apfs_mount(RFSRoot *root) {
 	ctx->omap_tree_oid = 0;
 	bool catalog_ok = true;
 
-	R_LOG_INFO ("Volume omap_oid: %" PFMT64u ", root_tree_oid: %" PFMT64u,
+	R_LOG_DEBUG ("Volume omap_oid: %" PFMT64u ", root_tree_oid: %" PFMT64u,
 		omap_oid, apfs_read64 (ctx, (ut8 *)&vol_sb->apfs_root_tree_oid));
 
 	if (omap_oid != 0) {
@@ -212,7 +212,7 @@ static bool fs_apfs_mount(RFSRoot *root) {
 			R_LOG_WARN ("Failed to parse object map");
 			catalog_ok = false;
 		} else {
-			R_LOG_INFO ("Successfully parsed volume object map");
+			R_LOG_DEBUG ("Successfully parsed volume object map");
 		}
 	} else {
 		catalog_ok = false;
@@ -221,7 +221,7 @@ static bool fs_apfs_mount(RFSRoot *root) {
 	if (catalog_ok) {
 		// Walk the catalog B-tree starting from root
 		ut64 root_tree_oid = apfs_read64 (ctx, (ut8 *)&vol_sb->apfs_root_tree_oid);
-		R_LOG_INFO ("Walking catalog B-tree from root OID %" PFMT64u, root_tree_oid);
+		R_LOG_DEBUG ("Walking catalog B-tree from root OID %" PFMT64u, root_tree_oid);
 		catalog_ok = apfs_walk_catalog_btree (ctx, root_tree_oid, 0);
 	}
 
@@ -612,11 +612,11 @@ static bool apfs_parse_omap_btree(ApfsFS *ctx, ut64 omap_oid) {
 static bool apfs_resolve_omap_btree_node(ApfsFS *ctx, ut64 node_oid, ut64 target_oid, ut64 target_xid, ut64 *paddr);
 
 static bool apfs_resolve_omap(ApfsFS *ctx, ut64 oid, ut64 *paddr) {
-	R_LOG_INFO ("apfs_resolve_omap: resolving OID %" PFMT64u ", omap_tree_oid=%" PFMT64u, oid, ctx->omap_tree_oid);
+	R_LOG_DEBUG ("apfs_resolve_omap: resolving OID %" PFMT64u ", omap_tree_oid=%" PFMT64u, oid, ctx->omap_tree_oid);
 	if (!ctx->omap_tree_oid) {
 		// Direct mapping for simple cases
 		*paddr = oid;
-		R_LOG_INFO ("apfs_resolve_omap: direct mapping to paddr %" PFMT64u, *paddr);
+		R_LOG_DEBUG ("apfs_resolve_omap: direct mapping to paddr %" PFMT64u, *paddr);
 		return true;
 	}
 
@@ -625,11 +625,11 @@ static bool apfs_resolve_omap(ApfsFS *ctx, ut64 oid, ut64 *paddr) {
 	if (ctx->vol_sb) {
 		target_xid = apfs_read64 (ctx, (ut8 *)&ctx->vol_sb->apfs_o.o_xid);
 	}
-	R_LOG_INFO ("apfs_resolve_omap: target_xid=%" PFMT64u, target_xid);
+	R_LOG_DEBUG ("apfs_resolve_omap: target_xid=%" PFMT64u, target_xid);
 
 	// Start traversal from the object map tree root
 	bool result = apfs_resolve_omap_btree_node (ctx, ctx->omap_tree_oid, oid, target_xid, paddr);
-	R_LOG_INFO ("apfs_resolve_omap: result=%d, paddr=%" PFMT64u, result, *paddr);
+	R_LOG_DEBUG ("apfs_resolve_omap: result=%d, paddr=%" PFMT64u, result, *paddr);
 	return result;
 }
 
