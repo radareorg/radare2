@@ -1,5 +1,5 @@
 export WASI_ROOT="${HOME}/Downloads/wasi"
-export WASI_MAJOR=20
+export WASI_MAJOR=29
 export WASI_VERSION=${WASI_MAJOR}.0
 export WASI_SDK=${WASI_ROOT}/wasi-sdk-${WASI_VERSION}
 export WASI_SYSROOT=${WASI_ROOT}/wasi-sysroot-${WASI_VERSION}
