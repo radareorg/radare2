@@ -110,7 +110,7 @@ static bool cb_diff_sort(void *_core, void *_node) {
 		return true;
 	}
 fail:
-	eprintf ("e diff.sort = [name, namelen, addr, type, size, dist]\n");
+	R_LOG_INFO ("e diff.sort = [name, namelen, addr, type, size, dist]");
 	return false;
 }
 
@@ -1773,12 +1773,14 @@ static bool cb_color_getter(void *user, RConfigNode *node) {
 	return true;
 }
 
+// R2R test/db/cmd/cmd_pd_bugs
 static bool cb_reloff(void *user, void *data) {
 	const char options[] = "func\nflag\nmaps\ndmap\nfmap\nsect\nsymb\nlibs\nfile\n";
 	RConfigNode *node = (RConfigNode *)data;
 	if (*node->value) {
 		char *pos = strstr (options, node->value);
-		if (pos && r_str_endswith (node->value, "\n")) {
+		size_t len = strlen (node->value);
+		if (pos && pos[len] == '\n') {
 			return true;
 		}
 		if (strchr (node->value, '?')) {
