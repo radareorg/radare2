@@ -1625,13 +1625,13 @@ static bool cb_cmdpdc(void *user, void *data) {
 		RCorePlugin *cp;
 		r_list_foreach (core->rcmd->plist, iter, cp) {
 			if (!strcmp (cp->meta.name, "r2retdec")) {
-				r_cons_printf (core->cons, "pdz\n");
+				r_cons_println (core->cons, "pdz");
 			} else if (!strcmp (cp->meta.name, "decai")) {
-				r_cons_printf (core->cons, "decai\n");
+				r_cons_println (core->cons, "decai");
 			} else if (!strcmp (cp->meta.name, "r2jadx")) {
-				r_cons_printf (core->cons, "r2jadx\n");
+				r_cons_println (core->cons, "r2jadx");
 			} else if (!strcmp (cp->meta.name, "r2ghidra")) {
-				r_cons_printf (core->cons, "pdg\n");
+				r_cons_println (core->cons, "pdg");
 			}
 		}
 		RConfigNode *r2dec = r_config_node_get (core->config, "r2dec.asm");
@@ -1778,7 +1778,7 @@ static bool cb_reloff(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	if (*node->value) {
 		char *pos = strstr (options, node->value);
-		if (pos && pos[strlen (node->value)] == '\n') {
+		if (pos && r_str_endswith (node->value, "\n")) {
 			return true;
 		}
 		if (strchr (node->value, '?')) {
@@ -1893,8 +1893,7 @@ static bool cb_dbg_gdb_retries(void *user, void *data) {
 		return false;
 	}
 	if (isGdbPlugin (core)) {
-		char cmd[64];
-		snprintf (cmd, sizeof (cmd), "retries %" PFMT64d, node->i_value);
+		r_strf_var (cmd, 64, "retries %" PFMT64d, node->i_value);
 		free (r_io_system (core->io, cmd));
 	}
 	return true;

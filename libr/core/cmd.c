@@ -2864,13 +2864,12 @@ static bool cmd_r2cmd(RCore *core, const char *_input) {
 		rc = __runMain (core->r_main_radiff2, input);
 	} else if (ISCMD ("r2.")) {
 		r_core_cmdf (core, "'js console.log(r2.%s)", input + 3);
-	} else if (ISCMD ("r2")) {
-		if (input[2] == ' ' || input[2] == 0) {
-			r_sys_cmdf ("%s", input);
-		} else {
-			R_LOG_ERROR ("Invalid command");
-		}
-		// rc = __runMain (core->r_main_radare2, input);
+	} else if (ISCMD ("r2mcp")) {
+		R_LOG_ERROR ("You need to install the plugin with r2pm -ci r2mcp");
+		r_core_return_value (core, 1);
+	} else if (ISCMD ("r2ai")) {
+		R_LOG_ERROR ("You need to install the plugin with r2pm -ci r2ai");
+		r_core_return_value (core, 1);
 	} else {
 		const char *r2cmds[] = {
 			"rax2", "r2pm", "rafs2", "rasm2", "rabin2", "rahash2", "rafind2", "rarun2", "ragg2", "radare2", "r2pm", "r2", NULL
