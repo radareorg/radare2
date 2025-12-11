@@ -681,6 +681,25 @@ jobs:
         done
 
 
+  # XCFramework for release only
+  macos-xcframework:
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+    runs-on: macos-15-intel
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+    - name: Extract r2 version
+      shell: bash
+      run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
+      id: r2v
+    - name: Build XCFramework
+      run: |
+        make -C dist/sdk
+    - uses: actions/upload-artifact@v5
+      with:
+        name: macos-xcframework
+        path: Radare2.xcframework.zip
+
   # Release creation
   check_release:
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
@@ -695,6 +714,7 @@ jobs:
 #      - linux-acr-rpm-64
       - linux-acr-deb
       - macos-acr
+      - macos-xcframework
       - ios
       - android-acr
 #      - android-meson
@@ -733,6 +753,7 @@ jobs:
         dist/artifacts/w64-meson/*.zip
         dist/artifacts/w32-meson/*.zip
         dist/artifacts/macos-acr-*/*.pkg
+        dist/artifacts/macos-xcframework/*.zip
         dist/artifacts/ios-cydia/*.deb
         dist/artifacts/ios-cydia32/*.deb
         dist/artifacts/ios-cydia/r2ios-sdk-*.zip
