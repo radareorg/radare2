@@ -257,7 +257,7 @@ jobs:
       run: brew install ldid
     - name: Extract r2 version
       shell: bash
-      run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
+      run: echo "branch=`./configure -qV`" >> $GITHUB_OUTPUT
       id: r2v
     - name: Create ${{ matrix.type }} package
       run: ./sys/ios-${{ matrix.type }}.sh
@@ -326,7 +326,7 @@ jobs:
         sudo pip3 install --user meson ninja --break-system-packages
     - name: Extract r2 version
       shell: bash
-      run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
+      run: echo "branch=`./configure -qV`" >> $GITHUB_OUTPUT
       id: r2v
     - name: Compile with meson
       run: |
@@ -364,7 +364,7 @@ jobs:
         pip install meson ninja r2pipe wget --break-system-packages
     - name: Extract r2 version
       shell: bash
-      run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
+      run: echo "branch=`./configure -qV`" >> $GITHUB_OUTPUT
       id: r2v
     - name: Build with meson + ninja
       shell: pwsh
@@ -410,7 +410,7 @@ jobs:
         pip install meson ninja r2pipe wget r2env --break-system-packages
     - name: Extract r2 version
       shell: bash
-      run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
+      run: echo "branch=`./configure -qV`" >> $GITHUB_OUTPUT
       id: r2v
     - name: preconfigure
       continue-on-error: true
@@ -462,7 +462,7 @@ jobs:
         pip install meson ninja r2pipe wget --break-system-packages
     - name: Extract r2 version
       shell: bash
-      run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
+      run: echo "branch=`./configure -qV`" >> $GITHUB_OUTPUT
       id: r2v
     - name: Build with meson + ninja
       shell: pwsh
@@ -535,7 +535,7 @@ jobs:
         pip install meson ninja r2pipe wget --break-system-packages
     - name: Extract r2 version
       shell: bash
-      run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
+      run: echo "branch=`./configure -qV`" >> $GITHUB_OUTPUT
       id: r2v
     - name: Build with meson + ninja
       shell: pwsh
@@ -574,7 +574,7 @@ jobs:
         pip install meson ninja r2pipe wget --break-system-packages
     - name: Extract r2 version
       shell: bash
-      run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
+      run: echo "branch=`./configure -qV`" >> $GITHUB_OUTPUT
       id: r2v
     - name: Build with meson + ninja
       shell: pwsh
@@ -597,7 +597,7 @@ jobs:
 #    - uses: actions/checkout@v6
 #    - name: Extract r2 version
 #      shell: bash
-#      run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
+#      run: echo "branch=`./configure -qV`" >> $GITHUB_OUTPUT
 #      id: r2v
 #    - name: Build r2 in FreeBSD
 #      id: build
@@ -690,7 +690,7 @@ jobs:
       uses: actions/checkout@v6
     - name: Extract r2 version
       shell: bash
-      run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
+      run: echo "branch=`./configure -qV`" >> $GITHUB_OUTPUT
       id: r2v
     - name: Build XCFramework
       run: |
@@ -773,7 +773,7 @@ jobs:
           fetch-depth: 0 # Download all git history and tags
       - name: Extract r2 version
         shell: bash
-        run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
+        run: echo "branch=`./configure -qV`" >> $GITHUB_OUTPUT
         id: r2v
       - name: Prepare release notes
         run: ./sys/release-notes.sh | tee ./RELEASE_NOTES.md
