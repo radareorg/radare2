@@ -338,6 +338,21 @@ static ut64 apfs_inode_get_size(ApfsFS *ctx, ApfsInodeCache *cache) {
 	return apfs_read64 (ctx, (ut8 *)&cache->inode->uncompressed_size);
 }
 
+static int apfs_dir_entry_cmp(const void *a, const void *b) {
+	const RFSFile *fa = (const RFSFile *)a;
+	const RFSFile *fb = (const RFSFile *)b;
+	if (!fa || !fb) {
+		return 0;
+	}
+	if (!fa->name) {
+		return fb->name ? -1 : 0;
+	}
+	if (!fb->name) {
+		return 1;
+	}
+	return strcmp (fa->name, fb->name);
+}
+
 static RList *fs_apfs_dir(RFSRoot *root, const char *path, int view) {
 	R_RETURN_VAL_IF_FAIL (root, NULL);
 
@@ -360,6 +375,10 @@ static RList *fs_apfs_dir(RFSRoot *root, const char *path, int view) {
 
 	ApfsDirIterContext iter_ctx = { list, parent_inode_num, ctx, root };
 	ht_up_foreach (ctx->inodes, apfs_dir_iter_cb, &iter_ctx);
+
+	// Sort the list alphabetically by name
+	r_list_sort (list, apfs_dir_entry_cmp);
+
 	return list;
 }
 
