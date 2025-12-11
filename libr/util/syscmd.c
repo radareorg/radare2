@@ -11,31 +11,27 @@
 
 static R_TH_LOCAL RList *dirstack = NULL;
 
-static void showfile(RStrBuf *buf, PJ *pj, const int nth, const char *fpath, const char *name, int printfmt, bool needs_newline, int column_width) {
+static void showfile(RStrBuf *sb, PJ *pj, const int nth, const char *fpath, const char *name, int printfmt, bool needs_newline, int column_width) {
 #if R2__UNIX__
-	struct stat sb;
+	struct stat st;
 #endif
 	const char *n = fpath;
-	char *nn, *u_rwx = NULL;
+	char *u_rwx = NULL;
 	int sz = r_file_size (n);
-	int perm, uid = 0, gid = 0;
+	int uid = 0, gid = 0;
 	int fch = '-';
 	if (r_str_startswith (fpath, "./")) {
 		fpath = fpath + 2;
 	}
 	const bool isdir = r_file_is_directory (n);
-	if (isdir) {
-		nn = r_str_newf ("%s/", fpath);
-	} else {
-		nn = strdup (fpath);
-	}
-	if (!*nn) {
-		free (nn);
-		return;
-	}
-	perm = isdir? 0755: 0644;
+	char *nn = r_str_newf ("%s%s", fpath, isdir? "/": "");
+	int perm = isdir? 0755: 0644;
 	if (!printfmt) {
-		r_strbuf_appendf (buf, "%-*s%s", column_width, nn, needs_newline? "\n": "  ");
+		if (needs_newline) {
+			r_strbuf_appendf (sb, "%s\n", nn);
+		} else {
+			r_strbuf_appendf (sb, "%-*s%s", column_width, nn, "  ");
+		}
 		free (nn);
 		return;
 	}
@@ -43,17 +39,17 @@ static void showfile(RStrBuf *buf, PJ *pj, const int nth, const char *fpath, con
 	// TODO: Implement more real info in ls -l
 	// TODO: handle suid
 #if R2__UNIX__
-	if (lstat (n, &sb) != -1) {
-		ut32 ifmt = sb.st_mode & S_IFMT;
-		uid = sb.st_uid;
-		gid = sb.st_gid;
-		perm = sb.st_mode & 0777;
+	if (lstat (n, &st) != -1) {
+		ut32 ifmt = st.st_mode & S_IFMT;
+		uid = st.st_uid;
+		gid = st.st_gid;
+		perm = st.st_mode & 0777;
 		if (! (u_rwx = strdup (r_str_rwx_i (perm >> 6)))) {
 			free (nn);
 			return;
 		}
-		if (sb.st_mode & S_ISUID) {
-			u_rwx[2] = (sb.st_mode & S_IXUSR)? 's': 'S';
+		if (st.st_mode & S_ISUID) {
+			u_rwx[2] = (st.st_mode & S_IXUSR)? 's': 'S';
 		}
 		if (isdir) {
 			fch = 'd';
@@ -63,10 +59,8 @@ static void showfile(RStrBuf *buf, PJ *pj, const int nth, const char *fpath, con
 			case S_IFBLK: fch = 'b'; break;
 			case S_IFLNK: fch = 'l'; break;
 			case S_IFIFO: fch = 'p'; break;
-#ifndef __wasi__
-#ifdef S_IFSOCK
+#if !defined(__wasi__) && defined(S_IFSOCK)
 			case S_IFSOCK: fch = 's'; break;
-#endif
 #endif
 			}
 		}
@@ -76,7 +70,7 @@ static void showfile(RStrBuf *buf, PJ *pj, const int nth, const char *fpath, con
 	fch = isdir? 'd': '-';
 #endif
 	if (printfmt == FMT_QUIET) {
-		r_strbuf_appendf (buf, "%s\n", nn);
+		r_strbuf_appendf (sb, "%s\n", nn);
 	} else if (printfmt == FMT_EMOJI) {
 		const char *eDIR = "📁";
 		const char *eIMG = "🌅";
@@ -112,21 +106,19 @@ static void showfile(RStrBuf *buf, PJ *pj, const int nth, const char *fpath, con
 		} else if (r_str_casestr (nn, ".jpg") || r_str_casestr (nn, ".png") || r_str_casestr (nn, ".gif") || r_str_casestr (nn, ".jpeg") || r_str_casestr (nn, ".svg")) {
 			icon = eIMG;
 #if R2__UNIX__
-		} else if ((sb.st_mode & S_IFMT) == S_IFLNK) {
-			const char *eLNK = "📎";
-			icon = eLNK;
-		} else if (sb.st_mode & S_ISUID) {
-			const char *eUID = "🔼";
-			icon = eUID;
+		} else if ((st.st_mode & S_IFMT) == S_IFLNK) {
+			icon = "📎";
+		} else if (st.st_mode & S_ISUID) {
+			icon = "🔼";
 		} else if (perm & 1) {
 			icon = eEXE;
 #endif
 		} else if (*nn == '.') {
 			icon = eHID;
 		}
-		r_strbuf_appendf (buf, "%s %s\n", icon, nn);
+		r_strbuf_appendf (sb, "%s %s\n", icon, nn);
 	} else if (printfmt == FMT_RAW) {
-		r_strbuf_appendf (buf, "%c%s%s%s  1 %4d:%-4d  %-10d  %s\n",
+		r_strbuf_appendf (sb, "%c%s%s%s  1 %4d:%-4d  %-10d  %s\n",
 			isdir? 'd': fch,
 			r_str_get_fail (u_rwx, "-"),
 			r_str_rwx_i ((perm >> 3) & 7),
@@ -150,8 +142,6 @@ static void showfile(RStrBuf *buf, PJ *pj, const int nth, const char *fpath, con
 	free (nn);
 	free (u_rwx);
 }
-
-
 
 typedef struct {
 	char *path;
@@ -199,17 +189,27 @@ static PathInfo *resolve_path_info(const char *input) {
 			free (pi);
 			return NULL;
 		}
-		if (r_str_startswith (input, "-e")) {
-			printfmt = FMT_EMOJI;
-			path = r_str_trim_head_ro (input + 2);
-		} else if (r_str_startswith (input, "-q")) {
-			printfmt = FMT_QUIET;
-			path = r_str_trim_head_ro (input + 2);
-		} else if (r_str_startswith (input, "-l") || r_str_startswith (input, "-j")) {
-			printfmt = (input[1] == 'j')? FMT_JSON: FMT_RAW;
-			path = r_str_trim_head_ro (input + 2);
-			if (!*path) {
-				path = ".";
+		if (*input == '-') {
+			switch (input[1]) {
+			case 'e':
+				printfmt = FMT_EMOJI;
+				path = r_str_trim_head_ro (input + 2);
+				break;
+			case 'q':
+				printfmt = FMT_QUIET;
+				path = r_str_trim_head_ro (input + 2);
+				break;
+			case 'l':
+			case 'j':
+				printfmt = (input[1] == 'j')? FMT_JSON: FMT_RAW;
+				path = r_str_trim_head_ro (input + 2);
+				if (!*path) {
+					path = ".";
+				}
+				break;
+			default:
+				R_LOG_ERROR ("Unknown flag %s", input);
+				break;
 			}
 		} else {
 			path = input;
@@ -268,13 +268,12 @@ static void free_path_info(PathInfo *pi) {
 }
 
 R_API char *r_syscmd_ls(const char *input, int cons_width) {
-	RStrBuf *sb = r_strbuf_new ("");
 	PJ *pj = NULL;
 	PathInfo *pi = resolve_path_info (input);
 	if (!pi) {
-		r_strbuf_free (sb);
 		return NULL;
 	}
+	RStrBuf *sb = r_strbuf_new ("");
 	if (pi->printfmt == FMT_JSON) {
 		pj = pj_new ();
 		pj_a (pj);
@@ -313,7 +312,7 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 	}
 
 	char *dir = r_str_newf ("%s%s", pi->path, pi->path[strlen(pi->path) - 1] == '/' ? "" : "/");
-	const char *display_dir = (!strncmp (dir, "./", 2))? dir + 2: dir;
+	const char *display_dir = r_str_startswith (dir, "./")? dir + 2: dir;
 	int max_len = strlen (display_dir) + max_name_len + 1;
 	int column_width = max_len + 2;
 	if (column_width > cons_width / 2) {
@@ -323,42 +322,36 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 		column_width = 12;
 	}
 	int nth = 0;
-	bool needs_newline = false;
 	int linelen = 0;
 	r_list_foreach (files, iter, name) {
 		char *n = r_str_newf ("%s%s", dir, name);
-		if (!n) {
-			break;
-		}
 		if (r_str_glob (name, pi->pattern)) {
 			if (*n) {
 				bool isdir = r_file_is_directory (n);
 				const char *display_path = r_str_startswith (n, "./")? n + 2: n;
 				int display_len = strlen (display_path) + (isdir? 1: 0);
 				int add = R_MAX (column_width, display_len) + 2;
-				if (linelen + add > cons_width) {
-					if (!pj) {
-						if (r_strbuf_length (sb) == 0 || r_strbuf_get (sb)[r_strbuf_length (sb) - 1] != '\n') {
-							r_strbuf_append (sb, "\n");
-						}
-						linelen = 0;
-					}
+				bool needs_newline = (linelen + add > cons_width);
+				showfile (sb, pj, nth, n, name, pi->printfmt, needs_newline, column_width);
+				if (needs_newline) {
+					linelen = 0;
+				} else {
+					linelen += add;
 				}
-				showfile (sb, pj, nth, n, name, pi->printfmt, false, column_width);
-				linelen += add;
 			}
 			nth++;
 		}
 		free (n);
-	}
-	if (!pj && r_strbuf_length (sb) > 0 && r_strbuf_get (sb)[r_strbuf_length (sb) - 1] != '\n') {
-		r_strbuf_append (sb, "\n");
 	}
 	char *res;
 	if (pj) {
 		pj_end (pj);
 		res = pj_drain (pj);
 	} else {
+		/// AITODO this is awful
+		if (r_strbuf_length (sb) > 0 && r_strbuf_get (sb)[r_strbuf_length (sb) - 1] != '\n') {
+			r_strbuf_append (sb, "\n");
+		}
 		res = r_strbuf_drain (sb);
 	}
 	free (dir);

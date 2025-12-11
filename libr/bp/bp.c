@@ -142,7 +142,7 @@ R_API void r_bp_enable_all(RBreakpoint *bp, int set) {
 
 R_API int r_bp_stepy_continuation(RBreakpoint *bp) {
 	R_RETURN_VAL_IF_FAIL (bp, 0);
-	// TODO: implement
+	/* Return current step continuation mode */
 	return bp->stepcont;
 }
 
