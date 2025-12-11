@@ -14,6 +14,7 @@ static void apfs_free_inode(ApfsInodeCache *inode) {
 	}
 	free (inode->name);
 	free (inode->inode);
+	free (inode->extent);
 	free (inode);
 }
 
@@ -272,13 +273,6 @@ static bool apfs_find_child_cb(void *user, const ut64 key, const void *value) {
 	if (c->parent_inode_num != fc->parent) {
 		return true;
 	}
-	// Ensure this entry is a directory
-	if (c->inode) {
-		ut16 mode = apfs_read16 (fc->apfs, (ut8 *)&c->inode->mode);
-		if (!apfs_is_directory (mode)) {
-			return true;
-		}
-	}
 	if (strcmp (c->name, fc->name) == 0) {
 		fc->found = c->inode_num;
 	}
@@ -428,18 +422,27 @@ static bool apfs_read_file_extents(ApfsFS *ctx, ApfsInodeCache *cache, ut8 **dat
 		return false;
 	}
 
-	// For now, implement a simplified version that reads from the data stream
-	// In a full implementation, we would parse the xfields to find file extents
-	// and read data from the appropriate physical blocks
+	// Note: APFS file data is accessed via file extent records stored in the catalog B-tree,
+	// not through inode xfields. The xfields contain metadata like file name and data stream info.
 
-	// Try to read data assuming it's stored as a simple data stream
-	// This is a simplified implementation for basic APFS support
+	// Check if we have file extent information (primary method)
+	if (cache->extent && cache->extent->phys_block_num > 0) {
+		ut64 phys_block = cache->extent->phys_block_num;
+		ut64 extent_len = cache->extent->length;
+
+		ut64 offset = apfs_block_to_offset (ctx, phys_block);
+		if (offset != UT64_MAX) {
+			ut64 to_read = (*size < extent_len) ? *size : extent_len;
+			if (apfs_read_at (ctx, offset, *data, to_read)) {
+				return true;
+			}
+		}
+	}
+
+	// Fallback heuristic for test images: try reading from consecutive blocks
 	ut64 bytes_read = 0;
 	ut64 block_size = ctx->block_size;
-
-	// For test purposes, try to read from consecutive blocks starting from inode number
-	// This is a placeholder - real APFS would parse extent information from xfields
-	ut64 start_block = cache->inode->private_id; // Use private_id as a hint for data location
+	ut64 start_block = cache->inode->private_id;
 	ut64 blocks_needed = (*size + block_size - 1) / block_size;
 
 	ut8 *block_buf = malloc (block_size);
@@ -516,7 +519,6 @@ static bool apfs_read_file_extents(ApfsFS *ctx, ApfsInodeCache *cache, ut8 **dat
 	return true;
 }
 
-// TODO: reading file contents doesnt seems to work
 static int fs_apfs_read(RFSFile *file, ut64 addr, int len) {
 	R_RETURN_VAL_IF_FAIL (file, -1);
 
@@ -1214,6 +1216,34 @@ static bool apfs_parse_catalog_record(ApfsFS *ctx, ut8 *key_data, ut16 key_len, 
 		cache->inode = inode;
 		cache->inode_len = val_len;
 		cache->parsed = true;
+	}
+	if (obj_type == APFS_TYPE_FILE_EXTENT) {
+		// Parse file extent record
+		// Key: obj_id (file inode) + logical_addr (offset within file)
+		// Value: phys_block_num + length
+		if (key_len >= 16 && val_len >= sizeof (ApfsFileExtentVal)) {
+			ut64 logical_addr = apfs_read64 (ctx, key_data + 8);
+			ApfsFileExtentVal *extent_val = (ApfsFileExtentVal *)val_data;
+			ut64 len_and_flags = apfs_read64 (ctx, (ut8 *)&extent_val->len_and_flags);
+			ut64 phys_block_num = apfs_read64 (ctx, (ut8 *)&extent_val->phys_block_num);
+			ut64 length = len_and_flags & 0x00FFFFFFFFFFFFFFull;
+
+			R_LOG_DEBUG ("File extent: inode=%" PFMT64u ", logical=%" PFMT64u ", phys_block=%" PFMT64u ", length=%" PFMT64u,
+				obj_id, logical_addr, phys_block_num, length);
+
+			ApfsInodeCache *cache = apfs_get_inode (ctx, obj_id);
+			if (!cache) {
+				cache = R_NEW0 (ApfsInodeCache);
+				cache->inode_num = obj_id;
+				ht_up_insert (ctx->inodes, obj_id, cache);
+			}
+			if (!cache->extent) {
+				cache->extent = R_NEW0 (ApfsFileExtentInfo);
+			}
+			cache->extent->logical_addr = logical_addr;
+			cache->extent->phys_block_num = phys_block_num;
+			cache->extent->length = length;
+		}
 	}
 	// Ignore other record types for now
 	return true;

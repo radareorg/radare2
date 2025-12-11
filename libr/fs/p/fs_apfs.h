@@ -35,6 +35,7 @@
 // Catalog record types
 #define APFS_TYPE_INODE 3
 #define APFS_TYPE_XATTR 4
+#define APFS_TYPE_FILE_EXTENT 8
 #define APFS_TYPE_DIR_REC 9
 
 // Bit masks for the 'obj_id_and_type' field of a key header
@@ -380,6 +381,13 @@ typedef struct {
 	RFSRoot *root;
 } ApfsDirIterContext;
 
+// File extent info
+typedef struct {
+	ut64 logical_addr;
+	ut64 phys_block_num;
+	ut64 length;
+} ApfsFileExtentInfo;
+
 // Parsed inode cache entry
 typedef struct {
 	ut64 inode_num;
@@ -388,6 +396,7 @@ typedef struct {
 	ApfsInodeVal *inode;
 	ut32 inode_len;
 	bool parsed;
+	ApfsFileExtentInfo *extent; // File extent (for reading data)
 } ApfsInodeCache;
 
 // Filesystem context
