@@ -24,14 +24,17 @@ wasi_setup_sdk() {
 
 		rm -f ~/Downloads/wasi/wasi-sysroot.tar.gz
 		echo "Downloading wasi-sysroot-${WASI_VERSION}.tar.gz..."
-		wget -c -O ~/Downloads/wasi/wasi-root.tar.gz https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_MAJOR}/wasi-sysroot-${WASI_VERSION}.tar.gz || exit 1
+		wget -c -O ~/Downloads/wasi/wasi-sysroot.tar.gz https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_MAJOR}/wasi-sysroot-${WASI_VERSION}.tar.gz || exit 1
 
 		echo "Extracting WASI SDK..."
 		(
 			cd ~/Downloads/wasi
 			tar xzvf wasi-sdk.tar.gz
-			tar xzvf wasi-root.tar.gz
+			tar xzvf wasi-sysroot.tar.gz
+			# Version 29+ already extracts with the versioned directory name
+		if [ -d wasi-sysroot ] && [ ! -d wasi-sysroot-${WASI_VERSION} ]; then
 			mv wasi-sysroot wasi-sysroot-${WASI_VERSION}
+		fi
 		)
 
 		echo "WASI SDK installed successfully"
