@@ -156,11 +156,30 @@ static void unlinkBreakpoint(RBreakpoint *bp, RBreakpointItem *b) {
 	r_list_delete_data (bp->bps, b);
 }
 
-/* TODO: detect overlapping of breakpoints */
 static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 * R_NULLABLE obytes, ut64 addr, int size, int hw, int perm) {
 	R_RETURN_VAL_IF_FAIL (bp, NULL);
 	if (addr == UT64_MAX || size < 1) {
 		return NULL;
+	}
+	/* Detect and (only warn) when setting breakpoints that overlap */
+	{
+		RListIter *iter;
+		RBreakpointItem *other;
+		r_list_foreach (bp->bps, iter, other) {
+			// Check for address space overflow in either breakpoint
+			bool other_overflow = (other->size > 0 && other->addr > UT64_MAX - other->size);
+			bool this_overflow = (size > 0 && addr > UT64_MAX - size);
+			if (other_overflow || this_overflow) {
+				R_LOG_WARN ("Breakpoint range overflow detected at 0x%08"PFMT64x, other->addr);
+				continue;
+			}
+			// Check if ranges overlap
+			ut64 other_end = other->addr + other->size;
+			ut64 this_end = addr + size;
+			if (addr < other_end && other->addr < this_end) {
+				R_LOG_WARN ("Breakpoint overlaps with existing breakpoint at 0x%08"PFMT64x, other->addr);
+			}
+		}
 	}
 	if (r_bp_get_in (bp, addr, perm)) {
 		R_LOG_WARN ("Breakpoint already set at this address");
