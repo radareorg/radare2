@@ -64,7 +64,7 @@ localize_hidden:
 	rm -rf .libr
 	mkdir -p .libr
 	for LIB in $^ ; do \
-		${PARTIALLD} $(ALFLAGS) $(CFLAGS) $(MLFLAGS) $(PLFLAGS) -o .libr/$$(basename $${LIB}.a).o $${LIB} ; \
+		if [ -f "$$LIB" ]; then (cd .libr && ${AR} x "../$$LIB"); fi ; \
 	done
 ifeq ($(OSTYPE),linux)
 	$(MAKE) localize_hidden
@@ -108,11 +108,12 @@ WHOLEFLAG=-Wl,--whole-archive
 endif
 endif
 endif
-libr.o: ../shlr/libr_shlr.${EXT_AR}
-	$(CC) -r -nostdlib $(CFLAGS) $(WHOLEFLAG) -o libr.o $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
+libr.o: .libr
+	${AR} -rcs libr.o .libr/*.o
+	$(RANLIB) libr.o
 
-libr.${EXT_AR}: libr.o
-	$(AR) -rs $@ libr.o
+libr.${EXT_AR}: .libr
+	-${AR} -rs $@ .libr/*.o
 	$(RANLIB) $@
 
 #libr.${EXT_AR}: .libr2
@@ -175,8 +176,8 @@ ifeq (${COMPILER},wasi)
 	echo nothing to do here
 else
 	$(CC) -fvisibility=hidden $(MLFLAGS) ${LINK} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} $(LIBR_LDFLAGS) -o libr.${EXT_SO}  \
-		libr.${EXT_AR} ../shlr/gdb/lib/libgdbr.${EXT_AR} ../shlr/java/libr_java.${EXT_AR} \
-		../shlr/libr_shlr.${EXT_AR} $(E) ../libr/util/libr_util.${EXT_AR}
+		.libr/*.o ../shlr/gdb/lib/libgdbr.${EXT_AR} ../shlr/java/libr_java.${EXT_AR} \
+		../shlr/libr_shlr.${EXT_AR} $(E)
 endif
 endif
 

@@ -26,7 +26,7 @@ CFLAGS+=-fno-common
 LDFLAGS_LIB=-dynamiclib
 LDFLAGS_SONAME=-Wl,-install_name,${LIBDIR}/
 else
-PARTIALLD=${LD} -r --whole-archive
+PARTIALLD=${CC} -r -Wl,--whole-archive -c
 LDFLAGS_LIB=${LDFLAGS} -shared
 #ifneq (${NAME},)
 #LDFLAGS_LIB+=-Wl,-soname,lib${NAME}.${EXT_SO}.${VERSION}

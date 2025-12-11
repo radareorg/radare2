@@ -122,7 +122,7 @@ ${BEXE}: ${OBJ} ${SHARED_OBJ}
 	${CC} ${CFLAGS} $+ -L.. -o $@ $(LDFLAGS)
   endif
  else
-	${CC} ${CFLAGS} $+ -L.. -o $@ ../../libr/libr.a $(LDFLAGS)
+	${RANLIB} ../../libr/libr.a || true ; ${CC} ${CFLAGS} $+ -L.. -o $@ ../../libr/libr.a $(LDFLAGS)
  endif
 else
 
