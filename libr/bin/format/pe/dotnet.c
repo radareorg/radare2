@@ -1570,7 +1570,7 @@ DotNetVersionInfo *dotnet_parse_version_info(const ut8 *buf, int size) {
 								}
 
 								// Now read Assembly table first row
-								if (fits_in_pe (pe, table_offset, 4 + 2 + 2 + 2 + 2)) {
+								if (table_offset >= pe->data && (size_t)(pe->data + pe->data_size - table_offset) >= (4 + 2 + 2 + 2 + 2)) {
 									version_info->asm_major = r_read_le16 (table_offset + 4);
 									version_info->asm_minor = r_read_le16 (table_offset + 6);
 									version_info->asm_build = r_read_le16 (table_offset + 8);
