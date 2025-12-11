@@ -93,7 +93,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install meson ninja r2pipe wget
+        pip install meson ninja r2pipe wget --break-system-packages
         sudo apt update --assume-yes
         sudo apt install gperf
     - name: Installing with symlinks
@@ -145,7 +145,7 @@ jobs:
       uses: actions/checkout@v6
     - name: Building Radare2
       run: |
-        pip install r2pipe wheel
+        pip install r2pipe wheel --break-system-packages
         export CFLAGS="-O2 -Wno-unused-result"
         sys/install.sh
     - name: Running tests
@@ -196,12 +196,12 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install r2pipe
+        pip install r2pipe --break-system-packages
         brew install pkg-config
     - name: Building Radare2
       run: export CFLAGS="-O2"; sys/install.sh
     - name: Running tests
-      run: pip3 install r2pipe; make tests
+      run: make tests
   build-rpath-linux:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     name: linux-rpath
@@ -282,7 +282,7 @@ jobs:
       uses: actions/checkout@v6
     - name: Building Radare2
       run: |
-        pip install r2pipe
+        pip install r2pipe --break-system-packages
         sudo sh -c 'echo 0 > /proc/sys/kernel/randomize_va_space'
         export SANITIZE=address
         sys/sanitize.sh
@@ -314,7 +314,7 @@ jobs:
       uses: actions/checkout@v6
     - name: Building Radare2
       run: |
-        pip install r2pipe
+        pip install r2pipe --break-system-packages
         sudo sh -c 'echo 0 > /proc/sys/kernel/randomize_va_space'
         sys/sanitize.sh
     - name: Installing tools for the testsuite
@@ -358,7 +358,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install meson ninja r2pipe wget
+        pip install meson ninja r2pipe wget --break-system-packages
     - name: Build with meson + ninja
       shell: cmd
       run: |
