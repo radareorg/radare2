@@ -3,7 +3,7 @@ export WASI_MAJOR=29
 export WASI_VERSION=${WASI_MAJOR}.0
 
 # Detect architecture and OS for the SDK path
-WASI_ARCH=x86_64
+WASI_ARCH=`uname -m`
 WASI_OS=`uname`
 case "$WASI_OS" in
 linux|Linux) WASI_OS=linux ;;

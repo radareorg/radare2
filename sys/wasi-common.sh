@@ -3,7 +3,7 @@
 
 # Setup WASI SDK by downloading if necessary
 wasi_setup_sdk() {
-	ARCH=x86_64
+	ARCH=`uname -m`
 
 	if [ ! -d "$WASI_SDK" ]; then
 		echo "WASI SDK not found at $WASI_SDK, downloading..."
@@ -38,6 +38,14 @@ wasi_setup_sdk() {
 		)
 
 		echo "WASI SDK installed successfully"
+
+		# Re-evaluate WASI_SDK path after extraction
+		# OS variable already contains "${ARCH}-${OS_NAME}" at this point
+		if [ -d "${WASI_ROOT}/wasi-sdk-${WASI_VERSION}-${OS}" ]; then
+			export WASI_SDK="${WASI_ROOT}/wasi-sdk-${WASI_VERSION}-${OS}"
+		elif [ -d "${WASI_ROOT}/wasi-sdk-${WASI_VERSION}" ]; then
+			export WASI_SDK="${WASI_ROOT}/wasi-sdk-${WASI_VERSION}"
+		fi
 	fi
 
 	# Verify SDK is now available
