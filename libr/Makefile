@@ -101,7 +101,11 @@ else
 ifeq ($(OSTYPE),wasi)
 WHOLEFLAG=
 else
+ifeq ($(OSTYPE),wasi-api)
+WHOLEFLAG=
+else
 WHOLEFLAG=-Wl,--whole-archive
+endif
 endif
 endif
 libr.o: ../shlr/libr_shlr.${EXT_AR}
