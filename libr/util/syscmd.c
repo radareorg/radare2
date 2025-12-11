@@ -294,9 +294,7 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 	if (!files) {
 		free_path_info (pi);
 		r_strbuf_free (sb);
-		if (pj) {
-			pj_free (pj);
-		}
+		pj_free (pj);
 		return NULL;
 	}
 	r_list_sort (files, (RListComparator)strcmp);
@@ -311,7 +309,7 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 		}
 	}
 
-	char *dir = r_str_newf ("%s%s", pi->path, pi->path[strlen(pi->path) - 1] == '/' ? "" : "/");
+	char *dir = r_str_newf ("%s%s", pi->path, pi->path[strlen (pi->path) - 1] == '/' ? "" : "/");
 	const char *display_dir = r_str_startswith (dir, "./")? dir + 2: dir;
 	int max_len = strlen (display_dir) + max_name_len + 1;
 	int column_width = max_len + 2;
@@ -323,6 +321,7 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 	}
 	int nth = 0;
 	int linelen = 0;
+	bool lacks_newline = false;
 	r_list_foreach (files, iter, name) {
 		char *n = r_str_newf ("%s%s", dir, name);
 		if (r_str_glob (name, pi->pattern)) {
@@ -330,12 +329,14 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 				bool isdir = r_file_is_directory (n);
 				const char *display_path = r_str_startswith (n, "./")? n + 2: n;
 				int display_len = strlen (display_path) + (isdir? 1: 0);
-				int add = R_MAX (column_width, display_len) + 2;
+				int add = R_MAX (column_width, display_len) + 5;
 				bool needs_newline = (linelen + add > cons_width);
 				showfile (sb, pj, nth, n, name, pi->printfmt, needs_newline, column_width);
 				if (needs_newline) {
 					linelen = 0;
+					lacks_newline = false;
 				} else {
+					lacks_newline = true;
 					linelen += add;
 				}
 			}
@@ -348,8 +349,7 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 		pj_end (pj);
 		res = pj_drain (pj);
 	} else {
-		/// AITODO this is awful
-		if (r_strbuf_length (sb) > 0 && r_strbuf_get (sb)[r_strbuf_length (sb) - 1] != '\n') {
+		if (lacks_newline) {
 			r_strbuf_append (sb, "\n");
 		}
 		res = r_strbuf_drain (sb);
@@ -380,7 +380,7 @@ R_API char *r_syscmd_sort(const char *file) {
 			p = file;
 		}
 	}
-	if (p && *p) {
+	if (R_STR_ISNOTEMPTY (p)) {
 		char *filename = strdup (p);
 		r_str_trim (filename);
 		char *data = r_file_slurp (filename, NULL);
