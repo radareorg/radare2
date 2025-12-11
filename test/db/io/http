@@ -1,4 +1,5 @@
 NAME=r2 http://example.org
+BROKEN=1
 FILE=http://example.org
 CMDS=<<EOF
 r
