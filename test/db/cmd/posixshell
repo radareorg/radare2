@@ -67,8 +67,7 @@ rm /tmp/foo/bar
 rm /tmp/foo
 EOF
 EXPECT=<<EOF
-/tmp/foo/bar/foo/./       /tmp/foo/bar/foo/../      
-/tmp/foo/bar/foo/fooz     
+/tmp/foo/bar/foo/./       /tmp/foo/bar/foo/../      /tmp/foo/bar/foo/fooz
 EOF
 EXPECT_ERR=
 RUN
