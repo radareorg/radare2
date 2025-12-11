@@ -154,7 +154,16 @@ static void type_trace_voyeur_reg_write(void *user, const char *name, ut64 old, 
 		return;
 	}
 	char *name_dup = strdup (name);
+	if (!name_dup) {
+		R_LOG_ERROR ("Failed to allocate(strdup) memory for storing access");
+		return;
+	}
 	TypeTraceAccess *access = VecAccess_emplace_back (&trace->db.accesses);
+	if (!access) {
+		free (name_dup);
+		R_LOG_ERROR ("Failed to allocate memory for storing access");
+		return;
+	}
 	access->is_reg = true;
 	access->reg.name = name_dup;
 	access->reg.value = val;
