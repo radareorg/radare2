@@ -379,7 +379,7 @@ static PUT_CALLBACK(spp_r2_fputs) {
 		r_cons_printf (cons, "%s", buf);
 	}
 #else
-	r_cons_printf ("%s", buf);
+	r_cons_printf (cons, "%s", buf);
 #endif
 	return 0;
 }

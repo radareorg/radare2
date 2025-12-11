@@ -1,0 +1,80 @@
+#!/bin/sh
+# Common functions for WASI build scripts
+
+# Setup WASI SDK by downloading if necessary
+wasi_setup_sdk() {
+	ARCH=`uname -m`
+
+	if [ ! -d "$WASI_SDK" ]; then
+		echo "WASI SDK not found at $WASI_SDK, downloading..."
+
+		# Determine OS for download URL
+		OS=`uname`
+		case "$OS" in
+		linux|Linux) OS=linux ;;
+		darwin|Darwin) OS=macos ;;
+		windows|Windows) OS=mingw ;;
+		esac
+		OS="$ARCH-$OS"
+
+		mkdir -p ~/Downloads/wasi
+		rm -f ~/Downloads/wasi/wasi-sdk.tar.gz
+		echo "Downloading wasi-sdk-${WASI_VERSION}-$OS.tar.gz..."
+		wget -c -O ~/Downloads/wasi/wasi-sdk.tar.gz https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_MAJOR}/wasi-sdk-${WASI_VERSION}-$OS.tar.gz || exit 1
+
+		rm -f ~/Downloads/wasi/wasi-sysroot.tar.gz
+		echo "Downloading wasi-sysroot-${WASI_VERSION}.tar.gz..."
+		wget -c -O ~/Downloads/wasi/wasi-sysroot.tar.gz https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_MAJOR}/wasi-sysroot-${WASI_VERSION}.tar.gz || exit 1
+
+		echo "Extracting WASI SDK..."
+		(
+			cd ~/Downloads/wasi
+			tar xzvf wasi-sdk.tar.gz
+			tar xzvf wasi-sysroot.tar.gz
+			# Version 29+ already extracts with the versioned directory name
+		if [ -d wasi-sysroot ] && [ ! -d wasi-sysroot-${WASI_VERSION} ]; then
+			mv wasi-sysroot wasi-sysroot-${WASI_VERSION}
+		fi
+		)
+
+		echo "WASI SDK installed successfully"
+
+		# Re-evaluate WASI_SDK path after extraction
+		# OS variable already contains "${ARCH}-${OS_NAME}" at this point
+		if [ -d "${WASI_ROOT}/wasi-sdk-${WASI_VERSION}-${OS}" ]; then
+			export WASI_SDK="${WASI_ROOT}/wasi-sdk-${WASI_VERSION}-${OS}"
+		elif [ -d "${WASI_ROOT}/wasi-sdk-${WASI_VERSION}" ]; then
+			export WASI_SDK="${WASI_ROOT}/wasi-sdk-${WASI_VERSION}"
+		fi
+	fi
+
+	# Verify SDK is now available
+	if [ ! -d "$WASI_SDK" ]; then
+		echo "ERROR: WASI_SDK directory not found at $WASI_SDK"
+		exit 1
+	fi
+
+	echo "Using WASI_SDK=$WASI_SDK"
+}
+
+# Setup plugins configuration
+wasi_setup_plugins() {
+	cp -f dist/plugins-cfg/plugins.wasi.cfg plugins.cfg
+}
+
+# Build tools for WASI
+wasi_build_tools() {
+	TOOLS="$1"
+	OUTPUT_DIR="$2"
+
+	ERR=0
+	mkdir -p "$OUTPUT_DIR"
+
+	for a in ${TOOLS} ; do
+		echo "Building $a..."
+		make -C binr/$a || ERR=1
+		cp -f binr/$a/$a.wasm "$OUTPUT_DIR" || ERR=1
+	done
+
+	return $ERR
+}
