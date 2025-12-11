@@ -278,7 +278,9 @@ else
 	rm -rf .libr
 	mkdir .libr
 	for LIB in ${SHLRS} ; do \
-		if [ -f "$${LIB}" ]; then ${PARTIALLD} -o .libr/$$(basename $${LIB}.a).o $${LIB} ; fi ; \
+		if [ -f "$${LIB}" ]; then \
+			( cd .libr && ${AR} x "../$${LIB}" ); \
+		fi ; \
 	done
 	${AR} rs $@ .libr/*.o
 	$(RANLIB) $@
