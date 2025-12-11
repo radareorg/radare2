@@ -1,25 +1,27 @@
 #!/bin/sh
 
-[ -z "${CPU}" ] && CPU="arm64"
-CWD="$(dirname "$0")"
+[ -z "${SDK}"    ] && SDK=iphoneos
+[ -z "${IOSVER}" ] && IOSVER=14.0
+[ -z "${CPU}"    ] && CPU="arm64"
+
+LINKER=$(xcrun --sdk ${SDK} -f ld)
+if [ "$SDK" = "iphoneos" ]; then
+	VERSION_FLAG="-platform_version ios ${IOSVER} $(xcrun --sdk iphoneos --show-sdk-version)"
+else
+	VERSION_FLAG="-platform_version ios-simulator ${IOSVER} $(xcrun --sdk iphonesimulator --show-sdk-version)"
+fi
 CPUS=""
 CPU=`echo $CPU | sed -e 's,+, ,g'`
 for a in `IFS=+ echo ${CPU}` ; do
 	CPUS="-arch $a ${CPUS}"
 done
-[ -z "${SDK}" ] && SDK=iphoneos
 APPLE_SDK=`echo ${SDK} | tr a-z A-Z`
-# Respect EMBED_BITCODE; default off
 BITCODE_BUNDLE=""
 if [ "${EMBED_BITCODE}" = "1" ]; then
-    BITCODE_BUNDLE="-bitcode_bundle"
+	BITCODE_BUNDLE="-bitcode_bundle"
 fi
-LD="xcrun --sdk ${SDK} ld ${CPUS} ${BITCODE_BUNDLE}"
-if [ "$SDK" = "iphoneos" ]; then
-	LD="$LD -ios_version_min 10.0"
-else
-	LD="$LD -ios_simulator_version_min 10.0"
-fi
+
+LD="${LINKER} ${VERSION_FLAG} ${CPUS} ${BITCODE_BUNDLE}"
 echo "$LD $*"
 ${LD} $*
 r=$?

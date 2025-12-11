@@ -4,21 +4,15 @@ ARCH=$(shell uname -m)
 XCODE_VERSION=$(shell xcodebuild -version|grep Xcode|grep -o "[\.0-9]\+")
 XCODE_VERSION_MAJOR=$(word 1, $(subst ., ,$(XCODE_VERSION)))
 
-ifneq (,$(findstring ios-sdk,$(COMPILER)))
-
-IOS_VERSION="9.0"
-IOS_SDK_VERSION="9.0"
-
-else
+ifeq (,$(findstring ios-sdk,$(COMPILER)))
 
 ifeq ($(XCODE_VERSION_MAJOR),)
 XCODE_VERSION_MAJOR=0
 endif
 
 ifeq ($(shell test $(XCODE_VERSION_MAJOR) -gt 10;echo $$?),0)
-MACOS_VERSION="10.5"
-MACOS_SDK_VERSION="10.5"
-PARTIALLD+=-arch ${ARCH} -platform_version macos $(MACOS_VERSION) $(MACOS_SDK_VERSION)
+MACOSVER?=10.10
+PARTIALLD+=-arch ${ARCH} -platform_version macos $(MACOSVER) $(shell xcrun --sdk macosx --show-sdk-version)
 endif
 
 endif

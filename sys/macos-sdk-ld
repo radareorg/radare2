@@ -1,0 +1,19 @@
+#!/bin/sh
+
+[ -z "${MACOSVER}" ] && MACOSVER=10.10
+[ -z "${CPU}"      ] && CPU="$(uname -m)"
+
+CPUS=""
+CPU=`echo $CPU | sed -e 's,+, ,g'`
+for a in `IFS=+ echo ${CPU}` ; do
+	CPUS="-arch $a ${CPUS}"
+done
+
+LD="$(xcrun --sdk macosx -f ld) ${CPUS} -platform_version macos ${MACOSVER} $(xcrun --sdk macosx --show-sdk-version)"
+echo "$LD $*"
+${LD} $*
+r=$?
+if [ "$r" != 0 ]; then
+	echo ${LD} $* >&2
+fi
+exit $r

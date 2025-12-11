@@ -1,0 +1,31 @@
+#!/bin/sh
+
+[ -z "${SDK}"    ] && SDK=iphoneos
+[ -z "${IOSVER}" ] && IOSVER=14.0
+[ -z "${CPU}"    ] && CPU="arm64"
+
+CLANG=$(xcrun --sdk ${SDK} -f clang)
+SYSROOT=$(xcrun --sdk ${SDK} --show-sdk-path)
+if [ "$SDK" = "iphoneos" ]; then
+	VERSION_FLAG="-mios-version-min=${IOSVER}"
+else
+	VERSION_FLAG="-mios-simulator-version-min=${IOSVER}"
+fi
+CPUS=""
+IFS=+
+for a in $CPU; do
+	CPUS="-arch $a ${CPUS}"
+done
+unset IFS
+BITCODE_FLAG=""
+if [ "${EMBED_BITCODE}" = "1" ]; then
+	BITCODE_FLAG="-fembed-bitcode"
+fi
+APPLE_SDK=`echo ${SDK} | tr a-z A-Z`
+
+CC="${CLANG} -isysroot ${SYSROOT} ${VERSION_FLAG} ${CPUS} ${BITCODE_FLAG} -DAPPLE_SDK_${APPLE_SDK}=1"
+echo $CC $*
+${CC} $*
+r=$?
+[ "$r" != 0 ] && echo ${CC} $* >&2
+exit $r

@@ -37,10 +37,7 @@ PREFIX="/usr"
 
 export PATH=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin:$PATH
 export PATH=$(pwd)/sys:${PATH}
-export CC=$(pwd)/sys/ios-sdk-gcc
-# set only for arm64, otherwise it is armv7
-# select ios sdk version
-export IOSVER=9.3
+export CC=$(pwd)/sys/ios-sdk-clang
 #export CFLAGS=-O2
 export CFLAGS="-Os -flto"
 export LDFLAGS="-flto"
@@ -61,7 +58,7 @@ cp -f dist/plugins-cfg/plugins.ios.cfg plugins.cfg
 	${CFGFLAGS} \
 	--with-ostype=darwin --with-libr \
 	--without-gpl --without-fork \
-	--with-compiler=ios-sdk \
+	--with-compiler=ios-sdk-clang \
 	--target=arm-unknown-darwin
 fi
 

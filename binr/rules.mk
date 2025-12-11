@@ -5,7 +5,7 @@ include ../../shlr/sdb.mk
 
 # despite libs are pic, some systems/compilers dont
 # like relocatable executables, so here we do the magic
-USE_PIE=$(shell echo "$(CC)" | grep -E "emcc|tcc|vinix|wasm" >/dev/null && echo 0 || echo 1)
+USE_PIE=$(shell echo "$(CC)" | grep -E "emcc|ios-sdk|macos-sdk|tcc|vinix|wasm" >/dev/null && echo 0 || echo 1)
 
 ifeq ($(USE_PIE),1)
 CFLAGS+=-pie

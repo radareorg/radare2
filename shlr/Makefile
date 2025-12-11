@@ -266,6 +266,15 @@ SHLRS+=winkd/libr_winkd.a
 SHLRS+=zip/librz.a
 
 libr_shlr.${EXT_AR}:
+ifeq ($(OSTYPE),darwin)
+	@LIBS=""; \
+	for LIB in $(SHLRS); do \
+		if [ -f "$${LIB}" ]; then \
+			LIBS="$${LIBS} $${LIB}"; \
+		fi; \
+	done; \
+	xcrun libtool -static -o $@ $${LIBS}
+else
 	rm -rf .libr
 	mkdir .libr
 	for LIB in ${SHLRS} ; do \
@@ -273,5 +282,6 @@ libr_shlr.${EXT_AR}:
 	done
 	${AR} rs $@ .libr/*.o
 	$(RANLIB) $@
+endif
 
 .PHONY: spp

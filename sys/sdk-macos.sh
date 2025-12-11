@@ -4,22 +4,19 @@
 
 . sys/sdk-common.sh
 
-: "${R2_MACOS_MIN:=10.10}"
-
 # macOS specific
 PLUGINS_CFG=plugins.ios-store.cfg
 
+# Environment variables
+. sys/macos-env.sh
+
+set -eo pipefail
+
 macosConfigure() {
-	: "${MACOSX_DEPLOYMENT_TARGET:=${R2_MACOS_MIN}}"
-	export MACOSX_DEPLOYMENT_TARGET
-
-	export CFLAGS="-mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET} ${CFLAGS}"
-	export LDFLAGS="-mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET} ${LDFLAGS}"
-
 	cp -f dist/plugins-cfg/${PLUGINS_CFG} plugins.cfg
 	./configure --with-libr --prefix=${PREFIX} --with-ostype=darwin \
 		--disable-debugger --without-gpl \
-		--without-fork --with-compiler=clang \
+		--without-fork --with-compiler=macos-sdk-clang \
 		--target=x86_64-apple-darwin
 	return $?
 }
@@ -66,9 +63,9 @@ rm -rf "$INSTALL_DST"
 
 if [ "${#ARCHS}" -gt 0 ]; then
 	sdkClean
+	export CPU="$ARCHS"
 	macosConfigure
 	if [ $? -eq 0 ]; then
-		export CPU="$ARCHS"
 		echo "Building for $CPU"
 		sleep 1
 		sdkBuild

@@ -4,11 +4,9 @@
 
 . sys/sdk-common.sh
 
-: "${R2_IOS_MIN:=12.0}"
-
 # iOS specific variables
 USE_SIMULATOR=0
-SIMULATOR_ARCHS="x86_64"
+SIMULATOR_ARCHS="arm64"
 PACKAGE_RADARE=0
 EMBED_BITCODE=0
 PLUGINS_CFG=plugins.ios-store.cfg
@@ -16,6 +14,8 @@ PLUGINS_CFG=plugins.ios-store.cfg
 # Environment variables
 . sys/ios-env.sh
 export USE_IOS_STATIC=0
+
+set -eo pipefail
 
 echo "If xcrun --sdk iphoneos cant find the profile use this line:"
 echo " sudo xcode-select -switch /Applications/Xcode.app"
@@ -26,16 +26,10 @@ if [ "${EMBED_BITCODE}" = 1 ]; then
 fi
 
 iosConfigure() {
-	: "${IPHONEOS_DEPLOYMENT_TARGET:=${R2_IOS_MIN}}"
-	export IPHONEOS_DEPLOYMENT_TARGET
-
-	export CFLAGS="-miphoneos-version-min=${IPHONEOS_DEPLOYMENT_TARGET} ${CFLAGS}"
-	export LDFLAGS="-miphoneos-version-min=${IPHONEOS_DEPLOYMENT_TARGET} ${LDFLAGS}"
-
 	cp -f dist/plugins-cfg/${PLUGINS_CFG} plugins.cfg
 	./configure --with-libr --prefix=${PREFIX} --with-ostype=darwin \
 		--disable-debugger --without-gpl \
-		--without-fork --with-compiler=ios-sdk \
+		--without-fork --with-compiler=ios-sdk-clang \
 		--target=arm64-unknown-darwin
 	return $?
 }
@@ -142,40 +136,36 @@ rm -rf "$INSTALL_DST"
 # Build for simulator
 if [ "${USE_SIMULATOR}" = 1 ]; then
 	sdkClean
-	if [ 1 = 0 ]; then
-		iosConfigure
-		if [ $? -eq 0 ]; then
-			export CPU="$SIMULATOR_ARCHS"
-			export SDK=iphonesimulator
-			echo "Building for simulator($SIMULATOR_ARCHS)"
-			sleep 1
-			sdkBuild
-		fi
-	else
-		sys/ios-simulator.sh
-	fi
-	# backup lib folder
+	export CPU="$SIMULATOR_ARCHS"
+	export SDK=iphonesimulator
+	iosConfigure
+	echo "Building for simulator($SIMULATOR_ARCHS)"
+	sleep 1
+	sdkBuild
+	# backup include and lib directories
 	if [ "${#ARCHS}" -gt 0 ]; then
-		rm -rf "$INSTALL_DST/$PREFIX"/lib_simulator
-		mv "$INSTALL_DST/$PREFIX"/lib "$INSTALL_DST/$PREFIX"/lib_simulator
+		for d in include lib; do
+			rm -rf "$INSTALL_DST/$PREFIX"/${d}_simulator
+			mv "$INSTALL_DST/$PREFIX"/${d} "$INSTALL_DST/$PREFIX"/${d}_simulator
+		done
 	else
-		cp -r "$INSTALL_DST/$PREFIX"/lib "$INSTALL_DST/$PREFIX"/lib_simulator
+		for d in include lib; do
+			cp -r "$INSTALL_DST/$PREFIX"/${d} "$INSTALL_DST/$PREFIX"/${d}_simulator
+		done
 	fi
 fi
 
 # Build for device
 if [ "${#ARCHS}" -gt 0 ]; then
 	sdkClean
+	export CPU="$ARCHS"
+	export SDK=iphoneos
 	iosConfigure
-	if [ $? -eq 0 ]; then
-		export CPU="$ARCHS"
-		export SDK=iphoneos
-		echo "Building for $CPU"
-		sleep 1
-		sdkBuild
-		if [ "${PACKAGE_RADARE}" = 1 ]; then
-			iosPackage
-		fi
+	echo "Building for $CPU"
+	sleep 1
+	sdkBuild
+	if [ "${PACKAGE_RADARE}" = 1 ]; then
+		iosPackage
 	fi
 fi
 
