@@ -146,15 +146,15 @@ ${CC} .test.c \
 	-I ${PWD}/r2-static/usr/include/libr \
 	-I ${PWD}/r2-static/usr/include/libr/sdb \
 	r2-static/usr/lib/libr.a ${LDFLAGS}
-res=$?
+res2=$?
 du -hs r2-static/usr/bin/radare2
 du -hs a.out
 set +x
-if [ $res = 0 ]; then
-	echo SUCCESS
+if [ $res2 = 0 ]; then
+	echo SUCCESS2
 	rm -f a.out
 else
-	echo FAILURE
+	echo FAILURE2
 fi
 
 rm -f .test.c
