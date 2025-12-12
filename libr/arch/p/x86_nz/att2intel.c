@@ -3,7 +3,8 @@
 #include <r_asm.h>
 
 // x86-specific AT&T to Intel parser plugin
-// Uses the generic r_str_att2intel() from libr/util/str_att.c
+// Uses the x86-specific r_str_att2intel() from libr/util/str_att.c
+// This plugin is used as a pseudo-disassembler parser to convert AT&T output to Intel
 
 static char *parse(RAsmPluginSession *aps, const char *data) {
 	return r_str_att2intel (data);

@@ -2,12 +2,18 @@
 
 #include <r_util.h>
 
-// Generic AT&T to Intel syntax conversion
-// This handles the common cases that work across architectures:
+// x86-specific AT&T to Intel syntax conversion
+// This handles x86 AT&T syntax conversion to Intel syntax for assemblers that
+// only support Intel syntax. The conversion includes:
 // - Remove % prefix from registers
 // - Remove $ prefix from immediates
 // - Swap operand order (AT&T: src, dst -> Intel: dst, src)
 // - Convert memory addressing ( ) to [ ]
+// - Strip AT&T size suffixes (l, q, b, w) from instructions
+//
+// Note: This is NOT generic across architectures. Most non-x86 architectures
+// use their own syntax and don't have AT&T/Intel distinction. The encoder
+// plugin's encode_syntax field should indicate if it supports ATT natively.
 
 // instructions that take 2 operands and need swap (src, dst -> dst, src)
 static const char *ops_2swap[] = {
