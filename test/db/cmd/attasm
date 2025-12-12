@@ -1,0 +1,449 @@
+NAME=x86 AT&T movl immediate to register
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.syntax=att
+pa movl $3, %eax
+EOF
+EXPECT=<<EOF
+b803000000
+EOF
+RUN
+
+NAME=x86 AT&T movq register to register (operand swap)
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.syntax=att
+pa movq %rax, %rbx
+EOF
+EXPECT=<<EOF
+4889c3
+EOF
+RUN
+
+NAME=x86 AT&T addq immediate to register
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.syntax=att
+pa addq $8, %rsp
+EOF
+EXPECT=<<EOF
+4883c408
+EOF
+RUN
+
+NAME=x86 AT&T subq immediate to register
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.syntax=att
+pa subq $0x10, %rsp
+EOF
+EXPECT=<<EOF
+4883ec10
+EOF
+RUN
+
+NAME=x86 AT&T xorl register to register (operand swap)
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.syntax=att
+pa xorl %ebx, %eax
+EOF
+EXPECT=<<EOF
+31d8
+EOF
+RUN
+
+NAME=x86 AT&T leaq memory operand with displacement
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.syntax=att
+pa leaq 8(%rsp), %rax
+EOF
+EXPECT=<<EOF
+488d442408
+EOF
+RUN
+
+NAME=x86 AT&T testq register to register
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.syntax=att
+pa testq %rax, %rbx
+EOF
+EXPECT=<<EOF
+4885c3
+EOF
+RUN
+
+NAME=x86 AT&T cmpl immediate to register
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.syntax=att
+pa cmpl $0x10, %eax
+EOF
+EXPECT=<<EOF
+83f810
+EOF
+RUN
+
+NAME=x86 AT&T movq memory read with displacement
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.syntax=att
+pa movq 0x10(%rbp), %rax
+EOF
+EXPECT=<<EOF
+488b4510
+EOF
+RUN
+
+NAME=x86 AT&T movq memory write with displacement
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.syntax=att
+pa movq %rax, 0x10(%rbp)
+EOF
+EXPECT=<<EOF
+48894510
+EOF
+RUN
+
+NAME=x86 AT&T shll immediate to register
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.syntax=att
+pa shll $4, %eax
+EOF
+EXPECT=<<EOF
+c1e004
+EOF
+RUN
+
+NAME=x86 AT&T andl immediate to register
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.syntax=att
+pa andl $0xff, %eax
+EOF
+EXPECT=<<EOF
+25ff000000
+EOF
+RUN
+
+NAME=x86 AT&T orl register to register
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.syntax=att
+pa orl %ebx, %eax
+EOF
+EXPECT=<<EOF
+09d8
+EOF
+RUN
+
+NAME=x86 AT&T imull three operand form
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.syntax=att
+pa imull $10, %ebx, %eax
+EOF
+EXPECT=<<EOF
+6bc30a
+EOF
+RUN
+
+NAME=x86 AT&T movzbl (zero extend)
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.syntax=att
+pa movzbl %cl, %eax
+EOF
+EXPECT=<<EOF
+0fb6c1
+EOF
+RUN
+
+NAME=x86 AT&T movsbl (sign extend)
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.syntax=att
+pa movsbl %cl, %eax
+EOF
+EXPECT=<<EOF
+0fbec1
+EOF
+RUN
+
+NAME=x86 AT&T cmovne register to register
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.syntax=att
+pa cmovne %ebx, %eax
+EOF
+EXPECT=<<EOF
+0f45c3
+EOF
+RUN
+
+NAME=x86 AT&T sarl immediate to register
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.syntax=att
+pa sarl $4, %eax
+EOF
+EXPECT=<<EOF
+c1f804
+EOF
+RUN
+
+NAME=x86 AT&T xchgl register to register
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.syntax=att
+pa xchgl %ebx, %eax
+EOF
+EXPECT=<<EOF
+93
+EOF
+RUN
+
+NAME=x86 32-bit AT&T movl immediate
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+e asm.syntax=att
+pa movl $0x42, %eax
+EOF
+EXPECT=<<EOF
+b842000000
+EOF
+RUN
+
+NAME=x86 32-bit AT&T addl register to register
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+e asm.syntax=att
+pa addl %ebx, %eax
+EOF
+EXPECT=<<EOF
+01d8
+EOF
+RUN
+
+NAME=rasm2 -S att x86 movq assembly
+FILE=-
+CMDS=!!rasm2 -a x86 -b 64 -S att "movq %rax, %rbx"
+EXPECT=<<EOF
+4889c3
+EOF
+RUN
+
+NAME=rasm2 -S att x86 addq assembly
+FILE=-
+CMDS=!!rasm2 -a x86 -b 64 -S att "addq \$0x10, %rsp"
+EXPECT=<<EOF
+4883c410
+EOF
+RUN
+
+NAME=rasm2 -S att x86 subq assembly
+FILE=-
+CMDS=!!rasm2 -a x86 -b 64 -S att "subq \$0x20, %rsp"
+EXPECT=<<EOF
+4883ec20
+EOF
+RUN
+
+NAME=rasm2 -S att x86 leaq assembly
+FILE=-
+CMDS=!!rasm2 -a x86 -b 64 -S att "leaq 0x8(%rbp), %rax"
+EXPECT=<<EOF
+488d4508
+EOF
+RUN
+
+NAME=rasm2 -S att x86 testl assembly
+FILE=-
+CMDS=!!rasm2 -a x86 -b 64 -S att "testl %ebx, %eax"
+EXPECT=<<EOF
+85d8
+EOF
+RUN
+
+NAME=rasm2 -S att x86 cmpl assembly
+FILE=-
+CMDS=!!rasm2 -a x86 -b 64 -S att "cmpl \$0x10, %eax"
+EXPECT=<<EOF
+83f810
+EOF
+RUN
+
+NAME=rasm2 -S att x86 xorq assembly
+FILE=-
+CMDS=!!rasm2 -a x86 -b 64 -S att "xorq %rbx, %rax"
+EXPECT=<<EOF
+4831d8
+EOF
+RUN
+
+NAME=rasm2 -S att x86 32-bit movl assembly
+FILE=-
+CMDS=!!rasm2 -a x86 -b 32 -S att "movl \$0x42, %eax"
+EXPECT=<<EOF
+b842000000
+EOF
+RUN
+
+NAME=rasm2 -S att x86 andl assembly
+FILE=-
+CMDS=!!rasm2 -a x86 -b 64 -S att "andl \$0xff, %eax"
+EXPECT=<<EOF
+25ff000000
+EOF
+RUN
+
+NAME=rasm2 -S att x86 orl assembly
+FILE=-
+CMDS=!!rasm2 -a x86 -b 64 -S att "orl %ecx, %edx"
+EXPECT=<<EOF
+09ca
+EOF
+RUN
+
+NAME=rasm2 -S att x86 shll assembly
+FILE=-
+CMDS=!!rasm2 -a x86 -b 64 -S att "shll \$8, %eax"
+EXPECT=<<EOF
+c1e008
+EOF
+RUN
+
+NAME=rasm2 -S att x86 shrl assembly
+FILE=-
+CMDS=!!rasm2 -a x86 -b 64 -S att "shrl \$4, %ebx"
+EXPECT=<<EOF
+c1eb04
+EOF
+RUN
+
+NAME=rasm2 -S att x86 movq mem write assembly
+FILE=-
+CMDS=!!rasm2 -a x86 -b 64 -S att "movq %rax, 0x20(%rsp)"
+EXPECT=<<EOF
+4889442420
+EOF
+RUN
+
+NAME=rasm2 -S att x86 movq mem read assembly
+FILE=-
+CMDS=!!rasm2 -a x86 -b 64 -S att "movq 0x20(%rsp), %rax"
+EXPECT=<<EOF
+488b442420
+EOF
+RUN
+
+NAME=arm64 assembly unaffected by ATT syntax setting
+FILE=-
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+e asm.syntax=att
+pa mov x0, x1
+EOF
+EXPECT=<<EOF
+e00301aa
+EOF
+RUN
+
+NAME=arm64 add instruction unaffected by ATT syntax
+FILE=-
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+e asm.syntax=att
+pa add x0, x1, x2
+EOF
+EXPECT=<<EOF
+2000028b
+EOF
+RUN
+
+NAME=arm32 assembly unaffected by ATT syntax setting
+FILE=-
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+e asm.syntax=att
+pa mov r0, r1
+EOF
+EXPECT=<<EOF
+0100a0e1
+EOF
+RUN
+
+NAME=riscv32 assembly unaffected by ATT syntax setting
+FILE=-
+CMDS=<<EOF
+e asm.arch=riscv
+e asm.bits=32
+e asm.syntax=att
+pa addi t0, t1, 1
+EOF
+EXPECT=<<EOF
+93023100
+EOF
+RUN
+
+NAME=riscv64 assembly unaffected by ATT syntax setting
+FILE=-
+CMDS=<<EOF
+e asm.arch=riscv
+e asm.bits=64
+e asm.syntax=att
+pa addi t0, t1, 1
+EOF
+EXPECT=<<EOF
+93023100
+EOF
+RUN
