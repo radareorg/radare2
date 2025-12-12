@@ -856,7 +856,7 @@ EXPECT=<<EOF
 0x00000afb java   method   5      $createCallSiteArray_1
 0x00000b6a java   method   6      $createCallSiteArray
 0x00000b99 java   method   7      $getCallSiteArray
-0x00000000 java      var   0 ps   __$stMC
+0x000008d1 java      var   0 ps   __$stMC
 EOF
 RUN
 

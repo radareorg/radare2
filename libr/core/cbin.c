@@ -2753,8 +2753,16 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 		}
 		ut64 addr = compute_addr (core->bin, symbol->paddr, symbol->vaddr, va);
 		ut32 len = symbol->size? symbol->size: 1;
-		if (at != UT64_MAX && (!symbol->size || !is_in_range (at, addr, symbol->size))) {
-			continue;
+		if (at != UT64_MAX) {
+			if (symbol->size) {
+				if (!is_in_range (at, addr, symbol->size)) {
+					continue;
+				}
+			} else {
+				if (addr != at) {
+					continue;
+				}
+			}
 		}
 		if (printHere) {
 			// const ut64 addr = va? symbol->vaddr: symbol->paddr;
@@ -4173,6 +4181,8 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 	RBinClass *c;
 	RBinField *f;
 	RList *cs = r_bin_get_classes (core->bin);
+	RBinInfo *info = r_bin_get_info (core->bin);
+	const int va = (info && info->has_va)? VA_TRUE: VA_FALSE;
 	if (IS_MODE_JSON (mode)) {
 		pj_a (pj);
 	} else if (IS_MODE_SET (mode)) {
@@ -4205,12 +4215,13 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 		ut64 at_max = 0LL;
 
 		r_list_foreach (c->methods, iter2, sym) {
-			if (sym->vaddr) {
-				if (sym->vaddr < at_min) {
-					at_min = sym->vaddr;
+			ut64 maddr = compute_addr (core->bin, sym->paddr, sym->vaddr, va);
+			if (maddr) {
+				if (maddr < at_min) {
+					at_min = maddr;
 				}
-				if (sym->vaddr + sym->size > at_max) {
-					at_max = sym->vaddr + sym->size;
+				if (maddr + sym->size > at_max) {
+					at_max = maddr + sym->size;
 				}
 			}
 		}
@@ -4223,19 +4234,20 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 			r_strf_var (classname, R_FLAG_NAME_SIZE, "class.%s", name);
 			r_flag_set (core->flags, classname, c->addr, 1);
 			r_list_foreach (c->methods, iter2, sym) {
-				RFlagItem *fi = r_flag_get_at (core->flags, sym->vaddr, false);
+				ut64 maddr = compute_addr (core->bin, sym->paddr, sym->vaddr, va);
+				RFlagItem *fi = r_flag_get_at (core->flags, maddr, false);
 				if (fi) {
 					// eprintf ("%s .. %s\n", sym->name, fi->name);
 				} else {
 					const char *sym_name = r_bin_name_tostring (sym->name);
 					// char *mflags = r_core_bin_attr_tostring (core, sym->attr, mode);
-					char *mflags = r_bin_attr_tostring (sym->attr, false);
+				char *mflags = r_bin_attr_tostring (sym->attr, false);
 					r_str_replace_char (mflags, ' ', '.');
 					// XXX probably access flags should not be part of the flag name
 					r_strf_var (method, R_FLAG_NAME_SIZE, "method%s%s.%s.%s", R_STR_ISEMPTY (mflags)? "": ".", mflags, cname, sym_name);
 					R_FREE (mflags);
 					r_name_filter (method, -1);
-					RFlagItem *fi = r_flag_set (core->flags, method, sym->vaddr, 1);
+					RFlagItem *fi = r_flag_set (core->flags, method, maddr, 1);
 					if (fi) {
 						const char *rawname = r_bin_name_tostring2 (sym->name, 'o');
 						if (rawname) {
@@ -4253,7 +4265,7 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 				const char *kind = r_bin_field_kindstr (f);
 				// XXX remove 'field' and just use kind?
 				char *fn = r_str_newf ("field.%s.%s.%s", classname, kind, fname);
-				ut64 at = f->vaddr;
+				ut64 at = compute_addr (core->bin, f->paddr, f->vaddr, va);
 				r_flag_set (core->flags, fn, at, 1);
 				free (fn);
 			}
@@ -4321,7 +4333,8 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 				const char *n = cname; //  r_name_filter_shell (cname);
 				char *sn = r_bin_name_tostring (sym->name); // r_name_filter_shell (sym->name); // symbol contains classname
 				const char *predot = R_STR_ISNOTEMPTY (mflags)? ".": "";
-				char *cmd = r_str_newf ("'f method.%s%s%s.%s = 0x%" PFMT64x "\n", n, predot, mflags, sn, sym->vaddr);
+				ut64 maddr = compute_addr (core->bin, sym->paddr, sym->vaddr, va);
+				char *cmd = r_str_newf ("'f method.%s%s%s.%s = 0x%" PFMT64x "\n", n, predot, mflags, sn, maddr);
 				// free (n);
 				// free (sn);
 				if (cmd) {
@@ -4345,7 +4358,7 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 				const char *fname = r_bin_name_tostring2 (f->name, pref);
 				char *fn = r_str_newf ("field.%s.%s.%s", cname, kind, fname);
 				r_name_filter (fn, -1);
-				ut64 at = f->vaddr; //  sym->vaddr + (f->vaddr &  0xffff);
+				ut64 at = compute_addr (core->bin, f->paddr, f->vaddr, va); //  sym->vaddr + (f->vaddr &  0xffff);
 				r_cons_printf (core->cons, "'f %s = 0x%08" PFMT64x "\n", fn, at);
 				free (fn);
 			}
@@ -4428,7 +4441,8 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 						rname = NULL;
 					}
 					pj_ks (pj, "name", sname);
-					RFlagItem *fi = r_flag_get_at (core->flags, sym->vaddr, false);
+					ut64 maddr = compute_addr (core->bin, sym->paddr, sym->vaddr, va);
+					RFlagItem *fi = r_flag_get_at (core->flags, maddr, false);
 					if (fi) {
 						pj_ks (pj, "flag", fi->realname? fi->realname: fi->name);
 					}
@@ -4456,7 +4470,7 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 					if (lang && *lang != '?') {
 						pj_ks (pj, "lang", lang);
 					}
-					pj_kN (pj, "addr", sym->vaddr);
+					pj_kN (pj, "addr", maddr);
 					pj_end (pj);
 				}
 				pj_end (pj);
@@ -4477,7 +4491,8 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 						pj_j (pj, mflags);
 						free (mflags);
 					}
-					pj_kN (pj, "addr", f->vaddr);
+					ut64 faddr = compute_addr (core->bin, f->paddr, f->vaddr, va);
+					pj_kN (pj, "addr", faddr);
 					pj_end (pj);
 				}
 				pj_end (pj);
@@ -4506,8 +4521,9 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 				char *mflags = r_core_bin_attr_tostring (core, sym->attr, mode);
 				const char *ls = r_bin_lang_tostring (sym->lang);
 				const char *sname = r_bin_name_tostring2 (sym->name, pref);
+				ut64 maddr = compute_addr (core->bin, sym->paddr, sym->vaddr, va);
 				r_cons_printf (core->cons, "0x%08" PFMT64x " %s %8s %3d %s %s\n",
-					sym->vaddr, ls? ls: "?", "method", m, mflags, sname);
+					maddr, ls? ls: "?", "method", m, mflags, sname);
 				R_FREE (mflags);
 				m++;
 			}
@@ -4516,8 +4532,9 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 			r_list_foreach (c->fields, iter3, f) {
 				char *mflags = r_core_bin_attr_tostring (core, f->attr, mode);
 				const char *ks = r_bin_field_kindstr (f);
+				ut64 faddr = compute_addr (core->bin, f->paddr, f->vaddr, va);
 				r_cons_printf (core->cons, "0x%08" PFMT64x " %s %8s %3d %s %s\n",
-					f->vaddr, ls, ks, m, mflags, r_bin_name_tostring2 (f->name, pref));
+					faddr, ls, ks, m, mflags, r_bin_name_tostring2 (f->name, pref));
 				m++;
 				free (mflags);
 			}

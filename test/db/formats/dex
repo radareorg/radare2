@@ -2003,3 +2003,22 @@ EXPECT=<<EOF
 544  0x0001b938 0x00022530 GLOBAL FUNC   2        Lcom/google/progress/Gps$1.method.onProviderEnabled(Ljava/lang/String;)V
 EOF
 RUN
+
+NAME=APK multidex is.j rebasing
+FILE=apk://bins/dex/mobipwn-nores.apk
+CMDS=<<EOF
+is.j @ 0xd56ac
+is.j @ 0x199ef4
+is.j @ 0xd56c4
+s method.public.final.Landroid_arch_a_a_a_1.Landroid_arch_a_a_a_1.method.execute_Ljava_lang_Runnable__V
+pd 2
+EOF
+EXPECT=<<EOF
+{"name":"Landroid/arch/a/a/a$1.method.<init>()V","flagname":"sym.Landroid_arch_a_a_a_1.method._init___V","realname":"Landroid/arch/a/a/a$1.method.<init>()V","ordinal":0,"bind":"LOCAL","size":8,"type":"FUNC","vaddr":874156,"paddr":69220,"is_imported":false}
+{}
+{"name":"Landroid/arch/a/a/a$1.method.execute(Ljava/lang/Runnable;)V","flagname":"sym.Landroid_arch_a_a_a_1.method.execute_Ljava_lang_Runnable__V","realname":"Landroid/arch/a/a/a$1.method.execute(Ljava/lang/Runnable;)V","ordinal":1,"bind":"GLOBAL","size":16,"type":"FUNC","vaddr":874180,"paddr":69244,"is_imported":false}
+            ;-- method.public.final.Landroid_arch_a_a_a_1.Landroid_arch_a_a_a_1.method.execute_Ljava_lang_Runnable__V:
+            0x000d56c4      710024000000   invoke-static {}, Landroid/arch/a/a/a.a()Landroid/arch/a/a/a; ; 0x24
+            0x000d56ca      0c00           move-result-object v0
+EOF
+RUN
