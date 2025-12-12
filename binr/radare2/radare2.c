@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #include <r_main.h>
 
@@ -75,7 +75,7 @@ static void r2cmd(int in, int out, const char *cmd) {
 		}
 	}
 	free (buf);
-	write (STDOUT_FILENO, "\n", 1);
+	R_UNUSED_RESULT(write (STDOUT_FILENO, "\n", 1));
 }
 
 static int r_main_r2pipe(int argc, const char **argv) {

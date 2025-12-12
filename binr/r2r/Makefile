@@ -8,4 +8,5 @@ include ../../libr/util/deps.mk
 
 LDFLAGS+=${DL_LIBS}
 LDFLAGS+=$(CLOCK_LDFLAGS)
-LDFLAGS+=$(LINK)
+
+include ../shlr.mk

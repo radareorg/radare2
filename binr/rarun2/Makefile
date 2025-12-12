@@ -5,4 +5,4 @@ include ../rules.mk
 include ../../libr/main/deps.mk
 include ../../shlr/zip/deps.mk
 include ../../libr/socket/deps.mk
-LDFLAGS+=$(LINK)
+include ../shlr.mk
