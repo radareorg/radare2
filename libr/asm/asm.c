@@ -622,7 +622,7 @@ static int r_asm_assemble_single(RAsm *a, RAnalOp *op, const char *buf) {
 	// convert AT&T syntax to Intel if needed
 	const char *arch = R_UNWRAP3 (a, config, arch);
 	if (a->config->syntax == R_ARCH_SYNTAX_ATT && arch && r_str_startswith (arch, "x86")) {
-		char *intel = r_asm_att2intel (b);
+		char *intel = r_str_att2intel (b);
 		if (intel) {
 			free (b);
 			b = intel;
