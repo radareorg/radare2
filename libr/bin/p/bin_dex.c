@@ -832,7 +832,7 @@ static RList *strings(RBinFile *bf) {
 				continue;
 			}
 			ptr->paddr = bin->strings[i];
-			ptr->vaddr = ptr->paddr + bf->bo->baddr;
+			ptr->vaddr = ptr->paddr;
 			ptr->size = len;
 			ptr->length = len;
 			ptr->ordinal = i + 1;
@@ -1104,7 +1104,6 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 	if (!dex->trycatch_list) {
 		dex->trycatch_list = r_list_newf ((RListFree)r_bin_trycatch_free);
 	}
-	const ut64 baddr = bf->bo->baddr;
 	size_t skip = 0;
 	ut64 bufsz = r_buf_size (bf->buf);
 	ut64 encoded_method_addr;
@@ -1338,7 +1337,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 				sym->type = R_BIN_TYPE_METH_STR;
 				sym->paddr = encoded_method_addr;
 			}
-			sym->vaddr = sym->paddr + bf->bo->baddr;
+			sym->vaddr = sym->paddr;
 			// sym->vaddr += bf->bo->baddr;
 			dex->code_from = R_MIN (dex->code_from, sym->paddr);
 			sym->lang = R_BIN_LANG_JAVA;
@@ -1365,10 +1364,12 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 				//}
 				//eprintf("%s (0x%x-0x%x) size=%d\nregsz=%d\ninsns_size=%d\nouts_size=%d\ntries_size=%d\ninsns_size=%d\n", flag_name, sym->vaddr, sym->vaddr+sym->size, prolog_size, regsz, ins_size, outs_size, tries_size, insns_size);
 				r_list_append (dex->methods_list, sym);
-				// XXX this is necessary because class methods and symbols obey baddr in a inconsistent way in cbin.c .. so better get this to work and fix later with more tests
+				// XXX keep class method vaddr consistent with symbol
 				RBinSymbol *method = r_bin_symbol_clone (sym);
-				method->vaddr += baddr;
-				r_list_append (cls->methods, method);
+				if (method) {
+					method->paddr = method->vaddr;
+					r_list_append (cls->methods, method);
+				}
 
 				if (dex->code_from == UT64_MAX || dex->code_from > sym->paddr) {
 					dex->code_from = sym->paddr;
@@ -1400,8 +1401,10 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 				r_list_append (dex->methods_list, sym);
 				sym->lang = R_BIN_LANG_JAVA;
 				RBinSymbol *method = r_bin_symbol_clone (sym);
-				// method->vaddr += baddr;
-				r_list_append (cls->methods, method);
+				if (method) {
+					method->paddr = method->vaddr;
+					r_list_append (cls->methods, method);
+				}
 			}
 			if (MC > 0 && debug_info_off > 0 && dex->header.data_offset < debug_info_off &&
 				debug_info_off < dex->header.data_offset + dex->header.data_size) {
@@ -1576,7 +1579,7 @@ static bool is_class_idx_in_code_classes(RBinDexObj *dex, int class_idx) {
 
 static bool dex_loadcode(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, false);
-	RBinDexObj *dex = (RBinDexObj*)bf->bo->bin_obj;
+	RBinDexObj *dex = bf->bo->bin_obj;
 	dex->verbose = true;
 	PrintfCallback cb_printf = bf->rbin->cb_printf;
 	size_t i;
@@ -1811,7 +1814,7 @@ static RList *entries(RBinFile *bf) {
 				if (!already_entry (ret, m->paddr)) {
 					if ((ptr = R_NEW0 (RBinAddr))) {
 						ptr->paddr = m->paddr;
-						ptr->vaddr = ptr->paddr + bf->bo->baddr;
+						ptr->vaddr = ptr->paddr;
 						r_list_append (ret, ptr);
 					}
 				}
