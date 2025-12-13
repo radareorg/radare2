@@ -21,12 +21,7 @@ R_API void r_muta_init(RMuta *cry) {
 		if (p) {
 			r_muta_add (cry, p);
 		}
-}
-	// add charset plugins
-	r_muta_add (cry, &r_muta_plugin_charset_ascii);
-	r_muta_add (cry, &r_muta_plugin_charset_ebcdic37);
-	r_muta_add (cry, &r_muta_plugin_charset_iso8859_1);
-	r_muta_add (cry, &r_muta_plugin_charset_jis7);
+	}
 }
 
 R_API bool r_muta_add(RMuta *cry, RMutaPlugin *h) {
@@ -50,6 +45,7 @@ R_API RMuta *r_muta_new(void) {
 R_API void r_muta_free(RMuta *cry) {
 	if (cry) {
 #if 0
+		// AITODO: implement!
 		RListIter *iter;
 		RMutaPlugin *p;
 		r_list_foreach (cry->plugins, iter, p) {
