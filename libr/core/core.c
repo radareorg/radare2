@@ -1242,9 +1242,6 @@ static void autocomplete_ms_file(RCore* core, RLineCompletion *completion, const
 static void autocomplete_charsets(RCore *core, RLineCompletion *completion, const char *str) {
 	R_RETURN_IF_FAIL (str);
 	int len = strlen (str);
-	if (!core->muta) {
-		core->muta = r_muta_new ();
-	}
 	char *lst = r_muta_list (core->muta, R_MUTA_TYPE_CHARSET, 0);
 	if (!lst) {
 		return;
@@ -2691,6 +2688,7 @@ R_API bool r_core_init(RCore *core) {
 	r_sys_signal (SIGUSR2, cmdusr2);
 #endif
 	r_w32_init ();
+	core->muta = r_muta_new ();
 	core->priv = R_NEW0 (RCorePriv);
 	core->log = r_core_log_new ();
 	core->blocksize = R_CORE_BLOCKSIZE;
@@ -2754,7 +2752,6 @@ R_API bool r_core_init(RCore *core) {
 	core->cmdrepeat = true;
 	core->yank_buf = r_buf_new ();
 	// Initialize RMuta and wire print charset callbacks
-	core->muta = r_muta_new ();
 	core->charset_session = NULL;
 	core->print->charset_ctx = core;
 	core->print->charset_decode = r_core_charset_decode_cb;

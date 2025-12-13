@@ -4023,27 +4023,21 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 		return true;
 	}
 	if (!i0 || i0 == 'l' || i0 == 'L') {
-		RMuta *cry = r_muta_new ();
-		char *s = r_muta_list (cry, R_MUTA_TYPE_HASH, 'q');
+		char *s = r_muta_list (core->muta, R_MUTA_TYPE_HASH, 'q');
 		r_cons_print (core->cons, s);
 		free (s);
-		r_muta_free (cry);
 		return true;
 	}
 	if (i0 == 'j') { // "phj"
-		RMuta *cry = r_muta_new ();
-		char *s = r_muta_list (cry, R_MUTA_TYPE_ALL, 'j');
+		char *s = r_muta_list (core->muta, R_MUTA_TYPE_ALL, 'j');
 		r_cons_print (core->cons, s);
 		free (s);
-		r_muta_free (cry);
 		return true;
 	}
 	if (i0 == 'J') { // "phJ"
-		RMuta *cry = r_muta_new ();
-		char *s = r_muta_list (cry, R_MUTA_TYPE_HASH, 'J');
+		char *s = r_muta_list (core->muta, R_MUTA_TYPE_HASH, 'J');
 		r_cons_print (core->cons, s);
 		free (s);
-		r_muta_free (cry);
 		return true;
 	}
 	if (i0 == ':') {

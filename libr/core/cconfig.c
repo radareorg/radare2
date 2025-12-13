@@ -1052,9 +1052,6 @@ static bool cb_asmos(void *user, void *data) {
 
 static void update_cfgcharsets_options(RCore *core, RConfigNode *node) {
 	r_config_node_purge_options (node);
-	if (!core->muta) {
-		core->muta = r_muta_new ();
-	}
 	char *lst = r_muta_list (core->muta, R_MUTA_TYPE_CHARSET, 'q');
 	if (!lst) {
 		return;
@@ -1408,9 +1405,6 @@ static bool cb_cfgcharset(void *user, void *data) {
 			free (lst);
 		}
 		return false;
-	}
-	if (!core->muta) {
-		core->muta = r_muta_new ();
 	}
 	r_muta_session_free (core->charset_session);
 	core->charset_session = r_muta_use (core->muta, cf);
