@@ -107,7 +107,6 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 	RBin *bin = bf->rbin;
 	const bool strings_nofp = bin->strings_nofp;
 	ut8 tmp[64]; // temporal buffer to encode characters in utf8 form
-	RStrBuf *sb = NULL;
 	ut64 str_start, needle = from;
 	int i, rc, runes;
 	int str_type = R_STRING_TYPE_DETECT;
@@ -144,7 +143,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 		free (buf);
 		return -1;
 	}
-	sb = r_strbuf_new ("");
+	RStrBuf *sb = r_strbuf_new ("");
 	if (!sb) {
 		free (buf);
 		return -1;
@@ -160,19 +159,20 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 		}
 	}
 	r_buf_read_at (bf->buf, from, buf, len);
-		const char *charset = getenv ("RABIN2_CHARSET");
-		if (R_STR_ISNOTEMPTY (charset)) {
-			RMuta *mu = r_muta_new ();
-			RMutaSession *ms = r_muta_use (mu, charset);
-			if (ms) {
-				ms->dir = R_CRYPTO_DIR_DECRYPT;
-				r_muta_session_update (ms, buf, len);
-				int outlen = 0;
-				ut8 *obuf = r_muta_session_get_output (ms, &outlen);
-				if (outlen > 0 && obuf) {
-					ut8 *out = calloc (len, 1);
-					if (out) {
-						int i;
+	const char *charset = getenv ("RABIN2_CHARSET");
+	if (R_STR_ISNOTEMPTY (charset)) {
+		// AITODO: we shouldnt be creating new instsances of RMuta here. let's just create ONLY one inside RBin and just call r_muta_use here
+		RMuta *mu = r_muta_new ();
+		RMutaSession *ms = r_muta_use (mu, charset);
+		if (ms) {
+			ms->dir = R_CRYPTO_DIR_DECRYPT;
+			r_muta_session_update (ms, buf, len);
+			int outlen = 0;
+			ut8 *obuf = r_muta_session_get_output (ms, &outlen);
+			if (outlen > 0 && obuf) {
+				ut8 *out = calloc (len, 1);
+				if (out) {
+					int i;
 					int cpy = R_MIN ((int)len, outlen);
 					memcpy (out, obuf, cpy);
 					// TODO unknown chars should be translated to null bytes
