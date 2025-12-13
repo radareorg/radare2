@@ -103,7 +103,7 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 }
 
 // TODO: this code must be implemented in RSearch as options for the strings mode
-static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from, const ut64 to, int type, int raw, RBinSection *section) {
+static int string_scan_range(RBinFile *bf, RList *list, int min, const ut64 from, const ut64 to, int type, int raw, RBinSection *section) {
 	RBin *bin = bf->rbin;
 	const bool strings_nofp = bin->strings_nofp;
 	ut8 tmp[64]; // temporal buffer to encode characters in utf8 form
@@ -162,8 +162,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 	const char *charset = getenv ("RABIN2_CHARSET");
 	if (R_STR_ISNOTEMPTY (charset)) {
 		// AITODO: we shouldnt be creating new instsances of RMuta here. let's just create ONLY one inside RBin and just call r_muta_use here
-		RMuta *mu = r_muta_new ();
-		RMutaSession *ms = r_muta_use (mu, charset);
+		RMutaSession *ms = r_muta_use (bin->muta, charset);
 		if (ms) {
 			ms->dir = R_CRYPTO_DIR_DECRYPT;
 			r_muta_session_update (ms, buf, len);
@@ -190,7 +189,6 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 		} else {
 			R_LOG_ERROR ("Invalid value for RABIN2_CHARSET");
 		}
-		r_muta_free (mu);
 	}
 	RCons *cons = bin->consb.cons;
 	RConsIsBreaked is_breaked = (bin && bin->consb.is_breaked)? bin->consb.is_breaked: NULL;
@@ -537,7 +535,7 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, bool 
 		R_LOG_ERROR ("encoding %s not supported", enc);
 		return;
 	}
-	string_scan_range (list, bf, min, from, to, type, raw, section);
+	string_scan_range (bf, list, min, from, to, type, raw, section);
 }
 
 /////////////////////////////
