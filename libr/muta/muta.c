@@ -44,19 +44,7 @@ R_API RMuta *r_muta_new(void) {
 
 R_API void r_muta_free(RMuta *cry) {
 	if (cry) {
-#if 0
-		// AITODO: implement!
-		RListIter *iter;
-		RMutaPlugin *p;
-		r_list_foreach (cry->plugins, iter, p) {
-			if (p->fini) {
-				// should be defined in the destructor pointer of the list
-				p->fini (cry, p);
-			}
-		}
-		// XXX leaks
 		r_list_free (cry->plugins);
-#endif
 		free (cry);
 	}
 }
