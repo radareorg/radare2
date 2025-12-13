@@ -25,18 +25,19 @@ static void showfile(RStrBuf *sb, PJ *pj, const int nth, const char *fpath, cons
 	}
 	const bool isdir = r_file_is_directory (n);
 	char *nn = r_str_newf ("%s%s", fpath, isdir? "/": "");
+	/* Escape non-printable characters in filenames for display */
+	char *safe = r_str_escape (nn);
 	int perm = isdir? 0755: 0644;
 	if (!printfmt) {
 		if (needs_newline) {
-			r_strbuf_appendf (sb, "%s\n", nn);
+			r_strbuf_appendf (sb, "%s\n", safe);
 		} else {
-			r_strbuf_appendf (sb, "%-*s%s", column_width, nn, "  ");
+			r_strbuf_appendf (sb, "%-*s%s", column_width, safe, "  ");
 		}
+		free (safe);
 		free (nn);
 		return;
 	}
-	// TODO: escape non-printable chars in filenames
-	// TODO: Implement more real info in ls -l
 	// TODO: handle suid
 #if R2__UNIX__
 	if (lstat (n, &st) != -1) {
@@ -70,10 +71,8 @@ static void showfile(RStrBuf *sb, PJ *pj, const int nth, const char *fpath, cons
 	fch = isdir? 'd': '-';
 #endif
 	if (printfmt == FMT_QUIET) {
-		r_strbuf_appendf (sb, "%s\n", nn);
+		r_strbuf_appendf (sb, "%s\n", safe);
 	} else if (printfmt == FMT_EMOJI) {
-		// AITODO: inline in the assignments below and remove those unnecessary local variables
-		// --
 		const char *icon = "📄";
 		if (isdir) {
 			icon = "📁";
@@ -106,14 +105,14 @@ static void showfile(RStrBuf *sb, PJ *pj, const int nth, const char *fpath, cons
 		} else if (*nn == '.') {
 			icon = "👀";
 		}
-		r_strbuf_appendf (sb, "%s %s\n", icon, nn);
+		r_strbuf_appendf (sb, "%s %s\n", icon, safe);
 	} else if (printfmt == FMT_RAW) {
 		r_strbuf_appendf (sb, "%c%s%s%s  1 %4d:%-4d  %-10d  %s\n",
 			isdir? 'd': fch,
 			r_str_get_fail (u_rwx, "-"),
 			r_str_rwx_i ((perm >> 3) & 7),
 			r_str_rwx_i (perm & 7),
-			uid, gid, sz, nn);
+			uid, gid, sz, safe);
 	} else if (printfmt == FMT_JSON) {
 		pj_o (pj);
 		pj_ks (pj, "name", name);
@@ -129,6 +128,7 @@ static void showfile(RStrBuf *sb, PJ *pj, const int nth, const char *fpath, cons
 	} else {
 		R_LOG_ERROR ("unknown format");
 	}
+	free (safe);
 	free (nn);
 	free (u_rwx);
 }
@@ -274,6 +274,7 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 		if (pj) {
 			pj_end (pj);
 			res = pj_drain (pj);
+			r_strbuf_free (sb);
 		} else {
 			res = r_strbuf_drain (sb);
 		}
