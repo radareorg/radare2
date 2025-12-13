@@ -394,6 +394,24 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=mnemonic shift/rotate ops
+FILE=-
+CMDS=<<EOF
+ae 1,2,LSL
+ae 1,4,LSR
+ae 1,0xffffffffffffffff,ASR
+ae 1,1,ROR
+ae 1,0x8000000000000000,ROL
+EOF
+EXPECT=<<EOF
+0x4
+0x2
+0xffffffffffffffff
+0x8000000000000000
+0x1
+EOF
+RUN
+
 NAME=ae??
 FILE=-
 CMDS=ae??
@@ -439,6 +457,16 @@ EXPECT=<<EOF
 | <<=     shl ax, bx => bx,ax,<<=  # shift left
 | >>>=    ror ax, bx => bx,ax,>>>=  # rotate right
 | <<<=    rol ax, bx => bx,ax,<<<=  # rotate left
+| LSR     a >> b => b,a,LSR  # logical shift right (alias: >>)
+| LSR=    a >>= b => b,a,LSR=  # logical shift right (alias: >>=)
+| LSL     a << b => b,a,LSL  # logical shift left (alias: <<)
+| LSL=    a <<= b => b,a,LSL=  # logical shift left (alias: <<=)
+| ASR     a >>>> b => b,a,ASR  # arithmetic shift right (alias: >>>>)
+| ASR=    a >>>>= b => b,a,ASR=  # arithmetic shift right (alias: >>>>=)
+| ROR     a ror b => b,a,ROR  # rotate right (alias: >>>)
+| ROR=    a ror= b => b,a,ROR=  # rotate right (alias: >>>=)
+| ROL     a rol b => b,a,ROL  # rotate left (alias: <<<)
+| ROL=    a rol= b => b,a,ROL=  # rotate left (alias: <<<=)
 | ?{      if popped value != 0 run the block until }
 | }{      else block
 | }       end of conditional block
