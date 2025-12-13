@@ -1421,29 +1421,29 @@ static bool cb_cfgcharset(void *user, void *data) {
 		R_LOG_WARN ("Cannot load muta charset '%s'", cf);
 	}
 #if 0
-        if (rc) {
-            if (!strcmp (cf, "ascii")) {
-                core->print->charset = NULL;
-            } else {
-                RCharset *c = r_charset_new ();
-                if (c) {
-                    char *file = r_sys_datadir ("radare2", r2_version, "charsets", cf, "sdb");
-                    if (file && !r_file_exists (file)) {
-                        free (file);
-                        file = r_str_newf ("../libr/util/d/%s.sdb", cf);
-                    }
-                    if (file) {
-                        r_charset_open (c, file);
-                        free (file);
-                        core->print->charset = c;
-                    } else {
-                        r_charset_free (c);
-                    }
-                }
-            }
-        } else {
-            R_LOG_WARN ("Cannot load muta charset '%s'", cf);
-        }
+	if (rc) {
+		if (!strcmp (cf, "ascii")) {
+			core->print->charset = NULL;
+		} else {
+			RCharset *c = r_charset_new ();
+			if (c) {
+				char *file = r_sys_datadir ("radare2", r2_version, "charsets", cf, "sdb");
+				if (file && !r_file_exists (file)) {
+					free (file);
+					file = r_str_newf ("../libr/util/d/%s.sdb", cf);
+				}
+				if (file) {
+					r_charset_open (c, file);
+					free (file);
+					core->print->charset = c;
+				} else {
+					r_charset_free (c);
+				}
+			}
+		}
+	} else {
+		R_LOG_WARN ("Cannot load muta charset '%s'", cf);
+	}
 #endif
 	return rc;
 }

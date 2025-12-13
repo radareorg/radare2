@@ -47,16 +47,17 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	if (!cj || !buf || len < 0) {
 		return false;
 	}
+	int i;
 	RStrBuf *sb = r_strbuf_new ("");
 	if (cj->dir == R_CRYPTO_DIR_DECRYPT) {
-		for (int i = 0; i < len; i++) {
+		for (i = 0; i < len; i++) {
 			const char *s = dec (buf[i]);
 			r_strbuf_append (sb, s? s: ".");
 		}
 		const char *out = r_strbuf_get (sb);
 		r_muta_session_append (cj, (const ut8 *)out, (int)strlen (out));
 	} else {
-		for (int i = 0; i < len; i++) {
+		for (i = 0; i < len; i++) {
 			ut8 b;
 			char ch[2] = { (char)buf[i], 0 };
 			if (!enc (ch, &b)) {

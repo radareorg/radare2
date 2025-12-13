@@ -205,7 +205,8 @@ static ut8 *pokered_encode(const ut8 *in, int in_len, int *out_len) {
 		bool found = false;
 
 		// Try to match longer tokens first (up to 7 chars for <BOLD_M>)
-		for (int i = 7; i >= 1; i--) {
+		int i;
+		for (i = 7; i >= 1; i--) {
 			if (str + i <= end) {
 				char tok[16] = { 0 };
 				strncpy (tok, str, i);
