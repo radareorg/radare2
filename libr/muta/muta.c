@@ -5,7 +5,7 @@
 #include <config.h>
 #include <r_util/r_assert.h>
 
-R_LIB_VERSION (r_muta);
+R_LIB_VERSION(r_muta);
 
 static RMutaPlugin *muta_static_plugins[] = {
 	R_MUTA_STATIC_PLUGINS
@@ -42,19 +42,8 @@ R_API RMuta *r_muta_new(void) {
 	return cry;
 }
 
-
 R_API void r_muta_free(RMuta *cry) {
 	if (cry) {
-#if 0
-		RListIter *iter;
-		RMutaPlugin *p;
-		r_list_foreach (cry->plugins, iter, p) {
-			if (p->fini) {
-				// should be defined in the destructor pointer of the list
-				p->fini (cry, p);
-			}
-		}
-#endif
 		r_list_free (cry->plugins);
 		free (cry);
 	}
@@ -203,4 +192,3 @@ R_API void r_muta_ed25519_keypair(const ut8 *seed, ut8 *privkey, ut8 *pubkey) {
 	ge_scalarmult_base (&A, privkey);
 	ge_p3_tobytes (pubkey, &A);
 }
-

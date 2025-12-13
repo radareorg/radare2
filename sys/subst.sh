@@ -8,6 +8,7 @@ fi
 #[ -z "$a" ] && a="r_str_chop "
 #[ -z "$b" ] && b="r_str_trim "
 WHERE="libr binr shlr mk sys"
+# WHERE="dist"
 # WHERE="mk sys"
 git grep "$a" ${WHERE} | less -R
 if [ -n "$b" ]; then

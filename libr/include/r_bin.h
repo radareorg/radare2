@@ -6,6 +6,7 @@
 #include <r_util.h>
 #include <r_types.h>
 #include <r_io.h>
+#include <r_muta.h>
 #include <r_cons.h>
 #include <r_list.h>
 
@@ -525,6 +526,7 @@ struct r_bin_t {
 	bool strings_nofp; // move to options struct passed instead of min, dump raw on every getstrings call
 	Sdb *sdb;
 	RIDStorage *ids;
+	RMuta *muta;
 	RList/*<RBinPlugin>*/ *plugins;
 	RList/*<RBinXtrPlugin>*/ *binxtrs;
 	RList/*<RBinLdrPlugin>*/ *binldrs;

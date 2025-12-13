@@ -80,18 +80,9 @@ static ut8 *pokemon_decode(const ut8 *in, int in_len, int *out_len) {
 			while (outpos + len > outcap) {
 				outcap = outcap? outcap * 2: 64;
 			}
-			if (!out) {
-				out = malloc (outcap);
-			} else {
-				ut8 *tmpbuf = realloc (out, outcap);
-				if (!tmpbuf) {
-					free (out);
-					*out_len = 0;
-					return NULL;
-				}
-				out = tmpbuf;
-			}
-			if (!out) {
+			ut8 *tmpbuf = realloc (out, outcap);
+			if (!tmpbuf) {
+				free (out);
 				*out_len = 0;
 				return NULL;
 			}

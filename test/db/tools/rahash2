@@ -170,7 +170,27 @@ cryp       base64  Binary to text encoding scheme using 64 ascii characters
 base       base91  Binary to text encoding scheme using 91 ascii characters
 base       bech32  
 cryp     blowfish  Bruce Schneier's symetric-key block cipher
+char   arabic_iso  arabic ISO stub
+char arabic_windows  arabic Windows stub
+char        ascii  ASCII character set encoding/decoding
+char   ascii_ansi  ASCII ANSI stub
+char    ascii_oem  ASCII OEM stub
+char         big5  Big5 stub
+char cyrillic_iso  Cyrillic ISO stub
+char cyrillic_windows  Windows-1251 (partial)
+char     ebcdic37  EBCDIC CP37 charset
+char    greek_iso  Greek ISO stub
+char greek_windows  Windows-1253 (partial)
+char   hebrew_iso  Hebrew ISO stub
+char hebrew_windows  Hebrew Windows stub
+char     hiragana  Hiragana stub
+char    iso8859_1  ISO-8859-1 charset
+char      iso_646  ISO 646 (IRV)
+char         jis7  JIS 7-bit Roman (ASCII-like)
+char     katakana  Katakana mapping (legacy-compatible)
+char    macintosh  Macintosh Roman (partial)
 char      pokemon  Transcode from/to Pokémon charset used in Gen 1 games
+char      pokered  Pokemon Red charset
 cryp         cps2  Capcom Play System 2
 cryp      des-ecb  DES with with Electronic Code Book mode
 sign      ed25519  Elliptic curve pubkey cryptographic algorithm used for signing and verification
@@ -188,6 +208,10 @@ hash          sip  SipHash-2-4
 cryp      sm4-ecb  ShāngMì4 block cipher with Electronic Code Book mode
 hash      strhash  String hash using a modified DJB2 xor
 cryp          xor  Byte level Exclusive Or
+char        ascii  ASCII character set encoding/decoding
+char     ebcdic37  EBCDIC CP37 charset
+char    iso8859_1  ISO-8859-1 charset
+char         jis7  JIS 7-bit Roman (ASCII-like)
 hash          md5
 hash         sha1
 hash       sha256

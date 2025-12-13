@@ -1,5 +1,3 @@
-subdir('d')
-
 r_util_sources = [
   'alloc.c',
   'arena.c',
