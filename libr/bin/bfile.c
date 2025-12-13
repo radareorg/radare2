@@ -2,6 +2,7 @@
 
 #include <r_bin.h>
 #include <r_hash.h>
+#include <r_muta.h>
 #include "i/private.h"
 
 // maybe too big sometimes? 2KB of stack eaten here..
@@ -159,29 +160,38 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 		}
 	}
 	r_buf_read_at (bf->buf, from, buf, len);
-	char *charset = r_sys_getenv ("RABIN2_CHARSET");
-	if (R_STR_ISNOTEMPTY (charset)) {
-		RCharset *ch = r_charset_new ();
-		if (r_charset_use (ch, charset)) {
-			int outlen = len * 4;
-			ut8 *out = calloc (len, 4);
-			if (out) {
-				int i, res = r_charset_encode_str (ch, out, outlen, buf, len, false);
-				// TODO unknown chars should be translated to null bytes
-				for (i = 0; i < res; i++) {
-					if (out[i] == '?') {
-						out[i] = 0;
+		const char *charset = getenv ("RABIN2_CHARSET");
+		if (R_STR_ISNOTEMPTY (charset)) {
+			RMuta *mu = r_muta_new ();
+			RMutaSession *ms = r_muta_use (mu, charset);
+			if (ms) {
+				ms->dir = R_CRYPTO_DIR_DECRYPT;
+				r_muta_session_update (ms, buf, len);
+				int outlen = 0;
+				ut8 *obuf = r_muta_session_get_output (ms, &outlen);
+				if (outlen > 0 && obuf) {
+					ut8 *out = calloc (len, 1);
+					if (out) {
+						int i;
+					int cpy = R_MIN ((int)len, outlen);
+					memcpy (out, obuf, cpy);
+					// TODO unknown chars should be translated to null bytes
+					for (i = 0; i < cpy; i++) {
+						if (out[i] == '?') {
+							out[i] = 0;
+						}
 					}
+					free (buf);
+					buf = out;
 				}
-				free (buf);
-				buf = out;
 			}
+			free (obuf);
+			r_muta_session_free (ms);
 		} else {
 			R_LOG_ERROR ("Invalid value for RABIN2_CHARSET");
 		}
-		r_charset_free (ch);
+		r_muta_free (mu);
 	}
-	free (charset);
 	RCons *cons = bin->consb.cons;
 	RConsIsBreaked is_breaked = (bin && bin->consb.is_breaked)? bin->consb.is_breaked: NULL;
 	// may oobread

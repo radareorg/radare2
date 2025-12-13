@@ -6017,23 +6017,31 @@ static ut8 * R_NULLABLE decode_text(RCore *core, ut64 offset, size_t len, bool z
 	}
 #endif
 	out[len] = 0;
-    if (core->print->charset_decode) {
-        ut8 *data = out;
-        out = calloc (len, 10);
-        if (out) {
-            r_io_read_at (core->io, core->addr, data, len);
-            ut8 *tmp = NULL;
-            int consumed;
-            int olen = core->print->charset_decode (core->print->charset_ctx, data, len, &tmp, &consumed);
-            if (olen > 0 && tmp) {
-                int cpy = R_MIN ((int)(len*10), olen);
-                memcpy (out, tmp, cpy);
-                free (tmp);
-            }
-            data[len] = 0;
-            free (data);
-        }
-    }
+	if (core->charset_session && core->print->charset_decode) {
+		ut8 *data = out;
+		RStrBuf *sb = r_strbuf_new ("");
+		if (sb) {
+			int pos = 0;
+			while (pos < len) {
+				ut8 *tmp = NULL;
+				int consumed = 0;
+				int olen = core->print->charset_decode (core->print->charset_ctx, data + pos, len - pos, &tmp, &consumed);
+				if (olen > 0 && tmp) {
+					r_strbuf_append_n (sb, (const char *)tmp, olen);
+					free (tmp);
+				}
+				if (consumed < 1) {
+					consumed = 1;
+				}
+				pos += consumed;
+			}
+			out = (ut8 *)r_strbuf_drain (sb);
+			free (data);
+			if (!out) {
+				out = (ut8 *)strdup ("");
+			}
+		}
+	}
 	return out;
 }
 
@@ -8166,32 +8174,39 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 0:
 			{
-                if (!core->print->charset_decode) {
-                    r_print_string (core->print, core->addr, core->block, len, R_PRINT_STRING_ZEROEND | R_PRINT_STRING_ONLY_PRINTABLE);
-                } else {
-                    if (len > 0) {
-                        size_t out_len = len * 10;
-                        ut8 *out = calloc (len, 10);
-                        if (out) {
-                            ut8 *data = malloc (len);
-                            if (data) {
-                                r_io_read_at (core->io, core->addr, data, len);
-                                ut8 *tmp = NULL;
-            int consumed;
-            int olen = core->print->charset_decode (core->print->charset_ctx, data, len, &tmp, &consumed);
-                                if (olen > 0 && tmp) {
-                                    int cpy = R_MIN ((int)out_len, olen);
-                                    memcpy (out, tmp, cpy);
-                                    free (tmp);
-                                }
-                                r_print_string (core->print, core->addr,
-                                        out, len, R_PRINT_STRING_ZEROEND);
-                                free (data);
-                            }
-                            free (out);
-                        }
-                    }
-                }
+				if (!core->charset_session || !core->print->charset_decode) {
+					r_print_string (core->print, core->addr, core->block, len, R_PRINT_STRING_ZEROEND | R_PRINT_STRING_ONLY_PRINTABLE);
+				} else if (len > 0) {
+					ut8 *data = malloc (len);
+					if (data) {
+						r_io_read_at (core->io, core->addr, data, len);
+						RStrBuf *sb = r_strbuf_new ("");
+						if (sb) {
+							int pos = 0;
+							while (pos < len) {
+								ut8 *tmp = NULL;
+								int consumed = 0;
+								int olen = core->print->charset_decode (core->print->charset_ctx, data + pos, len - pos, &tmp, &consumed);
+								if (olen > 0 && tmp) {
+									r_strbuf_append_n (sb, (const char *)tmp, olen);
+									free (tmp);
+								}
+								if (consumed < 1) {
+									consumed = 1;
+								}
+								pos += consumed;
+							}
+							char *out = r_strbuf_drain (sb);
+							if (out) {
+								int outlen = (int)strlen (out) + 1;
+								int plen = R_MIN (len, outlen);
+								r_print_string (core->print, core->addr, (const ut8 *)out, plen, R_PRINT_STRING_ZEROEND);
+								free (out);
+							}
+						}
+						free (data);
+					}
+				}
 				break;
 			}
 		default: // "ps"
@@ -8291,19 +8306,33 @@ static int cmd_print(void *data, const char *input) {
 		}
 		break;
 case 'r': // "pr"
-    /* If charset decoding is enabled, decode the current block and print only decoded output. */
-    if (l > 0 && core->print->charset_decode) {
-        ut8 *tmp = NULL;
-        int consumed;
-        int olen = core->print->charset_decode (core->print->charset_ctx, core->block, len, &tmp, &consumed);
-        if (olen > 0 && tmp) {
-            r_cons_write (core->cons, (const char *)tmp, olen);
-            free (tmp);
-            return true;
-        }
-        return true; /* avoid printing raw when charset is requested */
-    }
-    switch (input[1]) {
+	/* If charset decoding is enabled, decode the current block and print only decoded output. */
+	if (l > 0 && core->charset_session && core->print->charset_decode) {
+		RStrBuf *sb = r_strbuf_new ("");
+		if (sb) {
+			int pos = 0;
+			while (pos < len) {
+				ut8 *tmp = NULL;
+				int consumed = 0;
+				int olen = core->print->charset_decode (core->print->charset_ctx, core->block + pos, len - pos, &tmp, &consumed);
+				if (olen > 0 && tmp) {
+					r_strbuf_append_n (sb, (const char *)tmp, olen);
+					free (tmp);
+				}
+				if (consumed < 1) {
+					consumed = 1;
+				}
+				pos += consumed;
+			}
+			char *out = r_strbuf_drain (sb);
+			if (out) {
+				r_cons_write (core->cons, out, (int)strlen (out));
+				free (out);
+			}
+		}
+		return true;
+	}
+	switch (input[1]) {
 		case 'i':
 			cmd_pri (core, input);
 			break;
@@ -8434,23 +8463,36 @@ case 'r': // "pr"
 				printraw (core, strlen ((const char *) core->block), 0);
 			}
 			break;
-        default:
-            if (l != 0) {
-                if (core->print->charset_decode) {
-                    ut8 *tmp = NULL;
-                    int consumed;
-        int olen = core->print->charset_decode (core->print->charset_ctx, core->block, len, &tmp, &consumed);
-                    if (olen > 0 && tmp) {
-                        r_cons_write (core->cons, (const char *)tmp, olen);
-                        free (tmp);
-                        return true;
-                    }
-                    /* Charset requested but decode failed: print nothing to avoid mixing raw+decoded */
-                    return true;
-                }
-                printraw (core, len, 0);
-            }
-            break;
+		default:
+			if (l != 0) {
+				if (core->charset_session && core->print->charset_decode) {
+					RStrBuf *sb = r_strbuf_new ("");
+					if (sb) {
+						int pos = 0;
+						while (pos < len) {
+							ut8 *tmp = NULL;
+							int consumed = 0;
+							int olen = core->print->charset_decode (core->print->charset_ctx, core->block + pos, len - pos, &tmp, &consumed);
+							if (olen > 0 && tmp) {
+								r_strbuf_append_n (sb, (const char *)tmp, olen);
+								free (tmp);
+							}
+							if (consumed < 1) {
+								consumed = 1;
+							}
+							pos += consumed;
+						}
+						char *out = r_strbuf_drain (sb);
+						if (out) {
+							r_cons_write (core->cons, out, (int)strlen (out));
+							free (out);
+						}
+					}
+					return true;
+				}
+				printraw (core, len, 0);
+			}
+			break;
 		}
 		break;
 	case '3': // "p3" [file]

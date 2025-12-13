@@ -27,7 +27,8 @@ static const MutaCharsetMap map[] = {
 };
 
 static const char *decode_byte(ut8 b) {
-	for (const MutaCharsetMap *m = map; m->str; m++) {
+	const MutaCharsetMap *m;
+	for (m = map; m->str; m++) {
 		if (m->byte == b) {
 			return m->str;
 		}
@@ -35,7 +36,8 @@ static const char *decode_byte(ut8 b) {
 	return NULL;
 }
 static bool encode_utf8(const char *s, ut8 *out) {
-	for (const MutaCharsetMap *m = map; m->str; m++) {
+	const MutaCharsetMap *m;
+	for (m = map; m->str; m++) {
 		if (!strcmp (m->str, s)) {
 			*out = m->byte;
 			return true;
@@ -45,36 +47,64 @@ static bool encode_utf8(const char *s, ut8 *out) {
 }
 
 static int utf8_len(const char *s, int max) {
-	if (!s || max < 1) return 0;
-	if ((s[0] & 0x80) == 0) return 1;
-	if ((s[0] & 0xe0) == 0xc0 && max >= 2) return 2;
-	if ((s[0] & 0xf0) == 0xe0 && max >= 3) return 3;
-	if ((s[0] & 0xf8) == 0xf0 && max >= 4) return 4;
-	return 1; // invalid, treat as 1
+	if (!s || max < 1) {
+		return 0;
+	}
+	if ((s[0] & 0x80) == 0) {
+		return 1;
+	}
+	if ((s[0] & 0xe0) == 0xc0 && max >= 2) {
+		return 2;
+	}
+	if ((s[0] & 0xf0) == 0xe0 && max >= 3) {
+		return 3;
+	}
+	if ((s[0] & 0xf8) == 0xf0 && max >= 4) {
+		return 4;
+	}
+	return 1;
+}
+
+static int decode(RMutaSession *cj, const ut8 *in, int len, ut8 **out, int *consumed) {
+	R_RETURN_VAL_IF_FAIL (cj && in && out && consumed, 0);
+	if (len < 1) {
+		return 0;
+	}
+	const char *s = decode_byte (in[0]);
+	if (!s) {
+		s = "?";
+	}
+	int slen = (int)strlen (s);
+	char *cpy = strdup (s);
+	if (!cpy) {
+		return 0;
+	}
+	*out = (ut8*)cpy;
+	*consumed = 1;
+	return slen;
 }
 
 static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	if (!cj || !buf || len < 0) {
 		return false;
 	}
-	RStrBuf *sb = r_strbuf_new ("");
+	int i;
 	if (cj->dir == R_CRYPTO_DIR_DECRYPT) {
-		for (int i = 0; i < len; i++) {
+		for (i = 0; i < len; i++) {
 			const char *s = decode_byte (buf[i]);
 			if (!s) {
-				r_strbuf_append (sb, "?");
-			} else {
-				r_strbuf_append (sb, s);
+				s = "?";
 			}
+			r_muta_session_append (cj, (const ut8 *)s, (int)strlen (s));
 		}
-		const char *out = r_strbuf_get (sb);
-		r_muta_session_append (cj, (const ut8 *)out, (int)strlen (out));
 	} else {
 		const char *str = (const char *)buf;
-		int i = 0;
+		i = 0;
 		while (i < len) {
 			int ulen = utf8_len (str + i, len - i);
-			if (ulen < 1) break;
+			if (ulen < 1) {
+				break;
+			}
 			char *ch = r_str_ndup (str + i, ulen);
 			ut8 b;
 			if (ch && encode_utf8 (ch, &b)) {
@@ -87,7 +117,6 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 			i += ulen;
 		}
 	}
-	r_strbuf_free (sb);
 	return true;
 }
 static bool end(RMutaSession *cj, const ut8 *b, int l) {
@@ -101,6 +130,7 @@ RMutaPlugin r_muta_plugin_charset_ebcdic37 = {
 	.meta = { .name = "ebcdic37", .license = "MIT", .desc = "EBCDIC CP37 charset" },
 	.type = R_MUTA_TYPE_CHARSET,
 	.check = check,
+	.decode = decode,
 	.update = update,
 	.end = end
 };

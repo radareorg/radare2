@@ -1,5 +1,6 @@
 /* radare - MIT - Charset Katakana (half-width mapping used in r2 charsets) */
 #include <r_muta.h>
+#include <r_util.h>
 
 /* Map ASCII digraphs to single Katakana glyphs: "ra"->ラ, "da"->ダ, "re"->レ */
 typedef struct {
@@ -16,41 +17,65 @@ static const KDMap kdmap[] = {
 static bool check(const char *algo) {
 	return !strcmp (algo, "katakana");
 }
+
+static int decode(RMutaSession *cj, const ut8 *in, int len, ut8 **out, int *consumed) {
+	R_RETURN_VAL_IF_FAIL (cj && in && out && consumed, 0);
+	if (len < 1) {
+		return 0;
+	}
+	*consumed = 1;
+	if (len > 1) {
+		char two[3] = { (char)in[0], (char)in[1], 0 };
+		const KDMap *m;
+		for (m = kdmap; m->in2; m++) {
+			if (!strcmp (m->in2, two)) {
+				char *cpy = strdup (m->out);
+				if (!cpy) {
+					return 0;
+				}
+				*out = (ut8*)cpy;
+				*consumed = 2;
+				return (int)strlen (cpy);
+			}
+		}
+	}
+	if (IS_PRINTABLE (in[0])) {
+		char *cpy = malloc (2);
+		if (!cpy) {
+			return 0;
+		}
+		cpy[0] = (char)in[0];
+		cpy[1] = 0;
+		*out = (ut8*)cpy;
+		return 1;
+	}
+	/* Drop non-printable bytes (so trailing zeros don't emit '?'). */
+	return 0;
+}
+
 static bool update(RMutaSession *cj, const ut8 *b, int l) {
 	if (!cj || !b || l < 0) {
 		return false;
 	}
 	if (cj->dir == R_CRYPTO_DIR_DECRYPT) {
-		RStrBuf *sb = r_strbuf_new ("");
-		for (int i = 0; i < l;) {
-			if (i + 1 < l) {
-				char two[3] = { (char)b[i], (char)b[i + 1], 0 };
-				bool matched = false;
-				for (const KDMap *m = kdmap; m->in2; m++) {
-					if (!strcmp (m->in2, two)) {
-						r_strbuf_append (sb, m->out);
-						i += 2;
-						matched = true;
-						break;
-					}
-				}
-				if (matched) {
-					continue;
-				}
+		int i = 0;
+		while (i < l) {
+			ut8 *out = NULL;
+			int consumed = 0;
+			int olen = decode (cj, b + i, l - i, &out, &consumed);
+			if (olen > 0 && out) {
+				r_muta_session_append (cj, out, olen);
+				free (out);
 			}
-			// Not matched: drop ASCII letters; keep non-ASCII as-is
-			if (b[i] & 0x80) {
-				char ch[2] = { (char)b[i], 0 };
-				r_strbuf_append (sb, ch);
+			if (consumed < 1) {
+				consumed = 1;
 			}
-			i++;
+			i += consumed;
 		}
-		const char *out = r_strbuf_get (sb);
-		r_muta_session_append (cj, (const ut8 *)out, (int)strlen (out));
-		r_strbuf_free (sb);
 	} else {
 		/* Encoding back to ASCII: drop multibyte, keep ASCII */
-		for (int i = 0; i < l; i++) {
+		int i;
+		for (i = 0; i < l; i++) {
 			r_muta_session_append (cj, &b[i], 1);
 		}
 	}
@@ -63,6 +88,7 @@ RMutaPlugin r_muta_plugin_charset_katakana = {
 	.meta = { .name = "katakana", .license = "MIT", .desc = "Katakana mapping (legacy-compatible)" },
 	.type = R_MUTA_TYPE_CHARSET,
 	.check = check,
+	.decode = decode,
 	.update = update,
 	.end = end
 };

@@ -285,8 +285,8 @@ R_API void r_print_init(RPrint *p) {
 	p->strconv_mode = NULL;
 	memset (&p->consb, 0, sizeof (p->consb));
 	p->io_unalloc_ch = '.';
-    p->enable_progressbar = true;
-    // Charset callbacks are set by RCore; nothing to do here
+	p->enable_progressbar = true;
+	// Charset callbacks are set by RCore; nothing to do here
 }
 
 R_API RPrint* r_print_new(void) {
@@ -309,7 +309,7 @@ R_API bool r_print_fini(RPrint * R_NONNULL p) {
 	}
 	R_FREE (p->lines_cache);
 	R_FREE (p->row_offsets);
-    // Charset callbacks/context are owned by RCore; do not free here
+	// Charset callbacks/context are owned by RCore; do not free here
 	r_unref (p->config);
 	return true;
 }
@@ -1381,18 +1381,27 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					}
 					ut8 ch = (use_unalloc && p && !p->iob.is_valid_offset (p->iob.io, addr + j, false))
 						? ' ' : buf[j];
-                        if (p && p->charset_decode && char_pos <= j) {
-                            ut8 *out = NULL;
-                            int consumed = 0;
-                            int olen = p->charset_decode (p->charset_ctx, buf + j, len - j, &out, &consumed);
-                            if (olen > 0 && out) {
-                                r_print_printf (p, "%.*s", 1, out);
-                                free (out);
-                                char_pos = j + consumed;
-                            } else {
-                                r_print_byte (p, addr + j, "%c", j, ch);
-                            }
-                        } else {
+					if (p && p->charset_decode && char_pos <= j) {
+						ut8 *out = NULL;
+						int consumed = 0;
+						int olen = p->charset_decode (p->charset_ctx, buf + j, len - j, &out, &consumed);
+						if (olen > 0 && out) {
+							ut8 c0 = out[0];
+							ut8 c1 = (olen > 1)? out[1]: 0;
+							if (invalidchar (c0) && invalidchar (c1)) {
+								r_print_printf (p, ".");
+							} else {
+								r_print_printf (p, "%s", out);
+							}
+							free (out);
+							if (consumed > 1) {
+								char_pos = j + consumed;
+								j = char_pos - 1;
+							}
+						} else {
+							r_print_byte (p, addr + j, "%c", j, ch);
+						}
+					} else {
 						r_print_byte (p, addr + j, "%c", j, ch);
 					}
 					bytes++;

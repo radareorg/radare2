@@ -1409,33 +1409,33 @@ static void list_available_plugins(RCore *core, const char *path) {
 }
 
 static bool cb_cfgcharset(void *user, void *data) {
-    RCore *core = (RCore*) user;
-    RConfigNode *node = (RConfigNode*) data;
-    const char *cf = r_str_trim_head_ro (node->value);
-    if (!*cf) {
-        if (core->charset_session) {
-            r_muta_session_free (core->charset_session);
-            core->charset_session = NULL;
-        }
-        return true;
-    }
-    bool rc = false;
-    if (*cf == '?') {
-        char *lst = r_muta_list (core->muta, R_MUTA_TYPE_CHARSET, 'q');
-        if (lst) {
-            r_cons_println (core->cons, lst);
-            free (lst);
-        }
-    } else {
-        if (!core->muta) {
-            core->muta = r_muta_new ();
-        }
-        if (core->charset_session) {
-            r_muta_session_free (core->charset_session);
-            core->charset_session = NULL;
-        }
-        core->charset_session = r_muta_use (core->muta, cf);
-        rc = core->charset_session != NULL;
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	const char *cf = r_str_trim_head_ro (node->value);
+	if (!*cf) {
+		r_muta_session_free (core->charset_session);
+		core->charset_session = NULL;
+		return true;
+	}
+	if (*cf == '?') {
+		char *lst = r_muta_list (core->muta, R_MUTA_TYPE_CHARSET, 'q');
+		if (lst) {
+			r_cons_println (core->cons, lst);
+			free (lst);
+		}
+		return false;
+	}
+	if (!core->muta) {
+		core->muta = r_muta_new ();
+	}
+	r_muta_session_free (core->charset_session);
+	core->charset_session = r_muta_use (core->muta, cf);
+	bool rc = core->charset_session != NULL;
+	if (rc) {
+		r_sys_setenv ("RABIN2_CHARSET", cf);
+	} else {
+		R_LOG_WARN ("Cannot load muta charset '%s'", cf);
+	}
 #if 0
         if (rc) {
             if (!strcmp (cf, "ascii")) {
@@ -1461,8 +1461,7 @@ static bool cb_cfgcharset(void *user, void *data) {
             R_LOG_WARN ("Cannot load muta charset '%s'", cf);
         }
 #endif
-    }
-    return rc;
+	return rc;
 }
 
 static bool cb_cfgdatefmt(void *user, void *data) {

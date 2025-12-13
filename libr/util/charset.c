@@ -123,24 +123,6 @@ R_API bool r_charset_open(RCharset *c, const char *cs) {
 		sdb_reset (c->db);
 		sdb_open (c->db, cs);
 
-		if (!sdb_count (c->db)) {
-			char *basename = strdup (cs);
-			if (basename) {
-				char *p = strrchr (basename, '/');
-				if (p) {
-					p++;
-					char *ext = strstr (p, ".sdb");
-					if (ext) *ext = 0;
-					char *local = r_str_newf ("../libr/util/d/%s.sdb", p);
-					if (local && r_file_exists (local)) {
-						sdb_open (c->db, local);
-					}
-					free (local);
-				}
-				free (basename);
-			}
-		}
-
 		sdb_free (c->db_char_to_hex);
 		c->db_char_to_hex = sdb_new0 ();
 	}
