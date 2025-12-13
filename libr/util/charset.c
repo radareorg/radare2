@@ -5,51 +5,13 @@
 
 #define USE_RUNES 0
 
-#if HAVE_GPERF
-extern SdbGperf gperf_ascii;
-extern SdbGperf gperf_ebcdic37;
-extern SdbGperf gperf_hiragana;
-extern SdbGperf gperf_iso8859_1;
-extern SdbGperf gperf_katakana;
-extern SdbGperf gperf_pokered;
-
-static const SdbGperf * const gperfs[] = {
-	&gperf_ascii,
-	&gperf_ebcdic37,
-	&gperf_hiragana,
-	&gperf_iso8859_1,
-	&gperf_katakana,
-	&gperf_pokered,
-	NULL
-};
-
-R_API SdbGperf *r_charset_get_gperf(const char *k) {
-	SdbGperf **gp = (SdbGperf**)gperfs;
-	while (*gp) {
-		SdbGperf *g = *gp;
-		if (!strcmp (k, g->name)) {
-			return *gp;
-		}
-		gp++;
-	}
-	return NULL;
-}
-#else
+// TODO: this api must be deprecated because we have rmuta plugins now for that. think about the best way to simplify this usecase
 R_API SdbGperf *r_charset_get_gperf(const char *k) {
 	return NULL;
 }
-#endif
 
 R_API RList *r_charset_list(RCharset *ch) {
 	RList *list = r_list_newf (free);
-#if HAVE_GPERF
-	SdbGperf **gp = (SdbGperf**)gperfs;
-	while (*gp) {
-		SdbGperf *g = *gp;
-		r_list_append (list, strdup (g->name));
-		gp++;
-	}
-#endif
 	// iterate in disk
 	const char *cs = R2_PREFIX R_SYS_DIR R2_SDB R_SYS_DIR "charsets" R_SYS_DIR;
 	RList *files = r_sys_dir (cs);
@@ -68,10 +30,8 @@ R_API RList *r_charset_list(RCharset *ch) {
 
 R_API RCharset *r_charset_new(void) {
 	RCharset *ch = R_NEW0 (RCharset);
-	if (ch) {
-		ch->db = sdb_new0 ();
-		ch->db_char_to_hex = sdb_new0 ();
-	}
+	ch->db = sdb_new0 ();
+	ch->db_char_to_hex = sdb_new0 ();
 	return ch;
 }
 
