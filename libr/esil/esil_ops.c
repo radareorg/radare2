@@ -1053,6 +1053,35 @@ static bool esil_ror(REsil *esil) {
 	return ret;
 }
 
+static bool esil_roreq(REsil *esil) {
+	bool ret = false;
+	ut64 num, num2;
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
+	if (dst && r_esil_reg_read (esil, dst, &num, NULL)) {
+		if (src && r_esil_get_parm (esil, src, &num2)) {
+			int regsize = esil_internal_sizeof_reg (esil, dst);
+			if (regsize < 1) {
+				regsize = 64;
+			}
+			ut64 mask = (regsize - 1);
+			num2 &= mask;
+			esil->old = num;
+			num = (num >> num2) | (num << ((-(st64)num2) & mask));
+			num &= r_num_genmask (regsize - 1);
+			esil->cur = num;
+			esil->lastsz = regsize;
+			r_esil_reg_write (esil, dst, num);
+			ret = true;
+		} else {
+			R_LOG_DEBUG ("esil_roreq: empty stack");
+		}
+	}
+	free (src);
+	free (dst);
+	return ret;
+}
+
 static bool esil_rol(REsil *esil) {
 	bool ret = false;
 	int regsize;
@@ -1068,6 +1097,35 @@ static bool esil_rol(REsil *esil) {
 			ret = true;
 		} else {
 			R_LOG_DEBUG ("esil_rol: empty stack");
+		}
+	}
+	free (src);
+	free (dst);
+	return ret;
+}
+
+static bool esil_roleq(REsil *esil) {
+	bool ret = false;
+	ut64 num, num2;
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
+	if (dst && r_esil_reg_read (esil, dst, &num, NULL)) {
+		if (src && r_esil_get_parm (esil, src, &num2)) {
+			int regsize = esil_internal_sizeof_reg (esil, dst);
+			if (regsize < 1) {
+				regsize = 64;
+			}
+			ut64 mask = (regsize - 1);
+			num2 &= mask;
+			esil->old = num;
+			num = (num << num2) | (num >> ((-(st64)num2) & mask));
+			num &= r_num_genmask (regsize - 1);
+			esil->cur = num;
+			esil->lastsz = regsize;
+			r_esil_reg_write (esil, dst, num);
+			ret = true;
+		} else {
+			R_LOG_DEBUG ("esil_roleq: empty stack");
 		}
 	}
 	free (src);
@@ -2984,13 +3042,25 @@ R_API bool r_esil_setup_ops(REsil *esil) {
 	ret &= OP (">=", esil_bigger_equal, 1, 2, OT_MATH);
 	ret &= OP ("?{", esil_if, 0, 1, OT_CTR);
 	ret &= OP ("<<", esil_lsl, 1, 2, OT_MATH);
+	ret &= OP ("LSL", esil_lsl, 1, 2, OT_MATH);
 	ret &= OP ("<<=", esil_lsleq, 0, 2, OT_MATH | OT_REGW);
+	ret &= OP ("LSL=", esil_lsleq, 0, 2, OT_MATH | OT_REGW);
 	ret &= OP (">>", esil_lsr, 1, 2, OT_MATH);
+	ret &= OP ("LSR", esil_lsr, 1, 2, OT_MATH);
 	ret &= OP (">>=", esil_lsreq, 0, 2, OT_MATH | OT_REGW);
+	ret &= OP ("LSR=", esil_lsreq, 0, 2, OT_MATH | OT_REGW);
 	ret &= OP (">>>>", esil_asr, 1, 2, OT_MATH);
+	ret &= OP ("ASR", esil_asr, 1, 2, OT_MATH);
 	ret &= OP (">>>>=", esil_asreq, 0, 2, OT_MATH | OT_REGW);
+	ret &= OP ("ASR=", esil_asreq, 0, 2, OT_MATH | OT_REGW);
 	ret &= OP (">>>", esil_ror, 1, 2, OT_MATH);
+	ret &= OP ("ROR", esil_ror, 1, 2, OT_MATH);
+	ret &= OP (">>>=", esil_roreq, 0, 2, OT_MATH | OT_REGW);
+	ret &= OP ("ROR=", esil_roreq, 0, 2, OT_MATH | OT_REGW);
 	ret &= OP ("<<<", esil_rol, 1, 2, OT_MATH);
+	ret &= OP ("ROL", esil_rol, 1, 2, OT_MATH);
+	ret &= OP ("<<<=", esil_roleq, 0, 2, OT_MATH | OT_REGW);
+	ret &= OP ("ROL=", esil_roleq, 0, 2, OT_MATH | OT_REGW);
 	ret &= OP ("&", esil_and, 1, 2, OT_MATH);
 	ret &= OP ("&=", esil_andeq, 0, 2, OT_MATH | OT_REGW);
 	ret &= OP ("}", esil_nop, 0, 0, OT_CTR); // just to avoid push
