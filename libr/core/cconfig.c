@@ -1392,22 +1392,6 @@ static bool cb_cfg_float(void *user, void *data) {
 	return true;
 }
 
-static void list_available_plugins(RCore *core, const char *path) {
-	RListIter *iter;
-	const char *fn;
-	RList *files = r_sys_dir (path);
-	r_list_sort (files, (RListComparator)strcmp);
-	r_list_foreach (files, iter, fn) {
-		if (*fn && *fn != '.' && r_str_endswith (fn, ".sdb")) {
-			char *f = strdup (fn);
-			f[strlen (f) - 4] = 0;
-			r_cons_println (core->cons, f);
-			free (f);
-		}
-	}
-	r_list_free (files);
-}
-
 static bool cb_cfgcharset(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
