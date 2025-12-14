@@ -161,7 +161,7 @@ static int string_scan_range(RBinFile *bf, RList *list, int min, const ut64 from
 	r_buf_read_at (bf->buf, from, buf, len);
 	const char *charset = getenv ("RABIN2_CHARSET");
 	if (R_STR_ISNOTEMPTY (charset)) {
-		// AITODO: we shouldnt be creating new instsances of RMuta here. let's just create ONLY one inside RBin and just call r_muta_use here
+		// Decode the buffer using the specified charset
 		RMutaSession *ms = r_muta_use (bin->muta, charset);
 		if (ms) {
 			ms->dir = R_CRYPTO_DIR_DECRYPT;
