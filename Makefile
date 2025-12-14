@@ -13,7 +13,7 @@ BUILDSEC=$(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+__%H:%M:%S" 2>/dev/null ||
 else
 BUILDSEC=$(shell date "+__%H:%M:%S")
 endif
-DATADIRS=libr/cons/d libr/flag/d libr/bin/d libr/asm/d libr/syscall/d libr/magic/d libr/anal/d libr/util/d libr/arch/d
+DATADIRS=libr/cons/d libr/flag/d libr/bin/d libr/asm/d libr/syscall/d libr/magic/d libr/anal/d libr/arch/d
 ZIPWINDIST=YES
 ZIP=zip
 
@@ -303,7 +303,7 @@ install-pkgconfig-symlink pkgconfig-symstall symstall-pkgconfig:
 
 symstall-sdb:
 	for DIR in ${DATADIRS} ; do (\
-		cd "$$DIR" ; \
+		cd "$$DIR" || exit 1 ; \
 		echo "$$DIR" ; \
 		${MAKE} install-symlink ); \
 	done
