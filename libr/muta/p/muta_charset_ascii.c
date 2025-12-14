@@ -7,11 +7,8 @@ static bool check(const char *algo) {
 	return !strcmp (algo, "ascii");
 }
 
-static inline bool ascii_is_visible(ut8 b) {
-	if (b == '\n' || b == '\t') {
-		return true;
-	}
-	return b >= 0x20 && b <= 0x7e;
+static bool is_visible (const char c) {
+	return (c == '\n' || c == '\t' || c >= 0x20 && c <= 0x7e);
 }
 
 static bool update(RMutaSession *cj, const ut8 *buf, int len) {
@@ -22,18 +19,13 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	switch (cj->dir) {
 	case R_CRYPTO_DIR_ENCRYPT:
 		for (i = 0; i < len; i++) {
-			ut8 out = '?';
-			if (buf[i] == '\n' || buf[i] == '\t') {
-				out = buf[i];
-			} else if (buf[i] >= 0x20 && buf[i] <= 0x7e) {
-				out = buf[i];
-			}
+			ut8 out = is_visible (buf[i])? buf[i]: '?';
 			r_muta_session_append (cj, &out, 1);
 		}
 		break;
 	case R_CRYPTO_DIR_DECRYPT:
 		for (i = 0; i < len; i++) {
-			if (ascii_is_visible (buf[i])) {
+			if (is_visible (buf[i])) {
 				r_muta_session_append (cj, &buf[i], 1);
 			} else {
 				char tmp[5] = { 0 };
@@ -52,15 +44,11 @@ static int decode(RMutaSession *cj, const ut8 *in, int len, ut8 **out, int *cons
 		return 0;
 	}
 	*consumed = 1;
-	if (!ascii_is_visible (in[0])) {
+	if (!is_visible (in[0])) {
 		*out = NULL;
 		return 0;
 	}
 	char *cpy = malloc (2);
-	if (!cpy) {
-		*out = NULL;
-		return 0;
-	}
 	cpy[0] = (char)in[0];
 	cpy[1] = 0;
 	*out = (ut8 *)cpy;
