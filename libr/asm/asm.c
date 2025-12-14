@@ -619,6 +619,28 @@ static int r_asm_assemble_single(RAsm *a, RAnalOp *op, const char *buf) {
 	if (!b) {
 		return 0;
 	}
+	// convert AT&T syntax to Intel if needed, but only if the encoder doesn't support ATT natively
+	// The r_str_att2intel function is x86-specific, so only use it for x86 architectures
+	if (a->config->syntax == R_ARCH_SYNTAX_ATT) {
+		const char *arch = R_UNWRAP3 (a, config, arch);
+		// Get the encoder plugin to check its syntax support
+		RArchSession *as = R_UNWRAP4 (a, analb.anal, arch, session);
+		RArchPlugin *encoder_plugin = NULL;
+		if (as) {
+			// If encoder is separate, use that
+			encoder_plugin = as->encoder ? as->encoder->plugin : as->plugin;
+		}
+		// Check if encoder supports ATT syntax natively
+		bool encoder_supports_att = encoder_plugin && (encoder_plugin->encode_syntax & R_ARCH_SYNTAX_MASK_ATT);
+		// Only convert for x86 if encoder doesn't support ATT natively
+		if (!encoder_supports_att && arch && r_str_startswith (arch, "x86")) {
+			char *intel = r_str_att2intel (b);
+			if (intel) {
+				free (b);
+				b = intel;
+			}
+		}
+	}
 	r_str_case (b, false); // to-lower
 	if (a->analb.anal) {
 		ut8 buf[256] = { 0 };

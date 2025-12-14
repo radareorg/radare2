@@ -137,6 +137,7 @@ R_API bool r_asm_set_big_endian(RAsm *a, bool big_endian);
 
 R_API bool r_asm_set_syntax(RAsm *a, int syntax); // This is in RArchConfig
 R_API int r_asm_syntax_from_string(const char *name);
+R_API char *r_asm_att2intel(const char *att_str); // Convert AT&T to Intel syntax
 R_API int r_asm_set_pc(RAsm *a, ut64 pc);
 R_API int r_asm_disassemble(RAsm *a, RAnalOp *op, const ut8 *buf, int len);
 R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len);

@@ -151,6 +151,11 @@ typedef bool (*RArchPluginInitCallback)(RArchSession *s);
 typedef bool (*RArchPluginFiniCallback)(RArchSession *s);
 typedef bool (*RArchPluginEsilCallback)(RArchSession *s, RArchEsilAction action);
 
+// Bitmask for supported syntax modes in arch plugins
+#define R_ARCH_SYNTAX_MASK_INTEL (1 << R_ARCH_SYNTAX_INTEL)
+#define R_ARCH_SYNTAX_MASK_ATT   (1 << R_ARCH_SYNTAX_ATT)
+#define R_ARCH_SYNTAX_MASK_MASM  (1 << R_ARCH_SYNTAX_MASM)
+
 // TODO: use `const char *const` instead of `char*`
 typedef struct r_arch_plugin_t {
 	RPluginMeta meta;
@@ -161,6 +166,7 @@ typedef struct r_arch_plugin_t {
 	ut32 endian;
 	RSysBits bits;
 	RSysBits addr_bits;
+	ut32 encode_syntax; // bitmask of R_ARCH_SYNTAX_MASK_* for encoder-supported syntaxes (0 = Intel only, default)
 
 	const RArchPluginInitCallback init;
 	const RArchPluginFiniCallback fini;

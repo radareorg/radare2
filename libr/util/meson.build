@@ -76,6 +76,7 @@ r_util_sources = [
   'str_pseudo.c',
   'str_strip.c',
   'str_trim.c',
+  'str_att.c',
   'str.c',
   'strbuf.c',
   'strpool.c',
