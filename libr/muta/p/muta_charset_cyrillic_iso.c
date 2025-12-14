@@ -1,14 +1,11 @@
 /* radare - MIT - Charset cyrillic_iso (stub) */
 #include <r_muta.h>
 #include <r_muta/charset.h>
-static bool check(const char *algo) {
-	return !strcmp (algo, "cyrillic_iso");
-}
 RMutaPlugin r_muta_plugin_charset_cyrillic_iso = {
 	.meta = { .name = "cyrillic_iso", .license = "MIT", .desc = "Cyrillic ISO stub" },
 	.type = R_MUTA_TYPE_CHARSET,
-	.check = check,
-	.update = r_muta_charset_stub_update,
+	.implements = "cyrillic_iso",
+		.update = r_muta_charset_stub_update,
 	.end = r_muta_charset_stub_end
 };
 #ifndef R2_PLUGIN_INCORE

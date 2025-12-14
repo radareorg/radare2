@@ -50,10 +50,14 @@ R_API void r_muta_free(RMuta *cry) {
 }
 
 R_API RMutaSession *r_muta_use(RMuta *cry, const char *algo) {
-	R_RETURN_VAL_IF_FAIL (cry && algo, false);
+	R_RETURN_VAL_IF_FAIL (cry && algo, NULL);
 	RListIter *iter, *iter2;
 	RMutaPlugin *h;
 	r_list_foreach (cry->plugins, iter, h) {
+		if (h && R_STR_ISNOTEMPTY (h->meta.name) && !strcmp (h->meta.name, algo)) {
+			cry->h = h;
+			return r_muta_session_new (cry, h);
+		}
 		if (h && R_STR_ISNOTEMPTY (h->implements)) {
 			char *impls = strdup (h->implements);
 			RList *l = r_str_split_list (impls, ",", 0);
@@ -62,16 +66,12 @@ R_API RMutaSession *r_muta_use(RMuta *cry, const char *algo) {
 				if (!strcmp (s, algo)) {
 					cry->h = h;
 					r_list_free (l);
+					free (impls);
 					return r_muta_session_new (cry, h);
 				}
 			}
 			r_list_free (l);
 			free (impls);
-		}
-		// XXX deprecate
-		if (h && h->check && h->check (algo)) {
-			// R_DEPRECATE cry->h = h;
-			return r_muta_session_new (cry, h);
 		}
 	}
 	return NULL;

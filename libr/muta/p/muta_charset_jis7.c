@@ -9,10 +9,6 @@ static const RMutaCharsetMap jis7_table[] = {
 	{ NULL, { 0 }, 0 }
 };
 
-static bool check(const char *algo) {
-	return !strcmp (algo, "jis7");
-}
-
 static int decode(RMutaSession *cj, const ut8 *in, int len, ut8 **out, int *consumed) {
 	const char *s = NULL;
 	int clen = 0;
@@ -79,8 +75,8 @@ static bool end(RMutaSession *cj, const ut8 *b, int l) {
 RMutaPlugin r_muta_plugin_charset_jis7 = {
 	.meta = { .name = "jis7", .license = "MIT", .desc = "JIS 7-bit Roman (ASCII-like)" },
 	.type = R_MUTA_TYPE_CHARSET,
-	.check = check,
-	.decode = decode,
+	.implements = "jis7",
+		.decode = decode,
 	.update = update,
 	.end = end
 };

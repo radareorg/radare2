@@ -103,10 +103,6 @@ static int des_get_key_size(RMutaSession *cj) {
 	return st? st->key_size: 0;
 }
 
-static bool des_check(const char *algo) {
-	return algo && !strcmp (algo, "des-ecb");
-}
-
 static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	if (len <= 0) {
 		return false;
@@ -169,6 +165,7 @@ static bool end(RMutaSession *cj, const ut8 *buf, int len) {
 
 RMutaPlugin r_muta_plugin_des = {
 	.type = R_MUTA_TYPE_CRYPTO,
+	.implements = "des-ecb",
 	.meta = {
 		.name = "des-ecb",
 		.author = "deroad",
@@ -177,7 +174,6 @@ RMutaPlugin r_muta_plugin_des = {
 	},
 	.set_key = des_set_key,
 	.get_key_size = des_get_key_size,
-	.check = des_check,
 	.update = update,
 	.end = end
 };

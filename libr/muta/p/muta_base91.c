@@ -15,10 +15,6 @@ static int base91_get_key_size(RMutaSession *cj) {
 	return 0;
 }
 
-static bool base91_check(const char *algo) {
-	return algo && !strcmp (algo, "base91");
-}
-
 static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (cj && buf && len > 0, false);
 
@@ -51,7 +47,6 @@ RMutaPlugin r_muta_plugin_base91 = {
 	.type = R_MUTA_TYPE_BASE, // _BASE?
 	.set_key = base91_set_key,
 	.get_key_size = base91_get_key_size,
-	.check = base91_check,
 	.update = update,
 	.end = update
 };

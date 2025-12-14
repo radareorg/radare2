@@ -12,10 +12,6 @@ static int punycode_get_key_size(RMutaSession *cry) {
 	return 0;
 }
 
-static bool punycode_check(const char *algo) {
-	return !strcmp (algo, "punycode");
-}
-
 static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	char *obuf = NULL;
 	int olen = 0;
@@ -40,9 +36,9 @@ RMutaPlugin r_muta_plugin_punycode = {
 		.license = "LGPL-3.0-only",
 	},
 	.type = R_MUTA_TYPE_CHARSET, // XXX this is an actual charset plugin!
+	.implements = "punycode",
 	.set_key = punycode_set_key,
 	.get_key_size = punycode_get_key_size,
-	.check = punycode_check,
 	.update = update,
 	.end = update
 };

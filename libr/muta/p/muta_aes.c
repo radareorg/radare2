@@ -18,10 +18,6 @@ static int aes_get_key_size(RMutaSession *cj) {
 	return cj->key_len;
 }
 
-static bool aes_check(const char *algo) {
-	return !strcmp (algo, "aes-ecb");
-}
-
 static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	struct aes_state st;
 
@@ -75,9 +71,9 @@ RMutaPlugin r_muta_plugin_aes = {
 		.author = "pancake",
 		.license = "MIT",
 	},
+	.implements = "aes-ecb",
 	.set_key = aes_set_key,
 	.get_key_size = aes_get_key_size,
-	.check = aes_check,
 	.update = update,
 	.end = end
 };

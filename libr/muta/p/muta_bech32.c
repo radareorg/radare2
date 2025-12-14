@@ -160,10 +160,6 @@ static int bech32_get_key_size(RMutaSession *cj) {
 	return cj->key_len;
 }
 
-static bool bech32_check(const char *algo) {
-	return !strcmp (algo, "bech32");
-}
-
 static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	const int enc = BECH32_ENCODING_BECH32;
 	char *hrp = malloc (cj->key_len + 1); // HRP need to be null-terminated
@@ -201,10 +197,10 @@ RMutaPlugin r_muta_plugin_bech32 = {
 		.author = "W0nda",
 		.license = "BSD-3-Clause",
 	},
+	.implements = "bech32",
 	.type = R_MUTA_TYPE_BASE,
 	.set_key = bech32_set_key,
 	.get_key_size = bech32_get_key_size,
-	.check = bech32_check,
 	.update = update,
 	.end = end
 };

@@ -26,10 +26,6 @@ static int serpent_get_key_size(RMutaSession *cj) {
 	return st? st->key_size: 0;
 }
 
-static bool serpent_check(const char *algo) {
-	return !strcmp (algo, "serpent-ecb");
-}
-
 #define BLOCK_SIZE 16
 
 static bool update(RMutaSession *cj, const ut8 *buf, int len) {
@@ -113,6 +109,7 @@ static bool end(RMutaSession *cj, const ut8 *buf, int len) {
 
 RMutaPlugin r_muta_plugin_serpent = {
 	.type = R_MUTA_TYPE_CRYPTO,
+	.implements = "serpent",
 	.meta = {
 		.name = "serpent-ecb",
 		.desc = "Serpent block cipher with Electronic Code Book mode",
@@ -121,7 +118,6 @@ RMutaPlugin r_muta_plugin_serpent = {
 	},
 	.set_key = serpent_set_key,
 	.get_key_size = serpent_get_key_size,
-	.check = serpent_check,
 	.update = update,
 	.end = end
 };

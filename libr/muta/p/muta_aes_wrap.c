@@ -31,10 +31,6 @@ static bool aes_wrap_set_iv(RMutaSession *cj, const ut8 *iv_src, int ivlen) {
 	return true;
 }
 
-static bool aes_wrap_use(const char *algo) {
-	return algo && !strcmp (algo, "aes-wrap");
-}
-
 static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	struct aes_state st;
 	const ut64 blocks = len / AES_WRAP_BLOCK_SIZE;
@@ -94,10 +90,10 @@ RMutaPlugin r_muta_plugin_aes_wrap = {
 		.author = "Sylvain Pelissier",
 		.license = "LGPL-3.0-only",
 	},
+	.implements = "aes-wrap",
 	.set_key = aes_wrap_set_key,
 	.get_key_size = aes_wrap_get_key_size,
 	.set_iv = aes_wrap_set_iv,
-	.check = aes_wrap_use,
 	.update = update,
 	.end = end
 };

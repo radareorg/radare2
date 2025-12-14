@@ -15,10 +15,6 @@ static const RMutaCharsetMap katakana_table[] = {
 };
 // clang-format on
 
-static bool check(const char *algo) {
-	return !strcmp (algo, "katakana");
-}
-
 static int decode(RMutaSession *cj, const ut8 *in, int len, ut8 **out, int *consumed) {
 	const char *s = NULL;
 	int clen = 0;
@@ -87,8 +83,8 @@ static bool end(RMutaSession *cj, const ut8 *b, int l) {
 RMutaPlugin r_muta_plugin_charset_katakana = {
 	.meta = { .name = "katakana", .license = "MIT", .desc = "Katakana mapping (legacy-compatible)" },
 	.type = R_MUTA_TYPE_CHARSET,
-	.check = check,
-	.decode = decode,
+	.implements = "katakana",
+		.decode = decode,
 	.update = update,
 	.end = end
 };
