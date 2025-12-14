@@ -226,7 +226,7 @@ psz
 EOF
 EXPECT=<<EOF
 ABC
-ABC?
+ABC
 EOF
 RUN
 
