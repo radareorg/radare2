@@ -96,12 +96,9 @@ R_API ut8 *r_muta_session_get_output(RMutaSession *cj, int *size) {
 }
 
 // Decode input string using the provided charset decode function
-R_API ut8 *r_muta_session_decode_string(RMutaSession *session, const ut8 *input, int len, int (*decode_fn)(void *, const ut8 *, int, ut8 **, int *), void *decode_ctx) {
+R_API ut8 *r_muta_session_decode_string(RMutaSession *session, const ut8 *input, int len, RMutaDecodeCallback decode_fn, void *decode_ctx) {
 	R_RETURN_VAL_IF_FAIL (session && input && decode_fn, NULL);
 	RStrBuf *sb = r_strbuf_new ("");
-	if (!sb) {
-		return NULL;
-	}
 	int pos = 0;
 	while (pos < len) {
 		ut8 *tmp = NULL;

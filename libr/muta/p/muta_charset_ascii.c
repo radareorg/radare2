@@ -8,7 +8,7 @@ static bool check(const char *algo) {
 }
 
 static bool is_visible (const char c) {
-	return (c == '\n' || c == '\t' || c >= 0x20 && c <= 0x7e);
+	return ((c == '\n' || c == '\t') || (c >= 0x20 && c <= 0x7e));
 }
 
 static bool update(RMutaSession *cj, const ut8 *buf, int len) {

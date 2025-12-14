@@ -128,7 +128,8 @@ R_API int r_muta_session_append(RMutaSession *cry, const ut8 *buf, int len);
 R_API ut8 *r_muta_session_get_output(RMutaSession *cry, int *size);
 
 // Charset decoding helper
-R_API ut8 *r_muta_session_decode_string(RMutaSession *session, const ut8 *input, int len, int (*decode_fn)(void *, const ut8 *, int, ut8 **, int *), void *decode_ctx);
+typedef int (*RMutaDecodeCallback)(void *, const ut8 *, int, ut8 **, int *);
+R_API ut8 *r_muta_session_decode_string(RMutaSession *session, const ut8 *input, int len, RMutaDecodeCallback decode_fn, void *decode_ctx);
 
 #endif
 
