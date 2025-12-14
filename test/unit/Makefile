@@ -24,7 +24,7 @@ $(UNITS_BINDIR)/%: %.c
 	$(CC) $< -o $@ $(CFLAGS) $(LDFLAGS)
 
 run: $(BINS)
-	@R=0 ; r=0 ; cd .. ; \
+	@export R2_DEBUG_ASSERT=1 ; R=0 ; r=0 ; cd .. ; \
 	  for a in $(BINS) ; do \
 	  	echo "$$a" ; \
 		R=0 ; $(ASAN_LD_PRELOAD) ./unit/$$a || R=1; \
