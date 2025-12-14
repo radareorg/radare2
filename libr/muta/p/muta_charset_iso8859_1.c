@@ -1,7 +1,9 @@
-/* radare - MIT - Charset ISO-8859-1 */
+/* radare - MIT - Copyright 2025 - pancake */
+
 #include <r_muta.h>
 #include <r_muta/charset.h>
 
+// clang-format off
 static const RMutaCharsetMap iso8859_1_table[] = {
 	{ "[nul]", { 0x00 }, 1 }, { "[stx]", { 0x01 }, 1 }, { "[sot]", { 0x02 }, 1 }, { "[etx]", { 0x03 }, 1 }, { "[eot]", { 0x04 }, 1 }, { "[enq]", { 0x05 }, 1 }, { "[ack]", { 0x06 }, 1 }, { "[bel]", { 0x07 }, 1 },
 	{ "[bs]", { 0x08 }, 1 }, { "[ht]", { 0x09 }, 1 }, { "[lf]", { 0x0A }, 1 }, { "[vt]", { 0x0B }, 1 }, { "[ff]", { 0x0C }, 1 }, { "[cr]", { 0x0D }, 1 }, { "[so]", { 0x0E }, 1 }, { "[si]", { 0x0F }, 1 },
@@ -25,6 +27,7 @@ static const RMutaCharsetMap iso8859_1_table[] = {
 	{ "ð", { 0xF0 }, 1 }, { "ñ", { 0xF1 }, 1 }, { "ò", { 0xF2 }, 1 }, { "ó", { 0xF3 }, 1 }, { "ô", { 0xF4 }, 1 }, { "õ", { 0xF5 }, 1 }, { "ö", { 0xF6 }, 1 }, { "÷", { 0xF7 }, 1 }, { "ø", { 0xF8 }, 1 }, { "ù", { 0xF9 }, 1 }, { "ú", { 0xFA }, 1 }, { "û", { 0xFB }, 1 }, { "ü", { 0xFC }, 1 }, { "ý", { 0xFD }, 1 }, { "þ", { 0xFE }, 1 }, { "ÿ", { 0xFF }, 1 },
 	{ NULL, { 0 }, 0 }
 };
+// clang-format on
 
 static bool check(const char *algo) {
 	return !strcmp (algo, "iso8859_1");

@@ -1,6 +1,9 @@
-/* radare - MIT - Charset hiragana (stub) */
+/* radare - LGPL - Copyright 2025 - pancake */
+/* Charset hiragana (stub) */
+
 #include <r_muta.h>
 #include <r_muta/charset.h>
+
 static bool check(const char *algo) {
 	return !strcmp (algo, "hiragana");
 }

@@ -2,6 +2,7 @@
 #include <r_muta.h>
 #include <r_muta/charset.h>
 
+// clang-format off
 static const RMutaCharsetMap cp1253_table[] = {
 	{ "\n", { 0x0A }, 1 }, { "\t", { 0x09 }, 1 },
 	{ " ", { 0x20 }, 1 }, { "!", { 0x21 }, 1 }, { "\"", { 0x22 }, 1 }, { "#", { 0x23 }, 1 }, { "$", { 0x24 }, 1 }, { "%", { 0x25 }, 1 }, { "&", { 0x26 }, 1 }, { "'", { 0x27 }, 1 }, { "(", { 0x28 }, 1 }, { ")", { 0x29 }, 1 }, { "*", { 0x2A }, 1 }, { "+", { 0x2B }, 1 }, { ",", { 0x2C }, 1 }, { "-", { 0x2D }, 1 }, { ".", { 0x2E }, 1 }, { "/", { 0x2F }, 1 },
@@ -20,6 +21,7 @@ static const RMutaCharsetMap cp1253_table[] = {
 	{ "π", { 0xF0 }, 1 }, { "ρ", { 0xF1 }, 1 }, { "ς", { 0xF2 }, 1 }, { "σ", { 0xF3 }, 1 }, { "τ", { 0xF4 }, 1 }, { "υ", { 0xF5 }, 1 }, { "φ", { 0xF6 }, 1 }, { "χ", { 0xF7 }, 1 }, { "ψ", { 0xF8 }, 1 }, { "ω", { 0xF9 }, 1 },
 	{ NULL, { 0 }, 0 }
 };
+// clang-format on
 
 static bool check(const char *algo) {
 	return !strcmp (algo, "greek_windows");

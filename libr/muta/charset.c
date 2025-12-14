@@ -1,4 +1,4 @@
-/* radare - MIT - Copyright 2025 - pancake */
+/* radare - LGPL - Copyright 2025 - pancake */
 
 #include <r_muta/charset.h>
 #include <r_util.h>

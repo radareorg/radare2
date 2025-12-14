@@ -2,6 +2,7 @@
 #include <r_muta.h>
 #include <r_muta/charset.h>
 
+// clang-format off
 static const RMutaCharsetMap ebcdic37_table[] = {
 	{ "\r", { 0x0D }, 1 }, { "\n", { 0x15 }, 1 },
 	{ "!", { 0x21 }, 1 }, { "\"", { 0x22 }, 1 }, { "#", { 0x23 }, 1 }, { "$", { 0x24 }, 1 }, { "%", { 0x25 }, 1 }, { "&", { 0x26 }, 1 },
@@ -20,6 +21,7 @@ static const RMutaCharsetMap ebcdic37_table[] = {
 	{ "4", { 0xF4 }, 1 }, { "5", { 0xF5 }, 1 }, { "6", { 0xF6 }, 1 }, { "7", { 0xF7 }, 1 }, { "8", { 0xF8 }, 1 }, { "9", { 0xF9 }, 1 },
 	{ NULL, { 0 }, 0 }
 };
+// clang-format on
 
 static bool check(const char *algo) {
 	return !strcmp (algo, "ebcdic37");

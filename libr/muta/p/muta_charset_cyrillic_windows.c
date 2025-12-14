@@ -2,6 +2,7 @@
 #include <r_muta.h>
 #include <r_muta/charset.h>
 
+// clang-format off
 static const RMutaCharsetMap cp1251_table[] = {
 	/* ASCII */
 	{ "\n", { 0x0A }, 1 }, { "\t", { 0x09 }, 1 },
@@ -21,6 +22,7 @@ static const RMutaCharsetMap cp1251_table[] = {
 	{ "ф", { 0xF4 }, 1 }, { "х", { 0xF5 }, 1 }, { "ц", { 0xF6 }, 1 }, { "ч", { 0xF7 }, 1 }, { "ш", { 0xF8 }, 1 }, { "щ", { 0xF9 }, 1 }, { "ъ", { 0xFA }, 1 }, { "ы", { 0xFB }, 1 }, { "ь", { 0xFC }, 1 }, { "э", { 0xFD }, 1 }, { "ю", { 0xFE }, 1 }, { "я", { 0xFF }, 1 },
 	{ NULL, { 0 }, 0 }
 };
+// clang-format on
 
 static bool check(const char *algo) {
 	return !strcmp (algo, "cyrillic_windows");

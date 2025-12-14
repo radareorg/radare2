@@ -1,4 +1,6 @@
-/* radare - MIT - Charset Katakana (half-width mapping used in r2 charsets) */
+/* radare - LGPL - Copyright 2025 - pancake */
+/* Charset Katakana (half-width mapping) */
+
 #include <r_muta.h>
 #include <r_muta/charset.h>
 #include <r_util.h>

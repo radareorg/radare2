@@ -1,4 +1,5 @@
-/* radare - MIT - Charset ISO 646 (IRV, close to ASCII) */
+/* radare - LGPL - Copyright 2025 - pancake */
+/* Charset ISO 646 (IRV, close to ASCII) */
 #include <r_muta.h>
 #include <r_muta/charset.h>
 
