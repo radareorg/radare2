@@ -59,4 +59,3 @@ RMutaPlugin r_muta_plugin_charset_macintosh = {
 #ifndef R2_PLUGIN_INCORE
 RLibStruct radare_plugin = { .type = R_LIB_TYPE_MUTA, .data = &r_muta_plugin_charset_macintosh };
 #endif
-

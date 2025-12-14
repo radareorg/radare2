@@ -11,11 +11,11 @@ typedef enum {
 static uint32_t bech32_polymod_step(ut32 pre) {
 	uint8_t b = pre >> 25;
 	return ((pre & 0x1FFFFFF) << 5) ^
-		(-((b >> 0) & 1) & 0x3b6a57b2UL) ^
-		(-((b >> 1) & 1) & 0x26508e6dUL) ^
-		(-((b >> 2) & 1) & 0x1ea119faUL) ^
-		(-((b >> 3) & 1) & 0x3d4233ddUL) ^
-		(-((b >> 4) & 1) & 0x2a1462b3UL);
+		(- ((b >> 0) & 1) & 0x3b6a57b2UL) ^
+		(- ((b >> 1) & 1) & 0x26508e6dUL) ^
+		(- ((b >> 2) & 1) & 0x1ea119faUL) ^
+		(- ((b >> 3) & 1) & 0x3d4233ddUL) ^
+		(- ((b >> 4) & 1) & 0x2a1462b3UL);
 }
 
 static uint32_t bech32_final_constant(bech32_encoding enc) {
@@ -121,10 +121,12 @@ static bech32_encoding bech32_decode(char *hrp, uint8_t *data, int data_len, con
 	i++;
 	while (i < input_len) {
 		int v = (input[i] & 0x80)? -1: charset_rev[(int)input[i]];
-		if (input[i] >= 'a' && input[i] <= 'z')
+		if (input[i] >= 'a' && input[i] <= 'z') {
 			have_lower = 1;
-		if (input[i] >= 'A' && input[i] <= 'Z')
+		}
+		if (input[i] >= 'A' && input[i] <= 'Z') {
 			have_upper = 1;
+		}
 		if (v == -1) {
 			return BECH32_ENCODING_NONE;
 		}
@@ -176,7 +178,7 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 		bech32_encode (in_out, hrp, buf, len, enc);
 		break;
 	case R_CRYPTO_DIR_DECRYPT:
-		bech32_decode (hrp, (ut8*)data, len, in_out);
+		bech32_decode (hrp, (ut8 *)data, len, in_out);
 		break;
 	default:
 		R_LOG_ERROR ("Choose decrypt or encrypt");

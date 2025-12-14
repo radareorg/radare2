@@ -65,4 +65,3 @@ RMutaPlugin r_muta_plugin_charset_greek_windows = {
 #ifndef R2_PLUGIN_INCORE
 RLibStruct radare_plugin = { .type = R_LIB_TYPE_MUTA, .data = &r_muta_plugin_charset_greek_windows };
 #endif
-

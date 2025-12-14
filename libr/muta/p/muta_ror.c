@@ -36,12 +36,12 @@ static bool ror_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, 
 	cj->flag = direction;
 	free (cj->data);
 	cj->data = R_NEW0 (struct ror_state);
-	struct ror_state *st = (struct ror_state*)cj->data;
+	struct ror_state *st = (struct ror_state *)cj->data;
 	return ror_init (st, key, keylen);
 }
 
 static int ror_get_key_size(RMutaSession *cj) {
-	struct ror_state *st = (struct ror_state*)cj->data;
+	struct ror_state *st = (struct ror_state *)cj->data;
 	return st->key_size;
 }
 
@@ -57,7 +57,7 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	if (!obuf) {
 		return false;
 	}
-	struct ror_state *st = (struct ror_state*)cj->data;
+	struct ror_state *st = (struct ror_state *)cj->data;
 	ror_crypt (st, buf, obuf, len);
 	r_muta_session_append (cj, obuf, len);
 	free (obuf);

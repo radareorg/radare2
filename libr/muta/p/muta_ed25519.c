@@ -50,7 +50,7 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 
 	// Signature (R, S)
 	if (cj->dir == R_CRYPTO_DIR_ENCRYPT) {
-		// r = H( cj->key[32:64] || buf)
+		// r = H ( cj->key[32:64] || buf)
 		RHash *ctx = r_hash_new (true, R_HASH_SHA512);
 		r_sha512_init (&ctx->sha512);
 		r_sha512_update (&ctx->sha512, cj->key + 32, 32);
@@ -61,7 +61,7 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 		sc_reduce (r);
 		ge_scalarmult_base (&R, r);
 		ge_p3_tobytes (signature, &R);
-		// S = r + H(R || A || buf) * cj->key[0:32]
+		// S = r + H (R || A || buf) * cj->key[0:32]
 		r_sha512_init (&ctx->sha512);
 		r_sha512_update (&ctx->sha512, signature, 32);
 		r_sha512_update (&ctx->sha512, public_key, 32);

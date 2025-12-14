@@ -5,7 +5,7 @@
 #include "algo/crypto_aes.h"
 
 static bool aes_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction) {
-	if (!(keylen == 128 / 8 || keylen == 192 / 8 || keylen == 256 / 8)) {
+	if (! (keylen == 128 / 8 || keylen == 192 / 8 || keylen == 256 / 8)) {
 		return false;
 	}
 	cj->key_len = keylen;
@@ -89,4 +89,3 @@ R_API RLibStruct radare_plugin = {
 	.version = R2_VERSION
 };
 #endif
-

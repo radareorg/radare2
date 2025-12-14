@@ -6,7 +6,7 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	if (!buf || len < 1) {
 		return false;
 	}
-	ut64 i, count[256] = {0};
+	ut64 i, count[256] = { 0 };
 	double h = 0;
 	for (i = 0; i < len; i++) {
 		if (buf[i] < 0xff) {
@@ -15,7 +15,7 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	}
 	for (i = 0; i < 256; i++) {
 		if (count[i]) {
-			double p = (double) count[i] / len;
+			double p = (double)count[i] / len;
 			h -= p * log2 (p);
 		}
 	}
@@ -31,8 +31,8 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 static bool end(RMutaSession *cj, const ut8 *buf, int len) {
 	if (buf) {
 		if (len > 0) {
-			double e = update (cj, buf, len) / log2 ((double) R_MIN (len, 256));
-			if  (cj->entropy) {
+			double e = update (cj, buf, len) / log2 ((double)R_MIN (len, 256));
+			if (cj->entropy) {
 				cj->entropy += e;
 				cj->entropy /= 2;
 			} else {
@@ -64,4 +64,3 @@ R_API RLibStruct radare_plugin = {
 	.version = R2_VERSION
 };
 #endif
-

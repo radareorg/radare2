@@ -60,7 +60,7 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 		ibuf[j] = r_read_le32 (buf + 4 * j);
 	}
 	if (len & 0x3) {
-		ut8 tail[4] = {0}; // Zero padding
+		ut8 tail[4] = { 0 }; // Zero padding
 		memcpy (tail, buf + (len & ~0x3), len & 0x3);
 		ibuf[len / 4] = r_read_le32 (tail);
 	}
@@ -133,4 +133,3 @@ R_API RLibStruct radare_plugin = {
 	.version = R2_VERSION
 };
 #endif
-

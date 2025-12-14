@@ -27,7 +27,7 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 		obuf = r_punycode_encode (buf, len, &olen);
 		break;
 	}
-	r_muta_session_append (cj, (ut8*)obuf, olen);
+	r_muta_session_append (cj, (ut8 *)obuf, olen);
 	free (obuf);
 	return true;
 }

@@ -30,7 +30,7 @@ static int decode(RMutaSession *cj, const ut8 *in, int len, ut8 **out, int *cons
 		if (!cpy) {
 			return 0;
 		}
-		*out = (ut8*)cpy;
+		*out = (ut8 *)cpy;
 		*consumed = clen;
 		return (int)strlen (cpy);
 	}
@@ -42,10 +42,10 @@ static int decode(RMutaSession *cj, const ut8 *in, int len, ut8 **out, int *cons
 		}
 		cpy[0] = (char)in[0];
 		cpy[1] = 0;
-		*out = (ut8*)cpy;
+		*out = (ut8 *)cpy;
 		return 1;
 	}
-	/* Drop non-printable bytes (so trailing zeros don't emit '?'). */
+	/* Drop non-printable bytes (so trailing zeros don't emit '? '). */
 	return 0;
 }
 
@@ -93,4 +93,3 @@ RMutaPlugin r_muta_plugin_charset_katakana = {
 #ifndef R2_PLUGIN_INCORE
 RLibStruct radare_plugin = { .type = R_LIB_TYPE_MUTA, .data = &r_muta_plugin_charset_katakana };
 #endif
-

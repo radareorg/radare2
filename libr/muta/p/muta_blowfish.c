@@ -177,7 +177,7 @@ static void blowfish_crypt(struct blowfish_state *const state, const ut8 *inbuf,
 	ut32 left, right;
 	int index1, index2;
 
-	if (!state || !inbuf || !outbuf || buflen < 0 || buflen%8 != 0) {
+	if (!state || !inbuf || !outbuf || buflen < 0 || buflen % 8 != 0) {
 		// let user deal with padding
 		if (buflen % 8 != 0) {
 			R_LOG_ERROR ("Invalid input length %d. Expected length is multiple of 8 bytes", buflen);
@@ -186,8 +186,8 @@ static void blowfish_crypt(struct blowfish_state *const state, const ut8 *inbuf,
 	}
 
 	for (index1 = 0; index1 < buflen; index1 += 8) {
-		left = (inbuf[index1+0] << 24 | inbuf[index1+1] << 16 | inbuf[index1+2] << 8 | inbuf[index1+3]);
-		right = (inbuf[index1+4] << 24 | inbuf[index1+5] << 16 | inbuf[index1+6] << 8 | inbuf[index1+7]);
+		left = (inbuf[index1 + 0] << 24 | inbuf[index1 + 1] << 16 | inbuf[index1 + 2] << 8 | inbuf[index1 + 3]);
+		right = (inbuf[index1 + 4] << 24 | inbuf[index1 + 5] << 16 | inbuf[index1 + 6] << 8 | inbuf[index1 + 7]);
 
 		for (index2 = 0; index2 < 16; index2 += 1) {
 			left ^= state->p[index2];
@@ -199,14 +199,14 @@ static void blowfish_crypt(struct blowfish_state *const state, const ut8 *inbuf,
 		right ^= state->p[16];
 		left ^= state->p[17];
 
-		outbuf[index1+0] = left >> 24;
-		outbuf[index1+1] = left >> 16;
-		outbuf[index1+2] = left >> 8;
-		outbuf[index1+3] = left;
-		outbuf[index1+4] = right >> 24;
-		outbuf[index1+5] = right >> 16;
-		outbuf[index1+6] = right >> 8;
-		outbuf[index1+7] = right;
+		outbuf[index1 + 0] = left >> 24;
+		outbuf[index1 + 1] = left >> 16;
+		outbuf[index1 + 2] = left >> 8;
+		outbuf[index1 + 3] = left;
+		outbuf[index1 + 4] = right >> 24;
+		outbuf[index1 + 5] = right >> 16;
+		outbuf[index1 + 6] = right >> 8;
+		outbuf[index1 + 7] = right;
 	}
 }
 
@@ -214,21 +214,21 @@ static void blowfish_decrypt(struct blowfish_state *const state, const ut8 *inbu
 	ut32 left, right;
 	int index1, index2;
 
-	if (!state || !inbuf || !outbuf || buflen < 0 || buflen%8 != 0) {
-		//length of encrypted output of blowfish is multiple of 8 bytes.
-		if ((buflen%8) != 0) {
-			eprintf("Invalid input length %d. Expected length is multiple of 8 bytes.\n", buflen);
+	if (!state || !inbuf || !outbuf || buflen < 0 || buflen % 8 != 0) {
+		// length of encrypted output of blowfish is multiple of 8 bytes.
+		if ((buflen % 8) != 0) {
+			eprintf ("Invalid input length %d. Expected length is multiple of 8 bytes.\n", buflen);
 		}
 		return;
 	}
 
 	for (index1 = 0; index1 < buflen; index1 += 8) {
-		left = (inbuf[index1+0] << 24 | inbuf[index1+1] << 16 | inbuf[index1+2] << 8 | inbuf[index1+3]);
-		right = (inbuf[index1+4] << 24 | inbuf[index1+5] << 16 | inbuf[index1+6] << 8 | inbuf[index1+7]);
+		left = (inbuf[index1 + 0] << 24 | inbuf[index1 + 1] << 16 | inbuf[index1 + 2] << 8 | inbuf[index1 + 3]);
+		right = (inbuf[index1 + 4] << 24 | inbuf[index1 + 5] << 16 | inbuf[index1 + 6] << 8 | inbuf[index1 + 7]);
 
 		for (index2 = 17; index2 > 1; index2 -= 1) {
 			left ^= state->p[index2];
-			right ^= F(state, left);
+			right ^= F (state, left);
 			swap (&left, &right);
 		}
 		/* Undo the last swap. */
@@ -236,14 +236,14 @@ static void blowfish_decrypt(struct blowfish_state *const state, const ut8 *inbu
 		right ^= state->p[1];
 		left ^= state->p[0];
 
-		outbuf[index1+0] = left >> 24;
-		outbuf[index1+1] = left >> 16;
-		outbuf[index1+2] = left >> 8;
-		outbuf[index1+3] = left;
-		outbuf[index1+4] = right >> 24;
-		outbuf[index1+5] = right >> 16;
-		outbuf[index1+6] = right >> 8;
-		outbuf[index1+7] = right;
+		outbuf[index1 + 0] = left >> 24;
+		outbuf[index1 + 1] = left >> 16;
+		outbuf[index1 + 2] = left >> 8;
+		outbuf[index1 + 3] = left;
+		outbuf[index1 + 4] = right >> 24;
+		outbuf[index1 + 5] = right >> 16;
+		outbuf[index1 + 6] = right >> 8;
+		outbuf[index1 + 7] = right;
 	}
 }
 
@@ -266,25 +266,22 @@ static bool blowfish_init(struct blowfish_state *const state, const ut8 *key, in
 	 * Key bits are reused when length is exceeded.
 	 * */
 	for (index1 = 0, index2 = 0; index1 < 18; index1 += 1, index2 += 4) {
-		state->p[index1] ^= ((key[index2 % keylen] << 24) | (key[(index2+1) % keylen] << 16)
-				| (key[(index2+2) % keylen] << 8) | (key[(index2+3) % keylen]));
+		state->p[index1] ^= ((key[index2 % keylen] << 24) | (key[(index2 + 1) % keylen] << 16) | (key[(index2 + 2) % keylen] << 8) | (key[(index2 + 3) % keylen]));
 	}
 
 	/* Recalculating P-boxes */
 	for (index1 = 0; index1 < 18; index1 += 2) {
 		blowfish_crypt (state, block, block, 8);
 		state->p[index1] = (block[0] << 24 | block[1] << 16 | block[2] << 8 | block[3]);
-		state->p[index1+1] = (block[4] << 24 | block[5] << 16 | block[6] << 8 | block[7]);
+		state->p[index1 + 1] = (block[4] << 24 | block[5] << 16 | block[6] << 8 | block[7]);
 	}
 
 	/* Recalculating S-boxes */
 	for (index1 = 0; index1 < 4; index1 += 1) {
 		for (index2 = 0; index2 < 256; index2 += 2) {
 			blowfish_crypt (state, block, block, 8);
-			state->s[index1][index2] = (block[0] << 24 | block[1] << 16
-					| block[2] << 8 | block[3]);
-			state->s[index1][index2+1] = (block[4] << 24 | block[5] << 16
-					| block[6] << 8 | block[7]);
+			state->s[index1][index2] = (block[0] << 24 | block[1] << 16 | block[2] << 8 | block[3]);
+			state->s[index1][index2 + 1] = (block[4] << 24 | block[5] << 16 | block[6] << 8 | block[7]);
 		}
 	}
 	return true;

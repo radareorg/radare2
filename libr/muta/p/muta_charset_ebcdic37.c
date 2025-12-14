@@ -37,7 +37,7 @@ static int decode(RMutaSession *cj, const ut8 *in, int len, ut8 **out, int *cons
 		s = "?";
 		*consumed = 1;
 	}
-	*out = (ut8*)strdup (s);
+	*out = (ut8 *)strdup (s);
 	return *out? (int)strlen ((const char *)*out): 0;
 }
 

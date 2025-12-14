@@ -22,7 +22,7 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	ut8 *obuf = NULL;
 	switch (cj->dir) {
 	case R_CRYPTO_DIR_ENCRYPT:
-		olen = ((len + 2) / 3 ) * 4;
+		olen = ((len + 2) / 3) * 4;
 		obuf = malloc (olen + 1);
 		if (!obuf) {
 			return false;
@@ -32,7 +32,7 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	case R_CRYPTO_DIR_DECRYPT:
 		olen = 4 + ((len / 4) * 3);
 		if (len > 0) {
-			olen -= (buf[len-1] == '=') ? ((buf[len-2] == '=') ? 2 : 1) : 0;
+			olen -= (buf[len - 1] == '=')? ((buf[len - 2] == '=')? 2: 1): 0;
 		}
 		obuf = malloc (olen + 4);
 		if (!obuf) {
@@ -57,8 +57,7 @@ RMutaPlugin r_muta_plugin_base64 = {
 		.name = "base64",
 		.desc = "Binary to text encoding scheme using 64 ascii characters",
 		.author = "rakholiyajenish.07",
-		.license = "LGPL-3.0-only"
-	},
+		.license = "LGPL-3.0-only" },
 	.type = R_MUTA_TYPE_CRYPTO,
 	.set_key = base64_set_key,
 	.get_key_size = base64_get_key_size,

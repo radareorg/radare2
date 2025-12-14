@@ -25,7 +25,7 @@ static int sm4_get_key_size(RMutaSession *cry) {
 }
 
 static bool update(RMutaSession *cj, const ut8 *buf, int len) {
-	R_RETURN_VAL_IF_FAIL (cj&& buf, false);
+	R_RETURN_VAL_IF_FAIL (cj && buf, false);
 	ut8 *obuf = calloc (1, len);
 	if (!obuf) {
 		return false;

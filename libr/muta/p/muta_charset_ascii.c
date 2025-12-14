@@ -7,7 +7,7 @@ static bool check(const char *algo) {
 	return !strcmp (algo, "ascii");
 }
 
-static bool is_visible (const char c) {
+static bool is_visible(const char c) {
 	return ((c == '\n' || c == '\t') || (c >= 0x20 && c <= 0x7e));
 }
 

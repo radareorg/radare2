@@ -30,7 +30,7 @@ static int decode(RMutaSession *cj, const ut8 *in, int len, ut8 **out, int *cons
 		}
 		cpy[0] = (char)in[0];
 		cpy[1] = 0;
-		*out = (ut8*)cpy;
+		*out = (ut8 *)cpy;
 		*consumed = 1;
 		return 1;
 	} else {
@@ -41,7 +41,7 @@ static int decode(RMutaSession *cj, const ut8 *in, int len, ut8 **out, int *cons
 	if (!cpy) {
 		return 0;
 	}
-	*out = (ut8*)cpy;
+	*out = (ut8 *)cpy;
 	return (int)strlen (cpy);
 }
 
@@ -87,4 +87,3 @@ RMutaPlugin r_muta_plugin_charset_jis7 = {
 #ifndef R2_PLUGIN_INCORE
 RLibStruct radare_plugin = { .type = R_LIB_TYPE_MUTA, .data = &r_muta_plugin_charset_jis7 };
 #endif
-

@@ -78,4 +78,3 @@ RLibStruct radare_plugin = {
 	.data = &r_muta_plugin_charset_pokemon
 };
 #endif
-

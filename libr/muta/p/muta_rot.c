@@ -31,9 +31,9 @@ static void rot_crypt(ut8 key, const ut8 *inbuf, ut8 *outbuf, int buflen) {
 			continue;
 		}
 		outbuf[i] += key;
-		outbuf[i] -= (inbuf[i] >= 'a' && inbuf[i] <= 'z') ? 'a' : 'A';
+		outbuf[i] -= (inbuf[i] >= 'a' && inbuf[i] <= 'z')? 'a': 'A';
 		outbuf[i] = mod (outbuf[i], 26);
-		outbuf[i] += (inbuf[i] >= 'a' && inbuf[i] <= 'z') ? 'a' : 'A';
+		outbuf[i] += (inbuf[i] >= 'a' && inbuf[i] <= 'z')? 'a': 'A';
 	}
 }
 
@@ -44,11 +44,11 @@ static void rot_decrypt(ut8 key, const ut8 *inbuf, ut8 *outbuf, int buflen) {
 		if ((inbuf[i] < 'a' || inbuf[i] > 'z') && (inbuf[i] < 'A' || inbuf[i] > 'Z')) {
 			continue;
 		}
-		outbuf[i] += 26;	//adding so that subtracting does not make it negative
+		outbuf[i] += 26; // adding so that subtracting does not make it negative
 		outbuf[i] -= key;
-		outbuf[i] -= (inbuf[i] >= 'a' && inbuf[i] <= 'z') ? 'a' : 'A';
+		outbuf[i] -= (inbuf[i] >= 'a' && inbuf[i] <= 'z')? 'a': 'A';
 		outbuf[i] = mod (outbuf[i], 26);
-		outbuf[i] += (inbuf[i] >= 'a' && inbuf[i] <= 'z') ? 'a' : 'A';
+		outbuf[i] += (inbuf[i] >= 'a' && inbuf[i] <= 'z')? 'a': 'A';
 	}
 }
 
@@ -102,4 +102,3 @@ R_API RLibStruct radare_plugin = {
 	.version = R2_VERSION
 };
 #endif
-
