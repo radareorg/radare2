@@ -1381,6 +1381,7 @@ static bool bin_source(RCore *core, PJ *pj, int mode) {
 	case 1:
 	case R_MODE_SET:
 		// do nothing here
+		r_list_free (final_list);
 		return true;
 	default:
 		{
