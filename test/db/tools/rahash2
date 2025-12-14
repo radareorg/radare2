@@ -208,10 +208,6 @@ hash          sip  SipHash-2-4
 cryp      sm4-ecb  ShāngMì4 block cipher with Electronic Code Book mode
 hash      strhash  String hash using a modified DJB2 xor
 cryp          xor  Byte level Exclusive Or
-char        ascii  ASCII character set encoding/decoding
-char     ebcdic37  EBCDIC CP37 charset
-char    iso8859_1  ISO-8859-1 charset
-char         jis7  JIS 7-bit Roman (ASCII-like)
 hash          md5
 hash         sha1
 hash       sha256

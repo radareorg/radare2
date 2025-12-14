@@ -334,7 +334,6 @@ deinstall uninstall:
 	cd libr && ${MAKE} uninstall
 	cd binr && ${MAKE} uninstall
 	cd shlr && ${MAKE} uninstall
-	cd libr/util/d && ${MAKE} uninstall
 	cd libr/syscall/d && ${MAKE} uninstall
 	cd libr/anal/d && ${MAKE} uninstall
 	cd libr/arch/d && ${MAKE} uninstall
