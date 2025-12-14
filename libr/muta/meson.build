@@ -1,4 +1,5 @@
 r_muta_sources = files(
+  'charset.c',
   'muta.c',
   'muta_session.c',
   'p/muta_add.c',

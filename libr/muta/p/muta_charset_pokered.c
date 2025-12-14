@@ -1,259 +1,125 @@
 /* radare - MIT - Copyright 2025 - pancake */
 
 #include <r_muta.h>
+#include <r_muta/charset.h>
 
-typedef struct {
-	const char *str;
-	ut8 byte;
-} MutaCharsetMap;
-
-static const MutaCharsetMap pokered_table[] = {
-	{ "<NULL>", 0x00 },
-	{ "<PAGE>", 0x49 },
-	{ "<pkmn>", 0x4a },
-	{ "<_CONT>", 0x4b },
-	{ "<SCROLL>", 0x4c },
-	{ "<NEXT>", 0x4e },
-	{ "<LINE>", 0x4f },
-	{ "@", 0x50 },
-	{ "<PARA>", 0x51 },
-	{ "<PLAYER>", 0x52 },
-	{ "<RIVAL>", 0x53 },
-	{ "#", 0x54 },
-	{ "<CONT>", 0x55 },
-	{ "<……>", 0x56 },
-	{ "<DONE>", 0x57 },
-	{ "<PROMPT>", 0x58 },
-	{ "<TARGET>", 0x59 },
-	{ "<USER>", 0x5a },
-	{ "<PC>", 0x5b },
-	{ "<TM>", 0x5c },
-	{ "<TRAINER>", 0x5d },
-	{ "<ROCKET>", 0x5e },
-	{ "<DEXDEND>", 0x5f },
-	{ "<BOLD_A>", 0x60 },
-	{ "<BOLD_B>", 0x61 },
-	{ "<BOLD_C>", 0x62 },
-	{ "<BOLD_D>", 0x63 },
-	{ "<BOLD_E>", 0x64 },
-	{ "<BOLD_F>", 0x65 },
-	{ "<BOLD_G>", 0x66 },
-	{ "<BOLD_H>", 0x67 },
-	{ "<BOLD_I>", 0x68 },
-	{ "<BOLD_V>", 0x69 },
-	{ "<BOLD_S>", 0x6a },
-	{ "<BOLD_L>", 0x6b },
-	{ "<BOLD_M>", 0x6c },
-	{ "<COLON>", 0x6d },
-	{ "-", 0x7f },
-	{ "A", 0x80 },
-	{ "B", 0x81 },
-	{ "C", 0x82 },
-	{ "D", 0x83 },
-	{ "E", 0x84 },
-	{ "F", 0x85 },
-	{ "G", 0x86 },
-	{ "H", 0x87 },
-	{ "I", 0x88 },
-	{ "J", 0x89 },
-	{ "K", 0x8a },
-	{ "L", 0x8b },
-	{ "M", 0x8c },
-	{ "N", 0x8d },
-	{ "O", 0x8e },
-	{ "P", 0x8f },
-	{ "Q", 0x90 },
-	{ "R", 0x91 },
-	{ "S", 0x92 },
-	{ "T", 0x93 },
-	{ "U", 0x94 },
-	{ "V", 0x95 },
-	{ "W", 0x96 },
-	{ "X", 0x97 },
-	{ "Y", 0x98 },
-	{ "Z", 0x99 },
-	{ "(", 0x9a },
-	{ ")", 0x9b },
-	{ ":", 0x9c },
-	{ ";", 0x9d },
-	{ "[", 0x9e },
-	{ "]", 0x9f },
-	{ "a", 0xa0 },
-	{ "b", 0xa1 },
-	{ "c", 0xa2 },
-	{ "d", 0xa3 },
-	{ "e", 0xa4 },
-	{ "f", 0xa5 },
-	{ "g", 0xa6 },
-	{ "h", 0xa7 },
-	{ "i", 0xa8 },
-	{ "j", 0xa9 },
-	{ "k", 0xaa },
-	{ "l", 0xab },
-	{ "m", 0xac },
-	{ "n", 0xad },
-	{ "o", 0xae },
-	{ "p", 0xaf },
-	{ "q", 0xb0 },
-	{ "r", 0xb1 },
-	{ "s", 0xb2 },
-	{ "t", 0xb3 },
-	{ "u", 0xb4 },
-	{ "v", 0xb5 },
-	{ "w", 0xb6 },
-	{ "x", 0xb7 },
-	{ "y", 0xb8 },
-	{ "z", 0xb9 },
-	{ "'d", 0xbb },
-	{ "'l", 0xbc },
-	{ "'s", 0xbd },
-	{ "é", 0xe0 },
-	{ "-", 0xe3 },
-	{ "'r", 0xe4 },
-	{ "?", 0xe6 },
-	{ "!", 0xe7 },
-	{ "0", 0xf6 },
-	{ "1", 0xf7 },
-	{ "2", 0xf8 },
-	{ "3", 0xf9 },
-	{ "4", 0xfa },
-	{ "5", 0xfb },
-	{ "6", 0xfc },
-	{ "7", 0xfd },
-	{ "8", 0xfe },
-	{ "9", 0xff },
-	{ NULL, 0 }
+static const RMutaCharsetMap pokered_table[] = {
+	{ "<NULL>", { 0x00 }, 1 },
+	{ "<PAGE>", { 0x49 }, 1 },
+	{ "<pkmn>", { 0x4a }, 1 },
+	{ "<_CONT>", { 0x4b }, 1 },
+	{ "<SCROLL>", { 0x4c }, 1 },
+	{ "<NEXT>", { 0x4e }, 1 },
+	{ "<LINE>", { 0x4f }, 1 },
+	{ "@", { 0x50 }, 1 },
+	{ "<PARA>", { 0x51 }, 1 },
+	{ "<PLAYER>", { 0x52 }, 1 },
+	{ "<RIVAL>", { 0x53 }, 1 },
+	{ "#", { 0x54 }, 1 },
+	{ "<CONT>", { 0x55 }, 1 },
+	{ "<……>", { 0x56 }, 1 },
+	{ "<DONE>", { 0x57 }, 1 },
+	{ "<PROMPT>", { 0x58 }, 1 },
+	{ "<TARGET>", { 0x59 }, 1 },
+	{ "<USER>", { 0x5a }, 1 },
+	{ "<PC>", { 0x5b }, 1 },
+	{ "<TM>", { 0x5c }, 1 },
+	{ "<TRAINER>", { 0x5d }, 1 },
+	{ "<ROCKET>", { 0x5e }, 1 },
+	{ "<DEXDEND>", { 0x5f }, 1 },
+	{ "<BOLD_A>", { 0x60 }, 1 },
+	{ "<BOLD_B>", { 0x61 }, 1 },
+	{ "<BOLD_C>", { 0x62 }, 1 },
+	{ "<BOLD_D>", { 0x63 }, 1 },
+	{ "<BOLD_E>", { 0x64 }, 1 },
+	{ "<BOLD_F>", { 0x65 }, 1 },
+	{ "<BOLD_G>", { 0x66 }, 1 },
+	{ "<BOLD_H>", { 0x67 }, 1 },
+	{ "<BOLD_I>", { 0x68 }, 1 },
+	{ "<BOLD_V>", { 0x69 }, 1 },
+	{ "<BOLD_S>", { 0x6a }, 1 },
+	{ "<BOLD_L>", { 0x6b }, 1 },
+	{ "<BOLD_M>", { 0x6c }, 1 },
+	{ "<COLON>", { 0x6d }, 1 },
+	{ "-", { 0x7f }, 1 },
+	{ "A", { 0x80 }, 1 },
+	{ "B", { 0x81 }, 1 },
+	{ "C", { 0x82 }, 1 },
+	{ "D", { 0x83 }, 1 },
+	{ "E", { 0x84 }, 1 },
+	{ "F", { 0x85 }, 1 },
+	{ "G", { 0x86 }, 1 },
+	{ "H", { 0x87 }, 1 },
+	{ "I", { 0x88 }, 1 },
+	{ "J", { 0x89 }, 1 },
+	{ "K", { 0x8a }, 1 },
+	{ "L", { 0x8b }, 1 },
+	{ "M", { 0x8c }, 1 },
+	{ "N", { 0x8d }, 1 },
+	{ "O", { 0x8e }, 1 },
+	{ "P", { 0x8f }, 1 },
+	{ "Q", { 0x90 }, 1 },
+	{ "R", { 0x91 }, 1 },
+	{ "S", { 0x92 }, 1 },
+	{ "T", { 0x93 }, 1 },
+	{ "U", { 0x94 }, 1 },
+	{ "V", { 0x95 }, 1 },
+	{ "W", { 0x96 }, 1 },
+	{ "X", { 0x97 }, 1 },
+	{ "Y", { 0x98 }, 1 },
+	{ "Z", { 0x99 }, 1 },
+	{ "(", { 0x9a }, 1 },
+	{ ")", { 0x9b }, 1 },
+	{ ":", { 0x9c }, 1 },
+	{ ";", { 0x9d }, 1 },
+	{ "[", { 0x9e }, 1 },
+	{ "]", { 0x9f }, 1 },
+	{ "a", { 0xa0 }, 1 },
+	{ "b", { 0xa1 }, 1 },
+	{ "c", { 0xa2 }, 1 },
+	{ "d", { 0xa3 }, 1 },
+	{ "e", { 0xa4 }, 1 },
+	{ "f", { 0xa5 }, 1 },
+	{ "g", { 0xa6 }, 1 },
+	{ "h", { 0xa7 }, 1 },
+	{ "i", { 0xa8 }, 1 },
+	{ "j", { 0xa9 }, 1 },
+	{ "k", { 0xaa }, 1 },
+	{ "l", { 0xab }, 1 },
+	{ "m", { 0xac }, 1 },
+	{ "n", { 0xad }, 1 },
+	{ "o", { 0xae }, 1 },
+	{ "p", { 0xaf }, 1 },
+	{ "q", { 0xb0 }, 1 },
+	{ "r", { 0xb1 }, 1 },
+	{ "s", { 0xb2 }, 1 },
+	{ "t", { 0xb3 }, 1 },
+	{ "u", { 0xb4 }, 1 },
+	{ "v", { 0xb5 }, 1 },
+	{ "w", { 0xb6 }, 1 },
+	{ "x", { 0xb7 }, 1 },
+	{ "y", { 0xb8 }, 1 },
+	{ "z", { 0xb9 }, 1 },
+	{ "'d", { 0xbb }, 1 },
+	{ "'l", { 0xbc }, 1 },
+	{ "'s", { 0xbd }, 1 },
+	{ "é", { 0xe0 }, 1 },
+	{ "-", { 0xe3 }, 1 },
+	{ "'r", { 0xe4 }, 1 },
+	{ "?", { 0xe6 }, 1 },
+	{ "!", { 0xe7 }, 1 },
+	{ "0", { 0xf6 }, 1 },
+	{ "1", { 0xf7 }, 1 },
+	{ "2", { 0xf8 }, 1 },
+	{ "3", { 0xf9 }, 1 },
+	{ "4", { 0xfa }, 1 },
+	{ "5", { 0xfb }, 1 },
+	{ "6", { 0xfc }, 1 },
+	{ "7", { 0xfd }, 1 },
+	{ "8", { 0xfe }, 1 },
+	{ "9", { 0xff }, 1 },
+	{ NULL, { 0 }, 0 }
 };
-
-static const char *decode_byte(ut8 b) {
-	const MutaCharsetMap *m;
-	for (m = pokered_table; m->str; m++) {
-		if (m->byte == b) {
-			return m->str;
-		}
-	}
-	return NULL;
-}
-
-static bool encode_utf8(const char *utf8, ut8 *out) {
-	const MutaCharsetMap *m;
-	for (m = pokered_table; m->str; m++) {
-		if (!strcmp (m->str, utf8)) {
-			*out = m->byte;
-			return true;
-		}
-	}
-	return false;
-}
-
-static ut8 *pokered_decode(const ut8 *in, int in_len, int *out_len) {
-	const ut8 *ptr = in;
-	const ut8 *end = in + in_len;
-	ut8 *out = NULL;
-	int outcap = 0;
-	int outpos = 0;
-
-	while (ptr < end) {
-		ut8 b = *ptr++;
-		const char *decoded = decode_byte (b);
-		const char *text;
-		int len;
-
-		if (decoded) {
-			text = decoded;
-			len = strlen (decoded);
-		} else {
-			static char tmp[6];
-			snprintf (tmp, sizeof (tmp), "\\x%02x", b);
-			text = tmp;
-			len = strlen (tmp);
-		}
-
-		if (outpos + len > outcap) {
-			while (outpos + len > outcap) {
-				outcap = outcap? outcap * 2: 64;
-			}
-			ut8 *tmpbuf = realloc (out, outcap);
-			if (!tmpbuf) {
-				free (out);
-				*out_len = 0;
-				return NULL;
-			}
-			out = tmpbuf;
-		}
-
-		memcpy (out + outpos, text, len);
-		outpos += len;
-	}
-
-	*out_len = outpos;
-	return out;
-}
-
-static ut8 *pokered_encode(const ut8 *in, int in_len, int *out_len) {
-	const char *str = (const char *)in;
-	const char *end = str + in_len;
-	ut8 *out = malloc (in_len); // pessimistic allocation
-	if (!out) {
-		*out_len = 0;
-		return NULL;
-	}
-	int outpos = 0;
-
-	while (str < end && *str) {
-		ut8 b;
-		bool found = false;
-
-		// Try to match longer tokens first (up to 7 chars for <BOLD_M>)
-		int i;
-		for (i = 7; i >= 1; i--) {
-			if (str + i <= end) {
-				char tok[16] = { 0 };
-				strncpy (tok, str, i);
-				if (encode_utf8 (tok, &b)) {
-					out[outpos++] = b;
-					str += i;
-					found = true;
-					break;
-				}
-			}
-		}
-
-		if (!found) {
-			// Single char or escape
-			char tok[16] = { 0 };
-			int len = 1;
-
-			if (*str == '\\') {
-				// handle escapes
-				if (str[1] == 's') {
-					len = 2;
-					tok[0] = ' ';
-				} else if (str[1] == 't') {
-					len = 2;
-					tok[0] = '\t';
-				} else if (str[1] == 'n') {
-					len = 2;
-					tok[0] = '\n';
-				} else {
-					tok[0] = *str;
-				}
-			} else {
-				tok[0] = *str;
-			}
-
-			if (encode_utf8 (tok, &b)) {
-				out[outpos++] = b;
-			} else {
-				out[outpos++] = '?';
-			}
-			str += len;
-		}
-	}
-
-	*out_len = outpos;
-	return out;
-}
 
 static bool check(const char *algo) {
 	return !strcmp (algo, "pokered");
@@ -262,12 +128,15 @@ static bool check(const char *algo) {
 static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	int olen = 0;
 	ut8 *obuf = NULL;
+	if (!cj || !buf || len < 0) {
+		return false;
+	}
 	switch (cj->dir) {
 	case R_CRYPTO_DIR_ENCRYPT:
-		obuf = pokered_encode (buf, len, &olen);
+		obuf = r_muta_charset_encode (buf, len, &olen, pokered_table, r_muta_charset_parse_default);
 		break;
 	case R_CRYPTO_DIR_DECRYPT:
-		obuf = pokered_decode (buf, len, &olen);
+		obuf = r_muta_charset_decode (buf, len, &olen, pokered_table, "\\x%02x");
 		break;
 	}
 	if (!obuf) {
@@ -302,3 +171,4 @@ RLibStruct radare_plugin = {
 	.data = &r_muta_plugin_charset_pokered
 };
 #endif
+
