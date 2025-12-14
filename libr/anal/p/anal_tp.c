@@ -376,9 +376,9 @@ static void type_trace_fini(TypeTrace *trace, REsil *esil) {
 static bool type_trace_op(TypeTrace *trace, REsil *esil, RAnalOp *op) {
 	R_RETURN_VAL_IF_FAIL (trace && esil && op, false);
 	const char *expr = r_strbuf_get (&op->esil);
-	if (R_UNLIKELY (!expr || !strlen (expr))) {
-		R_LOG_WARN ("expr is empty or null at 0x%08" PFMT64x " type=%d", op->addr, op->type);
-		return false;
+	if (R_STR_ISEMPTY (expr)) {
+		// empty expressions are nops or unimplemented, we can move forward here
+		return true;
 	}
 	trace->cc = 0;
 	RRegItem *ri = r_reg_get (trace->reg, "PC", -1);
