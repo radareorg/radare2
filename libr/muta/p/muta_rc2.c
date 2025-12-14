@@ -1,12 +1,13 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #include <r_lib.h>
 #include <r_muta.h>
 
 #define BITS 1024
 #define RC2_KEY_SIZE 64 // bytes
-#define BLOCK_SIZE 8    // bytes
+#define BLOCK_SIZE 8 // bytes
 
+// clang-format off
 static const ut8 PITABLE[256] = {
 	0xD9, 0x78, 0xF9, 0xC4, 0x19, 0xDD, 0xB5, 0xED, 0x28, 0xE9, 0xFD, 0x79, 0x4A, 0xA0, 0xD8, 0x9D,
 	0xC6, 0x7E, 0x37, 0x83, 0x2B, 0x76, 0x53, 0x8E, 0x62, 0x4C, 0x64, 0x88, 0x44, 0x8B, 0xFB, 0xA2,
@@ -25,6 +26,7 @@ static const ut8 PITABLE[256] = {
 	0x0D, 0x38, 0x34, 0x1B, 0xAB, 0x33, 0xFF, 0xB0, 0xBB, 0x48, 0x0C, 0x5F, 0xB9, 0xB1, 0xCD, 0x2E,
 	0xC5, 0xF3, 0xDB, 0x47, 0xE5, 0xA5, 0x9C, 0x77, 0x0A, 0xA6, 0x20, 0x68, 0xFE, 0x7F, 0xC1, 0xAD,
 };
+// clang-format on
 
 struct rc2_state {
 	ut16 ekey[RC2_KEY_SIZE];
@@ -41,25 +43,25 @@ static bool rc2_expandKey(struct rc2_state *state, const ut8 *key, int key_len) 
 	memcpy (state->ekey, key, key_len);
 
 	// first loop
- 	for (i = key_len; i < 128; i++) {
- 		((ut8 *)state->ekey)[i] = PITABLE[(((ut8 *)state->ekey)[i - key_len] + ((ut8 *)state->ekey)[i - 1]) & 255];
- 	}
+	for (i = key_len; i < 128; i++) {
+		((ut8 *)state->ekey)[i] = PITABLE[(((ut8 *)state->ekey)[i - key_len] + ((ut8 *)state->ekey)[i - 1]) & 255];
+	}
 
 	int ekey_len = (BITS + 7) >> 3;
 	i = 128 - ekey_len;
- 	((ut8 *)state->ekey)[i] = PITABLE[((ut8 *)state->ekey)[i] & (255 >> (7 & -BITS))];
+	((ut8 *)state->ekey)[i] = PITABLE[((ut8 *)state->ekey)[i] &(255 >> (7 & -BITS))];
 
- 	// second loop
- 	while (i--) {
- 		((ut8 *)state->ekey)[i] = PITABLE[((ut8 *)state->ekey)[i + 1] ^ ((ut8 *)state->ekey)[i + ekey_len]];
- 	}
+	// second loop
+	while (i--) {
+		((ut8 *)state->ekey)[i] = PITABLE[((ut8 *)state->ekey)[i + 1] ^ ((ut8 *)state->ekey)[i + ekey_len]];
+	}
 
- 	// generate the ut16 key
- 	for (i = RC2_KEY_SIZE - 1; i >= 0; i--) {
- 		state->ekey[i] = ((ut8 *)state->ekey)[i * 2] + (((ut8 *)state->ekey)[i * 2 + 1] << 8);
- 	}
+	// generate the ut16 key
+	for (i = RC2_KEY_SIZE - 1; i >= 0; i--) {
+		state->ekey[i] = ((ut8 *)state->ekey)[i * 2] + (((ut8 *)state->ekey)[i * 2 + 1] << 8);
+	}
 
- 	return true;
+	return true;
 }
 
 static void rc2_crypt8(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf) {
@@ -92,13 +94,13 @@ static void rc2_crypt8(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf) {
 		}
 	}
 
-	outbuf[0] = (ut8) x10;
+	outbuf[0] = (ut8)x10;
 	outbuf[1] = (ut8) (x10 >> 8);
-	outbuf[2] = (ut8) x32;
+	outbuf[2] = (ut8)x32;
 	outbuf[3] = (ut8) (x32 >> 8);
-	outbuf[4] = (ut8) x54;
+	outbuf[4] = (ut8)x54;
 	outbuf[5] = (ut8) (x54 >> 8);
-	outbuf[6] = (ut8) x76;
+	outbuf[6] = (ut8)x76;
 	outbuf[7] = (ut8) (x76 >> 8);
 }
 
@@ -136,27 +138,27 @@ static void rc2_dcrypt8(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf) 
 		}
 	}
 
-	outbuf[0] = (ut8) x10;
+	outbuf[0] = (ut8)x10;
 	outbuf[1] = (ut8) (x10 >> 8);
-	outbuf[2] = (ut8) x32;
+	outbuf[2] = (ut8)x32;
 	outbuf[3] = (ut8) (x32 >> 8);
-	outbuf[4] = (ut8) x54;
+	outbuf[4] = (ut8)x54;
 	outbuf[5] = (ut8) (x54 >> 8);
-	outbuf[6] = (ut8) x76;
+	outbuf[6] = (ut8)x76;
 	outbuf[7] = (ut8) (x76 >> 8);
 }
 
 static void rc2_dcrypt(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf, int buflen) {
-	char data_block[BLOCK_SIZE + 1] = {0};
-	char dcrypted_block[BLOCK_SIZE + 1] = {0};
-	char *ptr = (char *) outbuf;
+	char data_block[BLOCK_SIZE + 1] = { 0 };
+	char dcrypted_block[BLOCK_SIZE + 1] = { 0 };
+	char *ptr = (char *)outbuf;
 	int i, idx = 0;
 
 	for (i = 0; i < buflen; i++) {
 		data_block[idx] = inbuf[i];
 		idx += 1;
 		if (idx % BLOCK_SIZE == 0) {
-			rc2_dcrypt8 (state, (const ut8 *) data_block, (ut8 *) dcrypted_block);
+			rc2_dcrypt8 (state, (const ut8 *)data_block, (ut8 *)dcrypted_block);
 			memcpy (ptr, dcrypted_block, BLOCK_SIZE);
 			ptr += BLOCK_SIZE;
 			idx = 0;
@@ -165,9 +167,9 @@ static void rc2_dcrypt(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf, i
 }
 
 static void rc2_crypt(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf, int buflen) {
-	char crypted_block[BLOCK_SIZE] = {0};
-	char data_block[BLOCK_SIZE] = {0};
-	char *ptr = (char *) outbuf;
+	char crypted_block[BLOCK_SIZE] = { 0 };
+	char data_block[BLOCK_SIZE] = { 0 };
+	char *ptr = (char *)outbuf;
 	int i, idx = 0;
 
 	// divide it into blocks of BLOCK_SIZE
@@ -175,7 +177,7 @@ static void rc2_crypt(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf, in
 		data_block[idx] = inbuf[i];
 		idx += 1;
 		if (idx % BLOCK_SIZE == 0) {
-			rc2_crypt8 (state, (const ut8 *) data_block, (ut8 *) crypted_block);
+			rc2_crypt8 (state, (const ut8 *)data_block, (ut8 *)crypted_block);
 			strncpy (ptr, crypted_block, BLOCK_SIZE);
 			ptr += BLOCK_SIZE;
 			idx = 0;
@@ -188,7 +190,7 @@ static void rc2_crypt(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf, in
 			data_block[mod] = 0;
 			idx++;
 		}
-		rc2_crypt8 (state, (const ut8 *) data_block, (ut8 *) crypted_block);
+		rc2_crypt8 (state, (const ut8 *)data_block, (ut8 *)crypted_block);
 		r_str_ncpy (ptr, crypted_block, BLOCK_SIZE);
 	}
 }
@@ -271,10 +273,10 @@ int main() {
 	struct rc2_state st;
 	st.key_size = 3;
 	/* encrypt */
-	rc2_expandKey ((const ut8*)"key", 3, BITS, &st);
-	rc2_crypt(&st, (const ut8 *)"12345678abc", out, 11);
+	rc2_expandKey ((const ut8 *)"key", 3, BITS, &st);
+	rc2_crypt (&st, (const ut8 *)"12345678abc", out, 11);
 	eprintf ("%s\n", (const char *)out);
-	rc2_dcrypt(&st, (const ut8 *)out, out, sizeof (out));
+	rc2_dcrypt (&st, (const ut8 *)out, out, sizeof (out));
 	eprintf ("%s\n", (const char *)out);
 	return 0;
 }
