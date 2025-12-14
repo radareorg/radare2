@@ -84,6 +84,7 @@ typedef struct r_muta_plugin_t {
 #if 0
 	bool (*init)(RMuta *cry, struct r_muta_plugin_t *cp);
 #endif
+	int (*decode)(RMutaSession *cj, const ut8 *in, int len, ut8 **out, int *consumed);
 	bool (*fini)(RMutaSession *cj);
 } RMutaPlugin;
 
@@ -125,6 +126,10 @@ R_API bool r_muta_session_update(RMutaSession *cry, const ut8 *buf, int len);
 R_API bool r_muta_session_end(RMutaSession *cry, const ut8 *buf, int len);
 R_API int r_muta_session_append(RMutaSession *cry, const ut8 *buf, int len);
 R_API ut8 *r_muta_session_get_output(RMutaSession *cry, int *size);
+
+// Charset decoding helper
+typedef int (*RMutaDecodeCallback)(void *, const ut8 *, int, ut8 **, int *);
+R_API ut8 *r_muta_session_decode_string(RMutaSession *session, const ut8 *input, int len, RMutaDecodeCallback decode_fn, void *decode_ctx);
 
 #endif
 
@@ -175,7 +180,27 @@ extern RMutaPlugin r_muta_plugin_sm4;
 extern RMutaPlugin r_muta_plugin_strhash;
 extern RMutaPlugin r_muta_plugin_xor;
 extern RMutaPlugin r_muta_plugin_add;
+extern RMutaPlugin r_muta_plugin_charset_ascii;
+extern RMutaPlugin r_muta_plugin_charset_ascii_ansi;
+extern RMutaPlugin r_muta_plugin_charset_ascii_oem;
+extern RMutaPlugin r_muta_plugin_charset_arabic_iso;
+extern RMutaPlugin r_muta_plugin_charset_arabic_windows;
+extern RMutaPlugin r_muta_plugin_charset_big5;
+extern RMutaPlugin r_muta_plugin_charset_cyrillic_iso;
+extern RMutaPlugin r_muta_plugin_charset_cyrillic_windows;
 extern RMutaPlugin r_muta_plugin_charset_pokemon;
+extern RMutaPlugin r_muta_plugin_charset_ebcdic37;
+extern RMutaPlugin r_muta_plugin_charset_iso8859_1;
+extern RMutaPlugin r_muta_plugin_charset_greek_iso;
+extern RMutaPlugin r_muta_plugin_charset_greek_windows;
+extern RMutaPlugin r_muta_plugin_charset_hebrew_iso;
+extern RMutaPlugin r_muta_plugin_charset_hebrew_windows;
+extern RMutaPlugin r_muta_plugin_charset_hiragana;
+extern RMutaPlugin r_muta_plugin_charset_iso_646;
+extern RMutaPlugin r_muta_plugin_charset_jis7;
+extern RMutaPlugin r_muta_plugin_charset_katakana;
+extern RMutaPlugin r_muta_plugin_charset_macintosh;
+extern RMutaPlugin r_muta_plugin_charset_pokered;
 
 #ifdef __cplusplus
 }

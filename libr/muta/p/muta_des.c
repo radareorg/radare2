@@ -37,16 +37,16 @@ static int des_encrypt(struct des_state *st, const ut8 *input, ut8 *output) {
 	st->buflo = be32 (input + 0);
 	st->bufhi = be32 (input + 4);
 
-	//first permutation
+	// first permutation
 	r_des_permute_block0 (&st->buflo, &st->bufhi);
 
 	for (st->i = 0; st->i < 16; st->i++) {
 		r_des_round (&st->buflo, &st->bufhi, &st->keylo[st->i], &st->keyhi[st->i]);
 	}
- 	//last permutation
+	// last permutation
 	r_des_permute_block1 (&st->bufhi, &st->buflo);
 
-	//result
+	// result
 	wbe32 (output + 0, st->bufhi);
 	wbe32 (output + 4, st->buflo);
 
@@ -57,16 +57,16 @@ static bool des_decrypt(struct des_state *st, const ut8 *input, ut8 *output) {
 	R_RETURN_VAL_IF_FAIL (st && input && output, false);
 	st->buflo = be32 (input + 0);
 	st->bufhi = be32 (input + 4);
-	//first permutation
+	// first permutation
 	r_des_permute_block0 (&st->buflo, &st->bufhi);
 
 	for (st->i = 0; st->i < 16; st->i++) {
 		r_des_round (&st->buflo, &st->bufhi, &st->keylo[15 - st->i], &st->keyhi[15 - st->i]);
 	}
 
-	//last permutation
+	// last permutation
 	r_des_permute_block1 (&st->bufhi, &st->buflo);
-	//result
+	// result
 	wbe32 (output + 0, st->bufhi);
 	wbe32 (output + 4, st->buflo);
 	return true;

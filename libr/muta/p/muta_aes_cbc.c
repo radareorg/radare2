@@ -7,7 +7,7 @@
 #include "algo/crypto_aes.h"
 
 static bool aes_cbc_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction) {
-	if (!(keylen == 128 / 8 || keylen == 192 / 8 || keylen == 256 / 8)) {
+	if (! (keylen == 128 / 8 || keylen == 192 / 8 || keylen == 256 / 8)) {
 		return false;
 	}
 	cj->key_len = keylen;
@@ -68,8 +68,8 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	memcpy (ibuf, buf, len);
 
 	st.key_size = cj->key_len;
-	st.rounds = 6 + (int)(st.key_size / 4);
-	st.columns = (int)(st.key_size / 4);
+	st.rounds = 6 + (int) (st.key_size / 4);
+	st.columns = (int) (st.key_size / 4);
 	memcpy (st.key, cj->key, st.key_size);
 
 	if (aes_cbc (&st, ibuf, obuf, cj->iv, cj->dir == R_CRYPTO_DIR_ENCRYPT, blocks)) {

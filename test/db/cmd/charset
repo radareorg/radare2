@@ -88,7 +88,10 @@ iso_646
 jis7
 katakana
 macintosh
+pokemon
 pokered
+punycode
+
 
 ground-to-protect<PAGE>itself-fr
 EOF
@@ -128,7 +131,10 @@ iso_646
 jis7
 katakana
 macintosh
+pokemon
 pokered
+punycode
+
 --------Self-replicating----arbi
 --------Self-replicating----arbi
 --------Self-replicating----arbi
@@ -151,7 +157,10 @@ iso_646
 jis7
 katakana
 macintosh
+pokemon
 pokered
+punycode
+
 --------Self-replicating----arbi
 --------Self-replicating----arbi
 EOF
@@ -217,7 +226,7 @@ psz
 EOF
 EXPECT=<<EOF
 ABC
-ABC?
+ABC
 EOF
 RUN
 

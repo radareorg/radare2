@@ -17,28 +17,6 @@ OBJS+=pj.o rbtree.o intervaltree.o qrcode.o vector.o str_constpool.o str_trim.o
 OBJS+=chartable.o protobuf.o graph_drawable.o axml.o sstext.o new_rbtree.o token.o
 OBJS+=rvc.o rvc_git.o rvc_rvc.o bscanf.o rprintf.o base32.o bloom.o mmap.o rxmldom.o
 
-ifeq (${HAVE_GPERF},1)
-OBJS+=d/ascii.o
-OBJS+=d/ascii_oem.o
-OBJS+=d/ascii_ansi.o
-OBJS+=d/arabic_iso.o
-OBJS+=d/arabic_windows.o
-OBJS+=d/iso_646.o
-OBJS+=d/cyrillic_iso.o
-OBJS+=d/cyrillic_windows.o
-OBJS+=d/greek_iso.o
-OBJS+=d/greek_windows.o
-OBJS+=d/hebrew_iso.o
-OBJS+=d/hebrew_windows.o
-OBJS+=d/macintosh.o
-OBJS+=d/big5.o
-OBJS+=d/pokered.o
-OBJS+=d/katakana.o
-OBJS+=d/hiragana.o
-OBJS+=d/ebcdic37.o
-OBJS+=d/iso8859_1.o
-endif
-
 ifeq ($(USE_SYSLZ4),1)
 CFLAGS+=${LZ4_CFLAGS}
 PCLIBS+=@LZ4_LDFLAGS@
@@ -58,7 +36,6 @@ LDFLAGS+=${TH_LIBS}
 LDFLAGS+=${DL_LIBS}
 
 EXTRA_PRE+=spp_config
-EXTRA_PRE+=charsets
 #EXTRA_TARGETS=$(EXTRA_PRE)
 EXTRA_CLEAN=doclean
 
@@ -74,9 +51,6 @@ f fast:
 	$(CC_LIB) $(LIBNAME) $(CFLAGS) sasa.c $(SHARED_OBJ) $(LINK) $(LDFLAGS)
 	rm -f sasa.c
 
-charsets:
-	$(MAKE) -C d
-
 doclean:
 	$(MAKE) -C d clean
 
@@ -85,4 +59,4 @@ sync-regex regex-sync:
 	cvs -qd anoncvs@anoncvs.ca.openbsd.org:/cvs get -P src/lib/libc/regex
 	cp src/lib/libc/regex/* regex
 
-.PHONY: charsets doclean sync-regex regex-sync
+.PHONY: doclean sync-regex regex-sync

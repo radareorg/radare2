@@ -19,7 +19,8 @@ CLANG_FORMAT_CONFIG = """BasedOnStyle: LLVM
 Language: Cpp
 PointerAlignment: Right
 AlwaysBreakAfterDefinitionReturnType: None
-BinPackParameters: true
+BinPackParameters: false
+BinPackArguments: false
 MaxEmptyLinesToKeep: 1
 SpaceInEmptyParentheses: false
 SpacesInContainerLiterals: true

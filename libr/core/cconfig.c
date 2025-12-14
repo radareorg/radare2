@@ -3,6 +3,7 @@
 #include <r_core.h>
 #include <r_types_base.h>
 #include <r_util/r_cfloat.h>
+#include <r_util/r_print.h>
 
 #define NODECB(w, x, y) r_config_set_cb(cfg, w, x, y)
 #define NODEICB(w, x, y) r_config_set_i_cb(cfg, w, x, y)
@@ -1050,15 +1051,18 @@ static bool cb_asmos(void *user, void *data) {
 }
 
 static void update_cfgcharsets_options(RCore *core, RConfigNode *node) {
-	// static void autocomplete_charsets (RCore *core, RLineCompletion *completion, const char *str) {
-	char *name;
-	RListIter *iter;
-	RList *chs = r_charset_list (core->print->charset);
 	r_config_node_purge_options (node);
+	char *lst = r_muta_list (core->muta, R_MUTA_TYPE_CHARSET, 'q');
+	if (!lst) {
+		return;
+	}
+	RList *chs = r_str_split_list (lst, "\n", 0);
+	RListIter *iter; char *name;
 	r_list_foreach (chs, iter, name) {
 		SETOPTIONS (node, name, NULL);
 	}
 	r_list_free (chs);
+	free (lst);
 }
 
 static void update_asmparser_options(RCore *core, RConfigNode *node) {
@@ -1385,41 +1389,30 @@ static bool cb_cfg_float(void *user, void *data) {
 	return true;
 }
 
-static void list_available_plugins(RCore *core, const char *path) {
-	RListIter *iter;
-	const char *fn;
-	RList *files = r_sys_dir (path);
-	r_list_sort (files, (RListComparator)strcmp);
-	r_list_foreach (files, iter, fn) {
-		if (*fn && *fn != '.' && r_str_endswith (fn, ".sdb")) {
-			char *f = strdup (fn);
-			f[strlen (f) - 4] = 0;
-			r_cons_println (core->cons, f);
-			free (f);
-		}
-	}
-	r_list_free (files);
-}
-
 static bool cb_cfgcharset(void *user, void *data) {
-	RCore *core = (RCore *)user;
-	RConfigNode *node = (RConfigNode *)data;
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
 	const char *cf = r_str_trim_head_ro (node->value);
 	if (!*cf) {
-		r_charset_close (core->print->charset);
+		r_muta_session_free (core->charset_session);
+		core->charset_session = NULL;
 		return true;
 	}
-	bool rc = false;
 	if (*cf == '?') {
-		const char *cs = R2_PREFIX R_SYS_DIR R2_SDB R_SYS_DIR "charsets" R_SYS_DIR;
-		list_available_plugins (core, cs);
-	} else {
-		rc = r_charset_use (core->print->charset, cf);
-		if (rc) {
-			r_sys_setenv ("RABIN2_CHARSET", cf);
-		} else {
-			R_LOG_WARN ("Cannot load charset file '%s'", cf);
+		char *lst = r_muta_list (core->muta, R_MUTA_TYPE_CHARSET, 'q');
+		if (lst) {
+			r_cons_println (core->cons, lst);
+			free (lst);
 		}
+		return false;
+	}
+	r_muta_session_free (core->charset_session);
+	core->charset_session = r_muta_use (core->muta, cf);
+	bool rc = core->charset_session != NULL;
+	if (rc) {
+		r_sys_setenv ("RABIN2_CHARSET", cf);
+	} else {
+		R_LOG_WARN ("Cannot load muta charset '%s'", cf);
 	}
 	return rc;
 }

@@ -479,6 +479,7 @@ include_files = [
   'include/r_core_task.h',
   'include/r_core_priv.h',
   'include/r_muta.h',
+  'include/r_muta/charset.h',
   'include/r_debug.h',
   'include/r_drx.h',
   'include/r_egg.h',

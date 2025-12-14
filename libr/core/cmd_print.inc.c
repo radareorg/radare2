@@ -4023,27 +4023,21 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 		return true;
 	}
 	if (!i0 || i0 == 'l' || i0 == 'L') {
-		RMuta *cry = r_muta_new ();
-		char *s = r_muta_list (cry, R_MUTA_TYPE_HASH, 'q');
+		char *s = r_muta_list (core->muta, R_MUTA_TYPE_HASH, 'q');
 		r_cons_print (core->cons, s);
 		free (s);
-		r_muta_free (cry);
 		return true;
 	}
 	if (i0 == 'j') { // "phj"
-		RMuta *cry = r_muta_new ();
-		char *s = r_muta_list (cry, R_MUTA_TYPE_ALL, 'j');
+		char *s = r_muta_list (core->muta, R_MUTA_TYPE_ALL, 'j');
 		r_cons_print (core->cons, s);
 		free (s);
-		r_muta_free (cry);
 		return true;
 	}
 	if (i0 == 'J') { // "phJ"
-		RMuta *cry = r_muta_new ();
-		char *s = r_muta_list (cry, R_MUTA_TYPE_HASH, 'J');
+		char *s = r_muta_list (core->muta, R_MUTA_TYPE_HASH, 'J');
 		r_cons_print (core->cons, s);
 		free (s);
-		r_muta_free (cry);
 		return true;
 	}
 	if (i0 == ':') {
@@ -6015,16 +6009,11 @@ static ut8 * R_NULLABLE decode_text(RCore *core, ut64 offset, size_t len, bool z
 	}
 #endif
 	out[len] = 0;
-	const char *current_charset = r_config_get (core->config, "cfg.charset");
-	if (R_STR_ISNOTEMPTY (current_charset)) {
-		size_t out_len = (len + 1) * 10;
-		ut8 *data = out;
-		out = calloc (len, 10);
-		if (out) {
-			r_io_read_at (core->io, core->addr, data, len);
-			r_charset_encode_str (core->print->charset, out, out_len, data, len, false);
-			data[len] = 0;
-			free (data);
+	if (core->charset_session && core->print->charset_decode) {
+		ut8 *decoded = r_muta_session_decode_string (core->charset_session, out, len, core->print->charset_decode, core->print->charset_ctx);
+		if (decoded) {
+			free (out);
+			out = decoded;
 		}
 	}
 	return out;
@@ -8159,24 +8148,20 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 0:
 			{
-				const char *current_charset = r_config_get (core->config, "cfg.charset");
-				if (R_STR_ISEMPTY (current_charset)) {
+				if (!core->charset_session || !core->print->charset_decode) {
 					r_print_string (core->print, core->addr, core->block, len, R_PRINT_STRING_ZEROEND | R_PRINT_STRING_ONLY_PRINTABLE);
-				} else {
-					if (len > 0) {
-						size_t out_len = len * 10;
-						ut8 *out = calloc (len, 10);
+				} else if (len > 0) {
+					ut8 *data = malloc (len);
+					if (data) {
+						r_io_read_at (core->io, core->addr, data, len);
+						char *out = (char *)r_muta_session_decode_string (core->charset_session, data, len, core->print->charset_decode, core->print->charset_ctx);
 						if (out) {
-							ut8 *data = malloc (len);
-							if (data) {
-								r_io_read_at (core->io, core->addr, data, len);
-								(void)r_charset_encode_str (core->print->charset, out, out_len, data, len, true);
-								r_print_string (core->print, core->addr,
-									out, len, R_PRINT_STRING_ZEROEND);
-								free (data);
-							}
+							int outlen = (int)strlen (out) + 1;
+							int plen = R_MIN (len, outlen);
+							r_print_string (core->print, core->addr, (const ut8 *)out, plen, R_PRINT_STRING_ZEROEND);
 							free (out);
 						}
+						free (data);
 					}
 				}
 				break;
@@ -8277,8 +8262,17 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		}
 		break;
-	case 'r': // "pr"
-		switch (input[1]) {
+case 'r': // "pr"
+	/* If charset decoding is enabled, decode the current block and print only decoded output. */
+	if (l > 0 && core->charset_session && core->print->charset_decode) {
+		char *out = (char *)r_muta_session_decode_string (core->charset_session, core->block, len, core->print->charset_decode, core->print->charset_ctx);
+		if (out) {
+			r_cons_write (core->cons, out, (int)strlen (out));
+			free (out);
+		}
+		return true;
+	}
+	switch (input[1]) {
 		case 'i':
 			cmd_pri (core, input);
 			break;
@@ -8411,6 +8405,14 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		default:
 			if (l != 0) {
+				if (core->charset_session && core->print->charset_decode) {
+					char *out = (char *)r_muta_session_decode_string (core->charset_session, core->block, len, core->print->charset_decode, core->print->charset_ctx);
+					if (out) {
+						r_cons_write (core->cons, out, (int)strlen (out));
+						free (out);
+					}
+					return true;
+				}
 				printraw (core, len, 0);
 			}
 			break;

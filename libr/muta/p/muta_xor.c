@@ -32,7 +32,7 @@ static bool xor_init(struct xor_state *const state, const ut8 *key, int keylen) 
 static void xor_crypt(struct xor_state *const state, const ut8 *inbuf, ut8 *outbuf, int buflen) {
 	int i;
 	for (i = 0; i < buflen; i++) {
-		outbuf[i] = inbuf[i] ^ state->key[(i%state->key_size)];
+		outbuf[i] = inbuf[i] ^ state->key[(i % state->key_size)];
 	}
 }
 static bool xor_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction) {

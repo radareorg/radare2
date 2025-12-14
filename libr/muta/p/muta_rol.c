@@ -35,12 +35,12 @@ static bool rol_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, 
 	free (cj->data);
 	cj->data = R_NEW0 (struct rol_state);
 	cj->flag = direction;
-	struct rol_state *st = (struct rol_state*)cj->data;
+	struct rol_state *st = (struct rol_state *)cj->data;
 	return rol_init (st, key, keylen);
 }
 
 static int rol_get_key_size(RMutaSession *cj) {
-	struct rol_state *st = (struct rol_state*)cj->data;
+	struct rol_state *st = (struct rol_state *)cj->data;
 	return st->key_size;
 }
 
@@ -54,7 +54,7 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 		R_LOG_ERROR ("Use ROR instead of ROL");
 		return false;
 	}
-	struct rol_state *st = (struct rol_state*)cj->data;
+	struct rol_state *st = (struct rol_state *)cj->data;
 	ut8 *obuf = calloc (1, len);
 	if (!obuf) {
 		return false;

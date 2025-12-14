@@ -133,11 +133,11 @@ int main() {
 
 	/* encrypt */
 	rc4_init (&st, (const ut8*)"key", 3);
-	rc4_crypt(&st, (const ut8*)"hello world", out, sizeof (out));
+	rc4_crypt (&st, (const ut8*)"hello world", out, sizeof (out));
 
 	/* decrypt */
 	rc4_init (&st, (const ut8*)"key", 3);
-	rc4_crypt(&st, out, out, sizeof (out));
+	rc4_crypt (&st, out, out, sizeof (out));
 
 	eprintf ("%s\n", (const char *)out); // must print "hello world"
 }

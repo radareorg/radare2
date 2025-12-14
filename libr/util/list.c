@@ -117,7 +117,7 @@ R_API bool r_list_delete_data(RList *list, void *ptr) {
 R_API void r_list_delete(RList *list, RListIter *iter) {
 	R_RETURN_IF_FAIL (list && iter);
 	r_list_split_iter (list, iter);
-	if (list->free && iter->data) {
+	if (list->free) {
 		list->free (iter->data);
 	}
 	iter->data = NULL;
