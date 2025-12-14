@@ -29,8 +29,8 @@ static uint32_t bech32_final_constant(bech32_encoding enc) {
 	return 0;
 }
 
+// clang-format off
 static const char charset[] = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
-
 static const int8_t charset_rev[128] = {
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -41,6 +41,7 @@ static const int8_t charset_rev[128] = {
 	-1, 29, -1, 24, 13, 25, 9, 8, 23, -1, 18, 22, 31, 27, 19, -1,
 	1, 0, 3, 16, 11, 28, 12, 14, 6, 4, 2, -1, -1, -1, -1, -1
 };
+// clang-format on
 
 static int bech32_encode(char *output, const char *hrp, const uint8_t *data, size_t data_len, bech32_encoding enc) {
 	uint32_t chk = 1;

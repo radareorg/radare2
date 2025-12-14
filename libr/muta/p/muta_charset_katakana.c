@@ -6,12 +6,14 @@
 #include <r_util.h>
 
 /* Map ASCII digraphs to single Katakana glyphs: "ra"->ラ, "da"->ダ, "re"->レ */
+// clang-format off
 static const RMutaCharsetMap katakana_table[] = {
 	{ "ラ", { 'r', 'a' }, 2 }, { "ラ", { 'r', 'A' }, 2 }, { "ラ", { 'R', 'a' }, 2 }, { "ラ", { 'R', 'A' }, 2 },
 	{ "ダ", { 'd', 'a' }, 2 }, { "ダ", { 'd', 'A' }, 2 }, { "ダ", { 'D', 'a' }, 2 }, { "ダ", { 'D', 'A' }, 2 },
 	{ "レ", { 'r', 'e' }, 2 }, { "レ", { 'r', 'E' }, 2 }, { "レ", { 'R', 'e' }, 2 }, { "レ", { 'R', 'E' }, 2 },
 	{ NULL, { 0 }, 0 }
 };
+// clang-format on
 
 static bool check(const char *algo) {
 	return !strcmp (algo, "katakana");
