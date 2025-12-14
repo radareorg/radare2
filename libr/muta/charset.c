@@ -6,8 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 
-R_API int r_muta_charset_parse_default(const char *str, const char *end,
-	char *token, int token_max) {
+R_API int r_muta_charset_parse_default(const char *str, const char *end, char *token, int token_max) {
 	R_RETURN_VAL_IF_FAIL (str && end && token, 0);
 	R_RETURN_VAL_IF_FAIL (token_max > 1, 0);
 	R_RETURN_VAL_IF_FAIL (str <= end, 0);
@@ -16,7 +15,7 @@ R_API int r_muta_charset_parse_default(const char *str, const char *end,
 		return 0;
 	}
 
-	const int left = (int)(end - str);
+	const int left = (int) (end - str);
 	if (left < 1) {
 		return 0;
 	}
@@ -25,7 +24,7 @@ R_API int r_muta_charset_parse_default(const char *str, const char *end,
 		const void *tendp = memchr (str + 1, '>', left - 1);
 		if (tendp) {
 			const char *tend = (const char *)tendp;
-			int tlen = (int)(tend - str) + 1;
+			int tlen = (int) (tend - str) + 1;
 			if (tlen > 0 && tlen < token_max) {
 				memcpy (token, str, tlen);
 				token[tlen] = 0;
@@ -38,7 +37,7 @@ R_API int r_muta_charset_parse_default(const char *str, const char *end,
 		const void *tendp = memchr (str + 1, ']', left - 1);
 		if (tendp) {
 			const char *tend = (const char *)tendp;
-			int tlen = (int)(tend - str) + 1;
+			int tlen = (int) (tend - str) + 1;
 			if (tlen > 0 && tlen < token_max) {
 				memcpy (token, str, tlen);
 				token[tlen] = 0;
@@ -98,7 +97,7 @@ R_API int r_muta_charset_parse_default(const char *str, const char *end,
 		ulen = (size_t)left;
 	}
 	if ((int)ulen >= token_max) {
-		ulen = (size_t)(token_max - 1);
+		ulen = (size_t) (token_max - 1);
 	}
 	memcpy (token, str, ulen);
 	token[ulen] = 0;
@@ -111,7 +110,7 @@ static bool r_muta_charset_outgrow(ut8 **out, int *outcap, int need) {
 	}
 	int cap = *outcap;
 	while (need > cap) {
-		cap = cap ? cap * 2 : 64;
+		cap = cap? cap * 2: 64;
 	}
 	ut8 *tmpbuf = realloc (*out, cap);
 	if (!tmpbuf) {
@@ -125,8 +124,7 @@ static bool r_muta_charset_outgrow(ut8 **out, int *outcap, int need) {
 	return true;
 }
 
-R_API ut8 *r_muta_charset_decode(const ut8 *in, int in_len, int *out_len,
-	const RMutaCharsetMap *table, const char *unknown_fmt) {
+R_API ut8 *r_muta_charset_decode(const ut8 *in, int in_len, int *out_len, const RMutaCharsetMap *table, const char *unknown_fmt) {
 	R_RETURN_VAL_IF_FAIL (out_len, NULL);
 	*out_len = 0;
 	R_RETURN_VAL_IF_FAIL (in && in_len >= 0 && table, NULL);
@@ -139,7 +137,7 @@ R_API ut8 *r_muta_charset_decode(const ut8 *in, int in_len, int *out_len,
 
 	while (ptr < end) {
 		int consumed = 0;
-		const char *decoded = r_muta_charset_lookup_decode (table, ptr, (int)(end - ptr), &consumed);
+		const char *decoded = r_muta_charset_lookup_decode (table, ptr, (int) (end - ptr), &consumed);
 		const char *text = NULL;
 		int len = 0;
 
@@ -177,8 +175,7 @@ R_API ut8 *r_muta_charset_decode(const ut8 *in, int in_len, int *out_len,
 	return out;
 }
 
-R_API ut8 *r_muta_charset_encode_ex(const ut8 *in, int in_len, int *out_len,
-	const RMutaCharsetMap *table, RMutaCharsetParserFn parser, ut8 unknown_byte) {
+R_API ut8 *r_muta_charset_encode_ex(const ut8 *in, int in_len, int *out_len, const RMutaCharsetMap *table, RMutaCharsetParserFn parser, ut8 unknown_byte) {
 	R_RETURN_VAL_IF_FAIL (out_len, NULL);
 	*out_len = 0;
 	R_RETURN_VAL_IF_FAIL (in && in_len >= 0 && table && parser, NULL);
@@ -224,8 +221,7 @@ R_API ut8 *r_muta_charset_encode_ex(const ut8 *in, int in_len, int *out_len,
 	return out;
 }
 
-R_API ut8 *r_muta_charset_encode(const ut8 *in, int in_len, int *out_len,
-	const RMutaCharsetMap *table, RMutaCharsetParserFn parser) {
+R_API ut8 *r_muta_charset_encode(const ut8 *in, int in_len, int *out_len, const RMutaCharsetMap *table, RMutaCharsetParserFn parser) {
 	return r_muta_charset_encode_ex (in, in_len, out_len, table, parser, '?');
 }
 
@@ -237,4 +233,16 @@ R_API bool r_muta_charset_stub_update(RMutaSession *cj, const ut8 *b, int l) {
 
 R_API bool r_muta_charset_stub_end(RMutaSession *cj, const ut8 *b, int l) {
 	return r_muta_charset_stub_update (cj, b, l);
+}
+
+R_API bool r_muta_charset_tr_update(RMutaSession *cj, const ut8 *buf, int len, const ut8 tr[256]) {
+	int i;
+	if (!cj || !buf || len < 0 || !tr) {
+		return false;
+	}
+	for (i = 0; i < len; i++) {
+		ut8 out = tr[buf[i]];
+		r_muta_session_append (cj, &out, 1);
+	}
+	return true;
 }
