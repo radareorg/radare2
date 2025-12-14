@@ -21,7 +21,6 @@ All credit goes to Andreas Naive for breaking the encryption algorithm.
 Code by Nicola Salmoria.
 Thanks to Charles MacDonald and Razoola for extracting the data from the hardware.
 
-
 The encryption only affects opcodes, not data.
 
 It consists of two 4-round Feistel networks(FN) and involves both
@@ -41,7 +40,6 @@ Then the cipher can be described as:
 
 D = FN2( E, K XOR EX( FN1(A, K ) ) )
 
-
 Each round of the Feistel networks consists of four substitution boxes. The boxes
 have 6 inputs and 2 outputs. Usually the input is the XOR of a data bit and a key
 bit, however in some cases only the key is used.
@@ -50,13 +48,10 @@ bit, however in some cases only the key is used.
 
 The s-boxes were chosen in order to use an empty key(all FF) for the dead board.
 
-
 Also, the hardware has different watchdog opcodes and address range(see below)
 which are stored in the battery backed RAM. There doesn't appear to be any relation
 between those and the 64-bit encryption key, so they probably use an additional
 64 bits of battery-backed RAM.
-
-
 
 First FN:
 
@@ -79,7 +74,6 @@ First FN:
 		|                              |
 		L4                             R4
 	(10 4 6 7 2 13 15 14) (0 1 3 5 8 9 11 12)
-
 
 Second FN:
 
@@ -112,7 +106,6 @@ Address range.
 
 The encryption does _not_ cover the entire address space. The range covered
 differs per game.
-
 
 Encryption Watchdog.
 
@@ -736,10 +729,6 @@ static int get_key_size(RMutaSession *cj) {
 	return 8;
 }
 
-static bool cps2_check(const char *algo) {
-	return !strcmp (algo, "cps2");
-}
-
 static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	ut8 *output = calloc (1, len);
 	if (!output) {
@@ -754,6 +743,7 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 
 RMutaPlugin r_muta_plugin_cps2 = {
 	.type = R_MUTA_TYPE_CRYPTO,
+	.implements = "cps2",
 	.meta = {
 		.name = "cps2",
 		.desc = "Capcom Play System 2",
@@ -762,7 +752,6 @@ RMutaPlugin r_muta_plugin_cps2 = {
 	},
 	.set_key = set_key,
 	.get_key_size = get_key_size,
-	.check = cps2_check,
 	.update = update
 };
 

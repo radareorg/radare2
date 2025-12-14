@@ -211,10 +211,6 @@ static int rc2_get_key_size(RMutaSession *cj) {
 	return state? state->key_size: 0;
 }
 
-static bool rc2_check(const char *algo) {
-	return !strcmp (algo, "rc2");
-}
-
 static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	ut8 *obuf = calloc (1, len);
 	if (!obuf) {
@@ -245,6 +241,7 @@ static bool fini(RMutaSession *cj) {
 
 RMutaPlugin r_muta_plugin_rc2 = {
 	.type = R_MUTA_TYPE_CRYPTO,
+	.implements = "rc2",
 	.meta = {
 		.name = "rc2",
 		.desc = "Ron Rivest's Code symmetric key encryption also known as ARC2",
@@ -253,7 +250,6 @@ RMutaPlugin r_muta_plugin_rc2 = {
 	},
 	.set_key = rc2_set_key,
 	.get_key_size = rc2_get_key_size,
-	.check = rc2_check,
 	.update = update,
 	.end = update,
 	.fini = fini

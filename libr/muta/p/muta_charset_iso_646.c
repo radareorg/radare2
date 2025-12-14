@@ -3,10 +3,6 @@
 #include <r_muta.h>
 #include <r_muta/charset.h>
 
-static bool check(const char *algo) {
-	return !strcmp (algo, "iso_646");
-}
-
 static inline bool iso646_is_visible(ut8 b) {
 	if (b == '\n' || b == '\t') {
 		return true;
@@ -51,8 +47,8 @@ static bool end(RMutaSession *cj, const ut8 *b, int l) {
 RMutaPlugin r_muta_plugin_charset_iso_646 = {
 	.meta = { .name = "iso_646", .license = "MIT", .desc = "ISO 646 (IRV)" },
 	.type = R_MUTA_TYPE_CHARSET,
-	.check = check,
-	.update = update,
+	.implements = "iso_646",
+		.update = update,
 	.end = end
 };
 #ifndef R2_PLUGIN_INCORE

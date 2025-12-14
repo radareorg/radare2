@@ -29,10 +29,6 @@ static const RMutaCharsetMap iso8859_1_table[] = {
 };
 // clang-format on
 
-static bool check(const char *algo) {
-	return !strcmp (algo, "iso8859_1");
-}
-
 static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	int olen = 0;
 	ut8 *obuf = NULL;
@@ -64,8 +60,8 @@ static bool end(RMutaSession *cj, const ut8 *b, int l) {
 RMutaPlugin r_muta_plugin_charset_iso8859_1 = {
 	.meta = { .name = "iso8859_1", .license = "MIT", .desc = "ISO-8859-1 charset" },
 	.type = R_MUTA_TYPE_CHARSET,
-	.check = check,
-	.update = update,
+	.implements = "iso8859_1",
+		.update = update,
 	.end = end
 };
 #ifndef R2_PLUGIN_INCORE

@@ -23,10 +23,6 @@ static const RMutaCharsetMap cp1253_table[] = {
 };
 // clang-format on
 
-static bool check(const char *algo) {
-	return !strcmp (algo, "greek_windows");
-}
-
 static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	int olen = 0;
 	ut8 *obuf = NULL;
@@ -58,8 +54,8 @@ static bool end(RMutaSession *cj, const ut8 *b, int l) {
 RMutaPlugin r_muta_plugin_charset_greek_windows = {
 	.meta = { .name = "greek_windows", .license = "MIT", .desc = "Windows-1253 (partial)" },
 	.type = R_MUTA_TYPE_CHARSET,
-	.check = check,
-	.update = update,
+	.implements = "greek_windows",
+		.update = update,
 	.end = end
 };
 #ifndef R2_PLUGIN_INCORE

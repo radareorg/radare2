@@ -77,10 +77,6 @@ static const RMutaCharsetMap pokemon_table[] = {
 	{ NULL, { 0 }, 0 }
 };
 
-static bool check(const char *algo) {
-	return !strcmp (algo, "pokemon");
-}
-
 static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	int olen = 0;
 	ut8 *obuf = NULL;
@@ -116,8 +112,8 @@ RMutaPlugin r_muta_plugin_charset_pokemon = {
 		.desc = "Transcode from/to Pokémon charset used in Gen 1 games",
 	},
 	.type = R_MUTA_TYPE_CHARSET,
-	.check = check,
-	.update = update,
+	.implements = "pokemon",
+		.update = update,
 	.end = end
 };
 

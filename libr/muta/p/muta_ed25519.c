@@ -38,10 +38,6 @@ static int ed25519_get_key_size(RMutaSession *cj) {
 	return cj->key_len;
 }
 
-static bool ed25519_use(const char *algo) {
-	return algo && !strcmp (algo, "ed25519");
-}
-
 static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	ut8 *public_key = (ut8 *)cj->data;
 	ut8 r[64];
@@ -83,6 +79,7 @@ static bool end(RMutaSession *cj, const ut8 *buf, int len) {
 
 RMutaPlugin r_muta_plugin_ed25519 = {
 	.type = R_MUTA_TYPE_SIGN,
+	.implements = "ed25519",
 	.meta = {
 		.name = "ed25519",
 		.desc = "Elliptic curve pubkey cryptographic algorithm used for signing and verification",
@@ -91,7 +88,6 @@ RMutaPlugin r_muta_plugin_ed25519 = {
 	},
 	.set_key = ed25519_set_key,
 	.get_key_size = ed25519_get_key_size,
-	.check = ed25519_use,
 	.update = update,
 	.end = end
 };

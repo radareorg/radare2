@@ -23,10 +23,6 @@ static const RMutaCharsetMap ebcdic37_table[] = {
 };
 // clang-format on
 
-static bool check(const char *algo) {
-	return !strcmp (algo, "ebcdic37");
-}
-
 static int decode(RMutaSession *cj, const ut8 *in, int len, ut8 **out, int *consumed) {
 	const char *s;
 	if (!cj || !in || !out || !consumed || len < 1) {
@@ -72,8 +68,8 @@ static bool end(RMutaSession *cj, const ut8 *b, int l) {
 RMutaPlugin r_muta_plugin_charset_ebcdic37 = {
 	.meta = { .name = "ebcdic37", .license = "MIT", .desc = "EBCDIC CP37 charset" },
 	.type = R_MUTA_TYPE_CHARSET,
-	.check = check,
-	.decode = decode,
+	.implements = "ebcdic37",
+		.decode = decode,
 	.update = update,
 	.end = end
 };

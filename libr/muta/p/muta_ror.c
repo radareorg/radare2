@@ -45,10 +45,6 @@ static int ror_get_key_size(RMutaSession *cj) {
 	return st->key_size;
 }
 
-static bool ror_check(const char *algo) {
-	return !strcmp (algo, NAME);
-}
-
 static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	if (cj->flag != R_CRYPTO_DIR_ENCRYPT) {
 		return false;
@@ -71,6 +67,7 @@ static bool fini(RMutaSession *cj) {
 
 RMutaPlugin r_muta_plugin_ror = {
 	.type = R_MUTA_TYPE_CRYPTO,
+	.implements = "ror",
 	.meta = {
 		.name = NAME,
 		.desc = "Rotate Right N bits",
@@ -79,7 +76,6 @@ RMutaPlugin r_muta_plugin_ror = {
 	},
 	.set_key = ror_set_key,
 	.get_key_size = ror_get_key_size,
-	.check = ror_check,
 	.update = update,
 	.end = update,
 	.fini = fini,

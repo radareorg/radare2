@@ -33,10 +33,6 @@ static bool aes_cbc_set_iv(RMutaSession *cj, const ut8 *iv_src, int ivlen) {
 	return true;
 }
 
-static bool aes_cbc_check(const char *algo) {
-	return algo && !strcmp (algo, "aes-cbc");
-}
-
 static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	if (!cj->iv) {
 		R_LOG_ERROR ("AES CBC IV is not defined");
@@ -89,10 +85,10 @@ RMutaPlugin r_muta_plugin_aes_cbc = {
 		.author = "pancake",
 		.license = "LGPL-3.0-only",
 	},
+	.implements = "aes-cbc",
 	.set_key = aes_cbc_set_key,
 	.get_key_size = aes_cbc_get_key_size,
 	.set_iv = aes_cbc_set_iv,
-	.check = aes_cbc_check,
 	.update = update,
 	.end = update
 };

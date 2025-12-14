@@ -72,7 +72,7 @@ typedef struct r_muta_plugin_t {
 	RPluginMeta meta;
 	const char *implements;
 	RMutaType type;
-	bool (*check)(const char *algo); // must be deprecated
+	bool (*check)(const char *algo); // DEPRECATED: use .implements instead
 
 	int (*get_key_size)(RMutaSession *cry);
 	RMutaSessionSetIVCallback set_iv;

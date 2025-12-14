@@ -13,10 +13,6 @@ static int base64_get_key_size(RMutaSession *cj) {
 	return 0;
 }
 
-static bool base64_check(const char *algo) {
-	return !strcmp (algo, "base64");
-}
-
 static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	int olen = 0;
 	ut8 *obuf = NULL;
@@ -59,9 +55,9 @@ RMutaPlugin r_muta_plugin_base64 = {
 		.author = "rakholiyajenish.07",
 		.license = "LGPL-3.0-only" },
 	.type = R_MUTA_TYPE_CRYPTO,
+	.implements = "base64",
 	.set_key = base64_set_key,
 	.get_key_size = base64_get_key_size,
-	.check = base64_check,
 	.update = update,
 	.end = end
 };

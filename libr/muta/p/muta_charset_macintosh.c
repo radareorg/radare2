@@ -41,10 +41,6 @@ static const RMutaCharsetMap macroman_table[] = {
 	{ NULL, { 0 }, 0 }
 };
 
-static bool check(const char *algo) {
-	return !strcmp (algo, "macintosh");
-}
-
 static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	int olen = 0;
 	ut8 *obuf = NULL;
@@ -76,8 +72,8 @@ static bool end(RMutaSession *cj, const ut8 *b, int l) {
 RMutaPlugin r_muta_plugin_charset_macintosh = {
 	.meta = { .name = "macintosh", .license = "MIT", .desc = "Macintosh Roman (partial)" },
 	.type = R_MUTA_TYPE_CHARSET,
-	.check = check,
-	.update = update,
+	.implements = "macintosh",
+		.update = update,
 	.end = end
 };
 #ifndef R2_PLUGIN_INCORE
