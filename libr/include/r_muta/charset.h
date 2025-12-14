@@ -70,6 +70,9 @@ R_API ut8 *r_muta_charset_decode(const ut8 *in, int in_len, int *out_len,
 R_API ut8 *r_muta_charset_encode(const ut8 *in, int in_len, int *out_len,
 	const RMutaCharsetMap *table, RMutaCharsetParserFn parser);
 
+R_API ut8 *r_muta_charset_encode_ex(const ut8 *in, int in_len, int *out_len,
+	const RMutaCharsetMap *table, RMutaCharsetParserFn parser, ut8 unknown_byte);
+
 R_API bool r_muta_charset_stub_update(RMutaSession *cj, const ut8 *b, int l);
 R_API bool r_muta_charset_stub_end(RMutaSession *cj, const ut8 *b, int l);
 

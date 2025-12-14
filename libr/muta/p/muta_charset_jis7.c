@@ -1,48 +1,39 @@
 /* radare - MIT - Charset JIS7 (radare2 legacy) */
 #include <r_muta.h>
+#include <r_muta/charset.h>
 #include <r_util.h>
+
+static const RMutaCharsetMap jis7_table[] = {
+	{ "ァ", { 0x21, 0x21 }, 2 },
+	{ "ア", { 0x21, 0x22 }, 2 },
+	{ NULL, { 0 }, 0 }
+};
 
 static bool check(const char *algo) {
 	return !strcmp (algo, "jis7");
 }
 
-static const char *decode2(ut8 a, ut8 b) {
-	if (a != 0x21) {
-		return NULL;
-	}
-	switch (b) {
-	case 0x21:
-		return "ァ";
-	case 0x22:
-		return "ア";
-	}
-	return NULL;
-}
-
 static int decode(RMutaSession *cj, const ut8 *in, int len, ut8 **out, int *consumed) {
+	const char *s = NULL;
+	int clen = 0;
 	R_RETURN_VAL_IF_FAIL (cj && in && out && consumed, 0);
 	if (len < 1) {
 		return 0;
 	}
-	const char *s = NULL;
-	if (len > 1) {
-		s = decode2 (in[0], in[1]);
-		if (s) {
-			*consumed = 2;
+	s = r_muta_charset_lookup_decode (jis7_table, in, len, &clen);
+	if (s && clen > 0) {
+		*consumed = clen;
+	} else if (IS_PRINTABLE (in[0])) {
+		char *cpy = malloc (2);
+		if (!cpy) {
+			return 0;
 		}
-	}
-	if (!s) {
-		if (IS_PRINTABLE (in[0])) {
-			char *cpy = malloc (2);
-			if (!cpy) {
-				return 0;
-			}
-			cpy[0] = (char)in[0];
-			cpy[1] = 0;
-			*out = (ut8*)cpy;
-			*consumed = 1;
-			return 1;
-		}
+		cpy[0] = (char)in[0];
+		cpy[1] = 0;
+		*out = (ut8*)cpy;
+		*consumed = 1;
+		return 1;
+	} else {
 		s = "?";
 		*consumed = 1;
 	}
@@ -80,9 +71,11 @@ static bool update(RMutaSession *cj, const ut8 *b, int l) {
 	}
 	return true;
 }
+
 static bool end(RMutaSession *cj, const ut8 *b, int l) {
 	return update (cj, b, l);
 }
+
 RMutaPlugin r_muta_plugin_charset_jis7 = {
 	.meta = { .name = "jis7", .license = "MIT", .desc = "JIS 7-bit Roman (ASCII-like)" },
 	.type = R_MUTA_TYPE_CHARSET,
@@ -94,3 +87,4 @@ RMutaPlugin r_muta_plugin_charset_jis7 = {
 #ifndef R2_PLUGIN_INCORE
 RLibStruct radare_plugin = { .type = R_LIB_TYPE_MUTA, .data = &r_muta_plugin_charset_jis7 };
 #endif
+

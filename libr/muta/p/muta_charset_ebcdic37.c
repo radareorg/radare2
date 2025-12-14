@@ -1,129 +1,70 @@
- /* radare - MIT - Charset EBCDIC-CP37 */
+/* radare - MIT - Charset EBCDIC-CP37 */
 #include <r_muta.h>
-#include <r_util.h>
+#include <r_muta/charset.h>
 
-typedef struct {
-	const char *str;
-	ut8 byte;
-} MutaCharsetMap;
-
-static const MutaCharsetMap map[] = {
-	{ "\r", 0x0D }, { "\n", 0x15 },
-	{ "!", 0x21 }, { "\"", 0x22 }, { "#", 0x23 }, { "$", 0x24 }, { "%", 0x25 }, { "&", 0x26 },
-	{ " ", 0x40 }, { "ç", 0x48 }, { ".", 0x4B }, { "<", 0x4C }, { "(", 0x4D }, { "+", 0x4E }, { "|", 0x4F },
-	{ "&", 0x50 }, { "é", 0x51 }, { "!", 0x5A }, { "$", 0x5B }, { "*", 0x5C }, { "*", 0x5D }, { ";", 0x5E },
-	{ "-", 0x60 }, { "/", 0x61 }, { "_", 0x6D }, { ">", 0x6E }, { "?", 0x6F }, { ":", 0x7A }, { "#", 0x7B }, { "@", 0x7C },
-	{ "'", 0x7D }, { "=", 0x7E }, { "\"", 0x7F },
-	{ "a", 0x81 }, { "b", 0x82 }, { "c", 0x83 }, { "d", 0x84 }, { "e", 0x85 }, { "f", 0x86 }, { "g", 0x87 },
-	{ "h", 0x88 }, { "i", 0x89 }, { "«", 0x8A }, { "»", 0x8B }, { "j", 0x91 }, { "k", 0x92 }, { "l", 0x93 }, { "m", 0x94 }, { "n", 0x95 },
-	{ "o", 0x96 }, { "p", 0x97 }, { "q", 0x98 }, { "r", 0x99 }, { "~", 0xA1 }, { "s", 0xA2 }, { "t", 0xA3 }, { "u", 0xA4 }, { "v", 0xA5 },
-	{ "w", 0xA6 }, { "x", 0xA7 }, { "y", 0xA8 }, { "z", 0xA9 }, { "®", 0xAF }, { "©", 0xB4 },
-	{ "{", 0xC0 }, { "A", 0xC1 }, { "B", 0xC2 }, { "C", 0xC3 }, { "D", 0xC4 }, { "E", 0xC5 }, { "F", 0xC6 },
-	{ "G", 0xC7 }, { "H", 0xC8 }, { "I", 0xC9 }, { "}", 0xD0 }, { "J", 0xD1 }, { "K", 0xD2 }, { "L", 0xD3 }, { "M", 0xD4 }, { "N", 0xD5 },
-	{ "O", 0xD6 }, { "P", 0xD7 }, { "Q", 0xD8 }, { "R", 0xD9 }, { "\\", 0xE0 }, { "S", 0xE2 }, { "T", 0xE3 }, { "U", 0xE4 }, { "V", 0xE5 },
-	{ "W", 0xE6 }, { "X", 0xE7 }, { "Y", 0xE8 }, { "Z", 0xE9 }, { "0", 0xF0 }, { "1", 0xF1 }, { "2", 0xF2 }, { "3", 0xF3 },
-	{ "4", 0xF4 }, { "5", 0xF5 }, { "6", 0xF6 }, { "7", 0xF7 }, { "8", 0xF8 }, { "9", 0xF9 },
-	{ NULL, 0 }
+static const RMutaCharsetMap ebcdic37_table[] = {
+	{ "\r", { 0x0D }, 1 }, { "\n", { 0x15 }, 1 },
+	{ "!", { 0x21 }, 1 }, { "\"", { 0x22 }, 1 }, { "#", { 0x23 }, 1 }, { "$", { 0x24 }, 1 }, { "%", { 0x25 }, 1 }, { "&", { 0x26 }, 1 },
+	{ " ", { 0x40 }, 1 }, { "ç", { 0x48 }, 1 }, { ".", { 0x4B }, 1 }, { "<", { 0x4C }, 1 }, { "(", { 0x4D }, 1 }, { "+", { 0x4E }, 1 }, { "|", { 0x4F }, 1 },
+	{ "&", { 0x50 }, 1 }, { "é", { 0x51 }, 1 }, { "!", { 0x5A }, 1 }, { "$", { 0x5B }, 1 }, { "*", { 0x5C }, 1 }, { "*", { 0x5D }, 1 }, { ";", { 0x5E }, 1 },
+	{ "-", { 0x60 }, 1 }, { "/", { 0x61 }, 1 }, { "_", { 0x6D }, 1 }, { ">", { 0x6E }, 1 }, { "?", { 0x6F }, 1 }, { ":", { 0x7A }, 1 }, { "#", { 0x7B }, 1 }, { "@", { 0x7C }, 1 },
+	{ "'", { 0x7D }, 1 }, { "=", { 0x7E }, 1 }, { "\"", { 0x7F }, 1 },
+	{ "a", { 0x81 }, 1 }, { "b", { 0x82 }, 1 }, { "c", { 0x83 }, 1 }, { "d", { 0x84 }, 1 }, { "e", { 0x85 }, 1 }, { "f", { 0x86 }, 1 }, { "g", { 0x87 }, 1 },
+	{ "h", { 0x88 }, 1 }, { "i", { 0x89 }, 1 }, { "«", { 0x8A }, 1 }, { "»", { 0x8B }, 1 }, { "j", { 0x91 }, 1 }, { "k", { 0x92 }, 1 }, { "l", { 0x93 }, 1 }, { "m", { 0x94 }, 1 }, { "n", { 0x95 }, 1 },
+	{ "o", { 0x96 }, 1 }, { "p", { 0x97 }, 1 }, { "q", { 0x98 }, 1 }, { "r", { 0x99 }, 1 }, { "~", { 0xA1 }, 1 }, { "s", { 0xA2 }, 1 }, { "t", { 0xA3 }, 1 }, { "u", { 0xA4 }, 1 }, { "v", { 0xA5 }, 1 },
+	{ "w", { 0xA6 }, 1 }, { "x", { 0xA7 }, 1 }, { "y", { 0xA8 }, 1 }, { "z", { 0xA9 }, 1 }, { "®", { 0xAF }, 1 }, { "©", { 0xB4 }, 1 },
+	{ "{", { 0xC0 }, 1 }, { "A", { 0xC1 }, 1 }, { "B", { 0xC2 }, 1 }, { "C", { 0xC3 }, 1 }, { "D", { 0xC4 }, 1 }, { "E", { 0xC5 }, 1 }, { "F", { 0xC6 }, 1 },
+	{ "G", { 0xC7 }, 1 }, { "H", { 0xC8 }, 1 }, { "I", { 0xC9 }, 1 }, { "}", { 0xD0 }, 1 }, { "J", { 0xD1 }, 1 }, { "K", { 0xD2 }, 1 }, { "L", { 0xD3 }, 1 }, { "M", { 0xD4 }, 1 }, { "N", { 0xD5 }, 1 },
+	{ "O", { 0xD6 }, 1 }, { "P", { 0xD7 }, 1 }, { "Q", { 0xD8 }, 1 }, { "R", { 0xD9 }, 1 }, { "\\", { 0xE0 }, 1 }, { "S", { 0xE2 }, 1 }, { "T", { 0xE3 }, 1 }, { "U", { 0xE4 }, 1 }, { "V", { 0xE5 }, 1 },
+	{ "W", { 0xE6 }, 1 }, { "X", { 0xE7 }, 1 }, { "Y", { 0xE8 }, 1 }, { "Z", { 0xE9 }, 1 }, { "0", { 0xF0 }, 1 }, { "1", { 0xF1 }, 1 }, { "2", { 0xF2 }, 1 }, { "3", { 0xF3 }, 1 },
+	{ "4", { 0xF4 }, 1 }, { "5", { 0xF5 }, 1 }, { "6", { 0xF6 }, 1 }, { "7", { 0xF7 }, 1 }, { "8", { 0xF8 }, 1 }, { "9", { 0xF9 }, 1 },
+	{ NULL, { 0 }, 0 }
 };
 
-static const char *decode_byte(ut8 b) {
-	const MutaCharsetMap *m;
-	for (m = map; m->str; m++) {
-		if (m->byte == b) {
-			return m->str;
-		}
-	}
-	return NULL;
-}
-static bool encode_utf8(const char *s, ut8 *out) {
-	const MutaCharsetMap *m;
-	for (m = map; m->str; m++) {
-		if (!strcmp (m->str, s)) {
-			*out = m->byte;
-			return true;
-		}
-	}
-	return false;
-}
-
-static int utf8_len(const char *s, int max) {
-	if (!s || max < 1) {
-		return 0;
-	}
-	if ((s[0] & 0x80) == 0) {
-		return 1;
-	}
-	if ((s[0] & 0xe0) == 0xc0 && max >= 2) {
-		return 2;
-	}
-	if ((s[0] & 0xf0) == 0xe0 && max >= 3) {
-		return 3;
-	}
-	if ((s[0] & 0xf8) == 0xf0 && max >= 4) {
-		return 4;
-	}
-	return 1;
+static bool check(const char *algo) {
+	return !strcmp (algo, "ebcdic37");
 }
 
 static int decode(RMutaSession *cj, const ut8 *in, int len, ut8 **out, int *consumed) {
-	R_RETURN_VAL_IF_FAIL (cj && in && out && consumed, 0);
-	if (len < 1) {
+	const char *s;
+	if (!cj || !in || !out || !consumed || len < 1) {
 		return 0;
 	}
-	const char *s = decode_byte (in[0]);
-	if (!s) {
+	s = r_muta_charset_lookup_decode (ebcdic37_table, in, len, consumed);
+	if (!s || *consumed < 1) {
 		s = "?";
+		*consumed = 1;
 	}
-	int slen = (int)strlen (s);
-	char *cpy = strdup (s);
-	if (!cpy) {
-		return 0;
-	}
-	*out = (ut8*)cpy;
-	*consumed = 1;
-	return slen;
+	*out = (ut8*)strdup (s);
+	return *out? (int)strlen ((const char *)*out): 0;
 }
 
 static bool update(RMutaSession *cj, const ut8 *buf, int len) {
+	int olen = 0;
+	ut8 *obuf = NULL;
 	if (!cj || !buf || len < 0) {
 		return false;
 	}
-	int i;
-	if (cj->dir == R_CRYPTO_DIR_DECRYPT) {
-		for (i = 0; i < len; i++) {
-			const char *s = decode_byte (buf[i]);
-			if (!s) {
-				s = "?";
-			}
-			r_muta_session_append (cj, (const ut8 *)s, (int)strlen (s));
-		}
-	} else {
-		const char *str = (const char *)buf;
-		i = 0;
-		while (i < len) {
-			int ulen = utf8_len (str + i, len - i);
-			if (ulen < 1) {
-				break;
-			}
-			char *ch = r_str_ndup (str + i, ulen);
-			ut8 b;
-			if (ch && encode_utf8 (ch, &b)) {
-				r_muta_session_append (cj, &b, 1);
-			} else {
-				b = 0x6F; /* '?' analog */
-				r_muta_session_append (cj, &b, 1);
-			}
-			free (ch);
-			i += ulen;
-		}
+	switch (cj->dir) {
+	case R_CRYPTO_DIR_DECRYPT:
+		obuf = r_muta_charset_decode (buf, len, &olen, ebcdic37_table, "?");
+		break;
+	case R_CRYPTO_DIR_ENCRYPT:
+		obuf = r_muta_charset_encode_ex (buf, len, &olen, ebcdic37_table, r_muta_charset_parse_default, 0x6F);
+		break;
 	}
+	if (!obuf) {
+		return false;
+	}
+	if (olen > 0) {
+		r_muta_session_append (cj, obuf, olen);
+	}
+	free (obuf);
 	return true;
 }
+
 static bool end(RMutaSession *cj, const ut8 *b, int l) {
 	return update (cj, b, l);
-}
-static bool check(const char *algo) {
-	return !strcmp (algo, "ebcdic37");
 }
 
 RMutaPlugin r_muta_plugin_charset_ebcdic37 = {

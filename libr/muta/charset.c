@@ -177,8 +177,8 @@ R_API ut8 *r_muta_charset_decode(const ut8 *in, int in_len, int *out_len,
 	return out;
 }
 
-R_API ut8 *r_muta_charset_encode(const ut8 *in, int in_len, int *out_len,
-	const RMutaCharsetMap *table, RMutaCharsetParserFn parser) {
+R_API ut8 *r_muta_charset_encode_ex(const ut8 *in, int in_len, int *out_len,
+	const RMutaCharsetMap *table, RMutaCharsetParserFn parser, ut8 unknown_byte) {
 	R_RETURN_VAL_IF_FAIL (out_len, NULL);
 	*out_len = 0;
 	R_RETURN_VAL_IF_FAIL (in && in_len >= 0 && table && parser, NULL);
@@ -202,7 +202,7 @@ R_API ut8 *r_muta_charset_encode(const ut8 *in, int in_len, int *out_len,
 		int byte_len = 0;
 		const ut8 *bytes = r_muta_charset_lookup_encode (table, tok, &byte_len);
 		if (!bytes || byte_len < 1) {
-			ut8 q = '?';
+			ut8 q = unknown_byte;
 			if (!r_muta_charset_outgrow (&out, &outcap, outpos + 1)) {
 				*out_len = 0;
 				return NULL;
@@ -224,6 +224,11 @@ R_API ut8 *r_muta_charset_encode(const ut8 *in, int in_len, int *out_len,
 	return out;
 }
 
+R_API ut8 *r_muta_charset_encode(const ut8 *in, int in_len, int *out_len,
+	const RMutaCharsetMap *table, RMutaCharsetParserFn parser) {
+	return r_muta_charset_encode_ex (in, in_len, out_len, table, parser, '?');
+}
+
 R_API bool r_muta_charset_stub_update(RMutaSession *cj, const ut8 *b, int l) {
 	R_RETURN_VAL_IF_FAIL (cj && b && l >= 0, false);
 	r_muta_session_append (cj, b, l);
@@ -233,4 +238,3 @@ R_API bool r_muta_charset_stub_update(RMutaSession *cj, const ut8 *b, int l) {
 R_API bool r_muta_charset_stub_end(RMutaSession *cj, const ut8 *b, int l) {
 	return r_muta_charset_stub_update (cj, b, l);
 }
-

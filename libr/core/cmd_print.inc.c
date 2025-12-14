@@ -4092,9 +4092,7 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 	int i, n = core->rasm->config->bits / 8;
 	int type = 'v';
 	bool fixed_size = true;
-/* Global guard for raw print commands when charset decoding is enabled.
- * If user runs plain 'pr' (raw print) with a charset set, prefer decoded output only. */
-switch (input[0]) {
+	switch (input[0]) {
 	case 'p': // "pvp"
 		input++;
 		break;

@@ -1,17 +1,14 @@
 /* radare - MIT - Charset Katakana (half-width mapping used in r2 charsets) */
 #include <r_muta.h>
+#include <r_muta/charset.h>
 #include <r_util.h>
 
 /* Map ASCII digraphs to single Katakana glyphs: "ra"->ラ, "da"->ダ, "re"->レ */
-typedef struct {
-	const char *in2;
-	const char *out;
-} KDMap;
-static const KDMap kdmap[] = {
-	{ "ra", "ラ" }, { "rA", "ラ" }, { "Ra", "ラ" }, { "RA", "ラ" },
-	{ "da", "ダ" }, { "dA", "ダ" }, { "Da", "ダ" }, { "DA", "ダ" },
-	{ "re", "レ" }, { "rE", "レ" }, { "Re", "レ" }, { "RE", "レ" },
-	{ NULL, NULL }
+static const RMutaCharsetMap katakana_table[] = {
+	{ "ラ", { 'r', 'a' }, 2 }, { "ラ", { 'r', 'A' }, 2 }, { "ラ", { 'R', 'a' }, 2 }, { "ラ", { 'R', 'A' }, 2 },
+	{ "ダ", { 'd', 'a' }, 2 }, { "ダ", { 'd', 'A' }, 2 }, { "ダ", { 'D', 'a' }, 2 }, { "ダ", { 'D', 'A' }, 2 },
+	{ "レ", { 'r', 'e' }, 2 }, { "レ", { 'r', 'E' }, 2 }, { "レ", { 'R', 'e' }, 2 }, { "レ", { 'R', 'E' }, 2 },
+	{ NULL, { 0 }, 0 }
 };
 
 static bool check(const char *algo) {
@@ -19,26 +16,23 @@ static bool check(const char *algo) {
 }
 
 static int decode(RMutaSession *cj, const ut8 *in, int len, ut8 **out, int *consumed) {
+	const char *s = NULL;
+	int clen = 0;
 	R_RETURN_VAL_IF_FAIL (cj && in && out && consumed, 0);
 	if (len < 1) {
 		return 0;
 	}
-	*consumed = 1;
-	if (len > 1) {
-		char two[3] = { (char)in[0], (char)in[1], 0 };
-		const KDMap *m;
-		for (m = kdmap; m->in2; m++) {
-			if (!strcmp (m->in2, two)) {
-				char *cpy = strdup (m->out);
-				if (!cpy) {
-					return 0;
-				}
-				*out = (ut8*)cpy;
-				*consumed = 2;
-				return (int)strlen (cpy);
-			}
+	s = r_muta_charset_lookup_decode (katakana_table, in, len, &clen);
+	if (s && clen > 0) {
+		char *cpy = strdup (s);
+		if (!cpy) {
+			return 0;
 		}
+		*out = (ut8*)cpy;
+		*consumed = clen;
+		return (int)strlen (cpy);
 	}
+	*consumed = 1;
 	if (IS_PRINTABLE (in[0])) {
 		char *cpy = malloc (2);
 		if (!cpy) {
@@ -81,9 +75,11 @@ static bool update(RMutaSession *cj, const ut8 *b, int l) {
 	}
 	return true;
 }
+
 static bool end(RMutaSession *cj, const ut8 *b, int l) {
 	return update (cj, b, l);
 }
+
 RMutaPlugin r_muta_plugin_charset_katakana = {
 	.meta = { .name = "katakana", .license = "MIT", .desc = "Katakana mapping (legacy-compatible)" },
 	.type = R_MUTA_TYPE_CHARSET,
@@ -95,3 +91,4 @@ RMutaPlugin r_muta_plugin_charset_katakana = {
 #ifndef R2_PLUGIN_INCORE
 RLibStruct radare_plugin = { .type = R_LIB_TYPE_MUTA, .data = &r_muta_plugin_charset_katakana };
 #endif
+
