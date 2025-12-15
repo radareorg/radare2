@@ -1,8 +1,8 @@
-/* radare - LGPL - Copyright 2007-2025 - pancake, ret2libc */
+/* radare - LGPL - Copyright 2007-2025 - pancake */
 
 #include <r_flag.h>
 #include <r_cons.h>
-#include <limits.h>
+#include <r_lib.h>
 
 R_LIB_VERSION (r_flag);
 

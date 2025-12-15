@@ -4,6 +4,7 @@
 #include <r_socket.h>
 #include <r_types.h>
 #include <r_util.h>
+#include <r_lib.h>
 #include <errno.h>
 
 #if __linux__

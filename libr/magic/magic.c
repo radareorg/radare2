@@ -1,8 +1,9 @@
-/* radare - Copyright 2011-2019 pancake<nopcode.org> */
+/* radare - Copyright 2011-2025 pancake<nopcode.org> */
 /* $OpenBSD: magic.c,v 1.8 2009/10/27 23:59:37 deraadt Exp $ */
 
 #include <r_userconf.h>
 #include <r_magic.h>
+#include <r_lib.h>
 
 R_LIB_VERSION (r_magic);
 

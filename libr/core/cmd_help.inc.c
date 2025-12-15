@@ -1125,6 +1125,7 @@ static int cmd_help(void *data, const char *input) {
 				pj_ks (pj, "arch", R_SYS_ARCH);
 				pj_ks (pj, "os", R_SYS_OS);
 				pj_ki (pj, "bits", R_SYS_BITS);
+				pj_ki (pj, "abiversion", R2_ABIVERSION);
 				pj_ki (pj, "commit", R2_VERSION_COMMIT);
 				pj_ks (pj, "tap", R2_GITTAP);
 				pj_ki (pj, "major", R2_VERSION_MAJOR);

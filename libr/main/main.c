@@ -2,9 +2,7 @@
 
 #include <r_main.h>
 #include <r_userconf.h>
-#include <r_util.h>
-#include <ctype.h>
-#include <string.h>
+#include <r_lib.h>
 
 R_LIB_VERSION(r_main);
 
@@ -58,6 +56,7 @@ R_API int r_main_version_print(const char *progname, int mode) {
 		pj_o (pj);
 		pj_ks (pj, "name", progname);
 		pj_ks (pj, "version", R2_VERSION);
+		pj_ki (pj, "abiversion", R2_ABIVERSION);
 		pj_ks (pj, "birth", R2_BIRTH);
 		pj_ks (pj, "commit", R2_GITTIP);
 		pj_ki (pj, "commits", R2_VERSION_COMMIT);
@@ -66,7 +65,7 @@ R_API int r_main_version_print(const char *progname, int mode) {
 		pj_ko (pj, "semver");
 		pj_ki (pj, "major", R2_VERSION_MAJOR);
 		pj_ki (pj, "minor", R2_VERSION_MINOR);
-		pj_ki (pj, "patch", R2_VERSION_MINOR);
+		pj_ki (pj, "patch", R2_VERSION_PATCH);
 		pj_end (pj);
 		pj_end (pj);
 		char *s = pj_drain (pj);

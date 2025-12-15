@@ -54,7 +54,7 @@ static void json_plugins(RCore *core, PJ *pj, const char *name, const char *cmd)
 static int r_main_version_verify(RCore *core, bool show, bool json) {
 	int i, ret;
 	typedef const char *(*vc) ();
-	const char *base = R2_GITTAP;
+	const char *base = R2_GITTAP "-" R2_ABIVERSION_STRING;
 	struct vcs_t {
 		const char *name;
 		vc callback;
@@ -88,9 +88,9 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 	if (json) {
 		PJ *pj = pj_new ();
 		pj_o (pj);
-#if 1
 		pj_ko (pj, "radare2");
 		pj_ks (pj, "version", R2_VERSION);
+		pj_ki (pj, "abiversion", R2_ABIVERSION);
 		pj_ks (pj, "birth", R2_BIRTH);
 		pj_ks (pj, "commit", R2_GITTIP);
 		pj_ki (pj, "commits", R2_VERSION_COMMIT);
@@ -99,10 +99,9 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 		pj_ko (pj, "semver");
 		pj_ki (pj, "major", R2_VERSION_MAJOR);
 		pj_ki (pj, "minor", R2_VERSION_MINOR);
-		pj_ki (pj, "patch", R2_VERSION_MINOR);
+		pj_ki (pj, "patch", R2_VERSION_PATCH);
 		pj_end (pj);
 		pj_end (pj);
-#endif
 		pj_ko (pj, "libraries");
 		if (show) {
 			pj_ks (pj, "r2", base);
