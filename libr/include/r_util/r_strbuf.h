@@ -40,8 +40,8 @@ R_API char *r_strbuf_drain(RStrBuf *sb);
 R_API char *r_strbuf_drain_nofree(RStrBuf *sb); // rename to _tostring() or asstring() ?
 R_API bool r_strbuf_replace(RStrBuf *sb, const char *key, const char *val);
 R_API bool r_strbuf_replacef(RStrBuf *sb, const char *key, const char *fmt, ...) R_PRINTF_CHECK(3, 4);
-R_API int r_strbuf_length(RStrBuf *sb);
-R_API int r_strbuf_size(RStrBuf *sb);
+R_API int r_strbuf_length(RStrBuf *sb); // returns its length
+R_API size_t r_strbuf_size(RStrBuf *sb); // returns its capacity
 R_API void r_strbuf_free(RStrBuf *sb);
 R_API void r_strbuf_fini(RStrBuf *sb);
 R_API void r_strbuf_init(RStrBuf *sb);

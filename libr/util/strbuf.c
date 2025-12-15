@@ -2,7 +2,21 @@
 
 #include <r_util.h>
 
-R_API RStrBuf * R_NONNULL r_strbuf_new(const char *str) {
+// Base growth: +12.5%, with adaptive slack to avoid size-class boundaries
+static inline size_t growlog(size_t cap, size_t required) {
+	// assume cap cant be zero because minimum if sizeof(buf)
+	if (cap >= required) {
+		return cap;
+	}
+	size_t grown = cap + (cap >> 3); // +12.5%
+	if (grown < required) {
+		grown = required + (required >> 3);
+	}
+	// avoids sharp size-class boundaries
+	return grown + (grown < 1024? 64: (grown >> 4));
+}
+
+R_API RStrBuf *R_NONNULL r_strbuf_new(const char *str) {
 	RStrBuf *s = R_NEW0 (RStrBuf);
 	if (str) {
 		r_strbuf_set (s, str);
@@ -37,9 +51,15 @@ R_API int r_strbuf_length(RStrBuf *sb) {
 	return sb->len;
 }
 
+R_API size_t r_strbuf_size(RStrBuf *sb) {
+	// return its capacity
+	R_RETURN_VAL_IF_FAIL (sb, 0);
+	return sb->ptr? sb->ptrlen: sizeof (sb->buf);
+}
+
 R_API void r_strbuf_init(RStrBuf *sb) {
 	R_RETURN_IF_FAIL (sb);
-	*sb = (const RStrBuf){0};
+	*sb = (const RStrBuf){ 0 };
 }
 
 R_API const char *r_strbuf_initf(RStrBuf *sb, const char *fmt, ...) {
@@ -162,7 +182,7 @@ R_API const char *r_strbuf_set(RStrBuf *sb, const char *s) {
 		return r_strbuf_get (sb);
 	}
 	size_t len = strlen (s);
-	if (!r_strbuf_setbin (sb, (const ut8*)s, len)) {
+	if (!r_strbuf_setbin (sb, (const ut8 *)s, len)) {
 		return NULL;
 	}
 	sb->len = len;
@@ -215,7 +235,7 @@ R_API bool r_strbuf_prepend(RStrBuf *sb, const char *s) {
 	bool ret = false;
 	if (ns) {
 		memcpy (ns, s, l);
-		char *s = sb->ptr ? sb->ptr: sb->buf;
+		char *s = sb->ptr? sb->ptr: sb->buf;
 		memcpy (ns + l, s, sb->len);
 		ns[newlen] = 0;
 		ret = r_strbuf_set (sb, ns);
@@ -245,12 +265,18 @@ R_API bool r_strbuf_append_n(RStrBuf *sb, const char *s, size_t l) {
 	if ((sb->len + l + 1) <= sizeof (sb->buf)) {
 		memcpy (sb->buf + sb->len, s, l);
 		sb->buf[sb->len + l] = 0;
+		sb->len += l;
 		R_FREE (sb->ptr);
-	} else {
-		int ll = (l < 256)? 256: (l * 2);
-		int newlen = sb->len + ll;
-		char *p = sb->ptr;
-		bool allocated = true;
+		return true;
+	}
+
+	char *p = sb->ptr;
+	size_t required = sb->len + l + 1;
+	size_t current = sb->ptr? sb->ptrlen: sizeof (sb->buf);
+
+	// Only grow if current capacity is insufficient
+	if (current < required) {
+		size_t newlen = growlog (current, required);
 		if (!sb->ptr) {
 			p = malloc (newlen);
 			if (!p) {
@@ -259,21 +285,19 @@ R_API bool r_strbuf_append_n(RStrBuf *sb, const char *s, size_t l) {
 			if (sb->len > 0) {
 				memcpy (p, sb->buf, sb->len);
 			}
-		} else if (sb->len + l + 1 > sb->ptrlen) {
+		} else {
 			p = realloc (sb->ptr, newlen);
 			if (!p) {
 				return false;
 			}
-		} else {
-			allocated = false;
 		}
-		if (allocated) {
-			sb->ptr = p;
-			sb->ptrlen = newlen;
-		}
-		memcpy (p + sb->len, s, l);
-		p[sb->len + l] = 0;
+		sb->ptr = p;
+		sb->ptrlen = newlen;
 	}
+
+	memcpy ((sb->ptr? sb->ptr: sb->buf) + sb->len, s, l);
+	char *buf = sb->ptr? sb->ptr: sb->buf;
+	buf[sb->len + l] = 0;
 	sb->len += l;
 	return true;
 }
@@ -345,11 +369,18 @@ R_API bool r_strbuf_prepend_n(RStrBuf *sb, const char *s, size_t l) {
 		memmove (&sb->buf[l], sb->buf, sb->len);
 		memcpy (sb->buf, s, l);
 		sb->buf[sb->len + l] = 0;
+		sb->len += l;
 		R_FREE (sb->ptr);
-	} else {
-		int ll = (l < 256)? 256: (l * 2);
-		int newlen = sb->len + ll;
-		char *p = sb->ptr;
+		return true;
+	}
+
+	char *p = sb->ptr;
+	size_t required = sb->len + l + 1;
+	size_t current = sb->ptr? sb->ptrlen: sizeof (sb->buf);
+
+	// Only grow if current capacity is insufficient
+	if (current < required) {
+		size_t newlen = growlog (current, required);
 		if (!sb->ptr) {
 			p = malloc (newlen);
 			if (!p) {
@@ -358,26 +389,25 @@ R_API bool r_strbuf_prepend_n(RStrBuf *sb, const char *s, size_t l) {
 			if (sb->len > 0) {
 				memcpy (p + l, sb->buf, sb->len);
 			}
-			sb->ptr = p;
-			sb->ptrlen = newlen;
-		} else if (sb->len + l + 1 > sb->ptrlen) {
+		} else {
 			p = realloc (sb->ptr, newlen);
 			if (!p) {
 				return false;
 			}
 			memmove (p + l, p, sb->len);
-			sb->ptr = p;
-			sb->ptrlen = newlen;
-		} else {
-			memmove (p + l, p, sb->len);
 		}
-		memcpy (p, s, l);
-		p[sb->len + l] = 0;
+		sb->ptr = p;
+		sb->ptrlen = newlen;
+	} else if (sb->ptr) {
+		memmove (p + l, p, sb->len);
 	}
+
+	memcpy ((sb->ptr? sb->ptr: sb->buf), s, l);
+	char *buf = sb->ptr? sb->ptr: sb->buf;
+	buf[sb->len + l] = 0;
 	sb->len += l;
 	return true;
 }
-
 
 R_API bool r_strbuf_pad(RStrBuf *sb, char ch, int sz) {
 	R_RETURN_VAL_IF_FAIL (sb, false);
@@ -387,13 +417,12 @@ R_API bool r_strbuf_pad(RStrBuf *sb, char ch, int sz) {
 	if (!r_strbuf_reserve (sb, sb->len + sz)) {
 		return false;
 	}
-	char *buf = sb->ptr ? sb->ptr : sb->buf;
+	char *buf = sb->ptr? sb->ptr: sb->buf;
 	memset (buf + sb->len, ch, sz);
 	buf[sb->len + sz] = 0;
 	sb->len += sz;
 	return true;
 }
-
 
 R_API bool r_strbuf_vprependf(RStrBuf *sb, const char *fmt, va_list ap) {
 	va_list ap2;
@@ -427,7 +456,7 @@ R_API bool r_strbuf_vprependf(RStrBuf *sb, const char *fmt, va_list ap) {
 
 R_API char *r_strbuf_get(RStrBuf *sb) {
 	R_RETURN_VAL_IF_FAIL (sb, NULL);
-	return sb->ptr ? sb->ptr : sb->buf;
+	return sb->ptr? sb->ptr: sb->buf;
 }
 
 R_API ut8 *r_strbuf_getbin(RStrBuf *sb, int *len) {

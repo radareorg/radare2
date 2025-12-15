@@ -1331,13 +1331,10 @@ static char *replace_lines(const char *src, size_t from, size_t to, const char *
 	while (line < from) {
 		begin = strchr (begin, '\n');
 		if (!begin) {
-			break;
+			return NULL;
 		}
 		begin++;
 		line++;
-	}
-	if (!begin) {
-		return NULL;
 	}
 
 	const char *end = begin;
