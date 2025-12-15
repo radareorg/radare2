@@ -5,9 +5,9 @@
 #define _FILE_OFFSET_BITS 64
 
 // defines like isdigit, etc'
-#include <r_types_base.h>
+#include "r_types_base.h"
 #include "r_util/r_str_util.h"
-#include <r_userconf.h>
+#include "r_userconf.h"
 #include <stddef.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -363,7 +363,7 @@ typedef int (*PrintfCallback)(const char *str, ...) R_PRINTF_CHECK(1, 2);
 #define R_LIB_VERSION_HEADER(x) \
 R_API const char *x##_version(void)
 #define R_LIB_VERSION(x) \
-R_API const char *x##_version(void) { return "" R2_ABIVERSION "-"R2_GITTAP; }
+R_API const char *x##_version(void) { return "" R2_GITTAP "-" R2_ABIVERSION_STRING; }
 
 #define BITS2BYTES(x) (((x)/8)+(((x)%8)?1:0))
 #define ZERO_FILL(x) memset (&x, 0, sizeof (x))

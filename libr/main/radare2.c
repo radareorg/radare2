@@ -54,7 +54,7 @@ static void json_plugins(RCore *core, PJ *pj, const char *name, const char *cmd)
 static int r_main_version_verify(RCore *core, bool show, bool json) {
 	int i, ret;
 	typedef const char *(*vc) ();
-	const char *base = R2_GITTAP;
+	const char *base = R2_GITTAP "-" R2_ABIVERSION_STRING;
 	struct vcs_t {
 		const char *name;
 		vc callback;
@@ -183,7 +183,7 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 		free (s);
 	} else {
 		if (show) {
-			printf ("%s  r2 (abi: %d)\n", base, R2_ABIVERSION);
+			printf ("%s  r2\n", base);
 		}
 		for (i = ret = 0; vcs[i].name; i++) {
 			struct vcs_t *v = &vcs[i];

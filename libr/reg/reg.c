@@ -1,7 +1,8 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #include <r_reg.h>
 #include <r_util.h>
+#include <r_lib.h>
 
 R_LIB_VERSION (r_reg);
 

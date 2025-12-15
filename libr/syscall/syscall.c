@@ -1,5 +1,7 @@
 /* radare - Copyright 2008-2025 - LGPL -- pancake */
+
 #include <r_syscall.h>
+#include <r_lib.h>
 
 R_LIB_VERSION (r_syscall);
 
@@ -12,13 +14,11 @@ R_API RSyscall* r_syscall_ref(RSyscall *sc) {
 	return sc;
 }
 
-R_API RSyscall* r_syscall_new(void) {
+R_API RSyscall* R_NONNULL r_syscall_new(void) {
 	RSyscall *rs = R_NEW0 (RSyscall);
-	if (rs) {
-		rs->sysport = sysport_x86;
-		rs->srdb = sdb_new0 (); // sysregs database
-		rs->db = sdb_new0 ();
-	}
+	rs->sysport = sysport_x86;
+	rs->srdb = sdb_new0 (); // sysregs database
+	rs->db = sdb_new0 ();
 	return rs;
 }
 
