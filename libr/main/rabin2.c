@@ -42,11 +42,11 @@ static Rabin2Env env[] = {
 
 static void rabin_show_env(bool show_desc);
 
-static int rabin_show_help(int v) {
+static int rabin_show_help(int line) {
 	printf ("Usage: rabin2 [-AcdeEghHiIjJlLMqrRsSUvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]\n"
 	"              [-C F:C:D] [-f str] [-m addr] [-n str] [-N m:M] [-P[-P] pdb]\n"
 	"              [-o str] [-O help] [-k query] [-D lang mangledsymbol] file\n");
-	if (v) {
+	if (line != 1) {
 		printf (
 			" -@ [addr]       show section, symbol or import at addr\n"
 			" -A              list sub-binaries and their arch-bits pairs\n"
@@ -108,7 +108,7 @@ static int rabin_show_help(int v) {
 			" -zzz            dump raw strings to stdout (for huge files)\n"
 			" -Z              guess size of binary program\n");
 	}
-	if (v) {
+	if (line == 2) {
 		printf ("Environment:\n");
 		rabin_show_env (true);
 	}
@@ -708,6 +708,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	}
 #define unset_action(x) action &= ~x
 	RGetopt opt;
+	int help = 0;
 	r_getopt_init (&opt, argc, argv, "DjJ:gAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEUlRwO:o:pPqQrTtvLhuxXzZy");
 	if (argc == 2 && !strcmp (argv[1], "-J")) {
 		rabin_show_env (false);
@@ -917,14 +918,18 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			}
 			break;
 		case 'h':
-			r_core_fini (&core);
-			free (create);
-			free (state.stdin_buf);
-			return rabin_show_help (1);
+			help++;
+			break;
 		default:
 			action |= R_BIN_REQ_HELP;
 			break;
 		}
+	}
+	if (help) {
+		r_core_fini (&core);
+		free (create);
+		free (state.stdin_buf);
+		return rabin_show_help (help > 1? 2: 0);
 	}
 	core.io->va = va;
 

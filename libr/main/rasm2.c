@@ -373,10 +373,10 @@ static int rasm_show_help(int v) {
 		" -w           what's this instruction for? describe opcode\n"
 		" If '-l' value is greater than output length, output is padded with nops\n"
 		" If the last argument is '-' reads from stdin\n");
-		printf ("Environment:\n");
-		rasm_show_env (true);
 	}
 	if (v == 2) {
+		printf ("Environment:\n");
+		rasm_show_env (true);
 		printf ("Preprocessor directives:\n");
 		r_asm_list_directives ();
 		printf ("Assembler directives:\n");
