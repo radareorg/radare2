@@ -141,21 +141,27 @@ Haiku, Vinix, FirefoxOS.
 
 ## Architectures
 
-i386, x86-64, Alpha, ARM, AVR, BPF, MIPS, PowerPC, SPARC, RISC-V, SH, m68k,
+i386, x86-64, Alpha, ARM, AVR, BPF, sBPF, MIPS, PowerPC, SPARC, RISC-V, SH, m68k,
 S390, XCore, CR16, HPPA, ARC, Blackfin, Z80, H8/300, V810, PDP11, m680x, V850,
 CRIS, XAP (CSR), PIC, LM32, 8051, 6502, i4004, i8080, Propeller, EVM, OR1K
 Tricore, CHIP-8, LH5801, T8200, GameBoy, SNES, SPC700, MSP430, Xtensa, xcore,
 NIOS II, Java, Dalvik, Pickle, WebAssembly, MSIL, EBC, TMS320 (c54x, c55x,
 c55+, c64x), Hexagon, Brainfuck, Malbolge, whitespace, DCPU16, LANAI, lm32,
+MSIL, InfernoDis, UXN, Cosmac, PythonBytecode, Sharp sm5xx MCPus, FreeScale QIQa,
 MCORE, mcs96, RSP, SuperH-4, VAX, KVX, Am29000, LOONGARCH, JDH8, s390x, STM8.
 
 ## File Formats
 
-ELF, Mach-O, Fatmach-O, PE, PE+, MZ, COFF, XCOFF, OMF, TE, XBE, SEP64, BIOS/UEFI,
-Dyldcache, DEX, ART, Java class, Android boot image, Plan9 executables, Amiga HUNK,
-ZIMG, MBN/SBL bootloader, ELF coredump, MDMP (Windows minidump), PDP11, XTAC, CGC,
-WASM (WebAssembly binary), Commodore VICE emulator, QNX, WAD, OFF, TIC-80,
-GB/GBA, NDS and N3DS, and mount several filesystems like NTFS, FAT, HFS+, EXT,...
+ELF, Mach-O, Fatmach-O, PE, PE+, MZ, COFF, XCOFF, OMF, TE, XBE, SEP64, BIOS/UEFI, BFLT, Pebble apps,
+Apple Dyldcache, Kernelcache, MCLF trustlets, DEX, ART, Java class, Android boot image, Plan9 executables, Amiga HUNK,
+ZIMG, MBN/SBL bootloader, ELF coredump, MDMP (Windows minidump), PDP11, XTAC, CGC, DotNet,
+WASM (WebAssembly binary), Commodore VICE emulator, DOL, QNX, WAD, OFF, TIC-80,
+GB/GBA, PSX, PRG (C64), Apple Classic PEF, NDS, z64, and N3DS
+...
+
+## FileSystems
+
+Mount in userland several filesystems like NTFS, FAT, HFS+, EXT, APFS, BeosFS, BFS, MINIX, ReiserFS, SFS, ubifs, ufs, jfs, ISO9660, UDF, xfs
 
 ## Packaging Status
 
