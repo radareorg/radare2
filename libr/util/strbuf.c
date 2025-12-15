@@ -4,7 +4,7 @@
 
 // Base growth: +12.5%, with adaptive slack to avoid size-class boundaries
 static inline size_t growlog(size_t cap, size_t required) {
-	// assume cap cant be zero because minimum if sizeof(buf)
+	// assume cap can't be zero because minimum if sizeof (buf)
 	if (cap >= required) {
 		return cap;
 	}
