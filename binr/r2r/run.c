@@ -425,6 +425,7 @@ R_API void r2r_subprocess_stdin_write(R2RSubprocess *proc, const ut8 *buf, size_
 }
 
 R_API R2RProcessOutput *r2r_subprocess_drain(R2RSubprocess *proc) {
+	// XXX, duplicate from the unix path
 	R2RProcessOutput *out = R_NEW (R2RProcessOutput);
 	out->out = r_strbuf_drain_nofree (&proc->out);
 	out->err = r_strbuf_drain_nofree (&proc->err);
@@ -438,6 +439,8 @@ R_API void r2r_subprocess_free(R2RSubprocess *proc) {
 		CloseHandle (proc->stdout_read);
 		CloseHandle (proc->stderr_read);
 		CloseHandle (proc->proc);
+		r_strbuf_fini (&proc->out);
+		r_strbuf_fini (&proc->err);
 		free (proc);
 	}
 }
@@ -462,6 +465,7 @@ struct r2r_subprocess_t {
 	RThreadLock *lock;
 };
 
+/// XXX remove globals!
 static RVecR2RSubprocessPtr subprocs;
 static RThreadLock *subprocs_mutex = NULL;
 static int sigchld_pipe[2];
@@ -631,7 +635,10 @@ R_API R2RSubprocess *r2r_subprocess_start(
 	proc->lock = r_th_lock_new (false);
 	r_strbuf_init (&proc->out);
 	r_strbuf_init (&proc->err);
-
+#if 0
+	r_strbuf_reserve (&proc->out, 32768);
+	r_strbuf_reserve (&proc->err, 32768);
+#endif
 	if (pipe (proc->killpipe) == -1) {
 		r_sys_perror ("subproc-start pipe");
 		goto error;
@@ -862,28 +869,21 @@ R_API void r2r_subprocess_stdin_write(R2RSubprocess *proc, const ut8 *buf, size_
 }
 
 R_API R2RProcessOutput *r2r_subprocess_drain(R2RSubprocess *proc) {
-	if (!proc) {
-		return NULL;
-	}
-	R2RProcessOutput *out = R_NEW0 (R2RProcessOutput);
+	R_RETURN_VAL_IF_FAIL (proc, NULL);
 	if (proc->lock && r_th_lock_enter (proc->lock)) {
-		out->out = r_strbuf_drain_nofree (&proc->out);
-		out->err = r_strbuf_drain_nofree (&proc->err);
+		R2RProcessOutput *out = R_NEW0 (R2RProcessOutput);
+// XXX for some reason strdup handles memory better than drain_nofree
+//		out->out = r_strbuf_drain_nofree (&proc->out);
+//		out->err = r_strbuf_drain_nofree (&proc->err);
+		out->out = strdup (r_strbuf_get (&proc->out));
+		out->err = strdup (r_strbuf_get (&proc->err));
 		out->ret = proc->ret;
 		out->timeout = false;
 		r_th_lock_leave (proc->lock);
-	} else {
-		// If we can't acquire the lock, make safe copies
-		if (proc->out.ptr) {
-			out->out = strdup (r_strbuf_get (&proc->out));
-		}
-		if (proc->err.ptr) {
-			out->err = strdup (r_strbuf_get (&proc->err));
-		}
-		out->ret = proc->ret;
-		out->timeout = false;
+		return out;
 	}
-	return out;
+	R_LOG_ERROR ("Cannot acquire the lock wtf");
+	return NULL;
 }
 
 R_API void r2r_subprocess_free(R2RSubprocess *proc) {
@@ -909,16 +909,17 @@ cleanup_without_vector:
 		// This prevents double frees when r2r_subprocess_drain has been called
 		if (proc->out.ptr) {
 			r_strbuf_fini (&proc->out);
-			r_strbuf_init (&proc->out); // Reinitialize to avoid issues with subsequent r_strbuf_fini
+		//	r_strbuf_init (&proc->out); // Reinitialize to avoid issues with subsequent r_strbuf_fini
 		}
 		if (proc->err.ptr) {
 			r_strbuf_fini (&proc->err);
-			r_strbuf_init (&proc->err); // Reinitialize to avoid issues with subsequent r_strbuf_fini
+		//	r_strbuf_init (&proc->err); // Reinitialize to avoid issues with subsequent r_strbuf_fini
 		}
 		// Release the process lock before freeing it
 		r_th_lock_leave (proc->lock);
 		r_th_lock_free (proc->lock);
 	} else {
+		R_LOG_ERROR ("We couldnt get the lock wtf");
 		// Even if we can't get the lock, we need to safely clean up buffers
 		// If buffers have been drained, ptr would be NULL and this is safe
 		r_strbuf_fini (&proc->out);
