@@ -2284,18 +2284,18 @@ static int opint(RArchSession *a, ut8 *data, const Opcode *op) {
 
 // enter imm16, imm8 - Create stack frame
 static int openter(RArchSession *a, ut8 *data, const Opcode *op) {
-	int l = 0;
 	if (op->operands_count != 2) {
+		R_LOG_ERROR ("Missing operands for the enter instruction");
 		return -1;
 	}
 	if ((op->operands[0].type & OT_CONSTANT) && (op->operands[1].type & OT_CONSTANT)) {
 		ut16 framesize = op->operands[0].immediate;
 		ut8 nesting = op->operands[1].immediate;
-		data[l++] = 0xc8;
-		data[l++] = framesize & 0xff;
-		data[l++] = (framesize >> 8) & 0xff;
-		data[l++] = nesting;
-		return l;
+		data[0] = 0xc8;
+		data[1] = framesize & 0xff;
+		data[2] = (framesize >> 8) & 0xff;
+		data[3] = nesting;
+		return 4;
 	}
 	return -1;
 }
