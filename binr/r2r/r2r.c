@@ -1313,16 +1313,13 @@ beach:
 }
 
 static char *format_cmd_kv(const char *key, const char *val) {
-	RStrBuf *sb = r_strbuf_newf ("%s=", key);
 	if (strchr (val, '\n')) {
 		if (strstr (val, "EOF")) {
-			R_LOG_TODO ("Value cannot contain 'EOF'");
+			R_LOG_TODO ("Value cannot contain multiline text with 'EOF'");
 		}
-		r_strbuf_appendf (sb, "<<EOF\n%sEOF", val);
-	} else {
-		r_strbuf_append (sb, val);
+		return r_str_newf ("%s=<<EOF\n%sEOF", key, val);
 	}
-	return r_strbuf_drain (sb);
+	return r_str_newf ("%s=%s", key, val);
 }
 
 static char *replace_lines(const char *src, size_t from, size_t to, const char *news) {
