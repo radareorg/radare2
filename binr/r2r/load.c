@@ -117,11 +117,6 @@ R_API RVecR2RCmdTestPtr *r2r_load_cmd_test_file(const char *file) {
 		return NULL;
 	}
 	R2RCmdTest *test = r2r_cmd_test_new ();
-	if (!test) {
-		free (contents);
-		RVecR2RCmdTestPtr_free (ret);
-		return NULL;
-	}
 
 	ut64 linenum = 0;
 	char *line = contents;
