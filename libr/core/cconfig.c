@@ -4103,6 +4103,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("asm.cmt.off", "nodup", "show offset comment in disasm (true, false, nodup)");
 	SETB ("asm.cmt.fold", "false", "fold comments, toggle with Vz");
 	SETB ("asm.cmt.token", ";", "token to use before printing a comment");
+	SETB ("asm.cmt.strings", "true", "show comment strings referenced by aop.ptr");
 	SETB ("asm.cmt.flgrefs", "true", "show comment flags associated to branch reference");
 	SETB ("asm.cmt.right", "true", "show comments at right of disassembly if they fit in screen");
 	SETB ("asm.cmt.esil", "false", "show ESIL expressions as comments");

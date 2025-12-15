@@ -191,6 +191,7 @@ typedef struct r_disasm_state_t {
 	bool show_cmt_flgrefs;
 	bool show_cmt_esil;
 	bool show_cmt_pseudo;
+	bool show_cmt_strings;
 	bool show_cycles;
 	bool show_refptr;
 	bool show_stackptr;
@@ -868,6 +869,7 @@ static RDisasmState *ds_init(RCore *core) {
 	ds->cmtcol = r_config_get_i (core->config, "asm.cmt.col");
 	ds->show_cmt_esil = r_config_get_b (core->config, "asm.cmt.esil");
 	ds->show_cmt_pseudo = r_config_get_b (core->config, "asm.cmt.pseudo");
+	ds->show_cmt_strings = r_config_get_b (core->config, "asm.cmt.strings");
 	ds->show_cmt_flgrefs = r_config_get_b (core->config, "asm.cmt.flgrefs");
 	ds->show_cycles = r_config_get_i (core->config, "asm.cycles");
 	ds->show_stackptr = r_config_get_i (core->config, "asm.stackptr");
@@ -4826,6 +4828,9 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 }
 
 static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refaddr) {
+	if (!ds->show_cmt_strings) {
+		return;
+	}
 	if (ds->core->flags->realnames || !r_bin_string_filter (ds->core->bin, str, refaddr)) {
 		return;
 	}
