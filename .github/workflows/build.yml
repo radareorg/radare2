@@ -648,7 +648,7 @@ jobs:
         wget https://ftp.fau.de/debian/pool/main/liba/libabigail/abigail-tools_2.2-2_amd64.deb
         sudo dpkg -i abigail-tools_2.2-2_amd64.deb
     - name: Download Build
-      uses: actions/download-artifact@v6
+      uses: actions/download-artifact@v7
       with:
         name: linux-static-amd64
         path: /tmp
@@ -778,7 +778,7 @@ jobs:
       - name: Prepare release notes
         run: ./sys/release-notes.sh | tee ./RELEASE_NOTES.md
       - name: Download artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           path: dist/artifacts
       - name: Generate checksums
