@@ -24,7 +24,7 @@ jobs:
           sys/debian.sh
           make -C dist/debian
     - name: Pub
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v6
       with:
         name: linux-acr-deb-arm64
         path: dist/debian/*/*.deb
@@ -45,7 +45,7 @@ jobs:
           sys/debian.sh
           make -C dist/debian
     - name: Pub
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v6
       with:
         name: linux-acr-deb-riscv64
         path: dist/debian/*/*.deb
@@ -66,7 +66,7 @@ jobs:
           sys/debian.sh
           make -C dist/debian
     - name: Pub
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v6
       with:
         name: linux-acr-deb-s390x
         path: dist/debian/*/*.deb
