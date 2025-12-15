@@ -544,7 +544,7 @@ R_API int r_core_seek_base(RCore *core, const char *hex);
 R_API void r_core_seek_previous(RCore *core, const char *type);
 R_API void r_core_seek_next(RCore *core, const char *type);
 R_API int r_core_seek_align(RCore *core, ut64 align, int count);
-R_API void r_core_arch_bits_at(RCore *core, ut64 addr, R_OUT int * R_NULLABLE bits, R_OUT R_BORROW const char ** R_NULLABLE arch);
+R_API void r_core_arch_bits_at(RCore *core, ut64 addr, R_OUT int * R_NULLABLE bits, R_OUT R_UNOWNED const char ** R_NULLABLE arch);
 R_API void r_core_prompt_format_help(RCore *core);
 R_API char *r_core_prompt_format(RCore *core, const char *fmt);
 R_API void r_core_seek_arch_bits(RCore *core, ut64 addr);
@@ -923,7 +923,7 @@ R_API void r_core_clippy(RCore *core, const char *msg);
 
 /* watchers */
 R_API void r_core_cmpwatch_free(RCoreCmpWatcher *w);
-R_API R_BORROW RCoreCmpWatcher *r_core_cmpwatch_get(RCore *core, ut64 addr);
+R_API R_UNOWNED RCoreCmpWatcher *r_core_cmpwatch_get(RCore *core, ut64 addr);
 R_API bool r_core_cmpwatch_add(RCore *core, ut64 addr, int size, const char *cmd);
 R_API bool r_core_cmpwatch_del(RCore *core, ut64 addr);
 R_API bool r_core_cmpwatch_update(RCore *core, ut64 addr);

@@ -28,8 +28,8 @@
 #endif
 
 typedef struct qjs_arch_plugin_data_t {
-	R_BORROW RCore *core;
-	R_BORROW JSContext *ctx;
+	R_UNOWNED RCore *core;
+	R_UNOWNED JSContext *ctx;
 	JSValue decode_func;
 	// JSValue encode_func;
 } QjsArchPluginData;

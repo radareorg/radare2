@@ -176,7 +176,7 @@ static RBinSymbol *bin_symbol_from_symbol(RCoreSymCacheElement *element, RCoreSy
 	return sym;
 }
 
-static RCoreSymCacheElement *parse_dragons(RBinFile *bf, RBuffer *buf, int off, int bits, R_OWN char *file_name) {
+static RCoreSymCacheElement *parse_dragons(RBinFile *bf, RBuffer *buf, int off, int bits, R_OWNED char *file_name) {
 	st64 size = r_buf_size (buf);
 	if (size < 0 || off >= size) {
 		return NULL;

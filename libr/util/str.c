@@ -1926,7 +1926,7 @@ R_API size_t r_str_ansi_strip(char *str) {
 #if 0
 // unused
 // insert a string into another string, supports ansi control chars
-R_API char *r_str_insert(R_OWN char *src, int pos, const char *str) {
+R_API char *r_str_insert(R_OWNED char *src, int pos, const char *str) {
 	r_str_var (a, pos, src);
 	char *b = strdup (src + pos + r_str_ansi_len (str));
 	char *r = r_str_newf ("%s%s%s", a, str, b);

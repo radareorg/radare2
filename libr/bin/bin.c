@@ -1469,7 +1469,7 @@ R_API const char *r_bin_field_kindstr(RBinField *f) {
 	}
 }
 
-R_API RBinName *r_bin_name_new_from(R_OWN char *name) {
+R_API RBinName *r_bin_name_new_from(R_OWNED char *name) {
 	R_RETURN_VAL_IF_FAIL (name, NULL);
 	RBinName *bn = R_NEW0 (RBinName);
 	bn->oname = name;

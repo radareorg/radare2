@@ -1130,7 +1130,7 @@ R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, int reftyp
 R_API int r_anal_function_del(RAnal *anal, ut64 addr);
 R_API bool r_anal_function_add_bb(RAnal *anal, RAnalFunction *fcn,
 		ut64 addr, ut64 size,
-		ut64 jump, ut64 fail, R_BORROW RAnalDiff *diff);
+		ut64 jump, ut64 fail, R_UNOWNED RAnalDiff *diff);
 R_API bool r_anal_check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64 high);
 
 R_API void r_anal_function_check_bp_use(RAnalFunction *fcn);
@@ -1206,14 +1206,14 @@ R_API void r_anal_remove_parsed_type(RAnal *anal, const char *name);
 R_API void r_anal_save_parsed_type(RAnal *anal, const char *parsed);
 
 /* var.c */
-R_API R_OWN char *r_anal_function_autoname_var(RAnalFunction *fcn, char kind, const char *pfx, int ptr);
-R_API R_BORROW RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind, const char * R_NULLABLE type, int size, bool isarg, const char * R_NONNULL name);
+R_API R_OWNED char *r_anal_function_autoname_var(RAnalFunction *fcn, char kind, const char *pfx, int ptr);
+R_API R_UNOWNED RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind, const char * R_NULLABLE type, int size, bool isarg, const char * R_NONNULL name);
 R_API bool r_anal_function_set_var_prot(RAnalFunction *fcn, RList /*<RAnalVarProt>*/ *l);
-R_API R_BORROW RAnalVar *r_anal_function_get_var(RAnalFunction *fcn, char kind, int delta);
+R_API R_UNOWNED RAnalVar *r_anal_function_get_var(RAnalFunction *fcn, char kind, int delta);
 R_API RList *r_anal_var_deserialize(const char *ser);
 R_API char *r_anal_var_prot_serialize(RList /*<RAnalVarProt>*/ *l, bool spaces);
 R_API RList /*<RAnalVarProt>*/ *r_anal_var_get_prots(RAnalFunction *fcn);
-R_API R_BORROW RAnalVar *r_anal_function_get_var_byname(RAnalFunction *fcn, const char *name);
+R_API R_UNOWNED RAnalVar *r_anal_function_get_var_byname(RAnalFunction *fcn, const char *name);
 R_API void r_anal_function_delete_vars_by_kind(RAnalFunction *fcn, RAnalVarKind kind);
 R_API void r_anal_function_delete_all_vars(RAnalFunction *fcn);
 R_API void r_anal_function_delete_unused_vars(RAnalFunction *fcn);
@@ -1221,7 +1221,7 @@ R_API void r_anal_function_delete_var(RAnalFunction *fcn, RAnalVar *var);
 R_API bool r_anal_function_rebase_vars(RAnal *a, RAnalFunction *fcn);
 R_API st64 r_anal_function_get_var_stackptr_at(RAnalFunction *fcn, st64 delta, ut64 addr);
 R_API const char *r_anal_function_get_var_reg_at(RAnalFunction *fcn, st64 delta, ut64 addr);
-R_API R_BORROW RVecAnalVarPtr *r_anal_function_get_vars_used_at(RAnalFunction *fcn, ut64 op_addr);
+R_API R_UNOWNED RVecAnalVarPtr *r_anal_function_get_vars_used_at(RAnalFunction *fcn, ut64 op_addr);
 
 R_API bool r_anal_var_rename(RAnal *anal, RAnalVar *var, const char *new_name);
 R_API void r_anal_var_set_type(RAnal *anal, RAnalVar *var, const char *type);
@@ -1230,7 +1230,7 @@ R_API ut64 r_anal_var_addr(RAnalVar *var);
 R_API bool r_anal_var_set_access(RAnal *anal, RAnalVar *var, const char *reg, ut64 access_addr, int access_type, st64 stackptr);
 R_API void r_anal_var_remove_access_at(RAnalVar *var, ut64 address);
 R_API void r_anal_var_clear_accesses(RAnalVar *var);
-R_API void r_anal_var_add_constraint(RAnalVar *var, R_BORROW RAnalVarConstraint *constraint);
+R_API void r_anal_var_add_constraint(RAnalVar *var, R_UNOWNED RAnalVarConstraint *constraint);
 R_API char *r_anal_var_get_constraints_readable(RAnalVar *var);
 
 // Get the access to var at exactly addr if there is one
@@ -1467,7 +1467,7 @@ R_API void r_anal_bits_hints_foreach(RAnal *anal, RAnalBitsHintCb cb, void *user
 // get the hint-specified arch value to be considered at addr
 // hint_addr will optionally be set to the address where the hint that specifies this arch is placed or UT64_MAX
 // if there is no hint affecting addr.
-R_API R_BORROW const char * R_NULLABLE  r_anal_hint_arch_at(RAnal *anal, ut64 addr, ut64 * R_NULLABLE hint_addr);
+R_API R_UNOWNED const char * R_NULLABLE  r_anal_hint_arch_at(RAnal *anal, ut64 addr, ut64 * R_NULLABLE hint_addr);
 
 // get the hint-specified bits value to be considered at addr
 // hint_addr will optionally be set to the address where the hint that specifies this arch is placed or UT64_MAX

@@ -1755,8 +1755,8 @@ static int cmd_wt(RCore *core, const char *input) {
 	case 's': { // "wts"
 		ut64 addr = 0;
 		char *host_port;
-		R_BORROW char *host;
-		R_BORROW char *port;
+		R_UNOWNED char *host;
+		R_UNOWNED char *port;
 		ut8 *buf;
 		RSocket *sock;
 
