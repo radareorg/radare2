@@ -65,16 +65,8 @@ static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
 			R_LOG_ERROR ("Missing opening end token after <<");
 			return NULL;
 		}
-#if 0
-		if (strcmp (endtoken, "EOF") != 0) {
-			// In case there will be strings containing "EOF" inside of them, this requirement
-			// can be weakened to only apply for strings which do not contain "EOF".
-			R_LOG_ERROR ("End token must be \"EOF\", got \"%s\" instead", endtoken);
-			return NULL;
-		}
-#endif
 		RStrBuf *sb = r_strbuf_new (NULL);
-		// r_strbuf_reserve (sb, 8192);
+		r_strbuf_reserve (sb, 8192);
 		char *line = *nextline;
 		size_t linesz = 0;
 		while (line) {
