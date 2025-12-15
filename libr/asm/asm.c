@@ -350,6 +350,20 @@ R_API bool r_asm_use_parser(RAsm *a, const char *name) {
 			}
 		}
 		free (sname);
+	} else {
+		// Try to match arch name with arch.pseudo pattern
+		char *dotname = r_str_newf ("%s.pseudo", name);
+		if (dotname) {
+			r_list_foreach (a->sessions, iter, aps) {
+				RAsmPlugin *ap = aps->plugin;
+				if (!strcmp (ap->meta.name, dotname)) {
+					useparser (a, aps);
+					found = true;
+					break;
+				}
+			}
+			free (dotname);
+		}
 	}
 	if (!found) {
 		R_LOG_WARN ("Cannot find asm.parser for %s", name);
