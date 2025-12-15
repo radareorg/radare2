@@ -374,8 +374,11 @@ R_API R_MUSTUSE char *r_hash_tostring(RHash * R_NULLABLE ctx, const char *name, 
 	}
 
 	if (cj && cj->h->type == R_MUTA_TYPE_HASH) {
-		r_muta_session_update (cj, data, len);
-		r_muta_session_end (cj, data, len);
+		if (cj->h->end) {
+			r_muta_session_end (cj, data, len);
+		} else {
+			r_muta_session_update (cj, data, len);
+		}
 		if (cj->entropy != 0) {
 			ctx->entropy = cj->entropy;
 		}
