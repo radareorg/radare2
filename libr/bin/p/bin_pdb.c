@@ -164,7 +164,7 @@ static RList *symbols(RBinFile *bf) {
 	return ret;
 }
 
-static R_BORROW RList *lines(RBinFile *bf) {
+static R_UNOWNED RList *lines(RBinFile *bf) {
 	RList *ret = r_list_newf (free);
 	if (!ret) {
 		return NULL;

@@ -422,7 +422,7 @@ typedef struct r_debug_t {
 	PrintfCallback cb_printf;
 	RIOBind iob;
 
-	R_BORROW RDebugPluginSession *current;
+	R_UNOWNED RDebugPluginSession *current;
 	RVecDebugPluginSession *plugins;
 	// R2_590 only used by windbg, set from an io plugin??
 	// possible solution: io plugin should start windbg debug plugin and set/update plugin_data?

@@ -15,7 +15,7 @@
 #define QJS_STRING(x) JS_NewString(ctx, x)
 
 typedef struct {
-	R_BORROW JSContext *ctx;
+	R_UNOWNED JSContext *ctx;
 	JSValue call_func;
 } QjsContext;
 
@@ -63,7 +63,7 @@ typedef struct qjs_core_plugin {
 typedef struct qjs_arch_plugin_t {
 	char *name;
 	char *arch;
-	R_BORROW JSContext *ctx;
+	R_UNOWNED JSContext *ctx;
 	JSValue decode_func;
 	// JSValue encode_func;
 } QjsArchPlugin;
@@ -71,7 +71,7 @@ typedef struct qjs_arch_plugin_t {
 typedef struct qjs_parse_plugin_t {
 	char *name;
 	RAsmPlugin *iop;
-	R_BORROW JSContext *ctx;
+	R_UNOWNED JSContext *ctx;
 	JSValue fn_parse_js;
 	// JSValue encode_func;
 } QjsAsmPlugin;
@@ -79,7 +79,7 @@ typedef struct qjs_parse_plugin_t {
 typedef struct qjs_io_plugin_t {
 	char *name;
 	RIOPlugin *iop;
-	R_BORROW JSContext *ctx;
+	R_UNOWNED JSContext *ctx;
 	JSValue fn_check_js;
 	JSValue fn_open_js;
 	JSValue fn_seek_js;
@@ -109,8 +109,8 @@ R_VEC_TYPE(RVecIoPlugin, QjsIoPlugin); // R2_590 add finalizer function
 
 typedef struct qjs_plugin_manager_t {
 	ut32 magic;
-	R_BORROW RCore *core;
-	R_BORROW JSRuntime *rt;
+	R_UNOWNED RCore *core;
+	R_UNOWNED JSRuntime *rt;
 	QjsContext default_ctx; // context for running normal JS code
 	RVecCorePlugin core_plugins;
 	RVecArchPlugin arch_plugins;

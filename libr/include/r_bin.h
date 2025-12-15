@@ -636,7 +636,7 @@ typedef struct r_bin_plugin_t {
 	bool (*sections_vec)(RBinFile *bf); // R2_590
 	bool (*symbols_vec)(RBinFile *bf);
 	bool (*imports_vec)(RBinFile *bf);
-	R_BORROW RList/*<RBinDwarfRow>*/* (*lines)(RBinFile *bf);
+	R_UNOWNED RList/*<RBinDwarfRow>*/* (*lines)(RBinFile *bf);
 	RList/*<RBinString>*/* (*strings)(RBinFile *bf);
 	RBinInfo/*<RBinInfo>*/* (*info)(RBinFile *bf);
 	RList/*<RBinField>*/* (*fields)(RBinFile *bf);
@@ -976,7 +976,7 @@ R_API const char *r_bin_lang_tostring(int type);
 R_API RList *r_bin_get_mem(RBin *bin);
 
 R_API RBinName *r_bin_name_new(const char *name);
-R_API RBinName *r_bin_name_new_from(R_OWN char *name);
+R_API RBinName *r_bin_name_new_from(R_OWNED char *name);
 R_API RBinName *r_bin_name_clone(RBinName *bn);
 R_API void r_bin_name_update(RBinName *bn, const char *name);
 R_API char *r_bin_name_tostring(RBinName *bn);

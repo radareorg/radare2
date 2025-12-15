@@ -374,7 +374,7 @@ static char *parse_value(RJson *parent, const char * R_NULLABLE key, char *p) {
 	return NULL;
 }
 
-R_API R_MUSTUSE RJson *r_json_parse(R_BORROW char *text) {
+R_API R_MUSTUSE RJson *r_json_parse(R_UNOWNED char *text) {
 	R_RETURN_VAL_IF_FAIL (text, NULL);
 	RJson js = {0};
 	bool res = parse_value (&js, 0, text);

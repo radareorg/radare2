@@ -422,7 +422,7 @@ R_API void r_anal_hint_free(RAnalHint *h) {
 	}
 }
 
-R_API R_BORROW const char * R_NULLABLE r_anal_hint_arch_at(RAnal *anal, ut64 addr, ut64 * R_NULLABLE hint_addr) {
+R_API R_UNOWNED const char * R_NULLABLE r_anal_hint_arch_at(RAnal *anal, ut64 addr, ut64 * R_NULLABLE hint_addr) {
 	RBNode *node = r_rbtree_upper_bound (anal->arch_hints, &addr, ranged_hint_record_cmp, NULL);
 	if (R_LIKELY (node)) {
 		RAnalArchHintRecord *record = (RAnalArchHintRecord *)container_of (node, RAnalRangedHintRecordBase, rb);

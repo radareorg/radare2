@@ -111,7 +111,7 @@ static RBinAddr *binsym(RBinFile *bf, int sym) {
 	return r_bin_java_get_entrypoint (bf->bo->bin_obj, sym);
 }
 
-static R_BORROW RList *lines(RBinFile *bf) {
+static R_UNOWNED RList *lines(RBinFile *bf) {
 	return NULL;
 #if 0
 	char *file = bf->file? strdup (bf->file): strdup ("");

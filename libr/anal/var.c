@@ -547,7 +547,7 @@ R_API RList *r_anal_var_get_prots(RAnalFunction *fcn) {
 	return ret;
 }
 
-R_API R_BORROW RAnalVar *r_anal_function_get_var_byname(RAnalFunction *fcn, const char *name) {
+R_API R_UNOWNED RAnalVar *r_anal_function_get_var_byname(RAnalFunction *fcn, const char *name) {
 	R_RETURN_VAL_IF_FAIL (fcn && name, NULL);
 	RAnalVar **it;
 	R_VEC_FOREACH (&fcn->vars, it) {
@@ -716,7 +716,7 @@ R_API int r_anal_var_get_argnum(RAnalVar *var) {
 	return idx;
 }
 
-R_API R_BORROW RVecAnalVarPtr *r_anal_function_get_vars_used_at(RAnalFunction *fcn, ut64 op_addr) {
+R_API R_UNOWNED RVecAnalVarPtr *r_anal_function_get_vars_used_at(RAnalFunction *fcn, ut64 op_addr) {
 	R_RETURN_VAL_IF_FAIL (fcn, NULL);
 	return ht_up_find (fcn->inst_vars, op_addr - fcn->addr, NULL);
 }
@@ -871,7 +871,7 @@ R_API RAnalVarAccess *r_anal_var_get_access_at(RAnalVar *var, ut64 addr) {
 	return NULL;
 }
 
-R_API void r_anal_var_add_constraint(RAnalVar *var, R_BORROW RAnalVarConstraint *constraint) {
+R_API void r_anal_var_add_constraint(RAnalVar *var, R_UNOWNED RAnalVarConstraint *constraint) {
 	RVecAnalVarConstraint_push_back (&var->constraints, constraint);
 }
 
@@ -1017,7 +1017,7 @@ static const char *get_regname(RAnal *anal, RAnalValue *value) {
 }
 #endif
 
-R_API R_OWN char *r_anal_function_autoname_var(RAnalFunction *fcn, char kind, const char *pfx, int ptr) {
+R_API R_OWNED char *r_anal_function_autoname_var(RAnalFunction *fcn, char kind, const char *pfx, int ptr) {
 	const ut32 uptr = R_ABS (ptr);
 	char *varname = r_str_newf ("%s_%xh", pfx, uptr);
 	RAnalVar **it;

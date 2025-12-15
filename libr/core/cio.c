@@ -347,7 +347,7 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 	return ret;
 }
 
-R_API void r_core_arch_bits_at(RCore *core, ut64 addr, R_OUT int * R_NULLABLE bits, R_OUT R_BORROW const char ** R_NULLABLE arch) {
+R_API void r_core_arch_bits_at(RCore *core, ut64 addr, R_OUT int * R_NULLABLE bits, R_OUT R_UNOWNED const char ** R_NULLABLE arch) {
 	int bitsval = 0;
 	const char *archval = NULL;
 	if (!core->fixedarch || !core->fixedbits) {

@@ -2065,7 +2065,7 @@ static ut64 size(RBinFile *bf) {
 }
 
 #if 0
-static R_BORROW RList *lines(RBinFile *bf) {
+static R_UNOWNED RList *lines(RBinFile *bf) {
 	struct r_bin_dex_obj_t *dex = bf->bo->bin_obj;
 	return dex->lines_list;
 }

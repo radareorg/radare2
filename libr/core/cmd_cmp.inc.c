@@ -83,7 +83,7 @@ R_API void r_core_cmpwatch_free(RCoreCmpWatcher *w) {
 	}
 }
 
-R_API R_BORROW RCoreCmpWatcher *r_core_cmpwatch_get(RCore *core, ut64 addr) {
+R_API R_UNOWNED RCoreCmpWatcher *r_core_cmpwatch_get(RCore *core, ut64 addr) {
 	RCoreCmpWatcher *w;
 	RListIter *iter;
 	r_list_foreach (core->watchers, iter, w) {

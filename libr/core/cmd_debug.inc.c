@@ -5252,7 +5252,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 	}
 
 	// See the comment above
-	input = R_BORROW argv[0] + 1;
+	input = R_UNOWNED argv[0] + 1;
 
 	// "dd" and "dd*" always need a live process unless we're only printing
 	if (!print) {
