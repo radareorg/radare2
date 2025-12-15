@@ -209,11 +209,12 @@ static char *types(RBinFile *bf) {
 		case eLF_STRUCTURE:
 		case eLF_CLASS: {
 			char *name = NULL;
+			char *name_to_free = NULL;
 			if (type_info->get_name) {
 				type_info->get_name (tpi_stream, type_info, &name);
 			}
 			if (!name) {
-				name = r_str_newf ("struct_0x%x", type->tpi_idx);
+				name = name_to_free = r_str_newf ("struct_0x%x", type->tpi_idx);
 			}
 			r_strbuf_appendf (sb, "struct %s {\n", name);
 			if (type_info->get_members) {
@@ -241,18 +242,17 @@ static char *types(RBinFile *bf) {
 				}
 			}
 			r_strbuf_append (sb, "};\n\n");
-			if (!type_info->get_name) {
-				free (name);
-			}
+			free (name_to_free);
 			break;
 		}
 		case eLF_UNION: {
 			char *name = NULL;
+			char *name_to_free = NULL;
 			if (type_info->get_name) {
 				type_info->get_name (tpi_stream, type_info, &name);
 			}
 			if (!name) {
-				name = r_str_newf ("union_0x%x", type->tpi_idx);
+				name = name_to_free = r_str_newf ("union_0x%x", type->tpi_idx);
 			}
 			r_strbuf_appendf (sb, "union %s {\n", name);
 			if (type_info->get_members) {
@@ -280,18 +280,17 @@ static char *types(RBinFile *bf) {
 				}
 			}
 			r_strbuf_append (sb, "};\n\n");
-			if (!type_info->get_name) {
-				free (name);
-			}
+			free (name_to_free);
 			break;
 		}
 		case eLF_ENUM: {
 			char *name = NULL;
+			char *name_to_free = NULL;
 			if (type_info->get_name) {
 				type_info->get_name (tpi_stream, type_info, &name);
 			}
 			if (!name) {
-				name = r_str_newf ("enum_0x%x", type->tpi_idx);
+				name = name_to_free = r_str_newf ("enum_0x%x", type->tpi_idx);
 			}
 			r_strbuf_appendf (sb, "enum %s {\n", name);
 			if (type_info->get_members) {
@@ -318,9 +317,7 @@ static char *types(RBinFile *bf) {
 				}
 			}
 			r_strbuf_append (sb, "};\n\n");
-			if (!type_info->get_name) {
-				free (name);
-			}
+			free (name_to_free);
 			break;
 		}
 		default:
