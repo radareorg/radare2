@@ -6,7 +6,7 @@
 #include "../format/pdb/omap.h"
 
 // Forward declarations for PDB internal structures needed by the plugin
-typedef void (*parse_stream_)(void *stream, R_STREAM_FILE *stream_file);
+typedef void(*parse_stream_)(void *stream, R_STREAM_FILE *stream_file);
 
 typedef struct {
 	int indx;
@@ -16,7 +16,8 @@ typedef struct {
 	free_func free;
 } SStreamParseFunc;
 
-#define PDB7_SIGNATURE "Microsoft C/C++ MSF 7.00\r\n\x1A" "DS\0\0\0"
+#define PDB7_SIGNATURE "Microsoft C/C++ MSF 7.00\r\n\x1A" \
+		"DS\0\0\0"
 #define PDB7_SIGNATURE_LEN 32
 
 typedef struct {
@@ -76,7 +77,7 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 static RList *symbols(RBinFile *bf) {
-	RList *ret = r_list_newf ((RListFree) r_bin_symbol_free);
+	RList *ret = r_list_newf ((RListFree)r_bin_symbol_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -96,7 +97,7 @@ static RList *symbols(RBinFile *bf) {
 
 	it = r_list_iterator (l);
 	while (r_list_iter_next (it)) {
-		tmp = (SStreamParseFunc *) r_list_iter_get (it);
+		tmp = (SStreamParseFunc *)r_list_iter_get (it);
 		switch (tmp->type) {
 		case ePDB_STREAM_SECT__HDR_ORIG:
 			sctns_orig = tmp;
@@ -145,13 +146,13 @@ static RList *symbols(RBinFile *bf) {
 			}
 
 			char *demangled_name = r_bin_demangle_msvc (gdata->name.name);
-			const char *name = demangled_name ? demangled_name : gdata->name.name;
+			const char *name = demangled_name? demangled_name: gdata->name.name;
 
 			sym->name = r_bin_name_new (name);
-			sym->vaddr = bf->bo->baddr + omap_remap ((omap) ? (omap->stream) : NULL, gdata->offset + sctn_header->virtual_address);
+			sym->vaddr = bf->bo->baddr + omap_remap ((omap)? (omap->stream): NULL, gdata->offset + sctn_header->virtual_address);
 			sym->paddr = gdata->offset;
 			sym->size = 0; // PDB doesn't provide symbol sizes
-			sym->type = (gdata->symtype == 2) ? "FUNC" : "OBJ";
+			sym->type = (gdata->symtype == 2)? "FUNC": "OBJ";
 			sym->bind = "GLOBAL";
 			sym->attr = R_BIN_ATTR_GLOBAL;
 
@@ -177,6 +178,160 @@ static R_BORROW RList *lines(RBinFile *bf) {
 	return ret;
 }
 
+static char *types(RBinFile *bf) {
+	RBinPDBObj *obj = bf->bo->bin_obj;
+	if (!obj || !obj->pdb.pdb_streams) {
+		return NULL;
+	}
+
+	RStrBuf *sb = r_strbuf_new ("");
+	if (!sb) {
+		return NULL;
+	}
+
+	// Get the TPI stream from the streams list
+	STpiStream *tpi_stream = r_list_get_n (obj->pdb.pdb_streams, ePDB_STREAM_TPI);
+	if (!tpi_stream || !tpi_stream->types) {
+		r_strbuf_free (sb);
+		return NULL;
+	}
+
+	// Iterate through all types and extract struct/union/enum definitions
+	RListIter *it = r_list_iterator (tpi_stream->types);
+	while (r_list_iter_next (it)) {
+		SType *type = r_list_iter_get (it);
+		if (!type) {
+			continue;
+		}
+
+		STypeInfo *type_info = &type->type_data;
+		switch (type_info->leaf_type) {
+		case eLF_STRUCTURE:
+		case eLF_CLASS: {
+			char *name = NULL;
+			if (type_info->get_name) {
+				type_info->get_name (tpi_stream, type_info, &name);
+			}
+			if (!name) {
+				name = r_str_newf ("struct_0x%x", type->tpi_idx);
+			}
+			r_strbuf_appendf (sb, "struct %s {\n", name);
+			if (type_info->get_members) {
+				RList *members = NULL;
+				type_info->get_members (tpi_stream, type_info, &members);
+				if (members) {
+					RListIter *member_it = r_list_iterator (members);
+					while (r_list_iter_next (member_it)) {
+						STypeInfo *member_info = r_list_iter_get (member_it);
+						if (member_info && member_info->leaf_type == eLF_MEMBER) {
+							char *member_name = NULL;
+							char *member_type = NULL;
+							if (member_info->get_name) {
+								member_info->get_name (tpi_stream, member_info, &member_name);
+							}
+							if (member_info->get_print_type) {
+								member_info->get_print_type (tpi_stream, member_info, &member_type);
+							}
+							if (member_name && member_type) {
+								r_strbuf_appendf (sb, "  %s %s;\n", member_type, member_name);
+							}
+							free (member_type);
+						}
+					}
+				}
+			}
+			r_strbuf_append (sb, "};\n\n");
+			if (!type_info->get_name) {
+				free (name);
+			}
+			break;
+		}
+		case eLF_UNION: {
+			char *name = NULL;
+			if (type_info->get_name) {
+				type_info->get_name (tpi_stream, type_info, &name);
+			}
+			if (!name) {
+				name = r_str_newf ("union_0x%x", type->tpi_idx);
+			}
+			r_strbuf_appendf (sb, "union %s {\n", name);
+			if (type_info->get_members) {
+				RList *members = NULL;
+				type_info->get_members (tpi_stream, type_info, &members);
+				if (members) {
+					RListIter *member_it = r_list_iterator (members);
+					while (r_list_iter_next (member_it)) {
+						STypeInfo *member_info = r_list_iter_get (member_it);
+						if (member_info && member_info->leaf_type == eLF_MEMBER) {
+							char *member_name = NULL;
+							char *member_type = NULL;
+							if (member_info->get_name) {
+								member_info->get_name (tpi_stream, member_info, &member_name);
+							}
+							if (member_info->get_print_type) {
+								member_info->get_print_type (tpi_stream, member_info, &member_type);
+							}
+							if (member_name && member_type) {
+								r_strbuf_appendf (sb, "  %s %s;\n", member_type, member_name);
+							}
+							free (member_type);
+						}
+					}
+				}
+			}
+			r_strbuf_append (sb, "};\n\n");
+			if (!type_info->get_name) {
+				free (name);
+			}
+			break;
+		}
+		case eLF_ENUM: {
+			char *name = NULL;
+			if (type_info->get_name) {
+				type_info->get_name (tpi_stream, type_info, &name);
+			}
+			if (!name) {
+				name = r_str_newf ("enum_0x%x", type->tpi_idx);
+			}
+			r_strbuf_appendf (sb, "enum %s {\n", name);
+			if (type_info->get_members) {
+				RList *members = NULL;
+				type_info->get_members (tpi_stream, type_info, &members);
+				if (members) {
+					RListIter *member_it = r_list_iterator (members);
+					while (r_list_iter_next (member_it)) {
+						STypeInfo *member_info = r_list_iter_get (member_it);
+						if (member_info && member_info->leaf_type == eLF_ENUMERATE) {
+							char *enum_name = NULL;
+							int enum_val = 0;
+							if (member_info->get_name) {
+								member_info->get_name (tpi_stream, member_info, &enum_name);
+							}
+							if (member_info->get_val) {
+								member_info->get_val (tpi_stream, member_info, &enum_val);
+							}
+							if (enum_name) {
+								r_strbuf_appendf (sb, "  %s = %d,\n", enum_name, enum_val);
+							}
+						}
+					}
+				}
+			}
+			r_strbuf_append (sb, "};\n\n");
+			if (!type_info->get_name) {
+				free (name);
+			}
+			break;
+		}
+		default:
+			break;
+		}
+	}
+
+	char *ret = r_strbuf_drain (sb);
+	return ret && *ret? ret: NULL;
+}
+
 RBinPlugin r_bin_plugin_pdb = {
 	.meta = {
 		.name = "pdb",
@@ -188,6 +343,7 @@ RBinPlugin r_bin_plugin_pdb = {
 	.check = &check,
 	.symbols = &symbols,
 	.lines = &lines,
+	.types = &types,
 	.info = &info,
 	.minstrlen = 0,
 };
