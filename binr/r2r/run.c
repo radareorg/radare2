@@ -1,11 +1,9 @@
 /* radare - LGPL - Copyright 2020-2025 - pancake, thestr4ng3r */
 
 #include "r2r.h"
-#include <r_vec.h>
 
 #if R2__WINDOWS__
 #include <windows.h>
-R_VEC_TYPE(RVecHandle, HANDLE);
 #endif
 
 #if __wasi__
@@ -341,25 +339,23 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 	DO_READ (stdout)
 	DO_READ (stderr)
 
-	RVecHandle handles;
-	RVecHandle_init (&handles);
-	RVecHandle_reserve (&handles, 3);
+	HANDLE handles[3];
 	while (true) {
-		RVecHandle_clear (&handles);
 		size_t stdout_index = 0;
 		size_t stderr_index = 0;
 		size_t proc_index = 0;
+		size_t handles_count = 0;
 		if (!stdout_eof) {
-			stdout_index = RVecHandle_length (&handles);
-			RVecHandle_push_back (&handles, &stdout_overlapped.hEvent);
+			stdout_index = handles_count;
+			handles[handles_count++] = stdout_overlapped.hEvent;
 		}
 		if (!stderr_eof) {
-			stderr_index = RVecHandle_length (&handles);
-			RVecHandle_push_back (&handles, &stderr_overlapped.hEvent);
+			stderr_index = handles_count;
+			handles[handles_count++] = stderr_overlapped.hEvent;
 		}
 		if (!child_dead) {
-			proc_index = RVecHandle_length (&handles);
-			RVecHandle_push_back (&handles, &proc->proc);
+			proc_index = handles_count;
+			handles[handles_count++] = proc->proc;
 		}
 
 		DWORD timeout = INFINITE;
@@ -370,7 +366,7 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 			}
 			timeout = (DWORD) ((timeout_us_abs - now) / R_USEC_PER_MSEC);
 		}
-		DWORD signaled = WaitForMultipleObjects (RVecHandle_length (&handles), R_VEC_START_ITER (&handles), FALSE, timeout);
+		DWORD signaled = WaitForMultipleObjects (handles_count, handles, FALSE, timeout);
 		if (!stdout_eof && signaled == stdout_index) {
 			DWORD r;
 			BOOL res = GetOverlappedResult (proc->stdout_read, &stdout_overlapped, &r, TRUE);
@@ -409,7 +405,6 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 		}
 		break;
 	}
-	RVecHandle_clear (&handles);
 	CloseHandle (stdout_overlapped.hEvent);
 	CloseHandle (stderr_overlapped.hEvent);
 	return stdout_eof && stderr_eof && child_dead;
