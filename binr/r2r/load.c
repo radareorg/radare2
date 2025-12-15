@@ -74,6 +74,7 @@ static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
 		}
 #endif
 		RStrBuf *sb = r_strbuf_new (NULL);
+		// r_strbuf_reserve (sb, 8192);
 		char *line = *nextline;
 		size_t linesz = 0;
 		while (line) {

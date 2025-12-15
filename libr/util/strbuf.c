@@ -99,13 +99,16 @@ R_API bool r_strbuf_reserve(RStrBuf *sb, size_t len) {
 	if ((sb->ptr && len < sb->ptrlen) || (!sb->ptr && len < sizeof (sb->buf))) {
 		return true;
 	}
+	char *old_ptr = sb->ptr;
 	char *newptr = realloc (sb->ptr, len + 1);
 	if (!newptr) {
+		sb->ptr = old_ptr;
 		return false;
 	}
-	if (!sb->ptr) {
+	if (!old_ptr) {
 		memcpy (newptr, sb->buf, sizeof (sb->buf));
 	}
+	sb->weakref = false;
 	sb->ptr = newptr;
 	sb->ptrlen = len + 1;
 	return true;
@@ -468,16 +471,22 @@ R_API ut8 *r_strbuf_getbin(RStrBuf *sb, int *len) {
 }
 
 static inline char *drain(RStrBuf *sb) {
-	return sb->ptr
-		? sb->weakref
-			? r_mem_dup (sb->ptr, sb->ptrlen)
-			: sb->ptr
-		: r_str_ndup (sb->buf, sb->len);
+	if (sb->ptr) {
+		if (sb->weakref) {
+			return r_mem_dup (sb->ptr, sb->len);
+		}
+		// realloc down the allocation
+		sb->ptrlen = sb->len;
+		return realloc (sb->ptr, sb->len + 1);
+	}
+	return r_str_ndup (sb->buf, sb->len);
 }
 
 R_API char *r_strbuf_drain(RStrBuf *sb) {
 	R_RETURN_VAL_IF_FAIL (sb, NULL);
 	char *ret = drain (sb);
+	sb->ptr = NULL;
+	sb->ptrlen = 0;
 	free (sb);
 	return ret;
 }
@@ -547,6 +556,7 @@ R_API void r_strbuf_fini(RStrBuf *sb) {
 		R_FREE (sb->ptr);
 		sb->len = 0;
 		sb->buf[0] = '\0';
+		sb->ptrlen = 0;
 	}
 }
 
