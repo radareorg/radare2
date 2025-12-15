@@ -1275,17 +1275,20 @@ int r_core_charset_decode_cb(void *ctx, const ut8 *in, int len, ut8 **out, int *
 	int olen = 0;
 	ut8 *obuf = r_muta_session_get_output (core->charset_session, &olen);
 	if (olen < 1) {
+		free (obuf);
 		*out = NULL;
 		core->charset_session->output_len = 0;
 		return 0;
 	}
 	ut8 *cpy = malloc (olen + 1);
 	if (!cpy) {
+		free (obuf);
 		*out = NULL;
 		core->charset_session->output_len = 0;
 		return 0;
 	}
 	memcpy (cpy, obuf, olen);
+	free (obuf);
 	cpy[olen] = 0;
 	*out = cpy;
 	core->charset_session->output_len = 0;
@@ -1303,17 +1306,20 @@ int r_core_charset_encode_cb(void *ctx, const ut8 *in, int len, ut8 **out) {
 	int olen = 0;
 	ut8 *obuf = r_muta_session_get_output (c->charset_session, &olen);
 	if (olen < 1) {
+		free (obuf);
 		*out = NULL;
 		c->charset_session->output_len = 0;
 		return 0;
 	}
 	ut8 *cpy = malloc (olen);
 	if (!cpy) {
+		free (obuf);
 		*out = NULL;
 		c->charset_session->output_len = 0;
 		return 0;
 	}
 	memcpy (cpy, obuf, olen);
+	free (obuf);
 	*out = cpy;
 	c->charset_session->output_len = 0;
 	return olen;

@@ -156,7 +156,7 @@ R_API ut8 *r_muta_charset_decode(const ut8 *in, int in_len, int *out_len, const 
 			consumed = 1;
 		}
 
-		ptr += (consumed > 0)? consumed: 1;
+		ptr += consumed;
 
 		if (!text || len <= 0) {
 			continue;

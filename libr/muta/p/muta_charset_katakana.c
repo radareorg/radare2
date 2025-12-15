@@ -59,8 +59,8 @@ static bool update(RMutaSession *cj, const ut8 *b, int l) {
 			int olen = decode (cj, b + i, l - i, &out, &consumed);
 			if (olen > 0 && out) {
 				r_muta_session_append (cj, out, olen);
-				free (out);
 			}
+			free (out);
 			if (consumed < 1) {
 				consumed = 1;
 			}

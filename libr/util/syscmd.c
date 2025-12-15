@@ -46,6 +46,7 @@ static void showfile(RStrBuf *sb, PJ *pj, const int nth, const char *fpath, cons
 		gid = st.st_gid;
 		perm = st.st_mode & 0777;
 		if (! (u_rwx = strdup (r_str_rwx_i (perm >> 6)))) {
+			free (safe);
 			free (nn);
 			return;
 		}
