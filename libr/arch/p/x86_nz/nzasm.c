@@ -2295,8 +2295,9 @@ static int openter(RArchSession *a, ut8 *data, const Opcode *op) {
 		data[l++] = framesize & 0xff;
 		data[l++] = (framesize >> 8) & 0xff;
 		data[l++] = nesting;
+		return l;
 	}
-	return l;
+	return -1;
 }
 
 static int opjc(RArchSession *a, ut8 *data, const Opcode *op) {
