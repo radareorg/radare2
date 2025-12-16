@@ -478,7 +478,7 @@ static void r2r_setup_environment(void) {
 	r_sys_setenv ("TZ", "UTC");
 }
 
-static bool init_paths(R2RState *state) {
+static bool validate_suite(R2RState *state) {
 	char *r2_binary = r_sys_getenv ("R2R_RADARE2");
 	if (R_STR_ISNOTEMPTY (r2_binary)) {
 		state->run_config.r2_cmd = r2_binary;
@@ -517,7 +517,7 @@ static bool r2r_state_init(R2RState *state, R2ROptions *opt) {
 		state->run_config.shallow = opt->shallow;
 	}
 
-	if (!init_paths (state)) {
+	if (!validate_suite (state)) {
 		return false;
 	}
 	state->run_config.skip_cmd = r_sys_getenv_asbool ("R2R_SKIP_CMD");
