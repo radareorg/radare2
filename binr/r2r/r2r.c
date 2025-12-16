@@ -672,12 +672,6 @@ static void test_result_to_json(PJ *pj, R2RTestResultInfo *result) {
 	pj_o (pj);
 	pj_k (pj, "type");
 	R2RTest *test = result->test;
-	if (!test) {
-		R_LOG_ERROR ("result->test shouldn't be null");
-		pj_s (pj, "error");
-		pj_end (pj);
-		return;
-	}
 	switch (test->type) {
 	case R2R_TEST_TYPE_CMD:
 		pj_s (pj, "cmd");
