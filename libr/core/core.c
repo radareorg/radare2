@@ -3779,7 +3779,7 @@ R_API char *r_core_editor(const RCore *core, const char *file, const char *str) 
 		RCons *cons = core->cons;
 		void *tmp = cons->cb_editor;
 		cons->cb_editor = NULL;
-		r_cons_editor (cons, name, NULL);
+		free (r_cons_editor (cons, name, NULL));
 		cons->cb_editor = tmp;
 	} else {
 		if (editor && name) {

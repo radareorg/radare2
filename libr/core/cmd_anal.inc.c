@@ -15911,8 +15911,7 @@ static void cmd_ano(RCore *core, const char *input) {
 		if (fcn) {
 			char *f = anopath (core, fcn);
 			if (f) {
-				// r_sys_cmdf ("vim %s", f);
-				r_cons_editor (core->cons, f, NULL);
+				free (r_cons_editor (core->cons, f, NULL));
 				free (f);
 			}
 		} else {
@@ -15980,14 +15979,13 @@ static void cmd_ano(RCore *core, const char *input) {
 					r_str_trim (s);
 					if (R_STR_ISEMPTY (s)) {
 						r_file_rm (f);
-						r_cons_editor (core->cons, f, NULL);
+						free (r_cons_editor (core->cons, f, NULL));
 					} else {
 						r_cons_printf (core->cons, "%s\n", s);
 					}
 					free (s);
 				} else {
-					r_cons_editor (core->cons, f, NULL);
-					// r_sys_cmdf ("vim %s", f);
+					free (r_cons_editor (core->cons, f, NULL));
 				}
 				free (f);
 			}
