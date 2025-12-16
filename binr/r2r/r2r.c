@@ -970,7 +970,7 @@ static void print_log(R2RState *state, ut64 prev_completed, ut64 prev_paths_comp
 	int a = (int)RVecR2RTestPtr_length (&state->queue);
 	for (; prev_paths_completed < paths_completed; prev_paths_completed++) {
 		const char *testpath = *RVecConstCharPtr_at (&state->completed_paths, prev_paths_completed);
-		printf ("[%d/%d] %20s ", (int)paths_completed, (int) (a + prev_paths_completed), shortpath (testpath));
+		printf ("[%d/%d] %30s ", (int)paths_completed, (int) (a + prev_paths_completed), shortpath (testpath));
 		print_state_counts (state);
 		printf ("\n");
 	}
