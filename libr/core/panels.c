@@ -6910,12 +6910,6 @@ static void __panels_process(RCore *core, RPanels *panels) {
 
 	bool originVmode = core->vmode;
 	core->vmode = true;
-	{
-		const char *layout = r_config_get (core->config, "scr.layout");
-		if (R_STR_ISNOTEMPTY (layout)) {
-			r_core_panels_load (core, layout);
-		}
-	}
 
 	bool o_interactive = r_cons_is_interactive (core->cons);
 	r_cons_set_interactive (core->cons, true);
