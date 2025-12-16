@@ -39,7 +39,7 @@ DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS ()
 // ESIL macros:
 
 // put the sign bit on the stack
-#define ES_IS_NEGATIVE(arg) "1," arg ",<<<,1,&"
+#define ES_IS_NEGATIVE(arg) "1," arg ",ROL,1,&"
 
 #define ES_B(x) "0xff," x ",&"
 #define ES_H(x) "0xffff," x ",&"

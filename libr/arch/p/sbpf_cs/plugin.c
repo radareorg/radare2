@@ -1445,10 +1445,10 @@ static void analop_esil(RArchSession *a, RAnalOp *op, cs_insn *insn, ut64 addr) 
 		esilprintf (op, "-1,%s,*=", REG (0));
 		break;
 	case BPF_INS_ARSH:	///< eBPF only
-		ALU (">>>>", 32);
+		ALU ("ASR", 32);
 		break;
 	case BPF_INS_ARSH64:
-		ALU (">>>>", 64);
+		ALU ("ASR", 64);
 		break;
 	case BPF_INS_MOV:	///< eBPF only
 		if (OP (1).type == BPF_OP_IMM) {

@@ -262,8 +262,8 @@ static int decode_sign_ext64(ShiftType extender) {
 static const char *decode_shift_64(ShiftType shift) {
 	const char * const E_OP_SR = ">>";
 	const char * const E_OP_SL = "<<";
-	const char * const E_OP_RR = ">>>";
-	const char * const E_OP_AR = ">>>>";
+	const char * const E_OP_RR = "ROR";
+	const char * const E_OP_AR = "ASR";
 	const char * const E_OP_VOID = "";
 
 	switch (shift) {
@@ -1459,7 +1459,7 @@ static int analop_esil(RArchSession *a, RAnalOp *op, const ut8 *buf, int len, In
 		break;
 	}
 	case ARM64_ROR:
-		OPCALL(">>>");
+		OPCALL("ROR");
 		break;
 	case ARM64_NOP:
 		r_strbuf_set (&op->esil, ",");
@@ -2395,14 +2395,14 @@ static int analop_esil(RArchSession *a, RAnalOp *op, const ut8 *buf, int len, In
 		if (ISREG64 (2)) {
 			if (LSHIFT2_64 (2)) {
 				ARG64_APPEND(&op->esil, 2);
-				r_strbuf_appendf (&op->esil, ",%d,%%,%s,>>>>,%s,=", size, r1, r0);
+				r_strbuf_appendf (&op->esil, ",%d,%%,%s,ASR,%s,=", size, r1, r0);
 			} else {
 				const char *r2 = REG64 (2);
-				r_strbuf_setf (&op->esil, "%d,%s,%%,%s,>>>>,%s,=", size, r2, r1, r0);
+				r_strbuf_setf (&op->esil, "%d,%s,%%,%s,ASR,%s,=", size, r2, r1, r0);
 			}
 		} else {
 			ut64 i2 = GETIMM64 (2);
-			r_strbuf_setf (&op->esil, "%"PFMT64u",%s,>>>>,%s,=", i2 % (ut64)size, r1, r0);
+			r_strbuf_setf (&op->esil, "%"PFMT64u",%s,ASR,%s,=", i2 % (ut64)size, r1, r0);
 		}
 		break;
 	}

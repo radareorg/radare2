@@ -760,10 +760,10 @@ static int first_nibble_is_4(RArch* anal, RAnalOp* op, ut16 code) {
 		r_strbuf_setf (&op->esil, "r%d,pr,=", GET_TARGET_REG (code));
 		op->type = R_ANAL_OP_TYPE_MOV;
 	} else if (IS_ROTR (code)) {
-		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,r%d,0x1,&,sr,|=,0x1,r%d,>>>,r%d,=", GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
+		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,r%d,0x1,&,sr,|=,0x1,r%d,ROR,r%d,=", GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
 		op->type = (code & 1)? R_ANAL_OP_TYPE_ROR:R_ANAL_OP_TYPE_ROL;
 	} else if (IS_ROTL (code)) {
-		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,0x1,r%d,<<<,r%d,=,r%d,0x1,&,sr,|=", GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
+		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,0x1,r%d,ROL,r%d,=,r%d,0x1,&,sr,|=", GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
 		op->type = (code & 1)? R_ANAL_OP_TYPE_ROR:R_ANAL_OP_TYPE_ROL;
 	} else if (IS_ROTCR (code)) {
 		r_strbuf_setf (&op->esil, "0,sr,0x1,&,?{,0x80000000,},0xFFFFFFFE,sr,&=,r%d,1,&,sr,|=,1,r%d,>>=,r%d,|=", GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
@@ -1342,4 +1342,3 @@ R_API RLibStruct radare_plugin = {
 	.version = R2_VERSION
 };
 #endif
-

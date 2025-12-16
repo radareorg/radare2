@@ -946,7 +946,7 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			src2 = getarg (&gop, 0, 0, NULL, NULL);
 			dst = getarg (&gop, 0, 1, NULL, NULL);
-			esilprintf (op, "%s,%s,<<<,%s", src, src2, dst);
+			esilprintf (op, "%s,%s,ROL,%s", src, src2, dst);
 			free (src);
 			free (src2);
 			free (dst);
@@ -960,7 +960,7 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			src2 = getarg (&gop, 0, 0, NULL, NULL);
 			dst = getarg (&gop, 0, 1, NULL, NULL);
-			esilprintf (op, "%s,%s,>>>,%s", src, src2, dst);
+			esilprintf (op, "%s,%s,ROR,%s", src, src2, dst);
 			free (src);
 			free (src2);
 			free (dst);
@@ -1012,7 +1012,7 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			dst_r = getarg (&gop, 0, 0, NULL, NULL);
 			dst_w = getarg (&gop, 0, 1, NULL, &bitsize);
-			esilprintf (op, "0,cf,:=,1,%s,-,1,<<,%s,&,?{,1,cf,:=,},%s,%s,>>>>,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=",
+			esilprintf (op, "0,cf,:=,1,%s,-,1,<<,%s,&,?{,1,cf,:=,},%s,%s,ASR,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=",
 				src, dst_r, src, dst_r, dst_w, bitsize - 1);
 			free (src);
 			free (dst_r);
@@ -1024,7 +1024,7 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			dst = getarg (&gop, 0, 1, NULL, NULL);
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			src2 = getarg (&gop, 1, 0, NULL, NULL);
-			esilprintf (op, "%s,%s,>>>>,%s,=", src2, src, dst);
+			esilprintf (op, "%s,%s,ASR,%s,=", src2, src, dst);
 			free (src);
 			free (src2);
 			free (dst);
