@@ -4491,7 +4491,13 @@ R_API int r_core_config_init(RCore *core) {
 		SETS ("http.homeroot", www, "http home root directory");
 		free (www);
 	}
-#if R2__WINDOWS__
+#if R2_USE_BUNDLE_PREFIX
+	{
+		char *wwwroot = r_file_new (r_sys_prefix (NULL), "www", NULL);
+		SETS ("http.root", wwwroot, "http root directory");
+		free (wwwroot);
+	}
+#elif R2__WINDOWS__
 	{
 		char *wwwroot = r_str_newf ("%s\\share\\www", r_sys_prefix (NULL));
 		SETS ("http.root", wwwroot, "http root directory");

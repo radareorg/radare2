@@ -5283,13 +5283,7 @@ static void __update_menu(RCore *core, const char *parent, R_NULLABLE RPanelMenu
 
 static char *__panels_config_path(bool syspath) {
 	if (syspath) {
-		char *r2_prefix = r_sys_getenv ("R2_PREFIX");
-		if (!r2_prefix) {
-			r2_prefix = strdup (R2_PREFIX);
-		}
-		char *res = r_file_new (r2_prefix, "share", "radare2", R2_VERSION, "panels", NULL);
-		free (r2_prefix);
-		return res;
+		return r_file_new (r_sys_prefix (NULL), R2_DATDIR_R2, "panels", NULL);
 	}
 	return r_xdg_datadir ("r2panels");
 }

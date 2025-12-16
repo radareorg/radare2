@@ -28,6 +28,7 @@ extern "C" {
 #define WANT_CAPSTONE @WANT_CAPSTONE@
 #define HAVE_LINUX_CAN_H @HAVE_LINUX_CAN_H@
 #define R2_USE_NEW_ABI @USE_NEW_ABI@
+#define R2_USE_BUNDLE_PREFIX @USE_BUNDLE_PREFIX@
 #define R2_USE_SQSH @USE_SQSH@
 #ifndef R2_WASM_BROWSER
 #define R2_WASM_BROWSER @R2_WASM_BROWSER@
@@ -64,13 +65,6 @@ extern "C" {
 #define R2_PLUGINS "@PLUGINS@"
 #define R2_EXTRAS "@EXTRAS@"
 #define R2_BINDINGS "@BINDINGS@"
-#define R2_DATDIR_R2 "@DATADIR_R2@"
-#define R2_SDB "@SDB@"
-#define R2_ZIGNS "@ZIGNS@"
-#define R2_THEMES "@THEMES@"
-#define R2_FORTUNES R_JOIN_3_PATHS ("@DATADIR@", "doc", "radare2")
-#define R2_FLAGS "@FLAGS@"
-#define R2_HUD "@HUD@"
 #else
 #if R2__WINDOWS__ || _MSC_VER
 #define R2_PREFIX "."
@@ -99,8 +93,39 @@ extern "C" {
 #define R2_EXTRAS "lib/radare2-extras/" R2_VERSION
 #define R2_BINDINGS "lib/radare2-bindings/" R2_VERSION
 #endif
+#endif
+
+#if R2_USE_BUNDLE_PREFIX
+#define R2_DATDIR_R2        ""
+#define R2_SDB              ""
+
+#define R2_PLATFORM         "platform"
+#define R2_ZIGNS            "zigns"
+#define R2_THEMES           "cons"
+#define R2_FLAGS            "flag"
+#define R2_FORTUNES         "doc"
+#define R2_HUD              "hud"
+
+#define R2_SDB_FCNSIGN      "fcnsign"
+#define R2_SDB_OPCODES      "opcodes"
+#define R2_SDB_MAGIC        "magic"
+#define R2_SDB_FORMAT       "format"
+
+#define R2_GLOBAL_RC        "radare2rc"
+#else
+#ifdef R_MESON_VERSION
+#define R2_DATDIR_R2 "@DATADIR_R2@"
+#define R2_SDB "@SDB@"
+#define R2_PLATFORM "@PLATFORM@"
+#define R2_ZIGNS "@ZIGNS@"
+#define R2_THEMES "@THEMES@"
+#define R2_FORTUNES R_JOIN_3_PATHS ("@DATADIR@", "doc", "radare2")
+#define R2_FLAGS "@FLAGS@"
+#define R2_HUD "@HUD@"
+#else
 #define R2_DATDIR_R2        R_JOIN_2_PATHS ("share", "radare2")
 #define R2_SDB              R_JOIN_3_PATHS ("share", "radare2", R2_VERSION)
+#define R2_PLATFORM         R_JOIN_4_PATHS ("share", "radare2", R2_VERSION, "platform")
 #define R2_ZIGNS            R_JOIN_4_PATHS ("share", "radare2", R2_VERSION, "zigns")
 #define R2_THEMES           R_JOIN_4_PATHS ("share", "radare2", R2_VERSION, "cons")
 #define R2_FLAGS            R_JOIN_4_PATHS ("share", "radare2", R2_VERSION, "flag")
@@ -114,6 +139,7 @@ extern "C" {
 #define R2_SDB_FORMAT       R_JOIN_2_PATHS (R2_SDB, "format")
 
 #define R2_GLOBAL_RC        R_JOIN_2_PATHS (R2_DATDIR_R2, "radare2rc")
+#endif
 
 #define HAVE_LIB_MAGIC @HAVE_LIB_MAGIC@
 #define USE_LIB_MAGIC @USE_LIB_MAGIC@

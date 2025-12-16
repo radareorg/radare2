@@ -226,6 +226,8 @@ ARG_WITH USE_NEW_ABI new-abi use the new ABI breaking changes scheduled for the 
 
 ARG_WITH USE_RPATH rpath use rpath to build ;
 
+ARG_WITH USE_BUNDLE_PREFIX bundle-prefix load data files relative to the binary location (bundle/framework resources) ;
+
 (( rules for the compiler ))
 ARG_WITH USERCC=gcc compiler Define compiler to use (see mk/) ;
 ARG_WITH USEROSTYPE=auto ostype Choose OS ( android windows wsl mingw32 bsd solaris gnulinux darwin haiku ) ;

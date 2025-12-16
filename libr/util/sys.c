@@ -37,12 +37,18 @@ static R_TH_LOCAL char *Gprefix = NULL;
 static R_TH_LOCAL char *Gr2prefix = NULL;
 static R_TH_LOCAL bool Gunsignable = false; // OK
 
+#if R2_USE_BUNDLE_PREFIX
+static char *macho_detect_bundle_location(void);
+static char *macho_path_for_address_or_main(const void *addr);
+#endif
+
 #if (__linux__ && __GNU_LIBRARY__) || defined(NETBSD_WITH_BACKTRACE) || \
   defined(FREEBSD_WITH_BACKTRACE) || __DragonFly__ || __sun
 # include <execinfo.h>
 #endif
 #if __APPLE__
 #include <errno.h>
+#include <mach-o/dyld.h>
 #include <TargetConditionals.h>
 // iOS don't have this
 #if !TARGET_OS_IPHONE
@@ -1496,6 +1502,11 @@ R_API bool r_sys_tts(const char *txt, bool bg) {
 }
 
 R_API const char *r_sys_prefix(const char *pfx) {
+#if R2_USE_BUNDLE_PREFIX
+	if (!Gprefix) {
+		Gprefix = macho_detect_bundle_location ();
+	}
+#else
 	if (!Gr2prefix) {
 		Gr2prefix = r_sys_getenv ("R2_PREFIX");
 		if (R_STR_ISEMPTY (Gr2prefix)) {
@@ -1517,8 +1528,33 @@ R_API const char *r_sys_prefix(const char *pfx) {
 		free (Gprefix);
 		Gprefix = strdup (pfx);
 	}
+#endif
 	return Gprefix;
 }
+
+#if R2_USE_BUNDLE_PREFIX
+static char *macho_detect_bundle_location(void) {
+	char *macho_path = macho_path_for_address_or_main (macho_detect_bundle_location);
+	char *macho_dir = r_file_dirname (macho_path);
+	char *resources = r_file_new (macho_dir, "Resources", NULL);
+	free (macho_dir);
+	free (macho_path);
+	return resources;
+}
+
+static char *macho_path_for_address_or_main(const void *addr) {
+	Dl_info info;
+	if (dladdr (addr, &info) && info.dli_fname) {
+		return strdup (info.dli_fname);
+	}
+
+	ut32 size = 0;
+	_NSGetExecutablePath (NULL, &size);
+	char *buf = malloc (size);
+	_NSGetExecutablePath (buf, &size);
+	return buf;
+}
+#endif
 
 R_API RSysInfo *r_sys_info(void) {
 #if R2__UNIX__

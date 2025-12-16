@@ -13,8 +13,9 @@ R_API SdbGperf *r_charset_get_gperf(const char *k) {
 R_API RList *r_charset_list(RCharset *ch) {
 	RList *list = r_list_newf (free);
 	// iterate in disk
-	const char *cs = R2_PREFIX R_SYS_DIR R2_SDB R_SYS_DIR "charsets" R_SYS_DIR;
+	char *cs = r_file_new (r_sys_prefix (NULL), R2_DATDIR_R2, "charsets", NULL);
 	RList *files = r_sys_dir (cs);
+	free (cs);
 	RListIter *iter;
 	char *file;
 	r_list_foreach (files, iter, file) {
@@ -61,8 +62,9 @@ R_API bool r_charset_use(RCharset *c, const char *cf) {
 			rc = true;
 		}
 	} else {
-		const char *cs = R2_PREFIX R_SYS_DIR R2_SDB R_SYS_DIR "charsets" R_SYS_DIR;
-		char *syscs = r_str_newf ("%s%s.sdb", cs, cf);
+		char *cs = r_file_new (r_sys_prefix (NULL), R2_DATDIR_R2, "charsets", NULL);
+		char *syscs = r_str_newf ("%s%s%s.sdb", cs, R_SYS_DIR, cf);
+		free (cs);
 		if (r_file_exists (syscs)) {
 			rc = r_charset_open (c, syscs);
 			r_sys_setenv ("RABIN2_CHARSET", cf);
