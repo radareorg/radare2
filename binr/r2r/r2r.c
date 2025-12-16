@@ -71,6 +71,14 @@ static void results_clear(RVecR2RTestResultInfoPtr *vec) {
 	RVecR2RTestResultInfoPtr_fini (vec);
 }
 
+static const char *shortpath (const char *testpath) {
+	char *shorter = strstr (testpath, "/db/");
+	if (shorter) {
+		return shorter + 1;
+	}
+	return testpath;
+}
+
 static void parse_skip(const char *arg) {
 	if (strstr (arg, "arch")) {
 		r_sys_setenv ("R2R_SKIP_ARCHOS", "1");
@@ -916,7 +924,7 @@ static void print_new_results(R2RState *state, ut64 prev_completed) {
 		if (result->timeout) {
 			printf (Color_CYAN " TIMEOUT" Color_RESET);
 		}
-		printf (" %s " Color_YELLOW "%s" Color_RESET "\n", result->test->path, name);
+		printf (" %s " Color_YELLOW "%s" Color_RESET "\n", shortpath (result->test->path), name);
 		if (result->result == R2R_TEST_RESULT_FAILED || (state->verbose && result->result == R2R_TEST_RESULT_BROKEN)) {
 			print_result_diff (&state->run_config, result);
 		}
@@ -962,7 +970,7 @@ static void print_log(R2RState *state, ut64 prev_completed, ut64 prev_paths_comp
 	int a = (int)RVecR2RTestPtr_length (&state->queue);
 	for (; prev_paths_completed < paths_completed; prev_paths_completed++) {
 		const char *testpath = *RVecConstCharPtr_at (&state->completed_paths, prev_paths_completed);
-		printf ("[%d/%d] %40s ", (int)paths_completed, (int) (a + prev_paths_completed), testpath);
+		printf ("[%d/%d] %20s ", (int)paths_completed, (int) (a + prev_paths_completed), shortpath (testpath));
 		print_state_counts (state);
 		printf ("\n");
 	}
