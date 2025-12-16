@@ -249,7 +249,7 @@ e asm.bits=32
 e asm.arch=x86
 aei
 ar eax=0x80000010
-ae 0x1,eax,ROL=
+ae 0x1,eax,ROL,eax,=
 ar eax
 EOF
 EXPECT=<<EOF
@@ -264,7 +264,7 @@ e asm.bits=32
 e asm.arch=x86
 aei
 ar eax=0x02000001
-ae 0x1,eax,ROR=
+ae 0x1,eax,ROR,eax,=
 ar eax
 EOF
 EXPECT=<<EOF
@@ -456,15 +456,10 @@ EXPECT=<<EOF
 | >>=     shr ax, bx => bx,ax,>>=  # shift right
 | <<=     shl ax, bx => bx,ax,<<=  # shift left
 | LSR     a >> b => b,a,LSR  # logical shift right (alias: >>)
-| LSR=    a >>= b => b,a,LSR=  # logical shift right (alias: >>=)
 | LSL     a << b => b,a,LSL  # logical shift left (alias: <<)
-| LSL=    a <<= b => b,a,LSL=  # logical shift left (alias: <<=)
 | ASR     a asr b => b,a,ASR  # arithmetic shift right
-| ASR=    a asr= b => b,a,ASR=  # arithmetic shift right
 | ROR     a ror b => b,a,ROR  # rotate right
-| ROR=    a ror= b => b,a,ROR=  # rotate right
 | ROL     a rol b => b,a,ROL  # rotate left
-| ROL=    a rol= b => b,a,ROL=  # rotate left
 | ?{      if popped value != 0 run the block until }
 | }{      else block
 | }       end of conditional block
