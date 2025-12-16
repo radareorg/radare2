@@ -566,6 +566,7 @@ static void r2r_state_fini(R2RState *state) {
 	r_th_lock_free (state->lock);
 	r_th_cond_free (state->cond);
 	free (state->run_config.r2_cmd);
+	free (state->run_config.rasm2_cmd);
 }
 
 // Returns: 0 = success, -1 = error, 1 = special exit (e.g., .c file handling)
