@@ -61,7 +61,7 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out);
 // ESIL macros:
 
 // put the sign bit on the stack
-#define ES_IS_NEGATIVE(arg) "1,"arg",<<<,1,&"
+#define ES_IS_NEGATIVE(arg) "1,"arg",ROL,1,&"
 
 
 // Call with delay slot.

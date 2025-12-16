@@ -911,9 +911,9 @@ static int decode_sign_ext(arm64_extender extender) {
 
 static const char *E_OP_SR = ">>";
 static const char *E_OP_SL = "<<";
-static const char *E_OP_RR = ">>>";
-static const char *E_OP_ASR = ">>>>";
-static const char *E_OP_AR = ">>>>";
+static const char *E_OP_RR = "ROR";
+static const char *E_OP_ASR = "ASR";
+static const char *E_OP_AR = "ASR";
 static const char *E_OP_VOID = "";
 
 static const char *decode_shift(arm_shifter shift) {
@@ -1578,7 +1578,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		break;
 	}
 	case ARM64_INS_ROR:
-		OPCALL (">>>");
+		OPCALL ("ROR");
 		break;
 	case ARM64_INS_NOP:
 		r_strbuf_set (&op->esil, ",");
@@ -2384,14 +2384,14 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		if (ISREG64 (2)) {
 			if (LSHIFT2_64 (2)) {
 				ARG64_APPEND (&op->esil, 2);
-				r_strbuf_appendf (&op->esil, ",%d,%%,%s,>>>>,%s,=", size, r1, r0);
+				r_strbuf_appendf (&op->esil, ",%d,%%,%s,ASR,%s,=", size, r1, r0);
 			} else {
 				const char *r2 = REG64 (2);
-				r_strbuf_setf (&op->esil, "%d,%s,%%,%s,>>>>,%s,=", size, r2, r1, r0);
+				r_strbuf_setf (&op->esil, "%d,%s,%%,%s,ASR,%s,=", size, r2, r1, r0);
 			}
 		} else {
 			ut64 i2 = IMM64 (2);
-			r_strbuf_setf (&op->esil, "%"PFMT64d",%s,>>>>,%s,=", i2 % (ut64)size, r1, r0);
+			r_strbuf_setf (&op->esil, "%"PFMT64d",%s,ASR,%s,=", i2 % (ut64)size, r1, r0);
 		}
 		break;
 	}
@@ -2536,7 +2536,7 @@ static void arm32math(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		r_strbuf_append (&op->esil, op2);
 	}
 	if (rotate_imm) {
-		r_strbuf_append (&op->esil, ",>>>");
+		r_strbuf_append (&op->esil, ",ROR");
 	}
 	if (negate) {
 		r_strbuf_append (&op->esil, ",-1,^");
@@ -2694,12 +2694,12 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 	case ARM_INS_ROR:
 		if (insn->detail->arm.update_flags) {
 			if (OPCOUNT () == 2) {
-				r_strbuf_appendf (&op->esil, "%s,!,!,?{,%s,1,%s,-,0x1,<<<,&,!,!,cf,:=,},", ARG (1), ARG (0), ARG (1));
+				r_strbuf_appendf (&op->esil, "%s,!,!,?{,%s,1,%s,-,0x1,LSL,&,!,!,cf,:=,},", ARG (1), ARG (0), ARG (1));
 			} else {
-				r_strbuf_appendf (&op->esil, "%s,!,!,?{,%s,1,%s,-,0x1,<<<,&,!,!,cf,:=,},", ARG (2), ARG (1), ARG (2));
+				r_strbuf_appendf (&op->esil, "%s,!,!,?{,%s,1,%s,-,0x1,LSL,&,!,!,cf,:=,},", ARG (2), ARG (1), ARG (2));
 			}
 		}
-		MATH32 (">>>");
+		MATH32 ("ROR");
 		break;
 	case ARM_INS_SVC:
 		r_strbuf_setf (&op->esil, "%s,$", ARG (0));
@@ -2800,10 +2800,10 @@ PUSH { r4, r5, r6, r7, lr }
 			if (ISSHIFTED (1)) {
 				r_strbuf_appendf (&op->esil, "%s,%s,=", ARG (1), ARG (0));
 			} else {
-				r_strbuf_appendf (&op->esil, "%s,%s,>>>>,%s,=", ARG (1), ARG (0), ARG (0));
+				r_strbuf_appendf (&op->esil, "%s,%s,ASR,%s,=", ARG (1), ARG (0), ARG (0));
 			}
 		} else if (OPCOUNT () == 3) {
-			r_strbuf_appendf (&op->esil, "%s,%s,>>>>,%s,=", ARG (2), ARG (1), ARG (0));
+			r_strbuf_appendf (&op->esil, "%s,%s,ASR,%s,=", ARG (2), ARG (1), ARG (0));
 		}
 		break;
 	case ARM_INS_POP:
@@ -2923,19 +2923,19 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 						}
 						break;
 					case ARM_SFT_ASR:
-						r_strbuf_appendf (&op->esil, "%s,%s,%d,%s,>>>>,+,0xffffffff,&,=[%d]",
+						r_strbuf_appendf (&op->esil, "%s,%s,%d,%s,ASR,+,0xffffffff,&,=[%d]",
 								  REG(0), MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), str_ldr_bytes);
 						if (ISWRITEBACK32 ()) {
-							r_strbuf_appendf (&op->esil, ",%s,%d,%s,>>>>,+,%s,=",
-									  MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), MEMBASE(1));
+							r_strbuf_appendf (&op->esil, ",%s,%d,%s,ASR,+,%s,=",
+										MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), MEMBASE(1));
 						}
 						break;
 					case ARM_SFT_ROR:
-						r_strbuf_appendf (&op->esil, "%s,%s,%d,%s,>>>,+,0xffffffff,&,=[%d]",
+						r_strbuf_appendf (&op->esil, "%s,%s,%d,%s,ROR,+,0xffffffff,&,=[%d]",
 								  REG(0), MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), str_ldr_bytes);
 						if (ISWRITEBACK32 ()) {
-							r_strbuf_appendf (&op->esil, ",%s,%d,%s,>>>,+,%s,=",
-									  MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), MEMBASE(1));
+							r_strbuf_appendf (&op->esil, ",%s,%d,%s,ROR,+,%s,=",
+										MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), MEMBASE(1));
 						}
 						break;
 					case ARM_SFT_RRX: // ROR with single bit shift, using previous cf rather than new cf
@@ -2972,12 +2972,12 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 							       REG(0), MEMBASE(1), str_ldr_bytes, MEMBASE(1), SHIFTVALUE(2), REG(2), MEMBASE(1));
 						break;
 					case ARM_SFT_ASR:
-						r_strbuf_appendf (&op->esil, "%s,%s,0xffffffff,&,=[%d],%s,%d,%s,>>>>,+,%s,=",
-							       REG(0), MEMBASE(1), str_ldr_bytes, MEMBASE(1), SHIFTVALUE(2), REG(2), MEMBASE(1));
+						r_strbuf_appendf (&op->esil, "%s,%s,0xffffffff,&,=[%d],%s,%d,%s,ASR,+,%s,=",
+								      REG(0), MEMBASE(1), str_ldr_bytes, MEMBASE(1), SHIFTVALUE(2), REG(2), MEMBASE(1));
 						break;
 					case ARM_SFT_ROR:
-						r_strbuf_appendf (&op->esil, "%s,%s,0xffffffff,&,=[%d],%s,%d,%s,>>>,+,%s,=",
-							       REG(0), MEMBASE(1), str_ldr_bytes, MEMBASE(1), SHIFTVALUE(2), REG(2), MEMBASE(1));
+						r_strbuf_appendf (&op->esil, "%s,%s,0xffffffff,&,=[%d],%s,%d,%s,ROR,+,%s,=",
+								      REG(0), MEMBASE(1), str_ldr_bytes, MEMBASE(1), SHIFTVALUE(2), REG(2), MEMBASE(1));
 						break;
 					case ARM_SFT_RRX:
 						//TODO

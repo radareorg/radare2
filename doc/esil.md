@@ -220,11 +220,12 @@ What to do with them? What about bit arithmetic if use variables instead of regi
 1. AND  "&"
 2. OR   "|"
 3. XOR  "^"
-4. SHL  "<<"
-5. SHR  ">>"
-6. ROL  "<<<"
-7. ROR  ">>>"
-8. NEG  "!"
+4. LSL  "LSL" (alias: "<<")
+5. LSR  "LSR" (alias: ">>")
+6. ASR  "ASR"
+7. ROL  "ROL"
+8. ROR  "ROR"
+9. NEG  "!"
 
 # Floating point
 

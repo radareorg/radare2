@@ -902,82 +902,6 @@ static bool esil_lsreq(REsil *esil) {
 	return ret;
 }
 
-static bool esil_asreq(REsil *esil) {
-	bool ret = false;
-	int regsize = 0;
-	ut64 op_num, param_num;
-	char *op = r_esil_pop (esil);
-	char *param = r_esil_pop (esil);
-	if (op && r_esil_get_parm_size (esil, op, &op_num, &regsize)) {
-		if (param && r_esil_get_parm (esil, param, &param_num)) {
-			ut64 mask = (regsize - 1);
-			param_num &= mask;
-			bool isNegative;
-			if (regsize == 32) {
-				isNegative = ((st32)op_num)<0;
-				st32 snum = op_num;
-				op_num = snum;
-			} else {
-				isNegative = ((st64)op_num)<0;
-			}
-			if (isNegative) {
-				if (regsize == 32) {
-					op_num = -(st64)op_num;
-					if (op_num >> param_num) {
-						op_num >>= param_num;
-						op_num = -(st64)op_num;
-					} else {
-						op_num = -1;
-					}
-				} else {
-					ut64 mask = (regsize - 1);
-					param_num &= mask;
-					ut64 left_bits = 0;
-					int shift = regsize - 1;
-					if (shift < 0 || shift > regsize - 1) {
-						if (esil->verbose) {
-							R_LOG_WARN ("Invalid asreq shift of %d at 0x%"PFMT64x, shift, esil->addr);
-						}
-						shift = 0;
-					}
-					if (param_num > regsize - 1) {
-						// capstone bug?
-						if (esil->verbose) {
-							R_LOG_WARN ("Invalid asreq shift of %"PFMT64d" at 0x%"PFMT64x, param_num, esil->addr);
-						}
-						param_num = 30;
-					}
-					if (shift >= 63) {
-						// LL can't handle LShift of 63 or more
-						if (esil->verbose) {
-							R_LOG_WARN ("Invalid asreq shift of %d at 0x%08"PFMT64x, shift, esil->addr);
-						}
-					} else if (op_num & (1LL << shift)) {
-						left_bits = (1 << param_num) - 1;
-						left_bits <<= regsize - param_num;
-					}
-					op_num = left_bits | (op_num >> param_num);
-				}
-			} else {
-				op_num >>= param_num;
-			}
-			ut64 res = op_num;
-			esil->cur = res;
-			esil->lastsz = esil_internal_sizeof_reg (esil, op);
-			r_esil_reg_write (esil, op, res);
-			// r_esil_pushnum (esil, res);
-			ret = true;
-		} else {
-			if (esil->verbose) {
-				R_LOG_WARN ("esil_asr: empty stack");
-			}
-		}
-	}
-	free (param);
-	free (op);
-	return ret;
-}
-
 static bool esil_asr(REsil *esil) {
 	bool ret = false;
 	int regsize = 0;
@@ -2984,13 +2908,14 @@ R_API bool r_esil_setup_ops(REsil *esil) {
 	ret &= OP (">=", esil_bigger_equal, 1, 2, OT_MATH);
 	ret &= OP ("?{", esil_if, 0, 1, OT_CTR);
 	ret &= OP ("<<", esil_lsl, 1, 2, OT_MATH);
+	ret &= OP ("LSL", esil_lsl, 1, 2, OT_MATH);
 	ret &= OP ("<<=", esil_lsleq, 0, 2, OT_MATH | OT_REGW);
 	ret &= OP (">>", esil_lsr, 1, 2, OT_MATH);
+	ret &= OP ("LSR", esil_lsr, 1, 2, OT_MATH);
 	ret &= OP (">>=", esil_lsreq, 0, 2, OT_MATH | OT_REGW);
-	ret &= OP (">>>>", esil_asr, 1, 2, OT_MATH);
-	ret &= OP (">>>>=", esil_asreq, 0, 2, OT_MATH | OT_REGW);
-	ret &= OP (">>>", esil_ror, 1, 2, OT_MATH);
-	ret &= OP ("<<<", esil_rol, 1, 2, OT_MATH);
+	ret &= OP ("ASR", esil_asr, 1, 2, OT_MATH);
+	ret &= OP ("ROR", esil_ror, 1, 2, OT_MATH);
+	ret &= OP ("ROL", esil_rol, 1, 2, OT_MATH);
 	ret &= OP ("&", esil_and, 1, 2, OT_MATH);
 	ret &= OP ("&=", esil_andeq, 0, 2, OT_MATH | OT_REGW);
 	ret &= OP ("}", esil_nop, 0, 0, OT_CTR); // just to avoid push

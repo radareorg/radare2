@@ -1479,7 +1479,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	case 0x99: // shr-int
 	case 0xb9:
 	case 0xe1:
-		OPCALL (">>>>", R_ANAL_OP_TYPE_SHR, OP_INT);
+		OPCALL ("ASR", R_ANAL_OP_TYPE_SHR, OP_INT);
 		break;
 	case 0x9a: // ushr-int
 	case 0xba:
@@ -1524,7 +1524,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		break;
 	case 0xa4: // shr-long
 	case 0xc4:
-		OPCALL (">>>>", R_ANAL_OP_TYPE_SHR, OP_LONG_SHFT);
+		OPCALL ("ASR", R_ANAL_OP_TYPE_SHR, OP_LONG_SHFT);
 		break;
 	case 0xa5: // ushr-long
 	case 0xc5:

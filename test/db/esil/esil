@@ -64,8 +64,8 @@ RUN
 NAME=shift-left
 FILE=-
 CMDS=<<EOF
-"ae 3,1,<<"
-"ae 1,3,<<"
+ae 3,1,LSL
+ae 1,3,LSL
 EOF
 EXPECT=<<EOF
 0x8
@@ -76,8 +76,8 @@ RUN
 NAME=shift-right
 FILE=-
 CMDS=<<EOF
-"ae 1,8,>>"
-"ae 8,1,>>"
+ae 1,8,LSR
+ae 8,1,LSR
 EOF
 EXPECT=<<EOF
 0x4
@@ -249,7 +249,7 @@ e asm.bits=32
 e asm.arch=x86
 aei
 ar eax=0x80000010
-"ae 0x1,eax,<<<,eax,="
+ae 0x1,eax,ROL,eax,=
 ar eax
 EOF
 EXPECT=<<EOF
@@ -264,7 +264,7 @@ e asm.bits=32
 e asm.arch=x86
 aei
 ar eax=0x02000001
-"ae 0x1,eax,>>>,eax,="
+ae 0x1,eax,ROR,eax,=
 ar eax
 EOF
 EXPECT=<<EOF
@@ -394,6 +394,24 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=mnemonic shift/rotate ops
+FILE=-
+CMDS=<<EOF
+ae 1,2,LSL
+ae 1,4,LSR
+ae 1,0xffffffffffffffff,ASR
+ae 1,1,ROR
+ae 1,0x8000000000000000,ROL
+EOF
+EXPECT=<<EOF
+0x4
+0x2
+0xffffffffffffffff
+0x8000000000000000
+0x1
+EOF
+RUN
+
 NAME=ae??
 FILE=-
 CMDS=ae??
@@ -437,8 +455,11 @@ EXPECT=<<EOF
 | >=      compare bigger for or equal
 | >>=     shr ax, bx => bx,ax,>>=  # shift right
 | <<=     shl ax, bx => bx,ax,<<=  # shift left
-| >>>=    ror ax, bx => bx,ax,>>>=  # rotate right
-| <<<=    rol ax, bx => bx,ax,<<<=  # rotate left
+| LSR     a >> b => b,a,LSR  # logical shift right (alias: >>)
+| LSL     a << b => b,a,LSL  # logical shift left (alias: <<)
+| ASR     a asr b => b,a,ASR  # arithmetic shift right
+| ROR     a ror b => b,a,ROR  # rotate right
+| ROL     a rol b => b,a,ROL  # rotate left
 | ?{      if popped value != 0 run the block until }
 | }{      else block
 | }       end of conditional block

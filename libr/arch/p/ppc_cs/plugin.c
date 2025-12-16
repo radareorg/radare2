@@ -886,7 +886,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			break;
 		case PPC_INS_RLWINM:
 			op->type = R_ANAL_OP_TYPE_ROL;
-			esilprintf (op, "%s,%s,<<<,%s,&,%s,=", ARG (2), ARG (1), cmask32 (cmaskbuf, ARG (3), ARG (4)), ARG (0));
+			esilprintf (op, "%s,%s,ROL,%s,&,%s,=", ARG (2), ARG (1), cmask32 (cmaskbuf, ARG (3), ARG (4)), ARG (0));
 			break;
 		case PPC_INS_SC:
 			op->type = R_ANAL_OP_TYPE_SWI;
@@ -1513,17 +1513,17 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			break;
 		case PPC_INS_ROTLDI:
 			op->type = R_ANAL_OP_TYPE_ROL;
-			esilprintf (op, "%s,%s,<<<,%s,=", ARG (2), ARG (1), ARG (0));
+			esilprintf (op, "%s,%s,ROL,%s,=", ARG (2), ARG (1), ARG (0));
 			break;
 		case PPC_INS_RLDCL:
 		case PPC_INS_RLDICL:
 			op->type = R_ANAL_OP_TYPE_ROL;
-			esilprintf (op, "%s,%s,<<<,%s,&,%s,=", ARG (2), ARG (1), cmask64 (cmaskbuf, ARG (3), "0x3F"), ARG (0));
+			esilprintf (op, "%s,%s,ROL,%s,&,%s,=", ARG (2), ARG (1), cmask64 (cmaskbuf, ARG (3), "0x3F"), ARG (0));
 			break;
 		case PPC_INS_RLDCR:
 		case PPC_INS_RLDICR:
 			op->type = R_ANAL_OP_TYPE_ROL;
-			esilprintf (op, "%s,%s,<<<,%s,&,%s,=", ARG (2), ARG (1), cmask64 (cmaskbuf, 0, ARG (3)), ARG (0));
+			esilprintf (op, "%s,%s,ROL,%s,&,%s,=", ARG (2), ARG (1), cmask64 (cmaskbuf, 0, ARG (3)), ARG (0));
 			break;
 		}
 		if (mask & R_ARCH_OP_MASK_VAL) {

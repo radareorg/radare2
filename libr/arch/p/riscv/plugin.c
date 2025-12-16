@@ -500,10 +500,10 @@ static bool riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 		} else if (r_str_startswith (name, "srl")) {
 			esilprintf (op, "%s,%s,>>,%s,=", ARG (2), ARG (1), ARG (0));
 		} else if (is_any ("sraiw")) {
-			esilprintf (op, "%s,%s,>>>>,%s,=,", ARG (2), ARG (1), ARG (0));
+			esilprintf (op, "%s,%s,ASR,%s,=,", ARG (2), ARG (1), ARG (0));
 			r_strbuf_appendf (&op->esil, "%s,64,-,%s,~=", ARG (2), ARG(0));
 		} else if (r_str_startswith (name, "sra")) {
-			esilprintf (op, "%s,%s,>>>>,%s,=", ARG (2), ARG (1), ARG (0));
+			esilprintf (op, "%s,%s,ASR,%s,=", ARG (2), ARG (1), ARG (0));
 		}
 		// assigns
 		else if (r_str_startswith (name, "mv")) {
