@@ -479,20 +479,22 @@ static void r2r_setup_environment(void) {
 }
 
 static bool validate_suite(R2RState *state) {
+	// check for radare2
 	char *r2_binary = r_sys_getenv ("R2R_RADARE2");
 	if (R_STR_ISNOTEMPTY (r2_binary)) {
-		state->run_config.r2_cmd = r2_binary;
+		state->run_config.r2_cmd = strdup (r2_binary);
 	} else {
-		free (r2_binary);
 		state->run_config.r2_cmd = r_file_path ("radare2");
 	}
+	free (r2_binary);
+	// check for rasm2
 	char *rasm2_binary = r_sys_getenv ("R2R_RASM2");
 	if (R_STR_ISNOTEMPTY (rasm2_binary)) {
-		state->run_config.rasm2_cmd = rasm2_binary;
+		state->run_config.rasm2_cmd = strdup (rasm2_binary);
 	} else {
-		free (rasm2_binary);
 		state->run_config.rasm2_cmd = r_file_path ("rasm2");
 	}
+	free (rasm2_binary);
 	R_LOG_INFO ("R2R_RADARE2: %s", state->run_config.r2_cmd);
 	R_LOG_INFO ("R2R_RASM2: %s", state->run_config.rasm2_cmd);
 	if (r_sys_cmdf ("%s -v", state->run_config.r2_cmd) != 0) {
@@ -511,20 +513,18 @@ static bool validate_suite(R2RState *state) {
 static bool r2r_state_init(R2RState *state, R2ROptions *opt) {
 	memset (state, 0, sizeof (R2RState));
 
+	if (!validate_suite (state)) {
+		return false;
+	}
 	Glock = r_th_lock_new (false);
 	if (opt->shallow > 0) {
 		r_num_irand ();
 		state->run_config.shallow = opt->shallow;
 	}
-
-	if (!validate_suite (state)) {
-		return false;
-	}
 	state->run_config.skip_cmd = r_sys_getenv_asbool ("R2R_SKIP_CMD");
 	state->run_config.skip_asm = r_sys_getenv_asbool ("R2R_SKIP_ASM");
 	state->run_config.skip_json = r_sys_getenv_asbool ("R2R_SKIP_JSON");
 	state->run_config.skip_fuzz = r_sys_getenv_asbool ("R2R_SKIP_FUZZ");
-	state->run_config.rasm2_cmd = "rasm2";
 	state->run_config.json_test_file = opt->json_test_file? opt->json_test_file: JSON_TEST_FILE_DEFAULT;
 	state->run_config.timeout_ms = (opt->timeout_sec > UT64_MAX / 1000)? UT64_MAX: opt->timeout_sec * 1000;
 	state->verbose = opt->verbose;
