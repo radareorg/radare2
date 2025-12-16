@@ -3,7 +3,7 @@
 #include <r_arch.h>
 
 static char *getroot(void) {
-	return strdup (R2_PREFIX"/share/radare2/last/platform/");
+	return r_file_new (r_sys_prefix (NULL), R2_PLATFORM, NULL);
 }
 
 R_API char *r_arch_platform_unset(RArch *arch, const char *name) {

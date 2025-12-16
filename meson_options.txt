@@ -31,6 +31,7 @@ option('capstone_in_builddir', type: 'boolean', value: false, description: 'When
 option('want_threads', type: 'boolean', value: true)
 option('want_qjs', type: 'boolean', value: true)
 option('use_new_abi', type: 'boolean', value: false)
+option('use_bundle_prefix', type: 'boolean', value: false)
 option('want_capstone', type: 'boolean', value: true)
 option('use_sys_capstone', type: 'boolean', value: false)
 option('use_capstone_version', type: 'combo', choices: ['v4', 'v5', 'next'], value: 'v5')
