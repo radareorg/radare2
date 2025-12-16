@@ -5,6 +5,7 @@
 #include "load.c"
 #include "run.c"
 #endif
+#include "r_lib.h"
 
 #define WORKERS_DEFAULT 8
 
@@ -477,21 +478,46 @@ static void r2r_setup_environment(void) {
 	r_sys_setenv ("TZ", "UTC");
 }
 
+static bool init_paths(R2RState *state) {
+	char *r2_binary = r_sys_getenv ("R2R_RADARE2");
+	if (R_STR_ISNOTEMPTY (r2_binary)) {
+		state->run_config.r2_cmd = r2_binary;
+	} else {
+		free (r2_binary);
+		state->run_config.r2_cmd = r_file_path ("radare2");
+	}
+	char *rasm2_binary = r_sys_getenv ("R2R_RASM2");
+	if (R_STR_ISNOTEMPTY (rasm2_binary)) {
+		state->run_config.rasm2_cmd = rasm2_binary;
+	} else {
+		free (rasm2_binary);
+		state->run_config.rasm2_cmd = r_file_path ("rasm2");
+	}
+	R_LOG_INFO ("R2R_RADARE2: %s", state->run_config.r2_cmd);
+	R_LOG_INFO ("R2R_RASM2: %s", state->run_config.rasm2_cmd);
+	if (r_sys_cmdf ("%s -v", state->run_config.r2_cmd)) {
+		return false;
+	}
+	printf ("%s-%d  r2r\n", R2_GITTAP, R2_ABIVERSION);
+	// TODO: check if r2r binary version is the same as the r2/rasm2 ones
+	if (r_sys_cmdf ("%s -V", state->run_config.r2_cmd) != 0) {
+		R_LOG_ERROR ("Inconsistent versions of r2 and its libraries");
+		return false;
+	}
+	return true;
+}
+
 static bool r2r_state_init(R2RState *state, R2ROptions *opt) {
 	memset (state, 0, sizeof (R2RState));
 
+	Glock = r_th_lock_new (false);
 	if (opt->shallow > 0) {
 		r_num_irand ();
 		state->run_config.shallow = opt->shallow;
 	}
 
-	char *r2_binary = r_sys_getenv ("R2R_RADARE2");
-	if (R_STR_ISNOTEMPTY (r2_binary)) {
-		R_LOG_INFO ("Using custom r2 binary: %s", r2_binary);
-		state->run_config.r2_cmd = r2_binary;
-	} else {
-		free (r2_binary);
-		state->run_config.r2_cmd = strdup ("radare2");
+	if (!init_paths (state)) {
+		return false;
 	}
 	state->run_config.skip_cmd = r_sys_getenv_asbool ("R2R_SKIP_CMD");
 	state->run_config.skip_asm = r_sys_getenv_asbool ("R2R_SKIP_ASM");
@@ -512,7 +538,6 @@ static bool r2r_state_init(R2RState *state, R2ROptions *opt) {
 		state->test_results = pj_new ();
 		pj_a (state->test_results);
 	}
-
 	state->lock = r_th_lock_new (false);
 	if (state->lock) {
 		state->cond = r_th_cond_new ();
@@ -540,73 +565,7 @@ static int r2r_load_tests(R2RState *state, R2ROptions *opt, int arg_ind, int arg
 	if (skip_json_tests) {
 		R_LOG_INFO ("Skipping json tests because jq is not available");
 	}
-	if (arg_ind < argc) {
-		int i;
-		for (i = arg_ind; i < argc; i++) {
-			const char *arg = argv[i];
-			char *arg_str = NULL;
-			if (*arg == '@') {
-				arg++;
-				eprintf ("Category: %s\n", arg);
-				if (!strcmp (arg, "unit")) {
-					if (!r2r_test_run_unit ()) {
-						return -1;
-					}
-					continue;
-				} else if (!strcmp (arg, "fuzz")) {
-					if (!opt->fuzz_dir) {
-						R_LOG_ERROR ("No fuzz dir given. Use -F [dir]");
-						return -1;
-					}
-					if (!r2r_test_database_load_fuzz (state->db, opt->fuzz_dir)) {
-						R_LOG_ERROR ("Failed to load fuzz tests from \"%s\"", opt->fuzz_dir);
-					}
-					continue;
-				} else if (!strcmp (arg, "json")) {
-					arg = "db/json";
-				} else if (!strcmp (arg, "dasm")) {
-					arg = "db/asm";
-				} else if (!strcmp (arg, "cmds")) {
-					arg = "db";
-				} else {
-					arg_str = r_str_newf ("db/%s", arg + 1);
-					arg = arg_str;
-				}
-			}
-			if (r_str_endswith (arg, ".c")) {
-				char *abspath = strdup (arg);
-				if (*arg != '/') {
-					free (abspath);
-					abspath = r_str_newf ("%s/%s", cwd, arg);
-				}
-				RList *tests = r_list_newf (free);
-				r2r_from_sourcecomments (tests, abspath);
-				free (abspath);
-				RListIter *iter;
-				char *test;
-				int grc = 0;
-				r_list_foreach (tests, iter, test) {
-					R_LOG_INFO ("Running %s", test);
-					int rc = r_sys_cmdf ("r2r %s %s", opt->interactive? "-i": "", test);
-					if (rc != 0) {
-						grc = rc;
-					}
-				}
-				r_list_free (tests);
-				free (arg_str);
-				return grc? grc: 1; // Signal special exit
-			}
-			char *tf = r_file_abspath_rel (cwd, arg);
-			if (!tf || !r2r_test_database_load (state->db, tf, skip_json_tests)) {
-				R_LOG_ERROR ("Failed to load tests from \"%s\"", tf);
-				free (tf);
-				free (arg_str);
-				return -1;
-			}
-			free (tf);
-			free (arg_str);
-		}
-	} else {
+	if (arg_ind >= argc) {
 		if (!r2r_test_database_load (state->db, "db", skip_json_tests)) {
 			R_LOG_ERROR ("Failed to load tests from ./db");
 			return -1;
@@ -614,6 +573,72 @@ static int r2r_load_tests(R2RState *state, R2ROptions *opt, int arg_ind, int arg
 		if (opt->fuzz_dir && !r2r_test_database_load_fuzz (state->db, opt->fuzz_dir)) {
 			R_LOG_ERROR ("Failed to load fuzz tests from \"%s\"", opt->fuzz_dir);
 		}
+		return 0;
+	}
+	int i;
+	for (i = arg_ind; i < argc; i++) {
+		const char *arg = argv[i];
+		char *arg_str = NULL;
+		if (*arg == '@') {
+			arg++;
+			eprintf ("Category: %s\n", arg);
+			if (!strcmp (arg, "unit")) {
+				if (!r2r_test_run_unit ()) {
+					return -1;
+				}
+				continue;
+			} else if (!strcmp (arg, "fuzz")) {
+				if (!opt->fuzz_dir) {
+					R_LOG_ERROR ("No fuzz dir given. Use -F [dir]");
+					return -1;
+				}
+				if (!r2r_test_database_load_fuzz (state->db, opt->fuzz_dir)) {
+					R_LOG_ERROR ("Failed to load fuzz tests from \"%s\"", opt->fuzz_dir);
+				}
+				continue;
+			} else if (!strcmp (arg, "json")) {
+				arg = "db/json";
+			} else if (!strcmp (arg, "dasm")) {
+				arg = "db/asm";
+			} else if (!strcmp (arg, "cmds")) {
+				arg = "db";
+			} else {
+				arg_str = r_str_newf ("db/%s", arg + 1);
+				arg = arg_str;
+			}
+		}
+		if (r_str_endswith (arg, ".c")) {
+			char *abspath = strdup (arg);
+			if (*arg != '/') {
+				free (abspath);
+				abspath = r_str_newf ("%s/%s", cwd, arg);
+			}
+			RList *tests = r_list_newf (free);
+			r2r_from_sourcecomments (tests, abspath);
+			free (abspath);
+			RListIter *iter;
+			char *test;
+			int grc = 0;
+			r_list_foreach (tests, iter, test) {
+				R_LOG_INFO ("Running %s", test);
+				int rc = r_sys_cmdf ("r2r %s %s", opt->interactive? "-i": "", test);
+				if (rc != 0) {
+					grc = rc;
+				}
+			}
+			r_list_free (tests);
+			free (arg_str);
+			return grc? grc: 1; // Signal special exit
+		}
+		char *tf = r_file_abspath_rel (cwd, arg);
+		if (!tf || !r2r_test_database_load (state->db, tf, skip_json_tests)) {
+			R_LOG_ERROR ("Failed to load tests from \"%s\"", tf);
+			free (tf);
+			free (arg_str);
+			return -1;
+		}
+		free (tf);
+		free (arg_str);
 	}
 	return 0;
 }
@@ -941,33 +966,26 @@ static void print_log(R2RState *state, ut64 prev_completed, ut64 prev_paths_comp
 	ut64 paths_completed = RVecConstCharPtr_length (&state->completed_paths);
 	int a = (int)RVecR2RTestPtr_length (&state->queue);
 	for (; prev_paths_completed < paths_completed; prev_paths_completed++) {
-		printf ("[%d/%d] %40s ",
-			(int)paths_completed,
-			(int) (a + prev_paths_completed),
-			*RVecConstCharPtr_at (&state->completed_paths, prev_paths_completed));
+		const char *testpath = *RVecConstCharPtr_at (&state->completed_paths, prev_paths_completed);
+		printf ("[%d/%d] %40s ", (int)paths_completed, (int) (a + prev_paths_completed), testpath);
 		print_state_counts (state);
 		printf ("\n");
 	}
 }
 
 static void r2r_print_summary(R2RState *state, ut64 time_start) {
-	if (!state->quiet) {
-		printf ("\n");
-		ut64 seconds = (r_time_now_mono () - time_start) / 1000000;
-		printf ("Finished in");
-		if (seconds > 60) {
-			ut64 minutes = seconds / 60;
-			printf (" %" PFMT64d " minutes and", minutes);
-			seconds -= (minutes * 60);
-		}
-		printf (" %" PFMT64d " seconds.\n", seconds % 60);
+	printf ("\n");
+	ut64 seconds = (r_time_now_mono () - time_start) / 1000000;
+	printf ("Finished in");
+	if (seconds > 60) {
+		ut64 minutes = seconds / 60;
+		printf (" %" PFMT64d " minutes and", minutes);
+		seconds -= (minutes * 60);
 	}
+	printf (" %" PFMT64d " seconds.\n", seconds % 60);
 }
 
 static void r2r_write_output(R2RState *state, const char *output_file) {
-	if (!output_file) {
-		return;
-	}
 	pj_end (state->test_results);
 	if (r_file_exists (output_file)) {
 		R_LOG_WARN ("Overwrite output file '%s'", output_file);
@@ -1090,8 +1108,7 @@ int main(int argc, char **argv) {
 #if R2__WINDOWS__
 	UINT old_cp = GetConsoleOutputCP ();
 	HANDLE streams[] = { GetStdHandle (STD_OUTPUT_HANDLE), GetStdHandle (STD_ERROR_HANDLE) };
-	DWORD mode;
-	DWORD mode_flags = ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+	DWORD mode, mode_flags = ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING;
 	int i;
 	for (i = 0; i < R_ARRAY_SIZE (streams); i++) {
 		GetConsoleMode (streams[i], &mode);
@@ -1135,7 +1152,6 @@ int main(int argc, char **argv) {
 	}
 	atexit (r2r_subprocess_fini);
 
-	Glock = r_th_lock_new (false);
 	r2r_setup_environment ();
 
 	if (!r2r_state_init (&state, &opt)) {
@@ -1174,8 +1190,12 @@ int main(int argc, char **argv) {
 		ret = -1;
 		goto cleanup;
 	}
-	r2r_print_summary (&state, time_start);
-	r2r_write_output (&state, opt.output_file);
+	if (!state.quiet) {
+		r2r_print_summary (&state, time_start);
+	}
+	if (opt.output_file) {
+		r2r_write_output (&state, opt.output_file);
+	}
 	if (opt.interactive) {
 		interact (&state);
 	}
