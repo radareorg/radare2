@@ -495,7 +495,8 @@ static bool init_paths(R2RState *state) {
 	}
 	R_LOG_INFO ("R2R_RADARE2: %s", state->run_config.r2_cmd);
 	R_LOG_INFO ("R2R_RASM2: %s", state->run_config.rasm2_cmd);
-	if (r_sys_cmdf ("%s -v", state->run_config.r2_cmd)) {
+	if (r_sys_cmdf ("%s -v", state->run_config.r2_cmd) != 0) {
+		R_LOG_ERROR ("Failed to run r2 -v");
 		return false;
 	}
 	printf ("%s-%d  r2r\n", R2_GITTAP, R2_ABIVERSION);
