@@ -190,7 +190,7 @@ R_API RLib *r_lib_new(const char *symname, const char *symnamefunc) {
 		lib->handlers_bytype[i] = NULL;
 	}
 	lib->plugins = r_list_newf (free);
-	lib->plugins_ht = ht_pp_new ((HtPPDupValue)sdb_strdup, (HtPPKvFreeFunc)free_kv, NULL);
+	lib->plugins_ht = ht_pp_new (NULL, (HtPPKvFreeFunc)free_kv, NULL);
 	lib->symname = strdup (symname? symname: R_LIB_SYMNAME);
 	lib->symnamefunc = strdup (symnamefunc? symnamefunc: R_LIB_SYMFUNC);
 	return lib;
