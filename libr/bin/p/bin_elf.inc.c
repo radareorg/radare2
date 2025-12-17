@@ -38,8 +38,8 @@ static void setimpord(ELFOBJ* eo, ut32 ord, RBinImport *ptr) {
 	if (!eo->imports_by_ord || ord >= eo->imports_by_ord_size) {
 		return;
 	}
-	// leak or uaf wtf
-	// r_bin_import_free (eo->imports_by_ord[ord]);
+	r_bin_import_free (eo->imports_by_ord[ord]);
+	// Clone so this array owns a separate copy from the imports list
 	eo->imports_by_ord[ord] = r_bin_import_clone (ptr);
 }
 
@@ -363,6 +363,12 @@ static bool symbols_vec(RBinFile *bf) {
 			break;
 		}
 		RVecRBinSymbol_push_back (list, ptr);
+		// Vector copies the struct, but pointers are shallow copies
+		// Only free the wrapper, not the contents
+		ptr->name = NULL;
+		ptr->libname = NULL;
+		ptr->classname = NULL;
+		r_bin_symbol_free (ptr);
 	}
 
 	// traverse imports
@@ -394,6 +400,12 @@ static bool symbols_vec(RBinFile *bf) {
 			ptr->vaddr = 0;
 		}
 		RVecRBinSymbol_push_back (list, ptr);
+		// Vector copies the struct, but pointers are shallow copies
+		// Only free the wrapper, not the contents
+		ptr->name = NULL;
+		ptr->libname = NULL;
+		ptr->classname = NULL;
+		r_bin_symbol_free (ptr);
 	}
 	return true;
 #endif
@@ -482,7 +494,9 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 	}
 	if (rel->sym) {
 		if (rel->sym < eo->imports_by_ord_size && eo->imports_by_ord[rel->sym]) {
-			r->import = eo->imports_by_ord[rel->sym];
+			// Clone the import so relocations own their own copy
+			// This avoids UAF if imports are modified later
+			r->import = r_bin_import_clone (eo->imports_by_ord[rel->sym]);
 		} else if (rel->sym < eo->symbols_by_ord_size && eo->symbols_by_ord[rel->sym]) {
 			r->symbol = eo->symbols_by_ord[rel->sym];
 		}
@@ -867,6 +881,13 @@ static ut32 murmur3_32(const char* data, ut32 len, ut32 seed) {
 	return hash;
 }
 
+static void _r_bin_elf_reloc_free(RBinReloc *reloc) {
+	if (reloc) {
+		r_bin_import_free (reloc->import);
+		free (reloc);
+	}
+}
+
 static RList* relocs(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	ELFOBJ *eo = bf->bo->bin_obj;
@@ -927,8 +948,13 @@ static RList* relocs(RBinFile *bf) {
 	}
 	ht_up_free (reloc_ht);
 	eo->relocs_list = ret;
+#if 0
 	ret->free = NULL; // already freed in the hashtable
 	return r_list_clone (eo->relocs_list, NULL);
+#endif
+	RList *result = ret;
+	eo->relocs_list = NULL; // caller takes ownership
+	return result;
 }
 
 static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 S, ut64 B, ut64 L) {
@@ -1450,7 +1476,7 @@ static RList* patch_relocs(RBinFile *bf) {
 	if (!relocs) {
 		return NULL;
 	}
-	RList *ret = r_list_newf ((RListFree)free);
+	RList *ret = r_list_newf ((RListFree)_r_bin_elf_reloc_free);
 	if (!ret) {
 		return NULL;
 	}
