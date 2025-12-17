@@ -1842,23 +1842,28 @@ static ut64 getoffset(RBinFile *bf, int type, int idx) {
 	switch (type) {
 	case 'm': // methods
 		// TODO: ADD CHECK
-		return offset_of_method_idx (bf, idx);
+		ut64 off = offset_of_method_idx (bf, idx);
+		return (off == UT64_MAX)? UT64_MAX: r_bin_file_get_vaddr (bf, off, off);
 	case 'f':
-		return dex_field_offset (dex, idx);
+		ut64 off = dex_field_offset (dex, idx);
+		return (off == UT64_MAX)? UT64_MAX: r_bin_file_get_vaddr (bf, off, off);
 	case 'o': // objects
 		R_LOG_TODO ("getoffset object");
 		return 0; // //chdex_object_offset (dex, idx);
 	case 's': // strings
 		if (dex->header.strings_size > idx) {
 			if (dex->strings) {
-				return dex->strings[idx];
+				ut64 off = dex->strings[idx];
+				return (off == UT64_MAX)? UT64_MAX: r_bin_file_get_vaddr (bf, off, off);
 			}
 		}
 		break;
 	case 't': // type
-		return dex_get_type_offset (bf, idx);
+		ut64 off = dex_get_type_offset (bf, idx);
+		return (off == UT64_MAX)? UT64_MAX: r_bin_file_get_vaddr (bf, off, off);
 	case 'c': // class
-		return dex_get_type_offset (bf, idx);
+		ut64 off = dex_get_type_offset (bf, idx);
+		return (off == UT64_MAX)? UT64_MAX: r_bin_file_get_vaddr (bf, off, off);
 	}
 	return UT64_MAX;
 }

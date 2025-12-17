@@ -105,3 +105,26 @@ EXPECT=<<EOF
 0 classes.dex
 EOF
 RUN
+
+NAME=apk:// dex import xrefs
+FILE=apk://bins/dex/org.radare.radare2installer.apk
+CMDS=<<EOF
+ob 1
+aa
+axtq @ sym.imp.Ljava_io_File.method.getAbsolutePath__Ljava_lang_String_
+EOF
+EXPECT=<<EOF
+0x14c2a
+0x18eb2
+0x1a4fc
+0x1a592
+0x1a5b6
+0x1a606
+0x1a62a
+0x1a67a
+0x1a69e
+0x1a6ee
+0x1a712
+0x2407c
+EOF
+RUN
