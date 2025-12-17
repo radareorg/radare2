@@ -60,8 +60,24 @@ static void object_delete_items(RBinObject *o) {
 		RVecRBinImport_fini (&o->imports_vec);
 	}
 	if (!RVecRBinSymbol_empty (&o->symbols_vec)) {
-		/* explicit deep cleanup for symbols via fini which calls r_bin_symbol_fini */
+		/* explicit deep cleanup for symbols */
+		RBinSymbol *sym;
+		R_VEC_FOREACH (&o->symbols_vec, sym) {
+			if (sym) {
+				if (sym->name) {
+					r_bin_name_free (sym->name);
+					sym->name = NULL;
+				}
+				free (sym->libname);
+				sym->libname = NULL;
+				free (sym->classname);
+				sym->classname = NULL;
+			}
+		}
 		RVecRBinSymbol_fini (&o->symbols_vec);
+		if (o->symbols) {
+			o->symbols->free = NULL;
+		}
 	}
 	r_list_free (o->symbols);
 
