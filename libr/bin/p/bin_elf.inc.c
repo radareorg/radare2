@@ -881,20 +881,13 @@ static ut32 murmur3_32(const char* data, ut32 len, ut32 seed) {
 	return hash;
 }
 
-static void _r_bin_elf_reloc_free(RBinReloc *reloc) {
-	if (reloc) {
-		r_bin_import_free (reloc->import);
-		free (reloc);
-	}
-}
-
 static RList* relocs(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	ELFOBJ *eo = bf->bo->bin_obj;
 	if (eo->relocs_list) {
 		return eo->relocs_list;
 	}
-	RList *ret = r_list_newf (free);
+	RList *ret = r_list_newf ((RListFree)r_bin_reloc_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -1476,7 +1469,7 @@ static RList* patch_relocs(RBinFile *bf) {
 	if (!relocs) {
 		return NULL;
 	}
-	RList *ret = r_list_newf ((RListFree)_r_bin_elf_reloc_free);
+	RList *ret = r_list_newf ((RListFree)r_bin_reloc_free);
 	if (!ret) {
 		return NULL;
 	}

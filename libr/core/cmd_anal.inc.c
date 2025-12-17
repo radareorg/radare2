@@ -5415,6 +5415,8 @@ static void cmd_afla(RCore *core, const char *input) {
 		rcd.inloop = false;
 		ht_up_foreach (ht, afla_purge, &rcd);
 		R_VEC_FOREACH (rcd.togo, v) {
+			RVecAddr *va = ht_up_find (ht, *v, NULL);
+			RVecAddr_free (va);
 			ht_up_delete (ht, *v);
 		}
 		RVecAddr_free (rcd.togo);

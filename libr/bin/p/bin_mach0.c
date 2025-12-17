@@ -251,14 +251,6 @@ static RList *imports(RBinFile *bf) {
 	return list;
 }
 
-static void _r_bin_reloc_free(RBinReloc *reloc) {
-	if (reloc) {
-		// XXX also need to free or unref RBinSymbol?
-		r_bin_import_free (reloc->import);
-		free (reloc);
-	}
-}
-
 static RList *relocs(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	struct MACH0_(obj_t) *mo = bf->bo->bin_obj;
@@ -266,7 +258,7 @@ static RList *relocs(RBinFile *bf) {
 	if (!relocs) {
 		return NULL;
 	}
-	RList *ret = r_list_newf ((RListFree)_r_bin_reloc_free);
+	RList *ret = r_list_newf ((RListFree)r_bin_reloc_free);
 
 	RSkipListNode *it;
 	struct reloc_t *reloc;
@@ -279,9 +271,10 @@ static RList *relocs(RBinFile *bf) {
 		ptr->ntype = reloc->ntype;
 		ptr->additive = 0;
 		if (reloc->name[0]) {
-			ptr->import = import_from_name (bf->rbin, (char*) reloc->name, mo->imports_by_name);
+			RBinImport *imp = import_from_name (bf->rbin, (char*) reloc->name, mo->imports_by_name);
+			ptr->import = r_bin_import_clone (imp);
 		} else if (reloc->ord >= 0 && mo->imports_by_ord && reloc->ord < mo->imports_by_ord_size) {
-			ptr->import = mo->imports_by_ord[reloc->ord];
+			ptr->import = r_bin_import_clone (mo->imports_by_ord[reloc->ord]);
 		}
 		ptr->addend = reloc->addend;
 		ptr->vaddr = reloc->addr;
@@ -538,7 +531,7 @@ static RList* patch_relocs(RBinFile *bf) {
 	}
 	gotr2map->name = strdup (".got.r2");
 
-	if (!(ret = r_list_newf ((RListFree)free))) {
+	if (!(ret = r_list_newf ((RListFree)r_bin_reloc_free))) {
 		goto beach;
 	}
 	if (!(relocs_by_sym = ht_uu_new0 ())) {
@@ -564,7 +557,7 @@ static RList* patch_relocs(RBinFile *bf) {
 		RBinImport *imp = import_from_name (b, (char*) reloc->name, mo->imports_by_name);
 		if (R_LIKELY (imp)) {
 			ptr->vaddr = sym_addr;
-			ptr->import = imp;
+			ptr->import = r_bin_import_clone (imp);
 			r_list_append (ret, ptr);
 		} else {
 			free (ptr);

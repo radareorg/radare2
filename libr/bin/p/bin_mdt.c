@@ -427,7 +427,7 @@ static RList *sections(RBinFile *bf) {
 static RList *relocs(RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
 	const RBinMdtObj *mdt = bf->bo->bin_obj;
-	RList *relocs = r_list_newf ((RListFree)free);
+	RList *relocs = r_list_newf ((RListFree)r_bin_reloc_free);
 	if (!relocs) {
 		return NULL;
 	}

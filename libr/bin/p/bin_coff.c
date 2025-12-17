@@ -539,7 +539,7 @@ static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *co, bool patch, ut
 	if (patch_imports && !imp_vaddr_ht) {
 		return NULL;
 	}
-	RList *list_rel = r_list_newf (free); // r_bin_reloc_free
+	RList *list_rel = r_list_newf ((RListFree)r_bin_reloc_free);
 	for (i = 0; i < f_nscns; i++) {
 		if (!co->scn_hdrs[i].s_nreloc) {
 			continue;
@@ -577,7 +577,8 @@ static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *co, bool patch, ut
 
 			ut64 sym_vaddr = symbol->vaddr;
 			if (symbol->is_imported) {
-				reloc->import = (RBinImport *)ht_up_find (co->imp_ht, (ut64)rel[j].r_symndx, NULL);
+				RBinImport *imp = (RBinImport *)ht_up_find (co->imp_ht, (ut64)rel[j].r_symndx, NULL);
+				reloc->import = r_bin_import_clone (imp);
 				if (patch_imports) {
 					bool found;
 					sym_vaddr = ht_uu_find (imp_vaddr_ht, (ut64)rel[j].r_symndx, &found);

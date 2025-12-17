@@ -815,6 +815,13 @@ R_API void r_bin_string_free(void *_str);
 
 #ifdef R_API
 
+static inline void r_bin_reloc_free(RBinReloc *reloc) {
+	if (reloc) {
+		r_bin_import_free (reloc->import);
+		free (reloc);
+	}
+}
+
 R_API RBinImport *r_bin_import_clone(RBinImport *o);
 typedef void (*RBinSymbolCallback)(RBinObject *obj, RBinSymbol *symbol);
 
