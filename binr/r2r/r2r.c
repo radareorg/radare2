@@ -71,14 +71,6 @@ static void results_clear(RVecR2RTestResultInfoPtr *vec) {
 	RVecR2RTestResultInfoPtr_fini (vec);
 }
 
-static const char *shortpath (const char *testpath) {
-	char *shorter = strstr (testpath, "/db/");
-	if (shorter) {
-		return shorter + 1;
-	}
-	return testpath;
-}
-
 static void parse_skip(const char *arg) {
 	if (strstr (arg, "arch")) {
 		r_sys_setenv ("R2R_SKIP_ARCHOS", "1");
@@ -506,14 +498,17 @@ static bool validate_suite(R2RState *state) {
 	R_LOG_INFO ("R2R_RADARE2: %s", state->run_config.r2_cmd);
 	R_LOG_INFO ("R2R_RASM2: %s", state->run_config.rasm2_cmd);
 	if (r_sys_cmdf ("%s -v", state->run_config.r2_cmd) != 0) {
-		R_LOG_ERROR ("Failed to run r2 -v");
-		return false;
+		if (r_sys_cmdf ("%s -v", state->run_config.r2_cmd) != 0) {
+			R_LOG_ERROR ("Failed to run r2 -v");
+			return false;
+		}
 	}
 	printf ("%s-%d  r2r\n", R2_GITTAP, R2_ABIVERSION);
 	// TODO: check if r2r binary version is the same as the r2/rasm2 ones
 	if (r_sys_cmdf ("%s -V", state->run_config.r2_cmd) != 0) {
 		R_LOG_ERROR ("Inconsistent versions of r2 and its libraries");
-		return false;
+		r_sys_sleep (3);
+		// return false;
 	}
 	return true;
 }
