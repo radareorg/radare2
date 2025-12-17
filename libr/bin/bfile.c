@@ -1336,7 +1336,7 @@ R_API const char *r_bin_class_origin_tostring(RBinClassOrigin origin) {
 
 R_API void r_bin_class_free(RBinClass *k) {
 	if (k) {
-		free (k->name);
+		r_bin_name_free (k->name);
 		r_list_free (k->super);
 		free (k->visibility_str);
 		r_list_free (k->methods);

@@ -68,6 +68,12 @@ typedef struct {
 // USE THIS: int ws = bf->bo->info->big_endian;
 #define mach0_endian 1
 
+static void import_hash_free(HtPPKv *kv) {
+	if (kv) {
+		r_bin_import_free (kv->value);
+	}
+}
+
 static ut64 read_uleb128(ut8 **p, ut8 *end) {
 	const char *error = NULL;
 	ut64 v;
@@ -2217,7 +2223,10 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 	free (mo->symstr);
 	free (mo->indirectsyms);
 	free (mo->imports_by_ord);
-	ht_pp_free (mo->imports_by_name);
+	if (mo->imports_by_name) {
+		mo->imports_by_name->opt.freefn = import_hash_free;
+		ht_pp_free (mo->imports_by_name);
+	}
 	free (mo->dyld_info);
 	free (mo->toc);
 	free (mo->modtab);
@@ -2273,6 +2282,7 @@ struct MACH0_(obj_t) *MACH0_(new_buf)(RBinFile *bf, RBuffer *buf, struct MACH0_(
 		mo->b = r_buf_ref (buf);
 		mo->main_addr = UT64_MAX;
 		mo->kv = sdb_new (NULL, "bin.mach0", 0);
+		mo->imports_by_name = ht_pp_new0 ();
 		// probably unnecessary indirection if we pass bf or bo to the apis instead of mo
 		// RVecRBinSymbol_init (&options->bf->bo->symbols_vec);
 		mo->symbols_vec = &(options->bf->bo->symbols_vec);
@@ -3142,14 +3152,16 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcache
 			}
 			if (limit > 0 && ordinal > limit) {
 				R_LOG_WARN ("funcstart count reached bin.limit");
+				free (sym_name);
 				break;
 			}
 			RBinSymbol *sym = RVecRBinSymbol_emplace_back (mo->symbols_vec);
 			if (R_UNLIKELY (!sym)) {
+				free (sym_name);
 				break;
 			}
 			memset (sym, 0, sizeof (RBinSymbol));
-			sym->name = r_bin_name_new (sym_name);
+			sym->name = r_bin_name_new_from (sym_name);
 			sym->vaddr = vaddr;
 			sym->paddr = addr_to_offset (mo, vaddr) + obj->boffset;
 			sym->type = (st->n_type & N_EXT)? "EXT": "LOCAL";
