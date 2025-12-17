@@ -229,9 +229,6 @@ static RBinAddr *r_xcoff_get_entry(RBinCoffObj *obj) {
 	}
 
 	RBinAddr *addr = R_NEW0 (RBinAddr);
-	if (!addr) {
-		return NULL;
-	}
 	addr->vaddr = entry_vaddr;
 	return addr;
 }
@@ -279,14 +276,11 @@ static bool r_coff_get_entry_helper(RBinCoffObj *obj, RBinAddr *address) {
 /* Try to get a valid entrypoint using the methods outlined in
  * https://ftp.gnu.org/old-gnu/Manuals/ld-2.9.1/html_mono/ld.html#SEC24 */
 R_IPI RBinAddr *r_coff_get_entry(RBinCoffObj *obj) {
-	RBinAddr *addr = R_NEW0 (RBinAddr);
-	if (!addr) {
-		return NULL;
-	}
 	/* Special case for XCOFF */
 	if (obj->type == COFF_TYPE_XCOFF) {
 		return r_xcoff_get_entry (obj);
 	}
+	RBinAddr *addr = R_NEW0 (RBinAddr);
 	/* Simplest case, the header provides the entrypoint address */
 	if (obj->type == COFF_TYPE_REGULAR && obj->hdr.f_opthdr) {
 		addr->paddr = obj->opt_hdr.entry;

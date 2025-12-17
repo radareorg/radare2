@@ -417,7 +417,6 @@ static RList *symbols(RBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	ret->free = free;
 	if ((obj->type == COFF_TYPE_BIGOBJ && obj->bigobj_symbols) || obj->symbols) {
 		ut32 f_nsyms = 0;
 		ut32 symbol_size = 0;
@@ -578,15 +577,17 @@ static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *co, bool patch, ut
 			ut64 sym_vaddr = symbol->vaddr;
 			if (symbol->is_imported) {
 				RBinImport *imp = (RBinImport *)ht_up_find (co->imp_ht, (ut64)rel[j].r_symndx, NULL);
-				reloc->import = r_bin_import_clone (imp);
-				if (patch_imports) {
-					bool found;
-					sym_vaddr = ht_uu_find (imp_vaddr_ht, (ut64)rel[j].r_symndx, &found);
-					if (!found) {
-						sym_vaddr = imp_map;
-						imp_map += BYTES_PER_IMP_RELOC;
-						ht_uu_insert (imp_vaddr_ht, (ut64)rel[j].r_symndx, sym_vaddr);
-						symbol->vaddr = sym_vaddr;
+				if (imp) {
+					reloc->import = r_bin_import_clone (imp);
+					if (patch_imports) {
+						bool found;
+						sym_vaddr = ht_uu_find (imp_vaddr_ht, (ut64)rel[j].r_symndx, &found);
+						if (!found) {
+							sym_vaddr = imp_map;
+							imp_map += BYTES_PER_IMP_RELOC;
+							ht_uu_insert (imp_vaddr_ht, (ut64)rel[j].r_symndx, sym_vaddr);
+							symbol->vaddr = sym_vaddr;
+						}
 					}
 				}
 			}
@@ -919,6 +920,7 @@ static RBinInfo *info(RBinFile *bf) {
 		ret->cpu = strdup ("ppc");
 		ret->arch = strdup ("ppc");
 		ret->bits = 32;
+		free (ret->os);
 		ret->os = strdup ("AIX");
 		break;
 	default:
