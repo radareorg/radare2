@@ -362,6 +362,12 @@ static bool symbols_vec(RBinFile *bf) {
 			break;
 		}
 		RVecRBinSymbol_push_back (list, ptr);
+		// Vector copies the struct, but pointers are shallow copies
+		// Only free the wrapper, not the contents
+		ptr->name = NULL;
+		ptr->libname = NULL;
+		ptr->classname = NULL;
+		r_bin_symbol_free (ptr);
 	}
 
 	// traverse imports
@@ -381,17 +387,6 @@ static bool symbols_vec(RBinFile *bf) {
 		if (!ptr) {
 			break;
 		}
-#if 1
-		ut64 prev_len = RVecRBinSymbol_length (list);
-		RVecRBinSymbol_push_back (list, ptr);
-		if (RVecRBinSymbol_length (list) == prev_len) {
-			// push_back failed, free the allocated symbol
-			r_bin_symbol_free (ptr);
-		} else {
-			// push_back copies the struct, free the original allocation
-			free (ptr);
-		}
-#endif
 		ptr->is_imported = true;
 		// object files have no plt section, imports are referenced by relocs not trampolines
 		if (ptr->paddr == 0) {
@@ -403,6 +398,13 @@ static bool symbols_vec(RBinFile *bf) {
 			ptr->paddr = 0;
 			ptr->vaddr = 0;
 		}
+		RVecRBinSymbol_push_back (list, ptr);
+		// Vector copies the struct, but pointers are shallow copies
+		// Only free the wrapper, not the contents
+		ptr->name = NULL;
+		ptr->libname = NULL;
+		ptr->classname = NULL;
+		r_bin_symbol_free (ptr);
 	}
 	return true;
 #endif
