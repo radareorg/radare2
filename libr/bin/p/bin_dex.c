@@ -1839,33 +1839,31 @@ static RList *entries(RBinFile *bf) {
 
 static ut64 getoffset(RBinFile *bf, int type, int idx) {
 	struct r_bin_dex_obj_t *dex = bf->bo->bin_obj;
+	ut64 off = UT64_MAX;
 	switch (type) {
 	case 'm': // methods
 		// TODO: ADD CHECK
-		ut64 off = offset_of_method_idx (bf, idx);
-		return (off == UT64_MAX)? UT64_MAX: r_bin_file_get_vaddr (bf, off, off);
+		off = offset_of_method_idx (bf, idx);
+		break;
 	case 'f':
-		ut64 off = dex_field_offset (dex, idx);
-		return (off == UT64_MAX)? UT64_MAX: r_bin_file_get_vaddr (bf, off, off);
+		off = dex_field_offset (dex, idx);
+		break;
 	case 'o': // objects
 		R_LOG_TODO ("getoffset object");
 		return 0; // //chdex_object_offset (dex, idx);
 	case 's': // strings
 		if (dex->header.strings_size > idx) {
 			if (dex->strings) {
-				ut64 off = dex->strings[idx];
-				return (off == UT64_MAX)? UT64_MAX: r_bin_file_get_vaddr (bf, off, off);
+				off = dex->strings[idx];
 			}
 		}
 		break;
 	case 't': // type
-		ut64 off = dex_get_type_offset (bf, idx);
-		return (off == UT64_MAX)? UT64_MAX: r_bin_file_get_vaddr (bf, off, off);
 	case 'c': // class
-		ut64 off = dex_get_type_offset (bf, idx);
-		return (off == UT64_MAX)? UT64_MAX: r_bin_file_get_vaddr (bf, off, off);
+		off = dex_get_type_offset (bf, idx);
+		break;
 	}
-	return UT64_MAX;
+	return (off == UT64_MAX)? UT64_MAX: r_bin_file_get_vaddr (bf, off, off);
 }
 
 static const char *getname(RBinFile *bf, int type, int idx, bool sd) {
