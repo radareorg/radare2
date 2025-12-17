@@ -196,6 +196,19 @@ typedef struct r2r_test_result_info_t {
 	};
 } R2RTestResultInfo;
 
+static inline const char *shortpath (const char *testpath) {
+	char *shorter = strstr (testpath, "/db/");
+	if (shorter) {
+		return shorter + 1;
+	}
+	shorter = strstr (testpath, "/bins/fuzzed");
+	if (shorter) {
+		return shorter + 6;
+	}
+	return testpath;
+}
+
+
 R_API R2RCmdTest *r2r_cmd_test_new(void);
 R_API void r2r_cmd_test_free(R2RCmdTest *test);
 R_API RVecR2RCmdTestPtr *r2r_load_cmd_test_file(const char *file);

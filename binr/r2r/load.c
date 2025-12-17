@@ -601,7 +601,7 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth, bool
 			}
 			if (!strcmp (subname, "extras")) {
 				// Only load "extras" dirs if explicitly specified
-				R_LOG_WARN ("Skipping %s" R_SYS_DIR "%s because it requires additional dependencies", path, subname);
+				R_LOG_WARN ("Skipping %s" R_SYS_DIR "%s because it requires additional dependencies", shortpath (path), subname);
 				continue;
 			}
 #if WANT_V35 == 0
@@ -609,10 +609,12 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth, bool
 			size_t i = 0;
 			for (; i < sizeof (v35_tests_to_skip) / sizeof (R2RTestToSkip); i++) {
 				R2RTestToSkip test = v35_tests_to_skip[i];
-				bool is_dir = r_str_endswith (path, r_str_newf (R_SYS_DIR "%s", test.dir));
+				char *testdir = r_str_newf (R_SYS_DIR "%s", test.dir);
+				bool is_dir = r_str_endswith (path, testdir);
+				free (testdir);
 				if (is_dir) {
 					if (!strcmp (subname, test.name)) {
-						R_LOG_WARN ("Skipping test %s" R_SYS_DIR "%s because it requires arm.v35", path, subname);
+						R_LOG_WARN ("Skipping test %s" R_SYS_DIR "%s because it requires arm.v35", shortpath (path), subname);
 						skip = true;
 						break;
 					}
@@ -623,11 +625,11 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth, bool
 			}
 #endif
 			if (skip_asm && test_from.type == R2R_TEST_TYPE_ASM) {
-				R_LOG_INFO ("R2R_SKIP_ASM: Skipping %s", path);
+				R_LOG_INFO ("R2R_SKIP_ASM: Skipping %s", shortpath (path));
 				continue;
 			}
 			if (test_from.archos && (skip_archos || strcmp (subname, archos))) {
-				R_LOG_INFO ("Skipping %s" R_SYS_DIR "%s because it does not match the current platform \"%s\"", path, subname, archos);
+				R_LOG_INFO ("Skipping %s" R_SYS_DIR "%s because it does not match the current platform \"%s\"", shortpath (path), subname, archos);
 				continue;
 			}
 			char *subpath = r_file_new (path, subname, NULL);

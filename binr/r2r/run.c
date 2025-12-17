@@ -1416,7 +1416,7 @@ R_API char *r2r_test_name(R2RTest *test) {
 	case R2R_TEST_TYPE_JSON:
 		return r_str_newf ("<json> %s", r_str_get (test->json_test->cmd));
 	case R2R_TEST_TYPE_FUZZ:
-		return r_str_newf ("<fuzz> %s", test->path);
+		return r_str_newf ("done"); // <fuzz> %s", shortpath (test->path));
 	}
 	return NULL;
 }
