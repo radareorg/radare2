@@ -627,7 +627,7 @@ R_API bool r_anal_block_recurse_depth_first(RAnalBlock *block, RAnalBlockCb cb, 
 
 beach:
 	ht_up_free (visited);
-	RVecRecurseDepthFirstCtx_clear (&path);
+	RVecRecurseDepthFirstCtx_fini (&path);
 	return true; // false!breaked;
 }
 

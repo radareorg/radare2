@@ -4051,6 +4051,7 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 	r_anal_block_recurse_depth_first (first_bb, (RAnalBlockCb)anal_block_cb,
 		(RAnalBlockCb)anal_block_on_exit, &ctx);
 	reg_set_clear (&ctx.reg_set);
+	RVecIntPtr_fini (&ctx.reg_set);
 	fcn->stack = saved_stack;
 }
 

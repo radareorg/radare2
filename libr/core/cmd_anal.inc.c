@@ -4351,6 +4351,11 @@ repeat:
 	return true;
 }
 
+static bool afba_free_vec(void *user, const ut64 key, const void *val) {
+	RVecAddr_free ((RVecAddr *)val);
+	return true;
+}
+
 static void cmd_afba(RCore *core, const char *input) {
 	bool reverse = true;
 	if (strchr (input, '!')) {
@@ -4415,6 +4420,9 @@ static void cmd_afba(RCore *core, const char *input) {
 			r_cons_printf (core->cons, "0x%08"PFMT64x"\n", *v);
 		}
 	}
+	RVecAddr_free (rcd.list);
+	ht_up_foreach (ht, afba_free_vec, NULL);
+	ht_up_free (ht);
 }
 #endif
 
@@ -5367,6 +5375,7 @@ static void cmd_afla(RCore *core, const char *input) {
 			RVecAddr_push_back (va0, &v);
 			ht_up_insert (ht, v, va0);
 			// RVecAddr *va = ht_up_find (ht, k, NULL);
+			RVecAnalRef_free (xrefs);
 			continue;
 		}
 		R_VEC_FOREACH (xrefs, xref) {
@@ -5389,6 +5398,7 @@ static void cmd_afla(RCore *core, const char *input) {
 			}
 			RVecAddr_push_back (va, &v);
 		}
+		RVecAnalRef_free (xrefs);
 	}
 	// first entries that have no xrefs .. wtf .. maybe this must be ignored? its main?
 	ut64 *v;
@@ -5410,6 +5420,7 @@ static void cmd_afla(RCore *core, const char *input) {
 		RVecAddr_free (rcd.togo);
 		rcd.togo = RVecAddr_new ();
 	} while (rcd.inloop);
+	RVecAddr_free (rcd.togo);
 
 	// add missing entries here
 	r_list_foreach (core->anal->fcns, iter, fcn) {
@@ -5434,6 +5445,9 @@ static void cmd_afla(RCore *core, const char *input) {
 		r_cons_println (core->cons, s);
 		free (s);
 	}
+	RVecAddr_free (rcd.list);
+	ht_up_foreach (ht, afba_free_vec, NULL);
+	ht_up_free (ht);
 }
 
 #if 0

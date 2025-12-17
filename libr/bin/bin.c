@@ -130,6 +130,7 @@ R_API void r_bin_info_free(RBinInfo *rb) {
 	free (rb->claimed_checksum);
 	free (rb->compiler);
 	free (rb->cpu);
+	free (rb->dbglink);
 	free (rb->debug_file_name);
 	free (rb->default_cc);
 	free (rb->file);

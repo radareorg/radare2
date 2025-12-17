@@ -851,7 +851,7 @@ R_API void r_anal_var_clear_accesses(RAnalVar *var) {
 			anal_var_ptr_remove (inst_accesses, var);
 		}
 	}
-	RVecAnalVarAccess_clear (&var->accesses);
+	RVecAnalVarAccess_fini (&var->accesses);
 	R_DIRTY_SET (var->fcn->anal);
 }
 
