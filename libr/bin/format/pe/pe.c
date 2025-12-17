@@ -4556,6 +4556,7 @@ void *PE_(r_bin_pe_free)(RBinPEObj *pe) {
 	free (pe->sections);
 	free (pe->authentihash);
 	r_list_free (pe->rich_entries);
+	r_list_free (pe->relocs);
 	r_list_free (pe->resources);
 	r_list_free (pe->dotnet_symbols);
 	r_pkcs7_cms_free (pe->cms);

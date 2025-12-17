@@ -553,7 +553,7 @@ static RList* imports(RBinFile *bf) {
 	r_list_free (pe->relocs);
 	RList *relocs = r_list_newf (free);
 	if (!relocs) {
-		free (ret);
+		r_list_free (ret);
 		return NULL;
 	}
 	pe->relocs = relocs;
@@ -606,7 +606,10 @@ static RList* imports(RBinFile *bf) {
 static RList* relocs(RBinFile *bf) {
 	RBinPEObj *pe = PE_(get) (bf);
 	if (pe && pe->relocs) {
-		return r_list_clone (pe->relocs, NULL);
+		RList *l = r_list_clone (pe->relocs, NULL);
+		// ownership transferred
+		pe->relocs->free = NULL;
+		return l;
 	}
 	return NULL;
 }
