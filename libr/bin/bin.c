@@ -1473,6 +1473,10 @@ R_API const char *r_bin_field_kindstr(RBinField *f) {
 R_API RBinName *r_bin_name_new_from(R_OWNED char *name) {
 	R_RETURN_VAL_IF_FAIL (name, NULL);
 	RBinName *bn = R_NEW0 (RBinName);
+	if (!bn) {
+		free (name);
+		return NULL;
+	}
 	bn->oname = name;
 	return bn;
 }
@@ -1480,7 +1484,9 @@ R_API RBinName *r_bin_name_new_from(R_OWNED char *name) {
 R_API RBinName *r_bin_name_new(const char *name) {
 	R_RETURN_VAL_IF_FAIL (name, NULL);
 	RBinName *bn = R_NEW0 (RBinName);
-	bn->oname = strdup (name);
+	if (bn) {
+		bn->oname = strdup (name);
+	}
 	return bn;
 }
 
