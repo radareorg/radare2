@@ -171,6 +171,10 @@ err:
 #endif
 }
 
+void free_kv(HtPPKv *kv) {
+	free (kv->key);
+}
+
 R_API RLib *r_lib_new(const char *symname, const char *symnamefunc) {
 	RLib *lib = R_NEW (RLib);
 	if (r_sys_getenv_asbool ("R2_DEBUG")) {
@@ -186,7 +190,7 @@ R_API RLib *r_lib_new(const char *symname, const char *symnamefunc) {
 		lib->handlers_bytype[i] = NULL;
 	}
 	lib->plugins = r_list_newf (free);
-	lib->plugins_ht = ht_pp_new0 ();
+	lib->plugins_ht = ht_pp_new ((HtPPDupValue)sdb_strdup, (HtPPKvFreeFunc)free_kv, NULL);
 	lib->symname = strdup (symname? symname: R_LIB_SYMNAME);
 	lib->symnamefunc = strdup (symnamefunc? symnamefunc: R_LIB_SYMFUNC);
 	return lib;
@@ -197,7 +201,7 @@ R_API void r_lib_free(RLib * R_NULLABLE lib) {
 		r_lib_close (lib, NULL);
 		r_list_free (lib->handlers);
 		r_list_free (lib->plugins);
-		ht_pp_free(lib->plugins_ht);
+		ht_pp_free (lib->plugins_ht);
 		free (lib->symname);
 		free (lib->symnamefunc);
 		free (lib);
@@ -455,14 +459,12 @@ R_API bool r_lib_open_ptr(RLib *lib, const char *file, void *handle, RLibStruct 
 	if (!ret) {
 		R_LOG_DEBUG ("Library handler has failed for '%s'", file);
 		free (p->file);
-		if (p->name) {
-			free (p->name);
-		}
+		free (p->name);
 		free (p);
 	} else {
 		r_list_append (lib->plugins, p);
 		if (p->name) {
-			ht_pp_insert (lib->plugins_ht, strdup (p->name), p);
+			ht_pp_insert (lib->plugins_ht, p->name, p);
 		}
 	}
 	return ret;

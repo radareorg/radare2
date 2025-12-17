@@ -39,6 +39,7 @@ static void setimpord(ELFOBJ* eo, ut32 ord, RBinImport *ptr) {
 		return;
 	}
 	r_bin_import_free (eo->imports_by_ord[ord]);
+	// Clone so this array owns a separate copy from the imports list
 	eo->imports_by_ord[ord] = r_bin_import_clone (ptr);
 }
 
@@ -493,7 +494,9 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 	}
 	if (rel->sym) {
 		if (rel->sym < eo->imports_by_ord_size && eo->imports_by_ord[rel->sym]) {
-			r->import = eo->imports_by_ord[rel->sym];
+			// Clone the import so relocations own their own copy
+			// This avoids UAF if imports are modified later
+			r->import = r_bin_import_clone (eo->imports_by_ord[rel->sym]);
 		} else if (rel->sym < eo->symbols_by_ord_size && eo->symbols_by_ord[rel->sym]) {
 			r->symbol = eo->symbols_by_ord[rel->sym];
 		}
