@@ -422,6 +422,7 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va) {
 			r_name_filter (str, -1);
 			RFlagItem *fi = r_flag_set (core->flags, str, vaddr, string->size);
 			if (fi) {
+				free (fi->rawname);
 				fi->rawname = strdup (string->string);
 				const bool realstr = r_config_get_b (core->config, "bin.str.real");
 				if (realstr) {
