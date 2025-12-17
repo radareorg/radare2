@@ -270,11 +270,14 @@ static RList *relocs(RBinFile *bf) {
 		ptr->type = reloc->type;
 		ptr->ntype = reloc->ntype;
 		ptr->additive = 0;
+		RBinImport *imp = NULL;
 		if (reloc->name[0]) {
-			RBinImport *imp = import_from_name (bf->rbin, (char*) reloc->name, mo->imports_by_name);
-			ptr->import = r_bin_import_clone (imp);
+			imp = import_from_name (bf->rbin, (char*) reloc->name, mo->imports_by_name);
 		} else if (reloc->ord >= 0 && mo->imports_by_ord && reloc->ord < mo->imports_by_ord_size) {
-			ptr->import = r_bin_import_clone (mo->imports_by_ord[reloc->ord]);
+			imp = mo->imports_by_ord[reloc->ord];
+		}
+		if (imp) {
+			ptr->import = r_bin_import_clone (imp);
 		}
 		ptr->addend = reloc->addend;
 		ptr->vaddr = reloc->addr;

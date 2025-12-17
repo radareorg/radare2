@@ -10,6 +10,7 @@ static char *get_filetype(RBuffer *b) {
 		r_magic_load (ck, R2_SDB_MAGIC);
 		ut8 buf[256] = {0};
 		if (r_buf_read_at (b, 0, buf, sizeof (buf)) < 1) {
+			r_magic_free (ck);
 			return NULL;
 		}
 		const char *tmp = r_magic_buffer (ck, buf, sizeof (buf));
