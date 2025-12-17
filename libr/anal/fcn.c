@@ -390,7 +390,7 @@ typedef struct {
 	char *reg;
 } leaddr_pair;
 
-static void free_leaddr_pair(void *pair) {
+static void leaddr_free(void *pair) {
 	leaddr_pair *_pair = pair;
 	free (_pair->reg);
 	free (_pair);
@@ -694,7 +694,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	}
 
 	if (!anal->leaddrs) {
-		anal->leaddrs = r_list_newf (free_leaddr_pair);
+		anal->leaddrs = r_list_newf (leaddr_free);
 		if (R_UNLIKELY (!anal->leaddrs)) {
 			R_LOG_ERROR ("Cannot create leaddr list");
 			gotoBeach (R_ANAL_RET_ERROR);
@@ -1501,8 +1501,8 @@ bx = jmptbl_base + (byte[x9]<<2)
 					ut64 opaddr = x10->op_addr;
 					ut64 basptr = x10->leaddr;
 					ut64 tblptr = x9->leaddr;
-					free (x9);
-					free (x10);
+					leaddr_free (x9);
+					leaddr_free (x10);
 
 					if (loadsize == 0) {
 						R_LOG_DEBUG ("Probably not not a SwitchTable, just indirect branch at 0x%08"PFMT64x, op->addr);
@@ -1899,7 +1899,7 @@ beach:
 			lea_cnt = 0;
 			break;
 		}
-		free (lea);
+		leaddr_free (lea);
 		// r_list_delete (anal->leaddrs, r_list_tail (anal->leaddrs));
 		lea_cnt--;
 	}
