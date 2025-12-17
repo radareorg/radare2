@@ -203,7 +203,7 @@ R_API const char *r_bin_import_tags(RBin *bin, const char *name) {
 
 R_API void r_bin_symbol_fini(RBinSymbol *sym) {
 	if (sym) {
-		free (sym->name);
+		r_bin_name_free (sym->name);
 		free (sym->libname);
 		free (sym->classname);
 	}
