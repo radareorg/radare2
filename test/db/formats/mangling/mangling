@@ -35,6 +35,17 @@ unit example sumofsquares(longint)longint
 EOF
 RUN
 
+NAME=cxx demangle respects bin.maxsymlen
+FILE=bins/elf/analysis/bigswitch_x86
+CMDS=<<EOF
+e bin.maxsymlen=12
+iD cxx _Z30AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAv
+EOF
+EXPECT=<<EOF
+AAAAAAAAA...
+EOF
+RUN
+
 NAME=freepascal detection
 FILE=bins/efi/freepascal_test_dwarf
 CMDS=i~lang

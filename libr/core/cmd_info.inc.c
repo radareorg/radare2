@@ -208,23 +208,6 @@ static void classdump_keys(RCore *core, RBinObject *bo) {
 	}
 }
 
-static char *demangle_internal(RCore *core, int type, const char *s) {
-	char *res = NULL;
-	switch (type) {
-	case R_BIN_LANG_CXX: res = r_bin_demangle_cxx (core->bin->cur, s, 0); break;
-	case R_BIN_LANG_JAVA: res = r_bin_demangle_java (s); break;
-	case R_BIN_LANG_OBJC: res = r_bin_demangle_objc (NULL, s); break;
-	case R_BIN_LANG_SWIFT: res = r_bin_demangle_swift (s, core->bin->options.demangle_usecmd, core->bin->options.demangle_trylib); break;
-	case R_BIN_LANG_DLANG: res = r_bin_demangle_plugin (core->bin, "dlang", s); break;
-	case R_BIN_LANG_MSVC: res = r_bin_demangle_msvc (s); break;
-	case R_BIN_LANG_RUST: res = r_bin_demangle_rust (core->bin->cur, s, 0); break;
-	case R_BIN_LANG_PASCAL: res = r_bin_demangle_freepascal (s); break;
-	default:
-		r_core_return_value (core, 1);
-	}
-	return res;
-}
-
 static void cmd_info_demangle(RCore *core, const char *input, PJ *pj, int mode) {
 	if (input[1] == 'j' && input[2] == ' ') {
 		mode = R_MODE_JSON;
@@ -261,7 +244,7 @@ static void cmd_info_demangle(RCore *core, const char *input, PJ *pj, int mode) 
 		}
 		r_core_return_value (core, 1);
 	}
-	char *res = demangle_internal (core, lang_type, text);
+	char *res = r_bin_demangle (core->bin->cur, lang, text, 0, false);
 	if (mode == R_MODE_JSON) {
 		pj_o (pj);
 		pj_ks (pj, "lang", lang);

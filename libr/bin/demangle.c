@@ -4,6 +4,27 @@
 #include "i/private.h"
 #include <cxx/demangle.h>
 
+static char *demangle_trunc(RBinFile *bf, char *s) {
+	RBin *bin = bf? bf->rbin: NULL;
+	const int maxsymlen = bin? bin->options.maxsymlen: 0;
+	if (s && maxsymlen > 0) {
+		const size_t slen = strlen (s);
+		if (slen > (size_t)maxsymlen) {
+			char *ns = r_str_ndup (s, maxsymlen);
+			if (ns) {
+				if (maxsymlen > 3) {
+					ns[maxsymlen - 3] = '.';
+					ns[maxsymlen - 2] = '.';
+					ns[maxsymlen - 1] = '.';
+				}
+				free (s);
+				return ns;
+			}
+		}
+	}
+	return s;
+}
+
 R_API void r_bin_demangle_list(RBin *bin) {
 	const char *langs[] = {
 		"c++",
@@ -176,5 +197,5 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 		free (demangled);
 		demangled = d;
 	}
-	return demangled;
+	return demangle_trunc (bf, demangled);
 }
