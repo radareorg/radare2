@@ -40,10 +40,7 @@ ifneq (,$(findstring emcc,$(CC)))
 MLFLAGS=
 else
 ifeq ($(OSTYPE),darwin)
-MLFLAGS+=-install_name @rpath/libr2.dylib
-endif
-ifeq ($(OSTYPE),ios)
-MLFLAGS+=-install_name @rpath/libr2.dylib
+MLFLAGS+=-Wl,-install_name,@rpath/libr.dylib
 ifeq ($(EMBED_BITCODE),1)
 MLFLAGS+=-fembed-bitcode
 endif
@@ -56,48 +53,24 @@ LDFLAGS+=${SSL_LDFLAGS}
 #endif
 # from env: ALFLAGS+=$(ALFLAGS)
 
-localize_hidden:
-	for LIB in .libr/* ; do $(OBJCOPY) --localize-hidden $$LIB ; done
-
-# ${PARTIALLD} $(ALFLAGS) $(MLFLAGS) $(PLFLAGS) -o .libr/$$(basename $${LIB}.a).o $${LIB}
-.libr: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
-	rm -rf .libr
-	mkdir -p .libr
-	for LIB in $^ ; do \
-		${PARTIALLD} $(ALFLAGS) $(CFLAGS) $(MLFLAGS) $(PLFLAGS) -o .libr/$$(basename $${LIB}.a).o $${LIB} ; \
-	done
-ifeq ($(OSTYPE),linux)
-	$(MAKE) localize_hidden
-endif
-ifeq ($(OSTYPE),gnulinux)
-	$(MAKE) localize_hidden
-endif
-ifeq ($(OSTYPE),android)
-	$(MAKE) localize_hidden
-endif
-ifeq ($(OSTYPE),bsd)
-	$(MAKE) localize_hidden
-endif
-
-_libr.${EXT_AR}: .libr
-	-${AR} -rs $@ .libr/*.o
-
-# ifeq ($(shell type libtool),)
-ifeq (1,1)
-# XXX this is not correct. libtool is required for static builds for now
-.libr2: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
-	rm -rf .libr2
-	mkdir -p .libr2
-	-for LIB in $^ ; do \
-		BN=`basename $$LIB` ; \
-		mkdir -p .libr2/$$BN ; \
-		echo "( cd .libr2/$$BN ; pwd ; du -hs ../../$$LIB; ${AR} -x ../../$$LIB )" ; \
-		( cd .libr2/$$BN ; pwd ; du -hs ../../$$LIB; ${AR} -x ../../$$LIB ) ; \
-	done
-
 ifeq ($(OSTYPE),darwin)
-WHOLEFLAG=-all_load
+
+LIBR_COMPONENTS_AR := $(sort $(wildcard */libr_*.$(EXT_AR)))
+LIBR_SHLR_AR := ../shlr/libr_shlr.$(EXT_AR)
+
+libr.$(EXT_AR): $(LIBR_COMPONENTS_AR) $(LIBR_SHLR_AR)
+	xcrun libtool -static -o $@ \
+		$(LIBR_COMPONENTS_AR) $(LIBR_SHLR_AR)
+	xcrun ranlib $@
+
+libr.$(EXT_SO): $(LIBR_COMPONENTS_AR) $(LIBR_SHLR_AR)
+	$(CC) -fvisibility=hidden $(MLFLAGS) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) \
+		-o $@ -dynamiclib -shared "-Wl,-exported_symbol,_r_*" -Wl,-dead_strip \
+		$(foreach a,$(LIBR_COMPONENTS_AR),-Wl,-force_load,$(a)) \
+		$(LIBR_SHLR_AR)
+
 else
+
 ifeq ($(OSTYPE),wasi)
 WHOLEFLAG=
 else
@@ -107,65 +80,12 @@ else
 WHOLEFLAG=-Wl,--whole-archive
 endif
 endif
-endif
 libr.o: ../shlr/libr_shlr.${EXT_AR}
 	$(CC) -r -nostdlib $(CFLAGS) $(WHOLEFLAG) -o libr.o $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
 
 libr.${EXT_AR}: libr.o
 	$(AR) -rs $@ libr.o
 	$(RANLIB) $@
-
-#libr.${EXT_AR}: .libr2
-#	-${AR} -rs $@ .libr2/*/*.o
-else
-
-libr.${EXT_AR}: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
-	libtool -static -o libr.${EXT_AR} $^
-	# ar -rcT libr.${EXT_AR} $^
-	du -hs libr.${EXT_AR}
-endif
-
-
-ifeq (1,$(WITH_GPL))
-E+=../shlr/grub/libgrubfs.${EXT_AR}
-endif
-E+=../shlr/ar/libr_ar.${EXT_AR}
-E+=../shlr/winkd/libr_winkd.${EXT_AR}
-E+=../shlr/qnx/lib/libqnxr.${EXT_AR}
-E+=../shlr/bochs/lib/libbochs.${EXT_AR}
-
-# E+=../libr/arch/p/arm/v35/v35arm64.${EXT_AR}
-# E+=../libr/arch/p/arm/v35/v35armv7.${EXT_AR}
-
-ifeq ($(USE_CAPSTONE),1)
-E+=$(CAPSTONE_LDFLAGS)
-else ifeq ($(USE_CSNEXT),1)
-E+=$(CS_ROOT)/libcapstone.${EXT_AR}
-else ifeq ($(USE_CS4),1)
-E+=$(CS_ROOT)/libcapstone.${EXT_AR}
-else
-E+=$(CS_ROOT)/libcapstone.${EXT_AR}
-endif
-
-ifeq ($(OSTYPE),darwin)
-LIBR_LDFLAGS=-dynamiclib -shared
-else
-LIBR_LDFLAGS=-shared
-endif
-
-libr2.${EXT_SO}: .libr2
-ifeq (${COMPILER},emscripten)
-	echo nothing to do here
-else
-ifeq (${COMPILER},wasi)
-	echo nothing to do here
-else
-	$(CC) -fvisibility=hidden $(MLFLAGS) ${LINK} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} $(LIBR_LDFLAGS) -o libr.${EXT_SO}  \
-		.libr2/*/*.o \
-		../shlr/gdb/lib/libgdbr.${EXT_AR} ../shlr/java/libr_java.${EXT_AR} \
-		../shlr/libr_shlr.${EXT_AR} $(E) ../libr/util/libr_util.${EXT_AR}
-endif
-endif
 
 libr.${EXT_SO}: libr.${EXT_AR}
 ifeq (${COMPILER},emscripten)
@@ -174,10 +94,12 @@ else
 ifeq (${COMPILER},wasi)
 	echo nothing to do here
 else
-	$(CC) -fvisibility=hidden $(MLFLAGS) ${LINK} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} $(LIBR_LDFLAGS) -o libr.${EXT_SO}  \
+	$(CC) -fvisibility=hidden $(MLFLAGS) ${LINK} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} -shared -o libr.${EXT_SO}  \
 		libr.${EXT_AR} ../shlr/gdb/lib/libgdbr.${EXT_AR} ../shlr/java/libr_java.${EXT_AR} \
-		../shlr/libr_shlr.${EXT_AR} $(E) ../libr/util/libr_util.${EXT_AR}
+		../shlr/libr_shlr.${EXT_AR} ../libr/util/libr_util.${EXT_AR}
 endif
+endif
+
 endif
 
 else
@@ -314,8 +236,6 @@ deinstall uninstall:
 	rm -rf "${DESTDIR}${LIBDIR}/libr_*.so.0"
 	rm -rf "${DESTDIR}${LIBDIR}/libr_*.so"
 	rm -rf "${DESTDIR}${LIBDIR}/libr_*.${EXT_AR}"
-	rm -rf "${DESTDIR}${LIBDIR}/libr2.so"*
-	rm -rf "${DESTDIR}${LIBDIR}/libr2.${EXT_AR}"
 	rm -rf "${DESTDIR}${LIBDIR}/libr.so"*
 	rm -rf "${DESTDIR}${LIBDIR}/libr.${EXT_AR}"
 	rm -rf "${DESTDIR}${DATADIR}/doc/radare2"
@@ -323,10 +243,10 @@ deinstall uninstall:
 
 clean:
 	for LIB in ${LIBS}; do ( cd $${LIB} && $(MAKE) clean ); done
-	rm -rf .libr libr.${LIB_SO} libr.${LIB_AR}
+	rm -rf libr.${LIB_SO} libr.${LIB_AR}
 
 mrproper:
-	rm -rf .libr libr.${LIB_SO} libr.${LIB_AR}
+	rm -rf libr.${LIB_SO} libr.${LIB_AR}
 	for LIB in ${LIBS}; do ( cd $${LIB} && $(MAKE) mrproper ); done
 
 .PHONY: sloc mrproper clean pkgcfg install deinstall uninstall libr
