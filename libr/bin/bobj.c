@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2024 - pancake, nibble, dso */
+/* radare2 - LGPL - Copyright 2009-2025 - pancake, nibble, dso */
 
 #define R_LOG_ORIGIN "bin.obj"
 
@@ -60,24 +60,8 @@ static void object_delete_items(RBinObject *o) {
 		RVecRBinImport_fini (&o->imports_vec);
 	}
 	if (!RVecRBinSymbol_empty (&o->symbols_vec)) {
-		/* explicit deep cleanup for symbols */
-		RBinSymbol *sym;
-		R_VEC_FOREACH (&o->symbols_vec, sym) {
-			if (sym) {
-				if (sym->name) {
-					r_bin_name_free (sym->name);
-					sym->name = NULL;
-				}
-				free (sym->libname);
-				sym->libname = NULL;
-				free (sym->classname);
-				sym->classname = NULL;
-			}
-		}
+		/* explicit deep cleanup for symbols via fini which calls r_bin_symbol_fini */
 		RVecRBinSymbol_fini (&o->symbols_vec);
-		if (o->symbols) {
-			o->symbols->free = NULL;
-		}
 	}
 	r_list_free (o->symbols);
 
@@ -484,11 +468,11 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	}
 	if (bin->filter_rules & (R_BIN_REQ_RELOCS | R_BIN_REQ_IMPORTS)) {
 		if (p->relocs) {
-			RList *l = (RList *)p->relocs (bf); // XXX this is an internal list (should be a vector), and shouldnt be freed by the caller
+			RList *l = (RList *)p->relocs (bf);
 			if (l) {
 				REBASE_PADDR (bo, l, RBinReloc);
 				bo->relocs = list2rbtree ((RList*)l);
-				l->free = NULL; // may leak or crash
+				l->free = NULL; // owned by tree now, via clone with proper cleanup
 				r_list_free (l);
 			}
 		}

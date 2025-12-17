@@ -6369,9 +6369,9 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 	//	}
 	} else {
 		if (rel) {
-			if (rel && rel->import && rel->import->name) {
+			if (rel->import && rel->import->name) {
 				name = r_bin_name_tostring (rel->import->name);
-			} else if (rel && rel->symbol && rel->symbol->name) {
+			} else if (rel->symbol && rel->symbol->name) {
 				name = r_bin_name_tostring (rel->symbol->name);
 			}
 			if (addr) { //  && *name == '.') {
@@ -6386,20 +6386,17 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 				}
 			}
 		} else {
-
-			// if (!set_jump_realname (ds, addr, &kw, &name)) {
-				RFlagItem *flag = r_core_flag_get_by_spaces (f, false, addr);
-				if (flag) {
-					// R2R db/anal/jmptbl
-					// adrp x0, segment.DATA //instead-of// adrp x0, section.20.__DATA.__objc_const
-					if (!r_str_startswith (flag->name, "section")) {
-						name = flag->name;
-						if (f->realnames && flag->realname) {
-							name = flag->realname;
-						}
+			RFlagItem *flag = r_core_flag_get_by_spaces (f, false, addr);
+			if (flag) {
+				// R2R db/anal/jmptbl
+				// adrp x0, segment.DATA //instead-of// adrp x0, section.20.__DATA.__objc_const
+				if (!r_str_startswith (flag->name, "section")) {
+					name = flag->name;
+					if (f->realnames && flag->realname) {
+						name = flag->realname;
 					}
 				}
-			// }
+			}
 		}
 	}
 	if (name) {

@@ -38,8 +38,7 @@ static void setimpord(ELFOBJ* eo, ut32 ord, RBinImport *ptr) {
 	if (!eo->imports_by_ord || ord >= eo->imports_by_ord_size) {
 		return;
 	}
-	// leak or uaf wtf
-	// r_bin_import_free (eo->imports_by_ord[ord]);
+	r_bin_import_free (eo->imports_by_ord[ord]);
 	eo->imports_by_ord[ord] = r_bin_import_clone (ptr);
 }
 
@@ -382,6 +381,17 @@ static bool symbols_vec(RBinFile *bf) {
 		if (!ptr) {
 			break;
 		}
+#if 1
+		ut64 prev_len = RVecRBinSymbol_length (list);
+		RVecRBinSymbol_push_back (list, ptr);
+		if (RVecRBinSymbol_length (list) == prev_len) {
+			// push_back failed, free the allocated symbol
+			r_bin_symbol_free (ptr);
+		} else {
+			// push_back copies the struct, free the original allocation
+			free (ptr);
+		}
+#endif
 		ptr->is_imported = true;
 		// object files have no plt section, imports are referenced by relocs not trampolines
 		if (ptr->paddr == 0) {
@@ -393,7 +403,6 @@ static bool symbols_vec(RBinFile *bf) {
 			ptr->paddr = 0;
 			ptr->vaddr = 0;
 		}
-		RVecRBinSymbol_push_back (list, ptr);
 	}
 	return true;
 #endif
@@ -867,6 +876,13 @@ static ut32 murmur3_32(const char* data, ut32 len, ut32 seed) {
 	return hash;
 }
 
+static void _r_bin_elf_reloc_free(RBinReloc *reloc) {
+	if (reloc) {
+		r_bin_import_free (reloc->import);
+		free (reloc);
+	}
+}
+
 static RList* relocs(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	ELFOBJ *eo = bf->bo->bin_obj;
@@ -927,8 +943,13 @@ static RList* relocs(RBinFile *bf) {
 	}
 	ht_up_free (reloc_ht);
 	eo->relocs_list = ret;
+#if 0
 	ret->free = NULL; // already freed in the hashtable
 	return r_list_clone (eo->relocs_list, NULL);
+#endif
+	RList *result = ret;
+	eo->relocs_list = NULL; // caller takes ownership
+	return result;
 }
 
 static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 S, ut64 B, ut64 L) {
@@ -1450,7 +1471,7 @@ static RList* patch_relocs(RBinFile *bf) {
 	if (!relocs) {
 		return NULL;
 	}
-	RList *ret = r_list_newf ((RListFree)free);
+	RList *ret = r_list_newf ((RListFree)_r_bin_elf_reloc_free);
 	if (!ret) {
 		return NULL;
 	}
