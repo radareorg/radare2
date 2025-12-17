@@ -409,7 +409,7 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin) {
 	}
 	r_buf_fread_at (bin->buf, (ut64)bin->ne_header->ModRefTable + bin->header_offset, (ut8 *)modref, "s", bin->ne_header->ModRefs);
 
-	RList *relocs = r_list_newf (free);
+	RList *relocs = r_list_newf ((RListFree)r_bin_reloc_free);
 	if (!relocs) {
 		free (modref);
 		return NULL;

@@ -789,7 +789,7 @@ void **flatlist(RList *list) {
 
 static RList *relocs(RBinFile *bf) {
 	RBinPEFObj *pef = bf->bo->bin_obj;
-	RList *ret = r_list_newf (free); // r_bin_reloc_free
+	RList *ret = r_list_newf ((RListFree)r_bin_reloc_free);
 	RList *importList = imports (bf); // Import linked-list
 	void **importArray = flatlist (importList); // Indexable import list
 	PEFReloc *r;

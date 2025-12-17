@@ -331,7 +331,7 @@ static bool filter_classes(RBinFile *bf, RList *list) {
 }
 
 static RRBTree *list2rbtree(RList *relocs) {
-	RRBTree *tree = r_crbtree_new (free);
+	RRBTree *tree = r_crbtree_new ((RListFree)r_bin_reloc_free);
 	if (tree) {
 		RListIter *it;
 		RBinReloc *reloc;

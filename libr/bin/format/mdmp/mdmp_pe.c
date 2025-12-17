@@ -95,7 +95,7 @@ RList *PE_(r_bin_mdmp_pe_get_imports) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin) {
 
 	imports = PE_(r_bin_pe_get_imports) (pe_bin->bin);
 	ret = r_list_new ();
-	relocs = r_list_newf (free);
+	relocs = r_list_newf ((RListFree)r_bin_reloc_free);
 
 	if (!imports || !ret || !relocs) {
 		free (imports);
@@ -130,7 +130,7 @@ RList *PE_(r_bin_mdmp_pe_get_imports) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin) {
 			offset -= pe_bin->vaddr;
 		}
 		rel->additive = 0;
-		rel->import = ptr;
+		rel->import = r_bin_import_clone (ptr);
 		rel->addend = 0;
 		rel->vaddr = offset + pe_bin->vaddr;
 		rel->paddr = imports[i].paddr + pe_bin->paddr;

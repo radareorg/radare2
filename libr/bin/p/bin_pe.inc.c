@@ -551,7 +551,7 @@ static RList* imports(RBinFile *bf) {
 		return NULL;
 	}
 	r_list_free (pe->relocs);
-	RList *relocs = r_list_newf (free);
+	RList *relocs = r_list_newf ((RListFree)r_bin_reloc_free);
 	if (!relocs) {
 		r_list_free (ret);
 		return NULL;
@@ -587,7 +587,7 @@ static RList* imports(RBinFile *bf) {
 		rel->type = R_BIN_RELOC_32;
 #endif
 		rel->additive = 0;
-		rel->import = ptr;
+		rel->import = r_bin_import_clone (ptr);
 		rel->addend = 0;
 		{
 			ut8 addr[4];
