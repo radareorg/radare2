@@ -146,3 +146,22 @@ EXPECT_ERR=<<EOF
 WARN: r2.plugin with name myarch qjs plugin is already registered
 EOF
 RUN
+
+NAME=js ec changes
+FILE=-
+CMDS=<<EOF
+js r2.cmd("ec call red")
+js console.log(r2.cmd("ec*~call"))
+js r2.cmd("ec call blue")
+js console.log(r2.cmd("ec*~call"))
+EOF
+EXPECT=<<EOF
+ec call rgb:c50f1f
+ec ucall rgb:13a10e
+
+ec call rgb:0037da
+ec ucall rgb:13a10e
+
+EOF
+EXPECT_ERR=
+RUN

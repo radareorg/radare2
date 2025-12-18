@@ -214,8 +214,13 @@ static bool cmd_load_theme(RCore *core, const char *_arg) {
 	char *theme_script = get_theme_script (core, _arg);
 	if (R_STR_ISNOTEMPTY (theme_script)) {
 		core->cmdfilter = "ec ";
+		// Enable batch mode to skip individual pal_reload calls
+		core->cons->context->pal_batch = true;
 		r_core_cmd_lines (core, theme_script);
+		core->cons->context->pal_batch = false;
+		// Single reload after all color changes
 		r_cons_pal_reload (core->cons);
+		core->cons->context->pal_dirty = false;
 		core->cmdfilter = NULL;
 		ret = true; // maybe the script fails?
 	} else {
@@ -614,7 +619,10 @@ static bool cmd_ec(RCore *core, const char *input) {
 				// Set color
 				*q++ = 0;
 				if (r_cons_pal_set (core->cons, p, q)) {
-					r_cons_pal_reload (core->cons);
+					core->cons->context->pal_dirty = true;
+					if (!core->cons->context->pal_batch) {
+						r_cons_pal_reload (core->cons);
+					}
 				}
 			} else {
 				char color[32] = { 0 };
