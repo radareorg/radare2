@@ -5371,10 +5371,6 @@ static void cmd_afla(RCore *core, const char *input) {
 		if (!xrefs || RVecAnalRef_length (xrefs) == 0) {
 			const ut64 v = fcn->addr;
 			RVecAddr_push_back (unrefed, &v);
-			RVecAddr *va0 = RVecAddr_new ();
-			RVecAddr_push_back (va0, &v);
-			ht_up_insert (ht, v, va0);
-			// RVecAddr *va = ht_up_find (ht, k, NULL);
 			RVecAnalRef_free (xrefs);
 			continue;
 		}

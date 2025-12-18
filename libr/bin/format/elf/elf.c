@@ -2437,11 +2437,16 @@ int Elf_(has_va)(ELFOBJ *eo) {
 }
 
 char* Elf_(get_arch)(ELFOBJ *eo) {
+	const char *arch = "unknown";
 	switch (eo->ehdr.e_machine) {
 	case EM_ARC:
 	case EM_ARC_A5:
-		return strdup ("arc");
-	case EM_AVR: return strdup ("avr");
+		arch = "arc";
+		break;
+	case EM_AVR:
+		arch = "avr";
+		break;
+// AITODO: this function should just "return arch"; at the end, replacing all those return strdups
 	case EM_BA2_NON_STANDARD:
 	case EM_BA2: return strdup ("ba2");
 	case EM_BPF: return strdup ("bpf");

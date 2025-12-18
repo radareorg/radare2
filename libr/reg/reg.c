@@ -363,7 +363,7 @@ R_API void r_reg_set_copy(RRegSet *d, RRegSet *s) {
 	RRegArena *a;
 	RListIter *iter;
 	d->pool = r_list_newf ((RListFree)r_reg_arena_free);
-	d->regs = r_list_newf ((RListFree)r_reg_item_unref);
+	d->regs = r_list_newf ((RListFree)r_reg_item_free);
 	r_list_foreach (s->pool, iter, a) {
 		RRegArena *na = r_reg_arena_clone (a);
 		r_list_append (d->pool, na);
