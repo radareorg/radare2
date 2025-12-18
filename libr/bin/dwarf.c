@@ -700,7 +700,9 @@ static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const u
 						const char *k = comp_dir_key? comp_dir_key: "DW_AT_comp_dir";
 						const char *comp_dir = sdb_const_get (bf->sdb_addrinfo, k, 0);
 						if (comp_dir) {
-							include_dir = r_str_newf ("%s/%s", comp_dir, include_dir);
+							char *tmp = r_str_newf ("%s/%s", comp_dir, include_dir);
+							free (include_dir);
+							include_dir = tmp;
 						}
 						free (comp_dir_key);
 					} else {
@@ -1922,6 +1924,12 @@ static void free_attr_value(RBinDwarfAttrValue *val) {
 	case DW_FORM_strp:
 	case DW_FORM_string:
 	case DW_FORM_line_strp:
+	case DW_FORM_strp_sup:
+	case DW_FORM_strx:
+	case DW_FORM_strx1:
+	case DW_FORM_strx2:
+	case DW_FORM_strx3:
+	case DW_FORM_strx4:
 		R_FREE (val->string.content);
 		break;
 	case DW_FORM_exprloc:
@@ -2454,7 +2462,7 @@ static const ut8 *parse_die(RBin *bin, const ut8 *buf, const ut8 *buf_end, RBinD
 		return NULL;
 	}
 	for (i = 0; i < die->count; i++) {
-		memset (&die->attr_values[i], 0, sizeof (RBinDwarfDie));
+		memset (&die->attr_values[i], 0, sizeof (die->attr_values[i]));
 	}
 	if (abbrev->count) {
 		for (i = 0; i < abbrev->count && i < die->capacity; i++) {
