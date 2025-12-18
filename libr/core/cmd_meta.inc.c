@@ -161,18 +161,22 @@ static RCoreHelpMessage help_msg_Cvs = {
 };
 
 static bool print_meta_offset(RCore *core, ut64 addr, PJ *pj) {
-	RBinAddrline *al = r_bin_addrline_get (core->bin, addr);
+	const RBinAddrline *al = r_bin_addrline_get (core->bin, addr);
 	if (!al) {
+		return false;
+	}
+	const char *al_file = r_bin_addrline_str (core->bin, al->file);
+	if (!al_file) {
 		return false;
 	}
 	if (pj) {
 		pj_o (pj);
-		pj_ks (pj, "file", al->file);
+		pj_ks (pj, "file", al_file);
 		pj_kn (pj, "line", al->line);
 		pj_kn (pj, "colu", al->column);
 		pj_kn (pj, "addr", addr);
-		if (r_file_exists (al->file)) {
-			char *row = r_file_slurp_line (al->file, al->line, 0);
+		if (r_file_exists (al_file)) {
+			char *row = r_file_slurp_line (al_file, al->line, 0);
 			pj_ks (pj, "text", row);
 			free (row);
 		} else {
@@ -183,22 +187,22 @@ static bool print_meta_offset(RCore *core, ut64 addr, PJ *pj) {
 	}
 	int line = al->line;
 
-	r_cons_printf (core->cons, "file: %s\nline: %d\ncolu: %d\naddr: 0x%08"PFMT64x"\n", al->file, line, al->column, addr);
+	r_cons_printf (core->cons, "file: %s\nline: %d\ncolu: %d\naddr: 0x%08"PFMT64x"\n", al_file, line, al->column, addr);
 	int line_old = line;
 	if (line >= 2) {
 		line -= 2;
 	}
-	if (r_file_exists (al->file)) {
+	if (r_file_exists (al_file)) {
 		int i;
 		for (i = 0; i < 5; i++) {
-			char *row = r_file_slurp_line (al->file, line + i, 0);
+			char *row = r_file_slurp_line (al_file, line + i, 0);
 			if (row) {
 				r_cons_printf (core->cons, "%c %.3x  %s\n", al->line + i == line_old ? '>' : ' ', line + i, row);
 				free (row);
 			}
 		}
 	} else {
-		R_LOG_ERROR ("Cannot open '%s'", al->file);
+		R_LOG_ERROR ("Cannot open '%s'", al_file);
 	}
 	return true;
 }

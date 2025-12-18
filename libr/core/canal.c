@@ -1606,9 +1606,10 @@ static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 		RStrBuf *sb = r_strbuf_new ("");
 		const ut64 bb_end = bb->addr + bb->size;
 		for (at = bb->addr; at < bb_end; at += 2) {
-			RBinAddrline *al = r_bin_addrline_get (core->bin, at);
-			if (al && al->line && al->line != oline && strcmp (al->file, "??")) {
-				filestr = r_file_slurp_line (al->file, al->line, 0);
+			const RBinAddrline *al = r_bin_addrline_get (core->bin, at);
+			const char *al_file = al ? r_bin_addrline_str (core->bin, al->file) : NULL;
+			if (al && al->line && al->line != oline && al_file && strcmp (al_file, "??")) {
+				filestr = r_file_slurp_line (al_file, al->line, 0);
 				if (filestr) {
 					r_strbuf_append (sb, filestr);
 					if (is_json) {
