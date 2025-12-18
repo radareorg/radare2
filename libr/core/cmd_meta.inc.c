@@ -258,7 +258,7 @@ static bool print_addrinfo_json(void *user, const char *k, const char *v) {
 	return true;
 }
 
-static bool print_addrinfo2_json(void *user, RBinAddrline *item) {
+static bool print_addrinfo2_json(void *user, const RBinAddrline *item) {
 	FilterStruct *fs = (FilterStruct *)user;
 	ut64 offset = item->addr;
 	if (!offset || offset == UT64_MAX) {
@@ -276,12 +276,12 @@ static bool print_addrinfo2_json(void *user, RBinAddrline *item) {
 		fs->filter_count++;
 	}
 #endif
-	const char *file = item->file;
+	const char *file = r_bin_addrline_str (fs->core->bin, item->file);
 	int line = item->line;
 	PJ *pj = fs->pj;
 	if (pj) {
 		pj_o (pj);
-		pj_ks (pj, "file", item->file);
+		pj_ks (pj, "file", file);
 		pj_kn (pj, "line", item->line);
 		if (item->column > 0) {
 			pj_kn (pj, "column", item->column);
@@ -308,19 +308,20 @@ static bool print_addrinfo2_json(void *user, RBinAddrline *item) {
 	return true;
 }
 
-static bool print_addrinfo2(void *user, RBinAddrline *item) {
+static bool print_addrinfo2(void *user, const RBinAddrline *item) {
 	FilterStruct *fs = (FilterStruct*)user;
 	ut64 offset = item->addr;
 	if (!offset || offset == UT64_MAX) {
 		return true;
 	}
 	if (fs->filter_offset == UT64_MAX || fs->filter_offset == offset) {
+		const char *file = r_bin_addrline_str (fs->core->bin, item->file);
 		if (fs->filter_format) {
 			// TODO add column if defined
-			r_cons_printf (fs->core->cons, "'CL 0x%08"PFMT64x" %s:%d\n", item->addr, item->file, item->line);
+			r_cons_printf (fs->core->cons, "'CL 0x%08"PFMT64x" %s:%d\n", item->addr, file, item->line);
 		} else {
 			r_cons_printf (fs->core->cons, "file: %s\nline: %d\ncolu: %d\naddr: 0x%08"PFMT64x"\n",
-				item->file, item->line, item->column, item->addr);
+				file, item->line, item->column, item->addr);
 		}
 		fs->filter_count++;
 	}
@@ -373,12 +374,8 @@ static int cmd_meta_add_fileline(RBinFile *bf, const char *fileline, ut64 offset
 	if (line) {
 		*line++ = 0;
 	}
-	RBinAddrline item = {
-		.addr = offset,
-		.file = file,
-		.line = line? atoi (line): 0,
-	};
-	bf->addrline.al_add (&bf->addrline, item);
+	ut32 linenum = line ? atoi (line) : 0;
+	bf->addrline.al_add (&bf->addrline, offset, file, NULL, linenum, 0);
 	free (file);
 #else
 	Sdb *s = bf->sdb_addrinfo;

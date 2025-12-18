@@ -352,12 +352,7 @@ static int apply_history(RBinFile *bf, ut64 pc, ut64 line, Sym *base, Sym **ret)
 		line = line - delta + 1;
 	}
 
-	RBinAddrline item = {
-		.addr = pc,
-		.file = name,
-		.line = line,
-	};
-	bf->addrline.al_add (&bf->addrline, item);
+	bf->addrline.al_add (&bf->addrline, pc, name, NULL, line, 0);
 	return 0;
 }
 

@@ -437,14 +437,15 @@ typedef struct r_bin_file_options_t {
 } RBinFileOptions;
 
 typedef struct r_bin_addrline_store_t RBinAddrLineStore;
-typedef bool (*RBinAddrLineAdd)(RBinAddrLineStore *bin, RBinAddrline item); // ut64 addr, const char *file, int line, int column);
-typedef RBinAddrline* (*RBinAddrLineGet)(RBinAddrLineStore *bin, ut64 addr);
-typedef void (*RBinAddrLineReset)(RBinAddrLineStore *bin);
-typedef void (*RBinAddrLineResetAt)(RBinAddrLineStore *bin, ut64 addr);
-typedef void (*RBinAddrLineDel)(RBinAddrLineStore *bin, ut64 addr);
-typedef bool (*RBinDbgInfoCallback)(void *user, RBinAddrline *item);
-typedef RList *(*RBinAddrLineFiles)(RBinAddrLineStore *bin);
-typedef void (*RBinAddrLineForeach)(RBinAddrLineStore *bin, RBinDbgInfoCallback cb, void *user);
+typedef bool (*RBinAddrLineAdd)(RBinAddrLineStore *als, ut64 addr, const char *file, const char *path, ut32 line, ut32 column);
+typedef const RBinAddrline *(*RBinAddrLineGet)(RBinAddrLineStore *als, ut64 addr);
+typedef void (*RBinAddrLineReset)(RBinAddrLineStore *als);
+typedef void (*RBinAddrLineResetAt)(RBinAddrLineStore *als, ut64 addr);
+typedef void (*RBinAddrLineDel)(RBinAddrLineStore *als, ut64 addr);
+typedef bool (*RBinDbgInfoCallback)(void *user, const RBinAddrline *item);
+typedef RList *(*RBinAddrLineFiles)(RBinAddrLineStore *als);
+typedef void (*RBinAddrLineForeach)(RBinAddrLineStore *als, RBinDbgInfoCallback cb, void *user);
+typedef const char *(*RBinAddrLineStr)(RBinAddrLineStore *als, ut32 idx);
 
 struct r_bin_addrline_store_t {
 	bool used; // deprecated when finished
@@ -456,6 +457,7 @@ struct r_bin_addrline_store_t {
 	RBinAddrLineReset al_reset;
 	RBinAddrLineFiles al_files;
 	RBinAddrLineForeach al_foreach;
+	RBinAddrLineStr al_str;
 };
 
 // XXX: RBinFile may hold more than one RBinObject?
@@ -968,9 +970,9 @@ R_API void r_bin_addrline_reset(RBin *bin);
 R_API void r_bin_addrline_reset_at(RBin *bin, ut64 addr);
 R_API bool r_bin_addrline_foreach(RBin *bin, RBinDbgInfoCallback item, void *user);
 R_API RList *r_bin_addrline_files(RBin *bin);
-R_API RBinAddrline *r_bin_addrline_at(RBin *bin, ut64 addr);
-R_API void r_bin_addrline_free(RBinAddrline *di);
-R_API RBinAddrline *r_bin_addrline_get(RBin *bin, ut64 addr);
+R_API const RBinAddrline *r_bin_addrline_at(RBin *bin, ut64 addr);
+R_API const RBinAddrline *r_bin_addrline_get(RBin *bin, ut64 addr);
+R_API const char *r_bin_addrline_str(RBin *bin, ut32 idx);
 R_API char *r_bin_addrline_tostring(RBin *bin, ut64 addr, int origin);
 
 /* bin_write.c */

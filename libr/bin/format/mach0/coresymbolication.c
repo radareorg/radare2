@@ -117,15 +117,9 @@ ut64 r_coresym_cache_element_pa2va(RCoreSymCacheElement *element, ut64 pa) {
 static void meta_add_fileline(RBinFile *bf, ut64 vaddr, ut32 size, RCoreSymCacheElementFLC *flc) {
 	ut64 cursor = vaddr;
 	ut64 end = cursor + R_MAX (size, 1);
-	RBinAddrline item = {
-		.addr = vaddr,
-		.file = flc->file,
-		.line = flc->line
-	};
 	while (cursor < end) {
-		bf->addrline.al_add (&bf->addrline, item);
+		bf->addrline.al_add (&bf->addrline, cursor, flc->file, NULL, flc->line, 0);
 		cursor += 2;
-		item.addr += 2;
 	}
 }
 

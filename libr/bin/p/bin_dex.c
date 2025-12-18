@@ -614,12 +614,7 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 					position->line = line;
 					r_list_append (debug_positions, position);
 				}
-				RBinAddrline item = {
-					.addr = address + paddr,
-					.file = getstr (dex, source_file_idx),
-					.line = line,
-				};
-				bf->addrline.al_add (&bf->addrline, item);
+				bf->addrline.al_add (&bf->addrline, address + paddr, getstr (dex, source_file_idx), NULL, line, 0);
 			} else {
 				R_LOG_ERROR ("unknown dex debug opcode: 0x%02x", opcode);
 			}

@@ -1227,14 +1227,7 @@ static inline void add_sdb_addrline(RBinFile *bf, ut64 addr, const char *file, u
 #endif
 		break;
 	}
-	p = file;
-	RBinAddrline item = {
-		.addr = addr,
-		.file = file,
-		.line = line,
-		.column = column,
-	};
-	bf->addrline.al_add (&bf->addrline, item);
+	bf->addrline.al_add (&bf->addrline, addr, file, NULL, line, column);
 }
 
 static const ut8 *parse_ext_opcode(RBin *bin, const ut8 *obuf, size_t len, const RBinDwarfLineHeader *hdr, RBinDwarfSMRegisters *regs, int mode) {
@@ -2665,14 +2658,8 @@ R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBin *bin, RVecDwarfAbbrevDecl 
 			if (path && name) {
 				// printf ("0x%08"PFMT64x" %s %s\n", low, path, name);
 				char *abspath = (*name != '/')? r_str_newf ("%s/%s", path, name): strdup (name);
-				RBinAddrline item = {
-					.addr = low + 1, // XXX this low is wrong, we must add compilation units not addrline
-					.file = abspath,
-					.line = 0,
-					.column = 0,
-				};
 				// TODO: add compilation unit callback here
-				bf->addrline.al_add_cu (&bf->addrline, item);
+				bf->addrline.al_add_cu (&bf->addrline, low + 1, abspath, NULL, 0, 0);
 				free (abspath);
 			}
 		}
@@ -2699,26 +2686,18 @@ R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBin *bin, RVecDwarfAbbrevDecl 
 }
 
 static void row_free(void *p) {
-	if (p) {
-		RBinAddrline *row = (RBinAddrline *)p;
-		r_bin_addrline_free (row);
-	}
+	free (p);
 }
 
-static bool cb(void *user, RBinAddrline *item) {
+static bool cb(void *user, const RBinAddrline *item) {
 	RList *list = (RList *)user;
-	// item is owned by al_foreach (created by dbgitem_from_internal_owned)
-	// so we can move ownership of file/path to the row instead of strdup'ing again
 	RBinAddrline *row = R_NEW0 (RBinAddrline);
 	if (row) {
 		row->addr = item->addr;
 		row->line = item->line;
 		row->column = item->column;
-		row->file = (char *)item->file; // transfer ownership
-		row->path = (char *)item->path; // transfer ownership
-		// Clear item pointers so r_bin_addrline_free in al_foreach won't double-free
-		item->file = NULL;
-		item->path = NULL;
+		row->file = item->file;
+		row->path = item->path;
 		r_list_append (list, row);
 	}
 	return true;
