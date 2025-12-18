@@ -1077,40 +1077,38 @@ static int step_line(RCore *core, int times) {
 		R_LOG_ERROR ("Cannot 'drn PC'");
 		return false;
 	}
-	RBinAddrline *al = r_bin_addrline_get (core->bin, off);
+	const RBinAddrline *al = r_bin_addrline_get (core->bin, off);
 	bool find_meta;
 	if (al) {
-		char* ptr = r_file_slurp_line (al->file, al->line, 0);
-		R_LOG_DEBUG ("addrline 0x%08"PFMT64x" %s : %d (%s)", off, al->file, al->line, ptr);
+		const char *file = r_bin_addrline_str (core->bin, al->file);
+		char* ptr = r_file_slurp_line (file, al->line, 0);
+		R_LOG_DEBUG ("addrline 0x%08"PFMT64x" %s : %d (%s)", off, file, al->line, ptr);
 		find_meta = false;
 		free (ptr);
 	} else {
 		R_LOG_DEBUG ("Stepping until the next addrline reference");
 		find_meta = true;
 	}
-	RBinAddrline *al2 = NULL;
+	const RBinAddrline *al2 = NULL;
 	do {
 		r_debug_step (core->dbg, 1);
 		off = r_debug_reg_get (core->dbg, "PC");
-		r_bin_addrline_free (al2);
 		al2 = r_bin_addrline_get (core->bin, off);
 		if (!al2) {
 			if (find_meta) {
 				continue;
 			}
 			R_LOG_ERROR ("Cannot retrieve addrline info at 0x%08"PFMT64x, off);
-			r_bin_addrline_free (al);
 			return false;
 		}
-	} while (al && al2 && !strcmp (al->file, al2->file) && al->line == al2->line);
+	} while (al && al2 && al->file == al2->file && al->line == al2->line);
 
 	if (al2) {
-		char *tmp_ptr = r_file_slurp_line (al2->file, al2->line, 0);
-		R_LOG_DEBUG ("addrline 0x%08"PFMT64x" %s : %d (%s)", off, al2->file, al2->line, tmp_ptr);
+		const char *file2 = r_bin_addrline_str (core->bin, al2->file);
+		char *tmp_ptr = r_file_slurp_line (file2, al2->line, 0);
+		R_LOG_DEBUG ("addrline 0x%08"PFMT64x" %s : %d (%s)", off, file2, al2->line, tmp_ptr);
 		free (tmp_ptr);
-		r_bin_addrline_free (al2);
 	}
-	r_bin_addrline_free (al);
 
 	return true;
 }

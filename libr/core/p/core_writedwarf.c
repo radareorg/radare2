@@ -693,22 +693,32 @@ int main() {
 }
 #endif
 
-static bool addrline_cb(void *user, RBinAddrline *al) {
-	RList *lines = (RList *)user;
-	if (!al || !al->file) {
+typedef struct {
+	RBin *bin;
+	RList *lines;
+} AddrlineCbCtx;
+
+static bool addrline_cb(void *user, const RBinAddrline *al) {
+	AddrlineCbCtx *ctx = (AddrlineCbCtx *)user;
+	if (!al || al->file == UT32_MAX) {
+		return true;
+	}
+	const char *file = r_bin_addrline_str (ctx->bin, al->file);
+	if (!file) {
 		return true;
 	}
 	LineEntry *le = R_NEW0 (LineEntry);
 	le->addr = al->addr;
-	le->file = strdup (al->file);
+	le->file = strdup (file);
 	le->line = al->line;
-	r_list_append (lines, le);
+	r_list_append (ctx->lines, le);
 	return true;
 }
 
 static void populate_lines_from_addrline(RBin *bin, RList *lines) {
 	if (bin && bin->cur && bin->cur->addrline.used) {
-		r_bin_addrline_foreach (bin, addrline_cb, lines);
+		AddrlineCbCtx ctx = { bin, lines };
+		r_bin_addrline_foreach (bin, addrline_cb, &ctx);
 	} else {
 		if (bin && bin->cur && bin->cur->sdb_addrinfo) {
 			R_LOG_INFO ("Falling back to legacy sdb_addrinfo");

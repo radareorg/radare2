@@ -161,18 +161,22 @@ static RCoreHelpMessage help_msg_Cvs = {
 };
 
 static bool print_meta_offset(RCore *core, ut64 addr, PJ *pj) {
-	RBinAddrline *al = r_bin_addrline_get (core->bin, addr);
+	const RBinAddrline *al = r_bin_addrline_get (core->bin, addr);
 	if (!al) {
+		return false;
+	}
+	const char *al_file = r_bin_addrline_str (core->bin, al->file);
+	if (!al_file) {
 		return false;
 	}
 	if (pj) {
 		pj_o (pj);
-		pj_ks (pj, "file", al->file);
+		pj_ks (pj, "file", al_file);
 		pj_kn (pj, "line", al->line);
 		pj_kn (pj, "colu", al->column);
 		pj_kn (pj, "addr", addr);
-		if (r_file_exists (al->file)) {
-			char *row = r_file_slurp_line (al->file, al->line, 0);
+		if (r_file_exists (al_file)) {
+			char *row = r_file_slurp_line (al_file, al->line, 0);
 			pj_ks (pj, "text", row);
 			free (row);
 		} else {
@@ -183,22 +187,22 @@ static bool print_meta_offset(RCore *core, ut64 addr, PJ *pj) {
 	}
 	int line = al->line;
 
-	r_cons_printf (core->cons, "file: %s\nline: %d\ncolu: %d\naddr: 0x%08"PFMT64x"\n", al->file, line, al->column, addr);
+	r_cons_printf (core->cons, "file: %s\nline: %d\ncolu: %d\naddr: 0x%08"PFMT64x"\n", al_file, line, al->column, addr);
 	int line_old = line;
 	if (line >= 2) {
 		line -= 2;
 	}
-	if (r_file_exists (al->file)) {
+	if (r_file_exists (al_file)) {
 		int i;
 		for (i = 0; i < 5; i++) {
-			char *row = r_file_slurp_line (al->file, line + i, 0);
+			char *row = r_file_slurp_line (al_file, line + i, 0);
 			if (row) {
 				r_cons_printf (core->cons, "%c %.3x  %s\n", al->line + i == line_old ? '>' : ' ', line + i, row);
 				free (row);
 			}
 		}
 	} else {
-		R_LOG_ERROR ("Cannot open '%s'", al->file);
+		R_LOG_ERROR ("Cannot open '%s'", al_file);
 	}
 	return true;
 }
@@ -258,7 +262,7 @@ static bool print_addrinfo_json(void *user, const char *k, const char *v) {
 	return true;
 }
 
-static bool print_addrinfo2_json(void *user, RBinAddrline *item) {
+static bool print_addrinfo2_json(void *user, const RBinAddrline *item) {
 	FilterStruct *fs = (FilterStruct *)user;
 	ut64 offset = item->addr;
 	if (!offset || offset == UT64_MAX) {
@@ -276,12 +280,12 @@ static bool print_addrinfo2_json(void *user, RBinAddrline *item) {
 		fs->filter_count++;
 	}
 #endif
-	const char *file = item->file;
+	const char *file = r_bin_addrline_str (fs->core->bin, item->file);
 	int line = item->line;
 	PJ *pj = fs->pj;
 	if (pj) {
 		pj_o (pj);
-		pj_ks (pj, "file", item->file);
+		pj_ks (pj, "file", file);
 		pj_kn (pj, "line", item->line);
 		if (item->column > 0) {
 			pj_kn (pj, "column", item->column);
@@ -308,19 +312,20 @@ static bool print_addrinfo2_json(void *user, RBinAddrline *item) {
 	return true;
 }
 
-static bool print_addrinfo2(void *user, RBinAddrline *item) {
+static bool print_addrinfo2(void *user, const RBinAddrline *item) {
 	FilterStruct *fs = (FilterStruct*)user;
 	ut64 offset = item->addr;
 	if (!offset || offset == UT64_MAX) {
 		return true;
 	}
 	if (fs->filter_offset == UT64_MAX || fs->filter_offset == offset) {
+		const char *file = r_bin_addrline_str (fs->core->bin, item->file);
 		if (fs->filter_format) {
 			// TODO add column if defined
-			r_cons_printf (fs->core->cons, "'CL 0x%08"PFMT64x" %s:%d\n", item->addr, item->file, item->line);
+			r_cons_printf (fs->core->cons, "'CL 0x%08"PFMT64x" %s:%d\n", item->addr, file, item->line);
 		} else {
 			r_cons_printf (fs->core->cons, "file: %s\nline: %d\ncolu: %d\naddr: 0x%08"PFMT64x"\n",
-				item->file, item->line, item->column, item->addr);
+				file, item->line, item->column, item->addr);
 		}
 		fs->filter_count++;
 	}
@@ -373,12 +378,8 @@ static int cmd_meta_add_fileline(RBinFile *bf, const char *fileline, ut64 offset
 	if (line) {
 		*line++ = 0;
 	}
-	RBinAddrline item = {
-		.addr = offset,
-		.file = file,
-		.line = line? atoi (line): 0,
-	};
-	bf->addrline.al_add (&bf->addrline, item);
+	ut32 linenum = line ? atoi (line) : 0;
+	bf->addrline.al_add (&bf->addrline, offset, file, NULL, linenum, 0);
 	free (file);
 #else
 	Sdb *s = bf->sdb_addrinfo;

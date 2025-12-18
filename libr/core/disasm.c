@@ -7668,13 +7668,12 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 		pj_kn (pj, "type2_num", (ut64)(ds->analop.type2 & UT64_MAX));
 		// addr addrline info here
 		{
-			RBinAddrline *al = r_bin_addrline_get (core->bin, at);
+			const RBinAddrline *al = r_bin_addrline_get (core->bin, at);
 			if (al) {
 				pj_ko (pj, "addrline");
-				pj_ks (pj, "file", al->file);
+				pj_ks (pj, "file", r_bin_addrline_str (core->bin, al->file));
 				pj_kn (pj, "line", al->line);
 				pj_end (pj);
-				r_bin_addrline_free (al);
 			}
 		}
 		// handle switch statements

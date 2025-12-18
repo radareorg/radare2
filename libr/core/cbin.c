@@ -1203,7 +1203,10 @@ static bool bin_addrline(RCore *core, PJ *pj, int mode) {
 		}
 		if (mode) {
 			// TODO: use 'Cl' instead of CC
-			const char *path = row->file;
+			const char *path = r_bin_addrline_str (core->bin, row->file);
+			if (!path) {
+				continue;
+			}
 			FileLines *current_lines = ht_pp_find (file_lines, path, NULL);
 			if (!current_lines) {
 				if (!set_p_contains (set, (void *)path)) {
@@ -1229,7 +1232,7 @@ static bool bin_addrline(RCore *core, PJ *pj, int mode) {
 				line = r_str_replace (line, "\\\\", "\\", 1);
 			}
 			bool chopPath = !r_config_get_i (core->config, "dir.dwarf.abspath");
-			char *file = strdup (row->file);
+			char *file = strdup (path);
 			if (chopPath) {
 				const char *slash = r_str_lchr (file, '/');
 				if (slash) {
@@ -1278,8 +1281,9 @@ static bool bin_addrline(RCore *core, PJ *pj, int mode) {
 			free (file);
 			free (line);
 		} else {
+			const char *path = r_bin_addrline_str (core->bin, row->file);
 			r_cons_printf (core->cons, "0x%08" PFMT64x "\t%s\t%d\n",
-				row->addr, row->file, row->line);
+				row->addr, r_str_get (path), row->line);
 		}
 	}
 	if (IS_MODE_JSON (mode)) {

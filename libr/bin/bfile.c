@@ -545,62 +545,37 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, bool 
 typedef struct {
 	RList *list;
 	RStrpool *pool;
-#if 0
-	RBloom *bloomSet;
-	RBloom *bloomGet;
-#endif
 	HtUP *ht;
 } AddrLineStore;
 
-static bool al_add(RBinAddrLineStore *als, RBinAddrline item) {
+static bool al_add(RBinAddrLineStore *als, ut64 addr, const char *file, const char *path, ut32 line, ut32 column) {
 	AddrLineStore *store = als->storage;
 	als->used = true;
-	RBinAddrlineInternal *di;
-#if 0
-	RListIter *iter;
-	if (r_bloom_check (store->bloomGet, &item.addr, sizeof (item.addr))) {
-#if 0
-		if (ht_up_find (store->ht, item.addr, NULL)) {
-			return false;
-		}
-#endif
-		/// XXX super slow but necessary
-		r_list_foreach (store->list, iter, di) {
-			if (item.addr == di->addr && item.line == di->line) {
-				// R_LOG_WARN ("FAIL %llx %s %d %d", item.addr, item.file, item.line, item.column);
-				return false;
-			}
-		}
-	}
-	// R_LOG_WARN ("ADD %llx %s %d %d", item.addr, item.file, item.line, item.column);
-#else
-	RBinAddrlineInternal *hitem = ht_up_find (store->ht, item.addr, NULL);
-	if (hitem && hitem->line == item.line) {
+	RBinAddrline *hitem = ht_up_find (store->ht, addr, NULL);
+	if (hitem && hitem->line == line) {
 		return false;
 	}
-#endif
-	di = R_NEW0 (RBinAddrlineInternal);
-	di->addr = item.addr;
-	di->line = item.line;
-	di->colu = item.column;
-	di->file = item.file ? r_strpool_add (store->pool, item.file) : UT32_MAX;
-	di->path = item.path ? r_strpool_add (store->pool, item.path) : UT32_MAX;
-#if 0
-	r_bloom_add (store->bloomSet, &item, sizeof (item));
-	r_bloom_add (store->bloomGet, &item.addr, sizeof (item.addr));
-#endif
+	RBinAddrline *di = R_NEW0 (RBinAddrline);
+	if (!di) {
+		return false;
+	}
+	di->addr = addr;
+	di->line = line;
+	di->column = column;
+	di->file = file ? r_strpool_add (store->pool, file) : UT32_MAX;
+	di->path = path ? r_strpool_add (store->pool, path) : UT32_MAX;
 	ht_up_insert (store->ht, di->addr, di);
 	r_list_append (store->list, di);
 	return true;
 }
 
-static bool al_add_cu(RBinAddrLineStore *als, RBinAddrline item) {
+static bool al_add_cu(RBinAddrLineStore *als, ut64 addr, const char *file, const char *path, ut32 line, ut32 column) {
 	AddrLineStore *store = als->storage;
 	// TODO: add storage for the compilation units here
 	// we are just storing the filename in the stringpool for `idx` purposes
-	if (item.file) {
+	if (file) {
 		als->used = true;
-		r_strpool_add (store->pool, item.file);
+		r_strpool_add (store->pool, file);
 	}
 	return true;
 }
@@ -638,19 +613,7 @@ static RBinAddrline* dbgitem_from_internal(RBinAddrLineStore *als, RBinAddrlineI
 }
 #endif
 
-// Like dbgitem_from_internal but with owned string copies (for use in foreach where strpool may be freed)
-static RBinAddrline* dbgitem_from_internal_owned(RBinAddrLineStore *als, RBinAddrlineInternal *item) {
-	AddrLineStore *store = als->storage;
-	RBinAddrline *di = R_NEW0 (RBinAddrline);
-	di->addr = item->addr;
-	di->line = item->line;
-	di->column = item->colu;
-	const char *file = r_strpool_get_nth (store->pool, item->file);
-	*(char **)&di->file = file ? strdup (file) : strdup ("?");
-	const char *path = r_strpool_get_nth (store->pool, item->path);
-	*(char **)&di->path = path ? strdup (path) : strdup ("?");
-	return di;
-}
+// no longer needed - RBinAddrline is now stored directly
 
 #if 0
 // Free temporary RBinAddrline created by dbgitem_from_internal (does not free strpool pointers)
@@ -677,14 +640,10 @@ static RList *al_files(RBinAddrLineStore *als) {
 
 static void al_foreach(RBinAddrLineStore *als, RBinDbgInfoCallback cb, void *user) {
 	AddrLineStore *store = als->storage;
-
 	RListIter *iter;
-	RBinAddrlineInternal *item;
+	RBinAddrline *item;
 	r_list_foreach (store->list, iter, item) {
-		RBinAddrline *di = dbgitem_from_internal_owned (als, item);
-		bool go_on = cb (user, di);
-		r_bin_addrline_free (di);
-		if (!go_on) {
+		if (!cb (user, item)) {
 			break;
 		}
 	}
@@ -692,9 +651,8 @@ static void al_foreach(RBinAddrLineStore *als, RBinDbgInfoCallback cb, void *use
 
 static void al_del(RBinAddrLineStore *als, ut64 addr) {
 	AddrLineStore *store = als->storage;
-
 	RListIter *iter;
-	RBinAddrlineInternal *item;
+	RBinAddrline *item;
 	r_list_foreach (store->list, iter, item) {
 		if (item->addr == addr) {
 			r_list_delete (store->list, iter);
@@ -703,40 +661,27 @@ static void al_del(RBinAddrLineStore *als, ut64 addr) {
 	}
 }
 
-static RBinAddrline* al_get(RBinAddrLineStore *als, ut64 addr) {
+static const RBinAddrline *al_get(RBinAddrLineStore *als, ut64 addr) {
 	AddrLineStore *store = als->storage;
-#if 0
-	if (!r_bloom_check (store->bloomGet, &addr, sizeof (addr))) {
+	return ht_up_find (store->ht, addr, NULL);
+}
+
+static const char *al_str(RBinAddrLineStore *als, ut32 idx) {
+	if (idx == UT32_MAX) {
 		return NULL;
 	}
-#endif
-#if 1
-	RBinAddrlineInternal *item = ht_up_find (store->ht, addr, NULL);
-	if (item) {
-		return dbgitem_from_internal_owned (als, item);
-	}
-#else
-	RListIter *iter;
-	RBinAddrlineInternal *item;
-	R_LOG_DEBUG ("ITEMS %d / %d", store->pool->count, r_list_length (store->list));
-	r_list_foreach (store->list, iter, item) {
-		if (item->addr == addr) {
-			return dbgitem_from_internal_owned (als, item);
-		}
-	}
-#endif
-	return NULL;
+	AddrLineStore *store = als->storage;
+	return r_strpool_get_nth (store->pool, idx);
 }
 
 static void addrline_store_init(RBinAddrLineStore *b) {
 	AddrLineStore *als = R_NEW0 (AddrLineStore);
+	if (!als) {
+		return;
+	}
 	als->ht = ht_up_new0 ();
 	als->list = r_list_newf (free);
 	als->pool = r_strpool_new ();
-#if 0
-	als->bloomGet = r_bloom_new (9586, 7, NULL);
-	als->bloomSet = r_bloom_new (9586, 7, NULL);
-#endif
 	b->storage = (void*)als;
 	b->al_add = al_add;
 	b->al_add_cu = al_add_cu;
@@ -745,16 +690,13 @@ static void addrline_store_init(RBinAddrLineStore *b) {
 	b->al_reset = al_reset;
 	b->al_foreach = al_foreach;
 	b->al_files = al_files;
+	b->al_str = al_str;
 }
 
 static void addrline_store_fini(RBinAddrLineStore *als) {
 	AddrLineStore *store = als->storage;
 	if (store) {
 		ht_up_free (store->ht);
-#if 0
-		r_bloom_free (store->bloomSet);
-		r_bloom_free (store->bloomGet);
-#endif
 		r_list_free (store->list);
 		r_strpool_free (store->pool);
 	}

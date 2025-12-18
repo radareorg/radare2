@@ -696,19 +696,11 @@ typedef struct {
 
 typedef struct {
 	ut64 addr;
-	const char *file;
-	const char *path;
+	ut32 file; // index into strpool (UT32_MAX if unset)
+	ut32 path; // index into strpool (UT32_MAX if unset)
 	ut32 line;
 	ut32 column;
 } RBinAddrline;
-
-typedef struct {
-	ut64 addr;
-	ut32 path;
-	ut32 file;
-	ut32 line;
-	ut32 colu;
-} RBinAddrlineInternal;
 
 #define DWARF_INIT_LEN_64	0xffffffff
 typedef union {
