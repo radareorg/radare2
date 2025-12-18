@@ -163,10 +163,9 @@ static bool is_valid_color(RColor c) {
 }
 
 static void pal_refresh(RCons *cons, bool rain) {
-	// TODO: unnecessarily slow
 	RConsContext *ctx = cons->context;
-	Sdb *db = sdb_new0 ();
 	int i;
+	Sdb *db = rain? sdb_new0 (): NULL;
 	/* Compute cons->pal values */
 	for (i = 0; keys[i].name; i++) {
 		RColor *rcolor = (RColor *) (((ut8 *) &(ctx->cpal)) + keys[i].coff);
@@ -174,13 +173,12 @@ static void pal_refresh(RCons *cons, bool rain) {
 		// Color is dynamically allocated, needs to be freed
 		R_FREE (*color);
 		*color = r_cons_rgb_str_mode (cons, NULL, 0, rcolor);
-		if (is_valid_color (*rcolor)) {
+		if (db && is_valid_color (*rcolor)) {
 			r_strf_var (rgbstr, 16, "rgb:%02x%02x%02x", rcolor->r, rcolor->g, rcolor->b);
-			// eprintf ("-> %s\n", rgbstr);
 			sdb_set (db, rgbstr, "1", 0);
 		}
 	}
-	if (rain) {
+	if (rain && db) {
 		SdbList *list = sdb_foreach_list (db, true);
 		SdbListIter *iter;
 		SdbKv *kv;
@@ -196,8 +194,8 @@ static void pal_refresh(RCons *cons, bool rain) {
 		}
 		ctx->pal.rainbow_sz = n;
 		ls_free (list);
+		sdb_free (db);
 	}
-	sdb_free (db);
 }
 
 R_API void r_cons_pal_init(RCons *cons) {

@@ -1760,7 +1760,8 @@ static bool cb_color(void *user, void *data) {
 	}
 	core->cons->context->color_mode = requested_mode;
 
-	r_cons_pal_reload (core->cons); // double flute
+	// Regenerate palette strings for new color mode (escape sequences differ per mode)
+	r_cons_pal_reload (core->cons);
 	r_print_set_flags (core->print, core->print->flags);
 	r_log_set_colors (node->i_value);
 	return true;

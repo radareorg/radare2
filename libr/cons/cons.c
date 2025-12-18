@@ -1653,13 +1653,23 @@ R_API bool r_cons_pop(RCons *cons) {
 		R_LOG_INFO ("Nothing to pop");
 		return false;
 	}
-	RConsContext *ctx = r_list_pop (cons->ctx_stack);
+	RConsContext *parent = r_list_pop (cons->ctx_stack);
+	// Propagate palette changes from child to parent before freeing
+	if (cons->context->pal_dirty) {
+		memcpy (&parent->cpal, &cons->context->cpal, sizeof (parent->cpal));
+		parent->pal_dirty = true;
+	}
 	r_cons_context_free (cons->context);
-	cons->context = ctx;
+	cons->context = parent;
+	// Refresh palette if changes were propagated
+	if (parent->pal_dirty && !parent->pal_batch) {
+		r_cons_pal_reload (cons);
+		parent->pal_dirty = false;
+	}
 	// global hacks
 	RCons *Gcons = r_cons_singleton ();
 	if (cons == Gcons) {
-		Gcons->context = ctx;
+		Gcons->context = parent;
 	}
 	return true;
 #if 0

@@ -452,6 +452,8 @@ typedef struct r_cons_context_t {
 	int color_limit; // maximum mode based TERM envvar
 	RConsPalette cpal;
 	RConsPrintablePalette pal;
+	bool pal_dirty; // cpal was modified, needs refresh
+	bool pal_batch; // batch mode: skip auto-reload after pal_set
 
 	RList *sorted_lines; // wtf
 	RList *unsorted_lines; // wtf
