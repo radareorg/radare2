@@ -192,15 +192,16 @@ static bool symbols_vec(RBinFile *bf) {
 }
 
 static RBinImport *import_from_name(RBin *rbin, const char *orig_name, HtPP *imports_by_name) {
-	if (imports_by_name) {
-		bool found = false;
-		RBinImport *ptr = ht_pp_find (imports_by_name, orig_name, &found);
-		if (found) {
-			return ptr;
-		}
+	if (!imports_by_name) {
+		return NULL;
+	}
+	bool found = false;
+	RBinImport *ptr = ht_pp_find (imports_by_name, orig_name, &found);
+	if (found) {
+		return ptr;
 	}
 
-	RBinImport *ptr = R_NEW0 (RBinImport);
+	ptr = R_NEW0 (RBinImport);
 	if (!ptr) {
 		return NULL;
 	}
@@ -226,9 +227,7 @@ static RBinImport *import_from_name(RBin *rbin, const char *orig_name, HtPP *imp
 	ptr->bind = "NONE";
 	ptr->type = r_str_constpool_get (&rbin->constpool, type);
 
-	if (imports_by_name) {
-		ht_pp_insert (imports_by_name, orig_name, ptr);
-	}
+	ht_pp_insert (imports_by_name, orig_name, ptr);
 
 	return ptr;
 }

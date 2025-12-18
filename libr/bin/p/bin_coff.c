@@ -75,7 +75,8 @@ static bool _fill_bin_symbol(RBin *rbin, struct r_bin_coff_obj *bin, int idx, RB
 	if (!coffname) {
 		return false;
 	}
-	ptr->name = r_bin_name_new_from (coffname);
+	const bool is_main = !strcmp (coffname, "main");
+	ptr->name = r_bin_name_new (coffname);
 	ptr->forwarder = "NONE";
 	ptr->bind = R_BIN_BIND_LOCAL_STR;
 	ptr->is_imported = false;
@@ -106,7 +107,7 @@ static bool _fill_bin_symbol(RBin *rbin, struct r_bin_coff_obj *bin, int idx, RB
 		} else {
 			ptr->bind = R_BIN_BIND_GLOBAL_STR;
 		}
-		ptr->type = (DTYPE_IS_FUNCTION (n_type) || !strcmp (coffname, "main"))
+		ptr->type = (DTYPE_IS_FUNCTION (n_type) || is_main)
 			? R_BIN_TYPE_FUNC_STR
 			: R_BIN_TYPE_UNKNOWN_STR;
 		break;
@@ -114,11 +115,11 @@ static bool _fill_bin_symbol(RBin *rbin, struct r_bin_coff_obj *bin, int idx, RB
 		if (n_scnum == COFF_SYM_SCNUM_ABS) {
 			ptr->type = "ABS";
 			ptr->paddr = ptr->vaddr = UT64_MAX;
-			ptr->name = r_bin_name_new_from (r_str_newf ("%s-0x%08x", coffname, n_value));
-			if (ptr->name) {
-				R_FREE (coffname);
-			} else {
-				ptr->name = r_bin_name_new_from (coffname);
+			r_bin_name_free (ptr->name);
+			char *absname = r_str_newf ("%s-0x%08x", coffname, n_value);
+			ptr->name = r_bin_name_new_from (absname);
+			if (!ptr->name) {
+				ptr->name = r_bin_name_new (coffname);
 			}
 		} else if (sc_hdr && !memcmp (sc_hdr->s_name, n_name, 8)) {
 			ptr->type = R_BIN_TYPE_SECTION_STR;
@@ -137,6 +138,7 @@ static bool _fill_bin_symbol(RBin *rbin, struct r_bin_coff_obj *bin, int idx, RB
 		}
 	ptr->size = 4;
 	ptr->ordinal = 0;
+	free (coffname);
 	return true;
 }
 
@@ -391,10 +393,6 @@ static RList *sections(RBinFile *bf) {
 			//IO does not like sections with the same name append idx
 			//since it will update it
 			ptr = R_NEW0 (RBinSection);
-			if (!ptr) {
-				free (tmp);
-				return ret;
-			}
 			ptr->name = r_str_newf ("%s-%u", tmp, (unsigned int)i);
 			free (tmp);
 			if (obj->type == COFF_TYPE_XCOFF) {

@@ -1,4 +1,4 @@
-/* radare - LGPL3 - 2021-2022 - Jose_Ant_Romero */
+/* radare - LGPL3 - 2021-2025 - Jose_Ant_Romero */
 
 #include <r_bin.h>
 #include <r_magic.h>
@@ -100,20 +100,15 @@ static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 	bool res = check (bf, b);
 	if (res) {
 		s390user *su = R_NEW0 (s390user);
-		if (su) {
-			su->sb = r_strbuf_new ("");
-			su->symbols = r_list_newf (r_bin_symbol_free);
-			bf->bo->bin_obj = (void*)su;
-		}
+		su->sb = r_strbuf_new ("");
+		su->symbols = r_list_newf (r_bin_symbol_free);
+		bf->bo->bin_obj = (void*)su;
 	}
 	return res;
 }
 
 static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) {
-		return NULL;
-	}
 	ret->file = strdup (bf->file);
 	ret->machine = strdup ("s390");
 	ret->bclass = strdup ("XX");
@@ -127,12 +122,9 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static void add_symbol(RList *ret, char *name, ut64 addr) {
+static void add_symbol(RList *ret, const char *name, ut64 addr) {
 	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
-	if (!ptr) {
-		return;
-	}
-	ptr->name = r_bin_name_new_from (name);
+	ptr->name = r_bin_name_new (name);
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->size = 0;
 	ptr->ordinal = 0;
@@ -163,9 +155,6 @@ static RList *symbols(RBinFile *bf) {
 
 static void add_section(RList *ret, char *name, ut64 addr, ut64 len) {
 	RBinSection *ptr = R_NEW0 (RBinSection);
-	if (!ptr) {
-		return;
-	}
 	ptr->name = name;
 	ptr->paddr = addr;
 	ptr->vaddr = addr + S390_BADDR;
@@ -349,11 +338,6 @@ static RList *entries(RBinFile *bf) {
 	s390user *su = bf->bo->bin_obj;
 	RList *ret = r_list_new ();
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
-	if (!ret || !ptr) {
-		free (ret);
-		free (ptr);
-		return NULL;
-	}
 	r_list_free (sections (bf));
 	ptr->vaddr = su->entry0 + S390_BADDR;
 	ptr->paddr = su->entry0;
