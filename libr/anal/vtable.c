@@ -31,7 +31,7 @@ R_API void r_anal_vtable_info_free(RVTableInfo *vtable) {
 	if (!vtable) {
 		return;
 	}
-	RVecRVTableMethodInfo_clear (&vtable->methods);
+	RVecRVTableMethodInfo_fini (&vtable->methods);
 	free (vtable);
 }
 
