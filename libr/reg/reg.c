@@ -404,8 +404,6 @@ R_API RReg *r_reg_clone(RReg *r) {
 	rr->bits_default = r->bits_default;
 	rr->hasbits = r->hasbits;
 	rr->endian = r->endian;
-	// nothing to clone
-	r_reg_arena_push (rr);
 	r_reg_hasbits_clear (rr);
 	return rr;
 }
