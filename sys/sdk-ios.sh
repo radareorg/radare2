@@ -9,7 +9,7 @@ USE_SIMULATOR=0
 SIMULATOR_ARCHS="arm64"
 PACKAGE_RADARE=0
 EMBED_BITCODE=0
-PLUGINS_CFG=plugins.ios-store.cfg
+PLUGINS_CFG=plugins.sdk.cfg
 
 # Environment variables
 . sys/ios-env.sh

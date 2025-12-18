@@ -5,7 +5,7 @@
 . sys/sdk-common.sh
 
 # macOS specific
-PLUGINS_CFG=plugins.ios-store.cfg
+PLUGINS_CFG=plugins.sdk.cfg
 
 # Environment variables
 . sys/macos-env.sh
