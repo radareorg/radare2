@@ -139,7 +139,7 @@ static void mark_free(RConsMark *m) {
  */
 static void rcons_update_color_limit_from_term(RCons *cons) {
 	char *term = r_sys_getenv ("TERM");
-	int limit = COLOR_MODE_16M; // Default to no limit by default
+	int limit = COLOR_MODE_16M; // Default to no limit
 	// alacritty, kitty, ghostty, wezterm, foot, konsole-256color, iterm2, ..
 	if (R_STR_ISNOTEMPTY (term)) {
 		if (!strcmp (term, "dumb")) {

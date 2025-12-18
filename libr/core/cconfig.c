@@ -1754,10 +1754,9 @@ static bool cb_color(void *user, void *data) {
 		node->i_value = 0;
 	}
 	int requested_mode = R_MIN (node->i_value, COLOR_MODE_16M);
-	// Enforce color_limit: never exceed the terminal's capability
 	if (requested_mode > limit) {
 		R_LOG_WARN ("Color mode %d requested but terminal only supports %d", requested_mode, limit);
-		core->cons->context->color_mode = R_MIN (requested_mode, limit);
+		// core->cons->context->color_mode = R_MIN (requested_mode, limit);
 	}
 	core->cons->context->color_mode = requested_mode;
 
