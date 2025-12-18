@@ -387,6 +387,7 @@ static bool esil_eq(REsil *esil) {
 		char *dst2 = r_str_newf ("%sh", dst); // q0 -> q0h
 		ret = r_esil_reg_write (esil, dst2, n0);
 		free (dst2);
+		free (src2);
 	} else if (ispacked) {
 		char *src2 = r_esil_pop (esil);
 		char *newreg = r_str_newf ("%sl", dst);
