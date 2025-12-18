@@ -149,6 +149,7 @@ RUN
 
 NAME=js ec changes
 FILE=-
+ARGS=-e scr.color=1
 CMDS=<<EOF
 'js r2.cmd("ec call blue");console.log(r2.cmd("ec*~call"));r2.cmd("ec call red");console.log(r2.cmd("ec*~call"))
 EOF
