@@ -1732,7 +1732,17 @@ static bool cb_scr_color_ophex(void *user, void *data) {
 
 static bool cb_color(void *user, void *data) {
 	RCore *core = (RCore *)user;
+	const int limit = core->cons->context->color_limit;
 	RConfigNode *node = (RConfigNode *)data;
+	if (*node->value == '?') {
+		r_cons_printf (core->cons, "Possible values:\n"
+				"  0 - disable colors\n"
+				"  1 - ansi 16 colors\n"
+				"  2 - 256 colors\n"
+				"  3 - 16 million colors (truecolor)\n"
+				"Maximum supported by your terminal: %d\n", limit);
+		return false;
+	}
 	if (node->i_value) {
 		core->print->flags |= R_PRINT_FLAGS_COLOR;
 	} else {
@@ -1743,11 +1753,14 @@ static bool cb_color(void *user, void *data) {
 	} else if (!strcmp (node->value, "false")) {
 		node->i_value = 0;
 	}
-	int requested_mode = (node->i_value > COLOR_MODE_16M)
-		? COLOR_MODE_16M
-		: node->i_value;
-	// Enforce scrcolorlimit: never exceed the terminal's capability
-	core->cons->context->color_mode = R_MIN (requested_mode, core->cons->context->scrcolorlimit);
+	int requested_mode = R_MIN (node->i_value, COLOR_MODE_16M);
+	// Enforce color_limit: never exceed the terminal's capability
+	if (requested_mode > limit) {
+		R_LOG_WARN ("Color mode %d requested but terminal only supports %d", requested_mode, limit);
+		core->cons->context->color_mode = R_MIN (requested_mode, limit);
+	}
+	core->cons->context->color_mode = requested_mode;
+
 	r_cons_pal_reload (core->cons); // double flute
 	r_print_set_flags (core->print, core->print->flags);
 	r_log_set_colors (node->i_value);
@@ -2666,6 +2679,13 @@ static bool cb_scrhighlight(void *user, void *data) {
 }
 
 #if R2__WINDOWS__
+static inline DWORD modevalue(DWORD mode, bool set) {
+	if (set) {
+		return mode | ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+	}
+	return mode & ~ENABLE_VIRTUAL_TERMINAL_PROCESSING & ~ENABLE_WRAP_AT_EOL_OUTPUT;
+}
+
 static bool scr_vtmode(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
@@ -2687,18 +2707,10 @@ static bool scr_vtmode(void *user, void *data) {
 	}
 	HANDLE streams[] = { GetStdHandle (STD_OUTPUT_HANDLE), GetStdHandle (STD_ERROR_HANDLE) };
 	int i;
-	if (node->i_value > 0) {
-		for (i = 0; i < R_ARRAY_SIZE (streams); i++) {
-			GetConsoleMode (streams[i], &mode);
-			SetConsoleMode (streams[i],
-				mode | ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-		}
-	} else {
-		for (i = 0; i < R_ARRAY_SIZE (streams); i++) {
-			GetConsoleMode (streams[i], &mode);
-			SetConsoleMode (streams[i],
-				mode & ~ENABLE_VIRTUAL_TERMINAL_PROCESSING & ~ENABLE_WRAP_AT_EOL_OUTPUT);
-		}
+	bool set = (node->i_value > 0);
+	for (i = 0; i < R_ARRAY_SIZE (streams); i++) {
+		GetConsoleMode (streams[i], &mode);
+		SetConsoleMode (streams[i], modevalue (mode, set));
 	}
 	return true;
 }
@@ -4660,7 +4672,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("scr.tts", "false", "use tts if available by a command (see ic)");
 	SETCB ("scr.prompt", "true", &cb_scrprompt, "show user prompt (used by r2 -q)");
 	SETICB ("scr.limit", 0, &cb_scr_limit, "stop printing after N bytes");
-	SETICB ("scr.color", (core->print->flags & R_PRINT_FLAGS_COLOR)? COLOR_MODE_16: COLOR_MODE_DISABLED, &cb_color, "enable colors (0: none, 1: ansi, 2: 256 colors, 3: truecolor)");
+	const int default_color = (core->print->flags & R_PRINT_FLAGS_COLOR)? core->cons->context->color_limit: COLOR_MODE_DISABLED;
+	SETICB ("scr.color", default_color, &cb_color, "enable colors (0: none, 1: ansi, 2: 256 colors, 3: truecolor)");
 	r_config_set_getter (cfg, "scr.color", (RConfigCallback)cb_color_getter);
 	SETCB ("scr.color.grep", "false", &cb_scr_color_grep, "enable colors when using ~grep");
 	SETB ("scr.color.pipe", "false", "enable colors when using pipes");

@@ -120,7 +120,7 @@ static void mark_free(RConsMark *m) {
 }
 
 /*
- * Update the scrcolorlimit based on TERM environment variable.
+ * Update the color_limit based on TERM environment variable.
  *
  * This function provides a basic, hard-coded mapping from TERM values to
  * maximum color capabilities. It is intentionally simple and does not implement
@@ -137,27 +137,31 @@ static void mark_free(RConsMark *m) {
  * - No consideration of terminal multiplexers (screen/tmux) capability passthrough
  * - No handling of terminal emulation compatibility layers
  */
-static void rcons_update_scrcolorlimit_from_term(RCons *cons) {
+static void rcons_update_color_limit_from_term(RCons *cons) {
 	char *term = r_sys_getenv ("TERM");
-	int limit = COLOR_MODE_16M; // Default to no limit for unknown terminals
+	int limit = COLOR_MODE_16M; // Default to no limit by default
+	// alacritty, kitty, ghostty, wezterm, foot, konsole-256color, iterm2, ..
 	if (R_STR_ISNOTEMPTY (term)) {
 		if (!strcmp (term, "dumb")) {
 			limit = COLOR_MODE_DISABLED;
 		} else if (!strcmp (term, "vt100") || !strcmp (term, "vt102") ||
 			   !strcmp (term, "vt220") || !strcmp (term, "vt200") ||
-			   !strncmp (term, "vt2", 3)) {
+			   r_str_startswith (term, "vt2")) {
 			limit = COLOR_MODE_DISABLED;
 		} else if (!strcmp (term, "cons25")) {
 			limit = COLOR_MODE_DISABLED;
 		} else if (strstr (term, "16color")) {
 			limit = COLOR_MODE_16;
 		} else if (strstr (term, "256color")) {
-			limit = COLOR_MODE_256;
+			// requires extra check for COLORTERM=truecolor|24bit
+			// but it's the standard, and 99% of them support truecolor
+			// limit = COLOR_MODE_256;
+			limit = COLOR_MODE_16M;
 		} else if (!strcmp (term, "ansi") || !strcmp (term, "screen")) {
 			limit = COLOR_MODE_16;
 		}
 	}
-	cons->context->scrcolorlimit = limit;
+	cons->context->color_limit = limit;
 	free (term);
 }
 
@@ -181,13 +185,13 @@ static void init_cons_context(RCons *cons, RConsContext * R_NULLABLE parent) {
 
 	if (parent) {
 		ctx->color_mode = parent->color_mode;
-		ctx->scrcolorlimit = parent->scrcolorlimit;
+		ctx->color_limit = parent->color_limit;
 		r_cons_pal_copy (cons, parent);
 	} else {
 		ctx->color_mode = COLOR_MODE_DISABLED;
-		ctx->scrcolorlimit = COLOR_MODE_16M; // Default to no limit
+		ctx->color_limit = COLOR_MODE_16M; // Default to no limit
 		r_cons_pal_init (cons);
-		rcons_update_scrcolorlimit_from_term (cons);
+		rcons_update_color_limit_from_term (cons);
 	}
 	cons_grep_reset (&ctx->grep);
 }
