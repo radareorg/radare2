@@ -120,6 +120,7 @@ extern "C" {
 
 // Helper macros for doing a foreach-style loop over the elements of a vector.
 #define R_VEC_FOREACH(vec, iter) for (iter = (vec)->_start; iter != (vec)->_end; iter++)
+#define R_VEC_FOREACH_I(vec, idx) for (size_t idx = 0; (uintptr_t)(vec) && idx < (vec)->_end - (vec)->_start; idx++)
 #define R_VEC_FOREACH_PREV(vec, iter) if ((vec)->_start != (vec)->_end) for (iter = (vec)->_end - 1; iter >= (vec)->_start; iter--)
 
 #define R_CONCAT_INNER(a, b) a ## b

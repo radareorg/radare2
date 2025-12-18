@@ -1153,7 +1153,7 @@ static bool bin_addrline(RCore *core, PJ *pj, int mode) {
 		list = plugin->lines (binfile);
 	} else if (core->bin) {
 		// TODO: complete and speed-up support for dwarf
-		RBinDwarfDebugAbbrev *da = r_bin_dwarf_parse_abbrev (core->bin, mode);
+		RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (core->bin, mode);
 		if (!da) {
 			if (IS_MODE_JSON (mode)) {
 				pj_end (pj);
@@ -1295,6 +1295,7 @@ static bool bin_addrline(RCore *core, PJ *pj, int mode) {
 R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode) {
 	R_RETURN_VAL_IF_FAIL (core && file, false);
 
+	bool jsonmode = (mode & R_MODE_JSON) && pj;
 	ut64 baddr = r_config_get_i (core->config, "bin.baddr");
 	if (!baddr && core->bin->cur && core->bin->cur->bo && core->bin->cur->bo->baddr) {
 		baddr = core->bin->cur->bo->baddr;
@@ -1307,7 +1308,7 @@ R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode) {
 
 	pdb.cb_printf = r_cons_gprintf;
 	if (!r_bin_pdb_parser (&pdb, file)) {
-		if (pj || mode == 'j') {
+		if (jsonmode) {
 			pj_o (pj);
 			pj_end (pj);
 		}
@@ -1316,42 +1317,33 @@ R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode) {
 	if (!pdb.pdb_parse (&pdb)) {
 		R_LOG_ERROR ("pdb was not parsed");
 		pdb.finish_pdb_parse (&pdb);
-		if (pj || mode == 'j') {
+		if (jsonmode) {
 			pj_o (pj);
 			pj_end (pj);
 		}
 		return false;
 	}
 
-	switch (mode) {
-	case R_MODE_SET:
-		mode = 's';
+	int fmt_mode = 'd'; // default
+	if (jsonmode) {
+		fmt_mode = 'j';
+	} else if (mode == R_MODE_SET) {
+		fmt_mode = 's';
 		r_core_cmd0 (core, ".iP*");
-		if (pj) {
-			pj_end (pj);
-		}
 		return true;
-	case R_MODE_JSON:
-		mode = 'j';
-		break;
-	case '*':
-	case 1:
-		mode = 'r';
-		break;
-	default:
-		mode = 'd'; // default
-		break;
+	} else if (mode == '*' || mode == 1 || mode == R_MODE_RADARE) {
+		fmt_mode = 'r';
 	}
 
-	if (mode == 'j') {
+	if (jsonmode) {
 		pj_o (pj);
 	}
-	pdb.print_types (&pdb, pj, mode);
-	pdb.print_gvars (&pdb, baddr, pj, mode);
+	pdb.print_types (&pdb, pj, fmt_mode);
+	pdb.print_gvars (&pdb, baddr, pj, fmt_mode);
 	// Save compound types into SDB
 	r_parse_pdb_types (core->anal, &pdb);
 	pdb.finish_pdb_parse (&pdb);
-	if (mode == 'j') {
+	if (jsonmode) {
 		pj_end (pj);
 	}
 
@@ -5267,6 +5259,7 @@ R_API bool r_core_bin_info(RCore *core, ut64 action, PJ *pj, int mode, int va, R
 			}
 		}
 	}
+	// Arena is persistent and will be freed when RBin is freed
 	return ret;
 }
 

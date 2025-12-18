@@ -8,7 +8,11 @@
 // R2R db/cmd/lea_intel
 
 R_API void r_bin_addrline_free(RBinAddrline *di) {
-	free (di);
+	if (di) {
+		free ((char *)di->file);
+		free ((char *)di->path);
+		free (di);
+	}
 }
 
 // must be tied to the rbinfile

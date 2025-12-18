@@ -6,23 +6,78 @@
 
 #define MODE 2
 
-#define check_abbrev_code(expected_code) \
-	mu_assert_eq (da->decls[i].code, expected_code, "Wrong abbrev code");
+// Global test context to prevent leaks on early returns
+static RBin *bin = NULL;
+static RIO *io = NULL;
 
-#define check_abbrev_tag(expected_tag) \
-	mu_assert_eq (da->decls[i].tag, expected_tag, "Incorrect abbreviation tag")
+static bool setup(void) {
+	bin = r_bin_new ();
+	io = r_io_new ();
+	if (!bin || !io) {
+		r_bin_free (bin);
+		r_io_free (io);
+		return false;
+	}
+	r_io_bind (io, &bin->iob);
+	return true;
+}
 
-#define check_abbrev_count(expected_count) \
-	mu_assert_eq (da->decls[i].count, expected_count, "Incorrect abbreviation count")
+static bool teardown(void) {
+	r_bin_free (bin);
+	r_io_free (io);
+	bin = NULL;
+	io = NULL;
+	return true;
+}
 
-#define check_abbrev_children(expected_children) \
-	mu_assert_eq (da->decls[i].has_children, expected_children, "Incorrect children flag")
+// Helper macros for accessing abbreviation declarations with better error messages
+#define ABBREV_DECL(idx) (RVecDwarfAbbrevDecl_at(da, idx))
+#define ABBREV_ATTR_DEF(decl, attr_idx) (RVecDwarfAttrDef_at((decl)->defs, attr_idx))
 
-#define check_abbrev_attr_name(expected_name) \
-	mu_assert_eq (da->decls[i].defs[j].attr_name, expected_name, "Incorrect children flag");
+// Improved check macros with clear naming and better assertions
+#define check_abbrev_code(expected_code) do { \
+	RBinDwarfAbbrevDecl *decl = ABBREV_DECL(i); \
+	mu_assert_notnull(decl, "Abbrev declaration at index is NULL"); \
+	mu_assert_eq(decl->code, expected_code, "Wrong abbrev code"); \
+} while (0)
 
-#define check_abbrev_attr_form(expected_form) \
-	mu_assert_eq (da->decls[i].defs[j].attr_form, expected_form, "Incorrect children flag");
+#define check_abbrev_tag(expected_tag) do { \
+	RBinDwarfAbbrevDecl *decl = ABBREV_DECL(i); \
+	mu_assert_notnull(decl, "Abbrev declaration at index is NULL"); \
+	mu_assert_eq(decl->tag, expected_tag, "Incorrect abbreviation tag"); \
+} while (0)
+
+#define check_abbrev_count(expected_count) do { \
+	RBinDwarfAbbrevDecl *decl = ABBREV_DECL(i); \
+	mu_assert_notnull(decl, "Abbrev declaration at index is NULL"); \
+	mu_assert_notnull(decl->defs, "Attribute definitions vector is NULL"); \
+	ut64 count = RVecDwarfAttrDef_length(decl->defs); \
+	mu_assert_eq(count, expected_count, "Incorrect abbreviation count"); \
+} while (0)
+
+#define check_abbrev_children(expected_children) do { \
+	RBinDwarfAbbrevDecl *decl = ABBREV_DECL(i); \
+	mu_assert_notnull(decl, "Abbrev declaration at index is NULL"); \
+	mu_assert_eq(decl->has_children, expected_children, "Incorrect children flag"); \
+} while (0)
+
+#define check_abbrev_attr_name(expected_name) do { \
+	RBinDwarfAbbrevDecl *decl = ABBREV_DECL(i); \
+	mu_assert_notnull(decl, "Abbrev declaration at index is NULL"); \
+	mu_assert_notnull(decl->defs, "Attribute definitions vector is NULL"); \
+	RBinDwarfAttrDef *attr = ABBREV_ATTR_DEF(decl, j); \
+	mu_assert_notnull(attr, "Attribute definition is NULL"); \
+	mu_assert_eq(attr->attr_name, expected_name, "Incorrect attribute name"); \
+} while (0)
+
+#define check_abbrev_attr_form(expected_form) do { \
+	RBinDwarfAbbrevDecl *decl = ABBREV_DECL(i); \
+	mu_assert_notnull(decl, "Abbrev declaration at index is NULL"); \
+	mu_assert_notnull(decl->defs, "Attribute definitions vector is NULL"); \
+	RBinDwarfAttrDef *attr = ABBREV_ATTR_DEF(decl, j); \
+	mu_assert_notnull(attr, "Attribute definition is NULL"); \
+	mu_assert_eq(attr->attr_form, expected_form, "Incorrect attribute form"); \
+} while (0)
 
 /**
  * @brief Comparator to sort list of line statements by address(collection of DbgItem)
@@ -44,20 +99,13 @@ int int_compare(const void *a, const void *b){
  * @brief Tests correct parsing of abbreviations and line information of DWARF3 C binary
  */
 static bool test_dwarf3_c_basic(void) { // this should work for dwarf2 as well
-	RBin *bin = r_bin_new ();
-	RIO *io = r_io_new ();
-	r_io_bind (io, &bin->iob);
-
 	RBinFileOptions opt = {0};
 	bool res = r_bin_open (bin, "bins/elf/dwarf3_c.elf", &opt);
 	mu_assert ("couldn't open file", res);
 
-	RBinDwarfDebugAbbrev *da = NULL;
-	// mode = 0, calls
-	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RBinDwarfDebugAbbrev *da)
-	// which prints out all the abbreviation
-	da = r_bin_dwarf_parse_abbrev (bin, MODE);
-	mu_assert_eq (da->count, 7, "Incorrect number of abbreviation");
+	RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bin, MODE);
+	mu_assert_notnull (da, "Failed to parse abbreviations");
+	mu_assert_eq (RVecDwarfAbbrevDecl_length(da), 7, "Incorrect number of abbreviations");
 
 	// order matters
 	// I nest scopes to make it more readable, (hopefully)
@@ -154,37 +202,22 @@ static bool test_dwarf3_c_basic(void) { // this should work for dwarf2 as well
 	}
 
 	r_list_free (line_list);
-	r_bin_dwarf_free_debug_abbrev (da);
-	r_bin_free (bin);
-	r_io_free (io);
+	RVecDwarfAbbrevDecl_free (da);
 	mu_end;
 }
 
 /**
  * @brief Tests correct parsing of abbreviations and line information of DWARF3 C++ binary
- * 
- * 
- * 
- * 
  */
 static bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 as well
-	RBin *bin = r_bin_new ();
-	RIO *io = r_io_new ();
-	r_io_bind (io, &bin->iob);
 
 	RBinFileOptions opt = {0};
 	bool res = r_bin_open (bin, "bins/elf/dwarf3_cpp.elf", &opt);
 	mu_assert ("couldn't open file", res);
 
-	// this is probably ugly, but I didn't know how to
-	// tell core  what bin to open so I did it myself
-
-	RBinDwarfDebugAbbrev *da = NULL;
-	// mode = 0, calls
-	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RBinDwarfDebugAbbrev *da)
-	// which prints out all the abbreviation
-	da = r_bin_dwarf_parse_abbrev (bin, MODE);
-	mu_assert ("Incorrect number of abbreviation", da->count == 32);
+	RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bin, MODE);
+	mu_assert_notnull (da, "Failed to parse abbreviations");
+	mu_assert_eq (RVecDwarfAbbrevDecl_length(da), 32, "Incorrect number of abbreviations");
 
 	// order matters
 	// I nest scopes to make it more readable, (hopefully)
@@ -479,10 +512,6 @@ static bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 as well
 		check_abbrev_count (8);
 	}
 
-	// r_bin_dwarf_parse_info (da, core->bin, mode); Information not stored anywhere, not testable now?
-
-	// r_bin_dwarf_parse_aranges (core->bin, MODE); Information not stored anywhere, not testable now?
-
 	RList *line_list = r_bin_dwarf_parse_line (bin, MODE);
 	mu_assert_eq (r_list_length (line_list), 60, "Amount of line information parse doesn't match");
 
@@ -563,27 +592,19 @@ static bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 as well
 	}
 
 	r_list_free (line_list);
-	r_bin_dwarf_free_debug_abbrev (da);
-	r_bin_free (bin);
-	r_io_free (io);
+	RVecDwarfAbbrevDecl_free (da);
 	mu_end;
 }
 
 static bool test_dwarf3_cpp_many_comp_units(void) {
-	RBin *bin = r_bin_new ();
-	RIO *io = r_io_new ();
-	r_io_bind (io, &bin->iob);
 
 	RBinFileOptions opt = {0};
 	bool res = r_bin_open (bin, "bins/elf/dwarf3_many_comp_units.elf", &opt);
 	mu_assert ("couldn't open file", res);
 
-	RBinDwarfDebugAbbrev *da = NULL;
-	// mode = 0, calls
-	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RBinDwarfDebugAbbrev *da)
-	// which prints out all the abbreviation
-	da = r_bin_dwarf_parse_abbrev (bin, MODE);
-	mu_assert_eq (da->count, 58, "Incorrect number of abbreviation");
+	RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bin, MODE);
+	mu_assert_notnull (da, "Failed to parse abbreviations");
+	mu_assert_eq (RVecDwarfAbbrevDecl_length(da), 58, "Incorrect number of abbreviations");
 	int i = 18;
 
 	check_abbrev_tag (DW_TAG_formal_parameter);
@@ -691,28 +712,20 @@ static bool test_dwarf3_cpp_many_comp_units(void) {
 	}
 
 	r_list_free (line_list);
-	r_bin_dwarf_free_debug_abbrev (da);
-	r_bin_free (bin);
-	r_io_free (io);
+	RVecDwarfAbbrevDecl_free (da);
 	mu_end;
 }
 
 static bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 as well
-	RBin *bin = r_bin_new ();
-	RIO *io = r_io_new ();
-	r_io_bind (io, &bin->iob);
 
 	RBinFileOptions opt = {0};
 	bool res = r_bin_open (bin, "bins/pe/hello_world_not_stripped.exe", &opt);
 	mu_assert ("couldn't open file", res);
 
-	RBinDwarfDebugAbbrev *da = NULL;
-	// mode = 0, calls
-	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RBinDwarfDebugAbbrev *da)
-	// which prints out all the abbreviation
-	da = r_bin_dwarf_parse_abbrev (bin, MODE);
+	RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bin, MODE);
+	mu_assert_notnull (da, "Failed to parse abbreviations");
 	// not ignoring null entries -> 755 abbrevs
-	mu_assert_eq (da->count, 731, "Incorrect number of abbreviation");
+	mu_assert_eq (RVecDwarfAbbrevDecl_length(da), 731, "Incorrect number of abbreviations");
 
 	RList *line_list = r_bin_dwarf_parse_line (bin, MODE);
 	mu_assert_eq (r_list_length (line_list), 1159, "Amount of line information parse doesn't match");
@@ -772,27 +785,19 @@ static bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf
 	}
 
 	r_list_free (line_list);
-	r_bin_dwarf_free_debug_abbrev (da);
-	r_io_free (io);
-	r_bin_free (bin);
+	RVecDwarfAbbrevDecl_free (da);
 	mu_end;
 }
 
 bool test_dwarf2_cpp_many_comp_units(void) {
-	RBin *bin = r_bin_new ();
-	RIO *io = r_io_new ();
-	r_io_bind (io, &bin->iob);
 
 	RBinFileOptions opt = {0};
 	bool res = r_bin_open (bin, "bins/elf/dwarf2_many_comp_units.elf", &opt);
 	mu_assert ("couldn't open file", res);
 
-	RBinDwarfDebugAbbrev *da = NULL;
-	// mode = 0, calls
-	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RBinDwarfDebugAbbrev *da)
-	// which prints out all the abbreviation
-	da = r_bin_dwarf_parse_abbrev (bin, MODE);
-	mu_assert_eq (da->count, 58, "Incorrect number of abbreviation");
+	RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bin, MODE);
+	mu_assert_notnull (da, "Failed to parse abbreviations");
+	mu_assert_eq (RVecDwarfAbbrevDecl_length(da), 58, "Incorrect number of abbreviations");
 
 	int i = 18;
 
@@ -900,22 +905,15 @@ bool test_dwarf2_cpp_many_comp_units(void) {
 
 	// add line information check
 	r_list_free (line_list);
-	r_bin_dwarf_free_debug_abbrev (da);
-	r_bin_free (bin);
-	r_io_free (io);
+	RVecDwarfAbbrevDecl_free (da);
 	mu_end;
 }
 
 bool test_dwarf4_cpp_many_comp_units(void) {
-	RBin *bin = r_bin_new ();
-	RIO *io = r_io_new ();
-	r_io_bind (io, &bin->iob);
 
 	RBinFileOptions opt = {0};
 	bool res = r_bin_open (bin, "bins/elf/dwarf4_many_comp_units.elf", &opt);
 	mu_assert ("couldn't open file", res);
-
-	// TODO add abbrev checks
 
 	RList *line_list = r_bin_dwarf_parse_line (bin, MODE);
 	mu_assert_eq (r_list_length (line_list), 75, "Amount of line information parse doesn't match");
@@ -1009,15 +1007,10 @@ bool test_dwarf4_cpp_many_comp_units(void) {
 	}
 
 	r_list_free (line_list);
-	r_bin_free (bin);
-	r_io_free (io);
 	mu_end;
 }
 
 bool test_big_endian_dwarf2(void) {
-	RBin *bin = r_bin_new ();
-	RIO *io = r_io_new ();
-	r_io_bind (io, &bin->iob);
 
 	RBinFileOptions opt = {0};
 	bool res = r_bin_open (bin, "bins/elf/ppc64_sudoku_dwarf", &opt);
@@ -1443,22 +1436,29 @@ bool test_big_endian_dwarf2(void) {
 	}
 
 	r_list_free (line_list);
-	r_bin_free (bin);
-	r_io_free (io);
 	mu_end;
 }
 
+#define run_test_with_setup(test_func) do { \
+	if (!setup()) { \
+		printf("Setup failed for " #test_func "\n"); \
+		return 1; \
+	} \
+	mu_run_test(test_func); \
+	teardown(); \
+} while (0)
+
 bool all_tests(void) {
-	mu_run_test (test_dwarf_cpp_empty_line_info);
-	mu_run_test (test_dwarf2_cpp_many_comp_units);
-	mu_run_test (test_dwarf3_c_basic);
-	mu_run_test (test_dwarf3_cpp_basic);
-	mu_run_test (test_dwarf3_cpp_many_comp_units);
-	mu_run_test (test_dwarf4_cpp_many_comp_units);
-	mu_run_test (test_big_endian_dwarf2);
+	run_test_with_setup(test_dwarf_cpp_empty_line_info);
+	run_test_with_setup(test_dwarf2_cpp_many_comp_units);
+	run_test_with_setup(test_dwarf3_c_basic);
+	run_test_with_setup(test_dwarf3_cpp_basic);
+	run_test_with_setup(test_dwarf3_cpp_many_comp_units);
+	run_test_with_setup(test_dwarf4_cpp_many_comp_units);
+	run_test_with_setup(test_big_endian_dwarf2);
 	return tests_passed != tests_run;
 }
 
 int main(int argc, char **argv) {
-	return all_tests ();
+	return all_tests();
 }
