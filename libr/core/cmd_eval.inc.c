@@ -622,7 +622,8 @@ static bool cmd_ec(RCore *core, const char *input) {
 					core->cons->context->pal_dirty = true;
 					if (!core->cons->context->pal_batch) {
 						r_cons_pal_reload (core->cons);
-						core->cons->context->pal_dirty = false;
+						// if we uncomment this changing color theme doesnt work from rcore_cmd_str
+						// core->cons->context->pal_dirty = false;
 					}
 				}
 			} else {
