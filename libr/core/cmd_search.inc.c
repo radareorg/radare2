@@ -2746,6 +2746,7 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 					hasch--;
 				}
 				if (aop.type == R_ANAL_OP_TYPE_ADD || aop.type == R_ANAL_OP_TYPE_SUB) {
+					r_anal_op_fini (&aop);
 					continue;
 				}
 				if (inmov && aop.type == R_ANAL_OP_TYPE_OR) {

@@ -2437,91 +2437,135 @@ int Elf_(has_va)(ELFOBJ *eo) {
 }
 
 char* Elf_(get_arch)(ELFOBJ *eo) {
+	const char *arch = "unknown";
 	switch (eo->ehdr.e_machine) {
 	case EM_ARC:
 	case EM_ARC_A5:
-		return strdup ("arc");
-	case EM_AVR: return strdup ("avr");
+		arch = "arc";
+		break;
+	case EM_AVR:
+		arch = "avr";
+		break;
 	case EM_BA2_NON_STANDARD:
-	case EM_BA2: return strdup ("ba2");
-	case EM_BPF: return strdup ("bpf");
-	case EM_SBPF: return strdup ("sbpf");
-	case EM_CRIS: return strdup ("cris");
-	case EM_68K: return strdup ("m68k");
+	case EM_BA2:
+		arch = "ba2";
+		break;
+	case EM_BPF:
+		arch = "bpf";
+		break;
+	case EM_SBPF:
+		arch = "sbpf";
+		break;
+	case EM_CRIS:
+		arch = "cris";
+		break;
+	case EM_68K:
+		arch = "m68k";
+		break;
 	case EM_MIPS:
 	case EM_MIPS_RS3_LE:
 	case EM_MIPS_X:
-		return strdup ("mips");
+		arch = "mips";
+		break;
 	case EM_MCST_ELBRUS:
-		return strdup ("elbrus");
+		arch = "elbrus";
+		break;
 	case EM_TRICORE:
-		return strdup ("tricore");
+		arch = "tricore";
+		break;
 	case EM_RCE:
-		return strdup ("mcore");
+		arch = "mcore";
+		break;
 	case EM_ARM:
 	case EM_AARCH64:
-		return strdup ("arm");
+		arch = "arm";
+		break;
 	case EM_QDSP6: // EM_HEXAGON
-		return strdup ("hexagon");
+		arch = "hexagon";
+		break;
 	case EM_BLACKFIN:
-		return strdup ("blackfin");
+		arch = "blackfin";
+		break;
 	case EM_SPARC:
 	case EM_SPARC32PLUS:
 	case EM_SPARCV9:
-		return strdup ("sparc");
+		arch = "sparc";
+		break;
 	case EM_PPC:
 	case EM_PPC64:
-		return strdup ("ppc");
+		arch = "ppc";
+		break;
 	case EM_PARISC:
-		return strdup ("hppa");
+		arch = "hppa";
+		break;
 	case EM_PROPELLER:
-		return strdup ("propeller");
+		arch = "propeller";
+		break;
 	case EM_MICROBLAZE:
-		return strdup ("microblaze.gnu");
+		arch = "microblaze.gnu";
+		break;
 	case EM_RISCV:
-		return strdup ("riscv");
+		arch = "riscv";
+		break;
 	case EM_VAX:
-		return strdup ("vax");
+		arch = "vax";
+		break;
 	case EM_XTENSA:
-		return strdup ("xtensa");
+		arch = "xtensa";
+		break;
 	case EM_LANAI:
-		return strdup ("lanai");
+		arch = "lanai";
+		break;
 	case EM_VIDEOCORE3:
 	case EM_VIDEOCORE4:
-		return strdup ("vc4");
+		arch = "vc4";
+		break;
 	case EM_MSP430:
-		return strdup ("msp430");
+		arch = "msp430";
+		break;
 	case EM_SH:
-		return strdup ("sh");
+		arch = "sh";
+		break;
 	case EM_V800:
-		return strdup ("v850");
+		arch = "v850";
+		break;
 	case EM_V850:
-		return strdup ("v850");
+		arch = "v850";
+		break;
 	case EM_IA_64:
-		return strdup ("ia64");
+		arch = "ia64";
+		break;
 	case EM_S390:
-		return strdup ("s390");
+		arch = "s390";
+		break;
 	case EM_KVX:
-		return strdup("kvx");
+		arch = "kvx";
+		break;
 	case EM_LOONGARCH:
-		return strdup ("loongarch");
+		arch = "loongarch";
+		break;
 	case EM_NDS32:
-		return strdup ("nds32");
+		arch = "nds32";
+		break;
 	case EM_386:
 	case EM_X86_64:
 	case EM_IAMCU:
-		return strdup ("x86");
+		arch = "x86";
+		break;
 	case EM_NONE:
-		return strdup ("null");
+		arch = "null";
+		break;
 	case EM_TI_C6000:
 	case EM_TI_C2000:
 	case EM_TI_C5500:
-		return strdup ("tms320");
+		arch = "tms320";
+		break;
 	default:
 		// should be NULL instead
 		R_LOG_ERROR ("Unknown e_machine 0x%02x", eo->ehdr.e_machine);
-		return strdup ("unknown"); // Unknown or unsupported arch");
+		break;
 	}
+	return strdup (arch);
 }
 
 char* Elf_(get_abi)(ELFOBJ *eo) {

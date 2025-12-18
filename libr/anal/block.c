@@ -525,7 +525,7 @@ R_API bool r_anal_block_recurse(RAnalBlock *block, RAnalBlockCb cb, void *user) 
 
 beach:
 	ht_up_free (ctx.visited);
-	RVecAnalBlockPtr_clear (&ctx.to_visit);
+	RVecAnalBlockPtr_fini (&ctx.to_visit);
 	return !breaked;
 }
 
@@ -557,7 +557,7 @@ R_API bool r_anal_block_recurse_followthrough(RAnalBlock *block, RAnalBlockCb cb
 
 beach:
 	ht_up_free (ctx.visited);
-	RVecAnalBlockPtr_clear (&ctx.to_visit);
+	RVecAnalBlockPtr_fini (&ctx.to_visit);
 	return !breaked;
 }
 
@@ -820,8 +820,8 @@ done_bfs: {
 
 beach:
 	ht_up_free (ctx.visited);
-	RVecAnalBlockPtr_clear (&visit_a);
-	RVecAnalBlockPtr_clear (&visit_b);
+	RVecAnalBlockPtr_fini (&visit_a);
+	RVecAnalBlockPtr_fini (&visit_b);
 	return ret;
 }
 
