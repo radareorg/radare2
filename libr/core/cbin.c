@@ -1281,8 +1281,9 @@ static bool bin_addrline(RCore *core, PJ *pj, int mode) {
 			free (file);
 			free (line);
 		} else {
+			const char *path = r_bin_addrline_str (core->bin, row->file);
 			r_cons_printf (core->cons, "0x%08" PFMT64x "\t%s\t%d\n",
-				row->addr, row->file, row->line);
+				row->addr, r_str_get (path), row->line);
 		}
 	}
 	if (IS_MODE_JSON (mode)) {
