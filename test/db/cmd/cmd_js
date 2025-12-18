@@ -150,16 +150,13 @@ RUN
 NAME=js ec changes
 FILE=-
 CMDS=<<EOF
-js r2.cmd("ec call red")
-js console.log(r2.cmd("ec*~call"))
-js r2.cmd("ec call blue")
-js console.log(r2.cmd("ec*~call"))
+'js r2.cmd("ec call blue");console.log(r2.cmd("ec*~call"));r2.cmd("ec call red");console.log(r2.cmd("ec*~call"))
 EOF
 EXPECT=<<EOF
-ec call rgb:c50f1f
+ec call rgb:0037da
 ec ucall rgb:13a10e
 
-ec call rgb:0037da
+ec call rgb:c50f1f
 ec ucall rgb:13a10e
 
 EOF
