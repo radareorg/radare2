@@ -1,6 +1,11 @@
 #ifndef R2_BIN_DWARF_H
 #define R2_BIN_DWARF_H
 
+#include <r_types.h>
+#include <r_util.h>
+
+typedef struct r_bin_t RBin;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -736,7 +741,7 @@ typedef struct {
 
 typedef struct {
 	ut64 length;
-	ut8 *data;
+	const ut8 *data;
 } RBinDwarfBlock;
 
 // https://www.dwarfstd.org/doc/DWARF4.pdf#page=29http://www.dwarfstd.org/doc/DWARF4.pdf#page=29&zoom=100,0,0zoom=100,0,0
@@ -794,52 +799,46 @@ typedef struct {
 	bool is_64bit;
 } RBinDwarfCompUnitHdr;
 
+R_VEC_TYPE(RVecDwarfAttrValue, RBinDwarfAttrValue);
+
 typedef struct {
 	ut64	tag;
 	ut64	abbrev_code;
-	size_t	count;
-	size_t	capacity;
 	ut64	offset; // important for parsing types
 	bool	has_children; // important for parsing types
-	RBinDwarfAttrValue *attr_values;
+	RVecDwarfAttrValue *attr_values;
 } RBinDwarfDie;
+
+R_VEC_TYPE(RVecDwarfDie, RBinDwarfDie);
 
 typedef struct {
 	RBinDwarfCompUnitHdr hdr;
-	ut64	offset;
-	size_t	count;
-	size_t	capacity;
-	RBinDwarfDie *dies;
+	ut64 offset;
+  RVecDwarfDie *dies;
 } RBinDwarfCompUnit;
 
-#define COMP_UNIT_CAPACITY 8
-#define DEBUG_INFO_CAPACITY 8
+R_VEC_TYPE(RVecDwarfCompUnit, RBinDwarfCompUnit);
+
 typedef struct {
-	size_t count;
-	size_t capacity;
-	RBinDwarfCompUnit *comp_units;
+  RVecDwarfCompUnit *comp_units;
 	HtUP/*<ut64 offset, DwarfDie *die>*/ *lookup_table;
 } RBinDwarfDebugInfo;
 
-#define	ABBREV_DECL_CAP 8
+R_VEC_TYPE(RVecDwarfAttrDef, RBinDwarfAttrDef);
 
 typedef struct {
 	ut64 code;
 	ut64 tag;
 	ut64 offset;
 	ut8 has_children;
-	size_t count;
-	size_t capacity;
-	RBinDwarfAttrDef *defs;
+	RVecDwarfAttrDef *defs;
 } RBinDwarfAbbrevDecl;
 
-#define DEBUG_ABBREV_CAP	32
+static inline void abbrev_decl_fini(RBinDwarfAbbrevDecl *decl) {
+	RVecDwarfAttrDef_free (decl->defs);
+}
 
-typedef struct {
-	size_t count;
-	size_t capacity;
-	RBinDwarfAbbrevDecl *decls;
-} RBinDwarfDebugAbbrev;
+R_VEC_TYPE_WITH_FINI(RVecDwarfAbbrevDecl, RBinDwarfAbbrevDecl, abbrev_decl_fini);
 
 typedef struct {
 	ut64 address;
@@ -857,7 +856,7 @@ typedef struct {
 } RBinDwarfSMRegisters;
 
 typedef struct {
-	char *name;
+	const char *name;
 	ut32 id_idx, mod_time, file_len;
 	bool has_checksum;
 	ut8 md5sum[16];
@@ -898,13 +897,13 @@ typedef struct r_bin_dwarf_loc_list_t {
 
 R_API void r_bin_dwarf_parse_aranges(RBin *a, int mode);
 R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode);
-R_API RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev(RBin *a, int mode);
-R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBin *a, RBinDwarfDebugAbbrev *da, int mode);
+R_API RVecDwarfAbbrevDecl *r_bin_dwarf_parse_abbrev(RBin *a, int mode);
+R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBin *a, RVecDwarfAbbrevDecl *da, int mode);
 R_API HtUP/*<offset, RBinDwarfLocList*>*/  *r_bin_dwarf_parse_loc(RBin *bin, int addr_size);
 R_API char *r_bin_dwarf_print_loc(HtUP /*<offset, RBinDwarfLocList*>*/  *loc_table, int addr_size);
 R_API void r_bin_dwarf_free_loc(HtUP /*<offset, RBinDwarfLocList*>*/  *loc_table);
 R_API void r_bin_dwarf_free_debug_info(RBinDwarfDebugInfo *inf);
-R_API void r_bin_dwarf_free_debug_abbrev(RBinDwarfDebugAbbrev *da);
+R_API void r_bin_dwarf_free_debug_abbrev(RVecDwarfAbbrevDecl *da);
 
 #ifdef __cplusplus
 }

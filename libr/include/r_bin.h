@@ -354,6 +354,8 @@ typedef struct r_bin_section_t {
 	bool is_data;
 	bool is_segment;
 	int backing_fd;
+
+	RSlice bytes;
 } RBinSection;
 
 typedef struct r_bin_import_t {
@@ -486,6 +488,7 @@ typedef struct r_bin_file_t {
 	struct r_bin_t *rbin;
 	int string_count;
 	RBinFileOptions *options;
+	RArena *arena;
 } RBinFile;
 
 typedef struct r_bin_create_options_t {

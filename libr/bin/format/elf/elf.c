@@ -40,16 +40,15 @@
 #define BREAD16(x, i) r_buf_read_ble16_at (x, i, eo->endian); (i) += 2
 #define BREAD32(x, i) r_buf_read_ble32_at (x, i, eo->endian); (i) += 4
 #define BREAD64(x, i) r_buf_read_ble64_at (x, i, eo->endian); (i) += 8
-
-#define NUMENTRIES_ROUNDUP(sectionsize, entrysize) (((sectionsize) + (entrysize)-1) / (entrysize))
+#define NUMENTRIES_ROUNDUP(sectionsize, entrysize) (((sectionsize) + (entrysize) - 1) / (entrysize))
 #define COMPUTE_PLTGOT_POSITION(rel, pltgot_addr, n_initial_unused_entries) \
 	((rel->rva - pltgot_addr - n_initial_unused_entries * R_BIN_ELF_WORDSIZE) / R_BIN_ELF_WORDSIZE)
 
 #define round_up(a) ((((a) + (4) - (1)) / (4)) * (4))
 
-#define EF_MIPS_ABI_O32		0x00001000  /* O32 ABI.  */
-#define EF_MIPS_ABI_O64		0x00002000  /* O32 extended for 64 bit.  */
-#define EF_MIPS_ABI		0x0000f000
+#define EF_MIPS_ABI_O32                0x00001000  /* O32 ABI.  */
+#define EF_MIPS_ABI_O64                0x00002000  /* O32 extended for 64 bit.  */
+#define EF_MIPS_ABI            0x0000f000
 
 /* ARCH_ASE */
 #define EF_MIPS_MICROMIPS      0x02000000 /* microMIPS */
@@ -58,7 +57,7 @@
 #define EF_MIPS_ARCH_ASE       0x0f000000 /* Mask for EF_MIPS_ARCH_ASE_xxx flags */
 
 static bool reloc_fill_local_address(ELFOBJ *eo);
-static inline bool is_elfclass64(Elf_(Ehdr) *h) {
+static inline bool is_elfclass64(Elf_(Ehdr) * h) {
 	return h->e_ident[EI_CLASS] == ELFCLASS64;
 }
 
@@ -5385,6 +5384,7 @@ static RVecRBinElfSymbol *Elf_(load_symbols_from)(ELFOBJ *eo, int type) {
 		if (!_process_symbols_and_imports_in_section (eo, type, &state)) {
 			R_LOG_ERROR ("failed parsing imports in section");
 			_symbol_memory_free (&memory);
+			RVecRBinElfSymbol_free (ret);
 			return NULL;
 		}
 

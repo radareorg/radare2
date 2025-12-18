@@ -619,6 +619,7 @@ static void al_reset(RBinAddrLineStore *als) {
 #endif
 }
 
+#if 0
 static RBinAddrline* dbgitem_from_internal(RBinAddrLineStore *als, RBinAddrlineInternal *item) {
 	AddrLineStore *store = als->storage;
 	RBinAddrline *di = R_NEW0 (RBinAddrline);
@@ -635,6 +636,30 @@ static RBinAddrline* dbgitem_from_internal(RBinAddrLineStore *als, RBinAddrlineI
 	}
 	return di;
 }
+#endif
+
+// Like dbgitem_from_internal but with owned string copies (for use in foreach where strpool may be freed)
+static RBinAddrline* dbgitem_from_internal_owned(RBinAddrLineStore *als, RBinAddrlineInternal *item) {
+	AddrLineStore *store = als->storage;
+	RBinAddrline *di = R_NEW0 (RBinAddrline);
+	di->addr = item->addr;
+	di->line = item->line;
+	di->column = item->colu;
+	const char *file = r_strpool_get_nth (store->pool, item->file);
+	*(char **)&di->file = file ? strdup (file) : strdup ("?");
+	const char *path = r_strpool_get_nth (store->pool, item->path);
+	*(char **)&di->path = path ? strdup (path) : strdup ("?");
+	return di;
+}
+
+#if 0
+// Free temporary RBinAddrline created by dbgitem_from_internal (does not free strpool pointers)
+static void addrline_from_strpool_free(void *p) {
+	if (p) {
+		free (p);
+	}
+}
+#endif
 
 static RList *al_files(RBinAddrLineStore *als) {
 	AddrLineStore *store = als->storage;
@@ -656,7 +681,7 @@ static void al_foreach(RBinAddrLineStore *als, RBinDbgInfoCallback cb, void *use
 	RListIter *iter;
 	RBinAddrlineInternal *item;
 	r_list_foreach (store->list, iter, item) {
-		RBinAddrline *di = dbgitem_from_internal (als, item);
+		RBinAddrline *di = dbgitem_from_internal_owned (als, item);
 		bool go_on = cb (user, di);
 		r_bin_addrline_free (di);
 		if (!go_on) {
@@ -688,7 +713,7 @@ static RBinAddrline* al_get(RBinAddrLineStore *als, ut64 addr) {
 #if 1
 	RBinAddrlineInternal *item = ht_up_find (store->ht, addr, NULL);
 	if (item) {
-		return dbgitem_from_internal (als, item);
+		return dbgitem_from_internal_owned (als, item);
 	}
 #else
 	RListIter *iter;
@@ -696,7 +721,7 @@ static RBinAddrline* al_get(RBinAddrLineStore *als, ut64 addr) {
 	R_LOG_DEBUG ("ITEMS %d / %d", store->pool->count, r_list_length (store->list));
 	r_list_foreach (store->list, iter, item) {
 		if (item->addr == addr) {
-			return dbgitem_from_internal (als, item);
+			return dbgitem_from_internal_owned (als, item);
 		}
 	}
 #endif
@@ -742,12 +767,24 @@ R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, ut64 file_sz, RBinFi
 	if (!r_id_pool_grab_id (bin->ids->pool, &bf_id)) {
 		return NULL;
 	}
-	RBinFile *bf = R_NEW0 (RBinFile);
+	// Create arena first for efficient memory management
+	RArena *arena = r_arena_new ();
+	if (!arena) {
+		r_id_pool_kick_id (bin->ids->pool, bf_id);
+		return NULL;
+	}
+	RBinFile *bf = r_arena_calloc (arena, sizeof (RBinFile));
+	if (!bf) {
+		r_arena_free (arena);
+		r_id_pool_kick_id (bin->ids->pool, bf_id);
+		return NULL;
+	}
+	bf->arena = arena;
 	bf->options = opt;
 	addrline_store_init (&bf->addrline);
 	bf->id = bf_id;
 	bf->rbin = bin;
-	bf->file = file ? strdup (file) : NULL;
+	bf->file = file ? r_arena_push_str (arena, file) : NULL;
 	bf->rawstr = opt->rawstr;
 	bf->fd = opt->fd;
 	bf->curxtr = opt->pluginname? r_bin_get_xtrplugin_by_name (bin, opt->pluginname) : NULL;
@@ -1029,11 +1066,8 @@ R_API void r_bin_file_free(void /*RBinFile*/ *_bf) {
 		bf->curxtr->free_xtr ((void *)(bf->xtr_obj));
 	}
 	// TODO: unset related sdb namespaces
-	if (bf->sdb_addrinfo) {
-		sdb_free (bf->sdb_addrinfo);
-		bf->sdb_addrinfo = NULL;
-	}
-	free (bf->file);
+	sdb_free (bf->sdb_addrinfo);
+	sdb_free (bf->sdb);
 	r_bin_object_free (bf->bo);
 	r_list_free (bf->xtr_data);
 	if (bf->id != -1) {
@@ -1041,7 +1075,8 @@ R_API void r_bin_file_free(void /*RBinFile*/ *_bf) {
 		r_id_pool_kick_id (bf->rbin->ids->pool, bf->id);
 	}
 	(void) r_bin_object_delete (bf->rbin, bf->id);
-	free (bf);
+	// Arena owns all arena-allocated memory including bf->file and bf itself
+	r_arena_free (bf->arena);
 }
 
 R_IPI RBinFile *r_bin_file_xtr_load(RBin *bin, RBinXtrPlugin *xtr, const char *filename, RBuffer *buf, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr) {
