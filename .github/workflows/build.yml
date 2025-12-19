@@ -26,6 +26,7 @@ jobs:
 
   # WASI API
   linux-wasi-api:
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
@@ -40,6 +41,7 @@ jobs:
 
   # WASI Browser
   linux-wasi-browser:
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
@@ -708,6 +710,7 @@ jobs:
       tag_name: ${{ steps.release.outputs.tag }}
     needs:
       - linux-wasi
+      - linux-wasi-api
       - linux-wasi-browser
       - tarball
 #      - linux-static
