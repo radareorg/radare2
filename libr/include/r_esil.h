@@ -198,7 +198,7 @@ typedef enum {
 
 #define	VOYEUR_TYPE_BITS	3
 #define	VOYEUR_SHIFT_LEFT	((sizeof (ut32) << 3) - VOYEUR_TYPE_BITS)
-#define	VOYEUR_TYPE_MASK	(R_ESIL_VOYEUR_HIGH_MASK << VOYEUR_SHIFT_LEFT)
+#define	VOYEUR_TYPE_MASK	((ut32)R_ESIL_VOYEUR_HIGH_MASK << VOYEUR_SHIFT_LEFT)
 #define	MAX_VOYEURS	(UT32_MAX ^ VOYEUR_TYPE_MASK)
 
 typedef struct r_esil_options_t {
