@@ -1594,11 +1594,7 @@ R_API R2RProcessOutput *r2r_run_leak_test(R2RRunConfig *config, R2RCmdTest *test
 		}
 	}
 	if (r_list_empty (files)) {
-		if (!files) {
-			files = r_list_new ();
-		} else {
-			files->free = NULL;
-		}
+		files->free = NULL;
 		r_list_push (files, "-");
 	}
 	if (test->env.value) {
