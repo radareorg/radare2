@@ -13,7 +13,7 @@ CMDS=<<EOF
 iD swift _$s13PasswordCheck11ContentViewV4bodyQrvg7SwiftUI05TupleD0VyAE0D0PAEE7paddingyQrAE4EdgeO3SetV_12CoreGraphics7CGFloatVSgtFQOyAE4TextV_Qo__AiEEAJyQrAN_ARtFQOyAiEE14textFieldStyleyQrqd__AE0oqR0Rd__lFQOyAE06SecureQ0VyATG_AE013RoundedBorderoqR0VQo__Qo_AiEE5alert11isPresented7contentQrAE7BindingVySbG_AE5AlertVyXEtFQOyAE6ButtonVyAiEE12cornerRadius_11antialiasedQrAQ_SbtFQOyAiEE15foregroundColoryQrAE5ColorVSgFQOyAiEE10background_20ignoresSafeAreaEdgesQrqd___ANtAE05ShapeR0Rd__lFQOyAU_A17_Qo__Qo__Qo_G_Qo_tGyXEfU_yycfU_
 EOF
 EXPECT=<<EOF
-closure #1 () -> () in closure #1 () -> SwiftUI.TupleView<(<<opaque return type of (extension in SwiftUI):SwiftUI.View.padding(SwiftUI.Edge.Set, Swift.Optional<CoreGraphics.CGFloat>) -> some>>.0, <<opaque return type of (extension in SwiftUI):SwiftUI.View.padding(SwiftUI.Edge.Set, Swift.Optional<CoreGraphics.CGFloat>) -> some>>.0, <<opaque return type of (extension in SwiftUI):SwiftUI.View.alert(isPresented: SwiftUI.Binding<Swift.Bool>, content: () -> SwiftUI.Alert) -> some>>.0)> in PasswordCheck.ContentView.body.getter : some
+PasswordCheck.ContentView.body.SwiftUI.Tuple...D0VyAE0D0PAEE7paddingyQrAE4EdgeO3SetV_12CoreGraphics7CGFloatVSgtFQOyAE4TextV_Qo__AiEEAJyQrAN_ARtFQOyAiEE14textFieldStyleyQrqd__AE0oqR0Rd__lFQOyAE06SecureQ0VyATG_AE013RoundedBorderoqR0VQo__Qo_AiEE5alert11isPresented7contentQrAE7BindingVySbG_AE5AlertVyXEtFQOyAE6ButtonVyAiEE12cornerRadius_11antialiasedQrAQ_SbtFQOyAiEE15foregroundColoryQrAE5ColorVSgFQOyAiEE10background_20ignoresSafeAreaEdgesQrqd___ANtAE05ShapeR0Rd__lFQOyAU_A17_Qo__Qo__Qo_G_Qo_tGyXEfU_yycfU_
 EOF
 RUN
 
@@ -26,9 +26,9 @@ iD swift _$s10HomeWallet0A12FileProviderC013getContentsOfC04with4type10Foundatio
 iD swift _$s10HomeWallet0A13DeeplinkModelV6pageIdSSSgvpfi
 EOF
 EXPECT=<<EOF
-HomeWallet.HomeDeeplinkModel.launchIDFA.modify : Swift.Optional<Swift.String>
-HomeWallet.HomeFileProvider.getContentsOfFile(with: Swift.String, type: Swift.String) -> Swift.Optional<Foundation.Data>
-variable initialization expression of HomeWallet.HomeDeeplinkModel.pageId : Swift.Optional<Swift.String>
+HomeWallet.DeeplinkModel.launchIDFA(...SgvM)
+HomeWallet.FileProvider.getContentsOf.with.type__String(...tF)
+HomeWallet.DeeplinkModel.pageId(...Sgvpfi)
 EOF
 RUN
 
@@ -39,7 +39,7 @@ CMDS=<<EOF
 iD swift _$s10CartFacade0aB13ModalItemViewC14moreItemsLabelSo7UILabelCSgvgTq
 EOF
 EXPECT=<<EOF
-method descriptor for CartFacade.CartFacadeModalItemView.moreItemsLabel.getter : Swift.Optional<__C.UILabel>
+CartFacade: ', ModalItemView.moreItemsLabel: ', C.more.UILabel(...gvgTq)
 EOF
 RUN
 
@@ -50,7 +50,7 @@ CMDS=<<EOF
 iD swift $s9CryptoKit4P384O12KeyAgreementO07PrivateD0V20compactRepresentableAGSb_tcfC
 EOF
 EXPECT=<<EOF
-CryptoKit.P384.KeyAgreement.PrivateKey.init(compactRepresentable: Swift.Bool) -> CryptoKit.P384.KeyAgreement.PrivateKey
+CryptoKit.P384.KeyAgreement.Private(...cfC)
 EOF
 RUN
 
@@ -88,7 +88,7 @@ FILE=--
 ARGS=-e bin.demangle.trylib=false
 CMDS=iD swift $s9CryptoKit8Curve448O7SigningO9PublicKeyV17rawRepresentationAGx_tKc10Foundation15ContiguousBytesRzlufC
 EXPECT=<<EOF
-CryptoKit.Curve448.Signing.PublicKey.init<A where A: Foundation.ContiguousBytes>(rawRepresentation: A) throws -> CryptoKit.Curve448.Signing.PublicKey
+CryptoKit.Curve448.Signing.PublicKey.rawRepresentation.Foundation.ContiguousBytes(...lufC)
 EOF
 RUN
 
