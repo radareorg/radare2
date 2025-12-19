@@ -2,6 +2,10 @@
 
 #include <r_io.h>
 #include <r_lib.h>
+#include "../io_memory.h"
+
+// Forward declarations for FIFO delegation
+extern RIOPlugin r_io_plugin_malloc;
 
 typedef struct r_io_mmo_t {
 	char *filename;
@@ -32,6 +36,62 @@ static bool check_for_blockdevice(RIOMMapFileObj *mmo) {
 	return false;
 }
 
+static bool is_fifo(const char *file) {
+#if R2__UNIX__
+	struct stat buf;
+	if (stat (file, &buf) != -1) {
+		return S_ISFIFO (buf.st_mode);
+	}
+#endif
+	return false;
+}
+
+// Read a FIFO atomically into a buffer (since pipes can't be mmap'd or seeked)
+static ut8 *slurp_fifo(const char *file, size_t *sz) {
+	R_RETURN_VAL_IF_FAIL (file && sz, NULL);
+	*sz = 0;
+	int fd = r_sandbox_open (file, O_RDONLY, 0);
+	if (fd == -1) {
+		return NULL;
+	}
+	ut8 *buf = NULL;
+	size_t size = 0;
+	size_t capacity = 4096;
+	buf = malloc (capacity);
+	if (!buf) {
+		close (fd);
+		return NULL;
+	}
+	while (true) {
+		ssize_t r = read (fd, buf + size, capacity - size);
+		if (r < 0) {
+			// read error
+			free (buf);
+			close (fd);
+			return NULL;
+		}
+		if (r == 0) {
+			// EOF
+			break;
+		}
+		size += r;
+		if (size >= capacity) {
+			// grow buffer
+			capacity *= 2;
+			ut8 *nbuf = realloc (buf, capacity);
+			if (!nbuf) {
+				free (buf);
+				close (fd);
+				return NULL;
+			}
+			buf = nbuf;
+		}
+	}
+	close (fd);
+	*sz = size;
+	return buf;
+}
+
 static int open_file(const char *file, int perm, int mode) {
 	int fd;
 	if (r_str_startswith (file, "file://")) {
@@ -57,8 +117,10 @@ static int open_file(const char *file, int perm, int mode) {
 		fd = r_sandbox_open (file, O_RDONLY | O_BINARY, 0);
 	}
 #else
-	const size_t posixFlags = (perm & R_PERM_W) ? (perm & R_PERM_CREAT)
-			? (O_RDWR | O_CREAT) : O_RDWR : O_RDONLY;
+	const size_t posixFlags = (perm & R_PERM_W)? (perm & R_PERM_CREAT)
+			? (O_RDWR | O_CREAT)
+			: O_RDWR
+						: O_RDONLY;
 	bool toctou = (posixFlags & O_CREAT) && r_file_exists (file);
 	fd = r_sandbox_open (file, posixFlags, mode);
 	if ((posixFlags & O_CREAT) && !toctou && fd != -1) {
@@ -88,13 +150,14 @@ static ut64 mmap_seek(RIO *io, RIOMMapFileObj *mmo, ut64 offset, int whence) {
 }
 
 static bool mmap_refresh(RIOMMapFileObj *mmo) {
-	RIO* io = mmo->io_backref;
+	RIO *io = mmo->io_backref;
 	ut64 cur = 0;
 	if (mmo->buf) {
 		cur = r_buf_tell (mmo->buf);
 		r_buf_free (mmo->buf);
 		mmo->buf = NULL;
 	}
+
 	st64 sz = r_file_size (mmo->filename);
 	if (sz > ST32_MAX) {
 		// Do not use mmap if the file is huge
@@ -135,7 +198,7 @@ done:
 	return mmo->fd != -1;
 }
 
-static void mmap_free(RIOMMapFileObj * R_NULLABLE mmo) {
+static void mmap_free(RIOMMapFileObj *R_NULLABLE mmo) {
 	if (mmo) {
 		free (mmo->filename);
 		r_buf_free (mmo->buf);
@@ -146,7 +209,7 @@ static void mmap_free(RIOMMapFileObj * R_NULLABLE mmo) {
 	}
 }
 
-static RIOMMapFileObj *mmap_create(RIO  *io, const char *filename, int perm, int mode) {
+static RIOMMapFileObj *mmap_create(RIO *io, const char *filename, int perm, int mode) {
 	R_RETURN_VAL_IF_FAIL (io && filename, NULL);
 	RIOMMapFileObj *mmo = R_NEW0 (RIOMMapFileObj);
 	mmo->fd = -1;
@@ -193,7 +256,7 @@ static bool uricheck(const char *filename) {
 
 static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	R_RETURN_VAL_IF_FAIL (fd && fd->data && buf, -1);
-	RIOMMapFileObj *mmo = (RIOMMapFileObj*)fd->data;
+	RIOMMapFileObj *mmo = (RIOMMapFileObj *)fd->data;
 	if (mmo->addr == UT64_MAX) {
 		memset (buf, io->Oxff, count);
 		return count;
@@ -230,7 +293,7 @@ static int mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	}
 
 	if (mmo->buf) {
-		if (!(mmo->perm & R_PERM_W)) {
+		if (! (mmo->perm & R_PERM_W)) {
 			return -1;
 		}
 		if ((count + addr > r_buf_size (mmo->buf)) || r_buf_size (mmo->buf) == 0) {
@@ -248,7 +311,7 @@ static int mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		}
 		len = write (fd->fd, buf, count);
 	}
-	if (!mmap_refresh (mmo) ) {
+	if (!mmap_refresh (mmo)) {
 		R_LOG_ERROR ("failed to refresh the def_mmap backed buffer");
 		// XXX - not sure what needs to be done here (error handling).
 	}
@@ -257,6 +320,38 @@ static int mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 
 static RIODesc *mmap_open(RIO *io, const char *file, int perm, int mode) {
 	R_RETURN_VAL_IF_FAIL (io && file, NULL);
+	const char *filepath = file;
+	if (r_str_startswith (file, "file://")) {
+		filepath = file + strlen ("file://");
+	} else if (r_str_startswith (file, "stdio://")) {
+		filepath = file + strlen ("stdio://");
+	}
+	// Handle pipes (FIFOs) by slurping them atomically
+	if (is_fifo (filepath)) {
+		size_t fifo_sz = 0;
+		ut8 *fifo_buf = slurp_fifo (filepath, &fifo_sz);
+		if (!fifo_buf || fifo_sz < 1) {
+			free (fifo_buf);
+			return NULL;
+		}
+		// Wrap slurped FIFO data in RIOMalloc (same as slurp:// does)
+		RIOMalloc *mal = R_NEW0 (RIOMalloc);
+		if (!mal) {
+			free (fifo_buf);
+			return NULL;
+		}
+		mal->offset = 0;
+		mal->buf = fifo_buf;
+		mal->size = fifo_sz;
+		// Use malloc plugin to handle memory-backed file
+		RIODesc *d = r_io_desc_new (io, &r_io_plugin_malloc, filepath, perm, mode, mal);
+		if (!d) {
+			free (mal->buf);
+			free (mal);
+			return NULL;
+		}
+		return d;
+	}
 #if __wasi__
 	RIOPlugin *_plugin = r_io_plugin_resolve (io, (const char *)"slurp://", false);
 	if (!_plugin || !_plugin->open) {
@@ -324,7 +419,7 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 static bool __close(RIODesc *fd) {
 	R_RETURN_VAL_IF_FAIL (fd, false);
 	if (fd->data) {
-		mmap_free ((RIOMMapFileObj *) fd->data);
+		mmap_free ((RIOMMapFileObj *)fd->data);
 		fd->data = NULL;
 	}
 	return true;
@@ -333,7 +428,7 @@ static bool __close(RIODesc *fd) {
 static bool __resize(RIO *io, RIODesc *fd, ut64 size) {
 	R_RETURN_VAL_IF_FAIL (io && fd && fd->data, false);
 	RIOMMapFileObj *mmo = fd->data;
-	if (!(mmo->perm & R_PERM_W)) {
+	if (! (mmo->perm & R_PERM_W)) {
 		return false;
 	}
 	return mmap_truncate (fd, mmo, size);
