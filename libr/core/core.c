@@ -1871,12 +1871,10 @@ static void update_sdb(RCore *core) {
 	//sdb_ns_set (core->sdb, "bin", core->bin->sdb);
 	//Score->sdb// syscall/
 	if (core->rasm && core->rasm->syscall && core->rasm->syscall->db) {
-		core->rasm->syscall->db->refs++;
 		sdb_ns_set (core->sdb, "syscall", core->rasm->syscall->db);
 	}
 	d = sdb_ns (core->sdb, "debug", 1);
 	if (core->dbg->sgnls) {
-		core->dbg->sgnls->refs++;
 		sdb_ns_set (d, "signals", core->dbg->sgnls);
 	}
 }
