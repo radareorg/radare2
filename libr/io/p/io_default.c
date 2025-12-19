@@ -216,10 +216,10 @@ static RIOMMapFileObj *mmap_create(RIO *io, const char *filename, int perm, int 
 	R_RETURN_VAL_IF_FAIL (io && filename, NULL);
 	RIOMMapFileObj *mmo = R_NEW0 (RIOMMapFileObj);
 	mmo->fd = -1;
-	mmo->rawio = false;
+	mmo->rawio = true;
 	if (r_str_startswith (filename, "file://")) {
 		filename += strlen ("file://");
-		mmo->rawio = false;
+		mmo->rawio = true;
 	} else if (r_str_startswith (filename, "stdio://")) {
 		filename += strlen ("stdio://");
 		mmo->rawio = true;
@@ -260,6 +260,7 @@ static bool uricheck(const char *filename) {
 static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	R_RETURN_VAL_IF_FAIL (fd && fd->data && buf, -1);
 	RIOMMapFileObj *mmo = (RIOMMapFileObj *)fd->data;
+	R_LOG_DEBUG ("rawio %d", mmo->rawio);
 	if (mmo->addr == UT64_MAX) {
 		memset (buf, io->Oxff, count);
 		return count;
