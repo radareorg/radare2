@@ -1,32 +1,21 @@
-/* radare2 - LGPL - Copyright 2007-2025 - pancake */
+/* radare2 - LGPL - Copyright 2025 - 0verflowme */
 
 #include <r_util/r_print.h>
 #include <r_util/r_str.h>
 #include <r_anal.h>
 
-static bool reg_rainbow_enabled(RPrint *print) {
-	if (!print) {
-		return false;
-	}
-	if (print->coreb.cfgGetB) {
+static bool reg_rainbow_enabled (RPrint *print) {
+	if (print && print->coreb.cfgGetB) {
 		return print->coreb.cfgGetB (print->coreb.core, "scr.color.regs");
 	}
 	return false;
 }
 
-static bool is_not_token(const char p) {
-	if (isalpha (p & 0xff) || isdigit (p & 0xff)) {
-		return true;
-	}
-	switch (p) {
-	case '.':
-	case '_':
-		return true;
-	}
-	return false;
+static inline bool is_token_char (char p) {
+	return isalpha (p & 0xff) || isdigit (p & 0xff) || p == '.' || p == '_';
 }
 
-static bool token_name(const char *p, char *name, size_t name_sz) {
+static bool token_name (const char *p, char *name, size_t name_sz) {
 	if (!p || !name || name_sz < 2) {
 		return false;
 	}
@@ -39,7 +28,7 @@ static bool token_name(const char *p, char *name, size_t name_sz) {
 		return false;
 	}
 	size_t n = 0;
-	while (p[n] && is_not_token (p[n])) {
+	while (p[n] && is_token_char (p[n])) {
 		n++;
 	}
 	if (n < 1 || n >= name_sz) {
@@ -50,25 +39,9 @@ static bool token_name(const char *p, char *name, size_t name_sz) {
 	return true;
 }
 
-static bool is_reg_stopword(const char *s) {
-	static const char *words[] = {
-		"byte", "word", "dword", "qword", "tbyte", "tword",
-		"oword", "xmmword", "ymmword", "zmmword",
-		"ptr", "short", "near", "far",
-		NULL
-	};
-	int i;
-	for (i = 0; words[i]; i++) {
-		if (!strcmp (s, words[i])) {
-			return true;
-		}
-	}
-	return false;
-}
-
-static int reg_item_cmp(const RRegItem *a, const RRegItem *b) {
-	const int offa = (a->offset * 16) + a->size;
-	const int offb = (b->offset * 16) + b->size;
+static int reg_item_cmp (const RRegItem *a, const RRegItem *b) {
+	const int offa = (a->offset << 4) + a->size;
+	const int offb = (b->offset << 4) + b->size;
 	if (offa != offb) {
 		return (offa > offb) - (offa < offb);
 	}
@@ -78,7 +51,7 @@ static int reg_item_cmp(const RRegItem *a, const RRegItem *b) {
 	return strcmp (a->name, b->name);
 }
 
-static int reg_item_rank(RReg *reg, const RRegItem *item) {
+static int reg_item_rank (RReg *reg, const RRegItem *item) {
 	int rank = 0;
 	int i;
 	RListIter *iter;
@@ -96,7 +69,7 @@ static int reg_item_rank(RReg *reg, const RRegItem *item) {
 	return rank;
 }
 
-static int reg_palette_add_unique(const char **colors, int n, int max, const char *color) {
+static int reg_palette_add_unique (const char **colors, int n, int max, const char *color) {
 	if (n < 0 || n >= max || R_STR_ISEMPTY (color) || !strcmp (color, Color_RESET) || !strcmp (color, Color_RESET_NOBG)) {
 		return n;
 	}
@@ -110,7 +83,7 @@ static int reg_palette_add_unique(const char **colors, int n, int max, const cha
 	return n;
 }
 
-static int reg_palette_colors(RConsPrintablePalette *pal, const char **colors, int max) {
+static int reg_palette_colors (RConsPrintablePalette *pal, const char **colors, int max) {
 	int n = 0;
 	if (!pal || !colors || max < 1) {
 		return 0;
@@ -143,19 +116,16 @@ static int reg_palette_colors(RConsPrintablePalette *pal, const char **colors, i
 	return n;
 }
 
-R_IPI bool r_print_reg_rainbow_enabled(RPrint *print) {
+R_IPI bool r_print_reg_rainbow_enabled (RPrint *print) {
 	return reg_rainbow_enabled (print);
 }
 
-R_IPI char *r_print_reg_rainbow_color(RPrint *print, const char *p) {
+R_IPI char *r_print_reg_rainbow_color (RPrint *print, const char *p) {
 	if (!print || !reg_rainbow_enabled (print) || !print->consb.cons || !print->reg || !print->get_register) {
 		return NULL;
 	}
 	char regname[64];
 	if (!token_name (p, regname, sizeof (regname))) {
-		return NULL;
-	}
-	if (is_reg_stopword (regname)) {
 		return NULL;
 	}
 	RRegItem *item = print->get_register (print->reg, regname, R_REG_TYPE_ALL);
@@ -181,4 +151,3 @@ R_IPI char *r_print_reg_rainbow_color(RPrint *print, const char *p) {
 	}
 	return strdup (color);
 }
-

@@ -375,6 +375,10 @@ static bool cb_analarch(void *user, void *data) {
 	}
 	if (*node->value) {
 		if (r_anal_use (core->anal, node->value)) {
+			if (core->print) {
+				core->print->reg = core->anal->reg;
+				core->print->get_register = r_reg_get;
+			}
 			return true;
 		}
 		char *p = strchr (node->value, '.');
@@ -384,6 +388,10 @@ static bool cb_analarch(void *user, void *data) {
 			free (node->value);
 			node->value = arch;
 			if (r_anal_use (core->anal, node->value)) {
+				if (core->print) {
+					core->print->reg = core->anal->reg;
+					core->print->get_register = r_reg_get;
+				}
 				return true;
 			}
 		}
@@ -821,6 +829,10 @@ static bool cb_asmarch(void *user, void *data) {
 		r_core_anal_type_init (core);
 	}
 	r_core_anal_cc_init (core);
+	if (core->print) {
+		core->print->reg = core->anal->reg;
+		core->print->get_register = r_reg_get;
+	}
 
 	return true;
 }
@@ -856,6 +868,10 @@ static bool cb_asmbits(void *user, void *data) {
 		return false;
 	}
 	if (bits == core->rasm->config->bits && bits == core->dbg->bits) {
+		if (core->print) {
+			core->print->reg = core->anal->reg;
+			core->print->get_register = r_reg_get;
+		}
 		// early optimization
 		return true;
 	}
@@ -906,6 +922,10 @@ static bool cb_asmbits(void *user, void *data) {
 		/* set codealign */
 		int v = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
 		r_config_set_i (core->config, "arch.codealign", (v != -1)? v: 0);
+	}
+	if (core->print) {
+		core->print->reg = core->anal->reg;
+		core->print->get_register = r_reg_get;
 	}
 	return ret;
 }
