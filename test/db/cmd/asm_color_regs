@@ -1,0 +1,19 @@
+NAME=color-regs
+FILE=malloc://1024
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+ecd
+e scr.color=1
+e scr.color.ops=true
+e scr.color.regs=true
+wx 4889d8
+pi 1
+wx 4801c0
+pi 1
+EOF
+EXPECT=<<EOF
+[36m[36m[36mmov[37m [1m[35mrax[0m,[37m [1m[37mrbx[0m[0m
+[33m[33m[33madd[37m [1m[35mrax[0m,[37m [1m[35mrax[0m[0m
+EOF
+EXPECT_ERR=
+RUN

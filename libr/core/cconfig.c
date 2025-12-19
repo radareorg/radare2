@@ -4684,6 +4684,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("scr.color.grep", "false", &cb_scr_color_grep, "enable colors when using ~grep");
 	SETB ("scr.color.pipe", "false", "enable colors when using pipes");
 	SETB ("scr.color.ops", "true", "colorize numbers and registers in opcodes");
+	SETB ("scr.color.regs", "false", "colorize each register differently");
 	SETCB ("scr.color.ophex", "false", &cb_scr_color_ophex, "colorize in hexdump depending on opcode type (px)");
 	SETB ("scr.color.args", "true", "colorize arguments and variables of functions");
 	SETB ("scr.color.bytes", "true", "colorize bytes that represent the opcodes of the instruction");

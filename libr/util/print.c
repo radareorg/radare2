@@ -1,6 +1,7 @@
 /* radare2 - LGPL - Copyright 2007-2025 - pancake */
 
 #include <r_util/r_print.h>
+#include <r_util/r_str.h>
 #include <r_anal.h>
 
 #define DFLT_ROWS 16
@@ -2327,6 +2328,142 @@ static bool is_flag(const char *p) {
 	return len > 3;
 }
 
+static bool token_name(const char *p, char *name, size_t name_sz) {
+	if (!p || !name || name_sz < 2) {
+		return false;
+	}
+	while (*p && isspace (*p & 0xff)) {
+		p++;
+	}
+	while (*p == '%' || *p == '$') {
+		p++;
+	}
+	while (*p && isspace (*p & 0xff)) {
+		p++;
+	}
+	if (!isalpha (*p & 0xff) && *p != '_') {
+		return false;
+	}
+	size_t n = 0;
+	while (p[n] && is_not_token (p[n])) {
+		n++;
+	}
+	if (n < 1 || n >= name_sz) {
+		return false;
+	}
+	memcpy (name, p, n);
+	name[n] = '\0';
+	return true;
+}
+
+static bool is_reg_stopword(const char *s) {
+	static const char *words[] = {
+		"byte", "word", "dword", "qword", "tbyte", "tword",
+		"oword", "xmmword", "ymmword", "zmmword",
+		"ptr", "short", "near", "far",
+		NULL
+	};
+	int i;
+	for (i = 0; words[i]; i++) {
+		if (!strcmp (s, words[i])) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool reg_rainbow_enabled(RPrint *print) {
+	if (!print) {
+		return false;
+	}
+	if (print->coreb.cfgGetB) {
+		return print->coreb.cfgGetB (print->coreb.core, "scr.color.regs");
+	}
+	return false;
+}
+
+static int reg_item_cmp(const RRegItem *a, const RRegItem *b) {
+	const int offa = (a->offset * 16) + a->size;
+	const int offb = (b->offset * 16) + b->size;
+	if (offa != offb) {
+		return (offa > offb) - (offa < offb);
+	}
+	if (a->type != b->type) {
+		return (a->type > b->type) - (a->type < b->type);
+	}
+	return strcmp (a->name, b->name);
+}
+
+static int reg_item_rank(RReg *reg, const RRegItem *item) {
+	int rank = 0;
+	int i;
+	RListIter *iter;
+	RRegItem *r;
+	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		r_list_foreach (reg->regset[i].regs, iter, r) {
+			if (r == item) {
+				continue;
+			}
+			if (reg_item_cmp (r, item) < 0) {
+				rank++;
+			}
+		}
+	}
+	return rank;
+}
+
+static bool reg_rainbow_prepare_palette(RCons *cons) {
+	if (!cons || !cons->context) {
+		return false;
+	}
+	if (!cons->context->pal.rainbow || cons->context->pal.rainbow_sz < 1) {
+		r_cons_rainbow_free (cons);
+		char *tmp = r_cons_rainbow_get (cons, 0, -1, false);
+		free (tmp);
+	}
+	return cons->context->pal.rainbow && cons->context->pal.rainbow_sz > 0;
+}
+
+static char *reg_rainbow_color(RPrint *print, const char *p) {
+	if (!print || !reg_rainbow_enabled (print) || !print->consb.cons || !print->reg || !print->get_register) {
+		return NULL;
+	}
+	char regname[64];
+	if (!token_name (p, regname, sizeof (regname))) {
+		return NULL;
+	}
+	if (is_reg_stopword (regname)) {
+		return NULL;
+	}
+	RRegItem *item = print->get_register (print->reg, regname, R_REG_TYPE_ALL);
+	if (!item) {
+		return NULL;
+	}
+	const int rank = reg_item_rank (print->reg, item);
+	r_unref (item);
+	RCons *cons = print->consb.cons;
+	if (!reg_rainbow_prepare_palette (cons)) {
+		return NULL;
+	}
+	const size_t sz = cons->context->pal.rainbow_sz;
+	if (sz < 1) {
+		return NULL;
+	}
+	const int base = rank % (int)sz;
+	const int variant = rank / (int)sz;
+	char *color = r_cons_rainbow_get (cons, base, -1, false);
+	if (!color || !*color) {
+		free (color);
+		return NULL;
+	}
+	if (variant & 1) {
+		char *tmp = r_str_newf ("%s%s", Color_BOLD, color);
+		free (color);
+		return tmp;
+	}
+	return color;
+}
+
 R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, const char *num, bool partial_reset, ut64 func_addr) {
 	bool expect_reg = true;
 	int i, j, k, is_mod, is_float = 0, is_arg = 0;
@@ -2338,6 +2475,9 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 
 	if (R_STR_ISEMPTY (p)) {
 		return NULL;
+	}
+	if (strchr (p, 0x1b)) {
+		return strdup (p);
 	}
 #if 0
 	// bool is_jmp = p && (*p == 'j' || ((*p == 'c') && (p[1] == 'a')))? 1: 0;
@@ -2386,6 +2526,21 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 		if (j + 100 >= COLORIZE_BUFSIZE) {
 			R_LOG_WARN ("r_print_colorize_opcode(): buffer overflow"); // XXX dont warn about overflows just fix
 			return strdup (p);
+		}
+		if (is_arg && reg_rainbow_enabled (print) && (i < 1 || issymbol (p[i - 1]))
+			&& (isalpha (p[i] & 0xff) || p[i] == '_')) {
+			char *color = reg_rainbow_color (print, p + i);
+			if (color) {
+				const ut32 color_len = strlen (color);
+				if (color_len + j + 10 >= COLORIZE_BUFSIZE) {
+					R_LOG_WARN ("r_print_colorize_opcode(): buffer overflow!");
+					free (color);
+					return strdup (p);
+				}
+				strcpy (o + j, color);
+				j += color_len;
+				free (color);
+			}
 		}
 		switch (p[i]) {
 		// We dont need to skip ansi codes.
@@ -2437,7 +2592,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 				strcpy (o + j, reset);
 				j += strlen (reset);
 				o[j] = p[i];
-				if (!(p[i + 1] == '$' || isdigit (p[i + 1] & 0xff))) {
+				if (p[i] == '[' || !(p[i + 1] == '$' || isdigit (p[i + 1] & 0xff))) {
 					const char *color = found_var ? print->consb.cons->context->pal.var_type : reg;
 					expect_reg = false;
 					if (is_flag (p + i)) {
