@@ -2412,16 +2412,51 @@ static int reg_item_rank(RReg *reg, const RRegItem *item) {
 	return rank;
 }
 
-static bool reg_rainbow_prepare_palette(RCons *cons) {
-	if (!cons || !cons->context) {
-		return false;
+static int reg_palette_add_unique(const char **colors, int n, int max, const char *color) {
+	if (n < 0 || n >= max || R_STR_ISEMPTY (color) || !strcmp (color, Color_RESET) || !strcmp (color, Color_RESET_NOBG)) {
+		return n;
 	}
-	if (!cons->context->pal.rainbow || cons->context->pal.rainbow_sz < 1) {
-		r_cons_rainbow_free (cons);
-		char *tmp = r_cons_rainbow_get (cons, 0, -1, false);
-		free (tmp);
+	int i;
+	for (i = 0; i < n; i++) {
+		if (!strcmp (colors[i], color)) {
+			return n;
+		}
 	}
-	return cons->context->pal.rainbow && cons->context->pal.rainbow_sz > 0;
+	colors[n++] = color;
+	return n;
+}
+
+static int reg_palette_colors(RConsPrintablePalette *pal, const char **colors, int max) {
+	int n = 0;
+	if (!pal || !colors || max < 1) {
+		return 0;
+	}
+	// Prefer core semantic palette entries; avoid BG-only entries.
+	n = reg_palette_add_unique (colors, n, max, pal->call);
+	n = reg_palette_add_unique (colors, n, max, pal->jmp);
+	n = reg_palette_add_unique (colors, n, max, pal->cjmp);
+	n = reg_palette_add_unique (colors, n, max, pal->cmp);
+	n = reg_palette_add_unique (colors, n, max, pal->mov);
+	n = reg_palette_add_unique (colors, n, max, pal->nop);
+	n = reg_palette_add_unique (colors, n, max, pal->push);
+	n = reg_palette_add_unique (colors, n, max, pal->pop);
+	n = reg_palette_add_unique (colors, n, max, pal->crypto);
+	n = reg_palette_add_unique (colors, n, max, pal->ret);
+	n = reg_palette_add_unique (colors, n, max, pal->trap);
+	n = reg_palette_add_unique (colors, n, max, pal->swi);
+	n = reg_palette_add_unique (colors, n, max, pal->num);
+	n = reg_palette_add_unique (colors, n, max, pal->flag);
+	n = reg_palette_add_unique (colors, n, max, pal->label);
+	n = reg_palette_add_unique (colors, n, max, pal->args);
+	n = reg_palette_add_unique (colors, n, max, pal->comment);
+	n = reg_palette_add_unique (colors, n, max, pal->fname);
+	n = reg_palette_add_unique (colors, n, max, pal->floc);
+	n = reg_palette_add_unique (colors, n, max, pal->fline);
+	n = reg_palette_add_unique (colors, n, max, pal->other);
+	n = reg_palette_add_unique (colors, n, max, pal->var_name);
+	n = reg_palette_add_unique (colors, n, max, pal->var_type);
+	n = reg_palette_add_unique (colors, n, max, pal->var_addr);
+	return n;
 }
 
 static char *reg_rainbow_color(RPrint *print, const char *p) {
@@ -2442,26 +2477,21 @@ static char *reg_rainbow_color(RPrint *print, const char *p) {
 	const int rank = reg_item_rank (print->reg, item);
 	r_unref (item);
 	RCons *cons = print->consb.cons;
-	if (!reg_rainbow_prepare_palette (cons)) {
+	if (!cons || !cons->context) {
 		return NULL;
 	}
-	const size_t sz = cons->context->pal.rainbow_sz;
-	if (sz < 1) {
+	const char *colors[64];
+	const int colors_sz = reg_palette_colors (&cons->context->pal, colors, (int)R_ARRAY_SIZE (colors));
+	if (colors_sz < 1) {
 		return NULL;
 	}
-	const int base = rank % (int)sz;
-	const int variant = rank / (int)sz;
-	char *color = r_cons_rainbow_get (cons, base, -1, false);
-	if (!color || !*color) {
-		free (color);
-		return NULL;
-	}
+	const int base = rank % colors_sz;
+	const int variant = rank / colors_sz;
+	const char *color = colors[base];
 	if (variant & 1) {
-		char *tmp = r_str_newf ("%s%s", Color_BOLD, color);
-		free (color);
-		return tmp;
+		return r_str_newf ("%s%s", Color_BOLD, color);
 	}
-	return color;
+	return strdup (color);
 }
 
 R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, const char *num, bool partial_reset, ut64 func_addr) {
