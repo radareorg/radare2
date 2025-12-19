@@ -1,11 +1,10 @@
 %global         gituser         radareorg
 %global         gitname         radare2
-#global         commit          5a3dab0a86e1452c0bb0c13d869f95b41f50b9a9
-%global         commit          4012ec3a8697bfbd0bd510c33d34576534e4d456
+%global         commit          27af51763d1213102fda91d481133ec8a5aa9139
 %global         shortcommit     %(c=%{commit}; echo ${c:0:7})
 
 Name:           radare2
-Version:        5.9.8
+Version:        6.0.7
 Release:        1%{?dist}
 Summary:        The %{name} reverse engineering framework
 Group:          Applications/Engineering
@@ -56,7 +55,7 @@ CFLAGS="%{optflags} -fPIC -I../include" make %{?_smp_mflags} LIBDIR=%{_libdir} P
 %install
 rm -rf %{buildroot}
 NOSUDO=1 make install DESTDIR=%{buildroot} LIBDIR=%{_libdir} PREFIX=%{_prefix}
-cp shlr/sdb/src/libsdb.a %{buildroot}/%{_libdir}/libsdb.a
+# cp shlr/sdb/src/libsdb.a %{buildroot}/%{_libdir}/libsdb.a
 # 5.9.9 : cp subprojects/sdb/src/libsdb.a %{buildroot}/%{_libdir}/libsdb.a
 
 %post -p /sbin/ldconfig
@@ -65,8 +64,9 @@ cp shlr/sdb/src/libsdb.a %{buildroot}/%{_libdir}/libsdb.a
 
 %files
 %doc COMMUNITY.md CONTRIBUTING.md DEVELOPERS.md INSTALL.md README.md SECURITY.md USAGE.md
-%license COPYING
+%license COPYING.md
 %{_bindir}/r*
+%{_bindir}/clang-format-radare2
 %{_libdir}/libr*
 %dir %{_libdir}/%{name}
 %dir %{_libdir}/%{name}/%{version}
@@ -89,13 +89,14 @@ cp shlr/sdb/src/libsdb.a %{buildroot}/%{_libdir}/libsdb.a
 %dir %{_prefix}/share/%{name}/%{version}/magic
 %{_prefix}/share/%{name}/%{version}/magic/*
 %{_mandir}/man1/r*.1.*
+%{_mandir}/man3/r_*.3.*
 %{_mandir}/man7/esil.7.*
 %dir %{_datadir}/%{name}/%{version}/www
 %{_datadir}/%{name}/%{version}/www/*
+%{_datadir}/%{name}/%{version}/panels/*
 
 %files devel
 %{_includedir}/libr
-%{_libdir}/libsdb.a
 %{_libdir}/pkgconfig/*.pc
 
 %post -n %{name}-devel -p /sbin/ldconfig
@@ -103,6 +104,9 @@ cp shlr/sdb/src/libsdb.a %{buildroot}/%{_libdir}/libsdb.a
 
 
 %changelog
+* Tue Jan 10 2023 pancake <pancake@nopcode.org> 6.0.7
+- lots of bug fixes and memory leaks
+
 * Tue Jan 10 2023 pancake <pancake@nopcode.org> 5.8.0
 - remove system deps and integrate it in the build system
 
