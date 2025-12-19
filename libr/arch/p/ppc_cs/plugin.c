@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2024 - pancake */
+/* radare2 - LGPL - Copyright 2013-2025 - pancake */
 
 #include <r_arch.h>
 #include <r_esil.h>
@@ -242,7 +242,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 
 static char *regs(RArchSession *as) {
 	if (as->config->bits == 32) {
-		const char *p =
+		const char p[] =
 			"=PC	pc\n"
 			"=SP	r1\n"
 			"=BP	r31\n"
@@ -346,7 +346,7 @@ static char *regs(RArchSession *as) {
 		return strdup (p);
 	}
 
-	const char *p =
+	const char p[] =
 		"=PC	pc\n"
 		"=SP	r1\n"
 		"=BP	r31\n"
@@ -525,7 +525,7 @@ static int analop_vle(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		case R_ANAL_OP_TYPE_XOR:
 			break;
 		default:
-			//eprintf ("Missing an R_ANAL_OP_TYPE (%"PFMT64u")\n", op->type);
+			// R_LOG_WARN ("Missing an R_ANAL_OP_TYPE (%"PFMT64u")", op->type);
 			break;
 		}
 		vle_free (instr);
@@ -550,10 +550,11 @@ static const char *parse_reg_name(csh handle, cs_insn *insn, int reg_num) {
 }
 
 static void create_src_dst(RAnalOp *op) {
-	RVecRArchValue_emplace_back (&op->srcs);
-	RVecRArchValue_emplace_back (&op->srcs);
-	RVecRArchValue_emplace_back (&op->srcs);
-	RVecRArchValue_emplace_back (&op->dsts);
+	R_UNUSED RArchValue *_ = NULL;
+	_ = RVecRArchValue_emplace_back (&op->srcs);
+	_ = RVecRArchValue_emplace_back (&op->srcs);
+	_ = RVecRArchValue_emplace_back (&op->srcs);
+	_ = RVecRArchValue_emplace_back (&op->dsts);
 }
 
 static void set_src_dst(RAnalValue *val, csh *handle, cs_insn *insn, int x) {
