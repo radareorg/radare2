@@ -234,7 +234,7 @@ FILE=malloc://2048
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=16
-e asm.segmen.bits=8
+e asm.addr.segment.bits=8
 s 0x400
 wx 9090558bec9a000004005dc3
 pd 1 @ 0x405
