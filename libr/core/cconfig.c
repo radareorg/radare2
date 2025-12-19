@@ -3226,7 +3226,7 @@ static bool cb_binstralign(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
 	if (core->bin) {
-		core->bin->options.str_align = node->i_value;
+		core->bin->options.str_align = R_MAX ((int)node->i_value, 0);
 		r_bin_reset_strings (core->bin);
 		return true;
 	}
