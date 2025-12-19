@@ -488,7 +488,6 @@ R_API RVecR2RJsonTestPtr *r2r_load_json_test_file(const char *file) {
 	return ret;
 }
 
-
 static R2RTest *r2r_test_new(R2RTestType type, const char *path, void *specific_test, bool load_plugins) {
 	R2RTest *test = R_NEW (R2RTest);
 	test->type = type;
@@ -531,7 +530,7 @@ R_API void r2r_test_free(R2RTest *test) {
 	free (test);
 }
 
-R_API R2RTestDatabase * R_NONNULL r2r_test_database_new(void) {
+R_API R2RTestDatabase *R_NONNULL r2r_test_database_new(void) {
 	R2RTestDatabase *db = R_NEW (R2RTestDatabase);
 	RVecR2RTestPtr_init (&db->tests);
 	r_str_constpool_init (&db->strpool);
@@ -551,8 +550,10 @@ R_API void r2r_test_database_free(R2RTestDatabase *db) {
 	free (db);
 }
 
+R_IPI const char *getarchos(void);
+
 static R2RTestFrom test_type_for_path(const char *path) {
-	R2RTestFrom res = {0};
+	R2RTestFrom res = { 0 };
 	res.load_plugins = false;
 	if (strstr (path, R_SYS_DIR "asm" R_SYS_DIR)) {
 		res.type = R2R_TEST_TYPE_ASM;
@@ -565,7 +566,16 @@ static R2RTestFrom test_type_for_path(const char *path) {
 		res.type = R2R_TEST_TYPE_CMD;
 	}
 	res.archos = false;
-	if (strstr (path, R_SYS_DIR "archos") || !strcmp (path, "archos")) {
+	if (strstr (path, R_SYS_DIR "archos" R_SYS_DIR) || !strcmp (path, "archos")) {
+		// Don't mark as archos if the path itself is a platform-specific directory
+		// e.g. don't mark "archos/linux-x86_64" as needing archos filtering
+		const char *last_slash = strrchr (path, R_SYS_DIR[0]);
+		if (last_slash) {
+			const char *dirname = last_slash + 1;
+			if (!strcmp (dirname, getarchos ())) {
+				return res; // This is a platform dir, don't filter further
+			}
+		}
 		res.archos = true;
 	}
 	return res;
