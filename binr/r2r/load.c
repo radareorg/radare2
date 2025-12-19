@@ -566,16 +566,8 @@ static R2RTestFrom test_type_for_path(const char *path) {
 		res.type = R2R_TEST_TYPE_CMD;
 	}
 	res.archos = false;
-	if (strstr (path, R_SYS_DIR "archos" R_SYS_DIR) || !strcmp (path, "archos")) {
-		// Don't mark as archos if the path itself is a platform-specific directory
-		// e.g. don't mark "archos/linux-x86_64" as needing archos filtering
-		const char *last_slash = strrchr (path, R_SYS_DIR[0]);
-		if (last_slash) {
-			const char *dirname = last_slash + 1;
-			if (!strcmp (dirname, getarchos ())) {
-				return res; // This is a platform dir, don't filter further
-			}
-		}
+	if ((strstr (path, R_SYS_DIR "archos" R_SYS_DIR) || !strcmp (path, "archos")) &&
+	    strcmp (path + strlen (path) - strlen (getarchos ()), getarchos ())) {
 		res.archos = true;
 	}
 	return res;
