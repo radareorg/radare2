@@ -45,6 +45,7 @@ r_util_sources = [
   'pkcs7.c',
   'print_code.c',
   'print.c',
+  'print_regcolor.c',
   'prof.c',
   'protobuf.c',
   'punycode.c',
