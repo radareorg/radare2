@@ -18,6 +18,7 @@ static Rabin2Env env[] = {
 	{ "RABIN2_CHARSET", "e cfg.charset         # set default value charset for -z strings" },
 	{ "RABIN2_CODESIGN_VERBOSE", "                      # show codesign details at parse time" },
 	// TODO { "RABIN2_MACHO_CODESIGN",	"" },
+	{ "RABIN2_STRALIGN", "e bin.str.align       # only accept aligned strings (default=0)" },
 	{ "RABIN2_DEBASE64", "e bin.str.debase64    # try to debase64 all strings" },
 	{ "RABIN2_DEMANGLE", "e bin.demangle        # dont demangle symbols if value is 0" },
 	{ "RABIN2_DEMANGLE_CMD", "e bin.demangle.cmd    # try to purge false positives" },
@@ -694,6 +695,10 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	}
 	if ((tmp = r_sys_getenv ("RABIN2_DEBASE64"))) {
 		r_config_set (core.config, "bin.str.debase64", tmp);
+		free (tmp);
+	}
+	if ((tmp = r_sys_getenv ("RABIN2_STRALIGN"))) {
+		r_config_set (core.config, "bin.str.align", tmp);
 		free (tmp);
 	}
 	if ((tmp = r_sys_getenv ("RABIN2_PDBSERVER"))) {
