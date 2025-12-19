@@ -2622,7 +2622,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 				strcpy (o + j, reset);
 				j += strlen (reset);
 				o[j] = p[i];
-				if (p[i] == '[' || !(p[i + 1] == '$' || isdigit (p[i + 1] & 0xff))) {
+				if (!(p[i + 1] == '$' || isdigit (p[i + 1] & 0xff))) {
 					const char *color = found_var ? print->consb.cons->context->pal.var_type : reg;
 					expect_reg = false;
 					if (is_flag (p + i)) {
