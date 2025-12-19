@@ -510,6 +510,10 @@ static RAnalEnumCase *parse_enumerator(Context *ctx, ut64 idx, RAnalEnumCase *re
 		}
 	}
 
+	if (!name) {
+		goto cleanup;
+	}
+
 	if (result->name != name) {
 		result->name = strdup (name);
 	}

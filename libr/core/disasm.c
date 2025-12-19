@@ -1064,22 +1064,30 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds, bool print_color
 	if (!ds->asm_meta && *source == '.') {
 		return strdup (source);
 	}
-	if (!ds->show_color || !ds->colorop) {
+	if (!ds->show_color) {
+		return strdup (source);
+	}
+	// When scr.color.ops is false, only colorize if scr.color.regs is enabled
+	bool colorize_regs = r_config_get_b (core->config, "scr.color.regs");
+	if (!ds->colorop && !colorize_regs) {
 		return strdup (source);
 	}
 
-	if (print_color) {
+	if (print_color && ds->colorop) {
 		r_cons_print (core->cons, r_print_color_op_type (core->print, ds->analop.type));
 	}
+	// When scr.color.ops is false, use input color for ops but still allow register rainbow coloring
+	const char *color_reg = ds->colorop ? ds->color_reg : core->cons->context->pal.input;
+	const char *color_num = ds->colorop ? ds->color_num : core->cons->context->pal.input;
 	// workaround dummy colorizer in case of paired commands (tms320 & friends)
 	char *spacer = strstr (source, "||");
 	if (spacer) {
 		char *scol1, *s1 = r_str_ndup (source, spacer - source);
 		char *scol2, *s2 = strdup (spacer + 2);
 
-		scol1 = r_print_colorize_opcode (ds->core->print, s1, ds->color_reg, ds->color_num, partial_reset, f ? f->addr : 0);
+		scol1 = r_print_colorize_opcode (ds->core->print, s1, color_reg, color_num, partial_reset, f ? f->addr : 0);
 		free (s1);
-		scol2 = r_print_colorize_opcode (ds->core->print, s2, ds->color_reg, ds->color_num, partial_reset, f ? f->addr : 0);
+		scol2 = r_print_colorize_opcode (ds->core->print, s2, color_reg, color_num, partial_reset, f ? f->addr : 0);
 		free (s2);
 		if (!scol1) {
 			scol1 = strdup ("");
@@ -1092,7 +1100,7 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds, bool print_color
 		free (scol2);
 		return source;
 	}
-	return r_print_colorize_opcode (ds->core->print, source, ds->color_reg, ds->color_num, partial_reset, f ? f->addr : 0);
+	return r_print_colorize_opcode (ds->core->print, source, color_reg, color_num, partial_reset, f ? f->addr : 0);
 }
 
 static bool ds_must_strip(RDisasmState *ds) {
@@ -4127,7 +4135,7 @@ static void ds_print_bytes(RDisasmState *ds) {
 				pad[0] = 0;
 			}
 			free (str);
-			if (ds->show_color_bytes && !ds->show_bytes_ascmt) {
+			if (ds->show_color && ds->show_color_bytes && !ds->show_bytes_ascmt) {
 				str = r_str_newf ("%s"Color_RESET, nstr);
 				R_FREE (nstr);
 			} else {
