@@ -36,6 +36,7 @@ fi
 
 [ -z "$EDITOR" ] && EDITOR=vim
 $EDITOR README.md
+$EDITOR dist/rpm/radare2.spec
 $EDITOR dist/npm/package.json
 for a in dist/wapm/*/*.toml ; do
 	$EDITOR $a
