@@ -2964,6 +2964,19 @@ R_API void r_core_fini(RCore *c) {
 	r_core_task_join (&c->tasks, NULL, -1);
 	r_core_wait (c);
 	//update_sdb (c);
+	// clear namespace references before freeing components that own the child sdbs
+	if (c->sdb && c->sdb->ns) {
+		SdbListIter *it;
+		SdbNs *ns;
+		ls_foreach_cast (c->sdb->ns, it, SdbNs*, ns) {
+			free (ns->name);
+			ns->name = NULL;
+			ns->sdb = NULL;
+			free (ns);
+		}
+		ls_free (c->sdb->ns);
+		c->sdb->ns = NULL;
+	}
 	// avoid double free
 	r_list_free (c->ropchain);
 	r_table_free (c->table);
