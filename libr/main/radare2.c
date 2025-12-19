@@ -285,7 +285,8 @@ static int main_help(int line) {
 											" R2_IGNABI       ignore abiversion field from the radare (be even more careful)\n"
 											" R2_MAGICPATH    %s/" R2_SDB_MAGIC "\n"
 											" R2_NOPLUGINS    do not load r2 shared plugins\n",
-			dirPrefix, dirPrefix);
+			dirPrefix,
+			dirPrefix);
 		r_strbuf_append (sb, " R2_HISTORY      ${XDG_CACHE_DIR:=~/.cache/radare2}/history\n");
 		r_strbuf_append (sb, " R2_RCFILE       ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
 				" R2_CURL         set to '1' to use system curl program instead of r2 apis\n");
@@ -352,9 +353,9 @@ static int main_print_var(const char *var_name) {
 	} r2_vars[] = {
 		{ "R2_VERSION", R2_VERSION },
 		{ "R2_VERSION_ABI", R2_ABIVERSION_STRING },
-		{ "R2_VERSION_MAJOR", STRINGIFY(R2_VERSION_MAJOR) },
-		{ "R2_VERSION_MINOR", STRINGIFY(R2_VERSION_MINOR) },
-		{ "R2_VERSION_PATCH", STRINGIFY(R2_VERSION_PATH) },
+		{ "R2_VERSION_MAJOR", STRINGIFY (R2_VERSION_MAJOR) },
+		{ "R2_VERSION_MINOR", STRINGIFY (R2_VERSION_MINOR) },
+		{ "R2_VERSION_PATCH", STRINGIFY (R2_VERSION_PATH) },
 		{ "R2_ABIVERSION", R2_ABIVERSION_STRING },
 		{ "R2_PREFIX", r2prefix },
 		{ "R2_MAGICPATH", magicpath },
@@ -689,10 +690,10 @@ static void mainr2_init(RMainRadare2 *mr) {
 	mr->baddr = UT64_MAX;
 	mr->seek = UT64_MAX;
 	mr->perms = R_PERM_RX;
-	mr->cmds = r_list_new ();
-	mr->evals = r_list_new ();
-	mr->files = r_list_new ();
-	mr->prefiles = r_list_new ();
+	mr->cmds = r_list_newf (free);
+	mr->evals = r_list_newf (free);
+	mr->files = r_list_newf (free);
+	mr->prefiles = r_list_newf (free);
 }
 
 static void mainr2_fini(RMainRadare2 *mr) {

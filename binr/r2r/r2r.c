@@ -82,10 +82,12 @@ static void parse_skip(const char *arg) {
 		r_sys_setenv ("R2R_SKIP_FUZZ", "1");
 	} else if (strstr (arg, "json")) {
 		r_sys_setenv ("R2R_SKIP_JSON", "1");
+	} else if (strstr (arg, "leak")) {
+		r_sys_setenv ("R2R_SKIP_LEAK", "1");
 	} else if (strstr (arg, "asm")) {
 		r_sys_setenv ("R2R_SKIP_ASM", "1");
 	} else {
-		R_LOG_ERROR ("Invalid -s argument: @arch @unit @cmd @fuzz @json @asm");
+		R_LOG_ERROR ("Invalid -s argument: @arch @asm @cmd @fuzz @json @leak @unit");
 	}
 }
 
@@ -97,6 +99,7 @@ static void helpvars(int workers_count) {
 		"R2R_SKIP_UNIT=0     # do not run the unit tests\n"
 		"R2R_SKIP_CMD=0      # do not run the cmds tests\n"
 		"R2R_SKIP_ASM=0      # do not run the rasm2 tests\n"
+		"R2R_SKIP_LEAK=0     # do not run the leak tests (valgrind)\n"
 		"R2R_JOBS=%d       # maximum parallel jobs\n"
 		"R2R_TIMEOUT=%d    # timeout after 1 minute (60 * 60)\n"
 		"R2R_OFFLINE=0       # same as passing -u\n"
@@ -129,7 +132,7 @@ static int help(bool verbose, int workers_count) {
 			" -v           show version\n"
 			"\n");
 		helpvars (workers_count);
-		printf ("\nSupported test types: @asm @json @unit @fuzz @arch @cmd\nOS/Arch for archos tests: %s\n", getarchos ());
+		printf ("\nSupported test types: @arch @asm @cmd @fuzz @json @leak @unit\nOS/Arch for archos tests: %s\n", getarchos ());
 	}
 	return 1;
 }
@@ -528,6 +531,7 @@ static bool r2r_state_init(R2RState *state, R2ROptions *opt) {
 	state->run_config.skip_asm = r_sys_getenv_asbool ("R2R_SKIP_ASM");
 	state->run_config.skip_json = r_sys_getenv_asbool ("R2R_SKIP_JSON");
 	state->run_config.skip_fuzz = r_sys_getenv_asbool ("R2R_SKIP_FUZZ");
+	state->run_config.skip_leak = r_sys_getenv_asbool ("R2R_SKIP_LEAK");
 	state->run_config.json_test_file = opt->json_test_file? opt->json_test_file: JSON_TEST_FILE_DEFAULT;
 	state->run_config.timeout_ms = (opt->timeout_sec > UT64_MAX / 1000)? UT64_MAX: opt->timeout_sec * 1000;
 	state->verbose = opt->verbose;
@@ -570,8 +574,12 @@ static int r2r_load_tests(R2RState *state, R2ROptions *opt, int arg_ind, int arg
 	if (skip_json_tests) {
 		R_LOG_INFO ("Skipping json tests because jq is not available");
 	}
+	bool skip_leak_tests = !r2r_check_valgrind_available ();
+	if (skip_leak_tests) {
+		R_LOG_INFO ("Skipping leak tests because valgrind is not available");
+	}
 	if (arg_ind >= argc) {
-		if (!r2r_test_database_load (state->db, "db", skip_json_tests)) {
+		if (!r2r_test_database_load (state->db, "db", skip_json_tests, skip_leak_tests)) {
 			R_LOG_ERROR ("Failed to load tests from ./db");
 			return -1;
 		}
@@ -605,10 +613,16 @@ static int r2r_load_tests(R2RState *state, R2ROptions *opt, int arg_ind, int arg
 				arg = "db/json";
 			} else if (!strcmp (arg, "dasm")) {
 				arg = "db/asm";
-			} else if (!strcmp (arg, "cmds")) {
+			} else if (!strcmp (arg, "cmds") || !strcmp (arg, "cmd")) {
 				arg = "db";
+			} else if (!strcmp (arg, "asm")) {
+				arg = "db/asm";
+			} else if (!strcmp (arg, "arch")) {
+				arg = "db/archos";
+			} else if (!strcmp (arg, "leak")) {
+				arg = "db/leak";
 			} else {
-				arg_str = r_str_newf ("db/%s", arg + 1);
+				arg_str = r_str_newf ("db/%s", arg);
 				arg = arg_str;
 			}
 		}
@@ -636,7 +650,7 @@ static int r2r_load_tests(R2RState *state, R2ROptions *opt, int arg_ind, int arg
 			return grc? grc: 1; // Signal special exit
 		}
 		char *tf = r_file_abspath_rel (cwd, arg);
-		if (!tf || !r2r_test_database_load (state->db, tf, skip_json_tests)) {
+		if (!tf || !r2r_test_database_load (state->db, tf, skip_json_tests, skip_leak_tests)) {
 			R_LOG_ERROR ("Failed to load tests from \"%s\"", tf);
 			free (tf);
 			free (arg_str);
@@ -693,6 +707,12 @@ static void test_result_to_json(PJ *pj, R2RTestResultInfo *result) {
 	case R2R_TEST_TYPE_JSON:
 		pj_s (pj, "json");
 		pj_ks (pj, "cmd", test->json_test->cmd);
+		break;
+	case R2R_TEST_TYPE_LEAK:
+		pj_s (pj, "leak");
+		if (test->cmd_test->name.value) {
+			pj_ks (pj, "name", test->cmd_test->name.value);
+		}
 		break;
 	case R2R_TEST_TYPE_FUZZ:
 		pj_s (pj, "fuzz");
@@ -871,6 +891,13 @@ static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
 			printf ("-- stdout\n%s\n", result->proc_out->out);
 			printf ("-- stderr\n%s\n", result->proc_out->err);
 			printf ("-- exit status: " Color_RED "%d" Color_RESET "\n", result->proc_out->ret);
+			break;
+		case R2R_TEST_TYPE_LEAK:
+			r2r_run_leak_test (config, result->test->cmd_test, print_runner, NULL);
+			printf ("-- valgrind output\n%s\n", result->proc_out->out);
+			if (result->proc_out->err) {
+				printf ("-- stderr\n%s\n", result->proc_out->err);
+			}
 			break;
 		case R2R_TEST_TYPE_ASM:
 		case R2R_TEST_TYPE_JSON:

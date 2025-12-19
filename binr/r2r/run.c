@@ -205,8 +205,7 @@ error:
 }
 
 R_API R2RSubprocess *r2r_subprocess_start(
-	const char *file, const char *args[], size_t args_size,
-	const char *envvars[], const char *envvals[], size_t env_size) {
+	const char *file, const char *args[], size_t args_size, const char *envvars[], const char *envvals[], size_t env_size) {
 	char **argv = calloc (args_size + 1, sizeof (char *));
 	R2RSubprocess *proc = NULL;
 	HANDLE stdin_read = NULL, stdout_write = NULL, stderr_write = NULL;
@@ -266,9 +265,7 @@ R_API R2RSubprocess *r2r_subprocess_start(
 	start_info.dwFlags |= STARTF_USESTDHANDLES;
 
 	LPWSTR env = override_env (envvars, envvals, env_size);
-	if (!CreateProcessA (NULL, cmdline,
-		NULL, NULL, TRUE, CREATE_UNICODE_ENVIRONMENT, env,
-		NULL, &start_info, &proc_info)) {
+	if (!CreateProcessA (NULL, cmdline, NULL, NULL, TRUE, CREATE_UNICODE_ENVIRONMENT, env, NULL, &start_info, &proc_info)) {
 		free (env);
 		R_LOG_ERROR ("CreateProcess failed: %#x", (int)GetLastError ());
 		goto error;
@@ -617,8 +614,7 @@ static inline void dup_retry(int fds[2], int n, int b) {
 }
 
 R_API R2RSubprocess *r2r_subprocess_start(
-	const char *file, const char *args[], size_t args_size,
-	const char *envvars[], const char *envvals[], size_t env_size) {
+	const char *file, const char *args[], size_t args_size, const char *envvars[], const char *envvals[], size_t env_size) {
 	int stdin_pipe[2] = { -1, -1 };
 	int stdout_pipe[2] = { -1, -1 };
 	int stderr_pipe[2] = { -1, -1 };
@@ -867,9 +863,9 @@ R_API R2RProcessOutput *r2r_subprocess_drain(R2RSubprocess *proc) {
 	R_RETURN_VAL_IF_FAIL (proc, NULL);
 	if (proc->lock && r_th_lock_enter (proc->lock)) {
 		R2RProcessOutput *out = R_NEW0 (R2RProcessOutput);
-// XXX for some reason strdup handles memory better than drain_nofree
-//		out->out = r_strbuf_drain_nofree (&proc->out);
-//		out->err = r_strbuf_drain_nofree (&proc->err);
+		// XXX for some reason strdup handles memory better than drain_nofree
+		//		out->out = r_strbuf_drain_nofree (&proc->out);
+		//		out->err = r_strbuf_drain_nofree (&proc->err);
 		out->out = strdup (r_strbuf_get (&proc->out));
 		out->err = strdup (r_strbuf_get (&proc->err));
 		out->ret = proc->ret;
@@ -904,11 +900,11 @@ cleanup_without_vector:
 		// This prevents double frees when r2r_subprocess_drain has been called
 		if (proc->out.ptr) {
 			r_strbuf_fini (&proc->out);
-		//	r_strbuf_init (&proc->out); // Reinitialize to avoid issues with subsequent r_strbuf_fini
+			//	r_strbuf_init (&proc->out); // Reinitialize to avoid issues with subsequent r_strbuf_fini
 		}
 		if (proc->err.ptr) {
 			r_strbuf_fini (&proc->err);
-		//	r_strbuf_init (&proc->err); // Reinitialize to avoid issues with subsequent r_strbuf_fini
+			//	r_strbuf_init (&proc->err); // Reinitialize to avoid issues with subsequent r_strbuf_fini
 		}
 		// Release the process lock before freeing it
 		r_th_lock_leave (proc->lock);
@@ -950,8 +946,7 @@ R_API void r2r_process_output_free(R2RProcessOutput *out) {
 	free (out);
 }
 
-static R2RProcessOutput *subprocess_runner(const char *file, const char *args[], size_t args_size,
-	const char *envvars[], const char *envvals[], size_t env_size, ut64 timeout_ms, void *user) {
+static R2RProcessOutput *subprocess_runner(const char *file, const char *args[], size_t args_size, const char *envvars[], const char *envvals[], size_t env_size, ut64 timeout_ms, void *user) {
 	R2RSubprocess *proc = r2r_subprocess_start (file, args, args_size, envvars, envvals, env_size);
 	if (!proc) {
 		return NULL;
@@ -1091,11 +1086,16 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, ut64 timeout_ms, int 
 	if (extra_env) {
 		char *kv;
 		r_list_foreach (extra_env, it, kv) {
-			char *equal = strstr (kv, "=");
-			if (equal) {
-				*equal = 0;
-				r_list_append (envvars, (void *)kv);
-				r_list_append (envvals, (void *) (equal + 1));
+			char *dup = strdup (kv);
+			if (dup) {
+				char *equal = strstr (dup, "=");
+				if (equal) {
+					*equal = 0;
+					r_list_append (envvars, (void *)dup);
+					r_list_append (envvals, (void *) (equal + 1));
+				} else {
+					free (dup);
+				}
 			}
 		}
 	}
@@ -1163,8 +1163,7 @@ R_API R2RProcessOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test,
 	}
 	int repeat = test->repeat.value;
 	const ut64 timeout_ms = test->timeout.set? test->timeout.value * 1000: config->timeout_ms;
-	R2RProcessOutput *out = run_r2_test (config, timeout_ms, repeat,
-		test->cmds.value, files, extra_args, extra_env, test->load_plugins, runner, user);
+	R2RProcessOutput *out = run_r2_test (config, timeout_ms, repeat, test->cmds.value, files, extra_args, extra_env, test->load_plugins, runner, user);
 	r_list_free (extra_args);
 	r_list_free (files);
 	r_list_free (extra_env);
@@ -1225,6 +1224,15 @@ R_API bool r2r_check_jq_available(void) {
 	r2r_subprocess_free (proc);
 
 	return invalid_detected && valid_detected;
+}
+
+R_API bool r2r_check_valgrind_available(void) {
+	char *valgrind_bin = r_file_path ("valgrind");
+	if (!valgrind_bin) {
+		return false;
+	}
+	free (valgrind_bin);
+	return true;
 }
 
 R_API R2RProcessOutput *r2r_run_json_test(R2RRunConfig *config, R2RJsonTest *test, R2RCmdRunner runner, void *user) {
@@ -1404,6 +1412,262 @@ R_API bool r2r_check_fuzz_test(R2RProcessOutput *out) {
 	return out && out->ret == 0 && out->out && out->err && !out->timeout;
 }
 
+// Parse valgrind LEAK SUMMARY to check for memory leaks
+// Returns true if no leaks detected (test passes)
+static bool parse_valgrind_leak_summary(const char *valgrind_out) {
+	if (!valgrind_out) {
+		return false;
+	}
+	// Find LEAK SUMMARY section
+	const char *leak_summary = strstr (valgrind_out, "LEAK SUMMARY:");
+	if (!leak_summary) {
+		// If no LEAK SUMMARY found, consider it a failure
+		return false;
+	}
+	// Look for the three leak categories (ignore "still reachable")
+	// Pattern: "definitely lost: X bytes"
+	// Pattern: "indirectly lost: X bytes"
+	// Pattern: "possibly lost: X bytes"
+	ut64 definitely_lost = 0;
+	ut64 indirectly_lost = 0;
+	ut64 possibly_lost = 0;
+	// Extract "definitely lost" value
+	const char *p = strstr (leak_summary, "definitely lost:");
+	if (p) {
+		// Parse the number before " bytes"
+		p += 16; // strlen ("definitely lost:")
+		while (*p == ' ') {
+			p++;
+		}
+		definitely_lost = r_num_math (NULL, p);
+	}
+	// Extract "indirectly lost" value
+	p = strstr (leak_summary, "indirectly lost:");
+	if (p) {
+		p += 16; // strlen ("indirectly lost:")
+		while (*p == ' ') {
+			p++;
+		}
+		indirectly_lost = r_num_math (NULL, p);
+	}
+	// Extract "possibly lost" value
+	p = strstr (leak_summary, "possibly lost:");
+	if (p) {
+		p += 14; // strlen ("possibly lost:")
+		while (*p == ' ') {
+			p++;
+		}
+		possibly_lost = r_num_math (NULL, p);
+	}
+	// Test passes only if all three are 0
+	return definitely_lost == 0 && indirectly_lost == 0 && possibly_lost == 0;
+}
+
+// Run r2 test wrapped with valgrind
+// Similar to run_r2_test but wraps the command with valgrind
+static R2RProcessOutput *run_r2_test_with_valgrind(R2RRunConfig *config, ut64 timeout_ms, int repeat, const char *cmds, RList *files, RList *extra_args, RList *extra_env, bool load_plugins, R2RCmdRunner runner, void *user) {
+	RList *args = r_list_new ();
+	RList *envvars = r_list_new ();
+	RList *envvals = r_list_new ();
+	// Add valgrind arguments
+	r_list_append (args, (void *)"--leak-check=full");
+#if 0
+	r_list_append (args, (void *)"--show-leak-kinds=all");
+	r_list_append (args, (void *)"--track-origins=yes");
+#endif
+	r_list_append (args, (void *)config->r2_cmd);
+#if 0
+	r_list_append (args, (void *)"-escr.utf8=0");
+	r_list_append (args, (void *)"-escr.color=0");
+	r_list_append (args, (void *)"-escr.interactive=0");
+#endif
+	if (!load_plugins) {
+		r_list_append (args, (void *)"-NN");
+	}
+	RListIter *it;
+	void *extra_arg, *file_arg;
+	if (extra_args) {
+		r_list_foreach (extra_args, it, extra_arg) {
+			r_list_append (args, extra_arg);
+		}
+	}
+	// THIS FLAG LEAKS r_list_append (args, (void *)"-Qc");
+	r_list_append (args, (void *)"-qc");
+#if R2__WINDOWS__
+	char *wcmds = convert_win_cmds (cmds);
+	r_list_append (args, wcmds);
+#else
+	r_list_append (args, (void *)cmds);
+#endif
+	r_list_foreach (files, it, file_arg) {
+		r_list_append (args, file_arg);
+	}
+#if R2__WINDOWS__
+	r_list_append (envvars, (void *)"ANSICON");
+	r_list_append (envvals, (void *)"1");
+#endif
+	if (!load_plugins) {
+		r_list_append (envvars, (void *)"R2_NOPLUGINS");
+		r_list_append (envvals, (void *)"1");
+	}
+	if (extra_env) {
+		char *kv;
+		r_list_foreach (extra_env, it, kv) {
+			char *dup = strdup (kv);
+			if (dup) {
+				char *equal = strstr (dup, "=");
+				if (equal) {
+					*equal = 0;
+					r_list_append (envvars, (void *)dup);
+					r_list_append (envvals, (void *) (equal + 1));
+				} else {
+					free (dup);
+				}
+			}
+		}
+	}
+	size_t args_size, env_size;
+	const char **argv = rlist_to_argv (args, &args_size);
+	const char **envk = rlist_to_argv (envvars, &env_size);
+	const char **envv = rlist_to_argv (envvals, &env_size);
+
+	// Run valgrind instead of radare2 directly
+	R2RProcessOutput *out = runner ("valgrind", argv, args_size, envk, envv, env_size, timeout_ms, user);
+
+#if R2__WINDOWS__
+	free (wcmds);
+#endif
+	free (argv);
+	free (envk);
+	free (envv);
+	r_list_free (args);
+	r_list_free (envvars);
+	r_list_free (envvals);
+	return out;
+}
+
+// Run a leak test with valgrind
+// Returns process output with valgrind output in stdout/stderr
+R_API R2RProcessOutput *r2r_run_leak_test(R2RRunConfig *config, R2RCmdTest *test, R2RCmdRunner runner, void *user) {
+// Check if we're on Linux
+#if !R2__UNIX__
+	R2RProcessOutput *out = R_NEW0 (R2RProcessOutput);
+	out->ret = 1;
+	out->out = strdup ("Leak tests only run on Linux");
+	out->err = strdup ("");
+	return out;
+#else
+	// Check if valgrind is available
+	char *valgrind_bin = r_file_path ("valgrind");
+	if (!valgrind_bin) {
+		R2RProcessOutput *out = R_NEW0 (R2RProcessOutput);
+		out->ret = 1;
+		out->out = strdup ("valgrind not found");
+		out->err = strdup ("");
+		return out;
+	}
+	free (valgrind_bin);
+
+	// Run the test with valgrind --leak-check=full
+	// We need to build a valgrind command with the same args as the normal cmd test
+	RList *extra_args = test->args.value? r_str_split_duplist (test->args.value, " ", true): NULL;
+	RList *files = test->file.value? r_str_split_duplist (test->file.value, "\n", true): NULL;
+	RListIter *it;
+	RListIter *tmpit;
+	RList *extra_env = NULL;
+	char *token;
+
+	if (extra_args) {
+		r_list_foreach_safe (extra_args, it, tmpit, token) {
+			if (!*token) {
+				r_list_delete (extra_args, it);
+			}
+		}
+	}
+	if (!files) {
+		files = r_list_newf (free);
+		r_list_append (files, strdup ("-"));
+	}
+	r_list_foreach_safe (files, it, tmpit, token) {
+		if (!*token) {
+			r_list_delete (files, it);
+		}
+	}
+	if (r_list_empty (files)) {
+		files->free = NULL;
+		r_list_push (files, "-");
+	}
+	if (test->env.value) {
+		extra_env = r_str_split_duplist (test->env.value, ";", true);
+	}
+
+	const ut64 timeout_ms = test->timeout.set? test->timeout.value * 1000: config->timeout_ms;
+
+	// Run with valgrind wrapping
+	R2RProcessOutput *out = run_r2_test_with_valgrind (config, timeout_ms, 1, test->cmds.value, files, extra_args, extra_env, test->load_plugins, runner, user);
+
+	r_list_free (extra_args);
+	r_list_free (files);
+	r_list_free (extra_env);
+	return out;
+#endif
+}
+
+// Check if a leak test passed (no memory leaks)
+R_API bool r2r_check_leak_test(R2RProcessOutput *out, R2RCmdTest *test) {
+	if (!out) {
+		return false;
+	}
+
+	// Combine stdout and stderr for leak checking
+	RStrBuf *combined = r_strbuf_new (NULL);
+	if (out->out) {
+		r_strbuf_append (combined, out->out);
+	}
+	if (out->err) {
+		r_strbuf_append (combined, out->err);
+	}
+	char *full_output = r_strbuf_drain (combined);
+
+	// Check for leaks in valgrind output
+	bool leak_check = parse_valgrind_leak_summary (full_output);
+	free (full_output);
+
+	if (!leak_check) {
+		return false;
+	}
+
+	// Also check normal cmd test expectations (EXPECT, EXPECT_ERR, etc)
+	// For leak tests run with valgrind:
+	// - out->out contains the actual program's stdout
+	// - out->err contains valgrind's diagnostic output (with ==PID== lines)
+	const char *expect_out = test->expect.value;
+	const char *expect_err = test->expect_err.value;
+	const char *regexp_out = test->regexp_out.value;
+	const char *regexp_err = test->regexp_err.value;
+
+	// Check EXPECT output (actual program output, not valgrind diagnostics)
+	if (expect_out && out->out && strcmp (out->out, expect_out) != 0) {
+		return false;
+	}
+
+	// Check EXPECT_ERR (for leak tests, stderr is valgrind output, not checked by default)
+	if (expect_err && out->err && strcmp (out->err, expect_err) != 0) {
+		return false;
+	}
+
+	// Check REGEXP_OUT
+	if (regexp_out && out->out && !r_regex_match (regexp_out, "e", out->out)) {
+		return false;
+	}
+
+	// Check REGEXP_ERR
+	if (regexp_err && out->err && !r_regex_match (regexp_err, "e", out->err)) {
+		return false;
+	}
+	return !out->timeout;
+}
+
 R_API char *r2r_test_name(R2RTest *test) {
 	switch (test->type) {
 	case R2R_TEST_TYPE_CMD:
@@ -1417,6 +1681,11 @@ R_API char *r2r_test_name(R2RTest *test) {
 		return r_str_newf ("<json> %s", r_str_get (test->json_test->cmd));
 	case R2R_TEST_TYPE_FUZZ:
 		return r_str_newf ("done"); // <fuzz> %s", shortpath (test->path));
+	case R2R_TEST_TYPE_LEAK:
+		if (test->cmd_test->name.value) {
+			return r_str_newf ("<leak> %s", test->cmd_test->name.value);
+		}
+		return strdup ("<leak> <unnamed>");
 	}
 	return NULL;
 }
@@ -1436,6 +1705,7 @@ R_API int r2r_test_needsabi(R2RTest *test) {
 	case R2R_TEST_TYPE_ASM:
 	case R2R_TEST_TYPE_JSON:
 	case R2R_TEST_TYPE_FUZZ:
+	case R2R_TEST_TYPE_LEAK:
 		break;
 	}
 	return 0;
@@ -1451,6 +1721,8 @@ R_API bool r2r_test_broken(R2RTest *test) {
 		return test->json_test->broken;
 	case R2R_TEST_TYPE_FUZZ:
 		return false;
+	case R2R_TEST_TYPE_LEAK:
+		return test->cmd_test->broken.value;
 	}
 	return false;
 }
@@ -1625,6 +1897,34 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 			ret->run_failed = !out;
 		}
 		break;
+	case R2R_TEST_TYPE_LEAK:
+		if (config->skip_leak) {
+			success = true;
+			ret->run_failed = false;
+		} else {
+			R2RCmdTest *cmd_test = test->cmd_test;
+			const char *require = cmd_test->require.value;
+			if (!require_check (require)) {
+				R_LOG_WARN ("Skipping because of %s", require);
+				success = true;
+				ret->run_failed = false;
+				break;
+			}
+#if WANT_V35 == 0
+			if (cmd_test->args.value && strstr (cmd_test->args.value, "arm.v35")) {
+				R_LOG_WARN ("Skipping test because it requires arm.v35");
+				success = true;
+				ret->run_failed = false;
+				break;
+			}
+#endif
+			R2RProcessOutput *out = r2r_run_leak_test (config, cmd_test, subprocess_runner, NULL);
+			success = r2r_check_leak_test (out, cmd_test);
+			ret->proc_out = out;
+			ret->timeout = out? out->timeout: false;
+			ret->run_failed = !out;
+		}
+		break;
 	}
 	ret->time_elapsed = r_time_now_mono () - start_time;
 	bool broken = r2r_test_broken (test);
@@ -1651,6 +1951,7 @@ R_API void r2r_test_result_info_free(R2RTestResultInfo *result) {
 		case R2R_TEST_TYPE_CMD:
 		case R2R_TEST_TYPE_JSON:
 		case R2R_TEST_TYPE_FUZZ:
+		case R2R_TEST_TYPE_LEAK:
 			r2r_process_output_free (result->proc_out);
 			break;
 		case R2R_TEST_TYPE_ASM:

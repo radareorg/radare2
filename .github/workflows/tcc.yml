@@ -227,3 +227,45 @@ jobs:
         export R2R_SKIP_ASM=1
         export R2R_SKIP_ARCHOS=1
         make -j -C test/unit
+
+  leak-check:
+    name: ubuntu-tcc-leaks
+    runs-on: ubuntu-24.04
+    steps:
+    - name: Checkout TinyCC repository
+      run: |
+          git clone https://github.com/mirror/tinycc.git
+          cd tinycc
+          git checkout mob
+          git reset --hard 560526a49dfffef118bcb7fba83c727639ec0a1d
+    - name: Compiling and installing TinyCC
+      working-directory: tinycc
+      run: |
+          sh ./configure --prefix=/usr
+          make -j
+          sudo make install
+    - uses: actions/checkout@v6
+    - name: Checkout our Testsuite Binaries
+      uses: actions/checkout@v6
+      with:
+          repository: radareorg/radare2-testbins
+          path: test/bins
+    - name: Install dependencies
+      run: |
+        sudo apt update --assume-yes
+        sudo apt-get --assume-yes install gperf wheel setuptools valgrind || true
+        sudo pip install r2pipe --break-system-packages
+    - name: Configure, build and install
+      env:
+          CC: tcc
+      run: |
+          ./configure --prefix=/usr --with-compiler=tcc
+          make -j
+          sudo make install
+    - name: Run leak tests
+      env:
+        PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
+      run: |
+        r2 -v
+        r2r -v
+        r2r test/db/leak
