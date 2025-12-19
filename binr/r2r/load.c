@@ -504,6 +504,10 @@ static R2RTest *r2r_test_new(R2RTestType type, const char *path, void *specific_
 		test->json_test = specific_test;
 		test->json_test->load_plugins = load_plugins;
 		break;
+	case R2R_TEST_TYPE_LEAK:
+		test->cmd_test = specific_test;
+		test->cmd_test->load_plugins = load_plugins;
+		break;
 	case R2R_TEST_TYPE_FUZZ:
 		break;
 	}
@@ -523,6 +527,9 @@ R_API void r2r_test_free(R2RTest *test) {
 		break;
 	case R2R_TEST_TYPE_JSON:
 		r2r_json_test_free (test->json_test);
+		break;
+	case R2R_TEST_TYPE_LEAK:
+		r2r_cmd_test_free (test->cmd_test);
 		break;
 	case R2R_TEST_TYPE_FUZZ:
 		break;
@@ -559,6 +566,8 @@ static R2RTestFrom test_type_for_path(const char *path) {
 		res.type = R2R_TEST_TYPE_ASM;
 	} else if (strstr (path, R_SYS_DIR "json" R_SYS_DIR)) {
 		res.type = R2R_TEST_TYPE_JSON;
+	} else if (strstr (path, R_SYS_DIR "leak" R_SYS_DIR)) {
+		res.type = R2R_TEST_TYPE_LEAK;
 	} else {
 		if (strstr (path, R_SYS_DIR "extras" R_SYS_DIR)) {
 			res.load_plugins = true;
@@ -573,7 +582,7 @@ static R2RTestFrom test_type_for_path(const char *path) {
 	return res;
 }
 
-static bool database_load(R2RTestDatabase *db, const char *path, int depth, bool skip_json_tests) {
+static bool database_load(R2RTestDatabase *db, const char *path, int depth, bool skip_json_tests, bool skip_leak_tests) {
 #if WANT_V35 == 0
 	R2RTestToSkip v35_tests_to_skip[] = {
 		{ "asm", "arm.v35_64" },
@@ -635,7 +644,7 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth, bool
 				continue;
 			}
 			char *subpath = r_file_new (path, subname, NULL);
-			ret = database_load (db, subpath, depth - 1, skip_json_tests);
+			ret = database_load (db, subpath, depth - 1, skip_json_tests, skip_leak_tests);
 			free (subpath);
 			if (!ret) {
 				break;
@@ -654,6 +663,9 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth, bool
 	const char *pooled_path = r_str_constpool_get (&db->strpool, path);
 	R2RTestFrom tff = test_type_for_path (path);
 	if (skip_json_tests && tff.type == R2R_TEST_TYPE_JSON) {
+		return true;
+	}
+	if (skip_leak_tests && tff.type == R2R_TEST_TYPE_LEAK) {
 		return true;
 	}
 	switch (tff.type) {
@@ -699,6 +711,20 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth, bool
 			RVecR2RJsonTestPtr_free (json_tests);
 			break;
 		}
+	case R2R_TEST_TYPE_LEAK:
+		{
+			RVecR2RCmdTestPtr *cmd_tests = r2r_load_cmd_test_file (path);
+			if (!cmd_tests) {
+				return false;
+			}
+			R2RCmdTest **it;
+			R_VEC_FOREACH (cmd_tests, it) {
+				R2RTest *test = r2r_test_new (R2R_TEST_TYPE_LEAK, pooled_path, *it, tff.load_plugins);
+				RVecR2RTestPtr_push_back (&db->tests, &test);
+			}
+			RVecR2RCmdTestPtr_free (cmd_tests);
+			break;
+		}
 	case R2R_TEST_TYPE_FUZZ:
 		// shouldn't come here, fuzz tests are loaded differently
 		break;
@@ -707,8 +733,8 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth, bool
 	return true;
 }
 
-R_API bool r2r_test_database_load(R2RTestDatabase *db, const char *path, bool skip_json_tests) {
-	return database_load (db, path, 4, skip_json_tests);
+R_API bool r2r_test_database_load(R2RTestDatabase *db, const char *path, bool skip_json_tests, bool skip_leak_tests) {
+	return database_load (db, path, 4, skip_json_tests, skip_leak_tests);
 }
 
 static void database_load_fuzz_file(R2RTestDatabase *db, const char *path, const char *file) {

@@ -13,7 +13,7 @@
 
 bool test_r2r_database_load_cmd(void) {
 	R2RTestDatabase *db = r2r_test_database_new ();
-	database_load (db, FILENAME, 1, false);
+	database_load (db, FILENAME, 1, false, false);
 
 	mu_assert_eq (RVecR2RTestPtr_length (&db->tests), 4, "tests count");
 
@@ -57,7 +57,7 @@ bool test_r2r_database_load_cmd(void) {
 
 bool test_r2r_fix(void) {
 	R2RTestDatabase *db = r2r_test_database_new ();
-	database_load (db, FILENAME, 1, false);
+	database_load (db, FILENAME, 1, false, false);
 
 	RVecR2RTestResultInfoPtr results;
 	RVecR2RTestResultInfoPtr_init (&results);

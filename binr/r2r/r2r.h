@@ -124,7 +124,8 @@ typedef enum r2r_test_type_t {
 	R2R_TEST_TYPE_CMD,
 	R2R_TEST_TYPE_ASM,
 	R2R_TEST_TYPE_JSON,
-	R2R_TEST_TYPE_FUZZ
+	R2R_TEST_TYPE_FUZZ,
+	R2R_TEST_TYPE_LEAK
 } R2RTestType;
 
 typedef struct r2r_test_from_t {
@@ -159,6 +160,7 @@ typedef struct r2r_run_config_t {
 	bool skip_fuzz;
 	bool skip_asm;
 	bool skip_json;
+	bool skip_leak;
 } R2RRunConfig;
 
 typedef struct r2r_process_output_t {
@@ -223,7 +225,7 @@ R_API RVecR2RJsonTestPtr *r2r_load_json_test_file(const char *file);
 
 R_API R2RTestDatabase *r2r_test_database_new(void);
 R_API void r2r_test_database_free(R2RTestDatabase *db);
-R_API bool r2r_test_database_load(R2RTestDatabase *db, const char *path, bool skip_json_tests);
+R_API bool r2r_test_database_load(R2RTestDatabase *db, const char *path, bool skip_json_tests, bool skip_leak_tests);
 R_API bool r2r_test_database_load_fuzz(R2RTestDatabase *db, const char *path);
 
 typedef struct r2r_subprocess_t R2RSubprocess;
@@ -243,6 +245,7 @@ R_API void r2r_process_output_free(R2RProcessOutput *out);
 R_API R2RProcessOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test, R2RCmdRunner runner, void *user);
 R_API bool r2r_check_cmd_test(R2RProcessOutput *out, R2RCmdTest *test);
 R_API bool r2r_check_jq_available(void);
+R_API bool r2r_check_valgrind_available(void);
 R_API R2RProcessOutput *r2r_run_json_test(R2RRunConfig *config, R2RJsonTest *test, R2RCmdRunner runner, void *user);
 R_API bool r2r_check_json_test(R2RProcessOutput *out, R2RJsonTest *test);
 R_API R2RAsmTestOutput *r2r_run_asm_test(R2RRunConfig *config, R2RAsmTest *test);
@@ -250,6 +253,8 @@ R_API bool r2r_check_asm_test(R2RAsmTestOutput *out, R2RAsmTest *test);
 R_API void r2r_asm_test_output_free(R2RAsmTestOutput *out);
 R_API R2RProcessOutput *r2r_run_fuzz_test(R2RRunConfig *config, const char *file, R2RCmdRunner runner, void *user);
 R_API bool r2r_check_fuzz_test(R2RProcessOutput *out);
+R_API R2RProcessOutput *r2r_run_leak_test(R2RRunConfig *config, R2RCmdTest *test, R2RCmdRunner runner, void *user);
+R_API bool r2r_check_leak_test(R2RProcessOutput *out, R2RCmdTest *test);
 
 R_API void r2r_test_free(R2RTest *test);
 R_API char *r2r_test_name(R2RTest *test);

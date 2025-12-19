@@ -1,0 +1,20 @@
+NAME=leak opening malloc
+FILE=malloc://32
+CMDS=<<EOF
+?e hello
+EOF
+EXPECT=<<EOF
+hello
+EOF
+RUN
+
+NAME=leak opening elf
+FILE=bins/elf/ip-riscv
+CMDS=<<EOF
+?e hello
+EOF
+EXPECT=<<EOF
+hello
+EOF
+RUN
+
