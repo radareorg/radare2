@@ -244,7 +244,21 @@ static void cmd_info_demangle(RCore *core, const char *input, PJ *pj, int mode) 
 		}
 		r_core_return_value (core, 1);
 	}
-	char *res = r_bin_demangle (core->bin->cur, lang, text, 0, false);
+	char *res = NULL;
+	{
+		// RBinDemangle requires an RBinFile to get the RBinOptions for the trylib option
+		// when there's no current file, we need to pass core->bin for proper config access
+		RBinFile *bf = core->bin->cur;
+		RBinFile *temp_bf = NULL;
+		if (!bf && core->bin) {
+			// create a temporary wrapper to ensure demangle has access to config
+			temp_bf = R_NEW0 (RBinFile);
+			temp_bf->rbin = core->bin;
+			bf = temp_bf;
+		}
+		res = r_bin_demangle (bf, lang, text, 0, false);
+		free (temp_bf);
+	}
 	if (mode == R_MODE_JSON) {
 		pj_o (pj);
 		pj_ks (pj, "lang", lang);
