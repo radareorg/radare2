@@ -40,8 +40,8 @@ static bool token_name (const char *p, char *name, size_t name_sz) {
 }
 
 static int reg_item_cmp (const RRegItem *a, const RRegItem *b) {
-	const int offa = (a->offset << 4) + a->size;
-	const int offb = (b->offset << 4) + b->size;
+	const int offa = ((unsigned)a->offset << 4) + a->size;
+	const int offb = ((unsigned)b->offset << 4) + b->size;
 	if (offa != offb) {
 		return (offa > offb) - (offa < offb);
 	}

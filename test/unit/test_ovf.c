@@ -14,9 +14,9 @@ int test_overflow_add(void) {
 	mu_assert_true (ST16_ADD_OVFCHK (ST16_MIN, (st16)-1), "st16-add (min, -1)");
 	mu_assert_true (UT16_ADD_OVFCHK (10, (ut16)-20), "ut16-add (10, -20)");
 	mu_assert_false (ST16_ADD_OVFCHK ((st16)-10, 20), "st16-add (-10, 20)");
-	mu_assert_true (ST32_ADD_OVFCHK (ST32_MIN, (st32)-20), "st32-add (min, -20)");
+	mu_assert_true (ST32_ADD_OVFCHK (ST32_MIN, -20), "st32-add (min, -20)");
 	mu_assert_false (ST32_ADD_OVFCHK ((st32)-10, 20), "st32-add (-10, 20)");
-	mu_assert_true (ST64_ADD_OVFCHK (ST64_MIN, (st64)-20), "st64-add (min, -20)");
+	mu_assert_true (ST64_ADD_OVFCHK (ST64_MIN, -20), "st64-add (min, -20)");
 	mu_assert_false (ST64_ADD_OVFCHK ((st64)-10, 20), "st64-add 3");
 	mu_end;
 }
