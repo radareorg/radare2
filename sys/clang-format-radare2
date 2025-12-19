@@ -241,6 +241,7 @@ def split_line_ending(line):
 CASE_OPEN_RE = re.compile(r"^(\s*(?:case\b.*:|default:))\s*\{(\s*//.*)?$")
 CASE_CLOSE_BREAK_RE = re.compile(r"^(\s*)\}\s*break;(.*)$")
 CASE_CLOSE_ONLY_RE = re.compile(r"^(\s*)\}(.*)$")
+LABEL_RE = re.compile(r"^(\s*)([A-Za-z_][A-Za-z0-9_]*):(\s*(?://.*)?)?$")
 
 
 def fix_case_blocks(lines):
@@ -289,11 +290,30 @@ def fix_case_blocks(lines):
 				continue
 		if case_indent_stack:
 			_, inner_indent, body_indent = case_indent_stack[-1]
-			if content and not content.lstrip().startswith("{") and not content.lstrip().startswith("case ") and not ("||" in content or "&&" in content) and not content.lstrip().startswith("?") and not content.lstrip().startswith(":"):
+			if content and not content.lstrip().startswith("{") and not ("||" in content or "&&" in content) and not content.lstrip().startswith("?") and not content.lstrip().startswith(":"):
 				if content.startswith(inner_indent):
 					adjusted = body_indent + content[len(inner_indent):]
 					fixed.append(adjusted + line_sep)
 					continue
+		fixed.append(line)
+	return fixed
+
+
+def fix_labels(lines):
+	fixed = []
+	for line in lines:
+		content, ending = split_line_ending(line)
+		line_sep = ending or "\n"
+		match = LABEL_RE.match(content)
+		if match:
+			label_name = match.group(2)
+			# Skip case and default labels - they're switch labels, not goto labels
+			if label_name in ("case", "default"):
+				fixed.append(line)
+				continue
+			comment = match.group(3) or ""
+			fixed.append(label_name + ":" + comment + line_sep)
+			continue
 		fixed.append(line)
 	return fixed
 
@@ -593,6 +613,7 @@ def apply_indent_rules(text):
 		line = fix_logical_spacing(line)
 		lines.append(line)
 	lines = fix_case_blocks(lines)
+	lines = fix_labels(lines)
 	lines = fix_ternary_lines(lines)
 	lines = fix_multiline_comments(lines)
 	return "".join(lines)
