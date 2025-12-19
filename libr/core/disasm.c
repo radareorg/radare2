@@ -4136,8 +4136,12 @@ static void ds_print_bytes(RDisasmState *ds) {
 			}
 			free (str);
 			if (ds->show_color && ds->show_color_bytes && !ds->show_bytes_ascmt) {
-				str = r_str_newf ("%s"Color_RESET, nstr);
-				R_FREE (nstr);
+				if (ds->colorop) {
+					str = nstr;
+				} else {
+					str = r_str_newf ("%s"Color_RESET, nstr);
+					R_FREE (nstr);
+				}
 			} else {
 				str = nstr;
 			}
