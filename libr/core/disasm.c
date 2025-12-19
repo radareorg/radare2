@@ -271,6 +271,7 @@ typedef struct r_disasm_state_t {
 	const char *color_var_type;
 	const char *color_var_addr;
 	const char *cmtoken; // ";"
+	bool pal_batch_save; // saved pal_batch to restore on ds_free
 
 	RFlagItem *lastflag;
 	RAnalHint *hint;
@@ -977,6 +978,9 @@ static RDisasmState *ds_init(RCore *core) {
 			ds->linesopts |= R_ANAL_REFLINE_TYPE_UTF8;
 		}
 	}
+	// Prevent palette reload during disassembly to avoid UAF of cached color pointers
+	ds->pal_batch_save = core->cons->context->pal_batch;
+	core->cons->context->pal_batch = true;
 	return ds;
 }
 
@@ -1046,6 +1050,8 @@ static void ds_free(RDisasmState *ds) {
 	free (ds->osl);
 	free (ds->sl);
 	free (ds->_tabsbuf);
+	// Restore pal_batch and reload palette if needed
+	ds->core->cons->context->pal_batch = ds->pal_batch_save;
 	R_FREE (ds);
 }
 
