@@ -326,6 +326,11 @@ static int string_scan_range(RBinFile *bf, RList *list, int min, const ut64 from
 			needle -= 2;
 		}
 		if (runes >= min) {
+			// discard unaligned strings
+			const int str_align = bin->options.str_align;
+			if (str_align > 0 && (str_start % str_align)) {
+				continue;
+			}
 			const char *tmpstr = r_strbuf_get (sb);
 			size_t tmplen = r_strbuf_length (sb);
 			// reduce false positives

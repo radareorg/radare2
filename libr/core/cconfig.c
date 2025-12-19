@@ -3222,6 +3222,17 @@ static bool cb_binminstr(void *user, void *data) {
 	return true;
 }
 
+static bool cb_binstralign(void *user, void *data) {
+	RCore *core = (RCore *)user;
+	RConfigNode *node = (RConfigNode *)data;
+	if (core->bin) {
+		core->bin->options.str_align = node->i_value;
+		r_bin_reset_strings (core->bin);
+		return true;
+	}
+	return true;
+}
+
 static bool cb_searchin(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
@@ -4152,6 +4163,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("bin.maxsymlen", 0, &cb_binmaxsymlen, "maximum length for symbol names");
 	SETICB ("bin.str.min", 0, &cb_binminstr, "minimum string length for r_bin");
 	SETICB ("bin.str.max", 0, &cb_binmaxstr, "maximum string length for r_bin");
+	SETICB ("bin.str.align", 0, &cb_binstralign, "only consider strings aligned to this value (0 = disabled)");
 	SETICB ("bin.str.maxbuf", 1024 * 1024 * 10, &cb_binmaxstrbuf, "maximum size of range to load strings from");
 	n = NODECB ("bin.str.enc", "guess", &cb_binstrenc);
 	SETDESC (n, "default string encoding of binary");

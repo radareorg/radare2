@@ -517,6 +517,7 @@ typedef struct r_bin_options_t {
 	int minstrlen;
 	int maxstrlen;
 	int maxsymlen;
+	int str_align; // discard unaligned strings (0 = disabled)
 	ut64 maxstrbuf;
 	int limit; // max symbols
 	int rawstr;

@@ -5620,6 +5620,11 @@ again:
 		r_search_reset (core->search, R_SEARCH_STRING);
 		r_search_set_distance (core->search, (int)
 			r_config_get_i (core->config, "search.distance"));
+		// respect bin.str.align for string alignment filtering
+		int str_align = r_config_get_i (core->config, "bin.str.align");
+		if (str_align > 0) {
+			core->search->align = str_align;
+		}
 		{
 			RSearchKeyword *kw = r_search_keyword_new_hexmask ("00", NULL);
 			kw->type = R_SEARCH_KEYWORD_TYPE_STRING;
