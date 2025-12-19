@@ -1,6 +1,7 @@
 /* radare2 - LGPL - Copyright 2007-2025 - pancake */
 
 #include <r_util/r_print.h>
+#include <r_util/r_str.h>
 #include <r_anal.h>
 
 #define DFLT_ROWS 16
@@ -2327,9 +2328,14 @@ static bool is_flag(const char *p) {
 	return len > 3;
 }
 
+R_IPI bool r_print_reg_rainbow_enabled (RPrint *print);
+R_IPI char *r_print_reg_rainbow_color (RPrint *print, const char *p);
+
 R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, const char *num, bool partial_reset, ut64 func_addr) {
 	bool expect_reg = true;
 	int i, j, k, is_mod, is_float = 0, is_arg = 0;
+	bool was_ansi = false;
+	bool was_ansi_reset = false;
 	char *reset = partial_reset ? Color_RESET_NOBG : Color_RESET;
 	ut32 c_reset = strlen (reset);
 	ut32 opcode_sz = p && *p? strlen (p) * 10 + 1: 0;
@@ -2354,6 +2360,10 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 
 	memset (o, 0, COLORIZE_BUFSIZE);
 	for (i = j = 0; p[i]; i++, j++) {
+		const bool prev_was_ansi = was_ansi;
+		const bool prev_was_ansi_reset = was_ansi_reset;
+		was_ansi = false;
+		was_ansi_reset = false;
 		if (i > 0 && p[i - 1] == ' ' && (p[i] == '0' && p[i + 1] == 0)) {
 			snprintf (o + j, COLORIZE_BUFSIZE - j, "%s0", num);
 			j += strlen (o + j);
@@ -2366,8 +2376,9 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 			i++;
 		}
 		/* colorize numbers */
-		if ((ishexprefix (p + i) && previous != ':') \
-		     || (isdigit (p[i] & 0xff) && issymbol (previous))) {
+		const bool is_number = (ishexprefix (p + i) && previous != ':')
+			|| (isdigit (p[i] & 0xff) && issymbol (previous));
+		if (!prev_was_ansi && is_number) {
 			const char *num2 = num;
 			ut64 n = r_num_get (NULL, p + i);
 			const char *name = print->offname (print->user, n)? color_flag: NULL;
@@ -2387,25 +2398,48 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 			R_LOG_WARN ("r_print_colorize_opcode(): buffer overflow"); // XXX dont warn about overflows just fix
 			return strdup (p);
 		}
-		switch (p[i]) {
-		// We dont need to skip ansi codes.
-		// original colors must be preserved somehow
-		case 0x1b:
-#define STRIP_ANSI 1
-#if STRIP_ANSI
-			/* skip until 'm' */
-			for (i++; p[i] && p[i] != 'm'; i++) {
-				o[j] = p[i];
+		if (is_arg && r_print_reg_rainbow_enabled (print) && (i < 1 || issymbol (p[i - 1]))
+			&& (isalpha (p[i] & 0xff) || p[i] == '_')) {
+			char *color = r_print_reg_rainbow_color (print, p + i);
+			if (color) {
+				const ut32 color_len = strlen (color);
+				if (color_len + j + 10 >= COLORIZE_BUFSIZE) {
+					R_LOG_WARN ("r_print_colorize_opcode(): buffer overflow!");
+					free (color);
+					return strdup (p);
+				}
+				strcpy (o + j, color);
+				j += color_len;
+				free (color);
 			}
-			j--;
-			continue;
-#else
-			/* copy until 'm' */
-			for (; p[i] && p[i] != 'm'; i++) {
+		}
+		switch (p[i]) {
+		case 0x1b: {
+			/* copy ansi sequence verbatim */
+			const int ansi_j = j;
+			while (p[i] && p[i] != 'm') {
+				o[j++] = p[i++];
+				if (j + 10 >= COLORIZE_BUFSIZE) {
+					R_LOG_WARN ("r_print_colorize_opcode(): buffer overflow");
+					return strdup (p);
+				}
+			}
+			if (p[i] == 'm') {
 				o[j++] = p[i];
 			}
-			o[j++] = p[i++];
-#endif
+			const int ansi_len = j - ansi_j;
+			if (ansi_len > 0) {
+				const int reset_len = strlen (Color_RESET);
+				const int resetnb_len = strlen (Color_RESET_NOBG);
+				if ((ansi_len == reset_len && !memcmp (o + ansi_j, Color_RESET, reset_len))
+					|| (ansi_len == resetnb_len && !memcmp (o + ansi_j, Color_RESET_NOBG, resetnb_len))) {
+					was_ansi_reset = true;
+				}
+			}
+			j--;
+			was_ansi = true;
+			continue;
+		}
 		case '$':
 			snprintf (o + j, COLORIZE_BUFSIZE - j, "%s$", num);
 			j += strlen (o + j);
@@ -2428,6 +2462,9 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 				/* do nothing, keep going until next */
 				is_float = 0;
 			} else if (is_arg) {
+				if (prev_was_ansi && prev_was_ansi_reset) {
+					break;
+				}
 				if (c_reset + j + 10 >= COLORIZE_BUFSIZE) {
 					R_LOG_WARN ("r_print_colorize_opcode(): buffer overflow");
 					return strdup (p);
@@ -2437,7 +2474,13 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 				strcpy (o + j, reset);
 				j += strlen (reset);
 				o[j] = p[i];
-				if (!(p[i + 1] == '$' || isdigit (p[i + 1] & 0xff))) {
+				const char *np = p + i + 1;
+				while (*np && isspace (*np & 0xff)) {
+					np++;
+				}
+				const bool next_is_num = (*np == '$' || isdigit (*np & 0xff));
+				const bool immediate_space = isspace (p[i + 1] & 0xff);
+				if (!(next_is_num && (p[i] == '[' || !immediate_space))) {
 					const char *color = found_var ? print->consb.cons->context->pal.var_type : reg;
 					expect_reg = false;
 					if (is_flag (p + i)) {
@@ -2457,6 +2500,9 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 			break;
 		case ' ':
 			is_arg = 1;
+			if (prev_was_ansi) {
+				break;
+			}
 			// find if next ',' before ' ' is found
 			is_mod = 0;
 			is_float = 0;
@@ -2523,7 +2569,9 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 		memmove (o, t_o, opcode_sz);
 		/* free (t_o); */
 	}
-	strcpy (o + j, reset);
+	if (j < c_reset || memcmp (o + j - c_reset, reset, c_reset)) {
+		strcpy (o + j, reset);
+	}
 	return strdup (o);
 }
 

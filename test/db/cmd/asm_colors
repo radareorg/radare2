@@ -32,13 +32,12 @@ pi 1
 EOF
 EXPECT=<<EOF
 [33m[33m[33mnop word [0m[[32mrax [0m+[32m rax[0m][32m[0m[0m
-[35m[35m[35mlea[32m rdi[0m,[31m[31m [0m[[31m[34m0x0000e5ff[0m][32m[0m[0m
+[35m[35m[35mlea[32m rdi[0m,[31m[31m [0m[[34m0x0000e5ff[0m][32m[0m[0m
 [32m[32m[32mje[31m [34m0x17[0m[0m
 [32m[32m[32mje[31m cow.main[0m[0m
-[36m[36m[36mcall qword[31m [0m[[31m[34m0x0001c7d8[0m][32m[0m[0m
+[36m[36m[36mcall qword[31m [0m[[34m0x0001c7d8[0m][32m[0m[0m
 [36m[36m[36mcall qword[31m [0m[[31mbar.main[0m][32m[0m[0m
 [35m[35m[35mmov[32m r14d[0m,[32m edi[0m[0m
 EOF
 EXPECT_ERR=
 RUN
-

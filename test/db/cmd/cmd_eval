@@ -16,6 +16,7 @@ scr.color.grep    false
 scr.color.ophex   false
 scr.color.ops     true
 scr.color.pipe    false
+scr.color.regs    false
 
 EOF
 RUN

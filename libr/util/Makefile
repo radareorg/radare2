@@ -16,6 +16,7 @@ OBJS+=punycode.o pkcs7.o x509.o asn1.o asn1_str.o json_parser.o json_indent.o sk
 OBJS+=pj.o rbtree.o intervaltree.o qrcode.o vector.o str_constpool.o str_trim.o
 OBJS+=chartable.o protobuf.o graph_drawable.o axml.o sstext.o new_rbtree.o token.o
 OBJS+=rvc.o rvc_git.o rvc_rvc.o bscanf.o rprintf.o base32.o bloom.o mmap.o rxmldom.o
+OBJS+=print_regcolor.o
 
 ifeq ($(USE_SYSLZ4),1)
 CFLAGS+=${LZ4_CFLAGS}
