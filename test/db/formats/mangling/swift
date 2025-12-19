@@ -8,6 +8,7 @@ RUN
 
 NAME=one longsym
 FILE=--
+ARGS=-e bin.demangle.trylib=false
 CMDS=<<EOF
 iD swift _$s13PasswordCheck11ContentViewV4bodyQrvg7SwiftUI05TupleD0VyAE0D0PAEE7paddingyQrAE4EdgeO3SetV_12CoreGraphics7CGFloatVSgtFQOyAE4TextV_Qo__AiEEAJyQrAN_ARtFQOyAiEE14textFieldStyleyQrqd__AE0oqR0Rd__lFQOyAE06SecureQ0VyATG_AE013RoundedBorderoqR0VQo__Qo_AiEE5alert11isPresented7contentQrAE7BindingVySbG_AE5AlertVyXEtFQOyAE6ButtonVyAiEE12cornerRadius_11antialiasedQrAQ_SbtFQOyAiEE15foregroundColoryQrAE5ColorVSgFQOyAiEE10background_20ignoresSafeAreaEdgesQrqd___ANtAE05ShapeR0Rd__lFQOyAU_A17_Qo__Qo__Qo_G_Qo_tGyXEfU_yycfU_
 EOF
@@ -18,6 +19,7 @@ RUN
 
 NAME=more demangling
 FILE=--
+ARGS=-e bin.demangle.trylib=false
 CMDS=<<EOF
 iD swift _$s10HomeWallet0A13DeeplinkModelV10launchIDFASSSgvM
 iD swift _$s10HomeWallet0A12FileProviderC013getContentsOfC04with4type10Foundation4DataVSgSS_SStF
@@ -32,6 +34,7 @@ RUN
 
 NAME=aB swift demangling cases
 FILE=--
+ARGS=-e bin.demangle.trylib=false
 CMDS=<<EOF
 iD swift _$s10CartFacade0aB13ModalItemViewC14moreItemsLabelSo7UILabelCSgvgTq
 EOF
@@ -42,6 +45,7 @@ RUN
 
 NAME=aB swift compact symbol
 FILE=--
+ARGS=-e bin.demangle.trylib=false
 CMDS=<<EOF
 iD swift $s9CryptoKit4P384O12KeyAgreementO07PrivateD0V20compactRepresentableAGSb_tcfC
 EOF
@@ -63,6 +67,7 @@ RUN
 
 NAME=swift long method
 FILE=--
+ARGS=-e bin.demangle.trylib=false
 CMDS=iD swift s16IOSSecuritySuiteAAC14denySymbolHook_2at10imageSlideySS_SPySo11mach_headerVGSitFZ
 EXPECT=<<EOF
 IOSSecuritySuite..denySymbolHook.at.imageSlide(...eaderVGSitFZ)
@@ -71,6 +76,7 @@ RUN
 
 NAME=swift long method
 FILE=--
+ARGS=-e bin.demangle.trylib=false
 CMDS=iD swift s16IOSSecuritySuiteAAC16amIRuntimeHooked13dyldAllowList14detectionClass8selector02isJ6MethodSbSaySSG_yXlXp10ObjectiveC8SelectorVSbtFZ
 EXPECT=<<EOF
 IOSSecuritySuite..amIRuntimeHooked.dyldAllowList(...XlXp10ObjectiveC8SelectorVSbtFZ)
@@ -79,6 +85,7 @@ RUN
 
 NAME=swift long multiple dupes
 FILE=--
+ARGS=-e bin.demangle.trylib=false
 CMDS=iD swift $s9CryptoKit8Curve448O7SigningO9PublicKeyV17rawRepresentationAGx_tKc10Foundation15ContiguousBytesRzlufC
 EXPECT=<<EOF
 CryptoKit.Curve448.Signing.PublicKey.init<A where A: Foundation.ContiguousBytes>(rawRepresentation: A) throws -> CryptoKit.Curve448.Signing.PublicKey
@@ -87,6 +94,7 @@ RUN
 
 NAME=swift long multiple dupes 2
 FILE=--
+ARGS=-e bin.demangle.trylib=false
 CMDS=iD swift s9CryptoKit8Curve448O7SigningO9PublicKeyV16isValidSignature_3forSbx_q_t10Foundation12DataProtocolRzAjKR_r0_lF
 EXPECT=<<EOF
 CryptoKit.Curve448.Signing.PublicKey.isValidSignature.for.Foundation.DataProtocol...r0_lF
@@ -95,6 +103,7 @@ RUN
 
 NAME=swift long multiple dupes 3
 FILE=--
+ARGS=-e bin.demangle.trylib=false
 CMDS=iD swift s9CryptoKit8Curve448O7SigningO9PublicKeyV17rawRepresentation10Foundation4DataVvg
 EXPECT=<<EOF
 CryptoKit.Curve448.Signing.PublicKey.rawRepresentation.Foundation.Data...Vvg
@@ -103,6 +112,7 @@ RUN
 
 NAME=swift missing A2CmFWC attributes
 FILE=--
+ARGS=-e bin.demangle.trylib=false
 CMDS=iD swift s16IOSSecuritySuite11FailedCheckO30restrictedDirectoriesWriteableyA2CmFWC
 EXPECT=<<EOF
 IOSSecuritySuite.FailedCheck.restrictedDirectoriesWriteable(...A2CmFWC)
