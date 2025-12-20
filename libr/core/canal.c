@@ -223,7 +223,11 @@ static char *is_string_at(RCore *core, ut64 addr, int *olen) {
 		*olen = len;
 	}
 	// NOTE: coverity says that ret is always 0 here, so str is dead code
-	return ret? (char *)str: NULL;
+	if (ret && len > 0) {
+		return (char *)str;
+	}
+	free (str);
+	return NULL;
 }
 
 /* returns the R_ANAL_ADDR_TYPE_* of the address 'addr' */
