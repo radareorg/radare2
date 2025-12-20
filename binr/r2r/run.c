@@ -1463,6 +1463,7 @@ static bool parse_valgrind_leak_summary(const char *valgrind_out) {
 	return definitely_lost == 0 && indirectly_lost == 0 && possibly_lost == 0;
 }
 
+#if __linux__
 // Run r2 test wrapped with valgrind
 // Similar to run_r2_test but wraps the command with valgrind
 static R2RProcessOutput *run_r2_test_with_valgrind(R2RRunConfig *config, ut64 timeout_ms, int repeat, const char *cmds, RList *files, RList *extra_args, RList *extra_env, bool load_plugins, R2RCmdRunner runner, void *user) {
@@ -1545,6 +1546,7 @@ static R2RProcessOutput *run_r2_test_with_valgrind(R2RRunConfig *config, ut64 ti
 	r_list_free (envvals);
 	return out;
 }
+#endif
 
 // Run a leak test with valgrind
 // Returns process output with valgrind output in stdout/stderr
