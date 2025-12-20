@@ -1488,6 +1488,7 @@ repeat:
 				int ret2 = r_anal_op (anal, next_op, addr + ret, buf_ptr + i + ret, left, op_tions);
 				if (ret2 < 1) {
 					r_anal_op_fini (&aop);
+					r_anal_op_fini (next_op);
 					break;
 				}
 				have_cached_op = true;

@@ -70,6 +70,7 @@ typedef struct {
 
 static void import_hash_free(HtPPKv *kv) {
 	if (kv) {
+		free (kv->key);
 		r_bin_import_free (kv->value);
 	}
 }
