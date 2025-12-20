@@ -36,7 +36,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt update --assume-yes
-        sudo apt-get --assume-yes install gperf wheel setuptools || true
+        sudo apt-get --assume-yes install gperf || true
         sudo pip install r2pipe --break-system-packages
     - name: Configure, build and install (Using the new ABI)
       env:
@@ -79,7 +79,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt update --assume-yes
-        sudo apt-get --assume-yes install gperf wheel setuptools || true
+        sudo apt-get --assume-yes install gperf || true
         sudo pip install r2pipe --break-system-packages
     - name: Configure, build and install
       env:
@@ -107,7 +107,7 @@ jobs:
           cd tinycc && git checkout mob
           git reset --hard 560526a49dfffef118bcb7fba83c727639ec0a1d
           sudo apt update --assume-yes
-          sudo apt-get --assume-yes install gperf wheel setuptools || true
+          sudo apt-get --assume-yes install gperf || true
           sudo pip install r2pipe --break-system-packages
     - name: Compiling and installing TinyCC
       working-directory: tinycc
@@ -189,7 +189,7 @@ jobs:
           cd tinycc && git checkout mob
           git reset --hard 560526a49dfffef118bcb7fba83c727639ec0a1d
           sudo apt-get update --assume-yes
-          sudo apt-get --assume-yes install gperf wheel setuptools || true
+          sudo apt-get --assume-yes install gperf || true
           sudo pip install r2pipe --break-system-packages
     - name: Compiling and installing TinyCC
       working-directory: tinycc
@@ -253,7 +253,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt update --assume-yes
-        sudo apt-get --assume-yes install gperf wheel setuptools valgrind
+        sudo apt-get --assume-yes install gperf valgrind
         sudo pip install r2pipe --break-system-packages
     - name: Configure, build and install
       env:
