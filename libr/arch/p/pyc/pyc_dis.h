@@ -7,13 +7,7 @@
 #include <r_asm.h>
 
 #include "opcode.h"
-
-// Shared struct for pyc_version info
-struct pyc_version {
-	ut32 magic;
-	const char *version;
-	const char *revision;
-};
+#include "../../../bin/format/pyc/pyc_magic.h"
 
 // RBinPycObj holds all per-file state for the pyc bin plugin.
 // This struct is stored in bf->bo->bin_obj and accessed by the arch plugin.
