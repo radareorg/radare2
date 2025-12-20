@@ -986,39 +986,17 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	case X86_INS_SAR:
 		// TODO: Set CF. See case X86_INS_SHL for more details.
 		{
-#if 0
-			ut64 val = 0;
-			switch (gop.insn->detail->x86.operands[0].size) {
-			case 1:
-				val = 0x80;
-				break;
-			case 2:
-				val = 0x8000;
-				break;
-			case 4:
-				val = 0x80000000;
-				break;
-			case 8:
-				val = 0x8000000000000000;
-				break;
-			default:
-				val = 0x80;
-			}
-			src = getarg (&gop, 1, 0, NULL);
-			dst = getarg (&gop, 0, 0, NULL);
-			esilprintf (op, "%s,1,%s,>>,0x%"PFMT64x",%s,&,|,%s,=,1,%s,&,cf,=,1,REPEAT", src, dst, val, dst, dst, dst);
-#endif
-			ut32 bitsize;
-			src = getarg (&gop, 1, 0, NULL, NULL);
-			dst_r = getarg (&gop, 0, 0, NULL, NULL);
-			dst_w = getarg (&gop, 0, 1, NULL, &bitsize);
-			esilprintf (op, "0,cf,:=,1,%s,-,1,<<,%s,&,?{,1,cf,:=,},%s,%s,ASR,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=",
-				src, dst_r, src, dst_r, dst_w, bitsize - 1);
-			free (src);
-			free (dst_r);
-			free (dst_w);
-		}
-		break;
+		ut32 bitsize;
+		src = getarg (&gop, 1, 0, NULL, NULL);
+		dst_r = getarg (&gop, 0, 0, NULL, NULL);
+		dst_w = getarg (&gop, 0, 1, NULL, &bitsize);
+		esilprintf (op, "0,cf,:=,1,%s,-,1,<<,%s,&,?{,1,cf,:=,},%s,%s,ASR,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=",
+			src, dst_r, src, dst_r, dst_w, bitsize - 1);
+		free (src);
+		free (dst_r);
+		free (dst_w);
+	}
+	break;
 	case X86_INS_SARX:
 		{
 			dst = getarg (&gop, 0, 1, NULL, NULL);
