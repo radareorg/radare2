@@ -4,6 +4,8 @@
 #include <r_lib.h>
 #include "../io_memory.h"
 
+#define HAVE_FIFO 1 /*R2__UNIX__ && !__wasi__ */
+
 // Forward declarations for FIFO delegation
 extern RIOPlugin r_io_plugin_malloc;
 
@@ -36,7 +38,7 @@ static bool check_for_blockdevice(RIOMMapFileObj *mmo) {
 	return false;
 }
 
-#if R2__UNIX__ && !__wasi__
+#if HAVE_FIFO
 static bool is_fifo(const char *file) {
 	struct stat buf;
 	if (stat (file, &buf) != -1) {
@@ -62,7 +64,7 @@ static ut8 *slurp_fifo(const char *file, size_t *sz) {
 		return NULL;
 	}
 	while (true) {
-		ssize_t r = read (fd, buf + size, capacity - size);
+		int r = read (fd, buf + size, capacity - size);
 		if (r < 0) {
 			free (buf);
 			close (fd);
@@ -323,7 +325,7 @@ static RIODesc *mmap_open(RIO *io, const char *file, int perm, int mode) {
 	} else if (r_str_startswith (file, "stdio://")) {
 		filepath = file + strlen ("stdio://");
 	}
-#if R2__UNIX__ && !__wasi__
+#if HAVE_FIFO
 	// Handle pipes (FIFOs) by slurping them atomically
 	if (is_fifo (filepath)) {
 		size_t fifo_sz = 0;
