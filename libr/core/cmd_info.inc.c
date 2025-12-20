@@ -250,10 +250,10 @@ static void cmd_info_demangle(RCore *core, const char *input, PJ *pj, int mode) 
 		// when there's no current file, we need to pass core->bin for proper config access
 		RBinFile *bf = NULL;
 		RBinFile *temp_bf = NULL;
-		if (core && core->bin) {
+		if (core->bin) {
 			bf = core->bin->cur;
 		}
-		if (!bf && core && core->bin) {
+		if (!bf && core->bin) {
 			// create a temporary wrapper to ensure demangle has access to config
 			temp_bf = R_NEW0 (RBinFile);
 			temp_bf->rbin = core->bin;
