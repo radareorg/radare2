@@ -27,13 +27,13 @@ extern "C" {
 // if ((x > 0) && (a < INT_MIN + x)) /* `a - x` would underflow */;
 #define SZT_SUB_OVFCHK(a,b) SZT_ADD_OVFCHK(a,-(b))
 #define SSZT_SUB_OVFCHK(a,b) SSZT_ADD_OVFCHK(a,-(b))
-#define UT64_SUB_OVFCHK(a,b) UT64_ADD_OVFCHK(a,-(b))
+#define UT64_SUB_OVFCHK(a,b) UT64_ADD_OVFCHK(a,(-(st64)(b)))
 #define ST64_SUB_OVFCHK(a,b) ST64_ADD_OVFCHK(a,-(b))
-#define UT32_SUB_OVFCHK(a,b) UT32_ADD_OVFCHK(a,-(b))
+#define UT32_SUB_OVFCHK(a,b) UT32_ADD_OVFCHK(a,(-(st32)(b)))
 #define ST32_SUB_OVFCHK(a,b) ST32_ADD_OVFCHK(a,-(b))
 #define UT16_SUB_OVFCHK(a,b) ((a) < (b))
 #define ST16_SUB_OVFCHK(a,b) ST16_ADD_OVFCHK(a,-(b))
-#define UT8_SUB_OVFCHK(a,b) UT8_ADD_OVFCHK(a,-(b))
+#define UT8_SUB_OVFCHK(a,b) UT8_ADD_OVFCHK(a,(-(st8)(b)))
 #define ST8_SUB_OVFCHK(a,b) ST8_ADD_OVFCHK(a,-(b))
 
 // MUL

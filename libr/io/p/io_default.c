@@ -4,7 +4,7 @@
 #include <r_lib.h>
 #include "../io_memory.h"
 
-#define HAVE_FIFO 1 /*R2__UNIX__ && !__wasi__ */
+#define HAVE_FIFO 1
 
 // Forward declarations for FIFO delegation
 extern RIOPlugin r_io_plugin_malloc;
