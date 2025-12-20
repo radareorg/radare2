@@ -1,10 +1,15 @@
-/* radare - LGPL3 - Copyright 2016-2022 - c0riolis, x0urc3 */
+/* radare - LGPL3 - Copyright 2016-2025 - c0riolis, x0urc3 */
 
 #include "pyc.h"
 #include "marshal.h"
 
-bool pyc_get_sections_symbols(RList *sections, RList *symbols, RList *cobjs, RBuffer *buf, ut32 magic) {
-	return get_sections_symbols_from_code_objects (buf, sections, symbols, cobjs, magic);
+bool pyc_get_sections_symbols(RList *sections, RList *symbols, RList *cobjs, RBuffer *buf, ut32 magic, RList *interned_table) {
+	PycUnmarshalCtx ctx = {0};
+	ctx.magic = magic;
+	ctx.scount = 0;
+	ctx.refs = NULL;
+	ctx.interned_table = interned_table;
+	return get_sections_symbols_from_code_objects (&ctx, buf, sections, symbols, cobjs);
 }
 
 static inline bool pyc_is_object(ut8 b, pyc_marshal_type type) {
