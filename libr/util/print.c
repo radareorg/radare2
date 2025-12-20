@@ -2481,7 +2481,10 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 				const bool next_is_num = (*np == '$' || isdigit (*np & 0xff));
 				const bool immediate_space = isspace (p[i + 1] & 0xff);
 				if (!(next_is_num && (p[i] == '[' || !immediate_space))) {
-					const char *color = found_var ? print->consb.cons->context->pal.var_type : reg;
+					const char *color = reg;
+						if (found_var && print && print->consb.cons && print->consb.cons->context) {
+							color = print->consb.cons->context->pal.var_type;
+						}
 					expect_reg = false;
 					if (is_flag (p + i)) {
 						color = color_flag;
