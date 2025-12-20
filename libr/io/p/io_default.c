@@ -269,7 +269,11 @@ static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		if (lseek (mmo->fd, mmo->addr, SEEK_SET) < 0) {
 			return -1;
 		}
-		return read (mmo->fd, buf, count);
+		int ret = read (mmo->fd, buf, count);
+		if (ret > 0) {
+			mmo->addr += ret;
+		}
+		return ret;
 	}
 	size_t bs = r_buf_size (mmo->buf);
 	if (bs < mmo->addr) {
@@ -293,7 +297,11 @@ static int mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		if (lseek (mmo->fd, addr, 0) < 0) {
 			return -1;
 		}
-		return write (mmo->fd, buf, count);
+		int ret = write (mmo->fd, buf, count);
+		if (ret > 0) {
+			mmo->addr += ret;
+		}
+		return ret;
 	}
 
 	if (mmo->buf) {

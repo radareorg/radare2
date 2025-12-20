@@ -5,6 +5,9 @@
 
 static bool buf_io_init(RBuffer *b, const void *user) {
 	b->rb_io = r_mem_dup (user, sizeof (RBufferIO));
+	// Reset position to 0 so buffer reads from beginning
+	RIOBind *iob = b->rb_io->iob;
+	iob->fd_seek (iob->io, b->rb_io->fd, 0, R_IO_SEEK_SET);
 	return true;
 }
 
