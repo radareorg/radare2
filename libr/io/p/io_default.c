@@ -216,10 +216,10 @@ static RIOMMapFileObj *mmap_create(RIO *io, const char *filename, int perm, int 
 	R_RETURN_VAL_IF_FAIL (io && filename, NULL);
 	RIOMMapFileObj *mmo = R_NEW0 (RIOMMapFileObj);
 	mmo->fd = -1;
-	mmo->rawio = false;
+	mmo->rawio = true;
 	if (r_str_startswith (filename, "file://")) {
 		filename += strlen ("file://");
-		mmo->rawio = false;
+		mmo->rawio = true;
 	} else if (r_str_startswith (filename, "stdio://")) {
 		filename += strlen ("stdio://");
 		mmo->rawio = true;
@@ -268,7 +268,11 @@ static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		if (lseek (mmo->fd, mmo->addr, SEEK_SET) < 0) {
 			return -1;
 		}
-		return read (mmo->fd, buf, count);
+		int ret = read (mmo->fd, buf, count);
+		if (ret > 0) {
+			mmo->addr += ret;
+		}
+		return ret;
 	}
 	size_t bs = r_buf_size (mmo->buf);
 	if (bs < mmo->addr) {
@@ -292,7 +296,11 @@ static int mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		if (lseek (mmo->fd, addr, 0) < 0) {
 			return -1;
 		}
-		return write (mmo->fd, buf, count);
+		int ret = write (mmo->fd, buf, count);
+		if (ret > 0) {
+			mmo->addr += ret;
+		}
+		return ret;
 	}
 
 	if (mmo->buf) {
