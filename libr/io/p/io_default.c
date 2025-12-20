@@ -260,7 +260,6 @@ static bool uricheck(const char *filename) {
 static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	R_RETURN_VAL_IF_FAIL (fd && fd->data && buf, -1);
 	RIOMMapFileObj *mmo = (RIOMMapFileObj *)fd->data;
-	R_LOG_DEBUG ("rawio %d", mmo->rawio);
 	if (mmo->addr == UT64_MAX) {
 		memset (buf, io->Oxff, count);
 		return count;
