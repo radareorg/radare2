@@ -253,7 +253,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt update --assume-yes
-        sudo apt-get --assume-yes install gperf wheel setuptools valgrind || true
+        sudo apt-get --assume-yes install gperf wheel setuptools valgrind
         sudo pip install r2pipe --break-system-packages
     - name: Configure, build and install
       env:
@@ -266,6 +266,7 @@ jobs:
       env:
         PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
       run: |
+        valgrind --version
         r2 -v
         r2r -v
         r2r test/db/leak

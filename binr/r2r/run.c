@@ -1549,15 +1549,8 @@ static R2RProcessOutput *run_r2_test_with_valgrind(R2RRunConfig *config, ut64 ti
 // Run a leak test with valgrind
 // Returns process output with valgrind output in stdout/stderr
 R_API R2RProcessOutput *r2r_run_leak_test(R2RRunConfig *config, R2RCmdTest *test, R2RCmdRunner runner, void *user) {
-// Check if we're on Linux
-#if !R2__UNIX__
-	R2RProcessOutput *out = R_NEW0 (R2RProcessOutput);
-	out->ret = 1;
-	out->out = strdup ("Leak tests only run on Linux");
-	out->err = strdup ("");
-	return out;
-#else
-	// Check if valgrind is available
+#if __linux__
+	// Check if valgrind is available and we run only this stuff in linux
 	char *valgrind_bin = r_file_path ("valgrind");
 	if (!valgrind_bin) {
 		R2RProcessOutput *out = R_NEW0 (R2RProcessOutput);
@@ -1609,6 +1602,12 @@ R_API R2RProcessOutput *r2r_run_leak_test(R2RRunConfig *config, R2RCmdTest *test
 	r_list_free (extra_args);
 	r_list_free (files);
 	r_list_free (extra_env);
+	return out;
+#else
+	R2RProcessOutput *out = R_NEW0 (R2RProcessOutput);
+	out->ret = 1;
+	out->out = strdup ("Leak tests only run on Linux");
+	out->err = strdup ("");
 	return out;
 #endif
 }
