@@ -451,6 +451,15 @@ R_API bool r_bin_plugin_remove(RBin *bin, RBinPlugin *plugin) {
 			if (plug->fini) {
 				plug->fini (bin);
 			}
+			// Nullify plugin pointers in all RBinFiles using this plugin
+			// to prevent use-after-free when files are freed later
+			RListIter *fit;
+			RBinFile *bf;
+			r_list_foreach (bin->binfiles, fit, bf) {
+				if (bf && bf->bo && bf->bo->plugin == plug) {
+					bf->bo->plugin = NULL;
+				}
+			}
 			r_list_delete (bin->plugins, iter);
 			return true;
 		}
