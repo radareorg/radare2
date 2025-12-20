@@ -88,3 +88,19 @@ WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e 
 ERROR: [cmd_write_fail] Cannot write. Use `omp`, `io.cache` or reopen the file in rw with `oo+`
 EOF
 RUN
+
+NAME=issue-25090 aaef must not corrupt file
+FILE=.issue-25090.so
+ARGS=-w -e bin.relocs.apply=true
+CMDS=<<EOF
+!cp bins/elf/android/libpairipcore.so .issue-25090.so
+oo
+aa;aaef
+e io.va=0
+p8 4 @ 0
+rm .issue-25090.so
+EOF
+EXPECT=<<EOF
+7f454c46
+EOF
+RUN

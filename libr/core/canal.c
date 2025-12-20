@@ -5863,7 +5863,12 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 			ut64 fs = r_anal_function_realsize (fcn);
 			if (ls > fs + 4096) {
 				R_LOG_INFO ("Function is too sparse, must be analyzed with recursive");
+				// `aaef` (analysis) must not modify the opened file even in `-w` mode.
+				// Route ESIL writes to the IO overlay temporarily for this recursive pass.
+				bool (*old_write_at)(RIO *io, ut64 addr, const ut8 *buf, int len) = core->anal->iob.write_at;
+				core->anal->iob.write_at = r_io_vwrite_to_overlay_at;
 				r_core_anal_esil_function (core, core->addr);
+				core->anal->iob.write_at = old_write_at;
 				return;
 			}
 			start = r_anal_function_min_addr (fcn);
