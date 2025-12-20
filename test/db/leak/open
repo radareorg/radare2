@@ -18,3 +18,34 @@ hello
 EOF
 RUN
 
+NAME=leak opening macho
+FILE=bins/mach0/hello-osx-i386
+CMDS=<<EOF
+?e hello
+EOF
+EXPECT=<<EOF
+hello
+EOF
+RUN
+
+NAME=leak analysis elf
+FILE=bins/elf/ip-riscv
+ARGS=-AA
+CMDS=<<EOF
+?e hello
+EOF
+EXPECT=<<EOF
+hello
+EOF
+RUN
+
+NAME=leak analysis macho
+FILE=bins/mach0/hello-osx-i386
+ARGS=-AA
+CMDS=<<EOF
+?e hello
+EOF
+EXPECT=<<EOF
+hello
+EOF
+RUN
