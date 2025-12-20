@@ -248,8 +248,11 @@ static void cmd_info_demangle(RCore *core, const char *input, PJ *pj, int mode) 
 	{
 		// RBinDemangle requires an RBinFile to get the RBinOptions for the trylib option
 		// when there's no current file, we need to pass core->bin for proper config access
-		RBinFile *bf = core->bin->cur;
+		RBinFile *bf = NULL;
 		RBinFile *temp_bf = NULL;
+		if (core->bin) {
+			bf = core->bin->cur;
+		}
 		if (!bf && core->bin) {
 			// create a temporary wrapper to ensure demangle has access to config
 			temp_bf = R_NEW0 (RBinFile);

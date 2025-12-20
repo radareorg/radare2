@@ -893,7 +893,7 @@ static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
 			printf ("-- exit status: " Color_RED "%d" Color_RESET "\n", result->proc_out->ret);
 			break;
 		case R2R_TEST_TYPE_LEAK:
-			r2r_run_leak_test (config, result->test->cmd_test, print_runner, NULL);
+			result->proc_out = r2r_run_leak_test (config, result->test->cmd_test, print_runner, NULL);
 			printf ("-- valgrind output\n%s\n", result->proc_out->out);
 			if (result->proc_out->err) {
 				printf ("-- stderr\n%s\n", result->proc_out->err);
