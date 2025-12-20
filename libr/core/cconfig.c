@@ -1077,7 +1077,8 @@ static void update_cfgcharsets_options(RCore *core, RConfigNode *node) {
 		return;
 	}
 	RList *chs = r_str_split_list (lst, "\n", 0);
-	RListIter *iter; char *name;
+	RListIter *iter;
+	char *name;
 	r_list_foreach (chs, iter, name) {
 		SETOPTIONS (node, name, NULL);
 	}
@@ -1410,8 +1411,8 @@ static bool cb_cfg_float(void *user, void *data) {
 }
 
 static bool cb_cfgcharset(void *user, void *data) {
-	RCore *core = (RCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RCore *core = (RCore *)user;
+	RConfigNode *node = (RConfigNode *)data;
 	const char *cf = r_str_trim_head_ro (node->value);
 	if (!*cf) {
 		r_muta_session_free (core->charset_session);
@@ -1484,8 +1485,7 @@ static bool cb_cfgdebug(void *user, void *data) {
 			r_config_set (core->config, "asm.arch", "bf");
 		}
 		if (core->io->desc) {
-			r_debug_select (core->dbg, r_io_fd_get_pid (core->io, core->io->desc->fd),
-				r_io_fd_get_tid (core->io, core->io->desc->fd));
+			r_debug_select (core->dbg, r_io_fd_get_pid (core->io, core->io->desc->fd), r_io_fd_get_tid (core->io, core->io->desc->fd));
 		}
 	} else {
 		r_debug_use (core->dbg, NULL);
@@ -1555,15 +1555,7 @@ static bool cb_cfgsanbox_grain(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	if (strstr (node->value, "?")) {
 		static RCoreHelpMessage help_msg_grain = {
-			"Usage:", "e cfg.sandbox.grain=arg[,arg...]", "set grain types to mask out",
-			"Grain types:", "", "",
-			"", "all", "",
-			"", "none", "",
-			"", "disk", "",
-			"", "files", "",
-			"", "exec", "",
-			"", "socket", "",
-			NULL
+			"Usage:", "e cfg.sandbox.grain=arg[,arg...]", "set grain types to mask out", "Grain types:", "", "", "", "all", "", "", "none", "", "", "disk", "", "", "files", "", "", "exec", "", "", "socket", "", NULL
 		};
 		r_core_cmd_help ((RCore *)user, help_msg_grain);
 		return false;
@@ -1756,11 +1748,12 @@ static bool cb_color(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	if (*node->value == '?') {
 		r_cons_printf (core->cons, "Possible values:\n"
-				"  0 - disable colors\n"
-				"  1 - ansi 16 colors\n"
-				"  2 - 256 colors\n"
-				"  3 - 16 million colors (truecolor)\n"
-				"Maximum supported by your terminal: %d\n", limit);
+					"  0 - disable colors\n"
+					"  1 - ansi 16 colors\n"
+					"  2 - 256 colors\n"
+					"  3 - 16 million colors (truecolor)\n"
+					"Maximum supported by your terminal: %d\n",
+			limit);
 		return false;
 	}
 	if (node->i_value) {
@@ -2005,8 +1998,7 @@ static bool cb_dbgstatus(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	if (r_config_get_b (r->config, "cfg.debug")) {
 		if (node->i_value) {
-			r_config_set (r->config, "cmd.prompt",
-				".dr*; drd; sr PC;pi 1;s-");
+			r_config_set (r->config, "cmd.prompt", ".dr*; drd; sr PC;pi 1;s-");
 		} else {
 			r_config_set (r->config, "cmd.prompt", ".dr*");
 		}
@@ -3342,7 +3334,7 @@ static bool cb_anal_roregs(RCore *core, RConfigNode *node) {
 
 static bool cb_anal_gp(RCore *core, RConfigNode *node) {
 	ut64 gpv = node->i_value;
-	gpv = (gpv == UT64_MAX)? gpv: (gpv + 0xf) & ~(ut64)0xf;
+	gpv = (gpv == UT64_MAX)? gpv: (gpv + 0xf) & ~ (ut64)0xf;
 	node->i_value = gpv;
 	core->anal->gp = gpv;
 	r_reg_setv (core->anal->reg, "gp", gpv);
@@ -3836,15 +3828,7 @@ R_API int r_core_config_init(RCore *core) {
 	n = NODECB ("anal.in", "io.maps.x", &cb_searchin); // TODO: use io.sections.x seems to break db/anal/calls.. why?
 	n = NODECB ("anal.in", "bin.ormaps.x", &cb_searchin); // R2R db/anal/calls
 	SETDESC (n, "specify search boundaries for analysis");
-	SETOPTIONS (n, "range", "block",
-		"bin.segment", "bin.segments", "bin.segments.x", "bin.segments.r",
-		"bin.section", "bin.sections", "bin.sections.rwx", "bin.sections.r", "bin.sections.rw", "bin.sections.rx", "bin.sections.wx", "bin.sections.x",
-		"bin.ormaps.x",
-		"io.map", "io.maps", "io.maps.rwx", "io.maps.r", "io.maps.rw", "io.maps.rx", "io.maps.wx", "io.maps.x",
-		"dbg.stack", "dbg.heap",
-		"dbg.map", "dbg.maps", "dbg.maps.rwx", "dbg.maps.r", "dbg.maps.rw", "dbg.maps.rx", "dbg.maps.wx", "dbg.maps.x",
-		"anal.fcn", "anal.bb",
-		NULL);
+	SETOPTIONS (n, "range", "block", "bin.segment", "bin.segments", "bin.segments.x", "bin.segments.r", "bin.section", "bin.sections", "bin.sections.rwx", "bin.sections.r", "bin.sections.rw", "bin.sections.rx", "bin.sections.wx", "bin.sections.x", "bin.ormaps.x", "io.map", "io.maps", "io.maps.rwx", "io.maps.r", "io.maps.rw", "io.maps.rx", "io.maps.wx", "io.maps.x", "dbg.stack", "dbg.heap", "dbg.map", "dbg.maps", "dbg.maps.rwx", "dbg.maps.r", "dbg.maps.rw", "dbg.maps.rx", "dbg.maps.wx", "dbg.maps.x", "anal.fcn", "anal.bb", NULL);
 	SETI ("anal.timeout", 0, "stop analyzing after N seconds (0 = no timeout)");
 	SETCB ("anal.flagends", "true", &cb_anal_flagends, "end function when a flag is found");
 	SETCB ("anal.icods", "true", &cb_anal_icods, "analyze indirect code references");
@@ -3961,8 +3945,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("esil.addr.size", 64, "maximum address size in accessed by the ESIL VM");
 	SETB ("esil.breakoninvalid", "false", "break esil execution when instruction is invalid");
 	SETI ("esil.timeout", 0, "a timeout (in seconds) for when we should give up emulating");
-	SETCB ("esil.traprevert", "false", &cb_esiltraprevert,
-		"Revert the entire expression, when esil traps, instead of just the pc");
+	SETCB ("esil.traprevert", "false", &cb_esiltraprevert, "Revert the entire expression, when esil traps, instead of just the pc");
 	SETCB ("cfg.debug", "false", &cb_cfgdebug, "debugger mode");
 	/* asm */
 	// asm.os needs to be first, since other asm.* depend on it
@@ -4037,13 +4020,10 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("asm.flags.inoffset", "false", "display flags inside the offset column");
 	SETB ("asm.flags.inline", "false", "display flags in line separated by commas instead of newlines");
 	n = NODEICB ("asm.flags.middle", 2, &cb_midflags);
-	SETOPTIONS (n, "0 = do not show flag", "1 = show without realign", "2 = realign at middle flag",
-		"3 = realign at middle flag if sym.*", NULL);
+	SETOPTIONS (n, "0 = do not show flag", "1 = show without realign", "2 = realign at middle flag", "3 = realign at middle flag if sym.*", NULL);
 	SETDESC (n, "realign disassembly if there is a flag in the middle of an instruction");
-	SETCB ("asm.flags.real", "false", &cb_flag_realnames,
-		"show flags' unfiltered realnames instead of names, except realnames from demangling");
-	SETCB ("cfg.autoflagspace", "false", &cb_flag_autospace,
-		"automatically assign flagspace based on registered name prefixes");
+	SETCB ("asm.flags.real", "false", &cb_flag_realnames, "show flags' unfiltered realnames instead of names, except realnames from demangling");
+	SETCB ("cfg.autoflagspace", "false", &cb_flag_autospace, "automatically assign flagspace based on registered name prefixes");
 	SETB ("asm.lbytes", "true", "align disasm bytes to left");
 	SETB ("asm.lines", "true", "show ASCII-art lines at disassembly");
 	SETB ("asm.lines.fcn", "true", "show function boundary lines");
@@ -4476,10 +4456,18 @@ R_API int r_core_config_init(RCore *core) {
 		/* bin_name, standard_path, http.browser value override */
 		static const char *bin_data[] = {
 			"openURL", "/usr/bin/openURL", "", // iOS ericautils
-			"termux-open", TERMUX_PREFIX "/bin/termux-open", "",
-			"toolbox", "/system/bin/toolbox", "LD_LIBRARY_PATH=/system/lib am start -a android.intent.action.VIEW -d",
-			"xdg-open", "/usr/bin/xdg-open", "",
-			"open", "/usr/bin/open", "",
+			"termux-open",
+			TERMUX_PREFIX "/bin/termux-open",
+			"",
+			"toolbox",
+			"/system/bin/toolbox",
+			"LD_LIBRARY_PATH=/system/lib am start -a android.intent.action.VIEW -d",
+			"xdg-open",
+			"/usr/bin/xdg-open",
+			"",
+			"open",
+			"/usr/bin/open",
+			"",
 			NULL
 		};
 		int i;
@@ -4646,8 +4634,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("scr.flush", "false", &cb_scrflush, "force flush to console in realtime (breaks scripting)");
 	SETB ("scr.slow", "true", "do slow stuff on visual mode like RFlag.get_at(true)");
 #if R2__WINDOWS__
-	SETICB ("scr.vtmode", core->cons->vtmode? 1: 0,
-		&scr_vtmode, "use VT sequences on Windows (0: Disable, 1: Shell, 2: Visual)");
+	SETICB ("scr.vtmode", core->cons->vtmode? 1: 0, &scr_vtmode, "use VT sequences on Windows (0: Disable, 1: Shell, 2: Visual)");
 #else
 	SETI ("scr.vtmode", 0, "windows specific configuration that have no effect on other OSs");
 #endif
@@ -4717,6 +4704,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("scr.color.pipe", "false", "enable colors when using pipes");
 	SETB ("scr.color.ops", "true", "colorize numbers and registers in opcodes");
 	SETB ("scr.color.regs", "false", "colorize each register differently");
+	SETB ("scr.rainbow.regs", "false", "use static rainbow color palette for registers (overrides theme colors)");
 	SETCB ("scr.color.ophex", "false", &cb_scr_color_ophex, "colorize in hexdump depending on opcode type (px)");
 	SETB ("scr.color.args", "true", "colorize arguments and variables of functions");
 	SETB ("scr.color.bytes", "true", "colorize bytes that represent the opcodes of the instruction");
@@ -4760,13 +4748,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("search.from", -1, "search start address");
 	n = NODECB ("search.in", "io.maps", &cb_searchin);
 	SETDESC (n, "specify search boundaries");
-	SETOPTIONS (n, "raw", "flag", "flag:", "block",
-		"bin.section", "bin.sections", "bin.sections.rwx", "bin.sections.r", "bin.sections.rw", "bin.sections.rx", "bin.sections.wx", "bin.sections.x",
-		"io.map", "io.maps", "io.maps.rwx", "io.maps.r", "io.maps.rw", "io.maps.rx", "io.maps.wx", "io.maps.x",
-		"dbg.stack", "dbg.heap",
-		"dbg.map", "dbg.maps", "dbg.maps.rwx", "dbg.maps.r", "dbg.maps.rw", "dbg.maps.rx", "dbg.maps.wx", "dbg.maps.x",
-		"anal.fcn", "anal.bb",
-		NULL);
+	SETOPTIONS (n, "raw", "flag", "flag:", "block", "bin.section", "bin.sections", "bin.sections.rwx", "bin.sections.r", "bin.sections.rw", "bin.sections.rx", "bin.sections.wx", "bin.sections.x", "io.map", "io.maps", "io.maps.rwx", "io.maps.r", "io.maps.rw", "io.maps.rx", "io.maps.wx", "io.maps.x", "dbg.stack", "dbg.heap", "dbg.map", "dbg.maps", "dbg.maps.rwx", "dbg.maps.r", "dbg.maps.rw", "dbg.maps.rx", "dbg.maps.wx", "dbg.maps.x", "anal.fcn", "anal.bb", NULL);
 	SETICB ("search.kwidx", 0, &cb_search_kwidx, "store last search index count");
 	SETS ("search.prefix", "hit", "prefix name in search hits label");
 	SETB ("search.show", "true", "show search results");
@@ -4798,8 +4780,7 @@ R_API int r_core_config_init(RCore *core) {
 	// SETCB ("dbg.aslr", "false", &cb_ioaslr, "disable ASLR for spawn and such");
 	SETCB ("bin.aslr", "false", &cb_binaslr, "pick a random bin.baddr to simulate ASLR for static analysis");
 	SETCB ("io.va", "true", &cb_iova, "use virtual address layout");
-	SETB ("io.voidwrites", "true",
-		"handle writes to fully unmapped areas as valid operations (requires io.va to be set)");
+	SETB ("io.voidwrites", "true", "handle writes to fully unmapped areas as valid operations (requires io.va to be set)");
 	SETI ("io.mapinc", 0x10000000, "increment map address when overlap with r_io_map_locate");
 	SETCB ("io.pava", "false", &cb_io_pava, "use EXPERIMENTAL paddr -> vaddr address mode");
 	SETCB ("io.autofd", "true", &cb_ioautofd, "change fd when opening a new file");
@@ -4828,8 +4809,7 @@ R_API int r_core_config_init(RCore *core) {
 		char buf[128];
 		for (i = 1; i < 13; i++) {
 			snprintf (buf, sizeof (buf), "key.f%d", i);
-			snprintf (buf + 10, sizeof (buf) - 10,
-				"run this when F%d key is pressed in visual mode", i);
+			snprintf (buf + 10, sizeof (buf) - 10, "run this when F%d key is pressed in visual mode", i);
 			switch (i) {
 			default: p = ""; break;
 			}
@@ -4845,13 +4825,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("zoom.to", 0, "zoom end address");
 	n = NODECB ("zoom.in", "io.map", &cb_searchin);
 	SETDESC (n, "specify boundaries for zoom");
-	SETOPTIONS (n, "raw", "block",
-		"bin.section", "bin.sections", "bin.sections.rwx", "bin.sections.r", "bin.sections.rw", "bin.sections.rx", "bin.sections.wx", "bin.sections.x",
-		"io.map", "io.maps", "io.maps.rwx", "io.maps.r", "io.maps.rw", "io.maps.rx", "io.maps.wx", "io.maps.x",
-		"dbg.stack", "dbg.heap",
-		"dbg.map", "dbg.maps", "dbg.maps.rwx", "dbg.maps.r", "dbg.maps.rw", "dbg.maps.rx", "dbg.maps.wx", "dbg.maps.x",
-		"anal.fcn", "anal.bb",
-		NULL);
+	SETOPTIONS (n, "raw", "block", "bin.section", "bin.sections", "bin.sections.rwx", "bin.sections.r", "bin.sections.rw", "bin.sections.rx", "bin.sections.wx", "bin.sections.x", "io.map", "io.maps", "io.maps.rwx", "io.maps.r", "io.maps.rw", "io.maps.rx", "io.maps.wx", "io.maps.x", "dbg.stack", "dbg.heap", "dbg.map", "dbg.maps", "dbg.maps.rwx", "dbg.maps.r", "dbg.maps.rw", "dbg.maps.rx", "dbg.maps.wx", "dbg.maps.x", "anal.fcn", "anal.bb", NULL);
 	/* lines */
 	SETI ("lines.from", 0, "start address for line seek");
 	SETCB ("lines.to", "$s", &cb_linesto, "end address for line seek");

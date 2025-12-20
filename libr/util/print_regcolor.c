@@ -4,18 +4,46 @@
 #include <r_util/r_str.h>
 #include <r_anal.h>
 
-static bool reg_rainbow_enabled (RPrint *print) {
+static bool reg_rainbow_enabled(RPrint *print) {
 	if (print && print->coreb.cfgGetB) {
 		return print->coreb.cfgGetB (print->coreb.core, "scr.color.regs");
 	}
 	return false;
 }
 
-static inline bool is_token_char (char p) {
+static bool static_rainbow_palette_enabled(RPrint *print) {
+	if (print && print->coreb.cfgGetB) {
+		return print->coreb.cfgGetB (print->coreb.core, "scr.rainbow.regs");
+	}
+	return false;
+}
+
+// Static rainbow palette: ANSI basic colors + extended colors
+// Designed to work on old terminals while avoiding repetition
+static const char *rainbow_palette[] = {
+	Color_RED, // Red
+	Color_YELLOW, // Yellow
+	Color_GREEN, // Green
+	Color_CYAN, // Cyan
+	Color_BLUE, // Blue
+	Color_MAGENTA, // Magenta
+	Color_WHITE, // White
+	Color_BOLD Color_RED, // Bold Red
+	Color_BOLD Color_YELLOW, // Bold Yellow
+	Color_BOLD Color_GREEN, // Bold Green
+	Color_BOLD Color_CYAN, // Bold Cyan
+	Color_BOLD Color_BLUE, // Bold Blue
+	Color_BOLD Color_MAGENTA, // Bold Magenta
+	Color_BOLD Color_WHITE, // Bold White
+};
+
+static const int rainbow_palette_sz = R_ARRAY_SIZE(rainbow_palette);
+
+static inline bool is_token_char(char p) {
 	return isalpha (p & 0xff) || isdigit (p & 0xff) || p == '.' || p == '_';
 }
 
-static bool token_name (const char *p, char *name, size_t name_sz) {
+static bool token_name(const char *p, char *name, size_t name_sz) {
 	if (!p || !name || name_sz < 2) {
 		return false;
 	}
@@ -39,7 +67,7 @@ static bool token_name (const char *p, char *name, size_t name_sz) {
 	return true;
 }
 
-static int reg_item_cmp (const RRegItem *a, const RRegItem *b) {
+static int reg_item_cmp(const RRegItem *a, const RRegItem *b) {
 	const int offa = ((unsigned)a->offset << 4) + a->size;
 	const int offb = ((unsigned)b->offset << 4) + b->size;
 	if (offa != offb) {
@@ -51,7 +79,7 @@ static int reg_item_cmp (const RRegItem *a, const RRegItem *b) {
 	return strcmp (a->name, b->name);
 }
 
-static int reg_item_rank (RReg *reg, const RRegItem *item) {
+static int reg_item_rank(RReg *reg, const RRegItem *item) {
 	int rank = 0;
 	int i;
 	RListIter *iter;
@@ -69,7 +97,7 @@ static int reg_item_rank (RReg *reg, const RRegItem *item) {
 	return rank;
 }
 
-static int reg_palette_add_unique (const char **colors, int n, int max, const char *color) {
+static int reg_palette_add_unique(const char **colors, int n, int max, const char *color) {
 	if (n < 0 || n >= max || R_STR_ISEMPTY (color) || !strcmp (color, Color_RESET) || !strcmp (color, Color_RESET_NOBG)) {
 		return n;
 	}
@@ -83,7 +111,7 @@ static int reg_palette_add_unique (const char **colors, int n, int max, const ch
 	return n;
 }
 
-static int reg_palette_colors (RConsPrintablePalette *pal, const char **colors, int max) {
+static int reg_palette_colors(RConsPrintablePalette *pal, const char **colors, int max) {
 	int n = 0;
 	if (!pal || !colors || max < 1) {
 		return 0;
@@ -116,11 +144,11 @@ static int reg_palette_colors (RConsPrintablePalette *pal, const char **colors, 
 	return n;
 }
 
-R_IPI bool r_print_reg_rainbow_enabled (RPrint *print) {
+R_IPI bool r_print_reg_rainbow_enabled(RPrint *print) {
 	return reg_rainbow_enabled (print);
 }
 
-R_IPI char *r_print_reg_rainbow_color (RPrint *print, const char *p) {
+R_IPI char *r_print_reg_rainbow_color(RPrint *print, const char *p) {
 	if (!print || !reg_rainbow_enabled (print) || !print->consb.cons || !print->reg || !print->get_register) {
 		return NULL;
 	}
@@ -134,6 +162,13 @@ R_IPI char *r_print_reg_rainbow_color (RPrint *print, const char *p) {
 	}
 	const int rank = reg_item_rank (print->reg, item);
 	r_unref (item);
+
+	// Use static rainbow palette if enabled
+	if (static_rainbow_palette_enabled (print)) {
+		const int base = rank % rainbow_palette_sz;
+		return strdup (rainbow_palette[base]);
+	}
+
 	RCons *cons = print->consb.cons;
 	if (!cons || !cons->context) {
 		return NULL;
