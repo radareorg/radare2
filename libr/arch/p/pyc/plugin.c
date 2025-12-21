@@ -37,23 +37,23 @@ static pyc_opcodes *get_pyc_opcodes(RArchSession *s) {
 	return ops;
 }
 
-static RList *get_pyc_code_obj(RArchSession *as) {
+static RBinPycObj *get_pyc_obj(RArchSession *as) {
 	RBin *b = as->arch->binb.bin;
 	RBinPlugin *plugin = b->cur && b->cur->bo? b->cur->bo->plugin: NULL;
 	bool is_pyc = (plugin && strcmp (plugin->meta.name, "pyc") == 0);
-	return is_pyc? b->cur->bo->bin_obj: NULL;
+	return is_pyc? (RBinPycObj *)b->cur->bo->bin_obj: NULL;
 }
 
-static inline pyc_code_object *get_func(ut64 pc, RList *pyobj) {
+static inline pyc_code_object *get_func(ut64 pc, RBinPycObj *pyc) {
 	// XXX use better data structures
-	RList *cobjs = pyobj? r_list_get_n (pyobj, 0): NULL;
-	if (cobjs) {
-		pyc_code_object *t;
-		RListIter *iter;
-		r_list_foreach (cobjs, iter, t) {
-			if (R_BETWEEN (t->start_offset, pc, t->end_offset - 1)) {
-				return t;
-			}
+	if (!pyc || !pyc->cobjs) {
+		return NULL;
+	}
+	pyc_code_object *t;
+	RListIter *iter;
+	r_list_foreach (pyc->cobjs, iter, t) {
+		if (R_BETWEEN (t->start_offset, pc, t->end_offset - 1)) {
+			return t;
 		}
 	}
 	return NULL;
@@ -166,9 +166,9 @@ static inline size_t parse_op(RAnalOp *op, py_simple_op *so) {
 
 static bool pyc_decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const int pyversion = pyversion_toi (as->config->cpu);
-	RList *pyobj = get_pyc_code_obj (as);
+	RBinPycObj *pyc = get_pyc_obj (as);
 	pyc_opcodes *ops = get_pyc_opcodes (as);
-	pyc_code_object *func = get_func (op->addr, pyobj);
+	pyc_code_object *func = get_func (op->addr, pyc);
 	if (!func || !ops) {
 		return false;
 	}
@@ -186,8 +186,7 @@ static bool pyc_decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	op->size = size;
 
 	if (mask & R_ARCH_OP_MASK_DISASM) {
-		RList *interned_table = r_list_get_n (pyobj, 1);
-		r_pyc_disasm (op, func, interned_table, ops, &so);
+		r_pyc_disasm (op, func, pyc ? pyc->interned_table : NULL, ops, &so);
 	}
 	ut64 func_base = func->start_offset;
 	op->sign = true;

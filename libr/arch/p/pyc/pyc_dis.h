@@ -7,6 +7,17 @@
 #include <r_asm.h>
 
 #include "opcode.h"
+#include "../../../bin/format/pyc/pyc_magic.h"
+
+// RBinPycObj holds all per-file state for the pyc bin plugin.
+// This struct is stored in bf->bo->bin_obj and accessed by the arch plugin.
+typedef struct {
+	ut64 code_start_offset;
+	struct pyc_version version;
+	RList *sections_cache;     // RList<RBinSection*>
+	RList *interned_table;     // RList<char*>
+	RList *cobjs;              // RList<pyc_code_object*>
+} RBinPycObj;
 
 typedef struct {
 	ut8 opcode, have_arg, argsize, extop;

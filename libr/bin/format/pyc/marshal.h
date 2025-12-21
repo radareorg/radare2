@@ -70,7 +70,16 @@ typedef struct {
 	st64 end_offset;
 } pyc_code_object;
 
-bool get_sections_symbols_from_code_objects(RBuffer *buffer, RList *sections, RList *symbols, RList *objs, ut32 magic);
+// Per-parse context to avoid global variables.
+// Created fresh for each parse operation (sections/symbols extraction).
+typedef struct {
+	ut32 magic;            // .pyc magic number
+	ut32 scount;           // symbol ordinal counter
+	RList *refs;           // ref table for FLAG_REF objects (internal to parse)
+	RList *interned_table; // shared interned strings table
+} PycUnmarshalCtx;
+
+bool get_sections_symbols_from_code_objects(PycUnmarshalCtx *ctx, RBuffer *buffer, RList *sections, RList *symbols, RList *objs);
 ut64 get_code_object_addr(RBuffer *buffer, ut32 magic);
 
 #endif
