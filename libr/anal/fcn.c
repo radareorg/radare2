@@ -2272,7 +2272,8 @@ R_API char *r_anal_function_get_signature(RAnalFunction *function) {
 	} else {
 		realname = function->name;
 	}
-	if (r_str_startswith (realname, "__")) {
+	// strip leading __ prefix (e.g. __strcpy_chk -> strcpy_chk)
+	if (realname && r_str_startswith (realname, "__")) {
 		realname += 2;
 	}
 	char *ret = NULL, *args = strdup ("");

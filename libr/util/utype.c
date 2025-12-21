@@ -590,52 +590,51 @@ R_API void r_type_del(Sdb *TDB, const char *name) {
 	}
 }
 
+// Strip leading __ prefix for type database lookup
+// This allows __strcpy_chk to match strcpy_chk in the database
+static inline const char *normalize_func_name(const char *name) {
+	while (name && name[0] == '_' && name[1] == '_') {
+		name += 2;
+	}
+	return name;
+}
+
 // Function prototypes api
 R_API int r_type_func_exist(Sdb *TDB, const char *func_name) {
-	const char *fcn = sdb_const_get (TDB, func_name, 0);
+	const char *fcn = sdb_const_get (TDB, normalize_func_name (func_name), 0);
 	return fcn && !strcmp (fcn, "func");
 }
 
 R_API const char *r_type_func_ret(Sdb *TDB, const char *func_name) {
-	r_strf_var (query, 64, "func.%s.ret", func_name);
+	r_strf_var (query, 64, "func.%s.ret", normalize_func_name (func_name));
 	return sdb_const_get (TDB, query, 0);
 }
 
 R_API int r_type_func_args_count(Sdb *TDB, const char *R_NONNULL func_name) {
-	r_strf_var (query, 64, "func.%s.args", func_name);
+	r_strf_var (query, 64, "func.%s.args", normalize_func_name (func_name));
 	return sdb_num_get (TDB, query, 0);
 }
 
 R_API R_OWNED char *r_type_func_args_type(Sdb *TDB, const char *R_NONNULL func_name, int i) {
-	char *query = r_str_newf ("func.%s.arg.%d", func_name, i);
+	char *query = r_str_newf ("func.%s.arg.%d", normalize_func_name (func_name), i);
 	char *ret = sdb_get (TDB, query, 0);
 	free (query);
 	if (ret) {
 		char *comma = strchr (ret, ',');
 		if (comma) {
 			*comma = 0;
-			return ret;
 		}
-		return ret;
 	}
-	return NULL;
+	return ret;
 }
 
-const char *const argnames[10] = {
-	"arg0",
-	"arg1",
-	"arg2",
-	"arg3",
-	"arg4",
-	"arg5",
-	"arg6",
-	"arg7",
-	"arg8",
-	"arg9",
+static const char *const argnames[10] = {
+	"arg0", "arg1", "arg2", "arg3", "arg4",
+	"arg5", "arg6", "arg7", "arg8", "arg9",
 };
 
 R_API const char *r_type_func_args_name(Sdb *TDB, const char *R_NONNULL func_name, int i) {
-	char *query = r_str_newf ("func.%s.arg.%d", func_name, i);
+	char *query = r_str_newf ("func.%s.arg.%d", normalize_func_name (func_name), i);
 	const char *row = sdb_const_get (TDB, query, 0);
 	free (query);
 	if (row) {
@@ -643,12 +642,8 @@ R_API const char *r_type_func_args_name(Sdb *TDB, const char *R_NONNULL func_nam
 		if (ret) {
 			return ret + 1;
 		}
-		if (i >= 0 && i < 10) {
-			R_LOG_DEBUG ("Missing arg %d name for %s", i, func_name);
-			return argnames[i];
-		}
 	}
-	return NULL;
+	return (i >= 0 && i < 10)? argnames[i]: "arg";
 }
 
 #define MIN_MATCH_LEN 4

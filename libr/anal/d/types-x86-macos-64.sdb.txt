@@ -1,12 +1,12 @@
-__assert_rtn=func
-func.__assert_rtn.args=4
-func.__assert_rtn.arg.0=const char *,assertion
-func.__assert_rtn.arg.1=const char *,file
-func.__assert_rtn.arg.2=unsigned int,line
-func.__assert_rtn.arg.3=const char *,function
-func.__assert_rtn.noreturn=true
-func.__assert_rtn.ret=void
-func.__assert_rtn.cc=amd64
+assert_rtn=func
+func.assert_rtn.args=4
+func.assert_rtn.arg.0=const char *,assertion
+func.assert_rtn.arg.1=const char *,file
+func.assert_rtn.arg.2=unsigned int,line
+func.assert_rtn.arg.3=const char *,function
+func.assert_rtn.noreturn=true
+func.assert_rtn.ret=void
+func.assert_rtn.cc=amd64
 
 _exit=func
 func._exit.args=1
@@ -28,11 +28,11 @@ func.exit.noreturn=true
 func.exit.ret=void
 func.exit.cc=amd64
 
-__stack_chk_fail=func
-func.__stack_chk_fail.args=0
-func.__stack_chk_fail.noreturn=true
-func.__stack_chk_fail.ret=void
-func.__stack_chk_fail.cc=amd64
+stack_chk_fail=func
+func.stack_chk_fail.args=0
+func.stack_chk_fail.noreturn=true
+func.stack_chk_fail.ret=void
+func.stack_chk_fail.cc=amd64
 
 CCAlgorithm=enum
 enum.CCAlgorithm=kCCAlgorithmAES,kCCAlgorithmDES,kCCAlgorithm3DES,kCCAlgorithmCAST,kCCAlgorithmRC4,kCCAlgorithmRC2
