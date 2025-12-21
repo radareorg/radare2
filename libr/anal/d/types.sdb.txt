@@ -544,11 +544,6 @@ func.tolower.args=1
 func.tolower.arg.0=int,c
 func.tolower.ret=int
 
-toupper=func
-func.toupper.args=1
-func.toupper.arg.0=int,c
-func.toupper.ret=int
-
 kill=func
 func.kill.args=2
 func.kill.arg.0=pid_t,pid
