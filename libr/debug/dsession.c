@@ -105,6 +105,9 @@ R_API bool r_debug_add_checkpoint(RDebug *dbg) {
 
 static void _set_initial_registers(RDebug *dbg) {
 	size_t i;
+	if (!dbg->session->cur_chkpt) {
+		return;
+	}
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		RRegArena *a = dbg->session->cur_chkpt->arena[i];
 		RRegArena *b = dbg->reg->regset[i].arena;
@@ -140,6 +143,9 @@ R_API void _restore_registers(RDebug *dbg, ut32 cnum) {
 static void _set_initial_memory(RDebug *dbg) {
 	RListIter *iter;
 	RDebugSnap *snap;
+	if (!dbg->session->cur_chkpt) {
+		return;
+	}
 	r_list_foreach (dbg->session->cur_chkpt->snaps, iter, snap) {
 		dbg->iob.write_at (dbg->iob.io, snap->addr, snap->data, snap->size);
 	}
