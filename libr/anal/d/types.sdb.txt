@@ -528,12 +528,6 @@ func.maskrune.arg.0=long,c
 func.maskrune.arg.1=long,f
 func.maskrune.ret=int
 
-maskrune=func
-func.maskrune.args=2
-func.maskrune.arg.0=long,c
-func.maskrune.arg.1=long,f
-func.maskrune.ret=int
-
 toupper=func
 func.toupper.args=1
 func.toupper.arg.0=int,c
