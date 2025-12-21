@@ -1,3 +1,4 @@
+
 /* radare2 - LGPL - Copyright 2013-2025 - pancake */
 
 #include <r_arch.h>
@@ -6,6 +7,7 @@
 #include <capstone/capstone.h>
 #include <capstone/x86.h>
 
+// clang-format off
 #define r_anal_value_new() R_NEW0 (RAnalValue)
 #define ARCH_HAVE_READ 1
 #define GHOSTOPS 1
@@ -86,6 +88,15 @@ static csh cs_handle_for_session(RArchSession *as) {
 	return pd->cs_handle;
 }
 
+static inline RAnalValue * R_NONNULL newvalue(int type, int access, const char *regname, int delta, int memref) {
+	RAnalValue *val = R_NEW0 (RAnalValue);
+	val->type = type;
+	val->access = access;
+	val->reg = regname;
+	val->delta = delta;
+	val->memref = memref;
+	return val;
+}
 
 #define opexprintf(op, fmt, ...) r_strbuf_setf (&op->opex, fmt, ##__VA_ARGS__)
 #define INSOP(n) insn->detail->x86.operands[n]
@@ -479,16 +490,16 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		.bits = bits,
 		.syntax = as->config->syntax
 	};
-	char *src;
-	char *src2;
-	char *dst;
-	char *dst2;
-	char *dst_r;
-	char *dst_w;
-	char *dstAdd;
-	char *arg0;
-	char *arg1;
-	char *arg2;
+	char *src = NULL;
+	char *src2 = NULL;
+	char *dst = NULL;
+	char *dst2 = NULL;
+	char *dst_r = NULL;
+	char *dst_w = NULL;
+	char *dstAdd = NULL;
+	char *arg0 = NULL;
+	char *arg1 = NULL;
+	char *arg2 = NULL;
 
 	// counter for rep prefix
 	const char *counter = (bits == 16)?"cx": (bits == 32)? "ecx": "rcx";
@@ -1507,6 +1518,7 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 							&& (thunk[2] & 0x3f) == 0x24) {  /* --100100: ignore scale in SIB byte */
 						ut8 reg = (thunk[1] & 0x38) >> 3;
 						esilprintf (op, "0x%"PFMT64x",%s,=", addr + op->size, reg32_to_name (reg));
+						free (arg0);
 						break;
 					}
 				} else {
@@ -1522,6 +1534,7 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 					if (bin && bin->iob.read_at && bin->iob.read_at (bin->iob.io, at, b, sizeof (b))) {
 						if (b[0] == 0x5b) { // pop ebx
 							esilprintf (op, "0x%"PFMT64x",ebx,=", at);
+							free (arg0);
 							break;
 						}
 					} else {
@@ -2574,72 +2587,24 @@ static void set_access_info(RArchSession *as, RAnalOp *op, csh handle, cs_insn *
 
 	switch (insn->id) {
 	case X86_INS_PUSH:
-		val = r_anal_value_new ();
-		if (val) {
-			val->type = R_ANAL_VAL_MEM;
-			val->access = R_PERM_W;
-			val->reg = cs_reg_name (handle, sp);
-			val->delta = -INSOP(0).size;
-			val->memref = INSOP(0).size;
-			r_list_append (ret, val);
-		}
+		r_list_append (ret, newvalue (R_ANAL_VAL_MEM, R_PERM_W, cs_reg_name (handle, sp), -INSOP(0).size, INSOP(0).size));
 		break;
 	case X86_INS_PUSHAW:
 		// AX, CX, DX, BX, SP, BP, SI, DI
-		val = r_anal_value_new ();
-		if (val) {
-			val->type = R_ANAL_VAL_MEM;
-			val->access = R_PERM_W;
-			val->reg = cs_reg_name (handle, sp);
-			val->delta = -16;
-			val->memref = 16;
-			r_list_append (ret, val);
-		}
+		r_list_append (ret, newvalue (R_ANAL_VAL_MEM, R_PERM_W, cs_reg_name (handle, sp), -16, 16));
 		break;
 	case X86_INS_PUSHAL:
 		// EAX, ECX, EDX, EBX, EBP, ESP, EBP, ESI, EDI
-		val = r_anal_value_new ();
-		if (val) {
-			val->type = R_ANAL_VAL_MEM;
-			val->access = R_PERM_W;
-			val->reg = cs_reg_name (handle, sp);
-			val->delta = -32;
-			val->memref = 32;
-			r_list_append (ret, val);
-		}
+		r_list_append (ret, newvalue (R_ANAL_VAL_MEM, R_PERM_W, cs_reg_name (handle, sp), -32, 32));
 		break;
 	case X86_INS_PUSHF:
-		val = r_anal_value_new ();
-		if (val) {
-			val->type = R_ANAL_VAL_MEM;
-			val->access = R_PERM_W;
-			val->reg = cs_reg_name (handle, sp);
-			val->delta = -2;
-			val->memref = 2;
-			r_list_append (ret, val);
-		}
+		r_list_append (ret, newvalue (R_ANAL_VAL_MEM, R_PERM_W, cs_reg_name (handle, sp), -2, 2));
 		break;
 	case X86_INS_PUSHFD:
-		val = r_anal_value_new ();
-		if (val) {
-			val->type = R_ANAL_VAL_MEM;
-			val->access = R_PERM_W;
-			val->reg = cs_reg_name (handle, sp);
-			val->delta = -4;
-			val->memref = 4;
-			r_list_append (ret, val);
-		}
+		r_list_append (ret, newvalue (R_ANAL_VAL_MEM, R_PERM_W, cs_reg_name (handle, sp), -4, 4));
 		break;
 	case X86_INS_PUSHFQ:
-		val = r_anal_value_new ();
-		if (val) {
-			val->type = R_ANAL_VAL_MEM;
-			val->access = R_PERM_W;
-			val->reg = cs_reg_name (handle, sp);
-			val->delta = -8;
-			val->memref = 8;
-			r_list_append (ret, val);
-		}
+		r_list_append (ret, newvalue (R_ANAL_VAL_MEM, R_PERM_W, cs_reg_name (handle, sp), -8, 8));
 		break;
 	case X86_INS_CALL:
 	case X86_INS_LCALL:
@@ -4651,3 +4616,4 @@ R_API RLibStruct radare_plugin = {
 	.version = R2_VERSION
 };
 #endif
+// clang-format on

@@ -41,7 +41,6 @@ RUN
 
 NAME=leak analysis macho
 FILE=bins/mach0/hello-osx-i386
-BROKEN=1
 ARGS=-AA
 CMDS=<<EOF
 ?e hello
