@@ -1798,12 +1798,6 @@ func.bzero.arg.0=void *,s
 func.bzero.arg.1=size_t,n
 func.bzero.ret=void
 
-bzero=func
-func.bzero.args=2
-func.bzero.arg.0=void *,s
-func.bzero.arg.1=size_t,n
-func.bzero.ret=void
-
 memcpy=func
 func.memcpy.args=3
 func.memcpy.arg.0=void *,s1
