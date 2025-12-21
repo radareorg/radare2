@@ -47,11 +47,8 @@ static ut64 get_entrypoint(RBuffer *buf, ut32 magic, ut64 *out_code_start_offset
 
 static RBinInfo *info(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
-	RBinPycObj *obj = bf->bo ? (RBinPycObj *)bf->bo->bin_obj : NULL;
+	RBinPycObj *obj = (RBinPycObj *)R_UNWRAP3 (bf, bo, bin_obj);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) {
-		return NULL;
-	}
 	ret->file = strdup (bf->file);
 	ret->type = r_str_newf ("Python %s byte-compiled file", obj ? obj->version.version : "");
 	ret->bclass = strdup ("Python byte-compiled file");
@@ -67,7 +64,7 @@ static RBinInfo *info(RBinFile *bf) {
 
 static RList *sections(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
-	RBinPycObj *obj = (RBinPycObj *)bf->bo->bin_obj : NULL;
+	RBinPycObj *obj = (RBinPycObj *)R_UNWRAP3 (bf, bo, bin_obj);
 	return obj ? obj->sections_cache : NULL;
 }
 
@@ -75,14 +72,11 @@ static RList *entries(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
 	RBinPycObj *obj = R_UNWRAP3 (bf, bo, bin_obj);
 	RList *entries = r_list_newf ((RListFree)free);
-	if (!entries) {
-		return NULL;
-	}
 	RBinAddr *addr = R_NEW0 (RBinAddr);
 	ut64 ep = get_entrypoint (bf->buf, obj ? obj->version.magic : 0, obj ? &obj->code_start_offset : NULL);
 	addr->paddr = ep;
 	addr->vaddr = ep;
-	r_buf_seek (bf->buf, entrypoint, R_IO_SEEK_SET);
+	r_buf_seek (bf->buf, ep, R_IO_SEEK_SET);
 	r_list_append (entries, addr);
 	return entries;
 }
@@ -101,7 +95,7 @@ static RList *symbols(RBinFile *bf) {
 	}
 	RList *sections = r_list_newf (NULL); // keep old behavior; free on destroy if needed
 	RList *symbols = r_list_newf ((RListFree)free);
-	RBuffer *buffer = arch->buf;
+	RBuffer *buffer = bf->buf;
 	if (!obj->code_start_offset) {
 		// ensure code_start_offset is initialized
 		(void) get_entrypoint (buffer, obj->version.magic, &obj->code_start_offset);
