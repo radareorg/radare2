@@ -273,9 +273,10 @@ func.strcpy.arg.1=const char *,src
 func.strcpy.ret=char *
 
 strcpy_chk=func
-func.strcpy_chk.args=2
+func.strcpy_chk.args=3
 func.strcpy_chk.arg.0=char *,dest
 func.strcpy_chk.arg.1=const char *,src
+func.strcpy_chk.arg.2=size_t,destlen
 func.strcpy_chk.ret=char *
 
 compat_mode=func
@@ -2632,11 +2633,12 @@ func.snprintf.arg.3=,...
 func.snprintf.ret=int
 
 snprintf_chk=func
-func.snprintf_chk.args=4
+func.snprintf_chk.args=5
 func.snprintf_chk.arg.0=char *,s
-func.snprintf_chk.arg.1=size_t,size
-func.snprintf_chk.arg.2=const char *,format
-func.snprintf_chk.arg.3=,...
+func.snprintf_chk.arg.1=size_t,maxlen
+func.snprintf_chk.arg.2=int,flag
+func.snprintf_chk.arg.3=size_t,slen
+func.snprintf_chk.arg.4=const char *,format
 func.snprintf_chk.ret=int
 
 sprintf=func
@@ -2647,10 +2649,11 @@ func.sprintf.arg.2=,...
 func.sprintf.ret=int
 
 sprintf_chk=func
-func.sprintf_chk.args=3
+func.sprintf_chk.args=4
 func.sprintf_chk.arg.0=char *,s
-func.sprintf_chk.arg.1=const char *,format
-func.sprintf_chk.arg.2=,...
+func.sprintf_chk.arg.1=int,flag
+func.sprintf_chk.arg.2=size_t,slen
+func.sprintf_chk.arg.3=const char *,format
 func.sprintf_chk.ret=int
 
 sscanf=func
