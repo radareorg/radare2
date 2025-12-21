@@ -125,7 +125,9 @@ static void _set_register(RDebug *dbg, RRegItem *ri, ut32 cnum) {
 	ut64 index = RVecDebugChangeReg_upper_bound (vreg, &(RDebugChangeReg){ (int)cnum, 0 }, cmp_cnum_reg);
 	if (index > 0 && index <= RVecDebugChangeReg_length (vreg)) {
 		RDebugChangeReg *reg = RVecDebugChangeReg_at (vreg, index - 1);
-		if (reg->cnum > dbg->session->cur_chkpt->cnum) {
+		if (!dbg->session->cur_chkpt) {
+			r_reg_set_value (dbg->reg, ri, reg->data);
+		} else if (reg->cnum > dbg->session->cur_chkpt->cnum) {
 			r_reg_set_value (dbg->reg, ri, reg->data);
 		}
 	}
