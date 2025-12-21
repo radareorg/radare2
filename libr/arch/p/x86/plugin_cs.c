@@ -1,4 +1,3 @@
-
 /* radare2 - LGPL - Copyright 2013-2025 - pancake */
 
 #include <r_arch.h>
