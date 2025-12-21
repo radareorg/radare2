@@ -2968,13 +2968,6 @@ func.error.arg.1=int,errname
 func.error.arg.2=char *,format
 func.error.ret=void
 
-error=func
-func.error.args=3
-func.error.arg.0=int,status
-func.error.arg.1=int,errname
-func.error.arg.2=char *,format
-func.error.ret=void
-
 nl_langinfo=func
 func.nl_langinfo.args=1
 func.nl_langinfo.arg.0=nl_item,item
