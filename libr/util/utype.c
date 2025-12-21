@@ -743,13 +743,8 @@ R_API R_OWNED char *r_type_func_guess(Sdb *TDB, char *R_NONNULL func_name) {
 	str = strdup (str);
 	clean_function_name (str);
 
-	// strip leading underscores (e.g., __libc_start_main -> libc_start_main)
-	const char *stripped = str;
-	while (*stripped == '_') {
-		stripped++;
-	}
-	if (stripped != str) {
-		result = type_func_try_guess (TDB, stripped);
+	if (*str == '_') {
+		result = type_func_try_guess (TDB, str + 1);
 	}
 
 	free (str);
