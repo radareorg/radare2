@@ -1,7 +1,19 @@
+#include <r_core.h>
 #include <r_debug.h>
+#include <r_main.h>
+#include <r_util/r_file.h>
+#include <r_util/r_str.h>
+#include <r_util/r_sys.h>
 #include "minunit.h"
 #if __linux__
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <signal.h>
+#include <string.h>
+#include <sys/socket.h>
 #include <sys/user.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 #ifndef offsetof
 #define offsetof(type, field) ((size_t) &((type *)0)->field)
@@ -21,6 +33,92 @@ bool test_r_debug_use(void) {
 
 	r_debug_free (dbg);
 	mu_end;
+}
+
+static int pick_free_port(void) {
+#if __linux__
+	int sockfd = socket (AF_INET, SOCK_STREAM, 0);
+	if (sockfd < 0) {
+		return -1;
+	}
+	struct sockaddr_in addr;
+	memset (&addr, 0, sizeof (addr));
+	addr.sin_family = AF_INET;
+	addr.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
+	addr.sin_port = 0;
+	if (bind (sockfd, (struct sockaddr *)&addr, sizeof (addr)) < 0) {
+		close (sockfd);
+		return -1;
+	}
+	socklen_t len = sizeof (addr);
+	if (getsockname (sockfd, (struct sockaddr *)&addr, &len) < 0) {
+		close (sockfd);
+		return -1;
+	}
+	int port = ntohs (addr.sin_port);
+	close (sockfd);
+	return port;
+#else
+	return -1;
+#endif
+}
+
+bool test_r2_gdb_remote_open(void) {
+#if __linux__
+	char *gdbserver = r_file_path ("gdbserver");
+	if (!gdbserver) {
+		mu_ignore;
+	}
+	int port = pick_free_port ();
+	if (port <= 0) {
+		free (gdbserver);
+		mu_ignore;
+	}
+	char *portstr = r_str_newf ("%d", port);
+	char *listen = r_str_newf ("127.0.0.1:%s", portstr);
+	char *uri = r_str_newf ("gdb://%s", listen);
+	pid_t pid = r_sys_fork ();
+	if (pid < 0) {
+		free (gdbserver);
+		free (portstr);
+		free (listen);
+		free (uri);
+		mu_assert ("fork failed", false);
+	}
+	if (pid == 0) {
+		execl (gdbserver, "gdbserver", "--once", listen, "/bin/sleep", "2", NULL);
+		r_sys_exit (1, true);
+	}
+
+	r_sys_usleep (500000);
+	const char *argv[] = { "radare2", "-q", "-d", "-D", "gdb", "-Qc", "q", uri, NULL };
+	int ret = r_main_radare2 (8, argv);
+	int status = 0;
+	int waited = 0;
+	int wpid = 0;
+	while (waited < 20) {
+		wpid = waitpid (pid, &status, WNOHANG);
+		if (wpid == pid) {
+			break;
+		}
+		r_sys_usleep (100000);
+		waited++;
+	}
+	if (wpid == 0) {
+		kill (pid, SIGKILL);
+		waitpid (pid, &status, 0);
+	}
+
+	free (gdbserver);
+	free (portstr);
+	free (listen);
+	free (uri);
+
+	mu_assert_eq (ret, 0, "r2 gdb remote open failed");
+	mu_end;
+#else
+	mu_ignore;
+#endif
 }
 
 bool test_r_debug_reg_offset(void) {
@@ -54,6 +152,7 @@ bool test_r_debug_reg_offset(void) {
 
 int all_tests(void) {
 	mu_run_test (test_r_debug_use);
+	mu_run_test (test_r2_gdb_remote_open);
 	mu_run_test (test_r_debug_reg_offset);
 	return tests_passed != tests_run;
 }

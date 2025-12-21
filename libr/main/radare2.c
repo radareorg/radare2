@@ -1535,9 +1535,14 @@ R_API int r_main_radare2(int argc, const char **argv) {
 					ret = 1;
 					goto beach;
 				}
-				mr.fh = r_core_file_open (r, mr.pfile, mr.perms, mr.mapaddr);
+				const char *binpath = mr.pfile;
+				if (mr.debug == 2 && mr.fh) {
+					binpath = NULL;
+				} else {
+					mr.fh = r_core_file_open (r, mr.pfile, mr.perms, mr.mapaddr);
+				}
 				if (mr.fh) {
-					r_core_bin_load (r, mr.pfile, mr.baddr);
+					r_core_bin_load (r, binpath, mr.baddr);
 				}
 			}
 			if (opt.ind < argc) {
