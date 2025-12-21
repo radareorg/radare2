@@ -1551,7 +1551,7 @@ repeat:
 						resolved = false;
 						free (cc);
 					}
-					if (!strcmp (fcn_name, "__stack_chk_fail")) {
+					if (r_str_endswith (fcn_name, "stack_chk_fail")) {
 						// r_strf_var (query, 32, "%d.addr", cur_idx - 1);
 						// ut64 mov_addr = sdb_num_get (trace, query, 0);
 						// cur_idx = tps->tt.cur_idx - 2;
