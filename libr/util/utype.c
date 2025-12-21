@@ -652,13 +652,24 @@ static inline bool is_function(const char *name) {
 	return name && !strcmp ("func", name);
 }
 
-static R_OWNED char *type_func_try_guess(Sdb *TDB, char *R_NONNULL name) {
+static R_OWNED char *type_func_try_guess(Sdb *TDB, const char *name) {
 	if (strlen (name) < MIN_MATCH_LEN) {
 		return NULL;
 	}
 	const char *res = sdb_const_get (TDB, name, NULL);
 	if (is_function (res)) {
 		return strdup (name);
+	}
+	// strip leading underscores (e.g., __libc_start_main -> libc_start_main)
+	if (r_str_startswith (name, "__")) {
+		const char *stripped = name;
+		while (*stripped == '_') {
+			stripped++;
+		}
+		res = sdb_const_get (TDB, stripped, NULL);
+		if (is_function (res)) {
+			return strdup (stripped);
+		}
 	}
 	return NULL;
 }
@@ -732,8 +743,13 @@ R_API R_OWNED char *r_type_func_guess(Sdb *TDB, char *R_NONNULL func_name) {
 	str = strdup (str);
 	clean_function_name (str);
 
-	if (*str == '_') {
-		result = type_func_try_guess (TDB, str + 1);
+	// strip leading underscores (e.g., __libc_start_main -> libc_start_main)
+	const char *stripped = str;
+	while (*stripped == '_') {
+		stripped++;
+	}
+	if (stripped != str) {
+		result = type_func_try_guess (TDB, stripped);
 	}
 
 	free (str);
