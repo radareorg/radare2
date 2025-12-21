@@ -1357,8 +1357,8 @@ pdJ 1 @ 0x080483ec
 EOF
 EXPECT=<<EOF
 [{"addr":134514169,"arrow":134514133,"text":"|       `=< 0x080485f9      72da           if (((unsigned) v) < 0) goto 0x80485d5"}]
-[{"addr":134513644,"text":"            ; sym.imp.__libc_start_main"},{"addr":134513644,"text":"            ; int __libc_start_main(func main, int argc, char **ubp_av, func init, func fini, func rtld_fini, void *stack_end)"},{"addr":134513644,"text":"            0x080483ec      e873ffffff     134513508,eip,4,esp,-=,esp,=[4],eip,="}]
-[{"addr":134513644,"text":"            0x080483ec      e873ffffff     134513508,eip,4,esp,-=,esp,=[4],eip,= ; sym.imp.__libc_start_main ; int __libc_start_main(func main, int argc, char **ubp_av, func init, func fini, func rtld_fini, void *stack_end)"}]
+[{"addr":134513644,"text":"            ; sym.imp.__libc_start_main"},{"addr":134513644,"text":"            ; int libc_start_main(func main, int argc, char **ubp_av, func init, func fini, func rtld_fini, void *stack_end)"},{"addr":134513644,"text":"            0x080483ec      e873ffffff     134513508,eip,4,esp,-=,esp,=[4],eip,="}]
+[{"addr":134513644,"text":"            0x080483ec      e873ffffff     134513508,eip,4,esp,-=,esp,=[4],eip,= ; sym.imp.__libc_start_main ; int libc_start_main(func main, int argc, char **ubp_av, func init, func fini, func rtld_fini, void *stack_end)"}]
 EOF
 RUN
 

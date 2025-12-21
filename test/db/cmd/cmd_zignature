@@ -1004,9 +1004,9 @@ za sym.__write b f30f1efa488d05256d0d008b0085c07517b8010000000f05483d00f0ffff775
 za sym.__write g cc=6 nbbs=7 edges=7 ebbs=3 bbsum=148
 za sym.__write o 0x000ec800
 za sym.__write R X193cml0ZQ==
-za sym.__write t void sym.__write (int64_t arg1, int64_t arg2, int64_t arg3)
+za sym.__write t void sym.__write (int fd, const char *ptr, size_t nbytes)
 za sym.__write r sym.__libc_enable_asynccancel sym.__libc_disable_asynccancel
-za sym.__write v fs-32:var_8h:int64_t, tr73:arg3:int64_t, tr79:arg2:int64_t, tr83:arg1:int64_t
+za sym.__write v fs-32:var_8h:int64_t, tr73:nbytes:size_t, tr79:ptr:const char *, tr83:fd:int
 za sym.__write h 4f2d194bae72345352b26e0a36531e7d6ff6cb5d6b50b92487246507b8dafdc5
 EOF
 RUN

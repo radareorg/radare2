@@ -273,9 +273,10 @@ func.strcpy.arg.1=const char *,src
 func.strcpy.ret=char *
 
 strcpy_chk=func
-func.strcpy_chk.args=2
+func.strcpy_chk.args=3
 func.strcpy_chk.arg.0=char *,dest
 func.strcpy_chk.arg.1=const char *,src
+func.strcpy_chk.arg.2=size_t,destlen
 func.strcpy_chk.ret=char *
 
 compat_mode=func
@@ -527,26 +528,10 @@ func.maskrune.arg.0=long,c
 func.maskrune.arg.1=long,f
 func.maskrune.ret=int
 
-__maskrune=func
-func.__maskrune.args=2
-func.__maskrune.arg.0=long,c
-func.__maskrune.arg.1=long,f
-func.__maskrune.ret=int
-
 toupper=func
 func.toupper.args=1
 func.toupper.arg.0=int,c
 func.toupper.ret=int
-
-__tolower=func
-func.__tolower.args=1
-func.__tolower.arg.0=int,c
-func.__tolower.ret=int
-
-__toupper=func
-func.__toupper.args=1
-func.__toupper.arg.0=int,c
-func.__toupper.ret=int
 
 kill=func
 func.kill.args=2
@@ -1808,12 +1793,6 @@ func.bzero.arg.0=void *,s
 func.bzero.arg.1=size_t,n
 func.bzero.ret=void
 
-__bzero=func
-func.__bzero.args=2
-func.__bzero.arg.0=void *,s
-func.__bzero.arg.1=size_t,n
-func.__bzero.ret=void
-
 memcpy=func
 func.memcpy.args=3
 func.memcpy.arg.0=void *,s1
@@ -2632,11 +2611,12 @@ func.snprintf.arg.3=,...
 func.snprintf.ret=int
 
 snprintf_chk=func
-func.snprintf_chk.args=4
+func.snprintf_chk.args=5
 func.snprintf_chk.arg.0=char *,s
-func.snprintf_chk.arg.1=size_t,size
-func.snprintf_chk.arg.2=const char *,format
-func.snprintf_chk.arg.3=,...
+func.snprintf_chk.arg.1=size_t,maxlen
+func.snprintf_chk.arg.2=int,flag
+func.snprintf_chk.arg.3=size_t,slen
+func.snprintf_chk.arg.4=const char *,format
 func.snprintf_chk.ret=int
 
 sprintf=func
@@ -2647,10 +2627,11 @@ func.sprintf.arg.2=,...
 func.sprintf.ret=int
 
 sprintf_chk=func
-func.sprintf_chk.args=3
+func.sprintf_chk.args=4
 func.sprintf_chk.arg.0=char *,s
-func.sprintf_chk.arg.1=const char *,format
-func.sprintf_chk.arg.2=,...
+func.sprintf_chk.arg.1=int,flag
+func.sprintf_chk.arg.2=size_t,slen
+func.sprintf_chk.arg.3=const char *,format
 func.sprintf_chk.ret=int
 
 sscanf=func
@@ -2975,13 +2956,6 @@ func.error.arg.0=int,status
 func.error.arg.1=int,errname
 func.error.arg.2=char *,format
 func.error.ret=void
-
-__error=func
-func.__error.args=3
-func.__error.arg.0=int,status
-func.__error.arg.1=int,errname
-func.__error.arg.2=char *,format
-func.__error.ret=void
 
 nl_langinfo=func
 func.nl_langinfo.args=1

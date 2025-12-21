@@ -1,3 +1,13 @@
+NAME=strcpy lowerdashes
+FILE=bins/mach0/strcpy-overflow
+CMDS=<<EOF
+af;pdc~strcp
+EOF
+EXPECT=<<EOF
+        sym.imp.__strcpy_chk () // char *__strcpy_chk("", -1, -1)
+EOF
+RUN
+
 NAME=td anonymous struct in typedef
 FILE=--
 CMDS=<<EOF

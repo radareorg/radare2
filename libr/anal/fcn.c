@@ -2272,14 +2272,17 @@ R_API char *r_anal_function_get_signature(RAnalFunction *function) {
 	} else {
 		realname = function->name;
 	}
-
+	// strip leading __ prefix (e.g. __strcpy_chk -> strcpy_chk)
+	if (realname && r_str_startswith (realname, "__")) {
+		realname += 2;
+	}
 	char *ret = NULL, *args = strdup ("");
 	char *sdb_ret = r_str_newf ("func.%s.ret", realname);
 	char *sdb_args = r_str_newf ("func.%s.args", realname);
+	const char *argc_str = sdb_const_get (a->sdb_types, sdb_args, 0);
 	// RList *args_list = r_list_newf ((RListFree) free);
 	unsigned int i, j;
 	const char *ret_type = sdb_const_get (a->sdb_types, sdb_ret, 0);
-	const char *argc_str = sdb_const_get (a->sdb_types, sdb_args, 0);
 
 	int argc = argc_str? atoi (argc_str): 0;
 

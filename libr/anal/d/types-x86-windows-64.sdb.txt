@@ -4812,7 +4812,7 @@ func.WinHttpWriteProxySettings.cc=ms
 
 ### winsock2.h ###
 
-func.__WSAFDIsSet.cc=ms
+func.WSAFDIsSet.cc=ms
 func.accept.cc=ms
 func.bind.cc=ms
 func.closesocket.cc=ms

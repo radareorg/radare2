@@ -4803,7 +4803,7 @@ func.WinHttpWriteProxySettings.cc=stdcall
 
 ### winsock2.h ###
 
-func.__WSAFDIsSet.cc=stdcall
+func.WSAFDIsSet.cc=stdcall
 func.accept.cc=stdcall
 func.bind.cc=stdcall
 func.closesocket.cc=stdcall

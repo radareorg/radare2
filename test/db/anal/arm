@@ -1216,7 +1216,7 @@ EXPECT=<<EOF
 |           0x000083d4      04c02de5       str ip, [sp, -4]!
 |           0x000083d8      0c009fe5       ldr r0, main                ; [0x83ec:4]=0x8470 main
 |           0x000083dc      0c309fe5       ldr r3, fcn.00008668        ; [0x83f0:4]=0x8668 fcn.00008668
-\           0x000083e0      e5ffffeb       bl sym.imp.__libc_start_main ; int __libc_start_main(func main, int argc, char **ubp_av, func init, func fini, func rtld_fini, void *stack_end)
+\           0x000083e0      e5ffffeb       bl sym.imp.__libc_start_main ; int libc_start_main(func main, int argc, char **ubp_av, func init, func fini, func rtld_fini, void *stack_end)
             ; ICOD XREF from entry0 @ 0x83d8(x)
 / 484: int main (int argc, char **argv, char **envp);
 |           ; var int32_t var_10h @ fp-0x10

@@ -24,7 +24,7 @@ EXPECT=<<EOF
 |           0x0040041f      49c7c00006..   mov r8, sym.__libc_csu_fini ; 0x400600
 |           0x00400426      48c7c19005..   mov rcx, sym.__libc_csu_init ; 0x400590 ; "AWA\x89\xffAVI\x89\xf6AUI\x89\xd5ATL\x8d%p\x01 "
 |           0x0040042d      48c7c77405..   mov rdi, main               ; 0x400574 ; "U\xff\x14%X\t`"
-\           0x00400434      e8b7ffffff     call sym.imp.__libc_start_main ; int __libc_start_main(func main, int argc, char **ubp_av, func init, func fini, func rtld_fini, void *stack_end)
+\           0x00400434      e8b7ffffff     call sym.imp.__libc_start_main ; int libc_start_main(func main, int argc, char **ubp_av, func init, func fini, func rtld_fini, void *stack_end)
 EOF
 RUN
 
@@ -52,7 +52,7 @@ EXPECT=<<EOF
 |           0x0040041f      49c7c00006..   mov r8, sym.__libc_csu_fini ; 0x400600
 |           0x00400426      48c7c19005..   mov rcx, sym.__libc_csu_init ; 0x400590 ; "AWA\x89\xffAVI\x89\xf6AUI\x89\xd5ATL\x8d%p\x01 "
 |           0x0040042d      48c7c77405..   mov rdi, main               ; 0x400574 ; "U\xff\x14%X\t`"
-\           0x00400434      e8b7ffffff     call sym.imp.__libc_start_main ; int __libc_start_main(func main, int argc, char **ubp_av, func init, func fini, func rtld_fini, void *stack_end)
+\           0x00400434      e8b7ffffff     call sym.imp.__libc_start_main ; int libc_start_main(func main, int argc, char **ubp_av, func init, func fini, func rtld_fini, void *stack_end)
 EOF
 RUN
 
