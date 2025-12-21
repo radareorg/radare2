@@ -453,7 +453,7 @@ R_IPI int r_cons_win_eprintf(RCons *cons, bool vmode, const char *fmt, ...) {
 	return ret;
 }
 
-R_IPI int win_is_vtcompat(void) {
+R_IPI int win_is_vtcompat(RCons *cons) {
 	DWORD major;
 	DWORD minor;
 	DWORD release = 0;
@@ -476,11 +476,15 @@ R_IPI int win_is_vtcompat(void) {
 	char *term = r_sys_getenv ("TERM");
 	if (term) {
 		if (strstr (term, "xterm")) {
-			I->term_xterm = true;
+			if (cons) {
+				cons->term_xterm = true;
+			}
 			free (term);
 			return 2;
 		}
-		I->term_xterm = false;
+		if (cons) {
+			cons->term_xterm = false;
+		}
 		free (term);
 	}
 	char *ansicon = r_sys_getenv ("ANSICON");

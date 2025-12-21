@@ -17,7 +17,7 @@ R_API RLine *r_line_new(RCons *cons) {
 	line->kill_ring = r_list_newf (free);
 	line->kill_ring_ptr = -1;
 #if R2__WINDOWS__
-	line->vtmode = win_is_vtcompat ();
+	line->vtmode = win_is_vtcompat (cons);
 #else
 	line->vtmode = 2;
 #endif

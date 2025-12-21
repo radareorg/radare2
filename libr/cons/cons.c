@@ -256,7 +256,7 @@ R_API RCons *r_cons_new2(void) {
 	cons->timeout_warned = false;
 #if R2__WINDOWS__
 	cons->old_cp = GetConsoleOutputCP ();
-	cons->vtmode = win_is_vtcompat ();
+	cons->vtmode = win_is_vtcompat (cons);
 #else
 	cons->vtmode = 2;
 #endif

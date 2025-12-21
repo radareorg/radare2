@@ -877,7 +877,7 @@ R_API void r_cons_sleep_end(RCons *cons, void *user);
 R_API void r_cons_clear_buffer(RCons *cons);
 #if R2__WINDOWS__
 // TODO all the w32 apis must be ipi
-R_IPI int win_is_vtcompat(void);
+R_IPI int win_is_vtcompat(RCons *cons);
 R_API void r_cons_clear(RCons *cons);
 R_API void r_cons_win_gotoxy(RCons *cons, int fd, int x, int y);
 R_API int r_cons_win_print(RCons *cons, const char *ptr, int len, bool vmode);
