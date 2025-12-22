@@ -6173,10 +6173,11 @@ static bool __init_panels_menu(RCore *core) {
 
 	parent = "Edit.io.cache";
 	for (i = 0; menus_iocache[i]; i++) {
-		if (!strcmp (menus_iocache[i], "On")) {
-			__add_menu (core, parent, menus_iocache[i], __io_cache_on_cb);
-		} else if (!strcmp (menus_iocache[i], "Off")) {
-			__add_menu (core, parent, menus_iocache[i], __io_cache_off_cb);
+		const char *menu = menus_iocache[i];
+		if (!strcmp (menu, "On")) {
+			__add_menu (core, parent, menu, __io_cache_on_cb);
+		} else if (!strcmp (menu, "Off")) {
+			__add_menu (core, parent, menu, __io_cache_off_cb);
 		}
 	}
 

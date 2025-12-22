@@ -4605,7 +4605,7 @@ escape_pipe:
 	}
 
 	ptr = strstr (cmd, "?*");
-	if (ptr && (ptr == cmd || (ptr > cmd && ptr[-1] != '~'))) {
+	if (ptr && ((ptr - cmd) == 0 || ((ptr - cmd) > 0 && ptr[-1] != '~'))) {
 		char *pipechar = strchr (ptr, '>');
 		if (pipechar) {
 			*pipechar++ = 0;

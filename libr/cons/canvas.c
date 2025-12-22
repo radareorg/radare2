@@ -497,7 +497,7 @@ R_API char *r_cons_canvas_tostring(RConsCanvas *c) {
 			}
 		}
 		while (olen > 0 && o[olen - 1] == ' ') {
-			o[--olen] = '\0';
+			olen--;
 		}
 	}
 	o[olen] = '\0';
