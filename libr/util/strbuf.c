@@ -369,7 +369,9 @@ R_API bool r_strbuf_prepend_n(RStrBuf *sb, const char *s, size_t l) {
 	}
 
 	if ((sb->len + l + 1) <= sizeof (sb->buf)) {
-		memmove (&sb->buf[l], sb->buf, sb->len);
+		/* Guard to help static analyzers reason about bounds. */
+		R_RETURN_VAL_IF_FAIL (l < sizeof (sb->buf), false);
+		memmove (sb->buf + l, sb->buf, sb->len);
 		memcpy (sb->buf, s, l);
 		sb->buf[sb->len + l] = 0;
 		sb->len += l;
