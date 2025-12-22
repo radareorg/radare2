@@ -382,14 +382,6 @@ static bool type_trace_op(TypeTrace *trace, REsil *esil, RAnalOp *op) {
 		return true;
 	}
 	trace->cc = 0;
-	RRegItem *ri = r_reg_get (trace->reg, "PC", -1);
-	if (ri) {
-		const bool suc = r_esil_reg_write_silent (esil, ri->name, op->addr + op->size);
-		r_unref (ri);
-		if (!suc) {
-			return false;
-		}
-	}
 
 	TypeTraceOp *to = VecTraceOp_emplace_back (&trace->db.ops);
 	if (R_UNLIKELY (!to)) {
@@ -1433,7 +1425,6 @@ repeat:
 			if (r_cons_is_breaked (r_cons_singleton ())) {
 				goto out_function;
 			}
-			r_reg_setv (etrace->reg, "PC", addr);
 			ut64 bb_left = bb_size - i;
 			if ((addr >= bb_addr + bb_size) || (addr < bb_addr)) {
 				// stop emulating this bb if pc is outside the basic block boundaries
@@ -1450,7 +1441,6 @@ repeat:
 				if (ret <= 0) {
 					i += minopcode;
 					addr += minopcode;
-					r_reg_setv (etrace->reg, "PC", addr);
 					r_anal_op_fini (&aop);
 					continue;
 				}
