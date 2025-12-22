@@ -484,7 +484,11 @@ extern "C" {
 	} \
 	static inline R_MAYBE_UNUSED void R_VEC_FUNC(vec_type, sort)(vec_type *vec, R_VEC_CMP(vec_type) cmp_fn) { \
 		R_RETURN_IF_FAIL (vec && cmp_fn); \
-		qsort (vec->_start, R_VEC_FUNC(vec_type, length) (vec), sizeof (type), \
+		const size_t len = R_VEC_FUNC(vec_type, length) (vec); \
+		if (!len || !vec->_start) { \
+			return; \
+		} \
+		qsort (vec->_start, len, sizeof (type), \
 			(int (*)(const void *, const void *)) cmp_fn); \
 	} \
 	static inline R_MAYBE_UNUSED void R_VEC_FUNC(vec_type, uniq)(vec_type *vec, R_VEC_CMP(vec_type) cmp_fn) { \
