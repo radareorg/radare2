@@ -3,7 +3,6 @@ r_core_sources = [
   'casm.c',
   'vmatrix.c',
   'cproject.c',
-  'blaze.c',
   'clist.c',
   'prompt.c',
   'citem.c',
