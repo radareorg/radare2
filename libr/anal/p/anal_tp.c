@@ -452,52 +452,58 @@ static ut64 etrace_addrof(TypeTrace *etrace, ut32 idx) {
 	return op? op->addr: 0;
 }
 
-static ut64 etrace_memwrite_addr(TypeTrace *etrace, ut32 idx) {
+typedef bool (*AccessPredicate)(const TypeTraceAccess *access, void *user);
+
+static const TypeTraceAccess *etrace_find_access(TypeTrace *etrace, ut32 idx, AccessPredicate pred, void *user) {
 	TypeTraceOp *op = VecTraceOp_at (&etrace->db.ops, idx);
-	R_LOG_DEBUG ("memwrite %d %d", etrace->idx, idx);
-	if (op && op->start != op->end) {
-		TypeTraceAccess *start = VecAccess_at (&etrace->db.accesses, op->start);
-		TypeTraceAccess *end = VecAccess_at (&etrace->db.accesses, op->end - 1);
-		while (start <= end) {
-			if (!start->is_reg && start->is_write) {
-				return start->mem.addr;
-			}
-			start++;
+	if (!op || op->start == op->end) {
+		return NULL;
+	}
+	const TypeTraceAccess *start = VecAccess_at (&etrace->db.accesses, op->start);
+	const TypeTraceAccess *end = VecAccess_at (&etrace->db.accesses, op->end - 1);
+	while (start <= end) {
+		if (pred (start, user)) {
+			return start;
 		}
+		start++;
+	}
+	return NULL;
+}
+
+static bool etrace_is_memwrite(const TypeTraceAccess *access, void *user) {
+	(void)user;
+	return !access->is_reg && access->is_write;
+}
+
+static bool etrace_is_memread(const TypeTraceAccess *access, void *user) {
+	(void)user;
+	return !access->is_reg && !access->is_write;
+}
+
+static bool etrace_is_regread(const TypeTraceAccess *access, void *user) {
+	const char *rname = (const char *)user;
+	return access->is_reg && !access->is_write && !strcmp (rname, access->reg.name);
+}
+
+static ut64 etrace_memwrite_addr(TypeTrace *etrace, ut32 idx) {
+	R_LOG_DEBUG ("memwrite %d %d", etrace->idx, idx);
+	const TypeTraceAccess *access = etrace_find_access (etrace, idx, etrace_is_memwrite, NULL);
+	if (access) {
+		return access->mem.addr;
 	}
 	return 0;
 }
 
 static bool etrace_have_memread(TypeTrace *etrace, ut32 idx) {
-	TypeTraceOp *op = VecTraceOp_at (&etrace->db.ops, idx);
 	R_LOG_DEBUG ("memread %d %d", etrace->idx, idx);
-	if (op && op->start != op->end) {
-		TypeTraceAccess *start = VecAccess_at (&etrace->db.accesses, op->start);
-		TypeTraceAccess *end = VecAccess_at (&etrace->db.accesses, op->end - 1);
-		while (start <= end) {
-			if (!start->is_reg && !start->is_write) {
-				return true;
-			}
-			start++;
-		}
-	}
-	return false;
+	return etrace_find_access (etrace, idx, etrace_is_memread, NULL) != NULL;
 }
 
 static ut64 etrace_regread_value(TypeTrace *etrace, ut32 idx, const char *rname) {
 	R_LOG_DEBUG ("regread %d %d", etrace->idx, idx);
-	TypeTraceOp *op = VecTraceOp_at (&etrace->db.ops, idx);
-	if (op && op->start != op->end) {
-		TypeTraceAccess *start = VecAccess_at (&etrace->db.accesses, op->start);
-		TypeTraceAccess *end = VecAccess_at (&etrace->db.accesses, op->end - 1);
-		while (start <= end) {
-			if (start->is_reg && !start->is_write) {
-				if (!strcmp (rname, start->reg.name)) {
-					return start->reg.value;
-				}
-			}
-			start++;
-		}
+	const TypeTraceAccess *access = etrace_find_access (etrace, idx, etrace_is_regread, (void *)rname);
+	if (access) {
+		return access->reg.value;
 	}
 	return 0;
 }
