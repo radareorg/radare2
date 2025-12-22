@@ -6175,7 +6175,7 @@ static bool __init_panels_menu(RCore *core) {
 	for (i = 0; menus_iocache[i]; i++) {
 		const char *menu = menus_iocache[i];
 		if (!strcmp (menu, "On")) {
-			__add_menu (core, parent, men, __io_cache_on_cb);
+			__add_menu (core, parent, menu, __io_cache_on_cb);
 		} else if (!strcmp (menu, "Off")) {
 			__add_menu (core, parent, menu, __io_cache_off_cb);
 		}
