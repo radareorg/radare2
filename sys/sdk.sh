@@ -268,7 +268,7 @@ EOF
 	fi
 else
 	# Generic Unix build
-	export CFLAGS="-Os -fPIC"
+	export CFLAGS="$CFLAGS -fPIC"
 	make mrproper
 	if [ -z "${R2_PLUGINS_CFG}" ]; then
 		R2_PLUGINS_CFG=dist/plugins-cfg/plugins.bin.cfg
