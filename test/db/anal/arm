@@ -246,7 +246,7 @@ CMDS=<<EOF
 wx ff0000e2010050e30000001affffffea70009de594008de5e4139fe500f09ee5
 e asm.arch=arm
 e asm.bits=32
-.a2f
+a:a2f
 afb
 EOF
 EXPECT=<<EOF

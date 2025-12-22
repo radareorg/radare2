@@ -80,7 +80,7 @@ e anal.hasnext=0
 e asm.arch=x86
 e asm.bits=32
 wx 85c0740585c07405c385c0eb01c385c07401c3b8efbeaddec3
-a2f
+a:a2f
 afb
 EOF
 EXPECT=<<EOF
@@ -103,7 +103,7 @@ e asm.arch=x86
 e asm.bits=32
 wx 31c031c983c10183c10285c975f231c931c040c3
 s 0xa
-a2f
+a:a2f
 afb
 EOF
 EXPECT=<<EOF
@@ -121,7 +121,7 @@ e asm.arch=x86
 e asm.bits=32
 wx 31c083c00183e801750831c083e80183c00131c983c10183e90175e431d283ea0183c2017402ebd831c0c3
 s 0x26
-a2f
+a:a2f
 afb
 EOF
 EXPECT=<<EOF
@@ -142,7 +142,7 @@ e anal.arch = x86
 e io.cache=true
 e asm.bits=32
 wx 31c0740140c3
-a2f
+a:a2f
 afb
 EOF
 EXPECT=<<EOF
