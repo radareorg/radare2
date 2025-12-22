@@ -4006,23 +4006,25 @@ R_API char *r_str_nextword(char *s, char ch) {
 	return p;
 }
 
-R_API char *r_str_scale(const char *s, int w, int h) {
+R_API char *r_str_scale(const char *s, const int w, const int h) {
 	R_RETURN_VAL_IF_FAIL (s && w > 0 && h > 0, NULL);
 	char *str = strdup (s);
 	RList *lines = r_str_split_list (str, "\n", 0);
 	int i, j;
-	int rows = r_list_length (lines);
+	const int rows = r_list_length (lines);
 	RList *out = r_list_newf (free);
 
 	int curline = -1;
 	char *linetext = (char *)r_str_pad (NULL, 0, ' ', w);
 	for (i = 0; i < h; i++) {
-		int zoomedline = (int) (i *((double)rows / h));
+		const int zoomedline = (int) (i *((double)rows / h));
 		const char *srcline = r_list_get_n (lines, zoomedline);
-		int cols = strlen (srcline);
-		for (j = 0; j < w; j++) {
-			int zoomedcol = (int) (j *((double)cols / w));
-			linetext[j] = srcline[zoomedcol];
+		const int cols = srcline ? strlen (srcline) : 0;
+		if (cols > 0) {
+			for (j = 0; j < w; j++) {
+				const int zoomedcol = (int) (j *((double)cols / w));
+				linetext[j] = srcline[zoomedcol];
+			}
 		}
 		if (curline != zoomedline) {
 			r_list_append (out, strdup (linetext));
