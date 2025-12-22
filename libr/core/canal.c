@@ -3645,21 +3645,21 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 
 		// TODO: feels wasteful, maybe we should have functions that return just the amount?
 		RVecAnalRef *xrefs = r_anal_function_get_refs (fcn);
-		snprintf (refs, sizeof (refs), "%"PFMT64u, xrefs ? RVecAnalRef_length (xrefs) : 0);
+		snprintf (refs, sizeof (refs), "%zu", xrefs ? RVecAnalRef_length (xrefs) : 0);
 		RVecAnalRef_free (xrefs);
 
 		xrefs = r_anal_function_get_xrefs (fcn);
-		snprintf (xref, sizeof (xref), "%"PFMT64u, xrefs ? RVecAnalRef_length (xrefs) : 0);
+		snprintf (xref, sizeof (xref), "%zu", xrefs ? RVecAnalRef_length (xrefs) : 0);
 		RVecAnalRef_free (xrefs);
 
 		xrefs = r_anal_function_get_all_xrefs (fcn);
-		snprintf (axref, sizeof (axref), "%"PFMT64u, xrefs ? RVecAnalRef_length (xrefs) : 0);
+		snprintf (axref, sizeof (axref), "%zu", xrefs ? RVecAnalRef_length (xrefs) : 0);
 		RVecAnalRef_free (xrefs);
 		RVecAnalRef *calls = r_core_anal_fcn_get_calls (core, fcn);
 		if (calls) {
 			RVecAnalRef_sort (calls, RAnalRef_compare_by_addr);
 			RVecAnalRef_uniq (calls, RAnalRef_compare_by_addr);
-			snprintf (castr, sizeof (castr), "%"PFMT64u, calls ? RVecAnalRef_length (calls) : 0);
+			snprintf (castr, sizeof (castr), "%zu", calls ? RVecAnalRef_length (calls) : 0);
 			RVecAnalRef_free (calls);
 		} else {
 			snprintf (castr, sizeof (castr), "%d", 0);
