@@ -271,7 +271,7 @@ static void createFunction(RAnal *anal, fcn_t *fcn, const char *name) {
 
 #define Fhandled(x) r_strf("handled.%" PFMT64x, x)
 
-static bool anal_bbs(RCore *core, const char *input) {
+static bool anal_bbs(RCore *core, const char *input, bool nopskip) {
 	R_RETURN_VAL_IF_FAIL (core && input, false);
 	RAnal *anal = core->anal;
 	const ut64 start = core->addr;
@@ -282,7 +282,6 @@ static bool anal_bbs(RCore *core, const char *input) {
 	int block_score = 0;
 	bb_t *block = NULL;
 	int invalid_instruction_barrier = -20000;
-	const bool nopskip = r_config_get_b (core->config, "anal.nopskip");
 
 	ut8 *data = malloc (size);
 	if (!data) {
@@ -717,7 +716,8 @@ static bool blazecmd(RAnal *anal, const char *input) {
 	} else if (ch == '2') {
 		return anal_bbs_range (core, r_str_trim_head_ro (input + 6));
 	}
-	return anal_bbs (core, r_str_trim_head_ro (input + 6));
+	const bool nopskip = anal->coreb.cfgGetB (anal->coreb.core, "anal.nopskip");
+	return anal_bbs (core, r_str_trim_head_ro (input + 6), nopskip);
 }
 
 RAnalPlugin r_anal_plugin_blaze = {
