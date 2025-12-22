@@ -453,7 +453,7 @@ extern "C" {
 	} \
 	static inline R_MAYBE_UNUSED R_MUSTUSE size_t R_VEC_FUNC(vec_type, upper_bound)(vec_type *vec, type *value, R_VEC_CMP(vec_type) cmp_fn) { \
 		R_RETURN_VAL_IF_FAIL (vec && value && cmp_fn, 0); \
-		size_t end_pos = (size_t)(vec_type->_end - vec_type->_start); \
+		size_t end_pos = (size_t)(vec->_end - vec->_start); \
 		size_t pos; \
 		for (pos = 0; pos < end_pos; ) { \
 			size_t middle = pos + ((end_pos - pos) >> 1); \
