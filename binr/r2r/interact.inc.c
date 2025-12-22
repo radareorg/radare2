@@ -238,11 +238,11 @@ static void interact(R2RState *state) {
 #endif
 	printf ("\n");
 	printf ("#####################\n");
+	const size_t failed = RVecR2RTestResultInfoPtr_length (&failed_results);
 	if (use_fancy_stuff) {
-		printf (" %" PFMT64u " failed test(s)" R_UTF8_POLICE_CARS_REVOLVING_LIGHT "\n",
-			RVecR2RTestResultInfoPtr_length (&failed_results));
+		printf (" %zu failed test(s)" R_UTF8_POLICE_CARS_REVOLVING_LIGHT "\n", failed);
 	} else {
-		printf (" %" PFMT64u " failed test(s)\n", RVecR2RTestResultInfoPtr_length (&failed_results));
+		printf (" %zu failed test(s)\n", failed);
 	}
 	bool always_fix = false;
 

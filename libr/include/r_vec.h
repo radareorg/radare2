@@ -38,11 +38,11 @@ extern "C" {
  *   used by the vector elements.
  * - void R_VEC_FUNC(vec_type, free)(vec_type *vec):
  *   Similar to R_VEC_FUNC(vec_type, fini), but also frees the vector itself.
- * - ut64 R_VEC_FUNC(vec_type, length)(const vec_type *vec): Returns number of elements
+ * - size_t R_VEC_FUNC(vec_type, length)(const vec_type *vec): Returns number of elements
  *   in the vector.
  * - bool R_VEC_FUNC(vec_type, empty)(const vec_type *vec): Returns a boolean value indicating
  *   if the vector is empty or not.
- * - type *R_VEC_FUNC(vec_type, at)(const vec_type *vec, ut64 index): Returns a pointer to an
+ * - type *R_VEC_FUNC(vec_type, at)(const vec_type *vec, size_t index): Returns a pointer to an
  *   element in the vector. Note that this can be used for reading or writing from/to the element,
  *   but not deleting (see the pop and remove functions for this).
  * - type *R_VEC_FUNC(vec_type, last)(const vec_type *vec): Returns a pointer to the last element
@@ -54,11 +54,11 @@ extern "C" {
  * - type *R_VEC_FUNC(vec_type, find_if_not)(const vec_type *vec, void *value, R_VEC_FIND_CMP(vec_type) cmp_fn):
  *   Searches for the first value in the vector that is NOT equal (compare returns != 0) to the value
  *   passed in. Otherwise returns NULL.
- * - ut64 R_VEC_FUNC(vec_type, find_index)(const vec_type *vec, void *value, R_VEC_FIND_CMP(vec_type) cmp_fn):
+ * - size_t R_VEC_FUNC(vec_type, find_index)(const vec_type *vec, void *value, R_VEC_FIND_CMP(vec_type) cmp_fn):
  *   Searches for the index of the first value in the vector that is equal (compare returns 0) to the
- *   value passed in. Otherwise returns UT64_MAX.
+ *   value passed in. Otherwise returns SZT_MAX.
  * - vec_type *R_VEC_FUNC(vec_type, clone)(const vec_type *vec): Creates a shallow clone of a vector.
- * - bool R_VEC_FUNC(vec_type, reserve)(vec_type *vec, ut64 new_capacity): Ensures the vector has
+ * - bool R_VEC_FUNC(vec_type, reserve)(vec_type *vec, size_t new_capacity): Ensures the vector has
  *   atleast a capacity of "new_capacity". Returns true on success, otherwise false.
  * - void R_VEC_FUNC(vec_type, shrink_to_fit)(vec_type *vec): Shrinks the vector to exactly fit the
  *   current number of elements it contains.
@@ -75,7 +75,7 @@ extern "C" {
  *   undefined behavior! Note that "emplace_back" is preferred, since it is much more efficient.
  * - void R_VEC_FUNC(vec_type, append)(vec_type *vec, vec_type *values): Appends the elements of
  *   the second vector to the first. Note that only a shallow copy is made for each element.
- * - void R_VEC_FUNC(vec_type, remove)(vec_type *vec, ut64 index):
+ * - void R_VEC_FUNC(vec_type, remove)(vec_type *vec, size_t index):
  *   Calls the fini_fn on the Nth element of the vector (if provided), and then removes it.
  *   All subsequent elements are shifted 1 toward the beginning of the vector.
  * - void R_VEC_FUNC(vec_type, pop_front)(vec_type *vec):
@@ -86,10 +86,10 @@ extern "C" {
  *   Calls the fini_fn on the last element of the vector (if provided), and then removes it.
  * - void R_VEC_FUNC(vec_type, erase_back)(vec_type *vec, type *iter):
  *   Removes all elements from the back of the vector starting from "iter". Does not shrink the vector.
- * - ut64 R_VEC_FUNC(vec_type, lower_bound)(vec_type *vec, type *value, R_VEC_CMP(vec_type) cmp_fn):
+ * - size_t R_VEC_FUNC(vec_type, lower_bound)(vec_type *vec, type *value, R_VEC_CMP(vec_type) cmp_fn):
  *   Calculates the lower bound of a value in a vector. Returns the index to the element containing
  *   the lower bound.
- * - ut64 R_VEC_FUNC(vec_type, upper_bound)(vec_type *vec, type *value, R_VEC_CMP(vec_type) cmp_fn):
+ * - size_t R_VEC_FUNC(vec_type, upper_bound)(vec_type *vec, type *value, R_VEC_CMP(vec_type) cmp_fn):
  *   Calculates the upper bound of a value in a vector. Returns the index to the element containing
  *   the upper bound.
  * - type *R_VEC_FUNC(vec_type, partition)(vec_type *vec, R_VEC_CMP(vec_type) cmp_fn):
@@ -221,15 +221,15 @@ extern "C" {
 			free (vec); \
 		} \
 	} \
-	static inline R_MAYBE_UNUSED R_MUSTUSE ut64 R_VEC_FUNC(vec_type, length)(const vec_type *vec) { \
+	static inline R_MAYBE_UNUSED R_MUSTUSE size_t R_VEC_FUNC(vec_type, length)(const vec_type *vec) { \
 		R_RETURN_VAL_IF_FAIL (vec, 0); \
-		return vec->_start ? (ut64)(vec->_end - vec->_start) : 0; \
+		return vec->_start ? (size_t)(vec->_end - vec->_start) : 0; \
 	} \
 	static inline R_MAYBE_UNUSED R_MUSTUSE bool R_VEC_FUNC(vec_type, empty)(const vec_type *vec) { \
 		R_RETURN_VAL_IF_FAIL (vec, false); \
 		return !vec->_start || vec->_start == vec->_end; \
 	} \
-	static inline R_MAYBE_UNUSED R_MUSTUSE type *R_VEC_FUNC(vec_type, at)(const vec_type *vec, ut64 index) { \
+	static inline R_MAYBE_UNUSED R_MUSTUSE type *R_VEC_FUNC(vec_type, at)(const vec_type *vec, size_t index) { \
 		R_RETURN_VAL_IF_FAIL (vec, NULL); \
 		if (R_LIKELY (index < R_VEC_FUNC(vec_type, length) (vec))) { \
 			return vec->_start + index; \
@@ -263,9 +263,9 @@ extern "C" {
 		} \
 		return NULL; \
 	} \
-	static inline R_MAYBE_UNUSED R_MUSTUSE ut64 R_VEC_FUNC(vec_type, find_index)(const vec_type *vec, void *value, R_VEC_FIND_CMP(vec_type) cmp_fn) { \
-		R_RETURN_VAL_IF_FAIL (vec && value, UT64_MAX); \
-		ut64 index = 0; \
+	static inline R_MAYBE_UNUSED R_MUSTUSE size_t R_VEC_FUNC(vec_type, find_index)(const vec_type *vec, void *value, R_VEC_FIND_CMP(vec_type) cmp_fn) { \
+		R_RETURN_VAL_IF_FAIL (vec && value, SZT_MAX); \
+		size_t index = 0; \
 		type *val; \
 		R_VEC_FOREACH (vec, val) { \
 			if (!cmp_fn (val, value)) { \
@@ -273,16 +273,16 @@ extern "C" {
 			} \
 			index++; \
 		} \
-		return UT64_MAX; \
+		return SZT_MAX; \
 	} \
 	static inline R_MAYBE_UNUSED R_MUSTUSE vec_type *R_VEC_FUNC(vec_type, clone)(const vec_type *vec) { \
 		R_RETURN_VAL_IF_FAIL (vec, NULL); \
-		const ut64 capacity = R_VEC_CAPACITY (vec); \
+		const size_t capacity = R_VEC_CAPACITY (vec); \
 		type *buf = (type *)malloc (capacity * sizeof (type)); \
 		if (R_LIKELY (buf)) { \
 			vec_type *cloned_vec = (vec_type *)malloc (sizeof (vec_type)); \
 			if (R_LIKELY (cloned_vec)) { \
-				const ut64 num_elems = R_VEC_FUNC(vec_type, length) (vec); \
+				const size_t num_elems = R_VEC_FUNC(vec_type, length) (vec); \
 				memcpy (buf, vec->_start, num_elems * sizeof (type)); \
 				cloned_vec->_start = buf; \
 				cloned_vec->_end = buf + num_elems; \
@@ -293,10 +293,10 @@ extern "C" {
 		} \
 		return NULL; \
 	} \
-	static inline R_MAYBE_UNUSED bool R_VEC_FUNC(vec_type, reserve)(vec_type *vec, ut64 new_capacity) { \
+	static inline R_MAYBE_UNUSED bool R_VEC_FUNC(vec_type, reserve)(vec_type *vec, size_t new_capacity) { \
 		R_RETURN_VAL_IF_FAIL (vec, false); \
 		if (new_capacity > R_VEC_CAPACITY (vec)) { \
-			const ut64 num_elems = R_VEC_FUNC (vec_type, length) (vec); \
+			const size_t num_elems = R_VEC_FUNC (vec_type, length) (vec); \
 			type *buf = (type *)realloc (vec->_start, new_capacity * sizeof (type)); \
 			const bool is_success = buf != NULL; \
 			if (R_LIKELY (is_success)) { \
@@ -310,8 +310,8 @@ extern "C" {
 	} \
 	static inline R_MAYBE_UNUSED void R_VEC_FUNC(vec_type, shrink_to_fit)(vec_type *vec) { \
 		R_RETURN_IF_FAIL (vec); \
-		const ut64 num_elems = R_VEC_FUNC (vec_type, length) (vec); \
-		const ut64 capacity = R_VEC_CAPACITY (vec); \
+		const size_t num_elems = R_VEC_FUNC (vec_type, length) (vec); \
+		const size_t capacity = R_VEC_CAPACITY (vec); \
 		if (num_elems != capacity) { \
 			if (num_elems == 0) { \
 				free (vec->_start); \
@@ -328,10 +328,10 @@ extern "C" {
 	} \
 	static inline R_MAYBE_UNUSED void R_VEC_FUNC(vec_type, push_back)(vec_type *vec, type const *value) { \
 		R_RETURN_IF_FAIL (vec && value); \
-		const ut64 num_elems = R_VEC_FUNC(vec_type, length) (vec); \
-		const ut64 capacity = R_VEC_CAPACITY (vec); \
+		const size_t num_elems = R_VEC_FUNC(vec_type, length) (vec); \
+		const size_t capacity = R_VEC_CAPACITY (vec); \
 		if (R_UNLIKELY (num_elems == capacity)) { \
-			const ut64 new_capacity = capacity == 0 ? 8 : capacity * 2; \
+			const size_t new_capacity = capacity == 0 ? 8 : capacity * 2; \
 			if (!R_VEC_FUNC(vec_type, reserve) (vec, new_capacity)) { \
 				return; \
 			} \
@@ -341,10 +341,10 @@ extern "C" {
 	} \
 	static inline R_MAYBE_UNUSED R_MUSTUSE type *R_VEC_FUNC(vec_type, emplace_back)(vec_type *vec) { \
 		R_RETURN_VAL_IF_FAIL (vec, NULL); \
-		const ut64 num_elems = R_VEC_FUNC(vec_type, length) (vec); \
-		const ut64 capacity = R_VEC_CAPACITY (vec); \
+		const size_t num_elems = R_VEC_FUNC(vec_type, length) (vec); \
+		const size_t capacity = R_VEC_CAPACITY (vec); \
 		if (R_UNLIKELY (num_elems == capacity)) { \
-			const ut64 new_capacity = capacity == 0 ? 8 : capacity * 2; \
+			const size_t new_capacity = capacity == 0 ? 8 : capacity * 2; \
 			if (!R_VEC_FUNC(vec_type, reserve) (vec, new_capacity)) { \
 				return NULL; \
 			} \
@@ -356,10 +356,10 @@ extern "C" {
 	} \
 	static inline R_MAYBE_UNUSED void R_VEC_FUNC(vec_type, push_front)(vec_type *vec, type *value) { \
 		R_RETURN_IF_FAIL (vec && value); \
-		const ut64 num_elems = R_VEC_FUNC(vec_type, length) (vec); \
-		const ut64 capacity = R_VEC_CAPACITY (vec); \
+		const size_t num_elems = R_VEC_FUNC(vec_type, length) (vec); \
+		const size_t capacity = R_VEC_CAPACITY (vec); \
 		if (R_UNLIKELY (num_elems == capacity)) { \
-			const ut64 new_capacity = capacity == 0 ? 8 : capacity * 2; \
+			const size_t new_capacity = capacity == 0 ? 8 : capacity * 2; \
 			if (!R_VEC_FUNC(vec_type, reserve) (vec, new_capacity)) { \
 				return; \
 			} \
@@ -370,10 +370,10 @@ extern "C" {
 	} \
 	static inline R_MAYBE_UNUSED R_MUSTUSE type *R_VEC_FUNC(vec_type, emplace_front)(vec_type *vec) { \
 		R_RETURN_VAL_IF_FAIL (vec, NULL); \
-		const ut64 num_elems = R_VEC_FUNC(vec_type, length) (vec); \
-		const ut64 capacity = R_VEC_CAPACITY (vec); \
+		const size_t num_elems = R_VEC_FUNC(vec_type, length) (vec); \
+		const size_t capacity = R_VEC_CAPACITY (vec); \
 		if (R_UNLIKELY (num_elems == capacity)) { \
-			const ut64 new_capacity = capacity == 0 ? 8 : capacity * 2; \
+			const size_t new_capacity = capacity == 0 ? 8 : capacity * 2; \
 			if (!R_VEC_FUNC(vec_type, reserve) (vec, new_capacity)) { \
 				return NULL; \
 			} \
@@ -385,10 +385,10 @@ extern "C" {
 	} \
 	static inline R_MAYBE_UNUSED void R_VEC_FUNC(vec_type, append)(vec_type *vec, const vec_type *values, R_VEC_COPY(vec_type) copy_fn) { \
 		R_RETURN_IF_FAIL (vec && values); \
-		const ut64 num_elems = R_VEC_FUNC(vec_type, length) (vec); \
-		const ut64 capacity = R_VEC_CAPACITY (vec); \
-		const ut64 num_values = R_VEC_FUNC(vec_type, length) (values); \
-		const ut64 total_count = num_elems + num_values; \
+		const size_t num_elems = R_VEC_FUNC(vec_type, length) (vec); \
+		const size_t capacity = R_VEC_CAPACITY (vec); \
+		const size_t num_values = R_VEC_FUNC(vec_type, length) (values); \
+		const size_t total_count = num_elems + num_values; \
 		if (total_count > capacity) { \
 			if (!R_VEC_FUNC(vec_type, reserve) (vec, total_count)) { \
 				return; \
@@ -407,10 +407,10 @@ extern "C" {
 			vec->_end += num_values; \
 		} \
 	} \
-	static inline R_MAYBE_UNUSED void R_VEC_FUNC(vec_type, remove)(vec_type *vec, ut64 index) { \
-		R_RETURN_IF_FAIL (vec && vec->_start != vec->_end && index < (ut64)(size_t)(vec->_end - vec->_start)); \
+	static inline R_MAYBE_UNUSED void R_VEC_FUNC(vec_type, remove)(vec_type *vec, size_t index) { \
+		R_RETURN_IF_FAIL (vec && vec->_start != vec->_end && index < (size_t)(vec->_end - vec->_start)); \
 		type *ptr = R_VEC_FUNC(vec_type, at) (vec, index); \
-		const ut64 num_elems_after = vec->_end - ptr; \
+		const size_t num_elems_after = vec->_end - ptr; \
 		R_MAYBE_GENERATE(has_fini, fini_fn (ptr)); \
 		memmove (ptr, ptr + 1, (num_elems_after - 1) * sizeof (type)); \
 		vec->_end--; \
@@ -437,12 +437,12 @@ extern "C" {
 		); \
 		vec->_end = iter; \
 	} \
-	static inline R_MAYBE_UNUSED R_MUSTUSE ut64 R_VEC_FUNC(vec_type, lower_bound)(vec_type *vec, type *value, R_VEC_CMP(vec_type) cmp_fn) { \
+	static inline R_MAYBE_UNUSED R_MUSTUSE size_t R_VEC_FUNC(vec_type, lower_bound)(vec_type *vec, type *value, R_VEC_CMP(vec_type) cmp_fn) { \
 		R_RETURN_VAL_IF_FAIL (vec && value && cmp_fn, 0); \
-		ut64 end_pos = R_VEC_FUNC(vec_type, length) (vec); \
-		ut64 pos; \
+		size_t end_pos = R_VEC_FUNC(vec_type, length) (vec); \
+		size_t pos; \
 		for (pos = 0; pos < end_pos; ) { \
-			ut64 middle = pos + ((end_pos - pos) >> 1); \
+			size_t middle = pos + ((end_pos - pos) >> 1); \
 			if (cmp_fn (value, R_VEC_FUNC(vec_type, at) (vec, middle)) > 0) { \
 				pos = middle + 1; \
 			} else { \
@@ -451,12 +451,12 @@ extern "C" {
 		} \
 		return pos; \
 	} \
-	static inline R_MAYBE_UNUSED R_MUSTUSE ut64 R_VEC_FUNC(vec_type, upper_bound)(vec_type *vec, type *value, R_VEC_CMP(vec_type) cmp_fn) { \
+	static inline R_MAYBE_UNUSED R_MUSTUSE size_t R_VEC_FUNC(vec_type, upper_bound)(vec_type *vec, type *value, R_VEC_CMP(vec_type) cmp_fn) { \
 		R_RETURN_VAL_IF_FAIL (vec && value && cmp_fn, 0); \
-		ut64 end_pos = R_VEC_FUNC(vec_type, length) (vec); \
-		ut64 pos; \
+		size_t end_pos = R_VEC_FUNC(vec_type, length) (vec); \
+		size_t pos; \
 		for (pos = 0; pos < end_pos; ) { \
-			ut64 middle = pos + ((end_pos - pos) >> 1); \
+			size_t middle = pos + ((end_pos - pos) >> 1); \
 			if (cmp_fn (value, R_VEC_FUNC(vec_type, at) (vec, middle)) < 0) { \
 				end_pos = middle; \
 			} else { \
