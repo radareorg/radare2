@@ -4597,10 +4597,11 @@ static void set_src_dst(RAnalValue *val, csh *handle, cs_insn *insn, int x, int 
 #endif
 
 static void create_src_dst(RAnalOp *op) {
-	(void)RVecRArchValue_emplace_back (&op->srcs);
-	(void)RVecRArchValue_emplace_back (&op->srcs);
-	(void)RVecRArchValue_emplace_back (&op->srcs);
-	(void)RVecRArchValue_emplace_back (&op->dsts);
+	R_UNUSED RArchValue *_ = NULL;
+	_ = RVecRArchValue_emplace_back (&op->srcs);
+	_ = RVecRArchValue_emplace_back (&op->srcs);
+	_ = RVecRArchValue_emplace_back (&op->srcs);
+	_ = RVecRArchValue_emplace_back (&op->dsts);
 }
 
 static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn, int bits) {
