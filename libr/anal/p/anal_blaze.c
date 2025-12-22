@@ -541,7 +541,11 @@ static bool anal_bbs_range(RCore *core, const char *input) {
 				r_anal_op_fini (&op);
 				r_anal_op_init (&op);
 				const ut64 dst = b_start + cur;
-				bool ok = r_anal_op (core->anal, &op, dst, data + (dst - start), size - (dst - start), R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
+				size_t left = size - (dst - start);
+				if (left < 1) {
+					break;
+				}
+				bool ok = r_anal_op (core->anal, &op, dst, data + (dst - start), left, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
 
 				if (!ok || !op.mnemonic) {
 					block_score -= 10;
