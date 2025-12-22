@@ -1330,6 +1330,29 @@ static TPState *tps_init(RAnal *anal) {
 	return tps;
 }
 
+typedef struct type_prop_state_t {
+	char *ret_type;
+	char *ret_reg;
+	bool resolved;
+	bool userfnc;
+	const char *prev_dest;
+	RAnalVar *prev_var;
+	bool str_flag;
+	bool prop;
+	char prev_type[256];
+} TypePropState;
+
+static inline void tp_state_reset(TypePropState *state) {
+	state->str_flag = false;
+	state->prop = false;
+	state->prev_dest = NULL;
+}
+
+static inline void tp_state_fini(TypePropState *state) {
+	R_FREE (state->ret_type);
+	R_FREE (state->ret_reg);
+}
+
 R_API void r_anal_type_match(RAnal *anal, RAnalFunction *fcn) {
 	R_RETURN_IF_FAIL (anal && fcn);
 
@@ -1338,7 +1361,7 @@ R_API void r_anal_type_match(RAnal *anal, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *it;
 	RAnalOp aop = { 0 };
-	bool resolved = false;
+	TypePropState tp_state = { 0 };
 	Sdb *TDB = anal->sdb_types;
 	int ret;
 	const int mininstrsz = r_anal_archinfo (anal, R_ARCH_INFO_MINOP_SIZE);
@@ -1352,13 +1375,6 @@ R_API void r_anal_type_match(RAnal *anal, RAnalFunction *fcn) {
 	tps->tt.cur_idx = 0;
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config);
 	char *fcn_name = NULL;
-	char *ret_type = NULL;
-	bool str_flag = false;
-	bool prop = false;
-	bool prev_var = false;
-	char prev_type[256] = { 0 };
-	const char *prev_dest = NULL;
-	char *ret_reg = NULL;
 	r_cons_break_push (r_cons_singleton (), NULL, NULL);
 	RVecBuf buf;
 	RVecBuf_init (&buf);
@@ -1370,6 +1386,7 @@ R_API void r_anal_type_match(RAnal *anal, RAnalFunction *fcn) {
 repeat:
 	if (retries < 0) {
 		R_FREE (next_op);
+		tp_state_fini (&tp_state);
 		tps_fini (tps);
 		return;
 	}
@@ -1471,7 +1488,7 @@ repeat:
 				}
 			}
 #endif
-			bool userfnc = false;
+			tp_state.userfnc = false;
 			cur_idx = etrace_index (etrace) - 1;
 			if (cur_idx < 0) {
 				cur_idx = 0;
@@ -1521,7 +1538,7 @@ repeat:
 					}
 					if (!fcn_name) {
 						fcn_name = strdup (full_name);
-						userfnc = true;
+						tp_state.userfnc = true;
 					}
 					const char *Cc = NULL;
 					if (fcn_call && fcn_call->callconv) {
@@ -1536,20 +1553,20 @@ repeat:
 						if (tps->on_call) {
 							tps->on_call (tps, callee_addr, fcn_name);
 						}
-						type_match (tps, fcn_name, addr, bb->addr, cc, prev_idx, userfnc, callee_addr);
+						type_match (tps, fcn_name, addr, bb->addr, cc, prev_idx, tp_state.userfnc, callee_addr);
 						// prev_idx = tps->tt.cur_idx;
 						prev_idx = etrace->cur_idx;
-						R_FREE (ret_type);
+						R_FREE (tp_state.ret_type);
 						const char *rt = r_type_func_ret (TDB, fcn_name);
 						if (rt) {
-							ret_type = strdup (rt);
+							tp_state.ret_type = strdup (rt);
 						}
-						R_FREE (ret_reg);
+						R_FREE (tp_state.ret_reg);
 						const char *rr = r_anal_cc_ret (anal, cc);
 						if (rr) {
-							ret_reg = strdup (rr);
+							tp_state.ret_reg = strdup (rr);
 						}
-						resolved = false;
+						tp_state.resolved = false;
 						free (cc);
 					}
 					if (r_str_endswith (fcn_name, "stack_chk_fail")) {
@@ -1571,7 +1588,7 @@ repeat:
 					}
 					free (fcn_name);
 				}
-			} else if (!resolved && ret_type && ret_reg) {
+			} else if (!tp_state.resolved && tp_state.ret_type && tp_state.ret_reg) {
 				// Forward propgation of function return type
 				char src[REGNAME_SIZE] = { 0 };
 				// r_strf_var (query, 32, "%d.reg.write", cur_idx);
@@ -1581,14 +1598,14 @@ repeat:
 				cur_idx = etrace->cur_idx - 1;
 				const char *cur_dest = etrace_regwrite (etrace, cur_idx);
 				get_src_regname (anal, aop.addr, src, sizeof (src));
-				if (ret_reg && *src && strstr (ret_reg, src)) {
+				if (tp_state.ret_reg && *src && strstr (tp_state.ret_reg, src)) {
 					if (var && aop.direction == R_ANAL_OP_DIR_WRITE) {
-						var_retype (anal, var, NULL, ret_type, false, false);
-						resolved = true;
+						var_retype (anal, var, NULL, tp_state.ret_type, false, false);
+						tp_state.resolved = true;
 					} else if (type == R_ANAL_OP_TYPE_MOV) {
-						R_FREE (ret_reg);
+						R_FREE (tp_state.ret_reg);
 						if (cur_dest) {
-							ret_reg = strdup (cur_dest);
+							tp_state.ret_reg = strdup (cur_dest);
 						}
 					}
 				} else if (cur_dest) {
@@ -1597,16 +1614,16 @@ repeat:
 					if (tmp) {
 						*tmp++ = '\0';
 					}
-					if (ret_reg && (strstr (ret_reg, foo) || (tmp && strstr (ret_reg, tmp)))) {
-						resolved = true;
+					if (tp_state.ret_reg && (strstr (tp_state.ret_reg, foo) || (tmp && strstr (tp_state.ret_reg, tmp)))) {
+						tp_state.resolved = true;
 					} else if (type == R_ANAL_OP_TYPE_MOV && (next_op && next_op->type == R_ANAL_OP_TYPE_MOV)) {
 						// Progate return type passed using pointer
 						// int *ret; *ret = strlen (s);
 						// TODO: memref check , dest and next src match
 						char nsrc[REGNAME_SIZE] = { 0 };
 						get_src_regname (anal, next_op->addr, nsrc, sizeof (nsrc));
-						if (ret_reg && *nsrc && strstr (ret_reg, nsrc) && var && aop.direction == R_ANAL_OP_DIR_READ) {
-							var_retype (anal, var, NULL, ret_type, true, false);
+						if (tp_state.ret_reg && *nsrc && strstr (tp_state.ret_reg, nsrc) && var && aop.direction == R_ANAL_OP_DIR_READ) {
+							var_retype (anal, var, NULL, tp_state.ret_type, true, false);
 						}
 					}
 					free (foo);
@@ -1629,15 +1646,15 @@ repeat:
 				}
 				// lea rax , str.hello  ; mov [local_ch], rax;
 				// mov rdx , [local_4h] ; mov [local_8h], rdx;
-				if (prev_dest && (type == R_ANAL_OP_TYPE_MOV || type == R_ANAL_OP_TYPE_STORE)) {
+				if (tp_state.prev_dest && (type == R_ANAL_OP_TYPE_MOV || type == R_ANAL_OP_TYPE_STORE)) {
 					char reg[REGNAME_SIZE] = { 0 };
 					get_src_regname (anal, addr, reg, sizeof (reg));
-					bool match = strstr (prev_dest, reg);
-					if (str_flag && match) {
+					bool match = strstr (tp_state.prev_dest, reg);
+					if (tp_state.str_flag && match) {
 						var_retype (anal, var, NULL, "const char *", false, false);
 					}
-					if (prop && match && prev_var) {
-						var_retype (anal, var, NULL, prev_type, false, false);
+					if (tp_state.prop && match && tp_state.prev_var) {
+						var_retype (anal, var, NULL, tp_state.prev_type, false, false);
 					}
 				}
 				if (tps->cfg_chk_constraint && var && (type == R_ANAL_OP_TYPE_CMP && aop.disp != UT64_MAX) && next_op && next_op->type == R_ANAL_OP_TYPE_CJMP) {
@@ -1677,10 +1694,8 @@ repeat:
 					r_anal_var_add_constraint (var, &constr);
 				}
 			}
-			prev_var = (var && aop.direction == R_ANAL_OP_DIR_READ);
-			str_flag = false;
-			prop = false;
-			prev_dest = NULL;
+			tp_state.prev_var = (var && aop.direction == R_ANAL_OP_DIR_READ)? var: NULL;
+			tp_state_reset (&tp_state);
 			switch (type) {
 			case R_ANAL_OP_TYPE_MOV:
 			case R_ANAL_OP_TYPE_LEA:
@@ -1695,21 +1710,21 @@ repeat:
 						if (ptr && ptr != UT64_MAX) {
 							RFlagItem *f = anal->flb.f? r_flag_get_by_spaces (anal->flb.f, false, ptr, "strings", NULL): NULL;
 							if (f) {
-								str_flag = true;
+								tp_state.str_flag = true;
 							}
 						}
 					} else if (anal->flb.f && r_flag_exist_at (anal->flb.f, "str", 3, aop.ptr)) {
-						str_flag = true;
+						tp_state.str_flag = true;
 					}
 				}
 				// mov dword [local_4h], str.hello;
-				if (var && str_flag) {
+				if (var && tp_state.str_flag) {
 					var_retype (anal, var, NULL, "const char *", false, false);
 				}
-				prev_dest = etrace_regwrite (etrace, cur_idx);
+				tp_state.prev_dest = etrace_regwrite (etrace, cur_idx);
 				if (var) {
-					r_str_ncpy (prev_type, var->type, sizeof (prev_type) - 1);
-					prop = true;
+					r_str_ncpy (tp_state.prev_type, var->type, sizeof (tp_state.prev_type) - 1);
+					tp_state.prop = true;
 				}
 			}
 			i += ret;
@@ -1742,8 +1757,7 @@ repeat:
 	r_list_free (list);
 out_function:
 	R_FREE (next_op);
-	R_FREE (ret_reg);
-	R_FREE (ret_type);
+	tp_state_fini (&tp_state);
 	r_anal_op_fini (&aop);
 	r_cons_break_pop (r_cons_singleton ());
 	RVecBuf_fini (&buf);
