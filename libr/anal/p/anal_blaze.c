@@ -147,6 +147,14 @@ static bool addBB(RList *block_list, ut64 start, ut64 end, ut64 jump, ut64 fail,
 	return true;
 }
 
+static bool addBBWithLookup(RList *block_list, HtUP *ht_lookup, ut64 start, ut64 end, ut64 jump, ut64 fail, bb_type_t type, int score) {
+	bb_t *bb = R_NEW0 (bb_t);
+	initBB (bb, start, end, jump, fail, type, score, 0, 0);
+	r_list_append (block_list, bb);
+	ht_up_insert (ht_lookup, bb->start, bb);
+	return true;
+}
+
 static bool checkFunction(fcn_t *fcn) {
 	if (fcn && fcn->ends > 0 && fcn->size > 0) {
 		return true;
@@ -483,6 +491,7 @@ static bool anal_bbs_range(RCore *core, const char *input) {
 		free (data);
 		return false;
 	}
+	HtUP *ht_lookup = ht_up_new0 ();
 	R_LOG_DEBUG ("Analyzing [0x%08" PFMT64x "-0x%08" PFMT64x "]", start, start + size);
 	R_LOG_DEBUG ("Creating basic blocks");
 	lista[idx++] = b_start;
@@ -501,11 +510,9 @@ static bool anal_bbs_range(RCore *core, const char *input) {
 
 			bool bFound = false;
 			// check if offset don't have into block_list, to end branch analisys
-			r_list_foreach (block_list, iter, block) {
-				if ((block->type == END || block->type == NORMAL) && b_start + cur == block->start) {
-					bFound = true;
-					break;
-				}
+			bb_t *found_block = (bb_t *)ht_up_find (ht_lookup, b_start + cur, NULL);
+			if (found_block && (found_block->type == END || found_block->type == NORMAL)) {
+				bFound = true;
 			}
 
 			if (!bFound) {
@@ -530,23 +537,23 @@ static bool anal_bbs_range(RCore *core, const char *input) {
 				// eprintf ("0x%08"PFMT64x" %s\n", b_start + cur, op.mnemonic);
 				switch (op.type) {
 				case R_ANAL_OP_TYPE_RET:
-					addBB (block_list, b_start, b_start + cur + op.size, UT64_MAX, UT64_MAX, END, block_score);
+					addBBWithLookup (block_list, ht_lookup, b_start, b_start + cur + op.size, UT64_MAX, UT64_MAX, END, block_score);
 					cur = size;
 					break;
 				case R_ANAL_OP_TYPE_UJMP:
 				case R_ANAL_OP_TYPE_IRJMP:
-					addBB (block_list, b_start, b_start + cur + op.size, op.jump, UT64_MAX, END, block_score);
+					addBBWithLookup (block_list, ht_lookup, b_start, b_start + cur + op.size, op.jump, UT64_MAX, END, block_score);
 					cur = size;
 					break;
 				case R_ANAL_OP_TYPE_JMP:
-					addBB (block_list, b_start, b_start + cur + op.size, op.jump, UT64_MAX, END, block_score);
+					addBBWithLookup (block_list, ht_lookup, b_start, b_start + cur + op.size, op.jump, UT64_MAX, END, block_score);
 					b_start = op.jump;
 					cur = 0;
 					block_score = 0;
 					break;
 				case R_ANAL_OP_TYPE_CJMP:
 					// eprintf ("bb_b  0x%08"PFMT64x" - 0x%08"PFMT64x"\n", b_start, b_start + cur + op.size);
-					addBB (block_list, b_start, b_start + cur + op.size, op.jump, b_start + cur + op.size, NORMAL, block_score);
+					addBBWithLookup (block_list, ht_lookup, b_start, b_start + cur + op.size, op.jump, b_start + cur + op.size, NORMAL, block_score);
 					b_start = b_start + cur + op.size;
 					cur = 0;
 					if (idx < 1024) {
@@ -723,6 +730,7 @@ static bool anal_bbs_range(RCore *core, const char *input) {
 	}
 
 	ht_up_free (ht);
+	ht_up_free (ht_lookup);
 	set_u_free (ht2);
 	r_list_free (result);
 	r_list_free (block_list);
