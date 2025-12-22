@@ -2,6 +2,7 @@
 
 #include "r_anal.h"
 #include <r_core.h>
+#include <r_vec.h>
 
 #define NAME_BUF_SIZE    64
 #define BASE_CLASSES_MAX 32
@@ -46,6 +47,8 @@ typedef struct recovery_base_descriptor_t {
 	RecoveryTypeDescriptor *td;
 } RecoveryBaseDescriptor;
 
+R_VEC_TYPE (RVecRecoveryBaseDescriptor, RecoveryBaseDescriptor);
+
 typedef struct recovery_complete_object_locator_t {
 	ut64 addr;
 	bool valid;
@@ -54,7 +57,7 @@ typedef struct recovery_complete_object_locator_t {
 	RecoveryTypeDescriptor *td;
 	rtti_class_hierarchy_descriptor chd;
 	RList *bcd; // <rtti_base_class_descriptor>
-	RVector base_td; // <RecoveryBaseDescriptor>
+	RVecRecoveryBaseDescriptor base_td;
 } RecoveryCompleteObjectLocator;
 
 typedef struct rtti_msvc_anal_context_t {
@@ -670,7 +673,7 @@ R_API bool r_anal_rtti_msvc_print_at_vtable(RVTableContext *context, ut64 addr, 
 
 static RecoveryCompleteObjectLocator *recovery_complete_object_locator_new(void) {
 	RecoveryCompleteObjectLocator *col = R_NEW0 (RecoveryCompleteObjectLocator);
-	r_vector_init (&col->base_td, sizeof (RecoveryBaseDescriptor), NULL, NULL);
+	RVecRecoveryBaseDescriptor_init (&col->base_td);
 	return col;
 }
 
@@ -679,7 +682,7 @@ static void recovery_complete_object_locator_free(RecoveryCompleteObjectLocator 
 		return;
 	}
 	r_list_free (col->bcd);
-	r_vector_clear (&col->base_td);
+	RVecRecoveryBaseDescriptor_fini (&col->base_td);
 	free (col);
 }
 
@@ -762,7 +765,7 @@ RecoveryCompleteObjectLocator *recovery_anal_complete_object_locator(RRTTIMSVCAn
 		return col;
 	}
 
-	if (!r_vector_reserve (&col->base_td, (size_t)col->bcd->length)) {
+	if (!RVecRecoveryBaseDescriptor_reserve (&col->base_td, (size_t)col->bcd->length)) {
 		r_list_free (col->bcd);
 		col->bcd = NULL;
 		return NULL;
@@ -781,7 +784,7 @@ RecoveryCompleteObjectLocator *recovery_anal_complete_object_locator(RRTTIMSVCAn
 			}
 			continue;
 		}
-		RecoveryBaseDescriptor *base_desc = r_vector_push (&col->base_td, NULL);
+		RecoveryBaseDescriptor *base_desc = RVecRecoveryBaseDescriptor_emplace_back (&col->base_td);
 		base_desc->bcd = bcd;
 		base_desc->td = td;
 	}
@@ -858,9 +861,9 @@ static void recovery_apply_vtable(RAnal *anal, const char *class_name, RVTableIn
 	}
 }
 
-static void recovery_apply_bases(RRTTIMSVCAnalContext *context, const char *class_name, RVector *base_descs) {
+static void recovery_apply_bases(RRTTIMSVCAnalContext *context, const char *class_name, RVecRecoveryBaseDescriptor *base_descs) {
 	RecoveryBaseDescriptor *base_desc;
-	r_vector_foreach (base_descs, base_desc) {
+	R_VEC_FOREACH (base_descs, base_desc) {
 		RecoveryTypeDescriptor *base_td = base_desc->td;
 		if (!base_td->valid) {
 			R_LOG_WARN ("Invalid base td");
