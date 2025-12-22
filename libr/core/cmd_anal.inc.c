@@ -188,7 +188,6 @@ static RCoreHelpMessage help_msg_aa = {
 	"Usage:", "aa[0*?]", " # see also 'af' and 'afna'",
 	"aa", " ", "alias for 'af@@ sym.*;af@entry0;afva'", //;.afna @@ fcn.*'",
 	"aaa", "[?]", "autoname functions after aa (see afna)",
-	"aab", "", "abb across bin.sections.rx",
 	"aac", " [len]", "analyze function calls (af @@ `pi len~call[1]`)",
 	"aac*", " [len]", "flag function calls without performing a complete analysis",
 	"aaci", "", "flag import xrefs only",
@@ -277,7 +276,7 @@ static RCoreHelpMessage help_msg_ab = {
 	"ab.", "", "same as: ab $$",
 	"abi", "[?]", "alias for afbi",
 	"aba", "[j] [addr]", "analyze esil accesses in basic block (see aea?)",
-	"abb", " [length]", "analyze N bytes and extract basic blocks",
+
 	"abc", "[-] [color]", "change color of the current basic block (same as afbc, abc- to unset)",
 	"abe", " [esil-expr]", "assign esil expression to basic block (see: aeb, dre, afbd)",
 	"abf", " [addr]", "address of incoming (from) basic blocks",
@@ -10174,47 +10173,6 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 	free (buf);
 }
 
-static void cmd_anal_blocks(RCore *core, const char *input) {
-	ut64 from , to;
-	char *arg = strchr (input, ' ');
-	r_cons_break_push (core->cons, NULL, NULL);
-	if (!arg) {
-		r_core_cmd0 (core, "abb $SS @ $S");
-		RList *list = r_core_get_boundaries_prot (core, R_PERM_X, NULL, "anal");
-		RListIter *iter;
-		RIOMap* map;
-		if (!list) {
-			goto ctrl_c;
-		}
-		r_list_foreach (list, iter, map) {
-			from = r_io_map_begin (map);
-			to = r_io_map_end (map);
-			if (r_cons_is_breaked (core->cons)) {
-				goto ctrl_c;
-			}
-			if (!from && !to) {
-				R_LOG_ERROR ("Cannot determine search boundaries");
-			} else if (to - from > UT32_MAX) {
-				char *unit = r_num_units (NULL, 0, to - from);
-				R_LOG_WARN ("Skipping huge range (%s)", unit);
-				free (unit);
-			} else {
-				R_LOG_DEBUG ("abb 0x%08"PFMT64x" @ 0x%08"PFMT64x, (to - from), from);
-				r_core_cmdf (core, "abb 0x%08"PFMT64x" @ 0x%08"PFMT64x, (to - from), from);
-			}
-		}
-	} else {
-		st64 sz = r_num_math (core->num, arg + 1);
-		if (sz < 1) {
-			R_LOG_ERROR ("Invalid range");
-			return;
-		}
-		r_core_cmdf (core, "abb 0x%08"PFMT64x" @ 0x%08"PFMT64x, sz, core->addr);
-	}
-ctrl_c:
-	r_cons_break_pop (core->cons);
-}
-
 static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommands, bool importsOnly) {
 	RAnalOp op = {0};
 	const int depth = r_config_get_i (core->config, "anal.depth");
@@ -14585,13 +14543,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 	case '?':
 		r_core_cmd_help (core, help_msg_aa);
 		break;
-	case 'b': // "aab"
-		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_aa, "aab");
-		} else {
-			cmd_anal_blocks (core, input + 1);
-		}
-		break;
 	case 'f':
 		if (input[1] == 'e') {  // "aafe"
 			r_core_cmd0 (core, "aef@@F");
@@ -15776,9 +15727,6 @@ static void cmd_ab(RCore *core, const char *input) {
 	case 'a': // "aba"
 		r_core_cmdf (core, "aeab%s", input + 1);
 		break;
-	case 'b': // "abb"
-		core_anal_bbs (core, input + 1);
-		break;
 	case 'c': // "abc"
 		cmd_afbc (core, r_str_trim_head_ro (input + 1));
 		break;
@@ -15816,9 +15764,6 @@ static void cmd_ab(RCore *core, const char *input) {
 		break;
 	case 'f': // "abf"
 		core_anal_abf (core, input + 1);
-		break;
-	case 'r': // "abr"
-		core_anal_bbs_range (core, input + 1);
 		break;
 	case 't': // "abt"
 		cmd_anal_abt (core, input + 1);

@@ -3,7 +3,7 @@ user_plugins = get_option('plugins').split(',')
 
 esil_plugins = [ 'dummy', 'forth', 'null' ]
 asm_plugins = [ 'null', 'att2intel' ]
-anal_plugins = [ 'null', 'tcc' ]
+anal_plugins = [ 'null', 'a2f', 'tcc', 'blaze', 'tp', 'sbpf', 'path' ]
 arch_plugins = [ 'null' ]
 bin_plugins = [ 'any' ]
 bin_ldr_plugins = [ 'ldr_linux' ]
