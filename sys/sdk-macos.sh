@@ -16,7 +16,8 @@ macosConfigure() {
 	cp -f dist/plugins-cfg/${PLUGINS_CFG} plugins.cfg
 	./configure --with-libr --prefix=${PREFIX} --with-ostype=darwin \
 		--with-bundle-prefix --disable-debugger --without-gpl \
-		--without-fork --with-compiler=macos-sdk-clang \
+		--without-fork --with-checks-level=0 \
+		--with-compiler=macos-sdk-clang \
 		--target=x86_64-apple-darwin
 	return $?
 }
