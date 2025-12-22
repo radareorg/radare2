@@ -185,7 +185,8 @@ static bool anal_bbs(RCore *core, const char* input) {
 	R_RETURN_VAL_IF_FAIL (core && input, false);
 	RAnal *anal = core->anal;
 	const ut64 start = core->addr;
-	ut64 size = input[0] ? r_num_math (core->num, input) : core->blocksize;
+	const char *input_size = *input? input: "$SS"; // defaults to section size
+	ut64 size = r_num_math (core->num, input_size);
 	ut64 b_start = start;
 	RListIter *iter;
 	int block_score = 0;
@@ -446,7 +447,8 @@ static bool anal_bbs_range(RCore *core, const char* input) {
 	SetU *ht2 = NULL;
 	ut64 cur = 0;
 	ut64 start = core->addr;
-	ut64 size = input[0] ? r_num_math (core->num, input) : core->blocksize;
+	const char *input_size = *input? input: "$SS"; // defaults to section size
+	ut64 size = r_num_math (core->num, input_size);
 	ut64 b_start = start;
 	RAnalOp op = {0};
 	RListIter *iter;
@@ -479,86 +481,87 @@ static bool anal_bbs_range(RCore *core, const char* input) {
 	R_LOG_DEBUG ("Creating basic blocks");
 	lista[idx++] = b_start;
 	for (x = 0; x < 1024; x++) {
-		if (lista[x] != 0) {
-			cur = 0;
-			b_start = lista[x];
-			lista[x] = 0;
-			while (cur < size) {
-				// magic number to fix huge section of invalid code fuzz files
-				if (block_score < invalid_instruction_barrier) {
+		if (lista[x] == 0) {
+			continue;
+		}
+		cur = 0;
+		b_start = lista[x];
+		lista[x] = 0;
+		while (cur < size) {
+			// magic number to fix huge section of invalid code fuzz files
+			if (block_score < invalid_instruction_barrier) {
+				break;
+			}
+
+			bool bFound = false;
+			// check if offset don't have into block_list, to end branch analisys
+			r_list_foreach (block_list, iter, block) {
+				if ((block->type == END || block->type == NORMAL) && b_start + cur == block->start ) {
+					bFound = true;
 					break;
 				}
+			}
 
-				bool bFound = false;
-				// check if offset don't have into block_list, to end branch analisys
-				r_list_foreach (block_list, iter, block) {
-					if ((block->type == END || block->type == NORMAL) && b_start + cur == block->start ) {
-						bFound = true;
-						break;
-					}
+			if (!bFound) {
+				r_anal_op_fini (&op);
+				r_anal_op_init (&op);
+				const ut64 dst = b_start + cur;
+				bool ok = r_anal_op (core->anal, &op, dst, data + (dst - start), size - (dst - start), R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
+
+				if (!ok || !op.mnemonic) {
+					block_score -= 10;
+					cur++;
+					continue;
 				}
 
-				if (!bFound) {
-					r_anal_op_fini (&op);
-					r_anal_op_init (&op);
-					const ut64 dst = b_start + cur;
-					bool ok = r_anal_op (core->anal, &op, dst, data + (dst - start), size - (dst - start), R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
-
-					if (!ok || !op.mnemonic) {
-						block_score -= 10;
-						cur++;
-						continue;
+				if (op.mnemonic[0] == '?') {
+					R_LOG_ERROR ("? Bad op at: 0x%08"PFMT64x, cur + b_start);
+					R_LOG_ERROR ("Cannot analyze opcode at %"PFMT64x, b_start + cur);
+					block_score -= 10;
+					cur++;
+					continue;
+				}
+				//eprintf ("0x%08"PFMT64x" %s\n", b_start + cur, op.mnemonic);
+				switch (op.type) {
+				case R_ANAL_OP_TYPE_RET:
+					addBB (block_list, b_start, b_start + cur + op.size, UT64_MAX, UT64_MAX, END, block_score);
+					cur = size;
+					break;
+				case R_ANAL_OP_TYPE_UJMP:
+				case R_ANAL_OP_TYPE_IRJMP:
+					addBB (block_list, b_start, b_start + cur + op.size, op.jump, UT64_MAX, END, block_score);
+					cur = size;
+					break;
+				case R_ANAL_OP_TYPE_JMP:
+					addBB (block_list, b_start, b_start + cur + op.size, op.jump, UT64_MAX, END, block_score);
+					b_start = op.jump;
+					cur = 0;
+					block_score = 0;
+					break;
+				case R_ANAL_OP_TYPE_CJMP:
+					//eprintf ("bb_b  0x%08"PFMT64x" - 0x%08"PFMT64x"\n", b_start, b_start + cur + op.size);
+					addBB (block_list, b_start, b_start + cur + op.size, op.jump, b_start + cur + op.size, NORMAL, block_score);
+					b_start = b_start + cur + op.size;
+					cur = 0;
+					if (idx < 1024) {
+						lista[idx++] = op.jump;
 					}
-
-					if (op.mnemonic[0] == '?') {
-						R_LOG_ERROR ("? Bad op at: 0x%08"PFMT64x, cur + b_start);
-						R_LOG_ERROR ("Cannot analyze opcode at %"PFMT64x, b_start + cur);
-						block_score -= 10;
-						cur++;
-						continue;
-					}
-					//eprintf ("0x%08"PFMT64x" %s\n", b_start + cur, op.mnemonic);
-					switch (op.type) {
-					case R_ANAL_OP_TYPE_RET:
-						addBB (block_list, b_start, b_start + cur + op.size, UT64_MAX, UT64_MAX, END, block_score);
-						cur = size;
-						break;
-					case R_ANAL_OP_TYPE_UJMP:
-					case R_ANAL_OP_TYPE_IRJMP:
-						addBB (block_list, b_start, b_start + cur + op.size, op.jump, UT64_MAX, END, block_score);
-						cur = size;
-						break;
-					case R_ANAL_OP_TYPE_JMP:
-						addBB (block_list, b_start, b_start + cur + op.size, op.jump, UT64_MAX, END, block_score);
-						b_start = op.jump;
-						cur = 0;
-						block_score = 0;
-						break;
-					case R_ANAL_OP_TYPE_CJMP:
-						//eprintf ("bb_b  0x%08"PFMT64x" - 0x%08"PFMT64x"\n", b_start, b_start + cur + op.size);
-						addBB (block_list, b_start, b_start + cur + op.size, op.jump, b_start + cur + op.size, NORMAL, block_score);
-						b_start = b_start + cur + op.size;
-						cur = 0;
-						if (idx < 1024) {
-							lista[idx++] = op.jump;
-						}
-						block_score = 0;
-						break;
-					case R_ANAL_OP_TYPE_TRAP:
-					case R_ANAL_OP_TYPE_UNK:
-					case R_ANAL_OP_TYPE_ILL:
-						block_score -= 10;
-						cur += op.size;
-						break;
-					default:
-						cur += op.size;
-						break;
-					}
-					r_anal_op_fini (&op);
-				} else {
-					// we have this offset into previous analyzed block, exit from this path flow.
+					block_score = 0;
+					break;
+				case R_ANAL_OP_TYPE_TRAP:
+				case R_ANAL_OP_TYPE_UNK:
+				case R_ANAL_OP_TYPE_ILL:
+					block_score -= 10;
+					cur += op.size;
+					break;
+				default:
+					cur += op.size;
 					break;
 				}
+				r_anal_op_fini (&op);
+			} else {
+				// we have this offset into previous analyzed block, exit from this path flow.
+				break;
 			}
 		}
 	}
@@ -721,23 +724,18 @@ static bool anal_bbs_range(RCore *core, const char* input) {
 }
 
 static bool blazecmd(RAnal *anal, const char *input) {
-eprintf ("INPUT (%s)\n", input);
 	RCore *core = (RCore *)anal->coreb.core;
 	if (!r_str_startswith (input, "blaze")) {
 		return false;
 	}
-
-	if (input[5] == '?') {
+	const char ch = input[5];
+	if (ch == '?') {
 		R_LOG_INFO ("Usage: a:blaze [size] - analyze all basic blocks in range to create functions using the blaze algorithm");
-		return true;
+		R_LOG_INFO ("Usage: a:blaze2 [size] - experimental non linear advanced scan");
+	} else if (ch == '2') {
+		return anal_bbs_range (core, r_str_trim_head_ro (input + 6));
 	}
-
-	const char *arg = r_str_trim_head_ro (input + 5);
-	if (!strcmp (arg, "range") || r_str_startswith (arg, "range ")) {
-		return anal_bbs_range (core, arg + 5);
-	}
-
-	return anal_bbs (core, arg);
+	return anal_bbs (core, r_str_trim_head_ro (input + 6));
 }
 
 RAnalPlugin r_anal_plugin_blaze = {
