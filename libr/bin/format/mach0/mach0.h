@@ -57,6 +57,8 @@ struct section_t {
 	char name[R_BIN_MACH0_STRING_LENGTH];
 };
 
+R_VEC_TYPE (RVecSection, struct section_t);
+
 struct reloc_t {
 	ut64 offset;
 	ut64 addr;
@@ -190,7 +192,7 @@ struct MACH0_(obj_t) {
 	int (*original_io_read)(RIO *io, RIODesc *fd, ut8 *buf, int count);
 	bool rebasing_buffer;
 	bool sections_loaded;
-	RVector sections_cache;
+	RVecSection sections_cache;
 	bool imports_loaded;
 	RPVector imports_cache;
 	bool relocs_loaded;
@@ -263,7 +265,7 @@ void MACH0_(opts_set_default)(struct MACH0_(opts_t) *options, RBinFile *bf);
 struct MACH0_(obj_t) *MACH0_(mach0_new)(const char *file, struct MACH0_(opts_t) *options);
 struct MACH0_(obj_t) *MACH0_(new_buf)(RBinFile *bf, RBuffer *buf, struct MACH0_(opts_t) *options);
 void *MACH0_(mach0_free)(struct MACH0_(obj_t) *bin);
-const RVector *MACH0_(load_sections)(struct MACH0_(obj_t) *mo);
+const RVecSection *MACH0_(load_sections)(struct MACH0_(obj_t) *mo);
 RList *MACH0_(get_segments)(RBinFile *bf, struct MACH0_(obj_t) *mo);
 RVecSegment *MACH0_(get_segments_vec)(RBinFile *bf, struct MACH0_(obj_t) *mo);
 const bool MACH0_(load_symbols)(struct MACH0_(obj_t) *mo);

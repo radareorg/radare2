@@ -2245,7 +2245,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 	}
 #endif
 	if (mo->sections_loaded) {
-		r_vector_fini (&mo->sections_cache);
+		RVecSection_fini (&mo->sections_cache);
 	}
 	RVecSegment_free (mo->segments_vec);
 	mo->segments_vec = NULL;
@@ -2529,14 +2529,14 @@ RList *MACH0_(get_segments)(RBinFile *bf, struct MACH0_(obj_t) *macho) {
 	return list;
 }
 
-const RVector *MACH0_(load_sections)(struct MACH0_(obj_t) *mo) {
+const RVecSection *MACH0_(load_sections)(struct MACH0_(obj_t) *mo) {
 	R_RETURN_VAL_IF_FAIL (mo, NULL);
 	if (mo->sections_loaded) {
 		return &mo->sections_cache;
 	}
 
 	mo->sections_loaded = true;
-	r_vector_init (&mo->sections_cache, sizeof (struct section_t), NULL, NULL);
+	RVecSection_init (&mo->sections_cache);
 
 	char sectname[64];
 	char raw_segname[17];
@@ -2545,11 +2545,11 @@ const RVector *MACH0_(load_sections)(struct MACH0_(obj_t) *mo) {
 
 	/* for core files */
 	if (mo->nsects < 1 && mo->nsegs > 0) {
-		if (!r_vector_reserve (&mo->sections_cache, mo->nsegs)) {
+		if (!RVecSection_reserve (&mo->sections_cache, mo->nsegs)) {
 			return NULL;
 		}
 		for (i = 0; i < mo->nsegs; i++) {
-			struct section_t *section = r_vector_end (&mo->sections_cache);
+			struct section_t *section = RVecSection_emplace_back (&mo->sections_cache);
 			seg = &mo->segs[i];
 			section->vaddr = seg->vmaddr;
 			section->paddr = seg->fileoff;
@@ -2573,11 +2573,11 @@ const RVector *MACH0_(load_sections)(struct MACH0_(obj_t) *mo) {
 	if (to < 1) {
 		return NULL;
 	}
-	if (!r_vector_reserve (&mo->sections_cache, to)) {
+	if (!RVecSection_reserve (&mo->sections_cache, to)) {
 		return NULL;
 	}
 	for (i = 0; i < to; i++) {
-		struct section_t *section = r_vector_end (&mo->sections_cache);
+		struct section_t *section = RVecSection_emplace_back (&mo->sections_cache);
 		section->paddr = (ut64)mo->sects[i].offset;
 		section->vaddr = (ut64)mo->sects[i].addr;
 		section->size = (mo->sects[i].flags == S_ZEROFILL) ? 0 : (ut64)mo->sects[i].size;
