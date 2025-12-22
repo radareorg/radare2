@@ -146,14 +146,6 @@ static bool checkFunction(fcn_t *fcn) {
 	return false;
 }
 
-static R_MUSTUSE char *function_name(RAnal *anal, const char *name, ut64 addr) {
-	if (name) {
-		return strdup (name);
-	}
-	const char *pfx = r_anal_fcn_prefix_at (anal, addr);
-	return r_str_newf ("%s.%" PFMT64x, pfx, addr);
-}
-
 static void createFunction(RAnal *anal, fcn_t* fcn, const char *name) {
 	R_RETURN_IF_FAIL (anal && fcn);
 
@@ -199,13 +191,18 @@ static bool anal_bbs(RCore *core, const char* input) {
 	int invalid_instruction_barrier = -20000;
 	const bool nopskip = r_config_get_b (core->config, "anal.nopskip");
 
-	RList *block_list = r_list_new ();
-	if (!block_list) {
+	ut8 *data = malloc (size);
+	if (!data) {
+		R_LOG_ERROR ("Cannot allocate %d bytes", (int)size);
 		return false;
 	}
+	int res = anal->iob.read_at (anal->iob.io, start, data, size);
+	// AITODO: check return value for success or not
+	RList *block_list = r_list_new ();
 
 	R_LOG_DEBUG ("Analyzing [0x%08"PFMT64x"-0x%08"PFMT64x"]", start, start + size);
 	R_LOG_DEBUG ("Creating basic blocks");
+	RAnalOp op = {0};
 	ut64 cur = 0, base = 0;
 	while (cur >= base && cur < size) {
 		// magic number to fix huge section of invalid code fuzz files
@@ -223,39 +220,41 @@ static bool anal_bbs(RCore *core, const char* input) {
 			cur += dsize;
 			continue;
 		}
-		RAnalOp *const op = r_core_anal_op (core, dst, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
-
-		if (!op || !op->mnemonic) {
+		// AITODO: r_core_anal_op is implemented in core/canal.c and thats performing pretty badly for the usecase we have here b ecause we should be able to just call r_anal_op , the code below should behave the same, but in a more fast way. find other references to r_core_anal_op and apply the changes required to work
+		r_anal_op_fini (&op);
+		r_anal_op_init (&op);
+		bool ok = r_anal_op (anal, &op, dst, data, size - cur, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
+		if (!ok || !op.mnemonic) {
 			block_score -= 10;
 			cur++;
 			continue;
 		}
 
-		if (op->mnemonic[0] == '?') {
+		if (op.mnemonic[0] == '?') {
 			R_LOG_ERROR ("? Bad op at: 0x%08"PFMT64x, dst);
 			R_LOG_ERROR ("Cannot analyze opcode at 0x%"PFMT64x, dst);
 			block_score -= 10;
 			cur++;
 			continue;
 		}
-		switch (op->type) {
+		switch (op.type) {
 		case R_ANAL_OP_TYPE_NOP:
 			if (nopskip && b_start == dst) {
-				b_start = dst + op->size;
+				b_start = dst + op.size;
 			}
 			break;
 		case R_ANAL_OP_TYPE_CALL:
-			if (r_anal_noreturn_at (anal, op->jump)) {
-				addBB (block_list, b_start, dst + op->size, UT64_MAX, UT64_MAX, END, block_score);
-				b_start = dst + op->size;
+			if (r_anal_noreturn_at (anal, op.jump)) {
+				addBB (block_list, b_start, dst + op.size, UT64_MAX, UT64_MAX, END, block_score);
+				b_start = dst + op.size;
 				block_score = 0;
 			} else {
-				addBB (block_list, op->jump, UT64_MAX, UT64_MAX, UT64_MAX, CALL, block_score);
+				addBB (block_list, op.jump, UT64_MAX, UT64_MAX, UT64_MAX, CALL, block_score);
 			}
 			break;
 		case R_ANAL_OP_TYPE_JMP:
-			addBB (block_list, b_start, dst + op->size, op->jump, UT64_MAX, END, block_score);
-			b_start = dst + op->size;
+			addBB (block_list, b_start, dst + op.size, op.jump, UT64_MAX, END, block_score);
+			b_start = dst + op.size;
 			block_score = 0;
 			break;
 		case R_ANAL_OP_TYPE_TRAP:
@@ -263,17 +262,17 @@ static bool anal_bbs(RCore *core, const char* input) {
 			if (b_start < dst) {
 				addBB (block_list, b_start, dst, UT64_MAX, UT64_MAX, NORMAL, block_score);
 			}
-			b_start = dst + op->size;
+			b_start = dst + op.size;
 			block_score = 0;
 			break;
 		case R_ANAL_OP_TYPE_RET:
-			addBB (block_list, b_start, dst + op->size, UT64_MAX, UT64_MAX, END, block_score);
-			b_start = dst + op->size;
+			addBB (block_list, b_start, dst + op.size, UT64_MAX, UT64_MAX, END, block_score);
+			b_start = dst + op.size;
 			block_score = 0;
 			break;
 		case R_ANAL_OP_TYPE_CJMP:
-			addBB (block_list, b_start, dst + op->size, op->jump, dst + op->size, NORMAL, block_score);
-			b_start = dst + op->size;
+			addBB (block_list, b_start, dst + op.size, op.jump, dst + op.size, NORMAL, block_score);
+			b_start = dst + op.size;
 			block_score = 0;
 			break;
 		case R_ANAL_OP_TYPE_UNK:
@@ -283,9 +282,10 @@ static bool anal_bbs(RCore *core, const char* input) {
 		default:
 			break;
 		}
-		cur += op->size;
-		r_anal_op_free (op);
+		cur += op.size;
+		r_anal_op_fini (&op);
 	}
+	free (data);
 
 	R_LOG_DEBUG ("Found %d basic blocks", block_list->length);
 
