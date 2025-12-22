@@ -1962,15 +1962,6 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 	}
 	ret->time_elapsed = r_time_now_mono () - start_time;
 	bool broken = r2r_test_broken (test);
-#if R2R_ASAN
-#if !R2_ASSERT_STDOUT
-#error R2_ASSERT_STDOUT undefined or 0
-#endif
-	R2RProcessOutput *out = ret->proc_out;
-	if (!success && test->type == R2R_TEST_TYPE_CMD && strstr (test->path, "/dbg")) {
-		broken = check_cmd_asan_result (out);
-	}
-#endif
 	if (success) {
 		ret->result = broken? R2R_TEST_RESULT_FIXED: R2R_TEST_RESULT_OK;
 	} else {
