@@ -1016,7 +1016,6 @@ R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr);
 
 /* PLUGINS */
 extern RCorePlugin r_core_plugin_java;
-extern RCorePlugin r_core_plugin_a2f;
 extern RCorePlugin r_core_plugin_prj;
 extern RCorePlugin r_core_plugin_writedwarf;
 extern RCorePlugin r_core_plugin_sixref;

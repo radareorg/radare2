@@ -29,6 +29,7 @@ ec jmp white
 ec ujmp white
 ec cjmp white
 ec call rgb:6af
+ec ucall rgb:6af
 ec nop rgb:33a
 ec ret white
 ec trap blue

@@ -17,7 +17,7 @@ if get_option('use_zip')
 endif
 bp_plugins = [ 'null' ]
 muta_plugins = [ 'null' ]
-core_plugins = [ 'a2f', 'agD' ]
+core_plugins = [ 'prj', 'writedwarf', 'agD' ]
 egg_plugins = [ 'xor' ]
 debug_plugins = [ 'null', 'io', 'esil', 'rap' ]
 lang_plugins = [ 'lib', 'pipe', 'qjs', 'tsc', 'spp' ]
@@ -304,7 +304,6 @@ if get_option('plugins') == ''
   ]
 
   core_plugins += [
-    'a2f',
     'agD',
     'java'
   ]
