@@ -117,7 +117,7 @@ static RCoreHelpMessage help_msg_at_at_at = {
 	"x", " @@@f:hit*", "flags matching glob expression",
 	"x", " @@@i", "imports",
 	"x", " @@@M", "dbg.maps (See ?$?~size)",
-	"x", " @@@m", "io.maps",
+	"x", " @@@m[:rwx]", "io.maps (all of the ones matching perm mask)",
 	"x", " @@@r", "registers",
 	"x", " @@@R", "relocs",
 	"x", " @@@S", "sections",
