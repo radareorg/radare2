@@ -5,7 +5,7 @@
 # Default variables
 PREFIX="/usr/local"
 INSTALL_DST="/tmp/r2sdk"
-export CFLAGS="-O2 -DNDEBUG"
+export CFLAGS="-Oz -DNDEBUG"
 DOSH=0
 ARCHS=""
 MERGE_LIBS=1
