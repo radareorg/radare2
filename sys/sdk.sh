@@ -274,7 +274,7 @@ else
 		R2_PLUGINS_CFG=dist/plugins-cfg/plugins.bin.cfg
 	fi
 	cp -f "${R2_PLUGINS_CFG}" plugins.cfg
-	./configure --prefix="$PREFIX" --with-libr --without-gpl || exit 1
+	./configure --prefix="$PREFIX" --with-libr --without-gpl --with-checks-level=0 || exit 1
 	make -j8 || exit 1
 	rm -rf "${SDKDIR}"
 	mkdir -p "${SDKDIR}"/lib
