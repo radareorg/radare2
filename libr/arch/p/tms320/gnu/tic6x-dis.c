@@ -1105,8 +1105,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
 			  mem_base_reg_known = true;
 			  mem_base_reg = 15;
 			}
-		      if ( enc->coding_method == tic6x_coding_mem_offset_noscale
-			   || enc->coding_method == tic6x_coding_mem_offset_noscale )
+		      if (enc->coding_method == tic6x_coding_mem_offset_noscale)
 			mem_scaled = false;
 		    }
 		  break;

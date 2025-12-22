@@ -767,13 +767,9 @@ static bool cb_asmarch(void *user, void *data) {
 		return false;
 	}
 	r_config_set (core->config, "asm.parser", node->value);
-
-	if (core->anal->cur && ! (core->anal->config->bits & core->anal->config->bits)) {
-		r_config_set_i (core->config, "asm.bits", bits);
-	} else if (core->anal->cur && ! (core->rasm->config->bits & core->anal->config->bits)) {
+	if (core->anal->cur && ! (core->rasm->config->bits & core->anal->config->bits)) {
 		r_config_set_i (core->config, "asm.bits", bits);
 	}
-
 	r_debug_set_arch (core->dbg, node->value, bits);
 	if (!r_config_set (core->config, "anal.arch", node->value)) {
 		char *p, *s = strdup (node->value);

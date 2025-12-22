@@ -563,8 +563,8 @@ static ut32 ngc(ArmOp *op) {
 static ut32 rev(ArmOp *op) {
 	ut32 data = UT32_MAX;
 	int k = 0;
-	const bool reg64 = op->operands[0].reg_type & ARM_REG64 && op->operands[0].reg_type & ARM_REG64;
-	const bool reg32 = op->operands[0].reg_type & ARM_REG32 && op->operands[0].reg_type & ARM_REG32;
+	const bool reg64 = op->operands[0].reg_type & ARM_REG64;
+	const bool reg32 = op->operands[0].reg_type & ARM_REG32;
 
 	check_cond (op->operands[0].type == ARM_GPR);
 	check_cond (op->operands[1].type == ARM_GPR);
