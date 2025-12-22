@@ -13,7 +13,7 @@ typedef struct type_trace_change_reg_t {
 	ut64 odata;
 } TypeTraceRegChange;
 
-static void type_trace_reg_change_fini(void *data, void *user) {
+static void type_trace_reg_change_fini(void *data) {
 	if (data) {
 		TypeTraceRegChange *change = data;
 		free (change->name);
@@ -29,7 +29,7 @@ typedef struct type_trace_mem_range_t {
 	ut8 *odata;
 } TypeTraceMemRange;
 
-static void type_trace_mem_range_fini(void *data, void *user) {
+static void type_trace_mem_range_fini(void *data) {
 	TypeTraceMemRange *range = data;
 	if (range) {
 		free (range->data);
@@ -151,18 +151,10 @@ static void add_reg_change(TypeTrace *trace, RRegItem *ri, ut64 data, ut64 odata
 		VecRegChange_init (vreg);
 		ht_up_insert (trace->registers, addr, vreg);
 	}
-	char *name = strdup (ri->name);
-	if (!name) {
-		R_LOG_ERROR ("Failed to allocate(strdup) memory for storing register change");
-		return;
-	}
 	TypeTraceRegChange *reg = VecRegChange_emplace_back (vreg);
-	if (!reg) {
-		free (name);
-		R_LOG_ERROR ("Failed to allocate memory for storing register change");
-		return;
+	if (reg) {
+		*reg = (TypeTraceRegChange){ trace->cur_idx, trace->cc++, strdup (ri->name), data, odata };
 	}
-	*reg = (TypeTraceRegChange){ trace->cur_idx, trace->cc++, name, data, odata };
 }
 
 static void type_trace_voyeur_reg_write(void *user, const char *name, ut64 old, ut64 val) {
@@ -173,21 +165,11 @@ static void type_trace_voyeur_reg_write(void *user, const char *name, ut64 old, 
 		return;
 	}
 	char *name_dup = strdup (name);
-	if (!name_dup) {
-		R_LOG_ERROR ("Failed to allocate(strdup) memory for storing access");
-		return;
-	}
 	TypeTraceAccess *access = VecAccess_emplace_back (&trace->db.accesses);
-	if (!access) {
-		free (name_dup);
-		R_LOG_ERROR ("Failed to allocate memory for storing access");
-		return;
-	}
 	access->is_reg = true;
 	access->reg.name = name_dup;
 	access->reg.value = val;
 	access->is_write = true;
-
 	if (trace->enable_rollback) {
 		r_strbuf_prependf (&trace->rollback, "0x%" PFMT64x ",%s,:=,", old, name);
 	}
@@ -200,16 +182,11 @@ static void type_trace_voyeur_mem_read(void *user, ut64 addr, const ut8 *buf, in
 	R_RETURN_IF_FAIL (user && buf && (len > 0));
 	char *hexbuf = r_hex_bin2strdup (buf, len); // why?
 	if (!hexbuf) {
-		R_LOG_ERROR ("Failed to allocate(r_hex_bin2strdup) memory for storing access");
+		R_LOG_ERROR ("r_hex_bin2strdup fail");
 		return;
 	}
 	TypeTraceDB *db = user;
 	TypeTraceAccess *access = VecAccess_emplace_back (&db->accesses);
-	if (!access) {
-		free (hexbuf);
-		R_LOG_ERROR ("Failed to allocate memory for storing access");
-		return;
-	}
 	access->is_reg = false;
 	access->mem.data = hexbuf;
 	access->mem.addr = addr;
@@ -221,7 +198,7 @@ static void type_trace_voyeur_mem_write(void *user, ut64 addr, const ut8 *old, c
 	R_RETURN_IF_FAIL (user && buf && (len > 0));
 	char *hexbuf = r_hex_bin2strdup (buf, len); // why?
 	if (!hexbuf) {
-		R_LOG_ERROR ("Failed to allocate(r_hex_bin2strdup) memory for storing access");
+		R_LOG_ERROR ("r_hex_bin2strdup fail");
 		return;
 	}
 	TypeTrace *trace = user;
@@ -262,6 +239,8 @@ static void type_trace_voyeur_mem_write(void *user, ut64 addr, const ut8 *old, c
 		odata = malloc (len);
 		if (!odata) {
 			free (data);
+			mem->data = NULL;
+			mem->odata = NULL;
 			VecMemRange_erase_back (&trace->memory, mem);
 			R_LOG_ERROR ("Failed to allocate memory for storing access");
 			goto update_db;
@@ -269,7 +248,8 @@ static void type_trace_voyeur_mem_write(void *user, ut64 addr, const ut8 *old, c
 		memcpy (odata, old, len);
 	}
 	*mem = (TypeTraceMemRange){ trace->idx, trace->cc++, addr, (ut32)len, data, odata };
-update_trace_db_op (&trace->db);
+update_db:
+	update_trace_db_op (&trace->db);
 }
 
 static void htup_regvec_free(HtUPKv *kv) {
