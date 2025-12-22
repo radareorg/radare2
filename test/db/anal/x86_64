@@ -581,7 +581,7 @@ e anal.hasnext=0
 e asm.arch=x86
 e asm.bits=64
 wx b8010000004839ca7f26b8ffffffff4839ca7c1c498b4838498b5138b8010000004839ca7f0ab8ffffffff4839ca7d025dc34883c7684883c6685dc3
-a2f
+a:a2f
 afl~?
 EOF
 EXPECT=<<EOF
@@ -596,7 +596,7 @@ e anal.hasnext=0
 e asm.arch=x86
 e asm.bits=64
 wx b8010000004839ca7f26b8ffffffff4839ca7c1c498b4838498b5138b8010000004839ca7f0ab8ffffffff4839ca7d025dc34883c7684883c6685dc3
-a2f
+a:a2f
 afl~?
 afl~[2]
 EOF
@@ -613,7 +613,7 @@ e anal.hasnext=0
 e asm.arch=x86
 e asm.bits=64
 wx b8010000004839ca7f26b8ffffffff4839ca7c1c498b4838498b5138b8010000004839ca7f0ab8ffffffff4839ca7d025dc34883c7684883c6685dc3
-a2f
+a:a2f
 afl~?
 afl~[2]
 EOF
