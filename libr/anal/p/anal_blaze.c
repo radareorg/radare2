@@ -176,6 +176,67 @@ static bool checkFunction(fcn_t *fcn) {
 	return false;
 }
 
+static void mergeBlocks(RList *block_list, HtUP *ht, RList *result) {
+	bb_t *block = NULL;
+	while (block_list->length > 0) {
+		block = r_list_pop (block_list);
+		if (!block) {
+			R_LOG_ERROR ("Failed to get next block from list");
+			continue;
+		}
+
+		if (block_list->length > 0) {
+			bb_t *next_block = (bb_t *)r_list_iter_get_data (block_list->tail);
+			if (!next_block) {
+				R_LOG_ERROR ("No next block to compare with!");
+				break;
+			}
+
+			// current block is just a split block
+			if (block->start == next_block->start && block->end == UT64_MAX) {
+				if (block->type != CALL && next_block->type != CALL) {
+					next_block->reached = block->reached + 1;
+				}
+				free (block);
+				continue;
+			}
+
+			// block and next_block share the same start so we copy the
+			// contenct of the block into the next_block and skip the current one
+			if (block->start == next_block->start && next_block->end == UT64_MAX) {
+				if (next_block->type != CALL) {
+					block->reached += 1;
+				}
+				*next_block = *block;
+				free (block);
+				continue;
+			}
+
+			if (block->end < UT64_MAX && next_block->start < block->end && next_block->start > block->start) {
+				if (next_block->jump == UT64_MAX) {
+					next_block->jump = block->jump;
+				}
+
+				if (next_block->fail == UT64_MAX) {
+					next_block->fail = block->fail;
+				}
+
+				next_block->end = block->end;
+				block->end = next_block->start;
+				block->jump = next_block->start;
+				block->fail = UT64_MAX;
+				next_block->type = block->type;
+				if (next_block->type != CALL) {
+					next_block->reached++;
+				}
+			}
+		}
+
+		ht_up_insert (ht, block->start, block);
+		r_list_append (result, block);
+	}
+}
+
 static void createFunction(RAnal *anal, fcn_t *fcn, const char *name) {
 	R_RETURN_IF_FAIL (anal && fcn);
 
@@ -339,62 +400,7 @@ static bool anal_bbs(RCore *core, const char *input) {
 	R_LOG_DEBUG ("Sorting all blocks done");
 	R_LOG_DEBUG ("Creating the complete graph");
 
-	while (block_list->length > 0) {
-		block = r_list_pop (block_list);
-		if (!block) {
-			R_LOG_ERROR ("Failed to get next block from list");
-			continue;
-		}
-
-		if (block_list->length > 0) {
-			bb_t *next_block = (bb_t *)r_list_iter_get_data (block_list->tail);
-			if (!next_block) {
-				R_LOG_ERROR ("No next block to compare with!");
-				break;
-			}
-
-			// current block is just a split block
-			if (block->start == next_block->start && block->end == UT64_MAX) {
-				if (block->type != CALL && next_block->type != CALL) {
-					next_block->reached = block->reached + 1;
-				}
-				free (block);
-				continue;
-			}
-
-			// block and next_block share the same start so we copy the
-			// contenct of the block into the next_block and skip the current one
-			if (block->start == next_block->start && next_block->end == UT64_MAX) {
-				if (next_block->type != CALL) {
-					block->reached += 1;
-				}
-				*next_block = *block;
-				free (block);
-				continue;
-			}
-
-			if (block->end < UT64_MAX && next_block->start < block->end && next_block->start > block->start) {
-				if (next_block->jump == UT64_MAX) {
-					next_block->jump = block->jump;
-				}
-
-				if (next_block->fail == UT64_MAX) {
-					next_block->fail = block->fail;
-				}
-
-				next_block->end = block->end;
-				block->end = next_block->start;
-				block->jump = next_block->start;
-				block->fail = UT64_MAX;
-				next_block->type = block->type;
-				if (next_block->type != CALL) {
-					next_block->reached += 1;
-				}
-			}
-		}
-		ht_up_insert (ht, block->start, block);
-		r_list_append (result, block);
-	}
+	mergeBlocks (block_list, ht, result);
 
 	// finally search for functions
 	// we simply assume that non reached blocks or called blocks
@@ -611,62 +617,7 @@ static bool anal_bbs_range(RCore *core, const char *input) {
 	R_LOG_DEBUG ("Sorting all blocks done");
 	R_LOG_DEBUG ("Creating the complete graph");
 
-	while (block_list->length > 0) {
-		block = r_list_pop (block_list);
-		if (!block) {
-			R_LOG_ERROR ("Failed to get next block from list");
-			continue;
-		}
-
-		if (block_list->length > 0) {
-			bb_t *next_block = (bb_t *)r_list_iter_get_data (block_list->tail);
-			if (!next_block) {
-				R_LOG_ERROR ("No next block to compare with!");
-			}
-
-			// current block is just a split block
-			if (block->start == next_block->start && block->end == UT64_MAX) {
-				if (block->type != CALL && next_block->type != CALL) {
-					next_block->reached = block->reached + 1;
-				}
-				free (block);
-				continue;
-			}
-
-			// block and next_block share the same start so we copy the
-			// contenct of the block into the next_block and skip the current one
-			if (block->start == next_block->start && next_block->end == UT64_MAX) {
-				if (next_block->type != CALL) {
-					block->reached += 1;
-				}
-				*next_block = *block;
-				free (block);
-				continue;
-			}
-
-			if (block->end < UT64_MAX && next_block->start < block->end && next_block->start > block->start) {
-				if (next_block->jump == UT64_MAX) {
-					next_block->jump = block->jump;
-				}
-
-				if (next_block->fail == UT64_MAX) {
-					next_block->fail = block->fail;
-				}
-
-				next_block->end = block->end;
-				block->end = next_block->start;
-				block->jump = next_block->start;
-				block->fail = UT64_MAX;
-				next_block->type = block->type;
-				if (next_block->type != CALL) {
-					next_block->reached++;
-				}
-			}
-		}
-
-		ht_up_insert (ht, block->start, block);
-		r_list_append (result, block);
-	}
+	mergeBlocks (block_list, ht, result);
 
 	// finally add bb to function
 	// we simply assume that non reached blocks
