@@ -10,7 +10,7 @@ OBJS=core.o cmd.o cfile.o cconfig.o visual.o cio.o yank.o libs.o agraph.o xpatch
 OBJS+=fortune.o vasm.o patch.o cbin.o corelog.o rtr.o cmd_api.o cundo.o cproject.o
 OBJS+=carg.o canal.o project.o gdiff.o casm.o disasm.o cplugin.o cmd_print_list.o
 OBJS+=vmenus.o vmenus_graph.o vmenus_zigns.o zdiff.o citem.o vslides.o clist.o
-OBJS+=task.o panels.o pseudo.o vmarks.o anal_objc.o blaze.o core_esil.o
+OBJS+=task.o panels.o pseudo.o vmarks.o anal_objc.o core_esil.o
 OBJS+=vmatrix.o prompt.o
 
 CFLAGS+=-DR2_PLUGIN_INCORE -I../../shlr

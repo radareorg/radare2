@@ -277,7 +277,7 @@ static RCoreHelpMessage help_msg_ab = {
 	"ab.", "", "same as: ab $$",
 	"abi", "[?]", "alias for afbi",
 	"aba", "[j] [addr]", "analyze esil accesses in basic block (see aea?)",
-	"abb", " [length]", "analyze N bytes and extract basic blocks",
+
 	"abc", "[-] [color]", "change color of the current basic block (same as afbc, abc- to unset)",
 	"abe", " [esil-expr]", "assign esil expression to basic block (see: aeb, dre, afbd)",
 	"abf", " [addr]", "address of incoming (from) basic blocks",
@@ -15776,9 +15776,6 @@ static void cmd_ab(RCore *core, const char *input) {
 	case 'a': // "aba"
 		r_core_cmdf (core, "aeab%s", input + 1);
 		break;
-	case 'b': // "abb"
-		core_anal_bbs (core, input + 1);
-		break;
 	case 'c': // "abc"
 		cmd_afbc (core, r_str_trim_head_ro (input + 1));
 		break;
@@ -15816,9 +15813,6 @@ static void cmd_ab(RCore *core, const char *input) {
 		break;
 	case 'f': // "abf"
 		core_anal_abf (core, input + 1);
-		break;
-	case 'r': // "abr"
-		core_anal_bbs_range (core, input + 1);
 		break;
 	case 't': // "abt"
 		cmd_anal_abt (core, input + 1);

@@ -1,5 +1,6 @@
-/* radare - LGPL - Copyright 2017-2023 - pancake, defragger */
+/* radare - LGPL - Copyright 2017-2025 - pancake, defragger */
 
+#include <r_anal.h>
 #include <r_core.h>
 
 typedef enum bb_type {
@@ -219,7 +220,8 @@ static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
 }
 
 #define Fhandled(x) r_strf ("handled.%"PFMT64x, x)
-R_API bool core_anal_bbs(RCore *core, const char* input) {
+
+static bool anal_bbs(RCore *core, const char* input) {
 	R_RETURN_VAL_IF_FAIL (core && input, false);
 	if (!r_io_is_valid_offset (core->io, core->addr, false)) {
 		R_LOG_ERROR ("No valid offset given to analyze");
@@ -486,7 +488,7 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 	return true;
 }
 
-R_API bool core_anal_bbs_range(RCore *core, const char* input) {
+static bool anal_bbs_range(RCore *core, const char* input) {
 	if (!r_io_is_valid_offset (core->io, core->addr, false)) {
 		R_LOG_ERROR ("No valid offset given to analyze");
 		return false;
@@ -764,3 +766,47 @@ R_API bool core_anal_bbs_range(RCore *core, const char* input) {
 	r_list_free (block_list);
 	return true;
 }
+
+static bool blazecmd(RAnal *anal, const char *input) {
+	RCore *core = (RCore *)anal->coreb.core;
+	if (!r_str_startswith (input, "blaze")) {
+		return false;
+	}
+
+	static RCoreHelpMessage help_msg_blaze = {
+		"Usage:", "a:blaze", "[*|size]",
+		"a:blaze", "", "Analyze code blocks using blaze algorithm",
+		"a:blaze", "*", "Print radare2 commands instead of creating functions",
+		NULL
+	};
+
+	if (input[5] == '?') {
+		anal->coreb.help (core, help_msg_blaze);
+		return true;
+	}
+
+	const char *arg = r_str_trim_head_ro (input + 5);
+	if (!strcmp (arg, "range") || r_str_startswith (arg, "range ")) {
+		return anal_bbs_range (core, arg + 5);
+	}
+
+	return anal_bbs (core, arg);
+}
+
+RAnalPlugin r_anal_plugin_blaze = {
+	.meta = {
+		.name = "blaze",
+		.author = "pancake, defragger",
+		.desc = "Code analysis using basic block construction (blaze algorithm)",
+		.license = "LGPL",
+	},
+	.cmd = blazecmd,
+};
+
+#ifndef R2_PLUGIN_INCORE
+R_API RLibStruct radare_plugin = {
+	.type = R_LIB_TYPE_ANAL,
+	.data = &r_anal_plugin_blaze,
+	.version = R2_VERSION
+};
+#endif
