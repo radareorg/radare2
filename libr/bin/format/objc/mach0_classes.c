@@ -99,10 +99,10 @@ static void metadata_sections_fini(MetaSections *ms) {
 #define PARSECTION(x,y) parse_section (bf, x, section, y)
 static MetaSections metadata_sections_init(RBinFile *bf) {
 	MetaSections ms = {{0}};
-	const RVector *sections = MACH0_(load_sections) (bf->bo->bin_obj);
+	const RVecSection *sections = MACH0_(load_sections) (bf->bo->bin_obj);
 	if (sections) {
 		struct section_t *section;
-		r_vector_foreach (sections, section) {
+		R_VEC_FOREACH (sections, section) {
 			PARSECTION (&ms.clslist, "__objc_classlist");
 			PARSECTION (&ms.catlist, "__objc_catlist");
 			PARSECTION (&ms.types, "swift5_types");

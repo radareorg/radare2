@@ -1021,7 +1021,7 @@ static objc_cache_opt_info *get_objc_opt_info(RBinFile *bf, RDyldCache *cache) {
 			goto beach;
 		}
 
-		const RVector *sections = MACH0_(load_sections) (mach0);
+		const RVecSection *sections = MACH0_(load_sections) (mach0);
 		if (!sections) {
 			MACH0_(mach0_free) (mach0);
 			goto beach;
@@ -1039,7 +1039,7 @@ static objc_cache_opt_info *get_objc_opt_info(RBinFile *bf, RDyldCache *cache) {
 		ut64 slide = rebase_infos_get_slide (cache);
 
 		struct section_t *section;
-		r_vector_foreach (sections, section) {
+		R_VEC_FOREACH (sections, section) {
 			if (section->size == 0) {
 				continue;
 			}
@@ -1304,14 +1304,14 @@ static void sections_from_bin(RList *ret, RBinFile *bf, RDyldBinImage *bin) {
 		return;
 	}
 
-	const RVector *sections = MACH0_(load_sections) (mach0);
+	const RVecSection *sections = MACH0_(load_sections) (mach0);
 	if (!sections) {
 		return;
 	}
 
 	ut64 slide = rebase_infos_get_slide (cache);
 	struct section_t *section;
-	r_vector_foreach (sections, section) {
+	R_VEC_FOREACH (sections, section) {
 		RBinSection *ptr = R_NEW0 (RBinSection);
 		if (!ptr) {
 			break;
@@ -1531,14 +1531,14 @@ static RList *classes(RBinFile *bf) {
 			goto beach;
 		}
 
-		const RVector *sections = MACH0_(load_sections) (mach0);
+		const RVecSection *sections = MACH0_(load_sections) (mach0);
 		if (!sections) {
 			MACH0_(mach0_free) (mach0);
 			goto beach;
 		}
 
 		struct section_t *section;
-		r_vector_foreach (sections, section) {
+		R_VEC_FOREACH (sections, section) {
 			if (section->size == 0) {
 				continue;
 			}

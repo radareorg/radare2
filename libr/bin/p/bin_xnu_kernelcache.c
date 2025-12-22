@@ -175,7 +175,7 @@ static RRebaseInfo *r_rebase_info_new_from_mach0(RBuffer *cache_buf, struct MACH
 static void r_rebase_info_free(RRebaseInfo *info);
 static void r_rebase_info_populate(RRebaseInfo *info, RKernelCacheObj *obj);
 static ut64 iterate_rebase_list(RBuffer *cache_buf, ut64 multiplier, ut64 start_offset, ROnRebaseFunc func, void *user_data);
-static ut64 r_rebase_offset_to_paddr(RKernelCacheObj *obj, const RVector *sections, ut64 offset);
+static ut64 r_rebase_offset_to_paddr(RKernelCacheObj *obj, const RVecSection *sections, ut64 offset);
 static void swizzle_io_read(RKernelCacheObj *obj, RIO *io);
 static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count);
 static void rebase_buffer(RKernelCacheObj *obj, ut64 off, RIODesc *fd, ut8 *buf, int count);
@@ -419,7 +419,7 @@ static void ensure_kexts_initialized(RKernelCacheObj *obj, RBinFile *bf) {
 }
 
 static RPrelinkRange *get_prelink_info_range_from_mach0(struct MACH0_(obj_t) *mach0) {
-	const RVector *sections = MACH0_(load_sections) (mach0);
+	const RVecSection *sections = MACH0_(load_sections) (mach0);
 	if (!sections) {
 		return NULL;
 	}
@@ -428,7 +428,7 @@ static RPrelinkRange *get_prelink_info_range_from_mach0(struct MACH0_(obj_t) *ma
 
 	int incomplete = 3;
 	struct section_t *section;
-	r_vector_foreach (sections, section) {
+	R_VEC_FOREACH (sections, section) {
 		if (strstr (section->name, "__PRELINK_INFO.__info")) {
 			prelink_range->range.offset = section->paddr;
 			prelink_range->range.size = section->size;
@@ -585,7 +585,7 @@ static ut64 r_ptr(ut8 *buf, RKernelCacheObj *obj) {
 }
 
 static RList *carve_kexts(RKernelCacheObj *obj, RBinFile *bf) {
-	const RVector *sections = MACH0_(load_sections) (obj->mach0);
+	const RVecSection *sections = MACH0_(load_sections) (obj->mach0);
 	if (!sections) {
 		return NULL;
 	}
@@ -598,7 +598,7 @@ static RList *carve_kexts(RKernelCacheObj *obj, RBinFile *bf) {
 	RKmodInfo *all_infos = NULL;
 
 	struct section_t *section;
-	r_vector_foreach (sections, section) {
+	R_VEC_FOREACH (sections, section) {
 		if (incomplete == 0) {
 			break;
 		}
@@ -813,13 +813,13 @@ static void r_kext_free(RKext *kext) {
 }
 
 static void r_kext_fill_text_range(RKext *kext) {
-	const RVector *sections = MACH0_(load_sections) (kext->mach0);
+	const RVecSection *sections = MACH0_(load_sections) (kext->mach0);
 	if (!sections) {
 		return;
 	}
 
 	struct section_t *section;
-	r_vector_foreach (sections, section) {
+	R_VEC_FOREACH (sections, section) {
 		if (strstr (section->name, "__TEXT_EXEC.__text")) {
 			kext->text_range.offset = section->paddr;
 			kext->text_range.size = section->size;
@@ -953,13 +953,13 @@ static RList *entries(RBinFile *bf) {
 static void process_kmod_init_term_vec(RVecRBinSymbol *symbols, RBinFile *bf, RKext *kext, ut64 **inits, ut64 **terms) {
 	RKernelCacheObj *obj = (RKernelCacheObj*) bf->bo->bin_obj;
 	if (!*inits || !*terms) {
-		const RVector *sections = MACH0_(load_sections) (obj->mach0);
+		const RVecSection *sections = MACH0_(load_sections) (obj->mach0);
 		if (!sections) {
 			return;
 		}
 
 		struct section_t *section;
-		r_vector_foreach (sections, section) {
+		R_VEC_FOREACH (sections, section) {
 			if (section->size == 0) {
 				continue;
 			}
@@ -1055,13 +1055,13 @@ static void create_initterm_syms_vec(RVecRBinSymbol *symbols, RBinFile *bf, RKex
 
 static void process_constructors(RKernelCacheObj *obj, struct MACH0_(obj_t) *mach0, RList *ret, ut64 paddr, bool is_first, int mode, const char *prefix) {
 // TODO: derpecate and use only a vector
-	const RVector *sections = MACH0_(load_sections) (mach0);
+	const RVecSection *sections = MACH0_(load_sections) (mach0);
 	if (!sections) {
 		return;
 	}
 	int type;
 	struct section_t *section;
-	r_vector_foreach (sections, section) {
+	R_VEC_FOREACH (sections, section) {
 		if (section->size == 0) {
 			continue;
 		}
@@ -1112,13 +1112,13 @@ static void process_constructors(RKernelCacheObj *obj, struct MACH0_(obj_t) *mac
 }
 
 static void process_constructors_vec(RVecRBinSymbol *symbols, RBinFile *bf, RKernelCacheObj *obj, struct MACH0_(obj_t) *mo, ut64 paddr, bool is_first, int mode, const char *prefix) {
-	const RVector *sections = MACH0_(load_sections) (mo);
+	const RVecSection *sections = MACH0_(load_sections) (mo);
 	if (!sections) {
 		return;
 	}
 	int type;
 	struct section_t *section;
-	r_vector_foreach (sections, section) {
+	R_VEC_FOREACH (sections, section) {
 		if (section->size == 0) {
 			continue;
 		}
@@ -1266,20 +1266,20 @@ static int prot2perm(int x) {
 }
 
 static void sections_from_mach0(RList *ret, struct MACH0_(obj_t) *mach0, RBinFile *bf, ut64 paddr, char *prefix, RKernelCacheObj *obj) {
-	const RVector *sections = MACH0_(load_sections) (mach0);
+	const RVecSection *sections = MACH0_(load_sections) (mach0);
 	if (!sections) {
 		return;
 	}
 
 	struct section_t *section;
 	bool is_paddr_global = true;
-	r_vector_foreach (sections, section) {
+	R_VEC_FOREACH (sections, section) {
 		if (section->paddr != 0 && section->paddr + bf->bo->boffset < paddr) {
 			is_paddr_global = false;
 			break;
 		}
 	}
-	r_vector_foreach (sections, section) {
+	R_VEC_FOREACH (sections, section) {
 		RBinSection *ptr = R_NEW0 (RBinSection);
 		if (prefix) {
 			ptr->name = r_str_newf ("%s.%s", prefix, (char*)section->name);
@@ -1480,7 +1480,7 @@ typedef struct _r_sysent {
 } RSysEnt;
 
 static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
-	const RVector *sections = MACH0_(load_sections) (obj->mach0);
+	const RVecSection *sections = MACH0_(load_sections) (obj->mach0);
 	if (!sections) {
 		return NULL;
 	}
@@ -1490,7 +1490,7 @@ static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
 	ut8 *data_const = NULL;
 	ut64 data_const_offset = 0, data_const_size = 0, data_const_vaddr = 0;
 	struct section_t *section;
-	r_vector_foreach (sections, section) {
+	R_VEC_FOREACH (sections, section) {
 		if (strstr (section->name, "__DATA_CONST.__const")) {
 			data_const_offset = section->paddr;
 			data_const_size = section->size;
@@ -1504,9 +1504,9 @@ static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
 		int kiter;
 		r_kext_index_foreach (obj->kexts, kiter, kext) {
 			if (strcmp (kext->name, "com.apple.kernel") == 0) {
-				const RVector *sections = MACH0_(load_sections) (kext->mach0);
+				const RVecSection *sections = MACH0_(load_sections) (kext->mach0);
 				if (sections) {
-					r_vector_foreach (sections, section) {
+					R_VEC_FOREACH (sections, section) {
 						if (strstr (section->name, "__DATA_CONST.__const")) {
 							data_const_offset = section->paddr;
 							data_const_size = section->size;
@@ -1659,7 +1659,7 @@ static HtPP *mig_hash_new(void) {
 }
 
 static RList *resolve_mig_subsystem(RKernelCacheObj *obj) {
-	const RVector *sections = MACH0_(load_sections) (obj->mach0);
+	const RVecSection *sections = MACH0_(load_sections) (obj->mach0);
 	if (!sections) {
 		return NULL;
 	}
@@ -1672,7 +1672,7 @@ static RList *resolve_mig_subsystem(RKernelCacheObj *obj) {
 	int incomplete = 2;
 
 	struct section_t *section;
-	r_vector_foreach (sections, section) {
+	R_VEC_FOREACH (sections, section) {
 		if (strstr (section->name, "__DATA_CONST.__const")) {
 			data_const_offset = section->paddr;
 			data_const_size = section->size;
@@ -1920,7 +1920,7 @@ static void symbols_from_stubs_vec(RVecRBinSymbol *symbols, RBinFile *bf, HtPP *
 
 
 static RStubsInfo *get_stubs_info(struct MACH0_(obj_t) *mach0, ut64 paddr, RKernelCacheObj *obj) {
-	const RVector *sections = MACH0_(load_sections) (mach0);
+	const RVecSection *sections = MACH0_(load_sections) (mach0);
 	if (!sections) {
 		return NULL;
 	}
@@ -1928,7 +1928,7 @@ static RStubsInfo *get_stubs_info(struct MACH0_(obj_t) *mach0, ut64 paddr, RKern
 	RStubsInfo *stubs_info = R_NEW0 (RStubsInfo);
 	int incomplete = 2;
 	struct section_t *section;
-	r_vector_foreach (sections, section) {
+	R_VEC_FOREACH (sections, section) {
 		if (strstr (section->name, "__DATA_CONST.__got")) {
 			stubs_info->got.offset = section->paddr + paddr;
 			stubs_info->got.size = section->size;
@@ -2698,7 +2698,7 @@ static void r_kernel_cache_free(RKernelCacheObj *obj) {
 }
 
 static RRebaseInfo *r_rebase_info_new_from_mach0(RBuffer *cache_buf, struct MACH0_(obj_t) *mach0) {
-	const RVector *sections = MACH0_(load_sections) (mach0);
+	const RVecSection *sections = MACH0_(load_sections) (mach0);
 	if (!sections) {
 		return NULL;
 	}
@@ -2706,7 +2706,7 @@ static RRebaseInfo *r_rebase_info_new_from_mach0(RBuffer *cache_buf, struct MACH
 	ut64 starts_offset = 0, starts_size = 0;
 
 	struct section_t *section;
-	r_vector_foreach (sections, section) {
+	R_VEC_FOREACH (sections, section) {
 		if (strstr (section->name, "__TEXT.__thread_starts")) {
 			starts_offset = section->paddr;
 			starts_size = section->size;
@@ -2777,7 +2777,7 @@ static void r_rebase_info_free(RRebaseInfo *info) {
 }
 
 static void r_rebase_info_populate(RRebaseInfo *info, RKernelCacheObj *obj) {
-	const RVector *sections = NULL;
+	const RVecSection *sections = NULL;
 	int i = 0;
 
 	if (obj->rebase_info_populated) {
@@ -2804,10 +2804,10 @@ static void r_rebase_info_populate(RRebaseInfo *info, RKernelCacheObj *obj) {
 	}
 }
 
-static ut64 r_rebase_offset_to_paddr(RKernelCacheObj *obj, const RVector *sections, ut64 offset) {
+static ut64 r_rebase_offset_to_paddr(RKernelCacheObj *obj, const RVecSection *sections, ut64 offset) {
 	ut64 vaddr = obj->rebase_info->kernel_base + offset;
 	struct section_t *section;
-	r_vector_foreach (sections, section) {
+	R_VEC_FOREACH (sections, section) {
 		if (section->vaddr <= vaddr && vaddr < (section->vaddr + section->vsize)) {
 			return section->paddr + (vaddr - section->vaddr);
 		}
