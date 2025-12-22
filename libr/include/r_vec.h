@@ -56,7 +56,7 @@ extern "C" {
  *   passed in. Otherwise returns NULL.
  * - size_t R_VEC_FUNC(vec_type, find_index)(const vec_type *vec, void *value, R_VEC_FIND_CMP(vec_type) cmp_fn):
  *   Searches for the index of the first value in the vector that is equal (compare returns 0) to the
- *   value passed in. Otherwise returns UT64_MAX.
+ *   value passed in. Otherwise returns SZT_MAX.
  * - vec_type *R_VEC_FUNC(vec_type, clone)(const vec_type *vec): Creates a shallow clone of a vector.
  * - bool R_VEC_FUNC(vec_type, reserve)(vec_type *vec, size_t new_capacity): Ensures the vector has
  *   atleast a capacity of "new_capacity". Returns true on success, otherwise false.
@@ -264,7 +264,7 @@ extern "C" {
 		return NULL; \
 	} \
 	static inline R_MAYBE_UNUSED R_MUSTUSE size_t R_VEC_FUNC(vec_type, find_index)(const vec_type *vec, void *value, R_VEC_FIND_CMP(vec_type) cmp_fn) { \
-		R_RETURN_VAL_IF_FAIL (vec && value, UT64_MAX); \
+		R_RETURN_VAL_IF_FAIL (vec && value, SZT_MAX); \
 		size_t index = 0; \
 		type *val; \
 		R_VEC_FOREACH (vec, val) { \
@@ -273,7 +273,7 @@ extern "C" {
 			} \
 			index++; \
 		} \
-		return UT64_MAX; \
+		return SZT_MAX; \
 	} \
 	static inline R_MAYBE_UNUSED R_MUSTUSE vec_type *R_VEC_FUNC(vec_type, clone)(const vec_type *vec) { \
 		R_RETURN_VAL_IF_FAIL (vec, NULL); \
@@ -408,7 +408,7 @@ extern "C" {
 		} \
 	} \
 	static inline R_MAYBE_UNUSED void R_VEC_FUNC(vec_type, remove)(vec_type *vec, size_t index) { \
-		R_RETURN_IF_FAIL (vec && vec->_start != vec->_end && index < (size_t)(size_t)(vec->_end - vec->_start)); \
+		R_RETURN_IF_FAIL (vec && vec->_start != vec->_end && index < (size_t)(vec->_end - vec->_start)); \
 		type *ptr = R_VEC_FUNC(vec_type, at) (vec, index); \
 		const size_t num_elems_after = vec->_end - ptr; \
 		R_MAYBE_GENERATE(has_fini, fini_fn (ptr)); \
