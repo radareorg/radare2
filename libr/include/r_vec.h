@@ -223,7 +223,7 @@ extern "C" {
 	} \
 	static inline R_MAYBE_UNUSED R_MUSTUSE size_t R_VEC_FUNC(vec_type, length)(const vec_type *vec) { \
 		R_RETURN_VAL_IF_FAIL (vec, 0); \
-		return vec->_start ? (size_t)(vec->_end - vec->_start) : 0; \
+		return (size_t)(vec->_end - vec->_start); \
 	} \
 	static inline R_MAYBE_UNUSED R_MUSTUSE bool R_VEC_FUNC(vec_type, empty)(const vec_type *vec) { \
 		R_RETURN_VAL_IF_FAIL (vec, false); \
@@ -439,7 +439,7 @@ extern "C" {
 	} \
 	static inline R_MAYBE_UNUSED R_MUSTUSE size_t R_VEC_FUNC(vec_type, lower_bound)(vec_type *vec, type *value, R_VEC_CMP(vec_type) cmp_fn) { \
 		R_RETURN_VAL_IF_FAIL (vec && value && cmp_fn, 0); \
-		size_t end_pos = R_VEC_FUNC(vec_type, length) (vec); \
+		size_t end_pos = (size_t)(vec->_end - vec->_start); \
 		size_t pos; \
 		for (pos = 0; pos < end_pos; ) { \
 			size_t middle = pos + ((end_pos - pos) >> 1); \
@@ -453,7 +453,7 @@ extern "C" {
 	} \
 	static inline R_MAYBE_UNUSED R_MUSTUSE size_t R_VEC_FUNC(vec_type, upper_bound)(vec_type *vec, type *value, R_VEC_CMP(vec_type) cmp_fn) { \
 		R_RETURN_VAL_IF_FAIL (vec && value && cmp_fn, 0); \
-		size_t end_pos = R_VEC_FUNC(vec_type, length) (vec); \
+		size_t end_pos = (size_t)(vec->_end - vec->_start); \
 		size_t pos; \
 		for (pos = 0; pos < end_pos; ) { \
 			size_t middle = pos + ((end_pos - pos) >> 1); \
@@ -484,8 +484,9 @@ extern "C" {
 	} \
 	static inline R_MAYBE_UNUSED void R_VEC_FUNC(vec_type, sort)(vec_type *vec, R_VEC_CMP(vec_type) cmp_fn) { \
 		R_RETURN_IF_FAIL (vec && cmp_fn); \
-		if (!R_VEC_FUNC(vec_type, empty) (vec)) { \
-			qsort (vec->_start, R_VEC_FUNC(vec_type, length) (vec), sizeof (type), \
+		const size_t len = R_VEC_FUNC(vec_type, length) (vec); \
+		if (len > 0) { \
+			qsort (vec->_start, len, sizeof (type), \
 				(int (*)(const void *, const void *)) cmp_fn); \
 		} \
 	} \
