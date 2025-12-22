@@ -160,7 +160,9 @@ static bool _restore_memory_cb(void *user, const ut64 key, const void *value) {
 	ut64 index = RVecDebugChangeMem_upper_bound (vmem, &(RDebugChangeMem){ (int)dbg->session->cnum, 0 }, cmp_cnum_mem);
 	if (index > 0 && index <= RVecDebugChangeMem_length (vmem)) {
 		RDebugChangeMem *mem = RVecDebugChangeMem_at (vmem, index - 1);
-		if (mem->cnum > dbg->session->cur_chkpt->cnum) {
+		if (!dbg->session->cur_chkpt) {
+			dbg->iob.write_at (dbg->iob.io, key, &mem->data, 1);
+		} else if (mem->cnum > dbg->session->cur_chkpt->cnum) {
 			dbg->iob.write_at (dbg->iob.io, key, &mem->data, 1);
 		}
 	}
