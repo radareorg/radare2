@@ -261,11 +261,16 @@ R_API bool r_strbuf_append_n(RStrBuf *sb, const char *s, size_t l) {
 		return false;
 	}
 
+	if (SZT_ADD_OVFCHK (sb->len, l + 1)) {
+		return false;
+	}
+
+	size_t required = sb->len + l + 1;
 	if (sb->weakref || l == 0) {
 		return !sb->weakref;
 	}
 
-	if ((sb->len + l + 1) <= sizeof (sb->buf)) {
+	if (required <= sizeof (sb->buf)) {
 		memcpy (sb->buf + sb->len, s, l);
 		sb->buf[sb->len + l] = 0;
 		sb->len += l;
@@ -274,7 +279,6 @@ R_API bool r_strbuf_append_n(RStrBuf *sb, const char *s, size_t l) {
 	}
 
 	char *p = sb->ptr;
-	size_t required = sb->len + l + 1;
 	size_t current = sb->ptr? sb->ptrlen: sizeof (sb->buf);
 
 	// Only grow if current capacity is insufficient
