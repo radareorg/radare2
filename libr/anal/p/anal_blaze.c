@@ -31,26 +31,21 @@ typedef struct fcn {
 	ut64 ends;
 } fcn_t;
 
-static inline bool __is_data_block_cb(RAnalBlock *block, void *user) {
+static inline bool is_datablock(RAnalBlock *block, void *user) {
 	bool *block_exists = user;
 	*block_exists = true;
 	return false;
 }
 
-static int __isdata(RCore *core, ut64 addr) {
-	if (!r_io_is_valid_offset (core->io, addr, false)) {
-		// R_LOG_WARN ("Invalid memory address at 0x%08"PFMT64x, addr);
-		return 4;
-	}
-
+static int isdata(RAnal *anal, ut64 addr) {
 	bool block_exists = false;
 	// This will just set block_exists = true if there is any basic block at this addr
-	r_anal_blocks_foreach_in (core->anal, addr, __is_data_block_cb, &block_exists);
+	r_anal_blocks_foreach_in (anal, addr, is_datablock, &block_exists);
 	if (block_exists) {
 		return 1;
 	}
 
-	RVecIntervalNodePtr *list = r_meta_get_all_in (core->anal, addr, R_META_TYPE_ANY);
+	RVecIntervalNodePtr *list = r_meta_get_all_in (anal, addr, R_META_TYPE_ANY);
 	RIntervalNode **it;
 	int result = 0;
 	R_VEC_FOREACH (list, it) {
@@ -144,21 +139,6 @@ static bool addBB(RList *block_list, ut64 start, ut64 end, ut64 jump, ut64 fail,
 	return true;
 }
 
-#if 0
-static void dump_block(bb_t *block) {
-	eprintf ("s: 0x%"PFMT64x" e: 0x%"PFMT64x" j: 0x%"PFMT64x" f: 0x%"PFMT64x" t: %d\n"
-			, block->start, block->end, block->jump, block->fail, block->type);
-}
-
-static void dump_blocks(RList* list) {
-	RListIter *iter;
-	bb_t *block = NULL;
-	r_list_foreach (list, iter, block) {
-		dump_block (block);
-	}
-}
-#endif
-
 static bool checkFunction(fcn_t *fcn) {
 	if (fcn && fcn->ends > 0 && fcn->size > 0) {
 		return true;
@@ -166,35 +146,21 @@ static bool checkFunction(fcn_t *fcn) {
 	return false;
 }
 
-static R_MUSTUSE char *function_name(RCore *core, const char *name, ut64 addr) {
+static R_MUSTUSE char *function_name(RAnal *anal, const char *name, ut64 addr) {
 	if (name) {
 		return strdup (name);
 	}
-	const char *pfx = r_anal_fcn_prefix_at (core->anal, addr);
+	const char *pfx = r_anal_fcn_prefix_at (anal, addr);
 	return r_str_newf ("%s.%" PFMT64x, pfx, addr);
 }
 
-static void printFunctionCommands(RCore *core, fcn_t* fcn, const char *name) {
-	R_RETURN_IF_FAIL (core && fcn);
-	RListIter *fcn_iter;
-	bb_t *cur = NULL;
-	char *_name = function_name (core, name, fcn->addr);
-	r_cons_printf (core->cons, "af+ 0x%08" PFMT64x " %s\n", fcn->addr, _name);
-	free (_name);
-
-	r_list_foreach (fcn->bbs, fcn_iter, cur) {
-		r_cons_printf (core->cons, "afb+ 0x%08" PFMT64x " 0x%08" PFMT64x " %"PFMT64u" 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
-			fcn->addr, cur->start, cur->end - cur->start, cur->jump, cur->fail);
-	}
-}
-
-static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
-	R_RETURN_IF_FAIL (core && fcn);
+static void createFunction(RAnal *anal, fcn_t* fcn, const char *name) {
+	R_RETURN_IF_FAIL (anal && fcn);
 
 	RListIter *fcn_iter;
 	bb_t *cur = NULL;
-	const char *pfx = r_anal_fcn_prefix_at (core->anal, fcn->addr);
-	RAnalFunction *f = r_anal_function_new (core->anal);
+	const char *pfx = r_anal_fcn_prefix_at (anal, fcn->addr);
+	RAnalFunction *f = r_anal_function_new (anal);
 	if (!f) {
 		R_LOG_ERROR ("Failed to create new function");
 		return;
@@ -202,17 +168,17 @@ static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
 
 	f->name = name? strdup (name): r_str_newf ("%s.%" PFMT64x, pfx, fcn->addr);
 	f->addr = fcn->addr;
-	f->bits = core->anal->config->bits;
-	f->callconv = r_str_constpool_get (&core->anal->constpool, r_anal_cc_default (core->anal));
+	f->bits = anal->config->bits;
+	f->callconv = r_str_constpool_get (&anal->constpool, r_anal_cc_default (anal));
 	f->type = R_ANAL_FCN_TYPE_FCN;
 
 	r_list_foreach (fcn->bbs, fcn_iter, cur) {
-		if (__isdata (core, cur->start)) {
+		if (isdata (anal, cur->start)) {
 			continue;
 		}
-		r_anal_function_add_bb (core->anal, f, cur->start, (cur->end - cur->start), cur->jump, cur->fail, NULL);
+		r_anal_function_add_bb (anal, f, cur->start, (cur->end - cur->start), cur->jump, cur->fail, NULL);
 	}
-	if (!r_anal_add_function (core->anal, f)) {
+	if (!r_anal_add_function (anal, f)) {
 		// R_LOG_ERROR ("Failed to insert function");
 		r_anal_function_free (f);
 		return;
@@ -223,12 +189,7 @@ static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
 
 static bool anal_bbs(RCore *core, const char* input) {
 	R_RETURN_VAL_IF_FAIL (core && input, false);
-	if (!r_io_is_valid_offset (core->io, core->addr, false)) {
-		R_LOG_ERROR ("No valid offset given to analyze");
-		return false;
-	}
-	HtUP *ht = NULL;
-	SetU *ht2 = NULL;
+	RAnal *anal = core->anal;
 	const ut64 start = core->addr;
 	ut64 size = input[0] ? r_num_math (core->num, input + 1) : core->blocksize;
 	ut64 b_start = start;
@@ -247,9 +208,6 @@ static bool anal_bbs(RCore *core, const char* input) {
 	R_LOG_DEBUG ("Creating basic blocks");
 	ut64 cur = 0, base = 0;
 	while (cur >= base && cur < size) {
-		if (r_cons_is_breaked (core->cons)) {
-			break;
-		}
 		// magic number to fix huge section of invalid code fuzz files
 		if (block_score < invalid_instruction_barrier) {
 			break;
@@ -260,7 +218,7 @@ static bool anal_bbs(RCore *core, const char* input) {
 			break;
 		}
 		base = cur;
-		int dsize = __isdata (core, dst);
+		int dsize = isdata (anal, dst);
 		if (dsize > 0) {
 			cur += dsize;
 			continue;
@@ -287,7 +245,7 @@ static bool anal_bbs(RCore *core, const char* input) {
 			}
 			break;
 		case R_ANAL_OP_TYPE_CALL:
-			if (r_anal_noreturn_at (core->anal, op->jump)) {
+			if (r_anal_noreturn_at (anal, op->jump)) {
 				addBB (block_list, b_start, dst + op->size, UT64_MAX, UT64_MAX, END, block_score);
 				b_start = dst + op->size;
 				block_score = 0;
@@ -337,8 +295,8 @@ static bool anal_bbs(RCore *core, const char* input) {
 		return false;
 	}
 
-	ht = ht_up_new0 ();
-	ht2 = set_u_new ();
+	HtUP *ht = ht_up_new0 ();
+	SetU *ht2 = set_u_new ();
 
 	r_list_sort (block_list, (RListComparator)bbCMP);
 
@@ -350,9 +308,6 @@ static bool anal_bbs(RCore *core, const char* input) {
 		if (!block) {
 			R_LOG_ERROR ("Failed to get next block from list");
 			continue;
-		}
-		if (r_cons_is_breaked (core->cons)) {
-			break;
 		}
 
 		if (block_list->length > 0) {
@@ -411,9 +366,6 @@ static bool anal_bbs(RCore *core, const char* input) {
 	R_LOG_DEBUG ("Trying to create functions");
 
 	r_list_foreach (result, iter, block) {
-		if (r_cons_is_breaked (core->cons)) {
-			break;
-		}
 		if (block && (block->reached == 0 || block->called >= 1)) {
 			fcn_t* current_function = fcnNew (block);
 			RStack *stack = r_stack_new (100);
@@ -468,11 +420,7 @@ static bool anal_bbs(RCore *core, const char* input) {
 			// function creation complete
 			if (current_function) {
 				if (checkFunction (current_function)) {
-					if (input[0] == '*') {
-						printFunctionCommands (core, current_function, NULL);
-					} else {
-						createFunction (core, current_function, NULL);
-					}
+					createFunction (core->anal, current_function, NULL);
 				}
 				fcnFree (current_function);
 			}
@@ -489,10 +437,6 @@ static bool anal_bbs(RCore *core, const char* input) {
 }
 
 static bool anal_bbs_range(RCore *core, const char* input) {
-	if (!r_io_is_valid_offset (core->io, core->addr, false)) {
-		R_LOG_ERROR ("No valid offset given to analyze");
-		return false;
-	}
 	HtUP *ht = NULL;
 	SetU *ht2 = NULL;
 	ut64 cur = 0;
@@ -521,9 +465,6 @@ static bool anal_bbs_range(RCore *core, const char* input) {
 			b_start = lista[x];
 			lista[x] = 0;
 			while (cur < size) {
-				if (r_cons_is_breaked (core->cons)) {
-					break;
-				}
 				// magic number to fix huge section of invalid code fuzz files
 				if (block_score < invalid_instruction_barrier) {
 					break;
@@ -622,9 +563,6 @@ static bool anal_bbs_range(RCore *core, const char* input) {
 			R_LOG_ERROR ("Failed to get next block from list");
 			continue;
 		}
-		if (r_cons_is_breaked (core->cons)) {
-			break;
-		}
 
 		if (block_list->length > 0) {
 			bb_t *next_block = (bb_t*)r_list_iter_get_data (block_list->tail);
@@ -682,9 +620,6 @@ static bool anal_bbs_range(RCore *core, const char* input) {
 	R_LOG_DEBUG ("Trying to create functions");
 
 	r_list_foreach (result, iter, block) {
-		if (r_cons_is_breaked (core->cons)) {
-			break;
-		}
 		if (block && (block->reached == 0)) {
 			fcn_t* current_function = fcnNew (block);
 			RStack *stack = r_stack_new (100);
@@ -744,11 +679,7 @@ static bool anal_bbs_range(RCore *core, const char* input) {
 					// set supply function size
 					current_function->size = size;
 					if (checkFunction (current_function)) {
-						if (input[0] == '*') {
-							printFunctionCommands (core, current_function, NULL);
-						} else {
-							createFunction (core, current_function, NULL);
-						}
+						createFunction (core->anal, current_function, NULL);
 						fcnFree (current_function);
 						r_stack_free (stack);
 						break;
@@ -773,15 +704,8 @@ static bool blazecmd(RAnal *anal, const char *input) {
 		return false;
 	}
 
-	static RCoreHelpMessage help_msg_blaze = {
-		"Usage:", "a:blaze", "[*|size]",
-		"a:blaze", "", "Analyze code blocks using blaze algorithm",
-		"a:blaze", "*", "Print radare2 commands instead of creating functions",
-		NULL
-	};
-
 	if (input[5] == '?') {
-		anal->coreb.help (core, help_msg_blaze);
+		R_LOG_INFO ("Usage: a:blaze [size] - analyze all basic blocks in range to create functions using the blaze algorithm");
 		return true;
 	}
 
