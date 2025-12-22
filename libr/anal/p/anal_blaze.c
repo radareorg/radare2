@@ -33,13 +33,23 @@ typedef struct fcn {
 	ut64 ends;
 } fcn_t;
 
+typedef struct {
+	ut64 addr;
+	int size;
+} IsDataCache;
+
 static inline bool is_datablock(RAnalBlock *block, void *user) {
 	bool *block_exists = user;
 	*block_exists = true;
 	return false;
 }
 
-static int isdata(RAnal *anal, ut64 addr) {
+static int isdata(RAnal *anal, ut64 addr, IsDataCache *cache) {
+	// Check cache first
+	if (cache && cache->addr != UT64_MAX && addr >= cache->addr && addr < cache->addr + cache->size) {
+		return cache->addr + cache->size - addr;
+	}
+
 	bool block_exists = false;
 	// This will just set block_exists = true if there is any basic block at this addr
 	r_anal_blocks_foreach_in (anal, addr, is_datablock, &block_exists);
@@ -58,6 +68,10 @@ static int isdata(RAnal *anal, ut64 addr) {
 		case R_META_TYPE_STRING:
 		case R_META_TYPE_FORMAT:
 			result = node->end - addr + 1;
+			if (cache) {
+				cache->addr = addr;
+				cache->size = result;
+			}
 			goto exit;
 		default:
 			break;
@@ -180,8 +194,9 @@ static void createFunction(RAnal *anal, fcn_t *fcn, const char *name) {
 	f->callconv = r_str_constpool_get (&anal->constpool, r_anal_cc_default (anal));
 	f->type = R_ANAL_FCN_TYPE_FCN;
 
+	IsDataCache cache = { .addr = UT64_MAX, .size = 0 };
 	r_list_foreach (fcn->bbs, fcn_iter, cur) {
-		if (isdata (anal, cur->start)) {
+		if (isdata (anal, cur->start, &cache)) {
 			continue;
 		}
 		r_anal_function_add_bb (anal, f, cur->start, (cur->end - cur->start), cur->jump, cur->fail, NULL);
@@ -225,6 +240,7 @@ static bool anal_bbs(RCore *core, const char *input) {
 	R_LOG_DEBUG ("Creating basic blocks");
 	RAnalOp op = { 0 };
 	ut64 cur = 0, base = 0;
+	IsDataCache cache = { .addr = UT64_MAX, .size = 0 };
 	while (cur >= base && cur < size) {
 		// magic number to fix huge section of invalid code fuzz files
 		if (block_score < invalid_instruction_barrier) {
@@ -236,7 +252,7 @@ static bool anal_bbs(RCore *core, const char *input) {
 			break;
 		}
 		base = cur;
-		int dsize = isdata (anal, dst);
+		int dsize = isdata (anal, dst, &cache);
 		if (dsize > 0) {
 			cur += dsize;
 			continue;
