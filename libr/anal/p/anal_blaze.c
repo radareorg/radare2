@@ -197,7 +197,11 @@ static bool anal_bbs(RCore *core, const char* input) {
 		return false;
 	}
 	int res = anal->iob.read_at (anal->iob.io, start, data, size);
-	// AITODO: check return value for success or not
+	if (res < 0) {
+		R_LOG_ERROR ("Failed to read data at 0x%"PFMT64x, start);
+		free (data);
+		return false;
+	}
 	RList *block_list = r_list_new ();
 
 	R_LOG_DEBUG ("Analyzing [0x%08"PFMT64x"-0x%08"PFMT64x"]", start, start + size);
@@ -220,7 +224,6 @@ static bool anal_bbs(RCore *core, const char* input) {
 			cur += dsize;
 			continue;
 		}
-		// AITODO: r_core_anal_op is implemented in core/canal.c and thats performing pretty badly for the usecase we have here b ecause we should be able to just call r_anal_op , the code below should behave the same, but in a more fast way. find other references to r_core_anal_op and apply the changes required to work
 		r_anal_op_fini (&op);
 		r_anal_op_init (&op);
 		bool ok = r_anal_op (anal, &op, dst, data, size - cur, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
@@ -443,7 +446,7 @@ static bool anal_bbs_range(RCore *core, const char* input) {
 	ut64 start = core->addr;
 	ut64 size = input[0] ? r_num_math (core->num, input + 1) : core->blocksize;
 	ut64 b_start = start;
-	RAnalOp *op;
+	RAnalOp op = {0};
 	RListIter *iter;
 	int block_score = 0;
 	bb_t *block = NULL;
@@ -452,9 +455,23 @@ static bool anal_bbs_range(RCore *core, const char* input) {
 	int idx = 0;
 	int x;
 
+	ut8 *data = malloc (size);
+	if (!data) {
+		R_LOG_ERROR ("Cannot allocate %d bytes", (int)size);
+		return false;
+	}
+	int res = core->anal->iob.read_at (core->anal->iob.io, start, data, size);
+	if (res < 0) {
+		R_LOG_ERROR ("Failed to read data at 0x%"PFMT64x, start);
+		free (data);
+		return false;
+	}
+
 	RList *block_list = r_list_new ();
 	if (!block_list) {
 		R_LOG_ERROR ("Failed to create block_list");
+		free (data);
+		return false;
 	}
 	R_LOG_DEBUG ("Analyzing [0x%08"PFMT64x"-0x%08"PFMT64x"]", start, start + size);
 	R_LOG_DEBUG ("Creating basic blocks");
@@ -480,45 +497,48 @@ static bool anal_bbs_range(RCore *core, const char* input) {
 				}
 
 				if (!bFound) {
-					op = r_core_anal_op (core, b_start + cur, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
+					r_anal_op_fini (&op);
+					r_anal_op_init (&op);
+					const ut64 dst = b_start + cur;
+					bool ok = r_anal_op (core->anal, &op, dst, data + (dst - start), size - (dst - start), R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
 
-					if (!op || !op->mnemonic) {
+					if (!ok || !op.mnemonic) {
 						block_score -= 10;
 						cur++;
 						continue;
 					}
 
-					if (op->mnemonic[0] == '?') {
+					if (op.mnemonic[0] == '?') {
 						R_LOG_ERROR ("? Bad op at: 0x%08"PFMT64x, cur + b_start);
 						R_LOG_ERROR ("Cannot analyze opcode at %"PFMT64x, b_start + cur);
 						block_score -= 10;
 						cur++;
 						continue;
 					}
-					//eprintf ("0x%08"PFMT64x" %s\n", b_start + cur, op->mnemonic);
-					switch (op->type) {
+					//eprintf ("0x%08"PFMT64x" %s\n", b_start + cur, op.mnemonic);
+					switch (op.type) {
 					case R_ANAL_OP_TYPE_RET:
-						addBB (block_list, b_start, b_start + cur + op->size, UT64_MAX, UT64_MAX, END, block_score);
+						addBB (block_list, b_start, b_start + cur + op.size, UT64_MAX, UT64_MAX, END, block_score);
 						cur = size;
 						break;
 					case R_ANAL_OP_TYPE_UJMP:
 					case R_ANAL_OP_TYPE_IRJMP:
-						addBB (block_list, b_start, b_start + cur + op->size, op->jump, UT64_MAX, END, block_score);
+						addBB (block_list, b_start, b_start + cur + op.size, op.jump, UT64_MAX, END, block_score);
 						cur = size;
 						break;
 					case R_ANAL_OP_TYPE_JMP:
-						addBB (block_list, b_start, b_start + cur + op->size, op->jump, UT64_MAX, END, block_score);
-						b_start = op->jump;
+						addBB (block_list, b_start, b_start + cur + op.size, op.jump, UT64_MAX, END, block_score);
+						b_start = op.jump;
 						cur = 0;
 						block_score = 0;
 						break;
 					case R_ANAL_OP_TYPE_CJMP:
-						//eprintf ("bb_b  0x%08"PFMT64x" - 0x%08"PFMT64x"\n", b_start, b_start + cur + op->size);
-						addBB (block_list, b_start, b_start + cur + op->size, op->jump, b_start + cur + op->size, NORMAL, block_score);
-						b_start = b_start + cur + op->size;
+						//eprintf ("bb_b  0x%08"PFMT64x" - 0x%08"PFMT64x"\n", b_start, b_start + cur + op.size);
+						addBB (block_list, b_start, b_start + cur + op.size, op.jump, b_start + cur + op.size, NORMAL, block_score);
+						b_start = b_start + cur + op.size;
 						cur = 0;
 						if (idx < 1024) {
-							lista[idx++] = op->jump;
+							lista[idx++] = op.jump;
 						}
 						block_score = 0;
 						break;
@@ -526,14 +546,13 @@ static bool anal_bbs_range(RCore *core, const char* input) {
 					case R_ANAL_OP_TYPE_UNK:
 					case R_ANAL_OP_TYPE_ILL:
 						block_score -= 10;
-						cur += op->size;
+						cur += op.size;
 						break;
 					default:
-						cur += op->size;
+						cur += op.size;
 						break;
 					}
-					r_anal_op_free (op);
-					op = NULL;
+					r_anal_op_fini (&op);
 				} else {
 					// we have this offset into previous analyzed block, exit from this path flow.
 					break;
@@ -541,6 +560,7 @@ static bool anal_bbs_range(RCore *core, const char* input) {
 			}
 		}
 	}
+	free (data);
 	R_LOG_DEBUG ("Found %d basic blocks", block_list->length);
 
 	RList *result = r_list_newf (free);
