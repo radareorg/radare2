@@ -5610,7 +5610,25 @@ static RList *foreach3list(RCore *core, char type, const char *glob) {
 		}
 		break;
 	case 'm': // "@@@m"
-		{
+		if (R_STR_ISNOTEMPTY (glob)) {
+			// filter io maps by permission string (e.g., @@@m:x, @@@m:rw, @@@m:rwx)
+			int perm = r_str_rwx (glob);
+			if (perm < 1) {
+				R_LOG_WARN ("Invalid permissions string '%s'", glob);
+			} else {
+				RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
+				if (bank) {
+					RListIter *iter;
+					RIOMapRef *mapref;
+					r_list_foreach_prev (bank->maprefs, iter, mapref) {
+						RIOMap *map = r_io_map_get (core->io, mapref->id);
+						if (map && (map->perm & perm) == perm) {
+							append_item (list, NULL, r_io_map_begin (map), r_io_map_size (map));
+						}
+					}
+				}
+			}
+		} else {
 			int fd = r_io_fd_get_current (core->io);
 			// only iterate maps of current fd
 			RList *maps = r_io_map_get_by_fd (core->io, fd);
