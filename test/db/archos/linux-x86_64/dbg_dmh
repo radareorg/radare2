@@ -14,8 +14,10 @@ p=3
 EOF
 RUN
 
+# This test fails ONLY when running with asan mode because it cant find the heap section. so better disable it for now
 NAME=dmh allocated
 FILE=bins/elf/simple_malloc_x86_64
+SKIPONASAN=1
 ARGS=-d
 CMDS=<<EOF
 dcu main
