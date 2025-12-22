@@ -20,13 +20,22 @@ static void type_trace_reg_change_fini(void *data, void *user) {
 	}
 }
 
-typedef struct type_trace_change_mem_t {
+typedef struct type_trace_mem_range_t {
 	int idx;
 	ut32 cc;
 	ut64 addr;
-	ut8 data;
-	ut8 odata;
-} TypeTraceMemChange;
+	ut32 len;
+	ut8 *data;
+	ut8 *odata;
+} TypeTraceMemRange;
+
+static void type_trace_mem_range_fini(void *data, void *user) {
+	TypeTraceMemRange *range = data;
+	if (range) {
+		free (range->data);
+		free (range->odata);
+	}
+}
 
 typedef struct {
 	char *name;
@@ -65,6 +74,8 @@ static inline void tt_fini_access(TypeTraceAccess *access) {
 
 R_VEC_TYPE(VecTraceOp, TypeTraceOp);
 R_VEC_TYPE_WITH_FINI(VecAccess, TypeTraceAccess, tt_fini_access);
+R_VEC_TYPE_WITH_FINI(VecRegChange, TypeTraceRegChange, type_trace_reg_change_fini);
+R_VEC_TYPE_WITH_FINI(VecMemRange, TypeTraceMemRange, type_trace_mem_range_fini);
 
 typedef struct {
 	VecTraceOp ops;
@@ -80,7 +91,7 @@ typedef struct type_trace_t {
 	int cur_idx;
 	RReg *reg;
 	HtUP *registers;
-	HtUP *memory;
+	VecMemRange memory;
 	ut32 voy[4];
 	RStrBuf rollback;  // ESIL string to rollback state (inspired by PR #24428)
 	bool enable_rollback;
@@ -88,7 +99,6 @@ typedef struct type_trace_t {
 } TypeTrace;
 
 #define CMP_REG_CHANGE(x, y) ((x) - ((TypeTraceRegChange *)y)->idx)
-#define CMP_MEM_CHANGE(x, y) ((x) - ((TypeTraceMemChange *)y)->idx)
 
 static void update_trace_db_op(TypeTraceDB *db) {
 	const ut32 trace_op_len = VecTraceOp_length (&db->ops);
@@ -131,19 +141,28 @@ static void type_trace_voyeur_reg_read(void *user, const char *name, ut64 val) {
 static void add_reg_change(TypeTrace *trace, RRegItem *ri, ut64 data, ut64 odata) {
 	R_RETURN_IF_FAIL (trace && ri);
 	ut64 addr = ri->offset | (ri->arena << 16);
-	RVector *vreg = ht_up_find (trace->registers, addr, NULL);
+	VecRegChange *vreg = ht_up_find (trace->registers, addr, NULL);
 	if (R_UNLIKELY (!vreg)) {
-		// TODO: Do not use RVector!
-		vreg = r_vector_new (sizeof (TypeTraceRegChange), type_trace_reg_change_fini, NULL);
+		vreg = R_NEW0 (VecRegChange);
 		if (R_UNLIKELY (!vreg)) {
 			R_LOG_ERROR ("creating a register vector");
 			return;
 		}
+		VecRegChange_init (vreg);
 		ht_up_insert (trace->registers, addr, vreg);
 	}
 	char *name = strdup (ri->name);
-	TypeTraceRegChange reg = { trace->cur_idx, trace->cc++, name, data, odata };
-	r_vector_push (vreg, &reg);
+	if (!name) {
+		R_LOG_ERROR ("Failed to allocate(strdup) memory for storing register change");
+		return;
+	}
+	TypeTraceRegChange *reg = VecRegChange_emplace_back (vreg);
+	if (!reg) {
+		free (name);
+		R_LOG_ERROR ("Failed to allocate memory for storing register change");
+		return;
+	}
+	*reg = (TypeTraceRegChange){ trace->cur_idx, trace->cc++, name, data, odata };
 }
 
 static void type_trace_voyeur_reg_write(void *user, const char *name, ut64 old, ut64 val) {
@@ -225,29 +244,37 @@ static void type_trace_voyeur_mem_write(void *user, ut64 addr, const ut8 *old, c
 		}
 	}
 
-	ut32 j;
-	for (j = 0; j < len; j++) {
-		ut64 cur_addr = addr + j;
-		// adding each byte one by one is utterly stupid, typical gsoc crap
-		// ideally this would use a tree structure, that splits nodes when necessary
-		RVector *vmem = ht_up_find (trace->memory, cur_addr, NULL);
-		if (!vmem) {
-			vmem = r_vector_new (sizeof (TypeTraceMemChange), NULL, NULL);
-			if (!vmem) {
-				R_LOG_ERROR ("creating a memory vector");
-				break;
-			}
-			ht_up_insert (trace->memory, cur_addr, vmem);
-		}
-		TypeTraceMemChange mem = { trace->idx, trace->cc++, cur_addr, buf[j], old[j] };
-		r_vector_push (vmem, &mem);
+	TypeTraceMemRange *mem = VecMemRange_emplace_back (&trace->memory);
+	if (!mem) {
+		R_LOG_ERROR ("Failed to allocate memory for storing access");
+		goto update_db;
 	}
-	update_trace_db_op (&trace->db);
+	*mem = (TypeTraceMemRange){ 0 };
+	ut8 *data = malloc (len);
+	if (!data) {
+		VecMemRange_erase_back (&trace->memory, mem);
+		R_LOG_ERROR ("Failed to allocate memory for storing access");
+		goto update_db;
+	}
+	memcpy (data, buf, len);
+	ut8 *odata = NULL;
+	if (old) {
+		odata = malloc (len);
+		if (!odata) {
+			free (data);
+			VecMemRange_erase_back (&trace->memory, mem);
+			R_LOG_ERROR ("Failed to allocate memory for storing access");
+			goto update_db;
+		}
+		memcpy (odata, old, len);
+	}
+	*mem = (TypeTraceMemRange){ trace->idx, trace->cc++, addr, (ut32)len, data, odata };
+update_trace_db_op (&trace->db);
 }
 
-static void htup_vector_free(HtUPKv *kv) {
-	if (kv) {
-		r_vector_free (kv->value);
+static void htup_regvec_free(HtUPKv *kv) {
+	if (kv && kv->value) {
+		VecRegChange_free (kv->value);
 	}
 }
 
@@ -272,13 +299,10 @@ static bool type_trace_init(TypeTrace *trace, REsil *esil, RReg *reg) {
 	trace_db_init (&trace->db);
 	r_strbuf_init (&trace->rollback);
 	trace->enable_rollback = false; // Disabled by default for performance
-	trace->registers = ht_up_new (NULL, htup_vector_free, NULL);
+	VecMemRange_init (&trace->memory);
+	trace->registers = ht_up_new (NULL, htup_regvec_free, NULL);
 	if (!trace->registers) {
 		goto fail_registers_ht;
-	}
-	trace->memory = ht_up_new (NULL, htup_vector_free, NULL);
-	if (!trace->memory) {
-		goto fail_memory_ht;
 	}
 	trace->voy[R_ESIL_VOYEUR_REG_READ] = r_esil_add_voyeur (esil, &trace->db,
 		type_trace_voyeur_reg_read, R_ESIL_VOYEUR_REG_READ);
@@ -309,12 +333,10 @@ fail_memr_voy:
 fail_regw_voy:
 	r_esil_del_voyeur (esil, trace->voy[R_ESIL_VOYEUR_REG_READ]);
 fail_regr_voy:
-	ht_up_free (trace->memory);
-	trace->memory = NULL;
-fail_memory_ht:
 	ht_up_free (trace->registers);
 	trace->registers = NULL;
 fail_registers_ht:
+	VecMemRange_fini (&trace->memory);
 	trace_db_fini (&trace->db);
 	return false;
 }
@@ -362,8 +384,7 @@ static void type_trace_fini(TypeTrace *trace, REsil *esil) {
 	r_strbuf_fini (&trace->rollback);
 	ht_up_free (trace->registers);
 	trace->registers = NULL;
-	ht_up_free (trace->memory);
-	trace->memory = NULL;
+	VecMemRange_fini (&trace->memory);
 	r_esil_del_voyeur (esil, trace->voy[R_ESIL_VOYEUR_MEM_WRITE]);
 	r_esil_del_voyeur (esil, trace->voy[R_ESIL_VOYEUR_MEM_READ]);
 	r_esil_del_voyeur (esil, trace->voy[R_ESIL_VOYEUR_REG_WRITE]);
