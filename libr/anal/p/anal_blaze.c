@@ -1,5 +1,7 @@
 /* radare - LGPL - Copyright 2017-2025 - pancake, defragger */
 
+// based on the algorithm described https://arxiv.org/abs/1902.01437
+
 #include <r_anal.h>
 #include <r_core.h>
 
@@ -183,7 +185,7 @@ static bool anal_bbs(RCore *core, const char* input) {
 	R_RETURN_VAL_IF_FAIL (core && input, false);
 	RAnal *anal = core->anal;
 	const ut64 start = core->addr;
-	ut64 size = input[0] ? r_num_math (core->num, input + 1) : core->blocksize;
+	ut64 size = input[0] ? r_num_math (core->num, input) : core->blocksize;
 	ut64 b_start = start;
 	RListIter *iter;
 	int block_score = 0;
@@ -226,7 +228,7 @@ static bool anal_bbs(RCore *core, const char* input) {
 		}
 		r_anal_op_fini (&op);
 		r_anal_op_init (&op);
-		bool ok = r_anal_op (anal, &op, dst, data, size - cur, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
+		bool ok = r_anal_op (anal, &op, dst, data + cur, size - cur, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
 		if (!ok || !op.mnemonic) {
 			block_score -= 10;
 			cur++;
@@ -444,7 +446,7 @@ static bool anal_bbs_range(RCore *core, const char* input) {
 	SetU *ht2 = NULL;
 	ut64 cur = 0;
 	ut64 start = core->addr;
-	ut64 size = input[0] ? r_num_math (core->num, input + 1) : core->blocksize;
+	ut64 size = input[0] ? r_num_math (core->num, input) : core->blocksize;
 	ut64 b_start = start;
 	RAnalOp op = {0};
 	RListIter *iter;
@@ -719,6 +721,7 @@ static bool anal_bbs_range(RCore *core, const char* input) {
 }
 
 static bool blazecmd(RAnal *anal, const char *input) {
+eprintf ("INPUT (%s)\n", input);
 	RCore *core = (RCore *)anal->coreb.core;
 	if (!r_str_startswith (input, "blaze")) {
 		return false;
