@@ -438,9 +438,11 @@ void print_loop(char* str, int size, ut64 addr, mcore_t* instr) {
 		} else if (instr->args[i].type == TYPE_IMM) {
 			add += snprintf (str + add, bufsize - add, " 0x%x,", instr->args[i].value);
 		} else if (instr->args[i].type == TYPE_MEM) {
-			add += snprintf (str + add, bufsize - add, " 0x%x(r%d),",
-				instr->args[i + 1].value, instr->args[i].value);
-			i++;
+			if (i + 1 < instr->n_args) {
+				add += snprintf (str + add, bufsize - add, " 0x%x(r%d),",
+					instr->args[i + 1].value, instr->args[i].value);
+				i++;
+			}
 		} else if (instr->args[i].type == TYPE_JMPI) {
 			ut64 jump = addr + ((instr->args[i].value << 2) & 0xfffffffc);
 			add += snprintf (str + add, bufsize - add, " [0x%" PFMT64x"],", jump);

@@ -618,7 +618,7 @@ R_IPI int py_version_cmp(const char *va, const char *vb, bool *err) {
 		vb++;
 	}
 	// major compare, MUST have major version
-	bool _err;
+	bool _err = false;
 	bool *localerr;
 	if (err) {
 		localerr = err;

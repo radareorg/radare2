@@ -1313,7 +1313,12 @@ static RGraphNode *get_right_dummy(const RAGraph *g, const RGraphNode *n) {
 		return NULL;
 	}
 
-	for (k = an->pos_in_layer + 1; k < g->layers[layer].n_nodes; k++) {
+	int start_pos = an->pos_in_layer + 1;
+	if (start_pos >= g->layers[layer].n_nodes) {
+		return NULL;
+	}
+
+	for (k = start_pos; k < g->layers[layer].n_nodes; k++) {
 		RGraphNode *gk = g->layers[layer].nodes[k];
 		const RANode *ak = get_anode (gk);
 		if (!ak) {
