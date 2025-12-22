@@ -2,6 +2,21 @@
 
 #include "r2r.h"
 
+// Detect if we're running under Address Sanitizer
+#if defined(__has_feature)
+#if __has_feature(address_sanitizer)
+#define R2R_ASAN 1
+#endif
+#endif
+#ifndef R2R_ASAN
+#if defined(__SANITIZE_ADDRESS__)
+#define R2R_ASAN 1
+#endif
+#endif
+#ifndef R2R_ASAN
+#define R2R_ASAN 0
+#endif
+
 #if R2__WINDOWS__
 #include <windows.h>
 #endif
@@ -1728,11 +1743,10 @@ R_API bool r2r_test_broken(R2RTest *test) {
 	return false;
 }
 
-#if ASAN
+#if R2R_ASAN
 static bool check_cmd_asan_result(R2RProcessOutput *out) {
 	bool stdout_success = !out->out || (!strstr (out->out, "WARNING:") && !strstr (out->out, "ERROR:") && !strstr (out->out, "FATAL:"));
-	bool stderr_success = !out->err || (!strstr (out->err, "Sanitizer")
-			&& !strstr (out->err, "runtime error:");
+	bool stderr_success = !out->err || (!strstr (out->err, "Sanitizer") && !strstr (out->err, "runtime error:"));
 	return stdout_success && stderr_success;
 }
 #endif
@@ -1785,6 +1799,28 @@ static bool require_check(const char *require) {
 	return res;
 }
 
+// Check cmd/leak test compatibility and early skip conditions
+static bool check_cmd_test_skip(R2RCmdTest *cmd_test) {
+	const char *require = cmd_test->require.value;
+	if (!require_check (require)) {
+		R_LOG_WARN ("Skipping because of %s", require);
+		return true;
+	}
+#if R2R_ASAN
+	if (cmd_test->skiponasan.value) {
+		R_LOG_WARN ("Skipping test because of SKIPONASAN");
+		return true;
+	}
+#endif
+#if WANT_V35 == 0
+	if (cmd_test->args.value && strstr (cmd_test->args.value, "arm.v35")) {
+		R_LOG_WARN ("Skipping test because it requires arm.v35");
+		return true;
+	}
+#endif
+	return false;
+}
+
 R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 	R2RTestResultInfo *ret = R_NEW0 (R2RTestResultInfo);
 	if (!ret) {
@@ -1801,21 +1837,16 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 			ret->run_failed = false;
 		} else {
 			R2RCmdTest *cmd_test = test->cmd_test;
-			const char *require = cmd_test->require.value;
-			if (!require_check (require)) {
-				R_LOG_WARN ("Skipping because of %s", require);
+			if (check_cmd_test_skip (cmd_test)) {
 				success = true;
 				ret->run_failed = false;
-				break;
-			}
-#if WANT_V35 == 0
-			if (cmd_test->args.value && strstr (cmd_test->args.value, "arm.v35")) {
-				R_LOG_WARN ("Skipping test because it requires arm.v35");
-				success = true;
-				ret->run_failed = false;
-				break;
-			}
+#if R2R_ASAN
+				if (cmd_test->skiponasan.value) {
+					ret->run_skipped = true;
+				}
 #endif
+				break;
+			}
 #if R2_USE_NEW_ABI
 			bool mustrun = !needsabi || (needsabi > 0);
 #else
@@ -1904,21 +1935,16 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 			ret->run_failed = false;
 		} else {
 			R2RCmdTest *cmd_test = test->cmd_test;
-			const char *require = cmd_test->require.value;
-			if (!require_check (require)) {
-				R_LOG_WARN ("Skipping because of %s", require);
+			if (check_cmd_test_skip (cmd_test)) {
 				success = true;
 				ret->run_failed = false;
-				break;
-			}
-#if WANT_V35 == 0
-			if (cmd_test->args.value && strstr (cmd_test->args.value, "arm.v35")) {
-				R_LOG_WARN ("Skipping test because it requires arm.v35");
-				success = true;
-				ret->run_failed = false;
-				break;
-			}
+#if R2R_ASAN
+				if (cmd_test->skiponasan.value) {
+					ret->run_skipped = true;
+				}
 #endif
+				break;
+			}
 			R2RProcessOutput *out = r2r_run_leak_test (config, cmd_test, subprocess_runner, NULL);
 			success = r2r_check_leak_test (out, cmd_test);
 			ret->proc_out = out;
@@ -1929,15 +1955,6 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 	}
 	ret->time_elapsed = r_time_now_mono () - start_time;
 	bool broken = r2r_test_broken (test);
-#if ASAN
-#if !R2_ASSERT_STDOUT
-#error R2_ASSERT_STDOUT undefined or 0
-#endif
-	R2RProcessOutput *out = ret->proc_out;
-	if (!success && test->type == R2R_TEST_TYPE_CMD && strstr (test->path, "/dbg")) {
-		broken = check_cmd_asan_result (out);
-	}
-#endif
 	if (success) {
 		ret->result = broken? R2R_TEST_RESULT_FIXED: R2R_TEST_RESULT_OK;
 	} else {

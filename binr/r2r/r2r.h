@@ -61,6 +61,7 @@ typedef struct r2r_cmd_test_t {
 	R2RCmdTestBoolRecord broken;
 	R2RCmdTestBoolRecord oldabi;
 	R2RCmdTestBoolRecord newabi;
+	R2RCmdTestBoolRecord skiponasan;
 	R2RCmdTestNumRecord timeout;
 	ut64 run_line;
 	bool load_plugins;
@@ -84,6 +85,7 @@ typedef struct r2r_cmd_test_t {
 	macro_bool ("BROKEN", broken) \
 	macro_bool ("OLDABI", oldabi) \
 	macro_bool ("NEWABI", newabi) \
+	macro_bool ("SKIPONASAN", skiponasan) \
 
 typedef enum r2r_asm_test_mode_t {
 	R2R_ASM_TEST_MODE_ASSEMBLE = 1,
