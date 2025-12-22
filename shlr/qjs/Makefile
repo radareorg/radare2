@@ -4,7 +4,8 @@ include deps.mk
 QJS_CFLAGS+=-D QJS_LIBC=$(QJS_LIBC)
 QJS_CFLAGS+=-D QJS_NOABORT=1
 QJS_CFLAGS+=-U DUMP_LEAKS
-QJS_CFLAGS+=-U NDEBUG
+QJS_CFLAGS+=-D NDEBUG=1
+# QJS_CFLAGS+=-U NDEBUG
 QJS_CFLAGS+=-fvisibility=hidden
 
 QJS_LIBS+=-lr_core -lr_config -lr_cons
