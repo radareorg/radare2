@@ -563,12 +563,12 @@ grub_hfsplus_cmp_extkey (struct grub_hfsplus_key *keya,
   struct grub_hfsplus_extkey_internal *extkey_b = &keyb->extkey;
   int diff;
 
-  diff = grub_be_to_cpu32 (extkey_a->fileid) - extkey_b->fileid;
+  diff = (int)grub_be_to_cpu32 (extkey_a->fileid) - (int)extkey_b->fileid;
 
   if (diff)
     return diff;
 
-  diff = grub_be_to_cpu32 (extkey_a->start) - extkey_b->start;
+  diff = (int)grub_be_to_cpu32 (extkey_a->start) - (int)extkey_b->start;
   return diff;
 }
 
