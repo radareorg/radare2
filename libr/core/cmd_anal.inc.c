@@ -196,7 +196,7 @@ static RCoreHelpMessage help_msg_aa = {
 	"aaef", "", "analyze references with ESIL in all functions",
 	"aaf", "[?][efrt] ", "analyze all functions relationships with flags, type matching and consecutive",
 	"aaF", " [sym*]", "set anal.in=block for all the spaces between flags matching glob",
-	"aaFa", " [sym*]", "same as aaF but uses af/a2f instead of af+/afb+ (slower but more accurate)",
+	"aaFa", " [sym*]", "same as aaF but uses af instead of af+/afb+ (slower but more accurate)",
 	"aai", "[j]", "show info of all analysis parameters",
 	"aaj", " ", "analyze all jumps",
 	"aan", "[?][fgr]", "autoname functions (aang = golang, aanr = noreturn propagation, aanf = afna@@F)",

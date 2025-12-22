@@ -3804,7 +3804,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.syscc", analsyscc? analsyscc: "", (RConfigCallback)&cb_analsyscc, "specify default syscall calling convention");
 	SETCB ("anal.verbose", "false", &cb_analverbose, "show RAnal warnings when analyzing code");
 	SETB ("anal.mask", "false", "use the smart aobm command to compute the binary mask of the instruction"); // TODO: must be true by default
-	SETB ("anal.a2f", "false", "use the new WIP analysis algorithm (core/p/a2f), anal.depth ignored atm");
 	SETCB ("anal.roregs", "gp,zero", (RConfigCallback)&cb_anal_roregs, "comma separated list of register names to be readonly");
 	SETICB ("anal.cs", 0, (RConfigCallback)&cb_anal_cs, "set the value for the x86-16 CS segment register (see asm.addr.segment and asm.addr.segment.bits)");
 	SETICB ("anal.gp", 0, (RConfigCallback)&cb_anal_gp, "set the value of the GP register (MIPS)");

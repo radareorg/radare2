@@ -2184,10 +2184,6 @@ R_API bool r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 			return false;
 		}
 	}
-	if (r_config_get_b (core->config, "anal.a2f")) {
-		r_core_cmdf (core, ".a2f @ 0x%08"PFMT64x, at);
-		return false;
-	}
 	if (use_esil) {
 		return r_core_anal_esil_fcn (core, at, from, reftype, depth);
 	}
@@ -6761,10 +6757,8 @@ R_API void r_core_anal_inflags(RCore *core, const char * R_NULLABLE glob) {
 	R_RETURN_IF_FAIL (core);
 	RList *addrs = r_list_newf (free);
 	RListIter *iter;
-	const bool a2f = r_config_get_b (core->config, "anal.a2f");
 	char *anal_in = strdup (r_config_get (core->config, "anal.in"));
 	r_config_set (core->config, "anal.in", "block");
-	// aaFa = use a2f instead of af+
 	bool simple = (!glob || *glob != 'a');
 	glob = r_str_trim_head_ro (glob);
 	char *addr;
@@ -6804,11 +6798,7 @@ R_API void r_core_anal_inflags(RCore *core, const char * R_NULLABLE glob) {
 			if (fcn) {
 				eprintf ("%s  %s %"PFMT64d"    # %s\n", addr, "af", sz, fcn->name);
 			} else {
-				if (a2f) {
-					r_core_cmdf (core, "a2f@%s!%s-%s", addr, addr2, addr);
-				} else {
-					r_core_cmdf (core, "af@%s!%s-%s", addr, addr2, addr);
-				}
+				r_core_cmdf (core, "af@%s!%s-%s", addr, addr2, addr);
 				fcn = r_anal_get_fcn_in (core->anal, r_num_math (core->num, addr), 0);
 				eprintf ("%s  %s %.4"PFMT64d"   # %s\n", addr, "aab", sz, fcn?fcn->name: "");
 			}
