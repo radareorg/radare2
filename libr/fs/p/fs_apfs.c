@@ -632,7 +632,10 @@ static bool apfs_resolve_omap_btree_node(ApfsFS *ctx, ut64 node_oid, ut64 target
 
 static bool apfs_resolve_omap(ApfsFS *ctx, ut64 oid, ut64 *paddr) {
 	R_LOG_DEBUG ("apfs_resolve_omap: resolving OID %" PFMT64u ", omap_tree_oid=%" PFMT64u, oid, ctx->omap_tree_oid);
-	if (!ctx->omap_tree_oid) {
+
+	if (ctx->omap_tree_oid) {
+		*paddr = 0;
+	} else {
 		// Direct mapping for simple cases
 		*paddr = oid;
 		R_LOG_DEBUG ("apfs_resolve_omap: direct mapping to paddr %" PFMT64u, *paddr);

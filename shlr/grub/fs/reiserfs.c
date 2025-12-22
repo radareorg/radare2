@@ -1289,7 +1289,7 @@ grub_reiserfs_dir (grub_device_t device, const char *path,
 		   void *closure)
 {
   struct grub_reiserfs_data *data = 0;
-  struct grub_fshelp_node root, *found;
+  struct grub_fshelp_node root = {0}, *found;
   struct grub_reiserfs_key root_key;
   struct grub_reiserfs_dir_closure c;
 

@@ -1804,8 +1804,8 @@ analopfinish:
 			}
 			break;
 		case R_ANAL_OP_TYPE_UPUSH:
-			if ((op->type & R_ANAL_OP_TYPE_REG) && last_is_reg_mov_lea && src0 && src0->reg
-					&& src0->reg && !strcmp (src0->reg, last_reg_mov_lea_name)) {
+			if ((op->type & R_ANAL_OP_TYPE_REG) && last_is_reg_mov_lea \
+				&& (src0 && src0->reg && !strcmp (src0->reg, last_reg_mov_lea_name))) {
 				last_is_push = true;
 				last_push_addr = last_reg_mov_lea_val;
 				if (anal->iob.is_valid_offset (anal->iob.io, last_push_addr, 1)) {

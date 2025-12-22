@@ -3664,7 +3664,7 @@ reaccept:
 					if (!r_str_ncpy (line, "ET /cmd/", 8)) {
 						char *cmd = line + 8;
 						char *http = strstr (cmd, "HTTP");
-						if (http) {
+						if (http && http > cmd) {
 							*http = 0;
 							http--;
 							if (*http == ' ') {

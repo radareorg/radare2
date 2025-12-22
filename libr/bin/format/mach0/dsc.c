@@ -41,21 +41,19 @@ static void dsc_header_free(RDSCHeader * self) {
 	free (self);
 }
 
-static bool dsc_header_get_field(RDSCHeader * self, const char * name, ut8 * out_value, size_t size) {
-	ut64 cursor;
-	ut64 data_len;
+static bool dsc_header_get_field(RDSCHeader *self, const char *name, ut8 *out_value, size_t size) {
 	const RDSCField * field;
 	ut8 tmp[32];
 
-	data_len = r_buf_size (self->buf);
-	cursor = 0;
-
+	ut64 data_len = r_buf_size (self->buf);
+	ut64 cursor = 0;
+	// Initialize out value to avoid UB
+	memset (out_value, 0, size);
 	for (field = self->fields; field->name != NULL && cursor < data_len; field++) {
 		st64 field_size = r_buf_fread_at (self->buf, cursor, tmp, field->format, 1);
 		if (field_size < 0) {
 			return false;
 		}
-
 		if (!strcmp (field->name, name)) {
 			if (size < field_size) {
 				return false;
@@ -63,18 +61,17 @@ static bool dsc_header_get_field(RDSCHeader * self, const char * name, ut8 * out
 			memcpy (out_value, tmp, field_size);
 			return true;
 		}
-
 		cursor += field_size;
 	}
 
 	return false;
 }
 
-static bool dsc_header_get_u64(RDSCHeader * self, const char * name, ut64 * out_value) {
+static bool dsc_header_get_u64(RDSCHeader *self, const char *name, ut64 *out_value) {
 	return dsc_header_get_field (self, name, (ut8 *) out_value, sizeof (ut64));
 }
 
-static bool dsc_header_get_u32(RDSCHeader * self, const char * name, ut32 * out_value) {
+static bool dsc_header_get_u32(RDSCHeader *self, const char *name, ut32 *out_value) {
 	return dsc_header_get_field (self, name, (ut8 *) out_value, sizeof (ut32));
 }
 

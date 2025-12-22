@@ -640,8 +640,7 @@ print_insn32_alu1 (bfd_vma pc ATTRIBUTE_UNUSED, disassemble_info *info, uint32_t
 	    mnemonic_alu1[op], gpr_map[rt], gpr_map[ra], gpr_map[rb]);
       return;
     case 0x9:			/* srli */
-      if (ra ==0 && rb == 0 && rb==0)
-	{
+      if (ra ==0 && rb == 0) {
 	  func (stream, "nop");
 	  return;
 	}

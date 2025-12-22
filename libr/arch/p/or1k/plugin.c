@@ -184,7 +184,7 @@ static int insn_to_op(struct or1k_regs *regs, RAnalOp *op, ut64 addr, insn_t *de
 		o.rd = get_operand_value (insn, type_descr, INSN_OPER_D);
 		o.ra = get_operand_value (insn, type_descr, INSN_OPER_A);
 		o.i = get_operand_value (insn, type_descr, INSN_OPER_I);
-		if (regs->cpu_enable & (1 << o.ra) & regs->cpu_enable & (1 << o.rd)) {
+		if (regs->cpu_enable & (1 << o.ra) && regs->cpu_enable & (1 << o.rd)) {
 			regs->cpu[o.rd] = regs->cpu[o.ra] | o.i;
 			regs->cpu_enable |= (1 << o.rd);
 			op->ptr = regs->cpu[o.rd];

@@ -198,22 +198,21 @@ R_API ut8 *r_muta_charset_encode_ex(const ut8 *in, int in_len, int *out_len, con
 
 		int byte_len = 0;
 		const ut8 *bytes = r_muta_charset_lookup_encode (table, tok, &byte_len);
-		if (!bytes || byte_len < 1) {
-			ut8 q = unknown_byte;
-			if (!r_muta_charset_outgrow (&out, &outcap, outpos + 1)) {
-				*out_len = 0;
-				return NULL;
-			}
-			out[outpos++] = q;
-		} else {
+		if (bytes && byte_len > 0) {
 			if (!r_muta_charset_outgrow (&out, &outcap, outpos + byte_len)) {
 				*out_len = 0;
 				return NULL;
 			}
 			memcpy (out + outpos, bytes, byte_len);
 			outpos += byte_len;
+		} else {
+			ut8 q = unknown_byte;
+			if (!r_muta_charset_outgrow (&out, &outcap, outpos + 1)) {
+				*out_len = 0;
+				return NULL;
+			}
+			out[outpos++] = q;
 		}
-
 		str += consumed;
 	}
 

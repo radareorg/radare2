@@ -315,7 +315,11 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 				case 's': buf[i] -= str[j]; break;
 				case 'm': buf[i] *= str[j]; break;
 				case 'w': buf[i] = str[j]; break;
-				case 'd': buf[i] = (str[j])? (buf[i] / str[j]): 0; break;
+				case 'd': {
+					ut8 divisor = str[j];
+					buf[i] = divisor ? (buf[i] / divisor) : 0;
+					break;
+				}
 				case 'r': buf[i] >>= str[j]; break;
 				case 'l': buf[i] <<= str[j]; break;
 				case 'o': buf[i] |= str[j]; break;

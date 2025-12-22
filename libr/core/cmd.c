@@ -3985,7 +3985,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	if (R_UNLIKELY (r_str_startswith (cmd, "GET /cmd/"))) {
 		memmove (cmd, cmd + 9, strlen (cmd + 9) + 1);
 		char *http = strstr (cmd, "HTTP");
-		if (http) {
+		if (http && http > cmd) {
 			*http = 0;
 			http--;
 			if (*http == ' ') {

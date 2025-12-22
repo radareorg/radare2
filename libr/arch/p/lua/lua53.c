@@ -5,7 +5,7 @@
 #include "lua53.h"
 
 typedef struct plugin_data_t {
-	ut32 *current_write_prt;
+	ut32 instructions[256];
 	ut32 current_write_index;
 } PluginData;
 
@@ -115,7 +115,7 @@ static int parseNextInstruction(PluginData *state, const char *str) {
 			chars_skipped += j;
 			R_LOG_DEBUG ("Opcode %i Instruction %s", i, instruction_names[i]);
 
-			SET_OPCODE (state->current_write_prt[state->current_write_index], i);	// sets the opcode
+			SET_OPCODE (state->instructions[state->current_write_index], i);	// sets the opcode
 
 			doParse1 (state, chars_skipped, parseParameters, str, i);	// Parse parameters
 
@@ -237,22 +237,22 @@ static int parseParameter(PluginData *state, const char *str, Parameter paramete
 	}
 	switch (parameter) {
 	case PARAMETER_A:
-		SETARG_A (state->current_write_prt[state->current_write_index], resultingNumber);
+		SETARG_A (state->instructions[state->current_write_index], resultingNumber);
 		break;
 	case PARAMETER_B:
-		SETARG_B (state->current_write_prt[state->current_write_index], resultingNumber);
+		SETARG_B (state->instructions[state->current_write_index], resultingNumber);
 		break;
 	case PARAMETER_C:
-		SETARG_C (state->current_write_prt[state->current_write_index], resultingNumber);
+		SETARG_C (state->instructions[state->current_write_index], resultingNumber);
 		break;
 	case PARAMETER_Ax:
-		SETARG_Ax (state->current_write_prt[state->current_write_index], resultingNumber);
+		SETARG_Ax (state->instructions[state->current_write_index], resultingNumber);
 		break;
 	case PARAMETER_Bx:
-		SETARG_Bx (state->current_write_prt[state->current_write_index], resultingNumber);
+		SETARG_Bx (state->instructions[state->current_write_index], resultingNumber);
 		break;
 	case PARAMETER_sBx:
-		SETARG_sBx (state->current_write_prt[state->current_write_index], resultingNumber);
+		SETARG_sBx (state->instructions[state->current_write_index], resultingNumber);
 		break;
 	}
 	return skipped_chars;
@@ -396,29 +396,27 @@ int main(int argc, char **argv) {
 	char *c = "move 1 2\n forprep 13 -2";
 	int p = 0;
 	PluginData state = {0};
-	state.current_write_prt = malloc (8);
 	eprintf ("Parsing String: %s\n", c);
 	eprintf ("-----------------------\n");
 	doParse0 (state, p, parseNextInstruction, c, (int) strlen (c));
 	eprintf ("Parsed Characters %i\n", p);
-	eprintf ("%d   %08x\n", state.current_write_index, current_write_prt[state.current_write_index - 1]);
+	eprintf ("%d   %08x\n", state.current_write_index, state.instructions[state.current_write_index - 1]);
 
 	eprintf ("------------\n");
 
 	doParse0 (state, p, parseNextInstruction, c, (int) strlen (c));
 	eprintf ("Parsed Characters %i\n", p);
-	eprintf ("%d   %08x\n", state.current_write_index, current_write_prt[state.current_write_index - 1]);
+	eprintf ("%d   %08x\n", state.current_write_index, state.instructions[state.current_write_index - 1]);
 
 	eprintf ("------------\n");
 
 	RAsmOp *asmOp = (RAsmOp *) malloc (sizeof (RAsmOp));
-	int advanced = lua53dissasm (&state, asmOp, (const char *) current_write_prt, 4);
+	int advanced = lua53dissasm (&state, asmOp, (const ut8 *) state.instructions, 4);
 
 	eprintf ("%s\n", asmOp->buf_asm);
-	lua53dissasm (&state, asmOp, (const char *) current_write_prt + advanced, 4);
+	lua53dissasm (&state, asmOp, (const ut8 *) state.instructions + advanced, 4);
 	eprintf ("%s\n", asmOp->buf_asm);
 
-	free (state.current_write_prt);
 	return 0;
 }
 #endif	// MAIN_ASM
