@@ -68,7 +68,7 @@ exit:
 	return result;
 }
 
-static bool fcnAddBB(fcn_t *fcn, bb_t* block) {
+static bool fcnAddBB(fcn_t *fcn, bb_t *block) {
 	if (!fcn) {
 		R_LOG_ERROR ("No function given to add a basic block");
 		return false;
@@ -86,8 +86,8 @@ static bool fcnAddBB(fcn_t *fcn, bb_t* block) {
 	return true;
 }
 
-static fcn_t* fcnNew(bb_t *block) {
-	fcn_t* fcn = R_NEW0 (fcn_t);
+static fcn_t *fcnNew(bb_t *block) {
+	fcn_t *fcn = R_NEW0 (fcn_t);
 	fcn->addr = block->start;
 	fcn->bbs = r_list_new ();
 	if (!fcnAddBB (fcn, block)) {
@@ -102,9 +102,15 @@ static void fcnFree(fcn_t *fcn) {
 }
 
 static int bbCMP(void *_a, void *_b) {
-	bb_t *a = (bb_t*)_a;
-	bb_t *b = (bb_t*)_b;
-	return b->start - a->start;
+	bb_t *a = (bb_t *)_a;
+	bb_t *b = (bb_t *)_b;
+	if (b->start > a->start) {
+		return 1;
+	}
+	if (b->start < a->start) {
+		return -1;
+	}
+	return 0;
 }
 
 static void initBB(bb_t *bb, ut64 start, ut64 end, ut64 jump, ut64 fail, bb_type_t type, int score, int reached, int called) {
@@ -148,7 +154,7 @@ static bool checkFunction(fcn_t *fcn) {
 	return false;
 }
 
-static void createFunction(RAnal *anal, fcn_t* fcn, const char *name) {
+static void createFunction(RAnal *anal, fcn_t *fcn, const char *name) {
 	R_RETURN_IF_FAIL (anal && fcn);
 
 	RListIter *fcn_iter;
@@ -179,9 +185,9 @@ static void createFunction(RAnal *anal, fcn_t* fcn, const char *name) {
 	}
 }
 
-#define Fhandled(x) r_strf ("handled.%"PFMT64x, x)
+#define Fhandled(x) r_strf("handled.%" PFMT64x, x)
 
-static bool anal_bbs(RCore *core, const char* input) {
+static bool anal_bbs(RCore *core, const char *input) {
 	R_RETURN_VAL_IF_FAIL (core && input, false);
 	RAnal *anal = core->anal;
 	const ut64 start = core->addr;
@@ -201,15 +207,15 @@ static bool anal_bbs(RCore *core, const char* input) {
 	}
 	int res = anal->iob.read_at (anal->iob.io, start, data, size);
 	if (res < 0) {
-		R_LOG_ERROR ("Failed to read data at 0x%"PFMT64x, start);
+		R_LOG_ERROR ("Failed to read data at 0x%" PFMT64x, start);
 		free (data);
 		return false;
 	}
 	RList *block_list = r_list_new ();
 
-	R_LOG_DEBUG ("Analyzing [0x%08"PFMT64x"-0x%08"PFMT64x"]", start, start + size);
+	R_LOG_DEBUG ("Analyzing [0x%08" PFMT64x "-0x%08" PFMT64x "]", start, start + size);
 	R_LOG_DEBUG ("Creating basic blocks");
-	RAnalOp op = {0};
+	RAnalOp op = { 0 };
 	ut64 cur = 0, base = 0;
 	while (cur >= base && cur < size) {
 		// magic number to fix huge section of invalid code fuzz files
@@ -237,8 +243,8 @@ static bool anal_bbs(RCore *core, const char* input) {
 		}
 
 		if (op.mnemonic[0] == '?') {
-			R_LOG_ERROR ("? Bad op at: 0x%08"PFMT64x, dst);
-			R_LOG_ERROR ("Cannot analyze opcode at 0x%"PFMT64x, dst);
+			R_LOG_ERROR ("? Bad op at: 0x%08" PFMT64x, dst);
+			R_LOG_ERROR ("Cannot analyze opcode at 0x%" PFMT64x, dst);
 			block_score -= 10;
 			cur++;
 			continue;
@@ -317,7 +323,7 @@ static bool anal_bbs(RCore *core, const char* input) {
 		}
 
 		if (block_list->length > 0) {
-			bb_t *next_block = (bb_t*) r_list_iter_get_data (block_list->tail);
+			bb_t *next_block = (bb_t *)r_list_iter_get_data (block_list->tail);
 			if (!next_block) {
 				R_LOG_ERROR ("No next block to compare with!");
 				break;
@@ -335,7 +341,7 @@ static bool anal_bbs(RCore *core, const char* input) {
 			// block and next_block share the same start so we copy the
 			// contenct of the block into the next_block and skip the current one
 			if (block->start == next_block->start && next_block->end == UT64_MAX) {
-				if (next_block->type != CALL)  {
+				if (next_block->type != CALL) {
 					block->reached += 1;
 				}
 				*next_block = *block;
@@ -357,7 +363,7 @@ static bool anal_bbs(RCore *core, const char* input) {
 				block->jump = next_block->start;
 				block->fail = UT64_MAX;
 				next_block->type = block->type;
-				if (next_block->type != CALL)  {
+				if (next_block->type != CALL) {
 					next_block->reached += 1;
 				}
 			}
@@ -373,18 +379,18 @@ static bool anal_bbs(RCore *core, const char* input) {
 
 	r_list_foreach (result, iter, block) {
 		if (block && (block->reached == 0 || block->called >= 1)) {
-			fcn_t* current_function = fcnNew (block);
+			fcn_t *current_function = fcnNew (block);
 			RStack *stack = r_stack_new (100);
 			bb_t *jump = NULL;
 			bb_t *fail = NULL;
 			bb_t *cur = NULL;
 
-			if (!r_stack_push (stack, (void*)block)) {
+			if (!r_stack_push (stack, (void *)block)) {
 				R_LOG_ERROR ("Failed to push initial block");
 			}
 
 			while (!r_stack_is_empty (stack)) {
-				cur = (bb_t*) r_stack_pop (stack);
+				cur = (bb_t *)r_stack_pop (stack);
 				if (!cur) {
 					continue;
 				}
@@ -395,7 +401,7 @@ static bool anal_bbs(RCore *core, const char* input) {
 					break;
 				}
 				// we ignore negative blocks
-				if ((st64)(cur->end - cur->start) < 0) {
+				if ((st64) (cur->end - cur->start) < 0) {
 					break;
 				}
 
@@ -404,20 +410,20 @@ static bool anal_bbs(RCore *core, const char* input) {
 				if (cur->jump < UT64_MAX && !set_u_contains (ht2, cur->jump)) {
 					jump = ht_up_find (ht, cur->jump, NULL);
 					if (!jump) {
-						R_LOG_ERROR ("Failed to get jump block at 0x%"PFMT64x, cur->jump);
+						R_LOG_ERROR ("Failed to get jump block at 0x%" PFMT64x, cur->jump);
 						continue;
 					}
-					if (!r_stack_push (stack, (void*)jump)) {
+					if (!r_stack_push (stack, (void *)jump)) {
 						R_LOG_ERROR ("Failed to push jump block to stack");
 					}
 				}
 				if (cur->fail < UT64_MAX && !set_u_contains (ht2, cur->fail)) {
 					fail = ht_up_find (ht, cur->fail, NULL);
 					if (!fail) {
-						R_LOG_ERROR ("Failed to get fail block at 0x%"PFMT64x, cur->fail);
+						R_LOG_ERROR ("Failed to get fail block at 0x%" PFMT64x, cur->fail);
 						continue;
 					}
-					if (!r_stack_push (stack, (void*)fail)) {
+					if (!r_stack_push (stack, (void *)fail)) {
 						R_LOG_ERROR ("Failed to push jump block to stack");
 					}
 				}
@@ -442,7 +448,7 @@ static bool anal_bbs(RCore *core, const char* input) {
 	return true;
 }
 
-static bool anal_bbs_range(RCore *core, const char* input) {
+static bool anal_bbs_range(RCore *core, const char *input) {
 	HtUP *ht = NULL;
 	SetU *ht2 = NULL;
 	ut64 cur = 0;
@@ -450,12 +456,12 @@ static bool anal_bbs_range(RCore *core, const char* input) {
 	const char *input_size = *input? input: "$SS"; // defaults to section size
 	ut64 size = r_num_math (core->num, input_size);
 	ut64 b_start = start;
-	RAnalOp op = {0};
+	RAnalOp op = { 0 };
 	RListIter *iter;
 	int block_score = 0;
 	bb_t *block = NULL;
 	int invalid_instruction_barrier = -20000;
-	ut64 lista[1024] = {0};
+	ut64 lista[1024] = { 0 };
 	int idx = 0;
 	int x;
 
@@ -466,7 +472,7 @@ static bool anal_bbs_range(RCore *core, const char* input) {
 	}
 	int res = core->anal->iob.read_at (core->anal->iob.io, start, data, size);
 	if (res < 0) {
-		R_LOG_ERROR ("Failed to read data at 0x%"PFMT64x, start);
+		R_LOG_ERROR ("Failed to read data at 0x%" PFMT64x, start);
 		free (data);
 		return false;
 	}
@@ -477,7 +483,7 @@ static bool anal_bbs_range(RCore *core, const char* input) {
 		free (data);
 		return false;
 	}
-	R_LOG_DEBUG ("Analyzing [0x%08"PFMT64x"-0x%08"PFMT64x"]", start, start + size);
+	R_LOG_DEBUG ("Analyzing [0x%08" PFMT64x "-0x%08" PFMT64x "]", start, start + size);
 	R_LOG_DEBUG ("Creating basic blocks");
 	lista[idx++] = b_start;
 	for (x = 0; x < 1024; x++) {
@@ -496,7 +502,7 @@ static bool anal_bbs_range(RCore *core, const char* input) {
 			bool bFound = false;
 			// check if offset don't have into block_list, to end branch analisys
 			r_list_foreach (block_list, iter, block) {
-				if ((block->type == END || block->type == NORMAL) && b_start + cur == block->start ) {
+				if ((block->type == END || block->type == NORMAL) && b_start + cur == block->start) {
 					bFound = true;
 					break;
 				}
@@ -515,13 +521,13 @@ static bool anal_bbs_range(RCore *core, const char* input) {
 				}
 
 				if (op.mnemonic[0] == '?') {
-					R_LOG_ERROR ("? Bad op at: 0x%08"PFMT64x, cur + b_start);
-					R_LOG_ERROR ("Cannot analyze opcode at %"PFMT64x, b_start + cur);
+					R_LOG_ERROR ("? Bad op at: 0x%08" PFMT64x, cur + b_start);
+					R_LOG_ERROR ("Cannot analyze opcode at %" PFMT64x, b_start + cur);
 					block_score -= 10;
 					cur++;
 					continue;
 				}
-				//eprintf ("0x%08"PFMT64x" %s\n", b_start + cur, op.mnemonic);
+				// eprintf ("0x%08"PFMT64x" %s\n", b_start + cur, op.mnemonic);
 				switch (op.type) {
 				case R_ANAL_OP_TYPE_RET:
 					addBB (block_list, b_start, b_start + cur + op.size, UT64_MAX, UT64_MAX, END, block_score);
@@ -539,7 +545,7 @@ static bool anal_bbs_range(RCore *core, const char* input) {
 					block_score = 0;
 					break;
 				case R_ANAL_OP_TYPE_CJMP:
-					//eprintf ("bb_b  0x%08"PFMT64x" - 0x%08"PFMT64x"\n", b_start, b_start + cur + op.size);
+					// eprintf ("bb_b  0x%08"PFMT64x" - 0x%08"PFMT64x"\n", b_start, b_start + cur + op.size);
 					addBB (block_list, b_start, b_start + cur + op.size, op.jump, b_start + cur + op.size, NORMAL, block_score);
 					b_start = b_start + cur + op.size;
 					cur = 0;
@@ -590,7 +596,7 @@ static bool anal_bbs_range(RCore *core, const char* input) {
 		}
 
 		if (block_list->length > 0) {
-			bb_t *next_block = (bb_t*)r_list_iter_get_data (block_list->tail);
+			bb_t *next_block = (bb_t *)r_list_iter_get_data (block_list->tail);
 			if (!next_block) {
 				R_LOG_ERROR ("No next block to compare with!");
 			}
@@ -646,18 +652,18 @@ static bool anal_bbs_range(RCore *core, const char* input) {
 
 	r_list_foreach (result, iter, block) {
 		if (block && (block->reached == 0)) {
-			fcn_t* current_function = fcnNew (block);
+			fcn_t *current_function = fcnNew (block);
 			RStack *stack = r_stack_new (100);
 			bb_t *jump = NULL;
 			bb_t *fail = NULL;
 			bb_t *cur = NULL;
 
-			if (!r_stack_push (stack, (void*)block)) {
+			if (!r_stack_push (stack, (void *)block)) {
 				R_LOG_ERROR ("Failed to push initial block");
 			}
 
 			while (!r_stack_is_empty (stack)) {
-				cur = (bb_t*)r_stack_pop (stack);
+				cur = (bb_t *)r_stack_pop (stack);
 				if (!cur) {
 					continue;
 				}
@@ -668,7 +674,7 @@ static bool anal_bbs_range(RCore *core, const char* input) {
 					break;
 				}
 				// we ignore negative blocks
-				if ((st64)(cur->end - cur->start) < 0) {
+				if ((st64) (cur->end - cur->start) < 0) {
 					break;
 				}
 
@@ -677,10 +683,10 @@ static bool anal_bbs_range(RCore *core, const char* input) {
 				if (cur->jump < UT64_MAX && !set_u_contains (ht2, cur->jump)) {
 					jump = ht_up_find (ht, cur->jump, NULL);
 					if (!jump) {
-						R_LOG_ERROR ("Failed to get jump block at 0x%"PFMT64x, cur->jump);
+						R_LOG_ERROR ("Failed to get jump block at 0x%" PFMT64x, cur->jump);
 						continue;
 					}
-					if (!r_stack_push (stack, (void*)jump)) {
+					if (!r_stack_push (stack, (void *)jump)) {
 						R_LOG_ERROR ("Failed to push jump block to stack");
 					}
 				}
@@ -688,10 +694,10 @@ static bool anal_bbs_range(RCore *core, const char* input) {
 				if (cur->fail < UT64_MAX && !set_u_contains (ht2, cur->fail)) {
 					fail = ht_up_find (ht, cur->fail, NULL);
 					if (!fail) {
-						R_LOG_ERROR ("Failed to get fail block at 0x%"PFMT64x, cur->fail);
+						R_LOG_ERROR ("Failed to get fail block at 0x%" PFMT64x, cur->fail);
 						continue;
 					}
-					if (!r_stack_push (stack, (void*)fail)) {
+					if (!r_stack_push (stack, (void *)fail)) {
 						R_LOG_ERROR ("Failed to push jump block to stack");
 					}
 				}
