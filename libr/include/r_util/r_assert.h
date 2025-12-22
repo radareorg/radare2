@@ -22,6 +22,25 @@ R_API void r_assert_log(RLogLevel level, const char *origin, const char *fmt, ..
 #define R_FUNCTION ((const char*) ("???"))
 #endif
 
+/*
+ * R_CHECKS_LEVEL determines the behaviour of the R_RETURN_* set of functions.
+ *
+ * 0: completely disable every function and make them like no-operation
+ * 1: silently enable checks. Check expressions and do return, but do not log anything
+ * 2: enable checks and logging (DEFAULT)
+ * 3: transform them into real assertion
+ */
+#ifndef R_CHECKS_LEVEL
+#define R_CHECKS_LEVEL 2
+#endif
+
+#if R_CHECKS_LEVEL == 0
+
+#define R_WARN_IF_REACHED() do { ; } while(0)
+#define R_WARN_IF_FAIL(expr) do { ; } while(0)
+
+#else
+
 #define R_WARN_IF_REACHED() \
 	do { \
 		r_assert_log (R_LOG_LEVEL_WARN, R_LOG_ORIGIN, "(%s:%d):%s%s code should not be reached", \
@@ -36,16 +55,6 @@ R_API void r_assert_log(RLogLevel level, const char *origin, const char *fmt, ..
 		} \
 	} while (0)
 
-/*
- * R_CHECKS_LEVEL determines the behaviour of the R_RETURN_* set of functions.
- *
- * 0: completely disable every function and make them like no-operation
- * 1: silently enable checks. Check expressions and do return, but do not log anything
- * 2: enable checks and logging (DEFAULT)
- * 3: transform them into real assertion
- */
-#ifndef R_CHECKS_LEVEL
-#define R_CHECKS_LEVEL 2
 #endif
 
 #if R_CHECKS_LEVEL == 0
