@@ -347,6 +347,7 @@ static bool anal_bbs(RCore *core, const char *input) {
 				block_score = 0;
 			} else {
 				addBB (block_list, op.jump, UT64_MAX, UT64_MAX, UT64_MAX, CALL, block_score);
+				b_start = dst + op.size;
 			}
 			break;
 		case R_ANAL_OP_TYPE_JMP:
