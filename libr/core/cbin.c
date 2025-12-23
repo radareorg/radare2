@@ -23,6 +23,7 @@
 #define IS_MODE_NORMAL(mode) (! (mode))
 #define IS_MODE_CLASSDUMP(mode) ((mode) & R_MODE_CLASSDUMP)
 
+// AITODO: remove those global variables!
 static R_TH_LOCAL int old_bits = -1;
 static R_TH_LOCAL char *old_arch = NULL;
 
@@ -3392,7 +3393,7 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 	int plimit = filesize? R_MIN (filesize, bin_hashlimit): bin_hashlimit;
 	const bool use_color = r_config_get_i (core->config, "scr.color") > 0;
 	r_list_foreach (sections, iter, section) {
-		const char *perms = r_str_rwx_i (section->perm);
+		const char *perms = r_str_srwx_i (section->perm);
 		int va_sect = va;
 
 		if (va && ! (section->perm & R_PERM_R)) {
@@ -3524,7 +3525,7 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 				}
 				}
 				char disp_perms[64];
-				r_cons_permstr (core->cons, section->perm, use_color, disp_perms, sizeof (disp_perms));
+				r_cons_perm (core->cons, section->perm, use_color, true, disp_perms, sizeof (disp_perms));
 				r_cons_printf (core->cons, "0x%08" PFMT64x " 0x%08" PFMT64x " %s %s%s%s\n",
 				addr, addr + section->size,
 				disp_perms,
@@ -3600,7 +3601,7 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 				stype = print_segments? "MAP": "----";
 			}
 			char disp_perms[64];
-			r_cons_permstr (core->cons, section->perm, use_color, disp_perms, sizeof (disp_perms));
+			r_cons_perm (core->cons, section->perm, use_color, true, disp_perms, sizeof (disp_perms));
 			if (hashtypes) {
 				r_table_add_rowf (table, "dXxXxsxsss", i,
 					(ut64)section->paddr, (ut64)section->size,
@@ -4608,7 +4609,7 @@ static void bin_mem_print(RCore *core, PJ *pj, RList *mems, int perms, int depth
 			pj_ks (pj, "name", mem->name);
 			pj_ki (pj, "size", mem->size);
 			pj_kn (pj, "address", mem->addr);
-			pj_ks (pj, "flags", r_str_rwx_i (mem->perms & perms));
+			pj_ks (pj, "flags", r_str_srwx_i (mem->perms & perms));
 			pj_end (pj);
 		} else if (IS_MODE_SIMPLE (mode)) {
 			// r_cons_printf (core->cons, "%s\n", mem->name);
@@ -4616,13 +4617,13 @@ static void bin_mem_print(RCore *core, PJ *pj, RList *mems, int perms, int depth
 		} else if (IS_MODE_RAD (mode)) {
 			r_cons_printf (core->cons, "of malloc://%d\n", mem->size);
 			r_cons_printf (core->cons, "om . 0x%08" PFMT64x " 0x%04x 0 %s %s\n",
-				mem->addr, mem->size, r_str_rwx_i (mem->perms & perms),
+				mem->addr, mem->size, r_str_srwx_i (mem->perms & perms),
 				mem->name);
 		} else if (IS_MODE_SET (mode)) {
 			bin_mem_print (core, pj, mem->mirrors, mem->perms & perms, depth + 1, mode);
 		} else {
 			r_cons_printf (core->cons, "0x%08" PFMT64x " +0x%04x %s %s\n",
-				mem->addr, mem->size, r_str_rwx_i (mem->perms & perms),
+				mem->addr, mem->size, r_str_srwx_i (mem->perms & perms),
 				mem->name);
 		}
 		if (mem->mirrors) {

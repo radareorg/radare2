@@ -6,10 +6,30 @@
 
 /* stable code */
 static const char *const rwxstr[] = {
+	[0] = "---",
+	[1] = "--x",
+	[2] = "-w-",
+	[3] = "-wx",
+	[4] = "r--",
+	[5] = "r-x",
+	[6] = "rw-",
+	[7] = "rwx",
+
+	[8] = "s---",
+	[9] = "s--x",
+	[10] = "sw--",
+	[11] = "sw-x",
+	[12] = "sr--",
+	[13] = "sr-x",
+	[14] = "srw-",
+	[15] = "srwx",
+};
+
+static const char *const srwxstr[] = {
 	[0] = "----",
 	[1] = "---x",
-	[2] = "-w--",
-	[3] = "-w-x",
+	[2] = "--w-",
+	[3] = "--wx",
 	[4] = "-r--",
 	[5] = "-r-x",
 	[6] = "-rw-",
@@ -222,13 +242,26 @@ R_API int r_str_rwx(const char *str) {
 	return ret;
 }
 
-// Returns the string representation of the permission of the inputted integer.
-R_API const char *r_str_rwx_i(int rwx) {
-	int idx = (rwx & R_PERM_RWX) | ((rwx & R_PERM_SHAR) ? 8 : 0);
-	if (idx < 0 || idx >= (int)R_ARRAY_SIZE (rwxstr)) {
-		idx = 0;
+// Returns the string representation of permissions.
+// with_dash=false: 3-4 chars "rwx" "s--x" (compact)
+// with_dash=true:  4 chars "-rwx" "s--x" (Unix-style)
+// If SHAR bit is set, returns 4 characters with 's' prefix instead of dash.
+R_API const char *r_str_perm(int perm, bool with_dash) {
+	if (perm < 0 || perm >= 16) {
+		return with_dash ? srwxstr[0] : rwxstr[0];
 	}
-	return rwxstr[idx];
+	int idx = (perm & R_PERM_RWX) | ((perm & R_PERM_SHAR) ? 8 : 0);
+	return with_dash ? srwxstr[idx] : rwxstr[idx];
+}
+
+// Deprecated: use r_str_perm(perm, false) instead
+R_API const char *r_str_rwx_i(int rwx) {
+	return r_str_perm (rwx, false);
+}
+
+// Deprecated: use r_str_perm(perm, true) instead
+R_API const char *r_str_srwx_i(int rwx) {
+	return r_str_perm (rwx, true);
 }
 
 // If up is true, upcase all characters in the string, otherwise downcase all
