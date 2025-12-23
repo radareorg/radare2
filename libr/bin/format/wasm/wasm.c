@@ -8,6 +8,7 @@
 
 typedef size_t (*ConsumeFcn) (const ut8 *p, const ut8 *bound, ut32 *out_value);
 typedef void *(*ParseEntryFcn) (RBinWasmObj *bin, ut64 bound, ut32 index);
+typedef void (*WasmEntryFree) (void *entry);
 
 // RBuffer consume functions
 static ut32 consume_r(RBuffer *b, ut64 bound, size_t *n_out, ConsumeFcn consume_fcn) {
@@ -363,10 +364,12 @@ static void free_import_entry(RBinWasmImportEntry *entry) {
 	}
 }
 
+static void free_vec_entries(RVecWasmPtr *vec, WasmEntryFree free_entry);
+
 static inline void free_all_imports(RBinWasmObj *bin) {
 	int i;
 	for (i = 0; i < R_ARRAY_SIZE (bin->g_imports_arr); i++) {
-		r_pvector_free (bin->g_imports_arr[i]);
+		free_vec_entries (bin->g_imports_arr[i], (WasmEntryFree)free_import_entry);
 	}
 	memset (bin->g_imports_arr, 0, sizeof (bin->g_imports_arr));
 }
@@ -383,6 +386,16 @@ static void free_code_entry(RBinWasmCodeEntry *ptr) {
 		free (ptr->locals);
 		free (ptr);
 	}
+}
+
+static void free_vec_entries(RVecWasmPtr *vec, WasmEntryFree free_entry) {
+	if (vec) {
+		void **it;
+		R_VEC_FOREACH (vec, it) {
+			free_entry (*it);
+		}
+	}
+	RVecWasmPtr_free (vec);
 }
 
 static void wasm_sec_free(RBinWasmSection *sec) {
@@ -422,7 +435,7 @@ static inline void free_custom_names(RBinWasmCustomNames *names) {
 }
 
 // Parsing
-static inline RPVector *parse_vec(RBinWasmObj *bin, ut64 bound, ParseEntryFcn parse_entry, RPVectorFree free_entry) {
+static inline RVecWasmPtr *parse_vec(RBinWasmObj *bin, ut64 bound, ParseEntryFcn parse_entry, WasmEntryFree free_entry) {
 	RBuffer *buf = bin->buf;
 
 	ut32 count;
@@ -436,21 +449,24 @@ static inline RPVector *parse_vec(RBinWasmObj *bin, ut64 bound, ParseEntryFcn pa
 		return NULL;
 	}
 
-	RPVector *vec = r_pvector_new (free_entry);
-	if (vec) {
-		if (!r_pvector_reserve (vec, count)) {
-			return NULL;
+	RVecWasmPtr *vec = RVecWasmPtr_new ();
+	if (!vec) {
+		return NULL;
+	}
+	if (!RVecWasmPtr_reserve (vec, count)) {
+		RVecWasmPtr_free (vec);
+		return NULL;
+	}
+	ut32 i;
+	for (i = 0; i < count; i++) {
+		ut64 start = r_buf_tell (buf);
+		void *e = parse_entry (bin, bound, i);
+		if (!e) {
+			R_LOG_ERROR ("Failed to parse entry %u/%u of vec at 0x%" PFMT64x, i, count, start);
+			free_entry (e);
+			break;
 		}
-		ut32 i;
-		for (i = 0; i < count; i++) {
-			ut64 start = r_buf_tell (buf);
-			void *e = parse_entry (bin, bound, i);
-			if (!e || !r_pvector_push (vec, e)) {
-				R_LOG_ERROR ("Failed to parse entry %u/%u of vec at 0x%" PFMT64x, i, count, start);
-				free_entry (e);
-				break;
-			}
-		}
+		RVecWasmPtr_push_back (vec, &e);
 	}
 	return vec;
 }
@@ -886,7 +902,7 @@ static bool parse_import_sec(RBinWasmObj *bin) {
 
 	int i;
 	for (i = 0; i < R_ARRAY_SIZE (bin->g_imports_arr); i++) {
-		bin->g_imports_arr[i] = r_pvector_new ((RPVectorFree)free_import_entry);
+		bin->g_imports_arr[i] = RVecWasmPtr_new ();
 		if (!bin->g_imports_arr[i]) {
 			return false;
 		}
@@ -916,7 +932,7 @@ static bool parse_import_sec(RBinWasmObj *bin) {
 
 	// over estimate size, shrink later
 	for (i = 0; i < R_ARRAY_SIZE (bin->g_imports_arr); i++) {
-		if (!r_pvector_reserve (bin->g_imports_arr[i], count)) {
+		if (!RVecWasmPtr_reserve (bin->g_imports_arr[i], count)) {
 			R_LOG_ERROR ("Unable to allocate %d in import array", count);
 			return false;
 		}
@@ -926,7 +942,7 @@ static bool parse_import_sec(RBinWasmObj *bin) {
 		ut64 start = r_buf_tell (buf);
 		RBinWasmImportEntry *imp = parse_import_entry (bin, bound, i);
 		if (imp && imp->kind < R_ARRAY_SIZE (bin->g_imports_arr)) {
-			r_pvector_push (bin->g_imports_arr[imp->kind], imp);
+			RVecWasmPtr_push_back (bin->g_imports_arr[imp->kind], (void **)&imp);
 		} else {
 			R_LOG_ERROR ("Failed to parse import entry %u/%u of vec at 0x%" PFMT64x, i, count, start);
 			free_import_entry (imp);
@@ -936,8 +952,8 @@ static bool parse_import_sec(RBinWasmObj *bin) {
 
 	ut32 seen = 0;
 	for (i = 0; i < R_ARRAY_SIZE (bin->g_imports_arr); i++) {
-		r_pvector_shrink (bin->g_imports_arr[i]);
-		seen += r_pvector_length (bin->g_imports_arr[i]);
+		RVecWasmPtr_shrink_to_fit (bin->g_imports_arr[i]);
+		seen += RVecWasmPtr_length (bin->g_imports_arr[i]);
 	}
 	return seen == count? true: false;
 }
@@ -975,16 +991,16 @@ void wasm_obj_free(RBinWasmObj *bin) {
 	if (bin) {
 		r_buf_free (bin->buf);
 		r_list_free (bin->g_sections);
-		r_pvector_free (bin->g_types);
+		free_vec_entries (bin->g_types, (WasmEntryFree)free_type_entry);
 		free_all_imports (bin);
-		r_pvector_free (bin->g_funcs);
-		r_pvector_free (bin->g_tables);
-		r_pvector_free (bin->g_memories);
-		r_pvector_free (bin->g_globals);
-		r_pvector_free (bin->g_exports);
-		r_pvector_free (bin->g_elements);
-		r_pvector_free (bin->g_codes);
-		r_pvector_free (bin->g_datas);
+		free_vec_entries (bin->g_funcs, free);
+		free_vec_entries (bin->g_tables, free);
+		free_vec_entries (bin->g_memories, free);
+		free_vec_entries (bin->g_globals, free);
+		free_vec_entries (bin->g_exports, (WasmEntryFree)free_export_entry);
+		free_vec_entries (bin->g_elements, free);
+		free_vec_entries (bin->g_codes, (WasmEntryFree)free_code_entry);
+		free_vec_entries (bin->g_datas, free);
 		free_custom_names (bin->names);
 		free (bin);
 	}
@@ -1130,18 +1146,19 @@ ut32 r_bin_wasm_get_entrypoint(RBinWasmObj *bin) {
 		return bin->entrypoint;
 	}
 	ut32 start = r_bin_wasm_get_start (bin);
-	RPVector *code = r_bin_wasm_get_codes (bin);
+	RVecWasmPtr *code = r_bin_wasm_get_codes (bin);
 	// FIX: entrypoint can be also an import
 	if (code && start != UT32_MAX) {
-		RBinWasmCodeEntry *func = r_pvector_at (code, start);
+		void **slot = RVecWasmPtr_at (code, start);
+		RBinWasmCodeEntry *func = slot? *slot: NULL;
 		return func? func->code: 0;
 	}
 	return 0;
 }
 
-static int _export_sorter(const void *_a, const void *_b) {
-	const RBinWasmExportEntry *a = _a;
-	const RBinWasmExportEntry *b = _b;
+static int _export_sorter(void *const *_a, void *const *_b) {
+	const RBinWasmExportEntry *a = *_a;
+	const RBinWasmExportEntry *b = *_b;
 	st64 diff = (st64)a->kind - b->kind;
 	if (!diff) {
 		diff = (st64)a->index - b->index;
@@ -1152,15 +1169,15 @@ static int _export_sorter(const void *_a, const void *_b) {
 	return diff > 0? 1: -1;
 }
 
-static RPVector *parse_sub_section_vec(RBinWasmObj *bin, RBinWasmSection *sec) {
-	RPVectorComparator sorter = NULL;
-	RPVector **cache = NULL;
-	RPVectorFree pfree = (RPVectorFree)free;
+static RVecWasmPtr *parse_sub_section_vec(RBinWasmObj *bin, RBinWasmSection *sec) {
+	RVecWasmPtrCompare sorter = NULL;
+	RVecWasmPtr **cache = NULL;
+	WasmEntryFree pfree = (WasmEntryFree)free;
 	ParseEntryFcn parser;
 	switch (sec->id) {
 	case R_BIN_WASM_SECTION_TYPE:
 		parser = (ParseEntryFcn)parse_type_entry;
-		pfree = (RPVectorFree)free_type_entry;
+		pfree = (WasmEntryFree)free_type_entry;
 		cache = &bin->g_types;
 		break;
 	case R_BIN_WASM_SECTION_FUNCTION:
@@ -1181,9 +1198,9 @@ static RPVector *parse_sub_section_vec(RBinWasmObj *bin, RBinWasmSection *sec) {
 		break;
 	case R_BIN_WASM_SECTION_EXPORT:
 		parser = (ParseEntryFcn)parse_export_entry;
-		pfree = (RPVectorFree)free_export_entry;
+		pfree = (WasmEntryFree)free_export_entry;
 		cache = &bin->g_exports;
-		sorter = (RPVectorComparator)_export_sorter;
+		sorter = _export_sorter;
 		break;
 	case R_BIN_WASM_SECTION_ELEMENT:
 		parser = (ParseEntryFcn)parse_element_entry;
@@ -1191,7 +1208,7 @@ static RPVector *parse_sub_section_vec(RBinWasmObj *bin, RBinWasmSection *sec) {
 		break;
 	case R_BIN_WASM_SECTION_CODE:
 		parser = (ParseEntryFcn)parse_code_entry;
-		pfree = (RPVectorFree)free_code_entry;
+		pfree = (WasmEntryFree)free_code_entry;
 		cache = &bin->g_codes;
 		break;
 	case R_BIN_WASM_SECTION_DATA:
@@ -1218,13 +1235,13 @@ static RPVector *parse_sub_section_vec(RBinWasmObj *bin, RBinWasmSection *sec) {
 
 	*cache = parse_vec (bin, bound, parser, pfree);
 	if (sorter) {
-		r_pvector_sort (*cache, sorter);
+		RVecWasmPtr_sort (*cache, sorter);
 	}
 	return *cache;
 }
 
 // warns if there are two sections of this type
-static inline RPVector *parse_unique_subsec_vec_by_id(RBinWasmObj *bin, ut8 id) {
+static inline RVecWasmPtr *parse_unique_subsec_vec_by_id(RBinWasmObj *bin, ut8 id) {
 	RBinWasmSection *sec = section_first_with_id (bin->g_sections, id);
 	if (sec) {
 		return parse_sub_section_vec (bin, sec);
@@ -1232,56 +1249,56 @@ static inline RPVector *parse_unique_subsec_vec_by_id(RBinWasmObj *bin, ut8 id) 
 	return false;
 }
 
-RPVector *r_bin_wasm_get_types(RBinWasmObj *bin) {
+RVecWasmPtr *r_bin_wasm_get_types(RBinWasmObj *bin) {
 	R_RETURN_VAL_IF_FAIL (bin && bin->g_sections, NULL);
 	return bin->g_types? bin->g_types: parse_unique_subsec_vec_by_id (bin, R_BIN_WASM_SECTION_TYPE);
 }
 
-RPVector *r_bin_wasm_get_imports_kind(RBinWasmObj *bin, ut32 kind) {
+RVecWasmPtr *r_bin_wasm_get_imports_kind(RBinWasmObj *bin, ut32 kind) {
 	R_RETURN_VAL_IF_FAIL (bin && bin->g_sections && kind < R_ARRAY_SIZE (bin->g_imports_arr), NULL);
-	RPVector **vec = &bin->g_imports_arr[kind];
+	RVecWasmPtr **vec = &bin->g_imports_arr[kind];
 	if (!*vec) {
 		parse_import_sec (bin);
 	}
 	return *vec;
 }
 
-RPVector *r_bin_wasm_get_functions(RBinWasmObj *bin) {
+RVecWasmPtr *r_bin_wasm_get_functions(RBinWasmObj *bin) {
 	R_RETURN_VAL_IF_FAIL (bin && bin->g_sections, NULL);
 	return bin->g_funcs? bin->g_funcs: parse_unique_subsec_vec_by_id (bin, R_BIN_WASM_SECTION_FUNCTION);
 }
 
-RPVector *r_bin_wasm_get_tables(RBinWasmObj *bin) {
+RVecWasmPtr *r_bin_wasm_get_tables(RBinWasmObj *bin) {
 	R_RETURN_VAL_IF_FAIL (bin && bin->g_sections, NULL);
 	return bin->g_tables? bin->g_tables: parse_unique_subsec_vec_by_id (bin, R_BIN_WASM_SECTION_TABLE);
 }
 
-RPVector *r_bin_wasm_get_memories(RBinWasmObj *bin) {
+RVecWasmPtr *r_bin_wasm_get_memories(RBinWasmObj *bin) {
 	R_RETURN_VAL_IF_FAIL (bin && bin->g_sections, NULL);
 	return bin->g_memories? bin->g_memories: parse_unique_subsec_vec_by_id (bin, R_BIN_WASM_SECTION_MEMORY);
 }
 
-RPVector *r_bin_wasm_get_globals(RBinWasmObj *bin) {
+RVecWasmPtr *r_bin_wasm_get_globals(RBinWasmObj *bin) {
 	R_RETURN_VAL_IF_FAIL (bin && bin->g_sections, NULL);
 	return bin->g_globals? bin->g_globals: parse_unique_subsec_vec_by_id (bin, R_BIN_WASM_SECTION_GLOBAL);
 }
 
-RPVector *r_bin_wasm_get_exports(RBinWasmObj *bin) {
+RVecWasmPtr *r_bin_wasm_get_exports(RBinWasmObj *bin) {
 	R_RETURN_VAL_IF_FAIL (bin && bin->g_sections, NULL);
 	return bin->g_exports? bin->g_exports: parse_unique_subsec_vec_by_id (bin, R_BIN_WASM_SECTION_EXPORT);
 }
 
-RPVector *r_bin_wasm_get_elements(RBinWasmObj *bin) {
+RVecWasmPtr *r_bin_wasm_get_elements(RBinWasmObj *bin) {
 	R_RETURN_VAL_IF_FAIL (bin && bin->g_sections, NULL);
 	return bin->g_elements? bin->g_elements: parse_unique_subsec_vec_by_id (bin, R_BIN_WASM_SECTION_ELEMENT);
 }
 
-RPVector *r_bin_wasm_get_codes(RBinWasmObj *bin) {
+RVecWasmPtr *r_bin_wasm_get_codes(RBinWasmObj *bin) {
 	R_RETURN_VAL_IF_FAIL (bin && bin->g_sections, NULL);
 	return bin->g_codes? bin->g_codes: parse_unique_subsec_vec_by_id (bin, R_BIN_WASM_SECTION_CODE);
 }
 
-RPVector *r_bin_wasm_get_datas(RBinWasmObj *bin) {
+RVecWasmPtr *r_bin_wasm_get_datas(RBinWasmObj *bin) {
 	R_RETURN_VAL_IF_FAIL (bin && bin->g_sections, NULL);
 	return bin->g_datas? bin->g_datas: parse_unique_subsec_vec_by_id (bin, R_BIN_WASM_SECTION_DATA);
 }

@@ -1287,7 +1287,8 @@ static int parse_dylib(struct MACH0_(obj_t) *mo, ut64 off) {
 		return false;
 	}
 
-	r_pvector_push (&mo->libs_cache, r_str_ndup (lib, R_BIN_MACH0_STRING_LENGTH));
+	char *name = r_str_ndup (lib, R_BIN_MACH0_STRING_LENGTH);
+	RVecMach0Lib_push_back (&mo->libs_cache, &name);
 	return true;
 }
 
@@ -1774,7 +1775,7 @@ static int init_items(struct MACH0_(obj_t) *mo) {
 	mo->os = 0;
 	mo->has_crypto = false;
 	mo->segments_vec = NULL;
-	r_pvector_init (&mo->libs_cache, (RPVectorFree) free);
+	RVecMach0Lib_init (&mo->libs_cache);
 
 	if (mo->hdr.sizeofcmds > mo->size) {
 		R_LOG_WARN ("chopping hdr.sizeofcmds because it's larger than the file size");
@@ -2208,7 +2209,7 @@ static bool init(struct MACH0_(obj_t) *mo) {
 	}
 	mo->baddr = MACH0_(get_baddr)(mo);
 	mo->libs_loaded = true;
-	r_pvector_shrink (&mo->libs_cache);
+	RVecMach0Lib_shrink_to_fit (&mo->libs_cache);
 	return true;
 }
 
@@ -2232,7 +2233,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 	free (mo->toc);
 	free (mo->modtab);
 	if (mo->libs_loaded) {
-		r_pvector_fini (&mo->libs_cache);
+		RVecMach0Lib_fini (&mo->libs_cache);
 	}
 	free (mo->func_start);
 	free (mo->signature);
@@ -2241,7 +2242,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 #if R2_590
 #else
 	if (mo->imports_loaded) {
-		r_pvector_fini (&mo->imports_cache);
+		RVecMach0Import_fini (&mo->imports_cache);
 	}
 #endif
 	if (mo->sections_loaded) {
@@ -3397,21 +3398,21 @@ static void check_for_special_import_names(struct MACH0_(obj_t) *bin, RBinImport
 	}
 }
 
-const RPVector *MACH0_(load_imports)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
+const RVecMach0Import *MACH0_(load_imports)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	if (bin->imports_loaded) {
 		return &bin->imports_cache;
 	}
 
 	bin->imports_loaded = true;
-	r_pvector_init (&bin->imports_cache, (RPVectorFree) r_bin_import_free);
+	RVecMach0Import_init (&bin->imports_cache);
 
 	ut32 nundefsym = bin->dysymtab.nundefsym;
 	if (nundefsym < 1 || nundefsym > 0xfffff) {
 		return NULL;
 	}
 
-	r_pvector_reserve (&bin->imports_cache, nundefsym);
+	RVecMach0Import_reserve (&bin->imports_cache, nundefsym);
 
 	if (!bin->sects || !bin->symtab || !bin->symstr || !bin->indirectsyms) {
 		return NULL;
@@ -3448,7 +3449,7 @@ const RPVector *MACH0_(load_imports)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 		}
 
 		import->ordinal = i;
-		r_pvector_push (&bin->imports_cache, import);
+		RVecMach0Import_push_back (&bin->imports_cache, &import);
 		num_imports++;
 		check_for_special_import_names (bin, import);
 		free (imp_name);
@@ -3461,9 +3462,9 @@ const RPVector *MACH0_(load_imports)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 			return NULL;
 		}
 
-		void **it;
-		r_pvector_foreach (&bin->imports_cache, it) {
-			RBinImport *import = (RBinImport*) *it;
+		RBinImport **it;
+		R_VEC_FOREACH (&bin->imports_cache, it) {
+			RBinImport *import = *it;
 			if (import->ordinal < bin->imports_by_ord_size) {
 				bin->imports_by_ord[import->ordinal] = import;
 			}
@@ -3708,8 +3709,30 @@ static bool is_valid_ordinal_table_size(ut64 size) {
 	return size > 0 && size <= UT16_MAX;
 }
 
+static void mach0_reloc_ref_fini (struct reloc_t **reloc) {
+	free (*reloc);
+}
+
+R_VEC_TYPE_WITH_FINI (RVecRelocRef, struct reloc_t *, mach0_reloc_ref_fini);
+
+static RVecRelocRef *reloc_ref_vec_new_with_len (ut64 length) {
+	RVecRelocRef *vec = RVecRelocRef_new ();
+	if (!vec) {
+		return NULL;
+	}
+	if (!RVecRelocRef_reserve (vec, length)) {
+		RVecRelocRef_free (vec);
+		return NULL;
+	}
+	struct reloc_t *empty = NULL;
+	while (RVecRelocRef_length (vec) < length) {
+		RVecRelocRef_push_back (vec, &empty);
+	}
+	return vec;
+}
+
 static bool _load_relocations(struct MACH0_(obj_t) *mo) {
-	RPVector *threaded_binds = NULL;
+	RVecRelocRef *threaded_binds = NULL;
 	ut8 *opcodes = NULL;
 	size_t wordsize = get_word_size (mo);
 	if (mo->dyld_info) {
@@ -3816,9 +3839,9 @@ static bool _load_relocations(struct MACH0_(obj_t) *mo) {
 							break;
 						}
 						if (threaded_binds) {
-							r_pvector_free (threaded_binds);
+							RVecRelocRef_free (threaded_binds);
 						}
-						threaded_binds = r_pvector_new_with_len ((RPVectorFree) &free, table_size);
+						threaded_binds = reloc_ref_vec_new_with_len (table_size);
 						if (threaded_binds) {
 							sym_ord = 0;
 						}
@@ -3827,7 +3850,7 @@ static bool _load_relocations(struct MACH0_(obj_t) *mo) {
 					case BIND_SUBOPCODE_THREADED_APPLY:
 						if (threaded_binds) {
 							int cur_seg_idx = (seg_idx != -1)? seg_idx: 0;
-							size_t n_threaded_binds = r_pvector_length (threaded_binds);
+							ut64 n_threaded_binds = RVecRelocRef_length (threaded_binds);
 							while (addr < segment_end_addr) {
 								ut8 tmp[8];
 								ut64 paddr = addr - mo->segs[cur_seg_idx].vmaddr + mo->segs[cur_seg_idx].fileoff;
@@ -3867,7 +3890,8 @@ static bool _load_relocations(struct MACH0_(obj_t) *mo) {
 										R_LOG_DEBUG ("Malformed bind chain");
 										break;
 									}
-									struct reloc_t *ref = r_pvector_at (threaded_binds, ordinal);
+									struct reloc_t **ref_slot = RVecRelocRef_at (threaded_binds, ordinal);
+									struct reloc_t *ref = ref_slot ? *ref_slot : NULL;
 									if (!ref) {
 										R_LOG_DEBUG ("Inconsistent bind opcodes");
 										break;
@@ -3950,7 +3974,7 @@ static bool _load_relocations(struct MACH0_(obj_t) *mo) {
 					if (seg_idx >= mo->nsegs) {
 						R_LOG_ERROR ("BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB has no segment %d", seg_idx);
 						free (opcodes);
-						r_pvector_free (threaded_binds);
+						RVecRelocRef_free (threaded_binds);
 						return false; // early exit to avoid future mayhem
 					}
 					addr = mo->segs[seg_idx].vmaddr + read_uleb128 (&p, end);
@@ -3986,7 +4010,10 @@ static bool _load_relocations(struct MACH0_(obj_t) *mo) {
 		r_str_ncpy (reloc->name, sym_name, 256);\
 	}\
 	if (threaded_binds) {\
-		r_pvector_set (threaded_binds, sym_ord, reloc);\
+		struct reloc_t **slot = RVecRelocRef_at (threaded_binds, sym_ord);\
+		if (slot) {\
+			*slot = reloc;\
+		}\
 	} else {\
 		r_skiplist_insert (mo->relocs_cache, reloc);\
 	}\
@@ -4039,14 +4066,14 @@ static bool _load_relocations(struct MACH0_(obj_t) *mo) {
 				default:
 					R_LOG_DEBUG ("unknown bind opcode 0x%02x in dyld_info", *p);
 					R_FREE (opcodes);
-					r_pvector_free (threaded_binds);
+					RVecRelocRef_free (threaded_binds);
 					return false;
 				}
 			}
 			opcodes_offset += partition_size;
 		}
 		R_FREE (opcodes);
-		r_pvector_free (threaded_binds);
+		RVecRelocRef_free (threaded_binds);
 		threaded_binds = NULL;
 	}
 
@@ -4079,7 +4106,7 @@ static bool _load_relocations(struct MACH0_(obj_t) *mo) {
 	}
 beach:
 	R_FREE (opcodes);
-	r_pvector_free (threaded_binds);
+	RVecRelocRef_free (threaded_binds);
 	return true;
 }
 
@@ -4144,11 +4171,12 @@ void MACH0_(kv_loadlibs)(struct MACH0_(obj_t) *mo) {
 	char lib_flagname[128];
 	for (i = 0; i < mo->nlibs; i++) {
 		snprintf (lib_flagname, sizeof (lib_flagname), "libs.%d.name", i);
-		sdb_set (mo->kv, lib_flagname, r_pvector_at (&mo->libs_cache, i), 0);
+		char **lib = RVecMach0Lib_at (&mo->libs_cache, i);
+		sdb_set (mo->kv, lib_flagname, lib? *lib: NULL, 0);
 	}
 }
 
-const RPVector *MACH0_(load_libs)(struct MACH0_(obj_t) *mo) {
+const RVecMach0Lib *MACH0_(load_libs)(struct MACH0_(obj_t) *mo) {
 	R_RETURN_VAL_IF_FAIL (mo, NULL);
 	if (!mo->nlibs) {
 		return NULL;

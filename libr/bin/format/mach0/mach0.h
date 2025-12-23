@@ -1,6 +1,6 @@
 #include <r_bin.h>
 #include <r_types.h>
-#include <r_vector.h>
+#include <r_vec.h>
 #include "mach0_specs.h"
 
 #ifndef _INCLUDE_R_BIN_MACH0_H_
@@ -105,14 +105,23 @@ struct MACH0_(opts_t) {
 	RBinFile *bf;
 };
 
-static inline void r_bin_section_fini(RBinSection *bs) {
-	if (bs) {
-		free (bs->name);
-		free (bs->format);
-	}
+static inline void r_bin_section_fini (RBinSection *bs) {
+	free (bs->name);
+	free (bs->format);
 }
 
 R_VEC_TYPE_WITH_FINI(RVecSegment, RBinSection, r_bin_section_fini);
+
+static inline void mach0_lib_fini (char **lib) {
+	free (*lib);
+}
+
+static inline void mach0_import_fini (RBinImport **import) {
+	r_bin_import_free (*import);
+}
+
+R_VEC_TYPE_WITH_FINI (RVecMach0Lib, char *, mach0_lib_fini);
+R_VEC_TYPE_WITH_FINI (RVecMach0Import, RBinImport *, mach0_import_fini);
 
 struct MACH0_(obj_t) {
 	struct MACH0_(mach_header) hdr;
@@ -159,7 +168,7 @@ struct MACH0_(obj_t) {
 		struct arm_thread_state64 arm_64;
 	} thread_state;
 	bool libs_loaded;
-	RPVector libs_cache;
+	RVecMach0Lib libs_cache;
 	int nlibs;
 	ut64 size;
 	ut64 baddr;
@@ -194,7 +203,7 @@ struct MACH0_(obj_t) {
 	bool sections_loaded;
 	RVecSection sections_cache;
 	bool imports_loaded;
-	RPVector imports_cache;
+	RVecMach0Import imports_cache;
 	bool relocs_loaded;
 	RSkipList *relocs_cache;
 	RList *reloc_fixups;
@@ -270,10 +279,10 @@ RList *MACH0_(get_segments)(RBinFile *bf, struct MACH0_(obj_t) *mo);
 RVecSegment *MACH0_(get_segments_vec)(RBinFile *bf, struct MACH0_(obj_t) *mo);
 const bool MACH0_(load_symbols)(struct MACH0_(obj_t) *mo);
 void MACH0_(pull_symbols)(struct MACH0_(obj_t) *mo, RBinSymbolCallback cb, void *user);
-const RPVector *MACH0_(load_imports)(RBinFile* bf, struct MACH0_(obj_t) *bin);
+const RVecMach0Import *MACH0_(load_imports)(RBinFile* bf, struct MACH0_(obj_t) *bin);
 const RSkipList *MACH0_(load_relocs)(struct MACH0_(obj_t) *bin);
 struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) *bin);
-const RPVector *MACH0_(load_libs)(struct MACH0_(obj_t) *bin);
+const RVecMach0Lib *MACH0_(load_libs)(struct MACH0_(obj_t) *bin);
 ut64 MACH0_(get_baddr)(struct MACH0_(obj_t) *bin);
 char *MACH0_(get_class)(struct MACH0_(obj_t) *bin);
 int MACH0_(get_bits)(struct MACH0_(obj_t) *bin);

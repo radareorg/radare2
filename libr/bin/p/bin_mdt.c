@@ -448,10 +448,10 @@ static RList *relocs(RBinFile *bf) {
 			}
 		} else if (part->format == R_BIN_MDT_PART_ELF && part->obj.elf) {
 			// Get relocs from nested ELF
-			const RVector *elf_relocs = Elf_(load_relocs) (part->obj.elf);
+			const RVecRBinElfReloc *elf_relocs = Elf_(load_relocs) (part->obj.elf);
 			if (elf_relocs) {
 				RBinElfReloc *erel;
-				r_vector_foreach (elf_relocs, erel) {
+				R_VEC_FOREACH (elf_relocs, erel) {
 					RBinReloc *rel = R_NEW0 (RBinReloc);
 					if (!rel) {
 						continue;

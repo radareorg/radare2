@@ -13,8 +13,8 @@ extern "C" {
  * C++ and std::vec::Vec in Rust. Unlike in those languages, C does not have
  * templates and instead relies on macros to generate 1 concrete implementation per type.
  *
- * Note that compared to the older r_vector and r_pvector types in R2, there is
- * only a single type that exists for both usecases.
+ * Note that compared to the older vector types in R2, there is only a single
+ * type that exists for both use cases.
  *
  * The way to use this code is as follows:
  * 1. Use the R_VEC_TYPE or R_VEC_TYPE_WITH_FINI macro to generate the vector

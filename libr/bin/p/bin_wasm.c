@@ -10,12 +10,36 @@
 #include "wasm/wasm.h"
 #include "../format/wasm/wasm.h"
 
-static inline void *vector_at(RPVector *vec, ut64 n) {
+static inline void *vector_at(RVecWasmPtr *vec, ut64 n) {
 	// If the file is corrupted, the section may not have as many entries as it should
-	if (n < r_pvector_length (vec)) {
-		return r_pvector_at (vec, n);
+	if (vec && n < RVecWasmPtr_length (vec)) {
+		void **slot = RVecWasmPtr_at (vec, n);
+		return slot? *slot: NULL;
 	}
 	return NULL;
+}
+
+static int vec_bsearch(RVecWasmPtr *vec, const void *needle, int (*cmp)(const void *elem, const void *needle)) {
+	if (!vec || !cmp) {
+		return -1;
+	}
+	st64 low = 0;
+	st64 high = (st64)RVecWasmPtr_length (vec) - 1;
+	while (low <= high) {
+		st64 mid = low + ((high - low) >> 1);
+		void **slot = RVecWasmPtr_at (vec, mid);
+		void *elem = slot? *slot: NULL;
+		int res = cmp (elem, needle);
+		if (!res) {
+			return (int)mid;
+		}
+		if (res < 0) {
+			low = mid + 1;
+		} else {
+			high = mid - 1;
+		}
+	}
+	return -1;
 }
 
 static bool check(RBinFile *bf, RBuffer *rbuf) {
@@ -41,12 +65,12 @@ static int _export_finder(const void *_exp, const void *_needle) {
 	return diff > 0? 1: -1;
 }
 
-static inline RBinWasmExportEntry *find_export(RPVector *exports, ut8 kind, ut32 index) {
+static inline RBinWasmExportEntry *find_export(RVecWasmPtr *exports, ut8 kind, ut32 index) {
 	if (!exports) {
 		return NULL;
 	}
 	struct search_fields sf = { .kind = kind, .index = index };
-	int n = r_pvector_bsearch (exports, (void *)&sf, _export_finder);
+	int n = vec_bsearch (exports, (void *)&sf, _export_finder);
 	return n >= 0? vector_at (exports, n): NULL;
 }
 
@@ -78,7 +102,7 @@ static RList *entries(RBinFile *bf) {
 	// TODO
 	ut64 addr = (ut64)r_bin_wasm_get_entrypoint (bin);
 	if (!addr) {
-		RPVector *codes = r_bin_wasm_get_codes (bin);
+		RVecWasmPtr *codes = r_bin_wasm_get_codes (bin);
 		if (codes) {
 			RBinWasmCodeEntry *func = vector_at (codes, 0);
 			if (func) {
@@ -143,8 +167,8 @@ alloc_err:
 }
 
 static inline ut32 first_ord_not_import(RBinWasmObj *bin, ut32 kind) {
-	RPVector *imps = r_bin_wasm_get_imports_kind (bin, kind);
-	return imps? r_pvector_length (imps): 0;
+	RVecWasmPtr *imps = r_bin_wasm_get_imports_kind (bin, kind);
+	return imps? RVecWasmPtr_length (imps): 0;
 }
 
 static const char *import_typename(ut32 kind) {
@@ -167,9 +191,9 @@ static inline bool symbols_add_import_kind(RBinWasmObj *bin, ut32 kind, RList *l
 	void **p;
 	ut32 ordinal = 0;
 	const char *type = import_typename (kind);
-	RPVector *imports = r_bin_wasm_get_imports_kind (bin, kind);
+	RVecWasmPtr *imports = r_bin_wasm_get_imports_kind (bin, kind);
 	if (imports && type) {
-		r_pvector_foreach (imports, p) {
+		R_VEC_FOREACH (imports, p) {
 			RBinWasmImportEntry *imp = *p;
 			RBinSymbol *sym = R_NEW0 (RBinSymbol);
 			if (!sym) {
@@ -192,7 +216,7 @@ static inline bool symbols_add_import_kind(RBinWasmObj *bin, ut32 kind, RList *l
 }
 
 static inline char *name_from_export(RBinWasmObj *bin, int type, int ord) {
-	RPVector *exports = r_bin_wasm_get_exports (bin);
+	RVecWasmPtr *exports = r_bin_wasm_get_exports (bin);
 	RBinWasmExportEntry *exp = find_export (exports, type, ord);
 	return exp? strdup (exp->field_str): NULL;
 }
@@ -220,13 +244,13 @@ static inline void set_sym_name(RBinWasmObj *bin, int type, RBinSymbol *sym) {
 }
 
 static inline bool symbols_add_code(RBinWasmObj *bin, RList *list) {
-	RPVector *codes = r_bin_wasm_get_codes (bin);
+	RVecWasmPtr *codes = r_bin_wasm_get_codes (bin);
 	if (!codes) {
 		return false;
 	}
 	ut32 ordinal = first_ord_not_import (bin, R_BIN_WASM_EXTERNALKIND_Function);
 	void **p;
-	r_pvector_foreach (codes, p) {
+	R_VEC_FOREACH (codes, p) {
 		RBinWasmCodeEntry *func = *p;
 		RBinSymbol *sym = R_NEW0 (RBinSymbol);
 		if (!sym) {
@@ -285,13 +309,13 @@ static void sym_set_content_type(RBinSymbol *sym, int t) {
 }
 
 static inline bool symbols_add_globals(RBinWasmObj *bin, RList *list) {
-	RPVector *globals = r_bin_wasm_get_globals (bin);
+	RVecWasmPtr *globals = r_bin_wasm_get_globals (bin);
 	if (!globals) {
 		return true;
 	}
 	ut32 ordinal = first_ord_not_import (bin, R_BIN_WASM_EXTERNALKIND_Global);
 	void **p;
-	r_pvector_foreach (globals, p) {
+	R_VEC_FOREACH (globals, p) {
 		// not real confident in any of this
 		RBinWasmGlobalEntry *gl = *p;
 		RBinSymbol *sym = R_NEW0 (RBinSymbol);
@@ -352,13 +376,13 @@ static RList *get_imports(RBinFile *bf) {
 	ut32 kind;
 	for (kind = 0; kind <= R_BIN_WASM_EXTERNALKIND_Global; kind++) {
 		const char *type = import_typename (kind);
-		RPVector *imports = r_bin_wasm_get_imports_kind (bin, kind);
+		RVecWasmPtr *imports = r_bin_wasm_get_imports_kind (bin, kind);
 		if (!type || !imports) {
 			continue;
 		}
 		int i = 0;
 		void **p;
-		r_pvector_foreach (imports, p) {
+		R_VEC_FOREACH (imports, p) {
 			RBinWasmImportEntry *import = *p;
 			RBinImport *ptr = R_NEW0 (RBinImport);
 			if (!ptr) {
@@ -421,7 +445,7 @@ static RBuffer *create(RBin *bin, const ut8 *code, int codelen, const ut8 *data,
 static ut64 get_fcn_offset_from_id(RBinFile *bf, int ordinal) {
 	RBinWasmObj *bin = bf->bo->bin_obj;
 	ut32 min = first_ord_not_import (bin, R_BIN_WASM_EXTERNALKIND_Function);
-	RPVector *codes = r_bin_wasm_get_codes (bin);
+	RVecWasmPtr *codes = r_bin_wasm_get_codes (bin);
 	if (min <= ordinal && codes) {
 		ordinal -= min;
 		RBinWasmCodeEntry *func = vector_at (codes, ordinal);
@@ -447,9 +471,9 @@ static int _code_frm_addr(const void *_code, const void *_needle) {
 static ut64 get_fcn_offset_from_addr(RBinFile *bf, int addr, bool start) {
 	RBinWasmObj *bin = R_UNWRAP3 (bf, bo, bin_obj);
 	if (bin) {
-		RPVector *codes = r_bin_wasm_get_codes (bin);
+		RVecWasmPtr *codes = r_bin_wasm_get_codes (bin);
 		if (codes) {
-			int n = r_pvector_bsearch (codes, (void *)&addr, _code_frm_addr);
+			int n = vec_bsearch (codes, (void *)&addr, _code_frm_addr);
 			RBinWasmCodeEntry *code = vector_at (codes, n);
 			if (code) {
 				if (start) {

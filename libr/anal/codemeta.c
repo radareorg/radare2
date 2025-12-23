@@ -443,7 +443,7 @@ R_API char *r_codemeta_print2(RCodeMeta *code, RVecCodeMetaOffset *line_offsets,
 	return r_codemeta_print_internal (code, line_offsets, anal, false);
 }
 
-// TODO rename R_API char *r_codemeta_print_offsets(RCodeMeta *code, RVector *line_offsets, bool d) {
+// TODO rename R_API char *r_codemeta_print_offsets(RCodeMeta *code, RVecCodeMetaOffset *line_offsets, bool d) {
 R_API char *r_codemeta_print(RCodeMeta *code, RVecCodeMetaOffset *line_offsets) {
 	R_LOG_DEBUG ("RCodeMetaPrint is deprecated: use RCodeMetaPrint2 instead");
 	return r_codemeta_print_internal (code, line_offsets, NULL, false);

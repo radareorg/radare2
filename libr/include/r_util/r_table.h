@@ -40,7 +40,7 @@ enum {
 };
 
 typedef struct {
-	// TODO: use RVector
+	// TODO: use RVec
 	RList *items;
 } RTableRow;
 

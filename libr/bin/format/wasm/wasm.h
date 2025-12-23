@@ -4,7 +4,7 @@
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
-#include <r_vector.h>
+#include <r_vec.h>
 
 #ifndef _INCLUDE_WASM_H_
 #define _INCLUDE_WASM_H_
@@ -201,6 +201,8 @@ typedef struct r_bin_wasm_data_t {
 	ut32 data; // offset
 } RBinWasmDataEntry;
 
+R_VEC_TYPE (RVecWasmPtr, void *);
+
 typedef struct r_bin_wasm_custom_module {
 	ut64 file_offset;
 	char *name;
@@ -230,16 +232,16 @@ typedef struct r_bin_wasm_obj_t {
 
 	// cache purposes
 	RList *g_sections;
-	RPVector *g_types;
-	RPVector *g_imports_arr[4];
-	RPVector *g_funcs;
-	RPVector *g_tables;
-	RPVector *g_memories;
-	RPVector *g_globals;
-	RPVector *g_exports;
-	RPVector *g_elements;
-	RPVector *g_codes;
-	RPVector *g_datas;
+	RVecWasmPtr *g_types;
+	RVecWasmPtr *g_imports_arr[4];
+	RVecWasmPtr *g_funcs;
+	RVecWasmPtr *g_tables;
+	RVecWasmPtr *g_memories;
+	RVecWasmPtr *g_globals;
+	RVecWasmPtr *g_exports;
+	RVecWasmPtr *g_elements;
+	RVecWasmPtr *g_codes;
+	RVecWasmPtr *g_datas;
 	ut32 g_start;
 
 	// custom sections
@@ -249,16 +251,16 @@ typedef struct r_bin_wasm_obj_t {
 RBinWasmObj *r_bin_wasm_init(RBinFile *bf, RBuffer *buf);
 void r_bin_wasm_destroy(RBinFile *bf);
 RList *r_bin_wasm_get_sections(RBinWasmObj *bin);
-RPVector *r_bin_wasm_get_types(RBinWasmObj *bin);
-RPVector *r_bin_wasm_get_imports_kind(RBinWasmObj *bin, ut32 kind);
-RPVector *r_bin_wasm_get_functions(RBinWasmObj *bin);
-RPVector *r_bin_wasm_get_tables(RBinWasmObj *bin);
-RPVector *r_bin_wasm_get_memories(RBinWasmObj *bin);
-RPVector *r_bin_wasm_get_globals(RBinWasmObj *bin);
-RPVector *r_bin_wasm_get_exports(RBinWasmObj *bin);
-RPVector *r_bin_wasm_get_elements(RBinWasmObj *bin);
-RPVector *r_bin_wasm_get_codes(RBinWasmObj *bin);
-RPVector *r_bin_wasm_get_datas(RBinWasmObj *bin);
+RVecWasmPtr *r_bin_wasm_get_types(RBinWasmObj *bin);
+RVecWasmPtr *r_bin_wasm_get_imports_kind(RBinWasmObj *bin, ut32 kind);
+RVecWasmPtr *r_bin_wasm_get_functions(RBinWasmObj *bin);
+RVecWasmPtr *r_bin_wasm_get_tables(RBinWasmObj *bin);
+RVecWasmPtr *r_bin_wasm_get_memories(RBinWasmObj *bin);
+RVecWasmPtr *r_bin_wasm_get_globals(RBinWasmObj *bin);
+RVecWasmPtr *r_bin_wasm_get_exports(RBinWasmObj *bin);
+RVecWasmPtr *r_bin_wasm_get_elements(RBinWasmObj *bin);
+RVecWasmPtr *r_bin_wasm_get_codes(RBinWasmObj *bin);
+RVecWasmPtr *r_bin_wasm_get_datas(RBinWasmObj *bin);
 RBinWasmCustomNames *r_bin_wasm_get_custom_names(RBinWasmObj *bin);
 ut32 r_bin_wasm_get_entrypoint(RBinWasmObj *bin);
 const char *r_bin_wasm_get_function_name(RBinWasmObj *bin, ut32 idx);

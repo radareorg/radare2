@@ -17,7 +17,6 @@
 #include <r_codemeta.h>
 #include <r_anal/hint.h>
 #include <r_vec.h>
-#include <r_vector.h>
 #include <r_util/r_intervaltree.h>
 #include <sdb/set.h>
 
@@ -322,7 +321,7 @@ typedef struct r_anal_function_t {
 	ut8 *fingerprint; // TODO: make is fuzzy and smarter
 	size_t fingerprint_size;
 	RAnalDiff *diff;
-	RList *bbs; // TODO: should be RPVector
+	RList *bbs; // TODO: should be RVec
 	RAnalFcnMeta meta;
 	RList *imports; // maybe bound to class?
 	struct r_anal_t *anal; // this function is associated with this instance
