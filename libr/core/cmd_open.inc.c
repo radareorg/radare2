@@ -2,7 +2,10 @@
 
 #if R_INCLUDE_BEGIN
 
-static R_TH_LOCAL int fdsz = 0; // XXX delete this global
+typedef struct {
+	RCore *core;
+	ut64 fdsz;
+} DescListCtx;
 
 static RCoreHelpMessage help_msg_o = {
 	"Usage: o", "[file] ([offset])", "Open and close files, maps, and banks",
@@ -1849,16 +1852,18 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 }
 
 static bool init_desc_list_visual_cb(void *user, void *data, ut32 id) {
+	DescListCtx *ctx = (DescListCtx *)user;
 	RIODesc *desc = (RIODesc *)data;
 	ut64 sz = r_io_desc_size (desc);
-	if (sz > fdsz) {
-		fdsz = sz;
+	if (sz > ctx->fdsz) {
+		ctx->fdsz = sz;
 	}
 	return true;
 }
 
 static bool desc_list_visual_cb(void *user, void *data, ut32 id) {
-	RCore *core = (RCore *)user;
+	DescListCtx *ctx = (DescListCtx *)user;
+	RCore *core = ctx->core;
 	RPrint *p = core->print;
 	RIODesc *desc = (RIODesc *)data;
 	ut64 sz = r_io_desc_size (desc);
@@ -1866,7 +1871,7 @@ static bool desc_list_visual_cb(void *user, void *data, ut32 id) {
 			(desc->io && (desc->io->desc == desc)) ? '*' : '-', r_str_rwx_i (desc->perm), sz);
 	int flags = p->flags;
 	p->flags &= ~R_PRINT_FLAGS_HEADER;
-	const int percent = (fdsz > 0) ? (sz * 100) / fdsz: 0;
+	const int percent = (ctx->fdsz > 0) ? (sz * 100) / ctx->fdsz: 0;
 	r_print_progressbar (p, percent, r_cons_get_size (core->cons, NULL) - 40, NULL);
 	p->flags = flags;
 	r_cons_printf (core->cons, " %s\n", desc->uri);
@@ -2491,9 +2496,9 @@ static int cmd_open(void *data, const char *input) {
 				}
 			}
 		} else { // "o="
-			fdsz = 0;
-			r_id_storage_foreach (&core->io->files, init_desc_list_visual_cb, core);
-			r_id_storage_foreach (&core->io->files, desc_list_visual_cb, core);
+			DescListCtx ctx = { core, 0 };
+			r_id_storage_foreach (&core->io->files, init_desc_list_visual_cb, &ctx);
+			r_id_storage_foreach (&core->io->files, desc_list_visual_cb, &ctx);
 		}
 		break;
 	case 'q': // "oq"
