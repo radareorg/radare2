@@ -3,6 +3,7 @@
 #include <r_lib.h>
 #include <r_bin.h>
 #include <r_vector.h>
+#include <r_vec.h>
 #include <sdb/ht_uu.h>
 
 #include "elf_specs.h"
@@ -83,6 +84,8 @@ typedef struct r_bin_elf_field_t {
 	char name[ELF_STRING_LENGTH];
 } RBinElfField;
 
+R_VEC_TYPE (RVecElfOff, Elf_(Off));
+
 typedef struct Elf_(dynamic_info) {
 	Elf_(Xword) dt_pltrelsz;
 	Elf_(Addr) dt_pltgot;
@@ -110,7 +113,7 @@ typedef struct Elf_(dynamic_info) {
 	Elf_(Xword) dt_flags_1;
 	Elf_(Xword) dt_rpath;
 	Elf_(Xword) dt_runpath;
-	RVector dt_needed;
+	RVecElfOff dt_needed;
 } RBinElfDynamicInfo;
 
 typedef struct r_bin_elf_lib_t {
@@ -118,7 +121,11 @@ typedef struct r_bin_elf_lib_t {
 } RBinElfLib;
 
 #include <r_vec.h>
+R_VEC_TYPE (RVecRBinElfSection, RBinElfSection);
+R_VEC_TYPE (RVecRBinElfReloc, RBinElfReloc);
 R_VEC_TYPE (RVecRBinElfSymbol, RBinElfSymbol);
+R_VEC_TYPE (RVecRBinElfLib, RBinElfLib);
+R_VEC_TYPE (RVecRBinElfField, RBinElfField);
 
 struct Elf_(obj_t) {
 	Elf_(Ehdr) ehdr;
@@ -165,21 +172,17 @@ struct Elf_(obj_t) {
 	HtUU *rel_cache;
 	ut32 g_reloc_num;
 	bool relocs_loaded;
-	RVector g_relocs;  // RBinElfReloc
+	RVecRBinElfReloc g_relocs;
 	RList *relocs_list;
 	bool sections_loaded;
 	bool sections_cached;
-#if R2_590
-	RVecRBinElfSection g_sections_elf;
-#else
-	RVector g_sections; // RBinElfSection
-#endif
-	RVector cached_sections; // RBinSection
+	RVecRBinElfSection g_sections;
+	RVecRBinSection cached_sections;
 	RBinElfSection *last_section; // RBinSection
 	bool libs_loaded;
-	RVector g_libs; // RBinElfLib
+	RVecRBinElfLib g_libs;
 	bool fields_loaded;
-	RVector g_fields;  // RBinElfField
+	RVecRBinElfField g_fields;
 	int limit;
 	char *osabi;
 };
@@ -213,12 +216,12 @@ char* Elf_(get_elf_class)(struct Elf_(obj_t) *bin);
 int Elf_(get_bits)(struct Elf_(obj_t) *bin);
 char* Elf_(get_osabi_name)(struct Elf_(obj_t) *bin);
 int Elf_(is_big_endian)(struct Elf_(obj_t) *bin);
-const RVector *Elf_(load_relocs)(struct Elf_(obj_t) *bin);  // RBinElfReloc
-const RVector* Elf_(load_libs)(struct Elf_(obj_t) *bin);  // RBinElfLib
-const RVector* Elf_(load_sections)(RBinFile *bf, ELFOBJ *eo);
+const RVecRBinElfReloc *Elf_(load_relocs)(struct Elf_(obj_t) *bin);
+const RVecRBinElfLib *Elf_(load_libs)(struct Elf_(obj_t) *bin);
+const RVecRBinSection *Elf_(load_sections)(RBinFile *bf, ELFOBJ *eo);
 bool Elf_(load_symbols)(ELFOBJ *eo);
 bool Elf_(load_imports)(ELFOBJ *eo);
-const RVector* Elf_(load_fields)(struct Elf_(obj_t) *bin);  // RBinElfField
+const RVecRBinElfField *Elf_(load_fields)(struct Elf_(obj_t) *bin);
 char *Elf_(get_rpath)(struct Elf_(obj_t) *bin);
 
 struct Elf_(obj_t)* Elf_(new)(const char* file, bool verbose);

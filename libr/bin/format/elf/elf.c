@@ -520,7 +520,7 @@ static void set_default_value_dynamic_info(ELFOBJ *eo) {
 	eo->dyn_info.dt_flags_1 = R_BIN_ELF_XWORD_MAX;
 	eo->dyn_info.dt_rpath = R_BIN_ELF_XWORD_MAX;
 	eo->dyn_info.dt_runpath = R_BIN_ELF_XWORD_MAX;
-	r_vector_init (&eo->dyn_info.dt_needed, sizeof (Elf_(Off)), NULL, NULL);
+	RVecElfOff_init (&eo->dyn_info.dt_needed);
 }
 
 static inline size_t get_maximum_number_of_dynamic_entries(ut64 dyn_size) {
@@ -629,7 +629,7 @@ static void fill_dynamic_entries(ELFOBJ *eo, ut64 loaded_offset, ut64 dyn_size) 
 			eo->dyn_info.dt_runpath = d.d_un.d_val;
 			break;
 		case DT_NEEDED:
-			r_vector_push (&eo->dyn_info.dt_needed, &d.d_un.d_val);
+			RVecElfOff_push_back (&eo->dyn_info.dt_needed, &d.d_un.d_val);
 			break;
 		case DT_INIT:
 		case DT_FINI:
@@ -728,11 +728,7 @@ static RBinElfSection* get_section_by_name(ELFOBJ *eo, const char *name) {
 			return eo->last_section;
 		}
 		RBinElfSection *sec;
-#if R2_590
-		R_VEC_FOREACH (eo->g_sections_vec, sec) {
-#else
-		r_vector_foreach (&eo->g_sections, sec) {
-#endif
+		R_VEC_FOREACH (&eo->g_sections, sec) {
 			if (!strcmp (sec->name, name)) {
 				eo->last_section = sec;
 				return sec;
@@ -1555,7 +1551,7 @@ static bool init_dynstr(ELFOBJ *eo) {
 	return false;
 }
 
-static const RVector *_load_elf_sections(ELFOBJ *eo);
+static const RVecRBinElfSection *_load_elf_sections(ELFOBJ *eo);
 
 static void relro_insdb(ELFOBJ *eo) {
 	int r = Elf_(has_relro) (eo);
@@ -1943,7 +1939,7 @@ static ut64 get_import_addr(ELFOBJ *eo, int sym) {
 		return UT64_MAX;
 	}
 	// lookup the right rel/rela entry
-	RBinElfReloc *rel = r_vector_at (&eo->g_relocs, index - 1);
+	RBinElfReloc *rel = RVecRBinElfReloc_at (&eo->g_relocs, index - 1);
 	if (!rel) {
 		return UT64_MAX;
 	}
@@ -3034,9 +3030,9 @@ static char* guess_osabi_name(ELFOBJ *eo) {
 	}
 	// if a lib is "liblog.so", lets assume android again.
 	RBinElfLib *it;
-	const RVector *libs = Elf_(load_libs)(eo);
+	const RVecRBinElfLib *libs = Elf_(load_libs)(eo);
 	if (libs) {
-		r_vector_foreach (libs, it) {
+		R_VEC_FOREACH (libs, it) {
 			if (!strcmp (it->name, "liblog.so")) {
 				return strdup ("android");
 			}
@@ -3174,13 +3170,13 @@ char *Elf_(get_rpath)(ELFOBJ *eo) {
 }
 
 static bool has_valid_section_header(ELFOBJ *eo, size_t pos) {
-	RBinElfSection *section = r_vector_at (&eo->g_sections, pos);
+	RBinElfSection *section = RVecRBinElfSection_at (&eo->g_sections, pos);
 	return section->info < eo->ehdr.e_shnum && eo->shdr;
 }
 
 static void fix_rva_and_offset_relocable_file(ELFOBJ *eo, RBinElfReloc *r, size_t pos) {
 	if (has_valid_section_header (eo, pos)) {
-		RBinElfSection *section = r_vector_at (&eo->g_sections, pos);
+		RBinElfSection *section = RVecRBinElfSection_at (&eo->g_sections, pos);
 		size_t idx = section->info;
 		if (idx < eo->ehdr.e_shnum) {
 			ut64 pa = eo->shdr[idx].sh_offset + r->offset;
@@ -3524,7 +3520,7 @@ static bool section_is_valid(ELFOBJ *eo, RBinElfSection *sect) {
 }
 
 static Elf_(Xword) get_section_mode(ELFOBJ *eo, size_t pos) {
-	RBinElfSection *section = r_vector_at (&eo->g_sections, pos);
+	RBinElfSection *section = RVecRBinElfSection_at (&eo->g_sections, pos);
 	if (r_str_startswith (section->name, ".rela.")) {
 		return DT_RELA;
 	}
@@ -3555,7 +3551,7 @@ static size_t get_num_relocs_sections(ELFOBJ *eo) {
 	size_t ret = 0;
 	size_t i = 0;
 	RBinElfSection *section;
-	r_vector_foreach (&eo->g_sections, section) {
+	R_VEC_FOREACH (&eo->g_sections, section) {
 		if (!section_is_valid (eo, section)) {
 			i++;
 			continue;
@@ -3592,17 +3588,17 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 	// order matters
 	// parse pltrel
 	for (offset = 0; offset < offset_end && pos < num_relocs; offset += size, pos++) {
-		RBinElfReloc *reloc = r_vector_end (&eo->g_relocs);
+		RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
 		if (!reloc) {
 			break;
 		}
 		if (!read_reloc (eo, reloc, eo->dyn_info.dt_pltrel, eo->dyn_info.dt_jmprel + offset)) {
-			r_vector_pop (&eo->g_relocs, NULL);
+			RVecRBinElfReloc_pop_back (&eo->g_relocs);
 			break;
 		}
 
 		// XXX reloc is a weak pointer we can't own it!
-		int index = r_vector_index (&eo->g_relocs);
+		int index = (int)RVecRBinElfReloc_length (&eo->g_relocs) - 1;
 		ht_uu_insert (eo->rel_cache, reloc->sym + 1, index + 1);
 		fix_rva_and_offset_exec_file (eo, reloc);
 	}
@@ -3610,15 +3606,15 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 	if (eo->dyn_info.dt_relr != R_BIN_ELF_ADDR_MAX) {
 		offset = 0;
 		while (offset < eo->dyn_info.dt_relrsz && pos < num_relocs) {
-			RBinElfReloc *reloc = r_vector_end (&eo->g_relocs);
+			RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
 			if (!read_reloc (eo, reloc, DT_RELR, eo->dyn_info.dt_relr + offset)) {
 				// If read_reloc fails for RELR, it might be processing a bitmap entry
 				// Try the next entry
-				r_vector_pop (&eo->g_relocs, NULL);
+				RVecRBinElfReloc_pop_back (&eo->g_relocs);
 				offset += sizeof (Elf_(Addr));
 				continue;
 			}
-			int index = r_vector_index (&eo->g_relocs);
+			int index = (int)RVecRBinElfReloc_length (&eo->g_relocs) - 1;
 			ht_uu_insert (eo->rel_cache, reloc->sym + 1, index + 1);
 			fix_rva_and_offset_exec_file (eo, reloc);
 			pos++;
@@ -3627,23 +3623,23 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 	}
 	// parse rela
 	for (offset = 0; offset < eo->dyn_info.dt_relasz && pos < num_relocs; offset += eo->dyn_info.dt_relaent, pos++) {
-		RBinElfReloc *reloc = r_vector_end (&eo->g_relocs);
+		RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
 		if (!read_reloc (eo, reloc, DT_RELA, eo->dyn_info.dt_rela + offset)) {
-			r_vector_pop (&eo->g_relocs, NULL);
+			RVecRBinElfReloc_pop_back (&eo->g_relocs);
 			break;
 		}
-		int index = r_vector_index (&eo->g_relocs);
+		int index = (int)RVecRBinElfReloc_length (&eo->g_relocs) - 1;
 		ht_uu_insert (eo->rel_cache, reloc->sym + 1, index + 1);
 		fix_rva_and_offset_exec_file (eo, reloc);
 	}
 
 	for (offset = 0; offset < eo->dyn_info.dt_relsz && pos < num_relocs; offset += eo->dyn_info.dt_relent, pos++) {
-		RBinElfReloc *reloc = r_vector_end (&eo->g_relocs);
+		RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
 		if (!read_reloc (eo, reloc, DT_REL, eo->dyn_info.dt_rel + offset)) {
-			r_vector_pop (&eo->g_relocs, NULL);
+			RVecRBinElfReloc_pop_back (&eo->g_relocs);
 			break;
 		}
-		int index = r_vector_index (&eo->g_relocs);
+		int index = (int)RVecRBinElfReloc_length (&eo->g_relocs) - 1;
 		ht_uu_insert (eo->rel_cache, reloc->sym + 1, index + 1);
 		fix_rva_and_offset_exec_file (eo, reloc);
 	}
@@ -3652,12 +3648,12 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 		// CREL uses variable-length encoding, so we can't use the same approach as above
 		ut64 next_offset = 0;
 		while (pos < num_relocs) {
-			RBinElfReloc *reloc = r_vector_end (&eo->g_relocs);
+			RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
 			if (!read_crel_reloc (eo, reloc, eo->dyn_info.dt_crel + next_offset, &next_offset)) {
-				r_vector_pop (&eo->g_relocs, NULL);
+				RVecRBinElfReloc_pop_back (&eo->g_relocs);
 				break;
 			}
-			int index = r_vector_index (&eo->g_relocs);
+			int index = (int)RVecRBinElfReloc_length (&eo->g_relocs) - 1;
 			ht_uu_insert (eo->rel_cache, reloc->sym + 1, index + 1);
 			// For CREL relocations from dynamic table, we need to convert offset to address
 			ut64 vaddr = Elf_(p2v) (eo, reloc->offset);
@@ -3733,7 +3729,7 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, size_t pos, size_t
 
 	size_t i = 0;
 	RBinElfSection *section;
-	r_vector_foreach (&eo->g_sections, section) {
+	R_VEC_FOREACH (&eo->g_sections, section) {
 		Elf_(Xword) rel_mode = get_section_mode (eo, i);
 		if (!is_reloc_section (rel_mode)) {
 			i++;
@@ -3750,21 +3746,21 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, size_t pos, size_t
 			ut64 j = 0;
 			// Process all CREL relocations in the section
 			while (j < section->size && pos <= num_relocs) {
-				RBinElfReloc *reloc = r_vector_end (&eo->g_relocs);
+				RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
 				if (!read_crel_reloc (eo, reloc, section->rva + j, &next_offset)) {
 					// If read_crel_reloc returns false, either we're done or encountered an error
 					// In either case, break the loop
-					r_vector_pop (&eo->g_relocs, NULL);
+					RVecRBinElfReloc_pop_back (&eo->g_relocs);
 					break;
 				}
 
-				int index = r_vector_index (&eo->g_relocs);
+				int index = (int)RVecRBinElfReloc_length (&eo->g_relocs) - 1;
 				ht_uu_insert (eo->rel_cache, reloc->sym, index);
 				// For CREL relocations from sections, make sure rva is properly set
 				if (is_bin_etrel (eo)) {
 					// For relocatable files, find target section
 					if (has_valid_section_header (eo, i)) {
-						RBinElfSection *target_section = r_vector_at (&eo->g_sections, i);
+						RBinElfSection *target_section = RVecRBinElfSection_at (&eo->g_sections, i);
 						size_t idx = target_section->info;
 						if (idx < eo->ehdr.e_shnum) {
 							// Map file offset to virtual address in target section
@@ -3794,13 +3790,13 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, size_t pos, size_t
 				j < section->size && pos <= dim_relocs;
 				j = get_next_not_analysed_offset (eo, section->rva, j + size)) {
 
-				RBinElfReloc *reloc = r_vector_end (&eo->g_relocs);
+				RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
 				if (!read_reloc (eo, reloc, rel_mode, section->rva + j)) {
-					r_vector_pop (&eo->g_relocs, NULL);
+					RVecRBinElfReloc_pop_back (&eo->g_relocs);
 					break;
 				}
 
-				int index = r_vector_index (&eo->g_relocs);
+				int index = (int)RVecRBinElfReloc_length (&eo->g_relocs) - 1;
 				ht_uu_insert (eo->rel_cache, reloc->sym, index);
 				fix_rva_and_offset (eo, reloc, i);
 				pos++;
@@ -3814,15 +3810,15 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, size_t pos, size_t
 }
 
 static bool populate_relocs_record(ELFOBJ *eo) {
-	r_vector_init (&eo->g_relocs, sizeof (RBinElfReloc), NULL, NULL);
+	RVecRBinElfReloc_init (&eo->g_relocs);
 	size_t num_relocs = get_num_relocs_approx (eo);
 
-	if (!r_vector_reserve (&eo->g_relocs, num_relocs)) {
+	if (!RVecRBinElfReloc_reserve (&eo->g_relocs, num_relocs)) {
 		// In case we can't allocate enough memory for all the claimed
 		// relocation entries, try to parse only the ones specified in
 		// the dynamic segment.
 		num_relocs = get_num_relocs_dynamic (eo);
-		if (!r_vector_reserve (&eo->g_relocs, num_relocs)) {
+		if (!RVecRBinElfReloc_reserve (&eo->g_relocs, num_relocs)) {
 			return false;
 		}
 	}
@@ -3834,7 +3830,7 @@ static bool populate_relocs_record(ELFOBJ *eo) {
 	return true;
 }
 
-const RVector *Elf_(load_relocs) (ELFOBJ *eo) {
+const RVecRBinElfReloc *Elf_(load_relocs) (ELFOBJ *eo) {
 	R_RETURN_VAL_IF_FAIL (eo, NULL);
 	if (eo->relocs_loaded) {
 		return &eo->g_relocs;
@@ -3846,7 +3842,7 @@ const RVector *Elf_(load_relocs) (ELFOBJ *eo) {
 	return &eo->g_relocs;
 }
 
-const RVector* Elf_(load_libs)(ELFOBJ *eo) {
+const RVecRBinElfLib* Elf_(load_libs)(ELFOBJ *eo) {
 	R_RETURN_VAL_IF_FAIL (eo, NULL);
 
 	if (eo->libs_loaded) {
@@ -3854,17 +3850,17 @@ const RVector* Elf_(load_libs)(ELFOBJ *eo) {
 	}
 
 	eo->libs_loaded = true;
-	r_vector_init (&eo->g_libs, sizeof (RBinElfLib), NULL, NULL);
+	RVecRBinElfLib_init (&eo->g_libs);
 
 	if (!eo->phdr || !eo->strtab || (eo->strtab[0] && eo->strtab[1] == '0')) {
 		return NULL;
 	}
 
 	Elf_(Off) *it = NULL;
-	r_vector_foreach (&eo->dyn_info.dt_needed, it) {
+	R_VEC_FOREACH (&eo->dyn_info.dt_needed, it) {
 		Elf_(Off) val = *it;
 		if (val > eo->strtab_size) {
-			r_vector_clear (&eo->g_libs);
+			RVecRBinElfLib_clear (&eo->g_libs);
 			return NULL;
 		}
 
@@ -3873,7 +3869,7 @@ const RVector* Elf_(load_libs)(ELFOBJ *eo) {
 			continue;
 		}
 
-		RBinElfLib *lib = r_vector_end (&eo->g_libs);
+		RBinElfLib *lib = RVecRBinElfLib_emplace_back (&eo->g_libs);
 		r_str_ncpy (lib->name, name, ELF_STRING_LENGTH);
 		lib->name[ELF_STRING_LENGTH - 1] = '\0';
 	}
@@ -3884,7 +3880,7 @@ const RVector* Elf_(load_libs)(ELFOBJ *eo) {
 static void create_section_from_phdr(ELFOBJ *eo, const char *name, ut64 addr, ut64 sz) {
 	R_RETURN_IF_FAIL (eo);
 	if (addr && addr != UT64_MAX) {
-		RBinElfSection *section = r_vector_end (&eo->g_sections);
+		RBinElfSection *section = RVecRBinElfSection_emplace_back (&eo->g_sections);
 		section->offset = Elf_(v2p_new) (eo, addr);
 		section->rva = addr;
 		section->size = sz;
@@ -3892,7 +3888,7 @@ static void create_section_from_phdr(ELFOBJ *eo, const char *name, ut64 addr, ut
 	}
 }
 
-static const RVector *load_sections_from_phdr(ELFOBJ *eo) {
+static const RVecRBinElfSection *load_sections_from_phdr(ELFOBJ *eo) {
 	R_RETURN_VAL_IF_FAIL (eo && eo->phdr, NULL);
 
 	if (!eo->ehdr.e_phnum) {
@@ -3937,7 +3933,7 @@ static const RVector *load_sections_from_phdr(ELFOBJ *eo) {
 		num_sections++;
 	}
 
-	if (!r_vector_reserve (&eo->g_sections, num_sections)) {
+	if (!RVecRBinElfSection_reserve (&eo->g_sections, num_sections)) {
 		return NULL;
 	}
 
@@ -3949,14 +3945,14 @@ static const RVector *load_sections_from_phdr(ELFOBJ *eo) {
 	return &eo->g_sections;
 }
 
-static const RVector *_load_elf_sections(ELFOBJ *eo) {
+static const RVecRBinElfSection *_load_elf_sections(ELFOBJ *eo) {
 	R_RETURN_VAL_IF_FAIL (eo, NULL);
 	if (eo->sections_loaded) {
 		return &eo->g_sections;
 	}
 
 	eo->sections_loaded = true;
-	r_vector_init (&eo->g_sections, sizeof (RBinElfSection), NULL, NULL);
+	RVecRBinElfSection_init (&eo->g_sections);
 
 	if (!eo->shdr && eo->phdr) {
 		// we don't give up search in phdr section
@@ -3968,14 +3964,14 @@ static const RVector *_load_elf_sections(ELFOBJ *eo) {
 	}
 
 	ut32 count = eo->ehdr.e_shnum;
-	if (!r_vector_reserve (&eo->g_sections, count)) {
+	if (!RVecRBinElfSection_reserve (&eo->g_sections, count)) {
 		return NULL;
 	}
 
 	int unknown_count = 0, invalid_count = 0;
 	int i;
 	for (i = 0; i < count; i++) {
-		RBinElfSection *section = r_vector_end (&eo->g_sections);
+		RBinElfSection *section = RVecRBinElfSection_emplace_back (&eo->g_sections);
 		section->offset = eo->shdr[i].sh_offset;
 		section->size = eo->shdr[i].sh_size;
 		section->align = eo->shdr[i].sh_addralign;
@@ -4277,12 +4273,12 @@ static char *setphname(ut16 mach, Elf_(Word) ptyp) {
 	return strdup (s);
 }
 
-static void _store_bin_sections(ELFOBJ *eo, const RVector *elf_bin_sections) {
-	r_vector_reserve (&eo->cached_sections, r_vector_length (elf_bin_sections));
+static void _store_bin_sections(ELFOBJ *eo, const RVecRBinElfSection *elf_bin_sections) {
+	RVecRBinSection_reserve (&eo->cached_sections, RVecRBinElfSection_length (elf_bin_sections));
 
 	RBinElfSection *section;
-	r_vector_foreach (elf_bin_sections, section) {
-		RBinSection *ptr = r_vector_end (&eo->cached_sections);
+	R_VEC_FOREACH (elf_bin_sections, section) {
+		RBinSection *ptr = RVecRBinSection_emplace_back (&eo->cached_sections);
 		if (!ptr) {
 			break;
 		}
@@ -4330,7 +4326,7 @@ static bool _add_sections_from_phdr(RBinFile *bf, ELFOBJ *eo, bool *found_load) 
 	ut16 mach = eo->ehdr.e_machine;
 
 	ut64 num = Elf_(get_phnum) (eo);
-	if (!r_vector_reserve (&eo->cached_sections, r_vector_length (&eo->cached_sections) + num)) {
+	if (!RVecRBinSection_reserve (&eo->cached_sections, RVecRBinSection_length (&eo->cached_sections) + num)) {
 		return false;
 	}
 
@@ -4343,7 +4339,7 @@ static bool _add_sections_from_phdr(RBinFile *bf, ELFOBJ *eo, bool *found_load) 
 	int i = 0, n = 0;
 
 	for (i = 0; i < num; i++) {
-		RBinSection *ptr = r_vector_end (&eo->cached_sections);
+		RBinSection *ptr = RVecRBinSection_emplace_back (&eo->cached_sections);
 		if (!ptr) {
 			return false;
 		}
@@ -4435,7 +4431,7 @@ static bool _add_sections_from_phdr(RBinFile *bf, ELFOBJ *eo, bool *found_load) 
 
 static void _add_ehdr_section(RBinFile *bf, ELFOBJ *eo) {
 	// add entry for ehdr
-	RBinSection *ptr = r_vector_end (&eo->cached_sections);
+	RBinSection *ptr = RVecRBinSection_emplace_back (&eo->cached_sections);
 	if (!ptr) {
 		return;
 	}
@@ -4454,7 +4450,7 @@ static void _add_ehdr_section(RBinFile *bf, ELFOBJ *eo) {
 	ptr->is_segment = true;
 }
 
-static void _cache_bin_sections(RBinFile *bf, ELFOBJ *eo, const RVector *elf_bin_sections) {
+static void _cache_bin_sections(RBinFile *bf, ELFOBJ *eo, const RVecRBinElfSection *elf_bin_sections) {
 	if (elf_bin_sections) {
 		_store_bin_sections (eo, elf_bin_sections);
 	}
@@ -4468,13 +4464,13 @@ static void _cache_bin_sections(RBinFile *bf, ELFOBJ *eo, const RVector *elf_bin
 		}
 	}
 
-	if (r_vector_empty (&eo->cached_sections)) {
+	if (RVecRBinSection_empty (&eo->cached_sections)) {
 		if (!bf->size) {
 			ELFOBJ *eo = bf->bo->bin_obj;
 			bf->size = eo? eo->size: 0x9999;
 		}
 		if (!found_load) {
-			RBinSection *ptr = r_vector_end (&eo->cached_sections);
+			RBinSection *ptr = RVecRBinSection_emplace_back (&eo->cached_sections);
 			if (!ptr) {
 				return;
 			}
@@ -4491,18 +4487,12 @@ static void _cache_bin_sections(RBinFile *bf, ELFOBJ *eo, const RVector *elf_bin
 	_add_ehdr_section (bf, eo);
 }
 
-static void _fini_bin_section(RBinSection *section, void *user) {
-	if (section) {
-		free (section->name);
-		free (section->format);
-	}
-}
 
-const RVector* Elf_(load_sections)(RBinFile *bf, ELFOBJ *eo) {
+const RVecRBinSection* Elf_(load_sections)(RBinFile *bf, ELFOBJ *eo) {
 	R_RETURN_VAL_IF_FAIL (bf && eo, NULL);
 	if (!eo->sections_cached) {
-		const RVector *sections = _load_elf_sections (eo);
-		r_vector_init (&eo->cached_sections, sizeof (RBinSection), (RVectorFree) _fini_bin_section, NULL);
+		const RVecRBinElfSection *sections = _load_elf_sections (eo);
+		RVecRBinSection_init (&eo->cached_sections);
 		_cache_bin_sections (bf, eo, sections);
 		eo->sections_cached = true;
 	}
@@ -4957,7 +4947,7 @@ RBinSymbol *Elf_(convert_symbol)(ELFOBJ *eo, RBinElfSymbol *symbol) {
 static RBinElfSection *getsection_byname(ELFOBJ *eo, const char *name, size_t *_i) {
 	RBinElfSection *s;
 	size_t i = 0;
-	r_vector_foreach (&eo->g_sections, s) {
+	R_VEC_FOREACH (&eo->g_sections, s) {
 		if (!strcmp (s->name, name)) {
 			return s;
 		}
@@ -5438,7 +5428,7 @@ bool Elf_(load_imports)(ELFOBJ *eo) {
 	return eo->g_imports_vec != NULL;
 }
 
-const RVector* Elf_(load_fields)(ELFOBJ *eo) {
+const RVecRBinElfField* Elf_(load_fields)(ELFOBJ *eo) {
 	R_RETURN_VAL_IF_FAIL (eo, NULL);
 
 	if (eo->fields_loaded) {
@@ -5446,28 +5436,28 @@ const RVector* Elf_(load_fields)(ELFOBJ *eo) {
 	}
 
 	eo->fields_loaded = true;
-	r_vector_init (&eo->g_fields, sizeof (RBinElfLib), NULL, NULL);
+	RVecRBinElfField_init (&eo->g_fields);
 
 	ut64 num_fields = eo->ehdr.e_phnum + 3;
-	if (!(r_vector_reserve (&eo->g_fields, num_fields))) {
+	if (!(RVecRBinElfField_reserve (&eo->g_fields, num_fields))) {
 		return NULL;
 	}
 
-	RBinElfField *new_field = r_vector_end (&eo->g_fields);
+	RBinElfField *new_field = RVecRBinElfField_emplace_back (&eo->g_fields);
 	r_str_ncpy (new_field->name, "ehdr", ELF_STRING_LENGTH);
 	new_field->offset = 0;
 
-	new_field = r_vector_end (&eo->g_fields);
+	new_field = RVecRBinElfField_emplace_back (&eo->g_fields);
 	r_str_ncpy (new_field->name, "shoff", ELF_STRING_LENGTH);
 	new_field->offset = eo->ehdr.e_shoff;
 
-	new_field = r_vector_end (&eo->g_fields);
+	new_field = RVecRBinElfField_emplace_back (&eo->g_fields);
 	r_str_ncpy (new_field->name, "phoff", ELF_STRING_LENGTH);
 	new_field->offset = eo->ehdr.e_phoff;
 
 	int i;
 	for (i = 0; eo->phdr && i < eo->ehdr.e_phnum; i++) {
-		new_field = r_vector_end (&eo->g_fields);
+		new_field = RVecRBinElfField_emplace_back (&eo->g_fields);
 		snprintf (new_field->name, ELF_STRING_LENGTH, "phdr_%i", i);
 		new_field->offset = eo->phdr[i].p_offset;
 	}
@@ -5497,7 +5487,7 @@ void Elf_(free)(ELFOBJ* eo) {
 	free (eo->strtab);
 	free (eo->shstrtab);
 	free (eo->dynstr);
-	r_vector_fini (&eo->dyn_info.dt_needed);
+	RVecElfOff_fini (&eo->dyn_info.dt_needed);
 	//free (eo->strtab_section);
 	if (eo->imports_by_ord) {
 		size_t i;
@@ -5524,31 +5514,36 @@ void Elf_(free)(ELFOBJ* eo) {
 	eo->g_imports_vec = NULL;
 #if 0
 	// R2_590
-	r_vector_free (eo->g_symbols);
+	RVecRBinElfSymbol_free (&eo->g_symbols);
 	eo->g_symbols = NULL;
 	// eo->phdr_symbols = NULL;
 
 	if (eo->phdr_imports != eo->g_imports) {
-		r_vector_free (eo->phdr_imports);
+		RVecElfOff_free (&eo->phdr_imports);
 	}
 	eo->phdr_imports = NULL;
-	r_vector_free (eo->g_imports);
+	RVecElfOff_free (&eo->g_imports);
 	eo->g_imports = NULL;
 #endif
 	if (eo->sections_loaded) {
-		r_vector_fini (&eo->g_sections);
+		RVecRBinElfSection_fini (&eo->g_sections);
 	}
 	if (eo->sections_cached) {
-		r_vector_fini (&eo->cached_sections);
+		RBinSection *iter;
+		R_VEC_FOREACH (&eo->cached_sections, iter) {
+			free (iter->name);
+			free (iter->format);
+		}
+		RVecRBinSection_fini (&eo->cached_sections);
 	}
 	if (eo->libs_loaded) {
-		r_vector_fini (&eo->g_libs);
+		RVecRBinElfLib_fini (&eo->g_libs);
 	}
 	if (eo->relocs_loaded) {
-		r_vector_fini (&eo->g_relocs);
+		RVecRBinElfReloc_fini (&eo->g_relocs);
 	}
 	if (eo->fields_loaded) {
-		r_vector_fini (&eo->g_fields);
+		RVecRBinElfField_fini (&eo->g_fields);
 	}
 	ht_uu_free (eo->rel_cache);
 	eo->rel_cache = NULL;
@@ -5853,7 +5848,7 @@ static bool reloc_fill_local_address(ELFOBJ *eo) {
 	RBinElfSection *s;
 
 	// find got/plt section bounadries
-	r_vector_foreach (&eo->g_sections, s) {
+	R_VEC_FOREACH (&eo->g_sections, s) {
 		if (!strcmp (s->name, ".got")) {
 			ri.got = true;
 			ri.got_min = s->offset;
@@ -5879,7 +5874,7 @@ static bool reloc_fill_local_address(ELFOBJ *eo) {
 	}
 	int index = -2;
 	// resolve got and plt
-	r_vector_foreach (&eo->g_relocs, reloc) {
+	R_VEC_FOREACH (&eo->g_relocs, reloc) {
 		const ut64 raddr = reloc->offset;
 		if (raddr < ri.got_min || raddr >= ri.got_max) {
 			continue;
