@@ -198,8 +198,9 @@ static void pal_refresh(RCons *cons, bool rain) {
 	}
 }
 
-R_API void r_cons_permstr(RCons *cons, int perm, bool color_enabled, char *buf, size_t buf_sz) {
-	const char *perm_str = r_str_rwx_i (perm);
+// Format permission string with optional coloring
+R_API void r_cons_perm(RCons *cons, int perm, bool color_enabled, bool with_dash, char *buf, size_t buf_sz) {
+	const char *perm_str = r_str_perm (perm, with_dash);
 	if (!color_enabled || !cons || !(perm & (R_PERM_RWX | R_PERM_SHAR))) {
 		strncpy (buf, perm_str, buf_sz - 1);
 		buf[buf_sz - 1] = 0;
@@ -214,6 +215,11 @@ R_API void r_cons_permstr(RCons *cons, int perm, bool color_enabled, char *buf, 
 		color = cons->context->pal.ai_read;
 	}
 	snprintf (buf, buf_sz, "%s%s%s", color, perm_str, Color_RESET);
+}
+
+// Deprecated: use r_cons_perm(cons, perm, color, false, buf, sz) instead
+R_API void r_cons_permstr(RCons *cons, int perm, bool color_enabled, char *buf, size_t buf_sz) {
+	r_cons_perm (cons, perm, color_enabled, false, buf, buf_sz);
 }
 
 R_API void r_cons_pal_init(RCons *cons) {
