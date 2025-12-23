@@ -844,6 +844,7 @@ R_API void r_cons_canvas_line_back_edge(RConsCanvas *c, int x, int y, int x2, in
 R_API RCons *r_cons_new(void);
 R_API RCons *r_cons_singleton(void); // DEPRECATE
 R_API RCons *r_cons_global(RCons * R_NULLABLE c); // same as singleton? but taking nullable arg?
+R_API void r_cons_permstr(RCons *cons, int perm, bool color_enabled, char *buf, size_t buf_sz);
 R_API int r_cons_get_size(RCons *cons, int *rows);
 R_API const RConsTheme *r_cons_themes(void);
 R_API void r_cons_free(RCons *cons);

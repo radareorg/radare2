@@ -7,7 +7,7 @@
 /* Print out the JSON body for memory maps in the passed map region */
 static void print_debug_map_json(RDebugMap *map, PJ *pj) {
 	pj_o (pj);
-	if (map->name && *map->name) {
+	if (R_STR_ISNOTEMPTY (map->name)) {
 		pj_ks (pj, "name", map->name);
 	}
 	if (map->file && *map->file) {
@@ -28,17 +28,22 @@ static void print_debug_map_line_header(RDebug *dbg, const char *input) {
 /* Write a single memory map line to the console */
 static void print_debug_map_line(RDebug *dbg, RDebugMap *map, ut64 addr, const char *input) {
 	char humansz[8];
+	RCore *core = dbg->coreb.core;
+	RCons *cons = core ? core->cons : NULL;
+	bool color_enabled = cons != NULL;
 	if (input[0] == 'q') { // "dmq"
-		char *name = (map->name && *map->name)
+		char *name = R_STR_ISNOTEMPTY (map->name)
 			? r_str_newf ("%s.%s", map->name, r_str_rwx_i (map->perm))
 			: r_str_newf ("%08" PFMT64x ".%s", map->addr, r_str_rwx_i (map->perm));
 		r_name_filter (name, 0);
 		r_num_units (humansz, sizeof (humansz), map->addr_end - map->addr);
+		char perm_str[16];
+		r_cons_permstr (cons, map->perm, color_enabled, perm_str, sizeof (perm_str));
 		dbg->cb_printf ("0x%016" PFMT64x " - 0x%016" PFMT64x " %6s %5s %s\n",
 			map->addr,
 			map->addr_end,
 			humansz,
-			r_str_rwx_i (map->perm),
+			perm_str,
 			name
 		);
 		free (name);
@@ -61,6 +66,8 @@ static void print_debug_map_line(RDebug *dbg, RDebugMap *map, ut64 addr, const c
 			free (filtered_name);
 		}
 		r_num_units (humansz, sizeof (humansz), map->size);
+		char perm_str[16];
+		r_cons_permstr (cons, map->perm, color_enabled, perm_str, sizeof (perm_str));
 		dbg->cb_printf (fmtstr,
 			map->addr,
 			map->addr_end,
@@ -68,7 +75,7 @@ static void print_debug_map_line(RDebug *dbg, RDebugMap *map, ut64 addr, const c
 			type,
 			humansz,
 			map->user ? 'u' : 's',
-			r_str_rwx_i (map->perm),
+			perm_str,
 			r_str_get_fail (map->name, "?"),
 			r_str_get_fail (map->file, "?"),
 			*flagname ? " ; " : "",
