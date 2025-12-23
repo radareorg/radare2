@@ -6,23 +6,23 @@
 
 /* stable code */
 static const char *const rwxstr[] = {
-	[0] = "---",
-	[1] = "--x",
-	[2] = "-w-",
-	[3] = "-wx",
-	[4] = "r--",
-	[5] = "r-x",
-	[6] = "rw-",
-	[7] = "rwx",
+	[0] = "----",
+	[1] = "---x",
+	[2] = "-w--",
+	[3] = "-w-x",
+	[4] = "-r--",
+	[5] = "-r-x",
+	[6] = "-rw-",
+	[7] = "-rwx",
 
-	[8] = "---",
-	[9] = "--x",
-	[10] = "-w-",
-	[11] = "-wx",
-	[12] = "r--",
-	[13] = "r-x",
-	[14] = "rw-",
-	[15] = "rwx",
+	[8] = "s---",
+	[9] = "s--x",
+	[10] = "sw--",
+	[11] = "sw-x",
+	[12] = "sr--",
+	[13] = "sr-x",
+	[14] = "srw-",
+	[15] = "srwx",
 };
 
 // equal string, same case
@@ -223,10 +223,11 @@ R_API int r_str_rwx(const char *str) {
 
 // Returns the string representation of the permission of the inputted integer.
 R_API const char *r_str_rwx_i(int rwx) {
-	if (rwx < 0 || rwx >= R_ARRAY_SIZE (rwxstr)) {
-		rwx = 0;
+	int idx = (rwx & R_PERM_RWX) | ((rwx & R_PERM_SHAR) ? 8 : 0);
+	if (idx < 0 || idx >= (int)R_ARRAY_SIZE (rwxstr)) {
+		idx = 0;
 	}
-	return rwxstr[rwx % 24]; // 15 for srwx
+	return rwxstr[idx];
 }
 
 // If up is true, upcase all characters in the string, otherwise downcase all

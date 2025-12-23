@@ -3392,7 +3392,7 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 	int plimit = filesize? R_MIN (filesize, bin_hashlimit): bin_hashlimit;
 	const bool use_color = r_config_get_i (core->config, "scr.color") > 0;
 	r_list_foreach (sections, iter, section) {
-		char perms[] = "----";
+		const char *perms = r_str_rwx_i (section->perm);
 		int va_sect = va;
 
 		if (va && ! (section->perm & R_PERM_R)) {
@@ -3414,19 +3414,6 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 
 		if (section->is_segment != print_segments) {
 			continue;
-		}
-		// XXX use r_str_perm instead of doing it here imho
-		if (section->perm & R_PERM_SHAR) {
-			perms[0] = 's';
-		}
-		if (section->perm & R_PERM_R) {
-			perms[1] = 'r';
-		}
-		if (section->perm & R_PERM_W) {
-			perms[2] = 'w';
-		}
-		if (section->perm & R_PERM_X) {
-			perms[3] = 'x';
 		}
 		const char *arch = NULL;
 		int bits = 0;
