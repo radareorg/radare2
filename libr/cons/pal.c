@@ -198,6 +198,24 @@ static void pal_refresh(RCons *cons, bool rain) {
 	}
 }
 
+R_API void r_cons_permstr(RCons *cons, int perm, bool color_enabled, char *buf, size_t buf_sz) {
+	const char *perm_str = r_str_rwx_i (perm);
+	if (!color_enabled || !cons || !(perm & R_PERM_RWX)) {
+		strncpy (buf, perm_str, buf_sz - 1);
+		buf[buf_sz - 1] = 0;
+		return;
+	}
+	const char *color = "";
+	if (perm & R_PERM_X) {
+		color = cons->context->pal.ai_exec;
+	} else if (perm & R_PERM_W) {
+		color = cons->context->pal.ai_write;
+	} else if (perm & R_PERM_R) {
+		color = cons->context->pal.ai_read;
+	}
+	snprintf (buf, buf_sz, "%s%s%s", color, perm_str, Color_RESET);
+}
+
 R_API void r_cons_pal_init(RCons *cons) {
 	RConsContext *ctx = cons->context;
 	size_t i;

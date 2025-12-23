@@ -3390,6 +3390,7 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 		io_section_info = r_list_newf ((RListFree)free);
 	}
 	int plimit = filesize? R_MIN (filesize, bin_hashlimit): bin_hashlimit;
+	const bool use_color = r_config_get_i (core->config, "scr.color") > 0;
 	r_list_foreach (sections, iter, section) {
 		char perms[] = "----";
 		int va_sect = va;
@@ -3534,10 +3535,12 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 				} else if (core->bin->options.verbose) {
 					R_LOG_ERROR ("Section at 0x%08" PFMT64x " larger than bin.hashlimit", section->paddr);
 				}
-			}
-			r_cons_printf (core->cons, "0x%08" PFMT64x " 0x%08" PFMT64x " %s %s%s%s\n",
+				}
+				char disp_perms[64];
+				r_cons_permstr (core->cons, section->perm, use_color, disp_perms, sizeof (disp_perms));
+				r_cons_printf (core->cons, "0x%08" PFMT64x " 0x%08" PFMT64x " %s %s%s%s\n",
 				addr, addr + section->size,
-				perms,
+				disp_perms,
 				r_str_get (hashstr), hashstr? " ": "",
 				section->name);
 			free (hashstr);
@@ -3609,16 +3612,18 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 			if (R_STR_ISEMPTY (stype)) {
 				stype = print_segments? "MAP": "----";
 			}
+			char disp_perms[64];
+			r_cons_permstr (core->cons, section->perm, use_color, disp_perms, sizeof (disp_perms));
 			if (hashtypes) {
 				r_table_add_rowf (table, "dXxXxsxsss", i,
 					(ut64)section->paddr, (ut64)section->size,
 					(ut64)addr, (ut64)section->vsize,
-					perms, section->flags, r_str_get (hashstr), stype, section_name);
+					disp_perms, section->flags, r_str_get (hashstr), stype, section_name);
 			} else {
 				r_table_add_rowf (table, "dXxXxsxss", i,
 					(ut64)section->paddr, (ut64)section->size,
 					(ut64)addr, (ut64)section->vsize,
-					perms, section->flags, stype, section_name);
+					disp_perms, section->flags, stype, section_name);
 			}
 			free (hashstr);
 		}

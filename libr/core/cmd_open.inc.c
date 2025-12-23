@@ -571,15 +571,19 @@ static void map_list(RCore *core, int mode, RPrint *p, int fd) {
 			}
 			break;
 		}
-		default:
+		default: {
+			char perm_str[16];
+			r_cons_permstr (core->cons, map->perm,
+				r_config_get_i (core->config, "scr.color") > 0, perm_str, sizeof (perm_str));
 			r_print_printf (p, "%c%2d fd: %i +0x%08"PFMT64x" 0x%08"PFMT64x
 					" - 0x%08"PFMT64x" %s%s%s\n",
 					(check_for_current_map && r_io_map_contain (map, off)) ?
 					'*' : '-', map->id, map->fd, map->delta, r_io_map_begin (map),
-					r_io_map_to (map), r_str_rwx_i (map->perm),
+					r_io_map_to (map), perm_str,
 					R_STR_ISEMPTY (map->name)? "": " ",r_str_get (map->name));
 			check_for_current_map &= !r_io_map_contain (map, off);
 			break;
+		}
 		}
 	}
 	if (om_cmds) {
