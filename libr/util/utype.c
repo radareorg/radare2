@@ -674,15 +674,15 @@ static R_OWNED char *type_func_try_guess(Sdb *TDB, const char *name) {
 	return NULL;
 }
 
-static inline bool is_auto_named(char *func_name, size_t slen) {
+static inline bool is_auto_named(const char *func_name, size_t slen) {
 	return slen > 4 && (r_str_startswith (func_name, "fcn.") || r_str_startswith (func_name, "loc."));
 }
 
-static inline bool has_r_prefixes(char *func_name, int offset, size_t slen) {
+static inline bool has_r_prefixes(const char *func_name, int offset, size_t slen) {
 	return slen > 4 && (offset + 3 < slen) && func_name[offset + 3] == '.';
 }
 
-static char *strip_r_prefixes(char *func_name, size_t slen) {
+static const char *strip_r_prefixes(const char *func_name, size_t slen) {
 	// strip r2 prefixes (sym, sym.imp, etc')
 	int offset = 0;
 	while (has_r_prefixes (func_name, offset, slen)) {
@@ -691,7 +691,7 @@ static char *strip_r_prefixes(char *func_name, size_t slen) {
 	return func_name + offset;
 }
 
-static char *strip_common_prefixes_stdlib(char *func_name) {
+static const char *strip_common_prefixes_stdlib(const char *func_name) {
 	// strip common prefixes from standard lib functions
 	if (r_str_startswith (func_name, "__isoc99_")) {
 		func_name += 9;
@@ -703,8 +703,8 @@ static char *strip_common_prefixes_stdlib(char *func_name) {
 	return func_name;
 }
 
-static char *strip_dll_prefix(char *func_name) {
-	char *tmp = strstr (func_name, "dll_");
+static const char *strip_dll_prefix(const char *func_name) {
+	const char *tmp = strstr (func_name, "dll_");
 	if (tmp) {
 		return tmp + 3;
 	}
@@ -722,9 +722,9 @@ static void clean_function_name(char *func_name) {
 // TODO:
 // - symbol names are long and noisy, some of them might not be matched due
 //	 to additional information added around name
-R_API R_OWNED char *r_type_func_guess(Sdb *TDB, char *R_NONNULL func_name) {
+R_API R_OWNED char *r_type_func_guess(Sdb *TDB, const char *R_NONNULL func_name) {
 	R_RETURN_VAL_IF_FAIL (TDB && func_name, false);
-	char *str = func_name;
+	const char *str = func_name;
 	char *result = NULL;
 
 	size_t slen = strlen (str);
@@ -740,14 +740,14 @@ R_API R_OWNED char *r_type_func_guess(Sdb *TDB, char *R_NONNULL func_name) {
 		return result;
 	}
 
-	str = strdup (str);
-	clean_function_name (str);
+	char *str_copy = strdup (str);
+	clean_function_name (str_copy);
 
-	if (*str == '_') {
-		result = type_func_try_guess (TDB, str + 1);
+	if (*str_copy == '_') {
+		result = type_func_try_guess (TDB, str_copy + 1);
 	}
 
-	free (str);
+	free (str_copy);
 	return result;
 }
 
@@ -764,5 +764,5 @@ R_API char *r_type_func_name(Sdb *types, const char *fname) {
 	if (r_type_func_exist (types, name)) {
 		return strdup (name);
 	}
-	return r_type_func_guess (types, (char *)fname);
+	return r_type_func_guess (types, fname);
 }

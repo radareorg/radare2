@@ -558,7 +558,7 @@ R_API bool r_anal_noreturn_add(RAnal *anal, const char * R_NULLABLE name, ut64 a
 	}
 	if (r_type_func_exist (TDB, tmp_name)) {
 		fnl_name = strdup (tmp_name);
-	} else if (!(fnl_name = r_type_func_guess (TDB, (char *)tmp_name))) {
+	} else if (!(fnl_name = r_type_func_guess (TDB, tmp_name))) {
 		if (addr == UT64_MAX) {
 			if (name) {
 				sdb_bool_set (TDB, K_NORET_FUNC (name), true, 0);
@@ -615,7 +615,7 @@ static bool r_anal_noreturn_at_name(RAnal *anal, const char *name) {
 	if (sdb_bool_get (anal->sdb_types, K_NORET_FUNC (name), NULL)) {
 		return true;
 	}
-	char *tmp = r_type_func_guess (anal->sdb_types, (char *)name);
+	char *tmp = r_type_func_guess (anal->sdb_types, name);
 	if (tmp) {
 		if (sdb_bool_get (anal->sdb_types, K_NORET_FUNC (tmp), NULL)) {
 			free (tmp);
