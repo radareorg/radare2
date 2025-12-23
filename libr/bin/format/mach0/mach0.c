@@ -4013,6 +4013,8 @@ static bool _load_relocations(struct MACH0_(obj_t) *mo) {
 		struct reloc_t **slot = RVecRelocRef_at (threaded_binds, sym_ord);\
 		if (slot) {\
 			*slot = reloc;\
+		} else {\
+			free (reloc);\
 		}\
 	} else {\
 		r_skiplist_insert (mo->relocs_cache, reloc);\
