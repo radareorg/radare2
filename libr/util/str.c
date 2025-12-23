@@ -208,11 +208,12 @@ R_API int r_str_rwx(const char *str) {
 	R_RETURN_VAL_IF_FAIL (str, -1);
 	int ret = atoi (str);
 	if (!ret) {
+		ret |= strchr (str, 's')? 8: 0;
 		ret |= strchr (str, 'm')? 16: 0;
 		ret |= strchr (str, 'r')? 4: 0;
 		ret |= strchr (str, 'w')? 2: 0;
 		ret |= strchr (str, 'x')? 1: 0;
-		if (!ret && strcmp (str, "---")) {
+		if (!ret && strcmp (str, "---") && strcmp (str, "s---")) {
 			ret = -1;
 		}
 	} else if (ret < 0 || ret >= R_ARRAY_SIZE (rwxstr)) {
