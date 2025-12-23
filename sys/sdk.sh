@@ -96,6 +96,7 @@ if [ "$OS" = "Darwin" ]; then
 		local hdrdir="$fw/Headers"
 		local moddir="$fw/Modules"
 		local resdir="$fw/Resources"
+		local infodir="$fw"
 		local bindir="$fw"
 		local install_id_path="@rpath/Radare2.framework/Radare2"
 
@@ -105,6 +106,7 @@ if [ "$OS" = "Darwin" ]; then
 			hdrdir="$ver/Headers"
 			moddir="$ver/Modules"
 			resdir="$ver/Resources"
+			infodir="$resdir"
 			bindir="$ver"
 			install_id_path="@rpath/Radare2.framework/Versions/A/Radare2"
 
@@ -204,7 +206,7 @@ framework module Radare2 {
 }
 EOF
 
-		cat > "$resdir/Info.plist" <<EOF
+		cat > "$infodir/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
