@@ -200,7 +200,7 @@ static void pal_refresh(RCons *cons, bool rain) {
 
 R_API void r_cons_permstr(RCons *cons, int perm, bool color_enabled, char *buf, size_t buf_sz) {
 	const char *perm_str = r_str_rwx_i (perm);
-	if (!color_enabled || !cons || !(perm & R_PERM_RWX)) {
+	if (!color_enabled || !cons || !(perm & (R_PERM_RWX | R_PERM_SHAR))) {
 		strncpy (buf, perm_str, buf_sz - 1);
 		buf[buf_sz - 1] = 0;
 		return;
