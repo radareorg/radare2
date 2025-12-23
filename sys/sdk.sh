@@ -206,7 +206,37 @@ framework module Radare2 {
 }
 EOF
 
-		cat > "$infodir/Info.plist" <<EOF
+		local supported_platform=""
+		case "$flavor" in
+			ios) supported_platform="iPhoneOS" ;;
+			sim) supported_platform="iPhoneSimulator" ;;
+			macos) supported_platform="" ;;
+		esac
+
+		local min_os_version="${IOSVER:-14.0}"
+
+		local dt_platform_name=""
+		local dt_sdk_name=""
+		local dt_xcode_build=""
+		local build_machine_os_build=""
+
+		if [ "$flavor" != "macos" ]; then
+			if [ "$flavor" = "sim" ]; then
+				dt_platform_name="iphonesimulator"
+			else
+				dt_platform_name="iphoneos"
+			fi
+
+			local sdkver="$(xcrun --sdk "${dt_platform_name}" --show-sdk-version)"
+			dt_sdk_name="${dt_platform_name}${sdkver}"
+
+			dt_xcode_build="$(xcodebuild -version | awk '/Build version/{print $3}')"
+			build_machine_os_build="$(sw_vers -buildVersion)"
+		fi
+
+		local infopath="$infodir/Info.plist"
+
+		cat > "$infopath" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -217,6 +247,8 @@ EOF
   <string>Radare2</string>
   <key>CFBundlePackageType</key>
   <string>FMWK</string>
+  <key>CFBundleSignature</key>
+  <string>????</string>
   <key>CFBundleShortVersionString</key>
   <string>${R2_VERSION}</string>
   <key>CFBundleVersion</key>
@@ -227,6 +259,28 @@ EOF
   <string>en</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
+EOF
+
+		if [ "$flavor" != "macos" ]; then
+			cat >> "$infopath" <<EOF
+  <key>CFBundleSupportedPlatforms</key>
+  <array>
+    <string>${supported_platform}</string>
+  </array>
+  <key>MinimumOSVersion</key>
+  <string>${min_os_version}</string>
+  <key>DTPlatformName</key>
+  <string>${dt_platform_name}</string>
+  <key>DTSDKName</key>
+  <string>${dt_sdk_name}</string>
+  <key>DTXcodeBuild</key>
+  <string>${dt_xcode_build}</string>
+  <key>BuildMachineOSBuild</key>
+  <string>${build_machine_os_build}</string>
+EOF
+		fi
+
+		cat >> "$infopath" <<'EOF'
 </dict>
 </plist>
 EOF
