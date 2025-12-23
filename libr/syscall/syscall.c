@@ -50,14 +50,14 @@ static Sdb *openDatabase(Sdb *db, const char *name) {
 				sdb_reset (db);
 				if (sdb_open (db, file) < 0) {
 					sdb_free (db);
-					db = NULL;
+					db = sdb_new0 ();
 				}
 			} else {
 				db = sdb_new (0, file, 0);
 			}
 		} else {
 			sdb_free (db);
-			db = NULL;
+			db = sdb_new0 ();
 		}
 		free (file);
 	}
