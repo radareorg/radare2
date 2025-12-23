@@ -209,22 +209,22 @@ EOF
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>CFBundleIdentifier</key>
-  <string>org.radare2.Radare2</string>
-  <key>CFBundleName</key>
-  <string>Radare2</string>
-  <key>CFBundlePackageType</key>
-  <string>FMWK</string>
-  <key>CFBundleShortVersionString</key>
-  <string>${R2_VERSION}</string>
-  <key>CFBundleVersion</key>
-  <string>${R2_ABIVERSION}</string>
-  <key>CFBundleExecutable</key>
-  <string>Radare2</string>
-  <key>CFBundleDevelopmentRegion</key>
-  <string>en</string>
-  <key>CFBundleInfoDictionaryVersion</key>
-  <string>6.0</string>
+	<key>CFBundleIdentifier</key>
+	<string>org.radare2.Radare2</string>
+	<key>CFBundleName</key>
+	<string>Radare2</string>
+	<key>CFBundlePackageType</key>
+	<string>FMWK</string>
+	<key>CFBundleShortVersionString</key>
+	<string>${R2_VERSION}</string>
+	<key>CFBundleVersion</key>
+	<string>${R2_ABIVERSION}</string>
+	<key>CFBundleExecutable</key>
+	<string>Radare2</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
 </dict>
 </plist>
 EOF
