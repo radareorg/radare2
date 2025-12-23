@@ -4,7 +4,7 @@
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
-#include <r_vector.h>
+#include <r_vec.h>
 #include "../format/p9/p9bin.h"
 
 #undef P9_ALIGN
@@ -259,6 +259,11 @@ typedef struct {
 	char *name;
 } Sym;
 
+static void sym_fini (Sym *sym);
+
+R_VEC_TYPE_WITH_FINI (RVecSym, Sym, sym_fini);
+R_VEC_TYPE (RVecP9Name, char *);
+
 static st64 sym_read(RBinFile *bf, Sym *sym, const ut64 offset) {
 	st64 size = 0;
 	const RBinPlan9Obj *o = (RBinPlan9Obj *)bf->bo->bin_obj;
@@ -299,11 +304,8 @@ static st64 sym_read(RBinFile *bf, Sym *sym, const ut64 offset) {
 	return size;
 }
 
-static void sym_fini(void *sym, R_UNUSED void *user) {
-	Sym *s = (Sym *)sym;
-	if (s && s->name) {
-		R_FREE (s->name);
-	}
+static void sym_fini (Sym *sym) {
+	R_FREE (sym->name);
 }
 
 static int apply_history(RBinFile *bf, ut64 pc, ut64 line, Sym *base, Sym **ret) {
@@ -358,9 +360,9 @@ static int apply_history(RBinFile *bf, ut64 pc, ut64 line, Sym *base, Sym **ret)
 
 static RList *symbols(RBinFile *bf) {
 	RList *ret = NULL;
-	RVector *history = NULL; // <Sym>
-	HtUP *histories = NULL; // <ut64, RVector<Sym> *>
-	RPVector *names = NULL; // <char *>
+	RVecSym *history = NULL; // <Sym>
+	HtUP *histories = NULL; // <ut64, RVecSym *>
+	RVecP9Name *names = NULL; // <char *>
 	const RBinPlan9Obj *o = (RBinPlan9Obj *)bf->bo->bin_obj;
 	ut64 i;
 	Sym sym = {0};
@@ -373,7 +375,7 @@ static RList *symbols(RBinFile *bf) {
 		goto error;
 	}
 
-	if (!(names = r_pvector_new (NULL))) {
+	if (!(names = RVecP9Name_new ())) {
 		goto error;
 	}
 
@@ -393,15 +395,22 @@ static RList *symbols(RBinFile *bf) {
 				R_LOG_ERROR ("Prevented huge memory allocation");
 				break;
 			}
-			if (r_pvector_length (names) < sym.value) {
-				if (!r_pvector_reserve (names, sym.value)) {
+			if (RVecP9Name_length (names) < sym.value) {
+				char *empty = NULL;
+				if (!RVecP9Name_reserve (names, sym.value)) {
 					goto error;
 				}
 				// reserve zeros so this is safe
-				names->v.len = sym.value;
+				while (RVecP9Name_length (names) < sym.value) {
+					RVecP9Name_push_back (names, &empty);
+				}
 			}
 
-			r_pvector_set (names, sym.value - 1, sym.name);
+			char **name_slot = RVecP9Name_at (names, sym.value - 1);
+			if (!name_slot) {
+				goto error;
+			}
+			*name_slot = sym.name;
 			continue;
 		}
 
@@ -424,7 +433,11 @@ static RList *symbols(RBinFile *bf) {
 					break;
 				}
 
-				const char *name = r_pvector_at (names, index - 1);
+				char *name = NULL;
+				char **name_slot = RVecP9Name_at (names, index - 1);
+				if (name_slot) {
+					name = *name_slot;
+				}
 				r_strbuf_appendf (sb, "%s", name);
 				// lead / is NOT assumed
 				if (i != 0) {
@@ -445,11 +458,11 @@ static RList *symbols(RBinFile *bf) {
 			}
 
 			if (!history) {
-				history = r_vector_new (sizeof (Sym), sym_fini, NULL);
+				history = RVecSym_new ();
 			}
 
 			Sym history_sym = {sym.value, 'z', name};
-			r_vector_push (history, &history_sym);
+			RVecSym_push_back (history, &history_sym);
 			continue;
 		}
 
@@ -482,7 +495,7 @@ static RList *symbols(RBinFile *bf) {
 		}
 			// fallthrough
 		default:
-			sym_fini (&sym, NULL);
+			sym_fini (&sym);
 			continue;
 		}
 
@@ -513,7 +526,7 @@ static RList *symbols(RBinFile *bf) {
 
 	offset = 0;
 	while (offset < o->header.pcsz) {
-		RVector *h = ht_up_find (histories, pc + o->pcq, NULL);
+		RVecSym *h = ht_up_find (histories, pc + o->pcq, NULL);
 		if (h) {
 			history = h;
 		}
@@ -545,18 +558,18 @@ static RList *symbols(RBinFile *bf) {
 
 		pc += o->pcq;
 
-		if (history && prev != line && r_vector_length (history) > 1) {
-			apply_history (bf, pc, line, r_vector_at (history, 0), NULL);
+		if (history && prev != line && RVecSym_length (history) > 1) {
+			apply_history (bf, pc, line, RVecSym_at (history, 0), NULL);
 		}
 	}
 
 	ht_up_free (histories);
-	r_pvector_free (names);
+	RVecP9Name_free (names);
 	return ret;
 error:
-	sym_fini (&sym, NULL);
+	sym_fini (&sym);
 	r_list_free (ret);
-	r_pvector_free (names);
+	RVecP9Name_free (names);
 	ht_up_free (histories);
 	return NULL;
 }

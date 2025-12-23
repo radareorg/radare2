@@ -6,6 +6,8 @@
 #include "objc/mach0_classes.h"
 #include <sdb/ht_uu.h>
 
+R_VEC_TYPE (RVecExtReloc, struct reloc_t *);
+
 typedef struct {
 	ut8 *buf;
 	int count;
@@ -234,14 +236,14 @@ static RBinImport *import_from_name(RBin *rbin, const char *orig_name, HtPP *imp
 
 static RList *imports(RBinFile *bf) {
 	RBinObject *obj = bf? bf->bo: NULL;
-	const RPVector *imports = MACH0_(load_imports) (bf, obj->bin_obj);
+	const RVecMach0Import *imports = MACH0_(load_imports) (bf, obj->bin_obj);
 	if (!imports) {
 		return NULL;
 	}
 
 	RList *list = r_list_newf ((RListFree) r_bin_import_free);
-	void **it;
-	r_pvector_foreach (imports, it) {
+	RBinImport **it;
+	R_VEC_FOREACH (imports, it) {
 		// need to clone here, in bobj.c the list free function is forced to `r_bin_import_free`
 		// otherwise, a list with no free function could be returned here..
 		RBinImport *import = r_bin_import_clone (*it);
@@ -307,17 +309,17 @@ static RList *libs(RBinFile *bf) {
 		return NULL;
 	}
 
-	const RPVector *libs = MACH0_(load_libs) (obj->bin_obj);
-	if (!libs) {
-		return NULL;
-	}
+const RVecMach0Lib *libs = MACH0_(load_libs) (obj->bin_obj);
+if (!libs) {
+	return NULL;
+}
 
-	RList *result = r_list_new ();
-	void **it;
-	r_pvector_foreach (libs, it) {
-		r_list_append (result, *it);
-	}
-	return result;
+RList *result = r_list_new ();
+char **it;
+R_VEC_FOREACH (libs, it) {
+	r_list_append (result, *it);
+}
+return result;
 }
 
 static RBinInfo *info(RBinFile *bf) {
@@ -450,15 +452,15 @@ static RList* patch_relocs(RBinFile *bf) {
 	if (!all_relocs) {
 		return NULL;
 	}
-	RPVector ext_relocs;
-	r_pvector_init (&ext_relocs, NULL);
+	RVecExtReloc ext_relocs;
+	RVecExtReloc_init (&ext_relocs);
 	RSkipListNode *it;
 	struct reloc_t *reloc;
 	r_skiplist_foreach (all_relocs, it, reloc) {
 		if (!reloc->external) {
 			continue;
 		}
-		r_pvector_push (&ext_relocs, reloc);
+		RVecExtReloc_push_back (&ext_relocs, &reloc);
 	}
 #if 1
 	// XXX for some reason we are patching this twice as relocs and fixups
@@ -495,7 +497,7 @@ static RList* patch_relocs(RBinFile *bf) {
 		}
 	}
 #endif
-	ut64 num_ext_relocs = r_pvector_length (&ext_relocs);
+	ut64 num_ext_relocs = RVecExtReloc_length (&ext_relocs);
 	if (!num_ext_relocs) {
 		goto beach;
 	}
@@ -540,8 +542,8 @@ static RList* patch_relocs(RBinFile *bf) {
 		goto beach;
 	}
 	ut64 vaddr = n_vaddr;
-	void **ext_reloc_iter;
-	r_pvector_foreach (&ext_relocs, ext_reloc_iter) {
+	struct reloc_t **ext_reloc_iter;
+	R_VEC_FOREACH (&ext_relocs, ext_reloc_iter) {
 		reloc = *ext_reloc_iter;
 		bool found = false;
 		ut64 sym_addr = ht_uu_find (relocs_by_sym, reloc->ord, &found);
@@ -569,12 +571,12 @@ static RList* patch_relocs(RBinFile *bf) {
 		goto beach;
 	}
 	ht_uu_free (relocs_by_sym);
-	r_pvector_fini (&ext_relocs);
+	RVecExtReloc_fini (&ext_relocs);
 	// XXX r_io_desc_free (gotr2desc);
 	return ret;
 
 beach:
-	r_pvector_fini (&ext_relocs);
+	RVecExtReloc_fini (&ext_relocs);
 	r_io_desc_free (gotr2desc);
 	r_list_free (ret);
 	ht_uu_free (relocs_by_sym);

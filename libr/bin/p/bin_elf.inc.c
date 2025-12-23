@@ -118,7 +118,7 @@ static RList* sections(RBinFile *bf) {
 
 	// there is no leak here with sections since they are cached by elf.c
 	// and freed within Elf_(free) R2_590. must return bool
-	const RVector *sections = Elf_(load_sections) (bf, eo);
+	const RVecRBinSection *sections = Elf_(load_sections) (bf, eo);
 	if (!sections) {
 		return NULL;
 	}
@@ -126,7 +126,7 @@ static RList* sections(RBinFile *bf) {
 	RList *ret = r_list_newf ((RListFree)r_bin_section_free);
 	if (ret) {
 		RBinSection *section;
-		r_vector_foreach (sections, section) {
+		R_VEC_FOREACH (sections, section) {
 			r_list_append (ret, r_bin_section_clone (section));
 		}
 	}
@@ -256,9 +256,9 @@ static RList* entries(RBinFile *bf) {
 
 		if (bf->bo->sections) {
 			// XXX store / cache sections by name in hashmap
-			const RVector *sections = Elf_(load_sections) (bf, bf->bo->bin_obj);
+			const RVecRBinSection *sections = Elf_(load_sections) (bf, bf->bo->bin_obj);
 			RBinSection *section;
-			r_vector_foreach_prev (sections, section) {
+			R_VEC_FOREACH_PREV (sections, section) {
 				if (!strcmp (section->name, "ehdr")) {
 					ptr->hvaddr = section->vaddr + ptr->hpaddr;
 					break;
@@ -451,10 +451,10 @@ static RList* libs(RBinFile *bf) {
 	}
 
 	// No leak, libs is automatically freed when r_bin_elf_free is called
-	const RVector *libs = Elf_(load_libs) (bf->bo->bin_obj);
+	const RVecRBinElfLib *libs = Elf_(load_libs) (bf->bo->bin_obj);
 	if (libs) {
 		RBinElfLib *lib;
-		r_vector_foreach (libs, lib) {
+		R_VEC_FOREACH (libs, lib) {
 			r_list_append (ret, strdup (lib->name));
 		}
 	}
@@ -900,7 +900,7 @@ static RList* relocs(RBinFile *bf) {
 		got_addr = Elf_(get_section_addr) (eo, ".got.r2");
 	}
 
-	const RVector *relocs = Elf_(load_relocs) (eo);
+	const RVecRBinElfReloc *relocs = Elf_(load_relocs) (eo);
 	if (!relocs) {
 		return ret;
 	}
@@ -911,7 +911,7 @@ static RList* relocs(RBinFile *bf) {
 	}
 
 	RBinElfReloc *reloc;
-	r_vector_foreach (relocs, reloc) {
+	R_VEC_FOREACH (relocs, reloc) {
 		RBinReloc *already_inserted = ht_up_find (reloc_ht, reloc->rva, NULL);
 		if (already_inserted) {
 			continue;
@@ -1465,7 +1465,7 @@ static RList* patch_relocs(RBinFile *bf) {
 	}
 	gotr2map->name = strdup (".got.r2");
 
-	const RVector *relocs = Elf_(load_relocs) (eo);
+	const RVecRBinElfReloc *relocs = Elf_(load_relocs) (eo);
 	if (!relocs) {
 		return NULL;
 	}
@@ -1480,7 +1480,7 @@ static RList* patch_relocs(RBinFile *bf) {
 	}
 	ut64 vaddr = n_vaddr;
 	RBinElfReloc *reloc;
-	r_vector_foreach (relocs, reloc) {
+	R_VEC_FOREACH (relocs, reloc) {
 		ut64 plt_entry_addr = vaddr;
 		ut64 sym_addr = UT64_MAX;
 
