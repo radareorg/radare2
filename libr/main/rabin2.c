@@ -622,6 +622,12 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		return 1;
 	}
 
+	// Honor R2_COLOR environment variable
+	ut64 color_val = r_sys_getenv_asut64 ("R2_COLOR");
+	if (color_val != UT64_MAX) {
+		r_config_set_i (core.config, "scr.color", (int)color_val);
+	}
+
 	if (! (tmp = r_sys_getenv ("R2_NOPLUGINS"))) {
 		char *homeplugindir = r_xdg_datadir ("plugins");
 		char *plugindir = r_str_r2_prefix (R2_PLUGINS);
