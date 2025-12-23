@@ -510,7 +510,6 @@ include_files = [
   'include/r_types_null.h',
   'include/r_types_overflow.h',
   'include/r_util.h',
-  'include/r_vector.h',
   'include/r_event.h',
   'include/r_vec.h',
 ]

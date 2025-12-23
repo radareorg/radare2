@@ -102,7 +102,6 @@ r_util_sources = [
   'utf32.c',
   'utf8.c',
   'utype.c',
-  'vector.c',
   'w32.c',
   'w32dw.c',
   'x509.c',
