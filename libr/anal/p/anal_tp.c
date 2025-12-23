@@ -165,7 +165,18 @@ static void type_trace_voyeur_reg_write(void *user, const char *name, ut64 old, 
 		return;
 	}
 	char *name_dup = strdup (name);
+	if (!name_dup) {
+		r_unref (ri);
+		R_LOG_ERROR ("Failed to allocate(strdup) memory for storing access");
+		return;
+	}
 	TypeTraceAccess *access = VecAccess_emplace_back (&trace->db.accesses);
+	if (!access) {
+		free (name_dup);
+		r_unref (ri);
+		R_LOG_ERROR ("Failed to allocate memory for storing access");
+		return;
+	}
 	access->is_reg = true;
 	access->reg.name = name_dup;
 	access->reg.value = val;
@@ -187,6 +198,11 @@ static void type_trace_voyeur_mem_read(void *user, ut64 addr, const ut8 *buf, in
 	}
 	TypeTraceDB *db = user;
 	TypeTraceAccess *access = VecAccess_emplace_back (&db->accesses);
+	if (!access) {
+		free (hexbuf);
+		R_LOG_ERROR ("Failed to allocate memory for storing access");
+		return;
+	}
 	access->is_reg = false;
 	access->mem.data = hexbuf;
 	access->mem.addr = addr;
@@ -453,6 +469,9 @@ static const TypeTraceAccess *etrace_find_access(TypeTrace *etrace, ut32 idx, Ac
 	}
 	const TypeTraceAccess *start = VecAccess_at (&etrace->db.accesses, op->start);
 	const TypeTraceAccess *end = VecAccess_at (&etrace->db.accesses, op->end - 1);
+	if (!start || !end || start > end) {
+		return NULL;
+	}
 	while (start <= end) {
 		if (pred (start, user)) {
 			return start;
@@ -506,6 +525,9 @@ static const char *etrace_regwrite(TypeTrace *etrace, ut32 idx) {
 	if (op && op->start != op->end) {
 		TypeTraceAccess *start = VecAccess_at (&etrace->db.accesses, op->start);
 		TypeTraceAccess *end = VecAccess_at (&etrace->db.accesses, op->end - 1);
+		if (!start || !end || start > end) {
+			return NULL;
+		}
 		while (start <= end) {
 			if (start->is_reg && start->is_write) {
 				return start->reg.name;
@@ -525,6 +547,9 @@ static bool etrace_regwrite_contains(TypeTrace *etrace, ut32 idx, const char *rn
 	if (op && op->start != op->end) {
 		TypeTraceAccess *start = VecAccess_at (&etrace->db.accesses, op->start);
 		TypeTraceAccess *end = VecAccess_at (&etrace->db.accesses, op->end - 1);
+		if (!start || !end || start > end) {
+			return false;
+		}
 		while (start <= end) {
 			if (start->is_reg && start->is_write) {
 				if (!strcmp (rname, start->reg.name)) {
@@ -799,6 +824,9 @@ static bool etrace_memread_contains_addr(TypeTrace *etrace, ut32 idx, ut64 addr)
 	if (op && op->start != op->end) {
 		TypeTraceAccess *start = VecAccess_at (&etrace->db.accesses, op->start);
 		TypeTraceAccess *end = VecAccess_at (&etrace->db.accesses, op->end - 1);
+		if (!start || !end || start > end) {
+			return false;
+		}
 		while (start <= end) {
 			if (!start->is_reg && !start->is_write && start->mem.addr == addr) {
 				return true;
@@ -816,6 +844,9 @@ static bool etrace_memread_first_addr(TypeTrace *etrace, ut32 idx, ut64 *addr) {
 	}
 	TypeTraceAccess *start = VecAccess_at (&etrace->db.accesses, op->start);
 	TypeTraceAccess *end = VecAccess_at (&etrace->db.accesses, op->end - 1);
+	if (!start || !end || start > end) {
+		return false;
+	}
 	while (start <= end) {
 		if (!start->is_reg && !start->is_write) {
 			if (addr) {
@@ -1660,8 +1691,9 @@ repeat:
 					RAnalBlock *jmpbb = r_anal_function_bbget_in (anal, fcn, jmp_addr);
 					RAnalBlock jbb = { 0 };
 					if (jmpbb) {
-						// the bb can be invalidated in the loop below, causing
-						// a crash, so we copy that into a stack ghosty struct
+						// Copy only fields needed for r_anal_block_contains check.
+						// The bb can be invalidated in the loop below, so avoid
+						// shallow-copying pointer members from jmpbb.
 						jbb.addr = jmpbb->addr;
 						jbb.size = jmpbb->size;
 					}
