@@ -212,7 +212,7 @@ static void mergeBlocks(RList *block_list, HtUP *ht, RList *result) {
 				continue;
 			}
 
-			if (block->end < UT64_MAX && next_block->start < block->end && next_block->start > block->start) {
+			if (block->end < UT64_MAX && next_block->start < block->end) {
 				if (next_block->jump == UT64_MAX) {
 					next_block->jump = block->jump;
 				}
