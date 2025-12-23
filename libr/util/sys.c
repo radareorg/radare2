@@ -1536,10 +1536,15 @@ R_API const char *r_sys_prefix(const char *pfx) {
 static char *macho_detect_bundle_location(void) {
 	char *macho_path = macho_path_for_address_or_main (macho_detect_bundle_location);
 	char *macho_dir = r_file_dirname (macho_path);
+	free (macho_path);
+
+#if TARGET_OS_OSX
 	char *resources = r_file_new (macho_dir, "Resources", NULL);
 	free (macho_dir);
-	free (macho_path);
 	return resources;
+#else
+	return macho_dir;
+#endif
 }
 
 static char *macho_path_for_address_or_main(const void *addr) {
