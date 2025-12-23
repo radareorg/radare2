@@ -95,7 +95,7 @@ if [ "$OS" = "Darwin" ]; then
 		# Default: shallow (iOS, simulator)
 		local hdrdir="$fw/Headers"
 		local moddir="$fw/Modules"
-		local resdir="$fw/Resources"
+		local resdir="$fw"
 		local bindir="$fw"
 		local install_id_path="@rpath/Radare2.framework/Radare2"
 
@@ -116,7 +116,7 @@ if [ "$OS" = "Darwin" ]; then
 			ln -s "Versions/Current/Resources" "$fw/Resources"
 			ln -s "Versions/Current/Radare2"   "$fw/Radare2"
 		else
-			mkdir -p "$hdrdir" "$moddir" "$resdir"
+			mkdir -p "$hdrdir" "$moddir"
 		fi
 
 		cp "$dylib" "$bindir/Radare2"
