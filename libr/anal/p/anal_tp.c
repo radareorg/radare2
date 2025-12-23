@@ -1691,10 +1691,11 @@ repeat:
 					RAnalBlock *jmpbb = r_anal_function_bbget_in (anal, fcn, jmp_addr);
 					RAnalBlock jbb = { 0 };
 					if (jmpbb) {
-						// Copy relevant fields for r_anal_block_contains check
-						// The bb can be invalidated in the loop below, so we
-						// copy needed fields into a stack struct
-						jbb = *jmpbb;
+						// Copy only fields needed for r_anal_block_contains check.
+						// The bb can be invalidated in the loop below, so avoid
+						// shallow-copying pointer members from jmpbb.
+						jbb.addr = jmpbb->addr;
+						jbb.size = jmpbb->size;
 					}
 
 					// Check exit status of jmp branch
