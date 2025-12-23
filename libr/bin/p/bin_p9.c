@@ -259,10 +259,14 @@ typedef struct {
 	char *name;
 } Sym;
 
-static void sym_fini (Sym *sym);
+static void sym_fini_vec(Sym *s) {
+	if (s && s->name) {
+		R_FREE (s->name);
+	}
+}
 
-R_VEC_TYPE_WITH_FINI (RVecSym, Sym, sym_fini);
-R_VEC_TYPE (RVecP9Name, char *);
+R_VEC_TYPE_WITH_FINI(SymVec, Sym, sym_fini_vec)
+R_VEC_TYPE(StrVec, char *)
 
 static st64 sym_read(RBinFile *bf, Sym *sym, const ut64 offset) {
 	st64 size = 0;
@@ -304,9 +308,7 @@ static st64 sym_read(RBinFile *bf, Sym *sym, const ut64 offset) {
 	return size;
 }
 
-static void sym_fini (Sym *sym) {
-	R_FREE (sym->name);
-}
+
 
 static int apply_history(RBinFile *bf, ut64 pc, ut64 line, Sym *base, Sym **ret) {
 	// start of current level
@@ -360,9 +362,9 @@ static int apply_history(RBinFile *bf, ut64 pc, ut64 line, Sym *base, Sym **ret)
 
 static RList *symbols(RBinFile *bf) {
 	RList *ret = NULL;
-	RVecSym *history = NULL; // <Sym>
-	HtUP *histories = NULL; // <ut64, RVecSym *>
-	RVecP9Name *names = NULL; // <char *>
+	SymVec *history = NULL; // <Sym>
+	HtUP *histories = NULL; // <ut64, SymVec *>
+	StrVec *names = NULL; // <char *>
 	const RBinPlan9Obj *o = (RBinPlan9Obj *)bf->bo->bin_obj;
 	ut64 i;
 	Sym sym = {0};
@@ -375,7 +377,7 @@ static RList *symbols(RBinFile *bf) {
 		goto error;
 	}
 
-	if (!(names = RVecP9Name_new ())) {
+	if (!(names = StrVec_new ())) {
 		goto error;
 	}
 
@@ -395,22 +397,21 @@ static RList *symbols(RBinFile *bf) {
 				R_LOG_ERROR ("Prevented huge memory allocation");
 				break;
 			}
-			if (RVecP9Name_length (names) < sym.value) {
-				char *empty = NULL;
-				if (!RVecP9Name_reserve (names, sym.value)) {
+			if (StrVec_length (names) < sym.value) {
+				if (!StrVec_reserve (names, sym.value)) {
 					goto error;
 				}
-				// reserve zeros so this is safe
-				while (RVecP9Name_length (names) < sym.value) {
-					RVecP9Name_push_back (names, &empty);
+				// push NULL elements until we reach sym.value
+				while (StrVec_length (names) < sym.value) {
+					char *null_ptr = NULL;
+					StrVec_push_back (names, &null_ptr);
 				}
 			}
 
-			char **name_slot = RVecP9Name_at (names, sym.value - 1);
-			if (!name_slot) {
-				goto error;
+			char **name_ptr = StrVec_at (names, sym.value - 1);
+			if (name_ptr) {
+				*name_ptr = sym.name;
 			}
-			*name_slot = sym.name;
 			continue;
 		}
 
@@ -433,11 +434,8 @@ static RList *symbols(RBinFile *bf) {
 					break;
 				}
 
-				char *name = NULL;
-				char **name_slot = RVecP9Name_at (names, index - 1);
-				if (name_slot) {
-					name = *name_slot;
-				}
+				char **name_ptr = StrVec_at (names, index - 1);
+				const char *name = name_ptr ? *name_ptr : NULL;
 				r_strbuf_appendf (sb, "%s", name);
 				// lead / is NOT assumed
 				if (i != 0) {
@@ -458,13 +456,13 @@ static RList *symbols(RBinFile *bf) {
 			}
 
 			if (!history) {
-				history = RVecSym_new ();
+				history = SymVec_new ();
 			}
 
 			Sym history_sym = {sym.value, 'z', name};
-			RVecSym_push_back (history, &history_sym);
+			SymVec_push_back (history, &history_sym);
 			continue;
-		}
+			}
 
 		// skip non symbol information
 		switch (sym.type) {
@@ -495,7 +493,7 @@ static RList *symbols(RBinFile *bf) {
 		}
 			// fallthrough
 		default:
-			sym_fini (&sym);
+			sym_fini_vec (&sym);
 			continue;
 		}
 
@@ -526,7 +524,7 @@ static RList *symbols(RBinFile *bf) {
 
 	offset = 0;
 	while (offset < o->header.pcsz) {
-		RVecSym *h = ht_up_find (histories, pc + o->pcq, NULL);
+		SymVec *h = ht_up_find (histories, pc + o->pcq, NULL);
 		if (h) {
 			history = h;
 		}
@@ -558,18 +556,18 @@ static RList *symbols(RBinFile *bf) {
 
 		pc += o->pcq;
 
-		if (history && prev != line && RVecSym_length (history) > 1) {
-			apply_history (bf, pc, line, RVecSym_at (history, 0), NULL);
+		if (history && prev != line && SymVec_length (history) > 1) {
+			apply_history (bf, pc, line, SymVec_at (history, 0), NULL);
 		}
 	}
 
 	ht_up_free (histories);
-	RVecP9Name_free (names);
+	StrVec_free (names);
 	return ret;
 error:
-	sym_fini (&sym);
+	sym_fini_vec (&sym);
 	r_list_free (ret);
-	RVecP9Name_free (names);
+	StrVec_free (names);
 	ht_up_free (histories);
 	return NULL;
 }

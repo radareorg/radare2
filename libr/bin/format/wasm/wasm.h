@@ -1,10 +1,9 @@
-/* radare2 - LGPL - Copyright 2017-2018 - cgvwzq */
+/* radare2 - LGPL - Copyright 2017-2025 - cgvwzq */
 
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
-#include <r_vec.h>
 
 #ifndef _INCLUDE_WASM_H_
 #define _INCLUDE_WASM_H_
