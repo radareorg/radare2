@@ -597,7 +597,7 @@ static void dotnet_parse_tilde_methoddef(
 					break;
 				}
 				rva = *(ut32 *)row_ptr;
-				ut16 impl_flags = *(ut16 *)(row_ptr + 4);
+				ut16 impl_flags = *(ut16 *) (row_ptr + 4);
 
 				// Get method name from string stream
 				// Offset: RVA (4) + ImplFlags (2) + Flags (2) = 8
@@ -926,6 +926,9 @@ static RList *dotnet_collect_typedefs(PE *pe, ut64 metadata_root, PSTREAMS strea
 			uint8_t extends_index_size = (row_count > (0xFFFF >> 0x02))? 4: 2;
 			uint8_t field_index_size = (rows.field > 0xFFFF)? 4: 2;
 			uint8_t methoddef_index_size = (rows.methoddef > 0xFFFF)? 4: 2;
+			if (!fits_in_pe (pe, row_offset, (matched_bits + 1) * sizeof (uint32_t))) {
+				return typedef_info;
+			}
 			num_rows = *(row_offset + matched_bits);
 
 			uint8_t *row_ptr = table_offset;
@@ -1000,6 +1003,9 @@ static RList *dotnet_collect_typedefs(PE *pe, ut64 metadata_root, PSTREAMS strea
 			break;
 		} else if (bit_check < BIT_TYPEDEF) {
 			// Skip tables before TypeDef
+			if (!fits_in_pe (pe, row_offset, (matched_bits + 1) * sizeof (uint32_t))) {
+				return typedef_info;
+			}
 			num_rows = *(row_offset + matched_bits);
 			// Calculate row size for this table and skip it
 			switch (bit_check) {
@@ -1283,7 +1289,9 @@ static RList *dotnet_parse_com(PE *pe, ut64 baddr) {
 		eprintf ("[dotnet] After parse_tilde: %d symbols\n", r_list_length (symbols));
 	} else {
 		eprintf ("[dotnet] Missing required streams: tilde=%p, string=%p, blob=%p\n",
-			headers.tilde, headers.string, headers.blob);
+			headers.tilde,
+			headers.string,
+			headers.blob);
 	}
 
 	return symbols;
@@ -1539,6 +1547,10 @@ DotNetVersionInfo *dotnet_parse_version_info(const ut8 *buf, int size) {
 									matched_bits++;
 								}
 							}
+							if (!fits_in_pe (pe, row_offset, (matched_bits + 1) * sizeof (uint32_t))) {
+								free (version_info);
+								return NULL;
+							}
 							uint32_t num_rows = *(row_offset + matched_bits);
 							if (num_rows > 0) {
 								// Find Assembly table offset - count matched bits to know where to start
@@ -1553,6 +1565,9 @@ DotNetVersionInfo *dotnet_parse_version_info(const ut8 *buf, int size) {
 								int bit_check;
 								for (bit_check = 0; bit_check < BIT_ASSEMBLY && bit_check < 64; bit_check++) {
 									if ((tilde_header->Valid >> bit_check) & 0x01) {
+										if (!fits_in_pe (pe, row_offset, (matched_bits + 1) * sizeof (uint32_t))) {
+											break;
+										}
 										uint32_t rows = *(row_offset + matched_bits);
 										uint32_t table_size = 0;
 										switch (bit_check) {
@@ -1570,7 +1585,7 @@ DotNetVersionInfo *dotnet_parse_version_info(const ut8 *buf, int size) {
 								}
 
 								// Now read Assembly table first row
-								if (table_offset >= pe->data && (size_t)(pe->data + pe->data_size - table_offset) >= (4 + 2 + 2 + 2 + 2)) {
+								if (table_offset >= pe->data && (size_t) (pe->data + pe->data_size - table_offset) >= (4 + 2 + 2 + 2 + 2)) {
 									version_info->asm_major = r_read_le16 (table_offset + 4);
 									version_info->asm_minor = r_read_le16 (table_offset + 6);
 									version_info->asm_build = r_read_le16 (table_offset + 8);
