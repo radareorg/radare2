@@ -674,15 +674,15 @@ static R_OWNED char *type_func_try_guess(Sdb *TDB, const char *name) {
 	return NULL;
 }
 
-static inline bool is_auto_named(char *func_name, size_t slen) {
+static inline bool is_auto_named(const char *func_name, size_t slen) {
 	return slen > 4 && (r_str_startswith (func_name, "fcn.") || r_str_startswith (func_name, "loc."));
 }
 
-static inline bool has_r_prefixes(char *func_name, int offset, size_t slen) {
+static inline bool has_r_prefixes(const char *func_name, int offset, size_t slen) {
 	return slen > 4 && (offset + 3 < slen) && func_name[offset + 3] == '.';
 }
 
-static char *strip_r_prefixes(char *func_name, size_t slen) {
+static const char *strip_r_prefixes(const char *func_name, size_t slen) {
 	// strip r2 prefixes (sym, sym.imp, etc')
 	int offset = 0;
 	while (has_r_prefixes (func_name, offset, slen)) {
@@ -691,7 +691,7 @@ static char *strip_r_prefixes(char *func_name, size_t slen) {
 	return func_name + offset;
 }
 
-static char *strip_common_prefixes_stdlib(char *func_name) {
+static const char *strip_common_prefixes_stdlib(const char *func_name) {
 	// strip common prefixes from standard lib functions
 	if (r_str_startswith (func_name, "__isoc99_")) {
 		func_name += 9;
@@ -703,8 +703,8 @@ static char *strip_common_prefixes_stdlib(char *func_name) {
 	return func_name;
 }
 
-static char *strip_dll_prefix(char *func_name) {
-	char *tmp = strstr (func_name, "dll_");
+static const char *strip_dll_prefix(const char *func_name) {
+	const char *tmp = strstr (func_name, "dll_");
 	if (tmp) {
 		return tmp + 3;
 	}
@@ -728,13 +728,13 @@ R_API R_OWNED char *r_type_func_guess(Sdb *TDB, const char *R_NONNULL func_name)
 	char *result = NULL;
 
 	size_t slen = strlen (str);
-	if (slen < MIN_MATCH_LEN || is_auto_named ((char *)str, slen)) {
+	if (slen < MIN_MATCH_LEN || is_auto_named (str, slen)) {
 		return NULL;
 	}
 
-	str = strip_r_prefixes ((char *)str, slen);
-	str = strip_common_prefixes_stdlib ((char *)str);
-	str = strip_dll_prefix ((char *)str);
+	str = strip_r_prefixes (str, slen);
+	str = strip_common_prefixes_stdlib (str);
+	str = strip_dll_prefix (str);
 
 	if ( (result = type_func_try_guess (TDB, str))) {
 		return result;
