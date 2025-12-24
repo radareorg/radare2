@@ -1,7 +1,7 @@
 TESTS=lowerdash test test-enum a c b invalid j macho
 TESTS+=union crash vararg align books dotfun sizes
 TESTS+=typestr fcnptr anonworld pre 12272 colons
-TESTS+=typedef typedef2 fcnptr2 funsig static
+TESTS+=typedef typedef2 fcnptr2 funsig static typedef_union_enum
 
 all:
 	rm -f a.out

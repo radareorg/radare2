@@ -1,5 +1,11 @@
 typedef.fp=func.fp
 fp=typedef
+func.fp.arg.0=int,a
+func.fp.arg.1=int,b
+func.fp=a,b
+func.fp.cc=cdecl
+func.fp.args=2
+func.fp.ret=int
 foo=struct
 foo.fp=func
 struct.foo.x=int,0,0
