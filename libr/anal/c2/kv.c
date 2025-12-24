@@ -636,7 +636,8 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 			char *tag_str = has_tag? kvctoken_tostring (tag): strdup ("");
 			if (ptr_depth > 0) {
 				RStrBuf *ptrbuf = r_strbuf_new ("");
-				for (int i = 0; i < ptr_depth; i++) {
+				int i;
+				for (i = 0; i < ptr_depth; i++) {
 					r_strbuf_append (ptrbuf, " *");
 				}
 				char *ptrs = r_strbuf_drain (ptrbuf);
@@ -864,7 +865,8 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 			char *tag_str = has_tag? kvctoken_tostring (tag): strdup ("");
 			if (ptr_depth > 0) {
 				RStrBuf *ptrbuf = r_strbuf_new ("");
-				for (int i = 0; i < ptr_depth; i++) {
+				int i;
+				for (i = 0; i < ptr_depth; i++) {
 					r_strbuf_append (ptrbuf, " *");
 				}
 				char *ptrs = r_strbuf_drain (ptrbuf);
@@ -1072,7 +1074,8 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 			char *tag_str = has_tag? kvctoken_tostring (tag): strdup ("");
 			if (ptr_depth > 0) {
 				RStrBuf *ptrbuf = r_strbuf_new ("");
-				for (int i = 0; i < ptr_depth; i++) {
+				int i;
+				for (i = 0; i < ptr_depth; i++) {
 					r_strbuf_append (ptrbuf, " *");
 				}
 				char *ptrs = r_strbuf_drain (ptrbuf);
