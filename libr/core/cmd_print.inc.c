@@ -3855,6 +3855,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 			oaddr = UT64_MAX;
 		}
 		if (addr != UT64_MAX) {
+			const char *str = NULL;
 			if (show_comments && !pdsfs) {
 				char *comment = r_core_anal_get_comments (core, addr);
 				if (R_STR_ISNOTEMPTY (comment)) {
