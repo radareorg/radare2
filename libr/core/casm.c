@@ -570,7 +570,7 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 
 	r_asm_set_pc (core->rasm, at);
 	for (hit_count = 0; hit_count < n; hit_count++) {
-		RAnalOp op;
+		RAnalOp op = {0};
 		int instrlen = r_asm_disassemble (core->rasm, &op,
 			buf + len - addrbytes * (addr - at), addrbytes * (addr - at));
 		add_hit_to_hits (hits, at, instrlen, true);

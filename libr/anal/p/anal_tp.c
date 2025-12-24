@@ -1375,6 +1375,9 @@ static inline void tp_state_reset(TypePropState *state) {
 	state->str_flag = false;
 	state->prop = false;
 	state->prev_dest = NULL;
+	state->prev_var = NULL;
+	state->userfnc = false;
+	memset (state->prev_type, 0, sizeof (state->prev_type));
 }
 
 static inline void tp_state_fini(TypePropState *state) {
@@ -1440,6 +1443,9 @@ repeat:
 			retries--;
 			goto repeat;
 		}
+		R_FREE (tp_state.ret_type);
+		R_FREE (tp_state.ret_reg);
+		tp_state.resolved = false;
 		ut64 bb_addr = bb->addr;
 		ut64 bb_size = bb->size;
 		const ut64 buf_size = bb->size + 32;
@@ -1659,7 +1665,7 @@ repeat:
 			// Type propagation using instruction access pattern
 			if (var) {
 				bool sign = false;
-				if ((type == R_ANAL_OP_TYPE_CMP) && next_op) {
+				if ((type == R_ANAL_OP_TYPE_CMP) && next_op && (next_op->type == R_ANAL_OP_TYPE_CJMP)) {
 					if (next_op->sign) {
 						sign = true;
 					} else {
