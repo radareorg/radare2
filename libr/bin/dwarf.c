@@ -2618,9 +2618,11 @@ R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBin *bin, RVecDwarfAbbrevDecl 
 	if (!info) {
 		return NULL;
 	}
-	if (mode == R_MODE_PRINT) {
-		print_debug_info (info, bin->cb_printf);
-	}
+	// Don't print debug info automatically - it causes severe performance issues
+	// for large binaries. To debug DWARF, use explicit commands.
+	// if (mode == R_MODE_PRINT) {
+	// 	print_debug_info (info, bin->cb_printf);
+	// }
 
 	// TODO: load compilation units
 	// TODO: only necessary when we have no srcline inf
@@ -2748,9 +2750,12 @@ R_API RVecDwarfAbbrevDecl *r_bin_dwarf_parse_abbrev(RBin *bin, int mode) {
 		return NULL;
 	}
 	RVecDwarfAbbrevDecl *abbrevs = parse_abbrev_raw (buf, section->bytes.len);
-	if (mode == R_MODE_PRINT && abbrevs) {
-		print_abbrev_section (abbrevs, bin->cb_printf);
-	}
+	// Don't print abbreviations automatically - they're internal DWARF data
+	// and printing them causes performance issues for large binaries.
+	// To debug DWARF, use explicit commands like 'idi' instead.
+	// if (mode == R_MODE_PRINT && abbrevs) {
+	// 	print_abbrev_section (abbrevs, bin->cb_printf);
+	// }
 	return abbrevs;
 }
 
