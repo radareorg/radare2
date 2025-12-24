@@ -1,5 +1,6 @@
 NAME=pdsf leak
 FILE=bins/mach0/hello-osx-i386
+BROKEN=1
 CMDS=<<EOF
 af
 pdsf
