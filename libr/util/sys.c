@@ -33,7 +33,6 @@ extern int backtrace_symbols_fd(void**, size_t, int);
 #include <r_lib.h>
 
 static R_TH_LOCAL char** Genv = NULL;
-static R_TH_LOCAL char *Gprefix = NULL;
 static R_TH_LOCAL bool Gunsignable = false; // OK
 
 #if R2_USE_BUNDLE_PREFIX
