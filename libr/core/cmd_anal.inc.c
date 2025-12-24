@@ -14000,6 +14000,7 @@ static bool check_string_at(RCore *core, ut64 addr, bool and_print_it) {
 	}
 	if (!and_print_it) {
 		free (out);
+		free (buf);
 		return (is_ascii || is_utf8);
 	}
 #if 0
