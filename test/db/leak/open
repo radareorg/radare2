@@ -9,7 +9,7 @@ EOF
 RUN
 
 NAME=leak opening elf
-FILE=bins/elf/ip-riscv
+FILE=bins/elf/tcache
 CMDS=<<EOF
 ?e hello
 EOF
@@ -29,7 +29,7 @@ EOF
 RUN
 
 NAME=leak analysis elf
-FILE=bins/elf/ip-riscv
+FILE=bins/elf/tcache
 ARGS=-AA
 CMDS=<<EOF
 ?e hello
