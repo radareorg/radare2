@@ -1,10 +1,16 @@
 NAME=pdsf leak
 FILE=bins/mach0/hello-osx-i386
+ARGS=-e scr.color=0
 CMDS=<<EOF
 af
 pdsf
 EOF
 EXPECT=<<EOF
-hello
+;-- section.0.__TEXT.__text:
+;-- start:
+0x00001f14 [00] -r-x section size 100 named 0.__TEXT.__text
+0x00001f44 call sym._main
+0x00001f44 "", ""
+0x00001f4c call sym.imp.exit
 EOF
 RUN
