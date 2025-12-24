@@ -545,6 +545,10 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 			break;
 		}
 		c = r_asm_mdisassemble (core->rasm, buf + len - idx, idx);
+		if (!c || !c->assembly) {
+			r_asm_code_free (c);
+			continue;
+		}
 		if (strstr (c->assembly, "invalid") || strstr (c->assembly, ".byte")) {
 			r_asm_code_free (c);
 			continue;
