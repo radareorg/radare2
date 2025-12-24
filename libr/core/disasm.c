@@ -3140,7 +3140,6 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		ds->prev_ins = strdup (ds->asmop.mnemonic);
 	}
 	ds->oplen = ds->asmop.size;
-eprintf ("Pene\n");
 
 	if (ret < 1) {
 		ret = -1;
