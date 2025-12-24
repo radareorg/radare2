@@ -320,7 +320,7 @@ static void sdb_concat_by_path(Sdb *s, const char *path) {
 R_API bool r_anal_set_os(RAnal *anal, const char *os) {
 	R_RETURN_VAL_IF_FAIL (anal && os, false);
 	Sdb *types = anal->sdb_types;
-	const char *dir_prefix = r_sys_prefix (NULL);
+	char *dir_prefix = r_sys_prefix (NULL);
 	SdbGperf *gp = r_anal_get_gperf_types (os);
 	if (gp) {
 		Sdb *gd = sdb_new0 ();
@@ -329,12 +329,14 @@ R_API bool r_anal_set_os(RAnal *anal, const char *os) {
 		sdb_merge (anal->sdb_types, gd);
 		sdb_close (gd);
 		sdb_free (gd);
+		free (dir_prefix);
 		return r_anal_set_triplet (anal, os, NULL, -1);
 	}
 	// char *ff = r_str_newf ("types-%s.sdb", os);
 	// char *dbpath = r_file_new (dir_prefix, r2_sdb_fcnsign, ff, NULL);
 	char *dbpath = r_str_newf ("%s%s%s%stypes-%s.sdb",
 		dir_prefix, R_SYS_DIR, R2_SDB_FCNSIGN, R_SYS_DIR, os);
+	free (dir_prefix);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}

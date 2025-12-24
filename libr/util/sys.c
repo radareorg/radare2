@@ -34,7 +34,6 @@ extern int backtrace_symbols_fd(void**, size_t, int);
 
 static R_TH_LOCAL char** Genv = NULL;
 static R_TH_LOCAL char *Gprefix = NULL;
-static R_TH_LOCAL char *Gr2prefix = NULL;
 static R_TH_LOCAL bool Gunsignable = false; // OK
 
 #if R2_USE_BUNDLE_PREFIX
@@ -1501,7 +1500,9 @@ R_API bool r_sys_tts(const char *txt, bool bg) {
 	return false;
 }
 
-R_API const char *r_sys_prefix(const char *pfx) {
+R_API char *r_sys_prefix(const char *pfx) {
+	char *Gprefix = NULL;
+	char *Gr2prefix = NULL;
 #if R2_USE_BUNDLE_PREFIX
 	if (!Gprefix) {
 		Gprefix = macho_detect_bundle_location ();
@@ -1529,6 +1530,7 @@ R_API const char *r_sys_prefix(const char *pfx) {
 		Gprefix = strdup (pfx);
 	}
 #endif
+	free (Gr2prefix);
 	return Gprefix;
 }
 

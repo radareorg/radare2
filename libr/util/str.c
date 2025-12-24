@@ -280,7 +280,10 @@ R_API void r_str_case(char *str, bool up) {
 }
 
 R_API R_MUSTUSE char *r_str_r2_prefix(const char *str) {
-	return r_str_newf ("%s%s%s", r_sys_prefix (NULL), R_SYS_DIR, str);
+	char *pfx = r_sys_prefix (NULL);
+	char *res = r_str_newf ("%s%s%s", pfx, R_SYS_DIR, str);
+	free (pfx);
+	return res;
 }
 
 // Compute a modified 64 bit DJB hash of a string

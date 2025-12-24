@@ -5283,7 +5283,10 @@ static void __update_menu(RCore *core, const char *parent, R_NULLABLE RPanelMenu
 
 static char *__panels_config_path(bool syspath) {
 	if (syspath) {
-		return r_file_new (r_sys_prefix (NULL), R2_DATDIR_R2, "panels", NULL);
+		char *pfx = r_sys_prefix (NULL);
+		char *res = r_file_new (pfx, R2_DATDIR_R2, "panels", NULL);
+		free (pfx);
+		return res;
 	}
 	return r_xdg_datadir ("r2panels");
 }

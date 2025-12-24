@@ -3286,7 +3286,8 @@ static int __dbg_swstep_getter(void *user, RConfigNode *node) {
 }
 
 static bool cb_dirpfx(RCore *core, RConfigNode *node) {
-	r_sys_prefix (node->value);
+	char *pfx = r_sys_prefix (node->value);
+	free (pfx);
 	return true;
 }
 
@@ -3756,10 +3757,11 @@ R_API int r_core_config_init(RCore *core) {
 	{
 		char *pfx = r_sys_getenv ("R2_PREFIX");
 #if R2__WINDOWS__
-		const char *invoke_dir = r_sys_prefix (NULL);
+		char *invoke_dir = r_sys_prefix (NULL);
 		if (!pfx && invoke_dir) {
 			pfx = strdup (invoke_dir);
 		}
+		free (invoke_dir);
 #endif
 		if (!pfx) {
 			pfx = strdup (R2_PREFIX);
@@ -4509,13 +4511,17 @@ R_API int r_core_config_init(RCore *core) {
 	}
 #if R2_USE_BUNDLE_PREFIX
 	{
-		char *wwwroot = r_file_new (r_sys_prefix (NULL), "www", NULL);
+		char *pfx = r_sys_prefix (NULL);
+		char *wwwroot = r_file_new (pfx, "www", NULL);
+		free (pfx);
 		SETS ("http.root", wwwroot, "http root directory");
 		free (wwwroot);
 	}
 #elif R2__WINDOWS__
 	{
-		char *wwwroot = r_str_newf ("%s\\share\\www", r_sys_prefix (NULL));
+		char *pfx = r_sys_prefix (NULL);
+		char *wwwroot = r_str_newf ("%s\\share\\www", pfx);
+		free (pfx);
 		SETS ("http.root", wwwroot, "http root directory");
 		free (wwwroot);
 	}

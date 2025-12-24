@@ -2694,6 +2694,7 @@ R_API bool r_core_init(RCore *core) {
 	r_w32_init ();
 	core->muta = r_muta_new ();
 	core->priv = R_NEW0 (RCorePriv);
+	((RCorePriv *)core->priv)->old_bits = -1;
 	core->log = r_core_log_new ();
 	core->blocksize = R_CORE_BLOCKSIZE;
 	core->block = (ut8 *)calloc (R_CORE_BLOCKSIZE + 1, 1);
@@ -3033,6 +3034,7 @@ R_API void r_core_fini(RCore *c) {
 	r_core_log_free (c->log);
 	r_fs_shell_free (c->rfs);
 	free (c->times);
+	free (((RCorePriv *)c->priv)->old_arch);
 	free (c->priv);
 }
 

@@ -504,7 +504,9 @@ static inline void prevPrintFormat(RCore *core) {
 
 R_API bool r_core_visual_hud(RCore *core) {
 	const char *c = r_config_get (core->config, "hud.path");
-	char *f = r_str_newf (R_JOIN_3_PATHS ("%s", R2_HUD, "main"), r_sys_prefix (NULL));
+	char *pfx = r_sys_prefix (NULL);
+	char *f = r_str_newf (R_JOIN_3_PATHS ("%s", R2_HUD, "main"), pfx);
+	free (pfx);
 	const int use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	char *homehud = r_xdg_datadir ("hud");
 	bool ready = false;

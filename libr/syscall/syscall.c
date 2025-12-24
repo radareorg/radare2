@@ -44,7 +44,9 @@ static Sdb *openDatabase(Sdb *db, const char *name) {
 		sdb_reset (db);
 		sdb_open_gperf (db, sg);
 	} else {
-		char *file = r_str_newf (R_JOIN_3_PATHS ("%s", R2_SDB, "%s.sdb"), r_sys_prefix (NULL), name);
+		char *pfx = r_sys_prefix (NULL);
+		char *file = r_str_newf (R_JOIN_3_PATHS ("%s", R2_SDB, "%s.sdb"), pfx, name);
+		free (pfx);
 		if (r_file_exists (file)) {
 			if (db) {
 				sdb_reset (db);
