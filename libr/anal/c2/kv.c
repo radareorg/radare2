@@ -543,10 +543,10 @@ static const char *kvc_lookup_typedef(KVCParser *kvc, const char *name) {
 }
 
 static void emit_func_typedef(KVCParser *kvc, const char *name, const char *rtype, const char *args) {
-	if (!name || !*name) {
+	if (R_STR_ISEMPTY (name)) {
 		return;
 	}
-	if (args && *args) {
+	if (R_STR_ISNOTEMPTY (args)) {
 		char *args_copy = strdup (args);
 		char *p = args_copy;
 		int arg_idx = 0;
